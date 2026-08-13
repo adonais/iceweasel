@@ -4,12 +4,12 @@
 
 #include "TestCommon.h"
 #include "gtest/gtest.h"
-#include "mozilla/gtest/MozAssertions.h"
-#include "mozilla/StaticPrefs_network.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs_network.h"
+#include "mozilla/gtest/MozAssertions.h"
 #include "mozilla/net/DNS.h"
-#include "nsNetUtil.h"
 #include "nsIOService.h"
+#include "nsNetUtil.h"
 
 TEST(TestNetAddrLNAUtil, IPAddressSpaceCategorization)
 {

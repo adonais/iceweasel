@@ -35,6 +35,8 @@ pub(crate) struct Metrics {
     https_rr_ech: bool,
     https_rr_ipv4hint: bool,
     https_rr_ipv6hint: bool,
+    // The resolver type (DoH/TRR vs native) that produced the HTTPS record.
+    is_trr: bool,
     outcome: Option<Outcome>,
 }
 
@@ -56,6 +58,7 @@ impl Metrics {
             https_rr_ech: false,
             https_rr_ipv4hint: false,
             https_rr_ipv6hint: false,
+            is_trr: false,
             outcome: None,
         }
     }
@@ -89,17 +92,21 @@ impl Metrics {
         &mut self,
         id: happy_eyeballs::Id,
         infos: &[happy_eyeballs::ServiceInfo],
+        is_trr: bool,
     ) {
         self.https_record_received |= !infos.is_empty();
         self.https_rr_h3 |= infos.iter().any(|i| {
             i.alpn_http_versions
                 .contains(&happy_eyeballs::HttpVersion::H3)
         });
-        self.https_rr_ech |= infos
-            .iter()
-            .any(|i| i.ech_config.as_ref().is_some_and(|e| !e.as_ref().is_empty()));
+        self.https_rr_ech |= infos.iter().any(|i| {
+            i.ech_config
+                .as_ref()
+                .is_some_and(|e| !e.as_ref().is_empty())
+        });
         self.https_rr_ipv4hint |= infos.iter().any(|i| !i.ipv4_hints.is_empty());
         self.https_rr_ipv6hint |= infos.iter().any(|i| !i.ipv6_hints.is_empty());
+        self.is_trr = is_trr;
         self.dns_response(id);
     }
 
@@ -157,9 +164,12 @@ impl Drop for Metrics {
             Outcome::Succeeded { elapsed, .. } | Outcome::Failed { elapsed } => *elapsed,
         };
         let elapsed_ms = elapsed.as_millis() as i64;
-        glean::happy_eyeballs_connection_establishment_time
-            .get(outcome_label)
-            .accumulate_single_sample_signed(elapsed_ms);
+        match outcome {
+            Outcome::Succeeded { .. } => glean::happy_eyeballs_end_to_end_time_succeeded
+                .accumulate_single_sample_signed(elapsed_ms),
+            Outcome::Failed { .. } => glean::happy_eyeballs_end_to_end_time_failed
+                .accumulate_single_sample_signed(elapsed_ms),
+        }
 
         glean::happy_eyeballs_connection_attempt_count
             .get(outcome_label)
@@ -184,24 +194,20 @@ impl Drop for Metrics {
             .add(1);
 
         if self.https_record_received {
-            glean::happy_eyeballs_https_rr_features.get("total").add(1);
+            let resolver = if self.is_trr { "doh" } else { "native" };
+            let metric = &glean::happy_eyeballs_https_rr_features_by_resolver;
+            metric.get(resolver, "total").add(1);
             if self.https_rr_h3 {
-                glean::happy_eyeballs_https_rr_features
-                    .get("h3_alpn")
-                    .add(1);
+                metric.get(resolver, "h3_alpn").add(1);
             }
             if self.https_rr_ech {
-                glean::happy_eyeballs_https_rr_features.get("ech").add(1);
+                metric.get(resolver, "ech").add(1);
             }
             if self.https_rr_ipv4hint {
-                glean::happy_eyeballs_https_rr_features
-                    .get("ipv4hint")
-                    .add(1);
+                metric.get(resolver, "ipv4hint").add(1);
             }
             if self.https_rr_ipv6hint {
-                glean::happy_eyeballs_https_rr_features
-                    .get("ipv6hint")
-                    .add(1);
+                metric.get(resolver, "ipv6hint").add(1);
             }
         }
     }

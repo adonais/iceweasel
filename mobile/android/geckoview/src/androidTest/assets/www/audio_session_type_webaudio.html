@@ -1,0 +1,22 @@
+<!doctype html>
+<!-- Plays Web Audio so the tab's effective audio-session type is "ambient". -->
+<html>
+  <head>
+    <title>audio session type: web audio</title>
+  </head>
+  <body>
+    <script>
+      window.onload = async () => {
+        const ac = new AudioContext();
+        if (ac.state !== "running") {
+          await ac.resume();
+        }
+        const osc = ac.createOscillator();
+        const gain = ac.createGain();
+        gain.gain.value = 0.2;
+        osc.connect(gain).connect(ac.destination);
+        osc.start();
+      };
+    </script>
+  </body>
+</html>

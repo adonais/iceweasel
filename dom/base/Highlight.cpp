@@ -14,6 +14,7 @@
 #include "mozilla/StaticAnalysisFunctions.h"
 #include "mozilla/dom/HighlightBinding.h"
 #include "nsFrameSelection.h"
+#include "nsIContentInlines.h"
 #include "nsLayoutUtils.h"
 #include "nsPIDOMWindow.h"
 #include "nsPresContext.h"
@@ -190,7 +191,11 @@ struct PointHitCallback : public RectCallback {
 nsTArray<RefPtr<AbstractRange>> Highlight::RangesAtPoint(
     float aX, float aY,
     const Sequence<OwningNonNull<mozilla::dom::ShadowRoot>>& aShadowRoots,
-    ShadowRoot* aPointShadowRoot) const {
+    Element* aElementAtPoint) const {
+  if (!aElementAtPoint) {
+    return {};
+  }
+
   AutoTArray<RefPtr<AbstractRange>, 4> rangesAtPoint;
 
   // Convert once; all client rects from CollectClientRects() are in app units.
@@ -198,6 +203,18 @@ nsTArray<RefPtr<AbstractRange>> Highlight::RangesAtPoint(
   const nscoord yAppUnits = nsPresContext::CSSPixelsToAppUnits(aY);
 
   // 3.2. For each AbstractRange abstractRange in highlight:
+  ShadowRoot* const containingShadowAtPoint =
+      aElementAtPoint->GetContainingShadowForSelection();
+  ShadowRoot* const shadowRootCoveredByElementAtPoint = [&]() {
+    // If aElementAtPoint is an inclusive descendant of an assigned node of a
+    // <slot>, the range in an assigned node hides the shadow at the point.
+    // Then, we should not append ranges that appear in the shadow.
+    ShadowRoot* const closestShadowRootInFlattenedTree =
+        aElementAtPoint->GetClosestShadowRootInFlattenedTreeForSelection();
+    return containingShadowAtPoint != closestShadowRootInFlattenedTree
+               ? closestShadowRootInFlattenedTree
+               : nullptr;
+  }();
   for (const auto& range : mRanges) {
     // 3.2.1. If abstractRange is an invalid StaticRange, then continue.
     if (range->IsStaticRange() && !range->AsStaticRange()->IsValid()) {
@@ -216,18 +233,30 @@ nsTArray<RefPtr<AbstractRange>> Highlight::RangesAtPoint(
     //  - If the point is in the light DOM, skip ranges whose
     //    closestCommonAncestorContainer is in a shadow tree not listed in
     //    options.shadowRoots.
-    const nsINode* closestCommonAncestor =
+    const nsINode* const closestCommonAncestor =
         range->GetClosestCommonInclusiveAncestor();
     if (!closestCommonAncestor) {
       continue;
     }
-    if (aPointShadowRoot) {
-      if (closestCommonAncestor->GetContainingShadow() != aPointShadowRoot) {
+    const ShadowRoot* const containingShadow =
+        closestCommonAncestor->GetContainingShadow();
+    if (containingShadowAtPoint) {
+      if (containingShadow != containingShadowAtPoint) {
+        // The range is not selecting content in the shadow root.
         continue;
       }
     } else if (closestCommonAncestor->IsInShadowTree() &&
-               !aShadowRoots.Contains(
-                   closestCommonAncestor->GetContainingShadow())) {
+               !aShadowRoots.Contains(containingShadow)) {
+      // The range is in a shadow, but the shadow root is not listed in
+      // options.shadowRoots.
+      continue;
+    }
+
+    // The range in the shadow should not be appended when the element at the
+    // point is an assigned slot of a <slot> in the shadow since the element
+    // covers the shadow and is not contained by the shadow.
+    if (shadowRootCoveredByElementAtPoint &&
+        containingShadow == shadowRootCoveredByElementAtPoint) {
       continue;
     }
 

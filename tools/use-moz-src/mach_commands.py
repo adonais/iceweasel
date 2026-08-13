@@ -296,6 +296,12 @@ def use_moz_src(command_context, paths):
                 NEWTAB_WARNING + "\n  {}".format("\n  ".join(newtab_files)),
             )
 
+        command_context._mach_context.commands.dispatch(
+            "ts",
+            command_context._mach_context,
+            subcommand="paths",
+        )
+
     _log.log(
         logging.INFO, "Done. Make sure to test the result before submitting patches."
     )

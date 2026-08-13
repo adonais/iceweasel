@@ -3,7 +3,7 @@
 
 "use strict";
 
-const RESULT_SOURCE = UrlbarUtils.RESULT_SOURCE;
+const RESULT_SOURCE = UrlbarShared.RESULT_SOURCE;
 
 const now = new Date();
 const oneWeekAgo = new Date();

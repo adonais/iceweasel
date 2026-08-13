@@ -132,36 +132,48 @@ const nsAttrValue* AttrArray::AddNewAttributeAssumeAvailableSlot(
 }
 
 nsresult AttrArray::SetAndSwapAttr(nsAtom* aLocalName, nsAttrValue& aValue,
-                                   bool* aHadValue) {
+                                   bool* aHadValue,
+                                   mozilla::dom::IsKnownNewAttr aIsKnownNew) {
   *aHadValue = false;
 
-  for (InternalAttr& attr : Attrs()) {
-    if (attr.mName.Equals(aLocalName)) {
-      attr.mValue.SwapValueWith(aValue);
-      *aHadValue = true;
-      return NS_OK;
+  if (aIsKnownNew == mozilla::dom::IsKnownNewAttr::No) {
+    for (InternalAttr& attr : Attrs()) {
+      if (attr.mName.Equals(aLocalName)) {
+        attr.mValue.SwapValueWith(aValue);
+        *aHadValue = true;
+        return NS_OK;
+      }
     }
+  } else {
+    MOZ_ASSERT(IndexOfAttr(aLocalName) == -1,
+               "Caller asserted attribute is new but it already exists");
   }
 
   return AddNewAttribute(aLocalName, aValue);
 }
 
 nsresult AttrArray::SetAndSwapAttr(mozilla::dom::NodeInfo* aName,
-                                   nsAttrValue& aValue, bool* aHadValue) {
+                                   nsAttrValue& aValue, bool* aHadValue,
+                                   mozilla::dom::IsKnownNewAttr aIsKnownNew) {
   int32_t namespaceID = aName->NamespaceID();
   nsAtom* localName = aName->NameAtom();
   if (namespaceID == kNameSpaceID_None) {
-    return SetAndSwapAttr(localName, aValue, aHadValue);
+    return SetAndSwapAttr(localName, aValue, aHadValue, aIsKnownNew);
   }
 
   *aHadValue = false;
-  for (InternalAttr& attr : Attrs()) {
-    if (attr.mName.Equals(localName, namespaceID)) {
-      attr.mName.SetTo(aName);
-      attr.mValue.SwapValueWith(aValue);
-      *aHadValue = true;
-      return NS_OK;
+  if (aIsKnownNew == mozilla::dom::IsKnownNewAttr::No) {
+    for (InternalAttr& attr : Attrs()) {
+      if (attr.mName.Equals(localName, namespaceID)) {
+        attr.mName.SetTo(aName);
+        attr.mValue.SwapValueWith(aValue);
+        *aHadValue = true;
+        return NS_OK;
+      }
     }
+  } else {
+    MOZ_ASSERT(IndexOfAttr(localName, namespaceID) == -1,
+               "Caller asserted attribute is new but it already exists");
   }
 
   return AddNewAttribute(aName, aValue);
@@ -213,11 +225,27 @@ const nsAttrName* AttrArray::GetSafeAttrNameAt(uint32_t aPos) const {
 }
 
 const nsAttrName* AttrArray::GetExistingAttrNameFromQName(
-    const nsAString& aName) const {
+    const nsAString& aName, RefPtr<nsAtom>* aOutAtom) const {
+  if (aOutAtom) {
+    *aOutAtom = nullptr;
+  }
+  if (!HasAttrs()) {
+    return nullptr;
+  }
+  RefPtr<nsAtom> nameAtom = NS_AtomizeMainThread(aName);
   for (const InternalAttr& attr : Attrs()) {
-    if (attr.mName.QualifiedNameEquals(aName)) {
+    // Equals(nsAtom*) compares mBits; for NodeInfo-typed entries mBits has the
+    // tag bit set and can never equal a clean atom pointer, so this is safe
+    // for both kinds without branching on IsAtom().
+    if (attr.mName.Equals(nameAtom.get())) {
       return &attr.mName;
     }
+    if (!attr.mName.IsAtom() && attr.mName.QualifiedNameEquals(aName)) {
+      return &attr.mName;
+    }
+  }
+  if (aOutAtom) {
+    *aOutAtom = nameAtom.forget();
   }
   return nullptr;
 }

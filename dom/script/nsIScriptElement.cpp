@@ -88,7 +88,8 @@ mozilla::dom::ReferrerPolicy nsIScriptElement::GetReferrerPolicy() {
 void nsIScriptElement::DetermineKindFromType(
     const mozilla::dom::Document* aOwnerDoc) {
   MOZ_ASSERT((mKind != ScriptKind::eModule) &&
-             (mKind != ScriptKind::eImportMap) && !mAsync && !mDefer &&
+             (mKind != ScriptKind::eImportMap) &&
+             (mKind != ScriptKind::eSpeculationRules) && !mAsync && !mDefer &&
              !mExternal);
 
   nsAutoString type;
@@ -105,6 +106,14 @@ void nsIScriptElement::DetermineKindFromType(
     // "importmap".
     if (type.LowerCaseEqualsASCII("importmap")) {
       mKind = ScriptKind::eImportMap;
+    }
+
+    // Step 12. Otherwise, if the script block's type string is an ASCII
+    // case-insensitive match for the string "speculationrules", then set el's
+    // type to "speculationrules".
+    if (mozilla::StaticPrefs::dom_speculation_rules_enabled() &&
+        type.LowerCaseEqualsASCII("speculationrules")) {
+      mKind = ScriptKind::eSpeculationRules;
     }
   }
 }

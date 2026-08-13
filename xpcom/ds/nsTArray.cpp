@@ -3,11 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsTArray.h"
-#include "nsXPCOM.h"
-#include "nsCycleCollectionNoteChild.h"
-#include "nsDebug.h"
+
 #include "mozilla/CheckedInt.h"
 #include "mozilla/IntegerPrintfMacros.h"
+#include "nsCycleCollectionNoteChild.h"
+#include "nsDebug.h"
+#include "nsXPCOM.h"
 
 // Ensure this is sufficiently aligned so that Elements() and co don't create
 // unaligned pointers, or slices with unaligned pointers for empty arrays, see

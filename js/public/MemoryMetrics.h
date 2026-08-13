@@ -183,7 +183,6 @@ struct ClassInfo {
   MACRO(Objects, NonHeap, objectsGCBufferSlots)                    \
   MACRO(Objects, NonHeap, objectsGCBufferElementsNormal)           \
   MACRO(Objects, MallocHeap, objectsMallocHeapElementsArrayBuffer) \
-  MACRO(Objects, MallocHeap, objectsMallocHeapElementsAsmJS)       \
   MACRO(Objects, MallocHeap, objectsMallocHeapGlobalData)          \
   MACRO(Objects, MallocHeap, objectsMallocHeapMisc)                \
   MACRO(Objects, NonHeap, objectsNonHeapElementsNormal)            \

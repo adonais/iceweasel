@@ -21,12 +21,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
@@ -68,13 +71,24 @@ fun RenameAndChangeLocationDialogContent(
     onCancel: () -> Unit,
 ) {
     var fileNameState by remember {
-        val end = File(dialogState.fileName).nameWithoutExtension.length
         mutableStateOf(
             TextFieldValue(
                 text = dialogState.fileName,
-                selection = TextRange(0, end),
             ),
         )
+    }
+
+    val focusRequester = remember { FocusRequester() }
+    var isFocused by remember { mutableStateOf(false) }
+
+    LaunchedEffect(isFocused) {
+        if (isFocused) {
+            val text = fileNameState.text
+            val end = File(text).nameWithoutExtension.length
+            fileNameState = fileNameState.copy(
+                selection = TextRange(0, end),
+            )
+        }
     }
 
     val currentError: RenameFileError? = when {
@@ -109,6 +123,10 @@ fun RenameAndChangeLocationDialogContent(
                     onFileNameChange(newFileName.text)
                 },
                 currentError = currentError,
+                focusRequester = focusRequester,
+                modifier = Modifier.onFocusChanged { focusState ->
+                    isFocused = focusState.isFocused
+                },
             )
 
             DirectorySelectionItem(

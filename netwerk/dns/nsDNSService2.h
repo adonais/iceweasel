@@ -6,17 +6,17 @@
 #define nsDNSService2_h_
 
 #include "DNSServiceBase.h"
-#include "nsClassHashtable.h"
-#include "nsPIDNSService.h"
-#include "nsIMemoryReporter.h"
-#include "nsIObserver.h"
-#include "nsHostResolver.h"
-#include "nsString.h"
-#include "nsTHashSet.h"
-#include "nsHashKeys.h"
+#include "TRRService.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Mutex.h"
-#include "TRRService.h"
+#include "nsClassHashtable.h"
+#include "nsHashKeys.h"
+#include "nsHostResolver.h"
+#include "nsIMemoryReporter.h"
+#include "nsIObserver.h"
+#include "nsPIDNSService.h"
+#include "nsString.h"
+#include "nsTHashSet.h"
 
 class nsAuthSSPI;
 

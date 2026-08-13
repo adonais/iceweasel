@@ -709,9 +709,9 @@ class MWasmHeapReg : public MNullaryInstruction {
   AliasSet getAliasSet() const override { return aliases_; }
 };
 
-// For memory32, bounds check nodes are of type Int32 on 32-bit systems for both
-// wasm and asm.js code, as well as on 64-bit systems for asm.js code and for
-// wasm code that is known to have a bounds check limit that fits into 32 bits.
+// For memory32, bounds check nodes are of type Int32 on 32-bit systems and
+// on 64-bit systems for wasm code that is known to have a bounds check limit
+// that fits into 32 bits.
 // They are of type Int64 only on 64-bit systems for wasm code with 4GB heaps.
 // There is no way for nodes of both types to be present in the same function.
 // Should this change, then BCE must be updated to take type into account.
@@ -965,129 +965,6 @@ class MWasmStore : public MVariadicInstruction, public NoTypePolicy::Data {
       res->replaceOperand(i, inputs[i]);
     }
     return res;
-  }
-};
-
-class MAsmJSMemoryAccess {
-  Scalar::Type accessType_;
-  bool needsBoundsCheck_;
-
- public:
-  explicit MAsmJSMemoryAccess(Scalar::Type accessType)
-      : accessType_(accessType), needsBoundsCheck_(true) {
-    MOZ_ASSERT(accessType != Scalar::Uint8Clamped);
-  }
-
-  Scalar::Type accessType() const { return accessType_; }
-  unsigned byteSize() const { return TypedArrayElemSize(accessType()); }
-  bool needsBoundsCheck() const { return needsBoundsCheck_; }
-
-  wasm::MemoryAccessDesc access() const {
-    return wasm::MemoryAccessDesc(0, accessType_, Scalar::byteSize(accessType_),
-                                  0, wasm::TrapSiteDesc(), false);
-  }
-
-  void removeBoundsCheck() { needsBoundsCheck_ = false; }
-};
-
-class MAsmJSLoadHeap
-    : public MVariadicInstruction,  // 1 plus optional memoryBase and
-                                    // boundsCheckLimit
-      public MAsmJSMemoryAccess,
-      public NoTypePolicy::Data {
-  uint32_t memoryBaseIndex_;
-
-  explicit MAsmJSLoadHeap(uint32_t memoryBaseIndex, Scalar::Type accessType)
-      : MVariadicInstruction(classOpcode),
-        MAsmJSMemoryAccess(accessType),
-        memoryBaseIndex_(memoryBaseIndex) {
-    setResultType(ScalarTypeToMIRType(accessType));
-  }
-
- public:
-  INSTRUCTION_HEADER(AsmJSLoadHeap)
-  NAMED_OPERANDS((0, base), (1, boundsCheckLimit))
-
-  static MAsmJSLoadHeap* New(TempAllocator& alloc, MDefinition* memoryBase,
-                             MDefinition* base, MDefinition* boundsCheckLimit,
-                             Scalar::Type accessType) {
-    uint32_t nextIndex = 2;
-    uint32_t memoryBaseIndex = memoryBase ? nextIndex++ : UINT32_MAX;
-
-    MAsmJSLoadHeap* load =
-        new (alloc) MAsmJSLoadHeap(memoryBaseIndex, accessType);
-    if (!load->init(alloc, nextIndex)) {
-      return nullptr;
-    }
-
-    load->initOperand(0, base);
-    load->initOperand(1, boundsCheckLimit);
-    if (memoryBase) {
-      load->initOperand(memoryBaseIndex, memoryBase);
-    }
-
-    return load;
-  }
-
-  bool hasMemoryBase() const { return memoryBaseIndex_ != UINT32_MAX; }
-  MDefinition* memoryBase() const {
-    MOZ_ASSERT(hasMemoryBase());
-    return getOperand(memoryBaseIndex_);
-  }
-
-  bool congruentTo(const MDefinition* ins) const override;
-  AliasSet getAliasSet() const override {
-    return AliasSet::Load(AliasSet::WasmHeap);
-  }
-  AliasType mightAlias(const MDefinition* def) const override;
-};
-
-class MAsmJSStoreHeap
-    : public MVariadicInstruction,  // 2 plus optional memoryBase and
-                                    // boundsCheckLimit
-      public MAsmJSMemoryAccess,
-      public NoTypePolicy::Data {
-  uint32_t memoryBaseIndex_;
-
-  explicit MAsmJSStoreHeap(uint32_t memoryBaseIndex, Scalar::Type accessType)
-      : MVariadicInstruction(classOpcode),
-        MAsmJSMemoryAccess(accessType),
-        memoryBaseIndex_(memoryBaseIndex) {}
-
- public:
-  INSTRUCTION_HEADER(AsmJSStoreHeap)
-  NAMED_OPERANDS((0, base), (1, value), (2, boundsCheckLimit))
-
-  static MAsmJSStoreHeap* New(TempAllocator& alloc, MDefinition* memoryBase,
-                              MDefinition* base, MDefinition* boundsCheckLimit,
-                              Scalar::Type accessType, MDefinition* v) {
-    uint32_t nextIndex = 3;
-    uint32_t memoryBaseIndex = memoryBase ? nextIndex++ : UINT32_MAX;
-
-    MAsmJSStoreHeap* store =
-        new (alloc) MAsmJSStoreHeap(memoryBaseIndex, accessType);
-    if (!store->init(alloc, nextIndex)) {
-      return nullptr;
-    }
-
-    store->initOperand(0, base);
-    store->initOperand(1, v);
-    store->initOperand(2, boundsCheckLimit);
-    if (memoryBase) {
-      store->initOperand(memoryBaseIndex, memoryBase);
-    }
-
-    return store;
-  }
-
-  bool hasMemoryBase() const { return memoryBaseIndex_ != UINT32_MAX; }
-  MDefinition* memoryBase() const {
-    MOZ_ASSERT(hasMemoryBase());
-    return getOperand(memoryBaseIndex_);
-  }
-
-  AliasSet getAliasSet() const override {
-    return AliasSet::Store(AliasSet::WasmHeap);
   }
 };
 

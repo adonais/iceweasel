@@ -32,7 +32,6 @@ namespace JS {
 struct WasmModule : js::AtomicRefCounted<WasmModule> {
   virtual ~WasmModule() = default;
   virtual JSObject* createObject(JSContext* cx) const = 0;
-  virtual JSObject* createObjectForAsmJS(JSContext* cx) const = 0;
 };
 
 extern JS_PUBLIC_API bool IsWasmModuleObject(HandleObject obj);

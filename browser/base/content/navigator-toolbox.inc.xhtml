@@ -36,14 +36,6 @@
     <hbox flex="1" align="end" class="toolbar-items">
       <toolbartabstop/>
       <hbox id="TabsToolbar-customization-target" flex="1">
-        <toolbarbutton id="firefox-view-button"
-                       class="toolbarbutton-1 chromeclass-toolbar-additional"
-                       data-l10n-id="toolbar-button-firefox-view-2"
-                       role="button"
-                       aria-pressed="false"
-                       cui-areatype="toolbar"
-                       removable="true"/>
-
         <tabs id="tabbrowser-tabs"
               is="tabbrowser-tabs"
               aria-multiselectable="true"
@@ -64,7 +56,7 @@
           <splitter orient="vertical" id="vertical-pinned-tabs-splitter" resizebefore="sibling" resizeafter="none" hidden="true"/>
           <hbox class="tab-drop-indicator" hidden="true"/>
           <arrowscrollbox id="tabbrowser-arrowscrollbox" orient="horizontal" flex="1" clicktoscroll="" scrolledtostart="" scrolledtoend="">
-            <tab is="tabbrowser-tab" class="tabbrowser-tab" selected="true" visuallyselected="" fadein=""/>
+            <tab is="tabbrowser-tab" class="tabbrowser-tab" selected="" visuallyselected="" fadein=""/>
             <hbox id="tabbrowser-arrowscrollbox-periphery">
               <toolbartabstop/>
               <toolbarbutton id="tabs-newtab-button"
@@ -104,14 +96,6 @@
     <hbox class="titlebar-spacer" type="post-tabs"/>
 
 #include private-browsing-indicator.inc.xhtml
-
-    <toolbarbutton id="ai-window-toggle"
-                    class="toolbarbutton-1 chromeclass-toolbar-additional"
-                    data-l10n-id="toolbar-button-ai-window-toggle"
-                    cui-areatype="toolbar"
-                    removable="false"
-                    aria-haspopup="true"
-                    hidden="true"/>
 
     <toolbarbutton class="content-analysis-indicator toolbarbutton-1 content-analysis-indicator-icon"/>
 
@@ -158,19 +142,11 @@
         <toolbarbutton id="reload-button" class="toolbarbutton-1"
                        data-l10n-id="toolbar-button-reload"
                        command="Browser:ReloadOrDuplicate"
-                       tooltip="dynamic-shortcut-tooltip">
-          <box class="toolbarbutton-animatable-box">
-            <image class="toolbarbutton-animatable-image"/>
-          </box>
-        </toolbarbutton>
+                       tooltip="dynamic-shortcut-tooltip"/>
         <toolbarbutton id="stop-button" class="toolbarbutton-1"
                        data-l10n-id="toolbar-button-stop"
                        command="Browser:Stop"
-                       tooltip="dynamic-shortcut-tooltip">
-          <box class="toolbarbutton-animatable-box">
-            <image class="toolbarbutton-animatable-image"/>
-          </box>
-        </toolbarbutton>
+                       tooltip="dynamic-shortcut-tooltip"/>
       </toolbaritem>
       <toolbarspring cui-areatype="toolbar" class="chromeclass-toolbar-additional"/>
       <toolbarspring cui-areatype="toolbar"
@@ -508,6 +484,19 @@
 
     <toolbarbutton id="taskbar-tabs-audio" class="toolbarbutton-1 chromeclass-toolbar-additional"
                     removable="false" overflows="false"/>
+
+    <toolbaritem id="smartwindow-group-tabs-button"
+                 class="chromeclass-toolbar-additional"
+                 hidden="true"
+                 overflows="false"
+                 removable="false">
+      <toolbarbutton id="smartwindow-group-tabs-button-inner"
+                      class="toolbarbutton-1"
+                      aria-haspopup="dialog"
+                      aria-expanded="false"
+                      data-l10n-id="smartwindow-organize-tabs-button">
+      </toolbarbutton>
+    </toolbaritem>
 
     <toolbaritem id="smartwindow-ask-button"
                  class="chromeclass-toolbar-additional"

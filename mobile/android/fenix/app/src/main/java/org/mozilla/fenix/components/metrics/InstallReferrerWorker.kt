@@ -99,6 +99,15 @@ class InstallReferrerWorker(
             settings.isUserXTwitterAttributed =
                 InstallReferrerHandlingService.isXTwitterAttribution(installReferrerResponse)
 
+            settings.isUserMolocoAttributed =
+                InstallReferrerHandlingService.isMolocoAttribution(installReferrerResponse)
+
+            settings.isUserRakutenAttributed =
+                InstallReferrerHandlingService.isRakutenAttribution(installReferrerResponse)
+
+            settings.isUserSkyflagAttributed =
+                InstallReferrerHandlingService.isSkyflagAttribution(installReferrerResponse)
+
             utmParams.recordInstallReferrer(settings)
         }
 

@@ -11,6 +11,7 @@
 #include "ProfilerBacktrace.h"
 #include "ProfilerRustBindings.h"
 
+#include "js/Initialization.h"
 #include "js/ProfilingFrameIterator.h"
 #include "jsapi.h"
 #include "jsfriendapi.h"
@@ -1102,7 +1103,7 @@ void ProfileBuffer::MaybeStreamExecutionTraceToJSON(
         aGetStreamingParametersForThreadCallback,
     double aSinceTime) const {
   JS::ExecutionTrace trace;
-  if (!JS_TracerSnapshotTrace(trace)) {
+  if (!JS_IsInitialized() || !JS_TracerSnapshotTrace(trace)) {
     return;
   }
 

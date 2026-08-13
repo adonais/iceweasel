@@ -173,7 +173,7 @@ add_task(async function test_devtools_inspectedWindow_eval_bindings() {
   await extension.awaitMessage(`inspectedWindow-eval-result`);
   await debuggerPanelSelectedPromise;
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     expectedSourceSelected("file_inspectedwindow_eval.html", 9),
     "Wait the expected function to be selected in the jsdebugger panel"
   );
@@ -186,7 +186,7 @@ add_task(async function test_devtools_inspectedWindow_eval_bindings() {
   );
   await extension.awaitMessage(`inspectedWindow-eval-result`);
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     expectedSourceSelected("file_inspectedwindow_eval.html", 15),
     "Wait the expected function to be selected in the jsdebugger panel"
   );

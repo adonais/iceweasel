@@ -8,7 +8,7 @@ support-files = [
   "!/browser/components/extensions/test/browser/head.js",
   "!/browser/components/extensions/test/browser/head_browserAction.js"
 ]
-prefs = ["sidebar.revamp=false"]
+prefs = ["sidebar.revamp=true"]
 
 ["browser_test_select_popup_position.js"]
 support-files = [

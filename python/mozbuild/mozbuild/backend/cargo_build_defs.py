@@ -16,7 +16,6 @@ cargo_extra_outputs = {
     "num-traits": ["rust_out.o"],
     "selectors": ["ascii_case_insensitive_html_attributes.rs"],
     "style": [
-        "gecko/atom_macro.rs",
         "gecko/pseudo_element_definition.rs",
         "gecko/structs.rs",
         "properties.rs",

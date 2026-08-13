@@ -191,7 +191,7 @@ add_task(async function test_searchModeSwitcher() {
   await SearchbarTestUtils.assertSearchMode(window, {
     engineName: "engine2",
     isGeneralPurposeEngine: true,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     isPreview: false,
     entry: "searchbutton",
   });

@@ -9,7 +9,8 @@
 
 #include <stdint.h>  // uint8_t
 
-#include "jspubtd.h"     // JSType
+#include "jspubtd.h"  // JSType
+
 #include "vm/Opcodes.h"  // JSOp
 
 namespace js {

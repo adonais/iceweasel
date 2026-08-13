@@ -14,9 +14,11 @@
  *
  * PLEASE NOTE: This weak pointer implementation is not thread-safe.
  *
- * The overhead of WeakPtr is that accesses to 'Foo' becomes an additional
- * dereference, and an additional heap allocated pointer sized object shared
- * between all of the WeakPtrs.
+ * Overhead of WeakPtr:
+ * 1. Accesses to 'Foo' become an additional dereference.
+ * 2. There is an additional heap allocated object shared between Foo and all of
+ *    its WeakPtrs containing a pointer and a reference count.
+ * 3. Foo (every instance) contains an additional pointer.
  *
  * Example of usage:
  *
@@ -242,7 +244,7 @@ class WeakPtr {
     // before we throw it away... (this can be called from a ctor)
     MOZ_WEAKPTR_ASSERT_THREAD_SAFETY_DELEGATED_IF(mRef);
     // ...and make sure the new reference is used on a single thread as well.
-    MOZ_WEAKPTR_ASSERT_THREAD_SAFETY_DELEGATED(aOther.mRef);
+    MOZ_WEAKPTR_ASSERT_THREAD_SAFETY_DELEGATED_IF(aOther.mRef);
 
     mRef = aOther.mRef;
     return *this;
@@ -257,10 +259,7 @@ class WeakPtr {
     // We must make sure the reference we have now is safe to be dereferenced
     // before we throw it away.
     MOZ_WEAKPTR_ASSERT_THREAD_SAFETY_DELEGATED_IF(mRef);
-    if (!mRef || mRef->get()) {
-      // Ensure that mRef is dereferenceable in the uninitialized state.
-      mRef = new WeakReference(nullptr);
-    }
+    mRef = nullptr;
     return *this;
   }
 
@@ -270,12 +269,10 @@ class WeakPtr {
     MOZ_WEAKPTR_ASSERT_THREAD_SAFETY_DELEGATED_IF(mRef);
     if (aOther) {
       mRef = aOther->SelfReferencingWeakReference();
-    } else if (!mRef || mRef->get()) {
-      // Ensure that mRef is dereferenceable in the uninitialized state.
-      mRef = new WeakReference(nullptr);
+    } else {
+      mRef = nullptr;
     }
-    // The thread safety check happens inside SelfReferencingWeakPtr
-    // or is initialized in the WeakReference constructor.
+    // The thread safety check happens inside SelfReferencingWeakPtr.
     return *this;
   }
 
@@ -291,11 +288,10 @@ class WeakPtr {
 
   explicit WeakPtr(const RefPtr<T>& aOther) : WeakPtr(aOther.get()) {}
 
-  // Ensure that mRef is dereferenceable in the uninitialized state.
-  WeakPtr() : mRef(new WeakReference(nullptr)) {}
+  WeakPtr() = default;
 
-  explicit operator bool() const { return mRef->get(); }
-  T* get() const { return static_cast<T*>(mRef->get()); }
+  explicit operator bool() const { return !!get(); }
+  T* get() const { return mRef ? static_cast<T*>(mRef->get()) : nullptr; }
   operator T*() const { return get(); }
   T& operator*() const { return *get(); }
   T* operator->() const MOZ_NO_ADDREF_RELEASE_ON_RETURN { return get(); }
@@ -303,9 +299,11 @@ class WeakPtr {
 #ifdef MOZILLA_INTERNAL_API
   ~WeakPtr() {
     if (Destruct == detail::WeakPtrDestructorBehavior::ProxyToMainThread) {
-      NS_ReleaseOnMainThread("WeakPtr::mRef", mRef.forget());
+      if (mRef) {
+        NS_ReleaseOnMainThread("WeakPtr::mRef", mRef.forget());
+      }
     } else {
-      MOZ_WEAKPTR_ASSERT_THREAD_SAFETY_DELEGATED(mRef);
+      MOZ_WEAKPTR_ASSERT_THREAD_SAFETY_DELEGATED_IF(mRef);
     }
   }
 #endif

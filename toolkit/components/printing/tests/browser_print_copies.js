@@ -41,7 +41,7 @@ add_task(async function testCopyError() {
         await helper.waitForSettingsEvent();
         is(copyInput.value, "10000", "Copies gets set to max value");
         is(copyInput.checkValidity(), true, "Copy count is valid again");
-        await BrowserTestUtils.waitForCondition(
+        await TestUtils.waitForCondition(
           () => copyError.hidden,
           "Wait for copy error to be hidden"
         );

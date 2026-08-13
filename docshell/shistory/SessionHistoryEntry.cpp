@@ -136,47 +136,6 @@ SessionHistoryInfo::SessionHistoryInfo(
   }
 }
 
-void SessionHistoryInfo::Reset(nsIURI* aURI, const nsID& aDocShellID,
-                               bool aDynamicCreation,
-                               nsIPrincipal* aTriggeringPrincipal,
-                               nsIPrincipal* aPrincipalToInherit,
-                               nsIPrincipal* aPartitionedPrincipalToInherit,
-                               nsIPolicyContainer* aPolicyContainer,
-                               const nsACString& aContentType) {
-  mURI = aURI;
-  mOriginalURI = nullptr;
-  mResultPrincipalURI = nullptr;
-  mUnstrippedURI = nullptr;
-  mReferrerInfo = nullptr;
-  // Default title is the URL.
-  nsAutoCString spec;
-  if (NS_SUCCEEDED(mURI->GetSpec(spec))) {
-    CopyUTF8toUTF16(spec, mTitle);
-  }
-  mPostData = nullptr;
-  mLoadType = 0;
-  mScrollPositionX = 0;
-  mScrollPositionY = 0;
-  mStateData = nullptr;
-  mSrcdocData = Nothing();
-  mBaseURI = nullptr;
-  mLoadReplace = false;
-  mURIWasModified = false;
-  mScrollRestorationIsManual = false;
-  mTransient = false;
-  mHasUserInteraction = false;
-  mHasUserActivation = false;
-  mNavigationAPIState = nullptr;
-
-  mSharedState.Get()->mTriggeringPrincipal = aTriggeringPrincipal;
-  mSharedState.Get()->mPrincipalToInherit = aPrincipalToInherit;
-  mSharedState.Get()->mPartitionedPrincipalToInherit =
-      aPartitionedPrincipalToInherit;
-  mSharedState.Get()->mPolicyContainer = aPolicyContainer;
-  mSharedState.Get()->mContentType = aContentType;
-  mSharedState.Get()->mLayoutHistoryState = nullptr;
-}
-
 void SessionHistoryInfo::MaybeUpdateTitleFromURI() {
   if (mTitle.IsEmpty() && mURI) {
     // Default title is the URL.
@@ -1730,55 +1689,15 @@ bool ParamTraits<mozilla::dom::SessionHistoryInfo>::Read(
   return true;
 }
 
-void ParamTraits<mozilla::dom::PreviousSessionHistoryInfo>::Write(
-    IPC::MessageWriter* aWriter,
-    const mozilla::dom::PreviousSessionHistoryInfo& aParam) {
-  WriteParam(aWriter, aParam.mSameOriginSessionHistoryInfo);
-}
+IMPLEMENT_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::PreviousSessionHistoryInfo,
+                                     mSameOriginSessionHistoryInfo);
 
-bool ParamTraits<mozilla::dom::PreviousSessionHistoryInfo>::Read(
-    IPC::MessageReader* aReader,
-    mozilla::dom::PreviousSessionHistoryInfo* aResult) {
-  if (!ReadParam(aReader, &aResult->mSameOriginSessionHistoryInfo)) {
-    aReader->FatalError("Error reading fields for PreviousSessionHistoryInfo");
-    return false;
-  }
-
-  return true;
-}
-
-void ParamTraits<mozilla::dom::LoadingSessionHistoryInfo>::Write(
-    IPC::MessageWriter* aWriter,
-    const mozilla::dom::LoadingSessionHistoryInfo& aParam) {
-  WriteParam(aWriter, aParam.mInfo);
-  WriteParam(aWriter, aParam.mContiguousEntries);
-  WriteParam(aWriter, aParam.mPreviousEntry);
-  WriteParam(aWriter, aParam.mTriggeringNavigationType);
-  WriteParam(aWriter, aParam.mLoadId);
-  WriteParam(aWriter, aParam.mLoadIsFromSessionHistory);
-  WriteParam(aWriter, aParam.mOffset);
-  WriteParam(aWriter, aParam.mLoadingCurrentEntry);
-  WriteParam(aWriter, aParam.mForceMaybeResetName);
-}
-
-bool ParamTraits<mozilla::dom::LoadingSessionHistoryInfo>::Read(
-    IPC::MessageReader* aReader,
-    mozilla::dom::LoadingSessionHistoryInfo* aResult) {
-  if (!ReadParam(aReader, &aResult->mInfo) ||
-      !ReadParam(aReader, &aResult->mContiguousEntries) ||
-      !ReadParam(aReader, &aResult->mPreviousEntry) ||
-      !ReadParam(aReader, &aResult->mTriggeringNavigationType) ||
-      !ReadParam(aReader, &aResult->mLoadId) ||
-      !ReadParam(aReader, &aResult->mLoadIsFromSessionHistory) ||
-      !ReadParam(aReader, &aResult->mOffset) ||
-      !ReadParam(aReader, &aResult->mLoadingCurrentEntry) ||
-      !ReadParam(aReader, &aResult->mForceMaybeResetName)) {
-    aReader->FatalError("Error reading fields for LoadingSessionHistoryInfo");
-    return false;
-  }
-
-  return true;
-}
+IMPLEMENT_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::LoadingSessionHistoryInfo,
+                                     mInfo, mContiguousEntries, mPreviousEntry,
+                                     mTriggeringNavigationType, mLoadId,
+                                     mLoadIsFromSessionHistory, mOffset,
+                                     mLoadingCurrentEntry,
+                                     mForceMaybeResetName);
 
 void ParamTraits<nsILayoutHistoryState*>::Write(IPC::MessageWriter* aWriter,
                                                 nsILayoutHistoryState* aParam) {
@@ -1829,17 +1748,8 @@ bool ParamTraits<nsILayoutHistoryState*>::Read(
   return true;
 }
 
-void ParamTraits<mozilla::dom::Wireframe>::Write(
-    IPC::MessageWriter* aWriter, const mozilla::dom::Wireframe& aParam) {
-  WriteParam(aWriter, aParam.mCanvasBackground);
-  WriteParam(aWriter, aParam.mRects);
-}
-
-bool ParamTraits<mozilla::dom::Wireframe>::Read(
-    IPC::MessageReader* aReader, mozilla::dom::Wireframe* aResult) {
-  return ReadParam(aReader, &aResult->mCanvasBackground) &&
-         ReadParam(aReader, &aResult->mRects);
-}
+IMPLEMENT_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::Wireframe, mCanvasBackground,
+                                     mRects);
 
 // Allow sending mozilla::dom::WireframeRectType enums over IPC.
 template <>
@@ -1847,30 +1757,7 @@ struct ParamTraits<mozilla::dom::WireframeRectType>
     : public mozilla::dom::WebIDLEnumSerializer<
           mozilla::dom::WireframeRectType> {};
 
-template <>
-struct ParamTraits<mozilla::dom::WireframeTaggedRect> {
-  static void Write(MessageWriter* aWriter,
-                    const mozilla::dom::WireframeTaggedRect& aParam);
-  static bool Read(MessageReader* aReader,
-                   mozilla::dom::WireframeTaggedRect* aResult);
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::WireframeTaggedRect, mColor,
+                                  mType, mX, mY, mWidth, mHeight);
 
-void ParamTraits<mozilla::dom::WireframeTaggedRect>::Write(
-    MessageWriter* aWriter, const mozilla::dom::WireframeTaggedRect& aParam) {
-  WriteParam(aWriter, aParam.mColor);
-  WriteParam(aWriter, aParam.mType);
-  WriteParam(aWriter, aParam.mX);
-  WriteParam(aWriter, aParam.mY);
-  WriteParam(aWriter, aParam.mWidth);
-  WriteParam(aWriter, aParam.mHeight);
-}
-
-bool ParamTraits<mozilla::dom::WireframeTaggedRect>::Read(
-    IPC::MessageReader* aReader, mozilla::dom::WireframeTaggedRect* aResult) {
-  return ReadParam(aReader, &aResult->mColor) &&
-         ReadParam(aReader, &aResult->mType) &&
-         ReadParam(aReader, &aResult->mX) && ReadParam(aReader, &aResult->mY) &&
-         ReadParam(aReader, &aResult->mWidth) &&
-         ReadParam(aReader, &aResult->mHeight);
-}
 }  // namespace IPC

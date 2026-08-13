@@ -21,8 +21,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
   IPProtectionStates:
     "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
-  IPPFxaAuthProvider:
-    "moz-src:///toolkit/components/ipprotection/fxa/IPPFxaAuthProvider.sys.mjs",
   IPPFxaActivateAuthProvider:
     "moz-src:///toolkit/components/ipprotection/fxa/IPPFxaActivateAuthProvider.sys.mjs",
 });
@@ -92,15 +90,7 @@ function pickAuthProvider() {
   if (AppConstants.MOZ_ENTERPRISE) {
     return lazy.IPPEnterpriseAuthProvider;
   }
-  if (
-    Services.prefs.getBoolPref(
-      "browser.ipProtection.fxa.useActivateFlow",
-      false
-    )
-  ) {
-    return lazy.IPPFxaActivateAuthProvider;
-  }
-  return lazy.IPPFxaAuthProvider;
+  return lazy.IPPFxaActivateAuthProvider;
 }
 
 const authProvider = pickAuthProvider();

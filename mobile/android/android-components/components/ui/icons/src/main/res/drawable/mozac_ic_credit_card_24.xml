@@ -2,18 +2,14 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
     <path
         android:fillColor="@color/mozac_ui_icons_fill"
-        android:pathData="M9 13.125H6v1.75h3v-1.75z"
-        tools:ignore="VectorRaster" />
+        android:pathData="M10.125,14.25C10.608,14.25 11,14.642 11,15.125C11,15.608 10.608,16 10.125,16H6.875C6.392,16 6,15.608 6,15.125C6,14.642 6.392,14.25 6.875,14.25H10.125Z" />
     <path
         android:fillColor="@color/mozac_ui_icons_fill"
-        android:fillType="evenOdd"
-        android:pathData="M2 6.5A2.5 2.5 0 0 1 4.5 4h15A2.5 2.5 0 0 1 22 6.5v10a2.5 2.5 0 0 1-2.5 2.5h-15A2.5 2.5 0 0 1 2 16.5v-10zm2.5-0.75A0.75 0.75 0 0 0 3.75 6.5v1.75h16.5V6.5a0.75 0.75 0 0 0-0.75-0.75h-15zM3.75 16.5V10h16.5v6.5a0.75 0.75 0 0 1-0.75 0.75h-15a0.75 0.75 0 0 1-0.75-0.75z"
-        tools:ignore="VectorRaster" />
+        android:pathData="M12,5.001C14.131,5.001 16.575,5.12 19.263,5.467C20.82,5.668 22,6.995 22,8.572V16.43C22,17.989 20.854,19.326 19.292,19.529C17.126,19.81 14.679,20 12,20C9.869,20 7.425,19.881 4.737,19.534C3.18,19.333 2,18.006 2,16.429V8.571C2,7.012 3.146,5.675 4.708,5.472C6.874,5.191 9.321,5.001 12,5.001ZM3.75,16.429C3.75,17.119 4.269,17.709 4.961,17.798C7.566,18.133 9.935,18.25 12,18.25C14.597,18.25 16.967,18.066 19.066,17.794C19.74,17.707 20.25,17.126 20.25,16.43V11.75H3.75V16.429ZM12,6.751C9.403,6.751 7.033,6.935 4.934,7.207C4.26,7.294 3.75,7.875 3.75,8.571V10H20.25V8.572C20.25,7.882 19.731,7.292 19.039,7.203C16.434,6.867 14.065,6.751 12,6.751Z" />
 </vector>

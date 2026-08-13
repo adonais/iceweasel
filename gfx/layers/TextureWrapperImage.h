@@ -5,8 +5,8 @@
 #ifndef GFX_LAYERS_TEXTUREWRAPPINGIMAGE_H_
 #define GFX_LAYERS_TEXTUREWRAPPINGIMAGE_H_
 
-#include "mozilla/RefPtr.h"
 #include "ImageContainer.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/layers/TextureClient.h"
 
 namespace mozilla {

@@ -10,15 +10,15 @@
 #ifndef _nsMultiplexInputStream_h_
 #define _nsMultiplexInputStream_h_
 
+#include "mozilla/ipc/InputStreamUtils.h"
+#include "nsCOMPtr.h"
+#include "nsIAsyncInputStream.h"
 #include "nsIBufferedStreams.h"
 #include "nsICloneableInputStream.h"
+#include "nsIIPCSerializableInputStream.h"
+#include "nsIInputStreamLength.h"
 #include "nsIMultiplexInputStream.h"
 #include "nsISeekableStream.h"
-#include "nsCOMPtr.h"
-#include "nsIIPCSerializableInputStream.h"
-#include "mozilla/ipc/InputStreamUtils.h"
-#include "nsIAsyncInputStream.h"
-#include "nsIInputStreamLength.h"
 #include "nsNetUtil.h"
 #include "nsStreamUtils.h"
 

@@ -177,6 +177,8 @@ support-files = [
 
 ["browser_hideHeuristic.js"]
 
+["browser_historyInSearchMode.js"]
+
 ["browser_ime_composition.js"]
 
 ["browser_inputHistory.js"]
@@ -421,7 +423,7 @@ support-files = [
 
 ["browser_speculative_connect.js"]
 support-files = [
-  "searchSuggestionEngine2.xml",
+"searchSuggestionEngine2.xml",
   "searchSuggestionEngine.sjs",
 ]
 
@@ -498,11 +500,13 @@ https_first_disabled = true
 https_first_disabled = true
 support-files = ["!/browser/base/content/test/protectionsUI/trackingPage.html"]
 
+["browser_trust_panel_cert_exception.js"]
+
+["browser_trust_panel_focus.js"]
+
 ["browser_trust_panel_icon.js"]
 https_first_disabled = true
 support-files = ["!/browser/base/content/test/protectionsUI/trackingPage.html"]
-
-["browser_trust_panel_cert_exception.js"]
 
 ["browser_trust_panel_pages.js"]
 https_first_disabled = true

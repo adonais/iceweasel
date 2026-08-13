@@ -5,9 +5,9 @@
 /* DOM proxy-related functionality, including expando support. */
 
 #include "js/friend/DOMProxy.h"  // JS::DOMProxyShadowsCheck
-#include "proxy/DOMProxy.h"
 
 #include "js/Proxy.h"  // js::GetProxyHandler, js::IsProxy
+#include "proxy/DOMProxy.h"
 
 using JS::DOMProxyShadowsCheck;
 

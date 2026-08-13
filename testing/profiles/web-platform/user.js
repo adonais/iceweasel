@@ -79,8 +79,6 @@ user_pref("layout.css.prefers-color-scheme.content-override", 1);
 user_pref("dom.reporting.enabled", true);
 // Enable WebDriver BiDi experimental commands and events during tests.
 user_pref("remote.experimental.enabled", true);
-// Dismiss file pickers for WebDriver BiDi sessions.
-user_pref("remote.bidi.dismiss_file_pickers.enabled", true);
 // Disable OCSP checks in WPT (webtransport triggers these occasionally)
 user_pref("security.OCSP.enabled", 0);
 // Disable download of intermediate certificates.

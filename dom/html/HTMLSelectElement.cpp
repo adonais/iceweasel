@@ -11,6 +11,7 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/EventDispatcher.h"
+#include "mozilla/EventStateManager.h"
 #include "mozilla/MappedDeclarationsBuilder.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/PresShell.h"
@@ -524,16 +525,17 @@ void HTMLSelectElement::SetLength(uint32_t aLength, ErrorResult& aRv) {
 bool HTMLSelectElement::MatchSelectedOptions(Element* aElement,
                                              int32_t /* unused */,
                                              nsAtom* /* unused */,
-                                             void* /* unused*/) {
-  // FIXME(bug 2035253): This is missing validity checks.
+                                             void* aData) {
   HTMLOptionElement* option = HTMLOptionElement::FromNode(aElement);
-  return option && option->Selected();
+  return option &&
+         option->GetSelect() == static_cast<HTMLSelectElement*>(aData) &&
+         option->Selected();
 }
 
 HTMLCollection* HTMLSelectElement::SelectedOptions() {
   if (!mSelectedOptions) {
     mSelectedOptions = new ContentList(this, MatchSelectedOptions, nullptr,
-                                       nullptr, /* deep */ true);
+                                       this, /* deep */ true);
   }
   return mSelectedOptions;
 }
@@ -567,6 +569,29 @@ void HTMLSelectElement::SetSelectedIndex(int32_t aIdx) {
   ScheduleSelectedContentUpdateScriptRunner(/* aForceUpdate = */ true);
 }
 
+void HTMLSelectElement::ScrollToOption(int32_t aIndex) {
+  if (aIndex < 0) {
+    return;
+  }
+  OwnerDoc()->Dispatch(
+      NewRunnableMethod<int32_t>("HTMLSelectElement::DoScrollToOption", this,
+                                 &HTMLSelectElement::DoScrollToOption, aIndex));
+}
+
+void HTMLSelectElement::DoScrollToOption(int32_t aIndex) {
+  RefPtr option = Item(aIndex);
+  if (!option) {
+    return;
+  }
+  if (nsIFrame* childFrame = option->GetPrimaryFrame()) {
+    RefPtr<mozilla::PresShell> presShell = childFrame->PresShell();
+    presShell->ScrollFrameIntoView(childFrame, Nothing(), AxisScrollParams(),
+                                   AxisScrollParams(),
+                                   ScrollFlags::ScrollOverflowHidden |
+                                       ScrollFlags::ScrollFirstAncestorOnly);
+  }
+}
+
 void HTMLSelectElement::SetSelectedIndexInternal(int32_t aIndex, bool aNotify) {
   OptionFlags mask{OptionFlag::IsSelected, OptionFlag::ClearAll,
                    OptionFlag::SetDisabled};
@@ -574,9 +599,20 @@ void HTMLSelectElement::SetSelectedIndexInternal(int32_t aIndex, bool aNotify) {
     mask += OptionFlag::Notify;
   }
   SetOptionsSelectedByIndex(aIndex, aIndex, mask);
-  if (nsListControlFrame* listBoxFrame = GetListBoxFrame()) {
-    listBoxFrame->OnSetSelectedIndex(aIndex);
+  if (!IsCombobox()) {
+#ifdef ACCESSIBILITY
+    nsCOMPtr<nsIContent> prevOption = GetCurrentOption();
+#endif
+    mListBoxSelection.SetTo(aIndex);
+    if (nsListControlFrame* listBox = GetListBoxFrame()) {
+      listBox->InvalidateFocus();
+    }
+    ScrollToOption(aIndex);
+#ifdef ACCESSIBILITY
+    MaybeFireMenuItemActiveEvent(prevOption);
+#endif
   }
+
   OnSelectionChanged();
 }
 
@@ -597,9 +633,8 @@ void HTMLSelectElement::OnOptionSelected(int32_t aIndex, bool aSelected,
 
   OnSelectionChanged();
 
-  // Let the frame know too
-  if (auto* listBox = GetListBoxFrame()) {
-    listBox->OnOptionSelected(aIndex, aSelected);
+  if (aSelected && !IsCombobox()) {
+    ScrollToOption(aIndex);
   }
 
 #ifdef ACCESSIBILITY
@@ -1045,9 +1080,7 @@ void HTMLSelectElement::DoneAddingChildren(bool aHaveNotified) {
   }
 
   // Notify the frame
-  if (auto* listBoxFrame = GetListBoxFrame()) {
-    listBoxFrame->DoneAddingChildren();
-  }
+  ResetListBoxSelection(/* aAllowScrolling = */ true);
 
   if (!mInhibitStateRestoration) {
     GenerateStateKey();
@@ -1179,10 +1212,7 @@ bool HTMLSelectElement::RestoreState(PresState* aState) {
   const PresContentData& state = aState->contentData();
   if (state.type() == PresContentData::TSelectContentData) {
     RestoreStateTo(state.get_SelectContentData());
-
-    // Don't flush, if the frame doesn't exist yet it doesn't care if
-    // we're reset or not.
-    DispatchContentReset();
+    ResetListBoxSelection(/* aAllowScrolling = */ true);
   }
 
   if (aState->disabledSet() && !aState->disabled()) {
@@ -1266,13 +1296,7 @@ HTMLSelectElement::Reset() {
 
   OnSelectionChanged();
   SetUserInteracted(false);
-
-  // Let the frame know we were reset
-  //
-  // Don't flush, if there's no frame yet it won't care about us being
-  // reset even if we forced it to be created now.
-  //
-  DispatchContentReset();
+  ResetListBoxSelection(/* aAllowScrolling = */ true);
 
   // https://html.spec.whatwg.org/#update-a-select's-descendant-selectedcontent-elements
   UpdateDescendantSelectedContentElements();
@@ -1317,9 +1341,16 @@ HTMLSelectElement::SubmitNamesValues(FormData* aFormData) {
   return NS_OK;
 }
 
-void HTMLSelectElement::DispatchContentReset() {
+void HTMLSelectElement::ResetListBoxSelection(bool aAllowScrolling) {
+  if (!IsDoneAddingChildren() || IsCombobox()) {
+    return;
+  }
+  mListBoxSelection.SetTo(kNothingSelected);
   if (nsListControlFrame* listFrame = GetListBoxFrame()) {
-    listFrame->OnContentReset();
+    listFrame->OnSelectionReset();
+  }
+  if (aAllowScrolling) {
+    ScrollToSelectedOption();
   }
 }
 
@@ -1567,10 +1598,10 @@ void HTMLSelectElement::ContentWillBeRemoved(nsIContent* aChild,
   MutatedOptions options;
   const bool anySelected = CollectOptions(*this, aChild, options);
   if (!options.IsEmpty()) {
-    if (nsListControlFrame* listBox = GetListBoxFrame()) {
+    if (GetListBoxFrame()) {
       auto index = options[0]->Index();
       for (size_t i = 0; i < options.Length(); ++i) {
-        listBox->RemoveOption(index);
+        RemoveOptionFromListBoxSelection(index);
       }
     }
   }
@@ -1702,7 +1733,6 @@ HTMLSelectElement::~HTMLSelectElement() {
   }
 }
 
-static constexpr int32_t kNothingSelected = -1;
 static const uint32_t kMaxDropdownRows = 20;
 
 class MOZ_RAII AutoIncrementalSearchResetter {
@@ -1728,10 +1758,7 @@ class MOZ_RAII AutoIncrementalSearchResetter {
 };
 
 int32_t HTMLSelectElement::GetEndSelectionIndex() const {
-  if (nsListControlFrame* lf = do_QueryFrame(GetPrimaryFrame())) {
-    return lf->GetEndSelectionIndex();
-  }
-  return SelectedIndex();
+  return IsCombobox() ? SelectedIndex() : mListBoxSelection.mEnd;
 }
 
 bool HTMLSelectElement::IsOptionInteractivelySelectable(uint32_t aIndex) const {
@@ -1875,11 +1902,293 @@ void HTMLSelectElement::PostHandleKeyEvent(int32_t aNewIndex,
     UserFinishedInteracting(/* aChanged = */ true);
     return;
   }
-  if (nsListControlFrame* lf = GetListBoxFrame()) {
-    lf->UpdateSelectionAfterKeyEvent(aNewIndex, aCharCode, aIsShift,
-                                     aIsControlOrMeta, mControlSelectMode);
+  UpdateListBoxSelectionAfterKeyEvent(aNewIndex, aCharCode, aIsShift,
+                                      aIsControlOrMeta);
+}
+
+void HTMLSelectElement::CaptureMouseEvents(bool aGrabMouseEvents) {
+  if (aGrabMouseEvents) {
+    PresShell::SetCapturingContent(this, CaptureFlags::IgnoreAllowedState);
+  } else if (PresShell::GetCapturingContent() == this) {
+    // Only clear the capturing content if *we* are the ones doing the
+    // capturing. It could be a scrollbar inside this listbox which is actually
+    // grabbing.
+    PresShell::ReleaseCapturingContent();
   }
 }
+
+Maybe<int32_t> HTMLSelectElement::GetListBoxIndexFromEvent(
+    const WidgetMouseEvent& aEvent) {
+  nsListControlFrame* lf = GetListBoxFrame();
+  if (NS_WARN_IF(!lf)) {
+    return {};
+  }
+  if (PresShell::GetCapturingContent() != this) {
+    // If we're not capturing, then ignore movement in the border.
+    nsPoint pt =
+        nsLayoutUtils::GetEventCoordinatesRelativeTo(&aEvent, RelativeTo{lf});
+    nsRect borderInnerEdge = lf->GetScrollPortRect();
+    if (!borderInnerEdge.Contains(pt)) {
+      return {};
+    }
+  }
+
+  RefPtr<HTMLOptionElement> option;
+  for (nsIContent* content =
+           lf->PresContext()->EventStateManager()->GetEventTargetContent();
+       content && !option; content = content->GetParent()) {
+    option = HTMLOptionElement::FromNode(content);
+  }
+
+  if (!option) {
+    return {};
+  }
+  int32_t idx = option->Index();
+  MOZ_ASSERT(idx >= 0);
+  return Some(idx);
+}
+
+static int32_t DecrementAndClamp(int32_t aSelectionIndex, int32_t aLength) {
+  return aLength == 0 ? -1 : std::max(0, aSelectionIndex - 1);
+}
+
+void HTMLSelectElement::RemoveOptionFromListBoxSelection(int32_t aIndex) {
+  MOZ_ASSERT(aIndex >= 0, "negative <option> index");
+
+  if (mListBoxSelection.mStart != kNothingSelected) {
+    NS_ASSERTION(mListBoxSelection.mEnd != kNothingSelected, "");
+    int32_t numOptions = static_cast<int32_t>(Length());
+    // NOTE: numOptions is the new number of options whereas aIndex is the
+    // unadjusted index of the removed option (hence the <= below).
+    NS_ASSERTION(aIndex <= numOptions, "out-of-bounds <option> index");
+
+    int32_t forward = mListBoxSelection.mEnd - mListBoxSelection.mStart;
+    int32_t* low =
+        forward >= 0 ? &mListBoxSelection.mStart : &mListBoxSelection.mEnd;
+    int32_t* high =
+        forward >= 0 ? &mListBoxSelection.mEnd : &mListBoxSelection.mStart;
+    if (aIndex < *low) {
+      *low = DecrementAndClamp(*low, numOptions);
+    }
+    if (aIndex <= *high) {
+      *high = DecrementAndClamp(*high, numOptions);
+    }
+    if (forward == 0) {
+      *low = *high;
+    }
+  } else {
+    NS_ASSERTION(mListBoxSelection.mEnd == kNothingSelected, "");
+  }
+
+  if (nsListControlFrame* lf = GetListBoxFrame()) {
+    lf->InvalidateFocus();
+  }
+}
+
+bool HTMLSelectElement::ExtendedSelection(int32_t aStartIndex,
+                                          int32_t aEndIndex, bool aClearAll) {
+  OptionFlags mask = OptionFlag::Notify;
+  mask += OptionFlag::IsSelected;
+  if (aClearAll) {
+    mask += OptionFlag::ClearAll;
+  }
+  return SetOptionsSelectedByIndex(aStartIndex, aEndIndex, mask);
+}
+
+bool HTMLSelectElement::ToggleOptionSelected(int32_t aIndex) {
+  RefPtr<HTMLOptionElement> option = Item(static_cast<uint32_t>(aIndex));
+  NS_ENSURE_TRUE(option, false);
+
+  OptionFlags mask = OptionFlag::Notify;
+  if (!option->Selected()) {
+    mask += OptionFlag::IsSelected;
+  }
+  return SetOptionsSelectedByIndex(aIndex, aIndex, mask);
+}
+
+void HTMLSelectElement::InitListBoxSelectionRange(int32_t aClickedIndex) {
+  // If nothing is selected, set the start selection depending on where
+  // the user clicked and what the initial selection is:
+  // - if the user clicked *before* selectedIndex, set the start index to
+  //   the end of the first contiguous selection.
+  // - if the user clicked *after* the end of the first contiguous
+  //   selection, set the start index to selectedIndex.
+  // - if the user clicked *within* the first contiguous selection, set the
+  //   start index to selectedIndex.
+  // The last two rules, of course, boil down to the same thing: if the user
+  // clicked >= selectedIndex, return selectedIndex.
+  //
+  // This makes it so that shift click works properly when you first click
+  // in a multiple select.
+  int32_t selectedIndex = SelectedIndex();
+  if (selectedIndex >= 0) {
+    // Get the end of the contiguous selection
+    RefPtr<HTMLOptionsCollection> options = Options();
+    NS_ASSERTION(options, "Collection of options is null!");
+    uint32_t numOptions = options->Length();
+    // Push i to one past the last selected index in the group.
+    uint32_t i;
+    for (i = selectedIndex + 1; i < numOptions; i++) {
+      if (!options->ItemAsOption(i)->Selected()) {
+        break;
+      }
+    }
+
+    if (aClickedIndex < selectedIndex) {
+      // User clicked before selection, so start selection at end of
+      // contiguous selection
+      mListBoxSelection.mStart = i - 1;
+      mListBoxSelection.mEnd = selectedIndex;
+    } else {
+      // User clicked after selection, so start selection at start of
+      // contiguous selection
+      mListBoxSelection.mStart = selectedIndex;
+      mListBoxSelection.mEnd = i - 1;
+    }
+  }
+}
+
+bool HTMLSelectElement::ListBoxSingleSelection(int32_t aClickedIndex,
+                                               bool aDoToggle) {
+#ifdef ACCESSIBILITY
+  nsCOMPtr<nsIContent> prevOption = GetCurrentOption();
+#endif
+  bool wasChanged = false;
+  // Get Current selection
+  if (aDoToggle) {
+    wasChanged = ToggleOptionSelected(aClickedIndex);
+  } else {
+    wasChanged = ExtendedSelection(aClickedIndex, aClickedIndex, true);
+  }
+  mListBoxSelection.SetTo(aClickedIndex);
+  ScrollToOption(aClickedIndex);
+  if (nsListControlFrame* listBox = GetListBoxFrame()) {
+    listBox->InvalidateFocus();
+  }
+#ifdef ACCESSIBILITY
+  MaybeFireMenuItemActiveEvent(prevOption);
+#endif
+
+  return wasChanged;
+}
+
+bool HTMLSelectElement::PerformListBoxSelection(int32_t aClickedIndex,
+                                                bool aIsShift,
+                                                bool aIsControl) {
+  if (aClickedIndex == kNothingSelected) {
+    // Ignore kNothingSelected.
+    return false;
+  }
+  if (!Multiple()) {
+    return ListBoxSingleSelection(aClickedIndex, false);
+  }
+  bool wasChanged = false;
+  if (aIsShift) {
+    // Make sure shift+click actually does something expected when
+    // the user has never clicked on the select
+    if (mListBoxSelection.mStart == kNothingSelected) {
+      InitListBoxSelectionRange(aClickedIndex);
+    }
+
+    // Get the range from beginning (low) to end (high)
+    // Shift *always* works, even if the current option is disabled
+    int32_t startIndex;
+    int32_t endIndex;
+    if (mListBoxSelection.mStart == kNothingSelected) {
+      startIndex = aClickedIndex;
+      endIndex = aClickedIndex;
+    } else if (mListBoxSelection.mStart <= aClickedIndex) {
+      startIndex = mListBoxSelection.mStart;
+      endIndex = aClickedIndex;
+    } else {
+      startIndex = aClickedIndex;
+      endIndex = mListBoxSelection.mStart;
+    }
+
+    // Clear only if control was not pressed
+    wasChanged = ExtendedSelection(startIndex, endIndex, !aIsControl);
+    ScrollToOption(aClickedIndex);
+    if (mListBoxSelection.mStart == kNothingSelected) {
+      mListBoxSelection.mStart = aClickedIndex;
+    }
+#ifdef ACCESSIBILITY
+    nsCOMPtr<nsIContent> prevOption = GetCurrentOption();
+#endif
+    mListBoxSelection.mEnd = aClickedIndex;
+    if (nsListControlFrame* listBox = GetListBoxFrame()) {
+      listBox->InvalidateFocus();
+    }
+#ifdef ACCESSIBILITY
+    MaybeFireMenuItemActiveEvent(prevOption);
+#endif
+  } else {
+    wasChanged = ListBoxSingleSelection(aClickedIndex, aIsControl);
+  }
+  return wasChanged;
+}
+
+// Dispatch event and such
+void HTMLSelectElement::UpdateSelection() {
+  if (IsDoneAddingChildren()) {
+    // Note that after UserFinishedInteracting we might be dead, as that can
+    // run script.
+    RefPtr<HTMLSelectElement> kungFuDeathGrip = this;
+    UserFinishedInteracting(/* aChanged = */ true);
+  }
+}
+
+void HTMLSelectElement::UpdateListBoxSelectionAfterKeyEvent(
+    int32_t aNewIndex, uint32_t aCharCode, bool aIsShift,
+    bool aIsControlOrMeta) {
+  bool wasChanged = false;
+  if (aIsControlOrMeta && !aIsShift && aCharCode != ' ') {
+#ifdef ACCESSIBILITY
+    nsCOMPtr<nsIContent> prevOption = GetCurrentOption();
+#endif
+    mListBoxSelection.SetTo(aNewIndex);
+    if (nsListControlFrame* listBox = GetListBoxFrame()) {
+      listBox->InvalidateFocus();
+    }
+    ScrollToOption(aNewIndex);
+#ifdef ACCESSIBILITY
+    MaybeFireMenuItemActiveEvent(prevOption);
+#endif
+  } else if (mControlSelectMode && aCharCode == ' ') {
+    wasChanged = ListBoxSingleSelection(aNewIndex, true);
+  } else {
+    wasChanged = PerformListBoxSelection(aNewIndex, aIsShift, aIsControlOrMeta);
+  }
+  if (wasChanged) {
+    UpdateSelection();
+  }
+}
+
+#ifdef ACCESSIBILITY
+void HTMLSelectElement::MaybeFireMenuItemActiveEvent(
+    nsIContent* aPreviousOption) {
+  if (!State().HasState(ElementState::FOCUS)) {
+    return;
+  }
+
+  nsIContent* optionContent = GetCurrentOption();
+  if (aPreviousOption == optionContent) {
+    // No change
+    return;
+  }
+
+  if (aPreviousOption) {
+    MakeRefPtr<AsyncEventDispatcher>(aPreviousOption, u"DOMMenuItemInactive"_ns,
+                                     CanBubble::eYes, ChromeOnlyDispatch::eNo)
+        ->PostDOMEvent();
+  }
+
+  if (optionContent) {
+    MakeRefPtr<AsyncEventDispatcher>(optionContent, u"DOMMenuItemActive"_ns,
+                                     CanBubble::eYes, ChromeOnlyDispatch::eNo)
+        ->PostDOMEvent();
+  }
+}
+#endif
 
 nsresult HTMLSelectElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
   if (aVisitor.mEventStatus == nsEventStatus_eConsumeNoDefault) {
@@ -1943,10 +2252,22 @@ nsresult HTMLSelectElement::HandleMouseDown(EventChainPostVisitor& aVisitor) {
     return NS_OK;
   }
 
-  if (nsListControlFrame* list = GetListBoxFrame()) {
-    mButtonDown = true;
-    return list->HandleLeftButtonMouseDown(*mouseEvent);
+  mButtonDown = true;
+  Maybe<int32_t> selectedIndex = GetListBoxIndexFromEvent(*mouseEvent);
+  if (!selectedIndex) {
+    return NS_OK;
   }
+  CaptureMouseEvents(true);
+  bool isControlOrMeta;
+#ifdef XP_MACOSX
+  isControlOrMeta = mouseEvent->IsMeta();
+#else
+  isControlOrMeta = mouseEvent->IsControl();
+#endif
+  // PerformSelection might destroy the frame, but we only need to record the
+  // result onto ourselves, which keeps us alive during event dispatch.
+  mListBoxSelectionChangedSinceDragStart = PerformListBoxSelection(
+      *selectedIndex, mouseEvent->IsShift(), isControlOrMeta);
   return NS_OK;
 }
 
@@ -1957,8 +2278,10 @@ nsresult HTMLSelectElement::HandleMouseUp(EventChainPostVisitor& aVisitor) {
     return NS_OK;
   }
 
-  if (nsListControlFrame* lf = GetListBoxFrame()) {
-    lf->CaptureMouseEvents(false);
+  CaptureMouseEvents(false);
+
+  if (IsCombobox()) {
+    return NS_OK;
   }
 
   WidgetMouseEvent* mouseEvent = aVisitor.mEvent->AsMouseEvent();
@@ -1971,10 +2294,12 @@ nsresult HTMLSelectElement::HandleMouseUp(EventChainPostVisitor& aVisitor) {
     return NS_OK;
   }
 
-  if (nsListControlFrame* lf = GetListBoxFrame()) {
-    return lf->HandleLeftButtonMouseUp();
+  if (mListBoxSelectionChangedSinceDragStart) {
+    // Reset this so that future MouseUps without a prior MouseDown won't fire
+    // onchange. Note that the call below runs script.
+    mListBoxSelectionChangedSinceDragStart = false;
+    UserFinishedInteracting(/* aChanged = */ true);
   }
-
   return NS_OK;
 }
 
@@ -1988,10 +2313,21 @@ nsresult HTMLSelectElement::HandleMouseMove(EventChainPostVisitor& aVisitor) {
     return NS_OK;
   }
 
-  if (nsListControlFrame* lf = GetListBoxFrame()) {
-    return lf->DragMove(*mouseEvent);
+  Maybe<int32_t> selectedIndex = GetListBoxIndexFromEvent(*mouseEvent);
+  // Don't waste cycles if we already dragged over this item.
+  if (!selectedIndex || *selectedIndex == mListBoxSelection.mEnd) {
+    return NS_OK;
   }
-
+  bool isControlOrMeta;
+#ifdef XP_MACOSX
+  isControlOrMeta = mouseEvent->IsMeta();
+#else
+  isControlOrMeta = mouseEvent->IsControl();
+#endif
+  // Turn SHIFT on when you are dragging, unless control is on.
+  const bool wasChanged = PerformListBoxSelection(
+      *selectedIndex, !isControlOrMeta, isControlOrMeta);
+  mListBoxSelectionChangedSinceDragStart |= wasChanged;
   return NS_OK;
 }
 
@@ -2130,15 +2466,12 @@ nsresult HTMLSelectElement::HandleKeyPress(EventChainPostVisitor& aVisitor) {
       return NS_OK;
     }
 
-    if (nsListControlFrame* lf = GetListBoxFrame()) {
-      bool wasChanged =
-          lf->PerformSelection(index, keyEvent->IsShift(), isControlOrMeta);
-      if (!wasChanged) {
-        return NS_OK;
-      }
+    bool wasChanged =
+        PerformListBoxSelection(index, keyEvent->IsShift(), isControlOrMeta);
+    if (wasChanged) {
       UserFinishedInteracting(/* aChanged = */ true);
     }
-    break;
+    return NS_OK;
   }
 
   return NS_OK;

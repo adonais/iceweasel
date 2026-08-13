@@ -5,13 +5,12 @@
 #ifndef mozilla_layers_NativeLayer_h
 #define mozilla_layers_NativeLayer_h
 
+#include "GLTypes.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Range.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/Types.h"
 #include "mozilla/layers/ScreenshotGrabber.h"
-
-#include "GLTypes.h"
 #include "nsISupportsImpl.h"
 #include "nsRegion.h"
 

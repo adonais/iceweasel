@@ -6,6 +6,15 @@ Services.scriptloader.loadSubScript(
 );
 /* globals withSidebarTree, synthesizeClickOnSelectedTreeCell, promiseLibrary, promiseLibraryClosed */
 
+add_setup(async function () {
+  // withSidebarTree opens the legacy bookmarks sidebar panel and inspects its
+  // tree view, so opt out of the updated bookmarks panel here.
+  // TODO(Bug 2039392): adapt this test to the new bookmarks sidebar panel and remove this sidebar.updateBookmarks.enabled pushPrefEnv)
+  await SpecialPowers.pushPrefEnv({
+    set: [["sidebar.updatedBookmarks.enabled", false]],
+  });
+});
+
 function bookmarkContextMenuExtension() {
   return ExtensionTestUtils.loadExtension({
     manifest: {

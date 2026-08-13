@@ -35,7 +35,7 @@ pub use crate::ipc_connector::{
 };
 pub use crate::ipc_listener::{IPCListener, IPCListenerError};
 pub use crate::ipc_queue::IPCQueue;
-pub use crate::platform::{PlatformError, ProcessHandle};
+pub use crate::platform::{AsProcessReaderHandle, PlatformError, ProcessHandle};
 
 #[cfg(target_os = "windows")]
 pub use crate::platform::server_addr;

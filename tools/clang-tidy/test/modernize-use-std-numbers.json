@@ -1,0 +1,8 @@
+[
+  [
+    "warning",
+    "prefer 'std::numbers::pi_v<float>' to this literal, differs by '8.74e-08'",
+    "modernize-use-std-numbers"
+  ],
+  { "reliability": "high" }
+]

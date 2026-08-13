@@ -473,7 +473,8 @@ nsresult ElementInternals::SetAttr(nsAtom* aName, const nsAString& aValue) {
     }
   } else {
     bool attrHadValue = false;
-    rs = mAttrs.SetAndSwapAttr(aName, attrValue, &attrHadValue);
+    rs = mAttrs.SetAndSwapAttr(aName, attrValue, &attrHadValue,
+                               mozilla::dom::IsKnownNewAttr::No);
   }
   nsMutationGuard::DidMutate();
 
@@ -489,7 +490,8 @@ nsresult ElementInternals::SetAttrInternal(nsAtom* aName,
                                            const nsAString& aValue) {
   bool attrHadValue;
   nsAttrValue attrValue(aValue);
-  return mAttrs.SetAndSwapAttr(aName, attrValue, &attrHadValue);
+  return mAttrs.SetAndSwapAttr(aName, attrValue, &attrHadValue,
+                               mozilla::dom::IsKnownNewAttr::No);
 }
 
 nsresult ElementInternals::UnsetAttrInternal(nsAtom* aName) {

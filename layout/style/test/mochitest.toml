@@ -12,11 +12,11 @@ prefs = [
   "layout.css.basic-shape-shape.enabled=true",
   "layout.css.field-sizing.enabled=true",
   "layout.css.anchor-positioning.enabled=true",
-  "layout.css.anchor-positioning.position-try-order.enabled=true",
   "layout.css.attr.enabled=true",
   "layout.css.scroll-state.enabled=true",
   "layout.css.style-queries.enabled=true",
   "layout.css.text-box.enabled=true",
+  "layout.css.text-decoration-inset-percentage.enabled=true",
   "layout.css.link-parameters.enabled=true",
   "layout.css.ellipse-corners.enabled=true"
 ]

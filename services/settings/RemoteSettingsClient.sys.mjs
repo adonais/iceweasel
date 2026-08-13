@@ -1226,21 +1226,26 @@ export class RemoteSettingsClient extends EventEmitter {
         lazy.console.error(
           `${this.identifier} Signature failed ${retry ? "again" : ""} ${e}`
         );
-        if (!(e instanceof InvalidSignatureError)) {
-          // If it failed for any other kind of error (eg. shutdown)
-          // then give up quickly.
-          throw e;
-        }
 
-        // In order to distinguish signature errors that happen
-        // during sync, from hijacks of local DBs, we will verify
-        // the signature on the data that we had before syncing
-        // (if any).
+        // Any verification failure, invalid signature, malformed signature,
+        // or a failed x5u cert-chain fetch, must roll back the records just
+        // imported above, which are still unverified.
         if (!hasLocalData) {
           lazy.console.debug(`${this.identifier} No previous data to restore`);
         }
-        const localTrustworthy =
-          hasLocalData && (await new Promise(verifySignatureLocalData));
+
+        let localTrustworthy = false;
+        if (hasLocalData) {
+          try {
+            localTrustworthy = await new Promise(verifySignatureLocalData);
+          } catch (_) {
+            // We either throw a CorruptedDataError below which will lead to a
+            // telemetry event, or we have retried already and this is the second
+            // failure. We will reset to dump, clear everything, and throw the error
+            // so that the caller can report the sync status.
+          }
+        }
+
         if (!localTrustworthy && !retry) {
           // Signature failed, clear local DB because it contains
           // bad data (local + remote changes).

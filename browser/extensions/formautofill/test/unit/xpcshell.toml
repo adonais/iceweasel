@@ -43,6 +43,8 @@ head = "head_addressComponent.js"
 
 ["test_addressRecords.js"]
 
+["test_autofillDataTypes.js"]
+
 ["test_autofillFormFields.js"]
 
 ["test_autofill_ios_library.js"]
@@ -90,6 +92,8 @@ skip-if = [
 ["test_parseAddressFormat.js"]
 
 ["test_parseStreetAddress.js"]
+
+["test_passportStorage.js"]
 
 ["test_paymentsListItems.js"]
 

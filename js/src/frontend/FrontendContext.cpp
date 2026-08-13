@@ -5,8 +5,10 @@
 #include "frontend/FrontendContext.h"
 
 #ifdef _WIN32
+// clang-format off
 #  include "util/WindowsWrapper.h"
 #  include <process.h>  // GetCurrentThreadId
+// clang-format on
 #else
 #  include <pthread.h>  // pthread_self
 #endif

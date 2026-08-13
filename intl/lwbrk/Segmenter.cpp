@@ -11,9 +11,8 @@
 #include "icu4x/SentenceSegmenter.hpp"
 #include "icu4x/WordSegmenter.hpp"
 #include "mozilla/ClearOnShutdown.h"
-#include "mozilla/intl/UnicodeProperties.h"
 #include "nsUnicodeProperties.h"
-#include "nsCharTraits.h"
+#include "mozilla/Utf16.h"
 #include "nsThreadUtils.h"
 
 #include <mutex>
@@ -228,8 +227,8 @@ Maybe<uint32_t> GraphemeClusterBreakReverseIteratorUtf16::Next() {
   do {
     ch = mText[--mPos];
 
-    if (mPos > 0 && NS_IS_SURROGATE_PAIR(mText[mPos - 1], ch)) {
-      ch = SURROGATE_TO_UCS4(mText[--mPos], ch);
+    if (mPos > 0 && IsSurrogatePair(mText[mPos - 1], ch)) {
+      ch = SurrogateToUCS4(mText[--mPos], ch);
     }
 
     if (!IsClusterExtender(ch)) {

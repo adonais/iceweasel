@@ -2,18 +2,19 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsLocalFile.h"  // includes platform-specific headers
+#include "nsLocalFileCommon.h"
 
 #include "mozilla/Try.h"
-#include "nsString.h"
-#include "nsCOMPtr.h"
-#include "nsReadableUtils.h"
-#include "nsPrintfCString.h"
-#include "nsCRT.h"
-#include "nsNativeCharsetUtils.h"
-#include "nsUTF8Utils.h"
+#include "mozilla/Utf16.h"
 #include "nsArray.h"
-#include "nsLocalFileCommon.h"
+#include "nsCOMPtr.h"
+#include "nsCRT.h"
+#include "nsLocalFile.h"  // includes platform-specific headers
+#include "nsNativeCharsetUtils.h"
+#include "nsPrintfCString.h"
+#include "nsReadableUtils.h"
+#include "nsString.h"
+#include "nsUTF8Utils.h"
 
 #ifdef XP_WIN
 #  include <string.h>
@@ -278,7 +279,7 @@ nsLocalFile::CreateUnique(uint32_t aType, uint32_t aAttributes) {
 
 #ifdef XP_WIN
     // ensure that we don't cut the name in mid-UTF16-character
-    rootName.SetLength(NS_IS_LOW_SURROGATE(rootName[maxRootLength])
+    rootName.SetLength(mozilla::IsLowSurrogate(rootName[maxRootLength])
                            ? maxRootLength - 1
                            : maxRootLength);
     SetLeafName(rootName + suffix);

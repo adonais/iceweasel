@@ -47,12 +47,7 @@ PartitionedStorageHelper.runTestInNormalAndPrivateMode(
     thirdPartyWorker.terminate();
   },
 
-  async _ => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  },
+  // Cleanup callback
+  clearSiteTestData,
   []
 );

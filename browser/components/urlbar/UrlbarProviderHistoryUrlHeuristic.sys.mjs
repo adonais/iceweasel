@@ -18,6 +18,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
 });
 
 /**
@@ -115,8 +116,8 @@ export class UrlbarProviderHistoryUrlHeuristic extends UrlbarProvider {
     }
 
     return new lazy.UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      type: lazy.UrlbarShared.RESULT_TYPE.URL,
+      source: lazy.UrlbarShared.RESULT_SOURCE.HISTORY,
       heuristic: true,
       payload: {
         url: inputedURL,

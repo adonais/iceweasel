@@ -5,12 +5,12 @@
 #include "nsSerializationHelper.h"
 
 #include "mozilla/Base64.h"
-#include "nsISerializable.h"
-#include "nsIObjectOutputStream.h"
-#include "nsIObjectInputStream.h"
-#include "nsString.h"
 #include "nsBase64Encoder.h"
 #include "nsComponentManagerUtils.h"
+#include "nsIObjectInputStream.h"
+#include "nsIObjectOutputStream.h"
+#include "nsISerializable.h"
+#include "nsString.h"
 #include "nsStringStream.h"
 
 using namespace mozilla;

@@ -157,6 +157,50 @@ function deleteFile(path) {
   return { ok: true };
 }
 
+// Calls unlink(NULL) and unlinkat(AT_FDCWD, NULL, 0) via libc to check that the
+// sandbox syscall traps reject a null path instead of crashing the content
+// process. Returns the errno reported by each call. Include imports so this can
+// be safely serialized and run remotely by SpecialPowers.spawn.
+function unlinkNullPath() {
+  const { ctypes } = ChromeUtils.importESModule(
+    "resource://gre/modules/ctypes.sys.mjs"
+  );
+
+  // AT_FDCWD on Linux.
+  const AT_FDCWD = -100;
+
+  try {
+    const libc = ctypes.open("libc.so.6");
+
+    const unlink = libc.declare(
+      "unlink",
+      ctypes.default_abi,
+      ctypes.int, // return value
+      ctypes.char.ptr // pathname
+    );
+    const unlinkat = libc.declare(
+      "unlinkat",
+      ctypes.default_abi,
+      ctypes.int, // return value
+      ctypes.int, // dirfd
+      ctypes.char.ptr, // pathname
+      ctypes.int // flags
+    );
+
+    ctypes.errno = 0;
+    unlink(null);
+    const unlinkErrno = ctypes.errno;
+
+    ctypes.errno = 0;
+    unlinkat(AT_FDCWD, null, 0);
+    const unlinkatErrno = ctypes.errno;
+
+    return { ok: true, unlinkErrno, unlinkatErrno };
+  } catch (e) {
+    return { ok: false, code: e.result };
+  }
+}
+
 // Reads the directory at |path| and returns a promise that resolves when
 // iteration over the directory finishes or encounters an error. The promise
 // resolves with an object where .ok indicates success or failure and

@@ -9,8 +9,9 @@
  * nsWindowGfx - Painting and aceleration.
  */
 
-#include "nsWindow.h"
 #include <imgIContainer.h>
+
+#include "nsWindow.h"
 
 class nsISVGPaintContext;
 

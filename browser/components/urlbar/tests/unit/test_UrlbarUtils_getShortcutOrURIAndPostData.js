@@ -2,7 +2,7 @@
    https://creativecommons.org/publicdomain/zero/1.0/ */
 
 /**
- * These tests unit test the functionality of UrlbarController by stubbing out the
+ * These tests unit test the functionality of UrlbarParentController by stubbing out the
  * model and providing stubs to be called.
  */
 

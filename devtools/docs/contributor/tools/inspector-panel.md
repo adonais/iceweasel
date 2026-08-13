@@ -44,11 +44,11 @@ flowchart TD
     InspectorActor --> PageStyleActor["PageStyleActor (for rule-view/computed-view)"] --> StyleRuleActor
 ```
 
-__InspectorActor__
+## InspectorActor
 
 This tab-level actor is the one the inspector-panel connects to. It doesn't do much apart from creating and returning the WalkerActor and PageStyleActor.
 
-__WalkerActor__
+## WalkerActor
 
 - Single most important part of the inspector panel.
 - Responsible for walking the DOM on the current page but:
@@ -62,7 +62,7 @@ __WalkerActor__
 - Note that methods like querySelector return arbitrarily nested NodeActors, in which case the WalkerActor also sends the list of parents to link the returned nodes to the closest known nodes, so the UI can display the tree correctly.
 - Emits events when there are DOM mutations. These events are sent to the front-end and used to, for example refresh the markup-view. This uses an instance of MutationObserver (<https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver>) configured with, in particular, chromeOnlyNodes set to true, so that mutation events are also sent when pseudo elements are added/removed via css.
 
-__NodeActor__
+## NodeActor
 
 - Representation of a single DOM node (tagname, namespace, attributes, parent, sibblings, ...), which panels use to display previews of nodes.
 - Also provide useful methods to:

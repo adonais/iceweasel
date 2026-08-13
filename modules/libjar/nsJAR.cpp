@@ -448,7 +448,7 @@ nsJAREnumerator::GetNext(nsACString& aResult) {
       return NS_ERROR_FAILURE;  // no error translation
   }
   aResult.Assign(mName, mNameLen);
-  mName = 0;  // we just gave this one away
+  mName = nullptr;  // we just gave this one away
   return NS_OK;
 }
 

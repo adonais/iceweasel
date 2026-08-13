@@ -28,7 +28,6 @@ enum class BrowserDirection(
     FromTrackingProtection(R.id.trackingProtectionFragment),
     FromHttpsOnlyMode(R.id.httpsOnlyFragment),
     FromDnsOverHttps(R.id.dohSettingsFragment),
-    FromTrackingProtectionDialog(R.id.trackingProtectionPanelDialogFragment),
     FromSavedLoginsFragment(R.id.savedLoginsFragment),
     FromAddNewDeviceFragment(R.id.addNewDeviceFragment),
     FromSearchEngineFragment(R.id.searchEngineFragment),

@@ -76,17 +76,6 @@ export class AIChatContentParent extends JSWindowActorParent {
     this.sendAsyncMessage("AIChatContent:SetGenerating", { isGenerating });
   }
 
-  /**
-   * Forward the conversation's history results pool to the content page. Sent
-   * only when the pool changes (a search_browsing_history tool call ran).
-   *
-   * @param {object} payload
-   * @param {object[]} payload.records
-   */
-  dispatchHistoryResultsToChatContent(payload) {
-    this.sendAsyncMessage("AIChatContent:HistoryResults", payload);
-  }
-
   receiveMessage({ data, name }) {
     switch (name) {
       case "AIChatContent:DispatchFollowUp":
@@ -140,6 +129,12 @@ export class AIChatContentParent extends JSWindowActorParent {
   #notifyContentReady() {
     const aiWindow = this.#getAIWindowElement();
     aiWindow?.onContentReady();
+    // Tell the content its mode (sidebar/fullpage) so mode-specific styling
+    // (e.g. the fullpage top blur) can apply. Sent over the actor rather than
+    // the load URL, which would break this actor's exact about: match.
+    if (aiWindow?.mode) {
+      this.sendAsyncMessage("AIChatContent:SetMode", { mode: aiWindow.mode });
+    }
   }
 
   #handleFooterActionFromChild(data) {
@@ -156,7 +151,7 @@ export class AIChatContentParent extends JSWindowActorParent {
     aiWindow?.onOpenLink();
 
     try {
-      const { url } = data;
+      const { url, preferSwitchToTab } = data;
       if (!url) {
         return;
       }
@@ -195,8 +190,25 @@ export class AIChatContentParent extends JSWindowActorParent {
         window.gBrowser.selectedBrowser.browsingContext.originAttributes;
       const triggeringPrincipal =
         Services.scriptSecurityManager.createNullPrincipal({ userContextId });
-      const where = lazy.BrowserUtils.whereToOpenLink(data);
 
+      if (preferSwitchToTab) {
+        // Switch to an existing tab if one matches, otherwise
+        // open in a new tab
+        if (
+          lazy.URILoadingHelper.switchToTabHavingURI(window, url, false, {})
+        ) {
+          return;
+        }
+
+        lazy.URILoadingHelper.openWebLinkIn(window, url, "tab", {
+          triggeringPrincipal,
+          userContextId,
+          forceForeground: false,
+        });
+        return;
+      }
+
+      const where = lazy.BrowserUtils.whereToOpenLink(data);
       if (where === "current") {
         const tabFound = lazy.URILoadingHelper.switchToTabHavingURI(
           window,
@@ -278,19 +290,28 @@ export class AIChatContentParent extends JSWindowActorParent {
    * the page — then send them back to the requesting message.
    *
    * @param {object} data
+   * @param {string} data.conversationId - Identifies the conversation the
+   * message belongs to
    * @param {string} data.messageId - Identifies the message whose grid requested
    *   the assets, echoed back so the content side can route the results.
    * @param {Array<{url: string, thumbnail?: string}>} data.items
    */
-  async #handleRequestAssets({ messageId, items }) {
+  async #handleRequestAssets({ conversationId, messageId, items = [] }) {
     try {
       const images = await Promise.all(
-        (items ?? []).map(async ({ url, thumbnail }) => ({
+        items.map(async ({ url, thumbnail }) => ({
           url,
           image: await lazy.captureThumbnail(thumbnail),
           hasFavicon: await this.#pageHasFavicon(url),
         }))
       );
+
+      // Cache onto the conversation pool so later snapshots carry the assets,
+      // then push them to the requesting message for immediate render.
+      const aiWindowElement = this.#getAIWindowElement();
+      if (aiWindowElement) {
+        aiWindowElement.applyHistoryAssets(conversationId, images);
+      }
 
       this.sendAsyncMessage("AIChatContent:AssetsReady", {
         messageId,

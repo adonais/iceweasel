@@ -7,7 +7,7 @@ import { HighlightText } from "./HighlightText";
 import { HighlightImage } from "./HighlightImage";
 import { resolveText, resolveImage } from "./OMCHighlightRegistry.mjs";
 
-export const HighlightPopoverBody = ({ body, content }) => {
+export const HighlightPopoverBody = ({ body, content, onCtaClick }) => {
   const image = resolveImage({ content, defaults: body?.image });
   const title = resolveText({
     content,
@@ -21,12 +21,31 @@ export const HighlightPopoverBody = ({ body, content }) => {
     l10nKey: "subtitle",
     defaultL10nId: body?.subtitle?.l10nId,
   });
+  const cta = resolveText({
+    content,
+    rawKey: "cardCta",
+    l10nKey: "cta",
+    defaultL10nId: body?.cta?.l10nId,
+  });
 
   return (
     <div className="highlight-popover-body">
       <HighlightImage source={image} className="highlight-popover-image" />
       <HighlightText as="h3" className="title" value={title} />
       <HighlightText as="p" className="subtitle" value={subtitle} />
+      {cta && onCtaClick && (
+        <span className="button-wrapper">
+          {cta.raw ? (
+            <moz-button type="primary" label={cta.raw} onClick={onCtaClick} />
+          ) : (
+            <moz-button
+              type="primary"
+              data-l10n-id={cta.l10nId}
+              onClick={onCtaClick}
+            />
+          )}
+        </span>
+      )}
     </div>
   );
 };

@@ -6,6 +6,7 @@
 #define mozilla_StreamBufferSource_h
 
 #include <cstddef>
+
 #include "ErrorList.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Span.h"

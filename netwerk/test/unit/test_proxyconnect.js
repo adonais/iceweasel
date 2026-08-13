@@ -323,6 +323,42 @@ function test_connectonly_nonhttp() {
   do_test_pending();
 }
 
+// A compromised child process could try to smuggle extra headers or an
+// additional request into the proxy CONNECT by putting CR/LF (or a null byte)
+// in the upgrade protocol. HTTPUpgrade must reject such values.
+function test_httpupgrade_rejects_header_injection() {
+  const internal = NetUtil.newChannel({
+    uri: "https://localhost:" + socketserver_port + "/",
+    loadUsingSystemPrincipal: true,
+    securityFlags:
+      Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL |
+      Ci.nsILoadInfo.SEC_DONT_FOLLOW_REDIRECTS |
+      Ci.nsILoadInfo.SEC_COOKIES_OMIT,
+  }).QueryInterface(Ci.nsIHttpChannelInternal);
+
+  Assert.throws(
+    () => internal.HTTPUpgrade("webrtc\r\nX-Injected: evil", upgradeListener),
+    /NS_ERROR_ILLEGAL_VALUE/,
+    "HTTPUpgrade rejects a CRLF in the protocol"
+  );
+  Assert.throws(
+    () =>
+      internal.HTTPUpgrade("webrtc\r\n\r\nGET /evil HTTP/1.1", upgradeListener),
+    /NS_ERROR_ILLEGAL_VALUE/,
+    "HTTPUpgrade rejects an injected request in the protocol"
+  );
+  Assert.throws(
+    () => internal.HTTPUpgrade("webrtc\0", upgradeListener),
+    /NS_ERROR_ILLEGAL_VALUE/,
+    "HTTPUpgrade rejects a null byte in the protocol"
+  );
+  // A normal ALPN value is still accepted.
+  internal.HTTPUpgrade("webrtc,c-webrtc", upgradeListener);
+
+  do_test_pending();
+  nextTest();
+}
+
 function nextTest() {
   transportAvailable = false;
 
@@ -339,6 +375,7 @@ var tests = [
   test_connectonly,
   test_connectonly_noproxy,
   test_connectonly_nonhttp,
+  test_httpupgrade_rejects_header_injection,
 ];
 
 function clearPrefs() {

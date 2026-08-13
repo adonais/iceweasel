@@ -79,10 +79,7 @@ export var TestRunner = {
     let screenshotPath = PathUtils.join(PathUtils.tempDir, ...subDirs);
 
     const MOZ_UPLOAD_DIR = Services.env.get("MOZ_UPLOAD_DIR");
-    const GECKO_HEAD_REPOSITORY = Services.env.get("GECKO_HEAD_REPOSITORY");
-    // We don't want to upload images (from MOZ_UPLOAD_DIR) on integration
-    // branches in order to reduce bandwidth/storage.
-    if (MOZ_UPLOAD_DIR && !GECKO_HEAD_REPOSITORY.includes("/integration/")) {
+    if (MOZ_UPLOAD_DIR) {
       screenshotPath = MOZ_UPLOAD_DIR;
     }
 

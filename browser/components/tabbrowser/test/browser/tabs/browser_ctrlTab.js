@@ -244,7 +244,7 @@ add_task(async function () {
     // Ensure the image is not blank (see bug 1293692). The canvas shouldn't be
     // rendered at all until it has image data, but this will allow us to catch
     // any regressions in the future.
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () =>
         emptyImageData !==
         observedPreview._canvas.firstElementChild

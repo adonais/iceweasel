@@ -124,11 +124,19 @@ class InspectorActor extends Actor {
     super.destroy();
     this.destroyEyeDropper();
 
+    this.#highlighters.clear();
     this._compatibility = null;
     this._pageStylePromise = null;
     this._walkerPromise = null;
     this.walker = null;
     this.targetActor = null;
+  }
+
+  unmanage(actor) {
+    if (actor instanceof CustomHighlighterActor) {
+      this.#highlighters.delete(actor.highlighterTypeName);
+    }
+    super.unmanage(actor);
   }
 
   get window() {
@@ -204,6 +212,9 @@ class InspectorActor extends Actor {
     return this._compatibility;
   }
 
+  // Map of all already instantiated highlighter actors, keyed by type name (string).
+  #highlighters = new Map();
+
   /**
    * If consumers need to display several highlighters at the same time or
    * different types of highlighters, then this method should be used, passing
@@ -211,13 +222,25 @@ class InspectorActor extends Actor {
    * A new instance will be created everytime the method is called, so it's up
    * to the consumer to release it when it is not needed anymore
    *
-   * @param {string} type The type of highlighter to create
+   * @param {string} typeName The type of highlighter to create
+   * @param {boolean} forceName Optional boolean to force instantiating a new instance,
+   *                            even if one was already created.
+   *                            (this is used for grid highlighters where we may spawn
+   *                             many of them)
    * @return {Highlighter} The highlighter actor instance or null if the
    * typeName passed doesn't match any available highlighter
    */
-  async getHighlighterByType(typeName) {
+  async getHighlighterByType(typeName, forceNew = false) {
+    let highlighterActor = this.#highlighters.get(typeName);
+    if (highlighterActor && !forceNew) {
+      return highlighterActor;
+    }
     if (isTypeRegistered(typeName)) {
-      const highlighterActor = new CustomHighlighterActor(this, typeName);
+      highlighterActor = new CustomHighlighterActor(this, typeName);
+      // When we force the instantiation of a new instance, do not cache this actor.
+      if (!forceNew) {
+        this.#highlighters.set(typeName, highlighterActor);
+      }
       if (highlighterActor.instance.isReady) {
         await highlighterActor.instance.isReady;
       }

@@ -4,22 +4,22 @@
 
 #include "nsMenuItemX.h"
 #include "mozilla/dom/HTMLImageElement.h"
+#include "nsCocoaUtils.h"
 #include "nsMenuBarX.h"
-#include "nsMenuX.h"
 #include "nsMenuItemIconX.h"
 #include "nsMenuUtilsX.h"
-#include "nsCocoaUtils.h"
+#include "nsMenuX.h"
 
 #include "nsObjCExceptions.h"
 
 #include "nsCOMPtr.h"
 #include "nsGkAtoms.h"
 
+#include "mozilla/ErrorResult.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Event.h"
-#include "mozilla/ErrorResult.h"
 #include "nsIWidget.h"
-#include "mozilla/dom/Document.h"
 
 using namespace mozilla;
 

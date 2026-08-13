@@ -6,6 +6,8 @@
  * https://w3c.github.io/webappsec-referrer-policy#idl-index
  */
 
+// NOTE: Keep this in sync with the `enum ReferrerPolicy` in
+// dom/base/speculationrules/lib.rs.
 enum ReferrerPolicy {
   "",
   "no-referrer",

@@ -8,5 +8,11 @@
     android:viewportHeight="24">
     <path
         android:fillColor="@color/mozac_ui_icons_fill"
-        android:pathData="M4,6H20V7.75H4V6ZM6,11.25H18V13H6V11.25ZM10,16.25H14V18H10V16.25Z" />
+        android:pathData="M14.125,17C14.608,17 15,17.392 15,17.875C15,18.358 14.608,18.75 14.125,18.75H9.875C9.392,18.75 9,18.358 9,17.875C9,17.392 9.392,17 9.875,17H14.125Z" />
+    <path
+        android:fillColor="@color/mozac_ui_icons_fill"
+        android:pathData="M17.125,12C17.608,12 18,12.392 18,12.875C18,13.358 17.608,13.75 17.125,13.75H6.875C6.392,13.75 6,13.358 6,12.875C6,12.392 6.392,12 6.875,12H17.125Z" />
+    <path
+        android:fillColor="@color/mozac_ui_icons_fill"
+        android:pathData="M20.125,7C20.608,7 21,7.392 21,7.875C21,8.358 20.608,8.75 20.125,8.75H3.875C3.392,8.75 3,8.358 3,7.875C3,7.392 3.392,7 3.875,7H20.125Z" />
 </vector>

@@ -13,8 +13,8 @@
 
 #include <objc/objc.h>
 
-#include "nsCOMPtr.h"
 #include "LocalAccessible.h"
+#include "nsCOMPtr.h"
 
 namespace mozilla {
 namespace a11y {

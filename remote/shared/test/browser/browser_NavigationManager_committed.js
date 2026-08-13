@@ -26,7 +26,7 @@ add_task(async function test_committed() {
   navigationManager.startMonitoring();
 
   await loadURL(browser, SECOND_URL);
-  await BrowserTestUtils.waitForCondition(() => navigationObjects.length === 3);
+  await TestUtils.waitForCondition(() => navigationObjects.length === 3);
   is(
     navigationObjects[0].name,
     "navigation-started",

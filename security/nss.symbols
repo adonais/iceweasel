@@ -299,6 +299,7 @@ PK11_CreateDigestContext
 PK11_CreateGenericObject
 PK11_CreateMergeLog
 PK11_CreatePBEV2AlgorithmID
+PK11_CreatePrivateKeyFromTemplate
 PK11_Decrypt
 PK11_DeleteTokenCertAndKey
 PK11_DeleteTokenPrivateKey
@@ -670,6 +671,7 @@ SGN_DestroyDigestInfo_Util
 SGN_End
 SGN_NewContext
 SGN_Update
+SSL_AlertReceivedCallback
 SSL_AlertSentCallback
 SSL_AuthCertificateComplete
 SSL_AuthCertificateHook

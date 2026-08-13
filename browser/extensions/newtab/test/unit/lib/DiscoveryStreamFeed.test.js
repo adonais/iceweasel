@@ -100,6 +100,10 @@ describe("DiscoveryStreamFeed", () => {
     globals.set({
       gUUIDGenerator: { generateUUID: () => FAKE_UUID },
       PersistentCache,
+      AdsClient: {
+        isEnabled: () => false,
+        getClient: () => null,
+      },
     });
 
     sandbox

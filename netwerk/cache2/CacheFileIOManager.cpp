@@ -2,39 +2,40 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <limits>
-#include "CacheLog.h"
 #include "CacheFileIOManager.h"
 
-#include "CacheHashUtils.h"
-#include "CacheStorageService.h"
-#include "CacheIndex.h"
-#include "CacheFileUtils.h"
-#include "nsError.h"
-#include "nsThreadUtils.h"
+#include <limits>
+
 #include "CacheFile.h"
-#include "CacheObserver.h"
-#include "nsIFile.h"
 #include "CacheFileContextEvictor.h"
-#include "nsITimer.h"
-#include "nsIDirectoryEnumerator.h"
-#include "nsEffectiveTLDService.h"
-#include "nsIObserverService.h"
-#include "mozilla/net/MozURL.h"
-#include "mozilla/glean/NetwerkCache2Metrics.h"
+#include "CacheFileUtils.h"
+#include "CacheHashUtils.h"
+#include "CacheIndex.h"
+#include "CacheLog.h"
+#include "CacheObserver.h"
+#include "CacheStorageService.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/FileUtils.h"
+#include "mozilla/IntegerPrintfMacros.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StoragePrincipalHelper.h"
-#include "nsDirectoryServiceUtils.h"
-#include "nsAppDirectoryServiceDefs.h"
-#include "private/pprio.h"
-#include "mozilla/IntegerPrintfMacros.h"
-#include "mozilla/Preferences.h"
-#include "nsNetUtil.h"
+#include "mozilla/glean/NetwerkCache2Metrics.h"
 #include "mozilla/glean/NetwerkMetrics.h"
-#include "mozilla/FileUtils.h"
+#include "mozilla/net/MozURL.h"
+#include "nsAppDirectoryServiceDefs.h"
+#include "nsDirectoryServiceUtils.h"
+#include "nsEffectiveTLDService.h"
+#include "nsError.h"
+#include "nsIDirectoryEnumerator.h"
+#include "nsIFile.h"
+#include "nsIObserverService.h"
+#include "nsITimer.h"
+#include "nsNetUtil.h"
+#include "nsThreadUtils.h"
+#include "private/pprio.h"
 
 #ifdef MOZ_BACKGROUNDTASKS
 #  include "mozilla/BackgroundTasksRunner.h"
@@ -1057,20 +1058,20 @@ class InitIndexEntryEvent : public Runnable {
 class UpdateIndexEntryEvent : public Runnable {
  public:
   UpdateIndexEntryEvent(CacheFileHandle* aHandle, const uint32_t* aFrecency,
-                        const bool* aHasAltData, const uint16_t* aOnStartTime,
-                        const uint16_t* aOnStopTime,
+                        const bool* aHasAltData, const uint32_t* aLastFetched,
+                        const uint32_t* aFetchCount,
                         const uint8_t* aContentType)
       : Runnable("net::UpdateIndexEntryEvent"),
         mHandle(aHandle),
         mHasFrecency(false),
         mHasHasAltData(false),
-        mHasOnStartTime(false),
-        mHasOnStopTime(false),
+        mHasLastFetched(false),
+        mHasFetchCount(false),
         mHasContentType(false),
         mFrecency(0),
         mHasAltData(false),
-        mOnStartTime(0),
-        mOnStopTime(0),
+        mLastFetched(0),
+        mFetchCount(0),
         mContentType(nsICacheEntry::CONTENT_TYPE_UNKNOWN) {
     if (aFrecency) {
       mHasFrecency = true;
@@ -1080,13 +1081,13 @@ class UpdateIndexEntryEvent : public Runnable {
       mHasHasAltData = true;
       mHasAltData = *aHasAltData;
     }
-    if (aOnStartTime) {
-      mHasOnStartTime = true;
-      mOnStartTime = *aOnStartTime;
+    if (aLastFetched) {
+      mHasLastFetched = true;
+      mLastFetched = *aLastFetched;
     }
-    if (aOnStopTime) {
-      mHasOnStopTime = true;
-      mOnStopTime = *aOnStopTime;
+    if (aFetchCount) {
+      mHasFetchCount = true;
+      mFetchCount = *aFetchCount;
     }
     if (aContentType) {
       mHasContentType = true;
@@ -1106,8 +1107,8 @@ class UpdateIndexEntryEvent : public Runnable {
     CacheIndex::UpdateEntry(mHandle->Hash(),
                             mHasFrecency ? &mFrecency : nullptr,
                             mHasHasAltData ? &mHasAltData : nullptr,
-                            mHasOnStartTime ? &mOnStartTime : nullptr,
-                            mHasOnStopTime ? &mOnStopTime : nullptr,
+                            mHasLastFetched ? &mLastFetched : nullptr,
+                            mHasFetchCount ? &mFetchCount : nullptr,
                             mHasContentType ? &mContentType : nullptr, nullptr);
     return NS_OK;
   }
@@ -1117,14 +1118,14 @@ class UpdateIndexEntryEvent : public Runnable {
 
   bool mHasFrecency;
   bool mHasHasAltData;
-  bool mHasOnStartTime;
-  bool mHasOnStopTime;
+  bool mHasLastFetched;
+  bool mHasFetchCount;
   bool mHasContentType;
 
   uint32_t mFrecency;
   bool mHasAltData;
-  uint16_t mOnStartTime;
-  uint16_t mOnStopTime;
+  uint32_t mLastFetched;
+  uint32_t mFetchCount;
   uint8_t mContentType;
 };
 
@@ -3910,16 +3911,16 @@ nsresult CacheFileIOManager::InitIndexEntry(CacheFileHandle* aHandle,
 nsresult CacheFileIOManager::UpdateIndexEntry(CacheFileHandle* aHandle,
                                               const uint32_t* aFrecency,
                                               const bool* aHasAltData,
-                                              const uint16_t* aOnStartTime,
-                                              const uint16_t* aOnStopTime,
+                                              const uint32_t* aLastFetched,
+                                              const uint32_t* aFetchCount,
                                               const uint8_t* aContentType) {
   LOG(
       ("CacheFileIOManager::UpdateIndexEntry() [handle=%p, frecency=%s, "
-       "hasAltData=%s, onStartTime=%s, onStopTime=%s, contentType=%s]",
+       "hasAltData=%s, lastFetched=%s, fetchCount=%s, contentType=%s]",
        aHandle, aFrecency ? nsPrintfCString("%u", *aFrecency).get() : "",
        aHasAltData ? (*aHasAltData ? "true" : "false") : "",
-       aOnStartTime ? nsPrintfCString("%u", *aOnStartTime).get() : "",
-       aOnStopTime ? nsPrintfCString("%u", *aOnStopTime).get() : "",
+       aLastFetched ? nsPrintfCString("%u", *aLastFetched).get() : "",
+       aFetchCount ? nsPrintfCString("%u", *aFetchCount).get() : "",
        aContentType ? nsPrintfCString("%u", *aContentType).get() : ""));
 
   nsresult rv;
@@ -3934,7 +3935,7 @@ nsresult CacheFileIOManager::UpdateIndexEntry(CacheFileHandle* aHandle,
   }
 
   RefPtr<UpdateIndexEntryEvent> ev = new UpdateIndexEntryEvent(
-      aHandle, aFrecency, aHasAltData, aOnStartTime, aOnStopTime, aContentType);
+      aHandle, aFrecency, aHasAltData, aLastFetched, aFetchCount, aContentType);
   rv = ioMan->mIOThread->Dispatch(ev, aHandle->mPriority
                                           ? CacheIOThread::WRITE_PRIORITY
                                           : CacheIOThread::WRITE);

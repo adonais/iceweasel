@@ -5,8 +5,8 @@
 #ifndef mozilla_image_SurfacePipeFactory_h
 #define mozilla_image_SurfacePipeFactory_h
 
-#include "SurfacePipe.h"
 #include "SurfaceFilters.h"
+#include "SurfacePipe.h"
 
 namespace mozilla {
 namespace image {

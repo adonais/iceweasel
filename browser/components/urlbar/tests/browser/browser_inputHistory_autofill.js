@@ -192,7 +192,7 @@ add_task(async function notBumped_search() {
     for (let i = 0; i < UrlbarTestUtils.getResultCount(window); i++) {
       let details = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
       if (
-        details.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
+        details.type == UrlbarShared.RESULT_TYPE.SEARCH &&
         !details.result.heuristic
       ) {
         resultIndex = i;

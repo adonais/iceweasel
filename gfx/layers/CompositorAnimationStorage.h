@@ -5,15 +5,16 @@
 #ifndef mozilla_layers_CompositorAnimationStorage_h
 #define mozilla_layers_CompositorAnimationStorage_h
 
-#include "mozilla/layers/AnimationStorageData.h"
-#include "mozilla/layers/LayersMessages.h"  // for TransformData, etc
-#include "mozilla/webrender/webrender_ffi.h"
-#include "mozilla/Variant.h"
-#include "nsClassHashtable.h"
-#include "X11UndefineNone.h"
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
+
+#include "X11UndefineNone.h"
+#include "mozilla/Variant.h"
+#include "mozilla/layers/AnimationStorageData.h"
+#include "mozilla/layers/LayersMessages.h"  // for TransformData, etc
+#include "mozilla/webrender/webrender_ffi.h"
+#include "nsClassHashtable.h"
 
 namespace mozilla {
 namespace layers {

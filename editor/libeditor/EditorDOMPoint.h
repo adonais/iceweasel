@@ -1411,8 +1411,9 @@ class EditorDOMPointBase final {
     if (!IsSetAndValid() || !aOther.IsSetAndValid()) {
       return false;
     }
-    Maybe<int32_t> comp = nsContentUtils::ComparePoints(
-        ToRawRangeBoundary(), aOther.ToRawRangeBoundary());
+    Maybe<int32_t> comp =
+        nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+            ToRawRangeBoundary(), aOther.ToRawRangeBoundary());
     return comp.isSome() && comp.value() == -1;
   }
 
@@ -1421,8 +1422,9 @@ class EditorDOMPointBase final {
     if (!IsSetAndValid() || !aOther.IsSetAndValid()) {
       return false;
     }
-    Maybe<int32_t> comp = nsContentUtils::ComparePoints(
-        ToRawRangeBoundary(), aOther.ToRawRangeBoundary());
+    Maybe<int32_t> comp =
+        nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+            ToRawRangeBoundary(), aOther.ToRawRangeBoundary());
     return comp.isSome() && comp.value() <= 0;
   }
 

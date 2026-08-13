@@ -2224,6 +2224,14 @@ export class ExtensionData {
           })
         );
       }
+
+      const sandboxPages = manifest.sandbox?.pages;
+      if (sandboxPages) {
+        // Normalize all paths to contain a single leading /
+        result.sandboxPages = sandboxPages.map(path =>
+          path.replace(/^\/*/, "/")
+        );
+      }
     } else if (this.type == "locale") {
       // Langpack startup is performance critical, so we want to compute as much
       // as possible here to make startup not trigger async DB reads.
@@ -2354,6 +2362,7 @@ export class ExtensionData {
     await this.apiManager.lazyInit();
 
     this.webAccessibleResources = manifestData.webAccessibleResources;
+    this.sandboxPages = manifestData.sandboxPages;
 
     this.originControls = manifestData.originControls;
     this.allowedOrigins = new MatchPatternSet(manifestData.originPermissions, {
@@ -3403,7 +3412,7 @@ export class Extension extends ExtensionData {
   /** @type {Map<string, Map<string, any>>} */
   persistentListeners;
 
-  /** @type {import("ExtensionShortcuts.sys.mjs").ExtensionShortcuts} */
+  /** @type {import("./ExtensionShortcuts.sys.mjs").ExtensionShortcuts} */
   shortcuts;
 
   /**
@@ -3510,6 +3519,7 @@ export class Extension extends ExtensionData {
     this.allowedOrigins = null;
     this._optionalOrigins = null;
     this.webAccessibleResources = null;
+    this.sandboxPages = null;
 
     this.registeredContentScripts = new Map();
 
@@ -3763,6 +3773,13 @@ export class Extension extends ExtensionData {
     return content_security_policy;
   }
 
+  get sandboxPageCSP() {
+    if (this.manifestVersion === 2) {
+      return this.manifest.sandbox?.content_security_policy;
+    }
+    return this.manifest.content_security_policy?.sandbox;
+  }
+
   get backgroundScripts() {
     return this.manifest.background?.scripts;
   }
@@ -3825,6 +3842,8 @@ export class Extension extends ExtensionData {
       type: this.type,
       manifestVersion: this.manifestVersion,
       extensionPageCSP: this.extensionPageCSP,
+      sandboxPageCSP: this.sandboxPageCSP,
+      sandboxPages: this.sandboxPages,
       instanceId: this.instanceId,
       resourceURL: this.resourceURL,
       contentScripts: this.contentScripts,

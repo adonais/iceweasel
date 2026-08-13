@@ -3,9 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef XPC_WRAPPER_H
-#define XPC_WRAPPER_H 1
+#  define XPC_WRAPPER_H 1
 
-#include "js/TypeDecls.h"
+#  include "js/TypeDecls.h"
 
 namespace XPCNativeWrapper {
 

@@ -2,13 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <sstream>
+#include <string>
+
 #include "SanityChecks.h"
+#include "TestBugs.h"
 #include "TestPoint.h"
 #include "TestScaling.h"
-#include "TestBugs.h"
-
-#include <string>
-#include <sstream>
 
 struct TestObject {
   TestBase* test;

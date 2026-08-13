@@ -188,18 +188,15 @@ async function getFormSubmitResponseResult(
   { username = "#user", password = "#pass" } = {}
 ) {
   // default selectors are for the response page produced by formsubmit.sjs
-  // TODO: Switch to SpecialPowers.spawn
-  // eslint-disable-next-line mozilla/reject-contenttask-spawn
-  let fieldValues = await ContentTask.spawn(
+  if (!new URL(browser.currentURI.spec).pathname.endsWith(resultURL)) {
+    await BrowserTestUtils.browserLoaded(browser, false, url => {
+      return new URL(url).pathname.endsWith(resultURL);
+    });
+  }
+  let fieldValues = await SpecialPowers.spawn(
     browser,
-    { resultURL, usernameSelector: username, passwordSelector: password },
-    async function ({ resultURL, usernameSelector, passwordSelector }) {
-      await ContentTaskUtils.waitForCondition(() => {
-        return (
-          content.location.pathname.endsWith(resultURL) &&
-          content.document.readyState == "complete"
-        );
-      }, `Wait for form submission load (${resultURL})`);
+    [username, password],
+    (usernameSelector, passwordSelector) => {
       let username =
         content.document.querySelector(usernameSelector).textContent;
       // Bug 1686071: Since generated passwords can have special characters in them,
@@ -285,10 +282,13 @@ async function checkOnlyLoginWasUsedTwice({ justChanged }) {
     "timeLastUsed bumped"
   );
   if (justChanged) {
-    Assert.equal(
-      logins[0].timeLastUsed,
+    // The Rust storage backend records the password change and the use in two
+    // separate internal operations, so timeLastUsed may be a few ms after
+    // timePasswordChanged rather than exactly equal.
+    Assert.lessOrEqual(
       logins[0].timePasswordChanged,
-      "timeLastUsed == timePasswordChanged"
+      logins[0].timeLastUsed,
+      "timePasswordChanged <= timeLastUsed"
     );
   } else {
     Assert.equal(
@@ -485,14 +485,20 @@ async function clearMessageCache(browser) {
  * @param {string} password The password.
  */
 async function checkDoorhangerUsernamePassword(username, password) {
-  await BrowserTestUtils.waitForCondition(() => {
-    return (
-      document.getElementById("password-notification-username").value ==
-        username &&
-      document.getElementById("password-notification-password").value ==
-        password
-    );
-  }, "Wait for nsLoginManagerPrompter writeDataToUI() to update to the correct username/password values");
+  // allow extra time before giving up (default is 50 tries / 5s).
+  await TestUtils.waitForCondition(
+    () => {
+      return (
+        document.getElementById("password-notification-username").value ==
+          username &&
+        document.getElementById("password-notification-password").value ==
+          password
+      );
+    },
+    "Wait for nsLoginManagerPrompter writeDataToUI() to update to the correct username/password values",
+    100,
+    100
+  );
 }
 
 /**
@@ -591,9 +597,9 @@ async function _selectDoorhanger(text, inputSelector, dropmarkerSelector) {
       .getElementsByTagName("richlistitem"),
   ].filter(richlistitem => !richlistitem.collapsed);
 
-  let suggestionText = suggestions.map(
-    richlistitem => richlistitem.querySelector(".ac-title-text").innerHTML
-  );
+  let suggestionText = suggestions.map(richlistitem => {
+    return richlistitem.querySelector("autocomplete-row-item").label;
+  });
 
   let targetIndex = suggestionText.indexOf(text);
   Assert.notEqual(targetIndex, -1, "Suggestions include expected text");

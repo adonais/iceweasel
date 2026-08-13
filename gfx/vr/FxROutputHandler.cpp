@@ -3,9 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "FxROutputHandler.h"
-#include "mozilla/Assertions.h"
-#include "moz_external_vr.h"
+
 #include "VRShMem.h"
+#include "moz_external_vr.h"
+#include "mozilla/Assertions.h"
 
 // TryInitialize is responsible for associating this output handler with the
 // calling window's swapchain for subsequent updates. This also creates a

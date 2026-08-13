@@ -300,10 +300,16 @@ pkix_pl_HttpDefaultClient_HdrCheckComplete(
          }
  
          if (contentLength > 0) {
-             /* allocate a buffer of size contentLength  for the content */
+             if (client->filledupBytes > (PKIX_UInt32)contentLength) {
+                 client->connectStatus = HTTP_ERROR;
+                 PORT_SetError(SEC_ERROR_OCSP_BAD_HTTP_RESPONSE);
+                 goto cleanup;
+             }
+
+             /* allocate a buffer of size contentLength for the content */
              PKIX_CHECK(PKIX_PL_Malloc(contentLength, (void **)&body, plCtx),
                         PKIX_MALLOCFAILED);
-             
+
              /* copy any remaining bytes in current buffer into new buffer */
              if (client->filledupBytes > 0) {
                  PORT_Memcpy(body, &(client->rcvBuf[headerLength]),

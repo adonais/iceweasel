@@ -2,11 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "js/loader/LoadContextBase.h"
+
 #include "mozilla/dom/ScriptLoadContext.h"
-#include "mozilla/loader/SyncModuleLoader.h"
 #include "mozilla/dom/WorkerLoadContext.h"
 #include "mozilla/dom/worklet/WorkletModuleLoader.h"  // WorkletLoadContext
-#include "js/loader/LoadContextBase.h"
+#include "mozilla/loader/SyncModuleLoader.h"
+
 #include "js/loader/ScriptLoadRequest.h"
 
 namespace JS::loader {

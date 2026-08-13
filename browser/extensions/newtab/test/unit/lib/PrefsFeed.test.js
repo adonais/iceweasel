@@ -1,4 +1,8 @@
-import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
+import {
+  actionCreators as ac,
+  actionTypes as at,
+  actionUtils as au,
+} from "common/Actions.mjs";
 import { GlobalOverrider } from "test/unit/utils";
 import { PrefsFeed } from "lib/PrefsFeed.sys.mjs";
 
@@ -68,6 +72,53 @@ describe("PrefsFeed", () => {
   it("should set a pref when a SET_PREF action is received", () => {
     feed.onAction(ac.SetPref("foo", 2));
     assert.calledWith(feed._prefs.set, "foo", 2);
+  });
+  it("should set every pref when a SET_MULTIPLE_PREFS action is received", () => {
+    feed.onAction(ac.SetMultiplePrefs({ foo: 2, bar: 3 }));
+    assert.calledWith(feed._prefs.set, "foo", 2);
+    assert.calledWith(feed._prefs.set, "bar", 3);
+  });
+  it("should coalesce SET_MULTIPLE_PREFS into one content MULTIPLE_PREFS_CHANGED while still notifying feeds per pref", () => {
+    // The branch observer fires onPrefChanged synchronously per _prefs.set.
+    feed._prefs.set = sinon.spy((name, value) =>
+      feed.onPrefChanged(name, value)
+    );
+    feed.onAction(ac.SetMultiplePrefs({ foo: 2, bar: 3 }));
+
+    const dispatched = feed.store.dispatch.getCalls().map(call => call.args[0]);
+
+    // Content gets exactly one combined MULTIPLE_PREFS_CHANGED broadcast.
+    const prefsChanged = dispatched.filter(
+      a => a.type === at.MULTIPLE_PREFS_CHANGED
+    );
+    assert.equal(prefsChanged.length, 1);
+    assert.deepEqual(prefsChanged[0].data.values, { foo: 2, bar: 3 });
+    assert.isTrue(au.isBroadcastToContent(prefsChanged[0]));
+
+    // Feeds still get per-pref PREF_CHANGED, but main-only (not re-broadcast
+    // to content, which would re-stagger the resize).
+    const prefChanged = dispatched.filter(a => a.type === at.PREF_CHANGED);
+    assert.equal(prefChanged.length, 2);
+    prefChanged.forEach(a => assert.isFalse(au.isBroadcastToContent(a)));
+  });
+  it("should still route skipBroadcast prefs individually during a SET_MULTIPLE_PREFS transaction", () => {
+    feed._prefs.set = sinon.spy((name, value) =>
+      feed.onPrefChanged(name, value)
+    );
+    feed.onAction(ac.SetMultiplePrefs({ foo: 2, baz: 5 }));
+
+    const dispatched = feed.store.dispatch.getCalls().map(call => call.args[0]);
+    const prefsChanged = dispatched.filter(
+      a => a.type === at.MULTIPLE_PREFS_CHANGED
+    );
+    assert.equal(prefsChanged.length, 1);
+    assert.deepEqual(prefsChanged[0].data.values, { foo: 2 });
+
+    const bazChange = dispatched.find(
+      a => a.type === at.PREF_CHANGED && a.data.name === "baz"
+    );
+    assert.ok(bazChange, "baz should be dispatched individually");
+    assert.equal(bazChange.data.value, 5);
   });
   it("should call clearUserPref with action CLEAR_PREF", () => {
     feed.onAction({ type: at.CLEAR_PREF, data: { name: "pref.test" } });
@@ -513,6 +564,127 @@ describe("PrefsFeed", () => {
       assert.neverCalledWith(
         setBoolPref,
         "widgets.clocks.enabled",
+        sinon.match.any
+      );
+    });
+
+    it("should write widgetPictureOfTheDay.enabled to the user pref default branch, not the system pref", () => {
+      const setBoolPref = sinon.spy();
+      ServicesStub.prefs.getDefaultBranch = sinon
+        .stub()
+        .returns({ setBoolPref });
+      const enrollment = {
+        meta: { isRollout: false },
+        value: {
+          type: "widgetPictureOfTheDay",
+          payload: {
+            enabled: true,
+            setAsWallpaperEnabled: true,
+            size: "large",
+          },
+        },
+      };
+      sandbox
+        .stub(global.NimbusFeatures.newtabTrainhop, "getAllEnrollments")
+        .returns([enrollment]);
+
+      feed.onTrainhopExperimentUpdated();
+
+      // `enabled` overrides the user-facing enabled pref's default; `visible`
+      // (not present here) would reveal the widget separately; size and
+      // setAsWallpaperEnabled are read directly from trainhopConfig.
+      assert.calledWith(setBoolPref, "widgets.pictureOfTheDay.enabled", true);
+      assert.neverCalledWith(
+        setBoolPref,
+        "widgets.system.pictureOfTheDay.enabled",
+        sinon.match.any
+      );
+      assert.neverCalledWith(
+        setBoolPref,
+        "widgets.pictureOfTheDay.setAsWallpaper.enabled",
+        sinon.match.any
+      );
+    });
+
+    it("should not write the POTD enabled default when widgetPictureOfTheDay.enabled is absent", () => {
+      const setBoolPref = sinon.spy();
+      ServicesStub.prefs.getDefaultBranch = sinon
+        .stub()
+        .returns({ setBoolPref });
+      const enrollment = {
+        meta: { isRollout: false },
+        value: {
+          type: "widgetPictureOfTheDay",
+          payload: { size: "large" },
+        },
+      };
+      sandbox
+        .stub(global.NimbusFeatures.newtabTrainhop, "getAllEnrollments")
+        .returns([enrollment]);
+
+      feed.onTrainhopExperimentUpdated();
+
+      assert.neverCalledWith(
+        setBoolPref,
+        "widgets.pictureOfTheDay.enabled",
+        sinon.match.any
+      );
+    });
+
+    it("should write widgetCrossword.enabled to the user pref default branch, not the system pref", () => {
+      const setBoolPref = sinon.spy();
+      ServicesStub.prefs.getDefaultBranch = sinon
+        .stub()
+        .returns({ setBoolPref });
+      const enrollment = {
+        meta: { isRollout: false },
+        value: {
+          type: "widgetCrossword",
+          payload: {
+            enabled: true,
+            endpoint: "https://example.com/crossword/index.html",
+            size: "large",
+          },
+        },
+      };
+      sandbox
+        .stub(global.NimbusFeatures.newtabTrainhop, "getAllEnrollments")
+        .returns([enrollment]);
+
+      feed.onTrainhopExperimentUpdated();
+
+      // `enabled` overrides the user-facing enabled pref's default; `visible`
+      // (not present here) would reveal the widget separately; size and
+      // endpoint are read directly from trainhopConfig.
+      assert.calledWith(setBoolPref, "widgets.crossword.enabled", true);
+      assert.neverCalledWith(
+        setBoolPref,
+        "widgets.system.crossword.enabled",
+        sinon.match.any
+      );
+    });
+
+    it("should not write the crossword enabled default when widgetCrossword.enabled is absent", () => {
+      const setBoolPref = sinon.spy();
+      ServicesStub.prefs.getDefaultBranch = sinon
+        .stub()
+        .returns({ setBoolPref });
+      const enrollment = {
+        meta: { isRollout: false },
+        value: {
+          type: "widgetCrossword",
+          payload: { size: "large" },
+        },
+      };
+      sandbox
+        .stub(global.NimbusFeatures.newtabTrainhop, "getAllEnrollments")
+        .returns([enrollment]);
+
+      feed.onTrainhopExperimentUpdated();
+
+      assert.neverCalledWith(
+        setBoolPref,
+        "widgets.crossword.enabled",
         sinon.match.any
       );
     });

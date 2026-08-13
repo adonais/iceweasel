@@ -5,10 +5,10 @@
 #ifndef mozilla_SandboxOpenedFiles_h
 #define mozilla_SandboxOpenedFiles_h
 
-#include "mozilla/Atomics.h"
-
-#include <vector>
 #include <string>
+#include <vector>
+
+#include "mozilla/Atomics.h"
 
 // The use of C++ standard library containers here should be safe; the
 // standard (section container.requirements.dataraces) requires that

@@ -589,8 +589,11 @@ export async function searchBrowsingHistory({
     const startUs = isoToMicroseconds(startTs);
     const endUs = isoToMicroseconds(endTs);
 
+    // Note this is different than the URLbar threshold in PlacesSemanticHistory
+    // This is generally higher, because the AI can filter spurious results and
+    // support general queries.
     const distanceThreshold = Services.prefs.getFloatPref(
-      "places.semanticHistory.distanceThreshold",
+      "places.semanticHistory.smartwindow.distanceThreshold",
       0.6
     );
 

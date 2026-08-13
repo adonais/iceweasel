@@ -4,19 +4,8 @@
 
 #include "nsCoreUtils.h"
 
-#include "nsAttrValue.h"
-#include "nsIAccessibleTypes.h"
-
-#include "mozilla/dom/Document.h"
-#include "nsAccUtils.h"
-#include "nsRange.h"
-#include "nsXULElement.h"
-#include "nsIDocShell.h"
-#include "nsIObserverService.h"
-#include "nsPresContext.h"
-#include "nsISelectionController.h"
-#include "nsISimpleEnumerator.h"
-#include "mozilla/dom/TouchEvent.h"
+#include "AnchorPositioningUtils.h"
+#include "XULTreeElement.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/EventStateManager.h"
@@ -24,24 +13,32 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/TouchEvents.h"
-#include "nsGkAtoms.h"
-
-#include "AnchorPositioningUtils.h"
-#include "nsComponentManagerUtils.h"
-
-#include "XULTreeElement.h"
-#include "nsIContentInlines.h"
-#include "nsTreeColumns.h"
+#include "mozilla/dom/AncestorIterator.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/ElementInternals.h"
+#include "mozilla/dom/HTMLLabelElement.h"
 #include "mozilla/dom/HTMLOptGroupElement.h"
 #include "mozilla/dom/HTMLOptionElement.h"
 #include "mozilla/dom/HTMLSelectElement.h"
-#include "mozilla/dom/AncestorIterator.h"
-#include "mozilla/dom/ElementInternals.h"
-#include "mozilla/dom/HTMLLabelElement.h"
 #include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/dom/Selection.h"
+#include "mozilla/dom/TouchEvent.h"
+#include "nsAccUtils.h"
+#include "nsAttrValue.h"
+#include "nsComponentManagerUtils.h"
+#include "nsGkAtoms.h"
+#include "nsIAccessibleTypes.h"
+#include "nsIContentInlines.h"
+#include "nsIDocShell.h"
+#include "nsIObserverService.h"
+#include "nsISelectionController.h"
+#include "nsISimpleEnumerator.h"
+#include "nsPresContext.h"
+#include "nsRange.h"
+#include "nsTreeColumns.h"
+#include "nsXULElement.h"
 
 using namespace mozilla;
 
@@ -603,6 +600,12 @@ bool nsCoreUtils::CanCreateAccessibleWithoutFrame(nsIContent* aContent) {
     }
   } else if (auto* optgroup = dom::HTMLOptGroupElement::FromNode(element)) {
     if (auto* select = optgroup->GetSelect(); select && select->IsCombobox()) {
+      element = select;
+    }
+  } else if (element->GetPseudoElementType() == PseudoStyleType::Picker) {
+    if (auto* select =
+            dom::HTMLSelectElement::FromNode(element->GetFlattenedTreeParent());
+        select && select->IsCombobox()) {
       element = select;
     }
   }

@@ -115,6 +115,8 @@ internal sealed class Event {
         object AccessTokenKeyError : Account()
 
         object Logout : Account()
+
+        data class WebChannelPasswordChange(val jsonPayload: String) : Account()
     }
 
     internal sealed class Progress : Event() {
@@ -151,6 +153,7 @@ internal sealed class Event {
         is Account.AuthenticationError -> "Account.AthenticationError($operation)"
         is Account.AccessTokenKeyError -> "Account.AccessTknKeyError"
         is Account.Logout -> "Account.Logout"
+        is Account.WebChannelPasswordChange -> "Account.WebChannelPwdChange"
         is Progress.AccountNotFound -> "Progress.AccountNotFound"
         is Progress.AccountRestored -> "Progress.AccountRestored"
         is Progress.AuthData -> "Progress.LoggedOut"

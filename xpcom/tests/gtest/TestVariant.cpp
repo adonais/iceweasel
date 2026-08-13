@@ -3,8 +3,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #include <math.h>
-#include "nsVariant.h"
+
 #include "gtest/gtest.h"
+#include "nsVariant.h"
 
 TEST(Variant, DoubleNaN)
 {

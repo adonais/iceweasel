@@ -213,6 +213,40 @@ export class openAIEngine {
   }
 
   /**
+   * Checks if an error is transient and worth retrying: rate limits (429),
+   * timeouts (408), conflicts (409), server errors (>= 500), and network-layer
+   * failures. Deterministic errors (400/401/403/404/422) are NOT retryable.
+   *
+   * @param {Error} error  The error to check
+   * @returns {boolean}    True if the error is transient and worth retrying
+   */
+  static isRetryableError(error) {
+    if (!error) {
+      return false;
+    }
+    if (this.is429Error(error)) {
+      return true;
+    }
+    const isRetryableStatus = status =>
+      status === 408 || status === 409 || (status >= 500 && status <= 599);
+    if (typeof error.status === "number" && isRetryableStatus(error.status)) {
+      return true;
+    }
+    // Some backends only encode the status in the message text, e.g.
+    // "... 503 status code ...".
+    const messageStatus = error.message?.match(/(\d{3}) status code/)?.[1];
+    if (messageStatus && isRetryableStatus(Number(messageStatus))) {
+      return true;
+    }
+    // Network-layer failures expose no HTTP status; in Gecko they surface as
+    // NS_ERROR_* names or generic network/timeout messages.
+    const text = `${error.name ?? ""} ${error.message ?? ""}`;
+    return /NS_ERROR_(NET_|CONNECTION|PROXY)|NetworkError|connection (refused|reset)|timed? ?out/i.test(
+      text
+    );
+  }
+
+  /**
    * Creates an OpenAI engine instance
    *
    * @param {string} engineId     The identifier for the engine instance

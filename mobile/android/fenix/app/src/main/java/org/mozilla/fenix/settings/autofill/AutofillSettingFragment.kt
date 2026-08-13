@@ -27,10 +27,10 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import mozilla.components.concept.sync.SyncEngine
 import mozilla.components.lib.state.ext.consumeFrom
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.storeProvider
-import mozilla.components.service.fxa.SyncEngine
 import mozilla.components.service.fxa.manager.SyncEnginesStorage
 import mozilla.components.service.sync.autofill.AutofillCreditCardsAddressesStorage
 import mozilla.components.ui.widgets.withCenterAlignedButtons

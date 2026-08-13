@@ -477,6 +477,8 @@ newtab-recommended-stories-toggle =
     .label = Storiis conseadis
 newtab-custom-stories-personalized-toggle =
     .label = Storiis
+newtab-custom-stories-personalized-checkbox =
+    .label = Storiis personalizadis in base ae tô ativitât
 newtab-custom-stories-personalized-checkbox-label = Storiis personalizadis in base ae tô ativitât
 newtab-custom-pocket-sponsored = Storiis sponsorizadis
 newtab-custom-pocket-show-recent-saves = Mostre salvaments resints
@@ -1087,6 +1089,8 @@ newtab-sports-widget-show-less =
 # Toggle that filters the list of teams the user follows
 newtab-sports-widget-followed-only-toggle =
     .label = Dome scuadris che tu stâs daûr
+# Status shown when more matches are being fetched.
+newtab-sports-widget-loading-more = Daûr a cjariâ altris partidis…
 # Watch is a verb (as in watch matches online).
 newtab-sports-widget-watch =
     .label = Cjale
@@ -1166,6 +1170,9 @@ newtab-sports-widget-third-place = Tierç puest
 newtab-sports-widget-runner-up = Seconts classificâts
 newtab-sports-widget-champions = Campions
 newtab-sports-widget-world-cup-champions = Campions de Cope dal mont 2026
+# Compact champions label for the medium-size widget result card; the larger
+# card uses newtab-sports-widget-world-cup-champions.
+newtab-sports-widget-world-cup-champions-short = Campions
 # Variables:
 #   $date (Date) - The match start time
 newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }

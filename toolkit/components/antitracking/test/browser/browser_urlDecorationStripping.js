@@ -21,6 +21,10 @@ const TOP_PAGE_WITHOUT_TRACKING_IDENTIFIER =
 const TOP_PAGE_WITH_TRACKING_IDENTIFIER =
   TOP_PAGE_WITHOUT_TRACKING_IDENTIFIER + "?" + TOKEN_1 + "=123";
 
+add_setup(function () {
+  registerCleanupFunction(clearSiteTestData);
+});
+
 add_task(async _ => {
   let uds = Cc["@mozilla.org/tracking-url-decoration-service;1"].getService(
     Ci.nsIURLDecorationAnnotationsService
@@ -224,12 +228,4 @@ AntiTracking._createTask({
   accessRemoval: null,
   callbackAfterRemoval: null,
   topPage: TOP_PAGE_WITH_TRACKING_IDENTIFIER,
-});
-
-add_task(async _ => {
-  await new Promise(resolve => {
-    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-      resolve()
-    );
-  });
 });

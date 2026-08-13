@@ -4,12 +4,12 @@
 
 #include "nsPrintSettingsImpl.h"
 
-#include "prenv.h"
+#include "mozilla/DebugOnly.h"
+#include "mozilla/RefPtr.h"
 #include "nsCoord.h"
 #include "nsPaper.h"
 #include "nsReadableUtils.h"
-#include "mozilla/DebugOnly.h"
-#include "mozilla/RefPtr.h"
+#include "prenv.h"
 
 using namespace mozilla;
 

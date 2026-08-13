@@ -29,6 +29,7 @@
     --button-background-color-active: color-mix(in srgb, currentColor 30%, transparent);
     --button-background-color-ghost: transparent;
     --button-text-color: currentColor;
+    --button-text-color-menu-selected: currentColor;
     --button-text-color-primary: AccentColorText;
 
     /** color **/
@@ -40,12 +41,10 @@
 
     /** font-size **/
     --font-size-root: unset;
-    --font-size-xsmall: unset;
     --font-size-small: unset;
-    --font-size-large: unset;
-    --font-size-xlarge: unset;
-    --font-size-xxlarge: unset;
-    --font-size-xxxlarge: unset;
+
+    /** info-bar **/
+    --info-bar-border-color: var(--toolbarseparator-color);
 
     /** input **/
     --input-text-background-color: Field;
@@ -58,7 +57,7 @@
 
     /** panel **/
     --panel-background-color: Field;
-    --panel-border-color: ThreeDShadow;
+    --panel-border-color: var(--border-color-deemphasized);
     --panel-text-color: FieldText;
 
     /** sidebar **/
@@ -99,7 +98,7 @@
    until Bug 1879349 lands */
 @layer tokens-browser-theme {
   @media not ((forced-colors) or (-moz-native-theme)) {
-    :root:not([lwtheme]),
+    :root:is([theme-in-app], :not([lwtheme])),
     :host(.anonymous-content-host) {
       /** background-color **/
       --background-color-dimmed: light-dark(color-mix(in srgb, currentColor 12%, transparent), color-mix(in srgb, currentColor 17%, transparent));
@@ -111,6 +110,7 @@
       --button-background-color-hover: light-dark(rgba(207, 207, 216, 0.66), rgba(207, 207, 216, 0.2));
       --button-background-color-active: light-dark(rgb(207, 207, 216), rgba(207, 207, 216, 0.4));
       --button-text-color: light-dark(rgb(21, 20, 26), rgb(251, 251, 254));
+      --button-text-color-menu-selected: var(--button-text-color-ghost-selected);
       --button-text-color-primary: light-dark(rgb(251, 251, 254), rgb(43, 42, 51));
 
       /** color **/
@@ -120,12 +120,17 @@
       --color-accent-primary-active: light-dark(var(--color-blue-80), var(--color-cyan-10));
       --color-accent-primary-selected: light-dark(var(--color-blue-60), var(--color-cyan-30));
 
+      /** info-bar **/
+      --info-bar-border-color: light-dark(var(--color-violet-desaturated-20), var(--color-gray-60));
+
       /** input **/
       --input-text-background-color: light-dark(var(--color-white), #42414d);
       --input-text-color: light-dark(rgb(21, 20, 26), rgb(251, 251, 254));
 
       /** link **/
-      --link-color: light-dark(var(--color-blue-60), var(--color-cyan-30));
+      --link-color: var(--color-accent-primary);
+      --link-color-hover: var(--color-accent-primary-hover);
+      --link-color-active: var(--color-accent-primary-active);
 
       /** panel **/
       --panel-background-color: light-dark(var(--color-white), rgb(66, 65, 77));
@@ -168,9 +173,8 @@
       --button-background-color-hover: color-mix(in srgb, currentColor 17%, transparent);
       --button-background-color-active: color-mix(in srgb, currentColor 30%, transparent);
       --button-background-color-ghost: transparent;
-      /* This looks weird with AccentColor when the background is a color-mix() (can't override the background in nativeTheme from Figma currently) */
-      --button-border-color: transparent;
       --button-text-color: currentColor;
+      --button-text-color-menu-selected: currentColor;
       --button-text-color-primary: AccentColorText;
 
       /** color **/
@@ -180,13 +184,14 @@
       --color-accent-primary-active: color-mix(in srgb, black 20%, var(--color-accent-primary));
       --color-accent-primary-selected: SelectedItem;
 
-      /** link **/
-      --link-color: LinkText;
-
       /** panel **/
       --panel-background-color: Field;
-      --panel-border-color: ThreeDShadow;
+      --panel-border-color: var(--border-color-deemphasized);
       --panel-text-color: FieldText;
+
+      /** text-color **/
+      --text-color: currentColor;
+      --text-color-accent-primary-selected: SelectedItemText;
 
       /** toolbar **/
       --toolbar-background-color: color-mix(in srgb, -moz-dialog 85%, var(--color-white));
@@ -209,7 +214,7 @@
    until Bug 1879349 lands */
   @layer tokens-browser-theme-nova {
     @media not ((forced-colors) or (-moz-native-theme)) {
-      :root:not([lwtheme]),
+      :root:is([theme-in-app], :not([lwtheme])),
       :host(.anonymous-content-host) {
         /** button **/
         /* TODO Bug 1821203 - Gray use needs to be consolidated */
@@ -218,6 +223,7 @@
         --button-background-color-active: light-dark(var(--color-violet-desaturated-30), var(--color-violet-desaturated-40));
         --button-background-color-ghost: var(--button-background-color);
         --button-text-color: light-dark(var(--color-violet-90), var(--color-gray-0));
+        --button-text-color-menu-selected: light-dark(var(--button-text-color-ghost-selected), var(--button-text-color-selected));
         --button-text-color-primary: light-dark(var(--color-white), var(--color-gray-70));
 
         /** color **/
@@ -227,13 +233,13 @@
         --color-accent-primary-active: light-dark(var(--color-violet-70), var(--color-violet-10));
         --color-accent-primary-selected: var(--button-background-color-primary-active);
 
-        /** link **/
-        --link-color: var(--color-accent-primary);
-
         /** panel **/
         --panel-background-color: var(--background-color-box);
         --panel-border-color: light-dark(var(--color-gray-10), var(--color-gray-60));
         --panel-text-color: var(--text-color);
+
+        /** text-color **/
+        --text-color: light-dark(var(--color-violet-desaturated-90), var(--color-violet-desaturated-0));
 
         /** toolbar **/
         --toolbar-background-color: var(--background-color-box);

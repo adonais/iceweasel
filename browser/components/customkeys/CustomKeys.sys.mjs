@@ -218,6 +218,31 @@ export const CustomKeys = {
   },
 
   /**
+   * Clear all keyboard shortcuts; i.e. so they do nothing. This is useful for
+   * kiosk mode. Unlike resetAll, this affects every shortcut, including those
+   * that haven't been customized.
+   */
+  clearAll() {
+    const ids = new Set();
+    for (const window of windows.keys()) {
+      for (const keyEl of window.document.querySelectorAll("key[id]")) {
+        // Skip keys that are already unassigned; clearing them would
+        // incorrectly mark them as customized.
+        if (
+          config.data[keyEl.id] ||
+          keyEl.hasAttribute("key") ||
+          keyEl.hasAttribute("keycode")
+        ) {
+          ids.add(keyEl.id);
+        }
+      }
+    }
+    for (const id of ids) {
+      this.clearKey(id);
+    }
+  },
+
+  /**
    * Reset all keyboard shortcuts to their defaults.
    */
   resetAll() {

@@ -233,6 +233,7 @@ EXPORTS.mozilla.widget += [
     "TextRecognition.h",
     "ThemeChangeKind.h",
     "ThemeDrawing.h",
+    "WebCustomFormatUtils.h",
     "WidgetLogging.h",
     "WidgetMessageUtils.h",
     "WindowOcclusionState.h",
@@ -292,6 +293,7 @@ UNIFIED_SOURCES += [
     "ThemeDrawing.cpp",
     "TouchResampler.cpp",
     "VsyncDispatcher.cpp",
+    "WebCustomFormatUtils.cpp",
     "WidgetEventImpl.cpp",
     "WidgetUtils.cpp",
 ]

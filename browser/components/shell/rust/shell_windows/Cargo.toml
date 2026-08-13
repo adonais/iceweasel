@@ -3,15 +3,26 @@ name = "shell_windows"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+enable_tests = []
+
 [dependencies]
 base64 = "0.22"
+firefox-on-glean = { path = "../../../../../toolkit/components/glean/api" }
+futures = { version = "0.3", features = ["alloc"]}
 log = "0.4"
+moz_task = { path = "../../../../../xpcom/rust/moz_task" }
 nserror = { path = "../../../../../xpcom/rust/nserror" }
 nsstring = { path = "../../../../../xpcom/rust/nsstring" }
+scopeguard = "1.1.0"
 sha2 = "0.10.2"
-xpcom = { path = "../../../../../xpcom/rust/xpcom" }
 thin-vec = { version = "0.2.1", features = ["gecko-ffi"] }
-moz_task = { path = "../../../../../xpcom/rust/moz_task" }
+xpcom = { path = "../../../../../xpcom/rust/xpcom" }
+
+# Needed for #[interface(uuid)] macro.
+[dependencies.windows-core]
+version = "0.62.2"
+default-features = false
 
 [dependencies.windows]
 version = "0.62.0"
@@ -20,4 +31,7 @@ features = [
   "Storage_Search",
   "UI_Shell",
   "UI_StartScreen",
+  "Win32_System_Com",
+  "Win32_UI_Shell",
+  "Win32_UI_Shell_Common",
 ]

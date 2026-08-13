@@ -48,6 +48,11 @@ LOCAL_INCLUDES += [
     "/tools/profiler/public"
 ]
 
+OS_LIBS += [
+    "-framework AVFoundation",
+    "-framework Foundation"
+]
+
 UNIFIED_SOURCES += [
     "/third_party/libwebrtc/sdk/objc/base/RTCEncodedImage.m",
     "/third_party/libwebrtc/sdk/objc/base/RTCLogging.mm",

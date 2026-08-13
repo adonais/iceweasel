@@ -155,10 +155,25 @@ export class TranslationsEngineParent extends JSProcessActorParent {
   }
 
   /**
-   * Manually shut down the engines, typically for testing purposes.
+   * Manually shuts down the engines.
+   *
+   * After the engine has shut down, notify each associated TranslationsParent
+   * so its TranslationsDocument can discard stale ports and request a fresh
+   * engine when more translations are scheduled.
+   *
+   * @returns {Promise<void>}
    */
-  forceShutdown() {
-    return this.sendQuery("TranslationsEngine:ForceShutdown");
+  async forceShutdown() {
+    try {
+      return await this.sendQuery("TranslationsEngine:ForceShutdown");
+    } finally {
+      await Promise.allSettled(
+        [...this.#translationsParents.values()].map(translationsParent =>
+          translationsParent.notifyEngineTerminated()
+        )
+      );
+      this.#translationsParents.clear();
+    }
   }
 
   #isDestroyed = false;

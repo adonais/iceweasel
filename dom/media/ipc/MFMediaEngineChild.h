@@ -43,7 +43,7 @@ class MFMediaEngineChild final : public PMFMediaEngineChild {
   mozilla::ipc::IPCResult RecvUpdateCurrentTime(double aCurrentTimeInSecond);
   mozilla::ipc::IPCResult RecvNotifyEvent(MFMediaEngineEvent aEvent);
   mozilla::ipc::IPCResult RecvNotifyError(const MediaResult& aError);
-  mozilla::ipc::IPCResult RecvNotifyHardwareReset();
+  mozilla::ipc::IPCResult RecvNotifyHardwareReset(uint32_t aPlatformError);
   mozilla::ipc::IPCResult RecvNotifyWaitingForKey();
   mozilla::ipc::IPCResult RecvUpdateStatisticData(const StatisticData& aData);
   mozilla::ipc::IPCResult RecvNotifyResizing(uint32_t aWidth, uint32_t aHeight);
@@ -75,8 +75,10 @@ class MFMediaEngineChild final : public PMFMediaEngineChild {
 
   MozPromiseHolder<GenericNonExclusivePromise> mInitPromiseHolder;
   MozPromiseRequestHolder<InitMediaEnginePromise> mInitEngineRequest;
+  MozPromiseRequestHolder<GenericNonExclusivePromise> mLaunchProcessRequest;
 
-  // This is guaranteed always being alive in our lifetime.
+  // Owned by the state machine which also owns `mOwner`, so this is only
+  // guaranteed to be alive while `mOwner` is non-null.
   NotNull<FrameStatistics*> const MOZ_NON_OWNING_REF mFrameStats;
 
   bool mShutdown = false;
@@ -128,7 +130,7 @@ class MFMediaEngineWrapper final : public ExternalPlaybackEngine {
   void UpdateCurrentTime(double aCurrentTimeInSecond);
   void NotifyEvent(ExternalEngineEvent aEvent);
   void NotifyError(const MediaResult& aError);
-  void NotifyHardwareReset();
+  void NotifyHardwareReset(uint32_t aPlatformError);
   void NotifyWaitingForKey();
 #ifdef MOZ_WMF_CDM
   void NotifyFrameServerMode();

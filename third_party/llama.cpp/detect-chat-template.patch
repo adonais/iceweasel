@@ -1,8 +1,8 @@
 diff --git a/src/llama-chat.cpp b/src/llama-chat.cpp
-index 61ceb1e41d..e96699e58a 100644
+index c83e6b5ba0d4..d08ce353a113 100644
 --- a/src/llama-chat.cpp
 +++ b/src/llama-chat.cpp
-@@ -74,11 +74,17 @@
+@@ -89,11 +89,17 @@ llm_chat_template llm_chat_template_from_str(const std::string & name) {
  }
  
  llm_chat_template llm_chat_detect_template(const std::string & tmpl) {

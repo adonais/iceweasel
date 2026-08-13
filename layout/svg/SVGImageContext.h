@@ -91,16 +91,10 @@ class SVGImageContext {
     mLinkParameters = aLinkParameters;
   }
 
-  const SVGEmbeddingContextPaint* GetContextPaint() const {
-    return mContextPaint.get();
-  }
+  const SVGContextPaint* GetContextPaint() const { return mContextPaint.get(); }
 
-  SVGEmbeddingContextPaint* GetOrCreateContextPaint() {
-    if (!mContextPaint) {
-      mContextPaint = MakeRefPtr<SVGEmbeddingContextPaint>();
-    }
-
-    return mContextPaint.get();
+  void SetContextPaint(Maybe<nscolor> aFill, Maybe<nscolor> aStroke) {
+    mContextPaint = MakeRefPtr<SVGContextPaint>(aFill, aStroke);
   }
 
   void ClearContextPaint() { mContextPaint = nullptr; }
@@ -162,7 +156,7 @@ class SVGImageContext {
   }
 
   // NOTE: When adding new member-vars, remember to update Hash() & operator==.
-  RefPtr<SVGEmbeddingContextPaint> mContextPaint;
+  RefPtr<SVGContextPaint> mContextPaint;
   Maybe<CSSIntSize> mViewportSize;
   Maybe<SVGPreserveAspectRatio> mPreserveAspectRatio;
   Maybe<ColorScheme> mColorScheme;

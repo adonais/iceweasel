@@ -41,15 +41,15 @@ mailing address.
 
 #include <stddef.h>
 
-#include "imgFrame.h"
-#include "mozilla/EndianUtils.h"
+#include <algorithm>
+
 #include "RasterImage.h"
 #include "SurfacePipeFactory.h"
-
 #include "gfxColor.h"
 #include "gfxPlatform.h"
+#include "imgFrame.h"
+#include "mozilla/EndianUtils.h"
 #include "qcms.h"
-#include <algorithm>
 
 using namespace mozilla::gfx;
 

@@ -28,6 +28,7 @@
 #include "nsGenericHTMLElement.h"
 #include "nsGkAtoms.h"
 #include "nsIContent.h"
+#include "nsIContentInlines.h"
 #include "nsTHashtable.h"
 #include "nsWrapperCacheInlines.h"
 
@@ -128,84 +129,6 @@ JSObject* EmptyContentList::WrapObject(JSContext* cx,
                                        JS::Handle<JSObject*> aGivenProto) {
   return HTMLCollection_Binding::Wrap(cx, this, aGivenProto);
 }
-
-mozilla::dom::Element* EmptyContentList::Item(uint32_t aIndex) {
-  return nullptr;
-}
-
-mozilla::dom::Element* EmptyContentList::GetFirstNamedElement(
-    const nsAString& aName, bool& aFound) {
-  aFound = false;
-  return nullptr;
-}
-
-void EmptyContentList::GetSupportedNames(nsTArray<nsString>& aNames) {}
-
-Element* SimpleHTMLCollection::Item(uint32_t aIndex) {
-  nsIContent* content = mElements.SafeElementAt(aIndex);
-  MOZ_ASSERT(!content || content->IsElement(),
-             "SimpleHTMLCollection only contains elements");
-  return static_cast<Element*>(content);
-}
-
-Element* SimpleHTMLCollection::GetFirstNamedElement(const nsAString& aName,
-                                                    bool& aFound) {
-  aFound = false;
-  RefPtr<nsAtom> name = NS_Atomize(aName);
-  for (uint32_t i = 0; i < mElements.Length(); i++) {
-    MOZ_DIAGNOSTIC_ASSERT(mElements[i]);
-    Element* element = mElements[i]->AsElement();
-    if (element->GetID() == name ||
-        (element->HasName() &&
-         element->GetParsedAttr(nsGkAtoms::name)->GetAtomValue() == name)) {
-      aFound = true;
-      return element;
-    }
-  }
-  return nullptr;
-}
-
-void SimpleHTMLCollection::GetSupportedNames(nsTArray<nsString>& aNames) {
-  AutoTArray<nsAtom*, 8> atoms;
-  for (uint32_t i = 0; i < mElements.Length(); i++) {
-    MOZ_DIAGNOSTIC_ASSERT(mElements[i]);
-    Element* element = mElements[i]->AsElement();
-
-    nsAtom* id = element->GetID();
-    MOZ_ASSERT(id != nsGkAtoms::_empty);
-    if (id && !atoms.Contains(id)) {
-      atoms.AppendElement(id);
-    }
-
-    if (element->HasName()) {
-      nsAtom* name = element->GetParsedAttr(nsGkAtoms::name)->GetAtomValue();
-      MOZ_ASSERT(name && name != nsGkAtoms::_empty);
-      if (name && !atoms.Contains(name)) {
-        atoms.AppendElement(name);
-      }
-    }
-  }
-
-  nsString* names = aNames.AppendElements(atoms.Length());
-  for (uint32_t i = 0; i < atoms.Length(); i++) {
-    atoms[i]->ToString(names[i]);
-  }
-}
-
-JSObject* SimpleHTMLCollection::WrapObject(JSContext* aCx,
-                                           JS::Handle<JSObject*> aGivenProto) {
-  return HTMLCollection_Binding::Wrap(aCx, this, aGivenProto);
-}
-
-SimpleHTMLCollection::~SimpleHTMLCollection() = default;
-
-NS_IMPL_CYCLE_COLLECTION_INHERITED(SimpleHTMLCollection, HTMLCollection, mRoot)
-
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(SimpleHTMLCollection)
-NS_INTERFACE_MAP_END_INHERITING(HTMLCollection)
-
-NS_IMPL_ADDREF_INHERITED(SimpleHTMLCollection, HTMLCollection)
-NS_IMPL_RELEASE_INHERITED(SimpleHTMLCollection, HTMLCollection)
 
 struct ContentListCache
     : public MruCache<ContentListKey, ContentList*, ContentListCache> {
@@ -540,13 +463,27 @@ Element* ContentList::NamedItem(const nsAString& aName, bool aDoFlush) {
   return mNamedItemsCache->Get(name);
 }
 
-void ContentList::GetSupportedNames(nsTArray<nsString>& aNames,
-                                    FilterElementWithName aFilter) {
-  BringSelfUpToDate(true);
+Element* HTMLCollection::DefaultGetFirstNamedElement(const nsAString& aName,
+                                                     bool& aFound) {
+  aFound = false;
+  RefPtr<nsAtom> name = NS_Atomize(aName);
+  for (nsIContent* content : mElements) {
+    MOZ_DIAGNOSTIC_ASSERT(content);
+    Element* element = content->AsElement();
+    if (element->GetID() == name ||
+        (element->HasName() &&
+         element->GetParsedAttr(nsGkAtoms::name)->GetAtomValue() == name)) {
+      aFound = true;
+      return element;
+    }
+  }
+  return nullptr;
+}
 
+void HTMLCollection::GetSupportedNames(nsTArray<nsString>& aNames,
+                                       FilterElementWithName aFilter) {
   AutoTArray<nsAtom*, 8> atoms;
-  for (uint32_t i = 0; i < mElements.Length(); ++i) {
-    nsIContent* content = mElements.ElementAt(i);
+  for (nsIContent* content : mElements) {
     if (content->HasID()) {
       nsAtom* id = content->GetID();
       MOZ_ASSERT(id != nsGkAtoms::_empty, "Empty ids don't get atomized");
@@ -555,7 +492,7 @@ void ContentList::GetSupportedNames(nsTArray<nsString>& aNames,
       }
     }
 
-    if (nsGenericHTMLElement* el = nsGenericHTMLElement::FromNode(content)) {
+    if (auto* el = nsGenericHTMLElement::FromNode(content)) {
       // XXXbz should we be checking for particular tags here?  How
       // stable is this part of the spec?
       // Note: nsINode::HasName means the name is exposed on the document,

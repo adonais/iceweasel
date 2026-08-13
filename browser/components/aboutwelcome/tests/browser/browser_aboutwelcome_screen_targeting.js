@@ -12,6 +12,21 @@ const { OnboardingMessageProvider } = ChromeUtils.importESModule(
   "resource:///modules/asrouter/OnboardingMessageProvider.sys.mjs"
 );
 
+const { ClientEnvironmentBase } = ChromeUtils.importESModule(
+  "resource://gre/modules/components-utils/ClientEnvironment.sys.mjs"
+);
+
+// All `os.*` targeting attributes resolve to ClientEnvironmentBase.os,
+// regardless of the machine actually running the test. We stub that getter's
+// result with the whole `os` object used during targeting evaluation rather
+// than relying on the test runner's real OS.
+const OS_WITHOUT_PIN_PROMPT = { isWindows: false };
+const OS_WITH_WIN_PIN_PROMPT = {
+  isWindows: true,
+  windowsBuildNumber: 22621,
+  windowsUBR: 2400,
+};
+
 function makeSplashScreen() {
   const message = OnboardingMessageProvider.getPreonboardingMessages().find(
     m => m.id === "NEW_USER_TOU_ONBOARDING"
@@ -110,29 +125,20 @@ add_task(async function second_screen_filtered_by_targeting() {
  */
 add_task(async function test_aboutwelcome_mr_template_easy_setup_default() {
   const sandbox = sinon.createSandbox();
-  await pushPrefs(
-    ["browser.shell.checkDefaultBrowser", true],
-    ["messaging-system-action.showEmbeddedImport", false]
-  );
+  await pushPrefs(["browser.shell.checkDefaultBrowser", true]);
   sandbox.stub(ShellService, "doesAppNeedPin").returns(true);
   sandbox.stub(ShellService, "isDefaultBrowser").returns(false);
+  sandbox.stub(ClientEnvironmentBase, "os").get(() => OS_WITHOUT_PIN_PROMPT);
 
   await clearHistoryAndBookmarks();
 
   const { browser, cleanup } = await openMRAboutWelcome();
 
-  //should render easy setup with all checkboxes (default, pin, import)
   await test_screen_content(
     browser,
-    "doesn't render only pin, default, or import easy setup",
+    "renders easy setup with pin and default checkbox",
     //Expected selectors:
-    ["main.AW_EASY_SETUP_NEEDS_DEFAULT_AND_PIN"],
-    //Unexpected selectors:
-    [
-      "main.AW_EASY_SETUP_NEEDS_DEFAULT",
-      "main.AW_EASY_SETUP_NEEDS_PIN",
-      "main.AW_ONLY_IMPORT",
-    ]
+    ["main.AW_EASY_SETUP", "#checkbox-1", "#checkbox-2"]
   );
 
   await cleanup();
@@ -146,29 +152,22 @@ add_task(async function test_aboutwelcome_mr_template_easy_setup_default() {
  */
 add_task(async function test_aboutwelcome_mr_template_easy_setup_needs_pin() {
   const sandbox = sinon.createSandbox();
-  await pushPrefs(
-    ["browser.shell.checkDefaultBrowser", true],
-    ["messaging-system-action.showEmbeddedImport", false]
-  );
+  await pushPrefs(["browser.shell.checkDefaultBrowser", true]);
   sandbox.stub(ShellService, "doesAppNeedPin").returns(true);
   sandbox.stub(ShellService, "isDefaultBrowser").returns(true);
+  sandbox.stub(ClientEnvironmentBase, "os").get(() => OS_WITHOUT_PIN_PROMPT);
 
   await clearHistoryAndBookmarks();
 
   const { browser, cleanup } = await openMRAboutWelcome();
 
-  //should render easy setup needs pin
   await test_screen_content(
     browser,
-    "doesn't render default and pin, only default or import easy setup",
+    "renders easy setup with only pin checkbox",
     //Expected selectors:
-    ["main.AW_EASY_SETUP_NEEDS_PIN"],
+    ["main.AW_EASY_SETUP", "#checkbox-1"],
     //Unexpected selectors:
-    [
-      "main.AW_EASY_SETUP_NEEDS_DEFAULT",
-      "main.AW_EASY_SETUP_NEEDS_DEFAULT_AND_PIN",
-      "main.AW_ONLY_IMPORT",
-    ]
+    ["#checkbox-2"]
   );
 
   await cleanup();
@@ -177,16 +176,46 @@ add_task(async function test_aboutwelcome_mr_template_easy_setup_needs_pin() {
 });
 
 /**
+ * Test MR template easy setup content - Browser is not pinned, not set as
+ * default, and Windows will show its own OS-level pin consent prompt. The
+ * pin checkbox should be suppressed (PIN_FIREFOX_TASKBAR_WIN_OS_PROMPT
+ * silently pins instead) but the default-browser checkbox should still show.
+ */
+add_task(
+  async function test_aboutwelcome_mr_template_easy_setup_win_os_pin_prompt() {
+    const sandbox = sinon.createSandbox();
+    await pushPrefs(["browser.shell.checkDefaultBrowser", true]);
+    sandbox.stub(ShellService, "doesAppNeedPin").returns(true);
+    sandbox.stub(ShellService, "isDefaultBrowser").returns(false);
+    sandbox.stub(ClientEnvironmentBase, "os").get(() => OS_WITH_WIN_PIN_PROMPT);
+
+    await clearHistoryAndBookmarks();
+
+    const { browser, cleanup } = await openMRAboutWelcome();
+
+    await test_screen_content(
+      browser,
+      "renders easy setup with only default checkbox when Windows will show its own pin prompt",
+      //Expected selectors:
+      ["main.AW_EASY_SETUP", "#checkbox-2"],
+      //Unexpected selectors:
+      ["#checkbox-1"]
+    );
+
+    await cleanup();
+    await popPrefs();
+    sandbox.restore();
+  }
+);
+
+/**
  * Test MR template easy setup content - Browser is pinned and
  * not set as default
  */
 add_task(
   async function test_aboutwelcome_mr_template_easy_setup_needs_default() {
     const sandbox = sinon.createSandbox();
-    await pushPrefs(
-      ["browser.shell.checkDefaultBrowser", true],
-      ["messaging-system-action.showEmbeddedImport", false]
-    );
+    await pushPrefs(["browser.shell.checkDefaultBrowser", true]);
     sandbox.stub(ShellService, "doesAppNeedPin").returns(false);
     sandbox.stub(ShellService, "doesAppNeedStartMenuPin").returns(false);
     sandbox.stub(ShellService, "isDefaultBrowser").returns(false);
@@ -195,18 +224,13 @@ add_task(
 
     const { browser, cleanup } = await openMRAboutWelcome();
 
-    //should render easy setup needs default
     await test_screen_content(
       browser,
-      "doesn't render pin, import and set to default",
+      "renders easy setup with only set to default checkbox",
       //Expected selectors:
-      ["main.AW_EASY_SETUP_NEEDS_DEFAULT"],
+      ["main.AW_EASY_SETUP", "#checkbox-2"],
       //Unexpected selectors:
-      [
-        "main.AW_EASY_SETUP_NEEDS_PIN",
-        "main.AW_EASY_SETUP_NEEDS_DEFAULT_AND_PIN",
-        "main.AW_ONLY_IMPORT",
-      ]
+      ["#checkbox-1"]
     );
 
     await cleanup();

@@ -5,9 +5,12 @@
 #ifndef AppSignatureVerification_h
 #define AppSignatureVerification_h
 
+#include "cms.h"
+#include "mozilla/Span.h"
 #include "mozpkix/pkix.h"
 #include "mozpkix/pkixnss.h"
 #include "mozpkix/pkixutil.h"
+#include "nsTArray.h"
 
 // From the list of collectedCerts it gets the SignerCertificate based on
 // issuerAndSN.

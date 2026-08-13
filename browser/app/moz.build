@@ -21,6 +21,8 @@ with Files("moz.build"):
     BUG_COMPONENT = ("Firefox Build System", "General")
 with Files("Makefile.in"):
     BUG_COMPONENT = ("Firefox Build System", "General")
+with Files("generate_channel_prefs.py"):
+    BUG_COMPONENT = ("Firefox Build System", "General")
 
 with Files("profile/channel-prefs.js"):
     BUG_COMPONENT = ("Firefox", "Installer")
@@ -28,6 +30,14 @@ with Files("profile/firefox.js"):
     BUG_COMPONENT = ("Firefox", "General")
 
 DIRS += ["distribution"]
+
+if CONFIG["MOZ_WIDGET_TOOLKIT"] != "cocoa":
+    GeneratedFile(
+        "channel-prefs.js",
+        script="generate_channel_prefs.py",
+        inputs=["profile/channel-prefs.js"],
+    )
+    FINAL_TARGET_FILES.defaults.pref += ["!channel-prefs.js"]
 
 if CONFIG["MOZ_MACBUNDLE_NAME"]:
     DIRS += ["macbuild/Contents"]
@@ -141,6 +151,7 @@ if CONFIG["MOZ_SANDBOX"] and CONFIG["OS_ARCH"] == "WINNT":
     ]
 
     OS_LIBS += [
+        "shlwapi",
         "winmm",
     ]
     DELAYLOAD_DLLS += [
@@ -185,6 +196,29 @@ for icon in ("firefox", "document", "newwindow", "newtab", "pbmode", "document_p
     DEFINES[icon.upper() + "_ICO"] = '"%s/%s/%s.ico"' % (
         TOPSRCDIR,
         CONFIG["MOZ_BRANDING_DIRECTORY"],
+        icon,
+    )
+
+# User-selectable custom launcher icons (see CustomIconManager.sys.mjs). Unlike
+# the branding icons above, these are channel-agnostic decorations, so they live
+# in a single shared location rather than per-branding-directory. The same
+# source file is also shipped into omni.ja via browser/components/shell/jar.mn
+# so the about:settings picker can render a preview of it.
+for icon in (
+    "retro2004",
+    "retro2017",
+    "pride",
+    "minimal-dark",
+    "minimal-light",
+    "pixelated",
+    "momo",
+    "kit",
+):
+    # Hyphens aren't valid in the C macro name, so map e.g. minimal-dark ->
+    # CUSTOM_MINIMAL_DARK_ICO.
+    macro = "CUSTOM_" + icon.upper().replace("-", "_") + "_ICO"
+    DEFINES[macro] = '"%s/browser/components/shell/icons/%s.ico"' % (
+        TOPSRCDIR,
         icon,
     )
 

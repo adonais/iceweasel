@@ -36,6 +36,7 @@
  * @property {number} [portId]
  * @property {boolean} [native]
  * @property {boolean} [source]
+ * @property {string} [reportOnOpened]
  * @property {string} [reportOnClosed]
  *
  * Lists of recvX, sendX, queryX and castX methods this subject will use.
@@ -66,8 +67,6 @@ import { BaseConduit } from "resource://gre/modules/ConduitsChild.sys.mjs";
 import { ExtensionUtils } from "resource://gre/modules/ExtensionUtils.sys.mjs";
 import { WebNavigationFrames } from "resource://gre/modules/WebNavigationFrames.sys.mjs";
 
-const { DefaultWeakMap, ExtensionError } = ExtensionUtils;
-
 const BATCH_TIMEOUT_MS = 250;
 const ADDON_ENV = new Set(["addon_child", "devtools_child"]);
 
@@ -85,7 +84,10 @@ const Hub = {
   byMethod: new Map(),
 
   /** @type {WeakMap<ConduitsParent, Set<ConduitAddress>>} Conduits by actor. */
-  byActor: new DefaultWeakMap(() => new Set()),
+  byActor: new ExtensionUtils.DefaultWeakMap(() => new Set()),
+
+  /** @type {Map<string, BroadcastConduit>} */
+  reportOnOpened: new Map(),
 
   /** @type {Map<string, BroadcastConduit>} */
   reportOnClosed: new Map(),
@@ -218,6 +220,19 @@ const Hub = {
    */
   recvConduitOpened(address, actor) {
     this.fillInAddress(address, actor);
+
+    for (let [key, conduit] of this.reportOnOpened.entries()) {
+      if (address[key] != null) {
+        // A subject may veto by throwing, leaving the conduit unregistered.
+        try {
+          conduit.subject.recvConduitOpened(address);
+        } catch (e) {
+          Cu.reportError(e);
+          return;
+        }
+      }
+    }
+
     this.remotes.set(address.id, address);
     this.byActor.get(actor).add(address);
   },
@@ -274,6 +289,12 @@ export class BroadcastConduit extends BaseConduit {
       this[`cast${name}`] = this._cast.bind(this, name);
     }
 
+    // Wants to authorize conduits with a specific attribute as they open.
+    // `subject.recvConduitOpened(address)` throws to reject.
+    if (address.reportOnOpened) {
+      Hub.reportOnOpened.set(address.reportOnOpened, this);
+    }
+
     // Wants to know when conduits with a specific attribute are closed.
     // `subject.recvConduitClosed(address)` method will be called.
     if (address.reportOnClosed) {
@@ -295,7 +316,10 @@ export class BroadcastConduit extends BaseConduit {
    */
   _send(method, query, target, arg = {}) {
     if (!this.open) {
-      throw new Error(`send${method} on closed conduit ${this.id}`);
+      throw new Error(
+        `Cannot send "${method}" because conduit ${this.id} is already closed ` +
+          `(this usually means the extension context was unloaded)`
+      );
     }
 
     let sender = this.id;
@@ -309,14 +333,13 @@ export class BroadcastConduit extends BaseConduit {
 
   /**
    * Broadcasts a method call to all conduits of kind that satisfy filtering by
-   * kind-specific properties from arg. If arg.query is true, these broadcasts
-   * are all queries and this returns an array of response promises. Otherwise,
-   * they are not, and undefined is returned.
+   * kind-specific properties from arg. Returns the targeted conduits, along
+   * with the response promises for a query.
    *
    * @param {string} method
    * @param {BroadcastKind} kind
    * @param {object} arg
-   * @returns {undefined | Promise<any[]> | Promise<Response>}
+   * @returns {{ targets: ConduitAddress[], promises: Promise<any>[] }}
    */
   _cast(method, kind, arg) {
     let filters = {
@@ -356,50 +379,7 @@ export class BroadcastConduit extends BaseConduit {
 
     let targets = Array.from(Hub.remotes.values()).filter(filters[kind]);
     let promises = targets.map(c => this._send(method, !!arg.query, c.id, arg));
-    if (arg.query) {
-      return arg.firstResponse
-        ? this._raceResponses(promises)
-        : Promise.allSettled(promises);
-    }
-    return undefined;
-  }
-
-  /**
-   * Custom Promise.race() function that ignores certain resolutions and errors.
-   *
-   * @typedef {{response?: any, received?: boolean}} Response
-   *
-   * @param {Promise<Response>[]} promises
-   * @returns {Promise<Response?>}
-   */
-  _raceResponses(promises) {
-    return new Promise((resolve, reject) => {
-      let result;
-      promises.map(p =>
-        p
-          .then(value => {
-            if (value.response) {
-              // We have an explicit response, resolve immediately.
-              resolve(value);
-            } else if (value.received) {
-              // Message was received, but no response.
-              // Resolve with this only if there is no other explicit response.
-              result = value;
-            }
-          })
-          .catch(err => {
-            // Forward errors that are exposed to extension, but ignore
-            // internal errors such as actor destruction and DataCloneError.
-            if (err instanceof ExtensionError || err?.mozWebExtLocation) {
-              reject(err);
-            } else {
-              Cu.reportError(err);
-            }
-          })
-      );
-      // Ensure resolving when there are no responses.
-      Promise.allSettled(promises).then(() => resolve(result));
-    });
+    return { targets, promises };
   }
 
   async close() {
@@ -424,7 +404,7 @@ export class ConduitsParent extends JSWindowActorParent {
    * Group webRequest events to send them as a batch, reducing IPC overhead.
    *
    * @param {string} name
-   * @param {import("ConduitsChild.sys.mjs").MessageData} data
+   * @param {import("./ConduitsChild.sys.mjs").MessageData} data
    * @returns {Promise<object>}
    */
   batch(name, data) {
@@ -462,7 +442,7 @@ export class ConduitsParent extends JSWindowActorParent {
    *
    * @param {object} options
    * @param {string} options.name
-   * @param {import("ConduitsChild.sys.mjs").MessageData} options.data
+   * @param {import("./ConduitsChild.sys.mjs").MessageData} options.data
    * @returns {Promise?}
    */
   async receiveMessage({ name, data: { arg, query, sender } }) {

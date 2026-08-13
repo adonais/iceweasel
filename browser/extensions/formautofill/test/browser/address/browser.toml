@@ -10,8 +10,6 @@ support-files = [
   "head_address.js",
 ]
 
-["browser_address_autofill_nimbus.js"]
-
 ["browser_address_capture_form_removal.js"]
 
 ["browser_address_capture_housenumber.js"]

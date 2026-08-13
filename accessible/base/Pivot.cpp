@@ -7,10 +7,9 @@
 #include "AccIterator.h"
 #include "LocalAccessible.h"
 #include "RemoteAccessible.h"
+#include "mozilla/a11y/Accessible.h"
 #include "nsAccUtils.h"
 #include "nsIAccessiblePivot.h"
-
-#include "mozilla/a11y/Accessible.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;

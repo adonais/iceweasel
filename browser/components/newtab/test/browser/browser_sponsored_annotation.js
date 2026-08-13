@@ -311,7 +311,7 @@ async function pin(link) {
   // Setup test tile.
   NewTabUtils.pinnedLinks.pin(link, 0);
   await toggleTopsitesPref();
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     const sites = AboutNewTab.getTopSites();
     return (
       sites?.[0]?.isPinned &&

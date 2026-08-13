@@ -4,7 +4,8 @@ URL: https://github.com/abseil/abseil-cpp
 License: Apache-2.0
 License File: LICENSE
 Version: N/A
-Revision: c65fa830409351c8eca1f741cc153255ae59d258
+Revision: de672d07fefc25c4e431052012b68a12c75494aa
+Update Mechanism: Manual
 Security Critical: yes
 Shipped: yes
 
@@ -27,8 +28,19 @@ third_party/abseil-cpp/BUILD.gn target
 
 3. From your source root run third_party/abseil-cpp/generate_def_files.py to
    regenerate Windows symbol definition files.
+   NOTE: This must be run from a non-Windows host that has target_os=["win"] in its .gclient
 
 4. If abseil adds new features, update styleguide/c++/c++-features.md and add headers for that feature into exclude list in root DEPS
+
+5. Verify your roll no-ops upon `third_party/abseil-cpp/roll_abseil.py --no-branch --no-pull --no-upload --revision <Revision>`
+
+How to review a roll:
+
+1. `git cl patch <CL number>`, then verify that `third_party/abseil-cpp/roll_abseil.py --no-branch --no-pull --no-upload --revision <Revision>`
+   no-ops.
+2. Check that changes to the .def files exist, or whether there is a comment in the CL description calling out they don't change.
+3. Check that every change in BUILD.bazel is matched by a counterpart in BUILD.gn.
+
 
 Local Modifications:
 
@@ -40,4 +52,4 @@ Local Modifications:
 * Patches from //third_party/abseil-cpp/patches have been applied.
 
 * Increment this number to silence presubmits about modifying files in
-  third_party when regenerating absl .def files: 3
+  third_party when regenerating absl .def files: 4

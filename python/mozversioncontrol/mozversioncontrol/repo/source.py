@@ -153,6 +153,7 @@ class SrcRepository(Repository):
         ref: Optional[str] = None,
         dest_branch: Optional[str] = None,
         force: bool = False,
+        env: Optional[dict] = None,
     ):
         pass
 

@@ -5,7 +5,7 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  KeyValueService: "resource://gre/modules/kvstore.sys.mjs",
+  KeyValueService: "moz-src:///toolkit/components/kvstore/kvstore.sys.mjs",
 });
 
 /**

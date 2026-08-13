@@ -18,6 +18,9 @@
     const { BrowserTestUtils } = ChromeUtils.importESModule(
       "resource://testing-common/BrowserTestUtils.sys.mjs"
     );
+    const { TestUtils } = ChromeUtils.importESModule(
+      "resource://testing-common/TestUtils.sys.mjs"
+    );
 
     /**
      * Tests that adding a turn-on-scheduled-backups element to the DOM causes it to
@@ -45,7 +48,7 @@
       let inputDefault = turnOnScheduledBackups.filePathInputDefaultEl;
       ok(inputDefault, "Default input should be found");
 
-      let promise = BrowserTestUtils.waitForCondition(() => inputDefault.value);
+      let promise = TestUtils.waitForCondition(() => inputDefault.value);
 
       /* Normally we would pass in the default attributes, but for this test, we will
        * hardcode them since file paths vary across different platforms.
@@ -101,11 +104,22 @@
       ok(!confirmButton.disabled, "confirm button should be active");
 
       let content = document.getElementById("content");
-      let promise = BrowserTestUtils.waitForEvent(content, "BackupUI:EnableScheduledBackups");
 
-      confirmButton.click()
+      // Confirm now dispatches a probe event; simulate the actor returning success.
+      let probePromise = BrowserTestUtils.waitForEvent(content, "BackupUI:ProbeDefaultBackupDir");
+      let enablePromise = BrowserTestUtils.waitForEvent(content, "BackupUI:EnableScheduledBackups");
 
-      await promise;
+      confirmButton.click();
+
+      await probePromise;
+      turnOnScheduledBackups.dispatchEvent(
+        new CustomEvent("BackupUI:DefaultDirProbeResult", {
+          bubbles: false,
+          detail: { readAccessGranted: true },
+        })
+      );
+
+      await enablePromise;
       ok(true, "Detected event after selecting the confirm button");
     })
 
@@ -138,11 +152,21 @@
       ok(!confirmButton.disabled, "confirm button should be active");
 
       let content = document.getElementById("content");
-      let promise = BrowserTestUtils.waitForEvent(content, "BackupUI:EnableScheduledBackups");
 
-      confirmButton.click()
+      let probePromise = BrowserTestUtils.waitForEvent(content, "BackupUI:ProbeDefaultBackupDir");
+      let enablePromise = BrowserTestUtils.waitForEvent(content, "BackupUI:EnableScheduledBackups");
 
-      await promise;
+      confirmButton.click();
+
+      await probePromise;
+      turnOnScheduledBackups.dispatchEvent(
+        new CustomEvent("BackupUI:DefaultDirProbeResult", {
+          bubbles: false,
+          detail: { readAccessGranted: true },
+        })
+      );
+
+      await enablePromise;
       ok(true, "Detected event after selecting the confirm button");
     })
 
@@ -183,11 +207,21 @@
       ok(!confirmButton.disabled, "confirm button should be active");
 
       let content = document.getElementById("content");
-      let promise = BrowserTestUtils.waitForEvent(content, "BackupUI:EnableScheduledBackups");
 
-      confirmButton.click()
+      let probePromise = BrowserTestUtils.waitForEvent(content, "BackupUI:ProbeDefaultBackupDir");
+      let enablePromise = BrowserTestUtils.waitForEvent(content, "BackupUI:EnableScheduledBackups");
 
-      await promise;
+      confirmButton.click();
+
+      await probePromise;
+      turnOnScheduledBackups.dispatchEvent(
+        new CustomEvent("BackupUI:DefaultDirProbeResult", {
+          bubbles: false,
+          detail: { readAccessGranted: true },
+        })
+      );
+
+      await enablePromise;
       ok(true, "Detected event after selecting the confirm button");
     })
 

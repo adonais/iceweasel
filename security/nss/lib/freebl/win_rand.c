@@ -8,6 +8,9 @@
 #include <windows.h>
 #include <time.h>
 
+#include "secerr.h"
+#include "prinit.h"
+
 static BOOL
 CurrentClockTickTime(LPDWORD lpdwHigh, LPDWORD lpdwLow)
 {
@@ -148,14 +151,58 @@ DECLSPEC_IMPORT BOOLEAN WINAPI RtlGenRandom(
     PVOID RandomBuffer,
     ULONG RandomBufferLength);
 
+typedef BOOL(WINAPI *pProcessPrng)(PBYTE, SIZE_T);
+
+static PRCallOnceType coProcessPrngInit;
+static pProcessPrng sProcessPrng = NULL;
+
+static PRStatus
+LoadProcessPrng(void)
+{
+    // Using LOAD_LIBRARY_SEARCH_SYSTEM32 will fail on earlier windows, but
+    // only on versions where ProcessPrng wouldn't be available anyway.
+    HMODULE hmod = LoadLibraryExW(L"bcryptprimitives.dll", NULL,
+                                  LOAD_LIBRARY_SEARCH_SYSTEM32);
+    if (!hmod) {
+        return PR_FAILURE;
+    }
+
+    sProcessPrng = (pProcessPrng)GetProcAddress(hmod, "ProcessPrng");
+    if (!sProcessPrng) {
+        FreeLibrary(hmod);
+        return PR_FAILURE;
+    }
+
+    return PR_SUCCESS;
+}
+
+static BOOL
+CallProcessPrng(PBYTE pbData, SIZE_T cbData)
+{
+    if (!sProcessPrng &&
+        PR_CallOnce(&coProcessPrngInit, LoadProcessPrng) != PR_SUCCESS) {
+        // PR_CallOnce leaves PR_CALL_ONCE_ERROR in TLS, clear it so callers
+        // don't see a spurious error if the RtlGenRandom fallback succeeds.
+        PORT_SetError(0);
+        return FALSE;
+    }
+
+    return sProcessPrng(pbData, cbData);
+}
+
 size_t
 RNG_SystemRNG(void *dest, size_t maxLen)
 {
     size_t bytes = 0;
 
-    if (RtlGenRandom(dest, maxLen)) {
+    // Fall back to RtlGenRandom for pre Windows 8.
+    if (CallProcessPrng(dest, maxLen) ||
+        (maxLen <= PR_UINT32_MAX && RtlGenRandom(dest, (ULONG)maxLen))) {
         bytes = maxLen;
+    } else {
+        PORT_SetError(SEC_ERROR_NEED_RANDOM);
     }
+
     return bytes;
 }
 #endif /* is XP_WIN */

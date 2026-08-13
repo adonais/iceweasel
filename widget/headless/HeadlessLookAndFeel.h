@@ -5,8 +5,8 @@
 #ifndef mozilla_widget_HeadlessLookAndFeel_h
 #define mozilla_widget_HeadlessLookAndFeel_h
 
-#include "nsXPLookAndFeel.h"
 #include "nsLookAndFeel.h"
+#include "nsXPLookAndFeel.h"
 
 namespace mozilla {
 namespace widget {

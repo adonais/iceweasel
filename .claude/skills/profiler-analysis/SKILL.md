@@ -15,6 +15,8 @@ You are helping a Mozilla Firefox engineer analyze a Firefox performance profile
 
 # How to Help the User
 
+Before doing anything else, verify `profiler-cli` is installed by running `profiler-cli --version`. If the command is not found, STOP immediately: tell the user to install it (`npm install -g @firefox-devtools/profiler-cli@latest`) and restart the agent, then end your turn. Do NOT attempt any workaround. In particular, do not download profiles from Taskcluster or artifact URLs, do not fetch them with WebFetch, and do not parse profile JSON by hand. `profiler-cli` is the only supported way to load and analyze a profile, and there is no acceptable fallback.
+
 When invoked:
 1. Run `profiler-cli guide` first and read the **entire** output. It is approximately 400 lines. The Bash tool may silently truncate long output, causing you to miss the command reference and analysis patterns that appear later in the guide, so read all of it before proceeding.
 2. If `$ARGUMENTS` contains a profile path or URL, load it with `profiler-cli load`.
@@ -25,8 +27,6 @@ When invoked:
 If the URL is a `profiler.firefox.com/from-file/...` or `profiler.firefox.com/from-browser/...` link, stop and tell the user it cannot be loaded. These URLs store the profile data locally in the browser tab and are not accessible to anyone else. Ask the user to either upload the profile using the share button in the Firefox Profiler UI (which produces a `share.firefox.dev` or `profiler.firefox.com/public/...` link), or pass a local file path to the profile JSON directly.
 
 Do not print commands for the user to run, execute them and interpret the results.
-
-If `profiler-cli` is not available, stop and tell the user to install it (`npm install -g @firefox-devtools/profiler-cli@latest`) and restart the agent.
 
 Before giving the user a result or summary, always run `profiler-cli stop` to shut down the background daemon process (it persists beyond individual commands and must be explicitly stopped to free the port and memory), then present the findings.
 
@@ -40,6 +40,7 @@ The `references/` directory in this skill contains real profiling investigations
 Before starting an analysis, use `Glob` to list available case studies, then read the `-cli.md` file that most closely matches the current scenario:
 
 - **Lock contention / mutex blocking during startup**: `firefox-macos-startup-font-initialization-cli.md`
+- **Test timeout / idle hang (main thread parked in a wait primitive, deadlocked on an event or message that never fires — often a cross-process race)**: `windows-test-timeout-cross-process-race-cli.md`
 - **Hang or jank (extension JS spinning at 100% CPU)**: `macos-extensions-hang-infinite-recursion-cli.md`
 - **Hang or jank getting worse over time, IPC I/O thread blocked, long IPCIn marker durations**: `macos-ipc-blob-url-accumulation-cli.md`
 - **Android startup performance**: `simpleperf-non-rooted-firefox-startup-cli.md`

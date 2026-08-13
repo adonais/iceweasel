@@ -141,6 +141,12 @@ nsJARURI::GetSpec(nsACString& aSpec) {
   return FormatSpec(entrySpec, aSpec);
 }
 
+uint32_t nsJARURI::SpecHash() {
+  nsAutoCString spec;
+  (void)GetSpec(spec);
+  return CachedSpecHash(spec);
+}
+
 NS_IMETHODIMP
 nsJARURI::GetSpecIgnoringRef(nsACString& aSpec) {
   nsAutoCString entrySpec;

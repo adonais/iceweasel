@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<resources>
+  <!--
+    Text for a positive button in a permission request dialog, this button will give
+    access to this permission
+  -->
+  <string name="mozac_feature_sitepermissions_allow">Atļaut</string>
+  <!--
+    Alternate variant of the text for a negative button in a permission request dialog,
+    this button will not give access to this permission
+  -->
+  <string name="mozac_feature_sitepermissions_block">Liegt</string>
+  <!-- Text for a checkbox in a permission request dialog, this will allow to not show again the prompt -->
+  <string name="mozac_feature_sitepermissions_do_not_ask_again_on_this_site2">Atcerēties izvēli šai vietnei</string>
+  <!-- Title of a dialog to use EME. %1$s will be replaced with the URL of the current page -->
+  <string name="mozac_feature_sitepermissions_media_key_system_access_title">Atļaut %1$s atskaņot DRM pārvaldītu saturu?</string>
+  <!-- Text for a negative button in the storage access permission request dialog. This button will not give access to this permission. -->
+  <string name="mozac_feature_sitepermissions_storage_access_not_allow">Liegt</string>
+</resources>

@@ -135,6 +135,7 @@ class OnboardingFragment : Fragment() {
     private val defaultBrowserPromptManager by lazy {
         DefaultBrowserPromptManager(
             storage = defaultBrowserPromptStorage,
+            settings = { requireComponents.settings },
             promptToSetAsDefaultBrowser = {
                 requireContext().components.strictMode.allowViolation(StrictMode::allowThreadDiskReads) {
                     promptToSetAsDefaultBrowser()
@@ -217,6 +218,7 @@ class OnboardingFragment : Fragment() {
     private fun ScreenContent() {
         OnboardingScreen(
             pagesToDisplay = pagesToDisplay,
+            initialPageIndex = requireComponents.settings.onboardingCurrentPageIndex,
             onMakeFirefoxDefaultClick = {
                 promptToSetAsDefaultBrowser()
             },
@@ -282,10 +284,9 @@ class OnboardingFragment : Fragment() {
                     sequencePosition = pagesToDisplay.sequencePosition(it.type),
                 )
 
-                defaultBrowserPromptManager.maybePromptToSetAsDefaultBrowser(
-                    pagesToDisplay = pagesToDisplay,
-                    currentCard = it,
-                )
+                if (requireComponents.settings.shouldShowSetAsDefaultPrompt()) {
+                    defaultBrowserPromptManager.maybePromptToSetAsDefaultBrowser(it)
+                }
             },
             onboardingStore = onboardingStore,
             termsOfServiceEventHandler = termsOfServiceEventHandler,
@@ -322,6 +323,7 @@ class OnboardingFragment : Fragment() {
             },
             currentIndex = { index ->
                 removeMarketingFeature.withFeature { it.currentPageIndex = index }
+                requireComponents.settings.onboardingCurrentPageIndex = index
             },
             onNavigateToNextPage = {
                 telemetryRecorder.onNavigatedToNextPage()
@@ -373,6 +375,7 @@ class OnboardingFragment : Fragment() {
 
         val settings = requireComponents.settings
         settings.onboardingCompletedTimestamp = System.currentTimeMillis()
+        settings.onboardingCurrentPageIndex = 0
 
         // Telemetry and daily usage ping get enabled after ToU acceptance.
         startMetricsIfEnabled(

@@ -329,7 +329,7 @@ security:
         type: string
       baseline:
         description: >
-          The violation was triggered by the kBaselineChromeCSP.
+          The violation was triggered by the kBaselineSystemCSP.
         type: boolean
 
 

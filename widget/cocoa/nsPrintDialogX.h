@@ -5,9 +5,9 @@
 #ifndef nsPrintDialog_h_
 #define nsPrintDialog_h_
 
-#include "nsIPrintDialogService.h"
 #include "nsCOMPtr.h"
 #include "nsCocoaUtils.h"
+#include "nsIPrintDialogService.h"
 
 #import <Cocoa/Cocoa.h>
 

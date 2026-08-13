@@ -430,7 +430,7 @@ class SharedArrayBufferObject : public ArrayBufferObjectMaybeShared {
  * SharedArrayBuffer object with a fixed length. The JS exposed length is
  * unmodifiable, but the underlying memory can still grow for WebAssembly.
  *
- * Fixed-length SharedArrayBuffers can be used for asm.js and WebAssembly.
+ * Fixed-length SharedArrayBuffers can be used for WebAssembly.
  */
 class FixedLengthSharedArrayBufferObject : public SharedArrayBufferObject {
  public:
@@ -445,7 +445,7 @@ class FixedLengthSharedArrayBufferObject : public SharedArrayBufferObject {
  * SharedArrayBuffer object which can grow in size. The maximum byte length it
  * can grow to is set when creating the object.
  *
- * Growable SharedArrayBuffers can neither be used for asm.js nor WebAssembly.
+ * Growable SharedArrayBuffers cannot be used for WebAssembly.
  */
 class GrowableSharedArrayBufferObject : public SharedArrayBufferObject {
  public:

@@ -17,3 +17,16 @@ UNIFIED_SOURCES += [
 OS_LIBS += [
     "-framework Foundation",
 ]
+
+# In a compile build, assemble the `ChannelPrefs-localbuild.framework` artifact
+# (its binary renamed to `ChannelPrefs`) that artifact builds consume. An
+# artifact build already has the binary from upstream.
+if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
+    framework = OBJDIR_FILES.dist.update_framework_artifacts[
+        "ChannelPrefs-localbuild.framework"
+    ]
+    if CONFIG["COMPILE_ENVIRONMENT"]:
+        framework += [
+            (f"!/{FINAL_TARGET}/ChannelPrefs-localbuild", "ChannelPrefs")
+        ]
+    framework.Resources += ["../ChannelPrefs/Info.plist"]

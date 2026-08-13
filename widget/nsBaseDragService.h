@@ -5,22 +5,22 @@
 #ifndef nsBaseDragService_h_
 #define nsBaseDragService_h_
 
-#include "nsIDragService.h"
-#include "nsIDragSession.h"
-#include "nsCOMPtr.h"
-#include "nsIFrame.h"
-#include "nsRect.h"
-#include "nsPoint.h"
-#include "nsString.h"
+#include "Units.h"
+#include "mozilla/Logging.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/HTMLCanvasElement.h"
 #include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/dom/RemoteDragStartData.h"
-#include "mozilla/Logging.h"
 #include "mozilla/widget/WidgetLogging.h"
-#include "nsTArray.h"
+#include "nsCOMPtr.h"
+#include "nsIDragService.h"
+#include "nsIDragSession.h"
+#include "nsIFrame.h"
+#include "nsPoint.h"
+#include "nsRect.h"
 #include "nsRegion.h"
-#include "Units.h"
+#include "nsString.h"
+#include "nsTArray.h"
 
 #define MOZ_DRAGSERVICE_LOG DRAGSERVICE_LOGD
 #define MOZ_DRAGSERVICE_LOG_ENABLED() \
@@ -282,6 +282,13 @@ class nsBaseDragSession : public nsIDragSession {
 
   bool mIsDraggingTextInTextControl = false;
   bool mSessionIsSynthesizedForTests = false;
+  // True if this session was started by a synthesized (test) event that was
+  // dispatched asynchronously through WebDriver.  Such a session has no native
+  // drag loop, but (unlike a plain synthesized session) it is started from the
+  // parent process so it goes through the normal cross-process drag path: the
+  // content process must send PBrowser::InvokeDragSession so the parent owns
+  // the session.  See nsBaseDragSession::InvokeDragSession.
+  bool mSessionIsAsyncSynthesizedForTests = false;
 
   // true if in EndDragSession
   bool mEndingSession = false;

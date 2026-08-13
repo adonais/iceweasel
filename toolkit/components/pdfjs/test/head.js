@@ -434,7 +434,7 @@ async function addFreeText(browser, text, box) {
 
 async function waitForEditors(browser, selector, count) {
   info(`Wait for ${count} editors`);
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     async () => (await countElements(browser, selector)) === count
   );
 }
@@ -546,7 +546,7 @@ async function testTelemetryEventExtra(record, expected, clear = true) {
 }
 
 function waitForPreviewVisible() {
-  return BrowserTestUtils.waitForCondition(function () {
+  return TestUtils.waitForCondition(function () {
     let preview = document.querySelector(".printPreviewBrowser");
     return preview && BrowserTestUtils.isVisible(preview);
   });
@@ -554,7 +554,7 @@ function waitForPreviewVisible() {
 
 function closePreview() {
   EventUtils.synthesizeKey("KEY_Escape");
-  return BrowserTestUtils.waitForCondition(
+  return TestUtils.waitForCondition(
     () => !document.querySelector(".printPreviewBrowser")
   );
 }

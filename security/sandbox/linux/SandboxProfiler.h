@@ -5,19 +5,16 @@
 #ifndef SANDBOX_PROFILER_H
 #define SANDBOX_PROFILER_H
 
-#include <thread>
 #include <linux/limits.h>
 #include <semaphore.h>
 
-#include "base/trace_event/common/trace_event_common.h"
+#include <thread>
 
-#include "ProfilerNativeStack.h"
 #include "MicroGeckoProfiler.h"
-
+#include "ProfilerNativeStack.h"
+#include "mozilla/BoundedMPSCQueue.h"
 #include "mozilla/ProfileChunkedBuffer.h"
 #include "mozilla/ProfilerState.h"
-
-#include "mozilla/BoundedMPSCQueue.h"
 
 #if defined(HAVE_REPORT_UPROFILER_PARENT) && \
     defined(HAVE_REPORT_UPROFILER_CHILD)

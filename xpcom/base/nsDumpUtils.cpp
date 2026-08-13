@@ -3,21 +3,24 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsDumpUtils.h"
+
+#include <errno.h>
+
+#include "SpecialSystemDirectory.h"
+#include "mozilla/ClearOnShutdown.h"
+#include "mozilla/Services.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
-#include <errno.h>
-#include "prenv.h"
-#include "mozilla/Services.h"
 #include "nsIObserverService.h"
-#include "mozilla/ClearOnShutdown.h"
-#include "SpecialSystemDirectory.h"
+#include "prenv.h"
 
 #if defined(XP_UNIX) && !defined(XP_IOS)  // {
-#  include "mozilla/Preferences.h"
 #  include <fcntl.h>
-#  include <unistd.h>
 #  include <signal.h>
 #  include <sys/stat.h>
+#  include <unistd.h>
+
+#  include "mozilla/Preferences.h"
 
 using namespace mozilla;
 

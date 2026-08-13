@@ -4,19 +4,18 @@
 
 #include "VRLayerChild.h"
 
-#include "mozilla/dom/HTMLCanvasElement.h"
-#include "mozilla/layers/ImageBridgeChild.h"
-#include "mozilla/layers/LayersMessages.h"  // for TimedTexture
-#include "mozilla/layers/SyncObject.h"      // for SyncObjectClient
-#include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/StaticPrefs_webgl.h"
-
 #include "ClientWebGLContext.h"
-#include "gfxPlatform.h"
 #include "GLContext.h"
 #include "GLScreenBuffer.h"
 #include "SharedSurface.h"    // for SharedSurface
 #include "SharedSurfaceGL.h"  // for SharedSurface
+#include "gfxPlatform.h"
+#include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/StaticPrefs_webgl.h"
+#include "mozilla/dom/HTMLCanvasElement.h"
+#include "mozilla/layers/ImageBridgeChild.h"
+#include "mozilla/layers/LayersMessages.h"  // for TimedTexture
+#include "mozilla/layers/SyncObject.h"      // for SyncObjectClient
 
 namespace mozilla::gfx {
 

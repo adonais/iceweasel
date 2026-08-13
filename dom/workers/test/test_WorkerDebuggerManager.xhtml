@@ -16,7 +16,7 @@
     const WORKER_URL = "WorkerDebuggerManager_worker.js";
     const CHILD_WORKER_URL = "WorkerDebuggerManager_childWorker.js";
 
-    add_task(
+    addTaskWithBothWorkerDebuggers(
       async function runTest() {
         info("Check that worker debuggers are not enumerated before they are " +
              "registered.");

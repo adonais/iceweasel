@@ -53,7 +53,7 @@ async function getReaderModeURL() {
   let headerSpan = document.getElementById(
     "identity-popup-mainView-panel-header-span"
   );
-  await BrowserTestUtils.waitForCondition(() =>
+  await TestUtils.waitForCondition(() =>
     headerSpan.innerHTML.includes("example.com")
   );
   return headerSpan.innerHTML;

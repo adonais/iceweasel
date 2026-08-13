@@ -796,22 +796,31 @@ bool WeakMap<K, V, AP>::checkMarking() const {
 #ifdef JSGC_HASH_TABLE_CHECKS
 template <class K, class V, class AP>
 void WeakMap<K, V, AP>::checkAfterMovingGC() const {
-  MOZ_RELEASE_ASSERT(!hasNurseryEntries);
-  MOZ_RELEASE_ASSERT(nurseryKeysValid);
-  MOZ_RELEASE_ASSERT(nurseryKeys.empty());
-
+  bool foundNurseryEntries = false;
   for (auto iter = this->iter(); !iter.done(); iter.next()) {
     gc::Cell* key = gc::ToMarkable(iter.get().key());
     gc::Cell* value = gc::ToMarkable(iter.get().value());
+
     CheckGCThingAfterMovingGC(key);
+    if (key && !key->isTenured()) {
+      foundNurseryEntries = true;
+    }
+
     if (!allowKeysInOtherZones()) {
       Zone* keyZone = key->zoneFromAnyThread();
       MOZ_RELEASE_ASSERT(keyZone == zone() || keyZone->isAtomsZone());
     }
+
     CheckGCThingAfterMovingGC(value, zone());
+    if (value && !value->isTenured()) {
+      foundNurseryEntries = true;
+    }
+
     auto ptr = lookupUnbarriered(iter.get().key());
     MOZ_RELEASE_ASSERT(ptr.found() && &*ptr == &iter.get());
   }
+
+  MOZ_RELEASE_ASSERT(hasNurseryEntries == foundNurseryEntries);
 }
 #endif  // JSGC_HASH_TABLE_CHECKS
 

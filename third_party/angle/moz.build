@@ -1,0 +1,73 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+  ### This moz.build was AUTOMATICALLY GENERATED from a GN config,  ###
+  ### DO NOT edit it by hand.                                       ###
+
+DIRS += [
+    "/third_party/angle/angle_commit_id_gn",
+    "/third_party/angle/angle_common_gn",
+    "/third_party/angle/angle_common_shader_state_gn",
+    "/third_party/angle/angle_program_version_id_gn",
+    "/third_party/angle/angle_translator_headers_gn",
+    "/third_party/angle/angle_version_gn",
+    "/third_party/angle/angle_version_info_gn",
+    "/third_party/angle/includes_gn",
+    "/third_party/angle/preprocessor_gn",
+    "/third_party/angle/src/common/spirv/angle_spirv_headers_gn",
+    "/third_party/angle/translator_gn",
+    "/third_party/angle/xxhash_gn"
+]
+
+if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
+
+    DIRS += [
+        "/third_party/angle/angle_frame_capture_mock_gn",
+        "/third_party/angle/angle_gpu_info_util_gn",
+        "/third_party/angle/angle_image_util_gn",
+        "/third_party/angle/angle_image_util_headers_gn",
+        "/third_party/angle/libANGLE_gn",
+        "/third_party/angle/libANGLE_headers_gn",
+        "/third_party/angle/libANGLE_no_vulkan_gn",
+        "/third_party/angle/libEGL_egl_loader_gn",
+        "/third_party/angle/libEGL_gn",
+        "/third_party/angle/libGLESv2_gn",
+        "/third_party/angle/src/libANGLE/renderer/metal/angle_metal_backend_gn",
+        "/third_party/angle/third_party/zlib/google/compression_utils_portable_gn",
+        "/third_party/angle/third_party/zlib/zlib_gn"
+    ]
+
+if CONFIG["OS_TARGET"] == "WINNT":
+
+    DIRS += [
+        "/third_party/angle/angle_d3d_format_tables_gn",
+        "/third_party/angle/angle_frame_capture_mock_gn",
+        "/third_party/angle/angle_gpu_info_util_gn",
+        "/third_party/angle/angle_image_util_gn",
+        "/third_party/angle/angle_image_util_headers_gn",
+        "/third_party/angle/libANGLE_gn",
+        "/third_party/angle/libANGLE_headers_gn",
+        "/third_party/angle/libANGLE_no_vulkan_gn",
+        "/third_party/angle/libEGL_egl_loader_gn",
+        "/third_party/angle/libEGL_gn",
+        "/third_party/angle/libGLESv2_gn",
+        "/third_party/angle/src/libANGLE/renderer/d3d/angle_d3d11_backend_gn",
+        "/third_party/angle/src/libANGLE/renderer/d3d/angle_d3d9_backend_gn",
+        "/third_party/angle/src/libANGLE/renderer/d3d/angle_d3d_shared_gn",
+        "/third_party/angle/third_party/zlib/google/compression_utils_portable_gn",
+        "/third_party/angle/third_party/zlib/zlib_gn"
+    ]
+
+if CONFIG["MOZ_DEBUG"] == "1" and CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
+
+    DIRS += [
+        "/third_party/angle/angle_gl_enum_utils_gn"
+    ]
+
+if CONFIG["MOZ_DEBUG"] == "1" and CONFIG["OS_TARGET"] == "WINNT":
+
+    DIRS += [
+        "/third_party/angle/angle_gl_enum_utils_gn"
+    ]

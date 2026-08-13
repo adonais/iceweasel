@@ -1,6 +1,6 @@
-#include "gdb-tests.h"
-
 #include <stdint.h>
+
+#include "gdb-tests.h"
 
 enum unscoped_no_storage { EnumValue1 };
 

@@ -4,17 +4,17 @@
 
 #include "RemoteLookAndFeel.h"
 
-#include "gfxFont.h"
+#include <limits>
+#include <utility>
+
 #include "MainThreadUtils.h"
+#include "gfxFont.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/StaticPrefs_widget.h"
 #include "mozilla/Try.h"
 #include "nsXULAppAPI.h"
-
-#include <limits>
-#include <utility>
 
 namespace mozilla::widget {
 

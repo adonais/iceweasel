@@ -6,10 +6,11 @@
 
 #include <algorithm>
 #include <cstring>
-#include "mozilla/Likely.h"
-#include "nsIInputStream.h"
+
 #include "MainThreadUtils.h"
 #include "SurfaceCache.h"
+#include "mozilla/Likely.h"
+#include "nsIInputStream.h"
 
 using std::max;
 using std::min;

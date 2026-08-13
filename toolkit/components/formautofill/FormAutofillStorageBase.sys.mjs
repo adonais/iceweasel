@@ -131,6 +131,7 @@
 
 import { FormAutofill } from "resource://autofill/FormAutofill.sys.mjs";
 import { AddressRecord } from "resource://gre/modules/shared/AddressRecord.sys.mjs";
+import { AutofillDataTypes } from "resource://gre/modules/shared/AutofillDataTypes.sys.mjs";
 
 const lazy = {};
 
@@ -142,6 +143,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   FormAutofillUtils: "resource://gre/modules/shared/FormAutofillUtils.sys.mjs",
   OSKeyStore: "resource://gre/modules/OSKeyStore.sys.mjs",
   PhoneNumber: "resource://gre/modules/shared/PhoneNumber.sys.mjs",
+  Store:
+    "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustAutofill.sys.mjs",
 });
 
 const CryptoHash = Components.Constructor(
@@ -151,6 +154,11 @@ const CryptoHash = Components.Constructor(
 );
 
 const STORAGE_SCHEMA_VERSION = 1;
+
+// File name of the Application Services `autofill` SQLite store within the
+// profile directory. It is the sibling of the JSON profile that backs
+// addresses/credit cards (autofill-profiles.json).
+const AUTOFILL_STORE_FILE_NAME = "autofill.sqlite";
 
 // NOTE: It's likely this number can never change.
 // Please talk to the sync team before changing this!
@@ -290,12 +298,11 @@ class AutofillRecords {
       if (collectionName != this._collectionName) {
         return;
       }
-      const telemetryType =
-        subject.wrappedJSObject.collectionName == "creditCards"
-          ? lazy.AutofillTelemetry.CREDIT_CARD
-          : lazy.AutofillTelemetry.ADDRESS;
+      const dataType = AutofillDataTypes.all.find(
+        type => type.collectionName == collectionName
+      )?.id;
       const count = this._data.filter(entry => !entry.deleted).length;
-      lazy.AutofillTelemetry.recordAutofillProfileCount(telemetryType, count);
+      lazy.AutofillTelemetry.recordAutofillProfileCount(dataType, count);
     }
   }
 
@@ -1971,12 +1978,32 @@ export class FormAutofillStorageBase {
     return this.getCreditCards();
   }
 
+  get passports() {
+    return this.getPassports();
+  }
+
   getAddresses() {
     throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
   }
 
   getCreditCards() {
     throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
+  }
+
+  getPassports() {
+    throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
+  }
+
+  /**
+   * @returns {Promise<Store>}
+   */
+  get rustStore() {
+    if (!this._rustStore) {
+      this._rustStore = lazy.Store.init(
+        PathUtils.join(PathUtils.profileDir, AUTOFILL_STORE_FILE_NAME)
+      );
+    }
+    return this._rustStore;
   }
 
   /**

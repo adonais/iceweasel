@@ -13,10 +13,8 @@
 
 #include "frontend/NameAnalysisTypes.h"  // NameLocation
 #include "frontend/ParserAtom.h"  // TaggedParserAtomIndex, ParserAtomsTable
-
-#include "js/Utility.h"  // AutoEnterOOMUnsafeRegion
-
-#include "vm/StringType.h"  // JSAtom
+#include "js/Utility.h"           // AutoEnterOOMUnsafeRegion
+#include "vm/StringType.h"        // JSAtom
 
 namespace js {
 

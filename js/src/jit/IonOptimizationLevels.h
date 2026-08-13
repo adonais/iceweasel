@@ -39,9 +39,6 @@ class OptimizationInfo {
   // Toggles whether Effective Address Analysis is performed.
   bool eaa_;
 
-  // Toggles whether Alignment Mask Analysis is performed.
-  bool ama_;
-
   // Toggles whether Edge Case Analysis is used.
   bool edgeCaseAnalysis_;
 
@@ -85,7 +82,6 @@ class OptimizationInfo {
   constexpr OptimizationInfo()
       : level_(OptimizationLevel::Normal),
         eaa_(false),
-        ama_(false),
         edgeCaseAnalysis_(false),
         eliminateRedundantChecks_(false),
         eliminateRedundantShapeGuards_(false),
@@ -128,7 +124,6 @@ class OptimizationInfo {
 
     level_ = OptimizationLevel::Wasm;
 
-    ama_ = true;
     autoTruncate_ = false;
     edgeCaseAnalysis_ = false;
     eliminateRedundantChecks_ = false;
@@ -168,8 +163,6 @@ class OptimizationInfo {
   }
 
   bool eaaEnabled() const { return eaa_ && !JitOptions.disableEaa; }
-
-  bool amaEnabled() const { return ama_ && !JitOptions.disableAma; }
 
   bool edgeCaseAnalysisEnabled() const {
     return edgeCaseAnalysis_ && !JitOptions.disableEdgeCaseAnalysis;

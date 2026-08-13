@@ -8,9 +8,9 @@
 #include <queue>
 
 #include "mozilla/AbstractThread.h"
+#include "mozilla/FlowMarkers.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/ProfilerRunnable.h"
-#include "mozilla/FlowMarkers.h"
 #include "mozilla/UniquePtr.h"
 #include "nsIDirectTaskDispatcher.h"
 #include "nsISupportsImpl.h"

@@ -29,7 +29,7 @@ add_task(async function test_switchtab_decodeuri() {
     window,
     UrlbarTestUtils.getSelectedRowIndex(window)
   );
-  Assert.equal(result.type, UrlbarUtils.RESULT_TYPE.TAB_SWITCH);
+  Assert.equal(result.type, UrlbarShared.RESULT_TYPE.TAB_SWITCH);
 
   info("switch-to-tab");
   let tabSelectPromise = BrowserTestUtils.waitForEvent(

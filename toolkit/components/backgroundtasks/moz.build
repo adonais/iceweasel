@@ -71,6 +71,7 @@ TESTING_JS_MODULES.backgroundtasks += [
     "tests/BackgroundTask_backgroundtask_specific_pref.sys.mjs",
     "tests/BackgroundTask_console.sys.mjs",
     "tests/BackgroundTask_crash.sys.mjs",
+    "tests/BackgroundTask_crashReporterStatus.sys.mjs",
     "tests/BackgroundTask_file_exists.sys.mjs",
     "tests/BackgroundTask_jsdebugger.sys.mjs",
     "tests/BackgroundTask_localization.sys.mjs",

@@ -5,10 +5,9 @@
 #ifndef ACCESSIBLE_ACTION_H
 #define ACCESSIBLE_ACTION_H
 
-#include "nsISupports.h"
-
-#include "mozilla/a11y/Accessible.h"
 #include "AccessibleAction.h"
+#include "mozilla/a11y/Accessible.h"
+#include "nsISupports.h"
 
 namespace mozilla {
 namespace a11y {

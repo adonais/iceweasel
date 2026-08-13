@@ -4,11 +4,11 @@
 
 #include "ApplicationAccessibleWrap.h"
 
-#include "nsIGfxInfo.h"
 #include "AccAttributes.h"
-#include "nsServiceManagerUtils.h"
-#include "mozilla/Components.h"
 #include "MsaaAccessible.h"
+#include "mozilla/Components.h"
+#include "nsIGfxInfo.h"
+#include "nsServiceManagerUtils.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;

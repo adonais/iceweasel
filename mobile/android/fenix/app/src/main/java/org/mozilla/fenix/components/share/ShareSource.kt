@@ -20,4 +20,5 @@ enum class ShareSource(val value: String) {
     RECENTLY_CLOSED("recently_closed"),
     DEEP_LINK("deep_link"),
     WEB_SHARE("web_share"),
+    CONTEXT_MENU_LINK("context_menu_link"),
 }

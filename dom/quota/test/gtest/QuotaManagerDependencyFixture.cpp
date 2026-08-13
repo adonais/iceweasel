@@ -12,10 +12,12 @@
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/quota/QuotaManagerService.h"
 #include "mozilla/dom/quota/ResultExtensions.h"
+#include "mozilla/dom/quota/StreamUtils.h"
 #include "mozilla/dom/quota/UsageInfo.h"
 #include "mozilla/gtest/MozAssertions.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
+#include "nsIBinaryInputStream.h"
 #include "nsIPrefBranch.h"
 #include "nsIPrefService.h"
 #include "nsIQuotaCallbacks.h"
@@ -460,8 +462,13 @@ QuotaManagerDependencyFixture::LoadDirectoryMetadataHeader(
           return Nothing();
         }
 
+        auto streamResult = GetBinaryInputStream(
+            *directory, nsLiteralString(METADATA_V2_FILE_NAME));
+        MOZ_RELEASE_ASSERT(streamResult.isOk());
+        const auto& stream = streamResult.unwrap();
+
         auto originStateMetadataRes =
-            quota::LoadDirectoryMetadataHeader(*directory);
+            quota::ReadDirectoryMetadataHeader(*stream);
         MOZ_RELEASE_ASSERT(originStateMetadataRes.isOk());
 
         auto originStateMetadata = originStateMetadataRes.unwrap();

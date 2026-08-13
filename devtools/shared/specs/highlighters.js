@@ -20,9 +20,6 @@ const customHighlighterSpec = generateActorSpec({
   },
 
   methods: {
-    release: {
-      release: true,
-    },
     show: {
       request: {
         node: Arg(0, "nullable:domnode"),
@@ -37,6 +34,7 @@ const customHighlighterSpec = generateActorSpec({
     },
     finalize: {
       oneway: true,
+      release: true,
     },
   },
 });

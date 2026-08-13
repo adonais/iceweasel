@@ -1,4 +1,9 @@
-import { MESSAGE_CONV_ID_INDEX, LLM_TELEMETRY_TABLE } from "./ChatSql.sys.mjs";
+import {
+  MESSAGE_CONV_ID_INDEX,
+  LLM_TELEMETRY_TABLE,
+  TOOL_RESULT_TABLE,
+  TOOL_RESULT_HISTORY_URL_INDEX,
+} from "./ChatSql.sys.mjs";
 
 /*
  This Source Code Form is subject to the terms of the Mozilla Public
@@ -187,6 +192,27 @@ async function applyV10(conn, version) {
   );
 }
 
+// Create the tool_result table to store tool-call result data and migrate
+// tool_ui_data_jsonb into tool_result table.
+async function applyV11(conn, version) {
+  if (version >= 11) {
+    return;
+  }
+
+  await conn.execute(TOOL_RESULT_TABLE);
+  await conn.execute(TOOL_RESULT_HISTORY_URL_INDEX);
+
+  // Backfill rows from tool_ui_data_jsonb
+  const tool_ui_type = 0;
+  await conn.execute(`
+    INSERT INTO tool_result (message_id, type, ordinal, payload_jsonb)
+    SELECT message_id, ${tool_ui_type}, 0, tool_ui_data_jsonb
+    FROM message
+    WHERE tool_ui_data_jsonb IS NOT NULL
+    ON CONFLICT(message_id, type, ordinal) DO NOTHING
+  `);
+}
+
 /**
  * Array of migration functions to run in the order they should be run in.
  *
@@ -202,4 +228,5 @@ export const migrations = [
   applyV8,
   applyV9,
   applyV10,
+  applyV11,
 ];

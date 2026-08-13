@@ -8,10 +8,10 @@
 #include <algorithm>
 #include <cstdint>
 
-#include "mozilla/Attributes.h"
 #include "Point.h"
 #include "Rect.h"
 #include "Types.h"
+#include "mozilla/Attributes.h"
 
 namespace mozilla {
 

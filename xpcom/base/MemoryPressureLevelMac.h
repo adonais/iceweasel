@@ -5,9 +5,11 @@
 #ifndef mozilla_MemoryPressureLevelMac_h
 #define mozilla_MemoryPressureLevelMac_h
 
+#ifdef XP_DARWIN
+#  include "mozilla/Attributes.h"
+
 namespace mozilla {
 
-#if defined(XP_DARWIN)
 // An internal representation of the Mac memory-pressure level constants.
 class MacMemoryPressureLevel {
  public:
@@ -68,8 +70,8 @@ class MacMemoryPressureLevel {
  private:
   Value mValue;
 };
-#endif
 
 }  // namespace mozilla
 
+#endif
 #endif  // mozilla_MemoryPressureLevelMac_h

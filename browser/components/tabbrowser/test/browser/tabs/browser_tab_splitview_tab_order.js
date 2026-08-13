@@ -156,7 +156,7 @@ add_task(async function test_SplitViewContentFocusableTabOrder() {
 
       info("Tab out of the splitview");
       EventUtils.synthesizeKey("KEY_Tab");
-      await BrowserTestUtils.waitForCondition(() => {
+      await TestUtils.waitForCondition(() => {
         return document.activeElement !== secondBrowser;
       });
 

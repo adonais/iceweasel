@@ -10,7 +10,6 @@
 #include <stdint.h>
 
 #include "jit/mips-shared/Architecture-mips-shared.h"
-
 #include "js/Utility.h"
 
 namespace js {

@@ -50,7 +50,9 @@ async function createAlert(titleL10nId, messageL10nId) {
   Services.prompt.alert(window, title, message);
 }
 
-function setPassword(event) {
+async function setPassword(event) {
+  event.preventDefault();
+
   let token = Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(
     Ci.nsIPKCS11Token
   );
@@ -64,18 +66,17 @@ function setPassword(event) {
     if (fipsUtils.isFIPSEnabled) {
       // empty passwords are not allowed in FIPS mode
       createAlert("pw-change-failed-title", "pp-change2empty-in-fips-mode");
-      event.preventDefault();
       return;
     }
   }
 
   try {
-    token.changePassword(oldpwbox.value, pw1.value);
-    if (pw1.value == "") {
-      createAlert("pw-change-success-title", "settings-pp-erased-ok");
-    } else {
-      createAlert("pw-change-success-title", "pp-change-ok");
-    }
+    await token.changePassword(oldpwbox.value, pw1.value);
+    createAlert(
+      "pw-change-success-title",
+      pw1.value == "" ? "settings-pp-erased-ok" : "pp-change-ok"
+    );
+    window.close();
   } catch (e) {
     let nssErrorsService = Cc["@mozilla.org/nss_errors_service;1"].getService(
       Ci.nsINSSErrorsService
@@ -91,7 +92,6 @@ function setPassword(event) {
     } else {
       createAlert("pw-change-failed-title", "failed-pp-change");
     }
-    event.preventDefault();
   }
 }
 

@@ -203,7 +203,9 @@ class ManifestTokens:
         _mda_gpu: Token = self.add(Token(t_type=t_variant, value="mda_gpu"))
         _msix: Token = self.add(Token(t_type=t_variant, value="msix"))
         _nogpu: Token = self.add(Token(t_type=t_variant, value="nogpu"))
-        # privateBrowsing -- not used in any manifests
+        _private_browsing: Token = self.add(
+            Token(t_type=t_variant, value="privateBrowsing")
+        )
         _remote_async: Token = self.add(Token(t_type=t_variant, value="remote_async"))
         _snapshot: Token = self.add(Token(t_type=t_variant, value="snapshot"))
         _standalone: Token = self.add(Token(t_type=t_variant, value="standalone"))

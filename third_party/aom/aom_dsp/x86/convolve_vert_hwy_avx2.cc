@@ -12,6 +12,8 @@
 #define HWY_BASELINE_TARGETS HWY_AVX2
 #define HWY_BROKEN_32BIT 0
 
+#include <cstdint>
+
 #include "aom_dsp/convolve_hwy.h"
 
 extern "C" void aom_convolve8_vert_avx2(const uint8_t *src,

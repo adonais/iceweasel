@@ -21,6 +21,12 @@ const lazy = XPCOMUtils.declareLazy({
     }),
   collapseWhitespace:
     "moz-src:///toolkit/components/pageextractor/DOMExtractor.sys.mjs",
+  setTimeout: "resource://gre/modules/Timer.sys.mjs",
+  clearTimeout: "resource://gre/modules/Timer.sys.mjs",
+  headlessTimeoutMs: {
+    pref: "browser.ml.pageExtractor.headlessTimeoutMs",
+    default: 15000,
+  },
 });
 
 // NOTE: Copied from nsSandboxFlags.h.
@@ -177,9 +183,9 @@ export class PageExtractorParent extends JSWindowActorParent {
           // TODO (bug 2043254) - Move this into the HiddenBrowserManager so all hidden browsers don't affect global history.
           browser.setAttribute("disableglobalhistory", "true");
           // Suppress audio output from the loaded page.
-          browser.mute();
+          browser.browsingContext?.mediaController?.mute();
           browser.addEventListener("DidChangeBrowserRemoteness", () =>
-            browser.mute()
+            browser.browsingContext?.mediaController?.mute()
           );
           const { browsingContext } = browser;
           // Tracking Protection so third-party trackers on the page cannot profile the request or correlate it with the user.
@@ -253,10 +259,13 @@ export class PageExtractorParent extends JSWindowActorParent {
                   "PageExtractor"
                 );
 
-              actor.waitForPageReady().then(() => {
-                lazy.console.log("Headless PageExtractor is ready", url);
-                actorResolver.resolve(actor);
-              });
+              actor.waitForPageReady().then(
+                () => {
+                  lazy.console.log("Headless PageExtractor is ready", url);
+                  actorResolver.resolve(actor);
+                },
+                error => actorResolver.reject(error)
+              );
             } catch (error) {
               // TODO (Bug 2001385) - It would be nice to catch if this is the
               // `about:neterror` page or other similar errors. This will also fail if you
@@ -294,7 +303,26 @@ export class PageExtractorParent extends JSWindowActorParent {
 
         browser.loadURI(url.URI, loadURIOptions);
 
-        return callback(await actorResolver.promise);
+        // The load may never commit on the requested host: the network can
+        // stall, or bot detection can redirect to a challenge page elsewhere.
+        const timeoutMs = lazy.headlessTimeoutMs;
+        const timeoutId = lazy.setTimeout(() => {
+          actorResolver.reject(
+            new DOMException(
+              `The page did not load in a headless browser within ${timeoutMs}ms: ${url.href}`,
+              "TimeoutError"
+            )
+          );
+        }, timeoutMs);
+
+        let actor;
+        try {
+          actor = await actorResolver.promise;
+        } finally {
+          lazy.clearTimeout(timeoutId);
+        }
+
+        return callback(actor);
       },
       {
         // Create a custom message manager group for this browser so that the PageExtractor

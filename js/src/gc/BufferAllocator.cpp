@@ -2,12 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "gc/BufferAllocator-inl.h"
-
 #include "mozilla/Likely.h"
 #include "mozilla/ScopeExit.h"
 
 #include <bit>
+
+#include "gc/BufferAllocator-inl.h"
 
 #ifdef XP_DARWIN
 #  include <mach/mach_init.h>
@@ -496,14 +496,14 @@ bool SmallBufferRegion::hasNurseryOwnedAllocs() const {
 BufferAllocatorRuntime::BufferAllocatorRuntime()
     : lock(mutexid::BufferAllocator) {}
 
-void BufferAllocatorRuntime::incSweepCount() { allocatorSweepCount++; }
+void BufferAllocatorRuntime::incOffThreadCount() { offThreadAccessCount++; }
 
-void BufferAllocatorRuntime::decSweepCount() {
-  MOZ_ALWAYS_TRUE(allocatorSweepCount-- != 0);
+void BufferAllocatorRuntime::decOffThreadCount() {
+  MOZ_ALWAYS_TRUE(offThreadAccessCount-- != 0);
 }
 
 bool BufferAllocatorRuntime::needLockToAccessBufferMap() const {
-  return allocatorSweepCount != 0;
+  return offThreadAccessCount != 0;
 }
 
 LargeBuffer* BufferAllocatorRuntime::lookupLargeBuffer(void* alloc) {
@@ -527,7 +527,7 @@ LargeBuffer* BufferAllocatorRuntime::lookupLargeBuffer(void* alloc,
 }
 
 void BufferAllocatorRuntime::checkGCStateNotInUse() {
-  MOZ_ASSERT(allocatorSweepCount == 0);
+  MOZ_ASSERT(offThreadAccessCount == 0);
 }
 
 BufferAllocator::BufferAllocator(GCRuntime* gc, Zone* zone)
@@ -997,17 +997,16 @@ void* BufferAllocator::TraceEdge(JSTracer* trc, void** bufferp,
   BufferAllocator& allocator = chunk->zone->bufferAllocator;
 
   if (IsSmallAlloc(buffer)) {
-    allocator.traceSmallAlloc(trc, bufferp, name);
+    allocator.traceSmallAlloc(trc, buffer, name);
     return buffer;
   }
 
-  allocator.traceMediumAlloc(trc, bufferp, name);
+  allocator.traceMediumAlloc(trc, buffer, name);
   return buffer;
 }
 
-void BufferAllocator::traceSmallAlloc(JSTracer* trc, void** allocp,
+void BufferAllocator::traceSmallAlloc(JSTracer* trc, void* alloc,
                                       const char* name) {
-  void* alloc = *allocp;
   auto* region = SmallBufferRegion::from(alloc);
 
   if (trc->isTenuringTracer()) {
@@ -1026,9 +1025,8 @@ void BufferAllocator::traceSmallAlloc(JSTracer* trc, void** allocp,
   }
 }
 
-void BufferAllocator::traceMediumAlloc(JSTracer* trc, void** allocp,
+void BufferAllocator::traceMediumAlloc(JSTracer* trc, void* alloc,
                                        const char* name) {
-  void* alloc = *allocp;
   BufferChunk* chunk = BufferChunk::from(alloc);
 
   if (trc->isTenuringTracer()) {
@@ -1210,7 +1208,7 @@ bool BufferAllocator::startMinorSweeping() {
   }
 
   minorState = State::Sweeping;
-  runtime()->incSweepCount();
+  runtime()->incOffThreadCount();
 
   return true;
 }
@@ -1373,7 +1371,7 @@ void BufferAllocator::startMajorSweeping(MaybeLock& lock) {
   }
 
   majorState = State::Sweeping;
-  runtime()->incSweepCount();
+  runtime()->incOffThreadCount();
 }
 
 void BufferAllocator::sweepForMajorCollection(bool shouldDecommit) {
@@ -1477,9 +1475,13 @@ void BufferAllocator::abortMajorSweeping(const AutoLock& lock) {
   clearAllocatedDuringCollectionState(lock);
 
   if (minorState == State::Sweeping) {
-    // If we are minor sweeping then chunks with allocatedDuringCollection set
-    // may be present in |mixedChunksToSweep|. Set a flag so these are cleared
-    // when they are merged later.
+    // If we are minor sweeping then stolen chunks may be in
+    // |mixedChunksToSweep|; ensure mergeSweptData clears their
+    // stolenFromSweepList flag and stale mark bits.
+    majorSweepingStartedWhileMinorSweeping = true;
+    // Also, chunks with allocatedDuringCollection set may be present in
+    // |mixedChunksToSweep|. Set a flag so these are cleared when they are
+    // merged later.
     majorFinishedWhileMinorSweeping = true;
   }
 
@@ -1650,7 +1652,7 @@ void BufferAllocator::mergeSweptData(const AutoLock& lock) {
 
   if (minorSweepingFinished) {
     MOZ_ASSERT(minorState == State::Sweeping);
-    runtime()->decSweepCount();
+    runtime()->decOffThreadCount();
     minorState = State::NotCollecting;
     minorSweepingFinished = false;
     majorStartedWhileMinorSweeping = false;
@@ -1669,7 +1671,7 @@ void BufferAllocator::mergeSweptData(const AutoLock& lock) {
 
   if (majorSweepingFinished) {
     MOZ_ASSERT(majorState == State::Sweeping);
-    runtime()->decSweepCount();
+    runtime()->decOffThreadCount();
     majorState = State::NotCollecting;
     majorSweepingFinished = false;
 
@@ -1803,8 +1805,8 @@ bool LargeBuffer::isPointerWithinAllocation(void* ptr) const {
 #ifdef DEBUG
 
 void BufferAllocator::checkGCStateNotInUse() {
-  maybeMergeSweptData();
-  AutoLock lock(runtime());  // Some fields are protected by this lock.
+  MaybeLock lock;
+  maybeMergeSweptData(lock);
   checkGCStateNotInUse(lock);
 }
 

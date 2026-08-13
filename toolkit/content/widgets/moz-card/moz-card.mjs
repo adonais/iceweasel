@@ -27,6 +27,8 @@ import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
  * @property {string} iconSrc - Path to the icon that should be displayed in the card.
  * @property {string} type - (optional) The type of card. No type specified
  *   will be the default card. The other available type is "accordion"
+ * @property {string} spacing - (optional) The level of spacing applied to the card. If unspecified,
+ *   will use default spacing. The other available option is "compact", which has reduced spacing.
  * @property {boolean} expanded - A flag to indicate whether the card is
  *  expanded or not. Can be used to expand the content section of the
  *  accordion card on initial render.
@@ -47,6 +49,7 @@ export default class MozCard extends MozLitElement {
     headingLevel: { type: Number },
     iconSrc: { type: String },
     type: { type: String, reflect: true },
+    spacing: { type: String, reflect: true },
     expanded: { type: Boolean },
     role: { type: String, mapped: true },
   };
@@ -54,6 +57,7 @@ export default class MozCard extends MozLitElement {
   constructor() {
     super();
     this.type = "default";
+    this.spacing = "default";
     this.expanded = false;
     /* When set to 1-6, it uses h1-h6 around the heading */
     this.headingLevel = 0;

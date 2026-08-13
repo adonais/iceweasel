@@ -34,7 +34,7 @@ add_task(async function () {
   const browser = win.gBrowser.selectedBrowser;
 
   info("Wait until the loading URL appears in the URL bar");
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => browser.browsingContext.nonWebControlledLoadingURI,
     "nonWebControlledLoadingURI should be set"
   );

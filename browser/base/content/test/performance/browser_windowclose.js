@@ -2,7 +2,12 @@
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
-    set: [["test.wait300msAfterTabSwitch", true]],
+    set: [
+      ["test.wait300msAfterTabSwitch", true],
+      // Disable the window active/inactive transitions so the closing
+      // window's activation change doesn't register as flicker.
+      ["ui.prefersReducedMotion", 1],
+    ],
   });
 });
 
@@ -50,7 +55,7 @@ add_task(async function () {
 
   let inRange = (val, min, max) => min <= val && val <= max;
   let tabRect = win.gBrowser.tabContainer
-    .querySelector("tab[selected=true] .tab-background")
+    .querySelector("tab[selected] .tab-background")
     .getBoundingClientRect();
   await withPerfObserver(
     async function () {

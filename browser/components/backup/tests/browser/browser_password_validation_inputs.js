@@ -96,7 +96,7 @@ add_task(async function password_validation() {
      * Plus, visibility changes are delayed due to transitions. Use waitForCondition instead to wait for the animation to finish and
      * validate the tooltip's final visibility state.
      */
-    let hiddenPromise = BrowserTestUtils.waitForCondition(() => {
+    let hiddenPromise = TestUtils.waitForCondition(() => {
       return !passwordInputs.passwordRulesEl.open;
     });
 

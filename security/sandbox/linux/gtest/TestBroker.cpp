@@ -2,24 +2,22 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "gtest/gtest.h"
-
-#include "broker/SandboxBroker.h"
-#include "broker/SandboxBrokerUtils.h"
-#include "SandboxBrokerClient.h"
-
 #include <errno.h>
 #include <fcntl.h>
 #include <pthread.h>
-#include <stdlib.h>
 #include <sched.h>
 #include <semaphore.h>
+#include <stdlib.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
 
+#include "SandboxBrokerClient.h"
+#include "broker/SandboxBroker.h"
+#include "broker/SandboxBrokerUtils.h"
+#include "gtest/gtest.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/UniquePtr.h"

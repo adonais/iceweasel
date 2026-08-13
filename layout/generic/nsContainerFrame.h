@@ -158,7 +158,7 @@ class nsContainerFrame : public nsSplittableFrame {
    * Note: Reparenting a large frame list can be have huge performance impact.
    * For example, instead of using this method, nsInlineFrame uses a "lazy
    * reparenting" technique that it reparents a child frame just before
-   * reflowing the child. (See InlineReflowInput::mSetParentPointer.)
+   * reflowing the child. (See InlineReflowInput::mSetParentDuringReflow.)
    */
   static void ReparentFrames(nsFrameList& aFrameList,
                              nsContainerFrame* aOldParent,

@@ -19,6 +19,7 @@
 
 #include "jstypes.h"
 #include "mozmemory.h"
+
 #include "js/TypeDecls.h"
 
 /* The public JS engine namespace. */

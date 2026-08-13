@@ -31,7 +31,6 @@ struct StyleFontStyle;
 struct StyleLockedDeclarationBlock;
 struct StyleParsingMode;
 struct StylePerDocumentStyleData;
-union StyleComputedFontStyleDescriptor;
 enum class StyleColorSpace : uint8_t;
 
 template <typename Integer, typename Number, typename LinearStops>

@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 
 use std::{
-    collections::HashSet,
     net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr},
     time::Instant,
 };
@@ -14,6 +13,7 @@ use happy_eyeballs::{
 
 pub const HOSTNAME: &str = "example.com";
 pub const SVC1: &str = "svc1.example.com.";
+pub const SVC2: &str = "svc2.example.com.";
 pub const PORT: u16 = 443;
 pub const CUSTOM_PORT: u16 = 8443;
 pub const V6_ADDR: Ipv6Addr = Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0, 0, 0, 1);
@@ -27,95 +27,145 @@ pub fn ech_config() -> EchConfig {
     EchConfig::new(ECH_CONFIG_BYTES.to_vec())
 }
 
+/// Build a [`ServiceInfo`] from the fields tests usually vary: priority, target
+/// name, and ALPN versions. The remaining fields (hints, ECH, port) default to
+/// empty/none; set them with the chainable [`ServiceInfoExt`] methods, e.g.
+/// `service_info(1, SVC1, &[HttpVersion::H3]).ech().port(8443)`.
+pub fn service_info(priority: u16, target_name: &str, alpns: &[HttpVersion]) -> ServiceInfo {
+    ServiceInfo {
+        priority,
+        target_name: target_name.into(),
+        alpn_http_versions: alpns.iter().copied().collect(),
+        ipv6_hints: vec![],
+        ipv4_hints: vec![],
+        ech_config: None,
+        port: None,
+    }
+}
+
+/// Chainable setters for the non-default [`ServiceInfo`] fields, so tests can
+/// build records without spelling out the defaults, e.g.
+/// `service_info(1, SVC1, &[HttpVersion::H3]).ech().port(9443)`.
+pub trait ServiceInfoExt {
+    /// Attach the default test ECH config ([`ech_config`]).
+    fn ech(self) -> Self;
+    /// Attach a specific ECH config.
+    fn ech_with(self, ech: EchConfig) -> Self;
+    fn port(self, port: u16) -> Self;
+    fn ipv6_hints(self, hints: Vec<Ipv6Addr>) -> Self;
+    fn ipv4_hints(self, hints: Vec<Ipv4Addr>) -> Self;
+}
+
+impl ServiceInfoExt for ServiceInfo {
+    fn ech(mut self) -> Self {
+        self.ech_config = Some(ech_config());
+        self
+    }
+    fn ech_with(mut self, ech: EchConfig) -> Self {
+        self.ech_config = Some(ech);
+        self
+    }
+    fn port(mut self, port: u16) -> Self {
+        self.port = Some(port);
+        self
+    }
+    fn ipv6_hints(mut self, hints: Vec<Ipv6Addr>) -> Self {
+        self.ipv6_hints = hints;
+        self
+    }
+    fn ipv4_hints(mut self, hints: Vec<Ipv4Addr>) -> Self {
+        self.ipv4_hints = hints;
+        self
+    }
+}
+
+/// Test-only driver methods on [`HappyEyeballs`]. All methods take `now` last.
 pub trait HappyEyeballsExt {
-    fn expect(&mut self, input_output: Vec<(Option<Input>, Option<Output>)>, now: Instant);
-    fn expect_connection_attempts(&mut self, now: &mut Instant, connections: Vec<Output>);
+    /// Feed a single input into the state machine.
+    fn input(&mut self, input: Input, now: Instant);
+    /// Assert that the next output equals `expected`.
+    fn expect(&mut self, expected: Output, now: Instant);
+    /// Assert that the next outputs equal `expected`, in order. Convenience for
+    /// a run of consecutive outputs emitted at the same `now`.
+    fn expect_all(&mut self, expected: impl IntoIterator<Item = Output>, now: Instant);
+    /// Assert that the state machine has no further output to produce.
+    fn expect_idle(&mut self, now: Instant);
+    fn expect_connection_attempts(
+        &mut self,
+        connections: impl IntoIterator<Item = Output>,
+        now: &mut Instant,
+    );
 }
 
 impl HappyEyeballsExt for HappyEyeballs {
-    fn expect(&mut self, input_output: Vec<(Option<Input>, Option<Output>)>, now: Instant) {
-        for (input, expected_output) in input_output {
-            if let Some(input) = input {
-                self.process_input(input, now);
-            }
-            let output = self.process_output(now);
-            assert_eq!(expected_output, output);
+    fn input(&mut self, input: Input, now: Instant) {
+        self.process_input(input, now);
+    }
+
+    fn expect(&mut self, expected: Output, now: Instant) {
+        assert_eq!(Some(expected), self.process_output(now));
+    }
+
+    fn expect_all(&mut self, expected: impl IntoIterator<Item = Output>, now: Instant) {
+        for output in expected {
+            self.expect(output, now);
         }
     }
 
-    fn expect_connection_attempts(&mut self, now: &mut Instant, connections: Vec<Output>) {
+    fn expect_idle(&mut self, now: Instant) {
+        assert_eq!(None, self.process_output(now));
+    }
+
+    fn expect_connection_attempts(
+        &mut self,
+        connections: impl IntoIterator<Item = Output>,
+        now: &mut Instant,
+    ) {
         for conn in connections {
             *now += CONNECTION_ATTEMPT_DELAY;
-            self.expect(
-                vec![
-                    (None, Some(conn)),
-                    (None, Some(out_connection_attempt_delay())),
-                ],
-                *now,
-            );
+            self.expect(conn, *now);
+            self.expect(out_connection_attempt_delay(), *now);
         }
         *now += CONNECTION_ATTEMPT_DELAY;
-        self.expect(vec![(None, None)], *now);
+        self.expect_idle(*now);
     }
 }
 
 pub fn in_dns_https_positive(id: Id) -> Input {
     Input::DnsResult {
         id,
-        result: DnsResult::Https(Ok(vec![ServiceInfo {
-            priority: 1,
-            target_name: HOSTNAME.into(),
-            alpn_http_versions: HashSet::from([HttpVersion::H3, HttpVersion::H2]),
-            ipv6_hints: vec![],
-            ipv4_hints: vec![],
-            ech_config: None,
-            port: None,
-        }])),
+        result: DnsResult::Https(Ok(vec![service_info(
+            1,
+            HOSTNAME,
+            &[HttpVersion::H3, HttpVersion::H2],
+        )])),
     }
 }
 
 pub fn in_dns_https_positive_ech(id: Id) -> Input {
     Input::DnsResult {
         id,
-        result: DnsResult::Https(Ok(vec![ServiceInfo {
-            priority: 1,
-            target_name: HOSTNAME.into(),
-            alpn_http_versions: HashSet::from([HttpVersion::H3, HttpVersion::H2]),
-            ipv6_hints: vec![],
-            ipv4_hints: vec![],
-            ech_config: Some(ech_config()),
-            port: None,
-        }])),
+        result: DnsResult::Https(Ok(vec![
+            service_info(1, HOSTNAME, &[HttpVersion::H3, HttpVersion::H2]).ech(),
+        ])),
     }
 }
 
 pub fn in_dns_https_positive_no_alpn(id: Id) -> Input {
     Input::DnsResult {
         id,
-        result: DnsResult::Https(Ok(vec![ServiceInfo {
-            priority: 1,
-            target_name: HOSTNAME.into(),
-            alpn_http_versions: HashSet::new(),
-            ipv6_hints: vec![],
-            ipv4_hints: vec![],
-            ech_config: None,
-            port: None,
-        }])),
+        result: DnsResult::Https(Ok(vec![service_info(1, HOSTNAME, &[])])),
     }
 }
 
 fn in_dns_https_with_hints(id: Id, ipv4_hints: Vec<Ipv4Addr>, ipv6_hints: Vec<Ipv6Addr>) -> Input {
     Input::DnsResult {
         id,
-        result: DnsResult::Https(Ok(vec![ServiceInfo {
-            priority: 1,
-            target_name: HOSTNAME.into(),
-            alpn_http_versions: HashSet::from([HttpVersion::H3, HttpVersion::H2]),
-            ipv4_hints,
-            ipv6_hints,
-            ech_config: None,
-            port: None,
-        }])),
+        result: DnsResult::Https(Ok(vec![
+            service_info(1, HOSTNAME, &[HttpVersion::H3, HttpVersion::H2])
+                .ipv4_hints(ipv4_hints)
+                .ipv6_hints(ipv6_hints),
+        ])),
     }
 }
 
@@ -134,15 +184,9 @@ pub fn in_dns_https_positive_v4_and_v6_hints(id: Id) -> Input {
 pub fn in_dns_https_positive_svc1(id: Id) -> Input {
     Input::DnsResult {
         id,
-        result: DnsResult::Https(Ok(vec![ServiceInfo {
-            priority: 1,
-            target_name: SVC1.into(),
-            alpn_http_versions: HashSet::from([HttpVersion::H3, HttpVersion::H2]),
-            ipv6_hints: vec![V6_ADDR_2],
-            ipv4_hints: vec![],
-            ech_config: None,
-            port: None,
-        }])),
+        result: DnsResult::Https(Ok(vec![
+            service_info(1, SVC1, &[HttpVersion::H3, HttpVersion::H2]).ipv6_hints(vec![V6_ADDR_2]),
+        ])),
     }
 }
 
@@ -202,36 +246,28 @@ pub fn in_connection_result_ech_retry(id: Id) -> Input {
     }
 }
 
-pub fn out_send_dns_https(id: Id) -> Output {
+pub fn out_send_dns(id: Id, hostname: &str, record_type: DnsRecordType) -> Output {
     Output::SendDnsQuery {
         id,
-        hostname: HOSTNAME.into(),
-        record_type: DnsRecordType::Https,
+        hostname: hostname.into(),
+        record_type,
     }
+}
+
+pub fn out_send_dns_https(id: Id) -> Output {
+    out_send_dns(id, HOSTNAME, DnsRecordType::Https)
 }
 
 pub fn out_send_dns_aaaa(id: Id) -> Output {
-    Output::SendDnsQuery {
-        id,
-        hostname: HOSTNAME.into(),
-        record_type: DnsRecordType::Aaaa,
-    }
+    out_send_dns(id, HOSTNAME, DnsRecordType::Aaaa)
 }
 
 pub fn out_send_dns_svc1(id: Id) -> Output {
-    Output::SendDnsQuery {
-        id,
-        hostname: SVC1.into(),
-        record_type: DnsRecordType::Aaaa,
-    }
+    out_send_dns(id, SVC1, DnsRecordType::Aaaa)
 }
 
 pub fn out_send_dns_a(id: Id) -> Output {
-    Output::SendDnsQuery {
-        id,
-        hostname: HOSTNAME.into(),
-        record_type: DnsRecordType::A,
-    }
+    out_send_dns(id, HOSTNAME, DnsRecordType::A)
 }
 
 pub fn out_attempt_v6_h1_h2(id: Id) -> Output {
@@ -392,4 +428,51 @@ pub fn setup_with_config(config: NetworkConfig) -> (Instant, HappyEyeballs) {
     let now = Instant::now();
     let he = HappyEyeballs::new_with_network_config(HOSTNAME, PORT, config).unwrap();
     (now, he)
+}
+
+/// Assert that the next output is a DNS query for `hostname`/`record_type` with `id`.
+pub fn expect_query(
+    he: &mut HappyEyeballs,
+    now: Instant,
+    id: u64,
+    hostname: &str,
+    rt: DnsRecordType,
+) {
+    he.expect(out_send_dns(Id::from(id), hostname, rt), now);
+}
+
+/// Assert the standard opening burst of DNS queries: HTTPS, AAAA, then A for the
+/// default `HOSTNAME` with ids 0, 1, 2.
+pub fn expect_initial_dns_queries(he: &mut HappyEyeballs, now: Instant) {
+    expect_query(he, now, 0, HOSTNAME, DnsRecordType::Https);
+    expect_query(he, now, 1, HOSTNAME, DnsRecordType::Aaaa);
+    expect_query(he, now, 2, HOSTNAME, DnsRecordType::A);
+}
+
+/// After an HTTPS record names SVC1 as its target, the resolver emits SVC1's
+/// AAAA+A queries (ids 3-4) and then the resolution-delay timer.
+pub fn expect_svc1_dns_queries(he: &mut HappyEyeballs, now: Instant) {
+    he.expect_all(
+        [
+            out_send_dns(Id::from(3), SVC1, DnsRecordType::Aaaa),
+            out_send_dns(Id::from(4), SVC1, DnsRecordType::A),
+            out_resolution_delay(),
+        ],
+        now,
+    );
+}
+
+/// Like [`expect_svc1_dns_queries`] but for two targets: SVC1 (ids 3-4) and
+/// SVC2 (ids 5-6), then the resolution-delay timer.
+pub fn expect_svc1_svc2_dns_queries(he: &mut HappyEyeballs, now: Instant) {
+    he.expect_all(
+        [
+            out_send_dns(Id::from(3), SVC1, DnsRecordType::Aaaa),
+            out_send_dns(Id::from(4), SVC1, DnsRecordType::A),
+            out_send_dns(Id::from(5), SVC2, DnsRecordType::Aaaa),
+            out_send_dns(Id::from(6), SVC2, DnsRecordType::A),
+            out_resolution_delay(),
+        ],
+        now,
+    );
 }

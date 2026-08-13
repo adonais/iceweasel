@@ -8,6 +8,9 @@ const { TaskbarTabsRegistry, TaskbarTabsRegistryStorage } =
   ChromeUtils.importESModule(
     "resource:///modules/taskbartabs/TaskbarTabsRegistry.sys.mjs"
   );
+const { sinon } = ChromeUtils.importESModule(
+  "resource://testing-common/Sinon.sys.mjs"
+);
 
 function testFile() {
   let path = do_get_tempdir();
@@ -27,7 +30,7 @@ add_task(async function test_create_taskbar_tab() {
   const url = Services.io.newURI("https://www.test.com/start");
   const userContextId = 0; // Default container.
 
-  const registry = new TaskbarTabsRegistry();
+  const registry = createInMemoryRegistry();
 
   Assert.ok(
     !registry.findTaskbarTab(url, userContextId),
@@ -81,7 +84,7 @@ add_task(async function test_remove_taskbar_tab() {
   const url = Services.io.newURI("https://www.test.com/start");
   const userContextId = 0;
 
-  const registry = new TaskbarTabsRegistry();
+  const registry = createInMemoryRegistry();
   const taskbarTab = createTaskbarTab(registry, url, userContextId);
 
   Assert.deepEqual(
@@ -113,7 +116,7 @@ add_task(async function test_container_mismatch() {
   const userContextId = 0;
   const mismatchedUserContextId = 1;
 
-  const registry = new TaskbarTabsRegistry();
+  const registry = createInMemoryRegistry();
   const taskbarTab = createTaskbarTab(registry, url, userContextId);
   Assert.ok(taskbarTab, "Taskbar Tab ID should be created.");
 
@@ -134,7 +137,7 @@ add_task(async function test_scope_navigable() {
   );
   const userContextId = 0;
 
-  const registry = new TaskbarTabsRegistry();
+  const registry = createInMemoryRegistry();
   const taskbarTab = createTaskbarTab(registry, url, userContextId);
 
   Assert.ok(
@@ -159,7 +162,7 @@ add_task(async function test_psl_navigable() {
   );
   const userContextId = 0;
 
-  const registry = new TaskbarTabsRegistry();
+  const registry = createInMemoryRegistry();
   const taskbarTab = createTaskbarTab(registry, url, userContextId);
 
   Assert.ok(
@@ -172,14 +175,15 @@ add_task(async function test_save_and_load_consistency() {
   const url = Services.io.newURI("https://www.test.com/start");
   const userContextId = 0;
 
-  let saveRegistry = new TaskbarTabsRegistry();
+  let file = testFile();
+  let saveStorage = new TaskbarTabsRegistryStorage(file);
+  let saveRegistry = await saveStorage.load();
   const saveTaskbarTab = createTaskbarTab(saveRegistry, url, userContextId);
 
-  let file = testFile();
-  let storage = new TaskbarTabsRegistryStorage(saveRegistry, file);
-  await storage.save();
+  await saveStorage.save(saveRegistry);
 
-  const loadRegistry = await TaskbarTabsRegistry.create({ loadFile: file });
+  let loadStorage = new TaskbarTabsRegistryStorage(file);
+  let loadRegistry = await loadStorage.load();
   let loadTaskbarTab = loadRegistry.getTaskbarTab(saveTaskbarTab.id);
 
   Assert.deepEqual(
@@ -190,10 +194,13 @@ add_task(async function test_save_and_load_consistency() {
 });
 
 add_task(async function test_load_and_save_consistency() {
-  const loadFile = do_get_file("test_taskbarTabs.json");
+  const source = do_get_file("test_taskbarTabs.json");
+  const file = testFile();
+  await IOUtils.copy(source.path, file.path);
 
   // Test loading from the mock file
-  const registry = await TaskbarTabsRegistry.create({ loadFile });
+  const loadStorage = new TaskbarTabsRegistryStorage(file);
+  const registry = await loadStorage.load();
   Assert.equal(
     registry.findTaskbarTab(Services.io.newURI("https://www.test.com"), 0).id,
     "4186657a-0fe5-492a-af64-dc628c232c4c",
@@ -201,16 +208,14 @@ add_task(async function test_load_and_save_consistency() {
   );
 
   // Test saving to a new file
-  let file = testFile();
-  let storage = new TaskbarTabsRegistryStorage(registry, file);
-  await storage.save();
+  const savedTo = testFile();
+  const saveStorage = new TaskbarTabsRegistryStorage(savedTo);
+  await saveStorage.save(registry);
 
   // Verify the output against the original file on disk.
-  const originalData = await IOUtils.readJSON(loadFile.path);
-  const outputData = await IOUtils.readJSON(file.path);
+  const originalData = await IOUtils.readJSON(source.path);
+  const outputData = await IOUtils.readJSON(savedTo.path);
 
-  // Even though the Taskbar Tabs are kept in a map, entries remember their
-  // insertion orders.
   Assert.deepEqual(
     outputData,
     originalData,
@@ -219,9 +224,12 @@ add_task(async function test_load_and_save_consistency() {
 });
 
 add_task(async function test_load_and_save_migrates_name() {
-  const loadFile = do_get_file("test_taskbarTabs_nonames.json");
+  const source = do_get_file("test_taskbarTabs_nonames.json");
+  const file = testFile();
+  await IOUtils.copy(source.path, file.path);
 
-  const registry = await TaskbarTabsRegistry.create({ loadFile });
+  const storage = new TaskbarTabsRegistryStorage(file);
+  const registry = await storage.load();
   const tt = registry.findTaskbarTab(
     Services.io.newURI("https://www.test.com"),
     0
@@ -234,9 +242,7 @@ add_task(async function test_load_and_save_migrates_name() {
 
   equal(typeof tt.name, "string", "A name should be present in-memory.");
 
-  let file = testFile();
-  let storage = new TaskbarTabsRegistryStorage(registry, file);
-  await storage.save();
+  await storage.save(registry);
 
   const outputData = await IOUtils.readJSON(file.path);
   equal(
@@ -253,7 +259,7 @@ add_task(async function test_guards_against_commandline_strings() {
   const validUserContextId = 0;
   const invalidUserContextId = "0";
 
-  const registry = new TaskbarTabsRegistry();
+  const registry = createInMemoryRegistry();
 
   Assert.throws(
     () => registry.findTaskbarTab(invalidUrl, validUserContextId),
@@ -272,7 +278,7 @@ add_task(async function test_guards_against_non_urls() {
   const url = Services.io.newURI("about:blank");
   const userContextId = 0;
 
-  const registry = new TaskbarTabsRegistry();
+  const registry = createInMemoryRegistry();
 
   throws(
     () => createTaskbarTab(registry, url, userContextId),
@@ -282,17 +288,18 @@ add_task(async function test_guards_against_non_urls() {
 });
 
 add_task(async function test_patch_becomes_visible() {
-  const registry = new TaskbarTabsRegistry();
+  const stub = sinon.stub();
+  const registry = new TaskbarTabsRegistry(
+    {
+      save: stub,
+    },
+    []
+  );
   const tt = createTaskbarTab(
     registry,
     Services.io.newURI("https://www.test.com/start"),
     0
   );
-
-  let called = 0;
-  registry.on(TaskbarTabsRegistry.events.patched, () => {
-    called += 1;
-  });
 
   Assert.equal(
     tt.shortcutRelativePath,
@@ -307,11 +314,14 @@ add_task(async function test_patch_becomes_visible() {
     "some\\path\\string.lnk",
     "Should update to the new value"
   );
-  Assert.equal(called, 1, "Should emit the callback function once");
+  // Once after 'createTaskbarTab', once after 'patchTaskbarTab'.
+  Assert.equal(stub.callCount, 2, "Should save the database twice");
 });
 
 add_task(async function test_shortcutRelativePath_is_saved() {
-  const registry = new TaskbarTabsRegistry();
+  const file = testFile();
+  const storage = new TaskbarTabsRegistryStorage(file);
+  const registry = await storage.load();
   const tt = createTaskbarTab(
     registry,
     Services.io.newURI("https://www.test.com/start"),
@@ -322,9 +332,7 @@ add_task(async function test_shortcutRelativePath_is_saved() {
     shortcutRelativePath: "some\\path\\string.lnk",
   });
 
-  const file = testFile();
-  const storage = new TaskbarTabsRegistryStorage(registry, file);
-  await storage.save();
+  await storage.save(registry);
 
   const data = await IOUtils.readJSON(file.path);
   Assert.equal(
@@ -335,7 +343,7 @@ add_task(async function test_shortcutRelativePath_is_saved() {
 });
 
 add_task(async function test_multiple_match_longest_prefix() {
-  const registry = new TaskbarTabsRegistry();
+  const registry = createInMemoryRegistry();
 
   const uriWithPrefix = prefix =>
     Services.io.newURI("https://example.com" + prefix);

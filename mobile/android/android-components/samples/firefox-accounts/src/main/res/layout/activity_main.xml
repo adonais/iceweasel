@@ -21,6 +21,7 @@
         tools:context="org.mozilla.samples.fxa.MainActivity">
 
         <Button
+            style="@style/Mozac.Widgets.NeutralButton"
             android:id="@+id/buttonCustomTabs"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -28,6 +29,7 @@
             android:textAlignment="center" />
 
         <Button
+            style="@style/Mozac.Widgets.NeutralButton"
             android:id="@+id/buttonWebView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -35,6 +37,7 @@
             android:textAlignment="center" />
 
         <Button
+            style="@style/Mozac.Widgets.NeutralButton"
             android:id="@+id/buttonPair"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -42,6 +45,7 @@
             android:textAlignment="center" />
 
         <Button
+            style="@style/Mozac.Widgets.NeutralButton"
             android:id="@+id/buttonLogout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

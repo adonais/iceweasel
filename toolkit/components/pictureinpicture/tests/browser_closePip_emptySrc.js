@@ -38,7 +38,7 @@ add_task(async () => {
 
           // Wait for after autoclose's hardcoded time limit to pass
           try {
-            await BrowserTestUtils.waitForCondition(
+            await TestUtils.waitForCondition(
               () => pipWin.closed,
               "Player window closed.",
               10,

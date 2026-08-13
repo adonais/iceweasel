@@ -102,4 +102,14 @@ partial interface Range {
   undefined setStartAllowCrossShadowBoundary(Node refNode, unsigned long offset);
   [ChromeOnly, Throws]
   undefined setEndAllowCrossShadowBoundary(Node refNode, unsigned long offset);
+
+  [ChromeOnly, BinaryName="GetMayCrossShadowBoundaryStartContainer"]
+  readonly attribute Node mayCrossShadowBoundaryStartContainer;
+  [ChromeOnly]
+  readonly attribute unsigned long mayCrossShadowBoundaryStartOffset;
+  [ChromeOnly, BinaryName="GetMayCrossShadowBoundaryEndContainer"]
+  readonly attribute Node mayCrossShadowBoundaryEndContainer;
+  [ChromeOnly]
+  readonly attribute unsigned long mayCrossShadowBoundaryEndOffset;
+
 };

@@ -1307,6 +1307,27 @@ export class BackupService extends EventTarget {
   }
 
   /**
+   * Probes whether read access to a backup parent directory is available.
+   *
+   * @param {string} [path=BackupService.DEFAULT_PARENT_DIR_PATH]
+   *   The directory path to probe.
+   * @returns {Promise<boolean>}
+   *   Resolves to true if the directory contents could be listed,
+   *   false otherwise.
+   */
+  async probeDefaultDirAccess(path = BackupService.DEFAULT_PARENT_DIR_PATH) {
+    if (!path) {
+      return false;
+    }
+    try {
+      await IOUtils.getChildren(path);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Returns a reference to a BackupService singleton. If this is the first time
    * that this getter is accessed, this causes the BackupService singleton to be
    * instantiated.
@@ -5331,30 +5352,48 @@ export class BackupService extends EventTarget {
       // During the first startup, the browser's backup location is often left
       // unconfigured; therefore, it defaults to predefined locations to look
       // for existing backup files.
-      let backupPaths = [];
+      let backupPaths = new Set();
 
       if (this.#_state.backupDirPath) {
-        backupPaths.push(this.#_state.backupDirPath);
+        backupPaths.add(this.#_state.backupDirPath);
       }
 
-      // Filter out null paths (with Boolean) and append the backup dir name
-      backupPaths.push(
-        ...[
-          BackupService.docsDirFolderPath?.path,
-          BackupService.oneDriveFolderPath?.path,
-        ]
-          .filter(Boolean)
-          .map(backupPath =>
-            PathUtils.join(backupPath, BackupService.BACKUP_DIR_NAME)
-          )
-      );
+      for (let dirPath of [
+        BackupService.docsDirFolderPath?.path,
+        BackupService.oneDriveFolderPath?.path,
+      ]) {
+        if (dirPath) {
+          backupPaths.add(
+            PathUtils.join(dirPath, BackupService.BACKUP_DIR_NAME)
+          );
+        }
+      }
 
       let files = [];
+      let anyPathSucceeded = false;
 
       for (let backupPath of backupPaths) {
-        files.push(
-          ...(await IOUtils.getChildren(backupPath, { ignoreAbsent: true }))
-        );
+        try {
+          files.push(
+            ...(await IOUtils.getChildren(backupPath, { ignoreAbsent: true }))
+          );
+          anyPathSucceeded = true;
+        } catch (e) {
+          lazy.logConsole.error(
+            "Could not read backup directory: ",
+            backupPath,
+            e
+          );
+        }
+      }
+
+      if (!anyPathSucceeded && backupPaths.size) {
+        // Since we don't have access to any directory, let's not mistakenly
+        // let the user see a state where they can restore from.
+        this.#_state.backupFileToRestore = null;
+        this.#_state.backupFileInfo = null;
+        this.stateUpdate();
+        return { multipleBackupsFound: false, count: 0 };
       }
 
       // filtering is an O(N) operation, we can return early if there's too many files
@@ -5465,9 +5504,9 @@ export class BackupService extends EventTarget {
    *   in the internal state prior to searching.
    *
    * @param {object} [options] - Configuration options.
-   * @param {boolean} [options.validateFile=false] - Whether to validate each backup file
+   * @param {boolean} [options.validateFile=true] - Whether to validate each backup file
    *   before selecting it.
-   * @param {boolean} [options.multipleFiles=false] - Whether to allow selecting a file
+   * @param {boolean} [options.multipleFiles=true] - Whether to allow selecting a file
    *   when multiple files are found
    * @param {string} [options.source] - If provided, records a
    *   backup_detection_complete telemetry event with this value as the source
@@ -5479,8 +5518,8 @@ export class BackupService extends EventTarget {
    * - {boolean} multipleBackupsFound — Currently always `false`, reserved for future use.
    */
   async findBackupsInWellKnownLocations({
-    validateFile = false,
-    multipleFiles = false,
+    validateFile = true,
+    multipleFiles = true,
     source = null,
   } = {}) {
     this.#_state.backupFileToRestore = null;

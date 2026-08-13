@@ -24,6 +24,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -31,6 +32,7 @@
 #include "gtest/gtest.h"
 #include "absl/base/attributes.h"
 #include "absl/base/internal/exception_testing.h"
+#include "absl/base/internal/hardening.h"
 #include "absl/base/internal/iterator_traits_test_helper.h"
 #include "absl/base/macros.h"
 #include "absl/base/options.h"
@@ -51,6 +53,7 @@ using testing::AllOf;
 using testing::Each;
 using testing::ElementsAre;
 using testing::ElementsAreArray;
+using testing::IsEmpty;
 using testing::Eq;
 using testing::Gt;
 using testing::Pointee;
@@ -256,6 +259,7 @@ TEST(IntVec, Hardened) {
   Fill(&v, 10);
   EXPECT_EQ(v[9], 9);
 #if !defined(NDEBUG) || ABSL_OPTION_HARDENED
+  absl::base_internal::ScopedSetAbslHardeningForTesting hardener(true);
   EXPECT_DEATH_IF_SUPPORTED(v[10], "");
   EXPECT_DEATH_IF_SUPPORTED(v[static_cast<size_t>(-1)], "");
   EXPECT_DEATH_IF_SUPPORTED(v.resize(v.max_size() + 1), "");
@@ -474,16 +478,16 @@ TEST(InlinedVectorTest, MoveOnly) {
   v.emplace(v.begin(), MoveOnly{});
 }
 TEST(InlinedVectorTest, Noexcept) {
-  EXPECT_TRUE(std::is_nothrow_move_constructible<IntVec>::value);
-  EXPECT_TRUE((std::is_nothrow_move_constructible<
-               absl::InlinedVector<MoveOnly, 2>>::value));
+  EXPECT_TRUE(std::is_nothrow_move_constructible_v<IntVec>);
+  EXPECT_TRUE(
+      (std::is_nothrow_move_constructible_v<absl::InlinedVector<MoveOnly, 2>>));
 
   struct MoveCanThrow {
     MoveCanThrow(MoveCanThrow&&) {}
   };
   EXPECT_EQ(absl::default_allocator_is_nothrow::value,
-            (std::is_nothrow_move_constructible<
-                absl::InlinedVector<MoveCanThrow, 2>>::value));
+            (std::is_nothrow_move_constructible_v<
+                absl::InlinedVector<MoveCanThrow, 2>>));
 }
 
 TEST(InlinedVectorTest, EmplaceBack) {
@@ -822,7 +826,7 @@ class NotTriviallyDestructible {
       : p_(new int(*other.p_)) {}
 
   NotTriviallyDestructible& operator=(const NotTriviallyDestructible& other) {
-    p_ = absl::make_unique<int>(*other.p_);
+    p_ = std::make_unique<int>(*other.p_);
     return *this;
   }
 
@@ -919,7 +923,9 @@ TEST(IntVec, Clear) {
     SCOPED_TRACE(len);
     IntVec v;
     Fill(&v, len);
+    size_t capacity_before_clear = v.capacity();
     v.clear();
+    EXPECT_EQ(v.capacity(), capacity_before_clear);
     EXPECT_EQ(0u, v.size());
     EXPECT_EQ(v.begin(), v.end());
   }
@@ -1992,7 +1998,7 @@ TEST(AllocatorSupportTest, SizeAllocConstructor) {
 TEST(InlinedVectorTest, MinimumAllocatorCompilesUsingTraits) {
   using T = int;
   using A = std::allocator<T>;
-  using ATraits = absl::allocator_traits<A>;
+  using ATraits = std::allocator_traits<A>;
 
   struct MinimumAllocator {
     using value_type = T;
@@ -2252,6 +2258,24 @@ TEST(StorageTest, InlinedCapacityAutoIncrease) {
   EXPECT_GT((absl::InlinedVector<int, 1>().capacity()), 1);
   EXPECT_EQ((absl::InlinedVector<int, 1>().capacity()),
             sizeof(MySpan<int>) / sizeof(int));
+}
+
+TEST(IntVec, EraseIf) {
+  IntVec v = {3, 1, 2, 0};
+  EXPECT_EQ(absl::erase_if(v, [](int i) { return i > 1; }), 2u);
+  EXPECT_THAT(v, ElementsAre(1, 0));
+}
+
+TEST(IntVec, EraseIfMatchesNone) {
+  IntVec v = {1, 2, 3};
+  EXPECT_EQ(absl::erase_if(v, [](int i) { return i > 10; }), 0u);;
+  EXPECT_THAT(v, ElementsAre(1, 2, 3));
+}
+
+TEST(IntVec, EraseIfMatchesAll) {
+  IntVec v = {1, 2, 3};
+  EXPECT_EQ(absl::erase_if(v, [](int i) { return i > 0; }), 3u);
+  EXPECT_THAT(v, IsEmpty());
 }
 
 }  // anonymous namespace

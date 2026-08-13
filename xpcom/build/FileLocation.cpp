@@ -3,8 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "FileLocation.h"
-#include "nsZipArchive.h"
+
 #include "nsURLHelper.h"
+#include "nsZipArchive.h"
 
 namespace mozilla {
 

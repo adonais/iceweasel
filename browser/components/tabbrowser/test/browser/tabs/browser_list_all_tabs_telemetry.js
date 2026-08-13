@@ -49,7 +49,7 @@ add_task(async function test_list_all_tabs_telemetry_close_duplicate_tabs() {
   );
   closeDuplicateTabsButton.click();
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return (
       Glean.browserUiInteraction.listAllTabsAction.close_all_duplicates.testGetValue() ==
       1
@@ -89,7 +89,7 @@ add_task(async function test_list_all_tabs_telemetry_search_tabs() {
   );
   searchTabsButton.click();
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return (
       Glean.browserUiInteraction.listAllTabsAction.search_tabs.testGetValue() ==
       1

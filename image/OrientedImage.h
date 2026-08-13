@@ -6,8 +6,8 @@
 #define mozilla_image_OrientedImage_h
 
 #include "ImageWrapper.h"
-#include "mozilla/gfx/2D.h"
 #include "Orientation.h"
+#include "mozilla/gfx/2D.h"
 
 namespace mozilla {
 namespace image {

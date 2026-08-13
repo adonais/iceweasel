@@ -31,7 +31,10 @@ import {
 import { removeSources } from "./removeSources";
 import { mapFrames } from "../pause/index";
 import { selectSpecificLocation } from "../sources/index";
-import { createPrettyPrintOriginalSource } from "../../client/firefox/create";
+import {
+  createPrettyPrintOriginalScriptSource,
+  createPrettyPrintOriginalStyleSheetSource,
+} from "../../client/firefox/create";
 
 import {
   getFirstSourceActorForGeneratedSource,
@@ -274,7 +277,9 @@ function createPrettySource(source, sourceActor) {
   return async ({ dispatch }) => {
     const url = getPrettyOriginalSourceURL(source);
     const id = generatedToOriginalId(source.id, url);
-    const prettySource = createPrettyPrintOriginalSource(id, url, source);
+    const prettySource = source.isStyleSheet
+      ? createPrettyPrintOriginalStyleSheetSource(id, url, source)
+      : createPrettyPrintOriginalScriptSource(id, url, source);
 
     dispatch({
       type: "ADD_ORIGINAL_SOURCES",

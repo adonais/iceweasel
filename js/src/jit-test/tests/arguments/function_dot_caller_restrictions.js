@@ -47,8 +47,7 @@ function check(fn) {
     return true;
 }
 
-// Normal sloppy functions are allowed, even if they also are intended as
-// asm.js.
+// Normal sloppy functions are allowed.
 assertEq(check(g), true);
 assertEq(check(asm_mod), true);
 assertEq(check(asm_fun), true);

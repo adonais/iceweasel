@@ -372,6 +372,9 @@ add_task(async function test_canUpload_truth_table() {
     TelemetryReportingPolicy.reset();
     sinon.restore();
     const modalStub = sinon.stub(Policy, "showModal").returns(true);
+    // The build should appear eligible so the non-eligible short circuit in
+    // _shouldShowTOU() doesn't interfere with these checks.
+    sinon.stub(Policy, "isEligibleOnLinux").returns(true);
 
     for (const pref of [
       PREONBOARDING_ENABLED_PREF,

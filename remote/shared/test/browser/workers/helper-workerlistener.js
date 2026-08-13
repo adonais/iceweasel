@@ -88,7 +88,7 @@ async function waitForWorkersByIds(workers, expectedIds, expectedCount) {
 }
 
 async function waitForWorkersByFilter(workers, filterFn, expectedCount) {
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => workers.filter(filterFn).length === expectedCount,
     `Wait for ${expectedCount} worker event(s) to be received`
   );

@@ -7,20 +7,20 @@
 
 #include <stdint.h>
 
+#include <functional>
+
 #include "ElementStateManager.h"
 #include "Units.h"
 #include "mozilla/EventForwards.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/StaticPrefs_ui.h"
 #include "mozilla/layers/GeckoContentControllerTypes.h"  // for APZStateChange
 #include "mozilla/layers/ScrollableLayerGuid.h"  // for ScrollableLayerGuid
 #include "mozilla/layers/TouchCounter.h"         // for TouchCounter
-#include "mozilla/RefPtr.h"
-#include "mozilla/StaticPrefs_ui.h"
 #include "nsCOMPtr.h"
 #include "nsISupportsImpl.h"  // for NS_INLINE_DECL_REFCOUNTING
 #include "nsITimer.h"
 #include "nsIWeakReferenceUtils.h"  // for nsWeakPtr
-
-#include <functional>
 
 template <class>
 class nsCOMPtr;

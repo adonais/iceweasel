@@ -1,7 +1,7 @@
 diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
 --- a/expat/lib/xmlparse.c
 +++ b/expat/lib/xmlparse.c
-@@ -511,6 +511,13 @@ static enum XML_Error doProlog(XML_Parser parser, const ENCODING *enc,
+@@ -525,6 +525,13 @@ static enum XML_Error doProlog(XML_Parser parser, const ENCODING *enc,
                                 enum XML_Account account);
  static enum XML_Error processEntity(XML_Parser parser, ENTITY *entity,
                                      XML_Bool betweenDecl, enum EntityType type);
@@ -15,7 +15,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  static enum XML_Error doContent(XML_Parser parser, int startTagLevel,
                                  const ENCODING *enc, const char *start,
                                  const char *end, const char **endPtr,
-@@ -3210,10 +3217,14 @@ contentProcessor(XML_Parser parser, const char *start, const char *end,
+@@ -3162,10 +3169,14 @@ contentProcessor(XML_Parser parser, const char *start, const char *end,
        parser, parser->m_parentParser ? 1 : 0, parser->m_encoding, start, end,
        endPtr, (XML_Bool)! parser->m_parsingStatus.finalBuffer,
        XML_ACCOUNT_DIRECT);
@@ -30,7 +30,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
    return result;
  }
  
-@@ -3331,10 +3342,14 @@ externalEntityContentProcessor(XML_Parser parser, const char *start,
+@@ -3283,10 +3294,14 @@ externalEntityContentProcessor(XML_Parser parser, const char *start,
        = doContent(parser, 1, parser->m_encoding, start, end, endPtr,
                    (XML_Bool)! parser->m_parsingStatus.finalBuffer,
                    XML_ACCOUNT_ENTITY_EXPANSION);
@@ -45,7 +45,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
    return result;
  }
  
-@@ -3342,6 +3357,21 @@ static enum XML_Error
+@@ -3294,6 +3309,21 @@ static enum XML_Error
  doContent(XML_Parser parser, int startTagLevel, const ENCODING *enc,
            const char *s, const char *end, const char **nextPtr,
            XML_Bool haveMore, enum XML_Account account) {

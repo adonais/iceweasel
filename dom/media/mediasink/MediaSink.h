@@ -6,6 +6,7 @@
 #define MediaSink_h_
 
 #include "MediaInfo.h"
+#include "mozilla/DefineEnum.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/MediaDebugInfoBinding.h"
@@ -41,6 +42,12 @@ class MediaSink {
   // EndedPromise needs to be a non-exclusive promise as it is shared between
   // both the AudioSink and VideoSink.
   typedef MozPromise<bool, nsresult, /* IsExclusive = */ false> EndedPromise;
+
+  // Why playback is being stopped. Lets a sink treat a seek's stop/restart
+  // cycle differently from a real stop, for example by preserving resources it
+  // would otherwise tear down.
+  MOZ_DEFINE_ENUM_CLASS_WITH_TOSTRING_AT_CLASS_SCOPE(StopReason,
+                                                     (Regular, Seeking));
 
   // Return a promise which is resolved when the track finishes
   // or null if no such track.
@@ -88,8 +95,10 @@ class MediaSink {
   // Can be called in any state.
   virtual void SetPreservesPitch(bool aPreservesPitch) {}
 
-  // Pause/resume the playback. Only work after playback starts.
-  virtual void SetPlaying(bool aPlaying) = 0;
+  // Pause/resume the playback. Only work after playback starts. aReason lets a
+  // pause that is part of a seek be distinguished from a regular pause.
+  virtual void SetPlaying(bool aPlaying,
+                          StopReason aReason = StopReason::Regular) = 0;
 
   // Set the audio output device.  aDevice == nullptr indicates the default
   // device.  The returned promise is resolved when the previous device is no
@@ -111,16 +120,25 @@ class MediaSink {
   // Do nothing if this sink has no video track. Can be called in any state.
   virtual void Redraw(const VideoInfo& aInfo) {};
 
+  // Whether a Start() call begins initial playback or resumes after a seek.
+  // Sinks may start more cheaply for SeekResume; in particular the audio sink
+  // initializes the audio stream asynchronously so it does not block the state
+  // machine thread (and stall the clock) while resuming.
+  MOZ_DEFINE_ENUM_CLASS_WITH_TOSTRING_AT_CLASS_SCOPE(StartType,
+                                                     (Initial, SeekResume));
+
   // Begin a playback session with the provided start time in the media data
   // and media info.  Must be called when playback is stopped.  aStartTime is
   // compared with MediaData::mTime and continues to increase when looping,
   // unless decoding is reset.
   virtual nsresult Start(const media::TimeUnit& aStartTime,
-                         const MediaInfo& aInfo) = 0;
+                         const MediaInfo& aInfo,
+                         StartType aStartType = StartType::Initial) = 0;
 
   // Finish a playback session.
-  // Must be called after playback starts.
-  virtual void Stop() = 0;
+  // Must be called after playback starts. aReason lets a stop that is part of a
+  // seek be distinguished from a real stop.
+  virtual void Stop(StopReason aReason = StopReason::Regular) = 0;
 
   // Return true if playback has started.
   // Can be called in any state.

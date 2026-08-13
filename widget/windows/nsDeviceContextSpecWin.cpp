@@ -4,18 +4,18 @@
 
 #include "nsDeviceContextSpecWin.h"
 
-#include "mozilla/gfx/PrintPromise.h"
-#include "mozilla/gfx/PrintTargetPDF.h"
-#include "mozilla/gfx/PrintTargetWindows.h"
-#include "mozilla/Logging.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/RefPtr.h"
-#include "mozilla/glean/PrintingMetrics.h"
-#include "nsAnonymousTemporaryFile.h"
-
 #include <wchar.h>
 #include <windef.h>
 #include <winspool.h>
+
+#include "mozilla/Logging.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/gfx/PrintPromise.h"
+#include "mozilla/gfx/PrintTargetPDF.h"
+#include "mozilla/gfx/PrintTargetWindows.h"
+#include "mozilla/glean/PrintingMetrics.h"
+#include "nsAnonymousTemporaryFile.h"
 
 // winspool.h pollutes the global namespace, failing unified builds in e.g.
 // nsIFormControl::SetForm. Undo the damage.
@@ -25,21 +25,17 @@
 #undef GetForm
 #undef SetForm
 
-#include "nsIWidget.h"
-
-#include "nsTArray.h"
-#include "nsIPrintSettingsWin.h"
-
+#include "gfxWindowsSurface.h"
+#include "mozilla/gfx/Logging.h"
 #include "nsComponentManagerUtils.h"
+#include "nsIFileStreams.h"
+#include "nsIPrintSettingsWin.h"
+#include "nsIWidget.h"
 #include "nsPrinterWin.h"
 #include "nsReadableUtils.h"
 #include "nsString.h"
-
-#include "gfxWindowsSurface.h"
-
-#include "nsIFileStreams.h"
+#include "nsTArray.h"
 #include "nsWindowsHelpers.h"
-#include "mozilla/gfx/Logging.h"
 
 extern mozilla::LazyLogModule gPrintingLog;
 #define PR_PL(_p1) MOZ_LOG(gPrintingLog, mozilla::LogLevel::Debug, _p1)

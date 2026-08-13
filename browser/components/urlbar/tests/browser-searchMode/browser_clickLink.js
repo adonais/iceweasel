@@ -68,11 +68,11 @@ async function doClickLinkTest(searchString, href) {
     // Enter search mode and then close the popup so we can click the link in
     // the page.
     await UrlbarTestUtils.enterSearchMode(window, {
-      source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     });
     await UrlbarTestUtils.promisePopupClose(window);
     await UrlbarTestUtils.assertSearchMode(window, {
-      source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
       entry: "oneoff",
     });
 

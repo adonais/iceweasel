@@ -390,7 +390,7 @@ add_task(async function test_keyword_search() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: "http://key2/",
         title: "http://key2/",
         heuristic: true,

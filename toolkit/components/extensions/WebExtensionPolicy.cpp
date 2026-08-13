@@ -68,6 +68,8 @@ static const char kBackgroundPageHTMLEnd[] =
   "script-src 'self' 'wasm-unsafe-eval' http://localhost:* " \
   "http://127.0.0.1:*;"
 
+#define DEFAULT_SANDBOX_CSP "sandbox allow-scripts; script-src 'self';"
+
 static inline ExtensionPolicyService& EPS() {
   return ExtensionPolicyService::GetSingleton();
 }
@@ -93,13 +95,14 @@ static nsISubstitutingProtocolHandler* Proto() {
 
 bool ParseGlobs(GlobalObject& aGlobal,
                 Sequence<OwningMatchGlobOrUTF8String> aGlobs,
-                nsTArray<RefPtr<MatchGlobCore>>& aResult, ErrorResult& aRv) {
+                nsTArray<RefPtr<MatchGlobCore>>& aResult, ErrorResult& aRv,
+                bool aAllowQuestion = true) {
   for (auto& elem : aGlobs) {
     if (elem.IsMatchGlob()) {
       aResult.AppendElement(elem.GetAsMatchGlob()->Core());
     } else {
       RefPtr<MatchGlobCore> glob =
-          new MatchGlobCore(elem.GetAsUTF8String(), true, false, aRv);
+          new MatchGlobCore(elem.GetAsUTF8String(), aAllowQuestion, false, aRv);
       if (aRv.Failed()) {
         return false;
       }
@@ -213,6 +216,7 @@ WebExtensionPolicyCore::WebExtensionPolicyCore(GlobalObject& aGlobal,
       mType(NS_AtomizeMainThread(aInit.mType)),
       mManifestVersion(aInit.mManifestVersion),
       mExtensionPageCSP(aInit.mExtensionPageCSP),
+      mSandboxPageCSP(aInit.mSandboxPageCSP),
       mIsPrivileged(aInit.mIsPrivileged),
       mTemporarilyInstalled(aInit.mTemporarilyInstalled),
       mBackgroundWorkerScript(aInit.mBackgroundWorkerScript),
@@ -243,6 +247,17 @@ WebExtensionPolicyCore::WebExtensionPolicyCore(GlobalObject& aGlobal,
     }
   }
 
+  if (!aInit.mSandboxPages.IsNull()) {
+    if (!ParseGlobs(aGlobal, aInit.mSandboxPages.Value(),
+                    mSandboxPages.SetValue(), aRv, false)) {
+      return;
+    }
+  }
+
+  if (mSandboxPageCSP.IsVoid()) {
+    mSandboxPageCSP.AssignLiteral(DEFAULT_SANDBOX_CSP);
+  }
+
   if (mExtensionPageCSP.IsVoid()) {
     if (mManifestVersion < 3) {
       EPS().GetDefaultCSP(mExtensionPageCSP);
@@ -265,6 +280,14 @@ WebExtensionPolicyCore::WebExtensionPolicyCore(GlobalObject& aGlobal,
   if (NS_FAILED(rv)) {
     aRv.Throw(rv);
   }
+}
+
+bool WebExtensionPolicyCore::IsSandboxPage(nsIURI* aURI) const {
+  extensions::URLInfo urlInfo(aURI);
+  return aURI && !mSandboxPages.IsNull() &&
+         urlInfo.Scheme() == nsGkAtoms::moz_extension &&
+         MozExtensionHostname().Equals(urlInfo.Host()) &&
+         mSandboxPages.Value().Matches(urlInfo.FilePath());
 }
 
 bool WebExtensionPolicyCore::SourceMayAccessPath(

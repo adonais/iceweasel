@@ -4,9 +4,9 @@
 
 #include "MsaaIdGenerator.h"
 
+#include "MsaaAccessible.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ClearOnShutdown.h"
-#include "MsaaAccessible.h"
 #include "nsAccessibilityService.h"
 
 namespace mozilla {

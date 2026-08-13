@@ -4,8 +4,9 @@
 
 #include "TLSServerSocket.h"
 
-#include "mozilla/net/DNS.h"
+#include "ScopedNSSTypes.h"
 #include "mozilla/Components.h"
+#include "mozilla/net/DNS.h"
 #include "nsComponentManagerUtils.h"
 #include "nsDependentSubstring.h"
 #include "nsIServerSocket.h"
@@ -16,7 +17,6 @@
 #include "nsServiceManagerUtils.h"
 #include "nsSocketTransport2.h"
 #include "nsThreadUtils.h"
-#include "ScopedNSSTypes.h"
 #include "ssl.h"
 
 namespace mozilla {

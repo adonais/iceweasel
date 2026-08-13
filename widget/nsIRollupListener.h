@@ -6,9 +6,9 @@
 #ifndef _nsIRollupListener_h_
 #define _nsIRollupListener_h_
 
-#include "nsTArray.h"
-#include "nsPoint.h"
 #include "Units.h"
+#include "nsPoint.h"
+#include "nsTArray.h"
 
 class nsIContent;
 class nsIWidget;

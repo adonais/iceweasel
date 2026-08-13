@@ -238,6 +238,7 @@ const UPDATE_PROPS = [
   "referrerPolicy",
   "priority",
   "blockedReason",
+  "truncated",
   "extension",
   "channelId",
   "waitingTime",

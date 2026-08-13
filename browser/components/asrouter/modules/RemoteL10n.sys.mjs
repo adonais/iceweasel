@@ -220,7 +220,7 @@ export class _RemoteL10n {
         "browser/policy-messages.ftl",
         "browser/profiles.ftl",
         "browser/termsofuse.ftl",
-        "preview/aiWindow.ftl",
+        "browser/aiWindow.ftl",
         "toolkit/branding/brandings.ftl",
       ],
       false

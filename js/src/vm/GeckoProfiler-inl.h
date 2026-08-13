@@ -28,21 +28,6 @@ inline void GeckoProfilerThread::updatePC(JSContext* cx, JSScript* script,
   }
 }
 
-/*
- * This class is used to suppress profiler sampling during
- * critical sections where stack state is not valid.
- */
-class MOZ_RAII AutoSuppressProfilerSampling {
- public:
-  explicit AutoSuppressProfilerSampling(JSContext* cx);
-
-  ~AutoSuppressProfilerSampling();
-
- private:
-  JSContext* cx_;
-  bool previouslyEnabled_;
-};
-
 MOZ_ALWAYS_INLINE
 GeckoProfilerEntryMarker::GeckoProfilerEntryMarker(JSContext* cx,
                                                    JSScript* script)

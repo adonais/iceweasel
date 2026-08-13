@@ -36,6 +36,7 @@ import org.mozilla.fenix.compose.Favicon
 import org.mozilla.fenix.compose.Image
 import org.mozilla.fenix.home.fake.FakeHomepagePreview
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.wallpapers.WallpaperTheme
 import kotlin.math.roundToInt
 
 private val defaultCardContentPadding = 8.dp
@@ -64,7 +65,7 @@ internal fun StoryCard(
         modifier = modifier,
         shape = MaterialTheme.shapes.small,
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceBright),
+        colors = CardDefaults.cardColors(containerColor = WallpaperTheme.cardBackgroundColor),
     ) {
         Column(
             modifier = Modifier.padding(all = defaultCardContentPadding),

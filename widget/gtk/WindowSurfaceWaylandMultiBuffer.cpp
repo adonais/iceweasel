@@ -7,22 +7,22 @@
 
 #include <errno.h>
 #include <fcntl.h>
-#include <sys/mman.h>
 #include <prenv.h>
+#include <sys/mman.h>
 
+#include "GtkCompositorWidget.h"
+#include "MozContainer.h"
 #include "gfx2DGlue.h"
 #include "gfxPlatform.h"
-#include "MozContainer.h"
-#include "GtkCompositorWidget.h"
-#include "mozilla/gfx/DataSurfaceHelpers.h"
-#include "mozilla/gfx/Tools.h"
 #include "mozilla/StaticPrefs_widget.h"
 #include "mozilla/WidgetUtils.h"
+#include "mozilla/gfx/DataSurfaceHelpers.h"
+#include "mozilla/gfx/Tools.h"
 
 #undef LOGWAYLAND
 #ifdef MOZ_LOGGING
-#  include "mozilla/Logging.h"
 #  include "Units.h"
+#  include "mozilla/Logging.h"
 extern mozilla::LazyLogModule gWidgetWaylandLog;
 #  define LOGWAYLAND(...) \
     MOZ_LOG(gWidgetWaylandLog, mozilla::LogLevel::Debug, (__VA_ARGS__))

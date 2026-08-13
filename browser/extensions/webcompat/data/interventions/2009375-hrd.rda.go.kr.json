@@ -1,0 +1,17 @@
+{
+  "label": "hrd.rda.go.kr",
+  "bugs": {
+    "2009375": {
+      "issue": "firefox-blocked-completely",
+      "matches": [
+        "https://hrd.rda.go.kr/ehrd_front/myClass/study/startNavStdContent.do*"
+      ]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "ua_string": ["Chrome_with_FxQuantum"]
+    }
+  ]
+}

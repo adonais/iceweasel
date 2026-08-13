@@ -4,18 +4,18 @@
 
 #include "Image.h"
 
-#include "imgRequest.h"
 #include "WebRenderImageProvider.h"
-#include "nsIObserverService.h"
-#include "nsRefreshDriver.h"
-#include "nsContentUtils.h"
+#include "imgRequest.h"
 #include "mozilla/Atomics.h"
-#include "mozilla/gfx/Point.h"
-#include "mozilla/gfx/Rect.h"
-#include "mozilla/gfx/SourceSurfaceRawData.h"
 #include "mozilla/Services.h"
 #include "mozilla/SizeOfState.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/gfx/Point.h"
+#include "mozilla/gfx/Rect.h"
+#include "mozilla/gfx/SourceSurfaceRawData.h"
+#include "nsContentUtils.h"
+#include "nsIObserverService.h"
+#include "nsRefreshDriver.h"
 // for Tie
 #include "mozilla/layers/SharedSurfacesChild.h"
 

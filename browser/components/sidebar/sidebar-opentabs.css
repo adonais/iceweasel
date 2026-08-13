@@ -2,6 +2,29 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+@import url("chrome://browser/skin/tabbrowser/tab.tokens.css");
+
+.pinned-tabs moz-button::part(button) {
+  @media -moz-pref("browser.nova.enabled") {
+    border-color: transparent;
+  }
+}
+
+.pinned-tabs moz-button.selected::part(button) {
+  @media -moz-pref("browser.nova.enabled") {
+    outline: 1px solid var(--tab-selected-outline-color);
+    outline-offset: -1px;
+
+    @media (not (prefers-contrast)) {
+      border: 1px solid transparent;
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      background:
+        var(--tab-border-color-accent) border-box border-area,
+        var(--tab-background-color-selected) padding-box;
+    }
+  }
+}
+
 .pinned-tabs {
   display: flex;
   flex-wrap: wrap;

@@ -7,3 +7,6 @@ support-files = ["../../head.js"]
 ["browser_screenshots.js"]
 
 ["browser_screenshots_cropping.js"]
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # canvas cropping differs from the reference images on Apple Silicon
+]

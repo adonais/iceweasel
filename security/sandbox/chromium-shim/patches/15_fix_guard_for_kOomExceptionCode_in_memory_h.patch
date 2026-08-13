@@ -1,0 +1,14 @@
+kOomExceptionCode is defined in partion_alloc, so it needs an extra guard.
+
+diff --git a/base/process/memory.h b/base/process/memory.h
+--- a/base/process/memory.h
++++ b/base/process/memory.h
+@@ -55,7 +55,7 @@ namespace internal {
+ bool ReleaseAddressSpaceReservation();
+ }  // namespace internal
+ 
+-#if BUILDFLAG(IS_WIN)
++#if BUILDFLAG(IS_WIN) && PA_BUILDFLAG(USE_PARTITION_ALLOC)
+ namespace win {
+ 
+ using partition_alloc::win::kOomExceptionCode;

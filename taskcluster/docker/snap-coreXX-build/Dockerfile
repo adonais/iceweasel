@@ -37,7 +37,8 @@ COPY install-snap.sh /usr/local/bin/
 RUN install-snap.sh core
 
 # 8.11.1 is https://api.snapcraft.io/api/v1/snaps/download/vMTKRaLjnOJQetI78HjntT37VuoyssFE_15600.snap
-RUN install-snap.sh snapcraft
+# 9.0.0 hits https://bugzilla.mozilla.org/show_bug.cgi?id=2036497#c18
+RUN install-snap.sh snapcraft 8.x/stable
 
 RUN install-snap.sh $SNAP_BASE
 

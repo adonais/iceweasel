@@ -70,7 +70,7 @@ add_task(async function test_sessions_get_recently_closed_tabs() {
   // favicon loads, we have to wait some time before checking that icon was
   // stored properly. If that page doesn't have favicon links, let it timeout.
   try {
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => {
         return gBrowser.getIcon(tab) != null;
       },
@@ -88,7 +88,7 @@ add_task(async function test_sessions_get_recently_closed_tabs() {
   for (let url of ["about:robots", "about:buildconfig"]) {
     tab = await BrowserTestUtils.openNewForegroundTab(win.gBrowser, url);
     try {
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => {
           return gBrowser.getIcon(tab) != null;
         },
@@ -179,7 +179,7 @@ add_task(async function test_sessions_get_recently_closed_tabs() {
   );
   tab = win.gBrowser.getTabForBrowser(tabBrowser);
   try {
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => {
         return gBrowser.getIcon(tab) != null;
       },

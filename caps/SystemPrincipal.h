@@ -7,10 +7,9 @@
 #ifndef mozilla_SystemPrincipal_h
 #define mozilla_SystemPrincipal_h
 
+#include "mozilla/BasePrincipal.h"
 #include "nsIPrincipal.h"
 #include "nsJSPrincipals.h"
-
-#include "mozilla/BasePrincipal.h"
 
 #define NS_SYSTEMPRINCIPAL_CID \
   {0x4a6212db, 0xaccb, 0x11d3, {0xb7, 0x65, 0x0, 0x60, 0xb0, 0xb6, 0xce, 0xcb}}

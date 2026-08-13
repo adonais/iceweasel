@@ -3,10 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "builtin/Symbol.h"
-#include "js/Symbol.h"
 
 #include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
 #include "js/PropertySpec.h"
+#include "js/Symbol.h"
 #include "vm/PlainObject.h"  // js::PlainObject
 #include "vm/SymbolType.h"
 

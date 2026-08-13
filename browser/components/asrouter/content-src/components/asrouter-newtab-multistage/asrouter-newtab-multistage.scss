@@ -4,13 +4,32 @@
 
 @import '../../styles/multistage';
 
+$split-screen-min-height: 280px;
+
 // Suppress fullscreen sizing when rendered inline in about:newtab.
 .onboardingContainer {
-  height: auto;
+  height: 100%;
 
   .screen[pos='center'] {
     background-color: unset;
     overflow: unset;
+  }
+
+  .screen[pos='split'] {
+    &:where(:not([fullscreen])) {
+      margin: auto;
+      min-height: $split-screen-min-height; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+
+      &::before {
+        height: 100%;
+      }
+    }
+
+    .section-secondary,
+    .section-main {
+      height: 100%;
+      min-height: $split-screen-min-height; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+    }
   }
 }
 
@@ -36,5 +55,44 @@
     inset-block-start: var(--space-medium);
     inset-inline-end: var(--space-medium);
     z-index: 999;
+  }
+
+  @media (-moz-pref('browser.nova.enabled')) {
+    .onboardingContainer {
+      // The embedded surface focuses the screen container
+      // (role="alertdialog") for screen-reader announcement. Since it isn't a
+      // modal here, suppress the resulting focus ring around the whole card;
+      .screen:focus {
+        outline: none;
+      }
+
+      .main-content {
+        background-color: var(--background-color-box);
+      }
+
+      // Frame the card like the other New Tab message surfaces
+      // (asrouter-newtab-message)
+      .screen[pos='center'] .main-content {
+        border: 2px solid var(--card-border-color);
+        box-shadow: none;
+      }
+
+      .screen[pos='split']:where(:not([fullscreen], .zap-border, .zap-shadow)) {
+        border: 2px solid var(--card-border-color);
+        // Match the inner split components' corner radius.
+        border-radius: var(--border-radius-xlarge, var(--border-radius-medium));
+        overflow: hidden;
+
+        &::before {
+          box-shadow: none;
+        }
+
+        .section-secondary {
+          background-color: var(--background-color-dimmed);
+          border-radius: 0;
+          margin: 0;
+        }
+      }
+    }
   }
 }

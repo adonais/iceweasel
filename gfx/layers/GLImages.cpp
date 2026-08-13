@@ -3,13 +3,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "GLImages.h"
+
+#include "GLBlitHelper.h"
 #include "GLContext.h"
 #include "GLContextProvider.h"
-#include "ScopedGLHelpers.h"
 #include "GLImages.h"
-#include "GLBlitHelper.h"
-#include "GLReadTexImageHelper.h"
 #include "GLLibraryEGL.h"
+#include "GLReadTexImageHelper.h"
+#include "ScopedGLHelpers.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/layers/LayersSurfaces.h"
 

@@ -8,7 +8,6 @@ let lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
-  EventEmitter: "resource://gre/modules/EventEmitter.sys.mjs",
   JsonSchema: "resource://gre/modules/JsonSchema.sys.mjs",
 });
 
@@ -150,69 +149,35 @@ class TaskbarTab {
   }
 }
 
-export const kTaskbarTabsRegistryEvents = Object.freeze({
-  created: "created",
-  patched: "patched",
-  removed: "removed",
-});
-
 /**
  * Storage class for Taskbar Tabs feature's persistent storage.
  */
 export class TaskbarTabsRegistry {
-  // List of registered Taskbar Tabs.
-  #taskbarTabs = [];
-  // Signals when Taskbar Tabs have been created or removed.
-  #emitter = new lazy.EventEmitter();
-
-  static get events() {
-    return kTaskbarTabsRegistryEvents;
-  }
+  /**
+   * List of registered Taskbar Tabs.
+   *
+   * @type {TaskbarTab[]}
+   */
+  #taskbarTabs;
+  /**
+   * Persistent storage handler for Taskbar Tabs.
+   *
+   * @type {TaskbarTabsRegistryStorage}
+   */
+  #storage;
 
   /**
-   * Initializes a Taskbar Tabs Registry, optionally loading from a file.
+   * Creates a new registry from the provided array of taskbar tabs and the
+   * storage to save to.
    *
-   * @param {object} [init] - Initialization context.
-   * @param {nsIFile} [init.loadFile] - Optional file to load.
+   * @param {TaskbarTabsRegistryStorage} aStorage - Storage to save to when
+   * changes are made to the registry.
+   * @param {TaskbarTab[]} aTaskbarTabs - List of taskbar tabs that already
+   * existed.
    */
-  static async create({ loadFile } = {}) {
-    let registry = new TaskbarTabsRegistry();
-    if (loadFile) {
-      await registry.#load(loadFile);
-    }
-
-    return registry;
-  }
-
-  /**
-   * Loads the stored Taskbar Tabs.
-   *
-   * @param {nsIFile} aFile - File to load from.
-   */
-  async #load(aFile) {
-    if (!aFile.exists()) {
-      lazy.logConsole.error(`File ${aFile.path} does not exist.`);
-      return;
-    }
-
-    lazy.logConsole.info(`Loading file ${aFile.path} for Taskbar Tabs.`);
-
-    const [schema, jsonObject] = await Promise.all([
-      getJsonSchema(),
-      IOUtils.readJSON(aFile.path),
-    ]);
-
-    if (!schema.validate(jsonObject).valid) {
-      throw new Error(
-        `JSON from file ${aFile.path} is invalid for the Taskbar Tabs Schema.`
-      );
-    }
-    if (jsonObject.version > kStorageVersion) {
-      throw new Error(`File ${aFile.path} has an unrecognized version.
-          Current Version: ${kStorageVersion}
-          File Version: ${jsonObject.version}`);
-    }
-    this.#taskbarTabs = jsonObject.taskbarTabs.map(
+  constructor(aStorage, aTaskbarTabs) {
+    this.#storage = aStorage;
+    this.#taskbarTabs = aTaskbarTabs.map(
       tt => new TaskbarTab(migrateStoredTaskbarTab(tt))
     );
   }
@@ -273,7 +238,7 @@ export class TaskbarTabsRegistry {
     lazy.logConsole.info(`Created Taskbar Tab with ID ${id}`);
 
     Glean.webApp.install.record({});
-    this.#emitter.emit(kTaskbarTabsRegistryEvents.created, taskbarTab);
+    this.#storage.save(this);
 
     return {
       created: true,
@@ -299,7 +264,7 @@ export class TaskbarTabsRegistry {
       let removed = tts.splice(i, 1);
 
       Glean.webApp.uninstall.record({});
-      this.#emitter.emit(kTaskbarTabsRegistryEvents.removed, removed[0]);
+      this.#storage.save(this);
       return removed[0];
     }
 
@@ -395,10 +360,10 @@ export class TaskbarTabsRegistry {
    * @throws {Error} If any taskbar tab in aTaskbarTabs is unknown.
    */
   patchTaskbarTab(aTaskbarTab, aPatch) {
-    // This is done from the registry to make it more clear that an event
-    // will fire, and thus that I/O might be possible.
+    // This is done from the registry to make it more clear that I/O might be
+    // possible.
     aTaskbarTab._applyPatch(aPatch);
-    this.#emitter.emit(kTaskbarTabsRegistryEvents.patched, aTaskbarTab);
+    this.#storage.save(this);
   }
 
   /**
@@ -408,24 +373,6 @@ export class TaskbarTabsRegistry {
    */
   countTaskbarTabs() {
     return this.#taskbarTabs.length;
-  }
-
-  /**
-   * Passthrough to `EventEmitter.on`.
-   *
-   * @param  {...any} args - Same as `EventEmitter.on`.
-   */
-  on(...args) {
-    return this.#emitter.on(...args);
-  }
-
-  /**
-   * Passthrough to `EventEmitter.off`
-   *
-   * @param  {...any} args - Same as `EventEmitter.off`
-   */
-  off(...args) {
-    return this.#emitter.off(...args);
   }
 
   /**
@@ -446,33 +393,72 @@ export class TaskbarTabsRegistry {
  * newer version of Firefox, or has reverted an update.
  */
 export class TaskbarTabsRegistryStorage {
-  // The registry to save.
-  #registry;
-  // The file saved to.
-  #saveFile;
+  // The file to save to and load from.
+  #file;
   // Promise queue to ensure that async writes don't occur out of order.
   #saveQueue = Promise.resolve();
 
   /**
-   * @param {TaskbarTabsRegistry} aRegistry - The registry to serialize.
-   * @param {nsIFile} aSaveFile - The save file to update.
+   * @param {nsIFile} aFile - The file to load and save.
    */
-  constructor(aRegistry, aSaveFile) {
-    this.#registry = aRegistry;
-    this.#saveFile = aSaveFile;
+  constructor(aFile) {
+    this.#file = aFile;
   }
 
   /**
-   * Serializes the Taskbar Tabs Registry into a JSON file.
+   * Loads the associated file into a TaskbarTabsRegistry object.
+   *
+   * @returns {TaskbarTabsRegistry} The loaded registry.
+   */
+  async load() {
+    lazy.logConsole.info(`Loading file ${this.#file.path} for Taskbar Tabs.`);
+
+    const [schema, jsonObject] = await Promise.all([
+      getJsonSchema(),
+      IOUtils.readJSON(this.#file.path).catch(err => {
+        // If taskbartabs.json doesn't exist, that's expected (e.g. it could
+        // be a new profile.)
+        if (err.name !== "NotFoundError") {
+          lazy.logConsole.error(
+            `Could not read Taskbar Tabs from ${this.#file.path}:`,
+            err
+          );
+        }
+        return null;
+      }),
+    ]);
+
+    if (!jsonObject) {
+      return new TaskbarTabsRegistry(this, []);
+    }
+
+    if (!schema.validate(jsonObject).valid) {
+      throw new Error(
+        `JSON from file ${this.#file.path} is invalid for the Taskbar Tabs Schema.`
+      );
+    }
+
+    if (jsonObject.version > kStorageVersion) {
+      throw new Error(`File ${this.#file.path} has an unrecognized version.
+      Current Version: ${kStorageVersion}
+      File Version: ${jsonObject.version}`);
+    }
+
+    return new TaskbarTabsRegistry(this, jsonObject.taskbarTabs);
+  }
+
+  /**
+   * Serializes the given Taskbar Tabs Registry into a JSON file.
    *
    * Note: file writes are strictly ordered, ensuring the sequence of serialized
    * object writes reflects the latest state even if any individual write
    * serializes the registry in a newer state than when it's associated event
    * was emitted.
    *
+   * @param {TaskbarTabsRegistry} aRegistry - The registry to serialize.
    * @returns {Promise} Resolves once the current save operation completes.
    */
-  save() {
+  save(aRegistry) {
     this.#saveQueue = this.#saveQueue
       .finally(async () => {
         lazy.logConsole.info(`Updating Taskbar Tabs storage file.`);
@@ -480,8 +466,8 @@ export class TaskbarTabsRegistryStorage {
         const schema = await getJsonSchema();
 
         // Copy the JSON object to prevent awaits after validation risking
-        // TOCTOU if the registry changes..
-        let json = this.#registry.toJSON();
+        // TOCTOU if the registry changes.
+        let json = aRegistry.toJSON();
 
         let result = schema.validate(json);
         if (!result.valid) {
@@ -491,8 +477,8 @@ export class TaskbarTabsRegistryStorage {
           );
         }
 
-        await IOUtils.makeDirectory(this.#saveFile.parent.path);
-        await IOUtils.writeJSON(this.#saveFile.path, json);
+        await IOUtils.makeDirectory(this.#file.parent.path);
+        await IOUtils.writeJSON(this.#file.path, json);
 
         lazy.logConsole.info(`Tasbkar Tabs storage file updated.`);
       })

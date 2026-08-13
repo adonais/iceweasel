@@ -4,7 +4,7 @@
 
 do_get_profile();
 
-const { closeTabsAction } = ChromeUtils.importESModule(
+const { manageTabsAction, CLOSE_TABS } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/ManageTabs.sys.mjs"
 );
 
@@ -61,7 +61,7 @@ function setupBrowserWindowTracker(sandbox, windows) {
   sandbox.stub(BrowserWindowTracker, "orderedWindows").get(() => list);
 }
 
-add_task(async function test_closeTabsAction_confirmation_path_matches_tabs() {
+add_task(async function test_manageTabsAction_confirmation_path_matches_tabs() {
   const sb = sinon.createSandbox();
   try {
     const url1 = "https://example.com/a";
@@ -80,8 +80,9 @@ add_task(async function test_closeTabsAction_confirmation_path_matches_tabs() {
 
     const conversation = makeConversation();
 
-    const { toolResult: result, uiData } = await closeTabsAction(
+    const { toolResult: result, uiData } = await manageTabsAction(
       {
+        action: CLOSE_TABS,
         validUrls: new Set([url1, url2]),
         ask_confirmation: true,
         toolCallId: "tool-call-1",
@@ -174,7 +175,7 @@ add_task(async function test_closeTabsAction_confirmation_path_matches_tabs() {
   }
 });
 
-add_task(async function test_closeTabsAction_direct_close_path() {
+add_task(async function test_manageTabsAction_direct_close_path() {
   const sb = sinon.createSandbox();
   try {
     const url = "https://example.com/a";
@@ -198,8 +199,9 @@ add_task(async function test_closeTabsAction_direct_close_path() {
 
     const conversation = makeConversation();
 
-    const { toolResult: result, uiData } = await closeTabsAction(
+    const { toolResult: result, uiData } = await manageTabsAction(
       {
+        action: CLOSE_TABS,
         validUrls: new Set([url]),
         ask_confirmation: false,
       },
@@ -248,7 +250,7 @@ add_task(async function test_closeTabsAction_direct_close_path() {
   }
 });
 
-add_task(async function test_closeTabsAction_marks_failed_tabs() {
+add_task(async function test_manageTabsAction_marks_failed_tabs() {
   const sb = sinon.createSandbox();
   try {
     const closedUrl = "https://example.com/a";
@@ -269,8 +271,9 @@ add_task(async function test_closeTabsAction_marks_failed_tabs() {
       failedTabs: [{ tab: failedTab, reason: "already-closing" }],
     });
 
-    const { toolResult: result } = await closeTabsAction(
+    const { toolResult: result } = await manageTabsAction(
       {
+        action: CLOSE_TABS,
         validUrls: new Set([closedUrl, failedUrl]),
         ask_confirmation: false,
       },
@@ -307,7 +310,7 @@ add_task(async function test_closeTabsAction_marks_failed_tabs() {
  * are silently skipped), and the matched tab's label flows through
  * sanitizeUntrustedContent.
  */
-add_task(async function test_closeTabsAction_matches_and_sanitizes() {
+add_task(async function test_manageTabsAction_matches_and_sanitizes() {
   const sb = sinon.createSandbox();
   try {
     const url = "https://untrusted.example/";
@@ -321,8 +324,9 @@ add_task(async function test_closeTabsAction_matches_and_sanitizes() {
 
     const conversation = makeConversation();
 
-    const { toolResult: result } = await closeTabsAction(
+    const { toolResult: result } = await manageTabsAction(
       {
+        action: CLOSE_TABS,
         validUrls: new Set([url, "https://not-open.example/"]),
         ask_confirmation: true,
       },
@@ -345,7 +349,7 @@ add_task(async function test_closeTabsAction_matches_and_sanitizes() {
   }
 });
 
-add_task(async function test_closeTabsAction_no_matches_returns_failure() {
+add_task(async function test_manageTabsAction_no_matches_returns_failure() {
   const sb = sinon.createSandbox();
   try {
     setupBrowserWindowTracker(
@@ -355,8 +359,9 @@ add_task(async function test_closeTabsAction_no_matches_returns_failure() {
 
     const conversation = makeConversation();
 
-    const { toolResult: result, uiData } = await closeTabsAction(
+    const { toolResult: result, uiData } = await manageTabsAction(
       {
+        action: CLOSE_TABS,
         validUrls: new Set(["https://nope.example/"]),
         ask_confirmation: true,
       },
@@ -374,7 +379,7 @@ add_task(async function test_closeTabsAction_no_matches_returns_failure() {
   }
 });
 
-add_task(async function test_closeTabsAction_skips_non_ai_windows() {
+add_task(async function test_manageTabsAction_skips_non_ai_windows() {
   const sb = sinon.createSandbox();
   try {
     const url = "https://example.com/classic";
@@ -386,8 +391,9 @@ add_task(async function test_closeTabsAction_skips_non_ai_windows() {
 
     const conversation = makeConversation();
 
-    const { toolResult: result } = await closeTabsAction(
+    const { toolResult: result } = await manageTabsAction(
       {
+        action: CLOSE_TABS,
         validUrls: new Set([url]),
         ask_confirmation: true,
       },
@@ -403,7 +409,7 @@ add_task(async function test_closeTabsAction_skips_non_ai_windows() {
   }
 });
 
-add_task(async function test_closeTabsAction_forces_confirmation_overrides() {
+add_task(async function test_manageTabsAction_forces_confirmation_overrides() {
   const url1 = "https://example.com/a";
   const url2 = "https://example.com/b";
 
@@ -448,8 +454,12 @@ add_task(async function test_closeTabsAction_forces_confirmation_overrides() {
     const sb = sinon.createSandbox();
     try {
       setupBrowserWindowTracker(sb, makeWindow());
-      const { uiData } = await closeTabsAction(
-        { validUrls: new Set(validUrls), ask_confirmation: false },
+      const { uiData } = await manageTabsAction(
+        {
+          action: CLOSE_TABS,
+          validUrls: new Set(validUrls),
+          ask_confirmation: false,
+        },
         makeConversation(conversationOpts)
       );
       Assert.equal(

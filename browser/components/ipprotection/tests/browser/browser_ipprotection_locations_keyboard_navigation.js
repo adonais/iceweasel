@@ -55,9 +55,7 @@ async function openLocationsSubview(state = {}, keyboardActivated = false) {
   await locationsList?.updateComplete;
 
   let backButton = locationsView.querySelector(".subviewbutton-back");
-  let firstListItem = locationsList?.querySelector(
-    ".location-item:not([disabled])"
-  );
+  let firstListItem = locationsList?.querySelector(".location-item");
   let promoButton = locationsView.querySelector("moz-promo moz-button");
 
   return {
@@ -230,9 +228,7 @@ add_task(async function test_locations_arrow_keys_navigate_list() {
   let { firstListItem, locationsView } = await openLocationsSubview();
 
   let locationsList = locationsView.querySelector("locations-list");
-  let listItems = Array.from(
-    locationsList.querySelectorAll(".location-item:not([disabled])")
-  );
+  let listItems = Array.from(locationsList.querySelectorAll(".location-item"));
 
   Assert.greater(listItems.length, 1, "should have more than one enabled item");
 
@@ -246,6 +242,45 @@ add_task(async function test_locations_arrow_keys_navigate_list() {
 
   // ArrowDown from last item wraps to first.
   await expectFocusAfterKey("ArrowDown", listItems[0]);
+
+  await closePanel();
+  cleanupService();
+});
+
+/**
+ * Tests that an unavailable location is still reachable with the arrow keys and
+ * is not skipped during keyboard navigation.
+ */
+add_task(async function test_locations_arrow_keys_include_unavailable() {
+  let { locationsView } = await openLocationsSubview();
+
+  let locationsList = locationsView.querySelector("locations-list");
+  let listItems = Array.from(locationsList.querySelectorAll(".location-item"));
+
+  let unavailableItem = locationsList.querySelector(
+    ".location-item[aria-disabled]"
+  );
+
+  Assert.ok(unavailableItem, "an unavailable location item should be present");
+  Assert.ok(
+    listItems.includes(unavailableItem),
+    "the unavailable item should be part of the navigable list"
+  );
+
+  let unavailableIndex = listItems.indexOf(unavailableItem);
+  let previousItem =
+    listItems[(unavailableIndex - 1 + listItems.length) % listItems.length];
+
+  // ArrowDown from the item before the unavailable one should land on it.
+  previousItem.focus();
+  await expectFocusAfterKey("ArrowDown", unavailableItem);
+
+  // ArrowDown again should continue past it, confirming it is a normal stop.
+  let nextItem = listItems[(unavailableIndex + 1) % listItems.length];
+  await expectFocusAfterKey("ArrowDown", nextItem);
+
+  // ArrowUp should move focus back onto the unavailable item.
+  await expectFocusAfterKey("ArrowUp", unavailableItem);
 
   await closePanel();
   cleanupService();

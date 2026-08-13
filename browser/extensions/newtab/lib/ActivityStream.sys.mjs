@@ -5,17 +5,18 @@
 // We use importESModule here instead of static import so that
 // the Karma test environment won't choke on this module. This
 // is because the Karma test environment already stubs out
-// AppConstants, and overrides importESModule to be a no-op (which
+// XPCOMUtils, and overrides importESModule to be a no-op (which
 // can't be done for a static import statement).
-
-// eslint-disable-next-line mozilla/use-static-import
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
 
 // eslint-disable-next-line mozilla/use-static-import
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
+
+// Eager (not lazy) — the pref default below reads it unconditionally at load.
+// eslint-disable-next-line mozilla/use-static-import
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
 );
 
 const lazy = {};
@@ -47,6 +48,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
   SectionsFeed: "resource://newtab/lib/SectionsManager.sys.mjs",
   SectionsLayoutFeed: "resource://newtab/lib/SectionsLayoutFeed.sys.mjs",
   SportsFeed: "resource://newtab/lib/Widgets/SportsFeed.sys.mjs",
+  StocksFeed: "resource://newtab/lib/Widgets/StocksFeed.sys.mjs",
+  PrivacyFeed: "resource://newtab/lib/Widgets/PrivacyFeed.sys.mjs",
+  PictureOfTheDayFeed:
+    "resource://newtab/lib/Widgets/PictureOfTheDayFeed.sys.mjs",
   StartupCacheInit: "resource://newtab/lib/StartupCacheInit.sys.mjs",
   Store: "resource://newtab/lib/Store.sys.mjs",
   SystemTickFeed: "resource://newtab/lib/SystemTickFeed.sys.mjs",
@@ -56,6 +61,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   TopStoriesFeed: "resource://newtab/lib/TopStoriesFeed.sys.mjs",
   WallpaperFeed: "resource://newtab/lib/Wallpapers/WallpaperFeed.sys.mjs",
   WeatherFeed: "resource://newtab/lib/WeatherFeed.sys.mjs",
+  WebNotificationsFeed: "resource://newtab/lib/WebNotificationsFeed.sys.mjs",
 });
 
 XPCOMUtils.defineLazyServiceGetter(
@@ -160,18 +166,20 @@ export const WEATHER_OPTIN_REGIONS = [
   "CH", // Switzerland
 ];
 
+export function csvHasValue(csvString, value) {
+  return (csvString || "")
+    .split(",")
+    .map(s => s.trim())
+    .filter(item => item)
+    .includes(value);
+}
+
 export function csvPrefHasValue(stringPrefName, value) {
   if (typeof stringPrefName !== "string") {
     throw new Error(`The stringPrefName argument is not a string`);
   }
 
-  const pref = Services.prefs.getStringPref(stringPrefName, "") || "";
-  const prefValues = pref
-    .split(",")
-    .map(s => s.trim())
-    .filter(item => item);
-
-  return prefValues.includes(value);
+  return csvHasValue(Services.prefs.getStringPref(stringPrefName, ""), value);
 }
 
 export function shouldInitializeFeeds(defaultValue = true) {
@@ -199,11 +207,19 @@ function useSov({ geo, locale }) {
   );
 }
 
-function useContextualAds({ geo, locale }) {
-  return (
-    csvPrefHasValue(REGION_CONTEXTUAL_AD_CONFIG, geo) &&
-    csvPrefHasValue(LOCALE_CONTEXTUAL_AD_CONFIG, locale)
-  );
+/**
+ * @backward-compat { version 154 }
+ * We are turning this on in US/en-US,en-GB,en-CA, but doing it in here so it
+ * can trainhop. Drop the `|| "US"` / `|| "en-US,en-GB,en-CA"` fallbacks once
+ * 154 hits Release.
+ */
+export function useContextualAds({ geo, locale }) {
+  const regions =
+    Services.prefs.getStringPref(REGION_CONTEXTUAL_AD_CONFIG, "") || "US";
+  const locales =
+    Services.prefs.getStringPref(LOCALE_CONTEXTUAL_AD_CONFIG, "") ||
+    "en-US,en-GB,en-CA";
+  return csvHasValue(regions, geo) && csvHasValue(locales, locale);
 }
 
 // Determine if spocs should be shown for a geo/locale
@@ -417,6 +433,13 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "unifiedAds.adsClient.enabled",
+    {
+      title: "Local toggle for the AdsClient code paths",
+      value: false,
+    },
+  ],
+  [
     "unifiedAds.tiles.enabled",
     {
       title:
@@ -531,23 +554,6 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
-    "weather.reportEndpoint",
-    {
-      title:
-        "Temporary measure for trainhopping. This adds the Merino endpoint for the weather report",
-      value: "https://merino.services.mozilla.com/api/v1/suggest",
-    },
-  ],
-  [
-    "weather.hourlyEndpoint",
-    {
-      title:
-        "Temporary measure for trainhopping. This adds the Merino endpoint for the hourly forecasts to display in Weather Forecast widget",
-      value:
-        "https://merino.services.mozilla.com/api/v1/weather/hourly-forecasts",
-    },
-  ],
-  [
     "sports.worldCup.teamsEndpoint",
     {
       title: "The Merino endpoint for fetching available World Cup teams data",
@@ -574,6 +580,45 @@ export const PREFS_CONFIG = new Map([
       title:
         "The Merino endpoint for fetching World Cup watch-live broadcaster data",
       value: "https://merino.services.mozilla.com/api/v1/wcs/watch-links",
+    },
+  ],
+  [
+    "widgets.pictureOfTheDay.endpoint",
+    {
+      title: "The Merino endpoint for fetching the daily Picture of the day",
+      value:
+        "https://merino.services.mozilla.com/api/v1/rss/picture-of-the-day",
+    },
+  ],
+  [
+    "widgets.pictureOfTheDay.wallpaperActive",
+    {
+      title:
+        "Published date of the Picture of the day set as the active wallpaper",
+      value: "",
+    },
+  ],
+  [
+    "widgets.pictureOfTheDay.setAsWallpaper.enabled",
+    {
+      title:
+        "Whether the Picture of the day 'Set as wallpaper' feature/CTA is enabled",
+      value: false,
+    },
+  ],
+  [
+    "widgets.pictureOfTheDay.dismissedDate",
+    {
+      title: "Published date of the Picture of the day the user dismissed",
+      value: "",
+    },
+  ],
+  [
+    "widgets.pictureOfTheDay.interaction",
+    {
+      title:
+        "Boolean flag for determining if a user has interacted with the Picture of the day widget",
+      value: false,
     },
   ],
   [
@@ -655,18 +700,21 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "topSitesGroupedPins",
+    {
+      title:
+        "Group pinned Top Sites into a contiguous block with restricted drag-and-drop reordering",
+      // Channel-derived (resolves on the host), so it's on in Nightly but stays
+      // dark after the XPI train-hops to Beta/Release. A literal true would ride
+      // inside the XPI and wrongly activate.
+      value: AppConstants.NIGHTLY_BUILD,
+    },
+  ],
+  [
     "telemetry",
     {
       title: "Enable system error and usage data collection",
       value: true,
-      value_local_dev: false,
-    },
-  ],
-  [
-    "telemetry.ut.events",
-    {
-      title: "Enable Unified Telemetry event data collection",
-      value: AppConstants.EARLY_BETA_OR_EARLIER,
       value_local_dev: false,
     },
   ],
@@ -1255,15 +1303,15 @@ export const PREFS_CONFIG = new Map([
     "widgets.maximized",
     {
       title:
-        "Toggles maximized state for all widgets in the widgets section. It defaults to true as the default widget size is large",
-      value: true,
+        "Toggles maximized state for all widgets in the widgets section. It defaults to false as the default widget size is medium",
+      value: false,
     },
   ],
   [
     "widgets.system.maximized",
     {
       title: "Enables the maximize widget feature experiment in Nimbus",
-      value: false,
+      value: true,
     },
   ],
   [
@@ -1461,6 +1509,121 @@ export const PREFS_CONFIG = new Map([
     {
       title: "Saved clock widget time zones",
       value: "",
+    },
+  ],
+  [
+    "widgets.privacy.enabled",
+    {
+      title: "Enables the privacy widget",
+      value: true,
+    },
+  ],
+  [
+    "widgets.crossword.enabled",
+    {
+      title: "Enables the crossword widget",
+      value: true,
+    },
+  ],
+  [
+    "widgets.crossword.interaction",
+    {
+      title:
+        "Boolean flag for determining if a user has interacted with the crossword widget",
+      value: false,
+    },
+  ],
+  [
+    "widgets.stocks.enabled",
+    {
+      title: "Enables the stocks widget",
+      value: true,
+    },
+  ],
+  [
+    "widgets.pictureOfTheDay.enabled",
+    {
+      title: "Enables the picture of the day widget",
+      value: true,
+    },
+  ],
+  [
+    "widgets.system.privacy.enabled",
+    {
+      title: "Enables the privacy widget experiment in Nimbus",
+      value: false,
+    },
+  ],
+  [
+    "widgets.system.crossword.enabled",
+    {
+      title: "Enables the crossword widget experiment in Nimbus",
+      value: false,
+    },
+  ],
+  [
+    "widgets.system.stocks.enabled",
+    {
+      title: "Enables the stocks widget experiment in Nimbus",
+      value: false,
+    },
+  ],
+  [
+    "widgets.system.pictureOfTheDay.enabled",
+    {
+      title: "Enables the picture of the day widget experiment in Nimbus",
+      value: false,
+    },
+  ],
+  [
+    "widgets.privacy.size",
+    {
+      title: "Size of the privacy widget (medium or large)",
+      value: "",
+    },
+  ],
+  [
+    "widgets.privacy.maxCount",
+    {
+      title: "Max trackers-blocked count shown before the '+' cap",
+      value: 100,
+    },
+  ],
+  [
+    "widgets.crossword.size",
+    {
+      title: "Size of the crossword widget (medium or large)",
+      value: "",
+    },
+  ],
+  [
+    "widgets.stocks.size",
+    {
+      title: "Size of the stocks widget (small, medium, or large)",
+      value: "",
+    },
+  ],
+  [
+    "widgets.pictureOfTheDay.size",
+    {
+      title: "Size of the picture of the day widget (small, medium, or large)",
+      value: "",
+    },
+  ],
+  [
+    "widgets.stocks.size",
+    {
+      title: "Size of the stocks widget (small, medium, or large)",
+      value: "",
+    },
+  ],
+  [
+    "widgets.crossword.endpoint",
+    {
+      title:
+        "The Merino endpoint that serves the crossword bundle rendered in the widget iframe",
+      value:
+        "https://prod-games-particle.merino.prod.webservices.mozgcp.net/index.html",
     },
   ],
   [
@@ -1984,6 +2147,12 @@ const FEEDS_DATA = [
     value: true,
   },
   {
+    name: "stocksfeed",
+    factory: () => new lazy.StocksFeed(),
+    title: "Handles fetching and caching stocks data",
+    value: true,
+  },
+  {
     name: "adsfeed",
     factory: () => new lazy.AdsFeed(),
     title: "Handles fetching and caching ads data",
@@ -2028,6 +2197,19 @@ const FEEDS_DATA = [
     value: true,
   },
   {
+    name: "privacyfeed",
+    factory: () => new lazy.PrivacyFeed(),
+    title:
+      "Handles fetching the daily tracker-blocked count for the Privacy widget",
+    value: true,
+  },
+  {
+    name: "pictureofthedayfeed",
+    factory: () => new lazy.PictureOfTheDayFeed(),
+    title: "Handles fetching and caching the daily Picture of the day",
+    value: true,
+  },
+  {
     name: "timerfeed",
     factory: () => new lazy.TimerFeed(),
     title: "Handles the data for the Timer widget",
@@ -2038,6 +2220,12 @@ const FEEDS_DATA = [
     factory: () => new lazy.ExternalComponentsFeed(),
     title: "Handles updating the registry of external components",
     value: true,
+  },
+  {
+    name: "webnotificationsfeed",
+    factory: () => new lazy.WebNotificationsFeed(),
+    title: "Handles snapshotting the platform NotificationDB",
+    value: false,
   },
 ];
 

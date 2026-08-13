@@ -2,11 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/AppShutdown.h"
 #include "mozilla/IdlePeriodState.h"
+
+#include "mozilla/AppShutdown.h"
 #include "mozilla/StaticPrefs_idle_period.h"
-#include "mozilla/ipc/IdleSchedulerChild.h"
 #include "mozilla/dom/ContentChild.h"
+#include "mozilla/ipc/IdleSchedulerChild.h"
 #include "nsIIdlePeriod.h"
 #include "nsThreadManager.h"
 #include "nsXPCOM.h"

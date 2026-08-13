@@ -41,7 +41,7 @@ add_task(async function test_change_title_from_BookmarkStar() {
   let bookmarkPanelTitle = win.document.getElementById(
     "editBookmarkPanelTitle"
   );
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       bookmarkPanelTitle.textContent ===
       gFluentStrings.formatValueSync("bookmarks-edit-bookmark"),

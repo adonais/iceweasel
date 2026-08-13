@@ -1018,8 +1018,17 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   }
 
  public:
-  // Assert the arguments are in this context's realm (for scripts),
-  // compartment (for objects) or zone (for strings, symbols).
+  // [SMDOC] Argument Compatibility Conventions
+  //
+  // The convention within SpiderMonkey is that if a function takes a JSContext*
+  // argument, all the other arguments are in the same compartment as the
+  // JSContext for objects, same-realm for scripts, and same-zone for strings
+  // and symbols.
+  //
+  // Exceptions to this are allowed, but should be documented explicitly in
+  // some fashion (e.g. naming the parameter `unwrappedFoo`)
+  //
+  // The below `check` functions are used for dynamic enforcement.
   template <class... Args>
   inline void check(const Args&... args);
   template <class... Args>

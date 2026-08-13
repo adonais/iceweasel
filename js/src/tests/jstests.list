@@ -658,6 +658,7 @@ ignore-flag(--more-compartments) script test262/built-ins/Proxy/construct/return
 ignore-flag(--more-compartments) script test262/built-ins/Proxy/construct/return-not-object-throws-boolean-realm.js
 ignore-flag(--more-compartments) script test262/built-ins/Proxy/construct/return-not-object-throws-boolean-realm.js
 ignore-flag(--more-compartments) script test262/staging/sm/extensions/dataview.js
+skip-if(!xulRuntime.shell) ignore-flag(--more-compartments) script test262/intl402/FallbackSymbol/per-realm.js
 
 # Time zone canonicalization proposal.
 skip script test262/intl402/DateTimeFormat/timezone-not-canonicalized.js
@@ -706,9 +707,6 @@ skip script test262/built-ins/Error/prototype/stack/setter-receiver-is-proxy.js
 skip script test262/built-ins/Error/prototype/stack/getter-receiver-is-proxy.js
 skip script test262/built-ins/Error/prototype/stack/getter-error-prototype.js
 skip script test262/built-ins/Error/prototype/stack/getter-cross-realm.js
-
-# Bug 2046890
-skip script test262/intl402/FallbackSymbol/per-realm.js
 
 ###########################################################
 # Tests disabled due to issues in test262 importer script #

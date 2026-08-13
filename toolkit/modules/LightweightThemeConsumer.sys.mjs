@@ -345,11 +345,18 @@ LightweightThemeConsumer.prototype = {
       !!lazy.BuiltInThemeConfig.get(themeId)?.inApp;
 
     if (this._isAIWindow) {
-      if (manager.aiThemeData) {
-        themeData = manager.aiThemeData;
+      const useNova = this.BROWSER_NOVA_ENABLED;
+      const cachedData = useNova
+        ? manager.aiNovaThemeData
+        : manager.aiThemeData;
+      if (cachedData) {
+        themeData = cachedData;
         isDefaultOrInApp = true;
       } else {
-        manager.promiseAIThemeData().then(() => {
+        const promise = useNova
+          ? manager.promiseAINovathemeData()
+          : manager.promiseAIThemeData();
+        promise.then(() => {
           if (this._isAIWindow && this._win && !this._win.closed) {
             this._update(this._lastData);
           }
@@ -359,15 +366,13 @@ LightweightThemeConsumer.prototype = {
     } else if (
       shouldMakePrivateWindowDark &&
       this.BROWSER_NOVA_ENABLED &&
-      DEFAULT_THEME_ID === themeId
+      isDefaultOrInApp
     ) {
-      // When in a private window, with nova enabled and the default theme active,
-      // substitute the built-in private-window theme.
-      // Other themes (including built-ins like light, dark, alpenglow) are unchanged.
+      // When in a private window, with nova enabled and any of the in-app themes active,
+      // substitute the built-in private-window theme. Other themes are unchanged.
       if (manager.privateThemeData) {
         themeData = manager.privateThemeData;
         isPrivateThemeActive = true;
-        isDefaultOrInApp = true;
       } else {
         manager.promisePrivateThemeData().then(() => {
           if (this._win && !this._win.closed) {

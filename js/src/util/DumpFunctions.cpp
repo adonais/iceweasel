@@ -579,6 +579,19 @@ static void DumpHeapVisitCell(JSRuntime* rt, void* data, JS::GCCellPtr cellptr,
     fprintf(dtrc->output, "\n");
   }
 
+  if (cellptr.is<JSObject>()) {
+    JSObject* obj = &cellptr.as<JSObject>();
+    if (obj->is<js::NativeObject>() && obj->getClass()->preservesWrapper()) {
+      JS::Value objectWrapperSlot =
+          JS::GetReservedSlot(obj, JS_OBJECT_WRAPPER_SLOT);
+      if (!objectWrapperSlot.isUndefined() && objectWrapperSlot.toPrivate()) {
+        fprintf(dtrc->output, "> %p %c Wrapped DOM Object\n",
+                objectWrapperSlot.toPrivate(),
+                MarkDescriptor(cellptr.asCell()));
+      }
+    }
+  }
+
   JS::TraceChildren(dtrc, cellptr);
 }
 

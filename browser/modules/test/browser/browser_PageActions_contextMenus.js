@@ -69,7 +69,7 @@ add_task(async function contextMenu() {
 
   // Wait for the urlbar button to become visible again after about:addons is
   // closed and the test tab becomes selected.
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return BrowserPageActions.urlbarButtonNodeForActionID(actionId);
   }, "Waiting for urlbar button to be added back");
 
@@ -94,7 +94,7 @@ add_task(async function contextMenu() {
 
   // Wait for the urlbar button to become visible again after about:addons is
   // closed and the test tab becomes selected.
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return BrowserPageActions.urlbarButtonNodeForActionID(actionId);
   }, "Waiting for urlbar button to be added back");
 

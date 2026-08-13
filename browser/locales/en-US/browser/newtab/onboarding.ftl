@@ -445,6 +445,11 @@ onboarding-checklist-pin = Pin { -brand-short-name } to taskbar
 onboarding-checklist-import = Import from previous browser
 onboarding-checklist-extension = Add an extension
 onboarding-checklist-sign-up = Sign up or sign in to your account
+onboarding-checklist-minimize =
+    .label = Minimize
+onboarding-checklist-remove =
+    .label = Remove checklist
+onboarding-checklist-remove-2 = Remove checklist
 
 ## Tab Groups feature onboarding strings
 
@@ -602,3 +607,35 @@ onboarding-refresh-sync-title = Go anywhere. Sync everything.
 onboarding-refresh-gratitude-subtitle = Thank you for using { -brand-short-name }, the only major browser backed by a non-profit. With your support, we’re working to make the internet safer and more accessible for everyone.
 # "has your back" is an idiom suggesting support and protection
 onboarding-refresh-gratitude-title = { -brand-short-name } has your back
+
+## Smart window switcher callout
+
+smartwindow-switcher-callout = Switch between Smart and Classic Windows anytime.
+
+## Smart Window ToU modal
+
+# Existing users
+smartwindow-existing-user-fx-tou-title = { -brand-product-name } Terms of Use
+smartwindow-existing-user-fx-tou-body = To use { -smart-window-brand-name }, please accept the <a data-l10n-name="terms_of_use">Terms of Use</a> and updated <a data-l10n-name="privacy_notice">Privacy Notice</a>.
+smartwindow-existing-user-fx-tou-accept = Accept
+smartwindow-existing-user-fx-tou-go-back = Go back
+
+## Smart Window about:welcome screen
+
+smartwindow-onboarding-title = Make { -smart-window-brand-name } your go-to
+smartwindow-onboarding-subtitle = Summarize, compare, and ask questions without missing a beat.
+smartwindow-onboarding-primary-button = Continue
+# Kit is referring to the Firefox mascot
+smartwindow-onboarding-image-alt =
+  .aria-label = { -brand-product-name } mascot (Kit) with star props
+
+## Smart Window Sidebar Auto-Open Pref
+
+smartwindow-sidebar-auto-open-callout-title = Want to keep the assistant closed?
+smartwindow-sidebar-auto-open-callout-body = You can still open it whenever you need it.
+smartwindow-sidebar-auto-open-callout-accept = Yes, keep closed
+smartwindow-sidebar-auto-open-callout-dismiss = No thanks
+smartwindow-sidebar-auto-open-callout-accepted-title = The assistant will stay closed
+smartwindow-sidebar-auto-open-callout-accepted-subtitle = Use Ask to open it on any page. Change this anytime in <a data-l10n-name="settings">Settings</a>.
+smartwindow-sidebar-auto-open-callout-rejected-title = Got it
+smartwindow-sidebar-auto-open-callout-rejected-subtitle = If you change your mind, you can update the default in <a data-l10n-name="settings">Settings</a> anytime.

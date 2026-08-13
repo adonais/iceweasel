@@ -17,6 +17,7 @@ CompiledModules(
     "source-actors.js",
     "source-blackbox.js",
     "sources.js",
+    "stylesheets.js",
     "sources-content.js",
     "sources-tree.js",
     "tabs.js",

@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { ContextualIdentityService } from "resource://gre/modules/ContextualIdentityService.sys.mjs";
+import { ContextualIdentityService } from "moz-src:///toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs";
 
 export function QuotaUtilsService() {}
 

@@ -7,7 +7,6 @@
 #include "jit/MIRGraph.h"
 #include "jit/RangeAnalysis.h"
 #include "jit/ValueNumbering.h"
-
 #include "jsapi-tests/testJitMinimalFunc.h"
 #include "jsapi-tests/tests.h"
 

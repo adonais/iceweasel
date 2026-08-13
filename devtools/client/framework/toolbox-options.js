@@ -8,6 +8,9 @@ const EventEmitter = require("resource://devtools/shared/event-emitter.js");
 const {
   gDevTools,
 } = require("resource://devtools/client/framework/devtools.js");
+const {
+  getFormattedSize,
+} = require("resource://devtools/client/netmonitor/src/utils/format-utils.js");
 
 const l10n = new Localization(["devtools/client/toolbox-options.ftl"], true);
 
@@ -35,6 +38,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   LocalModeMappings:
     "resource://devtools/client/framework/LocalModeMappings.sys.mjs",
 });
+
+const NETMONITOR_BODY_LIMIT_PREF = "devtools.netmonitor.bodyLimit";
 
 function GetPref(name) {
   const type = Services.prefs.getPrefType(name);
@@ -106,20 +111,24 @@ class OptionsPanel extends EventEmitter {
     this.setupAdditionalOptions();
     await this.populatePreferences();
     this.#setupLocalMode();
+    this.setupNetworkBodySizeLimit();
+
     return this;
   }
 
+  #observedPreferences = [
+    "devtools.cache.disabled",
+    "devtools.theme",
+    "devtools.source-map.client-service.enabled",
+    "devtools.toolbox.splitconsole.enabled",
+    NETMONITOR_BODY_LIMIT_PREF,
+  ];
+
   #addListeners() {
-    Services.prefs.addObserver("devtools.cache.disabled", this.#prefChanged);
-    Services.prefs.addObserver("devtools.theme", this.#prefChanged);
-    Services.prefs.addObserver(
-      "devtools.source-map.client-service.enabled",
-      this.#prefChanged
-    );
-    Services.prefs.addObserver(
-      "devtools.toolbox.splitconsole.enabled",
-      this.#prefChanged
-    );
+    for (const prefName of this.#observedPreferences) {
+      Services.prefs.addObserver(prefName, this.#prefChanged);
+    }
+
     gDevTools.on("theme-registered", this.#themeRegistered);
     gDevTools.on("theme-unregistered", this.#themeUnregistered);
 
@@ -135,16 +144,9 @@ class OptionsPanel extends EventEmitter {
   }
 
   #removeListeners() {
-    Services.prefs.removeObserver("devtools.cache.disabled", this.#prefChanged);
-    Services.prefs.removeObserver("devtools.theme", this.#prefChanged);
-    Services.prefs.removeObserver(
-      "devtools.source-map.client-service.enabled",
-      this.#prefChanged
-    );
-    Services.prefs.removeObserver(
-      "devtools.toolbox.splitconsole.enabled",
-      this.#prefChanged
-    );
+    for (const prefName of this.#observedPreferences) {
+      Services.prefs.removeObserver(prefName, this.#prefChanged);
+    }
 
     this.toolbox.off("tool-registered", this.setupToolsList);
     this.toolbox.off("tool-unregistered", this.setupToolsList);
@@ -167,6 +169,8 @@ class OptionsPanel extends EventEmitter {
       this.updateSourceMapPref();
     } else if (prefName === "devtools.toolbox.splitconsole.enabled") {
       this.toolbox.updateIsSplitConsoleEnabled();
+    } else if (prefName === NETMONITOR_BODY_LIMIT_PREF) {
+      this.updateNetworkBodySizeLimit();
     }
   };
 
@@ -575,24 +579,138 @@ class OptionsPanel extends EventEmitter {
       // Hide the checkbox and label
       this.disableJSNode.parentNode.style.display = "none";
     }
-
-    // @backward-compat { version 152 } Once 152 hits release, we can remove this boolean
-    // and always consider it true (i.e. remove everything related to the "show comments" option in the toolbox).
-    const showCommentsOption = this.panelDoc.querySelector(
-      'label:has(> [data-pref="devtools.markup.showComments"])'
-    );
-    try {
-      if (
-        !this.commands.targetCommand.rootFront.traits
-          .supportsCommentNodesDisplayControl
-      ) {
-        showCommentsOption.style.display = "none";
-      }
-    } catch (e) {
-      // If inspector is not available, hide the option
-      showCommentsOption.style.display = "none";
-    }
   }
+
+  setupNetworkBodySizeLimit() {
+    const input = this.panelDoc.querySelector("#netmonitor-body-limit");
+
+    // Int preferences at capped at PR_INT32_MAX == ~2 GB
+    const maxValue = 2147483647;
+
+    const editElement = this.panelDoc.querySelector(
+      `.netmonitor-body-limit-button`
+    );
+    editElement.addEventListener("click", this.editNetworkBodySizeLimit);
+
+    const valueElement = this.panelDoc.querySelector(
+      `#netmonitor-body-limit-value`
+    );
+    const editSection = this.panelDoc.querySelector(
+      "#netmonitor-body-limit-edit"
+    );
+    input.addEventListener("keydown", function (event) {
+      if (event.key == "Escape") {
+        editSection.classList.remove("active");
+        // Prevents showing the split console
+        event.preventDefault();
+        event.stopPropagation();
+        valueElement.classList.remove("hidden");
+        editElement.classList.remove("hidden");
+        input.setCustomValidity("");
+        const hasCustomValue = Services.prefs.prefHasUserValue(
+          NETMONITOR_BODY_LIMIT_PREF
+        );
+        resetElement.classList.toggle("hidden", !hasCustomValue);
+      } else if (event.key == "Enter") {
+        setValue();
+        // Prevents submitting the form and navigating the options document
+        // to self-reload
+        event.preventDefault();
+      }
+    });
+    input.addEventListener("input", function () {
+      const limit = parseInt(input.value, 10);
+      if (limit < 0 || limit > maxValue) {
+        input.setCustomValidity("invalid");
+      } else {
+        input.setCustomValidity("");
+      }
+    });
+
+    function setValue() {
+      editSection.classList.remove("active");
+      valueElement.classList.remove("hidden");
+      editElement.classList.remove("hidden");
+      input.setCustomValidity("");
+      // Check <input pattern> mismatch as parseInt accepts strings like "1000xxx" and returns 1000
+      if (!input.validity.patternMismatch) {
+        // If this is a valid number, clamp to the closest valid number
+        const limit = Math.min(
+          Math.max(parseInt(input.value, 10), 0),
+          maxValue
+        );
+        SetPref(NETMONITOR_BODY_LIMIT_PREF, limit);
+      }
+      const hasCustomValue = Services.prefs.prefHasUserValue(
+        NETMONITOR_BODY_LIMIT_PREF
+      );
+      resetElement.classList.toggle("hidden", !hasCustomValue);
+    }
+    function reset() {
+      editSection.classList.remove("active");
+      valueElement.classList.remove("hidden");
+      editElement.classList.remove("hidden");
+      // Reset to the default value
+      Services.prefs.clearUserPref(NETMONITOR_BODY_LIMIT_PREF);
+      resetElement.classList.add("hidden");
+    }
+
+    const setElement = this.panelDoc.querySelector(
+      `.netmonitor-body-limit-set`
+    );
+    setElement.addEventListener("click", setValue);
+    const resetElement = this.panelDoc.querySelector(
+      `.netmonitor-body-limit-restore-default`
+    );
+    resetElement.addEventListener("click", reset);
+    const hasCustomValue = Services.prefs.prefHasUserValue(
+      NETMONITOR_BODY_LIMIT_PREF
+    );
+    resetElement.classList.toggle("hidden", !hasCustomValue);
+
+    this.updateNetworkBodySizeLimit();
+  }
+
+  updateNetworkBodySizeLimit() {
+    const valueElement = this.panelDoc.querySelector(
+      `#netmonitor-body-limit-value`
+    );
+    const value = GetPref(NETMONITOR_BODY_LIMIT_PREF);
+    valueElement.textContent =
+      value == 0
+        ? l10n.formatValueSync("options-netmonitor-body-limit-unlimited-label")
+        : getFormattedSize(value);
+  }
+
+  /**
+   * Show a form to edit the network maximum body size limit.
+   * Including an input and a save button which will replace the read-only display.
+   */
+  editNetworkBodySizeLimit = () => {
+    const valueElement = this.panelDoc.querySelector(
+      `#netmonitor-body-limit-value`
+    );
+    valueElement.classList.add("hidden");
+    const editElement = this.panelDoc.querySelector(
+      `.netmonitor-body-limit-button`
+    );
+    editElement.classList.add("hidden");
+
+    const editSection = this.panelDoc.querySelector(
+      "#netmonitor-body-limit-edit"
+    );
+    editSection.classList.add("active");
+
+    const resetElement = this.panelDoc.querySelector(
+      `.netmonitor-body-limit-restore-default`
+    );
+    resetElement.classList.add("hidden");
+
+    const input = this.panelDoc.querySelector("#netmonitor-body-limit");
+    input.value = GetPref(NETMONITOR_BODY_LIMIT_PREF);
+
+    input.focus();
+  };
 
   updateCurrentTheme() {
     const currentTheme = GetPref("devtools.theme");

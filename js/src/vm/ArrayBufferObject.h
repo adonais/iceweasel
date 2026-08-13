@@ -108,8 +108,7 @@ uint64_t WasmReservedBytes();
 // separated completely.
 //
 // Most APIs will only accept ArrayBufferObject.  ArrayBufferObjectMaybeShared
-// exists as a join point to allow APIs that can take or use either, notably
-// AsmJS.
+// exists as a join point to allow APIs that can take or use either.
 //
 // In contrast with the separation of ArrayBufferObject and
 // SharedArrayBufferObject, the TypedArray types can map either.
@@ -168,7 +167,6 @@ class ArrayBufferObjectMaybeShared : public NativeObject {
   }
   size_t wasmMappedSize() const { return WasmArrayBufferMappedSize(this); }
 
-  inline bool isPreparedForAsmJS() const;
   inline bool isWasm() const;
 };
 
@@ -286,12 +284,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
     // Resizable ArrayBuffer.
     RESIZABLE = 0b1'0000,
 
-    // This MALLOCED, MAPPED, or EXTERNAL buffer has been prepared for asm.js
-    // and cannot henceforth be transferred/detached.  (WASM, USER_OWNED, and
-    // INLINE_DATA buffers can't be prepared for asm.js -- although if an
-    // INLINE_DATA buffer is used with asm.js, it's silently rewritten into a
-    // MALLOCED buffer which *can* be prepared.)
-    FOR_ASMJS = 0b10'0000,
+    // (0b10'0000 is unused)
 
     // The length is temporarily pinned, so it should not be detached. In the
     // future, this will also prevent GrowableArrayBuffer/ResizeableArrayBuffer
@@ -615,21 +608,14 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
   bool isDetached() const { return flags() & DETACHED; }
   bool isResizable() const { return flags() & RESIZABLE; }
   bool isLengthPinned() const { return flags() & PINNED_LENGTH; }
-  bool isPreparedForAsmJS() const { return flags() & FOR_ASMJS; }
   bool isImmutable() const { return flags() & IMMUTABLE; }
 
-  // Only WASM and asm.js buffers have a non-undefined [[ArrayBufferDetachKey]].
+  // Only WASM buffers have a non-undefined [[ArrayBufferDetachKey]].
   //
   // https://tc39.es/ecma262/#sec-properties-of-the-arraybuffer-instances
-  bool hasDefinedDetachKey() const { return isWasm() || isPreparedForAsmJS(); }
+  bool hasDefinedDetachKey() const { return isWasm(); }
 
   // WebAssembly support:
-
-  /**
-   * Prepare this ArrayBuffer for use with asm.js.  Returns true on success,
-   * false on failure.  This function reports no errors.
-   */
-  [[nodiscard]] bool prepareForAsmJS();
 
   size_t wasmMappedSize() const;
 
@@ -678,13 +664,6 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
     MOZ_ASSERT(!isImmutable());
     setFlags(flags() | DETACHED);
   }
-  void setIsPreparedForAsmJS() {
-    MOZ_ASSERT(!isWasm());
-    MOZ_ASSERT(!hasUserOwnedData());
-    MOZ_ASSERT(!isInlineData());
-    MOZ_ASSERT(isMalloced() || isMapped() || isExternal());
-    setFlags(flags() | FOR_ASMJS);
-  }
 
   void initialize(size_t byteLength, BufferContents contents) {
     MOZ_ASSERT(contents.isAligned(byteLength));
@@ -709,7 +688,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
  * for ArrayBuffer objects, including inline data, malloc'ed memory, mapped
  * memory, and user-owner memory.
  *
- * Fixed-length ArrayBuffers can be used for asm.js and WebAssembly.
+ * Fixed-length ArrayBuffers can be used for WebAssembly.
  */
 class FixedLengthArrayBufferObject : public ArrayBufferObject {
   friend class ArrayBufferObject;
@@ -753,7 +732,7 @@ class FixedLengthArrayBufferObject : public ArrayBufferObject {
  * When a resizable ArrayBuffer object is detached, its maximum byte length
  * slot is set to zero in addition to the byte length slot.
  *
- * Resizable ArrayBuffers can neither be used for asm.js nor WebAssembly.
+ * Resizable ArrayBuffers cannot be used for WebAssembly.
  */
 class ResizableArrayBufferObject : public ArrayBufferObject {
   friend class ArrayBufferObject;
@@ -830,7 +809,7 @@ class ResizableArrayBufferObject : public ArrayBufferObject {
  * memory stores for ArrayBuffer objects, including inline data, malloc'ed
  * memory, mapped memory, and user-owner memory.
  *
- * Immutable ArrayBuffers can neither be used for asm.js nor WebAssembly.
+ * Immutable ArrayBuffers cannot be used for WebAssembly.
  */
 class ImmutableArrayBufferObject : public ArrayBufferObject {
   friend class ArrayBufferObject;

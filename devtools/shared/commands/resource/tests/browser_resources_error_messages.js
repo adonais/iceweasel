@@ -89,7 +89,7 @@ async function testErrorMessagesResources() {
     onAvailable,
   });
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => receivedMessages.length === expectedPageErrors.size
   );
 

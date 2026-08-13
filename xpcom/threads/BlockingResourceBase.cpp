@@ -9,18 +9,18 @@
 
 #  ifndef MOZ_CALLSTACK_DISABLED
 #    include "CodeAddressService.h"
-#    include "nsHashKeys.h"
 #    include "mozilla/StackWalk.h"
+#    include "nsHashKeys.h"
 #    include "nsTHashtable.h"
 #  endif
 
 #  include "mozilla/Attributes.h"
 #  include "mozilla/CondVar.h"
 #  include "mozilla/DeadlockDetector.h"
-#  include "mozilla/RecursiveMutex.h"
-#  include "mozilla/ReentrantMonitor.h"
 #  include "mozilla/Mutex.h"
 #  include "mozilla/RWLock.h"
+#  include "mozilla/RecursiveMutex.h"
+#  include "mozilla/ReentrantMonitor.h"
 #  include "mozilla/UniquePtr.h"
 
 #  if defined(MOZILLA_INTERNAL_API)

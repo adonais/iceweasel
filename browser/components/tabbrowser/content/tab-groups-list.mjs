@@ -7,6 +7,7 @@ import {
   nothing,
   repeat,
   styleMap,
+  classMap,
 } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 // eslint-disable-next-line import/no-unassigned-import
@@ -87,9 +88,9 @@ class TabGroupsList extends MozLitElement {
   #groupRow(group, isOpen) {
     const groupName = group.name || this._defaultGroupName;
     const style = styleMap({
-      "--tab-group-color": `var(--tab-group-color-${group.color})`,
-      "--tab-group-color-invert": `var(--tab-group-color-${group.color}-invert)`,
-      "--tab-group-color-pale": `var(--tab-group-color-${group.color}-pale)`,
+      "--tab-group-color": `var(--tab-group-${group.color})`,
+      "--tab-group-color-invert": `var(--tab-group-${group.color}-invert)`,
+      "--tab-group-color-pale": `var(--tab-group-${group.color}-pale)`,
       "--tab-group-background-color": `var(--tab-group-${group.color})`,
     });
     return html`
@@ -106,10 +107,15 @@ class TabGroupsList extends MozLitElement {
         @contextmenu=${e => this.#handleContextMenu(e, isOpen)}
       >
         <img
-          class="tab-group-row-icon${isOpen ? "" : " tab-group-icon-closed"}"
+          class=${classMap({
+            "tab-group-row-icon": true,
+            "tab-group-icon-closed": !isOpen,
+          })}
           src="chrome://browser/skin/tabbrowser/tab-group-chicklet.svg"
           width="16"
           height="16"
+          alt=""
+          role="presentation"
         />
         <span class="tab-group-row-label">${groupName}</span>
       </button>
@@ -148,9 +154,9 @@ class TabGroupsList extends MozLitElement {
     const win = this.#win;
     const newTab = win.gBrowser.addTrustedTab(win.BROWSER_NEW_TAB_URL);
     win.gBrowser.addTabGroup([newTab], {
-      isUserTriggered: true,
-      telemetryUserCreateSource:
-        lazy.TabMetrics.METRIC_SOURCE.TAB_OVERFLOW_MENU,
+      metricsContext: win.gBrowser.TabMetrics.userTriggeredContext(
+        win.gBrowser.TabMetrics.METRIC_SOURCE.TAB_OVERFLOW_MENU
+      ),
     });
   }
 

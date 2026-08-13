@@ -70,15 +70,6 @@
         <attr name="categoryItemDescription" format="reference" />
     </declare-styleable>
 
-    <declare-styleable name="SwitchWithDescription">
-        <attr name="switchTitle" format="reference" />
-        <attr name="switchDescriptionOn" format="reference" />
-        <attr name="switchDescriptionOff" format="reference" />
-        <attr name="switchIconOn" format="reference" />
-        <attr name="switchIconOff" format="reference" />
-        <attr name="switchShowIcon" format="boolean" />
-    </declare-styleable>
-
     <declare-styleable name="DeleteBrowsingDataItem">
         <attr name="deleteBrowsingDataItemTitle" format="reference" />
         <attr name="deleteBrowsingDataItemSubtitle" format="reference" />

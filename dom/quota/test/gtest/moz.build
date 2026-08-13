@@ -24,6 +24,7 @@ UNIFIED_SOURCES = [
     "TestDate.cpp",
     "TestDirectoryLock.cpp",
     "TestEncryptedRandomAccessBlock.cpp",
+    "TestEncryptedRandomAccessStream.cpp",
     "TestEncryptedStream.cpp",
     "TestFileOutputStream.cpp",
     "TestFlatten.cpp",

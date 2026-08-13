@@ -10,4 +10,6 @@ internal object BrokenSiteReporterTestTags {
     const val BROKEN_SITE_REPORTER_EDIT_URL_DIALOG_SAVE_BUTTON = "edit.url.broken.site.save.button"
     const val BROKEN_SITE_REPORTER_EDIT_URL_DIALOG_DISMISS_BUTTON = "edit.url.broken.site.dismiss.button"
     const val BROKEN_SITE_REPORTER_DESCRIPTION_INPUT = "broken.site.description.input"
+    const val BROKEN_SITE_REPORTER_REASON_OPTION = "broken.site.reason.option"
+    const val BROKEN_SITE_REPORTER_SELECTED_REASON = "broken.site.selected.reason"
 }

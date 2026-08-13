@@ -6,6 +6,7 @@
 #define mozilla_dom_gamepad_GamepadMessageUtils_h
 
 #include "ipc/EnumSerializer.h"
+#include "ipc/IPCMessageUtils.h"
 #include "mozilla/dom/BindingIPCUtils.h"
 #include "mozilla/dom/GamepadBinding.h"
 #include "mozilla/dom/GamepadHandle.h"
@@ -35,91 +36,15 @@ struct ParamTraits<mozilla::dom::GamepadCapabilityFlags>
           mozilla::dom::GamepadCapabilityFlags,
           mozilla::dom::GamepadCapabilityFlags::Cap_All> {};
 
-template <>
-struct ParamTraits<mozilla::dom::GamepadPoseState> {
-  typedef mozilla::dom::GamepadPoseState paramType;
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::GamepadPoseState, flags,
+                                  orientation, position, angularVelocity,
+                                  angularAcceleration, linearVelocity,
+                                  linearAcceleration, isPositionValid,
+                                  isOrientationValid);
 
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.flags);
-    WriteParam(aWriter, aParam.orientation[0]);
-    WriteParam(aWriter, aParam.orientation[1]);
-    WriteParam(aWriter, aParam.orientation[2]);
-    WriteParam(aWriter, aParam.orientation[3]);
-    WriteParam(aWriter, aParam.position[0]);
-    WriteParam(aWriter, aParam.position[1]);
-    WriteParam(aWriter, aParam.position[2]);
-    WriteParam(aWriter, aParam.angularVelocity[0]);
-    WriteParam(aWriter, aParam.angularVelocity[1]);
-    WriteParam(aWriter, aParam.angularVelocity[2]);
-    WriteParam(aWriter, aParam.angularAcceleration[0]);
-    WriteParam(aWriter, aParam.angularAcceleration[1]);
-    WriteParam(aWriter, aParam.angularAcceleration[2]);
-    WriteParam(aWriter, aParam.linearVelocity[0]);
-    WriteParam(aWriter, aParam.linearVelocity[1]);
-    WriteParam(aWriter, aParam.linearVelocity[2]);
-    WriteParam(aWriter, aParam.linearAcceleration[0]);
-    WriteParam(aWriter, aParam.linearAcceleration[1]);
-    WriteParam(aWriter, aParam.linearAcceleration[2]);
-    WriteParam(aWriter, aParam.isPositionValid);
-    WriteParam(aWriter, aParam.isOrientationValid);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    if (!ReadParam(aReader, &(aResult->flags)) ||
-        !ReadParam(aReader, &(aResult->orientation[0])) ||
-        !ReadParam(aReader, &(aResult->orientation[1])) ||
-        !ReadParam(aReader, &(aResult->orientation[2])) ||
-        !ReadParam(aReader, &(aResult->orientation[3])) ||
-        !ReadParam(aReader, &(aResult->position[0])) ||
-        !ReadParam(aReader, &(aResult->position[1])) ||
-        !ReadParam(aReader, &(aResult->position[2])) ||
-        !ReadParam(aReader, &(aResult->angularVelocity[0])) ||
-        !ReadParam(aReader, &(aResult->angularVelocity[1])) ||
-        !ReadParam(aReader, &(aResult->angularVelocity[2])) ||
-        !ReadParam(aReader, &(aResult->angularAcceleration[0])) ||
-        !ReadParam(aReader, &(aResult->angularAcceleration[1])) ||
-        !ReadParam(aReader, &(aResult->angularAcceleration[2])) ||
-        !ReadParam(aReader, &(aResult->linearVelocity[0])) ||
-        !ReadParam(aReader, &(aResult->linearVelocity[1])) ||
-        !ReadParam(aReader, &(aResult->linearVelocity[2])) ||
-        !ReadParam(aReader, &(aResult->linearAcceleration[0])) ||
-        !ReadParam(aReader, &(aResult->linearAcceleration[1])) ||
-        !ReadParam(aReader, &(aResult->linearAcceleration[2])) ||
-        !ReadParam(aReader, &(aResult->isPositionValid)) ||
-        !ReadParam(aReader, &(aResult->isOrientationValid))) {
-      return false;
-    }
-    return true;
-  }
-};
-
-template <>
-struct ParamTraits<mozilla::dom::GamepadTouchState> {
-  typedef mozilla::dom::GamepadTouchState paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.touchId);
-    WriteParam(aWriter, aParam.surfaceId);
-    WriteParam(aWriter, aParam.position[0]);
-    WriteParam(aWriter, aParam.position[1]);
-    WriteParam(aWriter, aParam.surfaceDimensions[0]);
-    WriteParam(aWriter, aParam.surfaceDimensions[1]);
-    WriteParam(aWriter, aParam.isSurfaceDimensionsValid);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    if (!ReadParam(aReader, &(aResult->touchId)) ||
-        !ReadParam(aReader, &(aResult->surfaceId)) ||
-        !ReadParam(aReader, &(aResult->position[0])) ||
-        !ReadParam(aReader, &(aResult->position[1])) ||
-        !ReadParam(aReader, &(aResult->surfaceDimensions[0])) ||
-        !ReadParam(aReader, &(aResult->surfaceDimensions[1])) ||
-        !ReadParam(aReader, &(aResult->isSurfaceDimensionsValid))) {
-      return false;
-    }
-    return true;
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::GamepadTouchState, touchId,
+                                  surfaceId, position, surfaceDimensions,
+                                  isSurfaceDimensionsValid);
 
 template <>
 struct ParamTraits<mozilla::dom::GamepadHandleKind>
@@ -128,18 +53,7 @@ struct ParamTraits<mozilla::dom::GamepadHandleKind>
           mozilla::dom::GamepadHandleKind::GamepadPlatformManager,
           mozilla::dom::GamepadHandleKind::VR> {};
 
-template <>
-struct ParamTraits<mozilla::dom::GamepadHandle> {
-  typedef mozilla::dom::GamepadHandle paramType;
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mValue);
-    WriteParam(aWriter, aParam.mKind);
-  }
-  static bool Read(MessageReader* aReader, paramType* aParam) {
-    return ReadParam(aReader, &aParam->mValue) &&
-           ReadParam(aReader, &aParam->mKind);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::GamepadHandle, mValue, mKind);
 
 }  // namespace IPC
 

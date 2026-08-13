@@ -5,10 +5,10 @@
 #ifndef mozilla_widget_ThemeDrawing_h
 #define mozilla_widget_ThemeDrawing_h
 
+#include "RetainedDisplayListBuilder.h"
 #include "mozilla/layers/IpcResourceUpdateQueue.h"
 #include "mozilla/layers/RenderRootStateManager.h"
 #include "mozilla/layers/StackingContextHelper.h"
-#include "RetainedDisplayListBuilder.h"
 
 namespace mozilla::widget {
 

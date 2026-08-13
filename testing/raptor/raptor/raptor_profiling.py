@@ -9,7 +9,11 @@ Superclass to handle profiling in Raptor-Browsertime.
 import gzip
 import json
 import os
+import platform
+import subprocess
+from pathlib import Path
 
+import mozfile
 from logger.logger import RaptorLogger
 
 here = os.path.dirname(os.path.realpath(__file__))
@@ -19,14 +23,14 @@ import tempfile
 
 class RaptorProfiling:
     """
-    Superclass for handling profling for Firefox and Chrom* applications.
+    Superclass for handling profling for Firefox and Chrome applications.
     """
 
     def __init__(self, upload_dir, raptor_config, test_config):
         self.upload_dir = upload_dir
         self.raptor_config = raptor_config
         self.test_config = test_config
-
+        self.profile = None
         # Create a temporary directory into which the tests can put
         # their profiles. These files will be assembled into one big
         # zip file later on, which is put into the MOZ_UPLOAD_DIR.
@@ -152,5 +156,159 @@ class RaptorProfiling:
                     "type": __get_test_type(),
                 })
 
-        LOG.info("Found %s profiles: %s" % (len(res), str(res)))
+        LOG.info(f"Found {len(res)} profiles: {res}")
         return res
+
+    def post_process_profiles(self):
+        """Process profiles with profiler-edit and return the processed profile paths."""
+
+        def _edit_profile(
+            input_profile=None,
+            output_profile=None,
+            name=None,
+            labels=False,
+            compact=False,
+            profiler_edit_args=None,
+        ):
+            if self.raptor_config.get("run_local"):
+                toolchain_dir = Path(
+                    os.environ.get("MOZBUILD_STATE_PATH", Path.home() / ".mozbuild")
+                )
+            else:
+                toolchain_dir = Path(os.environ.get("MOZ_FETCHES_DIR", ""))
+
+            profiler_edit = toolchain_dir / "profiler-node-tools" / "profiler-edit.js"
+
+            if platform.system() == "Windows":
+                node = toolchain_dir / "node" / "node.exe"
+            else:
+                node = toolchain_dir / "node" / "bin" / "node"
+
+            if not node.is_file():
+                raise FileNotFoundError(f"Node executable not found at {node}")
+
+            if not profiler_edit.is_file():
+                raise FileNotFoundError(f"profiler-edit not found at {profiler_edit}")
+
+            if input_profile is None:
+                input_profile = self.profile
+
+            if input_profile is None:
+                raise ValueError("No input profile specified.")
+
+            if output_profile is None:
+                raise ValueError("No output profile path specified.")
+
+            input_profile = Path(input_profile)
+            output_profile = Path(output_profile)
+
+            if not input_profile.is_file():
+                raise FileNotFoundError(f"Input profile not found: {input_profile}")
+
+            profiler_edit_cmd = [
+                str(node),
+                "--max-old-space-size=8192",  # Avoid node heap limit problems when post-processing
+                str(profiler_edit),
+                "-i",
+                str(input_profile),
+                "-o",
+                str(output_profile),
+            ]
+
+            if profiler_edit_args is None:
+                profiler_edit_args = []
+
+            if labels:
+                browser_labels_toml = (
+                    Path(__file__).resolve().parent / "browser_function_labels.toml"
+                )
+                profiler_edit_args.extend([
+                    "--insert-label-frames",
+                    str(browser_labels_toml),
+                ])
+
+            if compact:
+                profiler_edit_args.append(
+                    "--only-keep-threads-with-markers-matching=-async,-sync"
+                )
+                profiler_edit_args.append("--merge-non-overlapping-threads-by-name")
+
+            if name:
+                profiler_edit_args.extend(["--set-name", name])
+
+            profiler_edit_cmd.extend(profiler_edit_args)
+
+            LOG.info(f"Running: {' '.join(profiler_edit_cmd)}")
+            result = subprocess.run(
+                profiler_edit_cmd,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            for line in result.stdout.splitlines():
+                LOG.info(f"profiler-edit stdout: {line}")
+            for line in result.stderr.splitlines():
+                LOG.info(f"profiler-edit stderr: {line}")
+            if result.returncode != 0:
+                raise RuntimeError(
+                    f"profiler-edit exited with code {result.returncode}"
+                )
+            if not output_profile.exists():
+                raise RuntimeError(
+                    f"profiler-edit did not produce a profile at {output_profile}"
+                )
+
+        if self.profile.exists():
+            cycles = self.test_config.get("browser_cycles", "")
+            browser_cycles = f"{cycles}x" if cycles else ""
+            test_name = self.test_config.get("name", "test")
+
+            profiles = []
+
+            profile_configs = [
+                {
+                    "suffix": "compact",
+                    "name_suffix": "(with labels, combined main threads)",
+                    "labels": True,
+                    "compact": True,
+                },
+                {
+                    "suffix": "raw_all_processes",
+                    "name_suffix": "(all processes)",
+                },
+                {
+                    "suffix": "all_processes",
+                    "name_suffix": "(with labels, all processes)",
+                    "labels": True,
+                },
+            ]
+
+            for config in profile_configs:
+                output_profile_path = (
+                    self.upload_dir
+                    / f"profile_{test_name}_{config['suffix']}.jslb.gz"  # .jslb.gz should be more space-efficient than .json.gz
+                )
+                _edit_profile(
+                    output_profile=output_profile_path,
+                    name=f"{test_name.capitalize()} {browser_cycles} {config['name_suffix']}",
+                    labels=config.get("labels", False),
+                    compact=config.get("compact", False),
+                )
+                LOG.info(
+                    f"Created {output_profile_path.name} ({output_profile_path.stat().st_size} bytes)"
+                )
+                profiles.append(output_profile_path)
+
+            self.profile.unlink(missing_ok=True)
+            self.profile = None
+
+            return profiles
+
+        raise FileNotFoundError(
+            f"Profile post-process failed. Unprocessed profile not found: {self.profile}"
+        )
+
+    def clean(self):
+        """Clean up temp profile directory created during initialization."""
+        if self.temp_profile_dir and Path(self.temp_profile_dir).exists():
+            mozfile.remove(self.temp_profile_dir)

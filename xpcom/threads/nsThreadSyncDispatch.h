@@ -5,12 +5,11 @@
 #ifndef nsThreadSyncDispatch_h_
 #define nsThreadSyncDispatch_h_
 
+#include "MaybeLeakRefPtr.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/SpinEventLoopUntil.h"
-
 #include "nsThreadUtils.h"
-#include "MaybeLeakRefPtr.h"
 
 class nsThreadSyncDispatch : public mozilla::Runnable {
  public:

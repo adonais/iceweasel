@@ -53,8 +53,14 @@
 ["include:tests/custom/browsertime-custom.toml"]
 # Local custom browsertime tests
 
+["include:tests/custom/browsertime-hev3-connection.toml"]
+# Custom Happy Eyeballs v3 connection tests
+
 ["include:tests/custom/browsertime-indexeddb.toml"]
 # Custom indexeddb test
+
+["include:tests/custom/browsertime-media-seek.toml"]
+# Custom media seek-latency test
 
 ["include:tests/custom/browsertime-network-bench.toml"]
 # Custom download/upload performance test
@@ -100,6 +106,9 @@
 
 ["include:tests/scenario/idle.toml"]
 # raptor-browsertime scenario tests
+
+["include:tests/nav-bench/browsertime-nav-bench.toml"]
+# Navigation benchmark (LoadLine2-style, 6 sites x 50 reps x 2 marks)
 
 ["include:tests/tp6/desktop/browsertime-tp6.toml"]
 # raptor-browsertime desktop page-load tests

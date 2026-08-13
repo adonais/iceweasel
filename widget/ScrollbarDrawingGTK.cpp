@@ -4,8 +4,8 @@
 
 #include "ScrollbarDrawingGTK.h"
 
-#include "mozilla/gfx/Helpers.h"
 #include "mozilla/StaticPrefs_widget.h"
+#include "mozilla/gfx/Helpers.h"
 #include "nsLayoutUtils.h"
 #include "nsNativeTheme.h"
 

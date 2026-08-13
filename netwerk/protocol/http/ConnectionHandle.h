@@ -5,8 +5,8 @@
 #ifndef ConnectionHandle_h_
 #define ConnectionHandle_h_
 
-#include "nsAHttpConnection.h"
 #include "HttpConnectionBase.h"
+#include "nsAHttpConnection.h"
 
 namespace mozilla {
 namespace net {

@@ -83,8 +83,7 @@ add_task(async function () {
   );
 });
 
-add_task(async function testPrivateFields() {
-  // Create a source containing a class with private fields
+add_task(async function testPrettyPrintNewSyntax() {
   const httpServer = createTestHTTPServer();
   httpServer.registerContentType("html", "text/html");
   httpServer.registerContentType("js", "application/javascript");
@@ -93,22 +92,23 @@ add_task(async function testPrivateFields() {
     response.setStatusLine(request.httpVersion, 200, "OK");
     response.write(`
       <html>
-          Test pretty-printing class with private fields
-          <script type="text/javascript" src="class-with-private-fields.js"></script>
+          Test pretty-printing script with newly introduced JS syntax
+          <script type="text/javascript" src="new-syntax.js"></script>
       </html>`);
   });
 
   httpServer.registerPathHandler(
-    "/class-with-private-fields.js",
+    "/new-syntax.js",
     function (request, response) {
       response.setHeader("Content-Type", "application/javascript");
       response.write(`
       class MyClass {
         constructor(a) {
-          this.#a = a;this.#b = Math.random();this.ab = this.#getAB();
+          this.#a = a;this.#b = Math.random();this.ab = this.#getAB();this.#reg = /[a-zA-Z]/gv;
         }
         #a
         #b = "default value"
+        #reg
         static #someStaticPrivate
         #getA() {
           return this.#a;
@@ -127,8 +127,8 @@ add_task(async function testPrivateFields() {
   info("Open toolbox");
   const dbg = await initDebuggerWithAbsoluteURL(TEST_URL);
 
-  info("Select script with private fields");
-  await selectSource(dbg, "class-with-private-fields.js", 2);
+  info("Select script to pretty print");
+  await selectSource(dbg, "new-syntax.js", 2);
 
   info("Pretty print the script");
   await togglePrettyPrint(dbg);
@@ -136,7 +136,7 @@ add_task(async function testPrivateFields() {
   info("Check that the script was pretty-printed as expected");
   const prettyPrintedSource = await findSourceContent(
     dbg,
-    "class-with-private-fields.js:formatted"
+    "new-syntax.js:formatted"
   );
 
   is(
@@ -147,9 +147,11 @@ class MyClass {
     this.#a = a;
     this.#b = Math.random();
     this.ab = this.#getAB();
+    this.#reg = /[a-zA-Z]/gv;
   }
   #a
   #b = 'default value'
+  #reg
   static #someStaticPrivate
   #getA() {
     return this.#a;

@@ -6,6 +6,8 @@ package org.mozilla.fenix.settings
 
 import android.content.Context
 import android.util.AttributeSet
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -81,9 +83,12 @@ internal fun IPProtectionPreferenceRow(
 
 @Composable
 private fun BetaBadge() {
-    Surface(
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.information,
+    Box(
+        modifier = Modifier
+            .background(
+                MaterialTheme.colorScheme.information,
+                MaterialTheme.shapes.small,
+            ),
     ) {
         Text(
             text = stringResource(R.string.preferences_ip_protection_beta_badge_label),

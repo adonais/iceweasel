@@ -132,7 +132,6 @@ telemetry:
       - jrediger@mozilla.com
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: TELEMETRY_DATA_UPLOAD_OPTIN
 
   archive_directories_count:
     type: custom_distribution
@@ -153,7 +152,6 @@ telemetry:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: TELEMETRY_ARCHIVE_DIRECTORIES_COUNT
 
   archive_oldest_directory_age:
     type: custom_distribution
@@ -174,7 +172,6 @@ telemetry:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: TELEMETRY_ARCHIVE_OLDEST_DIRECTORY_AGE
 
   archive_scan_ping_count:
     type: custom_distribution
@@ -195,7 +192,6 @@ telemetry:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: TELEMETRY_ARCHIVE_SCAN_PING_COUNT
 
   archive_session_ping_count:
     type: counter
@@ -211,7 +207,6 @@ telemetry:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: h#TELEMETRY_ARCHIVE_SESSION_PING_COUNT
 
   archive_size:
     type: memory_distribution
@@ -228,7 +223,6 @@ telemetry:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: TELEMETRY_ARCHIVE_SIZE_MB
 
   archive_evicted_over_quota:
     type: custom_distribution
@@ -250,7 +244,6 @@ telemetry:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: TELEMETRY_ARCHIVE_EVICTED_OVER_QUOTA
 
   archive_evicted_old_dirs:
     type: custom_distribution
@@ -272,7 +265,6 @@ telemetry:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: TELEMETRY_ARCHIVE_EVICTED_OLD_DIRS
 
   archive_evicting_dirs:
     type: timing_distribution
@@ -289,7 +281,6 @@ telemetry:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: TELEMETRY_ARCHIVE_EVICTING_DIRS_MS
 
   archive_checking_over_quota:
     type: timing_distribution
@@ -306,7 +297,6 @@ telemetry:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: TELEMETRY_ARCHIVE_CHECKING_OVER_QUOTA_MS
 
   archive_evicting_over_quota:
     type: timing_distribution
@@ -323,7 +313,6 @@ telemetry:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: TELEMETRY_ARCHIVE_EVICTING_OVER_QUOTA_MS
 
   pending_load_failure_read:
     type: counter
@@ -339,7 +328,6 @@ telemetry:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: h#TELEMETRY_PENDING_LOAD_FAILURE_READ
 
   pending_load_failure_parse:
     type: counter
@@ -356,7 +344,6 @@ telemetry:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: h#TELEMETRY_PENDING_LOAD_FAILURE_PARSE
 
   pending_pings_size:
     type: memory_distribution
@@ -374,7 +361,6 @@ telemetry:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: TELEMETRY_PENDING_PINGS_SIZE_MB
 
   pending_pings_age:
     type: timing_distribution
@@ -391,7 +377,6 @@ telemetry:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: TELEMETRY_PENDING_PINGS_AGE
 
   pending_pings_evicted_over_quota:
     type: custom_distribution
@@ -413,7 +398,6 @@ telemetry:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: TELEMETRY_PENDING_PINGS_EVICTED_OVER_QUOTA
 
   pending_evicting_over_quota:
     type: timing_distribution
@@ -430,7 +414,6 @@ telemetry:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: TELEMETRY_PENDING_EVICTING_OVER_QUOTA_MS
 
   pending_checking_over_quota:
     type: timing_distribution
@@ -447,7 +430,6 @@ telemetry:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: TELEMETRY_PENDING_CHECKING_OVER_QUOTA_MS
 
   ping_size_exceeded_send:
     type: counter
@@ -464,7 +446,6 @@ telemetry:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: h#TELEMETRY_PING_SIZE_EXCEEDED_SEND
 
   ping_size_exceeded_pending:
     type: counter
@@ -481,7 +462,6 @@ telemetry:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: h#TELEMETRY_PING_SIZE_EXCEEDED_PENDING
 
   ping_size_exceeded_archived:
     type: counter
@@ -498,7 +478,6 @@ telemetry:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: h#TELEMETRY_PING_SIZE_EXCEEDED_ARCHIVED
 
   ping_submission_waiting_clientid:
     type: counter
@@ -515,7 +494,6 @@ telemetry:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: h#TELEMETRY_PING_SUBMISSION_WAITING_CLIENTID
 
   discarded_pending_pings_size:
     type: memory_distribution
@@ -533,7 +511,6 @@ telemetry:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: TELEMETRY_DISCARDED_PENDING_PINGS_SIZE_MB
 
   discarded_archived_pings_size:
     type: memory_distribution
@@ -551,7 +528,6 @@ telemetry:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: TELEMETRY_DISCARDED_ARCHIVED_PINGS_SIZE_MB
 
   discarded_send_pings_size:
     type: memory_distribution
@@ -569,7 +545,6 @@ telemetry:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: TELEMETRY_DISCARDED_SEND_PINGS_SIZE_MB
 
   compress:
     type: timing_distribution
@@ -586,7 +561,6 @@ telemetry:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: TELEMETRY_COMPRESS
 
   send_success:
     type: timing_distribution
@@ -604,7 +578,6 @@ telemetry:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: TELEMETRY_SEND_SUCCESS
 
   send_failure:
     type: timing_distribution
@@ -622,7 +595,6 @@ telemetry:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: TELEMETRY_SEND_FAILURE
 
   send_failure_type:
     type: labeled_counter
@@ -651,7 +623,6 @@ telemetry:
       - telemetry-client-dev@mozilla.com
       - chutten@mozilla.com
     expires: never
-    telemetry_mirror: h#TELEMETRY_SEND_FAILURE_TYPE
 
   send_failure_type_per_ping:
     type: dual_labeled_counter
@@ -685,7 +656,6 @@ telemetry:
       - telemetry-client-dev@mozilla.com
       - chutten@mozilla.com
     expires: never
-    telemetry_mirror: TELEMETRY_SEND_FAILURE_TYPE_PER_PING
 
   stringify:
     type: timing_distribution
@@ -702,7 +672,6 @@ telemetry:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: TELEMETRY_STRINGIFY
 
   success:
     type: labeled_counter
@@ -721,7 +690,6 @@ telemetry:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: h#TELEMETRY_SUCCESS
 
   invalid_ping_type_submitted:
     type: labeled_counter
@@ -737,7 +705,6 @@ telemetry:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: h#TELEMETRY_INVALID_PING_TYPE_SUBMITTED
 
   invalid_payload_submitted:
     type: counter
@@ -753,7 +720,6 @@ telemetry:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: h#TELEMETRY_INVALID_PAYLOAD_SUBMITTED
 
   ping_evicted_for_server_errors:
     type: counter
@@ -770,7 +736,6 @@ telemetry:
     notification_emails:
       - telemetry-client-dev@mozilla.com
     expires: never
-    telemetry_mirror: h#TELEMETRY_PING_EVICTED_FOR_SERVER_ERRORS
 
   event_ping_sent:
     type: labeled_counter
@@ -791,7 +756,6 @@ telemetry:
       - telemetry-client-dev@mozilla.com
       - chutten@mozilla.com
     expires: never
-    telemetry_mirror: h#TELEMETRY_EVENT_PING_SENT
 
   event_registration_error:
     type: labeled_counter
@@ -815,7 +779,6 @@ telemetry:
       - telemetry-client-dev@mozilla.com
       - chutten@mozilla.com
     expires: never
-    telemetry_mirror: h#TELEMETRY_EVENT_REGISTRATION_ERROR
 
   event_recording_error:
     type: labeled_counter
@@ -838,7 +801,6 @@ telemetry:
       - telemetry-client-dev@mozilla.com
       - chutten@mozilla.com
     expires: never
-    telemetry_mirror: h#TELEMETRY_EVENT_RECORDING_ERROR
 
 usage:
   profile_id:

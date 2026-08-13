@@ -2,30 +2,47 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "APZCTreeManager.h"
+
 #include <stack>
 #include <unordered_set>
-#include "APZCTreeManager.h"
+
 #include "AsyncPanZoomController.h"
 #include "Compositor.h"             // for Compositor
 #include "DragTracker.h"            // for DragTracker
 #include "GenericFlingAnimation.h"  // for FLING_LOG
-#include "HitTestingTreeNode.h"     // for HitTestingTreeNode
-#include "InputBlockState.h"        // for InputBlockState
-#include "InputData.h"              // for InputData, etc
-#include "WRHitTester.h"            // for WRHitTester
+#include "GestureEventListener.h"  // for GestureEventListener::setLongTapEnabled
+#include "HitTestingTreeNode.h"    // for HitTestingTreeNode
+#include "InputBlockState.h"       // for InputBlockState
+#include "InputData.h"             // for InputData, etc
+#include "OverscrollHandoffState.h"  // for OverscrollHandoffState
+#include "ScrollThumbUtils.h"        // for ComputeTransformForScrollThumb
+#include "TreeTraversal.h"           // for ForEachNode, BreadthFirstSearch, etc
+#include "UnitTransforms.h"          // for ViewAs
+#include "Units.h"                   // for ParentlayerPixel
+#include "WRHitTester.h"             // for WRHitTester
 #include "apz/src/APZUtils.h"
+#include "mozilla/EventStateManager.h"  // for WheelPrefs
+#include "mozilla/MouseEvents.h"
+#include "mozilla/MozPromise.h"
+#include "mozilla/Preferences.h"  // for Preferences
 #include "mozilla/RecursiveMutex.h"
-#include "mozilla/dom/BrowserParent.h"      // for AreRecordReplayTabsActive
-#include "mozilla/dom/MouseEventBinding.h"  // for MouseEvent constants
+#include "mozilla/StaticPrefs_accessibility.h"
+#include "mozilla/StaticPrefs_apz.h"
+#include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/ToString.h"
+#include "mozilla/TouchEvents.h"
+#include "mozilla/dom/BrowserParent.h"  // for AreRecordReplayTabsActive
 #include "mozilla/dom/InteractiveWidget.h"
-#include "mozilla/dom/Touch.h"  // for Touch
+#include "mozilla/dom/MouseEventBinding.h"  // for MouseEvent constants
+#include "mozilla/dom/Touch.h"              // for Touch
 #include "mozilla/gfx/CompositorHitTestInfo.h"
+#include "mozilla/gfx/GPUParent.h"  // for GPUParent
+#include "mozilla/gfx/Logging.h"    // for gfx::TreeLog
 #include "mozilla/gfx/LoggingConstants.h"
 #include "mozilla/gfx/Matrix.h"
-#include "mozilla/gfx/gfxVars.h"            // for gfxVars
-#include "mozilla/gfx/GPUParent.h"          // for GPUParent
-#include "mozilla/gfx/Logging.h"            // for gfx::TreeLog
 #include "mozilla/gfx/Point.h"              // for Point
+#include "mozilla/gfx/gfxVars.h"            // for gfxVars
 #include "mozilla/layers/APZSampler.h"      // for APZSampler
 #include "mozilla/layers/APZThreadUtils.h"  // for AssertOnControllerThread, etc
 #include "mozilla/layers/APZUpdater.h"      // for APZUpdater
@@ -37,27 +54,12 @@
 #include "mozilla/layers/ScrollableLayerGuid.h"
 #include "mozilla/layers/UiCompositorControllerParent.h"
 #include "mozilla/layers/WebRenderScrollDataWrapper.h"
-#include "mozilla/MouseEvents.h"
 #include "mozilla/mozalloc.h"  // for operator new
-#include "mozilla/MozPromise.h"
-#include "mozilla/Preferences.h"  // for Preferences
-#include "mozilla/StaticPrefs_accessibility.h"
-#include "mozilla/StaticPrefs_apz.h"
-#include "mozilla/StaticPrefs_layout.h"
-#include "mozilla/ToString.h"
-#include "mozilla/TouchEvents.h"
-#include "mozilla/EventStateManager.h"  // for WheelPrefs
 #include "mozilla/webrender/WebRenderAPI.h"
 #include "mozilla/webrender/WebRenderTypes.h"
-#include "nsDebug.h"                 // for NS_WARNING
-#include "nsPoint.h"                 // for nsIntPoint
-#include "nsThreadUtils.h"           // for NS_IsMainThread
-#include "ScrollThumbUtils.h"        // for ComputeTransformForScrollThumb
-#include "OverscrollHandoffState.h"  // for OverscrollHandoffState
-#include "TreeTraversal.h"           // for ForEachNode, BreadthFirstSearch, etc
-#include "Units.h"                   // for ParentlayerPixel
-#include "GestureEventListener.h"  // for GestureEventListener::setLongTapEnabled
-#include "UnitTransforms.h"        // for ViewAs
+#include "nsDebug.h"        // for NS_WARNING
+#include "nsPoint.h"        // for nsIntPoint
+#include "nsThreadUtils.h"  // for NS_IsMainThread
 
 mozilla::LazyLogModule mozilla::layers::APZCTreeManager::sLog("apz.manager");
 
@@ -2816,7 +2818,10 @@ void APZCTreeManager::FlushRepaintsToClearScreenToGeckoTransform() {
 }
 
 void APZCTreeManager::ClearTree() {
-  AssertOnUpdaterThread();
+  // ClearTree may run directly on the compositor thread when the updater
+  // (scene builder) thread never came up (see APZUpdater::ClearTree), so allow
+  // that case in addition to running on the updater thread itself.
+  GetUpdater()->AssertOnUpdaterThreadOrNotInitialized();
 
   // Ensure that no references to APZCs are alive in any lingering input
   // blocks. This breaks cycles from InputBlockState::mTargetApzc back to

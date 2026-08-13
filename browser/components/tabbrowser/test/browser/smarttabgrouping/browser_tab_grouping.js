@@ -106,6 +106,112 @@ add_task(async function testClustering() {
   }
 });
 
+add_task(async function testAgglomerativeClustering() {
+  for (const test_id of CLUSTERING_TEST_IDS) {
+    const rawEmbeddings = await fetchFile(
+      HOST_PREFIX,
+      `${test_id}_embeddings.tsv`
+    );
+    const embeddings = parseTsvEmbeddings(rawEmbeddings);
+    const rawLabels = await fetchFile(HOST_PREFIX, `${test_id}_labels.tsv`);
+    const labels = parseTsvStructured(rawLabels);
+    const score = await getGroupScore(
+      CLUSTER_METHODS.AGGLOMERATIVE,
+      null,
+      labels,
+      embeddings,
+      1
+    );
+    info(`AGGLOMERATIVE Rand score for ${test_id}: ${score}`);
+    Assert.greater(score, 0.5, `HAC clustering ok for dataset ${test_id}`);
+  }
+});
+
+add_task(function testGroupCohesion() {
+  const mk = embeddings =>
+    new ClusterRepresentation({
+      tabs: embeddings.map(() => ({})),
+      embeddings,
+      centroid: [],
+      config: SMART_TAB_GROUPING_CONFIG,
+    });
+  const near = (actual, expected, msg) =>
+    Assert.less(Math.abs(actual - expected), 1e-6, `${msg} (got ${actual})`);
+
+  near(
+    mk([
+      [1, 0],
+      [1, 0],
+    ]).getCohesion(),
+    1,
+    "identical vectors -> cohesion 1"
+  );
+  near(
+    mk([
+      [1, 0],
+      [0, 1],
+    ]).getCohesion(),
+    0,
+    "orthogonal vectors -> cohesion 0"
+  );
+  near(
+    mk([
+      [1, 0],
+      [1, 0],
+      [0, 1],
+    ]).getCohesion(),
+    1 / 3,
+    "mixed group -> mean pairwise cosine"
+  );
+  Assert.strictEqual(
+    mk([[1, 0]]).getCohesion(),
+    0,
+    "single-item cluster -> cohesion 0"
+  );
+
+  // A large group is reduced to a subsample of items before comparison;
+  // identical vectors still yield cohesion 1 and the computation stays bounded.
+  const big = Array.from({ length: 40 }, () => [1, 0]);
+  near(
+    mk(big).getCohesion(),
+    1,
+    "large identical group -> cohesion 1 (subsampled)"
+  );
+});
+
+add_task(async function testGenerateClustersAttachesCohesion() {
+  const rawEmbeddings = await fetchFile(
+    HOST_PREFIX,
+    "gen_set_2_embeddings.tsv"
+  );
+  const embeddings = parseTsvEmbeddings(rawEmbeddings);
+  const rawLabels = await fetchFile(HOST_PREFIX, "gen_set_2_labels.tsv");
+  const labels = parseTsvStructured(rawLabels);
+
+  const groupManager = new SmartTabGroupingManager();
+  groupManager.setDataTitleKey("title");
+  const result = await groupManager.generateClusters(
+    labels,
+    embeddings,
+    0,
+    simpleNumberSequence()
+  );
+
+  Assert.greater(
+    result.clusterRepresentations.length,
+    0,
+    "generateClusters returned groups"
+  );
+  for (const rep of result.clusterRepresentations) {
+    Assert.equal(typeof rep.cohesion, "number", "cohesion is a number");
+    Assert.ok(
+      Number.isFinite(rep.cohesion) && rep.cohesion >= -1 && rep.cohesion <= 1,
+      `cohesion in [-1, 1]: ${rep.cohesion}`
+    );
+    info(`group size=${rep.tabs.length} cohesion=${rep.cohesion.toFixed(3)}`);
+  }
+});
+
 /**
  * Run tests for finding similar items for a single item or cluster of items with label anchorLabel
  *

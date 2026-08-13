@@ -6,8 +6,9 @@
 #define mozilla_image_ImageMemoryReporter_h
 
 #include <cstdint>
-#include "nsString.h"
+
 #include "mozilla/layers/SharedSurfacesMemoryReport.h"
+#include "nsString.h"
 
 class nsISupports;
 class nsIHandleReportCallback;

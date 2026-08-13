@@ -36,13 +36,14 @@ class RuntimeInfo extends PureComponent {
   render() {
     const { icon, deviceName, name, version, runtimeId, dispatch } = this.props;
 
-    return dom.h1(
+    return dom.header(
       {
         className: "main-heading runtime-info",
       },
       dom.img({
         className: "main-heading__icon runtime-info__icon qa-runtime-icon",
         src: icon,
+        alt: "",
       }),
       Localized(
         {
@@ -50,7 +51,7 @@ class RuntimeInfo extends PureComponent {
           $name: name,
           $version: version,
         },
-        dom.label(
+        dom.h1(
           {
             className: "qa-runtime-name runtime-info__title",
           },
@@ -60,7 +61,8 @@ class RuntimeInfo extends PureComponent {
       deviceName
         ? dom.label(
             {
-              className: "main-heading-subtitle runtime-info__subtitle",
+              className:
+                "main-heading-subtitle runtime-info__subtitle heading-large",
             },
             deviceName
           )
@@ -72,8 +74,7 @@ class RuntimeInfo extends PureComponent {
             },
             dom.button(
               {
-                className:
-                  "default-button runtime-info__action qa-runtime-info__action",
+                className: "runtime-info__action qa-runtime-info__action",
                 onClick() {
                   dispatch(Actions.disconnectRuntime(runtimeId, true));
                 },

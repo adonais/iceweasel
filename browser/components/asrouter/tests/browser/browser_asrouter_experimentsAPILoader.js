@@ -4,7 +4,7 @@ const { RemoteSettings } = ChromeUtils.importESModule(
 const { ASRouter } = ChromeUtils.importESModule(
   "resource:///modules/asrouter/ASRouter.sys.mjs"
 );
-const { EnrollmentType, ExperimentAPI } = ChromeUtils.importESModule(
+const { EnrollmentType } = ChromeUtils.importESModule(
   "resource://nimbus/ExperimentAPI.sys.mjs"
 );
 const { NimbusTestUtils } = ChromeUtils.importESModule(
@@ -172,7 +172,7 @@ async function cleanup() {
  */
 async function assertMessageInState(id, found = true, wait = true) {
   if (wait) {
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => !!ASRouter.state.messages.find(m => m.id === id) === found,
       `Message ${id} should ${found ? "" : "not"} be found in ASRouter state`
     );
@@ -191,7 +191,7 @@ add_task(async function test_loading_experimentsAPI() {
   await setup(experiment);
   // Fetch the new recipe from RS
   await ExperimentAPI._rsLoader.updateRecipes();
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => NimbusFeatures.cfr.getEnrollmentMetadata(EnrollmentType.EXPERIMENT),
     "ExperimentAPI should return an experiment"
   );
@@ -209,7 +209,7 @@ add_task(async function test_loading_fxms_message_1_feature() {
   await setup(experiment);
   // Fetch the new recipe from RS
   await ExperimentAPI._rsLoader.updateRecipes();
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       NimbusFeatures["fxms-message-1"].getEnrollmentMetadata(
         EnrollmentType.EXPERIMENT
@@ -229,7 +229,7 @@ add_task(async function test_loading_experimentsAPI_rollout() {
 
   await setup(rollout);
   await ExperimentAPI._rsLoader.updateRecipes();
-  await BrowserTestUtils.waitForCondition(() =>
+  await TestUtils.waitForCondition(() =>
     NimbusFeatures.cfr.getEnrollmentMetadata("rollout")
   );
 
@@ -246,7 +246,7 @@ add_task(async function test_exposure_ping() {
   Services.telemetry.clearScalars();
   // Fetch the new recipe from RS
   await ExperimentAPI._rsLoader.updateRecipes();
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => NimbusFeatures.cfr.getEnrollmentMetadata(EnrollmentType.EXPERIMENT),
     "ExperimentAPI should return an experiment"
   );
@@ -297,7 +297,7 @@ add_task(async function test_update_on_enrollments_changed() {
   await setup(experiment);
   await ExperimentAPI._rsLoader.updateRecipes();
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => NimbusFeatures.cfr.getEnrollmentMetadata(EnrollmentType.EXPERIMENT),
     "ExperimentAPI should return an experiment"
   );
@@ -322,7 +322,7 @@ add_task(async function test_emptyMessage() {
 
   await setup(experiment);
   await ExperimentAPI._rsLoader.updateRecipes();
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => NimbusFeatures.cfr.getEnrollmentMetadata(EnrollmentType.EXPERIMENT),
     "ExperimentAPI should return an experiment"
   );
@@ -373,7 +373,7 @@ add_task(async function test_multiMessageTreatment() {
 
   await setup(recipe);
   await ExperimentAPI._rsLoader.updateRecipes();
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       NimbusFeatures[featureId].getEnrollmentMetadata(
         EnrollmentType.EXPERIMENT
@@ -381,7 +381,7 @@ add_task(async function test_multiMessageTreatment() {
     "ExperimentAPI should return an experiment"
   );
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       messages
         .map(m => ASRouter.state.messages.find(n => n.id === m.id))

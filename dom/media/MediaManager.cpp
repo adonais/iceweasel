@@ -2521,6 +2521,7 @@ static void ForeachObservedPref(const Function& aFunction) {
   aFunction("media.getusermedia.audio.processing.aec"_ns);
   aFunction("media.getusermedia.audio.processing.agc.enabled"_ns);
   aFunction("media.getusermedia.audio.processing.agc"_ns);
+  aFunction("media.getusermedia.audio.processing.agc2.forced"_ns);
   aFunction("media.getusermedia.audio.processing.hpf.enabled"_ns);
   aFunction("media.getusermedia.audio.processing.noise.enabled"_ns);
   aFunction("media.getusermedia.audio.processing.noise"_ns);
@@ -3018,6 +3019,13 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
           nsPIDOMWindowOuter* outer = aWindow->GetOuterWindow();
           vc.mBrowserWindow.Construct(outer->WindowID());
         }
+        // Allow tab capture requests from chrome context if device id is
+        // specified, since no prompt is needed.
+        if (isChrome && videoType == MediaSourceEnum::Browser &&
+            c.mVideo.IsMediaTrackConstraints() &&
+            c.mVideo.GetAsMediaTrackConstraints().mDeviceId.WasPassed()) {
+          break;
+        }
         [[fallthrough]];
       case MediaSourceEnum::Screen:
       case MediaSourceEnum::Window:
@@ -3203,6 +3211,20 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
   EnumerationFlags flags = EnumerationFlag::AllowPermissionRequest;
   if (forceFakes) {
     flags += EnumerationFlag::ForceFakes;
+  }
+  if (privileged && videoType == MediaSourceEnum::Browser &&
+      c.mVideo.IsMediaTrackConstraints() &&
+      c.mVideo.GetAsMediaTrackConstraints().mDeviceId.WasPassed()) {
+    // Bug 2041678: For automation purposes when calling getUserMedia
+    // in privileged context to record a browser window, since we avoid
+    // the interface to choose the device and just provide it directly,
+    // we have to invalidate the device cache.
+    MOZ_ALWAYS_SUCCEEDS(mMediaThread->Dispatch(NS_NewRunnableFunction(
+        __func__, [self = RefPtr(this), this, videoType] {
+          if (mBackend) {
+            mBackend->InvalidateDesktopCaptureDeviceCache(videoType);
+          }
+        })));
   }
   RefPtr<MediaManager> self = this;
   return EnumerateDevicesImpl(
@@ -4397,18 +4419,15 @@ DeviceListener::InitializeAsync() {
           [self = RefPtr<DeviceListener>(this), this](nsresult aRv) {
             auto kind = mDeviceState->mDevice->Kind();
             RefPtr<MediaMgrError> err;
-            if (aRv == NS_ERROR_NOT_AVAILABLE &&
-                kind == MediaDeviceKind::Audioinput) {
-              nsCString log;
-              log.AssignLiteral("Concurrent mic process limit.");
-              err = MakeRefPtr<MediaMgrError>(
-                  MediaMgrError::Name::NotReadableError, std::move(log));
-            } else if (NS_FAILED(aRv)) {
+            if (NS_FAILED(aRv)) {
+              auto name =
+                  (aRv == NS_ERROR_FAILURE || aRv == NS_ERROR_NOT_AVAILABLE)
+                      ? MediaMgrError::Name::NotReadableError
+                      : MediaMgrError::Name::AbortError;
               nsCString log;
               log.AppendPrintf("Starting %s failed",
                                dom::GetEnumString(kind).get());
-              err = MakeRefPtr<MediaMgrError>(MediaMgrError::Name::AbortError,
-                                              std::move(log));
+              err = MakeRefPtr<MediaMgrError>(name, std::move(log));
             }
 
             if (mStopped) {

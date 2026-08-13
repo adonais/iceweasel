@@ -5,12 +5,12 @@
 
 #include "nsSharePicker.h"
 
+#include "WindowsUIUtils.h"
+#include "mozilla/ErrorResult.h"
+#include "mozilla/dom/Promise.h"
+#include "nsPIDOMWindow.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
-#include "WindowsUIUtils.h"
-#include "nsPIDOMWindow.h"
-#include "mozilla/dom/Promise.h"
-#include "mozilla/ErrorResult.h"
 
 using mozilla::dom::Promise;
 

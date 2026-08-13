@@ -8,18 +8,15 @@
 
 :host,
 :root {
-  --urlbarView-secondary-text-color: color-mix(in srgb, currentColor 73%, transparent);
-
   --urlbarView-action-slide-in-distance: 200px;
 
   --urlbarView-small-font-size: 0.85em;
 
   --urlbarView-results-padding: 7px;
   --urlbarView-row-gutter: var(--space-xxsmall);
+  --urlbarview-row-padding-block: 6px;
   --urlbarView-row-padding-inline: var(--urlbar-icon-padding);
-  --urlbarView-row-padding-block: 6px;
-  --urlbarView-row-min-height: var(--size-item-large);
-  --urlbarView-row-inner-min-height: calc(var(--urlbarView-row-min-height) - var(--urlbarView-row-padding-block) * 2);
+  --urlbarView-row-inner-min-height: calc(var(--urlbarview-row-min-height) - var(--urlbarview-row-padding-block) * 2);
 
   /* The inline margins of a row icon. Rows with different icon sizes will define
      different values for these variables so that the icons of all rows are
@@ -31,7 +28,6 @@
 
   /* The size and inline margins of a standard 16px favicon. The margin variables
      can be used to align any 16px content along the vertical icon axis. */
-  --urlbarView-favicon-width: 16px;
   --urlbarView-favicon-margin-start: var(--urlbarView-icon-margin-start);
   --urlbarView-favicon-margin-end: var(--urlbarView-icon-margin-end);
 
@@ -57,9 +53,6 @@
   --urlbarView-labeled-row-label-top: calc(-1.27em - 2px);
   --urlbarView-labeled-tip-margin-top-extra: 8px;
 
-  --urlbarView-action-button-background-color: color-mix(in srgb, var(--urlbarview-background-color-hover) 50%, transparent);
-  --urlbarView-action-button-hover-background-color: var(--urlbarview-background-color-hover);
-
   --urlbarView-tail150-overlay-background: var(--color-violet-90);
   --urlbarView-tail150-overlay-color: var(--color-gray-0);
   --urlbarView-tail150-canvas-background: var(--color-violet-110);
@@ -79,14 +72,14 @@
 
   @media (prefers-contrast) {
     --urlbarView-result-button-background-opacity: 100%;
-    --urlbarView-secondary-text-color: currentColor;
+    --urlbarview-text-color-secondary: currentColor;
   }
 
   @media -moz-pref("browser.urlbar.richSuggestions.featureGate") {
-    --urlbarView-favicon-margin-start: calc((var(--urlbarView-rich-suggestion-default-icon-size) - var(--urlbarView-favicon-width)) / 2);
+    --urlbarView-favicon-margin-start: calc((var(--urlbarView-rich-suggestion-default-icon-size) - var(--urlbarview-favicon-size)) / 2);
     --urlbarView-favicon-margin-end: calc(
       var(--urlbar-icon-padding) + var(--identity-box-margin-inline) +
-        ((var(--urlbarView-rich-suggestion-default-icon-size) - var(--urlbarView-favicon-width)) / 2)
+        ((var(--urlbarView-rich-suggestion-default-icon-size) - var(--urlbarview-favicon-size)) / 2)
     );
   }
 }
@@ -122,7 +115,7 @@
 }
 
 .urlbarView-row {
-  --urlbarView-second-line-indent: calc(var(--urlbarView-icon-margin-start) + var(--urlbarView-icon-margin-end) + var(--urlbarView-favicon-width));
+  --urlbarView-second-line-indent: calc(var(--urlbarView-icon-margin-start) + var(--urlbarView-icon-margin-end) + var(--urlbarview-favicon-size));
 
   /* Align icons that are smaller than the default rich suggestion icon size
     (28px) with default-size rich suggestion icons. */
@@ -169,7 +162,7 @@
 
   &:not([type="tip"], [type="dynamic"]) {
     :root:not([uidensity="compact"]) & {
-      min-height: var(--urlbarView-row-min-height);
+      min-height: var(--urlbarview-row-min-height);
     }
     :root[uidensity="touch"] & {
       padding-block: 11px;
@@ -198,7 +191,7 @@
   flex: 1 1;
   overflow: hidden;
   padding-inline: var(--urlbarView-row-padding-inline);
-  padding-block: var(--urlbarView-row-padding-block);
+  padding-block: var(--urlbarview-row-padding-block);
 
   :root:not([uidensity="compact"]) & {
     min-height: var(--urlbarView-row-inner-min-height);
@@ -215,7 +208,7 @@
   .urlbarView-row[has-url]:is([type="remotetab"], [sponsored]):is(:hover, [selected]) > .urlbarView-row-inner > & {
     /* We prioritize icons + title + action over the url, so they can grow freely,
        but the url should never disappear when it's visible */
-    max-width: calc(70% - 2 * (var(--urlbarView-favicon-width) + (6px + 2px)));
+    max-width: calc(70% - 2 * (var(--urlbarview-favicon-size) + (6px + 2px)));
   }
 }
 
@@ -312,8 +305,8 @@
 /* Favicon */
 
 .urlbarView-favicon {
-  width: var(--urlbarView-favicon-width);
-  height: var(--urlbarView-favicon-width);
+  width: var(--urlbarview-favicon-size);
+  height: var(--urlbarview-favicon-size);
   align-self: center;
   margin-inline-start: var(--urlbarView-icon-margin-start);
   margin-inline-end: var(--urlbarView-icon-margin-end);
@@ -343,8 +336,8 @@
   width: var(--icon-size-xsmall);
   height: var(--icon-size-xsmall);
   align-self: center;
-  margin-top: var(--urlbarView-favicon-width);
-  margin-inline-start: calc(var(--urlbarView-icon-margin-start) + var(--urlbarView-favicon-width) - 6px);
+  margin-top: var(--urlbarview-favicon-size);
+  margin-inline-start: calc(var(--urlbarView-icon-margin-start) + var(--urlbarview-favicon-size) - 6px);
   background-repeat: no-repeat;
   background-size: contain;
   -moz-context-properties: fill, stroke;
@@ -405,7 +398,7 @@
   -moz-context-properties: fill, fill-opacity;
   border-radius: var(--border-radius-circle);
 
-  &:not(:hover, [selected], [primary], [open]) {
+  &:not(:hover, [selected], [primary], [aria-expanded="true"]) {
     @media (prefers-contrast) {
       outline: 1px solid currentColor;
       outline-offset: -1px;
@@ -425,12 +418,12 @@
     }
   }
 
-  .urlbarView-row:is([row-selectable]:hover, [selected]) > &:not(:hover, [open]) {
+  .urlbarView-row:is([row-selectable]:hover, [selected]) > &:not(:hover, [aria-expanded="true"]) {
     color: var(--urlbarView-result-button-selected-color);
     background-color: var(--urlbarView-result-button-selected-background-color);
   }
 
-  &:is(:hover, [open]) {
+  &:is(:hover, [aria-expanded="true"]) {
     color: var(--urlbarView-result-button-hover-color);
     background-color: var(--urlbarView-result-button-hover-background-color);
   }
@@ -449,7 +442,7 @@
   .urlbarView-results:not([disable-resultmenu-autohide])
     > .urlbarView-row:not(:hover, [selected], [descendant-selected])
     > .urlbarView-row-buttons
-    > &:not([open]):first-child:empty {
+    > &:not([aria-expanded="true"]):first-child:empty {
     /* The realtime suggestions' style will be broken if the width will be
        changed by hover. Thus we use the visibility instead of display to keep
        the element size */
@@ -483,6 +476,12 @@
   }
 }
 
+/* This should be supported within panel-{item,list} rather than modifying it, to be fixed by
+   https://bugzilla.mozilla.org/show_bug.cgi?id=1826841 */
+.urlbarView-result-menuitem::part(button) {
+  padding-inline-start: 12px;
+}
+
 /* Button with label, e.g. tip button */
 
 .urlbarView-button:where(:not(:empty):not(.urlbarView-button-result-menu)),
@@ -498,7 +497,7 @@
   flex-basis: initial;
   flex-shrink: 0;
 
-  &:not(:hover, [open]) {
+  &:not(:hover, [aria-expanded="true"]) {
     background-color: var(--button-background-color);
   }
 
@@ -597,12 +596,12 @@
     bottom: 0.72em;
     font-size: var(--urlbarView-small-font-size);
     margin-inline-start: calc(var(--urlbarView-row-padding-inline) + var(--urlbarView-favicon-margin-start));
-    padding-inline-start: calc(var(--urlbarView-favicon-width) + var(--urlbarView-favicon-margin-end));
+    padding-inline-start: calc(var(--urlbarview-favicon-size) + var(--urlbarView-favicon-margin-end));
     background-image: url("chrome://branding/content/icon32.png");
     background-repeat: no-repeat;
     background-position: 0 center;
-    background-size: var(--urlbarView-favicon-width);
-    min-height: var(--urlbarView-favicon-width);
+    background-size: var(--urlbarview-favicon-size);
+    min-height: var(--urlbarview-favicon-size);
   }
 }
 
@@ -796,11 +795,11 @@
       border-block-end: 1px solid var(--border-color-deemphasized);
 
       &.urlbarView-switchToTab {
-        padding-inline-start: calc(var(--urlbarView-favicon-width) + 8px);
+        padding-inline-start: calc(var(--urlbarview-favicon-size) + 8px);
         background-image: url("chrome://browser/content/firefoxview/view-opentabs.svg");
         background-repeat: no-repeat;
         background-position: 4px center;
-        background-size: var(--urlbarView-favicon-width);
+        background-size: var(--urlbarview-favicon-size);
       }
 
       &:not(.urlbarView-userContext) {
@@ -972,7 +971,7 @@
 
 /* prettier-ignore */
 .urlbarView-row[rich-suggestion]:not([selected]) > .urlbarView-row-inner > .urlbarView-row-body > :is(.urlbarView-row-body-description, .urlbarView-row-body-bottom) {
-  color: var(--urlbarView-secondary-text-color);
+  color: var(--urlbarview-text-color-secondary);
 }
 
 /* Tip rows. Tip result inherits rich suggestion. */
@@ -1001,7 +1000,7 @@
   }
 
   > .urlbarView-row-inner {
-    min-height: var(--urlbarView-row-min-height);
+    min-height: var(--urlbarview-row-min-height);
     align-items: center;
 
     /* Add space between the tip title (and the rest of row-inner) and its
@@ -1208,9 +1207,9 @@
 
 .urlbarView-actions-container {
   margin-inline-start: calc(
-    var(--urlbarView-row-padding-inline) + var(--urlbarView-favicon-margin-start) + var(--urlbarView-favicon-width) + var(--urlbarView-icon-margin-end)
+    var(--urlbarView-row-padding-inline) + var(--urlbarView-favicon-margin-start) + var(--urlbarview-favicon-size) + var(--urlbarView-icon-margin-end)
   );
-  margin-block-end: var(--urlbarView-row-padding-block);
+  margin-block-end: var(--urlbarview-row-padding-block);
 }
 
 .urlbarView-action-btn {
@@ -1221,7 +1220,7 @@
   padding: 0.4em 0.6em;
   display: inline-flex;
   align-items: center;
-  background-color: var(--urlbarView-action-button-background-color);
+  background-color: var(--urlbarview-action-button-background-color);
   margin-inline-end: var(--space-large);
 
   > img {
@@ -1232,7 +1231,7 @@
   }
 
   &:hover {
-    background-color: var(--urlbarView-action-button-hover-background-color);
+    background-color: var(--urlbarview-action-button-background-color-hover);
   }
 
   &[selected],
@@ -1274,7 +1273,7 @@
 .urlbarView-row[rich-suggestion][tip-type="realtime_opt_in"] {
   /* `margin-block-end` is large to give enough spacing between the opt-in and the
      row label in the next row. */
-  margin-block: var(--urlbarView-row-padding-block) calc(5 * var(--urlbarView-row-padding-block));
+  margin-block: var(--urlbarview-row-padding-block) calc(5 * var(--urlbarview-row-padding-block));
   padding-block: 0;
   border-block: none;
   border-radius: var(--border-radius-medium);
@@ -1415,7 +1414,7 @@
       }
 
       .urlbarView-row:not([selected]) > .urlbarView-realtime-root > .urlbarView-realtime-item:not([selected]) > & > .urlbarView-realtime-description-bottom {
-        color: var(--urlbarView-secondary-text-color);
+        color: var(--urlbarview-text-color-secondary);
       }
 
       > .urlbarView-realtime-description-top > .urlbarView-realtime-description-separator-dot,

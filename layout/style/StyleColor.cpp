@@ -47,6 +47,8 @@ bool ColorFunction::DependsOnCurrentColor() const {
       return OptionalDependsOnCurrentColor(AsOklch()._0);
     case Tag::Color:
       return OptionalDependsOnCurrentColor(AsColor()._0);
+    case Tag::Alpha:
+      return AsAlpha()._0.DependsOnCurrentColor();
   }
   MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Unknown color function type");
 }

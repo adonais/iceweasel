@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <script src="/tests/SimpleTest/SimpleTest.js"></script>
+    <link rel="stylesheet" href="/tests/SimpleTest/test.css" />
+  </head>
+  <body>
+    <canvas id="canvas" width="16" height="16"></canvas>
+    <script>
+      async function testBody() {
+        const adapter = await navigator.gpu.requestAdapter();
+        const device = await adapter.requestDevice();
+        const format = navigator.gpu.getPreferredCanvasFormat();
+
+        const canvas = document.getElementById("canvas");
+        const context = canvas.getContext("webgpu");
+        context.configure({ device, format });
+
+        // Read back the canvas, before it is composited.
+        //
+        // Note: sleeping would not be sufficient for compositing to happen. For
+        // the canvas to be composited, it needs to be used in a submitted
+        // command buffer.
+        const dataUrl = canvas.toDataURL();
+        ok(
+          dataUrl.startsWith("data:image/png;base64,"),
+          "toDataURL should return a PNG data URL"
+        );
+        ok(dataUrl.length > "data:image/png;base64,".length, "data URL should be non-empty");
+      }
+
+      SimpleTest.waitForExplicitFinish();
+      testBody()
+        .catch(e => ok(false, "Unhandled exception " + e))
+        .finally(() => SimpleTest.finish());
+    </script>
+  </body>
+</html>

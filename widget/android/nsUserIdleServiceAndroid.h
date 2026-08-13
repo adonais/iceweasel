@@ -5,8 +5,8 @@
 #ifndef nsUserIdleServiceAndroid_h_
 #define nsUserIdleServiceAndroid_h_
 
-#include "nsUserIdleService.h"
 #include "mozilla/AppShutdown.h"
+#include "nsUserIdleService.h"
 
 class nsUserIdleServiceAndroid : public nsUserIdleService {
  public:

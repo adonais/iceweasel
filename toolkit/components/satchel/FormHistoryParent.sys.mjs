@@ -43,13 +43,23 @@ export class FormHistoryParent extends JSWindowActorParent {
   }
 
   #onFormSubmitEntries(entries) {
-    const changes = entries.map(entry => ({
-      op: "bump",
-      fieldname: entry.name,
-      value: entry.value,
-    }));
+    // Don't store form history in private browsing sessions, or when the
+    // browsing context cannot be determined.
+    if (this.browsingContext?.usePrivateBrowsing ?? true) {
+      return;
+    }
 
-    lazy.FormHistory.update(changes);
+    const changes = entries
+      .filter(entry => lazy.FormHistory.isAllowedEntry(entry.name, entry.value))
+      .map(entry => ({
+        op: "bump",
+        fieldname: entry.name,
+        value: entry.value,
+      }));
+
+    if (changes.length) {
+      lazy.FormHistory.update(changes);
+    }
   }
 
   get formOrigin() {
@@ -60,6 +70,11 @@ export class FormHistoryParent extends JSWindowActorParent {
 
   async #onAutoCompleteSearch({ searchString, params, scenarioName }) {
     searchString = searchString.trim().toLowerCase();
+
+    // The search bar manages its own history and is not served here.
+    if (!lazy.FormHistory.isAllowedFieldname(params?.fieldname)) {
+      return { formHistoryEntries: [], externalEntries: [] };
+    }
 
     let formHistoryPromise;
     if (
@@ -99,6 +114,12 @@ export class FormHistoryParent extends JSWindowActorParent {
   }
 
   #onRemoveEntry({ inputName, value, guid }) {
+    // Removals must be scoped to a specific, allowed fieldname so the
+    // fieldname always constrains the query.
+    if (!inputName || !lazy.FormHistory.isAllowedFieldname(inputName)) {
+      return;
+    }
+
     lazy.FormHistory.update({
       op: "remove",
       fieldname: inputName,

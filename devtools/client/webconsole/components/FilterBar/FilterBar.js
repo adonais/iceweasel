@@ -77,6 +77,7 @@ class FilterBar extends Component {
       persistLogs: PropTypes.bool.isRequired,
       eagerEvaluation: PropTypes.bool.isRequired,
       timestampsVisible: PropTypes.bool.isRequired,
+      serviceContainer: PropTypes.object.isRequired,
       webConsoleUI: PropTypes.object.isRequired,
       autocomplete: PropTypes.bool.isRequired,
     };
@@ -220,7 +221,10 @@ class FilterBar extends Component {
   }
 
   renderFiltersConfigBar() {
-    const { dispatch, filter, filteredMessagesCount } = this.props;
+    const { dispatch, filter, filteredMessagesCount, serviceContainer } =
+      this.props;
+
+    const { isBrowserConsoleOrBrowserToolbox } = serviceContainer;
 
     const getLabel = (baseLabel, filterKey) => {
       const count = filteredMessagesCount[filterKey];
@@ -301,7 +305,36 @@ class FilterBar extends Component {
         label: l10n.getStr("webconsole.requestsFilterButton.label"),
         filterKey: FILTERS.NET,
         dispatch,
-      })
+      }),
+      // The browser console and browser toolbox console aggregate messages from
+      // the browser itself (privileged code) and from web content. Let the user
+      // show or hide each origin separately.
+      isBrowserConsoleOrBrowserToolbox &&
+        dom.div({
+          className: "devtools-separator",
+        }),
+      isBrowserConsoleOrBrowserToolbox &&
+        FilterButton({
+          active: filter[FILTERS.CHROME],
+          label: getLabel(
+            l10n.getStr("webconsole.chromeFilterButton.label"),
+            FILTERS.CHROME
+          ),
+          title: l10n.getStr("webconsole.chromeFilterButton.tooltip"),
+          filterKey: FILTERS.CHROME,
+          dispatch,
+        }),
+      isBrowserConsoleOrBrowserToolbox &&
+        FilterButton({
+          active: filter[FILTERS.CONTENT],
+          label: getLabel(
+            l10n.getStr("webconsole.contentFilterButton.label"),
+            FILTERS.CONTENT
+          ),
+          title: l10n.getStr("webconsole.contentFilterButton.tooltip"),
+          filterKey: FILTERS.CONTENT,
+          dispatch,
+        })
     );
   }
 

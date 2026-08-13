@@ -5,7 +5,7 @@
 const CC = Components.Constructor;
 
 let { ForgetAboutSite } = ChromeUtils.importESModule(
-  "resource://gre/modules/ForgetAboutSite.sys.mjs"
+  "moz-src:///toolkit/components/forgetaboutsite/ForgetAboutSite.sys.mjs"
 );
 let { HttpServer } = ChromeUtils.importESModule(
   "resource://testing-common/httpd.sys.mjs"

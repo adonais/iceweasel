@@ -8,8 +8,8 @@
 #include <algorithm>
 #include <ctime>
 
-#include "mozilla/gfx/2D.h"
 #include "mozilla/fallible.h"
+#include "mozilla/gfx/2D.h"
 
 using std::swap;
 

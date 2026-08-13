@@ -12,24 +12,24 @@
 #  include "mozilla/gfx/DeviceManagerDx.h"  // for DeviceManagerDx
 #  include "mozilla/layers/ImageDataSerializer.h"
 #endif
-#include "mozilla/layers/AnimationHelper.h"  // for CompositorAnimationStorage
+#include "GeckoProfiler.h"
+#include "mozilla/BaseProfilerMarkerTypes.h"
+#include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/layers/APZCTreeManagerParent.h"  // for APZCTreeManagerParent
 #include "mozilla/layers/APZUpdater.h"             // for APZUpdater
+#include "mozilla/layers/AnimationHelper.h"  // for CompositorAnimationStorage
+#include "mozilla/layers/AsyncImagePipelineManager.h"
 #include "mozilla/layers/CompositorManagerParent.h"
 #include "mozilla/layers/CompositorOptions.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/LayerTreeOwnerTracker.h"
 #include "mozilla/layers/RemoteContentController.h"
 #include "mozilla/layers/WebRenderBridgeParent.h"
-#include "mozilla/layers/AsyncImagePipelineManager.h"
 #include "mozilla/mozalloc.h"  // for operator new, etc
 #include "nsDebug.h"           // for NS_ASSERTION, etc
 #include "nsTArray.h"          // for nsTArray
 #include "nsXULAppAPI.h"       // for XRE_GetAsyncIOEventTarget
-#include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/StaticPtr.h"
-#include "mozilla/BaseProfilerMarkerTypes.h"
-#include "GeckoProfiler.h"
 
 namespace mozilla::layers {
 

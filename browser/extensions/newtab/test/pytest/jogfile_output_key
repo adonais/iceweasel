@@ -294,7 +294,8 @@
               ],
               "ping",
               false,
-              null
+              null,
+              false
             ]
           ]
         },
@@ -348,6 +349,18 @@
           "metrics"
         ],
         "type": "rate"
+      },
+      "unordered_quantity_metric": {
+        "description": "A multi-line\ndescription\n",
+        "disabled": false,
+        "extraArgs": {
+          "permit_non_commutative_operations_over_ipc": true
+        },
+        "lifetime": "ping",
+        "pings": [
+          "metrics"
+        ],
+        "type": "quantity"
       },
       "uuid_metric": {
         "description": "A multi-line\ndescription\n",

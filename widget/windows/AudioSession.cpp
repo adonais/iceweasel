@@ -4,27 +4,26 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <audiopolicy.h>
-#include <windows.h>
 #include <mmdeviceapi.h>
+#include <windows.h>
 
 #include "mozilla/AppShutdown.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/Logging.h"
+#include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
-#include "nsIStringBundle.h"
-
+#include "mozilla/mscom/AgileReference.h"
+#include "mozilla/mscom/Utils.h"
 #include "nsCOMPtr.h"
 #include "nsID.h"
+#include "nsIStringBundle.h"
 #include "nsServiceManagerUtils.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
-#include "mozilla/mscom/AgileReference.h"
-#include "mozilla/Logging.h"
-#include "mozilla/mscom/Utils.h"
-#include "mozilla/Mutex.h"
 
 #ifdef MOZ_BACKGROUNDTASKS
 #  include "mozilla/BackgroundTasks.h"

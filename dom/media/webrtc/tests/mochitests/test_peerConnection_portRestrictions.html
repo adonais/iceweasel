@@ -11,6 +11,201 @@
     title: "RTCPeerConnection check restricted ports"
   });
 
+// Runs in the parent process. Opens UDP/TCP listeners on request and reports
+// whether the browser ever sent a datagram / opened a connection to them.
+function portRestrictionsListenerScript() {
+  /* eslint-env mozilla/chrome-script */
+  let udpSocket = null;
+  let tcpSocket = null;
+  let observed = false;
+
+  const principal = Services.scriptSecurityManager.getSystemPrincipal();
+
+  addMessageListener("bind-udp", port => {
+    observed = false;
+    try {
+      udpSocket = Cc["@mozilla.org/network/udp-socket;1"].createInstance(
+        Ci.nsIUDPSocket
+      );
+      // Bind to all interfaces (loopbackOnly = false) so we receive whichever
+      // local host address the offerer pairs with and sends to.
+      udpSocket.init(
+        port,
+        /* loopbackOnly = */ false,
+        principal,
+        /* addressReuse = */ true
+      );
+      udpSocket.asyncListen({
+        QueryInterface: ChromeUtils.generateQI(["nsIUDPSocketListener"]),
+        onPacketReceived() {
+          observed = true;
+        },
+        onStopListening() {},
+      });
+      sendAsyncMessage("bound", { port: udpSocket.port });
+    } catch (e) {
+      sendAsyncMessage("bound", { error: `${e}` });
+    }
+  });
+
+  addMessageListener("bind-tcp", port => {
+    observed = false;
+    try {
+      tcpSocket = Cc["@mozilla.org/network/server-socket;1"].createInstance(
+        Ci.nsIServerSocket
+      );
+      tcpSocket.init(port, /* loopbackOnly = */ false, /* backlog = */ -1);
+      tcpSocket.asyncListen({
+        QueryInterface: ChromeUtils.generateQI(["nsIServerSocketListener"]),
+        onSocketAccepted() {
+          observed = true;
+        },
+        onStopListening() {},
+      });
+      sendAsyncMessage("bound", { port: tcpSocket.port });
+    } catch (e) {
+      sendAsyncMessage("bound", { error: `${e}` });
+    }
+  });
+
+  addMessageListener("observed?", () => {
+    sendAsyncMessage("observed", { observed });
+  });
+
+  addMessageListener("cleanup", () => {
+    if (udpSocket) {
+      udpSocket.close();
+      udpSocket = null;
+    }
+    if (tcpSocket) {
+      tcpSocket.close();
+      tcpSocket = null;
+    }
+    observed = false;
+    sendAsyncMessage("cleaned", {});
+  });
+}
+
+async function bindListener(listener, protocol, port) {
+  const bound = listener.promiseOneMessage("bound");
+  listener.sendAsyncMessage(
+    protocol == "udp" ? "bind-udp" : "bind-tcp",
+    port
+  );
+  const result = await bound;
+  if (result.error) {
+    ok(
+      false,
+      `Failed to bind ${protocol} listener on port ${port}: ${result.error}`
+    );
+    throw new Error(result.error);
+  }
+  return result.port;
+}
+
+async function listenerWasContacted(listener) {
+  const reply = listener.promiseOneMessage("observed");
+  listener.sendAsyncMessage("observed?", {});
+  return (await reply).observed;
+}
+
+async function cleanupListener(listener) {
+  const cleaned = listener.promiseOneMessage("cleaned");
+  listener.sendAsyncMessage("cleanup", {});
+  await cleaned;
+}
+
+async function probePort(listener, protocol, hostAddr, requestedPort) {
+  const port = await bindListener(listener, protocol, requestedPort);
+  try {
+    return {
+      port,
+      contacted: await offererContactsPort(listener, protocol, hostAddr, port),
+    };
+  } finally {
+    await cleanupListener(listener);
+  }
+}
+
+function getUfrag(sdp) {
+  return sdp.match(/a=ice-ufrag:(\S+)/)[1];
+}
+
+// Discovers the IPv4 host address the offerer gathers, so we can inject a
+// remote candidate the offerer will actually pair with (it will not pair a
+// LAN-IP local candidate with a 127.0.0.1 remote candidate).
+async function getLocalHostAddr() {
+  const pc = new RTCPeerConnection();
+  try {
+    pc.createDataChannel("probe");
+    let addr = null;
+    const done = new Promise(resolve => {
+      pc.addEventListener("icecandidate", e => {
+        if (!e.candidate) {
+          resolve();
+          return;
+        }
+        const fields = e.candidate.candidate.split(" ");
+        // candidate:<foundation> <comp> <protocol> <pri> <addr> <port> typ host
+        if (
+          !addr &&
+          fields[2] == "UDP" &&
+          fields[7] == "host" &&
+          fields[4].includes(".")
+        ) {
+          addr = fields[4];
+        }
+      });
+    });
+    await pc.setLocalDescription(await pc.createOffer());
+    await done;
+    return addr;
+  } finally {
+    pc.close();
+  }
+}
+
+// Sets up ICE credentials between two PeerConnections, then injects a
+// single remote candidate of the given protocol pointing at
+// {local-host-addr}:port. The offerer pairs it with its local candidate
+// and runs connectivity checks using the answerer's ICE password (which
+// it has from the answer SDP).
+// Resolves to true if the parent-process listener was contacted.
+async function offererContactsPort(listener, protocol, addr, port) {
+  const offerer = new RTCPeerConnection();
+  const answerer = new RTCPeerConnection();
+  try {
+    offerer.createDataChannel("probe");
+
+    const offer = await offerer.createOffer();
+    await offerer.setLocalDescription(offer);
+    await answerer.setRemoteDescription(offer);
+    // the answer will have no candidates because we grab it before sLD
+    const answer = await answerer.createAnswer();
+    await offerer.setRemoteDescription(answer);
+
+    const candidate =
+      protocol == "udp"
+        ? `candidate:0 1 UDP 2122252543 ${addr} ${port} typ host`
+        : `candidate:0 1 TCP 2105524479 ${addr} ${port} typ host tcptype passive`;
+
+    // this is the only candidate the offerer will have
+    await offerer.addIceCandidate({
+      candidate,
+      sdpMLineIndex: 0,
+      usernameFragment: getUfrag(answer.sdp),
+    });
+
+    // Give the ICE agent time to run connectivity checks.
+    await new Promise(r => setTimeout(r, 3000));
+
+    return await listenerWasContacted(listener);
+  } finally {
+    offerer.close();
+    answerer.close();
+  }
+}
+
 var makePC = (config, expected_error) => {
   var exception;
   try {
@@ -22,44 +217,103 @@ var makePC = (config, expected_error) => {
      "RTCPeerConnection(" + JSON.stringify(config) + ")");
 };
 
-// This is a test of the iceServers parsing code + readable errors
-runNetworkTest(() => {
-  var exception = null;
+const tests = [
+  // This is a test of the iceServers parsing code + readable errors
+  async function checkIceServerParsingCode() {
+    var exception = null;
 
-  // check various ports on the blocklist
-  makePC({ iceServers: [
-    { urls:"turn:[::1]:6666", username:"p", credential:"p" }] }, "SyntaxError");
-  makePC({ iceServers: [
-    { urls:"turns:localhost:6667?transport=udp", username:"p", credential:"p" }] },
-    "SyntaxError");
-  makePC({ iceServers: [
-    { urls:"stun:localhost:21", foo:"" }] }, "SyntaxError");
-  makePC({ iceServers: [
-    { urls:"stun:[::1]:22", foo:"" }] }, "SyntaxError");
-  makePC({ iceServers: [
-    { urls:"turn:localhost:5060", username:"p", credential:"p" }] },
-    "SyntaxError");
+    // check various ports on the blocklist
+    makePC({ iceServers: [
+      { urls:"turn:[::1]:6666", username:"p", credential:"p" }] }, "SyntaxError");
+    makePC({ iceServers: [
+      { urls:"turns:localhost:6667?transport=udp", username:"p", credential:"p" }] },
+      "SyntaxError");
+    makePC({ iceServers: [
+      { urls:"stun:localhost:21", foo:"" }] }, "SyntaxError");
+    makePC({ iceServers: [
+      { urls:"stun:[::1]:22", foo:"" }] }, "SyntaxError");
+    makePC({ iceServers: [
+      { urls:"turn:localhost:5060", username:"p", credential:"p" }] },
+      "SyntaxError");
 
-  // check various ports on the good list for webrtc (or default port)
-  makePC({ iceServers: [
-    { urls:"turn:[::1]:53", username:"p", credential:"p" },
-    { urls:"turn:[::1]:5349", username:"p", credential:"p" },
-    { urls:"turn:[::1]:3478", username:"p", credential:"p" },
-    { urls:"turn:[::1]", username:"p", credential:"p" },
-  ]});
-  makePC({ iceServers: [
-    { urls:"turn:localhost:53?transport=udp", username:"p", credential:"p" },
-    { urls:"turn:localhost:3478?transport=udp", username:"p", credential:"p" },
-    { urls:"turn:localhost:53?transport=tcp", username:"p", credential:"p" },
-    { urls:"turn:localhost:3478?transport=tcp", username:"p", credential:"p" },
-  ]});
-  makePC({ iceServers: [
-    { urls:"turns:localhost:3478?transport=udp", username:"p", credential:"p" },
-    { urls:"stun:localhost", foo:"" }
-  ]});
+    // check various ports on the good list for webrtc (or default port)
+    makePC({ iceServers: [
+      { urls:"turn:[::1]:53", username:"p", credential:"p" },
+      { urls:"turn:[::1]:5349", username:"p", credential:"p" },
+      { urls:"turn:[::1]:3478", username:"p", credential:"p" },
+      { urls:"turn:[::1]", username:"p", credential:"p" },
+    ]});
+    makePC({ iceServers: [
+      { urls:"turn:localhost:53?transport=udp", username:"p", credential:"p" },
+      { urls:"turn:localhost:3478?transport=udp", username:"p", credential:"p" },
+      { urls:"turn:localhost:53?transport=tcp", username:"p", credential:"p" },
+      { urls:"turn:localhost:3478?transport=tcp", username:"p", credential:"p" },
+    ]});
+    makePC({ iceServers: [
+      { urls:"turns:localhost:3478?transport=udp", username:"p", credential:"p" },
+      { urls:"stun:localhost", foo:"" }
+    ]});
 
-  // not in the known good ports and not on the generic block list
-  makePC({ iceServers: [{ urls:"turn:localhost:6664", username:"p", credential:"p" }] });
+    // not in the known good ports and not on the generic block list
+    makePC({ iceServers: [{ urls:"turn:localhost:6664", username:"p", credential:"p" }] });
+  },
+
+  async function checkRemoteCandidatePorts() {
+    // The allowed ports act as controls: without them, a failure to contact a
+    // restricted port would not be meaningful.
+    const PORTS = [
+      { port: 3478, allowed: true },
+      { port: 6001, allowed: true },
+      { port: 6697, allowed: false },
+    ];
+
+    await withPrefs(
+      [
+        ["media.peerconnection.ice.tcp", true],
+        // Disable mDNS obfuscation so host candidates expose real IP addresses
+        // rather than .local hostnames, which getLocalHostAddr() needs.
+        ["media.peerconnection.ice.obfuscate_host_addresses", false],
+      ],
+      async () => {
+        const hostAddr = await getLocalHostAddr();
+        ok(hostAddr, `discovered a local host address to target: ${hostAddr}`);
+
+        const listener = SpecialPowers.loadChromeScript(
+          portRestrictionsListenerScript
+        );
+        try {
+          for (const protocol of ["udp", "tcp"]) {
+            for (const { port, allowed } of PORTS) {
+              const result = await probePort(
+                listener,
+                protocol,
+                hostAddr,
+                port
+              );
+              is(
+                result.contacted,
+                allowed,
+                `${protocol}: connectivity check ${
+                  allowed ? "reaches allowed" : "is blocked to restricted"
+                } port ${port}`
+              );
+            }
+          }
+        } finally {
+          listener.destroy();
+        }
+      }
+    );
+  },
+
+];
+
+runNetworkTest(async () => {
+  for (const test of tests) {
+    info(`Running test: ${test.name}`);
+    await test();
+    info(`Done running test: ${test.name}`);
+  }
 });
 </script>
 </pre>

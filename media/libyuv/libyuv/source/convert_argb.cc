@@ -11,6 +11,7 @@
 #include "libyuv/convert_argb.h"
 
 #include <assert.h>
+#include <limits.h>
 
 #include "libyuv/convert_from_argb.h"
 #include "libyuv/cpu_id.h"
@@ -33,13 +34,14 @@ int ARGBCopy(const uint8_t* src_argb,
              int dst_stride_argb,
              int width,
              int height) {
-  if (!src_argb || !dst_argb || width <= 0 || height == 0) {
+  if (!src_argb || !dst_argb || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_argb = src_argb + (ptrdiff_t)(height - 1) * src_stride_argb;
     src_stride_argb = -src_stride_argb;
   }
 
@@ -67,13 +69,14 @@ int I420ToARGBMatrix(const uint8_t* src_y,
                         const struct YuvConstants* yuvconstants, int width) =
       I422ToARGBRow_C;
   assert(yuvconstants);
-  if (!src_y || !src_u || !src_v || !dst_argb || width <= 0 || height == 0) {
+  if (!src_y || !src_u || !src_v || !dst_argb || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_argb = dst_argb + (ptrdiff_t)(height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
 #if defined(HAS_I422TOARGBROW_SSSE3)
@@ -316,18 +319,20 @@ int I422ToARGBMatrix(const uint8_t* src_y,
                         const struct YuvConstants* yuvconstants, int width) =
       I422ToARGBRow_C;
   assert(yuvconstants);
-  if (!src_y || !src_u || !src_v || !dst_argb || width <= 0 || height == 0) {
+  if (!src_y || !src_u || !src_v || !dst_argb || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_argb = dst_argb + (ptrdiff_t)(height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
   // Coalesce rows.
   if (src_stride_y == width && src_stride_u * 2 == width &&
-      src_stride_v * 2 == width && dst_stride_argb == width * 4) {
+      src_stride_v * 2 == width && dst_stride_argb == width * 4 &&
+      (ptrdiff_t)width * height <= INT_MAX) {
     width *= height;
     height = 1;
     src_stride_y = src_stride_u = src_stride_v = dst_stride_argb = 0;
@@ -570,18 +575,19 @@ int I444ToARGBMatrix(const uint8_t* src_y,
                         const struct YuvConstants* yuvconstants, int width) =
       I444ToARGBRow_C;
   assert(yuvconstants);
-  if (!src_y || !src_u || !src_v || !dst_argb || width <= 0 || height == 0) {
+  if (!src_y || !src_u || !src_v || !dst_argb || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_argb = dst_argb + (ptrdiff_t)(height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
   // Coalesce rows.
   if (src_stride_y == width && src_stride_u == width && src_stride_v == width &&
-      dst_stride_argb == width * 4) {
+      dst_stride_argb == width * 4 && (ptrdiff_t)width * height <= INT_MAX) {
     width *= height;
     height = 1;
     src_stride_y = src_stride_u = src_stride_v = dst_stride_argb = 0;
@@ -807,18 +813,19 @@ int I444ToRGB24Matrix(const uint8_t* src_y,
                          const struct YuvConstants* yuvconstants, int width) =
       I444ToRGB24Row_C;
   assert(yuvconstants);
-  if (!src_y || !src_u || !src_v || !dst_rgb24 || width <= 0 || height == 0) {
+  if (!src_y || !src_u || !src_v || !dst_rgb24 || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_rgb24 = dst_rgb24 + (height - 1) * dst_stride_rgb24;
+    dst_rgb24 = dst_rgb24 + (ptrdiff_t)(height - 1) * dst_stride_rgb24;
     dst_stride_rgb24 = -dst_stride_rgb24;
   }
   // Coalesce rows.
   if (src_stride_y == width && src_stride_u == width && src_stride_v == width &&
-      dst_stride_rgb24 == width * 3) {
+      dst_stride_rgb24 == width * 3 && (ptrdiff_t)width * height <= INT_MAX) {
     width *= height;
     height = 1;
     src_stride_y = src_stride_u = src_stride_v = dst_stride_rgb24 = 0;
@@ -938,13 +945,14 @@ int I010ToAR30Matrix(const uint16_t* src_y,
                         const struct YuvConstants* yuvconstants, int width) =
       I210ToAR30Row_C;
   assert(yuvconstants);
-  if (!src_y || !src_u || !src_v || !dst_ar30 || width <= 0 || height == 0) {
+  if (!src_y || !src_u || !src_v || !dst_ar30 || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_ar30 = dst_ar30 + (height - 1) * dst_stride_ar30;
+    dst_ar30 = dst_ar30 + (ptrdiff_t)(height - 1) * dst_stride_ar30;
     dst_stride_ar30 = -dst_stride_ar30;
   }
 #if defined(HAS_I210TOAR30ROW_NEON)
@@ -1116,13 +1124,14 @@ int I012ToAR30Matrix(const uint16_t* src_y,
                         const struct YuvConstants* yuvconstants, int width) =
       I212ToAR30Row_C;
   assert(yuvconstants);
-  if (!src_y || !src_u || !src_v || !dst_ar30 || width <= 0 || height == 0) {
+  if (!src_y || !src_u || !src_v || !dst_ar30 || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_ar30 = dst_ar30 + (height - 1) * dst_stride_ar30;
+    dst_ar30 = dst_ar30 + (ptrdiff_t)(height - 1) * dst_stride_ar30;
     dst_stride_ar30 = -dst_stride_ar30;
   }
 #if defined(HAS_I212TOAR30ROW_SSSE3)
@@ -1192,13 +1201,14 @@ int I210ToAR30Matrix(const uint16_t* src_y,
                         const struct YuvConstants* yuvconstants, int width) =
       I210ToAR30Row_C;
   assert(yuvconstants);
-  if (!src_y || !src_u || !src_v || !dst_ar30 || width <= 0 || height == 0) {
+  if (!src_y || !src_u || !src_v || !dst_ar30 || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_ar30 = dst_ar30 + (height - 1) * dst_stride_ar30;
+    dst_ar30 = dst_ar30 + (ptrdiff_t)(height - 1) * dst_stride_ar30;
     dst_stride_ar30 = -dst_stride_ar30;
   }
 #if defined(HAS_I210TOAR30ROW_NEON)
@@ -1365,13 +1375,14 @@ int I410ToAR30Matrix(const uint16_t* src_y,
                         const struct YuvConstants* yuvconstants, int width) =
       I410ToAR30Row_C;
   assert(yuvconstants);
-  if (!src_y || !src_u || !src_v || !dst_ar30 || width <= 0 || height == 0) {
+  if (!src_y || !src_u || !src_v || !dst_ar30 || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_ar30 = dst_ar30 + (height - 1) * dst_stride_ar30;
+    dst_ar30 = dst_ar30 + (ptrdiff_t)(height - 1) * dst_stride_ar30;
     dst_stride_ar30 = -dst_stride_ar30;
   }
 #if defined(HAS_I410TOAR30ROW_NEON)
@@ -1437,13 +1448,14 @@ int I010ToARGBMatrix(const uint16_t* src_y,
                         const struct YuvConstants* yuvconstants, int width) =
       I210ToARGBRow_C;
   assert(yuvconstants);
-  if (!src_y || !src_u || !src_v || !dst_argb || width <= 0 || height == 0) {
+  if (!src_y || !src_u || !src_v || !dst_argb || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_argb = dst_argb + (ptrdiff_t)(height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
 #if defined(HAS_I210TOARGBROW_SSSE3)
@@ -1619,13 +1631,14 @@ int I012ToARGBMatrix(const uint16_t* src_y,
                         const struct YuvConstants* yuvconstants, int width) =
       I212ToARGBRow_C;
   assert(yuvconstants);
-  if (!src_y || !src_u || !src_v || !dst_argb || width <= 0 || height == 0) {
+  if (!src_y || !src_u || !src_v || !dst_argb || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_argb = dst_argb + (ptrdiff_t)(height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
 #if defined(HAS_I212TOARGBROW_SSSE3)
@@ -1693,13 +1706,14 @@ int I210ToARGBMatrix(const uint16_t* src_y,
                         const struct YuvConstants* yuvconstants, int width) =
       I210ToARGBRow_C;
   assert(yuvconstants);
-  if (!src_y || !src_u || !src_v || !dst_argb || width <= 0 || height == 0) {
+  if (!src_y || !src_u || !src_v || !dst_argb || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_argb = dst_argb + (ptrdiff_t)(height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
 #if defined(HAS_I210TOARGBROW_SSSE3)
@@ -1872,13 +1886,14 @@ int I410ToARGBMatrix(const uint16_t* src_y,
                         const struct YuvConstants* yuvconstants, int width) =
       I410ToARGBRow_C;
   assert(yuvconstants);
-  if (!src_y || !src_u || !src_v || !dst_argb || width <= 0 || height == 0) {
+  if (!src_y || !src_u || !src_v || !dst_argb || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_argb = dst_argb + (ptrdiff_t)(height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
 #if defined(HAS_I410TOARGBROW_SSSE3)
@@ -1940,13 +1955,14 @@ int P010ToARGBMatrix(const uint16_t* src_y,
       const uint16_t* y_buf, const uint16_t* uv_buf, uint8_t* rgb_buf,
       const struct YuvConstants* yuvconstants, int width) = P210ToARGBRow_C;
   assert(yuvconstants);
-  if (!src_y || !src_uv || !dst_argb || width <= 0 || height == 0) {
+  if (!src_y || !src_uv || !dst_argb || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_argb = dst_argb + (ptrdiff_t)(height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
 #if defined(HAS_P210TOARGBROW_SSSE3)
@@ -2009,13 +2025,14 @@ int P210ToARGBMatrix(const uint16_t* src_y,
       const uint16_t* y_buf, const uint16_t* uv_buf, uint8_t* rgb_buf,
       const struct YuvConstants* yuvconstants, int width) = P210ToARGBRow_C;
   assert(yuvconstants);
-  if (!src_y || !src_uv || !dst_argb || width <= 0 || height == 0) {
+  if (!src_y || !src_uv || !dst_argb || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_argb = dst_argb + (ptrdiff_t)(height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
 #if defined(HAS_P210TOARGBROW_SSSE3)
@@ -2076,13 +2093,14 @@ int P010ToAR30Matrix(const uint16_t* src_y,
       const uint16_t* y_buf, const uint16_t* uv_buf, uint8_t* rgb_buf,
       const struct YuvConstants* yuvconstants, int width) = P210ToAR30Row_C;
   assert(yuvconstants);
-  if (!src_y || !src_uv || !dst_ar30 || width <= 0 || height == 0) {
+  if (!src_y || !src_uv || !dst_ar30 || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_ar30 = dst_ar30 + (height - 1) * dst_stride_ar30;
+    dst_ar30 = dst_ar30 + (ptrdiff_t)(height - 1) * dst_stride_ar30;
     dst_stride_ar30 = -dst_stride_ar30;
   }
 #if defined(HAS_P210TOAR30ROW_SSSE3)
@@ -2145,13 +2163,14 @@ int P210ToAR30Matrix(const uint16_t* src_y,
       const uint16_t* y_buf, const uint16_t* uv_buf, uint8_t* rgb_buf,
       const struct YuvConstants* yuvconstants, int width) = P210ToAR30Row_C;
   assert(yuvconstants);
-  if (!src_y || !src_uv || !dst_ar30 || width <= 0 || height == 0) {
+  if (!src_y || !src_uv || !dst_ar30 || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_ar30 = dst_ar30 + (height - 1) * dst_stride_ar30;
+    dst_ar30 = dst_ar30 + (ptrdiff_t)(height - 1) * dst_stride_ar30;
     dst_stride_ar30 = -dst_stride_ar30;
   }
 #if defined(HAS_P210TOAR30ROW_SSSE3)
@@ -2223,13 +2242,13 @@ int I420AlphaToARGBMatrix(const uint8_t* src_y,
                            int width) = ARGBAttenuateRow_C;
   assert(yuvconstants);
   if (!src_y || !src_u || !src_v || !src_a || !dst_argb || width <= 0 ||
-      height == 0) {
+      height == 0 || height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_argb = dst_argb + (ptrdiff_t)(height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
 #if defined(HAS_I422ALPHATOARGBROW_SSSE3)
@@ -2376,13 +2395,13 @@ int I422AlphaToARGBMatrix(const uint8_t* src_y,
                            int width) = ARGBAttenuateRow_C;
   assert(yuvconstants);
   if (!src_y || !src_u || !src_v || !src_a || !dst_argb || width <= 0 ||
-      height == 0) {
+      height == 0 || height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_argb = dst_argb + (ptrdiff_t)(height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
 #if defined(HAS_I422ALPHATOARGBROW_SSSE3)
@@ -2527,13 +2546,13 @@ int I444AlphaToARGBMatrix(const uint8_t* src_y,
                            int width) = ARGBAttenuateRow_C;
   assert(yuvconstants);
   if (!src_y || !src_u || !src_v || !src_a || !dst_argb || width <= 0 ||
-      height == 0) {
+      height == 0 || height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_argb = dst_argb + (ptrdiff_t)(height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
 #if defined(HAS_I444ALPHATOARGBROW_SSSE3)
@@ -2791,13 +2810,13 @@ int I010AlphaToARGBMatrix(const uint16_t* src_y,
                            int width) = ARGBAttenuateRow_C;
   assert(yuvconstants);
   if (!src_y || !src_u || !src_v || !src_a || !dst_argb || width <= 0 ||
-      height == 0) {
+      height == 0 || height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_argb = dst_argb + (ptrdiff_t)(height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
 #if defined(HAS_I210ALPHATOARGBROW_NEON)
@@ -2923,13 +2942,13 @@ int I210AlphaToARGBMatrix(const uint16_t* src_y,
                            int width) = ARGBAttenuateRow_C;
   assert(yuvconstants);
   if (!src_y || !src_u || !src_v || !src_a || !dst_argb || width <= 0 ||
-      height == 0) {
+      height == 0 || height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_argb = dst_argb + (ptrdiff_t)(height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
 #if defined(HAS_I210ALPHATOARGBROW_NEON)
@@ -3053,13 +3072,13 @@ int I410AlphaToARGBMatrix(const uint16_t* src_y,
                            int width) = ARGBAttenuateRow_C;
   assert(yuvconstants);
   if (!src_y || !src_u || !src_v || !src_a || !dst_argb || width <= 0 ||
-      height == 0) {
+      height == 0 || height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_argb = dst_argb + (ptrdiff_t)(height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
 #if defined(HAS_I410ALPHATOARGBROW_NEON)
@@ -3171,17 +3190,18 @@ int I400ToARGBMatrix(const uint8_t* src_y,
                         const struct YuvConstants* yuvconstants, int width) =
       I400ToARGBRow_C;
   assert(yuvconstants);
-  if (!src_y || !dst_argb || width <= 0 || height == 0) {
+  if (!src_y || !dst_argb || width <= 0 || height == 0 || height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_argb = dst_argb + (ptrdiff_t)(height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
   // Coalesce rows.
-  if (src_stride_y == width && dst_stride_argb == width * 4) {
+  if (src_stride_y == width && dst_stride_argb == width * 4 &&
+      (ptrdiff_t)width * height <= INT_MAX) {
     width *= height;
     height = 1;
     src_stride_y = dst_stride_argb = 0;
@@ -3265,34 +3285,36 @@ int J400ToARGB(const uint8_t* src_y,
   int y;
   void (*J400ToARGBRow)(const uint8_t* src_y, uint8_t* dst_argb, int width) =
       J400ToARGBRow_C;
-  if (!src_y || !dst_argb || width <= 0 || height == 0) {
+  if (!src_y || !dst_argb || width <= 0 || height == 0 || height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src_y = src_y + (height - 1) * src_stride_y;
+    src_y = src_y + (ptrdiff_t)(height - 1) * src_stride_y;
     src_stride_y = -src_stride_y;
   }
   // Coalesce rows.
-  if (src_stride_y == width && dst_stride_argb == width * 4) {
+  if (src_stride_y == width && dst_stride_argb == width * 4 &&
+      (ptrdiff_t)width * height <= INT_MAX) {
     width *= height;
     height = 1;
     src_stride_y = dst_stride_argb = 0;
   }
-#if defined(HAS_J400TOARGBROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    J400ToARGBRow = J400ToARGBRow_Any_SSE2;
-    if (IS_ALIGNED(width, 8)) {
-      J400ToARGBRow = J400ToARGBRow_SSE2;
-    }
-  }
-#endif
+
 #if defined(HAS_J400TOARGBROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     J400ToARGBRow = J400ToARGBRow_Any_AVX2;
     if (IS_ALIGNED(width, 16)) {
       J400ToARGBRow = J400ToARGBRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_J400TOARGBROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    J400ToARGBRow = J400ToARGBRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 32)) {
+      J400ToARGBRow = J400ToARGBRow_AVX512BW;
     }
   }
 #endif
@@ -3357,13 +3379,13 @@ int BGRAToARGB(const uint8_t* src_bgra,
 
 // Convert ARGB to BGRA (same as BGRAToARGB).
 LIBYUV_API
-int ARGBToBGRA(const uint8_t* src_bgra,
-               int src_stride_bgra,
-               uint8_t* dst_argb,
-               int dst_stride_argb,
+int ARGBToBGRA(const uint8_t* src_argb,
+               int src_stride_argb,
+               uint8_t* dst_bgra,
+               int dst_stride_bgra,
                int width,
                int height) {
-  return ARGBShuffle(src_bgra, src_stride_bgra, dst_argb, dst_stride_argb,
+  return ARGBShuffle(src_argb, src_stride_argb, dst_bgra, dst_stride_bgra,
                      (const uint8_t*)&kShuffleMaskBGRAToARGB, width, height);
 }
 
@@ -3381,13 +3403,13 @@ int ABGRToARGB(const uint8_t* src_abgr,
 
 // Convert ARGB to ABGR to (same as ABGRToARGB).
 LIBYUV_API
-int ARGBToABGR(const uint8_t* src_abgr,
-               int src_stride_abgr,
-               uint8_t* dst_argb,
-               int dst_stride_argb,
+int ARGBToABGR(const uint8_t* src_argb,
+               int src_stride_argb,
+               uint8_t* dst_abgr,
+               int dst_stride_abgr,
                int width,
                int height) {
-  return ARGBShuffle(src_abgr, src_stride_abgr, dst_argb, dst_stride_argb,
+  return ARGBShuffle(src_argb, src_stride_argb, dst_abgr, dst_stride_abgr,
                      (const uint8_t*)&kShuffleMaskABGRToARGB, width, height);
 }
 
@@ -3438,17 +3460,19 @@ int ARGBToBGRA(const uint8_t* src_argb,
   int y;
   void (*ARGBToBGRARow)(const uint8_t* src_argb, uint8_t* dst_bgra, int width) =
       ARGBToBGRARow_C;
-  if (!src_argb || !dst_bgra || width <= 0 || height == 0) {
+  if (!src_argb || !dst_bgra || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_argb = src_argb + (ptrdiff_t)(height - 1) * src_stride_argb;
     src_stride_argb = -src_stride_argb;
   }
   // Coalesce rows.
-  if (src_stride_argb == width * 4 && dst_stride_bgra == width * 4) {
+  if (src_stride_argb == width * 4 && dst_stride_bgra == width * 4 &&
+      (ptrdiff_t)width * height <= INT_MAX) {
     width *= height;
     height = 1;
     src_stride_argb = dst_stride_bgra = 0;
@@ -3479,17 +3503,19 @@ int ARGBToABGR(const uint8_t* src_argb,
   int y;
   void (*ARGBToABGRRow)(const uint8_t* src_argb, uint8_t* dst_abgr, int width) =
       ARGBToABGRRow_C;
-  if (!src_argb || !dst_abgr || width <= 0 || height == 0) {
+  if (!src_argb || !dst_abgr || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_argb = src_argb + (ptrdiff_t)(height - 1) * src_stride_argb;
     src_stride_argb = -src_stride_argb;
   }
   // Coalesce rows.
-  if (src_stride_argb == width * 4 && dst_stride_abgr == width * 4) {
+  if (src_stride_argb == width * 4 && dst_stride_abgr == width * 4 &&
+      (ptrdiff_t)width * height <= INT_MAX) {
     width *= height;
     height = 1;
     src_stride_argb = dst_stride_abgr = 0;
@@ -3532,17 +3558,19 @@ int RGBAToARGB(const uint8_t* src_rgba,
   int y;
   void (*RGBAToARGBRow)(const uint8_t* src_rgba, uint8_t* dst_argb, int width) =
       RGBAToARGBRow_C;
-  if (!src_rgba || !dst_argb || width <= 0 || height == 0) {
+  if (!src_rgba || !dst_argb || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src_rgba = src_rgba + (height - 1) * src_stride_rgba;
+    src_rgba = src_rgba + (ptrdiff_t)(height - 1) * src_stride_rgba;
     src_stride_rgba = -src_stride_rgba;
   }
   // Coalesce rows.
-  if (src_stride_rgba == width * 4 && dst_stride_argb == width * 4) {
+  if (src_stride_rgba == width * 4 && dst_stride_argb == width * 4 &&
+      (ptrdiff_t)width * height <= INT_MAX) {
     width *= height;
     height = 1;
     src_stride_rgba = dst_stride_argb = 0;
@@ -3573,17 +3601,19 @@ int AR64ToAB64(const uint16_t* src_ar64,
   int y;
   void (*AR64ToAB64Row)(const uint16_t* src_ar64, uint16_t* dst_ab64,
                         int width) = AR64ToAB64Row_C;
-  if (!src_ar64 || !dst_ab64 || width <= 0 || height == 0) {
+  if (!src_ar64 || !dst_ab64 || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src_ar64 = src_ar64 + (height - 1) * src_stride_ar64;
+    src_ar64 = src_ar64 + (ptrdiff_t)(height - 1) * src_stride_ar64;
     src_stride_ar64 = -src_stride_ar64;
   }
   // Coalesce rows.
-  if (src_stride_ar64 == width * 4 && dst_stride_ab64 == width * 4) {
+  if (src_stride_ar64 == width * 4 && dst_stride_ab64 == width * 4 &&
+      (ptrdiff_t)width * height <= INT_MAX) {
     width *= height;
     height = 1;
     src_stride_ar64 = dst_stride_ab64 = 0;
@@ -3615,17 +3645,19 @@ int RGB24ToARGB(const uint8_t* src_rgb24,
   int y;
   void (*RGB24ToARGBRow)(const uint8_t* src_rgb, uint8_t* dst_argb, int width) =
       RGB24ToARGBRow_C;
-  if (!src_rgb24 || !dst_argb || width <= 0 || height == 0) {
+  if (!src_rgb24 || !dst_argb || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src_rgb24 = src_rgb24 + (height - 1) * src_stride_rgb24;
+    src_rgb24 = src_rgb24 + (ptrdiff_t)(height - 1) * src_stride_rgb24;
     src_stride_rgb24 = -src_stride_rgb24;
   }
   // Coalesce rows.
-  if (src_stride_rgb24 == width * 3 && dst_stride_argb == width * 4) {
+  if (src_stride_rgb24 == width * 3 && dst_stride_argb == width * 4 &&
+      (ptrdiff_t)width * height <= INT_MAX) {
     width *= height;
     height = 1;
     src_stride_rgb24 = dst_stride_argb = 0;
@@ -3635,6 +3667,22 @@ int RGB24ToARGB(const uint8_t* src_rgb24,
     RGB24ToARGBRow = RGB24ToARGBRow_Any_SSSE3;
     if (IS_ALIGNED(width, 16)) {
       RGB24ToARGBRow = RGB24ToARGBRow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_RGB24TOARGBROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    RGB24ToARGBRow = RGB24ToARGBRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      RGB24ToARGBRow = RGB24ToARGBRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_RGB24TOARGBROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    RGB24ToARGBRow = RGB24ToARGBRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 64)) {
+      RGB24ToARGBRow = RGB24ToARGBRow_AVX512BW;
     }
   }
 #endif
@@ -3672,7 +3720,6 @@ int RGB24ToARGB(const uint8_t* src_rgb24,
     RGB24ToARGBRow = RGB24ToARGBRow_RVV;
   }
 #endif
-
   for (y = 0; y < height; ++y) {
     RGB24ToARGBRow(src_rgb24, dst_argb, width);
     src_rgb24 += src_stride_rgb24;
@@ -3692,17 +3739,18 @@ int RAWToARGB(const uint8_t* src_raw,
   int y;
   void (*RAWToARGBRow)(const uint8_t* src_rgb, uint8_t* dst_argb, int width) =
       RAWToARGBRow_C;
-  if (!src_raw || !dst_argb || width <= 0 || height == 0) {
+  if (!src_raw || !dst_argb || width <= 0 || height == 0 || height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src_raw = src_raw + (height - 1) * src_stride_raw;
+    src_raw = src_raw + (ptrdiff_t)(height - 1) * src_stride_raw;
     src_stride_raw = -src_stride_raw;
   }
   // Coalesce rows.
-  if (src_stride_raw == width * 3 && dst_stride_argb == width * 4) {
+  if (src_stride_raw == width * 3 && dst_stride_argb == width * 4 &&
+      (ptrdiff_t)width * height <= INT_MAX) {
     width *= height;
     height = 1;
     src_stride_raw = dst_stride_argb = 0;
@@ -3720,6 +3768,14 @@ int RAWToARGB(const uint8_t* src_raw,
     RAWToARGBRow = RAWToARGBRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
       RAWToARGBRow = RAWToARGBRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_RAWTOARGBROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    RAWToARGBRow = RAWToARGBRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 64)) {
+      RAWToARGBRow = RAWToARGBRow_AVX512BW;
     }
   }
 #endif
@@ -3777,17 +3833,18 @@ int RAWToRGBA(const uint8_t* src_raw,
   int y;
   void (*RAWToRGBARow)(const uint8_t* src_rgb, uint8_t* dst_rgba, int width) =
       RAWToRGBARow_C;
-  if (!src_raw || !dst_rgba || width <= 0 || height == 0) {
+  if (!src_raw || !dst_rgba || width <= 0 || height == 0 || height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src_raw = src_raw + (height - 1) * src_stride_raw;
+    src_raw = src_raw + (ptrdiff_t)(height - 1) * src_stride_raw;
     src_stride_raw = -src_stride_raw;
   }
   // Coalesce rows.
-  if (src_stride_raw == width * 3 && dst_stride_rgba == width * 4) {
+  if (src_stride_raw == width * 3 && dst_stride_rgba == width * 4 &&
+      (ptrdiff_t)width * height <= INT_MAX) {
     width *= height;
     height = 1;
     src_stride_raw = dst_stride_rgba = 0;
@@ -3838,29 +3895,24 @@ int RGB565ToARGB(const uint8_t* src_rgb565,
   int y;
   void (*RGB565ToARGBRow)(const uint8_t* src_rgb565, uint8_t* dst_argb,
                           int width) = RGB565ToARGBRow_C;
-  if (!src_rgb565 || !dst_argb || width <= 0 || height == 0) {
+  if (!src_rgb565 || !dst_argb || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src_rgb565 = src_rgb565 + (height - 1) * src_stride_rgb565;
+    src_rgb565 = src_rgb565 + (ptrdiff_t)(height - 1) * src_stride_rgb565;
     src_stride_rgb565 = -src_stride_rgb565;
   }
   // Coalesce rows.
-  if (src_stride_rgb565 == width * 2 && dst_stride_argb == width * 4) {
+  if (src_stride_rgb565 == width * 2 && dst_stride_argb == width * 4 &&
+      (ptrdiff_t)width * height <= INT_MAX) {
     width *= height;
     height = 1;
     src_stride_rgb565 = dst_stride_argb = 0;
   }
-#if defined(HAS_RGB565TOARGBROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    RGB565ToARGBRow = RGB565ToARGBRow_Any_SSE2;
-    if (IS_ALIGNED(width, 8)) {
-      RGB565ToARGBRow = RGB565ToARGBRow_SSE2;
-    }
-  }
-#endif
+
 #if defined(HAS_RGB565TOARGBROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     RGB565ToARGBRow = RGB565ToARGBRow_Any_AVX2;
@@ -3913,29 +3965,24 @@ int ARGB1555ToARGB(const uint8_t* src_argb1555,
   int y;
   void (*ARGB1555ToARGBRow)(const uint8_t* src_argb1555, uint8_t* dst_argb,
                             int width) = ARGB1555ToARGBRow_C;
-  if (!src_argb1555 || !dst_argb || width <= 0 || height == 0) {
+  if (!src_argb1555 || !dst_argb || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src_argb1555 = src_argb1555 + (height - 1) * src_stride_argb1555;
+    src_argb1555 = src_argb1555 + (ptrdiff_t)(height - 1) * src_stride_argb1555;
     src_stride_argb1555 = -src_stride_argb1555;
   }
   // Coalesce rows.
-  if (src_stride_argb1555 == width * 2 && dst_stride_argb == width * 4) {
+  if (src_stride_argb1555 == width * 2 && dst_stride_argb == width * 4 &&
+      (ptrdiff_t)width * height <= INT_MAX) {
     width *= height;
     height = 1;
     src_stride_argb1555 = dst_stride_argb = 0;
   }
-#if defined(HAS_ARGB1555TOARGBROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    ARGB1555ToARGBRow = ARGB1555ToARGBRow_Any_SSE2;
-    if (IS_ALIGNED(width, 8)) {
-      ARGB1555ToARGBRow = ARGB1555ToARGBRow_SSE2;
-    }
-  }
-#endif
+
 #if defined(HAS_ARGB1555TOARGBROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     ARGB1555ToARGBRow = ARGB1555ToARGBRow_Any_AVX2;
@@ -3993,29 +4040,24 @@ int ARGB4444ToARGB(const uint8_t* src_argb4444,
   int y;
   void (*ARGB4444ToARGBRow)(const uint8_t* src_argb4444, uint8_t* dst_argb,
                             int width) = ARGB4444ToARGBRow_C;
-  if (!src_argb4444 || !dst_argb || width <= 0 || height == 0) {
+  if (!src_argb4444 || !dst_argb || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src_argb4444 = src_argb4444 + (height - 1) * src_stride_argb4444;
+    src_argb4444 = src_argb4444 + (ptrdiff_t)(height - 1) * src_stride_argb4444;
     src_stride_argb4444 = -src_stride_argb4444;
   }
   // Coalesce rows.
-  if (src_stride_argb4444 == width * 2 && dst_stride_argb == width * 4) {
+  if (src_stride_argb4444 == width * 2 && dst_stride_argb == width * 4 &&
+      (ptrdiff_t)width * height <= INT_MAX) {
     width *= height;
     height = 1;
     src_stride_argb4444 = dst_stride_argb = 0;
   }
-#if defined(HAS_ARGB4444TOARGBROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    ARGB4444ToARGBRow = ARGB4444ToARGBRow_Any_SSE2;
-    if (IS_ALIGNED(width, 8)) {
-      ARGB4444ToARGBRow = ARGB4444ToARGBRow_SSE2;
-    }
-  }
-#endif
+
 #if defined(HAS_ARGB4444TOARGBROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     ARGB4444ToARGBRow = ARGB4444ToARGBRow_Any_AVX2;
@@ -4066,17 +4108,19 @@ int AR30ToARGB(const uint8_t* src_ar30,
                int width,
                int height) {
   int y;
-  if (!src_ar30 || !dst_argb || width <= 0 || height == 0) {
+  if (!src_ar30 || !dst_argb || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src_ar30 = src_ar30 + (height - 1) * src_stride_ar30;
+    src_ar30 = src_ar30 + (ptrdiff_t)(height - 1) * src_stride_ar30;
     src_stride_ar30 = -src_stride_ar30;
   }
   // Coalesce rows.
-  if (src_stride_ar30 == width * 4 && dst_stride_argb == width * 4) {
+  if (src_stride_ar30 == width * 4 && dst_stride_argb == width * 4 &&
+      (ptrdiff_t)width * height <= INT_MAX) {
     width *= height;
     height = 1;
     src_stride_ar30 = dst_stride_argb = 0;
@@ -4098,17 +4142,19 @@ int AR30ToABGR(const uint8_t* src_ar30,
                int width,
                int height) {
   int y;
-  if (!src_ar30 || !dst_abgr || width <= 0 || height == 0) {
+  if (!src_ar30 || !dst_abgr || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src_ar30 = src_ar30 + (height - 1) * src_stride_ar30;
+    src_ar30 = src_ar30 + (ptrdiff_t)(height - 1) * src_stride_ar30;
     src_stride_ar30 = -src_stride_ar30;
   }
   // Coalesce rows.
-  if (src_stride_ar30 == width * 4 && dst_stride_abgr == width * 4) {
+  if (src_stride_ar30 == width * 4 && dst_stride_abgr == width * 4 &&
+      (ptrdiff_t)width * height <= INT_MAX) {
     width *= height;
     height = 1;
     src_stride_ar30 = dst_stride_abgr = 0;
@@ -4130,17 +4176,19 @@ int AR30ToAB30(const uint8_t* src_ar30,
                int width,
                int height) {
   int y;
-  if (!src_ar30 || !dst_ab30 || width <= 0 || height == 0) {
+  if (!src_ar30 || !dst_ab30 || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src_ar30 = src_ar30 + (height - 1) * src_stride_ar30;
+    src_ar30 = src_ar30 + (ptrdiff_t)(height - 1) * src_stride_ar30;
     src_stride_ar30 = -src_stride_ar30;
   }
   // Coalesce rows.
-  if (src_stride_ar30 == width * 4 && dst_stride_ab30 == width * 4) {
+  if (src_stride_ar30 == width * 4 && dst_stride_ab30 == width * 4 &&
+      (ptrdiff_t)width * height <= INT_MAX) {
     width *= height;
     height = 1;
     src_stride_ar30 = dst_stride_ab30 = 0;
@@ -4164,17 +4212,19 @@ int AR64ToARGB(const uint16_t* src_ar64,
   int y;
   void (*AR64ToARGBRow)(const uint16_t* src_ar64, uint8_t* dst_argb,
                         int width) = AR64ToARGBRow_C;
-  if (!src_ar64 || !dst_argb || width <= 0 || height == 0) {
+  if (!src_ar64 || !dst_argb || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src_ar64 = src_ar64 + (height - 1) * src_stride_ar64;
+    src_ar64 = src_ar64 + (ptrdiff_t)(height - 1) * src_stride_ar64;
     src_stride_ar64 = -src_stride_ar64;
   }
   // Coalesce rows.
-  if (src_stride_ar64 == width * 4 && dst_stride_argb == width * 4) {
+  if (src_stride_ar64 == width * 4 && dst_stride_argb == width * 4 &&
+      (ptrdiff_t)width * height <= INT_MAX) {
     width *= height;
     height = 1;
     src_stride_ar64 = dst_stride_argb = 0;
@@ -4228,17 +4278,19 @@ int AB64ToARGB(const uint16_t* src_ab64,
   int y;
   void (*AB64ToARGBRow)(const uint16_t* src_ar64, uint8_t* dst_argb,
                         int width) = AB64ToARGBRow_C;
-  if (!src_ab64 || !dst_argb || width <= 0 || height == 0) {
+  if (!src_ab64 || !dst_argb || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src_ab64 = src_ab64 + (height - 1) * src_stride_ab64;
+    src_ab64 = src_ab64 + (ptrdiff_t)(height - 1) * src_stride_ab64;
     src_stride_ab64 = -src_stride_ab64;
   }
   // Coalesce rows.
-  if (src_stride_ab64 == width * 4 && dst_stride_argb == width * 4) {
+  if (src_stride_ab64 == width * 4 && dst_stride_argb == width * 4 &&
+      (ptrdiff_t)width * height <= INT_MAX) {
     width *= height;
     height = 1;
     src_stride_ab64 = dst_stride_argb = 0;
@@ -4297,13 +4349,14 @@ int NV12ToARGBMatrix(const uint8_t* src_y,
       const uint8_t* y_buf, const uint8_t* uv_buf, uint8_t* rgb_buf,
       const struct YuvConstants* yuvconstants, int width) = NV12ToARGBRow_C;
   assert(yuvconstants);
-  if (!src_y || !src_uv || !dst_argb || width <= 0 || height == 0) {
+  if (!src_y || !src_uv || !dst_argb || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_argb = dst_argb + (ptrdiff_t)(height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
 #if defined(HAS_NV12TOARGBROW_SSSE3)
@@ -4389,13 +4442,14 @@ int NV21ToARGBMatrix(const uint8_t* src_y,
       const uint8_t* y_buf, const uint8_t* uv_buf, uint8_t* rgb_buf,
       const struct YuvConstants* yuvconstants, int width) = NV21ToARGBRow_C;
   assert(yuvconstants);
-  if (!src_y || !src_vu || !dst_argb || width <= 0 || height == 0) {
+  if (!src_y || !src_vu || !dst_argb || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_argb = dst_argb + (ptrdiff_t)(height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
 #if defined(HAS_NV21TOARGBROW_SSSE3)
@@ -4540,13 +4594,14 @@ int NV12ToRGB24Matrix(const uint8_t* src_y,
       const uint8_t* y_buf, const uint8_t* uv_buf, uint8_t* rgb_buf,
       const struct YuvConstants* yuvconstants, int width) = NV12ToRGB24Row_C;
   assert(yuvconstants);
-  if (!src_y || !src_uv || !dst_rgb24 || width <= 0 || height == 0) {
+  if (!src_y || !src_uv || !dst_rgb24 || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_rgb24 = dst_rgb24 + (height - 1) * dst_stride_rgb24;
+    dst_rgb24 = dst_rgb24 + (ptrdiff_t)(height - 1) * dst_stride_rgb24;
     dst_stride_rgb24 = -dst_stride_rgb24;
   }
 #if defined(HAS_NV12TORGB24ROW_NEON)
@@ -4616,13 +4671,14 @@ int NV21ToRGB24Matrix(const uint8_t* src_y,
       const uint8_t* y_buf, const uint8_t* uv_buf, uint8_t* rgb_buf,
       const struct YuvConstants* yuvconstants, int width) = NV21ToRGB24Row_C;
   assert(yuvconstants);
-  if (!src_y || !src_vu || !dst_rgb24 || width <= 0 || height == 0) {
+  if (!src_y || !src_vu || !dst_rgb24 || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_rgb24 = dst_rgb24 + (height - 1) * dst_stride_rgb24;
+    dst_rgb24 = dst_rgb24 + (ptrdiff_t)(height - 1) * dst_stride_rgb24;
     dst_stride_rgb24 = -dst_stride_rgb24;
   }
 #if defined(HAS_NV21TORGB24ROW_NEON)
@@ -4746,13 +4802,14 @@ int NV21ToYUV24(const uint8_t* src_y,
   int y;
   void (*NV21ToYUV24Row)(const uint8_t* src_y, const uint8_t* src_vu,
                          uint8_t* dst_yuv24, int width) = NV21ToYUV24Row_C;
-  if (!src_y || !src_vu || !dst_yuv24 || width <= 0 || height == 0) {
+  if (!src_y || !src_vu || !dst_yuv24 || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_yuv24 = dst_yuv24 + (height - 1) * dst_stride_yuv24;
+    dst_yuv24 = dst_yuv24 + (ptrdiff_t)(height - 1) * dst_stride_yuv24;
     dst_stride_yuv24 = -dst_stride_yuv24;
   }
 #if defined(HAS_NV21TOYUV24ROW_NEON)
@@ -4803,17 +4860,19 @@ int YUY2ToARGBMatrix(const uint8_t* src_yuy2,
   void (*YUY2ToARGBRow)(const uint8_t* src_yuy2, uint8_t* dst_argb,
                         const struct YuvConstants* yuvconstants, int width) =
       YUY2ToARGBRow_C;
-  if (!src_yuy2 || !dst_argb || width <= 0 || height == 0) {
+  if (!src_yuy2 || !dst_argb || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src_yuy2 = src_yuy2 + (height - 1) * src_stride_yuy2;
+    src_yuy2 = src_yuy2 + (ptrdiff_t)(height - 1) * src_stride_yuy2;
     src_stride_yuy2 = -src_stride_yuy2;
   }
   // Coalesce rows.
-  if (src_stride_yuy2 == width * 2 && dst_stride_argb == width * 4) {
+  if (src_stride_yuy2 == width * 2 && dst_stride_argb == width * 4 &&
+      (ptrdiff_t)width * height <= INT_MAX) {
     width *= height;
     height = 1;
     src_stride_yuy2 = dst_stride_argb = 0;
@@ -4893,17 +4952,19 @@ int UYVYToARGBMatrix(const uint8_t* src_uyvy,
   void (*UYVYToARGBRow)(const uint8_t* src_uyvy, uint8_t* dst_argb,
                         const struct YuvConstants* yuvconstants, int width) =
       UYVYToARGBRow_C;
-  if (!src_uyvy || !dst_argb || width <= 0 || height == 0) {
+  if (!src_uyvy || !dst_argb || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src_uyvy = src_uyvy + (height - 1) * src_stride_uyvy;
+    src_uyvy = src_uyvy + (ptrdiff_t)(height - 1) * src_stride_uyvy;
     src_stride_uyvy = -src_stride_uyvy;
   }
   // Coalesce rows.
-  if (src_stride_uyvy == width * 2 && dst_stride_argb == width * 4) {
+  if (src_stride_uyvy == width * 2 && dst_stride_argb == width * 4 &&
+      (ptrdiff_t)width * height <= INT_MAX) {
     width *= height;
     height = 1;
     src_stride_uyvy = dst_stride_argb = 0;
@@ -5005,14 +5066,15 @@ int Android420ToARGBMatrix(const uint8_t* src_y,
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
   assert(yuvconstants);
-  if (!src_y || !src_u || !src_v || !dst_argb || width <= 0 || height == 0) {
+  if (!src_y || !src_u || !src_v || !dst_argb || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
     halfheight = (height + 1) >> 1;
-    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_argb = dst_argb + (ptrdiff_t)(height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
 
@@ -5035,7 +5097,10 @@ int Android420ToARGBMatrix(const uint8_t* src_y,
   }
 
   // General case fallback creates NV12
-  align_buffer_64(plane_uv, halfwidth * 2 * halfheight);
+  const uint64_t uv_size = (uint64_t)halfwidth * 2 * halfheight;
+  if (uv_size > SIZE_MAX)
+    return 1;
+  align_buffer_64(plane_uv, (size_t)uv_size);
   if (!plane_uv)
     return 1;
   dst_uv = plane_uv;
@@ -5108,13 +5173,14 @@ int I422ToRGBAMatrix(const uint8_t* src_y,
                         const struct YuvConstants* yuvconstants, int width) =
       I422ToRGBARow_C;
   assert(yuvconstants);
-  if (!src_y || !src_u || !src_v || !dst_rgba || width <= 0 || height == 0) {
+  if (!src_y || !src_u || !src_v || !dst_rgba || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_rgba = dst_rgba + (height - 1) * dst_stride_rgba;
+    dst_rgba = dst_rgba + (ptrdiff_t)(height - 1) * dst_stride_rgba;
     dst_stride_rgba = -dst_stride_rgba;
   }
 #if defined(HAS_I422TORGBAROW_SSSE3)
@@ -5235,13 +5301,14 @@ int NV12ToRGB565Matrix(const uint8_t* src_y,
       const uint8_t* y_buf, const uint8_t* uv_buf, uint8_t* rgb_buf,
       const struct YuvConstants* yuvconstants, int width) = NV12ToRGB565Row_C;
   assert(yuvconstants);
-  if (!src_y || !src_uv || !dst_rgb565 || width <= 0 || height == 0) {
+  if (!src_y || !src_uv || !dst_rgb565 || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_rgb565 = dst_rgb565 + (height - 1) * dst_stride_rgb565;
+    dst_rgb565 = dst_rgb565 + (ptrdiff_t)(height - 1) * dst_stride_rgb565;
     dst_stride_rgb565 = -dst_stride_rgb565;
   }
 #if defined(HAS_NV12TORGB565ROW_SSSE3)
@@ -5330,13 +5397,14 @@ int I420ToRGBAMatrix(const uint8_t* src_y,
                         const struct YuvConstants* yuvconstants, int width) =
       I422ToRGBARow_C;
   assert(yuvconstants);
-  if (!src_y || !src_u || !src_v || !dst_rgba || width <= 0 || height == 0) {
+  if (!src_y || !src_u || !src_v || !dst_rgba || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_rgba = dst_rgba + (height - 1) * dst_stride_rgba;
+    dst_rgba = dst_rgba + (ptrdiff_t)(height - 1) * dst_stride_rgba;
     dst_stride_rgba = -dst_stride_rgba;
   }
 #if defined(HAS_I422TORGBAROW_SSSE3)
@@ -5462,13 +5530,14 @@ int I420ToRGB24Matrix(const uint8_t* src_y,
                          const struct YuvConstants* yuvconstants, int width) =
       I422ToRGB24Row_C;
   assert(yuvconstants);
-  if (!src_y || !src_u || !src_v || !dst_rgb24 || width <= 0 || height == 0) {
+  if (!src_y || !src_u || !src_v || !dst_rgb24 || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_rgb24 = dst_rgb24 + (height - 1) * dst_stride_rgb24;
+    dst_rgb24 = dst_rgb24 + (ptrdiff_t)(height - 1) * dst_stride_rgb24;
     dst_stride_rgb24 = -dst_stride_rgb24;
   }
 #if defined(HAS_I422TORGB24ROW_SSSE3)
@@ -5484,6 +5553,22 @@ int I420ToRGB24Matrix(const uint8_t* src_y,
     I422ToRGB24Row = I422ToRGB24Row_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
       I422ToRGB24Row = I422ToRGB24Row_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_I422TORGB24ROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    I422ToRGB24Row = I422ToRGB24Row_Any_AVX512BW;
+    if (IS_ALIGNED(width, 32)) {
+      I422ToRGB24Row = I422ToRGB24Row_AVX512BW;
+    }
+  }
+#endif
+#if defined(HAS_I422TORGB24ROW_AVX512VBMI)
+  if (TestCpuFlag(kCpuHasAVX512VBMI)) {
+    I422ToRGB24Row = I422ToRGB24Row_Any_AVX512VBMI;
+    if (IS_ALIGNED(width, 32)) {
+      I422ToRGB24Row = I422ToRGB24Row_AVX512VBMI;
     }
   }
 #endif
@@ -5666,13 +5751,14 @@ int I422ToRGB24Matrix(const uint8_t* src_y,
                          const struct YuvConstants* yuvconstants, int width) =
       I422ToRGB24Row_C;
   assert(yuvconstants);
-  if (!src_y || !src_u || !src_v || !dst_rgb24 || width <= 0 || height == 0) {
+  if (!src_y || !src_u || !src_v || !dst_rgb24 || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_rgb24 = dst_rgb24 + (height - 1) * dst_stride_rgb24;
+    dst_rgb24 = dst_rgb24 + (ptrdiff_t)(height - 1) * dst_stride_rgb24;
     dst_stride_rgb24 = -dst_stride_rgb24;
   }
 #if defined(HAS_I422TORGB24ROW_SSSE3)
@@ -5688,6 +5774,22 @@ int I422ToRGB24Matrix(const uint8_t* src_y,
     I422ToRGB24Row = I422ToRGB24Row_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
       I422ToRGB24Row = I422ToRGB24Row_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_I422TORGB24ROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    I422ToRGB24Row = I422ToRGB24Row_Any_AVX512BW;
+    if (IS_ALIGNED(width, 32)) {
+      I422ToRGB24Row = I422ToRGB24Row_AVX512BW;
+    }
+  }
+#endif
+#if defined(HAS_I422TORGB24ROW_AVX512VBMI)
+  if (TestCpuFlag(kCpuHasAVX512VBMI)) {
+    I422ToRGB24Row = I422ToRGB24Row_Any_AVX512VBMI;
+    if (IS_ALIGNED(width, 32)) {
+      I422ToRGB24Row = I422ToRGB24Row_AVX512VBMI;
     }
   }
 #endif
@@ -5795,13 +5897,13 @@ int I420ToARGB1555(const uint8_t* src_y,
                             const struct YuvConstants* yuvconstants,
                             int width) = I422ToARGB1555Row_C;
   if (!src_y || !src_u || !src_v || !dst_argb1555 || width <= 0 ||
-      height == 0) {
+      height == 0 || height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_argb1555 = dst_argb1555 + (height - 1) * dst_stride_argb1555;
+    dst_argb1555 = dst_argb1555 + (ptrdiff_t)(height - 1) * dst_stride_argb1555;
     dst_stride_argb1555 = -dst_stride_argb1555;
   }
 #if defined(HAS_I422TOARGB1555ROW_SSSE3)
@@ -5886,13 +5988,13 @@ int I420ToARGB4444(const uint8_t* src_y,
                             const struct YuvConstants* yuvconstants,
                             int width) = I422ToARGB4444Row_C;
   if (!src_y || !src_u || !src_v || !dst_argb4444 || width <= 0 ||
-      height == 0) {
+      height == 0 || height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_argb4444 = dst_argb4444 + (height - 1) * dst_stride_argb4444;
+    dst_argb4444 = dst_argb4444 + (ptrdiff_t)(height - 1) * dst_stride_argb4444;
     dst_stride_argb4444 = -dst_stride_argb4444;
   }
 #if defined(HAS_I422TOARGB4444ROW_SSSE3)
@@ -5978,13 +6080,14 @@ int I420ToRGB565Matrix(const uint8_t* src_y,
                           const struct YuvConstants* yuvconstants, int width) =
       I422ToRGB565Row_C;
   assert(yuvconstants);
-  if (!src_y || !src_u || !src_v || !dst_rgb565 || width <= 0 || height == 0) {
+  if (!src_y || !src_u || !src_v || !dst_rgb565 || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_rgb565 = dst_rgb565 + (height - 1) * dst_stride_rgb565;
+    dst_rgb565 = dst_rgb565 + (ptrdiff_t)(height - 1) * dst_stride_rgb565;
     dst_stride_rgb565 = -dst_stride_rgb565;
   }
 #if defined(HAS_I422TORGB565ROW_SSSE3)
@@ -6120,13 +6223,14 @@ int I422ToRGB565Matrix(const uint8_t* src_y,
                           const struct YuvConstants* yuvconstants, int width) =
       I422ToRGB565Row_C;
   assert(yuvconstants);
-  if (!src_y || !src_u || !src_v || !dst_rgb565 || width <= 0 || height == 0) {
+  if (!src_y || !src_u || !src_v || !dst_rgb565 || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_rgb565 = dst_rgb565 + (height - 1) * dst_stride_rgb565;
+    dst_rgb565 = dst_rgb565 + (ptrdiff_t)(height - 1) * dst_stride_rgb565;
     dst_stride_rgb565 = -dst_stride_rgb565;
   }
 #if defined(HAS_I422TORGB565ROW_SSSE3)
@@ -6233,13 +6337,14 @@ int I420ToRGB565Dither(const uint8_t* src_y,
   void (*ARGBToRGB565DitherRow)(const uint8_t* src_argb, uint8_t* dst_rgb,
                                 uint32_t dither4, int width) =
       ARGBToRGB565DitherRow_C;
-  if (!src_y || !src_u || !src_v || !dst_rgb565 || width <= 0 || height == 0) {
+  if (!src_y || !src_u || !src_v || !dst_rgb565 || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_rgb565 = dst_rgb565 + (height - 1) * dst_stride_rgb565;
+    dst_rgb565 = dst_rgb565 + (ptrdiff_t)(height - 1) * dst_stride_rgb565;
     dst_stride_rgb565 = -dst_stride_rgb565;
   }
   if (!dither4x4) {
@@ -6396,13 +6501,14 @@ int I420ToAR30Matrix(const uint8_t* src_y,
       I422ToAR30Row_C;
 
   assert(yuvconstants);
-  if (!src_y || !src_u || !src_v || !dst_ar30 || width <= 0 || height == 0) {
+  if (!src_y || !src_u || !src_v || !dst_ar30 || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_ar30 = dst_ar30 + (height - 1) * dst_stride_ar30;
+    dst_ar30 = dst_ar30 + (ptrdiff_t)(height - 1) * dst_stride_ar30;
     dst_stride_ar30 = -dst_stride_ar30;
   }
 
@@ -6543,13 +6649,14 @@ static int I420ToARGBMatrixBilinear(const uint8_t* src_y,
   void (*ScaleRowUp2_Linear)(const uint8_t* src_ptr, uint8_t* dst_ptr,
                              int dst_width) = ScaleRowUp2_Linear_Any_C;
   assert(yuvconstants);
-  if (!src_y || !src_u || !src_v || !dst_argb || width <= 0 || height == 0) {
+  if (!src_y || !src_u || !src_v || !dst_argb || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_argb = dst_argb + (ptrdiff_t)(height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
 #if defined(HAS_I444TOARGBROW_SSSE3)
@@ -6692,13 +6799,14 @@ static int I422ToARGBMatrixLinear(const uint8_t* src_y,
   void (*ScaleRowUp2_Linear)(const uint8_t* src_ptr, uint8_t* dst_ptr,
                              int dst_width) = ScaleRowUp2_Linear_Any_C;
   assert(yuvconstants);
-  if (!src_y || !src_u || !src_v || !dst_argb || width <= 0 || height == 0) {
+  if (!src_y || !src_u || !src_v || !dst_argb || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_argb = dst_argb + (ptrdiff_t)(height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
 #if defined(HAS_I444TOARGBROW_SSSE3)
@@ -6818,13 +6926,14 @@ static int I420ToRGB24MatrixBilinear(const uint8_t* src_y,
   void (*ScaleRowUp2_Linear)(const uint8_t* src_ptr, uint8_t* dst_ptr,
                              int dst_width) = ScaleRowUp2_Linear_Any_C;
   assert(yuvconstants);
-  if (!src_y || !src_u || !src_v || !dst_rgb24 || width <= 0 || height == 0) {
+  if (!src_y || !src_u || !src_v || !dst_rgb24 || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_rgb24 = dst_rgb24 + (height - 1) * dst_stride_rgb24;
+    dst_rgb24 = dst_rgb24 + (ptrdiff_t)(height - 1) * dst_stride_rgb24;
     dst_stride_rgb24 = -dst_stride_rgb24;
   }
 #if defined(HAS_I444TORGB24ROW_SSSE3)
@@ -6970,13 +7079,14 @@ static int I010ToAR30MatrixBilinear(const uint16_t* src_y,
   void (*ScaleRowUp2_Linear_12)(const uint16_t* src_ptr, uint16_t* dst_ptr,
                                 int dst_width) = ScaleRowUp2_Linear_16_Any_C;
   assert(yuvconstants);
-  if (!src_y || !src_u || !src_v || !dst_ar30 || width <= 0 || height == 0) {
+  if (!src_y || !src_u || !src_v || !dst_ar30 || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_ar30 = dst_ar30 + (height - 1) * dst_stride_ar30;
+    dst_ar30 = dst_ar30 + (ptrdiff_t)(height - 1) * dst_stride_ar30;
     dst_stride_ar30 = -dst_stride_ar30;
   }
 #if defined(HAS_I410TOAR30ROW_NEON)
@@ -7094,13 +7204,14 @@ static int I210ToAR30MatrixLinear(const uint16_t* src_y,
   void (*ScaleRowUp2_Linear_12)(const uint16_t* src_ptr, uint16_t* dst_ptr,
                                 int dst_width) = ScaleRowUp2_Linear_16_Any_C;
   assert(yuvconstants);
-  if (!src_y || !src_u || !src_v || !dst_ar30 || width <= 0 || height == 0) {
+  if (!src_y || !src_u || !src_v || !dst_ar30 || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_ar30 = dst_ar30 + (height - 1) * dst_stride_ar30;
+    dst_ar30 = dst_ar30 + (ptrdiff_t)(height - 1) * dst_stride_ar30;
     dst_stride_ar30 = -dst_stride_ar30;
   }
 #if defined(HAS_I410TOAR30ROW_NEON)
@@ -7197,13 +7308,14 @@ static int I010ToARGBMatrixBilinear(const uint16_t* src_y,
   void (*ScaleRowUp2_Linear_12)(const uint16_t* src_ptr, uint16_t* dst_ptr,
                                 int dst_width) = ScaleRowUp2_Linear_16_Any_C;
   assert(yuvconstants);
-  if (!src_y || !src_u || !src_v || !dst_argb || width <= 0 || height == 0) {
+  if (!src_y || !src_u || !src_v || !dst_argb || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_argb = dst_argb + (ptrdiff_t)(height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
 #if defined(HAS_I410TOARGBROW_SSSE3)
@@ -7320,13 +7432,14 @@ static int I210ToARGBMatrixLinear(const uint16_t* src_y,
   void (*ScaleRowUp2_Linear_12)(const uint16_t* src_ptr, uint16_t* dst_ptr,
                                 int dst_width) = ScaleRowUp2_Linear_16_Any_C;
   assert(yuvconstants);
-  if (!src_y || !src_u || !src_v || !dst_argb || width <= 0 || height == 0) {
+  if (!src_y || !src_u || !src_v || !dst_argb || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_argb = dst_argb + (ptrdiff_t)(height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
 #if defined(HAS_I410TOARGBROW_SSSE3)
@@ -7432,13 +7545,13 @@ static int I420AlphaToARGBMatrixBilinear(
                              int dst_width) = ScaleRowUp2_Linear_Any_C;
   assert(yuvconstants);
   if (!src_y || !src_u || !src_v || !src_a || !dst_argb || width <= 0 ||
-      height == 0) {
+      height == 0 || height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_argb = dst_argb + (ptrdiff_t)(height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
 #if defined(HAS_I444ALPHATOARGBROW_SSSE3)
@@ -7652,13 +7765,13 @@ static int I422AlphaToARGBMatrixLinear(const uint8_t* src_y,
                              int dst_width) = ScaleRowUp2_Linear_Any_C;
   assert(yuvconstants);
   if (!src_y || !src_u || !src_v || !src_a || !dst_argb || width <= 0 ||
-      height == 0) {
+      height == 0 || height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_argb = dst_argb + (ptrdiff_t)(height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
 #if defined(HAS_I444ALPHATOARGBROW_SSSE3)
@@ -7837,13 +7950,13 @@ static int I010AlphaToARGBMatrixBilinear(
                                 int dst_width) = ScaleRowUp2_Linear_16_Any_C;
   assert(yuvconstants);
   if (!src_y || !src_u || !src_v || !src_a || !dst_argb || width <= 0 ||
-      height == 0) {
+      height == 0 || height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_argb = dst_argb + (ptrdiff_t)(height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
 #if defined(HAS_I410ALPHATOARGBROW_NEON)
@@ -8031,13 +8144,13 @@ static int I210AlphaToARGBMatrixLinear(const uint16_t* src_y,
                              int dst_width) = ScaleRowUp2_Linear_16_Any_C;
   assert(yuvconstants);
   if (!src_y || !src_u || !src_v || !src_a || !dst_argb || width <= 0 ||
-      height == 0) {
+      height == 0 || height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_argb = dst_argb + (ptrdiff_t)(height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
 #if defined(HAS_I410ALPHATOARGBROW_NEON)
@@ -8179,13 +8292,14 @@ static int P010ToARGBMatrixBilinear(const uint16_t* src_y,
       const uint16_t* src_ptr, ptrdiff_t src_stride, uint16_t* dst_ptr,
       ptrdiff_t dst_stride, int dst_width) = ScaleUVRowUp2_Bilinear_16_Any_C;
   assert(yuvconstants);
-  if (!src_y || !src_uv || !dst_argb || width <= 0 || height == 0) {
+  if (!src_y || !src_uv || !dst_argb || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_argb = dst_argb + (ptrdiff_t)(height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
 #if defined(HAS_P410TOARGBROW_SSSE3)
@@ -8290,13 +8404,14 @@ static int P210ToARGBMatrixLinear(const uint16_t* src_y,
   void (*ScaleRowUp2_Linear)(const uint16_t* src_uv, uint16_t* dst_uv,
                              int dst_width) = ScaleUVRowUp2_Linear_16_Any_C;
   assert(yuvconstants);
-  if (!src_y || !src_uv || !dst_argb || width <= 0 || height == 0) {
+  if (!src_y || !src_uv || !dst_argb || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_argb = dst_argb + (ptrdiff_t)(height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
 #if defined(HAS_P410TOARGBROW_SSSE3)
@@ -8387,13 +8502,14 @@ static int P010ToAR30MatrixBilinear(const uint16_t* src_y,
       const uint16_t* src_ptr, ptrdiff_t src_stride, uint16_t* dst_ptr,
       ptrdiff_t dst_stride, int dst_width) = ScaleUVRowUp2_Bilinear_16_Any_C;
   assert(yuvconstants);
-  if (!src_y || !src_uv || !dst_ar30 || width <= 0 || height == 0) {
+  if (!src_y || !src_uv || !dst_ar30 || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_ar30 = dst_ar30 + (height - 1) * dst_stride_ar30;
+    dst_ar30 = dst_ar30 + (ptrdiff_t)(height - 1) * dst_stride_ar30;
     dst_stride_ar30 = -dst_stride_ar30;
   }
 #if defined(HAS_P410TOAR30ROW_SSSE3)
@@ -8498,13 +8614,14 @@ static int P210ToAR30MatrixLinear(const uint16_t* src_y,
   void (*ScaleRowUp2_Linear)(const uint16_t* src_uv, uint16_t* dst_uv,
                              int dst_width) = ScaleUVRowUp2_Linear_16_Any_C;
   assert(yuvconstants);
-  if (!src_y || !src_uv || !dst_ar30 || width <= 0 || height == 0) {
+  if (!src_y || !src_uv || !dst_ar30 || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_ar30 = dst_ar30 + (height - 1) * dst_stride_ar30;
+    dst_ar30 = dst_ar30 + (ptrdiff_t)(height - 1) * dst_stride_ar30;
     dst_stride_ar30 = -dst_stride_ar30;
   }
 #if defined(HAS_P410TOAR30ROW_SSSE3)
@@ -8597,13 +8714,14 @@ static int I422ToRGB24MatrixLinear(const uint8_t* src_y,
   void (*ScaleRowUp2_Linear)(const uint8_t* src_ptr, uint8_t* dst_ptr,
                              int dst_width) = ScaleRowUp2_Linear_Any_C;
   assert(yuvconstants);
-  if (!src_y || !src_u || !src_v || !dst_rgb24 || width <= 0 || height == 0) {
+  if (!src_y || !src_u || !src_v || !dst_rgb24 || width <= 0 || height == 0 ||
+      height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_rgb24 = dst_rgb24 + (height - 1) * dst_stride_rgb24;
+    dst_rgb24 = dst_rgb24 + (ptrdiff_t)(height - 1) * dst_stride_rgb24;
     dst_stride_rgb24 = -dst_stride_rgb24;
   }
 #if defined(HAS_I444TORGB24ROW_SSSE3)

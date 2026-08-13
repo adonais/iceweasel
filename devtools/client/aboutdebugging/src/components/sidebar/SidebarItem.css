@@ -4,7 +4,7 @@
 
 .sidebar-item {
   color: var(--sidebar-text-color);
-  border-radius: var(--border-radius-xsmall);
+  border-radius: var(--page-nav-button-border-radius);
   padding-inline-end: var(--category-padding);
   padding-inline-start: var(--category-padding);
   transition: background-color var(--category-transition-duration);
@@ -30,7 +30,7 @@
 }
 
 .sidebar-item:not(.sidebar-item--selectable) {
-  color: var(--secondary-text-color);
+  color: var(--text-color-deemphasized);
 }
 
 .sidebar-item--selectable:hover {

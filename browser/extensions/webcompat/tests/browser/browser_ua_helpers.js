@@ -431,6 +431,80 @@ const TESTS = {
     is(helper("X () Y"), "X () Y");
     is(helper("X (x) Y"), "X (Windows NT 10.0; Win64; x64; rv:1.1) Y");
   },
+  changeBrowserVersion(helper) {
+    UA = ORIG_UA.replaceAll(ORIG_UA_VER, "995.5");
+
+    is(helper(), undefined, "No-op");
+    is(helper(UA), UA, "No-op 2");
+    is(helper(UA, {}), UA, "No-op 3");
+    is(
+      helper(UA, { browser: "", version: "1" }),
+      UA,
+      "No-op 4 (Missing browser/ver)"
+    );
+    is(
+      helper(UA, { browser: "FireFox", version: "140" }),
+      UA,
+      "No-op 5 Missing browser/ver)"
+    );
+
+    is(helper(UA, { browser: "Firefox", version: null }), UA, "Invalid 1");
+    is(helper(UA, { browser: "Firefox", version: undefined }), UA, "Invalid 2");
+    is(helper(UA, { browser: undefined, version: "1" }), UA, "Invalid 4");
+    is(helper(UA, { browser: null, version: "1" }), UA, "Invalid 5");
+    is(helper(UA, { browser: "Chrome", version: "140" }), UA, "Invalid 6");
+
+    is(
+      helper(UA, { browser: "Firefox", version: "" }),
+      UA.replaceAll("995.5", ""),
+      "Firefox/(empty string)"
+    );
+    is(
+      helper(UA, { browser: "Firefox", version: "XXX" }),
+      UA.replaceAll("995.5", "XXX"),
+      "Firefox/XXX"
+    );
+    is(
+      helper(UA, { browser: "Firefox", version: "140" }),
+      UA.replaceAll("995.5", "140"),
+      "Firefox/140"
+    );
+    is(
+      helper(UA, { browser: "Firefox", version: "+2.2" }),
+      UA.replaceAll("995.5", "997.7"),
+      "Firefox/+2.2"
+    );
+    is(
+      helper(UA, { browser: "Firefox", version: "-2.2" }),
+      UA.replaceAll("995.5", "993.3"),
+      "Firefox/+2.2"
+    );
+
+    is(
+      helper("rv:123.0.0.0 Chrome/123.0.0.0", {
+        browser: "Chrome",
+        version: "140.2",
+      }),
+      "rv:140.2 Chrome/140.2",
+      "Chrome/140.2"
+    );
+    is(
+      helper("rv:3.2.1.0 Chrome/3.2.1.0", {
+        browser: "Chrome",
+        version: "+1.2.3.4",
+      }),
+      "rv:4.4.4.4 Chrome/4.4.4.4",
+      "Chrome/+1.2.3.4"
+    );
+    is(
+      helper("rv:3.2.1.0 Chrome/3.2.1.0", {
+        browser: "Chrome",
+        version: "-3.2.1.0",
+      }),
+      "rv:0.0.0.0 Chrome/0.0.0.0",
+      "Chrome/-3.2.1.0"
+    );
+  },
 };
 
 add_task(async function test_ua_helpers() {

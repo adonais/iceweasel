@@ -1,7 +1,7 @@
 /* Any copyright is dedicated to the Public Domain.
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
-// Tests clicks and enter key presses on UrlbarUtils.RESULT_TYPE.TIP results.
+// Tests clicks and enter key presses on UrlbarShared.RESULT_TYPE.TIP results.
 
 "use strict";
 
@@ -156,8 +156,8 @@ async function doTest({ click, buttonUrl = undefined, helpUrl = undefined }) {
 
 function makeTipResult({ buttonUrl, helpUrl, heuristic }) {
   return new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.TIP,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    type: UrlbarShared.RESULT_TYPE.TIP,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     heuristic,
     payload: {
       type: "test",
@@ -170,7 +170,7 @@ function makeTipResult({ buttonUrl, helpUrl, heuristic }) {
       ],
       helpUrl,
       helpL10n: {
-        id: "urlbar-result-menu-tip-get-help",
+        id: "urlbar-result-menu-tip-get-help2",
       },
     },
   });

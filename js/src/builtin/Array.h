@@ -24,9 +24,7 @@ class IteratorProperty;
 
 MOZ_ALWAYS_INLINE bool IdIsIndex(jsid id, uint32_t* indexp) {
   if (id.isInt()) {
-    int32_t i = id.toInt();
-    MOZ_ASSERT(i >= 0);
-    *indexp = uint32_t(i);
+    *indexp = id.toInt();
     return true;
   }
 

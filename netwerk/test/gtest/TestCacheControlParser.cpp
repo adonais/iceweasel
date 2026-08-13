@@ -1,6 +1,5 @@
-#include "gtest/gtest.h"
-
 #include "CacheControlParser.h"
+#include "gtest/gtest.h"
 
 using namespace mozilla;
 using namespace mozilla::net;

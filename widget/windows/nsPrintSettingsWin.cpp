@@ -3,10 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include "nsPrintSettingsWin.h"
 
+#include "WinUtils.h"
 #include "nsCRT.h"
 #include "nsDeviceContextSpecWin.h"
 #include "nsPrintSettingsImpl.h"
-#include "WinUtils.h"
 
 using namespace mozilla;
 

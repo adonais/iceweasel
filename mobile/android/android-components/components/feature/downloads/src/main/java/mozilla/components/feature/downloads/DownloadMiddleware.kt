@@ -190,7 +190,7 @@ class DownloadMiddleware(
             if (!downloadFileUtils.fileExists(
                     directoryPath = download.directoryPath,
                     fileName = download.fileName,
-                )
+                ) && download.status != DownloadState.Status.DOWNLOADING
             ) {
                 downloadStorage.remove(download)
                 logger.debug("Removed deleted download ${download.fileName} from the storage")

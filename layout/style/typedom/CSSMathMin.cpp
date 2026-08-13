@@ -7,6 +7,7 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/NotNull.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSMathMinBinding.h"
@@ -18,8 +19,10 @@
 namespace mozilla::dom {
 
 CSSMathMin::CSSMathMin(nsCOMPtr<nsISupports> aParent,
+                       MovingNotNull<UniquePtr<StyleNumericType>> aNumericType,
                        RefPtr<CSSNumericArray> aValues)
-    : CSSMathValue(std::move(aParent), MathValueType::MathMin),
+    : CSSMathValue(std::move(aParent), std::move(aNumericType),
+                   MathValueType::MathMin),
       mValues(std::move(aValues)) {}
 
 // static
@@ -27,13 +30,16 @@ RefPtr<CSSMathMin> CSSMathMin::Create(nsCOMPtr<nsISupports> aParent,
                                       const StyleMathMin& aMathMin) {
   nsTArray<RefPtr<CSSNumericValue>> values;
 
-  for (const auto& value : aMathMin) {
+  for (const auto& value : aMathMin.values) {
     values.AppendElement(CSSNumericValue::Create(aParent, value));
   }
 
   auto array = MakeRefPtr<CSSNumericArray>(aParent, std::move(values));
 
-  return MakeRefPtr<CSSMathMin>(std::move(aParent), std::move(array));
+  return MakeRefPtr<CSSMathMin>(
+      std::move(aParent),
+      WrapMovingNotNull(MakeUnique<StyleNumericType>(aMathMin.numeric_type)),
+      std::move(array));
 }
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(CSSMathMin, CSSMathValue)
@@ -71,13 +77,27 @@ already_AddRefed<CSSMathMin> CSSMathMin::Constructor(
     return nullptr;
   }
 
-  // XXX Step 3 is not yet implemented!
+  // Step 3.
+
+  AutoTArray<const StyleNumericType*, 8> numericTypes;
+  numericTypes.SetCapacity(values.Length());
+
+  for (const auto& value : values) {
+    numericTypes.AppendElement(&value->GetNumericType());
+  }
+
+  auto numericType = MakeUnique<StyleNumericType>();
+  if (!Servo_NumericType_AddTypes(&numericTypes, numericType.get())) {
+    aRv.ThrowTypeError("Incompatible types");
+    return nullptr;
+  }
 
   // Step 4.
 
   auto array = MakeRefPtr<CSSNumericArray>(global, std::move(values));
 
-  return MakeAndAddRef<CSSMathMin>(global, std::move(array));
+  return MakeAndAddRef<CSSMathMin>(
+      global, WrapMovingNotNull(std::move(numericType)), std::move(array));
 }
 
 CSSNumericArray* CSSMathMin::Values() const { return mValues; }
@@ -110,7 +130,7 @@ StyleMathMin CSSMathMin::ToStyleMathMin() const {
     values.AppendElement(value->ToStyleNumericValue());
   }
 
-  return StyleMathMin{std::move(values)};
+  return StyleMathMin{GetNumericType(), std::move(values)};
 }
 
 const CSSMathMin& CSSMathValue::GetAsCSSMathMin() const {

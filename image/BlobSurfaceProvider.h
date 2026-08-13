@@ -5,15 +5,15 @@
 #ifndef MOZILLA_IMAGE_BLOBSURFACEPROVIDER_H_
 #define MOZILLA_IMAGE_BLOBSURFACEPROVIDER_H_
 
+#include <vector>
+
+#include "ISurfaceProvider.h"
+#include "ImageRegion.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/SVGImageContext.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/DrawEventRecorderTypes.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
-#include "ImageRegion.h"
-#include "ISurfaceProvider.h"
-
-#include <vector>
 
 namespace mozilla {
 namespace image {

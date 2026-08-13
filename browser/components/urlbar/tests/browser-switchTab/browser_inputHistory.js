@@ -67,7 +67,7 @@ add_task(async function test_adaptive_with_search_term_and_switch_tab() {
 
   Assert.equal(
     result2.type,
-    UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+    UrlbarShared.RESULT_TYPE.TAB_SWITCH,
     "Selected entry should be tab switch"
   );
   Assert.equal(result2.url, urls[1]);
@@ -133,7 +133,7 @@ add_task(
       let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 1);
       Assert.equal(url, result.url, `Url is the first non-heuristic result`);
       Assert.equal(
-        UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+        UrlbarShared.RESULT_TYPE.TAB_SWITCH,
         result.type,
         "Should be a switch tab result"
       );

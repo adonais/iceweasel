@@ -9,12 +9,12 @@
 
 #include "mozilla/WeakPtr.h"
 
-#include "nsStubMutationObserver.h"
 #include "nsHashKeys.h"
 #include "nsIObserver.h"
 #include "nsMenuBarX.h"
-#include "nsTHashMap.h"
 #include "nsString.h"
+#include "nsStubMutationObserver.h"
+#include "nsTHashMap.h"
 
 class nsMenuItemX;
 class nsChangeObserver;

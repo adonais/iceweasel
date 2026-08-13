@@ -4,6 +4,9 @@
 
   "compilerOptions": {
     "checkJs": true,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "noImplicitThis": false,
     "plugins": [
       {
         "transform": "../../../tools/ts/plugins/checkRootOnly.js",

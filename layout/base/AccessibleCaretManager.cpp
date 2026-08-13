@@ -619,7 +619,7 @@ nsresult AccessibleCaretManager::SelectWordOrShortcut(const nsPoint& aPoint) {
     return NS_ERROR_FAILURE;
   }
 
-  nsIFrame* focusableFrame = GetFocusableFrame(ptFrame);
+  AutoWeakFrame focusableFrame = GetFocusableFrame(ptFrame);
 
 #ifdef DEBUG_FRAME_DUMP
   AC_LOG("%s: Found %s under (%d, %d)", __FUNCTION__, ptFrame->ListTag().get(),
@@ -675,7 +675,9 @@ nsresult AccessibleCaretManager::SelectWordOrShortcut(const nsPoint& aPoint) {
     return NS_ERROR_FAILURE;
   }
 
-  // ptFrame is selectable. Now change the focus.
+  // ptFrame is selectable. Now change the focus. Note that focusableFrame may
+  // have died during NotifyIME() above, but it is fine to pass nullptr into
+  // ChangeFocusToOrClearOldFocus() to clear the old focus.
   ChangeFocusToOrClearOldFocus(focusableFrame);
   if (!ptFrame.IsAlive()) {
     // Cannot continue because ptFrame died.
@@ -1249,7 +1251,8 @@ bool AccessibleCaretManager::RestrictCaretDraggingOffsets(
                "mOffsetInFrameContent should not be negative when casting to "
                "signed integer");
   const Maybe<int32_t> cmpToInactiveCaretPos =
-      nsContentUtils::ComparePoints_AllowNegativeOffsets(
+      nsContentUtils::ComparePoints_AllowNegativeOffsets<
+          TreeKind::ShadowIncludingDOM>(
           aOffsets.content, aOffsets.StartOffset(),
           frameAndOffset.GetFrameContent(),
           static_cast<int32_t>(frameAndOffset.mOffsetInFrameContent));
@@ -1276,7 +1279,8 @@ bool AccessibleCaretManager::RestrictCaretDraggingOffsets(
   NS_ASSERTION(limit.mContentOffset >= 0,
                "limit.mContentOffset should not be negative");
   const Maybe<int32_t> cmpToLimit =
-      nsContentUtils::ComparePoints_AllowNegativeOffsets(
+      nsContentUtils::ComparePoints_AllowNegativeOffsets<
+          TreeKind::ShadowIncludingDOM>(
           aOffsets.content, aOffsets.StartOffset(), limit.mResultContent,
           limit.mContentOffset);
   if (NS_WARN_IF(!cmpToLimit)) {
@@ -1340,7 +1344,7 @@ bool AccessibleCaretManager::CompareTreePosition(const nsIFrame* aStartFrame,
   if (aStartFrame->GetContent() == aEndFrame->GetContent()) {
     return aStartOffset <= aEndOffset;
   }
-  return nsContentUtils::ComparePoints(
+  return nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
              ConstRawRangeBoundary(aStartFrame->GetContent(),
                                    static_cast<uint32_t>(aStartOffset)),
              ConstRawRangeBoundary(aEndFrame->GetContent(),

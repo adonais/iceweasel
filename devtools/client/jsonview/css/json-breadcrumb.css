@@ -1,0 +1,71 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+.json-breadcrumb {
+  align-items: center;
+  overflow-x: auto;
+  height: 22px;
+  padding-inline: 6px;
+  border-top: 1px solid var(--theme-splitter-color);
+}
+
+.breadcrumb-item {
+  color: var(--theme-body-color);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-family: var(--monospace-font-family);
+
+  &:last-of-type {
+    color: var(--theme-highlight-blue);
+  }
+}
+
+.breadcrumb-icon {
+  user-select: none;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 14px;
+  width: 14px;
+  height: 14px;
+  -moz-context-properties: fill, stroke;
+  fill: var(--theme-icon-dimmed-color);
+  stroke: var(--theme-icon-dimmed-color);
+}
+
+.breadcrumb-icon-object {
+  background-image: url("chrome://devtools/content/jsonview/images/object.svg");
+}
+.breadcrumb-icon-array {
+  background-image: url("chrome://devtools/content/jsonview/images/array.svg");
+}
+.breadcrumb-icon-string {
+  background-image: url("chrome://devtools/content/jsonview/images/string.svg");
+  background-size: 16px;
+}
+.breadcrumb-icon-number {
+  background-image: url("chrome://devtools/content/jsonview/images/number.svg");
+  background-size: 18px;
+}
+.breadcrumb-icon-boolean {
+  background-image: url("chrome://devtools/content/jsonview/images/boolean.svg");
+  background-size: 18px;
+}
+.breadcrumb-icon-null {
+  background-image: url("chrome://devtools/content/jsonview/images/null.svg");
+}
+
+.breadcrumb-separator {
+  background-image: url("chrome://devtools/skin/images/breadcrumbs-divider.svg");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 6px;
+  width: 14px;
+  height: 14px;
+  -moz-context-properties: fill;
+  fill: var(--theme-icon-dimmed-color);
+  flex-shrink: 0;
+}

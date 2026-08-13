@@ -21,6 +21,8 @@ MOZ_SRC_FILES += [
     "modules/AIWindowTabStatesManager.sys.mjs",
     "modules/AIWindowTelemetry.sys.mjs",
     "modules/AIWindowUI.sys.mjs",
+    "modules/AutoTabGrouping.sys.mjs",
+    "modules/AutoTabGroupingSuggestions.sys.mjs",
     "modules/ChatConversation.sys.mjs",
     "modules/ChatEnums.sys.mjs",
     "modules/ChatMessage.sys.mjs",

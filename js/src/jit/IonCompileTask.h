@@ -9,7 +9,6 @@
 
 #include "jit/CompilationDependencyTracker.h"
 #include "jit/MIRGenerator.h"
-
 #include "js/Utility.h"
 #include "vm/HelperThreadTask.h"
 

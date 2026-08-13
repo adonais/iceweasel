@@ -32,7 +32,7 @@ async function ensureVisible(node) {
     node.scrollIntoView();
   }
   let dwu = window.windowUtils;
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     let nodeBounds = dwu.getBoundsWithoutFlushing(node);
     if (isInPalette) {
       let paletteBounds = dwu.getBoundsWithoutFlushing(gNavToolbox.palette);

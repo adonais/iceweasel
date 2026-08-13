@@ -497,7 +497,7 @@ class ByDomObjectClass : public CountType {
     using Lookup = UniqueC16String;
 
     static js::HashNumber hash(const Lookup& lookup) {
-      return mozilla::HashString(lookup.get());
+      return mozilla::HashString(lookup.get(), js_strlen(lookup.get()));
     }
 
     static bool match(const UniqueC16String& key, const Lookup& lookup) {

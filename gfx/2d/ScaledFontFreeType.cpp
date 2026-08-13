@@ -3,12 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ScaledFontFreeType.h"
-#include "UnscaledFontFreeType.h"
-#include "NativeFontResourceFreeType.h"
+
 #include "Logging.h"
+#include "NativeFontResourceFreeType.h"
+#include "UnscaledFontFreeType.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/webrender/WebRenderTypes.h"
-
 #include "skia/include/ports/SkTypeface_cairo.h"
 
 #include FT_MULTIPLE_MASTERS_H

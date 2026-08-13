@@ -5,8 +5,9 @@
 #ifndef mozilla_image_Resolution_h
 #define mozilla_image_Resolution_h
 
-#include "mozilla/Assertions.h"
 #include <cmath>
+
+#include "mozilla/Assertions.h"
 
 namespace mozilla {
 namespace image {

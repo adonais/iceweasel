@@ -61,32 +61,47 @@ where
     T: ProfilerMarker + 'static,
 {
     let type_id = TypeId::of::<T>();
-    let mut state = DESERIALIZER_TAGS_STATE.write().unwrap();
 
-    match state.marker_type_id_to_deserializer_tag.get(&type_id) {
-        None => {
-            // It's impossible to have length more than u8.
-            let deserializer_tag = state.marker_type_functions_1_based.len() as u8 + 1;
-            debug_assert!(
-                deserializer_tag < 250,
-                "Too many rust marker payload types! Please consider increasing the profiler \
-                 buffer tag size."
-            );
-
-            state
-                .marker_type_id_to_deserializer_tag
-                .insert(type_id, deserializer_tag);
-            state
-                .marker_type_functions_1_based
-                .push(MarkerTypeFunctions {
-                    marker_type_name_fn: T::marker_type_name,
-                    marker_type_display_fn: T::marker_type_display,
-                    transmute_and_stream_fn: transmute_and_stream::<T>,
-                });
-            deserializer_tag
-        }
-        Some(deserializer_tag) => *deserializer_tag,
+    // Fast path: already-registered types only need a shared read lock.
+    if let Some(deserializer_tag) = DESERIALIZER_TAGS_STATE
+        .read()
+        .unwrap()
+        .marker_type_id_to_deserializer_tag
+        .get(&type_id)
+        .copied()
+    {
+        return deserializer_tag;
     }
+
+    // Slow path: first registration takes the write lock and re-checks.
+    let mut state = DESERIALIZER_TAGS_STATE.write().unwrap();
+    if let Some(deserializer_tag) = state
+        .marker_type_id_to_deserializer_tag
+        .get(&type_id)
+        .copied()
+    {
+        return deserializer_tag;
+    }
+
+    // It's impossible to have length more than u8.
+    let deserializer_tag = state.marker_type_functions_1_based.len() as u8 + 1;
+    debug_assert!(
+        deserializer_tag < 250,
+        "Too many rust marker payload types! Please consider increasing the profiler \
+         buffer tag size."
+    );
+
+    state
+        .marker_type_id_to_deserializer_tag
+        .insert(type_id, deserializer_tag);
+    state
+        .marker_type_functions_1_based
+        .push(MarkerTypeFunctions {
+            marker_type_name_fn: T::marker_type_name,
+            marker_type_display_fn: T::marker_type_display,
+            transmute_and_stream_fn: transmute_and_stream::<T>,
+        });
+    deserializer_tag
 }
 
 /// A guard that will be used by the marker FFI functions for getting marker type functions.

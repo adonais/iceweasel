@@ -1,6 +1,14 @@
 /* Any copyright is dedicated to the Public Domain.
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
+async function clickPermissionButton(button, urlField) {
+  if (urlField) {
+    urlField.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+  await button.updateComplete;
+  button.click();
+}
+
 /**
  * First Test
  * Checks if buttons are disabled/enabled and visible/hidden correctly.
@@ -123,11 +131,11 @@ add_task(async function checkDialogFunctionality() {
   // Test if we can add permanent exceptions
   await runTest(
     preferencesDoc,
-    elements => {
+    async elements => {
       assertListContents(elements, []);
 
       elements.url.value = "test.com";
-      elements.btnAllow.doCommand();
+      await clickPermissionButton(elements.btnAllow, elements.url);
 
       assertListContents(elements, [["http://test.com", elements.allowL10nId]]);
     },
@@ -145,11 +153,11 @@ add_task(async function checkDialogFunctionality() {
   // Test if items are retained, and if temporary exceptions are added correctly
   await runTest(
     preferencesDoc,
-    elements => {
+    async elements => {
       assertListContents(elements, [["http://test.com", elements.allowL10nId]]);
 
       elements.url.value = "1.1.1.1:8080";
-      elements.btnAllowSession.doCommand();
+      await clickPermissionButton(elements.btnAllowSession, elements.url);
 
       assertListContents(elements, [
         ["http://test.com", elements.allowL10nId],
@@ -170,10 +178,10 @@ add_task(async function checkDialogFunctionality() {
   // Test if we can remove the permissions one-by-one
   await runTest(
     preferencesDoc,
-    elements => {
+    async elements => {
       while (elements.richlistbox.itemCount) {
         elements.richlistbox.selectedIndex = 0;
-        elements.btnRemove.doCommand();
+        await clickPermissionButton(elements.btnRemove);
       }
       assertListContents(elements, []);
     },
@@ -198,21 +206,21 @@ add_task(async function checkDialogFunctionality() {
   // while other schemes are kept as they are. (Bug 1757297)
   await runTest(
     preferencesDoc,
-    elements => {
+    async elements => {
       assertListContents(elements, []);
 
       elements.url.value = "http://test.com";
-      elements.btnAllow.doCommand();
+      await clickPermissionButton(elements.btnAllow, elements.url);
 
       assertListContents(elements, [["http://test.com", elements.allowL10nId]]);
 
       elements.url.value = "https://test.com";
-      elements.btnAllow.doCommand();
+      await clickPermissionButton(elements.btnAllow, elements.url);
 
       assertListContents(elements, [["http://test.com", elements.allowL10nId]]);
 
       elements.url.value = "https://test.org";
-      elements.btnAllow.doCommand();
+      await clickPermissionButton(elements.btnAllow, elements.url);
 
       assertListContents(elements, [
         ["http://test.com", elements.allowL10nId],
@@ -220,7 +228,7 @@ add_task(async function checkDialogFunctionality() {
       ]);
 
       elements.url.value = "moz-extension://test";
-      elements.btnAllow.doCommand();
+      await clickPermissionButton(elements.btnAllow, elements.url);
 
       assertListContents(elements, [
         ["http://test.com", elements.allowL10nId],
@@ -256,8 +264,8 @@ add_task(async function checkDialogFunctionality() {
   // Test if we can remove all permissions at once
   await runTest(
     preferencesDoc,
-    elements => {
-      elements.btnRemoveAll.doCommand();
+    async elements => {
+      await clickPermissionButton(elements.btnRemoveAll);
       assertListContents(elements, []);
     },
     elements => {

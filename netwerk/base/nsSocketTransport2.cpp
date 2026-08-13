@@ -2,23 +2,23 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <algorithm>
-
 #include "nsSocketTransport2.h"
+
+#include <algorithm>
 
 #include "MockNetworkLayer.h"
 #include "MockNetworkLayerController.h"
 #include "NSSErrorsService.h"
 #include "NetworkDataCountLayer.h"
 #include "QuicSocketControl.h"
+#include "mozilla/ProfilerBandwidthCounter.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/SyncRunnable.h"
-#include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/dom/ToJSValue.h"
+#include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/net/NeckoChild.h"
 #include "mozilla/net/SSLTokensCache.h"
-#include "mozilla/ProfilerBandwidthCounter.h"
 #include "nsCOMPtr.h"
 #include "nsICancelable.h"
 #include "nsIClassInfoImpl.h"
@@ -54,11 +54,15 @@
 #  include "ShutdownLayer.h"
 #endif
 
+#if defined(MOZ_WIDGET_ANDROID)
+#  include "AndroidNetworkBlockedReason.h"
+#endif
+
 /* Following inclusions required for keepalive config not supported by NSPR. */
 #include "private/pprio.h"
 #if defined(XP_WIN)
-#  include <winsock2.h>
 #  include <mstcpip.h>
+#  include <winsock2.h>
 #elif defined(XP_UNIX)
 #  include <errno.h>
 #  include <netinet/tcp.h>
@@ -2179,6 +2183,17 @@ void nsSocketTransport::OnSocketReady(PRFileDesc* fd, int16_t outFlags) {
   if (outFlags == -1) {
     SOCKET_LOG(("socket timeout expired\n"));
     mCondition = NS_ERROR_NET_TIMEOUT;
+#if defined(MOZ_WIDGET_ANDROID)
+    // A TCP connect blocked by Android's Local Network Protection reaches
+    // us as a plain timeout, with no distinguishing errno, so we must ask
+    // the OS directly whether that's what happened. Only applies while
+    // still connecting -- a read/write timeout on an already-established
+    // socket can't be an LNP block. See bug 2053432.
+    if (mState == STATE_CONNECTING &&
+        IsConnectBlockedByAndroidLocalNetworkPermission(fd)) {
+      mCondition = NS_ERROR_OS_LOCAL_NETWORK_ACCESS_DENIED;
+    }
+#endif
     return;
   }
 
@@ -2258,6 +2273,15 @@ void nsSocketTransport::OnSocketReady(PRFileDesc* fd, int16_t outFlags) {
             !mProxyHost.IsEmpty()) {
           mCondition = NS_ERROR_PROXY_CONNECTION_REFUSED;
         }
+#if defined(MOZ_WIDGET_ANDROID)
+        // Defensive: per Android's docs a blocked TCP connect should only
+        // ever manifest as a timeout (handled above), but some OEMs/API
+        // levels may surface a synchronous failure instead. See bug
+        // 2053432.
+        else if (IsConnectBlockedByAndroidLocalNetworkPermission(fd)) {
+          mCondition = NS_ERROR_OS_LOCAL_NETWORK_ACCESS_DENIED;
+        }
+#endif
         SOCKET_LOG(("  connection failed! [reason=%" PRIx32 "]\n",
                     static_cast<uint32_t>(mCondition)));
       }
@@ -3136,8 +3160,9 @@ nsSocketTransport::SetKeepaliveVals(int32_t aIdleTime, int32_t aRetryInterval) {
 
 #ifdef ENABLE_SOCKET_TRACING
 
-#  include <stdio.h>
 #  include <ctype.h>
+#  include <stdio.h>
+
 #  include "prenv.h"
 
 static void DumpBytesToFile(const char* path, const char* header,

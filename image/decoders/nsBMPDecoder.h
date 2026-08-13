@@ -7,9 +7,9 @@
 
 #include "BMPHeaders.h"
 #include "Decoder.h"
-#include "gfxColor.h"
 #include "StreamingLexer.h"
 #include "SurfacePipe.h"
+#include "gfxColor.h"
 #include "mozilla/UniquePtr.h"
 
 namespace mozilla {

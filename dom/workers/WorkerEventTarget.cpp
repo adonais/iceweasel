@@ -90,7 +90,8 @@ class WrappedDebuggerRunnable final : public WorkerDebuggerRunnable {
  public:
   WrappedDebuggerRunnable(WorkerPrivate* aWorkerPrivate,
                           nsCOMPtr<nsIRunnable>&& aInner)
-      : WorkerDebuggerRunnable("WrappedDebuggerRunnable"),
+      : WorkerDebuggerRunnable("WrappedDebuggerRunnable",
+                               /* aIsIPCMessage */ true),
         mInner(std::move(aInner)) {}
 
   virtual bool PreDispatch(WorkerPrivate* aWorkerPrivate) override {
@@ -235,6 +236,13 @@ WorkerEventTarget::RegisterShutdownTask(nsITargetShutdownTask* aTask) {
     return NS_ERROR_UNEXPECTED;
   }
 
+  // The debugger-only target backs the RemoteWorkerDebugger's MessageChannel.
+  // Track its shutdown tasks separately so they don't keep the worker
+  // ineligible for CC (bug 1944240); they still run on worker shutdown.
+  if (mBehavior == Behavior::DebuggerOnly) {
+    return mWorkerPrivate->RegisterDebuggerShutdownTask(aTask);
+  }
+
   return mWorkerPrivate->RegisterShutdownTask(aTask);
 }
 
@@ -246,6 +254,10 @@ WorkerEventTarget::UnregisterShutdownTask(nsITargetShutdownTask* aTask) {
 
   if (!mWorkerPrivate) {
     return NS_ERROR_UNEXPECTED;
+  }
+
+  if (mBehavior == Behavior::DebuggerOnly) {
+    return mWorkerPrivate->UnregisterDebuggerShutdownTask(aTask);
   }
 
   return mWorkerPrivate->UnregisterShutdownTask(aTask);

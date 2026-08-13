@@ -68,7 +68,7 @@ class SidebarRuntimeItem extends PureComponent {
       },
       dom.button(
         {
-          className: "default-button default-button--micro qa-connect-button",
+          className: "small-button qa-connect-button",
           disabled: isConnecting,
           onClick: async () => {
             const { dispatch, runtimeId } = this.props;

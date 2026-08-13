@@ -253,6 +253,10 @@ add_task(async function test_enrolling_skeleton() {
     2,
     "Two skeleton line thick elements should be present"
   );
+  Assert.ok(
+    container.querySelector(".skeleton-image"),
+    "Skeleton image element should be present"
+  );
 
   Assert.ok(
     !content.statusCardEl,

@@ -12,6 +12,7 @@ use fluent_fallback::{
 };
 use fluent_ffi::{convert_args, FluentArgs, FluentArgument, L10nArg};
 use l10nregistry_ffi::{
+    coverage::l10nregistry_clear_coverage_cache,
     env::GeckoEnvironment,
     registry::{get_l10n_registry, GeckoL10nRegistry, GeckoResourceId},
 };
@@ -582,6 +583,7 @@ pub extern "C" fn localization_is_sync(loc: &LocalizationRc) -> bool {
 
 #[no_mangle]
 pub extern "C" fn localization_on_change(loc: &LocalizationRc) {
+    l10nregistry_clear_coverage_cache();
     loc.on_change();
 }
 

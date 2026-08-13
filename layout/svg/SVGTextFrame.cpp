@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <numbers>
 #include <numeric>
 
 #include "DOMSVGPoint.h"
@@ -3226,9 +3227,9 @@ void SVGTextFrame::PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
   while (run.mFrame) {
     nsTextFrame* frame = run.mFrame;
 
-    auto contextPaint = MakeRefPtr<SVGContextPaintImpl>();
-    DrawMode drawMode = contextPaint->Init(&aDrawTarget, initialMatrix, frame,
-                                           outerContextPaint, aImgParams);
+    auto contextPaint = MakeRefPtr<SVGContextPaint>(
+        &aDrawTarget, initialMatrix, frame, outerContextPaint, aImgParams);
+    DrawMode drawMode = contextPaint->GetDrawMode();
     if (drawMode & DrawMode::GLYPH_STROKE) {
       ctxSR.EnsureSaved(&aContext);
       // This may change the gfxContext's transform (for non-scaling stroke),
@@ -3278,9 +3279,11 @@ void SVGTextFrame::PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
                                            frame, matrixForPaintServers,
                                            aImgParams, paintSVGGlyphs);
         params.callbacks = &callbacks;
-        frame->PaintText(params, startEdge, endEdge, nsPoint(), isSelected);
+        frame->PaintText(params, startEdge, endEdge, nsPoint(), isSelected,
+                         aImgParams);
       } else {
-        frame->PaintText(params, startEdge, endEdge, nsPoint(), isSelected);
+        frame->PaintText(params, startEdge, endEdge, nsPoint(), isSelected,
+                         aImgParams);
       }
     }
 
@@ -4116,7 +4119,8 @@ float SVGTextFrame::GetRotationOfChar(dom::SVGTextContentElement* aElement,
   int32_t glyphOrientation =
       90 * (glyphRun.IsSidewaysRight() - glyphRun.IsSidewaysLeft());
 
-  return mPositions[it.TextElementCharIndex()].mAngle * 180.0 / M_PI +
+  return mPositions[it.TextElementCharIndex()].mAngle * 180.0 /
+             std::numbers::pi +
          glyphOrientation;
 }
 
@@ -4313,7 +4317,8 @@ bool SVGTextFrame::ResolvePositionsForNode(nsIContent* aContent,
       uint32_t i = 0, j = 0;
       while (i < rotate->Length() && j < count) {
         if (!mPositions[aIndex + j].mUnaddressable) {
-          mPositions[aIndex + j].mAngle = M_PI * (*rotate)[i] / 180.0;
+          mPositions[aIndex + j].mAngle =
+              std::numbers::pi * (*rotate)[i] / 180.0;
           i++;
         }
         j++;

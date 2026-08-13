@@ -7,6 +7,7 @@ clippy:
         - browser/app/nmhproxy/
         - dom/base/fragmentdirectives/
         - dom/base/rust/
+        - dom/base/speculationrules/
         - dom/fs/parent/rust/data-encoding-ffi/
         - dom/fs/parent/rust/mime-guess-ffi/
         - dom/media/gtest/
@@ -163,8 +164,45 @@ clippy:
         - toolkit/components/bitsdownload/bits_client/bits/
         # mac and windows only
         - security/manager/ssl/osclientcerts/
+    # enable the `all`, `cargo` and `pedantic` lint groups plus the `use_self`
+    # nursery lint, then opt back out of the individual lints below. The allows
+    # are emitted as `-A` flags after the group `-W` flags so they take effect.
     warn:
+        - all
+        - cargo
+        - pedantic
+        - use_self
         - needless_return
+    allow:
+        - cargo_common_metadata
+        - multiple_crate_versions
+        - missing_errors_doc
+        - missing_panics_doc
+        - must_use_candidate
+        - cast_possible_truncation
+        - too_many_lines
+        - cast_possible_wrap
+        - cast_sign_loss
+        - struct_excessive_bools
+        - cast_precision_loss
+        - cast_lossless
+        - ignored_unit_patterns
+        - similar_names
+        - float_cmp
+        - return_self_not_must_use
+        - fn_params_excessive_bools
+        - used_underscore_items
+        - should_panic_without_expect
+        - doc_markdown
+        - unused_self
+        - enum_glob_use
+        - unnested_or_patterns
+        - implicit_hasher
+        - doc_link_with_quotes
+        - format_push_string
+        - flat_map_option
+        - from_iter_instead_of_collect
+        - large_types_passed_by_value
     extensions:
         - rs
     support-files:

@@ -5,6 +5,8 @@
 #ifndef NETWERK_SCTP_DATACHANNEL_DATACHANNELPROTOCOL_H_
 #define NETWERK_SCTP_DATACHANNEL_DATACHANNELPROTOCOL_H_
 
+#include <cstdint>
+
 #if defined(__GNUC__)
 #  define SCTP_PACKED __attribute__((packed))
 #elif defined(_MSC_VER)

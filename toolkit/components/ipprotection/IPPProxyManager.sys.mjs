@@ -2,11 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   IPPChannelFilter:
     "moz-src:///toolkit/components/ipprotection/IPPChannelFilter.sys.mjs",
+  IPPLifecycleHelper:
+    "moz-src:///toolkit/components/ipprotection/IPPLifecycleHelper.sys.mjs",
   IPPNetworkUtils:
     "moz-src:///toolkit/components/ipprotection/IPPNetworkUtils.sys.mjs",
   IPPNetworkErrorObserver:
@@ -34,6 +38,37 @@ ChromeUtils.defineLazyGetter(
   () =>
     ChromeUtils.importESModule("resource://gre/modules/Timer.sys.mjs")
       .clearTimeout
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "timeout",
+  "browser.ipProtection.guardian.timeout",
+  Temporal.Duration.from({ seconds: 30 }).total("milliseconds")
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "retryAfter",
+  "browser.ipProtection.guardian.retryAfter",
+  500
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "attemptTimeout",
+  "browser.ipProtection.guardian.attemptTimeout",
+  Temporal.Duration.from({ seconds: 10 }).total("milliseconds")
+);
+
+// Floor for scheduled rotations. A freshly fetched pass that is already due for
+// rotation would otherwise schedule with a zero delay, and since a successful
+// rotation reschedules the next one, that spins into a tight rotation loop.
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "minRotationInterval",
+  "browser.ipProtection.guardian.minRotationInterval",
+  Temporal.Duration.from({ seconds: 1 }).total("milliseconds")
 );
 
 export const ERRORS = Object.freeze({
@@ -617,6 +652,55 @@ class IPPProxyManagerSingleton extends EventTarget {
   }
 
   /**
+   * Attempts getting a new ProxyPass and usage info, retrying on transient errors
+   * until the abort signal is triggered.
+   *
+   * @param {AbortSignal} abortSignal
+   * @returns {Promise<object|null>}
+   */
+  async #attemptPassRotation(abortSignal) {
+    let delay = lazy.retryAfter;
+    while (!abortSignal.aborted) {
+      let result;
+      const attemptController = new AbortController();
+      const attemptTimer = lazy.setTimeout(
+        () => attemptController.abort(ERRORS.TIMEOUT),
+        lazy.attemptTimeout
+      );
+      const attemptSignal = AbortSignal.any([
+        abortSignal,
+        attemptController.signal,
+      ]);
+      try {
+        result = await this.#getPassAndUsage(attemptSignal);
+      } catch (e) {
+        if (abortSignal.aborted) {
+          return null;
+        }
+        // A per-attempt timeout (attemptSignal aborted) or an offline error is
+        // transient: back off and retry within the overall budget instead of
+        // failing the whole rotation.
+        if (!attemptSignal.aborted && !lazy.IPPNetworkUtils.isOffline) {
+          throw e;
+        }
+      } finally {
+        lazy.clearTimeout(attemptTimer);
+      }
+      if (result && !(result.status >= 500 && result.status <= 599)) {
+        return result;
+      }
+      await scheduleCallback(
+        () => {
+          delay *= 2;
+        },
+        Temporal.Now.instant().add({ milliseconds: delay }),
+        abortSignal
+      );
+    }
+    return null;
+  }
+
+  /**
    * Given a ProxyPass, sets a timer and triggers a rotation when it's about to expire.
    *
    * @param {*} pass
@@ -629,10 +713,12 @@ class IPPProxyManagerSingleton extends EventTarget {
 
     const now = Temporal.Now.instant();
     const rotationTimePoint = pass.rotationTimePoint;
-    let msUntilRotation = now.until(rotationTimePoint).total("milliseconds");
-    if (msUntilRotation <= 0) {
-      msUntilRotation = 0;
-    }
+    // Floor the delay: an already-due pass would otherwise schedule immediately
+    // and, since a successful rotation reschedules, spin into a tight loop.
+    let msUntilRotation = Math.max(
+      now.until(rotationTimePoint).total("milliseconds"),
+      lazy.minRotationInterval
+    );
 
     lazy.logConsole.debug(
       `ProxyPass will rotate in ${now.until(rotationTimePoint).total("minutes")} minutes`
@@ -642,11 +728,12 @@ class IPPProxyManagerSingleton extends EventTarget {
       if (!this.#connection?.active) {
         return;
       }
-      lazy.logConsole.debug(`Starting scheduled ProxyPass rotation`);
-      let newPass = await this.rotateProxyPass();
-      if (newPass) {
-        this.#schedulePassRotation(newPass);
+      if (lazy.IPPLifecycleHelper.isSuspended) {
+        // Asleep/backgrounded: the wake handler will rotate once network is back.
+        return;
       }
+      lazy.logConsole.debug(`Starting scheduled ProxyPass rotation`);
+      await this.rotateProxyPass();
     }, msUntilRotation);
   }
 
@@ -661,11 +748,15 @@ class IPPProxyManagerSingleton extends EventTarget {
       return this.#rotation.promise;
     }
     const controller = new AbortController();
+    const timeoutId = lazy.setTimeout(() => {
+      controller.abort(ERRORS.TIMEOUT);
+    }, lazy.timeout);
     let { promise, resolve } = Promise.withResolvers();
     this.#rotation = { promise, controller };
     let resumed = false;
     using scopeGuard = new DisposableStack();
     scopeGuard.defer(() => {
+      lazy.clearTimeout(timeoutId);
       if (!resumed) {
         this.#connection?.abortPendingChannels();
       }
@@ -677,12 +768,15 @@ class IPPProxyManagerSingleton extends EventTarget {
       this.#connection.suspend();
     }
 
-    const { pass, usage, error } = await this.#getPassAndUsage(
-      controller.signal
-    );
-    if (controller.signal.aborted) {
+    let result = await this.#attemptPassRotation(controller.signal);
+    if (controller.signal.aborted || !result) {
+      if (controller.signal.reason === ERRORS.TIMEOUT) {
+        this.#setErrorState(ERRORS.TIMEOUT);
+      }
       return null;
     }
+
+    const { pass, usage, error } = result;
     if (usage) {
       this.#setUsage(usage);
       if (usage.quotaExhausted) {
@@ -709,6 +803,9 @@ class IPPProxyManagerSingleton extends EventTarget {
     }
     lazy.logConsole.debug("Successfully rotated token!");
     this.#pass = pass;
+    // The freshly rotated token supersedes any pending scheduled rotation;
+    // cancel it and schedule the next one for this pass.
+    this.#schedulePassRotation(pass);
     resolve(pass);
     return promise;
   }

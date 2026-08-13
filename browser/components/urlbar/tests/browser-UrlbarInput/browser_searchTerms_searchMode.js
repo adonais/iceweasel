@@ -45,7 +45,7 @@ async function searchWithNonDefaultSearchMode(tab) {
   });
   await UrlbarTestUtils.enterSearchMode(window, {
     engineName: engine.name,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
   });
   gURLBar.focus();
   EventUtils.synthesizeKey("KEY_Enter");
@@ -55,7 +55,7 @@ async function searchWithNonDefaultSearchMode(tab) {
   await UrlbarTestUtils.assertSearchMode(window, {
     engineName: "MochiSearch",
     isGeneralPurposeEngine: true,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     isPreview: false,
     entry: "oneoff",
   });
@@ -88,7 +88,7 @@ add_task(async function different_search_mode_from_default_serp() {
   );
   await UrlbarTestUtils.enterSearchMode(window, {
     engineName: engine.name,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
   });
   Assert.ok(
     !window.gURLBar.hasAttribute("persistsearchterms"),
@@ -167,7 +167,7 @@ add_task(async function clear_search_mode_refresh() {
   await UrlbarTestUtils.assertSearchMode(window, {
     engineName: "MochiSearch",
     isGeneralPurposeEngine: true,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     isPreview: false,
     entry: "other",
   });
@@ -241,7 +241,7 @@ add_task(async function tabhistory_searchmode_non_default() {
   await UrlbarTestUtils.assertSearchMode(window, {
     engineName: "MochiSearch",
     isGeneralPurposeEngine: true,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     isPreview: false,
     entry: "other",
   });
@@ -289,7 +289,7 @@ add_task(async function tabhistory_searchmode_default_engine() {
   await UrlbarTestUtils.assertSearchMode(window, {
     engineName: "MochiSearch",
     isGeneralPurposeEngine: true,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     isPreview: false,
     entry: "other",
   });
@@ -308,7 +308,7 @@ add_task(async function search_mode_switch_tab_to_default() {
   let engine = SearchService.getEngineByName("MochiSearch");
   await UrlbarTestUtils.enterSearchMode(window, {
     engineName: engine.name,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
   });
 
   await BrowserTestUtils.switchTab(gBrowser, tab1);
@@ -335,7 +335,7 @@ add_task(async function search_mode_switch_tab_to_non_default() {
   let engine = SearchService.getEngineByName("Example");
   await UrlbarTestUtils.enterSearchMode(window, {
     engineName: engine.name,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
   });
 
   await BrowserTestUtils.switchTab(gBrowser, tab1);
@@ -344,7 +344,7 @@ add_task(async function search_mode_switch_tab_to_non_default() {
   await UrlbarTestUtils.assertSearchMode(window, {
     engineName: "MochiSearch",
     isGeneralPurposeEngine: true,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     isPreview: false,
     entry: "oneoff",
   });

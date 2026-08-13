@@ -7,9 +7,9 @@
 
 #include "AccessibleTable.h"
 #include "AccessibleTable2.h"
-#include "ia2AccessibleHypertext.h"
 #include "IUnknownImpl.h"
 #include "UiaGrid.h"
+#include "ia2AccessibleHypertext.h"
 
 namespace mozilla {
 namespace a11y {

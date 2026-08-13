@@ -5,10 +5,28 @@
 #ifndef xpcpublic_h
 #define xpcpublic_h
 
+#include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/Assertions.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/fallible.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/MemoryReporting.h"
+#include "mozilla/StringBuffer.h"
+#include "mozilla/TextUtils.h"
+
 #include <cstddef>
 #include <cstdint>
 #include <type_traits>
+
 #include "ErrorList.h"
+#include "jsapi.h"
+#include "nsCOMPtr.h"
+#include "nsISupports.h"
+#include "nsIURI.h"
+#include "nsStringFwd.h"
+#include "nsTArray.h"
+#include "nsWrapperCache.h"
+
 #include "js/BuildId.h"
 #include "js/ErrorReport.h"
 #include "js/friend/Wrapper.h"
@@ -19,21 +37,6 @@
 #include "js/TypeDecls.h"
 #include "js/Utility.h"
 #include "js/Value.h"
-#include "jsapi.h"
-#include "mozilla/AlreadyAddRefed.h"
-#include "mozilla/Assertions.h"
-#include "mozilla/Attributes.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/MemoryReporting.h"
-#include "mozilla/TextUtils.h"
-#include "mozilla/StringBuffer.h"
-#include "mozilla/fallible.h"
-#include "nsCOMPtr.h"
-#include "nsISupports.h"
-#include "nsIURI.h"
-#include "nsStringFwd.h"
-#include "nsTArray.h"
-#include "nsWrapperCache.h"
 
 class JSObject;
 class JSString;

@@ -160,7 +160,7 @@ class CCGCScheduler {
   bool NeedsFullGC() const { return mNeedsFullGC; }
 
   // Requests
-  void PokeGC(JS::GCReason aReason, JSObject* aObj, TimeDuration aDelay = 0);
+  void PokeGC(JS::GCReason aReason, JSObject* aObj, TimeDuration aDelay = {});
   void PokeShrinkingGC();
   void PokeFullGC();
   void MaybePokeCC(TimeStamp aNow, uint32_t aSuspectedCCObjects);
@@ -192,9 +192,9 @@ class CCGCScheduler {
    * Then it runs every
    * StaticPrefs::javascript_options_gc_delay_interslice()
    */
-  void EnsureGCRunner(TimeDuration aDelay);
+  void EnsureGCRunner(TimeDuration aDelay = {});
 
-  // If GCRunner isn't active, this calls EnsureGCRunner(0). Otherwise the timer
+  // If GCRunner isn't active, this calls EnsureGCRunner(). Otherwise the timer
   // is reset.
   void EnsureOrResetGCRunner();
 

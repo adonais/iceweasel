@@ -553,9 +553,6 @@ class Loader final {
       const nsAString& aNonce, const nsAString& aIntegrity,
       uint64_t aEarlyHintPreloaderId, dom::FetchPriority aFetchPriority);
 
-  RefPtr<StyleSheet> LookupInlineSheetInCache(const nsAString&, nsIPrincipal*,
-                                              nsIURI* aBaseURI);
-
   // Synchronously notify of a cached load data.
   void NotifyOfCachedLoad(RefPtr<SheetLoadData>);
 
@@ -594,7 +591,9 @@ class Loader final {
 
   // Notify observers on an individual data. This is different from
   // SheetComplete for loads that are shared.
-  void NotifyObservers(SheetLoadData&, nsresult);
+  // aCanFireEvents is true if we can fire load / error events synchronously (if
+  // our primary sheet which performs the load can notify).
+  void NotifyObservers(SheetLoadData&, nsresult, bool aCanFireEvents);
 
   // Mark the given SheetLoadData, as well as any of its siblings, parents, etc
   // transitively, as failed.  The idea is to mark as failed any load that was

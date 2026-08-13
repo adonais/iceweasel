@@ -10,8 +10,10 @@
 #include "MFCDMExtra.h"
 #include "MFCDMSession.h"
 #include "MFPMPHostWrapper.h"
+#include "MFProtectedPathReadinessMonitor.h"
 #include "RemoteMediaManagerParent.h"
 #include "mozilla/EventTargetAndLockCapability.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/PMFCDMParent.h"
 #include "mozilla/RefPtr.h"
@@ -52,6 +54,19 @@ class MFCDMParent final : public PMFCDMParent {
   uint64_t Id() const { return mId; }
   const nsString& GetKeySystem() const { return mKeySystem; }
 
+  // Per-session protected-playback readiness monitor. The engine actor reads
+  // and updates it via GetCDMById because this CDM actor outlives an engine
+  // recreate.
+  MFProtectedPathReadinessMonitor& ReadinessMonitor() {
+    return mReadinessMonitor;
+  }
+
+  bool IsHardwareDRM() const { return mIsHardwareDRM; }
+
+  // Whether this session is clearlead: its stream begins with clear samples
+  // before switching to encrypted, so its first produced frame is clear.
+  bool IsClearLead() const;
+
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
   mozilla::ipc::IPCResult RecvGetCapabilities(
@@ -91,6 +106,39 @@ class MFCDMParent final : public PMFCDMParent {
   // The result is used as a timing signal only; playback proceeds regardless
   // of whether the check succeeds or fails.
   RefPtr<GenericPromise> WaitForHDCPSettleAfterReset();
+
+  // Resolves with the IsHDCPVersionSupported result (NS_OK iff supported) on
+  // the manager thread, after running the blocking query on a background queue;
+  // rejects only if that query could not be dispatched.
+  using HDCPSupportPromise =
+      MozPromise<nsresult, nsresult, /* IsExclusive */ false>;
+  static RefPtr<HDCPSupportPromise> QueryHDCPSupport(
+      const nsString& aKeySystem, dom::HDCPVersion aVersion,
+      nsISerialEventTarget* aManagerThread);
+
+  // Warms the HDCP support query off the playback path at CDM init and marks
+  // the readiness monitor's HDCP condition once it completes: Ready if HDCP is
+  // supported, Failed otherwise (the gate still proceeds on Failed, and Media
+  // Foundation rebuilds HDCP when it later builds the topology). Skipped for
+  // non-hardware-DRM playback, which has no HDCP gate. HDCP is a per-display
+  // property, so the query is issued at most once per process and concurrent
+  // actors wait on the same outstanding query.
+  void PrewarmHDCP(bool aIsHardwareDRM);
+
+  // Marks the readiness monitor's HDCP condition Ready if aSupported, else
+  // Failed.
+  void MarkHDCPCondition(bool aSupported);
+
+  // Process-wide HDCP pre-warm state, touched only on the manager thread (which
+  // every MFCDMParent shares). sHDCPSupported holds the queried per-display
+  // HDCP result once known (Nothing until then); sHDCPPrewarmQuery is the
+  // outstanding query that concurrent actors share. Reset on a hardware context
+  // change so HDCP is re-queried.
+  static inline Maybe<bool> sHDCPSupported;
+  static inline RefPtr<HDCPSupportPromise> sHDCPPrewarmQuery;
+  // Bumped on every hardware-context reset so an in-flight pre-warm query that
+  // resolves after the reset is ignored: its result predates the change.
+  static inline uint32_t sHDCPPrewarmGeneration = 0;
 
   // A thread-safe method to access the CDM proxy. Returns nullptr if the CDM
   // has been shut down.
@@ -155,12 +203,15 @@ class MFCDMParent final : public PMFCDMParent {
   // Guards sRegisteredCDMs and the strong reference handed out by GetCDMById.
   static inline StaticMutex sRegistryMutex;
 
+  MFProtectedPathReadinessMonitor mReadinessMonitor;
+
   constinit static inline nsTHashMap<nsUint64HashKey, MFCDMParent*>
       sRegisteredCDMs MOZ_GUARDED_BY(sRegistryMutex);
 
   static inline uint64_t sNextId = 1;
   const uint64_t mId;
   bool mIsInited = false;
+  bool mIsHardwareDRM = false;
 
   static inline BSTR sWidevineL1Path;
 

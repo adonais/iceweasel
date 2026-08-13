@@ -151,7 +151,7 @@ private fun StocksSuggestionIcon(
         if (changePercent != ChangePercent.Neutral) {
             Icon(
                 painter = when (changePercent) {
-                    is ChangePercent.Positive -> painterResource(iconsR.drawable.mozac_ic_arrow_trending_up_24)
+                    is ChangePercent.Positive -> painterResource(iconsR.drawable.mozac_ic_arrow_trending_24)
                     is ChangePercent.Negative -> painterResource(iconsR.drawable.mozac_ic_arrow_trending_down_24)
                 },
                 tint = MaterialTheme.colorScheme.onPrimary,

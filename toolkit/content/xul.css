@@ -141,16 +141,6 @@ label html|span.accesskey {
   text-decoration-skip-ink: none;
 }
 
-description:where([value]) {
-  /* Preserves legacy behavior, maybe could be removed */
-  display: flex;
-}
-
-label:where([value]) {
-  /* Preserves legacy behavior, maybe could be removed */
-  display: inline-flex;
-}
-
 :is(label, description)[value] {
   white-space: nowrap;
 }
@@ -159,7 +149,6 @@ label:where([value]) {
   /* This displays the value attribute, along with the underlined
    * accesskey if needed */
   content: -moz-label-content;
-  display: block;
 }
 
 label[value=""]::before {
@@ -168,11 +157,6 @@ label[value=""]::before {
 
 :is(label, description)[value][crop] {
   min-width: 0;
-}
-
-:is(label, description)[value][crop]::before {
-  min-width: 0;
-  max-width: 100%;
   /* This implements crop=end */
   overflow: hidden;
   text-overflow: ellipsis;
@@ -436,7 +420,9 @@ treecol {
 
 treecol[hidden] {
   visibility: collapse;
-  display: flex;
+  /* `!important` to keep the column laid out (collapsed, not removed) over the
+     global `[hidden] { display: none !important }` rule. */
+  display: flex !important;
 }
 
 /* ::::: lines connecting cells ::::: */

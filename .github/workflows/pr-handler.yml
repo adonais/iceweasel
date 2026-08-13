@@ -23,6 +23,8 @@ env:
     mobile/android/fenix
     mobile/android/focus-android
     taskcluster/config.yml
+    .*.ftl$
+    browser/base/content/test/static
 
   GH_REPO: ${{ github.repository }}
   PR: ${{ github.event.pull_request.number }}

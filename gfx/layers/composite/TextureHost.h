@@ -5,26 +5,28 @@
 #ifndef MOZILLA_GFX_TEXTUREHOST_H
 #define MOZILLA_GFX_TEXTUREHOST_H
 
-#include <stddef.h>              // for size_t
-#include <stdint.h>              // for uint64_t, uint32_t, uint8_t
+#include <stddef.h>  // for size_t
+#include <stdint.h>  // for uint64_t, uint32_t, uint8_t
+
 #include "mozilla/Assertions.h"  // for MOZ_ASSERT, etc
 #include "mozilla/Attributes.h"  // for override
-#include "mozilla/RefPtr.h"      // for RefPtr, already_AddRefed, etc
+#include "mozilla/Range.h"
+#include "mozilla/RefPtr.h"               // for RefPtr, already_AddRefed, etc
+#include "mozilla/UniquePtr.h"            // for UniquePtr
+#include "mozilla/UniquePtrExtensions.h"  // for UniqueFileHandle
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/Matrix.h"
 #include "mozilla/gfx/Point.h"  // for IntSize, IntPoint
 #include "mozilla/gfx/Rect.h"
-#include "mozilla/gfx/Types.h"               // for SurfaceFormat, etc
+#include "mozilla/gfx/Types.h"  // for SurfaceFormat, etc
+#include "mozilla/layers/AtomicRefCountedWithFinalize.h"
 #include "mozilla/layers/CompositorTypes.h"  // for TextureFlags, etc
-#include "mozilla/layers/LayersTypes.h"      // for LayerRenderState, etc
 #include "mozilla/layers/LayersMessages.h"
 #include "mozilla/layers/LayersSurfaces.h"
+#include "mozilla/layers/LayersTypes.h"  // for LayerRenderState, etc
 #include "mozilla/layers/TextureSourceProvider.h"
 #include "mozilla/mozalloc.h"  // for operator delete
-#include "mozilla/Range.h"
-#include "mozilla/UniquePtr.h"            // for UniquePtr
-#include "mozilla/UniquePtrExtensions.h"  // for UniqueFileHandle
 #include "mozilla/webrender/WebRenderTypes.h"
 #include "nsCOMPtr.h"         // for already_AddRefed
 #include "nsDebug.h"          // for NS_WARNING
@@ -33,7 +35,6 @@
 #include "nsRegion.h"       // for nsIntRegion
 #include "nsTraceRefcnt.h"  // for MOZ_COUNT_CTOR, etc
 #include "nscore.h"         // for nsACString
-#include "mozilla/layers/AtomicRefCountedWithFinalize.h"
 
 class MacIOSurface;
 namespace mozilla {

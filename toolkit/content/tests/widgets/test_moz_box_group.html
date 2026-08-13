@@ -55,9 +55,21 @@
 
         const normalizePx = pxVal => Math.round(parseFloat(pxVal));
 
+        // Resolve border-radius to a computed pixel value
+        function normalizeBorderRadius(val) {
+          const el = document.querySelector("#target");
+          el.style.borderRadius = val;
+          val = getComputedStyle(el).borderStartStartRadius;
+          el.style.borderRadius = "";
+          return val;
+        }
+
         function verifyStyles(el, expectedStyles) {
           let styles = getComputedStyle(el);
           Object.entries(expectedStyles).forEach(([property, value]) => {
+            if (value.startsWith("--")) {
+              value = normalizeBorderRadius(styles.getPropertyValue(value));
+            }
             is(
               normalizePx(styles[property]),
               normalizePx(value),
@@ -66,9 +78,11 @@
           });
         }
 
+        const BOX_BORDER_RADIUS_INNER = "--box-border-radius-inner";
+
         const FIRST_ITEM_STYLES = {
-          borderStartEndRadius: "7px",
-          borderStartStartRadius: "7px",
+          borderStartEndRadius: BOX_BORDER_RADIUS_INNER,
+          borderStartStartRadius: BOX_BORDER_RADIUS_INNER,
           borderEndEndRadius: "0px",
           borderEndStartRadius: "0px",
           borderTopWidth: "0px",
@@ -85,8 +99,8 @@
         const LAST_ITEM_STYLES = {
           borderStartEndRadius: "0px",
           borderStartStartRadius: "0px",
-          borderEndEndRadius: "7px",
-          borderEndStartRadius: "7px",
+          borderEndEndRadius: BOX_BORDER_RADIUS_INNER,
+          borderEndStartRadius: BOX_BORDER_RADIUS_INNER,
           borderTopWidth: "1px",
         };
 
@@ -1342,6 +1356,7 @@
   <body>
     <p id="display"></p>
     <div id="content" style="display: none"></div>
+    <div id="target"></div>
     <pre id="test"></pre>
   </body>
 </html>

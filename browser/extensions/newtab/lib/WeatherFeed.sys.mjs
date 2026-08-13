@@ -4,52 +4,15 @@
 
 import { WEATHER_OPTIN_REGIONS } from "./ActivityStream.sys.mjs";
 
-// eslint-disable-next-line mozilla/use-static-import
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
-
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
+  GeolocationUtils:
+    "moz-src:///browser/components/urlbar/private/GeolocationUtils.sys.mjs",
+  MerinoClient: "moz-src:///browser/components/urlbar/MerinoClient.sys.mjs",
   PersistentCache: "resource://newtab/lib/PersistentCache.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
-});
-
-ChromeUtils.defineLazyGetter(lazy, "MerinoClient", () => {
-  // @backward-compat { version 151 }
-  // Bug 2018111 - TemporaryMerinoClientShim backports fetchWeatherReport() and
-  // fetchHourlyForecasts() with endpoint URL support. Remove this block
-  // and use MerinoClient directly once Firefox 151 ships to release.
-  if (Services.vc.compare(AppConstants.MOZ_APP_VERSION, "151.0a1") < 0) {
-    return ChromeUtils.importESModule(
-      "resource://newtab/lib/TemporaryMerinoClientShim.sys.mjs"
-    ).TemporaryMerinoClientShim;
-  }
-  try {
-    return ChromeUtils.importESModule(
-      "moz-src:///browser/components/urlbar/MerinoClient.sys.mjs"
-    ).MerinoClient;
-  } catch {
-    // Fallback to URI format prior to FF 144.
-    return ChromeUtils.importESModule(
-      "resource:///modules/MerinoClient.sys.mjs"
-    ).MerinoClient;
-  }
-});
-
-ChromeUtils.defineLazyGetter(lazy, "GeolocationUtils", () => {
-  try {
-    return ChromeUtils.importESModule(
-      "moz-src:///browser/components/urlbar/private/GeolocationUtils.sys.mjs"
-    ).GeolocationUtils;
-  } catch {
-    // Fallback to URI format prior to FF 144.
-    return ChromeUtils.importESModule(
-      "resource:///modules/urlbar/private/GeolocationUtils.sys.mjs"
-    ).GeolocationUtils;
-  }
 });
 
 import {
@@ -405,17 +368,6 @@ export class WeatherFeed {
             values["widgets.system.weather.enabled"] ||
             values.trainhopConfig?.widgets?.weatherEnabled);
 
-        // @backward-compat { version 151 }
-        // Read endpoint URLs from trainhopConfig or ActivityStream prefs so
-        // they can be configured without a tree change. Remove once shipped;
-        // MerinoClient will have the endpoints defined via UrlbarPrefs.
-        const reportEndpointUrl =
-          values.trainhopConfig?.weather?.reportEndpoint ||
-          values["weather.reportEndpoint"];
-        const hourlyEndpointUrl =
-          values.trainhopConfig?.weather?.hourlyEndpoint ||
-          values["weather.hourlyEndpoint"];
-
         const [reportResult, hourlyResult] = await Promise.all([
           this.merino.fetchWeatherReport({
             source: "newtab",
@@ -424,7 +376,6 @@ export class WeatherFeed {
             region,
             country,
             timeoutMs: 7000,
-            endpointUrl: reportEndpointUrl,
           }),
           weatherForecastWidgetEnabled
             ? // When locationName is set, city/region/country are unresolved
@@ -438,7 +389,6 @@ export class WeatherFeed {
                   city: city || this.locationData?.city,
                   region: region || this.locationData?.adminName?.id,
                   country: country || this.locationData?.country?.id,
-                  endpointUrl: hourlyEndpointUrl,
                 })
                 .catch(() => null)
             : Promise.resolve(null),

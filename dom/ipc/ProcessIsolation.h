@@ -140,7 +140,7 @@ enum class ValidatePrincipalOptions {
 };
 bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
     nsIPrincipal* aPrincipal, const nsACString& aRemoteType,
-    const EnumSet<ValidatePrincipalOptions>& aOptions);
+    const EnumSet<ValidatePrincipalOptions>& aOptions = {});
 
 }  // namespace mozilla::dom
 

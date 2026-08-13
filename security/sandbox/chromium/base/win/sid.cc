@@ -2,14 +2,22 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40284755): Remove this and spanify to fix the errors.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "base/win/sid.h"
 
-#include <windows.h>
+// clang-format off
+#include <windows.h>  // Must be in front of other Windows header files.
+// clang-format on
 
 #include <sddl.h>
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <algorithm>
 #include <iterator>
 #include <map>
 #include <utility>
@@ -17,7 +25,6 @@
 #include "base/check.h"
 #include "base/no_destructor.h"
 #include "base/rand_util.h"
-#include "base/ranges/algorithm.h"
 #include "base/strings/string_util_win.h"
 #include "base/win/scoped_handle.h"
 #include "base/win/scoped_localalloc.h"
@@ -25,7 +32,6 @@
 #if defined(MOZ_SANDBOX)
 #include <winternl.h>
 #else
-#include "third_party/boringssl/src/include/openssl/crypto.h"
 #include "third_party/boringssl/src/include/openssl/sha.h"
 #endif
 
@@ -106,7 +112,7 @@ Sid Sid::FromKnownCapability(WellKnownCapability capability) {
 typedef NTSTATUS(WINAPI* RtlDeriveCapabilitySidsFromNameFunction)(
     PCUNICODE_STRING SourceString, PSID CapabilityGroupSid, PSID CapabilitySid);
 
-Sid Sid::FromNamedCapability(const std::wstring& capability_name) {
+std::optional<Sid> Sid::FromNamedCapability(const std::wstring& capability_name) {
   static const base::NoDestructor<std::map<std::wstring, WellKnownCapability>>
       known_capabilities(
           {{L"INTERNETCLIENT", WellKnownCapability::kInternetClient},
@@ -138,7 +144,7 @@ Sid Sid::FromNamedCapability(const std::wstring& capability_name) {
       reinterpret_cast<RtlDeriveCapabilitySidsFromNameFunction>(
           ::GetProcAddress(ntdll_handle, "RtlDeriveCapabilitySidsFromName"));
   if (!derive_capability_sids) {
-    return Sid();
+    return std::nullopt;
   }
 
   UNICODE_STRING name = {};
@@ -148,7 +154,7 @@ Sid Sid::FromNamedCapability(const std::wstring& capability_name) {
 
   NTSTATUS status = derive_capability_sids(&name, group_sid, capability_sid);
   if (!NT_SUCCESS(status)) {
-    return Sid();
+    return std::nullopt;
   }
 
   return Sid(capability_sid, ::GetLengthSid(capability_sid));
@@ -223,25 +229,26 @@ Sid Sid::FromKnownSid(WellKnownSid type) {
   }
 }
 
-absl::optional<Sid> Sid::FromSddlString(const std::wstring& sddl_sid) {
+std::optional<Sid> Sid::FromSddlString(const std::wstring& sddl_sid) {
   PSID psid = nullptr;
   if (!::ConvertStringSidToSid(sddl_sid.c_str(), &psid)) {
-    return absl::nullopt;
+    return std::nullopt;
   }
   auto psid_alloc = TakeLocalAlloc(psid);
   return FromPSID(psid_alloc.get());
 }
 
-absl::optional<Sid> Sid::FromPSID(PSID sid) {
+std::optional<Sid> Sid::FromPSID(PSID sid) {
   DCHECK(sid);
-  if (!sid || !::IsValidSid(sid))
-    return absl::nullopt;
+  if (!sid || !::IsValidSid(sid)) {
+    return std::nullopt;
+  }
   return Sid(sid, ::GetLengthSid(sid));
 }
 
 Sid Sid::GenerateRandomSid() {
   DWORD sub_authorities[4] = {};
-  RandBytes(&sub_authorities, sizeof(sub_authorities));
+  RandBytes(as_writable_byte_span(sub_authorities));
   return FromSubAuthorities(SECURITY_NULL_SID_AUTHORITY,
                             std::size(sub_authorities), sub_authorities);
 }
@@ -251,14 +258,15 @@ Sid Sid::FromIntegrityLevel(DWORD integrity_level) {
                             &integrity_level);
 }
 
-absl::optional<std::vector<Sid>> Sid::FromSddlStringVector(
+std::optional<std::vector<Sid>> Sid::FromSddlStringVector(
     const std::vector<std::wstring>& sddl_sids) {
   std::vector<Sid> converted_sids;
   converted_sids.reserve(sddl_sids.size());
   for (const std::wstring& sddl_sid : sddl_sids) {
-    absl::optional<Sid> sid = FromSddlString(sddl_sid);
-    if (!sid)
-      return absl::nullopt;
+    std::optional<Sid> sid = FromSddlString(sddl_sid);
+    if (!sid) {
+      return std::nullopt;
+    }
     converted_sids.push_back(std::move(*sid));
   }
   return converted_sids;
@@ -267,23 +275,27 @@ absl::optional<std::vector<Sid>> Sid::FromSddlStringVector(
 std::vector<Sid> Sid::FromNamedCapabilityVector(
     const std::vector<std::wstring>& capability_names) {
   std::vector<Sid> sids;
-  ranges::transform(capability_names, std::back_inserter(sids),
-                    FromNamedCapability);
+  for (const auto& name : capability_names) {
+    std::optional<Sid> sid = FromNamedCapability(name);
+    if (sid) {
+      sids.push_back(std::move(*sid));
+    }
+  }
   return sids;
 }
 
 std::vector<Sid> Sid::FromKnownCapabilityVector(
     const std::vector<WellKnownCapability>& capabilities) {
   std::vector<Sid> sids;
-  ranges::transform(capabilities, std::back_inserter(sids),
-                    FromKnownCapability);
+  std::ranges::transform(capabilities, std::back_inserter(sids),
+                         FromKnownCapability);
   return sids;
 }
 
 std::vector<Sid> Sid::FromKnownSidVector(
     const std::vector<WellKnownSid>& known_sids) {
   std::vector<Sid> sids;
-  ranges::transform(known_sids, std::back_inserter(sids), FromKnownSid);
+  std::ranges::transform(known_sids, std::back_inserter(sids), FromKnownSid);
   return sids;
 }
 
@@ -299,10 +311,11 @@ PSID Sid::GetPSID() const {
   return const_cast<char*>(sid_.data());
 }
 
-absl::optional<std::wstring> Sid::ToSddlString() const {
+std::optional<std::wstring> Sid::ToSddlString() const {
   LPWSTR sid = nullptr;
-  if (!::ConvertSidToStringSid(GetPSID(), &sid))
-    return absl::nullopt;
+  if (!::ConvertSidToStringSid(GetPSID(), &sid)) {
+    return std::nullopt;
+  }
   auto sid_ptr = TakeLocalAlloc(sid);
   return sid_ptr.get();
 }
@@ -317,10 +330,6 @@ bool Sid::Equal(PSID sid) const {
 
 bool Sid::operator==(const Sid& sid) const {
   return Equal(sid.GetPSID());
-}
-
-bool Sid::operator!=(const Sid& sid) const {
-  return !(operator==(sid));
 }
 
 }  // namespace base::win

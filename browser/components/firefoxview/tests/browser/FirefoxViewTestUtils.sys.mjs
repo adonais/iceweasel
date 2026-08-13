@@ -63,6 +63,11 @@ async function openFirefoxViewTab(win) {
     );
   }
   await switchToWindow(win);
+  if (
+    !win.CustomizableUI.getPlacementOfWidget(win.FirefoxViewHandler.BUTTON_ID)
+  ) {
+    enableFirefoxViewButton(win);
+  }
   let fxviewTab = win.FirefoxViewHandler.tab;
   let alreadyLoaded =
     fxviewTab?.linkedBrowser.currentURI.spec.includes(getFirefoxViewURL()) &&
@@ -180,6 +185,21 @@ function isFirefoxViewTabSelectedInWindow(win) {
   return win.gBrowser.selectedBrowser.currentURI.spec == getFirefoxViewURL();
 }
 
+/**
+ * Adds the Firefox View button to the tabstrip. It will be removed after the
+ * test ends.
+ */
+function enableFirefoxViewButton({ CustomizableUI, FirefoxViewHandler }) {
+  CustomizableUI.addWidgetToArea(
+    FirefoxViewHandler.BUTTON_ID,
+    CustomizableUI.AREA_TABSTRIP,
+    CustomizableUI.getPlacementOfWidget("tabbrowser-tabs").position
+  );
+  testScope.registerCleanupFunction(() => {
+    CustomizableUI.removeWidgetFromArea(FirefoxViewHandler.BUTTON_ID);
+  });
+}
+
 export {
   init,
   switchToWindow,
@@ -190,4 +210,5 @@ export {
   closeFirefoxViewTab,
   isFirefoxViewTabSelectedInWindow,
   getFirefoxViewURL,
+  enableFirefoxViewButton,
 };

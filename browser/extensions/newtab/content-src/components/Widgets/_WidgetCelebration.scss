@@ -2,9 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// Shared celebration overlay rules; widgets supply --widget-celebration-*
-// tokens and call widget-celebration-styles(<classNamePrefix>).
-
 @mixin widget-celebration-styles($prefix) {
   .#{$prefix} {
     animation:
@@ -186,9 +183,6 @@
     animation-delay: var(--widget-celebration-illustration-delay), var(--widget-celebration-hold-duration);
   }
 
-  // Optional confetti shower. Widgets opt in by passing `confettiColors` to
-  // <WidgetCelebration>; pieces are generated in JS (colors + randomized
-  // position/spin via CSS custom props) and fall through this clipped layer.
   .#{$prefix}-confetti {
     position: absolute;
     inset: 0;
@@ -197,15 +191,12 @@
     pointer-events: none;
   }
 
-  // Holds the <symbol> soccer-ball geometry; never painted itself.
   .#{$prefix}-confetti-defs {
     position: absolute;
     inline-size: 0;
     block-size: 0;
   }
 
-  // Shared faller: position, size, fall/spin animation. Per-piece values come
-  // from JS-set custom props, so design tokens don't apply.
   .#{$prefix}-confetti-piece {
     position: absolute;
     inset-block-start: -12%;
@@ -216,13 +207,14 @@
     /* stylelint-enable stylelint-plugin-mozilla/use-design-tokens */
     opacity: 0;
     animation-name: widget-celebration-confetti-fall;
-    animation-duration: var(--confetti-duration);
+    animation-duration: calc(
+      var(--confetti-duration) * var(--confetti-duration-scale, 1)
+    );
     animation-timing-function: cubic-bezier(0.3, 0.45, 0.55, 1);
-    animation-delay: var(--confetti-delay);
+    animation-delay: calc(var(--confetti-delay) * var(--confetti-delay-scale, 1));
     animation-fill-mode: forwards;
   }
 
-  // Flat shapes: solid color fill + border-radius/clip-path silhouette.
   i.#{$prefix}-confetti-piece {
     /* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
     background-color: var(--confetti-color);
@@ -231,10 +223,42 @@
     clip-path: var(--confetti-clip);
   }
 
-  // Soccer balls: the <use>d symbol tints its body via currentColor.
   svg.#{$prefix}-confetti-piece {
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     color: var(--confetti-color);
+  }
+
+  .#{$prefix}-fireworks {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: inherit;
+    pointer-events: none;
+  }
+
+  .#{$prefix}-firework {
+    position: absolute;
+    /* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
+    inset-block-start: var(--fw-top);
+    inset-inline-start: var(--fw-left);
+    /* stylelint-enable stylelint-plugin-mozilla/use-design-tokens */
+    inline-size: 0;
+    block-size: 0;
+    color: inherit;
+  }
+
+  .#{$prefix}-firework-spark {
+    position: absolute;
+    /* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
+    inline-size: calc(6px * var(--fw-scale, 1));
+    block-size: calc(6px * var(--fw-scale, 1));
+    box-shadow: 0 0 4px currentColor;
+    /* stylelint-enable stylelint-plugin-mozilla/use-design-tokens */
+    border-radius: var(--border-radius-circle);
+    background-color: currentColor;
+    opacity: 0;
+    animation: widget-celebration-firework 1000ms ease-out
+      calc(var(--fw-delay) + var(--firework-start-delay, 0ms)) forwards;
   }
 }
 
@@ -257,6 +281,24 @@
     opacity: 0;
     translate: var(--confetti-drift) var(--confetti-fall, 360px);
     rotate: var(--confetti-rotate);
+  }
+}
+
+@keyframes widget-celebration-firework {
+  0% {
+    opacity: 0;
+    translate: 0 0;
+    scale: 0.3;
+  }
+
+  12% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    translate: var(--fw-dx) calc(var(--fw-dy) + 14px);
+    scale: 1;
   }
 }
 

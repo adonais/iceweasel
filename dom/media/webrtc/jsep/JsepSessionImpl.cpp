@@ -6,7 +6,6 @@
 
 #include <stdlib.h>
 
-#include <bitset>
 #include <set>
 #include <string>
 #include <utility>
@@ -37,17 +36,6 @@ MOZ_MTLOG_MODULE("jsep")
     mLastError = os.str();                                    \
     MOZ_MTLOG(ML_ERROR, "[" << mName << "]: " << mLastError); \
   } while (0);
-
-static std::bitset<128> GetForbiddenSdpPayloadTypes() {
-  std::bitset<128> forbidden(0);
-  forbidden[1] = true;
-  forbidden[2] = true;
-  forbidden[19] = true;
-  for (uint16_t i = 64; i < 96; ++i) {
-    forbidden[i] = true;
-  }
-  return forbidden;
-}
 
 static std::string GetRandomHex(size_t words) {
   std::ostringstream os;
@@ -822,17 +810,26 @@ JsepSession::Result JsepSessionImpl::SetLocalDescription(
   }
 
   UniquePtr<Sdp> parsed;
-  nsresult rv = ParseSdp(sdp, &parsed);
-  if (NS_FAILED(rv)) {
-    Maybe<size_t> lineNumber;
-    if (!mLastSdpParsingErrors.empty()) {
-      lineNumber = Some(mLastSdpParsingErrors[0].first);
+  switch (const auto res = ParseSdp(sdp, &parsed); res) {
+    case JsepParseTimeExceptionType::Operation: {
+      Maybe<size_t> lineNumber;
+      if (!mLastSdpParsingErrors.empty()) {
+        lineNumber = Some(mLastSdpParsingErrors[0].first);
+      }
+      return Result(dom::PCError::OperationError, "sdp-syntax-error",
+                    lineNumber);
     }
-    return Result(dom::PCError::OperationError, "sdp-syntax-error", lineNumber);
+    case JsepParseTimeExceptionType::InvalidAccess: {
+      NS_ENSURE_SUCCESS(NS_ERROR_INVALID_ARG, dom::PCError::InvalidAccessError);
+      break;
+    }
+    case JsepParseTimeExceptionType::None: {
+      break;
+    }
   }
 
   // Check that content hasn't done anything unsupported with the SDP
-  rv = ValidateLocalDescription(*parsed, type);
+  nsresult rv = ValidateLocalDescription(*parsed, type);
   NS_ENSURE_SUCCESS(rv, dom::PCError::InvalidModificationError);
 
   switch (type) {
@@ -1030,16 +1027,25 @@ JsepSession::Result JsepSessionImpl::SetRemoteDescription(
 
   // Parse.
   UniquePtr<Sdp> parsed;
-  nsresult rv = ParseSdp(sdp, &parsed);
-  if (NS_FAILED(rv)) {
-    Maybe<size_t> lineNumber;
-    if (!mLastSdpParsingErrors.empty()) {
-      lineNumber = Some(mLastSdpParsingErrors[0].first);
+  switch (const auto res = ParseSdp(sdp, &parsed); res) {
+    case JsepParseTimeExceptionType::Operation: {
+      Maybe<size_t> lineNumber;
+      if (!mLastSdpParsingErrors.empty()) {
+        lineNumber = Some(mLastSdpParsingErrors[0].first);
+      }
+      return Result(dom::PCError::OperationError, "sdp-syntax-error",
+                    lineNumber);
     }
-    return Result(dom::PCError::OperationError, "sdp-syntax-error", lineNumber);
+    case JsepParseTimeExceptionType::InvalidAccess: {
+      NS_ENSURE_SUCCESS(NS_ERROR_INVALID_ARG, dom::PCError::InvalidAccessError);
+      break;
+    }
+    case JsepParseTimeExceptionType::None: {
+      break;
+    }
   }
 
-  rv = ValidateRemoteDescription(*parsed);
+  nsresult rv = ValidateRemoteDescription(*parsed);
   NS_ENSURE_SUCCESS(rv, dom::PCError::InvalidAccessError);
 
   switch (type) {
@@ -1482,8 +1488,9 @@ nsresult JsepSessionImpl::CopyPreviousTransportParams(
   return NS_OK;
 }
 
-nsresult JsepSessionImpl::ParseSdp(const std::string& sdp,
-                                   UniquePtr<Sdp>* parsedp) {
+JsepParseTimeExceptionType JsepSessionImpl::ParseSdp(const std::string& sdp,
+                                                     UniquePtr<Sdp>* parsedp) {
+  using Except = JsepParseTimeExceptionType;
   auto results = mParser->Parse(sdp);
   auto parsed = std::move(results->Sdp());
   mLastSdpParsingErrors = results->Errors();
@@ -1491,7 +1498,7 @@ nsresult JsepSessionImpl::ParseSdp(const std::string& sdp,
     std::string error = results->ParserName() + " Failed to parse SDP: ";
     mSdpHelper.AppendSdpParseErrors(mLastSdpParsingErrors, &error);
     JSEP_SET_ERROR(error);
-    return NS_ERROR_INVALID_ARG;
+    return Except::Operation;
   }
   // Verify that the JSEP rules for all SDP are followed
   for (size_t i = 0; i < parsed->GetMediaSectionCount(); ++i) {
@@ -1509,7 +1516,7 @@ nsresult JsepSessionImpl::ParseSdp(const std::string& sdp,
           "Invalid description, mid length greater than 16 "
           "unsupported until 2-byte rtp header extensions are "
           "supported in webrtc.org");
-      return NS_ERROR_INVALID_ARG;
+      return Except::Operation;
     }
 
     if (mediaAttrs.HasAttribute(SdpAttribute::kExtmapAttribute)) {
@@ -1522,21 +1529,22 @@ nsresult JsepSessionImpl::ParseSdp(const std::string& sdp,
                          << id << " on level " << i
                          << " which is unsupported until 2-byte rtp"
                             " header extensions are supported in webrtc.org");
-          return NS_ERROR_INVALID_ARG;
+          return Except::Operation;
         }
 
         if (extIds.find(id) != extIds.end()) {
           JSEP_SET_ERROR("Description contains duplicate extension id "
                          << id << " on level " << i);
-          return NS_ERROR_INVALID_ARG;
+          return Except::Operation;
         }
         extIds.insert(id);
       }
     }
 
-    static const std::bitset<128> forbidden = GetForbiddenSdpPayloadTypes();
     if (msection.GetMediaType() == SdpMediaSection::kAudio ||
         msection.GetMediaType() == SdpMediaSection::kVideo) {
+      const bool rtcpMux = msection.GetAttributeList().HasAttribute(
+          SdpAttribute::kRtcpMuxAttribute);
       // Sanity-check that payload type can work with RTP
       for (const std::string& fmt : msection.GetFormats()) {
         uint16_t payloadType;
@@ -1544,24 +1552,40 @@ nsresult JsepSessionImpl::ParseSdp(const std::string& sdp,
           JSEP_SET_ERROR("Payload type \""
                          << fmt << "\" is not a 16-bit unsigned int at level "
                          << i);
-          return NS_ERROR_INVALID_ARG;
+          return Except::Operation;
         }
         if (payloadType > 127) {
           JSEP_SET_ERROR("audio/video payload type \""
                          << fmt << "\" is too large at level " << i);
-          return NS_ERROR_INVALID_ARG;
+          return Except::Operation;
         }
-        if (forbidden.test(payloadType)) {
-          JSEP_SET_ERROR("Illegal audio/video payload type \""
-                         << fmt << "\" at level " << i);
-          return NS_ERROR_INVALID_ARG;
+        // PT is well-formed, but it may be reserved
+        switch (payloadType) {
+          // https://www.rfc-editor.org/info/rfc3551/#section-6
+          case 1:
+          case 2:
+          case 19:
+            JSEP_SET_ERROR("Audio/video payload type \""
+                           << fmt << "\" at level " << i
+                           << " is using reserved payload type number");
+            return Except::InvalidAccess;
+          default:
+            break;
+        }
+        if (rtcpMux && payloadType >= 64 && payloadType <= 95) {
+          JSEP_SET_ERROR(
+              "Audio/video payload type \""
+              << fmt << "\" at level " << i
+              << " is using payload type number in the range 64 to 95 which"
+                 " is reserved while rtcp-mux is in use");
+          return Except::InvalidAccess;
         }
       }
     }
   }
 
   *parsedp = std::move(parsed);
-  return NS_OK;
+  return Except::None;
 }
 
 nsresult JsepSessionImpl::SetRemoteDescriptionOffer(UniquePtr<Sdp> offer) {
@@ -1762,7 +1786,8 @@ nsresult JsepSessionImpl::UpdateTransceiversFromRemoteDescription(
     // This will process a=msid if present, or clear the stream ids if the
     // msection is not sending. If the msection is sending, and there are no
     // a=msid, the previously set default will stay.
-    transceiver->mRecvTrack.RecvTrackSetRemote(remote, msection);
+    transceiver->mRecvTrack.RecvTrackSetRemote(
+        remote, msection, transceiver->mSendTrack.GetSsrcs());
     SetTransceiver(*transceiver);
   }
 

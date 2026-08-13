@@ -1,0 +1,83 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+---
+task-defaults:
+    description: "searchfox-cli toolchain build"
+    attributes:
+        local-toolchain: true
+    worker-type: b-linux-docker-amd
+    worker:
+        max-run-time: 1800
+    run:
+        script: build-rust-based-toolchain.sh
+        toolchain-artifact: public/build/searchfox-cli.tar.zst
+    fetches:
+        fetch:
+            - searchfox-cli
+
+linux64-searchfox-cli:
+    treeherder:
+        symbol: TL(searchfox-cli)
+    run:
+        arguments: ['x86_64-unknown-linux-gnu']
+    fetches:
+        toolchain:
+            - linux64-clang-toolchain
+            - linux64-rust-toolchain
+            - linux64-toolchain-sysroot
+
+linux64-aarch64-searchfox-cli:
+    treeherder:
+        symbol: TLA64(searchfox-cli)
+    run:
+        arguments: ['aarch64-unknown-linux-gnu']
+    fetches:
+        toolchain:
+            - linux64-clang-toolchain
+            - linux64-rust-toolchain
+            - linux64-aarch64-toolchain-sysroot
+
+macosx64-searchfox-cli:
+    treeherder:
+        symbol: TM(searchfox-cli)
+    run:
+        arguments: ['x86_64-apple-darwin']
+    fetches:
+        toolchain:
+            - linux64-clang-toolchain
+            - linux64-rust-macos-toolchain
+            - macosx64-sdk-toolchain
+
+macosx64-aarch64-searchfox-cli:
+    treeherder:
+        symbol: TMA64(searchfox-cli)
+    run:
+        arguments: ['aarch64-apple-darwin']
+    fetches:
+        toolchain:
+            - linux64-clang-toolchain
+            - linux64-rust-macos-toolchain
+            - macosx64-sdk-toolchain
+
+win32-searchfox-cli:
+    treeherder:
+        symbol: TW32(searchfox-cli)
+    run:
+        arguments: ['i686-pc-windows-msvc']
+    fetches:
+        toolchain:
+            - linux64-clang-toolchain
+            - linux64-rust-windows-toolchain
+            - vs-toolchain
+
+win64-searchfox-cli:
+    treeherder:
+        symbol: TW64(searchfox-cli)
+    run:
+        arguments: ['x86_64-pc-windows-msvc']
+    fetches:
+        toolchain:
+            - linux64-clang-toolchain
+            - linux64-rust-windows-toolchain
+            - vs-toolchain

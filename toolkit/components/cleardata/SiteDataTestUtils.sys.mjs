@@ -265,20 +265,11 @@ export var SiteDataTestUtils = {
     BrowserTestUtils.removeTab(tab);
   },
 
-  hasCookies(origin, testEntries = null, testPBMCookies = false) {
+  hasCookies(origin, testEntries = null, originAttributes = null) {
     let principal =
       Services.scriptSecurityManager.createContentPrincipalFromOrigin(origin);
+    originAttributes ??= principal.originAttributes;
 
-    let originAttributes = principal.originAttributes;
-
-    if (testPBMCookies) {
-      // Override the origin attributes to set PBM.
-      // This needs to be updated when adding support for multiple PBM contexts.
-      originAttributes = {
-        ...principal.originAttributes,
-        privateBrowsingId: 1,
-      };
-    }
     // Need to do an additional filter step since getCookiesFromHost returns all
     // cookies for the base domain (including subdomains). This method takes an
     // origin so we need to do an exact host match.

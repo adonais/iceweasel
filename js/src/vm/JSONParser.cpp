@@ -722,7 +722,8 @@ inline bool JSONFullParseHandlerAnyChar::finishObject(
   }
   // properties is traced in the parser; see JSONParser<CharT>::trace()
   JSObject* obj = NewPlainObjectWithMaybeDuplicateKeys(
-      cx, Handle<IdValueVector>::fromMarkedLocation(properties), newKind);
+      cx, Handle<IdValueVector>::fromMarkedLocation(properties),
+      {.newKind = newKind});
   if (!obj) {
     return false;
   }

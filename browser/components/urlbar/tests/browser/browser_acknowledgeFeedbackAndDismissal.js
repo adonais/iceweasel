@@ -115,6 +115,14 @@ add_task(async function acknowledgeFeedbackAndDismissal() {
     resultIndex: RESULT_INDEX,
   });
 
+  // The feedback acknowledgment is applied to the row content-side; on the
+  // message path it arrives asynchronously over the actor. Immediate in-process.
+  await BrowserTestUtils.waitForMutationCondition(
+    details.element.row,
+    { attributes: true, attributeFilter: ["feedback-acknowledgment"] },
+    () => details.element.row.hasAttribute("feedback-acknowledgment")
+  );
+
   Assert.equal(
     gTestProvider.commandCount[FEEDBACK_COMMAND],
     1,
@@ -274,11 +282,22 @@ async function doDismissTest({
 
   let resultCount = UrlbarTestUtils.getResultCount(window);
 
+  // On the message path the dismissal round-trips over the actor (the
+  // engagement runs parent-side, calls removeResult, and notifies back), so the
+  // row updates asynchronously. Await the removal notification; it fires
+  // synchronously on the in-process path.
+  let promiseRemoved = UrlbarTestUtils.promiseControllerNotification(
+    window,
+    "onQueryResultRemoved"
+  );
+
   // Click the command.
   await UrlbarTestUtils.openResultMenuAndClickItem(window, command, {
     resultIndex,
     openByMouse: true,
   });
+
+  await promiseRemoved;
 
   Assert.equal(
     gTestProvider.commandCount[command],
@@ -298,7 +317,7 @@ async function doDismissTest({
   details = await UrlbarTestUtils.getDetailsOfResultAt(window, resultIndex);
   Assert.equal(
     details.type,
-    UrlbarUtils.RESULT_TYPE.TIP,
+    UrlbarShared.RESULT_TYPE.TIP,
     "Row should be a tip after dismissal"
   );
   Assert.equal(
@@ -372,7 +391,7 @@ async function doDismissTest({
   for (let i = 0; i < UrlbarTestUtils.getResultCount(window); i++) {
     details = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
     Assert.ok(
-      details.type != UrlbarUtils.RESULT_TYPE.TIP &&
+      details.type != UrlbarShared.RESULT_TYPE.TIP &&
         details.result.providerName != gTestProvider.name,
       "Tip result and test result should not be present"
     );
@@ -396,19 +415,19 @@ class TestProvider extends UrlbarTestUtils.TestProvider {
       {
         name: FEEDBACK_COMMAND,
         l10n: {
-          id: "urlbar-result-menu-report-inaccurate-location",
+          id: "urlbar-result-menu-report-inaccurate-location2",
         },
       },
       {
         name: DISMISS_ONE_COMMAND,
         l10n: {
-          id: "firefox-suggest-command-not-interested",
+          id: "firefox-suggest-command-not-interested2",
         },
       },
       {
         name: DISMISS_ALL_COMMAND,
         l10n: {
-          id: "firefox-suggest-command-not-interested",
+          id: "firefox-suggest-command-not-interested2",
         },
       },
     ];
@@ -430,16 +449,18 @@ class TestProvider extends UrlbarTestUtils.TestProvider {
           controller.view.acknowledgeFeedback(details.result);
           break;
         case DISMISS_ONE_COMMAND:
-          details.result.acknowledgeDismissalL10n = {
-            id: "firefox-suggest-dismissal-acknowledgment-one",
-          };
-          controller.removeResult(details.result);
+          controller.removeResult(details.result, {
+            acknowledgeDismissalL10n: {
+              id: "firefox-suggest-dismissal-acknowledgment-one",
+            },
+          });
           break;
         case DISMISS_ALL_COMMAND:
-          details.result.acknowledgeDismissalL10n = {
-            id: "urlbar-result-dismissal-acknowledgment-all",
-          };
-          controller.removeResult(details.result);
+          controller.removeResult(details.result, {
+            acknowledgeDismissalL10n: {
+              id: "urlbar-result-dismissal-acknowledgment-all",
+            },
+          });
           break;
       }
     }
@@ -473,8 +494,8 @@ async function checkRowLabel(resultIndex, expectedLabel) {
 
 function makeResult(resultParams) {
   return new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    type: UrlbarShared.RESULT_TYPE.URL,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     payload: {
       url: "https://example.com/",
       isBlockable: true,

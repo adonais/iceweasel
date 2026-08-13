@@ -17,7 +17,6 @@
 #include "js/RootingAPI.h"            // JS::Rooted
 #include "js/String.h"                // JS_StringEqualsLiteral
 #include "js/Value.h"                 // JS::FalseValue, JS::Value
-
 #include "jsapi-tests/tests.h"
 #include "util/Text.h"  // js::InflateString
 

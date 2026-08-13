@@ -8,6 +8,7 @@
 
 #include "FrameStatistics.h"
 #include "MediaCodecsSupport.h"
+#include "MediaResult.h"
 #include "VideoUtils.h"
 #include "mozilla/EMEUtils.h"
 #include "mozilla/Logging.h"
@@ -514,6 +515,7 @@ void TelemetryProbesReporter::ReportResultForMFCDMPlaybackIfNeeded(
   const auto keySystem = mOwner->GetKeySystem();
   if (!keySystem) {
     NS_WARNING("Can not find key system to report telemetry for MFCDM!!");
+    ClearSessionErrorState();
     return;
   }
   glean::mfcdm::EmePlaybackExtra extraData;
@@ -521,6 +523,10 @@ void TelemetryProbesReporter::ReportResultForMFCDMPlaybackIfNeeded(
   extraData.videoCodec = Some(mOwner->GetMediaInfo().mVideo.mMimeType);
   extraData.resolution = Some(aResolution);
   extraData.playedTime = Some(aTotalPlayTimeS);
+  extraData.endedInError = Some(mEndedInError);
+  if (mLastPlatformError) {
+    extraData.lastPlatformError = mLastPlatformError;
+  }
 
   Maybe<uint64_t> renderedFrames;
   Maybe<uint64_t> droppedFrames;
@@ -546,8 +552,33 @@ void TelemetryProbesReporter::ReportResultForMFCDMPlaybackIfNeeded(
     LOG("{}", logMessage.get());
   }
   glean::mfcdm::eme_playback.Record(Some(extraData));
+
+  ClearSessionErrorState();
 }
 #endif
+
+void TelemetryProbesReporter::ClearSessionErrorState() {
+  AssertOnMainThreadAndNotShutdown();
+  mLastPlatformError = Nothing();
+  mEndedInError = false;
+}
+
+void TelemetryProbesReporter::OnDecodeError(const MediaResult& aError) {
+  AssertOnMainThreadAndNotShutdown();
+  if (!IsSessionEndingError(aError.Code())) {
+    return;
+  }
+  mEndedInError = true;
+  if (auto platformError = aError.GetPlatformErrorCode()) {
+    mLastPlatformError = platformError;
+  }
+}
+
+/* static */
+bool TelemetryProbesReporter::IsSessionEndingError(nsresult aError) {
+  return aError != NS_ERROR_DOM_MEDIA_WAITING_FOR_DATA &&
+         aError != NS_ERROR_DOM_MEDIA_CANCELED;
+}
 
 void TelemetryProbesReporter::ReportPlaytimeForKeySystem(
     const nsAString& aKeySystem, const double aTotalPlayTimeS,

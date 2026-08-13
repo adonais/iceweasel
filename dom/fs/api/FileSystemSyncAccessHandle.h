@@ -42,7 +42,7 @@ class FileSystemSyncAccessHandle final : public nsISupports,
           aAccessHandleControlChildEndpoint,
       const fs::FileSystemEntryMetadata& aMetadata);
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(FileSystemSyncAccessHandle)
 
   void LastRelease();

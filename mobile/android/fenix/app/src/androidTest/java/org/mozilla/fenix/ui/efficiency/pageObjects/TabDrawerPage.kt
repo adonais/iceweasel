@@ -4,17 +4,11 @@
 
 package org.mozilla.fenix.ui.efficiency.pageObjects
 
-import androidx.compose.ui.test.filter
-import androidx.compose.ui.test.hasParent
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
-import androidx.compose.ui.test.onAllNodesWithTag
-import androidx.compose.ui.test.onFirst
-import androidx.compose.ui.test.performClick
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
-import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.helpers.SwipeDirection
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.TabDrawerSelectors
@@ -37,6 +31,12 @@ class TabDrawerPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRu
             to = "HomePage",
             steps = listOf(NavigationStep.PressBack),
         )
+
+        NavigationRegistry.register(
+            from = pageName,
+            to = "BrowserPage",
+            steps = listOf(NavigationStep.PressBack),
+        )
     }
 
     override fun mozGetSelectorsByGroup(group: String): List<Selector> {
@@ -44,10 +44,101 @@ class TabDrawerPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRu
     }
 
     fun closeTabWithTitle(title: String): TabDrawerPage {
-        composeRule.onAllNodesWithTag(TabsTrayTestTag.TAB_ITEM_CLOSE)
-            .filter(hasParent(hasText(title)))
-            .onFirst()
-            .performClick()
+        mozClickFirstWithParentText(TabDrawerSelectors.TAB_ITEM_CLOSE, title)
+        return this
+    }
+
+    fun verifyNormalTabsList(): TabDrawerPage {
+        mozWaitUntilAbsent(TabDrawerSelectors.EMPTY_NORMAL_TABS_LIST)
+        mozVerify(TabDrawerSelectors.NORMAL_TABS_LIST)
+        return this
+    }
+
+    fun verifyExistingOpenTabs(vararg urls: String): TabDrawerPage {
+        urls.forEach { url ->
+            mozVerifyAnyHasChildWithText(TabDrawerSelectors.TAB_ITEM_ROOT, url)
+        }
+        return this
+    }
+
+    fun selectTabsAndCreateTabGroup(
+        tabTitle: String,
+        tabGroupTitle: String = "",
+        tabGroupColor: String = "",
+    ): TabDrawerPage {
+        mozClick(TabDrawerSelectors.THREE_DOT_BUTTON)
+        mozClick(TabDrawerSelectors.SELECT_TABS_BUTTON)
+        mozClick(TabDrawerSelectors.TAB_ITEM_WITH_TITLE(tabTitle))
+        mozClick(TabDrawerSelectors.TAB_SELECTION_THREE_DOT_BUTTON)
+        mozClick(TabDrawerSelectors.ADD_TO_GROUP_THREE_DOT_BUTTON)
+
+        if (tabGroupTitle.isNotEmpty()) {
+            mozEnterText(tabGroupTitle, TabDrawerSelectors.CREATE_TAB_GROUP_NAME_TEXT_FIELD)
+        }
+
+        if (tabGroupColor.isNotEmpty()) {
+            mozClick(TabDrawerSelectors.CREATE_TAB_GROUP_COLOR_BUTTON(tabGroupColor))
+        }
+
+        mozClick(TabDrawerSelectors.CREATE_TAB_GROUP_SAVE_BUTTON)
+
+        return this
+    }
+
+    fun selectAllTabsAndCreateTabGroup(
+        tabGroupTitle: String = "",
+        tabGroupColor: String = "",
+    ): TabDrawerPage {
+        mozClick(TabDrawerSelectors.THREE_DOT_BUTTON)
+        mozClick(TabDrawerSelectors.SELECT_ALL_TABS_BUTTON)
+        mozClick(TabDrawerSelectors.TAB_SELECTION_THREE_DOT_BUTTON)
+        mozClick(TabDrawerSelectors.ADD_TO_GROUP_THREE_DOT_BUTTON)
+
+        if (tabGroupTitle.isNotEmpty()) {
+            mozEnterText(tabGroupTitle, TabDrawerSelectors.CREATE_TAB_GROUP_NAME_TEXT_FIELD)
+        }
+
+        if (tabGroupColor.isNotEmpty()) {
+            mozClick(TabDrawerSelectors.CREATE_TAB_GROUP_COLOR_BUTTON(tabGroupColor))
+        }
+
+        mozClick(TabDrawerSelectors.CREATE_TAB_GROUP_SAVE_BUTTON)
+
+        return this
+    }
+
+    fun deleteTabGroupFromTabGroupPage(): TabDrawerPage {
+        mozClick(TabDrawerSelectors.TAB_GROUP_MORE_OPTIONS_BUTTON)
+        mozClick(TabDrawerSelectors.TAB_GROUP_MORE_OPTIONS_DELETE_BUTTON)
+
+        return this
+    }
+
+    fun closeTabGroup(): TabDrawerPage {
+        mozClick(TabDrawerSelectors.TAB_GROUP_MORE_OPTIONS_BUTTON)
+        mozClick(TabDrawerSelectors.TAB_GROUP_MORE_OPTIONS_CLOSE_BUTTON)
+
+        return this
+    }
+
+    fun swipCloseTabGroupBottomSheet(): TabDrawerPage {
+        mozSwipeElement(TabDrawerSelectors.TAB_GROUP_BOTTOM_SHEET_HANDLE, SwipeDirection.DOWN)
+        mozWaitUntilAbsent(TabDrawerSelectors.TAB_GROUP_BOTTOM_SHEET_HANDLE)
+
+        return this
+    }
+
+    fun openTabGroupFromTabGroupPage(tabGroupTitle: String, numberOfTabs: Int, tabGroupColor: String): TabDrawerPage {
+        mozClick(TabDrawerSelectors.TAB_GROUPS_BUTTON)
+        mozClick(TabDrawerSelectors.TAB_GROUP_ITEM(tabGroupTitle, numberOfTabs, tabGroupColor))
+
+        return this
+    }
+
+    fun verifyTabGroupFromTabGroupPage(tabGroupTitle: String, numberOfTabs: Int, tabGroupColor: String): TabDrawerPage {
+        mozClick(TabDrawerSelectors.TAB_GROUPS_BUTTON)
+        mozVerify(TabDrawerSelectors.TAB_GROUP_ITEM(tabGroupTitle, numberOfTabs, tabGroupColor))
+
         return this
     }
 }

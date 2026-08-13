@@ -184,11 +184,11 @@ export class NetworkObserver {
    */
   #openRequests = new lazy.ChannelMap();
   /**
-   * The maximum size (in bytes) of the individual response bodies to be stored.
+   * The maximum size (in bytes) of the individual request and response bodies to be stored.
    *
    * @type {number}
    */
-  #responseBodyLimit = 0;
+  #bodyLimit = 0;
   /**
    * Network response bodies are piped through a buffer of the given size
    * (in bytes).
@@ -228,7 +228,7 @@ export class NetworkObserver {
       decodeResponseBodies,
       ignoreChannelFunction,
       onNetworkEvent,
-      responseBodyLimit,
+      bodyLimit,
     } = options;
 
     if (typeof ignoreChannelFunction !== "function") {
@@ -251,9 +251,9 @@ export class NetworkObserver {
       this.#decodeResponseBodies = decodeResponseBodies;
     }
 
-    // Set the provided responseBodyLimit if any, otherwise use the default "0".
-    if (typeof responseBodyLimit === "number") {
-      this.#responseBodyLimit = responseBodyLimit;
+    // Set the provided bodyLimit if any, otherwise use the default "0".
+    if (typeof bodyLimit === "number") {
+      this.#bodyLimit = bodyLimit;
     }
 
     // Start all platform observers.
@@ -305,21 +305,21 @@ export class NetworkObserver {
     this.#authPromptListenerEnabled = enabled;
   }
 
-  /**
-   * Update the maximum size in bytes that can be collected for network response
-   * bodies. Responses for which the NetworkResponseListener has already been
-   * created will not be using the new limit, only later responses will be
-   * affected.
-   *
-   * @param {number} responseBodyLimit
-   *        The new responseBodyLimit to use.
-   */
-  setResponseBodyLimit(responseBodyLimit) {
-    this.#responseBodyLimit = responseBodyLimit;
-  }
-
   setSaveRequestAndResponseBodies(save) {
     this.#saveRequestAndResponseBodies = save;
+  }
+
+  /**
+   * Update the maximum size in bytes that can be collected for network request
+   * and response bodies.
+   * Requests and responses that have already been created will not be using the
+   * new limit, only later requests and responses will be affected.
+   *
+   * @param {number} bodyLimit
+   *        The new bodyLimit to use.
+   */
+  setBodyLimit(bodyLimit) {
+    this.#bodyLimit = bodyLimit;
   }
 
   getThrottleData() {
@@ -1274,7 +1274,7 @@ export class NetworkObserver {
       decodedCertificateCache: this.#decodedCertificateCache,
       decodeResponseBody: this.#decodeResponseBodies,
       fromServiceWorker: httpActivity.fromServiceWorker,
-      responseBodyLimit: this.#responseBodyLimit,
+      responseBodyLimit: this.#bodyLimit,
     });
 
     // Remember the input stream, so it isn't released by GC.
@@ -1341,9 +1341,7 @@ export class NetworkObserver {
 
   #sendRequestBody(httpActivity) {
     if (httpActivity.sentBody !== null) {
-      const limit = Services.prefs.getIntPref(
-        "devtools.netmonitor.requestBodyLimit"
-      );
+      const limit = this.#bodyLimit;
       const size = httpActivity.sentBody.length;
       if (size > limit && limit > 0) {
         httpActivity.sentBody = httpActivity.sentBody.substr(0, limit);

@@ -327,8 +327,7 @@ class nsAttrValue {
     constexpr EnumTableEntry(const char* aTag, int16_t aValue)
         : tag(aTag), value(aValue) {}
 
-    template <typename T,
-              typename = typename std::enable_if<std::is_enum<T>::value>::type>
+    template <typename T, typename = std::enable_if_t<std::is_enum_v<T>>>
     constexpr EnumTableEntry(const char* aTag, T aValue)
         : tag(aTag), value(static_cast<int16_t>(aValue)) {
       static_assert(mozilla::EnumTypeFitsWithin<T, int16_t>::value,

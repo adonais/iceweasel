@@ -27,5 +27,6 @@ object SettingsDataCollectionSelectors {
 
     val all = listOf(
         NAVIGATE_BACK_TOOLBAR_BUTTON,
+        SEND_TECHNICAL_AND_INTERACTION_DATA_OPTION,
     )
 }

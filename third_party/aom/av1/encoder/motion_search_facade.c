@@ -426,23 +426,6 @@ void av1_single_motion_search(const AV1_COMP *const cpi, MACROBLOCK *x,
               { p[0].dst.buf, p[1].dst.buf, p[2].dst.buf },
               { p[0].dst.stride, p[1].dst.stride, p[2].dst.stride },
             };
-            int64_t rd = INT64_MAX;
-            if (!mv_sf->disable_second_mv) {
-              // Calculate actual rd cost.
-              mbmi->mv[0].as_mv = best_mv->as_mv;
-              av1_enc_build_inter_predictor(cm, xd, mi_row, mi_col, &orig_dst,
-                                            bsize, 0, 0);
-              av1_subtract_plane(x, bsize, 0);
-              RD_STATS this_rd_stats;
-              av1_init_rd_stats(&this_rd_stats);
-              av1_estimate_txfm_yrd(cpi, x, &this_rd_stats, INT64_MAX, bsize,
-                                    max_txsize_rect_lookup[bsize]);
-              int this_mv_rate = av1_mv_bit_cost(
-                  &best_mv->as_mv, &ref_mv, mv_costs->nmv_joint_cost,
-                  mv_costs->mv_cost_stack, MV_COST_WEIGHT);
-              rd = RDCOST(x->rdmult, this_mv_rate + this_rd_stats.rate,
-                          this_rd_stats.dist);
-            }
 
             MV this_best_mv;
             subpel_start_mv = get_mv_from_fullmv(&second_best_mv.as_fullmv);
@@ -453,13 +436,28 @@ void av1_single_motion_search(const AV1_COMP *const cpi, MACROBLOCK *x,
                   xd, cm, &ms_params, subpel_start_mv, NULL, &this_best_mv,
                   &dis, &sse, fractional_ms_list);
 
-              if (!mv_sf->disable_second_mv) {
-                // If cpi->sf.mv_sf.disable_second_mv is 0, use actual rd cost
-                // to choose the better MV.
+              // If cpi->sf.mv_sf.disable_second_mv is 0 and both MVs are valid,
+              // use actual rd cost to choose the better MV.
+              if (!mv_sf->disable_second_mv && this_var != INT32_MAX) {
+                // Calculate rd cost of first MV.
+                mbmi->mv[0].as_mv = best_mv->as_mv;
+                av1_enc_build_inter_predictor(cm, xd, mi_row, mi_col, &orig_dst,
+                                              bsize, 0, 0);
+                RD_STATS this_rd_stats;
+                av1_init_rd_stats(&this_rd_stats);
+                av1_estimate_txfm_yrd(cpi, x, &this_rd_stats, INT64_MAX, bsize,
+                                      max_txsize_rect_lookup[bsize]);
+                int this_mv_rate = av1_mv_bit_cost(
+                    &best_mv->as_mv, &ref_mv, mv_costs->nmv_joint_cost,
+                    mv_costs->mv_cost_stack, MV_COST_WEIGHT);
+                const int64_t rd =
+                    RDCOST(x->rdmult, this_mv_rate + this_rd_stats.rate,
+                           this_rd_stats.dist);
+
+                // Calculate rd cost of second MV.
                 mbmi->mv[0].as_mv = this_best_mv;
                 av1_enc_build_inter_predictor(cm, xd, mi_row, mi_col, &orig_dst,
                                               bsize, 0, 0);
-                av1_subtract_plane(x, bsize, 0);
                 RD_STATS tmp_rd_stats;
                 av1_init_rd_stats(&tmp_rd_stats);
                 av1_estimate_txfm_yrd(cpi, x, &tmp_rd_stats, INT64_MAX, bsize,

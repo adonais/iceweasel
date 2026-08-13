@@ -4,22 +4,22 @@
 
 #include "UrlClassifierFeatureHarmfulAddonProtection.h"
 
+#include "ChannelClassifierService.h"
 #include "mozilla/AntiTrackingUtils.h"
+#include "mozilla/StaticPrefs_privacy.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/extensions/WebExtensionPolicy.h"
 #include "mozilla/glean/GleanPings.h"
 #include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/net/ChannelClassifierUtils.h"
 #include "mozilla/net/UrlClassifierCommon.h"
-#include "ChannelClassifierService.h"
-#include "mozilla/StaticPrefs_privacy.h"
-#include "nsNetUtil.h"
-#include "mozilla/StaticPtr.h"
 #include "nsIChannel.h"
 #include "nsIEffectiveTLDService.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsIObserverService.h"
 #include "nsIWebProgressListener.h"
 #include "nsIWritablePropertyBag2.h"
+#include "nsNetUtil.h"
 
 namespace mozilla {
 namespace net {

@@ -91,11 +91,11 @@ class GleanApplication : Application() {
             if (isFirstRun) {
                 // This file is bundled with the app, but derived from the server at build time.
                 // We'll use it now, on first run.
-                nimbus.setExperimentsLocally(R.raw.initial_experiments)
+                nimbus.applyLocalExperiments(R.raw.initial_experiments)
+            } else {
+                // Apply the experiments downloaded on last run.
+                nimbus.applyPendingExperiments()
             }
-            // Apply the experiments downloaded on last run, but on first run, it will
-            // use the contents of `R.raw.initial_experiments`.
-            nimbus.applyPendingExperiments()
 
             // In a real application, we might want to fetchExperiments() here.
             //

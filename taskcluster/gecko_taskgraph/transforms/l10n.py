@@ -8,6 +8,7 @@ Do transforms specific to l10n kind
 from typing import Literal, Optional, Union
 
 from mozbuild.chunkify import chunkify
+from mozilla_taskgraph.util.attributes import copy_attributes_from_dependent_job
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util import json
 from taskgraph.util.copy import deepcopy
@@ -23,10 +24,7 @@ from taskgraph.util.treeherder import add_suffix
 
 from gecko_taskgraph.transforms.job import JobDescriptionSchema
 from gecko_taskgraph.transforms.task import TaskDescriptionSchema
-from gecko_taskgraph.util.attributes import (
-    copy_attributes_from_dependent_job,
-    task_name,
-)
+from gecko_taskgraph.util.attributes import task_name
 
 
 def _by_platform(arg):

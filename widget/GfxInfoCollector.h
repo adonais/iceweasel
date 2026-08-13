@@ -6,9 +6,9 @@
 #ifndef _mozilla_widget_GfxInfoCollector_h_
 #define _mozilla_widget_GfxInfoCollector_h_
 
+#include "js/RootingAPI.h"
 #include "mozilla/Attributes.h"
 #include "nsStringFwd.h"
-#include "js/RootingAPI.h"
 
 namespace mozilla {
 namespace widget {

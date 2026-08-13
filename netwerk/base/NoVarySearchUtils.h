@@ -64,7 +64,10 @@ struct NoVarySearchData {
  *   "params, except=(\"a\")"    → Allowlist, paramNames=["a"]
  *   "key-order"                 → ExactMatch, varyOnKeyOrder=false
  */
-NoVarySearchData ParseNoVarySearchHeader(const nsACString& aHeader);
+NoVarySearchData ParseNoVarySearchHeader(const nsACString& aHeader,
+                                         bool* aParseError = nullptr);
+
+nsLiteralCString NoVarySearchRuleLabel(NoVarySearchData::ParamsRule aRule);
 
 /**
  * Determines whether two URIs are equivalent under a URL variation config.

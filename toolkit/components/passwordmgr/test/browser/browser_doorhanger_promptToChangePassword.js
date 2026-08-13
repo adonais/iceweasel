@@ -66,7 +66,7 @@ async function showChangePasswordDoorhanger(
 
   let { panel } = PopupNotifications;
   let notificationElement = panel.childNodes[0];
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return (
       notificationElement.querySelector("#password-notification-password")
         .value == formLogin.password &&
@@ -139,6 +139,12 @@ async function promptToChangePasswordTest(testData) {
       await updateDoorhangerInputValues(testData.promptTextboxValues);
 
       let mainActionButton = getDoorhangerButton(notif, CHANGE_BUTTON);
+      // The button label is updated asynchronously after editing the fields
+      // (updateButtonLabel awaits searchLoginsAsync), so wait for it to settle.
+      await TestUtils.waitForCondition(
+        () => mainActionButton.label == testData.expectedButtonLabel,
+        `Waiting for button label to become '${testData.expectedButtonLabel}'`
+      );
       Assert.equal(
         mainActionButton.label,
         testData.expectedButtonLabel,
@@ -158,6 +164,16 @@ async function promptToChangePasswordTest(testData) {
       await promiseHidden;
       info("Waiting for storagePromise");
       await storagePromise;
+
+      // persistData may trigger more than one storage change (e.g. a modify
+      // plus a remove when merging logins), and storagePromise only resolves on
+      // the first. Wait for the store to reflect the expected login count.
+      await TestUtils.waitForCondition(
+        async () =>
+          (await Services.logins.getAllLogins()).length ==
+          testData.expectedResultLogins.length,
+        "Waiting for the expected number of stored logins"
+      );
 
       // ensure the notification was removed to keep clean state for next run
       await cleanupDoorhanger(notif);
@@ -627,7 +643,10 @@ let tests = [
         savedLoginsByName.bobABC.timeLastUsed,
         "Check timeLastUsed did change"
       );
-      todo_is(
+      // The Rust storage backend only bumps timePasswordChanged when the
+      // password actually changes; here the password is put back to its
+      // original value, so it should be preserved.
+      Assert.equal(
         finalLogins[0].timePasswordChanged,
         savedLoginsByName.bobABC.timePasswordChanged,
         "Check timePasswordChanged didn't change"

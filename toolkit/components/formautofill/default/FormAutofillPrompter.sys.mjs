@@ -11,6 +11,7 @@ import { FormAutofill } from "resource://autofill/FormAutofill.sys.mjs";
 import { FormAutofillUtils } from "resource://gre/modules/shared/FormAutofillUtils.sys.mjs";
 
 import { AutofillTelemetry } from "resource://gre/modules/shared/AutofillTelemetry.sys.mjs";
+import { AutofillDataTypes } from "resource://gre/modules/shared/AutofillDataTypes.sys.mjs";
 import { showConfirmation } from "resource://gre/modules/FillHelpers.sys.mjs";
 
 const lazy = {};
@@ -157,7 +158,7 @@ export class AutofillDoorhanger {
 
   onMenuItemClick(evt) {
     AutofillTelemetry.recordDoorhangerClicked(
-      this.constructor.telemetryType,
+      this.constructor.dataType,
       evt,
       this.constructor.telemetryObject,
       this.flowId
@@ -252,7 +253,7 @@ export class AutofillDoorhanger {
 
   async show() {
     AutofillTelemetry.recordDoorhangerShown(
-      this.constructor.telemetryType,
+      this.constructor.dataType,
       this.constructor.telemetryObject,
       this.flowId
     );
@@ -331,7 +332,7 @@ export class AutofillDoorhanger {
 
     const callback = () => {
       AutofillTelemetry.recordDoorhangerClicked(
-        this.constructor.telemetryType,
+        this.constructor.dataType,
         mainActionParams.callbackState,
         this.constructor.telemetryObject,
         this.flowId
@@ -351,7 +352,7 @@ export class AutofillDoorhanger {
         ...getLabelAndAccessKey(params),
         callback: () => {
           AutofillTelemetry.recordDoorhangerClicked(
-            this.constructor.telemetryType,
+            this.constructor.dataType,
             params.callbackState,
             this.constructor.telemetryObject,
             this.flowId
@@ -371,7 +372,7 @@ export class AddressSaveDoorhanger extends AutofillDoorhanger {
   static learnMoreURL = "automatically-fill-your-address-web-forms";
   static editLinkId = "address-capture-edit-address-button";
 
-  static telemetryType = AutofillTelemetry.ADDRESS;
+  static dataType = AutofillDataTypes.ADDRESS;
   static telemetryObject = "capture_doorhanger";
 
   constructor(browser, oldRecord, newRecord, flowId) {
@@ -590,7 +591,7 @@ export class AddressUpdateDoorhanger extends AddressSaveDoorhanger {
 }
 
 export class AddressEditDoorhanger extends AutofillDoorhanger {
-  static telemetryType = AutofillTelemetry.ADDRESS;
+  static dataType = AutofillDataTypes.ADDRESS;
   static telemetryObject = "edit_doorhanger";
 
   constructor(browser, record, flowId) {
@@ -855,7 +856,7 @@ export class AddressEditDoorhanger extends AutofillDoorhanger {
 export class CreditCardSaveDoorhanger extends AutofillDoorhanger {
   static contentClass = "credit-card-capture-content";
 
-  static telemetryType = AutofillTelemetry.CREDIT_CARD;
+  static dataType = AutofillDataTypes.CREDIT_CARD;
   static telemetryObject = "capture_doorhanger";
 
   static spotlightURL = "about:preferences#privacy-credit-card-autofill";
@@ -1011,7 +1012,7 @@ export class CreditCardSaveDoorhanger extends AutofillDoorhanger {
 }
 
 export class CreditCardUpdateDoorhanger extends CreditCardSaveDoorhanger {
-  static telemetryType = AutofillTelemetry.CREDIT_CARD;
+  static dataType = AutofillDataTypes.CREDIT_CARD;
   static telemetryObject = "update_doorhanger";
 
   constructor(browser, oldRecord, newRecord, flowId) {
@@ -1210,6 +1211,7 @@ CONTENT = {
       ],
     },
     options: {
+      autofocus: true,
       persistWhileVisible: true,
       hideClose: true,
 
@@ -1264,6 +1266,7 @@ CONTENT = {
       ],
     },
     options: {
+      autofocus: true,
       persistWhileVisible: true,
       hideClose: true,
     },

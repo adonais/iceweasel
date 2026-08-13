@@ -5,9 +5,9 @@
 #ifndef mozilla_net_WebSocketChannelChild_h
 #define mozilla_net_WebSocketChannelChild_h
 
+#include "mozilla/net/BaseWebSocketChannel.h"
 #include "mozilla/net/NeckoTargetHolder.h"
 #include "mozilla/net/PWebSocketChild.h"
-#include "mozilla/net/BaseWebSocketChannel.h"
 #include "nsString.h"
 
 namespace mozilla {

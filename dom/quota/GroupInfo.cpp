@@ -32,19 +32,37 @@ const nsCString& GroupInfo::GetGroup() const {
 void GroupInfo::LockedAddOriginInfo(NotNull<RefPtr<OriginInfo>>&& aOriginInfo) {
   AssertCurrentThreadOwnsQuotaMutex();
 
-  NS_ASSERTION(!mOriginInfos.Contains(aOriginInfo),
-               "Replacing an existing entry!");
-  const auto& back = *mOriginInfos.AppendElement(std::move(aOriginInfo));
+  QuotaManager* quotaManager = QuotaManager::Get();
+  MOZ_ASSERT(quotaManager);
 
-  uint64_t usage = back->LockedUsage();
+  const uint64_t usage = aOriginInfo->LockedUsage();
+  const bool persisted = aOriginInfo->LockedPersisted();
 
-  if (!back->LockedPersisted()) {
+  auto foundIndex = mOriginInfos.IndexOf(aOriginInfo);
+
+  if (decltype(mOriginInfos)::NoIndex != foundIndex) {
+    const auto& oldOriginInfo = mOriginInfos[foundIndex];
+    const uint64_t oldUsage = oldOriginInfo->LockedUsage();
+
+    // The persisted flag may differ between old and new, so subtract and
+    // re-add mUsage conditionally rather than using a simple delta.
+    if (!oldOriginInfo->LockedPersisted()) {
+      AssertNoUnderflow(mUsage, oldUsage);
+      mUsage -= oldUsage;
+    }
+
+    AssertNoUnderflow(quotaManager->mTemporaryStorageUsage, oldUsage);
+    quotaManager->mTemporaryStorageUsage -= oldUsage;
+
+    mOriginInfos[foundIndex] = std::move(aOriginInfo);
+  } else {
+    mOriginInfos.AppendElement(std::move(aOriginInfo));
+  }
+
+  if (!persisted) {
     AssertNoOverflow(mUsage, usage);
     mUsage += usage;
   }
-
-  QuotaManager* quotaManager = QuotaManager::Get();
-  MOZ_ASSERT(quotaManager);
 
   AssertNoOverflow(quotaManager->mTemporaryStorageUsage, usage);
   quotaManager->mTemporaryStorageUsage += usage;
@@ -55,14 +73,14 @@ void GroupInfo::LockedAdjustUsageForRemovedOriginInfo(
   const uint64_t usage = aOriginInfo.LockedUsage();
 
   if (!aOriginInfo.LockedPersisted()) {
-    AssertNoUnderflow(mUsage, usage);
+    QM_ASSERT_NO_UNDERFLOW(mUsage, usage);
     mUsage -= usage;
   }
 
   QuotaManager* const quotaManager = QuotaManager::Get();
   MOZ_ASSERT(quotaManager);
 
-  AssertNoUnderflow(quotaManager->mTemporaryStorageUsage, usage);
+  QM_ASSERT_NO_UNDERFLOW(quotaManager->mTemporaryStorageUsage, usage);
   quotaManager->mTemporaryStorageUsage -= usage;
 }
 
@@ -78,6 +96,12 @@ void GroupInfo::LockedRemoveOriginInfo(const nsACString& aOrigin) {
   if (foundIt != mOriginInfos.cend()) {
     LockedAdjustUsageForRemovedOriginInfo(**foundIt);
 
+    // The OriginInfo may still be referenced by mDirtyOriginInfos (which
+    // holds RefPtr<OriginInfo>). Nulling mGroupInfo lets
+    // FlushDirtyOriginInfos detect and skip it via its existing null check.
+    // The dirty flag persists on disk, so the origin will be rescanned on
+    // next initialization.
+    foundIt->get()->mGroupInfo = nullptr;
     mOriginInfos.RemoveElementAt(foundIt);
   }
 }
@@ -87,6 +111,7 @@ void GroupInfo::LockedRemoveOriginInfos() {
 
   for (const auto& originInfo : std::exchange(mOriginInfos, {})) {
     LockedAdjustUsageForRemovedOriginInfo(*originInfo);
+    originInfo->mGroupInfo = nullptr;
   }
 }
 

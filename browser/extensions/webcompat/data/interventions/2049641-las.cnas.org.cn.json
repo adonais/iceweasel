@@ -1,0 +1,15 @@
+{
+  "label": "las.cnas.org.cn",
+  "bugs": {
+    "2049641": {
+      "issue": "firefox-blocked-completely",
+      "matches": ["*://las.cnas.org.cn/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "ua_string": ["Chrome"]
+    }
+  ]
+}

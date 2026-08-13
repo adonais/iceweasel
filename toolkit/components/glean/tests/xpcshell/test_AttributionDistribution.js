@@ -20,22 +20,15 @@ add_setup(
 );
 
 add_task(function test_attribution_works() {
-  // Ensure we aren't racing Glean init.
-  // (Remove upon vendoring of a fix to bug 1959515).
-  Glean.testOnly.balloons.testGetValue();
-
   let attr = Services.fog.testGetAttribution();
-  Assert.deepEqual(
-    attr,
-    {
-      source: null,
-      medium: null,
-      campaign: null,
-      term: null,
-      content: null,
-    },
-    "Initial attribution should be empty."
-  );
+  const empty = {
+    source: null,
+    medium: null,
+    campaign: null,
+    term: null,
+    content: null,
+  };
+  Assert.deepEqual(empty, attr, "Initial attribution should be empty.");
 
   Services.fog.updateAttribution("source", null, "campaign", null, "content");
 
@@ -48,22 +41,23 @@ add_task(function test_attribution_works() {
   };
   attr = Services.fog.testGetAttribution();
   Assert.deepEqual(attr, expected, "Must give what it got.");
+
+  Services.fog.clearAttribution();
+  attr = Services.fog.testGetAttribution();
+  Assert.deepEqual(empty, attr, "Attribution should again be empty.");
 });
 
 add_task(function test_distribution_works() {
-  // Ensure we aren't racing Glean init.
-  // (Remove upon vendoring of a fix to bug 1959515).
-  Glean.testOnly.balloons.testGetValue();
-
   let dist = Services.fog.testGetDistribution();
-  Assert.deepEqual(
-    dist,
-    { name: null },
-    "Initial distribution should be empty."
-  );
+  const empty = { name: null };
+  Assert.deepEqual(dist, empty, "Initial distribution should be empty.");
 
   Services.fog.updateDistribution("name");
 
   dist = Services.fog.testGetDistribution();
   Assert.deepEqual(dist, { name: "name" }, "Must give what it got.");
+
+  Services.fog.clearDistribution();
+  dist = Services.fog.testGetDistribution();
+  Assert.deepEqual(dist, empty, "Distribution should be empty.");
 });

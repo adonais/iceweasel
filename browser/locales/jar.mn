@@ -14,11 +14,9 @@
   preview/genai.ftl                                (../components/genai/content/genai.ftl)
   preview/credentialChooser.ftl                    (../../toolkit/components/credentialmanagement/credentialChooser.ftl)
   browser                                          (%browser/**/*.ftl)
-  preview/aiFeatures.ftl                           (../locales-preview/aiFeatures.ftl)
-  preview/aiWindow.ftl                             (../locales-preview/aiWindow.ftl)
-  preview/aiWindowContent.ftl                      (../locales-preview/aiWindowContent.ftl)
   preview/smartTabGroups.ftl                       (%chrome/overrides/smartTabGroups.ftl)
   preview/privacyPreferences.ftl                   (../locales-preview/privacyPreferences.ftl)
+  preview/autoTabGrouping.ftl                      (../locales-preview/autoTabGrouping.ftl)
 
 @AB_CD@.jar:
 % locale browser @AB_CD@ %locale/browser/

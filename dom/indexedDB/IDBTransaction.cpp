@@ -332,12 +332,15 @@ void IDBTransaction::OnNewRequest() {
 
 void IDBTransaction::TransitionToActive() {
   AssertIsOnOwningThread();
-  MOZ_ASSERT(mReadyState == ReadyState::Inactive);
+  MOZ_DIAGNOSTIC_ASSERT(mReadyState == ReadyState::Inactive ||
+                        mReadyState == ReadyState::Finished);
 
   if (!mDeferralActive) {
     MOZ_DIAGNOSTIC_ASSERT(mDeferredRunnables.IsEmpty());
 
-    mReadyState = ReadyState::Active;
+    if (mReadyState == ReadyState::Inactive) {
+      mReadyState = ReadyState::Active;
+    }
     return;
   }
 
@@ -345,10 +348,6 @@ void IDBTransaction::TransitionToActive() {
 
   DrainDeferredResponses();
 
-  // Draining can run script that aborts the transaction; only become
-  // Active again if we're still Inactive so post-abort guards stay effective.
-  MOZ_DIAGNOSTIC_ASSERT(mReadyState == ReadyState::Inactive ||
-                        mReadyState == ReadyState::Finished);
   if (mReadyState == ReadyState::Inactive) {
     mReadyState = ReadyState::Active;
   }
@@ -389,7 +388,8 @@ void IDBTransaction::OnRequestFinished(
     const bool aRequestCompletedSuccessfully) {
   AssertIsOnOwningThread();
   MOZ_ASSERT(mReadyState != ReadyState::Active);
-  MOZ_ASSERT_IF(mReadyState == ReadyState::Finished, !NS_SUCCEEDED(mAbortCode));
+  MOZ_ASSERT_IF(mReadyState == ReadyState::Finished,
+                NS_FAILED(mAbortCode) || mFiredCompleteOrAbort);
   MOZ_ASSERT(mPendingRequestCount);
 
   --mPendingRequestCount;

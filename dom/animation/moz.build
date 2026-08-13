@@ -20,6 +20,7 @@ EXPORTS.mozilla.dom += [
     "EndpointBehavior.h",
     "KeyframeEffect.h",
     "ScrollTimeline.h",
+    "TimelineName.h",
     "ViewTimeline.h",
 ]
 
@@ -60,6 +61,7 @@ UNIFIED_SOURCES += [
     "KeyframeEffect.cpp",
     "KeyframeUtils.cpp",
     "ScrollTimeline.cpp",
+    "TimelineName.cpp",
     "TimingParams.cpp",
     "ViewTimeline.cpp",
 ]

@@ -4,7 +4,6 @@
 
 #include "APZCTreeManagerTester.h"
 #include "APZTestCommon.h"
-
 #include "InputUtils.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/StaticPrefs_mousewheel.h"

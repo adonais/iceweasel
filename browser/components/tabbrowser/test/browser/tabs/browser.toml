@@ -201,6 +201,8 @@ skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1904826
 ]
 
+["browser_list_all_tabs_menu_items.js"]
+
 ["browser_list_all_tabs_telemetry.js"]
 
 ["browser_long_data_url_label_truncation.js"]
@@ -485,6 +487,8 @@ skip-if = [
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug", # Bug 1932653
 ]
 
+["browser_selectMRUOnClose.js"]
+
 ["browser_selectTabAtIndex.js"]
 tags = "vertical-tabs"
 
@@ -512,6 +516,9 @@ fail-if = [
 skip-if = [
   "true", # Bug 1616418 Bug 1549985
 ]
+
+["browser_tabContextMenu_altStructure.js"]
+tags = "vertical-tabs"
 
 ["browser_tabContextMenu_keyboard.js"]
 tags = "vertical-tabs"
@@ -593,6 +600,8 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1947600
 ]
 
+["browser_tab_interaction_telemetry.js"]
+
 ["browser_tab_groups_tab_interactions_telemetry.js"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && swgl", # Bug 1968371
@@ -627,9 +636,6 @@ skip-if = [
 ]
 
 ["browser_tab_manager_keyboard_access.js"]
-tags = "vertical-tabs"
-
-["browser_tab_manager_synced_tabs.js"]
 tags = "vertical-tabs"
 
 ["browser_tab_move_active_tab.js"]

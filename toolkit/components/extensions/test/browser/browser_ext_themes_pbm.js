@@ -14,6 +14,8 @@ const { PromptTestUtils } = ChromeUtils.importESModule(
 const LIGHT_THEME_ID = "firefox-compact-light@mozilla.org";
 const DARK_THEME_ID = "firefox-compact-dark@mozilla.org";
 
+const NOVA_ENABLED = Services.prefs.getBoolPref("browser.nova.enabled", false);
+
 // This tests opens many chrome windows which is slow on debug builds.
 requestLongerTimeout(2);
 
@@ -45,20 +47,29 @@ async function testWindowColorScheme({
   win,
   expectDark,
   expectNonNativeTheme,
+  expectLWT = false,
 }) {
   let docEl = win.document.documentElement;
 
   await testIsDark(win, expectDark);
 
-  ok(!docEl.hasAttribute("lwtheme"), "Window should not have LWT attribute.");
-  ok(
-    !docEl.hasAttribute("lwtheme-brighttext"),
-    "LWT text color attribute should not be set."
-  );
+  if (expectLWT) {
+    ok(docEl.hasAttribute("lwtheme"), "Window should have LWT attribute.");
+    ok(
+      docEl.hasAttribute("lwtheme-brighttext"),
+      "LWT text color attribute should be set."
+    );
+  } else {
+    ok(!docEl.hasAttribute("lwtheme"), "Window should not have LWT attribute.");
+    ok(
+      !docEl.hasAttribute("lwtheme-brighttext"),
+      "LWT text color attribute should not be set."
+    );
+  }
   is(
     win.document.forceNonNativeTheme,
     expectNonNativeTheme,
-    "Window should not have LWT attribute."
+    `Document should have forceNonNativeTheme: ${expectNonNativeTheme}`
   );
 }
 
@@ -146,6 +157,8 @@ add_task(async function test_default_theme_light() {
   await testWindowColorScheme({
     win: pbmWindowA,
     expectDark: true,
+    // When nova is enabled, we load a dark in-app (LWT) theme
+    expectLWT: NOVA_ENABLED,
     expectNonNativeTheme: false,
   });
 
@@ -162,6 +175,8 @@ add_task(async function test_default_theme_light() {
   await testWindowColorScheme({
     win: pbmWindowB,
     expectDark: true,
+    // When nova is enabled, we load a dark in-app (LWT) theme
+    expectLWT: NOVA_ENABLED,
     expectNonNativeTheme: false,
   });
 
@@ -192,6 +207,8 @@ add_task(async function test_default_theme_dark() {
   await testWindowColorScheme({
     win: pbmWindow,
     expectDark: true,
+    // When nova is enabled, we load a dark in-app (LWT) theme
+    expectLWT: NOVA_ENABLED,
     expectNonNativeTheme: false,
   });
 
@@ -202,6 +219,7 @@ add_task(async function test_default_theme_dark() {
 
 // For the light theme both normal and private browsing windows should have a
 // bright color scheme applied.
+// In nova we load a dark private theme instead
 add_task(async function test_light_theme_builtin() {
   let lightTheme = await AddonManager.getAddonByID(LIGHT_THEME_ID);
   await lightTheme.enable();
@@ -217,11 +235,20 @@ add_task(async function test_light_theme_builtin() {
     private: true,
   });
   info("Private browsing window should not be in dark mode.");
-  await testWindowColorScheme({
-    win: pbmWindow,
-    expectDark: false,
-    expectNonNativeTheme: true,
-  });
+  if (NOVA_ENABLED) {
+    await testWindowColorScheme({
+      win: pbmWindow,
+      expectDark: true,
+      expectLWT: true,
+      expectNonNativeTheme: false,
+    });
+  } else {
+    await testWindowColorScheme({
+      win: pbmWindow,
+      expectDark: false,
+      expectNonNativeTheme: true,
+    });
+  }
 
   await BrowserTestUtils.closeWindow(pbmWindow);
   await lightTheme.disable();
@@ -248,7 +275,9 @@ add_task(async function test_dark_theme_builtin() {
   await testWindowColorScheme({
     win: pbmWindow,
     expectDark: true,
-    expectNonNativeTheme: true,
+    // When nova is enabled, we load a dark in-app (LWT) theme
+    expectLWT: NOVA_ENABLED,
+    expectNonNativeTheme: !NOVA_ENABLED,
   });
 
   await BrowserTestUtils.closeWindow(pbmWindow);
@@ -274,6 +303,8 @@ add_task(async function test_theme_switch_updates_existing_pbm_win() {
   await testWindowColorScheme({
     win: pbmWindow,
     expectDark: true,
+    // When nova is enabled, we load a dark in-app (LWT) theme
+    expectLWT: NOVA_ENABLED,
     expectNonNativeTheme: false,
   });
 
@@ -288,11 +319,15 @@ add_task(async function test_theme_switch_updates_existing_pbm_win() {
     expectNonNativeTheme: true,
   });
 
-  info("Private browsing window should not be in dark mode.");
+  info(
+    "Private browsing window should only be in dark mode with nova enabled."
+  );
   await testWindowColorScheme({
     win: pbmWindow,
-    expectDark: false,
-    expectNonNativeTheme: true,
+    // When nova is enabled, we load a dark in-app (LWT) theme
+    expectDark: NOVA_ENABLED,
+    expectLWT: NOVA_ENABLED,
+    expectNonNativeTheme: !NOVA_ENABLED,
   });
 
   await lightTheme.disable();
@@ -312,7 +347,9 @@ add_task(async function test_theme_switch_updates_existing_pbm_win() {
   await testWindowColorScheme({
     win: pbmWindow,
     expectDark: true,
-    expectNonNativeTheme: true,
+    // When nova is enabled, we load a dark in-app (LWT) theme
+    expectLWT: NOVA_ENABLED,
+    expectNonNativeTheme: !NOVA_ENABLED,
   });
 
   await darkTheme.disable();

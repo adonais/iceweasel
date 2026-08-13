@@ -5,6 +5,7 @@
 package org.mozilla.fenix.home
 
 import android.app.Activity
+import android.graphics.Color
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -31,6 +32,7 @@ import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.wallpapers.Wallpaper
+import com.google.android.material.R as materialR
 
 /**
  * Feature responsible for managing window insets, background styling, and toolbar visibility
@@ -180,16 +182,17 @@ class HomepageEdgeToEdgeFeature(
         val isPrivateMode = browsingModeManager.mode == BrowsingMode.Private
 
         return when {
-            !shouldShow -> android.graphics.Color.TRANSPARENT
+            !shouldShow -> Color.TRANSPARENT
             isPrivateMode -> ContextCompat.getColor(activity, R.color.fx_mobile_private_surface)
-            toolbarState.isShowingResultsScreen && browsingModeManager.mode == BrowsingMode.Normal &&
+            !settings.isTabStripEnabled &&
+                toolbarState.isShowingResultsScreen && browsingModeManager.mode == BrowsingMode.Normal &&
                 (
                     toolbarState.editState.query.current.isNotEmpty() ||
                     toolbarState.editState.queryWasPrefilled
                 ) ->
                 MaterialColors.getColor(
                     activity,
-                    com.google.android.material.R.attr.colorSurface,
+                    materialR.attr.colorSurface,
                     "Could not resolve color",
                 )
             else -> ContextCompat.getColor(activity, R.color.homepage_tab_edge_to_edge_toolbar_background)

@@ -77,7 +77,8 @@ function PlacesController(aView) {
   });
 
   ChromeUtils.defineESModuleGetters(this, {
-    ForgetAboutSite: "resource://gre/modules/ForgetAboutSite.sys.mjs",
+    ForgetAboutSite:
+      "moz-src:///toolkit/components/forgetaboutsite/ForgetAboutSite.sys.mjs",
   });
 }
 
@@ -1461,7 +1462,8 @@ PlacesController.prototype = {
           containers.splice(0, 0, "AllBookmarks");
           PlacesOrganizer.selectLeftPaneContainerByHierarchy(containers);
           this._view.selectItems([aBookmarkGuid], false);
-        });
+        })
+        .catch(e => console.error("showInFolder failed:", e));
     }
   },
 };

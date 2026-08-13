@@ -10,6 +10,13 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "chrome://global/content/translations/translations-document.sys.mjs",
 });
 
+ChromeUtils.defineLazyGetter(lazy, "console", () => {
+  return console.createInstance({
+    maxLogLevelPref: "browser.translations.logLevel",
+    prefix: "Translations",
+  });
+});
+
 /**
  * This file is extremely sensitive to memory size and performance!
  */
@@ -33,18 +40,14 @@ export class TranslationsChild extends JSWindowActorChild {
 
   #isDestroyed = false;
 
-  handleEvent(event) {
-    if (this.#isDestroyed) {
-      return;
-    }
+  actorCreated() {
+    const isTopLevelActor = this.browsingContext === this.browsingContext?.top;
+    const innerWindowId = this.contentWindow?.windowGlobalChild?.innerWindowId;
 
-    if (event.type === "DOMContentLoaded") {
-      this.sendAsyncMessage("Translations:DOMContentLoaded", {
-        htmlLangAttribute: this.document.documentElement.lang,
-      });
-    } else if (event.type === "load") {
-      this.sendAsyncMessage("Translations:Load");
-    }
+    lazy.console.debug(
+      `Created ${isTopLevelActor ? "top-level" : "sub-frame"} TranslationsChild actor.`,
+      { innerWindowId }
+    );
   }
 
   didDestroy() {
@@ -78,29 +81,6 @@ export class TranslationsChild extends JSWindowActorChild {
         this.#translatedDoc?.enterLazyTranslationsMode();
         return undefined;
       }
-      case "Translations:ExtractPageText": {
-        const { document } = this;
-        if (!document) {
-          return "";
-        }
-
-        const { sufficientLength } = data;
-
-        const encoder = Cu.createDocumentEncoder("text/plain");
-        encoder.init(
-          document,
-          "text/plain",
-          Ci.nsIDocumentEncoder.OutputBodyOnly |
-            Ci.nsIDocumentEncoder.SkipInvisibleContent |
-            Ci.nsIDocumentEncoder.AllowCrossShadowBoundary |
-            Ci.nsIDocumentEncoder.OutputForPlainTextClipboardCopy |
-            Ci.nsIDocumentEncoder.OutputDisallowLineBreaking |
-            Ci.nsIDocumentEncoder.OutputDropInvisibleBreak |
-            Ci.nsIDocumentEncoder.OutputLFLineBreak
-        );
-
-        return encoder.encodeToStringWithMaxLength(sufficientLength);
-      }
       case "Translations:TranslatePage": {
         if (this.#translatedDoc?.engineStatus === "error") {
           this.#translatedDoc.destroy();
@@ -112,7 +92,7 @@ export class TranslationsChild extends JSWindowActorChild {
           return undefined;
         }
 
-        const { isFindBarOpen, languagePair, port } = data;
+        const { isFindBarOpen, languagePair, port, subFrameSchedulerId } = data;
 
         if (
           !TranslationsChild.#translationsCache ||
@@ -132,21 +112,19 @@ export class TranslationsChild extends JSWindowActorChild {
           () => this.sendAsyncMessage("Translations:RequestPort"),
           () => this.sendAsyncMessage("Translations:ReportFirstVisibleChange"),
           TranslationsChild.#translationsCache,
-          isFindBarOpen
+          isFindBarOpen,
+          subFrameSchedulerId
         );
 
         return undefined;
       }
-      case "Translations:GetDocumentElementLang": {
-        return this.document.documentElement.lang;
-      }
-      case "Translations:IsDocumentReady": {
-        const state = this.document.readyState;
-        return state === "interactive" || state === "complete";
-      }
       case "Translations:AcquirePort": {
         this.addProfilerMarker("Acquired a port, resuming translations");
         this.#translatedDoc.acquirePort(data.port);
+        return undefined;
+      }
+      case "Translations:EngineTerminated": {
+        this.#translatedDoc?.handleEngineTerminated();
         return undefined;
       }
       default:

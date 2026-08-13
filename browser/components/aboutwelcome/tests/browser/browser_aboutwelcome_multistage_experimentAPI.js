@@ -10,6 +10,12 @@ const { TelemetryTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/TelemetryTestUtils.sys.mjs"
 );
 
+add_setup(async function () {
+  registerCleanupFunction(function () {
+    Services.prefs.clearUserPref("browser.aboutwelcome.didSeeFinalScreen");
+  });
+});
+
 /**
  * Test the zero onboarding using ExperimentAPI
  */

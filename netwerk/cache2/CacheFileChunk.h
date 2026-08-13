@@ -7,9 +7,9 @@
 
 #include "CacheCrypto.h"
 #include "CacheFileIOManager.h"
-#include "CacheStorageService.h"
-#include "CacheHashUtils.h"
 #include "CacheFileUtils.h"
+#include "CacheHashUtils.h"
+#include "CacheStorageService.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/UniquePtr.h"
 

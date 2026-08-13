@@ -18,7 +18,6 @@
 #define wasm_dump_h
 
 #include "js/Printer.h"
-
 #include "wasm/WasmModuleTypes.h"
 #include "wasm/WasmOpIter.h"
 #include "wasm/WasmTypeDef.h"

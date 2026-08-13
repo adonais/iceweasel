@@ -205,9 +205,8 @@ extern
 #ifdef __cplusplus
     "C"
 #endif
-    long
-    _InterlockedCompareExchange(long volatile* Destination, long Exchange,
-                                long Comperand);
+    long _InterlockedCompareExchange(long volatile* Destination, long Exchange,
+                                     long Comperand);
 
 typedef struct hist hist;
 

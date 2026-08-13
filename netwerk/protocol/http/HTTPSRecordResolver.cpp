@@ -3,17 +3,17 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 // HttpLog.h should generally be included first
-#include "HttpLog.h"
-
 #include "HTTPSRecordResolver.h"
+
+#include "HttpLog.h"
 #include "mozilla/Components.h"
 #include "mozilla/StaticPrefs_network.h"
-#include "nsIDNSByTypeRecord.h"
-#include "nsIDNSAdditionalInfo.h"
-#include "nsIDNSService.h"
-#include "nsHttpConnectionInfo.h"
-#include "nsNetCID.h"
 #include "nsAHttpTransaction.h"
+#include "nsHttpConnectionInfo.h"
+#include "nsIDNSAdditionalInfo.h"
+#include "nsIDNSByTypeRecord.h"
+#include "nsIDNSService.h"
+#include "nsNetCID.h"
 #include "nsServiceManagerUtils.h"
 
 namespace mozilla {

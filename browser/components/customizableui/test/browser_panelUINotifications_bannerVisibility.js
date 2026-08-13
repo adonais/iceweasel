@@ -123,7 +123,7 @@ add_task(async function testBannerVisibilityAfterClose() {
     () => banner.hasAttribute("label")
   );
 
-  let hidden = BrowserTestUtils.waitForCondition(() => {
+  let hidden = TestUtils.waitForCondition(() => {
     return !newWin.PanelUI.mainView.hasAttribute("visible");
   });
   menuButton.click();

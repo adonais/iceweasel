@@ -13,7 +13,9 @@
 #endif
 
 #include "mozilla/Attributes.h"
+
 #include <stdint.h>
+
 #include "nsCOMPtr.h"
 #include "nsIClassInfo.h"
 #include "nsISupports.h"

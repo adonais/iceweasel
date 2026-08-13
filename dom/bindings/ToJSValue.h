@@ -105,7 +105,7 @@ inline bool ToJSValue(JSContext* aCx, float aArgument,
   // Make sure we're called in a compartment
   MOZ_ASSERT(JS::CurrentGlobalOrNull(aCx));
 
-  aValue.set(JS_NumberValue(double(aArgument)));
+  aValue.setNumber(double(aArgument));
   return true;
 }
 
@@ -114,7 +114,7 @@ inline bool ToJSValue(JSContext* aCx, double aArgument,
   // Make sure we're called in a compartment
   MOZ_ASSERT(JS::CurrentGlobalOrNull(aCx));
 
-  aValue.set(JS_NumberValue(aArgument));
+  aValue.setNumber(aArgument);
   return true;
 }
 

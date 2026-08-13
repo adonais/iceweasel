@@ -4,31 +4,29 @@
 
 #include "XULMenuAccessible.h"
 
+#include "DocAccessible.h"
 #include "LocalAccessible-inl.h"
+#include "States.h"
+#include "XULFormControlAccessible.h"
 #include "XULMenuBarElement.h"
 #include "XULMenuParentElement.h"
 #include "XULPopupElement.h"
 #include "mozilla/Assertions.h"
-#include "nsAccessibilityService.h"
-#include "nsAccUtils.h"
-#include "DocAccessible.h"
+#include "mozilla/LookAndFeel.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/a11y/Role.h"
-#include "States.h"
-#include "XULFormControlAccessible.h"
-
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/dom/KeyboardEventBinding.h"
+#include "mozilla/dom/XULButtonElement.h"
+#include "nsAccUtils.h"
+#include "nsAccessibilityService.h"
+#include "nsIContent.h"
 #include "nsIContentInlines.h"
 #include "nsIDOMXULContainerElement.h"
 #include "nsIDOMXULSelectCntrlEl.h"
 #include "nsIDOMXULSelectCntrlItemEl.h"
-#include "nsIContent.h"
 #include "nsMenuPopupFrame.h"
-
-#include "mozilla/Preferences.h"
-#include "mozilla/LookAndFeel.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/dom/Element.h"
-#include "mozilla/dom/XULButtonElement.h"
-#include "mozilla/dom/KeyboardEventBinding.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;

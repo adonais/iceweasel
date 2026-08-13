@@ -4,8 +4,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsDragServiceProxy.h"
-#include "mozilla/dom/Document.h"
+
 #include "mozilla/dom/BrowserChild.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/net/CookieJarSettings.h"
 #include "mozilla/widget/WidgetLogging.h"

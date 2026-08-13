@@ -77,7 +77,7 @@ NrTcpSocket::~NrTcpSocket() {
 
 int NrTcpSocket::create(nr_transport_addr* aAddr) {
   r_log(LOG_GENERIC, LOG_DEBUG, "NrTcpSocket::create %p\n", this);
-  int32_t port;
+  uint16_t port;
   nsCString host;
 
   // Sanity check
@@ -96,7 +96,7 @@ int NrTcpSocket::connect(const nr_transport_addr* aAddr) {
   r_log(LOG_GENERIC, LOG_DEBUG, "NrTcpSocket::connect %p\n", this);
 
   nsCString remote_host;
-  int remote_port;
+  uint16_t remote_port;
 
   if (NS_WARN_IF(nr_transport_addr_get_addrstring_and_port(aAddr, &remote_host,
                                                            &remote_port))) {
@@ -106,7 +106,7 @@ int NrTcpSocket::connect(const nr_transport_addr* aAddr) {
   bool use_tls = aAddr->tls;
 
   nsCString local_addr;
-  int local_port;
+  uint16_t local_port;
 
   if (NS_WARN_IF(nr_transport_addr_get_addrstring_and_port(
           &my_addr_, &local_addr, &local_port))) {

@@ -25,6 +25,7 @@ export function registerWebDriverDocumentInsertedActor() {
       observers: ["initial-document-element-inserted"],
     },
     includeParent: true,
+    safeForUntrustedWebProcess: true,
   });
   registered = true;
 }

@@ -3,13 +3,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "AutoMemMap.h"
-#include "ScriptPreloader-inl.h"
 
-#include "mozilla/Try.h"
 #include "mozilla/ipc/FileDescriptor.h"
-#include "nsIFile.h"
+#include "mozilla/Try.h"
 
 #include <private/pprio.h>
+
+#include "nsIFile.h"
+#include "ScriptPreloader-inl.h"
 
 namespace mozilla {
 namespace loader {

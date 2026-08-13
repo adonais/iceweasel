@@ -43,16 +43,17 @@
 // test can count exactly how many request bursts reached the HTTP
 // layer.
 
-#include <atomic>
 #include <stdio.h>
 #include <string.h>
+
+#include <atomic>
 #include <string>
 
+#include "ScopedNSSTypes.h"
+#include "TLSServer.h"
 #include "mozilla/Sprintf.h"
 #include "nspr.h"
-#include "ScopedNSSTypes.h"
 #include "ssl.h"
-#include "TLSServer.h"
 
 using namespace mozilla;
 using namespace mozilla::test;

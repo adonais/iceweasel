@@ -29,6 +29,8 @@ support-files = [
 
 ["browser_sma_default_pdf_handler.js"]
 
+["browser_sma_destroy_uiwidget.js"]
+
 ["browser_sma_disable_doh.js"]
 
 ["browser_sma_docs.js"]

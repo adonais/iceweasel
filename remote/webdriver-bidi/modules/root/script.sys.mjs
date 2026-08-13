@@ -979,10 +979,16 @@ class ScriptModule extends RootBiDiModule {
     return realms
       .flat()
       .map(realm => {
+        const context = realm.context;
         // Resolve browsing context to a TabManager id.
-        realm.context = lazy.NavigableManager.getIdForBrowsingContext(
-          realm.context
-        );
+        realm.context = lazy.NavigableManager.getIdForBrowsingContext(context);
+
+        // Only attempt to resolve a user context if a valid navigable id was
+        // found.
+        if (realm.context !== null) {
+          realm.userContext =
+            lazy.UserContextManager.getIdByBrowsingContext(context);
+        }
         return realm;
       })
       .filter(realm => realm.context !== null);
@@ -1228,6 +1234,8 @@ class ScriptModule extends RootBiDiModule {
 
   #sendRealmCreatedEvent(realmInfo, context, browsingContextId) {
     realmInfo.context = browsingContextId;
+    realmInfo.userContext =
+      lazy.UserContextManager.getIdByBrowsingContext(context);
 
     this._emitEventForBrowsingContext(
       context.id,

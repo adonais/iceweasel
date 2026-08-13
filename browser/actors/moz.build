@@ -83,6 +83,9 @@ with Files("SpeechDispatcher*.sys.mjs"):
 with Files("SwitchDocumentDirectionChild.sys.mjs"):
     BUG_COMPONENT = ("Core", "Internationalization")
 
+with Files("Urlbar*.sys.mjs"):
+    BUG_COMPONENT = ("Firefox", "Address Bar")
+
 with Files("TLSCertificateBindingChild.sys.mjs"):
     BUG_COMPONENT = ("Firefox", "Security")
 
@@ -138,6 +141,8 @@ FINAL_TARGET_FILES.actors += [
     "SpeechDispatcherChild.sys.mjs",
     "SpeechDispatcherParent.sys.mjs",
     "SwitchDocumentDirectionChild.sys.mjs",
+    "UrlbarChild.sys.mjs",
+    "UrlbarParent.sys.mjs",
     "WebRTCChild.sys.mjs",
     "WebRTCParent.sys.mjs",
 ]

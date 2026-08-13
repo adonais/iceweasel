@@ -50,7 +50,10 @@ tasks:
                     default: false
         worker-type:
             by-platform:
-                linux.*: b-linux
+                linux-aarch64.*: b-linux-aarch64
+                # Matches x86 linux only; the lookahead keeps it from also
+                # matching linux-aarch64 (keyed-by forbids two matching arms).
+                linux(?!-aarch64).*: b-linux
                 win.*: b-win2022
                 mac.*: b-osx
         treeherder:

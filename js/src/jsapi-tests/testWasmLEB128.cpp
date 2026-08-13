@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "jsapi-tests/tests.h"
-
 #include "wasm/WasmValidate.h"
 
 static bool WriteValidBytes(js::wasm::Encoder& encoder, bool* passed) {

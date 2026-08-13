@@ -433,6 +433,11 @@ export class ProgressListener {
   }
 
   onLocationChange(progress, request, location, flag) {
+    // Ignore all location changes from subframes.
+    if (progress.browsingContext !== this.#webProgress.browsingContext) {
+      return;
+    }
+
     if (flag & Ci.nsIWebProgressListener.LOCATION_CHANGE_ERROR_PAGE) {
       // If an error page has been loaded abort the navigation.
       const errorName = this.#errorName || this.#getErrorName(this.documentURI);

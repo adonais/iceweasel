@@ -93,6 +93,15 @@ home-prefs-sports-widget-header =
 # Clock is a widget on New Tab that displays time zones around the world.
 home-prefs-clocks-header =
     .label = Hodiny
+# Privacy is a widget on New Tab that shows tracking protection activity.
+home-prefs-privacy-header =
+    .label = Súkromie
+# Stocks is a widget on New Tab that shows stock ticker prices.
+home-prefs-stocks-header =
+    .label = Akcie
+# Picture of the day is a widget on New Tab that shows a daily Wikimedia Commons image.
+home-prefs-picture-header =
+    .label = Obrázok dňa
 home-prefs-mission-message2 =
     .message = Naši sponzori podporujú našu misiu budovať lepší web.
 home-prefs-manage-topics-link2 =
@@ -153,6 +162,245 @@ home-prefs-support-firefox-header-srd =
     .label = Podpora pre { -brand-product-name(case: "acc") }
 home-prefs-mission-message-learn-more-link-srd = Pozrite sa ako
 
+## Strings for the Privacy widget
+
+# Context menu item linking to more information about the Privacy widget.
+newtab-privacy-menu-learn-more = Ďalšie informácie
+
+## Privacy widget — count readout
+
+# Label shown under the large tracker-count number, appearing like:
+# Line 1: 86
+# Line 2: Trackers blocked today
+# Translations can be adjusted to "Today's blocked trackers" or something
+# similar if this fixed order causes issues.
+# Variables:
+#   $count (number) - Number of trackers blocked today
+newtab-privacy-trackers-blocked-today =
+    { $count ->
+        [one] Sledovací prvok zablokované dnes
+        [few] Sledovacie prvky zablokované dnes
+        [many] Sledovacích prvkov zablokovaných dnes
+       *[other] Sledovacích prvkov zablokovaných dnes
+    }
+# Second line of the readout, under the large number and "Trackers blocked
+# today". Counts the sites those trackers were blocked on. The English is
+# shortened from "Blocked across { $count } sites" — translate it that fuller way
+# if the short fragment doesn't work in your language.
+# Variables:
+#   $count (number) - Number of sites where trackers were blocked
+newtab-privacy-across-sites =
+    { $count ->
+        [one] Na { $count } stránke
+        [few] Na { $count } stránkach
+        [many] Na { $count } stránkach
+       *[other] Na { $count } stránkach
+    }
+
+## Privacy widget — empty state
+
+# Shown when no trackers have been blocked yet today.
+newtab-privacy-empty = { -brand-short-name } blokuje sledovacie prvky počas prehliadania. Uvidíte ich tu.
+
+## Privacy widget — informational messages
+##
+## Rotating "info" secondary messages. Each message has a body plus a matched
+## "-cta" button label sharing the same id stem (the CTA button isn't rendered
+## yet; the labels are authored so the pairing is ready).
+
+newtab-privacy-message-info-1 = { -brand-short-name } automaticky blokuje sledovacie prvky počas prehliadania.
+newtab-privacy-message-info-1-cta = Zobraziť ochrany
+newtab-privacy-message-info-2 = Blokovanie sledovacích prvkov pomáha zabrániť spoločnostiam, aby vás sledovali online.
+newtab-privacy-message-info-2-cta = Zobraziť ochrany
+newtab-privacy-message-info-3 = Mnohé stránky majú sledovacie prvky, takže spoločnosti, ktoré ste nikdy nenavštívili, vás môžu sledovať online.
+newtab-privacy-message-info-3-cta = Zobraziť ochrany
+newtab-privacy-message-info-4 = Výberom { -brand-short-name(case: "gen") } si automaticky vyberáte ochranu.
+newtab-privacy-message-info-4-cta = Zobraziť ochrany
+newtab-privacy-message-info-5 = Zablokované sledovacie prvky znamenajú, že menej spoločností vás môže sledovať na rôznych stránkach.
+newtab-privacy-message-info-5-cta = Zobraziť ochrany
+newtab-privacy-message-info-6 = Zverte svoje údaje { -brand-short-name(case: "dat") }. Nikdy ich nepredávame, ale iné prehliadače by mohli.
+newtab-privacy-message-info-6-cta = Ďalšie informácie
+newtab-privacy-message-info-7 = Pozrite sa, ktoré sledovacie prvky { -brand-short-name } blokuje.
+newtab-privacy-message-info-7-cta = Zobraziť ochrany
+newtab-privacy-message-info-8 = Prehliadanie webu pomocou { -brand-short-name(case: "gen") } podporuje poslanie { -vendor-short-name(case: "gen") } budovať lepší web.
+newtab-privacy-message-info-8-cta = Ďalšie informácie
+newtab-privacy-message-info-9 = Nastavte si { -brand-short-name(case: "acc") } ako svoj obľúbený prehliadač vďaka zabudovanej ochrane súkromia.
+newtab-privacy-message-info-9-cta = Nastaviť ako predvolený
+newtab-privacy-message-info-10 = Uložte si heslá do { -brand-short-name(case: "gen") }, aby ste mohli všade používať silné a jedinečné prihlasovacie údaje.
+newtab-privacy-message-info-10-cta = Prejsť na heslá
+newtab-privacy-message-info-11 = Zistite, ako { -brand-short-name } pomáha udržiavať vaše prehliadanie súkromnejším.
+newtab-privacy-message-info-11-cta = Ďalšie informácie
+newtab-privacy-message-info-12 = Blokovanie sledovacích prvkov môže pomôcť ušetriť objem prenesených údajov pri pripojení s obmedzeným objemom údajov.
+newtab-privacy-message-info-12-cta = Zobraziť ochrany
+newtab-privacy-message-info-13 = { -brand-short-name } blokuje sledovacie prvky, čím uvoľňuje šírku pásma pre plynulejšie streamovanie.
+newtab-privacy-message-info-13-cta = Zobraziť ochrany
+
+## Privacy widget — promotional messages
+##
+## Rotating "promo" secondary messages suggesting another Firefox feature. Each
+## has a body plus a matched "-cta" button label.
+
+newtab-privacy-message-promo-monitor-1 = Zistite, či sa vaše osobné údaje neobjavia v prípade úniku údajov.
+newtab-privacy-message-promo-monitor-1-cta = Ďalšie informácie
+newtab-privacy-message-promo-monitor-2 = Chráňte svoje informácie pomocou bezplatného monitorovania únikov údajov až pre 20 e‑mailových adries.
+newtab-privacy-message-promo-monitor-2-cta = Ďalšie informácie
+newtab-privacy-message-promo-signin-1 = Uchovávajte záložky, heslá a karty šifrované naprieč zariadeniami pomocou svojho účtu { -vendor-short-name }.
+newtab-privacy-message-promo-signin-1-cta = Prihlásiť sa
+newtab-privacy-message-promo-vpn-1 = Nakupujete cez verejnú sieť Wi‑Fi? Zapnite si vstavanú VPN a získate extra ochranu.
+newtab-privacy-message-promo-vpn-1-cta = Otvoriť VPN
+newtab-privacy-message-promo-vpn-2 = Používate Wi‑Fi na letisku? Chráňte svoje prehliadanie zapnutím vstavanej VPN.
+newtab-privacy-message-promo-vpn-2-cta = Otvoriť VPN
+newtab-privacy-message-promo-vpn-3 = Zapnite si vstavanú sieť VPN, aby ste zachovali súkromie svojej polohy.
+newtab-privacy-message-promo-vpn-3-cta = Otvoriť VPN
+newtab-privacy-message-promo-private-window-1 = Vyskúšajte súkromné okno, aby ste si mohli prehliadať obsah súkromnejšie, ak používate zdieľaný počítač.
+newtab-privacy-message-promo-private-window-1-cta = Otvoriť súkromné okno
+newtab-privacy-message-promo-relay-1 = Uschovajte si svoju skutočnú e‑mailovú adresu pre ľudí, ktorým dôverujete. Pri rôznych registráciách používajte e‑mailové masky.
+newtab-privacy-message-promo-relay-1-cta = Získajte masky
+newtab-privacy-message-promo-relay-2 = Chráňte svoju e‑mailovú schránku pomocou bezplatného maskovania e‑mailov.
+newtab-privacy-message-promo-relay-2-cta = Získajte masky
+newtab-privacy-message-promo-relay-3 = Získajte 50 bezplatných masiek e‑mailov, ktoré vám pomôžu udržať vašu skutočnú e‑mailovú adresu v súkromí.
+newtab-privacy-message-promo-relay-3-cta = Získajte masky
+
+## Privacy widget — celebration messages
+##
+## Earned "celebration" moments (milestones, daily cap, streak, first
+## protection). Count-bearing ones interpolate { $count }.
+
+# Variables:
+#   $count (number) - Trackers blocked this week
+newtab-privacy-message-milestone-week =
+    { $count ->
+        [one] Tento týždeň bol zablokovaný { $count } sledovací prvok. Pozrite sa, pred čím vás { -brand-short-name } chráni.
+        [few] Tento týždeň boli zablokované { $count } sledovacie prvky. Pozrite sa, pred čím vás { -brand-short-name } chráni.
+        [many] Tento týždeň bolo zablokovaných { $count } sledovacích prvkov. Pozrite sa, pred čím vás { -brand-short-name } chráni.
+       *[other] Tento týždeň bolo zablokovaných { $count } sledovacích prvkov. Pozrite sa, pred čím vás { -brand-short-name } chráni.
+    }
+newtab-privacy-message-milestone-week-cta = Zobraziť ochrany
+# Variables:
+#   $count (number) - Trackers blocked this month
+newtab-privacy-message-milestone-month =
+    { $count ->
+        [one] Tento mesiac bol zablokovaný { $count } sledovací prvok. Malý krok pre súkromie. Veľký krok pre pokoj v duši.
+        [few] Tento mesiac boli zablokované { $count } sledovacie prvky. Malý krok pre súkromie. Veľký krok pre pokoj v duši.
+        [many] Tento mesiac bolo zablokovaných { $count } sledovacích prvkov. Malý krok pre súkromie. Veľký krok pre pokoj v duši.
+       *[other] Tento mesiac bolo zablokovaných { $count } sledovacích prvkov. Malý krok pre súkromie. Veľký krok pre pokoj v duši.
+    }
+newtab-privacy-message-milestone-month-cta = Zobraziť ochrany
+# Variables:
+#   $count (number) - Trackers blocked this year
+newtab-privacy-message-milestone-year =
+    { $count ->
+        [one] Tento rok bol zablokovaný { $count } sledovací prvok. Je to silný rok ochrany vášho súkromia.
+        [few] Tento rok boli zablokované { $count } sledovacie prvky. Je to silný rok ochrany vášho súkromia.
+        [many] Tento rok bolo zablokovaných { $count } sledovacích prvkov. Je to silný rok ochrany vášho súkromia.
+       *[other] Tento rok bolo zablokovaných { $count } sledovacích prvkov. Je to silný rok ochrany vášho súkromia.
+    }
+newtab-privacy-message-milestone-year-cta = Zobraziť ochrany
+# Variables:
+#   $count (number) - Trackers blocked all-time
+newtab-privacy-message-milestone-total =
+    { $count ->
+        [one] Bol zablokovaný { $count } sledovací prvok. To je významný pokrok smerom k ochrane súkromia podľa vašich predstáv.
+        [few] Boli zablokované { $count } sledovacie prvky. To je významný pokrok smerom k ochrane súkromia podľa vašich predstáv.
+        [many] Bolo zablokovaných { $count } sledovacích prvkov. To je významný pokrok smerom k ochrane súkromia podľa vašich predstáv.
+       *[other] Bolo zablokovaných { $count } sledovacích prvkov. To je významný pokrok smerom k ochrane súkromia podľa vašich predstáv.
+    }
+newtab-privacy-message-milestone-total-cta = Zobraziť ochrany
+# Shown when today's blocked-tracker count reaches the display cap ("100+").
+newtab-privacy-message-daily-cap = (Dnes bolo zablokovaných viac ako 100 sledovacích prvkov.) Menej sledovacích prvkov znamená viac súkromia.
+newtab-privacy-message-daily-cap-cta = Zobraziť ochrany
+# Variables:
+#   $count (number) - Consecutive days the user has had trackers blocked
+newtab-privacy-message-streak =
+    { $count ->
+        [one] Boli ste chránení { $count } deň.
+        [few] Boli ste chránení { $count } dni po sebe.
+        [many] Boli ste chránení { $count } dní po sebe.
+       *[other] Boli ste chránení { $count } dní po sebe.
+    }
+newtab-privacy-message-streak-cta = Zobraziť ochrany
+# Shown the first time the tracker count goes above zero.
+newtab-privacy-message-first-protection = Pokračujte v prehliadaní, { -brand-short-name } bude naďalej blokovať.
+newtab-privacy-message-first-protection-cta = Zobraziť ochrany
+
+## Strings for the Stocks widget
+
+# Context menu item for searching stock ticker symbols.
+newtab-stocks-menu-search = Hľadať burzové symboly
+# Context menu item linking to more information about the Stocks widget.
+newtab-stocks-menu-learn-more = Ďalšie informácie
+# "Stocks widget options" is an icon-only button in the widget toolbar — the
+# attributes are consumed as tooltip/screen-reader label only. The button
+# never renders visible text.
+newtab-stocks-widget-menu-button =
+    .title = Možnosti miniaplikácie Akcie
+    .aria-label = Možnosti miniaplikácie Akcie
+# Heading for the Stocks widget.
+newtab-stocks-widget-title = Akcie
+
+## Screen-reader summary of a stock ticker.
+## Variables:
+##   $name (String) - the full fund/ETF name, e.g. "SPDR S&P 500 ETF Trust".
+##   $change (String) - the day's percentage change, e.g. "+2.1%".
+##   $price (String) - the last price, e.g. "$559.44".
+
+# Stock increased (went up) during the day
+newtab-stocks-ticker-status-up = { $name }, zvýšenie o { $change }, { $price }
+# Stock decreased (went down) during the day
+newtab-stocks-ticker-status-down = { $name }, zníženie o { $change }, { $price }
+# Stock didn't change during the day
+newtab-stocks-ticker-status-flat = { $name }, bez zmeny, { $change }, { $price }
+
+## Strings for the Picture of the Day widget
+
+# Title shown at the top of the widget, with the source name appended.
+# "Wikimedia Commons" is a brand name and should not be translated.
+newtab-picture-header = Obrázok dňa · Wikimedia Commons
+# Shorter title shown at the top of the widget, without the source name.
+newtab-picture-header-main = Obrázok dňa
+# Attribution line shown under the title once a picture loads: an author
+# credit, a link to the picture's source page, and a link to its license.
+# "©" is the copyright symbol.
+# $author (string) - the name of the image's author.
+newtab-picture-attribution-author = © { $author }
+# Link to the picture's source page (its Wikimedia Commons file page).
+# "Wikimedia Commons" is a brand name and should not be translated.
+newtab-picture-attribution-source-link = Wikimedia Commons
+# Screen-reader label for the license link; the visible text is the license
+# name (for example "CC BY-SA 4.0") provided with the picture.
+# $license (string) - the name of the license.
+newtab-picture-attribution-license =
+    .aria-label = Zobraziť licenciu { $license }
+# Tooltip and screen-reader label for the icon-only button that opens the
+# widget's context menu. The button never renders visible text.
+newtab-picture-widget-menu-button =
+    .title = Nastavenia pre obrázok dňa
+    .aria-label = Nastavenia pre obrázok dňa
+# Button that sets the current picture as the New Tab background wallpaper. The
+# button collapses to an icon when not hovered/focused, so .title is its tooltip.
+newtab-picture-set-wallpaper =
+    .label = Nastaviť tapetu
+    .title = Nastaviť tapetu
+    .aria-label = Nastavte si obrázok dňa ako tapetu
+# Context menu item that opens the New Tab customization panel.
+newtab-picture-menu-manage-wallpaper = Spravovať tapetu
+# Context menu item that hides today’s picture, replacing it with an existing
+# wallpaper.
+newtab-picture-menu-hide-photo = Skryť obrázok dňa
+# Context menu item that restores today’s picture after it has been hidden.
+newtab-picture-menu-show-photo = Zobraziť obrázok dňa
+# Context menu item linking to more information about the widget.
+newtab-picture-menu-learn-more = Ďalšie informácie
+# Icon button shown on the widget once the picture is hidden; restores it.
+newtab-picture-show-button =
+    .title = Zobraziť obrázok dňa
+    .aria-label = Zobraziť obrázok dňa
+# Shown when there is no new picture to display yet.
+newtab-picture-check-back = Zajtra tu nájdete nový obrázok
+# Screen-reader text alternative for the picture; fallback used when the source
+# provides no localized description.
+newtab-picture-image-alt = Obrázok dňa z Wikimedia Commons
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -188,6 +436,7 @@ newtab-topsites-add-shortcut-label = Pridať skratku
 newtab-topsites-add-shortcut-title =
     .title = Pridať skratku
     .aria-label = Pridať skratku
+newtab-shortcuts-pinned-area = Pripnutá oblasť
 newtab-topsites-title-label = Názov
 newtab-topsites-title-input =
     .placeholder = Zadajte názov
@@ -475,6 +724,8 @@ newtab-recommended-stories-toggle =
     .label = Odporúčané príbehy
 newtab-custom-stories-personalized-toggle =
     .label = Príbehy
+newtab-custom-stories-personalized-checkbox =
+    .label = Prispôsobené príbehy na základe vašej aktivity
 newtab-custom-stories-personalized-checkbox-label = Prispôsobené príbehy na základe vašej aktivity
 newtab-custom-pocket-sponsored = Sponzorované príbehy
 newtab-custom-pocket-show-recent-saves = Zobraziť nedávno uložené položky
@@ -495,6 +746,12 @@ newtab-custom-widget-clock-toggle =
     .label = Hodiny
 newtab-custom-widget-sports-toggle2 =
     .label = Šport
+newtab-custom-widget-privacy-toggle =
+    .label = Súkromie
+newtab-custom-widget-stocks-toggle =
+    .label = Akcie
+newtab-custom-widget-picture-toggle =
+    .label = Obrázok dňa
 newtab-custom-widget-section-title = Miniaplikácie
 newtab-custom-widget-section-toggle =
     .label = Miniaplikácie
@@ -971,6 +1228,8 @@ newtab-widget-timer-reset =
 newtab-widget-timer-menu-notifications = Vypnúť upozornenia
 newtab-widget-timer-menu-notifications-on = Zapnúť upozornenia
 newtab-widget-timer-menu-learn-more = Ďalšie informácie
+newtab-widget-timer-menu-button =
+    .aria-label = Možnosti časovača
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = Najlepšie titulky
 newtab-daily-briefing-card-menu-dismiss = Zavrieť
@@ -1091,6 +1350,8 @@ newtab-sports-widget-show-less =
 # Toggle that filters the list of teams the user follows
 newtab-sports-widget-followed-only-toggle =
     .label = Iba sledované tímy
+# Status shown when more matches are being fetched.
+newtab-sports-widget-loading-more = Načítavajú sa ďalšie zápasy…
 # Watch is a verb (as in watch matches online).
 newtab-sports-widget-watch =
     .label = Sledovať
@@ -1170,6 +1431,9 @@ newtab-sports-widget-third-place = Tretie miesto
 newtab-sports-widget-runner-up = Druhé miesto
 newtab-sports-widget-champions = Víťaz
 newtab-sports-widget-world-cup-champions = Majstrovstvá sveta vo futbale 2026
+# Compact champions label for the medium-size widget result card; the larger
+# card uses newtab-sports-widget-world-cup-champions.
+newtab-sports-widget-world-cup-champions-short = Šampióni 2026
 # Variables:
 #   $date (Date) - The match start time
 newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
@@ -1268,12 +1532,23 @@ newtab-sports-widget-team-tbd = Bude upresnené
 newtab-sports-widget-message-wallpapers-title = Začnite Majstrovstvá sveta vo futbale s novými tapetami
 newtab-sports-widget-message-wallpapers-body = Prineste si do prehliadača energiu na zápasový deň počas turnaja.
 newtab-sports-widget-message-wallpapers-cta = Vyberte si tapetu
+newtab-sports-widget-message-wallpapers-semifinals-title = Získajte novú tapetu pre semifinále
+newtab-sports-widget-message-wallpapers-semifinals-body = Pripravte si pôdu pre najväčšie zápasy Majstrovstiev sveta.
 newtab-sports-widget-message-add-widgets-cta =
     .label = Pridať miniaplikácie
 newtab-sports-widget-message-day-in-play-title = Využite svoj deň naplno s miniaplikáciami vo { -brand-product-name(case: "loc") }
 newtab-sports-widget-message-day-in-play-body = Sledujte Majstrovstvá sveta, sústreďte sa na úlohy, sledujte čas po celom svete a mnoho ďalšieho.
 newtab-sports-widget-message-explore-widgets-cta =
     .label = Preskúmajte miniaplikácie
+
+## Survey prompts shown after the World Cup to gather feedback on the widgets experience.
+
+newtab-sports-widget-message-survey-title = Pomôžte nám vylepšiť miniaplikácie
+newtab-sports-widget-message-survey-body = A je tu koniec Majstrovstiev sveta. Podeľte sa s nami o svoj názor na tento zážitok.
+newtab-sports-widget-message-survey-widget-title = Aká bola miniaplikácia Majstrovstiev sveta?
+newtab-sports-widget-message-survey-widget-body = Podeľte sa s nami o svoju spätnú väzbu, aby sme mohli vylepšiť budúce miniaplikácie. A potom vyskúšajte ďalšiu z našej ponuky miniaplikácií.
+newtab-sports-widget-message-survey-cta =
+    .label = Zúčastniť sa prieskumu
 
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input

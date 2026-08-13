@@ -36,6 +36,11 @@
 
 <main>
   <section>Section.80</section>
+  <ol>
+    <li>First</li>
+    <li>Second</li>
+    <li>Third</li>
+  </ol>
 </main>
 
 <script>
@@ -543,6 +548,97 @@ add_task(async function() {
     ]
   });
 
+  /// sibling-index()
+  test({
+    expression: "sibling-index()",
+    el: document.querySelector("li:nth-of-type(1)"),
+    expected: [
+      "sibling-index()",
+      "1",
+    ]
+  });
+  test({
+    expression: "sibling-index()",
+    el: document.querySelector("li:nth-of-type(2)"),
+    expected: [
+      "sibling-index()",
+      "2",
+    ]
+  });
+  test({
+    expression: "sibling-index()",
+    el: document.querySelector("li:nth-of-type(2)"),
+    pseudo: "::marker",
+    expected: [
+      "sibling-index()",
+      "2",
+    ]
+  });
+
+  /// sibling-count()
+  test({
+    expression: "sibling-count()",
+    el: document.querySelector("li:nth-of-type(1)"),
+    expected: [
+      "sibling-count()",
+      "3",
+    ]
+  });
+  test({
+    expression: "sibling-count()",
+    el: document.querySelector("li:nth-of-type(2)"),
+    expected: [
+      "sibling-count()",
+      "3",
+    ]
+  });
+  test({
+    expression: "sibling-count()",
+    el: document.querySelector("li:nth-of-type(2)"),
+    pseudo: "::marker",
+    expected: [
+      "sibling-count()",
+      "3",
+    ]
+  });
+
+  /// progress()
+  test({
+    expression: "progress(5, 0, 10)",
+    el: sectionEl,
+    expected: [
+      "progress(5, 0, 10)",
+      "0.5",
+    ]
+  });
+  test({
+    expression: "progress(2em, 2cqw, 92cqh)",
+    el: sectionEl,
+    expected: [
+      "progress(2em, 2cqw, 92cqh)",
+      "progress(48px, 4px, 92px)",
+      "0.5",
+    ]
+  });
+  test({
+    expression: "progress(2em, 0cqw, 2.4cqw)",
+    el: sectionEl,
+    expected: [
+      "progress(2em, 0cqw, 2.4cqw)",
+      "progress(48px, 0px, 4.8px)",
+      "1",
+    ]
+  });
+  test({
+    expression: "progress(no-clamp 2em, 0cqw, 2.4cqw)",
+    el: sectionEl,
+    expected: [
+      "progress(no-clamp 2em, 0cqw, 2.4cqw)",
+      "progress(no-clamp 48px, 0px, 4.8px)",
+      "10",
+    ]
+  });
+
   /// calc() operations
   test({
     expression: "calc(1px)",
@@ -753,6 +849,19 @@ add_task(async function() {
     el: sectionEl,
     // TODO: var() should be substituted (See Bug 2041622)
     expected: []
+  });
+  test({
+    expression: "calc((1em * max(sibling-index(), 10)) + (min(2, sibling-count()) * 0.5rem))",
+    el: document.querySelector("li:nth-of-type(2)"),
+    expected: [
+      "calc((1em * max(sibling-index(), 10)) + (min(2, sibling-count()) * 0.5rem))",
+      "calc((20px * max(2, 10)) + (min(2, 3) * 10px))",
+      "calc((20px * 10) + (min(2, 3) * 10px))",
+      "calc(200px + (min(2, 3) * 10px))",
+      "calc(200px + (2 * 10px))",
+      "calc(200px + 20px)",
+      "220px",
+    ]
   });
 
   /// relative color computation

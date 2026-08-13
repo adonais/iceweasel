@@ -6,13 +6,22 @@
 #define ipc_MediaControlIPC_h
 
 #include "ipc/EnumSerializer.h"
+#include "ipc/IPCMessageUtils.h"
 #include "mozilla/dom/AudioSessionBinding.h"
 #include "mozilla/dom/BindingIPCUtils.h"
+#include "mozilla/dom/ContentMediaController.h"
 #include "mozilla/dom/MediaControlKeySource.h"
 #include "mozilla/dom/MediaControllerBinding.h"
 #include "mozilla/dom/MediaPlaybackStatus.h"
 
 namespace IPC {
+template <>
+struct ParamTraits<mozilla::dom::AudioFocusInterruptAction>
+    : public ContiguousEnumSerializerInclusive<
+          mozilla::dom::AudioFocusInterruptAction,
+          mozilla::dom::AudioFocusInterruptAction::Suspend,
+          mozilla::dom::AudioFocusInterruptAction::Resume> {};
+
 template <>
 struct ParamTraits<mozilla::dom::MediaControlKey>
     : public mozilla::dom::WebIDLEnumSerializer<mozilla::dom::MediaControlKey> {
@@ -51,61 +60,14 @@ struct ParamTraits<mozilla::dom::AudioSessionState>
           mozilla::dom::AudioSessionState::Inactive,
           mozilla::dom::AudioSessionState::Interrupted> {};
 
-template <>
-struct ParamTraits<mozilla::dom::AbsoluteSeek> {
-  typedef mozilla::dom::AbsoluteSeek paramType;
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::AbsoluteSeek, mSeekTime,
+                                  mFastSeek);
 
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mSeekTime);
-    WriteParam(aWriter, aParam.mFastSeek);
-  }
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::MediaControlActionParams,
+                                  mAbsolute, mRelativeSeekOffset, mVolume);
 
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    if (!ReadParam(aReader, &aResult->mSeekTime) ||
-        !ReadParam(aReader, &aResult->mFastSeek)) {
-      return false;
-    }
-    return true;
-  }
-};
-
-template <>
-struct ParamTraits<mozilla::dom::MediaControlActionParams> {
-  typedef mozilla::dom::MediaControlActionParams paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mAbsolute);
-    WriteParam(aWriter, aParam.mRelativeSeekOffset);
-    WriteParam(aWriter, aParam.mVolume);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    if (!ReadParam(aReader, &aResult->mAbsolute) ||
-        !ReadParam(aReader, &aResult->mRelativeSeekOffset) ||
-        !ReadParam(aReader, &aResult->mVolume)) {
-      return false;
-    }
-    return true;
-  }
-};
-
-template <>
-struct ParamTraits<mozilla::dom::MediaControlAction> {
-  typedef mozilla::dom::MediaControlAction paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mKey);
-    WriteParam(aWriter, aParam.mParams);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    if (!ReadParam(aReader, &aResult->mKey) ||
-        !ReadParam(aReader, &aResult->mParams)) {
-      return false;
-    }
-    return true;
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::MediaControlAction, mKey,
+                                  mParams);
 
 }  // namespace IPC
 

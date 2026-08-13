@@ -37,6 +37,7 @@
         tools:ignore="UnusedAttribute" />
 
     <Button
+        style="@style/Mozac.Widgets.NeutralButton"
         android:id="@+id/buttonGenerateData"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -52,6 +53,7 @@
         android:text="@string/counter_metric_info" />
 
     <Button
+        style="@style/Mozac.Widgets.NeutralButton"
         android:id="@+id/buttonCheckExperiments"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

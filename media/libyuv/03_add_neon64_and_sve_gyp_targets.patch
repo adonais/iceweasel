@@ -1,5 +1,4 @@
 diff --git a/libyuv.gyp b/libyuv.gyp
-index 07bb5494..f3da0203 100644
 --- a/libyuv.gyp
 +++ b/libyuv.gyp
 @@ -64,9 +64,7 @@
@@ -42,10 +41,11 @@ index 07bb5494..f3da0203 100644
          ['OS != "ios" and libyuv_disable_jpeg != 1 and build_with_mozilla != 1', {
            'defines': [
              'HAVE_JPEG'
-@@ -149,12 +142,94 @@
-               '-Wl,--dynamic-linker,/system/bin/linker',
-             ],
-           }],
+@@ -138,11 +131,95 @@
+           'include',
+           '.',
+         ],
++        'conditions': [
 +          ['target_arch == "armv7" or target_arch == "arm64" and moz_have_arm_i8mm_and_dot_prod == 1 and build_with_mozilla == 1', {
 +            'dependencies': [
 +                 ':libyuv_neon',
@@ -56,7 +56,7 @@ index 07bb5494..f3da0203 100644
 +                 ':libyuv_sve',
 +            ],
 +          }],
-         ], #conditions
++        ], #conditions
        },
        'sources': [
          '<@(libyuv_sources)',
@@ -138,7 +138,6 @@ index 07bb5494..f3da0203 100644
  }
  
 diff --git a/libyuv.gypi b/libyuv.gypi
-index 44b12741..ba5f7960 100644
 --- a/libyuv.gypi
 +++ b/libyuv.gypi
 @@ -8,6 +8,29 @@
@@ -194,15 +193,15 @@ index 44b12741..ba5f7960 100644
        'source/row_lsx.cc',
 -      'source/row_neon.cc',
 -      'source/row_neon64.cc',
+       'source/row_rvv.cc',
        'source/row_win.cc',
        'source/scale.cc',
-       'source/scale_any.cc',
-@@ -76,8 +93,6 @@
+@@ -77,8 +94,6 @@
        'source/scale_common.cc',
        'source/scale_gcc.cc',
        'source/scale_lsx.cc',
 -      'source/scale_neon.cc',
 -      'source/scale_neon64.cc',
        'source/scale_rgb.cc',
+       'source/scale_rvv.cc',
        'source/scale_uv.cc',
-       'source/scale_win.cc',

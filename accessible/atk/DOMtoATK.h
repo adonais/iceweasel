@@ -6,8 +6,9 @@
 #define ACCESSIBLE_ATK_DOMTOATK_H_
 
 #include <glib.h>
+
+#include "mozilla/Utf16.h"
 #include "mozilla/a11y/HyperTextAccessibleBase.h"
-#include "nsCharTraits.h"
 #include "nsString.h"
 
 /**
@@ -40,10 +41,7 @@
  * - all non-BMP characters that are fully in the string are in the UTF-8 result
  * as character followed by BOM
  */
-namespace mozilla {
-namespace a11y {
-
-namespace DOMtoATK {
+namespace mozilla::a11y::DOMtoATK {
 
 /**
  * Converts a string of accessible text into ATK gchar* string (by adding
@@ -126,29 +124,26 @@ inline gunichar ATKCharacter(HyperTextAccessibleBase* aAccessible,
   // char16_t is unsigned short in Mozilla, gnuichar is guint32 in glib.
   gunichar character = static_cast<gunichar>(aAccessible->CharAt(aOffset));
 
-  if (NS_IS_LOW_SURROGATE(character)) {
+  if (IsLowSurrogate(character)) {
     // Trailing surrogate, return BOM instead.
     return 0xFEFF;
   }
 
-  if (NS_IS_HIGH_SURROGATE(character)) {
+  if (IsHighSurrogate(character)) {
     // Heading surrogate, get the trailing surrogate and combine them.
     gunichar characterLow =
         static_cast<gunichar>(aAccessible->CharAt(aOffset + 1));
 
-    if (!NS_IS_LOW_SURROGATE(characterLow)) {
+    if (!IsLowSurrogate(characterLow)) {
       // It should have been a trailing surrogate... Flag the error.
       return 0xFFFD;
     }
-    return SURROGATE_TO_UCS4(character, characterLow);
+    return SurrogateToUCS4(character, characterLow);
   }
 
   return character;
 }
 
-}  // namespace DOMtoATK
-
-}  // namespace a11y
-}  // namespace mozilla
+}  // namespace mozilla::a11y::DOMtoATK
 
 #endif  // ACCESSIBLE_ATK_DOMTOATK_H_

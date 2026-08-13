@@ -1,0 +1,19 @@
+We still have wildcard SignedPolicy rules for our binary dir.
+
+diff --git a/sandbox/win/src/signed_policy.cc b/sandbox/win/src/signed_policy.cc
+index 9eaf44f9ff42..679529683f93 100644
+--- a/sandbox/win/src/signed_policy.cc
++++ b/sandbox/win/src/signed_policy.cc
+@@ -39,10 +39,12 @@ namespace sandbox {
+ 
+ bool SignedPolicy::GenerateRules(base::FilePath dll_path,
+                                  LowLevelPolicy* policy) {
++#if !defined(MOZ_SANDBOX)
+   // Disallow patterns to allow for future API changes.
+   if (base::Contains(dll_path.value(), L'*')) {
+     return false;
+   }
++#endif
+   if (!dll_path.IsAbsolute()) {
+     return false;
+   }

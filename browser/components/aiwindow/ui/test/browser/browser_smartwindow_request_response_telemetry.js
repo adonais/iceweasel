@@ -14,6 +14,11 @@ const { PromiseTestUtils } = ChromeUtils.importESModule(
 // assertions exercise.
 PromiseTestUtils.allowMatchingRejectionsGlobally(/Connection error/);
 
+// Test cases "separate conversations have isolated IDs" and
+// "createEngine error path receives flowId matching chat_id" might stop
+// inflight requests and lead to 400 errors.
+PromiseTestUtils.allowMatchingRejectionsGlobally(/400 Bad request/);
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   IntentClassifier:

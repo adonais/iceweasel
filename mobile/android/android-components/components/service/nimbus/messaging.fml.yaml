@@ -199,6 +199,10 @@ objects:
         description: The list of answers to present to the user e.g. "Satisfied, Dissatisfied...".
         type: List<MicrosurveyAnswer>
         default: [] # Should not be defaulted
+      max-number-lines:
+        description: The maximum number of lines allowed for the microsurvey text layout.
+        type: Int
+        default: 2
   MicrosurveyAnswer:
     description: Attributes relating to microsurvey content.
     fields:

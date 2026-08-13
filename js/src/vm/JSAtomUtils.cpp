@@ -6,9 +6,7 @@
  * JS atom table.
  */
 
-#include "vm/JSAtomUtils-inl.h"
-
-#include "mozilla/HashFunctions.h"  // mozilla::HashStringKnownLength
+#include "mozilla/HashFunctions.h"  // mozilla::HashString
 #include "mozilla/RangedPtr.h"
 
 #include <charconv>
@@ -29,7 +27,9 @@
 #include "vm/StringType.h"
 #include "vm/SymbolType.h"
 #include "vm/WellKnownAtom.h"  // WellKnownAtomInfo, WellKnownAtomId, wellKnownAtomInfos
+
 #include "gc/AtomMarking-inl.h"
+#include "vm/JSAtomUtils-inl.h"
 #include "vm/JSContext-inl.h"
 #include "vm/Realm-inl.h"
 #include "vm/StringType-inl.h"
@@ -153,12 +153,12 @@ bool JSRuntime::initializeAtoms(JSContext* cx) {
   // The bare symbol names are already part of the well-known set, but their
   // descriptions are not, so enumerate them here and add them to the initial
   // permanent atoms set below.
+  // NOTE: This needs to use the utf-16 version of HashString() to match
+  // AtomTableKey.
   static const WellKnownAtomInfo symbolDescInfo[] = {
-#define COMMON_NAME_INFO(NAME)                                  \
-  {uint32_t(sizeof("Symbol." #NAME) - 1),                       \
-   mozilla::HashStringKnownLength("Symbol." #NAME,              \
-                                  sizeof("Symbol." #NAME) - 1), \
-   "Symbol." #NAME},
+#define COMMON_NAME_INFO(NAME)            \
+  {uint32_t(sizeof("Symbol." #NAME) - 1), \
+   mozilla::HashString(u"Symbol." #NAME), "Symbol." #NAME},
       JS_FOR_EACH_WELL_KNOWN_SYMBOL(COMMON_NAME_INFO)
 #undef COMMON_NAME_INFO
   };

@@ -5,6 +5,7 @@
 #include "nsMathMLOperators.h"
 
 #include "mozilla/StaticPrefs_mathml.h"
+#include "mozilla/Utf16.h"
 #include "mozilla/intl/UnicodeProperties.h"
 #include "nsCOMPtr.h"
 #include "nsCRT.h"
@@ -42,8 +43,8 @@ static uint32_t ToUnicodeCodePoint(const nsString& aOperator) {
     return aOperator[0];
   }
   if (aOperator.Length() == 2 &&
-      NS_IS_SURROGATE_PAIR(aOperator[0], aOperator[1])) {
-    return SURROGATE_TO_UCS4(aOperator[0], aOperator[1]);
+      mozilla::IsSurrogatePair(aOperator[0], aOperator[1])) {
+    return mozilla::SurrogateToUCS4(aOperator[0], aOperator[1]);
   }
   return 0;
 }

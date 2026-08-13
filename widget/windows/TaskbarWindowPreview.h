@@ -6,10 +6,10 @@
 #ifndef _mozilla_widget_TaskbarWindowPreview_h_
 #define _mozilla_widget_TaskbarWindowPreview_h_
 
-#include "nsITaskbarWindowPreview.h"
-#include "nsITaskbarProgress.h"
-#include "nsITaskbarOverlayIconController.h"
 #include "TaskbarPreview.h"
+#include "nsITaskbarOverlayIconController.h"
+#include "nsITaskbarProgress.h"
+#include "nsITaskbarWindowPreview.h"
 #include "nsWeakReference.h"
 
 namespace mozilla {

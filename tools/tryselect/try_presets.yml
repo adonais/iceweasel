@@ -533,6 +533,15 @@ webextensions:
     query:
         - "'android | '64/ | 'windows11-64- !wpt !gpu !msix !-lite !-asan"
 
+webgl:
+    selector: fuzzy
+    description: >-
+        Runs the tests relevant to WebGL.
+    query:
+        - "'mochitest-webgl"
+        - "source-test-mozlint-updatebot"
+        - "source-test-clang-tidy"
+
 webgpu:
     selector: fuzzy
     description: >-

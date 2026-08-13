@@ -1074,7 +1074,7 @@ class TranslationsBencher {
    * @returns {Promise<number>} The timestamp when the translation is complete.
    */
   static async #getTranslationCompleteTimestampPromise(runInPage) {
-    await runInPage(async ({ waitForCondition }) => {
+    await runInPage(async ({ collectTranslatedDocs, waitForCondition }) => {
       // First, wait for the final paragraph to be translated.
       await new Promise(resolve => {
         content.document.addEventListener("FinalParagraphTranslated", resolve, {
@@ -1082,21 +1082,19 @@ class TranslationsBencher {
         });
       });
 
-      const translationsChild =
-        content.windowGlobalChild.getActor("Translations");
+      const hasPendingTranslationActivity = () =>
+        collectTranslatedDocs().some(
+          translatedDoc =>
+            translatedDoc.hasPendingCallbackOnEventLoop() ||
+            translatedDoc.hasPendingTranslationRequests() ||
+            translatedDoc.isObservingAnyElementForContentIntersection()
+        );
 
-      if (
-        translationsChild.translatedDoc?.hasPendingCallbackOnEventLoop() ||
-        translationsChild.translatedDoc?.hasPendingTranslationRequests() ||
-        translationsChild.translatedDoc?.isObservingAnyElementForContentIntersection()
-      ) {
+      if (hasPendingTranslationActivity()) {
         // The final paragraph was translated, but it wasn't the final request,
         // so we must still wait for every translation request to complete.
         await waitForCondition(
-          () =>
-            !translationsChild.translatedDoc?.hasPendingCallbackOnEventLoop() &&
-            !translationsChild.translatedDoc?.hasPendingTranslationRequests() &&
-            !translationsChild.translatedDoc?.isObservingAnyElementForContentIntersection(),
+          () => !hasPendingTranslationActivity(),
           "Waiting for all pending translation requests to complete."
         );
       }
@@ -1521,27 +1519,28 @@ class FullPageTranslationsTestUtils {
    * @param {Function} runInPage - A function run a closure in the content page.
    */
   static async waitForAllPendingTranslationsToComplete(runInPage) {
-    await runInPage(async ({ waitForCondition }) => {
-      let translationsChild;
-      try {
-        translationsChild = content.windowGlobalChild.getActor("Translations");
-      } catch {
-        return;
-      }
+    await runInPage(async ({ collectTranslatedDocs, waitForCondition }) => {
+      const hasPendingTranslationActivity = () =>
+        collectTranslatedDocs().some(
+          translatedDoc =>
+            translatedDoc.hasPendingTranslationRequests() ||
+            translatedDoc.hasPendingCallbackOnEventLoop()
+        );
 
-      while (
-        translationsChild.translatedDoc?.hasPendingTranslationRequests() ||
-        translationsChild.translatedDoc?.hasPendingCallbackOnEventLoop()
-      ) {
+      while (hasPendingTranslationActivity()) {
         await waitForCondition(
           () =>
-            !translationsChild.translatedDoc?.hasPendingTranslationRequests(),
+            !collectTranslatedDocs().some(translatedDoc =>
+              translatedDoc.hasPendingTranslationRequests()
+            ),
           "Waiting for all pending translation requests to complete."
         );
 
         await waitForCondition(
           () =>
-            !translationsChild.translatedDoc?.hasPendingCallbackOnEventLoop(),
+            !collectTranslatedDocs().some(translatedDoc =>
+              translatedDoc.hasPendingCallbackOnEventLoop()
+            ),
           "Waiting for pending event-loop callbacks to resolve in the TranslationsDocument."
         );
       }
@@ -1556,17 +1555,12 @@ class FullPageTranslationsTestUtils {
    * @param {Function} runInPage – Executes an async closure in the content page.
    */
   static async assertNoElementsAreObservedForContentIntersection(runInPage) {
-    await runInPage(async ({ waitForCondition }) => {
-      let translationsChild;
-      try {
-        translationsChild = content.windowGlobalChild.getActor("Translations");
-      } catch {
-        return;
-      }
-
+    await runInPage(async ({ collectTranslatedDocs, waitForCondition }) => {
       await waitForCondition(
         () =>
-          !translationsChild.translatedDoc?.isObservingAnyElementForContentIntersection(),
+          !collectTranslatedDocs().some(translatedDoc =>
+            translatedDoc.isObservingAnyElementForContentIntersection()
+          ),
         "Waiting until no elements are observed for content intersection."
       );
     });
@@ -1580,17 +1574,12 @@ class FullPageTranslationsTestUtils {
    * @param {Function} runInPage – Executes an async closure in the content page.
    */
   static async assertNoElementsAreObservedForAttributeIntersection(runInPage) {
-    await runInPage(async ({ waitForCondition }) => {
-      let translationsChild;
-      try {
-        translationsChild = content.windowGlobalChild.getActor("Translations");
-      } catch {
-        return;
-      }
-
+    await runInPage(async ({ collectTranslatedDocs, waitForCondition }) => {
       await waitForCondition(
         () =>
-          !translationsChild.translatedDoc?.isObservingAnyElementForAttributeIntersection(),
+          !collectTranslatedDocs().some(translatedDoc =>
+            translatedDoc.isObservingAnyElementForAttributeIntersection()
+          ),
         "Waiting until no elements are observed for attribute intersection."
       );
     });
@@ -1603,13 +1592,12 @@ class FullPageTranslationsTestUtils {
    * @param {Function} runInPage – Executes an async closure in the content page.
    */
   static async assertAnyElementIsObservedForContentIntersection(runInPage) {
-    await runInPage(async ({ waitForCondition }) => {
-      const translationsChild =
-        content.windowGlobalChild.getActor("Translations");
-
+    await runInPage(async ({ collectTranslatedDocs, waitForCondition }) => {
       await waitForCondition(
         () =>
-          translationsChild.translatedDoc?.isObservingAnyElementForContentIntersection(),
+          collectTranslatedDocs().some(translatedDoc =>
+            translatedDoc.isObservingAnyElementForContentIntersection()
+          ),
         "Waiting until an element is observed for content intersection."
       );
     });
@@ -1622,13 +1610,12 @@ class FullPageTranslationsTestUtils {
    * @param {Function} runInPage – Executes an async closure in the content page.
    */
   static async assertAnyElementIsObservedForAttributeIntersection(runInPage) {
-    await runInPage(async ({ waitForCondition }) => {
-      const translationsChild =
-        content.windowGlobalChild.getActor("Translations");
-
+    await runInPage(async ({ collectTranslatedDocs, waitForCondition }) => {
       await waitForCondition(
         () =>
-          translationsChild.translatedDoc?.isObservingAnyElementForAttributeIntersection(),
+          collectTranslatedDocs().some(translatedDoc =>
+            translatedDoc.isObservingAnyElementForAttributeIntersection()
+          ),
         "Waiting until an element is observed for attribute intersection."
       );
     });
@@ -1640,15 +1627,531 @@ class FullPageTranslationsTestUtils {
    * @param {Function} runInPage - A function run a closure in the content page.
    */
   static async waitForAnyRequestToInitialize(runInPage) {
-    await runInPage(async ({ waitForCondition }) => {
-      const translationsChild =
-        content.windowGlobalChild.getActor("Translations");
-
+    await runInPage(async ({ collectTranslatedDocs, waitForCondition }) => {
       await waitForCondition(
-        () => translationsChild.translatedDoc?.hasPendingTranslationRequests(),
+        () =>
+          collectTranslatedDocs().some(translatedDoc =>
+            translatedDoc.hasPendingTranslationRequests()
+          ),
         "Waiting for any translation request to initialize."
       );
     });
+  }
+
+  /**
+   * Asserts a translation result for an element inside a translated iframe.
+   *
+   * @param {object} options - The options for the assertion.
+   * @param {string} options.iframeId - The id of the iframe element in the top-level page.
+   * @param {Function} options.runInPage - Allows running a closure in the content page.
+   * @param {string} options.selector - The selector for the element inside the iframe.
+   * @param {string} [options.attribute]
+   * @param {string | Array<string>} options.expectedResult - The expected translated or untranslated result.
+   * @param {string} options.assertionMessage - The assertion message.
+   * @param {string} options.infoMessage - The message to log to info.
+   */
+  static async assertIframeTranslationResult({
+    iframeId,
+    runInPage,
+    selector,
+    attribute,
+    expectedResult,
+    assertionMessage,
+    infoMessage,
+  }) {
+    info(infoMessage);
+    await assertTranslationResultInBrowsingContext({
+      browsingContext: await getIframeBrowsingContext(runInPage, iframeId),
+      selector,
+      attribute,
+      expectedResult,
+      message: assertionMessage,
+    });
+  }
+
+  /**
+   * Mutates an element inside an iframe.
+   *
+   * @param {object} options
+   * @param {string} options.iframeId - The id of the iframe element in the top-level page.
+   * @param {Function} options.runInPage - Allows running a closure in the content page.
+   * @param {string} options.selector - The selector for the element inside the iframe.
+   * @param {string} [options.textContent]
+   * @param {string} [options.title]
+   * @returns {Promise<void>}
+   */
+  static async mutateIframeElement({
+    iframeId,
+    runInPage,
+    selector,
+    textContent,
+    title,
+  }) {
+    await mutateElementInBrowsingContext({
+      browsingContext: await getIframeBrowsingContext(runInPage, iframeId),
+      selector,
+      textContent,
+      title,
+    });
+  }
+
+  /**
+   * Inserts a translated test iframe relative to an existing iframe in the top-level page.
+   *
+   * @param {object} options
+   * @param {string} options.iframeId - The id to assign to the inserted iframe.
+   * @param {Function} options.runInPage - Allows running a closure in the content page.
+   * @param {string} options.referenceIframeId - The id of the existing iframe used as the insertion anchor.
+   * @param {"beforebegin" | "afterend"} options.position - Where to insert the new iframe relative to the anchor iframe.
+   * @returns {Promise<void>}
+   */
+  static async insertIframe({
+    iframeId,
+    runInPage,
+    referenceIframeId,
+    position,
+  }) {
+    info(
+      `Inserting the iframe "${iframeId}" ${position} the iframe "${referenceIframeId}".`
+    );
+    await insertIframeIntoPage(runInPage, {
+      iframeId,
+      referenceIframeId,
+      position,
+    });
+  }
+
+  /**
+   * Scrolls an iframe document to the top.
+   *
+   * @param {object} options
+   * @param {string} options.iframeId - The id of the iframe element in the top-level page.
+   * @param {Function} options.runInPage - Allows running a closure in the content page.
+   * @returns {Promise<void>}
+   */
+  static async scrollToTopOfIframe({ iframeId, runInPage }) {
+    info(`Scrolling the iframe "${iframeId}" to the top.`);
+    await scrollBrowsingContextToTop(
+      await getIframeBrowsingContext(runInPage, iframeId)
+    );
+  }
+
+  /**
+   * Scrolls an iframe document to the bottom.
+   *
+   * @param {object} options
+   * @param {string} options.iframeId - The id of the iframe element in the top-level page.
+   * @param {Function} options.runInPage - Allows running a closure in the content page.
+   * @returns {Promise<void>}
+   */
+  static async scrollToBottomOfIframe({ iframeId, runInPage }) {
+    info(`Scrolling the iframe "${iframeId}" to the bottom.`);
+    await scrollBrowsingContextToBottom(
+      await getIframeBrowsingContext(runInPage, iframeId)
+    );
+  }
+
+  /**
+   * Asserts that an iframe H1 element's content has been translated into the target language.
+   *
+   * @param {object} options - The options for the assertion.
+   * @param {string} options.iframeId - The id of the iframe element in the top-level page.
+   * @param {string} options.fromLanguage - The BCP-47 language tag being translated from.
+   * @param {string} options.toLanguage - The BCP-47 language tag being translated into.
+   * @param {Function} options.runInPage - Allows running a closure in the content page.
+   */
+  static async assertIframeH1ContentIsTranslated({
+    iframeId,
+    fromLanguage,
+    toLanguage,
+    runInPage,
+  }) {
+    await FullPageTranslationsTestUtils.assertIframeTranslationResult({
+      iframeId,
+      runInPage,
+      selector: "h1",
+      expectedResult: `DON QUIJOTE DE LA MANCHA [${fromLanguage} to ${toLanguage}]`,
+      assertionMessage: `The iframe "${iframeId}" H1 is translated.`,
+      infoMessage: `Checking that the iframe "${iframeId}" header is translated.`,
+    });
+  }
+
+  /**
+   * Asserts that an iframe H1 element's content remains untranslated.
+   *
+   * @param {object} options - The options for the assertion.
+   * @param {string} options.iframeId - The id of the iframe element in the top-level page.
+   * @param {Function} options.runInPage - Allows running a closure in the content page.
+   */
+  static async assertIframeH1ContentIsNotTranslated({ iframeId, runInPage }) {
+    await FullPageTranslationsTestUtils.assertIframeTranslationResult({
+      iframeId,
+      runInPage,
+      selector: "h1",
+      expectedResult: "Don Quijote de La Mancha",
+      assertionMessage: `The iframe "${iframeId}" H1 is not translated.`,
+      infoMessage: `Checking that the iframe "${iframeId}" header is not translated.`,
+    });
+  }
+
+  /**
+   * Asserts that an iframe H1 element's content matches the provided value.
+   *
+   * @param {object} options - The options for the assertion.
+   * @param {string} options.iframeId - The id of the iframe element in the top-level page.
+   * @param {Function} options.runInPage - Allows running a closure in the content page.
+   * @param {string | Array<string>} options.expectedResult - The expected value.
+   * @param {string} options.message - The assertion and info message.
+   */
+  static async assertIframeH1ContentMatches({
+    iframeId,
+    runInPage,
+    expectedResult,
+    message,
+  }) {
+    await FullPageTranslationsTestUtils.assertIframeTranslationResult({
+      iframeId,
+      runInPage,
+      selector: "h1",
+      expectedResult,
+      assertionMessage: message,
+      infoMessage: message,
+    });
+  }
+
+  /**
+   * Asserts that an iframe H1 title attribute has been translated into the target language.
+   *
+   * @param {object} options - The options for the assertion.
+   * @param {string} options.iframeId - The id of the iframe element in the top-level page.
+   * @param {string} options.fromLanguage - The BCP-47 language tag being translated from.
+   * @param {string} options.toLanguage - The BCP-47 language tag being translated into.
+   * @param {Function} options.runInPage - Allows running a closure in the content page.
+   */
+  static async assertIframeH1TitleIsTranslated({
+    iframeId,
+    fromLanguage,
+    toLanguage,
+    runInPage,
+  }) {
+    await FullPageTranslationsTestUtils.assertIframeTranslationResult({
+      iframeId,
+      runInPage,
+      selector: "h1",
+      attribute: "title",
+      expectedResult: `ESTE ES EL TÍTULO DEL ENCABEZADO DE PÁGINA [${fromLanguage} to ${toLanguage}]`,
+      assertionMessage: `The iframe "${iframeId}" H1 title is translated.`,
+      infoMessage: `Checking that the iframe "${iframeId}" header title is translated.`,
+    });
+  }
+
+  /**
+   * Asserts that an iframe H1 title attribute remains untranslated.
+   *
+   * @param {object} options - The options for the assertion.
+   * @param {string} options.iframeId - The id of the iframe element in the top-level page.
+   * @param {Function} options.runInPage - Allows running a closure in the content page.
+   */
+  static async assertIframeH1TitleIsNotTranslated({ iframeId, runInPage }) {
+    await FullPageTranslationsTestUtils.assertIframeTranslationResult({
+      iframeId,
+      runInPage,
+      selector: "h1",
+      attribute: "title",
+      expectedResult: "Este es el título del encabezado de página",
+      assertionMessage: `The iframe "${iframeId}" H1 title is not translated.`,
+      infoMessage: `Checking that the iframe "${iframeId}" header title is not translated.`,
+    });
+  }
+
+  /**
+   * Asserts that an iframe H1 title attribute matches the provided value.
+   *
+   * @param {object} options - The options for the assertion.
+   * @param {string} options.iframeId - The id of the iframe element in the top-level page.
+   * @param {Function} options.runInPage - Allows running a closure in the content page.
+   * @param {string | Array<string>} options.expectedResult - The expected value.
+   * @param {string} options.message - The assertion and info message.
+   */
+  static async assertIframeH1TitleMatches({
+    iframeId,
+    runInPage,
+    expectedResult,
+    message,
+  }) {
+    await FullPageTranslationsTestUtils.assertIframeTranslationResult({
+      iframeId,
+      runInPage,
+      selector: "h1",
+      attribute: "title",
+      expectedResult,
+      assertionMessage: message,
+      infoMessage: message,
+    });
+  }
+
+  /**
+   * Asserts that an iframe final paragraph's content has been translated into the target language.
+   *
+   * @param {object} options - The options for the assertion.
+   * @param {string} options.iframeId - The id of the iframe element in the top-level page.
+   * @param {string} options.fromLanguage - The BCP-47 language tag being translated from.
+   * @param {string} options.toLanguage - The BCP-47 language tag being translated into.
+   * @param {Function} options.runInPage - Allows running a closure in the content page.
+   */
+  static async assertIframeFinalParagraphContentIsTranslated({
+    iframeId,
+    fromLanguage,
+    toLanguage,
+    runInPage,
+  }) {
+    await FullPageTranslationsTestUtils.assertIframeTranslationResult({
+      iframeId,
+      runInPage,
+      selector: "p:last-of-type",
+      expectedResult: `— PUES, AUNQUE MOVÁIS MÁS BRAZOS QUE LOS DEL GIGANTE BRIAREO, ME LO HABÉIS DE PAGAR. [${fromLanguage} to ${toLanguage}]`,
+      assertionMessage: `The iframe "${iframeId}" final paragraph is translated.`,
+      infoMessage: `Checking that the iframe "${iframeId}" final paragraph is translated.`,
+    });
+  }
+
+  /**
+   * Asserts that an iframe's translatable content is fully translated.
+   *
+   * @param {object} options - The options for the assertion.
+   * @param {string} options.iframeId - The id of the iframe element in the top-level page.
+   * @param {string} options.fromLanguage - The BCP-47 language tag being translated from.
+   * @param {string} options.toLanguage - The BCP-47 language tag being translated into.
+   * @param {Function} options.runInPage - Allows running a closure in the content page.
+   */
+  static async assertIframeContentIsTranslated({
+    iframeId,
+    fromLanguage,
+    toLanguage,
+    runInPage,
+  }) {
+    await FullPageTranslationsTestUtils.assertIframeH1ContentIsTranslated({
+      iframeId,
+      fromLanguage,
+      toLanguage,
+      runInPage,
+    });
+    await FullPageTranslationsTestUtils.assertIframeFinalParagraphContentIsTranslated(
+      {
+        iframeId,
+        fromLanguage,
+        toLanguage,
+        runInPage,
+      }
+    );
+  }
+
+  /**
+   * Asserts that an iframe final paragraph's content remains untranslated.
+   *
+   * @param {object} options - The options for the assertion.
+   * @param {string} options.iframeId - The id of the iframe element in the top-level page.
+   * @param {Function} options.runInPage - Allows running a closure in the content page.
+   */
+  static async assertIframeFinalParagraphContentIsNotTranslated({
+    iframeId,
+    runInPage,
+  }) {
+    await FullPageTranslationsTestUtils.assertIframeTranslationResult({
+      iframeId,
+      runInPage,
+      selector: "p:last-of-type",
+      expectedResult:
+        "— Pues, aunque mováis más brazos que los del gigante Briareo, me lo habéis de pagar.",
+      assertionMessage: `The iframe "${iframeId}" final paragraph is not translated.`,
+      infoMessage: `Checking that the iframe "${iframeId}" final paragraph is not translated.`,
+    });
+  }
+
+  /**
+   * Asserts that an iframe final paragraph title attribute has been translated into the target language.
+   *
+   * @param {object} options - The options for the assertion.
+   * @param {string} options.iframeId - The id of the iframe element in the top-level page.
+   * @param {string} options.fromLanguage - The BCP-47 language tag being translated from.
+   * @param {string} options.toLanguage - The BCP-47 language tag being translated into.
+   * @param {Function} options.runInPage - Allows running a closure in the content page.
+   */
+  static async assertIframeFinalParagraphTitleIsTranslated({
+    iframeId,
+    fromLanguage,
+    toLanguage,
+    runInPage,
+  }) {
+    await FullPageTranslationsTestUtils.assertIframeTranslationResult({
+      iframeId,
+      runInPage,
+      selector: "p:last-of-type",
+      attribute: "title",
+      expectedResult: `ESTE ES EL TÍTULO DEL ÚLTIMO PÁRRAFO [${fromLanguage} to ${toLanguage}]`,
+      assertionMessage: `The iframe "${iframeId}" final paragraph title is translated.`,
+      infoMessage: `Checking that the iframe "${iframeId}" final paragraph title is translated.`,
+    });
+  }
+
+  /**
+   * Asserts that an iframe final paragraph title attribute remains untranslated.
+   *
+   * @param {object} options - The options for the assertion.
+   * @param {string} options.iframeId - The id of the iframe element in the top-level page.
+   * @param {Function} options.runInPage - Allows running a closure in the content page.
+   */
+  static async assertIframeFinalParagraphTitleIsNotTranslated({
+    iframeId,
+    runInPage,
+  }) {
+    await FullPageTranslationsTestUtils.assertIframeTranslationResult({
+      iframeId,
+      runInPage,
+      selector: "p:last-of-type",
+      attribute: "title",
+      expectedResult: "Este es el título del último párrafo",
+      assertionMessage: `The iframe "${iframeId}" final paragraph title is not translated.`,
+      infoMessage: `Checking that the iframe "${iframeId}" final paragraph title is not translated.`,
+    });
+  }
+
+  /**
+   * Mutates an iframe H1 element's text content and title attribute.
+   *
+   * @param {object} options - The options for the mutation.
+   * @param {string} options.iframeId - The id of the iframe element in the top-level page.
+   * @param {Function} options.runInPage - Allows running a closure in the content page.
+   * @param {string} [options.textContent]
+   * @param {string} [options.title]
+   * @returns {Promise<void>}
+   */
+  static async mutateIframeH1({ iframeId, runInPage, textContent, title }) {
+    await FullPageTranslationsTestUtils.mutateIframeElement({
+      iframeId,
+      runInPage,
+      selector: "h1",
+      textContent,
+      title,
+    });
+  }
+
+  /**
+   * Mutates an iframe final paragraph's text content and title attribute.
+   *
+   * @param {object} options - The options for the mutation.
+   * @param {string} options.iframeId - The id of the iframe element in the top-level page.
+   * @param {Function} options.runInPage - Allows running a closure in the content page.
+   * @param {string} [options.textContent]
+   * @param {string} [options.title]
+   * @returns {Promise<void>}
+   */
+  static async mutateIframeFinalParagraph({
+    iframeId,
+    runInPage,
+    textContent,
+    title,
+  }) {
+    await FullPageTranslationsTestUtils.mutateIframeElement({
+      iframeId,
+      runInPage,
+      selector: "p:last-of-type",
+      textContent,
+      title,
+    });
+  }
+
+  /**
+   * Asserts lazy iframe content translation based on top-level iframe intersection.
+   *
+   * @param {object} options - The options for the assertion.
+   * @param {string[]} options.intersectingIframeIds - Iframes within top-level observation range.
+   * @param {string[]} options.outOfRangeIframeIds - Iframes outside top-level observation range.
+   * @param {string} options.fromLanguage - The BCP-47 language tag being translated from.
+   * @param {string} options.toLanguage - The BCP-47 language tag being translated into.
+   * @param {Function} options.runInPage - Allows running a closure in the content page.
+   */
+  static async assertOnlyIntersectingIframeNodesAreTranslated({
+    intersectingIframeIds,
+    outOfRangeIframeIds,
+    fromLanguage,
+    toLanguage,
+    runInPage,
+  }) {
+    for (const iframeId of intersectingIframeIds) {
+      await FullPageTranslationsTestUtils.assertIframeH1ContentIsTranslated({
+        iframeId,
+        fromLanguage,
+        toLanguage,
+        runInPage,
+      });
+
+      await FullPageTranslationsTestUtils.assertIframeFinalParagraphContentIsNotTranslated(
+        {
+          iframeId,
+          runInPage,
+        }
+      );
+    }
+
+    for (const iframeId of outOfRangeIframeIds) {
+      await FullPageTranslationsTestUtils.assertIframeH1ContentIsNotTranslated({
+        iframeId,
+        runInPage,
+      });
+
+      await FullPageTranslationsTestUtils.assertIframeFinalParagraphContentIsNotTranslated(
+        {
+          iframeId,
+          runInPage,
+        }
+      );
+    }
+
+    await FullPageTranslationsTestUtils.assertLangTagIsShownOnTranslationsButton(
+      fromLanguage,
+      toLanguage
+    );
+
+    await FullPageTranslationsTestUtils.waitForAllPendingTranslationsToComplete(
+      runInPage
+    );
+  }
+
+  /**
+   * Asserts that all iframe content is translated.
+   *
+   * @param {object} options - The options for the assertion.
+   * @param {string} options.fromLanguage - The BCP-47 language tag being translated from.
+   * @param {string} options.toLanguage - The BCP-47 language tag being translated into.
+   * @param {Function} options.runInPage - Allows running a closure in the content page.
+   */
+  static async assertAllIframeContentIsTranslated({
+    fromLanguage,
+    toLanguage,
+    runInPage,
+  }) {
+    await FullPageTranslationsTestUtils.assertIframeContentIsTranslated({
+      iframeId: "top-frame",
+      fromLanguage,
+      toLanguage,
+      runInPage,
+    });
+    await FullPageTranslationsTestUtils.assertIframeContentIsTranslated({
+      iframeId: "bottom-frame",
+      fromLanguage,
+      toLanguage,
+      runInPage,
+    });
+
+    await FullPageTranslationsTestUtils.assertLangTagIsShownOnTranslationsButton(
+      fromLanguage,
+      toLanguage
+    );
+
+    await FullPageTranslationsTestUtils.waitForAllPendingTranslationsToComplete(
+      runInPage
+    );
   }
 
   /**

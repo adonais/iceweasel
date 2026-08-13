@@ -700,6 +700,64 @@ tasks:
                         - linux64-fix-stacks
                         - linux64-geckodriver
 
+    web-platform-tests-aam:
+        description: "Web platform aamtests run"
+        schedules-component: web-platform-tests-aam
+        treeherder-symbol: W(aam)
+        worker-type:
+            by-test-platform:
+                .*windows.*: win11-64-25h2
+                default: default
+        chunks: 1
+        mozharness:
+            extra-options:
+                - --test-type=aamtest
+            config:
+                - web_platform_tests/prod_config.py
+                - web_platform_tests/aam_config.py
+                - remove_executables.py
+        variants:
+            - no-fission
+            - async-event-dispatching
+        run-on-projects:
+            by-variant:
+                no-fission:
+                    by-test-platform:
+                        linux2404-64/.*: ['mozilla-central']
+                        linux2404-64-shippable/opt: ['mozilla-central']
+                        linux2404-64-asan/opt: ['mozilla-central']
+                        default: []
+                async-event-dispatching:
+                    by-test-platform:
+                        .*/opt: []  # try only for now
+                        default: []
+                default:
+                    by-test-platform:
+                        linux.*: built-projects  # only on Linux for now
+                        default: []
+        tier:
+            by-variant:
+                no-fission:
+                    by-test-platform:
+                        linux.*: 2
+                        default: default
+                default: default
+        fetches:
+            toolchain:
+                by-test-platform:
+                    linux2204.*:
+                        - linux64-geckodriver
+                        - linux64-minidump-stackwalk
+                        - linux64-fix-stacks
+                        - linux64-2204-pygobject
+                        - linux64-2204-pycairo
+                    default:
+                        - linux64-minidump-stackwalk
+                        - linux64-fix-stacks
+                        - linux64-geckodriver
+                        - linux64-2404-pygobject
+                        - linux64-2404-pycairo
+
     web-platform-tests-crashtest:
         description: "Web platform crashtests run"
         schedules-component: web-platform-tests-crashtest

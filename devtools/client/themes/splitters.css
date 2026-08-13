@@ -102,3 +102,8 @@ splitter.devtools-horizontal-splitter {
 
   cursor: ew-resize;
 }
+
+/* Specific style for content page|devtools toolbox splitters */
+splitter:is(.devtools-horizontal-splitter, .devtools-side-splitter):focus-visible {
+  outline: auto;
+}

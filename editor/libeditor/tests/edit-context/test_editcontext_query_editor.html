@@ -1,0 +1,41 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test that EditContext control bounds are correctly reported for QueryEditorRect content event</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="/tests/SimpleTest/EventUtils.js"></script>
+  <script src="common.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<div></div>
+<canvas></canvas>
+
+<script>
+'use strict';
+
+const domHost = document.querySelector('div');
+const canvasHost = document.querySelector('canvas');
+const editContext = new EditContext();
+const controlBounds = new DOMRect(123, 456, 789, 10);
+editContext.updateControlBounds(controlBounds);
+
+for (let host of [domHost, canvasHost]) {
+  add_task(async () => {
+    const hostType = host === domHost ? 'DOM-based EditContext'
+                                      : '<canvas>-based EditContext';
+    await SimpleTest.promiseFocus();
+    domHost.editContext = null;
+    canvasHost.editContext = null;
+    host.editContext = editContext;
+    host.focus();
+    const editorRect = synthesizeQueryEditorRect();
+    ok(editorRect.succeeded, `QueryEditorRect should succeed for ${hostType}.`);
+    checkRect(editorRect, controlBounds,
+              `QueryEditorRect should give rectangle passed to updateControlBounds() for ${hostType}.`);
+  });
+}
+</script>
+</body>
+</html>

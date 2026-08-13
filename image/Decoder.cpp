@@ -8,13 +8,13 @@
 #include "IDecodingTask.h"
 #include "ISurfaceProvider.h"
 #include "gfxPlatform.h"
+#include "mozilla/ProfilerLabels.h"
+#include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Point.h"
-#include "mozilla/ProfilerLabels.h"
 #include "nsComponentManagerUtils.h"
 #include "nsProxyRelease.h"
 #include "nsServiceManagerUtils.h"
-#include "mozilla/StaticPrefs_gfx.h"
 
 using mozilla::gfx::IntPoint;
 using mozilla::gfx::IntRect;

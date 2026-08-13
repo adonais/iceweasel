@@ -4,28 +4,27 @@
 
 #include "XULTreeAccessible.h"
 
-#include "LocalAccessible-inl.h"
 #include "DocAccessible-inl.h"
-#include "nsAccCache.h"
-#include "nsAccUtils.h"
-#include "nsCoreUtils.h"
-#include "nsEventShell.h"
 #include "DocAccessible.h"
+#include "LocalAccessible-inl.h"
 #include "Relation.h"
-#include "mozilla/a11y/Role.h"
 #include "States.h"
 #include "XULTreeGridAccessible.h"
-#include "nsQueryObject.h"
-
+#include "mozilla/PresShell.h"
+#include "mozilla/a11y/Role.h"
+#include "mozilla/dom/XULTreeElementBinding.h"
+#include "nsAccCache.h"
+#include "nsAccUtils.h"
 #include "nsComponentManagerUtils.h"
+#include "nsCoreUtils.h"
+#include "nsEventShell.h"
 #include "nsIAutoCompletePopup.h"
 #include "nsIDOMXULMenuListElement.h"
 #include "nsITreeSelection.h"
+#include "nsQueryObject.h"
 #include "nsTreeBodyFrame.h"
 #include "nsTreeColumns.h"
 #include "nsTreeUtils.h"
-#include "mozilla/PresShell.h"
-#include "mozilla/dom/XULTreeElementBinding.h"
 
 using namespace mozilla::a11y;
 

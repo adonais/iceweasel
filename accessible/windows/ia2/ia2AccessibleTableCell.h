@@ -6,9 +6,9 @@
 #define ACCESSIBLE_TABLECELL_H
 
 #include "AccessibleTableCell.h"
-#include "ia2AccessibleHypertext.h"
 #include "IUnknownImpl.h"
 #include "UiaGridItem.h"
+#include "ia2AccessibleHypertext.h"
 
 namespace mozilla {
 namespace a11y {

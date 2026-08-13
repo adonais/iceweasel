@@ -26,6 +26,8 @@ class CSSColorValue : public CSSStyleValue {
  public:
   explicit CSSColorValue(nsCOMPtr<nsISupports> aParent);
 
+  static bool IsEnabled(JSContext*, JSObject*);
+
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 

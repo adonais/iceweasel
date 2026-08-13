@@ -7,6 +7,7 @@
 #include "nsIURI.h"
 #include "nsIEffectiveTLDService.h"
 #include "mozilla/Components.h"
+#include "mozilla/ContentClassifierService.h"
 #include "mozilla/Logging.h"
 #include "mozilla/net/UrlClassifierCommon.h"
 #include "mozilla/StaticPrefs_privacy.h"
@@ -98,6 +99,37 @@ nsresult ScopedPrefs::GetBoolPrefFallback(const nsIScopedPrefs::Pref aPref,
           (aIsPrivate &&
            StaticPrefs::
                privacy_trackingprotection_emailtracking_pbmode_enabled());
+      break;
+    // The content-classifier features gate independently from the
+    // URLClassifier: each falls back to whether its blocking feature is active.
+    // ContentClassifierService owns the engines prefs that decide this.
+    case nsIScopedPrefs::PRIVACY_TRACKINGPROTECTION_CONTENT_ENABLED:
+      *aValue = ContentClassifierService::IsBlockingFeatureActive("trackers"_ns,
+                                                                  aIsPrivate);
+      break;
+    case nsIScopedPrefs::
+        PRIVACY_TRACKINGPROTECTION_CONTENT_CRYPTOMINING_ENABLED:
+      *aValue = ContentClassifierService::IsBlockingFeatureActive(
+          "cryptominers"_ns, aIsPrivate);
+      break;
+    case nsIScopedPrefs::
+        PRIVACY_TRACKINGPROTECTION_CONTENT_FINGERPRINTING_ENABLED:
+      *aValue = ContentClassifierService::IsBlockingFeatureActive(
+          "fingerprinters"_ns, aIsPrivate);
+      break;
+    case nsIScopedPrefs::
+        PRIVACY_TRACKINGPROTECTION_CONTENT_SOCIALTRACKING_ENABLED:
+      *aValue = ContentClassifierService::IsBlockingFeatureActive(
+          "social-trackers"_ns, aIsPrivate);
+      break;
+    case nsIScopedPrefs::
+        PRIVACY_TRACKINGPROTECTION_CONTENT_EMAILTRACKING_ENABLED:
+      *aValue = ContentClassifierService::IsBlockingFeatureActive(
+          "email-trackers"_ns, aIsPrivate);
+      break;
+    case nsIScopedPrefs::PRIVACY_TRACKINGPROTECTION_CONTENT_TEST_ENABLED:
+      *aValue = ContentClassifierService::IsBlockingFeatureActive(
+          "test_block"_ns, aIsPrivate);
       break;
     case nsIScopedPrefs::NUM_SCOPED_BOOL_PREFS:
       // not a valid value

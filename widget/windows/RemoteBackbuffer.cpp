@@ -3,13 +3,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "RemoteBackbuffer.h"
-#include "GeckoProfiler.h"
-#include "nsThreadUtils.h"
-#include "mozilla/Span.h"
-#include "mozilla/gfx/Point.h"
-#include "WinUtils.h"
+
 #include <algorithm>
 #include <type_traits>
+
+#include "GeckoProfiler.h"
+#include "WinUtils.h"
+#include "mozilla/Span.h"
+#include "mozilla/gfx/Point.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla {
 namespace widget {

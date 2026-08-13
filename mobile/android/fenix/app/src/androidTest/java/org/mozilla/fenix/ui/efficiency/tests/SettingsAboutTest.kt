@@ -23,6 +23,7 @@ class SettingsAboutTest : BaseTest() {
             .mozVerifyElementsByGroup("googlePlay")
     }
 
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3132646
     @Test
     fun verifyLibrariesListInReleaseBuildsTest() {
             on.settingsAbout.navigateToPage()

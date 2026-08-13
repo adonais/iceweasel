@@ -530,10 +530,9 @@ class OpenTabsInViewCard extends ViewPageContent {
 
   closeTab(event) {
     const tab = event.originalTarget.tabElement;
-    tab?.documentGlobal.gBrowser.removeTab(
-      tab,
-      lazy.TabMetrics.userTriggeredContext()
-    );
+    tab?.documentGlobal.gBrowser.removeTab(tab, {
+      metricsContext: lazy.TabMetrics.userTriggeredContext(),
+    });
 
     Glean.firefoxviewNext.closeOpenTabTabs.record();
   }

@@ -6,6 +6,7 @@
 #define LogCommandLineHandler_h
 
 #include <functional>
+
 #include "nsString.h"
 
 namespace mozilla {

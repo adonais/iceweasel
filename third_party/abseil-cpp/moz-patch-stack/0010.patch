@@ -1,23 +1,25 @@
 From: Michael Froman <mfroman@mozilla.com>
-Date: Tue, 7 Jan 2025 15:37:00 -0600
-Subject: Bug 1935474 - only apply android api < 17 fix for SYS_mmap2 if
- actually on < 17 api. r?ng!
+Date: Tue, 1 Jul 2025 18:38:00 -0500
+Subject: Bug 1974813 - abseil-cpp - remove prevent_unsafe_narrowing build
+ config since chromium/build now automatically includes it
 
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/7822a8be4fb906ec1570667f72565a1a91f17228
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/af60dbfe1bbea15ac5102a8ca90b9f6624ee151c
 ---
- abseil-cpp/absl/base/internal/direct_mmap.h | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ abseil-cpp/absl.gni | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/abseil-cpp/absl/base/internal/direct_mmap.h b/abseil-cpp/absl/base/internal/direct_mmap.h
-index 1beb2ee4e52..986a8200ad8 100644
---- a/abseil-cpp/absl/base/internal/direct_mmap.h
-+++ b/abseil-cpp/absl/base/internal/direct_mmap.h
-@@ -94,7 +94,7 @@ inline void* DirectMmap(void* start, size_t length, int prot, int flags, int fd,
-     errno = EINVAL;
-     return MAP_FAILED;
-   }
--#ifdef __BIONIC__
-+#if defined(__BIONIC__) && (!defined(__ANDROID_API__) || __ANDROID_API__ < 17)
-   // SYS_mmap2 has problems on Android API level <= 16.
-   // Workaround by invoking __mmap2() instead.
-   return __mmap2(start, length, prot, flags, fd,
+diff --git a/abseil-cpp/absl.gni b/abseil-cpp/absl.gni
+index 3632789e941..9e1c844bf3b 100644
+--- a/abseil-cpp/absl.gni
++++ b/abseil-cpp/absl.gni
+@@ -38,6 +38,10 @@ template("absl_source_set") {
+         "//abseil-cpp:absl_define_config",
+       ]
+ 
++      if (moz_webrtc_build) {
++        configs -= [ "//chromium/build/config/compiler:prevent_unsafe_narrowing" ]
++      }
++
+       if (!defined(defines)) {
+         defines = []
+       }

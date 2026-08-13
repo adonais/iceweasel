@@ -5,20 +5,20 @@
 #ifndef nsThreadPool_h_
 #define nsThreadPool_h_
 
-#include "nsITargetShutdownTask.h"
-#include "nsIThread.h"
-#include "nsIThreadPool.h"
-#include "nsIRunnable.h"
-#include "nsCOMArray.h"
-#include "nsCOMPtr.h"
-#include "nsThreadUtils.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/CondVar.h"
 #include "mozilla/EventQueue.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/TargetShutdownTaskSet.h"
+#include "nsCOMArray.h"
+#include "nsCOMPtr.h"
+#include "nsIRunnable.h"
+#include "nsITargetShutdownTask.h"
+#include "nsIThread.h"
+#include "nsIThreadPool.h"
+#include "nsThreadUtils.h"
 
 class nsIThread;
 

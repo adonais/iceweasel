@@ -78,6 +78,7 @@ EXCLUSIVE_COMPONENTS = [
     "web-platform-tests-print-reftest",
     "web-platform-tests-reftest",
     "web-platform-tests-wdspec",
+    "web-platform-tests-aam",
     "nss",
 ]
 EXCLUSIVE_COMPONENTS = sorted(EXCLUSIVE_COMPONENTS)

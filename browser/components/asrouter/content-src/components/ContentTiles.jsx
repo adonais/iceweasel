@@ -354,7 +354,11 @@ export const ContentTiles = props => {
               />
             )}
             {tile.type === "action_checklist" && tile.data && (
-              <ActionChecklist content={content} message_id={props.messageId} />
+              <ActionChecklist
+                content={content}
+                message_id={props.messageId}
+                handleAction={props.handleAction}
+              />
             )}
             {tile.type === "embedded_browser" && tile.data?.url && (
               <EmbeddedBrowser url={tile.data.url} style={tile.data.style} />
@@ -393,6 +397,7 @@ export const ContentTiles = props => {
                 tile={tile}
                 messageId={props.messageId}
                 handleAction={props.handleAction}
+                setPinnedSite={props.setPinnedSite}
               />
             )}
             {tile.type === "content-toggle" && tile.data && (

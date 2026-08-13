@@ -9,7 +9,7 @@ PromiseTestUtils.allowMatchingRejectionsGlobally(
 
 function extensionShortcutsReady(id) {
   let extension = WebExtensionPolicy.getByID(id).extension;
-  return BrowserTestUtils.waitForCondition(() => {
+  return TestUtils.waitForCondition(() => {
     return extension.shortcuts.keysetsMap.has(window);
   }, "Wait for add-on keyset to be registered");
 }
@@ -142,7 +142,7 @@ add_task(async function testUpdatingCommands() {
     count++;
 
     // Wait for the shortcut attribute to change.
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => input.getAttribute("shortcut") == "Alt+Shift+8",
       "Wait for shortcut to update to Alt+Shift+8"
     );
@@ -161,7 +161,7 @@ add_task(async function testUpdatingCommands() {
       shiftKey: true,
       altKey: true,
     });
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => input.getAttribute("shortcut") == `Alt+Shift+${count}`,
       `Wait for shortcut to update to Alt+Shift+${count}`
     );
@@ -180,7 +180,7 @@ add_task(async function testUpdatingCommands() {
     shortcutInput.focus();
     EventUtils.synthesizeKey(synthesizeKey, { shiftKey: true, altKey: true });
     // Wait for the shortcut attribute to change.
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => shortcutInput.getAttribute("shortcut") == `Alt+Shift+${key}`,
       `Wait for shortcut to update to Alt+Shift+${key}`
     );

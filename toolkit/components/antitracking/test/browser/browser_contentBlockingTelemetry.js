@@ -22,11 +22,7 @@ function clearTelemetry() {
 }
 
 async function cleanup() {
-  await new Promise(resolve => {
-    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-      resolve()
-    );
-  });
+  await clearSiteTestData();
 }
 
 function getExpectedExpiredDaysFromPref(pref) {
@@ -64,7 +60,7 @@ async function testTelemetry(
   let storageAccessGrantedHistogram;
 
   // Wait until the telemetry probe appears.
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     let histograms;
     if (aProbeInParent) {
       histograms = Services.telemetry.getSnapshotForHistograms(

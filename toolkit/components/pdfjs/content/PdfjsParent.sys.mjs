@@ -55,6 +55,68 @@ let gFindTypes = [
   "finddiacriticmatchingchange",
 ];
 
+// Defence-in-depth bounds for the signature-verification IPC handlers
+// below. Even though only our own viewer code is expected to call them,
+// the IPC boundary is privileged (chrome receives content-supplied
+// data) so we reject obviously malformed shapes before reaching NSS or
+// `about:certificate`. The validators below are exported so xpcshell
+// can exercise them without having to instantiate the JSWindowActor.
+const MAX_CERTS_PER_VIEW = 16;
+const MAX_DER_BASE64_LEN = 64 * 1024; // 64 KiB / cert is far above any real chain.
+const BASE64_RE = /^[A-Za-z0-9+/=]+$/;
+
+// `instanceof Uint8Array` is unreliable across realms (xpcshell exercises
+// these validators from another global); brand-check a byte view instead.
+const isBytes = x => ArrayBuffer.isView(x) && x.BYTES_PER_ELEMENT === 1;
+
+/**
+ * Validate the shape of a `verifyPdfSignature` IPC payload before
+ * forwarding bytes to `nsIX509CertDB.asyncVerifyPKCS7Object`.
+ *
+ * @param {*} data Content-supplied object.
+ * @returns {boolean} `true` if the payload is a `{pkcs7, data,
+ *   signatureType}` triple with non-empty `Uint8Array` `pkcs7`, a
+ *   non-empty `Uint8Array[]` `data`, and `signatureType ∈ {0, 1}`.
+ * Exported for unit tests.
+ * @internal
+ */
+export function validateVerifyPdfSignatureArgs(data) {
+  const { pkcs7, data: detached, signatureType } = data || {};
+  return (
+    isBytes(pkcs7) &&
+    Array.isArray(detached) &&
+    detached.length &&
+    detached.every(isBytes) &&
+    (signatureType === 0 || signatureType === 1)
+  );
+}
+
+/**
+ * Validate + filter the cert payload of a `viewPdfCertificate` IPC
+ * call before composing the `about:certificate` URL.
+ *
+ * @param {*} data Content-supplied object.
+ * @returns {?string[]} The filtered list of valid base64 cert
+ *   strings, or `null` when the input shape is bad or no cert
+ *   passes the base64 / length checks.
+ * Exported for unit tests.
+ * @internal
+ */
+export function filterCertsForView(data) {
+  const rawCerts = Array.isArray(data?.certs) ? data.certs : [];
+  if (!rawCerts.length || rawCerts.length > MAX_CERTS_PER_VIEW) {
+    return null;
+  }
+  const certs = rawCerts.filter(
+    d =>
+      typeof d === "string" &&
+      d.length &&
+      d.length <= MAX_DER_BASE64_LEN &&
+      BASE64_RE.test(d)
+  );
+  return certs.length ? certs : null;
+}
+
 export class PdfjsParent extends JSWindowActorParent {
   #signatureStorageChangedObserver = null;
 
@@ -129,8 +191,123 @@ export class PdfjsParent extends JSWindowActorParent {
         return this._updatedPreference(aMsg);
       case "PDFJS:Parent:handleSignature":
         return this._handleSignature(aMsg);
+      case "PDFJS:Parent:verifyPdfSignature":
+        return this._verifyPdfSignature(aMsg);
+      case "PDFJS:Parent:viewPdfCertificate":
+        return this._viewPdfCertificate(aMsg);
     }
     return undefined;
+  }
+
+  _viewPdfCertificate({ data }) {
+    if (
+      !Services.prefs.getBoolPref("pdfjs.enableSignatureVerification", true)
+    ) {
+      return false;
+    }
+    // Validate before the try — invalid input isn't an "exception", it
+    // should produce a clean rejection without going through catch.
+    const certs = filterCertsForView(data);
+    if (!certs) {
+      console.warn("viewPdfCertificate: bad cert payload");
+      return false;
+    }
+    try {
+      const params = certs.map(d => `cert=${encodeURIComponent(d)}`).join("&");
+      const url = `about:certificate?${params}`;
+      const browser = this.browser;
+      let win = browser?.ownerGlobal;
+      if (!win?.openTrustedLinkIn) {
+        win = Services.wm.getMostRecentBrowserWindow();
+      }
+      if (win?.openTrustedLinkIn) {
+        win.openTrustedLinkIn(url, "tab", { relatedToCurrent: true });
+        return true;
+      }
+      console.warn("viewPdfCertificate: no chrome window available");
+      return false;
+    } catch (ex) {
+      console.error("viewPdfCertificate failed:", ex?.name || "Error");
+      return false;
+    }
+  }
+
+  async _verifyPdfSignature({ data }) {
+    if (
+      !Services.prefs.getBoolPref("pdfjs.enableSignatureVerification", true)
+    ) {
+      return { error: "disabled" };
+    }
+    if (!validateVerifyPdfSignatureArgs(data)) {
+      return { error: "bad-args" };
+    }
+    const { pkcs7, data: detached, signatureType } = data;
+    try {
+      const certDB = Cc["@mozilla.org/security/x509certdb;1"].getService(
+        Ci.nsIX509CertDB
+      );
+      const results = await certDB.asyncVerifyPKCS7Object(
+        pkcs7,
+        detached,
+        signatureType
+      );
+      return Array.from(results, r => ({
+        signatureResult: this.#nsresultName(r.signatureResult),
+        certificateResult: this.#nsresultName(r.certificateResult),
+        certificate: this.#flattenCertificate(r.signerCertificate),
+      }));
+    } catch (ex) {
+      // Don't log `String(ex)` — `ex.message` can embed attacker-derived
+      // strings from the PKCS#7 bytes. Log only the error class / NSS
+      // result code.
+      console.error(
+        "verifyPdfSignature failed:",
+        ex?.name || "Error",
+        ex?.result ?? ""
+      );
+      return { error: ex?.name || "verify-failed" };
+    }
+  }
+
+  #nsresultName(code) {
+    if (code === Cr.NS_OK) {
+      return "NS_OK";
+    }
+    try {
+      const errSvc = Cc["@mozilla.org/nss_errors_service;1"].getService(
+        Ci.nsINSSErrorsService
+      );
+      return errSvc.getErrorName?.(code) || `0x${(code >>> 0).toString(16)}`;
+    } catch {
+      return `0x${(code >>> 0).toString(16)}`;
+    }
+  }
+
+  #flattenCertificate(cert) {
+    if (!cert) {
+      return null;
+    }
+    const validity = cert.validity;
+    // PRTime is microseconds since epoch.
+    const notBefore = validity?.notBefore
+      ? new Date(Number(validity.notBefore) / 1000).toISOString()
+      : null;
+    const notAfter = validity?.notAfter
+      ? new Date(Number(validity.notAfter) / 1000).toISOString()
+      : null;
+    let derBase64 = "";
+    try {
+      derBase64 = cert.getBase64DERString?.() || "";
+    } catch {}
+    return {
+      subjectCN: cert.commonName || cert.subjectName || "",
+      issuerCN: cert.issuerCommonName || cert.issuerName || "",
+      notBefore,
+      notAfter,
+      serialNumber: cert.serialNumber || "",
+      fingerprintSha256: cert.sha256Fingerprint || "",
+      derBase64,
+    };
   }
 
   /*

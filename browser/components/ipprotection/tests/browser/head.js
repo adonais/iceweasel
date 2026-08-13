@@ -17,6 +17,10 @@ const { IPPProxyManager, IPPProxyStates } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs"
 );
 
+const { IPPExceptionsManager, IPPPrincipalRules } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/ipprotection/IPPExceptionsManager.sys.mjs"
+);
+
 const { IPProtectionAlertManager } = ChromeUtils.importESModule(
   "moz-src:///browser/components/ipprotection/IPProtectionAlertManager.sys.mjs"
 );
@@ -367,6 +371,7 @@ add_setup(async function setupVPN() {
     Services.prefs.clearUserPref(
       "browser.ipProtection.locationButtonBadgeDismissed"
     );
+    Services.perms.removeByType("ipp-vpn");
   });
 });
 

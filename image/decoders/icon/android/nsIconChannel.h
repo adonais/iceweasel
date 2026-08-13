@@ -5,9 +5,9 @@
 #ifndef mozilla_image_decoders_icon_android_nsIconChannel_h
 #define mozilla_image_decoders_icon_android_nsIconChannel_h
 
+#include "nsCOMPtr.h"
 #include "nsIChannel.h"
 #include "nsIURI.h"
-#include "nsCOMPtr.h"
 
 /**
  * This class is the Android implementation of nsIconChannel.

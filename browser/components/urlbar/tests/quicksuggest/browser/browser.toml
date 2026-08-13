@@ -35,13 +35,16 @@ prefs = [
 
 ["browser_quicksuggest_merinoSessions.js"]
 
-["browser_quicksuggest_ping_amp.js"]
-tags = "search-telemetry"
-
 ["browser_quicksuggest_ping_deletionRequest.js"]
 tags = "search-telemetry"
 
-["browser_quicksuggest_ping_merinoAndNullValues.js"]
+["browser_quicksuggest_ping_nullValues.js"]
+tags = "search-telemetry"
+
+["browser_quicksuggest_ping_offline.js"]
+tags = "search-telemetry"
+
+["browser_quicksuggest_ping_online.js"]
 tags = "search-telemetry"
 
 ["browser_quicksuggest_realtime_flight_status.js"]

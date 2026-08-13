@@ -113,12 +113,6 @@ module.exports = function (config) {
               functions: 8,
               branches: 0,
             },
-            "lib/UTEventReporting.sys.mjs": {
-              statements: 100,
-              lines: 100,
-              functions: 100,
-              branches: 75,
-            },
             "lib/Screenshots.sys.mjs": {
               statements: 94,
               lines: 94,
@@ -175,6 +169,17 @@ module.exports = function (config) {
               functions: 0,
               branches: 0,
             },
+            /**
+             * DiscoveryStreamAdmin.jsx is tested via Jest
+             * (see test/jest/content-src/components/DiscoveryStreamAdmin.test.jsx).
+             */
+            "content-src/components/DiscoveryStreamAdmin/DiscoveryStreamAdmin.jsx":
+              {
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
+              },
             /**
              * Logo.jsx and its variant components are tested via Jest
              * (see test/jest/content-src/components/Logo.test.jsx).
@@ -383,6 +388,49 @@ module.exports = function (config) {
               functions: 0,
               branches: 0,
             },
+            // Coverage for this component lives in Jest (test/jest/content-src/components/Widgets/Privacy.test.jsx)
+            "content-src/components/Widgets/Privacy/Privacy.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            // Coverage for this component lives in Jest (test/jest/content-src/components/Widgets/Crossword.test.jsx)
+            "content-src/components/Widgets/Crossword/Crossword.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            // Coverage for this component lives in Jest (test/jest/content-src/components/Widgets/Stocks.test.jsx)
+            "content-src/components/Widgets/Stocks/Stocks.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            // Coverage for this component lives in Jest (test/jest/content-src/components/Widgets/StocksError.test.jsx)
+            "content-src/components/Widgets/Stocks/StocksError.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            // Coverage for this component lives in Jest (test/jest/content-src/components/Widgets/StockTicker.test.jsx)
+            "content-src/components/Widgets/Stocks/StockTicker.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            // Coverage for this component lives in Jest (test/jest/content-src/components/Widgets/PictureOfTheDay.test.jsx)
+            "content-src/components/Widgets/PictureOfTheDay/PictureOfTheDay.jsx":
+              {
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
+              },
             // Coverage for this component lives in Jest (test/jest/content-src/components/Widgets/AddClockForm.test.jsx)
             "content-src/components/Widgets/Clocks/AddClockForm.jsx": {
               statements: 0,
@@ -506,6 +554,21 @@ module.exports = function (config) {
               functions: 0,
               branches: 0,
             },
+            // Coverage for this component lives in Jest (test/jest/content-src/components/Widgets/SportsResultCelebration.test.jsx)
+            "content-src/components/Widgets/SportsWidget/SportsResultCelebration.jsx":
+              {
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
+              },
+            // Coverage for this component lives in Jest (test/jest/content-src/components/Widgets/WidgetCelebration.test.jsx)
+            "content-src/components/Widgets/WidgetCelebration.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
             "content-src/components/Widgets/Widgets.jsx": {
               statements: 51.1,
               lines: 52,
@@ -519,6 +582,42 @@ module.exports = function (config) {
               branches: 0,
             },
             "content-src/components/Widgets/useMouseDnD.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "content-src/components/TopSites/useTopSitesDnD.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "content-src/components/TopSites/TopSiteListContainer.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "content-src/components/TopSites/GroupedTopSiteListContainer.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "content-src/components/TopSites/PinnedAreaOverlay.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "content-src/components/TopSites/useZeroPinDrop.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "content-src/components/TopSites/useAppendPinDrop.jsx": {
               statements: 0,
               lines: 0,
               functions: 0,

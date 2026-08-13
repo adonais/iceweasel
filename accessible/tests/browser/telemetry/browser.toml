@@ -2,4 +2,4 @@
 subsuite = "a11y"
 
 ["browser_HCM_telemetry.js"]
-support-files = ["!/browser/components/preferences/tests/head.js"]
+support-files = ["!/browser/components/preferences/tests/head-common.js"]

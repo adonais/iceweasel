@@ -13,7 +13,7 @@ class SignalHandler:
         signal.signal(signal.SIGTERM, self.handle_signal)
 
     def handle_signal(self, signum, frame):
-        raise SignalHandlerException("Program aborted due to signal %s" % signum)
+        raise SignalHandlerException(f"Program aborted due to signal {signum}")
 
 
 class SignalHandlerException(Exception):

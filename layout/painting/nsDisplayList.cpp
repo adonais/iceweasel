@@ -172,11 +172,19 @@ void InitializeHitTestInfo(nsDisplayListBuilder* aBuilder,
 
 /* static */
 already_AddRefed<ActiveScrolledRoot> ActiveScrolledRoot::GetOrCreateASRForFrame(
-    const ActiveScrolledRoot* aParent,
-    ScrollContainerFrame* aScrollContainerFrame,
-    nsTArray<RefPtr<ActiveScrolledRoot>>& aActiveScrolledRoots) {
-  RefPtr<ActiveScrolledRoot> asr =
-      aScrollContainerFrame->GetProperty(ActiveScrolledRootCache());
+    const ActiveScrolledRoot* aParent, nsIFrame* aFrame,
+    nsTArray<RefPtr<ActiveScrolledRoot>>& aActiveScrolledRoots,
+    ASRKind asrKind) {
+  MOZ_ASSERT_IF(asrKind == ASRKind::Scroll,
+                aFrame->IsScrollContainerOrSubclass());
+
+  if (asrKind == ASRKind::Sticky) {
+    aFrame = aFrame->FirstContinuation();
+  }
+
+  RefPtr<ActiveScrolledRoot> asr = aFrame->GetProperty(
+      asrKind == ASRKind::Scroll ? ActiveScrolledRootCache()
+                                 : StickyActiveScrolledRootCache());
 
 #ifdef DEBUG
   if (asr && aActiveScrolledRoots.Contains(asr)) {
@@ -184,8 +192,8 @@ already_AddRefed<ActiveScrolledRoot> ActiveScrolledRoot::GetOrCreateASRForFrame(
     // paint, assert that we aren't changing any of the values. (The values can
     // change *between* paints, but not during one paint.)
     MOZ_ASSERT(asr->mParent == aParent);
-    MOZ_ASSERT(asr->mFrame == aScrollContainerFrame);
-    MOZ_ASSERT(asr->mKind == ASRKind::Scroll);
+    MOZ_ASSERT(asr->mFrame == aFrame);
+    MOZ_ASSERT(asr->mKind == asrKind);
     asr->AssertDepthInvariant();
   }
 #endif
@@ -194,52 +202,15 @@ already_AddRefed<ActiveScrolledRoot> ActiveScrolledRoot::GetOrCreateASRForFrame(
     asr = new ActiveScrolledRoot();
 
     RefPtr<ActiveScrolledRoot> ref = asr;
-    aScrollContainerFrame->SetProperty(ActiveScrolledRootCache(),
-                                       ref.forget().take());
+    aFrame->SetProperty(asrKind == ASRKind::Scroll
+                            ? ActiveScrolledRootCache()
+                            : StickyActiveScrolledRootCache(),
+                        ref.forget().take());
     aActiveScrolledRoots.AppendElement(asr);
   }
   asr->mParent = aParent;
-  asr->mFrame = aScrollContainerFrame;
-  asr->mKind = ASRKind::Scroll;
-  asr->mDepth = aParent ? aParent->mDepth + 1 : 1;
-
-  return asr.forget();
-}
-
-/* static */
-already_AddRefed<ActiveScrolledRoot>
-ActiveScrolledRoot::GetOrCreateASRForStickyFrame(
-    const ActiveScrolledRoot* aParent, nsIFrame* aStickyFrame,
-    nsTArray<RefPtr<ActiveScrolledRoot>>& aActiveScrolledRoots) {
-  aStickyFrame = aStickyFrame->FirstContinuation();
-
-  RefPtr<ActiveScrolledRoot> asr =
-      aStickyFrame->GetProperty(StickyActiveScrolledRootCache());
-
-#ifdef DEBUG
-  if (asr && aActiveScrolledRoots.Contains(asr)) {
-    // If this is the second time we are called for this frame in this same
-    // paint, assert that we aren't changing any of the values. (The values can
-    // change *between* paints, but not during one paint.)
-    MOZ_ASSERT(asr->mParent == aParent);
-    MOZ_ASSERT(asr->mFrame == aStickyFrame);
-    MOZ_ASSERT(asr->mKind == ASRKind::Sticky);
-    asr->AssertDepthInvariant();
-  }
-#endif
-
-  if (!asr) {
-    asr = new ActiveScrolledRoot();
-
-    RefPtr<ActiveScrolledRoot> ref = asr;
-    aStickyFrame->SetProperty(StickyActiveScrolledRootCache(),
-                              ref.forget().take());
-    aActiveScrolledRoots.AppendElement(asr);
-  }
-
-  asr->mParent = aParent;
-  asr->mFrame = aStickyFrame;
-  asr->mKind = ASRKind::Sticky;
+  asr->mFrame = aFrame;
+  asr->mKind = asrKind;
   asr->mDepth = aParent ? aParent->mDepth + 1 : 1;
 
   return asr.forget();
@@ -603,6 +574,15 @@ void nsDisplayListBuilder::AutoCurrentActiveScrolledRootSetter::
     }
   }
 
+  mUsed = true;
+}
+
+void nsDisplayListBuilder::AutoCurrentActiveScrolledRootSetter::
+    EnterScrollFrame(ScrollContainerFrame* aScrollContainerFrame) {
+  MOZ_ASSERT(!mUsed);
+  ActiveScrolledRoot* asr = mBuilder->GetOrCreateActiveScrolledRoot(
+      mBuilder->mCurrentActiveScrolledRoot, aScrollContainerFrame);
+  mBuilder->mCurrentActiveScrolledRoot = asr;
   mUsed = true;
 }
 
@@ -1582,19 +1562,10 @@ void nsDisplayListBuilder::MarkPreserve3DFramesForDisplayList(
 }
 
 ActiveScrolledRoot* nsDisplayListBuilder::GetOrCreateActiveScrolledRoot(
-    const ActiveScrolledRoot* aParent,
-    ScrollContainerFrame* aScrollContainerFrame) {
+    const ActiveScrolledRoot* aParent, nsIFrame* aFrame,
+    ActiveScrolledRoot::ASRKind asrKind) {
   RefPtr<ActiveScrolledRoot> asr = ActiveScrolledRoot::GetOrCreateASRForFrame(
-      aParent, aScrollContainerFrame, mActiveScrolledRoots);
-  return asr;
-}
-
-ActiveScrolledRoot*
-nsDisplayListBuilder::GetOrCreateActiveScrolledRootForSticky(
-    const ActiveScrolledRoot* aParent, nsIFrame* aStickyFrame) {
-  RefPtr<ActiveScrolledRoot> asr =
-      ActiveScrolledRoot::GetOrCreateASRForStickyFrame(aParent, aStickyFrame,
-                                                       mActiveScrolledRoots);
+      aParent, aFrame, mActiveScrolledRoots, asrKind);
   return asr;
 }
 
@@ -6077,14 +6048,10 @@ bool nsDisplayStickyPosition::UpdateScrollData(
     }
 
     if (ShouldGetStickyAnimationId()) {
-      // TODO(follow-up to bug 1730749): Should there be a
-      // "GetWebRenderUserData" method we should be calling here, rather than
-      // "CreateOrRecycle"?
       RefPtr<WebRenderAPZAnimationData> animationData =
           aData->GetManager()
               ->CommandBuilder()
-              .CreateOrRecycleWebRenderUserData<WebRenderAPZAnimationData>(
-                  this);
+              .GetWebRenderUserData<WebRenderAPZAnimationData>(this);
       MOZ_ASSERT(animationData);
       aLayerData->SetStickyPositionAnimationId(animationData->GetAnimationId());
     }
@@ -6860,7 +6827,7 @@ const Matrix4x4Flagged& nsDisplayTransform::GetInverseTransform() const {
 }
 
 Matrix4x4 nsDisplayTransform::GetTransformForRendering(
-    LayoutDevicePoint* aOutOrigin) const {
+    LayoutDevicePoint* aOutOrigin, const nsDisplayListBuilder* aBuilder) const {
   if (!mFrame->HasPerspective() || mHasTransformGetter ||
       mIsTransformSeparator) {
     if (!mHasTransformGetter && !mIsTransformSeparator && aOutOrigin) {
@@ -6872,7 +6839,7 @@ Matrix4x4 nsDisplayTransform::GetTransformForRendering(
       *aOutOrigin = LayoutDevicePoint::FromAppUnits(ToReferenceFrame(), scale);
 
       // The rounding behavior should also be the same as GetTransform().
-      if (nsLayoutUtils::ShouldSnapToGrid(mFrame)) {
+      if (nsLayoutUtils::ShouldSnapToGrid(mFrame, aBuilder)) {
         aOutOrigin->Round();
       }
       return GetResultingTransformMatrix(mFrame, nsPoint(0, 0), scale,
@@ -6927,7 +6894,8 @@ bool nsDisplayTransform::CreateWebRenderCommands(
   // this frame goes into the stacking context bounds while the transform goes
   // into the transform.
   LayoutDevicePoint position;
-  Matrix4x4 newTransformMatrix = GetTransformForRendering(&position);
+  Matrix4x4 newTransformMatrix =
+      GetTransformForRendering(&position, aDisplayListBuilder);
 
   gfx::Matrix4x4* transformForSC = &newTransformMatrix;
   if (newTransformMatrix.IsIdentity()) {
@@ -6939,7 +6907,7 @@ bool nsDisplayTransform::CreateWebRenderCommands(
     // In ChooseScaleAndSetTransform, we round the offset from the reference
     // frame used to adjust the transform, if there is no transform, or it
     // is just a translation. We need to do the same here.
-    if (nsLayoutUtils::ShouldSnapToGrid(mFrame)) {
+    if (nsLayoutUtils::ShouldSnapToGrid(mFrame, aDisplayListBuilder)) {
       position.Round();
     }
   }
@@ -6992,13 +6960,6 @@ bool nsDisplayTransform::CreateWebRenderCommands(
   params.paired_with_perspective = mHasAssociatedPerspective;
   params.mDeferredTransformItem = deferredTransformItem;
   params.mAnimated = animated;
-  // Determine if we would have to rasterize any items in local raster space
-  // (i.e. disable subpixel AA). We don't always need to rasterize locally even
-  // if the stacking context is possibly animated (at the cost of potentially
-  // some false negatives with respect to will-change handling), so we pass in
-  // this determination separately to accurately match with when FLB would
-  // normally disable subpixel AA.
-  params.mRasterizeLocally = animated && Frame()->HasAnimationOfTransform();
   params.SetPreserve3D(mFrame->Extend3DContext() && !mIsTransformSeparator);
   params.clip =
       wr::WrStackingContextClip::ClipChain(aBuilder.CurrentClipChainId());
@@ -7979,8 +7940,9 @@ void nsDisplayText::RenderToContext(gfxContext* aCtx,
     params.state = nsTextFrame::PaintTextParams::PaintText;
   }
 
+  imgDrawingParams imgParams(aBuilder->GetImageDecodeFlags());
   f->PaintText(params, mVisIStartEdge, mVisIEndEdge, ToReferenceFrame(),
-               f->IsSelected(), aOpacity);
+               f->IsSelected(), imgParams, aOpacity);
 }
 
 // This could go to nsDisplayListInvalidation.h, but

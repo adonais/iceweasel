@@ -54,7 +54,7 @@ add_task(async function test_ignoreFragment() {
   );
   switchTab("about:mozilla", true);
   switchTab("about:home", true, { ignoreFragment: "whenComparingAndReplace" });
-  await BrowserTestUtils.waitForCondition(function () {
+  await TestUtils.waitForCondition(function () {
     return tabRefAboutHome.linkedBrowser.currentURI.spec == "about:home";
   });
   is(

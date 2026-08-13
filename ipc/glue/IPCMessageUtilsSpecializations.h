@@ -115,10 +115,9 @@ struct ParamTraits<nsTDependentString<T>> : ParamTraits<nsTSubstring<T>> {};
 
 // Key type must be a type with ParamTraits, a default constructor and a move
 // constructor.
-template <
-    typename KeyClass,
-    typename ConstructableKeyType = typename std::remove_const<
-        typename std::remove_reference<typename KeyClass::KeyType>::type>::type>
+template <typename KeyClass,
+          typename ConstructableKeyType = std::remove_const_t<
+              std::remove_reference_t<typename KeyClass::KeyType>>>
 struct ParamTraitsforHashSet {
   typedef nsTBaseHashSet<KeyClass> paramType;
   using KeyType = typename KeyClass::KeyType;
@@ -438,7 +437,7 @@ struct ParamTraits<mozilla::EnumSet<T, U>> {
     static_assert(mozilla::MaxEnumValue<T>::value < kUnderlyingWidth,
                   "Enum max value is not in the range!");
     static_assert(
-        std::is_unsigned<decltype(mozilla::MaxEnumValue<T>::value)>::value,
+        std::is_unsigned_v<decltype(mozilla::MaxEnumValue<T>::value)>,
         "Type of MaxEnumValue<T>::value specialization should be unsigned!");
 
     return (value & AllEnumBits()) == value;
@@ -622,88 +621,14 @@ struct ParamTraits<mozilla::BitSet<N, Word>> {
   }
 };
 
+// Use TiedFields for LinkHeader serialization to ensure that all fields are
+// serialized.
 template <>
-struct ParamTraits<mozilla::net::LinkHeader> {
-  typedef mozilla::net::LinkHeader paramType;
-  constexpr static int kNumberOfMembers = 14;
-  constexpr static int kSizeOfEachMember = sizeof(nsString);
-  constexpr static int kExpectedSizeOfParamType =
-      kNumberOfMembers * kSizeOfEachMember;
+struct ParamTraits<mozilla::net::LinkHeader>
+    : ParamTraits_TiedFields<mozilla::net::LinkHeader> {};
 
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    static_assert(sizeof(paramType) == kExpectedSizeOfParamType,
-                  "All members of should be written below.");
-    WriteParam(aWriter, aParam.mHref);
-    WriteParam(aWriter, aParam.mRel);
-    WriteParam(aWriter, aParam.mTitle);
-    WriteParam(aWriter, aParam.mNonce);
-    WriteParam(aWriter, aParam.mIntegrity);
-    WriteParam(aWriter, aParam.mSrcset);
-    WriteParam(aWriter, aParam.mSizes);
-    WriteParam(aWriter, aParam.mType);
-    WriteParam(aWriter, aParam.mMedia);
-    WriteParam(aWriter, aParam.mAnchor);
-    WriteParam(aWriter, aParam.mCrossOrigin);
-    WriteParam(aWriter, aParam.mReferrerPolicy);
-    WriteParam(aWriter, aParam.mAs);
-    WriteParam(aWriter, aParam.mFetchPriority);
-  }
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    static_assert(sizeof(paramType) == kExpectedSizeOfParamType,
-                  "All members of should be handled below.");
-    if (!ReadParam(aReader, &aResult->mHref)) {
-      return false;
-    }
-    if (!ReadParam(aReader, &aResult->mRel)) {
-      return false;
-    }
-    if (!ReadParam(aReader, &aResult->mTitle)) {
-      return false;
-    }
-    if (!ReadParam(aReader, &aResult->mNonce)) {
-      return false;
-    }
-    if (!ReadParam(aReader, &aResult->mIntegrity)) {
-      return false;
-    }
-    if (!ReadParam(aReader, &aResult->mSrcset)) {
-      return false;
-    }
-    if (!ReadParam(aReader, &aResult->mSizes)) {
-      return false;
-    }
-    if (!ReadParam(aReader, &aResult->mType)) {
-      return false;
-    }
-    if (!ReadParam(aReader, &aResult->mMedia)) {
-      return false;
-    }
-    if (!ReadParam(aReader, &aResult->mAnchor)) {
-      return false;
-    }
-    if (!ReadParam(aReader, &aResult->mCrossOrigin)) {
-      return false;
-    }
-    if (!ReadParam(aReader, &aResult->mReferrerPolicy)) {
-      return false;
-    }
-    if (!ReadParam(aReader, &aResult->mAs)) {
-      return false;
-    }
-    return ReadParam(aReader, &aResult->mFetchPriority);
-  };
-};
-
-template <>
-struct ParamTraits<mozilla::dom::UserActivation::Modifiers> {
-  typedef mozilla::dom::UserActivation::Modifiers paramType;
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mModifiers);
-  }
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mModifiers);
-  };
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::UserActivation::Modifiers,
+                                  mModifiers);
 
 template <>
 struct ParamTraits<gfxPlatform::GlobalReflowFlags>

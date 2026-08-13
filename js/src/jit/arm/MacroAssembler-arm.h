@@ -1236,8 +1236,8 @@ class MacroAssemblerARMCompat : public MacroAssemblerARM {
   void store32(Register src, AbsoluteAddress address);
   FaultingCodeOffset store32(Register src, const Address& address);
   FaultingCodeOffset store32(Register src, const BaseIndex& address);
-  void store32(Imm32 src, const Address& address);
-  void store32(Imm32 src, const BaseIndex& address);
+  FaultingCodeOffset store32(Imm32 src, const Address& address);
+  FaultingCodeOffset store32(Imm32 src, const BaseIndex& address);
 
   template <typename S, typename T>
   void store32Unaligned(const S& src, const T& dest) {
@@ -1273,8 +1273,8 @@ class MacroAssemblerARMCompat : public MacroAssemblerARM {
     store64(src, dest);
   }
 
-  void storePtr(ImmWord imm, const Address& address);
-  void storePtr(ImmWord imm, const BaseIndex& address);
+  FaultingCodeOffset storePtr(ImmWord imm, const Address& address);
+  FaultingCodeOffset storePtr(ImmWord imm, const BaseIndex& address);
   void storePtr(ImmPtr imm, const Address& address);
   void storePtr(ImmPtr imm, const BaseIndex& address);
   void storePtr(ImmGCPtr imm, const Address& address);

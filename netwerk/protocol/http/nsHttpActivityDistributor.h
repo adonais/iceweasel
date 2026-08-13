@@ -5,11 +5,11 @@
 #ifndef nsHttpActivityDistributor_h_
 #define nsHttpActivityDistributor_h_
 
-#include "nsIHttpActivityObserver.h"
-#include "nsTArray.h"
-#include "nsProxyRelease.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Mutex.h"
+#include "nsIHttpActivityObserver.h"
+#include "nsProxyRelease.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 namespace net {

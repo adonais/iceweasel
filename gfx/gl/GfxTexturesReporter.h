@@ -5,9 +5,9 @@
 #ifndef GFXTEXTURESREPORTER_H_
 #define GFXTEXTURESREPORTER_H_
 
+#include "GLTypes.h"
 #include "mozilla/Atomics.h"
 #include "nsIMemoryReporter.h"
-#include "GLTypes.h"
 
 namespace mozilla {
 namespace gl {

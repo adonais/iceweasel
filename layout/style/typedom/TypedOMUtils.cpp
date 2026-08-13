@@ -5,10 +5,32 @@
 #include "TypedOMUtils.h"
 
 #include "mozilla/Assertions.h"
+#include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/CSSKeywordValueBinding.h"
 #include "mozilla/dom/CSSPerspectiveBinding.h"
 
 namespace mozilla::dom {
+
+namespace {
+
+static_assert(StyleNUMERIC_BASE_TYPE_COUNT == CSSNUMERIC_BASE_TYPE_COUNT);
+
+static_assert(uint8_t(StyleNumericBaseType::Length) ==
+              uint8_t(CSSNumericBaseType::Length));
+static_assert(uint8_t(StyleNumericBaseType::Angle) ==
+              uint8_t(CSSNumericBaseType::Angle));
+static_assert(uint8_t(StyleNumericBaseType::Time) ==
+              uint8_t(CSSNumericBaseType::Time));
+static_assert(uint8_t(StyleNumericBaseType::Frequency) ==
+              uint8_t(CSSNumericBaseType::Frequency));
+static_assert(uint8_t(StyleNumericBaseType::Resolution) ==
+              uint8_t(CSSNumericBaseType::Resolution));
+static_assert(uint8_t(StyleNumericBaseType::Flex) ==
+              uint8_t(CSSNumericBaseType::Flex));
+static_assert(uint8_t(StyleNumericBaseType::Percent) ==
+              uint8_t(CSSNumericBaseType::Percent));
+
+}  // namespace
 
 void ToCSSKeywordish(const CSSPerspectiveValue& aValue,
                      CSSKeywordish& aResult) {

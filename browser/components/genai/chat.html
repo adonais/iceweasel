@@ -29,9 +29,31 @@
     <script src="chrome://global/content/vendor/react-dom.js"></script>
     <script src="chrome://browser/content/contentTheme.js"></script>
     <script src="chrome://browser/content/genai/chat.js"></script>
+    <script
+      type="module"
+      src="chrome://browser/content/sidebar/sidebar-panel-switcher.mjs"
+    ></script>
+    <script
+      type="module"
+      src="chrome://browser/content/genai/content/chatbot-promo.mjs"
+    ></script>
   </head>
   <body>
     <div id="header">
+      <!-- Shown only in horizontal-tabs "hide-launcher" mode, where there is no
+           launcher to switch sidebar panels with. The switcher and close button
+           are ordered first in the DOM so keyboard focus reaches them (switcher,
+           then close) ahead of the chatbot's own provider switcher and options
+           menu; CSS keeps the visual layout of each mode intact. -->
+      <sidebar-panel-switcher
+        view="viewGenaiChatSidebar"
+      ></sidebar-panel-switcher>
+      <moz-button
+        data-l10n-id="genai-header-close-button"
+        iconsrc="chrome://global/skin/icons/close.svg"
+        id="header-close"
+        type="icon ghost"
+      ></moz-button>
       <select data-l10n-id="genai-header-provider-menu" id="provider"></select>
       <div id="permissions-indicator"></div>
       <moz-button
@@ -42,23 +64,20 @@
         id="header-more"
         type="icon ghost"
       ></moz-button>
-      <moz-button
-        data-l10n-id="genai-header-close-button"
-        iconsrc="chrome://global/skin/icons/close.svg"
-        id="header-close"
-        type="icon ghost"
-      ></moz-button>
     </div>
     <div id="message-container"></div>
     <div id="browser-container"></div>
-    <div id="summarize-btn-container">
-      <span class="badge" data-l10n-id="genai-menu-new-badge"></span>
-      <moz-button
-        data-l10n-id="genai-page-button-summarize"
-        id="summarize-button"
-        size="default"
-      >
-      </moz-button>
+    <div id="footer">
+      <chatbot-promo id="chatbot-promo"></chatbot-promo>
+      <div id="summarize-btn-container">
+        <span class="badge" data-l10n-id="genai-menu-new-badge"></span>
+        <moz-button
+          data-l10n-id="genai-page-button-summarize"
+          id="summarize-button"
+          size="default"
+        >
+        </moz-button>
+      </div>
     </div>
   </body>
 </html>

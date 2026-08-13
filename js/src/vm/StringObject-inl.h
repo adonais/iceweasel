@@ -34,12 +34,13 @@ namespace js {
                                                        HandleObject proto,
                                                        NewObjectKind newKind) {
   Rooted<StringObject*> obj(
-      cx, NewObjectWithClassProtoAndKind<StringObject>(
-              cx, proto, newKind,
-              ObjectFlags({
-                  ObjectFlag::NeedsProxyGetSetResultValidation,
-                  ObjectFlag::HasNonWritableOrAccessorPropExclProto,
-              })));
+      cx, NewObjectWithClassProto<StringObject>(
+              cx, proto,
+              {.newKind = newKind,
+               .flags = ObjectFlags({
+                   ObjectFlag::NeedsProxyGetSetResultValidation,
+                   ObjectFlag::HasNonWritableOrAccessorPropExclProto,
+               })}));
   if (!obj) {
     return nullptr;
   }

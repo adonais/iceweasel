@@ -37,12 +37,17 @@ class SummarizeSettingsMiddleware(
                     SettingsLoaded(
                         isFeatureEnabled = settings.getFeatureEnabledUserStatus().first() == true,
                         isGestureEnabled = settings.getGestureEnabledUserStatus().first(),
+                        shakeSensitivity = settings.getShakeSensitivity().first(),
                     ),
                 )
             }
 
             SummarizePagesPreferenceToggled -> scope.launch {
                 settings.setFeatureEnabledUserStatus(store.state.isFeatureEnabled)
+            }
+
+            is ShakeSensitivityChanged -> scope.launch {
+                settings.setShakeSensitivity(store.state.shakeSensitivity)
             }
 
             ShakeToSummarizePreferenceToggled -> scope.launch {

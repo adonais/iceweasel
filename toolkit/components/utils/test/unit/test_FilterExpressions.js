@@ -71,11 +71,16 @@ add_task(async function () {
 // Preference tests
 add_task(async function () {
   let val;
-  // Compare the value of the preference
+
+  // Set up the preferences used throughout this task.
   Services.prefs.setIntPref("normandy.test.value", 3);
-  registerCleanupFunction(() =>
-    Services.prefs.clearUserPref("normandy.test.value")
-  );
+  Services.prefs.getDefaultBranch("").setBoolPref("normandy.test.locked", true);
+  Services.prefs.lockPref("normandy.test.locked");
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref("normandy.test.value");
+    Services.prefs.unlockPref("normandy.test.locked");
+    Services.prefs.deleteBranch("normandy.test.locked");
+  });
 
   val = await FilterExpressions.eval(
     '"normandy.test.value"|preferenceValue == 3'
@@ -131,6 +136,22 @@ add_task(async function () {
     '"normandy.test.value"|preferenceExists == true'
   );
   ok(val, "preferenceExists expression fails existence check appropriately");
+
+  val = await FilterExpressions.eval(
+    '"normandy.test.locked"|preferenceIsLocked == true'
+  );
+  ok(val, "preferenceIsLocked expression detects a locked preference");
+  val = await FilterExpressions.eval(
+    '"normandy.test.value"|preferenceIsLocked == true'
+  );
+  ok(!val, "preferenceIsLocked expression is false for an unlocked preference");
+  val = await FilterExpressions.eval(
+    '"normandy.test.doesntexist"|preferenceIsLocked == true'
+  );
+  ok(
+    !val,
+    "preferenceIsLocked expression is false for a nonexistent preference"
+  );
 });
 
 // keys tests

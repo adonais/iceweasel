@@ -13,6 +13,7 @@ export default class LocationsList extends MozLitElement {
   static properties = {
     locations: { type: Array },
     selectedLocation: { type: String, state: true },
+    premium: { type: Boolean },
   };
 
   static defaultLocation = "REC";
@@ -20,7 +21,11 @@ export default class LocationsList extends MozLitElement {
   static collator = new Intl.Collator(undefined, { sensitivity: "base" });
 
   get #sortedLocations() {
-    return Array.from(this.locations ?? []).sort((a, b) => {
+    let locations = Array.from(this.locations ?? []);
+    if (!this.premium) {
+      locations = locations.filter(aLocation => !aLocation.locked);
+    }
+    return locations.sort((a, b) => {
       const nameA = countryName(a.code) ?? a.code;
       const nameB = countryName(b.code) ?? b.code;
       return LocationsList.collator.compare(nameA, nameB);
@@ -31,6 +36,7 @@ export default class LocationsList extends MozLitElement {
     super();
     this.selectedLocation = "";
     this.locations = [];
+    this.premium = false;
   }
 
   createRenderRoot() {
@@ -42,32 +48,40 @@ export default class LocationsList extends MozLitElement {
   }
 
   getSelectedLocation() {
+    const selected = this.locations?.find(
+      l => l.code === this.selectedLocation
+    );
     if (
       !this.selectedLocation ||
-      (this.selectedLocation !== LocationsList.defaultLocation &&
-        !this.locations?.some(l => l.code === this.selectedLocation))
+      (this.selectedLocation !== LocationsList.defaultLocation && !selected) ||
+      (selected?.locked && !this.premium)
     ) {
       return LocationsList.defaultLocation;
     }
     return this.selectedLocation;
   }
 
-  handleSelectLocation(code) {
-    if (this.selectedLocation === code) {
+  handleSelectLocation(selectedLocation) {
+    if (
+      this.selectedLocation === selectedLocation.code ||
+      !selectedLocation.available
+    ) {
       return;
     }
-    this.selectedLocation = code;
+    this.selectedLocation = selectedLocation.code;
     this.dispatchEvent(
       new CustomEvent("IPProtection:UserSelectLocation", {
         bubbles: true,
         composed: true,
-        detail: { code },
+        detail: { code: selectedLocation.code },
       })
     );
   }
 
   #locationRow(aLocation) {
     const isSelected = aLocation.code === this.getSelectedLocation();
+    // Use aria-disabled instead of the native disabled attribute so that unavailable locations can be reached by keyboard
+    // and announced by screen readers
     return html`
       <li role="presentation">
         <button
@@ -75,8 +89,8 @@ export default class LocationsList extends MozLitElement {
           role="radio"
           id="location-option-${aLocation.code}"
           aria-checked=${isSelected ? "true" : "false"}
-          @click=${() => this.handleSelectLocation(aLocation.code)}
-          ?disabled=${!aLocation.available}
+          @click=${() => this.handleSelectLocation(aLocation)}
+          ?aria-disabled=${!aLocation.available}
         >
           <img
             class="location-check"
@@ -102,7 +116,7 @@ export default class LocationsList extends MozLitElement {
             ? html`
                 <span
                   class="location-unavailable-label"
-                  data-l10n-id="ipprotection-locations-unavailable-label"
+                  data-l10n-id="ipprotection-locations-unavailable-label-1"
                 ></span>
               `
             : null}

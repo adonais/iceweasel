@@ -5,7 +5,9 @@
 #ifndef MOZILLA_GFX_SHAREDSURFACESCHILD_H
 #define MOZILLA_GFX_SHAREDSURFACESCHILD_H
 
-#include <stdint.h>                            // for uint32_t, uint64_t
+#include <stdint.h>  // for uint32_t, uint64_t
+
+#include "ImageTypes.h"                        // for ContainerProducerID
 #include "mozilla/Maybe.h"                     // for Maybe
 #include "mozilla/RefPtr.h"                    // for already_AddRefed
 #include "mozilla/StaticPtr.h"                 // for StaticRefPtr
@@ -14,7 +16,6 @@
 #include "mozilla/webrender/WebRenderTypes.h"  // for wr::ImageKey
 #include "nsTArray.h"                          // for AutoTArray
 #include "nsThreadUtils.h"                     // for Runnable
-#include "ImageTypes.h"                        // for ContainerProducerID
 
 namespace mozilla {
 namespace layers {

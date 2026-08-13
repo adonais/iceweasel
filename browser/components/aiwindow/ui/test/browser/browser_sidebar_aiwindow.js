@@ -35,12 +35,26 @@ add_task(
   async function test_aichat_sidebar_toggle_keybinding_in_smartwindow_sidebar() {
     let win;
     try {
-      const { win: w } = await openAIWindowWithSidebar();
+      const { win: w, sidebarBrowser } = await openAIWindowWithSidebar();
       win = w;
 
       const box = win.document.getElementById(AIWindowUI.BOX_ID);
 
       Assert.ok(AIWindowUI.isSidebarOpen(win), "Should have sidebar open");
+
+      await SpecialPowers.spawn(sidebarBrowser, [], async () => {
+        const aiWindow = content.document.querySelector("ai-window");
+        const smartbar = await ContentTaskUtils.waitForCondition(
+          () => aiWindow.shadowRoot?.querySelector("#ai-window-smartbar"),
+          "Wait for Smartbar to be rendered"
+        );
+        smartbar.inputField.blur();
+        await ContentTaskUtils.waitForCondition(
+          () => !smartbar.contains(aiWindow.shadowRoot.activeElement),
+          "Smartbar should be blurred before re-open"
+        );
+      });
+
       triggerSidebarToggleKeybind(win);
       await BrowserTestUtils.waitForMutationCondition(
         box,
@@ -56,6 +70,17 @@ add_task(
         () => AIWindowUI.isSidebarOpen(win)
       );
       Assert.ok(AIWindowUI.isSidebarOpen(win), "Should toggle sidebar open");
+
+      await SpecialPowers.spawn(sidebarBrowser, [], async () => {
+        const aiWindow = content.document.querySelector("ai-window");
+        const smartbar = aiWindow.shadowRoot.querySelector(
+          "#ai-window-smartbar"
+        );
+        await ContentTaskUtils.waitForCondition(
+          () => smartbar.contains(aiWindow.shadowRoot.activeElement),
+          "Smartbar should be focused after re-opening the sidebar"
+        );
+      });
     } finally {
       if (win) {
         await BrowserTestUtils.closeWindow(win);

@@ -10,11 +10,14 @@ prefs = [
 ]
 support-files = [
   "head.js",
+  "head-common.js",
   "addons/pl-dictionary.xpi",
   "addons/set_homepage.xpi",
   "addons/set_newtab.xpi",
 ]
 tags = "os_integration"
+
+["browser_DefaultBrowserHelper.js"]
 
 ["browser_about_settings.js"]
 
@@ -27,6 +30,14 @@ tags = "os_integration"
 ["browser_backup_visibility.js"]
 
 ["browser_backup_warning_banner.js"]
+
+["browser_browserIcon.js"]
+run-if = [
+  "os == 'win'",
+]
+skip-if = [
+  "msix", # The custom browser icon feature is currently unsupported on packaged (MSIX) builds.
+]
 
 ["browser_bug1018066_resetScrollPosition.js"]
 
@@ -50,6 +61,10 @@ tags = "os_integration"
 
 ["browser_setting_group_in_progress.js"]
 
+["browser_setting_pane_focus_restoration.js"]
+
+["browser_setting_pane_missing_group.js"]
+
 ["browser_setting_pane_redesign_promo.js"]
 
 ["browser_setting_pane_scroll_restoration.js"]
@@ -67,12 +82,18 @@ tags = "os_integration"
 ["browser_subdialogs.js"]
 support-files = ["subdialog.xhtml", "subdialog2.xhtml"]
 
+["browser_tabs_browsing_pane.js"]
+
 ["browser_tabs_open_external_next_to_active_tab.js"]
 
 ["browser_updates_managed_by_os.js"]
 
 ["browser_windows_launch_on_login.js"]
-run-if = ["os == 'win' && !msix"]
+run-if = [
+  "os == 'win' && !msix",
+]
 
 ["browser_windows_launch_on_login_msix.js"]
-run-if = ["os == 'win' && msix"]
+run-if = [
+  "os == 'win' && msix",
+]

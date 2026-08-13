@@ -64,7 +64,6 @@ $shadow-image-inset: inset 0 0 0 0.5px $black-15;
   --newtab-element-secondary-hover-color: color-mix(in srgb, currentColor 12%, transparent);
   --newtab-element-secondary-active-color: color-mix(in srgb, currentColor 25%, transparent);
 
-  --newtab-primary-element-hover-color: color-mix(in srgb, var(--newtab-primary-action-background) 90%, #{$black});
   --newtab-primary-element-hover-pocket-color: color-mix(in srgb, var(--newtab-primary-action-background-pocket) 90%, #{$black});
   --newtab-primary-element-active-color: color-mix(in srgb, var(--newtab-primary-action-background) 80%, #{$black});
   --newtab-primary-element-text-color: #{$white};
@@ -101,7 +100,6 @@ $shadow-image-inset: inset 0 0 0 0.5px $black-15;
     --newtab-primary-action-background-pocket: #{$primary-blue-dark};
     --newtab-primary-action-background-pocket-dimmed: color-mix(in srgb, var(--newtab-primary-action-background) 25%, transparent);
 
-    --newtab-primary-element-hover-color: color-mix(in srgb, var(--newtab-primary-action-background) 55%, #{$white});
     --newtab-primary-element-hover-pocket-color: color-mix(in srgb, var(--newtab-primary-action-background-pocket) 55%, #{$white});
 
     --newtab-element-hover-color: color-mix(in srgb, var(--newtab-background-color) 80%, #{$white});

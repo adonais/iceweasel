@@ -160,6 +160,7 @@ export class SidebarBookmarkList extends SidebarTabList {
           draggable="true"
           data-guid=${tabItem.guid}
           @auxclick=${e => this.#onFolderAuxClick(e, tabItem.guid)}
+          @mouseenter=${e => this.#updateFolderTooltip(e, tabItem.title)}
           .guid=${tabItem.guid}
         >
           ${tabItem.title}
@@ -177,6 +178,7 @@ export class SidebarBookmarkList extends SidebarTabList {
             part="summary"
             data-guid=${tabItem.guid}
             @auxclick=${e => this.#onFolderAuxClick(e, tabItem.guid)}
+            @mouseenter=${e => this.#updateFolderTooltip(e, tabItem.title)}
           >
             ${tabItem.title}
           </summary>
@@ -288,6 +290,15 @@ export class SidebarBookmarkList extends SidebarTabList {
         detail: { guid, isFolder: true },
       })
     );
+  }
+
+  #updateFolderTooltip(e, title) {
+    let el = e.currentTarget;
+    if (el.scrollWidth > el.clientWidth) {
+      el.title = title;
+    } else {
+      el.removeAttribute("title");
+    }
   }
 
   #findBookmarkElement(composedPath) {
@@ -477,6 +488,7 @@ export class SidebarBookmarkList extends SidebarTabList {
     }
     this.#draggedGuid = item.guid;
     let data;
+    let url = item.url;
     if (item.isSeparator) {
       data = JSON.stringify({
         type: lazy.PlacesUtils.TYPE_X_MOZ_PLACE_SEPARATOR,
@@ -484,13 +496,20 @@ export class SidebarBookmarkList extends SidebarTabList {
         instanceId: lazy.PlacesUtils.instanceId,
       });
     } else if (item.isFolder) {
-      data = JSON.stringify({
-        type: lazy.PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER,
-        itemGuid: item.guid,
-        guid: item.guid,
-        instanceId: lazy.PlacesUtils.instanceId,
-        title: item.title,
-      });
+      if (lazy.PlacesUtils.isRootItem(item.guid)) {
+        const payload =
+          lazy.PlacesUtils.bookmarks.createVirtualLinkToRoot(item);
+        data = JSON.stringify(payload);
+        url = payload.uri;
+      } else {
+        data = JSON.stringify({
+          type: lazy.PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER,
+          itemGuid: item.guid,
+          guid: item.guid,
+          instanceId: lazy.PlacesUtils.instanceId,
+          title: item.title,
+        });
+      }
     } else {
       data = JSON.stringify({
         type: lazy.PlacesUtils.TYPE_X_MOZ_PLACE,
@@ -503,12 +522,12 @@ export class SidebarBookmarkList extends SidebarTabList {
     }
     e.dataTransfer.clearData();
     e.dataTransfer.setData(lazy.PlacesUtils.TYPE_X_MOZ_PLACE, data);
-    if (item.url) {
+    if (url) {
       e.dataTransfer.setData(
         lazy.PlacesUtils.TYPE_X_MOZ_URL,
-        item.url + "\n" + item.title
+        url + "\n" + item.title
       );
-      e.dataTransfer.setData(lazy.PlacesUtils.TYPE_PLAINTEXT, item.url);
+      e.dataTransfer.setData(lazy.PlacesUtils.TYPE_PLAINTEXT, url);
     }
     e.dataTransfer.effectAllowed = "copyMove";
     e.stopPropagation();

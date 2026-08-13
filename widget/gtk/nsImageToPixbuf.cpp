@@ -2,14 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <gdk-pixbuf/gdk-pixbuf.h>
-
 #include "nsImageToPixbuf.h"
 
-#include "imgIContainer.h"
-#include "mozilla/gfx/2D.h"
-#include "mozilla/RefPtr.h"
+#include <gdk-pixbuf/gdk-pixbuf.h>
+
 #include "GRefPtr.h"
+#include "imgIContainer.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/gfx/2D.h"
 #include "nsCOMPtr.h"
 
 using mozilla::gfx::DataSourceSurface;

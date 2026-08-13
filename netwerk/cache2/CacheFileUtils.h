@@ -5,13 +5,13 @@
 #ifndef CacheFileUtils_h_
 #define CacheFileUtils_h_
 
-#include "nsError.h"
-#include "nsCOMPtr.h"
-#include "nsString.h"
-#include "nsTArray.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/TimeStamp.h"
+#include "nsCOMPtr.h"
+#include "nsError.h"
+#include "nsString.h"
+#include "nsTArray.h"
 
 class nsILoadContextInfo;
 

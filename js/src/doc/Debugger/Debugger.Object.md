@@ -378,6 +378,13 @@ if by code scoped to the debugger's global object (and is thus in the
 debugger's compartment); and its `value`, `get`, and `set` properties,
 if present, are debuggee values.)
 
+<i>key</i> may also be a `Debugger.PrivateName` returned by
+[`getOwnPrivateProperties`](#getownprivateproperties) (see below), in
+which case the descriptor of the corresponding private field is
+returned. This is the only supported way to read the value of a private
+field, since the underlying private name is never exposed to the
+debugger as a usable key.
+
 ### `getOwnPropertyNames()`
 Return an array of strings naming all the referent's own properties, as
 if <code>Object.getOwnPropertyNames(<i>referent</i>)</code> had been
@@ -392,6 +399,28 @@ Return an array of strings naming all the referent's own symbols, as
 if <code>Object.getOwnPropertySymbols(<i>referent</i>)</code> had been
 called in the debuggee, and the result copied in the scope of the
 debugger's global object.
+
+### `getOwnPrivateProperties()`
+Return an array of `Debugger.PrivateName` objects, one for each private
+field (e.g. `#x`) declared on the referent. Static private fields are
+reported on the class constructor's `Debugger.Object`; instance private
+fields are reported on the instance's `Debugger.Object`.
+
+Each element is an opaque `Debugger.PrivateName` wrapper rather than the
+private field's name directly.
+
+A `Debugger.PrivateName` exposes a single accessor:
+
+* `description`: A string giving the field's source name, including the
+  leading `#` (e.g. `"#x"`). This is for display only; because two
+  distinct private fields (for instance a base class and a subclass field
+  that share a spelling) can have the same description, it is not a
+  usable property key and must not be used to look the field up.
+
+To read the value of a private field, pass its `Debugger.PrivateName`
+back to [`getOwnPropertyDescriptor`](#getownpropertydescriptorkey). A
+`Debugger.PrivateName` obtained from one `Debugger` may be used with a
+different `Debugger` viewing the same debuggee.
 
 ### `defineProperty(key, attributes)`
 Define a property on the referent named <i>key</i>, as described by
@@ -606,12 +635,6 @@ exception.  The `options` object can have the following properties:
   * `isScriptElement`: Optional boolean which will set the source's
     `introductionType` to `"inlineScript"` if specified.  Otherwise, the
     source's `introductionType` will be `undefined`.
-  * `forceEnableAsmJS`: Optional boolean to force enable the asm.js feature.
-    Unless specified, asm.js is disabled by default in the debuggee global.
-    This option can be used when the createSource is used for recompiling the
-    top-level script, where the script contains asm.js functions and the asm.js
-    was enabled at the first compilation, and the consumer doesn't want the
-    asm.js functions being compiled as regular JS functions.
 
 ### `asEnvironment()`
 If the referent is a global object, return the [`Debugger.Environment`][environment]
@@ -642,6 +665,8 @@ method makes it easier to gradually adapt large code bases to this
 Debugger API: adapted portions of the code can use `Debugger.Object`
 instances, but use this method to pass direct object references to code
 that has not yet been updated.
+
+This method is not present when fuzzing is enabled.
 
 ### `forceLexicalInitializationByName(binding)`
 If <i>binding</i> is in an uninitialized state initialize it to undefined

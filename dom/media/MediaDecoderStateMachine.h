@@ -323,7 +323,10 @@ class MediaDecoderStateMachine
   // Stops the media sink and shut it down.
   // The decoder monitor must be held with exactly one lock count.
   // Called on the state machine thread.
-  void StopMediaSink();
+  // aReason lets a stop that is part of a seek be distinguished from a real
+  // stop.
+  void StopMediaSink(
+      MediaSink::StopReason aReason = MediaSink::StopReason::Regular);
 
   // Create and start the media sink.
   // The decoder monitor must be held with exactly one lock count.
@@ -336,7 +339,10 @@ class MediaDecoderStateMachine
 
   // Sets internal state which causes playback of media to pause.
   // The decoder monitor must be held.
-  void StopPlayback();
+  // aReason lets a pause that is part of a seek be distinguished from a real
+  // one.
+  void StopPlayback(
+      MediaSink::StopReason aReason = MediaSink::StopReason::Regular);
 
   // If the conditions are right, sets internal state which causes playback
   // of media to begin or resume.
@@ -428,6 +434,14 @@ class MediaDecoderStateMachine
 
   // The media sink resource.  Used on the state machine thread.
   RefPtr<MediaSink> mMediaSink;
+
+  // True from the completion of a warm seek (one that interrupted active
+  // playback, not a paused seek or a seek to end) until the playback resume it
+  // triggers has been handled. It marks the resume as warm so it can be made
+  // low-latency: the decode pipeline is already primed, so the resume does not
+  // need the full cold-start preroll cushion. Cleared once the resume has been
+  // handled, leaving later cold starts unaffected.
+  bool mStartSinkAfterWarmSeek = false;
 
   // The end time of the last audio frame that's been pushed onto the media sink
   // in microseconds. This will approximately be the end time

@@ -56,10 +56,12 @@
 // - WebSocketConnectionParent::RecvOnTransportAvailable
 // - WebSocketChannel::OnWebSocketConnectionAvailable
 
-class nsITransportSecurityInfo;
+#include "nsISupports.h"
 
-namespace mozilla {
-namespace net {
+class nsITransportSecurityInfo;
+class nsIEventTarget;
+
+namespace mozilla::net {
 
 class WebSocketConnectionListener;
 
@@ -78,7 +80,6 @@ class WebSocketConnectionBase : public nsISupports {
       nsITransportSecurityInfo** aSecurityInfo) = 0;
 };
 
-}  // namespace net
-}  // namespace mozilla
+}  // namespace mozilla::net
 
 #endif  // mozilla_net_WebSocketConnectionBase_h

@@ -2,22 +2,23 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "DNSUtils.h"
 #include "NetworkConnectivityService.h"
+
+#include "DNSUtils.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/ClearOnShutdown.h"
-#include "mozilla/net/SocketProcessParent.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
+#include "mozilla/StaticPrefs_network.h"
+#include "mozilla/net/SocketProcessParent.h"
 #include "nsCOMPtr.h"
-#include "nsIChannel.h"
-#include "nsIOService.h"
 #include "nsICancelable.h"
-#include "xpcpublic.h"
-#include "nsSocketTransport2.h"
+#include "nsIChannel.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsINetworkLinkService.h"
-#include "mozilla/StaticPrefs_network.h"
+#include "nsIOService.h"
+#include "nsSocketTransport2.h"
+#include "xpcpublic.h"
 
 static mozilla::LazyLogModule gNCSLog("NetworkConnectivityService");
 #undef LOG

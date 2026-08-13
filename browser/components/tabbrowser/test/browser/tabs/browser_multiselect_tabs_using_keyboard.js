@@ -144,7 +144,7 @@ add_task(async function changeSelectionUsingKeyboard() {
   is(tab4.previousElementSibling, tab3, "tab4 should be after tab3");
   is(tab4.nextElementSibling, tab5, "tab4 should be before tab5");
 
-  let tabsReordered = BrowserTestUtils.waitForCondition(() => {
+  let tabsReordered = TestUtils.waitForCondition(() => {
     return (
       tab4.previousElementSibling == tab2 && tab4.nextElementSibling == tab3
     );

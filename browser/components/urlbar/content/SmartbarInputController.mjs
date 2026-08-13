@@ -130,6 +130,18 @@ export class SmartbarInputController {
   }
 
   /**
+   * Replace a range of text and update the selection.
+   *
+   * @param {string} replacement
+   * @param {number} start
+   * @param {number} end
+   * @param {SelectionMode} [selectionMode]
+   */
+  setRangeText(replacement, start, end, selectionMode) {
+    this.input.setRangeText(replacement, start, end, selectionMode);
+  }
+
+  /**
    * Selects all text in the input.
    */
   select() {

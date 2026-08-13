@@ -5,15 +5,15 @@
 #ifndef mozilla_net_TRR_h
 #define mozilla_net_TRR_h
 
+#include "DNSPacket.h"
 #include "mozilla/net/DNSByTypeRecord.h"
 #include "nsClassHashtable.h"
 #include "nsIChannel.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsIStreamListener.h"
+#include "nsITRRSkipReason.h"
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
-#include "DNSPacket.h"
-#include "nsITRRSkipReason.h"
 
 class AHostResolver;
 class nsHostRecord;

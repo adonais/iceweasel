@@ -56,5 +56,26 @@ function test() {
       assertEq(getFuseState().OptimizeTypedArraySpeciesFuse.intact, false);
     `);
   }
+
+  // Mutating the prototype of <TypedArray> pops the fuse. A no-op change is fine.
+  for (var TA of TypedArrays) {
+    newGlobal().evaluate(`
+      assertEq(getFuseState().OptimizeTypedArraySpeciesFuse.intact, true);
+      let p = Object.getPrototypeOf(${TA.name});
+      Object.setPrototypeOf(${TA.name}, p);
+      assertEq(getFuseState().OptimizeTypedArraySpeciesFuse.intact, true);
+      Object.setPrototypeOf(${TA.name}, Object);
+      assertEq(getFuseState().OptimizeTypedArraySpeciesFuse.intact, false);
+    `);
+  }
+
+  // Adding <TypedArray>[Symbol.species] pops the fuse.
+  for (var TA of TypedArrays) {
+    newGlobal().evaluate(`
+      assertEq(getFuseState().OptimizeTypedArraySpeciesFuse.intact, true);
+      Object.defineProperty(${TA.name}, Symbol.species, Object);
+      assertEq(getFuseState().OptimizeTypedArraySpeciesFuse.intact, false);
+    `);
+  }
 }
 test();

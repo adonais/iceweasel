@@ -26,7 +26,7 @@ async function testModifiedClickWithKey(modifierKey, description) {
 
   for (let i = 0; i < resultCount; i++) {
     let result = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
-    if (result.type === UrlbarUtils.RESULT_TYPE.TAB_SWITCH) {
+    if (result.type === UrlbarShared.RESULT_TYPE.TAB_SWITCH) {
       tabResult = result;
       break;
     }

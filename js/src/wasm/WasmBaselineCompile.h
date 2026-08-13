@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef asmjs_wasm_baseline_compile_h
-#define asmjs_wasm_baseline_compile_h
+#ifndef wasm_baseline_compile_h
+#define wasm_baseline_compile_h
 
 #include "jit/ABIArgGenerator.h"
 #include "wasm/WasmGenerator.h"
@@ -98,4 +98,4 @@ class BaseLocalIter {
 }  // namespace wasm
 }  // namespace js
 
-#endif  // asmjs_wasm_baseline_compile_h
+#endif  // wasm_baseline_compile_h

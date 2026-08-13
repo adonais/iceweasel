@@ -33,6 +33,8 @@ const PENDING_EVENTS = new WeakMapMap();
  */
 class Telemetry {
   constructor({ useSessionId = false } = {}) {
+    this.sessionStartTime = this.msSinceProcessStart();
+
     // Note that native telemetry APIs expect a string
     this.sessionId = String(
       useSessionId ? parseInt(this.msSinceProcessStart(), 10) : -1
@@ -67,6 +69,8 @@ class Telemetry {
   /**
    * Time since the system wide epoch. This is not a monotonic timer but
    * can be used across process boundaries.
+   *
+   * @return {number} Number of elapsed milliseconds since epoch, as a float.
    */
   msSystemNow() {
     return Services.telemetry.msSystemNow();
@@ -75,9 +79,22 @@ class Telemetry {
   /**
    * The number of milliseconds since process start using monotonic
    * timestamps (unaffected by system clock changes).
+   *
+   * @return {number} Number of elapsed milliseconds since process started, as a
+   *         float.
    */
   msSinceProcessStart() {
     return Services.telemetry.msSinceProcessStart();
+  }
+
+  /**
+   * The number of milliseconds since the telemetry session started.
+   *
+   * @return {number} Number of elapsed milliseconds since session started, as a
+   *         float.
+   */
+  msSinceSessionStart() {
+    return this.msSinceProcessStart() - this.sessionStartTime;
   }
 
   /**

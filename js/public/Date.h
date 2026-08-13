@@ -131,7 +131,7 @@ inline ClippedTime TimeClip(int64_t time) {
 // Produce a double Value from the given time.  Because times may be NaN,
 // prefer using this to manual canonicalization.
 inline Value TimeValue(ClippedTime time) {
-  return CanonicalizedDoubleValue(time.toDouble());
+  return DoubleValue(time.toDouble());
 }
 
 // Create a new Date object whose [[DateValue]] internal slot contains the

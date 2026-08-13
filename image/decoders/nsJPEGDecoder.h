@@ -6,9 +6,9 @@
 #ifndef mozilla_image_decoders_nsJPEGDecoder_h
 #define mozilla_image_decoders_nsJPEGDecoder_h
 
+#include "EXIF.h"
 #include "RasterImage.h"
 #include "SurfacePipe.h"
-#include "EXIF.h"
 
 // On Windows systems, RasterImage.h brings in 'windows.h', which defines INT32.
 // But the jpeg decoder has its own definition of INT32. To avoid build issues,

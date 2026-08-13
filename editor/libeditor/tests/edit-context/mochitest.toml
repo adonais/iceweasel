@@ -1,6 +1,38 @@
 [DEFAULT]
 prefs = [
   "dom.editcontext.enabled=true",
+  "dom.editcontext.allow_canvas=true",
 ]
+support-files = ["common.js"]
+
+["test_editcontext_allow_canvas_pref.html"]
+
+["test_editcontext_blur_in_textupdate.html"]
 
 ["test_editcontext_composition.html"]
+
+["test_editcontext_content_command_replace_text.html"]
+
+["test_editcontext_empty_text_node.html"]
+
+["test_editcontext_fallback_bounds.html"]
+
+["test_editcontext_format_commands.html"]
+
+["test_editcontext_ime_notifications.html"]
+
+["test_editcontext_query_characters.html"]
+
+["test_editcontext_query_editor.html"]
+
+["test_editcontext_query_selection.html"]
+
+["test_editcontext_redundant_characterboundsupdate.html"]
+
+["test_editcontext_resist_fingerprinting.html"]
+support-files = ["file_editcontext_resist_fingerprinting.html"]
+
+["test_editcontext_spellcheck.html"]
+skip-if = [
+  "os == 'android'", # using the spellchecker
+]

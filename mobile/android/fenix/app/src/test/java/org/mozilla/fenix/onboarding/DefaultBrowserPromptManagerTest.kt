@@ -5,21 +5,35 @@ package org.mozilla.fenix.onboarding
 
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
+import mozilla.components.support.test.robolectric.testContext
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mozilla.fenix.R
+import org.mozilla.fenix.nimbus.DefaultBrowserPrompt
+import org.mozilla.fenix.nimbus.FxNimbus.features
 import org.mozilla.fenix.onboarding.view.OnboardingPageUiData
+import org.mozilla.fenix.onboarding.view.defaultBrowserPageUiData
 import org.mozilla.fenix.onboarding.view.notificationPageUiData
 import org.mozilla.fenix.onboarding.view.syncPageUiData
+import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class DefaultBrowserPromptManagerTest {
 
+    private lateinit var settings: Settings
+
+    @Before
+    fun setup() {
+        settings = Settings(testContext)
+        enableDefaultBrowserPromptFeature()
+    }
+
     @Test
     fun `WHEN browser is already default THEN can not show the prompt`() {
         val promptManager = DefaultBrowserPromptManager(
             storage = buildStorage(isDefaultBrowser = true),
+            settings = { settings },
             promptToSetAsDefaultBrowser = {},
         )
 
@@ -30,6 +44,7 @@ class DefaultBrowserPromptManagerTest {
     fun `WHEN prompt is already displayed THEN can not show it`() {
         val promptManager = DefaultBrowserPromptManager(
             storage = buildStorage(promptToSetAsDefaultBrowserDisplayedInOnboarding = true),
+            settings = { settings },
             promptToSetAsDefaultBrowser = {},
         )
 
@@ -40,6 +55,7 @@ class DefaultBrowserPromptManagerTest {
     fun `WHEN prompt is not supported THEN we can not show it`() {
         val promptManager = DefaultBrowserPromptManager(
             storage = buildStorage(isDefaultBrowserPromptSupported = false),
+            settings = { settings },
             promptToSetAsDefaultBrowser = {},
         )
 
@@ -47,58 +63,32 @@ class DefaultBrowserPromptManagerTest {
     }
 
     @Test
-    fun `GIVEN we can show prompt and there is no ToS card WHEN a card is shown THEN prompt the user`() {
-        var promptToSetAsDefaultBrowserCalled = false
-        val promptManager = DefaultBrowserPromptManager(
-            storage = buildStorage(),
-            promptToSetAsDefaultBrowser = { promptToSetAsDefaultBrowserCalled = true },
-        )
+    fun `WHEN default browser prompt feature flag is disabled THEN can not show the prompt`() {
+        val disabledFeature = DefaultBrowserPrompt(enabled = false)
 
-        assertTrue(promptManager.canShowPrompt())
-
-        promptManager.maybePromptToSetAsDefaultBrowser(
-            pagesToDisplay = listOf(
-                syncPageUiData,
-                notificationPageUiData,
-            ),
-            currentCard = syncPageUiData,
-        )
-
-        assertTrue(promptToSetAsDefaultBrowserCalled)
+        assertFalse(settings.shouldShowSetAsDefaultPrompt(disabledFeature))
     }
 
     @Test
-    fun `GIVEN we can show prompt WHEN there is a ToS card THEN wait for it to be shown before prompting the user`() {
+    fun `WHEN we can show prompt THEN only the set to default card shows the prompt`() {
+        assertTrue(promptShownFor(defaultBrowserPageUiData))
+        assertFalse(promptShownFor(syncPageUiData))
+        assertFalse(promptShownFor(notificationPageUiData))
+    }
+
+    private fun promptShownFor(currentCard: OnboardingPageUiData): Boolean {
         var promptToSetAsDefaultBrowserCalled = false
         val promptManager = DefaultBrowserPromptManager(
             storage = buildStorage(),
+            settings = { settings },
             promptToSetAsDefaultBrowser = { promptToSetAsDefaultBrowserCalled = true },
         )
-        val pagesToDisplay = listOf(syncPageUiData, tosPageUiData, notificationPageUiData)
 
         assertTrue(promptManager.canShowPrompt())
 
-        // yet to show ToS
-        promptManager.maybePromptToSetAsDefaultBrowser(
-            pagesToDisplay = pagesToDisplay,
-            currentCard = syncPageUiData,
-        )
-        assertFalse(promptToSetAsDefaultBrowserCalled)
+        promptManager.maybePromptToSetAsDefaultBrowser(currentCard)
 
-        // showing ToS
-        promptManager.maybePromptToSetAsDefaultBrowser(
-            pagesToDisplay = pagesToDisplay,
-            currentCard = tosPageUiData,
-        )
-        assertFalse(promptToSetAsDefaultBrowserCalled)
-
-        // already showed ToS, can prompt the user
-        promptManager.maybePromptToSetAsDefaultBrowser(
-            pagesToDisplay = pagesToDisplay,
-            currentCard = notificationPageUiData,
-        )
-
-        assertTrue(promptToSetAsDefaultBrowserCalled)
+        return promptToSetAsDefaultBrowserCalled
     }
 
     private fun buildStorage(
@@ -110,13 +100,14 @@ class DefaultBrowserPromptManagerTest {
         override val isDefaultBrowserPromptSupported: Boolean = isDefaultBrowserPromptSupported
         override var promptToSetAsDefaultBrowserDisplayedInOnboarding = promptToSetAsDefaultBrowserDisplayedInOnboarding
     }
-}
 
-val tosPageUiData = OnboardingPageUiData(
-    type = OnboardingPageUiData.Type.TERMS_OF_SERVICE,
-    imageRes = R.drawable.ic_firefox,
-    title = "tos title",
-    description = "tos body",
-    primaryButtonLabel = "tos primary button text",
-    secondaryButtonLabel = "tos secondary button text",
-)
+    private fun enableDefaultBrowserPromptFeature() {
+        val enabledFeature = DefaultBrowserPrompt(
+            enabled = true,
+            daysBetweenPrompts = null,
+            maxPromptsShown = null,
+            coldStartsBetweenPrompts = null,
+        )
+        features.defaultBrowserPrompt.withCachedValue(enabledFeature)
+    }
+}

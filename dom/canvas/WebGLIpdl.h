@@ -10,7 +10,6 @@
 #include "ipc/EnumSerializer.h"
 #include "ipc/IPCMessageUtils.h"
 #include "mozilla/GfxMessageUtils.h"
-#include "mozilla/ParamTraits_TiedFields.h"
 #include "mozilla/dom/BindingIPCUtils.h"
 #include "mozilla/ipc/Shmem.h"
 #include "mozilla/layers/LayersSurfaces.h"
@@ -141,7 +140,7 @@ template <>
 struct ParamTraits<mozilla::webgl::ReadPixelsResultIpc> final {
   using T = mozilla::webgl::ReadPixelsResultIpc;
 
-  static void Write(MessageWriter* const writer, T& in) {
+  static void Write(MessageWriter* const writer, T&& in) {
     WriteParam(writer, in.subrect);
     WriteParam(writer, in.byteStride);
     WriteParam(writer, std::move(in.shmem));
@@ -286,238 +285,69 @@ struct ParamTraits<mozilla::webgl::PixelUnpackStateWebgl> final
 
 // -
 
-template <>
-struct ParamTraits<mozilla::webgl::ReadPixelsDesc> final {
-  using T = mozilla::webgl::ReadPixelsDesc;
-
-  static void Write(MessageWriter* const writer, const T& in) {
-    WriteParam(writer, in.srcOffset);
-    WriteParam(writer, in.size);
-    WriteParam(writer, in.pi);
-    WriteParam(writer, in.packState);
-  }
-
-  static bool Read(MessageReader* const reader, T* const out) {
-    return ReadParam(reader, &out->srcOffset) &&
-           ReadParam(reader, &out->size) && ReadParam(reader, &out->pi) &&
-           ReadParam(reader, &out->packState);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::webgl::ReadPixelsDesc, srcOffset,
+                                  size, pi, packState);
 
 // -
 
-template <>
-struct ParamTraits<mozilla::webgl::PackingInfo> final {
-  using T = mozilla::webgl::PackingInfo;
-
-  static void Write(MessageWriter* const writer, const T& in) {
-    WriteParam(writer, in.format);
-    WriteParam(writer, in.type);
-  }
-
-  static bool Read(MessageReader* const reader, T* const out) {
-    return ReadParam(reader, &out->format) && ReadParam(reader, &out->type);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::webgl::PackingInfo, format, type);
 
 // -
 
-template <>
-struct ParamTraits<mozilla::webgl::CompileResult> final {
-  using T = mozilla::webgl::CompileResult;
-
-  static void Write(MessageWriter* const writer, const T& in) {
-    WriteParam(writer, in.pending);
-    WriteParam(writer, in.log);
-    WriteParam(writer, in.translatedSource);
-    WriteParam(writer, in.success);
-  }
-
-  static bool Read(MessageReader* const reader, T* const out) {
-    return ReadParam(reader, &out->pending) && ReadParam(reader, &out->log) &&
-           ReadParam(reader, &out->translatedSource) &&
-           ReadParam(reader, &out->success);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::webgl::CompileResult, pending, log,
+                                  translatedSource, success);
 
 // -
 
-template <>
-struct ParamTraits<mozilla::webgl::LinkResult> final {
-  using T = mozilla::webgl::LinkResult;
-
-  static void Write(MessageWriter* const writer, const T& in) {
-    WriteParam(writer, in.pending);
-    WriteParam(writer, in.log);
-    WriteParam(writer, in.success);
-    WriteParam(writer, in.active);
-    WriteParam(writer, in.tfBufferMode);
-  }
-
-  static bool Read(MessageReader* const reader, T* const out) {
-    return ReadParam(reader, &out->pending) && ReadParam(reader, &out->log) &&
-           ReadParam(reader, &out->success) &&
-           ReadParam(reader, &out->active) &&
-           ReadParam(reader, &out->tfBufferMode);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::webgl::LinkResult, pending, log,
+                                  success, active, tfBufferMode);
 
 // -
 
-template <>
-struct ParamTraits<mozilla::webgl::LinkActiveInfo> final {
-  using T = mozilla::webgl::LinkActiveInfo;
-
-  static void Write(MessageWriter* const writer, const T& in) {
-    WriteParam(writer, in.activeAttribs);
-    WriteParam(writer, in.activeUniforms);
-    WriteParam(writer, in.activeUniformBlocks);
-    WriteParam(writer, in.activeTfVaryings);
-  }
-
-  static bool Read(MessageReader* const reader, T* const out) {
-    return ReadParam(reader, &out->activeAttribs) &&
-           ReadParam(reader, &out->activeUniforms) &&
-           ReadParam(reader, &out->activeUniformBlocks) &&
-           ReadParam(reader, &out->activeTfVaryings);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::webgl::LinkActiveInfo, activeAttribs,
+                                  activeUniforms, activeUniformBlocks,
+                                  activeTfVaryings);
 
 // -
 
-template <>
-struct ParamTraits<mozilla::webgl::ActiveInfo> final {
-  using T = mozilla::webgl::ActiveInfo;
-
-  static void Write(MessageWriter* const writer, const T& in) {
-    WriteParam(writer, in.elemType);
-    WriteParam(writer, in.elemCount);
-    WriteParam(writer, in.name);
-  }
-
-  static bool Read(MessageReader* const reader, T* const out) {
-    return ReadParam(reader, &out->elemType) &&
-           ReadParam(reader, &out->elemCount) && ReadParam(reader, &out->name);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::webgl::ActiveInfo, elemType,
+                                  elemCount, name);
 
 // -
 
-template <>
-struct ParamTraits<mozilla::webgl::ActiveAttribInfo> final {
-  using T = mozilla::webgl::ActiveAttribInfo;
-
-  static void Write(MessageWriter* const writer, const T& in) {
-    WriteParam(writer, static_cast<const mozilla::webgl::ActiveInfo&>(in));
-    WriteParam(writer, in.location);
-    WriteParam(writer, in.baseType);
-  }
-
-  static bool Read(MessageReader* const reader, T* const out) {
-    return ReadParam(reader, static_cast<mozilla::webgl::ActiveInfo*>(out)) &&
-           ReadParam(reader, &out->location) &&
-           ReadParam(reader, &out->baseType);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_SUPER_CLASS_AND_FIELDS(
+    mozilla::webgl::ActiveAttribInfo, mozilla::webgl::ActiveInfo, location,
+    baseType);
 
 // -
 
-template <>
-struct ParamTraits<mozilla::webgl::ActiveUniformInfo> final {
-  using T = mozilla::webgl::ActiveUniformInfo;
-
-  static void Write(MessageWriter* const writer, const T& in) {
-    WriteParam(writer, static_cast<const mozilla::webgl::ActiveInfo&>(in));
-    WriteParam(writer, in.locByIndex);
-    WriteParam(writer, in.block_index);
-    WriteParam(writer, in.block_offset);
-    WriteParam(writer, in.block_arrayStride);
-    WriteParam(writer, in.block_matrixStride);
-    WriteParam(writer, in.block_isRowMajor);
-  }
-
-  static bool Read(MessageReader* const reader, T* const out) {
-    return ReadParam(reader, static_cast<mozilla::webgl::ActiveInfo*>(out)) &&
-           ReadParam(reader, &out->locByIndex) &&
-           ReadParam(reader, &out->block_index) &&
-           ReadParam(reader, &out->block_offset) &&
-           ReadParam(reader, &out->block_arrayStride) &&
-           ReadParam(reader, &out->block_matrixStride) &&
-           ReadParam(reader, &out->block_isRowMajor);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_SUPER_CLASS_AND_FIELDS(
+    mozilla::webgl::ActiveUniformInfo, mozilla::webgl::ActiveInfo, locByIndex,
+    block_index, block_offset, block_arrayStride, block_matrixStride,
+    block_isRowMajor);
 
 // -
 
-template <>
-struct ParamTraits<mozilla::webgl::ActiveUniformBlockInfo> final {
-  using T = mozilla::webgl::ActiveUniformBlockInfo;
-
-  static void Write(MessageWriter* const writer, const T& in) {
-    WriteParam(writer, in.name);
-    WriteParam(writer, in.dataSize);
-    WriteParam(writer, in.activeUniformIndices);
-    WriteParam(writer, in.referencedByVertexShader);
-    WriteParam(writer, in.referencedByFragmentShader);
-  }
-
-  static bool Read(MessageReader* const reader, T* const out) {
-    return ReadParam(reader, &out->name) && ReadParam(reader, &out->dataSize) &&
-           ReadParam(reader, &out->activeUniformIndices) &&
-           ReadParam(reader, &out->referencedByVertexShader) &&
-           ReadParam(reader, &out->referencedByFragmentShader);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::webgl::ActiveUniformBlockInfo, name,
+                                  dataSize, activeUniformIndices,
+                                  referencedByVertexShader,
+                                  referencedByFragmentShader);
 
 // -
 
-template <>
-struct ParamTraits<mozilla::webgl::GetUniformData> final {
-  using T = mozilla::webgl::GetUniformData;
-
-  static void Write(MessageWriter* const writer, const T& in) {
-    WriteParam(writer, in.data);
-    WriteParam(writer, in.type);
-  }
-
-  static bool Read(MessageReader* const reader, T* const out) {
-    return ReadParam(reader, &out->data) && ReadParam(reader, &out->type);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::webgl::GetUniformData, data, type);
 
 // -
 
 template <typename U>
-struct ParamTraits<mozilla::avec2<U>> final {
-  using T = mozilla::avec2<U>;
-
-  static void Write(MessageWriter* const writer, const T& in) {
-    WriteParam(writer, in.x);
-    WriteParam(writer, in.y);
-  }
-
-  static bool Read(MessageReader* const reader, T* const out) {
-    return ReadParam(reader, &out->x) && ReadParam(reader, &out->y);
-  }
-};
+struct ParamTraits<mozilla::avec2<U>>
+    : ParamTraits_TiedFields<mozilla::avec2<U>> {};
 
 // -
 
 template <typename U>
-struct ParamTraits<mozilla::avec3<U>> final {
-  using T = mozilla::avec3<U>;
-
-  static void Write(MessageWriter* const writer, const T& in) {
-    WriteParam(writer, in.x);
-    WriteParam(writer, in.y);
-    WriteParam(writer, in.z);
-  }
-
-  static bool Read(MessageReader* const reader, T* const out) {
-    return ReadParam(reader, &out->x) && ReadParam(reader, &out->y) &&
-           ReadParam(reader, &out->z);
-  }
-};
+struct ParamTraits<mozilla::avec3<U>>
+    : ParamTraits_TiedFields<mozilla::avec3<U>> {};
 
 }  // namespace IPC
 

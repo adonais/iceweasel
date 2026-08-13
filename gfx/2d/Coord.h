@@ -5,13 +5,13 @@
 #ifndef MOZILLA_GFX_COORD_H_
 #define MOZILLA_GFX_COORD_H_
 
-#include "mozilla/Attributes.h"
-#include "mozilla/FloatingPoint.h"
-#include "Types.h"
-#include "BaseCoord.h"
-
 #include <cmath>
 #include <type_traits>
+
+#include "BaseCoord.h"
+#include "Types.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/FloatingPoint.h"
 
 namespace mozilla {
 

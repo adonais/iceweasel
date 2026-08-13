@@ -128,6 +128,7 @@ EXTRA_JS_MODULES += [
     "HomePage.sys.mjs",
     "LaterRun.sys.mjs",
     "LinksCache.sys.mjs",
+    "MenuSectionLayout.sys.mjs",
     "PageActions.sys.mjs",
     "PartnerLinkAttribution.sys.mjs",
     "PermissionPromptTargeting.sys.mjs",

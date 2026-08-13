@@ -72,7 +72,9 @@ def test_shell_script(
 
         customscript = env.layers[TEST]
         metadata.binary = "a_binary"
-        with mock.patch("mozperftest.test.shellscript.DEPENDENCIES", new=[]):
+        with mock.patch("mozperftest.test.shellscript.install_package"), mock.patch(
+            "mozperftest.test.shellscript.subprocess.check_call"
+        ):
             with customscript as c:
                 c(metadata)
 

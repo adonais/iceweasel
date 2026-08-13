@@ -2,14 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsString.h"
-#include "nsReadableUtils.h"
 #include "UTFStrings.h"
-#include "nsUnicharUtils.h"
-#include "mozilla/HashFunctions.h"
-#include "nsUTF8Utils.h"
-
 #include "gtest/gtest.h"
+#include "mozilla/HashFunctions.h"
+#include "mozilla/Utf16.h"
+#include "nsHashKeys.h"
+#include "nsReadableUtils.h"
+#include "nsString.h"
 
 using namespace mozilla;
 
@@ -85,28 +84,35 @@ TEST(UTF, Malformed8)
   }
 }
 
+static HashNumber HashStringUsingUTF16Hasher(const nsAString& aString) {
+  mozilla::detail::UTF16Hasher hasher;
+  for (char16_t ch : Span<const char16_t>(aString)) {
+    hasher.Add(ch);
+  }
+  return hasher.Finish();
+}
+
 TEST(UTF, Hash16)
 {
   for (unsigned int i = 0; i < std::size(ValidStrings); ++i) {
     nsDependentCString str8(ValidStrings[i].m8);
-    bool err;
-    EXPECT_EQ(HashString(ValidStrings[i].m16),
-              HashUTF8AsUTF16(str8.get(), str8.Length(), &err));
-    EXPECT_FALSE(err);
+    nsDependentString str16(ValidStrings[i].m16);
+    EXPECT_EQ(HashString(str16), HashUTF8AsUTF16(str8.get(), str8.Length()));
+    EXPECT_EQ(HashString(str16), HashStringUsingUTF16Hasher(str16));
   }
 
   for (unsigned int i = 0; i < std::size(Invalid8Strings); ++i) {
     nsDependentCString str8(Invalid8Strings[i].m8);
-    bool err;
-    EXPECT_EQ(HashUTF8AsUTF16(str8.get(), str8.Length(), &err), 0u);
-    EXPECT_TRUE(err);
+    nsDependentString str16(Invalid8Strings[i].m16);
+    EXPECT_EQ(HashString(str16), HashUTF8AsUTF16(str8.get(), str8.Length()));
+    EXPECT_EQ(HashString(str16), HashStringUsingUTF16Hasher(str16));
   }
 
   for (unsigned int i = 0; i < std::size(Malformed8Strings); ++i) {
     nsDependentCString str8(Malformed8Strings[i].m8);
-    bool err;
-    EXPECT_EQ(HashUTF8AsUTF16(str8.get(), str8.Length(), &err), 0u);
-    EXPECT_TRUE(err);
+    nsDependentString str16(Malformed8Strings[i].m16);
+    EXPECT_EQ(HashString(str16), HashUTF8AsUTF16(str8.get(), str8.Length()));
+    EXPECT_EQ(HashString(str16), HashStringUsingUTF16Hasher(str16));
   }
 }
 
@@ -175,82 +181,28 @@ TEST(UTF, NonASCII16)
   NonASCII16_helper(512);
 }
 
-TEST(UTF, UTF8CharEnumerator)
-{
-  const char* p =
-      "\x61\xC0\xC2\xC2\x80\xE0\x80\x80\xE0\xA0\x80\xE1\x80\x80\xED\xBF\xBF\xED"
-      "\x9F\xBF\xEE\x80\x80\xEE\x80\xFF\xF0\x90\x80\x80\xF0\x80\x80\x80\xF1\x80"
-      "\x80\x80\xF4\x8F\xBF\xF4\x8F\xBF\xBF\xF4\xBF\xBF\xBF";
-  const char* end = p + 49;
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0x0061U);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0x0080U);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0x0800U);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0x1000U);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xD7FFU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xE000U);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0x10000U);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0x40000U);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0x10FFFFU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(p, end);
-  p = "\xC2\xB6";
-  end = p + 1;
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(p, end);
-  p = "\xE2\x98\x83";
-  end = p + 2;
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(p, end);
-  p = "\xF0\x9F\x92\xA9";
-  end = p + 2;
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(p, end);
-  p = "\xF0\x9F\x92\xA9";
-  end = p + 3;
-  EXPECT_EQ(UTF8CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(p, end);
-}
-
-TEST(UTF, UTF16CharEnumerator)
+TEST(UTF, DecodeOneUtf16CodePoint)
 {
   const char16_t* p = u"\u0061\U0001F4A9";
   const char16_t* end = p + 3;
-  EXPECT_EQ(UTF16CharEnumerator::NextChar(&p, end), 0x0061U);
-  EXPECT_EQ(UTF16CharEnumerator::NextChar(&p, end), 0x1F4A9U);
+  EXPECT_EQ(DecodeOneUtf16CodePoint(&p, end), 0x0061U);
+  EXPECT_EQ(DecodeOneUtf16CodePoint(&p, end), 0x1F4A9U);
   EXPECT_EQ(p, end);
   const char16_t loneHigh = 0xD83D;
   p = &loneHigh;
   end = p + 1;
-  EXPECT_EQ(UTF16CharEnumerator::NextChar(&p, end), 0xFFFDU);
+  EXPECT_EQ(DecodeOneUtf16CodePoint(&p, end), 0xFFFDU);
   EXPECT_EQ(p, end);
   const char16_t loneLow = 0xDCA9;
   p = &loneLow;
   end = p + 1;
-  EXPECT_EQ(UTF16CharEnumerator::NextChar(&p, end), 0xFFFDU);
+  EXPECT_EQ(DecodeOneUtf16CodePoint(&p, end), 0xFFFDU);
   EXPECT_EQ(p, end);
   const char16_t loneHighStr[] = {0xD83D, 0x0061};
   p = loneHighStr;
   end = p + 2;
-  EXPECT_EQ(UTF16CharEnumerator::NextChar(&p, end), 0xFFFDU);
-  EXPECT_EQ(UTF16CharEnumerator::NextChar(&p, end), 0x0061U);
+  EXPECT_EQ(DecodeOneUtf16CodePoint(&p, end), 0xFFFDU);
+  EXPECT_EQ(DecodeOneUtf16CodePoint(&p, end), 0x0061U);
   EXPECT_EQ(p, end);
 }
 

@@ -10,7 +10,11 @@ requestLongerTimeout(2);
 // the restoring operation.
 add_task(async function () {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.compactmode.show", true]],
+    set: [
+      ["browser.compactmode.show", true],
+      // The density dropdown is only shown when Nova is disabled.
+      ["browser.nova.enabled", false],
+    ],
   });
   let stopReloadButtonId = "stop-reload-button";
   CustomizableUI.removeWidgetFromArea(stopReloadButtonId);

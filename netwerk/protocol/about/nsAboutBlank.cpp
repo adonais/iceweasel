@@ -3,10 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsAboutBlank.h"
-#include "nsStringStream.h"
-#include "nsNetUtil.h"
+
 #include "nsContentUtils.h"
 #include "nsIChannel.h"
+#include "nsNetUtil.h"
+#include "nsStringStream.h"
 
 NS_IMPL_ISUPPORTS(nsAboutBlank, nsIAboutModule)
 

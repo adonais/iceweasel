@@ -6,9 +6,9 @@
 #define SiteIntegrityService_h
 
 #include "mozilla/OriginAttributes.h"
-#include "nsISiteIntegrityService.h"
 #include "nsCOMPtr.h"
 #include "nsIDataStorage.h"
+#include "nsISiteIntegrityService.h"
 
 namespace mozilla {
 

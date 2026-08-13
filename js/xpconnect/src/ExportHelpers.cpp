@@ -2,24 +2,26 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "xpcprivate.h"
-#include "WrapperFactory.h"
-#include "AccessCheck.h"
-#include "jsfriendapi.h"
-#include "js/CallAndConstruct.h"  // JS::IsConstructor, JS::Call, JS::Construct, JS::IsCallable
-#include "js/Exception.h"
-#include "js/PropertyAndElement.h"  // JS_DefineProperty, JS_DefinePropertyById
-#include "js/Proxy.h"
-#include "js/Wrapper.h"
-#include "mozilla/ErrorResult.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/BlobBinding.h"
 #include "mozilla/dom/BlobImpl.h"
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/StructuredCloneHolder.h"
+#include "mozilla/ErrorResult.h"
+
+#include "AccessCheck.h"
+#include "jsfriendapi.h"
 #include "nsContentUtils.h"
 #include "nsJSUtils.h"
-#include "js/Object.h"  // JS::GetCompartment
+#include "WrapperFactory.h"
+#include "xpcprivate.h"
+
+#include "js/CallAndConstruct.h"  // JS::IsConstructor, JS::Call, JS::Construct, JS::IsCallable
+#include "js/Exception.h"
+#include "js/Object.h"              // JS::GetCompartment
+#include "js/PropertyAndElement.h"  // JS_DefineProperty, JS_DefinePropertyById
+#include "js/Proxy.h"
+#include "js/Wrapper.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

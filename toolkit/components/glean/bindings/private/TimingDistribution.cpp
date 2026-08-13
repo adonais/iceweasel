@@ -121,7 +121,7 @@ class MetricLabelTimerTupleHashKey : public PLDHashEntryHdr {
   KeyType GetKey() const { return mValue; }
   bool KeyEquals(KeyTypePointer aKey) const {
     return aKey->mMetricId == mValue.mMetricId &&
-           aKey->mTimerId == mValue.mTimerId;
+           aKey->mLabel == mValue.mLabel && aKey->mTimerId == mValue.mTimerId;
   }
 
   static KeyTypePointer KeyToPointer(KeyType aKey) { return &aKey; }

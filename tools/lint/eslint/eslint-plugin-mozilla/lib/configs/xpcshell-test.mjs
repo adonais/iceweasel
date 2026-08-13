@@ -13,6 +13,10 @@ export default {
     globals: {
       ...privileged.globals,
       ...xpcshell.globals,
+      afterEach: false,
+      beforeEach: false,
+      describe: false,
+      it: false,
     },
   },
 

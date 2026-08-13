@@ -18,6 +18,7 @@ import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.state.TabGroup
 import mozilla.components.browser.state.state.TabPartition
 import mozilla.components.browser.state.state.TabSessionState
+import mozilla.components.browser.state.state.TranslationsBrowserState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.EngineSessionState
@@ -507,6 +508,82 @@ class BrowserStateWriterReaderTest {
         assertEquals("group1", restoredPartition.tabGroups[0].id)
         assertEquals("Group 1", restoredPartition.tabGroups[0].name)
         assertEquals(setOf("mozilla"), restoredPartition.tabGroups[0].tabIds)
+    }
+
+    @Test
+    fun `Read and write state with supported translations engine`() {
+        val engineState = createFakeEngineState()
+        val engine = createFakeEngine(engineState)
+
+        val state = BrowserState(
+            tabs = listOf(createTab(url = "https://www.mozilla.org", id = "mozilla")),
+            selectedTabId = "mozilla",
+            translationEngine = TranslationsBrowserState(isEngineSupported = true),
+        )
+
+        val writer = BrowserStateWriter()
+        val reader = BrowserStateReader()
+
+        val file = AtomicFile(
+            File.createTempFile(UUID.randomUUID().toString(), UUID.randomUUID().toString()),
+        )
+
+        assertTrue(writer.write(state, file))
+
+        val restoredState = reader.read(engine, file)
+        assertNotNull(restoredState)
+        assertEquals(true, restoredState.isTranslationsEngineSupported)
+    }
+
+    @Test
+    fun `Read and write state with unsupported translations engine`() {
+        val engineState = createFakeEngineState()
+        val engine = createFakeEngine(engineState)
+
+        val state = BrowserState(
+            tabs = listOf(createTab(url = "https://www.mozilla.org", id = "mozilla")),
+            selectedTabId = "mozilla",
+            translationEngine = TranslationsBrowserState(isEngineSupported = false),
+        )
+
+        val writer = BrowserStateWriter()
+        val reader = BrowserStateReader()
+
+        val file = AtomicFile(
+            File.createTempFile(UUID.randomUUID().toString(), UUID.randomUUID().toString()),
+        )
+
+        assertTrue(writer.write(state, file))
+
+        val restoredState = reader.read(engine, file)
+        assertNotNull(restoredState)
+        assertEquals(false, restoredState.isTranslationsEngineSupported)
+    }
+
+    @Test
+    fun `Read and write state with undetermined translations engine support`() {
+        val engineState = createFakeEngineState()
+        val engine = createFakeEngine(engineState)
+
+        val state = BrowserState(
+            tabs = listOf(createTab(url = "https://www.mozilla.org", id = "mozilla")),
+            selectedTabId = "mozilla",
+            translationEngine = TranslationsBrowserState(isEngineSupported = null),
+        )
+
+        val writer = BrowserStateWriter()
+        val reader = BrowserStateReader()
+
+        val file = AtomicFile(
+            File.createTempFile(UUID.randomUUID().toString(), UUID.randomUUID().toString()),
+        )
+
+        assertTrue(writer.write(state, file))
+
+        val restoredState = reader.read(engine, file)
+        assertNotNull(restoredState)
+        // An undetermined value should not be persisted and therefore stays null on restore.
+        assertNull(restoredState.isTranslationsEngineSupported)
     }
 }
 

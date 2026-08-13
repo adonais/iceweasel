@@ -5,15 +5,15 @@
 #ifndef RemoteStreamGetter_h_
 #define RemoteStreamGetter_h_
 
-#include "nsIChannel.h"
-#include "nsIInputStreamPump.h"
-#include "nsIStreamListener.h"
-#include "nsIInputStream.h"
-#include "nsICancelable.h"
 #include "SimpleChannel.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/net/NeckoChannelParams.h"
 #include "mozilla/net/NeckoChild.h"
-#include "mozilla/Maybe.h"
+#include "nsICancelable.h"
+#include "nsIChannel.h"
+#include "nsIInputStream.h"
+#include "nsIInputStreamPump.h"
+#include "nsIStreamListener.h"
 
 class nsILoadInfo;
 

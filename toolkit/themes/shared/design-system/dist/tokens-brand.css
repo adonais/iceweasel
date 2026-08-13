@@ -30,23 +30,8 @@
 
     /** font-size **/
     --font-size-root: 15px;
-    /* 11px / Note this token is to be used in rare cases because its hard to read. Please consult with the Design Systems and A11y teams for case-by-case feedback. */
-    --font-size-xsmall: 0.733rem;
-    /* 13px */
+    /* 13px (in-content) */
     --font-size-small: 0.867rem;
-    /* 17px */
-    --font-size-large: 1.133rem;
-    /* 22px */
-    --font-size-xlarge: 1.467rem;
-    /* 24px */
-    --font-size-xxlarge: 1.6rem;
-    /* 33px */
-    --font-size-xxxlarge: 2.2rem;
-
-    /** link **/
-    --link-color: var(--color-accent-primary);
-    --link-color-hover: var(--color-accent-primary-hover);
-    --link-color-active: var(--color-accent-primary-active);
 
     /** page **/
     --page-main-content-width: 664px;
@@ -85,7 +70,7 @@
     :root,
     :host(.anonymous-content-host) {
       /** button **/
-      --button-background-color-ghost: var(--button-background-color);
+      --button-background-color-ghost: ButtonFace;
       --button-background-color-ghost-disabled: var(--button-background-color-disabled);
       --button-background-color-toolbar: var(--button-background-color);
       --button-background-color-toolbar-disabled: var(--button-background-color-disabled);
@@ -93,6 +78,16 @@
       --button-text-color-ghost-disabled: var(--button-text-color-disabled);
       --button-text-color-toolbar: var(--button-text-color);
       --button-text-color-toolbar-disabled: var(--button-text-color-disabled);
+    }
+  }
+}
+
+@media -moz-pref("browser.nova.enabled") {
+  @layer tokens-foundation-brand-nova {
+    :root,
+    :host(.anonymous-content-host) {
+      /** text-color **/
+      --text-color-accent-primary-selected: light-dark(var(--color-white), var(--color-gray-55));
     }
   }
 }

@@ -8,11 +8,12 @@ add_setup(async () => {
 });
 
 add_task(async function test_vulnerable_password_methods() {
-  const logins = TestData.loginList();
+  // Use stored logins (with GUIDs assigned) since the Rust backend looks up
+  // vulnerability by GUID.
+  const logins = await Services.logins.addLogins(TestData.loginList());
   Assert.greater(logins.length, 0, "Initial logins length should be > 0.");
 
   for (const loginInfo of logins) {
-    await Services.logins.addLoginAsync(loginInfo);
     Assert.ok(
       !(await Services.logins.isPotentiallyVulnerablePassword(loginInfo)),
       "No logins should be vulnerable until addVulnerablePasswords is called."

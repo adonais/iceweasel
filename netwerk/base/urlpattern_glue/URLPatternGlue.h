@@ -5,10 +5,10 @@
 #ifndef URLPatternGlue_h_
 #define URLPatternGlue_h_
 
+#include "mozilla/Logging.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/net/urlpattern_glue.h"
 #include "nsTHashMap.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/Logging.h"
 
 extern mozilla::LazyLogModule gUrlPatternLog;
 

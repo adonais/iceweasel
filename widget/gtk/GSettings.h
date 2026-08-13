@@ -5,9 +5,9 @@
 #ifndef mozilla_widget_GSettings_h
 #define mozilla_widget_GSettings_h
 
-#include "nsStringFwd.h"
-#include "mozilla/RefPtr.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/RefPtr.h"
+#include "nsStringFwd.h"
 #include "nsTArrayForwardDeclare.h"
 
 using GSettings = struct _GSettings;

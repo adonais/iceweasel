@@ -3,15 +3,42 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
+import copy
 import datetime
 
 from mozilla_version.mobile import GeckoVersion
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.schema import resolve_keyed_by
 
-from ..build_config import get_extensions, get_path
+from ..build_config import get_component_name, get_components, get_extensions, get_path
 
+fanout_components = TransformSequence()
 transforms = TransformSequence()
+
+
+@fanout_components.add
+def fanout_components_by_build_type(config, tasks):
+    not_for_components = config.config.get("not-for-components", [])
+    (template,) = tasks
+    for component in get_components():
+        component_name = get_component_name(component)
+        if component_name in not_for_components:
+            continue
+        for build_type in ("regular", "nightly", "beta", "release"):
+            if not (component["shouldPublish"] or build_type == "regular"):
+                continue
+            name = "{}{}".format(
+                "" if build_type == "regular" else build_type + "-",
+                component_name,
+            )
+            task = copy.deepcopy(template)
+            task["name"] = name
+            task.setdefault("attributes", {}).update({
+                "build-type": build_type,
+                "component": component_name,
+                "gradle-project": component["name"],
+            })
+            yield task
 
 
 @transforms.add
@@ -141,6 +168,7 @@ def add_artifacts(config, tasks):
             "artifacts", []
         )
 
+        runs_unit_tests = any(t.endswith(":test") for t in task["run"]["gradlew"])
         for key in [
             "tests-artifact-template",
             "lint-artifact-template",
@@ -148,6 +176,10 @@ def add_artifacts(config, tasks):
         ]:
             if key in task:
                 optional_artifact_template = task.pop(key, {})
+                # The shipping graphs don't run unit tests, so don't declare a test-report
+                # artifact they won't produce.
+                if key == "tests-artifact-template" and not runs_unit_tests:
+                    continue
                 build_artifact_definitions.append({
                     "type": optional_artifact_template["type"],
                     "name": optional_artifact_template["name"],

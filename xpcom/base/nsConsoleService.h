@@ -11,20 +11,18 @@
 
 #include <cstdint>
 
+#include "MainThreadUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Mutex.h"
-
-#include "MainThreadUtils.h"
 #include "nsCOMPtr.h"
-#include "nsInterfaceHashtable.h"
 #include "nsHashKeys.h"
-
 #include "nsIConsoleListener.h"
 #include "nsIConsoleMessage.h"
 #include "nsIConsoleService.h"
 #include "nsIObserver.h"
 #include "nsISupports.h"
+#include "nsInterfaceHashtable.h"
 
 template <class T>
 class nsCOMArray;

@@ -3,16 +3,17 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "HitTestingTreeNode.h"
+
 #include <stack>
 
 #include "AsyncPanZoomController.h"  // for AsyncPanZoomController
+#include "UnitTransforms.h"          // for ViewAs
 #include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/ToString.h"         // for ToString
 #include "mozilla/gfx/Point.h"        // for Point4D
 #include "mozilla/layers/APZUtils.h"  // for AsyncTransform, CompleteAsyncTransform
 #include "mozilla/layers/AsyncDragMetrics.h"  // for AsyncDragMetrics
-#include "mozilla/ToString.h"                 // for ToString
 #include "nsPrintfCString.h"                  // for nsPrintfCString
-#include "UnitTransforms.h"                   // for ViewAs
 
 static mozilla::LazyLogModule sApzMgrLog("apz.manager");
 

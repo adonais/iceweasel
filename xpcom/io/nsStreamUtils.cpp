@@ -2,27 +2,28 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/Mutex.h"
+#include "nsStreamUtils.h"
+
+#include "NonBlockingAsyncInputStream.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/InputStreamLengthWrapper.h"
-#include "nsIInputStreamLength.h"
-#include "nsStreamUtils.h"
+#include "mozilla/Mutex.h"
 #include "nsCOMPtr.h"
-#include "nsICloneableInputStream.h"
-#include "nsIEventTarget.h"
-#include "nsICancelableRunnable.h"
-#include "nsISafeOutputStream.h"
-#include "nsString.h"
 #include "nsIAsyncInputStream.h"
 #include "nsIAsyncOutputStream.h"
 #include "nsIBufferedStreams.h"
+#include "nsICancelableRunnable.h"
+#include "nsICloneableInputStream.h"
+#include "nsIEventTarget.h"
+#include "nsIInputStreamLength.h"
 #include "nsIPipe.h"
+#include "nsISafeOutputStream.h"
+#include "nsIStreamTransportService.h"
+#include "nsITransport.h"
 #include "nsNetCID.h"
 #include "nsServiceManagerUtils.h"
+#include "nsString.h"
 #include "nsThreadUtils.h"
-#include "nsITransport.h"
-#include "nsIStreamTransportService.h"
-#include "NonBlockingAsyncInputStream.h"
 
 using namespace mozilla;
 

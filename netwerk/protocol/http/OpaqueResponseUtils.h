@@ -6,20 +6,18 @@
 #define mozilla_net_OpaqueResponseUtils_h
 
 #include "ipc/EnumSerializer.h"
+#include "mozilla/Logging.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
+#include "nsCOMPtr.h"
 #include "nsIContentPolicy.h"
 #include "nsIEncodedChannel.h"
-#include "nsIStreamListener.h"
-#include "nsUnknownDecoder.h"
-#include "nsMimeTypes.h"
 #include "nsIHttpChannel.h"
-
-#include "mozilla/Logging.h"
-#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
-
-#include "nsCOMPtr.h"
+#include "nsIStreamListener.h"
+#include "nsMimeTypes.h"
 #include "nsString.h"
 #include "nsTArray.h"
+#include "nsUnknownDecoder.h"
 
 class nsIContentSniffer;
 

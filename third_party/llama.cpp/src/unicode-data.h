@@ -13,8 +13,12 @@ struct range_nfd {
 
 static const uint32_t MAX_CODEPOINTS = 0x110000;
 
-const std::initializer_list<std::pair<uint32_t, uint16_t>>& get_unicode_ranges_flags();
-const std::unordered_set<uint32_t>& get_unicode_set_whitespace();
-const std::initializer_list<std::pair<uint32_t, uint32_t>>& get_unicode_map_lowercase();
-const std::initializer_list<std::pair<uint32_t, uint32_t>>& get_unicode_map_uppercase();
-const std::initializer_list<range_nfd>& get_unicode_ranges_nfd();
+extern const std::initializer_list<std::pair<uint32_t, uint16_t>> unicode_ranges_flags;
+// Firefox (no static constructors): the std::unordered_set has a non-trivial
+// constructor/destructor, so expose it via a lazily-initialized accessor instead
+// of a load-time global. The initializer_list globals are constant-initialized
+// and need no such treatment.
+const std::unordered_set<uint32_t> & get_unicode_set_whitespace();
+extern const std::initializer_list<std::pair<uint32_t, uint32_t>> unicode_map_lowercase;
+extern const std::initializer_list<std::pair<uint32_t, uint32_t>> unicode_map_uppercase;
+extern const std::initializer_list<range_nfd> unicode_ranges_nfd;

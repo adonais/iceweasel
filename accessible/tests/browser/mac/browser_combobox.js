@@ -74,7 +74,11 @@ addAccessibleTask(
 
     await testComboBox(browser, accDoc);
 
-    is(box.getAttributeValue("AXARIAControls").length, 1, "box controls list");
+    is(
+      box.getAttributeValue("AXLinkedUIElements").length,
+      1,
+      "box controls list"
+    );
   }
 );
 

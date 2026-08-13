@@ -11,9 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -27,6 +25,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
 import mozilla.components.browser.state.helper.Target
+import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.browser.awesomebar.AwesomeBar
 import mozilla.components.compose.browser.toolbar.BrowserToolbar
@@ -165,7 +164,9 @@ fun TabsTray(
                 },
                 modifier = Modifier.weight(1f),
             )
-            Button(
+
+            FilledButton(
+                text = "+",
                 onClick = {
                     components.tabsUseCases.addTab(
                         url = "about:blank",
@@ -174,9 +175,7 @@ fun TabsTray(
                     store.dispatch(BrowserScreenAction.HideTabs)
                     toolbarStore.dispatch(BrowserToolbarAction.EnterEditMode(false))
                 },
-            ) {
-                Text("+")
-            }
+            )
         }
     }
 }

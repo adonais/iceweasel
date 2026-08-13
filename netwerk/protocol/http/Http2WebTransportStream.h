@@ -7,10 +7,10 @@
 
 #include <functional>
 
-#include "mozilla/CheckedInt.h"
-#include "mozilla/Queue.h"
 #include "WebTransportFlowControl.h"
 #include "WebTransportStreamBase.h"
+#include "mozilla/CheckedInt.h"
+#include "mozilla/Queue.h"
 
 namespace mozilla::net {
 

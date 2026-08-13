@@ -2086,13 +2086,13 @@ nsIFrame::CaretBlockAxisMetrics nsIFrame::GetCaretBlockAxisMetrics(
   return CaretBlockAxisMetrics{.mOffset = baseline - ascent, .mExtent = height};
 }
 
-nscoord nsIFrame::GetFontMetricsDerivedCaretBaseline(nscoord aBSize) const {
+nscoord nsIFrame::GetFontMetricsDerivedCaretBaseline() const {
   float inflation = nsLayoutUtils::FontSizeInflationFor(this);
   RefPtr<nsFontMetrics> fm =
       nsLayoutUtils::GetFontMetricsForFrame(this, inflation);
   const WritingMode wm = GetWritingMode();
-  nscoord lineHeight = ReflowInput::CalcLineHeight(
-      *Style(), PresContext(), GetContent(), aBSize, inflation);
+  const nscoord lineHeight = ReflowInput::CalcLineHeight(
+      *Style(), PresContext(), GetContent(), inflation);
   return nsLayoutUtils::GetCenteredFontBaseline(fm, lineHeight,
                                                 wm.IsLineInverted()) +
          GetLogicalUsedBorderAndPadding(wm).BStart(wm);
@@ -2308,11 +2308,11 @@ static nsIFrame* GetActiveSelectionFrame(nsPresContext* aPresContext,
   return aFrame;
 }
 
-bool nsIFrame::ShouldHandleSelectionMovementEvents() {
+bool nsIFrame::ShouldHandleSelectionMovementEvents(ForSelectionStart aType) {
   if (GetDisplaySelection() == nsISelectionController::SELECTION_OFF) {
     return false;
   }
-  if (!IsSelectable()) {
+  if (UsedUserSelect(this, aType) == StyleUserSelect::None) {
     // Check whether style allows selection.
     return false;
   }
@@ -3425,8 +3425,9 @@ void nsIFrame::BuildDisplayListForStackingContext(
     if (shouldFlattenStickyItem) {
       stickyASR = aBuilder->CurrentActiveScrolledRoot();
     } else {
-      stickyASR = aBuilder->GetOrCreateActiveScrolledRootForSticky(
-          aBuilder->CurrentActiveScrolledRoot(), this);
+      stickyASR = aBuilder->GetOrCreateActiveScrolledRoot(
+          aBuilder->CurrentActiveScrolledRoot(), this,
+          ActiveScrolledRoot::ASRKind::Sticky);
       asrSetter.SetCurrentActiveScrolledRoot(stickyASR);
       stickyItemClipState.MaybeRemoveDisplayportClip();
     }
@@ -4295,7 +4296,7 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
                           : nullptr;
   nsIFrame* childOrOutOfFlow =
       placeholder ? placeholder->GetOutOfFlowFrame() : child;
-  if (ShouldSkipFrame(aBuilder, childOrOutOfFlow)) {
+  if (!childOrOutOfFlow || ShouldSkipFrame(aBuilder, childOrOutOfFlow)) {
     return;
   }
 
@@ -4920,9 +4921,15 @@ static bool IsEditingHost(const nsIFrame* aFrame) {
   return content && content->IsEditingHost();
 }
 
-static StyleUserSelect UsedUserSelect(const nsIFrame* aFrame) {
+mozilla::StyleUserSelect nsIFrame::UsedUserSelect(
+    const nsIFrame* aFrame, nsIFrame::ForSelectionStart aType) {
+  return UsedUserSelectRecurse(aFrame, aType).valueOr(StyleUserSelect::Text);
+}
+
+Maybe<mozilla::StyleUserSelect> nsIFrame::UsedUserSelectRecurse(
+    const nsIFrame* aFrame, nsIFrame::ForSelectionStart aType) {
   if (aFrame->IsGeneratedContentFrame()) {
-    return StyleUserSelect::None;
+    return Some(StyleUserSelect::None);
   }
 
   // Per https://drafts.csswg.org/css-ui-4/#content-selection:
@@ -4949,20 +4956,37 @@ static StyleUserSelect UsedUserSelect(const nsIFrame* aFrame) {
     // We don't implement 'contain' itself, but we make 'text' behave as
     // 'contain' for contenteditable and <input> / <textarea> elements anyway so
     // this is ok.
-    return StyleUserSelect::Text;
+    return Some(StyleUserSelect::Text);
   }
 
   auto style = aFrame->Style()->UserSelect();
   if (style != StyleUserSelect::Auto) {
-    return style;
+    return Some(style);
   }
 
+  const auto IsButton = [](const nsIFrame* aFrame) {
+    const auto* content = aFrame->GetContent();
+    if (!content) {
+      return false;
+    }
+    return content->IsAnyOfHTMLElements(nsGkAtoms::button);
+  };
+
   auto* parent = nsLayoutUtils::GetParentOrPlaceholderFor(aFrame);
-  return parent ? UsedUserSelect(parent) : StyleUserSelect::Text;
+  const auto parentResult =
+      parent ? UsedUserSelectRecurse(parent, aType) : Nothing{};
+  if (parentResult.valueOr(StyleUserSelect::Auto) != StyleUserSelect::None &&
+      aType == nsIFrame::ForSelectionStart::Yes && IsButton(aFrame)) {
+    // If the parent did not force our hands, we want non-`contenteditable`
+    // buttons to be clickable without accidentally selecting the text within
+    // it, but still allow selection that originates outside of it.
+    return Some(StyleUserSelect::None);
+  }
+  return parentResult;
 }
 
 bool nsIFrame::IsSelectable(StyleUserSelect* aSelectStyle) const {
-  auto style = UsedUserSelect(this);
+  auto style = UsedUserSelect(this, ForSelectionStart::No);
   if (aSelectStyle) {
     *aSelectStyle = style;
   }
@@ -5086,7 +5110,7 @@ nsresult nsIFrame::MoveCaretToEventPoint(nsPresContext* aPresContext,
 
   // Check whether this frame should handle selection events. If not, don't
   // tell selection the mouse event even occurred.
-  if (!ShouldHandleSelectionMovementEvents()) {
+  if (!ShouldHandleSelectionMovementEvents(ForSelectionStart::Yes)) {
     return NS_OK;
   }
 
@@ -6336,18 +6360,15 @@ void nsIFrame::DisassociateImage(const StyleImage& aImage) {
       .DisassociateRequestFromFrame(req, this);
 }
 
-StyleImageRendering nsIFrame::UsedImageRendering() const {
-  ComputedStyle* style;
+const ComputedStyle* nsIFrame::UsedStyleForImages() const {
   if (IsCanvasFrame()) {
     // XXXdholbert Maybe we should use FindCanvasBackground here (instead of
     // FindBackground), since we're inside an IsCanvasFrame check? Though then
     // we'd also have to copypaste or abstract-away the multi-part root-frame
     // lookup that the canvas-flavored API requires.
-    style = nsCSSRendering::FindBackground(this);
-  } else {
-    style = Style();
+    return nsCSSRendering::FindBackground(this);
   }
-  return style->StyleVisibility()->mImageRendering;
+  return Style();
 }
 
 // The touch-action CSS property applies to: all elements except: non-replaced
@@ -8855,6 +8876,11 @@ bool nsIFrame::IsBlockWrapper() const {
 bool nsIFrame::IsBlockFrameOrSubclass() const {
   const nsBlockFrame* thisAsBlock = do_QueryFrame(this);
   return !!thisAsBlock;
+}
+
+bool nsIFrame::IsInlineFrameOrSubclass() const {
+  const nsInlineFrame* asInline = do_QueryFrame(this);
+  return !!asInline;
 }
 
 bool nsIFrame::IsImageFrameOrSubclass() const {

@@ -3022,6 +3022,7 @@ class SubarrayReplacer : public MDefinitionVisitorDefaultNoop {
   }
 
   bool escapes(MArrayBufferViewElements* ins) const;
+  bool escapes(MGuardHasAttachedArrayBuffer* ins) const;
 
   void visitArrayBufferViewByteOffset(MArrayBufferViewByteOffset* ins);
   void visitArrayBufferViewElements(MArrayBufferViewElements* ins);
@@ -3041,11 +3042,7 @@ class SubarrayReplacer : public MDefinitionVisitorDefaultNoop {
     return ins->id() >= initialNumInstrIds_;
   }
 
-  bool isSubarrayOrGuard(MDefinition* ins) const {
-    if (ins == subarray_) {
-      return true;
-    }
-
+  bool isNewGuardHasAttachedArrayBuffer(MDefinition* ins) const {
     // GuardHasAttachedArrayBuffer is replaced with a guard on the subarray's
     // object.
     if (ins->isGuardHasAttachedArrayBuffer() && isNewInstruction(ins)) {
@@ -3053,8 +3050,18 @@ class SubarrayReplacer : public MDefinitionVisitorDefaultNoop {
                  subarray()->object());
       return true;
     }
-
     return false;
+  }
+
+  bool isSubarray(MDefinition* ins) const {
+    // New MGuardHasAttachedArrayBuffer instructions aren't expected to flow
+    // into |isSubarray()| callers.
+    MOZ_ASSERT(!isNewGuardHasAttachedArrayBuffer(ins));
+    return ins == subarray_;
+  }
+
+  bool isSubarrayOrGuard(MDefinition* ins) const {
+    return ins == subarray_ || isNewGuardHasAttachedArrayBuffer(ins);
   }
 
   MDefinition* toSubarrayObject(MDefinition* ins) const {
@@ -3113,7 +3120,7 @@ class SubarrayReplacer : public MDefinitionVisitorDefaultNoop {
 
 void SubarrayReplacer::visitUnbox(MUnbox* ins) {
   // Skip unbox on other objects.
-  if (ins->input() != subarray_) {
+  if (!isSubarray(ins->input())) {
     return;
   }
   MOZ_ASSERT(ins->type() == MIRType::Object);
@@ -3127,7 +3134,7 @@ void SubarrayReplacer::visitUnbox(MUnbox* ins) {
 
 void SubarrayReplacer::visitGuardShape(MGuardShape* ins) {
   // Skip guards on other objects.
-  if (ins->object() != subarray_) {
+  if (!isSubarray(ins->object())) {
     return;
   }
 
@@ -3141,7 +3148,7 @@ void SubarrayReplacer::visitGuardShape(MGuardShape* ins) {
 void SubarrayReplacer::visitGuardHasAttachedArrayBuffer(
     MGuardHasAttachedArrayBuffer* ins) {
   // Skip guards on other objects.
-  if (ins->object() != subarray_) {
+  if (!isSubarray(ins->object())) {
     return;
   }
 
@@ -3480,6 +3487,58 @@ bool SubarrayReplacer::escapes(MArrayBufferViewElements* ins) const {
   }
 
   JitSpew(JitSpew_Escape, "Subarray typed array elements is not escaped");
+  return false;
+}
+
+// Returns false if the subarray guard-has-attached-buffer does not escape.
+bool SubarrayReplacer::escapes(MGuardHasAttachedArrayBuffer* ins) const {
+  MOZ_ASSERT(ins->type() == MIRType::Object);
+
+  JitSpewDef(JitSpew_Escape, "Check subarray typed array guard\n", ins);
+  JitSpewIndent spewIndent(JitSpew_Escape);
+
+  // Check all uses to see whether they can be supported without allocating an
+  // TypedArrayObject for the `%TypedArray%.prototype.subarray` call.
+  for (MUseIterator i(ins->usesBegin()); i != ins->usesEnd(); i++) {
+    MNode* consumer = (*i)->consumer();
+
+    // If a resume point can observe this instruction, we can only optimize if
+    // it is recoverable.
+    if (consumer->isResumePoint()) {
+      if (!consumer->toResumePoint()->isRecoverableOperand(*i)) {
+        JitSpew(JitSpew_Escape, "Observable guard cannot be recovered");
+        return true;
+      }
+      continue;
+    }
+
+    MDefinition* def = consumer->toDefinition();
+    switch (def->op()) {
+      case MDefinition::Opcode::ArrayBufferViewElements: {
+        auto* elements = def->toArrayBufferViewElements();
+        if (escapes(elements)) {
+          JitSpewDef(JitSpew_Escape, "is indirectly escaped by\n", def);
+          return true;
+        }
+        break;
+      }
+
+      // Replacable instructions.
+      case MDefinition::Opcode::ArrayBufferViewByteOffset:
+      case MDefinition::Opcode::ArrayBufferViewLength:
+      case MDefinition::Opcode::TypedArrayElementSize:
+      case MDefinition::Opcode::TypedArrayFill:
+      case MDefinition::Opcode::TypedArraySet:
+      case MDefinition::Opcode::TypedArraySubarray:
+        break;
+
+      default:
+        JitSpewDef(JitSpew_Escape, "is escaped by\n", def);
+        return true;
+    }
+  }
+
+  JitSpew(JitSpew_Escape, "Subarray guard-has-attached-buffer is not escaped");
   return false;
 }
 

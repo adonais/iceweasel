@@ -6,6 +6,7 @@
 #define MOZILLA_GFX_SCALEDFONTDWRITE_H_
 
 #include <dwrite.h>
+
 #include "DWriteSettings.h"
 #include "ScaledFontBase.h"
 

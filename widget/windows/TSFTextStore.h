@@ -5,23 +5,21 @@
 #ifndef TSFTextStore_h
 #define TSFTextStore_h
 
-#include "nsIWidget.h"
-#include "nsWindow.h"
+#include <msctf.h>
+#include <textstor.h>
 
 #include "TSFTextStoreBase.h"
 #include "TSFUtils.h"
 #include "WinUtils.h"
 #include "WritingModes.h"
-
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/TextRange.h"
 #include "mozilla/widget/IMEData.h"
-
-#include <msctf.h>
-#include <textstor.h>
+#include "nsIWidget.h"
+#include "nsWindow.h"
 
 struct ITfThreadMgr;
 struct ITfDocumentMgr;

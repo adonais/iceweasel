@@ -736,13 +736,12 @@ using GetShaderPrecisionFormatArgs = std::tuple<GLenum, GLenum>;
 template <class Tuple>
 struct TupleStdHash {
   size_t operator()(const Tuple& t) const {
-    size_t ret = 0;
-    mozilla::MapTuple(t, [&](const auto& field) {
-      using FieldT = std::remove_cv_t<std::remove_reference_t<decltype(field)>>;
-      ret ^= std::hash<FieldT>{}(field);
-      return true;  // ignored
-    });
-    return ret;
+    return std::apply(
+        [](const auto&... field) {
+          return (std::hash<std::remove_cvref_t<decltype(field)>>{}(field) ^
+                  ...);
+        },
+        t);
   }
 };
 

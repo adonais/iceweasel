@@ -5,10 +5,10 @@
 #ifndef mozilla_net_WebSocketConnectionParent_h
 #define mozilla_net_WebSocketConnectionParent_h
 
+#include "WebSocketConnectionBase.h"
 #include "mozilla/net/PWebSocketConnectionParent.h"
 #include "mozilla/net/WebSocketConnectionBase.h"
 #include "nsISupportsImpl.h"
-#include "WebSocketConnectionBase.h"
 
 class nsIHttpUpgradeListener;
 

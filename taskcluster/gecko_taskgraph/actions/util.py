@@ -155,7 +155,39 @@ def get_label_to_taskid(project, push_id):
     return get_artifact(decision_task_id, "public/label-to-taskid.json")
 
 
-def get_pushes_in_gap(parameters, label):
+def get_label_to_taskid_with_actions(project, push_id, graph_config, label=None):
+    decision_task_id = get_decision_task_id(project, push_id)
+    label_map = get_artifact(decision_task_id, "public/label-to-taskid.json")
+    if label and label in label_map:
+        return label_map
+
+    parameters = get_parameters(decision_task_id)
+    head_rev_param = "{}head_rev".format(graph_config["project-repo-param-prefix"])
+    namespace = (
+        f"{graph_config['trust-domain']}.v2.{parameters['project']}"
+        f".revision.{parameters[head_rev_param]}.taskgraph.actions"
+    )
+
+    def fetch_action(task_id):
+        try:
+            return get_artifact(task_id, "public/label-to-taskid.json")
+        except TaskclusterRestFailure as e:
+            if e.status_code != 404:
+                raise
+            return {}
+
+    with futures.ThreadPoolExecutor(CONCURRENCY) as e:
+        action_fetches = [
+            e.submit(fetch_action, task_id) for task_id in list_tasks(namespace)
+        ]
+
+    for future in action_fetches:
+        label_map.update(future.result())
+
+    return label_map
+
+
+def get_pushes_in_gap(parameters, label, graph_config):
     end_id = int(parameters["pushlog_id"]) - 1
     gap_pushes: list[str] = []
 
@@ -168,7 +200,9 @@ def get_pushes_in_gap(parameters, label):
 
         for push_id in reversed(pushes):
             try:
-                label_map = get_label_to_taskid(parameters["project"], push_id)
+                label_map = get_label_to_taskid_with_actions(
+                    parameters["project"], push_id, graph_config, label
+                )
             except Exception:
                 logger.warning(f"Could not fetch labels for push {push_id}, skipping")
                 gap_pushes.append(push_id)

@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-@file:OptIn(ExperimentalMaterial3Api::class)
-
 package org.mozilla.fenix.tabstray.ui.tabstray
 
 import androidx.compose.animation.AnimatedVisibility
@@ -14,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -32,7 +29,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import mozilla.components.browser.storage.sync.TabEntry
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
@@ -65,9 +61,10 @@ import org.mozilla.fenix.tabstray.ui.syncedtabs.OnTabCloseClick as OnSyncedTabCl
 /**
  * Top-level UI for displaying the Tabs Tray feature.
  *
- * @param tabsTrayStore [TabsTrayStore] used to listen for changes to [TabsTrayState].
+ * @param state The current snapshot of [TabsTrayState].
  * @param snackbarHostState [SnackbarHostState] of this component to read and show [Snackbar]s accordingly.
  * @param modifier The [Modifier] used to style the container of the Tabs Tray UI.
+ * @param onAction Invoked to pass upwards a [TabsTrayAction] in response to a UI event.
  * @param onTabPageClick Invoked when the user clicks on the Normal, Private, or Synced tabs page button.
  * @param onTabClose Invoked when the user clicks to close a tab.
  * @param onItemClick Invoked when the user clicks on a tab.
@@ -107,6 +104,7 @@ import org.mozilla.fenix.tabstray.ui.syncedtabs.OnTabCloseClick as OnSyncedTabCl
  * @param onInactiveTabsCFRClick Invoked when the inactive tabs CFR is clicked.
  * @param onInactiveTabsCFRDismiss Invoked when the inactive tabs CFR is dismissed.
  * @param onTabGroupOnboardingDismiss Invoked when the tab group onboarding card is dismissed.
+ * @param onTabGroupOnboardingShown Invoked when the tab group onboarding card is shown to the user.
  * @param onOpenNewNormalTabClicked Invoked when the fab is clicked in [Page.NormalTabs].
  * @param onOpenNewPrivateTabClicked Invoked when the fab is clicked in [Page.PrivateTabs].
  * @param onSyncedTabsFabClicked Invoked when the fab is clicked in [Page.SyncedTabs].
@@ -117,9 +115,10 @@ import org.mozilla.fenix.tabstray.ui.syncedtabs.OnTabCloseClick as OnSyncedTabCl
 @Suppress("LongMethod", "LongParameterList")
 @Composable
 fun TabsTray(
-    tabsTrayStore: TabsTrayStore,
+    state: TabsTrayState,
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
+    onAction: (TabsTrayAction) -> Unit,
     onTabPageClick: (Page) -> Unit,
     onTabClose: (TabsTrayItem.Tab) -> Unit,
     onItemClick: (TabsTrayItem) -> Unit,
@@ -153,6 +152,7 @@ fun TabsTray(
     onInactiveTabsCFRClick: () -> Unit,
     onInactiveTabsCFRDismiss: () -> Unit,
     onTabGroupOnboardingDismiss: () -> Unit,
+    onTabGroupOnboardingShown: () -> Unit,
     onOpenNewNormalTabClicked: () -> Unit,
     onOpenNewPrivateTabClicked: () -> Unit,
     onSyncedTabsFabClicked: () -> Unit,
@@ -160,25 +160,19 @@ fun TabsTray(
     trackersBlockedCount: Int? = null,
     onPrivacyReportTapped: (() -> Unit)? = null,
 ) {
-    val tabsTrayState by tabsTrayStore.stateFlow.collectAsState()
-    val shouldShowTabGroupsPage = tabsTrayState.config.tabGroupsEnabled
+    val shouldShowTabGroupsPage = state.config.tabGroupsEnabled
     val pagerState = rememberPagerState(
         initialPage = Page.pageToPosition(
-            page = tabsTrayState.selectedPage,
+            page = state.selectedPage,
             shouldShowTabGroupsPage = shouldShowTabGroupsPage,
         ),
         pageCount = { Page.visiblePages(shouldShowTabGroupsPage).size },
     )
-    val syncedTabCount = remember(tabsTrayState.sync.syncedTabs) {
-        tabsTrayState.sync.syncedTabs
-            .filterIsInstance<SyncedTabsListItem.DeviceSection>()
-            .sumOf { deviceSection: SyncedTabsListItem.DeviceSection -> deviceSection.tabs.size }
-    }
 
-    LaunchedEffect(tabsTrayState.selectedPage, shouldShowTabGroupsPage) {
+    LaunchedEffect(state.selectedPage, shouldShowTabGroupsPage) {
         pagerState.animateScrollToPage(
             Page.pageToPosition(
-                page = tabsTrayState.selectedPage,
+                page = state.selectedPage,
                 shouldShowTabGroupsPage = shouldShowTabGroupsPage,
             ),
         )
@@ -196,18 +190,8 @@ fun TabsTray(
         },
         topBar = {
             TabsTrayBanner(
-                selectedPage = tabsTrayState.selectedPage,
-                normalTabCount = tabsTrayState.normalTabsState.tabCount,
-                privateTabCount = tabsTrayState.privateBrowsing.tabs.size,
-                shouldShowTabGroupsPage = shouldShowTabGroupsPage,
-                tabGroupCount = tabsTrayState.tabGroupState.groups.size,
-                syncedTabCount = syncedTabCount,
-                selectionMode = tabsTrayState.mode,
-                isInDebugMode = tabsTrayState.config.isInDebugMode,
-                shouldShowTabAutoCloseBanner = tabsTrayState.config.showTabAutoCloseBanner,
-                shouldShowLockPbmBanner = tabsTrayState.privateBrowsing.showLockBanner,
-                shouldShowAddToTabGroupButton = tabsTrayState.config.tabGroupsEnabled,
-                hasTabDataLoaded = tabsTrayState.hasTabDataLoaded,
+                state = state,
+                onAction = onAction,
                 onTabPageIndicatorClicked = onTabPageClick,
                 onSaveToCollectionClick = onSaveToCollectionClick,
                 onShareSelectedTabsClick = onShareSelectedTabsClick,
@@ -219,18 +203,12 @@ fun TabsTray(
                 onTabsTrayPbmLockedDismiss = onTabsTrayPbmLockedDismiss,
                 onTabAutoCloseBannerDismiss = onTabAutoCloseBannerDismiss,
                 onTabAutoCloseBannerShown = onTabAutoCloseBannerShown,
-                onExitSelectModeClick = {
-                    tabsTrayStore.dispatch(TabsTrayAction.ExitSelectMode)
-                },
-                onAddToTabGroup = {
-                    tabsTrayStore.dispatch(TabGroupAction.AddToTabGroup)
-                },
             )
         },
         floatingActionButton = {
             TabManagerFloatingToolbar(
-                tabsTrayStore = tabsTrayStore,
-                isSignedIn = tabsTrayState.sync.isSignedIn,
+                state = state,
+                onAction = onAction,
                 onOpenNewNormalTabClicked = onOpenNewNormalTabClicked,
                 onOpenNewPrivateTabClicked = onOpenNewPrivateTabClicked,
                 onSyncedTabsFabClicked = onSyncedTabsFabClicked,
@@ -243,7 +221,7 @@ fun TabsTray(
         floatingActionButtonPosition = FabPosition.Center,
     ) { paddingValues ->
         AnimatedVisibility(
-            visible = tabsTrayState.hasTabDataLoaded,
+            visible = state.hasTabDataLoaded,
             enter = fadeIn(animationSpec = tween()),
             exit = fadeOut(animationSpec = tween()),
         ) {
@@ -257,16 +235,14 @@ fun TabsTray(
                 when (Page.positionToPage(position, shouldShowTabGroupsPage)) {
                     Page.NormalTabs -> {
                         NormalTabsPage(
-                            items = tabsTrayState.normalTabsState.items,
-                            inactiveTabs = tabsTrayState.inactiveTabs.tabs,
-                            selectedItemIndex = tabsTrayState.normalTabsState.selectedItemIndex,
-                            selectionMode = tabsTrayState.mode,
-                            inactiveTabsExpanded = tabsTrayState.inactiveTabs.isExpanded,
-                            displayTabsInGrid = tabsTrayState.config.displayTabsInGrid,
-                            dragAndDropEnabled = tabsTrayState.config.tabGroupsDragAndDropEnabled,
-                            displayTabGroupOnboarding = tabsTrayState.shouldShowTabGroupOnboarding,
+                            normalTabsState = state.normalTabsState,
+                            inactiveTabsState = state.inactiveTabs,
+                            selectionMode = state.mode,
+                            tabsTrayConfig = state.config,
+                            displayTabGroupOnboarding = state.shouldShowTabGroupOnboarding,
+                            enteringGroupId = state.tabGroupState.enteringGroupId,
                             onTabClose = onTabClose,
-                            shouldShowInactiveTabsAutoCloseDialog = tabsTrayState.inactiveTabs.showAutoCloseDialog,
+                            shouldShowInactiveTabsAutoCloseDialog = state.inactiveTabs.showAutoCloseDialog,
                             onItemClick = onItemClick,
                             onItemLongClick = onItemLongClick,
                             onInactiveTabsHeaderClick = onInactiveTabsHeaderClick,
@@ -277,33 +253,35 @@ fun TabsTray(
                             onInactiveTabClick = onInactiveTabClick,
                             onInactiveTabClose = onInactiveTabClose,
                             tabInteractionHandler = tabInteractionHandler,
-                            shouldShowInactiveTabsCFR = tabsTrayState.inactiveTabs.showCFR,
+                            shouldShowInactiveTabsCFR = state.inactiveTabs.showCFR,
                             onInactiveTabsCFRShown = onInactiveTabsCFRShown,
                             onInactiveTabsCFRClick = onInactiveTabsCFRClick,
                             onInactiveTabsCFRDismiss = onInactiveTabsCFRDismiss,
                             onDeleteTabGroupClick = { group ->
-                                tabsTrayStore.dispatch(TabGroupAction.DeleteClicked(group))
+                                onAction(TabGroupAction.DeleteClicked(group))
                             },
                             onEditTabGroupClick = { group ->
-                                tabsTrayStore.dispatch(TabGroupAction.EditTabGroupClicked(group = group))
+                                onAction(TabGroupAction.EditTabGroupClicked(group = group))
                             },
                             onCloseTabGroupClick = { group ->
-                                tabsTrayStore.dispatch(TabGroupAction.CloseTabGroupClicked(group = group))
+                                onAction(TabGroupAction.CloseTabGroupClicked(group = group))
                             },
                             onTabGroupOnboardingDismiss = onTabGroupOnboardingDismiss,
+                            onTabGroupOnboardingShown = onTabGroupOnboardingShown,
                             trackersBlockedCount = trackersBlockedCount,
-                            focusEnabled = tabsTrayState.normalTabsState.itemFocusIndicatorEnabled,
+                            focusEnabled = state.normalTabsState.itemFocusIndicatorEnabled,
                             onPrivacyReportTapped = onPrivacyReportTapped,
+                            onEnteringGroupAnimationPlayed = {
+                                onAction(TabGroupAction.NewGroupAnimationFinished)
+                            },
+                            dragProcessingState = state.tabGroupState.dragProcessingState,
                         )
                     }
 
                     Page.PrivateTabs -> {
                         PrivateTabsPage(
-                            privateTabs = tabsTrayState.privateBrowsing.tabs,
-                            selectedItemIndex = tabsTrayState.privateBrowsing.selectedItemIndex,
-                            selectionMode = tabsTrayState.mode,
-                            displayTabsInGrid = tabsTrayState.config.displayTabsInGrid,
-                            privateTabsLocked = tabsTrayState.privateBrowsing.isLocked,
+                            state = state.privateBrowsing,
+                            config = state.config,
                             onTabClose = onTabClose,
                             onItemClick = onItemClick,
                             onItemLongClick = onItemLongClick,
@@ -314,29 +292,27 @@ fun TabsTray(
 
                     Page.SyncedTabs -> {
                         SyncedTabsPage(
-                            isSignedIn = tabsTrayState.sync.isSignedIn,
-                            syncedTabs = tabsTrayState.sync.syncedTabs,
+                            state = state.sync,
                             onTabClick = onSyncedTabClick,
                             onTabClose = onSyncedTabClose,
                             onSignInClick = onSignInClick,
-                            expandedState = tabsTrayState.sync.expandedSyncedTabs,
                             onSectionExpansionToggled = { i ->
-                                tabsTrayStore.dispatch(TabsTrayAction.SyncedTabsHeaderToggled(i))
+                                onAction(TabsTrayAction.SyncedTabsHeaderToggled(i))
                             },
                         )
                     }
 
                     Page.TabGroups -> {
                         TabGroupsPage(
-                            groups = tabsTrayState.tabGroupState.groups,
+                            state = state.tabGroupState,
                             onTabGroupClick = { group ->
-                                tabsTrayStore.dispatch(TabGroupAction.OpenTabGroupClicked(group))
+                                onAction(TabGroupAction.OpenTabGroupClicked(group))
                             },
                             onDeleteTabGroupClick = { group ->
-                                tabsTrayStore.dispatch(TabGroupAction.DeleteClicked(group))
+                                onAction(TabGroupAction.DeleteClicked(group))
                             },
                             onEditTabGroupClick = { group ->
-                                tabsTrayStore.dispatch(TabGroupAction.EditTabGroupClicked(group = group))
+                                onAction(TabGroupAction.EditTabGroupClicked(group = group))
                             },
                         )
                     }
@@ -360,7 +336,7 @@ private fun TabsTrayPreview(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    val tabsTrayStore = remember {
+    val store = remember {
         TabsTrayStore(
             initialState = TabsTrayState(
                 selectedPage = tabTrayState.selectedPage,
@@ -393,16 +369,15 @@ private fun TabsTrayPreview(
             ),
         )
     }
+    val state by store.stateFlow.collectAsState(initial = store.state)
 
-    val page by remember { tabsTrayStore.stateFlow.map { it.selectedPage } }
-        .collectAsState(initial = tabsTrayStore.state.selectedPage)
-
-    FirefoxTheme(theme = TabManagerThemeProvider(selectedPage = page).provideTheme()) {
+    FirefoxTheme(theme = TabManagerThemeProvider(selectedPage = state.selectedPage).provideTheme()) {
         TabsTray(
-            tabsTrayStore = tabsTrayStore,
+            state = state,
             snackbarHostState = snackbarHostState,
+            onAction = store::dispatch,
             onTabPageClick = { page ->
-                tabsTrayStore.dispatch(TabsTrayAction.PageSelected(page))
+                store.dispatch(TabsTrayAction.PageSelected(page))
             },
             tabInteractionHandler = NoOpTabInteractionHandler,
             onTabClose = { _ ->
@@ -415,24 +390,24 @@ private fun TabsTrayPreview(
                 }
             },
             onItemClick = { item ->
-                val isSelected = tabsTrayStore.state.mode.contains(item)
+                val isSelected = store.state.mode.contains(item)
                 when (item) {
                     is TabsTrayItem.Tab -> if (isSelected) {
-                        tabsTrayStore.dispatch(TabsTrayAction.RemoveSelectTab(item))
-                    } else if (tabsTrayStore.state.mode is TabsTrayState.Mode.Select) {
-                        tabsTrayStore.dispatch(TabsTrayAction.AddSelectTab(item))
+                        store.dispatch(TabsTrayAction.RemoveSelectTab(item))
+                    } else if (store.state.mode is TabsTrayState.Mode.Select) {
+                        store.dispatch(TabsTrayAction.AddSelectTab(item))
                     } else {
-                        tabsTrayStore.dispatch(TabsTrayAction.UpdateSelectedTabId(tabId = item.id))
+                        store.dispatch(TabsTrayAction.UpdateSelectedTabId(tabId = item.id))
                     }
 
                     is TabsTrayItem.TabGroup -> {
-                        tabsTrayStore.dispatch(TabGroupAction.TabGroupClicked(group = item))
+                        store.dispatch(TabGroupAction.TabGroupClicked(group = item))
                     }
                 }
             },
             onItemLongClick = {},
             onInactiveTabsHeaderClick = { expanded ->
-                tabsTrayStore.dispatch(TabsTrayAction.UpdateInactiveExpanded(expanded))
+                store.dispatch(TabsTrayAction.UpdateInactiveExpanded(expanded))
             },
             onDeleteAllInactiveTabsClick = {
                 scope.launch {
@@ -489,11 +464,12 @@ private fun TabsTrayPreview(
             onInactiveTabsCFRClick = {},
             onInactiveTabsCFRDismiss = {},
             onTabGroupOnboardingDismiss = {},
+            onTabGroupOnboardingShown = {},
             onOpenNewNormalTabClicked = {},
             onOpenNewPrivateTabClicked = {},
             onSyncedTabsFabClicked = {
-                val newSyncedTabList = tabsTrayStore.state.sync.syncedTabs + generateFakeSyncedTabsList()
-                tabsTrayStore.dispatch(TabsTrayAction.UpdateSyncedTabs(newSyncedTabList))
+                val newSyncedTabList = store.state.sync.syncedTabs + generateFakeSyncedTabsList()
+                store.dispatch(TabsTrayAction.UpdateSyncedTabs(newSyncedTabList))
             },
             onUnlockPbmClick = {},
         )

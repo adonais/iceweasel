@@ -58,6 +58,19 @@ void SharedStyleSheetCache::LoadCompleted(SharedStyleSheetCache* aCache,
     } while ((data = data->mNext));
   }
 
+  // The only way of getting a load with mMustNotify = false before or inside
+  // one with mMustNotify = true should be when we try to kick off a deferred
+  // load from a non-deferred one, and the load fails right away. In that case,
+  // it's not sound to try to fire events synchronously.
+  const bool canFireEvents = [&] {
+    for (auto* data = &aData; data; data = data->mParentData) {
+      if (!data->mMustNotify) {
+        return false;
+      }
+    }
+    return true;
+  }();
+
   // 8 is probably big enough for all our common cases.  It's not likely that
   // imports will nest more than 8 deep, and multiple sheets with the same URI
   // are rare.
@@ -67,7 +80,7 @@ void SharedStyleSheetCache::LoadCompleted(SharedStyleSheetCache* aCache,
   // Now it's safe to go ahead and notify observers
   for (RefPtr<css::SheetLoadData>& data : datasToNotify) {
     auto status = data->IsCancelled() ? cancelledStatus : aStatus;
-    data->mLoader->NotifyObservers(*data, status);
+    data->mLoader->NotifyObservers(*data, status, canFireEvents);
   }
 }
 

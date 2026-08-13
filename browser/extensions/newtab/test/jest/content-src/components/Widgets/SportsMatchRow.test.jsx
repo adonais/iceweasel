@@ -52,6 +52,22 @@ describe("<SportsMatchRow> upcoming variant", () => {
     expect(codes[1].textContent).toBe("USA");
   });
 
+  it("displays team.region for the code, falling back to team.key", () => {
+    const { container } = renderWithDispatch(
+      <SportsMatchRow
+        match={{
+          ...baseMatch,
+          home_team: { key: "CDR", region: "COD", name: "DR Congo" },
+        }}
+        variant="upcoming"
+      />
+    );
+    const codes = container.querySelectorAll(".sports-match-code");
+    // Home uses region; away has no region so it falls back to key.
+    expect(codes[0].textContent).toBe("COD");
+    expect(codes[1].textContent).toBe("USA");
+  });
+
   it("renders match time element", () => {
     const { container } = renderWithDispatch(
       <SportsMatchRow match={baseMatch} variant="upcoming" />
@@ -101,12 +117,12 @@ describe("<SportsMatchRow> upcoming variant", () => {
 });
 
 describe("<SportsMatchRow> now variant", () => {
-  it("renders home and away scores including extra time", () => {
+  it("renders home and away scores without double-counting extra time", () => {
     const { container } = renderWithDispatch(
       <SportsMatchRow
         match={{
           ...baseMatch,
-          home_score: 1,
+          home_score: 2,
           away_score: 0,
           home_extra: 1,
           away_extra: 0,
@@ -119,14 +135,22 @@ describe("<SportsMatchRow> now variant", () => {
   });
 
   it.each([
-    ["Halftime", "newtab-sports-widget-match-halftime"],
-    ["Extra time", "newtab-sports-widget-match-extra-time"],
+    [
+      "halftime (period 1, status Break)",
+      { period: "1", status: "Break" },
+      "newtab-sports-widget-match-halftime",
+    ],
+    [
+      "extra time (period ExtraTime)",
+      { period: "ExtraTime", status: "In Progress" },
+      "newtab-sports-widget-match-extra-time",
+    ],
   ])(
-    "renders the localised live status label when status_type is %s",
-    (statusType, expectedL10nId) => {
+    "renders the localised live status label for %s",
+    (_label, matchOverrides, expectedL10nId) => {
       const { container } = renderWithDispatch(
         <SportsMatchRow
-          match={{ ...baseMatch, status_type: statusType }}
+          match={{ ...baseMatch, ...matchOverrides }}
           variant="now"
         />
       );
@@ -136,13 +160,44 @@ describe("<SportsMatchRow> now variant", () => {
     }
   );
 
-  it.each(["live", "In Progress", null])(
-    "renders no live status footer when status_type is %s (no mapped FTL id)",
-    statusType => {
+  it.each([
+    ["regulation in progress", { period: "1", status: "In Progress" }],
+    ["all fields null", { period: null, status: null }],
+  ])("renders no live status footer for %s", (_label, matchOverrides) => {
+    const { container } = renderWithDispatch(
+      <SportsMatchRow
+        match={{ ...baseMatch, ...matchOverrides }}
+        variant="now"
+      />
+    );
+    expect(
+      container.querySelector(".sports-match-live-footer")
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not treat a Suspended match as a penalty shootout (regression guard for the 'pen' substring trap)", () => {
+    const { container } = renderWithDispatch(
+      <SportsMatchRow
+        match={{ ...baseMatch, period: "Suspended", status: "In Progress" }}
+        variant="now"
+      />
+    );
+    expect(
+      container.querySelector(".sports-match-live-footer")
+    ).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["halftime", { period: "1", status: "Break" }],
+    ["extra time", { period: "ExtraTime", status: "In Progress" }],
+  ])(
+    "does not render the live status footer in the medium widget when %s",
+    (_label, matchOverrides) => {
       const { container } = renderWithDispatch(
         <SportsMatchRow
-          match={{ ...baseMatch, status_type: statusType }}
+          match={{ ...baseMatch, ...matchOverrides }}
           variant="now"
+          size="medium"
         />
       );
       expect(
@@ -150,15 +205,207 @@ describe("<SportsMatchRow> now variant", () => {
       ).not.toBeInTheDocument();
     }
   );
-});
 
-describe("<SportsMatchRow> results variant", () => {
-  it("renders home and away scores including extra time", () => {
+  it("renders the Penalties footer for a penalty shootout with null scores", () => {
     const { container } = renderWithDispatch(
       <SportsMatchRow
         match={{
           ...baseMatch,
-          home_score: 1,
+          period: "PenaltyShootout",
+          status: "Break",
+          home_penalty: null,
+          away_penalty: null,
+        }}
+        variant="now"
+      />
+    );
+    expect(
+      container.querySelector(
+        "[data-l10n-id='newtab-sports-widget-match-penalties']"
+      )
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector(
+        "[data-l10n-id='newtab-sports-widget-match-extra-time']"
+      )
+    ).not.toBeInTheDocument();
+    expect(container.querySelectorAll(".sports-score-penalty")).toHaveLength(0);
+  });
+
+  it.each([["pen"], ["PEN"], ["penaltyshootout"]])(
+    "recognises the short-form period value %s as a shootout",
+    period => {
+      const { container } = renderWithDispatch(
+        <SportsMatchRow
+          match={{ ...baseMatch, period, status: "In Progress" }}
+          variant="now"
+        />
+      );
+      expect(
+        container.querySelector(
+          "[data-l10n-id='newtab-sports-widget-match-penalties']"
+        )
+      ).toBeInTheDocument();
+    }
+  );
+
+  it("treats populated penalty scores as a shootout even when period flips back to a regulation value", () => {
+    const { container } = renderWithDispatch(
+      <SportsMatchRow
+        match={{
+          ...baseMatch,
+          period: "2",
+          status: "In Progress",
+          home_penalty: 4,
+          away_penalty: 3,
+        }}
+        variant="now"
+      />
+    );
+    expect(
+      container.querySelector(
+        "[data-l10n-id='newtab-sports-widget-match-penalties']"
+      )
+    ).toBeInTheDocument();
+    const penalties = container.querySelectorAll(".sports-score-penalty");
+    expect(penalties[0].textContent).toBe("(4)");
+    expect(penalties[1].textContent).toBe("(3)");
+  });
+
+  it.each([["extratime"], ["ET"], ["et "], ["Extra Time"]])(
+    "matches the Extra time footer case-insensitively on period value %s",
+    period => {
+      const { container } = renderWithDispatch(
+        <SportsMatchRow
+          match={{ ...baseMatch, period, status: "In Progress" }}
+          variant="now"
+        />
+      );
+      expect(
+        container.querySelector(
+          "[data-l10n-id='newtab-sports-widget-match-extra-time']"
+        )
+      ).toBeInTheDocument();
+    }
+  );
+
+  it("prefers the shootout footer over halftime when both signals are present", () => {
+    const { container } = renderWithDispatch(
+      <SportsMatchRow
+        match={{
+          ...baseMatch,
+          period: "PenaltyShootout",
+          status: "Break",
+        }}
+        variant="now"
+      />
+    );
+    expect(
+      container.querySelector(
+        "[data-l10n-id='newtab-sports-widget-match-penalties']"
+      )
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector(
+        "[data-l10n-id='newtab-sports-widget-match-halftime']"
+      )
+    ).not.toBeInTheDocument();
+  });
+
+  it("prefers the shootout footer over extra time when penalty scores are present alongside an ExtraTime period", () => {
+    const { container } = renderWithDispatch(
+      <SportsMatchRow
+        match={{
+          ...baseMatch,
+          period: "ExtraTime",
+          status: "In Progress",
+          home_penalty: 2,
+          away_penalty: 1,
+        }}
+        variant="now"
+      />
+    );
+    expect(
+      container.querySelector(
+        "[data-l10n-id='newtab-sports-widget-match-penalties']"
+      )
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector(
+        "[data-l10n-id='newtab-sports-widget-match-extra-time']"
+      )
+    ).not.toBeInTheDocument();
+  });
+
+  it("prefers the extra time footer over halftime when both signals are present", () => {
+    const { container } = renderWithDispatch(
+      <SportsMatchRow
+        match={{ ...baseMatch, period: "ExtraTime", status: "Break" }}
+        variant="now"
+      />
+    );
+    expect(
+      container.querySelector(
+        "[data-l10n-id='newtab-sports-widget-match-extra-time']"
+      )
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector(
+        "[data-l10n-id='newtab-sports-widget-match-halftime']"
+      )
+    ).not.toBeInTheDocument();
+  });
+
+  it("treats away_penalty alone as a shootout signal", () => {
+    const { container } = renderWithDispatch(
+      <SportsMatchRow
+        match={{
+          ...baseMatch,
+          period: "2",
+          status: "In Progress",
+          home_penalty: null,
+          away_penalty: 1,
+        }}
+        variant="now"
+      />
+    );
+    expect(
+      container.querySelector(
+        "[data-l10n-id='newtab-sports-widget-match-penalties']"
+      )
+    ).toBeInTheDocument();
+  });
+
+  it.each([["large"], ["medium"]])(
+    "renders penalty subscripts in the Now-variant score pill in the %s widget when penalty scores are present",
+    size => {
+      const { container } = renderWithDispatch(
+        <SportsMatchRow
+          match={{
+            ...baseMatch,
+            period: "PenaltyShootout",
+            status: "Break",
+            home_penalty: 5,
+            away_penalty: 4,
+          }}
+          variant="now"
+          size={size}
+        />
+      );
+      const penalties = container.querySelectorAll(".sports-score-penalty");
+      expect(penalties[0].textContent).toBe("(5)");
+      expect(penalties[1].textContent).toBe("(4)");
+    }
+  );
+});
+
+describe("<SportsMatchRow> results variant", () => {
+  it("renders home and away scores without double-counting extra time", () => {
+    const { container } = renderWithDispatch(
+      <SportsMatchRow
+        match={{
+          ...baseMatch,
+          home_score: 2,
           away_score: 0,
           home_extra: 1,
           away_extra: 0,
@@ -253,6 +500,29 @@ describe("<SportsMatchRow> results variant", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows 'Penalties' instead of 'Full time' for medium-size rows", () => {
+    const { container } = renderWithDispatch(
+      <SportsMatchRow
+        match={{ ...baseMatch, home_penalty: 4, away_penalty: 3 }}
+        variant="results"
+        size="medium"
+      />
+    );
+    // Penalty scores still render inside the score pill.
+    expect(container.querySelectorAll(".sports-score-penalty")).toHaveLength(2);
+    // Medium replaces the status text with "Penalties" (no "Full time").
+    expect(
+      container.querySelector(
+        "[data-l10n-id='newtab-sports-widget-match-penalties']"
+      )
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector(
+        "[data-l10n-id='newtab-sports-widget-match-full-time']"
+      )
+    ).not.toBeInTheDocument();
+  });
+
   it("does not render the penalties footer label for list-size rows", () => {
     const { container } = renderWithDispatch(
       <SportsMatchRow
@@ -263,7 +533,12 @@ describe("<SportsMatchRow> results variant", () => {
     );
     // Penalty scores still render inside the score pill.
     expect(container.querySelectorAll(".sports-score-penalty")).toHaveLength(2);
-    // The footer label is suppressed in list view.
+    // List view keeps only the status text, with no penalties label.
+    expect(
+      container.querySelector(
+        "[data-l10n-id='newtab-sports-widget-match-full-time']"
+      )
+    ).toBeInTheDocument();
     expect(
       container.querySelector(
         "[data-l10n-id='newtab-sports-widget-match-penalties']"
@@ -332,7 +607,7 @@ describe("<SportsMatchRow> aria-label l10n", () => {
       expect(args.awayPenalty).toBe(4);
     });
 
-    it("adds extra-time goals into the announced scores", () => {
+    it("does not double-count extra-time goals in the announced scores", () => {
       const { container } = renderWithDispatch(
         <SportsMatchRow
           match={{
@@ -346,7 +621,7 @@ describe("<SportsMatchRow> aria-label l10n", () => {
         />
       );
       const { args } = getAnchorL10n(container);
-      expect(args.homeScore).toBe(3);
+      expect(args.homeScore).toBe(2);
       expect(args.awayScore).toBe(1);
     });
 
@@ -677,6 +952,74 @@ describe("<SportsMatchRow> followed teams", () => {
         .querySelector(".sports-match-flag-check")
         .getAttribute("aria-hidden")
     ).toBe("true");
+  });
+});
+
+describe("<SportsMatchRow> localized team names", () => {
+  it("renders the localized name in the flag's title and alt when localizedName is provided", () => {
+    const { container } = renderWithDispatch(
+      <SportsMatchRow
+        match={{ ...baseMatch }}
+        variant="results"
+        localizedNames={{
+          [baseMatch.home_team.key]: "Deutschland",
+          [baseMatch.away_team.key]: "Brasilien",
+        }}
+      />
+    );
+    const flags = container.querySelectorAll(".sports-match-flag");
+    expect(flags[0].getAttribute("title")).toBe("Deutschland");
+    expect(flags[0].getAttribute("alt")).toBe("Deutschland");
+    expect(flags[1].getAttribute("title")).toBe("Brasilien");
+    expect(flags[1].getAttribute("alt")).toBe("Brasilien");
+  });
+
+  it("falls back to team.name when localizedNames is undefined or missing a key", () => {
+    const { container: undefinedContainer } = renderWithDispatch(
+      <SportsMatchRow match={{ ...baseMatch }} variant="results" />
+    );
+    const undefinedFlags =
+      undefinedContainer.querySelectorAll(".sports-match-flag");
+    expect(undefinedFlags[0].getAttribute("title")).toBe(
+      baseMatch.home_team.name
+    );
+    expect(undefinedFlags[0].getAttribute("alt")).toBe(
+      baseMatch.home_team.name
+    );
+
+    const { container: partialContainer } = renderWithDispatch(
+      <SportsMatchRow
+        match={{ ...baseMatch }}
+        variant="results"
+        localizedNames={{ [baseMatch.home_team.key]: "Deutschland" }}
+      />
+    );
+    const partialFlags =
+      partialContainer.querySelectorAll(".sports-match-flag");
+    expect(partialFlags[0].getAttribute("title")).toBe("Deutschland");
+    expect(partialFlags[1].getAttribute("title")).toBe(
+      baseMatch.away_team.name
+    );
+    expect(partialFlags[1].getAttribute("alt")).toBe(baseMatch.away_team.name);
+  });
+
+  it("uses localized team names in the row aria-label args when localizedNames is provided", () => {
+    const { container } = renderWithDispatch(
+      <SportsMatchRow
+        match={{ ...baseMatch }}
+        variant="results"
+        localizedNames={{
+          [baseMatch.home_team.key]: "Deutschland",
+          [baseMatch.away_team.key]: "Brasilien",
+        }}
+      />
+    );
+    const anchor = container.querySelector(".sports-match-row");
+    const argsJson = anchor.getAttribute("data-l10n-args");
+    expect(argsJson).toBeTruthy();
+    const args = JSON.parse(argsJson);
+    expect(args.homeTeam).toBe("Deutschland");
+    expect(args.awayTeam).toBe("Brasilien");
   });
 });
 

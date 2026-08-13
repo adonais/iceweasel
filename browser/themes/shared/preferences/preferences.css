@@ -132,7 +132,7 @@ setting-group[data-category] {
 }
 
 /* Bug 2002963 - payments and addresses are in a groupbox together, but they probably shouldn't be */
-#formAutofillGroupBox:not([hidden]) {
+#formAutofillGroupBox {
   display: flex;
   flex-direction: column;
   gap: 32px;
@@ -515,7 +515,7 @@ richlistitem[selected] .actionsMenu:focus-visible {
   margin-inline-end: var(--space-small);
 }
 
-a[is="moz-support-link"]:not([hidden]) {
+a[is="moz-support-link"] {
   display: inline-block;
   white-space: initial;
 }
@@ -912,7 +912,7 @@ dialog > .sync-engines-list + hbox {
   margin-block-end: 10px;
 }
 
-.sync-engines-list > div:not([hidden]) {
+.sync-engines-list > div {
   display: flex;
   break-inside: avoid;
 }
@@ -997,6 +997,16 @@ dialog > .sync-engines-list + hbox {
 
 .info-box-container.smaller-font-size .info-icon {
   margin-top: 0.3em;
+}
+
+#search-results-back-button {
+  margin-block: var(--space-small) var(--space-xxsmall);
+  margin-inline: 0 var(--space-small);
+}
+
+#search-results-back-button:dir(rtl) {
+  /* RTL: flip the arrow icon */
+  transform: scaleX(-1);
 }
 
 #search-tooltip-container {
@@ -1166,8 +1176,8 @@ richlistitem .text-link:hover {
   align-items: center;
 }
 
-.proxy-grid-row:not([hidden]),
-.dnsOverHttps-grid-row:not([hidden]) {
+.proxy-grid-row,
+.dnsOverHttps-grid-row {
   display: contents;
 }
 
@@ -1206,10 +1216,8 @@ richlistitem .text-link:hover {
 }
 
 /* This is an HTML div (not XUL hbox), so it needs explicit display:flex for
-   horizontal icon+title layout. The :not([hidden]) guard prevents this from
-   overriding the hidden attribute's display:none (inline styles and CSS rules
-   both beat the UA stylesheet's hidden handling for HTML elements). */
-#moreFromMozillaCategory-header:not([hidden]) {
+   horizontal icon+title layout. */
+#moreFromMozillaCategory-header {
   display: flex;
   flex-wrap: wrap;
 }
@@ -1220,7 +1228,7 @@ richlistitem .text-link:hover {
   margin-block-end: var(--space-xlarge);
 }
 
-#moreFromMozillaCategory:not([hidden]) {
+#moreFromMozillaCategory {
   display: flex;
   flex-direction: column;
 }
@@ -1285,11 +1293,7 @@ richlistitem .text-link:hover {
   }
 }
 
-/*
- * The :not clause is required because hiding an element with `display: flex` only
- * partially hides it.
- */
-.qr-code-box:not([hidden="true"]) {
+.qr-code-box {
   max-width: 320px; /* a unit better than px for this & next? */
   min-height: 204px;
   margin-block: 10px 0;
@@ -1300,10 +1304,8 @@ richlistitem .text-link:hover {
   align-items: center;
   justify-content: space-evenly;
   border-radius: var(--border-radius-small);
-}
 
-@media (forced-colors) {
-  .qr-code-box:not([hidden="true"]) {
+  @media (forced-colors) {
     border: 1px solid currentColor;
   }
 }
@@ -1362,7 +1364,7 @@ richlistitem .text-link:hover {
 }
 
 @media (prefers-color-scheme: dark) {
-  .qr-code-box:not([hidden="true"]) {
+  .qr-code-box {
     background-color: rgba(91, 91, 102, 0.45);
   }
 
@@ -1392,6 +1394,33 @@ richlistitem .text-link:hover {
   }
 }
 /** SRD setting-chooser control END **/
+
+/** Browser icon picker (Windows-only) START **/
+.browser-icon-item {
+  --visual-picker-item-image-size: var(--icon-size-xlarge);
+  --visual-picker-item-padding: var(--space-large);
+}
+
+.browser-icon-item[disabled] {
+  pointer-events: none;
+  opacity: var(--button-opacity-disabled);
+  position: relative;
+
+  /* Gated (Bonus) icons are disabled until unlocked (default browser + pinned);
+   while locked, show a lock pinned to the trailing edge of the item. */
+  &::after {
+    content: url("chrome://global/skin/icons/security.svg");
+    -moz-context-properties: fill;
+    fill: currentColor;
+    position: absolute;
+    height: var(--icon-size);
+    width: var(--icon-size);
+    inset-inline-end: var(--space-large);
+    top: 50%;
+    transform: translateY(-50%);
+  }
+}
+/** Browser icon picker END **/
 
 /** SRD rows control for Homepage START **/
 setting-group[groupid="homepage"] {

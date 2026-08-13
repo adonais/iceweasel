@@ -5,14 +5,13 @@
 #include "HTMLLinkAccessible.h"
 
 #include "CacheConstants.h"
-#include "nsCoreUtils.h"
-#include "mozilla/a11y/Role.h"
 #include "States.h"
-
-#include "nsContentUtils.h"
-#include "nsIMutationObserver.h"
 #include "mozilla/a11y/DocAccessible.h"
+#include "mozilla/a11y/Role.h"
 #include "mozilla/dom/Element.h"
+#include "nsContentUtils.h"
+#include "nsCoreUtils.h"
+#include "nsIMutationObserver.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;

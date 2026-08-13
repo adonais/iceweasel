@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title></title>
+  </head>
+  <body>
+    <script>
+      "use strict";
+      // Page state is communicated to the test harness via the document title.
+
+      const initialTitle = "Waiting for source map";
+      const successTitle = "Source map received";
+      const errorTitle = "Error";
+
+      document.title = initialTitle;
+
+      function getSourceMap(sourceId) {
+        return new Promise((resolve, reject) => {
+          const requestId = Date.now();
+
+          function listener(event) {
+            window.removeEventListener(
+              "WebChannelMessageToContent",
+              listener,
+              true
+            );
+
+            const { id, message } = event.detail;
+
+            if (id !== "profiler.firefox.com" || !message || typeof message !== "object") {
+              reject(new Error("A malformed WebChannel event was received."));
+              return;
+            }
+
+            if (message.requestId !== requestId) {
+              return;
+            }
+
+            if (message.type === "SUCCESS_RESPONSE") {
+              resolve(message.response);
+            } else if (message.type === "ERROR_RESPONSE") {
+              reject(new Error(message.error));
+            } else {
+              reject(new Error("Unknown response type: " + message.type));
+            }
+          }
+
+          window.addEventListener("WebChannelMessageToContent", listener, true);
+
+          window.dispatchEvent(
+            new CustomEvent("WebChannelMessageToChrome", {
+              detail: JSON.stringify({
+                id: "profiler.firefox.com",
+                message: { type: "GET_SOURCE_MAP", requestId, sourceId },
+              }),
+            })
+          );
+        });
+      }
+
+      async function runTest() {
+        try {
+          const params = new URLSearchParams(document.location.search);
+          const sourceId = params.get("sourceId");
+          const expectedSourcesContent = JSON.parse(params.get("expectedSourcesContent"));
+
+          const sourceMap = await getSourceMap(sourceId);
+
+          // Verify the response is an object (not a JSON string).
+          if (typeof sourceMap !== "object" || sourceMap === null) {
+            throw new Error(
+              "Expected sourceMap to be an object, got: " + typeof sourceMap
+            );
+          }
+
+          if (JSON.stringify(sourceMap.sourcesContent) !== JSON.stringify(expectedSourcesContent)) {
+            throw new Error(
+              "Unexpected sourcesContent: " + JSON.stringify(sourceMap.sourcesContent) +
+              " (expected " + JSON.stringify(expectedSourcesContent) + ")"
+            );
+          }
+
+          document.title = successTitle;
+        } catch (error) {
+          document.title = errorTitle;
+          dump("An error was caught in webchannel-source-map.html\n");
+          dump(error + "\n");
+          console.error("An error was caught in webchannel-source-map.html", error);
+        }
+      }
+
+      runTest();
+    </script>
+  </body>
+</html>

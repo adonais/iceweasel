@@ -6,10 +6,9 @@
 #define mozilla_SandboxReporter_h
 
 #include "SandboxReporterCommon.h"
-
 #include "base/platform_thread.h"
-#include "mozilla/StaticPtr.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "nsTArray.h"
 

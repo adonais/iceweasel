@@ -2,12 +2,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "JumpListBuilder.h"
+
+// clang-format off
 #include <windows.h>
 #include <shobjidl.h>
 #include <propkey.h>
 #include <propvarutil.h>
 #include <shellapi.h>
-#include "JumpListBuilder.h"
+// clang-format on
+
+#include "WinUtils.h"
+#include "mozilla/CmdLineAndEnvUtils.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WindowsJumpListShortcutDescriptionBinding.h"
@@ -15,7 +21,6 @@
 #include "nsIFile.h"
 #include "nsIObserverService.h"
 #include "nsServiceManagerUtils.h"
-#include "WinUtils.h"
 
 using mozilla::dom::Promise;
 using mozilla::dom::WindowsJumpListShortcutDescription;
@@ -872,10 +877,20 @@ nsresult JumpListBuilder::GetShellLinkFromDescription(
 
   hr = psl->SetDescription(descriptionCopy.get());
 
-  if (aDesc.mArguments.WasPassed() && !aDesc.mArguments.Value().IsEmpty()) {
-    hr = psl->SetArguments(aDesc.mArguments.Value().get());
-  } else {
-    hr = psl->SetArguments(L"");
+  if (aDesc.mArguments.WasPassed()) {
+    const mozilla::dom::Sequence<nsString>& arguments =
+        aDesc.mArguments.Value();
+
+    // MakeCommandLine expects wchar_t**, but we have Sequence<nsString>, so
+    // convert it over.
+    AutoTArray<const wchar_t*, 8> flatArgs;
+    for (const nsString& arg : arguments) {
+      flatArgs.AppendElement(arg.get());
+    }
+
+    UniquePtr<wchar_t[]> commandLine = mozilla::MakeCommandLine(
+        AssertedCast<int>(flatArgs.Length()), flatArgs.Elements());
+    hr = psl->SetArguments(commandLine.get());
   }
 
   // Set up the fallback icon in the event that a valid icon URI has

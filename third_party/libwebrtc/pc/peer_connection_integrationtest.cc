@@ -77,6 +77,7 @@
 #include "pc/test/fake_periodic_video_source.h"
 #include "pc/test/integration_test_helpers.h"
 #include "pc/test/mock_peer_connection_observers.h"
+#include "rtc_base/event.h"
 #include "rtc_base/fake_mdns_responder.h"
 #include "rtc_base/firewall_socket_server.h"
 #include "rtc_base/logging.h"
@@ -2944,6 +2945,61 @@ TEST_P(PeerConnectionIntegrationTest, GetSourcesVideo) {
   EXPECT_EQ(RtpSourceType::SSRC, sources[0].source_type());
 }
 
+TEST_P(PeerConnectionIntegrationTest, ConcurrentUnsignaledSsrcPackets) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+  caller()->AddAudioTrack();
+  callee()->SetReceivedSdpMunger(RemoveSsrcsAndMsids);
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_THAT(WaitUntil([&] { return SignalingStateStable(); }, IsTrue()),
+              IsRtcOk());
+
+  // Wait until the connection is established.
+  ASSERT_THAT(WaitUntil([&] { return DtlsConnected(); }, IsTrue()), IsRtcOk());
+
+  // Drop all subsequent packets temporarily so we can coordinate the
+  // concurrency.
+  firewall()->AddRule(false);
+
+  // Block the shared worker thread.
+  Event worker_blocked;
+  Event worker_continue;
+  callee()->pc_internal()->worker_thread()->PostTask(
+      [&worker_blocked, &worker_continue] {
+        worker_blocked.Set();
+        worker_continue.Wait(Event::kForever);
+      });
+  worker_blocked.Wait(Event::kForever);
+
+  uint32_t initial_sent = virtual_socket_server()->sent_packets();
+
+  // Clear the firewall rules to allow packets to flow again.
+  // Since the worker thread is blocked, incoming RTP packets on the network
+  // thread will result in tasks posted to the worker thread to handle the
+  // unsignaled SSRC packet (specifically to create the default receive stream).
+  firewall()->ClearRules();
+
+  // Wait until at least 2 packets are sent through the virtual socket server.
+  ASSERT_THAT(WaitUntil(
+                  [&] {
+                    return virtual_socket_server()->sent_packets() -
+                           initial_sent;
+                  },
+                  ::testing::Ge(2u)),
+              IsRtcOk());
+
+  // Let the worker thread resume. It will process the queued tasks.
+  // The first task will create the default stream, and subsequent tasks
+  // for the same SSRC will discover that the stream already exists or is
+  // being created, and safely skip creation.
+  worker_continue.Set();
+
+  // Wait deterministically for the packets to be delivered and processed.
+  MediaExpectations media_expectations;
+  media_expectations.CalleeExpectsSomeAudio(1);
+  ASSERT_TRUE(ExpectNewFrames(media_expectations));
+}
+
 TEST_P(PeerConnectionIntegrationTest, UnsignaledSsrcGetSourcesAudio) {
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
@@ -4676,7 +4732,8 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
   caller()->AddVideoTrack();
-  auto munger = [](std::unique_ptr<SessionDescriptionInterface>& sdp) {
+  bool munged = false;
+  auto munger = [&munged](std::unique_ptr<SessionDescriptionInterface>& sdp) {
     auto video = GetFirstVideoContentDescription(sdp->description());
     auto codecs = video->codecs();
     std::optional<Codec> replacement_codec;
@@ -4692,6 +4749,7 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
           RTC_LOG(LS_INFO) << "Remapping VP9 codec " << codec << " to AV1";
           codec.name = replacement_codec->name;
           codec.params = replacement_codec->params;
+          munged = true;
           break;
         }
       }
@@ -4702,8 +4760,11 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   };
   caller()->SetGeneratedSdpMunger(munger);
   caller()->CreateAndSetAndSignalOffer();
-  ASSERT_THAT(WaitUntil([&] { return SignalingStateStable(); }, IsTrue()),
-              IsRtcOk());
+  // Skip rest of test if munge didn't work.
+  if (!munged) {
+    GTEST_SKIP() << "SDP munging did not replace codec, skipping.";
+  }
+  ASSERT_TRUE(WaitUntil([&] { return SignalingStateStable(); }));
   caller()->SetGeneratedSdpMunger(nullptr);
   std::unique_ptr<SessionDescriptionInterface> offer =
       caller()->CreateOfferAndWait();
@@ -5132,6 +5193,50 @@ TEST_P(PeerConnectionIntegrationTest, PerPeerConnectionHeaderExtensions) {
   }
 }
 
+TEST_P(PeerConnectionIntegrationTest, CryptexRenegotiation) {
+  CryptoOptions crypto_options;
+  crypto_options.srtp.cryptex_policy =
+      CryptoOptions::Srtp::CryptexPolicy::kNegotiate;
+  PeerConnectionInterface::RTCConfiguration config;
+  config.crypto_options = crypto_options;
+
+  const bool create_media_engine = true;
+  SetCallerPcWrapperAndReturnCurrent(CreatePeerConnectionWrapper(
+      "caller", nullptr, &config, PeerConnectionDependencies(nullptr),
+      /* event_log_factory= */ nullptr,
+      /* reset_encoder_factory= */ false,
+      /* reset_decoder_factory= */ false, create_media_engine));
+  SetCalleePcWrapperAndReturnCurrent(CreatePeerConnectionWrapper(
+      "callee", nullptr, &config, PeerConnectionDependencies(nullptr),
+      /* event_log_factory= */ nullptr,
+      /* reset_encoder_factory= */ false,
+      /* reset_decoder_factory= */ false, create_media_engine));
+
+  ConnectFakeSignaling();
+
+  caller()->AddAudioVideoTracks();
+  // Strip cryptex from the answer the caller receives so the caller observes
+  // a peer that does not negotiate cryptex.
+  caller()->SetReceivedSdpMunger(
+      [](std::unique_ptr<SessionDescriptionInterface>& sdp) {
+        sdp->description()->set_cryptex(false);
+      });
+
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_THAT(
+      WaitUntil(
+          [&] {
+            return PeerConnectionStateIs(
+                PeerConnectionInterface::PeerConnectionState::kConnected);
+          },
+          IsTrue()),
+      IsRtcOk());
+  caller()->SetReceivedSdpMunger(nullptr);
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_THAT(WaitUntil([&] { return SignalingStateStable(); }, IsTrue()),
+              IsRtcOk());
+}
+
 #ifdef WEBRTC_HAVE_SCTP
 
 class DowngradeLogSink : public LogSink {
@@ -5355,6 +5460,87 @@ TEST_P(PeerConnectionIntegrationTest,
 }
 
 #endif  // WEBRTC_HAVE_SCTP
+
+TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
+       MungeOfferCodecAndReOfferCausesNoDuplicateId) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+  caller()->AddVideoTrack();
+  caller()->AddAudioTrack();
+  bool munged = false;
+  auto munger = [&munged](std::unique_ptr<SessionDescriptionInterface>& sdp) {
+    VideoContentDescription* video =
+        GetFirstVideoContentDescription(sdp->description());
+    std::vector<Codec> codecs = video->codecs();
+    // Check that AV1 is present. If not, the munged SDP won't be accepted
+    // by SetLocalDescription.
+    if (!absl::c_any_of(
+            codecs, [](const Codec& codec) { return codec.name == "AV1"; })) {
+      return;
+    }
+    for (auto& codec : codecs) {
+      if (codec.name == "VP9") {
+        RTC_LOG(LS_INFO) << "Remapping VP9 codec " << codec << " to AV1";
+        codec.name = "AV1";
+        munged = true;
+      }
+    }
+    video->set_codecs(codecs);
+  };
+  caller()->SetGeneratedSdpMunger(munger);
+  caller()->CreateAndSetAndSignalOffer();
+  if (!munged) {
+    GTEST_SKIP() << "Test skipped, codec remapping did not work";
+  }
+  ASSERT_TRUE(WaitUntil([&] { return SignalingStateStable(); }));
+  EXPECT_TRUE(ValidateBundledPayloadTypes(
+                  *caller()->pc()->local_description()->description())
+                  .ok());
+  EXPECT_TRUE(ValidateBundledPayloadTypes(
+                  *caller()->pc()->remote_description()->description())
+                  .ok());
+  caller()->SetGeneratedSdpMunger(nullptr);
+  auto offer = caller()->CreateOfferAndWait();
+  ASSERT_THAT(offer, NotNull());
+  // The offer should be acceptable.
+  EXPECT_TRUE(ValidateBundledPayloadTypes(*offer->description()).ok());
+  EXPECT_TRUE(caller()->SetLocalDescriptionAndSendSdpMessage(std::move(offer)));
+}
+
+TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
+       MungeOfferCodecWithNonsenseFailsAtSetLocalDescription) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+  caller()->AddVideoTrack();
+  caller()->AddAudioTrack();
+  bool munged = false;
+  auto munger = [&munged](std::unique_ptr<SessionDescriptionInterface>& sdp) {
+    VideoContentDescription* video =
+        GetFirstVideoContentDescription(sdp->description());
+    std::vector<Codec> codecs = video->codecs();
+    for (auto& codec : codecs) {
+      if (codec.name == "VP9") {
+        RTC_LOG(LS_ERROR) << "Remapping VP9 codec " << codec << " to NONSENSE";
+        codec.name = "NONSENSE";
+        munged = true;
+      }
+    }
+    video->set_codecs(codecs);
+  };
+  caller()->SetGeneratedSdpMunger(munger);
+  std::unique_ptr<SessionDescriptionInterface> offer =
+      caller()->CreateOfferAndWait();
+  ASSERT_THAT(offer, NotNull());
+  // If the munger failed to find a VP9 codec to munge, don't test.
+  if (!munged) {
+    GTEST_SKIP() << "Replacement of codec failed, skipping test";
+  }
+  auto observer = make_ref_counted<MockSetSessionDescriptionObserver>();
+  caller()->pc()->SetLocalDescription(observer.get(), offer.release());
+  ASSERT_TRUE(WaitUntil([&] { return observer->called(); }));
+  // Observe failure.
+  EXPECT_FALSE(observer->result());
+}
 
 }  // namespace
 

@@ -10,9 +10,11 @@ CFRPopup(
     properties = CFRPopupProperties(
         popupWidth = 256.dp,
         popupAlignment = INDICATOR_CENTERED_IN_ANCHOR,
-        popupBodyColors = listOf(
-            ContextCompat.getColor(context, R.color.color1),
-            ContextCompat.getColor(context, R.color.color2)
+        popupBodyColors = CFRPopupBackground.Colors(
+            listOf(
+                ContextCompat.getColor(context, R.color.color1),
+                ContextCompat.getColor(context, R.color.color2)
+            )
         ),
         dismissButtonColor = ContextCompat.getColor(context, R.color.color3),
     ),
@@ -20,7 +22,7 @@ CFRPopup(
     text = {
         Text(
             text = stringResource(R.string.string1),
-            style = MaterialTheme.typography.body2,
+            style = AcornTheme.typography.body2,
         )
     },
     action = {

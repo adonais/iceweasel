@@ -142,12 +142,15 @@ pub unsafe extern "C" fn crash_helper_launch(
     helper_name: *const BreakpadChar,
     breakpad_raw_data: BreakpadRawData,
     minidump_path: *const BreakpadChar,
+    build_id: *const c_char,
 ) -> *mut CrashHelperClient {
     use crash_helper_common::BreakpadData;
 
     let breakpad_data = BreakpadData::new(breakpad_raw_data);
 
-    if let Ok(crash_helper) = CrashHelperClient::new(helper_name, breakpad_data, minidump_path) {
+    if let Ok(crash_helper) =
+        CrashHelperClient::new(helper_name, breakpad_data, minidump_path, build_id)
+    {
         let crash_helper_box = Box::new(crash_helper);
 
         // The object will be owned by the C++ code from now on, until it is
@@ -450,7 +453,7 @@ pub unsafe extern "C" fn get_install_time(path: *const BreakpadChar) -> u64 {
         let path = <OsString as BreakpadString>::from_ptr(path);
         Some(PathBuf::from(path))
     };
-    ApplicationInfo::get_install_time(path).unwrap_or(0)
+    ApplicationInfo::compute_install_time(path).unwrap_or(0)
 }
 
 /******************************************************************************

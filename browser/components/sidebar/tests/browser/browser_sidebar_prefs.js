@@ -42,7 +42,7 @@ add_task(async function test_tools_prefs() {
       continue;
     }
     toolInput.click();
-    await BrowserTestUtils.waitForCondition(() => {
+    await TestUtils.waitForCondition(() => {
       let toggledTool = win.SidebarController.toolsAndExtensions.get(
         toolInput.id
       );
@@ -287,4 +287,56 @@ add_task(async function test_opening_panel_flips_has_used_pref() {
     Services.prefs.getBoolPref("sidebar.new-sidebar.has-used"),
     "has-used pref enabled for revamped sidebar."
   );
+});
+
+add_task(async function test_visibility_normalization_preserves_valid_value() {
+  const { SidebarManager } = SidebarController;
+
+  info("A visibility already valid for vertical tabs is preserved.");
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["sidebar.verticalTabs", true],
+      ["sidebar.visibility", "hide-sidebar"],
+    ],
+  });
+  // Simulates a (possibly spurious) re-run of the vertical-tabs normalization,
+  // which must not clobber an explicit, orientation-valid choice.
+  SidebarManager.handleVerticalTabsPrefChange(true);
+  is(
+    Services.prefs.getStringPref("sidebar.visibility"),
+    "hide-sidebar",
+    "Valid vertical visibility is preserved."
+  );
+  await SpecialPowers.popPrefEnv();
+
+  info("A visibility invalid for the orientation is reset to its default.");
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["sidebar.verticalTabs", true],
+      // hide-on-close is a horizontal-only value.
+      ["sidebar.visibility", "hide-on-close"],
+    ],
+  });
+  SidebarManager.handleVerticalTabsPrefChange(true);
+  is(
+    Services.prefs.getStringPref("sidebar.visibility"),
+    "always-show",
+    "Visibility invalid for vertical tabs is reset to the vertical default."
+  );
+  await SpecialPowers.popPrefEnv();
+
+  info("A visibility already valid for horizontal tabs is preserved.");
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["sidebar.verticalTabs", false],
+      ["sidebar.visibility", "hide-launcher"],
+    ],
+  });
+  SidebarManager.handleVerticalTabsPrefChange(false);
+  is(
+    Services.prefs.getStringPref("sidebar.visibility"),
+    "hide-launcher",
+    "Valid horizontal visibility is preserved."
+  );
+  await SpecialPowers.popPrefEnv();
 });

@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import subprocess
+import unittest.mock
 
 import mozunit
 import pytest
@@ -243,6 +244,27 @@ def test_jj_push_change_id_with_dest_branch(repo):
         check=True,
     )
     assert "second commit" in result.stdout
+
+
+def test_push_env_passthrough(repo):
+    if repo.vcs in ("hg", "src"):
+        pytest.skip("env passthrough not supported for this VCS")
+
+    vcs = get_repository_object(repo.dir)
+    repo.execute_next_step()
+
+    if repo.vcs == "git":
+        remote, ref = "upstream", "master"
+    elif repo.vcs == "jj":
+        remote, ref = "upstream", "test-bookmark"
+
+    with unittest.mock.patch("mozversioncontrol.repo.base.subprocess.run") as mock_run:
+        mock_run.return_value.stdout = ""
+        vcs.push(remote=remote, ref=ref, env={"MVC_TEST_VAR": "sentinel"})
+
+    mock_run.assert_called_once()
+    passed_env = mock_run.call_args[1]["env"]
+    assert passed_env.get("MVC_TEST_VAR") == "sentinel"
 
 
 if __name__ == "__main__":

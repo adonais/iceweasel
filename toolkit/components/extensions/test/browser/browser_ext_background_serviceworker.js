@@ -7,6 +7,19 @@ Services.scriptloader.loadSubScript(
   this
 );
 
+add_setup(async function () {
+  // This test introspects worker process placement via the content-process
+  // nsIWorkerDebuggerManager enumeration, which only lists workers whose
+  // debugger lives in the content process. Force the local WorkerDebugger
+  // instead of the parent-process RemoteWorkerDebugger (bug 1944240). Remove
+  // this pin (or the test) once the local WorkerDebugger mechanism is removed;
+  // this legacy worker-introspection path still needs to be modernized to the
+  // RemoteWorkerDebugger model.
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.worker.remoteDebugger.enabled", false]],
+  });
+});
+
 add_task(assert_background_serviceworker_pref_enabled);
 
 add_task(async function test_serviceWorker_register_guarded_by_pref() {

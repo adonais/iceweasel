@@ -80,6 +80,8 @@ add_setup(async function setup() {
       ["browser.preferences.experimental.hidden", false],
     ],
   });
+
+  registerCleanupFunction(NimbusTestUtils.disableSignatureVerification());
 });
 
 const LOAD_TYPE = {
@@ -94,7 +96,7 @@ let COMMANDS_TESTS = [
     uri: "about:firefoxview",
     loadType: LOAD_TYPE.PRE_LOADED,
     testFun: async () => {
-      await BrowserTestUtils.waitForCondition(() => {
+      await TestUtils.waitForCondition(() => {
         return (
           window.gBrowser.selectedBrowser.currentURI.spec == "about:firefoxview"
         );
@@ -111,7 +113,7 @@ let COMMANDS_TESTS = [
       registerCleanupFunction(cleanup);
     },
     testFun: async () => {
-      await BrowserTestUtils.waitForCondition(() => {
+      await TestUtils.waitForCondition(() => {
         return (
           window.gBrowser.selectedBrowser.currentURI.spec ==
           "about:preferences#experimental"
@@ -223,13 +225,23 @@ let COMMANDS_TESTS = [
   {
     cmd: "library",
     testFun: async () => {
-      await BrowserTestUtils.waitForCondition(() => {
+      await TestUtils.waitForCondition(() => {
         return Services.wm.getMostRecentWindow("Places:Organizer");
       });
       const libraryWindow = Services.wm.getMostRecentWindow("Places:Organizer");
       libraryWindow?.close();
       return true;
     },
+  },
+  {
+    // "edit pdf" also phrase-matches the savepdf action ("pdf, save page"), so
+    // both actions are offered. editpdf is picked first because it is declared
+    // before savepdf in DEFAULT_ACTIONS; the about:pdf URI check below fails if
+    // that ordering ever changes and the print dialog is triggered instead.
+    cmd: "edit pdf",
+    uri: "about:pdf",
+    testFun: async () =>
+      gBrowser.selectedBrowser.currentURI.spec == "about:pdf",
   },
 ];
 
@@ -273,19 +285,22 @@ add_task(async function test_pages() {
     }
     EventUtils.synthesizeKey("KEY_Enter", {}, window);
 
-    let newTab;
-    if (loadType == LOAD_TYPE.PRE_LOADED) {
-      newTab = gBrowser.selectedTab;
-    } else if (onLoad) {
-      newTab = await onLoad;
-    } else {
-      newTab = null;
+    let newTab = null;
+    if (loadType != LOAD_TYPE.PRE_LOADED && onLoad) {
+      newTab = (await onLoad) ?? null;
     }
 
     Assert.ok(
       await testFun(),
       `The command "${cmd}" passed completed its test`
     );
+
+    if (loadType == LOAD_TYPE.PRE_LOADED) {
+      // The action opens and selects the tab from a parent-side engagement
+      // hook, which is async on the actor message path, so capture it only
+      // after testFun has confirmed the page is loaded.
+      newTab = gBrowser.selectedTab;
+    }
 
     if ([LOAD_TYPE.NEW_TAB, LOAD_TYPE.PRE_LOADED].includes(loadType)) {
       await BrowserTestUtils.removeTab(newTab);

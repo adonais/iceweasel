@@ -1,5 +1,7 @@
-#include "gtest/gtest.h"
+#include <fcntl.h>
+#include <sys/stat.h>
 
+#include "gtest/gtest.h"
 #include "mozilla/net/rust_helper.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
@@ -9,8 +11,6 @@
 #include "nsString.h"
 #include "nsTArray.h"
 #include "nsUnicharUtils.h"
-#include <fcntl.h>
-#include <sys/stat.h>
 
 #ifndef XP_WIN
 #  include <sys/file.h>

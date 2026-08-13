@@ -2,22 +2,22 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "NativeKeyBindings.h"
+
+#include <gdk/gdk.h>
+#include <gdk/gdkkeysyms-compat.h>
+#include <gdk/gdkkeysyms.h>
+#include <gtk/gtk.h>
+
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/NativeKeyBindingsType.h"
 #include "mozilla/StaticPrefs_ui.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/WritingModes.h"
-
-#include "NativeKeyBindings.h"
-#include "nsString.h"
 #include "nsGtkKeyUtils.h"
+#include "nsString.h"
 #include "nsWindow.h"
-
-#include <gtk/gtk.h>
-#include <gdk/gdkkeysyms.h>
-#include <gdk/gdkkeysyms-compat.h>
-#include <gdk/gdk.h>
 
 namespace mozilla {
 namespace widget {

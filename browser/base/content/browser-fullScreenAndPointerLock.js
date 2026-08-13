@@ -503,13 +503,10 @@ var FullScreen = {
     let translate = shiftSize > 0 ? `0 ${shiftSize}px` : "";
     gNavToolbox.classList.toggle("fullscreen-floating-toolbox", shiftSize > 0);
     gNavToolbox.style.translate = translate;
-    gURLBar.style.translate = gURLBar.hasAttribute("breakout") ? translate : "";
-    let searchbar = document.getElementById("searchbar-new");
-    if (searchbar) {
-      searchbar.style.translate = searchbar.hasAttribute("breakout")
-        ? translate
-        : "";
-    }
+    gURLBar.style.setProperty("--toolbar-shift-translate", translate);
+    document
+      .getElementById("searchbar-new")
+      ?.style.setProperty("--toolbar-shift-translate", translate);
     if (shiftSize > 0) {
       // If the mouse tracking missed our fullScreenToggler, then the toolbox
       // might not have been shown before the menubar is animated down. Make
@@ -649,6 +646,11 @@ var FullScreen = {
       }
     }
     document.documentElement.setAttribute("inDOMFullscreen", true);
+    // DOM fullscreen hides the nav toolbox, so the sidebar should hide too.
+    document.documentElement.toggleAttribute(
+      "fullscreenNavToolboxHidden",
+      true
+    );
 
     XULBrowserWindow.onEnterDOMFullscreen();
 
@@ -676,6 +678,7 @@ var FullScreen = {
 
   cleanup() {
     if (!window.fullScreen) {
+      this._mouseTargetRectObserver?.disconnect();
       MousePosTracker.removeListener(this);
       document.removeEventListener("keypress", this._keyToggleCallback);
       document.removeEventListener("popupshown", this._setPopupOpen);
@@ -748,6 +751,12 @@ var FullScreen = {
     );
 
     document.documentElement.removeAttribute("inDOMFullscreen");
+    // Leaving DOM fullscreen may return to F11 fullscreen with the nav toolbox
+    // still collapsed, so only clear the attribute if the chrome is showing.
+    document.documentElement.toggleAttribute(
+      "fullscreenNavToolboxHidden",
+      this._isChromeCollapsed
+    );
 
     return needToWaitForChildExit;
   },
@@ -856,6 +865,39 @@ var FullScreen = {
     return this._mouseTargetRect;
   },
 
+  // The region that hides the nav toolbox when the pointer enters it: the given
+  // tabpanels bounds, minus a 50px band at the top so the toolbox stays up while
+  // the pointer is near it.
+  _mouseTargetRectFromBounds(rect) {
+    return {
+      top: rect.top + 50,
+      bottom: rect.bottom,
+      left: rect.left,
+      right: rect.right,
+    };
+  },
+
+  // Recompute the mouse-target region against the current layout. The sidebar
+  // stays visible in fullscreen and reveals with an animation, so tabpanels
+  // (which excludes the sidebar) resizes as it settles. A ResizeObserver drives
+  // this update rather than recomputing in getMouseTargetRect, which would flush
+  // layout on every mouse move. We wait for promiseDocumentFlushed and read
+  // geometry with getBoundsWithoutFlushing so measuring never forces a
+  // synchronous flush.
+  _updateMouseTargetRect() {
+    return window
+      .promiseDocumentFlushed(() =>
+        window.windowUtils.getBoundsWithoutFlushing(gBrowser.tabpanels)
+      )
+      .then(rect => {
+        if (!window.fullScreen) {
+          return;
+        }
+        this._mouseTargetRect = this._mouseTargetRectFromBounds(rect);
+      })
+      .catch(() => {});
+  },
+
   // Event callbacks
   _expandCallback() {
     FullScreen.showNavToolbox();
@@ -902,14 +944,14 @@ var FullScreen = {
     }
   },
 
-  // UrlbarController listener method
+  // UrlbarChildController listener method
   onViewOpen() {
     if (!this._isChromeCollapsed) {
       this._isPopupOpen = true;
     }
   },
 
-  // UrlbarController listener method
+  // UrlbarChildController listener method
   onViewClose() {
     this._isPopupOpen = false;
     this.hideNavToolbox(true);
@@ -947,19 +989,33 @@ var FullScreen = {
       return;
     }
 
-    // Track whether mouse is near the toolbox
+    // Track whether the mouse moves into the content area. Observe tabpanels so
+    // the target rect follows the sidebar reveal (and any later layout changes)
+    // without flushing layout on every mouse move.
     if (trackMouse) {
-      let rect = gBrowser.tabpanels.getBoundingClientRect();
-      this._mouseTargetRect = {
-        top: rect.top + 50,
-        bottom: rect.bottom,
-        left: rect.left,
-        right: rect.right,
-      };
+      // Seed a synchronous initial value so MousePosTracker.addListener, which
+      // reads getMouseTargetRect() immediately, always has a rect. It may be
+      // stale (the sidebar hasn't settled yet); _updateMouseTargetRect corrects
+      // it on the next tick. getBoundsWithoutFlushing never forces a flush.
+      this._mouseTargetRect = this._mouseTargetRectFromBounds(
+        window.windowUtils.getBoundsWithoutFlushing(gBrowser.tabpanels)
+      );
+      this._updateMouseTargetRect();
+      if (!this._mouseTargetRectObserver) {
+        this._mouseTargetRectObserver = new ResizeObserver(() =>
+          this._updateMouseTargetRect()
+        );
+      }
+      this._mouseTargetRectObserver.observe(gBrowser.tabpanels);
+      // addListener calls back synchronously, so onMouseEnter can run here if
+      // the pointer already sits in the target rect. Keep _isChromeCollapsed
+      // set until after it so hideNavToolbox bails out instead of undoing the
+      // toolbox we're showing.
       MousePosTracker.addListener(this);
     }
 
     this._isChromeCollapsed = false;
+    document.documentElement.removeAttribute("fullscreenNavToolboxHidden");
     Services.obs.notifyObservers(
       gNavToolbox,
       "fullscreen-nav-toolbox",
@@ -1028,12 +1084,17 @@ var FullScreen = {
     gNavToolbox.style.marginTop =
       -gNavToolbox.getBoundingClientRect().height + "px";
     this._isChromeCollapsed = true;
+    document.documentElement.toggleAttribute(
+      "fullscreenNavToolboxHidden",
+      true
+    );
     Services.obs.notifyObservers(
       gNavToolbox,
       "fullscreen-nav-toolbox",
       "hidden"
     );
 
+    this._mouseTargetRectObserver?.disconnect();
     MousePosTracker.removeListener(this);
   },
 };

@@ -442,6 +442,9 @@ class nsDocShellLoadState final {
   // This is used as the parameter for https://html.spec.whatwg.org/#navigate
   void SetSourceElement(mozilla::dom::Element* aElement);
   already_AddRefed<mozilla::dom::Element> GetSourceElement() const;
+  bool HasSourceElement() const {
+    return mSourceElement && mSourceElement->IsAlive();
+  }
 
   // This is used as the parameter for https://html.spec.whatwg.org/#navigate
   nsIStructuredCloneContainer* GetNavigationAPIState() const;
@@ -486,6 +489,13 @@ class nsDocShellLoadState final {
 
   bool IsResumingInterceptedNavigation() const {
     return mIsResumingInterceptedNavigation;
+  }
+
+  bool HasComputedNamedTargetBrowsingContext() const {
+    return mHasComputedNamedTargetBrowsingContext;
+  }
+  void SetHasComputedNamedTargetBrowsingContext(bool aValue) {
+    mHasComputedNamedTargetBrowsingContext = aValue;
   }
 
  protected:
@@ -702,6 +712,9 @@ class nsDocShellLoadState final {
   // This will be true if this load is triggered by attribute changes.
   // See nsILoadInfo.isFromProcessingFrameAttributes
   bool mIsFromProcessingFrameAttributes;
+
+  // Whether the target name has been looked up yet
+  bool mHasComputedNamedTargetBrowsingContext = false;
 
   // If set, a pending cross-process redirected channel should be used to
   // perform the load. The channel will be stored in this value.

@@ -2,7 +2,49 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+const lazy = {};
+
+ChromeUtils.defineESModuleGetters(lazy, {
+  IPProtectionService:
+    "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
+});
+
 const PERM_NAME = "ipp-vpn";
+
+const INCLUSION_PREF = "browser.ipProtection.inclusion.match_patterns";
+
+const MATCH_PATTERN_OPTIONS = {
+  ignorePath: true,
+  restrictSchemes: false,
+};
+
+const DEFAULT_EXCLUDED_URL_PREFS = [
+  "browser.ipProtection.guardian.endpoint",
+  "captivedetect.canonicalURL",
+];
+
+/**
+ * Converts an excluded page URL to a host match pattern (scheme://host/*), or
+ * null if the URL cannot be parsed.
+ *
+ * @param {string} url
+ * @returns {?string}
+ */
+function urlToHostPattern(url) {
+  try {
+    const uri = Services.io.newURI(url);
+    return `${uri.scheme}://${uri.host}/*`;
+  } catch (_) {
+    return null;
+  }
+}
+
+/** @typedef {"included"|"excluded"|"default"} IPPPrincipalRule */
+export const IPPPrincipalRules = Object.freeze({
+  INCLUDED: "included",
+  EXCLUDED: "excluded",
+  DEFAULT: "default",
+});
 
 /**
  * Manages site exceptions for IP Protection.
@@ -12,10 +54,21 @@ const PERM_NAME = "ipp-vpn";
  * While permissions related UI (eg. panels and dialogs) already handle changes to ipp-vpn,
  * the intention of this class is to abstract methods for updating ipp-vpn as needed
  * from other non-permissions related UI.
+ *
+ * This is also the single source of truth for classifying a principal as
+ * included/excluded/default for the proxy, via getPrincipalRule. It owns the
+ * inclusion MatchPatternSet (from INCLUSION_PREF) and the excluded-origins
+ * MatchPatternSet (from the default-excluded prefs + authProvider.excludedUrlPrefs),
+ * both kept up to date via pref observers while inited.
  */
 class ExceptionsManager extends EventTarget {
   #inited = false;
   #observer = null;
+  #inclusionPrefObserver = null;
+  #inclusionSet = new MatchPatternSet([], MATCH_PATTERN_OPTIONS);
+  #excludedOrigins = new MatchPatternSet([], MATCH_PATTERN_OPTIONS);
+  #excludedPrefObserver = null;
+  #observedExcludedPrefs = [];
 
   init() {
     if (this.#inited) {
@@ -28,6 +81,25 @@ class ExceptionsManager extends EventTarget {
       this.observe(subject, topic, data);
     };
     Services.obs.addObserver(this.#observer, "perm-changed");
+
+    this.#inclusionSet = ExceptionsManager.getInclusionList();
+    this.#inclusionPrefObserver = () => {
+      this.#inclusionSet = ExceptionsManager.getInclusionList();
+    };
+    Services.prefs.addObserver(INCLUSION_PREF, this.#inclusionPrefObserver);
+
+    // The excluded origins come from the default-excluded prefs plus the active
+    // auth provider's prefs; observe each so the set stays current.
+    this.#observedExcludedPrefs = [
+      ...DEFAULT_EXCLUDED_URL_PREFS,
+      ...(lazy.IPProtectionService.authProvider?.excludedUrlPrefs ?? []),
+    ];
+    this.#excludedPrefObserver = () => this.#rebuildExcludedOrigins();
+    for (const pref of this.#observedExcludedPrefs) {
+      Services.prefs.addObserver(pref, this.#excludedPrefObserver);
+    }
+    this.#rebuildExcludedOrigins();
+
     this.#inited = true;
   }
 
@@ -38,7 +110,42 @@ class ExceptionsManager extends EventTarget {
 
     Services.obs.removeObserver(this.#observer, "perm-changed");
     this.#observer = null;
+
+    if (this.#inclusionPrefObserver) {
+      Services.prefs.removeObserver(
+        INCLUSION_PREF,
+        this.#inclusionPrefObserver
+      );
+      this.#inclusionPrefObserver = null;
+    }
+
+    if (this.#excludedPrefObserver) {
+      for (const pref of this.#observedExcludedPrefs) {
+        Services.prefs.removeObserver(pref, this.#excludedPrefObserver);
+      }
+      this.#excludedPrefObserver = null;
+      this.#observedExcludedPrefs = [];
+    }
+
     this.#inited = false;
+  }
+
+  /**
+   * Rebuilds the excluded-origins MatchPatternSet from the observed prefs
+   * (default-excluded prefs + the active auth provider's prefs).
+   */
+  #rebuildExcludedOrigins() {
+    const patterns = [];
+    for (const pref of this.#observedExcludedPrefs) {
+      const pattern = urlToHostPattern(Services.prefs.getStringPref(pref, ""));
+      if (pattern) {
+        patterns.push(pattern);
+      }
+    }
+    this.#excludedOrigins = new MatchPatternSet(
+      patterns,
+      MATCH_PATTERN_OPTIONS
+    );
   }
 
   observe(subject, topic, data) {
@@ -183,6 +290,105 @@ class ExceptionsManager extends EventTarget {
     } else {
       this.removeExclusion(principal);
     }
+  }
+
+  /**
+   * Builds the inclusion MatchPatternSet from INCLUSION_PREF.
+   *
+   * @returns {MatchPatternSet}
+   */
+  static getInclusionList() {
+    let raw = Services.prefs.getStringPref(INCLUSION_PREF, "[]");
+    let arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) {
+      throw new TypeError(`${INCLUSION_PREF} does not contain a JSON array`);
+    }
+    let patterns = arr.filter(s => typeof s === "string" && s.length);
+    return new MatchPatternSet(patterns, MATCH_PATTERN_OPTIONS);
+  }
+
+  /**
+   * @param {nsIPrincipal} principal
+   * @returns {boolean} True if the principal is a loopback host or a local IP.
+   */
+  static isLocal(principal) {
+    return principal.isLoopbackHost || principal.isLocalIpAddress;
+  }
+
+  /**
+   * Classifies a principal as included/excluded/default for the proxy.
+   *
+   * This is the single source of truth shared by the channel filter and the UI.
+   * Everything is derived from the principal: the inclusion match (its URI),
+   * scheme, loopback/local, the ipp-vpn user permission, and the default
+   * excluded origins. Fails safe to EXCLUDED on any error.
+   *
+   * @param {nsIPrincipal} principal
+   * @returns {IPPPrincipalRule}
+   */
+  getPrincipalRule(principal) {
+    if (!this.#inited) {
+      this.init();
+    }
+    try {
+      const uri = principal?.URI;
+      // Exclude non-http(s) schemes (about:, file:, etc.), but NOT null
+      // principals: a null principal's scheme is moz-nullprincipal even when it
+      // backs real http(s) content (e.g. a sandboxed iframe), so its scheme says
+      // nothing about whether the traffic should be proxied.
+      if (
+        !principal?.isNullPrincipal &&
+        !principal?.schemeIs("http") &&
+        !principal?.schemeIs("https")
+      ) {
+        return IPPPrincipalRules.EXCLUDED;
+      }
+      if (ExceptionsManager.isLocal(principal)) {
+        return IPPPrincipalRules.EXCLUDED;
+      }
+      // Infrastructure origins the VPN itself depends on (guardian endpoint,
+      // captive detection). These must beat inclusion.
+      if (uri && this.#excludedOrigins.matches(uri)) {
+        return IPPPrincipalRules.EXCLUDED;
+      }
+      if (uri && this.#inclusionSet.matches(uri)) {
+        return IPPPrincipalRules.INCLUDED;
+      }
+      if (this.hasExclusion(principal)) {
+        return IPPPrincipalRules.EXCLUDED;
+      }
+      return IPPPrincipalRules.DEFAULT;
+    } catch (_) {
+      return IPPPrincipalRules.EXCLUDED;
+    }
+  }
+
+  /**
+   * Whether the user can manage a VPN site exclusion for this principal — i.e.
+   * it is a normal content page, not an about: page or the system principal.
+   *
+   * @param {nsIPrincipal} principal
+   *  The principal to evaluate.
+   * @returns {boolean}
+   *  True if the user can manage an exclusion for this page.
+   */
+  canManage(principal) {
+    if (!principal) {
+      return false;
+    }
+    // about:/chrome:/resource: pages and the system principal are not
+    // user-manageable sites. The chrome: check matters because the UI derives
+    // this principal from the URL bar URI via createContentPrincipal, which
+    // yields a chrome-scoped content principal rather than the system principal
+    // gBrowser.contentPrincipal used to surface. Loopback/local hosts are
+    // always excluded by the proxy so the user cannot toggle them either.
+    return (
+      !principal.schemeIs("about") &&
+      !principal.schemeIs("chrome") &&
+      !principal.schemeIs("resource") &&
+      !principal.isSystemPrincipal &&
+      !ExceptionsManager.isLocal(principal)
+    );
   }
 }
 

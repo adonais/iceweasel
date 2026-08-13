@@ -29,9 +29,9 @@
 #include "nsError.h"
 #include "prprf.h"  // leaving it for PR_vsnprintf()
 
-#define WEBM_DEBUG(arg, ...)                                          \
-  DDMOZ_LOG(gMediaDemuxerLog, mozilla::LogLevel::Debug, "::%s: " arg, \
-            __func__, ##__VA_ARGS__)
+#define WEBM_DEBUG(arg, ...)                                              \
+  DDMOZ_LOG_FMT(gMediaDemuxerLog, mozilla::LogLevel::Debug, "::{}: " arg, \
+                __func__, ##__VA_ARGS__)
 extern mozilla::LazyLogModule gMediaDemuxerLog;
 
 namespace mozilla {
@@ -200,7 +200,7 @@ WebMDemuxer::WebMDemuxer(
                 aFrameEndTimeBeforeRecreateDemuxer.isNothing());
   if (aIsMediaSource && aFrameEndTimeBeforeRecreateDemuxer) {
     mVideoFrameEndTimeBeforeReset = aFrameEndTimeBeforeRecreateDemuxer;
-    WEBM_DEBUG("Set mVideoFrameEndTimeBeforeReset=%" PRId64,
+    WEBM_DEBUG("Set mVideoFrameEndTimeBeforeReset={}",
                mVideoFrameEndTimeBeforeReset->ToMicroseconds());
   }
 }
@@ -339,7 +339,7 @@ nsresult WebMDemuxer::SetContainerAudioCodecInfo(
       OpusCodecSpecificData opusCodecSpecificData;
       opusCodecSpecificData.mContainerCodecDelayFrames =
           AssertedCast<int64_t>(USECS_PER_S * codecDelayUs / 48000);
-      WEBM_DEBUG("Preroll for Opus: %" PRIu64 " frames",
+      WEBM_DEBUG("Preroll for Opus: {} frames",
                  opusCodecSpecificData.mContainerCodecDelayFrames);
       mInfo.mAudio.mCodecSpecificConfig =
           AudioCodecSpecificVariant{std::move(opusCodecSpecificData)};
@@ -399,7 +399,7 @@ nsresult WebMDemuxer::GetCodecPrivateData(
   }
 
   for (uint32_t header = 0; header < nheaders; ++header) {
-    unsigned char* data = 0;
+    unsigned char* data = nullptr;
     size_t length = 0;
     r = nestegg_track_codec_data(aContext, aTrackId, header, &data, &length);
     if (r == -1) {
@@ -497,7 +497,7 @@ nsresult WebMDemuxer::ReadMetadata() {
       return NS_ERROR_FAILURE;
     }
 
-    WEBM_DEBUG("Read metadata, track %u, codec id %d", track, id);
+    WEBM_DEBUG("Read metadata, track {}, codec id {}", track, id);
     int type = nestegg_track_type(context, track);
     if (type == NESTEGG_TRACK_VIDEO && !mHasVideo) {
       nestegg_video_params params;
@@ -533,7 +533,7 @@ nsresult WebMDemuxer::ReadMetadata() {
           CheckedInt<uint32_t>(params.crop_top) + params.crop_bottom;
       if (!cropH.isValid() || !cropV.isValid() ||
           cropH.value() >= params.width || cropV.value() >= params.height) {
-        WEBM_DEBUG("Invalid crop values left: %u right: %u top: %u bottom: %u",
+        WEBM_DEBUG("Invalid crop values left: {} right: {} top: {} bottom: {}",
                    params.crop_left, params.crop_right, params.crop_top,
                    params.crop_bottom);
         continue;
@@ -584,7 +584,7 @@ nsresult WebMDemuxer::ReadMetadata() {
       if (!r) {
         mInfo.mVideo.mDuration = TimeUnit::FromNanoseconds(duration);
       }
-      WEBM_DEBUG("stream duration: %lf\n", mInfo.mVideo.mDuration.ToSeconds());
+      WEBM_DEBUG("stream duration: {:f}\n", mInfo.mVideo.mDuration.ToSeconds());
       mInfo.mVideo.mCrypto = GetTrackCrypto(TrackInfo::kVideoTrack, track);
       if (mInfo.mVideo.mCrypto.IsEncrypted()) {
         MOZ_ASSERT(mInfo.mVideo.mCrypto.mCryptoScheme == CryptoScheme::Cenc,
@@ -602,7 +602,7 @@ nsresult WebMDemuxer::ReadMetadata() {
       if (params.rate <= 0 || params.rate > AudioInfo::MAX_RATE ||
           params.channels == 0 ||
           params.channels > AudioConfig::ChannelLayout::MAX_CHANNELS) {
-        WEBM_DEBUG("Invalid audio param rate: %lf channel count: %d",
+        WEBM_DEBUG("Invalid audio param rate: {:f} channel count: {}",
                    params.rate, params.channels);
         return NS_ERROR_DOM_MEDIA_METADATA_ERR;
       }
@@ -627,7 +627,7 @@ nsresult WebMDemuxer::ReadMetadata() {
       r = nestegg_duration(context, &duration);
       if (!r) {
         mInfo.mAudio.mDuration = TimeUnit::FromNanoseconds(duration);
-        WEBM_DEBUG("audio track duration: %lf",
+        WEBM_DEBUG("audio track duration: {:f}",
                    mInfo.mAudio.mDuration.ToSeconds());
       }
       mInfo.mAudio.mCrypto = GetTrackCrypto(TrackInfo::kAudioTrack, track);
@@ -703,7 +703,7 @@ CryptoTrack WebMDemuxer::GetTrackCrypto(TrackInfo::TrackType aType,
       context, aTrackNumber, &contentEncKeyId, &contentEncKeyIdLength);
 
   if (r == -1) {
-    WEBM_DEBUG("nestegg_track_content_enc_key_id failed r=%d", r);
+    WEBM_DEBUG("nestegg_track_content_enc_key_id failed r={}", r);
     return crypto;
   }
 
@@ -757,8 +757,7 @@ nsresult WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType,
   int64_t tstamp = holder->Timestamp();
   int64_t duration = holder->Duration();
   if (aType == TrackInfo::TrackType::kVideoTrack) {
-    WEBM_DEBUG("video: tstamp=%" PRId64 ", duration=%" PRId64
-               ", mVideoDefaultDuration=%" PRId64,
+    WEBM_DEBUG("video: tstamp={}, duration={}, mVideoDefaultDuration={}",
                tstamp, duration, mVideoDefaultDuration);
   }
 
@@ -781,52 +780,52 @@ nsresult WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType,
   RefPtr<NesteggPacketHolder> next_holder = result.unwrapOr(nullptr);
 
   int64_t next_tstamp = INT64_MIN;
-  auto calculateNextTimestamp = [&](auto pushPacket,
-                                    Maybe<int64_t>* lastFrameTime,
-                                    int64_t defaultDuration,
-                                    int64_t trackEndTime) {
-    MOZ_ASSERT(lastFrameTime);
-    if (next_holder) {
-      next_tstamp = next_holder->Timestamp();
-      (this->*pushPacket)(next_holder);
-    } else if (duration >= 0) {
-      next_tstamp = tstamp + duration;
-    } else if (defaultDuration >= 0) {
-      next_tstamp = tstamp + defaultDuration;
-    } else if (lastFrameTime->isSome()) {
-      // This is a poor estimate, and overestimation overlaps the subsequent
-      // block, which can cause cause removal of subsequent frames from
-      // MediaSource buffers.
-      next_tstamp = tstamp + (tstamp - lastFrameTime->value());
-    } else if (mVideoFrameEndTimeBeforeReset) {
-      WEBM_DEBUG("Setting next timestamp to be %" PRId64 " us",
-                 mVideoFrameEndTimeBeforeReset->ToMicroseconds());
-      next_tstamp = mVideoFrameEndTimeBeforeReset->ToMicroseconds();
-    } else if (mIsMediaSource) {
-      (this->*pushPacket)(holder);
-    } else {
-      // If we can't get frame's duration, it means either we need to wait for
-      // more data for MSE case or this is the last frame for file resource
-      // case.
-      if (tstamp > trackEndTime) {
-        // This shouldn't happen, but some muxers give incorrect durations to
-        // segments, then have samples appear beyond those durations.
-        WEBM_DEBUG("Found tstamp=%" PRIi64 " > trackEndTime=%" PRIi64
-                   " while calculating next timestamp! Indicates a bad mux! "
-                   "Will use tstamp value.",
-                   tstamp, trackEndTime);
-      }
-      next_tstamp = std::max<int64_t>(tstamp, trackEndTime);
-    }
-    *lastFrameTime = Some(tstamp);
-  };
+  auto calculateNextTimestamp =
+      [&](auto pushPacket, Maybe<int64_t>* lastFrameTime,
+          int64_t defaultDuration, int64_t trackEndTime) {
+        MOZ_ASSERT(lastFrameTime);
+        if (next_holder) {
+          next_tstamp = next_holder->Timestamp();
+          (this->*pushPacket)(next_holder);
+        } else if (duration >= 0) {
+          next_tstamp = tstamp + duration;
+        } else if (defaultDuration >= 0) {
+          next_tstamp = tstamp + defaultDuration;
+        } else if (lastFrameTime->isSome()) {
+          // This is a poor estimate, and overestimation overlaps the subsequent
+          // block, which can cause cause removal of subsequent frames from
+          // MediaSource buffers.
+          next_tstamp = tstamp + (tstamp - lastFrameTime->value());
+        } else if (mVideoFrameEndTimeBeforeReset) {
+          WEBM_DEBUG("Setting next timestamp to be {} us",
+                     mVideoFrameEndTimeBeforeReset->ToMicroseconds());
+          next_tstamp = mVideoFrameEndTimeBeforeReset->ToMicroseconds();
+        } else if (mIsMediaSource) {
+          (this->*pushPacket)(holder);
+        } else {
+          // If we can't get frame's duration, it means either we need to wait
+          // for more data for MSE case or this is the last frame for file
+          // resource case.
+          if (tstamp > trackEndTime) {
+            // This shouldn't happen, but some muxers give incorrect durations
+            // to segments, then have samples appear beyond those durations.
+            WEBM_DEBUG(
+                "Found tstamp={} > trackEndTime={}"
+                " while calculating next timestamp! Indicates a bad mux! "
+                "Will use tstamp value.",
+                tstamp, trackEndTime);
+          }
+          next_tstamp = std::max<int64_t>(tstamp, trackEndTime);
+        }
+        *lastFrameTime = Some(tstamp);
+      };
 
   if (aType == TrackInfo::kAudioTrack) {
     calculateNextTimestamp(&WebMDemuxer::PushAudioPacket, &mLastAudioFrameTime,
                            mAudioDefaultDuration,
                            mInfo.mAudio.mDuration.ToMicroseconds());
   } else {
-    WEBM_DEBUG("next_holder %c mLastVideoFrameTime %c", next_holder ? 'Y' : 'N',
+    WEBM_DEBUG("next_holder {} mLastVideoFrameTime {}", next_holder ? 'Y' : 'N',
                mLastVideoFrameTime ? 'Y' : 'N');
     calculateNextTimestamp(&WebMDemuxer::PushVideoPacket, &mLastVideoFrameTime,
                            mVideoDefaultDuration,
@@ -850,7 +849,7 @@ nsresult WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType,
     size_t length;
     r = nestegg_packet_data(holder->Packet(), i, &data, &length);
     if (r == -1) {
-      WEBM_DEBUG("nestegg_packet_data failed r=%d", r);
+      WEBM_DEBUG("nestegg_packet_data failed r={}", r);
       return NS_ERROR_DOM_MEDIA_DEMUXER_ERR;
     }
     unsigned char* alphaData = nullptr;
@@ -862,7 +861,7 @@ nsresult WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType,
                                          &alphaLength);
       if (r == -1) {
         WEBM_DEBUG(
-            "nestegg_packet_additional_data failed to retrieve alpha data r=%d",
+            "nestegg_packet_additional_data failed to retrieve alpha data r={}",
             r);
       }
     }
@@ -908,8 +907,7 @@ nsresult WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType,
         sample->mKeyframe = CheckKeyFrameByExamineByteStream(sample);
       }
     }
-    WEBM_DEBUG("push sample tstamp: %" PRId64 " next_tstamp: %" PRId64
-               " length: %zu kf: %d",
+    WEBM_DEBUG("push sample tstamp: {} next_tstamp: {} length: {} kf: {}",
                tstamp, next_tstamp, length, sample->mKeyframe);
 
     if (discardPadding && i == count - 1) {
@@ -926,7 +924,7 @@ nsresult WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType,
         if (samples <= 0) {
           WEBM_DEBUG(
               "Invalid number of samples, flagging packet for error (padding: "
-              "%s, samples: %d, already processed: %s, error: %s)",
+              "{}, samples: {}, already processed: {}, error: {})",
               padding.ToString().get(), samples,
               mProcessedDiscardPadding ? "true" : "false",
               (samples == OPUS_BAD_ARG)          ? "OPUS_BAD_ARG"
@@ -938,7 +936,7 @@ nsresult WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType,
           if (padding > packetDuration || mProcessedDiscardPadding) {
             WEBM_DEBUG(
                 "Padding frames larger than packet size, flagging packet for "
-                "error (padding: %s, duration: %s, already processed: %s)",
+                "error (padding: {}, duration: {}, already processed: {})",
                 padding.ToString().get(), packetDuration.ToString().get(),
                 mProcessedDiscardPadding ? "true" : "false");
             sample->mDuration = TimeUnit::Invalid();
@@ -982,7 +980,7 @@ nsresult WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType,
         } else if (packetEncryption ==
                    NESTEGG_PACKET_HAS_SIGNAL_BYTE_PARTITIONED) {
           uint8_t numPartitions = 0;
-          const uint32_t* partitions = NULL;
+          const uint32_t* partitions = nullptr;
           nestegg_packet_offsets(holder->Packet(), &partitions, &numPartitions);
 
           // WebM stores a list of 'partitions' in the data, which alternate
@@ -1002,7 +1000,7 @@ nsresult WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType,
             uint32_t partition = partitions[i];
             if (partition > length || partition < lastOffset) {
               WEBM_DEBUG(
-                  "Invalid partition offset: %u (length: %zu, lastOffset: %u)",
+                  "Invalid partition offset: {} (length: {}, lastOffset: {})",
                   partition, length, lastOffset);
               return NS_ERROR_DOM_MEDIA_DEMUXER_ERR;
             }
@@ -1043,11 +1041,11 @@ nsresult WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType,
           // Assert that the lengths of the encrypted and plain samples add to
           // the length of the data.
           MOZ_ASSERT(
-              ((size_t)(std::accumulate(writer->mCrypto.mPlainSizes.begin(),
-                                        writer->mCrypto.mPlainSizes.end(), 0) +
-                        std::accumulate(writer->mCrypto.mEncryptedSizes.begin(),
-                                        writer->mCrypto.mEncryptedSizes.end(),
-                                        0)) == length));
+              (std::accumulate(writer->mCrypto.mPlainSizes.begin(),
+                               writer->mCrypto.mPlainSizes.end(), size_t{0}) +
+               std::accumulate(writer->mCrypto.mEncryptedSizes.begin(),
+                               writer->mCrypto.mEncryptedSizes.end(),
+                               size_t{0})) == length);
         }
       }
     }
@@ -1151,7 +1149,7 @@ nsresult WebMDemuxer::SeekInternal(TrackInfo::TrackType aType,
   uint32_t trackToSeek = mHasVideo ? mVideoTrack : mAudioTrack;
   MOZ_ASSERT(aTarget.ToNanoseconds() >= 0, "Seek time can't be negative");
   uint64_t target = static_cast<uint64_t>(aTarget.ToNanoseconds());
-  WEBM_DEBUG("Seeking to %lf", aTarget.ToSeconds());
+  WEBM_DEBUG("Seeking to {:f}", aTarget.ToSeconds());
 
   Reset(aType);
 
@@ -1160,21 +1158,21 @@ nsresult WebMDemuxer::SeekInternal(TrackInfo::TrackType aType,
     if (!mBufferedState->GetStartTime(&startTime)) {
       startTime = 0;
     }
-    WEBM_DEBUG("Seek Target: %f",
+    WEBM_DEBUG("Seek Target: {:f}",
                TimeUnit::FromNanoseconds(target).ToSeconds());
     if (target < mSeekPreroll || target - mSeekPreroll < startTime) {
       target = startTime;
     } else {
       target -= mSeekPreroll;
     }
-    WEBM_DEBUG("SeekPreroll: %f StartTime: %f Adjusted Target: %f",
+    WEBM_DEBUG("SeekPreroll: {:f} StartTime: {:f} Adjusted Target: {:f}",
                TimeUnit::FromNanoseconds(mSeekPreroll).ToSeconds(),
                TimeUnit::FromNanoseconds(startTime).ToSeconds(),
                TimeUnit::FromNanoseconds(target).ToSeconds());
   }
   int r = nestegg_track_seek(Context(aType), trackToSeek, target);
   if (r == -1) {
-    WEBM_DEBUG("track_seek for track %u to %f failed, r=%d", trackToSeek,
+    WEBM_DEBUG("track_seek for track {} to {:f} failed, r={}", trackToSeek,
                TimeUnit::FromNanoseconds(target).ToSeconds(), r);
     // Try seeking directly based on cluster information in memory.
     int64_t offset = 0;
@@ -1185,17 +1183,16 @@ nsresult WebMDemuxer::SeekInternal(TrackInfo::TrackType aType,
     }
 
     if (offset < 0) {
-      WEBM_DEBUG("Unknow byte offset time for seek target %" PRIu64 "ns",
-                 target);
+      WEBM_DEBUG("Unknow byte offset time for seek target {}ns", target);
       return NS_ERROR_FAILURE;
     }
 
     r = nestegg_offset_seek(Context(aType), static_cast<uint64_t>(offset));
     if (r == -1) {
-      WEBM_DEBUG("and nestegg_offset_seek to %" PRIu64 " failed", offset);
+      WEBM_DEBUG("and nestegg_offset_seek to {} failed", offset);
       return NS_ERROR_FAILURE;
     }
-    WEBM_DEBUG("got offset from buffered state: %" PRIu64 "", offset);
+    WEBM_DEBUG("got offset from buffered state: {}", offset);
   }
 
   if (aType == TrackInfo::kAudioTrack) {
@@ -1212,9 +1209,10 @@ bool WebMDemuxer::IsBufferedIntervalValid(uint64_t start, uint64_t end) {
     // Buffered ranges are clamped to the media's start time and duration. Any
     // frames with timestamps outside that range are ignored, see bug 1697641
     // for more info.
-    WEBM_DEBUG("Ignoring range %" PRIu64 "-%" PRIu64
-               ", due to invalid interval (start > end).",
-               start, end);
+    WEBM_DEBUG(
+        "Ignoring range {}-{}"
+        ", due to invalid interval (start > end).",
+        start, end);
     return false;
   }
 
@@ -1226,7 +1224,7 @@ bool WebMDemuxer::IsBufferedIntervalValid(uint64_t start, uint64_t end) {
     // negative due to uint64 -> int64 conversion from TimeUnit. We should
     // not get negative timestamps, so guard against them.
     WEBM_DEBUG(
-        "Invalid range %f-%f, likely result of uint64 -> int64 conversion.",
+        "Invalid range {:f}-{:f}, likely result of uint64 -> int64 conversion.",
         startTime.ToSeconds(), endTime.ToSeconds());
     return false;
   }
@@ -1252,7 +1250,7 @@ media::TimeIntervals WebMDemuxer::GetBuffered() {
     if (mBufferedState->GetStartTime(&startOffset)) {
       duration += startOffset;
     }
-    WEBM_DEBUG("Duration: %f StartTime: %f",
+    WEBM_DEBUG("Duration: {:f} StartTime: {:f}",
                TimeUnit::FromNanoseconds(duration).ToSeconds(),
                TimeUnit::FromNanoseconds(startOffset).ToSeconds());
   }
@@ -1265,7 +1263,7 @@ media::TimeIntervals WebMDemuxer::GetBuffered() {
                    "startOffset negative or larger than start time");
 
       if (duration && end > duration) {
-        WEBM_DEBUG("limit range to duration, end: %f duration: %f",
+        WEBM_DEBUG("limit range to duration, end: {:f} duration: {:f}",
                    TimeUnit::FromNanoseconds(end).ToSeconds(),
                    TimeUnit::FromNanoseconds(duration).ToSeconds());
         end = duration;
@@ -1279,7 +1277,8 @@ media::TimeIntervals WebMDemuxer::GetBuffered() {
       auto startTime = TimeUnit::FromNanoseconds(start);
       auto endTime = TimeUnit::FromNanoseconds(end);
 
-      WEBM_DEBUG("add range %f-%f", startTime.ToSeconds(), endTime.ToSeconds());
+      WEBM_DEBUG("add range {:f}-{:f}", startTime.ToSeconds(),
+                 endTime.ToSeconds());
       buffered += media::TimeInterval(startTime, endTime);
     }
   }
@@ -1460,11 +1459,11 @@ void WebMTrackDemuxer::SetNextKeyFrameTime() {
   if (frameTime.IsValid()) {
     mNextKeyframeTime.emplace(frameTime);
     WEBM_DEBUG(
-        "Next Keyframe %f (%u queued %.02fs)",
+        "Next Keyframe {:f} ({} queued {:.02f}s)",
         mNextKeyframeTime.value().ToSeconds(), uint32_t(mSamples.GetSize()),
         (mSamples.Last()->mTimecode - mSamples.First()->mTimecode).ToSeconds());
   } else {
-    WEBM_DEBUG("Couldn't determine next keyframe time  (%u queued)",
+    WEBM_DEBUG("Couldn't determine next keyframe time  ({} queued)",
                uint32_t(mSamples.GetSize()));
   }
 }
@@ -1474,7 +1473,7 @@ void WebMTrackDemuxer::Reset() {
   media::TimeIntervals buffered = GetBuffered();
   mNeedKeyframe = true;
   if (!buffered.IsEmpty()) {
-    WEBM_DEBUG("Seek to start point: %f", buffered.Start(0).ToSeconds());
+    WEBM_DEBUG("Seek to start point: {:f}", buffered.Start(0).ToSeconds());
     mParent->SeekInternal(mType, buffered.Start(0));
     SetNextKeyFrameTime();
   } else {
@@ -1514,11 +1513,11 @@ WebMTrackDemuxer::SkipToNextRandomAccessPoint(const TimeUnit& aTimeThreshold) {
   RefPtr<MediaRawData> sample;
   nsresult rv = NS_OK;
 
-  WEBM_DEBUG("TimeThreshold: %f", aTimeThreshold.ToSeconds());
+  WEBM_DEBUG("TimeThreshold: {:f}", aTimeThreshold.ToSeconds());
   while (!found && NS_SUCCEEDED((rv = NextSample(sample)))) {
     parsed++;
     if (sample->mKeyframe && sample->mTime >= aTimeThreshold) {
-      WEBM_DEBUG("next sample: %f (parsed: %d)", sample->mTime.ToSeconds(),
+      WEBM_DEBUG("next sample: {:f} (parsed: {})", sample->mTime.ToSeconds(),
                  parsed);
       found = true;
       mSamples.Reset();

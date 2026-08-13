@@ -7752,11 +7752,11 @@ def convertConstIDLValueToJSVal(value):
     if tag == IDLType.Tags.uint32:
         return "JS::NumberValue(%sU)" % (value.value)
     if tag in [IDLType.Tags.int64, IDLType.Tags.uint64]:
-        return "JS::CanonicalizedDoubleValue(%s)" % numericValue(tag, value.value)
+        return "JS::DoubleValue(%s)" % numericValue(tag, value.value)
     if tag == IDLType.Tags.bool:
         return "JS::BooleanValue(%s)" % (toStringBool(value.value))
     if tag in [IDLType.Tags.float, IDLType.Tags.double]:
-        return "JS::CanonicalizedDoubleValue(%s)" % (value.value)
+        return "JS::DoubleValue(%s)" % (value.value)
     raise TypeError("Const value of unhandled type: %s" % value.type)
 
 
@@ -7996,7 +7996,7 @@ def getWrapTemplateForType(
         return _setValue(value, setter="setNumber")
 
     def setDouble(value):
-        return _setValue("JS_NumberValue(%s)" % value)
+        return _setValue("JS::NumberValue(%s)" % value)
 
     def setBoolean(value):
         return _setValue(value, setter="setBoolean")
@@ -12473,8 +12473,8 @@ class CGMemberJITInfo(CGThing):
             IDLType.Tags.unrestricted_double,
             IDLType.Tags.double,
         ]:
-            # These all use JS_NumberValue, which can return int or double.
-            # But TI treats "double" as meaning "int or double", so we're
+            # These all use JS::NumberValue, which can return int or double.
+            # JSJitInfo treats "double" as meaning "int or double", so we're
             # good to return JSVAL_TYPE_DOUBLE here.
             return "JSVAL_TYPE_DOUBLE"
         if tag != IDLType.Tags.uint32:
@@ -12556,8 +12556,8 @@ class CGMemberJITInfo(CGThing):
             IDLType.Tags.unrestricted_double,
             IDLType.Tags.double,
         ]:
-            # These all use JS_NumberValue, which can return int or double.
-            # But TI treats "double" as meaning "int or double", so we're
+            # These all use JS::NumberValue, which can return int or double.
+            # JSJitInfo treats "double" as meaning "int or double", so we're
             # good to return JSVAL_TYPE_DOUBLE here.
             return "JSJitInfo::Double"
         if tag != IDLType.Tags.uint32:
@@ -18246,6 +18246,25 @@ class CGDictionary(CGThing):
             body=body.define(),
         )
 
+    def getStructMemberDefault(self, m, memberDefault):
+        # A member with a real IDL default keeps it.
+        if memberDefault is not None:
+            return memberDefault
+        # Required bare scalar members (numeric / boolean / enum, not nullable and
+        # not inside an Optional<>) are otherwise left uninitialized and only set
+        # by Init(). Value-initialize them so static-analysis tools don't report
+        # an uninitialized field; the cost is a single zero-store that Init()
+        # overwrites, and non-scalar members already have their own constructors.
+        member = m[0]
+        t = member.type
+        if (
+            not member.canHaveMissingValue()
+            and not t.nullable()
+            and (t.isPrimitive() or t.isEnum())
+        ):
+            return "{}"
+        return None
+
     def getStructs(self):
         d = self.dictionary
         selfName = self.makeClassName(d)
@@ -18255,11 +18274,12 @@ class CGDictionary(CGThing):
                 self.getMemberType(m),
                 visibility="public",
                 body=self.getMemberInitializer(m),
-                hasIgnoreInitCheckFlag=memberDefault is None,
-                defaultValue=memberDefault,
+                hasIgnoreInitCheckFlag=structDefault is None,
+                defaultValue=structDefault,
             )
-            for m, memberDefault in [
-                (m, self.getMemberDefaultValue(m)) for m in self.memberInfo
+            for m, structDefault in [
+                (m, self.getStructMemberDefault(m, self.getMemberDefaultValue(m)))
+                for m in self.memberInfo
             ]
         ]
         if d.parent:
@@ -19905,13 +19925,13 @@ class CGNativeMember(ClassMethod):
                 # No need for a third element in the isMember case
                 return "nsString", None, None
             # Outparam
-            return "void", "", "aRetVal = ${declName};\n"
+            return "void", "", "aRetVal = std::move(${declName});\n"
         if type.isByteString() or type.isUTF8String():
             if isMember:
                 # No need for a third element in the isMember case
                 return "nsCString", None, None
             # Outparam
-            return "void", "", "aRetVal = ${declName};\n"
+            return "void", "", "aRetVal = std::move(${declName});\n"
         if type.isEnum():
             enumName = type.unroll().inner.identifier.name
             if type.nullable():

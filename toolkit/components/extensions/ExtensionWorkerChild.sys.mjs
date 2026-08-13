@@ -475,7 +475,7 @@ class WebIDLChildAPIManager extends ChildAPIManager {
    * Return an ExtensionAPI class instance given its namespace.
    *
    * @param {string} namespace
-   * @returns {import("ExtensionCommon.sys.mjs").ExtensionAPI}
+   * @returns {import("./ExtensionCommon.sys.mjs").ExtensionAPI}
    */
   getExtensionAPIInstance(namespace) {
     return this.apiCan.apis.get(namespace);
@@ -697,7 +697,9 @@ class WorkerContextChild extends BaseContext {
       { envType: "addon_parent" },
       WebIDLChildAPIManager
     ).call(this);
-    return redefineGetter(this, "childManager", childManager);
+    return /** @type {WebIDLChildAPIManager} */ (
+      redefineGetter(this, "childManager", childManager)
+    );
   }
 
   get messenger() {

@@ -16,10 +16,14 @@ async function setAutograntPreferences() {
   });
 }
 
-add_task(async function testPopupWithUserInteraction() {
+add_setup(async function () {
   await setPreferences();
   await setAutograntPreferences();
 
+  registerCleanupFunction(clearSiteTestData);
+});
+
+add_task(async function testPopupWithUserInteraction() {
   // Test that requesting storage access initially does not autogrant.
   // If the autogrant doesn't occur, we click reject on the door hanger
   // and expect the promise returned by requestStorageAccess to reject.
@@ -73,7 +77,4 @@ add_task(async function testPopupWithUserInteraction() {
     Services.perms.ALLOW_ACTION,
     "Storage access permission was granted during the test."
   );
-
-  await cleanUpData();
-  await SpecialPowers.flushPrefEnv();
 });

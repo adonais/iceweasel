@@ -1,0 +1,106 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+@import url("chrome://global/skin/design-system/text-and-typography.css");
+
+:host {
+  --addons-promo-image-size: calc(2 * var(--size-image-xlarge));
+  --addons-promo-padding: var(--space-xlarge);
+  --addons-promo-text-padding-inline: calc(var(--space-xxlarge) + var(--space-small));
+
+  text-align: start;
+  font-size: var(--font-size-small);
+}
+
+@media not -moz-pref("browser.nova.enabled") {
+  :host {
+    display: none;
+  }
+}
+
+moz-card {
+  --card-padding: var(--addons-promo-padding);
+}
+
+.promo-layout {
+  display: flex;
+  gap: var(--space-medium);
+  align-items: center;
+
+  :host([imagealignment="center"]) & {
+    flex-direction: column;
+    justify-content: center;
+
+    .image-container {
+      align-self: center;
+    }
+  }
+}
+
+/* When imagealignment="end" the image should be placed after the text. */
+:host([imagealignment="end"]) .image-container {
+  order: 2;
+}
+
+/* Switch to a vertical center aligned layout when the page width is
+ * narrower than the collapsed sidebar + list view cards.
+ *
+ * NOTE: 782px is the sum of var(--size-sidebar-narrow) and
+ * var(--page-main-content-width) and should be updated if those
+ * variables are being changed. */
+@media (max-width: 782px) {
+  .promo-layout {
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+
+    .text-container {
+      align-items: center;
+    }
+
+    .image-container {
+      align-self: center;
+    }
+  }
+}
+
+.text-container {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-small);
+  padding-inline: var(--addons-promo-text-padding-inline);
+
+  :host([textcentered]) & {
+    align-items: center;
+    text-align: center;
+  }
+}
+
+.image-container {
+  width: var(--addons-promo-image-size);
+  flex-shrink: 0;
+  align-self: stretch;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+
+  img {
+    width: 100%;
+    height: auto;
+  }
+}
+
+.heading {
+  margin-block: 0;
+  font-size: var(--font-size-large);
+}
+
+.message {
+  color: var(--text-color-deemphasized);
+  margin: 0;
+  /* Increase space between the promo message and
+   * the slotted actions below it */
+  padding-bottom: var(--space-medium);
+}

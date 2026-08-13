@@ -2,28 +2,28 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/Logging.h"
-
 #include "gfxUserFontSet.h"
+
+#include "gfxOTSUtils.h"
 #include "gfxPlatform.h"
+#include "gfxPlatformFontList.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/FontPropertyTypes.h"
+#include "mozilla/Logging.h"
+#include "mozilla/PostTraversalTask.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/Services.h"
-#include "mozilla/StaticPrefs_gfx.h"
-#include "mozilla/glean/GfxMetrics.h"
-#include "mozilla/gfx/2D.h"
-#include "gfxPlatformFontList.h"
-#include "mozilla/PostTraversalTask.h"
 #include "mozilla/ServoStyleSet.h"
+#include "mozilla/StaticPrefs_gfx.h"
+#include "mozilla/dom/FontFaceSetImpl.h"
 #include "mozilla/dom/WorkerCommon.h"
-#include "gfxOTSUtils.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/glean/GfxMetrics.h"
+#include "nsContentUtils.h"
 #include "nsFontFaceLoader.h"
 #include "nsIFontLoadCompleteCallback.h"
-#include "nsProxyRelease.h"
-#include "nsContentUtils.h"
 #include "nsPresContext.h"
-#include "mozilla/dom/FontFaceSetImpl.h"
+#include "nsProxyRelease.h"
 #include "nsTHashSet.h"
 
 using namespace mozilla;

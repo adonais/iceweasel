@@ -7,8 +7,10 @@
 
 #include <cfloat>
 #include <cmath>
-#include "mozilla/Vector.h"
+#include <numbers>
+
 #include "Types.h"
+#include "mozilla/Vector.h"
 
 namespace skia {
 
@@ -44,7 +46,7 @@ class SkLanczosFilter final : public SkBitmapFilter {
     if (x > -FLT_EPSILON && x < FLT_EPSILON) {
       return 1.0f;  // Special case the discontinuity at the origin.
     }
-    float xpi = x * float(M_PI);
+    float xpi = x * std::numbers::pi_v<float>;
     return (sinf(xpi) / xpi) *                   // sinc(x)
            sinf(xpi / fWidth) / (xpi / fWidth);  // sinc(x/fWidth)
   }

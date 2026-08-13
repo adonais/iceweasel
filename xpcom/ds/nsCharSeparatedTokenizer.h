@@ -8,7 +8,6 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/RangedPtr.h"
 #include "mozilla/TypedEnumBits.h"
-
 #include "nsCRTGlue.h"
 #include "nsTDependentSubstring.h"
 

@@ -1,0 +1,106 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test that the correct notifications are sent to the IME for EditContext editors</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="/tests/SimpleTest/EventUtils.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<div></div>
+<script>
+'use strict';
+
+const {Cc, Ci} = SpecialPowers;
+const TIP = Cc['@mozilla.org/text-input-processor;1']
+              .createInstance(Ci.nsITextInputProcessor);
+const TIPListener = Cc['@mozilla.org/text-input-processor-listener;1']
+                      .createInstance(Ci.nsITextInputProcessorListener);
+TIPListener.setCallback(() => {
+  const notification = TIPListener.getNotification();
+  try {
+    switch (notification.type) {
+     case 'request-to-commit':
+      TIP.commitComposition();
+      break;
+     case 'request-to-cancel':
+      TIP.cancelComposition();
+      break;
+    }
+  } catch (e) {
+    return false;
+  }
+  notifications.push(notification.type);
+  return true;
+});
+TIP.beginInputTransactionForTests(window, TIPListener);
+
+const host = document.querySelector('div');
+const editContext = new EditContext();
+host.editContext = editContext;
+let notifications = [];
+
+async function doTest(func, expectation, description) {
+  host.focus();
+  notifications = [];
+  func();
+  await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  for (const notification in expectation) {
+    is(notifications.includes(notification),
+       expectation[notification],
+      `Should ${expectation[notification] ? "not " : ""}notify of ${notification} when ${description}`);
+  }
+}
+
+function typeA() {
+  const properties = {
+    key: 'a',
+    code: 'KeyA',
+    keyCode: KeyboardEvent.DOM_VK_A,
+  };
+  TIP.keydown(new KeyboardEvent('keydown', properties));
+  TIP.keyup(new KeyboardEvent('keyup', properties));
+}
+
+add_task(async () => {
+  await SimpleTest.promiseFocus();
+
+  await doTest(() => {
+    host.textContent = 'test';
+  }, {
+    'notify-text-change': false,
+    'notify-selection-change': false,
+  }, 'DOM contents are changed.');
+
+  await doTest(() => {
+    typeA();
+  }, {
+    'notify-text-change': true,
+    'notify-selection-change': true,
+  }, 'Text is inputted into EditContext.');
+
+  await doTest(() => {
+    editContext.updateSelection(0, 0);
+  }, {
+    'notify-text-change': false,
+    'notify-selection-change': true,
+  }, 'EditContext.updateSelection() is called.');
+
+  await doTest(() => {
+    editContext.updateText(1, 1, 'b');
+  }, {
+    'notify-text-change': true,
+    'notify-selection-change': false,
+  }, 'EditContext.updateText() is called.');
+
+  await doTest(() => {
+    getSelection().collapse(host.firstChild, 3);
+  }, {
+    'notify-text-change': false,
+    'notify-selection-change': false,
+  }, 'DOM selection is changed.');
+});
+</script>
+</body>
+</html>

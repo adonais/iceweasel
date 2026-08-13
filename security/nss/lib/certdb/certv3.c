@@ -58,50 +58,7 @@ CERT_FindNSCertTypeExtension(CERTCertificate *cert, SECItem *retItem)
 char *
 CERT_FindNSStringExtension(CERTCertificate *cert, int oidtag)
 {
-    SECItem wrapperItem, tmpItem = { siBuffer, 0 };
-    SECStatus rv;
-    PLArenaPool *arena = NULL;
-    char *retstring = NULL;
-
-    wrapperItem.data = NULL;
-    tmpItem.data = NULL;
-
-    arena = PORT_NewArena(DER_DEFAULT_CHUNKSIZE);
-
-    if (!arena) {
-        goto loser;
-    }
-
-    rv = cert_FindExtension(cert->extensions, oidtag, &wrapperItem);
-    if (rv != SECSuccess) {
-        goto loser;
-    }
-
-    rv = SEC_QuickDERDecodeItem(
-        arena, &tmpItem, SEC_ASN1_GET(SEC_IA5StringTemplate), &wrapperItem);
-
-    if (rv != SECSuccess) {
-        goto loser;
-    }
-
-    retstring = (char *)PORT_Alloc(tmpItem.len + 1);
-    if (retstring == NULL) {
-        goto loser;
-    }
-
-    PORT_Memcpy(retstring, tmpItem.data, tmpItem.len);
-    retstring[tmpItem.len] = '\0';
-
-loser:
-    if (arena) {
-        PORT_FreeArena(arena, PR_FALSE);
-    }
-
-    if (wrapperItem.data) {
-        PORT_Free(wrapperItem.data);
-    }
-
-    return (retstring);
+    return NULL;
 }
 
 /*

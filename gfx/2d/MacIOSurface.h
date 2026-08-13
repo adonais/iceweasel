@@ -10,9 +10,9 @@
 #  include <QuartzCore/QuartzCore.h>
 #  include <dlfcn.h>
 
-#  include "mozilla/gfx/Types.h"
-#  include "mozilla/Maybe.h"
 #  include "CFTypeRefPtr.h"
+#  include "mozilla/Maybe.h"
+#  include "mozilla/gfx/Types.h"
 
 namespace mozilla {
 namespace gl {
@@ -66,10 +66,6 @@ class MacIOSurface final
       ChromaSubsampling aChromaSubsampling, YUVColorSpace aColorSpace,
       TransferFunction aTransferFunction, ColorRange aColorRange,
       ColorDepth aColorDepth, AllowAlpha aAllowAlpha);
-  static already_AddRefed<MacIOSurface> CreateSinglePlanarSurface(
-      const IntSize& aSize, YUVColorSpace aColorSpace,
-      TransferFunction aTransferFunction, ColorRange aColorRange,
-      AllowAlpha aAllowAlpha);
   static void ReleaseIOSurface(MacIOSurface* aIOSurface);
   static already_AddRefed<MacIOSurface> LookupSurface(
       IOSurfaceID aSurfaceID, YUVColorSpace aColorSpace,
@@ -123,6 +119,7 @@ class MacIOSurface final
     OSType format = GetPixelFormat();
     return (format == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange ||
             format == kCVPixelFormatType_420YpCbCr10BiPlanarFullRange ||
+            format == kCVPixelFormatType_422YpCbCr8BiPlanarFullRange ||
             format == kCVPixelFormatType_422YpCbCr10BiPlanarFullRange ||
             format == kCVPixelFormatType_422YpCbCr8FullRange);
   }

@@ -12,7 +12,7 @@ const XPCOMUtils = ChromeUtils.importESModule(
 const lazy = XPCOMUtils.declareLazy({
   AppConstants: "resource://gre/modules/AppConstants.sys.mjs",
   ContextualIdentityService:
-    "resource://gre/modules/ContextualIdentityService.sys.mjs",
+    "moz-src:///toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs",
   LinkPreview: "moz-src:///browser/components/genai/LinkPreview.sys.mjs",
   ShortcutUtils: "resource://gre/modules/ShortcutUtils.sys.mjs",
   TransientPrefs: "resource:///modules/TransientPrefs.sys.mjs",
@@ -458,6 +458,11 @@ Preferences.addSetting({
   pref: "browser.ml.linkPreview.longPress",
 });
 
+// Keyboard shortcuts settings
+Preferences.addSetting({
+  id: "keyboardCustomkeysLinkTabs",
+});
+
 // Media settings
 Preferences.addSetting({
   id: "pictureInPictureToggleEnabled",
@@ -719,6 +724,21 @@ SettingGroupManager.registerGroups({
             l10nId: "link-preview-settings-long-press",
           },
         ],
+      },
+    ],
+  },
+  keyboardShortcuts: {
+    l10nId: "settings-keyboard-shortcuts-group",
+    headingLevel: 2,
+    iconSrc: "chrome://browser/skin/preferences/category-accessibility.svg",
+    items: [
+      {
+        id: "keyboardCustomkeysLinkTabs",
+        l10nId: "settings-keyboard-shortcuts-customkeys-link",
+        control: "moz-box-link",
+        controlAttrs: {
+          href: "about:keyboard",
+        },
       },
     ],
   },

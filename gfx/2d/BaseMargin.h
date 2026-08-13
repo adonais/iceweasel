@@ -161,6 +161,8 @@ struct BaseMargin {
     return aStream << "(t=" << aMargin.top << ", r=" << aMargin.right
                    << ", b=" << aMargin.bottom << ", l=" << aMargin.left << ')';
   }
+
+  auto MutTiedFields() { return std::tie(top, right, bottom, left); }
 };
 
 }  // namespace gfx

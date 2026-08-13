@@ -409,7 +409,7 @@ add_task(async function test_section_toggle() {
   });
 
   Services.cookieBanners.resetRules(false);
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !!Services.cookieBanners.rules.length,
     "waiting for Services.cookieBanners.rules.length to be greater than 0"
   );

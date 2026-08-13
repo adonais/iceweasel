@@ -83,7 +83,7 @@ const startupPhases = {
         // "resource:///modules/BrowserWindowTracker.sys.mjs",
         "resource://gre/modules/BookmarkHTMLUtils.sys.mjs",
         "resource://gre/modules/Bookmarks.sys.mjs",
-        "resource://gre/modules/ContextualIdentityService.sys.mjs",
+        "moz-src:///toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs",
         "resource://gre/modules/FxAccounts.sys.mjs",
         "resource://gre/modules/FxAccountsStorage.sys.mjs",
         "resource://gre/modules/PlacesSyncUtils.sys.mjs",
@@ -129,7 +129,7 @@ if (
 
 if (AppConstants.MOZ_CRASHREPORTER) {
   startupPhases["before handling user events"].denylist.modules.add(
-    "resource://gre/modules/CrashSubmit.sys.mjs"
+    "moz-src:///toolkit/crashreporter/CrashSubmit.sys.mjs"
   );
 }
 // Bug 1798750

@@ -4,12 +4,12 @@
 
 #include "OrientedImage.h"
 
+#include "ImageRegion.h"
 #include "gfx2DGlue.h"
 #include "gfxContext.h"
 #include "gfxDrawable.h"
 #include "gfxPlatform.h"
 #include "gfxUtils.h"
-#include "ImageRegion.h"
 #include "mozilla/SVGImageContext.h"
 
 using std::swap;

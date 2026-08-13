@@ -1285,6 +1285,45 @@ static inline bool ShouldTraceWeakEdgeInStub(JSTracer* trc) {
   }
 }
 
+class GetCacheIROpsFunctor : public JS::TracingContext::Functor {
+  const CacheIRStubInfo* stubInfo;
+
+ public:
+  explicit GetCacheIROpsFunctor(const CacheIRStubInfo* stubInfo)
+      : stubInfo(stubInfo) {}
+  virtual void operator()(JS::TracingContext* trc, const char* name, char* buf,
+                          size_t bufsize) override;
+};
+
+void GetCacheIROpsFunctor::operator()(JS::TracingContext* tcx, const char* name,
+                                      char* buf, size_t bufsize) {
+  CacheIRReader reader(stubInfo);
+
+  int nameWritten = snprintf(buf, bufsize, "%s [kind: %s, ops:",
+                             CacheKindNames[uint8_t(stubInfo->kind())], name);
+  if (nameWritten < 0 || size_t(nameWritten) >= bufsize) {
+    return;
+  }
+  size_t totalWritten = size_t(nameWritten);
+
+  while (reader.more()) {
+    CacheOp op = reader.readOp();
+    CacheIROpInfo opInfo = CacheIROpInfos[size_t(op)];
+
+    size_t totalRemaining = bufsize - totalWritten;
+    int written = snprintf(buf + totalWritten, bufsize - totalWritten, " %s",
+                           CacheIRCodeName(op));
+    if (written < 0 || size_t(written) >= totalRemaining) {
+      return;
+    }
+
+    totalWritten += written;
+
+    reader.skip(opInfo.argLength);
+  }
+  snprintf(buf + totalWritten, bufsize - totalWritten, "]");
+}
+
 template <typename T>
 void jit::TraceCacheIRStub(JSTracer* trc, T* stub,
                            const CacheIRStubInfo* stubInfo) {
@@ -1308,6 +1347,8 @@ void jit::TraceCacheIRStub(JSTracer* trc, T* stub,
         // cross-zone shapes.
         GCPtr<Shape*>& shapeField =
             stubInfo->getStubField<T, Type::Shape>(stub, offset);
+        GetCacheIROpsFunctor func(stubInfo);
+        JS::AutoTracingDetails details(trc, func);
         TraceSameZoneCrossCompartmentEdge(trc, &shapeField, "cacheir-shape");
         break;
       }
@@ -1322,6 +1363,8 @@ void jit::TraceCacheIRStub(JSTracer* trc, T* stub,
         }
         break;
       case Type::JSObject: {
+        GetCacheIROpsFunctor func(stubInfo);
+        JS::AutoTracingDetails details(trc, func);
         TraceEdge(trc, &stubInfo->getStubField<T, Type::JSObject>(stub, offset),
                   "cacheir-object");
         break;
@@ -1333,14 +1376,20 @@ void jit::TraceCacheIRStub(JSTracer* trc, T* stub,
                     "cacheir-weak-object");
         }
         break;
-      case Type::Symbol:
+      case Type::Symbol: {
+        GetCacheIROpsFunctor func(stubInfo);
+        JS::AutoTracingDetails details(trc, func);
         TraceEdge(trc, &stubInfo->getStubField<T, Type::Symbol>(stub, offset),
                   "cacheir-symbol");
         break;
-      case Type::String:
+      }
+      case Type::String: {
+        GetCacheIROpsFunctor func(stubInfo);
+        JS::AutoTracingDetails details(trc, func);
         TraceEdge(trc, &stubInfo->getStubField<T, Type::String>(stub, offset),
                   "cacheir-string");
         break;
+      }
       case Type::WeakBaseScript:
         if (ShouldTraceWeakEdgeInStub<T>(trc)) {
           TraceEdge(
@@ -1357,10 +1406,13 @@ void jit::TraceCacheIRStub(JSTracer* trc, T* stub,
         TraceEdge(trc, &stubInfo->getStubField<T, Type::Id>(stub, offset),
                   "cacheir-id");
         break;
-      case Type::Value:
+      case Type::Value: {
+        GetCacheIROpsFunctor func(stubInfo);
+        JS::AutoTracingDetails details(trc, func);
         TraceEdge(trc, &stubInfo->getStubField<T, Type::Value>(stub, offset),
                   "cacheir-value");
         break;
+      }
       case Type::WeakValue:
         if (ShouldTraceWeakEdgeInStub<T>(trc)) {
           TraceEdge(trc,
@@ -3472,13 +3524,11 @@ bool CacheIRCompiler::emitInt32MulResult(Int32OperandId lhsId,
     return false;
   }
 
-  Label maybeNegZero, done;
+  Label done;
   masm.mov(lhs, scratch);
   masm.branchMul32(Assembler::Overflow, rhs, scratch, failure->label());
-  masm.branchTest32(Assembler::Zero, scratch, scratch, &maybeNegZero);
-  masm.jump(&done);
+  masm.branchTest32(Assembler::NonZero, scratch, scratch, &done);
 
-  masm.bind(&maybeNegZero);
   masm.mov(lhs, scratch2);
   // Result is -0 if exactly one of lhs or rhs is negative.
   masm.or32(rhs, scratch2);
@@ -9287,12 +9337,13 @@ bool CacheIRCompiler::emitMegamorphicLoadSlotByValueResult(ObjOperandId objId,
     return false;
   }
 
-#ifdef JS_CODEGEN_X86
   masm.xorPtr(scratch2, scratch2);
-#else
-  Label cacheHit;
-  masm.emitMegamorphicCacheLookupByValue(
-      idVal, obj, scratch1, scratch3, scratch2, output.valueReg(), &cacheHit);
+#ifndef JS_CODEGEN_X86
+  Label cacheHit, atomizeMiss;
+  masm.loadAtomOrSymbolAndHash(idVal, scratch1, scratch3, &atomizeMiss);
+  masm.emitMegamorphicCacheLookupByValue(obj, scratch1, scratch3, scratch2,
+                                         output.valueReg(), &cacheHit);
+  masm.bind(&atomizeMiss);
 #endif
 
   masm.branchIfNonNativeObj(obj, scratch1, failure->label());
@@ -9359,12 +9410,14 @@ bool CacheIRCompiler::emitMegamorphicLoadSlotByValuePermissiveResult(
   AutoScratchRegister scratch3(allocator, masm);
 #endif
 
-#ifdef JS_CODEGEN_X86
   masm.xorPtr(scratch2, scratch2);
-#else
-  Label cacheHit;
-  masm.emitMegamorphicCacheLookupByValue(
-      idVal, obj, scratch1, scratch3, scratch2, output.valueReg(), &cacheHit);
+#ifndef JS_CODEGEN_X86
+  Label cacheHit, atomizeMiss;
+
+  masm.loadAtomOrSymbolAndHash(idVal, scratch1, scratch3, &atomizeMiss);
+  masm.emitMegamorphicCacheLookupByValue(obj, scratch1, scratch3, scratch2,
+                                         output.valueReg(), &cacheHit);
+  masm.bind(&atomizeMiss);
 #endif
 
   callvm.prepare();
@@ -9406,13 +9459,13 @@ bool CacheIRCompiler::emitMegamorphicHasPropResult(ObjOperandId objId,
     return false;
   }
 
-#ifndef JS_CODEGEN_X86
-  Label cacheHit, done;
-  masm.emitMegamorphicCacheLookupExists(idVal, obj, scratch1, scratch3,
-                                        scratch2, output.maybeReg(), &cacheHit,
-                                        hasOwn);
-#else
   masm.xorPtr(scratch2, scratch2);
+#ifndef JS_CODEGEN_X86
+  Label done, cacheHit, atomizeMiss;
+  masm.loadAtomOrSymbolAndHash(idVal, scratch1, scratch3, &atomizeMiss);
+  masm.emitMegamorphicCacheLookupExists(obj, scratch1, scratch3, scratch2,
+                                        output.maybeReg(), &cacheHit, hasOwn);
+  masm.bind(&atomizeMiss);
 #endif
 
   masm.branchIfNonNativeObj(obj, scratch1, failure->label());
@@ -9737,9 +9790,10 @@ bool CacheIRCompiler::emitMegamorphicLoadSlotResult(ObjOperandId objId,
 #else
   Label cacheHit;
   emitLoadStubField(id, idReg);
-  masm.emitMegamorphicCacheLookupByValue(idReg.get(), obj, scratch1, scratch2,
-                                         scratch3, output.valueReg(),
-                                         &cacheHit);
+  masm.movePtr(idReg.get(), scratch1);
+  masm.loadAtomHash(scratch1, scratch2, nullptr);
+  masm.emitMegamorphicCacheLookupByValue(obj, scratch1, scratch2, scratch3,
+                                         output.valueReg(), &cacheHit);
 #endif
 
   FailurePath* failure;
@@ -9800,7 +9854,6 @@ bool CacheIRCompiler::emitMegamorphicLoadSlotPermissiveResult(
   Register obj = allocator.useRegister(masm, objId);
   StubFieldOffset id(idOffset, StubField::Type::Id);
 
-  AutoScratchRegisterMaybeOutput idReg(allocator, masm, output);
   AutoScratchRegister scratch1(allocator, masm);
   AutoScratchRegister scratch2(allocator, masm);
   AutoScratchRegisterMaybeOutputType scratch3(allocator, masm, output);
@@ -9809,10 +9862,10 @@ bool CacheIRCompiler::emitMegamorphicLoadSlotPermissiveResult(
   masm.xorPtr(scratch3, scratch3);
 #else
   Label cacheHit;
-  emitLoadStubField(id, idReg);
-  masm.emitMegamorphicCacheLookupByValue(idReg.get(), obj, scratch1, scratch2,
-                                         scratch3, output.valueReg(),
-                                         &cacheHit);
+  emitLoadStubField(id, scratch1);
+  masm.loadAtomHash(scratch1, scratch2, nullptr);
+  masm.emitMegamorphicCacheLookupByValue(obj, scratch1, scratch2, scratch3,
+                                         output.valueReg(), &cacheHit);
 #endif
 
   callvm.prepare();

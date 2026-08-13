@@ -5,6 +5,7 @@
 #ifndef mozilla_dom_indexeddb_serializationhelpers_h_
 #define mozilla_dom_indexeddb_serializationhelpers_h_
 
+#include "TransactionOpResult.h"
 #include "ipc/EnumSerializer.h"
 #include "ipc/IPCMessageUtilsSpecializations.h"
 #include "mozilla/dom/BindingIPCUtils.h"
@@ -22,20 +23,8 @@ struct ParamTraits<mozilla::dom::indexedDB::StructuredCloneFileBase::FileType>
           mozilla::dom::indexedDB::StructuredCloneFileBase::eBlob,
           mozilla::dom::indexedDB::StructuredCloneFileBase::eEndGuard> {};
 
-template <>
-struct ParamTraits<mozilla::dom::indexedDB::Key> {
-  typedef mozilla::dom::indexedDB::Key paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mBuffer);
-    WriteParam(aWriter, aParam.mAutoIncrementKeyOffsets);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mBuffer) &&
-           ReadParam(aReader, &aResult->mAutoIncrementKeyOffsets);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::indexedDB::Key, mBuffer,
+                                  mAutoIncrementKeyOffsets);
 
 template <>
 struct ParamTraits<mozilla::dom::indexedDB::KeyPath::KeyPathType>
@@ -44,20 +33,8 @@ struct ParamTraits<mozilla::dom::indexedDB::KeyPath::KeyPathType>
           mozilla::dom::indexedDB::KeyPath::KeyPathType::NonExistent,
           mozilla::dom::indexedDB::KeyPath::KeyPathType::EndGuard> {};
 
-template <>
-struct ParamTraits<mozilla::dom::indexedDB::KeyPath> {
-  typedef mozilla::dom::indexedDB::KeyPath paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mType);
-    WriteParam(aWriter, aParam.mStrings);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mType) &&
-           ReadParam(aReader, &aResult->mStrings);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::indexedDB::KeyPath, mType,
+                                  mStrings);
 
 template <>
 struct ParamTraits<mozilla::dom::IDBCursor::Direction>
@@ -77,6 +54,9 @@ struct ParamTraits<mozilla::dom::IDBTransaction::Durability>
           mozilla::dom::IDBTransaction::Durability,
           mozilla::dom::IDBTransaction::Durability::Default,
           mozilla::dom::IDBTransaction::Durability::Invalid> {};
+
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::indexedDB::TransactionOpResult,
+                                  mCode, mErrorMessage)
 
 }  // namespace IPC
 

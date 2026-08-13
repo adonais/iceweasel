@@ -28,6 +28,7 @@
 #include "nsIPrincipal.h"
 #include "nsIRandomGenerator.h"
 #include "nsIScriptError.h"
+#include "nsMixedContentBlocker.h"
 #include "nsNetUtil.h"
 #include "nsXULAppAPI.h"
 
@@ -160,7 +161,7 @@ void ReportingHeader::ReportingFromChannel(nsIHttpChannel* aChannel) {
     return;
   }
 
-  if (!IsSecureURI(uri)) {
+  if (!nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(uri)) {
     return;
   }
 
@@ -236,7 +237,7 @@ EndpointsList ReportingHeader::ProcessReportingEndpointsListFromResponse(
     return {};
   }
 
-  if (!IsSecureURI(uri)) {
+  if (!nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(uri)) {
     return {};
   }
 
@@ -285,7 +286,7 @@ size_t ReportingHeader::ParseReportingEndpointsHeader(
 
   size_t itemsParsed = 0;
 
-  if (!IsSecureURI(aURI)) {
+  if (!nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(aURI)) {
     return 0;
   }
 
@@ -321,7 +322,7 @@ size_t ReportingHeader::ParseReportingEndpointsHeader(
       continue;
     }
 
-    if (!IsSecureURI(endpointURL)) {
+    if (!nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(endpointURL)) {
       continue;
     }
 
@@ -491,20 +492,6 @@ ReportingHeader::ParseReportToHeader(nsIHttpChannel* aChannel, nsIURI* aURI,
   }
 
   return client;
-}
-
-/* static */
-bool ReportingHeader::IsSecureURI(nsIURI* aURI) {
-  MOZ_ASSERT(aURI);
-
-  bool prioriAuthenticated = false;
-  if (NS_WARN_IF(NS_FAILED(NS_URIChainHasFlags(
-          aURI, nsIProtocolHandler::URI_IS_POTENTIALLY_TRUSTWORTHY,
-          &prioriAuthenticated)))) {
-    return false;
-  }
-
-  return prioriAuthenticated;
 }
 
 /* static */

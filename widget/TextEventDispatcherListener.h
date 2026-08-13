@@ -6,6 +6,7 @@
 #define mozilla_textinputdispatcherlistener_h_
 
 #include "mozilla/EnumSet.h"
+#include "mozilla/EventForwards.h"
 #include "nsWeakReference.h"
 
 namespace mozilla {

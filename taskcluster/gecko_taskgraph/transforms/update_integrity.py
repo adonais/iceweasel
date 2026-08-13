@@ -151,6 +151,7 @@ def add_additional_fetches_and_command(config, jobs):
         # ideally, this attribute would be set on en-US jobs as well...but it's not, so we have to assume
         locale = job["attributes"].get("locale", "en-US")
         build_target = job["attributes"]["build_target"]
+        product = job.pop("product")
 
         cmd = [
             # add dmg tool location to the $PATH. this is not strictly necessary
@@ -171,10 +172,10 @@ def add_additional_fetches_and_command(config, jobs):
             "/builds/worker/fetches",
             # locale
             locale,
-            # channel - stop hardcoding
-            "nightly-try",
-            # app name - stop hardcoding
-            "firefox",
+            # channel
+            job["attributes"]["update-channel"],
+            # product name
+            product,
             # artifact dir
             "/builds/worker/artifacts",
         ]
@@ -227,15 +228,23 @@ def add_additional_fetches_and_command(config, jobs):
                 )
             else:
                 identifier = info["previousVersion"]
+                # `info['product']` actually contains the brand name (that is:
+                # Firefox for nightly/beta/release/esr, and Devedition
+                # for devedition; this is a necessary distinction for
+                # URL generation (devedition is in a `devedition` directory)
+                # but uses `firefox`/`Firefox` in filenames
+                brand = info["product"].lower()
                 from_installer_url = _get_release_installer_url(
-                    info["product"],
+                    brand,
+                    product,
                     build_target,
                     locale,
                     info["previousVersion"],
                     archive_prefix,
                 )
                 linux64_installer_url = _get_release_installer_url(
-                    info["product"],
+                    brand,
+                    product,
                     "Linux_x86_64-gcc3",
                     linux_locale,
                     info["previousVersion"],
@@ -258,14 +267,19 @@ def add_additional_fetches_and_command(config, jobs):
 
 
 def _get_release_installer_url(
-    brand, build_target, locale, from_version, archive_prefix
+    brand, product, build_target, locale, from_version, archive_prefix
 ):
-    product = brand.lower()
     ftp_platform = updatePlatform2ftp(build_target)
     releases_dir = getReleasesDir(
-        product, from_version, protocol="https", server=archive_prefix
+        brand, from_version, protocol="https", server=archive_prefix
     )
     path = urllib.parse.quote(
-        getReleaseInstallerPath(product, brand, from_version, ftp_platform, locale)
+        # although this function calls the second argument `brandName`, it
+        # is actually the product name as used in filenames, eg: Firefox
+        # using the `brand` given to us would cause errors for Devedition, which
+        # uses Firefox in its filenames 🙃
+        getReleaseInstallerPath(
+            product, product.capitalize(), from_version, ftp_platform, locale
+        )
     )
     return f"{releases_dir}/{path}"

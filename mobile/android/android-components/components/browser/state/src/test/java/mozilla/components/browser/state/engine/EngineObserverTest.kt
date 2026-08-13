@@ -82,6 +82,10 @@ class EngineObserverTest {
                 onResult: (Boolean) -> Unit,
                 onException: (Throwable) -> Unit,
             ) {}
+            override fun getBrokenSiteReport(
+                onResult: (JSONObject) -> Unit,
+                onException: (Throwable) -> Unit,
+            ) {}
             override fun getWebCompatInfo(
                 onResult: (JSONObject) -> Unit,
                 onException: (Throwable) -> Unit,
@@ -172,6 +176,10 @@ class EngineObserverTest {
             ) {}
             override fun checkForPdfViewer(
                 onResult: (Boolean) -> Unit,
+                onException: (Throwable) -> Unit,
+            ) {}
+            override fun getBrokenSiteReport(
+                onResult: (JSONObject) -> Unit,
                 onException: (Throwable) -> Unit,
             ) {}
             override fun getWebCompatInfo(
@@ -265,6 +273,10 @@ class EngineObserverTest {
                 onResult: (Boolean) -> Unit,
                 onException: (Throwable) -> Unit,
             ) {}
+            override fun getBrokenSiteReport(
+                onResult: (JSONObject) -> Unit,
+                onException: (Throwable) -> Unit,
+            ) {}
             override fun getWebCompatInfo(
                 onResult: (JSONObject) -> Unit,
                 onException: (Throwable) -> Unit,
@@ -352,6 +364,10 @@ class EngineObserverTest {
                 onResult: (Boolean) -> Unit,
                 onException: (Throwable) -> Unit,
             ) {}
+            override fun getBrokenSiteReport(
+                onResult: (JSONObject) -> Unit,
+                onException: (Throwable) -> Unit,
+            ) {}
             override fun getWebCompatInfo(
                 onResult: (JSONObject) -> Unit,
                 onException: (Throwable) -> Unit,
@@ -435,6 +451,10 @@ class EngineObserverTest {
             ) {}
             override fun checkForPdfViewer(
                 onResult: (Boolean) -> Unit,
+                onException: (Throwable) -> Unit,
+            ) {}
+            override fun getBrokenSiteReport(
+                onResult: (JSONObject) -> Unit,
                 onException: (Throwable) -> Unit,
             ) {}
             override fun getWebCompatInfo(

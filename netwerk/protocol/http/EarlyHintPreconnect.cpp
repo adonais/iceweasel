@@ -4,12 +4,12 @@
 
 #include "EarlyHintPreconnect.h"
 
+#include "SpeculativeTransaction.h"
 #include "mozilla/CORSMode.h"
-#include "mozilla/dom/Element.h"
 #include "mozilla/StaticPrefs_network.h"
+#include "mozilla/dom/Element.h"
 #include "nsIOService.h"
 #include "nsIURI.h"
-#include "SpeculativeTransaction.h"
 
 namespace mozilla::net {
 

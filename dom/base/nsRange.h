@@ -166,6 +166,14 @@ class nsRange final : public mozilla::dom::AbstractRange,
   already_AddRefed<nsRange> CloneRange() const;
 
   /**
+   * Return this if the both start/end containers of mCrossShadowBoundaryRange
+   * are in the flattened containers in the flattened tree. Otherwise, return
+   * a clone but mCrossShadowBoundaryRange is adjusted to end of the closest
+   * flattened ancestor node.
+   */
+  already_AddRefed<nsRange> GetRangeInFlatTree() const;
+
+  /**
    * SetStartAndEnd() works similar to call both SetStart() and SetEnd().
    * Different from calls them separately, this does nothing if either
    * the start point or the end point is invalid point.

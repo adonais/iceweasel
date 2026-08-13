@@ -132,7 +132,7 @@ async function waitForNetworkEvents(expectedUrl = null, expectedRequestsCount) {
   registerCleanupFunction(() => networkObserver.destroy());
 
   info("Wait until the events count reaches " + expectedRequestsCount);
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => events.length >= expectedRequestsCount
   );
   return events;

@@ -6,6 +6,7 @@
 #define GFX_MAC_UTILS_H
 
 #include <CoreFoundation/CoreFoundation.h>
+
 #include "mozilla/gfx/2D.h"
 
 class gfxMacUtils {

@@ -916,6 +916,114 @@ add_task(async () => {
   await SpecialPowers.popPrefEnv();
 });
 
+// The scroller lives in an out-of-process iframe (OOPIF) that is rotated twice:
+// the parent rotates the iframe by 90deg and the OOPIF rotates its own scroller
+// by 270deg. The two rotations cancel out, so the scroller ends up scrolling
+// vertically on screen. A horizontal pan over the OOPIF is therefore not along
+// the scroller's scroll axis, so it isn't consumed by the OOPIF scroller and
+// should trigger swipe-to-navigate.
+add_task(async () => {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.gesture.swipe.left", "Browser:BackOrBackDuplicate"],
+      ["browser.gesture.swipe.right", "Browser:ForwardOrForwardDuplicate"],
+      ["widget.disable-swipe-tracker", false],
+      ["widget.swipe.velocity-twitch-tolerance", 0.0000001],
+      ["widget.swipe.success-velocity-contribution", 0.5],
+      ["apz.overscroll.enabled", true],
+    ],
+  });
+
+  const URL_ROOT = getRootDirectory(gTestPath).replace(
+    "chrome://mochitests/content/",
+    "http://mochi.test:8888/"
+  );
+  const pageURL = URL_ROOT + "helper_swipe_gesture_double_rotated_oopif.html";
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    pageURL,
+    true /* waitForLoad */
+  );
+
+  BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, "about:mozilla");
+  await BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+    false /* includeSubFrames */,
+    "about:mozilla"
+  );
+
+  gBrowser.goBack();
+  await BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+    false /* includeSubFrames */,
+    pageURL
+  );
+
+  ok(
+    gBrowser.webNavigation.canGoForward,
+    "The tab should have forward history"
+  );
+
+  // Load the OOPIF from a different origin.
+  const childURL =
+    "https://example.com/browser/widget/tests/browser/helper_swipe_gesture_double_rotated_oopif_child.html";
+  // We attach the load listener in the
+  // parent document before setting the src so that the load event is never
+  // missed, then wait for it to resolve.
+  await SpecialPowers.spawn(tab.linkedBrowser, [childURL], url => {
+    const iframe = content.document.getElementById("oopif");
+    content.wrappedJSObject.oopifLoadPromise = new Promise(resolve => {
+      iframe.addEventListener("load", () => resolve(), { once: true });
+    });
+    iframe.src = url;
+  });
+
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+    await content.wrappedJSObject.oopifLoadPromise;
+  });
+
+  const iframeContext = tab.linkedBrowser.browsingContext.children[0];
+  ok(iframeContext, "The doubly-rotated OOPIF browsing context should exist");
+
+  if (gFissionBrowser) {
+    isnot(
+      iframeContext.currentWindowGlobal.osPid,
+      tab.linkedBrowser.browsingContext.currentWindowGlobal.osPid,
+      "The doubly-rotated iframe should be running in a separate process"
+    );
+  }
+
+  await SpecialPowers.spawn(iframeContext, [], async () => {
+    await SpecialPowers.contentTransformsReceived(content);
+  });
+
+  const navigationPromise = BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+    false /* includeSubFrames */,
+    "about:mozilla"
+  );
+
+  // Pan over the center of the iframe.
+  const panPoint = await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
+    const rect = content.document
+      .getElementById("oopif")
+      .getBoundingClientRect();
+    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+  });
+  await panRightToLeft(tab.linkedBrowser, panPoint.x, panPoint.y, 1);
+
+  await navigationPromise;
+
+  is(
+    tab.linkedBrowser.currentURI.spec,
+    "about:mozilla",
+    "The horizontal pan over the doubly-rotated OOPIF should trigger history navigation"
+  );
+
+  BrowserTestUtils.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
+});
+
 // A test case to make sure the short circuit path for swipe-to-navigations in
 // APZ works, i.e. cases where we know for sure that the target APZC for a given
 // pan-start event isn't scrollable in the pan-start event direction.

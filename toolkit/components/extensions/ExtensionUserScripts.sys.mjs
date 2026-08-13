@@ -7,7 +7,7 @@ import { ExtensionTaskScheduler } from "resource://gre/modules/ExtensionTaskSche
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = XPCOMUtils.declareLazy({
-  KeyValueService: "resource://gre/modules/kvstore.sys.mjs",
+  KeyValueService: "moz-src:///toolkit/components/kvstore/kvstore.sys.mjs",
 });
 
 /**

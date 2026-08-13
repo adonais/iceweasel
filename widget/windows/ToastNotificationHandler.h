@@ -5,15 +5,16 @@
 #ifndef ToastNotificationHandler_h_
 #define ToastNotificationHandler_h_
 
-#include <windows.ui.notifications.h>
 #include <windows.data.xml.dom.h>
+#include <windows.ui.notifications.h>
 #include <wrl.h>
+
+#include "mozilla/Result.h"
 #include "nsCOMPtr.h"
 #include "nsICancelable.h"
 #include "nsIFile.h"
 #include "nsIWindowsAlertsService.h"
 #include "nsString.h"
-#include "mozilla/Result.h"
 
 namespace mozilla {
 namespace widget {

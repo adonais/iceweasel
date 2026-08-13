@@ -16,6 +16,29 @@ export const MENTION_TYPE = /** @type {const} */ ({
   TAB_RECENTLY_CLOSED: "TAB_RECENTLY_CLOSED",
 });
 
+// URLs that should not be offered as mention suggestions in addition to the
+// initial browsers pages.
+const ADDITIONAL_EXCLUDED_MENTION_URLS = new Set(["about:aichatcontent"]);
+
+/**
+ * Whether a tab URL should be excluded from the mention suggestions.
+ *
+ * @param {Window} browserWindow
+ * @param {string} url
+ * @returns {boolean}
+ */
+function isExcludedMentionUrl(browserWindow, url) {
+  if (!url || browserWindow.isInitialPage(url)) {
+    return true;
+  }
+  try {
+    const { prePath, filePath } = Services.io.newURI(url);
+    return ADDITIONAL_EXCLUDED_MENTION_URLS.has(`${prePath}${filePath}`);
+  } catch {
+    return false;
+  }
+}
+
 /**
  * @typedef {object} TabResult
  * @property {string} url - Tab URL
@@ -94,7 +117,7 @@ export class SmartbarMentionsPanelSearch {
     // Open tabs
     for (const tab of browserWindow.gBrowser.tabs) {
       const url = tab.linkedBrowser?.currentURI?.spec;
-      if (!url) {
+      if (isExcludedMentionUrl(browserWindow, url)) {
         continue;
       }
 
@@ -129,7 +152,7 @@ export class SmartbarMentionsPanelSearch {
 
         const entry = state.entries[activeIndex];
         const url = entry.url;
-        if (!url) {
+        if (isExcludedMentionUrl(browserWindow, url)) {
           continue;
         }
 

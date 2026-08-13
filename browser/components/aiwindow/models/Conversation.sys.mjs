@@ -6,6 +6,7 @@
 
 import { Message } from "moz-src:///browser/components/aiwindow/models/Message.sys.mjs";
 import { compactMessages } from "moz-src:///browser/components/aiwindow/models/PromptOptimizer.sys.mjs";
+import { SecurityProperties } from "moz-src:///browser/components/aiwindow/models/SecurityProperties.sys.mjs";
 import {
   consumeStreamChunk,
   createParserState,
@@ -49,6 +50,35 @@ export class Conversation {
   feature;
   engine;
   parameters;
+  /** @type {SecurityProperties} */
+  securityProperties;
+
+  /**
+   * Language models can generate arbitrary URLs. If a conversation has been exposed
+   * to untrusted content (such as from summarizing a webpage) then it can be prompt
+   * injected to display arbitrary URLs. Language models can also invent plausible URLs
+   * for a conversation that do not exist.
+   *
+   * To mitigate these issues we collect all URLs that have been seen in a conversation
+   * so that we can decide how to show them to users in a safe way. If a URL has not
+   * been seen before, then it's untrusted in different circumstances.
+   *
+   * Initialized from the constructor params (restored from DB) or as an empty Set.
+   *
+   * @type {Set<string>}
+   */
+  seenUrls;
+
+  /**
+   * URLs found in SERP contents from run_search that we are willing to
+   * fetch via a anonymous request even when the conversation has
+   * been exposed to both private and untrusted content.
+   *
+   * Initialized from the constructor params (restored from DB) or as an empty Set.
+   *
+   * @type {Set<string>}
+   */
+  serpUrlsForAnonymousFetch;
 
   /** @type {Message[]} */
   #messages = [];
@@ -63,26 +93,44 @@ export class Conversation {
    * @param {number} [params.createdDate]
    * @param {number} [params.updatedDate]
    * @param {Message[]} [params.messages]
+   * @param {string[]} [params.seenUrls]
+   * @param {string[]} [params.serpUrlsForAnonymousFetch]
    * @param {string} [params.feature]
    * @param {object} [params.engine]
    * @param {object} [params.parameters]
+   * @param {SecurityProperties|object|null} [params.securityProperties]
    */
   constructor({
     id = crypto.randomUUID(),
     createdDate = Date.now(),
     updatedDate = Date.now(),
     messages = [],
+    seenUrls,
+    serpUrlsForAnonymousFetch,
     feature = null,
     engine = null,
-    parameters = null,
+    parameters,
+    securityProperties,
   } = {}) {
     this.id = id;
     this.createdDate = createdDate;
     this.updatedDate = updatedDate;
     this.#messages = messages;
+    this.seenUrls = seenUrls ? new Set(seenUrls) : new Set();
+    this.serpUrlsForAnonymousFetch = serpUrlsForAnonymousFetch
+      ? new Set(serpUrlsForAnonymousFetch)
+      : new Set();
     this.feature = feature;
     this.engine = engine;
     this.parameters = parameters ?? {};
+
+    if (securityProperties instanceof SecurityProperties) {
+      this.securityProperties = securityProperties;
+    } else if (securityProperties != null) {
+      this.securityProperties = SecurityProperties.fromJSON(securityProperties);
+    } else {
+      this.securityProperties = new SecurityProperties();
+    }
   }
 
   set messages(value) {
@@ -383,5 +431,47 @@ export class Conversation {
       feature: this.feature,
       messages: this.#messages,
     };
+  }
+
+  /**
+   * Efficiently add an iterable of URLs to the seen urls.
+   *
+   * @param {Iterable<string>} urls
+   */
+  addSeenUrls(urls) {
+    for (const url of urls) {
+      this.seenUrls.add(url);
+    }
+  }
+
+  /**
+   * Add an iterable of URLs to the serpUrlsForAnonymousFetch ledger
+   *
+   * @param {Iterable<string>} urls
+   */
+  addSerpUrlsForAnonymousFetch(urls) {
+    for (const url of urls) {
+      this.serpUrlsForAnonymousFetch.add(url);
+    }
+  }
+
+  /**
+   * Gets any URL mentioned in the conversation. These URLs have heightened security
+   * permissions as they have been explicitly added to the conversation by the user.
+   *
+   * @returns {Set<string>}
+   */
+  getAllMentionURLs() {
+    /** @type {Set<string>} */
+    const mentionUrls = new Set();
+    for (const message of this.messages) {
+      const { contextMentions } = message.content;
+      if (contextMentions) {
+        for (const { url } of contextMentions) {
+          mentionUrls.add(url);
+        }
+      }
+    }
+    return mentionUrls;
   }
 }

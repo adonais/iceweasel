@@ -17,8 +17,7 @@
 namespace js {
 namespace jit {
 
-static const uint32_t SimdMemoryAlignment =
-    16;  // Make it 4 to avoid a bunch of div-by-zero warnings
+static const uint32_t SimdMemoryAlignment = 16;
 
 // RISCV64 has 32 64-bit integer registers, x0 though x31.
 //  The program counter is not accessible as a register.
@@ -113,15 +112,14 @@ class Registers {
     t4 = x29,
     t5 = x30,
     t6 = x31,
-    invalid_reg,
   };
-  typedef uint8_t Code;
-  typedef RegisterID Encoding;
+  using Code = uint8_t;
+  using Encoding = uint8_t;
   union RegisterContent {
     uintptr_t r;
   };
 
-  typedef uint32_t SetType;
+  using SetType = uint32_t;
 
   static uint32_t SetSize(SetType x) { return std::popcount(x); }
   static uint32_t FirstBit(SetType x) {
@@ -147,7 +145,7 @@ class Registers {
   static Code FromName(const char*);
 
   static const Encoding StackPointer = sp;
-  static const Encoding Invalid = invalid_reg;
+  static const Code Invalid = 0xFF;
   static const uint32_t Total = 32;
   static const uint32_t TotalPhys = 32;
   static const uint32_t Allocatable = 24;
@@ -193,11 +191,11 @@ class Registers {
 };
 
 // Smallest integer type that can hold a register bitmask.
-typedef uint32_t PackedRegisterMask;
+using PackedRegisterMask = uint32_t;
 
 class FloatRegisters {
  public:
-  enum FPRegisterID {
+  enum FPRegisterID : uint8_t {
     f0 = 0,
     f1,
     f2,
@@ -230,7 +228,6 @@ class FloatRegisters {
     f29,
     f30,
     f31,
-    invalid_reg,
     ft0 = f0,
     ft1 = f1,
     ft2 = f2,
@@ -267,7 +264,7 @@ class FloatRegisters {
 
   enum Kind : uint8_t { Double, Single, NumTypes };
 
-  // (invalid << 7) | (kind << 5) | encoding
+  // Eight bits: (invalid << 7) | (kind << 5) | encoding
   using Code = uint8_t;
   using Encoding = FPRegisterID;
 
@@ -293,7 +290,7 @@ class FloatRegisters {
 
   using SetType = uint64_t;
 
-  static const Code Invalid = Code(0b10000000);
+  static const Code Invalid = Code(0b1'00'00000);
   static const uint32_t TotalPhys = 32;
   static const uint32_t Total = TotalPhys * NumTypes;
   static const uint32_t Allocatable = 23;
@@ -449,17 +446,15 @@ struct FloatRegister {
   }
   static Code FromName(const char* name);
 
-  // This is used in static initializers, so produce a bogus value instead of
-  // crashing.
   static uint32_t GetPushSizeInBytes(const TypedRegisterSet<FloatRegister>& s);
 
  private:
   using Kind = Codes::Kind;
   // These fields only hold valid values: an invalid register is always
   // represented as a valid encoding and kind with the invalid_ bit set.
-  Encoding encoding_;  // 32 encodings
-  Kind kind_;          // Double, Single; more later
-  bool invalid_;
+  Encoding encoding_ : 5;  // 32 encodings
+  Kind kind_ : 2;          // Double, Single; more later
+  bool invalid_ : 1;
 
  public:
   constexpr FloatRegister(Encoding encoding, Kind kind)
@@ -473,7 +468,7 @@ struct FloatRegister {
   }
 
   constexpr FloatRegister()
-      : encoding_(FloatRegisters::invalid_reg),
+      : encoding_(FloatRegisters::ft0),
         kind_(FloatRegisters::Double),
         invalid_(true) {}
 
@@ -506,7 +501,6 @@ FloatRegister::LiveAsIndexableSet<RegTypeName::Any>(SetType set) {
   return set;
 }
 
-inline bool hasUnaliasedDouble() { return false; }
 inline bool hasMultiAlias() { return false; }
 
 static constexpr uint32_t ShadowStackSpace = 0;

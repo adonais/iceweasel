@@ -66,18 +66,15 @@ static bool IsFullyClipped(nsTextFrame* aFrame, nscoord aLeft, nscoord aRight,
                                          aSnappedRight);
 }
 
-static bool IsInlineAxisOverflowVisible(nsIFrame* aFrame) {
-  MOZ_ASSERT(aFrame && aFrame->IsBlockFrameOrSubclass(),
-             "expected a block frame");
-
-  nsIFrame* f = aFrame;
+static bool IsInlineAxisOverflowVisible(nsBlockFrame& aFrame) {
+  nsIFrame* f = &aFrame;
   while (f && f->Style()->IsAnonBox() && !f->IsScrollContainerFrame()) {
     f = f->GetParent();
   }
   if (!f) {
     return true;
   }
-  auto overflow = aFrame->GetWritingMode().IsVertical()
+  auto overflow = aFrame.GetWritingMode().IsVertical()
                       ? f->StyleDisplay()->mOverflowY
                       : f->StyleDisplay()->mOverflowX;
   return overflow == StyleOverflow::Visible;
@@ -125,6 +122,8 @@ static bool IsFrameDescendantOfAny(
 }
 
 class nsDisplayTextOverflowMarker final : public nsPaintedDisplayItem {
+  using imgDrawingParams = mozilla::image::imgDrawingParams;
+
  public:
   nsDisplayTextOverflowMarker(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                               const nsRect& aRect, nscoord aAscent,
@@ -146,7 +145,7 @@ class nsDisplayTextOverflowMarker final : public nsPaintedDisplayItem {
     return nsLayoutUtils::GetTextShadowRectsUnion(mRect, mFrame);
   }
 
-  virtual nsRect GetComponentAlphaBounds(
+  nsRect GetComponentAlphaBounds(
       nsDisplayListBuilder* aBuilder) const override {
     if (gfxPlatform::GetPlatform()->RespectsFontStyleSmoothing()) {
       // On OS X, web authors can turn off subpixel text rendering using the
@@ -160,11 +159,12 @@ class nsDisplayTextOverflowMarker final : public nsPaintedDisplayItem {
     return GetBounds(aBuilder, &snap);
   }
 
-  virtual void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) override;
+  void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) override;
 
-  void PaintTextToContext(gfxContext* aCtx, nsPoint aOffsetFromRect);
+  void PaintTextToContext(gfxContext* aCtx, imgDrawingParams& aImgParams,
+                          const nsPoint& aOffsetFromRect);
 
-  virtual bool CreateWebRenderCommands(
+  bool CreateWebRenderCommands(
       mozilla::wr::DisplayListBuilder& aBuilder,
       mozilla::wr::IpcResourceUpdateQueue& aResources,
       const StackingContextHelper& aSc,
@@ -179,27 +179,30 @@ class nsDisplayTextOverflowMarker final : public nsPaintedDisplayItem {
   RefPtr<gfxTextRun> mTextRun;  // precached textrun, if available
 };
 
-static void PaintTextShadowCallback(gfxContext* aCtx, nsPoint aShadowOffset,
-                                    const nscolor& aShadowColor, void* aData) {
+static void PaintTextShadowCallback(
+    gfxContext* aCtx, mozilla::image::imgDrawingParams& aImgParams,
+    const nsPoint& aShadowOffset, const nscolor& aShadowColor, void* aData) {
   reinterpret_cast<nsDisplayTextOverflowMarker*>(aData)->PaintTextToContext(
-      aCtx, aShadowOffset);
+      aCtx, aImgParams, aShadowOffset);
 }
 
 void nsDisplayTextOverflowMarker::Paint(nsDisplayListBuilder* aBuilder,
                                         gfxContext* aCtx) {
   nscolor foregroundColor =
       nsLayoutUtils::GetTextColor(mFrame, &nsStyleText::mWebkitTextFillColor);
+  imgDrawingParams imgParams(aBuilder->GetImageDecodeFlags());
 
   // Paint the text-shadows for the overflow marker
-  nsLayoutUtils::PaintTextShadow(mFrame, aCtx, mRect,
+  nsLayoutUtils::PaintTextShadow(mFrame, aCtx, imgParams, mRect,
                                  GetPaintRect(aBuilder, aCtx), foregroundColor,
                                  PaintTextShadowCallback, (void*)this);
   aCtx->SetColor(gfx::sRGBColor::FromABGR(foregroundColor));
-  PaintTextToContext(aCtx, nsPoint(0, 0));
+  PaintTextToContext(aCtx, imgParams, nsPoint(0, 0));
 }
 
-void nsDisplayTextOverflowMarker::PaintTextToContext(gfxContext* aCtx,
-                                                     nsPoint aOffsetFromRect) {
+void nsDisplayTextOverflowMarker::PaintTextToContext(
+    gfxContext* aCtx, imgDrawingParams& aImgParams,
+    const nsPoint& aOffsetFromRect) {
   WritingMode wm = mFrame->GetWritingMode();
   nsPoint pt(mRect.x, mRect.y);
   if (wm.IsVertical()) {
@@ -220,7 +223,7 @@ void nsDisplayTextOverflowMarker::PaintTextToContext(gfxContext* aCtx,
     gfx::Point gfxPt(pt.x, pt.y);
     auto& paletteCache = mFrame->PresContext()->FontPaletteCache();
     mTextRun->Draw(gfxTextRun::Range(mTextRun), gfxPt,
-                   gfxTextRun::DrawParams(aCtx, paletteCache));
+                   gfxTextRun::DrawParams(aCtx, paletteCache), aImgParams);
     return;
   }
 
@@ -800,6 +803,13 @@ static bool BlockCanHaveLineClampEllipsis(nsBlockFrame* aBlockFrame,
   return aBlockFrame->HasLineClampEllipsis();
 }
 
+static bool IsTextInputScrolledContent(nsIFrame* aFrame) {
+  return aFrame &&
+         aFrame->Style()->GetPseudoType() ==
+             PseudoStyleType::MozScrolledContent &&
+         aFrame->GetParent()->IsTextInputFrame();
+}
+
 /* static */
 bool TextOverflow::CanHaveOverflowMarkers(nsBlockFrame* aBlockFrame,
                                           BeforeReflow aBeforeReflow) {
@@ -808,31 +818,58 @@ bool TextOverflow::CanHaveOverflowMarkers(nsBlockFrame* aBlockFrame,
     return true;
   }
 
-  // Nothing to do for text-overflow:clip or if 'overflow-x/y:visible'.
-  if (HasClippedTextOverflow(aBlockFrame) ||
-      IsInlineAxisOverflowVisible(aBlockFrame)) {
+  // Nothing to do for text-overflow:clip.
+  if (HasClippedTextOverflow(aBlockFrame)) {
     return false;
   }
 
-  // Skip the combobox anonymous block because it would clip the drop-down
-  // arrow. The inner label inherits 'text-overflow' and does the right thing.
-  if (aBlockFrame->IsComboboxControlFrame()) {
+  // Some special-cases for form controls:
+  //  * Skip the combobox button, because it would clip the drop-down arrow. The
+  //    inner label inherits 'text-overflow' and does the right thing.
+  //  * Similar story for <input>, ::placeholder and the control preview inherit
+  //    text-overflow as needed.
+  if (aBlockFrame->IsComboboxControlFrame() ||
+      IsTextInputScrolledContent(aBlockFrame)) {
     return false;
   }
 
-  // Inhibit the markers if a descendant content owns the caret.
+  // Make text-overflow: ellipsis work on the <input> editor.
+  if (aBlockFrame->Style()->GetPseudoType() ==
+      PseudoStyleType::MozTextControlEditingRoot) {
+    MOZ_ASSERT(IsInlineAxisOverflowVisible(*aBlockFrame),
+               "The control editing root must create overflow");
+    MOZ_DIAGNOSTIC_ASSERT(IsTextInputScrolledContent(aBlockFrame->GetParent()));
+    auto* scc = static_cast<ScrollContainerFrame*>(
+        aBlockFrame->GetParent()->GetParent());
+    if (scc->GetScrollPosition() != nsPoint()) {
+      return false;
+    }
+    if (scc->GetContent()->AsElement()->State().HasState(
+            dom::ElementState::FOCUS)) {
+      // If our input is focused, don't show the ellipsis either, usually this
+      // is covered by the caret check below but when the caret is not visible
+      // (the selection is not collapsed for example) this gives slightly more
+      // predictable behavior.
+      // TODO(emilio): Maybe do the same for contenteditable too?
+      return false;
+    }
+  } else if (IsInlineAxisOverflowVisible(*aBlockFrame)) {
+    // If overflow is visible in the inline axis, then nothing to do either.
+    return false;
+  }
+
+  // Disable text-overflow if the caret is in a descendant.
   RefPtr<nsCaret> caret = aBlockFrame->PresShell()->GetActiveCaret();
   if (caret && caret->IsVisible()) {
-    RefPtr<dom::Selection> domSelection = caret->GetSelection();
-    if (domSelection) {
-      nsCOMPtr<nsIContent> content =
-          nsIContent::FromNodeOrNull(domSelection->GetFocusNode());
-      if (content &&
-          content->IsInclusiveDescendantOf(aBlockFrame->GetContent())) {
+    if (dom::Selection* sel = caret->GetSelection()) {
+      auto* content = nsIContent::FromNodeOrNull(sel->GetFocusNode());
+      if (content && content->IsShadowIncludingInclusiveDescendantOf(
+                         aBlockFrame->GetContent())) {
         return false;
       }
     }
   }
+
   return true;
 }
 

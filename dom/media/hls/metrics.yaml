@@ -62,9 +62,9 @@ hls:
     notification_emails:
       - media-alerts@mozilla.com
     extra_keys:
-      media_extension:
+      media_content_type:
         description: >
-          The extension in the media file name, could be 'ts' (for MPEG-TS), 'mp4',
-          'aac', 'mp3', ...
+          The content type of the media, could be 'video/mp2t' (for MPEG-TS),
+          'video/mp4', 'audio/aac', 'audio/mpeg', ...
         type: string
     expires: 156

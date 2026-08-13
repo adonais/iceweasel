@@ -7,15 +7,15 @@
 
 #include <unordered_map>
 
-#include "apz/src/APZCTreeManager.h"
-#include "base/platform_thread.h"  // for PlatformThreadId
-#include "mozilla/layers/APZUtils.h"
-#include "mozilla/layers/SampleTime.h"
-#include "mozilla/StaticMutex.h"
-#include "mozilla/StaticPtr.h"
-#include "mozilla/webrender/WebRenderTypes.h"
 #include "Units.h"
 #include "VsyncSource.h"
+#include "apz/src/APZCTreeManager.h"
+#include "base/platform_thread.h"  // for PlatformThreadId
+#include "mozilla/StaticMutex.h"
+#include "mozilla/StaticPtr.h"
+#include "mozilla/layers/APZUtils.h"
+#include "mozilla/layers/SampleTime.h"
+#include "mozilla/webrender/WebRenderTypes.h"
 
 namespace mozilla {
 

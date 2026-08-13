@@ -358,6 +358,9 @@ class TestDescriptionSchema(Schema, kw_only=True):
             use_msgspec=True,
         )
     ] = None
+    # Information for indexing this build so its artifacts can be discovered;
+    # see the docstring on `IndexSchema` in 'task.py' transforms.
+    index: TOptional[JobDescriptionSchema.__annotations__["index"]] = None  # type: ignore
     # A list of artifacts to install from 'fetch' tasks. Validation deferred
     # to 'job' transforms.
     fetches: TOptional[object] = None
@@ -633,6 +636,17 @@ def make_job_description(config, tasks):
             jobdesc["expires-after"] = task["expires-after"]
 
         jobdesc["routes"] = task.get("routes", [])
+        # The confirm-failure ('-cf') copy of a task is a retrigger helper that
+        # never runs on real branches, so it must not claim the shared index.
+        if "index" in task and not task.get("confirm-failure"):
+            index = dict(task["index"])
+            # The same job runs on multiple test platforms, so disambiguate the
+            # index path to avoid the per-platform tasks clobbering each other.
+            # The test-platform is "<platform>/<build-type>"; '/' isn't allowed
+            # in an index name, so join the two with a '-'.
+            platform = task["test-platform"].replace("/", "-")
+            index["job-name"] = "{}.{}".format(index["job-name"], platform)
+            jobdesc["index"] = index
         jobdesc["run-on-repo-type"] = sorted(task["run-on-repo-type"])
         jobdesc["run-on-projects"] = sorted(task["run-on-projects"])
         jobdesc["scopes"] = []

@@ -5,8 +5,8 @@
 #ifndef mozilla_widget_AndroidCompositorWidget_h
 #define mozilla_widget_AndroidCompositorWidget_h
 
-#include "CompositorWidget.h"
 #include "AndroidNativeWindow.h"
+#include "CompositorWidget.h"
 #include "GLDefs.h"
 
 namespace mozilla {

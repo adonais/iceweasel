@@ -6,13 +6,14 @@
 #ifndef _mozilla_widget_TaskbarPreviewButton_h_
 #define _mozilla_widget_TaskbarPreviewButton_h_
 
-#include <windows.h>
 #include <shobjidl.h>
+#include <windows.h>
 #undef LogSeverity  // SetupAPI.h #defines this as DWORD
 
-#include "mozilla/RefPtr.h"
 #include <nsITaskbarPreviewButton.h>
 #include <nsString.h>
+
+#include "mozilla/RefPtr.h"
 #include "nsWeakReference.h"
 
 namespace mozilla {

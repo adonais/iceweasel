@@ -22,6 +22,8 @@ prefs = ["test.ime_content_observer.assert_invalid_cache=true"]
 ["test_pasteImgTextarea.xhtml"]
 support-files = ["green.png"]
 
+["test_reframe_text_control_at_compositionstart.html"]
+
 ["test_texteditor_keyevent_handling.html"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Fails delete key on linux

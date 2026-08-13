@@ -386,8 +386,8 @@ async function showReusableMasksAsync(browser, origin, error) {
         const button = document.createElement("button");
 
         const maskDescription = document.createElement("span");
-        const raw = mask.description || mask.generated_for || mask.used_on;
-        maskDescription.textContent = URL.parse(raw)?.hostname ?? raw ?? "";
+        const raw = mask.description || "";
+        maskDescription.textContent = URL.parse(raw)?.hostname ?? raw ?? "―";
         button.appendChild(maskDescription);
 
         const maskFullAddress = document.createElement("span");

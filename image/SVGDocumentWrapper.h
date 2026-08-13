@@ -8,11 +8,11 @@
 #define mozilla_image_SVGDocumentWrapper_h
 
 #include "nsCOMPtr.h"
-#include "nsIStreamListener.h"
-#include "nsIObserver.h"
 #include "nsIDocumentViewer.h"
-#include "nsWeakReference.h"
+#include "nsIObserver.h"
+#include "nsIStreamListener.h"
 #include "nsSize.h"
+#include "nsWeakReference.h"
 
 class nsIRequest;
 class nsILoadGroup;

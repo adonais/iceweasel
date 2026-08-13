@@ -57,6 +57,12 @@ In case a policy modal needs to be shown to the user, which will delay Glean ini
 it's set to `false` until the user has dealt with the modal. It's turned back to `true` afterwards.
 This ensures we don't capture data until the user had the chance to make an explicit choice.
 
+`telemetry.fog.enable_fog_transport`
+
+Defaults to `false`.
+Controls whether the Glean IPC tooling uses the existing PContent child/parent structure, or the new PFOGTransport child/parent structure.
+It is set to `false`, and can be set to `true` using Nimbus.
+
 ## Defines
 
 `MOZ_AUTOMATION`

@@ -27,10 +27,6 @@
 
 /* global describe, it, beforeEach */
 
-const alwaysIncludeCommonAncestor = SpecialPowers.getBoolPref(
-  "dom.serializer.includeCommonAncestor.enabled"
-);
-
 const TESTS = [
   {
     selector: `ul li`,
@@ -38,58 +34,32 @@ const TESTS = [
     expectedContext: `<html><body><div id="container"><ul></ul></div></body></html>`,
   }, {
     selector: `ul li span`,
-    expectedResult: `${alwaysIncludeCommonAncestor ? `<li>` : ``}` +
-                    `<span>Item2</span>` +
-                    `${alwaysIncludeCommonAncestor ? `</li>` : ``}`,
-    expectedContext: `<html><body><div id="container"><ul>` +
-                     `${alwaysIncludeCommonAncestor ? `` : `<li></li>`}` +
-                     `</ul></div></body></html>`,
+    expectedResult: `<span>Item2</span>`,
+    expectedContext: `<html><body><div id="container"><ul><li></li></ul></div></body></html>`,
   }, {
     selector: `ul li div`,
-    expectedResult: `${alwaysIncludeCommonAncestor ? `<li>` : ``}` +
-                    `<div>Item3</div>` +
-                    `${alwaysIncludeCommonAncestor ? `</li>` : ``}`,
-    expectedContext: `<html><body><div id="container"><ul>` +
-                     `${alwaysIncludeCommonAncestor ? `` : `<li></li>`}` +
-                     `</ul></div></body></html>`,
+    expectedResult: `<div>Item3</div>`,
+    expectedContext: `<html><body><div id="container"><ul><li></li></ul></div></body></html>`,
   }, {
     selector: `ul ol li`,
-    expectedResult: `${alwaysIncludeCommonAncestor ? `<li><ol>` : ``}` +
-                    `<li>SubItem1</li>` +
-                    `${alwaysIncludeCommonAncestor ? `</ol></li>` : ``}`,
-    expectedContext: `<html><body><div id="container"><ul>` +
-                     `${alwaysIncludeCommonAncestor ? `` : `<li><ol></ol></li>`}` +
-                     `</ul></div></body></html>`,
+    expectedResult: `<li>SubItem1</li>`,
+    expectedContext: `<html><body><div id="container"><ul><li><ol></ol></li></ul></div></body></html>`,
   }, {
     selector: `ul ol li span`,
-    expectedResult: `${alwaysIncludeCommonAncestor ? `<li>` : ``}` +
-                    `<span>SubItem2</span>` +
-                    `${alwaysIncludeCommonAncestor ? `</li>` : ``}`,
-    expectedContext: `<html><body><div id="container"><ul><li><ol>` +
-                     `${alwaysIncludeCommonAncestor ? `` : `<li></li>`}` +
-                     `</ol></li></ul></div></body></html>`,
+    expectedResult: `<span>SubItem2</span>`,
+    expectedContext: `<html><body><div id="container"><ul><li><ol><li></li></ol></li></ul></div></body></html>`,
   }, {
     selector: `ul ol li div`,
-    expectedResult: `${alwaysIncludeCommonAncestor ? `<li>` : ``}` +
-                    `<div>SubItem3</div>` +
-                    `${alwaysIncludeCommonAncestor ? `</li>` : ``}`,
-    expectedContext: `<html><body><div id="container"><ul><li><ol>` +
-                     `${alwaysIncludeCommonAncestor ? `` : `<li value="2"></li>`}` +
-                     `</ol></li></ul></div></body></html>`,
+    expectedResult: `<div>SubItem3</div>`,
+    expectedContext: `<html><body><div id="container"><ul><li><ol><li value="2"></li></ol></li></ul></div></body></html>`,
   }, {
     selector: `ul span li`,
     expectedResult: `<span><li>ItemInSpan1</li></span>`,
-    expectedContext: `<html><body><div id="container"><ul>` +
-                     `${alwaysIncludeCommonAncestor ? `` : `<span></span>`}` +
-                     `</ul></div></body></html>`,
+    expectedContext: `<html><body><div id="container"><ul><span></span></ul></div></body></html>`,
   }, {
     selector: `ul div span`,
-    expectedResult: `${alwaysIncludeCommonAncestor ? `<div><li>` : ``}` +
-                    `<span>ItemInDiv1</span>` +
-                    `${alwaysIncludeCommonAncestor ? `</li></div>` : ``}`,
-    expectedContext: `<html><body><div id="container"><ul>` +
-                     `${alwaysIncludeCommonAncestor ? `` : `<div><li></li></div>`}` +
-                     `</ul></div></body></html>`,
+    expectedResult: `<span>ItemInDiv1</span>`,
+    expectedContext: `<html><body><div id="container"><ul><div><li></li></div></ul></div></body></html>`,
   },
 ];
 

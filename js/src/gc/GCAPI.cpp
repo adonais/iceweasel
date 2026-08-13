@@ -6,12 +6,13 @@
  * API functions and methods used by the rest of SpiderMonkey and by embeddings.
  */
 
+#include "gc/GC.h"
+
 #include "mozilla/TimeStamp.h"
 
 #include "jsapi.h"
 #include "jsfriendapi.h"
 
-#include "gc/GC.h"
 #include "gc/PublicIterators.h"
 #include "jit/JitZone.h"
 #include "js/HeapAPI.h"
@@ -843,6 +844,15 @@ JS_PUBLIC_API void js::gc::LockSweepingLock(JSRuntime* runtime) {
 JS_PUBLIC_API void js::gc::UnlockSweepingLock(JSRuntime* runtime) {
   MOZ_ASSERT(runtime);
   runtime->gc.unlockSweepingLock();
+}
+
+bool js::IsGCParameterFuzzingSafe(JSGCParamKey key) {
+  switch (key) {
+    case JSGC_SEMISPACE_NURSERY_ENABLED:
+      return false;
+    default:
+      return true;
+  }
 }
 
 #ifdef JS_GC_ZEAL

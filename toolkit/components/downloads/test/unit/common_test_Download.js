@@ -18,6 +18,8 @@ const kDeleteTempFileOnExit = "browser.helperApps.deleteTempFileOnExit";
 // TODO (bug 1986365): we should replace the setting of this pref with an actual
 // test for the "new" behaviour (introduced in bug 1790641).
 const kDeletePrivateFileFeature = "browser.download.enableDeletePrivate";
+const kDecodeContentForKnownCompressedExtensions =
+  "network.http.decode_content_for_known_compressed_extensions";
 
 ChromeUtils.defineESModuleGetters(this, {
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
@@ -623,7 +625,7 @@ add_task(async function test_adjustChannel() {
     stream.setByteStringData(postData);
 
     channel.QueryInterface(Ci.nsIUploadChannel2);
-    channel.explicitSetUploadStream(stream, null, -1, "POST", false);
+    channel.explicitSetUploadStream(stream, null, -1, "POST");
 
     return Promise.resolve();
   }
@@ -1898,14 +1900,60 @@ add_task(async function test_with_content_encoding() {
 });
 
 /**
- * Checks that the file is not decoded if the extension matches the encoding.
+ * Checks that the Content-Encoding is decoded even when the file extension
+ * matches the encoding (bug 610679, bug 1470011). This is the default
+ * behavior; the legacy behavior is checked in the test below.
+ */
+add_task(async function test_with_content_encoding_matching_extension() {
+  Services.prefs.setBoolPref(kDecodeContentForKnownCompressedExtensions, true);
+
+  let sourcePath = "/test_with_content_encoding_matching_extension.gz";
+  let sourceUrl = httpUrl("test_with_content_encoding_matching_extension.gz");
+
+  function cleanup() {
+    gHttpServer.registerPathHandler(sourcePath, null);
+    Services.prefs.clearUserPref(kDecodeContentForKnownCompressedExtensions);
+  }
+  registerCleanupFunction(cleanup);
+
+  gHttpServer.registerPathHandler(sourcePath, function (aRequest, aResponse) {
+    aResponse.setHeader("Content-Type", "text/plain", false);
+    aResponse.setHeader("Content-Encoding", "gzip", false);
+    aResponse.setHeader(
+      "Content-Length",
+      "" + TEST_DATA_SHORT_GZIP_ENCODED.length,
+      false
+    );
+
+    let bos = new BinaryOutputStream(aResponse.bodyOutputStream);
+    bos.writeByteArray(TEST_DATA_SHORT_GZIP_ENCODED);
+  });
+
+  let download = await promiseStartDownload(sourceUrl);
+  await promiseDownloadStopped(download);
+
+  Assert.equal(download.progress, 100);
+  Assert.equal(download.totalBytes, TEST_DATA_SHORT_GZIP_ENCODED.length);
+
+  // Ensure the content matches the decoded test data.
+  await promiseVerifyTarget(download.target, TEST_DATA_SHORT);
+
+  cleanup();
+});
+
+/**
+ * Checks that with the legacy pref disabled, the file is not decoded if the
+ * extension matches the encoding.
  */
 add_task(async function test_with_content_encoding_ignore_extension() {
+  Services.prefs.setBoolPref(kDecodeContentForKnownCompressedExtensions, false);
+
   let sourcePath = "/test_with_content_encoding_ignore_extension.gz";
   let sourceUrl = httpUrl("test_with_content_encoding_ignore_extension.gz");
 
   function cleanup() {
     gHttpServer.registerPathHandler(sourcePath, null);
+    Services.prefs.clearUserPref(kDecodeContentForKnownCompressedExtensions);
   }
   registerCleanupFunction(cleanup);
 

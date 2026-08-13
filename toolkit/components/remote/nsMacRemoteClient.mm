@@ -27,7 +27,7 @@ nsresult nsMacRemoteClient::SendCommandLine(const char* aProgram,
                     length:className.Length()];
 
   CFMessagePortRef messageServer =
-      CFMessagePortCreateRemote(0, (CFStringRef)serverNameString);
+      CFMessagePortCreateRemote(nullptr, (CFStringRef)serverNameString);
 
   if (messageServer) {
     // Getting current process directory
@@ -43,8 +43,8 @@ nsresult nsMacRemoteClient::SendCommandLine(const char* aProgram,
 
     NSData* data = [NSKeyedArchiver archivedDataWithRootObject:dict];
 
-    CFMessagePortSendRequest(messageServer, 0, (CFDataRef)data, 10.0, 0.0, NULL,
-                             NULL);
+    CFMessagePortSendRequest(messageServer, 0, (CFDataRef)data, 10.0, 0.0,
+                             nullptr, nullptr);
 
     CFMessagePortInvalidate(messageServer);
     CFRelease(messageServer);

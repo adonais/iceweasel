@@ -19,9 +19,9 @@
 #ifndef nsPreloadedStream_h_
 #define nsPreloadedStream_h_
 
-#include "nsIAsyncInputStream.h"
-#include "nsCOMPtr.h"
 #include "mozilla/DataMutex.h"
+#include "nsCOMPtr.h"
+#include "nsIAsyncInputStream.h"
 
 namespace mozilla {
 namespace net {

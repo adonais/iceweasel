@@ -8,7 +8,7 @@
 ---
 $schema: moz://mozilla.org/schemas/glean/metrics/2-0-0
 $tags:
-  - 'Toolkit :: Telemetry'
+  - 'Firefox :: Installer'
 
 glean.attribution:
   ext:
@@ -41,7 +41,7 @@ glean.attribution:
       - https://bugzilla.mozilla.org/1955429
       - https://phabricator.services.mozilla.com/D275328
     notification_emails:
-      - chutten@mozilla.com
+      - desktop-integrations@mozilla.com
     send_in_pings:
       - metrics
       - baseline
@@ -89,7 +89,7 @@ glean.distribution:
     data_reviews:
       - https://bugzilla.mozilla.org/1955429
     notification_emails:
-      - chutten@mozilla.com
+      - desktop-integrations@mozilla.com
     send_in_pings:
       - metrics
       - baseline

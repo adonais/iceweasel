@@ -590,7 +590,7 @@ class PromiseNativeHandlerShim final : public PromiseNativeHandler {
     return PromiseNativeHandler_Binding::Wrap(aCx, this, aGivenProto, aWrapper);
   }
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS(PromiseNativeHandlerShim)
 };
 
@@ -1198,6 +1198,16 @@ void DomPromise_Release(mozilla::dom::Promise* aPromise) {
   aPromise->Release();
 }
 
+void DomPromise_ResolveWithUndefined(mozilla::dom::Promise* aPromise) {
+  MOZ_ASSERT(aPromise);
+  aPromise->MaybeResolveWithUndefined();
+}
+
+void DomPromise_RejectWithUndefined(mozilla::dom::Promise* aPromise) {
+  MOZ_ASSERT(aPromise);
+  aPromise->MaybeRejectWithUndefined();
+}
+
 #define DOM_PROMISE_FUNC_WITH_VARIANT(name, func)                         \
   void name(mozilla::dom::Promise* aPromise, nsIVariant* aVariant) {      \
     MOZ_ASSERT(aPromise);                                                 \
@@ -1216,8 +1226,14 @@ void DomPromise_Release(mozilla::dom::Promise* aPromise) {
     aPromise->func(val);                                                  \
   }
 
-DOM_PROMISE_FUNC_WITH_VARIANT(DomPromise_RejectWithVariant, MaybeReject)
 DOM_PROMISE_FUNC_WITH_VARIANT(DomPromise_ResolveWithVariant, MaybeResolve)
+DOM_PROMISE_FUNC_WITH_VARIANT(DomPromise_RejectWithVariant, MaybeReject)
+
+void DomPromise_RejectWithNsresult(mozilla::dom::Promise* aPromise,
+                                   nsresult aResult) {
+  MOZ_ASSERT(aPromise);
+  aPromise->MaybeReject(aResult);
+}
 
 #undef DOM_PROMISE_FUNC_WITH_VARIANT
 }

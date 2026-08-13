@@ -11,25 +11,25 @@
 #ifndef TestHarness_h_
 #define TestHarness_h_
 
-#include "mozilla/Attributes.h"
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-#include "prenv.h"
-#include "nsComponentManagerUtils.h"
-#include "nsServiceManagerUtils.h"
-#include "nsCOMPtr.h"
-#include "nsString.h"
+#include "mozilla/AppShutdown.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/IntegerPrintfMacros.h"
 #include "nsAppDirectoryServiceDefs.h"
+#include "nsCOMPtr.h"
+#include "nsComponentManagerUtils.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
-#include "mozilla/IntegerPrintfMacros.h"
 #include "nsIDirectoryService.h"
 #include "nsIFile.h"
 #include "nsIObserverService.h"
+#include "nsServiceManagerUtils.h"
+#include "nsString.h"
 #include "nsXULAppAPI.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include "mozilla/AppShutdown.h"
+#include "prenv.h"
 
 static uint32_t gFailCount = 0;
 

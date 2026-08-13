@@ -4,3 +4,4 @@
 
 browser.jar:
     builtin-addons/ipp-activator/ (extension/**)
+    builtin-addons/ipp-activator/manifest.json (manifest.json)

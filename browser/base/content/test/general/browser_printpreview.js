@@ -30,14 +30,14 @@ async function testClosePrintPreviewWithEscKey() {
 
 async function openPrintPreview() {
   document.getElementById("cmd_print").doCommand();
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     let preview = document.querySelector(".printPreviewBrowser");
     return preview && BrowserTestUtils.isVisible(preview);
   });
 }
 
 async function checkPrintPreviewClosed() {
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !document.querySelector(".printPreviewBrowser")
   );
 }

@@ -17,6 +17,18 @@ export class RecommendedFooter extends AboutAddonsHTMLElement {
             data-l10n-id="find-more-addons"
           ></button>
         </div>
+        <addons-promo
+          imagesrc="chrome://mozapps/skin/extensions/kit-addons.svg"
+          imagealignment="end"
+          data-l10n-id="find-more-addons-promo"
+        >
+          <moz-button
+            slot="actions"
+            action="open-amo"
+            size="large"
+            data-l10n-id="find-more-addons-promo-open-amo-button"
+          ></moz-button>
+        </addons-promo>
         <div class="view-footer-item">
           <a
             class="privacy-policy-link"
@@ -41,7 +53,13 @@ export class RecommendedFooter extends AboutAddonsHTMLElement {
     let action = event.target.getAttribute("action");
     switch (action) {
       case "open-amo":
-        openAmoInTab(this);
+        // TODO: remove the conditional utmContent value along with
+        // removing the old pre-nova open-amo button.
+        openAmoInTab(null, {
+          utmContent: event.target.closest("addons-promo")
+            ? "find-more-promo-bottom"
+            : "find-more-link-bottom",
+        });
         break;
     }
   }

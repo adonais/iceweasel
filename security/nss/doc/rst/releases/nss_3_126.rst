@@ -1,0 +1,108 @@
+.. _mozilla_projects_nss_nss_3_126_release_notes:
+
+NSS 3.126 release notes
+=======================
+
+`Introduction <#introduction>`__
+--------------------------------
+
+.. container::
+
+   Network Security Services (NSS) 3.126 was released on *17 July 2026*.
+
+`Distribution Information <#distribution_information>`__
+--------------------------------------------------------
+
+.. container::
+
+   The HG tag is NSS_3_126_RTM. NSS 3.126 requires NSPR 4.39 or newer.
+
+   NSS 3.126 source distributions are available on ftp.mozilla.org for secure HTTPS download:
+
+   -  Source tarballs:
+      https://ftp.mozilla.org/pub/mozilla.org/security/nss/releases/NSS_3_126_RTM/src/
+
+   Other releases are available :ref:`mozilla_projects_nss_releases`.
+
+.. _changes_in_nss_3.126:
+
+`Changes in NSS 3.126 <#changes_in_nss_3.126>`__
+------------------------------------------------------------------
+
+.. container::
+
+   - Bug 2054731 - reject resumption tokens where wrapped_master_secret_len is too long.
+   - Bug 2054723 - harden against integer overflows in lowpbe.c.
+   - Bug 2054697 - fix AES GCM parameter serialization in pk11_GetPBECryptoMechanism.
+   - Bug 2054695 - handle HMAC truncation when using PK11_Digest* APIs.
+   - Bug 1329766 - Enable DTLS in BoGo tests.
+   - Bug 2054616 - reject short ciphertexts in sec_pkcs5_rc2.
+   - Bug 2027350 - rewrite PK11_SaveContext in terms of PK11_SaveContextAlloc.
+   - Bug 2050034 - reject long OCSP responses in libpkix http client.
+   - Bug 2047783 - Set nssckbi version to 2.90.
+   - Bug 2052097 - remove ePKI Root Certification Authority.
+   - Bug 2047804 - add Telia v3 Roots.
+   - Bug 2047800 - add SECOM 2024 Roots.
+   - Bug 2017374 - remove websites trust bit from Atos TrustedRoot 2011.
+   - Bug 2039251 - clang format.
+   - Bug 2052288 - clang format.
+   - Bug 2053436 - Fix session reference leak in NSC_GetOperationState error paths.
+   - Bug 2039251 - Use ProcessPrng in RNG_SystemRNG in freebl on Windows.
+   - Bug 2052650 - Speed up DTLS timers.
+   - Bug 2053075 - Only use lower PBE iteration count limit in fuzzing builds.
+   - Bug 2052442 - Update git support for mach clang-format.
+   - Bug 2052442 - run black over mach.
+   - Bug 2052437 - Include keythi.h to avoid warning.
+   - Bug 2029410 - Bound CCM ulMACLen and GCM ulTagBits in pk11_AEADSimulateOp to prevent taglen overflow.
+   - Bug 2029406 - Validate CKM_AES_CBC_PAD mechanism parameter length in sftk_CryptInit.
+   - Bug 2019001 - update abicheck expectations.
+   - Bug 2042337 - Use aarch64 implementation of AES-GCM from AWS-LC.
+   - Bug 2051752 - add a CI job that runs gtests without hardware crypto support.
+   - Bug 2051995 - add a faster PORT_SafeZero fallback.
+   - Bug 2051939 - null check extension array in tls13_CheckCertDelegationUsage.
+   - Bug 2051754 - update wycheproof AES-GCM test vectors.
+   - Bug 2027311 - clang format.
+   - Bug 2052288 - clear greaseEchBuf after constructing HRR.
+   - Bug 2029321 - validate params length before len-2 subtraction in SECKEY_GetECCOid.
+   - Bug 2015247 - Fix leak in CERT_EnableOCSPDefaultResponder.
+   - Bug 2015247 - Fix infinite recursion in FC_AsyncJoin.
+   - Bug 2015247 - Fix leak of public key in PK11_GenerateKeyPairWithOpFlags.
+   - Bug 2015247 - Fix leak in jpake_Round2Base.
+   - Bug 2019001 - add support for ML-KEM-1024 named group.
+   - Bug 2029750 - Reject undersized IV and key SECItems in PBES2 cipher dispatchers.
+   - Bug 2027311 - Add defensive checks on generic MECHANISM_PARAM.
+   - Bug 2029438 - Stop serializing SHA-256 dispatch function pointers in Flatten/Resurrect.
+   - Bug 2029434 - Reject overflowing quantities in nss_ZNEWARRAY and nss_ZREALLOCARRAY.
+   - Bug 2029437 - Expand 2-key 3DES key from 16 to 24 bytes (K1||K2||K1) before DES_InitContext.
+   - Bug 2029701 - Reject mechanism param vs CKA_VALUE_LEN inconsistency in NSC_DeriveKey before indexing key_block.
+   - Bug 2029763 - Mirror nssCKFWSession_CopyObject sizing loop on the population loop's iteration order.
+   - Bug 2051735 - copy correct param string in secmod_MkAppendTokensList.
+   - Bug 2029816 - remove support for parsing cert comment strings.
+   - Bug 2051967 - update abicheck expectation.
+   - Bug 2029779 - Add overflow check to kbkdf_IncrementBuffer and propagate failure to both callers.
+   - Bug 2027380 - pass offset-adjusted pointer to SEC_ASN1GetSubtemplate in QuickDER call sites.
+   - Bug 2027375 - account for primitive payload bytes in DER_INDEFINITE contents_length.
+   - Bug 2027351 - reserve trailing length prefix bytes in PK11_HPKE_ImportContext bounds checks.
+   - Bug 2027374 - bounds check multibyte DER length in der_capture and der_indefinite_length.
+   - Bug 2029289 - fix off-by-one offset in pk11_buildNickname cert_id branch.
+   - Bug 2046579 - fix new ubsan warnings after clang upgrade.
+   - Bug 2046579 - update tlsfuzzer.
+   - Bug 2046579 - update tlsinterop.
+   - Bug 2046579 - upgrade docker images to ubuntu noble.
+   - Bug 2046579 - rework ci build platform names and aliases.
+   - Bug 2046579 - extend NSS CI with linux arm64 workers.
+   - Bug 2050958 - add defensive hash length check in emsa_pss_verify.
+   - Bug 2029794 - handle NSSCertificate identity changing in __CERT_AddTempCertToPerm.
+   - Bug 2027388 - add defensive check on pk11_HandUnwrap key size.
+   - Bug 2049435 - CID 1694497 - a resource leak in sftk_CryptInit() in lib/softoken/pkcs11c.c.
+   - Bug 2037078 - Implement CMS AuthEnvelopedData decryption (RFC 5083/5084).
+   - Bug 2046136 - Add a few sanity checks in CMS decoder.
+   - Bug 2047310 - add PK11_CreatePrivateKeyFromTemplate.
+   - Bug 2047771 - fix more pre-existing session object leaks.
+   - Bug 2047771 - avoid leaking session object in PK11_UnwrapPrivKey.
+   - Bug 2047771 - check for session object leaks in NSS_STRICT_SHUTDOWN mode.
+   - Bug 2044460 - Change smime_gtest make build to link smime library statically.
+   - Bug 2046371 - Add test for server rejecting client CertificateRequest.
+   - Bug 2046371 - Reject TLS 1.3 handshake messages received in the wrong endpoint role.
+   - Bug 2047218 - bundle NSPR 4.39 with source distribution.
+

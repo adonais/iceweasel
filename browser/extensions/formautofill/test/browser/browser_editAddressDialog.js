@@ -65,12 +65,12 @@ add_task(async function test_saveAddress() {
     let doc = win.document;
     // Verify labels
     is(
-      doc.querySelector("#address-level1-container > .label-text").textContent,
+      doc.querySelector("#address-level1-container > *")?.getAttribute("label"),
       "State",
       "US address-level1 label should be 'State'"
     );
     is(
-      doc.querySelector("#postal-code-container > .label-text").textContent,
+      doc.querySelector("#postal-code-container > *")?.getAttribute("label"),
       "ZIP code",
       "US postal-code label should be 'ZIP code'"
     );
@@ -91,23 +91,17 @@ add_task(async function test_saveAddress() {
       "VK_TAB",
       TEST_ADDRESS_1["address-level1"],
       "VK_TAB",
-      TEST_ADDRESS_1["postal-code"],
-      "VK_TAB",
       // TEST_ADDRESS_1.country, // Country is already US
+      "VK_TAB",
+      TEST_ADDRESS_1["postal-code"],
       "VK_TAB",
       TEST_ADDRESS_1.tel,
       "VK_TAB",
       TEST_ADDRESS_1.email,
-      "VK_TAB",
     ];
-    if (AppConstants.platform != "win") {
-      keypresses.push("VK_TAB", "VK_RETURN");
-    } else {
-      keypresses.push("VK_RETURN");
-    }
     keypresses.forEach(keypress => {
       if (
-        doc.activeElement.localName == "select" &&
+        doc.activeElement.localName == "moz-select" &&
         !keypress.startsWith("VK_")
       ) {
         let field = doc.activeElement;
@@ -118,6 +112,7 @@ add_task(async function test_saveAddress() {
         EventUtils.synthesizeKey(keypress, {}, win);
       }
     });
+    win.document.querySelector("#save").click();
   });
   let addresses = await getAddresses();
 
@@ -138,7 +133,7 @@ add_task(async function test_editAddress() {
 
       let stateSelect = win.document.querySelector("#address-level1");
       is(
-        stateSelect.selectedOptions[0].value,
+        stateSelect.value,
         TEST_ADDRESS_1["address-level1"],
         "address-level1 should be selected in the dropdown"
       );
@@ -176,7 +171,7 @@ add_task(
       win => {
         let stateSelect = win.document.querySelector("#address-level1");
         is(
-          stateSelect.selectedOptions[0].value,
+          stateSelect.value,
           "BC",
           "address-level1 should have 'BC' selected in the dropdown"
         );
@@ -237,17 +232,18 @@ add_task(async function test_saveAddressCA() {
 
     await TestUtils.waitForCondition(() => {
       return (
-        doc.querySelector("#address-level1-container > .label-text")
-          .textContent == "Province"
+        doc
+          .querySelector("#address-level1-container > *")
+          ?.getAttribute("label") == "Province"
       );
     }, "Wait for the mutation observer to change the labels");
     is(
-      doc.querySelector("#address-level1-container > .label-text").textContent,
+      doc.querySelector("#address-level1-container > *")?.getAttribute("label"),
       "Province",
       "CA address-level1 label should be 'Province'"
     );
     is(
-      doc.querySelector("#postal-code-container > .label-text").textContent,
+      doc.querySelector("#postal-code-container > *")?.getAttribute("label"),
       "Postal Code",
       "CA postal-code label should be 'Postal Code'"
     );
@@ -275,21 +271,16 @@ add_task(async function test_saveAddressCA() {
       // will happen to select the right value here.
       TEST_ADDRESS_CA_1["address-level1"],
       "VK_TAB",
-      TEST_ADDRESS_CA_1["postal-code"],
-      "VK_TAB",
       // TEST_ADDRESS_1.country, // Country is already selected above
+      "VK_TAB",
+      TEST_ADDRESS_CA_1["postal-code"],
       "VK_TAB",
       TEST_ADDRESS_CA_1.tel,
       "VK_TAB",
       TEST_ADDRESS_CA_1.email,
-      "VK_TAB",
     ];
-    if (AppConstants.platform != "win") {
-      keyInputs.push("VK_TAB", "VK_RETURN");
-    } else {
-      keyInputs.push("VK_RETURN");
-    }
     keyInputs.forEach(input => EventUtils.synthesizeKey(input, {}, win));
+    win.document.querySelector("#save").click();
   });
   let addresses = await getAddresses();
   for (let [fieldName, fieldValue] of Object.entries(TEST_ADDRESS_CA_1)) {
@@ -306,12 +297,13 @@ add_task(async function test_saveAddressDE() {
     EventUtils.synthesizeKey("Germany", {}, win);
     await TestUtils.waitForCondition(() => {
       return (
-        doc.querySelector("#postal-code-container > .label-text").textContent ==
-        "Postal Code"
+        doc
+          .querySelector("#postal-code-container > *")
+          ?.getAttribute("label") == "Postal Code"
       );
     }, "Wait for the mutation observer to change the labels");
     is(
-      doc.querySelector("#postal-code-container > .label-text").textContent,
+      doc.querySelector("#postal-code-container > *")?.getAttribute("label"),
       "Postal Code",
       "DE postal-code label should be 'Postal Code'"
     );
@@ -345,14 +337,9 @@ add_task(async function test_saveAddressDE() {
       TEST_ADDRESS_DE_1.tel,
       "VK_TAB",
       TEST_ADDRESS_DE_1.email,
-      "VK_TAB",
     ];
-    if (AppConstants.platform != "win") {
-      keyInputs.push("VK_TAB", "VK_RETURN");
-    } else {
-      keyInputs.push("VK_RETURN");
-    }
     keyInputs.forEach(input => EventUtils.synthesizeKey(input, {}, win));
+    win.document.querySelector("#save").click();
   });
   let addresses = await getAddresses();
   for (let [fieldName, fieldValue] of Object.entries(TEST_ADDRESS_DE_1)) {
@@ -369,22 +356,23 @@ add_task(async function test_saveAddressIE() {
     EventUtils.synthesizeKey("Ireland", {}, win);
     await TestUtils.waitForCondition(() => {
       return (
-        doc.querySelector("#postal-code-container > .label-text").textContent ==
-        "Eircode"
+        doc
+          .querySelector("#postal-code-container > *")
+          ?.getAttribute("label") == "Eircode"
       );
     }, "Wait for the mutation observer to change the labels");
     is(
-      doc.querySelector("#postal-code-container > .label-text").textContent,
+      doc.querySelector("#postal-code-container > *")?.getAttribute("label"),
       "Eircode",
       "IE postal-code label should be 'Eircode'"
     );
     is(
-      doc.querySelector("#address-level1-container > .label-text").textContent,
+      doc.querySelector("#address-level1-container > *")?.getAttribute("label"),
       "County",
       "IE address-level1 should be 'County'"
     );
     is(
-      doc.querySelector("#address-level3-container > .label-text").textContent,
+      doc.querySelector("#address-level3-container > *")?.getAttribute("label"),
       "Townland",
       "IE address-level3 should be 'Townland'"
     );
@@ -408,21 +396,16 @@ add_task(async function test_saveAddressIE() {
       "VK_TAB",
       "Co. Dub", // This is a dropdown menu, so type the first few letters
       "VK_TAB",
-      TEST_ADDRESS_IE_1["postal-code"],
-      "VK_TAB",
       // TEST_ADDRESS_1.country, // Country is already selected above
+      "VK_TAB",
+      TEST_ADDRESS_IE_1["postal-code"],
       "VK_TAB",
       TEST_ADDRESS_IE_1.tel,
       "VK_TAB",
       TEST_ADDRESS_IE_1.email,
-      "VK_TAB",
     ];
-    if (AppConstants.platform != "win") {
-      keyInputs.push("VK_TAB", "VK_RETURN");
-    } else {
-      keyInputs.push("VK_RETURN");
-    }
     keyInputs.forEach(input => EventUtils.synthesizeKey(input, {}, win));
+    win.document.querySelector("#save").click();
   });
 
   let addresses = await getAddresses();
@@ -436,10 +419,11 @@ add_task(async function test_countryAndStateFieldLabels() {
   await testDialog(EDIT_ADDRESS_DIALOG_URL, async win => {
     const doc = win.document;
     for (let countryOption of doc.querySelector("#country").options) {
-      // Clear L10N textContent to not leave leftovers between country tests
-      for (const labelEl of doc.querySelectorAll(".label-text")) {
-        delete labelEl.dataset["l10n-id"];
-        labelEl.textContent = "";
+      // Clear labels to not leave leftovers between country tests
+      for (const el of doc.querySelectorAll(
+        "moz-input-text, moz-select, moz-textarea"
+      )) {
+        el.removeAttribute("label");
       }
 
       // Change country to verify labels
@@ -450,9 +434,9 @@ add_task(async function test_countryAndStateFieldLabels() {
 
       await waitForFocusAndFormReady(win);
 
-      const allLabelsHaveText = [...doc.querySelectorAll(".label-text")].every(
-        labelEl => labelEl.textContent
-      );
+      const allLabelsHaveText = [
+        ...doc.querySelectorAll("moz-input-text, moz-select, moz-textarea"),
+      ].every(el => el.getAttribute("label"));
 
       ok(allLabelsHaveText, "All labels are rendered and have text content");
 
@@ -505,7 +489,7 @@ add_task(async function test_countryAndStateFieldLabels() {
             "Each State should be listed in alphabetical name order (key)"
           );
           is(
-            stateOptions[i].text,
+            stateOptions[i].label,
             names[i],
             "Each State should be listed in alphabetical name order (name)"
           );
@@ -522,15 +506,21 @@ add_task(async function test_countryAndStateFieldLabels() {
 add_task(async function test_hiddenFieldNotSaved() {
   await testDialog(EDIT_ADDRESS_DIALOG_URL, async win => {
     const doc = win.document;
-    doc.querySelector("#address-level2").focus();
-    EventUtils.synthesizeKey(TEST_ADDRESS_1["address-level2"], {}, win);
+    // Set a state while the country is still US.
     doc.querySelector("#address-level1").focus();
     EventUtils.synthesizeKey(TEST_ADDRESS_1["address-level1"], {}, win);
+    // Switch to Germany, whose layout has no address-level1 field.
     doc.querySelector("#country").focus();
     EventUtils.synthesizeKey("Germany", {}, win);
     await waitForFocusAndFormReady(win);
-    doc.querySelector("#save").focus();
-    EventUtils.synthesizeKey("VK_RETURN", {}, win);
+    // Fill the German layout's required fields so the form can be submitted.
+    doc.querySelector("#street-address").focus();
+    EventUtils.synthesizeKey(TEST_ADDRESS_1["street-address"], {}, win);
+    doc.querySelector("#address-level2").focus();
+    EventUtils.synthesizeKey(TEST_ADDRESS_1["address-level2"], {}, win);
+    doc.querySelector("#postal-code").focus();
+    EventUtils.synthesizeKey(TEST_ADDRESS_1["postal-code"], {}, win);
+    doc.querySelector("#save").click();
   });
   let addresses = await getAddresses();
   is(addresses[0].country, "DE", "check country");
@@ -553,6 +543,8 @@ add_task(async function test_hiddenFieldRemovedWhenCountryChanged() {
   ok(!addresses.length, "no addresses at start of test");
   await testDialog(EDIT_ADDRESS_DIALOG_URL, win => {
     let doc = win.document;
+    doc.querySelector("#street-address").focus();
+    EventUtils.synthesizeKey(TEST_ADDRESS_1["street-address"], {}, win);
     doc.querySelector("#address-level2").focus();
     EventUtils.synthesizeKey(TEST_ADDRESS_1["address-level2"], {}, win);
     doc.querySelector("#address-level1").focus();
@@ -562,8 +554,9 @@ add_task(async function test_hiddenFieldRemovedWhenCountryChanged() {
     ) {
       EventUtils.synthesizeKey(TEST_ADDRESS_1["address-level1"][0], {}, win);
     }
-    doc.querySelector("#save").focus();
-    EventUtils.synthesizeKey("VK_RETURN", {}, win);
+    doc.querySelector("#postal-code").focus();
+    EventUtils.synthesizeKey(TEST_ADDRESS_1["postal-code"], {}, win);
+    doc.querySelector("#save").click();
   });
   addresses = await getAddresses();
   is(addresses[0].country, "US", "check country");
@@ -625,7 +618,11 @@ add_task(async function test_countrySpecificFieldsGetRequiredness() {
     await waitForFocusAndFormReady(win);
     const stateField = doc.getElementById("address-level1");
 
-    ok(stateField.required, "address-level1 should be marked as required");
+    Assert.strictEqual(
+      stateField.dataset.required,
+      "true",
+      "address-level1 should be marked as required"
+    );
     ok(!stateField.disabled, "address-level1 should not be marked as disabled");
 
     // Dispatch a dummy key event so that <select>'s incremental search is cleared.

@@ -366,7 +366,7 @@ async function awaitTip(searchString, win = window) {
     "Number of results is greater than or equal to 2"
   );
   let result = context.results[1];
-  Assert.equal(result.type, UrlbarUtils.RESULT_TYPE.TIP, "Result type");
+  Assert.equal(result.type, UrlbarShared.RESULT_TYPE.TIP, "Result type");
   let element = await UrlbarTestUtils.waitForAutocompleteResultAt(win, 1);
   return [result, element];
 }
@@ -492,7 +492,7 @@ async function awaitNoTip(searchString, win = window) {
     fireInputEvent: true,
   });
   for (let result of context.results) {
-    Assert.notEqual(result.type, UrlbarUtils.RESULT_TYPE.TIP);
+    Assert.notEqual(result.type, UrlbarShared.RESULT_TYPE.TIP);
   }
 }
 
@@ -521,7 +521,7 @@ async function checkTip(win, expectedTip, closeView = true) {
   Assert.ok(true, "View opened");
   Assert.equal(UrlbarTestUtils.getResultCount(win), 1, "Number of results");
   let result = await UrlbarTestUtils.getDetailsOfResultAt(win, 0);
-  Assert.equal(result.type, UrlbarUtils.RESULT_TYPE.TIP, "Result type");
+  Assert.equal(result.type, UrlbarShared.RESULT_TYPE.TIP, "Result type");
   let heuristic;
   let title;
   let name = SearchService.defaultEngine.name;
@@ -568,8 +568,8 @@ function makeTipResult({
   descriptionLearnMoreTopic = undefined,
 }) {
   return new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.TIP,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    type: UrlbarShared.RESULT_TYPE.TIP,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     payload: {
       helpUrl,
       descriptionL10n,

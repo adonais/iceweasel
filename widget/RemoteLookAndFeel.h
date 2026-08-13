@@ -5,8 +5,8 @@
 #ifndef mozilla_widget_RemoteLookAndFeel_h_
 #define mozilla_widget_RemoteLookAndFeel_h_
 
-#include "mozilla/widget/nsXPLookAndFeel.h"
 #include "mozilla/widget/LookAndFeelTypes.h"
+#include "mozilla/widget/nsXPLookAndFeel.h"
 
 namespace mozilla::widget {
 

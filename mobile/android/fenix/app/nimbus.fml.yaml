@@ -32,6 +32,22 @@ import:
               "ampMobile": false,
               "wikipedia": true,
             }
+  - path: ../../android-components/components/feature/media/media.fml.yaml
+    channel: default
+    features:
+      media-notification-improvements:
+        - channel: developer
+          value:
+            enabled: true
+        - channel: nightly
+          value:
+            enabled: true
+        - channel: beta
+          value:
+            enabled: false
+        - channel: release
+          value:
+            enabled: false
 
 features:
   homescreen:
@@ -740,21 +756,23 @@ features:
         type: Boolean
         default: false
 
-  search-suggestions-on-homepage:
-    description: Enables search suggestions on homepage.
-    variables:
-      enabled:
-        description: >
-          Whether or not to enable search suggestions on homepage.
-        type: Boolean
-        default: false
-
   homepage-as-new-tab:
     description: Enables homepage as a a new tab.
     variables:
       enabled:
         description: >
           Whether or not to enable homepage as a new tab
+        type: Boolean
+        default: false
+
+  universal-edge-to-edge-wallpapers:
+    description: >
+      Extends non-default homepage wallpapers edge-to-edge and adapts the toolbar, navigation bar
+      and system bars to them.
+    variables:
+      enabled:
+        description: >
+          Whether or not to enable the universal edge-to-edge wallpaper treatment.
         type: Boolean
         default: false
 
@@ -990,6 +1008,14 @@ features:
         description: >
           Whether or not to enable onboarding for tab groups.
         type: Boolean
+        default: true
+  tab-groups-live-reorder:
+    description: Control whether reorder happens live during a drag and drop action for Tab Groups.
+    variables:
+      enabled:
+        description: >
+          Whether or not to enable live reorder for tab groups drag and drop.
+        type: Boolean
         default: false
     defaults:
       - channel: release
@@ -1051,16 +1077,6 @@ features:
         type: Boolean
         default: false
 
-  custom-review-prompt:
-    description: Feature that controls the Play store review prompt.
-    variables:
-      enabled:
-        description: Whether or not to enable the new trigger criteria.
-        type: Boolean
-        default: false
-
-  # Created this in addition to the `custom-review-prompt` flag to keep changes minimal and make it easier to uplift.
-  # See: https://bugzilla.mozilla.org/show_bug.cgi?id=2014083
   custom-review-prompt-ui:
     description: Feature that controls the custom UI for review prompt.
     variables:
@@ -1158,14 +1174,7 @@ features:
       enabled:
         description: If true, Add Shortcuts improvement is enabled.
         type: Boolean
-        default: false
-    defaults:
-      - channel: developer
-        value:
-          enabled: true
-      - channel: nightly
-        value:
-          enabled: true
+        default: true
 
   merino-client:
     description: Feature to enable the Merino Client for users on Firefox on Android.
@@ -1175,21 +1184,13 @@ features:
         type: Boolean
         default: false
 
-  merino-manifest:
-    description: Feature to enable the Merino Manifest for users on Firefox on Android.
+  ads-client-for-stories:
+    description: Feature to enable the Mozilla Ads Client support for Sponsored Stories for users on Firefox on Android.
     variables:
       enabled:
-        description: If true, Merino Manifest is enabled.
+        description: If true, Mozilla Ads Client support for Sponsored Stories is enabled.
         type: Boolean
-        default: true
-
-  mozilla-ads-client:
-    description: Feature to enable the Mozilla Ads Client support for Top Sites for users on Firefox on Android.
-    variables:
-      enabled:
-        description: If true, Mozilla Ads Client support for Top Sites is enabled.
-        type: Boolean
-        default: true
+        default: false
 
   private-mode-and-stories-entry-point:
     description: Feature to enable the Private Mode and Stories Entry Point Experiment.
@@ -1239,14 +1240,7 @@ features:
       enabled:
         description: If true, custom download location is enabled.
         type: Boolean
-        default: false
-    defaults:
-      - channel: developer
-        value:
-          enabled: true
-      - channel: nightly
-        value:
-          enabled: true
+        default: true
 
   google-lens-integration:
     description: A feature that enables Google Lens integration for users on Firefox on Android.
@@ -1324,7 +1318,7 @@ features:
     defaults:
       - channel: nightly
         value:
-          enabled: false
+          enabled: true
       - channel: developer
         value:
           enabled: true
@@ -1343,6 +1337,34 @@ features:
       - channel: developer
         value:
           enabled: true
+
+  uninstall-survey:
+    description: Feature that controls the visibility and handling of the uninstall survey app shortcut.
+    variables:
+      enabled:
+        description: If true, the uninstall survey shortcut is enabled and visible.
+        type: Boolean
+        default: false
+    defaults:
+      - channel: developer
+        value:
+          enabled: true
+
+  homepage-customization:
+    description: Feature to enable Homepage Customization for users on Firefox on Android.
+    variables:
+      enabled:
+        description: If true, Homepage Customization is enabled.
+        type: Boolean
+        default: false
+
+  homepage-trending-recent-search:
+    description: Feature to show trending and recent searches on the Homepage Search for users on Firefox on Android.
+    variables:
+      enabled:
+        description: If true, trending and recent searches are shown on the Homepage Search.
+        type: Boolean
+        default: false
 
 types:
   objects:

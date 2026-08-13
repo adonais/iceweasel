@@ -93,6 +93,15 @@ home-prefs-sports-widget-header =
 # Clock is a widget on New Tab that displays time zones around the world.
 home-prefs-clocks-header =
     .label = 时钟
+# Privacy is a widget on New Tab that shows tracking protection activity.
+home-prefs-privacy-header =
+    .label = 隐私保护
+# Stocks is a widget on New Tab that shows stock ticker prices.
+home-prefs-stocks-header =
+    .label = 股市
+# Picture of the day is a widget on New Tab that shows a daily Wikimedia Commons image.
+home-prefs-picture-header =
+    .label = 每日一图
 home-prefs-mission-message2 =
     .message = 建设一个更好的互联网的使命，离不开我们赞助商的支持。
 home-prefs-manage-topics-link2 =
@@ -147,6 +156,139 @@ home-prefs-weather-header-srd =
 home-prefs-support-firefox-header-srd =
     .label = 支持 { -brand-product-name }
 home-prefs-mission-message-learn-more-link-srd = 了解其方式
+
+## Strings for the Privacy widget
+
+# Context menu item linking to more information about the Privacy widget.
+newtab-privacy-menu-learn-more = 详细了解
+
+## Privacy widget — count readout
+
+# Label shown under the large tracker-count number, appearing like:
+# Line 1: 86
+# Line 2: Trackers blocked today
+# Translations can be adjusted to "Today's blocked trackers" or something
+# similar if this fixed order causes issues.
+# Variables:
+#   $count (number) - Number of trackers blocked today
+newtab-privacy-trackers-blocked-today = 今天拦截的跟踪器数量
+
+## Privacy widget — empty state
+
+# Shown when no trackers have been blocked yet today.
+newtab-privacy-empty = { -brand-short-name } 会在您浏览时拦截跟踪器。拦截情况将显示在这里。
+
+## Privacy widget — informational messages
+##
+## Rotating "info" secondary messages. Each message has a body plus a matched
+## "-cta" button label sharing the same id stem (the CTA button isn't rendered
+## yet; the labels are authored so the pairing is ready).
+
+newtab-privacy-message-info-1 = { -brand-short-name } 会在您浏览时自动拦截跟踪器。
+newtab-privacy-message-info-2 = 拦截跟踪器有助于阻止大公司在网络上跟踪您。
+newtab-privacy-message-info-3 = 许多网站都藏有跟踪器，使得您未曾打过交道的公司也可以在网络上跟踪您。
+newtab-privacy-message-info-8 = 使用 { -brand-short-name } 浏览，即是在支持 { -vendor-short-name } 的使命：建设更好的网络。
+newtab-privacy-message-info-8-cta = 详细了解
+newtab-privacy-message-info-9 = 将 { -brand-short-name } 设为默认浏览器，享受内置隐私保护。
+newtab-privacy-message-info-9-cta = 设为默认
+newtab-privacy-message-info-10-cta = 转到密码
+newtab-privacy-message-info-11 = 了解 { -brand-short-name } 如何帮助您更私密地浏览。
+newtab-privacy-message-info-11-cta = 详细了解
+newtab-privacy-message-info-12 = 使用限量数据流量套餐时，拦截跟踪器有助于节省带宽。
+
+## Privacy widget — promotional messages
+##
+## Rotating "promo" secondary messages suggesting another Firefox feature. Each
+## has a body plus a matched "-cta" button label.
+
+newtab-privacy-message-promo-monitor-1 = 看看您的个人信息是否出现在数据外泄事件中。
+newtab-privacy-message-promo-monitor-1-cta = 详细了解
+newtab-privacy-message-promo-monitor-2 = 使用免费的数据外泄事件监控来保护您的信息，最多可监控 20 个邮箱。
+newtab-privacy-message-promo-monitor-2-cta = 详细了解
+newtab-privacy-message-promo-signin-1-cta = 登录
+newtab-privacy-message-promo-vpn-1 = 使用公共 Wi-Fi 购物？开启内置 VPN，获得额外防护。
+newtab-privacy-message-promo-vpn-1-cta = 打开 VPN
+newtab-privacy-message-promo-vpn-2 = 在使用机场 Wi-Fi？开启内置 VPN，保护您的浏览。
+newtab-privacy-message-promo-vpn-2-cta = 打开 VPN
+newtab-privacy-message-promo-vpn-3 = 开启内置 VPN，更好隐藏您的真实位置。
+newtab-privacy-message-promo-vpn-3-cta = 打开 VPN
+newtab-privacy-message-promo-private-window-1 = 与他人共用计算机时，建议使用隐私窗口，让浏览更有隐私。
+newtab-privacy-message-promo-private-window-1-cta = 打开隐私窗口
+newtab-privacy-message-promo-relay-1 = 将马甲邮箱用于注册账户，把真实邮箱留给信任的人。
+newtab-privacy-message-promo-relay-1-cta = 获取马甲邮箱
+newtab-privacy-message-promo-relay-2 = 使用免费的马甲邮箱，保护收件箱免受垃圾邮件侵扰。
+newtab-privacy-message-promo-relay-2-cta = 获取马甲邮箱
+newtab-privacy-message-promo-relay-3 = 获取 50 个免费马甲邮箱，帮助隐藏真实邮箱地址。
+newtab-privacy-message-promo-relay-3-cta = 获取马甲邮箱
+
+## Privacy widget — celebration messages
+##
+## Earned "celebration" moments (milestones, daily cap, streak, first
+## protection). Count-bearing ones interpolate { $count }.
+
+# Variables:
+#   $count (number) - Trackers blocked this month
+newtab-privacy-message-milestone-month = 本月已拦截 { $count } 个跟踪器。隐私一小步，心安一大步。
+
+## Strings for the Stocks widget
+
+# Context menu item for searching stock ticker symbols.
+newtab-stocks-menu-search = 搜索股票代码
+# Context menu item linking to more information about the Stocks widget.
+newtab-stocks-menu-learn-more = 详细了解
+# "Stocks widget options" is an icon-only button in the widget toolbar — the
+# attributes are consumed as tooltip/screen-reader label only. The button
+# never renders visible text.
+newtab-stocks-widget-menu-button =
+    .title = 股市小组件选项
+    .aria-label = 股市小组件选项
+# Heading for the Stocks widget.
+newtab-stocks-widget-title = 股市
+
+## Strings for the Picture of the Day widget
+
+# Title shown at the top of the widget, with the source name appended.
+# "Wikimedia Commons" is a brand name and should not be translated.
+newtab-picture-header = 每日一图 · 维基共享资源
+# Shorter title shown at the top of the widget, without the source name.
+newtab-picture-header-main = 每日一图
+# Attribution line shown under the title once a picture loads: an author
+# credit, a link to the picture's source page, and a link to its license.
+# "©" is the copyright symbol.
+# $author (string) - the name of the image's author.
+newtab-picture-attribution-author = © { $author }
+# Link to the picture's source page (its Wikimedia Commons file page).
+# "Wikimedia Commons" is a brand name and should not be translated.
+newtab-picture-attribution-source-link = 维基共享资源
+# Screen-reader label for the license link; the visible text is the license
+# name (for example "CC BY-SA 4.0") provided with the picture.
+# $license (string) - the name of the license.
+newtab-picture-attribution-license =
+    .aria-label = 查看 { $license } 许可协议
+# Tooltip and screen-reader label for the icon-only button that opens the
+# widget's context menu. The button never renders visible text.
+newtab-picture-widget-menu-button =
+    .title = 每日一图选项
+    .aria-label = 每日一图选项
+# Button that sets the current picture as the New Tab background wallpaper. The
+# button collapses to an icon when not hovered/focused, so .title is its tooltip.
+newtab-picture-set-wallpaper =
+    .label = 设置壁纸
+    .title = 设置壁纸
+    .aria-label = 将今日图片设置为壁纸
+# Context menu item that opens the New Tab customization panel.
+newtab-picture-menu-manage-wallpaper = 管理壁纸
+# Context menu item that hides today’s picture, replacing it with an existing
+# wallpaper.
+newtab-picture-menu-hide-photo = 隐藏今日图片
+# Context menu item that restores today’s picture after it has been hidden.
+newtab-picture-menu-show-photo = 显示今日图片
+# Context menu item linking to more information about the widget.
+newtab-picture-menu-learn-more = 详细了解
+# Icon button shown on the widget once the picture is hidden; restores it.
+newtab-picture-show-button =
+    .title = 显示今日图片
+    .aria-label = 显示今日图片
 
 ## Search box component.
 
@@ -466,6 +608,8 @@ newtab-recommended-stories-toggle =
     .label = 推荐文章
 newtab-custom-stories-personalized-toggle =
     .label = 文章
+newtab-custom-stories-personalized-checkbox =
+    .label = 根据您的阅读记录为您推荐文章
 newtab-custom-stories-personalized-checkbox-label = 根据您的阅读记录为您推荐文章
 newtab-custom-pocket-sponsored = 赞助内容
 newtab-custom-pocket-show-recent-saves = 显示近期保存内容
@@ -486,6 +630,12 @@ newtab-custom-widget-clock-toggle =
     .label = 时钟
 newtab-custom-widget-sports-toggle2 =
     .label = 体育
+newtab-custom-widget-privacy-toggle =
+    .label = 隐私保护
+newtab-custom-widget-stocks-toggle =
+    .label = 股市
+newtab-custom-widget-picture-toggle =
+    .label = 每日一图
 newtab-custom-widget-section-title = 小组件
 newtab-custom-widget-section-toggle =
     .label = 小组件
@@ -962,6 +1112,8 @@ newtab-widget-timer-reset =
 newtab-widget-timer-menu-notifications = 关闭通知
 newtab-widget-timer-menu-notifications-on = 开启通知
 newtab-widget-timer-menu-learn-more = 详细了解
+newtab-widget-timer-menu-button =
+    .aria-label = 计时器选项
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = 头条新闻
 newtab-daily-briefing-card-menu-dismiss = 知道了
@@ -1064,6 +1216,8 @@ newtab-sports-widget-show-less =
 # Toggle that filters the list of teams the user follows
 newtab-sports-widget-followed-only-toggle =
     .label = 仅显示关注的球队
+# Status shown when more matches are being fetched.
+newtab-sports-widget-loading-more = 正加载更多匹配项…
 # Watch is a verb (as in watch matches online).
 newtab-sports-widget-watch =
     .label = 观看
@@ -1143,6 +1297,9 @@ newtab-sports-widget-third-place = 季军
 newtab-sports-widget-runner-up = 亚军
 newtab-sports-widget-champions = 冠军
 newtab-sports-widget-world-cup-champions = 2026 年世界杯冠军
+# Compact champions label for the medium-size widget result card; the larger
+# card uses newtab-sports-widget-world-cup-champions.
+newtab-sports-widget-world-cup-champions-short = 2026 年世界杯冠军
 # Variables:
 #   $date (Date) - The match start time
 newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
@@ -1239,12 +1396,21 @@ newtab-sports-widget-team-tbd = 待定
 newtab-sports-widget-message-wallpapers-title = 换上新壁纸，迎接世界杯
 newtab-sports-widget-message-wallpapers-body = 赛事期间，将赛场活力注入浏览器
 newtab-sports-widget-message-wallpapers-cta = 选择壁纸
+newtab-sports-widget-message-wallpapers-semifinals-title = 换上新壁纸，迎接半决赛
 newtab-sports-widget-message-add-widgets-cta =
     .label = 添加小组件
 newtab-sports-widget-message-day-in-play-title = 使用 { -brand-product-name } 小组件，全天候关注精彩赛事
 newtab-sports-widget-message-day-in-play-body = 关注世界杯、记录任务、掌握世界各地时间，另有更多实用功能。
 newtab-sports-widget-message-explore-widgets-cta =
     .label = 探索小组件
+
+## Survey prompts shown after the World Cup to gather feedback on the widgets experience.
+
+newtab-sports-widget-message-survey-title = 帮助我们改进小部件
+newtab-sports-widget-message-survey-body = 世界杯已落下帷幕，欢迎分享您对此次体验的反馈。
+newtab-sports-widget-message-survey-widget-title = 世界杯小组件使用体验如何？
+newtab-sports-widget-message-survey-cta =
+    .label = 填写问卷
 
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input

@@ -5,8 +5,8 @@
 #ifndef mozilla_image_MultipartImage_h
 #define mozilla_image_MultipartImage_h
 
-#include "ImageWrapper.h"
 #include "IProgressObserver.h"
+#include "ImageWrapper.h"
 #include "ProgressTracker.h"
 
 namespace mozilla {

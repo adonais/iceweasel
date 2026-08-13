@@ -1,0 +1,30 @@
+schema: 1
+
+bugzilla:
+  product: NSPR
+  component: NSPR
+
+origin:
+  name: nspr
+  description: Netscape Portable Runtime
+  url: https://github.com/mozilla/nspr
+
+  release: NSPR_4_39_RTM (2026-05-05T14:48:55+02:00).
+  revision: NSPR_4_39_RTM
+
+  license: MPL-2.0
+  license-file: LICENSE
+
+vendoring:
+  url: https://github.com/mozilla/nspr
+  source-hosting: github
+  vendor-directory: nsprpub
+  tracking: tag
+  exclude:
+    - .hgignore
+  keep:
+    - prdepend.py
+  update-actions:
+    - action: run-script
+      cwd: '{topsrcdir}'
+      script: '{cwd}/nsprpub/prdepend.py'

@@ -2687,6 +2687,8 @@ public class GeckoViewActivity extends AppCompatActivity
           return "ERROR_NET_TIMEOUT";
         case WebRequestError.ERROR_CONNECTION_REFUSED:
           return "ERROR_CONNECTION_REFUSED";
+        case WebRequestError.ERROR_LOCAL_NETWORK_ACCESS_DENIED:
+          return "ERROR_LOCAL_NETWORK_ACCESS_DENIED";
         case WebRequestError.ERROR_UNKNOWN_PROTOCOL:
           return "ERROR_UNKNOWN_PROTOCOL";
         case WebRequestError.ERROR_UNKNOWN_HOST:

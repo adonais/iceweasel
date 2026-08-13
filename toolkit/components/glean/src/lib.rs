@@ -377,6 +377,12 @@ impl From<&FogDistributionMetrics> for DistributionMetrics {
         DistributionMetrics { name }
     }
 }
+
+#[no_mangle]
+pub extern "C" fn fog_clear_attribution() {
+    glean::clear_attribution();
+}
+
 #[no_mangle]
 pub extern "C" fn fog_update_attribution(attr: &FogAttributionMetrics) {
     glean::update_attribution(attr.into());
@@ -385,6 +391,11 @@ pub extern "C" fn fog_update_attribution(attr: &FogAttributionMetrics) {
 #[no_mangle]
 pub extern "C" fn fog_test_get_attribution(value: &mut FogAttributionMetrics) {
     value.take(glean::test_get_attribution());
+}
+
+#[no_mangle]
+pub extern "C" fn fog_clear_distribution() {
+    glean::clear_distribution();
 }
 
 #[no_mangle]

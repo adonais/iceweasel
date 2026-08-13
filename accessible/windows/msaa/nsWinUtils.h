@@ -5,11 +5,12 @@
 #ifndef nsWinUtils_h_
 #define nsWinUtils_h_
 
-#include <functional>
 #include <windows.h>
 
-#include "nsICSSDeclaration.h"
+#include <functional>
+
 #include "nsCOMPtr.h"
+#include "nsICSSDeclaration.h"
 
 class nsIContent;
 

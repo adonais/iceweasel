@@ -1,5 +1,4 @@
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
+/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
@@ -8,7 +7,7 @@
 [scriptable, builtinclass, uuid(51191434-1dd2-11b2-a17c-e49c4e99a4e3)]
 interface nsIPKCS11Token : nsISupports
 {
-  /*
+  /**
    * The name of the token
    */
   [must_use]
@@ -33,31 +32,41 @@ interface nsIPKCS11Token : nsISupports
   [must_use]
   readonly attribute AUTF8String tokenSerialNumber;
 
-  /*
-   * Login information
+  /**
+   * Whether or not the token has been logged in to.
    */
   [must_use]
   readonly attribute boolean isLoggedIn;
-  [must_use]
-  void login();
-  [must_use]
-  void logout();
-
-  /*
-   * Reset password
-   */
-  [must_use]
-  void reset();
 
   /**
-   * Changes the user pin (password) on the token. If no password has been set
-   * and `oldPassword` is empty, initializes the password to `newPassword`.
-   * Otherwise, if `oldPassword` is the current password, changes it to
-   * `newPassword`.
+   * Returns a promise that resolves when the login() operation has completed.
+   */
+  [implicit_jscontext, must_use]
+  Promise login();
+
+  /**
+   * Returns a promise that resolves when the logout() operation has completed.
+   */
+  [implicit_jscontext, must_use]
+  Promise logout();
+
+  /**
+   * Returns a promise that resolves when the token has been reset. If there
+   * was a pin (password), it will have been removed. All secrets stored on the
+   * token will have been deleted or rendered inaccessible.
+   */
+  [implicit_jscontext, must_use]
+  Promise reset();
+
+  /**
+   * Returns a promise that resolves when the user pin (password) has been
+   * changed on the token. If no password has been set and `oldPassword` is
+   * empty, initializes the password to `newPassword`. Otherwise, if
+   * `oldPassword` is the current password, changes it to `newPassword`.
    * Tokens with protected authentication paths are not supported.
    */
-  [must_use]
-  void changePassword(in AUTF8String oldPassword, in AUTF8String newPassword);
+  [implicit_jscontext, must_use]
+  Promise changePassword(in AUTF8String oldPassword, in AUTF8String newPassword);
 
   /**
    * True if a password can be set on this token, and false otherwise.

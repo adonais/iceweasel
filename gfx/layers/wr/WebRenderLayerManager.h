@@ -5,10 +5,12 @@
 #ifndef GFX_WEBRENDERLAYERMANAGER_H
 #define GFX_WEBRENDERLAYERMANAGER_H
 
-#include <cstddef>                    // for size_t
-#include <cstdint>                    // for uint32_t, int32_t, INT32_MAX
-#include <string>                     // for string
-#include "Units.h"                    // for LayoutDeviceIntSize
+#include <cstddef>  // for size_t
+#include <cstdint>  // for uint32_t, int32_t, INT32_MAX
+#include <string>   // for string
+
+#include "Units.h"  // for LayoutDeviceIntSize
+#include "WindowRenderer.h"
 #include "mozilla/AlreadyAddRefed.h"  // for already_AddRefed
 #include "mozilla/Assertions.h"  // for AssertionConditionType, MOZ_ASSERT, MOZ_ASSERT_HELPER2
 #include "mozilla/Attributes.h"              // for MOZ_NON_OWNING_REF
@@ -23,11 +25,10 @@
 #include "mozilla/layers/ScrollableLayerGuid.h"  // for ScrollableLayerGuid, ScrollableLayerGuid::ViewID
 #include "mozilla/layers/WebRenderCommandBuilder.h"  // for WebRenderCommandBuilder
 #include "mozilla/layers/WebRenderScrollData.h"      // for WebRenderScrollData
-#include "WindowRenderer.h"
-#include "nsHashKeys.h"   // for nsRefPtrHashKey
-#include "nsRegion.h"     // for nsIntRegion
-#include "nsStringFwd.h"  // for nsCString, nsAString
-#include "nsTArray.h"     // for nsTArray
+#include "nsHashKeys.h"                              // for nsRefPtrHashKey
+#include "nsRegion.h"                                // for nsIntRegion
+#include "nsStringFwd.h"                             // for nsCString, nsAString
+#include "nsTArray.h"                                // for nsTArray
 #include "nsTHashSet.h"
 
 class gfxContext;

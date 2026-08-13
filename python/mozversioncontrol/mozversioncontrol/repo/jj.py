@@ -17,7 +17,7 @@ from mozfile import which
 from mozpack.files import FileListFinder
 from packaging.version import Version
 
-MINIMUM_SUPPORTED_JJ_VERSION = Version("0.28")
+MINIMUM_SUPPORTED_JJ_VERSION = Version("0.38")
 
 from mozversioncontrol.errors import (
     CannotDeleteFromRootOfRepositoryException,
@@ -46,27 +46,11 @@ class JujutsuRepository(Repository):
         super().__init__(path, tool=jj)
         self._git = GitRepository(path, git=git)
 
-        # Find git root. Newer jj has `jj git root`, but this should support
-        # older versions for now.
-        out = self._run("root")
-        if not out:
-            raise MissingVCSInfo("cannot find jj workspace root")
+        git_dir = self._run("git", "root")
+        if not git_dir:
+            raise MissingVCSInfo("cannot find `jj git root`")
 
-        try:
-            jj_ws_root = Path(out.rstrip())
-            jj_repo = jj_ws_root / ".jj" / "repo"
-            if not jj_repo.is_dir():
-                # Path / absolute discards the left operand, so this handles both relative and absolute paths.
-                jj_repo = jj_repo.parent / Path(jj_repo.read_text())
-        except Exception:
-            raise MissingVCSInfo("cannot find jj repo")
-
-        try:
-            git_target = jj_repo / "store" / "git_target"
-            git_dir = git_target.parent / Path(git_target.read_text())
-        except Exception:
-            raise MissingVCSInfo("cannot find git dir")
-
+        git_dir = Path(git_dir.rstrip())
         if not git_dir.is_dir():
             raise MissingVCSInfo("cannot find git dir")
 
@@ -358,14 +342,14 @@ class JujutsuRepository(Repository):
     def commit(self, message, author=None, date=None, paths=None):
         run_kwargs = {}
         cmd = ["commit", "--message", message]
-        if author:
-            cmd += ["--author", author]
         if date:
             dt = datetime.strptime(date, "%Y-%m-%d %H:%M:%S %z")
             run_kwargs["env"] = {"JJ_TIMESTAMP": dt.isoformat()}
         if paths:
             cmd.extend(paths)
         self._run(*cmd, **run_kwargs)
+        if author:
+            self._run("metaedit", "--author", author, "@-")
 
     def add_note(
         self,
@@ -382,6 +366,7 @@ class JujutsuRepository(Repository):
         ref: Optional[str] = None,
         dest_branch: Optional[str] = None,
         force: bool = False,
+        env: Optional[dict] = None,
     ):
         if ref and not remote:
             raise ValueError("Cannot specify ref without specifying remote")
@@ -390,7 +375,7 @@ class JujutsuRepository(Repository):
 
         if ref and dest_branch:
             ref = self._resolve_to_commit(ref)
-        self._git.push(remote, ref=ref, dest_branch=dest_branch, force=force)
+        self._git.push(remote, ref=ref, dest_branch=dest_branch, force=force, env=env)
 
     def _resolve_try_branch(self):
         dest_branch = self.branch
@@ -415,7 +400,7 @@ class JujutsuRepository(Repository):
 
         return dest_branch
 
-    def _push_to_hg_try(self, message, changed_files, allow_log_capture):
+    def _push_to_hg_try(self, message, changed_files, remote, allow_log_capture):
         if not self.has_git_cinnabar:
             raise MissingVCSExtension("cinnabar")
 
@@ -425,9 +410,7 @@ class JujutsuRepository(Repository):
                     "git", "remote", "remove", "mach_tryserver", return_codes=[0, 1]
                 )
             # `jj git remote add` would barf on the cinnabar syntax here.
-            self._git._run(
-                "remote", "add", "mach_tryserver", "hg::ssh://hg.mozilla.org/try"
-            )
+            self._git._run("remote", "add", "mach_tryserver", f"hg::{remote}")
             self._run("git", "import")
             cmd = (
                 str(self._tool),
@@ -438,7 +421,6 @@ class JujutsuRepository(Repository):
                 "mach_tryserver",
                 "--change",
                 head,
-                "--allow-new",
                 "--allow-empty-description",
             )
             if allow_log_capture:
@@ -705,7 +687,7 @@ class JujutsuRepository(Repository):
                     updated_author = True
 
             if updated_author:
-                self._run("describe", "--reset-author", "--no-edit")
+                self._run("metaedit", "--update-author")
 
             immutable_heads_key = 'revset-aliases."immutable_heads()"'
             immutable_heads_default_value = "builtin_immutable_heads() | remote_bookmarks(glob:'*', remote=exact:'origin')"
@@ -732,33 +714,25 @@ class JujutsuRepository(Repository):
 
             # This enables watchman if it's installed.
             if which("watchman"):
-                # Use appropriate config keys based on jj version. 0.32.0+ renamed these config keys
-                if jj_version >= Version("0.32"):
-                    # Remove deprecated config keys to prevent warnings
-                    for key in [
-                        "core.fsmonitor",
-                        "core.watchman.register-snapshot-trigger",
-                    ]:
-                        self._run(
-                            "config",
-                            "unset",
-                            "--repo",
-                            key,
-                            return_codes=[0, 1],
-                            stderr=subprocess.DEVNULL,
-                        )
+                # Remove deprecated config keys (renamed in 0.32.0) to prevent warnings
+                for key in [
+                    "core.fsmonitor",
+                    "core.watchman.register-snapshot-trigger",
+                ]:
+                    self._run(
+                        "config",
+                        "unset",
+                        "--repo",
+                        key,
+                        return_codes=[0, 1],
+                        stderr=subprocess.DEVNULL,
+                    )
 
-                    # Set 0.32.0+ config keys
-                    self._set_default_if_missing("fsmonitor.backend", "watchman")
-                    self._set_default_if_missing(
-                        "fsmonitor.watchman.register-snapshot-trigger", False
-                    )
-                else:
-                    # Set old config keys
-                    self._set_default_if_missing("core.fsmonitor", "watchman")
-                    self._set_default_if_missing(
-                        "core.watchman.register-snapshot-trigger", False
-                    )
+                # Set 0.32.0+ config keys
+                self._set_default_if_missing("fsmonitor.backend", "watchman")
+                self._set_default_if_missing(
+                    "fsmonitor.watchman.register-snapshot-trigger", False
+                )
 
                 print("Checking if watchman is enabled...")
                 output = self._run_read_only("debug", "watchman", "status")

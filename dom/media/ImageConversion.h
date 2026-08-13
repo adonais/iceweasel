@@ -20,6 +20,16 @@ namespace layers {
 class Image;
 }  // namespace layers
 
+// The conversion routines below scale with libyuv's box filter, which is
+// defined for image dimensions below this value.
+static constexpr int32_t kMaxConvertImageDimension = 32768;
+
+// Whether an image of aSize can be passed to the conversion routines below.
+inline bool IsImageDimensionSupportedForConversion(const gfx::IntSize& aSize) {
+  return aSize.width < kMaxConvertImageDimension &&
+         aSize.height < kMaxConvertImageDimension;
+}
+
 /**
  * Gets a SourceSurface from given image.
  */

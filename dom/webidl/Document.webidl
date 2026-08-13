@@ -32,6 +32,9 @@ enum VisibilityState { "hidden", "visible" };
 
 /* https://dom.spec.whatwg.org/#dictdef-elementcreationoptions */
 dictionary ElementCreationOptions {
+  [Pref="dom.scoped-custom-element-registries.enabled"]
+  CustomElementRegistry? customElementRegistry;
+
   DOMString is;
 
   [ChromeOnly]
@@ -275,7 +278,9 @@ partial interface Document {
   // @deprecated These are old Netscape 4 methods. Do not use,
   //             the implementation is no-op.
   // XXXbz do we actually need these anymore?
+  [Deprecated=UseOfCaptureEvents]
   undefined captureEvents();
+  [Deprecated=UseOfReleaseEvents]
   undefined releaseEvents();
 
   [SameObject] readonly attribute HTMLAllCollection all;

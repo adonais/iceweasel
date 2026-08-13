@@ -12086,7 +12086,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectConstructor() {
     }
 
     // Create a temporary object to act as the template object.
-    templateObj = NewPlainObjectWithAllocKind(cx_, NewObjectGCKind());
+    templateObj = NewPlainObject(cx_, {.allocKind = NewObjectGCKind()});
     if (!templateObj) {
       cx_->recoverFromOutOfMemory();
       return AttachDecision::NoAction;
@@ -16651,12 +16651,6 @@ void LambdaIRGenerator::trackAttached(const char* name) {
 }
 
 AttachDecision LambdaIRGenerator::tryAttachFunctionClone() {
-  // Don't optimize asm.js module functions.
-  if (canonicalFunction_->isNativeFun()) {
-    MOZ_ASSERT(IsAsmJSModule(canonicalFunction_));
-    return AttachDecision::NoAction;
-  }
-
   // Stub doesn't support metadata builder.
   if (cx_->realm()->hasAllocationMetadataBuilder()) {
     return AttachDecision::NoAction;

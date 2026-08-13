@@ -35,7 +35,7 @@ add_setup(async function setup() {
 });
 
 const assertActionButtonStatus = async (name, expectedEnabled, description) => {
-  await BrowserTestUtils.waitForCondition(() =>
+  await TestUtils.waitForCondition(() =>
     window.document.querySelector(`[data-action=${name}]`)
   );
   const target = window.document.querySelector(`[data-action=${name}]`);
@@ -148,14 +148,14 @@ add_task(async function test_inspector() {
     info("Do inspect action");
     EventUtils.synthesizeKey("KEY_Tab", {}, window);
     EventUtils.synthesizeKey("KEY_Enter", {}, window);
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => DevToolsShim.hasToolboxForTab(gBrowser.selectedTab),
       "Wait for opening inspector for current selected tab"
     );
     const toolbox = DevToolsShim.getToolboxForTab(gBrowser.selectedTab);
     info("Wait for the toolbox to be initialized");
     await toolbox.isOpen;
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => toolbox.getPanel("inspector"),
       "Wait until the inspector is ready"
     );
@@ -223,7 +223,7 @@ add_task(async function test_colorpicker() {
   PromiseTestUtils.expectUncaughtRejection(/front '.*' is already destroyed/);
 
   BrowserTestUtils.removeTab(tab);
-  await BrowserTestUtils.waitForCondition(() => targetFront.isDestroyed());
+  await TestUtils.waitForCondition(() => targetFront.isDestroyed());
 
   await SpecialPowers.popPrefEnv();
 });

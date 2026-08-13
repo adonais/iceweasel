@@ -6,15 +6,15 @@
 
 #include "xpcAccessibleMacInterface.h"
 
+#include "js/PropertyAndElement.h"  // JS_Enumerate, JS_GetElement, JS_GetProperty, JS_GetPropertyById, JS_HasOwnProperty, JS_SetUCProperty
+#include "mozilla/Services.h"
+#include "mozilla/dom/ToJSValue.h"
 #include "nsCocoaUtils.h"
 #include "nsContentUtils.h"
 #include "nsIObserverService.h"
 #include "nsISimpleEnumerator.h"
 #include "nsIXPConnect.h"
-#include "mozilla/dom/ToJSValue.h"
-#include "mozilla/Services.h"
 #include "nsString.h"
-#include "js/PropertyAndElement.h"  // JS_Enumerate, JS_GetElement, JS_GetProperty, JS_GetPropertyById, JS_HasOwnProperty, JS_SetUCProperty
 
 #import <Accessibility/Accessibility.h>
 #import <objc/runtime.h>

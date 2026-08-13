@@ -33,7 +33,6 @@ class ComposeIconButtonDetectorTest : LintDetectorTest() {
         """.trimIndent()
 
         lint()
-            .allowMissingSdk()
             .allowCompilationErrors()
             .files(kotlin(validCode))
             .run()
@@ -53,7 +52,6 @@ class ComposeIconButtonDetectorTest : LintDetectorTest() {
         """.trimIndent()
 
         lint()
-            .allowMissingSdk()
             .allowCompilationErrors()
             .skipTestModes(TestMode.IMPORT_ALIAS)
             .files(kotlin(invalidCode))

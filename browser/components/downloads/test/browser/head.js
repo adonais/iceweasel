@@ -472,7 +472,7 @@ function promiseDownloadHasProgress(aDownload, progress) {
  */
 function promiseButtonShown(id) {
   let dwu = window.windowUtils;
-  return BrowserTestUtils.waitForCondition(() => {
+  return TestUtils.waitForCondition(() => {
     let target = document.getElementById(id);
     let bounds = dwu.getBoundsWithoutFlushing(target);
     return bounds.width > 0 && bounds.height > 0;

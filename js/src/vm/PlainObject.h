@@ -60,35 +60,23 @@ extern SharedShape* ThisShapeForFunction(JSContext* cx,
 
 // Create a new PlainObject with %Object.prototype% as prototype.
 extern PlainObject* NewPlainObject(JSContext* cx,
-                                   NewObjectKind newKind = GenericObject);
-
-// Like NewPlainObject, but uses the given AllocKind. This allows creating an
-// object with fixed slots available for properties.
-extern PlainObject* NewPlainObjectWithAllocKind(
-    JSContext* cx, gc::AllocKind allocKind,
-    NewObjectKind newKind = GenericObject);
+                                   const NewObjectOptions& options = {});
 
 // Create a new PlainObject with the given |proto| as prototype.
 extern PlainObject* NewPlainObjectWithProto(
-    JSContext* cx, HandleObject proto, NewObjectKind newKind = GenericObject);
-
-// Like NewPlainObjectWithProto, but uses the given AllocKind. This allows
-// creating an object with fixed slots available for properties.
-extern PlainObject* NewPlainObjectWithProtoAndAllocKind(
-    JSContext* cx, HandleObject proto, gc::AllocKind allocKind,
-    NewObjectKind newKind = GenericObject);
+    JSContext* cx, HandleObject proto, const NewObjectOptions& options = {});
 
 // Create a plain object with the given properties. The list must not contain
 // duplicate keys or integer keys.
 extern PlainObject* NewPlainObjectWithUniqueNames(
     JSContext* cx, Handle<IdValueVector> properties,
-    NewObjectKind newKind = GenericObject);
+    const NewObjectOptions& options = {});
 
 // Create a plain object with the given properties. The list may contain integer
 // keys or duplicate keys.
 extern PlainObject* NewPlainObjectWithMaybeDuplicateKeys(
     JSContext* cx, Handle<IdValueVector> properties,
-    NewObjectKind newKind = GenericObject);
+    const NewObjectOptions& options = {});
 
 }  // namespace js
 

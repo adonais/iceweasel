@@ -49,6 +49,11 @@ policy-CaptivePortal = Enable or disable captive portal support.
 
 policy-CertificatesDescription = Add certificates or use built-in certificates.
 
+# CNSA 2.0 is the United States National Security Agency's Commercial National
+# Security Algorithm Suite 2.0. ML-KEM-1024 is a post-quantum key agreement
+# algorithm. Neither should be translated.
+policy-CNSA2KeyAgreementEnabled = Enable the CNSA 2.0 ML-KEM-1024 key agreement for TLS.
+
 policy-ContentAnalysis = Enable or disable connection to data-loss-prevention agent.
 
 policy-Cookies = Allow or deny websites to set cookies.
@@ -59,6 +64,8 @@ policy-Containers = Set policies related to containers.
 policy-DisableAccounts = Disable account-based services, including sync.
 
 policy-DisabledCiphers = Disable ciphers.
+
+policy-DefaultBrowserSettingEnabled = Control whether the user can set { -brand-short-name } as the default browser.
 
 policy-DefaultDownloadDirectory = Set the default download directory.
 

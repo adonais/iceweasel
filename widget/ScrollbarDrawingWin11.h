@@ -5,10 +5,10 @@
 #ifndef mozilla_widget_ScrollbarDrawingWin11_h
 #define mozilla_widget_ScrollbarDrawingWin11_h
 
-#include "nsITheme.h"
-#include "nsNativeTheme.h"
 #include "ScrollbarDrawing.h"
 #include "ScrollbarDrawingWin.h"
+#include "nsITheme.h"
+#include "nsNativeTheme.h"
 
 namespace mozilla::widget {
 

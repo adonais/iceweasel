@@ -1,14 +1,13 @@
-#include "gtest/gtest.h"
-
 #include "Helpers.h"
+#include "gtest/gtest.h"
 #include "mozilla/SpinEventLoopUntil.h"
-#include "nsComponentManagerUtils.h"
 #include "nsCOMPtr.h"
+#include "nsComponentManagerUtils.h"
+#include "nsIMIMEInputStream.h"
+#include "nsISeekableStream.h"
 #include "nsStreamUtils.h"
 #include "nsString.h"
 #include "nsStringStream.h"
-#include "nsIMIMEInputStream.h"
-#include "nsISeekableStream.h"
 
 using mozilla::GetCurrentSerialEventTarget;
 using mozilla::SpinEventLoopUntil;

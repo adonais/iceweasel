@@ -12,60 +12,60 @@
 #  undef LOG
 #endif
 
-#include "mozilla/ReentrantMonitor.h"
-#include "nsMemoryPressure.h"
-#include "nsThreadManager.h"
-#include "nsIClassInfoImpl.h"
-#include "nsCOMPtr.h"
-#include "nsQueryObject.h"
-#include "pratom.h"
+#include "GeckoProfiler.h"
+#include "ThreadDelay.h"
+#include "ThreadEventQueue.h"
+#include "ThreadEventTarget.h"
 #include "mozilla/BackgroundHangMonitor.h"
+#include "mozilla/ChaosMode.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/DebugOnly.h"
-#include "mozilla/Logging.h"
-#include "nsIObserverService.h"
 #include "mozilla/IOInterposer.h"
-#include "mozilla/ipc/MessageChannel.h"
-#include "mozilla/ipc/BackgroundChild.h"
+#include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ProfilerRunnable.h"
+#include "mozilla/ReentrantMonitor.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/Services.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/StaticLocalPtr.h"
 #include "mozilla/StaticPrefs_threads.h"
 #include "mozilla/TaskController.h"
-#include "nsExceptionHandler.h"
-#include "nsFmtString.h"
-#include "nsXPCOMPrivate.h"
-#include "mozilla/ChaosMode.h"
-#include "prerror.h"
-#include "mozilla/glean/XpcomMetrics.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/ScriptSettings.h"
-#include "nsThreadSyncDispatch.h"
+#include "mozilla/glean/XpcomMetrics.h"
+#include "mozilla/ipc/BackgroundChild.h"
+#include "mozilla/ipc/MessageChannel.h"
+#include "nsCOMPtr.h"
+#include "nsExceptionHandler.h"
+#include "nsFmtString.h"
+#include "nsIClassInfoImpl.h"
+#include "nsIObserverService.h"
+#include "nsMemoryPressure.h"
+#include "nsQueryObject.h"
 #include "nsServiceManagerUtils.h"
-#include "GeckoProfiler.h"
-#include "ThreadEventQueue.h"
-#include "ThreadEventTarget.h"
-#include "ThreadDelay.h"
+#include "nsThreadManager.h"
+#include "nsThreadSyncDispatch.h"
+#include "nsXPCOMPrivate.h"
+#include "pratom.h"
+#include "prerror.h"
 
 #ifdef XP_LINUX
 #  ifdef __GLIBC__
 #    include <gnu/libc-version.h>
 #  endif
-#  include <sys/mman.h>
-#  include <sys/time.h>
-#  include <sys/resource.h>
 #  include <sched.h>
 #  include <stdio.h>
+#  include <sys/mman.h>
+#  include <sys/resource.h>
+#  include <sys/time.h>
 #endif
 
 #ifdef XP_WIN
-#  include "mozilla/DynamicallyLinkedFunctionPtr.h"
-
 #  include <winbase.h>
+
+#  include "mozilla/DynamicallyLinkedFunctionPtr.h"
 
 using GetCurrentThreadStackLimitsFn = void(WINAPI*)(PULONG_PTR LowLimit,
                                                     PULONG_PTR HighLimit);
@@ -89,10 +89,11 @@ using GetCurrentThreadStackLimitsFn = void(WINAPI*)(PULONG_PTR LowLimit,
 #endif
 
 #ifdef MOZ_CANARY
-#  include <unistd.h>
 #  include <execinfo.h>
-#  include <signal.h>
 #  include <fcntl.h>
+#  include <signal.h>
+#  include <unistd.h>
+
 #  include "nsXULAppAPI.h"
 #endif
 

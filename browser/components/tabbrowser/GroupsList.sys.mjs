@@ -4,8 +4,17 @@
 
 import { PrivateBrowsingUtils } from "resource://gre/modules/PrivateBrowsingUtils.sys.mjs";
 import { TabMetrics } from "moz-src:///browser/components/tabbrowser/TabMetrics.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const MAX_INITIAL_ITEMS = 5;
+
+const lazy = {};
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "tabGroupsAlternateMenu",
+  "browser.tabs.groups.alternateMenu",
+  false
+);
 
 export class GroupsPanel {
   constructor({ view, containerNode, showAll = false }) {
@@ -97,6 +106,12 @@ export class GroupsPanel {
 
   #showAll;
   #populate() {
+    if (lazy.tabGroupsAlternateMenu) {
+      this.containerNode.replaceChildren();
+      this.#setupListeners();
+      return;
+    }
+
     let fragment = this.doc.createDocumentFragment();
 
     let openGroups = this.win.gBrowser.getAllTabGroups({
@@ -168,15 +183,15 @@ export class GroupsPanel {
 
     row.style.setProperty(
       "--tab-group-color",
-      `var(--tab-group-color-${group.color})`
+      `var(--tab-group-${group.color})`
     );
     row.style.setProperty(
       "--tab-group-color-invert",
-      `var(--tab-group-color-${group.color}-invert)`
+      `var(--tab-group-${group.color}-invert)`
     );
     row.style.setProperty(
       "--tab-group-color-pale",
-      `var(--tab-group-color-${group.color}-pale)`
+      `var(--tab-group-${group.color}-pale)`
     );
     row.style.setProperty(
       "--tab-group-background-color",

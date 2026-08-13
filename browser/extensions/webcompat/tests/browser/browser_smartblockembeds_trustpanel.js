@@ -92,7 +92,7 @@ add_task(async function test_smartblock_embed_replaced() {
   );
 
   // Check if smartblock section is still there after unblock
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return BrowserTestUtils.isVisible(
       tab.ownerDocument.getElementById("trustpanel-smartblock-toggle-container")
     );

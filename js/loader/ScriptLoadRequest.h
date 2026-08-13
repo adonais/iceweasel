@@ -5,10 +5,6 @@
 #ifndef js_loader_ScriptLoadRequest_h
 #define js_loader_ScriptLoadRequest_h
 
-#include "js/experimental/JSStencil.h"
-#include "js/RootingAPI.h"
-#include "js/SourceText.h"
-#include "js/TypeDecls.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/dom/CacheExpirationTime.h"
 #include "mozilla/dom/SRIMetadata.h"
@@ -17,11 +13,17 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/SharedSubResourceCache.h"  // mozilla::SubResourceNetworkMetadataHolder
 #include "mozilla/StaticPrefs_dom.h"
+
+#include "LoadedScript.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIGlobalObject.h"
-#include "LoadedScript.h"
-#include "ScriptKind.h"
 #include "ScriptFetchOptions.h"
+#include "ScriptKind.h"
+
+#include "js/experimental/JSStencil.h"
+#include "js/RootingAPI.h"
+#include "js/SourceText.h"
+#include "js/TypeDecls.h"
 
 namespace mozilla::dom {
 
@@ -103,6 +105,9 @@ class ScriptLoadRequest : public nsISupports,
 
   bool IsModuleRequest() const { return mKind == ScriptKind::eModule; }
   bool IsImportMapRequest() const { return mKind == ScriptKind::eImportMap; }
+  bool IsSpeculationRulesRequest() const {
+    return mKind == ScriptKind::eSpeculationRules;
+  }
 
   ModuleLoadRequest* AsModuleRequest();
   const ModuleLoadRequest* AsModuleRequest() const;
@@ -374,7 +379,8 @@ class ScriptLoadRequest : public nsISupports,
  public:
   // Fields.
 
-  // Whether this is a classic script, a module script, or an import map.
+  // Whether this is a classic script, a module script, an import map, or a
+  // speculation rule set.
   const ScriptKind mKind;
 
   // Are we still waiting for a load to complete?

@@ -89,6 +89,7 @@ class GeckoParametersSchema(Schema, kw_only=True, rename=None):
     try_mode: Optional[str]
     try_task_config: TryTaskConfig
     version: str
+    head_git_repository: Optional[str] = None
     head_git_rev: Optional[str] = None
     pull_request_number: Optional[int] = None
 

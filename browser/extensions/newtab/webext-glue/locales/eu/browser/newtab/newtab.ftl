@@ -475,6 +475,8 @@ newtab-recommended-stories-toggle =
     .label = Gomendatutako istorioak
 newtab-custom-stories-personalized-toggle =
     .label = Istorioak
+newtab-custom-stories-personalized-checkbox =
+    .label = Zure jardueran oinarritutako istorio pertsonalizatuak
 newtab-custom-stories-personalized-checkbox-label = Zure jardueran oinarritutako istorio pertsonalizatuak
 newtab-custom-pocket-sponsored = Babesleen istorioak
 newtab-custom-pocket-show-recent-saves = Erakutsi gordetako azkenak
@@ -971,6 +973,8 @@ newtab-widget-timer-reset =
 newtab-widget-timer-menu-notifications = Desaktibatu jakinarazpenak
 newtab-widget-timer-menu-notifications-on = Aktibatu jakinarazpenak
 newtab-widget-timer-menu-learn-more = Argibide gehiago
+newtab-widget-timer-menu-button =
+    .aria-label = Tenporizadorearen aukerak
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = Lerroburu garrantzitsuenak
 newtab-daily-briefing-card-menu-dismiss = Baztertu
@@ -1085,6 +1089,8 @@ newtab-sports-widget-show-less =
 # Toggle that filters the list of teams the user follows
 newtab-sports-widget-followed-only-toggle =
     .label = Jarraitzen ditudan taldeak soilik
+# Status shown when more matches are being fetched.
+newtab-sports-widget-loading-more = Partida gehiago kargatzen…
 # Watch is a verb (as in watch matches online).
 newtab-sports-widget-watch =
     .label = Ikusi
@@ -1127,8 +1133,8 @@ newtab-sports-widget-group-i = I Multzoa
 newtab-sports-widget-group-j = J Multzoa
 newtab-sports-widget-group-k = K Multzoa
 newtab-sports-widget-group-l = L Multzoa
-newtab-sports-widget-round-32 = Final hogeita hamabirenak
-newtab-sports-widget-round-16 = Final hamaseirenak
+newtab-sports-widget-round-32 = Final hamaseirenak
+newtab-sports-widget-round-16 = Final zortzirenak
 newtab-sports-widget-quarter-finals = Final laurdenak
 # The "LIVE" string is meant to be uppercase in English, but other languages and locales may vary in how they handle this.
 newtab-sports-widget-live = ZUZENEAN
@@ -1164,10 +1170,13 @@ newtab-sports-widget-third-place = Hirugarren postua
 newtab-sports-widget-runner-up = Txapeldunordea
 newtab-sports-widget-champions = Txapeldunak
 newtab-sports-widget-world-cup-champions = 2026ko Munduko Koparen Txapeldunak
+# Compact champions label for the medium-size widget result card; the larger
+# card uses newtab-sports-widget-world-cup-champions.
+newtab-sports-widget-world-cup-champions-short = 2026ko txapeldunak
 # Variables:
 #   $date (Date) - The match start time
 newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
-newtab-sports-widget-match-full-time = Partidaren amaiera
+newtab-sports-widget-match-full-time = Amaituta
 newtab-sports-widget-match-halftime = Atsedenaldia
 newtab-sports-widget-match-extra-time = Luzapena
 newtab-sports-widget-match-penalties = Penaltiak

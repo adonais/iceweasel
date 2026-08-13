@@ -5,12 +5,10 @@
 #ifndef nsAccUtils_h_
 #define nsAccUtils_h_
 
-#include "mozilla/a11y/LocalAccessible.h"
 #include "mozilla/a11y/DocManager.h"
-
+#include "mozilla/a11y/LocalAccessible.h"
 #include "nsAccessibilityService.h"
 #include "nsCoreUtils.h"
-
 #include "nsIDocShell.h"
 #include "nsPoint.h"
 

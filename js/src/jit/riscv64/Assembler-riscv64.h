@@ -102,7 +102,7 @@ static constexpr uint32_t JitStackAlignment = 16;
 static constexpr uint32_t JitStackValueAlignment =
     JitStackAlignment / sizeof(Value);
 static const uint32_t WasmStackAlignment = 16;
-static const uint32_t WasmTrapInstructionLength = 2 * kInstrSize;
+static const uint32_t WasmTrapInstructionLength = kInstrSize;
 // See comments in wasm::GenerateFunctionPrologue.  The difference between these
 // is the size of the largest callable prologue on the platform.
 static constexpr uint32_t WasmCheckedCallEntryOffset = 0u;
@@ -112,18 +112,22 @@ static const Scale ScalePointer = TimesEight;
 
 class Assembler;
 
-using Buffer =
-    js::jit::AssemblerBufferWithConstantPools<Instruction, Assembler,
-                                              js::jit::AssemblerBufferSettings{
-                                                  .instSize = kInstrSize,
-                                                  .guardSize = 2,
-                                                  .headerSize = 2,
-                                                  .pcBias = 8,
-                                                  .alignFillInst = kNopByte,
-                                                  .nopFillInst = kNopByte,
-                                                  .numShortBranchRanges =
-                                                      NumShortBranchRangeTypes,
-                                              }>;
+using Buffer = js::jit::AssemblerBufferWithConstantPools<
+    Instruction, Assembler,
+    js::jit::AssemblerBufferSettings{
+        .instSize = kInstrSize,
+        // Guard around veneer branches uses a single 'jal' instruction.
+        .guardSize = 1,
+        // Constant pools not used, so no header needed.
+        .headerSize = 0,
+        // Veneer branches use an 'auipc + jalr' instruction pair.
+        .veneerSize = 2,
+        // No bias needed when constant pool not used.
+        .pcBias = 0,
+        .alignFillInst = kNopByte,
+        .nopFillInst = kNopByte,
+        .numShortBranchRanges = NumShortBranchRangeTypes,
+    }>;
 
 class Assembler : public AssemblerShared,
                   public AssemblerRISCVI,
@@ -138,31 +142,27 @@ class Assembler : public AssemblerShared,
                   public AssemblerRISCVZicond,
                   public AssemblerRISCVZicsr,
                   public AssemblerRISCVZifencei {
+  // No maximum pool offset necessary when constant pool not used.
+  static constexpr size_t BufferMaxPoolOffset = 0;
+
+  // Number of nop instructions to add before instructions. Can be set to a non-
+  // zero value to check instruction locations are correctly referenced.
+  static constexpr unsigned BufferNumDebugNopsToInsert = 0;
+
   GeneralRegisterSet scratch_register_list_;
 
-  static constexpr int kInvalidSlotPos = -1;
+#ifdef JS_DISASM_RISCV64
+  static constexpr const char* const LabelIndent = "                 ";
+  static constexpr const char* const TargetIndent = "                    ";
 
-#ifdef JS_JITSPEW
-  Sprinter* printer;
+  DisassemblerSpew spew_;
 #endif
-  bool enoughLabelCache_ = true;
 
  protected:
-  using LabelOffset = int32_t;
-  using LabelCache =
-      HashMap<LabelOffset, BufferOffset, js::DefaultHasher<LabelOffset>,
-              js::SystemAllocPolicy>;
-  LabelCache label_cache_;
-  void NoEnoughLabelCache() { enoughLabelCache_ = false; }
   CompactBufferWriter jumpRelocations_;
   CompactBufferWriter dataRelocations_;
   Buffer m_buffer;
   bool isFinished = false;
-
-  // Return the Instruction at a given byte offset.
-  Instruction* getInstructionAt(BufferOffset offset) {
-    return m_buffer.getInst(offset);
-  }
 
   struct RelativePatch {
     // the offset within the code buffer where the value is loaded that
@@ -198,26 +198,35 @@ class Assembler : public AssemblerShared,
   Assembler()
       : scratch_register_list_((1 << t5.code()) | (1 << t4.code()) |
                                (1 << t6.code())),
-#ifdef JS_JITSPEW
-        printer(nullptr),
-#endif
-        m_buffer(/*poolMaxOffset*/ GetPoolMaxOffset(), /*nopFill*/ 0),
+        m_buffer(BufferMaxPoolOffset, BufferNumDebugNopsToInsert),
         isFinished(false) {
+#ifdef JS_DISASM_RISCV64
+    spew_.setLabelIndent(LabelIndent);
+    spew_.setTargetIndent(TargetIndent);
+#endif
   }
-  static uint32_t NopFill;
-  static uint32_t AsmPoolMaxOffset;
-  static uint32_t GetPoolMaxOffset();
+
+  ~Assembler() {
+#ifdef JS_DISASM_RISCV64
+    spew_.spewOrphans();
+#endif
+  }
+
   bool reserve(size_t size);
   bool oom() const;
+
   void setPrinter(Sprinter* sp) {
-#ifdef JS_JITSPEW
-    printer = sp;
+#ifdef JS_DISASM_RISCV64
+    spew_.setPrinter(sp);
 #endif
   }
+
   void finish() {
     MOZ_ASSERT(!isFinished);
     isFinished = true;
   }
+
+  void flushBuffer() { m_buffer.flushPool(); }
 
   void enterNoPool(size_t maxInst, size_t maxNewDeadlines = 0) {
     m_buffer.enterNoPool(maxInst, maxNewDeadlines);
@@ -240,65 +249,19 @@ class Assembler : public AssemblerShared,
   // Copy the assembly code to the given buffer, and perform any pending
   // relocations relying on the target address.
   void executableCopy(uint8_t* buffer);
-  // API for speaking with the IonAssemblerBufferWithConstantPools generate an
-  // initial placeholder instruction that we want to later fix up.
-  static void InsertIndexIntoTag(uint8_t* load, uint32_t index);
-  static void PatchConstantPoolLoad(void* loadAddr, void* constPoolAddr);
-  // We're not tracking short-range branches for ARM for now.
+
   static void PatchShortRangeBranchToVeneer(Buffer*, unsigned rangeIdx,
                                             BufferOffset deadline,
                                             BufferOffset veneer);
-  struct PoolHeader {
-    uint32_t data;
-
-    struct Header {
-      // The size should take into account the pool header.
-      // The size is in units of Instruction (4bytes), not byte.
-      union {
-        struct {
-          uint32_t size : 15;
-
-          // "Natural" guards are part of the normal instruction stream,
-          // while "non-natural" guards are inserted for the sole purpose
-          // of skipping around a pool.
-          uint32_t isNatural : 1;
-          uint32_t ONES : 16;
-        };
-        uint32_t data;
-      };
-
-      Header(int size_, bool isNatural_)
-          : size(size_), isNatural(isNatural_), ONES(0xffff) {}
-
-      explicit Header(uint32_t data) : data(data) {
-        static_assert(sizeof(Header) == sizeof(uint32_t));
-        MOZ_ASSERT(ONES == 0xffff);
-      }
-
-      uint32_t raw() const {
-        static_assert(sizeof(Header) == sizeof(uint32_t));
-        return data;
-      }
-    };
-
-    PoolHeader(int size_, bool isNatural_)
-        : data(Header(size_, isNatural_).raw()) {}
-
-    uint32_t size() const {
-      Header tmp(data);
-      return tmp.size;
-    }
-
-    uint32_t isNatural() const {
-      Header tmp(data);
-      return tmp.isNatural;
-    }
-  };
-
-  static void WritePoolHeader(uint8_t* start, Pool* p, bool isNatural);
   static void WritePoolGuard(BufferOffset branch, Instruction* inst,
                              BufferOffset dest);
+
   void processCodeLabels(uint8_t* rawCode);
+
+  // Return the Instruction at a given byte offset.
+  Instruction* getInstructionAt(BufferOffset offset) {
+    return m_buffer.getInst(offset);
+  }
 
   // Get the next usable buffer offset. Note that a constant pool may be placed
   // here before the next instruction is emitted.
@@ -310,36 +273,21 @@ class Assembler : public AssemblerShared,
     return m_buffer.nextInstrOffset(numInsts, numNewDeadlines);
   }
 
-  void comment(const char* msg) { spew("; %s", msg); }
-
-#ifdef JS_JITSPEW
-  inline void spew(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3) {
-    if (MOZ_UNLIKELY(printer || JitSpewEnabled(JitSpew_Codegen))) {
-      va_list va;
-      va_start(va, fmt);
-      spewVA(fmt, va);
-      va_end(va);
-    }
-  }
+ protected:
+#ifdef JS_DISASM_RISCV64
+  void spew(BufferOffset offs, Instruction* instr);
+  void spewBranch(BufferOffset offs, Instruction* instr, LabelDoc target);
+  LabelDoc refLabel(Label* label);
 #else
-  MOZ_ALWAYS_INLINE void spew(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3) {}
+  LabelDoc refLabel(Label* label) { return {}; }
 #endif
 
-#ifdef JS_JITSPEW
-  MOZ_COLD void spewVA(const char* fmt, va_list va) MOZ_FORMAT_PRINTF(2, 0) {
-    // Buffer to hold the formatted string. Note that this may contain
-    // '%' characters, so do not pass it directly to printf functions.
-    char buf[200];
-
-    int i = VsprintfLiteral(buf, fmt, va);
-    if (i > -1) {
-      if (printer) {
-        printer->printf("%s\n", buf);
-      }
-      js::jit::JitSpew(js::jit::JitSpew_Codegen, "%s", buf);
-    }
+ public:
+  void comment(const char* msg) {
+#ifdef JS_DISASM_RISCV64
+    spew_.spew("; %s", msg);
+#endif
   }
-#endif
 
   enum Condition {
     Overflow = overflow,
@@ -383,46 +331,50 @@ class Assembler : public AssemblerShared,
   };
 
   Register getStackPointer() const { return StackPointer; }
-  void flushBuffer() {}
+
 #ifdef JS_DISASM_RISCV64
-  static int disassembleInstr(Instruction* instr, bool enable_spew = false);
-#endif /* JS_DISASM_RISCV64 */
-  int jumpChainTargetAt(BufferOffset pos);
-  static int jumpChainTargetAt(Instruction* instruction, BufferOffset pos,
-                               Instruction* instruction2 = nullptr);
+  static void disassembleInstr(Instruction* instr);
+  static void disassembleInstr(BufferOffset offs, Instruction* instr);
+#else
+  static void disassembleInstr(Instruction* instr) {}
+#endif
+
   BufferOffset jumpChainGetNextLink(BufferOffset pos);
-  uint32_t jumpChainUseNextLink(Label* label);
-  // Returns true if the target was successfully assembled and spewed.
-  bool jumpChainPutTargetAt(BufferOffset pos, BufferOffset target_pos);
-  int32_t branchOffsetHelper(Label* L, OffsetSize bits);
-  int32_t branchLongOffsetHelper(Label* L);
+
+  void jumpChainPutTargetAt(BufferOffset pos, BufferOffset target_pos);
+
+ private:
+  int32_t branchOffset(Label* L, OffsetSize bits,
+                       BufferOffset next_instr_offset);
+
+ public:
+  // Branch offset for short branches (jal, branch, etc.).
+  int32_t branchOffset(Label* L, OffsetSize bits);
+
+  // Branch offset for long branches (auipc + jalr).
+  int32_t branchOffset(Label* L);
 
   void nopAlign(int m) { m_buffer.align(m); }
 
-  virtual BufferOffset emit(Instr x) {
+  BufferOffset emit(Instr x) override final {
     MOZ_ASSERT(hasCreator());
     BufferOffset offset = m_buffer.putInt(x);
-#if (defined(DEBUG) || defined(JS_JITSPEW)) && defined(JS_DISASM_RISCV64)
-    if (offset.assigned()) {
-      DEBUG_PRINTF("0x%" PRIx64 "(%x):", uint64_t(getInstructionAt(offset)),
-                   unsigned(offset.getOffset()));
-      disassembleInstr(getInstructionAt(offset),
-                       JitSpewEnabled(JitSpew_Codegen));
-    }
+#ifdef JS_DISASM_RISCV64
+    spew(offset, m_buffer.getInstOrNull(offset));
 #endif
     return offset;
   }
-  virtual BufferOffset emit(ShortInstr x) { MOZ_CRASH(); }
-  virtual BufferOffset emit(uint64_t x) { MOZ_CRASH(); }
-  virtual BufferOffset emit(uint32_t x) {
+  BufferOffset emit(Instr x, LabelDoc doc) override final {
+    MOZ_ASSERT(hasCreator());
     BufferOffset offset = m_buffer.putInt(x);
-    if (offset.assigned()) {
-      DEBUG_PRINTF("0x%" PRIx64 "(%x): uint32_t: %" PRId32 "\n",
-                   uint64_t(getInstructionAt(offset)),
-                   unsigned(offset.getOffset()), x);
-    }
+#ifdef JS_DISASM_RISCV64
+    spewBranch(offset, m_buffer.getInstOrNull(offset), doc);
+#endif
     return offset;
   }
+  BufferOffset emit(ShortInstr x) override final { MOZ_CRASH(); }
+  BufferOffset emit(uint64_t x) override final { MOZ_CRASH(); }
+  BufferOffset emit(uint32_t x) { return m_buffer.putInt(x); }
 
   static Condition InvertCondition(Condition);
 
@@ -471,7 +423,7 @@ class Assembler : public AssemblerShared,
   // label operations
   void bind(Label* label, BufferOffset boff = BufferOffset());
   void bind(CodeLabel* label) { label->target()->bind(currentOffset()); }
-  uint32_t currentOffset() { return nextOffset().getOffset(); }
+  uint32_t currentOffset() override final { return nextOffset().getOffset(); }
   void retarget(Label* label, Label* target);
   static uint32_t NopSize() { return kInstrSize; }
 
@@ -538,16 +490,14 @@ class Assembler : public AssemblerShared,
 
   // Assembler Pseudo Instructions (Tables 25.2, 25.3, RISC-V Unprivileged ISA)
   void break_(uint32_t code, bool break_as_stop = false);
+
+  // Load an immediate. A variable number of instructions is generated.
+  //
+  // In most cases the immediate is 32-bit and 2 instructions are generated. If
+  // a temporary register is available, in the worst case, 6 instructions are
+  // generated for a full 64-bit immediate. If temporay register isn't available
+  // the maximum will be 8 instructions.
   void RV_li(Register rd, int64_t imm);
-  static int RV_li_count(int64_t imm, bool is_get_temp_reg = false);
-  void GeneralLi(Register rd, int64_t imm);
-  static int GeneralLiCount(int64_t imm, bool is_get_temp_reg = false);
-  void RecursiveLiImpl(Register rd, int64_t imm);
-  void RecursiveLi(Register rd, int64_t imm);
-  static int RecursiveLiCount(int64_t imm);
-  static int RecursiveLiImplCount(int64_t imm);
-  // Returns the number of instructions required to load the immediate
-  static int li_estimate(int64_t imm, bool is_get_temp_reg = false);
 
   // Loads an immediate, always using 8 instructions, regardless of the value,
   // so that it can be modified later.
@@ -640,14 +590,10 @@ class UseScratchRegisterScope {
   ~UseScratchRegisterScope();
 
   Register Acquire();
-  void Release(const Register& reg);
+  void Acquire(Register reg);
+  void Release(Register reg);
   bool hasAvailable() const;
-  void Include(const GeneralRegisterSet& list) {
-    *available_ = GeneralRegisterSet::Union(*available_, list);
-  }
-  void Exclude(const GeneralRegisterSet& list) {
-    *available_ = GeneralRegisterSet::Subtract(*available_, list);
-  }
+  uint32_t countAvailable() const;
 
  private:
   GeneralRegisterSet* available_;

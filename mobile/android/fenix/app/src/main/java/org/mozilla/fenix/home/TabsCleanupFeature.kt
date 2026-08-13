@@ -13,6 +13,7 @@ import mozilla.components.browser.state.selector.findTab
 import mozilla.components.browser.state.selector.normalTabs
 import mozilla.components.browser.state.selector.privateTabs
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import org.mozilla.fenix.R
@@ -169,7 +170,10 @@ class TabsCleanupFeature(
         showUndoSnackbar(
             message = context.tabClosedUndoMessage(tab.content.private),
             onCancel = {
-                onUndoTabRemoved(tabId)
+                onUndoTabRemoved(
+                    tabId = tabId,
+                    isRestoringHomepageTab = tab.content.url == ABOUT_HOME_URL,
+                )
             },
         )
     }
@@ -177,19 +181,24 @@ class TabsCleanupFeature(
     /**
      * Callback invoked when the remove tab action is cancelled.
      *
-     * @param tabId Optional ID of the tab that should be removed after the tab removal is
-     * undone.
+     * @param tabId Optional ID of the tab that should be removed after the tab removal is undone.
+     * @param isRestoringHomepageTab Whether the restored tab is a homepage tab.
      */
     @VisibleForTesting
-    internal fun onUndoTabRemoved(tabId: String?) {
+    internal fun onUndoTabRemoved(
+        tabId: String?,
+        isRestoringHomepageTab: Boolean = false,
+    ) {
         tabsUseCases.undo.invoke()
 
         if (tabId?.isNotBlank() == true) {
             tabsUseCases.removeTab.invoke(tabId)
         }
 
-        navController.navigate(
-            HomeFragmentDirections.actionGlobalBrowser(null),
-        )
+        // The homepage is already shown when the removed tab is undone. Only navigate to the browser
+        // when restoring a non-homepage tab.
+        if (!isRestoringHomepageTab) {
+            navController.navigate(HomeFragmentDirections.actionGlobalBrowser(null))
+        }
     }
 }

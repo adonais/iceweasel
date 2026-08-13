@@ -680,6 +680,13 @@ class nsFlexContainerFrame final : public nsContainerFrame,
                                 mozilla::IntrinsicISizeType aType);
 
   /**
+   * If the flex item contains `NS_FRAME_CONTAINS_RELATIVE_BSIZE`, potentially
+   * propagate the flag to this flex container. See the function implementation
+   * for more details.
+   */
+  void MaybePropagateRelativeBSizeFlagFrom(const FlexItem& aItem);
+
+  /**
    * Cached values to optimize IntrinsicISize().
    */
   mozilla::IntrinsicISizesCache mCachedIntrinsicSizes;

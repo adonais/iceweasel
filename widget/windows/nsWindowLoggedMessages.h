@@ -6,10 +6,9 @@
 #define WindowLoggedMessages_h_
 
 #include "minwindef.h"
-#include "wtypes.h"
-
 #include "nsIWidget.h"
 #include "nsStringFwd.h"
+#include "wtypes.h"
 
 namespace mozilla::widget {
 

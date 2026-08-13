@@ -36,3 +36,14 @@ export const NEWTAB_DARK_THEME = {
     a: 1,
   },
 };
+
+// Wallpaper category ids. These must match the `category` values the
+// wallpaper feed provides; prefer this map over bare category strings.
+export const WALLPAPER_CATEGORIES = {
+  Abstracts: "abstracts",
+  Celestial: "celestial",
+  Photographs: "photographs",
+  SolidColors: "solid-colors",
+  Firefox: "firefox",
+  CustomWallpaper: "custom-wallpaper",
+};

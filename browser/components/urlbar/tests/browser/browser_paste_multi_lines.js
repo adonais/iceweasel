@@ -11,7 +11,7 @@ const TEST_DATA = [
     expected: {
       urlbar: "this is a test",
       title: "this is a test",
-      type: UrlbarUtils.RESULT_TYPE.SEARCH,
+      type: UrlbarShared.RESULT_TYPE.SEARCH,
     },
   },
   {
@@ -19,7 +19,7 @@ const TEST_DATA = [
     expected: {
       urlbar: "this is    a  test",
       title: "this is    a  test",
-      type: UrlbarUtils.RESULT_TYPE.SEARCH,
+      type: UrlbarShared.RESULT_TYPE.SEARCH,
     },
   },
   {
@@ -27,7 +27,7 @@ const TEST_DATA = [
     expected: {
       urlbar: "http://example.com",
       title: "http://example.com/",
-      type: UrlbarUtils.RESULT_TYPE.URL,
+      type: UrlbarShared.RESULT_TYPE.URL,
     },
   },
   {
@@ -35,7 +35,7 @@ const TEST_DATA = [
     expected: {
       urlbar: "htp:example.com",
       title: "example.com/",
-      type: UrlbarUtils.RESULT_TYPE.URL,
+      type: UrlbarShared.RESULT_TYPE.URL,
     },
   },
   {
@@ -43,7 +43,7 @@ const TEST_DATA = [
     expected: {
       urlbar: "example.com",
       title: "example.com/",
-      type: UrlbarUtils.RESULT_TYPE.URL,
+      type: UrlbarShared.RESULT_TYPE.URL,
     },
   },
   {
@@ -51,7 +51,7 @@ const TEST_DATA = [
     expected: {
       urlbar: "http://example.com/foo       bar/",
       title: "http://example.com/foo       bar/",
-      type: UrlbarUtils.RESULT_TYPE.URL,
+      type: UrlbarShared.RESULT_TYPE.URL,
     },
   },
   {
@@ -59,7 +59,7 @@ const TEST_DATA = [
     expected: {
       urlbar: "http://example.com/foo       bar/",
       title: "http://example.com/foo       bar/",
-      type: UrlbarUtils.RESULT_TYPE.URL,
+      type: UrlbarShared.RESULT_TYPE.URL,
     },
   },
   {
@@ -67,7 +67,7 @@ const TEST_DATA = [
     expected: {
       urlbar: "alert(1)",
       title: "alert(1)",
-      type: UrlbarUtils.RESULT_TYPE.SEARCH,
+      type: UrlbarShared.RESULT_TYPE.SEARCH,
     },
   },
   {
@@ -75,7 +75,7 @@ const TEST_DATA = [
     expected: {
       urlbar: "a b c",
       title: "a b c",
-      type: UrlbarUtils.RESULT_TYPE.SEARCH,
+      type: UrlbarShared.RESULT_TYPE.SEARCH,
     },
   },
   {
@@ -83,7 +83,7 @@ const TEST_DATA = [
     expected: {
       urlbar: "localhost",
       title: "localhost/",
-      type: UrlbarUtils.RESULT_TYPE.URL,
+      type: UrlbarShared.RESULT_TYPE.URL,
     },
   },
   {
@@ -91,7 +91,7 @@ const TEST_DATA = [
     expected: {
       urlbar: "data:text/html,<iframe  src='example .com'> </iframe>",
       title: "data:text/html,<iframe  src='example .com'> </iframe>",
-      type: UrlbarUtils.RESULT_TYPE.URL,
+      type: UrlbarShared.RESULT_TYPE.URL,
     },
   },
   {
@@ -99,7 +99,7 @@ const TEST_DATA = [
     expected: {
       urlbar: "data:,123 4 5 6",
       title: "data:,123 4 5 6",
-      type: UrlbarUtils.RESULT_TYPE.URL,
+      type: UrlbarShared.RESULT_TYPE.URL,
     },
   },
   {
@@ -107,7 +107,7 @@ const TEST_DATA = [
     expected: {
       urlbar: "data:text/html;base64,1234 56",
       title: "data:text/html;base64,123456",
-      type: UrlbarUtils.RESULT_TYPE.URL,
+      type: UrlbarShared.RESULT_TYPE.URL,
     },
   },
   {
@@ -115,7 +115,7 @@ const TEST_DATA = [
     expected: {
       urlbar: "http://example.com",
       title: "http://example.com/",
-      type: UrlbarUtils.RESULT_TYPE.URL,
+      type: UrlbarShared.RESULT_TYPE.URL,
     },
   },
   {
@@ -123,7 +123,7 @@ const TEST_DATA = [
     expected: {
       urlbar: "http://example.com",
       title: "http://example.com/",
-      type: UrlbarUtils.RESULT_TYPE.URL,
+      type: UrlbarShared.RESULT_TYPE.URL,
     },
   },
   {
@@ -131,7 +131,7 @@ const TEST_DATA = [
     expected: {
       urlbar: "http://example.com",
       title: "http://example.com/",
-      type: UrlbarUtils.RESULT_TYPE.URL,
+      type: UrlbarShared.RESULT_TYPE.URL,
     },
   },
   {
@@ -139,7 +139,7 @@ const TEST_DATA = [
     expected: {
       urlbar: "http://example.com/titled",
       title: "example title",
-      type: UrlbarUtils.RESULT_TYPE.URL,
+      type: UrlbarShared.RESULT_TYPE.URL,
     },
   },
   {
@@ -147,7 +147,7 @@ const TEST_DATA = [
     expected: {
       urlbar: "127.0.0.1",
       title: "127.0.0.1/",
-      type: UrlbarUtils.RESULT_TYPE.URL,
+      type: UrlbarShared.RESULT_TYPE.URL,
     },
   },
   {
@@ -155,7 +155,7 @@ const TEST_DATA = [
     expected: {
       urlbar: "",
       title: undefined,
-      type: UrlbarUtils.RESULT_TYPE.SEARCH,
+      type: UrlbarShared.RESULT_TYPE.SEARCH,
     },
   },
 ];

@@ -223,8 +223,25 @@ add_task(async function test_button_disables_all_tracker_prefs() {
     ],
   ];
 
+  // Content-classifier scoped prefs the button should also clear.
+  const CONTENT_SCOPED_PREFS = [
+    Ci.nsIScopedPrefs.PRIVACY_TRACKINGPROTECTION_CONTENT_ENABLED,
+    Ci.nsIScopedPrefs.PRIVACY_TRACKINGPROTECTION_CONTENT_CRYPTOMINING_ENABLED,
+    Ci.nsIScopedPrefs.PRIVACY_TRACKINGPROTECTION_CONTENT_FINGERPRINTING_ENABLED,
+    Ci.nsIScopedPrefs.PRIVACY_TRACKINGPROTECTION_CONTENT_SOCIALTRACKING_ENABLED,
+    Ci.nsIScopedPrefs.PRIVACY_TRACKINGPROTECTION_CONTENT_EMAILTRACKING_ENABLED,
+  ];
+
+  // Enable the content protection engines pref to test the button clearing.
   await SpecialPowers.pushPrefEnv({
-    set: TRACKER_PREFS.map(([pref]) => [pref, true]),
+    set: [
+      ...TRACKER_PREFS.map(([pref]) => [pref, true]),
+      ["privacy.trackingprotection.content.protection.enabled", true],
+      [
+        "privacy.trackingprotection.content.protection.engines.pbmode",
+        "trackers,cryptominers,fingerprinters,social-trackers,email-trackers",
+      ],
+    ],
   });
 
   let blockingPromise = waitForContentBlockingEvent(pbWindow.gBrowser);
@@ -244,17 +261,35 @@ add_task(async function test_button_disables_all_tracker_prefs() {
   );
   ok(notification, "Infobar appeared");
 
+  let scopedPrefs = tab.linkedBrowser.browsingContext.scopedPrefs;
+  let bc = tab.linkedBrowser.browsingContext;
+
+  // The content scoped prefs have no override yet, so they resolve to their
+  // enabled fallback. This makes the button clearing them to false observable.
+  for (const scopedPref of CONTENT_SCOPED_PREFS) {
+    Assert.equal(
+      scopedPrefs.getBoolPrefScoped(scopedPref, bc),
+      true,
+      `Content scoped pref ${scopedPref} is enabled before button click`
+    );
+  }
+
   let reloadPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
   notification.buttonContainer.querySelector("button:last-child").click();
   await reloadPromise;
 
-  let scopedPrefs = tab.linkedBrowser.browsingContext.scopedPrefs;
-  let bc = tab.linkedBrowser.browsingContext;
   for (const [, scopedPref] of TRACKER_PREFS) {
     Assert.equal(
       scopedPrefs.getBoolPrefScoped(scopedPref, bc),
       false,
       `Scoped pref ${scopedPref} is disabled after button click`
+    );
+  }
+  for (const scopedPref of CONTENT_SCOPED_PREFS) {
+    Assert.equal(
+      scopedPrefs.getBoolPrefScoped(scopedPref, bc),
+      false,
+      `Content scoped pref ${scopedPref} is disabled after button click`
     );
   }
 

@@ -232,7 +232,9 @@ contents_length(DERTemplate *dtemplate, void *src)
                         sub_len++;
                 }
                 if (under_kind != DER_ANY)
-                    len += 1 + DER_LengthLength(sub_len);
+                    len += 1 + DER_LengthLength(sub_len) + sub_len;
+                else
+                    len += sub_len;
             }
         }
 

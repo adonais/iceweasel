@@ -3,12 +3,19 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "CompositorOGL.h"
-#include <stddef.h>             // for size_t
-#include <stdint.h>             // for uint32_t, uint8_t
-#include <stdlib.h>             // for free, malloc
-#include "GLContextProvider.h"  // for GLContextProvider
+
+#include <stddef.h>  // for size_t
+#include <stdint.h>  // for uint32_t, uint8_t
+#include <stdlib.h>  // for free, malloc
+
+#include "GLBlitHelper.h"
 #include "GLContext.h"          // for GLContext
+#include "GLContextProvider.h"  // for GLContextProvider
+#include "GLReadTexImageHelper.h"
 #include "GLUploadHelpers.h"
+#include "HeapCopyOfStackArray.h"
+#include "OGLShaderProgram.h"  // for ShaderProgramOGL, etc
+#include "ScopedGLHelpers.h"
 #include "gfxCrashReporterUtils.h"  // for ScopedGfxFeatureReporter
 #include "gfxEnv.h"                 // for gfxEnv
 #include "gfxPlatform.h"            // for gfxPlatform
@@ -21,18 +28,19 @@
 #include "mozilla/StaticPrefs_nglayout.h"
 #include "mozilla/gfx/BasePoint.h"  // for BasePoint
 #include "mozilla/gfx/Matrix.h"     // for Matrix4x4, Matrix
-#include "mozilla/gfx/Triangle.h"   // for Triangle
-#include "mozilla/gfx/gfxVars.h"    // for gfxVars
+#include "mozilla/gfx/Swizzle.h"
+#include "mozilla/gfx/Triangle.h"  // for Triangle
+#include "mozilla/gfx/gfxVars.h"   // for gfxVars
+#include "mozilla/layers/CompositingRenderTargetOGL.h"
+#include "mozilla/layers/Effects.h"  // for EffectChain, TexturedEffect, etc
 #include "mozilla/layers/ImageDataSerializer.h"
 #include "mozilla/layers/NativeLayer.h"
-#include "mozilla/layers/CompositingRenderTargetOGL.h"
-#include "mozilla/layers/Effects.h"      // for EffectChain, TexturedEffect, etc
-#include "mozilla/layers/TextureHost.h"  // for TextureSource, etc
-#include "mozilla/layers/TextureHostOGL.h"  // for TextureSourceOGL, etc
 #include "mozilla/layers/PTextureParent.h"  // for OtherPid() on PTextureParent
+#include "mozilla/layers/TextureHost.h"     // for TextureSource, etc
+#include "mozilla/layers/TextureHostOGL.h"  // for TextureSourceOGL, etc
 #include "mozilla/mozalloc.h"               // for operator delete, etc
-#include "nsAppRunner.h"
 #include "nsAString.h"
+#include "nsAppRunner.h"
 #include "nsClassHashtable.h"
 #include "nsIConsoleService.h"      // for nsIConsoleService, etc
 #include "nsIWidget.h"              // for nsIWidget
@@ -41,12 +49,6 @@
 #include "nsRect.h"                 // for mozilla::gfx::IntRect
 #include "nsServiceManagerUtils.h"  // for do_GetService
 #include "nsString.h"               // for nsString, nsAutoCString, etc
-#include "OGLShaderProgram.h"       // for ShaderProgramOGL, etc
-#include "ScopedGLHelpers.h"
-#include "GLReadTexImageHelper.h"
-#include "HeapCopyOfStackArray.h"
-#include "GLBlitHelper.h"
-#include "mozilla/gfx/Swizzle.h"
 #ifdef MOZ_WIDGET_GTK
 #  include "mozilla/widget/GtkCompositorWidget.h"
 #endif

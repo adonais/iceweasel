@@ -64,7 +64,7 @@ already_AddRefed<Promise> Clients::Get(const nsAString& aClientID,
   // forbid strings that start with "{" to avoid inconsistency and bugs like
   // bug 1446225.
   if (aClientID.IsEmpty() || aClientID.CharAt(0) == '{' ||
-      !id.Parse(NS_ConvertUTF16toUTF8(aClientID).get())) {
+      !id.Parse(NS_ConvertUTF16toUTF8(aClientID))) {
     // Invalid ID means we will definitely not find a match, so just
     // resolve with undefined indicating "not found".
     outerPromise->MaybeResolveWithUndefined();

@@ -108,6 +108,7 @@ class PerfParser(CompareParser):
         "build-car",
         "disable-pgo",
         "env",
+        "extensions",
         "gecko-profile",
         "native-profiling",
         "path",
@@ -194,10 +195,11 @@ class PerfParser(CompareParser):
         [
             ["-q", "--query"],
             {
-                "type": str,
-                "default": None,
+                "action": "append",
+                "default": [],
                 "help": "Query to run in either the perf-category selector, "
-                "or the fuzzy selector if --show-all/--full is provided.",
+                "or the fuzzy selector if --show-all/--full is provided. "
+                "Specifying multiple times schedules the union of computed tasks.",
             },
         ],
         [
@@ -355,13 +357,18 @@ class PerfParser(CompareParser):
     ]
 
     def get_tasks(base_cmd, queries, query_arg=None, candidate_tasks=None):
-        cmd = base_cmd[:]
-        if query_arg:
-            cmd.extend(["-f", query_arg])
+        query_args = query_arg if isinstance(query_arg, list) else [query_arg]
 
-        query_str, tasks = run_fzf(cmd, sorted(candidate_tasks))
-        queries.append(query_str)
-        return set(tasks)
+        selected_tasks = set()
+        for query in query_args or [None]:
+            cmd = base_cmd[:]
+            if query:
+                cmd.extend(["-f", query])
+
+            query_str, tasks = run_fzf(cmd, sorted(candidate_tasks))
+            queries.append(query_str)
+            selected_tasks |= set(tasks)
+        return selected_tasks
 
     def get_perf_tasks(base_cmd, all_tg_tasks, perf_categories, query=None):
         # Convert the categories to tasks
@@ -1046,7 +1053,7 @@ class PerfParser(CompareParser):
 
     def determine_lando_instance(push_to_vcs=False):
         """Determine the lando instance id that a push will use."""
-        return "" if push_to_vcs else get_lando_instance_id(vcs.path)
+        return "" if push_to_vcs else get_lando_instance_id(vcs)
 
     def check_cached_revision(selected_tasks, base_commit=None, push_to_vcs=True):
         """
@@ -1183,7 +1190,9 @@ class PerfParser(CompareParser):
         env = try_config.setdefault("env", {})
         if extra_args:
             args = " ".join(extra_args)
-            env["PERF_FLAGS"] = args
+            env["PERF_FLAGS"] = (
+                f"{env['PERF_FLAGS']} {args}" if env.get("PERF_FLAGS") else args
+            )
         if (
             PerfParser.push_info.base_revision
             or PerfParser.push_info.base_lando_commit_id

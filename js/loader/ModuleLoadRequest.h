@@ -5,15 +5,17 @@
 #ifndef js_loader_ModuleLoadRequest_h
 #define js_loader_ModuleLoadRequest_h
 
-#include "LoadContextBase.h"
-#include "ScriptLoadRequest.h"
-#include "ModuleLoaderBase.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/HoldDropJSObjects.h"
+
+#include "LoadContextBase.h"
+#include "ModuleLoaderBase.h"
+#include "nsTHashtable.h"
+#include "nsURIHashKey.h"
+#include "ScriptLoadRequest.h"
+
 #include "js/RootingAPI.h"
 #include "js/Value.h"
-#include "nsURIHashKey.h"
-#include "nsTHashtable.h"
 
 namespace JS::loader {
 

@@ -50,10 +50,18 @@ add_task(async function () {
       validateValue: () =>
         getDoc().querySelector(".monitor-panel .split-box .controlled")
           .clientWidth,
-      modifyFrontend(value) {
-        getDoc().querySelector(
+      async modifyFrontend(value) {
+        const splitter = getDoc().querySelector(
+          ".monitor-panel .split-box .splitter"
+        );
+        const controlled = getDoc().querySelector(
           ".monitor-panel .split-box .controlled"
-        ).style.width = `${value}px`;
+        );
+        resizeSplitter(
+          splitter,
+          // There must be some 2px margin/border that requires an extra pixel more of move
+          controlled.getBoundingClientRect().width - value + 2
+        );
       },
     },
     networkDetailsHeight: {
@@ -62,9 +70,18 @@ add_task(async function () {
         getDoc().querySelector(".monitor-panel .split-box .controlled")
           .clientHeight,
       modifyFrontend(value) {
-        getDoc().querySelector(
+        const splitter = getDoc().querySelector(
+          ".monitor-panel .split-box .splitter"
+        );
+        const controlled = getDoc().querySelector(
           ".monitor-panel .split-box .controlled"
-        ).style.height = `${value}px`;
+        );
+        resizeSplitter(
+          splitter,
+          0,
+          // There must be some 4px margin/border that requires an extra pixel more of move
+          controlled.getBoundingClientRect().height - value + 4
+        );
       },
     },
     /* add more prefs here... */
@@ -325,3 +342,22 @@ add_task(async function () {
     validateFirstPrefValues(true);
   }
 });
+
+function resizeSplitter(splitterEl, diffX, diffY = 0) {
+  EventUtils.synthesizeMouseAtCenter(
+    splitterEl,
+    { type: "mousedown" },
+    splitterEl.documentGlobal
+  );
+  EventUtils.synthesizeMouseAtPoint(
+    splitterEl.getBoundingClientRect().left + diffX,
+    splitterEl.getBoundingClientRect().top + diffY,
+    { type: "mousemove" },
+    splitterEl.documentGlobal
+  );
+  EventUtils.synthesizeMouseAtCenter(
+    splitterEl,
+    { type: "mouseup" },
+    splitterEl.documentGlobal
+  );
+}

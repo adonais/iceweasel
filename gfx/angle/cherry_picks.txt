@@ -1,173 +1,48 @@
-commit 7b0bc3d196d480cce121a7aef375eda817e7e7ce
-Author: Ashley Hale <ahale@mozilla.com>
-Date:   Tue Jun 09 02:49:49 2026 -0700
+commit 9eadd12e33d65b8c9101ddef1d77d1c9a07e07bf
+Author: Jamie Nicol <jnicol@mozilla.com>
+Date:   Thu Apr 30 09:43:22 2026 +0100
 
-    Cherry-pick another translator fix
+    Revert "Translator: Do not validate uniform packing"
+    
+    This reverts commit ad96e4bb5071aa32dc4b5782ae710b3989f04664.
+    
+    Co-authored-by: Erich Gubler <erichdongubler@gmail.com>
 
-commit a25624ef5e0ffa6d30956d99fba040de008a1b3f
+commit bbac11c6c8fefa19cf51d92ac9a6303e8f707777
 Author: Shahbaz Youssefi <syoussefi@chromium.org>
-Date:   Tue Apr 07 15:51:37 2026 -0400
+Date:   Fri May 29 11:07:06 2026 -0400
 
-    M148: Translator: Fix redeclared built-in type checks
+    GL: Fix `invariant gl_FragColor;` + draw buffers
     
-    When a built-in is redeclared, it's type must match the built-in.  A
-    minor exception is that gl_ClipDistance and gl_CullDistance are allowed
-    to have a smaller array size.
+    When GL_EXT_draw_buffers is enabled, gl_FragColor is replaced by
+    gl_FragData.  If it was globally qualified as `invariant`, the relevant
+    transformation did not handle it.
     
-    The checks for various redeclared built-ins are consolidated in this
-    change, which automatically fixes missing validation for
-    gl_LastFragColor/Depth/StencilARM built-ins.
-    
-    Bug: chromium:499131214
-    Change-Id: I33c3047852f04a11dbf9f880694c4d3ff8c2585e
-    Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/7818777
-    Reviewed-by: Yuxin Hu <yuxinhu@google.com>
-
-commit 71efafb2033e86950eb40ba4e455f2034960f6bd
-Author: Geoff Lang <geofflang@chromium.org>
-Date:   Thu Mar 26 18:05:30 2026 -0500
-
-    M146: Optionally validate GL_MAX_*_UNIFORM_BLOCKS at compile time.
-    
-    These were validated at link time but some drivers have compiler crashes
-    when compiling shaders with too many uniform blocks.
-    
-    Bug: chromium:475877320
-    Change-Id: I4413ce06307b4fe9e27105d85f66f610c235a301
-    Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/7568089
+    Bug: chromium:517575864
+    Change-Id: I3ec2a6629940a69070e5327abd8ce37c55d0efcd
+    Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/7883926
+    Reviewed-by: Geoff Lang <geofflang@chromium.org>
     Commit-Queue: Geoff Lang <geofflang@chromium.org>
-    Reviewed-by: Shahbaz Youssefi <syoussefi@chromium.org>
-    (cherry picked from commit bf6dd974238bceec7a0a27987e2e02e177f2b7f8)
-    Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/7653195
 
-commit e3878006704bd7142896fcefa410925a04ad8ee4
-Author: teoxoy <28601907+teoxoy@users.noreply.github.com>
-Date:   Mon May 11 11:20:55 2026 +0200
-
-    add missing include
-
-commit ff1e5e2227563f239be3f537eeae9de05f2effb5
+commit d7228e6ed21c3ea4d710f595fe7f65f7fc01d80c
 Author: teoxoy <28601907+teoxoy@users.noreply.github.com>
 Date:   Mon May 11 11:16:18 2026 +0200
 
     eliminate `static_cast`
 
-commit 99774d7dd4b8719be30921ff32d01cbea999ccbd
+commit 005a5e22a30bb5a7cb4b0e0032fd0873427e2b9a
 Author: teoxoy <28601907+teoxoy@users.noreply.github.com>
 Date:   Mon May 11 11:09:56 2026 +0200
 
     use correct framebuffer var
 
-commit a1db0642de56a9a0d7754cd068c97a852f54a16b
-Author: Shrek Shao <shrekshao@google.com>
-Date:   Thu Apr 02 15:41:06 2026 -0700
-
-    D3D11: Fix overflow in compressed 3D texture deferred-init
-    
-    The ANGLE D3D11 backend computed the zero-fill buffer size for
-    block-compressed 3D textures using an unchecked
-    32-bit multiplication that did not account for block height.
-    This produced a value four times larger than the actual
-    compressed image size and could overflow for sufficiently large
-    textures.
-    
-    This fix:
-    1. Uses InternalFormat::computeCompressedImageSize to correctly
-    calculate the required buffer size for compressed textures,
-    taking block dimensions into account.
-    2. Employs angle::CheckedNumeric for uncompressed texture size
-    calculations to prevent potential integer overflows.
-    3. Adds a regression test DeferredInit3DOverflow
-    that uses large texture dimensions (2048x2048x320) to verify
-    there is no ASAN error.
-    
-    Bug: b/497896137
-    Fixed: b/501314630
-    Change-Id: I76f0fb008af34e8ac78870318e608d16ed4ddd93
-    Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/7728091
-    Reviewed-by: Shahbaz Youssefi <syoussefi@chromium.org>
-    Commit-Queue: Shahbaz Youssefi <syoussefi@chromium.org>
-    Auto-Submit: Shrek Shao <shrekshao@google.com>
-    (cherry picked from commit 838c9be2bc21df9ab804428d53bf61fa906be4b4)
-    Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/7783400
-    Reviewed-by: Geoff Lang <geofflang@chromium.org>
-
-commit 2601573081fe88bf56a13247b74b62313557798d
+commit 77001e3c6a4c6f217afb5fc6c5485f26efa8c124
 Author: teoxoy <28601907+teoxoy@users.noreply.github.com>
 Date:   Mon May 11 10:45:36 2026 +0200
 
     call `SafeDelete` only if `onDestroy` has not errored
 
-commit 07b62327e0b091b4ccbd9e79bc63b5563a4db91e
-Author: Steven Noonan <steven@uplinklabs.net>
-Date:   Wed Apr 29 11:50:10 2026 +0200
-
-    handle Qualcomm's mixed vendor IDs
-    
-    This is a weird situation. Up until Qualcomm had a native Vulkan driver
-    for Windows (with the Snapdragon X series chips), the only vendor ID
-    observable on Windows was 0x4D4F4351. This was reported through DXGI,
-    device manager, etc.
-    
-    But with their native Vulkan driver, they now report 0x5143 as well:
-    
-        VkPhysicalDeviceProperties:
-        ---------------------------
-            apiVersion        = 1.3.295 (4206887)
-            driverVersion     = 0.807.0 (2150789120)
-            vendorID          = 0x5143
-            deviceID          = 0x36334330
-            deviceType        = PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU
-            deviceName        = Qualcomm(R) Adreno(TM) X1-85 GPU
-            pipelineCacheUUID = 0eba4509-4351-0000-0000-010c05430000
-    
-    And yet, DXGI still reports 0x4D4F4351. Cool, huh?
-    
-    Let's teach IsQualcomm to understand both vendor IDs to ensure the
-    device is correctly detected as a tile-based renderer in the Vulkan
-    backend.
-    
-    Bug: angleproject:390866623
-    Change-Id: I9170c30262ace269498f066e922a279c7e981de6
-    Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/6183621
-    Reviewed-by: Geoff Lang <geofflang@chromium.org>
-    Reviewed-by: Shahbaz Youssefi <syoussefi@chromium.org>
-    Commit-Queue: Geoff Lang <geofflang@chromium.org>
-    Auto-Submit: Steven Noonan <steven@uplinklabs.net>
-
-commit c75106cebae93b7c103ff1e63b274c3047b520ff
-Author: Shrek Shao <shrekshao@google.com>
-Date:   Tue Mar 17 14:04:32 2026 -0700
-
-    Fix D3D11 integer overflows in streaming vertex buffer path
-    
-    The D3D11 backend's streaming vertex buffer path had several integer
-    arithmetic errors that could lead to under-reservation or out-of-bounds
-    memory access when using large base instance values.
-    
-    Key changes:
-    - mathutil.h: Added UnsignedCeilDivide64 to handle 64-bit values safely.
-    - Renderer11/Renderer9: Updated getVertexSpaceRequired to use size_t and
-    CheckedNumeric for instance calculations, preventing 32-bit truncation.
-    - VertexBuffer: Updated storeDynamicAttribute to use CheckedNumeric when
-    calculating adjustedCount for instanced attributes with a base instance.
-    - VertexDataManager: Changed firstVertexIndex from GLint to size_t to
-    prevent negative index wrapping and added overflow checks for vertex
-    buffer size validation.
-    - Added a regression test (D3D11OverflowTest.cpp) to verify that large
-    baseInstance values do not cause crashes in the D3D11 backend.
-    
-    This is a Gemini generated CL with manual modifications.
-    
-    Bug: chromium:489791424
-    Change-Id: I86d13594ee6da6238d8c6583c5268b4bd2ee2658
-    Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/7675790
-    Auto-Submit: Shrek Shao <shrekshao@google.com>
-    Commit-Queue: Shahbaz Youssefi <syoussefi@chromium.org>
-    Reviewed-by: Geoff Lang <geofflang@chromium.org>
-    Reviewed-by: Shahbaz Youssefi <syoussefi@chromium.org>
-
-commit c194cd0c42e86451d1499c57397e7ef8eefa135c
+commit 6f109db56ea1bd5cf17f35f00cf2ba32e50b6262
 Author: Antonio Maiorano <amaiorano@google.com>
 Date:   Tue Apr 07 16:03:19 2026 -0400
 
@@ -179,335 +54,35 @@ Date:   Tue Apr 07 16:03:19 2026 -0400
     Reviewed-by: Geoff Lang <geofflang@chromium.org>
     Commit-Queue: Antonio Maiorano <amaiorano@google.com>
 
-commit d941ceb42e6066d57561ba5d6054a5dedfa63055
-Author: teoxoy <28601907+teoxoy@users.noreply.github.com>
-Date:   Mon Apr 27 14:27:19 2026 +0200
-
-    improve `EmulatedIndexedStorage::getBuffer`
-
-commit c276b24aa48b75d454cc496bdcf6d170eed5cff3
+commit 31bb7089d275e226d0f3878470c9fe6acfaf1736
 Author: Geoff Lang <geofflang@chromium.org>
-Date:   Mon Mar 23 17:32:05 2026 -0400
+Date:   Wed Apr 15 15:00:04 2026 -0400
 
-    D3D11: Protect against overflows for texture staging buffers
+    D3D11: Avoid cache self-eviction for uniform buffers.
     
-    When TextureStorage11 needs to calculate sizes of intermediate buffers
-    for data conversion, do the math in 64-bit using CheckedNumerics.
-    Validate that the results fit into 32 bits.
+    D3D11 makes copies of buffers to handle different binding
+    offsets since they are not natively supported. It limits the cache to
+    the buffer's size * 2. glBindBufferRange allows giving sizes larger than
+    the buffer, this can cause the D3D11 buffer storage to trim even with
+    one element, evicting the newly allocated buffer.
     
-    Bug: chromium:491760376
-    Change-Id: Ie5942291fe7790c229cb1070fa9a2325fa40ac2f
-    Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/7695232
+    Avoid this by checking if the buffer to evict was the newly inserted
+    one. It would always be the last element in the cache because it has the
+    most recent LRU value.
+    
+    Fixed: chromium:498881735
+    Change-Id: Ie235f1c3efa6b3a2395bbfdf6b165c4c42d95fdc
+    Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/7765258
     Reviewed-by: Shahbaz Youssefi <syoussefi@chromium.org>
     Commit-Queue: Geoff Lang <geofflang@chromium.org>
 
-commit 9efddc5cfb20ac0028690bdfc5304a6a7c86dd39
-Author: teoxoy <28601907+teoxoy@users.noreply.github.com>
-Date:   Wed Apr 22 18:57:59 2026 +0200
-
-    break out of loop early
-
-commit 1640bca09e9ab1cd44c0d2d5b2ee3baafff426fe
-Author: Teodor Tanasoaia <28601907+teoxoy@users.noreply.github.com>
-Date:   Thu Apr 09 17:44:53 2026 +0200
-
-    Add return statement for empty bodies
-
-commit d4d97ea4f918c6d702d62cde4b76d2d6c4723777
-Author: Stephen White <senorblanco@chromium.org>
-Date:   Wed Mar 04 15:44:30 2026 -0500
-
-    M146: D3D11: fix overflow in line loop and triangle fan
-    
-    If an index buffer is created of element type less than 32bit (e.g.,
-    GL_UNSIGNED_BYTE) and used in a line loop or triangle fan, D3D11 must
-    widen it to 32-bit. This can cause an overflow if the widened size in
-    bytes is greater than INT_MAX. The fix is to detect the overflow and
-    abort.
-    
-    Bug: chromium:487977696
-    Change-Id: I57b1dcc9b3d968da88282164a5f92386500c6205
-    Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/7637780
-    Reviewed-by: Geoff Lang <geofflang@chromium.org>
-    Commit-Queue: Stephen White <senorblanco@chromium.org>
-    (cherry picked from commit 4b7aace914924f634c4148c41e6fc87198867fa5)
-    Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/7657185
-
-commit b0098a1ebdb0400b515ff7a662685bda111e9e87
-Author: Emilio Cobos Álvarez <emilio@crisal.io>
-Date:   Thu Apr 09 15:03:30 2026 +0200
-
-    Add a missing change to 7918168436578718b234bfd56da152e34a85af1d that is in Gecko.
-
-commit 442302a3b7ae7cca7f85524e6bb3d774a10b6fbc
-Author: Shahbaz Youssefi <syoussefi@chromium.org>
-Date:   Mon Mar 27 13:05:36 2023 -0400
-
-    Translator: Initialize out arguments too for WebGL
-    
-    Local variables were initialized for WebGL, but not `out` arguments.
-    However, `out` arguments completely overwrite the passed-in variable at
-    call site, so they should also be zeroed out.
-    
-    Bug: chromium:1425685
-    Change-Id: Ib2f61a962eea74c4933aafa4d5ad377189cec578
-    Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/4375137
-    Reviewed-by: Geoff Lang <geofflang@chromium.org>
-    Reviewed-by: Kenneth Russell <kbr@chromium.org>
-    Commit-Queue: Shahbaz Youssefi <syoussefi@chromium.org>
-
-commit 4f5c3dbc01f70efbaaed41743893ed2c8a7653cd
-Author: Emilio Cobos Álvarez <emilio@crisal.io>
-Date:   Thu Apr 09 13:40:10 2026 +0200
-
-    Add missing codegen from #27.
-
-commit be5a7593658365659dfc6384a95c44406e4e5d9e
-Author: Kimmo Kinnunen <kkinnunen@apple.com>
-Date:   Thu Oct 24 11:46:54 2024 +0300
-
-    Disallow discarded uniform block references
-    
-    Uniform block instances cannot be used by themselves, as there
-    is no way to refer to their type. Disallow the only typeless
-    access pattern, discarding via expression statement:
-    
-      uniform MyBlock { int x;  } b;
-      void main() {
-        b;
-        0, b;
-      }
-    
-    Explained as disallowed in newer GLSL 300:
-    https://github.com/KhronosGroup/WebGL/issues/3644
-    
-    The comma expression form would ASSERT in CollectVariables.
-    
-    Bug: angleproject:42267026
-    Change-Id: I6c8b835482fd551bd97576c1bd24f005874da6af
-    Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/5961498
-    Reviewed-by: Alexey Knyazev <lexa.knyazev@gmail.com>
-    Reviewed-by: Geoff Lang <geofflang@chromium.org>
-    Reviewed-by: Shahbaz Youssefi <syoussefi@chromium.org>
-    Commit-Queue: Kimmo Kinnunen <kkinnunen@apple.com>
-    Auto-Submit: Kimmo Kinnunen <kkinnunen@apple.com>
-
-commit 329044148ea14623910a1b33a4f1fd81445fd21e
-Author: Scott Marcy <mscott@apple.com>
-Date:   Thu May 30 11:36:58 2024 -0600
-
-    Fix stack overflow crash by traversing a too-deep AST
-    
-    This simply moves the check for a too-deep AST before the first attempts
-    to traverse the AST (i.e., `validateAST()`).
-    
-    Bug: angleproject:343505104
-    Change-Id: Iafb658a30f74a666beab8c69745ca53d17d70dd3
-    Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/5585186
-    Reviewed-by: Shahbaz Youssefi <syoussefi@chromium.org>
-    Reviewed-by: Kimmo Kinnunen <kkinnunen@apple.com>
-    Commit-Queue: Kimmo Kinnunen <kkinnunen@apple.com>
-    Auto-Submit: Scott M <mscott@apple.com>
-
-commit 28669be7c0129fa7ed117f730484db302a39bcb2
-Author: Nisha Jain <nisha_jain@apple.com>
-Date:   Thu Mar 07 14:19:58 2024 +0200
-
-    Avoid asserts when const folding binary ops on void variables
-    
-    Fix asserts for example with / and % during constant folding when
-    the operands might be voids.
-    
-    Bug: angleproject:8592
-    Change-Id: I22275642dbcdf9066940d3a94114e8daa5cbbe41
-    Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/5416376
-    Auto-Submit: Kimmo Kinnunen <kkinnunen@apple.com>
-    Commit-Queue: Geoff Lang <geofflang@chromium.org>
-    Reviewed-by: Geoff Lang <geofflang@chromium.org>
-    Reviewed-by: Kimmo Kinnunen <kkinnunen@apple.com>
-
-commit ebaab5cd66b66183175f8c5d5f72210afcba38ca
-Author: Kimmo Kinnunen <kkinnunen@apple.com>
-Date:   Fri Mar 08 14:26:56 2024 +0200
-
-    Check array index against unsigned array size
-    
-    Fix an assert during GLSL parsing when a very
-    large array (~1U) type is indexed.
-    
-    Bug: angleproject:8596
-    Change-Id: I219ac5c8f3fa58aa4c7d679eade6f32b59eb1103
-    Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/5352653
-    Auto-Submit: Kimmo Kinnunen <kkinnunen@apple.com>
-    Reviewed-by: Shahbaz Youssefi <syoussefi@chromium.org>
-    Commit-Queue: Kimmo Kinnunen <kkinnunen@apple.com>
-
-commit 5a3f53d8bff0709e94e9b5c2a97684c9a012f6f6
-Author: Erica Li <lerica@apple.com>
-Date:   Fri Mar 08 12:40:09 2024 +0200
-
-    Avoid assert with multiple memory qualifiers
-    
-    Add missing qualifier strings.
-    
-    Bug: angleproject:8593
-    Change-Id: I484571c33effd85d52712b4876f6a3a5c73d8fde
-    Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/5352255
-    Reviewed-by: Shahbaz Youssefi <syoussefi@chromium.org>
-    Auto-Submit: Kimmo Kinnunen <kkinnunen@apple.com>
-    Commit-Queue: Shahbaz Youssefi <syoussefi@chromium.org>
-
-commit f95d411e7d0c5cfb4b0dfef2ecadb952cc92b06a
-Author: Kimmo Kinnunen <kkinnunen@apple.com>
-Date:   Tue Mar 05 21:42:32 2024 +0200
-
-    Ensure unary math op parse to an node on error
-    
-    Return the error node for ops like radians().
-    The math op parse can fail in multiple ways.
-    
-    Fixed: angleproject:8583
-    Change-Id: Ief7e150dffefe711f567d95c62d1023fc7fa1c91
-    Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/5344716
-    Reviewed-by: Kenneth Russell <kbr@chromium.org>
-    Auto-Submit: Kimmo Kinnunen <kkinnunen@apple.com>
-    Commit-Queue: Kenneth Russell <kbr@chromium.org>
-
-commit 386e3783a143a5268df86bdf93cd10892419f395
-Author: Kimmo Kinnunen <kkinnunen@apple.com>
-Date:   Mon Mar 04 14:43:10 2024 +0200
-
-    Fix layout(index=) parse assert on es 100 shaders
-    
-    Remove invalid assert about layout index qualifier being present only if
-    EXT_blend_func_extended is present.
-    
-    The layout qualifier gets parsed to support EXT_shader_framebuffer_fetch
-    in ES 100 shaders to support
-    "layout(incoherent) mediump vec4 gl_FragData[gl_MaxDrawBuffers]"
-    
-    Fixed: angleproject:8570
-    Change-Id: I0d0d99bcc882a0befd97c2510dec4a8ccf1690bd
-    Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/5340249
-    Reviewed-by: Kenneth Russell <kbr@chromium.org>
-    Commit-Queue: Kenneth Russell <kbr@chromium.org>
-    Auto-Submit: Kimmo Kinnunen <kkinnunen@apple.com>
-
-commit abe9de5edc89a3db4188c8ddf52e61f6820ecebd
-Author: Kimmo Kinnunen <kkinnunen@apple.com>
-Date:   Fri Feb 16 22:28:18 2024 +0200
-
-    Fix ASSERT in non-global precise var decls
-    
-    Precise was treated as invariant. Precise can be
-    declared for non-global variables.
-    
-    Bug: angleproject:8550
-    Change-Id: Ia0d00d67d0d1504b78294ee2256785fe3da3e399
-    Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/5300976
-    Commit-Queue: Shahbaz Youssefi <syoussefi@chromium.org>
-    Auto-Submit: Kimmo Kinnunen <kkinnunen@apple.com>
-    Reviewed-by: Shahbaz Youssefi <syoussefi@chromium.org>
-    Reviewed-by: Kenneth Russell <kbr@chromium.org>
-
-commit 718164d445a82bd24da61ff670deb5f1702fbfc3
-Author: Kimmo Kinnunen <kkinnunen@apple.com>
-Date:   Tue Feb 13 17:54:12 2024 +0200
-
-    Uniform block reference in constuctors crash
-    
-    Passing uniform block instance name to a built-in constructor would
-    cause type confusion. Block this by failing to parse.
-    
-    Bug: angleproject:8533
-    Change-Id: I5a676b41e2f3d766ece4ed472debc1c874753293
-    Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/5290897
-    Commit-Queue: Shahbaz Youssefi <syoussefi@chromium.org>
-    Reviewed-by: Shahbaz Youssefi <syoussefi@chromium.org>
-    Commit-Queue: Kimmo Kinnunen <kkinnunen@apple.com>
-    Auto-Submit: Kimmo Kinnunen <kkinnunen@apple.com>
-
-commit a7ce496eaa3ac8f108190ca544e00024edead840
-Author: Kimmo Kinnunen <kkinnunen@apple.com>
-Date:   Wed Feb 07 14:25:32 2024 +0200
-
-    Fix an assert on multidim array constructors
-    
-    Fail early instead of asserting when trying to parse a
-    multidimensional array constructor call with unsized
-    argument array argument.
-    
-    int A[];
-    int B[int[][](A)];
-    
-    Bug: angleproject:8519
-    Change-Id: Iee2c70318eebd2def57ffab8db709d1076692922
-    Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/5272434
-    Reviewed-by: Shahbaz Youssefi <syoussefi@chromium.org>
-    Auto-Submit: Kimmo Kinnunen <kkinnunen@apple.com>
-    Commit-Queue: Kimmo Kinnunen <kkinnunen@apple.com>
-    Commit-Queue: Shahbaz Youssefi <syoussefi@chromium.org>
-
-commit 7918168436578718b234bfd56da152e34a85af1d
+commit a5f0aab16397f6e46f4b5c50e35347ce678cfbb0
 Author: Kelsey Gilbert <kelsey.gilbert@mozilla.com>
 Date:   Tue Jun 04 15:37:29 2024 -0700
 
     Add GLSL variable byte size limits to ShBuiltInResources.
 
-commit 31c0a5bff1330706aff3c4594c8166745814a45b
-Author: Shahbaz Youssefi <syoussefi@chromium.org>
-Date:   Wed May 03 13:41:36 2023 -0400
-
-    WebGL: Limit total size of private data
-    
-    ... not just individual arrays.
-    
-    Bug: chromium:1431761
-    Change-Id: I721e29aeceeaf12c3f6a67b668abffb8dfbc89b0
-    Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/4503753
-    Reviewed-by: Kenneth Russell <kbr@chromium.org>
-    Commit-Queue: Shahbaz Youssefi <syoussefi@chromium.org>
-
-commit ddaf44ac75d5d0390873c2af193e02159ecbe672
-Author: Geoff Lang <geofflang@chromium.org>
-Date:   Fri Dec 08 13:20:36 2023 -0500
-
-    Validate Uniform variable limits with each iteration
-    
-    VariablePacker would loop over all variables and sum up the total
-    row counts before validating. Each variable can take hundreds of rows
-    so it is possible to overflow the counters before validating them.
-    
-    Validate the limits with each iteration and early-out when the limits
-    are exceeded.
-    
-    https://bugzilla.mozilla.org/show_bug.cgi?id=1864587
-    
-    Bug: chromium:1864587
-    Change-Id: Ic235ada1516a0d5a9948d82b22f6316a037c09ca
-    Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/5106408
-    Reviewed-by: Shahbaz Youssefi <syoussefi@chromium.org>
-    Auto-Submit: Geoff Lang <geofflang@chromium.org>
-    Commit-Queue: Shahbaz Youssefi <syoussefi@chromium.org>
-
-commit 6784271c1c6273a1be0b6a2dad9ac7b921521ad8
-Author: Shahbaz Youssefi <syoussefi@chromium.org>
-Date:   Tue Mar 28 11:43:23 2023 -0400
-
-    Translator: Limit the size of private variables in WebGL shaders
-    
-    As a follow up to
-    https://chromium-review.googlesource.com/c/angle/angle/+/3023033, the
-    limit to shader-private variables (locals and globals) is further
-    reduced to 1MB.  A variable that large will not fit in GPU registers and
-    will spill to memory, killing performance.
-    
-    Bug: chromium:1427865
-    Change-Id: I77314d4b891c591cd9a83ad2aebb77d7256f3ada
-    Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/4377639
-    Reviewed-by: Kenneth Russell <kbr@chromium.org>
-
-commit 23347851217a581f3b9d877af203a0dcc4b7b6e9
+commit e43d053219a0e60fb0744a2df3ecef41d244e385
 Author: Kelsey Gilbert <kelsey.gilbert@mozilla.com>
 Date:   Wed Mar 29 16:13:39 2023 -0700
 
@@ -515,13 +90,13 @@ Date:   Wed Mar 29 16:13:39 2023 -0700
     
     Change-Id: I1d998867f3e829ed0dc8181fa76be5fe701dde70
 
-commit aa3a569c8ddc1122d55663749a6db63e48b3033c
+commit e8407590dcd8432d77dbe5a54dd3b0328484f7ea
 Author: Ashley Hale <ahale@mozilla.com>
 Date:   Wed Mar 01 18:03:04 2023 -0800
 
     Disable ClearView with scissor on Skylake iGPU because of observed bugs with edge corruption. (#27)
 
-commit d93c05cd2d786f2c624fbf8f4465238b38a771a1
+commit c49b9f114ed50c2f069aa5f295d6a027e90d74c7
 Author: Kelsey Gilbert <jgilbert@mozilla.com>
 Date:   Thu Sep 08 17:10:21 2022 -0700
 
@@ -533,7 +108,7 @@ Date:   Thu Sep 08 17:10:21 2022 -0700
     
     Co-authored-by: Erich Gubler <erichdongubler@gmail.com>
 
-commit 0bf5781fddeb50d02b703dd89cc77b2c5f07e334
+commit df25c5bcf1e91df209e03d08259e17ab3fb18e80
 Author: Erich Gubler <erichdongubler@gmail.com>
 Date:   Thu Jan 19 00:20:06 2023 -0500
 
@@ -543,19 +118,7 @@ Date:   Thu Jan 19 00:20:06 2023 -0500
     
     [failing-ci]: https://treeherder.mozilla.org/jobs?repo=autoland&author=egubler%40mozilla.com&selectedTaskRun=e6KdZgnNTCOE9weaOnTjVQ.0
 
-commit ea4d354f6cfc83c31446a855f3fd5603737eae76
-Author: Erich Gubler <erichdongubler@gmail.com>
-Date:   Wed Nov 16 20:54:23 2022 -0500
-
-    fix(windows,pre-c++20): use default ctors for `std::atomic<angle::Mutex*>`
-
-commit 9bcfaed62b60e210004217fd5e79c25f3e2b3760
-Author: Jeff Gilbert <jdashg@gmail.com>
-Date:   Thu Jul 15 15:56:45 2021 -0700
-
-    Add missing header to build config.
-
-commit 16baec7195df362b9d615ccb7e5d51673501e10e
+commit 620bd161dae49507402e0ce7e35b00800e6f0673
 Author: Jeff Gilbert <jdashg@gmail.com>
 Date:   Thu Feb 11 17:34:00 2021 -0800
 
@@ -566,7 +129,7 @@ Date:   Thu Feb 11 17:34:00 2021 -0800
     match enough to hit the CopySubResource path.
     Firefox bug: https://bugzilla.mozilla.org/show_bug.cgi?id=1692355
 
-commit 43e9d9a7c95b509869a774fab62bf42d6d15b745
+commit d9c5b07d9b3abde2c17f4085e18f951a50a97e0f
 Author: Jeff Muizelaar <jrmuizel@gmail.com>
 Date:   Wed May 06 14:04:42 2020 -0400
 
@@ -580,13 +143,7 @@ Date:   Wed May 06 14:04:42 2020 -0400
     If we detect that this is going to happen we fall back to the manual
     draw call path. This lets us use ClearView most of the time still.
 
-commit b16ebaa05424354c06c2ccdccc36df2c7c1b191e
-Author: Erich Gubler <erichdongubler@gmail.com>
-Date:   Wed Nov 09 21:12:44 2022 -0500
-
-    Fix broken build from `-Wexit-time-destructors` on Windows x64
-
-commit 4c3a473aec4e09ffacd0466817cb851529087767
+commit 47cdac4b96daf88ca0e2aac1cc5476efc42db36c
 Author: Dzmitry Malyshau <dmalyshau@mozilla.com>
 Date:   Thu Dec 05 13:02:14 2019 -0500
 
@@ -600,17 +157,20 @@ Date:   Thu Dec 05 13:02:14 2019 -0500
 
 Above: cherries picked
 ================================================================================
-Below: merge base from: origin/chromium/5359
+Below: merge base from: origin/chromium/7778
 
-commit ceec659ac60b0c8ee9d9c602ca1a878ec1d3a88f
+commit 9fa37b5e144119f3dd266e6e066a528a1bfac22c
 Author: Shahbaz Youssefi <syoussefi@chromium.org>
-Date:   Mon Oct 31 10:29:45 2022 -0400
+Date:   Fri May 29 10:05:29 2026 -0400
 
-    M108: Vulkan: Disable logicOp dynamic state on Intel/Mesa
+    M148: GL: Fix missing binding before texture recreation during mipgen
     
-    Hits a stack overflow inside the driver.
+    ... if the recreateMipmapLevelsBeforeGenerate workaround is enabled.
+    Fixes a regression introduced in [1].
     
-    Bug: chromium:1379201
-    Change-Id: I790d7ef0333ba17eedbe91e4fc9c3a2b94563bff
-    Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/4004440
-    Reviewed-by: Yuxin Hu <yuxinhu@google.com>
+    [1]:https://chromium-review.googlesource.com/c/angle/angle/+/7791058
+    
+    Bug: chromium:491732188
+    Change-Id: I98f386fec4c57c87c69b9e00dcd88b088ee370a3
+    Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/7886844
+    Reviewed-by: Geoff Lang <geofflang@chromium.org>

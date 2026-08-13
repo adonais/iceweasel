@@ -1381,6 +1381,34 @@ TEST_F(TlsConnectStreamTls13, GreaseEchHrrMatches) {
   CheckConnected();
 }
 
+// A real (group-negotiation) HelloRetryRequest on a single server socket,
+// combined with a client that GREASEs ECH, must not leave stale ECH HRR GREASE
+// state on the server. When the client offers ECH the server records ECH state
+// and writes an ECH HRR GREASE signal into its transient greaseEchBuf while
+// sending the first HRR. That buffer has to be cleared afterwards: the signal
+// is preserved in the cookie and restored when the transcript is reconstructed
+// on the second ClientHello. Previously it was not cleared, so reconstruction
+// tripped PORT_Assert(!ss->ssl3.hs.greaseEchBuf.len) in
+// tls13_ConstructHelloRetryRequest. This reproduces the assertion by having a
+// server that only supports P-256 while the client prefers X25519, forcing a
+// genuine HRR without a stateless MakeNewServer() reset.
+TEST_F(TlsConnectStreamTls13, EchGreaseHrr) {
+  EnsureTlsSetup();
+  // Client offers both, but prefers X25519 so it only sends an X25519 share.
+  client_->ConfigNamedGroups({ssl_grp_ec_curve25519, ssl_grp_ec_secp256r1});
+  // Server only supports P-256, so it must send an HRR requesting it.
+  server_->ConfigNamedGroups({ssl_grp_ec_secp256r1});
+  // GREASE ECH so the server records ECH state and emits an ECH HRR signal.
+  EXPECT_EQ(SECSuccess, SSL_EnableTls13GreaseEch(client_->ssl_fd(), PR_TRUE));
+
+  auto hrr_capture = MakeTlsFilter<TlsHandshakeRecorder>(
+      server_, kTlsHandshakeHelloRetryRequest);
+  Connect();
+  EXPECT_LT(0U, hrr_capture->buffer().len()) << "HelloRetryRequest expected";
+  CheckKeys(ssl_kea_ecdh, ssl_grp_ec_secp256r1, ssl_auth_rsa_sign,
+            ssl_sig_rsa_pss_rsae_sha256);
+}
+
 TEST_F(TlsConnectStreamTls13Ech, EchRejectMisizedEchXtn) {
   ScopedSECKEYPublicKey pub;
   ScopedSECKEYPrivateKey priv;

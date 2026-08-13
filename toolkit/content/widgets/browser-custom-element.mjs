@@ -18,12 +18,14 @@ let lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
+  ContentAnalysisUtils: "resource://gre/modules/ContentAnalysisUtils.sys.mjs",
   Finder: "resource://gre/modules/Finder.sys.mjs",
   FinderParent: "resource://gre/modules/FinderParent.sys.mjs",
   PopupAndRedirectBlocker:
     "resource://gre/actors/PopupAndRedirectBlockingParent.sys.mjs",
   SelectParentHelper: "resource://gre/actors/SelectParent.sys.mjs",
-  RemoteWebNavigation: "resource://gre/modules/RemoteWebNavigation.sys.mjs",
+  RemoteWebNavigation:
+    "moz-src:///toolkit/components/remotebrowserutils/RemoteWebNavigation.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "blankURI", () =>
@@ -179,17 +181,21 @@ export class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
             // Submit a content analysis request for the DataTransfer and
             // stop dispatching this drop event.  Reissue the drop if all
             // requests are permitted, otherwise issue a dragexit.
-            let request = {
-              analysisType: Ci.nsIContentAnalysisRequest.eBulkDataEntry,
-              dataTransfer: event.dataTransfer,
-              operationTypeForDisplay:
-                Ci.nsIContentAnalysisRequest.eDroppedText,
-              reason: Ci.nsIContentAnalysisRequest.eDragAndDrop,
-              resources: [],
-              sourceWindowGlobal: dragSession.sourceWindowContext,
-              uri: contentAnalysis.getURIForDropEvent(event),
-              windowGlobalParent: this.browsingContext.currentWindowContext,
-            };
+            let request =
+              lazy.ContentAnalysisUtils.createContentAnalysisRequest(
+                {
+                  analysisType: Ci.nsIContentAnalysisRequest.eBulkDataEntry,
+                  operationTypeForDisplay:
+                    Ci.nsIContentAnalysisRequest.eDroppedText,
+                  reason: Ci.nsIContentAnalysisRequest.eDragAndDrop,
+                  url: contentAnalysis.getURIForDropEvent(event),
+                  windowGlobalParent: this.browsingContext.currentWindowContext,
+                },
+                {
+                  dataTransfer: event.dataTransfer,
+                  sourceWindowGlobal: dragSession.sourceWindowContext,
+                }
+              );
 
             // Tell browser to record the event target and to delay EndDragSession
             // until the content analysis results are given.
@@ -353,8 +359,6 @@ export class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
     this._isSyntheticDocument = false;
 
     this.mPrefs = Services.prefs;
-
-    this._audioMuted = false;
 
     this._hasAnyPlayingMediaBeenBlocked = false;
 
@@ -628,7 +632,9 @@ export class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
 
   get browsingContext() {
     if (this.frameLoader) {
-      return this.frameLoader.browsingContext;
+      return /** @type {CanonicalBrowsingContext} */ (
+        this.frameLoader.browsingContext
+      );
     }
     return null;
   }
@@ -783,7 +789,7 @@ export class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
   }
 
   get audioMuted() {
-    return this._audioMuted;
+    return this.browsingContext?.mediaController?.isMuted ?? false;
   }
 
   get shouldHandleUnselectedTabHover() {
@@ -984,21 +990,6 @@ export class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
     }
   }
 
-  audioPlaybackStarted() {
-    if (this._audioMuted) {
-      return;
-    }
-    let event = document.createEvent("Events");
-    event.initEvent("DOMAudioPlaybackStarted", true, false);
-    this.dispatchEvent(event);
-  }
-
-  audioPlaybackStopped() {
-    let event = document.createEvent("Events");
-    event.initEvent("DOMAudioPlaybackStopped", true, false);
-    this.dispatchEvent(event);
-  }
-
   /**
    * When the pref "media.block-autoplay-until-in-foreground" is on,
    * Gecko delays starting playback of media resources in tabs until the
@@ -1025,20 +1016,6 @@ export class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
     let event = document.createEvent("Events");
     event.initEvent("DOMAudioPlaybackBlockStopped", true, false);
     this.dispatchEvent(event);
-  }
-
-  mute(transientState) {
-    if (!transientState) {
-      this._audioMuted = true;
-    }
-    let context = this.frameLoader.browsingContext;
-    context.notifyMediaMutedChanged(true);
-  }
-
-  unmute() {
-    this._audioMuted = false;
-    let context = this.frameLoader.browsingContext;
-    context.notifyMediaMutedChanged(false);
   }
 
   resumeMedia() {

@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ctypes/CTypes.h"
-#include "js/experimental/CTypes.h"  // JS::CTypesActivity{Callback,Type}, JS::InitCTypesClass, JS::SetCTypesActivityCallback, JS::SetCTypesCallbacks
 
 #include "mozilla/CheckedInt.h"
 #include "mozilla/MemoryReporting.h"
@@ -11,6 +10,8 @@
 #include "mozilla/TextUtils.h"
 #include "mozilla/Vector.h"
 #include "mozilla/WrappingOperations.h"
+
+#include "js/experimental/CTypes.h"  // JS::CTypesActivity{Callback,Type}, JS::InitCTypesClass, JS::SetCTypesActivityCallback, JS::SetCTypesCallbacks
 
 #if defined(XP_UNIX)
 #  include <errno.h>
@@ -3168,11 +3169,11 @@ static bool ConvertToJS(JSContext* cx, HandleObject typeObj,
   }
       CTYPES_FOR_EACH_WRAPPED_INT_TYPE(WRAPPED_INT_CASE)
 #undef WRAPPED_INT_CASE
-#define FLOAT_CASE(name, type, ffiType)        \
-  case TYPE_##name: {                          \
-    type value = *static_cast<type*>(data);    \
-    result.set(JS_NumberValue(double(value))); \
-    break;                                     \
+#define FLOAT_CASE(name, type, ffiType)     \
+  case TYPE_##name: {                       \
+    type value = *static_cast<type*>(data); \
+    result.setNumber(double(value));        \
+    break;                                  \
   }
       CTYPES_FOR_EACH_FLOAT_TYPE(FLOAT_CASE)
 #undef FLOAT_CASE

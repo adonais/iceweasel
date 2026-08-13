@@ -57,7 +57,7 @@ add_task(async function userTyping() {
   await UrlbarTestUtils.promiseSearchComplete(window);
   Assert.equal(UrlbarTestUtils.getSelectedRowIndex(window), 0);
   let details = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
-  Assert.equal(details.type, UrlbarUtils.RESULT_TYPE.SEARCH);
+  Assert.equal(details.type, UrlbarShared.RESULT_TYPE.SEARCH);
   Assert.ok(details.searchParams);
   Assert.equal(details.searchParams.query, "foo");
   Assert.equal(gURLBar.value, "foo");

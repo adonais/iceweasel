@@ -5,10 +5,10 @@
 #ifndef MOZILLA_GFX_PATHHELPERS_H_
 #define MOZILLA_GFX_PATHHELPERS_H_
 
+#include <cmath>
+
 #include "2D.h"
 #include "UserData.h"
-
-#include <cmath>
 
 namespace mozilla {
 namespace gfx {

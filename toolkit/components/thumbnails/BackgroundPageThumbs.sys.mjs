@@ -35,7 +35,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   ContextualIdentityService:
-    "resource://gre/modules/ContextualIdentityService.sys.mjs",
+    "moz-src:///toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs",
 });
 
 export const BackgroundPageThumbs = {
@@ -398,7 +398,7 @@ export const BackgroundPageThumbs = {
     this._parentWin.document.documentElement.appendChild(browser);
 
     browser.addProgressListener(this, Ci.nsIWebProgress.NOTIFY_STATE_WINDOW);
-    browser.mute();
+    browser.browsingContext?.mediaController?.mute();
 
     // an event that is sent if the remote process crashes - no need to remove
     // it as we want it to be there as long as the browser itself lives.

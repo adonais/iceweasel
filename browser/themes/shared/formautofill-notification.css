@@ -12,11 +12,6 @@
  * "address-save-update" prefix is used for "save address doorhanger" and "update address doorhanger"
  */
 
-.popup-notification-body[popupid="address-save-update"],
-.popup-notification-body[popupid="address-edit"] {
-  width: 25.8em;
-}
-
 .address-capture-notification {
   /* Overwrite margin that we don't need */
   :is(popupnotificationcontent, .panel-footer) {
@@ -40,30 +35,6 @@
 
   #address-capture-menu-button {
     margin-inline-start: auto;
-
-    &:hover {
-      color: var(--button-text-color-ghost-hover);
-      background-color: var(--button-background-color-ghost-hover);
-
-      &:active {
-        color: var(--button-text-color-ghost-active);
-        background-color: var(--button-background-color-ghost-active);
-      }
-    }
-
-    &:focus-visible {
-      outline: var(--focus-outline);
-      outline-offset: var(--focus-outline-offset);
-      border-radius: var(--border-radius-xsmall);
-    }
-
-    &#address-capture-edit-address-button {
-      background-image: url("chrome://global/skin/icons/edit-outline.svg");
-    }
-
-    &#address-capture-menu-button {
-      background-image: url("chrome://browser/skin/formautofill/icon-doorhanger-menu.svg");
-    }
   }
 }
 
@@ -123,6 +94,12 @@
 
 .address-update-text-diff-removed {
   text-decoration: line-through;
+}
+
+.address-capture-img-address,
+.address-capture-img-email {
+  -moz-context-properties: fill;
+  fill: currentColor;
 }
 
 .address-capture-img-address {

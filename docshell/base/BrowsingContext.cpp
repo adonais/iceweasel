@@ -29,7 +29,6 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentPictureInPicture.h"
 #include "mozilla/dom/Element.h"
-#include "mozilla/dom/Geolocation.h"
 #include "mozilla/dom/HTMLEmbedElement.h"
 #include "mozilla/dom/HTMLIFrameElement.h"
 #include "mozilla/dom/Location.h"
@@ -60,6 +59,7 @@
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Components.h"
+#include "mozilla/GeolocationService.h"
 #include "mozilla/Logging.h"
 #include "mozilla/MediaFeatureChange.h"
 #include "mozilla/Services.h"
@@ -144,20 +144,8 @@ struct ParamTraits<mozilla::dom::TouchEventsOverride>
     : public mozilla::dom::WebIDLEnumSerializer<
           mozilla::dom::TouchEventsOverride> {};
 
-template <>
-struct ParamTraits<mozilla::dom::EmbedderColorSchemes> {
-  using paramType = mozilla::dom::EmbedderColorSchemes;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mUsed);
-    WriteParam(aWriter, aParam.mPreferred);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mUsed) &&
-           ReadParam(aReader, &aResult->mPreferred);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::EmbedderColorSchemes, mUsed,
+                                  mPreferred);
 
 }  // namespace IPC
 
@@ -3809,7 +3797,7 @@ void BrowsingContext::SetWatchedByDevTools(bool aWatchedByDevTools,
   SetWatchedByDevToolsInternal(aWatchedByDevTools, aRv);
 }
 
-RefPtr<nsGeolocationService> BrowsingContext::GetGeolocationServiceOverride() {
+RefPtr<GeolocationService> BrowsingContext::GetGeolocationServiceOverride() {
   // Override can be set only to the top-level browsing context,
   // but when the geolocation coordinates are requested for iframe,
   // we should return the override which is set for its top-level context.
@@ -3823,15 +3811,15 @@ void BrowsingContext::SetGeolocationServiceOverride(
       "Should only set GeolocationServiceOverride in the top browsing context");
   if (aGeolocationOverride.WasPassed()) {
     if (!mGeolocationServiceOverride) {
-      mGeolocationServiceOverride = MakeRefPtr<nsGeolocationService>();
+      mGeolocationServiceOverride = MakeRefPtr<GeolocationService>();
       mGeolocationServiceOverride->Init();
     }
     mGeolocationServiceOverride->Update(aGeolocationOverride.Value());
-  } else if (RefPtr<nsGeolocationService> serviceOverride =
+  } else if (RefPtr<GeolocationService> serviceOverride =
                  mGeolocationServiceOverride.forget()) {
     // Create an original service and move the locators.
-    RefPtr<nsGeolocationService> service =
-        nsGeolocationService::GetGeolocationService();
+    RefPtr<GeolocationService> service =
+        GeolocationService::GetGeolocationService();
     serviceOverride->MoveLocators(service);
   }
 }
@@ -4698,39 +4686,12 @@ bool ParamTraits<MaybeDiscarded<BrowsingContext>>::Read(
   return true;
 }
 
-void ParamTraits<BrowsingContext::IPCInitializer>::Write(
-    IPC::MessageWriter* aWriter, const paramType& aInit) {
-  // Write actor ID parameters.
-  WriteParam(aWriter, aInit.mId);
-  WriteParam(aWriter, aInit.mParentId);
-  WriteParam(aWriter, aInit.mWindowless);
-  WriteParam(aWriter, aInit.mUseRemoteTabs);
-  WriteParam(aWriter, aInit.mUseRemoteSubframes);
-  WriteParam(aWriter, aInit.mCreatedDynamically);
-  WriteParam(aWriter, aInit.mChildOffset);
-  WriteParam(aWriter, aInit.mOriginAttributes);
-  WriteParam(aWriter, aInit.mRequestContextId);
-  WriteParam(aWriter, aInit.mSessionHistoryIndex);
-  WriteParam(aWriter, aInit.mSessionHistoryCount);
-  WriteParam(aWriter, aInit.mFields);
-}
-
-bool ParamTraits<BrowsingContext::IPCInitializer>::Read(
-    IPC::MessageReader* aReader, paramType* aInit) {
-  // Read actor ID parameters.
-  return ReadParam(aReader, &aInit->mId) &&
-         ReadParam(aReader, &aInit->mParentId) &&
-         ReadParam(aReader, &aInit->mWindowless) &&
-         ReadParam(aReader, &aInit->mUseRemoteTabs) &&
-         ReadParam(aReader, &aInit->mUseRemoteSubframes) &&
-         ReadParam(aReader, &aInit->mCreatedDynamically) &&
-         ReadParam(aReader, &aInit->mChildOffset) &&
-         ReadParam(aReader, &aInit->mOriginAttributes) &&
-         ReadParam(aReader, &aInit->mRequestContextId) &&
-         ReadParam(aReader, &aInit->mSessionHistoryIndex) &&
-         ReadParam(aReader, &aInit->mSessionHistoryCount) &&
-         ReadParam(aReader, &aInit->mFields);
-}
+IMPLEMENT_IPC_SERIALIZER_WITH_FIELDS(BrowsingContext::IPCInitializer, mId,
+                                     mParentId, mWindowless, mUseRemoteTabs,
+                                     mUseRemoteSubframes, mCreatedDynamically,
+                                     mChildOffset, mOriginAttributes,
+                                     mRequestContextId, mSessionHistoryIndex,
+                                     mSessionHistoryCount, mFields);
 
 template struct ParamTraits<BrowsingContext::BaseTransaction>;
 

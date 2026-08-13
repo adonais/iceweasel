@@ -9,12 +9,12 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Encoding.h"
 #include "mozilla/StaticPtr.h"
-#include "prprf.h"
 #include "nsCRT.h"
 #include "nsDirIndex.h"
 #include "nsEscape.h"
 #include "nsIDirIndex.h"
 #include "nsIInputStream.h"
+#include "prprf.h"
 
 using namespace mozilla;
 

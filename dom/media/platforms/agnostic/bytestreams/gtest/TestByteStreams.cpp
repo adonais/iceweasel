@@ -2,7 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+#include <cstring>
+#include <limits>
+
 #include "AnnexB.h"
+#include "BitWriter.h"
 #include "BufferReader.h"
 #include "ByteWriter.h"
 #include "H264.h"
@@ -138,7 +142,12 @@ static already_AddRefed<MediaByteBuffer> GetHvccExtraDataWithPrefixSEI(
     payloadSize -= 0xff;
   }
   seiNalu.AppendElement(static_cast<uint8_t>(payloadSize));
-  seiNalu.AppendElements(aPayloadSize);
+  // AppendElements does not zero POD bytes; a zeroed payload would make
+  // EncodeH265NALUnit insert emulation-prevention bytes and change the
+  // round-trip length. Fill with a fixed non-zero pattern (no 0x00 0x00 runs)
+  // so the result size is deterministic regardless of allocator state.
+  uint8_t* payload = seiNalu.AppendElements(aPayloadSize);
+  memset(payload, 0xAA, aPayloadSize);
   seiNalu.AppendElement(0x80);
 
   nalus.AppendElement(H265NALU(seiNalu.Elements(), seiNalu.Length()));
@@ -940,6 +949,140 @@ TEST(H264, AnnexBExtractExtraDataForAVCC)
   EXPECT_EQ(avcc.mAVCProfileIndication, 100u);
   EXPECT_EQ(avcc.mProfileCompatibility, 0u);
   EXPECT_EQ(avcc.mAVCLevelIndication, 31u);
+}
+
+TEST(H264, DecodeSPSFromExtraData)
+{
+  uint8_t sps_pps[] = {0x01, 0x4d, 0x40, 0x0c, 0xff, 0xe1, 0x00, 0x1b, 0x67,
+                       0x4d, 0x40, 0x0c, 0xe8, 0x80, 0x80, 0x9d, 0x80, 0xb5,
+                       0x01, 0x01, 0x01, 0x40, 0x00, 0x00, 0x03, 0x00, 0x40,
+                       0x00, 0x00, 0x0f, 0x03, 0xc5, 0x0a, 0x44, 0x80, 0x01,
+                       0x00, 0x04, 0x68, 0xeb, 0xef, 0x20};
+
+  RefPtr<MediaByteBuffer> extraData = new MediaByteBuffer();
+  extraData->AppendElements(sps_pps, sizeof(sps_pps));
+  SPSData spsdata1;
+  bool success = H264::DecodeSPSFromExtraData(extraData, spsdata1);
+  EXPECT_EQ(success, true);
+
+  auto testOutput = [&](uint8_t aProfile, uint8_t aConstraints, uint8_t aLevel,
+                        gfx::IntSize aSize, char const* aDesc) {
+    RefPtr<MediaByteBuffer> extraData = H264::CreateExtraData(
+        aProfile, aConstraints, H264_LEVEL{aLevel}, aSize);
+    SPSData spsData;
+    success = H264::DecodeSPSFromExtraData(extraData, spsData);
+    EXPECT_EQ(success, true) << aDesc;
+    EXPECT_EQ(spsData.profile_idc, aProfile) << aDesc;
+    EXPECT_EQ(spsData.constraint_set0_flag, (aConstraints >> 7) & 1) << aDesc;
+    EXPECT_EQ(spsData.constraint_set1_flag, (aConstraints >> 6) & 1) << aDesc;
+    EXPECT_EQ(spsData.constraint_set2_flag, (aConstraints >> 5) & 1) << aDesc;
+    EXPECT_EQ(spsData.constraint_set3_flag, (aConstraints >> 4) & 1) << aDesc;
+    EXPECT_EQ(spsData.constraint_set4_flag, (aConstraints >> 3) & 1) << aDesc;
+    EXPECT_EQ(spsData.constraint_set5_flag, (aConstraints >> 2) & 1) << aDesc;
+
+    EXPECT_EQ(spsData.level_idc, aLevel) << aDesc;
+    EXPECT_TRUE(!aSize.IsEmpty());
+    EXPECT_EQ(spsData.pic_width, static_cast<uint32_t>(aSize.width)) << aDesc;
+    EXPECT_EQ(spsData.pic_height, static_cast<uint32_t>(aSize.height)) << aDesc;
+  };
+
+  testOutput(0x42, 0x40, 0x1E, {1920, 1080}, "Constrained Baseline Profile");
+  testOutput(0x4D, 0x00, 0x0B, {300, 300}, "Main Profile");
+  testOutput(0x64, 0x0C, 0x33, {1280, 720}, "Constrained High Profile");
+}
+
+static RefPtr<MediaByteBuffer> BuildSPSWithRawFields(
+    uint32_t aPicWidthInMBSMinus1, uint32_t aPicHeightInMapUnitsMinus1,
+    bool aFrameMbsOnlyFlag) {
+  RefPtr<MediaByteBuffer> sps = new MediaByteBuffer();
+  BitWriter bw(sps);
+  bw.WriteU8(0);       // profile_idc (no High Profile chroma section)
+  bw.WriteU8(0);       // constraint_set flags + reserved
+  bw.WriteU8(0);       // level_idc
+  bw.WriteUE(0);       // seq_parameter_set_id
+  bw.WriteUE(0);       // log2_max_frame_num_minus4
+  bw.WriteUE(0);       // pic_order_cnt_type
+  bw.WriteUE(0);       // log2_max_pic_order_cnt_lsb_minus4
+  bw.WriteUE(0);       // max_num_ref_frames
+  bw.WriteBit(false);  // gaps_in_frame_num_value_allowed_flag
+  bw.WriteUE(aPicWidthInMBSMinus1);
+  bw.WriteUE(aPicHeightInMapUnitsMinus1);
+  bw.WriteBit(aFrameMbsOnlyFlag);
+  if (!aFrameMbsOnlyFlag) {
+    bw.WriteBit(false);  // mb_adaptive_frame_field_flag
+  }
+  bw.WriteBit(false);  // direct_8x8_inference_flag
+  bw.WriteBit(false);  // frame_cropping_flag
+  bw.WriteBit(false);  // vui_parameters_present_flag
+  bw.CloseWithRbspTrailing();
+  return sps;
+}
+
+static RefPtr<MediaByteBuffer> BuildSPSWithRawWidthMBS(
+    uint32_t aPicWidthInMBSMinus1) {
+  return BuildSPSWithRawFields(aPicWidthInMBSMinus1, 44, true);
+}
+
+TEST(H264, RejectsInvalidPicWidthMbs)
+{
+  // pic_width_in_mbs_minus1 = 0x0FFFFFFF makes pic_width_in_mbs * 16 exceed
+  // the uint32_t range.
+  SPSData spsdata;
+  RefPtr<MediaByteBuffer> sps = BuildSPSWithRawWidthMBS(0x0FFFFFFF);
+  EXPECT_FALSE(H264::DecodeSPS(sps, spsdata));
+}
+
+TEST(H264, RejectsInvalidPicHeightMapUnits)
+{
+  // pic_height_in_map_units_minus1 above the uint32-safe bound for * 16.
+  SPSData spsdata;
+  RefPtr<MediaByteBuffer> sps = BuildSPSWithRawFields(79, 0x0FFFFFFF, true);
+  EXPECT_FALSE(H264::DecodeSPS(sps, spsdata));
+}
+
+TEST(H264, RejectsInvalidPicHeightMapUnitsRegardlessOfFlag)
+{
+  // Same height value as above but with frame_mbs_only_flag=false in the
+  // payload. Verifies rejection happens at the picture-dimension
+  // multiplication regardless of the field-coded *= 2 step.
+  SPSData spsdata;
+  RefPtr<MediaByteBuffer> sps = BuildSPSWithRawFields(79, 0x0FFFFFFF, false);
+  EXPECT_FALSE(H264::DecodeSPS(sps, spsdata));
+}
+
+TEST(H264, CheckBoundaryPicWidth)
+{
+  // Largest pic_width_in_mbs_minus1 whose computed pic_width still fits the
+  // supported size limit. The helper sets frame_cropping_flag=false, so
+  // DecodeSPS computes pic_width = pic_width_in_mbs * 16 with no crop.
+  constexpr uint32_t kMaxMbs = std::numeric_limits<int32_t>::max() / 16;
+  SPSData spsdata;
+  RefPtr<MediaByteBuffer> sps = BuildSPSWithRawWidthMBS(kMaxMbs - 1);
+  EXPECT_TRUE(H264::DecodeSPS(sps, spsdata));
+  EXPECT_EQ(spsdata.pic_width, kMaxMbs * 16);
+
+  // One macroblock past the boundary makes pic_width exceed the supported
+  // size limit (still a valid uint32_t), so DecodeSPS rejects it.
+  RefPtr<MediaByteBuffer> tooWide = BuildSPSWithRawWidthMBS(kMaxMbs);
+  EXPECT_FALSE(H264::DecodeSPS(tooWide, spsdata));
+}
+
+TEST(H264, CheckBoundaryPicHeight)
+{
+  // Same size limit for the frame-coded path
+  // (frame_mbs_only_flag=true): pic_height = pic_height_in_map_units * 16.
+  // Field-coded mode (flag=false) has a tighter limit because of the *= 2
+  // step; not exercised here.
+  constexpr uint32_t kMaxMbs = std::numeric_limits<int32_t>::max() / 16;
+  SPSData spsdata;
+  RefPtr<MediaByteBuffer> sps = BuildSPSWithRawFields(79, kMaxMbs - 1, true);
+  EXPECT_TRUE(H264::DecodeSPS(sps, spsdata));
+  EXPECT_EQ(spsdata.pic_height, kMaxMbs * 16);
+
+  // One map-unit past the boundary makes pic_height exceed the supported
+  // size limit (still a valid uint32_t), so DecodeSPS rejects it.
+  RefPtr<MediaByteBuffer> tooTall = BuildSPSWithRawFields(79, kMaxMbs, true);
+  EXPECT_FALSE(H264::DecodeSPS(tooTall, spsdata));
 }
 
 TEST(H265, HVCCParsingSuccess)

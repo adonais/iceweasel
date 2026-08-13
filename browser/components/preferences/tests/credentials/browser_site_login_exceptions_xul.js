@@ -59,6 +59,7 @@ async function addALoginException() {
   EventUtils.sendString("www.example.com", exceptionsDialog);
 
   let btnBlock = doc.getElementById("btnBlock");
+  await btnBlock.updateComplete;
   btnBlock.click();
 
   await TestUtils.waitForCondition(() => richlistbox.itemCount == 2);

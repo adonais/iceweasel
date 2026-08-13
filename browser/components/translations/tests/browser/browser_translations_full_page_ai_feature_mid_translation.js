@@ -304,7 +304,13 @@ add_task(async function test_mid_translation_disable_from_tab_without_actor() {
  * for the same language pair.
  */
 add_task(async function test_disable_feature_during_model_loading() {
-  const { cleanup, runInPage, resolveDownloads } = await loadTestPage({
+  const {
+    cleanup,
+    rejectDownloads,
+    remoteClients,
+    runInPage,
+    resolveDownloads,
+  } = await loadTestPage({
     page: SPANISH_PAGE_URL,
     languagePairs: LANGUAGE_PAIRS,
     autoDownloadFromRemoteSettings: false,
@@ -317,6 +323,10 @@ add_task(async function test_disable_feature_during_model_loading() {
   await FullPageTranslationsTestUtils.assertPageIsNotTranslated(runInPage);
 
   await TranslationsFeature.enable();
+  if (!EngineProcess.areAllEnginesTerminated()) {
+    await EngineProcess.getTranslationsEngineParent();
+    await EngineProcess.destroyTranslationsEngine();
+  }
   await FullPageTranslationsTestUtils.assertTranslationsButton(
     { button: true, circleArrows: false, locale: false, icon: true },
     "The URL bar translate button is visible when the Translations feature is enabled."
@@ -335,6 +345,13 @@ add_task(async function test_disable_feature_during_model_loading() {
     downloadHandler: null,
   });
 
+  await Promise.all([
+    remoteClients.translationsWasm.waitForPendingDownloads(1),
+    remoteClients.translationModels.waitForPendingDownloads(
+      downloadedFilesPerLanguagePair()
+    ),
+  ]);
+
   info("Waiting for the button to show the loading indicator.");
   await FullPageTranslationsTestUtils.assertTranslationsButton(
     { button: true, circleArrows: true, locale: false, icon: true },
@@ -350,6 +367,8 @@ add_task(async function test_disable_feature_during_model_loading() {
     { button: false },
     "The URL bar translate button is hidden after disabling the Translations feature."
   );
+
+  await rejectDownloads(1);
 
   info("Re-enabling the Translations feature.");
   await TranslationsFeature.enable();

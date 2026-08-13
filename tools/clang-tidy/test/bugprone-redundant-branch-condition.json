@@ -1,0 +1,10 @@
+[
+  [
+    "warning",
+    "redundant condition 'cond'",
+    "bugprone-redundant-branch-condition"
+  ],
+  {
+    "reliability": "high"
+  }
+]

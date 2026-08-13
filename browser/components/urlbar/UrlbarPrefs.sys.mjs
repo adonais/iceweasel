@@ -196,6 +196,13 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   // Set default intent threshold value of 0.5
   ["intentThreshold", [0.5, "float"]],
 
+  // When true, in-process (chrome) `<moz-urlbar>` instances route through the
+  // Urlbar actor's message-passing path instead of holding a direct
+  // UrlbarParentController reference, exercising the same wire path a
+  // content-process `<moz-urlbar>` uses. Off by default; intended for the
+  // pref-on CI variant and local testing of the actor path.
+  ["ipc.chromeMessagePassing", false],
+
   // Whether the results panel should be kept open during IME composition.
   ["keepPanelOpenDuringImeComposition", false],
 
@@ -203,6 +210,10 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   // telemetry. Only applies to results with an `exposureTelemetry` value other
   // than `NONE`.
   ["keywordExposureResults", ""],
+
+  // Enable a certain level of urlbar logging to the Browser Console. See
+  // ConsoleInstance.webidl.
+  ["loglevel", "Error"],
 
   // Feature gate pref for stock market suggestions in the urlbar.
   ["market.featureGate", false],
@@ -674,6 +685,9 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
 
   // Whether or not Unified Search Button is shown always.
   ["unifiedSearchButton.always", false],
+
+  // Whether or not we show history and other results while in searchMode.
+  ["unifiedSearchButton.historyInSearchMode", false],
 
   // Feature gate pref for weather suggestions in the urlbar.
   ["weather.featureGate", true],

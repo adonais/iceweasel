@@ -94,7 +94,7 @@ class ContentAnalysisTest : public testing::Test {
     return RefPtr(new ContentAnalysisRequest(
                       nsIContentAnalysisRequest::AnalysisType::eFileTransfer,
                       nsIContentAnalysisRequest::Reason::eFilePickerDialog,
-                      EmptyString(), false, EmptyCString(), uri,
+                      u"abc"_ns, false, EmptyCString(), uri,
                       nsIContentAnalysisRequest::OperationType::eDroppedText,
                       nullptr))
         .forget();

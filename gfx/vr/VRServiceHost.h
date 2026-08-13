@@ -5,11 +5,11 @@
 #ifndef GFX_VR_SERVICE_HOST_H
 #define GFX_VR_SERVICE_HOST_H
 
+#include <cstdint>
+
 #include "mozilla/RefPtr.h"
 #include "nsISupportsImpl.h"
 #include "nsTArray.h"
-
-#include <cstdint>
 
 namespace mozilla {
 namespace gfx {

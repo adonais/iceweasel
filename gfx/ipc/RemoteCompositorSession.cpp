@@ -3,11 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "RemoteCompositorSession.h"
+
 #include "gfxPlatform.h"
 #include "mozilla/VsyncDispatcher.h"
 #include "mozilla/gfx/GPUProcessManager.h"
-#include "mozilla/layers/APZChild.h"
 #include "mozilla/layers/APZCTreeManagerChild.h"
+#include "mozilla/layers/APZChild.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/GeckoContentController.h"
 #include "nsIWidget.h"

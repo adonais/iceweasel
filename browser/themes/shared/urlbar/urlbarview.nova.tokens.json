@@ -1,8 +1,71 @@
 {
+  "background": {
+    "color": {
+      "hover": {
+        "value": {
+          "nativeTheme": "{background.color.dimmed.@base}",
+          "default": "{toolbarbutton.background.color.hover}"
+        }
+      },
+      "selected": {
+        "value": {
+          "nativeTheme": "SelectedItem",
+          "default": "{toolbarbutton.background.color.active}"
+        }
+      }
+    }
+  },
   "border": {
     "radius": {
-      "comment": "TODO Bug 2031910: Finalize the border radius for Nova.",
-      "value": "1.8462em"
+      "value": "{urlbar.border.radius}"
+    }
+  },
+  "separator": {
+    "color": {
+      "value": {
+        "nativeTheme": "color-mix(in srgb, currentColor 14%, transparent)",
+        "light": "{color.gray.20}",
+        "dark": "{color.gray.60}",
+        "forcedColors": "#ffffff"
+      }
+    }
+  },
+  "action": {
+    "button": {
+      "background": {
+        "color": {
+          "@base": {
+            "value": "{urlbar.box.background.color.@base}"
+          },
+          "hover": {
+            "value": "{urlbar.box.background.color.hover}"
+          }
+        }
+      }
+    }
+  },
+  "text": {
+    "color": {
+      "action": {
+        "value": {
+          "nativeTheme": "LinkText",
+          "default": "{toolbar.field.text.color.focus}"
+        }
+      },
+      "secondary": {
+        "value": {
+          "nativeTheme": "color-mix(in srgb, currentColor 73%, transparent)",
+          "light": "#3e315f",
+          "dark": "#e7e1f8",
+          "forcedColors": "#ffffff"
+        }
+      },
+      "selected": {
+        "value": {
+          "nativeTheme": "SelectedItemText",
+          "default": "{toolbar.field.text.color.focus}"
+        }
+      }
     }
   }
 }

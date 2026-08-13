@@ -1,0 +1,295 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+:host([mode="sidebar"]) {
+  display: inline-flex;
+}
+
+/* Fullpage top-actions row; ai-window centers it in the content column. */
+:host([mode="fullpage"]) {
+  display: flex;
+  gap: var(--space-medium);
+  justify-content: flex-start;
+  width: 100%;
+}
+
+moz-button.fullpage-action-button::part(button) {
+  font-weight: var(--font-weight);
+}
+
+/* Non-nova has no top scrim, so these ghost buttons carry their own background. */
+@media (not -moz-pref("browser.nova.enabled")) and (not (forced-colors)) {
+  moz-button.fullpage-action-button {
+    --button-background-color-ghost: var(--smartwindow-ghost-button-background);
+    --button-background-color-ghost-hover: var(--smartwindow-ghost-button-background-hover);
+    --button-background-color-ghost-active: var(--smartwindow-ghost-button-background-active);
+    /* Hold the hover fill while the menu is open. */
+    --button-background-color-ghost-selected: var(--button-background-color-ghost-hover);
+    --button-text-color-ghost: var(--smartwindow-ghost-button-text);
+    --button-icon-fill: currentColor;
+  }
+}
+
+/* Non-nova: round the fullpage action buttons into pills. */
+@media (not -moz-pref("browser.nova.enabled")) {
+  moz-button.fullpage-action-button {
+    --button-border-radius: var(--border-radius-circle);
+  }
+}
+
+/* 4px gap between a trigger button and its opened menu. panel-list reflects
+   valign to say whether it opened below (bottom) or above (top) the anchor. */
+panel-list.history-menu[valign="bottom"] {
+  margin-block-start: var(--space-xsmall);
+}
+
+panel-list.history-menu[valign="top"] {
+  margin-block-start: calc(-1 * var(--space-xsmall));
+}
+
+@media -moz-pref("browser.nova.enabled") and (not (forced-colors)) {
+  moz-button.fullpage-action-button {
+    /* Resting icon/label use the muted accent (#584a7d / #9687c0); on
+       hover/active/selected they brighten to button/text/color (#fcfbff in
+       dark). The icon tracks the label via currentColor. */
+    --button-text-color-ghost: var(--icon-color-accent-primary-desaturated);
+    --button-text-color-ghost-hover: var(--button-text-color);
+    --button-text-color-ghost-active: var(--button-text-color);
+    --button-text-color-ghost-selected: var(--button-text-color);
+    --button-icon-fill: currentColor;
+    /* No resting fill (transparent ghost; the top scrim provides legibility).
+       Design button/background/color/ghost/hover: #584a7d @16% light, #b89cff
+       @24% dark. Not a shared token, so define it once locally and reuse for
+       the pressed and menu-open (selected) states. */
+    --fullpage-ghost-bg: light-dark(
+      color-mix(in srgb, var(--color-violet-desaturated-60) 16%, transparent),
+      color-mix(in srgb, var(--color-violet-30) 24%, transparent)
+    );
+    --button-background-color-ghost-hover: var(--fullpage-ghost-bg);
+    --button-background-color-ghost-active: var(--fullpage-ghost-bg);
+    --button-background-color-ghost-selected: var(--fullpage-ghost-bg);
+  }
+}
+
+/* Sidebar "..." trigger, matching the New chat / Close buttons. */
+moz-button.history-menu-button {
+  --button-border-radius: var(--border-radius-circle);
+
+  @media not (forced-colors) {
+    --button-background-color-ghost: var(--smartwindow-ghost-button-background);
+    --button-background-color-ghost-hover: var(--smartwindow-ghost-button-background-hover);
+    --button-background-color-ghost-active: var(--smartwindow-ghost-button-background-active);
+    /* Hold the hover fill while the menu is open. */
+    --button-background-color-ghost-selected: var(--button-background-color-ghost-hover);
+    --button-text-color-ghost: var(--smartwindow-ghost-button-text);
+
+    @media -moz-pref("browser.nova.enabled") {
+      --button-icon-fill: light-dark(var(--color-violet-desaturated-60), var(--color-violet-desaturated-40));
+      --button-background-color-ghost: light-dark(var(--color-white), var(--color-gray-70));
+      --button-background-color-ghost-hover: var(--button-background-color-ghost);
+      --button-background-color-ghost-active: var(--button-background-color-ghost);
+      --button-background-color-ghost-selected: var(--button-background-color-ghost);
+    }
+  }
+
+  &::part(button) {
+    backdrop-filter: blur(12px);
+    box-shadow: var(--box-shadow-level-1);
+  }
+
+  @media -moz-pref("browser.nova.enabled") and (not (forced-colors)) {
+    &::part(button) {
+      --nova-border-gradient: linear-gradient(
+        180deg,
+        transparent 35%,
+        color-mix(in srgb, var(--color-violet-40) 30%, transparent) 80%,
+        color-mix(in srgb, var(--color-violet-40) 50%, transparent) 100%
+      );
+      border: var(--border-width) solid transparent;
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      background:
+        image(var(--button-background-color-ghost)) padding-box,
+        var(--nova-border-gradient) border-box;
+    }
+
+    &:is(:hover, :active)::part(button) {
+      --nova-border-gradient: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--color-violet-40) 10%, transparent) 5%,
+        color-mix(in srgb, var(--color-violet-40) 30%, transparent) 20%,
+        color-mix(in srgb, var(--color-violet-40) 40%, transparent) 40%,
+        color-mix(in srgb, var(--color-violet-40) 90%, transparent) 100%
+      );
+    }
+  }
+}
+
+/* Match the shared smartwindow panel-list item metrics. */
+.history-menu {
+  --panel-item-padding: calc(var(--size-item-small) / 2);
+  --panel-item-icon-size: var(--icon-size-small);
+  /* Inline space that clears a leading/trailing icon: padding + icon + padding. */
+  --panel-item-icon-inset: calc(var(--panel-item-padding) * 2 + var(--panel-item-icon-size));
+  /* Chat-row favicon badge: 60% of the icon box, nudged 1px past the icon's
+     trailing and bottom edges so it nests into the chat bubble's cutout. */
+  --chat-favicon-size: calc(var(--panel-item-icon-size) * 0.6);
+  --chat-favicon-inline-inset: calc(var(--panel-item-padding) + var(--panel-item-icon-size) + 1px - var(--chat-favicon-size));
+  --chat-favicon-block-inset: calc(var(--panel-item-padding) - 1px);
+  --panel-padding-block: var(--space-small);
+  min-width: var(--size-layout-small);
+  max-width: var(--size-layout-medium);
+  /* Force the popover onto its own layer so the displayed cursor tracks the
+     painted rows (works around the top-layer popover cursor mismatch). */
+  transform: translate(0);
+}
+
+/* The chat-list submenu (recent chats + View all chats) uses 16px block
+   padding per design; the plain action menus keep 8px. The separator's inline
+   margin matches so the line aligns with the rows. */
+.history-menu:has([data-l10n-id="aiwindow-history-menu-view-all-chats"]) {
+  --panel-padding-block: var(--space-large);
+  --panel-separator-padding: var(--panel-separator-padding-block) var(--space-large);
+}
+
+/* Its rows inset 16px inline to match, instead of the default 8px. */
+.history-menu:has([data-l10n-id="aiwindow-history-menu-view-all-chats"]) panel-item::part(button) {
+  margin-inline: var(--space-large);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  max-width: calc(100% - 2 * var(--space-large));
+}
+
+.history-menu panel-item::part(button) {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  padding: var(--panel-item-padding);
+}
+
+/* Recent-chat rows and "View all chats" behave like links, so show a pointer. */
+.history-menu panel-item.history-menu-chat::part(button),
+.history-menu panel-item[data-l10n-id="aiwindow-history-menu-view-all-chats"]::part(button) {
+  cursor: pointer;
+}
+
+.history-menu panel-item[icon]::part(button) {
+  background-image: var(--panel-item-icon-url);
+  background-size: var(--panel-item-icon-size);
+  background-repeat: no-repeat;
+  background-position: var(--panel-item-padding) center;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  padding-inline-start: var(--panel-item-icon-inset);
+  -moz-context-properties: fill;
+  fill: currentColor;
+}
+
+.history-menu panel-item[icon]::part(button):dir(rtl) {
+  background-position-x: right var(--panel-item-padding);
+}
+
+/* Main-view "Chat history" row: trailing chevron, no leading icon. */
+.history-menu .history-menu-nav::part(button) {
+  background-image: url("chrome://global/skin/icons/arrow-right.svg");
+  background-repeat: no-repeat;
+  background-size: var(--panel-item-icon-size);
+  background-position: right var(--panel-item-padding) center;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  padding-inline-end: var(--panel-item-icon-inset);
+  -moz-context-properties: fill;
+  fill: currentColor;
+}
+
+.history-menu .history-menu-nav::part(button):dir(rtl) {
+  background-image: url("chrome://global/skin/icons/arrow-left.svg");
+  background-position: left var(--panel-item-padding) center;
+}
+
+/* Subview header: a back arrow button (the only hover target) plus a centered
+   title. The 3-column grid keeps the title centered regardless of button width. */
+.history-menu .history-menu-header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding-inline: var(--space-large);
+}
+
+.history-menu .history-menu-back {
+  justify-self: start;
+}
+
+.history-menu .history-menu-back:dir(rtl) {
+  transform: scaleX(-1);
+}
+
+.history-menu .history-menu-header-title {
+  grid-column: 2;
+  font-weight: var(--font-weight-bold);
+}
+
+/* Nova: the back arrow uses the Smart Window accent-desaturated icon fill (per
+   design); its hover matches the row hover, not moz-button's solid default. */
+@media -moz-pref("browser.nova.enabled") and (not (forced-colors)) {
+  .history-menu .history-menu-back {
+    --button-icon-fill: var(--smartwindow-icon-color-accent-primary-desaturated);
+    --button-background-color-ghost-hover: var(--smartwindow-panel-item-background-color-hover);
+    --button-background-color-ghost-active: var(--smartwindow-panel-item-background-color-active);
+  }
+}
+
+/* Favicon (60%) over the chat-bubble overlay, matching Firefox View Chats. */
+.history-menu panel-item[icon].history-menu-chat.chat-overlay::part(button) {
+  background-image: var(--panel-item-icon-url), url("chrome://browser/content/firefoxview/empty-chat.svg");
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  background-size: var(--chat-favicon-size), var(--panel-item-icon-size);
+  background-position:
+    left var(--chat-favicon-inline-inset) bottom var(--chat-favicon-block-inset),
+    var(--panel-item-padding) center;
+}
+
+.history-menu panel-item[icon].history-menu-chat.chat-overlay::part(button):dir(rtl) {
+  background-position:
+    right var(--chat-favicon-inline-inset) bottom var(--chat-favicon-block-inset),
+    right var(--panel-item-padding) center;
+}
+
+.history-menu panel-item::part(label) {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Non-nova: inset the row hover/active to line up with the separator (8px) and
+   round it, matching the standard application-menu panel-list rather than
+   full-bleeding to the submenu edges. */
+@media (not -moz-pref("browser.nova.enabled")) {
+  .history-menu panel-item::part(button) {
+    margin-inline: var(--space-small);
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    max-width: calc(100% - 2 * var(--space-small));
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    border-radius: var(--panel-menuitem-border-radius);
+  }
+}
+
+/* Nova theme; non-nova uses panel-list's application-menu defaults. */
+@media -moz-pref("browser.nova.enabled") {
+  .history-menu {
+    --panel-list-border-radius: var(--border-radius-large);
+    --panel-list-box-shadow: var(--box-shadow-level-3);
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    --panel-item-button-border-radius: var(--smartwindow-panel-item-border-radius);
+
+    @media not (forced-colors) {
+      --panel-list-border-color: light-dark(var(--color-violet-desaturated-20), var(--color-violet-desaturated-50));
+      --panel-list-text-color: light-dark(var(--color-violet-90), var(--color-gray-0));
+      --button-background-color-hover: var(--smartwindow-panel-item-background-color-hover);
+      --button-background-color-active: var(--smartwindow-panel-item-background-color-active);
+    }
+  }
+
+  .history-menu panel-item::part(button) {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    border-radius: var(--panel-item-button-border-radius);
+    margin-inline: var(--space-small);
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    max-width: calc(100% - 2 * var(--space-small));
+  }
+}

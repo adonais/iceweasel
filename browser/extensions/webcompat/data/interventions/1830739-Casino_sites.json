@@ -79,6 +79,10 @@
     "2017590": {
       "issue": "firefox-blocked-completely",
       "matches": ["*://*.slotsofvegas.com/*"]
+    },
+    "2043225": {
+      "issue": "firefox-blocked-completely",
+      "matches": ["*://*.playmegamedusa.com/*"]
     }
   },
   "interventions": [

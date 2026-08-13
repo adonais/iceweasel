@@ -19,7 +19,6 @@ class MoveEmitterNone {
   explicit MoveEmitterNone(MacroAssemblerNone&) { MOZ_CRASH(); }
   void emit(const MoveResolver&) { MOZ_CRASH(); }
   void finish() { MOZ_CRASH(); }
-  void setScratchRegister(Register) { MOZ_CRASH(); }
 };
 
 using MoveEmitter = MoveEmitterNone;

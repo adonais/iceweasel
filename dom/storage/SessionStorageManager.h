@@ -121,7 +121,7 @@ class SessionStorageManager final : public SessionStorageManagerBase,
  public:
   explicit SessionStorageManager(RefPtr<BrowsingContext> aBrowsingContext);
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_NSIDOMSTORAGEMANAGER
   NS_DECL_NSIDOMSESSIONSTORAGEMANAGER
 

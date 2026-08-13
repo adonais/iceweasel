@@ -1873,7 +1873,8 @@ static const JSPropertySpec AtomicsProperties[] = {
 
 static JSObject* CreateAtomicsObject(JSContext* cx, JSProtoKey key) {
   RootedObject proto(cx, &cx->global()->getObjectPrototype());
-  return NewTenuredObjectWithGivenProto(cx, &AtomicsObject::class_, proto);
+  return NewObjectWithGivenProto(cx, &AtomicsObject::class_, proto,
+                                 {.newKind = TenuredObject});
 }
 
 static const ClassSpec AtomicsClassSpec = {

@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
-
 const PDF_HEADER = "%PDF-";
 
 let ShellService = null;
@@ -29,12 +27,17 @@ export class AboutPDFParent extends JSWindowActorParent {
   }
 
   #canSetDefaultPDFHandler() {
-    if (!ShellService || AppConstants.platform != "win") {
+    if (!ShellService) {
       return false;
     }
 
     try {
-      return !ShellService.isDefaultHandlerFor(".pdf");
+      // canSetAsDefaultPDFHandler gates the platform/OS-version support (e.g.
+      // macOS 12+); only offer when supported and we aren't already default.
+      return (
+        ShellService.canSetAsDefaultPDFHandler &&
+        !ShellService.isDefaultHandlerFor(".pdf")
+      );
     } catch {
       return false;
     }
@@ -69,10 +72,14 @@ export class AboutPDFParent extends JSWindowActorParent {
 
   async #setDefaultPDFHandler() {
     if (!this.#canSetDefaultPDFHandler()) {
-      return;
+      return false;
     }
 
+    // setAsDefaultPDFHandler only reports that the attempt was made (the user
+    // may decline the OS prompt), so query the actual state to tell the page
+    // whether Firefox is now the default.
     await ShellService.setAsDefaultPDFHandler();
+    return ShellService.isDefaultHandlerFor(".pdf");
   }
 
   async #looksLikePDF(file) {

@@ -170,10 +170,71 @@ add_task(async function test_feature_callout_open_on_pref() {
     "Message impression applied for button and callout"
   );
 
-  callout.querySelector(".dismiss-button").click();
+  const moreButton = callout.querySelector(".more-button");
+  const minimizeItem = moreButton
+    .querySelector(".fxms-multi-stage-submenu")
+    .querySelector("menuitem[value='minimize']");
+  minimizeItem.doCommand();
   await TestUtils.waitForCondition(
     () => !win.document.querySelector(`.${messageId}`),
     "Waiting for feature_callout to be dismissed"
+  );
+
+  await BrowserTestUtils.closeWindow(win);
+  cleanup();
+});
+
+// Tests that the remove checklist button blocks the message and destroys the toolbar button
+add_task(async function test_remove_checklist_button() {
+  const blockMessageStub = sandbox.stub(
+    SpecialMessageActions,
+    "blockMessageById"
+  );
+  const messageId = "FINISH_SETUP_CHECKLIST";
+
+  await BookmarksBarButton.showBookmarksBarButton(
+    gBrowser.selectedBrowser,
+    buttonMessage
+  );
+
+  const win = await BrowserTestUtils.openNewBrowserWindow();
+
+  await BrowserTestUtils.openNewForegroundTab({
+    gBrowser: win.gBrowser,
+    url: "about:newtab",
+  });
+
+  Services.prefs.setBoolPref(
+    "messaging-system-action.easyChecklist.open",
+    true
+  );
+
+  await TestUtils.waitForCondition(
+    () => win.document.querySelector(`.${messageId}`),
+    "Waiting for feature_callout to open"
+  );
+  const callout = win.document.querySelector(`.${messageId}`);
+  Assert.ok(callout, "Feature callout should be open");
+
+  const moreButton = callout.querySelector(".more-button");
+  const removeItem = moreButton
+    .querySelector(".fxms-multi-stage-submenu")
+    .querySelector("menuitem[value='remove_checklist']");
+  removeItem.doCommand();
+
+  await TestUtils.waitForCondition(
+    () => !win.document.querySelector(`.${messageId}`),
+    "Waiting for feature_callout to be dismissed"
+  );
+
+  Assert.ok(
+    blockMessageStub.calledWith(messageId),
+    "Remove checklist should block the message"
+  );
+
+  await TestUtils.waitForCondition(
+    () => !window.document.getElementById("fxms-bmb-button"),
+    "Waiting for toolbar button to be removed"
   );
 
   await BrowserTestUtils.closeWindow(win);

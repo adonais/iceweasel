@@ -4,7 +4,7 @@ from webdriver.bidi.modules.script import ContextTarget
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.mark.allow_system_access
+@pytest.mark.geckodriver(allow_system_access=True)
 @pytest.mark.parametrize(
     "function_declaration, expected_value",
     [

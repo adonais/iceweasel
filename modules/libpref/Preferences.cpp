@@ -25,6 +25,7 @@
 #include "mozilla/IdleTaskRunner.h"
 #include "mozilla/HashTable.h"
 #include "mozilla/HelperMacros.h"
+#include "mozilla/ReverseIterator.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
@@ -54,6 +55,7 @@
 #include "nsContentUtils.h"
 #include "nsCRT.h"
 #include "nsTHashMap.h"
+#include "nsTHashSet.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsIConsoleService.h"
 #include "nsIFile.h"
@@ -587,6 +589,7 @@ struct PrefsSizes {
         mPrefNameArena(0),
         mCallbacksObjects(0),
         mCallbacksDomains(0),
+        mCallbacksTrie(0),
         mMisc(0) {}
 
   size_t mHashTable;
@@ -596,6 +599,7 @@ struct PrefsSizes {
   size_t mPrefNameArena;
   size_t mCallbacksObjects;
   size_t mCallbacksDomains;
+  size_t mCallbacksTrie;
   size_t mMisc;
 };
 }  // namespace mozilla
@@ -623,10 +627,6 @@ class PrefWrapper;
 class Pref;
 static bool IsPreferenceSanitized(const Pref* const aPref);
 static bool ShouldSanitizePreference(const Pref* const aPref);
-
-// Note that this never changes in the parent process, and is only read in
-// content processes.
-static bool gContentProcessPrefsAreInited = false;
 
 class Pref {
  public:
@@ -802,6 +802,11 @@ class Pref {
       if (!ValueMatches(PrefValueKind::Default, type, value)) {
         // Type() is PrefType::None if it's a newly added pref. This is ok.
         mDefaultValue.Replace(mHasDefaultValue, Type(), type, value);
+        // Both values share the type tag, so clear a user value of the old
+        // type now, while Clear() still matches how it was stored.
+        if (mHasUserValue && !IsType(type)) {
+          ClearUserValue();
+        }
         SetType(type);
         mHasDefaultValue = true;
         defaultValueChanged = true;
@@ -1143,7 +1148,9 @@ struct PrefHasher {
   using Key = UniquePtr<Pref>;
   using Lookup = const char*;
 
-  static HashNumber hash(const Lookup aLookup) { return HashString(aLookup); }
+  static HashNumber hash(const Lookup aLookup) {
+    return HashString(aLookup, strlen(aLookup));
+  }
 
   static bool match(const Key& aKey, const Lookup aLookup) {
     if (!aLookup || !aKey->Name()) {
@@ -1407,24 +1414,59 @@ void Pref::FromWrapper(PrefWrapper& aWrapper) {
   }
 }
 
-class CallbackNode {
+static nsCString CopyStrippingTrailingDot(const nsACString& aDomain) {
+  if (!aDomain.IsEmpty() && aDomain.Last() == '.') {
+    return nsCString(Substring(aDomain, 0, aDomain.Length() - 1));
+  }
+  return nsCString(aDomain);
+}
+
+// The fire-time payload of a pref-change callback: the function and its
+// closure. Shared base of the trie's refcounted CallbackNode and the mirror
+// list's inline entries (see MirrorCallbackList), so the notify, sweep and
+// unregister paths can read Func()/Data() and clear a callback uniformly
+// regardless of how it is stored.
+class CallbackData {
  public:
+  CallbackData() = default;
+  CallbackData(PrefChangedFunc aFunc, void* aData)
+      : mFunc(aFunc), mData(aData) {}
+
+  PrefChangedFunc Func() const { return mFunc; }
+  void* Data() const { return mData; }
+  void ClearFunc() { mFunc = nullptr; }
+  void Fire(const char* aPrefName) const { mFunc(aPrefName, mData); }
+
+ protected:
+  // mFunc is cleared to nullptr on removal; Compact() reclaims the node lazily.
+  PrefChangedFunc mFunc = nullptr;
+  void* mData = nullptr;
+};
+
+// Owned via RefPtr by the CallbackTrieNode(s) it is registered under; a single
+// node registered for an array of prefs is shared (referenced) by several trie
+// nodes.  Main-thread only, so the refcount is non-atomic.
+class CallbackNode : public CallbackData {
+ public:
+  NS_INLINE_DECL_REFCOUNTING(CallbackNode)
+
   CallbackNode(const nsACString& aDomain, PrefChangedFunc aFunc, void* aData,
-               Preferences::MatchKind aMatchKind)
-      : mDomain(AsVariant(nsCString(aDomain))),
-        mFunc(aFunc),
-        mData(aData),
-        mNextAndMatchKind(aMatchKind) {}
+               bool aIsPrefix)
+      : CallbackData(aFunc, aData),
+        mDomain(AsVariant(CopyStrippingTrailingDot(aDomain))),
+        mIsPrefix(aIsPrefix),
+        mSingleDomainHadTrailingDot(StringEndsWith(aDomain, "."_ns)) {
+#ifdef DEBUG
+    mRawDomain = aDomain;
+#endif
+  }
 
   CallbackNode(const char* const* aDomains, PrefChangedFunc aFunc, void* aData,
-               Preferences::MatchKind aMatchKind)
-      : mDomain(AsVariant(aDomains)),
-        mFunc(aFunc),
-        mData(aData),
-        mNextAndMatchKind(aMatchKind) {}
+               bool aIsPrefix)
+      : CallbackData(aFunc, aData),
+        mDomain(AsVariant(aDomains)),
+        mIsPrefix(aIsPrefix) {}
 
-  // mDomain is a UniquePtr<>, so any uses of Domain() should only be temporary
-  // borrows.
   const Variant<nsCString, const char* const*>& Domain() const {
     return mDomain;
   }
@@ -1433,52 +1475,52 @@ class CallbackNode {
     return mDomain.is<nsCString>() ? mDomain.as<nsCString>().get() : "(multi)";
   }
 
-  PrefChangedFunc Func() const { return mFunc; }
-  void ClearFunc() { mFunc = nullptr; }
+  // Func(), Data(), ClearFunc() are inherited from CallbackData.
 
-  void* Data() const { return mData; }
+  bool IsPrefix() const { return mIsPrefix; }
 
-  Preferences::MatchKind MatchKind() const {
-    return static_cast<Preferences::MatchKind>(mNextAndMatchKind &
-                                               kMatchKindMask);
-  }
-
-  bool DomainIs(const nsACString& aDomain) const {
-    return mDomain.is<nsCString>() && mDomain.as<nsCString>() == aDomain;
-  }
-
-  bool DomainIs(const char* const* aPrefs) const {
-    return mDomain == AsVariant(aPrefs);
-  }
-
-  bool Matches(const nsACString& aPrefName) const {
-    auto match = [&](const nsACString& aStr) {
-      return MatchKind() == Preferences::ExactMatch
-                 ? aPrefName == aStr
-                 : StringBeginsWith(aPrefName, aStr);
-    };
-
-    if (mDomain.is<nsCString>()) {
-      return match(mDomain.as<nsCString>());
+  // Whether this callback matches aPrefName exactly. Called at the terminal
+  // trie node, where the dot-stripped domain already equals the dot-stripped
+  // name: a domain registered with a trailing dot covers the subtree below it,
+  // not the shorter stem name.
+  bool MatchesTerminalPref(const nsACString& aPrefName,
+                           bool aPrefHasTrailingDot) const {
+    if (aPrefHasTrailingDot) {
+      return true;
     }
-    for (const char* const* ptr = mDomain.as<const char* const*>(); *ptr;
-         ptr++) {
-      if (match(nsDependentCString(*ptr))) {
+    if (mDomain.is<nsCString>()) {
+      return !mSingleDomainHadTrailingDot;
+    }
+    // Array entries keep their dots, so an exact one still matches.
+    for (const char* const* p = mDomain.as<const char* const*>(); *p; ++p) {
+      if (aPrefName.Equals(*p)) {
         return true;
       }
     }
     return false;
   }
 
-  CallbackNode* Next() const {
-    return reinterpret_cast<CallbackNode*>(mNextAndMatchKind & kNextMask);
+#ifdef DEBUG
+  // Domain exactly as registered, before trailing-dot stripping (single-string
+  // registrations only). Used by CallbackTrie's prefix-divergence audit to
+  // reconstruct the old StringBeginsWith matching semantics.
+  const nsCString& RawDomain() const { return mRawDomain; }
+#endif
+
+  bool DomainIs(const nsACString& aDomain) const {
+    if (!mDomain.is<nsCString>()) {
+      return false;
+    }
+    // mDomain is already stripped of any trailing dot at construction time.
+    auto len = aDomain.Length();
+    if (len > 0 && aDomain.Last() == '.') {
+      --len;
+    }
+    return mDomain.as<nsCString>() == Substring(aDomain, 0, len);
   }
 
-  void SetNext(CallbackNode* aNext) {
-    uintptr_t matchKind = mNextAndMatchKind & kMatchKindMask;
-    mNextAndMatchKind = reinterpret_cast<uintptr_t>(aNext);
-    MOZ_ASSERT((mNextAndMatchKind & kMatchKindMask) == 0);
-    mNextAndMatchKind |= matchKind;
+  bool DomainIs(const char* const* aPrefs) const {
+    return mDomain == AsVariant(aPrefs);
   }
 
   void AddSizeOfIncludingThis(MallocSizeOf aMallocSizeOf, PrefsSizes& aSizes) {
@@ -1489,24 +1531,612 @@ class CallbackNode {
     }
   }
 
+#ifdef DEBUG
+  // DEBUG-only diagnostic, set externally (see RegisterCallbackImpl); left
+  // public deliberately. The pre-strip domain for the divergence audit.
+  nsCString mRawDomain;
+#endif
+
  private:
-  static const uintptr_t kMatchKindMask = uintptr_t(0x1);
-  static const uintptr_t kNextMask = ~kMatchKindMask;
+  ~CallbackNode() = default;
 
   Variant<nsCString, const char* const*> mDomain;
 
-  // If someone attempts to remove the node from the callback list while
-  // NotifyCallbacks() is running, |func| is set to nullptr. Such nodes will
-  // be removed at the end of NotifyCallbacks().
-  PrefChangedFunc mFunc;
-  void* mData;
-
-  // Conceptually this is two fields:
-  // - CallbackNode* mNext;
-  // - Preferences::MatchKind mMatchKind;
-  // They are combined into a tagged pointer to save memory.
-  uintptr_t mNextAndMatchKind;
+  bool mIsPrefix;
+  // Array entries keep their dots in mDomain, so this stays false for them.
+  bool mSingleDomainHadTrailingDot = false;
 };
+
+// Node in the dot-segmented pref callback trie.  Each node represents one
+// segment of a '.' separated pref name.  Callbacks stored at a node fire
+// when any pref whose full name passes through that node changes.
+struct CallbackTrieNode {
+  struct Child {
+    nsCString mSegment;
+    UniquePtr<CallbackTrieNode> mNode;
+  };
+  // Sorted by mSegment; a plain nsTArray<Child> carries no inline slot, which
+  // would go unused on the leaf nodes that make up most of the trie. Use
+  // BinarySearchIf(SegmentComparator) for O(log k) lookup.
+  nsTArray<Child> mChildren;
+  nsTArray<RefPtr<CallbackNode>> mCallbacks;
+
+  // Append this node's live callbacks (skipping dead, null-Func nodes) that
+  // match aPrefName to aOut in LIFO order (newest registration first).
+  void AppendAll(nsTArray<RefPtr<CallbackNode>>& aOut,
+                 const nsACString& aPrefName, bool aPrefHasTrailingDot) const {
+    for (const RefPtr<CallbackNode>& node : Reversed(mCallbacks)) {
+      if (node->Func() &&
+          node->MatchesTerminalPref(aPrefName, aPrefHasTrailingDot)) {
+        aOut.AppendElement(node);
+      }
+    }
+  }
+
+  // Like AppendAll but only prefix-registered callbacks.  Used at non-terminal
+  // trie nodes during notification.
+  void AppendPrefix(nsTArray<RefPtr<CallbackNode>>& aOut) const {
+    for (const RefPtr<CallbackNode>& node : Reversed(mCallbacks)) {
+      if (node->Func() && node->IsPrefix()) aOut.AppendElement(node);
+    }
+  }
+
+  // Binary-searches mChildren for aSegment.  Sets aIdx to the match, or to the
+  // sorted insertion point on a miss, and returns whether a match was found.
+  bool FindChildIndex(const nsACString& aSegment, size_t& aIdx) const {
+    return BinarySearchIf(
+        mChildren, 0, mChildren.Length(),
+        [&aSegment](const Child& c) { return Compare(aSegment, c.mSegment); },
+        &aIdx);
+  }
+
+  // The child for aSegment, or nullptr if there is none.
+  CallbackTrieNode* FindChild(const nsACString& aSegment) {
+    size_t idx;
+    return FindChildIndex(aSegment, idx) ? mChildren[idx].mNode.get() : nullptr;
+  }
+
+  // The child for aSegment, inserting one (keeping mChildren sorted) if absent.
+  CallbackTrieNode& GetOrCreateChild(const nsACString& aSegment) {
+    size_t idx;
+    if (FindChildIndex(aSegment, idx)) {
+      return *mChildren[idx].mNode;
+    }
+    return *mChildren
+                .InsertElementAt(idx, Child{nsCString(aSegment),
+                                            MakeUnique<CallbackTrieNode>()})
+                ->mNode;
+  }
+
+  // Add the heap memory of this node's children arrays, segment strings,
+  // callback array, and (recursively) the descendant nodes themselves into
+  // aSizes.mCallbacksTrie. A node's own allocation is charged by its parent
+  // (which owns the UniquePtr); the root is inline in CallbackTrie so its own
+  // allocation is not charged here. CallbackNode objects are counted separately
+  // (see CallbackTrie::AddSizeOf). aNodeCount/aSegmentBytes, when non-null,
+  // collect descendant-node counts and segment-string bytes for the
+  // microbenchmark.
+  void AddSubtreeSizeOf(MallocSizeOf aMallocSizeOf, PrefsSizes& aSizes,
+                        uint32_t* aNodeCount = nullptr,
+                        size_t* aSegmentBytes = nullptr) const {
+    aSizes.mCallbacksTrie +=
+        mChildren.ShallowSizeOfExcludingThis(aMallocSizeOf);
+    aSizes.mCallbacksTrie +=
+        mCallbacks.ShallowSizeOfExcludingThis(aMallocSizeOf);
+    for (const Child& child : mChildren) {
+      size_t segBytes =
+          child.mSegment.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
+      aSizes.mCallbacksTrie += segBytes;
+      aSizes.mCallbacksTrie += aMallocSizeOf(child.mNode.get());
+      if (aNodeCount) ++*aNodeCount;
+      if (aSegmentBytes) *aSegmentBytes += segBytes;
+      child.mNode->AddSubtreeSizeOf(aMallocSizeOf, aSizes, aNodeCount,
+                                    aSegmentBytes);
+    }
+  }
+};
+
+// Dot-segmented callback trie.  Registering a callback at domain "a.b" places
+// it at the CallbackTrieNode for segment "b" under "a".  During notification
+// for pref "a.b.c", the walk root → "a" → "b" → "c" fires prefix callbacks at
+// every node along the path and all callbacks (prefix and exact) at the
+// terminal node.  Trailing dots on domains are stripped at registration time.
+// One instance (mCallbacks) holds the general pref observers; the static-pref
+// mirrors use MirrorCallbackList instead.
+class CallbackTrie {
+ public:
+  void Register(CallbackNode* aNode) {
+    MOZ_DIAGNOSTIC_ASSERT(
+        !aNode->Domain().is<nsCString>() ||
+            !StringBeginsWith(aNode->Domain().as<nsCString>(), "."_ns),
+        "Pref callback domain must not start with '.'");
+    if (aNode->Domain().is<nsCString>()) {
+      // Domain is already stripped of trailing dot by CallbackNode ctor.
+      NodeFor(aNode->Domain().as<nsCString>()).mCallbacks.AppendElement(aNode);
+    } else {
+      for (const char* const* p = aNode->Domain().as<const char* const*>(); *p;
+           ++p) {
+        NodeFor(nsDependentCString(*p)).mCallbacks.AppendElement(aNode);
+      }
+    }
+    ++mLiveCount;
+  }
+
+  // Mark aNode dead so it stops firing and is reclaimed by the next Compact().
+  // Idempotent: a node referenced by several trie nodes may be visited more
+  // than once by a traversal, but is only counted and queued for removal once.
+  void MarkDead(CallbackNode* aNode) {
+    if (!aNode->Func()) return;
+    aNode->ClearFunc();
+    mDeadNodes.AppendElement(aNode);
+    --mLiveCount;
+  }
+
+  void Compact() {
+    for (CallbackNode* node : mDeadNodes) {
+      // Dropping the last trie reference deletes the node.
+      RemoveFromTrie(node);
+    }
+    mDeadNodes.Clear();
+  }
+
+  // Collect the live callbacks that fire for aPrefName into aOut, in firing
+  // order, for NotifyCallbacks to invoke.  Walk root → each segment → leaf.  At
+  // non-terminal nodes only prefix callbacks fire; at the terminal node all
+  // callbacks fire.  Within each node callbacks fire in LIFO order (newest
+  // registration first).
+  void CollectMatchingForNotify(const nsCString& aPrefName,
+                                nsTArray<RefPtr<CallbackNode>>& aOut) {
+    const bool prefHasTrailingDot =
+        !aPrefName.IsEmpty() && aPrefName.Last() == '.';
+    mRoot.AppendPrefix(aOut);
+    Walk(aPrefName,
+         [&aOut, &aPrefName, prefHasTrailingDot](
+             CallbackTrieNode* aNode, const nsACString& aSegment,
+             bool aIsLast) -> CallbackTrieNode* {
+           CallbackTrieNode* child = aNode->FindChild(aSegment);
+           if (!child) return nullptr;
+           aIsLast ? child->AppendAll(aOut, aPrefName, prefHasTrailingDot)
+                   : child->AppendPrefix(aOut);
+           return child;
+         });
+  }
+
+  void CollectMatchingForUnregister(PrefChangedFunc aFunc,
+                                    const nsACString& aDomain, void* aData,
+                                    bool aIsPrefix,
+                                    nsTArray<CallbackNode*>& aOut) {
+    CallbackTrieNode* trieNode = FindNode(aDomain);
+    if (!trieNode) return;
+    for (const RefPtr<CallbackNode>& node : trieNode->mCallbacks) {
+      if (node->Func() == aFunc && node->Data() == aData &&
+          node->IsPrefix() == aIsPrefix && node->DomainIs(aDomain)) {
+        aOut.AppendElement(node);
+      }
+    }
+  }
+
+  void CollectMatchingForUnregister(PrefChangedFunc aFunc,
+                                    const char* const* aDomains, void* aData,
+                                    bool aIsPrefix,
+                                    nsTArray<CallbackNode*>& aOut) {
+    if (!*aDomains) return;
+    // Array-registered nodes are indexed under each of their names; looking
+    // up the first name is sufficient — DomainIs() distinguishes by array
+    // pointer identity.
+    CallbackTrieNode* trieNode = FindNode(nsDependentCString(*aDomains));
+    if (!trieNode) return;
+    for (const RefPtr<CallbackNode>& node : trieNode->mCallbacks) {
+      if (node->Func() == aFunc && node->Data() == aData &&
+          node->IsPrefix() == aIsPrefix && node->DomainIs(aDomains)) {
+        aOut.AppendElement(node);
+      }
+    }
+  }
+
+  // Invoke aFn(node) for every callback in the trie.  A node registered for an
+  // array of prefs lives under several trie nodes and is visited once per name;
+  // callers must tolerate that (MarkDead does, by being idempotent).
+  template <typename Fn>
+  void ForEachCallback(Fn&& aFn) {
+    ForEachCallback(mRoot, aFn);
+  }
+
+  uint32_t Count() const { return mLiveCount; }
+
+  void AddSizeOf(MallocSizeOf aMallocSizeOf, PrefsSizes& aSizes,
+                 uint32_t* aNodeCount = nullptr,
+                 size_t* aSegmentBytes = nullptr,
+                 uint32_t* aCallbackCount = nullptr) {
+    nsTHashSet<CallbackNode*> seen;
+    ForEachCallback([&](CallbackNode* aNode) {
+      if (seen.EnsureInserted(aNode)) {
+        aNode->AddSizeOfIncludingThis(aMallocSizeOf, aSizes);
+        if (aCallbackCount) ++*aCallbackCount;
+      }
+    });
+    // The trie scaffolding (nodes, child arrays, segment strings, callback
+    // arrays) was previously unmeasured and showed up as heap-unclassified.
+    mRoot.AddSubtreeSizeOf(aMallocSizeOf, aSizes, aNodeCount, aSegmentBytes);
+    aSizes.mCallbacksTrie +=
+        mDeadNodes.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  }
+
+  void Clear() {
+    mRoot.mChildren.Clear();
+    mRoot.mCallbacks.Clear();
+    mDeadNodes.Clear();
+    mLiveCount = 0;
+  }
+
+ private:
+  // Walk the trie along the dot-separated segments of aPath (any trailing dot
+  // stripped).  aStep(node, segment, isLast) returns the node to continue from,
+  // or nullptr to stop the walk early.  Returns the last node aStep produced,
+  // or &mRoot when aPath has no segments.
+  template <typename Step>
+  CallbackTrieNode* Walk(const nsACString& aPath, Step&& aStep) {
+    CallbackTrieNode* node = &mRoot;
+    const char* p = aPath.BeginReading();
+    const char* end = aPath.EndReading();
+    if (end > p && *(end - 1) == '.') --end;
+    while (p < end && node) {
+      const char* q = static_cast<const char*>(memchr(p, '.', end - p));
+      const bool isLast = !q;
+      if (isLast) q = end;
+      node = aStep(node, nsDependentCSubstring(p, q), isLast);
+      if (isLast) break;
+      p = q + 1;
+    }
+    return node;
+  }
+
+  // Walk (or create) the trie node for aDomain, stripping any trailing dot.
+  CallbackTrieNode& NodeFor(const nsACString& aDomain) {
+    return *Walk(aDomain,
+                 [](CallbackTrieNode* aNode, const nsACString& aSegment, bool) {
+                   return &aNode->GetOrCreateChild(aSegment);
+                 });
+  }
+
+  // Find the trie node for aDomain (stripping trailing dot); nullptr if absent.
+  CallbackTrieNode* FindNode(const nsACString& aDomain) {
+    return Walk(aDomain, [](CallbackTrieNode* aNode, const nsACString& aSegment,
+                            bool) { return aNode->FindChild(aSegment); });
+  }
+
+  void RemoveFromTrie(CallbackNode* aNode) {
+    if (aNode->Domain().is<nsCString>()) {
+      RemoveCallbackAndPrune(aNode, aNode->Domain().as<nsCString>());
+    } else {
+      for (const char* const* p = aNode->Domain().as<const char* const*>(); *p;
+           ++p) {
+        RemoveCallbackAndPrune(aNode, nsDependentCString(*p));
+      }
+    }
+  }
+
+  // Remove aNode's callback from the trie node for aDomain, then drop any nodes
+  // along the path that became empty (no callbacks and no children) so the trie
+  // does not accumulate dead scaffolding under observer churn.
+  void RemoveCallbackAndPrune(CallbackNode* aNode, const nsACString& aDomain) {
+    MOZ_ASSERT(NS_IsMainThread());
+    // Walk to the target node, recording the (parent, child index) of each edge
+    // so we can prune bottom-up afterwards.
+    AutoTArray<std::pair<CallbackTrieNode*, size_t>, 8> path;
+    CallbackTrieNode* node = &mRoot;
+    const char* p = aDomain.BeginReading();
+    const char* end = aDomain.EndReading();
+    if (end > p && *(end - 1) == '.') --end;
+    while (p < end) {
+      const char* q = static_cast<const char*>(memchr(p, '.', end - p));
+      const bool isLast = !q;
+      if (isLast) q = end;
+      size_t idx;
+      if (!node->FindChildIndex(nsDependentCSubstring(p, q), idx)) {
+        return;  // Path absent; nothing to remove.
+      }
+      path.AppendElement(std::make_pair(node, idx));
+      node = node->mChildren[idx].mNode.get();
+      if (isLast) break;
+      p = q + 1;
+    }
+
+    node->mCallbacks.RemoveElement(aNode);
+
+    // Prune empty nodes from the leaf upward, stopping at the first node that
+    // is still in use (has callbacks or other children).
+    for (size_t i = path.Length(); i-- > 0;) {
+      CallbackTrieNode* parent = path[i].first;
+      size_t idx = path[i].second;
+      CallbackTrieNode* child = parent->mChildren[idx].mNode.get();
+      if (child->mCallbacks.IsEmpty() && child->mChildren.IsEmpty()) {
+        parent->mChildren.RemoveElementAt(idx);
+      } else {
+        break;
+      }
+    }
+  }
+
+  template <typename Fn>
+  void ForEachCallback(CallbackTrieNode& aNode, Fn& aFn) {
+    for (const RefPtr<CallbackNode>& node : aNode.mCallbacks) {
+      aFn(node.get());
+    }
+    for (CallbackTrieNode::Child& child : aNode.mChildren) {
+      ForEachCallback(*child.mNode, aFn);
+    }
+  }
+
+  // Live (non-dead) callback count.  Maintained incrementally so Count() is
+  // O(1) and does not double-count array-registered nodes.
+  uint32_t mLiveCount = 0;
+  nsTArray<CallbackNode*> mDeadNodes;
+  CallbackTrieNode mRoot;
+};
+
+// Lazy-sorted, append-only list of the static-pref "always" mirror callbacks.
+//
+// Each is an exact-match, single-name callback that keeps one C++ mirror
+// variable coherent with its pref; all ~2,500 are registered in one bulk phase
+// at startup and live for the whole process (there is no RemoveMirror, and
+// nothing unregisters UpdateMirror), so the list only ever grows.
+//
+// They live in a flat inline array rather than the trie purely to save memory
+// (no per-callback heap node, no refcount, no prefix-matching scaffolding).
+// Sorted lazily on the first notify; looked up by binary search.
+class MirrorCallbackList {
+ public:
+  // Inline callback entry. Derives from CallbackData so the notify path can
+  // read Func()/Data() the same way it does for a trie CallbackNode.
+  struct MirrorCallback : public CallbackData {
+    // Borrowed pointer to the process-lifetime literal pref name (NUL-
+    // terminated). A bare pointer rather than a dependent string (which is not
+    // copy-assignable, so the entries could not be sorted in place) and rather
+    // than pointer+cached-length: the entries pack into one page-rounded array
+    // buffer, so the extra length word would cost ~real memory (a page per few
+    // hundred entries, not absorbed by allocator quantization) to save an
+    // strlen that only runs during the one-time sort and the per-notify binary
+    // search.
+    const char* mName;
+
+    MirrorCallback(PrefChangedFunc aFunc, void* aData, const char* aName)
+        : CallbackData(aFunc, aData), mName(aName) {}
+
+    nsDependentCString Name() const { return nsDependentCString(mName); }
+  };
+
+  void Register(PrefChangedFunc aFunc, const nsACString& aDomain, void* aData) {
+    MOZ_DIAGNOSTIC_ASSERT(aDomain.IsLiteral(),
+                          "mirror domains must be process-lifetime literals");
+    // Mirror names are full pref names with no trailing dot; the literal is
+    // NUL-terminated, so Name()'s strlen-based view is well-formed.
+    mEntries.EmplaceBack(aFunc, aData, aDomain.BeginReading());
+    mSorted = false;
+  }
+
+  // The fire-time payload of the mirror matching aPrefName, or Nothing. A copy
+  // (not a pointer into mEntries) so it stays valid if a callback registers a
+  // mirror and reallocates the array mid-notify.
+  Maybe<CallbackData> FindForNotify(const nsCString& aPrefName) {
+    if (MirrorCallback* entry = Find(aPrefName)) {
+      return Some(static_cast<const CallbackData&>(*entry));  // slices
+    }
+    return Nothing();
+  }
+
+  uint32_t Count() const { return mEntries.Length(); }
+
+  void AddSizeOf(MallocSizeOf aMallocSizeOf, PrefsSizes& aSizes,
+                 uint32_t* aNodeCount = nullptr,
+                 size_t* aSegmentBytes = nullptr,
+                 uint32_t* aCallbackCount = nullptr) {
+    // The callbacks live inline in the array; there are no per-callback heap
+    // objects, child arrays or segments.
+    aSizes.mCallbacksObjects +=
+        mEntries.ShallowSizeOfExcludingThis(aMallocSizeOf);
+    if (aCallbackCount) *aCallbackCount += mEntries.Length();
+    if (aNodeCount) *aNodeCount += mEntries.Length();
+  }
+
+  void Clear() {
+    mEntries.Clear();
+    mSorted = true;
+  }
+
+ private:
+  void EnsureSorted() {
+    if (mSorted) return;
+    // Names are unique (the static-pref codegen rejects duplicate pref names,
+    // so no two mirrors share a name), so the comparator never ties and a plain
+    // (non-stable) sort is enough.
+    mEntries.Sort([](const MirrorCallback& aA, const MirrorCallback& aB) {
+      return Compare(aA.Name(), aB.Name());
+    });
+    mSorted = true;
+#ifdef DEBUG
+    // Mirror names must be unique (Find / FindForNotify rely on at most one
+    // match); the static-pref codegen rejects duplicate pref names, so adjacent
+    // entries in the sorted array must never tie.
+    for (size_t i = 1; i < mEntries.Length(); ++i) {
+      MOZ_ASSERT(Compare(mEntries[i - 1].Name(), mEntries[i].Name()) != 0,
+                 "duplicate mirror pref name");
+    }
+#endif
+  }
+
+  // The single entry whose name equals aName, or null (names are unique, see
+  // EnsureSorted, so there is at most one). Sorts on demand.
+  MirrorCallback* Find(const nsACString& aName) {
+    EnsureSorted();
+    size_t idx = mEntries.BinaryIndexOf(
+        aName, [](const MirrorCallback& aEntry, const nsACString& aKey) {
+          return Compare(aEntry.Name(), aKey);
+        });
+    return idx == decltype(mEntries)::NoIndex ? nullptr : &mEntries[idx];
+  }
+
+  nsTArray<MirrorCallback> mEntries;
+  bool mSorted = true;
+};
+
+namespace mozilla {
+
+// Holds all Preferences instance data and internal implementation details.
+// Defined here (not in the header) to keep implementation details private.
+class PreferencesImpl {
+ public:
+  NS_INLINE_DECL_REFCOUNTING(PreferencesImpl)
+
+  using WritePrefFilePromise = MozPromise<bool, nsresult, false>;
+  // Default pref file save can be blocking or not.
+  enum class SaveMethod { Blocking, Asynchronous };
+
+  PreferencesImpl();
+
+  nsCOMPtr<nsIFile> mCurrentFile;
+  nsCOMPtr<nsISerialEventTarget> mAsyncTarget;
+  // Time since unix epoch in ms (JS Date compatible)
+  PRTime mUserPrefsFileLastModifiedAtStartup = 0;
+  bool mDirty = false;
+  bool mProfileShutdown = false;
+  // We wait a bit after prefs are dirty before writing them. In this period,
+  // mDirty and mSavePending will both be true.
+  bool mSavePending = false;
+  int32_t mAllowOMTPrefWrite = -1;
+
+  nsCOMPtr<nsIPrefBranch> mRootBranch;
+  nsCOMPtr<nsIPrefBranch> mDefaultRootBranch;
+
+  MirrorCallbackList mMirrorCallbacks;
+  CallbackTrie mCallbacks;
+#ifdef DEBUG
+  bool mCallbacksInProgress = false;
+#endif
+  bool mShouldCleanupDeadNodes = false;
+  bool mShouldSweepWeakObservers = false;
+  const PrefWrapper* mCallbackPref = nullptr;
+
+  nsresult NotifyServiceObservers(const char* aSubject);
+  // Loads the prefs.js file from the profile, or creates a new one. Returns
+  // the prefs file if successful, or nullptr on failure.
+  already_AddRefed<nsIFile> ReadSavedPrefs();
+  // Loads the user.js file from the profile if present.
+  void ReadUserOverridePrefs();
+  nsresult MakeBackupPrefFile(nsIFile* aFile);
+  // Off main thread is only respected for the default aFile value (nullptr).
+  nsresult SavePrefFileInternal(nsIFile* aFile, SaveMethod aSaveMethod);
+  // A non-null aPromise marks this as a backup write: it targets a file other
+  // than the profile prefs.js, carries a filtered pref set via
+  // aPrefOverrideMap, bypasses the shared sPendingWriteData coalescing, and
+  // settles aPromise when done. aPromise is non-null iff this is a backup
+  // write; normal profile prefs.js writes pass no promise.
+  nsresult WritePrefFile(
+      nsIFile* aFile, SaveMethod aSaveMethod,
+      UniquePtr<MozPromiseHolder<WritePrefFilePromise>> aPromise = nullptr,
+      const nsIPrefOverrideMap* aPrefOverrideMap = nullptr);
+  nsresult ResetUserPrefs();
+
+  Maybe<PrefWrapper> Lookup(const char* aPrefName,
+                            bool aIncludeTypeNone = false);
+  Result<Pref*, nsresult> LookupForModify(
+      const char* aPrefName,
+      const std::function<bool(const PrefWrapper&)>& aCheckFn);
+  PrefSaveData SavePrefs(const nsIPrefOverrideMap* aPrefOverrideMap);
+  void NotifyCallbacks(const nsCString& aPrefName,
+                       const PrefWrapper* aPref = nullptr);
+  void NotifyCallbacks(const nsCString& aPrefName, const PrefWrapper& aPref) {
+    NotifyCallbacks(aPrefName, &aPref);
+  }
+
+  static void SetupTelemetryPref();
+  static nsresult InitInitialObjects(bool aIsStartup);
+
+  template <typename T>
+  static nsresult GetPrefValue(const char* aPrefName, T&& aResult,
+                               PrefValueKind aKind);
+
+  template <typename T>
+  static nsresult GetSharedPrefValue(const char* aName, T* aResult);
+
+  template <typename T>
+  static T GetPref(const char* aPrefName, T aFallback,
+                   PrefValueKind aKind = PrefValueKind::User) {
+    T result = aFallback;
+    GetPrefValue(aPrefName, &result, aKind);
+    return result;
+  }
+
+  template <typename T, typename V>
+  static void MOZ_NEVER_INLINE AssignMirror(T& aMirror, V aValue) {
+    aMirror = aValue;
+  }
+
+  static void MOZ_NEVER_INLINE AssignMirror(DataMutexString& aMirror,
+                                            nsCString&& aValue) {
+    auto lock = aMirror.Lock();
+    lock->Assign(std::move(aValue));
+  }
+
+  static void MOZ_NEVER_INLINE AssignMirror(DataMutexString& aMirror,
+                                            const nsLiteralCString& aValue) {
+    auto lock = aMirror.Lock();
+    lock->Assign(aValue);
+  }
+
+  static void ClearMirror(DataMutexString& aMirror) {
+    auto lock = aMirror.Lock();
+    lock->Assign(nsCString());
+  }
+
+  template <typename T>
+  static void UpdateMirror(const char* aPref, void* aData) {
+    StripAtomic<T> value;
+    nsresult rv = GetPrefValue(aPref, &value, PrefValueKind::User);
+    if (NS_SUCCEEDED(rv)) {
+      AssignMirror(*static_cast<T*>(aData),
+                   std::forward<StripAtomic<T>>(value));
+    } else {
+      NS_WARNING(nsPrintfCString("Pref changed failure: %s", aPref).get());
+      MOZ_ASSERT(false);
+    }
+  }
+
+  // Register the coherence callback for a static-pref "always" mirror. This is
+  // the only producer of mMirrorCallbacks entries; the general RegisterCallback
+  // path has no notion of mirrors.
+  template <typename T>
+  static nsresult RegisterMirror(T* aMirror, const nsACString& aPref) {
+    return RegisterMirrorCallback(UpdateMirror<T>, aPref, aMirror);
+  }
+
+  static nsresult RegisterMirrorCallback(PrefChangedFunc aCallback,
+                                         const nsACString& aPref,
+                                         void* aMirror);
+
+  template <typename T>
+  static nsresult RegisterCallbackImpl(PrefChangedFunc aCallback, T& aPrefNode,
+                                       void* aData, bool aIsPrefix = false);
+
+  template <typename T>
+  static nsresult UnregisterCallbackImpl(PrefChangedFunc aCallback,
+                                         T& aPrefNode, void* aData,
+                                         bool aIsPrefix = false);
+
+ private:
+  ~PreferencesImpl() = default;
+};
+
+static StaticRefPtr<PreferencesImpl> sPImpl;
+
+}  // namespace mozilla
+
+// These must be accessible before sPImpl is created (child process early init).
+// Note that this never changes in the parent process, and is only read in
+// content processes.
+static bool gContentProcessPrefsAreInited = false;
+// A list of changed prefs sent from the parent via shared memory.
+static mozilla::StaticAutoPtr<nsTArray<mozilla::dom::Pref>> gChangedDomPrefs;
 
 using PrefsHashTable = HashSet<UniquePtr<Pref>, PrefHasher>;
 
@@ -1532,11 +2162,6 @@ struct CompareStr {
 typedef std::map<const char*, AntiFootgunCallback, CompareStr> AntiFootgunMap;
 static StaticAutoPtr<AntiFootgunMap> gOnceStaticPrefsAntiFootgun;
 #endif
-
-// The callback list contains all the priority callbacks followed by the
-// non-priority callbacks. gLastPriorityNode records where the first part ends.
-static CallbackNode* gFirstCallback = nullptr;
-static CallbackNode* gLastPriorityNode = nullptr;
 
 #ifdef DEBUG
 #  define ACCESS_COUNTS
@@ -1566,12 +2191,8 @@ static void AddAccessCount(const char* aPrefName) {
 static void AddAccessCount(const char* aPrefName) {}
 #endif
 
-// These are only used during the call to NotifyCallbacks().
-static bool gCallbacksInProgress = false;
-static bool gShouldCleanupDeadNodes = false;
-
-// IdleTaskRunner for sweeping expired weak observer callbacks.
-static StaticRefPtr<mozilla::IdleTaskRunner> sSweepRunner;
+// IdleTaskRunner for sweeping expired weak observers and compacting dead nodes.
+static StaticRefPtr<mozilla::IdleTaskRunner> sCallbackSweepRunner;
 
 class PrefsHashIter {
   using Iterator = decltype(HashTable()->modIter());
@@ -1766,14 +2387,6 @@ class PrefsIter {
 
 static Pref* pref_HashTableLookup(const char* aPrefName);
 
-static void NotifyCallbacks(const nsCString& aPrefName,
-                            const PrefWrapper* aPref = nullptr);
-
-static void NotifyCallbacks(const nsCString& aPrefName,
-                            const PrefWrapper& aPref) {
-  NotifyCallbacks(aPrefName, &aPref);
-}
-
 // The approximate number of preferences in the dynamic hashtable for the parent
 // and content processes, respectively. These numbers are used to determine the
 // initial size of the dynamic preference hashtables, and should be chosen to
@@ -1798,33 +2411,11 @@ static void NotifyCallbacks(const nsCString& aPrefName,
 constexpr size_t kHashTableInitialLengthParent = 3000;
 constexpr size_t kHashTableInitialLengthContent = 64;
 
-static PrefSaveData pref_savePrefs(const nsIPrefOverrideMap* aPrefOverrideMap) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  PrefSaveData savedPrefs(HashTable()->count());
-
-  for (auto& pref : PrefsIter(HashTable(), gSharedMap)) {
-    nsAutoCString prefValueStr;
-    if (!pref->UserValueToStringForSaving(prefValueStr, aPrefOverrideMap)) {
-      continue;
-    }
-
-    nsAutoCString prefNameStr;
-    StrEscape(pref->Name(), prefNameStr);
-
-    nsPrintfCString str("user_pref(%s, %s);", prefNameStr.get(),
-                        prefValueStr.get());
-
-    savedPrefs.AppendElement(str);
-  }
-
-  return savedPrefs;
-}
-
 static Pref* pref_HashTableLookup(const char* aPrefName) {
   MOZ_ASSERT(NS_IsMainThread() || ServoStyleSet::IsInServoTraversal());
 
-  MOZ_ASSERT_IF(!XRE_IsParentProcess(), gContentProcessPrefsAreInited);
+  MOZ_ASSERT_IF(!XRE_IsParentProcess(),
+                Preferences::ArePrefsInitedInContentProcess());
 
   // We use readonlyThreadsafeLookup() because we often have concurrent lookups
   // from multiple Stylo threads. This is safe because those threads cannot
@@ -1834,63 +2425,12 @@ static Pref* pref_HashTableLookup(const char* aPrefName) {
   return p ? p->get() : nullptr;
 }
 
-// While notifying preference callbacks, this holds the wrapper for the
-// preference being notified, in order to optimize lookups.
-//
-// Note: Callbacks and lookups only happen on the main thread, so this is safe
-// to use without locking.
-static const PrefWrapper* gCallbackPref;
-
 Maybe<PrefWrapper> pref_SharedLookup(const char* aPrefName) {
   MOZ_DIAGNOSTIC_ASSERT(gSharedMap, "gSharedMap must be initialized");
   if (Maybe<SharedPrefMap::Pref> pref = gSharedMap->Get(aPrefName)) {
     return Some(*pref);
   }
   return Nothing();
-}
-
-Maybe<PrefWrapper> pref_Lookup(const char* aPrefName,
-                               bool aIncludeTypeNone = false) {
-  MOZ_ASSERT(NS_IsMainThread() || ServoStyleSet::IsInServoTraversal());
-
-  AddAccessCount(aPrefName);
-
-  if (gCallbackPref && strcmp(aPrefName, gCallbackPref->Name()) == 0) {
-    return Some(*gCallbackPref);
-  }
-  if (Pref* pref = pref_HashTableLookup(aPrefName)) {
-    if (aIncludeTypeNone || !pref->IsTypeNone() || pref->IsSanitized()) {
-      return Some(pref);
-    }
-  } else if (gSharedMap) {
-    return pref_SharedLookup(aPrefName);
-  }
-
-  return Nothing();
-}
-
-static Result<Pref*, nsresult> pref_LookupForModify(
-    const char* aPrefName,
-    const std::function<bool(const PrefWrapper&)>& aCheckFn) {
-  Maybe<PrefWrapper> wrapper =
-      pref_Lookup(aPrefName, /* includeTypeNone */ true);
-  if (wrapper.isNothing()) {
-    return Err(NS_ERROR_INVALID_ARG);
-  }
-  if (!aCheckFn(*wrapper)) {
-    return nullptr;
-  }
-  if (wrapper->is<Pref*>()) {
-    return wrapper->as<Pref*>();
-  }
-
-  Pref* pref = new Pref(nsDependentCString{aPrefName});
-  if (!HashTable()->putNew(aPrefName, pref)) {
-    delete pref;
-    return Err(NS_ERROR_OUT_OF_MEMORY);
-  }
-  pref->FromWrapper(*wrapper);
-  return pref;
 }
 
 static nsresult pref_SetPref(const nsCString& aPrefName, PrefType aType,
@@ -1917,8 +2457,8 @@ static nsresult pref_SetPref(const nsCString& aPrefName, PrefType aType,
 
   Pref* pref = nullptr;
   if (gSharedMap) {
-    auto result =
-        pref_LookupForModify(aPrefName.get(), [&](const PrefWrapper& aWrapper) {
+    auto result = sPImpl->LookupForModify(
+        aPrefName.get(), [&](const PrefWrapper& aWrapper) {
           return !aWrapper.Matches(aType, aKind, aValue, aIsSticky, aIsLocked);
         });
     if (result.isOk() && !(pref = result.unwrap())) {
@@ -1974,88 +2514,10 @@ static nsresult pref_SetPref(const nsCString& aPrefName, PrefType aType,
     if (aKind == PrefValueKind::User) {
       Preferences::HandleDirty();
     }
-    NotifyCallbacks(aPrefName, PrefWrapper(pref));
+    sPImpl->NotifyCallbacks(aPrefName, PrefWrapper(pref));
   }
 
   return NS_OK;
-}
-
-// Removes |node| from callback list. Returns the node after the deleted one.
-static CallbackNode* pref_RemoveCallbackNode(CallbackNode* aNode,
-                                             CallbackNode* aPrevNode) {
-  MOZ_ASSERT(!aPrevNode || aPrevNode->Next() == aNode);
-  MOZ_ASSERT(aPrevNode || gFirstCallback == aNode);
-  MOZ_ASSERT(!gCallbacksInProgress);
-
-  CallbackNode* next_node = aNode->Next();
-  if (aPrevNode) {
-    aPrevNode->SetNext(next_node);
-  } else {
-    gFirstCallback = next_node;
-  }
-  if (gLastPriorityNode == aNode) {
-    gLastPriorityNode = aPrevNode;
-  }
-  delete aNode;
-  return next_node;
-}
-
-static void NotifyCallbacks(const nsCString& aPrefName,
-                            const PrefWrapper* aPref) {
-  bool reentered = gCallbacksInProgress;
-
-  gCallbackPref = aPref;
-  auto cleanup = MakeScopeExit([]() { gCallbackPref = nullptr; });
-
-  // Nodes must not be deleted while gCallbacksInProgress is true.
-  // Nodes that need to be deleted are marked for deletion by nulling
-  // out the |func| pointer. We release them at the end of this function
-  // if we haven't reentered.
-  gCallbacksInProgress = true;
-
-  for (CallbackNode* node = gFirstCallback; node; node = node->Next()) {
-    if (node->Func()) {
-      if (node->Matches(aPrefName)) {
-        MOZ_LOG(sPrefLog, LogLevel::Debug,
-                ("NotifyCallbacks: pref='%s' -> domain='%s'", aPrefName.get(),
-                 node->DomainForLog()));
-        (node->Func())(aPrefName.get(), node->Data());
-      }
-    }
-  }
-
-  gCallbacksInProgress = reentered;
-
-  if (gShouldCleanupDeadNodes && !gCallbacksInProgress) {
-    CallbackNode* prev_node = nullptr;
-    CallbackNode* node = gFirstCallback;
-
-    while (node) {
-      if (!node->Func()) {
-        node = pref_RemoveCallbackNode(node, prev_node);
-      } else {
-        prev_node = node;
-        node = node->Next();
-      }
-    }
-    gShouldCleanupDeadNodes = false;
-  }
-
-#ifdef DEBUG
-  if (XRE_IsParentProcess() &&
-      !StaticPrefs::preferences_force_disable_check_once_policy() &&
-      (StaticPrefs::preferences_check_once_policy() || xpc::IsInAutomation())) {
-    // Check that we aren't modifying a `once`-mirrored pref using that pref
-    // name. We have about 100 `once`-mirrored prefs. std::map performs a
-    // search in O(log n), so this is fast enough.
-    MOZ_ASSERT(gOnceStaticPrefsAntiFootgun);
-    auto search = gOnceStaticPrefsAntiFootgun->find(aPrefName.get());
-    if (search != gOnceStaticPrefsAntiFootgun->end()) {
-      // Run the callback.
-      (search->second)();
-    }
-  }
-#endif
 }
 
 //===========================================================================
@@ -2294,6 +2756,8 @@ class nsPrefBranch final : public nsIPrefBranch,
                            public nsIObserver,
                            public nsSupportsWeakReference {
   friend class mozilla::PreferenceServiceReporter;
+  friend class mozilla::Preferences;
+  friend class mozilla::PreferencesImpl;
 
  public:
   NS_DECL_ISUPPORTS
@@ -2304,7 +2768,7 @@ class nsPrefBranch final : public nsIPrefBranch,
   nsPrefBranch() = delete;
 
   static void NotifyObserver(const char* aNewpref, void* aData);
-  static void SweepExpiredWeakObservers();
+  static void ReapAndCompactCallbacks();
 
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
@@ -2335,6 +2799,8 @@ class nsPrefBranch final : public nsIPrefBranch,
   }
 
   PrefName GetPrefName(const nsACString& aPrefName) const;
+
+  nsresult ClearBranch(const char* aStartingAt, bool deleteDefaults);
 
   void FreeObserverList(void);
 
@@ -2854,9 +3320,8 @@ nsPrefBranch::UnlockPref(const char* aPrefName) {
   return Preferences::Unlock(pref.get());
 }
 
-NS_IMETHODIMP
-nsPrefBranch::DeleteBranch(const char* aStartingAt) {
-  ENSURE_PARENT_PROCESS("DeleteBranch", aStartingAt);
+nsresult nsPrefBranch::ClearBranch(const char* aStartingAt,
+                                   bool deleteDefaults) {
   NS_ENSURE_ARG(aStartingAt);
 
   MOZ_ASSERT(NS_IsMainThread());
@@ -2891,7 +3356,7 @@ nsPrefBranch::DeleteBranch(const char* aStartingAt) {
 
   // Remove the listed preferences.
   for (auto& prefName : prefNames) {
-    auto result = pref_LookupForModify(
+    auto result = sPImpl->LookupForModify(
         prefName, [](const PrefWrapper& aPref) { return !aPref.IsTypeNone(); });
     if (result.isErr()) {
       // Pref was likely removed by a previously-notified callback
@@ -2900,25 +3365,49 @@ nsPrefBranch::DeleteBranch(const char* aStartingAt) {
 
     if (Pref* pref = result.unwrap()) {
       pref->ClearUserValue();
-      pref->ClearDefaultValue();
-
-      MOZ_ASSERT(
-          !gSharedMap || !pref->IsSanitized() || !gSharedMap->Has(pref->Name()),
-          "A sanitized pref should never be in the shared pref map.");
-      if (!pref->IsSanitized() &&
-          (!gSharedMap || !gSharedMap->Has(pref->Name()))) {
-        HashTable()->remove(prefName);
-      } else {
-        // If there is a matching shared pref, it must be shadowed by an empty
-        // entry in the HashTable().
-        pref->SetType(PrefType::None);
+      if (deleteDefaults) {
+        pref->ClearDefaultValue();
       }
-      NotifyCallbacks(nsDependentCString{prefName});
+
+      // If there's no default value, or the pref has been completely deleted,
+      // handle that appropriately, otherwise send out a regular preference
+      // update.
+      if (deleteDefaults || !pref->HasDefaultValue()) {
+        MOZ_ASSERT(!gSharedMap || !pref->IsSanitized() ||
+                       !gSharedMap->Has(pref->Name()),
+                   "A sanitized pref should never be in the shared pref map.");
+        if (!pref->IsSanitized() &&
+            (!gSharedMap || !gSharedMap->Has(pref->Name()))) {
+          HashTable()->remove(prefName);
+        } else {
+          // If there is a matching shared pref, it must be shadowed by an empty
+          // entry in the HashTable().
+          pref->SetType(PrefType::None);
+        }
+        sPImpl->NotifyCallbacks(nsDependentCString{prefName});
+      } else {
+        sPImpl->NotifyCallbacks(nsDependentCString{prefName},
+                                PrefWrapper(pref));
+      }
     }
   }
 
   Preferences::HandleDirty();
   return NS_OK;
+}
+
+NS_IMETHODIMP
+nsPrefBranch::DeleteBranch(const char* aStartingAt) {
+  ENSURE_PARENT_PROCESS("DeleteBranch", aStartingAt);
+
+  return ClearBranch(aStartingAt, true);
+}
+
+NS_IMETHODIMP
+nsPrefBranch::ClearUserBranch(const char* aStartingAt) {
+  ENSURE_PARENT_PROCESS("ClearUserBranch", aStartingAt);
+
+  return ClearBranch(aStartingAt, false);
 }
 
 NS_IMETHODIMP
@@ -2995,8 +3484,9 @@ nsPrefBranch::AddObserverImpl(const nsACString& aDomain, nsIObserver* aObserver,
       mozilla::UniquePtr<PrefCallback> existing;
       mObservers.Remove(&weakKey, &existing);
       if (existing) {
-        Preferences::UnregisterCallback(
-            NotifyObserver, prefName, existing.get(), Preferences::PrefixMatch);
+        Preferences::UnregisterCallback(NotifyObserver, prefName,
+                                        existing.get(),
+                                        /* aPrefixMatch */ true);
       }
     }
   }
@@ -3011,8 +3501,7 @@ nsPrefBranch::AddObserverImpl(const nsACString& aDomain, nsIObserver* aObserver,
       // aDomain == nullptr is the only possible failure, and we trapped it with
       // NS_ENSURE_ARG above.
       Preferences::RegisterCallback(NotifyObserver, prefName, pCallback.get(),
-                                    Preferences::PrefixMatch,
-                                    /* isPriority */ false);
+                                    /* aPrefixMatch */ true);
 
       p.Insert(std::move(pCallback));
     }
@@ -3059,8 +3548,9 @@ nsPrefBranch::RemoveObserverImpl(const nsACString& aDomain,
   }
 
   if (pCallback) {
-    rv = Preferences::UnregisterCallback(
-        NotifyObserver, prefName, pCallback.get(), Preferences::PrefixMatch);
+    rv = Preferences::UnregisterCallback(NotifyObserver, prefName,
+                                         pCallback.get(),
+                                         /* aPrefixMatch */ true);
   }
 
   return rv;
@@ -3077,23 +3567,25 @@ nsPrefBranch::Observe(nsISupports* aSubject, const char* aTopic,
   return NS_OK;
 }
 
-// Schedule an idle sweep of expired weak observer callbacks. This is purely
-// a memory optimization — expired callbacks are inert (notifications skip
-// them and they do not keep alive anything else), so there is no urgency.
-static void MaybeScheduleExpiredWeakObserverSweep() {
-  if (sSweepRunner) {
+// Schedule an idle reap of expired weak observers and compaction of dead
+// callback nodes. This is purely a memory optimization — dead callbacks are
+// inert (notifications skip them and they do not keep alive anything else), so
+// there is no urgency.
+static void MaybeScheduleCallbackSweep() {
+  if (sCallbackSweepRunner ||
+      AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdown)) {
     return;
   }
-  PROFILER_MARKER_UNTYPED("ScheduleWeakObserverSweep", OTHER);
+  PROFILER_MARKER_UNTYPED("ScheduleCallbackSweep", OTHER);
   static const TimeDuration kMaxDelay = TimeDuration::FromSeconds(2);
   static const TimeDuration kMinBudget = TimeDuration::FromMilliseconds(15);
-  sSweepRunner = IdleTaskRunner::Create(
+  sCallbackSweepRunner = IdleTaskRunner::Create(
       [](TimeStamp aDeadline) {
-        nsPrefBranch::SweepExpiredWeakObservers();
-        sSweepRunner = nullptr;
+        nsPrefBranch::ReapAndCompactCallbacks();
+        sCallbackSweepRunner = nullptr;
         return true;
       },
-      "SweepExpiredWeakObservers"_ns, TimeDuration(), kMaxDelay, kMinBudget,
+      "ReapAndCompactCallbacks"_ns, TimeDuration(), kMaxDelay, kMinBudget,
       false, nullptr);
 }
 
@@ -3103,14 +3595,19 @@ void nsPrefBranch::NotifyObserver(const char* aNewPref, void* aData) {
 
   nsCOMPtr<nsIObserver> observer = pCallback->GetObserver();
   if (!observer) {
-    MaybeScheduleExpiredWeakObserverSweep();
+    sPImpl->mShouldSweepWeakObservers = true;
+    MaybeScheduleCallbackSweep();
     return;
   }
 
   // Remove any root this string may contain so as to not confuse the observer
-  // by passing them something other than what they passed us as a topic.
-  uint32_t len = pCallback->GetPrefBranch()->GetRootLength();
-  nsDependentCString suffix(aNewPref + len);
+  // by passing them something other than what they passed us as a topic. The
+  // trie normalizes trailing dots while the root length does not, so clamp to
+  // keep the topic a suffix of the name.
+  nsDependentCString fullPref(aNewPref);
+  uint32_t len = std::min<uint32_t>(pCallback->GetPrefBranch()->GetRootLength(),
+                                    fullPref.Length());
+  const nsDependentCSubstring suffix(Substring(fullPref, len));
 
   observer->Observe(static_cast<nsIPrefBranch*>(pCallback->GetPrefBranch()),
                     NS_PREFBRANCH_PREFCHANGE_TOPIC_ID,
@@ -3191,25 +3688,28 @@ nsPrefBranch::PrefName nsPrefBranch::GetPrefName(
 }
 
 // static
-void nsPrefBranch::SweepExpiredWeakObservers() {
-  MOZ_ASSERT(!gCallbacksInProgress);
-
-  CallbackNode* prev_node = nullptr;
-  CallbackNode* node = gFirstCallback;
-
-  while (node) {
-    if (node->Func() == nsPrefBranch::NotifyObserver) {
-      auto* pCallback = static_cast<PrefCallback*>(node->Data());
-      if (pCallback->IsExpired()) {
-        // Remove will leave a dangling pointer on the node (and in pCallback),
-        // but we're going to delete the node immediately after.
-        pCallback->GetPrefBranch()->mObservers.Remove(pCallback);
-        node = pref_RemoveCallbackNode(node, prev_node);
-        continue;
+void nsPrefBranch::ReapAndCompactCallbacks() {
+  // Mirror callbacks are never pref-branch observers, so only the trie is swept
+  // and compacted here.
+  if (sPImpl->mShouldSweepWeakObservers) {
+    sPImpl->mCallbacks.ForEachCallback([&](CallbackNode* aNode) {
+      if (aNode->Func() == nsPrefBranch::NotifyObserver) {
+        auto* pCallback = static_cast<PrefCallback*>(aNode->Data());
+        if (pCallback->IsExpired()) {
+          pCallback->GetPrefBranch()->mObservers.Remove(pCallback);
+          // MarkDead is idempotent, so the repeated visits of an array-
+          // registered node do their work only once.
+          sPImpl->mCallbacks.MarkDead(aNode);
+          sPImpl->mShouldCleanupDeadNodes = true;
+        }
       }
-    }
-    prev_node = node;
-    node = node->Next();
+    });
+    sPImpl->mShouldSweepWeakObservers = false;
+  }
+
+  if (sPImpl->mShouldCleanupDeadNodes) {
+    sPImpl->mCallbacks.Compact();
+    sPImpl->mShouldCleanupDeadNodes = false;
   }
 }
 
@@ -3241,7 +3741,7 @@ NS_IMETHODIMP
 nsPrefOverrideMap::AddEntry(const nsACString& aPrefName,
                             JS::Handle<JS::Value> aPrefValue, JSContext* aCx) {
   nsCString prefName(aPrefName);
-  auto maybePrefWrapper = pref_Lookup(prefName.get());
+  auto maybePrefWrapper = sPImpl->Lookup(prefName.get());
   if (NS_WARN_IF(!maybePrefWrapper)) {
     return NS_ERROR_DOM_NOT_FOUND_ERR;
   }
@@ -3285,7 +3785,7 @@ NS_IMETHODIMP
 nsPrefOverrideMap::GetEntry(const nsACString& aPrefName, JSContext* aCx,
                             JS::MutableHandle<JS::Value> aPrefValue) {
   nsCString prefName(aPrefName);
-  auto maybePrefWrapper = pref_Lookup(prefName.get());
+  auto maybePrefWrapper = sPImpl->Lookup(prefName.get());
   if (NS_WARN_IF(!maybePrefWrapper)) {
     return NS_ERROR_DOM_NOT_FOUND_ERR;
   }
@@ -3354,6 +3854,136 @@ nsRelativeFilePref::SetRelativeToKey(const nsACString& aRelativeToKey) {
   return NS_OK;
 }
 
+namespace mozilla {
+
+PreferencesImpl::PreferencesImpl()
+    : mRootBranch(new nsPrefBranch("", PrefValueKind::User)),
+      mDefaultRootBranch(new nsPrefBranch("", PrefValueKind::Default)) {}
+
+Maybe<PrefWrapper> PreferencesImpl::Lookup(const char* aPrefName,
+                                           bool aIncludeTypeNone) {
+  MOZ_ASSERT(NS_IsMainThread() || ServoStyleSet::IsInServoTraversal());
+
+  AddAccessCount(aPrefName);
+
+  if (mCallbackPref && strcmp(aPrefName, mCallbackPref->Name()) == 0) {
+    return Some(*mCallbackPref);
+  }
+  if (Pref* pref = pref_HashTableLookup(aPrefName)) {
+    if (aIncludeTypeNone || !pref->IsTypeNone() || pref->IsSanitized()) {
+      return Some(pref);
+    }
+  } else if (gSharedMap) {
+    return pref_SharedLookup(aPrefName);
+  }
+
+  return Nothing();
+}
+
+Result<Pref*, nsresult> PreferencesImpl::LookupForModify(
+    const char* aPrefName,
+    const std::function<bool(const PrefWrapper&)>& aCheckFn) {
+  Maybe<PrefWrapper> wrapper = Lookup(aPrefName, /* includeTypeNone */ true);
+  if (wrapper.isNothing()) {
+    return Err(NS_ERROR_INVALID_ARG);
+  }
+  if (!aCheckFn(*wrapper)) {
+    return nullptr;
+  }
+  if (wrapper->is<Pref*>()) {
+    return wrapper->as<Pref*>();
+  }
+
+  Pref* pref = new Pref(nsDependentCString{aPrefName});
+  if (!HashTable()->putNew(aPrefName, pref)) {
+    delete pref;
+    return Err(NS_ERROR_OUT_OF_MEMORY);
+  }
+  pref->FromWrapper(*wrapper);
+  return pref;
+}
+
+PrefSaveData PreferencesImpl::SavePrefs(
+    const nsIPrefOverrideMap* aPrefOverrideMap) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  PrefSaveData savedPrefs(HashTable()->count());
+
+  for (auto& pref : PrefsIter(HashTable(), gSharedMap)) {
+    nsAutoCString prefValueStr;
+    if (!pref->UserValueToStringForSaving(prefValueStr, aPrefOverrideMap)) {
+      continue;
+    }
+
+    nsAutoCString prefNameStr;
+    StrEscape(pref->Name(), prefNameStr);
+
+    nsPrintfCString str("user_pref(%s, %s);", prefNameStr.get(),
+                        prefValueStr.get());
+
+    savedPrefs.AppendElement(str);
+  }
+
+  return savedPrefs;
+}
+
+void PreferencesImpl::NotifyCallbacks(const nsCString& aPrefName,
+                                      const PrefWrapper* aPref) {
+#ifdef DEBUG
+  bool reentered = mCallbacksInProgress;
+  mCallbacksInProgress = true;
+#endif
+
+  mCallbackPref = aPref;
+  // Capture a pointer to the member, not `this`: PreferencesImpl is refcounted
+  // and the clang plugin forbids capturing a refcounted `this` in a lambda.
+  auto* callbackPref = &mCallbackPref;
+  auto cleanup = MakeScopeExit([callbackPref]() { *callbackPref = nullptr; });
+
+  // Snapshot matching callbacks before invoking any, so that registrations or
+  // unregistrations made by callbacks do not affect this notification round.
+  // The static-pref mirror (at most one, by unique name) fires first, so a
+  // mirror is coherent before any observer that might read StaticPrefs::foo()
+  // runs. It is snapshotted by value, which (unlike a pointer into the array)
+  // cannot dangle if a callback registers during the round.
+  if (Maybe<CallbackData> mirror = mMirrorCallbacks.FindForNotify(aPrefName)) {
+    mirror->Fire(aPrefName.get());
+  }
+
+  // Observer callbacks are snapshotted by pointer into their (stable,
+  // refcounted) trie nodes, so a callback unregistered mid-round (which clears
+  // its func) is skipped here at fire time.
+  AutoTArray<RefPtr<CallbackNode>, 16> toNotify;
+  mCallbacks.CollectMatchingForNotify(aPrefName, toNotify);
+  for (const RefPtr<CallbackNode>& node : toNotify) {
+    if (PrefChangedFunc func = node->Func()) {
+      MOZ_LOG(sPrefLog, LogLevel::Debug,
+              ("NotifyCallbacks: pref='%s' -> domain='%s'", aPrefName.get(),
+               node->DomainForLog()));
+      func(aPrefName.get(), node->Data());
+    }
+  }
+
+#ifdef DEBUG
+  mCallbacksInProgress = reentered;
+
+  if (XRE_IsParentProcess() &&
+      !StaticPrefs::preferences_force_disable_check_once_policy() &&
+      (StaticPrefs::preferences_check_once_policy() || xpc::IsInAutomation())) {
+    // Check that we aren't modifying a `once`-mirrored pref using that pref
+    // name. We have about 100 `once`-mirrored prefs. std::map performs a
+    // search in O(log n), so this is fast enough.
+    MOZ_ASSERT(gOnceStaticPrefsAntiFootgun);
+    auto search = gOnceStaticPrefsAntiFootgun->find(aPrefName.get());
+    if (search != gOnceStaticPrefsAntiFootgun->end()) {
+      (search->second)();
+    }
+  }
+#endif
+}
+
+}  // namespace mozilla
+
 //===========================================================================
 // class Preferences and related things
 //===========================================================================
@@ -3369,17 +3999,17 @@ void Preferences::HandleDirty() {
     return;
   }
 
-  if (sPreferences->mProfileShutdown) {
+  if (sPImpl->mProfileShutdown) {
     NS_WARNING("Setting user pref after profile shutdown.");
     return;
   }
 
-  if (!sPreferences->mDirty) {
-    sPreferences->mDirty = true;
+  if (!sPImpl->mDirty) {
+    sPImpl->mDirty = true;
 
-    if (sPreferences->mCurrentFile && sPreferences->AllowOffMainThreadSave() &&
-        !sPreferences->mSavePending) {
-      sPreferences->mSavePending = true;
+    if (sPImpl->mCurrentFile && sPreferences->AllowOffMainThreadSave() &&
+        !sPImpl->mSavePending) {
+      sPImpl->mSavePending = true;
       static const int PREF_DELAY_MS = 500;
       NS_DelayedDispatchToCurrentThread(
           NewRunnableMethod("Preferences::SavePrefFileAsynchronous",
@@ -3397,9 +4027,6 @@ static nsresult parsePrefData(const nsCString& aData, PrefValueKind aKind);
 // Note: if sShutdown is true, sPreferences will be nullptr.
 StaticRefPtr<Preferences> Preferences::sPreferences;
 bool Preferences::sShutdown = false;
-
-// This globally enables or disables OMT pref writing, both sync and async.
-static int32_t sAllowOMTPrefWrite = -1;
 
 // Write the preference data to a file.
 class PreferencesWriter final {
@@ -3504,15 +4131,33 @@ StaticMutex PreferencesWriter::sWritingToFile;
 
 class PWRunnable : public Runnable {
  public:
+  // Consumes sPendingWriteData, writing it to aFile (the profile prefs.js).
   explicit PWRunnable(
       nsIFile* aFile,
-      UniquePtr<MozPromiseHolder<Preferences::WritePrefFilePromise>>
+      UniquePtr<MozPromiseHolder<PreferencesImpl::WritePrefFilePromise>>
           aPromiseHolder)
       : Runnable("PWRunnable"),
         mFile(aFile),
         mPromiseHolder(std::move(aPromiseHolder)) {}
 
+  // Writes aData to aFile, bypassing sPendingWriteData; used for backups.
+  PWRunnable(nsIFile* aFile, UniquePtr<PrefSaveData> aData,
+             UniquePtr<MozPromiseHolder<PreferencesImpl::WritePrefFilePromise>>
+                 aPromiseHolder)
+      : Runnable("PWRunnableBackup"),
+        mFile(aFile),
+        mData(std::move(aData)),
+        mPromiseHolder(std::move(aPromiseHolder)) {}
+
   NS_IMETHOD Run() override {
+    // Backups carry their own data and bypass the sPendingWriteData coalescing.
+    if (mData) {
+      nsresult rv = PreferencesWriter::Write(mFile, *mData);
+      DispatchWriteComplete(rv, /* aRetryOnFailure */ false);
+      PreferencesWriter::sPendingWriteCount--;
+      return rv;
+    }
+
     // Preference writes are handled a bit strangely, in that a "newer"
     // write is generally regarded as always better. For this reason,
     // sPendingWriteData can be overwritten multiple times before anyone
@@ -3556,34 +4201,45 @@ class PWRunnable : public Runnable {
           PreferencesWriter::sPendingWriteData.exchange(nullptr));
       if (prefs) {
         rv = PreferencesWriter::Write(mFile, *prefs);
-        // Make a copy of these so we can have them in runnable lambda.
-        // nsIFile is only there so that we would never release the
-        // ref counted pointer off main thread.
-        nsresult rvCopy = rv;
-        nsCOMPtr<nsIFile> fileCopy(mFile);
-        SchedulerGroup::Dispatch(NS_NewRunnableFunction(
-            "Preferences::WriterRunnable",
-            [fileCopy, rvCopy, promiseHolder = std::move(mPromiseHolder)] {
-              MOZ_RELEASE_ASSERT(NS_IsMainThread());
-              if (NS_FAILED(rvCopy)) {
-                Preferences::HandleDirty();
-              }
-              if (promiseHolder) {
-                promiseHolder->ResolveIfExists(true, __func__);
-              }
-            }));
+        DispatchWriteComplete(rv, /* aRetryOnFailure */ true);
       }
     }
     // We've completed the write to the best of our abilities, whether
     // we had prefs to write or another runnable got to them first. If
     // PreferencesWriter::Write failed, this is still correct as the
-    // write is no longer outstanding, and the above HandleDirty call
-    // will just start the cycle again.
+    // write is no longer outstanding, and the HandleDirty call that
+    // DispatchWriteComplete makes on failure will just start the cycle
+    // again.
     PreferencesWriter::sPendingWriteCount--;
     return rv;
   }
 
  private:
+  // Dispatches a main-thread runnable that settles mPromiseHolder for a write
+  // that finished with aRv; the captured nsIFile ref keeps mFile alive until it
+  // is released on the main thread. When aRetryOnFailure is true (the coalesced
+  // profile prefs.js write), a failed write is retried via HandleDirty() and
+  // the promise still resolves; otherwise a failed write rejects the promise.
+  void DispatchWriteComplete(nsresult aRv, bool aRetryOnFailure) {
+    nsCOMPtr<nsIFile> fileCopy(mFile);
+    SchedulerGroup::Dispatch(NS_NewRunnableFunction(
+        "Preferences::WriterRunnable",
+        [fileCopy, aRv, aRetryOnFailure,
+         promiseHolder = std::move(mPromiseHolder)] {
+          MOZ_RELEASE_ASSERT(NS_IsMainThread());
+          if (NS_FAILED(aRv) && aRetryOnFailure) {
+            Preferences::HandleDirty();
+          }
+          if (promiseHolder) {
+            if (NS_SUCCEEDED(aRv) || aRetryOnFailure) {
+              promiseHolder->ResolveIfExists(true, __func__);
+            } else {
+              promiseHolder->RejectIfExists(aRv, __func__);
+            }
+          }
+        }));
+  }
+
   ~PWRunnable() {
     if (mPromiseHolder) {
       mPromiseHolder->RejectIfExists(NS_ERROR_ABORT, __func__);
@@ -3592,7 +4248,10 @@ class PWRunnable : public Runnable {
 
  protected:
   nsCOMPtr<nsIFile> mFile;
-  UniquePtr<MozPromiseHolder<Preferences::WritePrefFilePromise>> mPromiseHolder;
+  // When set, Run() writes this instead of consuming sPendingWriteData.
+  UniquePtr<PrefSaveData> mData;
+  UniquePtr<MozPromiseHolder<PreferencesImpl::WritePrefFilePromise>>
+      mPromiseHolder;
 };
 
 // Although this is a member of Preferences, it measures sPreferences and
@@ -3607,19 +4266,43 @@ void Preferences::AddSizeOfIncludingThis(MallocSizeOf aMallocSizeOf,
   aSizes.mMisc += aMallocSizeOf(sPreferences.get());
 
   aSizes.mRootBranches +=
-      static_cast<nsPrefBranch*>(sPreferences->mRootBranch.get())
+      static_cast<nsPrefBranch*>(sPImpl->mRootBranch.get())
           ->SizeOfIncludingThis(aMallocSizeOf) +
-      static_cast<nsPrefBranch*>(sPreferences->mDefaultRootBranch.get())
+      static_cast<nsPrefBranch*>(sPImpl->mDefaultRootBranch.get())
           ->SizeOfIncludingThis(aMallocSizeOf);
 }
 
 /* static */
 uint32_t Preferences::GetCallbackCount() {
-  uint32_t count = 0;
-  for (CallbackNode* node = gFirstCallback; node; node = node->Next()) {
-    count++;
+  return sPImpl->mMirrorCallbacks.Count() + sPImpl->mCallbacks.Count();
+}
+
+MOZ_DEFINE_MALLOC_SIZE_OF(PrefCallbackTrieMallocSizeOf)
+
+/* static */
+Preferences::CallbackTrieStats Preferences::GetCallbackTrieStatsForTesting() {
+  CallbackTrieStats stats;
+  if (!sPImpl) {
+    return stats;
   }
-  return count;
+  MallocSizeOf mallocSizeOf = PrefCallbackTrieMallocSizeOf;
+  PrefsSizes sizes;
+  uint32_t nodeCount = 0;
+  size_t segmentBytes = 0;
+  uint32_t callbackCount = 0;
+  sPImpl->mMirrorCallbacks.AddSizeOf(mallocSizeOf, sizes, &nodeCount,
+                                     &segmentBytes, &callbackCount);
+  sPImpl->mCallbacks.AddSizeOf(mallocSizeOf, sizes, &nodeCount, &segmentBytes,
+                               &callbackCount);
+  stats.mObjectBytes = sizes.mCallbacksObjects;
+  stats.mDomainBytes = sizes.mCallbacksDomains;
+  stats.mTrieBytes = sizes.mCallbacksTrie;
+  stats.mTotalBytes =
+      sizes.mCallbacksObjects + sizes.mCallbacksDomains + sizes.mCallbacksTrie;
+  stats.mSegmentBytes = segmentBytes;
+  stats.mNodeCount = nodeCount;
+  stats.mCallbackCount = callbackCount;
+  return stats;
 }
 
 class PreferenceServiceReporter final : public nsIMemoryReporter {
@@ -3657,9 +4340,8 @@ PreferenceServiceReporter::CollectReports(
 
   sizes.mPrefNameArena += PrefNameArena().SizeOfExcludingThis(mallocSizeOf);
 
-  for (CallbackNode* node = gFirstCallback; node; node = node->Next()) {
-    node->AddSizeOfIncludingThis(mallocSizeOf, sizes);
-  }
+  sPImpl->mMirrorCallbacks.AddSizeOf(mallocSizeOf, sizes);
+  sPImpl->mCallbacks.AddSizeOf(mallocSizeOf, sizes);
 
   if (gSharedMap) {
     sizes.mMisc += mallocSizeOf(gSharedMap);
@@ -3698,6 +4380,12 @@ PreferenceServiceReporter::CollectReports(
                      UNITS_BYTES, sizes.mCallbacksDomains,
                      "Memory used by pref callback domains (pref names and "
                      "prefixes).");
+
+  MOZ_COLLECT_REPORT(
+      "explicit/preferences/callbacks/trie", KIND_HEAP, UNITS_BYTES,
+      sizes.mCallbacksTrie,
+      "Memory used by the pref callback trie scaffolding (nodes, "
+      "child arrays, and segment strings).");
 
   MOZ_COLLECT_REPORT("explicit/preferences/misc", KIND_HEAP, UNITS_BYTES,
                      sizes.mMisc, "Miscellaneous memory used by libpref.");
@@ -3799,9 +4487,6 @@ class AddPreferencesMemoryReporterRunnable : public Runnable {
 
 }  // namespace
 
-// A list of changed prefs sent from the parent via shared memory.
-static StaticAutoPtr<nsTArray<dom::Pref>> gChangedDomPrefs;
-
 static const char kTelemetryPref[] = "toolkit.telemetry.enabled";
 #if !(defined(MOZ_WIDGET_ANDROID) && defined(MOZ_TELEMETRY_ON_BY_DEFAULT))
 static const char kChannelPref[] = "app.update.channel";
@@ -3831,7 +4516,7 @@ static Maybe<bool> TelemetryPrefValue() {
 }
 
 /* static */
-void Preferences::SetupTelemetryPref() {
+void PreferencesImpl::SetupTelemetryPref() {
   MOZ_ASSERT(XRE_IsParentProcess());
 
   Maybe<bool> telemetryPrefValue = TelemetryPrefValue();
@@ -3878,7 +4563,7 @@ static bool TelemetryPrefValue() {
 }
 
 /* static */
-void Preferences::SetupTelemetryPref() {
+void PreferencesImpl::SetupTelemetryPref() {
   MOZ_ASSERT(XRE_IsParentProcess());
 
   Preferences::SetBool(kTelemetryPref, TelemetryPrefValue(),
@@ -3914,7 +4599,7 @@ already_AddRefed<Preferences> Preferences::GetInstanceForService() {
   gAccessCounts = new AccessCountsHashTable();
 #endif
 
-  nsresult rv = InitInitialObjects(/* isStartup */ true);
+  nsresult rv = PreferencesImpl::InitInitialObjects(/* isStartup */ true);
   if (NS_FAILED(rv)) {
     sPreferences = nullptr;
     return nullptr;
@@ -3983,6 +4668,13 @@ bool Preferences::IsServiceAvailable() {
 }
 
 /* static */
+nsIPrefBranch* Preferences::GetRootBranch(PrefValueKind aKind) {
+  NS_ENSURE_TRUE(InitStaticMembers(), nullptr);
+  return (aKind == PrefValueKind::Default) ? sPImpl->mDefaultRootBranch
+                                           : sPImpl->mRootBranch;
+}
+
+/* static */
 bool Preferences::InitStaticMembers() {
   MOZ_ASSERT(NS_IsMainThread() || ServoStyleSet::IsInServoTraversal());
 
@@ -4004,31 +4696,24 @@ void Preferences::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
   if (!sShutdown) {
     sShutdown = true;  // Don't create the singleton instance after here.
-    if (sSweepRunner) {
-      sSweepRunner->Cancel();
-      sSweepRunner = nullptr;
+    if (sCallbackSweepRunner) {
+      sCallbackSweepRunner->Cancel();
+      sCallbackSweepRunner = nullptr;
     }
     sPreferences = nullptr;
     StaticPrefs::ShutdownAlwaysPrefs();
   }
 }
 
-Preferences::Preferences()
-    : mRootBranch(new nsPrefBranch("", PrefValueKind::User)),
-      mDefaultRootBranch(new nsPrefBranch("", PrefValueKind::Default)) {}
+Preferences::Preferences() { sPImpl = new PreferencesImpl(); }
 
 Preferences::~Preferences() {
   MOZ_ASSERT(!sPreferences);
 
-  MOZ_ASSERT(!gCallbacksInProgress);
+  MOZ_ASSERT(!sPImpl->mCallbacksInProgress);
 
-  CallbackNode* node = gFirstCallback;
-  while (node) {
-    CallbackNode* next_node = node->Next();
-    delete node;
-    node = next_node;
-  }
-  gLastPriorityNode = gFirstCallback = nullptr;
+  sPImpl->mMirrorCallbacks.Clear();
+  sPImpl->mCallbacks.Clear();
 
   delete HashTable();
   HashTable() = nullptr;
@@ -4043,11 +4728,134 @@ Preferences::~Preferences() {
 
   gSharedMap = nullptr;
 
+  sPImpl = nullptr;
+
   PrefNameArena().Clear();
 }
 
 NS_IMPL_ISUPPORTS(Preferences, nsIPrefService, nsIObserver, nsIPrefBranch,
                   nsISupportsWeakReference)
+
+// nsIPrefBranch forwarding to mRootBranch.
+NS_IMETHODIMP Preferences::GetRoot(nsACString& aRoot) {
+  return sPImpl->mRootBranch->GetRoot(aRoot);
+}
+NS_IMETHODIMP Preferences::GetPrefType(const char* aPrefName,
+                                       nsIPrefBranch::PreferenceType* aRetVal) {
+  return sPImpl->mRootBranch->GetPrefType(aPrefName, aRetVal);
+}
+NS_IMETHODIMP Preferences::GetBoolPrefWithDefault(const char* aPrefName,
+                                                  bool aDefaultValue,
+                                                  uint8_t aArgc,
+                                                  bool* aRetVal) {
+  return sPImpl->mRootBranch->GetBoolPrefWithDefault(aPrefName, aDefaultValue,
+                                                     aArgc, aRetVal);
+}
+NS_IMETHODIMP Preferences::GetBoolPref(const char* aPrefName, bool* aRetVal) {
+  return sPImpl->mRootBranch->GetBoolPref(aPrefName, aRetVal);
+}
+NS_IMETHODIMP Preferences::SetBoolPref(const char* aPrefName, bool aValue) {
+  return sPImpl->mRootBranch->SetBoolPref(aPrefName, aValue);
+}
+NS_IMETHODIMP Preferences::GetFloatPrefWithDefault(const char* aPrefName,
+                                                   float aDefaultValue,
+                                                   uint8_t aArgc,
+                                                   float* aRetVal) {
+  return sPImpl->mRootBranch->GetFloatPrefWithDefault(aPrefName, aDefaultValue,
+                                                      aArgc, aRetVal);
+}
+NS_IMETHODIMP Preferences::GetFloatPref(const char* aPrefName, float* aRetVal) {
+  return sPImpl->mRootBranch->GetFloatPref(aPrefName, aRetVal);
+}
+NS_IMETHODIMP Preferences::GetCharPrefWithDefault(
+    const char* aPrefName, const nsACString& aDefaultValue, uint8_t aArgc,
+    nsACString& aRetVal) {
+  return sPImpl->mRootBranch->GetCharPrefWithDefault(aPrefName, aDefaultValue,
+                                                     aArgc, aRetVal);
+}
+NS_IMETHODIMP Preferences::GetCharPref(const char* aPrefName,
+                                       nsACString& aRetVal) {
+  return sPImpl->mRootBranch->GetCharPref(aPrefName, aRetVal);
+}
+NS_IMETHODIMP Preferences::SetCharPref(const char* aPrefName,
+                                       const nsACString& aValue) {
+  return sPImpl->mRootBranch->SetCharPref(aPrefName, aValue);
+}
+NS_IMETHODIMP Preferences::GetStringPref(const char* aPrefName,
+                                         const nsACString& aDefaultValue,
+                                         uint8_t aArgc, nsACString& aRetVal) {
+  return sPImpl->mRootBranch->GetStringPref(aPrefName, aDefaultValue, aArgc,
+                                            aRetVal);
+}
+NS_IMETHODIMP Preferences::SetStringPref(const char* aPrefName,
+                                         const nsACString& aValue) {
+  return sPImpl->mRootBranch->SetStringPref(aPrefName, aValue);
+}
+NS_IMETHODIMP Preferences::GetIntPrefWithDefault(const char* aPrefName,
+                                                 int32_t aDefaultValue,
+                                                 uint8_t aArgc,
+                                                 int32_t* aRetVal) {
+  return sPImpl->mRootBranch->GetIntPrefWithDefault(aPrefName, aDefaultValue,
+                                                    aArgc, aRetVal);
+}
+NS_IMETHODIMP Preferences::GetIntPref(const char* aPrefName, int32_t* aRetVal) {
+  return sPImpl->mRootBranch->GetIntPref(aPrefName, aRetVal);
+}
+NS_IMETHODIMP Preferences::SetIntPref(const char* aPrefName, int32_t aValue) {
+  return sPImpl->mRootBranch->SetIntPref(aPrefName, aValue);
+}
+NS_IMETHODIMP Preferences::GetComplexValue(const char* aPrefName,
+                                           const nsIID& aType, void** aValue) {
+  return sPImpl->mRootBranch->GetComplexValue(aPrefName, aType, aValue);
+}
+NS_IMETHODIMP Preferences::SetComplexValue(const char* aPrefName,
+                                           const nsIID& aType,
+                                           nsISupports* aValue) {
+  return sPImpl->mRootBranch->SetComplexValue(aPrefName, aType, aValue);
+}
+NS_IMETHODIMP Preferences::ClearUserPref(const char* aPrefName) {
+  return sPImpl->mRootBranch->ClearUserPref(aPrefName);
+}
+NS_IMETHODIMP Preferences::LockPref(const char* aPrefName) {
+  return sPImpl->mRootBranch->LockPref(aPrefName);
+}
+NS_IMETHODIMP Preferences::PrefHasUserValue(const char* aPrefName,
+                                            bool* aRetVal) {
+  return sPImpl->mRootBranch->PrefHasUserValue(aPrefName, aRetVal);
+}
+NS_IMETHODIMP Preferences::PrefHasDefaultValue(const char* aPrefName,
+                                               bool* aRetVal) {
+  return sPImpl->mRootBranch->PrefHasDefaultValue(aPrefName, aRetVal);
+}
+NS_IMETHODIMP Preferences::PrefIsLocked(const char* aPrefName, bool* aRetVal) {
+  return sPImpl->mRootBranch->PrefIsLocked(aPrefName, aRetVal);
+}
+NS_IMETHODIMP Preferences::PrefIsSanitized(const char* aPrefName,
+                                           bool* aRetVal) {
+  return sPImpl->mRootBranch->PrefIsSanitized(aPrefName, aRetVal);
+}
+NS_IMETHODIMP Preferences::UnlockPref(const char* aPrefName) {
+  return sPImpl->mRootBranch->UnlockPref(aPrefName);
+}
+NS_IMETHODIMP Preferences::DeleteBranch(const char* aStartingAt) {
+  return sPImpl->mRootBranch->DeleteBranch(aStartingAt);
+}
+NS_IMETHODIMP Preferences::ClearUserBranch(const char* aStartingAt) {
+  return sPImpl->mRootBranch->ClearUserBranch(aStartingAt);
+}
+NS_IMETHODIMP Preferences::GetChildList(const char* aStartingAt,
+                                        nsTArray<nsCString>& aRetVal) {
+  return sPImpl->mRootBranch->GetChildList(aStartingAt, aRetVal);
+}
+NS_IMETHODIMP Preferences::AddObserverImpl(const nsACString& aDomain,
+                                           nsIObserver* aObserver,
+                                           bool aHoldWeak) {
+  return sPImpl->mRootBranch->AddObserverImpl(aDomain, aObserver, aHoldWeak);
+}
+NS_IMETHODIMP Preferences::RemoveObserverImpl(const nsACString& aDomain,
+                                              nsIObserver* aObserver) {
+  return sPImpl->mRootBranch->RemoveObserverImpl(aDomain, aObserver);
+}
 
 /* static */
 void Preferences::SerializePreferences(nsCString& aStr,
@@ -4129,7 +4937,7 @@ mozilla::ipc::ReadOnlySharedMemoryHandle Preferences::EnsureSnapshot() {
 
     delete sPrefNameArena;
     sPrefNameArena = newPrefNameArena;
-    gCallbackPref = nullptr;
+    sPImpl->mCallbackPref = nullptr;
 
     for (uint32_t i = 0; i < toRepopulate.Length(); i++) {
       auto pref = toRepopulate[i];
@@ -4156,26 +4964,26 @@ void Preferences::InitSnapshot(
 /* static */
 void Preferences::InitializeUserPrefs() {
   MOZ_ASSERT(XRE_IsParentProcess());
-  MOZ_ASSERT(!sPreferences->mCurrentFile, "Should only initialize prefs once");
+  MOZ_ASSERT(!sPImpl->mCurrentFile, "Should only initialize prefs once");
 
   // Prefs which are set before we initialize the profile are silently
   // discarded. This is stupid, but there are various tests which depend on
   // this behavior.
-  sPreferences->ResetUserPrefs();
+  sPImpl->ResetUserPrefs();
 
-  nsCOMPtr<nsIFile> prefsFile = sPreferences->ReadSavedPrefs();
-  sPreferences->ReadUserOverridePrefs();
+  nsCOMPtr<nsIFile> prefsFile = sPImpl->ReadSavedPrefs();
+  sPImpl->ReadUserOverridePrefs();
 
-  sPreferences->mDirty = false;
+  sPImpl->mDirty = false;
 
   // Don't set mCurrentFile until we're done so that dirty flags work properly.
-  sPreferences->mCurrentFile = std::move(prefsFile);
+  sPImpl->mCurrentFile = std::move(prefsFile);
 }
 
 /* static */
 void Preferences::FinishInitializingUserPrefs() {
   MOZ_ASSERT(NS_IsMainThread());
-  sPreferences->NotifyServiceObservers(NS_PREFSERVICE_READ_TOPIC_ID);
+  sPImpl->NotifyServiceObservers(NS_PREFSERVICE_READ_TOPIC_ID);
 }
 
 NS_IMETHODIMP
@@ -4200,8 +5008,8 @@ Preferences::Observe(nsISupports* aSubject, const char* aTopic,
     // set a pref. A blocking save here re-saves if necessary and also waits
     // for any pending saves to complete.
     SavePrefFileBlocking();
-    MOZ_ASSERT(!mDirty, "Preferences should not be dirty");
-    mProfileShutdown = true;
+    MOZ_ASSERT(!sPImpl->mDirty, "Preferences should not be dirty");
+    sPImpl->mProfileShutdown = true;
 
   } else if (!nsCRT::strcmp(aTopic, "suspend_process_notification")) {
     // Our process is being suspended. The OS may wake our process later,
@@ -4250,12 +5058,12 @@ Preferences::ResetPrefs() {
 
   PrefNameArena().Clear();
 
-  return InitInitialObjects(/* isStartup */ false);
+  return PreferencesImpl::InitInitialObjects(/* isStartup */ false);
 }
 
-nsresult Preferences::ResetUserPrefs() {
-  ENSURE_PARENT_PROCESS("Preferences::ResetUserPrefs", "all prefs");
-  NS_ENSURE_TRUE(InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
+nsresult PreferencesImpl::ResetUserPrefs() {
+  ENSURE_PARENT_PROCESS("PreferencesImpl::ResetUserPrefs", "all prefs");
+  NS_ENSURE_TRUE(Preferences::InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
   MOZ_ASSERT(NS_IsMainThread());
 
   Vector<const char*> prefNames;
@@ -4285,18 +5093,19 @@ nsresult Preferences::ResetUserPrefs() {
 bool Preferences::AllowOffMainThreadSave() {
   // Put in a preference that allows us to disable off main thread preference
   // file save.
-  if (sAllowOMTPrefWrite < 0) {
+  if (sPImpl->mAllowOMTPrefWrite < 0) {
     bool value = false;
     Preferences::GetBool("preferences.allow.omt-write", &value);
-    sAllowOMTPrefWrite = value ? 1 : 0;
+    sPImpl->mAllowOMTPrefWrite = value ? 1 : 0;
   }
 
-  return !!sAllowOMTPrefWrite;
+  return !!sPImpl->mAllowOMTPrefWrite;
 }
 
 nsresult Preferences::SavePrefFileBlocking() {
-  if (mDirty) {
-    return SavePrefFileInternal(nullptr, SaveMethod::Blocking);
+  if (sPImpl->mDirty) {
+    return sPImpl->SavePrefFileInternal(nullptr,
+                                        PreferencesImpl::SaveMethod::Blocking);
   }
 
   // If we weren't dirty to start, SavePrefFileInternal will early exit so
@@ -4313,13 +5122,15 @@ nsresult Preferences::SavePrefFileBlocking() {
 }
 
 nsresult Preferences::SavePrefFileAsynchronous() {
-  return SavePrefFileInternal(nullptr, SaveMethod::Asynchronous);
+  return sPImpl->SavePrefFileInternal(
+      nullptr, PreferencesImpl::SaveMethod::Asynchronous);
 }
 
 NS_IMETHODIMP
 Preferences::SavePrefFile(nsIFile* aFile) {
   // This is the method accessible from service API. Make it off main thread.
-  return SavePrefFileInternal(aFile, SaveMethod::Asynchronous);
+  return sPImpl->SavePrefFileInternal(
+      aFile, PreferencesImpl::SaveMethod::Asynchronous);
 }
 
 NS_IMETHODIMP
@@ -4331,9 +5142,9 @@ Preferences::BackupPrefFile(nsIFile* aFile, nsIPrefOverrideMap* aJSOverrideMap,
     return NS_ERROR_INVALID_ARG;
   }
 
-  if (mCurrentFile) {
+  if (sPImpl->mCurrentFile) {
     bool equalsCurrent = false;
-    nsresult rv = aFile->Equals(mCurrentFile, &equalsCurrent);
+    nsresult rv = aFile->Equals(sPImpl->mCurrentFile, &equalsCurrent);
 
     if (NS_FAILED(rv)) {
       return rv;
@@ -4356,13 +5167,15 @@ Preferences::BackupPrefFile(nsIFile* aFile, nsIPrefOverrideMap* aJSOverrideMap,
       new nsMainThreadPtrHolder<Promise>("Preferences::BackupPrefFile promise",
                                          promise));
 
+  using WritePrefFilePromise = PreferencesImpl::WritePrefFilePromise;
   auto mozPromiseHolder = MakeUnique<MozPromiseHolder<WritePrefFilePromise>>();
   RefPtr<WritePrefFilePromise> writePrefPromise =
       mozPromiseHolder->Ensure(__func__);
 
   // Write prefs, minus ExperimentAPI prefs and overrides.
-  nsresult rv = WritePrefFile(aFile, SaveMethod::Asynchronous,
-                              std::move(mozPromiseHolder), aJSOverrideMap);
+  nsresult rv =
+      sPImpl->WritePrefFile(aFile, PreferencesImpl::SaveMethod::Asynchronous,
+                            std::move(mozPromiseHolder), aJSOverrideMap);
   if (NS_FAILED(rv)) {
     // WritePrefFile is responsible for rejecting the underlying MozPromise in
     // the event that it the method failed somewhere.
@@ -4434,9 +5247,9 @@ void Preferences::SetPreference(const dom::Pref& aDomPref) {
 
   if (valueChanged) {
     if (pref) {
-      NotifyCallbacks(prefName, PrefWrapper(pref));
+      sPImpl->NotifyCallbacks(prefName, PrefWrapper(pref));
     } else {
-      NotifyCallbacks(prefName);
+      sPImpl->NotifyCallbacks(prefName);
     }
   }
 }
@@ -4475,7 +5288,7 @@ Preferences::GetBranch(const char* aPrefRoot, nsIPrefBranch** aRetVal) {
     prefBranch.forget(aRetVal);
   } else {
     // Special case: caching the default root.
-    nsCOMPtr<nsIPrefBranch> root(sPreferences->mRootBranch);
+    nsCOMPtr<nsIPrefBranch> root(sPImpl->mRootBranch);
     root.forget(aRetVal);
   }
 
@@ -4485,7 +5298,7 @@ Preferences::GetBranch(const char* aPrefRoot, nsIPrefBranch** aRetVal) {
 NS_IMETHODIMP
 Preferences::GetDefaultBranch(const char* aPrefRoot, nsIPrefBranch** aRetVal) {
   if (!aPrefRoot || !aPrefRoot[0]) {
-    nsCOMPtr<nsIPrefBranch> root(sPreferences->mDefaultRootBranch);
+    nsCOMPtr<nsIPrefBranch> root(sPImpl->mDefaultRootBranch);
     root.forget(aRetVal);
     return NS_OK;
   }
@@ -4593,13 +5406,13 @@ Preferences::ParsePrefsFromBuffer(const nsTArray<uint8_t>& aBytes,
 
 NS_IMETHODIMP
 Preferences::GetUserPrefsFileLastModifiedAtStartup(PRTime* aLastModified) {
-  *aLastModified = mUserPrefsFileLastModifiedAtStartup;
+  *aLastModified = sPImpl->mUserPrefsFileLastModifiedAtStartup;
   return NS_OK;
 }
 
 NS_IMETHODIMP
 Preferences::GetDirty(bool* aRetVal) {
-  *aRetVal = mDirty;
+  *aRetVal = sPImpl->mDirty;
   return NS_OK;
 }
 
@@ -4609,19 +5422,19 @@ Preferences::GetPrefsJsPreamble(nsACString& aPreamble) {
   return NS_OK;
 }
 
-nsresult Preferences::NotifyServiceObservers(const char* aTopic) {
+nsresult PreferencesImpl::NotifyServiceObservers(const char* aTopic) {
   nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();
   if (!observerService) {
     return NS_ERROR_FAILURE;
   }
 
-  auto subject = static_cast<nsIPrefService*>(this);
+  auto subject = static_cast<nsIPrefService*>(Preferences::sPreferences.get());
   observerService->NotifyObservers(subject, aTopic, nullptr);
 
   return NS_OK;
 }
 
-already_AddRefed<nsIFile> Preferences::ReadSavedPrefs() {
+already_AddRefed<nsIFile> PreferencesImpl::ReadSavedPrefs() {
   nsCOMPtr<nsIFile> file;
   nsresult rv =
       NS_GetSpecialDirectory(NS_APP_PREFS_50_FILE, getter_AddRefs(file));
@@ -4650,7 +5463,7 @@ already_AddRefed<nsIFile> Preferences::ReadSavedPrefs() {
   return file.forget();
 }
 
-void Preferences::ReadUserOverridePrefs() {
+void PreferencesImpl::ReadUserOverridePrefs() {
   nsCOMPtr<nsIFile> aFile;
   nsresult rv =
       NS_GetSpecialDirectory(NS_APP_PREFS_50_DIR, getter_AddRefs(aFile));
@@ -4662,7 +5475,7 @@ void Preferences::ReadUserOverridePrefs() {
   rv = openPrefFile(aFile, PrefValueKind::User);
 }
 
-nsresult Preferences::MakeBackupPrefFile(nsIFile* aFile) {
+nsresult PreferencesImpl::MakeBackupPrefFile(nsIFile* aFile) {
   // Example: this copies "prefs.js" to "Invalidprefs.js" in the same directory.
   // "Invalidprefs.js" is removed if it exists, prior to making the copy.
   nsAutoString newFilename;
@@ -4690,9 +5503,9 @@ nsresult Preferences::MakeBackupPrefFile(nsIFile* aFile) {
   return rv;
 }
 
-nsresult Preferences::SavePrefFileInternal(nsIFile* aFile,
-                                           SaveMethod aSaveMethod) {
-  ENSURE_PARENT_PROCESS("Preferences::SavePrefFileInternal", "all prefs");
+nsresult PreferencesImpl::SavePrefFileInternal(nsIFile* aFile,
+                                               SaveMethod aSaveMethod) {
+  ENSURE_PARENT_PROCESS("PreferencesImpl::SavePrefFileInternal", "all prefs");
 
   // We allow different behavior here when aFile argument is not null, but it
   // happens to be the same as the current file.  It is not clear that we
@@ -4703,7 +5516,7 @@ nsresult Preferences::SavePrefFileInternal(nsIFile* aFile,
     mSavePending = false;
 
     // Off main thread writing only if allowed.
-    if (!AllowOffMainThreadSave()) {
+    if (!Preferences::sPreferences->AllowOffMainThreadSave()) {
       aSaveMethod = SaveMethod::Blocking;
     }
 
@@ -4739,7 +5552,7 @@ nsresult Preferences::SavePrefFileInternal(nsIFile* aFile,
   }
 }
 
-nsresult Preferences::WritePrefFile(
+nsresult PreferencesImpl::WritePrefFile(
     nsIFile* aFile, SaveMethod aSaveMethod,
     UniquePtr<MozPromiseHolder<WritePrefFilePromise>>
         aPromiseHolder /* = nullptr */,
@@ -4756,11 +5569,11 @@ nsresult Preferences::WritePrefFile(
     REJECT_IF_PROMISE_HOLDER_EXISTS(NS_ERROR_NOT_INITIALIZED);
   }
 
-  AUTO_PROFILER_LABEL("Preferences::WritePrefFile", OTHER);
+  AUTO_PROFILER_LABEL("PreferencesImpl::WritePrefFile", OTHER);
 
-  if (AllowOffMainThreadSave()) {
+  if (Preferences::sPreferences->AllowOffMainThreadSave()) {
     UniquePtr<PrefSaveData> prefs =
-        MakeUnique<PrefSaveData>(pref_savePrefs(aPrefOverrideMap));
+        MakeUnique<PrefSaveData>(SavePrefs(aPrefOverrideMap));
 
     nsresult rv = NS_OK;
     bool writingToCurrent = false;
@@ -4773,6 +5586,24 @@ nsresult Preferences::WritePrefFile(
       if (NS_FAILED(rv)) {
         REJECT_IF_PROMISE_HOLDER_EXISTS(rv);
       }
+    }
+
+    // Backups target a different file with a filtered pref set and must settle
+    // their promise, so they can't share the single-slot sPendingWriteData
+    // coalescing. Dispatch a standalone write instead.
+    if (aPromiseHolder) {
+      MOZ_ASSERT(aSaveMethod == SaveMethod::Asynchronous,
+                 "Backup writes are always asynchronous");
+      PreferencesWriter::sPendingWriteCount++;
+      rv = mAsyncTarget->Dispatch(
+          new PWRunnable(aFile, std::move(prefs), std::move(aPromiseHolder)),
+          nsIEventTarget::DISPATCH_EVENT_MAY_BLOCK);
+      if (NS_FAILED(rv)) {
+        PreferencesWriter::sPendingWriteCount--;
+        // The PWRunnable rejected the holder in its destructor.
+        return rv;
+      }
+      return NS_OK;
     }
 
     if (mCurrentFile) {
@@ -4834,7 +5665,7 @@ nsresult Preferences::WritePrefFile(
   // This will do a main thread write. It is safe to do it this way because
   // AllowOffMainThreadSave() returns a consistent value for the lifetime of
   // the parent process.
-  PrefSaveData prefsData = pref_savePrefs(aPrefOverrideMap);
+  PrefSaveData prefsData = SavePrefs(aPrefOverrideMap);
 
   // If we were given a MozPromiseHolder, this means the caller is attempting
   // to write prefs asynchronously to the disk - but if we get here, it means
@@ -5005,117 +5836,173 @@ static nsCString PrefValueToString(const nsACString* s) {
 }
 static nsCString PrefValueToString(const nsACString& s) { return nsCString(s); }
 
-// These preference getter wrappers allow us to look up the value for static
-// preferences based on their native types, rather than manually mapping them to
-// the appropriate Preferences::Get* functions.
-// We define these methods in a struct which is made friend of Preferences in
-// order to access private members.
-struct Internals {
-  template <typename T>
-  static nsresult GetPrefValue(const char* aPrefName, T&& aResult,
-                               PrefValueKind aKind) {
-    nsresult rv = NS_ERROR_UNEXPECTED;
-    NS_ENSURE_TRUE(Preferences::InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
+template <typename T>
+nsresult PreferencesImpl::GetPrefValue(const char* aPrefName, T&& aResult,
+                                       PrefValueKind aKind) {
+  nsresult rv = NS_ERROR_UNEXPECTED;
+  NS_ENSURE_TRUE(Preferences::InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
 
-    if (Maybe<PrefWrapper> pref = pref_Lookup(aPrefName)) {
-      rv = pref->GetValue(aKind, aResult);
+  if (Maybe<PrefWrapper> pref = sPImpl->Lookup(aPrefName)) {
+    rv = pref->GetValue(aKind, std::forward<T>(aResult));
 
-      if (profiler_thread_is_being_profiled_for_markers()) {
-        auto str = PrefValueToString(aResult);
-        profiler_add_marker(
-            "Preference Read", baseprofiler::category::OTHER_PreferenceRead, {},
-            PreferenceMarker{},
-            ProfilerString8View::WrapNullTerminatedString(aPrefName),
-            Some(aKind), pref->Type(), std::move(str));
-      }
+    if (profiler_thread_is_being_profiled_for_markers()) {
+      auto str = PrefValueToString(aResult);
+      profiler_add_marker(
+          "Preference Read", baseprofiler::category::OTHER_PreferenceRead, {},
+          PreferenceMarker{},
+          ProfilerString8View::WrapNullTerminatedString(aPrefName), Some(aKind),
+          pref->Type(), std::move(str));
     }
-
-    return rv;
   }
 
-  template <typename T>
-  static nsresult GetSharedPrefValue(const char* aName, T* aResult) {
-    nsresult rv = NS_ERROR_UNEXPECTED;
+  return rv;
+}
 
-    if (Maybe<PrefWrapper> pref = pref_SharedLookup(aName)) {
-      rv = pref->GetValue(PrefValueKind::User, aResult);
+template <typename T>
+nsresult PreferencesImpl::GetSharedPrefValue(const char* aName, T* aResult) {
+  nsresult rv = NS_ERROR_UNEXPECTED;
 
-      if (profiler_thread_is_being_profiled_for_markers()) {
-        auto str = PrefValueToString(aResult);
-        profiler_add_marker(
-            "Preference Read", baseprofiler::category::OTHER_PreferenceRead, {},
-            PreferenceMarker{},
-            ProfilerString8View::WrapNullTerminatedString(aName),
-            Nothing() /* indicates Shared */, pref->Type(), std::move(str));
-      }
+  if (Maybe<PrefWrapper> pref = pref_SharedLookup(aName)) {
+    rv = pref->GetValue(PrefValueKind::User, aResult);
+
+    if (profiler_thread_is_being_profiled_for_markers()) {
+      auto str = PrefValueToString(aResult);
+      profiler_add_marker(
+          "Preference Read", baseprofiler::category::OTHER_PreferenceRead, {},
+          PreferenceMarker{},
+          ProfilerString8View::WrapNullTerminatedString(aName),
+          Nothing() /* indicates Shared */, pref->Type(), std::move(str));
     }
-
-    return rv;
   }
 
-  template <typename T>
-  static T GetPref(const char* aPrefName, T aFallback,
-                   PrefValueKind aKind = PrefValueKind::User) {
-    T result = aFallback;
-    GetPrefValue(aPrefName, &result, aKind);
-    return result;
+  return rv;
+}
+
+#ifdef DEBUG
+// Congruence check: a prefix observer is congruent with the pref database if,
+// for every existing pref it matches under the old StringBeginsWith rule, it
+// also matches under the trie's segment-bounded walk. An observer that matches
+// no existing pref is fine (it simply never fires, e.g. a not-yet-created
+// pref); a "partial" / mid-segment match (domain "a.b" vs existing pref "a.bc")
+// is a behavior change. These arise where pref names use '_' or camelCase as a
+// soft separator under a dot-segment (e.g. observing "network.proxy.socks"
+// when "network.proxy.socks_port" exists): the old string-prefix match was
+// separator-blind and caught them; the trie only honors '.'. Whether that
+// matters depends on whether the observer wanted the pseudo-subtree, so this
+// is a heads-up, not a hard error. Opt in with MOZ_PREF_TRIE_AUDIT=1; the
+// warning fires at registration time, where the stack identifies the caller.
+static void WarnIfPrefixObserverDiverges(const nsACString& aRawDomain) {
+  if (aRawDomain.IsEmpty() || !HashTable()) {
+    // An empty domain registers at the root and matches every pref, so it
+    // never diverges.
+    return;
   }
-
-  template <typename T, typename V>
-  static void MOZ_NEVER_INLINE AssignMirror(T& aMirror, V aValue) {
-    aMirror = aValue;
+  // segLen is the domain length without any trailing dot -- the trie strips it,
+  // so it bounds the segment-bounded (new) match below.
+  size_t segLen = aRawDomain.Length();
+  if (aRawDomain.CharAt(segLen - 1) == '.') {
+    --segLen;
   }
-
-  static void MOZ_NEVER_INLINE AssignMirror(DataMutexString& aMirror,
-                                            nsCString&& aValue) {
-    auto lock = aMirror.Lock();
-    lock->Assign(std::move(aValue));
+  for (auto& pref : PrefsIter(HashTable(), gSharedMap)) {
+    nsDependentCString prefName(pref->Name());
+    // Old matching used StringBeginsWith on the domain exactly as registered;
+    // it did NOT strip a trailing dot (that is new in this part), so a
+    // trailing-dot domain like "network.proxy." never fired for
+    // "network.proxyX".
+    if (!StringBeginsWith(prefName, aRawDomain)) {
+      continue;  // old semantics would not have fired for this pref
+    }
+    bool firesUnderTrie =
+        prefName.Length() == segLen || prefName.CharAt(segLen) == '.';
+    if (!firesUnderTrie) {
+      printf_stderr(
+          "[pref-trie-audit] prefix observer domain '%s' partial-matches "
+          "existing pref '%s': fired under the old StringBeginsWith rule but "
+          "not under the segment-bounded trie\n",
+          PromiseFlatCString(aRawDomain).get(), pref->Name());
+    }
   }
+}
+#endif
 
-  static void MOZ_NEVER_INLINE AssignMirror(DataMutexString& aMirror,
-                                            const nsLiteralCString& aValue) {
-    auto lock = aMirror.Lock();
-    lock->Assign(aValue);
-  }
+// Register the coherence callback for a static-pref "always" mirror, into the
+// dedicated mMirrorCallbacks lookup table. Mirrors are single-name,
+// exact-match, process-lifetime and unshared, so they need neither the trie nor
+// a refcounted node; see MirrorCallbackList.
+nsresult PreferencesImpl::RegisterMirrorCallback(PrefChangedFunc aCallback,
+                                                 const nsACString& aPref,
+                                                 void* aMirror) {
+  MOZ_ASSERT(NS_IsMainThread());
+  NS_ENSURE_ARG(aCallback);
+  NS_ENSURE_TRUE(Preferences::InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
+  sPImpl->mMirrorCallbacks.Register(aCallback, aPref, aMirror);
+  return NS_OK;
+}
 
-  static void ClearMirror(DataMutexString& aMirror) {
-    auto lock = aMirror.Lock();
-    lock->Assign(nsCString());
-  }
+template <typename T>
+nsresult PreferencesImpl::RegisterCallbackImpl(PrefChangedFunc aCallback,
+                                               T& aPrefNode, void* aData,
+                                               bool aIsPrefix) {
+  MOZ_ASSERT(NS_IsMainThread());
+  NS_ENSURE_ARG(aCallback);
+  NS_ENSURE_TRUE(Preferences::InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
 
-  template <typename T>
-  static void UpdateMirror(const char* aPref, void* aMirror) {
-    StripAtomic<T> value;
+  RefPtr<CallbackNode> node =
+      MakeRefPtr<CallbackNode>(aPrefNode, aCallback, aData, aIsPrefix);
+  sPImpl->mCallbacks.Register(node);
 
-    nsresult rv = GetPrefValue(aPref, &value, PrefValueKind::User);
-    if (NS_SUCCEEDED(rv)) {
-      AssignMirror(*static_cast<T*>(aMirror),
-                   std::forward<StripAtomic<T>>(value));
+#ifdef DEBUG
+  static const bool sTriePrefAudit = !!getenv("MOZ_PREF_TRIE_AUDIT");
+  if (aIsPrefix && sTriePrefAudit) {
+    if (node->Domain().is<nsCString>()) {
+      WarnIfPrefixObserverDiverges(node->RawDomain());
     } else {
-      // GetPrefValue() can fail if the update is caused by the pref being
-      // deleted or if it fails to make a cast. This assertion is the only place
-      // where we safeguard these. In this case the mirror variable will be
-      // untouched, thus keeping the value it had prior to the change.
-      // (Note that this case won't happen for a deletion via DeleteBranch()
-      // unless bug 343600 is fixed, but it will happen for a deletion via
-      // ClearUserPref().)
-      NS_WARNING(nsPrintfCString("Pref changed failure: %s", aPref).get());
-      MOZ_ASSERT(false);
+      for (const char* const* p = node->Domain().as<const char* const*>(); *p;
+           ++p) {
+        WarnIfPrefixObserverDiverges(nsDependentCString(*p));
+      }
     }
   }
+#endif
 
-  template <typename T>
-  static nsresult RegisterCallback(void* aMirror, const nsACString& aPref) {
-    return Preferences::RegisterCallback(UpdateMirror<T>, aPref, aMirror,
-                                         Preferences::ExactMatch,
-                                         /* isPriority */ true);
+  return NS_OK;
+}
+
+template <typename T>
+nsresult PreferencesImpl::UnregisterCallbackImpl(PrefChangedFunc aCallback,
+                                                 T& aPrefNode, void* aData,
+                                                 bool aIsPrefix) {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(aCallback);
+  if (Preferences::sShutdown) {
+    MOZ_ASSERT(!Preferences::sPreferences);
+    return NS_OK;
   }
-};
+  NS_ENSURE_TRUE(Preferences::sPreferences, NS_ERROR_NOT_AVAILABLE);
+
+  // Mirrors are never unregistered (see MirrorCallbackList), so only the trie
+  // is searched: it collects the matching nodes, then marks them dead.
+  bool found = false;
+  AutoTArray<CallbackNode*, 4> matches;
+  sPImpl->mCallbacks.CollectMatchingForUnregister(aCallback, aPrefNode, aData,
+                                                  aIsPrefix, matches);
+  for (CallbackNode* node : matches) {
+    sPImpl->mCallbacks.MarkDead(node);
+    sPImpl->mShouldCleanupDeadNodes = true;
+    found = true;
+  }
+
+  if (!found) {
+    return NS_ERROR_FAILURE;
+  }
+  MaybeScheduleCallbackSweep();
+  return NS_OK;
+}
 
 // Initialize default preference JavaScript buffers from appropriate TEXT
 // resources.
 /* static */
-nsresult Preferences::InitInitialObjects(bool aIsStartup) {
+nsresult PreferencesImpl::InitInitialObjects(bool aIsStartup) {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (!XRE_IsParentProcess()) {
@@ -5373,28 +6260,28 @@ nsresult Preferences::InitInitialObjects(bool aIsStartup) {
 nsresult Preferences::GetBool(const char* aPrefName, bool* aResult,
                               PrefValueKind aKind) {
   MOZ_ASSERT(aResult);
-  return Internals::GetPrefValue(aPrefName, aResult, aKind);
+  return PreferencesImpl::GetPrefValue(aPrefName, aResult, aKind);
 }
 
 /* static */
 nsresult Preferences::GetInt(const char* aPrefName, int32_t* aResult,
                              PrefValueKind aKind) {
   MOZ_ASSERT(aResult);
-  return Internals::GetPrefValue(aPrefName, aResult, aKind);
+  return PreferencesImpl::GetPrefValue(aPrefName, aResult, aKind);
 }
 
 /* static */
 nsresult Preferences::GetFloat(const char* aPrefName, float* aResult,
                                PrefValueKind aKind) {
   MOZ_ASSERT(aResult);
-  return Internals::GetPrefValue(aPrefName, aResult, aKind);
+  return PreferencesImpl::GetPrefValue(aPrefName, aResult, aKind);
 }
 
 /* static */
 nsresult Preferences::GetCString(const char* aPrefName, nsACString& aResult,
                                  PrefValueKind aKind) {
   aResult.SetIsVoid(true);
-  return Internals::GetPrefValue(aPrefName, aResult, aKind);
+  return PreferencesImpl::GetPrefValue(aPrefName, aResult, aKind);
 }
 
 /* static */
@@ -5446,25 +6333,25 @@ nsresult Preferences::GetComplex(const char* aPrefName, const nsIID& aType,
 /* static */
 bool Preferences::GetBool(const char* aPrefName, bool aFallback,
                           PrefValueKind aKind) {
-  return Internals::GetPref(aPrefName, aFallback, aKind);
+  return PreferencesImpl::GetPref(aPrefName, aFallback, aKind);
 }
 
 /* static */
 int32_t Preferences::GetInt(const char* aPrefName, int32_t aFallback,
                             PrefValueKind aKind) {
-  return Internals::GetPref(aPrefName, aFallback, aKind);
+  return PreferencesImpl::GetPref(aPrefName, aFallback, aKind);
 }
 
 /* static */
 uint32_t Preferences::GetUint(const char* aPrefName, uint32_t aFallback,
                               PrefValueKind aKind) {
-  return Internals::GetPref(aPrefName, aFallback, aKind);
+  return PreferencesImpl::GetPref(aPrefName, aFallback, aKind);
 }
 
 /* static */
 float Preferences::GetFloat(const char* aPrefName, float aFallback,
                             PrefValueKind aKind) {
-  return Internals::GetPref(aPrefName, aFallback, aKind);
+  return PreferencesImpl::GetPref(aPrefName, aFallback, aKind);
 }
 
 /* static */
@@ -5532,12 +6419,12 @@ nsresult Preferences::Lock(const char* aPrefName) {
   ENSURE_PARENT_PROCESS("Lock", aPrefName);
   NS_ENSURE_TRUE(InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
 
-  Pref* pref = MOZ_TRY(pref_LookupForModify(
+  Pref* pref = MOZ_TRY(sPImpl->LookupForModify(
       aPrefName, [](const PrefWrapper& aPref) { return !aPref.IsLocked(); }));
 
   if (pref) {
     pref->SetIsLocked(true);
-    NotifyCallbacks(nsDependentCString{aPrefName}, PrefWrapper(pref));
+    sPImpl->NotifyCallbacks(nsDependentCString{aPrefName}, PrefWrapper(pref));
   }
 
   return NS_OK;
@@ -5548,12 +6435,12 @@ nsresult Preferences::Unlock(const char* aPrefName) {
   ENSURE_PARENT_PROCESS("Unlock", aPrefName);
   NS_ENSURE_TRUE(InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
 
-  Pref* pref = MOZ_TRY(pref_LookupForModify(
+  Pref* pref = MOZ_TRY(sPImpl->LookupForModify(
       aPrefName, [](const PrefWrapper& aPref) { return aPref.IsLocked(); }));
 
   if (pref) {
     pref->SetIsLocked(false);
-    NotifyCallbacks(nsDependentCString{aPrefName}, PrefWrapper(pref));
+    sPImpl->NotifyCallbacks(nsDependentCString{aPrefName}, PrefWrapper(pref));
   }
 
   return NS_OK;
@@ -5563,7 +6450,7 @@ nsresult Preferences::Unlock(const char* aPrefName) {
 bool Preferences::IsLocked(const char* aPrefName) {
   NS_ENSURE_TRUE(InitStaticMembers(), false);
 
-  Maybe<PrefWrapper> pref = pref_Lookup(aPrefName);
+  Maybe<PrefWrapper> pref = sPImpl->Lookup(aPrefName);
   return pref.isSome() && pref->IsLocked();
 }
 
@@ -5571,7 +6458,7 @@ bool Preferences::IsLocked(const char* aPrefName) {
 bool Preferences::IsSanitized(const char* aPrefName) {
   NS_ENSURE_TRUE(InitStaticMembers(), false);
 
-  Maybe<PrefWrapper> pref = pref_Lookup(aPrefName);
+  Maybe<PrefWrapper> pref = sPImpl->Lookup(aPrefName);
   return pref.isSome() && pref->IsSanitized();
 }
 
@@ -5580,7 +6467,7 @@ nsresult Preferences::ClearUser(const char* aPrefName) {
   ENSURE_PARENT_PROCESS("ClearUser", aPrefName);
   NS_ENSURE_TRUE(InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
 
-  auto result = pref_LookupForModify(
+  auto result = sPImpl->LookupForModify(
       aPrefName, [](const PrefWrapper& aPref) { return aPref.HasUserValue(); });
   if (result.isErr()) {
     return NS_OK;
@@ -5600,9 +6487,9 @@ nsresult Preferences::ClearUser(const char* aPrefName) {
         pref->SetType(PrefType::None);
       }
 
-      NotifyCallbacks(nsDependentCString{aPrefName});
+      sPImpl->NotifyCallbacks(nsDependentCString{aPrefName});
     } else {
-      NotifyCallbacks(nsDependentCString{aPrefName}, PrefWrapper(pref));
+      sPImpl->NotifyCallbacks(nsDependentCString{aPrefName}, PrefWrapper(pref));
     }
 
     Preferences::HandleDirty();
@@ -5614,7 +6501,7 @@ nsresult Preferences::ClearUser(const char* aPrefName) {
 bool Preferences::HasUserValue(const char* aPrefName) {
   NS_ENSURE_TRUE(InitStaticMembers(), false);
 
-  Maybe<PrefWrapper> pref = pref_Lookup(aPrefName);
+  Maybe<PrefWrapper> pref = sPImpl->Lookup(aPrefName);
   return pref.isSome() && pref->HasUserValue();
 }
 
@@ -5622,7 +6509,7 @@ bool Preferences::HasUserValue(const char* aPrefName) {
 bool Preferences::HasDefaultValue(const char* aPrefName) {
   NS_ENSURE_TRUE(InitStaticMembers(), false);
 
-  Maybe<PrefWrapper> pref = pref_Lookup(aPrefName);
+  Maybe<PrefWrapper> pref = sPImpl->Lookup(aPrefName);
   return pref.isSome() && pref->HasDefaultValue();
 }
 
@@ -5634,7 +6521,7 @@ nsIPrefBranch::PreferenceType Preferences::GetType(const char* aPrefName) {
     return PREF_INVALID;
   }
 
-  Maybe<PrefWrapper> pref = pref_Lookup(aPrefName);
+  Maybe<PrefWrapper> pref = sPImpl->Lookup(aPrefName);
   if (!pref.isSome()) {
     return PREF_INVALID;
   }
@@ -5674,7 +6561,7 @@ nsresult Preferences::AddStrongObserver(nsIObserver* aObserver,
                                         const nsACString& aPref) {
   MOZ_ASSERT(aObserver);
   NS_ENSURE_TRUE(InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
-  return sPreferences->mRootBranch->AddObserver(aPref, aObserver, false);
+  return sPImpl->mRootBranch->AddObserver(aPref, aObserver, false);
 }
 
 /* static */
@@ -5687,12 +6574,14 @@ nsresult Preferences::AddWeakObserver(nsIObserver* aObserver,
   // observers expire without triggering a notification.
   static uint32_t sWeakRegistrationsSinceSweep = 0;
   static constexpr uint32_t kSweepInterval = 512;
-  if (!sSweepRunner && ++sWeakRegistrationsSinceSweep >= kSweepInterval) {
+  if (!sCallbackSweepRunner &&
+      ++sWeakRegistrationsSinceSweep >= kSweepInterval) {
     sWeakRegistrationsSinceSweep = 0;
-    MaybeScheduleExpiredWeakObserverSweep();
+    sPImpl->mShouldSweepWeakObservers = true;
+    MaybeScheduleCallbackSweep();
   }
 
-  return sPreferences->mRootBranch->AddObserver(aPref, aObserver, true);
+  return sPImpl->mRootBranch->AddObserver(aPref, aObserver, true);
 }
 
 /* static */
@@ -5705,7 +6594,7 @@ nsresult Preferences::RemoveObserver(nsIObserver* aObserver,
     return NS_OK;  // Observers have been released automatically.
   }
   NS_ENSURE_TRUE(sPreferences, NS_ERROR_NOT_AVAILABLE);
-  return sPreferences->mRootBranch->RemoveObserver(aPref, aObserver);
+  return sPImpl->mRootBranch->RemoveObserver(aPref, aObserver);
 }
 
 template <typename T>
@@ -5765,66 +6654,20 @@ nsresult Preferences::RemoveObservers(nsIObserver* aObserver,
   return NS_OK;
 }
 
-template <typename T>
-/* static */
-nsresult Preferences::RegisterCallbackImpl(PrefChangedFunc aCallback,
-                                           T& aPrefNode, void* aData,
-                                           MatchKind aMatchKind,
-                                           bool aIsPriority) {
-  MOZ_ASSERT(NS_IsMainThread());
-  NS_ENSURE_ARG(aCallback);
-
-  NS_ENSURE_TRUE(InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
-
-  auto node = new CallbackNode(aPrefNode, aCallback, aData, aMatchKind);
-
-  if (aIsPriority) {
-    // Add to the start of the list.
-    node->SetNext(gFirstCallback);
-    gFirstCallback = node;
-    if (!gLastPriorityNode) {
-      gLastPriorityNode = node;
-    }
-  } else {
-    // Add to the start of the non-priority part of the list.
-    if (gLastPriorityNode) {
-      node->SetNext(gLastPriorityNode->Next());
-      gLastPriorityNode->SetNext(node);
-    } else {
-      node->SetNext(gFirstCallback);
-      gFirstCallback = node;
-    }
-  }
-
-  return NS_OK;
-}
-
 /* static */
 nsresult Preferences::RegisterCallback(PrefChangedFunc aCallback,
                                        const nsACString& aPrefNode, void* aData,
-                                       MatchKind aMatchKind, bool aIsPriority) {
-  return RegisterCallbackImpl(aCallback, aPrefNode, aData, aMatchKind,
-                              aIsPriority);
+                                       bool aPrefixMatch) {
+  return PreferencesImpl::RegisterCallbackImpl(aCallback, aPrefNode, aData,
+                                               aPrefixMatch);
 }
 
 /* static */
 nsresult Preferences::RegisterCallbacks(PrefChangedFunc aCallback,
                                         const char* const* aPrefs, void* aData,
-                                        MatchKind aMatchKind) {
-  return RegisterCallbackImpl(aCallback, aPrefs, aData, aMatchKind);
-}
-
-/* static */
-nsresult Preferences::RegisterCallbackAndCall(PrefChangedFunc aCallback,
-                                              const nsACString& aPref,
-                                              void* aClosure,
-                                              MatchKind aMatchKind) {
-  MOZ_ASSERT(aCallback);
-  nsresult rv = RegisterCallback(aCallback, aPref, aClosure, aMatchKind);
-  if (NS_SUCCEEDED(rv)) {
-    (*aCallback)(PromiseFlatCString(aPref).get(), aClosure);
-  }
-  return rv;
+                                        bool aPrefixMatch) {
+  return PreferencesImpl::RegisterCallbackImpl(aCallback, aPrefs, aData,
+                                               aPrefixMatch);
 }
 
 /* static */
@@ -5833,8 +6676,7 @@ nsresult Preferences::RegisterCallbacksAndCall(PrefChangedFunc aCallback,
                                                void* aClosure) {
   MOZ_ASSERT(aCallback);
 
-  nsresult rv =
-      RegisterCallbacks(aCallback, aPrefs, aClosure, MatchKind::ExactMatch);
+  nsresult rv = RegisterCallbacks(aCallback, aPrefs, aClosure);
   if (NS_SUCCEEDED(rv)) {
     for (const char* const* ptr = aPrefs; *ptr; ptr++) {
       (*aCallback)(*ptr, aClosure);
@@ -5843,58 +6685,20 @@ nsresult Preferences::RegisterCallbacksAndCall(PrefChangedFunc aCallback,
   return rv;
 }
 
-template <typename T>
-/* static */
-nsresult Preferences::UnregisterCallbackImpl(PrefChangedFunc aCallback,
-                                             T& aPrefNode, void* aData,
-                                             MatchKind aMatchKind) {
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(aCallback);
-  if (sShutdown) {
-    MOZ_ASSERT(!sPreferences);
-    return NS_OK;  // Observers have been released automatically.
-  }
-  NS_ENSURE_TRUE(sPreferences, NS_ERROR_NOT_AVAILABLE);
-
-  nsresult rv = NS_ERROR_FAILURE;
-  CallbackNode* node = gFirstCallback;
-  CallbackNode* prev_node = nullptr;
-
-  while (node) {
-    if (node->Func() == aCallback && node->Data() == aData &&
-        node->MatchKind() == aMatchKind && node->DomainIs(aPrefNode)) {
-      if (gCallbacksInProgress) {
-        // Postpone the node removal until after callbacks enumeration is
-        // finished.
-        node->ClearFunc();
-        gShouldCleanupDeadNodes = true;
-        prev_node = node;
-        node = node->Next();
-      } else {
-        node = pref_RemoveCallbackNode(node, prev_node);
-      }
-      rv = NS_OK;
-    } else {
-      prev_node = node;
-      node = node->Next();
-    }
-  }
-  return rv;
-}
-
 /* static */
 nsresult Preferences::UnregisterCallback(PrefChangedFunc aCallback,
                                          const nsACString& aPrefNode,
-                                         void* aData, MatchKind aMatchKind) {
-  return UnregisterCallbackImpl<const nsACString&>(aCallback, aPrefNode, aData,
-                                                   aMatchKind);
+                                         void* aData, bool aPrefixMatch) {
+  return PreferencesImpl::UnregisterCallbackImpl<const nsACString&>(
+      aCallback, aPrefNode, aData, aPrefixMatch);
 }
 
 /* static */
 nsresult Preferences::UnregisterCallbacks(PrefChangedFunc aCallback,
                                           const char* const* aPrefs,
-                                          void* aData, MatchKind aMatchKind) {
-  return UnregisterCallbackImpl(aCallback, aPrefs, aData, aMatchKind);
+                                          void* aData, bool aPrefixMatch) {
+  return PreferencesImpl::UnregisterCallbackImpl(aCallback, aPrefs, aData,
+                                                 aPrefixMatch);
 }
 
 /* static */
@@ -5904,27 +6708,20 @@ uint32_t Preferences::UnregisterCallbacksForBranch(nsPrefBranch* aBranch) {
     return 0;
   }
 
+  // Mirror callbacks are never pref-branch observers, so only the trie is
+  // reaped here.
   uint32_t removedCount = 0;
-  CallbackNode* node = gFirstCallback;
-  CallbackNode* prev_node = nullptr;
-
-  while (node) {
-    if (node->Func() == nsPrefBranch::NotifyObserver &&
-        static_cast<PrefCallback*>(node->Data())->GetPrefBranch() == aBranch) {
+  sPImpl->mCallbacks.ForEachCallback([&](CallbackNode* aNode) {
+    // A live node fires NotifyObserver; MarkDead clears Func, so an array-
+    // registered node matches (and is counted) only on its first visit.
+    if (aNode->Func() == nsPrefBranch::NotifyObserver &&
+        static_cast<PrefCallback*>(aNode->Data())->GetPrefBranch() == aBranch) {
       ++removedCount;
-      if (gCallbacksInProgress) {
-        node->ClearFunc();
-        gShouldCleanupDeadNodes = true;
-        prev_node = node;
-        node = node->Next();
-      } else {
-        node = pref_RemoveCallbackNode(node, prev_node);
-      }
-    } else {
-      prev_node = node;
-      node = node->Next();
+      sPImpl->mCallbacks.MarkDead(aNode);
+      sPImpl->mShouldCleanupDeadNodes = true;
     }
-  }
+  });
+  MaybeScheduleCallbackSweep();
   return removedCount;
 }
 
@@ -5932,14 +6729,15 @@ template <typename T>
 static void AddMirrorCallback(T* aMirror, const nsACString& aPref) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  Internals::RegisterCallback<T>(aMirror, aPref);
+  PreferencesImpl::RegisterMirror<T>(aMirror, aPref);
 }
 
 // Don't inline because it explodes compile times.
 template <typename T>
 static MOZ_NEVER_INLINE void AddMirror(T* aMirror, const nsACString& aPref,
                                        StripAtomic<T> aDefault) {
-  *aMirror = Internals::GetPref(PromiseFlatCString(aPref).get(), aDefault);
+  *aMirror =
+      PreferencesImpl::GetPref(PromiseFlatCString(aPref).get(), aDefault);
   AddMirrorCallback(aMirror, aPref);
 }
 
@@ -5947,8 +6745,8 @@ static MOZ_NEVER_INLINE void AddMirror(DataMutexString& aMirror,
                                        const nsACString& aPref) {
   auto lock = aMirror.Lock();
   nsCString result(*lock);
-  Internals::GetPrefValue(PromiseFlatCString(aPref).get(), result,
-                          PrefValueKind::User);
+  PreferencesImpl::GetPrefValue(PromiseFlatCString(aPref).get(), result,
+                                PrefValueKind::User);
   lock->Assign(std::move(result));
   AddMirrorCallback(&aMirror, aPref);
 }
@@ -6037,7 +6835,7 @@ static void InitAlwaysPref(const nsCString& aName, DataMutexString& aCache,
   // `always` mirror to the default value.
   // `once` mirrors will be initialized lazily in InitOncePrefs().
   InitPref_String(aName, aDefaultValue.get());
-  Internals::AssignMirror(aCache, aDefaultValue);
+  PreferencesImpl::AssignMirror(aCache, aDefaultValue);
 }
 
 static Atomic<bool> sOncePrefRead(false);
@@ -6140,12 +6938,12 @@ static void InitOncePrefs() MOZ_REQUIRES(sMainThreadCapability) {
 #  define ONCE_PREF(name, base_id, full_id, cpp_type, value)                   \
     {                                                                          \
       MOZ_ASSERT(gOnceStaticPrefsAntiFootgun);                                 \
-      sMirror_##full_id = Internals::GetPref(name, cpp_type(value));           \
+      sMirror_##full_id = PreferencesImpl::GetPref(name, cpp_type(value));     \
       auto checkPref = [&]() {                                                 \
         MOZ_ASSERT(sOncePrefRead);                                             \
         cpp_type staticPrefValue = full_id();                                  \
-        cpp_type preferenceValue =                                             \
-            Internals::GetPref(GetPrefName_##base_id(), cpp_type(value));      \
+        cpp_type preferenceValue = PreferencesImpl::GetPref(                   \
+            GetPrefName_##base_id(), cpp_type(value));                         \
         MOZ_ASSERT(staticPrefValue == preferenceValue,                         \
                    "Preference '" name                                         \
                    "' got modified since StaticPrefs::" #full_id               \
@@ -6158,7 +6956,7 @@ static void InitOncePrefs() MOZ_REQUIRES(sMainThreadCapability) {
     }
 #else
 #  define ONCE_PREF(name, base_id, full_id, cpp_type, value) \
-    sMirror_##full_id = Internals::GetPref(name, cpp_type(value));
+    sMirror_##full_id = PreferencesImpl::GetPref(name, cpp_type(value));
 #endif
 
 #include "mozilla/StaticPrefListAll.h"
@@ -6175,7 +6973,7 @@ static void ShutdownAlwaysPrefs() {
 #define NEVER_PREF(name, cpp_type, value)
 #define ALWAYS_PREF(name, base_id, full_id, cpp_type, value)
 #define ALWAYS_DATAMUTEX_PREF(name, base_id, full_id, cpp_type, value) \
-  Internals::ClearMirror(sMirror_##full_id);
+  PreferencesImpl::ClearMirror(sMirror_##full_id);
 #define ONCE_PREF(name, base_id, full_id, cpp_type, value)
 #include "mozilla/StaticPrefListAll.h"
 #undef NEVER_PREF
@@ -6306,31 +7104,31 @@ static void InitStaticPrefsFromShared() {
   // builds, where this scenario involving inconsistent binaries should not
   // occur.
 #define NEVER_PREF(name, cpp_type, default_value)
-#define ALWAYS_PREF(name, base_id, full_id, cpp_type, default_value)    \
-  {                                                                     \
-    StripAtomic<cpp_type> val;                                          \
-    ASSERT_PREF_NOT_SANITIZED(name, cpp_type);                          \
-    DebugOnly<nsresult> rv = Internals::GetSharedPrefValue(name, &val); \
-    MOZ_ASSERT(NS_SUCCEEDED(rv), "Failed accessing " name);             \
-    StaticPrefs::sMirror_##full_id = val;                               \
+#define ALWAYS_PREF(name, base_id, full_id, cpp_type, default_value)          \
+  {                                                                           \
+    StripAtomic<cpp_type> val;                                                \
+    ASSERT_PREF_NOT_SANITIZED(name, cpp_type);                                \
+    DebugOnly<nsresult> rv = PreferencesImpl::GetSharedPrefValue(name, &val); \
+    MOZ_ASSERT(NS_SUCCEEDED(rv), "Failed accessing " name);                   \
+    StaticPrefs::sMirror_##full_id = val;                                     \
   }
 #define ALWAYS_DATAMUTEX_PREF(name, base_id, full_id, cpp_type, default_value) \
   {                                                                            \
     StripAtomic<cpp_type> val;                                                 \
     ASSERT_PREF_NOT_SANITIZED(name, cpp_type);                                 \
-    DebugOnly<nsresult> rv = Internals::GetSharedPrefValue(name, &val);        \
+    DebugOnly<nsresult> rv = PreferencesImpl::GetSharedPrefValue(name, &val);  \
     MOZ_ASSERT(NS_SUCCEEDED(rv), "Failed accessing " name);                    \
-    Internals::AssignMirror(StaticPrefs::sMirror_##full_id,                    \
-                            std::forward<StripAtomic<cpp_type>>(val));         \
+    PreferencesImpl::AssignMirror(StaticPrefs::sMirror_##full_id,              \
+                                  std::forward<StripAtomic<cpp_type>>(val));   \
   }
-#define ONCE_PREF(name, base_id, full_id, cpp_type, default_value) \
-  {                                                                \
-    cpp_type val;                                                  \
-    ASSERT_PREF_NOT_SANITIZED(name, cpp_type);                     \
-    DebugOnly<nsresult> rv =                                       \
-        Internals::GetSharedPrefValue(ONCE_PREF_NAME(name), &val); \
-    MOZ_ASSERT(NS_SUCCEEDED(rv), "Failed accessing " name);        \
-    StaticPrefs::sMirror_##full_id = val;                          \
+#define ONCE_PREF(name, base_id, full_id, cpp_type, default_value)       \
+  {                                                                      \
+    cpp_type val;                                                        \
+    ASSERT_PREF_NOT_SANITIZED(name, cpp_type);                           \
+    DebugOnly<nsresult> rv =                                             \
+        PreferencesImpl::GetSharedPrefValue(ONCE_PREF_NAME(name), &val); \
+    MOZ_ASSERT(NS_SUCCEEDED(rv), "Failed accessing " name);              \
+    StaticPrefs::sMirror_##full_id = val;                                \
   }
 #include "mozilla/StaticPrefListAll.h"
 #undef NEVER_PREF
@@ -6604,7 +7402,7 @@ bool IsPreferenceSanitized(const char* aPrefName) {
     return false;
   }
 
-  if (Maybe<PrefWrapper> pref = pref_Lookup(aPrefName)) {
+  if (Maybe<PrefWrapper> pref = sPImpl->Lookup(aPrefName)) {
     if (pref.isNothing()) {
       return true;
     }

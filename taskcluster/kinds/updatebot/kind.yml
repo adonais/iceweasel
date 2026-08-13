@@ -25,11 +25,15 @@ tasks:
             platform: updatebot/all
             symbol: cron
             tier: 1
-        worker-type: b-linux
+        worker-type: b-linux-docker-updatebot-amd
         worker:
             docker-image: {in-tree: updatebot}
             max-run-time: 4500
             taskcluster-proxy: true
+            artifacts:
+                - type: directory
+                  name: public/updatebot
+                  path: /builds/worker/artifacts
         scopes:
             - secrets:get:project/updatebot/{level}/try-sshkey
             - secrets:get:project/updatebot/{level}/phabricator-token
@@ -37,6 +41,7 @@ tasks:
             - secrets:get:project/updatebot/{level}/database-password
             - secrets:get:project/updatebot/{level}/sentry-url
             - secrets:get:project/updatebot/{level}/sql-proxy-config
+            - secrets:get:project/updatebot/{level}/ai-api-key
             - hooks:trigger-hook:project-gecko/in-tree-action-1-generic/*
         run:
             using: run-task
@@ -61,7 +66,7 @@ tasks:
             platform: updatebot/all
             symbol: w-cron
             tier: 1
-        worker-type: b-win2022
+        worker-type: b-win2022-updatebot
         worker:
             max-run-time: 4500
             taskcluster-proxy: true

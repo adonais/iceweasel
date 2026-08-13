@@ -14,6 +14,7 @@
 #include <type_traits>  // std::enable_if_t, std::{true,false}_type, std::is_{integral,signed,unsigned}_v
 
 #include "jstypes.h"  // JS_PUBLIC_API
+
 #include "js/TypeDecls.h"
 
 namespace mozilla {

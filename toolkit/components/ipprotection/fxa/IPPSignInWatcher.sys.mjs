@@ -4,6 +4,11 @@
 
 const lazy = {};
 
+ChromeUtils.defineLazyGetter(lazy, "fxAccounts", () =>
+  ChromeUtils.importESModule(
+    "resource://gre/modules/FxAccounts.sys.mjs"
+  ).getFxAccountsSingleton()
+);
 ChromeUtils.defineESModuleGetters(lazy, {
   IPProtectionService:
     "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
@@ -26,7 +31,33 @@ class IPPSignInWatcherSingleton extends EventTarget {
   }
 
   init() {
-    this.#signedIn = Services.prefs.prefHasUserValue("services.sync.username");
+    // Get signed in state
+    this.#refreshFromFxA();
+  }
+
+  async #refreshFromFxA() {
+    let signedIn = false;
+    try {
+      const userData = await lazy.fxAccounts.getSignedInUser();
+      signedIn = !!userData?.verified;
+    } catch (_) {
+      signedIn = false;
+    }
+    this.#setSignedIn(signedIn);
+  }
+
+  #setSignedIn(signedIn) {
+    if (signedIn === this.#signedIn) {
+      return;
+    }
+    this.#signedIn = signedIn;
+    lazy.IPProtectionService.updateState();
+    this.dispatchEvent(
+      new CustomEvent("IPPSignInWatcher:StateChanged", {
+        bubbles: true,
+        composed: true,
+      })
+    );
   }
 
   /**
@@ -42,17 +73,7 @@ class IPPSignInWatcherSingleton extends EventTarget {
       observe() {
         let { status } = lazy.UIState.get();
         let signedIn = status == lazy.UIState.STATUS_SIGNED_IN;
-        if (signedIn !== IPPSignInWatcher.isSignedIn) {
-          IPPSignInWatcher.isSignedIn = signedIn;
-          lazy.IPProtectionService.updateState();
-
-          IPPSignInWatcher.dispatchEvent(
-            new CustomEvent("IPPSignInWatcher:StateChanged", {
-              bubbles: true,
-              composed: true,
-            })
-          );
-        }
+        IPPSignInWatcher.#setSignedIn(signedIn);
       },
     };
 

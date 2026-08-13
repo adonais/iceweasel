@@ -76,7 +76,7 @@ add_task(async function test_interaction_recorded_on_user_interaction() {
     async function (browser) {
       await simulateUserInteraction(browser);
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => getInteractionTime("https://example.com") > 0,
         "Waiting for interaction record to be written"
       );
@@ -114,7 +114,7 @@ add_task(async function test_interaction_recorded_without_permission() {
     async function (browser) {
       await simulateUserInteraction(browser);
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => getInteractionCount("https://example.org") > 0,
         "Waiting for interaction record to be written"
       );
@@ -159,7 +159,7 @@ add_task(async function test_interaction_updates_on_repeat_interaction() {
     async function (browser) {
       await simulateUserInteraction(browser);
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => getInteractionTime("https://example.net") > 0,
         "Waiting for first interaction record"
       );
@@ -180,7 +180,7 @@ add_task(async function test_interaction_updates_on_repeat_interaction() {
     async function (browser) {
       await simulateUserInteraction(browser);
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => getInteractionTime("https://example.net") >= firstInteractionTime,
         "Waiting for second interaction record"
       );
@@ -226,7 +226,7 @@ add_task(async function test_interaction_tracked_even_when_disabled() {
     async function (browser) {
       await simulateUserInteraction(browser);
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => getInteractionTime("https://www.example.com") > 0,
         "Interaction should be tracked even when feature is disabled"
       );

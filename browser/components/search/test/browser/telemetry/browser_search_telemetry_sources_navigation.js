@@ -36,7 +36,7 @@ async function getFirstSuggestionIndex() {
   for (let i = 0; i < matchCount; i++) {
     let result = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
     if (
-      result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
+      result.type == UrlbarShared.RESULT_TYPE.SEARCH &&
       result.searchParams.suggestion
     ) {
       return i;

@@ -2,12 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/Logging.h"
-
 #include "TaskbarProgress.h"
-#include "nsWindow.h"
+
 #include "WidgetUtils.h"
+#include "mozilla/Logging.h"
 #include "nsPIDOMWindow.h"
+#include "nsWindow.h"
 
 using mozilla::LogLevel;
 static mozilla::LazyLogModule gGtkTaskbarProgressLog("nsIGtkTaskbarProgress");

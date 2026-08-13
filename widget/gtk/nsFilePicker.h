@@ -8,12 +8,13 @@
 #include <gtk/gtk.h>
 
 #include "nsBaseFilePicker.h"
+#include "nsCOMArray.h"
 #include "nsString.h"
 #include "nsTArray.h"
-#include "nsCOMArray.h"
 
 class nsIWidget;
 class nsIFile;
+class nsWindow;
 
 class nsFilePicker final : public nsBaseFilePicker {
  public:

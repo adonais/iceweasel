@@ -1,0 +1,23 @@
+{
+  "metrics": {
+    "newtab": {
+      "scroll": {
+        "description": "Whether the user scrolled more than SCROLL_TELEMETRY_THRESHOLD pixels during a newtab session. Absent if no qualifying scroll occurred during the session.\n",
+        "disabled": false,
+        "lifetime": "ping",
+        "pings": ["newtab"],
+        "type": "boolean"
+      }
+    },
+    "topsites": {
+      "pinned_count": {
+        "description": "The number of pinned top site tiles at the time of the newtab session.\n",
+        "disabled": false,
+        "lifetime": "application",
+        "pings": ["newtab"],
+        "type": "quantity"
+      }
+    }
+  },
+  "pings": {}
+}

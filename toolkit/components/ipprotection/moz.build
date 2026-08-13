@@ -10,6 +10,7 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
         "fxa/IPPAndroidAuthProvider.sys.mjs",
         "fxa/IPPAndroidSignInWatcher.sys.mjs",
         "gpi/IPPGpiAuthProvider.sys.mjs",
+        "tests/IPPDummyAuthProvider.sys.mjs",
     ]
 
 if CONFIG["MOZ_ENTERPRISE"]:
@@ -28,8 +29,6 @@ TESTING_JS_MODULES.ipprotection += [
 MOZ_SRC_FILES += [
     "fxa/GuardianClient.sys.mjs",
     "fxa/IPPFxaActivateAuthProvider.sys.mjs",
-    "fxa/IPPFxaAuthProvider.sys.mjs",
-    "fxa/IPPFxaBaseAuthProvider.sys.mjs",
     "fxa/IPPSignInWatcher.sys.mjs",
     "GuardianTypes.sys.mjs",
     "IPPAuthProvider.sys.mjs",

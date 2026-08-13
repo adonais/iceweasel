@@ -96,17 +96,19 @@ static void ComposeExtraMask(DrawTarget* aTarget, SourceSurface* aExtraMask) {
 void SVGClipPathFrame::PaintChildren(gfxContext& aMaskContext,
                                      nsIFrame* aClippedFrame,
                                      const gfxMatrix& aMatrix) {
-  // Check if this clipPath is itself clipped by another clipPath:
-  SVGClipPathFrame* clipPathThatClipsClipPath;
-  // XXX check return value?
-  SVGObserverUtils::GetAndObserveClipPath(this, &clipPathThatClipsClipPath);
   SVGUtils::MaskUsage maskUsage = SVGUtils::DetermineMaskUsage(this, true);
-
   gfxGroupForBlendAutoSaveRestore autoGroupForBlend(&aMaskContext);
+
   if (maskUsage.ShouldApplyClipPath()) {
+    SVGClipPathFrame* clipPathThatClipsClipPath;
+    // Check if this clipPath is itself clipped by another clipPath:
+    SVGObserverUtils::GetAndObserveClipPath(this, &clipPathThatClipsClipPath);
     clipPathThatClipsClipPath->ApplyClipPath(aMaskContext, aClippedFrame,
                                              aMatrix);
   } else if (maskUsage.ShouldGenerateClipMaskLayer()) {
+    SVGClipPathFrame* clipPathThatClipsClipPath;
+    // Check if this clipPath is itself clipped by another clipPath:
+    SVGObserverUtils::GetAndObserveClipPath(this, &clipPathThatClipsClipPath);
     RefPtr<SourceSurface> maskSurface = clipPathThatClipsClipPath->GetClipMask(
         aMaskContext, aClippedFrame, aMatrix);
     // We want the mask to be untransformed so use the inverse of the current

@@ -6,8 +6,8 @@
 #define MOZILLA_GFX_HELPERSCAIRO_H_
 
 #include "2D.h"
-#include "cairo.h"
 #include "Logging.h"
+#include "cairo.h"
 
 namespace mozilla {
 namespace gfx {

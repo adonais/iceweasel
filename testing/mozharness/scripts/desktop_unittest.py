@@ -243,6 +243,15 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
                 },
             ],
             [
+                ["--combine-suites"],
+                {
+                    "action": "store_true",
+                    "dest": "combine_suites",
+                    "default": False,
+                    "help": "Combine test suites into one gtest invocation.",
+                },
+            ],
+            [
                 ["--threads"],
                 {
                     "action": "store",
@@ -685,7 +694,7 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
             abs_app_dir = self.query_abs_app_dir()
             abs_res_dir = self.query_abs_res_dir()
 
-            raw_log_file, error_summary_file = self.get_indexed_logs(
+            raw_log_file, error_summary_file, test_summary_file = self.get_indexed_logs(
                 dirs["abs_blob_upload_dir"], suite
             )
 
@@ -697,6 +706,7 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
                 "abs_res_dir": abs_res_dir,
                 "raw_log_file": raw_log_file,
                 "error_summary_file": error_summary_file,
+                "test_summary_file": test_summary_file,
                 "gtest_dir": os.path.join(dirs["abs_test_install_dir"], "gtest"),
             }
 
@@ -827,7 +837,16 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
                     base_cmd.append("--filter-set={}".format(c["filter_set"]))
                 else:
                     self.warning(
-                        "--filter-set does not currently work with suites other then "
+                        "--filter-set does not currently work with suites other than "
+                        "gtest."
+                    )
+
+            if c["combine_suites"]:
+                if suite_category == "gtest":
+                    base_cmd.append("--combine-suites")
+                else:
+                    self.warning(
+                        "--combine-suites does not currently work with suites other than "
                         "gtest."
                     )
 

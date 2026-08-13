@@ -275,9 +275,7 @@ export class TranslationsTelemetry {
    * @param {boolean | null} [data.langTagsMatch]
    * @param {boolean | null} [data.isLangAttributeValid]
    * @param {number} data.extractedCodeUnits
-   * @param {number} data.extractionTime
    * @param {number} data.identificationTime
-   * @param {number} data.totalTime
    * @param {boolean} data.confident
    */
   static onIdentifyPageLanguage(data) {
@@ -290,9 +288,7 @@ export class TranslationsTelemetry {
           langTagsMatch,
           isLangAttributeValid,
           extractedCodeUnits,
-          extractionTime,
           identificationTime,
-          totalTime,
           confident,
         } = data;
 
@@ -302,9 +298,7 @@ export class TranslationsTelemetry {
           lang_tags_match: langTagsMatch,
           is_lang_attribute_valid: isLangAttributeValid,
           extracted_code_units: extractedCodeUnits,
-          extraction_time: extractionTime,
           identification_time: identificationTime,
-          total_time: totalTime,
           confident,
         });
         TranslationsTelemetry.logEventToConsole(

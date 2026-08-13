@@ -5,9 +5,9 @@
 #ifndef PendingTransactionQueue_h_
 #define PendingTransactionQueue_h_
 
+#include "PendingTransactionInfo.h"
 #include "nsClassHashtable.h"
 #include "nsHttpTransaction.h"
-#include "PendingTransactionInfo.h"
 
 namespace mozilla {
 namespace net {

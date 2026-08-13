@@ -264,6 +264,7 @@ impl Runner for FirefoxRunner {
                 | Arg::Other(_)
                 | Arg::RemoteAllowHosts
                 | Arg::RemoteAllowOrigins
+                | Arg::RemoteAllowSystemAccess
                 | Arg::RemoteDebuggingPort => {}
             }
         }
@@ -276,9 +277,10 @@ impl Runner for FirefoxRunner {
             cmd.arg("-no-remote");
         }
         if let Some(ref profile) = self.profile
-            && !seen_profile {
-                cmd.arg("-profile").arg(&profile.path);
-            }
+            && !seen_profile
+        {
+            cmd.arg("-profile").arg(&profile.path);
+        }
 
         info!("Running command: {:?}", cmd);
         let process = cmd.spawn()?;
@@ -394,8 +396,8 @@ pub mod platform {
     use crate::path::{find_binary, is_binary};
     use std::io::Error;
     use std::path::PathBuf;
-    use winreg::enums::*;
     use winreg::RegKey;
+    use winreg::enums::*;
 
     pub fn resolve_binary_path(path: &mut PathBuf) -> &PathBuf {
         path

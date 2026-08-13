@@ -974,7 +974,7 @@ class MacroAssemblerLOONG64Compat : public MacroAssemblerLOONG64 {
   }
 
   template <typename T>
-  void storePtr(ImmWord imm, T address);
+  FaultingCodeOffset storePtr(ImmWord imm, T address);
   template <typename T>
   void storePtr(ImmPtr imm, T address);
   template <typename T>

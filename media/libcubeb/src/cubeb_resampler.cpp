@@ -70,6 +70,7 @@ passthrough_resampler<T>::fill(void * input_buffer, long * input_frames_count,
   // and can directly forward it to the callback.
   void * in_buf = input_buffer;
   unsigned long pop_input_count = 0u;
+  long original_input_frames_count = input_buffer ? *input_frames_count : 0;
   if (input_buffer && !output_buffer) {
     output_frames = *input_frames_count;
   } else if (input_buffer) {
@@ -113,10 +114,8 @@ passthrough_resampler<T>::fill(void * input_buffer, long * input_frames_count,
   if (input_buffer) {
     if (pop_input_count) {
       internal_input_buffer.pop(nullptr, pop_input_count);
-      *input_frames_count = samples_to_frames(pop_input_count);
-    } else {
-      *input_frames_count = output_frames;
     }
+    *input_frames_count = original_input_frames_count;
     drop_audio_if_needed();
   }
 
@@ -131,16 +130,23 @@ template <typename T, typename InputProcessor, typename OutputProcessor>
 cubeb_resampler_speex<T, InputProcessor, OutputProcessor>::
     cubeb_resampler_speex(InputProcessor * input_processor,
                           OutputProcessor * output_processor, cubeb_stream * s,
-                          cubeb_data_callback cb, void * ptr)
+                          cubeb_data_callback cb, void * ptr,
+                          cubeb_resampler_direction direction,
+                          uint32_t input_channels, uint32_t target_rate)
     : input_processor(input_processor), output_processor(output_processor),
-      stream(s), data_callback(cb), user_ptr(ptr)
+      stream(s), data_callback(cb), user_ptr(ptr),
+      input_channels(input_channels), target_rate(target_rate)
 {
-  if (input_processor && output_processor) {
+  switch (direction) {
+  case cubeb_resampler_direction::DUPLEX:
     fill_internal = &cubeb_resampler_speex::fill_internal_duplex;
-  } else if (input_processor) {
+    break;
+  case cubeb_resampler_direction::INPUT:
     fill_internal = &cubeb_resampler_speex::fill_internal_input;
-  } else if (output_processor) {
+    break;
+  case cubeb_resampler_direction::OUTPUT:
     fill_internal = &cubeb_resampler_speex::fill_internal_output;
+    break;
   }
 }
 
@@ -212,34 +218,41 @@ cubeb_resampler_speex<T, InputProcessor, OutputProcessor>::fill_internal_input(
   assert(input_buffer && input_frames_count && *input_frames_count &&
          !output_buffer);
 
+  long original_count = *input_frames_count;
   /* The input data, after eventual resampling. This is passed to the callback.
    */
   T * resampled_input = nullptr;
   uint32_t resampled_frame_count =
       input_processor->output_for_input(*input_frames_count);
 
-  /* process the input, and present exactly `output_frames_needed` in the
-   * callback. */
+  /* process the input, and present exactly `resampled_frame_count` frames in
+   * the callback. */
   input_processor->input(input_buffer, *input_frames_count);
 
   /* resampled_frame_count == 0 happens if the resampler
    * doesn't have enough input frames buffered to produce 1 resampled frame. */
   if (resampled_frame_count == 0) {
-    return *input_frames_count;
+    *input_frames_count = original_count;
+    return original_count;
   }
 
-  size_t frames_resampled = 0;
-  resampled_input =
-      input_processor->output(resampled_frame_count, &frames_resampled);
-  *input_frames_count = frames_resampled;
+  resampled_input = input_processor->output(resampled_frame_count, nullptr);
 
   long got = data_callback(stream, user_ptr, resampled_input, nullptr,
                            resampled_frame_count);
+  if (got < 0) {
+    input_processor->drop_audio_if_needed();
+    *input_frames_count = original_count;
+    return got;
+  }
+
+  input_processor->drop_audio_if_needed();
+  *input_frames_count = original_count;
 
   /* Return the number of initial input frames or part of it.
    * Since output_frames_needed == 0 in input scenario, the only
    * available number outside resampler is the initial number of frames. */
-  return (*input_frames_count) * (got / resampled_frame_count);
+  return original_count * (got / static_cast<long>(resampled_frame_count));
 }
 
 template <typename T, typename InputProcessor, typename OutputProcessor>
@@ -250,7 +263,10 @@ cubeb_resampler_speex<T, InputProcessor, OutputProcessor>::fill_internal_duplex(
 {
   if (draining) {
     // discard input and drain any signal remaining in the resampler.
-    return output_processor->output(out_buffer, output_frames_needed);
+    if (output_processor) {
+      return output_processor->output(out_buffer, output_frames_needed);
+    }
+    return 0;
   }
 
   /* The input data, after eventual resampling. This is passed to the callback.
@@ -273,23 +289,40 @@ cubeb_resampler_speex<T, InputProcessor, OutputProcessor>::fill_internal_duplex(
    * get the output data, and resample it to the number of frames needed by the
    * caller. */
 
-  output_frames_before_processing =
-      output_processor->input_needed_for_output(output_frames_needed);
-  /* fill directly the input buffer of the output processor to save a copy */
-  out_unprocessed =
-      output_processor->input_buffer(output_frames_before_processing);
+  if (output_processor) {
+    output_frames_before_processing =
+        output_processor->input_needed_for_output(output_frames_needed);
+    /* fill directly the input buffer of the output processor to save a copy */
+    out_unprocessed =
+        output_processor->input_buffer(output_frames_before_processing);
+  } else {
+    output_frames_before_processing = output_frames_needed;
+    out_unprocessed = out_buffer;
+  }
 
   if (in_buffer) {
-    /* process the input, and present exactly `output_frames_needed` in the
-     * callback. */
-    input_processor->input(in_buffer, *input_frames_count);
-
-    size_t frames_resampled = 0;
-    resampled_input = input_processor->output(output_frames_before_processing,
-                                              &frames_resampled);
-    *input_frames_count = frames_resampled;
-  } else {
-    resampled_input = nullptr;
+    /* All provided input frames are reported as consumed: every path accepts
+     * all input, buffering excess internally. Callers must not re-present
+     * frames after a fill call. */
+    if (input_processor) {
+      long original_count = *input_frames_count;
+      input_processor->input(in_buffer, *input_frames_count);
+      resampled_input =
+          input_processor->output(output_frames_before_processing, nullptr);
+      *input_frames_count = original_count;
+    } else {
+      long original_count = *input_frames_count;
+      input_queue.push(in_buffer, *input_frames_count * input_channels);
+      long available = static_cast<long>(input_queue.length() / input_channels);
+      if (available < output_frames_before_processing) {
+        /* Capture underrun: pad with silence rather than presenting fewer
+         * frames to the callback, which would shorten the output. */
+        input_queue.push_silence((output_frames_before_processing - available) *
+                                 input_channels);
+      }
+      resampled_input = input_queue.data();
+      *input_frames_count = original_count;
+    }
   }
 
   got = data_callback(stream, user_ptr, resampled_input, out_unprocessed,
@@ -303,15 +336,28 @@ cubeb_resampler_speex<T, InputProcessor, OutputProcessor>::fill_internal_duplex(
     }
   }
 
-  output_processor->written(got);
+  if (output_processor) {
+    output_processor->written(got);
+  }
 
-  input_processor->drop_audio_if_needed();
+  if (input_processor) {
+    input_processor->drop_audio_if_needed();
+  } else if (in_buffer) {
+    input_queue.pop(nullptr, output_frames_before_processing * input_channels);
+    uint32_t available =
+        static_cast<uint32_t>(input_queue.length() / input_channels);
+    uint32_t to_keep = min_buffered_audio_frame(target_rate);
+    if (available > to_keep) {
+      input_queue.pop(nullptr, (available - to_keep) * input_channels);
+    }
+  }
 
-  /* Process the output. If not enough frames have been returned from the
-   * callback, drain the processors. */
-  got = output_processor->output(out_buffer, output_frames_needed);
-
-  output_processor->drop_audio_if_needed();
+  if (output_processor) {
+    /* Process the output. If not enough frames have been returned from the
+     * callback, drain the processors. */
+    got = output_processor->output(out_buffer, output_frames_needed);
+    output_processor->drop_audio_if_needed();
+  }
 
   return got;
 }
@@ -370,6 +416,19 @@ long
 cubeb_resampler_latency(cubeb_resampler * resampler)
 {
   return resampler->latency();
+}
+
+long
+cubeb_resampler_input_latency(cubeb_resampler * resampler)
+{
+  return resampler->input_latency();
+}
+
+long
+cubeb_resampler_input_needed_for_output(cubeb_resampler * resampler,
+                                        long output_frames)
+{
+  return resampler->input_needed_for_output(output_frames);
 }
 
 cubeb_resampler_stats

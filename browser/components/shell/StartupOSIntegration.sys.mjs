@@ -23,6 +23,8 @@ XPCOMUtils.defineLazyServiceGetters(lazy, {
 });
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  CustomIconManager:
+    "moz-src:///browser/components/shell/CustomIconManager.sys.mjs",
   FirefoxBridgeExtensionUtils:
     "resource:///modules/FirefoxBridgeExtensionUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
@@ -118,6 +120,29 @@ export let StartupOSIntegration = {
     return true;
   },
 
+  /**
+   * Early-startup hook for the custom-launcher-icon feature. Runs before the
+   * first browser window is created and synchronously registers the runtime
+   * icon override with the widget layer so that newly-created nsWindows
+   * pick up the user's chosen icon at construction time.
+   *
+   * Does no disk I/O; the existence check and any necessary revert work
+   * happens later via onStartupIdle → ensureAppliedOrRevert.
+   *
+   * Wired in BrowserComponents.manifest under the browser-before-ui-startup
+   * category (XP_WIN only).
+   */
+  applyCustomIconOnStartup() {
+    if (AppConstants.platform !== "win") {
+      return;
+    }
+    try {
+      lazy.CustomIconManager.applyRuntimeOverrideForStartup();
+    } catch (ex) {
+      console.error(ex);
+    }
+  },
+
   checkForLaunchOnLogin() {
     // We only support launch on login on Windows at the moment.
     if (AppConstants.platform != "win") {
@@ -166,6 +191,8 @@ export let StartupOSIntegration = {
         safeCall(() => this.maybePinMSIXToStartMenu());
       }
       safeCall(() => this.ensurePrivateBrowsingShortcutExists());
+      safeCall(() => lazy.CustomIconManager.ensureAppliedOrRevert());
+      safeCall(() => lazy.CustomIconManager.ensureShortcutInPerUserStartMenu());
     }
   },
 

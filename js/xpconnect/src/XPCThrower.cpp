@@ -4,14 +4,16 @@
 
 /* Code for throwing errors into JavaScript. */
 
-#include "xpcprivate.h"
-#include "XPCWrapper.h"
-#include "js/CharacterEncoding.h"
-#include "js/Printf.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/Exceptions.h"
+
 #include "nsString.h"
+#include "xpcprivate.h"
+#include "XPCWrapper.h"
+
+#include "js/CharacterEncoding.h"
+#include "js/Printf.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

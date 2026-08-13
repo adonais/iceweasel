@@ -167,7 +167,7 @@ add_task(async function test_escaped_chars() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         uri: "https://www.mozilla.org/%E5%95%8A-test",
         title: "test visit for https://www.mozilla.org/%E5%95%8A-test",
         iconUri: "page-icon:https://www.mozilla.org/%E5%95%8A-test",

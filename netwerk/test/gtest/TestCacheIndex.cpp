@@ -1,8 +1,8 @@
+#include "../cache2/CacheIndex.h"
 #include "gtest/gtest.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/TimeStamp.h"
 #include "nsTArray.h"
-#include "../cache2/CacheIndex.h"
 
 namespace mozilla {
 namespace net {

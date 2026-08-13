@@ -269,6 +269,43 @@ describe("ContentSection", () => {
     );
   });
 
+  it("should dispatch WIDGETS_ENABLED with widget_name=stocks when the stocks toggle fires", () => {
+    const dispatch = sinon.spy();
+    wrapper = mount(
+      <ContentSection
+        {...DEFAULT_PROPS}
+        dispatch={dispatch}
+        enabledWidgets={{
+          listsEnabled: false,
+          timerEnabled: false,
+          widgetsMaximized: false,
+          widgetsMayBeMaximized: false,
+        }}
+      />
+    );
+
+    wrapper.instance().onPreferenceSelect({
+      target: {
+        nodeName: "INPUT",
+        checked: true,
+        dataset: {
+          preference: "widgets.stocks.enabled",
+          eventSource: "WIDGET_STOCKS",
+        },
+      },
+    });
+
+    const widgetsEnabledCall = dispatch
+      .getCalls()
+      .find(call => call.args[0].type === "WIDGETS_ENABLED");
+    assert.ok(widgetsEnabledCall, "Expected WIDGETS_ENABLED to be dispatched");
+    assert.equal(
+      widgetsEnabledCall.args[0].data.widget_name,
+      "stocks",
+      "widget_name should be stocks"
+    );
+  });
+
   it("should dispatch WIDGETS_ENABLED with widget_size=small for Weather widget", () => {
     const dispatch = sinon.spy();
     wrapper = mount(

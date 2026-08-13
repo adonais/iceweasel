@@ -3,6 +3,11 @@
 
 "use strict";
 
+const { PromiseTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/PromiseTestUtils.sys.mjs"
+);
+PromiseTestUtils.allowMatchingRejectionsGlobally(/Connection closed/);
+
 // Test that the expected supported categories are displayed for USB runtimes.
 add_task(async function () {
   const targetTab = await addTab("about:home");

@@ -5,12 +5,11 @@
 #include "APZCBasicTester.h"
 #include "APZCTreeManagerTester.h"
 #include "APZTestCommon.h"
+#include "InputUtils.h"
 #include "mozilla/RelativeTo.h"
 #include "mozilla/ScrollPositionUpdate.h"
 #include "mozilla/layers/ScrollableLayerGuid.h"
 #include "mozilla/layers/WebRenderScrollDataWrapper.h"
-
-#include "InputUtils.h"
 
 using LayersUpdateFlags = AsyncPanZoomController::LayersUpdateFlags;
 

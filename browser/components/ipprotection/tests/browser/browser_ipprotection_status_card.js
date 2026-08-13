@@ -7,9 +7,6 @@
 const { LINKS, BANDWIDTH } = ChromeUtils.importESModule(
   "chrome://browser/content/ipprotection/ipprotection-constants.mjs"
 );
-const { IPPExceptionsManager } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/ipprotection/IPPExceptionsManager.sys.mjs"
-);
 const { countryName } = ChromeUtils.importESModule(
   "chrome://browser/content/ipprotection/ipprotection-utils.mjs"
 );

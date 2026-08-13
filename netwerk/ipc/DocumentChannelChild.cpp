@@ -4,6 +4,8 @@
 
 #include "DocumentChannelChild.h"
 
+#include "mozilla/ScopeExit.h"
+#include "mozilla/StaticPrefs_fission.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/RemoteType.h"
@@ -11,17 +13,15 @@
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/net/HttpBaseChannel.h"
 #include "mozilla/net/NeckoChild.h"
-#include "mozilla/ScopeExit.h"
-#include "mozilla/StaticPrefs_fission.h"
+#include "nsDocShellLoadState.h"
+#include "nsFrameLoader.h"
+#include "nsFrameLoaderOwner.h"
 #include "nsHashPropertyBag.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsIObjectLoadingContent.h"
-#include "nsIXULRuntime.h"
 #include "nsIWritablePropertyBag.h"
-#include "nsFrameLoader.h"
-#include "nsFrameLoaderOwner.h"
+#include "nsIXULRuntime.h"
 #include "nsQueryObject.h"
-#include "nsDocShellLoadState.h"
 
 using namespace mozilla::dom;
 using namespace mozilla::ipc;

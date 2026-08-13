@@ -3,9 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 // HttpLog.h should generally be included first
-#include "HttpLog.h"
-
 #include "MockHttpAuth.h"
+
+#include "HttpLog.h"
 
 namespace mozilla::net {
 

@@ -9,9 +9,9 @@
 #ifndef mozilla_image_src_ImageCacheKey_h
 #define mozilla_image_src_ImageCacheKey_h
 
+#include "PLDHashTable.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Maybe.h"
-#include "PLDHashTable.h"
 #include "nsIDocShell.h"
 
 class nsIURI;

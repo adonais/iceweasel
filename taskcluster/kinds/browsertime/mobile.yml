@@ -579,3 +579,34 @@ browsertime-trr-performance-m:
                     default: []
     tier: 3
     treeherder-symbol: Btime(trrperfm)
+
+browsertime-hev3-connection-m:
+    raptor:
+        apps: [fenix, chrome-m]
+        run-visual-metrics: false
+        subtests:
+            by-app:
+                fenix:
+                    - he3off-dns
+                    - he3off-doh
+                    - he3on-dns
+                    - he3on-doh
+                chrome-m:
+                    - baseline
+
+    description: Raptor (browsertime) Happy Eyeballs v3 connection tests, mobile
+    # Ceiling for flaky venv/pip setup, not the test (healthy run ~6-7 min).
+    max-run-time: 900
+    run-on-projects:
+        by-app:
+            fenix:
+                by-test-platform:
+                    android-hw-a55.*shippable.*: [mozilla-central]
+                    default: []
+            chrome-m:
+                by-test-platform:
+                    android-hw-a55.*shippable.*: [mozilla-central]
+                    default: []
+            default: []
+    tier: 3
+    treeherder-symbol: Btime(hev3connm)

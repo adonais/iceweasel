@@ -182,8 +182,13 @@ add_task(async function test_separatePrivateDefault() {
     "Private engine selection box should be enabled"
   );
 
+  // Await the SearchService update to finish syncing the backend preference.
+  let prefChangePromise = TestUtils.waitForPrefChange(
+    "browser.search.separatePrivateDefault"
+  );
   separateEngineCheckbox.click();
   await separateEngineCheckbox.parentElement.updateComplete;
+  await prefChangePromise;
 
   Assert.ok(
     !Services.prefs.getBoolPref("browser.search.separatePrivateDefault"),
@@ -281,6 +286,66 @@ add_task(async function test_setDefaultEngine() {
       },
     },
     "Should have received the correct event details"
+  );
+
+  gBrowser.removeCurrentTab();
+});
+
+add_task(async function test_privateDefaultEngineResetOnUncheck() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.search.separatePrivateDefault.ui.enabled", true],
+      ["browser.search.separatePrivateDefault", true],
+    ],
+  });
+
+  const engine1 = SearchService.getEngineByName("engine1");
+  await SearchService.setDefaultPrivate(
+    engine1,
+    SearchService.CHANGE_REASON.UNKNOWN
+  );
+
+  Assert.equal(
+    (await SearchService.getDefaultPrivate()).name,
+    "engine1",
+    "engine1 should be the private default before unchecking"
+  );
+
+  await openPreferencesViaOpenPreferencesAPI("search", { leaveOpen: true });
+
+  const doc = gBrowser.selectedBrowser.contentDocument;
+  const separateEngineCheckbox = doc.getElementById(
+    "browserSeparateDefaultEngine"
+  );
+
+  let prefChangePromise = TestUtils.waitForPrefChange(
+    "browser.search.separatePrivateDefault"
+  );
+  separateEngineCheckbox.click();
+  await separateEngineCheckbox.parentElement.updateComplete;
+  await prefChangePromise;
+
+  Assert.ok(
+    !Services.prefs.getBoolPref("browser.search.separatePrivateDefault"),
+    "Pref should be false after unchecking"
+  );
+
+  prefChangePromise = TestUtils.waitForPrefChange(
+    "browser.search.separatePrivateDefault"
+  );
+  separateEngineCheckbox.click();
+  await separateEngineCheckbox.parentElement.updateComplete;
+  await prefChangePromise;
+
+  Assert.ok(
+    Services.prefs.getBoolPref("browser.search.separatePrivateDefault"),
+    "Pref should be true after re-checking"
+  );
+
+  Assert.notEqual(
+    (await SearchService.getDefaultPrivate()).name,
+    "engine1",
+    "Private default should have been cleared when unchecked and not restored to engine1 on re-check"
   );
 
   gBrowser.removeCurrentTab();

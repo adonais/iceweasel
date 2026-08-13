@@ -5,9 +5,9 @@
 #ifndef mozilla_AvailableMemoryWatcher_h
 #define mozilla_AvailableMemoryWatcher_h
 
-#include "mozilla/ipc/CrashReporterHost.h"
-#include "mozilla/UniquePtr.h"
 #include "MemoryPressureLevelMac.h"
+#include "mozilla/UniquePtr.h"
+#include "mozilla/ipc/CrashReporterHost.h"
 #include "nsCOMPtr.h"
 #include "nsIAvailableMemoryWatcherBase.h"
 #include "nsIObserver.h"

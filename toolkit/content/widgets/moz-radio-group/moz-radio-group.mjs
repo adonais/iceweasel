@@ -30,11 +30,15 @@ import { MozBaseInputElement } from "../lit-utils.mjs";
  */
 export class MozRadioGroup extends SelectControlBaseElement {
   static childElementName = "moz-radio";
-  static orientation = "vertical";
 
   static properties = {
     parentDisabled: { type: Boolean, state: true },
   };
+
+  constructor() {
+    super();
+    this.orientation = "vertical";
+  }
 }
 customElements.define("moz-radio-group", MozRadioGroup);
 

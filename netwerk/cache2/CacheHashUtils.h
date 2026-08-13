@@ -6,8 +6,8 @@
 #define CacheHashUtils_h_
 
 #include "nsISupports.h"
-#include "prnetdb.h"
 #include "nsPrintfCString.h"
+#include "prnetdb.h"
 
 #define LOGSHA1(x)                                         \
   PR_htonl((reinterpret_cast<const uint32_t*>(x))[0]),     \

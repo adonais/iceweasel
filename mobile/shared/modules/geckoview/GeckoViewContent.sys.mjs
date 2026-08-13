@@ -23,6 +23,7 @@ export class GeckoViewContent extends GeckoViewModule {
       "GeckoView:UpdateInitData",
       "GeckoView:ZoomToInput",
       "GeckoView:IsPdfJs",
+      "GeckoView:GetBrokenSiteReport",
       "GeckoView:GetWebCompatInfo",
       "GeckoView:SendMoreWebCompatInfo",
     ]);
@@ -279,6 +280,9 @@ export class GeckoViewContent extends GeckoViewModule {
       case "GeckoView:ContainsFormData":
         this._containsFormData(aCallback);
         break;
+      case "GeckoView:GetBrokenSiteReport":
+        this._getBrokenSiteReport(aCallback);
+        break;
       case "GeckoView:GetWebCompatInfo":
         this._getWebCompatInfo(aCallback);
         break;
@@ -393,6 +397,36 @@ export class GeckoViewContent extends GeckoViewModule {
         }
         break;
       }
+    }
+  }
+
+  async _getBrokenSiteReport(aCallback) {
+    if (
+      Cu.isInAutomation &&
+      Services.prefs.getBoolPref(
+        "browser.webcompat.geckoview.enableAllTestMocks",
+        false
+      )
+    ) {
+      const mockResult = {
+        devicePixelRatio: 2.5,
+        antitracking: { hasTrackingContentBlocked: false },
+      };
+      aCallback.onSuccess(JSON.stringify(mockResult));
+      return;
+    }
+    try {
+      const actor =
+        this.browser.browsingContext.currentWindowGlobal.getActor(
+          "ReportBrokenSite"
+        );
+      const info = await actor.getBrokenSiteReport();
+
+      // Stringify to convert potential non-ASCII
+      // characters in the returned web compat info map.
+      aCallback.onSuccess(JSON.stringify(info));
+    } catch (error) {
+      aCallback.onError(`Cannot get broken site report, error: ${error}`);
     }
   }
 

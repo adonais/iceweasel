@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -47,6 +46,7 @@ import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem.RecentHistoryGrou
 import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem.RecentHistoryHighlight
 import org.mozilla.fenix.home.topsites.ui.HomepageCard
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.wallpapers.WallpaperTheme
 import mozilla.components.ui.icons.R as iconsR
 
 // Number of recently visited items per column.
@@ -72,7 +72,7 @@ private val contentPadding = 16.dp
 fun RecentlyVisited(
     recentVisits: List<RecentlyVisitedItem>,
     menuItems: List<RecentVisitMenuItem>,
-    backgroundColor: Color = MaterialTheme.colorScheme.surfaceBright,
+    backgroundColor: Color = WallpaperTheme.cardBackgroundColor,
     onRecentVisitClick: (RecentlyVisitedItem, pageNumber: Int) -> Unit = { _, _ -> },
 ) {
     val isSingleColumn by remember(recentVisits) { derivedStateOf { recentVisits.size <= VISITS_PER_COLUMN } }

@@ -13,18 +13,52 @@ exclude: true
 
 ⚠️  breaking change and deprecation notices
 
+
+## v155
+- Added [WebRequestError.ERROR_LOCAL_NETWORK_ACCESS_DENIED] to indicate that a load failed because the user denied the local network access permission on Android 17+.
+
+## v154
+- Added [`Autofill.Node.getDatalist`][154.1] to expose predefined values by [`datalist`][154.2] elements for input fields.
+- Added experimental [`ContentPermission.notifyShown`][154.3] so embedders can signal that a permission prompt UI has been displayed to the user, enabling per-prompt telemetry on the Gecko side (e.g. for local network access). ([bug 2009145]({{bugzilla}}2009145))
+- Added [`IPProtectionController.refreshUsage`][154.4] to request a refresh of proxy usage information, delivered asynchronously via [`Delegate#onUsageChanged`][154.5].
+  ([bug 2042799]({{bugzilla}}2042799))
+- Added [`IPProtectionController.getCountryList`][154.6] and [`IPProtectionController.Country`][154.7] to request the list of countries available in the proxy serverlist, delivered asynchronously via [`Delegate#onCountryListChanged`][154.8] whenever the list changes.
+- Added [`IPProtectionController.activate(boolean, boolean, String)`][154.9] to activate the proxy with explicit user-action, private-browsing, and country options.
+- ⚠️ Made [`ScrollPositionUpdate`][154.10] immutable: its fields are now `final` and instances are constructed via `ScrollPositionUpdate(float, float, float, int)` instead of the previous no-argument constructor with mutable fields. ([bug 1994863]({{bugzilla}}1994863))
+- Added [`GeckoSession.getBrokenSiteReport`][154.11] that returns a `GeckoResult<JSONObject>` containing information for a broken site report. ([bug 2049050]({{bugzilla}}2049050)).
+- Changed [`GeckoSession.setHistoryDelegate`][154.12], [`setContentBlockingDelegate`][154.13], [`setMediaDelegate`][154.14], [`setMediaSessionDelegate`][154.15], [`setTranslationsSessionDelegate`][154.16], [`setPrintDelegate`][154.17], and [`setExperimentDelegate`][154.18] from `@AnyThread` to `@UiThread`, reflecting that they must be called on the UI thread.
+
+[154.1]: {{javadoc_uri}}/Autofill.Node.html#getDatalist()
+[154.2]: https://developer.mozilla.org/en/docs/Web/HTML/Reference/Elements/datalist
+[154.3]: {{javadoc_uri}}/GeckoSession.PermissionDelegate.ContentPermission.html#notifyShown()
+[154.4]: {{javadoc_uri}}/IPProtectionController.html#refreshUsage()
+[154.5]: {{javadoc_uri}}/IPProtectionController.Delegate.html#onUsageChanged(org.mozilla.geckoview.IPProtectionController.UsageInfo)
+[154.6]: {{javadoc_uri}}/IPProtectionController.html#getCountryList()
+[154.7]: {{javadoc_uri}}/IPProtectionController.Country.html
+[154.8]: {{javadoc_uri}}/IPProtectionController.Delegate.html#onCountryListChanged(java.util.List)
+[154.9]: {{javadoc_uri}}/IPProtectionController.html#activate(boolean,boolean,java.lang.String)
+[154.10]: {{javadoc_uri}}/GeckoSession.ScrollPositionUpdate.html
+[154.12]: {{javadoc_uri}}/GeckoSession.html#setHistoryDelegate(org.mozilla.geckoview.GeckoSession.HistoryDelegate)
+[154.13]: {{javadoc_uri}}/GeckoSession.html#setContentBlockingDelegate(org.mozilla.geckoview.ContentBlocking.Delegate)
+[154.14]: {{javadoc_uri}}/GeckoSession.html#setMediaDelegate(org.mozilla.geckoview.GeckoSession.MediaDelegate)
+[154.15]: {{javadoc_uri}}/GeckoSession.html#setMediaSessionDelegate(org.mozilla.geckoview.MediaSession.Delegate)
+[154.16]: {{javadoc_uri}}/GeckoSession.html#setTranslationsSessionDelegate(org.mozilla.geckoview.TranslationsController.SessionTranslation.Delegate)
+[154.17]: {{javadoc_uri}}/GeckoSession.html#setPrintDelegate(org.mozilla.geckoview.GeckoSession.PrintDelegate)
+[154.18]: {{javadoc_uri}}/GeckoSession.html#setExperimentDelegate(org.mozilla.geckoview.GeckoSession.ExperimentDelegate)
+
 ## v153
 - Added [`SourceType`][153.1] annotation to [`ScrollPositionUpdate.source`][153.2]
   ([bug 1994860]({{bugzilla}}1994860))
 - Updated the [`PURGED_BOUNCETRACKER`][129.3] value and added new [`REPLACED_FINGERPRINTING_CONTENT`] ContentBlockingController.Event. ([bug 2039485]({{bugzilla}}2039485))
 - Added  [`clearTrackingDb`][153.4] to ContentBlockingController to support clearing all data stored about blocked trackers in previous browsing sessions. ([bug 2042068]({{bugzilla}}2042068))
-- Added experimental [`ContentPermission.notifyShown`][153.5] so embedders can signal that a permission prompt UI has been displayed to the user, enabling per-prompt telemetry on the Gecko side (e.g. for local network access). ([bug 2009145]({{bugzilla}}2009145)) (also included in 154, but uplifted to 153)
+- Added [`onAudioSessionTypeChanged`][153.5] to [`MediaSession.Delegate`][153.6] so embedders can request platform audio focus matching the tab's W3C Audio Session type. ([bug 2047296]({{bugzilla}}2047296))
 
 [153.1]: {{javadoc_uri}}/GeckoSession.ScrollPositionUpdate.SourceType.html
 [153.2]: {{javadoc_uri}}/GeckoSession.ScrollPositionUpdate.html#source
 [153.3]: {{javadoc_uri}}/ContentBlockingController.Event.html#REPLACED_FINGERPRINTING_CONTENT
 [153.4]: {{javadoc_uri}}/ContentBlockingController.html#clearTrackingDb()
-[153.5]: {{javadoc_uri}}/GeckoSession.PermissionDelegate.ContentPermission.html#notifyShown()
+[153.5]: {{javadoc_uri}}/MediaSession.Delegate.html#onAudioSessionTypeChanged(org.mozilla.geckoview.GeckoSession,org.mozilla.geckoview.MediaSession,java.lang.String)
+[153.6]: {{javadoc_uri}}/MediaSession.Delegate.html
 
 ## v152
 - Added [`WebExtensionController.INSTALLATION_METHOD_RTAMO`][152.1], which should be used when a `WebExtension` is installed for the RTAMO feature. ([bug 2029607]({{bugzilla}}2029607))
@@ -34,6 +68,7 @@ exclude: true
 - Added [`WebAuthnRelatedOriginPrompt`][152.10] and [`onWebAuthnRelatedOriginPrompt`][152.11] to `GeckoSession.PromptDelegate` for confirming WebAuthn related origin requests.
     ([bug 2010193]({{bugzilla}}2010193))
 - Added [`IPProtectionController.enroll`][152.12] and [`IPProtectionController.EnrollResult`][152.13] to trigger enrollment via the active auth provider. ([bug 2037352]({{bugzilla}}2037352))
+- Added [`IPProtectionController.GpiProvider`][152.14], [`setGpiProvider`][152.15] / [`getGpiProvider`][152.16] so embedders can supply Google Play Integrity tokens to the IP Protection service. ([bug 2037184]({{bugzilla}}2037184))
 
 [152.1]: {{javadoc_uri}}/WebExtensionController.html#INSTALLATION_METHOD_RTAMO
 [152.2]: {{javadoc_uri}}/IPProtectionController.AuthProvider.html
@@ -48,6 +83,9 @@ exclude: true
 [152.11]: {{javadoc_uri}}/GeckoSession.PromptDelegate.html#onWebAuthnRelatedOriginPrompt(org.mozilla.geckoview.GeckoSession,org.mozilla.geckoview.GeckoSession.PromptDelegate.WebAuthnRelatedOriginPrompt)
 [152.12]: {{javadoc_uri}}/IPProtectionController.html#enroll()
 [152.13]: {{javadoc_uri}}/IPProtectionController.EnrollResult.html
+[152.14]: {{javadoc_uri}}/IPProtectionController.GpiProvider.html
+[152.15]: {{javadoc_uri}}/IPProtectionController.html#setGpiProvider(org.mozilla.geckoview.IPProtectionController.GpiProvider)
+[152.16]: {{javadoc_uri}}/IPProtectionController.html#getGpiProvider()
 
 ## v151
 - Added `isBlocked` to `AIFeature` on [`AIFeaturesController`][150.3].
@@ -1988,4 +2026,4 @@ to allow adding gecko profiler markers.
 [65.24]: {{javadoc_uri}}/CrashReporter.html#sendCrashReport(android.content.Context,android.os.Bundle,java.lang.String)
 [65.25]: {{javadoc_uri}}/GeckoResult.html
 
-[api-version]: e2d7b4a86368971ed93ef141051e884efaf2e472
+[api-version]: 8e646d30158d54d419e53ae51e0be333b0a5ddef

@@ -3,16 +3,16 @@
     "color": {
       "hover": {
         "value": {
+          "nativeTheme": "{background.color.dimmed.@base}",
           "light": "rgb(240, 240, 244)",
-          "dark": "{background.color.dimmed.@base}",
-          "nativeTheme": "{background.color.dimmed.@base}"
+          "dark": "{background.color.dimmed.@base}"
         }
       },
       "selected": {
         "value": {
+          "nativeTheme": "SelectedItem",
           "light": "#e0e0e6",
-          "dark": "rgb(43, 42, 51)",
-          "nativeTheme": "SelectedItem"
+          "dark": "rgb(43, 42, 51)"
         }
       }
     }
@@ -32,6 +32,37 @@
       }
     }
   },
+  "action": {
+    "button": {
+      "background": {
+        "color": {
+          "@base": {
+            "value": "color-mix(in srgb, var(--urlbarview-background-color-hover) 50%, transparent)"
+          },
+          "hover": {
+            "value": "var(--urlbarview-background-color-hover)"
+          }
+        }
+      }
+    }
+  },
+  "favicon": {
+    "size": {
+      "value": "{icon.size.@base}"
+    }
+  },
+  "row": {
+    "min": {
+      "height": {
+        "value": "{size.item.large}"
+      }
+    },
+    "padding": {
+      "block": {
+        "value": "{space.small}"
+      }
+    }
+  },
   "text": {
     "color": {
       "action": {
@@ -39,6 +70,13 @@
           "light": "rgb(91, 91, 102)",
           "dark": "rgb(191, 191, 201)",
           "nativeTheme": "LinkText"
+        }
+      },
+      "secondary": {
+        "value": {
+          "nativeTheme": "color-mix(in srgb, currentColor 73%, transparent)",
+          "default": "color-mix(in srgb, currentColor 73%, transparent)",
+          "forcedColors": "currentColor"
         }
       },
       "selected": {

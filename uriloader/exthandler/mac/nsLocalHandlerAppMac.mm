@@ -47,15 +47,15 @@ nsLocalHandlerAppMac::LaunchWithURI(
   aURI->GetAsciiSpec(uriSpec);
 
   const UInt8* uriString = reinterpret_cast<const UInt8*>(uriSpec.get());
-  CFURLRef uri = ::CFURLCreateWithBytes(NULL, uriString, uriSpec.Length(),
-                                        kCFStringEncodingUTF8, NULL);
+  CFURLRef uri = ::CFURLCreateWithBytes(nullptr, uriString, uriSpec.Length(),
+                                        kCFStringEncodingUTF8, nullptr);
   if (!uri) {
     ::CFRelease(appURL);
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
-  CFArrayRef uris =
-      ::CFArrayCreate(NULL, reinterpret_cast<const void**>(&uri), 1, NULL);
+  CFArrayRef uris = ::CFArrayCreate(
+      nullptr, reinterpret_cast<const void**>(&uri), 1, nullptr);
   if (!uris) {
     ::CFRelease(uri);
     ::CFRelease(appURL);
@@ -65,11 +65,11 @@ nsLocalHandlerAppMac::LaunchWithURI(
   LSLaunchURLSpec launchSpec;
   launchSpec.appURL = appURL;
   launchSpec.itemURLs = uris;
-  launchSpec.passThruParams = NULL;
+  launchSpec.passThruParams = nullptr;
   launchSpec.launchFlags = kLSLaunchDefaults;
-  launchSpec.asyncRefCon = NULL;
+  launchSpec.asyncRefCon = nullptr;
 
-  OSErr err = ::LSOpenFromURLSpec(&launchSpec, NULL);
+  OSErr err = ::LSOpenFromURLSpec(&launchSpec, nullptr);
 
   ::CFRelease(uris);
   ::CFRelease(uri);

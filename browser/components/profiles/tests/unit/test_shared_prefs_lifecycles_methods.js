@@ -182,3 +182,57 @@ add_task(async function test_SharedPrefsLifecycle() {
     "Should have updated testPrefBoolTrue"
   );
 });
+
+add_task(async function test_SharedPrefsCanBeAddedAfterInitialGroupCreation() {
+  const SelectableProfileService = getSelectableProfileService();
+
+  // Confirm that the prefs in the db contain all of the permanent shared prefs
+  const dbPrefs = new Set(
+    (await SelectableProfileService.getAllDBPrefs()).map(pref => pref.name)
+  );
+  const sharedPrefsSet = new Set(
+    SelectableProfileService.constructor.permanentSharedPrefs
+  );
+
+  Assert.deepEqual(
+    [...dbPrefs.intersection(sharedPrefsSet)],
+    [...sharedPrefsSet],
+    "Prefs in the db are equal to permanent shared prefs"
+  );
+
+  await SelectableProfileService.uninit();
+
+  // Add a new permanent shared pref while unitialized
+  Services.prefs.setBoolPref("newlyAddedSharedPref", true);
+
+  SelectableProfileService.constructor.permanentSharedPrefs.push(
+    "newlyAddedSharedPref"
+  );
+
+  // Init and confirm that the newly added pref exists in the db
+  await SelectableProfileService.init();
+
+  const newDbPrefs = new Set(
+    (await SelectableProfileService.getAllDBPrefs()).map(pref => pref.name)
+  );
+  const newSharedPrefsSet = new Set(
+    SelectableProfileService.constructor.permanentSharedPrefs
+  );
+
+  Assert.ok(
+    await SelectableProfileService.getDBPref("newlyAddedSharedPref"),
+    "Pref exists in the db"
+  );
+
+  Assert.greater(
+    newSharedPrefsSet.size,
+    sharedPrefsSet.size,
+    "New shared pref exists"
+  );
+
+  Assert.deepEqual(
+    [...newDbPrefs.intersection(newSharedPrefsSet)],
+    [...newSharedPrefsSet],
+    "Prefs in the db are equal to permanent shared prefs"
+  );
+});

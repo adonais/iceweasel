@@ -103,7 +103,11 @@ export class PropertyValidator {
     let hasFixes = false;
     parsedValue.walk(node => {
       if (node.type == "word") {
-        const token = lookupMap[node.value.trim().toLowerCase()];
+        const word = node.value.trim();
+        if (this.isInAllowedWords(word)) {
+          return;
+        }
+        const token = lookupMap[word.toLowerCase()];
         if (token) {
           hasFixes = true;
           node.value = token;
@@ -153,12 +157,14 @@ export class PropertyValidator {
     return Boolean(this.config.shorthand);
   }
 
-  isAllowedWord(word, isAlias = false) {
-    const lowerWord = word.toLowerCase();
-    const hasAllowedWord = Array.from(this.allowedWords).some(
-      allowed => allowed.toLowerCase() === lowerWord
+  isInAllowedWords(word) {
+    return Array.from(this.allowedWords).some(
+      allowed => allowed.toLowerCase() === word.toLowerCase()
     );
-    if (hasAllowedWord) {
+  }
+
+  isAllowedWord(word, isAlias = false) {
+    if (this.isInAllowedWords(word)) {
       return true;
     }
 
@@ -171,6 +177,7 @@ export class PropertyValidator {
     }
 
     if (isAlias) {
+      const lowerWord = word.toLowerCase();
       return Array.from(this.allowedAliasWords).some(
         allowed => allowed.toLowerCase() === lowerWord
       );

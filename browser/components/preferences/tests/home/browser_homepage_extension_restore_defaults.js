@@ -52,7 +52,7 @@ add_task(async function test_restore_defaults_deselects_extension() {
 
   // Switching the dropdown from an extension back to Firefox Home doesn't
   // fire a DOM change we can watch for, so poll here.
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => tabsNativeSelect.value === "home",
     "New tabs dropdown reset to Firefox Home"
   );

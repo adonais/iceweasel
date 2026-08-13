@@ -26,7 +26,7 @@
       <html:link rel="stylesheet" href="chrome://global/skin/global.css" />
       <html:link
         rel="stylesheet"
-        href="chrome://browser/skin/preferences/containers-dialog.css"
+        href="chrome://browser/skin/usercontext/container-editor.css"
       />
       <html:link rel="localization" href="browser/preferences/containers.ftl" />
     </linkset>
@@ -42,28 +42,6 @@
     />
     <script src="chrome://browser/content/preferences/dialogs/containers.js" />
 
-    <html:form id="containerForm">
-      <html:moz-input-text
-        id="name"
-        name="name"
-        data-l10n-id="containers-name-label2"
-      />
-
-      <html:moz-visual-picker
-        type="radio"
-        name="color"
-        id="colorSwatches"
-        class="swatches"
-        data-l10n-id="containers-color-label2"
-      />
-
-      <html:moz-visual-picker
-        type="radio"
-        name="icon"
-        id="iconSwatches"
-        class="swatches"
-        data-l10n-id="containers-icon-label2"
-      />
-    </html:form>
+    <html:div id="containerEditorHost" />
   </dialog>
 </window>

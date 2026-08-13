@@ -6,7 +6,6 @@
 #define MOZILLA_GFX_DRAWTARGETOFFSET_H_
 
 #include "2D.h"
-
 #include "Filters.h"
 #include "Logging.h"
 

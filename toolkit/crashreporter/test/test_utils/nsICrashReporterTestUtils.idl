@@ -1,0 +1,19 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+#include "nsISupports.idl"
+
+/**
+ * Test-only access to crash-reporter internals that aren't part of the
+ * public nsICrashReporter surface.
+ */
+[scriptable, builtinclass, uuid(9e3b262e-1731-46b4-a96d-e7b0b4201ff7)]
+interface nsICrashReporterTestUtils : nsISupports
+{
+  /**
+   * Returns the PID of the running crashhelper process, or 0 if no
+   * crashhelper has been launched.
+   */
+  unsigned long getCrashHelperPid();
+};

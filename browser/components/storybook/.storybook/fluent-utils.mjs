@@ -90,7 +90,7 @@ export async function insertFTLIfNeeded(fileName) {
     // eslint-disable-next-line no-unsanitized/method
     let imported = await import(
       /* webpackInclude: /\.ftl$/ */
-      `browser/locales-preview/${rest}`
+      `toolkit/locales-preview/${rest}`
     );
     ftlContents = imported.default;
   } else if (root == "branding") {

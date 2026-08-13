@@ -249,7 +249,7 @@
   <!-- Indicates the add-on is enabled. -->
   <string name="mozac_feature_addons_settings_on">رۊشن</string>
   <!-- Indicates the add-on is allowed in private browsing mode. -->
-  <string name="mozac_feature_addons_settings_allow_in_private_browsing_2">بهلین وردنی من هالت سیخومی ر بوۊفته</string>
+  <string name="mozac_feature_addons_settings_allow_in_private_browsing_2">بهلین وردنی من هالت سیخومی ره بوۊفته</string>
   <!-- Indicates the add-on is allowed in private browsing mode. -->
   <string name="mozac_feature_addons_settings_run_in_private_browsing">ره وندن من هالت گشتن سیخومی</string>
   <!-- This is displayed when the add-on is not allowed to run in private browsing. -->

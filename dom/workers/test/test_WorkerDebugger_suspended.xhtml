@@ -4,8 +4,7 @@
   http://creativecommons.org/publicdomain/zero/1.0/
 -->
 <window title="Test for WorkerDebugger with suspended workers"
-        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
-        onload="test();">
+        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
   <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"/>
   <script src="chrome://mochikit/content/tests/SimpleTest/EventUtils.js"/>
@@ -17,10 +16,8 @@
     const WORKER_URL = "WorkerDebugger_suspended_worker.js";
     const DEBUGGER_URL = BASE_URL + "WorkerDebugger_suspended_debugger.js";
 
-    function test() {
-      (async function() {
-        SimpleTest.waitForExplicitFinish();
-
+    addTaskWithBothWorkerDebuggers(
+      async function () {
         info("Create a worker, wait for its debugger to be registered, and " +
              "initialize it.");
         let promise = waitForRegister(WORKER_URL, DEBUGGER_URL);
@@ -56,9 +53,8 @@
         windowUtils.resumeTimeouts();
         await promise;
 
-        SimpleTest.finish();
-      })();
-    }
+      }
+    );
 
   ]]>
   </script>

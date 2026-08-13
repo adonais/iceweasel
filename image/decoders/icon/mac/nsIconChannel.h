@@ -7,16 +7,16 @@
 #define mozilla_image_encoders_icon_mac_nsIconChannel_h
 
 #include "nsCOMPtr.h"
-#include "nsString.h"
 #include "nsIChannel.h"
-#include "nsILoadGroup.h"
-#include "nsILoadInfo.h"
+#include "nsIInputStreamPump.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsIInterfaceRequestorUtils.h"
-#include "nsIInputStreamPump.h"
+#include "nsILoadGroup.h"
+#include "nsILoadInfo.h"
 #include "nsIStreamListener.h"
 #include "nsIURI.h"
 #include "nsNetUtil.h"
+#include "nsString.h"
 
 class nsIFile;
 

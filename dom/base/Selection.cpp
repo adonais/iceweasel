@@ -112,8 +112,11 @@ std::string format_as(SelectionType aType) {
   };
   static_assert(static_cast<std::underlying_type_t<SelectionType>>(
                     SelectionType::eInvalid) == -1);
-  MOZ_ASSERT(static_cast<std::underlying_type_t<SelectionType>>(
-                 SelectionType::eHighlight) == std::size(sNames) - 1);
+  static_assert(static_cast<std::underlying_type_t<SelectionType>>(
+                    SelectionType::eHighlight) -
+                    static_cast<std::underlying_type_t<SelectionType>>(
+                        SelectionType::eInvalid) ==
+                std::size(sNames) - 1);
   const size_t index =
       static_cast<std::underlying_type_t<SelectionType>>(aType) + 1;
   return index >= std::size(sNames) ? "<invalid value>" : sNames[index];
@@ -394,7 +397,7 @@ const nsTHashSet<const nsINode*>& SelectionNodeCache::MaybeCollect(
       for (; !subtreeIter.IsDone(); subtreeIter.Next()) {
         MOZ_DIAGNOSTIC_ASSERT(subtreeIter.GetCurrentNode());
         if (subtreeIter.GetCurrentNode()->IsContent()) {
-          TreeIterator<FlattenedChildIterator> iter(
+          TreeIterator<FlattenedChildIteratorForSelection> iter(
               *(subtreeIter.GetCurrentNode()->AsContent()));
           for (; iter.GetCurrent(); iter.GetNext()) {
             AddNodeIfFullySelected(iter.GetCurrent());
@@ -431,7 +434,7 @@ class AutoScroller final : public nsITimerCallback, public nsINamed {
 
   explicit AutoScroller(nsFrameSelection* aFrameSelection)
       : mFrameSelection(aFrameSelection),
-        mPresContext(0),
+        mPresContext(nullptr),
         mPoint(0, 0),
         mDelayInMs(30),
         mFurtherScrollingAllowed(FurtherScrollingAllowed::kYes) {
@@ -949,61 +952,93 @@ void Selection::SetAnchorFocusRange(size_t aIndex) {
   mAnchorFocusRange = anchorFocusRange->AsDynamicRange();
 }
 
-template <TreeKind aKind, typename PT, typename RT,
-          typename = std::enable_if_t<aKind == TreeKind::ShadowIncludingDOM ||
-                                      aKind == TreeKind::Flat>>
+template <typename PT, typename RT>
 static int32_t CompareToRangeStart(
-    const RangeBoundaryBase<PT, RT>& aCompareBoundary,
+    const RangeBoundaryBase<PT, RT>& aCompareBoundary, RangeBoundaryFor aFor,
     const AbstractRange& aRange, nsContentUtils::NodeIndexCache* aCache) {
   MOZ_ASSERT(aCompareBoundary.IsSet());
-  MOZ_ASSERT(aRange.GetMayCrossShadowBoundaryStartContainer());
+  const RangeBoundary& startRef = aRange.MayCrossShadowBoundaryStartRef();
+  MOZ_ASSERT(startRef.IsSet());
   // If the nodes that we're comparing are not in the same document, assume
   // that aCompareNode will fall at the end of the ranges.
-  if (aCompareBoundary.GetComposedDoc() !=
-          aRange.MayCrossShadowBoundaryStartRef().GetComposedDoc() ||
-      !aRange.MayCrossShadowBoundaryStartRef().IsSetAndInComposedDoc()) {
+  if (aCompareBoundary.GetComposedDoc() != startRef.GetComposedDoc() ||
+      !startRef.IsSetAndInComposedDoc()) {
     NS_WARNING(
         "`CompareToRangeStart` couldn't compare nodes, pretending some order.");
     return 1;
   }
-  return *nsContentUtils::ComparePoints<aKind>(
-      aCompareBoundary,
-      ConstRawRangeBoundary{aRange.GetMayCrossShadowBoundaryStartContainer(),
-                            aRange.MayCrossShadowBoundaryStartOffset()},
-      aCache);
+  const auto rangeBoundaryFor =
+      aRange.AreNormalRangeAndCrossShadowBoundaryRangeCollapsed()
+          ? RangeBoundaryFor::Collapsed
+          : RangeBoundaryFor::Start;
+  const Maybe<int32_t> order =
+      nsContentUtils::ComparePoints<TreeKind::FlatForSelection>(
+          aCompareBoundary.AsRangeBoundaryInFlatTreeOrNonFlattenedNode(aFor),
+          startRef.AsRangeBoundaryInFlatTreeOrNonFlattenedNode(
+              rangeBoundaryFor),
+          aCache);
+  NS_WARNING_ASSERTION(
+      order.isSome(),
+      fmt::format(
+          "\naCompareBoundary={}\n"
+          "  .AsRangeBoundaryInFlatTreeOrNonFlattenedNode({})={}\n"
+          "startRef={}\n"
+          "  .AsRangeBoundaryInFlatTreeOrNonFlattenedNode({})={}\n",
+          aCompareBoundary, aFor,
+          aCompareBoundary.AsConstRaw()
+              .AsRangeBoundaryInFlatTreeOrNonFlattenedNode(aFor),
+          startRef, rangeBoundaryFor,
+          startRef.AsConstRaw().AsRangeBoundaryInFlatTreeOrNonFlattenedNode(
+              rangeBoundaryFor))
+          .c_str());
+  return order.valueOr(1);
 }
 
-template <TreeKind aKind, typename PT, typename RT,
-          typename = std::enable_if_t<aKind == TreeKind::ShadowIncludingDOM ||
-                                      aKind == TreeKind::Flat>>
+template <typename PT, typename RT>
 static int32_t CompareToRangeStart(
-    const RangeBoundaryBase<PT, RT>& aCompareBoundary,
+    const RangeBoundaryBase<PT, RT>& aCompareBoundary, RangeBoundaryFor aFor,
     const AbstractRange& aRange) {
-  return CompareToRangeStart<aKind>(aCompareBoundary, aRange, nullptr);
+  return CompareToRangeStart(aCompareBoundary, aFor, aRange, nullptr);
 }
 
-template <TreeKind aKind, typename PT, typename RT,
-          typename = std::enable_if_t<aKind == TreeKind::ShadowIncludingDOM ||
-                                      aKind == TreeKind::Flat>>
+template <typename PT, typename RT>
 static int32_t CompareToRangeEnd(
-    const RangeBoundaryBase<PT, RT>& aCompareBoundary,
+    const RangeBoundaryBase<PT, RT>& aCompareBoundary, RangeBoundaryFor aFor,
     const AbstractRange& aRange) {
   MOZ_ASSERT(aCompareBoundary.IsSet());
   MOZ_ASSERT(aRange.IsPositioned());
+  const RangeBoundary& endRef = aRange.MayCrossShadowBoundaryEndRef();
   // If the nodes that we're comparing are not in the same document or in the
   // same subtree, assume that aCompareNode will fall at the end of the ranges.
-  if (aCompareBoundary.GetComposedDoc() !=
-          aRange.MayCrossShadowBoundaryEndRef().GetComposedDoc() ||
-      !aRange.MayCrossShadowBoundaryEndRef().IsSetAndInComposedDoc()) {
+  if (aCompareBoundary.GetComposedDoc() != endRef.GetComposedDoc() ||
+      !endRef.IsSetAndInComposedDoc()) {
     NS_WARNING(
         "`CompareToRangeEnd` couldn't compare nodes, pretending some order.");
     return 1;
   }
-
-  nsINode* end = aRange.GetMayCrossShadowBoundaryEndContainer();
-  uint32_t endOffset = aRange.MayCrossShadowBoundaryEndOffset();
-  return *nsContentUtils::ComparePoints<TreeKind::Flat>(
-      aCompareBoundary, ConstRawRangeBoundary{end, endOffset});
+  const auto rangeBoundaryFor =
+      aRange.AreNormalRangeAndCrossShadowBoundaryRangeCollapsed()
+          ? RangeBoundaryFor::Collapsed
+          : RangeBoundaryFor::End;
+  const Maybe<int32_t> order =
+      nsContentUtils::ComparePoints<TreeKind::FlatForSelection>(
+          aCompareBoundary.AsRangeBoundaryInFlatTreeOrNonFlattenedNode(aFor),
+          endRef.AsRangeBoundaryInFlatTreeOrNonFlattenedNode(rangeBoundaryFor));
+  NS_WARNING_ASSERTION(
+      order.isSome(),
+      fmt::format(
+          "\naCompareBoundary={}\n"
+          "  .AsRangeBoundaryInFlatTreeOrNonFlattenedNode({})={}\n"
+          "endRef={}\n"
+          "  .AsRangeBoundaryInFlatTreeOrNonFlattenedNode({})={}\n",
+          aCompareBoundary, aFor,
+          aCompareBoundary.AsConstRaw()
+              .AsRangeBoundaryInFlatTreeOrNonFlattenedNode(aFor),
+          endRef, rangeBoundaryFor,
+          endRef.AsConstRaw().AsRangeBoundaryInFlatTreeOrNonFlattenedNode(
+              rangeBoundaryFor))
+          .c_str());
+  return order.valueOr(1);
 }
 
 // Helper to extract AbstractRange* from array elements.
@@ -1031,7 +1066,8 @@ const AbstractRange* ExtractRange<RefPtr<AbstractRange>>(
 template <typename PT, typename RT, typename ArrayType>
 size_t Selection::StyledRanges::FindInsertionPoint(
     const ArrayType& aElementArray, const RangeBoundaryBase<PT, RT>& aBoundary,
-    int32_t (*aComparator)(const RangeBoundaryBase<PT, RT>&,
+    RangeBoundaryFor aFor,
+    int32_t (*aComparator)(const RangeBoundaryBase<PT, RT>&, RangeBoundaryFor,
                            const AbstractRange&)) {
   using ElementType = std::remove_reference_t<decltype(aElementArray[0])>;
 
@@ -1044,7 +1080,7 @@ size_t Selection::StyledRanges::FindInsertionPoint(
       const AbstractRange* range =
           ExtractRange<ElementType>(aElementArray[center]);
 
-      int32_t cmp{aComparator(aBoundary, *range)};
+      int32_t cmp{aComparator(aBoundary, aFor, *range)};
 
       if (cmp < 0) {  // point < cur
         endSearch = center;
@@ -1085,12 +1121,17 @@ nsresult Selection::StyledRanges::SubtractRange(
   }
 
   // First we want to compare to the range start
-  const int32_t cmp =
-      CompareToRangeStart<TreeKind::Flat>(range->StartRef(), aSubtract);
+  int32_t cmp =
+      CompareToRangeStart(range->StartRef(),
+                          range->Collapsed() ? RangeBoundaryFor::Collapsed
+                                             : RangeBoundaryFor::Start,
+                          aSubtract);
 
   // Also, make a comparison to the range end
-  const int32_t cmp2 =
-      CompareToRangeEnd<TreeKind::Flat>(range->EndRef(), aSubtract);
+  int32_t cmp2 = CompareToRangeEnd(
+      range->EndRef(),
+      range->Collapsed() ? RangeBoundaryFor::Collapsed : RangeBoundaryFor::End,
+      aSubtract);
 
   // If the existing range left overlaps the new range (aSubtract) then
   // cmp < 0, and cmp2 < 0
@@ -1318,8 +1359,11 @@ nsresult Selection::StyledRanges::AddRangeAndIgnoreOverlaps(
 
   // a common case is that we have no ranges yet
   if (mRanges.Length() == 0) {
+    if (NS_WARN_IF(
+            NS_FAILED(aRange->RegisterSelection(MOZ_KnownLive(mSelection))))) {
+      return NS_ERROR_FAILURE;
+    }
     mRanges.AppendElement(StyledRange(aRange));
-    aRange->RegisterSelection(MOZ_KnownLive(mSelection));
 #ifdef ACCESSIBILITY
     a11y::SelectionManager::SelectionRangeChanged(mSelection.GetType(),
                                                   *aRange);
@@ -1347,8 +1391,11 @@ nsresult Selection::StyledRanges::AddRangeAndIgnoreOverlaps(
     startIndex = *maybeStartIndex;
   }
 
+  if (NS_WARN_IF(
+          NS_FAILED(aRange->RegisterSelection(MOZ_KnownLive(mSelection))))) {
+    return NS_ERROR_FAILURE;
+  }
   mRanges.InsertElementAt(startIndex, StyledRange(aRange));
-  aRange->RegisterSelection(MOZ_KnownLive(mSelection));
 #ifdef ACCESSIBILITY
   a11y::SelectionManager::SelectionRangeChanged(mSelection.GetType(), *aRange);
 #endif
@@ -1364,10 +1411,13 @@ nsresult Selection::StyledRanges::MaybeAddRangeAndTruncateOverlaps(
 
   // a common case is that we have no ranges yet
   if (mRanges.Length() == 0) {
+    if (NS_WARN_IF(
+            NS_FAILED(aRange->RegisterSelection(MOZ_KnownLive(mSelection))))) {
+      return NS_ERROR_FAILURE;
+    }
     // XXX(Bug 1631371) Check if this should use a fallible operation as it
     // pretended earlier.
     mRanges.AppendElement(StyledRange(aRange));
-    aRange->RegisterSelection(MOZ_KnownLive(mSelection));
 #ifdef ACCESSIBILITY
     a11y::SelectionManager::SelectionRangeChanged(mSelection.GetType(),
                                                   *aRange);
@@ -1415,11 +1465,14 @@ nsresult Selection::StyledRanges::MaybeAddRangeAndTruncateOverlaps(
 #endif
 
   if (startIndex == endIndex) {
+    if (NS_WARN_IF(
+            NS_FAILED(aRange->RegisterSelection(MOZ_KnownLive(mSelection))))) {
+      return NS_ERROR_FAILURE;
+    }
     // The new range doesn't overlap any existing ranges
     // XXX(Bug 1631371) Check if this should use a fallible operation as it
     // pretended earlier.
     mRanges.InsertElementAt(startIndex, StyledRange(aRange));
-    aRange->RegisterSelection(MOZ_KnownLive(mSelection));
     aOutIndex->emplace(startIndex);
     return NS_OK;
   }
@@ -1450,22 +1503,28 @@ nsresult Selection::StyledRanges::MaybeAddRangeAndTruncateOverlaps(
 
   // Insert the new element into our "leftovers" array
   // `aRange` is positioned, so it has to have a start container.
-  const size_t insertionPoint = FindInsertionPoint(
-      temp, aRange->StartRef(), CompareToRangeStart<TreeKind::Flat>);
+  size_t insertionPoint =
+      FindInsertionPoint(temp, aRange->StartRef(),
+                         aRange->Collapsed() ? RangeBoundaryFor::Collapsed
+                                             : RangeBoundaryFor::Start,
+                         CompareToRangeStart);
 
   temp.InsertElementAt(insertionPoint, StyledRange(aRange));
 
-  // Merge the leftovers back in to mRanges
-  mRanges.InsertElementsAt(startIndex, temp);
-
   for (uint32_t i = 0; i < temp.Length(); ++i) {
     if (temp[i].mRange->IsDynamicRange()) {
-      MOZ_KnownLive(temp[i].mRange->AsDynamicRange())
-          ->RegisterSelection(MOZ_KnownLive(mSelection));
+      if (NS_WARN_IF(
+              NS_FAILED(MOZ_KnownLive(temp[i].mRange->AsDynamicRange())
+                            ->RegisterSelection(MOZ_KnownLive(mSelection))))) {
+        return NS_ERROR_FAILURE;
+      }
       // `MOZ_KnownLive` is required because of
       // https://bugzilla.mozilla.org/show_bug.cgi?id=1622253.
     }
   }
+
+  // Merge the leftovers back in to mRanges
+  mRanges.InsertElementsAt(startIndex, temp);
 
   aOutIndex->emplace(startIndex + insertionPoint);
   return NS_OK;
@@ -1619,14 +1678,16 @@ nsresult Selection::GetDynamicRangesForIntervalArray(
   return NS_OK;
 }
 
-void Selection::StyledRanges::ReorderRangesIfNecessary() {
+nsresult Selection::StyledRanges::ReorderRangesIfNecessary() {
   const Document* doc = mSelection.GetDocument();
   if (!doc) {
-    return;
+    // XXX Should we return error? But it'd cause new exception in JS in the
+    // edge case.
+    return NS_OK;
   }
   if (mRanges.Length() < 2 && mInvalidStaticRanges.IsEmpty()) {
     // There is nothing to be reordered.
-    return;
+    return NS_OK;
   }
   const int32_t currentDocumentGeneration = doc->GetGeneration();
   const bool domMutationHasHappened =
@@ -1649,7 +1710,10 @@ void Selection::StyledRanges::ReorderRangesIfNecessary() {
       if (iter->mRange->AsStaticRange()->IsValid()) {
         mRanges.AppendElement(*iter);
         if (!iter->mRange->IsInSelection(mSelection)) {
-          iter->mRange->RegisterSelection(mSelection);
+          if (NS_WARN_IF(
+                  NS_FAILED(iter->mRange->RegisterSelection(mSelection)))) {
+            return NS_ERROR_FAILURE;
+          }
         }
         iter = mInvalidStaticRanges.RemoveElementAt(iter);
       } else {
@@ -1670,18 +1734,29 @@ void Selection::StyledRanges::ReorderRangesIfNecessary() {
     // the cache, which is reused by the sort call).
     nsContentUtils::NodeIndexCache cache;
     bool rangeOrderHasChanged = false;
-    RawRangeBoundary previousStartRef;
+    RawRangeBoundary previousStartRef{TreeKind::FlatForSelection};
     for (const auto& range : mRanges.Ranges()) {
       if (!previousStartRef.IsSet()) {
-        previousStartRef = range->StartRef().AsRaw();
+        previousStartRef =
+            range->StartRef()
+                .AsRaw()
+                .AsRangeBoundaryInFlatTreeOrNonFlattenedNode(
+                    range->Collapsed() ? RangeBoundaryFor::Collapsed
+                                       : RangeBoundaryFor::Start);
         continue;
       }
       // Calling ComparePoints here saves one call of
       // AbstractRange::StartOffset() per iteration (which is surprisingly
       // expensive).
+      const RawRangeBoundary startRef =
+          range->MayCrossShadowBoundaryStartRef()
+              .AsRaw()
+              .AsRangeBoundaryInFlatTreeOrNonFlattenedNode(
+                  range->Collapsed() ? RangeBoundaryFor::Collapsed
+                                     : RangeBoundaryFor::Start);
       const Maybe<int32_t> compareResult =
-          nsContentUtils::ComparePoints<TreeKind::Flat>(
-              range->StartRef(), previousStartRef, &cache);
+          nsContentUtils::ComparePoints<TreeKind::FlatForSelection>(
+              startRef, previousStartRef, &cache);
       // If the nodes are in different subtrees, the Maybe is empty.
       // Since CompareToRangeStart pretends ranges to be ordered, this aligns
       // to that behavior.
@@ -1689,17 +1764,21 @@ void Selection::StyledRanges::ReorderRangesIfNecessary() {
         rangeOrderHasChanged = true;
         break;
       }
-      previousStartRef = range->StartRef().AsRaw();
+      previousStartRef = startRef;
     }
     if (rangeOrderHasChanged) {
       const auto compare = [&cache](const auto& a, const auto& b) {
-        return CompareToRangeStart<TreeKind::Flat>(a->StartRef(), *b, &cache);
+        return CompareToRangeStart(a->StartRef(),
+                                   a->Collapsed() ? RangeBoundaryFor::Collapsed
+                                                  : RangeBoundaryFor::Start,
+                                   *b, &cache);
       };
       mRanges.Sort(compare);
     }
     mDocumentGeneration = currentDocumentGeneration;
     mRangesMightHaveChanged = false;
   }
+  return NS_OK;
 }
 
 nsresult Selection::StyledRanges::GetIndicesForInterval(
@@ -1717,7 +1796,9 @@ nsresult Selection::StyledRanges::GetIndicesForInterval(
     return NS_ERROR_INVALID_POINTER;
   }
 
-  ReorderRangesIfNecessary();
+  if (NS_WARN_IF(NS_FAILED(ReorderRangesIfNecessary()))) {
+    return NS_ERROR_FAILURE;
+  }
 
   if (mRanges.Length() == 0) {
     return NS_OK;
@@ -1731,7 +1812,8 @@ nsresult Selection::StyledRanges::GetIndicesForInterval(
   size_t endsBeforeIndex = FindInsertionPoint(
       mRanges.Ranges(),
       ConstRawRangeBoundary(aEndNode, aEndOffset, RangeBoundarySetBy::Offset),
-      &CompareToRangeStart<TreeKind::Flat>);
+      intervalIsCollapsed ? RangeBoundaryFor::Collapsed : RangeBoundaryFor::End,
+      &CompareToRangeStart);
 
   if (endsBeforeIndex == 0) {
     const AbstractRange* endRange = GetAbstractRangeAt(endsBeforeIndex);
@@ -1756,7 +1838,9 @@ nsresult Selection::StyledRanges::GetIndicesForInterval(
       FindInsertionPoint(mRanges.Ranges(),
                          ConstRawRangeBoundary(aBeginNode, aBeginOffset,
                                                RangeBoundarySetBy::Offset),
-                         &CompareToRangeEnd<TreeKind::Flat>);
+                         intervalIsCollapsed ? RangeBoundaryFor::Collapsed
+                                             : RangeBoundaryFor::Start,
+                         &CompareToRangeEnd);
 
   if (beginsAfterIndex == mRanges.Length()) {
     return NS_OK;  // optimization: all ranges are strictly before us
@@ -2027,7 +2111,7 @@ nsresult Selection::SelectFrames(nsPresContext* aPresContext,
 void Selection::SelectFramesOfFlattenedTreeOfContent(nsIContent* aContent,
                                                      bool aSelected) const {
   MOZ_ASSERT(aContent);
-  TreeIterator<FlattenedChildIterator> iter(*aContent);
+  TreeIterator<FlattenedChildIteratorForSelection> iter(*aContent);
   for (; iter.GetCurrent(); iter.GetNext()) {
     SelectFramesOf(iter.GetCurrent(), aSelected);
   }
@@ -3169,255 +3253,253 @@ void Selection::ExtendInternal(nsINode& aContainer, uint32_t aOffset,
     return;
   }
 
-#ifdef DEBUG_SELECTION
-  nsDirection oldDirection = GetDirection();
-#endif
-  nsINode* anchorNode = GetMayCrossShadowBoundaryAnchorNode();
-  nsINode* focusNode = GetMayCrossShadowBoundaryFocusNode();
-  const uint32_t anchorOffset = MayCrossShadowBoundaryAnchorOffset();
-  const uint32_t focusOffset = MayCrossShadowBoundaryFocusOffset();
+  if (MOZ_UNLIKELY(
+          !IsValidNodeAndOffsetForBoundary(aContainer, aOffset, aRv))) {
+    return;
+  }
+
+  DebugOnly<nsDirection> oldDirection = GetDirection();
+  const RawRangeBoundary newFocusRefInTreeKindDOM(
+      &aContainer, aOffset, RangeBoundarySetBy::Offset, TreeKind::DOM);
 
   RefPtr<nsRange> range = mAnchorFocusRange->CloneRange();
 
-  nsINode* startNode = range->GetMayCrossShadowBoundaryStartContainer();
-  nsINode* endNode = range->GetMayCrossShadowBoundaryEndContainer();
-  const uint32_t startOffset = range->MayCrossShadowBoundaryStartOffset();
-  const uint32_t endOffset = range->MayCrossShadowBoundaryEndOffset();
+  const RawRangeBoundary startRefInTreeKindDOM =
+      range->MayCrossShadowBoundaryStartRef()
+          .AsRaw()
+          .AsRangeBoundaryInDOMTree();
+  const RawRangeBoundary endRefInTreeKindDOM =
+      range->MayCrossShadowBoundaryEndRef().AsRaw().AsRangeBoundaryInDOMTree();
+  const RawRangeBoundary& anchorRefInTreeKindDOM =
+      GetDirection() == nsDirection::eDirNext ? startRefInTreeKindDOM
+                                              : endRefInTreeKindDOM;
+  const RawRangeBoundary& focusRefInTreeKindDOM =
+      GetDirection() == nsDirection::eDirNext ? endRefInTreeKindDOM
+                                              : startRefInTreeKindDOM;
 
-  bool shouldClearRange = false;
-
-  auto ComparePoints = [](const nsINode* aNode1, const uint32_t aOffset1,
-                          const nsINode* aNode2, const uint32_t aOffset2) {
-    return nsContentUtils::ComparePointsWithIndices<TreeKind::Flat>(
-        aNode1, aOffset1, aNode2, aOffset2);
-  };
+  // Selection API handles only the DOM points in the non-flattened tree.
+  // Therefore, even if the cross-shadow-selection is enabled, we should compare
+  // the DOM points within the shadow including DOM because some nodes may be
+  // slotted to another place and that may change the order.
   const Maybe<int32_t> anchorOldFocusOrder =
-      ComparePoints(anchorNode, anchorOffset, focusNode, focusOffset);
-  shouldClearRange |= !anchorOldFocusOrder;
+      nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+          anchorRefInTreeKindDOM, focusRefInTreeKindDOM);
   const Maybe<int32_t> oldFocusNewFocusOrder =
-      ComparePoints(focusNode, focusOffset, &aContainer, aOffset);
-  shouldClearRange |= !oldFocusNewFocusOrder;
+      nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+          focusRefInTreeKindDOM, newFocusRefInTreeKindDOM);
   const Maybe<int32_t> anchorNewFocusOrder =
-      ComparePoints(anchorNode, anchorOffset, &aContainer, aOffset);
-  shouldClearRange |= !anchorNewFocusOrder;
+      nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+          anchorRefInTreeKindDOM, newFocusRefInTreeKindDOM);
 
   // If the points are disconnected, the range will be collapsed below,
   // resulting in a range that selects nothing.
-  nsresult res;
-  if (shouldClearRange) {
+  if (!anchorOldFocusOrder || !oldFocusNewFocusOrder || !anchorNewFocusOrder) {
     // Repaint the current range with the selection removed.
     SelectFrames(presContext, *range, false);
 
-    res = range->CollapseTo(&aContainer, aOffset);
-    if (NS_FAILED(res)) {
-      aRv.Throw(res);
+    nsresult rv = range->CollapseTo(&aContainer, aOffset);
+    if (NS_FAILED(rv)) {
+      aRv.Throw(rv);
       return;
     }
 
-    res = SetAnchorFocusToRange(range);
-    if (NS_FAILED(res)) {
-      aRv.Throw(res);
+    rv = SetAnchorFocusToRange(range);
+    if (NS_FAILED(rv)) {
+      aRv.Throw(rv);
       return;
     }
   } else {
-    RefPtr<nsRange> difRange = nsRange::Create(&aContainer);
+    // (the collapsed range < new focus) ||
+    // (anchor <= focus && focus < new focus)
+    // I.e., extending the end boundary forward. (a1,2  a,1,2)
     if ((*anchorOldFocusOrder == 0 && *anchorNewFocusOrder < 0) ||
-        (*anchorOldFocusOrder <= 0 &&
-         *oldFocusNewFocusOrder < 0)) {  // a1,2  a,1,2
-      // select from 1 to 2 unless they are collapsed
-      range->SetEnd(aContainer, aOffset, aRv,
+        (*anchorOldFocusOrder <= 0 && *oldFocusNewFocusOrder < 0)) {
+      // Select from the anchor which is not after focus to the new focus.
+      range->SetEnd(newFocusRefInTreeKindDOM, aRv,
                     AllowRangeCrossShadowBoundary::Yes);
-      if (aRv.Failed()) {
+      if (MOZ_UNLIKELY(aRv.Failed())) {
         return;
       }
       SetDirection(eDirNext);
-      res = difRange->SetStartAndEnd(
-          focusNode, focusOffset,
-          range->GetMayCrossShadowBoundaryEndContainer(),
-          range->MayCrossShadowBoundaryEndOffset(),
-          AllowRangeCrossShadowBoundary::Yes);
-      if (NS_FAILED(res)) {
-        aRv.Throw(res);
+      const RefPtr<nsRange> diffRange =
+          nsRange::Create(focusRefInTreeKindDOM, newFocusRefInTreeKindDOM, aRv,
+                          AllowRangeCrossShadowBoundary::Yes);
+      if (NS_WARN_IF(aRv.Failed())) {
         return;
       }
-      SelectFrames(presContext, *difRange, true);
-      res = SetAnchorFocusToRange(range);
-      if (NS_FAILED(res)) {
-        aRv.Throw(res);
+      SelectFrames(presContext, *diffRange, true);
+      nsresult rv = SetAnchorFocusToRange(range);
+      if (NS_FAILED(rv)) {
+        aRv.Throw(rv);
         return;
       }
-    } else if (*anchorOldFocusOrder == 0 &&
-               *anchorNewFocusOrder > 0) {  // 2, a1
-      // select from 2 to 1a
+    }
+    // anchor == focus && new focus < the collapsed range
+    // I.e., extending the collapsed range backward (2, a1)
+    else if (*anchorOldFocusOrder == 0 && *anchorNewFocusOrder > 0) {
       SetDirection(eDirPrevious);
-      range->SetStart(aContainer, aOffset, aRv,
+      range->SetStart(newFocusRefInTreeKindDOM, aRv,
                       AllowRangeCrossShadowBoundary::Yes);
-      if (aRv.Failed()) {
+      if (MOZ_UNLIKELY(aRv.Failed())) {
         return;
       }
       SelectFrames(presContext, *range, true);
-      res = SetAnchorFocusToRange(range);
-      if (NS_FAILED(res)) {
-        aRv.Throw(res);
+      nsresult rv = SetAnchorFocusToRange(range);
+      if (NS_FAILED(rv)) {
+        aRv.Throw(rv);
         return;
       }
-    } else if (*anchorNewFocusOrder <= 0 &&
-               *oldFocusNewFocusOrder >= 0) {  // a,2,1 or a2,1 or a,21 or a21
+    }
+    // anchor <= new focus && new focus <= old focus
+    // I.e., shrink the end boundary into the range.
+    // (a,2,1 or a2,1 or a,21 or a21)
+    else if (*anchorNewFocusOrder <= 0 && *oldFocusNewFocusOrder >= 0) {
       // deselect from 2 to 1
-      res =
-          difRange->SetStartAndEnd(&aContainer, aOffset, focusNode, focusOffset,
-                                   AllowRangeCrossShadowBoundary::Yes);
-      if (NS_FAILED(res)) {
-        aRv.Throw(res);
+      const RefPtr<nsRange> diffRange =
+          nsRange::Create(newFocusRefInTreeKindDOM, focusRefInTreeKindDOM, aRv,
+                          AllowRangeCrossShadowBoundary::Yes);
+      if (NS_WARN_IF(aRv.Failed())) {
         return;
       }
 
-      range->SetEnd(aContainer, aOffset, aRv,
+      range->SetEnd(newFocusRefInTreeKindDOM, aRv,
                     AllowRangeCrossShadowBoundary::Yes);
-      if (aRv.Failed()) {
+      if (MOZ_UNLIKELY(aRv.Failed())) {
         return;
       }
-      res = SetAnchorFocusToRange(range);
-      if (NS_FAILED(res)) {
-        aRv.Throw(res);
+      nsresult rv = SetAnchorFocusToRange(range);
+      if (NS_FAILED(rv)) {
+        aRv.Throw(rv);
         return;
       }
-      SelectFrames(presContext, *difRange, false);  // deselect now
-      difRange->SetEnd(range->GetMayCrossShadowBoundaryEndContainer(),
-                       range->MayCrossShadowBoundaryEndOffset(),
-                       AllowRangeCrossShadowBoundary::Yes);
-      SelectFrames(presContext, *difRange, true);  // must reselect last node
-                                                   // maybe more
-    } else if (*anchorOldFocusOrder >= 0 &&
-               *anchorNewFocusOrder <= 0) {  // 1,a,2 or 1a,2 or 1,a2 or 1a2
-      if (GetDirection() == eDirPrevious) {
-        res = range->SetStart(endNode, endOffset,
-                              AllowRangeCrossShadowBoundary::Yes);
-        if (NS_FAILED(res)) {
-          aRv.Throw(res);
-          return;
-        }
+      SelectFrames(presContext, *diffRange, false);
+      MOZ_ASSERT(
+          diffRange->MayCrossShadowBoundaryStartRef()
+                  .AsRangeBoundaryInDOMTree() ==
+              range->MayCrossShadowBoundaryEndRef().AsRangeBoundaryInDOMTree(),
+          "Do we need to deselect the frames in this range??");
+    }
+    // focus <= anchor && anchor <= new focus
+    // I.e., the range is reversed or collapsed and the new focus is after the
+    // end boundary. So, collapse the range and extend the range forward.
+    // (1,a,2 or 1a,2 or 1,a2 or 1a2)
+    else if (*anchorOldFocusOrder >= 0 && *anchorNewFocusOrder <= 0) {
+      // Collapse to end if the range was not collapsed
+      RefPtr<nsRange> oldNonCollapsedRange;
+      if (*anchorOldFocusOrder) {
+        oldNonCollapsedRange = range->CloneRange();
+        range->Collapse(false);
       }
       SetDirection(eDirNext);
-      range->SetEnd(aContainer, aOffset, aRv,
+      // Then, extend the range forward.
+      range->SetEnd(newFocusRefInTreeKindDOM, aRv,
                     AllowRangeCrossShadowBoundary::Yes);
-      if (aRv.Failed()) {
+      if (MOZ_UNLIKELY(aRv.Failed())) {
         return;
       }
-      if (focusNode != anchorNode ||
-          focusOffset != anchorOffset) {  // if collapsed diff dont do anything
-        res = difRange->SetStart(focusNode, focusOffset,
-                                 AllowRangeCrossShadowBoundary::Yes);
-        nsresult tmp = difRange->SetEnd(anchorNode, anchorOffset,
-                                        AllowRangeCrossShadowBoundary::Yes);
-        if (NS_FAILED(tmp)) {
-          res = tmp;
-        }
-        if (NS_FAILED(res)) {
-          aRv.Throw(res);
-          return;
-        }
-        res = SetAnchorFocusToRange(range);
-        if (NS_FAILED(res)) {
-          aRv.Throw(res);
-          return;
-        }
+      nsresult rv = SetAnchorFocusToRange(range);
+      if (NS_FAILED(rv)) {
+        aRv.Throw(rv);
+        return;
+      }
+      // If the range was not collapsed, we need to deselect frames.
+      if (oldNonCollapsedRange) {
         // deselect from 1 to a
-        SelectFrames(presContext, *difRange, false);
-      } else {
-        res = SetAnchorFocusToRange(range);
-        if (NS_FAILED(res)) {
-          aRv.Throw(res);
-          return;
-        }
+        SelectFrames(presContext, *oldNonCollapsedRange, false);
       }
       // select from a to 2
       SelectFrames(presContext, *range, true);
-    } else if (*oldFocusNewFocusOrder <= 0 &&
-               *anchorNewFocusOrder >= 0) {  // 1,2,a or 12,a or 1,2a or 12a
-      // deselect from 1 to 2
-      res =
-          difRange->SetStartAndEnd(focusNode, focusOffset, &aContainer, aOffset,
-                                   AllowRangeCrossShadowBoundary::Yes);
-      if (NS_FAILED(res)) {
-        aRv.Throw(res);
+    }
+    // focus <= new focus && new focus <= anchor
+    // I.e., the range is reversed and the new focus is in the range. Shrink
+    // the start boundary forward.
+    // (1,2,a or 12,a or 1,2a or 12a)
+    else if (*oldFocusNewFocusOrder <= 0 && *anchorNewFocusOrder >= 0) {
+      RefPtr<nsRange> diffRange;
+      if (focusRefInTreeKindDOM != newFocusRefInTreeKindDOM) {
+        // deselect from 1 to 2
+        diffRange =
+            nsRange::Create(focusRefInTreeKindDOM, newFocusRefInTreeKindDOM,
+                            aRv, AllowRangeCrossShadowBoundary::Yes);
+        if (NS_WARN_IF(aRv.Failed())) {
+          return;
+        }
+
+        SetDirection(eDirPrevious);
+        range->SetStart(newFocusRefInTreeKindDOM, aRv,
+                        AllowRangeCrossShadowBoundary::Yes);
+        if (aRv.Failed()) {
+          return;
+        }
+      }
+
+      nsresult rv = SetAnchorFocusToRange(range);
+      if (NS_FAILED(rv)) {
+        aRv.Throw(rv);
         return;
       }
 
-      SetDirection(eDirPrevious);
-      range->SetStart(aContainer, aOffset, aRv,
-                      AllowRangeCrossShadowBoundary::Yes);
-      if (aRv.Failed()) {
-        return;
+      if (diffRange) {
+        SelectFrames(presContext, *diffRange, false);
       }
-
-      res = SetAnchorFocusToRange(range);
-      if (NS_FAILED(res)) {
-        aRv.Throw(res);
-        return;
-      }
-      SelectFrames(presContext, *difRange, false);
-      difRange->SetStart(range->GetMayCrossShadowBoundaryStartContainer(),
-                         range->MayCrossShadowBoundaryStartOffset(),
-                         AllowRangeCrossShadowBoundary::Yes);
-      SelectFrames(presContext, *difRange, true);  // must reselect last node
-    } else if (*anchorNewFocusOrder >= 0 &&
-               *anchorOldFocusOrder <= 0) {  // 2,a,1 or 2a,1 or 2,a1 or 2a1
-      if (GetDirection() == eDirNext) {
-        range->SetEnd(startNode, startOffset,
-                      AllowRangeCrossShadowBoundary::Yes);
+      MOZ_ASSERT(!diffRange || range->MayCrossShadowBoundaryStartRef()
+                                       .AsRangeBoundaryInDOMTree() ==
+                                   diffRange->MayCrossShadowBoundaryEndRef()
+                                       .AsRangeBoundaryInDOMTree(),
+                 "Do we need to deselect the frames in this range??");
+    }
+    // new focus <= anchor && anchor <= focus
+    // I.e., the new focus is before the range. Collapse the range to start and
+    // extend the range backward. (2,a,1 or 2a,1 or 2,a1 or 2a1)
+    else if (*anchorNewFocusOrder >= 0 && *anchorOldFocusOrder <= 0) {
+      // Collapse the range to start.
+      RefPtr<nsRange> oldNonCollapsedRange;
+      if (*anchorOldFocusOrder) {
+        oldNonCollapsedRange = range->CloneRange();
+        range->Collapse(true);
       }
       SetDirection(eDirPrevious);
-      range->SetStart(aContainer, aOffset, aRv,
+      // Then, extend the range backward.
+      range->SetStart(newFocusRefInTreeKindDOM, aRv,
                       AllowRangeCrossShadowBoundary::Yes);
-      if (aRv.Failed()) {
+      if (MOZ_UNLIKELY(aRv.Failed())) {
         return;
       }
-      // deselect from a to 1
-      if (focusNode != anchorNode ||
-          focusOffset != anchorOffset) {  // if collapsed diff dont do anything
-        res = difRange->SetStartAndEnd(anchorNode, anchorOffset, focusNode,
-                                       focusOffset,
-                                       AllowRangeCrossShadowBoundary::Yes);
-        nsresult tmp = SetAnchorFocusToRange(range);
-        if (NS_FAILED(tmp)) {
-          res = tmp;
-        }
-        if (NS_FAILED(res)) {
-          aRv.Throw(res);
-          return;
-        }
-        SelectFrames(presContext, *difRange, false);
-      } else {
-        res = SetAnchorFocusToRange(range);
-        if (NS_FAILED(res)) {
-          aRv.Throw(res);
-          return;
-        }
+      nsresult rv = SetAnchorFocusToRange(range);
+      if (NS_FAILED(rv)) {
+        aRv.Throw(rv);
+        return;
+      }
+      // If the range was not collapsed, we need to deselect frames.
+      if (oldNonCollapsedRange) {
+        // deselect from a to 1
+        SelectFrames(presContext, *oldNonCollapsedRange, false);
       }
       // select from 2 to a
       SelectFrames(presContext, *range, true);
-    } else if (*oldFocusNewFocusOrder >= 0 &&
-               *anchorOldFocusOrder >= 0) {  // 2,1,a or 21,a or 2,1a or 21a
+    }
+    // new focus <= focus && focus <= anchor
+    // I.e., the range is reversed and extend the range backward.
+    // (2,1,a or 21,a or 2,1a or 21a)
+    else if (*oldFocusNewFocusOrder >= 0 && *anchorOldFocusOrder >= 0) {
       // select from 2 to 1
-      range->SetStart(aContainer, aOffset, aRv,
+      range->SetStart(newFocusRefInTreeKindDOM, aRv,
                       AllowRangeCrossShadowBoundary::Yes);
-      if (aRv.Failed()) {
+      if (MOZ_UNLIKELY(aRv.Failed())) {
         return;
       }
       SetDirection(eDirPrevious);
-      res = difRange->SetStartAndEnd(
-          range->GetStartContainer(), range->StartOffset(), focusNode,
-          focusOffset, AllowRangeCrossShadowBoundary::Yes);
-      if (NS_FAILED(res)) {
-        aRv.Throw(res);
+      const RefPtr<nsRange> diffRange =
+          nsRange::Create(newFocusRefInTreeKindDOM, focusRefInTreeKindDOM, aRv,
+                          AllowRangeCrossShadowBoundary::Yes);
+      if (NS_WARN_IF(aRv.Failed())) {
         return;
       }
 
-      SelectFrames(presContext, *difRange, true);
-      res = SetAnchorFocusToRange(range);
-      if (NS_FAILED(res)) {
-        aRv.Throw(res);
+      SelectFrames(presContext, *diffRange, true);
+      nsresult rv = SetAnchorFocusToRange(range);
+      if (NS_FAILED(rv)) {
+        aRv.Throw(rv);
         return;
       }
     }
@@ -3494,6 +3576,14 @@ bool Selection::ContainsNode(nsINode& aNode, bool aAllowPartial,
                              ErrorResult& aRv) {
   nsresult rv;
   if (mStyledRanges.Length() == 0) {
+    return false;
+  }
+
+  // If aNode is a non-flattened node in the flattened tree for selection, i.e.,
+  // an inclusive descendant is an unassigned child of a shadow host or a
+  // fallback content node of a <slot> in a shadow.
+  if (aNode.GetClosestFlatTreeAncestorElementForNonFlatTreeNode<
+          TreeKind::FlatForSelection>()) {
     return false;
   }
 
@@ -3926,10 +4016,15 @@ void Selection::StyledRanges::MaybeFocusCommonEditingHost(
   }
 }
 
-void Selection::NotifySelectionListeners(bool aCalledByJS) {
+void Selection::NotifySelectionListeners(
+    bool aCalledByJS, IsFromRangeMutationObserver aIsFromRange) {
   AutoRestore<bool> calledFromJSRestorer(mCalledByJS);
   mCalledByJS = aCalledByJS;
   NotifySelectionListeners();
+  if (aIsFromRange == IsFromRangeMutationObserver::Yes &&
+      mSelectionChangeEventDispatcher) {
+    mSelectionChangeEventDispatcher->SelectionRangeObservedMutation();
+  }
 }
 
 void Selection::NotifySelectionListeners() {
@@ -3983,7 +4078,8 @@ void Selection::NotifySelectionListeners() {
     if (mSelectionType == SelectionType::eNormal && RangeCount() && doc) {
       // Focus navigation should start from the new selection, instead
       // of the last focused element.
-      doc->SetFocusNavigationStartingPoint(nullptr);
+      doc->SetPreviouslyFocusedContent(nullptr);
+      doc->SetSelectionMoreRecentThanFocus(true);
     }
   }
 
@@ -4327,8 +4423,8 @@ void Selection::SetBaseAndExtentInternal(InLimiter aInLimiter,
       IsEditorSelection()
           ? nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
                 aAnchorRef, aFocusRef)
-          : nsContentUtils::ComparePoints<TreeKind::Flat>(aAnchorRef,
-                                                          aFocusRef);
+          : nsContentUtils::ComparePoints<TreeKind::FlatForSelection>(
+                aAnchorRef, aFocusRef);
   if (order && (*order <= 0)) {
     SetStartAndEndInternal(aInLimiter, aAnchorRef, aFocusRef, eDirNext, aRv);
     return;

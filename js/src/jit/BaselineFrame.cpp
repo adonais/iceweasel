@@ -2,14 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "jit/BaselineFrame-inl.h"
-
 #include <algorithm>
 
 #include "debugger/DebugAPI.h"
 #include "vm/EnvironmentObject.h"
 #include "vm/JSContext.h"
 
+#include "jit/BaselineFrame-inl.h"
 #include "jit/JSJitFrameIter-inl.h"
 #include "vm/Stack-inl.h"
 

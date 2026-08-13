@@ -360,7 +360,7 @@ void SVGImageFrame::PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
 
     nscoord appUnitsPerDevPx = PresContext()->AppUnitsPerDevPixel();
     uint32_t flags = aImgParams.imageFlags;
-    if (mForceSyncDecoding) {
+    if (mForceSyncDecoding || UsedImageDecoding() == StyleImageDecoding::Sync) {
       flags |= imgIContainer::FLAG_SYNC_DECODE;
     }
 
@@ -475,7 +475,7 @@ bool SVGImageFrame::CreateWebRenderCommands(
   }
 
   uint32_t flags = aDisplayListBuilder->GetImageDecodeFlags();
-  if (mForceSyncDecoding) {
+  if (mForceSyncDecoding || UsedImageDecoding() == StyleImageDecoding::Sync) {
     flags |= imgIContainer::FLAG_SYNC_DECODE;
   }
 

@@ -5,14 +5,12 @@
 #ifndef mozilla_net_Cookie_h
 #define mozilla_net_Cookie_h
 
+#include "mozilla/BasePrincipal.h"
+#include "mozilla/MemoryReporting.h"
+#include "mozilla/net/NeckoChannelParams.h"
 #include "nsICookie.h"
 #include "nsIMemoryReporter.h"
 #include "nsString.h"
-
-#include "mozilla/MemoryReporting.h"
-#include "mozilla/BasePrincipal.h"
-#include "mozilla/net/NeckoChannelParams.h"
-#include "nsIMemoryReporter.h"
 
 using mozilla::OriginAttributes;
 

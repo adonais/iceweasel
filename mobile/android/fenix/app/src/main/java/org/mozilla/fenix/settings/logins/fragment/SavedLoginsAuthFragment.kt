@@ -10,8 +10,8 @@ import androidx.navigation.fragment.findNavController
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
+import mozilla.components.concept.sync.SyncEngine
 import mozilla.components.feature.autofill.preference.AutofillPreference
-import mozilla.components.service.fxa.SyncEngine
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Logins
 import org.mozilla.fenix.R

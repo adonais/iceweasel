@@ -5,11 +5,11 @@
 #include "TreeWalker.h"
 
 #include "ARIAMap.h"
-#include "nsAccessibilityService.h"
 #include "DocAccessible.h"
-
 #include "mozilla/dom/ChildIterator.h"
 #include "mozilla/dom/Element.h"
+#include "nsAccessibilityService.h"
+#include "nsIContentInlines.h"
 
 namespace mozilla::a11y {
 

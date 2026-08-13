@@ -122,6 +122,7 @@ reftest.Runner = class {
         },
       },
       allFrames: true,
+      safeForUntrustedWebProcess: true,
     });
   }
 

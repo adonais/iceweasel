@@ -6,8 +6,9 @@
 #define mozilla_widget_InitData_h_
 
 #include <cstdint>
-#include "mozilla/TypedEnumBits.h"
+
 #include "X11UndefineNone.h"
+#include "mozilla/TypedEnumBits.h"
 
 namespace mozilla::widget {
 

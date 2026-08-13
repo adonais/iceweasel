@@ -5,35 +5,35 @@
 #ifndef GFXMESSAGEUTILS_H_
 #define GFXMESSAGEUTILS_H_
 
+#include <stdint.h>
+
 #include "DriverCrashGuard.h"
 #include "FilterSupport.h"
 #include "ImageTypes.h"
 #include "RegionBuilder.h"
+#include "SharedFontList.h"
 #include "chrome/common/ipc_message_utils.h"
-#include "gfxFeature.h"
 #include "gfxFallback.h"
+#include "gfxFeature.h"
 #include "gfxPoint.h"
 #include "gfxRect.h"
 #include "gfxSparseBitSet.h"
 #include "gfxTelemetry.h"
 #include "gfxTypes.h"
 #include "ipc/EnumSerializer.h"
-#include "mozilla/EnumTypeTraits.h"
 #include "ipc/IPCMessageUtilsSpecializations.h"
+#include "mozilla/EnumTypeTraits.h"
 #include "mozilla/gfx/CrossProcessPaint.h"
 #include "mozilla/gfx/FileHandleWrapper.h"
 #include "mozilla/gfx/Matrix.h"
 #include "mozilla/gfx/ScaleFactor.h"
 #include "mozilla/gfx/ScaleFactors2D.h"
-#include "SharedFontList.h"
-#include "nsRect.h"
-#include "nsRegion.h"
 #include "mozilla/ipc/FileDescriptor.h"
 #include "mozilla/ipc/ProtocolMessageUtils.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/ipc/ShmemMessageUtils.h"
-
-#include <stdint.h>
+#include "nsRect.h"
+#include "nsRegion.h"
 
 #ifdef _MSC_VER
 #  pragma warning(disable : 4800)
@@ -51,38 +51,9 @@ DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::gfx::Matrix, _11, _12, _21, _22, _31,
                                   _32);
 
 template <class SourceUnits, class TargetUnits, class T>
-struct ParamTraits<mozilla::gfx::Matrix4x4Typed<SourceUnits, TargetUnits, T>> {
-  typedef mozilla::gfx::Matrix4x4Typed<SourceUnits, TargetUnits, T> paramType;
-
-  static void Write(MessageWriter* writer, const paramType& param) {
-#define Wr(_f) WriteParam(writer, param._f)
-    Wr(_11);
-    Wr(_12);
-    Wr(_13);
-    Wr(_14);
-    Wr(_21);
-    Wr(_22);
-    Wr(_23);
-    Wr(_24);
-    Wr(_31);
-    Wr(_32);
-    Wr(_33);
-    Wr(_34);
-    Wr(_41);
-    Wr(_42);
-    Wr(_43);
-    Wr(_44);
-#undef Wr
-  }
-
-  static bool Read(MessageReader* reader, paramType* result) {
-#define Rd(_f) ReadParam(reader, &result->_f)
-    return (Rd(_11) && Rd(_12) && Rd(_13) && Rd(_14) && Rd(_21) && Rd(_22) &&
-            Rd(_23) && Rd(_24) && Rd(_31) && Rd(_32) && Rd(_33) && Rd(_34) &&
-            Rd(_41) && Rd(_42) && Rd(_43) && Rd(_44));
-#undef Rd
-  }
-};
+struct ParamTraits<mozilla::gfx::Matrix4x4Typed<SourceUnits, TargetUnits, T>>
+    : ParamTraits_TiedFields<
+          mozilla::gfx::Matrix4x4Typed<SourceUnits, TargetUnits, T>> {};
 
 DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::gfx::Matrix5x4, _11, _12, _13, _14,
                                   _21, _22, _23, _24, _31, _32, _33, _34, _41,
@@ -226,48 +197,12 @@ struct ParamTraits<mozilla::gfx::CompositionOp>
 DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::gfx::sRGBColor, r, g, b, a);
 DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::gfx::DeviceColor, r, g, b, a);
 
-template <>
-struct ParamTraits<nsPoint> {
-  typedef nsPoint paramType;
-
-  static void Write(MessageWriter* writer, const paramType& param) {
-    WriteParam(writer, param.x);
-    WriteParam(writer, param.y);
-  }
-
-  static bool Read(MessageReader* reader, paramType* result) {
-    return (ReadParam(reader, &result->x) && ReadParam(reader, &result->y));
-  }
-};
-
-template <>
-struct ParamTraits<nsIntPoint> {
-  typedef nsIntPoint paramType;
-
-  static void Write(MessageWriter* writer, const paramType& param) {
-    WriteParam(writer, param.x);
-    WriteParam(writer, param.y);
-  }
-
-  static bool Read(MessageReader* reader, paramType* result) {
-    return (ReadParam(reader, &result->x) && ReadParam(reader, &result->y));
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(nsPoint, x, y);
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(nsIntPoint, x, y);
 
 template <typename T>
-struct ParamTraits<mozilla::gfx::IntSizeTyped<T>> {
-  typedef mozilla::gfx::IntSizeTyped<T> paramType;
-
-  static void Write(MessageWriter* writer, const paramType& param) {
-    WriteParam(writer, param.width);
-    WriteParam(writer, param.height);
-  }
-
-  static bool Read(MessageReader* reader, paramType* result) {
-    return (ReadParam(reader, &result->width) &&
-            ReadParam(reader, &result->height));
-  }
-};
+struct ParamTraits<mozilla::gfx::IntSizeTyped<T>>
+    : ParamTraits_TiedFields<mozilla::gfx::IntSizeTyped<T>> {};
 
 template <typename Region, typename Rect, typename Iter>
 struct RegionParamTraits {
@@ -306,133 +241,39 @@ struct ParamTraits<mozilla::gfx::IntRegionTyped<Units>>
           mozilla::gfx::IntRectTyped<Units>,
           typename mozilla::gfx::IntRegionTyped<Units>::RectIterator> {};
 
-template <>
-struct ParamTraits<mozilla::gfx::IntSize> {
-  typedef mozilla::gfx::IntSize paramType;
-
-  static void Write(MessageWriter* writer, const paramType& param) {
-    WriteParam(writer, param.width);
-    WriteParam(writer, param.height);
-  }
-
-  static bool Read(MessageReader* reader, paramType* result) {
-    return (ReadParam(reader, &result->width) &&
-            ReadParam(reader, &result->height));
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::gfx::IntSize, width, height);
 
 template <class T>
-struct ParamTraits<mozilla::gfx::CoordTyped<T>> {
-  typedef mozilla::gfx::CoordTyped<T> paramType;
-
-  static void Write(MessageWriter* writer, const paramType& param) {
-    WriteParam(writer, param.value);
-  }
-
-  static bool Read(MessageReader* reader, paramType* result) {
-    return (ReadParam(reader, &result->value));
-  }
-};
+struct ParamTraits<mozilla::gfx::CoordTyped<T>>
+    : ParamTraits_TiedFields<mozilla::gfx::CoordTyped<T>> {};
 
 template <class T>
-struct ParamTraits<mozilla::gfx::IntCoordTyped<T>> {
-  typedef mozilla::gfx::IntCoordTyped<T> paramType;
-
-  static void Write(MessageWriter* writer, const paramType& param) {
-    WriteParam(writer, param.value);
-  }
-
-  static bool Read(MessageReader* reader, paramType* result) {
-    return (ReadParam(reader, &result->value));
-  }
-};
+struct ParamTraits<mozilla::gfx::IntCoordTyped<T>>
+    : ParamTraits_TiedFields<mozilla::gfx::IntCoordTyped<T>> {};
 
 template <class T, class U>
-struct ParamTraits<mozilla::gfx::ScaleFactor<T, U>> {
-  typedef mozilla::gfx::ScaleFactor<T, U> paramType;
-
-  static void Write(MessageWriter* writer, const paramType& param) {
-    WriteParam(writer, param.scale);
-  }
-
-  static bool Read(MessageReader* reader, paramType* result) {
-    return (ReadParam(reader, &result->scale));
-  }
-};
+struct ParamTraits<mozilla::gfx::ScaleFactor<T, U>>
+    : ParamTraits_TiedFields<mozilla::gfx::ScaleFactor<T, U>> {};
 
 template <class T, class U>
-struct ParamTraits<mozilla::gfx::ScaleFactors2D<T, U>> {
-  typedef mozilla::gfx::ScaleFactors2D<T, U> paramType;
-
-  static void Write(MessageWriter* writer, const paramType& param) {
-    WriteParam(writer, param.xScale);
-    WriteParam(writer, param.yScale);
-  }
-
-  static bool Read(MessageReader* reader, paramType* result) {
-    return (ReadParam(reader, &result->xScale) &&
-            ReadParam(reader, &result->yScale));
-  }
-};
+struct ParamTraits<mozilla::gfx::ScaleFactors2D<T, U>>
+    : ParamTraits_TiedFields<mozilla::gfx::ScaleFactors2D<T, U>> {};
 
 template <class T>
-struct ParamTraits<mozilla::gfx::PointTyped<T>> {
-  typedef mozilla::gfx::PointTyped<T> paramType;
-
-  static void Write(MessageWriter* writer, const paramType& param) {
-    WriteParam(writer, param.x);
-    WriteParam(writer, param.y);
-  }
-
-  static bool Read(MessageReader* reader, paramType* result) {
-    return (ReadParam(reader, &result->x) && ReadParam(reader, &result->y));
-  }
-};
+struct ParamTraits<mozilla::gfx::PointTyped<T>>
+    : ParamTraits_TiedFields<mozilla::gfx::PointTyped<T>> {};
 
 template <class F, class T>
-struct ParamTraits<mozilla::gfx::Point3DTyped<F, T>> {
-  typedef mozilla::gfx::Point3DTyped<F, T> paramType;
-
-  static void Write(MessageWriter* writer, const paramType& param) {
-    WriteParam(writer, param.x);
-    WriteParam(writer, param.y);
-    WriteParam(writer, param.z);
-  }
-
-  static bool Read(MessageReader* reader, paramType* result) {
-    return (ReadParam(reader, &result->x) && ReadParam(reader, &result->y) &&
-            ReadParam(reader, &result->z));
-  }
-};
+struct ParamTraits<mozilla::gfx::Point3DTyped<F, T>>
+    : ParamTraits_TiedFields<mozilla::gfx::Point3DTyped<F, T>> {};
 
 template <class T>
-struct ParamTraits<mozilla::gfx::IntPointTyped<T>> {
-  typedef mozilla::gfx::IntPointTyped<T> paramType;
-
-  static void Write(MessageWriter* writer, const paramType& param) {
-    WriteParam(writer, param.x);
-    WriteParam(writer, param.y);
-  }
-
-  static bool Read(MessageReader* reader, paramType* result) {
-    return (ReadParam(reader, &result->x) && ReadParam(reader, &result->y));
-  }
-};
+struct ParamTraits<mozilla::gfx::IntPointTyped<T>>
+    : ParamTraits_TiedFields<mozilla::gfx::IntPointTyped<T>> {};
 
 template <class T>
-struct ParamTraits<mozilla::gfx::SizeTyped<T>> {
-  typedef mozilla::gfx::SizeTyped<T> paramType;
-
-  static void Write(MessageWriter* writer, const paramType& param) {
-    WriteParam(writer, param.width);
-    WriteParam(writer, param.height);
-  }
-
-  static bool Read(MessageReader* reader, paramType* result) {
-    return (ReadParam(reader, &result->width) &&
-            ReadParam(reader, &result->height));
-  }
-};
+struct ParamTraits<mozilla::gfx::SizeTyped<T>>
+    : ParamTraits_TiedFields<mozilla::gfx::SizeTyped<T>> {};
 
 template <class T>
 struct ParamTraits<mozilla::gfx::RectTyped<T>> {
@@ -506,25 +347,7 @@ struct ParamTraits<mozilla::gfx::IntRectTyped<T>> {
   }
 };
 
-template <>
-struct ParamTraits<mozilla::gfx::RectCornerRadii> {
-  typedef mozilla::gfx::RectCornerRadii paramType;
-
-  static void Write(MessageWriter* writer, const paramType& param) {
-    for (const auto& i : param.radii) {
-      WriteParam(writer, i);
-    }
-  }
-
-  static bool Read(MessageReader* reader, paramType* result) {
-    for (auto& i : result->radii) {
-      if (!ReadParam(reader, &i)) {
-        return false;
-      }
-    }
-    return true;
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::gfx::RectCornerRadii, radii);
 
 DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::gfx::RoundedRect, rect, corners);
 
@@ -532,40 +355,12 @@ DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::gfx::Margin, top, right, bottom,
                                   left);
 
 template <class T>
-struct ParamTraits<mozilla::gfx::MarginTyped<T>> {
-  typedef mozilla::gfx::MarginTyped<T> paramType;
-
-  static void Write(MessageWriter* writer, const paramType& param) {
-    WriteParam(writer, param.top);
-    WriteParam(writer, param.right);
-    WriteParam(writer, param.bottom);
-    WriteParam(writer, param.left);
-  }
-
-  static bool Read(MessageReader* reader, paramType* result) {
-    return (
-        ReadParam(reader, &result->top) && ReadParam(reader, &result->right) &&
-        ReadParam(reader, &result->bottom) && ReadParam(reader, &result->left));
-  }
-};
+struct ParamTraits<mozilla::gfx::MarginTyped<T>>
+    : ParamTraits_TiedFields<mozilla::gfx::MarginTyped<T>> {};
 
 template <class T>
-struct ParamTraits<mozilla::gfx::IntMarginTyped<T>> {
-  typedef mozilla::gfx::IntMarginTyped<T> paramType;
-
-  static void Write(MessageWriter* writer, const paramType& param) {
-    WriteParam(writer, param.top);
-    WriteParam(writer, param.right);
-    WriteParam(writer, param.bottom);
-    WriteParam(writer, param.left);
-  }
-
-  static bool Read(MessageReader* reader, paramType* result) {
-    return (
-        ReadParam(reader, &result->top) && ReadParam(reader, &result->right) &&
-        ReadParam(reader, &result->bottom) && ReadParam(reader, &result->left));
-  }
-};
+struct ParamTraits<mozilla::gfx::IntMarginTyped<T>>
+    : ParamTraits_TiedFields<mozilla::gfx::IntMarginTyped<T>> {};
 
 template <>
 struct ParamTraits<nsRect> {
@@ -728,33 +523,8 @@ DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::gfx::DropShadowAttributes,
 DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::gfx::ColorMatrixAttributes, mType,
                                   mValues);
 
-template <>
-struct ParamTraits<mozilla::gfx::ComponentTransferAttributes> {
-  typedef mozilla::gfx::ComponentTransferAttributes paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    for (int i = 0; i < 4; ++i) {
-      WriteParam(aWriter, aParam.mTypes[i]);
-    }
-    for (int i = 0; i < 4; ++i) {
-      WriteParam(aWriter, aParam.mValues[i]);
-    }
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    for (int i = 0; i < 4; ++i) {
-      if (!ReadParam(aReader, &aResult->mTypes[i])) {
-        return false;
-      }
-    }
-    for (int i = 0; i < 4; ++i) {
-      if (!ReadParam(aReader, &aResult->mValues[i])) {
-        return false;
-      }
-    }
-    return true;
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::gfx::ComponentTransferAttributes,
+                                  mTypes, mValues);
 
 DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::gfx::ConvolveMatrixAttributes,
                                   mKernelSize, mKernelMatrix, mDivisor, mBias,

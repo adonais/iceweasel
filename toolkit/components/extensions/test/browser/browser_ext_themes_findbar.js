@@ -220,3 +220,52 @@ add_task(
     await extension.unload();
   }
 );
+
+add_task(async function test_findbar_textbox_status_colors_with_lwtheme() {
+  const TOOLBAR_FIELD_COLOR = "#ff00ff";
+  const TOOLBAR_FIELD_TEXT_COLOR = "#9400ff";
+  let newWin = await BrowserTestUtils.openNewBrowserWindow();
+  newWin.gBrowser.selectedTab.focus();
+  let extension = ExtensionTestUtils.loadExtension({
+    manifest: {
+      theme: {
+        colors: {
+          frame: ACCENT_COLOR,
+          tab_background_text: TEXT_COLOR,
+          toolbar_field: TOOLBAR_FIELD_COLOR,
+          toolbar_field_text: TOOLBAR_FIELD_TEXT_COLOR,
+        },
+      },
+    },
+  });
+
+  await extension.startup();
+  await newWin.gBrowser.getFindBar();
+
+  let findbar_textbox = newWin.gFindBar.getElement("findbar-textbox");
+
+  Assert.equal(
+    newWin.getComputedStyle(findbar_textbox).backgroundColor,
+    hexToCSS(TOOLBAR_FIELD_COLOR),
+    "Findbar textbox uses toolbar field color with a lightweight theme."
+  );
+
+  findbar_textbox.setAttribute("status", "notfound");
+  Assert.equal(
+    newWin.getComputedStyle(findbar_textbox).backgroundColor,
+    "rgba(226, 40, 80, 0.3)",
+    "Findbar textbox uses notfound color with a lightweight theme."
+  );
+  findbar_textbox.removeAttribute("status");
+
+  findbar_textbox.setAttribute("flash", "true");
+  Assert.equal(
+    newWin.getComputedStyle(findbar_textbox).backgroundColor,
+    "rgba(255, 233, 0, 0.3)",
+    "Findbar textbox uses flash color with a lightweight theme."
+  );
+  findbar_textbox.removeAttribute("flash");
+
+  await extension.unload();
+  await BrowserTestUtils.closeWindow(newWin);
+});

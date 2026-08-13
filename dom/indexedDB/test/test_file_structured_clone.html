@@ -11,19 +11,16 @@
 
   <script type="text/javascript">
   /**
-   * Test that structured cloning a Blob results in distinct backing files when
-   * stored in IndexedDB.
+   * Test that structured cloning a Blob preserves deduplication when stored in
+   * IndexedDB.
    *
-   * Currently, IndexedDB deduplicates blobs based on Blob object identity.
-   * Structured cloning creates a new Blob instance with a different identity,
-   * so the two blobs are treated as distinct and stored separately on disk.
+   * IndexedDB deduplicates blobs based on their underlying BlobImpl.
+   * Structured cloning creates a new Blob object, but it refers to the same
+   * BlobImpl, so the two blobs should be treated as identical and stored only
+   * once on disk.
    *
-   * This test verifies that behavior by ensuring the cloned Blob receives a
-   * different fileId.
-   *
-   * TODO: Once IndexedDB switches to using BlobImpl for deduplication,
-   * structured-cloned blobs that share the same underlying data should be
-   * deduplicated and mapped to the same fileId.
+   * This test verifies that behavior by ensuring that both the original and
+   * the structured-cloned Blob map to the same backing file (same fileId).
    */
   async function testSteps()
   {
@@ -35,10 +32,7 @@
     const clonedBlob = structuredClone(blob);
 
     const blobData1 = { key: 1, blob, expectedFileId: 1 };
-    // TODO: After switching IndexedDB blob deduplication to use BlobImpl
-    // instead of Blob identity, this structured-cloned blob should reuse the
-    // same underlying file and have expectedFileId = 1.
-    const blobData2 = { key: 2, blob: clonedBlob, expectedFileId: 2 };
+    const blobData2 = { key: 2, blob: clonedBlob, expectedFileId: 1 };
 
     await SpecialPowers.pushPrefEnv({ set: [["dom.indexedDB.dataThreshold", -1]] });
 

@@ -4,9 +4,9 @@
 #include "CompositorThread.h"
 
 #include "CompositorBridgeParent.h"
-#include "gfxGradientCache.h"
 #include "MainThreadUtils.h"
 #include "VRManagerParent.h"
+#include "gfxGradientCache.h"
 #include "mozilla/BackgroundHangMonitor.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/gfx/gfxVars.h"

@@ -5,22 +5,22 @@
 #ifndef CacheFileIOManager_h_
 #define CacheFileIOManager_h_
 
+#include "CacheHashUtils.h"
 #include "CacheIOThread.h"
 #include "CacheStorageService.h"
-#include "CacheHashUtils.h"
-#include "nsIEventTarget.h"
-#include "nsINamed.h"
-#include "nsITimer.h"
-#include "nsCOMPtr.h"
+#include "Dictionary.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/SHA1.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TimeStamp.h"
-#include "nsTArray.h"
+#include "nsCOMPtr.h"
+#include "nsIEventTarget.h"
+#include "nsINamed.h"
+#include "nsITimer.h"
 #include "nsString.h"
+#include "nsTArray.h"
 #include "nsTHashtable.h"
 #include "prio.h"
-#include "Dictionary.h"
 
 // #define DEBUG_HANDLES 1
 #if !defined(MOZ_WIDGET_ANDROID)
@@ -354,8 +354,8 @@ class CacheFileIOManager final : public nsITimerCallback, public nsINamed {
   static nsresult UpdateIndexEntry(CacheFileHandle* aHandle,
                                    const uint32_t* aFrecency,
                                    const bool* aHasAltData,
-                                   const uint16_t* aOnStartTime,
-                                   const uint16_t* aOnStopTime,
+                                   const uint32_t* aLastFetched,
+                                   const uint32_t* aFetchCount,
                                    const uint8_t* aContentType);
 
   static nsresult UpdateIndexEntry();

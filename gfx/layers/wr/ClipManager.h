@@ -9,8 +9,8 @@
 #include <unordered_map>
 
 #include "mozilla/Attributes.h"
-#include "mozilla/webrender/WebRenderAPI.h"
 #include "mozilla/layout/StickyScrollContainer.h"
+#include "mozilla/webrender/WebRenderAPI.h"
 
 namespace mozilla {
 

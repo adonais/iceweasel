@@ -6,8 +6,9 @@
 #define mozilla_a11y_Platform_h
 
 #include <stdint.h>
-#include "nsStringFwd.h"
+
 #include "Units.h"
+#include "nsStringFwd.h"
 
 #if defined(ANDROID)
 #  include "nsTArray.h"

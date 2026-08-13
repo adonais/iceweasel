@@ -2,14 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "InterfaceInitFuncs.h"
-
-#include "LocalAccessible-inl.h"
 #include "HyperTextAccessible-inl.h"
-#include "nsMai.h"
+#include "InterfaceInitFuncs.h"
+#include "LocalAccessible-inl.h"
 #include "RemoteAccessible.h"
-#include "nsString.h"
 #include "mozilla/Likely.h"
+#include "nsMai.h"
+#include "nsString.h"
 
 using namespace mozilla::a11y;
 

@@ -2,30 +2,31 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <queue>
+#include "WinWindowOcclusionTracker.h"
+
 #include <windows.h>
 #include <winuser.h>
 #include <wtsapi32.h>
 
-#include "WinWindowOcclusionTracker.h"
+#include <queue>
 
-#include "base/thread.h"
-#include "base/message_loop.h"
-#include "base/platform_thread.h"
-#include "gfxConfig.h"
-#include "nsThreadUtils.h"
-#include "mozilla/DataMutex.h"
-#include "mozilla/gfx/Logging.h"
-#include "mozilla/TimeStamp.h"
-#include "mozilla/Logging.h"
-#include "mozilla/StaticPrefs_widget.h"
-#include "mozilla/StaticMonitor.h"
-#include "mozilla/StaticPtr.h"
-#include "nsIWidget.h"
-#include "nsWindow.h"
-#include "transport/runnable_utils.h"
 #include "WinEventObserver.h"
 #include "WinUtils.h"
+#include "base/message_loop.h"
+#include "base/platform_thread.h"
+#include "base/thread.h"
+#include "gfxConfig.h"
+#include "mozilla/DataMutex.h"
+#include "mozilla/Logging.h"
+#include "mozilla/StaticMonitor.h"
+#include "mozilla/StaticPrefs_widget.h"
+#include "mozilla/StaticPtr.h"
+#include "mozilla/TimeStamp.h"
+#include "mozilla/gfx/Logging.h"
+#include "nsIWidget.h"
+#include "nsThreadUtils.h"
+#include "nsWindow.h"
+#include "transport/runnable_utils.h"
 
 namespace mozilla::widget {
 
@@ -592,10 +593,7 @@ bool WinWindowOcclusionTracker::IsWindowVisibleAndFullyOpaque(
   // not displayed. explorer.exe, in particular has one that's the
   // size of the desktop. It's usually behind Chrome windows in the z-order,
   // but using a remote desktop can move it up in the z-order. So, ignore them.
-  DWORD reason;
-  if (SUCCEEDED(::DwmGetWindowAttribute(aHwnd, DWMWA_CLOAKED, &reason,
-                                        sizeof(reason))) &&
-      reason != 0) {
+  if (WinUtils::QueryCloaked(aHwnd)) {
     return false;
   }
 
@@ -1426,10 +1424,7 @@ Maybe<bool> WinWindowOcclusionTracker::WindowOcclusionCalculator::
   // windows and briefly reports them as not on the current desktop with a
   // real (non-null) GUID -- the existing GUID_NULL workaround below misses
   // this case.
-  BOOL isCloaked = FALSE;
-  if (FAILED(::DwmGetWindowAttribute(aHwnd, DWMWA_CLOAKED, &isCloaked,
-                                     sizeof(isCloaked))) ||
-      !isCloaked) {
+  if (!WinUtils::QueryCloaked(aHwnd)) {
     return Some(true);
   }
 

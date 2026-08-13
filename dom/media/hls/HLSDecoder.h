@@ -42,9 +42,6 @@ class HLSDecoder final : public MediaDecoder {
   // Called as data arrives on the underlying HLS player. Main thread only.
   void NotifyDataArrived();
 
-  // Called when Exoplayer start to load media. Main thread only.
-  void NotifyLoad(nsCString aMediaUrl);
-
   bool IsHLSDecoder() const override { return true; }
 
  private:
@@ -61,9 +58,8 @@ class HLSDecoder final : public MediaDecoder {
     return true;
   }
 
-  void UpdateCurrentPrincipal(nsIURI* aMediaUri);
-  already_AddRefed<nsIPrincipal> GetContentPrincipal(nsIURI* aMediaUri);
-  void RecordMediaUsage(nsIURI* aMediaUri);
+  void UpdateCurrentPrincipal(nsIPrincipal* aPrincipal);
+  void RecordMediaUsage(const nsCString& aMimeType);
 
   static size_t sAllocatedInstances;  // Access only in the main thread.
 

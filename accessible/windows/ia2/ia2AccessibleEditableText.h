@@ -5,9 +5,8 @@
 #ifndef ACCESSIBLE_EDITABLETEXT_H
 #define ACCESSIBLE_EDITABLETEXT_H
 
-#include "nsISupports.h"
-
 #include "AccessibleEditableText.h"
+#include "nsISupports.h"
 
 namespace mozilla {
 namespace a11y {

@@ -130,7 +130,7 @@ add_task(async function test_filterResponseData_after_redirect() {
         // fail because ChannelWrapper::RequestListener::Init() fails when
         // HttpBaseChannel::mListener is absent. For more details on the race,
         // see https://bugzilla.mozilla.org/show_bug.cgi?id=1673749#c31
-        this.registerTraceableChannel(policy, remoteTab);
+        this.registerTraceableChannel(policy);
 
         // This assertion failed before the fix to bug 2044517. But even
         // without this assertion, we would have triggered a release assertion

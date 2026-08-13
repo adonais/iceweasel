@@ -4,14 +4,15 @@
 
 /* The privileged system principal. */
 
-#include "nscore.h"
 #include "SystemPrincipal.h"
+
 #include "mozilla/ClearOnShutdown.h"
 #include "nsCOMPtr.h"
-#include "nsReadableUtils.h"
 #include "nsCRT.h"
-#include "nsString.h"
 #include "nsIClassInfoImpl.h"
+#include "nsReadableUtils.h"
+#include "nsString.h"
+#include "nscore.h"
 #include "pratom.h"
 
 using namespace mozilla;

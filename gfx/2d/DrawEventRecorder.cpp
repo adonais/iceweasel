@@ -5,8 +5,8 @@
 #include "DrawEventRecorder.h"
 
 #include "PathRecording.h"
-#include "RecordingTypes.h"
 #include "RecordedEventImpl.h"
+#include "RecordingTypes.h"
 
 namespace mozilla {
 namespace gfx {

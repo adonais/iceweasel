@@ -42,7 +42,7 @@ class NetworkBench(BasePythonSupport):
     def setup_test(self, test, args):
         from cmdline import CHROME_ANDROID_APPS, CHROMIUM_DISTROS
 
-        LOG.info("setup_test: '%s'" % test)
+        LOG.info(f"setup_test: '{test}'")
 
         self._is_chrome = (
             args.app in CHROMIUM_DISTROS or args.app in CHROME_ANDROID_APPS
@@ -67,7 +67,7 @@ class NetworkBench(BasePythonSupport):
                 text=True,
             )
             if result.returncode == 0:
-                LOG.info("Caddy is installed. Version: %s" % result.stdout.strip())
+                LOG.info(f"Caddy is installed. Version: {result.stdout.strip()}")
                 return True
             else:
                 LOG.error("Caddy is not installed.")
@@ -79,12 +79,12 @@ class NetworkBench(BasePythonSupport):
         if self.browsertime_node is None or not self.browsertime_node.exists():
             return None
 
-        LOG.info("node bin: %s" % self.browsertime_node)
+        LOG.info(f"node bin: {self.browsertime_node}")
 
         server_path = (
             Path(__file__).parent / ".." / ".." / "browsertime" / "utils" / path
         )
-        LOG.info("server_path: %s" % server_path)
+        LOG.info(f"server_path: {server_path}")
 
         if not server_path.exists():
             return None
@@ -98,11 +98,11 @@ class NetworkBench(BasePythonSupport):
             start_new_session=True,
         )
         msg = process.stdout.readline()
-        LOG.info("server msg: %s" % msg)
+        LOG.info(f"server msg: {msg}")
         match = re.search(r"Server is running on http://[^:]+:(\d+)", msg)
         if match:
             self.backend_port = match.group(1)
-            LOG.info("backend port: %s" % self.backend_port)
+            LOG.info(f"backend port: {self.backend_port}")
             return process
         return None
 
@@ -124,12 +124,12 @@ class NetworkBench(BasePythonSupport):
             return None
 
         key_path = utils_path / "http2-cert.key"
-        LOG.info("key_path: %s" % key_path)
+        LOG.info(f"key_path: {key_path}")
         if not key_path.exists():
             return None
 
         pem_path = utils_path / "http2-cert.pem"
-        LOG.info("pem_path: %s" % pem_path)
+        LOG.info(f"pem_path: {pem_path}")
         if not pem_path.exists():
             return None
 
@@ -220,7 +220,7 @@ class NetworkBench(BasePythonSupport):
             },
         }
 
-        LOG.info("caddyfile_content: %s" % caddyfile_content)
+        LOG.info(f"caddyfile_content: {caddyfile_content}")
 
         with tempfile.NamedTemporaryFile(
             mode="w", delete=False, suffix=".json"
@@ -228,7 +228,7 @@ class NetworkBench(BasePythonSupport):
             json.dump(caddyfile_content, temp_json_file, indent=2)
             temp_json_file_path = temp_json_file.name
 
-        LOG.info("temp_json_file_path: %s" % temp_json_file_path)
+        LOG.info(f"temp_json_file_path: {temp_json_file_path}")
         command = ["caddy", "run", "--config", temp_json_file_path]
 
         def read_output(pipe, log_func):
@@ -646,7 +646,7 @@ class NetworkBench(BasePythonSupport):
                 str(file_size),
             ]
 
-        LOG.info("modify_command: %s" % cmd)
+        LOG.info(f"modify_command: {cmd}")
 
         # We know that cmd[0] is the path to nodejs.
         self.browsertime_node = Path(cmd[0])
@@ -730,11 +730,11 @@ class NetworkBench(BasePythonSupport):
                 item["extraOptions"].append(loss_str)
 
     def shutdown_process(self, name, proc):
-        LOG.info("%s server shutting down ..." % name)
+        LOG.info(f"{name} server shutting down ...")
         if proc.poll() is not None:
-            LOG.info("server already dead %s" % proc.poll())
+            LOG.info(f"server already dead {proc.poll()}")
         else:
-            LOG.info("server pid is %s" % str(proc.pid))
+            LOG.info(f"server pid is {proc.pid}")
             try:
                 os.killpg(proc.pid, signal.SIGTERM)
             except Exception as e:

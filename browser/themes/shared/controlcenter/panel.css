@@ -315,6 +315,17 @@
   margin-block: 0.5em;
 }
 
+#trustpanel-popup #identity-popup-content-verifier-label {
+  margin-block-end: var(--space-xsmall);
+}
+
+#trustpanel-popup #identity-popup-content-cert-info {
+  border-block-end: 1px solid var(--trustpanel-card-divider-color);
+  padding-block-end: var(--space-small);
+  margin-inline: calc(-1 * var(--panel-menuitem-padding-inline));
+  padding-inline: var(--panel-menuitem-padding-inline);
+}
+
 #identity-popup-content-supplemental {
   margin-block-end: 0.5em;
 }
@@ -325,9 +336,10 @@
 
 #identity-popup-securityView-extended-info {
   margin-inline: var(--panel-menuitem-margin-inline);
+  padding-inline: var(--panel-menuitem-padding-inline);
 
-  @media not (prefers-contrast) {
-    --card-background-color: color-mix(in srgb, currentColor 2%, transparent);
+  .header {
+    font-weight: var(--font-weight-heading);
   }
 
   #trustpanel-popup:is([connection="chrome"], [connection="file"], [connection="associated"], [connection="extension"]) & {
@@ -1179,9 +1191,13 @@
   padding-bottom: 0;
 }
 
+#trustpanel-securityInformationView {
+  padding-block-end: var(--space-small);
+}
+
 .moz-button-subviewbutton-nav {
   --button-font-weight: normal;
-  --button-alignment: inline-start;
+  --button-content-alignment: inline-start;
   --button-border-radius: var(--border-radius-small);
   --focus-outline-offset: -2px;
   margin: var(--space-small);

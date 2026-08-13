@@ -6,7 +6,7 @@
 /**
  * The current SQLite database schema version
  */
-export const CURRENT_SCHEMA_VERSION = 10;
+export const CURRENT_SCHEMA_VERSION = 11;
 
 /**
  * The directory that the SQLite database lives in
@@ -28,4 +28,5 @@ export {
   MESSAGE_ROLE,
   MEMORIES_FLAG_SOURCE,
   SYSTEM_PROMPT_TYPE,
+  TOOL_RESULT_TYPE,
 } from "./ChatEnums.sys.mjs";

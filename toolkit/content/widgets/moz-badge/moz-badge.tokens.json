@@ -1,21 +1,4 @@
 {
-  "text": {
-    "color": {
-      "@base": {
-        "value": {
-          "default": "{text.color.deemphasized}",
-          "forcedColors": "CanvasText"
-        }
-      },
-      "filled": {
-        "value": {
-          "light": "{color.white.@base}",
-          "dark": "{color.gray.100}",
-          "forcedColors": "AccentColorText"
-        }
-      }
-    }
-  },
   "background": {
     "color": {
       "@base": {
@@ -51,6 +34,39 @@
     },
     "width": {
       "value": "1px"
+    }
+  },
+  "font": {
+    "weight": {
+      "value": "{font.weight.semibold}"
+    }
+  },
+  "padding": {
+    "block": {
+      "value": "0"
+    },
+    "inline": {
+      "value": "{space.xsmall}"
+    },
+    "nova-inline": {
+      "value": "calc({space.xsmall} + {space.xxsmall})"
+    }
+  },
+  "text": {
+    "color": {
+      "@base": {
+        "value": {
+          "default": "{text.color.deemphasized}",
+          "forcedColors": "CanvasText"
+        }
+      },
+      "filled": {
+        "value": {
+          "light": "{color.white.@base}",
+          "dark": "{color.gray.100}",
+          "forcedColors": "AccentColorText"
+        }
+      }
     }
   }
 }

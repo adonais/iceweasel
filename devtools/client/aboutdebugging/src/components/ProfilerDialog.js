@@ -8,6 +8,7 @@ const {
   connect,
 } = require("resource://devtools/client/shared/vendor/react-redux.js");
 const {
+  createElement,
   createFactory,
   PureComponent,
 } = require("resource://devtools/client/shared/vendor/react.mjs");
@@ -132,21 +133,19 @@ class ProfilerDialog extends PureComponent {
               "about-debugging-profiler-dialog-title2"
             )
           ),
-          dom.button(
-            {
-              className: "ghost-button qa-profiler-dialog-close",
-              onClick: () => {
-                if (profilerContext === PROFILER_PAGE_CONTEXT.DEVTOOLS_REMOTE) {
-                  this.hide();
-                } else {
-                  switchProfilerContext(PROFILER_PAGE_CONTEXT.DEVTOOLS_REMOTE);
-                }
-              },
+          createElement("moz-button", {
+            class: `qa-profiler-dialog-close`,
+            type: "icon ghost",
+            iconsrc: "chrome://devtools/skin/images/close.svg",
+            "data-l10n-id": "about-debugging-message-close-icon2",
+            onClick: () => {
+              if (profilerContext === PROFILER_PAGE_CONTEXT.DEVTOOLS_REMOTE) {
+                this.hide();
+              } else {
+                switchProfilerContext(PROFILER_PAGE_CONTEXT.DEVTOOLS_REMOTE);
+              }
             },
-            dom.img({
-              src: "chrome://devtools/skin/images/close.svg",
-            })
-          )
+          })
         ),
         this.renderProfilerIframe()
       )

@@ -8,12 +8,12 @@
 #include <functional>
 #include <utility>
 
-#include "mozilla/dom/SafeRefPtr.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Result.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/SafeRefPtr.h"
 #include "nsCOMPtr.h"
 #include "nsDebug.h"
 #include "nsHashtablesFwd.h"

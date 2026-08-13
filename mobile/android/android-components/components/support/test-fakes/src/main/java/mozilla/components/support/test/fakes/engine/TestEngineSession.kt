@@ -62,6 +62,11 @@ open class TestEngineSession(override val settings: Settings = DefaultSettings()
         onException: (Throwable) -> Unit,
     ) = Unit
 
+    override fun getBrokenSiteReport(
+        onResult: (JSONObject) -> Unit,
+        onException: (Throwable) -> Unit,
+    ) = Unit
+
     override fun getWebCompatInfo(
         onResult: (JSONObject) -> Unit,
         onException: (Throwable) -> Unit,

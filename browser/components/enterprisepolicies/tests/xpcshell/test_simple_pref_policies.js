@@ -1214,6 +1214,16 @@ const POLICIES_TESTS = [
     },
   },
 
+  // POLICY: CNSA2KeyAgreementEnabled
+  {
+    policies: {
+      CNSA2KeyAgreementEnabled: true,
+    },
+    lockedPrefs: {
+      "security.tls.enable_mlkem1024": true,
+    },
+  },
+
   // POLICY: HttpsOnlyMode
   {
     policies: {

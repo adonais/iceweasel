@@ -182,7 +182,7 @@ private fun getIconTint(state: MenuItemState): Color {
         MenuItemState.ACTIVE -> MaterialTheme.colorScheme.tertiary
         MenuItemState.WARNING -> MaterialTheme.colorScheme.error
         MenuItemState.DISABLED -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-        else -> MaterialTheme.colorScheme.onSurface
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 }
 

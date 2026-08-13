@@ -537,7 +537,7 @@ NS_IMETHODIMP BounceTrackingProtectionStorage::BlockShutdown(
   // If init failed log a warning. This isn't an early return since we still
   // need to try to tear down, including removing the shutdown blocker. A
   // failure state shouldn't cause a shutdown hang.
-  NS_WARNING_ASSERTION(NS_FAILED(rv), "BlockShutdown: Init failed");
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "BlockShutdown: Init failed");
 
   // Flush pending updates to disk before shutting down.
   // This will increment mPendingWrites which we will wait for below.

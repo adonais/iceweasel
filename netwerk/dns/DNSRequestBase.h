@@ -7,9 +7,9 @@
 
 #include "mozilla/net/PDNSRequestParent.h"
 #include "nsICancelable.h"
-#include "nsIDNSRecord.h"
-#include "nsIDNSListener.h"
 #include "nsIDNSByTypeRecord.h"
+#include "nsIDNSListener.h"
+#include "nsIDNSRecord.h"
 #include "nsIEventTarget.h"
 
 namespace mozilla {

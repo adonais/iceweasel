@@ -7,6 +7,7 @@
 
 #include "chrome/common/ipc_message.h"
 #include "chrome/common/ipc_message_utils.h"
+#include "ipc/IPCMessageUtils.h"
 #include "js/AllocPolicy.h"
 #include "js/StructuredClone.h"
 #include "mozilla/mozalloc.h"
@@ -59,18 +60,8 @@ struct ParamTraits<JSStructuredCloneData> {
   static bool Read(MessageReader* aReader, paramType* aResult);
 };
 
-template <>
-struct ParamTraits<mozilla::SerializedStructuredCloneBuffer> {
-  typedef mozilla::SerializedStructuredCloneBuffer paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.data);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->data);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::SerializedStructuredCloneBuffer,
+                                  data);
 
 }  // namespace IPC
 

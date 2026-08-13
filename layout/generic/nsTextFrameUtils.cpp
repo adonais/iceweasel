@@ -6,6 +6,7 @@
 
 #include <algorithm>
 
+#include "mozilla/Utf16.h"
 #include "mozilla/dom/CharacterDataBuffer.h"
 #include "mozilla/dom/Text.h"
 #include "nsBidiUtils.h"
@@ -105,8 +106,9 @@ static CharT* TransformWhiteSpaces(
       uint32_t ucs4before, ucs4after;
       uint32_t pos = aBegin;
       do {
-        if (pos > 1 && NS_IS_SURROGATE_PAIR(aText[pos - 2], aText[pos - 1])) {
-          ucs4before = SURROGATE_TO_UCS4(aText[pos - 2], aText[pos - 1]);
+        if (pos > 1 &&
+            mozilla::IsSurrogatePair(aText[pos - 2], aText[pos - 1])) {
+          ucs4before = mozilla::SurrogateToUCS4(aText[pos - 2], aText[pos - 1]);
           pos -= 2;
         } else {
           ucs4before = aText[pos - 1];
@@ -117,8 +119,8 @@ static CharT* TransformWhiteSpaces(
       pos = aEnd;
       do {
         if (pos + 1 < aLength &&
-            NS_IS_SURROGATE_PAIR(aText[pos], aText[pos + 1])) {
-          ucs4after = SURROGATE_TO_UCS4(aText[pos], aText[pos + 1]);
+            mozilla::IsSurrogatePair(aText[pos], aText[pos + 1])) {
+          ucs4after = mozilla::SurrogateToUCS4(aText[pos], aText[pos + 1]);
           pos += 2;
         } else {
           ucs4after = aText[pos];

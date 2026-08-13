@@ -25,6 +25,7 @@ absl_source_set("stacktrace") {
     "//third_party/abseil-cpp/absl/base:config",
     "//third_party/abseil-cpp/absl/base:core_headers",
     "//third_party/abseil-cpp/absl/base:dynamic_annotations",
+    "//third_party/abseil-cpp/absl/base:malloc_internal",
     "//third_party/abseil-cpp/absl/base:raw_logging_internal",
   ]
 }
@@ -35,6 +36,7 @@ absl_test("stacktrace_test") {
     ":stacktrace",
     "//third_party/abseil-cpp/absl/base:config",
     "//third_party/abseil-cpp/absl/base:core_headers",
+    "//third_party/abseil-cpp/absl/base:errno_saver",
     "//third_party/abseil-cpp/absl/types:span",
   ]
 }
@@ -69,6 +71,8 @@ absl_source_set("symbolize") {
   #   -DEFAULTLIB:dbghelp.lib
   # evaluate if this needs to be added here as well.
 }
+
+# symbolize_test is excluded because defines its own main function
 
 absl_source_set("examine_stack") {
   sources = [ "internal/examine_stack.cc" ]

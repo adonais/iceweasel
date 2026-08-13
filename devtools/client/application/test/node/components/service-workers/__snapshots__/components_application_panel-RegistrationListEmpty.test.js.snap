@@ -46,8 +46,8 @@ exports[`RegistrationListEmpty renders the expected snapshot 1`] = `
       <Localized
         id="serviceworker-empty-intro-link"
       >
-        <a
-          onClick={[Function]}
+        <MDNLink
+          url="https://developer.mozilla.org/docs/Web/API/Service_Worker_API/Using_Service_Workers?utm_source=devtools&utm_medium=sw-panel-blank&utm_campaign=default"
         />
       </Localized>
     </p>

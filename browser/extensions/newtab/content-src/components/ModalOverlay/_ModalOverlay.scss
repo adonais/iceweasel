@@ -7,4 +7,9 @@
   &::backdrop {
     background: var(--newtab-overlay-color);
   }
+
+  .nova-enabled & {
+    // @nova-cleanup(merge-styles): Merge into .modalOverlayOuter
+    border-radius: var(--border-radius-large);
+  }
 }

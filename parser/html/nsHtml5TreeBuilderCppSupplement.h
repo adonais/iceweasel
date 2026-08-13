@@ -151,7 +151,7 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
     if (aNamespace == kNameSpaceID_XHTML) {
       elem = nsHtml5TreeOperation::CreateHTMLElement(
           aName, aAttributes, mozilla::dom::FROM_PARSER_FRAGMENT,
-          nodeInfoManager, mBuilder, aCreator.html);
+          nodeInfoManager, mBuilder, aCreator.html, intendedParent);
     } else if (aNamespace == kNameSpaceID_SVG) {
       elem = nsHtml5TreeOperation::CreateSVGElement(
           aName, aAttributes, mozilla::dom::FROM_PARSER_FRAGMENT,

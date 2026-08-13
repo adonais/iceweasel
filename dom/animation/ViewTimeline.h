@@ -9,7 +9,6 @@
 
 namespace mozilla {
 class ScrollContainerFrame;
-struct TimelineRangeOffset;
 }  // namespace mozilla
 
 namespace mozilla::dom {
@@ -60,7 +59,8 @@ class ViewTimeline final : public ScrollTimeline {
 
   void ReplacePropertiesWith(Element* aSubjectElement,
                              const PseudoStyleRequest& aPseudoRequest,
-                             nsAtom* aName, StyleScrollAxis aAxis,
+                             const dom::ScopedTimelineName& aName,
+                             StyleScrollAxis aAxis,
                              const StyleViewTimelineInset& aInset);
 
   bool UpdateCachedCurrentTime() override;

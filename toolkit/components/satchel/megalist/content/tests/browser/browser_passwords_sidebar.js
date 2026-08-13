@@ -133,13 +133,13 @@ add_task(async function test_login_line_commands() {
   Services.fog.testResetFOG();
   await Services.fog.testFlushAllChildren();
 
-  await addLocalOriginLogin();
+  await addNavigableOriginLogin();
   const passwordsSidebar = await openPasswordsSidebar();
   await checkAllLoginsRendered(passwordsSidebar);
   const list = passwordsSidebar.querySelector(".passwords-list");
   const card = list.querySelector("password-card");
   const expectedPasswordCard = {
-    originLine: { value: "about:preferences#privacy" },
+    originLine: { value: "https://example.com/" },
     usernameLine: { value: "john" },
     passwordLine: { value: "pass4" },
   };
@@ -280,12 +280,15 @@ add_task(async function test_passwords_menu_external_links() {
   ok(true, "support link opened.");
 
   BrowserTestUtils.removeTab(helpTab);
-  // We need this since removing gBrowser.selectedTab (this is the tab that has about:preferences)
-  // without a fallback causes an error. Leaving it causes a leak when running in chaos mode.
-  // It seems that our testing framework is smart enough to cleanup about:blank pages.
   LoginTestUtils.clearData();
+  // Add an about:blank fallback so we never remove the last tab, then remove
+  // the about:preferences tab explicitly.
   BrowserTestUtils.addTab(gBrowser, "about:blank");
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  for (const tab of [...gBrowser.tabs]) {
+    if (tab.linkedBrowser?.currentURI?.spec.startsWith("about:preferences")) {
+      BrowserTestUtils.removeTab(tab);
+    }
+  }
   SidebarController.hide();
 });
 
@@ -354,7 +357,7 @@ add_task(async function test_passwords_visibility_when_view_shown() {
 
   info("Hide the sidebar");
   SidebarController.hide();
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return !SidebarController.isOpen;
   }, "Sidebar did not close.");
 

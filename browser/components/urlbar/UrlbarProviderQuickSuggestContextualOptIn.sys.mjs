@@ -19,6 +19,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarProviderTopSites:
     "moz-src:///browser/components/urlbar/UrlbarProviderTopSites.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
 });
 
 const DYNAMIC_RESULT_TYPE = "quickSuggestContextualOptIn";
@@ -84,7 +85,7 @@ export class UrlbarProviderQuickSuggestContextualOptIn extends UrlbarProvider {
       (queryContext.isPrivate ||
         queryContext.restrictSource ||
         queryContext.searchString ||
-        queryContext.searchMode)
+        queryContext.restrictInSearchMode())
     ) {
       return false;
     }
@@ -315,8 +316,8 @@ export class UrlbarProviderQuickSuggestContextualOptIn extends UrlbarProvider {
    */
   async startQuery(queryContext, addCallback) {
     let result = new lazy.UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.DYNAMIC,
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      type: lazy.UrlbarShared.RESULT_TYPE.DYNAMIC,
+      source: lazy.UrlbarShared.RESULT_SOURCE.SEARCH,
       suggestedIndex: 0,
       payload: {
         buttons: [

@@ -11,8 +11,8 @@
 
 #import <Cocoa/Cocoa.h>
 
-#include "mozilla/widget/IconLoader.h"
 #include "mozilla/WeakPtr.h"
+#include "mozilla/widget/IconLoader.h"
 
 class nsIconLoaderService;
 class nsIURI;

@@ -2,27 +2,30 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "WakeLockListener.h"
+
 #include <queue>
 
-#include "WakeLockListener.h"
 #include "WidgetUtilsGtk.h"
-#include "prenv.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Services.h"
+#include "nsContentUtils.h"
 #include "nsIStringBundle.h"
 #include "nsReadableUtils.h"
-#include "nsContentUtils.h"
+#include "prenv.h"
 
 #ifdef MOZ_ENABLE_DBUS
 #  include <gio/gio.h>
+
 #  include "AsyncDBus.h"
 #endif
 
 #if defined(MOZ_X11)
-#  include "prlink.h"
 #  include <gdk/gdk.h>
 #  include <gdk/gdkx.h>
+
 #  include "X11UndefineNone.h"
+#  include "prlink.h"
 #endif
 
 #if defined(MOZ_WAYLAND)
@@ -598,9 +601,9 @@ void WakeLockTopic::InhibitFreeDesktopPower() {
 void WakeLockTopic::InhibitGNOME() {
   WAKE_LOCK_LOG("InhibitGNOME() background %d", mLockOnBackground);
   static const uint32_t xid = 0;
-  static const uint32_t flags = mLockOnBackground
-                                    ? SESSION_MANAGER_INHIBIT_SUSPEND_FLAG
-                                    : SESSION_MANAGER_INHIBIT_IDLE_FLAG;
+  const uint32_t flags = mLockOnBackground
+                             ? SESSION_MANAGER_INHIBIT_SUSPEND_FLAG
+                             : SESSION_MANAGER_INHIBIT_IDLE_FLAG;
   DBusInhibitScreensaver(
       SESSION_MANAGER_TARGET, SESSION_MANAGER_OBJECT, SESSION_MANAGER_INTERFACE,
       "Inhibit",

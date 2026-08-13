@@ -5,10 +5,10 @@
 #ifndef MOZILLA_GFX_RECORDEDEVENT_H_
 #define MOZILLA_GFX_RECORDEDEVENT_H_
 
-#include <ostream>
-#include <sstream>
 #include <cstring>
 #include <functional>
+#include <ostream>
+#include <sstream>
 
 #include "RecordingTypes.h"
 #include "mozilla/PodOperations.h"

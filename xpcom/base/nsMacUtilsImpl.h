@@ -5,10 +5,10 @@
 #ifndef nsMacUtilsImpl_h_
 #define nsMacUtilsImpl_h_
 
-#include "nsString.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
+#include "nsString.h"
 
 using mozilla::Atomic;
 using mozilla::StaticAutoPtr;

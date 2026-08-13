@@ -36,14 +36,14 @@ class MenuItemTest {
                 Column(Modifier.background(color = MaterialTheme.colorScheme.surfaceBright).padding(16.dp)) {
                     IconListItem(
                         label = "Test Label",
-                        beforeIconPainter = painterResource(iconsR.drawable.mozac_ic_shield_slash_critical_24),
+                        beforeIconPainter = painterResource(iconsR.drawable.mozac_ic_shield_slash_multicolor_24),
                         beforeIconTint = Color.Unspecified,
                         enabled = true,
                         modifier = Modifier.testTag("NoTint"),
                     )
                     IconListItem(
                         label = "Test Label",
-                        beforeIconPainter = painterResource(iconsR.drawable.mozac_ic_shield_slash_critical_24),
+                        beforeIconPainter = painterResource(iconsR.drawable.mozac_ic_shield_slash_multicolor_24),
                         enabled = true,
                         modifier = Modifier.testTag("DefaultTint"),
                     )

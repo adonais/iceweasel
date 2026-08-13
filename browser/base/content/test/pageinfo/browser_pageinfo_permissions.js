@@ -190,6 +190,160 @@ add_task(async function test_default_geo_permission() {
   await testPermissions(Services.perms.ALLOW_ACTION);
 });
 
+// The clear-on-shutdown exception row is hidden unless data is cleared on
+// shutdown.
+add_task(async function test_persist_data_on_shutdown_hidden() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["privacy.sanitize.sanitizeOnShutdown", false]],
+  });
+  await BrowserTestUtils.withNewTab(TEST_ORIGIN, async function () {
+    let pageInfo = BrowserCommands.pageInfo(TEST_ORIGIN, "permTab");
+    await BrowserTestUtils.waitForEvent(pageInfo, "load");
+
+    let permList = pageInfo.document.getElementById("permList");
+    await BrowserTestUtils.waitForMutationCondition(
+      permList,
+      { childList: true },
+      () => permList.childElementCount
+    );
+    is(
+      pageInfo.document.getElementById("persist-data-on-shutdownDef"),
+      null,
+      "The clear-on-shutdown exception row should not be present."
+    );
+
+    pageInfo.close();
+  });
+});
+
+// Test the clear-on-shutdown exception permission, which exposes a "Clear when
+// closing" (default) and an "Always keep site data" radio alongside the "Use
+// Default" checkbox.
+add_task(async function test_persist_data_on_shutdown_permission() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["privacy.sanitize.sanitizeOnShutdown", true]],
+  });
+  await BrowserTestUtils.withNewTab(TEST_ORIGIN, async function () {
+    let pageInfo = BrowserCommands.pageInfo(TEST_ORIGIN, "permTab");
+    await BrowserTestUtils.waitForEvent(pageInfo, "load");
+
+    let permList = pageInfo.document.getElementById("permList");
+    await BrowserTestUtils.waitForMutationCondition(
+      permList,
+      { childList: true },
+      () => pageInfo.document.getElementById("persist-data-on-shutdownDef")
+    );
+    let defaultCheckbox = pageInfo.document.getElementById(
+      "persist-data-on-shutdownDef"
+    );
+    let radioGroup = pageInfo.document.getElementById(
+      "persist-data-on-shutdownRadioGroup"
+    );
+    let clearRadioButton = pageInfo.document.getElementById(
+      "persist-data-on-shutdown#0"
+    );
+    let allowRadioButton = pageInfo.document.getElementById(
+      "persist-data-on-shutdown#1"
+    );
+    let command = pageInfo.document.getElementById(
+      "cmd_persist-data-on-shutdownToggle"
+    );
+
+    let row = pageInfo.document.getElementById(
+      "perm-persist-data-on-shutdown-row"
+    );
+    // The Permissions tab needs to be displayed before its rows lay out as
+    // visible.
+    await TestUtils.waitForCondition(
+      () => BrowserTestUtils.isVisible(row),
+      "The permission row should be visible."
+    );
+    ok(
+      BrowserTestUtils.isVisible(defaultCheckbox),
+      "The default checkbox should be visible."
+    );
+    ok(
+      BrowserTestUtils.isVisible(radioGroup),
+      "The radio group should be visible."
+    );
+
+    ok(defaultCheckbox.checked, "The default checkbox should be checked.");
+    is(
+      radioGroup.selectedItem,
+      clearRadioButton,
+      "The clear (default) radio button should be selected."
+    );
+    ok(
+      command.hasAttribute("disabled"),
+      "The radio controls should be disabled in the default state."
+    );
+
+    // An exception added externally should be reflected via the observer.
+    PermissionTestUtils.add(
+      gBrowser.currentURI,
+      "persist-data-on-shutdown",
+      Services.perms.ALLOW_ACTION
+    );
+
+    ok(!defaultCheckbox.checked, "The default checkbox should not be checked.");
+    is(
+      radioGroup.selectedItem,
+      allowRadioButton,
+      "The allow radio button should be selected."
+    );
+    ok(
+      !command.hasAttribute("disabled"),
+      "The radio controls should be enabled once an exception is set."
+    );
+
+    // Checking the default checkbox removes the exception.
+    defaultCheckbox.checked = true;
+    defaultCheckbox.doCommand();
+
+    ok(
+      !PermissionTestUtils.getPermissionObject(
+        gBrowser.currentURI,
+        "persist-data-on-shutdown"
+      ),
+      "Checking the default checkbox should reset the permission."
+    );
+
+    // Selecting the allow radio sets the ALLOW exception.
+    radioGroup.selectedItem = allowRadioButton;
+    allowRadioButton.doCommand();
+
+    is(
+      PermissionTestUtils.testPermission(
+        gBrowser.currentURI,
+        "persist-data-on-shutdown"
+      ),
+      SitePermissions.ALLOW,
+      "Selecting the allow radio should set the exception to ALLOW."
+    );
+    ok(!defaultCheckbox.checked, "The default checkbox should not be checked.");
+
+    // Selecting the clear radio reverts to the default (no exception stored).
+    radioGroup.selectedItem = clearRadioButton;
+    clearRadioButton.doCommand();
+
+    ok(
+      !PermissionTestUtils.getPermissionObject(
+        gBrowser.currentURI,
+        "persist-data-on-shutdown"
+      ),
+      "Selecting the clear radio should reset the permission."
+    );
+    ok(defaultCheckbox.checked, "The default checkbox should be checked.");
+    ok(
+      command.hasAttribute("disabled"),
+      "The radio controls should be disabled once back to the default state."
+    );
+
+    pageInfo.close();
+    PermissionTestUtils.remove(gBrowser.currentURI, "persist-data-on-shutdown");
+  });
+});
+
 // Test special behavior for cookie permissions.
 add_task(async function test_cookie_permission() {
   await BrowserTestUtils.withNewTab(TEST_ORIGIN, async function () {

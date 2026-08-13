@@ -60,6 +60,7 @@ class DebugTargetItem extends PureComponent {
     return dom.img({
       className: "debug-target-item__icon qa-debug-target-item-icon",
       src: this.props.target.icon,
+      alt: "",
     });
   }
 

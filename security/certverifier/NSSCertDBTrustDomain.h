@@ -5,8 +5,8 @@
 #ifndef NSSCertDBTrustDomain_h
 #define NSSCertDBTrustDomain_h
 
-#include "CertVerifier.h"
 #include "CRLiteTimestamp.h"
+#include "CertVerifier.h"
 #include "ScopedNSSTypes.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/TimeStamp.h"

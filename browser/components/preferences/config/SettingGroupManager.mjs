@@ -8,6 +8,9 @@ export const SettingGroupManager = {
   /** @type {Map<string, SettingGroupConfig>} */
   _data: new Map(),
 
+  /** @type {Set<(id: string) => void>} */
+  _onRegisterListeners: new Set(),
+
   /**
    * @param {string} id
    */
@@ -20,6 +23,25 @@ export const SettingGroupManager = {
 
   /**
    * @param {string} id
+   * @returns {boolean} Whether this group is registered.
+   */
+  has(id) {
+    return this._data.has(id);
+  },
+
+  /**
+   * Notifies subscribers as each group registers (bug 2051119).
+   *
+   * @param {(id: string) => void} callback
+   * @returns {() => void} Removes the listener.
+   */
+  onRegister(callback) {
+    this._onRegisterListeners.add(callback);
+    return () => this._onRegisterListeners.delete(callback);
+  },
+
+  /**
+   * @param {string} id
    * @param {SettingGroupConfig} config
    */
   registerGroup(id, config) {
@@ -27,6 +49,13 @@ export const SettingGroupManager = {
       throw new Error(`Setting group "${id}" already registered`);
     }
     this._data.set(id, config);
+    for (let callback of this._onRegisterListeners) {
+      try {
+        callback(id);
+      } catch (ex) {
+        console.error("Error notifying SettingGroupManager listener", ex);
+      }
+    }
   },
 
   /**

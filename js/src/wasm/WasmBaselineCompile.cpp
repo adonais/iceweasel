@@ -567,7 +567,7 @@ bool BaseCompiler::beginFunction() {
   OutOfLineCode* oolStackOverflowTrap =
       addOutOfLineCode(new (alloc_) OutOfLineTrap(
           Trap::StackOverflow,
-          TrapSiteDesc(BytecodeOffset(func_.lineOrBytecode)), nullptr));
+          TrapSiteDesc(BytecodeOffset(func_.bytecodeOffset)), nullptr));
   if (!oolStackOverflowTrap) {
     return false;
   }
@@ -2052,7 +2052,6 @@ bool BaseCompiler::callIndirect(uint32_t funcTypeIndex, uint32_t tableIndex,
                                 CodeOffset* slowCallOffset) {
   CallIndirectId callIndirectId =
       CallIndirectId::forFuncType(codeMeta_, funcTypeIndex);
-  MOZ_ASSERT(callIndirectId.kind() != CallIndirectIdKind::AsmJS);
 
   const TableDesc& table = codeMeta_.tables[tableIndex];
   CallSiteDesc desc(bytecodeOffset(), CallSiteKind::Indirect);
@@ -12325,7 +12324,7 @@ bool BaseCompiler::emitBody() {
         break;
       }
 
-      // asm.js and other private operations
+      // Other private operations
       case uint16_t(Op::MozPrefix): {
         if (op.b1 != uint32_t(MozOp::CallBuiltinModuleFunc) ||
             !codeMeta_.isBuiltinModule()) {
@@ -12584,10 +12583,6 @@ bool BaseCompiler::init() {
     MOZ_ASSERT_IF(isMem64(memoryIndex),
                   !codeMeta_.hugeMemoryEnabled(memoryIndex));
   }
-  // asm.js is not supported in baseline
-  MOZ_ASSERT(!codeMeta_.isAsmJS());
-  // Only asm.js modules have call site line numbers
-  MOZ_ASSERT(func_.callSiteLineNums.empty());
 
   ra.init(this);
 
@@ -12645,7 +12640,6 @@ bool js::wasm::BaselineCompileFunctions(const CodeMetadata& codeMeta,
                                         CompiledCode* code,
                                         UniqueChars* error) {
   MOZ_ASSERT(compilerEnv.tier() == Tier::Baseline);
-  MOZ_ASSERT(codeMeta.kind == ModuleKind::Wasm);
 
   // The MacroAssembler will sometimes access the jitContext.
 
@@ -12674,7 +12668,7 @@ bool js::wasm::BaselineCompileFunctions(const CodeMetadata& codeMeta,
   }
 
   for (const FuncCompileInput& func : inputs) {
-    Decoder d(func.begin, func.end, func.lineOrBytecode, error);
+    Decoder d(func.begin, func.end, func.bytecodeOffset, error);
 
     // Build the local types vector.
 

@@ -49,7 +49,7 @@ export function createLocation({
     //    JSScript::lineno and JSScript::column
     //    https://searchfox.org/mozilla-central/rev/4c065f1df299065c305fb48b36cdae571a43d97c/js/src/vm/JSScript.h#1567-1570
     //  - some RDP packets outside of the thread actor:
-    //    - CONSOLE_MESSAGE, CSS_MESSAGE, PAGE_ERROR resources for lineNumber, columnNumber and stacktrace attributes
+    //    - CONSOLE_MESSAGE, CSS_MESSAGE, PAGE_ERROR resources for lineNumber, columnNumber and stacktrace attributes.
     //    - Error objects's Object Actor's grip's "preview" attribute will expose its stacktraces with 1-based columns
     //  - SmartTrace is dealing with these RDP packets and consumes 1-based columns,
     //    but has to map to 0-based columns as it depends on debugger frontend Frames components.

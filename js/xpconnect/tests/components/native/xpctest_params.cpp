@@ -2,14 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "xpctest_private.h"
-#include "xpctest_interfaces.h"
 #include "mozilla/Casting.h"
-#include "js/Value.h"
 
-#include "nsCOMPtr.h"
 #include "nsComponentManagerUtils.h"
+#include "nsCOMPtr.h"
 #include "nsIURI.h"
+#include "xpctest_interfaces.h"
+#include "xpctest_private.h"
+
+#include "js/Value.h"
 
 using namespace mozilla;
 

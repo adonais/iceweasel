@@ -34,8 +34,7 @@ class SettingsDeleteBrowsingDataOnQuitPage(composeRule: AndroidComposeTestRule<H
             from = pageName,
             to = "HomePage",
             steps = listOf(
-                NavigationStep.PressBack,
-                NavigationStep.PressBack,
+                NavigationStep.PressBackUntilGone(SettingsSelectors.NAVIGATION_TOOLBAR),
             ),
         )
     }

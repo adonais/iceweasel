@@ -4,6 +4,12 @@
 "use strict";
 
 add_setup(async function () {
+  // This feature's selection hooks do live-DOM work through the parent-side
+  // provider, which can't run on the Urlbar actor's message path, so keep it on
+  // the direct path even under the pref-on variant.
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.ipc.chromeMessagePassing", false]],
+  });
   registerCleanupFunction(async () => {
     UrlbarPrefs.clear("quicksuggest.online.enabled");
     UrlbarPrefs.clear("quicksuggest.contextualOptIn");

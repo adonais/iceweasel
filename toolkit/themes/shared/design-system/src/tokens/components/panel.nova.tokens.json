@@ -12,14 +12,14 @@
   "border": {
     "color": {
       "value": {
-        "nativeTheme": "ThreeDShadow",
+        "nativeTheme": "{border.color.deemphasized.@base}",
         "light": "{color.gray.10}",
         "dark": "{color.gray.60}",
         "forcedColors": "{border.color.@base}"
       }
     },
     "radius": {
-      "value": "16px"
+      "value": "{border.radius.large}"
     }
   },
   "padding": {

@@ -4,7 +4,6 @@
 
 package mozilla.components.service.fxa
 
-import androidx.core.net.toUri
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -14,7 +13,6 @@ import mozilla.appservices.fxaclient.FxaClient
 import mozilla.appservices.fxaclient.FxaEvent
 import mozilla.appservices.fxaclient.FxaState
 import mozilla.components.concept.base.crash.CrashReporting
-import mozilla.components.concept.sync.AuthFlowUrl
 import mozilla.components.concept.sync.DeviceConstellation
 import mozilla.components.concept.sync.FxAEntryPoint
 import mozilla.components.concept.sync.OAuthAccount
@@ -104,32 +102,6 @@ class FirefoxAccount internal constructor(
     internal fun simulateTemporaryAuthTokenIssue() = inner.simulateTemporaryAuthTokenIssue()
     internal fun simulatePermanentAuthTokenIssue() = inner.simulatePermanentAuthTokenIssue()
 
-    override suspend fun beginOAuthFlow(
-        scopes: Set<String>,
-        entryPoint: FxAEntryPoint,
-    ) = withContext(scope.coroutineContext) {
-        handleFxaExceptions(logger, "begin oauth flow", { null }) {
-            val url = inner.beginOAuthFlow(scopes.toTypedArray(), entryPoint.entryName)
-            val state = url.toUri().getQueryParameter("state")!!
-            AuthFlowUrl(state, url)
-        }
-    }
-
-    override suspend fun beginPairingFlow(
-        pairingUrl: String,
-        scopes: Set<String>,
-        entryPoint: FxAEntryPoint,
-    ) = withContext(scope.coroutineContext) {
-        // Eventually we should specify this as a param here, but for now, let's
-        // use a generic value (it's used only for server-side telemetry, so the
-        // actual value doesn't matter much)
-        handleFxaExceptions(logger, "begin oauth pairing flow", { null }) {
-            val url = inner.beginPairingFlow(pairingUrl, scopes.toTypedArray(), entryPoint.entryName)
-            val state = url.toUri().getQueryParameter("state")!!
-            AuthFlowUrl(state, url)
-        }
-    }
-
     override suspend fun getProfile(ignoreCache: Boolean) = withContext(scope.coroutineContext) {
         handleFxaExceptions(logger, "getProfile", { null }) {
             inner.getProfile(ignoreCache).into()
@@ -179,15 +151,6 @@ class FirefoxAccount internal constructor(
      */
     fun getConnectionSuccessURL(): String {
         return inner.getConnectionSuccessURL()
-    }
-
-    override suspend fun completeOAuthFlow(
-        code: String,
-        state: String,
-    ) = withContext(scope.coroutineContext) {
-        handleFxaExceptions(logger, "complete oauth flow") {
-            inner.completeOAuthFlow(code, state)
-        }
     }
 
     override suspend fun getAccessToken(singleScope: String) = withContext(scope.coroutineContext) {

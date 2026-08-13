@@ -2,22 +2,24 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "Cookie.h"
 #include "CookieCommons.h"
+
+#include "Cookie.h"
 #include "CookieLogging.h"
 #include "CookieParser.h"
 #include "CookieService.h"
+#include "ThirdPartyUtil.h"
+#include "mozIThirdPartyUtil.h"
 #include "mozilla/ContentBlockingNotifier.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StorageAccess.h"
-#include "mozilla/dom/nsMixedContentBlocker.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/dom/WorkerPrivate.h"
+#include "mozilla/dom/nsMixedContentBlocker.h"
 #include "mozilla/net/CookieJarSettings.h"
-#include "mozIThirdPartyUtil.h"
 #include "nsContentUtils.h"
 #include "nsICookiePermission.h"
 #include "nsICookieService.h"
@@ -27,10 +29,9 @@
 #include "nsIRedirectHistoryEntry.h"
 #include "nsIWebProgressListener.h"
 #include "nsNetUtil.h"
+#include "nsReadableUtils.h"
 #include "nsSandboxFlags.h"
 #include "nsScriptSecurityManager.h"
-#include "nsReadableUtils.h"
-#include "ThirdPartyUtil.h"
 
 namespace mozilla {
 

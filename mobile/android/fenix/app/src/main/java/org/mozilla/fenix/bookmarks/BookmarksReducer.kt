@@ -22,10 +22,7 @@ internal fun bookmarksReducer(state: BookmarksState, action: BookmarksAction) = 
         bookmarkItems = action.bookmarkItems.sortedWith(state.sortOrder.comparator),
         isLoading = false,
     )
-    is SearchClicked -> {
-        state.copy(isSearching = true)
-    }
-    is SearchDismissed -> state.copy(isSearching = false)
+    is SearchAction -> state.handleSearchAction(action = action)
     is RecursiveSelectionCountLoaded -> state.copy(recursiveSelectedCount = action.count)
     is BookmarkLongClicked -> state.toggleSelectionOf(action.item)
     is FolderLongClicked -> state.toggleSelectionOf(action.item)
@@ -68,7 +65,9 @@ internal fun bookmarksReducer(state: BookmarksState, action: BookmarksAction) = 
     RootOverflowMenuClicked -> state.copy(rootMenuShown = true)
     RootOverflowMenuDismissed -> state.copy(rootMenuShown = false)
     is ImportAction.ImportFileClicked -> state.copy(rootMenuShown = false)
-    ImportAction.ImportFailed,
+    ImportAction.ImportStarted,
+    ImportAction.ImportCancelled,
+    is ImportAction.ImportFailed,
     is ImportAction.ImportSucceeded,
     CloseClicked,
     FirstSyncCompleted,
@@ -94,6 +93,31 @@ private fun BookmarksState.handleOpenTabsConfirmationDialogAction(
                 isPrivate = action.isPrivate,
             ),
         )
+    }
+}
+
+private fun BookmarksState.handleSearchAction(
+    action: SearchAction,
+): BookmarksState = when (action) {
+    is SearchAction.SearchClicked -> copy(
+        bookmarkItems = emptyList(),
+        searchState = SearchState(),
+    )
+    is SearchAction.SearchDismissed -> copy(
+        searchState = null,
+        isLoading = true,
+    )
+    is SearchAction.SearchQueryChanged -> copy(
+        searchState = SearchState(searchQuery = action.query),
+        isLoading = true,
+    )
+    is SearchAction.ReceivedSearchResults -> if (isSearching) {
+        copy(
+            bookmarkItems = action.results,
+            isLoading = false,
+        )
+    } else {
+        this
     }
 }
 

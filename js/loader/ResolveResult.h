@@ -7,6 +7,7 @@
 
 #include "mozilla/ResultVariant.h"
 #include "mozilla/UniquePtr.h"
+
 #include "nsIURI.h"
 #include "ResolvedModuleSet.h"
 

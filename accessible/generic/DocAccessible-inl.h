@@ -7,10 +7,10 @@
 
 #include "DocAccessible.h"
 #include "LocalAccessible-inl.h"
-#include "nsAccessibilityService.h"
 #include "NotificationController.h"
 #include "States.h"
 #include "mozilla/dom/DocumentInlines.h"
+#include "nsAccessibilityService.h"
 
 #ifdef A11Y_LOG
 #  include "Logging.h"
@@ -21,13 +21,8 @@ namespace a11y {
 
 inline LocalAccessible* DocAccessible::AccessibleOrTrueContainer(
     nsINode* aNode, bool aNoContainerIfPruned) const {
-  // HTML comboboxes have no-content list accessible as an intermediate
-  // containing all options.
   LocalAccessible* container =
       GetAccessibleOrContainer(aNode, aNoContainerIfPruned);
-  if (container && container->IsHTMLCombobox()) {
-    return container->LocalFirstChild();
-  }
   return container;
 }
 

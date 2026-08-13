@@ -13,7 +13,6 @@ import mozilla.appservices.places.BookmarkRoot
 import mozilla.components.browser.state.action.EngineAction
 import mozilla.components.browser.state.ext.getUrl
 import mozilla.components.browser.state.selector.selectedTab
-import mozilla.components.browser.state.state.CustomTabSessionState
 import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.EngineSession.LoadUrlFlags
@@ -64,7 +63,6 @@ import org.mozilla.fenix.webcompat.WebCompatReporterMoreInfoSender
  * @param settings Used to check [Settings] when adding items to the home screen.
  * @param onDismiss Callback invoked to dismiss the menu dialog.
  * @param scope [CoroutineScope] used to launch coroutines.
- * @param customTab [CustomTabSessionState] used for sharing custom tab.
  * @param webCompatReporterMoreInfoSender [WebCompatReporterMoreInfoSender] used
  * to send WebCompat info to webcompat.com.
  */
@@ -79,7 +77,6 @@ class MenuNavigationMiddleware(
     private val settings: Settings,
     private val onDismiss: suspend () -> Unit,
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.Main),
-    private val customTab: CustomTabSessionState?,
     private val webCompatReporterMoreInfoSender: WebCompatReporterMoreInfoSender,
 ) : Middleware<MenuState, MenuAction> {
 
@@ -216,23 +213,23 @@ class MenuNavigationMiddleware(
                 )
 
                 is MenuAction.Navigate.Share -> {
-                    val session: SessionState? = customTab ?: currentState.browserMenuState?.selectedTab
-                    val url = customTab?.content?.url ?: currentState.browserMenuState?.selectedTab?.getUrl()
+                    val session: SessionState? = currentState.browserMenuState?.selectedTab
+                    val url = session?.getTabUrl()
 
                     shareUseCases.shareUrl(
                         id = session?.id,
                         url = url,
                         title = session?.content?.title,
-                        source = if (customTab != null) {
+                        source = if (session.isCustomTab()) {
                             ShareSource.CUSTOM_TAB_MENU
                         } else {
                             ShareSource.BROWSER_MENU
                         },
                         isPrivate = session?.content?.private ?: false,
-                        isCustomTab = customTab != null,
+                        isCustomTab = session.isCustomTab(),
                         navigateToShareFragment = {
                             val shareData = arrayOf(ShareData(title = session?.content?.title, url = url))
-                            val popUpToId = if (customTab != null) {
+                            val popUpToId = if (session.isCustomTab()) {
                                 R.id.externalAppBrowserFragment
                             } else {
                                 R.id.browserFragment
@@ -272,7 +269,7 @@ class MenuNavigationMiddleware(
                 )
 
                 is MenuAction.Navigate.WebCompatReporter -> {
-                    val session = customTab ?: currentState.browserMenuState?.selectedTab
+                    val session = currentState.browserMenuState?.selectedTab
                     session?.content?.url?.let { tabUrl ->
                         if (settings.isTelemetryEnabled) {
                             navController.nav(
@@ -316,19 +313,22 @@ class MenuNavigationMiddleware(
                         navController.nav(
                             id = R.id.menuDialogFragment,
                             directions = MenuDialogFragmentDirections.actionGlobalTabHistoryDialogFragment(
-                                activeSessionId = currentState.customTabSessionId,
+                                // active session here implies a custom tab. so we only set this if it's a custom tab
+                                activeSessionId = currentState.browserMenuState?.selectedTab
+                                    ?.takeIf { it.isCustomTab() }
+                                    ?.id,
                             ),
                             navOptions = NavOptions.Builder()
                                 .setPopUpTo(R.id.browserFragment, false)
                                 .build(),
                         )
                     } else {
-                        val session = customTab ?: currentState.browserMenuState?.selectedTab ?: return@launch
+                        val session = currentState.browserMenuState?.selectedTab ?: return@launch
 
                         when {
                             settings.enableHomepageAsNewTab ->
                                 browserStore.dispatch(EngineAction.GoBackAction(session.id))
-                            customTab == null && session.hasUrlOfAHomeScreenStory() -> {
+                            !session.isCustomTab() && session.hasUrlOfAHomeScreenStory() -> {
                                 // First attempting to go back to the existing home fragment
                                 // to preserve its scroll position.
                                 val popToExistingHomeFragment =
@@ -340,7 +340,7 @@ class MenuNavigationMiddleware(
                                     )
                                 }
                             }
-                            customTab == null && session.hasUrlOfAStoriesScreenStory() -> {
+                            !session.isCustomTab() && session.hasUrlOfAStoriesScreenStory() -> {
                                 // First attempting to go back to the existing stories fragment
                                 // to preserve its scroll position.
                                 val popToExistingStoriesFragment =
@@ -361,19 +361,21 @@ class MenuNavigationMiddleware(
                 }
 
                 is MenuAction.Navigate.Forward -> {
+                    val session = currentState.browserMenuState?.selectedTab
                     if (action.viewHistory) {
                         navController.nav(
                             id = R.id.menuDialogFragment,
                             directions = MenuDialogFragmentDirections.actionGlobalTabHistoryDialogFragment(
-                                activeSessionId = currentState.customTabSessionId,
+                                // active session here implies a custom tab. so we only set this if it's a custom tab
+                                activeSessionId = currentState.browserMenuState?.selectedTab
+                                    ?.takeIf { it.isCustomTab() }
+                                    ?.id,
                             ),
                             navOptions = NavOptions.Builder()
                                 .setPopUpTo(R.id.browserFragment, false)
                                 .build(),
                         )
                     } else {
-                        val session = customTab ?: currentState.browserMenuState?.selectedTab
-
                         session?.let {
                             sessionUseCases.goForward.invoke(it.id)
                             onDismiss()
@@ -382,7 +384,7 @@ class MenuNavigationMiddleware(
                 }
 
                 is MenuAction.Navigate.Reload -> {
-                    val session = customTab ?: currentState.browserMenuState?.selectedTab
+                    val session = currentState.browserMenuState?.selectedTab
 
                     session?.let {
                         sessionUseCases.reload.invoke(
@@ -398,7 +400,7 @@ class MenuNavigationMiddleware(
                 }
 
                 is MenuAction.Navigate.Stop -> {
-                    val session = customTab ?: currentState.browserMenuState?.selectedTab
+                    val session = currentState.browserMenuState?.selectedTab
 
                     session?.let {
                         sessionUseCases.stopLoading.invoke(it.id)

@@ -22,11 +22,6 @@ let certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
 
 add_setup(async function setup() {
   addCertFromFile(certdb, "http2-ca.pem", "CTu,u,u");
-  // HE3 doesn't support connection coalescing yet.
-  Services.prefs.setBoolPref("network.http.happy_eyeballs_enabled", false);
-  registerCleanupFunction(async () => {
-    Services.prefs.clearUserPref("network.http.happy_eyeballs_enabled");
-  });
 });
 
 async function createServer() {
@@ -83,8 +78,9 @@ add_task(async function test_dontCoalesce() {
   override.clearOverrides();
   Services.dns.clearCache(true);
 
+  // foo and alt1 resolve to different single addresses, so Happy Eyeballs
+  // connects them to different IPs and they must not coalesce.
   override.addIPOverride("foo.example.com", IP1);
-  override.addIPOverride("foo.example.com", IP2);
   override.addIPOverride("alt1.example.com", IP2);
 
   let { addr: addr1 } = await openChan(
@@ -121,34 +117,61 @@ add_task(async function test_doCoalesce() {
   await server.stop();
 });
 
-add_task(async function test_doCoalesceAggresive() {
-  let server = await createServer();
+// Aggressive coalescing across different IPs relies on a connection being
+// registered under every resolved IP (legacy multi-address coalescing keys), so
+// that alt1 (resolving only to IP2) coalesces onto foo's connection on IP1.
+// Happy Eyeballs registers only the winning connection's single address, so it
+// only coalesces connections on the same IP. Since aggressive_coalescing is off
+// by default, skip this case when Happy Eyeballs is enabled.
+add_task(
+  {
+    skip_if: () =>
+      Services.prefs.getBoolPref("network.http.happy_eyeballs_enabled", false),
+  },
+  async function test_doCoalesceAggresive() {
+    let server = await createServer();
 
-  Services.prefs.setBoolPref("network.http.http2.aggressive_coalescing", true);
-  override.clearOverrides();
-  Services.dns.clearCache(true);
+    Services.prefs.setBoolPref(
+      "network.http.http2.aggressive_coalescing",
+      true
+    );
+    override.clearOverrides();
+    Services.dns.clearCache(true);
 
-  override.addIPOverride("foo.example.com", IP1);
-  override.addIPOverride("foo.example.com", IP2);
-  override.addIPOverride("alt1.example.com", IP2);
+    override.addIPOverride("foo.example.com", IP1);
+    override.addIPOverride("foo.example.com", IP2);
+    override.addIPOverride("alt1.example.com", IP2);
 
-  let { port: port1, addr: addr1 } = await openChan(
-    `https://foo.example.com:${server.port()}/`
-  );
-  let { port: port2, addr: addr2 } = await openChan(
-    `https://alt1.example.com:${server.port()}/`
-  );
+    let { port: port1, addr: addr1 } = await openChan(
+      `https://foo.example.com:${server.port()}/`
+    );
+    let { port: port2, addr: addr2 } = await openChan(
+      `https://alt1.example.com:${server.port()}/`
+    );
 
-  Assert.equal(addr1, addr2);
-  Assert.equal(port1, port2);
-  await server.stop();
-});
+    Assert.equal(addr1, addr2);
+    Assert.equal(port1, port2);
+    await server.stop();
+  }
+);
 
 // On android because of the way networking is set up the
 // localAddress is always ::ffff:127.0.0.1 so it can't be
 // used to make a decision.
+//
+// Like test_doCoalesceAggresive, this case relies on legacy multi-address
+// coalescing keys (a connection registered under an IP it didn't connect to),
+// so that alt1 aggressively coalesces onto foo's connection on a different IP
+// and the server replies 421. Happy Eyeballs registers only the winning
+// connection's single address, so this 421-then-retry path never occurs. Since
+// aggressive_coalescing is off by default, skip this case when Happy Eyeballs
+// is enabled.
 add_task(
-  { skip_if: () => AppConstants.platform == "android" },
+  {
+    skip_if: () =>
+      AppConstants.platform == "android" ||
+      Services.prefs.getBoolPref("network.http.happy_eyeballs_enabled", false),
+  },
   async function test_doCoalesceAggresive421() {
     let server = await createServer();
 

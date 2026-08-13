@@ -86,7 +86,9 @@ typedef enum {
     ssl_kea_tls13_any = 7,
     ssl_kea_ecdh_hybrid = 8,
     ssl_kea_ecdh_hybrid_psk = 9,
-    ssl_kea_size /* number of ssl_kea_ algorithms */
+    ssl_kea_kem = 10,     /* standalone KEM, e.g. ML-KEM */
+    ssl_kea_kem_psk = 11, /* standalone KEM with PSK (resumption) */
+    ssl_kea_size          /* number of ssl_kea_ algorithms */
 } SSLKEAType;
 
 /* The following defines are for backwards compatibility.
@@ -260,6 +262,7 @@ typedef enum {
     ssl_grp_ffdhe_4096 = 258,
     ssl_grp_ffdhe_6144 = 259,
     ssl_grp_ffdhe_8192 = 260,
+    ssl_grp_kem_mlkem1024 = 514, /* draft-ietf-tls-mlkem */
     ssl_grp_kem_secp256r1mlkem768 = 4587,
     ssl_grp_kem_secp384r1mlkem1024 = 4589,
     ssl_grp_kem_mlkem768x25519 = 4588,

@@ -83,7 +83,7 @@ async function waitForFileChannelNotification(
     },
   };
   Services.obs.addObserver(observer, "file-channel-opened");
-  await BrowserTestUtils.waitForCondition(() => receivedNotifications > 0);
+  await TestUtils.waitForCondition(() => receivedNotifications > 0);
   is(receivedNotifications, 1, "Received exactly one notification");
   Services.obs.removeObserver(observer, "file-channel-opened");
 }

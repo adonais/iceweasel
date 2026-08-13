@@ -11,7 +11,7 @@ MozReview-Commit-ID: GCKj5Ao2Y2n
 diff --git a/sandbox/win/src/sandbox_nt_util.cc b/sandbox/win/src/sandbox_nt_util.cc
 --- a/sandbox/win/src/sandbox_nt_util.cc
 +++ b/sandbox/win/src/sandbox_nt_util.cc
-@@ -663,16 +663,21 @@ void* operator new(size_t size, sandbox:
+@@ -689,16 +689,21 @@ void* operator new(size_t size, sandbox:
  
    // TODO: Returning nullptr from operator new has undefined behavior, but
    // the Allocate() functions called above can return nullptr. Consider checking
@@ -36,10 +36,10 @@ diff --git a/sandbox/win/src/sandbox_nt_util.cc b/sandbox/win/src/sandbox_nt_uti
 diff --git a/sandbox/win/src/sandbox_nt_util.h b/sandbox/win/src/sandbox_nt_util.h
 --- a/sandbox/win/src/sandbox_nt_util.h
 +++ b/sandbox/win/src/sandbox_nt_util.h
-@@ -13,16 +13,19 @@
+@@ -18,16 +18,19 @@
+ #include "base/memory/raw_ptr_exclusion.h"
  #include "sandbox/win/src/nt_internals.h"
  #include "sandbox/win/src/sandbox_nt_types.h"
- #include "third_party/abseil-cpp/absl/types/optional.h"
  
  // Placement new and delete to be used from ntdll interception code.
  void* __cdecl operator new(size_t size,

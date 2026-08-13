@@ -41,7 +41,7 @@ async function aDownloadLaunchedWithAppIsSavedInFolder(downloadDir) {
   });
 
   let download = await downloadFinishedPromise;
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => gBrowser.tabs.length == initialTabsCount + 2
   );
 

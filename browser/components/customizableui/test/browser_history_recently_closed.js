@@ -110,7 +110,7 @@ add_task(async function testRecentlyClosedDisabled() {
 
   // Wait for the disabled attribute to change, as we receive
   // the "viewshown" event before this changes
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => recentlyClosedTabs.hasAttribute("disabled"),
     "Waiting for button to become disabled"
   );
@@ -133,7 +133,7 @@ add_task(async function testRecentlyClosedDisabled() {
 
   await openHistoryPanel();
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !recentlyClosedTabs.hasAttribute("disabled"),
     "Waiting for button to be enabled"
   );
@@ -161,7 +161,7 @@ add_task(async function testRecentlyClosedDisabled() {
 
   await openHistoryPanel();
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !recentlyClosedWindows.hasAttribute("disabled"),
     "Waiting for button to be enabled"
   );
@@ -317,7 +317,7 @@ add_task(async function testRecentlyClosedRestoreAllTabs() {
   EventUtils.sendMouseEvent({ type: "click" }, restoreAllItem, window);
 
   info("waiting for restored tabs");
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => SessionStore.getClosedTabCount() === 0,
     "Waiting for all the closed tabs to be opened"
   );

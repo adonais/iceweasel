@@ -76,6 +76,9 @@ class RLBoxSoundTouch {
   RLBOX_SOUNDTOUCH_API
   void flush();
 
+  RLBOX_SOUNDTOUCH_API
+  static void redirectRLBoxSbxGrowFail(void (*fn)());
+
  private:
   bool mCreated{false};
   uint mChannels{0};

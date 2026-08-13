@@ -12,20 +12,16 @@
 #include "sandbox/win/src/crosscall_client.h"
 #include "sandbox/win/src/interception.h"
 #include "sandbox/win/src/interceptors.h"
-#include "sandbox/win/src/ipc_tags.h"
-#include "sandbox/win/src/policy_broker.h"
-#include "sandbox/win/src/policy_params.h"
 #include "sandbox/win/src/registry_interception.h"
+#include "sandbox/win/src/ipc_tags.h"
+#include "sandbox/win/src/policy_params.h"
 #include "sandbox/win/src/registry_policy.h"
-#include "sandbox/win/src/sandbox.h"
-#include "sandbox/win/src/sandbox_nt_util.h"
 #include "sandbox/win/src/win_utils.h"
 
 namespace {
 
 // Builds a path using the root directory and the name.
-bool GetCompletePath(HANDLE root,
-                     const std::wstring& name,
+bool GetCompletePath(HANDLE root, const std::wstring& name,
                      std::wstring* complete_name) {
   if (root) {
     auto root_name = sandbox::GetPathFromHandle(root);
@@ -65,8 +61,9 @@ RegistryDispatcher::RegistryDispatcher(PolicyBase* policy_base)
 
 bool RegistryDispatcher::SetupService(InterceptionManager* manager,
                                       IpcTag service) {
-  if (IpcTag::NTCREATEKEY == service)
+  if (IpcTag::NTCREATEKEY == service) {
     return INTERCEPT_NT(manager, NtCreateKey, CREATE_KEY_ID, 32);
+  }
 
   if (IpcTag::NTOPENKEY == service) {
     bool result = INTERCEPT_NT(manager, NtOpenKey, OPEN_KEY_ID, 16);
@@ -77,10 +74,8 @@ bool RegistryDispatcher::SetupService(InterceptionManager* manager,
   return false;
 }
 
-bool RegistryDispatcher::NtCreateKey(IPCInfo* ipc,
-                                     std::wstring* name,
-                                     uint32_t attributes,
-                                     HANDLE root,
+bool RegistryDispatcher::NtCreateKey(IPCInfo* ipc, std::wstring* name,
+                                     uint32_t attributes, HANDLE root,
                                      uint32_t desired_access,
                                      uint32_t title_index,
                                      uint32_t create_options) {
@@ -92,18 +87,19 @@ bool RegistryDispatcher::NtCreateKey(IPCInfo* ipc,
   if (root) {
     if (!::DuplicateHandle(ipc->client_info->process, root,
                            ::GetCurrentProcess(), &root, 0, false,
-                           DUPLICATE_SAME_ACCESS))
+                           DUPLICATE_SAME_ACCESS)) {
       return false;
+    }
 
     root_handle.Set(root);
   }
 
-  if (!GetCompletePath(root, *name, &real_path))
+  if (!GetCompletePath(root, *name, &real_path)) {
     return false;
-
-  const wchar_t* regname = real_path.c_str();
+  }
+  std::wstring_view real_path_view(real_path);
   CountedParameterSet<OpenKey> params;
-  params[OpenKey::NAME] = ParamPickerMake(regname);
+  params[OpenKey::NAME] = ParamPickerMake(real_path_view);
   params[OpenKey::ACCESS] = ParamPickerMake(desired_access);
 
   EvalResult result =
@@ -126,10 +122,8 @@ bool RegistryDispatcher::NtCreateKey(IPCInfo* ipc,
   return true;
 }
 
-bool RegistryDispatcher::NtOpenKey(IPCInfo* ipc,
-                                   std::wstring* name,
-                                   uint32_t attributes,
-                                   HANDLE root,
+bool RegistryDispatcher::NtOpenKey(IPCInfo* ipc, std::wstring* name,
+                                   uint32_t attributes, HANDLE root,
                                    uint32_t desired_access) {
   base::win::ScopedHandle root_handle;
   std::wstring real_path = *name;
@@ -139,17 +133,19 @@ bool RegistryDispatcher::NtOpenKey(IPCInfo* ipc,
   if (root) {
     if (!::DuplicateHandle(ipc->client_info->process, root,
                            ::GetCurrentProcess(), &root, 0, false,
-                           DUPLICATE_SAME_ACCESS))
+                           DUPLICATE_SAME_ACCESS)) {
       return false;
+    }
     root_handle.Set(root);
   }
 
-  if (!GetCompletePath(root, *name, &real_path))
+  if (!GetCompletePath(root, *name, &real_path)) {
     return false;
+  }
 
-  const wchar_t* regname = real_path.c_str();
+  std::wstring_view real_path_view(real_path);
   CountedParameterSet<OpenKey> params;
-  params[OpenKey::NAME] = ParamPickerMake(regname);
+  params[OpenKey::NAME] = ParamPickerMake(real_path_view);
   params[OpenKey::ACCESS] = ParamPickerMake(desired_access);
 
   EvalResult result =

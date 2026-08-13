@@ -52,7 +52,7 @@ function getExpectedSearchMode(button, isPreview = true) {
     expectedSearchMode.engineName = button.engine.name;
     let engine = SearchService.getEngineByName(button.engine.name);
     if (engine.isGeneralPurposeEngine) {
-      expectedSearchMode.source = UrlbarUtils.RESULT_SOURCE.SEARCH;
+      expectedSearchMode.source = UrlbarShared.RESULT_SOURCE.SEARCH;
     }
   } else {
     expectedSearchMode.source = button.source;
@@ -75,7 +75,7 @@ add_task(async function tokenAlias() {
     details = await UrlbarTestUtils.getDetailsOfResultAt(window, index);
 
     let expectedSearchMode =
-      details.type === UrlbarUtils.RESULT_TYPE.RESTRICT
+      details.type === UrlbarShared.RESULT_TYPE.RESTRICT
         ? gURLBar.searchModeForToken(details.result.payload.keyword)
         : {
             engineName: details.searchParams.engine,
@@ -86,10 +86,10 @@ add_task(async function tokenAlias() {
     expectedSearchMode.isPreview = true;
     expectedSearchMode.entry = "keywordoffer";
 
-    if (details.type !== UrlbarUtils.RESULT_TYPE.RESTRICT) {
+    if (details.type !== UrlbarShared.RESULT_TYPE.RESTRICT) {
       let engine = SearchService.getEngineByName(details.searchParams.engine);
       if (engine.isGeneralPurposeEngine) {
-        expectedSearchMode.source = UrlbarUtils.RESULT_SOURCE.SEARCH;
+        expectedSearchMode.source = UrlbarShared.RESULT_SOURCE.SEARCH;
       }
     }
     await UrlbarTestUtils.assertSearchMode(window, expectedSearchMode);
@@ -101,7 +101,7 @@ add_task(async function tokenAlias() {
 
   // Test that we are in confirmed search mode.
   let searchMode;
-  if (details.type === UrlbarUtils.RESULT_TYPE.RESTRICT) {
+  if (details.type === UrlbarShared.RESULT_TYPE.RESTRICT) {
     searchMode = gURLBar.searchModeForToken(details.result.payload.keyword);
   } else {
     searchMode = {
@@ -470,10 +470,10 @@ add_task(async function fullSearchMode_oneOff_restore_on_down() {
   );
 
   await UrlbarTestUtils.enterSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    source: UrlbarShared.RESULT_SOURCE.HISTORY,
   });
   let expectedSearchMode = getExpectedSearchMode(
-    oneOffButtons.find(b => b.source == UrlbarUtils.RESULT_SOURCE.HISTORY),
+    oneOffButtons.find(b => b.source == UrlbarShared.RESULT_SOURCE.HISTORY),
     false
   );
   await UrlbarTestUtils.assertSearchMode(window, expectedSearchMode);

@@ -144,3 +144,37 @@ add_task(async function () {
 
   SpecialPowers.clearUserPref("network.cookie.sameSite.laxByDefault");
 });
+
+add_task(async function testCrossGroupNavigation() {
+  // Navigating between two BrowsingContext group (from parent process about:robots to http url)
+  // forces to navigate between two distinct BrowsingContext, which may not be properly handled
+
+  const tab = await addTab("about:robots");
+  const toolbox = await gDevTools.showToolboxForTab(tab, {
+    toolId: "webconsole",
+  });
+
+  const URL = buildURLWithContent(
+    "example.com",
+    `<h1>example.com</h1>` + `<script>document.cookie = "lorem=ipsum";</script>`
+  );
+
+  await navigateTo(URL);
+
+  const panel = await toolbox.selectTool("storage");
+  const doc = panel.panelWindow.document;
+  _setupStoragePanelForTest(toolbox);
+
+  // wait for storage tree refresh, and check host
+  info("Waiting for storage tree to refresh and show correct host…");
+  await waitUntil(() => isInTree(doc, ["cookies", "https://example.com"]));
+
+  // check the table for values
+  // NOTE: there's an issue with the TreeWidget in which `selectedItem` is set
+  //       but we have nothing selected in the UI. See Bug 1712706.
+  //       Here we are forcing selecting a different item first.
+  await selectTreeItem(["cookies"]);
+  await selectTreeItem(["cookies", "https://example.com"]);
+  info("Waiting for table data to update and show correct values");
+  await waitUntil(() => hasCookieData("lorem", "ipsum"));
+});

@@ -4,6 +4,7 @@
 
 import React, { useCallback } from "react";
 import { useSelector } from "react-redux";
+import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import { MessageWrapper } from "content-src/components/MessageWrapper/MessageWrapper";
 import { FeatureHighlight } from "./FeatureHighlight";
 import { HighlightPopoverBody } from "./HighlightPopoverBody";
@@ -13,13 +14,51 @@ import {
   getRegistryEntry,
 } from "./OMCHighlightRegistry.mjs";
 
-const PopoverShell = ({ entry, content, handleDismiss, handleBlock }) => {
+// MESSAGE_CLICK telemetry source label for the callout's CTA button.
+const CTA_CLICK_SOURCE = "cta";
+
+const PopoverShell = ({
+  entry,
+  content,
+  handleDismiss,
+  handleBlock,
+  handleClick,
+  handleClose,
+  dispatch,
+}) => {
   const dismissCallback = useCallback(() => {
     handleDismiss?.();
     if (entry.dismiss === DISMISS_MODES.BLOCK) {
       handleBlock?.();
     }
   }, [entry.dismiss, handleDismiss, handleBlock]);
+
+  // The CTA opens content.surveyUrl in a new tab and records the click. Taking
+  // the survey is a conversion, not a dismissal, so we block (to keep the
+  // callout from reappearing) and close the popover, but leave MESSAGE_DISMISS
+  // to the X button and outside clicks. Only wired up when a surveyUrl is
+  // present so we never render a "Take survey" button that just closes.
+  const surveyUrl = content?.surveyUrl;
+  const onCtaClick = useCallback(() => {
+    dispatch(
+      ac.OnlyToMain({
+        type: at.OPEN_LINK,
+        data: { url: surveyUrl, where: "tab" },
+      })
+    );
+    handleClick?.(CTA_CLICK_SOURCE);
+    if (entry.dismiss === DISMISS_MODES.BLOCK) {
+      handleBlock?.();
+    }
+    handleClose?.();
+  }, [
+    surveyUrl,
+    entry.dismiss,
+    dispatch,
+    handleClick,
+    handleBlock,
+    handleClose,
+  ]);
 
   return (
     <FeatureHighlight
@@ -28,7 +67,13 @@ const PopoverShell = ({ entry, content, handleDismiss, handleBlock }) => {
       modalClassName={entry.chrome.modalClassName}
       openedOverride={true}
       showButtonIcon={false}
-      message={<HighlightPopoverBody body={entry.body} content={content} />}
+      message={
+        <HighlightPopoverBody
+          body={entry.body}
+          content={content}
+          onCtaClick={surveyUrl ? onCtaClick : undefined}
+        />
+      }
       dismissCallback={dismissCallback}
       outsideClickCallback={handleDismiss}
     />

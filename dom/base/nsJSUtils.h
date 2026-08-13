@@ -86,8 +86,8 @@ class nsJSUtils {
       mozilla::UniquePtr<uint8_t[], JS::FreePolicy> aBuffer);
 };
 
-template <typename T, typename std::enable_if_t<std::is_same<
-                          typename T::char_type, char16_t>::value>* = nullptr>
+template <typename T, typename std::enable_if_t<std::is_same_v<
+                          typename T::char_type, char16_t>>* = nullptr>
 inline bool AssignJSString(JSContext* cx, T& dest, JSString* s) {
   size_t len = JS::GetStringLength(s);
   static_assert(JS::MaxStringLength < (1 << 30),
@@ -108,8 +108,8 @@ inline bool AssignJSString(JSContext* cx, T& dest, JSString* s) {
 }
 
 // Specialization for UTF8String.
-template <typename T, typename std::enable_if_t<std::is_same<
-                          typename T::char_type, char>::value>* = nullptr>
+template <typename T, typename std::enable_if_t<std::is_same_v<
+                          typename T::char_type, char>>* = nullptr>
 inline bool AssignJSString(JSContext* cx, T& dest, JSString* s) {
   using namespace mozilla;
   CheckedInt<size_t> bufLen(JS::GetStringLength(s));

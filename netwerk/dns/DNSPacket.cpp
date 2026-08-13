@@ -8,7 +8,6 @@
 #include "mozilla/StaticPrefs_network.h"
 // Put DNSLogging.h at the end to avoid LOG being overwritten by other headers.
 #include "DNSLogging.h"
-
 #include "nsIInputStream.h"
 
 namespace mozilla {

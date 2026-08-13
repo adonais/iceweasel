@@ -4,16 +4,13 @@
 
 /* eslint-disable no-undef,mozilla/balanced-listeners */
 import { AddressRecord } from "resource://gre/modules/shared/AddressRecord.sys.mjs";
+import { AutofillDataTypes } from "resource://gre/modules/shared/AutofillDataTypes.sys.mjs";
 import { FormAutofillHandler } from "resource://gre/modules/shared/FormAutofillHandler.sys.mjs";
 import { FormAutofillHeuristics } from "resource://gre/modules/shared/FormAutofillHeuristics.sys.mjs";
 import { FormAutofillUtils } from "resource://gre/modules/shared/FormAutofillUtils.sys.mjs";
 import { FormStateManager } from "resource://gre/modules/shared/FormStateManager.sys.mjs";
 import { CreditCardRecord } from "resource://gre/modules/shared/CreditCardRecord.sys.mjs";
-import {
-  FormAutofillAddressSection,
-  FormAutofillCreditCardSection,
-  FormAutofillSection,
-} from "resource://gre/modules/shared/FormAutofillSection.sys.mjs";
+import { FormAutofillSection } from "resource://gre/modules/shared/FormAutofillSection.sys.mjs";
 
 export class FormAutofillChild {
   /**
@@ -162,11 +159,12 @@ export class FormAutofillChild {
         continue;
       }
 
-      if (section instanceof FormAutofillAddressSection) {
+      const typeId = section.type;
+      if (typeId === AutofillDataTypes.ADDRESS) {
         // TODO(FXSP-133 Phase 3): Support address capture
         // this.callbacks.address.submit();
         continue;
-      } else if (section instanceof FormAutofillCreditCardSection) {
+      } else if (typeId === AutofillDataTypes.CREDIT_CARD) {
         creditCard.push(secRecord);
       } else {
         throw new Error("Unknown section type");

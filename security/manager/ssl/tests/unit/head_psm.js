@@ -446,8 +446,10 @@ function clearOCSPCache() {
 }
 
 function clearSessionCache() {
-  let nssComponent = Cc["@mozilla.org/psm;1"].getService(Ci.nsINSSComponent);
-  nssComponent.clearSSLExternalAndInternalSessionCache();
+  let sslTokensCache = Cc["@mozilla.org/network/ssl-tokens-cache;1"].getService(
+    Ci.nsISSLTokensCache
+  );
+  sslTokensCache.clearSSLExternalAndInternalSessionCache();
 }
 
 function getSSLStatistics() {
@@ -565,8 +567,7 @@ function add_tls_server_setup(serverBinName, certsPath, addDefaultRoot = true) {
  *   output stream is ready.
  * @param {OriginAttributes} aOriginAttributes (optional)
  *   The origin attributes that the socket transport will have. This parameter
- *   affects OCSP because OCSP cache is double-keyed by origin attributes' first
- *   party domain.
+ *   affects OCSP because the OCSP cache partitioned by origin attributes.
  *
  * @param {OriginAttributes} aEchConfig (optional)
  *   A Base64-encoded ECHConfig. If non-empty, it will be configured to the client

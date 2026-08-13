@@ -22,6 +22,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarProviderOpenTabs:
     "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "SQL_ADAPTIVE_QUERY", () => {
@@ -90,7 +91,7 @@ export class UrlbarProviderInputHistory extends UrlbarProvider {
       (lazy.UrlbarPrefs.get("suggest.history") ||
         lazy.UrlbarPrefs.get("suggest.bookmark") ||
         lazy.UrlbarPrefs.get("suggest.openpage")) &&
-      !queryContext.searchMode
+      !queryContext.restrictInSearchMode()
     );
   }
 
@@ -137,8 +138,8 @@ export class UrlbarProviderInputHistory extends UrlbarProvider {
         }
         let userContextId = row.getResultByName("userContextId") || 0;
         let result = new lazy.UrlbarResult({
-          type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-          source: UrlbarUtils.RESULT_SOURCE.TABS,
+          type: lazy.UrlbarShared.RESULT_TYPE.TAB_SWITCH,
+          source: lazy.UrlbarShared.RESULT_SOURCE.TABS,
           payload: {
             url,
             title: resultTitle,
@@ -160,10 +161,10 @@ export class UrlbarProviderInputHistory extends UrlbarProvider {
 
       let resultSource;
       if (bookmarked && lazy.UrlbarPrefs.get("suggest.bookmark")) {
-        resultSource = UrlbarUtils.RESULT_SOURCE.BOOKMARKS;
+        resultSource = lazy.UrlbarShared.RESULT_SOURCE.BOOKMARKS;
         resultTitle = bookmarkTitle || historyTitle;
       } else if (lazy.UrlbarPrefs.get("suggest.history")) {
-        resultSource = UrlbarUtils.RESULT_SOURCE.HISTORY;
+        resultSource = lazy.UrlbarShared.RESULT_SOURCE.HISTORY;
       } else {
         continue;
       }
@@ -175,10 +176,10 @@ export class UrlbarProviderInputHistory extends UrlbarProvider {
         );
       });
 
-      let isBlockable = resultSource == UrlbarUtils.RESULT_SOURCE.HISTORY;
+      let isBlockable = resultSource == lazy.UrlbarShared.RESULT_SOURCE.HISTORY;
 
       let result = new lazy.UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
+        type: lazy.UrlbarShared.RESULT_TYPE.URL,
         source: resultSource,
         payload: {
           url,
@@ -187,7 +188,7 @@ export class UrlbarProviderInputHistory extends UrlbarProvider {
           icon: UrlbarUtils.getIconForUrl(url),
           isBlockable,
           blockL10n: isBlockable
-            ? { id: "urlbar-result-menu-remove-from-history" }
+            ? { id: "urlbar-result-menu-remove-from-history2" }
             : undefined,
           helpUrl: isBlockable
             ? Services.urlFormatter.formatURLPref("app.support.baseURL") +
@@ -201,7 +202,6 @@ export class UrlbarProviderInputHistory extends UrlbarProvider {
           tags: UrlbarUtils.HIGHLIGHT.TYPED,
         },
       });
-
       addCallback(this, result);
     }
   }
@@ -210,7 +210,7 @@ export class UrlbarProviderInputHistory extends UrlbarProvider {
     let { result } = details;
     if (
       details.selType == "dismiss" &&
-      result.type == UrlbarUtils.RESULT_TYPE.URL
+      result.type == lazy.UrlbarShared.RESULT_TYPE.URL
     ) {
       // Even if removing history normally also removes input history, that
       // doesn't happen if the page is bookmarked, so we do remove input history

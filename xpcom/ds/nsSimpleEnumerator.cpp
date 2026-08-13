@@ -4,10 +4,10 @@
 
 #include "nsSimpleEnumerator.h"
 
+#include "mozilla/Try.h"
 #include "mozilla/dom/IteratorResultBinding.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/ToJSValue.h"
-#include "mozilla/Try.h"
 #include "nsContentUtils.h"
 
 using namespace mozilla;

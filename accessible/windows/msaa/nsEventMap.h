@@ -6,6 +6,7 @@
 #define ACCESSIBLE_WINDOWS_MSAA_NSEVENTMAP_H_
 
 #include <winuser.h>
+
 #include "AccessibleEventId.h"
 
 const uint32_t kEVENT_WIN_UNKNOWN = 0x00000000;

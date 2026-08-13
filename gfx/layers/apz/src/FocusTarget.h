@@ -8,9 +8,9 @@
 #include <stdint.h>  // for int32_t, uint32_t
 
 #include "mozilla/DefineEnum.h"                  // for MOZ_DEFINE_ENUM
-#include "mozilla/layers/ScrollableLayerGuid.h"  // for ViewID
-#include "mozilla/Variant.h"                     // for Variant
 #include "mozilla/Maybe.h"                       // for Maybe
+#include "mozilla/Variant.h"                     // for Variant
+#include "mozilla/layers/ScrollableLayerGuid.h"  // for ViewID
 
 namespace mozilla {
 

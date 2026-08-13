@@ -251,24 +251,10 @@ void FeaturePolicyUtils::ReportViolation(Document* aDocument,
 
 namespace IPC {
 
-void ParamTraits<mozilla::dom::FeaturePolicyInfo>::Write(
-    MessageWriter* aWriter, const mozilla::dom::FeaturePolicyInfo& aParam) {
-  WriteParam(aWriter, aParam.mInheritedDeniedFeatureNames);
-  WriteParam(aWriter, aParam.mAttributeEnabledFeatureNames);
-  WriteParam(aWriter, aParam.mDeclaredString);
-  WriteParam(aWriter, aParam.mDefaultOrigin);
-  WriteParam(aWriter, aParam.mSelfOrigin);
-  WriteParam(aWriter, aParam.mSrcOrigin);
-}
-
-bool ParamTraits<mozilla::dom::FeaturePolicyInfo>::Read(
-    MessageReader* aReader, mozilla::dom::FeaturePolicyInfo* aResult) {
-  return ReadParam(aReader, &aResult->mInheritedDeniedFeatureNames) &&
-         ReadParam(aReader, &aResult->mAttributeEnabledFeatureNames) &&
-         ReadParam(aReader, &aResult->mDeclaredString) &&
-         ReadParam(aReader, &aResult->mDefaultOrigin) &&
-         ReadParam(aReader, &aResult->mSelfOrigin) &&
-         ReadParam(aReader, &aResult->mSrcOrigin);
-}
+IMPLEMENT_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::FeaturePolicyInfo,
+                                     mInheritedDeniedFeatureNames,
+                                     mAttributeEnabledFeatureNames,
+                                     mDeclaredString, mDefaultOrigin,
+                                     mSelfOrigin, mSrcOrigin);
 
 }  // namespace IPC

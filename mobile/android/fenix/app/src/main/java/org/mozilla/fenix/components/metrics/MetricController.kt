@@ -57,17 +57,15 @@ import org.mozilla.fenix.GleanMetrics.LoginDialog
 import org.mozilla.fenix.GleanMetrics.Logins
 import org.mozilla.fenix.GleanMetrics.MediaNotification
 import org.mozilla.fenix.GleanMetrics.MediaState
+import org.mozilla.fenix.GleanMetrics.NativeShareSheet
 import org.mozilla.fenix.GleanMetrics.PerfAwesomebar
 import org.mozilla.fenix.GleanMetrics.Pings
 import org.mozilla.fenix.GleanMetrics.ProgressiveWebApp
 import org.mozilla.fenix.GleanMetrics.SitePermissions
 import org.mozilla.fenix.GleanMetrics.Sync
 import org.mozilla.fenix.GleanMetrics.SyncedTabs
-import org.mozilla.fenix.GleanMetrics.Toolbar
 import org.mozilla.fenix.GleanMetrics.TrackingProtection
-import org.mozilla.fenix.telemetry.ACTION_TAB_COUNTER_CLICKED
-import org.mozilla.fenix.telemetry.ACTION_TAB_COUNTER_LONG_CLICKED
-import org.mozilla.fenix.telemetry.SOURCE_ADDRESS_BAR
+import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.utils.Settings
 import java.util.UUID
 import mozilla.components.compose.browser.awesomebar.AwesomeBarFacts as ComposeAwesomeBarFacts
@@ -181,6 +179,8 @@ internal class ReleaseMetricController(
             when (action) {
                 Action.PLAY -> MediaNotification.play.record(NoExtras())
                 Action.PAUSE -> MediaNotification.pause.record(NoExtras())
+                Action.NEXT -> MediaNotification.next.record(NoExtras())
+                Action.PREVIOUS -> MediaNotification.previous.record(NoExtras())
                 else -> Unit
             }
         }
@@ -200,20 +200,15 @@ internal class ReleaseMetricController(
         Component.BROWSER_TOOLBAR to ToolbarFacts.Items.MENU -> {
             Events.toolbarMenuVisible.record(NoExtras())
         }
-        Component.UI_TABCOUNTER to ToolbarFacts.Items.TOOLBAR -> {
-            Toolbar.buttonTapped.record(
-                Toolbar.ButtonTappedExtra(source = SOURCE_ADDRESS_BAR, item = ACTION_TAB_COUNTER_CLICKED),
-            )
-        }
-        Component.UI_TABCOUNTER to ToolbarFacts.Items.MENU -> {
-            Toolbar.buttonTapped.record(
-                Toolbar.ButtonTappedExtra(source = SOURCE_ADDRESS_BAR, item = ACTION_TAB_COUNTER_LONG_CLICKED),
-            )
-        }
         Component.FEATURE_CONTEXTMENU to ContextMenuFacts.Items.ITEM -> {
             metadata?.get("item")?.let { item ->
                 contextMenuAllowList[item]?.let { extraKey ->
                     ContextMenu.itemTapped.record(ContextMenu.ItemTappedExtra(extraKey))
+                }
+                if (item == SHARE_LINK_CONTEXT_MENU_ITEM_ID) {
+                    NativeShareSheet.shown.record(
+                        NativeShareSheet.ShownExtra(source = ShareSource.CONTEXT_MENU_LINK.value),
+                    )
                 }
             } ?: Unit
         }
@@ -643,6 +638,9 @@ internal class ReleaseMetricController(
         const val CONTEXT_MENU_SELECT_ALL = "org.mozilla.geckoview.SELECT_ALL"
         const val CONTEXT_MENU_SHARE = "CUSTOM_CONTEXT_MENU_SHARE"
 
+        @VisibleForTesting
+        internal const val SHARE_LINK_CONTEXT_MENU_ITEM_ID = "mozac.feature.contextmenu.share_link"
+
         /**
          * Non - Text selection long press context menu items to be tracked.
          */
@@ -651,10 +649,11 @@ internal class ReleaseMetricController(
             "mozac.feature.contextmenu.open_in_private_tab" to "open_in_private_tab",
             "mozac.feature.contextmenu.open_image_in_new_tab" to "open_image_in_new_tab",
             "mozac.feature.contextmenu.save_image" to "save_image",
-            "mozac.feature.contextmenu.share_link" to "share_link",
+            SHARE_LINK_CONTEXT_MENU_ITEM_ID to "share_link",
             "mozac.feature.contextmenu.copy_link" to "copy_link",
             "mozac.feature.contextmenu.copy_image_location" to "copy_image_location",
             "mozac.feature.contextmenu.share_image" to "share_image",
+            "fenix.contextmenu.open_with_google_lens" to "open_with_google_lens",
         )
     }
 }

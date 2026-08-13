@@ -21,7 +21,7 @@ function getNotifiedDomains() {
 }
 
 async function assertNoNotification(tab) {
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => getNotification(tab),
     "watching for an unexpected notification",
     50,

@@ -84,6 +84,10 @@ class TestServer @JvmOverloads constructor(
                     response.headers.set(header, value)
                 }
 
+                request.query.getString("contentDisposition")?.let { contentDisposition ->
+                    response.headers.set("Content-Disposition", contentDisposition)
+                }
+
                 responseModifiers?.get(request.path)?.let { modifier ->
                     response.send(mimeType, modifier.transformResponse(asset.decodeToString()))
                     return@HttpServerRequestCallback

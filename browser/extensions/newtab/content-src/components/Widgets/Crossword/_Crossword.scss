@@ -1,0 +1,92 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
+
+.crossword {
+  @include widget-base-style;
+
+  &.medium-widget {
+    grid-row: span 2;
+  }
+
+  &.large-widget {
+    grid-row: span 4;
+  }
+}
+
+.crossword-title-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-block-end: var(--space-xsmall);
+
+  .crossword-badge-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: var(--space-small);
+    min-inline-size: 0;
+  }
+
+  h3 {
+    margin-block: 0;
+    font-weight: var(--font-weight);
+    font-size: var(--font-size-root);
+  }
+
+  // moz-badge renders its visible content in shadow DOM, so it can only be
+  // styled here via its token custom properties (padding/background) plus
+  // inherited properties (text-transform). The green "filled" look normally
+  // comes from type="new", which errors on the unregistered moz-badge-new2
+  // string, so paint the pill on the host instead and recolor via the same
+  // tokens the default badge reads.
+  .crossword-new-badge {
+    flex: none;
+    background-color: var(--badge-background-color-filled);
+    border-radius: var(--badge-border-radius);
+    text-transform: uppercase;
+
+    --badge-padding-block: 1px;
+    --badge-padding-inline: var(--space-small);
+    --badge-background-color-filled: var(--color-green-40);
+    --badge-text-color: var(--badge-text-color-filled);
+    --badge-border-color: transparent;
+  }
+}
+
+// Keep the badge readable in High Contrast Mode by using the system accent.
+@media (forced-colors: active) {
+  .crossword-new-badge {
+    --badge-background-color-filled: AccentColor;
+  }
+}
+
+.crossword-context-menu-wrapper {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.crossword:hover,
+.crossword:focus-within {
+  .crossword-context-menu-wrapper {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.crossword-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-small);
+  min-height: 0;
+}
+
+.crossword-frame {
+  flex: 1;
+  min-block-size: 0;
+  width: 100%;
+  border: none;
+  border-radius: var(--border-radius-medium);
+}

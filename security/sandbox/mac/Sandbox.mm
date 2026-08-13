@@ -32,8 +32,8 @@
 #include "mozilla/Assertions.h"
 
 #include "mozilla/GeckoArgs.h"
-#include "mozilla/ipc/UtilityProcessSandboxing.h"
 #include "mozilla/SandboxSettings.h"
+#include "mozilla/ipc/UtilityProcessSandboxing.h"
 
 // Undocumented sandbox setup routines.
 extern "C" int sandbox_init_with_parameters(const char* profile, uint64_t flags,
@@ -461,6 +461,9 @@ bool StartMacSandbox(MacSandboxInfo const& aInfo, std::string& aErrorMessage) {
     }
   } else if (aInfo.type == MacSandboxType_GPU) {
     profile = const_cast<char*>(SandboxPolicyGPU);
+    if (ProcessIsX86_64()) {
+      profile.append(SandboxPolicyGPUx86_64Addend);
+    }
     params.push_back("SHOULD_LOG");
     params.push_back(aInfo.shouldLog ? "TRUE" : "FALSE");
     params.push_back("MAC_OS_VERSION");

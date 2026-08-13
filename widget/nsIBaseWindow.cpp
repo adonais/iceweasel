@@ -3,8 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsIBaseWindow.h"
-#include "nsDeviceContext.h"
+
 #include "mozilla/LookAndFeel.h"
+#include "nsDeviceContext.h"
 
 using namespace mozilla;
 

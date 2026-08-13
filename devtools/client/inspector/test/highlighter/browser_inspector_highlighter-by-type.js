@@ -24,32 +24,36 @@ add_task(async function () {
 async function manyInstancesOfCustomHighlighters({ inspectorFront }) {
   const h1 = await inspectorFront.getHighlighterByType(TYPES.BOXMODEL);
   const h2 = await inspectorFront.getHighlighterByType(TYPES.BOXMODEL);
-  Assert.notStrictEqual(
-    h1,
-    h2,
-    "getHighlighterByType returns new instances every time (1)"
-  );
-
-  const h3 = await inspectorFront.getHighlighterByType(TYPES.TRANSFORM);
-  const h4 = await inspectorFront.getHighlighterByType(TYPES.TRANSFORM);
+  is(h1, h2, "getHighlighterByType returns previous instance by default");
+  const h3 = await inspectorFront.getHighlighterByType(TYPES.BOXMODEL, true);
+  const h4 = await inspectorFront.getHighlighterByType(TYPES.BOXMODEL, true);
   Assert.notStrictEqual(
     h3,
     h4,
-    "getHighlighterByType returns new instances every time (2)"
+    "getHighlighterByType returns new instances every time (with forced=true) (1)"
+  );
+
+  const h5 = await inspectorFront.getHighlighterByType(TYPES.TRANSFORM, true);
+  const h6 = await inspectorFront.getHighlighterByType(TYPES.TRANSFORM, true);
+  Assert.notStrictEqual(
+    h5,
+    h6,
+    "getHighlighterByType returns new instances every time (with forced=true) (2)"
   );
   ok(
-    h3 !== h1 && h3 !== h2,
-    "getHighlighterByType returns new instances every time (3)"
+    h5 !== h1 && h5 !== h3 && h5 != h4,
+    "getHighlighterByType returns new instances every time (with forced=true) (3)"
   );
   ok(
-    h4 !== h1 && h4 !== h2,
-    "getHighlighterByType returns new instances every time (4)"
+    h6 !== h1 && h6 !== h3 && h6 != h4,
+    "getHighlighterByType returns new instances every time (with forced=true) (4)"
   );
 
   await h1.finalize();
-  await h2.finalize();
   await h3.finalize();
   await h4.finalize();
+  await h5.finalize();
+  await h6.finalize();
 }
 
 async function showHideMethodsAreAvailable({ inspectorFront }) {

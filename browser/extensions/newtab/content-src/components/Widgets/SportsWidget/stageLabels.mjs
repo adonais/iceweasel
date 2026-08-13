@@ -6,15 +6,16 @@
 // group phase; any other value signals a knockout stage.
 const GROUP_STAGE_LABEL = "Group Stage";
 
-// Map from the literal `match.stage` string Merino sends for each
-// knockout phase to the corresponding Fluent message ID. Expected
-// spellings, not yet observed in production (tournament hasn't reached
-// knockouts at time of writing).
+// Map from the literal `match.stage` string Merino sends for each knockout
+// phase to the corresponding Fluent message ID. The third-place match is sent
+// as "3rd Place"; "Bronze Final" is kept as a defensive alias for the same
+// label.
 export const KNOCKOUT_STAGE_L10N_IDS = {
   "Round of 32": "newtab-sports-widget-round-32",
   "Round of 16": "newtab-sports-widget-round-16",
   "Quarter-finals": "newtab-sports-widget-quarter-finals",
   "Semi-finals": "newtab-sports-widget-semi-finals",
+  "3rd Place": "newtab-sports-widget-bronze-finals",
   "Bronze Final": "newtab-sports-widget-bronze-finals",
   Final: "newtab-sports-widget-final",
 };

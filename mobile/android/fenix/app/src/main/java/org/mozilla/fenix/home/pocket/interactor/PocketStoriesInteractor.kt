@@ -8,6 +8,7 @@ import mozilla.components.service.pocket.PocketStory
 import mozilla.components.service.pocket.PocketStory.PocketRecommendedStory
 import org.mozilla.fenix.home.pocket.PocketRecommendedStoriesCategory
 import org.mozilla.fenix.home.pocket.controller.PocketStoriesController
+import org.mozilla.fenix.home.pocket.controller.StoriesImpressionSource
 
 /**
  * Contract for all possible user interactions with the Pocket recommended stories feature.
@@ -26,8 +27,9 @@ interface PocketStoriesInteractor {
      * Callback for then new stories are shown to the user.
      *
      * @param storiesShown The new list of [PocketRecommendedStory]es shown to the user.
+     * @param source The surface where the stories were shown.
      */
-    fun onStoriesShown(storiesShown: List<PocketStory>)
+    fun onStoriesShown(storiesShown: List<PocketStory>, source: StoriesImpressionSource)
 
     /**
      * Callback for when the user clicks a specific category.
@@ -42,8 +44,13 @@ interface PocketStoriesInteractor {
      * @param storyClicked The just clicked [PocketStory].
      * @param storyPosition `row x column x index` matrix representing the grid and index position
      * of the clicked story.
+     * @param source The surface where the clicked story was shown.
      */
-    fun onStoryClicked(storyClicked: PocketStory, storyPosition: Triple<Int, Int, Int>)
+    fun onStoryClicked(
+        storyClicked: PocketStory,
+        storyPosition: Triple<Int, Int, Int>,
+        source: StoriesImpressionSource,
+    )
 
     /**
      * Callback when an user clicks on the "Discover more" nutton for stories on the homepage.
@@ -66,16 +73,20 @@ class DefaultPocketStoriesInteractor(
         controller.handleStoryShown(storyShown, storyPosition)
     }
 
-    override fun onStoriesShown(storiesShown: List<PocketStory>) {
-        controller.handleStoriesShown(storiesShown)
+    override fun onStoriesShown(storiesShown: List<PocketStory>, source: StoriesImpressionSource) {
+        controller.handleStoriesShown(storiesShown, source)
     }
 
     override fun onCategoryClicked(categoryClicked: PocketRecommendedStoriesCategory) {
         controller.handleCategoryClick(categoryClicked)
     }
 
-    override fun onStoryClicked(storyClicked: PocketStory, storyPosition: Triple<Int, Int, Int>) {
-        controller.handleStoryClicked(storyClicked, storyPosition)
+    override fun onStoryClicked(
+        storyClicked: PocketStory,
+        storyPosition: Triple<Int, Int, Int>,
+        source: StoriesImpressionSource,
+    ) {
+        controller.handleStoryClicked(storyClicked, storyPosition, source)
     }
 
     override fun onDiscoverMoreClicked() {

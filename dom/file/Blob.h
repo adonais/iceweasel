@@ -8,7 +8,6 @@
 #include "mozilla/dom/BodyConsumer.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsWeakReference.h"
 #include "nsWrapperCache.h"
 
 class nsIGlobalObject;
@@ -31,7 +30,7 @@ class ReadableStream;
 #define NS_DOM_BLOB_IID \
   {0x648c2a83, 0xbdb1, 0x4a7d, {0xb5, 0x0a, 0xca, 0xcd, 0x92, 0x87, 0x45, 0xc2}}
 
-class Blob : public nsSupportsWeakReference, public nsWrapperCache {
+class Blob : public nsISupports, public nsWrapperCache {
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(Blob)
@@ -153,9 +152,5 @@ size_t BindingJSObjectMallocBytes(Blob* aBlob);
 
 }  // namespace dom
 }  // namespace mozilla
-
-inline nsISupports* ToSupports(mozilla::dom::Blob* aBlob) {
-  return static_cast<nsISupportsWeakReference*>(aBlob);
-}
 
 #endif  // mozilla_dom_Blob_h

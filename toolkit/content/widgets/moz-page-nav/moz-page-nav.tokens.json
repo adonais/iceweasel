@@ -1,19 +1,170 @@
 {
+  "nova": {
+    "button": {
+      "background": {
+        "color": {
+          "hover": {
+            "value": "{button.background.color.hover}"
+          },
+          "active": {
+            "value": "{button.background.color.active}"
+          },
+          "selected": {
+            "value": "{color.accent.primary.@base}"
+          }
+        }
+      },
+      "border": {
+        "color": {
+          "@base": {
+            "value": {
+              "default": "{border.color.transparent}",
+              "forcedColors": "ButtonText"
+            }
+          }
+        },
+        "radius": {
+          "@base": {
+            "value": "{border.radius.circle}"
+          },
+          "focused": {
+            "value": "{border.radius.circle}"
+          }
+        }
+      },
+      "indicator": {
+        "background": {
+          "color": {
+            "value": "transparent"
+          }
+        },
+        "width": {
+          "value": "0"
+        }
+      },
+      "padding": {
+        "@base": {
+          "value": "{space.medium}"
+        },
+        "small": {
+          "value": "{space.medium}"
+        }
+      },
+      "text": {
+        "color": {
+          "selected": {
+            "value": "{button.text.color.primary.@base}"
+          }
+        }
+      }
+    },
+    "focus": {
+      "outline": {
+        "offset": {
+          "value": "{focus.outline.offset}"
+        }
+      },
+      "padding": {
+        "value": "calc({focus.outline.offset} + {focus.outline.width})"
+      }
+    },
+    "hr": {
+      "background": {
+        "color": {
+          "value": "{border.color.deemphasized.@base}"
+        }
+      }
+    }
+  },
   "border": {
     "color": {
       "value": "{border.color.transparent}"
     }
   },
   "button": {
+    "background": {
+      "color": {
+        "@base": {
+          "value": "{button.background.color.ghost.@base}"
+        },
+        "hover": {
+          "value": "{button.background.color.ghost.hover}"
+        },
+        "active": {
+          "value": "{button.background.color.ghost.active}"
+        },
+        "selected": {
+          "value": "color-mix(in srgb, currentColor 8%, transparent)"
+        }
+      }
+    },
+    "border": {
+      "color": {
+        "@base": {
+          "value": "unset"
+        },
+        "hover": {
+          "value": "{button.border.color.ghost.hover}"
+        },
+        "active": {
+          "value": "{button.border.color.ghost.active}"
+        }
+      },
+      "radius": {
+        "@base": {
+          "value": "{button.border.radius}"
+        },
+        "focused": {
+          "value": "{border.radius.small}"
+        }
+      }
+    },
     "gap": {
       "value": "{space.xsmall}"
+    },
+    "indicator": {
+      "background": {
+        "color": {
+          "value": "{color.accent.primary.@base}"
+        }
+      },
+      "width": {
+        "value": "4px"
+      }
+    },
+    "padding": {
+      "@base": {
+        "value": "{space.small} {space.medium}"
+      },
+      "small": {
+        "value": "{space.small}"
+      }
+    },
+    "text": {
+      "color": {
+        "@base": {
+          "value": "{button.text.color.ghost.@base}"
+        },
+        "hover": {
+          "value": "{button.text.color.ghost.hover}"
+        },
+        "active": {
+          "value": "{button.text.color.ghost.active}"
+        },
+        "selected": {
+          "value": "{color.accent.primary.@base}"
+        }
+      }
     }
   },
   "focus": {
     "outline": {
-      "inset": {
+      "offset": {
         "value": "{focus.outline.inset}"
       }
+    },
+    "padding": {
+      "value": "0px"
     }
   },
   "gap": {

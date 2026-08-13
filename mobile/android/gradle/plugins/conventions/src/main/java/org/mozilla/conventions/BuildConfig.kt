@@ -20,13 +20,12 @@ import org.gradle.api.tasks.Copy
 private val buildIdLogger = Logging.getLogger("org.mozilla.conventions.BuildId")
 
 // Mimic Python: open(os.path.join(buildconfig.topobjdir, 'buildid.h')).readline().split()[2]
-fun getBuildId(topobjdir: String): String {
-    val envDate = System.getenv("MOZ_BUILD_DATE")
-    if (envDate != null) {
-        if (envDate.length == 14) {
-            return envDate
+fun getBuildId(topobjdir: String, mozBuildDate: String?): String {
+    if (mozBuildDate != null) {
+        if (mozBuildDate.length == 14) {
+            return mozBuildDate
         }
-        buildIdLogger.warn("Ignoring invalid MOZ_BUILD_DATE: $envDate")
+        buildIdLogger.warn("Ignoring invalid MOZ_BUILD_DATE: $mozBuildDate")
     }
 
     return File(topobjdir, "buildid.h").readText().split(Regex("\\s+"))[2]
@@ -34,7 +33,7 @@ fun getBuildId(topobjdir: String): String {
 
 // Return a manifest version string that respects the Firefox version format,
 // see: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/version#version_format
-fun getManifestVersionString(componentsVersion: String, topobjdir: String): String {
+fun getManifestVersionString(componentsVersion: String, topobjdir: String, mozBuildDate: String?): String {
     // We assume that the `version.txt` file will always contain a version
     // string with at least two parts separated with a dot. Below, we extract
     // each part, and we make sure that there is no letter, e.g. `"0a2"` would
@@ -47,10 +46,10 @@ fun getManifestVersionString(componentsVersion: String, topobjdir: String): Stri
     // each part can have up to 9 digits. Note the single `H` when formatting the output to avoid
     // leading zeros, which are not allowed.
     val buildDate = LocalDateTime.parse(
-        getBuildId(topobjdir),
+        getBuildId(topobjdir, mozBuildDate),
         DateTimeFormatter.ofPattern("yyyyMMddHHmmss"),
     )
-    val dateAndTime = buildDate.format(DateTimeFormatter.ofPattern("YYYYMMdd.Hmmss"))
+    val dateAndTime = buildDate.format(DateTimeFormatter.ofPattern("yyyyMMdd.Hmmss"))
 
     return "${parts[0]}.${parts[1]}.$dateAndTime"
 }
@@ -63,13 +62,14 @@ fun getManifestVersionString(componentsVersion: String, topobjdir: String): Stri
 fun updateExtensionVersion(task: Copy, extDir: String, componentsVersion: String) {
     val mozconfig = task.project.gradle.extensions.extraProperties["mozconfig"] as Map<String, Any>
     val topobjdir = mozconfig["topobjdir"] as String
+    val mozBuildDate = task.project.providers.environmentVariable("MOZ_BUILD_DATE").orNull
 
     task.from(extDir)
     task.include("manifest.template.json")
     task.rename { "manifest.json" }
     task.into(extDir)
 
-    val values = mapOf("version" to getManifestVersionString(componentsVersion, topobjdir))
+    val values = mapOf("version" to getManifestVersionString(componentsVersion, topobjdir, mozBuildDate))
     task.inputs.properties(values)
     task.expand(values)
 }

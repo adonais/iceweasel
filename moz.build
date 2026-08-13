@@ -14,6 +14,9 @@ with Files("mots.yaml"):
 with Files("CODEOWNERS"):
     BUG_COMPONENT = ("Conduit", "mots")
 
+with Files(".cargo/**"):
+    BUG_COMPONENT = ("Firefox Build System", "General")
+
 with Files("Cargo.*"):
     BUG_COMPONENT = ("Firefox Build System", "General")
 
@@ -24,6 +27,18 @@ with Files("CLOBBER"):
     BUG_COMPONENT = ("Firefox Build System", "General")
 
 with Files("*configure*"):
+    BUG_COMPONENT = ("Firefox Build System", "General")
+
+with Files(".gitattributes"):
+    BUG_COMPONENT = ("Firefox Build System", "General")
+
+with Files(".gitignore"):
+    BUG_COMPONENT = ("Firefox Build System", "General")
+
+with Files(".hgignore"):
+    BUG_COMPONENT = ("Firefox Build System", "General")
+
+with Files(".hgtags"):
     BUG_COMPONENT = ("Firefox Build System", "General")
 
 with Files("docs/**"):
@@ -40,6 +55,42 @@ with Files("mach*"):
     BUG_COMPONENT = ("Firefox Build System", "Mach Core")
 
 with Files("pyproject.toml", "srcdir-resolver.js"):
+    BUG_COMPONENT = ("Developer Infrastructure", "Lint and Formatting")
+
+with Files(".babel-eslint.rc.js"):
+    BUG_COMPONENT = ("Developer Infrastructure", "Lint and Formatting")
+
+with Files(".cargo/audit.toml"):
+    BUG_COMPONENT = ("Developer Infrastructure", "Lint and Formatting")
+
+with Files(".clang-format"):
+    BUG_COMPONENT = ("Developer Infrastructure", "Lint and Formatting")
+
+with Files(".clang-format-ignore"):
+    BUG_COMPONENT = ("Developer Infrastructure", "Lint and Formatting")
+
+with Files(".prettierignore*"):
+    BUG_COMPONENT = ("Developer Infrastructure", "Lint and Formatting")
+
+with Files(".prettierrc.js"):
+    BUG_COMPONENT = ("Developer Infrastructure", "Lint and Formatting")
+
+with Files("..rstcheck.cfg"):
+    BUG_COMPONENT = ("Developer Infrastructure", "Lint and Formatting")
+
+with Files(".stylelintignore"):
+    BUG_COMPONENT = ("Developer Infrastructure", "Lint and Formatting")
+
+with Files(".stylelintrc.js"):
+    BUG_COMPONENT = ("Developer Infrastructure", "Lint and Formatting")
+
+with Files(".rstcheck.cfg"):
+    BUG_COMPONENT = ("Developer Infrastructure", "Lint and Formatting")
+
+with Files(".yamllint"):
+    BUG_COMPONENT = ("Developer Infrastructure", "Lint and Formatting")
+
+with Files("toolkit/.eslintrc.mjs"):
     BUG_COMPONENT = ("Developer Infrastructure", "Lint and Formatting")
 
 with Files("*moz*"):
@@ -59,6 +110,9 @@ with Files(".agents/**"):
     BUG_COMPONENT = ("Developer Infrastructure", "AI for Development")
 
 with Files(".claude/**"):
+    BUG_COMPONENT = ("Developer Infrastructure", "AI for Development")
+
+with Files(".codex/**"):
     BUG_COMPONENT = ("Developer Infrastructure", "AI for Development")
 
 with Files("*.json"):
@@ -85,6 +139,51 @@ with Files("CLAUDE.md"):
 
 with Files("nsprpub/**"):
     BUG_COMPONENT = ("NSPR", "NSPR")
+
+with Files(".cron.yml"):
+    BUG_COMPONENT = ("Firefox Build System", "Task Configuration")
+
+with Files(".taskcluster.yml"):
+    BUG_COMPONENT = ("Firefox Build System", "Task Configuration")
+
+with Files(".editorconfig"):
+    BUG_COMPONENT = ("Developer Infrastructure", "Developer Environment Integration")
+
+with Files(".lldbinit"):
+    BUG_COMPONENT = ("Developer Infrastructure", "Developer Environment Integration")
+
+with Files(".vscode/**"):
+    BUG_COMPONENT = ("Developer Infrastructure", "Developer Environment Integration")
+
+with Files(".zed/**"):
+    BUG_COMPONENT = ("Developer Infrastructure", "Developer Environment Integration")
+
+with Files(".ycm_extra_conf.py"):
+    BUG_COMPONENT = ("Developer Infrastructure", "Developer Environment Integration")
+
+with Files(".git-blame-ignore-revs"):
+    BUG_COMPONENT = ("Developer Infrastructure", "General")
+
+with Files(".hg-annotate-ignore-revs"):
+    BUG_COMPONENT = ("Developer Infrastructure", "General")
+
+with Files(".mailmap"):
+    BUG_COMPONENT = ("Developer Infrastructure", "General")
+
+with Files(".trackerignore"):
+    BUG_COMPONENT = ("Developer Infrastructure", "General")
+
+with Files(".arcconfig"):
+    BUG_COMPONENT = ("Conduit", "moz-phab")
+
+with Files(".github/**"):
+    BUG_COMPONENT = ("Conduit", "General")
+
+with Files(".github/workflows/pr-handler.yml"):
+    BUG_COMPONENT = ("Conduit", "Lando")
+
+with Files(".lando.ini"):
+    BUG_COMPONENT = ("Conduit", "Lando")
 
 with Files("**/Makefile.in"):
     BUG_COMPONENT = ("Firefox Build System", "General")

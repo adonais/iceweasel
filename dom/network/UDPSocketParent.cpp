@@ -331,7 +331,7 @@ mozilla::ipc::IPCResult UDPSocketParent::RecvOutgoingData(
                                data.Length(), nsISocketFilter::SF_OUTGOING,
                                &allowed);
 
-    // Sending unallowed data, kill content.
+    // Sending unallowed data, kill content or socket process at the other end.
     if (NS_WARN_IF(NS_FAILED(rv)) || !allowed) {
       return IPC_FAIL(this, "Content tried to send non STUN packet");
     }

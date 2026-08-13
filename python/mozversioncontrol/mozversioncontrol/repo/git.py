@@ -349,13 +349,19 @@ class GitRepository(Repository):
         ref: Optional[str] = None,
         dest_branch: Optional[str] = None,
         force: bool = False,
+        env: Optional[dict] = None,
     ):
         if ref and not remote:
             raise ValueError("Cannot specify ref without specifying remote")
         if dest_branch and not ref:
             raise ValueError("Cannot specify dest_branch without specifying ref")
 
-        args = ["push"]
+        args = []
+        if remote and remote.startswith("hg::"):
+            # Ensure git-cinnabar adds the `extra.git_commit` metadata to the Mercurial
+            # commit.
+            args.extend(["-c", "cinnabar.experiments=git_commit"])
+        args.append("push")
         if force:
             args.append("--force")
         if remote:
@@ -365,8 +371,12 @@ class GitRepository(Repository):
                 args.append(f"{ref}:refs/heads/{dest_branch}")
             else:
                 args.append(ref)
-        (cmd, _, env) = self._process_run_args(*args)
-        subprocess.check_call(cmd, cwd=self.path, env=env)
+
+        runargs = {
+            "env": env,
+            "stdout": None,  # stream push output
+        }
+        self._run(*args, **runargs)
 
     def _resolve_try_branch(self):
         if not self.branch:
@@ -375,7 +385,7 @@ class GitRepository(Repository):
             )
         return self.branch
 
-    def _push_to_hg_try(self, message, changed_files, allow_log_capture):
+    def _push_to_hg_try(self, message, changed_files, remote, allow_log_capture):
         if not self.has_git_cinnabar:
             raise MissingVCSExtension("cinnabar")
 
@@ -388,7 +398,7 @@ class GitRepository(Repository):
                 # is, and figures on its own, but that request takes a long time on try.
                 "cinnabar.data=never",
                 "push",
-                "hg::ssh://hg.mozilla.org/try",
+                f"hg::{remote}",
                 f"+{head}:refs/heads/branches/default/tip",
             )
             if allow_log_capture:

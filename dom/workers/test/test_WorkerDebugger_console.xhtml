@@ -4,8 +4,7 @@
   http://creativecommons.org/publicdomain/zero/1.0/
 -->
 <window title="Test for WorkerDebuggerGlobalScope.console methods"
-        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
-        onload="test();">
+        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
   <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"/>
   <script src="chrome://mochikit/content/tests/SimpleTest/EventUtils.js"/>
@@ -19,32 +18,32 @@
     const DEBUGGER_URL = BASE_URL + "WorkerDebugger.console_debugger.js";
 
     consoleMessagesReceived = 0;
-    function test() {
-      const ConsoleAPIStorage = SpecialPowers.Cc[
-        "@mozilla.org/consoleAPI-storage;1"
-      ].getService(SpecialPowers.Ci.nsIConsoleAPIStorage);
+    addTaskWithBothWorkerDebuggers(
+      async function () {
+        consoleMessagesReceived = 0;
 
-      function consoleListener() {
-        this.observe = this.observe.bind(this);
-        ConsoleAPIStorage.addLogEventListener(this.observe, SpecialPowers.wrap(document).nodePrincipal);
-      }
+        const ConsoleAPIStorage = SpecialPowers.Cc[
+          "@mozilla.org/consoleAPI-storage;1"
+        ].getService(SpecialPowers.Ci.nsIConsoleAPIStorage);
 
-      consoleListener.prototype  = {
-        observe(aSubject) {
-          var obj = aSubject.wrappedJSObject;
-          if (obj.arguments[0] == "Hello from the debugger script!" &&
-              !consoleMessagesReceived) {
-            consoleMessagesReceived++;
-            ok(true, "Something has been received");
-            ConsoleAPIStorage.removeLogEventListener(this.observe);
+        function consoleListener() {
+          this.observe = this.observe.bind(this);
+          ConsoleAPIStorage.addLogEventListener(this.observe, SpecialPowers.wrap(document).nodePrincipal);
+        }
+
+        consoleListener.prototype = {
+          observe(aSubject) {
+            var obj = aSubject.wrappedJSObject;
+            if (obj.arguments[0] == "Hello from the debugger script!" &&
+                !consoleMessagesReceived) {
+              consoleMessagesReceived++;
+              ok(true, "Something has been received");
+              ConsoleAPIStorage.removeLogEventListener(this.observe);
+            }
           }
         }
-      }
 
-      var cl = new consoleListener();
-
-      (async function() {
-        SimpleTest.waitForExplicitFinish();
+        var cl = new consoleListener();
 
         info("Create a worker that creates a child worker, wait for their " +
              "debuggers to be registered, and initialize them.");
@@ -57,34 +56,36 @@
 
         info("Send a request to the worker debugger. This should cause the " +
              "the worker debugger to send a response.");
-        dbg.addListener({
-          onMessage(msg) {
-            try {
-              msg = JSON.parse(msg);
-            } catch(e) {
+        await new Promise(resolve => {
+          dbg.addListener({
+            onMessage(msg) {
+              try {
+                msg = JSON.parse(msg);
+              } catch(e) {
+                ok(false, "Something went wrong");
+                return;
+              }
+
+              if (msg.type == 'finish') {
+                ok(consoleMessagesReceived, "We received something via debugger console!");
+                dbg.removeListener(this);
+                resolve();
+                return;
+              }
+
+              if (msg.type == 'status') {
+                ok(msg.what, msg.msg);
+                return;
+              }
+
               ok(false, "Something went wrong");
-              return;
             }
+          });
 
-            if (msg.type == 'finish') {
-              ok(consoleMessagesReceived, "We received something via debugger console!");
-              dbg.removeListener(this);
-              SimpleTest.finish();
-              return;
-            }
-
-            if (msg.type == 'status') {
-              ok(msg.what, msg.msg);
-              return;
-            }
-
-            ok(false, "Something went wrong");
-          }
+          dbg.postMessage("do magic");
         });
-
-        dbg.postMessage("do magic");
-      })();
-    }
+      }
+    );
 
   ]]>
   </script>

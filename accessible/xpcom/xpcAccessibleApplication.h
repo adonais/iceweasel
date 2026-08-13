@@ -5,8 +5,8 @@
 #ifndef mozilla_a11y_xpcAccessibleApplication_h_
 #define mozilla_a11y_xpcAccessibleApplication_h_
 
-#include "nsIAccessibleApplication.h"
 #include "ApplicationAccessible.h"
+#include "nsIAccessibleApplication.h"
 #include "xpcAccessibleGeneric.h"
 
 namespace mozilla {

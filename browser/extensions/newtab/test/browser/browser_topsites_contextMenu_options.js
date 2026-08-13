@@ -26,11 +26,12 @@ test_newtab({
     const contextMenuItems =
       await content.openContextMenuAndGetOptions(siteSelector);
 
-    Assert.equal(contextMenuItems.length, 5, "Number of options is correct");
+    Assert.equal(contextMenuItems.length, 6, "Number of options is correct");
 
     const expectedItemsText = [
       "Pin",
       "Edit",
+      "Add New Shortcut",
       "Open in a New Window",
       "Open in a New Private Window",
       "Dismiss",
@@ -50,7 +51,7 @@ test_newtab({
   // Test verifies that the next top site in queue replaces a dismissed top site.
   test: async function defaultTopSites_dismiss() {
     const siteSelector =
-      ".top-site-outer:not(.search-shortcut, .placeholder, .add-button)";
+      ".top-site-outer:not(.search-shortcut, .placeholder, .add-button-tile)";
     await ContentTaskUtils.waitForCondition(
       () => content.document.querySelector(siteSelector),
       "Topsite tippytop icon not found"
@@ -69,11 +70,11 @@ test_newtab({
     const contextMenuItems =
       await content.openContextMenuAndGetOptions(siteSelector);
     await ContentTaskUtils.waitForCondition(
-      () => contextMenuItems[4].textContent === "Dismiss",
-      "'Dismiss' is the 5th item in the context menu list"
+      () => contextMenuItems[5].textContent === "Dismiss",
+      "'Dismiss' is the last item in the context menu list"
     );
 
-    contextMenuItems[4].querySelector("button").click();
+    contextMenuItems[5].querySelector("button").click();
 
     // Wait for the topsite to be dismissed and the second one to replace it
     await ContentTaskUtils.waitForCondition(

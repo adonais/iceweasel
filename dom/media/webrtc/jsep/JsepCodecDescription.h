@@ -467,19 +467,22 @@ class JsepAudioCodecDescription final : public JsepCodecDescription {
         mMaxAverageBitrate = opusParams.maxAverageBitrate;
       }
       mDTXEnabled = opusParams.useDTX;
-      if (remoteMsection.GetAttributeList().HasAttribute(
-              SdpAttribute::kPtimeAttribute)) {
-        mFrameSizeMs = remoteMsection.GetAttributeList().GetPtime();
-      } else {
+      // No range check: libwebrtc's GetFrameSizeMs clamps any ptime to the
+      // next-highest entry in kOpusSupportedFrameLengths.
+      if (opusParams.frameSizeMs) {
         mFrameSizeMs = opusParams.frameSizeMs;
+      } else if (remoteMsection.GetAttributeList().HasAttribute(
+                     SdpAttribute::kPtimeAttribute)) {
+        mFrameSizeMs = remoteMsection.GetAttributeList().GetPtime();
       }
       mMinFrameSizeMs = opusParams.minFrameSizeMs;
-      if (remoteMsection.GetAttributeList().HasAttribute(
-              SdpAttribute::kMaxptimeAttribute)) {
-        mMaxFrameSizeMs = remoteMsection.GetAttributeList().GetMaxptime();
-      } else {
+      if (opusParams.maxFrameSizeMs) {
         mMaxFrameSizeMs = opusParams.maxFrameSizeMs;
+      } else if (remoteMsection.GetAttributeList().HasAttribute(
+                     SdpAttribute::kMaxptimeAttribute)) {
+        mMaxFrameSizeMs = remoteMsection.GetAttributeList().GetMaxptime();
       }
+      mMaxFrameSizeMs = std::max(mMaxFrameSizeMs, mMinFrameSizeMs);
       mCbrEnabled = opusParams.useCbr;
     }
 

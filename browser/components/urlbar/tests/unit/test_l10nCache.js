@@ -1,12 +1,12 @@
 /* Any copyright is dedicated to the Public Domain.
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
-// Tests L10nCache in UrlbarUtils.sys.mjs.
+// Tests L10nCache.mjs.
 
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
-  L10nCache: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
+  L10nCache: "chrome://browser/content/urlbar/L10nCache.mjs",
 });
 
 add_task(async function comprehensive() {

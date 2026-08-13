@@ -94,7 +94,7 @@ add_task(async function test_fill_hidden_by_login_saving_disabled() {
 add_task(async function test_fill_hidden_by_locked_primary_password() {
   // test that the generated password option is not present when the user
   // didn't unlock the primary password.
-  LoginTestUtils.primaryPassword.enable();
+  await LoginTestUtils.primaryPassword.enable();
 
   await BrowserTestUtils.withNewTab(
     {
@@ -125,7 +125,7 @@ add_task(async function test_fill_hidden_by_locked_primary_password() {
     }
   );
 
-  LoginTestUtils.primaryPassword.disable();
+  await LoginTestUtils.primaryPassword.disable();
 });
 
 add_task(async function fill_generated_password_empty_field() {

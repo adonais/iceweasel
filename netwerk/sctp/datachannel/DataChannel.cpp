@@ -2,37 +2,38 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <algorithm>
 #include <stdio.h>
+
+#include <algorithm>
 
 #ifdef XP_WIN
 #  include <winsock.h>  // for htonl, htons, ntohl, ntohs
 #endif
 
-#include "nsIInputStream.h"
-#include "nsIPrefBranch.h"
-#include "nsIPrefService.h"
-#include "mozilla/Sprintf.h"
-#include "nsProxyRelease.h"
-#include "nsThread.h"
-#include "nsThreadUtils.h"
-#include "nsNetUtil.h"
 #include "mozilla/Components.h"
+#include "mozilla/Sprintf.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/dom/RTCDataChannel.h"
 #include "mozilla/dom/RTCDataChannelBinding.h"
+#include "nsIInputStream.h"
+#include "nsIPrefBranch.h"
+#include "nsIPrefService.h"
+#include "nsNetUtil.h"
+#include "nsProxyRelease.h"
+#include "nsThread.h"
+#include "nsThreadUtils.h"
 #ifdef MOZ_PEERCONNECTION
-#  include "transport/runnable_utils.h"
 #  include "jsapi/MediaTransportHandler.h"
 #  include "mediapacket.h"
+#  include "transport/runnable_utils.h"
 #endif
 
 #include "DataChannel.h"
 #include "DataChannelDcSctp.h"
-#include "DataChannelUsrsctp.h"
 #include "DataChannelLog.h"
 #include "DataChannelProtocol.h"
+#include "DataChannelUsrsctp.h"
 
 namespace mozilla {
 
@@ -334,7 +335,7 @@ void DataChannelConnection::SetSignals(const std::string& aTransportId) {
 
 void DataChannelConnection::TransportStateChange(
     const std::string& aTransportId, TransportLayer::State aState,
-    const nsTArray<nsTArray<uint8_t>>&) {
+    const nsTArray<nsTArray<uint8_t>>&, Maybe<dom::RTCErrorParams>) {
   MOZ_ASSERT(mSTS->IsOnCurrentThread());
   if (aTransportId == mTransportId) {
     if (aState == TransportLayer::TS_OPEN) {

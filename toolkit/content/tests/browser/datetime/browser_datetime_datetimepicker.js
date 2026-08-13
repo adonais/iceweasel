@@ -136,7 +136,7 @@ add_task(async function test_datetimepicker_max_time() {
 
   Assert.deepEqual(
     minutes,
-    ["0", "1", "2", "3", "4", "5"],
+    ["00", "01", "02", "03", "04", "05"],
     "The valid minutes are available in the picker"
   );
 

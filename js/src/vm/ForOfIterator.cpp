@@ -25,17 +25,16 @@ bool ForOfIterator::init(HandleValue iterable,
     return false;
   }
 
-  MOZ_ASSERT(index == NOT_ARRAY);
+  MOZ_ASSERT(!isOptimizedArray_);
 
   if (IsArrayWithDefaultIterator<MustBePacked::No>(iterableObj, cx)) {
     // Array is optimizable.
-    index = 0;
-    iterator = iterableObj;
-    nextMethod.setUndefined();
+    isOptimizedArray_ = true;
+    arrayIndex_ = 0;
+    iteratorOrArray_ = iterableObj;
+    nextMethod_.setUndefined();
     return true;
   }
-
-  MOZ_ASSERT(index == NOT_ARRAY);
 
   RootedValue callee(cx);
   RootedId iteratorId(cx, PropertyKey::Symbol(cx->wellKnownSymbols().iterator));
@@ -44,8 +43,8 @@ bool ForOfIterator::init(HandleValue iterable,
   }
 
   // If obj[@@iterator] is undefined and we were asked to allow non-iterables,
-  // bail out now without setting iterator.  This will make valueIsIterable(),
-  // which our caller should check, return false.
+  // bail out now without setting iteratorOrArray_.  This will make
+  // valueIsIterable(), which our caller should check, return false.
   if (nonIterableBehavior == AllowNonIterable && callee.isUndefined()) {
     return true;
   }
@@ -79,22 +78,22 @@ bool ForOfIterator::init(HandleValue iterable,
     return false;
   }
 
-  iterator = iteratorObj;
-  nextMethod = res;
+  iteratorOrArray_ = iteratorObj;
+  nextMethod_ = res;
   return true;
 }
 
 inline bool ForOfIterator::nextFromOptimizedArray(MutableHandleValue vp,
                                                   bool* done) {
-  MOZ_ASSERT(index != NOT_ARRAY);
+  MOZ_ASSERT(isOptimizedArray_);
 
   if (!CheckForInterrupt(cx_)) {
     return false;
   }
 
-  ArrayObject* arr = &iterator->as<ArrayObject>();
+  ArrayObject* arr = &iteratorOrArray_->as<ArrayObject>();
 
-  if (index >= arr->length()) {
+  if (arrayIndex_ >= arr->length()) {
     vp.setUndefined();
     *done = true;
     return true;
@@ -102,25 +101,25 @@ inline bool ForOfIterator::nextFromOptimizedArray(MutableHandleValue vp,
   *done = false;
 
   // Try to get array element via direct access.
-  if (index < arr->getDenseInitializedLength()) {
-    vp.set(arr->getDenseElement(index));
+  if (arrayIndex_ < arr->getDenseInitializedLength()) {
+    vp.set(arr->getDenseElement(arrayIndex_));
     if (!vp.isMagic(JS_ELEMENTS_HOLE)) {
-      ++index;
+      ++arrayIndex_;
       return true;
     }
   }
 
-  return GetElement(cx_, iterator, iterator, index++, vp);
+  return GetElement(cx_, iteratorOrArray_, iteratorOrArray_, arrayIndex_++, vp);
 }
 
 bool ForOfIterator::next(MutableHandleValue vp, bool* done) {
-  MOZ_ASSERT(iterator);
-  if (index != NOT_ARRAY) {
+  MOZ_ASSERT(iteratorOrArray_);
+  if (isOptimizedArray_) {
     return nextFromOptimizedArray(vp, done);
   }
 
   RootedValue v(cx_);
-  if (!js::Call(cx_, nextMethod, iterator, &v)) {
+  if (!js::Call(cx_, nextMethod_, iteratorOrArray_, &v)) {
     return false;
   }
 
@@ -143,7 +142,14 @@ bool ForOfIterator::next(MutableHandleValue vp, bool* done) {
 }
 
 void ForOfIterator::closeThrow() {
-  MOZ_ASSERT(iterator);
+  MOZ_ASSERT(iteratorOrArray_);
+
+  if (isOptimizedArray_) {
+    // |iteratorOrArray_| is the array object. IsArrayWithDefaultIterator
+    // ensured %ArrayIteratorPrototype% does not have a |return| property, so
+    // IteratorClose is a no-op.
+    return;
+  }
 
   // Don't handle uncatchable exceptions to match `for-of` bytecode behavior,
   // which also doesn't run IteratorClose when an interrupt was requested.
@@ -156,7 +162,8 @@ void ForOfIterator::closeThrow() {
   JS::AutoSaveExceptionState savedExc(cx_);
 
   // Perform IteratorClose on the iterator.
-  MOZ_ALWAYS_TRUE(CloseIterOperation(cx_, iterator, CompletionKind::Throw));
+  MOZ_ALWAYS_TRUE(
+      CloseIterOperation(cx_, iteratorOrArray_, CompletionKind::Throw));
 
   // CloseIterOperation clears any pending exception.
   MOZ_ASSERT(!cx_->isExceptionPending());

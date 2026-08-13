@@ -10,7 +10,7 @@
 #
 cmake_minimum_required(VERSION 3.16)
 
-string(TIMESTAMP year "%Y")
+set(year "2017")
 set(asm_file_header_block "\;
 \; Copyright (c) ${year}, Alliance for Open Media. All rights reserved.
 \;

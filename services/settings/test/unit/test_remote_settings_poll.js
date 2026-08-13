@@ -7,8 +7,6 @@ const { remoteSettingsBroadcastHandler, BROADCAST_ID } =
     "resource://services-settings/remote-settings.sys.mjs"
   );
 
-const IS_ANDROID = AppConstants.platform == "android";
-
 const PREF_SETTINGS_SERVER = "services.settings.server";
 const PREF_SETTINGS_SERVER_BACKOFF = "services.settings.server.backoff";
 const PREF_LAST_UPDATE = "services.settings.last_update_seconds";

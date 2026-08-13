@@ -176,8 +176,8 @@ const JSFunctionSpec WeakSetObject::methods[] = {
 
 WeakSetObject* WeakSetObject::create(JSContext* cx,
                                      HandleObject proto /* = nullptr */) {
-  return NewObjectWithClassProtoAndKind<WeakSetObject>(cx, proto,
-                                                       TenuredObject);
+  return NewObjectWithClassProto<WeakSetObject>(cx, proto,
+                                                {.newKind = TenuredObject});
 }
 
 // static

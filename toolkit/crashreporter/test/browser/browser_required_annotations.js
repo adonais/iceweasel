@@ -20,8 +20,14 @@ add_task(async function test_install_time_annotation() {
       // Crash the tab
       let annotations = await BrowserTestUtils.crashFrame(browser);
 
+      assert_annotation_is_present("BuildID", annotations);
       assert_annotation_is_present("CrashEventID", annotations);
       assert_annotation_is_present("InstallTime", annotations);
+      assert_annotation_is_present("ProductID", annotations);
+      assert_annotation_is_present("ProductName", annotations);
+      assert_annotation_is_present("ReleaseChannel", annotations);
+      assert_annotation_is_present("Vendor", annotations);
+      assert_annotation_is_present("Version", annotations);
     }
   );
 });

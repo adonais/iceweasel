@@ -774,6 +774,10 @@ export class CommandQueue {
     let store = await lazy.getRemoteCommandStore();
     let pending = await store.getUnsentCommands();
     log.trace("flushQueue total queued items", pending.length);
+    if (!pending.length) {
+      // nothing to do!
+      return false;
+    }
     // any timeRequested less than `sendThreshold` should be sent now (unless we are shutting down,
     // in which case we send everything now)
     let now = this.now();

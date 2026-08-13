@@ -62,7 +62,9 @@ export const ASRouterScreenUtils = {
    * Filter out screens whose targeting do not match.
    *
    * Given an array of screens, each screen will have it's `targeting` property
-   * evaluated, and removed if it's targeting evaluates to false
+   * evaluated, and removed if it's targeting evaluates to false. Screens that
+   * are kept additionally have their multiselect tiles filtered, so that
+   * checkboxes opting in to targeting are resolved before the screen renders.
    *
    * @param {object[]} screens - An array of screens that will be looped
    * through to be evaluated for removal
@@ -71,18 +73,63 @@ export const ASRouterScreenUtils = {
   async evaluateTargetingAndRemoveScreens(screens) {
     const filteredScreens = [...screens];
     await this.removeScreens(filteredScreens, async screen => {
-      if (screen.targeting === undefined) {
-        // Don't remove the screen if we don't have a targeting property
-        return false;
+      if (screen.targeting !== undefined) {
+        const result = await this.evaluateScreenTargeting(screen.targeting);
+        // A false evaluation means we want to remove the screen.
+        if (!result) {
+          return true;
+        }
       }
 
-      const result = await this.evaluateScreenTargeting(screen.targeting);
-      // Flipping the value because a true evaluation means we
-      // don't want to remove the screen, while false means we do
-      return !result;
+      // Resolve any opt-in multiselect checkbox targeting
+      //so the correct checkboxes are present on first paint.
+      await this.filterMultiSelectTargeting(screen);
+      return false;
     });
 
     return filteredScreens;
+  },
+
+  /**
+   *
+   * A multiselect tile's checkbox may include a `targeting` JEXL expression to
+   * conditionally render itself. We do this in the parent process before
+   * the screen is handed to content so it's evaluated before first paint.
+   * This is opt-in, a checkbox without `targeting` is always kept. A multiselect tile
+   * whose checkboxes are all filtered out is removed entirely
+   *
+   * @param {object} screen - The screen whose multiselect tiles to filter.
+   */
+  async filterMultiSelectTargeting(screen) {
+    const tiles = screen?.content?.tiles;
+    if (!tiles) {
+      return;
+    }
+    const tilesArray = Array.isArray(tiles) ? tiles : [tiles];
+
+    for (const tile of tilesArray) {
+      if (tile?.type !== "multiselect" || !Array.isArray(tile.data)) {
+        continue;
+      }
+      const evaluatedCheckboxes = [];
+      for (const checkbox of tile.data) {
+        if (
+          checkbox?.targeting === undefined ||
+          (await this.evaluateScreenTargeting(checkbox.targeting))
+        ) {
+          evaluatedCheckboxes.push(checkbox);
+        }
+      }
+      tile.data = evaluatedCheckboxes;
+    }
+
+    const isEmptyMultiSelect = tile =>
+      tile?.type === "multiselect" && !tile.data.length;
+    if (Array.isArray(tiles)) {
+      screen.content.tiles = tiles.filter(tile => !isEmptyMultiSelect(tile));
+    } else if (isEmptyMultiSelect(tiles)) {
+      delete screen.content.tiles;
+    }
   },
 
   async addScreenImpression(screen) {

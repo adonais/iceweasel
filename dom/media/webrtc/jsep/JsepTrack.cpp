@@ -175,7 +175,8 @@ void JsepTrack::SetMaxEncodings(size_t aMax) {
 }
 
 void JsepTrack::RecvTrackSetRemote(const Sdp& aSdp,
-                                   const SdpMediaSection& aMsection) {
+                                   const SdpMediaSection& aMsection,
+                                   const std::vector<uint32_t>& aOwnSendSsrcs) {
   mInHaveRemote = true;
   if (mDirection != sdp::kRecv) {
     MOZ_MTLOG(ML_ERROR, "RecvTrackSetRemote called on non-receive track");
@@ -206,24 +207,22 @@ void JsepTrack::RecvTrackSetRemote(const Sdp& aSdp,
   SetCNAME(helper.GetCNAME(aMsection));
   mSsrcs.clear();
   // Storage of mSsrcs and mSsrcToRtxSsrc could be improved, see Bug 1990364
-  // Each `a=ssrc ssrc-attr:value` line can contain the same SSRC. We should
-  // only add unique SSRCs to mSsrcs.
-  std::set<uint32_t> ssrcsSet;
+  mSsrcToRtxSsrc.clear();
+
   if (aMsection.GetAttributeList().HasAttribute(SdpAttribute::kSsrcAttribute)) {
+    std::set<uint32_t> seen;
     for (const auto& s : aMsection.GetAttributeList().GetSsrc().mSsrcs) {
-      if (ssrcsSet.find(s.ssrc) != ssrcsSet.end()) {
-        continue;
+      // Each a=ssrc line carries one attribute (cname, msid, etc.) for the
+      // same SSRC; only add each unique SSRC value once.
+      if (seen.insert(s.ssrc).second) {
+        mSsrcs.push_back(s.ssrc);
       }
-      ssrcsSet.insert(s.ssrc);
-      // Preserve order of ssrcs as they appear in the m-section
-      mSsrcs.push_back(s.ssrc);
     }
   }
 
   // Use FID ssrc-group to associate rtx ssrcs with "regular" ssrcs. Despite
   // not being part of RFC 4588, this is how rtx is negotiated by libwebrtc
   // and jitsi.
-  mSsrcToRtxSsrc.clear();
   if (aMsection.GetAttributeList().HasAttribute(
           SdpAttribute::kSsrcGroupAttribute)) {
     for (const auto& group :
@@ -242,6 +241,17 @@ void JsepTrack::RecvTrackSetRemote(const Sdp& aSdp,
           mSsrcs.erase(res, mSsrcs.end());
         }
       }
+    }
+  }
+
+  // Remove any extracted SSRCs that duplicate our own send SSRCs, to prevent
+  // EnsureLocalSSRC() from regenerating our send SSRC to a value the peer
+  // never negotiated.
+  for (uint32_t sendSsrc : aOwnSendSsrcs) {
+    auto it = std::find(mSsrcs.begin(), mSsrcs.end(), sendSsrc);
+    if (it != mSsrcs.end()) {
+      mSsrcToRtxSsrc.erase(sendSsrc);
+      mSsrcs.erase(it);
     }
   }
 }

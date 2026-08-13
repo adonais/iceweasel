@@ -16,7 +16,7 @@ if CONFIG["MOZ_BITS_DOWNLOAD"]:
     EXPORTS += ["Bits.h"]
     UNIFIED_SOURCES += ["Bits.cpp"]
 
-EXTRA_JS_MODULES += [
+MOZ_SRC_FILES += [
     "Bits.sys.mjs",
 ]
 

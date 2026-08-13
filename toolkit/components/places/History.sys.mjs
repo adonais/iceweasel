@@ -384,9 +384,7 @@ export var History = Object.freeze({
         if (guidsSlice.length < REMOVE_PAGES_CHUNKLEN) {
           urlsSlice = urls.splice(0, REMOVE_PAGES_CHUNKLEN - guidsSlice.length);
         }
-
         let pagesToRemove = { guids: guidsSlice, urls: urlsSlice };
-
         let result = await lazy.PlacesUtils.withConnectionWrapper(
           "History.sys.mjs: remove",
           db => remove(db, pagesToRemove, onResult)
@@ -868,6 +866,8 @@ var clear = async function (db) {
  *   Pages that have been touched and that need cleaning up.
  * @param {number} pages.id
  *   The `moz_places` identifier for the place.
+ * @param {number} pages.hash
+ *   The `url_hash` of the page, used to expire orphan icons.
  * @param {boolean} pages.hasVisits
  *   If `true`, there remains at least one visit to this page, so the page
  *   should be kept and its frecency updated.
@@ -885,43 +885,30 @@ var cleanupPages = async function (db, pages) {
   // Note, we are already in a transaction, since callers create it.
   // Check relations regardless, to avoid creating orphans in case of
   // async race conditions.
-  for (let chunk of lazy.PlacesUtils.chunkArray(
-    pagesToRemove,
-    db.variableLimit
-  )) {
-    let idsToRemove = chunk.map(p => p.id);
-    await db.execute(
-      `DELETE FROM moz_places
-       WHERE id IN ( ${lazy.PlacesUtils.sqlBindPlaceholders(idsToRemove)} )
+  await db.executeCached(
+    `DELETE FROM moz_places
+       WHERE id IN carray(:ids)
          AND foreign_count = 0 AND last_visit_date ISNULL`,
-      idsToRemove
-    );
+    { ids: pagesToRemove.map(p => p.id) }
+  );
 
-    // Expire orphans.
-    let hashesToRemove = chunk.map(p => p.hash);
-    await db.executeCached(
-      `DELETE FROM moz_pages_w_icons
-       WHERE page_url_hash IN (${lazy.PlacesUtils.sqlBindPlaceholders(
-         hashesToRemove
-       )})`,
-      hashesToRemove
-    );
+  // Expire orphans.
+  await db.executeCached(
+    `DELETE FROM moz_pages_w_icons
+       WHERE page_url_hash IN carray(:hashes)`,
+    { hashes: pagesToRemove.map(p => p.hash) }
+  );
 
-    await db.execute(
-      `DELETE FROM moz_annos
-       WHERE place_id IN ( ${lazy.PlacesUtils.sqlBindPlaceholders(
-         idsToRemove
-       )} )`,
-      idsToRemove
-    );
-    await db.execute(
-      `DELETE FROM moz_inputhistory
-       WHERE place_id IN ( ${lazy.PlacesUtils.sqlBindPlaceholders(
-         idsToRemove
-       )} )`,
-      idsToRemove
-    );
-  }
+  await db.executeCached(
+    `DELETE FROM moz_annos
+       WHERE place_id IN carray(:ids)`,
+    { ids: pagesToRemove.map(p => p.id) }
+  );
+  await db.executeCached(
+    `DELETE FROM moz_inputhistory
+       WHERE place_id IN carray(:ids)`,
+    { ids: pagesToRemove.map(p => p.id) }
+  );
   // Hosts accumulated during the places delete are updated through a trigger
   // (see nsPlacesTriggers.h).
   await db.executeCached(`DELETE FROM moz_updateoriginsdelete_temp`);
@@ -1277,29 +1264,21 @@ var removeVisitsByFilter = async function (db, filter, onResult = null) {
   let pages = [];
   await db.executeTransaction(async function () {
     // 2. Remove all offending visits.
-    for (let chunk of lazy.PlacesUtils.chunkArray(
-      visitsToRemove,
-      db.variableLimit
-    )) {
-      await db.execute(
-        `DELETE FROM moz_historyvisits
-         WHERE id IN (${lazy.PlacesUtils.sqlBindPlaceholders(chunk)})`,
-        chunk
-      );
-    }
+    await db.executeCached(
+      `DELETE FROM moz_historyvisits
+         WHERE id IN carray(:visitsToRemove)`,
+      { visitsToRemove }
+    );
 
     // 3. Find out which pages have been orphaned
-    for (let chunk of lazy.PlacesUtils.chunkArray(
-      [...pagesToInspect],
-      db.variableLimit
-    )) {
-      await db.execute(
+    if (pagesToInspect.size) {
+      await db.executeCached(
         `SELECT id, url, url_hash, guid,
           (foreign_count != 0) AS has_foreign,
           (last_visit_date NOTNULL) as has_visits
          FROM moz_places
-         WHERE id IN (${lazy.PlacesUtils.sqlBindPlaceholders(chunk)})`,
-        chunk,
+         WHERE id IN carray(:pagesToInspect)`,
+        { pagesToInspect: [...pagesToInspect] },
         row => {
           let page = {
             id: row.getResultByName("id"),
@@ -1410,13 +1389,11 @@ var removeByFilter = async function (db, filter, onResult = null) {
   await db.executeTransaction(async function () {
     // 4. Actually remove visits
     let pageIds = pages.map(p => p.id);
-    for (let chunk of lazy.PlacesUtils.chunkArray(pageIds, db.variableLimit)) {
-      await db.execute(
-        `DELETE FROM moz_historyvisits
-         WHERE place_id IN(${lazy.PlacesUtils.sqlBindPlaceholders(chunk)})`,
-        chunk
-      );
-    }
+    await db.executeCached(
+      `DELETE FROM moz_historyvisits
+         WHERE place_id IN carray(:pageIds)`,
+      { pageIds }
+    );
     // 5. Clean up and notify
     await cleanupPages(db, pages);
   });
@@ -1459,28 +1436,24 @@ var remove = async function (db, { guids, urls }, onResult = null) {
       });
     }
   }
-  for (let chunk of lazy.PlacesUtils.chunkArray(guids, db.variableLimit)) {
-    let query = `SELECT id, url, url_hash, guid, foreign_count, title, frecency
-       FROM moz_places
-       WHERE guid IN (${lazy.PlacesUtils.sqlBindPlaceholders(guids)})
-      `;
-    await db.execute(query, chunk, onRow);
-  }
-  for (let chunk of lazy.PlacesUtils.chunkArray(urls, db.variableLimit)) {
-    // Make an array of variables like `["?1", "?2", ...]`, up to the length of
-    // the chunk. This lets us bind each URL once, reusing the binding for the
-    // `url_hash IN (...)` and `url IN (...)` clauses. We add 1 because indexed
-    // parameters start at 1, not 0.
-    let variables = Array.from(
-      { length: chunk.length },
-      (_, i) => "?" + (i + 1)
+  if (guids.length) {
+    await db.executeCached(
+      `SELECT id, url, url_hash, guid, foreign_count, title, frecency
+         FROM moz_places
+         WHERE guid IN carray(:guids)`,
+      { guids },
+      onRow
     );
-    let query = `SELECT id, url, url_hash, guid, foreign_count, title, frecency
-       FROM moz_places
-       WHERE url_hash IN (${variables.map(v => `hash(${v})`).join(",")}) AND
-             url IN (${variables.join(",")})
-      `;
-    await db.execute(query, chunk, onRow);
+  }
+  if (urls.length) {
+    await db.executeCached(
+      `SELECT id, url, url_hash, guid, foreign_count, title, frecency
+         FROM moz_places
+         WHERE url_hash IN (SELECT hash(value) FROM carray(:urls))
+           AND url IN carray(:urls)`,
+      { urls },
+      onRow
+    );
   }
 
   if (!pages.length) {
@@ -1490,14 +1463,11 @@ var remove = async function (db, { guids, urls }, onResult = null) {
 
   await db.executeTransaction(async function () {
     // 2. Remove all visits to these pages.
-    let pageIds = pages.map(p => p.id);
-    for (let chunk of lazy.PlacesUtils.chunkArray(pageIds, db.variableLimit)) {
-      await db.execute(
-        `DELETE FROM moz_historyvisits
-         WHERE place_id IN (${lazy.PlacesUtils.sqlBindPlaceholders(chunk)})`,
-        chunk
-      );
-    }
+    await db.execute(
+      `DELETE FROM moz_historyvisits
+       WHERE place_id IN carray(:ids)`,
+      { ids: pages.map(p => p.id) }
+    );
 
     // 3. Clean up and notify
     await cleanupPages(db, pages);

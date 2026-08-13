@@ -40,6 +40,12 @@ if CONFIG["OS_TARGET"] == "Android":
     DEFINES["_GNU_SOURCE"] = True
     DEFINES["__ANDROID_UNAVAILABLE_SYMBOLS_ARE_WEAK__"] = True
 
+if CONFIG["OS_TARGET"] == "Darwin":
+
+    OS_LIBS += [
+        "-framework Foundation"
+    ]
+
 if CONFIG["OS_TARGET"] == "Linux":
 
     DEFINES["USE_AURA"] = "1"

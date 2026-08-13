@@ -30,16 +30,17 @@
 #  define MOZ_USE_WIFI_TICKLER
 #endif
 
-#include "nsISupports.h"
 #include <stdint.h>
+
+#include "nsISupports.h"
 
 #ifdef MOZ_USE_WIFI_TICKLER
 #  include "mozilla/Mutex.h"
+#  include "mozilla/ThreadSafeWeakPtr.h"
 #  include "mozilla/TimeStamp.h"
 #  include "nsISupports.h"
 #  include "nsIThread.h"
 #  include "nsITimer.h"
-#  include "mozilla/ThreadSafeWeakPtr.h"
 #  include "prio.h"
 
 class nsIPrefBranch;

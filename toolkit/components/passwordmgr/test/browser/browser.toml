@@ -150,6 +150,11 @@ support-files = [
   "subtst_notifications_8.html",
 ]
 
+["browser_doorhanger_keyboard.js"]
+skip-if = [
+  "a11y_checks", # Bugs 1858041, 1854454 and 1824058 for causing intermittent crashes
+]
+
 ["browser_doorhanger_multipage_form.js"]
 
 ["browser_doorhanger_password_edits.js"]
@@ -240,6 +245,11 @@ skip-if = [
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1683848
 ]
 
+["browser_login_storage_migrator.js"]
+skip-if = [
+  "os == 'android'", # The migrator only runs on desktop
+]
+
 ["browser_message_onFormSubmit.js"]
 
 ["browser_openPasswordManager.js"]
@@ -281,12 +291,6 @@ support-files = ["browser_relay_utils.js"]
 
 ["browser_relay_use.js"]
 support-files = ["browser_relay_utils.js"]
-
-["browser_rust_mirror.js"]
-skip-if = [
-  "os == 'android'",
-  "release_or_beta", # Bug 1993218
-]
 
 ["browser_telemetry_SignUpFormRuleset.js"]
 

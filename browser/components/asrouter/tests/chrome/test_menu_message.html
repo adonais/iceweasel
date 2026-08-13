@@ -269,6 +269,173 @@
     });
 
     /**
+     * Tests the "split" layout and imagePosition property.
+     */
+    add_task(async function test_split_layout() {
+      let message = document.createElement("menu-message");
+      message.layout = "split";
+      message.buttonText = "Sign in";
+      message.primaryText = "Sync all your devices";
+      message.secondaryText =
+        "Instantly get your bookmarks and passwords everywhere.";
+      message.imageURL =
+        "chrome://browser/content/asrouter/assets/fox-with-devices.svg";
+
+      document.getElementById("content").appendChild(message);
+      await message.updateComplete;
+
+      const shadow = message.shadowRoot;
+      const container = shadow.querySelector("#container");
+      is(
+        container.getAttribute("layout"),
+        "split",
+        "Layout for container is 'split'."
+      );
+      is(
+        container.getAttribute("image-position"),
+        "end",
+        "imagePosition defaults to 'end'."
+      );
+      ok(shadow.querySelector("#top-row"), "Split layout renders #top-row.");
+      ok(shadow.querySelector("#columns"), "Split layout renders #columns.");
+      ok(
+        shadow.querySelector("#content-column"),
+        "Split layout renders #content-column."
+      );
+      ok(
+        shadow.querySelector("#illustration-container"),
+        "Split layout renders #illustration-container."
+      );
+
+      const primaryText = shadow.querySelector("#primary");
+      const secondaryText = shadow.querySelector("#secondary");
+      const primaryBtn = shadow.querySelector("#primary-button");
+      const closeBtn = shadow.querySelector("#close-button");
+      ok(!isHidden(primaryText), "Primary text is visible.");
+      ok(!isHidden(secondaryText), "Secondary text is visible.");
+      ok(!isHidden(primaryBtn), "Primary button is visible.");
+      ok(!isHidden(closeBtn), "Close button is visible.");
+
+
+      const topRow = shadow.querySelector("#top-row");
+      is(primaryText.parentElement, topRow, "Primary text sits inside #top-row.");
+      is(closeBtn.parentElement, topRow, "Close button sits inside #top-row.");
+      const contentColumn = shadow.querySelector("#content-column");
+      is(
+        secondaryText.parentElement,
+        contentColumn,
+        "Secondary text sits inside #content-column."
+      );
+      is(
+        primaryBtn.parentElement,
+        contentColumn,
+        "Primary button sits inside #content-column."
+      );
+
+      // imagePosition reflects to the image-position attribute
+      message.imagePosition = "start";
+      await message.updateComplete;
+      is(
+        container.getAttribute("image-position"),
+        "start",
+        "image-position attribute updates to 'start'."
+      );
+
+      message.remove();
+    });
+
+    /**
+     * Tests the column layout's full-bleed bottom image variant
+     */
+    add_task(async function test_column_layout_bottom_image_position() {
+      let message = document.createElement("menu-message");
+      message.layout = "column";
+      message.imagePosition = "bottom";
+      message.buttonText = "Sign in";
+      message.primaryText = "Sync all your devices";
+      message.secondaryText =
+        "Instantly get your bookmarks and passwords everywhere.";
+      message.imageURL =
+        "chrome://browser/content/asrouter/assets/fox-with-devices.svg";
+
+      document.getElementById("content").appendChild(message);
+      await message.updateComplete;
+
+      const shadow = message.shadowRoot;
+      const container = shadow.querySelector("#container");
+      is(
+        container.getAttribute("layout"),
+        "column",
+        "Layout for container is 'column'."
+      );
+      is(
+        container.getAttribute("image-position"),
+        "bottom",
+        "image-position attribute is 'bottom'."
+      );
+
+      const illustrationContainer = shadow.querySelector(
+        "#illustration-container"
+      );
+      const orderValue = window.getComputedStyle(illustrationContainer).order;
+      is(
+        orderValue,
+        "1",
+        "Illustration container uses order to render at the bottom."
+      );
+
+      message.remove();
+    });
+
+    /**
+     * Tests that providing an rtlImageURL renders a single image
+     * whose src swaps to the RTL asset in a RTL context.
+     */
+    add_task(async function test_rtl_image_url() {
+      const LTR_IMAGE_URL =
+        "chrome://browser/content/asrouter/assets/kit-checkmark.svg";
+      const RTL_IMAGE_URL =
+        "chrome://browser/content/asrouter/assets/kit-checkmark-flipped.svg";
+
+      let message = document.createElement("menu-message");
+      message.layout = "split";
+      message.buttonText = "Set as default";
+      message.primaryText = "Make Firefox your primary browser";
+      message.secondaryText = "Get speed, safety and privacy every time you browse.";
+      message.imageURL = LTR_IMAGE_URL;
+      message.rtlImageURL = RTL_IMAGE_URL;
+
+      document.getElementById("content").appendChild(message);
+      await message.updateComplete;
+
+      const shadow = message.shadowRoot;
+      const img = shadow.querySelector("#illustration");
+
+      ok(img, "Illustration is rendered.");
+      is(
+        shadow.querySelectorAll("img#illustration").length,
+        1,
+        "only one illustration img element is rendered."
+      );
+      is(img.src, LTR_IMAGE_URL, "LTR source is default");
+
+      message.setAttribute("dir", "rtl");
+      message.requestUpdate();
+      await message.updateComplete;
+      is(img.src, RTL_IMAGE_URL, "RTL img source used when the host context is :dir(rtl).");
+      ok(
+        img.classList.contains("illustration-rtl"),
+        "contains 'illustration-rtl' class when an RTL variant is provided and in an RTL context."
+      );
+
+      message.setAttribute("dir", "ltr");
+      message.requestUpdate();
+      await message.updateComplete;
+      is(img.src, LTR_IMAGE_URL, "LTR source updated when the host :dir(ltr).");
+      message.remove();
+    });
+
+    /**
      * Tests "simple" layout, which only displays primary text and primary button.
      */
     add_task(async function test_simple_layout() {

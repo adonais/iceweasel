@@ -55,7 +55,6 @@ import mozilla.components.compose.base.utils.BackInvokedHandler
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.list.SwitchListItem
 import org.mozilla.fenix.settings.labs.LabsItem
-import org.mozilla.fenix.settings.labs.LabsItemSlugs
 import org.mozilla.fenix.settings.labs.store.DialogState
 import org.mozilla.fenix.settings.labs.store.LabsAction
 import org.mozilla.fenix.settings.labs.store.LabsState
@@ -172,14 +171,23 @@ private fun LabsItemRow(
     onToggle: (LabsItem) -> Unit,
     onShareFeedbackClick: (LabsItem) -> Unit,
 ) {
-    val itemTitle = stringResource(id = item.title)
+    val itemTitle = item.title
     SwitchListItem(
         label = itemTitle,
         checked = item.enrolled,
-        description = stringResource(id = item.description),
+        description = item.description,
         maxDescriptionLines = Int.MAX_VALUE,
+        enabled = item.available,
         showSwitchAfter = true,
         belowListItemContent = {
+            if (!item.available) {
+                Text(
+                    text = stringResource(R.string.firefox_labs_feature_conflict),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = FirefoxTheme.typography.body2,
+                )
+            }
+
             item.feedbackUrl?.let { url ->
                 LabsShareFeedbackLink(
                     item = item,
@@ -429,19 +437,27 @@ private class FirefoxLabsScreenPreviewProvider : ThemedValueProvider<List<LabsIt
     sequenceOf(
         listOf(
             LabsItem(
-                slug = LabsItemSlugs.HOMEPAGE_AS_NEW_TAB,
-                title = R.string.firefox_labs_homepage_as_a_new_tab,
-                description = R.string.firefox_labs_homepage_as_a_new_tab_description,
+                slug = "preview-lab-one",
+                title = "Preview lab one",
+                description = "Sample Labs item one for previews.",
                 enrolled = true,
                 requiresRestart = true,
             ),
             LabsItem(
-                slug = LabsItemSlugs.HOMEPAGE_AS_NEW_TAB,
-                title = R.string.firefox_labs_homepage_as_a_new_tab,
-                description = R.string.firefox_labs_homepage_as_a_new_tab_description,
+                slug = "preview-lab-two",
+                title = "Preview lab two",
+                description = "Sample Labs item two for previews.",
                 enrolled = false,
                 feedbackUrl = "https://connect.mozilla.org/",
                 requiresRestart = true,
+            ),
+            LabsItem(
+                slug = "preview-lab-three",
+                title = "Preview lab three",
+                description = "Sample Labs item three for previews.",
+                enrolled = false,
+                requiresRestart = true,
+                available = false,
             ),
         ),
         emptyList(),
@@ -462,6 +478,28 @@ private fun FirefoxLabsScreenPreview(
                 ),
             ),
             onNavigationIconClick = {},
+            onShareFeedbackClick = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun LabsItemRowUnavailablePreview(
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
+        LabsItemRow(
+            item = LabsItem(
+                slug = "preview-lab-unavailable",
+                title = "Preview lab",
+                description = "Sample deactivated Labs item for previews.",
+                enrolled = false,
+                requiresRestart = true,
+                feedbackUrl = "https://connect.mozilla.org/",
+                available = false,
+            ),
+            onToggle = {},
             onShareFeedbackClick = {},
         )
     }

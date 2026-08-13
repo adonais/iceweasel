@@ -37,6 +37,8 @@ import mozilla.components.support.base.log.logger.Logger
  * If `null` a progress bar will not be displayed.
  * @param backgroundColor Color of the background.
  * @param outlineColor Color of the divider.
+ * @param browserActionsColor Optional `onSurface` color override applied only to the browser
+ * actions (outside the URL bounding box), leaving the page actions on the ambient color scheme.
  * @param browserActionsStart List of browser [Action]s to be displayed at the start of the
  * toolbar, outside of the URL bounding box.
  * These should be actions relevant to the browser as a whole.
@@ -63,6 +65,7 @@ fun BrowserDisplayToolbar(
     progressBarConfig: ProgressBarConfig?,
     backgroundColor: Color = MaterialTheme.colorScheme.surface,
     outlineColor: Color = DividerDefaults.color,
+    browserActionsColor: Color? = null,
     browserActionsStart: List<Action> = emptyList(),
     pageActionsStart: List<Action> = emptyList(),
     pageActionsEnd: List<Action> = emptyList(),
@@ -88,6 +91,7 @@ fun BrowserDisplayToolbar(
         modifier = Modifier.fillMaxWidth(),
         backgroundColor = backgroundColor,
         outlineColor = outlineColor,
+        browserActionsColor = browserActionsColor,
         browserActionsStartModifier = Modifier,
         pageActionsStartModifier = Modifier,
         originModifier = Modifier,

@@ -17,7 +17,6 @@ export const logNameTable = {
   "A4AqwmL24F4D+Lxve5hRMk/Xaj31t1lRdeIi+46b1fY=": "Sectigo 'Tiger2027h2'",
   "ABpdGhwtk3W2SFV4+C9xoa5u7zl9KXyK4xV7yt7hoB4=": "DigiCert 'Wyvern2027h1'",
   "CRV/Yy1Gx/dtlSZUk7wPALOVrF2zorJr+wQ9ukrGOJM=": "IPng Networks 'Halloumi2027h2'",
-  "GYbUxyiqb/66A294Kk0BkarOLXIxD67OXXBBLSVMx9Q=": "Let's Encrypt 'Oak2026h1'",
   "Gouda43XkdHNBUnttgNV1ga2T60w23H+eI8Px8j7xLE=": "IPng Networks 'Gouda2027h1'",
   "GoudaVNi2GSSp7niI2BuNOzp4xC6NPuTBXhdKc5XV+s=": "IPng Networks 'Gouda2027h2'",
   "Goudaw/+v4G0eTnG0jEKhtbRAtTwRuIYLJ3jX14mJe8=": "IPng Networks 'Gouda2026h2'",

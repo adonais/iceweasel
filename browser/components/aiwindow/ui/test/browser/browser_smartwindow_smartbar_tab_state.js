@@ -147,6 +147,23 @@ async function navigateFromFullpage(win, browser, conversation) {
   );
 }
 
+/**
+ * Gets the context chips in the smartbar input header.
+ *
+ * @param {Window} win
+ */
+async function getSidebarContextChips(win) {
+  if (!AIWindowUI.isSidebarOpen(win)) {
+    return null;
+  }
+  const sidebarBrowser = win.document.getElementById(AIWindowUI.BROWSER_ID);
+  const smartbar = BrowserTestUtils.querySelectorDeep(
+    sidebarBrowser.contentDocument,
+    "#ai-window-smartbar"
+  );
+  return smartbar.contextChips.map(c => c.url);
+}
+
 describe("Smartbar tab state input tracking", () => {
   describe("when one tab has a sidebar", () => {
     let win, browser, tab, sandbox, sidebarBrowser;
@@ -225,25 +242,27 @@ describe("Smartbar tab state input tracking", () => {
       );
     });
 
-    it("should submit when re-selecting the current action from the dropdown", async () => {
+    it("should not submit when re-selecting the current action from the dropdown", async () => {
       await typeInSmartbar(sidebarBrowser, "hello");
-      await SpecialPowers.spawn(sidebarBrowser, [], async () => {
-        const aiWindowElement = content.document.querySelector("ai-window");
-        const smartbar = await ContentTaskUtils.waitForCondition(
-          () =>
-            aiWindowElement.shadowRoot?.querySelector("#ai-window-smartbar"),
-          "Wait for Smartbar to be rendered"
-        );
-        const inputCta = smartbar.querySelector("input-cta");
-        inputCta.shadowRoot
-          .querySelector("panel-list")
-          .querySelector(`panel-item[icon="chat"]`)
-          .click();
-        await ContentTaskUtils.waitForCondition(
-          () => smartbar.value === "",
-          "Smartbar should be cleared after re-selecting the same action"
-        );
-      });
+
+      const smartbar = BrowserTestUtils.querySelectorDeep(
+        sidebarBrowser.contentDocument,
+        "#ai-window-smartbar"
+      );
+      const panelItem = BrowserTestUtils.querySelectorDeep(
+        sidebarBrowser.contentDocument,
+        `panel-item[icon="chat"]`
+      );
+      panelItem.click();
+
+      // Picking an action only changes/locks the button; it does not submit,
+      // so the typed value is preserved.
+      await TestUtils.waitForTick();
+      Assert.equal(
+        smartbar.value,
+        "hello",
+        "Re-selecting the same action should not submit or clear the input"
+      );
     });
 
     it("should preserve input from URL bar navigation", async () => {
@@ -390,6 +409,112 @@ describe("Smartbar tab state input tracking", () => {
         async () => (await getSidebarInputValue(win)) === "hello",
         "Tab A should restore its stored input"
       );
+    });
+
+    it("should restore each tab's stored context chips on switch", async () => {
+      const smartbar = BrowserTestUtils.querySelectorDeep(
+        sidebarBrowser.contentDocument,
+        "#ai-window-smartbar"
+      );
+      const tabBChip = {
+        type: "tab",
+        url: "https://example.com",
+        label: "Example label for Tab B",
+      };
+      smartbar.addContextMention(tabBChip);
+
+      await BrowserTestUtils.switchTab(win.gBrowser, tabA);
+      await TestUtils.waitForCondition(async () => {
+        const chips = await getSidebarContextChips(win);
+        return chips?.length === 0;
+      }, "Tab A should start with no context chips");
+
+      await BrowserTestUtils.switchTab(win.gBrowser, tabB);
+      await TestUtils.waitForCondition(async () => {
+        const chips = await getSidebarContextChips(win);
+        return chips?.length === 1 && chips[0] === tabBChip.url;
+      }, "Tab B should start with one context chip");
+
+      await BrowserTestUtils.switchTab(win.gBrowser, tabA);
+
+      const tabAChip = {
+        type: "tab",
+        url: "https://example.net",
+        label: "Example label for Tab A",
+      };
+      smartbar.addContextMention(tabAChip);
+      await TestUtils.waitForCondition(async () => {
+        const chips = await getSidebarContextChips(win);
+        return chips?.length === 1 && chips[0] === tabAChip.url;
+      }, "Tab A should have one context chip");
+
+      await BrowserTestUtils.switchTab(win.gBrowser, tabB);
+      await BrowserTestUtils.switchTab(win.gBrowser, tabA);
+      await TestUtils.waitForCondition(async () => {
+        const chips = await getSidebarContextChips(win);
+        return chips?.length === 1 && chips[0] === tabAChip.url;
+      }, "Tab A should restore its context chip");
+    });
+
+    it("should restore a tab's stored context chips when the sidebar reopens", async () => {
+      const smartbar = BrowserTestUtils.querySelectorDeep(
+        sidebarBrowser.contentDocument,
+        "#ai-window-smartbar"
+      );
+      const tabBChip = {
+        type: "tab",
+        url: "https://example.com",
+        label: "Example label for Tab B",
+      };
+      smartbar.addContextMention(tabBChip);
+      await TestUtils.waitForCondition(async () => {
+        const chips = await getSidebarContextChips(win);
+        return chips?.length === 1 && chips[0] === tabBChip.url;
+      }, "Tab B should start with one context chip");
+
+      await BrowserTestUtils.switchTab(win.gBrowser, tabA);
+      if (AIWindowUI.isSidebarOpen(win)) {
+        AIWindowUI.closeSidebar(win);
+      }
+
+      await AIWindowUI.openSidebar(win);
+      await TestUtils.waitForCondition(
+        async () => !(await getSidebarContextChips(win))?.length,
+        "Reopening the sidebar on tab A should not show tab B's chips"
+      );
+    });
+
+    it("should clear the context chips when smartbar is submitted, even after switching tabs", async () => {
+      const smartbar = BrowserTestUtils.querySelectorDeep(
+        sidebarBrowser.contentDocument,
+        "#ai-window-smartbar"
+      );
+      const tabBChip = {
+        type: "tab",
+        url: "https://example.com",
+        label: "Example label for Tab B",
+      };
+      smartbar.addContextMention(tabBChip);
+      await TestUtils.waitForCondition(async () => {
+        const chips = await getSidebarContextChips(win);
+        return chips?.length === 1 && chips[0] === tabBChip.url;
+      }, "Tab B should start with one context chip");
+
+      await typeInSmartbar(sidebarBrowser, "hey");
+      await submitSmartbar(sidebarBrowser);
+
+      await TestUtils.waitForCondition(async () => {
+        const chips = await getSidebarContextChips(win);
+        return chips?.length === 0;
+      }, "Tab B should have no context chips after submit");
+
+      await BrowserTestUtils.switchTab(win.gBrowser, tabA);
+      await BrowserTestUtils.switchTab(win.gBrowser, tabB);
+
+      await TestUtils.waitForCondition(async () => {
+        const chips = await getSidebarContextChips(win);
+        return chips?.length === 0;
+      }, "Tab B should still have no context chips even after switching from another tab");
     });
   });
 });

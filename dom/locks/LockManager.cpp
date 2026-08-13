@@ -60,6 +60,11 @@ LockManager::LockManager(nsIGlobalObject* aGlobal) : mGlobal(aGlobal) {
     clientID = Some(clientInfo->Id());
   }
 
+  if (NS_WARN_IF(
+          !mozilla::ipc::BackgroundChild::ValidatePrincipal(principal, {}))) {
+    return;
+  }
+
   mozilla::ipc::PBackgroundChild* backgroundActor =
       mozilla::ipc::BackgroundChild::GetOrCreateForCurrentThread();
   mActor = new locks::LockManagerChild(aGlobal);

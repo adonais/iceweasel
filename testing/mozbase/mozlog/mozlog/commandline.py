@@ -32,6 +32,7 @@ log_formatters = {
         "Grouped summary of test results (provided by mozlog)",
     ),
     "errorsummary": (formatters.ErrorSummaryFormatter, argparse.SUPPRESS),
+    "testsummary": (formatters.TestSummaryFormatter, argparse.SUPPRESS),
 }
 
 TEXT_FORMATTERS = ("raw", "mach")

@@ -103,7 +103,7 @@ async function focusAndWaitForPopupOpen(browser) {
 
   await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, browser);
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return browser.autoCompletePopup.popupOpen;
   });
 }
@@ -114,7 +114,7 @@ async function unfocusAndWaitForPopupClose(browser) {
     input.blur();
   });
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return !browser.autoCompletePopup.popupOpen;
   });
 }

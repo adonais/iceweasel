@@ -13,7 +13,7 @@ use crate::gpu_types::UvRectKind;
 use crate::internal_types::{FrameId, FrameMemory, FrameVec, TextureSource, TextureSourceExternal};
 use crate::renderer::MAX_VERTEX_TEXTURE_WIDTH;
 use crate::util::ScaleOffset;
-use api::units::{DeviceIntPoint, DeviceIntRect, DeviceIntSize, DeviceRect, LayoutRect, PictureRect};
+use api::units::{DeviceIntRect, DeviceIntSize, DevicePoint, DeviceRect, LayoutRect, PictureRect};
 use api::{PremultipliedColorF, ImageFormat};
 use crate::device::Texel;
 use crate::render_task::{RenderTaskLocation, StaticRenderTaskSurface};
@@ -222,14 +222,27 @@ impl Into<GpuBufferBlockF> for PictureRect {
     }
 }
 
-impl Into<GpuBufferBlockF> for DeviceRect {
-    fn into(self) -> GpuBufferBlockF {
+impl From<DeviceRect> for GpuBufferBlockF {
+    fn from(rect: DeviceRect) -> Self {
         GpuBufferBlockF {
             data: [
-                self.min.x,
-                self.min.y,
-                self.max.x,
-                self.max.y,
+                rect.min.x,
+                rect.min.y,
+                rect.max.x,
+                rect.max.y,
+            ],
+        }
+    }
+}
+
+impl From<DeviceRect> for GpuBufferBlockI {
+    fn from(rect: DeviceRect) -> Self {
+        GpuBufferBlockI {
+            data: [
+                rect.min.x as i32,
+                rect.min.y as i32,
+                rect.max.x as i32,
+                rect.max.y as i32,
             ],
         }
     }
@@ -411,7 +424,7 @@ pub struct GpuBufferBuilderImpl<T> {
     epoch: u32,
 }
 
-impl<T> GpuBufferBuilderImpl<T> where T: Texel + std::convert::From<DeviceIntRect> {
+impl<T> GpuBufferBuilderImpl<T> where T: Texel + std::convert::From<DeviceIntRect> + std::convert::From<DeviceRect> {
     pub fn new(memory: &FrameMemory, capacity: usize, frame_id: FrameId) -> Self {
         // Pick the first 8 bits of the frame id and store them in the upper bits
         // of the handles.
@@ -505,16 +518,35 @@ impl<T> GpuBufferBuilderImpl<T> where T: Texel + std::convert::From<DeviceIntRec
                 // The gpu buffer stores uv rects in device pixels, but the renderer
                 // writes normalized uvs for external images that use them. Scale by the
                 // image size (the external image task's target rect) during the copy.
+                let task_target_rect = render_task.get_target_rect();
                 let uv_scale = if normalized_uvs {
-                    let size = render_task.get_target_rect().size();
+                    let size = task_target_rect.size();
                     [size.width as f32, size.height as f32]
                 } else {
                     [1.0, 1.0]
+                };
+                // External image uvs are resolved by the renderer, so the sub-rect
+                // can't be baked in here as it is for non-external images.
+                // Instead, express it as fractions of the task and apply it in
+                // `apply_deferred_uv_copies` once the uvs are known.
+                let sub_uv = if block.task_id.has_sub_rect() {
+                    let sub = &render_tasks.sub_rects[block.task_id.sub_rect_index as usize];
+                    let w = task_target_rect.width() as f32;
+                    let h = task_target_rect.height() as f32;
+                    [
+                        sub.sub_rect.min.x as f32 / w,
+                        sub.sub_rect.min.y as f32 / h,
+                        sub.sub_rect.max.x as f32 / w,
+                        sub.sub_rect.max.y as f32 / h,
+                    ]
+                } else {
+                    [0.0, 0.0, 1.0, 1.0]
                 };
                 deferred_uv_copies.push(DeferredUvCopy {
                     src: render_task.get_texture_address().as_u32(),
                     dst: block.index as u32,
                     uv_scale,
+                    sub_uv,
                 });
                 continue;
             }
@@ -527,6 +559,7 @@ impl<T> GpuBufferBuilderImpl<T> where T: Texel + std::convert::From<DeviceIntRec
                     .intersection_unchecked(&target_rect);
             }
 
+            let target_rect = target_rect.to_f32();
             let uv_rect = match render_task.uv_rect_kind() {
                 UvRectKind::Rect => {
                     target_rect
@@ -534,14 +567,14 @@ impl<T> GpuBufferBuilderImpl<T> where T: Texel + std::convert::From<DeviceIntRec
                 UvRectKind::Quad { top_left, bottom_right, .. } => {
                     let size = target_rect.size();
 
-                    DeviceIntRect::new(
-                        DeviceIntPoint::new(
-                            target_rect.min.x + (top_left.x * size.width as f32).round() as i32,
-                            target_rect.min.y + (top_left.y * size.height as f32).round() as i32,
+                    DeviceRect::new(
+                        DevicePoint::new(
+                            target_rect.min.x + top_left.x * size.width,
+                            target_rect.min.y + top_left.y * size.height,
                         ),
-                        DeviceIntPoint::new(
-                            target_rect.min.x + (bottom_right.x * size.width as f32).round() as i32,
-                            target_rect.min.y + (bottom_right.y * size.height as f32).round() as i32,
+                        DevicePoint::new(
+                            target_rect.min.x + bottom_right.x * size.width,
+                            target_rect.min.y + bottom_right.y * size.height,
                         ),
                     )
                 }
@@ -637,6 +670,13 @@ pub struct DeferredUvCopy {
     /// device pixels that the quad shaders expect. `[1.0, 1.0]` for uvs that
     /// are already in device pixels.
     pub uv_scale: [f32; 2],
+    /// Sub-rect to extract from the copied uv rect, expressed as fractions of
+    /// the source task's extent: `[fx0, fy0, fx1, fy1]`. `[0.0, 0.0, 1.0, 1.0]`
+    /// copies the whole task (the common case). Used for image borders, whose
+    /// segments sample a sub-region of the source image via `add_sub_rect`; the
+    /// sub-rect must be applied on top of the renderer-resolved uvs here because
+    /// external image uvs are not known at `finalize` time.
+    pub sub_uv: [f32; 4],
 }
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -661,7 +701,17 @@ impl GpuBuffer<GpuBufferBlockF> {
             uv[1] *= copy.uv_scale[1];
             uv[2] *= copy.uv_scale[0];
             uv[3] *= copy.uv_scale[1];
-            self.data[copy.dst as usize] = uv.into();
+            // Extract the sub-rect (fractions of the resolved uv rect). This is an
+            // identity transform in the common (whole-task) case.
+            let w = uv[2] - uv[0];
+            let h = uv[3] - uv[1];
+            let sub = [
+                uv[0] + copy.sub_uv[0] * w,
+                uv[1] + copy.sub_uv[1] * h,
+                uv[0] + copy.sub_uv[2] * w,
+                uv[1] + copy.sub_uv[3] * h,
+            ];
+            self.data[copy.dst as usize] = sub.into();
         }
     }
 }

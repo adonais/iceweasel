@@ -8,7 +8,6 @@
 }
 
 .sidebar__label {
-  color: var(--secondary-text-color);
   display: block;
   padding: 12px 0;
   text-align: center;

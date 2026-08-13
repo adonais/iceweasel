@@ -9,6 +9,8 @@
   --fc-background: var(--fc-background-light, #FFF);
   --fc-color: var(--fc-color-light, rgb(21, 20, 26));
   --fc-border: var(--fc-border-light, #CFCFD8);
+  --fc-zap-border: var(--fc-zap-border-light, var(--fc-border));
+  --fc-zap-border-background: var(--fc-zap-border-background-light, var(--fc-background));
   --fc-accent-color: var(--fc-accent-color-light, rgb(0, 97, 224));
   --fc-button-background: var(--fc-button-background-light, #F0F0F4);
   --fc-button-color: var(--fc-button-color-light, rgb(21, 20, 26));
@@ -43,6 +45,8 @@
   --fc-background: var(--fc-background-dark, rgb(43, 42, 51));
   --fc-color: var(--fc-color-dark, rgb(251, 251, 254));
   --fc-border: var(--fc-border-dark, #3A3944);
+  --fc-zap-border: var(--fc-zap-border-dark, var(--fc-border));
+  --fc-zap-border-background: var(--fc-zap-border-background-dark, var(--fc-background));
   --fc-accent-color: var(--fc-accent-color-dark, rgb(0, 221, 255));
   --fc-button-background: var(--fc-button-background-dark, #2B2A33);
   --fc-button-color: var(--fc-button-color-dark, rgb(251, 251, 254));
@@ -66,18 +70,19 @@
   --fc-current-step-color: var(--fc-current-step-color-dark, rgb(0,221,255));
   --fc-link-color: var(--fc-link-color-dark, #00DDFF);
   --fc-link-color-hover: var(--fc-link-color-hover-dark, #80EBFF);
-  --fc-link-color-active: var(--fc-link-color-hover-active, #AAF2FF);
+  --fc-link-color-active: var(--fc-link-color-active-dark, #AAF2FF);
   --fc-icon-success-color: var(--fc-icon-success-color-dark, #54FFBD);
   --fc-dismiss-button-background: var(--fc-dismiss-button-background-dark, rgb(66, 65, 77));
   --fc-dismiss-button-background-hover: var(--fc-dismiss-button-background-hover-dark, color-mix(in srgb, currentColor 14%, rgb(66, 65, 77)));
   --fc-dismiss-button-background-active: var(--fc-dismiss-button-background-active-dark, color-mix(in srgb, currentColor 14%, rgb(66, 65, 77)));
-
 }
 
 @mixin hcm-theme {
   --fc-background: var(--fc-background-hcm, -moz-dialog);
   --fc-color: var(--fc-color-hcm, -moz-dialogtext);
   --fc-border: var(--fc-border-hcm, -moz-dialogtext);
+  --fc-zap-border: var(--fc-zap-border-hcm, var(--fc-border));
+  --fc-zap-border-background: var(--fc-zap-border-background-hcm, var(--fc-background));
   --fc-accent-color: var(--fc-accent-color-hcm, LinkText);
   --fc-button-background: var(--fc-button-background-hcm, ButtonFace);
   --fc-button-color: var(--fc-button-color-hcm, ButtonText);
@@ -98,7 +103,7 @@
   --fc-primary-button-color-active: var(--fc-primary-button-color-active-hcm, SelectedItem);
   --fc-primary-button-border-active: var(--fc-primary-button-border-active-hcm, SelectedItem);
   --fc-step-color: var(--fc-step-color-hcm, CanvasText);
-  --fc-current-step-color: var(--fc-current-step-color-light, CanvasText);
+  --fc-current-step-color: var(--fc-current-step-color-hcm, CanvasText);
   --fc-link-color: var(--fc-link-color-hcm, LinkText);
   --fc-link-color-hover: var(--fc-link-color-hover-hcm, LinkText);
   --fc-link-color-active: var(--fc-link-color-active-hcm, ActiveText);

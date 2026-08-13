@@ -3,10 +3,10 @@
 
 #include "mozilla/SpinEventLoopUntil.h"
 #include "nsCOMPtr.h"
-#include "nsNetCID.h"
-#include "nsString.h"
-#include "nsNetUtil.h"
 #include "nsIStreamListener.h"
+#include "nsNetCID.h"
+#include "nsNetUtil.h"
+#include "nsString.h"
 
 namespace mozilla {
 namespace net {

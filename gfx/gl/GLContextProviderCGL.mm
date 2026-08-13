@@ -2,24 +2,24 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "GLContextProvider.h"
-#include "GLContextCGL.h"
-#include "GLLibraryLoader.h"
-#include "nsDebug.h"
-#include "nsIWidget.h"
 #include <OpenGL/gl.h>
+#include "GLContextCGL.h"
+#include "GLContextProvider.h"
+#include "GLLibraryLoader.h"
+#include "MozFramebuffer.h"
+#include "ScopedGLHelpers.h"
 #include "gfxFailure.h"
 #include "mozilla/IntegerRange.h"
+#include "mozilla/ProfilerLabels.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_gl.h"
 #include "mozilla/StaticPrefs_layout.h"
-#include "prenv.h"
-#include "prlink.h"
-#include "mozilla/ProfilerLabels.h"
-#include "MozFramebuffer.h"
 #include "mozilla/layers/CompositorOptions.h"
 #include "mozilla/widget/CompositorWidget.h"
-#include "ScopedGLHelpers.h"
+#include "nsDebug.h"
+#include "nsIWidget.h"
+#include "prenv.h"
+#include "prlink.h"
 
 #include <OpenGL/OpenGL.h>
 
@@ -266,6 +266,15 @@ static RefPtr<GLContextCGL> CreateOffscreenFBOContext(
 
   std::vector<NSOpenGLPixelFormatAttribute> attribs;
   auto& flags = desc.flags;
+
+#if defined(__aarch64__)
+  // Apple Silicon has a single GPU. The HIGH_POWER hint exists to steer
+  // macOS toward the discrete GPU on multi-GPU Intel Macs by requiring the
+  // currently-online renderer. On single-GPU systems the hint accomplishes
+  // nothing but still forces NSOpenGLPixelFormat to consult the WindowServer
+  // for renderer enumeration which the GPU-process sandbox denies.
+  flags &= ~CreateContextFlags::HIGH_POWER;
+#endif
 
   if (!StaticPrefs::gl_allow_high_power()) {
     flags &= ~CreateContextFlags::HIGH_POWER;

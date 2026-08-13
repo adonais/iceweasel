@@ -10,9 +10,7 @@
 #  include "jit/Linker.h"
 #  include "jit/MacroAssembler.h"
 #  include "jit/MoveResolver.h"
-
 #  include "jsapi-tests/tests.h"
-
 #  include "vm/Runtime.h"
 
 static const int LIFO_ALLOC_PRIMARY_CHUNK_SIZE = 4 * 1024;

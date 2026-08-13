@@ -9,8 +9,8 @@
  */
 
 let TEST_RESULT = new UrlbarResult({
-  type: UrlbarUtils.RESULT_TYPE.URL,
-  source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+  type: UrlbarShared.RESULT_TYPE.URL,
+  source: UrlbarShared.RESULT_SOURCE.HISTORY,
   payload: { url: "http://mozilla.org/" },
 });
 
@@ -154,7 +154,7 @@ add_task(async function newTab() {
   // Tabs opened with withNewTab don't focus the Urlbar, so we have to open one
   // manually.
   let tab = await openAboutNewTab(win);
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => win.gURLBar.hasAttribute("focused"),
     "Waiting for the Urlbar to become focused."
   );
@@ -183,7 +183,7 @@ add_task(async function newTab_alreadyOpen() {
       });
 
       let tab = await openAboutNewTab(win);
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => !UrlbarTestUtils.isPopupOpen(win),
         "Waiting for the Urlbar panel to close."
       );
@@ -246,9 +246,7 @@ add_task(async function interactionOnNewTab() {
 
   info("Open about:newtab in new tab");
   const tab = await openAboutNewTab(win);
-  await BrowserTestUtils.waitForCondition(
-    () => win.gBrowser.selectedTab === tab
-  );
+  await TestUtils.waitForCondition(() => win.gBrowser.selectedTab === tab);
 
   await testInteractionsOnAboutNewTab(win);
 
@@ -273,13 +271,11 @@ add_task(async function fakeFocusRemovedOnBlur() {
 
   info("Open about:newtab in new tab");
   const tab = await openAboutNewTab(win);
-  await BrowserTestUtils.waitForCondition(
-    () => win.gBrowser.selectedTab === tab
-  );
+  await TestUtils.waitForCondition(() => win.gBrowser.selectedTab === tab);
 
   await clickHandoff(win.gBrowser.selectedBrowser);
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     async () => await handoffHasFakeFocus(win.gBrowser.selectedBrowser),
     "Wait until hasFakeFocus is true"
   );
@@ -287,7 +283,7 @@ add_task(async function fakeFocusRemovedOnBlur() {
 
   info("Click on content to blur the urlbar");
   EventUtils.synthesizeMouse(win.gBrowser.selectedBrowser, -1000, 0, {}, win);
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     async () => !(await handoffHasFakeFocus(win.gBrowser.selectedBrowser)),
     "Wait until hasFakeFocus is False"
   );
@@ -305,7 +301,7 @@ add_task(async function fakeFocusRemovedOnBlurPBM() {
 
   await clickHandoff(win.gBrowser.selectedBrowser);
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     async () => await handoffHasFakeFocus(win.gBrowser.selectedBrowser),
     "Wait until hasFakeFocus is true"
   );
@@ -314,7 +310,7 @@ add_task(async function fakeFocusRemovedOnBlurPBM() {
   info("Click on content to blur the urlbar");
   EventUtils.synthesizeMouse(win.gBrowser.selectedBrowser, -1000, 0, {}, win);
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     async () => !(await handoffHasFakeFocus(win.gBrowser.selectedBrowser)),
     "Wait until hasFakeFocus is False"
   );
@@ -332,7 +328,7 @@ add_task(async function clickOnEdgeOfURLBar() {
     "URLBar does not have suppress-focus-border attribute"
   );
 
-  const onHiddenFocusRemoved = BrowserTestUtils.waitForCondition(
+  const onHiddenFocusRemoved = TestUtils.waitForCondition(
     () => !win.gURLBar._hideFocus
   );
 
@@ -386,12 +382,12 @@ async function testInteractionFeature(interaction, win) {
 
   await clickHandoff(win.gBrowser.selectedBrowser);
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => win.gURLBar._hideFocus,
     "Wait until _hideFocus will be true"
   );
 
-  const onHiddenFocusRemoved = BrowserTestUtils.waitForCondition(
+  const onHiddenFocusRemoved = TestUtils.waitForCondition(
     () => !win.gURLBar._hideFocus
   );
 
@@ -423,7 +419,7 @@ async function clickHandoff(browser) {
     await handoffUI.updateComplete;
     handoffUI.shadowRoot.querySelector(".search-handoff-button").click();
   });
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => spy.calledWith("blur"),
     "Wait for blur listener to be added"
   );

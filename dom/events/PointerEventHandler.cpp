@@ -268,6 +268,12 @@ void PointerEventHandler::RecordMouseState(
       layers::InputAPZContext::GetTargetLayerGuid();
   // FIXME: Don't trust the synthesized for tests flag of drag events.
   if (aMouseEvent.mClass != eDragEventClass) {
+    // eMouseDown and eMouseUp may cause some mouse boundary events. So,
+    // mIsActive should be set to the new state after handling the mouse
+    // boundary events because when this is called, we have not dispatched any
+    // mouse boundary events. After that, WillDispatchMouseEventToDOM() is
+    // called and update mIsActive to the latest one.
+    sLastMouseInfo->mIsActive = !!aMouseEvent.ComputeButtonsBeforeDispatch();
     sLastMouseInfo->mInputSource = aMouseEvent.mInputSource;
     sLastMouseInfo->mIsSynthesizedForTests =
         aMouseEvent.mFlags.mIsSynthesizedForTests;
@@ -298,6 +304,18 @@ void PointerEventHandler::RecordMouseState(
     }
   }
 #endif  // #ifdef DEBUG
+}
+
+/* static */
+void PointerEventHandler::WillDispatchMouseEventToDOM(
+    const WidgetMouseEvent& aMouseEvent) {
+  if (!sLastMouseInfo) {
+    return;
+  }
+  // aMouseEvent is going to be dispatched into the DOM. This means that the web
+  // app can know the new state and we should handle things with the new state
+  // starting from here. Therefore, we should update mIsActive right now.
+  sLastMouseInfo->mIsActive = !!aMouseEvent.mButtons;
 }
 
 /* static */

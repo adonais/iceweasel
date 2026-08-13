@@ -331,7 +331,8 @@ jpake_Round2Base(const SECItem *gx1, const SECItem *gx3,
     /* In round 2, the peer/attacker sends us g^x3 and g^x4 and the protocol
        requires that these values are distinct. */
     if (mp_cmp(&GX3, &GX4) == 0) {
-        return MP_BADARG;
+        err = MP_BADARG;
+        goto cleanup;
     }
 
     CHECK_MPI_OK(mp_mul(&GX1, &GX3, &tmp));

@@ -911,7 +911,9 @@ struct CStringHasher {
   using Key = const char*;
   using Lookup = const char*;
 
-  static HashNumber hash(const Lookup& aLookup) { return HashString(aLookup); }
+  static HashNumber hash(const Lookup& aLookup) {
+    return HashString(aLookup, strlen(aLookup));
+  }
 
   static bool match(const Key& aKey, const Lookup& aLookup) {
     return strcmp(aKey, aLookup) == 0;

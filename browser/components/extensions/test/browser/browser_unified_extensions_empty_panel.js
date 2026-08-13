@@ -62,12 +62,12 @@ function assertIsEmptyPanelOnboardingExtensions(win) {
   ok(BrowserTestUtils.isVisible(emptyStateBox), "Empty state is visible");
   is(
     emptyStateBox.querySelector("h2").getAttribute("data-l10n-id"),
-    "unified-extensions-empty-reason-zero-extensions-onboarding",
+    "unified-extensions-empty-reason-zero-extensions-onboarding2",
     "Has header when the user does not have any extensions installed"
   );
   is(
     emptyStateBox.querySelector("description").getAttribute("data-l10n-id"),
-    "unified-extensions-empty-content-explain-extensions-onboarding",
+    "unified-extensions-empty-content-explain-extensions-onboarding2",
     "Has description explaining extensions"
   );
 

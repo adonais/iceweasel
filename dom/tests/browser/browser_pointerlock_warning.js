@@ -72,7 +72,7 @@ add_task(async function show_pointerlock_warning_escape() {
 
     let warningHiddenPromise = waitForWarningState(warning, "hidden");
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => warning.innerText == expectedWarningText,
       "Warning text"
     );

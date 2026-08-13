@@ -3,12 +3,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ChromeObjectWrapper.h"
-#include "WrapperFactory.h"
+
 #include "AccessCheck.h"
-#include "xpcprivate.h"
 #include "jsapi.h"
-#include "js/Wrapper.h"
 #include "nsXULAppAPI.h"
+#include "WrapperFactory.h"
+#include "xpcprivate.h"
+
+#include "js/Wrapper.h"
 
 using namespace JS;
 

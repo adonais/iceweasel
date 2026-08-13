@@ -110,4 +110,4 @@ See `browser/components/asrouter/tests/browser/browser_asrouter_newtab_messages.
 
 - [New Tab External Components](../../../extensions/newtab/docs/v2-system-addon/external_components_guide.md)
 - [New Tab Train-hop Compatibility](../../../extensions/newtab/docs/v2-system-addon/train_hopping.md)
-- [ASRouter Documentation](../../asrouter/docs/index.rst)
+- [ASRouter Documentation](index.md)

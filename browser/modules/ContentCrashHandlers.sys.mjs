@@ -8,8 +8,8 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
-  CrashReports: "resource://gre/modules/CrashReports.sys.mjs",
-  CrashSubmit: "resource://gre/modules/CrashSubmit.sys.mjs",
+  CrashReports: "moz-src:///toolkit/crashreporter/CrashReports.sys.mjs",
+  CrashSubmit: "moz-src:///toolkit/crashreporter/CrashSubmit.sys.mjs",
   E10SUtils: "resource://gre/modules/E10SUtils.sys.mjs",
   RemoteSettingsCrashPull:
     "resource://gre/modules/RemoteSettingsCrashPull.sys.mjs",

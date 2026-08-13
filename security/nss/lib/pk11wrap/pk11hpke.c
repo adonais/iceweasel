@@ -390,7 +390,7 @@ PK11_HPKE_ImportContext(const SECItem *serialized, PK11SymKey *wrapKey)
 
     /* Import sender public key (serialized). */
     walker = decodeNumber(&tmpn, walker, 2);
-    CHECK_FAIL_ERR(tmpn >= REMAINING_BYTES(walker, serialized),
+    CHECK_FAIL_ERR(tmpn + 2 > REMAINING_BYTES(walker, serialized),
                    SEC_ERROR_BAD_DATA);
     tmpItem.data = walker;
     tmpItem.len = tmpn;
@@ -401,7 +401,7 @@ PK11_HPKE_ImportContext(const SECItem *serialized, PK11SymKey *wrapKey)
     /* Import base_nonce. */
     walker = decodeNumber(&tmpn, walker, 2);
     CHECK_FAIL_ERR(tmpn != cx->aeadParams->Nn, SEC_ERROR_BAD_DATA);
-    CHECK_FAIL_ERR(tmpn >= REMAINING_BYTES(walker, serialized),
+    CHECK_FAIL_ERR(tmpn + 2 > REMAINING_BYTES(walker, serialized),
                    SEC_ERROR_BAD_DATA);
     tmpItem.data = walker;
     tmpItem.len = tmpn;
@@ -411,7 +411,7 @@ PK11_HPKE_ImportContext(const SECItem *serialized, PK11SymKey *wrapKey)
 
     /* Import key */
     walker = decodeNumber(&tmpn, walker, 2);
-    CHECK_FAIL_ERR(tmpn >= REMAINING_BYTES(walker, serialized),
+    CHECK_FAIL_ERR(tmpn + 2 > REMAINING_BYTES(walker, serialized),
                    SEC_ERROR_BAD_DATA);
     tmpItem.data = walker;
     tmpItem.len = tmpn;

@@ -1,0 +1,339 @@
+Add a SpawnTarget function to provide an interface that doesn't require
+base::BindOnce or base::win::ScopedProcessInformation and all their
+dependencies to be compiled into xul.dll.
+Also allows an EnvironmentMap to be passed down through chromium sandbox
+code to alter the child process's environment.
+
+diff --git a/sandbox/win/src/broker_services.cc b/sandbox/win/src/broker_services.cc
+--- a/sandbox/win/src/broker_services.cc
++++ b/sandbox/win/src/broker_services.cc
+@@ -369,16 +369,18 @@ std::unique_ptr<TargetPolicy> BrokerServicesBase::CreatePolicy(
+   return policy;
+ }
+ 
++#if !defined(MOZ_SANDBOX)
+ void BrokerServicesBase::SpawnTargetAsync(const wchar_t* exe_path,
+                                           const wchar_t* command_line,
+                                           std::unique_ptr<TargetPolicy> policy,
+                                           SpawnTargetCallback result_callback) {
+   // The `policy` downcast is safe as long as we control CreatePolicy().
+   SpawnTargetAsyncImpl(
+       exe_path, command_line,
+       base::WrapUnique(static_cast<PolicyBase*>(policy.release())),
+       std::move(result_callback));
+ }
++#endif  // !defined(MOZ_SANDBOX)
+ 
+ ResultCode BrokerServicesBase::PreSpawnTarget(
+     const wchar_t* exe_path,
+@@ -492,7 +494,8 @@ void BrokerServicesBase::SpawnTargetAsyncImpl(
+     const wchar_t* exe_path,
+     const wchar_t* command_line,
+     std::unique_ptr<PolicyBase> policy_base,
+-    SpawnTargetCallback result_callback) {
++    SpawnTargetCallback result_callback,
++    std::optional<base::EnvironmentMap> env_changes) {
+   auto startup_info = std::make_unique<StartupInformationHelper>();
+   std::unique_ptr<TargetProcess> target;
+ 
+@@ -509,17 +512,51 @@ void BrokerServicesBase::SpawnTargetAsyncImpl(
+       FROM_HERE,
+       base::BindOnce(&BrokerServicesBase::CreateTarget, base::Unretained(this),
+                      target_ptr, std::wstring(exe_path),
+-                     std::wstring(command_line), std::move(startup_info)),
++                     std::wstring(command_line), std::move(startup_info),
++                     std::move(env_changes)),
+       base::BindOnce(&BrokerServicesBase::FinishSpawnTarget,
+                      base::Unretained(this), std::move(policy_base),
+                      std::move(target), std::move(result_callback)));
+ }
+ 
++ResultCode BrokerServicesBase::SpawnTarget(
++    const wchar_t* exe_path,
++    const wchar_t* command_line,
++    std::optional<base::EnvironmentMap> env_changes,
++    std::unique_ptr<TargetPolicy> policy,
++    DWORD* last_error,
++    PROCESS_INFORMATION* target_info) {
++  ResultCode result_code = SBOX_ERROR_GENERIC;
++  *last_error = ERROR_SUCCESS;
++  // SpawnTargetAsyncImpl may run synchronously or asynchronously depending on
++  // the BrokerServicesDelegate. The CHECK below ensures SpawnTarget is only
++  // used with a synchronous delegate.
++  bool callback_called = false;
++  SpawnTargetAsyncImpl(
++      exe_path, command_line,
++      base::WrapUnique(static_cast<PolicyBase*>(policy.release())),
++      base::BindOnce(
++          [](bool* called_out, ResultCode* result_out, DWORD* error_out,
++             PROCESS_INFORMATION* info_out,
++             base::win::ScopedProcessInformation proc_info, DWORD error,
++             ResultCode result) {
++            *called_out = true;
++            *result_out = result;
++            *error_out = error;
++            *info_out = proc_info.Take();
++          },
++          &callback_called, &result_code, last_error, target_info),
++      std::move(env_changes));
++  CHECK(callback_called);
++  return result_code;
++}
++
+ CreateTargetResult BrokerServicesBase::CreateTarget(
+     TargetProcess* target,
+     const std::wstring& exe_path,
+     const std::wstring& command_line,
+-    std::unique_ptr<StartupInformationHelper> startup_info) {
++    std::unique_ptr<StartupInformationHelper> startup_info,
++    std::optional<base::EnvironmentMap> env_changes) {
+   // A trace ID for the current scope is generated from the address of a local
+   // variable to ensure uniqueness across threads.
+   const void* trace_id = &startup_info;
+@@ -528,9 +565,9 @@ CreateTargetResult BrokerServicesBase::CreateTarget(
+ 
+   // Spawn the target process suspended.
+   CreateTargetResult result;
+-  result.result_code = target->Create(exe_path.c_str(), command_line.c_str(),
+-                                      std::move(startup_info),
+-                                      &result.process_info, &result.last_error);
++  result.result_code = target->Create(
++      exe_path.c_str(), command_line.c_str(), std::move(startup_info),
++      &result.process_info, std::move(env_changes), &result.last_error);
+ 
+   broker_services_delegate_->AfterTargetProcessCreateOnCreationThread(
+       trace_id, result.process_info.process_id());
+diff --git a/sandbox/win/src/broker_services.h b/sandbox/win/src/broker_services.h
+--- a/sandbox/win/src/broker_services.h
++++ b/sandbox/win/src/broker_services.h
+@@ -7,6 +7,7 @@
+ 
+ #include <map>
+ #include <memory>
++#include <optional>
+ #include <set>
+ #include <string>
+ #include <string_view>
+@@ -55,10 +54,18 @@ class BrokerServicesBase final : public BrokerServices,
+   std::unique_ptr<TargetPolicy> CreatePolicy() override;
+   std::unique_ptr<TargetPolicy> CreatePolicy(std::string_view key) override;
+ 
++#if !defined(MOZ_SANDBOX)
+   void SpawnTargetAsync(const wchar_t* exe_path,
+                         const wchar_t* command_line,
+                         std::unique_ptr<TargetPolicy> policy,
+                         SpawnTargetCallback result_callback) override;
++#endif  // !defined(MOZ_SANDBOX)
++  ResultCode SpawnTarget(const wchar_t* exe_path,
++                         const wchar_t* command_line,
++                         std::optional<base::EnvironmentMap> env_changes,
++                         std::unique_ptr<TargetPolicy> policy,
++                         DWORD* last_error,
++                         PROCESS_INFORMATION* target_info) override;
+   ResultCode GetPolicyDiagnostics(
+       std::unique_ptr<PolicyDiagnosticsReceiver> receiver) override;
+   void SetStartingMitigations(MitigationFlags starting_mitigations) override;
+@@ -89,7 +98,8 @@ class BrokerServicesBase final : public BrokerServices,
+       TargetProcess* target,
+       const std::wstring& exe_path,
+       const std::wstring& command_line,
+-      std::unique_ptr<StartupInformationHelper> startup_info);
++      std::unique_ptr<StartupInformationHelper> startup_info,
++      std::optional<base::EnvironmentMap> env_changes);
+ 
+   // Helper for initializing `startup_info` and `target` for CreateTarget.
+   ResultCode PreSpawnTarget(const wchar_t* exe_path,
+@@ -101,10 +111,12 @@ class BrokerServicesBase final : public BrokerServices,
+   // Parallel launching will be used if
+   // BrokerServicesDelegate::EnableParallelLaunch() returns true. The target
+   // creation result is returned to `result_callback`.
+-  void SpawnTargetAsyncImpl(const wchar_t* exe_path,
+-                            const wchar_t* command_line,
+-                            std::unique_ptr<PolicyBase> policy_base,
+-                            SpawnTargetCallback result_callback);
++  void SpawnTargetAsyncImpl(
++      const wchar_t* exe_path,
++      const wchar_t* command_line,
++      std::unique_ptr<PolicyBase> policy_base,
++      SpawnTargetCallback result_callback,
++      std::optional<base::EnvironmentMap> env_changes);
+ 
+   // This function is a wrapper for FinishSpawnTargetImpl and gets called after
+   // the target process is created. This function is responsible for running
+diff --git a/sandbox/win/src/sandbox.h b/sandbox/win/src/sandbox.h
+--- a/sandbox/win/src/sandbox.h
++++ b/sandbox/win/src/sandbox.h
+@@ -29,6 +29,7 @@
+ 
+ #include "base/compiler_specific.h"
+ #include "base/containers/span.h"
++#include "base/environment.h"
+ #include "base/win/scoped_process_information.h"
+ #include "base/win/windows_types.h"
+ #include "sandbox/win/src/sandbox_policy.h"
+@@ -107,6 +108,7 @@
+   // must be called every time.
+   virtual std::unique_ptr<TargetPolicy> CreatePolicy(std::string_view tag) = 0;
+ 
++#if !defined(MOZ_SANDBOX)
+   // Creates a new target (child process) in a suspended state and takes
+   // ownership of |policy|.
+   // Parameters:
+@@ -129,7 +131,19 @@
+                                 const wchar_t* command_line,
+                                 std::unique_ptr<TargetPolicy> policy,
+                                 SpawnTargetCallback result_callback) = 0;
++#endif  // !defined(MOZ_SANDBOX)
+ 
++  // Synchronous wrapper around SpawnTargetAsync. Creates the target process
++  // and waits for completion, returning the raw PROCESS_INFORMATION via
++  // |target_info|. The caller is responsible for closing the handles.
++  virtual ResultCode SpawnTarget(
++      const wchar_t* exe_path,
++      const wchar_t* command_line,
++      std::optional<base::EnvironmentMap> env_changes,
++      std::unique_ptr<TargetPolicy> policy,
++      DWORD* last_error,
++      PROCESS_INFORMATION* target_info) = 0;
++
+   // This call creates a snapshot of policies managed by the sandbox and
+   // returns them via a helper class.
+   // Parameters:
+diff --git a/sandbox/win/src/target_process.cc b/sandbox/win/src/target_process.cc
+--- a/sandbox/win/src/target_process.cc
++++ b/sandbox/win/src/target_process.cc
+@@ -19,16 +19,17 @@
+ #include <memory>
+ #include <string_view>
+ #include <utility>
+ #include <vector>
+ 
+ #include "base/containers/span.h"
+ #include "base/memory/free_deleter.h"
+ #include "base/numerics/safe_conversions.h"
++#include "base/process/environment_internal.h"
+ #include "base/strings/string_util.h"
+ #include "base/win/access_token.h"
+ #include "base/win/current_module.h"
+ #include "base/win/scoped_handle.h"
+ #include "base/win/security_util.h"
+ #include "base/win/startup_information.h"
+ #include "sandbox/win/src/crosscall_client.h"
+ #include "sandbox/win/src/crosscall_server.h"
+@@ -134,16 +135,17 @@ TargetProcess::~TargetProcess() {
+ 
+ // Creates the target (child) process suspended and assigns it to the job
+ // object.
+ ResultCode TargetProcess::Create(
+     const wchar_t* exe_path,
+     const wchar_t* command_line,
+     std::unique_ptr<StartupInformationHelper> startup_info_helper,
+     base::win::ScopedProcessInformation* target_info,
++    std::optional<base::EnvironmentMap> env_changes,
+     DWORD* win_error) {
+   exe_name_.reset(_wcsdup(exe_path));
+ 
+   base::win::StartupInformation* startup_info =
+       startup_info_helper->GetStartupInformation();
+ 
+   // the command line needs to be writable by CreateProcess().
+   std::unique_ptr<wchar_t, base::FreeDeleter> cmd_line(_wcsdup(command_line));
+@@ -152,41 +154,52 @@ ResultCode TargetProcess::Create(
+   DWORD flags =
+       CREATE_SUSPENDED | CREATE_UNICODE_ENVIRONMENT | DETACHED_PROCESS;
+ 
+   if (startup_info->has_extended_startup_info())
+     flags |= EXTENDED_STARTUPINFO_PRESENT;
+ 
+   std::wstring new_env;
+ 
++  wchar_t* old_environment = ::GetEnvironmentStringsW();
++  if (!old_environment) {
++    *win_error = ::GetLastError();
++    return SBOX_ERROR_CANNOT_OBTAIN_ENVIRONMENT;
++  }
++
+   if (startup_info_helper->IsEnvironmentFiltered()) {
+-    wchar_t* old_environment = ::GetEnvironmentStringsW();
+-    if (!old_environment) {
+-      *win_error = ::GetLastError();
+-      return SBOX_ERROR_CANNOT_OBTAIN_ENVIRONMENT;
+-    }
+-
+     // Only copy a limited list of variables to the target from the broker's
+     // environment. These are
+     //  * "Path", "SystemDrive", "SystemRoot", "TEMP", "TMP": Needed for normal
+     //    operation and tests.
+     //  * "LOCALAPPDATA": Needed for App Container processes.
+     //  * "CHROME_CRASHPAD_PIPE_NAME": Needed for crashpad.
+     static constexpr std::wstring_view to_keep[] = {
+         L"Path",
+         L"SystemDrive",
+         L"SystemRoot",
+         L"TEMP",
+         L"TMP",
+         L"LOCALAPPDATA",
+         L"CHROME_CRASHPAD_PIPE_NAME"};
+ 
+     new_env = FilterEnvironment(old_environment, to_keep);
+-    ::FreeEnvironmentStringsW(old_environment);
++  } else {
++    // Environment strings block is terminated by a double null.
++    wchar_t* end_ptr = old_environment;
++    while (*end_ptr++ || *end_ptr++) {
++    }
++    new_env.assign(old_environment, end_ptr);
+   }
++
++  ::FreeEnvironmentStringsW(old_environment);
++  if (env_changes) {
++    new_env = base::internal::AlterEnvironment(std::data(new_env),
++                                               *env_changes);
++  }
+ 
+   bool inherit_handles = startup_info_helper->ShouldInheritHandles();
+   PROCESS_INFORMATION temp_process_info = {};
+   // Allow Token handle to be closed once this function completes.
+   auto lockdown_token = lockdown_token_.release();
+   if (!::CreateProcessAsUserW(lockdown_token.get(), exe_path, cmd_line.get(),
+                               nullptr,  // No security attribute.
+                               nullptr,  // No thread attribute.
+diff --git a/sandbox/win/src/target_process.h b/sandbox/win/src/target_process.h
+--- a/sandbox/win/src/target_process.h
++++ b/sandbox/win/src/target_process.h
+@@ -7,16 +7,17 @@
+ 
+ #include <stddef.h>
+ #include <stdint.h>
+ 
+ #include <memory>
+ #include <string_view>
+ 
+ #include "base/containers/span.h"
++#include "base/environment.h"
+ #include "base/gtest_prod_util.h"
+ #include "base/memory/free_deleter.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/win/access_token.h"
+ #include "base/win/scoped_handle.h"
+ #include "base/win/scoped_process_information.h"
+ #include "base/win/sid.h"
+ #include "base/win/windows_types.h"
+@@ -45,16 +46,17 @@ class TargetProcess {
+ 
+   ~TargetProcess();
+ 
+   // Creates the new target process. The process is created suspended.
+   ResultCode Create(const wchar_t* exe_path,
+                     const wchar_t* command_line,
+                     std::unique_ptr<StartupInformationHelper> startup_info,
+                     base::win::ScopedProcessInformation* target_info,
++                    std::optional<base::EnvironmentMap> env_changes,
+                     DWORD* win_error);
+ 
+   // Destroys the target process.
+   void Terminate();
+ 
+   // Creates the IPC objects such as the BrokerDispatcher and the
+   // IPC server. The IPC server uses the services of the thread_pool.
+   ResultCode Init(Dispatcher* ipc_dispatcher,

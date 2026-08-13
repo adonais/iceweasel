@@ -4,8 +4,8 @@
 
 #include "FocusState.h"
 
-#include "mozilla/Logging.h"
 #include "mozilla/IntegerPrintfMacros.h"
+#include "mozilla/Logging.h"
 #include "mozilla/layers/APZThreadUtils.h"
 
 static mozilla::LazyLogModule sApzFstLog("apz.focusstate");

@@ -46,6 +46,6 @@ add_task(async function mouse_down_without_tip() {
     EventUtils.synthesizeMouseAtCenter(browser, {});
     AccessibilityUtils.resetEnv();
 
-    assertAbandonmentTelemetry([]);
+    await assertAbandonmentTelemetry([]);
   });
 });

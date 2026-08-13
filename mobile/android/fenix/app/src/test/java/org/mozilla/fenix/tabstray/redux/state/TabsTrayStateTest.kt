@@ -4,37 +4,23 @@
 
 package org.mozilla.fenix.tabstray.redux.state
 
-import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.test.ext.junit.runners.AndroidJUnit4
-import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.tabstray.data.createTabGroup
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.Mode
-import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
-import org.mozilla.fenix.tabstray.ui.fab.TabManagerFloatingToolbar
-import org.mozilla.fenix.theme.FirefoxTheme
-import org.mozilla.fenix.theme.Theme
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-@RunWith(AndroidJUnit4::class)
 class TabsTrayStateTest {
 
-    @get:Rule
-    val composeTestRule = createComposeRule()
-
     @Test
-    fun `GIVEN tabs are selected WHEN fetching the selected tab IDs from State THEN the IDs of the selected tabs are returned`() {
+    fun `GIVEN tabs are selected WHEN fetching the selected tabs from State THEN the IDs of the selected tabs are returned`() {
         val tabs = List(size = 10) { createTab(url = "") }
         val state = TabsTrayState(mode = Mode.Select(selectedTabs = tabs.toSet()))
 
-        assertEquals(tabs.map { it.id }, state.mode.selectedTabIds)
+        assertEquals(tabs.map { it.id }, state.mode.selectedTabs.map { it.id })
     }
 
     @Test
@@ -42,7 +28,7 @@ class TabsTrayStateTest {
         val tabGroups = List(size = 10) { createTabGroup() }
         val state = TabsTrayState(mode = Mode.Select(selectedTabGroups = tabGroups.toSet()))
 
-        assertEquals(tabGroups.map { it.id }, state.mode.selectedTabGroupIds)
+        assertEquals(tabGroups.map { it.id }, state.mode.selectedTabGroups.map { it.id })
     }
 
     @Test
@@ -159,6 +145,7 @@ class TabsTrayStateTest {
     @Test
     fun `WHEN all onboarding conditions are met THEN shouldShowTabGroupOnboarding returns true`() {
         val state = onboardingEligibleState()
+
         assertTrue(state.shouldShowTabGroupOnboarding)
     }
 
@@ -226,6 +213,87 @@ class TabsTrayStateTest {
     }
 
     @Test
+    fun `GIVEN the user already has tab groups WHEN the persisted UI state updates THEN the tab group onboarding is not visible`() {
+        val state = onboardingEligibleState().copy(
+            tabGroupState = onboardingEligibleState().tabGroupState.copy(
+                hasUserEverHadOneTabGroup = true,
+            ),
+        )
+
+        assertFalse(state.shouldShowTabGroupOnboarding)
+    }
+
+    @Test
+    fun `GIVEN the user has dismissed tab group onboarding WHEN the persisted UI state updates THEN the tab group onboarding is not visible`() {
+        val state = onboardingEligibleState().copy(
+            tabGroupState = onboardingEligibleState().tabGroupState.copy(
+                hasUserDismissedTabGroupOnboarding = true,
+            ),
+        )
+
+        assertFalse(state.shouldShowTabGroupOnboarding)
+    }
+
+    @Test
+    fun `GIVEN the user has seen the onboarding the maximum times WHEN the persisted UI state updates THEN the tab group onboarding is not visible`() {
+        val state = onboardingEligibleState().copy(
+            tabGroupState = onboardingEligibleState().tabGroupState.copy(
+                tabGroupOnboardingImpressionCount = TAB_GROUP_ONBOARDING_IMPRESSION_LIMIT,
+            ),
+        )
+
+        assertFalse(state.shouldShowTabGroupOnboarding)
+    }
+
+    @Test
+    fun `GIVEN tab groups enabled and a group exists and the page is not viewed THEN shouldShowTabGroupBadge returns true`() {
+        val state = TabsTrayState(
+            tabGroupState = TabsTrayState.TabGroupState(
+                groups = listOf(createTabGroup()),
+                hasViewedTabGroupsPage = false,
+            ),
+            config = TabsTrayState.TabsTrayConfig(tabGroupsEnabled = true),
+        )
+        assertTrue(state.shouldShowTabGroupBadge)
+    }
+
+    @Test
+    fun `GIVEN the user has already viewed the tab groups page THEN shouldShowTabGroupBadge returns false`() {
+        val state = TabsTrayState(
+            tabGroupState = TabsTrayState.TabGroupState(
+                groups = listOf(createTabGroup()),
+                hasViewedTabGroupsPage = true,
+            ),
+            config = TabsTrayState.TabsTrayConfig(tabGroupsEnabled = true),
+        )
+        assertFalse(state.shouldShowTabGroupBadge)
+    }
+
+    @Test
+    fun `GIVEN tab groups are disabled THEN shouldShowTabGroupBadge returns false`() {
+        val state = TabsTrayState(
+            tabGroupState = TabsTrayState.TabGroupState(
+                groups = listOf(createTabGroup()),
+                hasViewedTabGroupsPage = false,
+            ),
+            config = TabsTrayState.TabsTrayConfig(tabGroupsEnabled = false),
+        )
+        assertFalse(state.shouldShowTabGroupBadge)
+    }
+
+    @Test
+    fun `GIVEN the user has no tab groups THEN shouldShowTabGroupBadge returns false`() {
+        val state = TabsTrayState(
+            tabGroupState = TabsTrayState.TabGroupState(
+                groups = emptyList(),
+                hasViewedTabGroupsPage = false,
+            ),
+            config = TabsTrayState.TabsTrayConfig(tabGroupsEnabled = true),
+        )
+        assertFalse(state.shouldShowTabGroupBadge)
+    }
+
+    @Test
     fun `GIVEN mode is Normal and PBM is not locked WHEN on Normal tabs THEN toolbar visibility is true`() {
         val state = TabsTrayState(
             mode = Mode.Normal,
@@ -266,11 +334,28 @@ class TabsTrayStateTest {
     }
 
     @Test
-    fun `GIVEN Tab Groups is enabled and selected WHEN in Normal mode THEN toolbar visibility is false`() {
+    fun `GIVEN Tab Groups selected and homepage as new tab enabled WHEN in Normal mode THEN toolbar visibility is true`() {
         val state = TabsTrayState(
             mode = Mode.Normal,
             selectedPage = Page.TabGroups,
-            config = TabsTrayState.TabsTrayConfig(tabGroupsEnabled = true),
+            config = TabsTrayState.TabsTrayConfig(
+                tabGroupsEnabled = true,
+                homepageAsNewTabEnabled = true,
+            ),
+            privateBrowsing = TabsTrayState.PrivateBrowsingState(isLocked = false),
+        )
+        assert(state.isFloatingToolbarVisible)
+    }
+
+    @Test
+    fun `GIVEN Tab Groups selected and homepage as new tab disabled WHEN in Normal mode THEN toolbar visibility is false`() {
+        val state = TabsTrayState(
+            mode = Mode.Normal,
+            selectedPage = Page.TabGroups,
+            config = TabsTrayState.TabsTrayConfig(
+                tabGroupsEnabled = true,
+                homepageAsNewTabEnabled = false,
+            ),
             privateBrowsing = TabsTrayState.PrivateBrowsingState(isLocked = false),
         )
         assert(!state.isFloatingToolbarVisible)
@@ -293,39 +378,17 @@ class TabsTrayStateTest {
         assert(state2.isFloatingToolbarVisible)
     }
 
-    @Test
-    fun `GIVEN mode is Select WHEN toolbar is rendered THEN it is hidden`() {
-        val initialState = TabsTrayState(
-            mode = Mode.Select(),
-            selectedPage = Page.NormalTabs,
-        )
-        val tabsTrayStore = TabsTrayStore(initialState = initialState)
-
-        composeTestRule.setContent {
-            FirefoxTheme(theme = Theme.Light) {
-                TabManagerFloatingToolbar(
-                    tabsTrayStore = tabsTrayStore,
-                    isSignedIn = true,
-                    onOpenNewNormalTabClicked = {},
-                    onOpenNewPrivateTabClicked = {},
-                    onSyncedTabsFabClicked = {},
-                    onTabSettingsClick = {},
-                    onAccountSettingsClick = {},
-                    onDeleteAllTabsClick = {},
-                    onRecentlyClosedClick = {},
-                )
-            }
-        }
-
-        composeTestRule.onNodeWithTag(TabsTrayTestTag.FAB).assertDoesNotExist()
-    }
-
     private fun onboardingEligibleState(): TabsTrayState = TabsTrayState(
         normalTabsState = TabsTrayState.NormalTabsState(
             items = listOf(createTab(url = ""), createTab(url = "")),
             selectedItemIndex = 0,
         ),
-        tabGroupState = TabsTrayState.TabGroupState(groups = emptyList()),
+        tabGroupState = TabsTrayState.TabGroupState(
+            groups = emptyList(),
+            hasUserDismissedTabGroupOnboarding = false,
+            tabGroupOnboardingImpressionCount = 0,
+            hasUserEverHadOneTabGroup = false,
+        ),
         config = TabsTrayState.TabsTrayConfig(
             tabGroupsDragAndDropEnabled = true,
             tabGroupsOnboardingEnabled = true,

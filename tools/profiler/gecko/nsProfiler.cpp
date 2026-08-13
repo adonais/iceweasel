@@ -263,7 +263,6 @@ nsProfiler::WaitOnePeriodicSampling(JSContext* aCx, Promise** aPromise) {
                       promiseHandleInMT->MaybeReject(NS_ERROR_FAILURE);
                       break;
 
-                    case SamplingState::NoStackSamplingCompleted:
                     case SamplingState::SamplingCompleted:
                       // The parent process has succesfully done a sampling,
                       // check the child processes (if any).
@@ -351,6 +350,25 @@ nsProfiler::GetActiveConfiguration(JSContext* aCx,
 NS_IMETHODIMP
 nsProfiler::DumpProfileToFile(const char* aFilename) {
   profiler_save_profile_to_file(aFilename);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsProfiler::ScheduleDumpToFile(double aDelaySeconds, const char* aFilename,
+                               bool aExitAfterDump) {
+  profiler_schedule_dump_to_file(aDelaySeconds, aFilename, aExitAfterDump);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsProfiler::WaitForScheduledDump() {
+  profiler_wait_for_scheduled_dump();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsProfiler::CancelScheduledDump() {
+  profiler_cancel_scheduled_dump();
   return NS_OK;
 }
 

@@ -198,10 +198,16 @@ class Country {
    */
   cities;
 
+  /**
+   * If true this Location is locked behind a set of preconditions
+   */
+  locked = false;
+
   constructor(data) {
     this.name = data.name || "";
     this.code = data.code || "";
     this.cities = (data.cities || []).map(c => new City(c));
+    this.locked = !!data.locked;
   }
 }
 
@@ -209,6 +215,9 @@ class Country {
  * Base Class for the Serverlist
  */
 export class IPProtectionServerlistBase extends EventTarget {
+  /**
+   * @type {Country[] | null}
+   */
   __list = null;
 
   init() {}
@@ -238,10 +247,11 @@ export class IPProtectionServerlistBase extends EventTarget {
     return this.__list
       .filter(country => country.code !== RECOMMENDED_COUNTRY_CODE)
       .map(country => ({
-        code: country.code,
         available: country.cities.some(city =>
           city.servers.some(server => !server.quarantined)
         ),
+        code: country.code,
+        locked: country.locked,
       }));
   }
 

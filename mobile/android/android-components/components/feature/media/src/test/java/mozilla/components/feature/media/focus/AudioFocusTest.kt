@@ -4,6 +4,8 @@
 
 package mozilla.components.feature.media.focus
 
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
 import android.media.AudioManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import mozilla.components.browser.state.state.BrowserState
@@ -16,8 +18,10 @@ import mozilla.components.feature.media.service.AbstractMediaSessionService
 import mozilla.components.feature.media.service.MediaSessionServiceDelegate
 import mozilla.components.support.base.android.NotificationsDelegate
 import mozilla.components.support.test.any
+import mozilla.components.support.test.argumentCaptor
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -419,5 +423,83 @@ class AudioFocusTest {
         audioFocus.abandon()
 
         assertFalse(notified)
+    }
+
+    @Test
+    fun `WHEN requesting focus for playback THEN the request uses media usage`() {
+        doReturn(AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
+            .`when`(audioManager).requestAudioFocus(any())
+        val store = BrowserStore(BrowserState(tabs = listOf(createTab("https://www.mozilla.org"))))
+        val audioFocus = AudioFocus(audioManager, store)
+
+        audioFocus.request("tab", MediaSession.AudioSessionType.PLAYBACK)
+
+        val captor = argumentCaptor<AudioFocusRequest>()
+        verify(audioManager).requestAudioFocus(captor.capture())
+        assertEquals(AudioAttributes.USAGE_MEDIA, captor.value.audioAttributes.usage)
+    }
+
+    @Test
+    fun `WHEN requesting focus for transient THEN the request uses notification usage`() {
+        doReturn(AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
+            .`when`(audioManager).requestAudioFocus(any())
+        val store = BrowserStore(BrowserState(tabs = listOf(createTab("https://www.mozilla.org"))))
+        val audioFocus = AudioFocus(audioManager, store)
+
+        audioFocus.request("tab", MediaSession.AudioSessionType.TRANSIENT)
+
+        val captor = argumentCaptor<AudioFocusRequest>()
+        verify(audioManager).requestAudioFocus(captor.capture())
+        assertEquals(AudioAttributes.USAGE_NOTIFICATION, captor.value.audioAttributes.usage)
+    }
+
+    @Test
+    fun `WHEN requesting focus for play-and-record THEN the request uses voice-communication usage`() {
+        doReturn(AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
+            .`when`(audioManager).requestAudioFocus(any())
+        val store = BrowserStore(BrowserState(tabs = listOf(createTab("https://www.mozilla.org"))))
+        val audioFocus = AudioFocus(audioManager, store)
+
+        audioFocus.request("tab", MediaSession.AudioSessionType.PLAY_AND_RECORD)
+
+        val captor = argumentCaptor<AudioFocusRequest>()
+        verify(audioManager).requestAudioFocus(captor.capture())
+        assertEquals(
+            AudioAttributes.USAGE_VOICE_COMMUNICATION,
+            captor.value.audioAttributes.usage,
+        )
+    }
+
+    @Test
+    fun `WHEN requesting focus for ambient THEN no audio focus is requested`() {
+        val store = BrowserStore(BrowserState(tabs = listOf(createTab("https://www.mozilla.org"))))
+        val audioFocus = AudioFocus(audioManager, store)
+
+        audioFocus.request("tab", MediaSession.AudioSessionType.AMBIENT)
+
+        verify(audioManager, never()).requestAudioFocus(any())
+    }
+
+    @Test
+    fun `WHEN requesting focus for auto THEN the request uses durable media focus`() {
+        // auto is the default type when the embedder opt-in pref is off and no
+        // type was forwarded, so this asserts the legacy behaviour is preserved.
+        doReturn(AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
+            .`when`(audioManager).requestAudioFocus(any())
+        val store = BrowserStore(BrowserState(tabs = listOf(createTab("https://www.mozilla.org"))))
+        val audioFocus = AudioFocus(audioManager, store)
+
+        audioFocus.request("tab", MediaSession.AudioSessionType.AUTO)
+
+        // The full request must match the pre-patch one byte for byte:
+        // AUDIOFOCUS_GAIN + USAGE_MEDIA + CONTENT_TYPE_MUSIC.
+        val captor = argumentCaptor<AudioFocusRequest>()
+        verify(audioManager).requestAudioFocus(captor.capture())
+        assertEquals(AudioManager.AUDIOFOCUS_GAIN, captor.value.focusGain)
+        assertEquals(AudioAttributes.USAGE_MEDIA, captor.value.audioAttributes.usage)
+        assertEquals(
+            AudioAttributes.CONTENT_TYPE_MUSIC,
+            captor.value.audioAttributes.contentType,
+        )
     }
 }

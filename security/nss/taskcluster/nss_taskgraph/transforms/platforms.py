@@ -20,7 +20,7 @@ def resolve_platform_differences(config, tasks):
 def add_env_vars(config, tasks):
     for task in tasks:
         env = task["worker"].setdefault("env", {})
-        if task["attributes"]["build_platform"].startswith(("mac", "windows")):
+        if task["attributes"]["build_platform"].startswith(("mac", "win")):
             env.update({"DOMSUF": "localdomain", "HOST": "localhost"})
 
         if task["attributes"]["build_platform"].startswith("mac"):
@@ -38,6 +38,36 @@ def add_env_vars(config, tasks):
 @transforms.add
 def remove_docker_image_for_gw(config, tasks):
     for task in tasks:
-        if task["attributes"]["build_platform"].startswith(("mac", "windows")):
+        if task["attributes"]["build_platform"].startswith(("mac", "win")):
             task["worker"].pop("docker-image", None)
+        yield task
+
+
+@transforms.add
+def select_arch_docker_image(config, tasks):
+    """Select the architecture-appropriate variant of in-tree docker images.
+
+    Docker images are architecture specific, and `base` is now neutral:
+
+    * aarch64 tasks rewrite `{in-tree: <image>}` to `{in-tree: <image>-aarch64}`
+      so they pick up the natively-built arm64 image.
+    * 32-bit x86 (linux-x86) tasks rewrite `{in-tree: base}` to
+      `{in-tree: base-i386}`, the i386 layer needed to build and run ia32
+      binaries.
+
+    See taskcluster/kinds/docker-image/kind.yml. This covers build, certs, and
+    test tasks uniformly.
+    """
+    for task in tasks:
+        platform = task["attributes"]["build_platform"]
+        image = task.get("worker", {}).get("docker-image")
+        if not (isinstance(image, dict) and "in-tree" in image):
+            yield task
+            continue
+        name = image["in-tree"]
+        if "aarch64" in platform:
+            if not name.endswith("-aarch64"):
+                image["in-tree"] = f"{name}-aarch64"
+        elif "linux" in platform and "64" not in platform and name == "base":
+            image["in-tree"] = "base-i386"
         yield task

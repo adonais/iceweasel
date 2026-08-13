@@ -7,9 +7,9 @@ package mozilla.components.service.fxa.sync
 import androidx.annotation.VisibleForTesting
 import androidx.work.WorkInfo
 import mozilla.components.concept.storage.KeyProvider
+import mozilla.components.concept.sync.SyncConfig
+import mozilla.components.concept.sync.SyncEngine
 import mozilla.components.concept.sync.SyncableStore
-import mozilla.components.service.fxa.SyncConfig
-import mozilla.components.service.fxa.SyncEngine
 import mozilla.components.service.fxa.manager.SyncEnginesStorage
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.base.observer.Observable

@@ -6,8 +6,8 @@
 #define widget_gtk_CompositorWidgetChild_h
 
 #include "GtkCompositorWidget.h"
-#include "mozilla/widget/PCompositorWidgetChild.h"
 #include "mozilla/widget/CompositorWidgetVsyncObserver.h"
+#include "mozilla/widget/PCompositorWidgetChild.h"
 
 namespace mozilla {
 namespace widget {

@@ -2,13 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include "GPUProcessImpl.h"
-#include "nsXPCOM.h"
-#include "mozilla/ipc/ProcessUtils.h"
+
 #include "mozilla/GeckoArgs.h"
+#include "mozilla/ipc/ProcessUtils.h"
+#include "nsXPCOM.h"
 
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
-#  include "nsAppShell.h"
 #  include "mozilla/sandboxTarget.h"
+#  include "nsAppShell.h"
 #elif defined(__OpenBSD__) && defined(MOZ_SANDBOX)
 #  include "mozilla/SandboxSettings.h"
 #endif

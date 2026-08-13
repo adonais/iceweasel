@@ -1022,6 +1022,39 @@ export let ProfileDataUpgrader = {
       Services.prefs.setBoolPref("signon.rustMirror.migrationNeeded", true);
     }
 
+    if (existingDataVersion < 176) {
+      // Bug 1767271: cookie ALLOW permissions used to exempt sites from
+      // clear-on-shutdown. That exception is now its own permission type,
+      // persist-data-on-shutdown. Duplicate existing ALLOW exceptions over
+      // so users keep their shutdown protection after the split.
+      // Only migrate durable, user-set permissions. Anything that expires
+      // (session/time) or is re-applied from an enterprise policy on every
+      // startup (EXPIRE_POLICY) must not be persisted as a regular permission.
+      Services.perms.getAllByTypes(["cookie"]).forEach(p => {
+        if (p.expireType != Services.perms.EXPIRE_NEVER) {
+          return;
+        }
+        if (p.capability == Ci.nsICookiePermission.ACCESS_ALLOW) {
+          Services.perms.addFromPrincipal(
+            p.principal,
+            "persist-data-on-shutdown",
+            Ci.nsICookiePermission.ACCESS_ALLOW
+          );
+        }
+      });
+    }
+
+    if (
+      existingDataVersion < 177 &&
+      !Services.prefs.getBoolPref("sidebar.verticalTabs", false) &&
+      Services.prefs.getStringPref("sidebar.visibility", "") === "hide-sidebar"
+    ) {
+      // Bug 2047653: the legacy horizontal-tabs default was stored as
+      // "hide-sidebar", a value now reserved for vertical tabs. Horizontal tabs
+      // now have their own default value, "hide-on-close".
+      Services.prefs.setStringPref("sidebar.visibility", "hide-on-close");
+    }
+
     // Update the migration version.
     Services.prefs.setIntPref("browser.migration.version", newVersion);
   },

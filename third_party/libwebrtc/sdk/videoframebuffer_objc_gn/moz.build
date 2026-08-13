@@ -46,6 +46,14 @@ LOCAL_INCLUDES += [
     "/tools/profiler/public"
 ]
 
+OS_LIBS += [
+    "-framework AVFoundation",
+    "-framework CoreGraphics",
+    "-framework CoreVideo",
+    "-framework Foundation",
+    "-framework VideoToolbox"
+]
+
 UNIFIED_SOURCES += [
     "/third_party/libwebrtc/sdk/objc/api/video_frame_buffer/RTCNativeI420Buffer.mm",
     "/third_party/libwebrtc/sdk/objc/api/video_frame_buffer/RTCNativeMutableI420Buffer.mm",

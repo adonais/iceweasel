@@ -56,8 +56,8 @@ add_task(async function test_containers_no_left_click() {
 
   is(contextMenu.state, "open", "Context menu is open.");
   let contextIdItems = contextMenu.querySelectorAll("menuitem");
-  // 4 + default + manage containers
-  is(contextIdItems.length, 6, "Has 6 menu items");
+  // 4 + default + add container + manage containers
+  is(contextIdItems.length, 7, "Has 7 menu items");
   contextMenu.hidePopup();
 });
 
@@ -73,7 +73,7 @@ add_task(async function test_containers_with_left_click() {
   ok(newTabButton, "New tab button exists");
   ok(!newTabButton.hidden, "New tab button is visible");
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !!findPopup(),
     "Wait for popup to exist"
   );
@@ -84,8 +84,8 @@ add_task(async function test_containers_with_left_click() {
   EventUtils.synthesizeMouseAtCenter(newTabButton, { type: "mousedown" });
   await popupShownPromise;
   let contextIdItems = popup.querySelectorAll("menuitem");
-  // 4 + default + manage containers
-  is(contextIdItems.length, 6, "Has 6 menu items");
+  // 4 + default + add container + manage containers
+  is(contextIdItems.length, 7, "Has 7 menu items");
   popup.hidePopup();
   await popupHiddenPromise;
 
@@ -137,8 +137,8 @@ add_task(async function test_containers_with_left_click() {
 
   is(contextMenu.state, "open", "Context menu is open.");
   contextIdItems = contextMenu.querySelectorAll("menuitem");
-  // 4 + default + manage containers
-  is(contextIdItems.length, 6, "Has 6 menu items");
+  // 4 + default + add container + manage containers
+  is(contextIdItems.length, 7, "Has 7 menu items");
   contextMenu.hidePopup();
 });
 
@@ -198,8 +198,8 @@ add_task(async function test_opening_container_tab_context() {
   EventUtils.synthesizeMouseAtCenter(newTabButton, { type: "contextmenu" });
   await popupShownPromise;
   let contextIdItems = popup.querySelectorAll("menuitem");
-  // 4 + default + manage containers
-  is(contextIdItems.length, 6, "Has 6 menu items");
+  // 4 + default + add container + manage containers
+  is(contextIdItems.length, 7, "Has 7 menu items");
   popup.hidePopup();
   await popupHiddenPromise;
 
@@ -266,8 +266,8 @@ add_task(async function test_vertical_tabs_right_click_new_tab_button() {
   await popupshownContextmenu;
   is(contextMenu.state, "open", "Context menu is open.");
   let contextIdItems = contextMenu.querySelectorAll("menuitem");
-  // 4 + default + manage containers
-  is(contextIdItems.length, 6, "Has 6 menu items");
+  // 4 + default + add container + manage containers
+  is(contextIdItems.length, 7, "Has 7 menu items");
   contextMenu.hidePopup();
 
   await SpecialPowers.popPrefEnv();
@@ -321,8 +321,8 @@ add_task(async function test_vertical_tabs_right_click_other_new_tab_button() {
   await popupshownContextmenu;
   is(contextMenu.state, "open", "Context menu is open.");
   let contextIdItems = contextMenu.querySelectorAll("menuitem");
-  // 4 + default + manage containers
-  is(contextIdItems.length, 6, "Has 6 menu items");
+  // 4 + default + add container + manage containers
+  is(contextIdItems.length, 7, "Has 7 menu items");
   contextMenu.hidePopup();
 
   await SpecialPowers.popPrefEnv();

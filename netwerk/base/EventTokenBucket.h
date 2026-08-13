@@ -6,12 +6,11 @@
 #define NetEventTokenBucket_h_
 
 #include "ARefBase.h"
+#include "mozilla/TimeStamp.h"
 #include "nsCOMPtr.h"
 #include "nsDeque.h"
 #include "nsINamed.h"
 #include "nsITimer.h"
-
-#include "mozilla/TimeStamp.h"
 
 class nsICancelable;
 

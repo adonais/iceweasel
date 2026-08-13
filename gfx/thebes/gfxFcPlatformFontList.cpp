@@ -2,46 +2,47 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/Logging.h"
-
 #include "gfxFcPlatformFontList.h"
-#include "gfxFont.h"
+
+#include "SharedFontList-impl.h"
 #include "gfxFT2Utils.h"
+#include "gfxFont.h"
 #include "gfxPlatform.h"
-#include "nsPresContext.h"
-#include "mozilla/dom/ContentChild.h"
-#include "mozilla/dom/ContentParent.h"
+#include "mozilla/Components.h"
+#include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_mathml.h"
+#include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/ContentParent.h"
 #include "mozilla/glean/GfxMetrics.h"
+#include "nsCharSeparatedTokenizer.h"
+#include "nsDirectoryServiceDefs.h"
+#include "nsDirectoryServiceUtils.h"
 #include "nsGkAtoms.h"
 #include "nsIConsoleService.h"
 #include "nsIGfxInfo.h"
-#include "mozilla/Components.h"
+#include "nsPresContext.h"
 #include "nsString.h"
 #include "nsStringFwd.h"
-#include "nsDirectoryServiceUtils.h"
-#include "nsDirectoryServiceDefs.h"
-#include "nsCharSeparatedTokenizer.h"
 #include "nsXULAppAPI.h"
-#include "SharedFontList-impl.h"
 #define StandardFonts
 #include "StandardFonts-linux.inc"
 #undef StandardFonts
-#include "mozilla/intl/Locale.h"
-
 #include <cairo-ft.h>
+#include <dlfcn.h>
 #include <fontconfig/fcfreetype.h>
 #include <fontconfig/fontconfig.h>
 #include <harfbuzz/hb.h>
-#include <dlfcn.h>
 #include <unistd.h>
+
+#include "mozilla/intl/Locale.h"
 
 #ifdef MOZ_WIDGET_GTK
 #  include <gdk/gdk.h>
 #  include <gtk/gtk.h>
+
 #  include "gfxPlatformGtk.h"
 #  include "mozilla/WidgetUtilsGtk.h"
 #endif
@@ -1707,37 +1708,8 @@ nsresult gfxFcPlatformFontList::InitFontListForPlatform() {
     UpdateSystemFontOptionsFromIpc(fontList.options());
 #endif
 
-    // For fontconfig versions between 2.10.94 and 2.11.1 inclusive,
-    // we need to escape any leading space in the charset element,
-    // otherwise FcNameParse will fail. :(
-    //
-    // The bug was introduced on 2013-05-24 by
-    //   https://cgit.freedesktop.org/fontconfig/commit/?id=cd9b1033a68816a7acfbba1718ba0aa5888f6ec7
-    //   "Bug 64906 - FcNameParse() should ignore leading whitespace in
-    //   parameters"
-    // because ignoring a leading space in the encoded value of charset
-    // causes erroneous decoding of the whole element.
-    // This first shipped in version 2.10.94, and was eventually fixed as
-    // a side-effect of switching to the "human-readable" representation of
-    // charsets on 2014-07-03 in
-    //   https://cgit.freedesktop.org/fontconfig/commit/?id=e708e97c351d3bc9f7030ef22ac2f007d5114730
-    //   "Change charset parse/unparse format to be human readable"
-    // (with a followup fix next day) which means a leading space is no
-    // longer significant. This fix landed after 2.11.1 had been shipped,
-    // so the first version tag without the bug is 2.11.91.
-    int fcVersion = FcGetVersion();
-    bool fcCharsetParseBug = fcVersion >= 21094 && fcVersion <= 21101;
-
-    for (FontPatternListEntry& fpe : fontList.entries()) {
-      nsCString& patternStr = fpe.pattern();
-      if (fcCharsetParseBug) {
-        int32_t index = patternStr.Find(":charset= ");
-        if (index != kNotFound) {
-          // insert backslash after the =, before the space
-          patternStr.Insert('\\', index + 9);
-        }
-      }
-      FcPattern* pattern = FcNameParse((const FcChar8*)patternStr.get());
+    for (const FontPatternListEntry& fpe : fontList.entries()) {
+      FcPattern* pattern = FcNameParse((const FcChar8*)fpe.pattern().get());
       AddPatternToFontList(pattern, lastFamilyName, familyName, fontFamily,
                            fpe.appFontFamily());
       FcPatternDestroy(pattern);
@@ -1909,15 +1881,9 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
 
   nsClassHashtable<nsCStringHashKey, FacesData> faces;
 
-  // Do we need to work around the fontconfig FcNameParse/FcNameUnparse bug
-  // (present in versions between 2.10.94 and 2.11.1 inclusive)? See comment
-  // in InitFontListForPlatform for details.
-  int fcVersion = FcGetVersion();
-  bool fcCharsetParseBug = fcVersion >= 21094 && fcVersion <= 21101;
-
   // Returns true if the font was added with FontVisibility::Base.
   // This enables us to count how many known Base fonts are present.
-  auto addPattern = [this, fcCharsetParseBug, &families, &faces](
+  auto addPattern = [this, &families, &faces](
                         FcPattern* aPattern, FcChar8*& aLastFamilyName,
                         nsCString& aFamilyName, bool aAppFont) -> bool {
     // get canonical name
@@ -1963,15 +1929,6 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
           (char*)FcNameUnparse(dupToUnparse ? dupToUnparse.get() : aPattern);
       descriptor.Assign(s);
       free(s);
-    }
-
-    if (fcCharsetParseBug) {
-      // Escape any leading space in charset to work around FcNameParse bug.
-      int32_t index = descriptor.Find(":charset= ");
-      if (index != kNotFound) {
-        // insert backslash after the =, before the space
-        descriptor.Insert('\\', index + 9);
-      }
     }
 
     WeightRange weight(FontWeight::NORMAL);

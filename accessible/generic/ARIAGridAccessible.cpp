@@ -5,15 +5,16 @@
 #include "ARIAGridAccessible.h"
 
 #include <stdint.h>
-#include "LocalAccessible-inl.h"
+
 #include "AccAttributes.h"
+#include "LocalAccessible-inl.h"
+#include "States.h"
+#include "mozilla/a11y/Role.h"
 #include "mozilla/a11y/TableAccessible.h"
 #include "mozilla/a11y/TableCellAccessible.h"
-#include "nsAccessibilityService.h"
 #include "nsAccUtils.h"
+#include "nsAccessibilityService.h"
 #include "nsGkAtoms.h"
-#include "mozilla/a11y/Role.h"
-#include "States.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;

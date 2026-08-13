@@ -6,7 +6,7 @@
 async function waitForAllTabsMenu(window = window) {
   // Borrowed from browser_menu_touch.js,
   // Ensure menu has been added to the document and that it's open
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => window.document.getElementById("customizationui-widget-panel") != null
   );
   let menu = window.document.getElementById("customizationui-widget-panel");

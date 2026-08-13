@@ -47,10 +47,10 @@ XPCOMUtils.defineLazyPreferenceGetter(
 function effectiveSources(queryContext) {
   return {
     historyAllowed:
-      queryContext.sources.includes(UrlbarUtils.RESULT_SOURCE.HISTORY) &&
+      queryContext.sources.includes(lazy.UrlbarShared.RESULT_SOURCE.HISTORY) &&
       lazy.historyEnabled,
     bookmarksAllowed: queryContext.sources.includes(
-      UrlbarUtils.RESULT_SOURCE.BOOKMARKS
+      lazy.UrlbarShared.RESULT_SOURCE.BOOKMARKS
     ),
   };
 }
@@ -421,8 +421,8 @@ export class UrlbarProviderAutofill extends UrlbarProvider {
 
     // autoFill can only cope with history, bookmarks, and about: entries.
     if (
-      !queryContext.sources.includes(UrlbarUtils.RESULT_SOURCE.HISTORY) &&
-      !queryContext.sources.includes(UrlbarUtils.RESULT_SOURCE.BOOKMARKS)
+      !queryContext.sources.includes(lazy.UrlbarShared.RESULT_SOURCE.HISTORY) &&
+      !queryContext.sources.includes(lazy.UrlbarShared.RESULT_SOURCE.BOOKMARKS)
     ) {
       return false;
     }
@@ -535,10 +535,10 @@ export class UrlbarProviderAutofill extends UrlbarProvider {
       UrlbarUtils.clearAutofillBackspaceEntryForUrl(result.payload.url);
 
       // Upon removing the autofill, we should do another search.
-      controller.input._setValue(queryContext.searchString);
+      controller.input.setValue(queryContext.searchString);
       controller.input.startQuery({
         searchString: queryContext.searchString,
-        allowAutofill: false,
+        allowAutofill: true,
         resetSearchState: false,
       });
     }
@@ -563,7 +563,7 @@ export class UrlbarProviderAutofill extends UrlbarProvider {
         resultArray.push({
           name: RESULT_MENU_COMMANDS.DISMISS_AUTOFILL,
           l10n: {
-            id: "urlbar-result-menu-dismiss-suggestion",
+            id: "urlbar-result-menu-dismiss-suggestion2",
           },
         });
       }
@@ -573,7 +573,7 @@ export class UrlbarProviderAutofill extends UrlbarProvider {
         resultArray.push({
           name: RESULT_MENU_COMMANDS.DISMISS,
           l10n: {
-            id: "urlbar-result-menu-remove-from-history",
+            id: "urlbar-result-menu-remove-from-history2",
           },
         });
       }
@@ -600,15 +600,15 @@ export class UrlbarProviderAutofill extends UrlbarProvider {
     let params = [...hosts];
     let sources = queryContext.sources;
     if (
-      sources.includes(UrlbarUtils.RESULT_SOURCE.HISTORY) &&
-      sources.includes(UrlbarUtils.RESULT_SOURCE.BOOKMARKS)
+      sources.includes(lazy.UrlbarShared.RESULT_SOURCE.HISTORY) &&
+      sources.includes(lazy.UrlbarShared.RESULT_SOURCE.BOOKMARKS)
     ) {
       conditions.push(
         `(n_bookmarks > 0 OR ${SQL_AUTOFILL_FRECENCY_THRESHOLD})`
       );
-    } else if (sources.includes(UrlbarUtils.RESULT_SOURCE.HISTORY)) {
+    } else if (sources.includes(lazy.UrlbarShared.RESULT_SOURCE.HISTORY)) {
       conditions.push(`visited AND ${SQL_AUTOFILL_FRECENCY_THRESHOLD}`);
-    } else if (sources.includes(UrlbarUtils.RESULT_SOURCE.BOOKMARKS)) {
+    } else if (sources.includes(lazy.UrlbarShared.RESULT_SOURCE.BOOKMARKS)) {
       conditions.push("n_bookmarks > 0");
     }
 
@@ -810,7 +810,7 @@ export class UrlbarProviderAutofill extends UrlbarProvider {
 
     let selectTitle;
     let joinBookmarks;
-    if (UrlbarUtils.RESULT_SOURCE.BOOKMARKS) {
+    if (lazy.UrlbarShared.RESULT_SOURCE.BOOKMARKS) {
       selectTitle = "ifnull(b.title, matched.title)";
       joinBookmarks = "LEFT JOIN moz_bookmarks b ON b.fk = matched.id";
     } else {
@@ -1042,8 +1042,8 @@ export class UrlbarProviderAutofill extends UrlbarProvider {
     }
 
     return new lazy.UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      type: lazy.UrlbarShared.RESULT_TYPE.URL,
+      source: lazy.UrlbarShared.RESULT_SOURCE.HISTORY,
       heuristic: true,
       autofill: {
         adaptiveHistoryInput,
@@ -1091,8 +1091,8 @@ export class UrlbarProviderAutofill extends UrlbarProvider {
           queryContext.searchString +
           aboutUrl.substring(queryContext.searchString.length);
         return new lazy.UrlbarResult({
-          type: UrlbarUtils.RESULT_TYPE.URL,
-          source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+          type: lazy.UrlbarShared.RESULT_TYPE.URL,
+          source: lazy.UrlbarShared.RESULT_SOURCE.HISTORY,
           heuristic: true,
           autofill: {
             type: "about",
@@ -1224,14 +1224,14 @@ export class UrlbarProviderAutofill extends UrlbarProvider {
 
     let title = rows[0].getResultByName("title");
     let result = new lazy.UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      type: lazy.UrlbarShared.RESULT_TYPE.URL,
+      source: lazy.UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: {
         url: originUrl,
         title: title ?? originUrl,
         icon: UrlbarUtils.getIconForUrl(originUrl),
         isBlockable: true,
-        blockL10n: { id: "urlbar-result-menu-remove-from-history" },
+        blockL10n: { id: "urlbar-result-menu-remove-from-history2" },
         helpUrl:
           Services.urlFormatter.formatURLPref("app.support.baseURL") +
           "awesome-bar-result-menu",

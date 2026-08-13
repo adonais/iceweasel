@@ -133,7 +133,8 @@ add_task(async function testFilterFeatures() {
 
   info(`Resetted the search`);
 
-  // Clearing the search will go to the general pane so switch back to the experimental pane.
+  // Clearing the search returns to the previously viewed (experimental) pane;
+  // click it explicitly to be robust regardless of the restored pane.
   EventUtils.synthesizeMouseAtCenter(
     doc.getElementById("category-experimental"),
     {},

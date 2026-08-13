@@ -7,9 +7,9 @@
 #define mozilla_image_decoders_nsWebPDecoder_h
 
 #include "Decoder.h"
-#include "webp/demux.h"
 #include "StreamingLexer.h"
 #include "SurfacePipe.h"
+#include "webp/demux.h"
 
 namespace mozilla {
 namespace image {

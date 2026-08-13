@@ -1775,6 +1775,28 @@
         is(header.textContent, "test string", "import success header text content is changed to correct value");
         gWiz.removeAttribute("data-import-complete-success-string");
       });
+
+      /**
+       * Tests that clicking the "launch-macos-passwords-app" link on the
+       * SAFARI_PASSWORD_PERMISSION page fires the
+       * MigrationWizard:LaunchMacOSPasswordsApp custom event.
+       */
+      add_task(async function test_launch_macos_passwords_app() {
+        gWiz.setState({
+          page: MigrationWizardConstants.PAGES.SAFARI_PASSWORD_PERMISSION,
+        });
+
+        let launchLink = gShadowRoot.querySelector("#launch-macos-passwords-app");
+        ok(launchLink, "Found the launch macOS Passwords app link.");
+
+        let launchEvent = BrowserTestUtils.waitForEvent(
+          gWiz,
+          "MigrationWizard:LaunchMacOSPasswordsApp"
+        );
+        launchLink.click();
+        await launchEvent;
+        ok(true, "MigrationWizard:LaunchMacOSPasswordsApp event was fired.");
+      });
     </script>
   </head>
   <body>

@@ -1,7 +1,15 @@
 <!-- This Source Code Form is subject to the terms of the Mozilla Public
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
-<svg xmlns="http://www.w3.org/2000/svg"
-     width="16" height="16" viewBox="0 0 16 16">
-  <rect width="15" height="15" x="0.5" y="0.5" rx="4" stroke="context-stroke" stroke-width="1" fill="context-fill"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill-opacity="context-fill-opacity" viewBox="0 0 16 16">
+  <style>
+    .nova { display: none; }
+
+    @media -moz-pref("browser.nova.enabled") {
+      .proton { display: none; }
+      .nova { display: revert; }
+    }
+  </style>
+  <rect class="proton" width="15" height="15" x="0.5" y="0.5" rx="4" stroke="context-stroke" stroke-width="1" fill="context-fill"/>
+  <path class="nova" fill="context-fill" fill-opacity="context-fill-opacity" stroke="context-stroke" stroke-opacity="context-stroke-opacity" stroke-linejoin="round" stroke-width="1.5" d="M.75 8a7.25 7.25 0 1 1 7.25 7.25H3.2A2.45 2.45 0 0 1 .75 12.8z"/>
 </svg>

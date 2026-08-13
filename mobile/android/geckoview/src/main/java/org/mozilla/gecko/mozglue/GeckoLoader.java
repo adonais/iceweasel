@@ -19,7 +19,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.annotation.JNITarget;
-import org.mozilla.gecko.annotation.RobocopTarget;
 
 public final class GeckoLoader {
   private static final String LOGTAG = "GeckoLoader";
@@ -220,7 +219,6 @@ public final class GeckoLoader {
     putenv("MOZ_ANDROID_LIBDIR=" + getLibraryBase());
   }
 
-  @RobocopTarget
   public static synchronized void loadSQLiteLibs(final Context context) {
     if (sSQLiteLibsLoaded) {
       return;

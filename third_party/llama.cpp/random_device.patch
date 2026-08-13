@@ -1,8 +1,8 @@
-diff --git a/src/llama-sampling.cpp b/src/llama-sampling.cpp
-index dd1d9eee52..41081da1ba 100644
---- a/src/llama-sampling.cpp
-+++ b/src/llama-sampling.cpp
-@@ -305,9 +305,10 @@
+diff --git a/src/llama-sampler.cpp b/src/llama-sampler.cpp
+index 82f2babcab9b..10c60f7f9b19 100644
+--- a/src/llama-sampler.cpp
++++ b/src/llama-sampler.cpp
+@@ -336,9 +336,10 @@ static void llama_sampler_top_k_impl(llama_token_data_array * cur_p, int32_t k)
  }
  
  static uint32_t get_rng_seed(uint32_t seed) {

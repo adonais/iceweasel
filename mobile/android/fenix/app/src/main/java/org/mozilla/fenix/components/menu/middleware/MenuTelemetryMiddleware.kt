@@ -10,7 +10,6 @@ import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.AppMenu
 import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.GleanMetrics.HomeMenu
-import org.mozilla.fenix.GleanMetrics.Menu
 import org.mozilla.fenix.GleanMetrics.ReaderMode
 import org.mozilla.fenix.GleanMetrics.Translations
 import org.mozilla.fenix.components.menu.MenuAccessPoint
@@ -287,10 +286,6 @@ class MenuTelemetryMiddleware(
                     ),
                 )
             }
-
-            MenuAction.OnCFRShown -> Menu.showCfr.record(NoExtras())
-
-            MenuAction.OnCFRDismiss -> Menu.dismissCfr.record(NoExtras())
 
             MenuAction.Navigate.Summarizer,
             MenuAction.InitAction,

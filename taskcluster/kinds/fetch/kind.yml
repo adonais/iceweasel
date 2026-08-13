@@ -10,14 +10,12 @@ transforms:
     - gecko_taskgraph.transforms.job:transforms
     - gecko_taskgraph.transforms.task:transforms
 
-task-defaults:
-    run-on-repo-type: [hg]
-
 tasks-from:
     - benchmarks.yml
     - browsertime.yml
     - chromium-fetch.yml
     - cft-chromedriver-fetch.yml
+    - shunit2.yml
     - python-wheels.yml
     - toolchain-clang-tidy-external.yml
     - toolchains.yml

@@ -7,30 +7,30 @@ task-defaults:
               path: public/build
     scopes: ["project:releng:services/tooltool/api/download/internal"]
 
-windows2022-64/debug-make:
-    description: "Windows 2022 64 (debug, make)"
+win-x64/debug-make:
+    description: "Windows x64 (debug, make)"
     attributes:
         make: true
 
-windows2022-32/debug-make:
-    description: "Windows 2022 32 (debug, make)"
+win-x86/debug-make:
+    description: "Windows x86 (debug, make)"
     attributes:
         make: true
 
-windows2022-64/opt:
-    description: "Windows 2022 64 (opt)"
+win-x64/opt:
+    description: "Windows x64 (opt)"
 
-windows2022-64/debug:
-    description: "Windows 2022 64 (debug)"
+win-x64/debug:
+    description: "Windows x64 (debug)"
 
-windows2022-64/opt-static:
-    description: "Windows 2022 64 Static (opt)"
+win-x64/opt-static:
+    description: "Windows x64 Static (opt)"
     attributes:
         static: true
 
-windows2022-32/opt:
-    description: "Windows 2022 32 (opt)"
+win-x86/opt:
+    description: "Windows x86 (opt)"
 
-windows2022-32/debug:
-    description: "Windows 2022 32 (debug)"
+win-x86/debug:
+    description: "Windows x86 (debug)"
 

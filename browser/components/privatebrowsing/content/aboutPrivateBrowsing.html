@@ -32,6 +32,14 @@
       type="module"
       src="chrome://browser/content/contentSearchHandoffUI.mjs"
     ></script>
+    <script
+      type="module"
+      src="chrome://global/content/elements/moz-promo.mjs"
+    ></script>
+    <script
+      type="module"
+      src="chrome://global/content/elements/moz-button.mjs"
+    ></script>
   </head>
 
   <body>
@@ -77,7 +85,11 @@
       </div>
       <p
         class="nova-tagline"
-        data-l10n-id="about-private-browsing-felt-privacy-v1-info-header"
+        data-l10n-id="about-private-browsing-nova-info-header"
+      ></p>
+      <p
+        class="nova-subheader"
+        data-l10n-id="about-private-browsing-nova-info-subheader"
       ></p>
       <div class="search-inner-wrapper">
         <content-search-handoff-ui></content-search-handoff-ui>
@@ -123,6 +135,26 @@
         id="dismiss-btn"
         class="promo-dismiss"
       ></button>
+    </div>
+
+    <div class="nova-promo-wrapper" hidden>
+      <moz-promo
+        id="nova-promo"
+        type="vibrant"
+        imagealignment="start"
+        imagewidth="large"
+        imagedisplay="padded"
+      >
+        <a slot="support-link" id="nova-promo-link" href=""></a>
+        <moz-button slot="actions" id="nova-promo-button" type="primary">
+        </moz-button>
+      </moz-promo>
+      <moz-button
+        data-l10n-id="about-private-browsing-promo-close-button"
+        id="nova-dismiss-btn"
+        type="ghost"
+        iconsrc="chrome://global/skin/icons/close.svg"
+      ></moz-button>
     </div>
   </body>
 </html>

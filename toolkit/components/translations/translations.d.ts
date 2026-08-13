@@ -290,6 +290,14 @@ interface TranslationsEnginePayload {
 export type NodeVisibility = "in-viewport" | "beyond-viewport" | "hidden";
 
 /**
+ * Document-language metadata collected from the content page.
+ */
+export interface DocumentLanguageMetadata {
+  htmlLangAttribute: string;
+  textSample: string;
+}
+
+/**
  * Used to decide how to translate a page for full page translations.
  */
 export interface LangTags {
@@ -298,6 +306,96 @@ export interface LangTags {
   userLangTag: string | null;
   htmlLangAttribute: string | null;
   identified: null | DetectionResult;
+}
+
+/**
+ * Describes how Translations should respond after considering page-language
+ * identification, document metadata, and the user's Language and Translations settings.
+ *
+ * "allowOffer" means the page is eligible to move forward with automatic
+ * translation or automatic offer UI. If auto-translate is enabled for the
+ * resolved source language, the page should translate automatically. Otherwise,
+ * Translations may offer the panel when automatic popup is enabled.
+ *
+ * "showButton" means Translations should show the URL-bar button, but should
+ * not auto-translate or automatically offer the panel. This represents a scenario
+ * in which we detect that there may be a translatable language, but we don't have
+ * high confidence that the detection is correct. This makes the UI easier for the
+ * user to open, without committing to making an automated decision.
+ *
+ * "hideButton" means Translations should hide the URL-bar button and not offer
+ * translation UI for the page. This represents scenarios in which we do not think
+ * that the current page is in a language that the user may want to translate.
+ */
+export type TranslationsOfferAction =
+  | "allowOffer"
+  | "showButton"
+  | "hideButton";
+
+/**
+ * The normalized status of a page-language candidate used by the offer matrix.
+ */
+export type TranslationsOfferMatrixLanguageStatus =
+  | "supported"
+  | "user-language"
+  | "unsupported"
+  | null;
+
+/**
+ * A page-language candidate after matching it against Translations support and
+ * the user's web content languages.
+ */
+export interface TranslationsOfferLanguageCandidate {
+  langTag: string;
+  supportedLangTag: string | null;
+  matchesWebContentLanguage: boolean;
+}
+
+/**
+ * A page-language candidate produced from language identification.
+ */
+export interface TranslationsOfferIdentifiedLanguageCandidate extends TranslationsOfferLanguageCandidate {
+  identificationResult: DetectionResult;
+}
+
+/**
+ * The page-language candidate selected by a Translations offer matrix outcome.
+ */
+export type TranslationsOfferMatrixSourceCandidate = "html" | "identified";
+
+/**
+ * The comparable page-language values used by the Translations offer matrix.
+ * Omitted fields in a matrix entry are free variables.
+ */
+export interface TranslationsOfferMatrixConditions {
+  htmlStatus?: TranslationsOfferMatrixLanguageStatus;
+  identificationStatus?: TranslationsOfferMatrixLanguageStatus;
+  identificationMatchesHtml?: boolean;
+  identificationConfident?: boolean;
+}
+
+/**
+ * The outcome to apply when a Translations offer matrix scenario matches.
+ */
+export interface TranslationsOfferMatrixOutcome {
+  action: TranslationsOfferAction;
+  sourceCandidate?: TranslationsOfferMatrixSourceCandidate;
+}
+
+/**
+ * A scenario in the Translations offer matrix.
+ */
+export interface TranslationsOfferMatrixScenario {
+  conditions: TranslationsOfferMatrixConditions;
+  outcome: TranslationsOfferMatrixOutcome;
+}
+
+/**
+ * The concrete action and resolved language tags to use for a Translations offer.
+ */
+export interface TranslationsOfferInstruction {
+  action: TranslationsOfferAction;
+  resolvedLangTags: LangTags;
 }
 
 /**

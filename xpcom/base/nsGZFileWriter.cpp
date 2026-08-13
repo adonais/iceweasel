@@ -3,10 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsGZFileWriter.h"
+
+#include "mozilla/ScopeExit.h"
 #include "nsIFile.h"
 #include "nsString.h"
 #include "zlib.h"
-#include "mozilla/ScopeExit.h"
 
 #ifdef XP_WIN
 #  include <io.h>

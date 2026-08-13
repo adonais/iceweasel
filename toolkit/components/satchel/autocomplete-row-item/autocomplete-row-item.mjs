@@ -2,7 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { html, when } from "chrome://global/content/vendor/lit.all.mjs";
+import {
+  html,
+  when,
+  classMap,
+  ifDefined,
+} from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 
 // eslint-disable-next-line import/no-unassigned-import
@@ -15,6 +20,8 @@ class AutocompleteRowItem extends MozLitElement {
     value: { type: String },
     icon: { type: String },
     actions: { type: Object },
+    selected: { type: Boolean, reflect: true },
+    subfocused: { type: Boolean, reflect: true },
   };
 
   #openActionsMenu(anchor, actions) {
@@ -54,38 +61,55 @@ class AutocompleteRowItem extends MozLitElement {
     }
   }
 
+  activateSecondaryAction() {
+    const { action, actions } = this.actions.secondary;
+    if (action) {
+      action();
+    } else if (actions) {
+      const button = this.shadowRoot.querySelector(
+        "moz-button.secondary-action"
+      );
+      this.#openActionsMenu(button, actions);
+    }
+  }
+
   renderSecondaryActionButton() {
-    const { type, action, actions } = this.actions.secondary;
+    const { type, action, actions, label } = this.actions.secondary;
     const stopMouseEvents = e => e.stopPropagation();
+    const onMouseDown = e => {
+      e.stopPropagation();
+      this.activateSecondaryAction();
+    };
 
     // We're expecting a single action
     if (action) {
       return html`<moz-button
-        @mousedown=${stopMouseEvents}
+        id="secondary-action-button"
+        @mousedown=${onMouseDown}
         @mouseup=${stopMouseEvents}
-        @click=${e => {
-          e.stopPropagation();
-          action();
-        }}
         type="icon ghost"
+        aria-label=${ifDefined(label)}
         .iconSrc=${this.getSecondaryActionItemIcon(type)}
-        class="secondary-action"
+        class=${classMap({
+          "secondary-action": true,
+          selected: this.selected,
+        })}
       ></moz-button>`;
     }
 
     // We're expecting multiple actions for this item
     if (actions) {
       return html`<moz-button
-        @mousedown=${stopMouseEvents}
+        id="secondary-action-button"
+        @mousedown=${onMouseDown}
         @mouseup=${stopMouseEvents}
-        @click=${e => {
-          e.stopPropagation();
-          this.#openActionsMenu(e.currentTarget, actions);
-        }}
         type="icon ghost"
-        type="icon ghost"
+        aria-label=${ifDefined(label)}
         .iconSrc=${this.getSecondaryActionItemIcon(type)}
-        class="secondary-action"
+        class=${classMap({
+          "secondary-action": true,
+          selected: this.selected,
+        })}
         menuId="secondary-action-menu"
       ></moz-button>`;
     }

@@ -240,7 +240,7 @@ add_task(async function test_remote_fetch_on_updateRecipes() {
   ExperimentAPI._rsLoader._enabled = true;
   ExperimentAPI._rsLoader.setTimer();
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => updateRecipesStub.called,
     "Wait for timer to call"
   );

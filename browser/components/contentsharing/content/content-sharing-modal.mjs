@@ -6,7 +6,7 @@ import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 import { html } from "chrome://global/content/vendor/lit.all.mjs";
 
 const { ERRORS, WARNINGS, MAX_ITEM_COUNT } = ChromeUtils.importESModule(
-  "resource:///modules/contentsharing/ContentSharingUtils.sys.mjs"
+  "moz-src:///browser/components/contentsharing/ContentSharingUtils.sys.mjs"
 );
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
@@ -240,6 +240,8 @@ export class ContentSharingModal extends MozLitElement {
       >`;
     }
 
+    // Links that fail schema validation are dropped when the share is built, so
+    // this error only occurs when no shareable links remain.
     if (this.shareResult.error === ERRORS.INVALID_SCHEMA) {
       return html`<moz-message-bar
         type="critical"

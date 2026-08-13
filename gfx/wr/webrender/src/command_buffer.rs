@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use api::{MixBlendMode, units::PictureRect};
+use api::{MixBlendMode, units::{LayoutPoint, LayoutRect, PictureRect}};
 use crate::pattern::{PatternKind, PatternShaderInput};
 use crate::renderer::BlendMode;
 use crate::{spatial_tree::SpatialNodeIndex, render_task_graph::RenderTaskId, surface::SurfaceTileDescriptor, tile_cache::TileKey, renderer::GpuBufferAddress, FastHashMap};
@@ -23,14 +23,14 @@ impl Command {
     const CMD_DRAW_SIMPLE_PRIM: u32 = 0x00000000;
     /// Change the current spatial node.
     const CMD_SET_SPATIAL_NODE: u32 = 0x10000000;
-    /// Draw a complex (3d-split) primitive, that has multiple GPU cache addresses.
-    const CMD_DRAW_COMPLEX_PRIM: u32 = 0x20000000;
     /// Draw a primitive, that has a single GPU buffer addresses.
     const CMD_DRAW_INSTANCE: u32 = 0x30000000;
     /// Draw a generic quad primitive
     const CMD_DRAW_QUAD: u32 = 0x40000000;
     /// Set a list of variable-length segments
     const CMD_SET_SEGMENTS: u32 = 0x50000000;
+    /// Draw a 3d-split-composite primitive.
+    const CMD_DRAW_SPLIT_COMPOSITE: u32 = 0x60000000;
 
     /// Bitmask for command bits of the command.
     const CMD_MASK: u32 = 0xf0000000;
@@ -52,13 +52,13 @@ impl Command {
         Command(Command::CMD_SET_SEGMENTS | count as u32)
     }
 
-    /// Encode drawing a complex prim.
-    fn draw_complex_prim(draw_index: storage::Index<PrimitiveDrawHeader>) -> Self {
-        Command(Command::CMD_DRAW_COMPLEX_PRIM | draw_index.0)
-    }
-
     fn draw_instance(draw_index: storage::Index<PrimitiveDrawHeader>) -> Self {
         Command(Command::CMD_DRAW_INSTANCE | draw_index.0)
+    }
+
+    /// Encode drawing a 3d-split-composite prim.
+    fn draw_split_composite(draw_index: storage::Index<PrimitiveDrawHeader>) -> Self {
+        Command(Command::CMD_DRAW_SPLIT_COMPOSITE | draw_index.0)
     }
 
     /// Encode arbitrary data word.
@@ -117,9 +117,15 @@ pub enum PrimitiveCommand {
     Simple {
         draw_index: storage::Index<PrimitiveDrawHeader>,
     },
-    Complex {
+    SplitComposite {
         draw_index: storage::Index<PrimitiveDrawHeader>,
-        gpu_address: GpuBufferAddress,
+        polygons_address: GpuBufferAddress,
+        // Maps the plane's local space to the destination surface's raster space.
+        transform_id: GpuTransformId,
+        src_task_id: RenderTaskId,
+        // The picture's unclipped local rect, used to map plane positions to
+        // texture coordinates.
+        local_rect: LayoutRect,
     },
     Instance {
         draw_index: storage::Index<PrimitiveDrawHeader>,
@@ -128,7 +134,9 @@ pub enum PrimitiveCommand {
     Quad {
         pattern: PatternKind,
         pattern_input: PatternShaderInput,
-        src_color_task_id: RenderTaskId,
+        // Source textures sampled by the pattern. Most patterns only use slot 0;
+        // multi-plane patterns such as YUV use the additional slots.
+        src_color_task_ids: [RenderTaskId; 3],
         // TODO(gw): Used for bounding rect only, could possibly remove
         draw_index: storage::Index<PrimitiveDrawHeader>,
         gpu_buffer_address: GpuBufferAddress,
@@ -148,20 +156,26 @@ impl PrimitiveCommand {
         }
     }
 
-    pub fn complex(
+    pub fn split_composite(
         draw_index: storage::Index<PrimitiveDrawHeader>,
-        gpu_address: GpuBufferAddress,
+        polygons_address: GpuBufferAddress,
+        transform_id: GpuTransformId,
+        src_task_id: RenderTaskId,
+        local_rect: LayoutRect,
     ) -> Self {
-        PrimitiveCommand::Complex {
+        PrimitiveCommand::SplitComposite {
             draw_index,
-            gpu_address,
+            polygons_address,
+            transform_id,
+            src_task_id,
+            local_rect,
         }
     }
 
     pub fn quad(
         pattern: PatternKind,
         pattern_input: PatternShaderInput,
-        src_color_task_id: RenderTaskId,
+        src_color_task_ids: [RenderTaskId; 3],
         draw_index: storage::Index<PrimitiveDrawHeader>,
         gpu_buffer_address: GpuBufferAddress,
         transform_id: GpuTransformId,
@@ -172,7 +186,7 @@ impl PrimitiveCommand {
         PrimitiveCommand::Quad {
             pattern,
             pattern_input,
-            src_color_task_id,
+            src_color_task_ids,
             draw_index,
             gpu_buffer_address,
             transform_id,
@@ -204,11 +218,10 @@ fn encode_blend_mode(blend_mode: BlendMode) -> u32 {
         BlendMode::PremultipliedAlpha => 2,
         BlendMode::PremultipliedDestOut => 3,
         BlendMode::SubpixelDualSource => 4,
-        BlendMode::MultiplyDualSource => 5,
-        BlendMode::Screen => 6,
-        BlendMode::Exclusion => 7,
-        BlendMode::PlusLighter => 8,
-        BlendMode::Advanced(mode) => 9 + mode as u32,
+        BlendMode::Screen => 5,
+        BlendMode::Exclusion => 6,
+        BlendMode::PlusLighter => 7,
+        BlendMode::Advanced(mode) => 8 + mode as u32,
     }
 }
 
@@ -219,11 +232,10 @@ fn decode_blend_mode(val: u32) -> BlendMode {
         2 => BlendMode::PremultipliedAlpha,
         3 => BlendMode::PremultipliedDestOut,
         4 => BlendMode::SubpixelDualSource,
-        5 => BlendMode::MultiplyDualSource,
-        6 => BlendMode::Screen,
-        7 => BlendMode::Exclusion,
-        8 => BlendMode::PlusLighter,
-        _ => BlendMode::Advanced(unsafe { std::mem::transmute::<u8, MixBlendMode>((val - 9) as u8) }),
+        5 => BlendMode::Screen,
+        6 => BlendMode::Exclusion,
+        7 => BlendMode::PlusLighter,
+        _ => BlendMode::Advanced(unsafe { std::mem::transmute::<u8, MixBlendMode>((val - 8) as u8) }),
     }
 }
 
@@ -281,25 +293,34 @@ impl CommandBuffer {
             PrimitiveCommand::Simple { draw_index } => {
                 self.commands.push(Command::draw_simple_prim(draw_index));
             }
-            PrimitiveCommand::Complex { draw_index, gpu_address } => {
-                self.commands.push(Command::draw_complex_prim(draw_index));
-                self.commands.push(Command::data(gpu_address.as_u32()));
+            PrimitiveCommand::SplitComposite { draw_index, polygons_address, transform_id, src_task_id, local_rect } => {
+                self.commands.push(Command::draw_split_composite(draw_index));
+                self.commands.push(Command::data(polygons_address.as_u32()));
+                self.commands.push(Command::data(transform_id.0));
+                self.commands.push(Command::data(src_task_id.index));
+                self.commands.push(Command::data(src_task_id.sub_rect_index as u32));
+                self.commands.push(Command::data(local_rect.min.x.to_bits()));
+                self.commands.push(Command::data(local_rect.min.y.to_bits()));
+                self.commands.push(Command::data(local_rect.max.x.to_bits()));
+                self.commands.push(Command::data(local_rect.max.y.to_bits()));
             }
             PrimitiveCommand::Instance { draw_index, gpu_buffer_address } => {
                 self.commands.push(Command::draw_instance(draw_index));
                 self.commands.push(Command::data(gpu_buffer_address.as_u32()));
             }
-            PrimitiveCommand::Quad { pattern, pattern_input, draw_index, gpu_buffer_address, transform_id, quad_flags, edge_flags, src_color_task_id, blend_mode } => {
+            PrimitiveCommand::Quad { pattern, pattern_input, draw_index, gpu_buffer_address, transform_id, quad_flags, edge_flags, src_color_task_ids, blend_mode } => {
                 self.commands.push(Command::draw_quad(draw_index));
                 self.commands.push(Command::data(pattern as u32));
                 self.commands.push(Command::data(pattern_input.0 as u32));
                 self.commands.push(Command::data(pattern_input.1 as u32));
-                self.commands.push(Command::data(src_color_task_id.index));
-                self.commands.push(Command::data(src_color_task_id.sub_rect_index as u32));
                 self.commands.push(Command::data(gpu_buffer_address.as_u32()));
                 self.commands.push(Command::data(transform_id.0));
                 self.commands.push(Command::data((quad_flags.bits() as u32) << 16 | edge_flags.bits() as u32));
                 self.commands.push(Command::data(encode_blend_mode(blend_mode)));
+                for i in 0..pattern.num_src_textures() {
+                    self.commands.push(Command::data(src_color_task_ids[i].index));
+                    self.commands.push(Command::data(src_color_task_ids[i].sub_rect_index as u32));
+                }
             }
         }
     }
@@ -327,13 +348,30 @@ impl CommandBuffer {
                 Command::CMD_SET_SPATIAL_NODE => {
                     current_spatial_node_index = SpatialNodeIndex(param);
                 }
-                Command::CMD_DRAW_COMPLEX_PRIM => {
+                Command::CMD_DRAW_SPLIT_COMPOSITE => {
                     let draw_index = storage::Index::from_u32(param);
-                    let data = cmd_iter.next().unwrap();
-                    let gpu_address = GpuBufferAddress::from_u32(data.0);
-                    let cmd = PrimitiveCommand::complex(
+                    let polygons_address = GpuBufferAddress::from_u32(cmd_iter.next().unwrap().0);
+                    let transform_id = GpuTransformId(cmd_iter.next().unwrap().0);
+                    let src_task_id = RenderTaskId {
+                        index: cmd_iter.next().unwrap().0,
+                        sub_rect_index: cmd_iter.next().unwrap().0 as u16,
+                    };
+                    let local_rect = LayoutRect {
+                        min: LayoutPoint::new(
+                            f32::from_bits(cmd_iter.next().unwrap().0),
+                            f32::from_bits(cmd_iter.next().unwrap().0),
+                        ),
+                        max: LayoutPoint::new(
+                            f32::from_bits(cmd_iter.next().unwrap().0),
+                            f32::from_bits(cmd_iter.next().unwrap().0),
+                        ),
+                    };
+                    let cmd = PrimitiveCommand::split_composite(
                         draw_index,
-                        gpu_address,
+                        polygons_address,
+                        transform_id,
+                        src_task_id,
+                        local_rect,
                     );
                     f(&cmd, current_spatial_node_index, &[]);
                 }
@@ -344,10 +382,6 @@ impl CommandBuffer {
                         cmd_iter.next().unwrap().0 as i32,
                         cmd_iter.next().unwrap().0 as i32,
                     );
-                    let src_color_task_id = RenderTaskId {
-                        index: cmd_iter.next().unwrap().0,
-                        sub_rect_index: cmd_iter.next().unwrap().0 as u16
-                    };
                     let data = cmd_iter.next().unwrap();
                     let transform_id = GpuTransformId(cmd_iter.next().unwrap().0);
                     let bits = cmd_iter.next().unwrap().0;
@@ -355,10 +389,19 @@ impl CommandBuffer {
                     let edge_flags = EdgeMask::from_bits((bits & 0xff) as u8).unwrap();
                     let blend_mode = decode_blend_mode(cmd_iter.next().unwrap().0);
                     let gpu_buffer_address = GpuBufferAddress::from_u32(data.0);
+
+                    let mut src_color_task_ids = [RenderTaskId::INVALID; 3];
+                    for i in 0..pattern.num_src_textures() {
+                        src_color_task_ids[i] = RenderTaskId {
+                            index: cmd_iter.next().unwrap().0,
+                            sub_rect_index: cmd_iter.next().unwrap().0 as u16
+                        };
+                    }
+
                     let cmd = PrimitiveCommand::quad(
                         pattern,
                         pattern_input,
-                        src_color_task_id,
+                        src_color_task_ids,
                         draw_index,
                         gpu_buffer_address,
                         transform_id,

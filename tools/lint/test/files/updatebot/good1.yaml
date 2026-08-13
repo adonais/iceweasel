@@ -34,7 +34,7 @@ vendoring:
   url: https://chromium.googlesource.com/angle/angle
   tracking: tag
   source-hosting: angle
-  vendor-directory: gfx/angle/checkout
+  vendor-directory: third_party/angle
   skip-vendoring-steps: ["fetch", "update-moz-build"]
 
   update-actions:

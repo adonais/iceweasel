@@ -23,6 +23,10 @@ skip-if = [
 
 ["browser_etp_customize_2.js"]
 
+["browser_etp_customize_3.js"]
+
+["browser_etp_customize_4.js"]
+
 ["browser_etp_exceptions_dialog.js"]
 
 ["browser_etp_status.js"]

@@ -163,7 +163,7 @@ async function doSessionRestoreTest({
     const onNewTabCreated = waitForNewTabWithLoadRequest();
     const href = await openLink(browser, link, openBy, openAs);
     const target = await onNewTabCreated;
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () =>
         target.linkedBrowser.browsingContext
           .mostRecentLoadingSessionHistoryEntry

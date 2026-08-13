@@ -32,6 +32,7 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.toolbar.BrowserToolbar
 import mozilla.components.browser.toolbar.display.DisplayToolbar.Indicators
 import mozilla.components.compose.cfr.CFRPopup
+import mozilla.components.compose.cfr.CFRPopupBackground
 import mozilla.components.compose.cfr.CFRPopupProperties
 import mozilla.components.feature.customtabs.CustomTabsToolbarFeature
 import mozilla.components.feature.customtabs.getConfiguredColorSchemeParams
@@ -310,14 +311,16 @@ class BrowserToolbarIntegration(
                                 properties = CFRPopupProperties(
                                     popupWidth = 256.dp,
                                     popupAlignment = CFRPopup.PopupAlignment.INDICATOR_CENTERED_IN_ANCHOR,
-                                    popupBodyColors = listOf(
-                                        ContextCompat.getColor(
-                                            fragment.requireContext(),
-                                            R.color.cfr_pop_up_shape_end_color,
-                                        ),
-                                        ContextCompat.getColor(
-                                            fragment.requireContext(),
-                                            R.color.cfr_pop_up_shape_start_color,
+                                    popupBodyColors = CFRPopupBackground.Colors(
+                                        listOf(
+                                            ContextCompat.getColor(
+                                                fragment.requireContext(),
+                                                R.color.cfr_pop_up_shape_end_color,
+                                            ),
+                                            ContextCompat.getColor(
+                                                fragment.requireContext(),
+                                                R.color.cfr_pop_up_shape_start_color,
+                                            ),
                                         ),
                                     ),
                                     dismissButtonColor = ContextCompat.getColor(
@@ -363,14 +366,16 @@ class BrowserToolbarIntegration(
                                 properties = CFRPopupProperties(
                                     popupWidth = 256.dp,
                                     popupAlignment = CFRPopup.PopupAlignment.BODY_TO_ANCHOR_START,
-                                    popupBodyColors = listOf(
-                                        ContextCompat.getColor(
-                                            fragment.requireContext(),
-                                            R.color.cfr_pop_up_shape_end_color,
-                                        ),
-                                        ContextCompat.getColor(
-                                            fragment.requireContext(),
-                                            R.color.cfr_pop_up_shape_start_color,
+                                    popupBodyColors = CFRPopupBackground.Colors(
+                                        listOf(
+                                            ContextCompat.getColor(
+                                                fragment.requireContext(),
+                                                R.color.cfr_pop_up_shape_end_color,
+                                            ),
+                                            ContextCompat.getColor(
+                                                fragment.requireContext(),
+                                                R.color.cfr_pop_up_shape_start_color,
+                                            ),
                                         ),
                                     ),
                                     dismissButtonColor = ContextCompat.getColor(
@@ -429,14 +434,16 @@ class BrowserToolbarIntegration(
                                 properties = CFRPopupProperties(
                                     popupWidth = 256.dp,
                                     popupAlignment = CFRPopup.PopupAlignment.INDICATOR_CENTERED_IN_ANCHOR,
-                                    popupBodyColors = listOf(
-                                        ContextCompat.getColor(
-                                            fragment.requireContext(),
-                                            R.color.cfr_pop_up_shape_end_color,
-                                        ),
-                                        ContextCompat.getColor(
-                                            fragment.requireContext(),
-                                            R.color.cfr_pop_up_shape_start_color,
+                                    popupBodyColors = CFRPopupBackground.Colors(
+                                        listOf(
+                                            ContextCompat.getColor(
+                                                fragment.requireContext(),
+                                                R.color.cfr_pop_up_shape_end_color,
+                                            ),
+                                            ContextCompat.getColor(
+                                                fragment.requireContext(),
+                                                R.color.cfr_pop_up_shape_start_color,
+                                            ),
                                         ),
                                     ),
                                     dismissButtonColor = ContextCompat.getColor(

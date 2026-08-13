@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "jit/JSJitFrameIter-inl.h"
-
 #include "jit/CalleeToken.h"
 #include "jit/IonScript.h"
 #include "jit/JitcodeMap.h"
@@ -18,6 +16,7 @@
 #include "js/friend/DumpFunctions.h"  // js::DumpObject, js::DumpValue
 #include "vm/JitActivation.h"
 
+#include "jit/JSJitFrameIter-inl.h"
 #include "vm/JSScript-inl.h"
 
 using namespace js;

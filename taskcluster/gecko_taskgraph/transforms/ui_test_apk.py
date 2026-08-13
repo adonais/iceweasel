@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 """
 UI-test-apk-specific transforms. Build the Slack notification payload from
-the task's shipping-product, and build the test-lab.py invocation from the
+the task's app-name, and build the test-lab.py invocation from the
 task's flank-config / artifact-type / no-test-apk fields.
 """
 
@@ -92,6 +92,8 @@ def _slack_attachments(product_header):
 @transforms.add
 def build_slack_notification(config, tasks):
     for task in tasks:
+        product = task.pop("app-name")
+
         extra = task.setdefault("extra", {})
         notify = extra.get("notify") or {}
         if not notify.get("enabled"):
@@ -99,7 +101,6 @@ def build_slack_notification(config, tasks):
             yield task
             continue
 
-        product = task.get("attributes", {}).get("shipping-product")
         header = SLACK_PRODUCT_HEADERS.get(product)
         if header is None:
             extra["notify"] = {}

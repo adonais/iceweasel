@@ -740,7 +740,7 @@ describe("<FocusTimer>", () => {
       assert.equal(action.type, at.SET_PREF);
     });
 
-    it("should hide Focus Timer when 'Hide timer' option is clicked", () => {
+    it("should hide Focus Timer when 'Hide widget' option is clicked", () => {
       const menuItem = wrapper.find(
         "panel-item[data-l10n-id='newtab-widget-menu-hide']"
       );
@@ -858,7 +858,7 @@ describe("<FocusTimer>", () => {
       );
     });
 
-    it("renders size submenu with small/medium/large items when nova is enabled", () => {
+    it("renders size submenu with medium/large items when nova is enabled", () => {
       const novaWrapper = mount(
         <WrapWithProvider state={novaState}>
           <FocusTimer
@@ -874,15 +874,17 @@ describe("<FocusTimer>", () => {
       assert.isTrue(submenu.exists());
 
       const items = submenu.find("panel-item");
-      assert.equal(items.length, 3);
+      assert.equal(items.length, 2);
 
       const smallItem = items.filterWhere(n => n.prop("data-size") === "small");
       const mediumItem = items.filterWhere(
         n => n.prop("data-size") === "medium"
       );
       const largeItem = items.filterWhere(n => n.prop("data-size") === "large");
-      assert.isTrue(smallItem.exists(), "small item should exist");
-      assert.ok(smallItem.prop("disabled"), "small item should be disabled");
+      assert.isFalse(
+        smallItem.exists(),
+        "small item should not exist for the timer"
+      );
       assert.isTrue(mediumItem.exists(), "medium item should exist");
       assert.isTrue(largeItem.exists(), "large item should exist");
       novaWrapper.unmount();

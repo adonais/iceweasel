@@ -192,11 +192,10 @@ NSS_CMSDigestContext_FinishMultiple(NSSCMSDigestContext *cmsdigcx,
     digestPair *pair;
     void *mark;
     int i;
-    SECStatus rv;
+    SECStatus rv = SECSuccess;
 
     /* no contents? do not finish digests */
     if (digestsp == NULL || !cmsdigcx->saw_contents) {
-        rv = SECSuccess;
         goto cleanup;
     }
 
@@ -204,10 +203,14 @@ NSS_CMSDigestContext_FinishMultiple(NSSCMSDigestContext *cmsdigcx,
 
     /* allocate digest array & SECItems on arena */
     digests = PORT_ArenaNewArray(poolp, SECItem *, cmsdigcx->digcnt + 1);
+    if (!digests) {
+        PORT_ArenaRelease(poolp, mark);
+        rv = SECFailure;
+        goto cleanup;
+    }
 
-    rv = ((digests == NULL) ? SECFailure : SECSuccess);
     pair = cmsdigcx->digPairs;
-    for (i = 0; rv == SECSuccess && i < cmsdigcx->digcnt; i++, pair++) {
+    for (i = 0; i < cmsdigcx->digcnt; i++, pair++) {
         SECItem digest;
         unsigned char hash[HASH_LENGTH_MAX];
 
@@ -223,13 +226,15 @@ NSS_CMSDigestContext_FinishMultiple(NSSCMSDigestContext *cmsdigcx,
         digests[i] = SECITEM_ArenaDupItem(poolp, &digest);
         if (!digests[i]) {
             rv = SECFailure;
+            break;
         }
     }
-    digests[i] = NULL;
     if (rv == SECSuccess) {
+        digests[i] = NULL;
         PORT_ArenaUnmark(poolp, mark);
-    } else
+    } else {
         PORT_ArenaRelease(poolp, mark);
+    }
 
 cleanup:
     NSS_CMSDigestContext_Cancel(cmsdigcx);

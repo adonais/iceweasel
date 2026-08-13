@@ -414,7 +414,7 @@ bool js::OptimizeTypedArraySpeciesFuse::checkInvariant(JSContext* cx) {
 #undef PROTO_KEY
   };
 
-  auto* typedArrayproto =
+  auto* typedArrayProto =
       cx->global()->maybeGetPrototype<NativeObject>(JSProto_TypedArray);
 
   // Check all concrete TypedArray prototypes.
@@ -425,12 +425,12 @@ bool js::OptimizeTypedArraySpeciesFuse::checkInvariant(JSContext* cx) {
       // No proto, invariant still holds
       continue;
     }
-    MOZ_ASSERT(typedArrayproto,
+    MOZ_ASSERT(typedArrayProto,
                "%TypedArray%.prototype must be initialized when TypedArray "
                "subclass is initialized");
 
     // Ensure the prototype's prototype is %TypedArray%.prototype.
-    if (proto->staticPrototype() != typedArrayproto) {
+    if (proto->staticPrototype() != typedArrayProto) {
       return false;
     }
 
@@ -440,6 +440,34 @@ bool js::OptimizeTypedArraySpeciesFuse::checkInvariant(JSContext* cx) {
     // Ensure the prototype's `constructor` slot is the original constructor.
     if (!ObjectHasDataPropertyValue(proto, NameToId(cx->names().constructor),
                                     ObjectValue(*ctor))) {
+      return false;
+    }
+  }
+
+  auto* typedArrayCtor =
+      cx->global()->maybeGetConstructor<NativeObject>(JSProto_TypedArray);
+
+  // Check all concrete TypedArray constructors.
+  for (auto protoKey : typedArrayProtoKeys) {
+    // Constructor must be initialized.
+    NativeObject* ctor =
+        cx->global()->maybeGetConstructor<NativeObject>(protoKey);
+    if (!ctor) {
+      // No ctor, invariant still holds
+      continue;
+    }
+    MOZ_ASSERT(typedArrayCtor,
+               "%TypedArray% must be initialized when TypedArray subclass is "
+               "initialized");
+
+    // Ensure the constructor's prototype is %TypedArray%.
+    if (ctor->staticPrototype() != typedArrayCtor) {
+      return false;
+    }
+
+    // Ensure the constructor has no own @@species property.
+    auto speciesKey = PropertyKey::Symbol(cx->wellKnownSymbols().species);
+    if (ctor->lookupPure(speciesKey).isSome()) {
       return false;
     }
   }

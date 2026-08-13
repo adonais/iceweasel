@@ -1109,7 +1109,7 @@ function test_syntax(postfixes, check_error, ignore_opts) {
 
   // ==== Legacy ====
 
-  // ==== asm.js ====
+  // ==== 'use asm' directive ====
 
   test("(function() { 'use asm'; ");
   test("(function() { 'use asm'; var ");

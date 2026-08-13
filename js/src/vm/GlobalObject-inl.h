@@ -9,7 +9,8 @@
 
 #include "mozilla/Assertions.h"  // MOZ_ASSERT
 
-#include "vm/JSContext.h"             // JSContext
+#include "vm/JSContext.h"  // JSContext
+
 #include "vm/ObjectOperations-inl.h"  // js::SetProperty
 
 /* static */ inline bool js::GlobalObject::setIntrinsicValue(

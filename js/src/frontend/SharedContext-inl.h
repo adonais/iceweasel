@@ -6,13 +6,14 @@
 #define frontend_SharedContext_inl_h
 
 #include "frontend/SharedContext.h"
+
 #include "frontend/ParseContext.h"
 
 namespace js {
 namespace frontend {
 
 inline Directives::Directives(ParseContext* parent)
-    : strict_(parent->sc()->strict()), asmJS_(parent->useAsmOrInsideUseAsm()) {}
+    : strict_(parent->sc()->strict()) {}
 
 }  // namespace frontend
 

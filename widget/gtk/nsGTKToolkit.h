@@ -5,8 +5,9 @@
 #ifndef GTKTOOLKIT_H
 #define GTKTOOLKIT_H
 
-#include "nsString.h"
 #include <gtk/gtk.h>
+
+#include "nsString.h"
 
 /**
  * Wrapper around the thread running the message pump.

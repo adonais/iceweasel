@@ -32,7 +32,7 @@ nsCString GetFrameState(nsIFrame* aFrame) {
 
   nsFrameState state = aFrame->GetStateBits();
 
-  if (state == nsFrameState(0)) {
+  if (state == NS_FRAME_STATE_NONE) {
     result.Assign('0');
     return result;
   }
@@ -81,7 +81,7 @@ void DebugVerifyFrameStateBits() {
   // building this we assert that a bit isn't used multiple times within
   // the same group.
   nsFrameState bitsUsedPerGroup[size_t(FrameStateGroupId::LENGTH)] = {
-      nsFrameState(0)};
+      NS_FRAME_STATE_NONE};
 
 #  define FRAME_STATE_BIT(group_, value_, name_)                           \
     {                                                                      \

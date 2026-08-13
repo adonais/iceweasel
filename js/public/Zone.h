@@ -11,7 +11,8 @@
 
 #include <stddef.h>  // size_t
 
-#include "jstypes.h"        // JS_PUBLIC_API
+#include "jstypes.h"  // JS_PUBLIC_API
+
 #include "js/RootingAPI.h"  // JS::Handle
 #include "js/TypeDecls.h"  // JSContext, JSObject, jsid, JS::Compartment, JS::GCContext, JS::Value, JS::Zone
 

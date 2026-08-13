@@ -265,6 +265,26 @@ if(HAVE_PTHREAD_H)
   check_symbol_exists(pthread_setname_np pthread.h _HAS_PTHREAD_SETNAME_NP)
   aom_pop_var(CMAKE_REQUIRED_DEFINITIONS)
 
+  # Since https://gitlab.kitware.com/cmake/cmake/-/commit/cebcc07a80 (included
+  # in 3.30.0), check_symbol_exists() will modify CMAKE_<LANG>_FLAGS{,_<CONFIG>}
+  # and then restore the values afterward. This will create a normal variable
+  # which will override the cached variable libaom uses in checking for flags.
+  # Due to the level of scope involved, it's easier to clear the normal variable
+  # rather than try to propagate the value up through the intermediate scopes.
+  if(CMAKE_TRY_COMPILE_CONFIGURATION)
+    string(TOUPPER "${CMAKE_TRY_COMPILE_CONFIGURATION}" tc_config)
+  else()
+    set(tc_config "DEBUG")
+  endif()
+  set(tc_config "CMAKE_C_FLAGS_${tc_config}")
+  foreach(config ${AOM_C_CONFIGS})
+    if(${config} STREQUAL ${tc_config})
+      unset(${config})
+      break()
+    endif()
+  endforeach()
+  unset(tc_config)
+
   set(HAVE_PTHREAD_SETNAME_NP ${_HAS_PTHREAD_SETNAME_NP})
 endif()
 
@@ -478,7 +498,7 @@ if(NOT GIT_FOUND)
   message("--- Git missing, version will be read from CHANGELOG.")
 endif()
 
-string(TIMESTAMP year "%Y")
+set(year "2016")
 configure_file("${AOM_ROOT}/cmake/aom_config.c.template"
                "${AOM_CONFIG_DIR}/config/aom_config.c")
 

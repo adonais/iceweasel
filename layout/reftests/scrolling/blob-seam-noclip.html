@@ -1,0 +1,51 @@
+<!doctype html>
+<html reftest-async-scroll>
+  <head>
+    <meta charset="utf-8">
+    <title>blob-seam scroll-snap isolation (no clips, APZ scroll)</title>
+    <style>
+      html,body{margin:0;padding:0;background:#fff;}
+      #scroller{position:relative;overflow:auto;width:1486.8px;height:960px;}
+      #container{position:relative;overflow:visible;width:1440px;height:1920px;}
+    </style></head>
+    <body>
+      <div id="scroller"
+           reftest-displayport-x="0" reftest-displayport-y="0"
+           reftest-displayport-w="1487" reftest-displayport-h="1920"
+           reftest-async-scroll-x="0" reftest-async-scroll-y="76.6">
+        <div id="container">
+          <div class="kix-rotatingtilemanager docs-ui-hit-region-surface" style="position:absolute;top:0px;left:336px;right:2.4px;bottom:-161.8px;width:1088.4px;height:1060.8px;overflow:visible;transform-origin:544.2px 537px;display:block;box-sizing:content-box;margin:0px;padding:13.2px 0px 0px;">
+            <div class="kix-rotatingtilemanager-content" style="position:absolute;top:13.2px;left:46.2px;right:1042.2px;bottom:1060.8px;width:0px;height:0px;overflow:visible;transform-origin:0px 0px;display:block;box-sizing:content-box;margin:0px;padding:0px;z-index:22;">
+              <div style="position:absolute;top:0px;left:-46.2px;right:-1042.8px;bottom:-458px;width:1089px;height:458px;overflow:visible;transform-origin:544.5px 229px;display:block;box-sizing:content-box;margin:0px;padding:0px;z-index:0;">
+                <div class="kix-canvas-tile-content" style="position:absolute;top:0px;left:0px;right:0px;bottom:0px;width:1089px;height:458px;overflow:visible;transform-origin:544.5px 229px;display:block;box-sizing:content-box;margin:0px;padding:0px;z-index:0;">
+                  <svg width="100%" height="100%" style="position:static;width:1089px;height:458px;overflow:visible;transform-origin:544.5px 229px;display:inline;box-sizing:content-box;margin:0px;padding:0px;">
+                    <clipPath id="clipPath-1682" style="position:static;overflow:visible;transform-origin:0px 0px;display:inline;box-sizing:content-box;margin:0px;padding:0px;">
+                      <rect x="132.6" y="288.507" width="869.4" height="405.289" style="position:static;width:869.4px;height:405.289px;overflow:visible;transform-origin:0px 0px;display:inline;box-sizing:content-box;margin:0px;padding:0px;">
+                      </rect>
+                    </clipPath>
+                    <g clip-path="url(#clipPath-1682)" style="position:static;overflow:visible;transform-origin:0px 0px;clip-path:url(&quot;#clipPath-1682&quot;);display:inline;box-sizing:content-box;margin:0px;padding:0px;">
+                      <image x="86.4" y="288.507" width="869.4" height="405.289" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAgCAIAAACgkq6HAAAAGElEQVR4nGOUqq9nwAaYsIqOSoxKjCgJAM+4AVgmGgCgAAAAAElFTkSuQmCC" transform="matrix(1,0,0,1,46.2,0)" preserveAspectRatio="none" style="position:static;width:869.4px;height:405.289px;overflow:visible;transform:matrix(1, 0, 0, 1, 46.2, 0);transform-origin:0px 0px;display:inline;box-sizing:content-box;margin:0px;padding:0px;">
+                      </image>
+                    </g>
+                  </svg>
+                </div>
+              </div>
+              <div style="position:absolute;top:458px;left:-46.2px;right:-1042.8px;bottom:-916px;width:1089px;height:458px;overflow:visible;transform-origin:544.5px 229px;display:block;box-sizing:content-box;margin:0px;padding:0px;z-index:1;">
+                <div class="kix-canvas-tile-content" style="position:absolute;top:0px;left:0px;right:0px;bottom:0px;width:1089px;height:458px;overflow:visible;transform-origin:544.5px 229px;display:block;box-sizing:content-box;margin:0px;padding:0px;z-index:1;">
+                  <svg width="100%" height="100%" style="position:static;width:1089px;height:458px;overflow:visible;transform-origin:544.5px 229px;display:inline;box-sizing:content-box;margin:0px;padding:0px;">
+                    <clipPath id="clipPath-1727" style="position:static;overflow:visible;transform-origin:0px 0px;display:inline;box-sizing:content-box;margin:0px;padding:0px;">
+                      <rect x="132.6" y="-169.493" width="869.4" height="405.289" style="position:static;width:869.4px;height:405.289px;overflow:visible;transform-origin:0px 0px;display:inline;box-sizing:content-box;margin:0px;padding:0px;">
+                      </rect>
+                    </clipPath>
+                    <g clip-path="url(#clipPath-1727)" style="position:static;overflow:visible;transform-origin:0px 0px;clip-path:url(&quot;#clipPath-1727&quot;);display:inline;box-sizing:content-box;margin:0px;padding:0px;">
+                      <image x="86.4" y="288.507" width="869.4" height="405.289" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAgCAIAAACgkq6HAAAAGElEQVR4nGOUqq9nwAaYsIqOSoxKjCgJAM+4AVgmGgCgAAAAAElFTkSuQmCC" transform="matrix(1,0,0,1,46.2,-458)" preserveAspectRatio="none" style="position:static;width:869.4px;height:405.289px;overflow:visible;transform:matrix(1, 0, 0, 1, 46.2, -458);transform-origin:0px 0px;display:inline;box-sizing:content-box;margin:0px;padding:0px;">
+                      </image>
+                    </g>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div></body>
+    </html>

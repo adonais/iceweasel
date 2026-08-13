@@ -101,7 +101,7 @@ private val tabStripIconSize
  * Top level composable for the tabs strip.
  *
  * @param isSelectDisabled Whether or not the tabs can be shown as selected.
- * @param showActionButtons Show the action buttons in the tabs strip when true.
+ * @param showTabCounterButton Show the tab counter button in the tabs strip when true.
  * @param tabStripColors The colors to use for the tabs strip.
  * @param browserStore The [BrowserStore] instance used to observe tabs state.
  * @param appStore The [AppStore] instance used to observe browsing mode.
@@ -115,7 +115,7 @@ private val tabStripIconSize
 @Composable
 fun TabStrip(
     isSelectDisabled: Boolean = false,
-    showActionButtons: Boolean = true,
+    showTabCounterButton: Boolean = true,
     tabStripColors: TabStripColors = TabStripColors.default(),
     browserStore: BrowserStore = components.core.store,
     appStore: AppStore = components.appStore,
@@ -152,7 +152,7 @@ fun TabStrip(
 
     TabStripContent(
         state = state,
-        showActionButtons = showActionButtons,
+        showTabCounterButton = showTabCounterButton,
         colors = tabStripColors,
         onAddTabClick = {
             onAddTabClick()
@@ -186,7 +186,7 @@ fun TabStrip(
 private fun TabStripContent(
     state: TabStripState,
     colors: TabStripColors,
-    showActionButtons: Boolean = true,
+    showTabCounterButton: Boolean = true,
     onAddTabClick: () -> Unit,
     onCloseTabClick: (id: String, isPrivate: Boolean) -> Unit,
     onSelectedTabClick: (tabId: String, url: String) -> Unit,
@@ -215,18 +215,16 @@ private fun TabStripContent(
                 onMove = onMove,
             )
 
-            if (showActionButtons) {
-                IconButton(onClick = onAddTabClick) {
-                    Icon(
-                        painter = painterResource(iconsR.drawable.mozac_ic_plus_24),
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        contentDescription = stringResource(R.string.add_tab),
-                    )
-                }
+            IconButton(onClick = onAddTabClick) {
+                Icon(
+                    painter = painterResource(iconsR.drawable.mozac_ic_plus_24),
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    contentDescription = stringResource(R.string.add_tab),
+                )
             }
         }
 
-        if (showActionButtons) {
+        if (showTabCounterButton) {
             TabStripTabCounterButton(
                 tabCount = state.tabs.size,
                 size = dimensionResource(R.dimen.tab_strip_height),

@@ -41,8 +41,11 @@ async function testMeasuringToolHighlighterDestroyed(toolbox) {
   info("Activating the measuring tool");
   await activateMeasureButton(toolbox);
   await waitForHighlighterState(inspectorFront, true);
+  let measuringHighlighterFront = await inspectorFront.getHighlighterByType(
+    HIGHLIGHTER_TYPES.MEASURING
+  );
   ok(
-    inspectorFront.getKnownHighlighter(HIGHLIGHTER_TYPES.MEASURING)?.isShown(),
+    measuringHighlighterFront.isShown(),
     "Measuring tool highlighter is shown"
   );
 
@@ -52,7 +55,7 @@ async function testMeasuringToolHighlighterDestroyed(toolbox) {
   await waitForMeasureButtonInDOM(toolbox, false);
   await waitForHighlighterState(inspectorFront, false);
   ok(
-    !inspectorFront.getKnownHighlighter(HIGHLIGHTER_TYPES.MEASURING)?.isShown(),
+    !measuringHighlighterFront.isShown(),
     "Measuring tool highlighter is hidden after button disabled"
   );
 
@@ -62,28 +65,29 @@ async function testMeasuringToolHighlighterDestroyed(toolbox) {
   await toolbox.selectTool("inspector");
 
   await activateMeasureButton(toolbox);
+  ok(
+    isButtonActive(getMeasureButtonInDOM(toolbox)),
+    "Measure button is active before reloading the page"
+  );
   await waitForHighlighterState(inspectorFront, true);
   ok(
-    inspectorFront.getKnownHighlighter(HIGHLIGHTER_TYPES.MEASURING)?.isShown(),
+    measuringHighlighterFront.isShown(),
     "Measuring tool highlighter is shown again after re-enabling"
   );
 
   info("Reload the page");
   await reloadSelectedTab();
   inspectorFront = await toolbox.target.getFront("inspector");
-  is(
-    inspectorFront.getKnownHighlighter(HIGHLIGHTER_TYPES.MEASURING),
-    undefined,
-    "Highlighter doesn't exist anymore after reloading"
+  measuringHighlighterFront = await inspectorFront.getHighlighterByType(
+    HIGHLIGHTER_TYPES.MEASURING
   );
   ok(
-    !isButtonActive(getMeasureButtonInDOM(toolbox)),
-    "Measure button isn't active after reloading the page"
+    isButtonActive(getMeasureButtonInDOM(toolbox)),
+    "Measure button is kept active after reloading the page"
   );
-  await activateMeasureButton(toolbox);
   await waitForHighlighterState(inspectorFront, true);
   ok(
-    inspectorFront.getKnownHighlighter(HIGHLIGHTER_TYPES.MEASURING)?.isShown(),
+    measuringHighlighterFront.isShown(),
     "Measuring tool highlighter can be displayed after reloading"
   );
 }
@@ -134,10 +138,10 @@ function isButtonActive(button) {
 }
 
 async function waitForHighlighterState(inspectorFront, shouldBeShown) {
-  await waitFor(() => {
-    const highlighter = inspectorFront.getKnownHighlighter(
+  await waitFor(async () => {
+    const highlighter = await inspectorFront.getHighlighterByType(
       HIGHLIGHTER_TYPES.MEASURING
     );
-    return shouldBeShown ? highlighter?.isShown() : !highlighter?.isShown();
+    return shouldBeShown === highlighter.isShown();
   });
 }

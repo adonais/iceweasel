@@ -39,10 +39,6 @@ class FilePickerHandlerClass {
    *     A reference to identify the caller which requested to dismiss pickers.
    */
   allowFilePickers(caller) {
-    if (!this.#callers.has(caller)) {
-      return;
-    }
-
     this.#callers.delete(caller);
 
     if (this.#callers.size || !this.#registeredFactory) {

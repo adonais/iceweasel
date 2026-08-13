@@ -28,7 +28,7 @@ add_task(async function test_switchTab_notFoundPage() {
           context.results.some(
             result =>
               result.payload.url == url &&
-              result.type == UrlbarUtils.RESULT_TYPE.TAB_SWITCH
+              result.type == UrlbarShared.RESULT_TYPE.TAB_SWITCH
           ),
           "A switch to tab entry should be present for the URL"
         );

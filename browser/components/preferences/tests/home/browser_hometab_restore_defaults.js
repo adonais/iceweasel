@@ -18,7 +18,7 @@ add_task(async function testRestoreDefaultsBtn_visible() {
   );
   let browser = tab.linkedBrowser;
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       SpecialPowers.spawn(
         browser,
@@ -39,7 +39,7 @@ add_task(async function testRestoreDefaultsBtn_visible() {
     content.gHomePane.toggleRestoreDefaultsBtn();
   });
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       SpecialPowers.spawn(
         browser,
@@ -52,7 +52,7 @@ add_task(async function testRestoreDefaultsBtn_visible() {
     "Wait for the preference checkbox to load"
   );
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       SpecialPowers.spawn(
         browser,
@@ -68,7 +68,7 @@ add_task(async function testRestoreDefaultsBtn_visible() {
     content.document.getElementById("restoreDefaultHomePageBtn").click()
   );
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       SpecialPowers.spawn(
         browser,
@@ -81,7 +81,7 @@ add_task(async function testRestoreDefaultsBtn_visible() {
     "Should have checked preference"
   );
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       SpecialPowers.spawn(
         browser,
@@ -119,7 +119,7 @@ add_task(async function testRestoreDefaultsBtn_hidden() {
   );
   let browser = tab.linkedBrowser;
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       SpecialPowers.spawn(
         browser,
@@ -140,7 +140,7 @@ add_task(async function testRestoreDefaultsBtn_hidden() {
     content.gHomePane.toggleRestoreDefaultsBtn();
   });
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       SpecialPowers.spawn(
         browser,
@@ -166,7 +166,7 @@ add_task(async function testRestoreDefaultsBtn_hidden() {
     "When no prefs are changed button should not show up"
   );
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       SpecialPowers.spawn(
         browser,
@@ -186,7 +186,7 @@ add_task(async function testRestoreDefaultsBtn_hidden() {
       .click()
   );
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       SpecialPowers.spawn(
         browser,
@@ -199,7 +199,7 @@ add_task(async function testRestoreDefaultsBtn_hidden() {
     "Should have unchecked preference"
   );
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       SpecialPowers.spawn(
         browser,

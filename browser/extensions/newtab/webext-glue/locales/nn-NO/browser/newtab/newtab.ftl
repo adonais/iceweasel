@@ -93,6 +93,15 @@ home-prefs-sports-widget-header =
 # Clock is a widget on New Tab that displays time zones around the world.
 home-prefs-clocks-header =
     .label = Klokke
+# Privacy is a widget on New Tab that shows tracking protection activity.
+home-prefs-privacy-header =
+    .label = Personvern
+# Stocks is a widget on New Tab that shows stock ticker prices.
+home-prefs-stocks-header =
+    .label = Aksjar
+# Picture of the day is a widget on New Tab that shows a daily Wikimedia Commons image.
+home-prefs-picture-header =
+    .label = Dagens bilde
 home-prefs-mission-message2 =
     .message = Sponsorane våre støttar oppdraget vårt om å byggje eit betre internett.
 home-prefs-manage-topics-link2 =
@@ -152,6 +161,231 @@ home-prefs-support-firefox-header-srd =
     .label = Støtt { -brand-product-name }
 home-prefs-mission-message-learn-more-link-srd = Finn ut korleis
 
+## Strings for the Privacy widget
+
+# Context menu item linking to more information about the Privacy widget.
+newtab-privacy-menu-learn-more = Les meir
+
+## Privacy widget — count readout
+
+# Label shown under the large tracker-count number, appearing like:
+# Line 1: 86
+# Line 2: Trackers blocked today
+# Translations can be adjusted to "Today's blocked trackers" or something
+# similar if this fixed order causes issues.
+# Variables:
+#   $count (number) - Number of trackers blocked today
+newtab-privacy-trackers-blocked-today =
+    { $count ->
+        [one] Sporar blokkert i dag
+       *[other] Sporarar blokkerte i dag
+    }
+# Second line of the readout, under the large number and "Trackers blocked
+# today". Counts the sites those trackers were blocked on. The English is
+# shortened from "Blocked across { $count } sites" — translate it that fuller way
+# if the short fragment doesn't work in your language.
+# Variables:
+#   $count (number) - Number of sites where trackers were blocked
+newtab-privacy-across-sites =
+    { $count ->
+        [one] På tvers av { $count } nettstad
+       *[other] På tvers av { $count } nettstadar
+    }
+
+## Privacy widget — empty state
+
+# Shown when no trackers have been blocked yet today.
+newtab-privacy-empty = { -brand-short-name } blokkerer sporarar når du surfar. Du vil sjå dei her.
+
+## Privacy widget — informational messages
+##
+## Rotating "info" secondary messages. Each message has a body plus a matched
+## "-cta" button label sharing the same id stem (the CTA button isn't rendered
+## yet; the labels are authored so the pairing is ready).
+
+newtab-privacy-message-info-1 = { -brand-short-name } blokkerer sporarar  automatisk når du surfar
+newtab-privacy-message-info-1-cta = Vis vern
+newtab-privacy-message-info-2 = Sporingsblokkering hjelper til med å stoppe selskap frå å følgje deg på nettet.
+newtab-privacy-message-info-2-cta = Vis vern
+newtab-privacy-message-info-3 = Mange nettstadar har sporingsverktøy slik at selskap du aldri har vore innom kan følgje deg på nettet.
+newtab-privacy-message-info-3-cta = Vis vern
+newtab-privacy-message-info-4 = Å velje { -brand-short-name } betyr å velje vern som standard.
+newtab-privacy-message-info-4-cta = Vis vern
+newtab-privacy-message-info-5 = Blokkerte sporarar tyder færre selskap kan følgje deg på tvers av nettstadar.
+newtab-privacy-message-info-5-cta = Vis vern
+newtab-privacy-message-info-6 = Vern dataa dine med { -brand-short-name }. Vi sel dei aldri, men det kan hende at andre nettlesarar gjer det.
+newtab-privacy-message-info-6-cta = Les meir
+newtab-privacy-message-info-7 = Sjå kva for nokre sporarar { -brand-short-name } blokkerte.
+newtab-privacy-message-info-7-cta = Vis vern
+newtab-privacy-message-info-8 = Surfing med { -brand-short-name } støttar oppdraget til { -vendor-short-name } om å skape eit betre internett.
+newtab-privacy-message-info-8-cta = Les meir
+newtab-privacy-message-info-9 = Gjer { -brand-short-name } til din føretrekte nettlesar for innebygd personvern.
+newtab-privacy-message-info-9-cta = Bruk som standard
+newtab-privacy-message-info-10 = Lagre passord i { -brand-short-name } for å bruke sterke, unike påloggingar overalt.
+newtab-privacy-message-info-10-cta = Gå til passord
+newtab-privacy-message-info-11 = Finn ut korleis { -brand-short-name } bidreg til å halde nettlesinga di meir privat.
+newtab-privacy-message-info-11-cta = Les meir
+newtab-privacy-message-info-12 = Blokkering av sporarar kan bidra til å spare bandbreidde på avgrensa dataabonnement.
+newtab-privacy-message-info-12-cta = Vis vern
+newtab-privacy-message-info-13 = { -brand-short-name } blokkerer sporarar, og frigjer bandbreidde for jamnare strøyming.
+newtab-privacy-message-info-13-cta = Vis vern
+
+## Privacy widget — promotional messages
+##
+## Rotating "promo" secondary messages suggesting another Firefox feature. Each
+## has a body plus a matched "-cta" button label.
+
+newtab-privacy-message-promo-monitor-1 = Finn ut om den personlege informasjonen din dukkar opp i ein datalekkasje.
+newtab-privacy-message-promo-monitor-1-cta = Les meir
+newtab-privacy-message-promo-monitor-2 = Vern informasjonen din med gratis overvaking av datalekkasjar, for opptil 20 e-postar.
+newtab-privacy-message-promo-monitor-2-cta = Les meir
+newtab-privacy-message-promo-signin-1 = Hald bokmerke, passord og faner krypterte på tvers av einingar med { -vendor-short-name }-kontoen din.
+newtab-privacy-message-promo-signin-1-cta = Logg inn
+newtab-privacy-message-promo-vpn-1 = Handlar du på offentleg Wi-Fi? Slå på innebygd VPN for ekstra vern.
+newtab-privacy-message-promo-vpn-1-cta = Opne VPN
+newtab-privacy-message-promo-vpn-2 = Brukar du Wi-Fi på flyplassen? Vern nettlesinga di ved å slå på innebygd VPN.
+newtab-privacy-message-promo-vpn-2-cta = Opne VPN
+newtab-privacy-message-promo-vpn-3 = Slå på innebygd VPN for å halde plasseringa di meir privat.
+newtab-privacy-message-promo-vpn-3-cta = Opne VPN
+newtab-privacy-message-promo-private-window-1 = Prøv eit privat vindauge for å surfe meir privat når du deler datamaskin med andre.
+newtab-privacy-message-promo-private-window-1-cta = Opne privat vindauge
+newtab-privacy-message-promo-relay-1 = Reserver den verkelege e-postadressa di for folk du stolar på; bruk eit e-postalias for registreringar.
+newtab-privacy-message-promo-relay-1-cta = Få e-postalias
+newtab-privacy-message-promo-relay-2 = Vern innboksen din mot spam med gratis e-postalias.
+newtab-privacy-message-promo-relay-2-cta = Få e-postalias
+newtab-privacy-message-promo-relay-3 = Få 50 gratis e-postalias for å halde den ekte e-postadressa di privat.
+newtab-privacy-message-promo-relay-3-cta = Få e-postalias
+
+## Privacy widget — celebration messages
+##
+## Earned "celebration" moments (milestones, daily cap, streak, first
+## protection). Count-bearing ones interpolate { $count }.
+
+# Variables:
+#   $count (number) - Trackers blocked this week
+newtab-privacy-message-milestone-week =
+    { $count ->
+        [one] { $count } sporar blokkert denne veka. Sjå kva { -brand-short-name } held unna
+       *[other] { $count } sporarar blokkerte denne veka. Sjå kva { -brand-short-name } held unna
+    }
+newtab-privacy-message-milestone-week-cta = Vis vern
+# Variables:
+#   $count (number) - Trackers blocked this month
+newtab-privacy-message-milestone-month =
+    { $count ->
+        [one] { $count } sporar blokkert denne månaden. Eitt lite steg for personvern. Eitt stort steg for sinnsro.
+       *[other] { $count } sporarar blokkerte denne månaden. Eitt lite steg for personvern. Eitt stort steg for sinnsro.
+    }
+newtab-privacy-message-milestone-month-cta = Vis vern
+# Variables:
+#   $count (number) - Trackers blocked this year
+newtab-privacy-message-milestone-year =
+    { $count ->
+        [one] { $count } sporar blokkert i år. Det er eit sterkt år for ivaretaking av personvernet ditt.
+       *[other] { $count } sporarar blokkerte i år. Det er eit sterkt år for ivaretaking av personvernet ditt.
+    }
+newtab-privacy-message-milestone-year-cta = Vis vern
+# Variables:
+#   $count (number) - Trackers blocked all-time
+newtab-privacy-message-milestone-total =
+    { $count ->
+        [one] { $count } sporar blokkert. Det er eit stort framsteg for personvern på dine vilkår.
+       *[other] { $count } sporarar blokkerte. Det er eit stort framsteg for personvern på dine vilkår.
+    }
+newtab-privacy-message-milestone-total-cta = Vis vern
+# Shown when today's blocked-tracker count reaches the display cap ("100+").
+newtab-privacy-message-daily-cap = (Over 100 sporarar vart blokkerte i dag.) Færre sporarar betyr meir personvern.
+newtab-privacy-message-daily-cap-cta = Vis vern
+# Variables:
+#   $count (number) - Consecutive days the user has had trackers blocked
+newtab-privacy-message-streak =
+    { $count ->
+        [one] Du har vore verna { $count } dag på rad.
+       *[other] Du har vore verna { $count } dagar på rad.
+    }
+newtab-privacy-message-streak-cta = Vis vern
+# Shown the first time the tracker count goes above zero.
+newtab-privacy-message-first-protection = Surf vidare, { -brand-short-name } blokkerer framleis sporingsverktøy.
+newtab-privacy-message-first-protection-cta = Vis vern
+
+## Strings for the Stocks widget
+
+# Context menu item for searching stock ticker symbols.
+newtab-stocks-menu-search = Søk etter aksjesymbol
+# Context menu item linking to more information about the Stocks widget.
+newtab-stocks-menu-learn-more = Les meir
+# "Stocks widget options" is an icon-only button in the widget toolbar — the
+# attributes are consumed as tooltip/screen-reader label only. The button
+# never renders visible text.
+newtab-stocks-widget-menu-button =
+    .title = Innstillingar for aksje-widgeten
+    .aria-label = Innstillingar for aksje-widgeten
+# Heading for the Stocks widget.
+newtab-stocks-widget-title = Aksjar
+
+## Screen-reader summary of a stock ticker.
+## Variables:
+##   $name (String) - the full fund/ETF name, e.g. "SPDR S&P 500 ETF Trust".
+##   $change (String) - the day's percentage change, e.g. "+2.1%".
+##   $price (String) - the last price, e.g. "$559.44".
+
+# Stock increased (went up) during the day
+newtab-stocks-ticker-status-up = { $name }, opp { $change }, { $price }
+# Stock decreased (went down) during the day
+newtab-stocks-ticker-status-down = { $name }, ned { $change }, { $price }
+# Stock didn't change during the day
+newtab-stocks-ticker-status-flat = { $name }, inga endring, { $change }, { $price }
+
+## Strings for the Picture of the Day widget
+
+# Title shown at the top of the widget, with the source name appended.
+# "Wikimedia Commons" is a brand name and should not be translated.
+newtab-picture-header = Dagens bilde · Wikimedia Commons
+# Shorter title shown at the top of the widget, without the source name.
+newtab-picture-header-main = Dagens bilde
+# Attribution line shown under the title once a picture loads: an author
+# credit, a link to the picture's source page, and a link to its license.
+# "©" is the copyright symbol.
+# $author (string) - the name of the image's author.
+newtab-picture-attribution-author = © { $author }
+# Link to the picture's source page (its Wikimedia Commons file page).
+# "Wikimedia Commons" is a brand name and should not be translated.
+newtab-picture-attribution-source-link = Wikimedia Commons
+# Screen-reader label for the license link; the visible text is the license
+# name (for example "CC BY-SA 4.0") provided with the picture.
+# $license (string) - the name of the license.
+newtab-picture-attribution-license =
+    .aria-label = Vis { $license }-lisensen
+# Tooltip and screen-reader label for the icon-only button that opens the
+# widget's context menu. The button never renders visible text.
+newtab-picture-widget-menu-button =
+    .title = Innstillingar for «Dagens bilde»
+    .aria-label = Innstillingar for «Dagens bilde»
+# Button that sets the current picture as the New Tab background wallpaper. The
+# button collapses to an icon when not hovered/focused, so .title is its tooltip.
+newtab-picture-set-wallpaper =
+    .label = Vel bakgrunnsbilde
+    .title = Vel bakgrunnsbilde
+    .aria-label = Bruk dagens bilde som bakgrunnsbilde
+# Context menu item that opens the New Tab customization panel.
+newtab-picture-menu-manage-wallpaper = Behandle bakgrunnsbilde
+# Context menu item that hides today’s picture, replacing it with an existing
+# wallpaper.
+newtab-picture-menu-hide-photo = Skjul dagens bilde
+# Context menu item that restores today’s picture after it has been hidden.
+newtab-picture-menu-show-photo = Vis dagens bilde
+# Context menu item linking to more information about the widget.
+newtab-picture-menu-learn-more = Les meir
+# Icon button shown on the widget once the picture is hidden; restores it.
+newtab-picture-show-button =
+    .title = Vis dagens bilde
+    .aria-label = Vis dagens bilde
+# Shown when there is no new picture to display yet.
+newtab-picture-check-back = Sjekk tilbake i morgon for eit nytt bilde
+# Screen-reader text alternative for the picture; fallback used when the source
+# provides no localized description.
+newtab-picture-image-alt = Dagens bilde frå Wikimedia Commons
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -187,6 +421,7 @@ newtab-topsites-add-shortcut-label = Legg til snarveg
 newtab-topsites-add-shortcut-title =
     .title = Legg til snarveg
     .aria-label = Legg til snarveg
+newtab-shortcuts-pinned-area = Festa områda
 newtab-topsites-title-label = Tittel
 newtab-topsites-title-input =
     .placeholder = Skriv inn ein tittel
@@ -475,6 +710,8 @@ newtab-recommended-stories-toggle =
     .label = Tilrådde artiklar
 newtab-custom-stories-personalized-toggle =
     .label = Artiklar
+newtab-custom-stories-personalized-checkbox =
+    .label = Personlege artiklar basert på aktiviteten din
 newtab-custom-stories-personalized-checkbox-label = Personlege artiklar basert på aktiviteten din
 newtab-custom-pocket-sponsored = Sponsa historier
 newtab-custom-pocket-show-recent-saves = Vis siste lagra
@@ -495,6 +732,12 @@ newtab-custom-widget-clock-toggle =
     .label = Klokke
 newtab-custom-widget-sports-toggle2 =
     .label = Sport
+newtab-custom-widget-privacy-toggle =
+    .label = Personvern
+newtab-custom-widget-stocks-toggle =
+    .label = Aksjar
+newtab-custom-widget-picture-toggle =
+    .label = Dagens bilde
 newtab-custom-widget-section-title = Widgetar
 newtab-custom-widget-section-toggle =
     .label = Widgetar
@@ -971,6 +1214,8 @@ newtab-widget-timer-reset =
 newtab-widget-timer-menu-notifications = Slå av varsel
 newtab-widget-timer-menu-notifications-on = Slå på varsel
 newtab-widget-timer-menu-learn-more = Les meir
+newtab-widget-timer-menu-button =
+    .aria-label = Timer-innstillingar
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = Toppoverskrifter
 newtab-daily-briefing-card-menu-dismiss = Ignorer
@@ -1083,6 +1328,8 @@ newtab-sports-widget-show-less =
 # Toggle that filters the list of teams the user follows
 newtab-sports-widget-followed-only-toggle =
     .label = Berre følgde lag
+# Status shown when more matches are being fetched.
+newtab-sports-widget-loading-more = Lastar inn fleire treff…
 # Watch is a verb (as in watch matches online).
 newtab-sports-widget-watch =
     .label = Sjå
@@ -1162,12 +1409,15 @@ newtab-sports-widget-third-place = Tredjeplass
 newtab-sports-widget-runner-up = Andreplass
 newtab-sports-widget-champions = Meistrar
 newtab-sports-widget-world-cup-champions = VM 2026 – verds­meistrar
+# Compact champions label for the medium-size widget result card; the larger
+# card uses newtab-sports-widget-world-cup-champions.
+newtab-sports-widget-world-cup-champions-short = Verdsmeistrar 2026
 # Variables:
 #   $date (Date) - The match start time
 newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
 newtab-sports-widget-match-full-time = Slutt
 newtab-sports-widget-match-halftime = Pause
-newtab-sports-widget-match-extra-time = Ekstra tid
+newtab-sports-widget-match-extra-time = Ekstraomgangar
 newtab-sports-widget-match-penalties = Straffer
 # Separator shown between two teams in a placeholder match row when no upcoming
 # match details are available yet.
@@ -1260,12 +1510,23 @@ newtab-sports-widget-team-tbd = Skal bestemmast
 newtab-sports-widget-message-wallpapers-title = Spark i gang VM med nye bakgrunnsbilde
 newtab-sports-widget-message-wallpapers-body = Gi nettlesaren litt kampstemning under turneringa.
 newtab-sports-widget-message-wallpapers-cta = Vel bakgrunnsbilde
+newtab-sports-widget-message-wallpapers-semifinals-title = Få ein ny bakgrunn for semifinalane
+newtab-sports-widget-message-wallpapers-semifinals-body = Gjer deg klar for VMs største kampar.
 newtab-sports-widget-message-add-widgets-cta =
     .label = Legg til widgetar
 newtab-sports-widget-message-day-in-play-title = Hald dagen i gang med widgetar i { -brand-product-name }
 newtab-sports-widget-message-day-in-play-body = Følg VM, hald fokus på oppgåvene dine, følg tida rundt om i verda, og meir.
 newtab-sports-widget-message-explore-widgets-cta =
     .label = Utforsk widgetar
+
+## Survey prompts shown after the World Cup to gather feedback on the widgets experience.
+
+newtab-sports-widget-message-survey-title = Hjelp oss med å gjere widgetane betre
+newtab-sports-widget-message-survey-body = Då er VM over. Fortel oss kva du synest om opplevinga.
+newtab-sports-widget-message-survey-widget-title = Korleis var VM-widgeten?
+newtab-sports-widget-message-survey-widget-body = Del tilbakemeldingane dine for å hjelpe oss med å gjere framtidige widgetar betre. Prøv deretter den nye i utvalet ditt.
+newtab-sports-widget-message-survey-cta =
+    .label = Ver med på undersøkinga
 
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input

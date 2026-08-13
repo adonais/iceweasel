@@ -7,17 +7,25 @@
 
 "use strict";
 
+// Decryption failures are transparent in Rust. Cleanup is done via
+// `run_maintenance()` when idle.
+// See Bug 2052523
+const isRustBackend = Services.prefs.getBoolPref(
+  "signon.storage.rust.enabled",
+  false
+);
+
 // Globals
 
 /**
  * Resets the token used to decrypt logins.  This is equivalent to resetting the
  * primary password when it is not known.
  */
-function resetPrimaryPassword() {
+async function resetPrimaryPassword() {
   let token = Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(
     Ci.nsIPKCS11Token
   );
-  token.reset();
+  await token.reset();
 }
 
 // Tests
@@ -30,7 +38,7 @@ add_task(async function test_logins_decrypt_failure() {
   await Services.logins.addLogins(logins);
 
   // This makes the existing logins non-decryptable.
-  resetPrimaryPassword();
+  await resetPrimaryPassword();
 
   // These functions don't see the non-decryptable entries anymore.
   let savedLogins = await Services.logins.getAllLogins();
@@ -92,7 +100,7 @@ add_task(async function test_logins_decrypt_failure() {
   await Services.logins.removeAllUserFacingLoginsAsync();
   Assert.equal((await Services.logins.getAllLogins()).length, 0);
   Assert.equal(await Services.logins.countLoginsAsync("", "", ""), 0);
-});
+}).skip(isRustBackend);
 
 // Bug 621846 - If a login has a GUID but can't be decrypted, a search for
 // that GUID will (correctly) fail. Ensure we can add a new login with that
@@ -143,7 +151,7 @@ add_task(async function test_add_logins_with_decrypt_failure() {
   );
 
   // This makes the existing login non-decryptable.
-  resetPrimaryPassword();
+  await resetPrimaryPassword();
 
   // We can no longer find it in our search.
   const result1 = await Services.logins.searchLoginsAsync({ guid: login.guid });
@@ -155,7 +163,7 @@ add_task(async function test_add_logins_with_decrypt_failure() {
   equal(result2.length, 1);
 
   await Services.logins.removeAllUserFacingLoginsAsync();
-});
+}).skip(isRustBackend);
 
 // Test the "syncID" metadata works as expected on decryption failure.
 add_task(async function test_sync_metadata_with_decrypt_failure() {
@@ -166,7 +174,7 @@ add_task(async function test_sync_metadata_with_decrypt_failure() {
   equal(await Services.logins.getLastSync(), 123);
 
   // This makes the existing login and syncID non-decryptable.
-  resetPrimaryPassword();
+  await resetPrimaryPassword();
 
   // The syncID is now null.
   equal(await Services.logins.getSyncID(), null);
@@ -176,4 +184,4 @@ add_task(async function test_sync_metadata_with_decrypt_failure() {
   // But we should be able to set it again.
   await Services.logins.setSyncID("new-id");
   equal(await Services.logins.getSyncID(), "new-id");
-});
+}).skip(isRustBackend);

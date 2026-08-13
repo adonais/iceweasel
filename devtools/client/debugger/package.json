@@ -19,7 +19,7 @@
     "test:all": "yarn test"
   },
   "dependencies": {
-    "acorn": "~8.8.2",
+    "acorn": "~8.17.0",
     "source-map": "0.7.4",
     "wasmparser": "^3.1.1"
   },

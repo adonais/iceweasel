@@ -99,3 +99,6 @@ https_first_disabled = true
 
 ["browser_trigger_messagesLoaded.js"]
 tags = "remote-settings"
+
+["browser_trigger_nimbusUpdate.js"]
+tags = "remote-settings"

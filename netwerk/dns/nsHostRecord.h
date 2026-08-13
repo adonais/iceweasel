@@ -5,13 +5,13 @@
 #ifndef nsHostRecord_h_
 #define nsHostRecord_h_
 
+#include "PLDHashTable.h"
 #include "mozilla/AtomicBitfields.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/net/HTTPSSVC.h"
-#include "nsIDNSService.h"
 #include "nsIDNSByTypeRecord.h"
-#include "PLDHashTable.h"
+#include "nsIDNSService.h"
 #include "nsITRRSkipReason.h"
 
 class nsHostRecord;

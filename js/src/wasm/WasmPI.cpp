@@ -17,6 +17,7 @@
 #include "wasm/WasmPI.h"
 
 #include "jsfriendapi.h"
+
 #include "builtin/Promise.h"
 #include "debugger/DebugAPI.h"
 #include "debugger/Debugger.h"
@@ -1288,6 +1289,19 @@ void* GetPromiseResults(Instance* instance, void* promiseRef,
   if (!promise) {
     return nullptr;
   }
+
+  // The reaction that resumes the suspended continuation is registered on this
+  // promise and is only meant to run once the promise settles. A debugger can
+  // extract that reaction (Debugger.Object.prototype.getPromiseReactions) and
+  // invoke it (Debugger.Object.prototype.call) while the promise is still
+  // pending, resuming the continuation early. Fail cleanly here instead of
+  // reading the result slot of a pending promise.
+  if (promise->state() == JS::PromiseState::Pending) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_JSPI_INVALID_STATE);
+    return nullptr;
+  }
+
   bool promiseRejected = promise->state() == JS::PromiseState::Rejected;
   RootedValue promiseReasonOrValue(cx, promise->valueOrReason());
   if (!cx->compartment()->wrap(cx, &promiseReasonOrValue)) {

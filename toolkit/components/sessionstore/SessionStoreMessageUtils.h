@@ -13,58 +13,13 @@
 
 namespace IPC {
 
-template <>
-struct ParamTraits<mozilla::dom::CollectedNonMultipleSelectValue> {
-  typedef mozilla::dom::CollectedNonMultipleSelectValue paramType;
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::CollectedNonMultipleSelectValue,
+                                  mSelectedIndex, mValue);
 
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mSelectedIndex);
-    WriteParam(aWriter, aParam.mValue);
-  }
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(CollectedInputDataValue, id, type, value);
 
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mSelectedIndex) &&
-           ReadParam(aReader, &aResult->mValue);
-  }
-};
-
-template <>
-struct ParamTraits<CollectedInputDataValue> {
-  typedef CollectedInputDataValue paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.id);
-    WriteParam(aWriter, aParam.type);
-    WriteParam(aWriter, aParam.value);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->id) &&
-           ReadParam(aReader, &aResult->type) &&
-           ReadParam(aReader, &aResult->value);
-  }
-};
-
-template <>
-struct ParamTraits<InputFormData> {
-  typedef InputFormData paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.descendants);
-    WriteParam(aWriter, aParam.innerHTML);
-    WriteParam(aWriter, aParam.url);
-    WriteParam(aWriter, aParam.numId);
-    WriteParam(aWriter, aParam.numXPath);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->descendants) &&
-           ReadParam(aReader, &aResult->innerHTML) &&
-           ReadParam(aReader, &aResult->url) &&
-           ReadParam(aReader, &aResult->numId) &&
-           ReadParam(aReader, &aResult->numXPath);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(InputFormData, descendants, innerHTML, url,
+                                  numId, numXPath);
 
 template <>
 struct ParamTraits<mozilla::dom::SessionStoreRestoreData*> {
@@ -107,20 +62,8 @@ struct ParamTraits<mozilla::dom::SessionStoreRestoreData*> {
   }
 };
 
-template <>
-struct ParamTraits<mozilla::dom::SessionStoreRestoreData::Entry> {
-  static void Write(IPC::MessageWriter* aWriter,
-                    mozilla::dom::SessionStoreRestoreData::Entry aParam) {
-    WriteParam(aWriter, aParam.mData);
-    WriteParam(aWriter, aParam.mIsXPath);
-  }
-
-  static bool Read(IPC::MessageReader* aReader,
-                   mozilla::dom::SessionStoreRestoreData::Entry* aResult) {
-    return ReadParam(aReader, &aResult->mData) &&
-           ReadParam(aReader, &aResult->mIsXPath);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::SessionStoreRestoreData::Entry,
+                                  mData, mIsXPath);
 
 }  // namespace IPC
 

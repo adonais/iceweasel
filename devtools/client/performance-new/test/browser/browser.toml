@@ -10,6 +10,8 @@ support-files = [
   "webchannel-favicons.html",
   "webchannel-open-script-in-debugger_assets/*",
   "webchannel-js-sources.html",
+  "webchannel-source-map.html",
+  "webchannel-source-map-assets/*",
 ]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1804081, timeouts and data races in various tests
@@ -36,6 +38,8 @@ skip-if = [
 ["browser_aboutprofiling-threads-behavior.js"]
 
 ["browser_aboutprofiling-threads.js"]
+
+["browser_devtools-close.js"]
 
 ["browser_devtools-interrupted.js"]
 
@@ -66,6 +70,8 @@ skip-if = [
 ["browser_webchannel-enable-menu-button.js"]
 
 ["browser_webchannel-get-js-sources.js"]
+
+["browser_webchannel-get-source-map.js"]
 
 ["browser_webchannel-open-script-in-debugger.js"]
 

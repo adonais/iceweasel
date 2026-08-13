@@ -282,6 +282,9 @@ nsresult HTMLEditor::InsertHTMLAsAction(const nsAString& aInString,
   if (IsReadonly()) {
     return NS_OK;
   }
+  if (ComputeEditContext()) {
+    return NS_SUCCESS_DOM_NO_OPERATION;
+  }
 
   AutoEditActionDataSetter editActionData(*this, EditAction::eInsertHTML,
                                           aPrincipal);
@@ -975,13 +978,18 @@ Result<EditActionResult, nsresult> HTMLEditor::HTMLWithContextInserter::Run(
       return EditActionResult::HandledResult();
     }
 
-    nsresult rv =
-        MoveCaretOutsideOfLink(*linkElement, insertNodeResult.CaretPointRef());
-    if (NS_FAILED(rv)) {
-      NS_WARNING(
-          "HTMLEditor::HTMLWithContextInserter::MoveCaretOutsideOfLink() "
-          "failed");
-      return Err(rv);
+    // Note that the caret point may be outside the found link. So, let's check
+    // it before trying to split the link.
+    if (linkElement->IsInclusiveDescendantOf(
+            insertNodeResult.CaretPointRef().GetContainer())) [[likely]] {
+      nsresult rv = MoveCaretOutsideOfLink(*linkElement,
+                                           insertNodeResult.CaretPointRef());
+      if (NS_FAILED(rv)) {
+        NS_WARNING(
+            "HTMLEditor::HTMLWithContextInserter::MoveCaretOutsideOfLink() "
+            "failed");
+        return Err(rv);
+      }
     }
   }
 
@@ -1248,9 +1256,6 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
                             : EditorDOMPoint::AtEndOf(std::move(parentNode));
             MOZ_ASSERT(pointToInsert.IsSetAndValidInComposedDoc());
           }
-          NS_WARNING(nsPrintfCString("%s into %s", ToString(*child).c_str(),
-                                     ToString(pointToInsert).c_str())
-                         .get());
           Result<CreateContentResult, nsresult> moveChildResult =
               mHTMLEditor
                   .InsertNodeIntoProperAncestorWithTransaction<nsIContent>(
@@ -1396,13 +1401,9 @@ nsresult HTMLEditor::HTMLWithContextInserter::MoveCaretOutsideOfLink(
       mHTMLEditor.SplitNodeDeepWithTransaction(
           aLinkElement, aPointToPutCaret,
           SplitAtEdges::eDoNotCreateEmptyContainer);
-  if (MOZ_UNLIKELY(splitLinkResult.isErr())) {
-    if (splitLinkResult.inspectErr() == NS_ERROR_EDITOR_DESTROYED) {
-      NS_WARNING("HTMLEditor::SplitNodeDeepWithTransaction() failed");
-      return NS_ERROR_EDITOR_DESTROYED;
-    }
-    NS_WARNING(
-        "HTMLEditor::SplitNodeDeepWithTransaction() failed, but ignored");
+  if (splitLinkResult.isErr()) [[unlikely]] {
+    NS_WARNING("HTMLEditor::SplitNodeDeepWithTransaction() failed");
+    return splitLinkResult.unwrapErr();
   }
 
   if (nsIContent* previousContentOfSplitPoint =
@@ -1699,7 +1700,7 @@ nsresult HTMLEditor::ParseCFHTML(const nsCString& aCfhtml,
     return NS_ERROR_FAILURE;
   }
   if (!FindIntegerAfterString("EndFragment:", aCfhtml, endFragment) ||
-      startFragment < 0) {
+      endFragment < 0) {
     return NS_ERROR_FAILURE;
   }
 
@@ -4012,8 +4013,8 @@ bool HTMLEditor::HTMLWithContextInserter::FragmentFromPasteCreator::
   return false;
 }
 
-class MOZ_STACK_CLASS HTMLEditor::HTMLWithContextInserter::FragmentParser
-    final {
+class MOZ_STACK_CLASS
+HTMLEditor::HTMLWithContextInserter::FragmentParser final {
  public:
   FragmentParser(const Document& aDocument, SafeToInsertData aSafeToInsertData);
 

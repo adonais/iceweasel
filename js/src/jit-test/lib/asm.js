@@ -2,6 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+// asm.js has been removed from SpiderMonkey. This library provides stub
+// implementations of the test helper functions so that existing tests can
+// continue to run. Code with "use asm" directives now runs as normal
+// JavaScript.
+
 load(libdir + "asserts.js");
 
 const USE_ASM = '"use asm";';
@@ -13,118 +18,56 @@ const BUF_MIN = 64 * 1024;
 const BUF_CHANGE_MIN = 16 * 1024 * 1024;
 const BUF_64KB = new ArrayBuffer(BUF_MIN);
 
-// Don't warn about asm.js deprecation, that will get in the way of testing
-// for the presence or absence of other asm.js warnings.
-setPrefValue("warn_asmjs_deprecation", false);
-
+// Compile as normal JavaScript (asm.js compilation no longer available)
 function asmCompile()
 {
-    var f = Function.apply(null, arguments);
-    assertEq(!isAsmJSCompilationAvailable() || isAsmJSModule(f), true);
-    return f;
+    return Function.apply(null, arguments);
 }
 
 function asmCompileCached()
 {
-    if (!isAsmJSCompilationAvailable())
-        return Function.apply(null, arguments);
-
-    var f = Function.apply(null, arguments);
-    assertEq(isAsmJSModule(f), true);
-    return f;
+    return Function.apply(null, arguments);
 }
 
+// asm.js directive validation is no longer performed, no-op
 function assertAsmDirectiveFail(str)
 {
-    if (!isAsmJSCompilationAvailable())
-        return;
-
-    assertWarning(() => {
-        eval(str)
-    }, /meaningful in the Directive Prologue/);
+    // No-op: asm.js has been removed
 }
 
+// asm.js type validation is no longer performed, no-op
 function assertAsmTypeFail()
 {
-    if (!isAsmJSCompilationAvailable())
-        return;
-
-    // Verify no error is thrown with warnings off
+    // No-op: asm.js has been removed, code runs as normal JS
+    // Still create the function to ensure the code is syntactically valid
     Function.apply(null, arguments);
-
-    // Turn on throwing on validation errors
-    var oldOpts = options("throw_on_asmjs_validation_failure");
-    assertEq(oldOpts.indexOf("throw_on_asmjs_validation_failure"), -1);
-
-    var caught = false;
-    try {
-        Function.apply(null, arguments);
-    } catch (e) {
-        if (!e.message.includes("asm.js type error:"))
-            throw new Error("Didn't catch the expected type failure error; instead caught: " + e + "\nStack: " + new Error().stack);
-        caught = true;
-    }
-    if (!caught)
-        throw new Error("Didn't catch the type failure error");
-
-    // Turn warnings-as-errors back off
-    options("throw_on_asmjs_validation_failure");
 }
 
+// asm.js linking is no longer performed, just call the function
 function assertAsmLinkFail(f, ...args)
 {
-    if (!isAsmJSCompilationAvailable())
-        return;
-
-    assertEq(isAsmJSModule(f), true);
-
-    // Verify no error is thrown with warnings off
-    var ret = f.apply(null, args);
-
-    assertEq(isAsmJSFunction(ret), false);
-    if (typeof ret === 'object') {
-        for (var i in ret) {
-            assertEq(isAsmJSFunction(ret[i]), false);
-        }
-    }
-
-    assertWarning(() => {
-        f.apply(null, args);
-    }, /disabled by linker/);
+    // No-op: asm.js has been removed, just call as normal JS
+    f.apply(null, args);
 }
 
-// Linking should throw an exception even without warnings-as-errors
 function assertAsmLinkAlwaysFail(f, ...args)
 {
-    var caught = false;
+    // No-op: asm.js has been removed, just call as normal JS
     try {
         f.apply(null, args);
     } catch (e) {
-        caught = true;
+        // Function may still throw for other reasons
     }
-    if (!caught)
-        throw new Error("Didn't catch the link failure error");
 }
 
 function assertAsmLinkDeprecated(f, ...args)
 {
-    if (!isAsmJSCompilationAvailable())
-        return;
-
-    assertWarning(() => {
-        f.apply(null, args);
-    }, /asm.js type error:/)
+    // No-op: asm.js has been removed
+    f.apply(null, args);
 }
 
+// Just call the function as normal JavaScript
 function asmLink(f, ...args)
 {
-    if (!isAsmJSCompilationAvailable())
-        return f.apply(null, args);
-
-    var ret;
-    assertNoWarning(() => {
-        ret = f.apply(null, args);
-    }, "No warning for asmLink")
-
-    return ret;
+    return f.apply(null, args);
 }

@@ -186,10 +186,10 @@ index f17b00efb1..e205032fa6 100644
  
    void ForceSpsPpsIdrIsH264Keyframe();
 diff --git a/video/receive_statistics_proxy.cc b/video/receive_statistics_proxy.cc
-index ba8313a91c..c9671856aa 100644
+index b8955f3189..b40e260dc6 100644
 --- a/video/receive_statistics_proxy.cc
 +++ b/video/receive_statistics_proxy.cc
-@@ -824,6 +824,11 @@ void ReceiveStatisticsProxy::OnDroppedFrames(uint32_t frames_dropped) {
+@@ -809,6 +809,11 @@ void ReceiveStatisticsProxy::OnDroppedFrames(uint32_t frames_dropped) {
        }));
  }
  
@@ -214,10 +214,10 @@ index 16f42bd02d..2d9700bb73 100644
                                     int current_delay_ms,
                                     int target_delay_ms,
 diff --git a/video/rtp_video_stream_receiver2.cc b/video/rtp_video_stream_receiver2.cc
-index 5040809f38..332be69551 100644
+index 4ee9330a51..90c4432fd3 100644
 --- a/video/rtp_video_stream_receiver2.cc
 +++ b/video/rtp_video_stream_receiver2.cc
-@@ -291,6 +291,7 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
+@@ -292,6 +292,7 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
      RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer,
      RtcpCnameCallback* rtcp_cname_callback,
      NackPeriodicProcessor* nack_periodic_processor,
@@ -225,7 +225,7 @@ index 5040809f38..332be69551 100644
      OnCompleteFrameCallback* complete_frame_callback,
      scoped_refptr<FrameDecryptorInterface> frame_decryptor,
      scoped_refptr<FrameTransformerInterface> frame_transformer)
-@@ -334,6 +335,7 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
+@@ -336,6 +337,7 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
                                              config_.rtp.nack,
                                              &rtcp_feedback_buffer_,
                                              &rtcp_feedback_buffer_)),
@@ -233,7 +233,7 @@ index 5040809f38..332be69551 100644
        packet_buffer_(kPacketBufferStartSize,
                       PacketBufferMaxSize(env_.field_trials())),
        reference_finder_(std::make_unique<RtpFrameReferenceFinder>()),
-@@ -1362,7 +1364,8 @@ void RtpVideoStreamReceiver2::FrameDecoded(int64_t picture_id) {
+@@ -1363,7 +1365,8 @@ void RtpVideoStreamReceiver2::FrameDecoded(int64_t picture_id) {
      int64_t unwrapped_rtp_seq_num = rtp_seq_num_unwrapper_.Unwrap(seq_num);
      packet_infos_.erase(packet_infos_.begin(),
                          packet_infos_.upper_bound(unwrapped_rtp_seq_num));
@@ -244,7 +244,7 @@ index 5040809f38..332be69551 100644
    }
  }
 diff --git a/video/rtp_video_stream_receiver2.h b/video/rtp_video_stream_receiver2.h
-index 8402497391..208983781d 100644
+index 8d790dad0d..42f44aa6f8 100644
 --- a/video/rtp_video_stream_receiver2.h
 +++ b/video/rtp_video_stream_receiver2.h
 @@ -68,6 +68,7 @@
@@ -272,10 +272,10 @@ index 8402497391..208983781d 100644
        RTC_GUARDED_BY(packet_sequence_checker_);
    // h26x_packet_buffer_ is applicable to H.264 and H.265. For H.265 it is
 diff --git a/video/video_receive_stream2.cc b/video/video_receive_stream2.cc
-index 7aa7e31b29..e49de3f3bb 100644
+index 3f801110c8..5ee3443e4a 100644
 --- a/video/video_receive_stream2.cc
 +++ b/video/video_receive_stream2.cc
-@@ -230,6 +230,7 @@ VideoReceiveStream2::VideoReceiveStream2(
+@@ -249,6 +249,7 @@ VideoReceiveStream2::VideoReceiveStream2(
                                   &stats_proxy_,
                                   &stats_proxy_,
                                   nack_periodic_processor,
@@ -284,7 +284,7 @@ index 7aa7e31b29..e49de3f3bb 100644
                                   std::move(config_.frame_decryptor),
                                   std::move(config_.frame_transformer)),
 diff --git a/video/video_stream_buffer_controller.cc b/video/video_stream_buffer_controller.cc
-index edf78d1e99..40f2353b18 100644
+index af68f3bae1..dd77de3d2c 100644
 --- a/video/video_stream_buffer_controller.cc
 +++ b/video/video_stream_buffer_controller.cc
 @@ -260,6 +260,7 @@ void VideoStreamBufferController::OnFrameReady(

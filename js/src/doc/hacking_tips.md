@@ -225,9 +225,9 @@ Or you can wrap the x command in your own command:
         set arm force-mode auto
     end
 
-### Printing asm.js/wasm generated assembly code (from gdb)
+### Printing wasm generated assembly code (from gdb)
 
-- Set a breakpoint on `js::wasm::Instance::callExport` (defined in `WasmInstance.cpp` as of November 18th 2016). This will trigger for _any_ asm.js/wasm call, so you should find a way to set this breakpoint for the only generated codes you want to look at.
+- Set a breakpoint on `js::wasm::Instance::callExport` (defined in `WasmInstance.cpp` as of November 18th 2016). This will trigger for _any_ wasm call, so you should find a way to set this breakpoint for the only generated codes you want to look at.
 - Run the program.
 - Do `next` in gdb until you reach the definition of the `funcPtr`:
 ```
@@ -304,7 +304,7 @@ With gdb instrumentation, we can call [iongraph](https://github.com/sstangl/iong
 (gdb) frame 3
 #3  0x000000000083317f in js::jit::OptimizeMIR(js::jit::MIRGenerator*) (mir=0x33dbdf0) at …/js/src/jit/Ion.cpp:1570
 (gdb) iongraph mir
- function 0 (asm.js compilation): success; 1 passes.
+ function 0 (wasm compilation): success; 1 passes.
 /* open your png viewer with the result of iongraph */
 ```
 

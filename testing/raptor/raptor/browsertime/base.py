@@ -4,6 +4,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import datetime
 import json
 import os
 import pathlib
@@ -239,7 +240,7 @@ class Browsertime(Perftest, metaclass=ABCMeta):
                 if not os.path.exists(self.browsertime_chromedriver):
                     raise Exception(
                         "Cannot find the chromedriver for the chrome version "
-                        "being tested: %s" % self.browsertime_chromedriver
+                        f"being tested: {self.browsertime_chromedriver}"
                     )
 
             self.driver_paths.extend([
@@ -432,7 +433,28 @@ class Browsertime(Perftest, metaclass=ABCMeta):
             ),
         ]
 
+        # MOZ_LOG resolution order: explicit env var wins; else toml's
+        # firefox_moz_log (verbatim modules); else the "network" preset
+        # if the toml just sets firefox_log_modules = "network". The
+        # collected log is written by Firefox to
+        # browsertime-results/<test>/moz_log.txt.<pid>.
         moz_log_settings = os.environ.get("MOZ_LOG")
+        if not moz_log_settings:
+            moz_log_settings = test.get("firefox_moz_log") or None
+        if not moz_log_settings:
+            preset = (test.get("firefox_log_modules") or "").strip().lower()
+            if preset == "network":
+                # Enough to diagnose DNS/connect/TLS/HTTP hangs without
+                # drowning the run; timestamp+append keeps it readable
+                # across multiple browser_cycles.
+                moz_log_settings = (
+                    "timestamp,append,sync,"
+                    "nsHostResolver:5,"
+                    "nsSocketTransport:4,"
+                    "nsHttp:3,"
+                    "TRRIDLECONNECTION:5,"
+                    "cookie:3"
+                )
         if moz_log_settings:
             LOG.info(f"Passing MOZ_LOG settings to browsertime: {moz_log_settings}")
             browsertime_options.extend(["--firefox.collectMozLog", "true"])
@@ -661,7 +683,7 @@ class Browsertime(Perftest, metaclass=ABCMeta):
             (
                 "gecko_profile_features",
                 "--firefox.geckoProfilerParams.features",
-                "js,stackwalk,cpu,screenshots,memory",
+                "js,stackwalk,screenshots,memory,java",
             ),
             (
                 "gecko_profile_threads",
@@ -834,6 +856,10 @@ class Browsertime(Perftest, metaclass=ABCMeta):
         if self.config["gecko_profile"] is True:
             bt_timeout += 5 * 60
 
+        # if etw profiling enabled and instantiated, give browser more time for profiling
+        if self.config.get("etw_profile") and self.etw_profiler:
+            bt_timeout += 5 * 60
+
         # if simpleperf enabled, give browser more time for profiling
         if self.config["simpleperf"] is True:
             bt_timeout += 5 * 60
@@ -912,9 +938,7 @@ class Browsertime(Perftest, metaclass=ABCMeta):
             )
             profiler_test = deepcopy(test)
             cmd = self._compose_cmd(profiler_test, timeout, True)
-            LOG.info(
-                "browsertime profiling cmd: {}".format(" ".join([str(c) for c in cmd]))
-            )
+            LOG.info(f"browsertime profiling cmd: {' '.join([str(c) for c in cmd])}")
             mozprocess.run_and_wait(
                 cmd,
                 output_line_handler=line_handler,
@@ -961,6 +985,15 @@ class Browsertime(Perftest, metaclass=ABCMeta):
 
         self.run_test_setup(test)
 
+        # xperf profiling is currently only supported in CI as it requires
+        # scheduled tasks that are currently only configured on the
+        # CI machines.
+        if self.config.get("etw_profile"):
+            if not self.config.get("run_local"):
+                self._init_etw_profiling(test)
+            else:
+                raise Exception("ETW profiling is not supported in local runs")
+
         if self.config.get("simpleperf"):
             self._init_simpleperf_profiling(test)
 
@@ -981,7 +1014,7 @@ class Browsertime(Perftest, metaclass=ABCMeta):
 
         LOG.info(f"timeout (ms): {timeout}")
         LOG.info(f"browsertime cwd: {os.getcwd()}")
-        LOG.info("browsertime cmd: {}".format(" ".join([str(c) for c in cmd])))
+        LOG.info(f"browsertime cmd: {' '.join([str(c) for c in cmd])}")
         if self.browsertime_video:
             LOG.info(f"browsertime_ffmpeg: {self.browsertime_ffmpeg}")
 
@@ -1009,8 +1042,43 @@ class Browsertime(Perftest, metaclass=ABCMeta):
                 pathlib.Path(os.environ["MOZ_FETCHES_DIR"], "browsertime")
             )
 
-        LOG.info("PATH: {}".format(env["PATH"]))
+        LOG.info(f"PATH: {env['PATH']}")
 
+        # Tee browsertime's raw stdout/stderr to a persistent log next to
+        # mitmproxy.log so post-mortem debugging of CI failures doesn't
+        # rely on the harness stdout stream being preserved. Opened in
+        # append mode with a per-test header so multi-test runs aren't
+        # destructive.
+        browsertime_log_path = os.path.join(
+            os.environ.get("MOZ_UPLOAD_DIR", os.getcwd()), "browsertime.log"
+        )
+        try:
+            browsertime_log_fp = open(browsertime_log_path, "ab", buffering=0)
+        except OSError as e:
+            LOG.warning(
+                f"Could not open browsertime stderr log {browsertime_log_path}: {e}"
+            )
+            browsertime_log_fp = None
+        else:
+            LOG.info(f"browsertime log file: {browsertime_log_path}")
+            header = (
+                f"\n===== {test.get('name', '?')} | {datetime.datetime.utcnow().isoformat()} =====\n"
+            ).encode()
+            try:
+                browsertime_log_fp.write(header)
+            except Exception:
+                pass
+
+        # Start ETW profiling if enabled before browsertime starts
+        etw_started = False
+        if self.config.get("etw_profile") and self.etw_profiler:
+            try:
+                etw_started = self.etw_profiler.start()
+            except Exception as e:
+                LOG.warning(f"Failed to start ETW profiling: {e}")
+                self.etw_profiler = None  # Disable profiler to skip stop() later
+
+        browsertime_test_failed = False
         try:
             line_matcher = re.compile(r".*(\[.*\])\s+([a-zA-Z]+):\s+(.*)")
 
@@ -1026,6 +1094,17 @@ class Browsertime(Perftest, metaclass=ABCMeta):
                     if self.browsertime_failure, and raise an Exception if necessary
                     to stop Raptor execution (preventing the results processing).
                     """
+
+                    # Tee the raw line to disk first, before any rewriting
+                    # or LOG-level filtering, so the artifact captures
+                    # exactly what browsertime emitted.
+                    if browsertime_log_fp is not None:
+                        try:
+                            browsertime_log_fp.write(line)
+                            if not line.endswith(b"\n"):
+                                browsertime_log_fp.write(b"\n")
+                        except Exception:
+                            pass
 
                     # NOTE: this hack is to workaround encoding issues on windows
                     # a newer version of browsertime adds a `σ` character to output
@@ -1169,5 +1248,26 @@ class Browsertime(Perftest, metaclass=ABCMeta):
                 )
 
         except Exception as e:
+            browsertime_test_failed = True
             LOG.critical(str(e))
             raise
+
+        finally:
+            if browsertime_log_fp is not None:
+                try:
+                    browsertime_log_fp.close()
+                except Exception:
+                    pass
+            if etw_started and self.etw_profiler:
+                try:
+                    # Additionally upload kernel and user ETL files
+                    # for debugging if test fails
+                    self.etw_profiler.stop()
+                    self.etw_profiler.upload_etl(debug=browsertime_test_failed)
+                    self.etw_profiler.symbolicate()
+                    self.etw_profiler.post_process_profiles()
+                    self.etw_profiler.clean()
+                    etw_started = False
+                    LOG.info("ETW profiling has completed successfully")
+                except Exception as e:
+                    LOG.error(f"Failed to finalize ETW profiling: {e}")

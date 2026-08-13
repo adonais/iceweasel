@@ -2,26 +2,27 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <gtk/gtk.h>
-
 #include "nsUserIdleServiceGTK.h"
-#include "nsDebug.h"
-#include "prlink.h"
-#include "mozilla/Logging.h"
-#include "WidgetUtilsGtk.h"
+
+#include <gtk/gtk.h>
 #ifdef MOZ_X11
 #  include <X11/Xlib.h>
 #  include <X11/Xutil.h>
 #  include <gdk/gdkx.h>
-#endif
-#ifdef MOZ_ENABLE_DBUS
-#  include <gio/gio.h>
-#  include "AsyncDBus.h"
-#  include "WakeLockListener.h"
-#  include "nsIObserverService.h"
+
+#  include "X11UndefineNone.h"
 #endif
 
-using mozilla::LogLevel;
+#include "WidgetUtilsGtk.h"
+#include "mozilla/Logging.h"
+#include "mozilla/SpinEventLoopUntil.h"
+#include "nsITimer.h"
+#include "prlink.h"
+
+#ifdef MOZ_ENABLE_DBUS
+#  include "AsyncDBus.h"
+#endif
+
 static mozilla::LazyLogModule sIdleLog("nsIUserIdleService");
 
 using namespace mozilla;
@@ -155,63 +156,173 @@ class UserIdleServiceMutter : public UserIdleServiceImpl {
       return false;
     }
 
-    if (!mPollInProgress) {
-      mPollInProgress = true;
-      DBusProxyCall(mProxy, "GetIdletime", nullptr, G_DBUS_CALL_FLAGS_NONE, -1,
-                    mCancellable)
-          ->Then(
-              GetCurrentSerialEventTarget(), __func__,
-              // It's safe to capture this as we use mCancellable to stop
-              // listening.
-              [this](RefPtr<GVariant>&& aResult) {
-                if (!g_variant_is_of_type(aResult, G_VARIANT_TYPE_TUPLE) ||
-                    g_variant_n_children(aResult) != 1) {
-                  MOZ_LOG(sIdleLog, LogLevel::Info,
-                          ("PollIdleTime() Unexpected params type: %s\n",
-                           g_variant_get_type_string(aResult)));
-                  mLastIdleTime = 0;
-                  return;
-                }
-                RefPtr<GVariant> iTime =
-                    dont_AddRef(g_variant_get_child_value(aResult, 0));
-                if (!g_variant_is_of_type(iTime, G_VARIANT_TYPE_UINT64)) {
-                  MOZ_LOG(sIdleLog, LogLevel::Info,
-                          ("PollIdleTime() Unexpected params type: %s\n",
-                           g_variant_get_type_string(aResult)));
-                  mLastIdleTime = 0;
-                  return;
-                }
-                uint64_t idleTime = g_variant_get_uint64(iTime);
-                if (idleTime > std::numeric_limits<uint32_t>::max()) {
-                  idleTime = std::numeric_limits<uint32_t>::max();
-                }
-                mLastIdleTime = idleTime;
-                mPollInProgress = false;
-                MOZ_LOG(sIdleLog, LogLevel::Info,
-                        ("Async handler got %d\n", mLastIdleTime));
-              },
-              [this](GUniquePtr<GError>&& aError) {
-                mPollInProgress = false;
-                if (!IsCancelledGError(aError.get())) {
-                  MOZ_LOG(
-                      sIdleLog, LogLevel::Warning,
-                      ("Failed to call GetIdletime(): %s\n", aError->message));
-                  mUserIdleServiceGTK->RejectAndTryNextServiceCallback();
-                }
-              });
+    // Check cache freshness
+    if (!mCacheTimestamp.IsNull()) {
+      TimeDuration elapsed = TimeStamp::Now() - mCacheTimestamp;
+
+      if (elapsed < TimeDuration::FromMilliseconds(kCacheStaleMs)) {
+        // Serve from cache, advanced by the elapsed time so the value stays
+        // monotonic. A frozen value that lags the wall clock looks like a
+        // return from idle to nsUserIdleService, which re-arms its timer in a
+        // tight loop. A real poll corrects it within kCacheStaleMs.
+        uint64_t advanced =
+            uint64_t(mCachedIdleTime) + uint64_t(elapsed.ToMilliseconds());
+        if (advanced > std::numeric_limits<uint32_t>::max()) {
+          advanced = std::numeric_limits<uint32_t>::max();
+        }
+        *aIdleTime = static_cast<uint32_t>(advanced);
+
+        if (elapsed < TimeDuration::FromMilliseconds(kCacheFreshMs)) {
+          MOZ_LOG(sIdleLog, LogLevel::Info,
+                  ("PollIdleTime() returns cached (fresh) %d\n", *aIdleTime));
+        } else {
+          // Cache is acceptable but getting stale: kick off a background
+          // refresh while returning the advanced cached value.
+          MOZ_LOG(sIdleLog, LogLevel::Info,
+                  ("PollIdleTime() returns cached (stale) %d, refreshing\n",
+                   *aIdleTime));
+          if (!mPollRequest.Exists()) {
+            StartAsyncPoll();
+          }
+        }
+        return true;
+      }
+      // Cache is very stale, fall through to synchronous wait
     }
 
-    *aIdleTime = mLastIdleTime;
+    // Cache is null or older than kCacheStaleMs. Wait for a fresh value.
+    // If a poll is already in flight — a stale-cache background refresh, or
+    // an outer wait we re-entered via SpinEventLoopUntil event processing —
+    // we just wait for it. StartAsyncPoll arms a one-shot timer that bounds
+    // the wait regardless of main-thread activity.
+    TimeStamp prevCacheTimestamp = mCacheTimestamp;
+    if (!mPollRequest.Exists()) {
+      StartAsyncPoll();
+    }
+
+    // Wait synchronously for the async DBus call to complete.
+    // Note: We could make the entire GetIdleTime API async to avoid this.
+    // However that involves quite a lot of callers and it is only really
+    // useful when on GTK/DBUS. Live-lock is bounded by the poll timer (which
+    // cancels the DBus call) and by the shutdown check below.
     MOZ_LOG(sIdleLog, LogLevel::Info,
-            ("PollIdleTime() returns %d\n", *aIdleTime));
+            ("PollIdleTime() waiting for fresh value\n"));
+    SpinEventLoopUntil("UserIdleServiceMutter::PollIdleTime"_ns, [&]() {
+      return !mPollRequest.Exists() ||
+             AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed);
+    });
+
+    if (mCacheTimestamp == prevCacheTimestamp) {
+      MOZ_LOG(sIdleLog, LogLevel::Info,
+              ("PollIdleTime() returning failure (timeout, async error, or "
+               "shutdown)\n"));
+      return false;
+    }
+
+    *aIdleTime = mCachedIdleTime;
+    MOZ_LOG(sIdleLog, LogLevel::Info,
+            ("PollIdleTime() returns fresh %d\n", *aIdleTime));
     return true;
   }
 
+ private:
+  // Cancels a one-shot timer and drops our reference to it, after which it is
+  // safe to tear down state its callback captures (including destroying this).
+  static void CancelTimer(nsCOMPtr<nsITimer>& aTimer) {
+    if (aTimer) {
+      // Guaranteed not to run afterwards even if the timer already fired and
+      // its event is queued: nsTimerEvent re-checks the generation at Run()
+      // time and drops a cancelled one.
+      aTimer->Cancel();
+      aTimer = nullptr;
+    }
+  }
+
+  void StartAsyncPoll() {
+    mPollRequest.DisconnectIfExists();
+    // A fresh cancellable per request so the timer can cancel without
+    // disturbing later requests, and so the timer callback holds the exact
+    // cancellable that belongs to this in-flight call.
+    mCancellable = dont_AddRef(g_cancellable_new());
+    CancelTimer(mPollTimer);
+    // The timer fires on the main thread: it cancels the in-flight DBus call
+    // and disconnects the request so the spin in PollIdleTime exits and a
+    // later call can start a fresh one. Capturing this is safe: the timer is
+    // a member cancelled in the destructor.
+    NS_NewTimerWithCallback(
+        getter_AddRefs(mPollTimer),
+        [this](nsITimer*) {
+          MOZ_LOG(sIdleLog, LogLevel::Warning, ("PollIdleTime() timed out\n"));
+          g_cancellable_cancel(mCancellable);
+          mPollRequest.DisconnectIfExists();
+        },
+        TimeDuration::FromMilliseconds(kPollTimeoutMs), nsITimer::TYPE_ONE_SHOT,
+        "UserIdleServiceMutter::PollIdleTime"_ns);
+
+    DBusProxyCall(mProxy, "GetIdletime", nullptr, G_DBUS_CALL_FLAGS_NONE, -1,
+                  mCancellable)
+        ->Then(
+            GetCurrentSerialEventTarget(), __func__,
+            [this](RefPtr<GVariant>&& aResult) {
+              mPollRequest.Complete();
+              CancelTimer(mPollTimer);
+              if (!g_variant_is_of_type(aResult, G_VARIANT_TYPE_TUPLE) ||
+                  g_variant_n_children(aResult) != 1) {
+                MOZ_LOG(sIdleLog, LogLevel::Info,
+                        ("PollIdleTime() Unexpected params type: %s\n",
+                         g_variant_get_type_string(aResult)));
+                return;
+              }
+              RefPtr<GVariant> iTime =
+                  dont_AddRef(g_variant_get_child_value(aResult, 0));
+              if (!g_variant_is_of_type(iTime, G_VARIANT_TYPE_UINT64)) {
+                MOZ_LOG(sIdleLog, LogLevel::Info,
+                        ("PollIdleTime() Unexpected params type: %s\n",
+                         g_variant_get_type_string(aResult)));
+                return;
+              }
+              uint64_t idleTime = g_variant_get_uint64(iTime);
+              if (idleTime > std::numeric_limits<uint32_t>::max()) {
+                idleTime = std::numeric_limits<uint32_t>::max();
+              }
+              mCachedIdleTime = idleTime;
+              mCacheTimestamp = TimeStamp::Now();
+              MOZ_LOG(sIdleLog, LogLevel::Info,
+                      ("Async handler got %d, cached\n", mCachedIdleTime));
+            },
+            [this](GUniquePtr<GError>&& aError) {
+              mPollRequest.Complete();
+              CancelTimer(mPollTimer);
+              if (!IsCancelledGError(aError.get())) {
+                MOZ_LOG(
+                    sIdleLog, LogLevel::Warning,
+                    ("Failed to call GetIdletime(): %s\n", aError->message));
+              }
+            })
+        ->Track(mPollRequest);
+  }
+
+ public:
   bool ProbeImplementation() override {
     MOZ_LOG(sIdleLog, LogLevel::Info,
             ("UserIdleServiceMutter::UserIdleServiceMutter()\n"));
 
     mCancellable = dont_AddRef(g_cancellable_new());
+    // The timer fires on the main thread: it cancels the in-flight proxy
+    // creation and disconnects the request so the spin below exits. Capturing
+    // this is safe: the timer is a member cancelled in the destructor.
+    NS_NewTimerWithCallback(
+        getter_AddRefs(mProbeTimer),
+        [this](nsITimer*) {
+          MOZ_LOG(sIdleLog, LogLevel::Warning,
+                  ("ProbeImplementation() timed out\n"));
+          g_cancellable_cancel(mCancellable);
+          mProbeRequest.DisconnectIfExists();
+        },
+        TimeDuration::FromMilliseconds(kProbeTimeoutMs),
+        nsITimer::TYPE_ONE_SHOT,
+        "UserIdleServiceMutter::ProbeImplementation"_ns);
+
     CreateDBusProxyForBus(
         G_BUS_TYPE_SESSION,
         GDBusProxyFlags(G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS |
@@ -222,21 +333,39 @@ class UserIdleServiceMutter : public UserIdleServiceImpl {
         ->Then(
             GetCurrentSerialEventTarget(), __func__,
             [this](RefPtr<GDBusProxy>&& aProxy) {
+              mProbeRequest.Complete();
+              CancelTimer(mProbeTimer);
               mProxy = std::move(aProxy);
-              mUserIdleServiceGTK->AcceptServiceCallback();
             },
             [this](GUniquePtr<GError>&& aError) {
+              mProbeRequest.Complete();
+              CancelTimer(mProbeTimer);
               if (!IsCancelledGError(aError.get())) {
-                mUserIdleServiceGTK->RejectAndTryNextServiceCallback();
+                MOZ_LOG(sIdleLog, LogLevel::Warning,
+                        ("Failed to create DBus proxy: %s\n", aError->message));
               }
-            });
-    return true;
+            })
+        ->Track(mProbeRequest);
+
+    SpinEventLoopUntil("UserIdleServiceMutter::ProbeImplementation"_ns, [&]() {
+      return !mProbeRequest.Exists() ||
+             AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed);
+    });
+
+    if (mProxy) {
+      mUserIdleServiceGTK->AcceptServiceCallback();
+    }
+    return !!mProxy;
   }
 
   explicit UserIdleServiceMutter(nsUserIdleServiceGTK* aUserIdleService)
       : UserIdleServiceImpl(aUserIdleService) {};
 
   ~UserIdleServiceMutter() {
+    mProbeRequest.DisconnectIfExists();
+    mPollRequest.DisconnectIfExists();
+    CancelTimer(mProbeTimer);
+    CancelTimer(mPollTimer);
     if (mCancellable) {
       g_cancellable_cancel(mCancellable);
       mCancellable = nullptr;
@@ -245,10 +374,24 @@ class UserIdleServiceMutter : public UserIdleServiceImpl {
   }
 
  private:
+  // Tolerance thresholds for cache freshness
+  static constexpr uint32_t kCacheFreshMs = 1000;
+  static constexpr uint32_t kCacheStaleMs = 5000;
+  static_assert(kCacheStaleMs >= kCacheFreshMs,
+                "The fresh window must be a subset of the stale window: "
+                "PollIdleTime picks the fresh vs. stale branch by nesting "
+                "elapsed < kCacheFreshMs inside elapsed < kCacheStaleMs.");
+  static constexpr uint32_t kPollTimeoutMs = 3000;
+  static constexpr uint32_t kProbeTimeoutMs = 3000;
+
   RefPtr<GDBusProxy> mProxy;
   RefPtr<GCancellable> mCancellable;
-  uint32_t mLastIdleTime = 0;
-  bool mPollInProgress = false;
+  MozPromiseRequestHolder<DBusProxyPromise> mProbeRequest;
+  MozPromiseRequestHolder<DBusCallPromise> mPollRequest;
+  nsCOMPtr<nsITimer> mProbeTimer;
+  nsCOMPtr<nsITimer> mPollTimer;
+  uint32_t mCachedIdleTime = 0;
+  TimeStamp mCacheTimestamp;
 };
 #endif
 

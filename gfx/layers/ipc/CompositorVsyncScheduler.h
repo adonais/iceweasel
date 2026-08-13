@@ -10,10 +10,10 @@
 #include "mozilla/Monitor.h"    // for Monitor
 #include "mozilla/RefPtr.h"     // for RefPtr
 #include "mozilla/TimeStamp.h"  // for TimeStamp
+#include "mozilla/VsyncDispatcher.h"
 #include "mozilla/gfx/Point.h"  // for IntSize
 #include "mozilla/layers/SampleTime.h"
 #include "mozilla/webrender/webrender_ffi.h"
-#include "mozilla/VsyncDispatcher.h"
 #include "mozilla/widget/CompositorWidget.h"
 #include "nsISupportsImpl.h"
 

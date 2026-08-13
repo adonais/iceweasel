@@ -24,10 +24,7 @@ add_task(async function focus() {
   Assert.ok(!gURLBar.view.isOpen);
   Assert.ok(gURLBar.hasAttribute("focused"));
   Assert.ok(gURLBar.hasAttribute("breakout"));
-  Assert.equal(
-    gURLBar.hasAttribute("breakout-extend"),
-    Services.prefs.getBoolPref("browser.nova.enabled")
-  );
+  Assert.ok(!gURLBar.hasAttribute("breakout-extend"));
 
   info("Blur the focus from the urlbar");
   EventUtils.synthesizeKey("KEY_Escape");
@@ -56,8 +53,8 @@ add_task(async function empty_to_some() {
   let someProvider = new UrlbarTestUtils.TestProvider({
     results: [
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         suggestedIndex: 0,
         payload: {
           url: "https://example.com/",
@@ -87,8 +84,8 @@ add_task(async function some_to_empty() {
   let someProvider = new UrlbarTestUtils.TestProvider({
     results: [
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         suggestedIndex: 0,
         payload: {
           url: "https://example.com/",
@@ -150,10 +147,7 @@ add_task(async function oneoffs() {
   Assert.equal(UrlbarTestUtils.getResultCount(window), 0);
   Assert.ok(gURLBar.hasAttribute("breakout"));
   Assert.ok(gURLBar.hasAttribute("focused"));
-  Assert.ok(
-    gURLBar.hasAttribute("breakout-extend"),
-    "breakout-extend shuld be set if there is oneoff buttons"
-  );
+  Assert.ok(gURLBar.hasAttribute("breakout-extend"));
 
   manager.unregisterProvider(emptyProvider);
   await UrlbarTestUtils.promisePopupClose(window);

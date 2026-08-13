@@ -14,7 +14,12 @@ import attr
 from arsenic.services import Geckodriver, free_port, subprocess_based_service
 from mozdevice import ADBDeviceFactory, ADBError
 
-from condprof.util import write_yml_file, logger, DEFAULT_PREFS, BaseEnv
+from condprof.util import (
+    write_yml_file,
+    logger,
+    DEFAULT_PREFS,
+    BaseEnv,
+)
 
 
 # XXX most of this code should migrate into mozdevice - see Bug 1574849
@@ -96,12 +101,77 @@ class AndroidDevice:
         if not device.is_app_installed(self.app_name):
             raise Exception("%s is not installed" % self.app_name)
 
-        # debug flag
+        if not device.confirm_clear_app_data(self.app_name):
+            raise Exception(
+                "Abort: Declined to clear app data, can't build conditioned profile."
+            )
+
+        # pm clear wipes /data/data/<pkg>/ and /sdcard/Android/data/<pkg>/,
+        # avoiding shell-can't-rm-app-owned-files issues on Android 11+. Resets
+        # runtime perms, so grants below must come after this.
+        logger.info(f"Clearing app data for {self.app_name}")
+        try:
+            device.shell_output(f"pm clear {self.app_name}")
+        except ADBError as e:
+            logger.info(f"pm clear {self.app_name} failed: {e}. Continuing.")
+
         logger.info("Setting %s as the debug app on the phone" % self.app_name)
         device.shell(
             "am set-debug-app --persistent %s" % self.app_name,
             stdout_callback=logger.info,
         )
+
+        # mirror geckodriver's sdcard-storage grants so the app can read/write
+        # the pushed profile (see testing/geckodriver/src/android.rs prepare())
+        for perm in ("READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE"):
+            try:
+                device.shell(
+                    f"pm grant {self.app_name} android.permission.{perm}",
+                    stdout_callback=logger.info,
+                )
+            except ADBError as e:
+                logger.info(
+                    f"Could not grant {perm} to {self.app_name} (likely already "
+                    f"granted or not applicable on this Android version): {e}"
+                )
+
+        # on Android 11+ the app needs MANAGE_EXTERNAL_STORAGE to open
+        # /sdcard/Download/profile/... with raw paths
+        try:
+            device.shell_output(
+                f"appops set {self.app_name} MANAGE_EXTERNAL_STORAGE allow"
+            )
+            logger.info(
+                f"Granted MANAGE_EXTERNAL_STORAGE to {self.app_name} via appops"
+            )
+        except ADBError as e:
+            logger.info(
+                f"Could not grant MANAGE_EXTERNAL_STORAGE to {self.app_name} "
+                f"(likely Android < 11 where the op does not exist): {e}"
+            )
+
+        # grant shell MANAGE_EXTERNAL_STORAGE so adb pull
+        # works in the per-app dir on OEM images that honor it. Numeric uid
+        # first since `--uid shell` is rejected by some appops builds.
+        if not device.is_rooted:
+            granted = False
+            for cmd in (
+                "appops set --uid 2000 MANAGE_EXTERNAL_STORAGE allow",
+                "appops set --uid shell MANAGE_EXTERNAL_STORAGE allow",
+            ):
+                try:
+                    device.shell_output(cmd)
+                    logger.info(f"Granted MANAGE_EXTERNAL_STORAGE to shell via: {cmd}")
+                    granted = True
+                    break
+                except ADBError as e:
+                    logger.info(f"appops grant attempt failed ({cmd}): {e}")
+            if not granted:
+                logger.warning(
+                    "Could not grant MANAGE_EXTERNAL_STORAGE to shell; "
+                    "pulling the profile back from the per-app external "
+                    "storage dir may fail on Android 11+."
+                )
 
         # creating the profile on the device
         logger.info("Creating the profile on the device")
@@ -109,10 +179,29 @@ class AndroidDevice:
         remote_profile = posixpath.join(self.remote_test_root, "profile")
         logger.info("The profile on the phone will be at %s" % remote_profile)
 
-        device.rm(remote_profile, force=True, recursive=True)
+        # best-effort cleanup, this can fail when storage/shell permissions are
+        # not setup correctly, push below overwrites existing files, but can leave
+        # non-overwritten files in the same state as before
+        try:
+            device.rm(remote_profile, force=True, recursive=True)
+        except ADBError as e:
+            logger.info(
+                f"Could not remove stale remote profile {remote_profile}: {e}. "
+                "Continuing."
+            )
+
         logger.info("Pushing %s on the phone" % self.profile)
         device.push(profile, remote_profile)
-        device.chmod(remote_profile, recursive=True)
+
+        # best-effort, FAT/scoped-storage paths reject chmod, push sets perms though
+        try:
+            device.chmod(remote_profile, recursive=True)
+        except ADBError as e:
+            logger.info(
+                f"Could not chmod {remote_profile} "
+                f"(sdcard / scoped-storage path): {e}. Continuing."
+            )
+
         self.profile = profile
         self.remote_profile = remote_profile
 

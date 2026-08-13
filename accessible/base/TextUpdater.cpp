@@ -4,10 +4,11 @@
 
 #include "TextUpdater.h"
 
+#include <algorithm>
+
 #include "CacheConstants.h"
 #include "DocAccessible-inl.h"
 #include "TextLeafAccessible.h"
-#include <algorithm>
 
 using namespace mozilla::a11y;
 

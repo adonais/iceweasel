@@ -1,4 +1,4 @@
-ANDROID_INSTRUMENTATION_MANIFESTS += [
-    "grape/instrumentation.toml",
-    "huckleberry/instrumentation.toml",
+MOCHITEST_MANIFESTS += [
+    "grape/mochitest.toml",
+    "huckleberry/mochitest.toml",
 ]

@@ -8,7 +8,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(
   lazy,
   {
-    Reflect: "resource://gre/modules/reflect.sys.mjs",
+    Reflect: "moz-src:///toolkit/components/reflect/reflect.sys.mjs",
   },
   { global: "contextual" }
 );

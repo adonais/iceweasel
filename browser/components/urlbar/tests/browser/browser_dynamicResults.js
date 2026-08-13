@@ -69,7 +69,7 @@ add_task(async function viewCreated() {
     let row = await UrlbarTestUtils.waitForAutocompleteResultAt(window, 1);
     Assert.equal(
       row.result.type,
-      UrlbarUtils.RESULT_TYPE.DYNAMIC,
+      UrlbarShared.RESULT_TYPE.DYNAMIC,
       "row.result.type"
     );
     Assert.equal(
@@ -174,7 +174,7 @@ add_task(async function selection() {
     let row = await UrlbarTestUtils.waitForAutocompleteResultAt(window, 1);
     Assert.equal(
       row.result.type,
-      UrlbarUtils.RESULT_TYPE.DYNAMIC,
+      UrlbarShared.RESULT_TYPE.DYNAMIC,
       "row.result.type"
     );
 
@@ -269,7 +269,7 @@ add_task(async function pick() {
       let row = await UrlbarTestUtils.waitForAutocompleteResultAt(window, 1);
       Assert.equal(
         row.result.type,
-        UrlbarUtils.RESULT_TYPE.DYNAMIC,
+        UrlbarShared.RESULT_TYPE.DYNAMIC,
         "row.result.type"
       );
 
@@ -312,8 +312,8 @@ add_task(async function shouldNavigate() {
       addCallback(
         this,
         new UrlbarResult({
-          type: UrlbarUtils.RESULT_TYPE.DYNAMIC,
-          source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+          type: UrlbarShared.RESULT_TYPE.DYNAMIC,
+          source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
           suggestedIndex: 1,
           payload: {
             dynamicType: DYNAMIC_TYPE_NAME,
@@ -337,7 +337,7 @@ add_task(async function shouldNavigate() {
     let row = await UrlbarTestUtils.waitForAutocompleteResultAt(window, 1);
     Assert.equal(
       row.result.type,
-      UrlbarUtils.RESULT_TYPE.DYNAMIC,
+      UrlbarShared.RESULT_TYPE.DYNAMIC,
       "row.result.type"
     );
 
@@ -416,8 +416,8 @@ add_task(async function highlighting() {
     startQuery(context, addCallback) {
       this._tokens = context.tokens;
       let result = new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.DYNAMIC,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        type: UrlbarShared.RESULT_TYPE.DYNAMIC,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         suggestedIndex: 1,
         payload: {
           dynamicType: DYNAMIC_TYPE_NAME,
@@ -452,7 +452,7 @@ add_task(async function highlighting() {
     let row = await UrlbarTestUtils.waitForAutocompleteResultAt(window, 1);
     Assert.equal(
       row.result.type,
-      UrlbarUtils.RESULT_TYPE.DYNAMIC,
+      UrlbarShared.RESULT_TYPE.DYNAMIC,
       "row.result.type"
     );
     let parentTextNode = row.querySelector(
@@ -481,7 +481,7 @@ add_task(async function highlighting() {
       row = await UrlbarTestUtils.waitForAutocompleteResultAt(window, 1);
       Assert.equal(
         row.result.type,
-        UrlbarUtils.RESULT_TYPE.DYNAMIC,
+        UrlbarShared.RESULT_TYPE.DYNAMIC,
         "row.result.type"
       );
       parentTextNode = row.querySelector(
@@ -523,7 +523,7 @@ add_task(async function highlighting() {
     let row = await UrlbarTestUtils.waitForAutocompleteResultAt(window, 1);
     Assert.equal(
       row.result.type,
-      UrlbarUtils.RESULT_TYPE.DYNAMIC,
+      UrlbarShared.RESULT_TYPE.DYNAMIC,
       "row.result.type"
     );
     let parentTextNode = row.querySelector(
@@ -659,8 +659,8 @@ add_task(async function clear_dynamicType_attribute() {
       addCallback(
         this,
         new UrlbarResult({
-          type: UrlbarUtils.RESULT_TYPE.DYNAMIC,
-          source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+          type: UrlbarShared.RESULT_TYPE.DYNAMIC,
+          source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
           suggestedIndex: 0,
           payload: {
             dynamicType: DYNAMIC_TYPE_NAME,
@@ -763,7 +763,7 @@ async function doAttributesTest({
     let row = await UrlbarTestUtils.waitForAutocompleteResultAt(window, 1);
     Assert.equal(
       row.result.type,
-      UrlbarUtils.RESULT_TYPE.DYNAMIC,
+      UrlbarShared.RESULT_TYPE.DYNAMIC,
       "Sanity check: The expected row is present"
     );
     for (let [name, expected] of Object.entries(expectedAttributes)) {
@@ -786,8 +786,8 @@ class TestProvider extends UrlbarTestUtils.TestProvider {
     addCallback(
       this,
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.DYNAMIC,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        type: UrlbarShared.RESULT_TYPE.DYNAMIC,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         suggestedIndex: 1,
         payload: {
           dynamicType: DYNAMIC_TYPE_NAME,

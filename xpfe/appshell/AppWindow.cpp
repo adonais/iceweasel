@@ -1994,7 +1994,7 @@ void AppWindow::MaybeSavePersistentMiscAttributes(
       (void)SetPersistentValue(nsGkAtoms::sizemode, sizeString);
     }
   }
-  aRootElement.SetBoolAttr(nsGkAtoms::gtktiledwindow, mWindow->IsTiled());
+  aRootElement.SetBoolAttr(nsGkAtoms::tiled, mWindow->IsTiled());
 }
 
 void AppWindow::SavePersistentAttributes(

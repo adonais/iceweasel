@@ -3,6 +3,17 @@
     "@base": {
       "value": "{text.color.@base}"
     },
+    "accent": {
+      "primary": {
+        "desaturated": {
+          "value": {
+            "light": "{color.violet-desaturated.60}",
+            "dark": "{color.violet-desaturated.40}",
+            "forcedColors": "CanvasText"
+          }
+        }
+      }
+    },
     "information": {
       "value": {
         "light": "{color.violet.50}",

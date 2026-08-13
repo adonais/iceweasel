@@ -3,18 +3,18 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SocketProcessBridgeChild.h"
-#include "SocketProcessLogging.h"
 
+#include "SocketProcessLogging.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/Components.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs_network.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/net/NeckoChild.h"
 #include "nsIObserverService.h"
 #include "nsThreadUtils.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/StaticPrefs_network.h"
 
 namespace mozilla {
 

@@ -20,38 +20,38 @@
 #include "SandboxChrootProto.h"
 #include "SandboxInfo.h"
 #include "SandboxLogging.h"
-#include "base/eintr_wrapper.h"
+#include "base/posix/eintr_wrapper.h"
 #include "base/strings/safe_sprintf.h"
 #include "mozilla/Array.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/Components.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/SandboxReporter.h"
 #include "mozilla/SandboxSettings.h"
-#include "mozilla/Components.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/ipc/UtilityProcessSandboxing.h"
+#include "mozilla/pthread_atfork.h"
 #include "nsCOMPtr.h"
 #include "nsDebug.h"
 #include "nsIGfxInfo.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
 #include "prenv.h"
-#include "sandbox/linux/system_headers/linux_syscalls.h"
 #include "sandbox/linux/services/syscall_wrappers.h"
-
-#include "mozilla/pthread_atfork.h"
+#include "sandbox/linux/system_headers/linux_syscalls.h"
 
 #ifdef MOZ_X11
 #  ifndef MOZ_WIDGET_GTK
 #    error "Unknown toolkit"
 #  endif
-#  include "mozilla/WidgetUtilsGtk.h"
 #  include <gdk/gdk.h>
 #  include <gdk/gdkx.h>
+
 #  include "X11UndefineNone.h"
 #  include "gfxPlatform.h"
+#  include "mozilla/WidgetUtilsGtk.h"
 #endif
 
 #if defined(__GLIBC__) && !defined(__UCLIBC__)

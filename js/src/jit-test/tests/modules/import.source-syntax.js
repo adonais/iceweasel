@@ -6,9 +6,10 @@ const ast = Reflect.parse("import.source('module.js')");
 assertEq(ast.type, "Program");
 assertEq(ast.body.length, 1);
 assertEq(ast.body[0].type, "ExpressionStatement");
-assertEq(ast.body[0].expression.type, "CallImportSource");
-assertEq(ast.body[0].expression.meta.type, "Identifier");
-assertEq(ast.body[0].expression.meta.name, "import");
+assertEq(ast.body[0].expression.type, "CallImport");
+assertEq(ast.body[0].expression.phase, "source");
+assertEq(ast.body[0].expression.ident.type, "Identifier");
+assertEq(ast.body[0].expression.ident.name, "import");
 assertEq(ast.body[0].expression.property.type, "Identifier");
 assertEq(ast.body[0].expression.property.name, "source");
 assertEq(ast.body[0].expression.arguments.length, 1);
@@ -54,4 +55,9 @@ assertThrowsInstanceOf(() => Reflect.parse("import.source`template`"), SyntaxErr
 assertThrowsInstanceOf(() => Reflect.parse("(async () => await import.UNKNOWN('module'))"), SyntaxError);
 assertThrowsInstanceOf(() => Reflect.parse("import.source('module.js',)"), SyntaxError);
 assertThrowsInstanceOf(() => Reflect.parse("import.source('module.js', {with: {type:'json'}})"), SyntaxError);
+
+// The `import.` property dispatch: with source phase imports enabled, only
+// `meta` and `source` are accepted after the dot, so any other property
+// reports "expected meta or source, got ...".
+assertErrorMessage(() => Reflect.parse("import.foo('module.js')"), SyntaxError, /^expected meta or source, got /);
 

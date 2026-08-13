@@ -5,10 +5,9 @@
 #ifndef nsDragService_h_
 #define nsDragService_h_
 
-#include "nsBaseDragService.h"
-
 #include "AndroidGraphics.h"
 #include "mozilla/java/GeckoDragAndDropNatives.h"
+#include "nsBaseDragService.h"
 
 class nsITransferable;
 

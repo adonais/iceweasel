@@ -7,7 +7,7 @@ import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  CrashSubmit: "resource://gre/modules/CrashSubmit.sys.mjs",
+  CrashSubmit: "moz-src:///toolkit/crashreporter/CrashSubmit.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "gNavigatorBundle", function () {

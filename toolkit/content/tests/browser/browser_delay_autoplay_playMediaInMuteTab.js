@@ -70,7 +70,7 @@ add_task(async function unblock_icon_should_disappear_after_resume_tab() {
   await waitForTabBlockEvent(tab, false);
 
   info("- mute tab -");
-  tab.linkedBrowser.mute();
+  tab.linkedBrowser.browsingContext.mediaController.mute();
   ok(tab.linkedBrowser.audioMuted, "Audio should be muted now");
 
   info("- try to start audio in background tab -");

@@ -51,7 +51,7 @@ def attributeNativeName(a, getter):
     return f"{prefix}{binaryname}"
 
 
-def attributeAttributes(a, getter):
+def attributeAttributes(iface, a, getter):
     ret = ""
 
     if a.must_use:
@@ -67,10 +67,13 @@ def attributeAttributes(a, getter):
     ):
         ret = "MOZ_CAN_RUN_SCRIPT " + ret
 
+    kind = "getter" if getter else "setter"
+    ret = f"MOZ_BINDING(binding_to, idl, {kind}, XPIDL_{iface.name}_{a.name}) " + ret
+
     return ret
 
 
-def attributeReturnType(a, getter, macro):
+def attributeReturnType(iface, a, getter, macro):
     """macro should be NS_IMETHOD or NS_IMETHODIMP"""
     # Pick the type to be returned from the getter/setter.
     if a.notxpcom:
@@ -88,7 +91,7 @@ def attributeReturnType(a, getter, macro):
     else:
         ret = f"{macro}_({ret})"
 
-    return attributeAttributes(a, getter) + ret
+    return attributeAttributes(iface, a, getter) + ret
 
 
 def attributeParamlist(a, getter, return_param=True):
@@ -103,8 +106,8 @@ def attributeParamlist(a, getter, return_param=True):
     return ", ".join(l)
 
 
-def attributeAsNative(a, getter, declType="NS_IMETHOD"):
-    returntype = attributeReturnType(a, getter, declType)
+def attributeAsNative(iface, a, getter, declType="NS_IMETHOD"):
+    returntype = attributeReturnType(iface, a, getter, declType)
     binaryname = attributeNativeName(a, getter)
     paramlist = attributeParamlist(a, getter)
     return f"{returntype} {binaryname}({paramlist})"
@@ -114,7 +117,7 @@ def methodNativeName(m):
     return m.binaryname is not None and m.binaryname or firstCap(m.name)
 
 
-def methodAttributes(m):
+def methodAttributes(iface, m):
     ret = ""
 
     if m.must_use:
@@ -127,10 +130,12 @@ def methodAttributes(m):
     if m.explicit_can_run_script:
         ret = "MOZ_CAN_RUN_SCRIPT " + ret
 
+    ret = f"MOZ_BINDING(binding_to, idl, method, XPIDL_{iface.name}_{m.name}) " + ret
+
     return ret
 
 
-def methodReturnType(m, macro):
+def methodReturnType(iface, m, macro):
     """macro should be NS_IMETHOD or NS_IMETHODIMP"""
     if m.notxpcom:
         ret = m.realtype.nativeType("in").strip()
@@ -147,11 +152,11 @@ def methodReturnType(m, macro):
     else:
         ret = f"{macro}_({ret})"
 
-    return methodAttributes(m) + ret
+    return methodAttributes(iface, m) + ret
 
 
-def methodAsNative(m, declType="NS_IMETHOD"):
-    returntype = methodReturnType(m, declType)
+def methodAsNative(iface, m, declType="NS_IMETHOD"):
+    returntype = methodReturnType(iface, m, declType)
     binaryname = methodNativeName(m)
     paramlist = paramlistAsNative(m)
     return f"{returntype} {binaryname}({paramlist})"
@@ -437,7 +442,7 @@ class InterfaceNeedsThreadSafeRefCnt<{name}> : public std::true_type {{}};
 """
 
 
-def infallibleDecl(member):
+def infallibleDecl(iface, member):
     isattr = isinstance(member, xpidl.Attribute)
     ismethod = isinstance(member, xpidl.Method)
     assert isattr or ismethod
@@ -454,12 +459,12 @@ def infallibleDecl(member):
         nativename = attributeNativeName(member, getter=True)
         args = attributeParamlist(member, getter=True, return_param=False)
         argnames = attributeParamNames(member, getter=True, return_param=False)
-        attributes = attributeAttributes(member, getter=True)
+        attributes = attributeAttributes(iface, member, getter=True)
     else:
         nativename = methodNativeName(member)
         args = paramlistAsNative(member, return_param=False)
         argnames = paramlistNames(member, return_param=False)
-        attributes = methodAttributes(member)
+        attributes = methodAttributes(iface, member)
 
     return tmpl.format(
         attributes=attributes,
@@ -500,36 +505,49 @@ def write_interface(iface, fd):
             basetype = c.basetype
             value = c.getValue()
             signed = (not basetype.signed) and "U" or ""
-            enums.append(f"    {c.name} = {value}{signed}")
+            binding_annotation = (
+                f"MOZ_BINDING(binding_to, idl, const, XPIDL_{iface.name}_{c.name})"
+            )
+            enums.append(f"    {c.name} {binding_annotation} = {value}{signed}")
         fd.write(",\n".join(enums))
         fd.write("\n  };\n\n")
 
     def write_cenum_decl(b):
-        fd.write(f"  enum {b.basename} : uint{b.width}_t {{\n")
+        enum_binding_annotation = (
+            f"MOZ_BINDING(binding_to, idl, class, XPIDL_{iface.name}_{b.basename})"
+        )
+        fd.write(
+            f"  enum {enum_binding_annotation} {b.basename} : uint{b.width}_t {{\n"
+        )
         for var in b.variants:
-            fd.write(f"    {var.name} = {var.value},\n")
+            variant_binding_annotation = f"MOZ_BINDING(binding_to, idl, const, XPIDL_{iface.name}_{b.basename}_{var.name})"
+            fd.write(f"    {var.name} {variant_binding_annotation} = {var.value},\n")
         fd.write("  };\n\n")
 
     def write_method_decl(m):
         printComments(fd, m.doccomments, "  ")
 
         fd.write(f"  /* {m.toIDL()} */\n")
-        fd.write(f"  {runScriptAnnotation(m)}{methodAsNative(m)} = 0;\n\n")
+        fd.write(f"  {runScriptAnnotation(m)}{methodAsNative(iface, m)} = 0;\n\n")
 
         if m.infallible:
-            fd.write(infallibleDecl(m))
+            fd.write(infallibleDecl(iface, m))
 
     def write_attr_decl(a):
         printComments(fd, a.doccomments, "  ")
 
         fd.write(f"  /* {a.toIDL()} */\n")
 
-        fd.write(f"  {runScriptAnnotation(a)}{attributeAsNative(a, True)} = 0;\n")
+        fd.write(
+            f"  {runScriptAnnotation(a)}{attributeAsNative(iface, a, True)} = 0;\n"
+        )
         if a.infallible:
-            fd.write(infallibleDecl(a))
+            fd.write(infallibleDecl(iface, a))
 
         if not a.readonly:
-            fd.write(f"  {runScriptAnnotation(a)}{attributeAsNative(a, False)} = 0;\n")
+            fd.write(
+                f"  {runScriptAnnotation(a)}{attributeAsNative(iface, a, False)} = 0;\n"
+            )
         fd.write("\n")
 
     defname = iface.name.upper()
@@ -565,6 +583,8 @@ def write_interface(iface, fd):
 
     if not foundcdata:
         fd.write("NS_NO_VTABLE ")
+
+    fd.write(f"MOZ_BINDING(binding_to, idl, class, XPIDL_{iface.name}) ")
 
     fd.write(iface.name)
     if iface.base:
@@ -606,13 +626,15 @@ def write_interface(iface, fd):
                     fd.write(
                         f"\\\n  using {iface.name}::{attributeNativeName(member, True)}; "
                     )
-                fd.write(f"\\\n  {attributeAsNative(member, True, declType)}{suffix}; ")
+                fd.write(
+                    f"\\\n  {attributeAsNative(iface, member, True, declType)}{suffix}; "
+                )
                 if not member.readonly:
                     fd.write(
-                        f"\\\n  {attributeAsNative(member, False, declType)}{suffix}; "
+                        f"\\\n  {attributeAsNative(iface, member, False, declType)}{suffix}; "
                     )
             elif isinstance(member, xpidl.Method):
-                fd.write(f"\\\n  {methodAsNative(member, declType)}{suffix}; ")
+                fd.write(f"\\\n  {methodAsNative(iface, member, declType)}{suffix}; ")
         if len(iface.members) == 0:
             fd.write("\\\n  /* no methods! */")
         elif member.kind not in ("attribute", "method"):
@@ -635,7 +657,7 @@ def write_interface(iface, fd):
                 attr_tmpl = tmpl_notxpcom if member.notxpcom else tmpl
                 fd.write(
                     attr_tmpl.format(
-                        asNative=attributeAsNative(member, True),
+                        asNative=attributeAsNative(iface, member, True),
                         nativeName=attributeNativeName(member, True),
                         paramList=attributeParamNames(member, True),
                     )
@@ -643,7 +665,7 @@ def write_interface(iface, fd):
                 if not member.readonly:
                     fd.write(
                         attr_tmpl.format(
-                            asNative=attributeAsNative(member, False),
+                            asNative=attributeAsNative(iface, member, False),
                             nativeName=attributeNativeName(member, False),
                             paramList=attributeParamNames(member, False),
                         )
@@ -652,7 +674,7 @@ def write_interface(iface, fd):
                 if member.notxpcom:
                     fd.write(
                         tmpl_notxpcom.format(
-                            asNative=methodAsNative(member),
+                            asNative=methodAsNative(iface, member),
                             nativeName=methodNativeName(member),
                             paramList=paramlistNames(member),
                         )
@@ -660,7 +682,7 @@ def write_interface(iface, fd):
                 else:
                     fd.write(
                         tmpl.format(
-                            asNative=methodAsNative(member),
+                            asNative=methodAsNative(iface, member),
                             nativeName=methodNativeName(member),
                             paramList=paramlistNames(member),
                         )

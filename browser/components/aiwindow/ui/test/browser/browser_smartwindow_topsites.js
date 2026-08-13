@@ -17,10 +17,6 @@
 
 "use strict";
 
-const { TopSites } = ChromeUtils.importESModule(
-  "resource:///modules/topsites/TopSites.sys.mjs"
-);
-
 const HIDE_TOP_SITES_PREF = "browser.smartwindow.hideTopSites";
 const MAX_TOP_SITES = 8;
 
@@ -57,7 +53,7 @@ async function getResolvedAiWindow(browser) {
 
 add_task(async function test_topsites_render_after_starters_resolve() {
   const sb = sinon.createSandbox();
-  sb.stub(TopSites, "getSites").resolves(SAMPLE_SITES);
+  sb.stub(AboutNewTab, "getTopSites").returns(SAMPLE_SITES);
 
   const win = await openAIWindow();
   try {
@@ -84,13 +80,43 @@ add_task(async function test_topsites_render_after_starters_resolve() {
   }
 });
 
+add_task(async function test_topsites_render_when_store_populates_late() {
+  // On a fresh browser start AboutNewTab's store can still be empty when the AI
+  // window first reads it. Simulate that by returning no sites on connect, then
+  // populating and firing "newtab-top-sites-changed" to confirm the row appears.
+  const sb = sinon.createSandbox();
+  const getTopSites = sb.stub(AboutNewTab, "getTopSites").returns([]);
+
+  const win = await openAIWindow();
+  try {
+    const aiWindow = await getResolvedAiWindow(win.gBrowser.selectedBrowser);
+
+    Assert.equal(
+      getTopSiteTiles(aiWindow).length,
+      0,
+      "No Top Sites should render while the store is empty"
+    );
+
+    getTopSites.returns(SAMPLE_SITES);
+    Services.obs.notifyObservers(null, "newtab-top-sites-changed");
+
+    await TestUtils.waitForCondition(
+      () => getTopSiteTiles(aiWindow).length === SAMPLE_SITES.length,
+      "Top Sites should render once the store populates and notifies"
+    );
+  } finally {
+    await BrowserTestUtils.closeWindow(win);
+    sb.restore();
+  }
+});
+
 add_task(async function test_topsites_capped_at_max() {
   const manySites = Array.from({ length: MAX_TOP_SITES + 4 }, (_, i) => ({
     url: `https://site${i}.example/`,
     label: `Site ${i}`,
   }));
   const sb = sinon.createSandbox();
-  sb.stub(TopSites, "getSites").resolves(manySites);
+  sb.stub(AboutNewTab, "getTopSites").returns(manySites);
 
   const win = await openAIWindow();
   try {
@@ -114,7 +140,7 @@ add_task(async function test_topsites_capped_at_max() {
 
 add_task(async function test_topsites_gated_on_starter_resolution() {
   const sb = sinon.createSandbox();
-  sb.stub(TopSites, "getSites").resolves(SAMPLE_SITES);
+  sb.stub(AboutNewTab, "getTopSites").returns(SAMPLE_SITES);
 
   const win = await openAIWindow();
   try {
@@ -151,7 +177,7 @@ add_task(async function test_topsites_gated_on_starter_resolution() {
 add_task(async function test_topsites_hidden_by_pref() {
   await SpecialPowers.pushPrefEnv({ set: [[HIDE_TOP_SITES_PREF, false]] });
   const sb = sinon.createSandbox();
-  sb.stub(TopSites, "getSites").resolves(SAMPLE_SITES);
+  sb.stub(AboutNewTab, "getTopSites").returns(SAMPLE_SITES);
 
   const win = await openAIWindow();
   try {
@@ -177,7 +203,7 @@ add_task(async function test_topsites_hidden_by_pref() {
 
 add_task(async function test_topsites_revealed_in_background_tab() {
   const sb = sinon.createSandbox();
-  sb.stub(TopSites, "getSites").resolves(SAMPLE_SITES);
+  sb.stub(AboutNewTab, "getTopSites").returns(SAMPLE_SITES);
 
   const win = await openAIWindow();
   let bgTab;
@@ -299,7 +325,7 @@ add_task(async function test_topsites_component_rendering_and_selection() {
 add_task(async function test_topsites_telemetry_enabled_and_impression() {
   Services.fog.testResetFOG();
   const sb = sinon.createSandbox();
-  sb.stub(TopSites, "getSites").resolves(SAMPLE_SITES);
+  sb.stub(AboutNewTab, "getTopSites").returns(SAMPLE_SITES);
 
   const win = await openAIWindow();
   try {
@@ -337,7 +363,7 @@ add_task(async function test_topsites_telemetry_enabled_false_when_hidden() {
   await SpecialPowers.pushPrefEnv({ set: [[HIDE_TOP_SITES_PREF, true]] });
   Services.fog.testResetFOG();
   const sb = sinon.createSandbox();
-  sb.stub(TopSites, "getSites").resolves(SAMPLE_SITES);
+  sb.stub(AboutNewTab, "getTopSites").returns(SAMPLE_SITES);
 
   const win = await openAIWindow();
   try {
@@ -369,7 +395,7 @@ add_task(async function test_topsites_telemetry_click() {
   ];
   Services.fog.testResetFOG();
   const sb = sinon.createSandbox();
-  sb.stub(TopSites, "getSites").resolves(sites);
+  sb.stub(AboutNewTab, "getTopSites").returns(sites);
   // Stub navigation so clicking a tile records telemetry without loading a page.
   sb.stub(URILoadingHelper, "openTrustedLinkIn");
 

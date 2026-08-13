@@ -2,12 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "PoisonIOInterposer.h"
-
 #include <io.h>
 #include <windows.h>
 #include <winternl.h>
 
+#include "PoisonIOInterposer.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/FileUtilsWin.h"

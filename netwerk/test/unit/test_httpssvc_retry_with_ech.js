@@ -312,12 +312,16 @@ add_task(async function testEchRetry() {
       HandshakeTelemetryHelpers.assertHistogramMap(
         HandshakeTelemetryHelpers.resultDelta(f),
         new Map([
-          ["0", 1],
-          ["188", 1],
+          ["Success", 1],
+          ["SSL_ERROR_ECH_RETRY_WITH_ECH", 1],
         ])
       );
     }
-    HandshakeTelemetryHelpers.checkEntry(["_FIRST_TRY"], 188, 1);
+    HandshakeTelemetryHelpers.checkEntry(
+      ["_FIRST_TRY"],
+      "SSL_ERROR_ECH_RETRY_WITH_ECH",
+      1
+    );
     HandshakeTelemetryHelpers.checkEmpty(["_CONSERVATIVE", "_ECH_GREASE"]);
   }
 });

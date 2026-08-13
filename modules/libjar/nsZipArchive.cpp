@@ -440,7 +440,7 @@ nsresult nsZipArchive::Test(const nsACString& aEntryName) {
     if (!currItem) return NS_ERROR_FILE_NOT_FOUND;
     //-- don't test (synthetic) directory items
     if (currItem->IsDirectory()) return NS_OK;
-    return ExtractFile(currItem, 0, 0);
+    return ExtractFile(currItem, nullptr, nullptr);
   }
 
   // test all items in archive
@@ -448,7 +448,7 @@ nsresult nsZipArchive::Test(const nsACString& aEntryName) {
     for (currItem = item; currItem; currItem = currItem->next) {
       //-- don't test (synthetic) directory items
       if (currItem->IsDirectory()) continue;
-      nsresult rv = ExtractFile(currItem, 0, 0);
+      nsresult rv = ExtractFile(currItem, nullptr, nullptr);
       if (rv != NS_OK) return rv;
     }
   }
@@ -470,7 +470,7 @@ nsZipItem* nsZipArchive::GetItem(const nsACString& aEntryName) {
     //-- are created for the directories without their own entry.
     if (!mBuiltSynthetics) {
       if ((len > 0) && (aEntryName[len - 1] == '/')) {
-        if (BuildSynthetics() != NS_OK) return 0;
+        if (BuildSynthetics() != NS_OK) return nullptr;
       }
     }
     MMAP_FAULT_HANDLER_BEGIN_HANDLE(mFd)
@@ -556,7 +556,7 @@ nsresult nsZipArchive::FindInit(const char* aPattern, nsZipFind** aFind) {
   *aFind = nullptr;
 
   bool regExp = false;
-  char* pattern = 0;
+  char* pattern = nullptr;
 
   // Create synthetic directory entries on demand
   nsresult rv = BuildSynthetics();
@@ -603,7 +603,7 @@ nsresult nsZipFind::FindNext(const char** aResult, uint16_t* aNameLen) {
   NS_ENSURE_TRUE(mArchive, NS_ERROR_FILE_NOT_FOUND);
 
   MutexAutoLock lock(mArchive->mLock);
-  *aResult = 0;
+  *aResult = nullptr;
   *aNameLen = 0;
   MMAP_FAULT_HANDLER_BEGIN_HANDLE(mArchive->GetFD())
   // we start from last match, look for next
@@ -1008,7 +1008,7 @@ nsZipFind::~nsZipFind() {
  */
 MOZ_NO_SANITIZE_UNSIGNED_OVERFLOW
 static uint32_t HashName(const char* aName, uint16_t len) {
-  MOZ_ASSERT(aName != 0);
+  MOZ_ASSERT(aName != nullptr);
 
   const uint8_t* p = (const uint8_t*)aName;
   const uint8_t* endp = p + len;

@@ -88,14 +88,10 @@ class AwsyTestCase(MarionetteTestCase):
         self._dmd = self.testvars.get("dmd", False)
 
         self.logger.info(
-            "areweslimyet run by %d pages, %d iterations,"
-            " %d perTabPause, %d settleWaitTime"
-            % (
-                self._pages_to_load,
-                self._iterations,
-                self._perTabPause,
-                self._settleWaitTime,
-            )
+            f"areweslimyet run by {self._pages_to_load} pages, "
+            f"{self._iterations} iterations,"
+            f" {self._perTabPause} perTabPause, "
+            f"{self._settleWaitTime} settleWaitTime"
         )
         self.reset_state()
 
@@ -103,19 +99,19 @@ class AwsyTestCase(MarionetteTestCase):
         MarionetteTestCase.tearDown(self)
 
         try:
-            self.logger.info("processing data in %s!" % self._resultsDir)
+            self.logger.info(f"processing data in {self._resultsDir}!")
             perf_blob = process_perf_data.create_perf_data(
                 self._resultsDir,
                 self.perf_suites(),
                 self.perf_checkpoints(),
                 self.perf_extra_opts(),
             )
-            self.logger.info("PERFHERDER_DATA: %s" % json.dumps(perf_blob))
+            self.logger.info(f"PERFHERDER_DATA: {json.dumps(perf_blob)}")
 
             perf_file = os.path.join(self._resultsDir, "perfherder-data.json")
             with open(perf_file, "w") as fp:
                 json.dump(perf_blob, fp, indent=2)
-            self.logger.info("Perfherder data written to %s" % perf_file)
+            self.logger.info(f"Perfherder data written to {perf_file}")
         except Exception:
             raise
         finally:
@@ -145,7 +141,7 @@ class AwsyTestCase(MarionetteTestCase):
             # We don't fix stacks on Windows, even though we could, due to the
             # tale of woe in bug 1626272.
             if not sys.platform.startswith("win"):
-                self.logger.info("Fixing stacks for %s, this may take a while" % f)
+                self.logger.info(f"Fixing stacks for {f}, this may take a while")
                 isZipped = True
                 fixStackTraces(f, isZipped, gzip.open)
             shutil.move(f, self._resultsDir)
@@ -155,14 +151,14 @@ class AwsyTestCase(MarionetteTestCase):
             try:
                 os.remove(f)
             except OSError:
-                self.logger.info("Unable to remove %s" % f)
+                self.logger.info(f"Unable to remove {f}")
 
     def reset_state(self):
         self._pages_loaded = 0
 
         # Close all tabs except one
         for x in self.marionette.window_handles[1:]:
-            self.logger.info("closing window: %s" % x)
+            self.logger.info(f"closing window: {x}")
             self.marionette.switch_to_window(x)
             self.marionette.close()
 
@@ -180,9 +176,9 @@ class AwsyTestCase(MarionetteTestCase):
 
         :param minimize: If true, minimize memory before getting the report.
         """
-        self.logger.info("starting checkpoint %s..." % checkpointName)
+        self.logger.info(f"starting checkpoint {checkpointName}...")
 
-        checkpoint_file = "memory-report-%s-%d.json.gz" % (checkpointName, iteration)
+        checkpoint_file = f"memory-report-{checkpointName}-{iteration}.json.gz"
         checkpoint_path = os.path.join(self._resultsDir, checkpoint_file)
         # On Windows, replace / with the Windows directory
         # separator \ and escape it to prevent it from being
@@ -190,21 +186,19 @@ class AwsyTestCase(MarionetteTestCase):
         if sys.platform.startswith("win"):
             checkpoint_path = checkpoint_path.replace("\\", "\\\\").replace("/", "\\\\")
 
-        checkpoint_script = r"""
+        minimize_str = "true" if minimize else "false"
+        checkpoint_script = rf"""
             let [resolve] = arguments;
             let dumper =
             Cc["@mozilla.org/memory-info-dumper;1"].getService(
             Ci.nsIMemoryInfoDumper);
             dumper.dumpMemoryReportsToNamedFile(
-                "%s",
+                "{checkpoint_path}",
                 () => resolve("memory report done!"),
                 null,
                 /* anonymize */ false,
-                /* minimize memory usage */ %s);
-            """ % (
-            checkpoint_path,
-            "true" if minimize else "false",
-        )
+                /* minimize memory usage */ {minimize_str});
+            """
 
         checkpoint = None
         try:
@@ -214,13 +208,13 @@ class AwsyTestCase(MarionetteTestCase):
             if finished:
                 checkpoint = checkpoint_path
         except JavascriptException as e:
-            self.logger.error("Checkpoint JavaScript error: %s" % e)
+            self.logger.error(f"Checkpoint JavaScript error: {e}")
         except ScriptTimeoutException:
             self.logger.error("Memory report timed out")
         except Exception:
-            self.logger.error("Unexpected error: %s" % sys.exc_info()[0])
+            self.logger.error(f"Unexpected error: {sys.exc_info()[0]}")
         else:
-            self.logger.info("checkpoint created, stored in %s" % checkpoint_path)
+            self.logger.info(f"checkpoint created, stored in {checkpoint_path}")
 
         # Now trigger a DMD report if requested.
         if self._dmd:
@@ -236,9 +230,9 @@ class AwsyTestCase(MarionetteTestCase):
         NB: This will dump DMD reports to the temp dir. Unfortunately it also
         dumps memory reports, but that's all we have to work with right now.
         """
-        self.logger.info("Starting %s DMD reports..." % checkpointName)
+        self.logger.info(f"Starting {checkpointName} DMD reports...")
 
-        ident = "%s-%d" % (checkpointName, iteration)
+        ident = f"{checkpointName}-{iteration}"
 
         # TODO(ER): This actually takes a minimize argument. We could use that
         # rather than have a separate `do_gc` function. Also it generates a
@@ -251,28 +245,22 @@ class AwsyTestCase(MarionetteTestCase):
         #
         # and for the memory report:
         #   unified-memory-report-<checkpoint>-<iteration>.json.gz
-        dmd_script = (
-            r"""
+        dmd_script = rf"""
             let dumper =
             Cc["@mozilla.org/memory-info-dumper;1"].getService(
             Ci.nsIMemoryInfoDumper);
             dumper.dumpMemoryInfoToTempDir(
-                "%s",
+                "{ident}",
                 /* anonymize = */ false,
                 /* minimize = */ false);
             """
-            % ident
-        )
 
         try:
             # This is async and there's no callback so we use the existence
             # of an incomplete memory report to check if it hasn't finished yet.
             self.marionette.execute_script(dmd_script, script_timeout=60000)
             tmpdir = tempfile.gettempdir()
-            prefix = "incomplete-unified-memory-report-%s-%d-*" % (
-                checkpointName,
-                iteration,
-            )
+            prefix = f"incomplete-unified-memory-report-{checkpointName}-{iteration}-*"
             max_wait = 240
             elapsed = 0
             while fnmatch.filter(os.listdir(tmpdir), prefix) and elapsed < max_wait:
@@ -288,13 +276,13 @@ class AwsyTestCase(MarionetteTestCase):
                     os.remove(os.path.join(tmpdir, f))
 
         except JavascriptException as e:
-            self.logger.error("DMD JavaScript error: %s" % e)
+            self.logger.error(f"DMD JavaScript error: {e}")
         except ScriptTimeoutException:
             self.logger.error("DMD timed out")
         except Exception:
-            self.logger.error("Unexpected error: %s" % sys.exc_info()[0])
+            self.logger.error(f"Unexpected error: {sys.exc_info()[0]}")
         else:
-            self.logger.info("DMD started, prefixed with %s" % ident)
+            self.logger.info(f"DMD started, prefixed with {ident}")
 
     def open_and_focus(self):
         """Opens the next URL in the list and focuses on the tab it is opened in.
@@ -342,7 +330,7 @@ class AwsyTestCase(MarionetteTestCase):
             self.logger.info("switched to tab")
 
         with self.marionette.using_context("content"):
-            self.logger.info("loading %s" % page_to_load)
+            self.logger.info(f"loading {page_to_load}")
             self.marionette.navigate(page_to_load)
             self.logger.info("loaded!")
 

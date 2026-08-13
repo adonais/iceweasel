@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 let { ForgetAboutSite } = ChromeUtils.importESModule(
-  "resource://gre/modules/ForgetAboutSite.sys.mjs"
+  "moz-src:///toolkit/components/forgetaboutsite/ForgetAboutSite.sys.mjs"
 );
 
 function promiseClearHistory() {

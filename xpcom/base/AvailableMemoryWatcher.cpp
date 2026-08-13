@@ -5,11 +5,11 @@
 #include "AvailableMemoryWatcher.h"
 
 #include "mozilla/ClearOnShutdown.h"
-#include "mozilla/dom/Promise.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/dom/Promise.h"
 #include "mozilla/glean/XpcomMetrics.h"
 #include "nsExceptionHandler.h"
 #include "nsMemoryPressure.h"

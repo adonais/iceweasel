@@ -211,15 +211,20 @@ class NormalPropMap;
 class JS_PUBLIC_API GenericPrinter;
 class JSONPrinter;
 
+namespace gc {
+template <uint32_t opts>
+class MarkingTracerT;
+}  // namespace gc
+
 // Template class for storing a PropMap* and a property index as tagged pointer.
 template <typename T>
 class MapAndIndex {
-  uintptr_t data_ = 0;
+  GCData<uintptr_t> data_;
 
   static constexpr uintptr_t IndexMask = 0b111;
 
  public:
-  MapAndIndex() = default;
+  MapAndIndex() : data_(0) {}
 
   MapAndIndex(const T* map, uint32_t index) : data_(uintptr_t(map) | index) {
     MOZ_ASSERT((uintptr_t(map) & IndexMask) == 0);
@@ -233,6 +238,10 @@ class MapAndIndex {
 
   uintptr_t raw() const { return data_; }
   T* maybeMap() const { return reinterpret_cast<T*>(data_ & ~IndexMask); }
+
+  T* maybeMapForTracing() const {
+    return reinterpret_cast<T*>(data_.getForTracing() & ~IndexMask);
+  }
 
   uint32_t index() const {
     MOZ_ASSERT(!isNone());
@@ -461,6 +470,10 @@ class PropMap : public gc::TenuredCellWithFlags {
   // Cell::flags() method.
   uintptr_t flags() const { return headerFlagsField(); }
 
+  uintptr_t getFlagsForTracing() const { return headerFlagsFieldForTracing(); }
+  template <uint32_t opts>
+  friend class gc::MarkingTracerT;
+
  private:
   GCPtr<PropertyKey> keys_[Capacity];
 
@@ -560,6 +573,8 @@ class PropMap : public gc::TenuredCellWithFlags {
 
 class SharedPropMap : public PropMap {
   friend class PropMap;
+  template <uint32_t opts>
+  friend class gc::MarkingTracerT;
 
  protected:
   // Shared maps are stored in a tree structure. Each shared map has a TreeData
@@ -921,7 +936,9 @@ class NormalPropMap final : public SharedPropMap {
 class DictionaryPropMap final : public PropMap {
   friend class PropMap;
   friend class SharedPropMap;
-  friend class js::gc::CellAllocator;
+  friend class gc::CellAllocator;
+  template <uint32_t opts>
+  friend class gc::MarkingTracerT;
 
   LinkedPropMap::Data linkedData_;
 

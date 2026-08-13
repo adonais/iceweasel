@@ -642,7 +642,7 @@ UniqueChars Statistics::renderJsonMessage() const {
   /*
    * The format of the JSON message is specified by the GCMajorMarkerPayload
    * type in profiler.firefox.com
-   * https://github.com/firefox-devtools/profiler/blob/master/src/types/markers.js#L62
+   * https://github.com/firefox-devtools/profiler/blob/8f4935823ec06507c3125d4c6c1e78eef31361f3/src/types/markers.ts#L396
    *
    * All the properties listed here are created within the timings property
    * of the GCMajor marker.

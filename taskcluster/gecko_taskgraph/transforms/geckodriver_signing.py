@@ -7,12 +7,12 @@ Transform the repackage signing task into an actual task description.
 
 from typing import Optional
 
+from mozilla_taskgraph.util.attributes import copy_attributes_from_dependent_job
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.dependencies import get_primary_dependency
 from taskgraph.util.schema import Schema
 
 from gecko_taskgraph.transforms.task import TaskDescriptionSchema
-from gecko_taskgraph.util.attributes import copy_attributes_from_dependent_job
 from gecko_taskgraph.util.scriptworker import get_signing_type_per_platform
 
 
@@ -96,8 +96,11 @@ def make_signing_description(config, jobs):
             "treeherder": treeherder,
             "run-on-projects": ["mozilla-central"],
             "run-on-repo-type": job.get("run-on-repo-type", ["git", "hg"]),
-            "index": {"product": "geckodriver", "job-name": platform},
         }
+
+        # macOS geckodriver is indexed after notarization, not here.
+        if not build_platform.startswith("macosx"):
+            task["index"] = {"product": "geckodriver", "job-name": platform}
 
         if build_platform.startswith("macosx"):
             worker_type = task["worker-type"]

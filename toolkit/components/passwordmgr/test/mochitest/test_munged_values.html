@@ -12,22 +12,6 @@
 <script type="application/javascript">
 const DEFAULT_ORIGIN = window.location.origin;
 
-function removeAllUserFacingLoginsInParent() {
-  runInParent(async function removeAllUserFacingLogins() {
-    await Services.logins.removeAllUserFacingLoginsAsync();
-  });
-}
-
-async function add2logins() {
-  removeAllUserFacingLoginsInParent();
-  await addLoginsInParent([DEFAULT_ORIGIN, DEFAULT_ORIGIN, null, "real••••user", "pass1", "", ""], [DEFAULT_ORIGIN, DEFAULT_ORIGIN, null, "user2", "pass2", "", ""]);
-}
-
-async function addSingleLogin() {
-  removeAllUserFacingLoginsInParent();
-  await addLoginsInParent([DEFAULT_ORIGIN, DEFAULT_ORIGIN, null, "real••••user", "pass1", "", ""])
-}
-
 /**
  *  For any test including the character "!", generate a version of that test for every known munge
  *  character.
@@ -229,7 +213,10 @@ add_task(async function test_no_save_dialog_when_password_is_fully_munged() {
 
 add_task(async function test_no_autofill_munged_username_matching_password() {
   // run this test with 2 matching logins from this origin so we don't autofill
-  await add2logins();
+  await setStoredLoginsAsync(
+    [DEFAULT_ORIGIN, DEFAULT_ORIGIN, null, "real••••user", "pass1", "", ""],
+    [DEFAULT_ORIGIN, DEFAULT_ORIGIN, null, "user2", "pass2", "", ""]
+  );
   const allLogins = await LoginManager.getAllLogins();
   const matchingLogins = Array.prototype.filter.call(allLogins, l => l.origin == DEFAULT_ORIGIN);
   is(matchingLogins.length, 2, "Expected number of matching logins");
@@ -291,7 +278,9 @@ add_task(async function test_no_autofill_munged_username_matching_password() {
 
 add_task(async function test_autofill_munged_username_matching_password() {
   // only a single matching login so we autofill the username
-  await addSingleLogin();
+  await setStoredLoginsAsync(
+    [DEFAULT_ORIGIN, DEFAULT_ORIGIN, null, "real••••user", "pass1", "", ""]
+  );
 
   const allLogins = await LoginManager.getAllLogins();
   const matchingLogins = Array.prototype.filter.call(allLogins, l => l.origin == DEFAULT_ORIGIN);

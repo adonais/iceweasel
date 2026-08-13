@@ -33,7 +33,7 @@ let assertMetricEmpty = async metricName => {
 };
 
 let assertMetricFoundFor = async (metricName, count = 1) => {
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return Glean.tabgroup.tabInteractions[metricName].testGetValue() == count;
   }, `Wait for tab_interactions.${metricName} to be recorded`);
   Assert.equal(
@@ -147,7 +147,7 @@ add_task(async function test_tabInteractionsBasic() {
   let tab1 = await addTab();
   await assertMetricEmpty("add");
   window.gBrowser.moveTabToExistingGroup(tab1, group, {
-    isUserTriggered: true,
+    metricsContext: gBrowser.TabMetrics.userTriggeredContext(),
   });
   await assertMetricFoundFor("add");
 
@@ -164,7 +164,7 @@ add_task(async function test_tabInteractionsBasic() {
   await assertMetricEmpty("reorder");
   window.gBrowser.moveTabTo(group.tabs[0], {
     tabIndex: 3,
-    isUserTriggered: true,
+    metricsContext: gBrowser.TabMetrics.userTriggeredContext(),
   });
   await assertMetricFoundFor("reorder");
 
@@ -197,10 +197,10 @@ add_task(async function test_tabInteractionsClose() {
   await assertMetricFoundFor("close_tabstrip");
 
   info(
-    "Test that closing a tab via the tab context menu calls tab_interactions.close_tabstrip"
+    "Test that closing a tab via the tab context menu calls tab_interactions.close_tabmenu"
   );
   await activateTabContextMenuItem(group.tabs[0], "#context_closeTab");
-  await assertMetricFoundFor("close_tabstrip", 2);
+  await assertMetricFoundFor("close_tabmenu", 1);
 
   info(
     "Test that closing a tab via the tab close keyboard shortcut calls tab_interactions.close_tab_other"
@@ -220,10 +220,16 @@ add_task(async function test_tabInteractionsClose() {
     "Test that closing a tab via firefox view calls tab_interactions.close_tab_other"
   );
   await openFirefoxViewTab(window).then(async viewTab => {
-    const openTabs = viewTab.linkedBrowser.contentDocument
+    const openTabsCard = viewTab.linkedBrowser.contentDocument
       .querySelector("named-deck > view-recentbrowsing view-opentabs")
-      .shadowRoot.querySelector("view-opentabs-card").tabList.rowEls;
-    const tabElement = Array.from(openTabs).find(t => t.__tabElement.group);
+      .shadowRoot.querySelector("view-opentabs-card");
+    let tabElement;
+    await TestUtils.waitForCondition(() => {
+      tabElement = Array.from(openTabsCard.tabList.rowEls).find(
+        t => t.__tabElement?.group
+      );
+      return !!tabElement;
+    }, "Wait for grouped tab to appear in Firefox View open tabs");
     tabElement.shadowRoot.querySelector("moz-button.dismiss-button").click();
     await assertMetricFoundFor("close_tab_other", 3);
   });
@@ -239,20 +245,20 @@ add_task(async function test_tabInteractionsCloseViaAnotherTabContext() {
 
   window.gBrowser.addTabGroup([await addTab()]);
 
-  await assertMetricEmpty("close_tab_other");
+  await assertMetricEmpty("close_tabmenu");
 
   info(
-    "Test that closing a tab via the tab context menu 'close other tabs' command calls tab_interactions.close_tab_other"
+    "Test that closing a tab via the tab context menu 'close other tabs' command calls tab_interactions.close_tabmenu"
   );
   await activateTabContextMenuItem(
     initialTab,
     "#context_closeOtherTabs",
     "#context_closeTabOptions"
   );
-  await assertMetricFoundFor("close_tab_other");
+  await assertMetricFoundFor("close_tabmenu");
 
   info(
-    "Test that closing a tab via the tab context menu 'close tabs to left' command calls tab_interactions.close_tab_other"
+    "Test that closing a tab via the tab context menu 'close tabs to left' command calls tab_interactions.close_tabmenu"
   );
   window.gBrowser.addTabGroup([await addTab()]);
   window.gBrowser.moveTabToEnd(initialTab);
@@ -261,10 +267,10 @@ add_task(async function test_tabInteractionsCloseViaAnotherTabContext() {
     "#context_closeTabsToTheStart",
     "#context_closeTabOptions"
   );
-  await assertMetricFoundFor("close_tab_other", 2);
+  await assertMetricFoundFor("close_tabmenu", 2);
 
   info(
-    "Test that closing a tab via the tab context menu 'close tabs to right' command calls tab_interactions.close_tab_other"
+    "Test that closing a tab via the tab context menu 'close tabs to right' command calls tab_interactions.close_tabmenu"
   );
   window.gBrowser.addTabGroup([await addTab()]);
   await activateTabContextMenuItem(
@@ -272,10 +278,10 @@ add_task(async function test_tabInteractionsCloseViaAnotherTabContext() {
     "#context_closeTabsToTheEnd",
     "#context_closeTabOptions"
   );
-  await assertMetricFoundFor("close_tab_other", 3);
+  await assertMetricFoundFor("close_tabmenu", 3);
 
   info(
-    "Test that closing a tab via the tab context menu 'close duplicate tabs' command calls tab_interactions.close_tab_other"
+    "Test that closing a tab via the tab context menu 'close duplicate tabs' command calls tab_interactions.close_tabmenu"
   );
   let duplicateTabs = await Promise.all([addTab(), addTab()]);
   window.gBrowser.addTabGroup([duplicateTabs[1]]);
@@ -285,11 +291,11 @@ add_task(async function test_tabInteractionsCloseViaAnotherTabContext() {
     "#context_closeDuplicateTabs",
     "#context_closeTabOptions"
   );
-  await assertMetricFoundFor("close_tab_other", 4);
+  await assertMetricFoundFor("close_tabmenu", 4);
 
   // Dismiss the confirmation panel that appears after closing duplicate tabs.
   EventUtils.synthesizeMouseAtCenter(document.documentElement, {});
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !window.ConfirmationHint._panel.getAttribute("animating"),
     "Ensure the confirmation panel is closed"
   );
@@ -348,7 +354,7 @@ add_task(async function test_tabInteractionsRemoveFromGroup() {
   await assertMetricEmpty("remove_same_window");
   window.gBrowser.moveTabTo(group.tabs[0], {
     tabIndex: 0,
-    isUserTriggered: true,
+    metricsContext: gBrowser.TabMetrics.userTriggeredContext(),
   });
   await assertMetricFoundFor("remove_same_window");
 

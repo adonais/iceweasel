@@ -22,7 +22,7 @@ add_task(async function test_search_mode_chiclet_unfocus_home_page() {
   );
 
   await UrlbarTestUtils.assertSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     entry: "searchbutton",
   });
 
@@ -31,7 +31,7 @@ add_task(async function test_search_mode_chiclet_unfocus_home_page() {
   EventUtils.synthesizeKey("KEY_Tab");
 
   await UrlbarTestUtils.assertSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     entry: "searchbutton",
   });
 });
@@ -55,7 +55,7 @@ add_task(async function test_search_mode_chiclet_unfocus_loaded_sites() {
   );
 
   await UrlbarTestUtils.assertSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     entry: "searchbutton",
   });
 
@@ -64,7 +64,7 @@ add_task(async function test_search_mode_chiclet_unfocus_loaded_sites() {
   EventUtils.synthesizeKey("KEY_Tab");
 
   await UrlbarTestUtils.assertSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     entry: "searchbutton",
   });
 

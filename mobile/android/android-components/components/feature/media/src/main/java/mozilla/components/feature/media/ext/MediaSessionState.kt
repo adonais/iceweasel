@@ -7,17 +7,25 @@ package mozilla.components.feature.media.ext
 import android.support.v4.media.session.PlaybackStateCompat
 import mozilla.components.browser.state.state.MediaSessionState
 import mozilla.components.concept.engine.mediasession.MediaSession
+import mozilla.components.feature.media.MediaNimbus
 
 /**
  * Turns the [MediaSessionState] into a [PlaybackStateCompat] to be used with a `MediaSession`.
  */
-internal fun MediaSessionState.toPlaybackState() =
-    PlaybackStateCompat.Builder()
-        .setActions(
-            PlaybackStateCompat.ACTION_PLAY_PAUSE or
-                PlaybackStateCompat.ACTION_PLAY or
-                PlaybackStateCompat.ACTION_PAUSE,
-        )
+internal fun MediaSessionState.toPlaybackState(): PlaybackStateCompat {
+    var actions = PlaybackStateCompat.ACTION_PLAY_PAUSE or
+        PlaybackStateCompat.ACTION_PLAY or
+        PlaybackStateCompat.ACTION_PAUSE
+    if (MediaNimbus.features.mediaNotificationImprovements.value().enabled) {
+        if (features.contains(MediaSession.Feature.NEXT_TRACK)) {
+            actions = actions or PlaybackStateCompat.ACTION_SKIP_TO_NEXT
+        }
+        if (features.contains(MediaSession.Feature.PREVIOUS_TRACK)) {
+            actions = actions or PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+        }
+    }
+    return PlaybackStateCompat.Builder()
+        .setActions(actions)
         .setState(
             when (playbackState) {
                 MediaSession.PlaybackState.PLAYING -> PlaybackStateCompat.STATE_PLAYING
@@ -35,6 +43,7 @@ internal fun MediaSessionState.toPlaybackState() =
             },
         )
         .build()
+}
 
 /**
  * If this state is [MediaSession.PlaybackState.PLAYING] then return true, else return false.

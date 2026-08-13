@@ -5,8 +5,8 @@
 #ifndef XPCModule_h_
 #define XPCModule_h_
 
-#include "xpcprivate.h"
 #include "mozJSSubScriptLoader.h"
+#include "xpcprivate.h"
 
 /* Module implementation for the xpconnect library. */
 

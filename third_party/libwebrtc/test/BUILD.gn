@@ -1016,6 +1016,8 @@ rtc_library("direct_transport") {
     "../rtc_base:checks",
     "../rtc_base:copy_on_write_buffer",
     "../rtc_base:macromagic",
+    "../rtc_base:task_queue_for_test",
+    "../rtc_base:threading",
     "../rtc_base:timeutils",
     "../rtc_base/network:sent_packet",
     "../rtc_base/synchronization:mutex",
@@ -1489,6 +1491,7 @@ rtc_library("fake_encoded_frame") {
 }
 
 rtc_library("video_codec_tester") {
+  visibility = [ "*" ]
   testonly = true
   sources = [
     "video_codec_tester.cc",
@@ -1503,6 +1506,7 @@ rtc_library("video_codec_tester") {
     "../api:make_ref_counted",
     "../api:scoped_refptr",
     "../api/environment",
+    "../api/environment:environment_factory",
     "../api/numerics",
     "../api/test/metrics:metric",
     "../api/test/metrics:metrics_logger",

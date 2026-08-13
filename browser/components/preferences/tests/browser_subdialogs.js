@@ -428,10 +428,9 @@ add_task(async function background_click_should_close_dialog() {
   );
   AccessibilityUtils.resetEnv();
 
-  // Close the dialog by clicking on the overlay background. Simulate a click
-  // at point (2,2) instead of (0,0) so we are sure we're clicking on the
-  // overlay background instead of some boundary condition that a real user
-  // would never click.
+  // Close the dialog by clicking on the overlay background. Click at (20, 20)
+  // to stay clear of the content area's rounded top-left corner in Nova, which
+  // is up to 16px on macOS and clips any click closer to the origin.
   info("clicking the overlay background");
   // We intentionally turn off this a11y check, because the following click
   // is purposefully targeting a non-interactive element to dismiss the opened
@@ -442,8 +441,8 @@ add_task(async function background_click_should_close_dialog() {
     tab.linkedBrowser,
     function () {
       return BrowserTestUtils.synthesizeMouseAtPoint(
-        2,
-        2,
+        20,
+        20,
         {},
         tab.linkedBrowser
       );

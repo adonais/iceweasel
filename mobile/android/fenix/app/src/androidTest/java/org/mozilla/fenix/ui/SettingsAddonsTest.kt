@@ -16,7 +16,6 @@ import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.RecyclerViewIdlingResource
 import org.mozilla.fenix.helpers.TestAssetHelper.enhancedTrackingProtectionAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
-import org.mozilla.fenix.helpers.TestHelper
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.addonsMenu
 import org.mozilla.fenix.ui.robots.homeScreen
@@ -148,7 +147,6 @@ class SettingsAddonsTest {
     @SmokeTest
     @Test
     fun verifyUBlockWorksInPrivateModeTest() {
-        TestHelper.appContext.components.settings.shouldShowCookieBannersCFR = false
         val addonName = "uBlock Origin"
         val webPage = "https://mozilla-mobile.github.io/testapp/"
 

@@ -83,6 +83,7 @@ try_sshkey = get_secret("try-sshkey")
 database_config = get_secret("database-password")
 sentry_url = get_secret("sentry-url")
 sql_proxy_config = get_secret("sql-proxy-config")
+ai_api_key = get_secret("ai-api-key")
 
 # Update Updatebot =======================================
 if OPERATING_MODE == "dev":
@@ -187,6 +188,11 @@ database_config["host"] = "127.0.0.1"
 # Vendor =================================================
 log("Getting Updatebot ready...")
 os.chdir(UPDATEBOT_PATH)
+
+# AI conflict-resolution debug output; /builds/worker/artifacts is uploaded as task artifacts.
+ai_debug_dir = os.path.join(HOME_PATH, "artifacts", "ai-debug")
+os.makedirs(ai_debug_dir, exist_ok=True)
+
 localconfig = {
     "General": {
         "env": OPERATING_MODE,
@@ -201,6 +207,10 @@ localconfig = {
     "Database": database_config,
     "Bugzilla": {
         "apikey": bugzilla_api_key,
+    },
+    "AI": {
+        "apikey": ai_api_key,
+        "debug-output-dir": ai_debug_dir,
     },
     "Taskcluster": {
         "url_treeherder": "https://treeherder.mozilla.org/",

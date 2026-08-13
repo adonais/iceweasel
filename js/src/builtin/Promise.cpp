@@ -2157,7 +2157,9 @@ enum GetCapabilitiesExecutorSlots {
 
   // Let the Debugger know about this Promise, after we've set
   // flags and slots.
-  DebugAPI::onNewPromise(cx, promise);
+  if (!DebugAPI::onNewPromise(cx, promise)) {
+    return nullptr;
+  }
 
   // Step 11. Return promise.
   return promise;
@@ -2188,7 +2190,9 @@ enum GetCapabilitiesExecutorSlots {
 
   // Let the Debugger know about this Promise. Do this after we've set
   // flags and functions
-  DebugAPI::onNewPromise(cx, promise);
+  if (!DebugAPI::onNewPromise(cx, promise)) {
+    return nullptr;
+  }
 
   // Step 11. Return promise.
   return promise;
@@ -3510,7 +3514,9 @@ PromiseObject* PromiseObject::create(JSContext* cx, HandleObject executor,
   }
 
   // Let the Debugger know about this Promise.
-  DebugAPI::onNewPromise(cx, promise);
+  if (!DebugAPI::onNewPromise(cx, promise)) {
+    return nullptr;
+  }
 
   // Step 11. Return promise.
   return promise;
@@ -3535,7 +3541,7 @@ class MOZ_STACK_CLASS PromiseForOfIterator : public JS::ForOfIterator {
 
   bool isOptimizedDenseArrayIteration() {
     MOZ_ASSERT(valueIsIterable());
-    return index != NOT_ARRAY && IsPackedArray(iterator);
+    return isOptimizedArray_ && IsPackedArray(iteratorOrArray_);
   }
 };
 
@@ -8001,8 +8007,6 @@ void PromiseObject::onSettled(JSContext* cx, Handle<PromiseObject*> promise,
       promise->isUnhandled()) {
     cx->runtime()->addUnhandledRejectedPromise(cx, promise);
   }
-
-  DebugAPI::onPromiseSettled(cx, promise);
 }
 
 void PromiseObject::setRequiresUserInteractionHandling(bool state) {

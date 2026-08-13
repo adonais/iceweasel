@@ -307,3 +307,108 @@ async function getEventBreakpointCheckbox(
 
   return findElementWithSelector(dbg, `input[value="${eventBreakpointName}"]`);
 }
+
+/**
+ * Edits the stylesheet content within the editor
+ *
+ * @param {object} dbg
+ * @param {number} cursorPosLine
+ * @param {number} cursorPosColumn
+ * @param {number} noOfCharactersToRemove
+ * @param {string} textToType
+ */
+async function editSelectedSourceContent(
+  dbg,
+  cursorPosLine,
+  cursorPosColumn,
+  noOfCharactersToRemove,
+  textToType
+) {
+  getCMEditor(dbg).focus();
+  await setEditorCursorAt(dbg, cursorPosLine, cursorPosColumn);
+  let x = noOfCharactersToRemove;
+  while (x > 0) {
+    pressKey(dbg, "Backspace");
+    x--;
+  }
+  type(dbg, textToType);
+}
+
+/**
+ * Toogle the visibility of the stylesheet by clicking the icon and assert
+ * the background color changed.
+ *
+ * @param {object} dbg
+ * @param {string} expectedPageColor
+ */
+async function toggleVisibilityAndAssertTheBackgroundPageColor(
+  dbg,
+  expectedPageColor
+) {
+  const bgColorChanged = waitForStylePropertyValueChange(
+    dbg,
+    "backgroundColor",
+    expectedPageColor
+  );
+
+  info("Click to toggle the stylesheet");
+  await toggleStylesheetsVisibility(dbg);
+  await bgColorChanged;
+  ok(true, "The body background color has changed");
+
+  const currentBgColor =
+    await getCurrentPageStylePropertyValue("backgroundColor");
+  is(currentBgColor, expectedPageColor, "The background color is correct");
+}
+
+/**
+ * Waits until the value of a specified style property on the page changes
+ *
+ * @param {object} dbg
+ * @param {string} property
+ * @param {string} expectedPropertyValue
+ * @returns
+ */
+function waitForStylePropertyValueChange(dbg, property, expectedPropertyValue) {
+  return waitFor(async () => {
+    const currentPropertyValue =
+      await getCurrentPageStylePropertyValue(property);
+    return currentPropertyValue == expectedPropertyValue;
+  });
+}
+
+/**
+ * This gets the current value of the specified style property
+ *
+ * @returns
+ */
+function getCurrentPageStylePropertyValue(property) {
+  return SpecialPowers.spawn(
+    gBrowser.selectedBrowser,
+    [property],
+    function (styleProperty) {
+      const bodyStyles = content.getComputedStyle(content.document.body);
+      return bodyStyles[styleProperty];
+    }
+  );
+}
+
+/**
+ * Toogle the visibility of the stylesheet by clicking the icon.
+ * This should apply/unapply the stylesheet to the web page.
+ *
+ * @param {object} dbg
+ * @returns
+ */
+async function toggleStylesheetsVisibility(dbg) {
+  const el = findElementWithSelector(
+    dbg,
+    ".toggleStyleSheetVisibility .dbg-img-eye-opened"
+  );
+  const buttonUpdated = waitForElementWithSelector(
+    dbg,
+    `.toggleStyleSheetVisibility .dbg-img-eye-${el ? "closed" : "opened"}`
+  );
+  clickElement(dbg, "toggleStyleSheetVisibilityButton");
+  return buttonUpdated;
+}

@@ -380,9 +380,40 @@ class AudioDestinationNode::MediaSharedKeysListener final
     }
     if (aKey == MediaControlKey::Stop &&
         StaticPrefs::media_audioFocus_webaudio_enabled()) {
-      ctx->SuspendByMediaControl();
+      ctx->SuspendFromMediaControl();
     }
     // TODO (Bug 1962876): implement Setvolume/Mute/Unmute for Web Audio.
+  }
+
+  void SuspendForInterrupt() override {
+    MOZ_ASSERT(NS_IsMainThread());
+    AudioContext* ctx = mDestination.Context();
+    const bool willSuspend = ctx &&
+                             ctx->State() == AudioContextState::Running &&
+                             StaticPrefs::media_audioFocus_webaudio_enabled();
+    MEDIA_CONTROL_LOG(
+        "MediaSharedKeysListener {} SuspendForInterrupt in BC {}, suspend={}",
+        fmt::ptr(this), mBrowsingContextId, willSuspend);
+    if (willSuspend) {
+      // TODO(bug 2039104): drive the spec "interrupted" AudioContextState here
+      // instead of reusing the page-facing "suspended" state.
+      ctx->SuspendFromMediaControl();
+      mSuspendedByInterrupt = true;
+    }
+  }
+
+  void ResumeFromInterrupt() override {
+    MOZ_ASSERT(NS_IsMainThread());
+    AudioContext* ctx = mDestination.Context();
+    const bool willResume = mSuspendedByInterrupt && ctx &&
+                            ctx->State() == AudioContextState::Suspended;
+    MEDIA_CONTROL_LOG(
+        "MediaSharedKeysListener {} ResumeFromInterrupt in BC {}, resume={}",
+        fmt::ptr(this), mBrowsingContextId, willResume);
+    if (willResume) {
+      ctx->ResumeFromMediaControl();
+    }
+    mSuspendedByInterrupt = false;
   }
 
  private:
@@ -393,6 +424,9 @@ class AudioDestinationNode::MediaSharedKeysListener final
   uint64_t mBrowsingContextId = 0;
   bool mIsAudible = false;
   bool mShutdown = false;
+  // True while this listener suspended its AudioContext for an audio-focus
+  // interruption, so ResumeFromInterrupt only resumes a context it suspended.
+  bool mSuspendedByInterrupt = false;
 };
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(AudioDestinationNode, AudioNode,

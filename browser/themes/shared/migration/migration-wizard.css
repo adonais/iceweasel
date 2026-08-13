@@ -98,6 +98,7 @@ label:not([hidden]) {
   fill: currentColor;
   height: 16px;
   width: 16px;
+  margin-inline-end: var(--space-small);
 }
 
 .migrator-description {
@@ -211,7 +212,7 @@ details[open] .expand-collapse-icon {
   -moz-context-properties: fill;
   fill: currentColor;
   justify-self: end;
-  margin-inline-end: 8px;
+  margin-inline-end: calc(var(--space-small) + 8px);
 }
 
 details:not([open]) summary {

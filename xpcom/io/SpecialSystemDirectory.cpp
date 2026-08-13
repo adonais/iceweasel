@@ -3,31 +3,34 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SpecialSystemDirectory.h"
+
 #include "mozilla/Try.h"
 #include "nsComponentManagerUtils.h"
-#include "nsString.h"
 #include "nsDependentString.h"
 #include "nsIXULAppInfo.h"
+#include "nsString.h"
 
 #if defined(XP_WIN)
 
-#  include <windows.h>
-#  include <stdlib.h>
-#  include <stdio.h>
-#  include <string.h>
 #  include <direct.h>
-#  include <shlobj.h>
-#  include <knownfolders.h>
 #  include <guiddef.h>
+#  include <knownfolders.h>
+#  include <shlobj.h>
+#  include <stdio.h>
+#  include <stdlib.h>
+#  include <string.h>
+#  include <windows.h>
+
 #  include "mozilla/WinHeaderOnlyUtils.h"
 #  include "nsIWindowsRegKey.h"
 
 #elif defined(XP_UNIX)
 
 #  include <limits.h>
-#  include <unistd.h>
 #  include <stdlib.h>
 #  include <sys/param.h>
+#  include <unistd.h>
+
 #  include "prenv.h"
 #  if defined(XP_DARWIN)
 #    include "DarwinFileUtils.h"

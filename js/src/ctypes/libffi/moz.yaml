@@ -9,8 +9,8 @@ origin:
   description: A portable foreign-function interface library
   url: http://sourceware.org/libffi
 
-  release: v3.5.2 (2025-08-02T07:01:00Z).
-  revision: 11141fba1dcc69bdb98a8d63e7eb2c8109507c34
+  release: v3.6.0 (2026-06-20T13:54:12Z).
+  revision: f6303b8b0dd6353c6a5bb4de2e855a13b86f22cf
 
   license: MIT
   license-file: LICENSE

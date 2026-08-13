@@ -4,13 +4,13 @@
 
 import { html } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://global/content/elements/moz-card.mjs";
 
 const DEFAULT_FAVICON = "chrome://global/skin/icons/defaultFavicon.svg";
 
 /**
  * A card component for rendering URLs in Smart Window
- *
- * TODO: Bug 2045156 update with moz-card
  */
 export class AIChatCard extends MozLitElement {
   static properties = {
@@ -90,17 +90,19 @@ export class AIChatCard extends MozLitElement {
         href="chrome://browser/content/aiwindow/components/ai-chat-card.css"
       />
       <a class="ai-chat-card" href=${this.url} target="_blank">
-        ${this.renderImage()}
-        <div class="description">
-          <span part="title" class="title">${this.title}</span>
-          <div class="meta">
-            <div class="site">
-              ${this.renderFavicon()}
-              <span class="domain" title=${this.domain}>${this.domain}</span>
+        <moz-card>
+          ${this.renderImage()}
+          <div class="description">
+            <span part="title" class="title">${this.title}</span>
+            <div class="meta">
+              <div class="site">
+                ${this.renderFavicon()}
+                <span class="domain" title=${this.domain}>${this.domain}</span>
+              </div>
+              <span part="timestamp" class="timestamp">${this.timestamp}</span>
             </div>
-            <span part="timestamp" class="timestamp">${this.timestamp}</span>
           </div>
-        </div>
+        </moz-card>
       </a>
     `;
   }

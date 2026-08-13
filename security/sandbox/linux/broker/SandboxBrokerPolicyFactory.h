@@ -5,9 +5,9 @@
 #ifndef mozilla_SandboxBrokerPolicyFactory_h
 #define mozilla_SandboxBrokerPolicyFactory_h
 
-#include "mozilla/SandboxBroker.h"
-
 #include <mutex>
+
+#include "mozilla/SandboxBroker.h"
 
 namespace mozilla {
 

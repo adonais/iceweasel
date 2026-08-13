@@ -118,6 +118,22 @@ mach_try:
     send_in_pings:
       - usage
 
+  git_backing_push_duration:
+    type: timespan
+    description: >
+      Time spent pushing the source tree to the git-backing repo on GitHub
+      so that CI tasks can clone from it.
+    lifetime: application
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2033838
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2033838
+    notification_emails:
+      - build-telemetry@mozilla.com
+    expires: never
+    send_in_pings:
+      - usage
+
   vcs_prep:
     type: timespan
     description: Time spent making a push to try.

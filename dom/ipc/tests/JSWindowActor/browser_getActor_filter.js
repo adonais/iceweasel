@@ -161,6 +161,91 @@ declTest("getActor with remoteType mismatch", {
   },
 });
 
+declTest("safeForUntrustedWebProcess true, web", {
+  safeForUntrustedWebProcess: true,
+  safeForUntrustedWebProcessPref: true,
+  url: TEST_URL,
+
+  async test(browser) {
+    let parent = browser.browsingContext.currentWindowGlobal;
+    ok(parent.getActor("TestWindow"), "JSWindowActorParent should have value.");
+
+    await SpecialPowers.spawn(browser, [], async function () {
+      let child = content.windowGlobalChild;
+      ok(child, "WindowGlobalChild should have value.");
+      ok(child.getActor("TestWindow"), "JSWindowActorChild should have value.");
+    });
+  },
+});
+
+declTest("safeForUntrustedWebProcess false, web", {
+  safeForUntrustedWebProcess: false,
+  safeForUntrustedWebProcessPref: true,
+  url: TEST_URL,
+
+  async test(browser) {
+    let parent = browser.browsingContext.currentWindowGlobal;
+    Assert.throws(
+      () => parent.getActor("TestWindow"),
+      /NotSupportedError/,
+      "Should throw if safeForUntrustedWebProcess is false in web process."
+    );
+  },
+});
+
+declTest("safeForUntrustedWebProcess false, web, pref false", {
+  safeForUntrustedWebProcess: false,
+  safeForUntrustedWebProcessPref: false,
+  url: TEST_URL,
+
+  async test(browser) {
+    let parent = browser.browsingContext.currentWindowGlobal;
+    ok(parent.getActor("TestWindow"), "JSWindowActorParent should have value.");
+
+    await SpecialPowers.spawn(browser, [], async function () {
+      let child = content.windowGlobalChild;
+      ok(child, "WindowGlobalChild should have value.");
+      ok(child.getActor("TestWindow"), "JSWindowActorChild should have value.");
+    });
+  },
+});
+
+// A page that is loaded in the privilegedabout process should get an actor no
+// matter what the safeForUntrustedWebProcess value is.
+function safeForUntrustedWebProcessPriv(safeVal) {
+  return {
+    safeForUntrustedWebProcess: safeVal,
+    safeForUntrustedWebProcessPref: true,
+    // Arbitrary about: page that gets loaded in the privilegedabout process.
+    url: "about:logins",
+
+    async test(browser) {
+      let parent = browser.browsingContext.currentWindowGlobal;
+      ok(
+        parent.getActor("TestWindow"),
+        "JSWindowActorParent should have value."
+      );
+
+      await SpecialPowers.spawn(browser, [], async function () {
+        let child = content.windowGlobalChild;
+        ok(child, "WindowGlobalChild should have value.");
+        ok(
+          child.getActor("TestWindow"),
+          "JSWindowActorChild should have value."
+        );
+      });
+    },
+  };
+}
+declTest(
+  "safeForUntrustedWebProcess false priv okay",
+  safeForUntrustedWebProcessPriv(true)
+);
+declTest(
+  "safeForUntrustedWebProcess true priv okay",
+  safeForUntrustedWebProcessPriv(false)
+);
+
 declTest("getActor with iframe messageManagerGroups match", {
   allFrames: true,
   messageManagerGroups: ["browsers"],

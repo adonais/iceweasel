@@ -212,6 +212,22 @@ class NotifyIconObservers final : public Runnable {
 };
 
 /**
+ * Removes all favicon associations for the given page, dispatched on the
+ * async DB thread so it is serialized with other favicon writes.
+ */
+class AsyncExpireFaviconsForPage final : public Runnable {
+ public:
+  NS_DECL_NSIRUNNABLE
+
+  AsyncExpireFaviconsForPage(const nsCOMPtr<nsIURI>& aPageURI,
+                             dom::Promise* aPromise);
+
+ private:
+  nsCOMPtr<nsIURI> mPageURI;
+  nsMainThreadPtrHandle<dom::Promise> mPromise;
+};
+
+/**
  * Asynchronously tries to copy the favicons asociated to the URL.
  */
 class AsyncTryCopyFaviconsRunnable final : public Runnable {

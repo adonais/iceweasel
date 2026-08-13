@@ -3,10 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "jit/MacroAssembler.h"
-
 #include "jsapi-tests/tests.h"
 #include "jsapi-tests/testsJit.h"
-
 #include "wasm/WasmConstants.h"
 #include "wasm/WasmFeatures.h"  // AnyCompilerAvailable
 #include "wasm/WasmGenerator.h"

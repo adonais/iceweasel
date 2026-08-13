@@ -6,10 +6,10 @@
 
 #include "GLContextCGL.h"
 #include "MozFramebuffer.h"
+#include "ScopedGLHelpers.h"
 #include "mozilla/gfx/MacIOSurface.h"
 #include "mozilla/layers/LayersSurfaces.h"  // for SurfaceDescriptor, etc
 #include "mozilla/layers/LayersTypes.h"
-#include "ScopedGLHelpers.h"
 
 namespace mozilla {
 namespace gl {
@@ -26,22 +26,24 @@ SurfaceFactory_IOSurface::SurfaceFactory_IOSurface(GLContext& gl)
 // -
 // Surface
 
-static bool BackTextureWithIOSurf(GLContext* const gl, const GLuint tex,
-                                  MacIOSurface* const ioSurf) {
+static Maybe<GLenum> BackTextureWithIOSurf(GLContext* const gl,
+                                           const GLuint tex,
+                                           MacIOSurface* const ioSurf) {
   MOZ_ASSERT(gl->IsCurrent());
 
-  ScopedBindTexture texture(gl, tex, LOCAL_GL_TEXTURE_RECTANGLE_ARB);
+  const GLenum target = gl->GetPreferredMacIOSurfaceTextureTarget();
 
-  gl->fTexParameteri(LOCAL_GL_TEXTURE_RECTANGLE_ARB,
-                     LOCAL_GL_TEXTURE_MIN_FILTER, LOCAL_GL_LINEAR);
-  gl->fTexParameteri(LOCAL_GL_TEXTURE_RECTANGLE_ARB,
-                     LOCAL_GL_TEXTURE_MAG_FILTER, LOCAL_GL_LINEAR);
-  gl->fTexParameteri(LOCAL_GL_TEXTURE_RECTANGLE_ARB, LOCAL_GL_TEXTURE_WRAP_S,
-                     LOCAL_GL_CLAMP_TO_EDGE);
-  gl->fTexParameteri(LOCAL_GL_TEXTURE_RECTANGLE_ARB, LOCAL_GL_TEXTURE_WRAP_T,
-                     LOCAL_GL_CLAMP_TO_EDGE);
+  ScopedBindTexture texture(gl, tex, target);
 
-  return ioSurf->BindTexImage(gl, 0);
+  gl->fTexParameteri(target, LOCAL_GL_TEXTURE_MIN_FILTER, LOCAL_GL_LINEAR);
+  gl->fTexParameteri(target, LOCAL_GL_TEXTURE_MAG_FILTER, LOCAL_GL_LINEAR);
+  gl->fTexParameteri(target, LOCAL_GL_TEXTURE_WRAP_S, LOCAL_GL_CLAMP_TO_EDGE);
+  gl->fTexParameteri(target, LOCAL_GL_TEXTURE_WRAP_T, LOCAL_GL_CLAMP_TO_EDGE);
+
+  if (!ioSurf->BindTexImage(gl, 0)) {
+    return Nothing();
+  }
+  return Some(target);
 }
 
 /*static*/
@@ -60,13 +62,13 @@ UniquePtr<SharedSurface_IOSurface> SharedSurface_IOSurface::Create(
   // -
 
   auto tex = MakeUnique<Texture>(*desc.gl);
-  if (!BackTextureWithIOSurf(desc.gl, tex->name, ioSurf)) {
+  Maybe<GLenum> target = BackTextureWithIOSurf(desc.gl, tex->name, ioSurf);
+  if (!target) {
     return nullptr;
   }
 
-  const GLenum target = LOCAL_GL_TEXTURE_RECTANGLE;
   auto fb = MozFramebuffer::CreateForBacking(desc.gl, desc.size, 0, false,
-                                             target, tex->name);
+                                             *target, tex->name);
   if (!fb) return nullptr;
 
   return AsUnique(

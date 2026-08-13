@@ -3,13 +3,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "ImageLogging.h"  // Must appear first
-#include "gfxPlatform.h"
-#include "mozilla/TelemetryHistogramEnums.h"
 #include "nsWebPDecoder.h"
 
+#include "ImageLogging.h"  // Must appear first
 #include "RasterImage.h"
 #include "SurfacePipeFactory.h"
+#include "gfxPlatform.h"
+#include "mozilla/TelemetryHistogramEnums.h"
 
 using namespace mozilla::gfx;
 

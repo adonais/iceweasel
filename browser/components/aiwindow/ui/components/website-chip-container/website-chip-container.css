@@ -11,27 +11,38 @@
   min-width: 0;
 }
 
+.chip-container-scroller {
+  display: flex;
+  flex-wrap: nowrap;
+}
+
+/* when the chip container is part of the chat bubble */
+:host(.chat-bubble-chips) .chip-container-scroller {
+  align-items: flex-end;
+  flex-direction: column;
+  gap: var(--space-xsmall);
+}
+
+/* when the chip container is part of the smartbar */
 :host(.smartbar-context-chips-header) .chip-container {
   padding-inline-start: var(--space-medium);
   /* This padding aligns with border-width to maintain consistent spacing that creates the visual that the chips are coming to the edge. */
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   padding-inline-end: var(--border-width);
   padding-block-start: var(--space-large);
-}
 
-.scroller {
-  display: flex;
-  align-items: center;
-  gap: var(--space-small);
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
-  min-width: 0;
-}
+  .chip-container-scroller {
+    align-items: center;
+    gap: var(--space-small);
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    min-width: 0;
 
-.scroller > slot {
-  display: contents;
+    > slot {
+      display: contents;
+    }
+  }
 }
 
 ::slotted(*) {

@@ -31,7 +31,7 @@ add_task(async function context_one() {
   let url = getRootDirectory(gTestPath) + "add_search_engine_one.html";
   await BrowserTestUtils.withNewTab(url, async browser => {
     info("Waiting for favicon to load");
-    await BrowserTestUtils.waitForCondition(() => !!browser.mIconURL);
+    await TestUtils.waitForCondition(() => !!browser.mIconURL);
 
     await UrlbarTestUtils.withContextMenu(window, async popup => {
       info("The separator and the add engine item should be present.");
@@ -175,7 +175,7 @@ add_task(async function context_many() {
   let url = getRootDirectory(gTestPath) + "add_search_engine_many.html";
   await BrowserTestUtils.withNewTab(url, async browser => {
     info("Waiting for favicon to load");
-    await BrowserTestUtils.waitForCondition(() => !!browser.mIconURL);
+    await TestUtils.waitForCondition(() => !!browser.mIconURL);
 
     await UrlbarTestUtils.withContextMenu(window, async popup => {
       info("The separator and the add engine menu should be present.");

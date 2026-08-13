@@ -54,6 +54,34 @@ add_task(function test_ChatMessage_constructor_defaults() {
   });
 });
 
+add_task(function test_ChatMessage_historyResults() {
+  const defaulted = new ChatMessage({
+    ordinal: 0,
+    role: 0,
+    turnIndex: 0,
+    content: "some content",
+  });
+  Assert.deepEqual(
+    defaulted.historyResults,
+    [],
+    "historyResults should default to []"
+  );
+
+  const records = [{ url: "https://example.com/", title: "Example" }];
+  const withResults = new ChatMessage({
+    ordinal: 0,
+    role: 0,
+    turnIndex: 0,
+    content: "some content",
+    historyResults: records,
+  });
+  Assert.deepEqual(
+    withResults.historyResults,
+    records,
+    "historyResults should preserve a passed array"
+  );
+});
+
 add_task(function test_pageUrl_as_URL_ChatConversation() {
   const message = new ChatMessage({
     ordinal: 0,

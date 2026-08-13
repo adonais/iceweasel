@@ -2,21 +2,22 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsWindow.h"
 #include "nsWindowX11.h"
 
-#include "mozilla/gfx/gfxVars.h"
-#include "mozilla/PodOperations.h"
-#include <gdk/gdkkeysyms-compat.h>
 #include <X11/Xatom.h>
 #include <X11/extensions/XShm.h>
 #include <X11/extensions/Xfixes.h>
 #include <X11/extensions/shape.h>
-#include "gfxXlibSurface.h"
-#include "GLContextGLX.h"  // for GLContextGLX::FindVisual()
+#include <gdk/gdkkeysyms-compat.h>
+
 #include "GLContextEGL.h"  // for GLContextEGL::FindVisual()
+#include "GLContextGLX.h"  // for GLContextGLX::FindVisual()
 #include "WindowSurfaceX11Image.h"
 #include "WindowSurfaceX11SHM.h"
+#include "gfxXlibSurface.h"
+#include "mozilla/PodOperations.h"
+#include "mozilla/gfx/gfxVars.h"
+#include "nsWindow.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;

@@ -166,6 +166,7 @@ class WebrtcVideoConduit : public VideoSessionConduit,
 
   Ssrcs GetLocalSSRCs() const override;
   Maybe<Ssrc> GetAssociatedLocalRtxSSRC(Ssrc aSsrc) const override;
+  Maybe<Ssrc> GetAssociatedRemoteRtxSSRC() const override;
   Maybe<Ssrc> GetRemoteSSRC() const override;
 
   Maybe<gfx::IntSize> GetLastResolution() const override;

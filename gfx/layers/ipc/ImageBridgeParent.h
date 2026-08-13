@@ -7,6 +7,7 @@
 
 #include <stddef.h>  // for size_t
 #include <stdint.h>  // for uint32_t, uint64_t
+
 #include "CompositableTransactionParent.h"
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/ipc/ProtocolUtils.h"

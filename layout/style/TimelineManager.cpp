@@ -8,6 +8,7 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ElementInlines.h"
 #include "mozilla/dom/ScrollTimeline.h"
+#include "mozilla/dom/TimelineName.h"
 #include "mozilla/dom/ViewTimeline.h"
 #include "nsPresContext.h"
 
@@ -21,8 +22,8 @@ TimelineManager::TimelineManager(nsPresContext* aPresContext)
 
 template <typename TimelineType>
 struct TimelineTargetMatches {
-  bool operator()(const TimelineType* aTimeline) {
-    const auto target = aTimeline->TimelineTarget();
+  bool operator()(const TimelineEntry<TimelineType>& aTimeline) {
+    const auto target = aTimeline.mTimeline->TimelineTarget();
     return target.mElement == mElement &&
            target.mPseudoRequest == mPseudoRequest;
   }
@@ -212,8 +213,9 @@ TimelineType* TimelineManager::DoGetScopedTimeline(
 
   auto ScopeIsValid = [&](const Element* aTimelineCandidate,
                           const Element* aExpectedScope) {
-    const auto* e = aTimelineCandidate->GetFlattenedTreeParentElement();
-    for (; e && e != aExpectedScope; e = e->GetFlattenedTreeParentElement()) {
+    const auto* e = aTimelineCandidate->GetParentElementCrossingShadowRoot();
+    for (; e && e != aExpectedScope;
+         e = e->GetParentElementCrossingShadowRoot()) {
       if (GetTimelineScope(e, aName)) {
         // This timeline-scope declaring element blocks this timeline from being
         // visible to aExpectedScope.
@@ -227,7 +229,8 @@ TimelineType* TimelineManager::DoGetScopedTimeline(
   TimelineType* result = nullptr;
   bool found = false;
   for (const auto& candidate : candidates.Data()) {
-    if (!ScopeIsValid(candidate->TimelineTarget().mElement, aScopeElement)) {
+    if (!ScopeIsValid(candidate.mTimeline->TimelineTarget().mElement,
+                      aScopeElement)) {
       continue;
     }
     if (found) {
@@ -236,7 +239,7 @@ TimelineType* TimelineManager::DoGetScopedTimeline(
       return nullptr;
     }
     found = true;
-    result = candidate;
+    result = candidate.mTimeline;
   }
   return result;
 }
@@ -281,7 +284,7 @@ TimelineManager::GetScopedTimeline(const dom::Element* aScopeElement,
 
 template <typename TimelineType>
 static already_AddRefed<TimelineType> PopExistingTimeline(
-    nsAtom* aName, TimelineCollection<TimelineType>* aCollection) {
+    const nsAtom* aName, TimelineCollection<TimelineType>* aCollection) {
   if (!aCollection) {
     return nullptr;
   }
@@ -300,8 +303,9 @@ struct TimelineBuilder<ScrollTimeline> {
   static size_t NameCount(const nsStyleUIReset* aUI) {
     return aUI->mScrollTimelineNameCount;
   }
-  static nsAtom* Name(const nsStyleUIReset* aUI, size_t aIdx) {
-    return aUI->GetScrollTimelineName(aIdx);
+  static dom::ScopedTimelineName Name(const nsStyleUIReset* aUI, size_t aIdx) {
+    const auto& scopedName = aUI->GetScrollTimelineName(aIdx);
+    return dom::ScopedTimelineName{scopedName};
   }
   static already_AddRefed<ScrollTimeline> Make(
       nsPresContext* aPC, Element* aElement, const PseudoStyleRequest& aPseudo,
@@ -310,7 +314,8 @@ struct TimelineBuilder<ScrollTimeline> {
                                      aUI->GetScrollTimelineAxis(aIdx));
   }
   static void Replace(ScrollTimeline* aDest, Element* aElement,
-                      const PseudoStyleRequest& aPseudo, nsAtom* aName,
+                      const PseudoStyleRequest& aPseudo,
+                      const dom::ScopedTimelineName& aName,
                       const nsStyleUIReset* aUI, size_t aIdx) {
     aDest->ReplacePropertiesWith(aElement, aPseudo, aName,
                                  aUI->GetScrollTimelineAxis(aIdx));
@@ -322,8 +327,9 @@ struct TimelineBuilder<ViewTimeline> {
   static size_t NameCount(const nsStyleUIReset* aUI) {
     return aUI->mViewTimelineNameCount;
   }
-  static nsAtom* Name(const nsStyleUIReset* aUI, size_t aIdx) {
-    return aUI->GetViewTimelineName(aIdx);
+  static dom::ScopedTimelineName Name(const nsStyleUIReset* aUI, size_t aIdx) {
+    const auto& scopedName = aUI->GetViewTimelineName(aIdx);
+    return dom::ScopedTimelineName{scopedName};
   }
   static already_AddRefed<ViewTimeline> Make(nsPresContext* aPC,
                                              Element* aElement,
@@ -335,7 +341,8 @@ struct TimelineBuilder<ViewTimeline> {
                                    aUI->GetViewTimelineInset(aIdx));
   }
   static void Replace(ViewTimeline* aDest, Element* aElement,
-                      const PseudoStyleRequest& aPseudo, nsAtom* aName,
+                      const PseudoStyleRequest& aPseudo,
+                      const dom::ScopedTimelineName& aName,
                       const nsStyleUIReset* aUI, size_t aIdx) {
     aDest->ReplacePropertiesWith(aElement, aPseudo, aName,
                                  aUI->GetViewTimelineAxis(aIdx),
@@ -355,14 +362,16 @@ static auto BuildTimelines(nsPresContext* aPresContext, Element* aElement,
   // timeline closest to the end of the list of names wins [1].
   // [1]: https://drafts.csswg.org/scroll-animations-1/#timeline-scoping
   for (size_t idx = 0; idx < count; ++idx) {
-    nsAtom* name = Builder::Name(aUIReset, idx);
-    if (name == nsGkAtoms::_empty) {
+    auto scopedName = Builder::Name(aUIReset, idx);
+    if (scopedName.mName == nsGkAtoms::_empty) {
       continue;
     }
 
-    RefPtr<TimelineType> dest = PopExistingTimeline(name, aCollection);
+    RefPtr<TimelineType> dest =
+        PopExistingTimeline(scopedName.mName, aCollection);
     if (dest) {
-      Builder::Replace(dest, aElement, aPseudoRequest, name, aUIReset, idx);
+      Builder::Replace(dest, aElement, aPseudoRequest, scopedName, aUIReset,
+                       idx);
     } else {
       dest =
           Builder::Make(aPresContext, aElement, aPseudoRequest, aUIReset, idx);
@@ -370,7 +379,11 @@ static auto BuildTimelines(nsPresContext* aPresContext, Element* aElement,
     MOZ_ASSERT(dest);
 
     // Override the previous one if it is duplicated.
-    (void)result.InsertOrUpdate(name, dest);
+    const TimelineEntry<TimelineType> entry{
+        .mTimeline = dest,
+        .mCascadeLevel = scopedName.mCascadeLevel,
+    };
+    (void)result.InsertOrUpdate(scopedName.mName, entry);
   }
   return result;
 }
@@ -402,7 +415,7 @@ nsTArray<RefPtr<const nsAtom>> TimelineManager::DoUpdateTimelines(
   auto* collection =
       TimelineCollection<TimelineType>::Get(aElement, aPseudoRequest);
   if (!collection && Builder::NameCount(aUIReset) == 1 &&
-      Builder::Name(aUIReset, 0) == nsGkAtoms::_empty) {
+      Builder::Name(aUIReset, 0).mName == nsGkAtoms::_empty) {
     return {};
   }
 

@@ -1,0 +1,240 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+  ### This moz.build was AUTOMATICALLY GENERATED from a GN config,  ###
+  ### DO NOT edit it by hand.                                       ###
+
+COMPILE_FLAGS["OS_INCLUDES"] = []
+AllowCompilerWarnings()
+
+DEFINES["ANGLE_DISABLE_POOL_ALLOC"] = True
+DEFINES["ANGLE_ENABLE_CONTEXT_MUTEX"] = "1"
+DEFINES["ANGLE_ENABLE_DEBUG_ANNOTATIONS"] = False
+DEFINES["ANGLE_ENABLE_KEYEDMUTEX"] = True
+DEFINES["ANGLE_ENABLE_SHARE_CONTEXT_LOCK"] = "1"
+DEFINES["ANGLE_PLATFORM_EXPORT"] = ""
+DEFINES["ANGLE_SKIP_DXGI_1_2_CHECK"] = True
+DEFINES["LIBANGLE_IMPLEMENTATION"] = True
+
+LOCAL_INCLUDES += [
+    "!/ipc/ipdl/_ipdlheaders",
+    "/ipc/chromium/src",
+    "/third_party/angle/include/",
+    "/third_party/angle/src/",
+    "/third_party/angle/src/common/base/",
+    "/third_party/angle/src/common/third_party/xxhash/",
+    "/third_party/angle/third_party/zlib/google/",
+    "/tools/profiler/public"
+]
+
+SOURCES += [
+    "/third_party/angle/src/libANGLE/Context.cpp",
+    "/third_party/angle/src/libANGLE/Context_gles_1_0.cpp",
+    "/third_party/angle/src/libANGLE/Device.cpp",
+    "/third_party/angle/src/libANGLE/Display.cpp",
+    "/third_party/angle/src/libANGLE/Overlay.cpp",
+    "/third_party/angle/src/libANGLE/Overlay_autogen.cpp",
+    "/third_party/angle/src/libANGLE/OverlayWidgets.cpp",
+    "/third_party/angle/src/libANGLE/validationES2.cpp",
+    "/third_party/angle/src/libANGLE/validationESEXT.cpp"
+]
+
+UNIFIED_SOURCES += [
+    "/third_party/angle/src/libANGLE/angletypes.cpp",
+    "/third_party/angle/src/libANGLE/AttributeMap.cpp",
+    "/third_party/angle/src/libANGLE/BlobCache.cpp",
+    "/third_party/angle/src/libANGLE/Buffer.cpp",
+    "/third_party/angle/src/libANGLE/Caps.cpp",
+    "/third_party/angle/src/libANGLE/Compiler.cpp",
+    "/third_party/angle/src/libANGLE/Config.cpp",
+    "/third_party/angle/src/libANGLE/ContextMutex.cpp",
+    "/third_party/angle/src/libANGLE/Debug.cpp",
+    "/third_party/angle/src/libANGLE/EGLSync.cpp",
+    "/third_party/angle/src/libANGLE/Error.cpp",
+    "/third_party/angle/src/libANGLE/es3_copy_conversion_table_autogen.cpp",
+    "/third_party/angle/src/libANGLE/Fence.cpp",
+    "/third_party/angle/src/libANGLE/format_map_autogen.cpp",
+    "/third_party/angle/src/libANGLE/formatutils.cpp",
+    "/third_party/angle/src/libANGLE/Framebuffer.cpp",
+    "/third_party/angle/src/libANGLE/FramebufferAttachment.cpp",
+    "/third_party/angle/src/libANGLE/GLES1Renderer.cpp",
+    "/third_party/angle/src/libANGLE/GLES1State.cpp",
+    "/third_party/angle/src/libANGLE/gles_extensions_autogen.cpp",
+    "/third_party/angle/src/libANGLE/GlobalMutex.cpp",
+    "/third_party/angle/src/libANGLE/HandleAllocator.cpp",
+    "/third_party/angle/src/libANGLE/Image.cpp",
+    "/third_party/angle/src/libANGLE/ImageIndex.cpp",
+    "/third_party/angle/src/libANGLE/IndexRangeCache.cpp",
+    "/third_party/angle/src/libANGLE/LoggingAnnotator.cpp",
+    "/third_party/angle/src/libANGLE/MemoryObject.cpp",
+    "/third_party/angle/src/libANGLE/MemoryProgramCache.cpp",
+    "/third_party/angle/src/libANGLE/MemoryShaderCache.cpp",
+    "/third_party/angle/src/libANGLE/Observer.cpp",
+    "/third_party/angle/src/libANGLE/Overlay_font_autogen.cpp",
+    "/third_party/angle/src/libANGLE/PixelLocalStorage.cpp",
+    "/third_party/angle/src/libANGLE/Platform.cpp",
+    "/third_party/angle/src/libANGLE/Program.cpp",
+    "/third_party/angle/src/libANGLE/ProgramExecutable.cpp",
+    "/third_party/angle/src/libANGLE/ProgramLinkedResources.cpp",
+    "/third_party/angle/src/libANGLE/ProgramPipeline.cpp",
+    "/third_party/angle/src/libANGLE/Query.cpp",
+    "/third_party/angle/src/libANGLE/queryconversions.cpp",
+    "/third_party/angle/src/libANGLE/queryutils.cpp",
+    "/third_party/angle/src/libANGLE/Renderbuffer.cpp",
+    "/third_party/angle/src/libANGLE/renderer/BufferImpl.cpp",
+    "/third_party/angle/src/libANGLE/renderer/ContextImpl.cpp",
+    "/third_party/angle/src/libANGLE/renderer/DeviceImpl.cpp",
+    "/third_party/angle/src/libANGLE/renderer/DisplayImpl.cpp",
+    "/third_party/angle/src/libANGLE/renderer/driver_utils.cpp",
+    "/third_party/angle/src/libANGLE/renderer/EGLReusableSync.cpp",
+    "/third_party/angle/src/libANGLE/renderer/EGLSyncImpl.cpp",
+    "/third_party/angle/src/libANGLE/renderer/Format_table_autogen.cpp",
+    "/third_party/angle/src/libANGLE/renderer/FramebufferImpl.cpp",
+    "/third_party/angle/src/libANGLE/renderer/ImageImpl.cpp",
+    "/third_party/angle/src/libANGLE/renderer/load_functions_table_autogen.cpp",
+    "/third_party/angle/src/libANGLE/renderer/ProgramImpl.cpp",
+    "/third_party/angle/src/libANGLE/renderer/ProgramPipelineImpl.cpp",
+    "/third_party/angle/src/libANGLE/renderer/QueryImpl.cpp",
+    "/third_party/angle/src/libANGLE/renderer/RenderbufferImpl.cpp",
+    "/third_party/angle/src/libANGLE/renderer/renderer_utils.cpp",
+    "/third_party/angle/src/libANGLE/renderer/ShaderImpl.cpp",
+    "/third_party/angle/src/libANGLE/renderer/SurfaceImpl.cpp",
+    "/third_party/angle/src/libANGLE/renderer/TextureImpl.cpp",
+    "/third_party/angle/src/libANGLE/renderer/TransformFeedbackImpl.cpp",
+    "/third_party/angle/src/libANGLE/renderer/VertexArrayImpl.cpp",
+    "/third_party/angle/src/libANGLE/ResourceManager.cpp",
+    "/third_party/angle/src/libANGLE/Sampler.cpp",
+    "/third_party/angle/src/libANGLE/Semaphore.cpp",
+    "/third_party/angle/src/libANGLE/Shader.cpp",
+    "/third_party/angle/src/libANGLE/ShareGroup.cpp",
+    "/third_party/angle/src/libANGLE/State.cpp",
+    "/third_party/angle/src/libANGLE/Stream.cpp",
+    "/third_party/angle/src/libANGLE/Surface.cpp",
+    "/third_party/angle/src/libANGLE/Texture.cpp",
+    "/third_party/angle/src/libANGLE/Thread.cpp",
+    "/third_party/angle/src/libANGLE/TransformFeedback.cpp",
+    "/third_party/angle/src/libANGLE/Uniform.cpp",
+    "/third_party/angle/src/libANGLE/validationEGL.cpp",
+    "/third_party/angle/src/libANGLE/validationES.cpp",
+    "/third_party/angle/src/libANGLE/validationES1.cpp",
+    "/third_party/angle/src/libANGLE/validationES3.cpp",
+    "/third_party/angle/src/libANGLE/validationES31.cpp",
+    "/third_party/angle/src/libANGLE/validationES32.cpp",
+    "/third_party/angle/src/libANGLE/VaryingPacking.cpp",
+    "/third_party/angle/src/libANGLE/VertexArray.cpp",
+    "/third_party/angle/src/libANGLE/VertexAttribute.cpp"
+]
+
+USE_LIBS += [
+    "angle_common_gn",
+    "angle_common_shader_state_gn",
+    "angle_gpu_info_util_gn",
+    "ANGLE_headers_gn",
+    "angle_image_util_gn",
+    "angle_version_info_gn",
+    "compression_utils_portable_gn",
+    "includes_gn",
+    "translator_gn"
+]
+
+if not CONFIG["MOZ_DEBUG"]:
+
+    DEFINES["DYNAMIC_ANNOTATIONS_ENABLED"] = "0"
+    DEFINES["NDEBUG"] = True
+    DEFINES["NVALGRIND"] = True
+
+if CONFIG["MOZ_DEBUG"] == "1":
+
+    DEFINES["ANGLE_DEBUG_LAYERS_ENABLED"] = True
+    DEFINES["ANGLE_GENERATE_SHADER_DEBUG_INFO"] = True
+    DEFINES["DYNAMIC_ANNOTATIONS_ENABLED"] = "1"
+
+if CONFIG["OS_TARGET"] == "Darwin":
+
+    DEFINES["ANGLE_ENABLE_METAL"] = True
+    DEFINES["__STDC_CONSTANT_MACROS"] = True
+    DEFINES["__STDC_FORMAT_MACROS"] = True
+
+    LOCAL_INCLUDES += [
+        "!/third_party/angle/gen"
+    ]
+
+    OS_LIBS += [
+        "-framework Cocoa",
+        "-framework CoreFoundation",
+        "-framework CoreGraphics",
+        "-framework IOKit",
+        "-framework IOSurface",
+        "-framework Metal",
+        "-framework QuartzCore"
+    ]
+
+    UNIFIED_SOURCES += [
+        "/third_party/angle/src/libANGLE/renderer/driver_utils_mac.mm"
+    ]
+
+    USE_LIBS += [
+        "angle_metal_backend_gn"
+    ]
+
+if CONFIG["OS_TARGET"] == "WINNT":
+
+    DEFINES["ANGLE_ENABLE_D3D11"] = True
+    DEFINES["ANGLE_ENABLE_D3D9"] = True
+    DEFINES["ANGLE_IS_WIN"] = True
+    DEFINES["ANGLE_PRELOADED_D3DCOMPILER_MODULE_NAMES"] = "{ \"d3dcompiler_47.dll\", \"d3dcompiler_46.dll\", \"d3dcompiler_43.dll\" }"
+    DEFINES["CERT_CHAIN_PARA_HAS_EXTRA_FIELDS"] = True
+    DEFINES["NOMINMAX"] = True
+    DEFINES["NTDDI_VERSION"] = "0x0A000000"
+    DEFINES["PSAPI_VERSION"] = "2"
+    DEFINES["UNICODE"] = True
+    DEFINES["USE_AURA"] = "1"
+    DEFINES["WIN32"] = True
+    DEFINES["WIN32_LEAN_AND_MEAN"] = True
+    DEFINES["WINAPI_FAMILY"] = "WINAPI_FAMILY_DESKTOP_APP"
+    DEFINES["WINVER"] = "0x0A00"
+    DEFINES["_ATL_NO_OPENGL"] = True
+    DEFINES["_CRT_NONSTDC_NO_WARNINGS"] = True
+    DEFINES["_CRT_RAND_S"] = True
+    DEFINES["_CRT_SECURE_NO_DEPRECATE"] = True
+    DEFINES["_HAS_EXCEPTIONS"] = "0"
+    DEFINES["_HAS_NODISCARD"] = True
+    DEFINES["_SCL_SECURE_NO_DEPRECATE"] = True
+    DEFINES["_SECURE_ATL"] = True
+    DEFINES["_UNICODE"] = True
+    DEFINES["_WIN32_WINNT"] = "0x0A00"
+    DEFINES["_WINDOWS"] = True
+    DEFINES["_WINSOCK_DEPRECATED_NO_WARNINGS"] = True
+    DEFINES["__STD_C"] = True
+
+    OS_LIBS += [
+        "d3d9",
+        "delayimp",
+        "dxgi",
+        "dxguid",
+        "gdi32",
+        "setupapi",
+        "synchronization",
+        "user32"
+    ]
+
+    USE_LIBS += [
+        "angle_d3d11_backend_gn",
+        "angle_d3d9_backend_gn"
+    ]
+
+if CONFIG["TARGET_CPU"] == "aarch64":
+
+    DEFINES["__ARM_NEON__"] = "1"
+
+if CONFIG["MOZ_DEBUG"] == "1" and CONFIG["OS_TARGET"] == "Darwin":
+
+    DEFINES["_DEBUG"] = True
+
+if CONFIG["MOZ_DEBUG"] == "1" and CONFIG["OS_TARGET"] == "WINNT":
+
+    DEFINES["_HAS_ITERATOR_DEBUGGING"] = "0"
+
+Library("ANGLE_no_vulkan_gn")

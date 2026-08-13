@@ -5,12 +5,12 @@
 #ifndef mozilla_widget_VsyncDispatcher_h
 #define mozilla_widget_VsyncDispatcher_h
 
+#include "VsyncSource.h"
 #include "mozilla/DataMutex.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
 #include "nsISupportsImpl.h"
 #include "nsTArray.h"
-#include "mozilla/RefPtr.h"
-#include "VsyncSource.h"
 
 namespace mozilla {
 

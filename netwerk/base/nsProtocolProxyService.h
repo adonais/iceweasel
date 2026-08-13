@@ -5,16 +5,16 @@
 #ifndef nsProtocolProxyService_h_
 #define nsProtocolProxyService_h_
 
-#include "nsString.h"
 #include "nsCOMPtr.h"
-#include "nsTArray.h"
-#include "nsIProtocolProxyService2.h"
-#include "nsIProtocolProxyFilter.h"
-#include "nsIProxyInfo.h"
-#include "nsIObserver.h"
-#include "nsTHashMap.h"
 #include "nsHashKeys.h"
+#include "nsIObserver.h"
+#include "nsIProtocolProxyFilter.h"
+#include "nsIProtocolProxyService2.h"
+#include "nsIProxyInfo.h"
 #include "nsITimer.h"
+#include "nsString.h"
+#include "nsTArray.h"
+#include "nsTHashMap.h"
 #include "prio.h"
 
 class nsIPrefBranch;

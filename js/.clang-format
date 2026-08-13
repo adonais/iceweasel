@@ -1,0 +1,30 @@
+BasedOnStyle: InheritParentConfig
+SortIncludes:
+  Enabled: true
+  IgnoreCase: true
+IncludeBlocks: Regroup
+IncludeIsMainRegex: '(-inl)?'
+IncludeIsMainSourceRegex: '(-inl\.h)$'
+# Reproduce the traditional SpiderMonkey #include ordering.
+#   0. module header (handled by clang-format's main-include detection)
+#   1. mozilla/ headers
+#   2. system headers (<...>)
+#   3. top-level headers (no path)
+#   4. local headers (with a path)
+#   5. inline (-inl.h) headers
+#   6. non-header includes (.tbl/.msg/...)
+# TODO(emilio, bug 2055259): Do we want to make this ordering more consistent
+# with the rest of gecko?
+IncludeCategories:
+  - Regex:    '^"mozilla/'
+    Priority: 1
+  - Regex:    '^<'
+    Priority: 2
+  - Regex:    '/[^/"]*-inl\.h"$'
+    Priority: 5
+  - Regex:    '^"[^"]+/.*\.h(pp)?"$'
+    Priority: 4
+  - Regex:    '^"[^"/]*\.h(pp)?"$'
+    Priority: 3
+  - Regex:    '.*'
+    Priority: 6

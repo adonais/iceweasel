@@ -19,6 +19,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mozilla.components.browser.state.state.SessionState
@@ -71,8 +73,8 @@ import org.mozilla.fenix.onboarding.OnboardingTelemetryRecorder
 import org.mozilla.fenix.onboarding.continuous.ContinuousOnboardingFeatureDefault
 import org.mozilla.fenix.onboarding.continuous.ContinuousOnboardingStageProviderDefault
 import org.mozilla.fenix.settings.downloads.DownloadLocationManager
-import org.mozilla.fenix.settings.quicksettings.protections.cookiebanners.getCookieBannerUIMode
 import org.mozilla.fenix.shortcut.PwaOnboardingObserver
+import org.mozilla.fenix.summarization.SummarizationNavigator
 import org.mozilla.fenix.termsofuse.store.Surface
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.ipprotection.store.Surface as IPProtectionSurface
@@ -121,6 +123,14 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler, SystemIns
                 resultCode = result.resultCode,
             )
         }
+
+    private val summarizationNavigator by lazy {
+        SummarizationNavigator(
+            summarizationSettings = requireComponents.core.summarizationSettings,
+            eligibilityChecker = requireComponents.core.summarizationEligibilityChecker,
+            getCurrentTab = ::getSafeCurrentTab,
+        )
+    }
 
     private val telemetryRecorder by lazy {
         OnboardingTelemetryRecorder(
@@ -239,6 +249,7 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler, SystemIns
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     private fun setupShakeDetection() {
         val shouldSetupShake = requireComponents.core.summarizeFeatureSettings.canShowFeature &&
                 requireComponents.core.summarizationSettings.isGestureEnabled.value
@@ -252,65 +263,19 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler, SystemIns
             lifecycle.addObserver(accelerometer)
             lifecycleScope.launch {
                 viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                    accelerometer.detectShakes()
+                    requireComponents.core.summarizationSettings.shakeSensitivity
+                        .flatMapLatest { sensitivity ->
+                            accelerometer.detectShakes(sensitivity = sensitivity)
+                        }
                         .collect {
                             summarizeToolbarCfrBinding.get()?.maybeDismissCfr()
-                            navigateToSummarizationIfEligible()
+                            summarizationNavigator.navigateToSummarizationIfEligible(
+                                navController = findNavController(),
+                                fromShakeGesture = true,
+                            )
                         }
                 }
             }
-        }
-    }
-
-    private suspend fun navigateToSummarizationIfEligible() {
-        findNavController().apply {
-            // If the shake gesture or the parent feature was disabled in the bottom sheet hosted
-            // settings but the fragment has not been recreated yet, we need to check both are still
-            // active before proceeding.
-            val summarizationSettings = requireComponents.core.summarizationSettings
-            val shakeEnabled = summarizationSettings.isFeatureEnabled.value &&
-                summarizationSettings.isGestureEnabled.value
-
-            if (!shakeEnabled) {
-                return
-            }
-
-            // We don't want to navigate to the summarization fragment if the current
-            // tab is private.
-            val isPrivate = getSafeCurrentTab()?.content?.private == true
-
-            // We don't want to navigate to the summarization fragment if the current
-            // tab is loading.
-            val isPageLoading = getSafeCurrentTab()?.content?.loading == true
-
-            // Since the summarization fragment is in a dialog, it's possible that we
-            // can still detect shakes in the background. Don't try to navigate twice.
-            val currentDestinationIsNotTheBrowser = currentDestination?.id != R.id.browserFragment
-
-            // evaluate this lazy, to try and avoid querying the engine unless necessary
-            val isEnglishContent: suspend () -> Boolean = {
-                getSafeCurrentTab()?.engineState?.engineSession?.let { session ->
-                    requireComponents.core.summarizationEligibilityChecker
-                        .checkLanguage(session)
-                        .getOrNull()
-                } ?: false
-            }
-
-            // this can be removed when we get rid of language gating
-            @Suppress("ComplexCondition")
-            if (isPrivate ||
-                isPageLoading ||
-                currentDestinationIsNotTheBrowser ||
-                !isEnglishContent()
-            ) {
-                return
-            }
-
-            navigate(
-                BrowserFragmentDirections.actionBrowserFragmentToSummarizationFragment(
-                    true,
-                ),
-            )
         }
     }
 
@@ -468,17 +433,11 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler, SystemIns
         FxNimbus.features.cookieBanners.recordExposure()
         useCase.containsException(tab.id) { hasTrackingProtectionException ->
             lifecycleScope.launch {
-                val cookieBannersStorage = requireComponents.core.cookieBannersStorage
-                val cookieBannerUIMode = cookieBannersStorage.getCookieBannerUIMode(
-                    tab = tab,
-                    isFeatureEnabledInPrivateMode = requireComponents.settings.shouldUseCookieBannerPrivateMode,
-                    publicSuffixList = requireComponents.publicSuffixList,
-                )
                 withContext(Dispatchers.Main) {
                     runIfFragmentIsAttached {
                         val isTrackingProtectionEnabled =
                             tab.trackingProtection.enabled && !hasTrackingProtectionException
-                        val directions = if (requireComponents.settings.enableUnifiedTrustPanel) {
+                        val directions =
                             BrowserFragmentDirections.actionBrowserFragmentToTrustPanelFragment(
                                 sessionId = tab.id,
                                 url = tab.content.url,
@@ -489,23 +448,7 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler, SystemIns
                                 certificate = tab.content.securityInfo.certificate,
                                 permissionHighlights = tab.content.permissionHighlights,
                                 isTrackingProtectionEnabled = isTrackingProtectionEnabled,
-                                cookieBannerUIMode = cookieBannerUIMode,
                             )
-                        } else {
-                            BrowserFragmentDirections.actionBrowserFragmentToQuickSettingsSheetDialogFragment(
-                                sessionId = tab.id,
-                                url = tab.content.url,
-                                title = tab.content.title,
-                                isLocalPdf = tab.content.url.isContentUrl(),
-                                isSecured = tab.content.securityInfo.isSecure,
-                                sitePermissions = sitePermissions,
-                                gravity = getAppropriateLayoutGravity(),
-                                certificateName = tab.content.securityInfo.issuer,
-                                permissionHighlights = tab.content.permissionHighlights,
-                                isTrackingProtectionEnabled = isTrackingProtectionEnabled,
-                                cookieBannerUIMode = cookieBannerUIMode,
-                            )
-                        }
                         nav(R.id.browserFragment, directions)
                     }
                 }

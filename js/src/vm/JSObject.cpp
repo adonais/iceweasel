@@ -6,8 +6,6 @@
  * JS object implementation.
  */
 
-#include "vm/JSObject-inl.h"
-
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Try.h"
 
@@ -66,12 +64,14 @@
 #include "vm/TypedArrayObject.h"
 #include "vm/Watchtower.h"
 #include "vm/WrapperObject.h"
+
 #include "gc/StableCellHasher-inl.h"
 #include "vm/BooleanObject-inl.h"
 #include "vm/EnvironmentObject-inl.h"
 #include "vm/Interpreter-inl.h"
 #include "vm/JSAtomUtils-inl.h"  // AtomToId, PrimitiveValueToId, IndexToId
 #include "vm/JSContext-inl.h"
+#include "vm/JSObject-inl.h"
 #include "vm/NativeObject-inl.h"
 #include "vm/NumberObject-inl.h"
 #include "vm/ObjectFlags-inl.h"
@@ -731,8 +731,7 @@ bool js::TestIntegrityLevel(JSContext* cx, HandleObject obj,
 
 static MOZ_ALWAYS_INLINE NativeObject* NewObject(
     JSContext* cx, const JSClass* clasp, Handle<TaggedProto> proto,
-    gc::AllocKind kind, NewObjectKind newKind, ObjectFlags objFlags,
-    gc::AllocSite* allocSite = nullptr) {
+    const NewObjectOptions& options) {
   MOZ_ASSERT(clasp->isNativeObject());
 
   // Some classes have specialized allocation functions and shouldn't end up
@@ -741,7 +740,13 @@ static MOZ_ALWAYS_INLINE NativeObject* NewObject(
   MOZ_ASSERT(clasp != &PlainObject::class_);
   MOZ_ASSERT(!clasp->isJSFunction());
 
+  gc::AllocSite* allocSite = options.site;
   MOZ_ASSERT_IF(allocSite, allocSite->zone() == cx->zone());
+
+  gc::AllocKind kind = options.allocKind;
+  if (kind == gc::AllocKind::INVALID) {
+    kind = gc::GetGCObjectKind(clasp);
+  }
 
   // Computing nfixed based on the AllocKind isn't right for objects which can
   // store fixed data inline (TypedArrays and ArrayBuffers) so for simplicity
@@ -753,12 +758,12 @@ static MOZ_ALWAYS_INLINE NativeObject* NewObject(
 
   Rooted<SharedShape*> shape(
       cx, SharedShape::getInitialShape(cx, clasp, cx->realm(), proto, nfixed,
-                                       objFlags));
+                                       options.flags));
   if (!shape) {
     return nullptr;
   }
 
-  gc::Heap heap = GetInitialHeap(newKind, clasp, allocSite);
+  gc::Heap heap = GetInitialHeap(options.newKind, clasp, allocSite);
   NativeObject* obj = NativeObject::create(cx, kind, heap, shape, allocSite);
   if (!obj) {
     return nullptr;
@@ -770,25 +775,16 @@ static MOZ_ALWAYS_INLINE NativeObject* NewObject(
 
 NativeObject* js::NewObjectWithGivenTaggedProto(
     JSContext* cx, const JSClass* clasp, Handle<TaggedProto> proto,
-    gc::AllocKind allocKind, NewObjectKind newKind, ObjectFlags objFlags) {
-  return NewObject(cx, clasp, proto, allocKind, newKind, objFlags);
-}
-
-NativeObject* js::NewObjectWithGivenTaggedProtoAndAllocSite(
-    JSContext* cx, const JSClass* clasp, Handle<TaggedProto> proto,
-    gc::AllocKind allocKind, NewObjectKind newKind, ObjectFlags objFlags,
-    gc::AllocSite* site) {
-  return NewObject(cx, clasp, proto, allocKind, newKind, objFlags, site);
+    const NewObjectOptions& options) {
+  return NewObject(cx, clasp, proto, options);
 }
 
 NativeObject* js::NewObjectWithClassProto(JSContext* cx, const JSClass* clasp,
                                           HandleObject protoArg,
-                                          gc::AllocKind allocKind,
-                                          NewObjectKind newKind,
-                                          ObjectFlags objFlags) {
+                                          const NewObjectOptions& options) {
   if (protoArg) {
     return NewObjectWithGivenTaggedProto(cx, clasp, AsTaggedProto(protoArg),
-                                         allocKind, newKind, objFlags);
+                                         options);
   }
 
   // Find the appropriate proto for clasp. Built-in classes have a cached
@@ -804,7 +800,7 @@ NativeObject* js::NewObjectWithClassProto(JSContext* cx, const JSClass* clasp,
   }
 
   Rooted<TaggedProto> taggedProto(cx, TaggedProto(proto));
-  return NewObject(cx, clasp, taggedProto, allocKind, newKind, objFlags);
+  return NewObject(cx, clasp, taggedProto, options);
 }
 
 bool js::GetPrototypeFromConstructor(JSContext* cx, HandleObject newTarget,
@@ -1826,22 +1822,23 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
       return true;
     }
   }
+#endif
+
   if (key == JSProto_Iterator) {
     if (!JS::Prefs::experimental_iterator_chunking() &&
         (id == NameToId(cx->names().chunks) ||
          id == NameToId(cx->names().windows))) {
       return true;
     }
-    if (!JS::Prefs::experimental_iterator_join() &&
-        id == NameToId(cx->names().join)) {
-      return true;
-    }
     if (!JS::Prefs::experimental_iterator_includes() &&
         id == NameToId(cx->names().includes)) {
       return true;
     }
+    if (!JS::Prefs::experimental_iterator_join() &&
+        id == NameToId(cx->names().join)) {
+      return true;
+    }
   }
-#endif
 
   if (key == JSProto_Function &&
       !JS::Prefs::experimental_error_capture_stack_trace() &&

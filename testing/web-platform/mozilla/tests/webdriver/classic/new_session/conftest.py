@@ -16,21 +16,15 @@ def fixture_configuration(configuration):
 
 
 @pytest.fixture(name="new_session")
-def fixture_new_session(request, configuration, current_session):
-    """Start a new session for tests which themselves test creating new sessions.
-
-    :param body: The content of the body for the new session POST request.
-
-    :param delete_existing_session: Allows the fixture to delete an already
-     created custom session before the new session is getting created. This
-     is useful for tests which call this fixture multiple times within the
-     same test.
-    """
+def fixture_new_session(request, geckodriver):
+    """Start a new session for tests which themselves test creating new sessions."""
     custom_session = {}
 
+    driver = geckodriver(force_new=True)
+
     transport = HTTPWireProtocol(
-        configuration["host"],
-        configuration["port"],
+        driver.hostname,
+        driver.port,
         url_prefix="/",
     )
 
@@ -38,11 +32,6 @@ def fixture_new_session(request, configuration, current_session):
         transport.send("DELETE", f"session/{session_id}")
 
     def new_session(body, delete_existing_session=False, headers=None):
-        # If there is an active session from the global session fixture,
-        # delete that one first
-        if current_session is not None:
-            current_session.end()
-
         if delete_existing_session:
             _delete_session(custom_session["session"]["sessionId"])
 

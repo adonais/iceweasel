@@ -5,9 +5,9 @@
 #ifndef CacheCrypto_h_
 #define CacheCrypto_h_
 
-#include "nscore.h"
 #include "nsISupportsImpl.h"
 #include "nsString.h"
+#include "nscore.h"
 
 namespace mozilla {
 namespace net {

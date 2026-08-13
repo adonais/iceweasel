@@ -3,15 +3,16 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "WRHitTester.h"
-#include "AsyncPanZoomController.h"
+
 #include "APZCTreeManager.h"
+#include "AsyncPanZoomController.h"
 #include "TreeTraversal.h"  // for BreadthFirstSearch
 #include "mozilla/gfx/CompositorHitTestInfo.h"
+#include "mozilla/gfx/Matrix.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/webrender/WebRenderAPI.h"
 #include "nsDebug.h"        // for NS_ASSERTION
 #include "nsIXULRuntime.h"  // for FissionAutostart
-#include "mozilla/gfx/Matrix.h"
 
 #define APZCTM_LOG(...) \
   MOZ_LOG(APZCTreeManager::sLog, LogLevel::Debug, (__VA_ARGS__))

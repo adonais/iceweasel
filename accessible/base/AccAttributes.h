@@ -5,12 +5,12 @@
 #ifndef AccAttributes_h_
 #define AccAttributes_h_
 
-#include "mozilla/a11y/AccGroupInfo.h"
 #include "mozilla/Variant.h"
-#include "nsTHashMap.h"
-#include "nsStringFwd.h"
-#include "mozilla/gfx/Matrix.h"
 #include "mozilla/WritingModes.h"
+#include "mozilla/a11y/AccGroupInfo.h"
+#include "mozilla/gfx/Matrix.h"
+#include "nsStringFwd.h"
+#include "nsTHashMap.h"
 
 class nsVariant;
 

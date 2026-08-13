@@ -6,9 +6,10 @@
 #ifndef nsBaseFilePicker_h_
 #define nsBaseFilePicker_h_
 
-#include "nsISupports.h"
-#include "nsIFilePicker.h"
+#include "mozilla/TimeStamp.h"
 #include "nsCOMPtr.h"
+#include "nsIFilePicker.h"
+#include "nsISupports.h"
 #include "nsString.h"
 #include "nsTArray.h"
 
@@ -56,6 +57,13 @@ class nsBaseFilePicker : public nsIFilePicker {
 
   nsIGlobalObject* GetRelevantGlobal() const;
 
+  // This is split out (and public) only so the logic can be unit-tested
+  // without a live picker, pref, or clock; callers should use
+  // IsPickerInputProtected() instead.
+  static bool IsWithinInputProtectionTimeRange(mozilla::TimeStamp aShowTime,
+                                               mozilla::TimeStamp aNow,
+                                               uint32_t aProtectionMs);
+
  protected:
   virtual ~nsBaseFilePicker();
 
@@ -63,6 +71,24 @@ class nsBaseFilePicker : public nsIFilePicker {
 
   virtual nsresult ResolveSpecialDirectory(const nsAString& aSpecialDirectory);
   bool MaybeBlockFilePicker(nsIFilePickerShownCallback* aCallback);
+
+  // Records the time the native picker was shown to the user. Platform
+  // subclasses call this just before showing the picker.
+  void RecordLastShownTime() { mShowTime = mozilla::TimeStamp::Now(); }
+
+  // Returns true while the picker has been showing for less than
+  // security.notification_enable_delay. Platform subclasses use this to
+  // ignore a confirmation that arrives too soon after the picker appeared.
+  // Only content-initiated pickers (e.g. <input type=file>) are protected;
+  // see IsContentInitiated().
+  bool IsPickerInputProtected() const;
+
+  // True when this picker was opened by untrusted web content rather than by
+  // the browser UI. We only apply input protection to these so that chrome
+  // pickers like "Save As" keep working normally. Pickers in a content
+  // browsing context that host a trusted document (system principal or an
+  // about: page) are also excluded.
+  bool IsContentInitiated() const;
 
   bool mAddToRecentDocs = true;
   nsCOMPtr<nsIFile> mDisplayDirectory;
@@ -73,6 +99,7 @@ class nsBaseFilePicker : public nsIFilePicker {
   nsIFilePicker::Mode mMode = nsIFilePicker::modeOpen;
   nsString mOkButtonLabel;
   nsTArray<nsString> mRawFilters;
+  mozilla::TimeStamp mShowTime;
 };
 
 #endif  // nsBaseFilePicker_h_

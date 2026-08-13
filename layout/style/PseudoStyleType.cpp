@@ -65,6 +65,10 @@ void PseudoStyleRequest::ToString(nsAString& aResult) const {
         return u"::backdrop"_ns;
       case PseudoStyleType::Marker:
         return u"::marker"_ns;
+      case PseudoStyleType::Checkmark:
+        return u"::checkmark"_ns;
+      case PseudoStyleType::PickerIcon:
+        return u"::picker-icon"_ns;
       case PseudoStyleType::ViewTransition:
         return u"::view-transition"_ns;
       case PseudoStyleType::ViewTransitionGroup:

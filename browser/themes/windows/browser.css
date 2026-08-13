@@ -240,9 +240,20 @@
   }
 
   :root:not([lwtheme]) {
-    :not([focused]) > .urlbar-background,
     #searchbar:not(:focus-within),
     .findbar-textbox:not(:focus) {
+      border-color: ThreeDShadow;
+    }
+  }
+
+  @media -moz-pref("browser.nova.enabled") {
+    .urlbar[breakout-extend] > .urlbar-background {
+      border-color: currentColor;
+    }
+  }
+
+  @media not -moz-pref("browser.nova.enabled") {
+    :not([focused]) > .urlbar-background {
       border-color: ThreeDShadow;
     }
   }
@@ -270,10 +281,6 @@
 }
 
 /* All tabs menupopup */
-
-.alltabs-item[selected="true"] {
-  font-weight: var(--font-weight-bold);
-}
 
 #UITourTooltipButtons {
   /**

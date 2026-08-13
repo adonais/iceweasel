@@ -6,10 +6,9 @@
 #ifndef nsAString_h_
 #define nsAString_h_
 
+#include "nsStringFlags.h"
 #include "nsStringFwd.h"
 #include "nsStringIterator.h"
-
-#include "nsStringFlags.h"
 #include "nsTStringRepr.h"
 #include "nsTSubstring.h"
 #include "nsTSubstringTuple.h"

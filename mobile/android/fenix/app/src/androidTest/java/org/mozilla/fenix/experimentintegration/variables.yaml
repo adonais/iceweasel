@@ -14,7 +14,6 @@ smoke_tests:
   - CreditCardAutofillTest
   - CustomTabsTest
   - DownloadTest
-  - EnhancedTrackingProtectionTest
   - FirefoxSuggestTest
   - HistoryTest
   - HomeScreenTest

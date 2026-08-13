@@ -43,7 +43,7 @@ class GeckoProfile:
             "gecko_profile_entries", int(128 * 1024 * 1024 / 8)
         )
         gecko_profile_features = test_config.get(
-            "gecko_profile_features", "js,stackwalk,cpu,screenshots,memory"
+            "gecko_profile_features", "js,stackwalk,screenshots,memory"
         )
         gecko_profile_threads = test_config.get(
             "gecko_profile_threads", "GeckoMain,Compositor,Renderer"

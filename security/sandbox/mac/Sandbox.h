@@ -5,8 +5,12 @@
 #ifndef mozilla_Sandbox_h
 #define mozilla_Sandbox_h
 
+#include <sys/sysctl.h>
+
+#include <cstring>
 #include <string>
 #include <vector>
+
 #include "mozilla/ipc/UtilityProcessSandboxing.h"
 
 enum MacSandboxType {
@@ -85,6 +89,23 @@ bool IsMacSandboxStarted();
 #ifdef DEBUG
 void AssertMacSandboxEnabled();
 #endif /* DEBUG */
+
+/*
+ * Returns true if the process is running under x86_64. This encompasses
+ * Intel macs and Apple Silicon running the Rosetta translator. This
+ * complements (rather than duplicates) ProcessIsRosettaTranslated() in
+ * Sandbox.mm, which keys off `sysctl.proc_translated` and is true only
+ * for Rosetta. Defined inline here so SandboxTestingChildTests.h can
+ * call it without linking Sandbox.mm into the test binary.
+ */
+inline bool ProcessIsX86_64() {
+  char arch[32] = {0};
+  size_t size = sizeof(arch);
+  if (sysctlbyname("hw.machine", arch, &size, nullptr, 0) == -1) {
+    return false;
+  }
+  return std::strcmp(arch, "x86_64") == 0;
+}
 
 }  // namespace mozilla
 

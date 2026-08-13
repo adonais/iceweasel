@@ -379,13 +379,13 @@ add_task(async function buttons() {
 add_task(async function switchTab() {
   const TEST_DATA = [
     {
-      first: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-      second: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+      first: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
+      second: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
       expectedReused: true,
     },
     {
-      first: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-      second: UrlbarUtils.RESULT_TYPE.URL,
+      first: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
+      second: UrlbarShared.RESULT_TYPE.URL,
       expectedReused: false,
     },
   ];
@@ -676,8 +676,8 @@ add_task(async function quickSuggest_items() {
 
 function makeDynamicResult(override) {
   return new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.DYNAMIC,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    type: UrlbarShared.RESULT_TYPE.DYNAMIC,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     suggestedIndex: 0,
     ...override,
   });
@@ -685,8 +685,8 @@ function makeDynamicResult(override) {
 
 function makeUrlResult(override) {
   return new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    type: UrlbarShared.RESULT_TYPE.URL,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     suggestedIndex: 0,
     ...override,
   });
@@ -694,8 +694,8 @@ function makeUrlResult(override) {
 
 function makeTipResult(override) {
   return new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.TIP,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    type: UrlbarShared.RESULT_TYPE.TIP,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     suggestedIndex: 0,
     ...override,
   });

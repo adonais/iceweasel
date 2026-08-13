@@ -973,6 +973,23 @@ void RTCRtpTransceiver::ToDomRtpCodecParametersRtx(
   }
 }
 
+/* static */
+void RTCRtpTransceiver::ToDomHeaderExtensions(
+    const JsepTrackNegotiatedDetails& aDetails,
+    Sequence<RTCRtpHeaderExtensionParameters>& aExtensions) {
+  aDetails.ForEachRTPHeaderExtension(
+      [&](const SdpExtmapAttributeList::Extmap& aExtmap) {
+        RTCRtpHeaderExtensionParameters ext;
+        ext.mUri.Construct(
+            NS_ConvertUTF8toUTF16(aExtmap.extensionname.c_str()));
+        ext.mId.Construct(aExtmap.entry);
+        // We do not negotiate RFC 6904 encrypted header extensions. When we do,
+        // this should report encrypted=true with the inner (unwrapped) URI.
+        ext.mEncrypted.Construct(false);
+        (void)aExtensions.AppendElement(ext, fallible);
+      });
+}
+
 void RTCRtpTransceiver::Stop(ErrorResult& aRv) {
   if (mPc->IsClosed()) {
     aRv.ThrowInvalidStateError("Peer connection is closed");

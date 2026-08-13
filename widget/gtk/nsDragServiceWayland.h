@@ -6,6 +6,7 @@
 #define nsDragServiceWayland_h_
 
 #include "RetrievalContextWayland.h"
+#include "nsDragService.h"
 
 namespace mozilla::widget {
 

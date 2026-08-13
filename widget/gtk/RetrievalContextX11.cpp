@@ -2,21 +2,23 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "AsyncClipboardRequest.h"
 #include "RetrievalContextX11.h"
-#include "mozilla/TimeStamp.h"
-#include "mozilla/WidgetUtilsGtk.h"
 
 #include <gtk/gtk.h>
 
+#include "AsyncClipboardRequest.h"
+#include "mozilla/TimeStamp.h"
+#include "mozilla/WidgetUtilsGtk.h"
+
 // For manipulation of the X event queue
 #include <X11/Xlib.h>
-#include <poll.h>
+#include <errno.h>
 #include <gdk/gdkx.h>
+#include <poll.h>
 #include <sys/time.h>
 #include <sys/types.h>
-#include <errno.h>
 #include <unistd.h>
+
 #include "X11UndefineNone.h"
 
 using namespace mozilla;

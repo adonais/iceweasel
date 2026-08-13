@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "js/Printer.h"  // FixedBufferPrinter
-
 #include "jsapi-tests/tests.h"
 
 using namespace js;

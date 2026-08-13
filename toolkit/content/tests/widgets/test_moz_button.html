@@ -71,21 +71,18 @@
         if (val.includes("currentColor")) {
           val = val.replaceAll("currentColor", computedStyles.color);
         }
-        if (val.startsWith("light-dark")) {
-          let [, light, dark] = val.match(/light-dark\(([^,]+),\s*([^)]+)\)/);
-          if (light && dark) {
-            val = window.matchMedia("(prefers-color-scheme: dark)").matches
-              ? dark
-              : light;
-          }
-        }
-        try {
-          let { r, g, b, a } = InspectorUtils.colorToRGBA(val);
-          return `rgba(${r}, ${g}, ${b}, ${a})`;
-        } catch (e) {
+        // Resolve via computed style so nested light-dark(), color-mix(), etc. work.
+        const el = document.querySelector("#target");
+        el.style.color = val;
+        val = getComputedStyle(el).color;
+        el.style.color = "";
+        let rgba = InspectorUtils.colorToRGBA(val);
+        if (!rgba) {
           info(val);
-          throw e;
+          throw new Error(`Could not parse color: ${val}`);
         }
+        let { r, g, b, a } = rgba;
+        return `rgba(${r}, ${g}, ${b}, ${a})`;
       }
 
       function normalizeBackgroundSize(val) {
@@ -173,8 +170,8 @@
           minHeight: "--button-min-height",
         });
         assertButtonPropertiesMatch(toolbar, {
-          backgroundColor: "--button-background-color-ghost",
-          color: "--button-text-color-ghost",
+          backgroundColor: "--button-background-color-toolbar",
+          color: "--button-text-color-toolbar",
           minHeight: "--button-min-height",
         });
         assertButtonPropertiesMatch(menuitem, {
@@ -215,6 +212,38 @@
         });
         assertButtonPropertiesMatch(toolbar, {
           minHeight: "--button-min-height-small",
+        });
+
+        buttons.forEach(btn => (btn.size = "large"));
+
+        await Promise.all(buttons.map(btn => btn.updateComplete));
+
+        assertButtonPropertiesMatch(one, {
+          minHeight: "--button-min-height-large",
+        });
+        assertButtonPropertiesMatch(two, {
+          minHeight: "--button-min-height-large",
+        });
+        assertButtonPropertiesMatch(three, {
+          minHeight: "--button-min-height-large",
+        });
+        assertButtonPropertiesMatch(four, {
+          width: "--button-size-icon-large",
+          height: "--button-size-icon-large",
+        });
+        assertButtonPropertiesMatch(five, {
+          width: "--button-size-icon-large",
+          height: "--button-size-icon-large",
+        });
+        assertButtonPropertiesMatch(six, {
+          width: "--button-size-icon-large",
+          height: "--button-size-icon-large",
+        });
+        assertButtonPropertiesMatch(seven, {
+          minHeight: "--button-min-height-large",
+        });
+        assertButtonPropertiesMatch(toolbar, {
+          minHeight: "--button-min-height-large",
         });
       });
 

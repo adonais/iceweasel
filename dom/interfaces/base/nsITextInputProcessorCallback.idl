@@ -247,3 +247,45 @@ interface nsITextInputProcessorCallback : nsISupports
   boolean onNotify(in nsITextInputProcessor aTextInputProcessor,
                    in nsITextInputProcessorNotification aNotification);
 };
+
+[scriptable, function, uuid(dc2170d9-a1fc-4d2c-a5c9-c1bfd35bf1da)]
+interface nsITextInputProcessorListenerCallback : nsISupports {
+  boolean onNotify();
+};
+
+/*
+ * This class is used for testing IME notifications in mochitest-plain.
+ * Whenever the TIP is sent an IME notification, it stores the notification
+ * and calls the callback passed to setCallback() with no arguments -
+ * the notification can be retrieved with the getNotification() method.
+ * This is needed because XPIDL interfaces cannot be passed as arguments to
+ * content process JavaScript functions.
+ *
+ * Example usage:
+ *   const TIP = Cc["@mozilla.org/text-input-processor;1"]
+ *                 .createInstance(Ci.nsITextInputProcessor);
+ *   const TIPListener = Cc["@mozilla.org/text-input-processor-listener;1"]
+ *                         .createInstance(Ci.nsITextInputProcessorListener);
+ *   TIPListener.setCallback(() => {
+ *     const notification = TIPListener.getNotification();
+ *     try {
+ *       switch (notification.type) {
+ *         case "request-to-commit":
+ *           TIP.commitComposition();
+ *           break;
+ *         case "request-to-cancel":
+ *           TIP.cancelComposition();
+ *           break;
+ *       }
+ *     } catch (e) {
+ *       return false;
+ *     }
+ *     return true;
+ *   });
+ *   TIP.beginInputTransactionForTests(window, TIPListener);
+ */
+[scriptable, uuid(7c97c10f-9f17-440c-bae7-4120617b35c1)]
+interface nsITextInputProcessorListener : nsITextInputProcessorCallback {
+  nsITextInputProcessorNotification getNotification();
+  void setCallback(in nsITextInputProcessorListenerCallback aCallback);
+};

@@ -4,7 +4,8 @@
 
 devtools.jar:
 %   content devtools %content/
-    content/shared/webextension-fallback.html (webextension-fallback.html)
+%   resource devtools-webextension-fallback %webextension-fallback/
+    webextension-fallback/webextension-fallback.html (webextension-fallback.html)
 %   resource devtools %modules/devtools/
 %   resource devtools-highlighter-styles resource://devtools/server/actors/highlighters/css/ contentaccessible=yes
 %   resource devtools-shared-images resource://devtools/shared/images/ contentaccessible=true

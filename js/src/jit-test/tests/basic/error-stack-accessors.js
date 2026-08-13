@@ -18,11 +18,11 @@ assertEq(Object.create(Error.prototype).stack, "");
   assertEq(myOtherError.stack, 2);
 }
 
-// Should throw when there is no Error in the `this` object's prototype chain.
+// No longer throws when there is no Error in the `this` object's prototype chain.
 var obj = Object.create(null);
 var desc = Object.getOwnPropertyDescriptor(Error.prototype, "stack");
 Object.defineProperty(obj, "stack", desc);
-assertThrowsInstanceOf(() => obj.stack, TypeError);
+obj.stack = "oh no!";
 
 // Should throw with non-object `this` values.
 assertThrowsInstanceOf(desc.set,                TypeError);

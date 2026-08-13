@@ -417,3 +417,11 @@ export function getSourcesToRemoveForThread(state, threadActorID) {
     sources: sourcesToRemove,
   };
 }
+
+export function isStyleSheetDisabled(state, source) {
+  // Pretty printed source are disabling their unique related minimized source.
+  if (source.isPrettyPrinted) {
+    source = source.generatedSource;
+  }
+  return state.sources.mutableDisabledStylesheetsIDs.has(source.id);
+}

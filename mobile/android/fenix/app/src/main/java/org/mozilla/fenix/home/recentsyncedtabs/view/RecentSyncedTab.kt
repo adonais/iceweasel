@@ -53,6 +53,7 @@ import org.mozilla.fenix.home.recentsyncedtabs.RecentSyncedTab
 import org.mozilla.fenix.home.topsites.ui.HomepageCard
 import org.mozilla.fenix.home.topsites.ui.homepageCardImageShape
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.wallpapers.WallpaperTheme
 import mozilla.components.ui.icons.R as iconsR
 
 private const val THUMBNAIL_SIZE = 108
@@ -72,7 +73,7 @@ private const val THUMBNAIL_SIZE = 108
 @Composable
 fun RecentSyncedTab(
     tab: RecentSyncedTab?,
-    backgroundColor: Color = MaterialTheme.colorScheme.surfaceBright,
+    backgroundColor: Color = WallpaperTheme.cardBackgroundColor,
     buttonBackgroundColor: Color = ButtonDefaults.buttonColors().containerColor,
     buttonTextColor: Color = ButtonDefaults.buttonColors().contentColor,
     onRecentSyncedTabClick: (RecentSyncedTab) -> Unit,

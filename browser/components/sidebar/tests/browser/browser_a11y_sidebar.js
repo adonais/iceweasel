@@ -64,7 +64,7 @@ add_task(async function test_keyboard_navigation() {
   );
 
   const toolButtons = sidebar.toolButtons;
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => BrowserTestUtils.isVisible(toolButtons[0]),
     "The first toolbutton is rendered"
   );

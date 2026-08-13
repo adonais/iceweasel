@@ -29,6 +29,10 @@ export class SidebarTabList extends FxviewTabListBase {
     },
   };
 
+  static properties = {
+    mediumView: { type: Boolean, reflect: true, attribute: "medium-view" },
+  };
+
   /**
    * The tree view controller that owns selection state for the page this list
    * belongs to.
@@ -109,6 +113,13 @@ export class SidebarTabList extends FxviewTabListBase {
     } else if (!this.searchQuery) {
       tabIndex = 0;
     }
+    let time;
+    if (tabItem.time) {
+      // Some APIs report the timestamp in microseconds (16 digits); the row
+      // expects milliseconds.
+      const stringTime = tabItem.time.toString();
+      time = stringTime.length === 16 ? tabItem.time / 1000 : tabItem.time;
+    }
     return html`
       <sidebar-tab-row
         ?active=${i == this.activeIndex}
@@ -118,11 +129,13 @@ export class SidebarTabList extends FxviewTabListBase {
         .currentActiveElementId=${this.currentActiveElementId}
         .closeRequested=${tabItem.closeRequested}
         .containerObj=${tabItem.containerObj}
+        .dateTimeFormat=${this.dateTimeFormat}
         .fxaDeviceId=${ifDefined(tabItem.fxaDeviceId)}
         .favicon=${tabItem.icon}
         .guid=${tabItem.guid}
         .hasPopup=${this.hasPopup}
         .indicators=${tabItem.indicators}
+        .mediumView=${this.mediumView}
         .primaryL10nArgs=${ifDefined(tabItem.primaryL10nArgs)}
         .primaryL10nId=${tabItem.primaryL10nId}
         role="listitem"
@@ -137,6 +150,8 @@ export class SidebarTabList extends FxviewTabListBase {
         .sourceWindowId=${ifDefined(tabItem.sourceWindowId)}
         .tabElement=${ifDefined(tabItem.tabElement)}
         tabindex=${tabIndex}
+        .time=${time}
+        .timeMsPref=${this.timeMsPref}
         .title=${tabItem.title}
         .url=${tabItem.url}
         @keydown=${e => e.currentTarget.primaryActionHandler(e)}
@@ -160,13 +175,62 @@ export class SidebarTabList extends FxviewTabListBase {
 }
 customElements.define("sidebar-tab-list", SidebarTabList);
 
+/**
+ * A sidebar-specific tab row.
+ *
+ * Three Boolean states coexist on this row and they each mean something
+ * different:
+ *   - `active`   (inherited from FxviewTabRowBase): the row currently has
+ *                keyboard focus via the parent list's activeIndex.
+ *   - `selected`: the row is selected through the SidebarTreeView (user
+ *                click or multi-select inside the panel).
+ *   - `current`:  the row's tabElement is gBrowser.selectedTab. Tracked
+ *                live via a MutationObserver on the tab's [selected]
+ *                attribute.
+ */
 export class SidebarTabRow extends FxviewTabRowBase {
   static properties = {
     containerObj: { type: Object },
     guid: { type: String, reflect: true, attribute: "data-guid" },
     selected: { type: Boolean, reflect: true },
+    current: { type: Boolean, reflect: true },
     indicators: { type: Array },
+    mediumView: { type: Boolean, reflect: true, attribute: "medium-view" },
   };
+
+  static queries = {
+    ...FxviewTabRowBase.queries,
+    domainEl: "#sidebar-tab-row-domain",
+    timeEl: "#fxview-tab-row-time",
+  };
+
+  #tabSelectObserver = null;
+
+  willUpdate(changedProperties) {
+    super.willUpdate?.(changedProperties);
+    if (changedProperties.has("tabElement")) {
+      this.#tabSelectObserver?.disconnect();
+      this.#tabSelectObserver = null;
+      if (this.tabElement) {
+        this.current = this.tabElement.selected;
+        this.#tabSelectObserver = new MutationObserver(() => {
+          this.current = this.tabElement?.selected ?? false;
+        });
+        this.#tabSelectObserver.observe(this.tabElement, {
+          attributes: true,
+          attributeFilter: ["selected"],
+        });
+      } else {
+        this.current = false;
+      }
+    }
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.#tabSelectObserver?.disconnect();
+    this.#tabSelectObserver = null;
+  }
 
   get tooltipText() {
     return !this.primaryL10nId ? this.url : null;
@@ -197,6 +261,28 @@ export class SidebarTabRow extends FxviewTabRowBase {
       tabsToCheck.some(tab => tab.containerObj),
       () => html`<span class=${this.#getContainerClasses().join(" ")}></span>`
     )}`;
+  }
+
+  #getDomain() {
+    if (!this.url) {
+      return "";
+    }
+    try {
+      return Services.eTLD.getBaseDomain(Services.io.newURI(this.url));
+    } catch (e) {
+      // No base domain (about:, file:, IP hosts, etc.); show a friendly label
+      // the way Firefox View does.
+      return this.formatURIForDisplay(this.url);
+    }
+  }
+
+  #domainTemplate() {
+    return html`<span
+      class="sidebar-tab-row-domain text-truncated-ellipsis"
+      id="sidebar-tab-row-domain"
+    >
+      ${this.#getDomain()}
+    </span>`;
   }
 
   secondaryButtonTemplate() {
@@ -258,8 +344,12 @@ export class SidebarTabRow extends FxviewTabRowBase {
         @keydown=${this.primaryActionHandler}
       >
         ${this.faviconTemplate()} ${this.titleTemplate()}
+        ${when(
+          this.mediumView,
+          () => html`${this.#domainTemplate()} ${this.timeTemplate()}`
+        )}
       </a>
-      ${this.secondaryButtonTemplate()} ${this.#containerIndicatorTemplate()}
+      ${this.#containerIndicatorTemplate()} ${this.secondaryButtonTemplate()}
     `;
   }
 }

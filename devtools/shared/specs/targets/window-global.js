@@ -67,6 +67,12 @@ const windowGlobalTargetSpecPrototype = {
       request: {},
       response: {},
     },
+    gotoIndex: {
+      request: {
+        index: Arg(0, "number"),
+      },
+      response: {},
+    },
     // @backward-compat { legacy }
     //                  reload is preserved for third party tools. See Bug 1717837.
     //                  DevTools should use Descriptor::reloadDescriptor instead.

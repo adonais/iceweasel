@@ -83,6 +83,15 @@ class RemoteWorkerService final : public nsIObserver {
       RemoteWorkerDebuggerInfo aDebuggerInfo,
       mozilla::ipc::Endpoint<PRemoteWorkerDebuggerParent> aDebuggerParentEp);
 
+  // Returns true once the RemoteWorkerService singleton is initialized in this
+  // process, i.e. RegisterRemoteDebugger can be called safely. Content
+  // processes always have it (it backs every remote worker), but a
+  // parent-process worker may be constructed before the service is set up, or
+  // in a process that never sets it up (e.g. xpcshell). Callers that route
+  // parent-process workers through the RemoteWorkerDebugger must check this and
+  // fall back to the local WorkerDebugger otherwise.
+  static bool IsInitialized();
+
   // Called by RemoteWorkerChild instances on the "Worker Launcher" thread at
   // their creation to assist in tracking when it's safe to shutdown the
   // RemoteWorkerService and "Worker Launcher" thread.  This method will return

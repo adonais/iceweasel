@@ -1743,6 +1743,14 @@ sealed class MediaSessionAction : BrowserAction() {
         val fullScreen: Boolean,
         val elementMetadata: MediaSession.ElementMetadata?,
     ) : MediaSessionAction()
+
+    /**
+     * Updates the [MediaSession.AudioSessionType] claimed by the tab with id [tabId].
+     */
+    data class UpdateMediaAudioSessionTypeAction(
+        val tabId: String,
+        val audioSessionType: MediaSession.AudioSessionType,
+    ) : MediaSessionAction()
 }
 
 /**

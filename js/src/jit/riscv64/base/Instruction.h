@@ -199,7 +199,7 @@ class InstructionBase {
   }
 
   inline bool IsSlli() const {
-    return (InstructionBits() & kITypeMask) == RO_SLLI;
+    return (InstructionBits() & (kITypeMask | kFunct6Mask)) == RO_SLLI;
   }
 
   inline bool IsLw() const { return (InstructionBits() & kITypeMask) == RO_LW; }
@@ -423,8 +423,7 @@ class InstructionBase {
 
   inline int Shamt() const {
     // Valid only for shift instructions (SLLI, SRLI, SRAI)
-    MOZ_ASSERT(((InstructionBits() & kBaseOpcodeMask) == OP_IMM ||
-                (InstructionBits() & kBaseOpcodeMask) == OP_IMM_32) &&
+    MOZ_ASSERT((InstructionBits() & kBaseOpcodeMask) == OP_IMM &&
                (Funct3Value() == 0b001 || Funct3Value() == 0b101));
     // | 0A0000 | shamt | rs1 | funct3 | rd | opcode |
     //  31       25    20
@@ -711,6 +710,18 @@ class InstructionBase {
     SetInstructionBits((rs1 << kRs1Shift) | bits);
   }
 
+  inline void SetRs2Value(int rs2) {
+    MOZ_ASSERT(InstructionType() == InstructionBase::kRType ||
+               InstructionType() == InstructionBase::kR4Type ||
+               InstructionType() == InstructionBase::kSType ||
+               InstructionType() == InstructionBase::kBType ||
+               InstructionType() == InstructionBase::kVType);
+    MOZ_ASSERT(is_uintn(rs2, kRs2Bits));
+
+    Instr bits = InstructionBits() & ~kRs2FieldMask;
+    SetInstructionBits((rs2 << kRs2Shift) | bits);
+  }
+
   inline void SetImm12Value(int32_t imm12) {
     MOZ_ASSERT(InstructionType() == InstructionBase::kIType);
     MOZ_ASSERT(is_uint12(imm12) || is_int12(imm12));
@@ -763,28 +774,42 @@ class InstructionBase {
 
   inline void SetShamt(int32_t shamt) {
     // Valid only for shift instructions (SLLI, SRLI, SRAI)
-    MOZ_ASSERT(((InstructionBits() & kBaseOpcodeMask) == OP_IMM ||
-                (InstructionBits() & kBaseOpcodeMask) == OP_IMM_32) &&
+    MOZ_ASSERT((InstructionBits() & kBaseOpcodeMask) == OP_IMM &&
                (Funct3Value() == 0b001 || Funct3Value() == 0b101));
-    MOZ_ASSERT_IF((InstructionBits() & kBaseOpcodeMask) == OP_IMM,
-                  0 <= shamt && shamt <= 63);
-    MOZ_ASSERT_IF((InstructionBits() & kBaseOpcodeMask) == OP_IMM_32,
-                  0 <= shamt && shamt <= 31);
+    MOZ_ASSERT(0 <= shamt && shamt <= 63);
 
     // SLLI, SRLI, SRAI:
     // | 0A0000 | shamt | rs1 | funct3 | rd | opcode |
     //  31       25    20
-    //
+    int32_t imm12 = ((InstructionBits() & 0xfc000000) >> kImm12Shift) | shamt;
+    SetImm12Value(imm12);
+  }
+
+  inline void SetShamt32(int32_t shamt) {
+    // Valid only for shift instructions (SLLIW, SRLIW, SRAIW)
+    MOZ_ASSERT((InstructionBits() & kBaseOpcodeMask) == OP_IMM_32 &&
+               (Funct3Value() == 0b001 || Funct3Value() == 0b101));
+    MOZ_ASSERT(0 <= shamt && shamt <= 31);
+
     // SLLIW, SRLIW, SRAIW:
     // | 0A00000 | shamt | rs1 | funct3 | rd | opcode |
     //  31        24   20
-    int32_t imm12 = ((InstructionBits() & 0x40000000) >> kImm12Shift) | shamt;
+    int32_t imm12 = ((InstructionBits() & 0xfe000000) >> kImm12Shift) | shamt;
     SetImm12Value(imm12);
   }
 
   /// Compound setters
 
-  void SetIFormat(OpcodeRISCV32I opcode, int rd, int rs1, int32_t imm12) {
+  void SetRFormat(OpcodeRISCV auto opcode, int rd, int rs1, int rs2) {
+    SetInstructionBits(opcode);
+    MOZ_ASSERT(InstructionType() == kRType);
+
+    SetRdValue(rd);
+    SetRs1Value(rs1);
+    SetRs2Value(rs2);
+  }
+
+  void SetIFormat(OpcodeRISCV auto opcode, int rd, int rs1, int32_t imm12) {
     SetInstructionBits(opcode);
     MOZ_ASSERT(InstructionType() == kIType);
 
@@ -793,7 +818,27 @@ class InstructionBase {
     SetImm12Value(imm12);
   }
 
-  void SetJFormat(OpcodeRISCV32I opcode, int rd, int32_t imm21) {
+  void SetIShiftFormat(OpcodeRISCV auto opcode, int rd, int rs1,
+                       int32_t shamt) {
+    SetInstructionBits(opcode);
+    MOZ_ASSERT(InstructionType() == kIType);
+
+    SetRdValue(rd);
+    SetRs1Value(rs1);
+    SetShamt(shamt);
+  }
+
+  void SetIShift32Format(OpcodeRISCV auto opcode, int rd, int rs1,
+                         int32_t shamt) {
+    SetInstructionBits(opcode);
+    MOZ_ASSERT(InstructionType() == kIType);
+
+    SetRdValue(rd);
+    SetRs1Value(rs1);
+    SetShamt32(shamt);
+  }
+
+  void SetJFormat(OpcodeRISCV auto opcode, int rd, int32_t imm21) {
     SetInstructionBits(opcode);
     MOZ_ASSERT(InstructionType() == kJType);
 
@@ -801,7 +846,7 @@ class InstructionBase {
     SetImm20JValue(imm21);
   }
 
-  void SetUFormat(OpcodeRISCV32I opcode, int rd, int32_t imm20) {
+  void SetUFormat(OpcodeRISCV auto opcode, int rd, int32_t imm20) {
     SetInstructionBits(opcode);
     MOZ_ASSERT(InstructionType() == kUType);
 

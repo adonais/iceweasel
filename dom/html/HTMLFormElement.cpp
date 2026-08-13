@@ -602,7 +602,7 @@ nsresult HTMLFormElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
         case eFormSubmit: {
           if (!aVisitor.mEvent->IsTrusted()) {
             // Warning about the form submission is from untrusted event.
-            OwnerDoc()->WarnOnceAbout(
+            OwnerDoc()->WarnOnceAndReportAbout(
                 DeprecatedOperations::eFormSubmissionUntrustedEvent);
           }
           RefPtr<Event> event = aVisitor.mDOMEvent;
@@ -809,6 +809,10 @@ nsresult HTMLFormElement::SubmitSubmission(
     return NS_OK;
   }
 
+  if (doc->GetSandboxFlags() & SANDBOXED_FORMS) {
+    return NS_OK;
+  }
+
   // javascript URIs are not really submissions; they just call a function.
   // Also, they may synchronously call submit(), and we want them to be able to
   // do so while still disallowing other double submissions. (Bug 139798)
@@ -891,9 +895,7 @@ nsresult HTMLFormElement::SubmitSubmission(
     } else {
       loadState->SetSourceElement(this);
     }
-
-    nsCOMPtr<nsIPrincipal> nodePrincipal = NodePrincipal();
-    rv = container->OnLinkClickSync(this, loadState, false, nodePrincipal);
+    nsresult rv = container->OnFormSubmit(this, loadState);
     NS_ENSURE_SUBMIT_SUCCESS(rv);
 
     mTargetContext = loadState->TargetBrowsingContext().GetMaybeDiscarded();

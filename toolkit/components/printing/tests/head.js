@@ -409,7 +409,7 @@ class PrintHelper {
   async waitForSettingsEvent(changeFn) {
     let changed = BrowserTestUtils.waitForEvent(this.doc, "print-settings");
     await changeFn?.();
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => !this.win.PrintEventHandler._delayedSettingsChangeTask.isArmed,
       "Wait for all delayed tasks to execute"
     );
@@ -551,7 +551,7 @@ class PrintHelper {
 }
 
 function waitForPreviewVisible() {
-  return BrowserTestUtils.waitForCondition(function () {
+  return TestUtils.waitForCondition(function () {
     let preview = document.querySelector(".printPreviewBrowser");
     return preview && BrowserTestUtils.isVisible(preview);
   });

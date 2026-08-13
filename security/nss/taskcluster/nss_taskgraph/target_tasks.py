@@ -12,21 +12,31 @@ def filter_build_type(build_types, task):
         return True
 
 
+# Build platforms are named `<os>-<arch>`: linux/win/mac × x86/x64/aarch64
+# (e.g. linux-x64, win-x86, mac-x64, linux-aarch64), optionally with a variant
+# suffix that is part of the platform itself (e.g. linux-x64-asan). Those names
+# are also the try-syntax selectors, matched directly.
+#
+# A build *variant* that lives in the build_type rather than the platform name
+# (make / fips / fuzz) is selected with a `<platform>-<variant>` token, which
+# maps back to its underlying platform here and is then narrowed by the matching
+# attribute in filter_platform below. (Kept as an explicit literal so `./mach
+# try` can scrape these selectors for its --help output.)
 PLATFORM_ALIASES = {
-    "aarch64-make": "aarch64",
-    "linux": "linux32",
-    "linux-fuzz": "linux32",
-    "linux64-fips": "linux64",
-    "linux64-fuzz": "linux64",
-    "linux64-make": "linux64",
-    "linux-make": "linux32",
-    "win64-make": "windows2022-64",
-    "win-make": "windows2022-32",
-    "win64": "windows2022-64",
-    "win": "windows2022-32",
-    "mac": "macosx64",
-    "mac-make": "macosx64",
+    "linux-x86-make": "linux-x86",
+    "linux-x64-make": "linux-x64",
+    "linux-aarch64-make": "linux-aarch64",
+    "win-x86-make": "win-x86",
+    "win-x64-make": "win-x64",
+    "mac-x64-make": "mac-x64",
+    "linux-x64-fips": "linux-x64",
+    "linux-aarch64-fips": "linux-aarch64",
+    "linux-x86-fuzz": "linux-x86",
+    "linux-x64-fuzz": "linux-x64",
 }
+
+# build attribute that must be truthy for each `-<variant>` selector suffix.
+_VARIANT_ATTR = {"make": "make", "fips": "make-fips", "fuzz": "fuzz"}
 
 
 def filter_platform(platform, task):
@@ -37,20 +47,10 @@ def filter_platform(platform, task):
     task_platform = task.attributes["build_platform"]
     # Check the platform name.
     keep = task_platform == PLATFORM_ALIASES.get(platform, platform)
-    # Additional checks.
-    if platform == "linux64-fips":
-        keep &= task.attributes["fips"]
-    elif (
-        platform == "linux64-make"
-        or platform == "linux-make"
-        or platform == "win64-make"
-        or platform == "win-make"
-        or platform == "aarch64-make"
-        or platform == "mac-make"
-    ):
-        keep &= task.attributes["make"]
-    elif platform == "linux64-fuzz" or platform == "linux-fuzz":
-        keep &= task.attributes["fuzz"]
+    # A `<platform>-<variant>` selector shares its platform name with the plain
+    # build, so narrow to the variant by its attribute.
+    if platform in PLATFORM_ALIASES:
+        keep &= task.attributes[_VARIANT_ATTR[platform.rsplit("-", 1)[1]]]
     return keep
 
 
@@ -63,10 +63,14 @@ def filter_try_syntax(options, task):
     if task.kind == "tools":
         return any(t in options["tools"] for t in ["all", symbol])
 
-    # Filter unit tests.
+    # Filter unit tests. A test is selected by its own symbol, or by its group
+    # symbol for the grouped suites (so e.g. `-u cipher` picks up every
+    # Cipher(...) variant). On the FIPS build the group is rewritten to "fips",
+    # but the inner symbol is preserved, so e.g. FIPS(Gtest) still matches
+    # `-u gtest`.
     if task.kind == "test":
         tests = {"all", symbol}
-        if group in ("cipher", "ssl"):
+        if group in ("cipher", "ssl", "gtest"):
             tests.add(group)
         if not any(t in options["unittests"] for t in tests):
             return False

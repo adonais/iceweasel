@@ -748,7 +748,7 @@ void StorageDBThread::UnscheduleFlush() {
 
 TimeDuration StorageDBThread::TimeUntilFlush() {
   if (mFlushImmediately) {
-    return 0;  // Do it now regardless the timeout.
+    return {};  // Do it now regardless the timeout.
   }
 
   if (!mDirtyEpoch) {
@@ -760,7 +760,7 @@ TimeDuration StorageDBThread::TimeUntilFlush() {
   static const TimeDuration kMaxAge =
       TimeDuration::FromMilliseconds(FLUSHING_INTERVAL_MS);
   if (age > kMaxAge) {
-    return 0;  // It is time.
+    return {};  // It is time.
   }
 
   return kMaxAge - age;  // Time left. This is used to sleep the monitor.

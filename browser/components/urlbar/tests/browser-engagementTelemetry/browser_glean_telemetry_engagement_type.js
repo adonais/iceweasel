@@ -18,7 +18,7 @@ add_task(async function engagement_type_click() {
     await openPopup("x");
     await doClick();
 
-    assertEngagementTelemetry([{ engagement_type: "click" }]);
+    await assertEngagementTelemetry([{ engagement_type: "click" }]);
   });
 });
 
@@ -27,7 +27,7 @@ add_task(async function engagement_type_enter() {
     await openPopup("x");
     await doEnter();
 
-    assertEngagementTelemetry([{ engagement_type: "enter" }]);
+    await assertEngagementTelemetry([{ engagement_type: "enter" }]);
   });
 });
 
@@ -36,7 +36,7 @@ add_task(async function engagement_type_go_button() {
     await openPopup("x");
     EventUtils.synthesizeMouseAtCenter(gURLBar.goButton, {});
 
-    assertEngagementTelemetry([{ engagement_type: "go_button" }]);
+    await assertEngagementTelemetry([{ engagement_type: "go_button" }]);
   });
 });
 
@@ -44,7 +44,7 @@ add_task(async function engagement_type_drop_go() {
   await doTest(async () => {
     await doDropAndGo("example.com");
 
-    assertEngagementTelemetry([{ engagement_type: "drop_go" }]);
+    await assertEngagementTelemetry([{ engagement_type: "drop_go" }]);
   });
 });
 
@@ -52,7 +52,7 @@ add_task(async function engagement_type_paste_go() {
   await doTest(async () => {
     await doPasteAndGo("www.example.com");
 
-    assertEngagementTelemetry([{ engagement_type: "paste_go" }]);
+    await assertEngagementTelemetry([{ engagement_type: "paste_go" }]);
   });
 });
 
@@ -65,11 +65,11 @@ add_task(async function engagement_type_dismiss() {
     const originalResultCount = UrlbarTestUtils.getResultCount(window);
     await selectRowByURL("https://example.com/amp");
     UrlbarTestUtils.openResultMenuAndPressAccesskey(window, "D");
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => originalResultCount != UrlbarTestUtils.getResultCount(window)
     );
 
-    assertEngagementTelemetry([{ engagement_type: "dismiss" }]);
+    await assertEngagementTelemetry([{ engagement_type: "dismiss" }]);
 
     // The view should stay open after dismissing the result. Now pick the
     // heuristic result. Another "click" engagement event should be recorded.
@@ -78,7 +78,7 @@ add_task(async function engagement_type_dismiss() {
       "View should remain open after dismissing result"
     );
     await doClick();
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       { engagement_type: "dismiss" },
       { engagement_type: "click", interaction: "typed" },
     ]);
@@ -90,11 +90,11 @@ add_task(async function engagement_type_dismiss() {
     const originalResultCount = UrlbarTestUtils.getResultCount(window);
     await selectRowByURL("https://example.com/amp");
     EventUtils.synthesizeKey("KEY_Delete", { shiftKey: true });
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => originalResultCount != UrlbarTestUtils.getResultCount(window)
     );
 
-    assertEngagementTelemetry([{ engagement_type: "dismiss" }]);
+    await assertEngagementTelemetry([{ engagement_type: "dismiss" }]);
   });
 
   await cleanupQuickSuggest();
@@ -134,7 +134,7 @@ add_task(async function engagement_type_dismiss_adaptive_autofill_origin() {
     );
     await UrlbarTestUtils.promiseSearchComplete(window);
 
-    assertEngagementTelemetry([{ engagement_type: "dismiss" }]);
+    await assertEngagementTelemetry([{ engagement_type: "dismiss" }]);
   });
 
   await SpecialPowers.popPrefEnv();
@@ -174,7 +174,7 @@ add_task(async function engagement_type_dismiss_adaptive_autofill_url() {
     );
     await UrlbarTestUtils.promiseSearchComplete(window);
 
-    assertEngagementTelemetry([{ engagement_type: "dismiss" }]);
+    await assertEngagementTelemetry([{ engagement_type: "dismiss" }]);
   });
 
   await SpecialPowers.popPrefEnv();
@@ -211,7 +211,7 @@ add_task(
       });
       await UrlbarTestUtils.promiseSearchComplete(window);
 
-      assertEngagementTelemetry([{ engagement_type: "dismiss" }]);
+      await assertEngagementTelemetry([{ engagement_type: "dismiss" }]);
     });
 
     await SpecialPowers.popPrefEnv();
@@ -249,7 +249,7 @@ add_task(async function engagement_type_dismiss_origin_autofill() {
     );
     await UrlbarTestUtils.promiseSearchComplete(window);
 
-    assertEngagementTelemetry([{ engagement_type: "dismiss" }]);
+    await assertEngagementTelemetry([{ engagement_type: "dismiss" }]);
   });
 
   await SpecialPowers.popPrefEnv();
@@ -262,14 +262,14 @@ add_task(async function engagement_type_help() {
     priority: Infinity,
     results: [
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         payload: {
           url,
           isBlockable: true,
           helpUrl,
           helpL10n: {
-            id: "urlbar-result-menu-learn-more",
+            id: "urlbar-result-menu-learn-more2",
           },
         },
       }),
@@ -287,7 +287,7 @@ add_task(async function engagement_type_help() {
     const tab = await onTabOpened;
     BrowserTestUtils.removeTab(tab);
 
-    assertEngagementTelemetry([{ engagement_type: "help" }]);
+    await assertEngagementTelemetry([{ engagement_type: "help" }]);
   });
 
   providersManager.unregisterProvider(provider);
@@ -308,7 +308,7 @@ add_task(async function engagement_type_manage() {
     UrlbarTestUtils.openResultMenuAndPressAccesskey(window, "M");
     await onManagePageLoaded;
 
-    assertEngagementTelemetry([{ engagement_type: "manage" }]);
+    await assertEngagementTelemetry([{ engagement_type: "manage" }]);
   });
 
   await cleanupQuickSuggest();

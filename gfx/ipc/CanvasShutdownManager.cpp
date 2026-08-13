@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "CanvasShutdownManager.h"
+
 #include "mozilla/AppShutdown.h"
 #include "mozilla/dom/CanvasRenderingContext2D.h"
 #include "mozilla/dom/WorkerPrivate.h"

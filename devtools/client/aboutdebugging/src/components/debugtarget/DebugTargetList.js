@@ -41,7 +41,8 @@ class DebugTargetList extends PureComponent {
       },
       dom.p(
         {
-          className: "qa-debug-target-list-empty",
+          className:
+            "debug-target-list__empty-notice qa-debug-target-list-empty",
         },
         "Nothing yet."
       )

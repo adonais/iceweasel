@@ -68,15 +68,15 @@ add_task(
 
     let results = [
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         payload: {
           url: "https://mozilla.org/a",
         },
       }),
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         payload: {
           url: "https://mozilla.org/b",
         },
@@ -108,7 +108,7 @@ add_task(
       });
       Assert.ok(!gURLBar.view.selectedElement);
 
-      await BrowserTestUtils.waitForCondition(async () => {
+      await TestUtils.waitForCondition(async () => {
         if (UrlbarTestUtils.getResultCount(window) != 2) {
           return false;
         }
@@ -358,7 +358,7 @@ add_task(async function test_focus_order_by_tab() {
       gURLBar.view.getFirstSelectableElement()
     );
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => UrlbarTestUtils.getResultCount(window) == 2
     );
     Assert.ok(true, "This test needs exact 2 results");
@@ -406,7 +406,7 @@ async function test_focus_order_with_no_results({ input, shiftKey }) {
   info("Enter Tabs mode");
   const keywordToEnterTabsMode = scotchBonnetEnabled ? "@tabs " : "% ";
   keywordToEnterTabsMode.split("").forEach(c => EventUtils.synthesizeKey(c));
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => UrlbarTestUtils.getResultCount(window) == 0,
     "Wait until updating the results"
   );
@@ -547,9 +547,7 @@ add_task(async function test_ctrl_tab() {
   for (let { shiftKey, expectedOrder } of testData) {
     for (let nextTab of expectedOrder) {
       EventUtils.synthesizeKey("KEY_Tab", { ctrlKey: true, shiftKey });
-      await BrowserTestUtils.waitForCondition(
-        () => gBrowser.selectedTab == nextTab
-      );
+      await TestUtils.waitForCondition(() => gBrowser.selectedTab == nextTab);
       Assert.ok(true, "Expected tab is selected");
       let expectedInput = nextTab == mainTab ? query : "";
       Assert.equal(gURLBar.value, expectedInput, "Urlbar value is correct");
@@ -565,4 +563,37 @@ add_task(async function test_ctrl_tab() {
   gBrowser.removeTab(newTab2);
   gURLBar.view.close();
   gURLBar.handleRevert();
+});
+
+add_task(async function test_accesskeys() {
+  info("Test 'E' to enter search mode for engine1.");
+  await UrlbarTestUtils.openSearchModeSwitcher(window);
+  EventUtils.synthesizeKey("E");
+  await UrlbarTestUtils.promiseSearchComplete(window);
+  await UrlbarTestUtils.assertSearchMode(window, {
+    engineName: "engine1",
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
+    entry: "searchbutton",
+  });
+  await UrlbarTestUtils.exitSearchMode(window);
+
+  info("Test 'T' to enter search mode for tabs.");
+  await UrlbarTestUtils.openSearchModeSwitcher(window);
+  EventUtils.synthesizeKey("T");
+  await UrlbarTestUtils.promiseSearchComplete(window);
+  await UrlbarTestUtils.assertSearchMode(window, {
+    source: UrlbarShared.RESULT_SOURCE.TABS,
+    entry: "searchbutton",
+  });
+  await UrlbarTestUtils.exitSearchMode(window);
+
+  info("Test 'S' to open search settings.");
+  await UrlbarTestUtils.openSearchModeSwitcher(window);
+  EventUtils.synthesizeKey("S");
+  await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+  Assert.equal(
+    gBrowser.currentURI.spec,
+    "about:preferences#search",
+    "Opened search settings"
+  );
 });

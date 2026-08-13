@@ -5,9 +5,10 @@
 #ifndef WinPointerEvents_h_
 #define WinPointerEvents_h_
 
+#include <windef.h>
+
 #include "mozilla/MouseEvents.h"
 #include "touchinjection_sdk80.h"
-#include <windef.h>
 
 /******************************************************************************
  * WinPointerInfo

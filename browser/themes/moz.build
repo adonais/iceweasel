@@ -9,6 +9,7 @@ with Files("ThemeVariableMap.sys.mjs"):
     BUG_COMPONENT = ("WebExtensions", "Themes")
 
 MOZ_SRC_FILES += [
+    "ThemesList.sys.mjs",
     "ToolbarIconColor.sys.mjs",
 ]
 
@@ -21,6 +22,8 @@ EXTRA_JS_MODULES += [
 BROWSER_CHROME_MANIFESTS += [
     "test/browser/browser.toml",
 ]
+
+XPCSHELL_TESTS_MANIFESTS += ["test/unit/xpcshell.toml"]
 
 toolkit = CONFIG["MOZ_WIDGET_TOOLKIT"]
 

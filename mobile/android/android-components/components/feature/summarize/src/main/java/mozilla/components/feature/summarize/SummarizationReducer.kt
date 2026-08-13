@@ -19,6 +19,7 @@ fun summarizationReducer(state: SummarizationState, action: SummarizationAction)
     OffDeviceSummarizationShakeConsentAction.LearnMoreClicked -> SummarizationState.LearnMoreAboutShakeConsent
     OnDeviceSummarizationShakeConsentAction.LearnMoreClicked -> SummarizationState.LearnMoreAboutShakeConsent
     ErrorAction.ErrorDismissed -> SummarizationState.Finished.ErrorDismissed
+    PageLoadStarted -> SummarizationState.PageLoading
     is SummarizationRequested -> SummarizationState.Loading(action.info)
     is SummarizationCompleted -> state.complete()
     is SummarizationFailed -> SummarizationState.Error(SummarizationError.SummarizationFailed(action.exception))
@@ -31,7 +32,25 @@ fun summarizationReducer(state: SummarizationState, action: SummarizationAction)
         is SummarizationState.Settings -> SummarizationState.Summarized(info = state.info, document = state.document)
         else -> state
     }
-    else -> state
+
+    is ContentExtracted,
+    DownloadConsentAction.AllowClicked,
+    DownloadConsentAction.CancelClicked,
+    DownloadConsentAction.LearnMoreClicked,
+    DownloadErrorAction.CancelClicked,
+    DownloadErrorAction.LearnMoreClicked,
+    DownloadErrorAction.TryAgainClicked,
+    DownloadInProgressAction.CancelClicked,
+    ErrorAction.LearnMoreClicked,
+    LlmProviderAction.ProviderAvailable,
+    is LlmProviderAction.ProviderInitialized,
+    OffDeviceSummarizationShakeConsentAction.AllowClicked,
+    OnDeviceSummarizationShakeConsentAction.AllowClicked,
+    OnDeviceSummarizationShakeConsentAction.CancelClicked,
+    PageLoadCompleted,
+    ViewAppeared,
+    is ViewDismissed,
+    -> state
 }
 
 private fun SummarizationState.complete(): SummarizationState {

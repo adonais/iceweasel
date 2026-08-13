@@ -178,11 +178,17 @@ smartwindow-prompts {
   display: flex;
   gap: var(--space-small);
   grid-area: sidebar-header;
+  justify-content: flex-start;
 }
 
 .fullpage-header {
   display: none;
   grid-area: fullpage-header;
+  /* Center the row on the content column. */
+  inset-inline: 0;
+  margin-inline: auto;
+  max-width: var(--smartwindow-content-max-width);
+  padding-inline: 0;
 }
 
 moz-button.new-chat-icon-button,
@@ -190,10 +196,10 @@ moz-button.close-sidebar-button {
   --button-border-radius: var(--border-radius-circle);
 
   @media not (forced-colors) {
-    --button-background-color-ghost: light-dark(var(--color-white), var(--color-black-alpha-30));
-    --button-background-color-ghost-hover: light-dark(var(--color-violet-20), color-mix(in srgb, currentColor 11%, transparent));
-    --button-background-color-ghost-active: light-dark(var(--color-violet-30), color-mix(in srgb, currentColor 17%, transparent));
-    --button-text-color-ghost: light-dark(var(--color-violet-90), var(--color-violet-0));
+    --button-background-color-ghost: var(--smartwindow-ghost-button-background);
+    --button-background-color-ghost-hover: var(--smartwindow-ghost-button-background-hover);
+    --button-background-color-ghost-active: var(--smartwindow-ghost-button-background-active);
+    --button-text-color-ghost: var(--smartwindow-ghost-button-text);
 
     @media -moz-pref("browser.nova.enabled") {
       --button-icon-fill: light-dark(var(--color-violet-desaturated-60), var(--color-violet-desaturated-40));
@@ -237,6 +243,8 @@ moz-button.close-sidebar-button {
 
 moz-button.close-sidebar-button {
   --icon-size: calc(var(--icon-size-xsmall) - 2px);
+  /* Push to the trailing edge. */
+  margin-inline-start: auto;
 }
 
 #smartbar-toggle-button:not([hidden]) {

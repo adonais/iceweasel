@@ -3,22 +3,22 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use api::{
-    AlphaType, ColorDepth, ColorF, ColorRange, ColorU, ExternalImageData, ExternalImageType, ImageBufferKind, ImageKey as ApiImageKey, ImageRendering, PremultipliedColorF, RasterSpace, Shadow, YuvColorSpace, YuvFormat
+    AlphaType, ColorDepth, ColorF, ColorRange, ExternalImageData, ExternalImageType, ImageBufferKind, ImageKey as ApiImageKey, ImageRendering, PremultipliedColorF, YuvColorSpace, YuvFormat
 };
 use api::units::*;
 use euclid::point2;
 use crate::clip::{ClipChainInstance, ClipIntern};
 use crate::command_buffer::CommandBufferIndex;
-use crate::gpu_types::{ImageBrushPrimitiveData, YuvPrimitive};
+use crate::gpu_types::ImageBrushPrimitiveData;
 use crate::pattern::image::ImagePattern;
 use crate::quad::QuadTransformState;
-use crate::renderer::{GpuBufferAddress, GpuBufferBuilderF, GpuBufferWriterF};
-use crate::scene_building::{CreateShadow, IsVisible};
+use crate::renderer::{GpuBufferAddress, GpuBufferWriterF};
+use crate::scene_building::{IsVisible};
 use crate::frame_builder::{FrameBuildingContext, FrameBuildingState, PictureContext};
 use crate::intern::{DataStore, Handle as InternHandle, InternDebug, Internable};
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::prim_store::{
-    EdgeMask, InternablePrimitive, PrimKey, PrimTemplate, PrimTemplateCommonData, PrimitiveInstanceIndex, PrimitiveKind, PrimitiveOpacity, PrimitiveScratchBuffer, PrimitiveStore, SizeKey
+    EdgeMask, InternablePrimitive, PrimKey, PrimTemplate, PrimTemplateCommonData, PrimitiveInstanceIndex, PrimitiveKind, PrimitiveOpacity, PrimitiveScratchBuffer, PrimitiveStore
 };
 use crate::prim_store::storage;
 use crate::render_target::RenderTargetKind;
@@ -27,7 +27,7 @@ use crate::render_task::RenderTask;
 use crate::render_task_cache::{
     RenderTaskCacheKey, RenderTaskCacheKeyKind, RenderTaskParent
 };
-use crate::resource_cache::{ImageRequest, ImageProperties, ResourceCache};
+use crate::resource_cache::{ImageRequest, ImageProperties};
 use crate::visibility::compute_conservative_visible_rect;
 use crate::spatial_tree::SpatialNodeIndex;
 use crate::{image_tiling, quad};
@@ -88,6 +88,10 @@ pub struct ImageScratch {
     /// the resolved stretch size and adjustment-mapped values vary per
     /// instance, even when many instances share a single template.
     pub gpu_address: GpuBufferAddress,
+    /// Per-instance opacity. Recomputed each frame from the image's
+    /// resource-cache properties (and tile-spacing padding); lives here
+    /// rather than on the now-immutable template's common data.
+    pub opacity: PrimitiveOpacity,
 }
 
 impl ImageScratch {
@@ -100,37 +104,16 @@ impl ImageScratch {
             tight_local_clip_rect: LayoutRect::zero(),
             may_need_repetition: true,
             gpu_address: GpuBufferAddress::INVALID,
+            opacity: PrimitiveOpacity::translucent(),
         }
     }
 }
 
-/// How to compute the effective stretch size for an image primitive, per
-/// axis. `FillsPrim` resolves to the (snapped) prim-rect extent at
-/// frame-build so the value sent to the GPU lands on the snapped pixel
-/// grid. `Explicit` keeps the gecko-specified value verbatim. Per-axis
-/// because gecko can specify a background tile that fills the prim on
-/// one axis but tiles on the other (e.g. `background-repeat: repeat-y`
-/// with `background-size: 116.8px 0.8px`).
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, MallocSizeOf)]
-pub struct StretchSizeKey {
-    pub size: SizeKey,
-    pub fills_width: bool,
-    pub fills_height: bool,
-}
-
-impl StretchSizeKey {
-    /// Both axes fill the prim. The stored size is unused; normalised
-    /// to zero so different prim sizes still intern to the same key.
-    pub fn fills_prim() -> Self {
-        StretchSizeKey {
-            size: LayoutSize::zero().into(),
-            fills_width: true,
-            fills_height: true,
-        }
-    }
-}
+// `StretchSizeKey` now lives in `webrender_api::key_types` so builder-side
+// interning keys can reference it. The resolved `StretchSize` below (and its
+// frame-build `resolve`) stay here. Re-exported to keep existing references
+// working.
+pub use api::key_types::StretchSizeKey;
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -164,31 +147,11 @@ impl StretchSize {
     }
 }
 
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Clone, Eq, PartialEq, MallocSizeOf, Hash)]
-pub struct Image {
-    pub key: ApiImageKey,
-    pub stretch_size: StretchSizeKey,
-    pub tile_spacing: SizeKey,
-    pub color: ColorU,
-    pub image_rendering: ImageRendering,
-    pub alpha_type: AlphaType,
-}
+// `Image` now lives in `webrender_api::interned_prims` so content-process
+// interning can hold it. Re-exported to keep existing references working.
+pub use api::interned_prims::Image;
 
 pub type ImageKey = PrimKey<Image>;
-
-impl ImageKey {
-    pub fn new(
-        info: &LayoutPrimitiveInfo,
-        image: Image,
-    ) -> Self {
-        ImageKey {
-            common: info.into(),
-            kind: image,
-        }
-    }
-}
 
 impl InternDebug for ImageKey {}
 
@@ -223,8 +186,7 @@ impl ImageData {
     /// template. The initial request call to the GPU cache ensures that work is only
     /// done if the cache entry is invalid (due to first use or eviction).
     pub fn update(
-        &mut self,
-        common: &mut PrimTemplateCommonData,
+        &self,
         prim_instance_index: PrimitiveInstanceIndex,
         prim_spatial_node_index: SpatialNodeIndex,
         frame_state: &mut FrameBuildingState,
@@ -236,17 +198,6 @@ impl ImageData {
         let image_properties = frame_state
             .resource_cache
             .get_image_properties(self.key);
-
-        common.opacity = match &image_properties {
-            Some(properties) => {
-                if properties.descriptor.is_opaque() {
-                    PrimitiveOpacity::from_alpha(self.color.a)
-                } else {
-                    PrimitiveOpacity::translucent()
-                }
-            }
-            None => PrimitiveOpacity::opaque(),
-        };
 
         let request = ImageRequest {
             key: self.key,
@@ -269,6 +220,16 @@ impl ImageData {
 
         let mut image_scratch = ImageScratch::empty();
         image_scratch.tight_local_clip_rect = tight_clip_rect;
+        image_scratch.opacity = match &image_properties {
+            Some(properties) => {
+                if properties.descriptor.is_opaque() {
+                    PrimitiveOpacity::from_alpha(self.color.a)
+                } else {
+                    PrimitiveOpacity::translucent()
+                }
+            }
+            None => PrimitiveOpacity::opaque(),
+        };
         if effective_stretch_size.width >= prim_rect.size().width
             && effective_stretch_size.height >= prim_rect.size().height
         {
@@ -343,7 +304,7 @@ impl ImageData {
                     size.height += padding.vertical();
 
                     if padding != DeviceIntSideOffsets::zero() {
-                        common.opacity = PrimitiveOpacity::translucent();
+                        image_scratch.opacity = PrimitiveOpacity::translucent();
                     }
 
                     let image_cache_key = ImageCacheKey {
@@ -528,7 +489,6 @@ pub fn prepare_image_quads(
     };
 
     let src_is_opaque = image_properties.descriptor.is_opaque()
-        && common_data.opacity.is_opaque
         && image_data.color.a >= 0.9999;
 
     let premultiplied = image_data.alpha_type == AlphaType::PremultipliedAlpha;
@@ -755,7 +715,7 @@ impl InternablePrimitive for Image {
         self,
         info: &LayoutPrimitiveInfo,
     ) -> ImageKey {
-        ImageKey::new(info, self)
+        ImageKey::new(info.into(), self)
     }
 
     fn make_instance_kind(
@@ -769,23 +729,6 @@ impl InternablePrimitive for Image {
     }
 }
 
-impl CreateShadow for Image {
-    fn create_shadow(
-        &self,
-        shadow: &Shadow,
-        _: bool,
-        _: RasterSpace,
-    ) -> Self {
-        Image {
-            tile_spacing: self.tile_spacing,
-            stretch_size: self.stretch_size,
-            key: self.key,
-            image_rendering: self.image_rendering,
-            alpha_type: self.alpha_type,
-            color: shadow.color.into(),
-        }
-    }
-}
 
 impl IsVisible for Image {
     fn is_visible(&self) -> bool {
@@ -884,31 +827,11 @@ impl AdjustedImageSource {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Clone, Eq, MallocSizeOf, PartialEq, Hash)]
-pub struct YuvImage {
-    pub color_depth: ColorDepth,
-    pub yuv_key: [ApiImageKey; 3],
-    pub format: YuvFormat,
-    pub color_space: YuvColorSpace,
-    pub color_range: ColorRange,
-    pub image_rendering: ImageRendering,
-}
+// `YuvImage` now lives in `webrender_api::interned_prims` so content-process
+// interning can hold it. Re-exported to keep existing references working.
+pub use api::interned_prims::YuvImage;
 
 pub type YuvImageKey = PrimKey<YuvImage>;
-
-impl YuvImageKey {
-    pub fn new(
-        info: &LayoutPrimitiveInfo,
-        yuv_image: YuvImage,
-    ) -> Self {
-        YuvImageKey {
-            common: info.into(),
-            kind: yuv_image,
-        }
-    }
-}
 
 impl InternDebug for YuvImageKey {}
 
@@ -945,13 +868,12 @@ impl YuvImageData {
     /// template. The initial request call to the GPU cache ensures that work is only
     /// done if the cache entry is invalid (due to first use or eviction).
     pub fn update(
-        &mut self,
-        common: &mut PrimTemplateCommonData,
+        &self,
         is_composited: bool,
         frame_state: &mut FrameBuildingState,
-    ) {
+    ) -> [RenderTaskId; 3] {
 
-        self.src_yuv = [ None, None, None ];
+        let mut src_yuv = [ RenderTaskId::INVALID; 3 ];
 
         let channel_num = self.format.get_plane_num();
         debug_assert!(channel_num <= 3);
@@ -975,42 +897,10 @@ impl YuvImageData {
                 )
             );
 
-            self.src_yuv[channel] = Some(task_id);
+            src_yuv[channel] = task_id;
         }
 
-        let mut writer = frame_state.frame_gpu_data.f32.write_blocks(1);
-        self.write_prim_gpu_blocks(&mut writer);
-        common.gpu_buffer_address = writer.finish();
-
-    // YUV images never have transparency
-        common.opacity = PrimitiveOpacity::opaque();
-    }
-
-    pub fn request_resources(
-        &mut self,
-        resource_cache: &mut ResourceCache,
-        gpu_buffer: &mut GpuBufferBuilderF,
-    ) {
-        let channel_num = self.format.get_plane_num();
-        debug_assert!(channel_num <= 3);
-        for channel in 0 .. channel_num {
-            resource_cache.request_image(
-                ImageRequest {
-                    key: self.yuv_key[channel],
-                    rendering: self.image_rendering,
-                    tile: None,
-                },
-                gpu_buffer,
-            );
-        }
-    }
-
-    pub fn write_prim_gpu_blocks(&self, writer: &mut GpuBufferWriterF) {
-        writer.push(&YuvPrimitive {
-            channel_bit_depth: self.color_depth.bit_depth(),
-            color_space: self.color_space.with_range(self.color_range),
-            yuv_format: self.format,
-        });
+        src_yuv
     }
 }
 
@@ -1041,7 +931,7 @@ impl InternablePrimitive for YuvImage {
         self,
         info: &LayoutPrimitiveInfo,
     ) -> YuvImageKey {
-        YuvImageKey::new(info, self)
+        YuvImageKey::new(info.into(), self)
     }
 
     fn make_instance_kind(
@@ -1072,9 +962,9 @@ fn test_struct_sizes() {
     // (b) You made a structure larger. This is not necessarily a problem, but should only
     //     be done with care, and after checking if talos performance regresses badly.
     assert_eq!(mem::size_of::<Image>(), 36, "Image size changed");
-    assert_eq!(mem::size_of::<ImageTemplate>(), 56, "ImageTemplate size changed");
+    assert_eq!(mem::size_of::<ImageTemplate>(), 52, "ImageTemplate size changed");
     assert_eq!(mem::size_of::<ImageKey>(), 40, "ImageKey size changed");
     assert_eq!(mem::size_of::<YuvImage>(), 32, "YuvImage size changed");
-    assert_eq!(mem::size_of::<YuvImageTemplate>(), 76, "YuvImageTemplate size changed");
+    assert_eq!(mem::size_of::<YuvImageTemplate>(), 72, "YuvImageTemplate size changed");
     assert_eq!(mem::size_of::<YuvImageKey>(), 36, "YuvImageKey size changed");
 }

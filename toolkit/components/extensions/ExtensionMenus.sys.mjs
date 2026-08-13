@@ -8,7 +8,7 @@ const lazy = XPCOMUtils.declareLazy({
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
   DeferredTask: "resource://gre/modules/DeferredTask.sys.mjs",
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
-  KeyValueService: "resource://gre/modules/kvstore.sys.mjs",
+  KeyValueService: "moz-src:///toolkit/components/kvstore/kvstore.sys.mjs",
   MENU_STORE_WRITE_DEBOUNCE_TIME: {
     pref: "extensions.webextensions.menus.writeDebounceTime",
     // Minimum 0ms, max 1min

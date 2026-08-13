@@ -3454,12 +3454,67 @@ loser:
     return crv;
 }
 
+#ifdef DEBUG
+/*
+ * Count session objects that are still live in a slot and belong to an
+ * application session. The module's own objects (the FIPS validation
+ * indicators hung off slot->moduleObjects) are excluded because softoken owns
+ * them and tears them down separately in SFTK_DestroySlotData.
+ *
+ * When all of a slot's sessions are torn down (logout case below) a
+ * well-behaved application has already destroyed every object it created, so
+ * this count should be zero. A leftover object means the application created a
+ * session object and relied on session/slot teardown to reap it instead of
+ * destroying it -- harmless at exit, but an unbounded leak while the process
+ * runs, since these accumulate on NSS's long-lived internal session.
+ */
+static unsigned int
+sftk_countLiveSessionObjects(SFTKSlot *slot)
+{
+    unsigned int i;
+    unsigned int count = 0;
+
+    PR_Lock(slot->objectLock);
+    for (i = 0; i < slot->sessObjHashSize; i++) {
+        SFTKObject *object;
+        for (object = slot->sessObjHashTable[i]; object;
+             object = object->next) {
+            SFTKSessionObject *so = sftk_narrowToSessionObject(object);
+            if (so && so->session != &slot->moduleObjects) {
+                count++;
+            }
+        }
+    }
+    PR_Unlock(slot->objectLock);
+    return count;
+}
+#endif /* DEBUG */
+
 CK_RV
 sftk_CloseAllSessions(SFTKSlot *slot, PRBool logout)
 {
     SFTKSession *session;
     unsigned int i;
     SFTKDBHandle *handle;
+
+#ifdef DEBUG
+    /* When NSS_STRICT_SHUTDOWN is set, assert that the application has
+     * destroyed all of its session objects before every session on the slot is
+     * torn down (which happens via NSC_CloseAllSessions at slot teardown /
+     * C_Finalize, and via SFTK_ShutdownSlot). The fork child inherits the
+     * parent's objects and cannot clean them up, so skip the check there. */
+    if (logout && !parentForkedAfterC_Initialize &&
+        PR_GetEnvSecure("NSS_STRICT_SHUTDOWN")) {
+        unsigned int live = sftk_countLiveSessionObjects(slot);
+        if (live != 0) {
+            PR_fprintf(PR_STDERR,
+                       "NSS_STRICT_SHUTDOWN: slot %lu still has %u live "
+                       "session object(s) when closing all sessions\n",
+                       (unsigned long)slot->slotID, live);
+        }
+        PORT_Assert(live == 0);
+    }
+#endif
 
     /* first log out the card */
     /* special case - if we are in a middle of upgrade, we want to close the

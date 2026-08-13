@@ -161,6 +161,12 @@ bool IsValidVideoRegion(const gfx::IntSize& aFrame,
                         const gfx::IntRect& aPicture,
                         const gfx::IntSize& aDisplay);
 
+// Returns true if aDisplay is a valid display size for a video frame: each
+// dimension is positive and within the maximum image dimension, and the total
+// area does not exceed MAX_VIDEO_WIDTH * MAX_VIDEO_HEIGHT. This is the display
+// predicate used by IsValidVideoRegion.
+bool IsValidVideoDisplaySize(const gfx::IntSize& aDisplay);
+
 // Template to automatically set a variable to a value on scope exit.
 // Useful for unsetting flags, etc.
 template <typename T>

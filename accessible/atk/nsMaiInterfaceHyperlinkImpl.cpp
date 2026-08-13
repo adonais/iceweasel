@@ -3,9 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "InterfaceInitFuncs.h"
-
-#include "nsMaiHyperlink.h"
 #include "mozilla/Likely.h"
+#include "nsMaiHyperlink.h"
 
 using namespace mozilla::a11y;
 

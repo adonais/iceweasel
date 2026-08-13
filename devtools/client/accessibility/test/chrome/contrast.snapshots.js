@@ -86,14 +86,12 @@ window._snapshots = {
           {
             type: "a",
             props: {
-              className: "link",
+              className: "learn-more-link mdn-link",
               href:
                 "https://developer.mozilla.org/docs/Web/Accessibility/Guides/" +
                 "Understanding_WCAG/Perceivable/Color_contrast?utm_source=" +
                 "devtools&utm_medium=a11y-panel-checks-color-contrast&utm_campaign=default",
-              onClick:
-                "openDocOnClick(event) {\n    event.preventDefault();\n    " +
-                "openDocLink(event.target.href);\n  }",
+              onClick: "e => onLearnMoreClick(e, url)",
             },
             children: ["Learn more"],
           },
@@ -170,14 +168,12 @@ window._snapshots = {
           {
             type: "a",
             props: {
-              className: "link",
+              className: "learn-more-link mdn-link",
               href:
                 "https://developer.mozilla.org/docs/Web/Accessibility/Guides/" +
                 "Understanding_WCAG/Perceivable/Color_contrast?utm_source=" +
                 "devtools&utm_medium=a11y-panel-checks-color-contrast&utm_campaign=default",
-              onClick:
-                "openDocOnClick(event) {\n    event.preventDefault();\n    " +
-                "openDocLink(event.target.href);\n  }",
+              onClick: "e => onLearnMoreClick(e, url)",
             },
             children: ["Learn more"],
           },
@@ -243,14 +239,12 @@ window._snapshots = {
           {
             type: "a",
             props: {
-              className: "link",
+              className: "learn-more-link mdn-link",
               href:
                 "https://developer.mozilla.org/docs/Web/Accessibility/Guides/" +
                 "Understanding_WCAG/Perceivable/Color_contrast?utm_source=" +
                 "devtools&utm_medium=a11y-panel-checks-color-contrast&utm_campaign=default",
-              onClick:
-                "openDocOnClick(event) {\n    event.preventDefault();\n    " +
-                "openDocLink(event.target.href);\n  }",
+              onClick: "e => onLearnMoreClick(e, url)",
             },
             children: ["Learn more"],
           },

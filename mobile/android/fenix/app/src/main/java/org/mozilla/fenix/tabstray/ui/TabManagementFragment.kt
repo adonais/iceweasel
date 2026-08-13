@@ -76,7 +76,7 @@ import org.mozilla.fenix.pbmlock.registerForVerification
 import org.mozilla.fenix.pbmlock.verifyUser
 import org.mozilla.fenix.settings.biometric.DefaultBiometricUtils
 import org.mozilla.fenix.settings.biometric.ext.isAuthenticatorAvailable
-import org.mozilla.fenix.settings.biometric.ext.isHardwareAvailable
+import org.mozilla.fenix.settings.biometric.ext.isDeviceLockCapable
 import org.mozilla.fenix.share.ShareFragment
 import org.mozilla.fenix.tabgroups.AddToTabGroup
 import org.mozilla.fenix.tabgroups.CloseLastTabAndDeleteTabGroupConfirmationDialog
@@ -98,12 +98,14 @@ import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination
 import org.mozilla.fenix.tabstray.redux.action.TabGroupAction
 import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
+import org.mozilla.fenix.tabstray.redux.middleware.TabManagerUiStateStorageMiddleware
 import org.mozilla.fenix.tabstray.redux.middleware.TabSearchMiddleware
 import org.mozilla.fenix.tabstray.redux.middleware.TabSearchNavigationMiddleware
 import org.mozilla.fenix.tabstray.redux.middleware.TabStorageMiddleware
 import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
+import org.mozilla.fenix.tabstray.repository.uistate.DefaultTabManagerUiStateRepository
 import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsIntegration
 import org.mozilla.fenix.tabstray.ui.animation.defaultPredictivePopTransitionSpec
 import org.mozilla.fenix.tabstray.ui.animation.defaultTransitionSpec
@@ -158,16 +160,13 @@ class TabManagementFragment : Fragment() {
                         placeAfter = placeAfter,
                     ),
                 )
-                tabsTrayStore.dispatch(
-                    TabsTrayAction.TabDragCancel,
-                )
             }
 
             override fun onDrop(sourceKey: String, targetKey: String) {
                 tabsTrayStore.dispatch(
-                    TabGroupAction.DragAndDropCompleted(
-                        sourceKey,
-                        targetKey,
+                    TabGroupAction.DragAndDropInitiated(
+                        sourceId = sourceKey,
+                        destinationId = targetKey,
                     ),
                 )
             }
@@ -327,8 +326,9 @@ class TabManagementFragment : Fragment() {
                         entryProvider = entryProvider {
                             entry<TabManagerNavDestination.Root> {
                                 TabsTray(
-                                    tabsTrayStore = tabsTrayStore,
+                                    state = state,
                                     snackbarHostState = snackbarHostState,
+                                    onAction = tabsTrayStore::dispatch,
                                     onTabPageClick = { page ->
                                         onTabPageClick(
                                             tabsTrayInteractor = tabManagerInteractor,
@@ -418,8 +418,10 @@ class TabManagementFragment : Fragment() {
                                     },
                                     onInactiveTabsCFRDismiss = tabManagerCfrController::onInactiveTabsCfrDismiss,
                                     onTabGroupOnboardingDismiss = {
-                                        // TODO (Bug 2038234): Persistence will be handled later by the middleware.
                                         tabsTrayStore.dispatch(TabGroupAction.OnboardingDismissed)
+                                    },
+                                    onTabGroupOnboardingShown = {
+                                        tabsTrayStore.dispatch(TabGroupAction.OnboardingShown)
                                     },
                                     onOpenNewNormalTabClicked = tabManagerInteractor::onNormalTabsFabClicked,
                                     onOpenNewPrivateTabClicked = tabManagerInteractor::onPrivateTabsFabClicked,
@@ -433,7 +435,10 @@ class TabManagementFragment : Fragment() {
                             }
 
                             entry<TabManagerNavDestination.TabSearch> {
-                                TabSearchScreen(store = tabsTrayStore)
+                                TabSearchScreen(
+                                    state = state.tabSearchState,
+                                    onAction = tabsTrayStore::dispatch,
+                                )
                             }
 
                             entry<TabManagerNavDestination.ExpandedTabGroup>(
@@ -479,6 +484,7 @@ class TabManagementFragment : Fragment() {
                                             action = TabGroupAction.CloseTabGroupClicked(group = expandedGroup),
                                         )
                                     },
+                                    tabInteractionHandler = tabInteractionHandler,
                                 )
                             }
 
@@ -504,7 +510,23 @@ class TabManagementFragment : Fragment() {
                                     showBetaLabel = true,
                                 ),
                             ) {
-                                EditTabGroup(tabsTrayStore = tabsTrayStore)
+                                val formState = state.tabGroupState.formState
+                                requireNotNull(formState) {
+                                    "Form state must not be null when navigating to the edit sheet"
+                                }
+
+                                EditTabGroup(
+                                    formState = formState,
+                                    onTabGroupNameChange = { newName ->
+                                        tabsTrayStore.dispatch(TabGroupAction.NameChanged(newName))
+                                    },
+                                    onTabGroupThemeChange = { newTheme ->
+                                        tabsTrayStore.dispatch(TabGroupAction.ThemeChanged(newTheme))
+                                    },
+                                    onConfirmSave = {
+                                        tabsTrayStore.dispatch(TabGroupAction.SaveClicked)
+                                    },
+                                )
                             }
 
                             entry<TabManagerNavDestination.AddToTabGroup>(
@@ -560,7 +582,10 @@ class TabManagementFragment : Fragment() {
         return storeProvider.get { restoredState ->
             TabsTrayStore(
                 initialState = restoredState?.copy(
-                    config = restoredState.config.copy(displayTabsInGrid = settings.gridTabView),
+                    config = restoredState.config.copy(
+                        displayTabsInGrid = settings.gridTabView,
+                        homepageAsNewTabEnabled = settings.enableHomepageAsNewTab,
+                    ),
                 ) ?: createInitialState(args, settings),
                 middlewares = listOf(
                     TabsTrayTelemetryMiddleware(requireComponents.nimbus.events),
@@ -573,7 +598,15 @@ class TabManagementFragment : Fragment() {
                         tabGroupRepository = requireComponents.core.tabGroupRepository,
                         removeTabsUseCase = requireComponents.useCases.tabsUseCases.removeTabs,
                         moveTabsUseCase = requireComponents.useCases.tabsUseCases.moveTabs,
+                        fenixBrowserUseCases = requireComponents.useCases.fenixBrowserUseCases,
                         mainScope = lifecycleScope,
+                    ),
+                    TabManagerUiStateStorageMiddleware(
+                        uiStateRepository = DefaultTabManagerUiStateRepository(
+                            context = requireContext().applicationContext,
+                            stateFlowScope = lifecycleScope,
+                        ),
+                        scope = lifecycleScope,
                     ),
                 ),
             )
@@ -603,7 +636,7 @@ class TabManagementFragment : Fragment() {
                 showLockBanner = shouldShowLockPbmBanner(
                     isPrivateMode = appState.mode.isPrivate,
                     hasPrivateTabs = coreState.privateTabs.isNotEmpty(),
-                    biometricAvailable = BiometricManager.from(requireContext()).isHardwareAvailable(),
+                    biometricAvailable = BiometricManager.from(requireContext()).isDeviceLockCapable(),
                     privateLockEnabled = settings.privateBrowsingModeLocked,
                     shouldShowBanner = shouldShowBanner(settings),
                 ),
@@ -612,7 +645,9 @@ class TabManagementFragment : Fragment() {
             config = TabsTrayState.TabsTrayConfig(
                 tabGroupsEnabled = settings.tabGroupsEnabled,
                 tabGroupsDragAndDropEnabled = settings.tabGroupsDragAndDropEnabled,
+                tabGroupsLiveReorderEnabled = settings.tabGroupsLiveReorderEnabled,
                 tabGroupsOnboardingEnabled = settings.tabGroupsOnboardingEnabled,
+                homepageAsNewTabEnabled = settings.enableHomepageAsNewTab,
                 displayTabsInGrid = settings.gridTabView,
                 isInDebugMode = Config.channel.isDebug || requireComponents.settings.showSecretDebugMenuThisSession,
                 showTabAutoCloseBanner = settings.shouldShowAutoCloseTabsBanner &&

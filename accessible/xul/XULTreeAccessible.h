@@ -5,9 +5,9 @@
 #ifndef mozilla_a11y_XULTreeAccessible_h_
 #define mozilla_a11y_XULTreeAccessible_h_
 
-#include "nsITreeView.h"
 #include "XULListboxAccessible.h"
 #include "mozilla/dom/XULTreeElement.h"
+#include "nsITreeView.h"
 
 class nsTreeBodyFrame;
 class nsTreeColumn;

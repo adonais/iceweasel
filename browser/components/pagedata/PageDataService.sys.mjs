@@ -257,6 +257,7 @@ export const PageDataService = new (class PageDataService extends EventEmitter {
           pageshow: {},
         },
       },
+      safeForUntrustedWebProcess: true,
     });
 
     lazy.logConsole.debug("Service started");

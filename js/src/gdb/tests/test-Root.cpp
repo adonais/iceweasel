@@ -1,5 +1,4 @@
 #include "gdb-tests.h"
-
 #include "jsapi.h"
 
 #include "gc/Barrier.h"

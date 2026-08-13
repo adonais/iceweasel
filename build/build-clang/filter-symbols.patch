@@ -2,13 +2,24 @@ diff --git a/llvm/utils/extract_symbols.py b/llvm/utils/extract_symbols.py
 index 40a43d365555..7362cc26a203 100755
 --- a/llvm/utils/extract_symbols.py
 +++ b/llvm/utils/extract_symbols.py
-@@ -155,6 +155,27 @@ def should_keep_microsoft_symbol(symbol, calling_convention_decoration):
+@@ -155,6 +155,38 @@ def should_keep_microsoft_symbol(symbol, calling_convention_decoration):
          # because they are used for debugging only.
          if symbol.startswith(("?dump@", "?dumpColor@", "?printPretty@")):
              return None
 +        # anchor(): empty virtual functions whose only purpose is to anchor a
 +        # class's vtable to a single TU; never called by name from elsewhere.
-+        if symbol.startswith("?anchor@"):
++        # Exception: base classes that are directly subclassed or instantiated
++        # outside the DLL need anchor() exported so the linker can fill in the
++        # inherited vtable slot in plugins (raw_ostream and raw_pwrite_stream are
++        # needed because raw_string_ostream / raw_svector_ostream subclasses are
++        # created in the plugin and don't override anchor()).
++        if symbol.startswith("?anchor@") and not symbol.startswith(
++            (
++                "?anchor@PluginASTAction@clang@@",
++                "?anchor@raw_ostream@llvm@@",
++                "?anchor@raw_pwrite_stream@llvm@@",
++            )
++        ):
 +            return None
 +        # Profile(): FoldingSetTrait / FoldingSetNode hash methods, used only
 +        # by LLVM's internal hash-consing machinery.

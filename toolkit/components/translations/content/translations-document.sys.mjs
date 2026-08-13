@@ -1078,6 +1078,7 @@ export class TranslationsDocument {
    *                                           for a translation is about to occur.
    * @param {LRUCache} translationsCache - A cache in which to store translated text.
    * @param {boolean} isFindBarOpen - Whether the find bar was open in the current tab upon construction.
+   * @param {number | null} [subFrameSchedulerId=null] - An id to distinguish the scheduler logs if this doc corresponds to an <iframe>.
    */
   constructor(
     document,
@@ -1088,7 +1089,8 @@ export class TranslationsDocument {
     requestNewPort,
     reportVisibleChange,
     translationsCache,
-    isFindBarOpen
+    isFindBarOpen,
+    subFrameSchedulerId = null
   ) {
     /** @type {WindowProxy} */
     const documentGlobal = ensureExists(document.documentGlobal);
@@ -1110,7 +1112,9 @@ export class TranslationsDocument {
       port,
       this.#innerWindowId,
       translationsCache,
-      requestNewPort
+      requestNewPort,
+      documentGlobal === documentGlobal.top,
+      subFrameSchedulerId
     );
 
     /**
@@ -2352,7 +2356,14 @@ export class TranslationsDocument {
 
       const window = this.#sourceDocument.documentGlobal;
       if (window) {
-        window.removeEventListener("scroll", this.#handleScrollEvent);
+        try {
+          window.removeEventListener("scroll", this.#handleScrollEvent);
+        } catch (error) {
+          lazy.console.error(
+            "Failed to remove Translations scroll event listener.",
+            error
+          );
+        }
       }
     }
   }
@@ -3465,6 +3476,13 @@ export class TranslationsDocument {
    */
   acquirePort(port) {
     this.#scheduler.acquirePort(port);
+  }
+
+  /**
+   * Notifies the scheduler that the associated engine has terminated.
+   */
+  handleEngineTerminated() {
+    this.#scheduler.handleEngineTerminated();
   }
 
   /**
@@ -4881,6 +4899,25 @@ class TranslationScheduler {
   }
 
   /**
+   * Creates the debug label used to distinguish scheduler logs for each document.
+   *
+   * @param {boolean} isTopLevelDocument
+   * @param {number | null} subFrameSchedulerId
+   * @returns {string}
+   */
+  static #createSchedulerLabel(isTopLevelDocument, subFrameSchedulerId) {
+    if (isTopLevelDocument) {
+      return "top";
+    }
+
+    if (subFrameSchedulerId === null) {
+      return "___";
+    }
+
+    return `f${String(subFrameSchedulerId).padStart(2, "_")}`;
+  }
+
+  /**
    * The port that sends translation requests to the TranslationsEngine.
    *
    * @type {MessagePort | null}
@@ -5002,6 +5039,13 @@ class TranslationScheduler {
   #innerWindowId;
 
   /**
+   * A fixed-width label to identify this scheduler in debug logs.
+   *
+   * @type {string}
+   */
+  #schedulerLabel;
+
+  /**
    * A cache of translations that have already been computed.
    * This is cache is shared with the TranslationsDocument.
    *
@@ -5016,11 +5060,28 @@ class TranslationScheduler {
    * @param {number} innerWindowId - The innerWindowId for profiler markers.
    * @param {LRUCache} translationsCache - A cache of completed translations, shared with the TranslationsDocument.
    * @param {() => void} actorRequestNewPort - The function to call to ask the actor for a new port.
+   * @param {boolean} isTopLevelDocument - Whether this scheduler belongs to the top-level document.
+   * @param {number | null} subFrameSchedulerId - The debug-only scheduler id assigned by the top-level actor.
    */
-  constructor(port, innerWindowId, translationsCache, actorRequestNewPort) {
+  constructor(
+    port,
+    innerWindowId,
+    translationsCache,
+    actorRequestNewPort,
+    isTopLevelDocument,
+    subFrameSchedulerId
+  ) {
     this.#innerWindowId = innerWindowId;
     this.#translationsCache = translationsCache;
     this.#actorRequestNewPort = actorRequestNewPort;
+    this.#schedulerLabel = "___";
+
+    if (lazy.console.shouldLog("Debug")) {
+      this.#schedulerLabel = TranslationScheduler.#createSchedulerLabel(
+        isTopLevelDocument,
+        subFrameSchedulerId
+      );
+    }
 
     if (port) {
       this.acquirePort(port);
@@ -5062,6 +5123,10 @@ class TranslationScheduler {
 
     // Wire up message handling
     port.onmessage = event => {
+      if (port !== this.#port) {
+        return;
+      }
+
       /** @type {{data: PortToPage}} */
       const { data } = /** @type {any} */ (event);
 
@@ -5104,8 +5169,7 @@ class TranslationScheduler {
           break;
         }
         case "TranslationsPort:EngineTerminated": {
-          this.#discardPort();
-          this.maybeScheduleMoreTranslationRequests();
+          this.handleEngineTerminated();
           break;
         }
         default: {
@@ -5171,10 +5235,20 @@ class TranslationScheduler {
     if (this.#port) {
       this.#port.close();
       this.#port = null;
-      this.#portRequest = null;
     }
 
+    this.#portRequest?.resolve();
+    this.#portRequest = null;
     this.#engineStatus = "uninitialized";
+  }
+
+  /**
+   * Discards the current port and schedules any remaining translation requests
+   * to resume on a fresh engine port.
+   */
+  handleEngineTerminated() {
+    this.#discardPort();
+    this.maybeScheduleMoreTranslationRequests();
   }
 
   /**
@@ -5612,32 +5686,38 @@ class TranslationScheduler {
    *
    * Example:
    *
-   * "Scheduler(_1 | 422) [ __1, 165, 132, __1, 106, __1, __8, __8 ] => P0(__1), P1(__2)"
-   *             ╻    ╻      ╻    ╻    ╻    ╻    ╻    ╻    ╻    ╻       ╻        ╻
-   *             │    │      │    │    │    │    │    │    │    │       │        │
-   *             │    │      │    │    │    │    │    │    │    │       │        2 P1 requests were scheduled in this batch.
-   *             │    │      │    │    │    │    │    │    │    │       │
-   *             │    │      │    │    │    │    │    │    │    │       1 P0 request was scheduled in this batch.
-   *             │    │      │    │    │    │    │    │    │    │
-   *             │    │      │    │    │    │    │    │    │    There are 8 P7 requests
-   *             │    │      │    │    │    │    │    │    │
-   *             │    │      │    │    │    │    │    │    There are 8 P6 requests.
-   *             │    │      │    │    │    │    │    │
-   *             │    │      │    │    │    │    │    There is 1 P5 request.
-   *             │    │      │    │    │    │    │
-   *             │    │      │    │    │    │    There are 106 P4 requests.
-   *             │    │      │    │    │    │
-   *             │    │      │    │    │    There is 1 P3 request.
-   *             │    │      │    │    │
-   *             │    │      │    │    There are 132 P2 requests.
-   *             │    │      │    │
-   *             │    │      │    There are 165 P1 requests.
-   *             │    │      │
-   *             │    │      There is 1 P0 request.
+   * "Scheduler[top](_1 | 422) [ __1, 165, 132, __1, 106, ___, __8, __8 ] => P0(__1), P1(__2)"
+   *           [f_1]  ╻    ╻      ╻    ╻    ╻    ╻    ╻    ╻    ╻    ╻       ╻        ╻
+   *           [f_2]  │    │      │    │    │    │    │    │    │    │       │        │
+   *           [...]  │    │      │    │    │    │    │    │    │    │       │        2 P1 requests were scheduled in this batch.
+   *             ╻    │    │      │    │    │    │    │    │    │    │       │
+   *             │    │    │      │    │    │    │    │    │    │    │       1 P0 request was scheduled in this batch.
+   *             │    │    │      │    │    │    │    │    │    │    │
+   *             │    │    │      │    │    │    │    │    │    │    There are 8 P7 requests
+   *             │    │    │      │    │    │    │    │    │    │
+   *             │    │    │      │    │    │    │    │    │    There are 8 P6 requests.
+   *             │    │    │      │    │    │    │    │    │
+   *             │    │    │      │    │    │    │    │    There are no P5 requests.
+   *             │    │    │      │    │    │    │    │
+   *             │    │    │      │    │    │    │    There are 106 P4 requests.
+   *             │    │    │      │    │    │    │
+   *             │    │    │      │    │    │    There is 1 P3 request.
+   *             │    │    │      │    │    │
+   *             │    │    │      │    │    There are 132 P2 requests.
+   *             │    │    │      │    │
+   *             │    │    │      │    There are 165 P1 requests.
+   *             │    │    │      │
+   *             │    │    │      There is 1 P0 request.
+   *             │    │    │
+   *             │    │    There are 422 pending requests.
    *             │    │
-   *             │    There are 422 pending requests.
+   *             │    There is 1 active request.
    *             │
-   *             There is 1 active request.
+   *             Corresponds to the active scheduler that is submitting this log.
+   *               * [top] corresponds to the scheduler for the top-level document.
+   *               * [f_1] corresponds to the scheduler for the first initialized <iframe>.
+   *               * [f_2] corresponds to the scheduler for the second initialized <iframe>.
+   *               * [...] and so on.
    *
    * @param {Array<number>?} stackSizesAtStart – The size of each stack prior to the slice of scheduling that just occurred.
    * @param {number} activeRequestsAtStart - The number of active requests that the TranslationsEngine was processing at the
@@ -5700,7 +5780,7 @@ class TranslationScheduler {
     ).padStart(3, "_");
 
     lazy.console.debug(
-      `Scheduler(${activeRequestsString} | ${unscheduledRequestsString}) ` +
+      `Scheduler[${this.#schedulerLabel}](${activeRequestsString} | ${unscheduledRequestsString}) ` +
         TranslationScheduler.#formatSizesAtStart(stackSizesAtStart) +
         ` => ${segments.join(", ")}`
     );

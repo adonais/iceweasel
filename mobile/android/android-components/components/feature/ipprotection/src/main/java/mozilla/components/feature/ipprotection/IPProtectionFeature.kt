@@ -23,6 +23,7 @@ import mozilla.components.concept.engine.ipprotection.IPProtectionDelegate
 import mozilla.components.concept.engine.ipprotection.IPProtectionHandler
 import mozilla.components.concept.engine.ipprotection.ServiceState
 import mozilla.components.feature.ipprotection.IPProtectionFxaAuthFlow.Companion.SCOPE_IPPROTECTION
+import mozilla.components.feature.ipprotection.auth.IPProtectionAuthProvider
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.feature.ipprotection.store.IPProtectionStore
 import mozilla.components.feature.ipprotection.store.InternalAction
@@ -48,12 +49,14 @@ import mozilla.components.support.base.log.logger.Logger
  * @param store [IPProtectionStore] that holds the feature state.
  * @param engine [Engine] used to register the IP protection delegate and obtain the handler.
  * @param accountManager [FxaAccountManager] used to supply FxA tokens to the proxy service.
+ * @param extraAuthProvider Optional [IPProtectionAuthProvider] used to compose extra capabilities.
  * @param mainDispatcher [CoroutineDispatcher] on which state observations and engine calls run.
  */
 class IPProtectionFeature(
     private val store: IPProtectionStore,
     private val engine: Engine,
     private val accountManager: FxaAccountManager,
+    private val extraAuthProvider: IPProtectionAuthProvider? = null,
     private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) {
     private val logger = Logger("IPP:Feature")
@@ -120,7 +123,7 @@ class IPProtectionFeature(
                 .collect { state ->
                     when (state.accountState.status) {
                         AccountStatus.AuthFailed,
-                        AccountStatus.Uninitialized,
+                        AccountStatus.NoAccount,
                             -> {
                             handler?.notifyAccountStatus(false)
                         }
@@ -143,6 +146,7 @@ class IPProtectionFeature(
                             handler?.notifyAccountStatus(true)
                         }
 
+                        AccountStatus.Uninitialized,
                         AccountStatus.WarmingUp,
                         AccountStatus.NeedsAuthentication,
                         AccountStatus.RequestingAuthentication,
@@ -188,6 +192,7 @@ class IPProtectionFeature(
                     }
                 },
             )
+            extraAuthProvider?.configure(this, mainScope)
             // Initialization needs to be done ASAP whether we are using the service or not to avoid start-up delays.
             // We do need to register our listeners first to avoid dropping a message because,
             // as a side effect, the init call triggers `IPProtectionController#onServiceStateChanged`
@@ -209,7 +214,7 @@ class IPProtectionFeature(
             .collect { activate ->
                 val onResult: (Throwable?) -> Unit = { err ->
                     if (err != null) {
-                        store.dispatch(IPProtectionAction.ToggleFailed)
+                        store.dispatch(IPProtectionAction.ToggleFailed(err))
                     }
                 }
                 if (activate) {

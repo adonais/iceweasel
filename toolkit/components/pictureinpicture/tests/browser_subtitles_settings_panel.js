@@ -49,7 +49,7 @@ add_task(async function test_closePanelESCMouseFocus() {
       Assert.ok(subtitlesButton, "Subtitles button found");
 
       let subtitlesPanel = pipWin.document.getElementById("settings");
-      let panelVisiblePromise = BrowserTestUtils.waitForCondition(
+      let panelVisiblePromise = TestUtils.waitForCondition(
         () => BrowserTestUtils.isVisible(subtitlesPanel),
         "Wait for panel to be visible"
       );
@@ -61,7 +61,7 @@ add_task(async function test_closePanelESCMouseFocus() {
       let audioButton = pipWin.document.getElementById("audio");
       audioButton.focus();
 
-      let panelHiddenPromise = BrowserTestUtils.waitForCondition(
+      let panelHiddenPromise = TestUtils.waitForCondition(
         () => BrowserTestUtils.isHidden(subtitlesPanel),
         "Wait for panel to be hidden"
       );
@@ -126,7 +126,7 @@ add_task(async function test_closePanelESCKeyboardFocus() {
 
       let subtitlesPanel = pipWin.document.getElementById("settings");
       let subtitlesToggle = pipWin.document.getElementById("subtitles-toggle");
-      let panelVisiblePromise = BrowserTestUtils.waitForCondition(
+      let panelVisiblePromise = TestUtils.waitForCondition(
         () => BrowserTestUtils.isVisible(subtitlesPanel),
         "Wait for panel to be visible"
       );
@@ -142,7 +142,7 @@ add_task(async function test_closePanelESCKeyboardFocus() {
         "Subtitles switch toggle should have focus after opening panel"
       );
 
-      let panelHiddenPromise = BrowserTestUtils.waitForCondition(
+      let panelHiddenPromise = TestUtils.waitForCondition(
         () => BrowserTestUtils.isHidden(subtitlesPanel),
         "Wait for panel to be hidden"
       );
@@ -209,7 +209,7 @@ add_task(async function test_panelKeyboardButtons() {
 
       let subtitlesPanel = pipWin.document.getElementById("settings");
       let subtitlesToggle = pipWin.document.getElementById("subtitles-toggle");
-      let panelVisiblePromise = BrowserTestUtils.waitForCondition(
+      let panelVisiblePromise = TestUtils.waitForCondition(
         () => BrowserTestUtils.isVisible(subtitlesPanel),
         "Wait for panel to be visible"
       );
@@ -253,7 +253,7 @@ add_task(async function test_panelKeyboardButtons() {
 
       subtitlesButton.focus();
 
-      let panelHiddenPromise = BrowserTestUtils.waitForCondition(
+      let panelHiddenPromise = TestUtils.waitForCondition(
         () => BrowserTestUtils.isHidden(subtitlesPanel),
         "Wait for panel to be hidden"
       );

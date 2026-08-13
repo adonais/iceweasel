@@ -5,13 +5,13 @@
 #ifndef mozilla_net_UrlClassifierFeatureBase_h
 #define mozilla_net_UrlClassifierFeatureBase_h
 
-#include "nsIUrlClassifierFeature.h"
-#include "nsIUrlClassifierExceptionListService.h"
-#include "nsIUrlClassifierExceptionList.h"
 #include "mozilla/Mutex.h"
 #include "nsCOMPtr.h"
-#include "nsTArray.h"
+#include "nsIUrlClassifierExceptionList.h"
+#include "nsIUrlClassifierExceptionListService.h"
+#include "nsIUrlClassifierFeature.h"
 #include "nsString.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 namespace net {

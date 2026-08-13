@@ -3,13 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 plugins {
+    id 'com.android.library'
     alias(libs.plugins.dependency.analysis)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
 }
-
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
-apply plugin: 'com.google.devtools.ksp'
 
 android {
     defaultConfig {
@@ -33,7 +31,7 @@ dependencies {
     implementation project(':components:compose-base')
     implementation project(':components:support-base')
     implementation project(':components:ui-icons')
-    implementation libs.androidx.core.ktx
+    implementation libs.androidx.core
 
     implementation libs.androidx.room.runtime
     ksp libs.androidx.room.compiler

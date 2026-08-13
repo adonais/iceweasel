@@ -131,6 +131,7 @@ namespace jit {
   _(ToFloat32)                    \
   _(ToFloat16)                    \
   _(TruncateToInt32)              \
+  _(CanonicalizeNaN)              \
   _(NewObject)                    \
   _(NewPlainObject)               \
   _(NewArrayObject)               \
@@ -889,6 +890,14 @@ class RToFloat16 final : public RInstruction {
 class RTruncateToInt32 final : public RInstruction {
  public:
   RINSTRUCTION_HEADER_NUM_OP_(TruncateToInt32, 1)
+
+  [[nodiscard]] bool recover(JSContext* cx,
+                             SnapshotIterator& iter) const override;
+};
+
+class RCanonicalizeNaN final : public RInstruction {
+ public:
+  RINSTRUCTION_HEADER_NUM_OP_(CanonicalizeNaN, 1)
 
   [[nodiscard]] bool recover(JSContext* cx,
                              SnapshotIterator& iter) const override;

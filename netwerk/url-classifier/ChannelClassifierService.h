@@ -5,10 +5,10 @@
 #ifndef mozilla_net_ChannelClassifierService_h
 #define mozilla_net_ChannelClassifierService_h
 
-#include "nsIChannelClassifierService.h"
 #include "mozilla/net/ChannelClassifierUtils.h"
 #include "mozilla/net/UrlClassifierCommon.h"
 #include "nsCOMPtr.h"
+#include "nsIChannelClassifierService.h"
 #include "nsTArray.h"
 
 namespace mozilla {

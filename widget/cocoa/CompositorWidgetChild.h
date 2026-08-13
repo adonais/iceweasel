@@ -6,8 +6,8 @@
 #define widget_cocoa_CompositorWidgetChild_h
 
 #include "CocoaCompositorWidget.h"
-#include "mozilla/widget/PCompositorWidgetChild.h"
 #include "mozilla/widget/CompositorWidgetVsyncObserver.h"
+#include "mozilla/widget/PCompositorWidgetChild.h"
 
 namespace mozilla {
 namespace widget {

@@ -5,10 +5,10 @@
 #ifndef nsAtomTable_h_
 #define nsAtomTable_h_
 
+#include <stddef.h>
+
 #include "mozilla/MemoryReporting.h"
 #include "nsAtom.h"
-
-#include <stddef.h>
 
 void NS_InitAtomTable();
 void NS_ShutdownAtomTable();

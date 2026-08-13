@@ -1,5 +1,3 @@
-// |jit-test| skip-if: !isAsmJSCompilationAvailable()
-//
 // Confusion between TA constructor and TA view led to invalid wasm code
 // generation and a subsequent failure in the wasm verifier.  This code should
 // not validate; we should fall back to JS execution.

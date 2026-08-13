@@ -33,9 +33,6 @@ const PREF_SELECTED_WALLPAPER =
 const PREF_WALLPAPERS_USER_ENABLED_MIGRATED =
   "browser.newtabpage.activity-stream.newtabWallpapers.user.enabled.migrated";
 
-const RS_FALLBACK_BASE_URL =
-  "https://firefox-settings-attachments.cdn.mozilla.net/";
-
 export class WallpaperFeed {
   constructor() {
     this.loaded = false;
@@ -79,10 +76,11 @@ export class WallpaperFeed {
       // startup and on Remote Settings sync) would re-run the check every time,
       // undoing any explicit toggle-off the user makes.
       //
-      // @backward-compat { version 152 }
-      // This migration block and PREF_WALLPAPERS_USER_ENABLED_MIGRATED can be
-      // removed once Firefox 152 is on Release, at which point all users will
-      // have run this migration.
+      // This is a one-time data migration, not a train-hop compatibility shim,
+      // so it is intentionally not gated on a release version: a profile can
+      // update directly from a pre-migration version to a much later one
+      // (Firefox updates may skip intermediate major versions), and must still
+      // run this check the first time the new code executes.
       if (
         !Services.prefs.getBoolPref(
           PREF_WALLPAPERS_USER_ENABLED_MIGRATED,
@@ -166,15 +164,7 @@ export class WallpaperFeed {
       PREF_WALLPAPERS_CUSTOM_WALLPAPER_ENABLED
     );
 
-    let baseAttachmentURL = RS_FALLBACK_BASE_URL;
-    try {
-      baseAttachmentURL = await lazy.Utils.baseAttachmentsURL();
-    } catch (error) {
-      console.error(
-        `Error fetching remote settings base url from CDN. Falling back to ${RS_FALLBACK_BASE_URL}`,
-        error
-      );
-    }
+    const baseAttachmentURL = await lazy.Utils.baseAttachmentsURL();
 
     const wallpapers = [
       ...records.map(record => {

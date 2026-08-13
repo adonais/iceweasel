@@ -57,6 +57,18 @@ NS_IMPL_CYCLE_COLLECTION_INHERITED(GVAutoplayPermissionRequest,
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(GVAutoplayPermissionRequest,
                                                ContentPermissionRequestBase)
 
+static void NotifyRequestStatusChanged(nsPIDOMWindowInner* aWindow) {
+  if (!aWindow) {
+    return;
+  }
+  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+  if (obs) {
+    obs->NotifyObservers(ToSupports(aWindow),
+                         kGVAutoplayRequestStatusChangedTopic,
+                         /* no extra string data */ nullptr);
+  }
+}
+
 /* static */
 void GVAutoplayPermissionRequest::CreateRequest(nsGlobalWindowInner* aWindow,
                                                 BrowsingContext* aContext,
@@ -145,6 +157,7 @@ GVAutoplayPermissionRequest::Cancel() {
              status == RStatus::eUNKNOWN);
   if ((status == RStatus::ePENDING) && !mContext->IsDiscarded()) {
     SetRequestStatus(RStatus::eDENIED);
+    NotifyRequestStatusChanged(mWindow);
   }
   mContext = nullptr;
   return NS_OK;
@@ -165,13 +178,7 @@ GVAutoplayPermissionRequest::Allow(JS::Handle<JS::Value> aChoices) {
              status == RStatus::eUNKNOWN);
   if (status == RStatus::ePENDING) {
     SetRequestStatus(RStatus::eALLOWED);
-    // Permission grant may arrive late and elements may be suspended.
-    // We message to wake them up and resume downloading data if needed.
-    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-    if (obs) {
-      obs->NotifyObservers(ToSupports(mWindow), kGVAutoplayAllowedTopic,
-                           /* no extra string data */ nullptr);
-    }
+    NotifyRequestStatusChanged(mWindow);
   }
   mContext = nullptr;
   return NS_OK;

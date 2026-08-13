@@ -126,7 +126,7 @@ MOZ_RUNINIT const nsOSXSystemProxySettings::SchemeMapping
          kSCPropNetProxiesFTPPort, false},
         {"socks", kSCPropNetProxiesSOCKSEnable, kSCPropNetProxiesSOCKSProxy,
          kSCPropNetProxiesSOCKSPort, true},
-        {NULL, NULL, NULL, NULL, false},
+        {nullptr, nullptr, nullptr, nullptr, false},
 };
 
 static void ProxyHasChangedWrapper(SCDynamicStoreRef aStore,
@@ -135,8 +135,8 @@ static void ProxyHasChangedWrapper(SCDynamicStoreRef aStore,
 }
 
 nsOSXSystemProxySettings::nsOSXSystemProxySettings()
-    : mSystemDynamicStore(NULL), mProxyDict(NULL) {
-  mContext = (SCDynamicStoreContext){0, this, NULL, NULL, NULL};
+    : mSystemDynamicStore(nullptr), mProxyDict(nullptr) {
+  mContext = (SCDynamicStoreContext){0, this, nullptr, nullptr, nullptr};
 }
 
 nsresult nsOSXSystemProxySettings::Init() {
@@ -145,25 +145,25 @@ nsresult nsOSXSystemProxySettings::Init() {
   // Register for notification of proxy setting changes
   // See:
   // http://developer.apple.com/documentation/Networking/Conceptual/CFNetwork/CFStreamTasks/chapter_4_section_5.html
-  mSystemDynamicStore = SCDynamicStoreCreate(NULL, CFSTR("Mozilla"),
+  mSystemDynamicStore = SCDynamicStoreCreate(nullptr, CFSTR("Mozilla"),
                                              ProxyHasChangedWrapper, &mContext);
   if (!mSystemDynamicStore) return NS_ERROR_FAILURE;
 
   // Set up the store to monitor any changes to the proxies
-  CFStringRef proxiesKey = SCDynamicStoreKeyCreateProxies(NULL);
+  CFStringRef proxiesKey = SCDynamicStoreKeyCreateProxies(nullptr);
   if (!proxiesKey) return NS_ERROR_FAILURE;
 
-  CFArrayRef keyArray = CFArrayCreate(NULL, (const void**)(&proxiesKey), 1,
+  CFArrayRef keyArray = CFArrayCreate(nullptr, (const void**)(&proxiesKey), 1,
                                       &kCFTypeArrayCallBacks);
   CFRelease(proxiesKey);
   if (!keyArray) return NS_ERROR_FAILURE;
 
-  SCDynamicStoreSetNotificationKeys(mSystemDynamicStore, keyArray, NULL);
+  SCDynamicStoreSetNotificationKeys(mSystemDynamicStore, keyArray, nullptr);
   CFRelease(keyArray);
 
   // Add the dynamic store to the run loop
   CFRunLoopSourceRef storeRLSource =
-      SCDynamicStoreCreateRunLoopSource(NULL, mSystemDynamicStore, 0);
+      SCDynamicStoreCreateRunLoopSource(nullptr, mSystemDynamicStore, 0);
   if (!storeRLSource) return NS_ERROR_FAILURE;
   CFRunLoopAddSource(CFRunLoopGetCurrent(), storeRLSource,
                      kCFRunLoopCommonModes);
@@ -206,7 +206,7 @@ nsOSXSystemProxySettings::~nsOSXSystemProxySettings() {
     // Invalidate the dynamic store's run loop source
     // to get the store out of the run loop
     CFRunLoopSourceRef rls =
-        SCDynamicStoreCreateRunLoopSource(NULL, mSystemDynamicStore, 0);
+        SCDynamicStoreCreateRunLoopSource(nullptr, mSystemDynamicStore, 0);
     if (rls) {
       CFRunLoopSourceInvalidate(rls);
       CFRelease(rls);
@@ -234,9 +234,9 @@ nsresult nsOSXSystemProxySettings::FindSCProxyPort(const nsACString& aScheme,
                                                    bool& aResultSocksProxy) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
-  NS_ENSURE_TRUE(mProxyDict != NULL, NS_ERROR_FAILURE);
+  NS_ENSURE_TRUE(mProxyDict != nullptr, NS_ERROR_FAILURE);
 
-  for (const SchemeMapping* keys = gSchemeMappingList; keys->mScheme != NULL;
+  for (const SchemeMapping* keys = gSchemeMappingList; keys->mScheme != nullptr;
        ++keys) {
     // Check for matching scheme (when appropriate)
     if (strcasecmp(keys->mScheme, PromiseFlatCString(aScheme).get()) &&
@@ -245,13 +245,14 @@ nsresult nsOSXSystemProxySettings::FindSCProxyPort(const nsACString& aScheme,
 
     // Check the proxy is enabled
     NSNumber* enabled = [mProxyDict objectForKey:(NSString*)keys->mEnabled];
-    NS_ENSURE_TRUE(enabled == NULL || [enabled isKindOfClass:[NSNumber class]],
-                   NS_ERROR_FAILURE);
+    NS_ENSURE_TRUE(
+        enabled == nullptr || [enabled isKindOfClass:[NSNumber class]],
+        NS_ERROR_FAILURE);
     if ([enabled intValue] == 0) continue;
 
     // Get the proxy host
     NSString* host = [mProxyDict objectForKey:(NSString*)keys->mHost];
-    if (host == NULL) break;
+    if (host == nullptr) break;
     NS_ENSURE_TRUE([host isKindOfClass:[NSString class]], NS_ERROR_FAILURE);
     aResultHost.Assign([host UTF8String]);
 
@@ -275,7 +276,7 @@ bool nsOSXSystemProxySettings::IsAutoconfigEnabled() const {
 
   NSNumber* value = [mProxyDict
       objectForKey:(NSString*)kSCPropNetProxiesProxyAutoConfigEnable];
-  NS_ENSURE_TRUE(value == NULL || [value isKindOfClass:[NSNumber class]],
+  NS_ENSURE_TRUE(value == nullptr || [value isKindOfClass:[NSNumber class]],
                  false);
   return ([value intValue] != 0);
 
@@ -288,7 +289,7 @@ nsresult nsOSXSystemProxySettings::GetAutoconfigURL(
 
   NSString* value = [mProxyDict
       objectForKey:(NSString*)kSCPropNetProxiesProxyAutoConfigURLString];
-  if (value != NULL) {
+  if (value != nullptr) {
     NS_ENSURE_TRUE([value isKindOfClass:[NSString class]], NS_ERROR_FAILURE);
     aResult.Assign([value UTF8String]);
     return NS_OK;
@@ -303,16 +304,16 @@ bool nsOSXSystemProxySettings::IsInExceptionList(
     const nsACString& aHost) const {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
-  NS_ENSURE_TRUE(mProxyDict != NULL, false);
+  NS_ENSURE_TRUE(mProxyDict != nullptr, false);
 
   NSArray* exceptionList =
       [mProxyDict objectForKey:(NSString*)kSCPropNetProxiesExceptionsList];
   NS_ENSURE_TRUE(
-      exceptionList == NULL || [exceptionList isKindOfClass:[NSArray class]],
+      exceptionList == nullptr || [exceptionList isKindOfClass:[NSArray class]],
       false);
 
   NSEnumerator* exceptionEnumerator = [exceptionList objectEnumerator];
-  NSString* currentValue = NULL;
+  NSString* currentValue = nullptr;
   while ((currentValue = [exceptionEnumerator nextObject])) {
     NS_ENSURE_TRUE([currentValue isKindOfClass:[NSString class]], false);
     nsAutoCString overrideStr([currentValue UTF8String]);
@@ -326,7 +327,7 @@ bool nsOSXSystemProxySettings::IsInExceptionList(
 nsresult nsOSXSystemProxySettings::GetPACURI(nsACString& aResult) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
-  NS_ENSURE_TRUE(mProxyDict != NULL, NS_ERROR_FAILURE);
+  NS_ENSURE_TRUE(mProxyDict != nullptr, NS_ERROR_FAILURE);
 
   nsAutoCString pacUrl;
   if (IsAutoconfigEnabled() && NS_SUCCEEDED(GetAutoconfigURL(pacUrl))) {
@@ -445,11 +446,11 @@ void OSXSystemProxySettingsAsync::OnProxyConfigChangedInternal() {
   }
 
   // proxies (for now: PROXY and SOCKS)
-  for (const SchemeMapping* keys = gSchemeMappingList; keys->mScheme != NULL;
+  for (const SchemeMapping* keys = gSchemeMappingList; keys->mScheme != nullptr;
        ++keys) {
     // Check the proxy is enabled
     NSNumber* enabled = [mProxyDict objectForKey:(NSString*)keys->mEnabled];
-    if (!(enabled == NULL || [enabled isKindOfClass:[NSNumber class]])) {
+    if (!(enabled == nullptr || [enabled isKindOfClass:[NSNumber class]])) {
       continue;
     }
 
@@ -459,7 +460,7 @@ void OSXSystemProxySettingsAsync::OnProxyConfigChangedInternal() {
 
     // Get the proxy host
     NSString* host = [mProxyDict objectForKey:(NSString*)keys->mHost];
-    if (host == NULL) break;
+    if (host == nullptr) break;
     if (!([host isKindOfClass:[NSString class]])) {
       continue;
     }
@@ -482,11 +483,12 @@ void OSXSystemProxySettingsAsync::OnProxyConfigChangedInternal() {
   // exceptions
   NSArray* exceptionList =
       [mProxyDict objectForKey:(NSString*)kSCPropNetProxiesExceptionsList];
-  if (exceptionList != NULL && [exceptionList isKindOfClass:[NSArray class]]) {
+  if (exceptionList != nullptr &&
+      [exceptionList isKindOfClass:[NSArray class]]) {
     NSEnumerator* exceptionEnumerator = [exceptionList objectEnumerator];
-    NSString* currentValue = NULL;
+    NSString* currentValue = nullptr;
     while ((currentValue = [exceptionEnumerator nextObject])) {
-      if (currentValue != NULL &&
+      if (currentValue != nullptr &&
           [currentValue isKindOfClass:[NSString class]]) {
         nsCString overrideStr([currentValue UTF8String]);
         config.ByPassRules().mExceptions.AppendElement(std::move(overrideStr));

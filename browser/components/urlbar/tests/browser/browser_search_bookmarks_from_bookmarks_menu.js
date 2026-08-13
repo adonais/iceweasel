@@ -47,7 +47,7 @@ add_task(async function searchBookmarksFromBooksmarksMenu() {
   // Verify URLBar is in search mode with correct restriction
   is(
     gURLBar.searchMode?.source,
-    UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     "Addressbar in correct mode."
   );
 

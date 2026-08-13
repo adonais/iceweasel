@@ -5,15 +5,15 @@
 #ifndef mozilla_a11y_LazyInstantiator_h
 #define mozilla_a11y_LazyInstantiator_h
 
-#include "IUnknownImpl.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/RefPtr.h"
-#include "mozilla/Mutex.h"
-#include "nsISupportsImpl.h"
-#include "nsString.h"
-
 #include <oleacc.h>
 #include <uiautomation.h>
+
+#include "IUnknownImpl.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/Mutex.h"
+#include "mozilla/RefPtr.h"
+#include "nsISupportsImpl.h"
+#include "nsString.h"
 
 class nsIFile;
 

@@ -31,9 +31,24 @@ from mozversioncontrol import (
     JujutsuRepository,
 )
 
-TOKEN_FILE = (
-    Path(get_state_dir(specific_to_topsrcdir=False)) / "lando_auth0_user_token.json"
-)
+# Instances that keep using the legacy shared token file so existing users
+# are not forced to re-authenticate. This was the default instance back when
+# the token was stored in a single shared file.
+LEGACY_TOKEN_FILE_NAME = "lando_auth0_user_token.json"
+LEGACY_TOKEN_FILE_INSTANCES = {"lando-prod-2025"}
+
+
+def get_token_file(instance_id: str) -> Path:
+    """Return the path to the Auth0 token cache file for a Lando instance.
+
+    Tokens are stored per-instance since each Lando instance uses a distinct
+    Auth0 audience, so a token issued for one instance is not valid for another.
+    """
+    state_dir = Path(get_state_dir(specific_to_topsrcdir=False))
+    if instance_id in LEGACY_TOKEN_FILE_INSTANCES:
+        return state_dir / LEGACY_TOKEN_FILE_NAME
+    return state_dir / f"lando_auth0_user_token_{instance_id}.json"
+
 
 LAUNCH_BROWSER = True
 
@@ -49,18 +64,18 @@ def convert_bytes_patch_to_base64(patch_bytes: bytes) -> str:
     return base64.b64encode(patch_bytes).decode("ascii")
 
 
-def load_token_from_disk() -> dict | None:
+def load_token_from_disk(token_file: Path) -> dict | None:
     """Load and validate an existing Auth0 token from disk.
 
     Return the token as a `dict` if it can be validated, or return `None`
     if any error was encountered.
     """
-    if not TOKEN_FILE.exists():
+    if not token_file.exists():
         print("No existing Auth0 token found.")
         return None
 
     try:
-        user_token = json.loads(TOKEN_FILE.read_bytes())
+        user_token = json.loads(token_file.read_bytes())
     except json.JSONDecodeError:
         print("Existing Auth0 token could not be decoded as JSON.")
         return None
@@ -281,15 +296,15 @@ class Auth0Config:
 
         raise ValueError("Timed out waiting for Auth0 device code authentication!")
 
-    def get_token(self) -> dict:
+    def get_token(self, token_file: Path) -> dict:
         """Retrieve an access token for authentication.
 
-        If a cached token is found and can be confirmed to be valid, return it.
-        Otherwise, perform the Device Code Flow authorization to request a new
-        token, validate it and save it to disk.
+        If a cached token is found in `token_file` and can be confirmed to be
+        valid, return it. Otherwise, perform the Device Code Flow authorization
+        to request a new token, validate it and save it to `token_file`.
         """
         # Load a cached token and validate it if one is available.
-        cached_token = load_token_from_disk()
+        cached_token = load_token_from_disk(token_file)
         user_token = self.validate_token(cached_token) if cached_token else None
 
         # Login with the Device Authorization Flow if an existing token isn't found.
@@ -301,7 +316,7 @@ class Auth0Config:
             raise ValueError("Could not get an Auth0 token.")
 
         # Save token to disk.
-        with TOKEN_FILE.open("w") as f:
+        with token_file.open("w") as f:
             json.dump(user_token, f, indent=2, sort_keys=True)
 
         return user_token
@@ -365,12 +380,13 @@ class LandoAPI:
             scope=parser.get(section, "auth0_scope"),
         )
 
-        token = auth0.get_token()
+        instance_id = parser.get(section, "instance_id", fallback=section)
+        token = auth0.get_token(get_token_file(instance_id))
 
         return LandoAPI(
             api_url=parser.get(section, "api_domain"),
             access_token=token["access_token"],
-            instance_id=parser.get(section, "instance_id", fallback=section),
+            instance_id=instance_id,
             verify_tls=parser.getboolean(section, "verify_tls", fallback=True),
         )
 
@@ -404,6 +420,7 @@ class LandoAPI:
         patch_format: str,
         base_commit: str,
         base_commit_vcs: str,
+        repo_name: str = "try",
     ) -> dict:
         """Send try push contents to Lando.
 
@@ -411,6 +428,7 @@ class LandoAPI:
         the Mercurial `base_commit`, using the Auth0 `access_token` for authorization.
         """
         request_json_body = {
+            "repo_name": repo_name,
             "base_commit": base_commit,
             "base_commit_vcs": base_commit_vcs,
             "patch_format": patch_format,
@@ -429,6 +447,7 @@ def push_to_lando_try(
     metrics,
     *,
     force_old_lando: bool = False,
+    repo_name: str = "try",
 ):
     """Push a set of patches to Lando's try endpoint."""
 
@@ -445,7 +464,7 @@ def push_to_lando_try(
         raise ValueError(f"Try push via Lando is not supported for `{vcs.name}`.")
 
     # Load Auth0 config from `.lando.ini`.
-    lando_api = get_lando_api_config(vcs.path)
+    lando_api = get_lando_api_config(vcs)
 
     # Get the time when the push was initiated, not including Auth0 login time.
     push_start_time = time.perf_counter()
@@ -473,7 +492,11 @@ def push_to_lando_try(
         metrics.mach_try.vcs_push.start()
         # Make the try request to Lando.
         response_json = lando_api.post_try_push_patches(
-            patches, patch_format, base_commit, base_commit_vcs
+            patches,
+            patch_format,
+            base_commit,
+            base_commit_vcs,
+            repo_name=repo_name,
         )
     except LandoAPIException as exc:
         metrics.mach_try.vcs_push.stop()
@@ -501,24 +524,38 @@ def push_to_lando_try(
     }
 
 
-def get_lando_instance_id(vcs_path: str, section_name: str | None = None) -> str:
+def get_lando_instance_id(
+    vcs: SupportedVcsRepository, section_name: str | None = None
+) -> str:
     """Return the lando instance ID from the given config section, with default."""
-    lando_api = get_lando_api_config(vcs_path, section_name)
+    lando_api = get_lando_api_config(vcs, section_name)
     return lando_api.instance_id
 
 
-def get_lando_api_config(vcs_path: str, section_name: str | None = None) -> LandoAPI:
+def get_lando_api_config(
+    vcs: SupportedVcsRepository, section_name: str | None = None
+) -> LandoAPI:
     """Initialise a LandoAPI object from the .lando.ini for the given section_name"""
-    lando_ini_path = Path(vcs_path) / ".lando.ini"
-    section_name = section_name or get_lando_config_section_name()
+    lando_ini_path = Path(vcs.path) / ".lando.ini"
+    if not lando_ini_path.exists():
+        # In comm-central, `tools/` is under the `mozilla/`
+        # subdirectory, while the VCS root is under `comm/`
+        lando_ini_path = Path(vcs.path) / ".." / ".lando.ini"
+
+    section_name = section_name or get_lando_config_section_name(vcs)
 
     return LandoAPI.from_lando_config_file(lando_ini_path, section_name)
 
 
-def get_lando_config_section_name() -> str:
+def get_lando_config_section_name(vcs: SupportedVcsRepository) -> str:
     """Determine which lando config section to use.
 
     This is based on defaults and overrides such as the LANDO_TRY_CONFIG env variable.
+
+    The new Lando does not support pushing to try from a Mercurial checkout, so
+    Mercurial repos default to the old `lando-prod` instance.
     """
-    default_lando_config_section = "lando-prod-new"
-    return os.getenv("LANDO_TRY_CONFIG", default_lando_config_section)
+    if "LANDO_TRY_CONFIG" in os.environ:
+        return os.environ["LANDO_TRY_CONFIG"]
+
+    return "lando-prod" if vcs.name == "hg" else "lando-prod-new"

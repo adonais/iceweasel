@@ -2,28 +2,26 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/DebugOnly.h"
-
-#include "mozilla/Logging.h"
-
 #include "WinMouseScrollHandler.h"
-#include "nsWindow.h"
-#include "nsWindowDefs.h"
+
+#include <psapi.h>
+
 #include "KeyboardLayout.h"
 #include "WinUtils.h"
-#include "nsGkAtoms.h"
-#include "nsIDOMWindowUtils.h"
-
 #include "mozilla/AutoRestore.h"
+#include "mozilla/DebugOnly.h"
+#include "mozilla/Logging.h"
 #include "mozilla/MiscEvents.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/dom/WheelEventBinding.h"
 #include "mozilla/StaticPrefs_mousewheel.h"
 #include "mozilla/StaticPrefs_widget.h"
+#include "mozilla/dom/WheelEventBinding.h"
 #include "mozilla/widget/WinRegistry.h"
-
-#include <psapi.h>
+#include "nsGkAtoms.h"
+#include "nsIDOMWindowUtils.h"
+#include "nsWindow.h"
+#include "nsWindowDefs.h"
 
 namespace mozilla {
 namespace widget {

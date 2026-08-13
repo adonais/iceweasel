@@ -36,7 +36,7 @@ class ContentRecommendationsRefreshSchedulerTest {
             ContentRecommendationsRefreshScheduler(
                 config = PocketStoriesConfig(
                     client = client,
-                    frequency = Frequency(1, TimeUnit.HOURS),
+                    contentRecommendationsRefreshFrequency = Frequency(1, TimeUnit.HOURS),
                 ),
             ),
         )

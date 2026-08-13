@@ -25,6 +25,8 @@
 
 namespace mozilla::dom::quota {
 
+class DirtyTrackingAutoLock;
+
 class OriginInfo;
 class QuotaManager;
 
@@ -65,7 +67,8 @@ class CanonicalQuotaObject final : public QuotaObject {
     return result.forget();
   }
 
-  bool LockedMaybeUpdateSize(int64_t aSize, bool aTruncate);
+  bool LockedMaybeUpdateSize(int64_t aSize, bool aTruncate,
+                             DirtyTrackingAutoLock& aProofOfLock);
 
   mozilla::ThreadSafeAutoRefCnt mRefCnt;
 

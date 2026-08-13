@@ -2,15 +2,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/a11y/DocAccessible.h"
-#include "mozilla/a11y/DocAccessibleParent.h"
 #include "mozilla/a11y/PdfStructTreeBuilder.h"
-#include "mozilla/a11y/TableCellAccessible.h"
+
 #include "mozilla/ClearOnShutdown.h"
-#include "mozilla/dom/BrowserParent.h"
-#include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/StaticPrefs_accessibility.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/a11y/DocAccessible.h"
+#include "mozilla/a11y/DocAccessibleParent.h"
+#include "mozilla/a11y/TableCellAccessible.h"
+#include "mozilla/dom/BrowserParent.h"
+#include "mozilla/dom/CanonicalBrowsingContext.h"
+#include "mozilla/dom/Document.h"
 #include "skia/include/docs/SkPDFDocument.h"
 
 namespace mozilla::a11y {

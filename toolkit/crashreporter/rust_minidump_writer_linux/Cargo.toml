@@ -9,7 +9,7 @@ license = "MPL-2.0"
 
 [dependencies]
 crash-context = "0.6.1"
-minidump-writer = { git = "https://github.com/rust-minidump/minidump-writer.git", rev = "107e531a7a06f8e886ffcee13eb07e9ded43473b" }
+minidump-writer = { git = "https://github.com/rust-minidump/minidump-writer.git", rev = "45f5459790d264098346343f0ad58d008c386fa5" }
 crash_helper_common = { path = "../crash_helper_common/" }
 mozannotation_server = { path = "../mozannotation_server/" }
 libc = "0.2.74"

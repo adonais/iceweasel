@@ -18,6 +18,7 @@ add_task(async function test_addressbar_shortcut_smartwindow() {
     async () => {
       // Ensure sidebar is closed for this test
       AIWindowUI.closeSidebar(win);
+      await waitForSidebarClosed(win);
 
       win.gBrowser.selectedTab.focus();
       EventUtils.synthesizeKey("l", { accelKey: true }, win);

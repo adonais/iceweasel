@@ -9,6 +9,8 @@
 
 #include <algorithm>
 
+#include "xpcprivate.h"
+
 #include "js/PropertyAndElement.h"  // JS_HasProperty, JS_HasPropertyById
 
 /***************************************************************************/

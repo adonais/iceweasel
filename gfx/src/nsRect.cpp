@@ -3,19 +3,20 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsRect.h"
-#include "mozilla/gfx/Types.h"   // for eSideBottom, etc
+
 #include "mozilla/CheckedInt.h"  // for CheckedInt
+#include "mozilla/gfx/Types.h"   // for eSideBottom, etc
 #include "nsDeviceContext.h"     // for nsDeviceContext
-#include "nsString.h"            // for nsAutoString, etc
 #include "nsMargin.h"            // for nsMargin
+#include "nsString.h"            // for nsAutoString, etc
 
 #ifdef USE_NEON
-#  include "nsRectIntersectGeneric.h"
 #  include "mozilla/arm.h"
+#  include "nsRectIntersectGeneric.h"
 #endif
 #if defined(USE_SSE42)
-#  include "nsRectIntersectGeneric.h"
 #  include "mozilla/SSE.h"
+#  include "nsRectIntersectGeneric.h"
 #endif
 
 static_assert(

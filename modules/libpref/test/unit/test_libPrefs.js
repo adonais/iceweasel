@@ -75,6 +75,9 @@ add_task(async function run_test() {
     ps.unlockPref(null);
   }, Cr.NS_ERROR_INVALID_ARG);
   do_check_throws(function () {
+    ps.clearUserBranch(null);
+  }, Cr.NS_ERROR_INVALID_ARG);
+  do_check_throws(function () {
     ps.deleteBranch(null);
   }, Cr.NS_ERROR_INVALID_ARG);
   do_check_throws(function () {
@@ -145,6 +148,19 @@ add_task(async function run_test() {
   Assert.ok(!ps.prefHasUserValue("UserPref.existing.int"));
   ps.clearUserPref("UserPref.existing.char");
   Assert.ok(!ps.prefHasUserValue("UserPref.existing.char"));
+
+  // clearUserBranch should remove all the prefs on the branch, but not other
+  // branches
+  ps.setBoolPref("UserPref.existing.bool", true);
+  ps.setIntPref("UserPref.existing.int", 23);
+  ps.setCharPref("UserPref.existing.char", "hey");
+  ps.setBoolPref("UserOtherPref.existing.bool", true);
+
+  ps.clearUserBranch("UserPref.");
+  Assert.ok(!ps.prefHasUserValue("UserPref.existing.bool"));
+  Assert.ok(!ps.prefHasUserValue("UserPref.existing.int"));
+  Assert.ok(!ps.prefHasUserValue("UserPref.existing.char"));
+  Assert.equal(ps.getBoolPref("UserOtherPref.existing.bool"), true);
 
   //* *************************************************************************//
   // Large value test

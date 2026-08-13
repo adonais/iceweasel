@@ -5,8 +5,8 @@
 #ifndef widget_windows_SystemStatusBar_h
 #define widget_windows_SystemStatusBar_h
 
-#include "nsISystemStatusBar.h"
 #include "mozilla/LinkedList.h"
+#include "nsISystemStatusBar.h"
 
 namespace mozilla::widget {
 class StatusBarEntry;

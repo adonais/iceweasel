@@ -44,6 +44,9 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
     }
 #  else
     if (!XRE_IsRDDProcess() && !XRE_IsUtilityProcess() &&
+#    ifdef MOZ_WIDGET_ANDROID
+        !XRE_IsGPUProcess() &&
+#    endif
         !(XRE_IsParentProcess() && PR_GetEnv("MOZ_RUN_GTEST"))) {
       return;
     }
@@ -168,6 +171,7 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
             CreateDecoderParams::Option::Output8BitPerChannel),
         aParams.mTrackingId, aParams.mCDM);
 
+#ifdef XP_WIN
     // Ensure that decoding is exclusively performed using HW decoding in
     // the GPU process. If FFmpeg does not support HW decoding, reset the
     // decoder to allow PDMFactory to select an alternative HW-capable decoder
@@ -184,11 +188,16 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
         decoder = nullptr;
       }
     }
+#endif
     return decoder.forget();
   }
 
   already_AddRefed<MediaDataDecoder> CreateAudioDecoder(
       const CreateDecoderParams& aParams) override {
+    if (XRE_IsGPUProcess()) {
+      // Only allow video in the GPU process.
+      return nullptr;
+    }
     if (Supports(SupportDecoderParams(aParams), nullptr).isEmpty()) {
       return nullptr;
     }
@@ -214,11 +223,18 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
       return media::DecodeSupportSet{};
     }
 
+    // In GPU process, only support decoding if video. This only gives a hint of
+    // what the GPU decoder *may* support. The actual check will occur in
+    // CreateVideoDecoder.
+    const auto& trackInfo = aParams.mConfig;
+    if (XRE_IsGPUProcess() && !trackInfo.GetAsVideoInfo()) {
+      return media::DecodeSupportSet{};
+    }
+
     // Temporary - forces use of VPXDecoder when alpha is present.
     // Bug 1263836 will handle alpha scenario once implemented. It will shift
     // the check for alpha to PDMFactory but not itself remove the need for a
     // check.
-    const auto& trackInfo = aParams.mConfig;
     const nsACString& mimeType = trackInfo.mMimeType;
     if (VPXDecoder::IsVPX(mimeType) && trackInfo.GetAsVideoInfo()->HasAlpha()) {
       MOZ_LOG_FMT(sPDMLog, LogLevel::Debug,

@@ -4,8 +4,8 @@
 
 #include "xpcAccessibleTextLeafRange.h"
 
-#include "nsIAccessible.h"
 #include "TextLeafRange.h"
+#include "nsIAccessible.h"
 #include "xpcAccessibleDocument.h"
 
 using namespace mozilla;

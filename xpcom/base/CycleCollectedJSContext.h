@@ -5,16 +5,15 @@
 #ifndef mozilla_CycleCollectedJSContext_h
 #define mozilla_CycleCollectedJSContext_h
 
+#include "js/GCVector.h"
+#include "js/Promise.h"
 #include "js/TracingAPI.h"
+#include "js/friend/MicroTask.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/AtomList.h"
 #include "mozilla/dom/Promise.h"
-#include "js/GCVector.h"
-#include "js/Promise.h"
-#include "js/friend/MicroTask.h"
-
 #include "nsCOMPtr.h"
 #include "nsRefPtrHashtable.h"
 #include "nsTArray.h"
@@ -497,6 +496,10 @@ class CycleCollectedJSContext : dom::PerThreadAtomCache, public JS::JobQueue {
       mConsumedRejections;
   nsTArray<nsCOMPtr<nsISupports /* UncaughtRejectionObserver */>>
       mUncaughtRejectionObservers;
+
+  bool HasPendingUnhandledRejection(uint64_t aPromiseID) const {
+    return mPendingUnhandledRejections.Contains(aPromiseID);
+  }
 
   virtual bool IsSystemCaller() const = 0;
 

@@ -10,13 +10,13 @@
 #include "mozilla/EventForwards.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
+#include "nsCOMPtr.h"
+#include "nsChangeObserver.h"
 #include "nsISupports.h"
-#include "nsMenuParentX.h"
 #include "nsMenuBarX.h"
 #include "nsMenuGroupOwnerX.h"
 #include "nsMenuItemIconX.h"
-#include "nsCOMPtr.h"
-#include "nsChangeObserver.h"
+#include "nsMenuParentX.h"
 #include "nsThreadUtils.h"
 
 class nsMenuX;

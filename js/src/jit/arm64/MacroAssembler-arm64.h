@@ -661,8 +661,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
     AutoForbidNops afn(this);
 
     // It is unclear why this sync is necessary:
-    // * PSP and SP have been observed to be different in testcase
-    //   tests/asm.js/testBug1046688.js.
+    // * PSP and SP have been observed to be different. See bug 1046688.
     // * Removing the sync causes no failures in all of jit-tests.
     //
     // Also see branch(JitCode*) below. This version of jump() is called only
@@ -830,16 +829,15 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
     store16(src, dest);
   }
 
-  void storePtr(ImmWord imm, const Address& address) {
+  FaultingCodeOffset storePtr(ImmWord imm, const Address& address) {
     if (imm.value == 0) {
-      Str(vixl::xzr, toMemOperand(address));
-      return;
+      return Str(vixl::xzr, toMemOperand(address));
     }
     vixl::UseScratchRegisterScope temps(this);
     const Register scratch = temps.AcquireX().asUnsized();
     MOZ_ASSERT(scratch != address.base);
     movePtr(imm, scratch);
-    storePtr(scratch, address);
+    return storePtr(scratch, address);
   }
   void storePtr(ImmPtr imm, const Address& address) {
     vixl::UseScratchRegisterScope temps(this);
@@ -859,17 +857,16 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
     return Str(ARMRegister(src, 64), toMemOperand(address));
   }
 
-  void storePtr(ImmWord imm, const BaseIndex& address) {
+  FaultingCodeOffset storePtr(ImmWord imm, const BaseIndex& address) {
     if (imm.value == 0) {
-      doBaseIndex(vixl::xzr, address, vixl::STR_x);
-      return;
+      return doBaseIndex(vixl::xzr, address, vixl::STR_x);
     }
     vixl::UseScratchRegisterScope temps(this);
     const ARMRegister scratch64 = temps.AcquireX();
     MOZ_ASSERT(scratch64.asUnsized() != address.base);
     MOZ_ASSERT(scratch64.asUnsized() != address.index);
     Mov(scratch64, Operand(imm.value));
-    doBaseIndex(scratch64, address, vixl::STR_x);
+    return doBaseIndex(scratch64, address, vixl::STR_x);
   }
   void storePtr(ImmGCPtr imm, const BaseIndex& address) {
     vixl::UseScratchRegisterScope temps(this);

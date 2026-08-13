@@ -6,15 +6,15 @@
 #include "nsClipboardHelper.h"
 
 // basics
-#include "nsComponentManagerUtils.h"
 #include "nsCOMPtr.h"
-#include "nsXPCOM.h"
+#include "nsComponentManagerUtils.h"
 #include "nsISupportsPrimitives.h"
 #include "nsServiceManagerUtils.h"
+#include "nsXPCOM.h"
 
 // helpers
-#include "nsIClipboard.h"
 #include "mozilla/dom/Document.h"
+#include "nsIClipboard.h"
 #include "nsITransferable.h"
 #include "nsReadableUtils.h"
 

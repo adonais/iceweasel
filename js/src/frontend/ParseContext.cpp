@@ -2,11 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "frontend/ParseContext-inl.h"
-
 #include "frontend/CompilationStencil.h"  // ScopeContext
 #include "frontend/Parser.h"              // ParserBase
 #include "js/friend/ErrorMessages.h"      // JSMSG_*
+
+#include "frontend/ParseContext-inl.h"
 
 using mozilla::Maybe;
 using mozilla::Nothing;
@@ -314,10 +314,6 @@ static bool DeclarationKindIsCatchParameter(DeclarationKind kind) {
 
 bool ParseContext::Scope::addCatchParameters(ParseContext* pc,
                                              Scope& catchParamScope) {
-  if (pc->useAsmOrInsideUseAsm()) {
-    return true;
-  }
-
   for (auto iter = catchParamScope.declared_->iter(); !iter.done();
        iter.next()) {
     DeclarationKind kind = iter.get().value()->kind();
@@ -336,10 +332,6 @@ bool ParseContext::Scope::addCatchParameters(ParseContext* pc,
 
 void ParseContext::Scope::removeCatchParameters(ParseContext* pc,
                                                 Scope& catchParamScope) {
-  if (pc->useAsmOrInsideUseAsm()) {
-    return;
-  }
-
   for (auto iter = catchParamScope.declared_->iter(); !iter.done();
        iter.next()) {
     auto name = iter.get().key();
@@ -623,12 +615,6 @@ bool ParseContext::hasClosedOverFunctionSpecialName(
 
 bool ParseContext::declareFunctionThis(const UsedNameTracker& usedNames,
                                        bool canSkipLazyClosedOverBindings) {
-  // The asm.js validator does all its own symbol-table management so, as an
-  // optimization, avoid doing any work here.
-  if (useAsmOrInsideUseAsm()) {
-    return true;
-  }
-
   // Derived class constructors emit JSOp::CheckReturn, which requires
   // '.this' to be bound. Class field initializers implicitly read `.this`.
   // Therefore we unconditionally declare `.this` in all class constructors.
@@ -748,12 +734,6 @@ bool ParseContext::declareFunctionArgumentsObject(
 
 bool ParseContext::declareNewTarget(const UsedNameTracker& usedNames,
                                     bool canSkipLazyClosedOverBindings) {
-  // The asm.js validator does all its own symbol-table management so, as an
-  // optimization, avoid doing any work here.
-  if (useAsmOrInsideUseAsm()) {
-    return true;
-  }
-
   FunctionBox* funbox = functionBox();
   auto dotNewTarget = TaggedParserAtomIndex::WellKnown::dot_newTarget_();
 

@@ -9,9 +9,10 @@
 #ifndef MozWayland_h_
 #define MozWayland_h_
 
-#include "mozilla/Types.h"
-#include <gtk/gtk.h>
 #include <gdk/gdkwayland.h>
+#include <gtk/gtk.h>
+
+#include "mozilla/Types.h"
 
 #ifdef __cplusplus
 extern "C" {

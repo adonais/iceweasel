@@ -860,3 +860,156 @@ add_task(async function test_invalid_page_uri() {
     }
   }
 });
+
+add_task(async function test_associated_preferred_over_root() {
+  // When a page has both an associated icon and a root domain icon, the
+  // associated icon should be preferred over the root domain icon as long as
+  // the rescale factor is not excessive, even if the root icon happens to be a
+  // closer size match.
+
+  const PAGE = "http://assoc.root.example.com/page/";
+  const ASSOC_ICON = "http://assoc.root.example.com/page/favicon32.png";
+  const ROOT_ICON = "http://assoc.root.example.com/favicon.ico";
+
+  await PlacesTestUtils.addVisits(PAGE);
+  const dataURL32 = await readFileDataAsDataURL(
+    do_get_file("favicon-normal32.png"),
+    "image/png"
+  );
+  await PlacesTestUtils.setFaviconForPage(PAGE, ASSOC_ICON, dataURL32);
+  const dataURL16 = await readFileDataAsDataURL(
+    do_get_file("favicon-normal16.png"),
+    "image/png"
+  );
+  await PlacesTestUtils.setFaviconForPage(PAGE, ROOT_ICON, dataURL16);
+
+  // Prefer associated@32 over root@16 for preferred=64.
+  let result = await PlacesTestUtils.getFaviconForPage(PAGE, 64);
+  Assert.equal(
+    result.uri.spec,
+    ASSOC_ICON,
+    "Should prefer associated over root with 2x upscale"
+  );
+  Assert.equal(result.width, 32);
+
+  // Prefer associated@32 (downscale) over root@16 for preferred=16.
+  result = await PlacesTestUtils.getFaviconForPage(PAGE, 16);
+  Assert.equal(
+    result.uri.spec,
+    ASSOC_ICON,
+    "Should prefer associated over root when downscaling"
+  );
+  Assert.equal(result.width, 32);
+
+  await PlacesUtils.history.clear();
+  await PlacesTestUtils.clearFavicons();
+});
+
+add_task(
+  async function test_root_preferred_over_associated_excessive_upscale() {
+    // When the only associated icon would require more than 4x upscaling, the
+    // root domain icon should still be preferred.
+
+    const PAGE = "http://rootexcessive.example.com/page/";
+    const ASSOC_ICON = "http://rootexcessive.example.com/page/favicon16.png";
+    const ROOT_ICON = "http://rootexcessive.example.com/favicon.ico";
+
+    await PlacesTestUtils.addVisits(PAGE);
+    const dataURL16 = await readFileDataAsDataURL(
+      do_get_file("favicon-normal16.png"),
+      "image/png"
+    );
+    await PlacesTestUtils.setFaviconForPage(PAGE, ASSOC_ICON, dataURL16);
+    const dataURL64 = await readFileDataAsDataURL(
+      do_get_file("favicon-big64.png"),
+      "image/png"
+    );
+    await PlacesTestUtils.setFaviconForPage(PAGE, ROOT_ICON, dataURL64);
+
+    // Root@64 preferred over associated@16 for preferred=128 (8x upscale needed,
+    // 16 * 4 = 64 < 128).
+    const result = await PlacesTestUtils.getFaviconForPage(PAGE, 128);
+    Assert.equal(
+      result.uri.spec,
+      ROOT_ICON,
+      "Should prefer root when associated would need >4x upscale"
+    );
+    Assert.equal(result.width, 64);
+
+    await PlacesUtils.history.clear();
+    await PlacesTestUtils.clearFavicons();
+  }
+);
+
+add_task(async function test_associated_closest_to_preferred() {
+  // When multiple associated icons exist, the one closest to the preferred size
+  // should be chosen: smallest >= preferred (from above), or largest if all are
+  // below preferred.
+
+  const dataURL16 = await readFileDataAsDataURL(
+    do_get_file("favicon-normal16.png"),
+    "image/png"
+  );
+  const dataURL32 = await readFileDataAsDataURL(
+    do_get_file("favicon-normal32.png"),
+    "image/png"
+  );
+  const dataURL64 = await readFileDataAsDataURL(
+    do_get_file("favicon-big64.png"),
+    "image/png"
+  );
+
+  // Sub-case 1: all associated icons are below preferred.
+  // root@64 wins main selection (48-32=16 is not < |64-48|/4=4).
+  // bestAssociatedIcon should be assoc@32 (largest below 48), not assoc@16.
+  const PAGE1 = "http://closest.example.com/page/";
+  const ASSOC32_1 = "http://closest.example.com/page/favicon32.png";
+  await PlacesTestUtils.addVisits(PAGE1);
+  await PlacesTestUtils.setFaviconForPage(PAGE1, ASSOC32_1, dataURL32);
+  await PlacesTestUtils.setFaviconForPage(
+    PAGE1,
+    "http://closest.example.com/page/favicon16.png",
+    dataURL16
+  );
+  await PlacesTestUtils.setFaviconForPage(
+    PAGE1,
+    "http://closest.example.com/favicon.ico",
+    dataURL64
+  );
+
+  let result = await PlacesTestUtils.getFaviconForPage(PAGE1, 48);
+  Assert.equal(
+    result.uri.spec,
+    ASSOC32_1,
+    "Should prefer largest associated below preferred, not smallest"
+  );
+
+  // Sub-case 2: multiple associated icons are above preferred.
+  // At width=32, assoc is processed before root (root=0 < root=1), then
+  // root@32 overwrites assoc@32 in the main selection.
+  // bestAssociatedIcon should be assoc@32 (smallest >= 20), not assoc@64.
+  const PAGE2 = "http://closestabove.example.com/page/";
+  const ASSOC32_2 = "http://closestabove.example.com/page/favicon32.png";
+  await PlacesTestUtils.addVisits(PAGE2);
+  await PlacesTestUtils.setFaviconForPage(
+    PAGE2,
+    "http://closestabove.example.com/page/favicon64.png",
+    dataURL64
+  );
+  await PlacesTestUtils.setFaviconForPage(PAGE2, ASSOC32_2, dataURL32);
+  await PlacesTestUtils.setFaviconForPage(
+    PAGE2,
+    "http://closestabove.example.com/favicon.ico",
+    dataURL32
+  );
+
+  result = await PlacesTestUtils.getFaviconForPage(PAGE2, 20);
+  Assert.equal(
+    result.uri.spec,
+    ASSOC32_2,
+    "Should prefer smallest associated above preferred, not largest"
+  );
+
+  await PlacesUtils.history.clear();
+  await PlacesTestUtils.clearFavicons();
+});

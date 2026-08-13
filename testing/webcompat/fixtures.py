@@ -13,7 +13,6 @@ from datetime import datetime
 
 import pytest
 import webdriver
-
 from client import Client
 
 try:

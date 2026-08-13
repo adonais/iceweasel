@@ -5,10 +5,10 @@
 #ifndef nsThreadManager_h_
 #define nsThreadManager_h_
 
-#include "nsIThreadManager.h"
-#include "nsThread.h"
 #include "mozilla/ShutdownPhase.h"
 #include "mozilla/StaticString.h"
+#include "nsIThreadManager.h"
+#include "nsThread.h"
 
 class nsIRunnable;
 class nsIThread;

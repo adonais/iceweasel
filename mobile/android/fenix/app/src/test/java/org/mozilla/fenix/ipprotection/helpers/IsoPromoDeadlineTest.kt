@@ -5,7 +5,6 @@
 package org.mozilla.fenix.ipprotection.helpers
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -15,6 +14,8 @@ import org.mozilla.fenix.helpers.LocaleTestRule
 import org.robolectric.RobolectricTestRunner
 import java.time.format.DateTimeParseException
 import java.util.Locale
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class IsoPromoDeadlineTest {
@@ -31,7 +32,7 @@ class IsoPromoDeadlineTest {
         assertNotNull(formatted)
         assertTrue(
             "Expected formatted date to contain the month name, was \"$formatted\"",
-            formatted!!.contains("September"),
+            formatted.contains("September"),
         )
         assertTrue(formatted.contains("30"))
         assertTrue(captured.isEmpty())
@@ -45,7 +46,7 @@ class IsoPromoDeadlineTest {
 
         assertNull(formatted)
         assertEquals(1, captured.size)
-        assertTrue(captured.single() is DateTimeParseException)
+        assertIs<DateTimeParseException>(captured.single())
     }
 
     @Test
@@ -56,7 +57,7 @@ class IsoPromoDeadlineTest {
 
         assertNull(formatted)
         assertEquals(1, captured.size)
-        assertTrue(captured.single() is DateTimeParseException)
+        assertIs<DateTimeParseException>(captured.single())
     }
 
     @Test
@@ -67,7 +68,7 @@ class IsoPromoDeadlineTest {
 
         assertNull(formatted)
         assertEquals(1, captured.size)
-        assertTrue(captured.single() is DateTimeParseException)
+        assertIs<DateTimeParseException>(captured.single())
     }
 
     @Test
@@ -78,6 +79,6 @@ class IsoPromoDeadlineTest {
 
         assertNull(formatted)
         assertEquals(1, captured.size)
-        assertTrue(captured.single() is DateTimeParseException)
+        assertIs<DateTimeParseException>(captured.single())
     }
 }

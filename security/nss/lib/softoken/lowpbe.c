@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <limits.h> /* for UINT_MAX */
+
 #include "plarena.h"
 
 #include "seccomon.h"
@@ -25,7 +27,7 @@ SEC_ASN1_MKSUB(SECOID_AlgorithmIDTemplate)
 /* Upper bound on PBE iteration counts accepted from parsed algorithm
  * parameters.  This prevents denial-of-service from crafted input
  * (e.g. PKCS#12 files with extreme iteration counts). */
-#ifdef DEBUG
+#ifdef SOFTOKEN_FUZZ
 #define MAX_ITERATION_COUNT 600000
 #else
 #define MAX_ITERATION_COUNT 100000000
@@ -116,6 +118,14 @@ nsspkcs5_PBKDF1(const SECHashObject *hashObj, SECItem *salt, SECItem *pwd,
     SECStatus rv = SECFailure;
 
     if ((salt == NULL) || (pwd == NULL) || (iter < 0)) {
+        return NULL;
+    }
+
+    /* salt->len + pwd->len is used below to size pre_hash and is also copied
+     * out in two pieces; reject inputs where the sum would wrap so we can't
+     * under-allocate and then overflow the buffer. */
+    if (salt->len >= UINT_MAX - pwd->len) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
         return NULL;
     }
 
@@ -330,8 +340,17 @@ nsspkcs5_PBKDF2_F(const SECHashObject *hashobj, SECItem *pwitem, SECItem *salt,
     unsigned int hLen = hashobj->length;
     SECStatus rv = SECFailure;
     unsigned char *last = NULL;
-    unsigned int lastLength = salt->len + 4;
+    unsigned int lastLength;
     unsigned int lastBufLength;
+
+    /* salt->len + 4 (the 4-byte block index is appended) must not wrap;
+     * otherwise lastBufLength would undersize the buffer that the
+     * PORT_Memcpy below fills with salt->len bytes. */
+    if (salt->len >= UINT_MAX - 4) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        goto loser;
+    }
+    lastLength = salt->len + 4;
 
     cx = HMAC_Create(hashobj, pwitem->data, pwitem->len, PR_FALSE);
     if (cx == NULL) {
@@ -464,8 +483,17 @@ nsspkcs5_PKCS12PBE(const SECHashObject *hashObject,
         goto loser;
     }
 
+    if (salt->len >= UINT_MAX - bufferLength ||
+        pwitem->len >= UINT_MAX - bufferLength) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        goto loser;
+    }
     SLen = NSSPBE_ROUNDUP(salt->len, bufferLength);
     PLen = NSSPBE_ROUNDUP(pwitem->len, bufferLength);
+    if (SLen > UINT_MAX - PLen) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        goto loser;
+    }
     I.len = SLen + PLen;
     I.data = (unsigned char *)PORT_ArenaZAlloc(arena, I.len);
     if (I.data == NULL) {
@@ -1232,7 +1260,13 @@ sec_pkcs5_des(SECItem *key, SECItem *iv, SECItem *src, PRBool triple_des,
     DESContext *ctxt;
     unsigned int pad;
 
-    if ((src == NULL) || (key == NULL) || (iv == NULL)) {
+    /* freebl's DES_CreateContext has no IV/key length parameters and reads
+     * fixed-size buffers, so reject undersized SECItems here before they can
+     * cause an out-of-bounds read. */
+    if ((src == NULL) || (key == NULL) || (iv == NULL) ||
+        (key->data == NULL) ||
+        (key->len < (unsigned int)(triple_des ? 24 : DES_KEY_LENGTH)) ||
+        (iv->data == NULL) || (iv->len < DES_BLOCK_SIZE)) {
         PORT_SetError(SEC_ERROR_INVALID_ARGS);
         return NULL;
     }
@@ -1308,7 +1342,11 @@ sec_pkcs5_aes(SECItem *key, SECItem *iv, SECItem *src, PRBool triple_des,
     AESContext *ctxt;
     unsigned int pad;
 
-    if ((src == NULL) || (key == NULL) || (iv == NULL)) {
+    /* AES_CreateContext reads AES_BLOCK_SIZE bytes of IV with no length
+     * parameter; reject undersized SECItems to prevent OOB reads. */
+    if ((src == NULL) || (key == NULL) || (iv == NULL) ||
+        (key->data == NULL) || (iv->data == NULL) ||
+        (iv->len < AES_BLOCK_SIZE)) {
         PORT_SetError(SEC_ERROR_INVALID_ARGS);
         return NULL;
     }
@@ -1383,7 +1421,12 @@ sec_pkcs5_aes_key_wrap(SECItem *key, SECItem *iv, SECItem *src, PRBool triple_de
     AESKeyWrapContext *ctxt;
     unsigned int pad;
 
-    if ((src == NULL) || (key == NULL) || (iv == NULL)) {
+    /* AESKeyWrap_CreateContext reads AES_KEY_WRAP_BLOCK_SIZE bytes of IV when
+     * non-NULL; reject undersized SECItems to prevent OOB reads. A NULL
+     * iv->data is allowed and selects the default key-wrap IV. */
+    if ((src == NULL) || (key == NULL) || (iv == NULL) ||
+        (key->data == NULL) ||
+        (iv->data != NULL && iv->len < AES_KEY_WRAP_BLOCK_SIZE)) {
         PORT_SetError(SEC_ERROR_INVALID_ARGS);
         return NULL;
     }
@@ -1457,7 +1500,11 @@ sec_pkcs5_rc2(SECItem *key, SECItem *iv, SECItem *src, PRBool dummy,
     SECStatus rv = SECFailure;
     int pad;
 
-    if ((src == NULL) || (key == NULL) || (iv == NULL)) {
+    /* RC2_CreateContext reads 8 bytes of IV in CBC mode with no length
+     * parameter; reject undersized SECItems to prevent OOB reads. */
+    if ((src == NULL) || (key == NULL) || (iv == NULL) ||
+        (key->data == NULL) || (iv->data == NULL) ||
+        (iv->len < 8 /* RC2_BLOCK_SIZE */)) {
         PORT_SetError(SEC_ERROR_INVALID_ARGS);
         return NULL;
     }
@@ -1495,19 +1542,27 @@ sec_pkcs5_rc2(SECItem *key, SECItem *iv, SECItem *src, PRBool dummy,
 
                 /* assumes 8 byte blocks  -- remove padding */
                 if ((rv == SECSuccess) && (encrypt != PR_TRUE)) {
-                    pad = dest->data[dest->len - 1];
-                    if ((pad > 0) && (pad <= 8)) {
-                        if (dest->data[dest->len - pad] != pad) {
-                            PORT_SetError(SEC_ERROR_BAD_PASSWORD);
-                            rv = SECFailure;
-                        } else {
-                            dest->len -= pad;
-                        }
-                    } else {
+                    /* a padded plaintext holds at least one block; an empty
+                     * decryption result would make dest->len - 1 wrap. */
+                    if (dest->len < 8 /* RC2_BLOCK_SIZE */) {
                         PORT_SetError(SEC_ERROR_BAD_PASSWORD);
                         rv = SECFailure;
+                    } else {
+                        pad = dest->data[dest->len - 1];
+                        if ((pad > 0) && (pad <= 8)) {
+                            if (dest->data[dest->len - pad] != pad) {
+                                PORT_SetError(SEC_ERROR_BAD_PASSWORD);
+                                rv = SECFailure;
+                            } else {
+                                dest->len -= pad;
+                            }
+                        } else {
+                            PORT_SetError(SEC_ERROR_BAD_PASSWORD);
+                            rv = SECFailure;
+                        }
                     }
                 }
+                RC2_DestroyContext(ctxt, PR_TRUE);
             }
         }
     }
@@ -1597,6 +1652,19 @@ nsspkcs5_CipherData(NSSPKCS5PBEParameter *pbe_param, SECItem *pwitem,
     key = nsspkcs5_ComputeKeyAndIV(pbe_param, pwitem, &iv, PR_FALSE);
     if (key == NULL) {
         return NULL;
+    }
+
+    /* 2-key 3DES expands K1||K2 to K1||K2||K1; without this, the 16-byte
+     * key buffer is read as 24 bytes by DES_InitContext (OOB read). */
+    if (pbe_param->is2KeyDES && key->len == 16) {
+        SECItem *newKey = SECITEM_AllocItem(NULL, NULL, 24);
+        if (newKey == NULL) {
+            goto loser;
+        }
+        PORT_Memcpy(newKey->data, key->data, 16);
+        PORT_Memcpy(newKey->data + 16, key->data, 8);
+        SECITEM_ZfreeItem(key, PR_TRUE);
+        key = newKey;
     }
 
     switch (pbe_param->encAlg) {

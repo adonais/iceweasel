@@ -5,8 +5,10 @@
 #ifndef MOZILLA_GFX_TEXTURECLIENT_SHAREDSURFACE_H
 #define MOZILLA_GFX_TEXTURECLIENT_SHAREDSURFACE_H
 
-#include <cstddef>           // for size_t
-#include <stdint.h>          // for uint32_t, uint8_t, uint64_t
+#include <stdint.h>  // for uint32_t, uint8_t, uint64_t
+
+#include <cstddef>  // for size_t
+
 #include "GLContextTypes.h"  // for GLContext (ptr only), etc
 #include "TextureClient.h"
 #include "mozilla/Assertions.h"              // for MOZ_ASSERT, etc

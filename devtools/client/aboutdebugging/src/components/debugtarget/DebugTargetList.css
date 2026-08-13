@@ -5,3 +5,11 @@
 .debug-target-list {
   margin-block-start: calc(var(--base-unit) * 4);
 }
+
+/* Add some space before the "Nothing yet" element when there's nothing before it
+   in the debug-target-pane__collapsable container (e.g. we don't want the extra space
+   for the Temporary Extension section when there's already the "Load temporary addon"
+   button displayed) */
+.debug-target-pane__collapsable > .debug-target-list__empty-notice:first-child {
+  margin-block-start: calc(var(--base-unit) * 2);
+}

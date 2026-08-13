@@ -1,0 +1,112 @@
+<!--
+  Any copyright is dedicated to the Public Domain.
+  http://creativecommons.org/publicdomain/zero/1.0/
+-->
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Test freezing/thawing a worker parked in a sync loop with the RemoteWorkerDebugger (bug 2053827)</title>
+    <script src="/tests/SimpleTest/SimpleTest.js"></script>
+    <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css">
+  </head>
+  <body>
+    <script type="application/javascript">
+      "use strict";
+
+      // Regression test for bug 2053827. With the parent-process
+      // RemoteWorkerDebugger enabled, a worker that is parked in a nested sync
+      // loop (here, a synchronous XHR whose response is delayed) used to
+      // deadlock the content process when the owner page was frozen/thawed via
+      // bfcache: WorkerPrivate::Disable/EnableRemoteDebugger blocks the parent
+      // thread waiting for a debugger IPC handshake reply that the sync loop
+      // never serviced. If the fix regresses, the worker never finishes its XHR
+      // and the guard timer below fails the test instead of letting it hang.
+
+      SimpleTest.waitForExplicitFinish();
+      SimpleTest.requestFlakyTimeout("Intentionally waits on a delayed server response across a bfcache freeze/thaw.");
+
+      let win;
+      let bc;
+      let bcNav;
+      let frameShownCount = 0;
+      let finished = false;
+      let guardTimer;
+
+      function done(success, message) {
+        if (finished) {
+          return;
+        }
+        finished = true;
+        clearTimeout(guardTimer);
+        ok(success, message);
+        if (win && !win.closed) {
+          win.close();
+        }
+        bc.close();
+        bcNav.close();
+        SimpleTest.finish();
+      }
+
+      function runTest() {
+        bc = SpecialPowers.wrap(BroadcastChannel).unpartitionedTestingChannel(
+          "remoteDebugger_freeze_syncloop"
+        );
+        bcNav = SpecialPowers.wrap(BroadcastChannel).unpartitionedTestingChannel(
+          "remoteDebugger_freeze_syncloop_nav"
+        );
+
+        bc.onmessage = event => {
+          const msg = event.data;
+          if (msg.from == "frame" && msg.event == "pageshow") {
+            frameShownCount++;
+            if (frameShownCount == 1) {
+              // Frame is up; ask the shared worker to enter its sync loop.
+              is(msg.persisted, false, "First pageshow is not persisted");
+              bc.postMessage({ command: "start" });
+            } else {
+              info("Frame thawed (pageshow persisted=" + msg.persisted + ")");
+            }
+          } else if (msg.from == "worker") {
+            if (msg.data == "insync") {
+              // The worker is now parked in the synchronous XHR. Freeze the
+              // owner page (and hence the worker) via bfcache.
+              info("Worker is in the sync loop; freezing the owner page");
+              bc.postMessage({ command: "freeze" });
+            } else if (typeof msg.data == "string" && msg.data.startsWith("done:")) {
+              done(true, "Worker completed its sync loop after freeze/thaw (no deadlock)");
+            } else if (typeof msg.data == "string" && msg.data.startsWith("error:")) {
+              done(false, "Worker reported an error: " + msg.data);
+            }
+          }
+        };
+
+        bcNav.onmessage = event => {
+          if (event.data.event == "navloaded") {
+            // The owner page is now in bfcache; go back to thaw it.
+            info("Owner page is in bfcache; thawing");
+            bcNav.postMessage({ command: "thaw" });
+          }
+        };
+
+        // If the deadlock regresses, none of the follow-up messages arrive.
+        guardTimer = setTimeout(() => {
+          done(false, "Timed out: the worker never finished, content process likely deadlocked");
+        }, 30000);
+
+        win = window.open("remoteDebugger_freeze_syncloop_frame.html", "_blank", "noopener");
+      }
+
+      SpecialPowers.pushPrefEnv(
+        {
+          set: [
+            ["dom.worker.remoteDebugger.enabled", true],
+            // If Fission is disabled, the pref is a no-op.
+            ["fission.bfcacheInParent", true],
+          ],
+        },
+        runTest
+      );
+    </script>
+  </body>
+</html>

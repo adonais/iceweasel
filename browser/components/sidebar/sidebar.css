@@ -15,7 +15,27 @@
   --sidebar-box-color: currentColor;
   background-color: transparent;
   color: var(--sidebar-text-color);
+  font: menu;
   height: 100%;
+
+  --sidebar-panel-list-item-height: var(--size-item-large);
+  --sidebar-panel-subheading-min-height: auto;
+  --sidebar-panel-subheading-padding-block: var(--space-medium);
+  --sidebar-panel-header-heading-margin-block: var(--space-large);
+  --sidebar-panel-scrollable-margin-inline-end: 0;
+  --sidebar-panel-scrollable-padding-inline-end: var(--space-xsmall);
+
+  &[uidensity="compact"] {
+    --sidebar-panel-list-item-height: 28px;
+    --sidebar-panel-subheading-min-height: 36px;
+    --sidebar-panel-subheading-padding-block: 0;
+    --sidebar-panel-header-heading-margin-block: var(--space-medium);
+
+    @media -moz-pref("sidebar.verticalTabs") {
+      --sidebar-panel-scrollable-margin-inline-end: calc(-1 * var(--space-large) + 1px);
+      --sidebar-panel-scrollable-padding-inline-end: calc(var(--space-large) + var(--space-xsmall) - 1px);
+    }
+  }
 
   &[lwt-sidebar="light"] {
     color-scheme: light;
@@ -53,7 +73,8 @@ moz-card {
   }
 
   &::part(summary) {
-    padding-block: var(--space-medium);
+    min-height: var(--sidebar-panel-subheading-min-height);
+    padding-block: var(--sidebar-panel-subheading-padding-block);
   }
 
   &::part(heading) {
@@ -85,6 +106,8 @@ moz-card {
     flex: 1;
     min-height: 0;
     padding: var(--space-xsmall);
+    margin-inline-end: var(--sidebar-panel-scrollable-margin-inline-end);
+    padding-inline-end: var(--sidebar-panel-scrollable-padding-inline-end);
   }
 }
 
@@ -121,6 +144,12 @@ fxview-empty-state {
       max-width: 350px;
     }
   }
+}
+
+.options-container {
+  display: flex;
+  width: 100%;
+  align-items: center;
 }
 
 moz-input-search {

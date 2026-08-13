@@ -151,12 +151,13 @@ def android_sdk_root(value, android_os_info, toolchains_base_dir, want_bootstrap
 
 @dependable
 def android_sdk_version():
-    major, minor, patch = "37", "0", "0"
+    build_tools_version = "37.0.0"
+    compile_sdk_major_version, compile_sdk_minor_version = "37", "1"
     return namespace(
-        build_tools_version=f"{major}.{minor}.{patch}",
-        compile_sdk_major_version=major,
-        compile_sdk_minor_version=minor,
-        target_sdk_version="36",
+        build_tools_version=build_tools_version,
+        compile_sdk_major_version=compile_sdk_major_version,
+        compile_sdk_minor_version=compile_sdk_minor_version,
+        target_sdk_version="37",
         min_sdk_version="26",
     )
 

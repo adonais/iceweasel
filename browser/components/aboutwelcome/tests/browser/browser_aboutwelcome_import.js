@@ -15,6 +15,12 @@ const IMPORT_SCREEN = {
   },
 };
 
+add_setup(async function () {
+  registerCleanupFunction(function () {
+    Services.prefs.clearUserPref("identity.fxaccounts.account.device.name");
+  });
+});
+
 add_task(async function test_wait_import_modal() {
   await setAboutWelcomeMultiStage(
     JSON.stringify([IMPORT_SCREEN, { id: "AW_NEXT", content: {} }])

@@ -94,7 +94,7 @@ describe("context url retrieval", () => {
         TEST_PAGE_2
       );
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => gAiWindow.gBrowser.selectedTab.label === "Website Title",
         "Wait for tab title to update to 'Website Title'"
       );
@@ -135,7 +135,7 @@ describe("context url retrieval", () => {
         gAiWindow.gBrowser.selectedBrowser,
         TEST_PAGE_1
       );
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => gAiWindow.gBrowser.selectedTab.label === "Example Domain",
         "Wait for first tab title to update"
       );
@@ -146,7 +146,7 @@ describe("context url retrieval", () => {
         TEST_PAGE_2
       );
       await BrowserTestUtils.browserLoaded(secondTab.linkedBrowser);
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => secondTab.label === "Website Title",
         "Wait for second tab title to update"
       );
@@ -260,7 +260,7 @@ describe("context url retrieval", () => {
       const sidebarBrowser =
         gAiWindow.document.getElementById("ai-window-browser");
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () =>
           sidebarBrowser.contentDocument?.querySelector("ai-window:defined"),
         "Sidebar ai-window should be loaded"

@@ -34,7 +34,7 @@ add_task(async function search_engine_serp() {
     await popupHidden;
 
     // search mode is entered with a new query and a new session is started.
-    assertEngagementTelemetry([{ search_mode: "search_engine" }]);
+    await assertEngagementTelemetry([{ search_mode: "search_engine" }]);
     await assertAbandonmentTelemetry([]);
   });
 });
@@ -60,7 +60,7 @@ add_task(async function search_engine_searchmode() {
     // Since the query is an empty string, search mode is entered and
     // a new session is started. The first session should have been
     // discarded but the second one should be recorded as engagement.
-    assertEngagementTelemetry([{ search_mode: "search_engine" }]);
+    await assertEngagementTelemetry([{ search_mode: "search_engine" }]);
     await assertAbandonmentTelemetry([]);
   });
 });
@@ -90,7 +90,7 @@ add_task(async function bookmarks() {
     await selectRowByURL("https://example.com/bookmark");
 
     await doEnter();
-    assertEngagementTelemetry([{ search_mode: "bookmarks" }]);
+    await assertEngagementTelemetry([{ search_mode: "bookmarks" }]);
     await assertAbandonmentTelemetry([]);
   });
 });

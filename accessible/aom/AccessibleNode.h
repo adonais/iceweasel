@@ -5,12 +5,12 @@
 #ifndef A11Y_AOM_ACCESSIBLENODE_H
 #define A11Y_AOM_ACCESSIBLENODE_H
 
-#include "nsTHashMap.h"
-#include "nsRefPtrHashtable.h"
-#include "nsWrapperCache.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/DOMString.h"
 #include "mozilla/dom/Nullable.h"
+#include "nsRefPtrHashtable.h"
+#include "nsTHashMap.h"
+#include "nsWrapperCache.h"
 
 class nsINode;
 

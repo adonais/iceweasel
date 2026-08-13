@@ -670,8 +670,8 @@ function makeExpectedAddonResult({ suggestion, source, provider }) {
 
 function makeExpectedDefaultMerinoResult({ suggestion }) {
   return {
-    type: UrlbarUtils.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    type: UrlbarShared.RESULT_TYPE.URL,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     heuristic: false,
     payload: {
       source: "merino",

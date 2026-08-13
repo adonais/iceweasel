@@ -86,8 +86,6 @@ extern JS_PUBLIC_API void JS_SetAccumulateTelemetryCallback(
     JSContext* cx, JSAccumulateTelemetryDataCallback callback);
 
 #define FOR_EACH_JS_USE_COUNTER(_)                                   \
-  _(ASMJS, AsmJS)                                                    \
-  _(USE_ASM, UseAsm)                                                 \
   _(WASM, Wasm)                                                      \
   _(WASM_LEGACY_EXCEPTIONS, WasmLegacyExceptions)                    \
   _(ISHTMLDDA_FUSE, IsHTMLDDAFuse)                                   \

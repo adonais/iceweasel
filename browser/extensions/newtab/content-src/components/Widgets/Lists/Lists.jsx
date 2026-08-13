@@ -11,11 +11,11 @@ import React, {
 } from "react";
 import { useSelector, batch } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
-import { useSizeSubmenu } from "../../../lib/utils";
 import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
 import { WidgetCelebration } from "../WidgetCelebration";
 import { useWidgetCelebration } from "../useWidgetCelebration";
-import { MoveSubmenu } from "../MoveSubmenu";
+import { SizeSubmenu } from "../SizeSubmenu";
+import { WidgetMenuFooter } from "../WidgetMenuFooter";
 import { useWidgetTelemetry } from "../useWidgetTelemetry";
 
 const TASK_TYPE = {
@@ -210,15 +210,13 @@ function Lists({
   // Pre-hook code reported widget_size as "medium" when the widgets row is
   // not maximizable, regardless of the resolved widgetSize. Preserve that.
   const telemetrySize = widgetsMayBeMaximized ? widgetSize : "medium";
-  const { impressionRef, recordUserAction, recordEnabled } = useWidgetTelemetry(
-    {
-      dispatch,
-      widget: listsWidget,
-      widgetSize: telemetrySize,
-      legacyImpressionTypes: [at.WIDGETS_LISTS_USER_IMPRESSION],
-      legacyUserEventType: at.WIDGETS_LISTS_USER_EVENT,
-    }
-  );
+  const { impressionRef, recordUserAction } = useWidgetTelemetry({
+    dispatch,
+    widget: listsWidget,
+    widgetSize: telemetrySize,
+    legacyImpressionTypes: [at.WIDGETS_LISTS_USER_IMPRESSION],
+    legacyUserEventType: at.WIDGETS_LISTS_USER_EVENT,
+  });
 
   const handleListInteraction = useCallback(
     () => handleUserInteraction("lists"),
@@ -612,21 +610,6 @@ function Lists({
     handleListInteraction();
   }
 
-  function handleHideLists() {
-    batch(() => {
-      dispatch(
-        ac.OnlyToMain({
-          type: at.SET_PREF,
-          data: {
-            name: "widgets.lists.enabled",
-            value: false,
-          },
-        })
-      );
-      recordEnabled(false, { source: "context_menu" });
-    });
-  }
-
   function handleCopyListToClipboard() {
     const currentList = lists[selected];
 
@@ -661,19 +644,6 @@ function Lists({
     handleListInteraction();
   }
 
-  function handleLearnMore() {
-    dispatch(
-      ac.OnlyToMain({
-        type: at.OPEN_LINK,
-        data: {
-          url: "https://support.mozilla.org/kb/firefox-new-tab-widgets",
-          where: "tab",
-        },
-      })
-    );
-    handleListInteraction();
-  }
-
   const handleChangeSize = useCallback(
     size => {
       batch(() => {
@@ -692,8 +662,6 @@ function Lists({
     },
     [dispatch, recordUserAction]
   );
-
-  const sizeSubmenuRef = useSizeSubmenu(handleChangeSize);
 
   useEffect(() => {
     setIsAddingTask(false);
@@ -876,7 +844,7 @@ function Lists({
           )}
         <moz-button
           className="lists-panel-button"
-          data-l10n-id="newtab-menu-section-tooltip"
+          data-l10n-id="newtab-widget-lists-menu-button"
           iconSrc="chrome://global/skin/icons/more.svg"
           menuId="lists-panel"
           type="ghost"
@@ -896,41 +864,31 @@ function Lists({
             data-l10n-id="newtab-widget-lists-menu-delete"
             onClick={() => handleDeleteList()}
           ></panel-item>
-          <hr />
           <panel-item
             data-l10n-id="newtab-widget-lists-menu-copy"
             onClick={() => handleCopyListToClipboard()}
           ></panel-item>
-          {novaEnabled && widgetsMayBeMaximized && (
-            <panel-item submenu="lists-size-submenu">
-              <span data-l10n-id="newtab-widget-menu-change-size"></span>
-              <panel-list
-                ref={sizeSubmenuRef}
-                slot="submenu"
-                id="lists-size-submenu"
-              >
-                {["medium", "large"].map(size => (
-                  <panel-item
-                    key={size}
-                    type="checkbox"
-                    checked={widgetSize === size || undefined}
-                    data-size={size}
-                    data-l10n-id={`newtab-widget-size-${size}`}
-                  />
-                ))}
-              </panel-list>
-            </panel-item>
-          )}
-          <MoveSubmenu widgetId="lists" widgetEnabledMap={widgetEnabledMap} />
-          <panel-item
-            data-l10n-id="newtab-widget-menu-hide"
-            onClick={() => handleHideLists()}
-          ></panel-item>
-          <panel-item
-            className="learn-more"
-            data-l10n-id="newtab-widget-lists-menu-learn-more"
-            onClick={handleLearnMore}
-          ></panel-item>
+          <WidgetMenuFooter
+            dispatch={dispatch}
+            widgetId="lists"
+            widgetEnabledMap={widgetEnabledMap}
+            widgetName="lists"
+            enabledPref="widgets.lists.enabled"
+            widgetSize={widgetsMayBeMaximized ? widgetSize : "medium"}
+            learnMoreL10nId="newtab-widget-lists-menu-learn-more"
+            onLearnMore={handleListInteraction}
+            sizeSubmenu={
+              novaEnabled &&
+              widgetsMayBeMaximized && (
+                <SizeSubmenu
+                  submenuId="lists-size-submenu"
+                  sizes={["medium", "large"]}
+                  checkedSize={widgetSize}
+                  onChangeSize={handleChangeSize}
+                />
+              )
+            }
+          />
         </panel-list>
       </div>
       {(showInlineAddButton || isAddingTask) && (

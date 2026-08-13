@@ -5,13 +5,12 @@
 #ifndef mozilla_SandboxBroker_h
 #define mozilla_SandboxBroker_h
 
-#include "mozilla/SandboxBrokerCommon.h"
-
 #include "base/platform_thread.h"
+#include "mozilla/SandboxBrokerCommon.h"
 #include "mozilla/UniquePtr.h"
-#include "nsTHashMap.h"
 #include "nsHashKeys.h"
 #include "nsString.h"
+#include "nsTHashMap.h"
 
 namespace mozilla {
 

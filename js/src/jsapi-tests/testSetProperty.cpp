@@ -2,9 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "jsapi-tests/tests.h"
+
 #include "js/Object.h"              // JS::GetClass
 #include "js/PropertyAndElement.h"  // JS_DefineProperty
-#include "jsapi-tests/tests.h"
 
 BEGIN_TEST(testSetProperty_InheritedGlobalSetter) {
   // This is a JSAPI test because jsapi-test globals can be set up to not have

@@ -5,12 +5,19 @@
 #include "mozilla/dom/CSSColorValue.h"
 
 #include "mozilla/ErrorResult.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/dom/CSSColorValueBinding.h"
 
 namespace mozilla::dom {
 
 CSSColorValue::CSSColorValue(nsCOMPtr<nsISupports> aParent)
     : CSSStyleValue(std::move(aParent)) {}
+
+// static
+bool CSSColorValue::IsEnabled(JSContext*, JSObject*) {
+  return StaticPrefs::layout_css_typed_om_enabled() &&
+         StaticPrefs::layout_css_typed_om_color_enabled();
+}
 
 JSObject* CSSColorValue::WrapObject(JSContext* aCx,
                                     JS::Handle<JSObject*> aGivenProto) {

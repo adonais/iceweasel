@@ -2,12 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "VideoUtils.h"
 #include "gtest/gtest.h"
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/StateWatching.h"
 #include "mozilla/TaskQueue.h"
 #include "nsISupportsImpl.h"
-#include "VideoUtils.h"
 
 namespace TestStateWatching {
 

@@ -33,8 +33,11 @@ class ClipboardItem final : public nsWrapperCache {
     NS_DECL_NSIASYNCCLIPBOARDREQUESTCALLBACK
     NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(ItemEntry, PromiseNativeHandler)
 
-    explicit ItemEntry(nsIGlobalObject* aGlobal, const nsAString& aType)
-        : mGlobal(aGlobal), mType(aType) {
+    explicit ItemEntry(nsIGlobalObject* aGlobal, const nsAString& aType,
+                       const bool aIsUnsupportedType = false)
+        : mGlobal(aGlobal),
+          mType(aType),
+          mIsUnsupportedType(aIsUnsupportedType) {
       MOZ_ASSERT(mGlobal);
     }
     ItemEntry(nsIGlobalObject* aGlobal, const nsAString& aType,
@@ -63,6 +66,8 @@ class ClipboardItem final : public nsWrapperCache {
     // resolve/reject `aPromise` based on cached result and data.
     void ReactGetTypePromise(Promise& aPromise);
 
+    const bool& IsUnsupportedType() const { return mIsUnsupportedType; }
+
    private:
     ~ItemEntry() {
       if (!mPendingGetDataRequests.IsEmpty()) {
@@ -79,6 +84,9 @@ class ClipboardItem final : public nsWrapperCache {
 
     // MIME type of this entry.
     nsString mType;
+    // True if the mType is a valid mime type format, but not in supported type.
+    // See https://www.w3.org/TR/clipboard-apis/#dom-clipboarditem-supports
+    bool mIsUnsupportedType;
 
     // Cache the loading result.
     OwningStringOrBlob mData;
@@ -97,7 +105,8 @@ class ClipboardItem final : public nsWrapperCache {
   NS_DECL_CYCLE_COLLECTION_NATIVE_WRAPPERCACHE_CLASS(ClipboardItem)
 
   ClipboardItem(nsISupports* aOwner, dom::PresentationStyle aPresentationStyle,
-                nsTArray<RefPtr<ItemEntry>>&& aItems);
+                nsTArray<RefPtr<ItemEntry>>&& aItems,
+                const uint32_t& aCustomFormatCount = 0);
 
   static already_AddRefed<ClipboardItem> Constructor(
       const GlobalObject& aGlobal,
@@ -105,6 +114,21 @@ class ClipboardItem final : public nsWrapperCache {
       const ClipboardItemOptions& aOptions, ErrorResult& aRv);
 
   static bool Supports(const GlobalObject& aGlobal, const nsAString& aType);
+
+  /**
+   * Verify the passed input string is a valid mimeType or not.
+   * Return false, if the input string is not a valid mimeType or web custom
+   * format.
+   *
+   * @aInput: The input string.
+   * @aMimeType: The parsed mime type string.
+   * @aIsCustom: True, if the input string is a web custom format
+   * @aIsUnsupported: True, if the input string is a valid mime type format, but
+   *      not a supported type for Clipboard API.
+   *      https://www.w3.org/TR/clipboard-apis/#dom-clipboarditem-supports
+   */
+  static bool ParseMimeType(const nsAString& aInput, nsString& aMimeType,
+                            bool* aIsCustom, bool* aIsUnsupported);
 
   dom::PresentationStyle PresentationStyle() const {
     return mPresentationStyle;
@@ -120,12 +144,18 @@ class ClipboardItem final : public nsWrapperCache {
 
   const nsTArray<RefPtr<ItemEntry>>& Entries() const { return mItems; }
 
+  const uint32_t& CustomFormatCount() const { return mCustomFormatCount; }
+
  private:
   ~ClipboardItem() = default;
 
   nsCOMPtr<nsISupports> mOwner;
   dom::PresentationStyle mPresentationStyle;
   nsTArray<RefPtr<ItemEntry>> mItems;
+
+  // mCustomFormatCount is only set in ClipboardItem::Constructor.
+  // It is used to check number of Custom Format could not over 100.
+  uint32_t mCustomFormatCount;
 };
 
 }  // namespace mozilla::dom

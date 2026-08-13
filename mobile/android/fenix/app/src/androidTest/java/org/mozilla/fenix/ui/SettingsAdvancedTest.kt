@@ -181,7 +181,6 @@ class SettingsAdvancedTest {
     // Assumes Youtube is installed and enabled
     @Test
     fun privateBrowsingAskBeforeOpeningLinkInAppCancelTest() {
-        TestHelper.appContext.components.settings.shouldShowCookieBannersCFR = false
         composeTestRule.activityRule.applySettingsExceptions {
             it.openLinksInExternalApp = OpenLinksInApp.ASK
         }

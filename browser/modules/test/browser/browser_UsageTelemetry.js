@@ -552,7 +552,7 @@ add_task(async function test_loadedTabsHistogram() {
   });
   tabs.push(lazyTab);
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !ObjectUtils.deepEqual(snapshot, tabCount.snapshot())
   );
 

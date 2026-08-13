@@ -3,40 +3,40 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozJSSubScriptLoader.h"
-#include "js/experimental/JSStencil.h"
-#include "mozJSModuleLoader.h"
-#include "mozJSLoaderUtils.h"
 
-#include "nsIURI.h"
-#include "nsIIOService.h"
-#include "nsIChannel.h"
-#include "nsIInputStream.h"
-#include "nsNetCID.h"
-#include "nsNetUtil.h"
+#include "mozilla/ContentPrincipal.h"
+#include "mozilla/dom/ScriptLoader.h"
+#include "mozilla/ExtensionPolicyService.h"
+#include "mozilla/ProfilerLabels.h"
+#include "mozilla/ProfilerMarkers.h"
+#include "mozilla/scache/StartupCache.h"
+#include "mozilla/scache/StartupCacheUtils.h"
+#include "mozilla/ScriptPreloader.h"
+#include "mozilla/SystemPrincipal.h"
+#include "mozilla/Utf8.h"  // mozilla::Utf8Unit
 
 #include "jsapi.h"
 #include "jsfriendapi.h"
-#include "xpcprivate.h"                   // xpc::OptionsBase
+#include "mozJSLoaderUtils.h"
+#include "mozJSModuleLoader.h"
+#include "nsContentSecurityUtils.h"
+#include "nsContentUtils.h"
+#include "nsIChannel.h"
+#include "nsIInputStream.h"
+#include "nsIIOService.h"
+#include "nsIURI.h"
+#include "nsNetCID.h"
+#include "nsNetUtil.h"
+#include "nsString.h"
+#include "xpcprivate.h"  // xpc::OptionsBase
+
 #include "js/CompilationAndEvaluation.h"  // JS::Compile
 #include "js/CompileOptions.h"  // JS::ReadOnlyCompileOptions, JS::DecodeOptions
 #include "js/EnvironmentChain.h"  // JS::EnvironmentChain
+#include "js/experimental/JSStencil.h"
 #include "js/friend/JSMEnvironment.h"  // JS::ExecuteInJSMEnvironment, JS::IsJSMEnvironment
 #include "js/SourceText.h"             // JS::Source{Ownership,Text}
 #include "js/Wrapper.h"
-
-#include "mozilla/ContentPrincipal.h"
-#include "mozilla/ExtensionPolicyService.h"
-#include "mozilla/dom/ScriptLoader.h"
-#include "mozilla/ProfilerLabels.h"
-#include "mozilla/ProfilerMarkers.h"
-#include "mozilla/ScriptPreloader.h"
-#include "mozilla/SystemPrincipal.h"
-#include "mozilla/scache/StartupCache.h"
-#include "mozilla/scache/StartupCacheUtils.h"
-#include "mozilla/Utf8.h"  // mozilla::Utf8Unit
-#include "nsContentUtils.h"
-#include "nsContentSecurityUtils.h"
-#include "nsString.h"
 
 using namespace mozilla::scache;
 using namespace JS;

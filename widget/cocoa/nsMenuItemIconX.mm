@@ -6,18 +6,18 @@
  * Retrieves and displays icons in native menu items on macOS.
  */
 
+#include "nsMenuItemIconX.h"
 #include "MOZIconHelper.h"
+#include "mozilla/SVGImageContext.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/widget/NativeMenu.h"
-#include "mozilla/SVGImageContext.h"
 #include "nsCocoaUtils.h"
 #include "nsComputedDOMStyle.h"
 #include "nsContentUtils.h"
 #include "nsIContent.h"
 #include "nsIContentPolicy.h"
 #include "nsMenuItemX.h"
-#include "nsMenuItemIconX.h"
 #include "nsNameSpaceManager.h"
 #include "nsObjCExceptions.h"
 

@@ -119,7 +119,7 @@ async function clickOnJumpToDebuggerIconForNode(
 
   let source;
   info("Wait for source to be opened");
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => {
       source = dbg._selectors.getSelectedSource(dbg._getState());
       return !!source;

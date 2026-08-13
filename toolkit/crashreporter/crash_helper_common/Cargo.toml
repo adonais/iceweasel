@@ -8,8 +8,10 @@ edition = "2021"
 [dependencies]
 bytes = "1"
 mozannotation_server = { path = "../mozannotation_server/" }
+mozbuild = "0.1"
 num-derive = "0.4"
 num-traits = "0.2"
+process_reader = { path = "../process_reader" }
 thiserror = "2"
 
 [target."cfg(any(target_os = \"android\", target_os = \"linux\", target_os = \"macos\"))".dependencies]
@@ -21,7 +23,7 @@ mach2 = "0.4"
 log = "0.4"
 
 [target."cfg(any(target_os = \"android\", target_os = \"linux\"))".dependencies]
-minidump-writer = { git = "https://github.com/rust-minidump/minidump-writer.git", rev = "107e531a7a06f8e886ffcee13eb07e9ded43473b" }
+minidump-writer = { git = "https://github.com/rust-minidump/minidump-writer.git", rev = "45f5459790d264098346343f0ad58d008c386fa5" }
 
 [target."cfg(target_os = \"windows\")".dependencies]
 getrandom = { version = "0.3" }

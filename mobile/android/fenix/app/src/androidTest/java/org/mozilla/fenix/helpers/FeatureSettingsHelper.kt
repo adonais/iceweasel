@@ -46,11 +46,6 @@ interface FeatureSettingsHelper {
     var isDeleteSitePermissionsEnabled: Boolean
 
     /**
-     * Whether the Unified Trust Panel is enabled or not.
-     */
-    var isUnifiedTrustPanelEnabled: Boolean
-
-    /**
      * Whether the Homepage Sports Widget is visible or not.
      */
     var isHomepageSportsWidgetVisible: Boolean
@@ -72,11 +67,6 @@ interface FeatureSettingsHelper {
     var isLocationPermissionEnabled: SitePermissionsRules.Action
 
     /**
-     * Enable or disable the new main menu CFR.
-     */
-    var isMenuRedesignCFREnabled: Boolean
-
-    /**
      * Enable or disable the new microsurvey feature.
      */
     var isMicrosurveyEnabled: Boolean
@@ -90,11 +80,6 @@ interface FeatureSettingsHelper {
      * Enable or disable the onboarding feature.
      */
     var onboardingFeatureEnabled: Boolean
-
-    /**
-     * Enable or disable new crash reporter flow.
-     */
-    var isUseNewCrashReporterFlow: Boolean
 
     /**
      * Enable or disable the tab swipe CFR.

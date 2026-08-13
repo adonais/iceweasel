@@ -189,8 +189,8 @@
  * builtin itself is said to be *thunked*.  Going via the thunk is simple and,
  * except for always having to copy stack arguments on x86-32 and the extra call
  * in the thunk, close to as fast as we can make it without heroics.  Except for
- * the arithmetic helpers on 32-bit systems, most builtins are rarely used, are
- * asm.js-specific, or are expensive anyway, and the overhead of the extra call
+ * the arithmetic helpers on 32-bit systems, most builtins are rarely used
+ * or are expensive anyway, and the overhead of the extra call
  * doesn't matter.
  *
  * A few builtins for special purposes are *unthunked* and fall into two

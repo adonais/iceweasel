@@ -4,6 +4,8 @@
 
 .function-signature {
   align-self: center;
+  direction: ltr;
+  display: inline-block;
 }
 
 .function-signature .function-name {

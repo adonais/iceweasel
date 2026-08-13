@@ -5,12 +5,13 @@
 #ifndef nsInputStreamPump_h_
 #define nsInputStreamPump_h_
 
-#include "nsIInputStreamPump.h"
-#include "nsIAsyncInputStream.h"
-#include "nsIThreadRetargetableRequest.h"
-#include "nsCOMPtr.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/RecursiveMutex.h"
+#include "nsCOMPtr.h"
+#include "nsIAsyncInputStream.h"
+#include "nsIInputStreamPump.h"
+#include "nsIThreadRetargetableRequest.h"
 
 #ifdef DEBUG
 #  include "MainThreadUtils.h"

@@ -24,15 +24,7 @@ bool GetAppRegName(mozilla::UniquePtr<wchar_t[]>& aAppRegName);
 bool LaunchControlPanelDefaultPrograms();
 bool LaunchModernSettingsDialogDefaultApps();
 
-/*
- * Focus an element on a window.
- *
- * @param aWindow  Window that contains aElement.
- * @param aElement Element to focus.
- */
-void FocusElement(HWND aWindow, const UIElement& aElement);
-
-/*
+/**
  * Find the set default browser button in Windows Settings.
  *
  * Open Windows Settings beforehand via LaunchModernSettingsDialogDefaultApps().

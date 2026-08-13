@@ -791,6 +791,8 @@ style:
 
 mozilla-rules:
   active: true
+  ClassAcronymCasing:
+    active: true
 
 acorn-detekt-rules:
   active: true
@@ -798,6 +800,12 @@ acorn-detekt-rules:
     active: true
   AcornThemeUsage:
     active: false
+  MaterialButtonUsage:
+    active: true
+    excludes: ['**/compose/base/button/Button.kt']
+  MaterialOutlinedButtonUsage:
+    active: true
+    excludes: ['**/compose/base/button/Button.kt']
   MaterialSwitchUsage:
     active: true
     excludes: ['**/compose/base/Switch.kt']

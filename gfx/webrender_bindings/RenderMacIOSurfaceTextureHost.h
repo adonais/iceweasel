@@ -5,9 +5,9 @@
 #ifndef MOZILLA_GFX_RENDERMACIOSURFACETEXTUREHOST_H
 #define MOZILLA_GFX_RENDERMACIOSURFACETEXTUREHOST_H
 
+#include "RenderTextureHostSWGL.h"
 #include "mozilla/gfx/MacIOSurface.h"
 #include "mozilla/layers/TextureHostOGL.h"
-#include "RenderTextureHostSWGL.h"
 
 namespace mozilla {
 

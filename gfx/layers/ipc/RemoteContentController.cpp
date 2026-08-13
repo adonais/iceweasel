@@ -6,16 +6,16 @@
 
 #include "CompositorThread.h"
 #include "MainThreadUtils.h"
+#include "Units.h"
 #include "ipc/RemoteContentController.h"
 #include "mozilla/dom/BrowserParent.h"
+#include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/layers/APZCCallbackHelper.h"
 #include "mozilla/layers/APZCTreeManagerParent.h"  // for APZCTreeManagerParent
 #include "mozilla/layers/APZThreadUtils.h"
-#include "mozilla/layers/DoubleTapToZoom.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
+#include "mozilla/layers/DoubleTapToZoom.h"
 #include "mozilla/layers/MatrixMessage.h"
-#include "mozilla/gfx/GPUProcessManager.h"
-#include "Units.h"
 #ifdef MOZ_WIDGET_ANDROID
 #  include "mozilla/jni/Utils.h"
 #endif

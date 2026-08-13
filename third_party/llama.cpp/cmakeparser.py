@@ -4,6 +4,7 @@
 from pyparsing import (CharsNotIn, Group, Forward, Literal, Suppress, Word,
                        QuotedString, ZeroOrMore, alphas, alphanums)
 from string import Template
+import glob
 import re
 import logging
 from colorama import Fore, Style, init
@@ -207,6 +208,26 @@ def evaluate(variables, cache_variables, parsed, pwd):
                 cache_variables.append(variable)
             except ValueError:
                 variables[variable] = ' '.join(values)
+        elif command == 'file':
+            # Expand file(GLOB <var> [GLOB options] <globs>...) by globbing on
+            # disk, relative to the current directory. The matched files are
+            # stored relative to pwd so that add_library re-joins them the same
+            # way it does for explicitly-listed sources.
+            if arguments and arguments[0] in ('GLOB', 'GLOB_RECURSE'):
+                recursive = arguments[0] == 'GLOB_RECURSE'
+                variable = arguments[1]
+                base = os.path.join(*pwd)
+                matches = []
+                for pattern in arguments[2:]:
+                    # Skip CMake keywords that may precede the globbing
+                    # expressions; we don't need to honor them here.
+                    if pattern in ('LIST_DIRECTORIES', 'RELATIVE',
+                                   'CONFIGURE_DEPENDS', 'true', 'false'):
+                        continue
+                    for match in glob.glob(os.path.join(base, pattern),
+                                           recursive=recursive):
+                        matches.append(os.path.relpath(match, base))
+                variables[variable] = ' '.join(sorted(matches))
         elif command in ['ggml_add_backend']:
             backend = arguments[0].lower()
             if backend in variables["MOZ_GGML_BACKENDS"]:

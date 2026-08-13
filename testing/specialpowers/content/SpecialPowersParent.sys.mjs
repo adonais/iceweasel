@@ -195,6 +195,7 @@ export class SpecialPowersParent extends JSWindowActorParent {
       parent: {
         esModuleURI: "resource://testing-common/SpecialPowersParent.sys.mjs",
       },
+      safeForUntrustedWebProcess: true,
     });
     ChromeUtils.registerProcessActor("SpecialPowersProcessActor", {
       child: {
@@ -205,6 +206,7 @@ export class SpecialPowersParent extends JSWindowActorParent {
         esModuleURI:
           "resource://testing-common/SpecialPowersProcessActor.sys.mjs",
       },
+      safeForUntrustedWebProcess: true,
     });
   }
 
@@ -719,9 +721,9 @@ export class SpecialPowersParent extends JSWindowActorParent {
   _toggleMuteAudio(aMuted) {
     let browser = this.browsingContext.top.embedderElement;
     if (aMuted) {
-      browser.mute();
+      browser.browsingContext.mediaController.mute();
     } else {
-      browser.unmute();
+      browser.browsingContext.mediaController.unmute();
     }
   }
 

@@ -3,6 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mozilla.fenix.tabstray.ui
 
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -26,11 +28,13 @@ class TabSearchScreenTest {
     @get:Rule
     val composeTestRule = createComposeRule()
 
+    var store = TabsTrayStore()
+
     @Test
     fun tabSearchResultClickedTest() {
         var tabSearchInvoked = false
 
-        val store = TabsTrayStore(
+        store = TabsTrayStore(
             middlewares = listOf(TabSearchNavigationMiddleware(onSearchResultClicked = { tabSearchInvoked = true })),
             initialState = TabsTrayState(
                 tabSearchState = TabSearchState(
@@ -40,9 +44,7 @@ class TabSearchScreenTest {
             ),
         )
 
-        composeTestRule.setContent {
-            TabSearchScreen(store = store)
-        }
+        setContent()
 
         composeTestRule.onNodeWithTag(TabsTrayTestTag.TAB_ITEM_ROOT).performClick()
 
@@ -51,11 +53,7 @@ class TabSearchScreenTest {
 
     @Test
     fun spammingBackButtonDoesNotCrashTest() {
-        val store = TabsTrayStore()
-
-        composeTestRule.setContent {
-            TabSearchScreen(store = store)
-        }
+        setContent()
 
         composeTestRule.onNodeWithTag(TAB_SEARCH_BACK_BUTTON).performClick()
         composeTestRule.onNodeWithTag(TAB_SEARCH_BACK_BUTTON).performClick()
@@ -64,5 +62,16 @@ class TabSearchScreenTest {
         composeTestRule.onNodeWithTag(TAB_SEARCH_BACK_BUTTON).performClick()
 
         assertTrue(store.state.backStack.isNotEmpty())
+    }
+
+    private fun setContent() {
+        composeTestRule.setContent {
+            val state by store.stateFlow.collectAsState()
+
+            TabSearchScreen(
+                state = state.tabSearchState,
+                onAction = store::dispatch,
+            )
+        }
     }
 }

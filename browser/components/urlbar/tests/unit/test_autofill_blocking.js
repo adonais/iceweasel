@@ -179,7 +179,7 @@ add_task(async function origin_autofill_blocked_across_variants() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: "http://www.exam/",
         title: "www.exam/",
         iconUri: "",
@@ -269,7 +269,7 @@ add_task(async function adaptive_autofill_not_blocked_by_origin_block() {
 
   let context = createContext("exam", {
     isPrivate: false,
-    sources: [UrlbarUtils.RESULT_SOURCE.HISTORY],
+    sources: [UrlbarShared.RESULT_SOURCE.HISTORY],
   });
 
   await check_results({
@@ -303,7 +303,7 @@ add_task(async function adaptive_urls_blocked_by_pages_block() {
 
   let context = createContext("exam", {
     isPrivate: false,
-    sources: [UrlbarUtils.RESULT_SOURCE.HISTORY],
+    sources: [UrlbarShared.RESULT_SOURCE.HISTORY],
   });
 
   // Should fall back to origin autofill since adaptive URL is blocked.
@@ -353,7 +353,7 @@ add_task(async function adaptive_url_blocked_but_root_still_allowed() {
   // allowed.
   let context = createContext("exam", {
     isPrivate: false,
-    sources: [UrlbarUtils.RESULT_SOURCE.HISTORY],
+    sources: [UrlbarShared.RESULT_SOURCE.HISTORY],
   });
 
   // We expect the root URL to be adaptively autofilled instead of the page.
@@ -387,7 +387,7 @@ add_task(async function adaptive_url_not_blocked_when_expired() {
 
   let context = createContext("exam", {
     isPrivate: false,
-    sources: [UrlbarUtils.RESULT_SOURCE.HISTORY],
+    sources: [UrlbarShared.RESULT_SOURCE.HISTORY],
   });
 
   // Expired block should have no effect; adaptive autofill should succeed.

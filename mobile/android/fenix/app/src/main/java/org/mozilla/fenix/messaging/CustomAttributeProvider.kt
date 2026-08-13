@@ -9,6 +9,7 @@ import android.os.Build
 import androidx.core.app.NotificationManagerCompat
 import mozilla.components.service.nimbus.messaging.JexlAttributeProvider
 import mozilla.components.support.base.ext.areNotificationsEnabledSafe
+import mozilla.components.support.base.ext.isNotificationChannelEnabled
 import mozilla.components.support.utils.Browsers
 import org.json.JSONObject
 import org.mozilla.fenix.components.metrics.UTMParams.Companion.UTM_CAMPAIGN
@@ -17,6 +18,7 @@ import org.mozilla.fenix.components.metrics.UTMParams.Companion.UTM_MEDIUM
 import org.mozilla.fenix.components.metrics.UTMParams.Companion.UTM_SOURCE
 import org.mozilla.fenix.components.metrics.UTMParams.Companion.UTM_TERM
 import org.mozilla.fenix.ext.components
+import org.mozilla.fenix.onboarding.MARKETING_CHANNEL_ID
 import org.mozilla.fenix.utils.isLargeScreenSize
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -94,6 +96,8 @@ object CustomAttributeProvider : JexlAttributeProvider {
                 UTM_CONTENT to settings.utmContent,
                 "are_notifications_enabled" to NotificationManagerCompat.from(context)
                     .areNotificationsEnabledSafe(),
+                "are_marketing_notifications_enabled" to NotificationManagerCompat.from(context)
+                    .isNotificationChannelEnabled(MARKETING_CHANNEL_ID),
                 "search_widget_is_installed" to settings.searchWidgetInstalled,
                 "android_version" to android.os.Build.VERSION.SDK_INT,
                 "is_fxa_signed_in" to settings.signedInFxaAccount,

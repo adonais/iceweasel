@@ -5,11 +5,11 @@
 #ifndef mozilla_InputTaskManager_h
 #define mozilla_InputTaskManager_h
 
+#include "TaskController.h"
+#include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/StaticPtr.h"
 #include "nsTArray.h"
 #include "nsXULAppAPI.h"
-#include "TaskController.h"
-#include "mozilla/StaticPtr.h"
-#include "mozilla/StaticPrefs_dom.h"
 
 namespace mozilla {
 

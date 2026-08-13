@@ -21,7 +21,7 @@ const gfxFrameScript = {
       triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
     };
     webNav.loadURI(
-      Services.io.newURI("chrome://gfxsanity/content/sanitytest.html"),
+      Services.io.newURI("resource://gfxsanity/sanitytest.html"),
       loadURIOptions
     );
   },

@@ -6,8 +6,8 @@
 #define vm_Uint8Clamped_h
 
 #include <algorithm>
-#include <limits>
 #include <limits.h>
+#include <limits>
 #include <stdint.h>
 #include <type_traits>
 

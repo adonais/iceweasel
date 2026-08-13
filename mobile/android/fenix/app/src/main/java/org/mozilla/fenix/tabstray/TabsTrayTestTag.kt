@@ -69,6 +69,7 @@ internal object TabsTrayTestTag {
     const val BOTTOM_SHEET_SHARE_BUTTON = "$TAB_GROUP_BOTTOM_SHEET_ROOT.share"
     const val BOTTOM_SHEET_CIRCLE = "$TAB_GROUP_BOTTOM_SHEET_ROOT.circle"
     const val BOTTOM_SHEET_COLOR_LIST = "$TAB_GROUP_BOTTOM_SHEET_ROOT.colors"
+    const val EDIT_BOTTOM_SHEET_SAVE = "$TAB_GROUP_BOTTOM_SHEET_ROOT.save"
 
     const val GROUP_NAME = "$TAB_GROUP_BOTTOM_SHEET_ROOT.name"
     const val ADD_TO_TAB_GROUP_ROOT = "$TAB_GROUP_BOTTOM_SHEET_ROOT.addToGroup"
@@ -86,4 +87,7 @@ internal object TabsTrayTestTag {
     // Tab Search
     const val TAB_SEARCH_ROOT = "$TABS_TRAY.tab_search"
     const val TAB_SEARCH_BACK_BUTTON = "$TAB_SEARCH_ROOT.back_button"
+
+    // Tab grid
+    const val TAB_GRID = "$TABS_TRAY.grid"
 }

@@ -3,18 +3,19 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SharedSurfacesChild.h"
+
 #include "CompositorManagerChild.h"
-#include "mozilla/layers/IpcResourceUpdateQueue.h"
-#include "mozilla/layers/SourceSurfaceSharedData.h"
-#include "mozilla/layers/WebRenderBridgeChild.h"
-#include "mozilla/layers/RenderRootStateManager.h"
-#include "mozilla/layers/WebRenderLayerManager.h"
-#include "mozilla/layers/CompositorBridgeChild.h"
-#include "mozilla/layers/CompositorManagerParent.h"
 #include "mozilla/AppShutdown.h"
+#include "mozilla/PresShell.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/StaticPrefs_image.h"
-#include "mozilla/PresShell.h"
+#include "mozilla/layers/CompositorBridgeChild.h"
+#include "mozilla/layers/CompositorManagerParent.h"
+#include "mozilla/layers/IpcResourceUpdateQueue.h"
+#include "mozilla/layers/RenderRootStateManager.h"
+#include "mozilla/layers/SourceSurfaceSharedData.h"
+#include "mozilla/layers/WebRenderBridgeChild.h"
+#include "mozilla/layers/WebRenderLayerManager.h"
 #include "nsRefreshDriver.h"
 
 namespace mozilla {

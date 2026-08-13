@@ -2,34 +2,36 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "mozilla/Assertions.h"  // MOZ_ASSERT
+#include "mozilla/BasePrincipal.h"
+#include "mozilla/CycleCollectedJSContext.h"  // nsAutoMicroTask
+#include "mozilla/dom/AutoEntryScript.h"
+#include "mozilla/dom/ScriptLoadContext.h"
+#include "mozilla/dom/ScriptSettings.h"  // AutoJSAPI
+#include "mozilla/dom/ScriptTrace.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/RefPtr.h"  // mozilla::StaticRefPtr
+#include "mozilla/StaticPrefs_dom.h"
+
 #include "GeckoProfiler.h"
 #include "LoadedScript.h"
 #include "ModuleLoadRequest.h"
+#include "nsContentUtils.h"
+#include "nsICacheInfoChannel.h"  // nsICacheInfoChannel
+#include "nsNetUtil.h"            // NS_NewURI
+#include "ScriptLoaderInterface.h"
 #include "ScriptLoadRequest.h"
-#include "mozilla/dom/ScriptSettings.h"  // AutoJSAPI
-#include "mozilla/dom/ScriptTrace.h"
+#include "xpcpublic.h"
 
-#include "js/Array.h"  // JS::GetArrayLength
+#include "js/Array.h"         // JS::GetArrayLength
+#include "js/ColumnNumber.h"  // JS::ColumnNumberOneOrigin
 #include "js/CompilationAndEvaluation.h"
-#include "js/ColumnNumber.h"          // JS::ColumnNumberOneOrigin
 #include "js/ContextOptions.h"        // JS::ContextOptionsRef
 #include "js/ErrorReport.h"           // JSErrorBase
 #include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
 #include "js/Modules.h"  // JS::FinishLoadingImportedModule, JS::{G,S}etModuleResolveHook, JS::Get{ModulePrivate,ModuleScript,RequestedModule{s,Specifier,SourcePos}}, JS::SetModule{Load,Metadata}Hook
 #include "js/PropertyAndElement.h"  // JS_DefineProperty, JS_GetElement
 #include "js/SourceText.h"
-#include "mozilla/Assertions.h"  // MOZ_ASSERT
-#include "mozilla/BasePrincipal.h"
-#include "mozilla/dom/AutoEntryScript.h"
-#include "mozilla/dom/ScriptLoadContext.h"
-#include "mozilla/CycleCollectedJSContext.h"  // nsAutoMicroTask
-#include "mozilla/Preferences.h"
-#include "mozilla/RefPtr.h"  // mozilla::StaticRefPtr
-#include "mozilla/StaticPrefs_dom.h"
-#include "nsContentUtils.h"
-#include "nsICacheInfoChannel.h"  // nsICacheInfoChannel
-#include "nsNetUtil.h"            // NS_NewURI
-#include "xpcpublic.h"
 
 using mozilla::AutoSlowOperation;
 using mozilla::CycleCollectedJSContext;
@@ -666,6 +668,9 @@ ModuleLoaderBase::SetModuleFetchFinishedAndGetWaitingRequests(
 
   ModuleMapKey moduleMapKey(aRequest->URI(), aRequest->mModuleType);
 
+  // The entry may be absent for an inline module, because we already finished
+  // fetching it, or because it was canceled and dropped by
+  // CancelFetchingModules. There is nothing to complete in those cases.
   auto entry = mFetchingModules.Lookup(moduleMapKey);
   if (!entry) {
     LOG(
@@ -1170,6 +1175,12 @@ void ModuleLoaderBase::AddToResolvedModuleSet(
 
   bool isPreloadModule = aFetchInfo && aFetchInfo->IsForModuleScript() &&
                          aFetchInfo->IsForModulePreload();
+
+  // aHostDefined is undefined only for dynamic imports. The preload flag is
+  // flipped to false once a preloaded request is reused, so by the time a
+  // dynamic import runs its fetch info no longer reports a preload. A module
+  // that still reports a preload here therefore cannot be a dynamic import.
+  MOZ_ASSERT_IF(isPreloadModule, !aHostDefined.isUndefined());
   if (isPreloadModule) {
     RefPtr<ModuleLoadRequest> root = GetPreloadRootModuleRequest(aHostDefined);
     AddToPreloadedResolvedSet(root, std::move(aRecord));
@@ -1362,7 +1373,9 @@ void ModuleLoaderBase::StartFetchingModuleDependencies(
 
     Rooted<JSObject*> loadPromise(cx);
     result = LoadRequestedModules(cx, module, hostDefinedVal, &loadPromise);
-    AddPromiseReactions(cx, loadPromise, resolveFuncObj, rejectFuncObj);
+    if (result) {
+      AddPromiseReactions(cx, loadPromise, resolveFuncObj, rejectFuncObj);
+    }
   } else {
     result = LoadRequestedModules(cx, module, hostDefinedVal,
                                   OnLoadRequestedModulesResolved,
@@ -1527,6 +1540,8 @@ ModuleLoaderBase::~ModuleLoaderBase() {
   LOG(("ModuleLoaderBase::~ModuleLoaderBase %p", this));
 }
 
+nsIURI* ModuleLoaderBase::GetBaseURI() const { return mLoader->GetBaseURI(); }
+
 void ModuleLoaderBase::CancelFetchingModules() {
   for (const auto& entry : mFetchingModules) {
     RefPtr<LoadingRequest> loadingRequest = entry.GetData();
@@ -1537,8 +1552,10 @@ void ModuleLoaderBase::CancelFetchingModules() {
     }
   }
 
-  // We don't clear mFetchingModules here, as the fetching requests might arrive
-  // after the global is still shutting down.
+  // Drop the canceled requests rather than leaving HasFetchingModules() true
+  // forever. A request's fetch may still complete (unsuccessfully) afterwards;
+  // OnFetchComplete tolerates the entry no longer being in mFetchingModules.
+  mFetchingModules.Clear();
 }
 
 void ModuleLoaderBase::Shutdown() {

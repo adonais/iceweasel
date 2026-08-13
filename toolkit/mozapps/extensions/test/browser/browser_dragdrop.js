@@ -145,7 +145,7 @@ async function simulateDragAndDrop(win, dragData) {
   // the expected drop effect after the synthesizeDragOver call.
   session.dataTransfer.dropEffect = "move";
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !dropTarget.hidden,
     "Wait for the drop target element to be visible"
   );

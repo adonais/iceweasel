@@ -303,7 +303,7 @@ bool CCGCScheduler::GCRunnerFired(TimeStamp aDeadline) {
               // Recreate the GC runner with a 0 delay.  The new runner will
               // continue in idle time.
               KillGCRunner();
-              EnsureGCRunner(0);
+              EnsureGCRunner();
             } else if (!InIncrementalGC()) {
               // We should kill the GC runner since we're done with it, but
               // only if there's no incremental GC.
@@ -452,7 +452,7 @@ void CCGCScheduler::PokeShrinkingGC() {
           if (!nsRefreshDriver::IsRegularRateTimerTicking()) {
             s->SetWantMajorGC(JS::GCReason::USER_INACTIVE);
             if (!s->mHaveAskedParent) {
-              s->EnsureGCRunner(0);
+              s->EnsureGCRunner();
             }
           } else {
             s->PokeShrinkingGC();
@@ -478,7 +478,7 @@ void CCGCScheduler::PokeFullGC() {
           if (s->mCCRunner) {
             s->EnsureCCThenGC(CCReason::GC_WAITING);
           } else if (!s->mHaveAskedParent) {
-            s->EnsureGCRunner(0);
+            s->EnsureGCRunner();
           }
         },
         this, StaticPrefs::javascript_options_gc_delay_full(),
@@ -546,12 +546,12 @@ void CCGCScheduler::PokeMinorGC(JS::GCReason aReason) {
   }
 
   // Immediately start looking for idle time to run the minor GC.
-  EnsureGCRunner(0);
+  EnsureGCRunner();
 }
 
 void CCGCScheduler::EnsureOrResetGCRunner() {
   if (!mGCRunner) {
-    EnsureGCRunner(0);
+    EnsureGCRunner();
     return;
   }
 
@@ -644,8 +644,8 @@ void CCGCScheduler::EnsureCCRunner(TimeDuration aDelay, TimeDuration aBudget) {
   if (!mCCRunner) {
     mCCRunner = IdleTaskRunner::Create(
         [this](TimeStamp aDeadline) { return CCRunnerFired(aDeadline); },
-        "EnsureCCRunner::CCRunnerFired"_ns, 0, aDelay, minimumBudget, true,
-        [this] { return mDidShutdown; });
+        "EnsureCCRunner::CCRunnerFired"_ns, TimeDuration(), aDelay,
+        minimumBudget, true, [this] { return mDidShutdown; });
   } else {
     mCCRunner->SetMinimumUsefulBudget(minimumBudget.ToMilliseconds());
     nsIEventTarget* target = mozilla::GetCurrentSerialEventTarget();

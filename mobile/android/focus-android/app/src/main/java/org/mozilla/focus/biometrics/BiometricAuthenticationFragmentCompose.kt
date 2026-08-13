@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -79,10 +80,11 @@ private fun ComponentShowBiometricPromptButton(showBiometricPrompt: () -> Unit) 
             .padding(focusDimensions.paddingDefault)
             .fillMaxWidth(),
     ) {
-        Image(
+        Icon(
             painter = painterResource(iconsR.drawable.mozac_ic_fingerprinter_24),
             contentDescription = stringResource(R.string.biometric_auth_image_description),
             modifier = Modifier.padding(end = focusDimensions.paddingText),
+            tint = PhotonColors.White,
         )
         Text(
             color = PhotonColors.White,

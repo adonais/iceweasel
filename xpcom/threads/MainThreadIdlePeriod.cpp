@@ -4,10 +4,10 @@
 
 #include "MainThreadIdlePeriod.h"
 
+#include "VRManagerChild.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_idle_period.h"
 #include "mozilla/dom/Document.h"
-#include "VRManagerChild.h"
 #include "nsRefreshDriver.h"
 #include "nsThreadUtils.h"
 

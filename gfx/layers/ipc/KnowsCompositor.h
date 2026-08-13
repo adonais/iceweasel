@@ -5,9 +5,9 @@
 #ifndef MOZILLA_LAYERS_KNOWSCOMPOSITOR
 #define MOZILLA_LAYERS_KNOWSCOMPOSITOR
 
-#include "mozilla/layers/LayersTypes.h"  // for LayersBackend
-#include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/DataMutex.h"
+#include "mozilla/layers/CompositorTypes.h"
+#include "mozilla/layers/LayersTypes.h"  // for LayersBackend
 #include "mozilla/layers/SyncObject.h"
 
 namespace mozilla::layers {

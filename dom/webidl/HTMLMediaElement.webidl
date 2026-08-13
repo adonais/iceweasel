@@ -216,6 +216,12 @@ partial interface HTMLMediaElement {
   [ChromeOnly]
   readonly attribute boolean isInViewPort;
 
+  // Bitmask of the reasons the element is currently muted (see MutedReasons in
+  // HTMLMediaElement.h), exposed so tests can distinguish muting that leaves
+  // the web-visible muted attribute untouched (e.g. mute via media control).
+  [ChromeOnly, BinaryName="GetMutedReasons"]
+  readonly attribute unsigned long mutedReasons;
+
   [ChromeOnly]
   readonly attribute boolean isVideoDecodingSuspended;
 

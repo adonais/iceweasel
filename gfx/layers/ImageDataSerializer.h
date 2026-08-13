@@ -5,7 +5,8 @@
 #ifndef GFX_LAYERS_BLOBSURFACE_H
 #define GFX_LAYERS_BLOBSURFACE_H
 
-#include <stdint.h>                         // for uint8_t, uint32_t
+#include <stdint.h>  // for uint8_t, uint32_t
+
 #include "mozilla/Attributes.h"             // for MOZ_STACK_CLASS
 #include "mozilla/gfx/Point.h"              // for IntSize
 #include "mozilla/gfx/Rect.h"               // for IntRect

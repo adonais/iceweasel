@@ -6,6 +6,7 @@
 
 #if defined(XP_WIN)
 #  include <windows.h>
+
 #  include "mozilla/Maybe.h"
 #else
 #  include <sys/mman.h>

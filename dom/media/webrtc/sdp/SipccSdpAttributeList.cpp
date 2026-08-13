@@ -786,6 +786,9 @@ void SipccSdpAttributeList::LoadFmtp(sdp_t* sdp, const uint16_t level) {
         opusParameters->useInBandFec = fmtp->useinbandfec;
         opusParameters->maxAverageBitrate = fmtp->maxaveragebitrate;
         opusParameters->useDTX = fmtp->usedtx;
+        opusParameters->frameSizeMs = fmtp->opus_ptime;
+        opusParameters->minFrameSizeMs = fmtp->opus_minptime;
+        opusParameters->maxFrameSizeMs = fmtp->opus_maxptime;
         parameters = std::move(opusParameters);
       } break;
       case RTP_TELEPHONE_EVENT: {

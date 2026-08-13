@@ -7,7 +7,6 @@
 const {
   Component,
   createFactory,
-  PureComponent,
 } = require("resource://devtools/client/shared/vendor/react.mjs");
 const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.mjs");
 const ReactDOM = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
@@ -15,7 +14,9 @@ const ReactDOM = require("resource://devtools/client/shared/vendor/react-dom-fac
 const FluentReact = require("resource://devtools/client/shared/vendor/fluent-react.js");
 const Localized = createFactory(FluentReact.Localized);
 
-const { openDocLink } = require("resource://devtools/client/shared/link.js");
+const MDNLink = createFactory(
+  require("resource://devtools/client/shared/components/MdnLink.js")
+);
 
 const {
   accessibility: {
@@ -40,41 +41,6 @@ const SCORE_TO_ICON_MAP = {
     src: "chrome://devtools/skin/images/alert.svg",
   },
 };
-
-/**
- * Localized "Learn more" link that opens a new tab with relevant documentation.
- */
-class LearnMoreClass extends PureComponent {
-  static get propTypes() {
-    return {
-      href: PropTypes.string,
-      l10nId: PropTypes.string.isRequired,
-      onClick: PropTypes.func,
-    };
-  }
-
-  static get defaultProps() {
-    return {
-      href: "#",
-      l10nId: null,
-      onClick: LearnMoreClass.openDocOnClick,
-    };
-  }
-
-  static openDocOnClick(event) {
-    event.preventDefault();
-    openDocLink(event.target.href);
-  }
-
-  render() {
-    const { href, l10nId, onClick } = this.props;
-    const className = "link";
-
-    return Localized({ id: l10nId }, ReactDOM.a({ className, href, onClick }));
-  }
-}
-
-const LearnMore = createFactory(LearnMoreClass);
 
 /**
  * Renders icon with text description for the accessibility check.
@@ -105,7 +71,7 @@ function Annotation({ args, href, l10nId }) {
   return Localized(
     {
       id: l10nId,
-      a: LearnMore({ l10nId: "accessibility-learn-more", href }),
+      a: MDNLink({ url: href }),
       ...args,
     },
     ReactDOM.p({ className: "accessibility-check-annotation" })

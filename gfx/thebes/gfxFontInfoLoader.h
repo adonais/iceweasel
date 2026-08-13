@@ -5,15 +5,15 @@
 #ifndef GFX_FONT_INFO_LOADER_H
 #define GFX_FONT_INFO_LOADER_H
 
-#include "nsCOMPtr.h"
-#include "nsIObserver.h"
-#include "nsITimer.h"
-#include "nsIThread.h"
-#include "nsString.h"
 #include "gfxFontEntry.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/TimeStamp.h"
+#include "nsCOMPtr.h"
+#include "nsIObserver.h"
 #include "nsISupports.h"
+#include "nsIThread.h"
+#include "nsITimer.h"
+#include "nsString.h"
 
 // data retrieved for a given face
 

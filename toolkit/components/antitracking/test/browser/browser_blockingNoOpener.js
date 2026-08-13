@@ -28,13 +28,8 @@ AntiTracking.runTestInNormalAndPrivateMode(
         break;
     }
   },
-  async _ => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  },
+  // Cleanup callback
+  clearSiteTestData,
   null,
   true,
   false

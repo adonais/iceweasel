@@ -95,7 +95,7 @@ struct InlineBackgroundData {
    * This is used when painting backgrounds.
    */
   nsRect GetContinuousRect(nsIFrame* aFrame) {
-    MOZ_ASSERT(static_cast<nsInlineFrame*>(do_QueryFrame(aFrame)));
+    MOZ_ASSERT(aFrame->IsInlineFrameOrSubclass());
 
     SetFrame(aFrame);
 
@@ -540,7 +540,7 @@ static nsRect JoinBoxesForBlockAxisSlice(nsIFrame* aFrame,
 enum InlineBoxOrder { eForBorder, eForBackground };
 static nsRect JoinBoxesForSlice(nsIFrame* aFrame, const nsRect& aBorderArea,
                                 InlineBoxOrder aOrder) {
-  if (static_cast<nsInlineFrame*>(do_QueryFrame(aFrame))) {
+  if (aFrame->IsInlineFrameOrSubclass()) {
     return (aOrder == eForBorder
                 ? gInlineBGData->GetBorderContinuousRect(aFrame, aBorderArea)
                 : gInlineBGData->GetContinuousRect(aFrame)) +
@@ -3909,8 +3909,7 @@ static sk_sp<const SkTextBlob> CreateTextBlob(
       // if it's detailed, potentially add multiple into run.glyphs
       uint32_t count = aCompressedGlyph[currIndex].GetGlyphCount();
       if (count > 0) {
-        gfxTextRun::DetailedGlyph* detailGlyph =
-            aTextRun->GetDetailedGlyphs(currIndex);
+        const auto* detailGlyph = aTextRun->GetDetailedGlyphs(currIndex, count);
         for (uint32_t d = isRTL ? count - 1 : 0; count; count--, d += step) {
           MOZ_ASSERT(i < len, "glyph count error!");
           AddDetailedGlyph(run, detailGlyph[d], i, aAppUnitsPerDevPixel,

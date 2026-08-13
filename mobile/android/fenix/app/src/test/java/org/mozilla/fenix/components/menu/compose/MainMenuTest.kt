@@ -57,7 +57,6 @@ class MainMenuTest {
                     isBookmarked = false,
                     isDesktopMode = false,
                     isPdf = false,
-                    isPrivate = false,
                     isReaderViewActive = false,
                     isExtensionsProcessDisabled = false,
                     isMoreMenuHighlighted = false,

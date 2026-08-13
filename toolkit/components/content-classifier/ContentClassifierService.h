@@ -9,6 +9,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/ScopedPrefs.h"
 #include "mozilla/Span.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/RefPtr.h"
@@ -75,6 +76,28 @@ struct ContentClassifierFeature {
   // sanity-check that such features are listed after the features they may
   // except in the engines pref.
   bool mExceptionOnly;
+
+  // If true, the engine is called with the top-window site as the source
+  // site (and third-party-to-top-window as the third-party bit) instead of
+  // the loading frame's site. Used by features that expect to key on the top
+  // level, rather than the requesting frame- specifically all rules emulating
+  // the old behavior.
+  bool mUseTopWindowAsSource;
+
+  // The scoped pref that gates this feature's blocking decision. When the
+  // scoped pref is set to false, blocking is suppressed for the channel's site.
+  // Only consulted on the blocking path.
+  Maybe<nsIScopedPrefs::Pref> mReferencedScopedPref;
+
+  // Optional predicate evaluated before classification. When non-null, the
+  // feature's engine is skipped for any request where this returns false.
+  // Allows features to restrict classification to a request subset without
+  // needing per-request engine variants.
+  bool (*mRequestFilter)(const ContentClassifierRequest&);
+
+  // Optional callback invoked just before a matched channel is cancelled, after
+  // SetBlockedContent and before aChannel->Cancel(). Null for most features.
+  void (*mCancelChannelCallback)(nsIChannel*);
 };
 
 enum class InitPhase {
@@ -85,26 +108,18 @@ enum class InitPhase {
   ShutdownEnded
 };
 
-// Aggregated status across all engines consulted for a single
-// classification. Ordering is significant: higher values supersede
-// lower ones in ContentClassifierResult::Accumulate, so any Exception
-// promotes the aggregate over a Hit, and an Important variant pins the
-// status against later non-Important results.
-enum class ContentClassifierResultStatus : uint8_t {
-  Miss = 0,
-  Hit = 1,
-  Exception = 2,
-  ImportantHit = 3,
-  ImportantException = 4,
-};
-
 // Aggregated outcome across the engines consulted for one classification.
 // Records every engine result that contributed (a match or an exception),
 // so the caller can attribute the channel-side annotation / block to the
 // right feature definitions.
 class ContentClassifierResult {
  public:
-  using Status = ContentClassifierResultStatus;
+  // Aggregation ordering follows the numeric
+  // value of nsIContentClassifierService::ProbeStatus: higher values
+  // supersede lower ones in Accumulate, so any Exception promotes the
+  // aggregate over a Hit, and an Important variant pins the status against
+  // later non-Important results.
+  using Status = nsIContentClassifierService::ProbeStatus;
 
   ContentClassifierResult() = default;
 
@@ -177,6 +192,49 @@ struct EnginesPrefsSnapshot {
   nsTArray<nsCString> mAnnotatePBM;
 };
 
+class ContentClassifierProbeResult final
+    : public nsIContentClassifierProbeResult {
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSICONTENTCLASSIFIERPROBERESULT
+
+  ContentClassifierProbeResult(const nsACString& aFeatureName, bool aMatched,
+                               bool aException, bool aImportant,
+                               nsresult aEngineResult)
+      : mFeatureName(aFeatureName),
+        mMatched(aMatched),
+        mException(aException),
+        mImportant(aImportant),
+        mEngineResult(aEngineResult) {}
+
+ private:
+  ~ContentClassifierProbeResult() = default;
+
+  nsCString mFeatureName;
+  bool mMatched;
+  bool mException;
+  bool mImportant;
+  nsresult mEngineResult;
+};
+
+class ContentClassifierProbeReport final
+    : public nsIContentClassifierProbeReport {
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSICONTENTCLASSIFIERPROBEREPORT
+
+  ContentClassifierProbeReport(
+      nsIContentClassifierService::ProbeStatus aStatus,
+      nsTArray<RefPtr<nsIContentClassifierProbeResult>>&& aResults)
+      : mStatus(aStatus), mResults(std::move(aResults)) {}
+
+ private:
+  ~ContentClassifierProbeReport() = default;
+
+  nsIContentClassifierService::ProbeStatus mStatus;
+  nsTArray<RefPtr<nsIContentClassifierProbeResult>> mResults;
+};
+
 class ContentClassifierService final : public nsIAsyncShutdownBlocker,
                                        public nsIContentClassifierService {
  public:
@@ -198,6 +256,10 @@ class ContentClassifierService final : public nsIAsyncShutdownBlocker,
   // feature exists in the static table.
   static Maybe<const ContentClassifierFeature&> GetFeatureByName(
       const nsACString& aName);
+
+  // Returns whether the named blocking feature is currently active.
+  static bool IsBlockingFeatureActive(const nsACString& aFeatureName,
+                                      bool aIsPrivate);
 
   ContentClassifierResult ClassifyForCancel(
       const ContentClassifierRequest& aRequest);

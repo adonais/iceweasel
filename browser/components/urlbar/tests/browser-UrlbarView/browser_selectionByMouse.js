@@ -339,20 +339,20 @@ add_task(async function buttons() {
     priority: Infinity,
     results: [
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         payload: {
           url: mainResultUrl,
           helpUrl: mainResultHelpUrl,
           helpL10n: {
-            id: "urlbar-result-menu-learn-more",
+            id: "urlbar-result-menu-learn-more2",
           },
           isBlockable: true,
         },
       }),
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         payload: {
           url: otherResultUrl,
         },
@@ -364,9 +364,8 @@ add_task(async function buttons() {
   providersManager.registerProvider(provider);
 
   let assertResultMenuOpen = () => {
-    Assert.equal(
-      gURLBar.view.resultMenu.state,
-      "showing",
+    Assert.ok(
+      gURLBar.view.resultMenu.hasAttribute("open"),
       "Result menu is showing"
     );
     EventUtils.synthesizeKey("KEY_Escape");
@@ -535,7 +534,7 @@ add_task(async function buttons() {
 
 async function waitForElements(selectors) {
   let elements;
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => {
       elements = selectors.map(s => document.querySelector(s));
       return elements.every(e => e && BrowserTestUtils.isVisible(e));

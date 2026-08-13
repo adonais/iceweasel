@@ -8,8 +8,8 @@
 
 #include "js/Debug.h"
 #include "mozilla/CycleCollectedJSContext.h"
-#include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/SchedulerGroup.h"
+#include "mozilla/dom/ScriptSettings.h"
 
 namespace mozilla {
 

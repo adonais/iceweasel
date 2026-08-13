@@ -7,7 +7,8 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   Sqlite: "resource://gre/modules/Sqlite.sys.mjs",
-  UI_TYPES: "moz-src:///browser/components/aiwindow/ui/modules/ToolUI.sys.mjs",
+  CONFIRMATION_UI_TYPES:
+    "moz-src:///browser/components/aiwindow/ui/modules/ToolUI.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "log", function () {
@@ -27,6 +28,9 @@ import {
   MESSAGE_CREATED_DATE_INDEX,
   MESSAGE_CONV_ID_INDEX,
   MESSAGE_INSERT,
+  TOOL_RESULT_TABLE,
+  TOOL_RESULT_HISTORY_URL_INDEX,
+  TOOL_RESULT_INSERT,
   CONVERSATIONS_MOST_RECENT,
   CONVERSATION_BY_ID,
   CONVERSATIONS_BY_DATE,
@@ -73,6 +77,7 @@ import {
   DB_FILE_NAME,
   PREF_BRANCH,
   CONVERSATION_STATUS,
+  TOOL_RESULT_TYPE,
 } from "./AIWindowConstants.sys.mjs";
 
 import {
@@ -80,6 +85,7 @@ import {
   parseMessageRows,
   parseChatHistoryViewRows,
   toJSONOrNull,
+  stripHistoryResultAssets,
 } from "./ChatUtils.sys.mjs";
 
 // NOTE: Reference to migrations file, migrations.mjs has an example
@@ -145,6 +151,21 @@ class ChatStore {
       await this.#closeConnection();
     };
     this.#lastRecordedSize = null;
+
+    this.QueryInterface = ChromeUtils.generateQI([
+      "nsIObserver",
+      "nsISupportsWeakReference",
+    ]);
+
+    Services.obs.addObserver(this, "idle-daily", true);
+  }
+
+  observe(_subject, topic) {
+    if (topic === "idle-daily") {
+      this.pruneDatabase().catch(e => {
+        lazy.log.error("Could not prune chat database", e.message, e.stack);
+      });
+    }
   }
 
   /**
@@ -203,9 +224,10 @@ class ChatStore {
           memories_flag_source: m.memoriesFlagSource,
           memories_applied_jsonb: toJSONOrNull(m.memoriesApplied),
           web_search_queries_jsonb: toJSONOrNull(m.webSearchQueries),
-          tool_ui_data_jsonb: toJSONOrNull(m.toolUIData),
         }));
         await this.#conn.executeCached(MESSAGE_INSERT, messages);
+
+        await this.#applyToolResults(conversation);
       })
       .catch(e => {
         lazy.log.error("Transaction failed to execute", e.message, e.stack);
@@ -213,6 +235,39 @@ class ChatStore {
       });
 
     this.#recordDatabaseSize();
+  }
+
+  async #applyToolResults(conversation) {
+    // Upsert only: tool_result rows for a live message are grow-only (added or
+    // updated in place). Removal happens via message deletion, which cascades,
+    // so rows should never grow stale as tool results never change unless a
+    // message gets retried. In this case, the message being retried is deleted
+    // and the deletion cascades to the tool_result table. If in the future the
+    // tool result data can change then potentially stale rows must be removed.
+
+    const toolResults = [];
+    for (const m of conversation.messages) {
+      if (m.toolUIData) {
+        toolResults.push({
+          message_id: m.id,
+          type: TOOL_RESULT_TYPE.TOOL_UI,
+          ordinal: 0,
+          payload: toJSONOrNull(m.toolUIData),
+        });
+      }
+      m.historyResults.forEach((record, index) => {
+        toolResults.push({
+          message_id: m.id,
+          type: TOOL_RESULT_TYPE.HISTORY_RESULTS,
+          ordinal: index,
+          payload: toJSONOrNull(stripHistoryResultAssets(record)),
+        });
+      });
+    }
+
+    if (toolResults.length) {
+      await this.#conn.executeCached(TOOL_RESULT_INSERT, toolResults);
+    }
   }
 
   /**
@@ -347,6 +402,7 @@ class ChatStore {
       return new ChatMinimal({
         convId: row.getResultByName("conv_id"),
         title: row.getResultByName("title"),
+        pageUrl: row.getResultByName("page_url"),
       });
     });
   }
@@ -605,86 +661,86 @@ class ChatStore {
   }
 
   /**
-   * Prunes the database of old conversations in order to get the
-   * database file size to the specified maximum size.
+   * Reads the actual bytes being used by the database as opposed
+   * to the physical size on disk of the sqlite file
    *
-   * @todo Bug 2005411
-   * Review the requirements for db pruning and set up invocation schedule, and refactor
-   * to use dbstat
+   * @returns {number} Current bytes in use by db
+   */
+  async getDbBytesInUse() {
+    const rows = await this.#conn.execute(
+      "SELECT sum(pgsize) AS size FROM dbstat WHERE aggregate = TRUE"
+    );
+
+    return rows[0].getResultByName("size") ?? 0;
+  }
+
+  /**
+   * Prunes the database of old conversations in order to keep the
+   * database file size to stay under the specified maximum size.
    *
    * @param {number} [reduceByPercentage=0.05] - Percentage to reduce db file size by
    * @param {number} [maxDbSizeBytes=MAX_DB_SIZE_BYTES] - Db max file size
+   * @param {number} [deleteBatchSize=2] - Number of conversations to delete
+   *                                       at a time
    */
   async pruneDatabase(
     reduceByPercentage = 0.05,
-    maxDbSizeBytes = MAX_DB_SIZE_BYTES
+    maxDbSizeBytes = MAX_DB_SIZE_BYTES,
+    deleteBatchSize = 50
   ) {
-    if (!IOUtils.exists(this.databaseFilePath)) {
+    await this.#ensureDatabase().catch(e => {
+      lazy.log.error(
+        "Could not ensure a database connection.",
+        e.message,
+        e.stack
+      );
+      throw e;
+    });
+
+    const dbExists = await IOUtils.exists(this.databaseFilePath);
+    if (!dbExists) {
       return;
     }
 
-    const DELETE_BATCH_SIZE = 50;
-
-    const getPragmaInt = async name => {
-      const result = await this.#conn.execute(`PRAGMA ${name}`);
-      return result[0].getInt32(0);
-    };
-
-    // compute the logical DB size in bytes using SQLite's page_size,
-    // page_count, and freelist_count
-    const getLogicalDbSizeBytes = async () => {
-      const pageSize = await getPragmaInt("page_size");
-      const pageCount = await getPragmaInt("page_count");
-      const freelistCount = await getPragmaInt("freelist_count");
-
-      // Logical used pages = total pages - free pages
-      const usedPages = pageCount - freelistCount;
-      const lSize = usedPages * pageSize;
-
-      return lSize;
-    };
-
-    let logicalSize = await getLogicalDbSizeBytes();
-    if (logicalSize < maxDbSizeBytes) {
+    let dbSize = await this.getDbBytesInUse();
+    if (dbSize < maxDbSizeBytes) {
       return;
     }
 
-    const targetLogicalSize = Math.max(
-      0,
-      logicalSize * (1 - reduceByPercentage)
-    );
+    const targetDbSize = Math.max(0, dbSize * (1 - reduceByPercentage));
 
     const MAX_ITERATIONS = 100;
-    // how many "no file size change" batches we tolerate
+    // how many "no size change" batches we tolerate
     const MAX_STAGNANT = 5;
     let iterations = 0;
     let stagnantIterations = 0;
 
     while (
-      logicalSize > targetLogicalSize &&
+      dbSize > targetDbSize &&
       iterations < MAX_ITERATIONS &&
       stagnantIterations < MAX_STAGNANT
     ) {
       iterations++;
 
-      const recentChats = await this.findOldestConversations(DELETE_BATCH_SIZE);
+      const oldestConversations =
+        await this.findOldestConversations(deleteBatchSize);
 
-      if (!recentChats.length) {
+      if (!oldestConversations.length) {
         break;
       }
 
-      for (const chat of recentChats) {
+      for (const chat of oldestConversations) {
         await this.deleteConversationById(chat.id);
       }
 
-      const newLogicalSize = await getLogicalDbSizeBytes();
-      if (newLogicalSize >= logicalSize) {
+      const newDbSize = await this.getDbBytesInUse();
+      if (newDbSize >= dbSize) {
         stagnantIterations++;
       } else {
         stagnantIterations = 0;
       }
 
-      logicalSize = newLogicalSize;
+      dbSize = newDbSize;
     }
 
     // Actually reclaim disk space.
@@ -824,6 +880,7 @@ class ChatStore {
    * This method is meant to only be used for testing cleanup
    */
   async destroyDatabase() {
+    await this.#promiseConn?.catch(() => {});
     await this.#removeDatabaseFiles();
     this.#promiseConn = null;
     this.#recordDatabaseSizeValue(0);
@@ -890,7 +947,7 @@ class ChatStore {
     const byConv = {};
     parseMessageRows(rows).forEach(message => {
       if (convs[message.convId]) {
-        if (message.toolUIData?.uiType === lazy.UI_TYPES.WEBSITE_CONFIRMATION) {
+        if (lazy.CONFIRMATION_UI_TYPES.includes(message.toolUIData?.uiType)) {
           message.isRestored = true;
         }
         (byConv[message.convId] ??= []).push(message);
@@ -901,6 +958,12 @@ class ChatStore {
     for (const [convId, messages] of Object.entries(byConv)) {
       convs[convId].messages = messages;
     }
+
+    // Rebuild the history results map for ai-chat-grid
+    // instances now that all messages are retrieved
+    conversations.forEach(conversation =>
+      conversation.rehydrateHistoryResultsPool()
+    );
 
     return conversations;
   }
@@ -932,8 +995,9 @@ class ChatStore {
     );
 
     try {
-      // TODO: remove this after switching pruneDatabase() to use dbstat
+      // TODO - Bug 2048333 Migrate this to default value 32k
       await this.#conn.execute("PRAGMA page_size = 4096;");
+
       // Setup WAL journaling, as it is generally faster.
       await this.#conn.execute("PRAGMA journal_mode = WAL;");
       await this.#conn.execute("PRAGMA wal_autocheckpoint = 16;");
@@ -1424,6 +1488,8 @@ class ChatStore {
     await this.#conn.execute(MESSAGE_URL_INDEX);
     await this.#conn.execute(MESSAGE_CREATED_DATE_INDEX);
     await this.#conn.execute(MESSAGE_CONV_ID_INDEX);
+    await this.#conn.execute(TOOL_RESULT_TABLE);
+    await this.#conn.execute(TOOL_RESULT_HISTORY_URL_INDEX);
     await this.#conn.execute(LLM_TELEMETRY_TABLE);
   }
 

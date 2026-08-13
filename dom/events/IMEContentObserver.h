@@ -70,6 +70,11 @@ class IMEContentObserver final : public nsStubMutationObserver,
    */
   void OnSelectionChange(dom::Selection& aSelection);
 
+  void EditContextTextChanged(uint32_t aRangeStart, uint32_t aRangeEnd,
+                              const nsAString& aText);
+  void EditContextSelectionChanged();
+  void EditContextPositionChanged();
+
   MOZ_CAN_RUN_SCRIPT bool OnMouseButtonEvent(nsPresContext& aPresContext,
                                              WidgetMouseEvent& aMouseEvent);
 
@@ -157,6 +162,7 @@ class IMEContentObserver final : public nsStubMutationObserver,
     return mEditorBase == &aEditorBase;
   }
   bool IsEditorHandlingEventForComposition() const;
+  bool IsPreparingTextEditor() const;
   bool KeepAliveDuringDeactive() const {
     return mIMENotificationRequests &&
            mIMENotificationRequests->contains(
@@ -185,7 +191,7 @@ class IMEContentObserver final : public nsStubMutationObserver,
    * MaybeNotifyCompositionEventHandled() posts composition event handled
    * notification into the pseudo queue.
    */
-  void MaybeNotifyCompositionEventHandled();
+  void MaybeNotifyCompositionEventHandled(EventMessage);
 
   /**
    * Following methods are called when the editor:

@@ -4,17 +4,16 @@
 #ifndef _include_mozilla_gfx_ipc_CrossProcessPaint_h_
 #define _include_mozilla_gfx_ipc_CrossProcessPaint_h_
 
-#include "nsISupportsImpl.h"
-
+#include "mozilla/MozPromise.h"
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/gfx/Rect.h"
-#include "mozilla/MozPromise.h"
 #include "mozilla/ipc/ByteBuf.h"
 #include "nsColor.h"
-#include "nsTHashMap.h"
 #include "nsHashKeys.h"
+#include "nsISupportsImpl.h"
 #include "nsRefPtrHashtable.h"
+#include "nsTHashMap.h"
 #include "nsTHashSet.h"
 
 class nsIDocShell;

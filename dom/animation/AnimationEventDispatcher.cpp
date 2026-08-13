@@ -4,19 +4,16 @@
 
 #include "mozilla/AnimationEventDispatcher.h"
 
+#include "mozilla/AnimationUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ContentEvents.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventListenerManager.h"
-#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/dom/Animation.h"
 #include "mozilla/dom/AnimationEffect.h"
 #include "mozilla/dom/AnimationPlaybackEvent.h"
 #include "mozilla/dom/CSSAnimation.h"
-#include "mozilla/dom/CSSNumericValueBinding.h"
 #include "mozilla/dom/CSSTransition.h"
-#include "mozilla/dom/CSSUnitValue.h"
-#include "mozilla/dom/ScrollTimeline.h"  // For PROGRESS_TIMELINE_DURATION_MILLISEC
 #include "nsCSSProps.h"
 #include "nsGlobalWindowInner.h"
 #include "nsPresContext.h"
@@ -260,19 +257,18 @@ void AnimationEventInfo::Dispatch(nsPresContext* aPresContext) {
     }
 
     dom::AnimationPlaybackEventInit init;
+    const bool progressBased = mAnimation->AcceptsPercentageBasedTime();
+    nsIGlobalObject* global = mAnimation->GetParentObject();
     if (!data.mCurrentTime.IsNull()) {
-      if (mAnimation->AcceptsPercentageBasedTime()) {
-        const double progress =
-            data.mCurrentTime.Value() /
-            static_cast<double>(PROGRESS_TIMELINE_DURATION_MILLISEC) * 100.0;
-        init.mCurrentTime.SetValue().SetAsCSSNumericValue() =
-            MakeRefPtr<dom::CSSUnitValue>(mAnimation->GetParentObject(),
-                                          progress, "percent"_ns);
-      } else {
-        init.mCurrentTime.SetValue().SetAsDouble() = data.mCurrentTime.Value();
-      }
+      AnimationUtils::DoubleToCSSNumberish(data.mCurrentTime.Value(),
+                                           progressBased, global,
+                                           init.mCurrentTime.SetValue());
     }
-    init.mTimelineTime = data.mTimelineTime;
+    if (!data.mTimelineTime.IsNull()) {
+      AnimationUtils::DoubleToCSSNumberish(data.mTimelineTime.Value(),
+                                           progressBased, global,
+                                           init.mTimelineTime.SetValue());
+    }
     MOZ_ASSERT(nsDependentAtomString(data.mOnEvent).Find(u"on"_ns) == 0,
                "mOnEvent atom should start with 'on'!");
     RefPtr<dom::AnimationPlaybackEvent> event =

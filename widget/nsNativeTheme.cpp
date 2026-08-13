@@ -3,31 +3,34 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsNativeTheme.h"
-#include "nsIWidget.h"
-#include "mozilla/dom/Document.h"
-#include "nsIContent.h"
-#include "nsIFrame.h"
-#include "nsLayoutUtils.h"
-#include "nsPresContext.h"
-#include "nsString.h"
-#include "nsNameSpaceManager.h"
-#include "nsStyleConsts.h"
-#include "nsPIDOMWindow.h"
-#include "nsProgressFrame.h"
-#include "nsRangeFrame.h"
-#include "nsCSSRendering.h"
+
+#include <algorithm>
+
 #include "ImageContainer.h"
 #include "mozilla/ComputedStyle.h"
+#include "mozilla/PresShell.h"
+#include "mozilla/ScrollContainerFrame.h"
+#include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLBodyElement.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/HTMLProgressElement.h"
-#include "mozilla/PresShell.h"
-#include "mozilla/ScrollContainerFrame.h"
-#include "mozilla/StaticPrefs_layout.h"
-#include "mozilla/dom/DocumentInlines.h"
+#include "nsCSSRendering.h"
+#include "nsIContent.h"
+#include "nsIContentInlines.h"
+#include "nsIFrame.h"
+#include "nsIWidget.h"
+#include "nsLayoutUtils.h"
+#include "nsNameSpaceManager.h"
+#include "nsPIDOMWindow.h"
+#include "nsPresContext.h"
+#include "nsProgressFrame.h"
+#include "nsRangeFrame.h"
+#include "nsString.h"
+#include "nsStyleConsts.h"
 #include "nsXULElement.h"
-#include <algorithm>
 
 using namespace mozilla;
 using namespace mozilla::dom;

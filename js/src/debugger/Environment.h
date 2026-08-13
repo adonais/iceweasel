@@ -8,8 +8,9 @@
 #include "mozilla/Assertions.h"  // for AssertionConditionType, MOZ_ASSERT
 #include "mozilla/Maybe.h"       // for Maybe
 
-#include "jstypes.h"            // for JS_PUBLIC_API
-#include "NamespaceImports.h"   // for Value, HandleId, HandleObject
+#include "jstypes.h"           // for JS_PUBLIC_API
+#include "NamespaceImports.h"  // for Value, HandleId, HandleObject
+
 #include "debugger/Debugger.h"  // for Env
 #include "js/PropertySpec.h"    // for JSFunctionSpec, JSPropertySpec
 #include "js/RootingAPI.h"      // for Handle, MutableHandle

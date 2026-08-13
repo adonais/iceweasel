@@ -11,14 +11,19 @@ This outputter is different from the rest of the outputters in that the code it
 generates does not use the Glean SDK. It is meant to be used to collect events
 in server-side environments. In these environments SDK assumptions to measurement
 window and connectivity don't hold.
+
 Generated code takes care of assembling pings with metrics, and serializing to messages
-conforming to Glean schema.
+conforming to Glean schema. The transport is selected with the `transport` option
+on the `go_server` outputter (`-s transport=...`):
+- `logging` (default): Logs to stdout in MozLog format for ingestion via GCP log routing
+- `pubsub`: Builds messages for direct publishing to GCP Pub/Sub topics
+- `combined`: Emits both in a single file (sharing common types) for gradual migration
 
 Warning: this outputter supports limited set of metrics,
 see `SUPPORTED_METRIC_TYPES` below.
 
 Generated code creates two methods for each ping (`RecordPingX` and `RecordPingXWithoutUserInfo`)
-that are used for submitting (logging) them.
+that are used for submitting events.
 If pings have `event` metrics assigned, they can be passed to these methods.
 """
 
@@ -111,7 +116,10 @@ def validate_labeled_boolean(metric: metrics.Metric) -> bool:
 
 
 def output_go(
-    objs: metrics.ObjectTree, output_dir: Path, options: Optional[Dict[str, Any]]
+    objs: metrics.ObjectTree,
+    output_dir: Path,
+    options: Optional[Dict[str, Any]],
+    transport: str = "logging",
 ) -> None:
     """
     Given a tree of objects, output Go code to `output_dir`.
@@ -122,6 +130,9 @@ def output_go(
     :param objects: A tree of objects (metrics and pings) as returned from
         `parser.parse_objects`.
     :param output_dir: Path to an output directory to write to.
+    :param transport: Transport mode - one of "logging" (Cloud Logging, the
+        default), "pubsub" (Pub/Sub direct publishing), or "combined" (both in
+        a single file, sharing common types).
     """
 
     template = util.get_jinja2_template(
@@ -198,5 +209,41 @@ def output_go(
                 pings=ping_to_metrics,
                 events=event_metrics,
                 labeled_booleans=labeled_boolean_metrics,
+                transport=transport,
             )
         )
+
+
+def _resolve_transport(default: str, options: Optional[Dict[str, Any]]) -> str:
+    if not options:
+        return default
+    transport = options.get("transport")
+    if transport is None:
+        return default
+    if transport not in ("logging", "pubsub", "combined"):
+        raise ValueError(
+            f"Invalid transport '{transport}'."
+            " Must be one of: logging, pubsub, combined."
+        )
+    return transport
+
+
+def output_go_logger(
+    objs: metrics.ObjectTree, output_dir: Path, options: Optional[Dict[str, Any]] = None
+) -> None:
+    """
+    Given a tree of objects, output server Go code.
+
+    Defaults to the Cloud Logging transport; pass `-s transport=pubsub` for
+    direct Pub/Sub publishing, or `-s transport=combined` to emit both in a
+    single file (sharing common types) for a gradual logging->pubsub migration.
+
+    :param objects: A tree of objects (metrics and pings) as returned from
+        `parser.parse_objects`.
+    :param output_dir: Path to an output directory to write to.
+    :param options: options dictionary. Supports `transport` key with values
+        `logging` (default), `pubsub`, or `combined`.
+    """
+    output_go(
+        objs, output_dir, options, transport=_resolve_transport("logging", options)
+    )

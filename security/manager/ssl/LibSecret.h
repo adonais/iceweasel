@@ -7,7 +7,6 @@
 #define LibSecret_h
 
 #include "OSKeyStore.h"
-
 #include "nsString.h"
 
 nsresult MaybeLoadLibSecret();

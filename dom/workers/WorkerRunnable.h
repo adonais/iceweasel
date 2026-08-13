@@ -74,6 +74,16 @@ class WorkerRunnable : public nsIRunnable
   // and false otherwise.
   virtual bool IsDebuggerRunnable() const { return false; }
 
+  // True only for runnables that carry a RemoteWorkerDebugger IPC message
+  // (i.e. WrappedDebuggerRunnable). Such runnables are safe to service from
+  // within a nested sync loop while the parent thread is blocked in
+  // Enable/DisableRemoteDebugger, because their handlers only mutate debugger
+  // state and dispatch follow-up work; they never run JavaScript. Every other
+  // debugger-queue runnable (debugger script compilation, debugger message
+  // delivery, ...) returns false and must stay deferred until the worker
+  // returns to DoRunLoop. See WorkerPrivate::RunCurrentSyncLoop.
+  virtual bool IsIPCMessageDebuggerRunnable() const { return false; }
+
   static WorkerRunnable* FromRunnable(nsIRunnable* aRunnable);
 
  protected:
@@ -266,13 +276,25 @@ class WorkerThreadRunnable : public WorkerRunnable {
 // This runnable is used to send a message to a worker debugger.
 class WorkerDebuggerRunnable : public WorkerThreadRunnable {
  protected:
-  explicit WorkerDebuggerRunnable(const char* aName = "WorkerDebuggerRunnable")
-      : WorkerThreadRunnable(aName) {}
+  // mIsIPCMessage defaults to false: an ordinary WorkerDebuggerRunnable runs
+  // debugger JavaScript (script compilation, message delivery) and must not be
+  // serviced from within a nested sync loop. Only WrappedDebuggerRunnable, the
+  // sole wrapper for RemoteWorkerDebugger IPC delivered on the DebuggerOnly
+  // WorkerEventTarget, passes true here. See IsIPCMessageDebuggerRunnable.
+  explicit WorkerDebuggerRunnable(const char* aName = "WorkerDebuggerRunnable",
+                                  bool aIsIPCMessage = false)
+      : WorkerThreadRunnable(aName), mIsIPCMessage(aIsIPCMessage) {}
 
   virtual ~WorkerDebuggerRunnable() = default;
 
  private:
+  const bool mIsIPCMessage;
+
   virtual bool IsDebuggerRunnable() const override { return true; }
+
+  virtual bool IsIPCMessageDebuggerRunnable() const override {
+    return mIsIPCMessage;
+  }
 
   virtual bool PreDispatch(WorkerPrivate* aWorkerPrivate) override {
     AssertIsOnMainThread();

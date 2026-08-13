@@ -3,8 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsNetAddr.h"
-#include "nsString.h"
+
 #include "mozilla/net/DNS.h"
+#include "nsString.h"
 
 using namespace mozilla::net;
 

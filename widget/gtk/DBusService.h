@@ -5,10 +5,11 @@
 #ifndef DBusService_h_
 #define DBusService_h_
 
-#include <glib.h>
 #include <gio/gio.h>
-#include "mozilla/RefPtr.h"
+#include <glib.h>
+
 #include "mozilla/GRefPtr.h"
+#include "mozilla/RefPtr.h"
 
 namespace mozilla::widget {
 

@@ -27,7 +27,7 @@ add_setup(async function () {
  */
 function getTabGroupResult(queryContext) {
   const firstAction = queryContext.results.find(
-    result => result.source == UrlbarUtils.RESULT_SOURCE.ACTIONS
+    result => result.source == UrlbarShared.RESULT_SOURCE.ACTIONS
   );
   return firstAction?.payload.actionsResults.find(actionResult =>
     actionResult.key.startsWith("tabgroup-")

@@ -4,11 +4,11 @@
 
 #include "Screen.h"
 
-#include "mozilla/dom/DOMTypes.h"
-#include "mozilla/dom/ScreenBinding.h"
 #include "mozilla/Hal.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/dom/DOMTypes.h"
+#include "mozilla/dom/ScreenBinding.h"
 
 namespace mozilla::widget {
 

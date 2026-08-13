@@ -54,7 +54,7 @@ add_task(async function test_idle_cleanup() {
 
     Services.obs.notifyObservers(null, "idle-daily");
 
-    await BrowserTestUtils.waitForCondition(async () => {
+    await TestUtils.waitForCondition(async () => {
       return (
         (await Glean.networking.residualCacheFolderRemoval.failure.testGetValue()) ==
         1

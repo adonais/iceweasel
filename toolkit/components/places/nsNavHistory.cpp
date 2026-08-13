@@ -42,6 +42,7 @@
 #include "mozilla/storage.h"
 #include "mozilla/Preferences.h"
 #include <algorithm>
+#include <numbers>
 
 using namespace mozilla;
 using namespace mozilla::places;
@@ -1787,7 +1788,7 @@ int64_t nsNavHistory::CalculateFrecency(int32_t aVisitAgeInDays,
   int32_t refTimeInDaysFromEpoch = todayInDaysFromEpoch - aVisitAgeInDays;
 
   int32_t visitWeight = aBookmarked ? highWeight : mediumWeight;
-  double lambda = log(2.0) / static_cast<double>(halfLifeDays);
+  double lambda = std::numbers::ln2 / static_cast<double>(halfLifeDays);
   double decayedWeight =
       static_cast<double>(visitWeight) *
       exp(-lambda *

@@ -13,7 +13,7 @@ const { CredentialsAndSecurityBackupResource } = ChromeUtils.importESModule(
 add_task(async function test_measure() {
   Services.fog.testResetFOG();
 
-  const EXPECTED_CREDENTIALS_KILOBYTES_SIZE = 403;
+  const EXPECTED_CREDENTIALS_KILOBYTES_SIZE = 503;
   const EXPECTED_SECURITY_KILOBYTES_SIZE = 231;
 
   // Create resource files in temporary directory
@@ -29,6 +29,7 @@ add_task(async function test_measure() {
     { path: "logins-backup.json", sizeInKB: 1 },
     { path: "autofill-profiles.json", sizeInKB: 1 },
     { path: "credentialstate.sqlite", sizeInKB: 100 },
+    { path: "logins.db", sizeInKB: 100 },
     // Set up security files
     { path: "cert9.db", sizeInKB: 230 },
     { path: "pkcs11.txt", sizeInKB: 1 },
@@ -93,6 +94,7 @@ add_task(async function test_backup() {
     { path: "cert9.db" },
     { path: "key4.db" },
     { path: "credentialstate.sqlite" },
+    { path: "logins.db" },
   ]);
 
   // We have no need to test that Sqlite.sys.mjs's backup method is working -
@@ -120,8 +122,9 @@ add_task(async function test_backup() {
 
   // Next, we'll make sure that the Sqlite connection had `backup` called on it
   // with the right arguments.
-  Assert.ok(
-    fakeConnection.backup.calledThrice,
+  Assert.equal(
+    fakeConnection.backup.callCount,
+    4,
     "Called backup the expected number of times for all connections"
   );
   Assert.ok(
@@ -141,6 +144,12 @@ add_task(async function test_backup() {
       PathUtils.join(stagingPath, "credentialstate.sqlite")
     ),
     "Called backup on credentialstate.sqlite connection third"
+  );
+  Assert.ok(
+    fakeConnection.backup
+      .getCall(3)
+      .calledWith(PathUtils.join(stagingPath, "logins.db")),
+    "Called backup on logins.db connection fourth"
   );
 
   await maybeRemovePath(stagingPath);
@@ -172,6 +181,7 @@ add_task(async function test_recover() {
     { path: "cert9.db" },
     { path: "key4.db" },
     { path: "pkcs11.txt" },
+    { path: "logins.db" },
   ];
   await createTestFiles(recoveryPath, files);
 
@@ -270,6 +280,7 @@ add_task(async function test_recover_without_autofill_profiles() {
     { path: "cert9.db" },
     { path: "key4.db" },
     { path: "pkcs11.txt" },
+    { path: "logins.db" },
   ];
   await createTestFiles(recoveryPath, files);
 

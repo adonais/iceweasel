@@ -14,6 +14,15 @@ var WORKER1_URL = "code_listworkers-worker1.js";
 var WORKER2_URL = "code_listworkers-worker2.js";
 
 add_task(async function test() {
+  // This test enumerates a tab's workers through the content-process
+  // nsIWorkerDebuggerManager (the legacy WindowGlobalTargetActor.listWorkers
+  // path), which only lists workers whose debugger lives in the content
+  // process. Force the local WorkerDebugger instead of the parent-process
+  // RemoteWorkerDebugger (bug 1944240). Remove this pin (or the test) once the
+  // local WorkerDebugger mechanism is removed; this legacy worker-introspection
+  // path still needs to be modernized to the RemoteWorkerDebugger model.
+  await pushPref("dom.worker.remoteDebugger.enabled", false);
+
   const tab = await addTab(TAB_URL);
   const target = await createAndAttachTargetForTab(tab);
 

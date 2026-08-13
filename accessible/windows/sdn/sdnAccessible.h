@@ -8,7 +8,6 @@
 #include "ISimpleDOM.h"
 #include "IUnknownImpl.h"
 #include "MsaaAccessible.h"
-
 #include "mozilla/NotNull.h"
 
 namespace mozilla {
@@ -60,29 +59,29 @@ class sdnAccessible final : public ISimpleDOMNode {
   virtual HRESULT STDMETHODCALLTYPE scrollTo(/* [in] */ boolean aScrollTopLeft);
 
   virtual /* [propget] */ HRESULT STDMETHODCALLTYPE get_parentNode(
-      /* [out][retval] */ ISimpleDOMNode __RPC_FAR* __RPC_FAR* aNode);
+      /* [out][retval] */ ISimpleDOMNode __RPC_FAR * __RPC_FAR * aNode);
 
   virtual /* [propget] */ HRESULT STDMETHODCALLTYPE get_firstChild(
-      /* [out][retval] */ ISimpleDOMNode __RPC_FAR* __RPC_FAR* aNode);
+      /* [out][retval] */ ISimpleDOMNode __RPC_FAR * __RPC_FAR * aNode);
 
   virtual /* [propget] */ HRESULT STDMETHODCALLTYPE get_lastChild(
-      /* [out][retval] */ ISimpleDOMNode __RPC_FAR* __RPC_FAR* aNode);
+      /* [out][retval] */ ISimpleDOMNode __RPC_FAR * __RPC_FAR * aNode);
 
   virtual /* [propget] */ HRESULT STDMETHODCALLTYPE get_previousSibling(
-      /* [out][retval] */ ISimpleDOMNode __RPC_FAR* __RPC_FAR* aNode);
+      /* [out][retval] */ ISimpleDOMNode __RPC_FAR * __RPC_FAR * aNode);
 
   virtual /* [propget] */ HRESULT STDMETHODCALLTYPE get_nextSibling(
-      /* [out][retval] */ ISimpleDOMNode __RPC_FAR* __RPC_FAR* aNode);
+      /* [out][retval] */ ISimpleDOMNode __RPC_FAR * __RPC_FAR * aNode);
 
   virtual /* [propget] */ HRESULT STDMETHODCALLTYPE get_childAt(
       /* [in] */ unsigned aChildIndex,
-      /* [out][retval] */ ISimpleDOMNode __RPC_FAR* __RPC_FAR* aNode);
+      /* [out][retval] */ ISimpleDOMNode __RPC_FAR * __RPC_FAR * aNode);
 
   virtual /* [propget] */ HRESULT STDMETHODCALLTYPE get_innerHTML(
       /* [out][retval] */ BSTR __RPC_FAR* aInnerHTML);
 
   virtual /* [local][propget] */ HRESULT STDMETHODCALLTYPE get_localInterface(
-      /* [retval][out] */ void __RPC_FAR* __RPC_FAR* aLocalInterface);
+      /* [retval][out] */ void __RPC_FAR * __RPC_FAR * aLocalInterface);
 
   virtual /* [propget] */ HRESULT STDMETHODCALLTYPE get_language(
       /* [out][retval] */ BSTR __RPC_FAR* aLanguage);

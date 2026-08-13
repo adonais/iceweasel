@@ -8,10 +8,10 @@
 
 #include "mozilla/psm/PKCS11ModuleChild.h"
 
+#include "NSSCertDBTrustDomain.h"
 #include "PKCS11ModuleDB.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "nsDebugImpl.h"
-#include "NSSCertDBTrustDomain.h"
 
 namespace mozilla::psm {
 

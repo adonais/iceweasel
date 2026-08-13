@@ -25,7 +25,7 @@ function testLocalExportEntries(source, expected) {
 
 testLocalExportEntries(
     'export var v;',
-    [{exportName: 'v', moduleRequest: null, importName: null, localName: 'v'}]);
+    [{exportName: 'v', moduleRequest: null, importName: null, importNameValueType: 'string', localName: 'v'}]);
 
 testLocalExportEntries(
     'export var v = 0;',
@@ -92,11 +92,16 @@ testIndirectExportEntries(
 
 testIndirectExportEntries(
     'export {x} from "mod";',
-    [{exportName: 'x', moduleRequest: {specifier:'mod'}, importName: 'x', localName: null}]);
+    [{exportName: 'x', moduleRequest: {specifier:'mod'}, importName: 'x', importNameValueType: 'string', localName: null}]);
 
 testIndirectExportEntries(
     'export {v as x} from "mod";',
-    [{exportName: 'x', moduleRequest: {specifier:'mod'}, importName: 'v', localName: null}]);
+    [{exportName: 'x', moduleRequest: {specifier:'mod'}, importName: 'v', importNameValueType: 'string', localName: null}]);
+
+// A re-export spelled like an internal sentinel is still an ordinary string.
+testIndirectExportEntries(
+    'export { "*namespace*" as x } from "mod";',
+    [{exportName: 'x', moduleRequest: {specifier:'mod'}, importName: '*namespace*', importNameValueType: 'string', localName: null}]);
 
 testIndirectExportEntries(
     'export * from "mod";',
@@ -104,7 +109,15 @@ testIndirectExportEntries(
 
 testIndirectExportEntries(
     'import {v as x} from "mod"; export {x as y};',
-    [{exportName: 'y', moduleRequest: {specifier:'mod'}, importName: 'v', localName: null}]);
+    [{exportName: 'y', moduleRequest: {specifier:'mod'}, importName: 'v', importNameValueType: 'string', localName: null}]);
+
+testIndirectExportEntries(
+    'import * as ns from "mod"; export {ns};',
+    [{exportName: 'ns', moduleRequest: {specifier:'mod'}, importName: null, importNameValueType: 'namespace', localName: null}]);
+
+testIndirectExportEntries(
+    'export * as ns from "mod";',
+    [{exportName: 'ns', moduleRequest: {specifier:'mod'}, importName: null, importNameValueType: 'namespace', localName: null}]);
 
 // Test starExportEntries property
 
@@ -127,4 +140,4 @@ testStarExportEntries(
 
 testStarExportEntries(
     'export * from "mod";',
-    [{exportName: null, moduleRequest: {specifier:'mod'}, importName: null, localName: null}]);
+    [{exportName: null, moduleRequest: {specifier:'mod'}, importName: null, importNameValueType: 'all-but-default', localName: null}]);

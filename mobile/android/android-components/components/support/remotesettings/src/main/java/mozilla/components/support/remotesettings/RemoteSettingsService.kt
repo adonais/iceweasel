@@ -6,11 +6,12 @@ package mozilla.components.support.remotesettings
 
 import android.content.Context
 import android.os.Build
+import mozilla.appservices.remotesettings.GleanTelemetry
 import mozilla.appservices.remotesettings.RemoteSettingsConfig
 import mozilla.appservices.remotesettings.RemoteSettingsContext
 import mozilla.appservices.remotesettings.RemoteSettingsServer
-import mozilla.appservices.remotesettings.RemoteSettingsService
 import java.util.Locale
+import mozilla.appservices.remotesettings.RemoteSettingsService as AppServicesRemoteSettingsService
 import mozilla.components.Build as AcBuild
 
 /**
@@ -26,10 +27,15 @@ class RemoteSettingsService(
     channel: String = "release",
     isLargeScreenSize: Boolean = false,
 ) {
-    val remoteSettingsService: RemoteSettingsService by lazy {
+    val remoteSettingsService: AppServicesRemoteSettingsService by lazy {
         val appContext = generateAppContext(context, channel, isLargeScreenSize)
         val databasePath = context.getDir("remote-settings", Context.MODE_PRIVATE).absolutePath
-        RemoteSettingsService(databasePath, RemoteSettingsConfig(server = server, appContext = appContext))
+        AppServicesRemoteSettingsService(
+            databasePath,
+            RemoteSettingsConfig(server = server, appContext = appContext),
+        ).also { service ->
+            service.setTelemetry(GleanTelemetry())
+        }
     }
 }
 

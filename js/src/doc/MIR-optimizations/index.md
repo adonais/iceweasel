@@ -67,7 +67,7 @@ Remove bit-wise arithmetic operators that don’t do anything (like `x | 0` on i
 Fold `a + constant1 + constant2` into `a + (constant1+constant2)`.
 
 ## Effective Address Analysis
-This was added to ensure that we generated good code for memory accesses in asm.js.
+This was added to ensure that we generated good code for memory accesses in wasm.
 
 ## *DCE*
 [Dead code elimination](https://en.wikipedia.org/wiki/Dead_code_elimination) removes instructions whose results are never needed.

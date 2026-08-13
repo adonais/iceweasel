@@ -535,31 +535,20 @@ var gBrowserInit = {
       "serial-device-state-changed"
     );
 
-    BrowserOffline.init();
-
     BrowserUtils.callModulesFromCategory(
       {
         categoryName: "browser-window-delayed-startup",
         profilerMarker: "delayed-startup-task",
+        jsGlobal: globalThis,
       },
       window
     );
 
-    // Initialize the full zoom setting.
-    // We do this before the session restore service gets initialized so we can
-    // apply full zoom settings to tabs restored by the session restore service.
-    FullZoom.init();
-    PanelUI.init(shouldSuppressPopupNotifications);
-
     UpdateUrlbarSearchSplitterState();
 
-    BookmarkingUI.init();
-    gURLBar.delayedStartupInit();
     if (Services.prefs.getBoolPref("browser.search.widget.new", false)) {
       document.getElementById("searchbar-new")?.delayedStartupInit();
     }
-    gProtectionsHandler.init();
-    gTrustPanelHandler.init();
 
     let safeMode = document.getElementById("helpSafeMode");
     if (Services.appinfo.inSafeMode) {
@@ -605,36 +594,12 @@ var gBrowserInit = {
       "goForwardKb"
     );
 
-    PlacesToolbarHelper.init();
-
-    ctrlTab.readPref();
-    Services.prefs.addObserver(ctrlTab.prefName, ctrlTab);
-
-    ReducedProtectionNotification.observePref();
-
-    // The object handling the downloads indicator is initialized here in the
-    // delayed startup function, but the actual indicator element is not loaded
-    // unless there are downloads to be displayed.
-    DownloadsButton.initializeIndicator();
-
     if (AppConstants.platform != "macosx") {
       updateEditUIVisibility();
       let placesContext = document.getElementById("placesContext");
       placesContext.addEventListener("popupshowing", updateEditUIVisibility);
       placesContext.addEventListener("popuphiding", updateEditUIVisibility);
     }
-
-    FullScreen.init();
-
-    if (AppConstants.MOZ_DATA_REPORTING) {
-      gDataNotificationInfoBar.init();
-    }
-
-    if (!AppConstants.MOZILLA_OFFICIAL) {
-      DevelopmentHelpers.init();
-    }
-
-    gExtensionsNotifications.init();
 
     let wasMinimized = window.windowState == window.STATE_MINIMIZED;
     window.addEventListener("sizemodechange", () => {
@@ -649,6 +614,22 @@ var gBrowserInit = {
     window.addEventListener("mouseout", MousePosTracker);
     window.addEventListener("dragover", MousePosTracker);
 
+    // aHTMLTooltip is used for both the browser UI and in-process <browser>s.
+    // Set an attribute for in-process pages such as about:preferences, so we
+    // can adjust the tooltip style (e.g. follow content's preferred color
+    // scheme) for that case. We only do this for tabbrowser <browser>s, since
+    // other in-process <browser>s (e.g. the sidebar) follow the chrome's style.
+    let htmlTooltip = document.getElementById("aHTMLTooltip");
+    htmlTooltip.addEventListener("popupshowing", () => {
+      let browser =
+        htmlTooltip.triggerNode?.documentGlobal.browsingContext.top
+          .embedderElement;
+      htmlTooltip.toggleAttribute(
+        "contenttooltip",
+        browser?.getTabBrowser() == gBrowser
+      );
+    });
+
     gNavToolbox.addEventListener("customizationstarting", CustomizationHandler);
     gNavToolbox.addEventListener("aftercustomization", CustomizationHandler);
 
@@ -658,12 +639,13 @@ var gBrowserInit = {
         return;
       }
 
-      // Enable the Restore Last Session command if needed
-      gRestoreLastSessionObserver.init();
-
-      SidebarController.startDelayedLoad();
-
-      PanicButtonNotifier.init();
+      BrowserUtils.callModulesFromCategory(
+        {
+          categoryName: "browser-window-sessionstore-initialized",
+          jsGlobal: globalThis,
+        },
+        window
+      );
     });
 
     if (BrowserHandler.kiosk) {
@@ -779,8 +761,6 @@ var gBrowserInit = {
         }
       }
     }
-
-    CaptivePortalWatcher.delayedStartup();
 
     SessionStore.promiseAllWindowsRestored.then(() => {
       this._schedulePerWindowIdleTasks();
@@ -1183,20 +1163,12 @@ var gBrowserInit = {
 
     gHistorySwipeAnimation.uninit();
 
-    FullScreen.uninit();
-
     gSync.uninit();
-
-    gExtensionsNotifications.uninit();
 
     try {
       gBrowser.removeProgressListener(window.XULBrowserWindow);
       gBrowser.removeTabsProgressListener(window.TabsProgressListener);
     } catch (ex) {}
-
-    PlacesToolbarHelper.uninit();
-
-    BookmarkingUI.uninit();
 
     // Bug 1952900 to allow switching to unload category without leaking
     ChromeUtils.importESModule(
@@ -1216,12 +1188,15 @@ var gBrowserInit = {
       if (Win7Features) {
         Win7Features.onCloseWindow();
       }
-      Services.prefs.removeObserver(ctrlTab.prefName, ctrlTab);
-      ctrlTab.uninit();
       gBrowserThumbnails.uninit();
-      gProtectionsHandler.uninit();
-      gTrustPanelHandler.uninit();
-      FullZoom.destroy();
+
+      BrowserUtils.callModulesFromCategory(
+        {
+          categoryName: "browser-window-unload-delayed-startup",
+          jsGlobal: globalThis,
+        },
+        window
+      );
 
       Services.obs.removeObserver(gIdentityHandler, "perm-changed");
       Services.obs.removeObserver(gRemoteControl, "devtools-socket");
@@ -1272,9 +1247,6 @@ var gBrowserInit = {
         gSerialDeviceObserver,
         "serial-device-state-changed"
       );
-
-      BrowserOffline.uninit();
-      PanelUI.uninit();
     }
 
     BrowserUtils.callModulesFromCategory(

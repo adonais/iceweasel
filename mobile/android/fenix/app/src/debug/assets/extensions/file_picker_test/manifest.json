@@ -1,0 +1,20 @@
+{
+	"manifest_version": 2,
+	"name": "File Picker Android Test",
+	"description": "",
+	"version": "1.0.0",
+
+	"browser_specific_settings": {
+		"gecko_android": {
+			"strict_min_version": "120.0"
+		},
+		"gecko": {
+			"id": "{e068cfab-5e1d-4dcd-bf4c-4be5c62b1ea0}",
+			"strict_min_version": "109.0"
+		}
+	},
+	"options_ui": {
+		"page": "options.html",
+		"browser_style": true
+	}
+}

@@ -38,6 +38,20 @@ export const HeuristicsRegExp = {
     "cc-exp-year": undefined,
     "cc-exp": undefined,
     "cc-type": undefined,
+    "passport-number": undefined,
+    "passport-name": undefined,
+    "passport-given-name": undefined,
+    "passport-additional-name": undefined,
+    "passport-family-name": undefined,
+    "passport-country": undefined,
+    "passport-issue-date-month": undefined,
+    "passport-issue-date-day": undefined,
+    "passport-issue-date-year": undefined,
+    "passport-issue-date": undefined,
+    "passport-expiry-date-month": undefined,
+    "passport-expiry-date-day": undefined,
+    "passport-expiry-date-year": undefined,
+    "passport-expiry-date": undefined,
   },
 
   // regular expressions that only apply to label
@@ -127,6 +141,33 @@ export const HeuristicsRegExp = {
       "tel":
         "(numer|nr)?\\.?telefonu" + //pl-PL
         "|telefoon", // nl
+      // TODO: These passport rules are a temporary heuristic for testing and
+      // should be removed once the ML model supports passport fields.
+      "passport-number": "passport[\\s_-]*(number|num|no\\b|#)",
+      "passport-name":
+        "passport[\\s_-]*(holder[\\s_-]*)?name|name[\\s_-]*on[\\s_-]*passport",
+      "passport-given-name":
+        "(?=.*(passport|document)).*(first|given)[\\s_-]*name",
+      "passport-additional-name":
+        "(?=.*(passport|document)).*(middle|additional)[\\s_-]*name",
+      "passport-family-name":
+        "(?=.*(passport|document)).*(family[\\s_-]*name|last[\\s_-]*name|surname)",
+      "passport-country":
+        "passport[\\s_-]*(issuing[\\s_-]*)?country" +
+        "|issuing[\\s_-]*country|country[\\s_-]*of[\\s_-]*issue" +
+        "|place[\\s_-]*of[\\s_-]*issue|nationality",
+      "passport-issue-date-month":
+        "issue[\\s_-]*(date[\\s_-]*)?month|month[\\s_-]*of[\\s_-]*issue",
+      "passport-issue-date-day":
+        "issue[\\s_-]*(date[\\s_-]*)?day|day[\\s_-]*of[\\s_-]*issue",
+      "passport-issue-date-year":
+        "issue[\\s_-]*(date[\\s_-]*)?year|year[\\s_-]*of[\\s_-]*issue",
+      "passport-issue-date": "issue[\\s_-]*date|date[\\s_-]*of[\\s_-]*issue",
+      "passport-expiry-date-month":
+        "(?=.*(passport|document))(?=.*expir).*month",
+      "passport-expiry-date-day": "(?=.*(passport|document))(?=.*expir).*day",
+      "passport-expiry-date-year": "(?=.*(passport|document))(?=.*expir).*year",
+      "passport-expiry-date": "(?=.*(passport|document)).*expir",
     },
 
     //=========================================================================

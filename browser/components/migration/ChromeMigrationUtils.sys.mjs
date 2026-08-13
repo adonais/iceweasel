@@ -323,7 +323,8 @@ export var ChromeMigrationUtils = {
         ],
         // Opera GX is not available on Linux.
         // Canary is not available on Linux.
-        // Edge is not available on Linux.
+
+        Edge: [["Home", ".config", "microsoft-edge"]],
         Opera: [["Home", ".config", "opera"]],
         Vivaldi: [["Home", ".config", "vivaldi"]],
       },

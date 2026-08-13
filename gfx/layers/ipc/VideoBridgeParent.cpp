@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "VideoBridgeParent.h"
+
 #include "CompositorThread.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/ipc/Endpoint.h"

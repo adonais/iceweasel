@@ -5,11 +5,11 @@
 
 #include "WindowSurfaceCairo.h"
 
+#include "gfx2DGlue.h"
+#include "gfxPlatform.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Tools.h"
 #include "mozilla/gfx/gfxVars.h"
-#include "gfxPlatform.h"
-#include "gfx2DGlue.h"
 #include "nsWindow.h"
 
 namespace mozilla {

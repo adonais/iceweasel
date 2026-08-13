@@ -69,7 +69,7 @@ add_task(async function testTRRSelect() {
     "Default TRR selected."
   );
   try {
-    await BrowserTestUtils.waitForCondition(() => {
+    await TestUtils.waitForCondition(() => {
       return !Services.prefs.prefHasUserValue(
         prefs.TRR_SELECT_DRY_RUN_RESULT_PREF
       );
@@ -92,7 +92,7 @@ add_task(async function testTRRSelect() {
   await waitForStartup();
 
   try {
-    await BrowserTestUtils.waitForCondition(() => {
+    await TestUtils.waitForCondition(() => {
       return (
         Services.prefs.getStringPref(prefs.TRR_SELECT_URI_PREF) ==
         "https://example.com/dns-query"

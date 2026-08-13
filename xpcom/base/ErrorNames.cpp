@@ -3,9 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/ErrorNames.h"
+
+#include "MainThreadUtils.h"
 #include "nsString.h"
 #include "prerror.h"
-#include "MainThreadUtils.h"
 
 // Get the GetErrorNameInternal method
 #include "ErrorNamesInternal.h"

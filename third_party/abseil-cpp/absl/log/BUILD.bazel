@@ -14,6 +14,8 @@
 # limitations under the License.
 #
 
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load(
     "//absl:copts/configure_copts.bzl",
     "ABSL_DEFAULT_COPTS",
@@ -78,6 +80,8 @@ cc_library(
         ":log",
         "//absl/base:config",
         "//absl/base:core_headers",
+        "//absl/base:nullability",
+        "//absl/base:nullability_traits_internal",
         "//absl/strings",
     ],
 )
@@ -152,6 +156,7 @@ cc_library(
 
 cc_library(
     name = "log_entry",
+    srcs = ["log_entry.cc"],
     hdrs = ["log_entry.h"],
     copts = ABSL_DEFAULT_COPTS,
     linkopts = ABSL_DEFAULT_LINKOPTS,
@@ -160,6 +165,7 @@ cc_library(
         "//absl/base:core_headers",
         "//absl/base:log_severity",
         "//absl/log/internal:config",
+        "//absl/log/internal:proto",
         "//absl/strings",
         "//absl/time",
         "//absl/types:span",
@@ -203,6 +209,7 @@ cc_library(
         "//absl/strings",
         "//absl/strings:internal",
         "//absl/types:optional",
+        "//absl/types:source_location",
         "//absl/utility",
     ],
 )
@@ -279,7 +286,6 @@ cc_test(
         ":vlog_is_on",
         "//absl/base:log_severity",
         "//absl/flags:flag",
-        "//absl/types:optional",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -399,6 +405,7 @@ cc_test(
         "//absl/log/internal:test_helpers",
         "//absl/log/internal:test_matchers",
         "//absl/strings",
+        "//absl/types:source_location",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -495,7 +502,7 @@ cc_test(
         "//absl/log/internal:test_matchers",
         "//absl/strings",
         "//absl/strings:str_format",
-        "//absl/types:optional",
+        "//absl/types:source_location",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -560,6 +567,7 @@ cc_test(
         "//absl/log/internal:test_helpers",
         "//absl/log/internal:test_matchers",
         "//absl/strings",
+        "//absl/types:source_location",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -580,6 +588,7 @@ cc_test(
         "//absl/log/internal:test_matchers",
         "//absl/strings",
         "//absl/time",
+        "//absl/types:source_location",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

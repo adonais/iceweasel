@@ -8,6 +8,15 @@ ChromeUtils.defineESModuleGetters(lazy, {
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
 });
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "autoscrollSpeedMultiplier",
+  "general.autoscroll.speed_multiplier",
+  100
+);
+
 export class AutoScrollChild extends JSWindowActorChild {
   constructor() {
     super();
@@ -218,7 +227,6 @@ export class AutoScrollChild extends JSWindowActorChild {
         screenYDevPx: event.screenY * content.devicePixelRatio,
         scrollId: this._scrollId,
         presShellId,
-        browsingContext: this.browsingContext,
       }
     );
     if (!autoscrollEnabled) {
@@ -290,7 +298,12 @@ export class AutoScrollChild extends JSWindowActorChild {
   }
 
   accelerate(curr, start) {
-    const speed = 12;
+    // `speed` is the divisor in `val` below, so a higher multiplier must make
+    // `speed` smaller to produce a faster autoscroll. The multiplier is a
+    // percentage (100 = default). Clamp to avoid a zero divisor.
+    const baseSpeed = 12;
+    const multiplier = Math.max(1, lazy.autoscrollSpeedMultiplier);
+    const speed = Math.max(1, (baseSpeed * 100) / multiplier);
     var val = (curr - start) / speed;
 
     if (val > 1) {

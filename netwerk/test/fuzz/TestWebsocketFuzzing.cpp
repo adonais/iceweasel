@@ -1,10 +1,10 @@
-#include "mozilla/Preferences.h"
-
 #include "FuzzingInterface.h"
 #include "FuzzyLayer.h"
+#include "NullPrincipal.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/SpinEventLoopUntil.h"
-#include "nsComponentManagerUtils.h"
 #include "nsCOMPtr.h"
+#include "nsComponentManagerUtils.h"
 #include "nsContentUtils.h"
 #include "nsCycleCollector.h"
 #include "nsIPrincipal.h"
@@ -12,11 +12,10 @@
 #include "nsIWebSocketListener.h"
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
-#include "nsString.h"
+#include "nsSandboxFlags.h"
 #include "nsScriptSecurityManager.h"
 #include "nsServiceManagerUtils.h"
-#include "NullPrincipal.h"
-#include "nsSandboxFlags.h"
+#include "nsString.h"
 
 namespace mozilla {
 namespace net {
@@ -161,7 +160,7 @@ static int FuzzingRunNetworkWebsocket(const uint8_t* data, size_t size) {
 
     rv = gWebSocketChannel->InitLoadInfoNative(
         nullptr, nullPrincipal, nsContentUtils::GetSystemPrincipal(), nullptr,
-        secFlags, nsIContentPolicy::TYPE_WEBSOCKET, sandboxFlags);
+        secFlags, nsIContentPolicy::TYPE_WEBSOCKET, Nothing(), sandboxFlags);
 
     if (rv != NS_OK) {
       MOZ_CRASH("Failed to call InitLoadInfo");

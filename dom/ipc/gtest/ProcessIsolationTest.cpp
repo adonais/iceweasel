@@ -187,6 +187,17 @@ static nsCString ServiceWorkerIsolatedRemoteType(nsIPrincipal* aPrincipal,
   return SERVICEWORKER_REMOTE_TYPE + "="_ns + origin;
 }
 
+// When file URI process separation is disabled (as is the default on
+// Android), a file: shared worker is allowed to load in any remote type,
+// rather than being rejected when it isn't already in a file: process.
+static Result<RemoteTypes, nsresult> FileWorkerOutsideFileProcessExpected(
+    const nsCString& aFileRemoteType) {
+  if (StaticPrefs::browser_tabs_remote_separateFileUriProcess()) {
+    return Err(NS_ERROR_UNEXPECTED);
+  }
+  return RemoteTypes{aFileRemoteType, aFileRemoteType};
+}
+
 TEST(ProcessIsolationTest, WorkerOptions)
 {
   // Forcibly enable the privileged mozilla content process for the duration of
@@ -272,11 +283,16 @@ TEST(ProcessIsolationTest, WorkerOptions)
                        WEB_REMOTE_TYPE}},
       {.mPrincipal = extensionPrincipal,
        .mWorkerKind = WorkerKindService,
-       .mExpected = RemoteTypes{extensionRemoteType, extensionRemoteType}},
+       .mExpected = RemoteTypes{extensionRemoteType, extensionRemoteType},
+       .mCurrentRemoteType = EXTENSION_REMOTE_TYPE},
+      {.mPrincipal = privilegedMozillaPrincipal,
+       .mWorkerKind = WorkerKindService,
+       .mExpected = Err(NS_ERROR_UNEXPECTED)},
       {.mPrincipal = privilegedMozillaPrincipal,
        .mWorkerKind = WorkerKindService,
        .mExpected = RemoteTypes{PRIVILEGEDMOZILLA_REMOTE_TYPE,
-                                PRIVILEGEDMOZILLA_REMOTE_TYPE}},
+                                PRIVILEGEDMOZILLA_REMOTE_TYPE},
+       .mCurrentRemoteType = PRIVILEGEDMOZILLA_REMOTE_TYPE},
 
       // Shared Worker loaded from within a webCOOP+COEP remote type process,
       // should load elsewhere.
@@ -313,8 +329,7 @@ TEST(ProcessIsolationTest, WorkerOptions)
        .mWorkerKind = WorkerKindShared,
        .mExpected = Err(NS_ERROR_UNEXPECTED)},
 
-      // Content principals should load in the appropriate remote types,
-      // ignoring the current remote type.
+      // Content principals should load in the appropriate remote types.
       {.mPrincipal = secureComPrincipal,
        .mWorkerKind = WorkerKindShared,
        .mExpected = RemoteTypes{WebIsolatedRemoteType(secureComPrincipal),
@@ -329,14 +344,23 @@ TEST(ProcessIsolationTest, WorkerOptions)
                                 WEB_REMOTE_TYPE}},
       {.mPrincipal = filePrincipal,
        .mWorkerKind = WorkerKindShared,
-       .mExpected = RemoteTypes{fileRemoteType, fileRemoteType}},
+       .mExpected = FileWorkerOutsideFileProcessExpected(fileRemoteType)},
+      {.mPrincipal = filePrincipal,
+       .mWorkerKind = WorkerKindShared,
+       .mExpected = RemoteTypes{fileRemoteType, fileRemoteType},
+       .mCurrentRemoteType = FILE_REMOTE_TYPE},
       {.mPrincipal = extensionPrincipal,
        .mWorkerKind = WorkerKindShared,
-       .mExpected = RemoteTypes{extensionRemoteType, extensionRemoteType}},
+       .mExpected = RemoteTypes{extensionRemoteType, extensionRemoteType},
+       .mCurrentRemoteType = EXTENSION_REMOTE_TYPE},
+      {.mPrincipal = privilegedMozillaPrincipal,
+       .mWorkerKind = WorkerKindShared,
+       .mExpected = Err(NS_ERROR_UNEXPECTED)},
       {.mPrincipal = privilegedMozillaPrincipal,
        .mWorkerKind = WorkerKindShared,
        .mExpected = RemoteTypes{PRIVILEGEDMOZILLA_REMOTE_TYPE,
-                                PRIVILEGEDMOZILLA_REMOTE_TYPE}},
+                                PRIVILEGEDMOZILLA_REMOTE_TYPE},
+       .mCurrentRemoteType = PRIVILEGEDMOZILLA_REMOTE_TYPE},
       {.mPrincipal = nullSecureComPrecursorPrincipal,
        .mWorkerKind = WorkerKindShared,
        .mExpected = RemoteTypes{WebIsolatedRemoteType(secureComPrincipal),

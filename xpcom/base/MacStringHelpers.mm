@@ -5,8 +5,6 @@
 #include "MacStringHelpers.h"
 #include "nsObjCExceptions.h"
 
-#include <limits>
-
 namespace mozilla {
 
 void CopyNSStringToXPCOMString(const NSString* aFrom, nsAString& aTo) {
@@ -18,10 +16,6 @@ void CopyNSStringToXPCOMString(const NSString* aFrom, nsAString& aTo) {
   }
 
   NSUInteger len = [aFrom length];
-  if (len > std::numeric_limits<nsAString::size_type>::max()) {
-    aTo.AllocFailed(std::numeric_limits<nsAString::size_type>::max());
-  }
-
   aTo.SetLength(len);
   [aFrom getCharacters:reinterpret_cast<unichar*>(aTo.BeginWriting())
                  range:NSMakeRange(0, len)];

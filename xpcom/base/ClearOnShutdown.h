@@ -5,13 +5,13 @@
 #ifndef mozilla_ClearOnShutdown_h
 #define mozilla_ClearOnShutdown_h
 
+#include <functional>
+
+#include "MainThreadUtils.h"
+#include "ShutdownPhase.h"
+#include "mozilla/Array.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/StaticPtr.h"
-#include "mozilla/Array.h"
-#include "ShutdownPhase.h"
-#include "MainThreadUtils.h"
-
-#include <functional>
 
 /*
  * This header exports two public methods in the mozilla namespace:

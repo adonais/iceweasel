@@ -17,6 +17,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
+  ContentAnalysisUtils: "resource://gre/modules/ContentAnalysisUtils.sys.mjs",
   DeferredTask: "resource://gre/modules/DeferredTask.sys.mjs",
   DownloadSpamProtection:
     "moz-src:///browser/components/downloads/DownloadSpamProtection.sys.mjs",
@@ -598,29 +599,35 @@ export var DownloadIntegration = {
     let finalResultPromise = contentAnalysis
       .analyzeContentRequests(
         [
-          {
-            analysisType: Ci.nsIContentAnalysisRequest.eFileDownloaded,
-            operationTypeForDisplay: Ci.nsIContentAnalysisRequest.eDownload,
-            fileNameForDisplay,
-            // "Save As" downloads do not have a browsing context
-            reason:
-              download.source.browsingContextId === 0
-                ? Ci.nsIContentAnalysisRequest.eSaveAsDownload
-                : Ci.nsIContentAnalysisRequest.eNormalDownload,
-            resources,
-            requestToken,
-            url,
-            userActionId,
-            filePath: download.target.path,
-            // When doing a download analysis, the Content Analysis code won't
-            // display dialogs in the window, but the code still wants a
-            // content window and will get the topChromeWindow to show
-            // a notification.
-            windowGlobalParent: BrowsingContext.get(
-              download.source.browsingContextId
-            )?.topWindowContext,
-            sha256Digest: download.saver.getSha256Hash(),
-          },
+          lazy.ContentAnalysisUtils.createContentAnalysisRequest(
+            {
+              analysisType: Ci.nsIContentAnalysisRequest.eFileDownloaded,
+              operationTypeForDisplay: Ci.nsIContentAnalysisRequest.eDownload,
+              // "Save As" downloads do not have a browsing context
+              reason:
+                download.source.browsingContextId === 0
+                  ? Ci.nsIContentAnalysisRequest.eSaveAsDownload
+                  : Ci.nsIContentAnalysisRequest.eNormalDownload,
+              url,
+              // When doing a download analysis, the Content Analysis code won't
+              // display dialogs in the window, but the code still wants a
+              // content window and will get the topChromeWindow to show
+              // a notification.
+              windowGlobalParent: BrowsingContext.get(
+                download.source.browsingContextId
+              )?.topWindowContext,
+            },
+            {
+              fileNameForDisplay,
+              resources,
+              requestToken,
+              userActionId,
+              // Use the path to the part-file if a part file is involved.
+              // We haven't moved it yet.
+              filePath: download.target.partFilePath || download.target.path,
+              sha256Digest: download.saver.getSha256Hash(),
+            }
+          ),
         ],
         /* autoAcknowledge*/ true
       )
@@ -666,68 +673,6 @@ export var DownloadIntegration = {
   },
 
   /**
-   * Checks whether downloaded files should be marked as coming from
-   * Internet Zone.
-   *
-   * @return true if files should be marked
-   */
-  _shouldSaveZoneInformation() {
-    let key = Cc["@mozilla.org/windows-registry-key;1"].createInstance(
-      Ci.nsIWindowsRegKey
-    );
-    try {
-      key.open(
-        Ci.nsIWindowsRegKey.ROOT_KEY_CURRENT_USER,
-        "Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Attachments",
-        Ci.nsIWindowsRegKey.ACCESS_QUERY_VALUE
-      );
-      try {
-        return key.readIntValue("SaveZoneInformation") != 1;
-      } finally {
-        key.close();
-      }
-    } catch (ex) {
-      // If the key is not present, files should be marked by default.
-      return true;
-    }
-  },
-
-  /**
-   * Builds a key and URL value pair for the "Zone.Identifier" Alternate Data
-   * Stream.
-   *
-   * @param aKey
-   *        String to write before the "=" sign. This is not validated.
-   * @param aUrl
-   *        URL string to write after the "=" sign. Only the "http(s)" and
-   *        "ftp" schemes are allowed, and usernames and passwords are
-   *        stripped.
-   * @param [optional] aFallback
-   *        Value to place after the "=" sign in case the URL scheme is not
-   *        allowed. If unspecified, an empty string is returned when the
-   *        scheme is not allowed.
-   *
-   * @return Line to add to the stream, including the final CRLF, or an empty
-   *         string if the validation failed.
-   */
-  _zoneIdKey(aKey, aUrl, aFallback) {
-    try {
-      let url;
-      const uri = lazy.NetUtil.newURI(aUrl);
-      if (["http", "https", "ftp"].includes(uri.scheme)) {
-        url = uri.mutate().setUserPass("").finalize().spec;
-      } else if (aFallback) {
-        url = aFallback;
-      } else {
-        return "";
-      }
-      return aKey + "=" + url + "\r\n";
-    } catch (e) {
-      return "";
-    }
-  },
-
-  /**
    * Performs platform-specific operations when a download is done.
    *
    * aParam aDownload
@@ -738,49 +683,25 @@ export var DownloadIntegration = {
    * @rejects JavaScript exception if any of the operations failed.
    */
   async downloadDone(aDownload) {
-    // On Windows, we mark any file saved to the NTFS file system as coming
-    // from the Internet security zone unless Group Policy disables the
-    // feature.  We do this by writing to the "Zone.Identifier" Alternate
-    // Data Stream directly, because the Save method of the
-    // IAttachmentExecute interface would trigger operations that may cause
-    // the application to hang, or other performance issues.
-    // The stream created in this way is forward-compatible with all the
-    // current and future versions of Windows.
-    if (AppConstants.platform == "win" && this._shouldSaveZoneInformation()) {
-      let zone;
-      try {
-        zone = lazy.gDownloadPlatform.mapUrlToZone(aDownload.source.url);
-      } catch (e) {
-        // Default to Internet Zone if mapUrlToZone failed for
-        // whatever reason.
-        zone = Ci.mozIDownloadPlatform.ZONE_INTERNET;
-      }
-      // Don't write zone IDs for Local, Intranet, or Trusted sites
-      // to match Windows behavior.
-      if (zone >= Ci.mozIDownloadPlatform.ZONE_INTERNET) {
-        let path = aDownload.target.path + ":Zone.Identifier";
-        try {
-          let zoneId = "[ZoneTransfer]\r\nZoneId=" + zone + "\r\n";
-          let { url, isPrivate, referrerInfo } = aDownload.source;
-          if (!isPrivate) {
-            let referrer = referrerInfo
-              ? referrerInfo.computedReferrerSpec
-              : "";
-            zoneId +=
-              this._zoneIdKey("ReferrerUrl", referrer) +
-              this._zoneIdKey("HostUrl", url, "about:internet");
-          }
-          await IOUtils.writeUTF8(
-            PathUtils.toExtendedWindowsPath(path),
-            zoneId
-          );
-        } catch (ex) {
-          // If writing to the file fails, we ignore the error and continue.
-          if (!DOMException.isInstance(ex)) {
-            console.error(ex);
-          }
-        }
-      }
+    try {
+      // On Windows, this will mark any file saved to the file system as coming
+      // from the Internet security zone unless Group Policy disables the
+      // feature.  We do this by writing to the "Zone.Identifier" Alternate
+      // Data Stream directly, because the Save method of the
+      // IAttachmentExecute interface would trigger operations that may cause
+      // the application to hang, or other performance issues.
+      // The stream created in this way is forward-compatible with all the
+      // current and future versions of Windows.
+      // This currently does nothing on other platforms.
+      await lazy.gDownloadPlatform.maybeWriteDownloadOriginInformation(
+        new lazy.FileUtils.File(aDownload.target.path),
+        lazy.NetUtil.newURI(aDownload.source.url),
+        aDownload.source.referrerInfo,
+        aDownload.source.isPrivate
+      );
+    } catch (ex) {
+      // Just swallow the error.
+      console.error(ex);
     }
 
     // The file with the partially downloaded data has restrictive permissions

@@ -4,10 +4,12 @@
 
 #include "CTPolicyEnforcer.h"
 
+#include <stdint.h>
+
+#include <set>
+
 #include "mozilla/Assertions.h"
 #include "mozpkix/Time.h"
-#include <set>
-#include <stdint.h>
 
 namespace mozilla {
 namespace ct {

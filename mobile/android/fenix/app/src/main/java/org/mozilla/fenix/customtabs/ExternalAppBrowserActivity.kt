@@ -9,8 +9,12 @@ import android.os.Bundle
 import android.view.MotionEvent
 import androidx.annotation.VisibleForTesting
 import androidx.core.net.toUri
+import androidx.lifecycle.Lifecycle
 import mozilla.components.browser.state.selector.findCustomTab
 import mozilla.components.browser.state.state.SessionState
+import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
+import mozilla.components.support.utils.OnEnterAnimationCompleteListener
 import mozilla.components.support.utils.SafeIntent
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.ext.components
@@ -54,6 +58,14 @@ open class ExternalAppBrowserActivity : HomeActivity() {
         }
     }
 
+    /**
+     * [ExternalAppBrowserActivity], which is responsible for custom tabs, shares the [BrowserStore] and observing
+     * [AboutHomeBinding] would navigate the custom tab to the homepage when the selected tab's URL is
+     * [ABOUT_HOME_URL], so this is intentionally a no-op.
+     */
+    @VisibleForTesting
+    override fun addAboutHomeBinding(lifecycle: Lifecycle) = Unit
+
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun hasExternalTab(): Boolean {
         return getExternalTab() != null
@@ -92,5 +104,14 @@ open class ExternalAppBrowserActivity : HomeActivity() {
     override fun onEnterAnimationComplete() {
         super.onEnterAnimationComplete()
         isFinishedAnimating = true
+
+        val fragments = supportFragmentManager.fragments.toMutableList()
+        while (fragments.isNotEmpty()) {
+            val fragment = fragments.removeAt(0)
+            if (fragment is OnEnterAnimationCompleteListener) {
+                fragment.onEnterAnimationComplete()
+            }
+            fragments.addAll(fragment.childFragmentManager.fragments)
+        }
     }
 }

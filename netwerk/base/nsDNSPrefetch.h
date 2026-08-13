@@ -7,14 +7,13 @@
 
 #include <functional>
 
+#include "mozilla/BasePrincipal.h"
+#include "mozilla/TimeStamp.h"
+#include "nsIDNSListener.h"
+#include "nsIDNSService.h"
+#include "nsIRequest.h"
 #include "nsIWeakReferenceUtils.h"
 #include "nsString.h"
-#include "mozilla/TimeStamp.h"
-#include "mozilla/BasePrincipal.h"
-
-#include "nsIDNSListener.h"
-#include "nsIRequest.h"
-#include "nsIDNSService.h"
 
 class nsIURI;
 class nsIDNSHTTPSSVCRecord;

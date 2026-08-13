@@ -232,7 +232,7 @@ class BaseTargetActor extends Actor {
    * @param {JSON} options
    *        Configuration object provided by the client.
    *        See target-configuration actor.
-   * @param {boolean} calledFromDocumentCreate
+   * @param {boolean} calledFromDocumentCreation
    *        True, when this is called with initial configuration when the related target
    *        actor is instantiated.
    */
@@ -240,13 +240,31 @@ class BaseTargetActor extends Actor {
     if (typeof options.isTracerFeatureEnabled === "boolean") {
       this.isTracerFeatureEnabled = options.isTracerFeatureEnabled;
     }
+
+    this.#updateTracerOptions(
+      options.tracerOptions,
+      calledFromDocumentCreation
+    );
+
+    if (options.enabledHighlighters) {
+      this.#updateHighlighters(options.enabledHighlighters);
+    }
+  }
+
+  /**
+   * Process Target Configuration's tracerOptions setting
+   *
+   * @param {object} tracerOptions
+   * @param {boolean} calledFromDocumentCreation
+   */
+  #updateTracerOptions(tracerOptions, calledFromDocumentCreation) {
     // If there is some tracer options, we should start tracing, otherwise we should stop (if we were)
-    if (options.tracerOptions) {
+    if (tracerOptions) {
       // Ignore the SessionData update if the user requested to start the tracer on next page load and:
       //   - we apply it to an already loaded WindowGlobal,
       //   - the target isn't the top level one.
       if (
-        options.tracerOptions.traceOnNextLoad &&
+        tracerOptions.traceOnNextLoad &&
         (!calledFromDocumentCreation || !this.isTopLevelTarget)
       ) {
         if (this.isTopLevelTarget) {
@@ -296,11 +314,49 @@ class BaseTargetActor extends Actor {
         return;
       }
       const tracerActor = this.getTargetScopedActor("tracer");
-      tracerActor.startTracing(options.tracerOptions);
+      tracerActor.startTracing(tracerOptions);
     } else if (this.hasTargetScopedActor("tracer")) {
       const tracerActor = this.getTargetScopedActor("tracer");
       tracerActor.stopTracing();
     }
+  }
+
+  // List of active global highlighters enabled via Target Configuration's `enabledHighlighters`
+  // Contains objects with:
+  //  - `type` (string) highlighter type
+  //  - `highlighter` (HighlighterActor) active highlighter actor instance
+  #enabledHighlighters = new Set();
+
+  /**
+   * Process Target Configuration's enabledHighlighters setting
+   *
+   * @param {Array<string>} enabledHighlighters
+   *                        List of enabled highlighter types
+   *                        coming from /devtools/shared/highlighters.mjs
+   */
+  async #updateHighlighters(enabledHighlighters) {
+    const inspectorActor = this.getTargetScopedActor("inspector");
+
+    // First enable new highlighters
+    const promises = [];
+    for (const type of enabledHighlighters) {
+      if (this.#enabledHighlighters.has(type)) {
+        continue;
+      }
+      const highlighter = await inspectorActor.getHighlighterByType(type);
+      promises.push(highlighter.show());
+      this.#enabledHighlighters.add({ type, highlighter });
+    }
+
+    // Then disable the one no longer mentioned in the new list
+    for (const { type, highlighter } of this.#enabledHighlighters) {
+      if (enabledHighlighters.includes(type)) {
+        continue;
+      }
+      promises.push(highlighter.hide());
+    }
+
+    await Promise.all(promises);
   }
 }
 exports.BaseTargetActor = BaseTargetActor;

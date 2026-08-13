@@ -139,7 +139,7 @@ class IDBRequest : public DOMEventTargetHelper {
     mHaveResultOrErrorCode = true;
   }
 
-  void SetError(nsresult aRv);
+  void SetError(nsresult aRv, const nsACString& aMessage = EmptyCString());
 
   nsresult GetErrorCode() const
 #ifdef DEBUG

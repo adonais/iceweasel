@@ -4,34 +4,33 @@
 
 #include "PageThumbProtocolHandler.h"
 
+#include "LoadInfo.h"
+#include "SimpleChannel.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Components.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/ResultExtensions.h"
+#include "mozilla/Try.h"
 #include "mozilla/ipc/URIParams.h"
 #include "mozilla/ipc/URIUtils.h"
 #include "mozilla/net/NeckoChild.h"
 #include "mozilla/net/NeckoParent.h"
-#include "mozilla/RefPtr.h"
-#include "mozilla/ResultExtensions.h"
-#include "mozilla/Try.h"
-
-#include "LoadInfo.h"
 #include "nsContentUtils.h"
-#include "nsServiceManagerUtils.h"
+#include "nsICancelable.h"
+#include "nsIChannel.h"
 #include "nsIFile.h"
 #include "nsIFileChannel.h"
 #include "nsIFileStreams.h"
-#include "nsIMIMEService.h"
-#include "nsIURL.h"
-#include "nsIChannel.h"
-#include "nsIPageThumbsStorageService.h"
-#include "nsIInputStreamPump.h"
-#include "nsIStreamListener.h"
 #include "nsIInputStream.h"
+#include "nsIInputStreamPump.h"
+#include "nsIMIMEService.h"
+#include "nsIPageThumbsStorageService.h"
+#include "nsIStreamListener.h"
+#include "nsIURL.h"
 #include "nsNetUtil.h"
+#include "nsServiceManagerUtils.h"
 #include "nsURLHelper.h"
 #include "prio.h"
-#include "SimpleChannel.h"
-#include "nsICancelable.h"
 
 #ifdef MOZ_PLACES
 #  include "nsIPlacesPreviewsHelperService.h"
@@ -74,7 +73,7 @@ PageThumbProtocolHandler::PageThumbProtocolHandler()
     : SubstitutingProtocolHandler(PAGE_THUMB_SCHEME) {}
 
 RefPtr<RemoteStreamPromise> PageThumbProtocolHandler::NewStream(
-    nsIURI* aChildURI, bool* aTerminateSender) {
+    nsIURI* aChildURI, nsILoadInfo* aLoadInfo, bool* aTerminateSender) {
   MOZ_ASSERT(!IsNeckoChild());
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -93,6 +92,11 @@ RefPtr<RemoteStreamPromise> PageThumbProtocolHandler::NewStream(
   if (NS_FAILED(aChildURI->SchemeIs(PAGE_THUMB_SCHEME, &isPageThumbScheme)) ||
       !isPageThumbScheme) {
     return RemoteStreamPromise::CreateAndReject(NS_ERROR_UNKNOWN_PROTOCOL,
+                                                __func__);
+  }
+
+  if (!nsContentUtils::IsImageType(aLoadInfo->GetExternalContentPolicyType())) {
+    return RemoteStreamPromise::CreateAndReject(NS_ERROR_CONTENT_BLOCKED,
                                                 __func__);
   }
 
@@ -167,6 +171,10 @@ bool PageThumbProtocolHandler::ResolveSpecialCases(const nsACString& aHost,
 nsresult PageThumbProtocolHandler::SubstituteChannel(nsIURI* aURI,
                                                      nsILoadInfo* aLoadInfo,
                                                      nsIChannel** aRetVal) {
+  if (!nsContentUtils::IsImageType(aLoadInfo->GetExternalContentPolicyType())) {
+    return NS_ERROR_CONTENT_BLOCKED;
+  }
+
   // Check if URI resolves to a file URI.
   nsAutoCString resolvedSpec;
   MOZ_TRY(ResolveURI(aURI, resolvedSpec));

@@ -5,6 +5,7 @@
 #include "mozilla/layers/KeyboardMap.h"
 
 #include "mozilla/TextEvents.h"  // for IgnoreModifierState, ShortcutKeyCandidate
+#include "mozilla/Utf16.h"
 
 namespace mozilla {
 namespace layers {
@@ -91,7 +92,7 @@ bool KeyboardShortcut::MatchesKey(const KeyboardInput& aInput,
   }
 
   // Both char codes must be in lowercase to compare correctly
-  if (IS_IN_BMP(charCode)) {
+  if (mozilla::IsInBMP(charCode)) {
     charCode = ToLowerCase(static_cast<char16_t>(charCode));
   }
 

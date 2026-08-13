@@ -2,17 +2,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/Printf.h"
-
 #include "ManifestParser.h"
 
 #include <string.h>
 
+#include "mozilla/Printf.h"
 #include "prio.h"
 #if defined(XP_WIN)
 #  include <windows.h>
 #elif defined(MOZ_WIDGET_COCOA)
 #  include <CoreServices/CoreServices.h>
+
 #  include "nsCocoaFeatures.h"
 #elif defined(MOZ_WIDGET_GTK)
 #  include <gtk/gtk.h>
@@ -28,17 +28,15 @@
 #endif
 
 #include "mozilla/Services.h"
-
 #include "nsCRT.h"
 #include "nsConsoleMessage.h"
-#include "nsTextFormatter.h"
-#include "nsVersionComparator.h"
-#include "nsXPCOMCIDInternal.h"
-
 #include "nsIConsoleService.h"
 #include "nsIScriptError.h"
 #include "nsIXULAppInfo.h"
 #include "nsIXULRuntime.h"
+#include "nsTextFormatter.h"
+#include "nsVersionComparator.h"
+#include "nsXPCOMCIDInternal.h"
 
 using namespace mozilla;
 

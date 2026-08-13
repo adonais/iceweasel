@@ -5,18 +5,16 @@
 #ifndef nsTimerImpl_h_
 #define nsTimerImpl_h_
 
-#include "nsITimer.h"
-#include "nsIEventTarget.h"
-#include "nsIObserver.h"
-
-#include "nsCOMPtr.h"
-#include "nsString.h"
-
+#include "mozilla/Logging.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Variant.h"
-#include "mozilla/Logging.h"
+#include "nsCOMPtr.h"
+#include "nsIEventTarget.h"
+#include "nsIObserver.h"
+#include "nsITimer.h"
+#include "nsString.h"
 
 extern mozilla::LogModule* GetTimerLog();
 

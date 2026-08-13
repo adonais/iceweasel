@@ -3,6 +3,9 @@
 
 "use strict";
 
+const { NavigableManager } = ChromeUtils.importESModule(
+  "chrome://remote/content/shared/NavigableManager.sys.mjs"
+);
 const { UserContextManagerClass } = ChromeUtils.importESModule(
   "chrome://remote/content/shared/UserContextManager.sys.mjs"
 );
@@ -17,14 +20,19 @@ add_task(async function test_invalid() {
     is(userContextManager.getInternalIdById(value), null);
   }
 
-  // Check an invalid value for hasUserContextId/getInternalIdById which expects
-  // either "default" or a UUID from Services.uuid.generateUUID.
+  // Check an invalid value for APIs which expect either "default" or a UUID
+  // from Services.uuid.generateUUID.
   is(userContextManager.hasUserContextId("foo"), false);
   is(userContextManager.getInternalIdById("foo"), null);
 
   // Check invalid types for getIdByInternalId which expects a number.
   for (const value of [null, undefined, "foo", [], {}]) {
     is(userContextManager.getIdByInternalId(value), null);
+  }
+
+  // Check invalid values/types for getIdByNavigableId  all return null.
+  for (const value of [null, undefined, "foo", [], {}]) {
+    is(userContextManager.getIdByNavigableId(value), null);
   }
 
   userContextManager.destroy();
@@ -77,52 +85,84 @@ add_task(async function test_new_internal_contexts() {
 });
 
 add_task(async function test_create_remove_context() {
+  NavigableManager.startTracking();
   const userContextManager = new UserContextManagerClass();
 
-  for (const closeContextTabs of [true, false]) {
-    info("Create two contexts via createContext");
-    const userContextId1 = userContextManager.createContext();
-    const internalId1 = userContextManager.getInternalIdById(userContextId1);
-    assertContextAvailable(userContextManager, userContextId1);
+  try {
+    for (const closeContextTabs of [true, false]) {
+      info("Create two contexts via createContext");
+      const userContextId1 = userContextManager.createContext();
+      const internalId1 = userContextManager.getInternalIdById(userContextId1);
+      assertContextAvailable(userContextManager, userContextId1);
 
-    const userContextId2 = userContextManager.createContext();
-    const internalId2 = userContextManager.getInternalIdById(userContextId2);
-    assertContextAvailable(userContextManager, userContextId2);
+      const userContextId2 = userContextManager.createContext();
+      const internalId2 = userContextManager.getInternalIdById(userContextId2);
+      assertContextAvailable(userContextManager, userContextId2);
 
-    info("Create tabs in various user contexts");
-    const url = "https://example.com/document-builder.sjs?html=tab";
-    const tabDefault = await addTab(gBrowser, url);
-    const tabContext1 = await addTab(gBrowser, url, {
-      userContextId: internalId1,
-    });
-    const tabContext2 = await addTab(gBrowser, url, {
-      userContextId: internalId2,
-    });
+      info("Create tabs in various user contexts");
+      const url = "https://example.com/document-builder.sjs?html=tab";
+      const tabDefault = await addTab(gBrowser, url);
+      const tabContext1 = await addTab(gBrowser, url, {
+        userContextId: internalId1,
+      });
+      const tabContext2 = await addTab(gBrowser, url, {
+        userContextId: internalId2,
+      });
+      is(
+        userContextManager.getIdByNavigableId(
+          NavigableManager.getIdForBrowsingContext(
+            tabDefault.linkedBrowser.browsingContext
+          )
+        ),
+        "default"
+      );
+      is(
+        userContextManager.getIdByNavigableId(
+          NavigableManager.getIdForBrowsingContext(
+            tabContext1.linkedBrowser.browsingContext
+          )
+        ),
+        userContextId1
+      );
+      is(
+        userContextManager.getIdByNavigableId(
+          NavigableManager.getIdForBrowsingContext(
+            tabContext2.linkedBrowser.browsingContext
+          )
+        ),
+        userContextId2
+      );
 
-    info("Remove the user context 1 via removeUserContext");
-    userContextManager.removeUserContext(userContextId1, { closeContextTabs });
+      info("Remove the user context 1 via removeUserContext");
+      userContextManager.removeUserContext(userContextId1, {
+        closeContextTabs,
+      });
 
-    assertContextRemoved(userContextManager, userContextId1, internalId1);
-    if (closeContextTabs) {
-      ok(!gBrowser.tabs.includes(tabContext1), "Tab context 1 is closed");
-    } else {
-      ok(gBrowser.tabs.includes(tabContext1), "Tab context 1 is not closed");
-    }
-    ok(gBrowser.tabs.includes(tabDefault), "Tab default is not closed");
-    ok(gBrowser.tabs.includes(tabContext2), "Tab context 2 is not closed");
-
-    info("Remove the user context 2 via removeUserContext");
-    userContextManager.removeUserContext(userContextId2, { closeContextTabs });
-    assertContextRemoved(userContextManager, userContextId2, internalId2);
-    if (closeContextTabs) {
-      ok(!gBrowser.tabs.includes(tabContext2), "Tab context 2 is closed");
-    } else {
+      assertContextRemoved(userContextManager, userContextId1, internalId1);
+      if (closeContextTabs) {
+        ok(!gBrowser.tabs.includes(tabContext1), "Tab context 1 is closed");
+      } else {
+        ok(gBrowser.tabs.includes(tabContext1), "Tab context 1 is not closed");
+      }
+      ok(gBrowser.tabs.includes(tabDefault), "Tab default is not closed");
       ok(gBrowser.tabs.includes(tabContext2), "Tab context 2 is not closed");
-    }
-    ok(gBrowser.tabs.includes(tabDefault), "Tab default is not closed");
-  }
 
-  userContextManager.destroy();
+      info("Remove the user context 2 via removeUserContext");
+      userContextManager.removeUserContext(userContextId2, {
+        closeContextTabs,
+      });
+      assertContextRemoved(userContextManager, userContextId2, internalId2);
+      if (closeContextTabs) {
+        ok(!gBrowser.tabs.includes(tabContext2), "Tab context 2 is closed");
+      } else {
+        ok(gBrowser.tabs.includes(tabContext2), "Tab context 2 is not closed");
+      }
+      ok(gBrowser.tabs.includes(tabDefault), "Tab default is not closed");
+    }
+  } finally {
+    NavigableManager.stopTracking();
+    userContextManager.destroy();
+  }
 });
 
 add_task(async function test_create_context_prefix() {

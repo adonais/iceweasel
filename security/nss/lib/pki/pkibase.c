@@ -1010,19 +1010,20 @@ cert_getUIDFromInstance(nssCryptokiObject *instance, NSSItem *uid,
 static nssPKIObject *
 cert_createObject(nssPKIObject *o)
 {
-    NSSCertificate *cert;
-    cert = nssCertificate_Create(o);
-    /*    if (STAN_GetCERTCertificate(cert) == NULL) {
-        nssCertificate_Destroy(cert);
-        return (nssPKIObject *)NULL;
-    } */
-    /* In 3.4, have to maintain uniqueness of cert pointers by caching all
-     * certs.  Cache the cert here, before returning.  If it is already
-     * cached, take the cached entry.
-     */
-    {
-        NSSTrustDomain *td = o->trustDomain;
-        nssTrustDomain_AddCertsToCache(td, &cert, 1);
+    NSSCertificate *cert = nssCertificate_Create(o);
+    if (!cert) {
+        return NULL;
+    }
+    NSSTrustDomain *td = o->trustDomain;
+    /* nssTrustDomain_AddCertToCache takes ownership of the reference to cert,
+     * so first increase the refcount so it doesn't go away. */
+    nssCertificate_AddRef(cert);
+    NSSCertificate *certInCache = nssTrustDomain_AddCertToCache(td, cert);
+    if (certInCache) {
+        // This code should probably use the certificate returned from the cache,
+        // but currently the merge tests rely on not doing so. Discard it
+        // instead.
+        nssCertificate_Destroy(certInCache);
     }
     return (nssPKIObject *)cert;
 }

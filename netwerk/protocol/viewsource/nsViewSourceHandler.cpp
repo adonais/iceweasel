@@ -3,9 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsViewSourceHandler.h"
-#include "nsViewSourceChannel.h"
+
 #include "nsNetUtil.h"
 #include "nsSimpleNestedURI.h"
+#include "nsViewSourceChannel.h"
 
 #define VIEW_SOURCE "view-source"
 

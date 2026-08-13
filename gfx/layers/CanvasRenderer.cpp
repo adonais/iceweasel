@@ -5,16 +5,16 @@
 #include "CanvasRenderer.h"
 
 #include "BuildConstants.h"
-#include "ipc/KnowsCompositor.h"
-#include "mozilla/gfx/gfxVars.h"
-#include "mozilla/StaticPrefs_webgl.h"
-#include "nsICanvasRenderingContextInternal.h"
 #include "PersistentBufferProvider.h"
 #include "WebGLTypes.h"
+#include "ipc/KnowsCompositor.h"
+#include "mozilla/StaticPrefs_webgl.h"
+#include "mozilla/gfx/gfxVars.h"
+#include "nsICanvasRenderingContextInternal.h"
 
 #ifdef MOZ_WIDGET_GTK
-#  include "mozilla/widget/DMABufSurface.h"
 #  include "mozilla/widget/DMABufDevice.h"
+#  include "mozilla/widget/DMABufSurface.h"
 #endif
 
 namespace mozilla {

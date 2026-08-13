@@ -13,12 +13,12 @@
 #include "IDecodingTask.h"
 #include "Image.h"
 #include "ImageMetadata.h"
+#include "OrientedImage.h"
+#include "SourceBuffer.h"
 #include "imgIContainer.h"
 #include "mozilla/gfx/2D.h"
 #include "nsNetUtil.h"  // for NS_NewBufferedInputStream
 #include "nsStreamUtils.h"
-#include "OrientedImage.h"
-#include "SourceBuffer.h"
 
 using namespace mozilla::gfx;
 

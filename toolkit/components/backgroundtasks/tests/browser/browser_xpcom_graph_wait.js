@@ -76,7 +76,6 @@ const backgroundtaskPhases = {
         "@mozilla.org/observer-service;1",
         "@mozilla.org/power/powermanagerservice;1",
         "@mozilla.org/preferences-service;1",
-        "@mozilla.org/process/environment;1",
         "@mozilla.org/storage/service;1",
         "@mozilla.org/thirdpartyutil;1",
         "@mozilla.org/toolkit/app-startup;1",
@@ -112,7 +111,10 @@ const backgroundtaskPhases = {
 
         "resource://testing-common/backgroundtasks/BackgroundTask_wait.sys.mjs",
       ],
-      services: ["@mozilla.org/consoleAPI-storage;1"],
+      services: [
+        "@mozilla.org/consoleAPI-storage;1",
+        "@mozilla.org/process/environment;1",
+      ],
     },
   },
   AfterAwaitRunBackgroundTask: {

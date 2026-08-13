@@ -963,8 +963,8 @@ static cairo_int_status_t
 _cairo_win32_printing_surface_paint_linear_pattern (cairo_win32_printing_surface_t *surface,
                                                     cairo_linear_pattern_t *pattern)
 {
-    TRIVERTEX *vert;
-    GRADIENT_RECT *rect;
+    TRIVERTEX *vert = NULL;
+    GRADIENT_RECT *rect = NULL;
     RECT clip;
     XFORM xform;
     int i, num_stops;
@@ -974,6 +974,7 @@ _cairo_win32_printing_surface_paint_linear_pattern (cairo_win32_printing_surface
     int range_start, range_stop, num_ranges, num_rects, stop;
     int total_verts, total_rects;
     cairo_status_t status;
+    cairo_uint64_t alloc_size;
 
     extend = cairo_pattern_get_extend (&pattern->base.base);
     SaveDC (surface->win32.dc);
@@ -1006,7 +1007,8 @@ _cairo_win32_printing_surface_paint_linear_pattern (cairo_win32_printing_surface
 
     if (!SetWorldTransform (surface->win32.dc, &xform)) {
         fprintf (stderr, "%s:%s\n", __FUNCTION__, "SetWorldTransform");
-        return _cairo_error (CAIRO_STATUS_WIN32_GDI_ERROR);
+        status = _cairo_error (CAIRO_STATUS_WIN32_GDI_ERROR);
+        goto cleanup;
     }
 
     GetClipBox (surface->win32.dc, &clip);
@@ -1023,8 +1025,24 @@ _cairo_win32_printing_surface_paint_linear_pattern (cairo_win32_printing_surface
     num_rects = num_stops - 1;
 
     /* Add an extra four points and two rectangles for EXTEND_PAD */
-    vert = _cairo_malloc (sizeof (TRIVERTEX) * (num_rects*2*num_ranges + 4));
-    rect = _cairo_malloc (sizeof (GRADIENT_RECT) * (num_rects*num_ranges + 2));
+    alloc_size = sizeof (TRIVERTEX) * ((cairo_uint64_t)num_rects * 2 * (cairo_uint64_t)num_ranges + 4);
+    if (alloc_size > (cairo_uint64_t)SIZE_MAX) {
+        status = _cairo_error (CAIRO_INT_STATUS_UNSUPPORTED);
+        goto cleanup;
+    }
+    vert = _cairo_malloc (alloc_size);
+
+    alloc_size = sizeof (GRADIENT_RECT) * ((cairo_uint64_t)num_rects * (cairo_uint64_t)num_ranges + 2);
+    if (alloc_size > (cairo_uint64_t)SIZE_MAX) {
+        status = _cairo_error (CAIRO_INT_STATUS_UNSUPPORTED);
+        goto cleanup;
+    }
+    rect = _cairo_malloc (alloc_size);
+
+    if (!vert || !rect) {
+        status = _cairo_error (CAIRO_STATUS_NO_MEMORY);
+        goto cleanup;
+    }
 
     for (i = 0; i < num_ranges*num_rects; i++) {
 	vert[i*2].y = (LONG) clip.top;
@@ -1098,14 +1116,15 @@ _cairo_win32_printing_surface_paint_linear_pattern (cairo_win32_printing_surface
 		       GRADIENT_FILL_RECT_H))
     {
         fprintf (stderr, "%s:%s\n", __FUNCTION__, "GradientFill");
-        return _cairo_error (CAIRO_STATUS_WIN32_GDI_ERROR);
+        status = _cairo_error (CAIRO_STATUS_WIN32_GDI_ERROR);
     }
 
+cleanup:
     free (rect);
     free (vert);
     RestoreDC (surface->win32.dc, -1);
 
-    return 0;
+    return status;
 }
 
 static cairo_int_status_t
@@ -1539,7 +1558,9 @@ _cairo_win32_printing_surface_stroke (void			*abstract_surface,
 	pen_style |= PS_USERSTYLE;
 	dash_array = _cairo_calloc_ab (sizeof (DWORD), style->num_dashes);
 	for (i = 0; i < style->num_dashes; i++) {
-	    dash_array[i] = (DWORD) (scale * style->dash[i]);
+      /* ExtCreatePen fails if the scaled dash length becomes zero,
+         so enforce a minimum of 1 unit. */
+	    dash_array[i] = MAX(1, (DWORD) (scale * style->dash[i]));
 	}
     } else {
 	pen_style |= PS_SOLID;

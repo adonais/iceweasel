@@ -267,6 +267,38 @@ class HomepageEdgeToEdgeFeatureTest {
     }
 
     @Test
+    fun `GIVEN tab strip is enabled WHEN search query is shown on EdgeToEdge wallpaper THEN status bar background is shown`() = runTest(testDispatcher) {
+        every { settings.enableHomepageEdgeToEdgeBackgroundFeature } returns true
+        every { settings.shouldUseBottomToolbar } returns false
+        every { settings.isTabStripEnabled } returns true
+        val activity = Robolectric.buildActivity(Activity::class.java).create().get()
+        val decorView = activity.window.decorView as ViewGroup
+        val initialChildCount = decorView.childCount
+        val appStore = AppStore()
+        val toolbarStore = BrowserToolbarStore()
+        appStore.dispatch(AppAction.WallpaperAction.UpdateCurrentWallpaper(Wallpaper.EdgeToEdge))
+
+        HomepageEdgeToEdgeFeature(
+            appStore = appStore,
+            activity = activity,
+            settings = settings,
+            browsingModeManager = browsingModeManager,
+            toolbarStore = toolbarStore,
+            mainDispatcher = testDispatcher,
+        ).start()
+        testScheduler.advanceUntilIdle()
+
+        toolbarStore.dispatch(BrowserToolbarAction.EnterEditMode(isPrivate = false))
+        toolbarStore.dispatch(BrowserEditToolbarAction.SearchQueryUpdated(BrowserToolbarQuery("test")))
+        testScheduler.advanceUntilIdle()
+
+        assertEquals(
+            ContextCompat.getColor(activity, R.color.homepage_tab_edge_to_edge_toolbar_background),
+            (decorView.getChildAt(initialChildCount).background as ColorDrawable).color,
+        )
+    }
+
+    @Test
     fun `GIVEN EdgeToEdge wallpaper is active WHEN EdgeToEdge wallpaper is selected again THEN status bar background is not duplicated`() = runTest(testDispatcher) {
         every { settings.enableHomepageEdgeToEdgeBackgroundFeature } returns true
         every { settings.shouldUseBottomToolbar } returns false

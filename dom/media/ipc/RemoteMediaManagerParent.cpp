@@ -118,6 +118,7 @@ void RemoteMediaManagerParent::ShutdownVideoBridge() {
   }
 }
 
+/* static */
 bool RemoteMediaManagerParent::OnManagerThread() {
   return sRemoteMediaManagerParentThread->IsOnCurrentThread();
 }

@@ -14,6 +14,7 @@
 #include "mozilla/dom/BindingIPCUtils.h"
 #include "mozilla/dom/CandidateInfo.h"
 #include "mozilla/dom/RTCConfigurationBinding.h"
+#include "mozilla/dom/RTCErrorBinding.h"
 #include "mozilla/dom/RTCIceTransportBinding.h"
 #include "mozilla/media/webrtc/WebrtcGlobal.h"
 #include "transport/dtlsidentity.h"
@@ -97,8 +98,17 @@ struct ParamTraits<mozilla::dom::RTCIceTransportState>
     : public mozilla::dom::WebIDLEnumSerializer<
           mozilla::dom::RTCIceTransportState> {};
 
+template <>
+struct ParamTraits<mozilla::dom::RTCErrorDetailType>
+    : public mozilla::dom::WebIDLEnumSerializer<
+          mozilla::dom::RTCErrorDetailType> {};
+
 DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::RTCIceServer, mCredential,
                                   mCredentialType, mUrl, mUrls, mUsername)
+
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::RTCErrorInit, mErrorDetail,
+                                  mReceivedAlert, mSctpCauseCode,
+                                  mSdpLineNumber, mSentAlert)
 
 DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::CandidateInfo, mCandidate, mUfrag,
                                   mDefaultHostRtp, mDefaultPortRtp,

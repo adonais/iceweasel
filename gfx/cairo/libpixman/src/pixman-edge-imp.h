@@ -53,10 +53,13 @@ RASTERIZE_EDGES (pixman_image_t  *image,
 	 * when the sample point lies exactly on the line, we round towards
 	 * north-west.
 	 *
+	 * Use 64 bits to get a saturating add, in case lx or rx are near
+	 * the limits of pixman_fixed_t.
+	 *
 	 * (The AA case does a similar  adjustment in RENDER_SAMPLES_X)
 	 */
-	lx += X_FRAC_FIRST(1) - pixman_fixed_e;
-	rx += X_FRAC_FIRST(1) - pixman_fixed_e;
+	lx = (pixman_fixed_t) MIN ((int64_t) lx + (X_FRAC_FIRST(1) - pixman_fixed_e), INT32_MAX);
+	rx = (pixman_fixed_t) MIN ((int64_t) rx + (X_FRAC_FIRST(1) - pixman_fixed_e), INT32_MAX);
 #endif
 	/* clip X */
 	if (lx < 0)

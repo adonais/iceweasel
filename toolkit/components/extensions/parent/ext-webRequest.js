@@ -33,27 +33,16 @@ function handlerBehaviorChangedCallAllowed(timestamps) {
 
 // The guts of a WebRequest event handler.  Takes care of converting
 // |details| parameter when invoking listeners.
-function registerEvent(
-  extension,
-  eventName,
-  fire,
-  filter,
-  info,
-  remoteTab = null
-) {
-  let listener = async data => {
+function registerEvent(extension, eventName, fire, filter, info) {
+  let listener = data => {
     let event = data.serialize(eventName);
-    if (data.registerTraceableChannel) {
-      // If this is a primed listener, no tabParent was passed in here,
-      // but the convert() callback later in this function will be called
-      // when the background page is started.  Force that to happen here
-      // after which we'll have a valid tabParent.
-      if (fire.wakeup) {
-        await fire.wakeup();
-      }
-      data.registerTraceableChannel(extension.policy, remoteTab);
-    }
-
+    // If this is a blocking listener, the request is suspended until the event
+    // listener responds. If there are multiple listeners, earlier listeners
+    // can already resume the request and cancel/redirect as needed.
+    // `fire.sync()` will wake up a background script if needed. Note that the
+    // wakeup awaits ExtensionParent.browserPaintedPromise. In ext-proxy.js we
+    // wake up even earlier to prevent system requests from getting stuck, but
+    // here we do not because webRequest does not intercept system requests.
     return fire.sync(event);
   };
 
@@ -120,9 +109,8 @@ function registerEvent(
     unregister: () => {
       WebRequest[eventName].removeListener(listener);
     },
-    convert(_fire, context) {
+    convert(_fire) {
       fire = _fire;
-      remoteTab = context.xulBrowser.frameLoader.remoteTab;
     },
   };
 }
@@ -137,24 +125,14 @@ function makeWebRequestEventAPI(context, event, extensionApi) {
 }
 
 function makeWebRequestEventRegistrar(event) {
-  return function ({ fire, context }, params) {
+  return function ({ fire }, params) {
     // ExtensionAPIPersistent makes sure this function will be bound
     // to the ExtensionAPIPersistent instance.
     const { extension } = this;
 
-    const [filter, info] = params;
+    const [filter, extraInfoSpec] = params;
 
-    // When we are registering the real listener coming from the extension context,
-    // we should get the additional remoteTab parameter value from the extension context
-    // (which is then used by the registerTraceableChannel helper to register stream
-    // filters to the channel and associate them to the extension context that has
-    // created it and will be handling the filter onstart/ondata/onend events).
-    let remoteTab;
-    if (context) {
-      remoteTab = context.xulBrowser.frameLoader.remoteTab;
-    }
-
-    return registerEvent(extension, event, fire, filter, info, remoteTab);
+    return registerEvent(extension, event, fire, filter, extraInfoSpec);
   };
 }
 

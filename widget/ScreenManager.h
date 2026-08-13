@@ -5,11 +5,10 @@
 #ifndef mozilla_widget_ScreenManager_h
 #define mozilla_widget_ScreenManager_h
 
-#include "nsIScreenManager.h"
-
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/widget/Screen.h"
+#include "nsIScreenManager.h"
 #include "nsTArray.h"
 
 namespace mozilla {

@@ -5,6 +5,6 @@
 JAR_MANIFESTS += ["jar.mn"]
 
 with Files("**"):
-    BUG_COMPONENT = ("Firefox", "Password Manager")
+    BUG_COMPONENT = ("Toolkit", "Password Manager")
 
 MOCHITEST_CHROME_MANIFESTS += ["tests/chrome/chrome.toml"]

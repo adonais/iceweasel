@@ -20,16 +20,16 @@ async function performTest(region, expectedCount) {
         // There should be up to five items: three addresses, the status row and the manage item.
         is(items.length, expectedCount, "three items in autocomplete list");
         is(
-          items[0].getAttribute("ac-label"),
+          getACItemLabel(items[0]),
           TEST_ADDRESS_1["street-address"].replace("\n", " ")
         );
         is(
-          items[1].getAttribute("ac-label"),
+          getACItemLabel(items[1]),
           TEST_ADDRESS_CA_1["street-address"].replace("\n", " ")
         );
         if (expectedCount >= 5) {
           is(
-            items[2].getAttribute("ac-label"),
+            getACItemLabel(items[2]),
             TEST_ADDRESS_DE_1["street-address"].replace("\n", " ")
           );
         }

@@ -8,7 +8,6 @@ prefs = [
   "browser.ipProtection.features.siteExceptions=true",
   "dom.security.https_first=false",
   "browser.ipProtection.bandwidth.enabled=true",
-  "browser.ipProtection.fxa.useActivateFlow=false",
 ]
 
 ["browser_IPPChannelFilter.js"]
@@ -67,3 +66,5 @@ skip-if = [
 ]
 
 ["browser_ipprotection_utils.js"]
+
+["browser_ipprotection_viewer_site_exclusion.js"]

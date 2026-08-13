@@ -9,13 +9,12 @@
 #ifndef mozilla_image_AnimationSurfaceProvider_h
 #define mozilla_image_AnimationSurfaceProvider_h
 
-#include "mozilla/UniquePtr.h"
-
+#include "AnimationFrameBuffer.h"
 #include "Decoder.h"
 #include "FrameAnimator.h"
 #include "IDecodingTask.h"
 #include "ISurfaceProvider.h"
-#include "AnimationFrameBuffer.h"
+#include "mozilla/UniquePtr.h"
 
 namespace mozilla {
 namespace layers {

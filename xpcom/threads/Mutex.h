@@ -6,9 +6,9 @@
 #define mozilla_Mutex_h
 
 #include "mozilla/BlockingResourceBase.h"
-#include "mozilla/ThreadSafety.h"
-#include "mozilla/PlatformMutex.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/PlatformMutex.h"
+#include "mozilla/ThreadSafety.h"
 #include "nsISupports.h"
 
 //

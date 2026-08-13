@@ -1240,7 +1240,7 @@ export class FaviconProvider {
             lazy.PlacesUtils.favicons.FAVICON_LOAD_NON_PRIVATE
           );
         } catch (ex) {
-          console.error(`Failed to copy favicon [${ex}]`);
+          lazy.log.debug(`Failed to copy favicon [${ex}]`);
         }
       }
     }
@@ -1305,7 +1305,13 @@ export class FaviconProvider {
       // If the given faviconURI is data URL, set it as is.
       if (faviconURI.schemeIs("data")) {
         lazy.PlacesUtils.favicons
-          .setFaviconForPage(pageURI, faviconURI, faviconURI)
+          .setFaviconForPage(
+            pageURI,
+            faviconURI,
+            faviconURI,
+            0,
+            /* isRich */ true
+          )
           .catch(console.error);
         return;
       }
@@ -1323,7 +1329,9 @@ export class FaviconProvider {
         .setFaviconForPage(
           pageURI,
           faviconURI,
-          await this.getFaviconDataURLFromNetwork(faviconURI)
+          await this.getFaviconDataURLFromNetwork(faviconURI),
+          0,
+          /* isRich */ true
         )
         .catch(console.error);
     } catch (ex) {

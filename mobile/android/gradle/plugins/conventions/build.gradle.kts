@@ -4,6 +4,7 @@
 
 plugins {
     `kotlin-dsl`
+    alias(libs.plugins.android.lint.plugin)
     alias(libs.plugins.kotlin.serialization)
 }
 
@@ -45,6 +46,8 @@ dependencies {
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
+
+    lintChecks(libs.androidx.lint)
 }
 
 tasks.test {

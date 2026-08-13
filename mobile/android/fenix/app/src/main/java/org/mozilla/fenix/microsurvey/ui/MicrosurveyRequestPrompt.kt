@@ -145,6 +145,7 @@ private fun MicrosurveyRequestPromptPreview(
                 promptTitle = "Help make printing in Firefox better. It only takes a sec.",
                 icon = iconsR.drawable.mozac_ic_lightbulb_24,
                 question = "",
+                maxNumberLines = 2,
                 answers = emptyList(),
             ),
             onStartSurveyClicked = {},

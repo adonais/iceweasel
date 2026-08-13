@@ -5,12 +5,12 @@
 #ifndef mozilla_net_CookieNotification_h
 #define mozilla_net_CookieNotification_h
 
-#include "nsIArray.h"
-#include "nsICookieNotification.h"
-#include "nsICookie.h"
 #include "nsCOMPtr.h"
-#include "nsTArray.h"
+#include "nsIArray.h"
+#include "nsICookie.h"
+#include "nsICookieNotification.h"
 #include "nsString.h"
+#include "nsTArray.h"
 
 namespace mozilla::net {
 

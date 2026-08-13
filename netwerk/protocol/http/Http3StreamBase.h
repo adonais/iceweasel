@@ -5,9 +5,9 @@
 #ifndef mozilla_net_Http3StreamBase_h
 #define mozilla_net_Http3StreamBase_h
 
-#include "nsAHttpTransaction.h"
 #include "ARefBase.h"
 #include "mozilla/WeakPtr.h"
+#include "nsAHttpTransaction.h"
 #include "nsIClassOfService.h"
 
 namespace mozilla::net {

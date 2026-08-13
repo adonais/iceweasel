@@ -42,6 +42,16 @@
       await IOUtils.remove(TEST_PATH, { recursive: true });
     });
 
+    add_task(async function test_getFile_root() {
+      let expectedPath = PathUtils.tempDir;
+      let parent;
+      while ((parent = PathUtils.parent(expectedPath))) {
+        expectedPath = parent;
+      }
+
+      is((await IOUtils.getFile(expectedPath))?.path, expectedPath, "Returns the expected file");
+    });
+
     add_task(async function test_getDirectory() {
       const expectedPath = PathUtils.join(TEST_PATH, "qux", "quux", "corge");
 

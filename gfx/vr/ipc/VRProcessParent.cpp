@@ -3,24 +3,24 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "VRProcessParent.h"
+
+#include "VRChild.h"
 #include "VRGPUChild.h"
 #include "VRProcessManager.h"
+#include "VRThread.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/TimeStamp.h"  // for TimeStamp
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/MemoryReportRequest.h"
-#include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/gfx/GPUChild.h"
+#include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/ProcessChild.h"
 #include "mozilla/ipc/ProcessUtils.h"
 #include "mozilla/ipc/ProtocolTypes.h"
 #include "mozilla/ipc/ProtocolUtils.h"  // for IToplevelProtocol
-#include "mozilla/Preferences.h"
-#include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/TimeStamp.h"  // for TimeStamp
-#include "VRChild.h"
-#include "VRThread.h"
-
-#include "nsAppRunner.h"  // for IToplevelProtocol
+#include "nsAppRunner.h"                // for IToplevelProtocol
 
 using std::string;
 using std::vector;

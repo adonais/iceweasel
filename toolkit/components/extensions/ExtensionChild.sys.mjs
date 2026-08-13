@@ -710,6 +710,14 @@ export class ProxyAPIImplementation extends SchemaAPIInterface {
     map.ids.delete(id);
     map.removedIds.add(id);
 
+    // While the context is unloading, its conduit is closed and the parent
+    // tears down all of this context's listeners on its own, so sending a
+    // RemoveListener message would be redundant (and racy: the conduit may
+    // already be closed). Skip it to avoid spurious "closed conduit" errors.
+    if (this.childApiManager.context.unloaded) {
+      return;
+    }
+
     this.childApiManager.conduit.sendRemoveListener({
       childId: this.childApiManager.id,
       listenerId: id,

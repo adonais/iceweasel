@@ -27,6 +27,8 @@ import { MozBaseInputElement, MozLitElement } from "../lit-utils.mjs";
  *
  * @tagname moz-select
  * @property {string} label - The text of the label element
+ * @property {string} size - The select size.
+ *   Options: default, small.
  * @property {string} name - The name of the input control
  * @property {string} value - The value of the selected option
  * @property {boolean} disabled - The disabled state of the input control
@@ -43,6 +45,7 @@ import { MozBaseInputElement, MozLitElement } from "../lit-utils.mjs";
  */
 export default class MozSelect extends MozBaseInputElement {
   static properties = {
+    size: { type: String, reflect: true },
     options: { type: Array, state: true },
     selectedOption: { type: Object, state: true },
     selectedIndex: { type: Number, state: true },
@@ -57,6 +60,7 @@ export default class MozSelect extends MozBaseInputElement {
 
   constructor() {
     super();
+    this.size = "default";
     this.value = "";
     this.options = [];
     this.usePanelList = false;
@@ -327,6 +331,7 @@ export default class MozSelect extends MozBaseInputElement {
       @input=${this.handleStateChange}
       @change=${this.redispatchEvent}
       ?disabled=${this.disabled || this.parentDisabled}
+      size=${this.size}
       aria-label=${ifDefined(this.ariaLabel ?? undefined)}
       aria-describedby="description"
       aria-description=${ifDefined(
@@ -376,6 +381,7 @@ export default class MozSelect extends MozBaseInputElement {
       @click=${this.handlePanelClick}
       @keydown=${this.handlePanelKeydown}
       ?disabled=${this.disabled || this.parentDisabled}
+      size=${this.size}
     >
       <span class="panel-trigger-text">${this.selectedOption?.label}</span>
     </button>`;

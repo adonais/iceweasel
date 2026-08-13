@@ -12,9 +12,9 @@
         "llvmorg-23-init-5314-g19e9bcba0bab.patch",
         "llvmorg-23-init-5315-gf2a10ab74ff7.patch",
         "llvmorg-23-init-5316-g4f4087edb182.patch",
-        "filter-symbols.patch",
         "android-hardware-buffer-header-workaround_clang_21.patch",
         "arm64e-hack.patch",
+        "filter-symbols.patch",
         "no-no-rosegment.patch",
         "sanitizer_deadlock_suppression_clang_22.patch",
         "compiler-rt-rss-limit-heap-profile.patch"

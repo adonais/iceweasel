@@ -24,11 +24,11 @@
       <browser id="sidebar" autoscroll="false" disablehistory="true" disablefullscreen="true" tooltip="aHTMLTooltip"/>
     </stack>
   </vbox>
-  <splitter id="sidebar-splitter" class="chromeclass-extrachrome sidebar-splitter" resizebefore="sibling" resizeafter="none" hidden="true"/>
+  <splitter id="sidebar-splitter" class="chromeclass-extrachrome sidebar-splitter" resizebefore="sibling" resizeafter="none" hidden="true" role="separator" aria-controls="sidebar-box" data-l10n-id="sidebar-resize-splitter"/>
   <tabbox id="tabbrowser-tabbox" flex="1" tabcontainer="tabbrowser-tabs">
     <tabpanels id="tabbrowser-tabpanels" flex="1" selectedIndex="0"/>
   </tabbox>
-  <splitter id="ai-window-splitter" class="chromeclass-extrachrome sidebar-splitter" resizebefore="none" resizeafter="sibling" collapsed="true"/>
+  <splitter id="ai-window-splitter" class="chromeclass-extrachrome sidebar-splitter" resizebefore="sibling" resizeafter="sibling" collapsed="true"/>
   <vbox id="ai-window-box" collapsed="true" class="chromeclass-extrachrome ai-window-right-sidebar">
     <stack class="ai-window-browser-stack" flex="1">
     </stack>

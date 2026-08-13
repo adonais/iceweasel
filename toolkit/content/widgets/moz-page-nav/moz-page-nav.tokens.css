@@ -11,12 +11,63 @@
   :root,
   :host {
     --page-nav-border-color: var(--border-color-transparent);
+    --page-nav-button-background-color: var(--button-background-color-ghost);
+    --page-nav-button-background-color-hover: var(--button-background-color-ghost-hover);
+    --page-nav-button-background-color-active: var(--button-background-color-ghost-active);
+    --page-nav-button-background-color-selected: color-mix(in srgb, currentColor 8%, transparent);
+    --page-nav-button-border-color: unset;
+    --page-nav-button-border-color-hover: var(--button-border-color-ghost-hover);
+    --page-nav-button-border-color-active: var(--button-border-color-ghost-active);
+    --page-nav-button-border-radius: var(--button-border-radius);
+    --page-nav-button-border-radius-focused: var(--border-radius-small);
     --page-nav-button-gap: var(--space-xsmall);
-    --page-nav-focus-outline-inset: var(--focus-outline-inset);
+    --page-nav-button-indicator-background-color: var(--color-accent-primary);
+    --page-nav-button-indicator-width: 4px;
+    --page-nav-button-padding: var(--space-small) var(--space-medium);
+    --page-nav-button-padding-small: var(--space-small);
+    --page-nav-button-text-color: var(--button-text-color-ghost);
+    --page-nav-button-text-color-hover: var(--button-text-color-ghost-hover);
+    --page-nav-button-text-color-active: var(--button-text-color-ghost-active);
+    --page-nav-button-text-color-selected: var(--color-accent-primary);
+    --page-nav-focus-outline-offset: var(--focus-outline-inset);
+    --page-nav-focus-padding: 0px;
     --page-nav-gap: var(--space-large);
     --page-nav-heading-logo-size: var(--icon-size-large);
     --page-nav-hr-background-color: var(--border-color);
     --page-nav-margin-block-start: var(--page-space-block-start);
     --page-nav-margin-inline-start: 40px;
+  }
+}
+
+@media -moz-pref("browser.nova.enabled") {
+  @layer tokens-foundation-nova {
+    :root,
+    :host {
+      --page-nav-button-background-color-hover: var(--button-background-color-hover);
+      --page-nav-button-background-color-active: var(--button-background-color-active);
+      --page-nav-button-background-color-selected: var(--color-accent-primary);
+      --page-nav-button-border-color: var(--border-color-transparent);
+      --page-nav-button-border-radius: var(--border-radius-circle);
+      --page-nav-button-border-radius-focused: var(--border-radius-circle);
+      --page-nav-button-indicator-background-color: transparent;
+      --page-nav-button-indicator-width: 0;
+      --page-nav-button-padding: var(--space-medium);
+      --page-nav-button-padding-small: var(--space-medium);
+      --page-nav-button-text-color-selected: var(--button-text-color-primary);
+      --page-nav-focus-outline-offset: var(--focus-outline-offset);
+      --page-nav-focus-padding: calc(var(--focus-outline-offset) + var(--focus-outline-width));
+      --page-nav-hr-background-color: var(--border-color-deemphasized);
+    }
+  }
+
+  /* Bug 1879900: Can't nest media queries inside of :host, :root selector
+   until Bug 1879349 lands */
+  @layer tokens-forced-colors-nova {
+    @media (forced-colors) {
+      :root,
+      :host {
+        --page-nav-button-border-color: ButtonText;
+      }
+    }
   }
 }

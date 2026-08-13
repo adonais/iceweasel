@@ -365,7 +365,7 @@ void SpeechDispatcherService::Setup() {
   spd_set_notification_on(mSpeechdClient, SPD_END);
   spd_set_notification_on(mSpeechdClient, SPD_CANCEL);
 
-  if (list != NULL) {
+  if (list != nullptr) {
     for (int i = 0; list[i]; i++) {
       nsAutoString uri;
 

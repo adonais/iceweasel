@@ -5,11 +5,11 @@
 #ifndef nsAsyncStreamCopier_h_
 #define nsAsyncStreamCopier_h_
 
+#include "mozilla/Mutex.h"
+#include "nsCOMPtr.h"
 #include "nsIAsyncStreamCopier.h"
 #include "nsIAsyncStreamCopier2.h"
-#include "mozilla/Mutex.h"
 #include "nsStreamUtils.h"
-#include "nsCOMPtr.h"
 
 class nsIRequestObserver;
 

@@ -43,10 +43,8 @@ private fun Map<String, IconRequest.Resource.Type>.reverseLookup(type: IconReque
 
 internal fun List<IconRequest.Resource>.toJSON(): JSONArray {
     return mapNotNull { resource ->
-        if (resource.type == IconRequest.Resource.Type.TIPPY_TOP ||
-            resource.type == IconRequest.Resource.Type.MERINO_MANIFEST
-        ) {
-            // Ignore the URLs coming from the "tippy top" list and the Merino manifest.
+        if (resource.type == IconRequest.Resource.Type.MERINO_MANIFEST) {
+            // Ignore the URLs coming from the Merino manifest.
             return@mapNotNull null
         }
 

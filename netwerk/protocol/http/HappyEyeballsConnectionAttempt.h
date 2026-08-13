@@ -6,15 +6,18 @@
 #define HappyEyeballsConnectionAttempt_h_
 
 #include "ConnectionAttempt.h"
+#include "ConnectionEstablisher.h"
+#include "HappyEyeballsConnMgrDelegate.h"
+#include "HappyEyeballsTransaction.h"
+#include "happy_eyeballs_glue/HappyEyeballs.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/Result.h"
 #include "nsAHttpConnection.h"
 #include "nsICancelable.h"
 #include "nsIDNSListener.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/Result.h"
+#include "nsIDNSService.h"
+#include "nsRefPtrHashtable.h"
 #include "nsTHashSet.h"
-#include "happy_eyeballs_glue/HappyEyeballs.h"
-#include "ConnectionEstablisher.h"
-#include "HappyEyeballsTransaction.h"
 
 namespace mozilla {
 namespace net {
@@ -64,9 +67,13 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   NS_DECL_NSITIMERCALLBACK
   NS_DECL_NSINAMED
 
+  // aRetryWithoutTRR is set for the fallback attempt started after a first
+  // attempt's TRR-resolved addresses all failed to connect; it forces DNS
+  // resolution to bypass TRR (and the DNS cache).
   HappyEyeballsConnectionAttempt(nsHttpConnectionInfo* ci,
                                  nsAHttpTransaction* trans, uint32_t caps,
-                                 bool speculative, bool urgentStart);
+                                 bool speculative, bool urgentStart,
+                                 bool retryWithoutTRR = false);
 
   nsresult Init(ConnectionEntry* ent) override;
   void Abandon() override;
@@ -79,6 +86,19 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   // override prevents.
   void Unclaim() override {}
   uint32_t UnconnectedUDPConnsLength() const override;
+
+  // Test-only seams; call before Init().
+  void SetConnectionEstablisherFactoryForTesting(
+      ConnectionEstablisherFactory* aFactory) {
+    mEstablisherFactory = aFactory;
+  }
+  void SetConnMgrDelegateForTesting(HappyEyeballsConnMgrDelegate* aDelegate) {
+    mConnMgrDelegate = aDelegate;
+  }
+
+  // Test-only accessors.
+  bool WasTransactionAdoptedForTesting() const { return mTransactionAdopted; }
+  ZeroRttHandle* ZeroRttHandleForTesting() const { return mZeroRttHandle; }
 
   // Real transaction accessor, used by the shared ZeroRttHandle.
   nsHttpTransaction* RealHttpTransaction() const {
@@ -203,6 +223,21 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   nsresult OnAAAARecord(nsIDNSRecord* aRecord, nsresult status, uint64_t aId);
   nsresult OnHTTPSRecord(nsIDNSRecord* aRecord, nsresult status, uint64_t aId);
 
+  // True when this attempt's (TRR-resolved) addresses all failed to connect and
+  // we should hand the transaction to a fresh attempt that re-resolves with TRR
+  // disabled (the connection-time equivalent of nsSocketTransport's legacy
+  // native-DNS fallback). Only applies to a real transaction, outside TRR_ONLY
+  // mode, and not to an attempt that is already a TRR-disabled retry.
+  bool ShouldRetryWithoutTRR(happy_eyeballs::FailureReason aReason) const;
+  // Hand the transaction to a new HappyEyeballsConnectionAttempt that resolves
+  // with TRR disabled, and abandon this one without closing the transaction.
+  void RetryWithoutTRR();
+  // Once the origin host's (mHost) A and AAAA lookups have both completed,
+  // build the connection entry's coalescing keys from their combined addresses
+  // and reprocess the pending queue. Addresses resolved for an HTTPS RR target
+  // name are intentionally excluded.
+  void MaybeBuildOriginCoalescingKeys();
+
   // Connection Attempt
   // Build a per-establisher HappyEyeballsTransaction wired up to forward
   // its OnTransportStatus events back through MaybeSendTransportStatus
@@ -219,9 +254,10 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   nsresult EstablishTCPConnection(NetAddr aAddr, uint16_t aPort,
                                   nsTArray<uint8_t>&& aEchConfig, uint64_t aId,
                                   bool aIsEchRetry);
-  void HandleTCPConnectionResult(
+  // Handles both TCP and UDP results; IsUDP() distinguishes where it matters.
+  void HandleConnectionResult(
       Result<RefPtr<HttpConnectionBase>, nsresult> aResult,
-      TCPConnectionEstablisher* aEstablisher, uint64_t aId);
+      ConnectionEstablisher* aEstablisher, uint64_t aId);
   // If 0-RTT was active, forward the connection's security info to the real
   // transaction so MaybeRemoveSSLToken() in nsHttpTransaction::Restart() can
   // clear the SSL token cache for the retry.
@@ -230,9 +266,6 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   nsresult EstablishUDPConnection(NetAddr aAddr, uint16_t aPort,
                                   nsTArray<uint8_t>&& aEchConfig, uint64_t aId,
                                   bool aIsEchRetry);
-  void HandleUDPConnectionResult(
-      Result<RefPtr<HttpConnectionBase>, nsresult> aResult,
-      UDPConnectionEstablisher* aEstablisher, uint64_t aId);
 
   nsresult CheckLNA(nsISocketTransport* aTransport);
   nsresult CheckLNAForAddr(const NetAddr& aAddr);
@@ -248,9 +281,9 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   void EnterTimedOut();
   void EnterDone();
 
-  void ProcessTCPConn(nsHttpConnection* aConn, ConnectionEntry* aEntry,
+  void ProcessTCPConn(HttpConnectionBase* aConn, ConnectionEntry* aEntry,
                       bool aTransactionAlreadyOnConn);
-  void ProcessUDPConn(HttpConnectionUDP* aConn, ConnectionEntry* aEntry,
+  void ProcessUDPConn(HttpConnectionBase* aConn, ConnectionEntry* aEntry,
                       bool aTransactionAlreadyOnConn);
   void CloseHttpTransaction(happy_eyeballs::FailureReason aReason,
                             ConnectionEntry* aEntry);
@@ -264,12 +297,29 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
 
   nsRefPtrHashtable<nsUint64HashKey, ConnectionEstablisher>
       mConnectionEstablisherTable;
+  // Creates per-attempt establishers; default uses real sockets.
+  RefPtr<ConnectionEstablisherFactory> mEstablisherFactory;
+  // Wraps the connection manager + entry; default forwards to ConnMgr().
+  RefPtr<HappyEyeballsConnMgrDelegate> mConnMgrDelegate;
   RefPtr<HttpConnectionBase> mOutputConn;
   // Winning establisher's per-attempt transaction; used to read its
   // collected handshake timings before we dispatch the real transaction.
   RefPtr<HappyEyeballsTransaction> mOutputTrans;
   uint64_t mOutputConnId{0};
   uint16_t mAddrFamily{0};
+
+  // IDs of the still-outstanding A/AAAA lookups issued for mHost (the origin /
+  // routed host). HTTPS RR target-name lookups are not tracked here, so their
+  // addresses never enter the coalescing keys.
+  nsTHashSet<uint64_t> mOriginDnsLookupIds;
+  // Combined A+AAAA addresses resolved for mHost, used to build the entry's
+  // coalescing keys once both lookups complete.
+  nsTArray<NetAddr> mOriginAddresses;
+
+  // When set, DNS resolution bypasses TRR and the cache. Set on the fallback
+  // attempt started after TRR-resolved addresses failed to connect; also
+  // prevents that fallback attempt from triggering a second retry.
+  bool mRetryWithoutTRR = false;
 
   nsCOMPtr<nsITimer> mTimer;
   WeakPtr<ConnectionEntry> mEntry;
@@ -292,10 +342,13 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   bool mTRRInfoForwarded = false;
 
   // domainLookupStart: when the first DNS query (A/AAAA/HTTPS) was issued.
-  // domainLookupEnd is reported as mFirstConnectionStart (the start of the
-  // first connection attempt).
   TimeStamp mFirstDnsLookupStart;
   TimeStamp mFirstConnectionStart;
+  // domainLookupEnd: the latest DNS response (OnLookupComplete) that arrives
+  // before the first connection attempt starts; if none has by then, it is set
+  // to mFirstConnectionStart. domainLookupEnd is reported as
+  // min(mFirstConnectionStart, mDnsResolutionEnd) (see DnsLookupTimings).
+  TimeStamp mDnsResolutionEnd;
 
   // First-racer connect timings, mirroring the domainLookup span: the first
   // racer to reach each milestone across all racers (captured in

@@ -8,7 +8,7 @@
 #include "VideoUtils.h"
 #include "gfx2DGlue.h"
 #include "mozilla/CheckedInt.h"
-#include "mozilla/UniquePtr.h"
+#include "mozilla/UniquePtrExtensions.h"
 
 namespace mozilla {
 
@@ -41,9 +41,24 @@ void VideoFrame::TakeFrom(VideoFrame* aFrame) {
   mPrincipalHandle = aFrame->mPrincipalHandle;
 }
 
-/* static */
-already_AddRefed<Image> VideoFrame::CreateBlackImage(
+already_AddRefed<Image> VideoFrame::CloneAsBlackImage() const {
+  return CloneAsBlackImage(GetIntrinsicSize());
+}
+
+/* static */ already_AddRefed<Image> VideoFrame::CloneAsBlackImage(
     const gfx::IntSize& aSize) {
+  // Cap on input dimensions. Without this, valid int32_t dimensions can produce
+  // astronomically large-but-non-overflowing size_t values, causing the OS to
+  // thrash or kill lower priority processes when there are too many page
+  // faults. 16384 (16K) bounds the allocation to ~384 MB.
+  constexpr int32_t kMaxBlackImageDimension =
+      layers::PlanarYCbCrImage::MAX_DIMENSION;
+  if (aSize.width <= 0 || aSize.height <= 0 ||
+      aSize.width > kMaxBlackImageDimension ||
+      aSize.height > kMaxBlackImageDimension) {
+    return nullptr;
+  }
+
   RefPtr<ImageContainer> container = MakeAndAddRef<ImageContainer>(
       ImageUsageType::BlackImage, ImageContainer::ASYNCHRONOUS);
   RefPtr<PlanarYCbCrImage> image = container->CreatePlanarYCbCrImage();
@@ -51,9 +66,6 @@ already_AddRefed<Image> VideoFrame::CreateBlackImage(
     return nullptr;
   }
 
-  if (aSize.width <= 0 || aSize.height <= 0) {
-    return nullptr;
-  }
   auto checkedYLen = CheckedInt32(aSize.width) * aSize.height;
   if (!checkedYLen.isValid()) {
     return nullptr;
@@ -64,11 +76,14 @@ already_AddRefed<Image> VideoFrame::CreateBlackImage(
   if (!checkedCbCrLen.isValid()) {
     return nullptr;
   }
-  int yLen = checkedYLen.value();
-  int cbcrLen = checkedCbCrLen.value();
+  size_t yLen = checkedYLen.value();
+  size_t cbcrLen = checkedCbCrLen.value();
 
   // Generate a black image.
-  auto frame = MakeUnique<uint8_t[]>(yLen + 2 * cbcrLen);
+  auto frame = MakeUniqueFallible<uint8_t[]>(yLen + 2 * cbcrLen);
+  if (!frame) {
+    return nullptr;
+  }
   // Fill Y plane.
   memset(frame.get(), 0x10, yLen);
   // Fill Cb/Cr planes.

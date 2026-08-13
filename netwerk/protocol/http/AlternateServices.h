@@ -21,14 +21,14 @@ https://tools.ietf.org/html/draft-ietf-httpbis-alt-svc-06
 #ifndef mozilla_net_AlternateServices_h
 #define mozilla_net_AlternateServices_h
 
+#include "SpeculativeTransaction.h"
+#include "mozilla/BasePrincipal.h"
 #include "nsHttp.h"
-#include "nsRefPtrHashtable.h"
-#include "nsString.h"
 #include "nsIDataStorage.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsISpeculativeConnect.h"
-#include "mozilla/BasePrincipal.h"
-#include "SpeculativeTransaction.h"
+#include "nsRefPtrHashtable.h"
+#include "nsString.h"
 
 class nsILoadInfo;
 

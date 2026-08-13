@@ -364,7 +364,7 @@ hr {
   margin-block-start: auto;
 
   span {
-    font-size: var(--font-size-xsmall);
+    font-size: var(--newtab-font-size-xsmall);
   }
 
   .sponsored-text {
@@ -374,7 +374,7 @@ hr {
   .full-forecast {
     position: relative;
     z-index: 1;
-    font-size: var(--font-size-xsmall);
+    font-size: var(--newtab-font-size-xsmall);
     text-decoration: none;
     color: inherit;
   }

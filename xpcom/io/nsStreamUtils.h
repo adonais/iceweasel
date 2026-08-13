@@ -6,10 +6,10 @@
 #define nsStreamUtils_h_
 
 #include "nsCOMPtr.h"
-#include "nsStringFwd.h"
 #include "nsIInputStream.h"
-#include "nsTArray.h"
 #include "nsIRunnable.h"
+#include "nsStringFwd.h"
+#include "nsTArray.h"
 
 class nsIAsyncInputStream;
 class nsICloneableInputStream;

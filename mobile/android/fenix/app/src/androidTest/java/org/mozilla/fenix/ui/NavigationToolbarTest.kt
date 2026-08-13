@@ -6,7 +6,6 @@
 
 package org.mozilla.fenix.ui
 
-import androidx.core.net.toUri
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.SmokeTest
@@ -53,45 +52,6 @@ class NavigationToolbarTest {
 
     @get:Rule
     val searchMockServerRule = SearchMockServerRule()
-
-    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3135074
-    @SmokeTest
-    @Test
-    fun verifySecurePageSecuritySubMenuTest() {
-        val defaultWebPage = "https://mozilla-mobile.github.io/testapp/loginForm"
-        val defaultWebPageTitle = "Login_form"
-
-        navigationToolbar(composeTestRule) {
-        }.enterURLAndEnterToBrowser(
-            defaultWebPage.toUri(),
-        ) {
-            verifyPageContent("Login Form")
-        }.openSiteSecuritySheet {
-            verifyQuickActionSheet(defaultWebPage, true)
-            openSecureConnectionSubMenu(true)
-            verifySecureConnectionSubMenu(defaultWebPageTitle, defaultWebPage, true)
-        }
-    }
-
-    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3135075
-    @SmokeTest
-    @Test
-    fun verifyInsecurePageSecuritySubMenuTest() {
-        val defaultWebPage = mockWebServer.getGenericAsset(1)
-
-        navigationToolbar(composeTestRule) {
-        }.enterURLAndEnterToBrowser(defaultWebPage.url) {
-            verifyPageContent(defaultWebPage.content)
-        }.openSiteSecuritySheet {
-            verifyQuickActionSheet(defaultWebPage.url.toString(), false)
-            openSecureConnectionSubMenu(false)
-            verifySecureConnectionSubMenu(
-                defaultWebPage.title,
-                defaultWebPage.url.toString(),
-                false,
-            )
-        }
-    }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/987326
     // Swipes the nav bar left/right to switch between tabs

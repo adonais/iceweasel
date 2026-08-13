@@ -3,24 +3,26 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "D3D11Checks.h"
+
+#include <d3d10_1.h>
+#include <d3d11.h>
+#include <d3d11_1.h>
+#include <dxgi.h>
+#include <dxgi1_2.h>
+
 #include "DXVA2Manager.h"
-#include "gfxConfig.h"
 #include "GfxDriverInfo.h"
+#include "gfxConfig.h"
 #include "gfxWindowsPlatform.h"
 #include "mozilla/Components.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/StaticPrefs_media.h"
-#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/TextureD3D11.h"
 #include "nsIGfxInfo.h"
-#include <dxgi.h>
-#include <dxgi1_2.h>
-#include <d3d10_1.h>
-#include <d3d11.h>
-#include <d3d11_1.h>
 
 namespace mozilla {
 namespace gfx {

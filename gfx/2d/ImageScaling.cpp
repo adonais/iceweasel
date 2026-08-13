@@ -3,12 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ImageScaling.h"
-#include "2D.h"
-#include "DataSurfaceHelpers.h"
-
-#include "mozilla/SSE.h"
 
 #include <algorithm>
+
+#include "2D.h"
+#include "DataSurfaceHelpers.h"
+#include "mozilla/SSE.h"
 
 namespace mozilla {
 namespace gfx {

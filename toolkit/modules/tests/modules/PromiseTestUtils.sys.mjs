@@ -294,4 +294,13 @@ export var PromiseTestUtils = {
     // Reset the list of expected rejections in case the test suite continues.
     this._rejectionIgnoreFns = [];
   },
+
+  /**
+   * Removes all exceptions registered via allowMatchingRejectionsGlobally.
+   *
+   * This is called by the test suite at the end of each test file.
+   */
+  clearAllowedUncaughtRejections() {
+    this._globalRejectionIgnoreFns = [];
+  },
 };

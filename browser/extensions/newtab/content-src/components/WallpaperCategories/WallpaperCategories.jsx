@@ -8,6 +8,7 @@ import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 // eslint-disable-next-line no-shadow
 import { CSSTransition } from "react-transition-group";
 import { calculateTheme } from "lib/Wallpapers/WallpaperThemeUtils.mjs";
+import { WALLPAPER_CATEGORIES } from "content-src/lib/constants.mjs";
 
 const PREF_WALLPAPER_UPLOADED_PREVIOUSLY =
   "newtabWallpapers.customWallpaper.uploadedPreviously";
@@ -82,6 +83,27 @@ export class _WallpaperCategories extends React.PureComponent {
     ) {
       this.handleBack();
     }
+
+    // A CTA can deep-link into a specific wallpaper category by dispatching
+    // SHOW_PERSONALIZE with a wallpaperCategory. Open it once when it appears.
+    const requestedCategory = this.props.customizePanelWallpaperCategory;
+    if (
+      requestedCategory &&
+      requestedCategory !== prevProps.customizePanelWallpaperCategory
+    ) {
+      this.openRequestedCategory(requestedCategory);
+    }
+  }
+
+  openRequestedCategory(categoryId) {
+    const { categories } = this.props.Wallpapers;
+    const index = categories?.indexOf(categoryId) ?? -1;
+    // Category may not be available in every build/region; bail if missing.
+    if (index === -1) {
+      return;
+    }
+    this.setState({ focusedCategoryIndex: index });
+    this.openCategory(categoryId, { fromUser: false });
   }
 
   handleColorInput(event) {
@@ -271,39 +293,46 @@ export class _WallpaperCategories extends React.PureComponent {
     });
   }
 
-  handleCategory = event => {
-    this.setState({ activeCategory: event.target.id });
+  categoryFluentID(categoryId) {
+    switch (categoryId) {
+      case WALLPAPER_CATEGORIES.Abstracts:
+        return "newtab-wallpaper-category-title-abstract";
+      case WALLPAPER_CATEGORIES.Celestial:
+        return "newtab-wallpaper-category-title-celestial";
+      case WALLPAPER_CATEGORIES.Photographs:
+        return "newtab-wallpaper-category-title-photographs";
+      case WALLPAPER_CATEGORIES.SolidColors:
+        // @nova-cleanup(remove-conditional): Remove novaEnabled conditional and always use newtab-wallpaper-colors
+        return this.props.Prefs.values["nova.enabled"]
+          ? "newtab-wallpaper-colors"
+          : "newtab-wallpaper-category-title-colors";
+      case WALLPAPER_CATEGORIES.Firefox:
+        return "newtab-wallpaper-category-title-firefox";
+      default:
+        return undefined;
+    }
+  }
 
-    this.handleUserEvent(at.WALLPAPER_CATEGORY_CLICK, event.target.id);
+  // Open a wallpaper category subpanel. `fromUser` distinguishes a real category
+  // click (records telemetry) from a programmatic deep-link via a CTA.
+  openCategory(categoryId, { fromUser = true } = {}) {
+    this.setState({
+      activeCategory: categoryId,
+      activeCategoryFluentID: this.categoryFluentID(categoryId),
+    });
+
+    if (fromUser) {
+      this.handleUserEvent(at.WALLPAPER_CATEGORY_CLICK, categoryId);
+    }
 
     // Notify parent menu when subpanel opens
     if (this.props.onSubpanelToggle) {
       this.props.onSubpanelToggle(true);
     }
+  }
 
-    let fluent_id;
-    switch (event.target.id) {
-      case "abstracts":
-        fluent_id = "newtab-wallpaper-category-title-abstract";
-        break;
-      case "celestial":
-        fluent_id = "newtab-wallpaper-category-title-celestial";
-        break;
-      case "photographs":
-        fluent_id = "newtab-wallpaper-category-title-photographs";
-        break;
-      case "solid-colors":
-        // @nova-cleanup(remove-conditional): Remove novaEnabled conditional and always use newtab-wallpaper-colors
-        fluent_id = this.props.Prefs.values["nova.enabled"]
-          ? "newtab-wallpaper-colors"
-          : "newtab-wallpaper-category-title-colors";
-        break;
-      case "firefox":
-        fluent_id = "newtab-wallpaper-category-title-firefox";
-        break;
-    }
-
-    this.setState({ activeCategoryFluentID: fluent_id });
+  handleCategory = event => {
+    this.openCategory(event.target.id);
   };
 
   // Custom wallpaper image upload
@@ -461,9 +490,7 @@ export class _WallpaperCategories extends React.PureComponent {
     let arrowIconSrc;
     if (novaEnabled) {
       const isRTL = typeof document !== "undefined" && document.dir === "rtl";
-      // @backward-compat { version 151 } Switch to chrome://global/skin/icons/shaft-arrow-${dir}.svg
-      // once Firefox 151 reaches Release (icons not available in toolkit until then).
-      arrowIconSrc = `chrome://newtab/content/data/content/assets/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
+      arrowIconSrc = `chrome://global/skin/icons/shaft-arrow-${isRTL ? "right" : "left"}.svg`;
     }
     // Enable custom color select if pref'ed on
     let showColorPicker = prefs["newtabWallpapers.customColor.enabled"];
@@ -590,31 +617,13 @@ export class _WallpaperCategories extends React.PureComponent {
                 activeWallpaper.startsWith("solid-color-picker");
               const thumbnail = activeWallpaperObj || sortedList[0];
               let fluent_id;
-              switch (category) {
-                case "abstracts":
-                  fluent_id = "newtab-wallpaper-category-title-abstract";
-                  break;
-                case "celestial":
-                  fluent_id = "newtab-wallpaper-category-title-celestial";
-                  break;
-                case "custom-wallpaper":
-                  // @nova-cleanup(remove-conditional): Remove novaEnabled conditional and always use newtab-wallpaper-add-an-image
-                  fluent_id = novaEnabled
-                    ? "newtab-wallpaper-add-an-image"
-                    : "newtab-wallpaper-upload-image";
-                  break;
-                case "photographs":
-                  fluent_id = "newtab-wallpaper-category-title-photographs";
-                  break;
-                case "solid-colors":
-                  // @nova-cleanup(remove-conditional): Remove novaEnabled conditional and always use newtab-wallpaper-colors
-                  fluent_id = novaEnabled
-                    ? "newtab-wallpaper-colors"
-                    : "newtab-wallpaper-category-title-colors";
-                  break;
-                case "firefox":
-                  fluent_id = "newtab-wallpaper-category-title-firefox";
-                  break;
+              if (category === WALLPAPER_CATEGORIES.CustomWallpaper) {
+                // @nova-cleanup(remove-conditional): Remove novaEnabled conditional and always use newtab-wallpaper-add-an-image
+                fluent_id = novaEnabled
+                  ? "newtab-wallpaper-add-an-image"
+                  : "newtab-wallpaper-upload-image";
+              } else {
+                fluent_id = this.categoryFluentID(category);
               }
               let style = {};
               if (thumbnail?.wallpaperUrl) {
@@ -802,5 +811,6 @@ export const WallpaperCategories = connect(state => {
   return {
     Wallpapers: state.Wallpapers,
     Prefs: state.Prefs,
+    customizePanelWallpaperCategory: state.App.customizePanelWallpaperCategory,
   };
 })(_WallpaperCategories);

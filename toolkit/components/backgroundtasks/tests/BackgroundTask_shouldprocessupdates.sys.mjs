@@ -14,6 +14,9 @@ export async function runBackgroundTask() {
   if (get == "ShouldNotProcessUpdates(): NotAnUpdatingTask") {
     exitCode = 78;
   }
+  if (get == "ShouldNotProcessUpdates(): DisabledByEnvironment") {
+    exitCode = 77;
+  }
   console.debug(`runBackgroundTask: shouldprocessupdates`, {
     exists: Services.env.exists("MOZ_TEST_SHOULD_NOT_PROCESS_UPDATES"),
     get,

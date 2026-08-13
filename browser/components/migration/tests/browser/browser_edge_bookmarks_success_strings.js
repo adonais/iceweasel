@@ -64,7 +64,7 @@ add_task(async function test_edge_bookmarks_success_strings() {
       let messageTextElement =
         bookmarksProgressGroup.querySelector(".message-text");
 
-      await BrowserTestUtils.waitForCondition(() => {
+      await TestUtils.waitForCondition(() => {
         return messageTextElement.textContent.trim();
       });
 

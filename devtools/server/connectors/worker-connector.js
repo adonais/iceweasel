@@ -116,8 +116,11 @@ function connectToWorker(connection, dbg, forwardingPrefix, options) {
           id: dbg.id,
           name: dbg.name,
           type: dbg.type,
+          // Shared and service workers have no single owning document.
           relatedDocumentInnerWindowId:
-            dbg.window?.windowGlobalChild?.innerWindowId,
+            dbg.type === Ci.nsIWorkerDebugger.TYPE_DEDICATED
+              ? dbg.windowIDs[0]
+              : undefined,
           url: absoluteURL,
           // We don't have access to Services.prefs in Worker thread, so pass its value
           // from here.

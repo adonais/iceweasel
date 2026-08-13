@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.components.menu.compose
 
-import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,27 +14,15 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.rememberNestedScrollInteropConnection
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.BottomSheetHandle
-import mozilla.components.compose.cfr.CFRPopup
-import mozilla.components.compose.cfr.CFRPopupLayout
-import mozilla.components.compose.cfr.CFRPopupProperties
-import org.mozilla.fenix.components.appstate.OrientationMode
-import org.mozilla.fenix.theme.FirefoxTheme
-
-private const val CFR_HORIZONTAL_OFFSET = 160
-private const val CFR_VERTICAL_OFFSET_LANDSCAPE = 0
-private const val CFR_VERTICAL_OFFSET_PORTRAIT = -6
 
 /**
  * The menu dialog bottom sheet.
@@ -46,8 +33,6 @@ private const val CFR_VERTICAL_OFFSET_PORTRAIT = -6
  * @param menuHandleState Configuration of the handle to use for the menu layout.
  * @param snackbarHostState The [SnackbarHostState] to display snackbars in.
  * @param cornerShape The shape of the bottom sheet's top corners.
- * @param menuCfrState An optional [MenuCFRState] that describes how to display a
- * contextual feature recommendation (CFR) popup in the menu.
  * @param content The children composable to be laid out.
  */
 @Composable
@@ -60,7 +45,6 @@ fun MenuDialogBottomSheet(
         bottomStart = CornerSize(0.dp),
         bottomEnd = CornerSize(0.dp),
     ),
-    menuCfrState: MenuCFRState? = null,
     content: @Composable () -> Unit,
 ) {
     Box {
@@ -72,16 +56,7 @@ fun MenuDialogBottomSheet(
                 )
                 .nestedScroll(rememberNestedScrollInteropConnection()),
         ) {
-            if (menuCfrState?.showCFR == true) {
-                CFRBottomSheetHandle(
-                    modifier = modifier,
-                    state = menuCfrState,
-                    onRequestDismiss = onRequestDismiss,
-                    contentDescription = menuHandleState.contentDescription,
-                    isMenuDragBarDark = menuHandleState.useDarkBackground,
-                    cornerShape = cornerShape,
-                )
-            } else if (menuHandleState.visible) {
+            if (menuHandleState.visible) {
                 MenuBottomSheetHandle(
                     modifier = modifier,
                     onRequestDismiss = onRequestDismiss,
@@ -133,90 +108,6 @@ private fun MenuBottomSheetHandle(
         )
     }
 }
-
-/**
- * A handle present on top of a bottom sheet that will also serves as a anchor for the CFR.
- */
-@Composable
-private fun CFRBottomSheetHandle(
-    modifier: Modifier = Modifier,
-    state: MenuCFRState,
-    contentDescription: String,
-    onRequestDismiss: () -> Unit,
-    isMenuDragBarDark: Boolean,
-    cornerShape: Shape = MaterialTheme.shapes.large.copy(
-        bottomStart = CornerSize(0.dp),
-        bottomEnd = CornerSize(0.dp),
-    ),
-) {
-    val (indicatorDirection, verticalOffset) = when (state.orientation) {
-        OrientationMode.Landscape -> CFRPopup.IndicatorDirection.UP to CFR_VERTICAL_OFFSET_LANDSCAPE
-        else -> CFRPopup.IndicatorDirection.DOWN to CFR_VERTICAL_OFFSET_PORTRAIT
-    }
-
-    CFRPopupLayout(
-        showCFR = state.showCFR,
-        properties = CFRPopupProperties(
-            popupAlignment = CFRPopup.PopupAlignment.INDICATOR_CENTERED_IN_ANCHOR,
-            popupBodyColors = listOf(
-                FirefoxTheme.colors.layerGradientEnd.toArgb(),
-                FirefoxTheme.colors.layerGradientStart.toArgb(),
-            ),
-            dismissButtonColor = FirefoxTheme.colors.iconOnColor.toArgb(),
-            indicatorDirection = indicatorDirection,
-            popupVerticalOffset = verticalOffset.dp,
-            indicatorArrowStartOffset = CFR_HORIZONTAL_OFFSET.dp,
-        ),
-        onCFRShown = state.onShown,
-        onDismiss = state.onDismiss,
-        title = {
-            FirefoxTheme {
-                Text(
-                    text = stringResource(id = state.titleRes),
-                    color = FirefoxTheme.colors.textOnColorPrimary,
-                    style = FirefoxTheme.typography.subtitle2,
-                )
-            }
-        },
-        text = {
-            FirefoxTheme {
-                Text(
-                    text = stringResource(id = state.messageRes),
-                    color = FirefoxTheme.colors.textOnColorPrimary,
-                    style = FirefoxTheme.typography.body2,
-                )
-            }
-        },
-    ) {
-        MenuBottomSheetHandle(
-            modifier = modifier,
-            onRequestDismiss = onRequestDismiss,
-            contentDescription = contentDescription,
-            isMenuDragBarDark = isMenuDragBarDark,
-            cornerShape = cornerShape,
-        )
-    }
-}
-
-/**
- * State object that describe the contextual feature recommendation (CFR) popup in the menu.
- *
- * @property showCFR Whether or not to display the CFR.
- * @property titleRes The string resource ID of the title to display in the CFR.
- * @property messageRes The string resource ID of the message to display in the CFR body.
- * @property orientation The [OrientationMode] of the device.
- * @property onShown Invoked when the CFR is shown.
- * @property onDismiss Invoked when the CFR is dismissed. Returns true if the dismissal was
- * explicit (e.g. user clicked on the "X" close button).
- */
-data class MenuCFRState(
-    val showCFR: Boolean,
-    @param:StringRes val titleRes: Int,
-    @param:StringRes val messageRes: Int,
-    val orientation: OrientationMode,
-    val onShown: () -> Unit,
-    val onDismiss: (Boolean) -> Unit,
-)
 
 /**
  * Configuration of the handle to use for the menu layout.

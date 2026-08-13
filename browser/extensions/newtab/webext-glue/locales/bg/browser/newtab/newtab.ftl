@@ -81,6 +81,16 @@ home-prefs-weather-header-srd =
 home-prefs-support-firefox-header-srd =
     .label = Подкрепете { -brand-product-name }
 
+## Strings for the Privacy widget
+
+# Context menu item linking to more information about the Privacy widget.
+newtab-privacy-menu-learn-more = Научете повече
+
+## Strings for the Picture of the Day widget
+
+# Context menu item linking to more information about the widget.
+newtab-picture-menu-learn-more = Научете повече
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -396,6 +406,8 @@ newtab-recommended-stories-toggle =
     .label = Препоръчани истории
 newtab-custom-stories-personalized-toggle =
     .label = Истории
+newtab-custom-stories-personalized-checkbox =
+    .label = Персонализирани истории въз основа на вашата активност
 newtab-custom-stories-personalized-checkbox-label = Персонализирани истории въз основа на вашата активност
 newtab-custom-pocket-sponsored = Платени публикации
 newtab-custom-pocket-show-recent-saves = Показване на последните запазени
@@ -410,6 +422,8 @@ newtab-custom-widget-lists-toggle =
     .label = Списъци
 newtab-custom-widget-timer-toggle =
     .label = Таймер
+newtab-custom-widget-privacy-toggle =
+    .label = Поверителност
 # Tooltip for close button
 newtab-custom-close-menu-button =
     .title = Затваряне

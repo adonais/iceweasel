@@ -4,14 +4,11 @@
 
 #include <stdio.h>
 
-#include "gtest/gtest.h"
-
+#include "cairo.h"
 #include "gfxASurface.h"
 #include "gfxImageSurface.h"
-
+#include "gtest/gtest.h"
 #include "nsISupportsUtils.h"  // for NS_ADDREF
-
-#include "cairo.h"
 
 static int GetASurfaceRefCount(gfxASurface* s) {
   NS_ADDREF(s);

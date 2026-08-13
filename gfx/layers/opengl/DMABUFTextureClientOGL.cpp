@@ -3,8 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "DMABUFTextureClientOGL.h"
-#include "mozilla/widget/DMABufSurface.h"
+
 #include "gfxPlatform.h"
+#include "mozilla/widget/DMABufSurface.h"
 
 namespace mozilla::layers {
 

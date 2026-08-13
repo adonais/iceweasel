@@ -1,0 +1,22 @@
+{
+  "label": "bambulab.com",
+  "bugs": {
+    "1940173": {
+      "issue": "broken-images",
+      "matches": ["*://bambulab.com/*"]
+    }
+  },
+  "css": {
+    "fix_image_flickering": "img.scrollVideoImg { -moz-image-decoding: sync }"
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "min_version": 154,
+      "css": {
+        "user_styles": true,
+        "which": ["fix_image_flickering"]
+      }
+    }
+  ]
+}

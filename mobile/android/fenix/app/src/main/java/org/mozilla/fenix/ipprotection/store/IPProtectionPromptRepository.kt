@@ -52,11 +52,9 @@ interface IPProtectionPromptRepository {
  * Default implementation of [IPProtectionPromptRepository].
  *
  * @param settings the preferences settings
- * @param installedTimeMillis returns the application installation timestamp (epoch milliseconds).
  */
 class DefaultIPProtectionPromptRepository(
     private val settings: Settings,
-    private val installedTimeMillis: () -> Long,
 ) : IPProtectionPromptRepository {
 
     override var isShowingPrompt = false
@@ -71,9 +69,12 @@ class DefaultIPProtectionPromptRepository(
         get() = settings.hasAlreadyUsedVpn
 
     override fun canShowIPProtectionPrompt(currentTimeMillis: Long): Boolean =
-        settings.isIPProtectionAvailable && isInstalledAtLeastAWeekAgo(currentTimeMillis) &&
-            !isShowingPrompt && !hasShownPrompt && !hasAlreadyUsedIPProtection
+        settings.isIPProtectionAvailable &&
+            completedOnboardingOverAWeekAgo(currentTimeMillis) &&
+            !isShowingPrompt &&
+            !hasShownPrompt &&
+            !hasAlreadyUsedIPProtection
 
-    private fun isInstalledAtLeastAWeekAgo(currentTimeMillis: Long): Boolean =
-        currentTimeMillis - installedTimeMillis() >= ONE_WEEK_MS
+    private fun completedOnboardingOverAWeekAgo(currentTimeMillis: Long): Boolean =
+        currentTimeMillis - settings.onboardingCompletedTimestamp > ONE_WEEK_MS
 }

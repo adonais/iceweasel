@@ -5,8 +5,8 @@
 #ifndef GFX_PLATFORM_WORKER_H
 #define GFX_PLATFORM_WORKER_H
 
-#include "mozilla/ThreadLocal.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/ThreadLocal.h"
 
 namespace mozilla {
 namespace dom {

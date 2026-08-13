@@ -5,8 +5,8 @@
 #ifndef nsNetAddr_h_
 #define nsNetAddr_h_
 
-#include "nsINetAddr.h"
 #include "mozilla/net/DNS.h"
+#include "nsINetAddr.h"
 
 class nsNetAddr final : public nsINetAddr {
   ~nsNetAddr() = default;

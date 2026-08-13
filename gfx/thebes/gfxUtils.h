@@ -5,21 +5,21 @@
 #ifndef GFX_UTILS_H
 #define GFX_UTILS_H
 
+#include "ImageTypes.h"
 #include "gfxMatrix.h"
 #include "gfxRect.h"
 #include "gfxTypes.h"
-#include "ImageTypes.h"
 #include "imgIContainer.h"
-#include "mozilla/gfx/2D.h"
+#include "mozilla/CheckedInt.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/Rect.h"
+#include "mozilla/webrender/WebRenderTypes.h"
 #include "nsColor.h"
 #include "nsContentUtils.h"
 #include "nsPrintfCString.h"
 #include "nsRegionFwd.h"
-#include "mozilla/gfx/Rect.h"
-#include "mozilla/CheckedInt.h"
-#include "mozilla/webrender/WebRenderTypes.h"
 #include "qcms.h"
 
 class gfxASurface;

@@ -142,6 +142,9 @@ const COMMON_PREFERENCES = new Map([
   // thumbnails in general cannot hurt
   ["browser.pagethumbnails.capturing_disabled", true],
 
+  // Do not show the preonboarding modal/splash which can interfere with tests
+  ["browser.preonboarding.enabled", false],
+
   // Disable geolocation ping(#1)
   ["browser.region.network.url", ""],
 

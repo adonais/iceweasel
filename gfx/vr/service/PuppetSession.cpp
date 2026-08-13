@@ -4,12 +4,13 @@
 
 #include "PuppetSession.h"
 
-#include "nsString.h"
 #include "VRPuppetCommandBuffer.h"
 #include "mozilla/StaticPrefs_dom.h"
+#include "nsString.h"
 
 #if defined(XP_WIN)
 #  include <d3d11.h>
+
 #  include "mozilla/gfx/DeviceManagerDx.h"
 #elif defined(XP_MACOSX)
 #  include "mozilla/gfx/MacIOSurface.h"

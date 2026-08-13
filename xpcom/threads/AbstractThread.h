@@ -7,9 +7,9 @@
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/ThreadLocal.h"
-#include "nscore.h"
 #include "nsISerialEventTarget.h"
 #include "nsISupports.h"
+#include "nscore.h"
 
 class nsIEventTarget;
 class nsIRunnable;

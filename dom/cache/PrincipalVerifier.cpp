@@ -99,7 +99,7 @@ void PrincipalVerifier::VerifyOnMainThread() {
       [this](const nsresult result) { DispatchToInitiatingThread(result); });
 
   if (NS_WARN_IF(mHandle && !ValidatePrincipalCouldPotentiallyBeLoadedBy(
-                                principal, mHandle->GetRemoteType(), {}))) {
+                                principal, mHandle->GetRemoteType()))) {
     DispatchToInitiatingThread(NS_ERROR_FAILURE);
     return;
   }

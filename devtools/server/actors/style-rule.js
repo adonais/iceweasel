@@ -1683,11 +1683,14 @@ class StyleRuleActor extends Actor {
    * @returns Array<string>
    */
   getCssExplainersData(expression, pseudo, inheritedNode) {
-    return InspectorUtils.getComputationSteps(
-      expression,
-      inheritedNode?.rawNode || this.currentlySelectedElement,
-      pseudo
-    );
+    let element = inheritedNode?.rawNode || this.currentlySelectedElement;
+    // If we have a pseudo element, we want to pass its binding element
+    // to the InspectorUtils method
+    if (element.implementedPseudoElement) {
+      element =
+        SharedCssLogic.getBindingElementAndPseudo(element).bindingElement;
+    }
+    return InspectorUtils.getComputationSteps(expression, element, pseudo);
   }
 }
 exports.StyleRuleActor = StyleRuleActor;

@@ -8,6 +8,7 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 const lazy = XPCOMUtils.declareLazy({
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
 
@@ -195,7 +196,7 @@ export class UrlbarSearchOneOffs extends SearchOneOffs {
     let startQueryParams = {
       allowAutofill:
         !searchMode.engineName &&
-        searchMode.source != lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
+        searchMode.source != lazy.UrlbarShared.RESULT_SOURCE.SEARCH,
       event,
     };
 

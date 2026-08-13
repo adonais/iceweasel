@@ -18,6 +18,7 @@ export default class OutlineFilter extends Component {
     return {
       filter: PropTypes.string.isRequired,
       updateFilter: PropTypes.func.isRequired,
+      selectedSource: PropTypes.object.isRequired,
     };
   }
 
@@ -44,6 +45,10 @@ export default class OutlineFilter extends Component {
 
   render() {
     const { focused } = this.state;
+    const { selectedSource } = this.props;
+    if (!selectedSource) {
+      return null;
+    }
     return div(
       {
         className: "outline-filter",
@@ -56,7 +61,9 @@ export default class OutlineFilter extends Component {
           }),
           onFocus: () => this.setFocus(true),
           onBlur: () => this.setFocus(false),
-          placeholder: L10N.getStr("outline.placeholder"),
+          placeholder: selectedSource.isStyleSheet
+            ? L10N.getStr("outline.placeholder.atRules")
+            : L10N.getStr("outline.placeholder.functions"),
           value: this.props.filter,
           type: "text",
           onChange: this.onChange,

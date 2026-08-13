@@ -13,15 +13,20 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 const SLEEP_TOPIC = "sleep_notification";
 const WAKE_TOPIC = "wake_notification";
+const BACKGROUND_TOPIC = "application-background";
+const FOREGROUND_TOPIC = "application-foreground";
 
 /**
- * Keeps the proxy connection healthy across system sleep/wake.
+ * Keeps the proxy connection healthy across interruptions that can drop the
+ * underlying network: system sleep/wake on desktop and the app moving to the
+ * background/foreground on Android.
  *
- * While ACTIVE, suspends the channel filter on sleep and, on wake, resumes it if
- * the pass is still good or rotates otherwise.
+ * While ACTIVE, suspends the channel filter when going to sleep/background and,
+ * on wake/foreground, resumes it if the pass is still good or rotates otherwise.
  */
 export class IPPLifeCycleHelperClass {
   #observing = false;
+  #suspended = false;
 
   constructor() {
     this.handleEvent = this.#handleEvent.bind(this);
@@ -61,6 +66,8 @@ export class IPPLifeCycleHelperClass {
     }
     Services.obs.addObserver(this, SLEEP_TOPIC);
     Services.obs.addObserver(this, WAKE_TOPIC);
+    Services.obs.addObserver(this, BACKGROUND_TOPIC);
+    Services.obs.addObserver(this, FOREGROUND_TOPIC);
     this.#observing = true;
   }
 
@@ -70,21 +77,35 @@ export class IPPLifeCycleHelperClass {
     }
     Services.obs.removeObserver(this, SLEEP_TOPIC);
     Services.obs.removeObserver(this, WAKE_TOPIC);
+    Services.obs.removeObserver(this, BACKGROUND_TOPIC);
+    Services.obs.removeObserver(this, FOREGROUND_TOPIC);
     this.#observing = false;
+    this.#suspended = false;
+  }
+
+  /**
+   * True while the device is asleep or the app is backgrounded, i.e. between a
+   * sleep/background notification and the following wake/foreground one.
+   */
+  get isSuspended() {
+    return this.#suspended;
   }
 
   observe(_subject, topic) {
     switch (topic) {
       case SLEEP_TOPIC:
+      case BACKGROUND_TOPIC:
         this.#onSleep();
         break;
       case WAKE_TOPIC:
+      case FOREGROUND_TOPIC:
         this.#onWake();
         break;
     }
   }
 
   #onSleep() {
+    this.#suspended = true;
     const channelFilter = lazy.IPPProxyManager.channelFilter();
     if (!channelFilter?.active) {
       return;
@@ -93,6 +114,7 @@ export class IPPLifeCycleHelperClass {
   }
 
   #onWake() {
+    this.#suspended = false;
     const channelFilter = lazy.IPPProxyManager.channelFilter();
     if (!channelFilter?.active) {
       return;

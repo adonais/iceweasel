@@ -6,6 +6,7 @@
 #define MOZILLA_GFX_HELPERSWIN_H_
 
 #include <dxgiformat.h>
+
 #include "2D.h"
 
 namespace mozilla {

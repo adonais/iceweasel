@@ -6,8 +6,8 @@
 
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Components.h"
-#include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/StaticPrefs_privacy.h"
+#include "mozilla/dom/WindowGlobalParent.h"
 #include "nsIChannel.h"
 #include "nsIClassifiedChannel.h"
 #include "nsIHttpChannelInternal.h"

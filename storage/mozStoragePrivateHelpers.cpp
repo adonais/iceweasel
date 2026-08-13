@@ -103,18 +103,11 @@ void checkAndLogStatementPerformance(sqlite3_stmt* aStatement) {
 
 #define STORAGE_WARNINGS_URL \
   "https://firefox-source-docs.mozilla.org/storage/warnings.html"
-#ifdef MOZ_STORAGE_SORTWARNING_SQL_DUMP
   NS_WARNING(nsPrintfCString("Suboptimal indexes for the SQL statement `%s` "
                              "[%d sort operation(s)] (" STORAGE_WARNINGS_URL
                              ").",
                              sql, count)
                  .get());
-#else
-  NS_WARNING(nsPrintfCString("Suboptimal indexes for the SQL statement 0x%p "
-                             "(" STORAGE_WARNINGS_URL ").",
-                             aStatement)
-                 .get());
-#endif
 #undef STORAGE_WARNINGS_URL
 }
 

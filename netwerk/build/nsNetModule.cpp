@@ -4,22 +4,21 @@
 
 #define ALLOW_LATE_HTTPLOG_H_INCLUDE 1
 #include "base/basictypes.h"
-
-#include "nsCOMPtr.h"
-#include "nsIClassInfoImpl.h"
 #include "mozilla/Components.h"
 #include "mozilla/ModuleUtils.h"
-#include "nscore.h"
-#include "nsSimpleURI.h"
-#include "nsLoadGroup.h"
-#include "nsMimeTypes.h"
-#include "nsDNSPrefetch.h"
-#include "nsXULAppAPI.h"
-#include "nsCategoryCache.h"
-#include "nsIContentSniffer.h"
-#include "nsStandardURL.h"
 #include "mozilla/net/BackgroundChannelRegistrar.h"
 #include "mozilla/net/NeckoChild.h"
+#include "nsCOMPtr.h"
+#include "nsCategoryCache.h"
+#include "nsDNSPrefetch.h"
+#include "nsIClassInfoImpl.h"
+#include "nsIContentSniffer.h"
+#include "nsLoadGroup.h"
+#include "nsMimeTypes.h"
+#include "nsSimpleURI.h"
+#include "nsStandardURL.h"
+#include "nsXULAppAPI.h"
+#include "nscore.h"
 #ifdef MOZ_AUTH_EXTENSION
 #  include "nsAuthGSSAPI.h"
 #endif
@@ -48,13 +47,13 @@ NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(nsLoadGroup, Init)
 ///////////////////////////////////////////////////////////////////////////////
 
 // http/https
-#include "nsHttpHandler.h"
 #include "Http2Compression.h"
+#include "nsHttpHandler.h"
 #undef LOG
 #undef LOG_ENABLED
-#include "nsHttpAuthManager.h"
-#include "nsHttpActivityDistributor.h"
 #include "ThrottleQueue.h"
+#include "nsHttpActivityDistributor.h"
+#include "nsHttpAuthManager.h"
 #undef LOG
 #undef LOG_ENABLED
 
@@ -102,10 +101,10 @@ WEB_SOCKET_HANDLER_CONSTRUCTOR(WebSocketSSLChannel, true)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "nsStreamConverterService.h"
-#include "nsMultiMixedConv.h"
-#include "nsHTTPCompressConv.h"
 #include "mozTXTToHTMLConv.h"
+#include "nsHTTPCompressConv.h"
+#include "nsMultiMixedConv.h"
+#include "nsStreamConverterService.h"
 #include "nsUnknownDecoder.h"
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -6,15 +6,15 @@
 
 #include "AccIterator.h"
 #include "HTMLTableAccessible.h"
-#include "mozilla/a11y/DocAccessibleParent.h"
+#include "Pivot.h"
+#include "RemoteAccessible.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/a11y/DocAccessibleParent.h"
 #include "nsAccUtils.h"
 #include "nsIAccessiblePivot.h"
 #include "nsThreadUtils.h"
-#include "Pivot.h"
-#include "RemoteAccessible.h"
 
 namespace mozilla::a11y {
 
@@ -29,7 +29,7 @@ class MOZ_STACK_CLASS TablePartRule : public PivotRule {
       MOZ_ASSERT(aAcc->IsTable());
       return nsIAccessibleTraversalRule::FILTER_IGNORE;
     }
-    if (aAcc->IsTable()) {
+    if (aAcc->IsTable() || aAcc->IsOuterDoc() || aAcc->IsDoc()) {
       // Don't walk inside nested tables at all.
       return nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
     }
@@ -283,7 +283,7 @@ CachedTableCellAccessible* CachedTableCellAccessible::GetFrom(
 Accessible* CachedTableCellAccessible::Acc(Accessible* aTableAcc) const {
   Accessible* acc =
       nsAccUtils::GetAccessibleByID(nsAccUtils::DocumentFor(aTableAcc), mAccID);
-  MOZ_DIAGNOSTIC_ASSERT(acc == mAcc, "Cell's cached mAcc is dead!");
+  MOZ_RELEASE_ASSERT(acc == mAcc, "Cell's cached mAcc is dead!");
   return acc;
 }
 

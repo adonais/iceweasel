@@ -8,6 +8,8 @@ prefs = [
 support-files = [
   "head.js",
   "head_history_thumbnails.js",
+  "test_agent_monitor_item_page.html",
+  "test_agent_monitor_item.mjs",
   "test_ai_action_result_page.html",
   "test_ai_action_result.mjs",
   "test_assistant_message_footer_page.html",
@@ -17,6 +19,8 @@ support-files = [
   "test_kit_mention_page.html",
   "test_memories_icon_button_page.html",
   "test_memories_icon_button.mjs",
+  "test_grouped_chips_page.html",
+  "test_grouped_chips.mjs",
   "test_smartwindow_panel_list_page.html",
   "test_smartwindow_panel_list.mjs",
   "test_website_chip_page.html",
@@ -27,7 +31,8 @@ support-files = [
   "test_website_confirmation.mjs",
   "test_aiwindow_tab_close_integration.html",
   "test_context_url_page.html",
-  "test_context_url_page2.html"
+  "test_context_url_page2.html",
+  "test_context_url_injection_page.html"
 ]
 
 ["browser_actor_user_prompt.js"]
@@ -54,6 +59,8 @@ support-files = [
 
 ["browser_aiwindow_account_auth.js"]
 
+["browser_aiwindow_agent_monitor_item.js"]
+
 ["browser_aiwindow_ai_action_result.js"]
 
 ["browser_aiwindow_aifeature_contract.js"]
@@ -73,6 +80,15 @@ skip-if = [
 ]
 
 ["browser_aiwindow_followup_tokens.js"]
+
+["browser_aiwindow_group_tabs_button.js"]
+skip-if = [
+  "verify", # Bug 2060705
+]
+
+["browser_aiwindow_grouped_chips.js"]
+
+["browser_aiwindow_history_menu.js"]
 
 ["browser_aiwindow_immersive.js"]
 
@@ -96,9 +112,13 @@ skip-if = [
 
 ["browser_aiwindow_smartbar_ask.js"]
 
+["browser_aiwindow_smartbar_autofill.js"]
+
 ["browser_aiwindow_smartbar_chat_active_navigate.js"]
 
 ["browser_aiwindow_smartbar_context_chips.js"]
+
+["browser_aiwindow_smartbar_context_paste.js"]
 
 ["browser_aiwindow_smartbar_focus.js"]
 
@@ -111,6 +131,8 @@ skip-if = [
 ["browser_aiwindow_smartbar_keyboard_navigation.js"]
 
 ["browser_aiwindow_smartbar_placeholder.js"]
+
+["browser_aiwindow_smartbar_quicksuggest.js"]
 
 ["browser_aiwindow_smartbar_suggestions.js"]
 
@@ -153,6 +175,14 @@ skip-if = [
 
 ["browser_security_chat.js"]
 
+["browser_security_get_open_tabs.js"]
+
+["browser_security_get_user_memories.js"]
+
+["browser_security_run_search.js"]
+
+["browser_security_search_browsing_history.js"]
+
 ["browser_sidebar_aiwindow.js"]
 
 ["browser_smartwindow_abort_on_tab_close.js"]
@@ -181,6 +211,8 @@ skip-if = [
 
 ["browser_smartwindow_footer.js"]
 
+["browser_smartwindow_get_page_content_timeout.js"]
+
 ["browser_smartwindow_history_commands.js"]
 
 ["browser_smartwindow_history_thumbnails.js"]
@@ -195,6 +227,8 @@ skip-if = [
 skip-if = [
   "debug && standalone", # Bug 2025711
 ]
+
+["browser_smartwindow_manage_tabs_tool.js"]
 
 ["browser_smartwindow_metrics_telemetry.js"]
 
@@ -223,7 +257,11 @@ skip-if = [
 
 ["browser_smartwindow_sidebar_auto_open_pref_prompt.js"]
 
+["browser_smartwindow_smartbar_contextmenu_autofill_dismiss.js"]
+
 ["browser_smartwindow_smartbar_glow.js"]
+
+["browser_smartwindow_smartbar_mentions_filter.js"]
 
 ["browser_smartwindow_smartbar_model_select.js"]
 

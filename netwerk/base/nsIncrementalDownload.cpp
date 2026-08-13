@@ -2,36 +2,35 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/TaskQueue.h"
-#include "mozilla/UniquePtrExtensions.h"
-#include "mozilla/UniquePtr.h"
+#include <algorithm>
 
-#include "nsIIncrementalDownload.h"
-#include "nsIRequestObserver.h"
-#include "nsIProgressEventSink.h"
-#include "nsIChannelEventSink.h"
+#include "mozilla/Logging.h"
+#include "mozilla/TaskQueue.h"
+#include "mozilla/UniquePtr.h"
+#include "mozilla/UniquePtrExtensions.h"
+#include "nsContentUtils.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
+#include "nsIChannelEventSink.h"
+#include "nsIContentPolicy.h"
+#include "nsIFile.h"
+#include "nsIHttpChannel.h"
+#include "nsIIncrementalDownload.h"
+#include "nsIInputStream.h"
 #include "nsIInterfaceRequestor.h"
-#include "nsIObserverService.h"
+#include "nsIOService.h"
 #include "nsIObserver.h"
+#include "nsIObserverService.h"
+#include "nsIProgressEventSink.h"
+#include "nsIRequestObserver.h"
 #include "nsIStreamListener.h"
 #include "nsIThreadRetargetableRequest.h"
 #include "nsIThreadRetargetableStreamListener.h"
-#include "nsIFile.h"
-#include "nsIHttpChannel.h"
-#include "nsIOService.h"
 #include "nsITimer.h"
 #include "nsIURI.h"
-#include "nsIInputStream.h"
 #include "nsNetUtil.h"
 #include "nsWeakReference.h"
 #include "prio.h"
 #include "prprf.h"
-#include <algorithm>
-#include "nsIContentPolicy.h"
-#include "nsContentUtils.h"
-#include "mozilla/Logging.h"
-#include "mozilla/UniquePtr.h"
 
 // Default values used to initialize a nsIncrementalDownload object.
 #define DEFAULT_CHUNK_SIZE (4096 * 16)  // bytes

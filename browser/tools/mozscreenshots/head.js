@@ -56,8 +56,11 @@ function shouldCapture() {
     return false;
   }
 
-  if (AppConstants.MOZ_UPDATE_CHANNEL == "nightly") {
-    ok(true, "Screenshots aren't captured on Nightlies");
+  if (!Services.env.get("MOZ_UPLOAD_DIR")) {
+    ok(
+      true,
+      "Screenshots are only captured when there's a directory to upload them to"
+    );
     return false;
   }
 

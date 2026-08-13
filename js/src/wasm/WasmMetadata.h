@@ -43,7 +43,6 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   // Constant parameters for the entire compilation.  These are not marked
   // `const` only because it breaks constructor delegation in
   // CodeMetadata::CodeMetadata, which is a shame.
-  ModuleKind kind;
 
   // The compile arguments that were used for this module.
   SharedCompileArgs compileArgs;
@@ -92,11 +91,6 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   // be used to lookup exported functions on an instance.
   Uint32Vector exportedFuncIndices;
 
-  // asm.js tables are homogenous and only store functions of the same type.
-  // This maps from a function type to the table index to use for an indirect
-  // call.
-  Uint32Vector asmJSSigToTableIndex;
-
   // Branch hints to apply to functions
   BranchHintCollection branchHints;
 
@@ -135,10 +129,8 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   // The total size of the instance data.
   uint32_t instanceDataLength;
 
-  explicit CodeMetadata(const CompileArgs* compileArgs = nullptr,
-                        ModuleKind kind = ModuleKind::Wasm)
-      : kind(kind),
-        compileArgs(compileArgs),
+  explicit CodeMetadata(const CompileArgs* compileArgs = nullptr)
+      : compileArgs(compileArgs),
         numFuncImports(0),
         funcImportsAreJS(false),
         numGlobalImports(0),
@@ -163,7 +155,6 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   [[nodiscard]] bool prepareForCompile(CompileMode mode);
   bool isPreparedForCompile() const { return instanceDataLength != UINT32_MAX; }
 
-  bool isAsmJS() const { return kind == ModuleKind::AsmJS; }
   // A builtin module is a host constructed wasm module that exports host
   // functionality, using special opcodes. Otherwise, it has the same rules
   // as wasm modules and so it does not get a new ModuleKind.
@@ -182,7 +173,7 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   bool simdAvailable() const { return features().simd; }
 
   bool hugeMemoryEnabled(uint32_t memoryIndex) const {
-    return !isAsmJS() && memoryIndex < memories.length() &&
+    return memoryIndex < memories.length() &&
            IsHugeMemoryEnabled(memories[memoryIndex].addressType(),
                                memories[memoryIndex].pageSize());
   }
@@ -237,11 +228,9 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
     return 0;
   }
 
-  // This gets names for wasm only.
-  // For asm.js, see CodeMetadataForAsmJS::getFuncNameForAsmJS.
-  bool getFuncNameForWasm(NameContext ctx, uint32_t funcIndex,
-                          const ShareableBytes* nameSectionPayload,
-                          UTF8Bytes* name) const;
+  bool getFuncName(NameContext ctx, uint32_t funcIndex,
+                   const ShareableBytes* nameSectionPayload,
+                   UTF8Bytes* name) const;
 
   uint32_t offsetOfFuncDefInstanceData(uint32_t funcIndex) const {
     MOZ_RELEASE_ASSERT(funcIndex >= numFuncImports && funcIndex < numFuncs());
@@ -441,8 +430,8 @@ struct ModuleMetadata : public ShareableBase<ModuleMetadata> {
   // has been downloaded.
   MutableCodeTailMetadata codeTailMeta;
 
-  // Module fields decoded from the module environment (or initialized while
-  // validating an asm.js module) and immutable during compilation:
+  // Module fields decoded from the module environment and immutable during
+  // compilation.
   ImportVector imports;
   ExportVector exports;
 
@@ -466,20 +455,20 @@ struct ModuleMetadata : public ShareableBase<ModuleMetadata> {
 
   explicit ModuleMetadata() = default;
 
-  [[nodiscard]] bool init(const CompileArgs& compileArgs,
-                          ModuleKind kind = ModuleKind::Wasm) {
-    codeMeta = js_new<CodeMetadata>(&compileArgs, kind);
+  [[nodiscard]] bool init(const CompileArgs& compileArgs) {
+    codeMeta = js_new<CodeMetadata>(&compileArgs);
     return !!codeMeta && codeMeta->init();
   }
 
-  bool addDefinedFunc(ValTypeVector&& params, ValTypeVector&& results,
-                      bool declareForRef = false,
-                      mozilla::Maybe<CacheableName>&& optionalExportedName =
-                          mozilla::Nothing());
-  bool addDefinedFuncWithType(uint32_t funcTypeIndex,
-                              bool declareForRef = false,
-                              mozilla::Maybe<CacheableName>&&
-                                  optionalExportedName = mozilla::Nothing());
+  [[nodiscard]] bool addDefinedFunc(
+      ValTypeVector&& params, ValTypeVector&& results,
+      bool declareForRef = false,
+      mozilla::Maybe<CacheableName>&& optionalExportedName =
+          mozilla::Nothing());
+  [[nodiscard]] bool addDefinedFuncWithType(
+      uint32_t funcTypeIndex, bool declareForRef = false,
+      mozilla::Maybe<CacheableName>&& optionalExportedName =
+          mozilla::Nothing());
   bool addImportedFunc(ValTypeVector&& params, ValTypeVector&& results,
                        CacheableName&& importModName,
                        CacheableName&& importFieldName);

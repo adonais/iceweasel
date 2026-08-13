@@ -18,7 +18,6 @@ add_task(
       gDebuggee = debuggee;
 
       await gThreadFront.reconfigure({
-        observeAsmJS: true,
         observeWasm: true,
       });
 

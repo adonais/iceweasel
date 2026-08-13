@@ -79,7 +79,7 @@ dependencies {
 
 // Arrange for the doclet jar to be included in Java resources, to be consumed
 // at runtime.
-val docletJar by configurations.creating
+val docletJar = configurations.create("docletJar")
 
 dependencies {
     docletJar(project(path = ":apidoc-plugin", configuration = "docletJar"))

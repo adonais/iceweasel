@@ -6,9 +6,9 @@
 #define HTTPSRecordResolver_h_
 
 #include "mozilla/Mutex.h"
+#include "nsHttpConnectionInfo.h"
 #include "nsICancelable.h"
 #include "nsIDNSListener.h"
-#include "nsHttpConnectionInfo.h"
 
 class nsIDNSAddrRecord;
 class nsIDNSHTTPSSVCRecord;

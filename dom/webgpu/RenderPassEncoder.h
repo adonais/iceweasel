@@ -28,16 +28,17 @@ namespace ffi {
 struct WGPURecordedRenderPass;
 }  // namespace ffi
 
+RawId BeginFfiRenderPass(ffi::WGPUClient* aClient, RawId aDeviceId,
+                         RawId aEncoderId,
+                         const dom::GPURenderPassDescriptor& aDesc);
+
 class BindGroup;
 class Buffer;
 class CommandEncoder;
 class RenderBundle;
 class RenderPipeline;
 class TextureView;
-
-struct ffiWGPURenderPassDeleter {
-  void operator()(ffi::WGPURecordedRenderPass*);
-};
+class ExternalTexture;
 
 class RenderPassEncoder final : public nsWrapperCache,
                                 public ObjectBase,
@@ -46,35 +47,22 @@ class RenderPassEncoder final : public nsWrapperCache,
   GPU_DECL_CYCLE_COLLECTION(RenderPassEncoder)
   GPU_DECL_JS_WRAP(RenderPassEncoder)
 
-  RenderPassEncoder(CommandEncoder* const aParent, RawId aId,
-                    const dom::GPURenderPassDescriptor& aDesc);
+  RenderPassEncoder(CommandEncoder* const aParent, RawId aId);
 
  protected:
   virtual ~RenderPassEncoder();
 
-  std::unique_ptr<ffi::WGPURecordedRenderPass, ffiWGPURenderPassDeleter> mPass;
-  // keep all the used objects alive while the pass is recorded
-  nsTArray<RefPtr<const BindGroup>> mUsedBindGroups;
-  nsTArray<RefPtr<const Buffer>> mUsedBuffers;
-  nsTArray<RefPtr<const RenderPipeline>> mUsedPipelines;
-  nsTArray<RefPtr<const TextureView>> mUsedTextureViews;
-  nsTArray<RefPtr<const RenderBundle>> mUsedRenderBundles;
-
   // The canvas contexts of any canvas textures used in bind groups of this
   // render pass.
   CanvasContextArray mUsedCanvasContexts;
+  nsTArray<RefPtr<ExternalTexture>> mExternalTextures;
 
-  // programmable pass encoder
  private:
-  bool mValid = true;
-
   void SetBindGroup(uint32_t aSlot, BindGroup* const aBindGroup,
                     const uint32_t* aDynamicOffsets,
                     size_t aDynamicOffsetsLength);
 
  public:
-  void Invalidate() { mValid = false; }
-
   void SetBindGroup(uint32_t aSlot, BindGroup* const aBindGroup,
                     const dom::Sequence<uint32_t>& aDynamicOffsets,
                     ErrorResult& aRv);

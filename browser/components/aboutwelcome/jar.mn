@@ -12,7 +12,6 @@ browser.jar:
 # with live experiments using these assets at those paths. Removal of this
 # backwards compability is tracked in bug 1866935.
   content/activity-stream/data/content/assets/confetti.svg                                  (./assets/confetti.svg)
-  content/activity-stream/data/content/assets/device-migration.svg                          (./assets/device-migration.svg)
   content/activity-stream/data/content/assets/euo-chatbot.svg                               (./assets/euo-chatbot.svg)
   content/activity-stream/data/content/assets/euo-tab-orientation.svg                       (./assets/euo-tab-orientation.svg)
   content/activity-stream/data/content/assets/fox-doodle-tail.png                           (./assets/fox-doodle-tail.png)
@@ -38,7 +37,6 @@ browser.jar:
   content/activity-stream/data/content/assets/tabs-side-zap-transparent.svg                 (./assets/tabs-side-zap-transparent.svg)
   content/activity-stream/data/content/assets/tabs-top-zap-transparent.svg                  (./assets/tabs-top-zap-transparent.svg)
   content/activity-stream/data/content/assets/nuo-taborientation.svg                        (./assets/nuo-taborientation.svg)
-  content/activity-stream/data/content/assets/fox-doodle-backup.svg                         (./assets/fox-doodle-backup.svg)
   content/activity-stream/data/content/assets/fox-doodle-backup-restore.svg                 (./assets/fox-doodle-backup-restore.svg)
   content/activity-stream/data/content/assets/br-set-default-fox-heart.svg                  (./assets/br-set-default-fox-heart.svg)
   content/activity-stream/data/content/assets/br-import-fox-house.svg                       (./assets/br-import-fox-house.svg)
@@ -46,3 +44,6 @@ browser.jar:
   content/activity-stream/data/content/assets/br-amo-fox-paint.svg                          (./assets/br-amo-fox-paint.svg)
   content/activity-stream/data/content/assets/br-gratitude-fox-rock.svg                     (./assets/br-gratitude-fox-rock.svg)
   content/activity-stream/data/content/assets/splash-logo.svg                               (./assets/splash-logo.svg)
+  content/activity-stream/data/content/assets/br-migration-fox-juggle.svg                   (./assets/br-migration-fox-juggle.svg)
+  content/activity-stream/data/content/assets/br-backup-fox-in-box.svg                      (./assets/br-backup-fox-in-box.svg)
+  content/activity-stream/data/content/assets/br-backup-fox-outside-box.svg                 (./assets/br-backup-fox-outside-box.svg)

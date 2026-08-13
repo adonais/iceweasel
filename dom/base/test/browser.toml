@@ -304,3 +304,6 @@ skip-if = [
 ["browser_user_input_handling_delay_reload_ticks.js"]
 
 ["browser_xml_toggle.js"]
+
+["browser_xml_xslt_disabled.js"]
+support-files = ["file_xslt_stylesheet_header.sjs"]

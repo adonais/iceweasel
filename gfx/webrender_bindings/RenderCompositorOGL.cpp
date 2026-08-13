@@ -7,8 +7,8 @@
 #include "GLContext.h"
 #include "GLContextEGL.h"
 #include "GLContextProvider.h"
-#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/webrender/RenderThread.h"
 #include "mozilla/widget/CompositorWidget.h"
 

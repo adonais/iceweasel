@@ -5,11 +5,11 @@
 #ifndef mozilla_widget_WindowsUIUtils_h_
 #define mozilla_widget_WindowsUIUtils_h_
 
-#include "nsIWindowsUIUtils.h"
-#include "nsString.h"
-#include "nsColor.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
+#include "nsColor.h"
+#include "nsIWindowsUIUtils.h"
+#include "nsString.h"
 
 // Avoid including windef.h to get this, which improves
 // build times.

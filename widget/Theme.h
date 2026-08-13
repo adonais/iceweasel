@@ -6,13 +6,13 @@
 #ifndef mozilla_widget_Theme_h
 #define mozilla_widget_Theme_h
 
+#include "ScrollbarDrawing.h"
 #include "Units.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Rect.h"
 #include "mozilla/gfx/Types.h"
 #include "nsITheme.h"
 #include "nsNativeTheme.h"
-#include "ScrollbarDrawing.h"
 
 namespace mozilla {
 

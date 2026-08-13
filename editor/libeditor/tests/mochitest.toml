@@ -18,6 +18,7 @@ support-files = [
   "data/cfhtml-ie.txt",
   "data/cfhtml-ooo.txt",
   "data/cfhtml-nocontext.txt",
+  "data/cfhtml-negative-endfragment.txt",
 ]
 
 ["test_abs_positioner_appearance.html"]
@@ -454,6 +455,8 @@ support-files = ["window_caret_visibility_when_moving_focus_in_shadow.html"]
 ["test_composition_event_created_in_chrome.html"]
 
 ["test_composition_modified_as_multiple_text_nodes.html"]
+
+["test_composition_selectionchange.html"]
 
 ["test_composition_with_highlight_in_texteditor.html"]
 

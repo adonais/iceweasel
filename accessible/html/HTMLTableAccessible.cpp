@@ -6,27 +6,25 @@
 
 #include <stdint.h>
 
-#include "nsAccessibilityService.h"
-#include "AccAttributes.h"
 #include "ARIAMap.h"
+#include "AccAttributes.h"
 #include "CacheConstants.h"
-#include "LocalAccessible-inl.h"
 #include "DocAccessible-inl.h"
-#include "nsTextEquivUtils.h"
+#include "LocalAccessible-inl.h"
 #include "Relation.h"
-#include "mozilla/a11y/Role.h"
 #include "States.h"
-
+#include "mozilla/Assertions.h"
+#include "mozilla/a11y/Role.h"
 #include "mozilla/a11y/TableAccessible.h"
 #include "mozilla/a11y/TableCellAccessible.h"
-#include "mozilla/Assertions.h"
+#include "mozilla/dom/ContentList.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/NameSpaceConstants.h"
+#include "nsAccessibilityService.h"
+#include "nsCOMPtr.h"
 #include "nsCaseTreatment.h"
 #include "nsColor.h"
-#include "nsCOMPtr.h"
 #include "nsCoreUtils.h"
-#include "mozilla/dom/ContentList.h"
 #include "nsDebug.h"
 #include "nsError.h"
 #include "nsGkAtoms.h"
@@ -37,6 +35,7 @@
 #include "nsStringFwd.h"
 #include "nsTableCellFrame.h"
 #include "nsTableWrapperFrame.h"
+#include "nsTextEquivUtils.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

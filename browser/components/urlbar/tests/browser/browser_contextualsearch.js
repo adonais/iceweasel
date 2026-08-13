@@ -201,7 +201,12 @@ add_task(async function test_actions() {
   EventUtils.synthesizeKey("KEY_Enter");
   await UrlbarTestUtils.promisePopupClose(window);
 
-  Assert.equal(testActionCalled, 1, "Test action was called");
+  // The action's onPick runs parent-side, so on the actor message path it fires
+  // asynchronously after the pick.
+  await TestUtils.waitForCondition(
+    () => testActionCalled == 1,
+    "Test action was called"
+  );
 
   info("Check whether the URI on the original tab is not changed");
   // eslint-disable-next-line mozilla/no-arbitrary-setTimeout

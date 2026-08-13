@@ -109,6 +109,7 @@
 
     function browserTest(aTestFile) {
       this.path = aTestFile.url;
+      this.manifest = aTestFile.manifest;
       this.expected = aTestFile.expected;
       this.https_first_disabled = aTestFile.https_first_disabled || false;
       this.allow_xul_xbl = aTestFile.allow_xul_xbl || false;

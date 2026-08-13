@@ -73,6 +73,11 @@ struct Http3TestServer {
     connections_to_close: HashMap<Instant, Vec<ConnectionRef>>,
     sessions_to_close: HashMap<Instant, Vec<WebTransportRequest>>,
     sessions_to_create_stream: Vec<(WebTransportRequest, StreamType, Option<Vec<u8>>)>,
+    // Server-initiated bidi WebTransport sessions for which we create a stream
+    // and then, in a later flight, send STOP_SENDING(0x100). Regression test for
+    // bug 2043946.
+    sessions_to_create_bidi_and_stop_sending: Vec<WebTransportRequest>,
+    streams_to_stop_sending: HashMap<Instant, Vec<Http3OrWebTransportStream>>,
     webtransport_bidi_stream: HashSet<Http3OrWebTransportStream>,
     wt_unidi_conn_to_stream: HashMap<ConnectionRef, Http3OrWebTransportStream>,
     wt_unidi_echo_back: HashMap<Http3OrWebTransportStream, Http3OrWebTransportStream>,
@@ -97,6 +102,8 @@ impl Http3TestServer {
             connections_to_close: HashMap::new(),
             sessions_to_close: HashMap::new(),
             sessions_to_create_stream: Vec::new(),
+            sessions_to_create_bidi_and_stop_sending: Vec::new(),
+            streams_to_stop_sending: HashMap::new(),
             webtransport_bidi_stream: HashSet::new(),
             wt_unidi_conn_to_stream: HashMap::new(),
             wt_unidi_echo_back: HashMap::new(),
@@ -188,6 +195,40 @@ impl Http3TestServer {
             }
         }
     }
+
+    // Regression test for bug 2043946: open a server-initiated bidi WebTransport
+    // stream, send a byte so the client registers it in mStreamIdHash, then
+    // schedule a STOP_SENDING(0x100) for a later flight.
+    fn maybe_create_wt_stream_and_stop_sending(&mut self, now: Instant) {
+        if self.sessions_to_create_bidi_and_stop_sending.is_empty() {
+            return;
+        }
+        let session = self
+            .sessions_to_create_bidi_and_stop_sending
+            .pop()
+            .unwrap();
+        let wt_server_stream = session.create_stream(StreamType::BiDi).unwrap();
+        let _ = wt_server_stream.send_data(b"h", now);
+        // The STOP_SENDING must arrive after the client has processed the
+        // NewStream event, so defer it to a separate flight.
+        let expires = now + Duration::from_millis(200);
+        self.streams_to_stop_sending
+            .entry(expires)
+            .or_insert_with(Vec::new)
+            .push(wt_server_stream);
+    }
+
+    fn maybe_stop_sending(&mut self, now: Instant) {
+        for (expires, streams) in self.streams_to_stop_sending.iter_mut() {
+            if *expires <= now {
+                for s in streams.iter_mut() {
+                    let _ = s.stream_stop_sending(Error::HttpNone.code());
+                }
+            }
+        }
+        self.streams_to_stop_sending
+            .retain(|expires, _| *expires > now);
+    }
 }
 
 impl HttpServer for Http3TestServer {
@@ -213,7 +254,10 @@ impl HttpServer for Http3TestServer {
             self.stuck_0rtt_activated = true;
         }
 
-        let output = if self.sessions_to_close.is_empty() && self.connections_to_close.is_empty() {
+        let output = if self.sessions_to_close.is_empty()
+            && self.connections_to_close.is_empty()
+            && self.streams_to_stop_sending.is_empty()
+        {
             output
         } else {
             // In case there are pending sessions to close, use a shorter
@@ -234,6 +278,8 @@ impl HttpServer for Http3TestServer {
         self.maybe_close_connection();
         self.maybe_close_session(now);
         self.maybe_create_wt_stream(now);
+        self.maybe_create_wt_stream_and_stop_sending(now);
+        self.maybe_stop_sending(now);
 
         while let Some(event) = self.server.next_event() {
             qtrace!("Event: {:?}", event);
@@ -699,6 +745,10 @@ impl HttpServer for Http3TestServer {
                                     StreamType::BiDi,
                                     Some(data),
                                 ));
+                            } else if path == b"/create_bidi_stream_and_stop_sending" {
+                                session.response(&SessionAcceptAction::Accept, now).unwrap();
+                                self.sessions_to_create_bidi_and_stop_sending
+                                    .push(session);
                             } else {
                                 session.response(&SessionAcceptAction::Accept, now).unwrap();
                             }

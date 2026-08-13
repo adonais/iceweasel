@@ -5,16 +5,15 @@
 #include "TextAttrs.h"
 
 #include "AccAttributes.h"
-#include "nsAccUtils.h"
-#include "nsCoreUtils.h"
+#include "HyperTextAccessible.h"
 #include "StyleInfo.h"
-
 #include "gfxTextRun.h"
+#include "mozilla/AppUnits.h"
+#include "nsAccUtils.h"
+#include "nsContainerFrame.h"
+#include "nsCoreUtils.h"
 #include "nsFontMetrics.h"
 #include "nsLayoutUtils.h"
-#include "nsContainerFrame.h"
-#include "HyperTextAccessible.h"
-#include "mozilla/AppUnits.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;

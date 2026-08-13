@@ -24,6 +24,12 @@ https_first_disabled = true
 
 ["browser_firstResult.js"]
 
+["browser_inputField_contextmenu_dismissal.js"]
+
+["browser_inputField_contextmenu_dismissal_telemetry.js"]
+
+["browser_inputField_contextmenu_reintegration.js"]
+
 ["browser_originToAdaptive.js"]
 
 ["browser_paste.js"]

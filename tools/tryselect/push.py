@@ -4,7 +4,10 @@
 
 import json
 import os
+import shlex
+import stat
 import sys
+import tempfile
 from functools import cache
 from typing import Optional
 
@@ -13,6 +16,8 @@ from mozbuild.base import MozbuildObject
 from mozversioncontrol import MissingVCSExtension, get_repository_object
 
 from .lando import push_to_lando_try
+from .util.project import get_project_topsrcdir, is_thunderbird_try
+from .util.taskcluster import get_client
 
 GIT_CINNABAR_NOT_FOUND = """
 Could not detect `git-cinnabar`.
@@ -59,11 +64,29 @@ MACH_TRY_PUSH_TO_VCS = os.getenv("MACH_TRY_PUSH_TO_VCS") == "1"
 HG_TRY_URL = "ssh://hg.mozilla.org/try"
 MACH_TRY_REMOTE: Optional[str] = None
 
-TREEHERDER_LANDO_TRY_RUN_URL = "https://treeherder.mozilla.org/jobs?repo=try&landoInstance={lando_instance}&landoCommitID={job_id}"
+GIT_BACKING_ENABLED = False
+GIT_BACKING_REPO = "https://github.com/mozilla-releng/git-backing"
+GIT_BACKING_SSH = "git@github.com:mozilla-releng/git-backing.git"
+GIT_BACKING_SECRET = "project/releng/releng-github-git-backing-ssh"
+
+TREEHERDER_LANDO_TRY_RUN_URL = "https://treeherder.mozilla.org/jobs?repo={repo_name}&landoInstance={lando_instance}&landoCommitID={job_id}"
 
 here = os.path.abspath(os.path.dirname(__file__))
 build = MozbuildObject.from_environment(cwd=here)
-vcs = get_repository_object(build.topsrcdir)
+
+
+def get_try_repo(topsrcdir):
+    """Return the Treeherder repo name to use for a try push."""
+
+    # Thunderbird uses try-comm-central.
+    if is_thunderbird_try(build):
+        return "try-comm-central"
+
+    return "try"
+
+
+topsrcdir = get_project_topsrcdir(build)
+vcs = get_repository_object(topsrcdir)
 
 history_path = os.path.join(
     get_state_dir(specific_to_topsrcdir=True), "history", "try_task_configs.json"
@@ -154,8 +177,6 @@ def task_labels_from_try_config(try_task_config):
             return parameters["try_task_config"].get("tasks")
         else:
             return None
-    elif try_task_config["version"] == 1:
-        return try_task_config.get("tasks", list())
     else:
         return None
 
@@ -185,6 +206,33 @@ def _is_hg_try(remote):
     return HG_TRY_URL in remote
 
 
+def push_to_git_backing(prefix: str) -> str:
+    """Push the current head to the git-backing repo and return the git SHA."""
+    print("Pushing to git-backing...")
+    client = get_client("secrets", [f"secrets:get:{GIT_BACKING_SECRET}"])
+    key = client.get(GIT_BACKING_SECRET)["secret"]["ssh_privkey"]
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".pem") as keyfile:
+        keyfile.write(key)
+        os.chmod(keyfile.name, stat.S_IRUSR | stat.S_IWUSR)
+        keyfile.flush()
+        ssh_command = (
+            f"ssh -F /dev/null -i {shlex.quote(keyfile.name)} "
+            "-o IdentitiesOnly=yes -o IdentityAgent=none "
+            "-o StrictHostKeyChecking=accept-new"
+        )
+
+        sha = vcs.head_rev
+        vcs.push(
+            GIT_BACKING_SSH,
+            ref=sha,
+            dest_branch=f"{prefix}/{sha}",
+            force=True,
+            env={"GIT_SSH_COMMAND": ssh_command},
+        )
+        return sha
+
+
 def push_to_try(
     method,
     msg,
@@ -198,9 +246,14 @@ def push_to_try(
     push_to_vcs=False,
     force_old_lando=False,
 ):
-    remote = os.environ.get("MACH_TRY_REMOTE") or MACH_TRY_REMOTE
-    metrics.mach_try.commit_prep.start()
     push = not stage_changes and not dry_run
+
+    if push and is_thunderbird_try(build):
+        remote = HG_TRY_URL + "-comm-central"
+    else:
+        remote = os.environ.get("MACH_TRY_REMOTE") or MACH_TRY_REMOTE
+
+    metrics.mach_try.commit_prep.start()
 
     if push and not remote:
         print(NO_REMOTE_CONFIGURED)
@@ -218,6 +271,38 @@ def push_to_try(
 
     changed_files = {}
 
+    if not push:
+        print("Commit message:")
+        print(commit_message)
+
+        if try_task_config:
+            print("Calculated try_task_config.json:")
+            print(
+                json.dumps(
+                    try_task_config, indent=4, separators=(",", ": "), sort_keys=True
+                )
+                + "\n"
+            )
+
+        if stage_changes and files_to_change:
+            vcs.stage_changes(files_to_change)
+        return
+
+    metrics.mach_try.commit_prep.stop()
+
+    if GIT_BACKING_ENABLED and _is_hg_try(remote) and vcs.name != "hg":
+        # Push the source tree to the git-backing repo so tasks can clone from GitHub,
+        # then inject the resulting git rev into the try_task_config parameters.
+        metrics.mach_try.git_backing_push_duration.start()
+        backing_sha = push_to_git_backing(prefix="try")
+        metrics.mach_try.git_backing_push_duration.stop()
+
+        try_task_config = try_task_config or {}
+        try_task_config.setdefault("version", 2)
+        try_task_config.setdefault("parameters", {})
+        try_task_config["parameters"]["head_git_repository"] = GIT_BACKING_REPO
+        try_task_config["parameters"]["head_git_rev"] = backing_sha
+
     if try_task_config:
         changed_files["try_task_config.json"] = (
             json.dumps(
@@ -225,25 +310,13 @@ def push_to_try(
             )
             + "\n"
         )
-        if push and method not in ("again", "auto", "empty"):
+        if method not in ("again", "auto", "empty"):
             write_task_config_history(msg, try_task_config)
 
-    if (push or stage_changes) and files_to_change:
+    if files_to_change:
         changed_files.update(files_to_change.items())
 
-    if not push:
-        print("Commit message:")
-        print(commit_message)
-        config = changed_files.pop("try_task_config.json", None)
-        if config:
-            print("Calculated try_task_config.json:")
-            print(config)
-        if stage_changes:
-            vcs.stage_changes(changed_files)
-
-        return
-
-    metrics.mach_try.commit_prep.stop()
+    print("Pushing to try...")
     try:
         if push_to_vcs:
             vcs.push_to_try(
@@ -253,12 +326,14 @@ def push_to_try(
                 remote=remote,
             )
         else:
+            try_repo = get_try_repo(vcs.path)
             push_data = push_to_lando_try(
                 vcs,
                 commit_message,
                 changed_files,
                 metrics,
                 force_old_lando=force_old_lando,
+                repo_name=try_repo,
             )
             if not push_data:
                 sys.exit(1)
@@ -266,7 +341,9 @@ def push_to_try(
             job_id = push_data["lando_job_id"]
             if lando_instance and job_id:
                 treeherder_url = TREEHERDER_LANDO_TRY_RUN_URL.format(
-                    lando_instance=lando_instance, job_id=job_id
+                    repo_name=try_repo,
+                    lando_instance=lando_instance,
+                    job_id=job_id,
                 )
                 print(
                     f"try submission success in {push_data['duration']:.1f}s:\n"

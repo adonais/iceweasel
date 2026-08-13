@@ -366,6 +366,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   // Stops listening for async GV autoplay permissions if observer exists.
   void StopObservingGVAutoplayIfNeeded();
 
+  bool ShouldDelayPlayUntilGVAutoplayRequestResolved() const;
+
   // Check if the media element had crossorigin set when loading started
   bool ShouldCheckAllowOrigin();
 
@@ -654,11 +656,24 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   void SetVolume(double aVolume, ErrorResult& aRv);
 
+  enum MutedReasons {
+    MUTED_BY_CONTENT = 0x01,
+    MUTED_BY_INVALID_PLAYBACK_RATE = 0x02,
+    MUTED_BY_AUDIO_CHANNEL = 0x04,
+    MUTED_BY_AUDIO_TRACK = 0x08,
+    MUTED_BY_MEDIA_CONTROL = 0x10
+  };
+
   bool Muted() const {
     // https://html.spec.whatwg.org/multipage/media.html#concept-media-muted
     return !!(mMuted & (MUTED_BY_CONTENT | MUTED_BY_INVALID_PLAYBACK_RATE));
   }
-  void SetMuted(bool aMuted);
+  void SetMuted(bool aMuted, MutedReasons aReason = MUTED_BY_CONTENT);
+
+  // Chrome-only accessor exposing which reasons currently contribute to the
+  // muted state, so tests can verify muting that does not affect the
+  // web-visible muted attribute (e.g. mute via media control).
+  uint32_t GetMutedReasons() const { return mMuted; }
 
   bool DefaultMuted() const { return GetBoolAttr(nsGkAtoms::muted); }
 
@@ -1605,13 +1620,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   // True if the audio track is not silent.
   bool mIsAudioTrackAudible = false;
 
-  enum MutedReasons {
-    MUTED_BY_CONTENT = 0x01,
-    MUTED_BY_INVALID_PLAYBACK_RATE = 0x02,
-    MUTED_BY_AUDIO_CHANNEL = 0x04,
-    MUTED_BY_AUDIO_TRACK = 0x08
-  };
-
   uint32_t mMuted = 0;
 
   // The tristate "muted state". While Default, the muted content attribute is a
@@ -1637,6 +1645,12 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   // This is always the original URL we're trying to load --- before
   // redirects etc.
   nsCOMPtr<nsIURI> mLoadingSrc;
+
+  // The URI of the resource actually loaded. Starts equal to mLoadingSrc and
+  // is updated to the post-redirect URI on each redirect. Used to decide
+  // cross-origin load-error redaction; null means we have no captured URI, and
+  // is treated as cross-origin.
+  nsCOMPtr<nsIURI> mLoadingSrcFinalURI;
 
   // The triggering principal for the current source.
   nsCOMPtr<nsIPrincipal> mLoadingSrcTriggeringPrincipal;
@@ -1994,9 +2008,10 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   // error.
   bool IsPlayable() const;
 
-  // Return true if the media qualifies for being controlled by media control
-  // keys.
-  bool ShouldStartMediaControlKeyListener() const;
+  // Return true if the media source qualifies for full media-key control,
+  // meaning the OS media-control interface (media keys, lock-screen widget,
+  // etc.) will be activated for this element.
+  bool IsControllableMediaSource() const;
 
   // Start the listener if media fits the requirement of being able to be
   // controlled be media control keys.

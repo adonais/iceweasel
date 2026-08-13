@@ -2,13 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
-
 #include "APZCBasicTester.h"
 #include "APZTestCommon.h"
 #include "InputUtils.h"
 #include "apz/src/InputBlockState.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "mozilla/StaticPrefs_apz.h"
 
 // Note: There are additional tests that test gesture detection behaviour

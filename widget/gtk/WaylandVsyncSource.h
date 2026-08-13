@@ -5,16 +5,16 @@
 #ifndef WaylandVsyncSource_h_
 #define WaylandVsyncSource_h_
 
-#include "base/thread.h"
-#include "mozilla/RefPtr.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/Mutex.h"
-#include "mozilla/Monitor.h"
-#include "mozilla/layers/NativeLayerWayland.h"
 #include "MozContainer.h"
-#include "nsWaylandDisplay.h"
 #include "VsyncSource.h"
 #include "WaylandSurface.h"
+#include "base/thread.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/Monitor.h"
+#include "mozilla/Mutex.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/layers/NativeLayerWayland.h"
+#include "nsWaylandDisplay.h"
 
 namespace mozilla {
 

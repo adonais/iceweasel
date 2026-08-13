@@ -72,7 +72,7 @@ async function searchWithDefault() {
   let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
   Assert.equal(
     result.type,
-    UrlbarUtils.RESULT_TYPE.SEARCH,
+    UrlbarShared.RESULT_TYPE.SEARCH,
     "Should be of type search"
   );
 

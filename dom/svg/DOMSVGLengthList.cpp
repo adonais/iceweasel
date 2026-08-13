@@ -222,10 +222,13 @@ already_AddRefed<DOMSVGLength> DOMSVGLengthList::InsertItemBefore(
 
   index = std::min(index, LengthNoFlush());
 
-  AutoChangeLengthListNotifier notifier(this);
-  // Now that we know we're inserting, keep animVal list in sync as necessary.
-  MaybeInsertNullInAnimValListAt(index);
+  // Keep animVal list in sync as necessary.
+  if (!MaybeInsertNullInAnimValListAt(index)) {
+    aRv.ThrowIndexSizeError("List too long");
+    return nullptr;
+  }
 
+  AutoChangeLengthListNotifier notifier(this);
   InternalList().InsertItem(index, domItem->ToSVGLength());
   MOZ_ALWAYS_TRUE(mItems.InsertElementAt(index, domItem.get(), fallible));
 
@@ -317,21 +320,26 @@ already_AddRefed<DOMSVGLength> DOMSVGLengthList::GetItemAt(uint32_t aIndex) {
   return result.forget();
 }
 
-void DOMSVGLengthList::MaybeInsertNullInAnimValListAt(uint32_t aIndex) {
+bool DOMSVGLengthList::MaybeInsertNullInAnimValListAt(uint32_t aIndex) {
   MOZ_ASSERT(!IsAnimValList(), "call from baseVal to animVal");
 
   if (!AnimListMirrorsBaseList()) {
-    return;
+    return true;
+  }
+  DOMSVGLengthList* animVal = mAList->mAnimVal;
+  MOZ_ASSERT(animVal, "AnimListMirrorsBaseList() promised a non-null animVal");
+
+  if (animVal->mItems.Length() >= DOMSVGLength::MaxListIndex()) {
+    return false;
   }
 
-  DOMSVGLengthList* animVal = mAList->mAnimVal;
-
-  MOZ_ASSERT(animVal, "AnimListMirrorsBaseList() promised a non-null animVal");
   MOZ_ASSERT(animVal->mItems.Length() == mItems.Length(),
              "animVal list not in sync!");
   MOZ_ALWAYS_TRUE(animVal->mItems.InsertElementAt(aIndex, nullptr, fallible));
 
   UpdateListIndicesFromIndex(animVal->mItems, aIndex + 1);
+
+  return true;
 }
 
 void DOMSVGLengthList::MaybeRemoveItemFromAnimValListAt(uint32_t aIndex) {

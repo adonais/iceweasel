@@ -6,10 +6,10 @@
 
 #include "AndroidGraphics.h"
 #include "AndroidWidgetUtils.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/java/GeckoDragAndDropWrappers.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/java/GeckoDragAndDropWrappers.h"
 #include "nsArrayUtils.h"
 #include "nsClipboard.h"
 #include "nsComponentManagerUtils.h"

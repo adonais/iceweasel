@@ -6,8 +6,8 @@
 
 #include "mozilla/BackgroundHangMonitor.h"
 #include "mozilla/GeckoArgs.h"
-#include "mozilla/ipc/ProcessUtils.h"
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/ipc/ProcessUtils.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;

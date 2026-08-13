@@ -73,7 +73,8 @@ already_AddRefed<CSSTranslate> CSSTranslate::Constructor(
                                        &aX, &aY, &aZ.Value());
   }
 
-  RefPtr<CSSUnitValue> z = CSSUnitValue::Create(global, 0.0, "px"_ns);
+  RefPtr<CSSUnitValue> z =
+      CSSUnitValue::Create(global, StyleNumericType::Length(), 0.0, "px"_ns);
 
   return MakeAndAddRef<CSSTranslate>(std::move(global), /* aIs2D */ true, &aX,
                                      &aY, std::move(z));

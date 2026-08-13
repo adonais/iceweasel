@@ -1,0 +1,77 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test that replaceText content command works with EditContext.</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="/tests/SimpleTest/EventUtils.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<div>test</div>
+<canvas></canvas>
+<script>
+'use strict';
+
+const domHost = document.querySelector('div');
+const canvasHost = document.querySelector('canvas');
+const domWindowUtils = _getDOMWindowUtils();
+
+const preventSetSelectionFlag = SpecialPowers.Ci.nsIDOMWindowUtils.CONTENT_COMMAND_FLAG_PREVENT_SET_SELECTION;
+
+for (let host of [domHost, canvasHost]) {
+  for (let preventSetSelection of [false, true]) {
+    add_task(async () => {
+      await SimpleTest.promiseFocus();
+      const editContext = new EditContext({text: 'hello.'});
+      host.editContext = editContext;
+      editContext.updateSelection(5, 5);
+      host.focus();
+
+      const {resolve, promise} = Promise.withResolvers();
+      editContext.ontextupdate = resolve;
+      let beforeInputEvent;
+      host.onbeforeinput = e => {
+        beforeInputEvent = e;
+      };
+      domWindowUtils.sendContentCommandEvent('replaceText', null, 'r', 2, 'll',
+                                             preventSetSelection ? preventSetSelectionFlag : 0);
+      const textUpdate = await promise;
+      ok(beforeInputEvent, 'Should fire beforeinput for replaceText command.');
+      is(beforeInputEvent?.inputType, 'insertText',
+         'beforeinput event inputType should be insertText.');
+      is(beforeInputEvent?.data, 'r', 'beforeinput event data should be set to replacement text.');
+      is(beforeInputEvent?.dataTransfer, null, 'beforeinput event dataTransfer should be null.');
+      is(textUpdate.text, 'r', 'textupdate event text should be set');
+      is(`${textUpdate.updateRangeStart}-${textUpdate.updateRangeEnd}`,
+         '2-4', 'textupdate event update range should be set based on replace range.');
+      is(editContext.text, 'hero.', 'EditContext.text should be updated');
+      if (preventSetSelection) {
+        is(`${editContext.selectionStart}-${editContext.selectionEnd}`,
+           '4-4', 'EditContext selection should be adjusted, but should not be set to end of inserted text.');
+      } else {
+        is(`${editContext.selectionStart}-${editContext.selectionEnd}`,
+           '3-3', 'EditContext selection should be set to end of inserted text.');
+      }
+      is(domHost.textContent, 'test', 'DOM contents should not be changed');
+    });
+  }
+  // Test that beforeinput/textupdate is not fired if text to replace doesn't match.
+  add_task(async () => {
+    await SimpleTest.promiseFocus();
+    const editContext = new EditContext({text: 'hello.'});
+    host.editContext = editContext;
+    editContext.updateSelection(5, 5);
+    host.focus();
+    host.onbeforeinput = () => ok(false, 'Should not fire beforeinput');
+    host.ontextupdate = () => ok(false, 'Should not fire textupdate');
+    domWindowUtils.sendContentCommandEvent('replaceText', null, 'r', 2, 'lx');
+    await new Promise(r => SimpleTest.executeSoon(r));
+    is(editContext.text, 'hello.', 'Should not replace text in EditContext.text');
+    is(`${editContext.selectionStart}-${editContext.selectionEnd}`,
+       '5-5', 'EditContext selection should not change.');
+  });
+}
+</script>
+</body>
+</html>

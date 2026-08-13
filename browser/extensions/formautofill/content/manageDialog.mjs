@@ -14,6 +14,7 @@ const { AutofillTelemetry } = ChromeUtils.importESModule(
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
+  AutofillDataTypes: "resource://gre/modules/shared/AutofillDataTypes.sys.mjs",
   CreditCard: "resource://gre/modules/CreditCard.sys.mjs",
   FormAutofillUtils: "resource://gre/modules/shared/FormAutofillUtils.sys.mjs",
   formAutofillStorage: "resource://autofill/FormAutofillStorage.sys.mjs",
@@ -174,7 +175,7 @@ class ManageRecords {
     this._elements.records.dispatchEvent(new CustomEvent("RecordsRemoved"));
 
     for (let i = 0; i < options.length; i++) {
-      AutofillTelemetry.recordManageEvent(this.telemetryType, "delete");
+      AutofillTelemetry.recordManageEvent(this.dataType, "delete");
     }
   }
 
@@ -302,7 +303,7 @@ class ManageRecords {
 }
 
 export class ManageAddresses extends ManageRecords {
-  telemetryType = AutofillTelemetry.ADDRESS;
+  dataType = lazy.AutofillDataTypes.ADDRESS;
 
   constructor(elements) {
     super("addresses", elements);
@@ -310,7 +311,7 @@ export class ManageAddresses extends ManageRecords {
       "search-l10n-ids",
       lazy.FormAutofillUtils.EDIT_ADDRESS_L10N_IDS.join(",")
     );
-    AutofillTelemetry.recordManageEvent(this.telemetryType, "show");
+    AutofillTelemetry.recordManageEvent(this.dataType, "show");
   }
 
   static getAddressL10nStrings() {
@@ -346,7 +347,7 @@ export class ManageAddresses extends ManageRecords {
 }
 
 export class ManageCreditCards extends ManageRecords {
-  telemetryType = AutofillTelemetry.CREDIT_CARD;
+  dataType = lazy.AutofillDataTypes.CREDIT_CARD;
 
   constructor(elements) {
     super("creditCards", elements);
@@ -356,7 +357,7 @@ export class ManageCreditCards extends ManageRecords {
     );
 
     this._isDecrypted = false;
-    AutofillTelemetry.recordManageEvent(this.telemetryType, "show");
+    AutofillTelemetry.recordManageEvent(this.dataType, "show");
   }
 
   /**

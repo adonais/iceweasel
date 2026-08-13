@@ -13,13 +13,15 @@
  *   Daniele Nicolodi  <daniele@grinta.net>
  */
 
+#include "nsTextFormatter.h"
+
 #include <stddef.h>
 #include <stdio.h>
-#include "prdtoa.h"
+
 #include "mozilla/Logging.h"
 #include "mozilla/Sprintf.h"
 #include "nsCRTGlue.h"
-#include "nsTextFormatter.h"
+#include "prdtoa.h"
 
 struct nsTextFormatter::SprintfStateStr {
   int (*stuff)(SprintfStateStr* aState, const char16_t* aStr, uint32_t aLen);

@@ -163,28 +163,6 @@ skip-if = [
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'aarch64'",
 ]
-# https://bugzilla.mozilla.org/show_bug.cgi?id=1810021
-#
-# Currently getting failures like the following:
-#
-# > ```
-# > the right edge of view 0 of color attachment 1 should be untouched
-# > the left edge of view 1 of color attachment 1 should be untouched
-# > the right edge of view 1 of color attachment 1 should be untouched
-# > the left edge of view 2 of color attachment 1 should be untouched
-# > the right edge of view 2 of color attachment 1 should be untouched
-# > the left edge of view 3 of color attachment 1 should be untouched
-# > the right edge of view 0 of color attachment 2 should be untouched
-# > the left edge of view 1 of color attachment 2 should be untouched
-# > the right edge of view 1 of color attachment 2 should be untouched
-# > the left edge of view 2 of color attachment 2 should be untouched
-# > the right edge of view 2 of color attachment 2 should be untouched
-# > the left edge of view 3 of color attachment 2 should be untouched
-# > ```
-fail-if = [
-  "os == 'win' && os_version == '11.26100' && debug",
-  "os == 'win' && os_version == '11.26200' && debug",
-]
 
 ["generated/test_2_conformance2__extensions__ovr_multiview2_instanced_draw.html"]
 skip-if = [
@@ -1041,8 +1019,11 @@ skip-if = [
 ]
 
 ["generated/test_2_conformance2__textures__misc__immutable-tex-render-feedback.html"]
-# E.g. getError expected: NO_ERROR. Was INVALID_VALUE : after draw with texture
 fail-if = [
+  # E.g. checkFramebufferStatus expected: FRAMEBUFFER_INCOMPLETE_ATTACHMENT. Was FRAMEBUFFER_COMPLETE
+  # due to disagreement between CTS and ANGLE/GLES spec. See https://issues.angleproject.org/issues/42267266.
+  "os == 'win'",
+  # E.g. getError expected: NO_ERROR. Was INVALID_VALUE : after draw with texture
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'",
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'",
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
@@ -1487,8 +1468,6 @@ skip-if = [
 # Ditto
 fail-if = [
   "os == 'android' && os_version == '14' && arch == 'aarch64' && opt",
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'",
 ]
 
 ["generated/test_2_conformance__glsl__constructors__glsl-construct-vec-mat-index.html"]
@@ -1947,13 +1926,6 @@ skip-if = [
 # application crashed [@ jemalloc_crash]
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'aarch64'",
-]
-
-["generated/test_conformance__glsl__bugs__vector-matrix-constructor-scalarization.html"]
-# https://bugzilla.mozilla.org/show_bug.cgi?id=1725075
-fail-if = [
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'",
 ]
 
 ["generated/test_conformance__glsl__constructors__glsl-construct-bvec2.html"]

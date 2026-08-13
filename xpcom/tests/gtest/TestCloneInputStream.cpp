@@ -2,15 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "gtest/gtest.h"
 #include "Helpers.h"
+#include "gtest/gtest.h"
 #include "mozilla/gtest/MozAssertions.h"
+#include "nsComponentManagerUtils.h"
 #include "nsICloneableInputStream.h"
 #include "nsIMultiplexInputStream.h"
 #include "nsNetUtil.h"
 #include "nsStreamUtils.h"
 #include "nsStringStream.h"
-#include "nsComponentManagerUtils.h"
 
 TEST(CloneInputStream, InvalidInput)
 {

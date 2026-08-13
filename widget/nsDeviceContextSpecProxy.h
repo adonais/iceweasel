@@ -5,11 +5,11 @@
 #ifndef nsDeviceContextSpecProxy_h
 #define nsDeviceContextSpecProxy_h
 
-#include "nsIDeviceContextSpec.h"
-#include "nsCOMPtr.h"
-#include "nsString.h"
-#include "mozilla/layout/printing/DrawEventRecorder.h"
 #include "mozilla/gfx/PrintPromise.h"
+#include "mozilla/layout/printing/DrawEventRecorder.h"
+#include "nsCOMPtr.h"
+#include "nsIDeviceContextSpec.h"
+#include "nsString.h"
 
 class nsIFile;
 class nsIUUIDGenerator;

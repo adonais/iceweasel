@@ -16,6 +16,26 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustSuggest.sys.mjs",
 });
 
+const MERINO_SUGGESTION = {
+  title: "Amp Suggestion",
+  url: "https://example.com/amp",
+  provider: "adm",
+  is_sponsored: true,
+  score: 0.31,
+  icon: "https://example.com/amp-icon",
+  iab_category: "22 - Shopping",
+  block_id: 1,
+  full_keyword: "amp",
+  advertiser: "Amp",
+  impression_url: "https://example.com/amp-impression",
+  click_url: "https://example.com/amp-click",
+  custom_details: {
+    amp: {
+      suggestion_id: "amp-suggestion-id",
+    },
+  },
+};
+
 add_setup(async function init() {
   UrlbarPrefs.set("maxRichResults", 10);
 
@@ -1215,7 +1235,7 @@ async function doAmpMatchingStrategyTest({
   sandbox.restore();
 }
 
-add_task(async function online() {
+add_task(async function online_disabled() {
   let context = createContext("amp", {
     providers: [UrlbarProviderQuickSuggest.name],
     isPrivate: false,
@@ -1227,30 +1247,18 @@ add_task(async function online() {
         ["suggest.quicksuggest.all", true],
         ["suggest.quicksuggest.sponsored", true],
       ],
-      merinoSuggestions: [
-        {
-          title: "Amp Suggestion",
-          url: "https://example.com/amp",
-          provider: "adm",
-          is_sponsored: true,
-          score: 0.31,
-          icon: "https://example.com/amp-icon",
-          iab_category: "22 - Shopping",
-          block_id: 1,
-          full_keyword: "amp",
-          advertiser: "Amp",
-          impression_url: "https://example.com/amp-impression",
-          click_url: "https://example.com/amp-click",
-        },
-      ],
+      merinoSuggestions: [MERINO_SUGGESTION],
     },
     tests: [
+      // First, a sanity check to make sure this task *can* trigger Merino
+      // suggestions when they're enabled.
       {
+        context,
+        description: "Sanity check: online available and enabled",
         prefs: [
           ["quicksuggest.online.available", true],
           ["quicksuggest.online.enabled", true],
         ],
-        context,
         expected: [
           QuickSuggestTestUtils.ampResult({
             source: "merino",
@@ -1259,89 +1267,392 @@ add_task(async function online() {
             iabCategory: "22 - Shopping",
             requestId: "request_id",
             suggestedIndex: -1,
+            suggestionId: "amp-suggestion-id",
           }),
         ],
       },
+
       {
+        context,
+        description: "Online not available",
         prefs: [
           ["quicksuggest.online.available", false],
           ["quicksuggest.online.enabled", true],
         ],
-        context,
         expected: [],
       },
+
       {
+        context,
+        description: "Online not enabled",
         prefs: [
           ["quicksuggest.online.available", true],
           ["quicksuggest.online.enabled", false],
         ],
+        merinoSuggestions: [MERINO_SUGGESTION],
+        expected: [],
+      },
+
+      {
         context,
+        description: "Online not available or enabled",
+        prefs: [
+          ["quicksuggest.online.available", false],
+          ["quicksuggest.online.enabled", false],
+        ],
         expected: [],
       },
     ],
   });
 });
 
-// Tests an AMP suggestion with `is_top_pick: true`.
+add_task(async function online_enabled() {
+  let context = createContext("amp", {
+    providers: [UrlbarProviderQuickSuggest.name],
+    isPrivate: false,
+  });
+
+  let expected = {
+    source: "merino",
+    provider: "adm",
+    icon: "https://example.com/amp-icon",
+    iabCategory: "22 - Shopping",
+    requestId: "request_id",
+    suggestedIndex: -1,
+  };
+
+  let noCustomDetails = structuredClone(MERINO_SUGGESTION);
+  delete noCustomDetails.custom_details;
+
+  let noCustomDetailsAmp = structuredClone(MERINO_SUGGESTION);
+  delete noCustomDetailsAmp.custom_details.amp;
+
+  let noSuggestionId = structuredClone(MERINO_SUGGESTION);
+  delete noSuggestionId.custom_details.amp.suggestion_id;
+
+  await doResultCheckTest({
+    env: {
+      prefs: [
+        ["quicksuggest.online.available", true],
+        ["quicksuggest.online.enabled", true],
+        ["suggest.quicksuggest.all", true],
+        ["suggest.quicksuggest.sponsored", true],
+      ],
+    },
+    tests: [
+      {
+        context,
+        description: "Normal suggestion",
+        merinoSuggestions: [MERINO_SUGGESTION],
+        expected: [
+          QuickSuggestTestUtils.ampResult({
+            ...expected,
+            suggestionId: "amp-suggestion-id",
+          }),
+        ],
+      },
+
+      {
+        context,
+        description: "header_text and full_keyword",
+        merinoSuggestions: [
+          {
+            ...MERINO_SUGGESTION,
+            full_keyword: "amp full keyword",
+            custom_details: {
+              ...MERINO_SUGGESTION.custom_details,
+              amp: {
+                ...MERINO_SUGGESTION.custom_details.amp,
+                header_text: "Test header text",
+              },
+            },
+          },
+        ],
+        expected: [
+          QuickSuggestTestUtils.ampResult({
+            ...expected,
+            suggestionId: "amp-suggestion-id",
+            fullKeyword: "Test header text",
+          }),
+        ],
+      },
+
+      {
+        context,
+        description: "header_text instead of full_keyword",
+        merinoSuggestions: [
+          {
+            ...MERINO_SUGGESTION,
+            full_keyword: undefined,
+            custom_details: {
+              ...MERINO_SUGGESTION.custom_details,
+              amp: {
+                ...MERINO_SUGGESTION.custom_details.amp,
+                header_text: "Test header text",
+              },
+            },
+          },
+        ],
+        expected: [
+          QuickSuggestTestUtils.ampResult({
+            ...expected,
+            suggestionId: "amp-suggestion-id",
+            fullKeyword: "Test header text",
+          }),
+        ],
+      },
+
+      {
+        context,
+        description: "Undefined header_text and full_keyword",
+        merinoSuggestions: [
+          {
+            ...MERINO_SUGGESTION,
+            full_keyword: "amp full keyword",
+            custom_details: {
+              ...MERINO_SUGGESTION.custom_details,
+              amp: {
+                ...MERINO_SUGGESTION.custom_details.amp,
+                header_text: undefined,
+              },
+            },
+          },
+        ],
+        expected: [
+          QuickSuggestTestUtils.ampResult({
+            ...expected,
+            suggestionId: "amp-suggestion-id",
+            fullKeyword: "amp full keyword",
+          }),
+        ],
+      },
+
+      {
+        context,
+        description: "Empty-string header_text and full_keyword",
+        merinoSuggestions: [
+          {
+            ...MERINO_SUGGESTION,
+            full_keyword: "amp full keyword",
+            custom_details: {
+              ...MERINO_SUGGESTION.custom_details,
+              amp: {
+                ...MERINO_SUGGESTION.custom_details.amp,
+                header_text: "",
+              },
+            },
+          },
+        ],
+        expected: [
+          QuickSuggestTestUtils.ampResult({
+            ...expected,
+            suggestionId: "amp-suggestion-id",
+            fullKeyword: "",
+          }),
+        ],
+      },
+
+      {
+        context,
+        description: "Missing custom_details",
+        merinoSuggestions: [noCustomDetails],
+        expected: [
+          QuickSuggestTestUtils.ampResult({
+            ...expected,
+            suggestionId: undefined,
+          }),
+        ],
+      },
+
+      {
+        context,
+        description: "Undefined custom_details",
+        merinoSuggestions: [
+          {
+            ...MERINO_SUGGESTION,
+            custom_details: undefined,
+          },
+        ],
+        expected: [
+          QuickSuggestTestUtils.ampResult({
+            ...expected,
+            suggestionId: undefined,
+          }),
+        ],
+      },
+
+      {
+        context,
+        description: "Null custom_details",
+        merinoSuggestions: [
+          {
+            ...MERINO_SUGGESTION,
+            custom_details: null,
+          },
+        ],
+        expected: [
+          QuickSuggestTestUtils.ampResult({
+            ...expected,
+            suggestionId: undefined,
+          }),
+        ],
+      },
+
+      {
+        context,
+        description: "Empty custom_details",
+        merinoSuggestions: [
+          {
+            ...MERINO_SUGGESTION,
+            custom_details: {},
+          },
+        ],
+        expected: [
+          QuickSuggestTestUtils.ampResult({
+            ...expected,
+            suggestionId: undefined,
+          }),
+        ],
+      },
+
+      {
+        context,
+        description: "Missing custom_details.amp",
+        merinoSuggestions: [noCustomDetailsAmp],
+        expected: [
+          QuickSuggestTestUtils.ampResult({
+            ...expected,
+            suggestionId: undefined,
+          }),
+        ],
+      },
+
+      {
+        context,
+        description: "Empty custom_details.amp",
+        merinoSuggestions: [
+          {
+            ...structuredClone(MERINO_SUGGESTION),
+            custom_details: {
+              amp: {},
+            },
+          },
+        ],
+        expected: [
+          QuickSuggestTestUtils.ampResult({
+            ...expected,
+            suggestionId: undefined,
+          }),
+        ],
+      },
+    ],
+  });
+});
+
+// Tests a Merino AMP suggestion when the search string length is at least
+// `quickSuggestAmpTopPickCharThreshold`. The suggestion should be shown as a
+// top pick.
+add_task(async function online_quickSuggestAmpTopPickCharThreshold() {
+  await doOnlineTopPickTest({
+    searchString: "some long query",
+    suggestion: {},
+    expected: {
+      meetsThreshold: true,
+      isTopPick: true,
+    },
+  });
+});
+
+// Tests a Merino AMP suggestion with `is_top_pick: true`, which should
+// override `quickSuggestAmpTopPickCharThreshold` and cause the suggestion to be
+// shown as a top pick even when the search string is short.
 add_task(async function online_isTopPick_true() {
-  let context = createContext("amp", {
-    providers: [UrlbarProviderQuickSuggest.name],
-    isPrivate: false,
-  });
-
-  await doResultCheckTest({
-    env: {
-      prefs: [
-        ["quicksuggest.online.available", true],
-        ["quicksuggest.online.enabled", true],
-        ["suggest.quicksuggest.all", true],
-        ["suggest.quicksuggest.sponsored", true],
-      ],
-      merinoSuggestions: [
-        {
-          is_top_pick: true,
-          title: "Amp Suggestion",
-          url: "https://example.com/amp",
-          provider: "adm",
-          is_sponsored: true,
-          score: 0.31,
-          icon: "https://example.com/amp-icon",
-          iab_category: "22 - Shopping",
-          block_id: 1,
-          full_keyword: "amp",
-          advertiser: "Amp",
-          impression_url: "https://example.com/amp-impression",
-          click_url: "https://example.com/amp-click",
-        },
-      ],
+  await doOnlineTopPickTest({
+    searchString: "amp",
+    suggestion: {
+      is_top_pick: true,
     },
-    tests: [
-      {
-        context,
-        expected: [
-          QuickSuggestTestUtils.ampResult({
-            // The following properties should be set due to
-            // `suggestion.is_top_pick == true`:
-            isBestMatch: true,
-            suggestedIndex: 1,
-            isSuggestedIndexRelativeToGroup: false,
-
-            // Usual properties
-            source: "merino",
-            provider: "adm",
-            icon: "https://example.com/amp-icon",
-            iabCategory: "22 - Shopping",
-            requestId: "request_id",
-          }),
-        ],
-      },
-    ],
+    expected: {
+      meetsThreshold: false,
+      isTopPick: true,
+    },
   });
 });
 
-// Tests an AMP suggestion with `is_top_pick: false`.
+// Tests a Merino AMP suggestion with `is_top_pick: false`, which should
+// override `quickSuggestAmpTopPickCharThreshold` and cause the suggestion *not*
+// to be shown as a top pick even when the search string is long.
 add_task(async function online_isTopPick_false() {
-  let context = createContext("amp", {
+  await doOnlineTopPickTest({
+    searchString: "some long query",
+    suggestion: {
+      is_top_pick: false,
+    },
+    expected: {
+      meetsThreshold: true,
+      isTopPick: false,
+    },
+  });
+});
+
+// Tests a Merino AMP suggestion with `is_top_pick: undefined`, which should
+// *not* override `quickSuggestAmpTopPickCharThreshold`.
+add_task(async function online_isTopPick_undefined_short() {
+  await doOnlineTopPickTest({
+    searchString: "amp",
+    suggestion: {
+      is_top_pick: undefined,
+    },
+    expected: {
+      meetsThreshold: false,
+      isTopPick: false,
+    },
+  });
+});
+
+// Tests a Merino AMP suggestion with `is_top_pick: undefined`, which should
+// *not* override `quickSuggestAmpTopPickCharThreshold`.
+add_task(async function online_isTopPick_undefined_long() {
+  await doOnlineTopPickTest({
+    searchString: "some long query",
+    suggestion: {
+      is_top_pick: undefined,
+    },
+    expected: {
+      meetsThreshold: true,
+      isTopPick: true,
+    },
+  });
+});
+
+async function doOnlineTopPickTest({ searchString, suggestion, expected }) {
+  // This test isn't testing what it should be if this fails.
+  if (expected.meetsThreshold) {
+    Assert.greaterOrEqual(
+      searchString.length,
+      UrlbarPrefs.get("quickSuggestAmpTopPickCharThreshold"),
+      "Sanity check: search string length should be >= quickSuggestAmpTopPickCharThreshold"
+    );
+  } else {
+    Assert.less(
+      searchString.length,
+      UrlbarPrefs.get("quickSuggestAmpTopPickCharThreshold"),
+      "Sanity check: search string length should be < quickSuggestAmpTopPickCharThreshold"
+    );
+  }
+
+  let expectedPayload = expected.isTopPick
+    ? {
+        isBestMatch: true,
+        suggestedIndex: 1,
+        isSuggestedIndexRelativeToGroup: false,
+      }
+    : {
+        isBestMatch: false,
+        suggestedIndex: -1,
+      };
+
+  let context = createContext(searchString, {
     providers: [UrlbarProviderQuickSuggest.name],
     isPrivate: false,
   });
@@ -1356,7 +1667,6 @@ add_task(async function online_isTopPick_false() {
       ],
       merinoSuggestions: [
         {
-          is_top_pick: false,
           title: "Amp Suggestion",
           url: "https://example.com/amp",
           provider: "adm",
@@ -1369,6 +1679,7 @@ add_task(async function online_isTopPick_false() {
           advertiser: "Amp",
           impression_url: "https://example.com/amp-impression",
           click_url: "https://example.com/amp-click",
+          ...suggestion,
         },
       ],
     },
@@ -1377,8 +1688,7 @@ add_task(async function online_isTopPick_false() {
         context,
         expected: [
           QuickSuggestTestUtils.ampResult({
-            // `isBestMatch` should be false
-            isBestMatch: false,
+            ...expectedPayload,
 
             // Usual properties
             source: "merino",
@@ -1386,10 +1696,9 @@ add_task(async function online_isTopPick_false() {
             icon: "https://example.com/amp-icon",
             iabCategory: "22 - Shopping",
             requestId: "request_id",
-            suggestedIndex: -1,
           }),
         ],
       },
     ],
   });
-});
+}

@@ -4,7 +4,7 @@
 
 package mozilla.components.service.fxa.sync
 
-import mozilla.components.service.fxa.SyncEngine
+import mozilla.components.concept.sync.SyncEngine
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test

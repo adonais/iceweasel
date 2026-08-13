@@ -4,13 +4,13 @@
 
 #include "AudioTrimmer.h"
 
-#define LOG(arg, ...)                                                  \
-  DDMOZ_LOG(sPDMLog, mozilla::LogLevel::Debug, "::%s: " arg, __func__, \
-            ##__VA_ARGS__)
+#define LOG(arg, ...)                                                      \
+  DDMOZ_LOG_FMT(sPDMLog, mozilla::LogLevel::Debug, "::{}: " arg, __func__, \
+                ##__VA_ARGS__)
 
-#define LOGV(arg, ...)                                                   \
-  DDMOZ_LOG(sPDMLog, mozilla::LogLevel::Verbose, "::%s: " arg, __func__, \
-            ##__VA_ARGS__)
+#define LOGV(arg, ...)                                                       \
+  DDMOZ_LOG_FMT(sPDMLog, mozilla::LogLevel::Verbose, "::{}: " arg, __func__, \
+                ##__VA_ARGS__)
 
 namespace mozilla {
 
@@ -105,7 +105,7 @@ RefPtr<MediaDataDecoder::DecodePromise> AudioTrimmer::HandleDecodedResult(
                                           __func__);
   }
   MediaDataDecoder::DecodedData results = std::move(aValue.ResolveValue());
-  LOG("HandleDecodedResults: %zu decoded data, %zu trimmers", results.Length(),
+  LOG("HandleDecodedResults: {} decoded data, {} trimmers", results.Length(),
       mTrimmers.Length());
   if (results.IsEmpty()) {
     // No samples returned, we assume this is due to the latency of the
@@ -127,7 +127,7 @@ RefPtr<MediaDataDecoder::DecodePromise> AudioTrimmer::HandleDecodedResult(
     if (mTrimmers.IsEmpty()) {
       // mTrimmers being empty can only occurs if the decoder returned more
       // frames than we pushed in. We can't handle this case, abort trimming.
-      LOG("decoded buffer [%s, %s] has no trimming information)",
+      LOG("decoded buffer [{}, {}] has no trimming information)",
           sampleInterval.mStart.ToString().get(),
           sampleInterval.mEnd.ToString().get());
       i++;
@@ -138,20 +138,20 @@ RefPtr<MediaDataDecoder::DecodePromise> AudioTrimmer::HandleDecodedResult(
     mTrimmers.RemoveElementAt(0);
     if (!trimmer) {
       // Those frames didn't need trimming.
-      LOGV("decoded buffer [%s, %s] doesn't need trimming",
+      LOGV("decoded buffer [{}, {}] doesn't need trimming",
            sampleInterval.mStart.ToString().get(),
            sampleInterval.mEnd.ToString().get());
       i++;
       continue;
     }
     if (!trimmer->Intersects(sampleInterval)) {
-      LOGV("decoded buffer [%s, %s] would be empty after trimming, dropping it",
+      LOGV("decoded buffer [{}, {}] would be empty after trimming, dropping it",
            sampleInterval.mStart.ToString().get(),
            sampleInterval.mEnd.ToString().get());
       results.RemoveElementAt(i);
       continue;
     }
-    LOGV("Trimming sample[%s,%s] to [%s,%s]",
+    LOGV("Trimming sample[{},{}] to [{},{}]",
          sampleInterval.mStart.ToString().get(),
          sampleInterval.mEnd.ToString().get(), trimmer->mStart.ToString().get(),
          trimmer->mEnd.ToString().get());
@@ -163,7 +163,7 @@ RefPtr<MediaDataDecoder::DecodePromise> AudioTrimmer::HandleDecodedResult(
     NS_ASSERTION(ok, "Trimming of audio sample failed");
     (void)ok;
     if (sample->Frames() == 0) {
-      LOGV("sample[%s, %s] is empty after trimming, dropping it",
+      LOGV("sample[{}, {}] is empty after trimming, dropping it",
            sampleInterval.mStart.ToString().get(),
            sampleInterval.mEnd.ToString().get());
       results.RemoveElementAt(i);
@@ -200,7 +200,7 @@ void AudioTrimmer::PrepareTrimmers(MediaRawData* aRaw) {
   // the frame set by the demuxer and mTime and mDuration set to what it
   // should be after trimming.
   if (aRaw->mOriginalPresentationWindow) {
-    LOGV("sample[%s, %s] has trimming info ([%s, %s]",
+    LOGV("sample[{}, {}] has trimming info ([{}, {}]",
          aRaw->mOriginalPresentationWindow->mStart.ToString().get(),
          aRaw->mOriginalPresentationWindow->mEnd.ToString().get(),
          aRaw->mTime.ToString().get(), aRaw->GetEndTime().ToString().get());
@@ -209,7 +209,7 @@ void AudioTrimmer::PrepareTrimmers(MediaRawData* aRaw) {
     aRaw->mTime = aRaw->mOriginalPresentationWindow->mStart;
     aRaw->mDuration = aRaw->mOriginalPresentationWindow->Length();
   } else {
-    LOGV("sample[%s,%s] no trimming information", aRaw->mTime.ToString().get(),
+    LOGV("sample[{},{}] no trimming information", aRaw->mTime.ToString().get(),
          aRaw->GetEndTime().ToString().get());
     mTrimmers.AppendElement(Nothing());
   }

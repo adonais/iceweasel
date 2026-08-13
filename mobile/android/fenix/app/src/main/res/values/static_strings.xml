@@ -25,6 +25,8 @@
     <!-- Secret Settings Strings -->
     <!-- Label for the secret settings preference -->
     <string name="preferences_debug_settings">Secret Settings</string>
+    <!-- App preference label for showing the debug info -->
+    <string name="preferences_show_debug_info" translatable="false">Show debug info</string>
 
     <!-- Labels for secret settings preference categories -->
     <string name="secret_settings_category_homepage_title" translatable="false">Homepage</string>
@@ -97,8 +99,13 @@
     <string name="preferences_sync_debug_oauth_token_scopes_title">Scopes (space-separated)</string>
     <string name="preferences_sync_debug_oauth_token_fetch_title">Fetch Token</string>
     <string name="preferences_sync_debug_oauth_token_result_title">Result</string>
+    <string name="preferences_sync_debug_pairing_category">Pairing (debug)</string>
+    <string name="preferences_sync_debug_pairing_url_title">Pairing URL (from QR)</string>
+    <string name="preferences_sync_debug_pairing_start_title">Begin pairing</string>
     <!-- Label for enabling Homepage as a New Tab -->
     <string name="preferences_debug_settings_homepage_as_new_tab" translatable="false">Enable Homepage as a New Tab</string>
+    <!-- Label for enabling the universal edge-to-edge wallpapers treatment on the homepage -->
+    <string name="preferences_debug_settings_universal_edge_to_edge_wallpapers" translatable="false">Enable universal edge-to-edge wallpapers</string>
     <!-- Label for enabling Firefox Labs -->
     <string name="preferences_debug_settings_firefox_labs" translatable="false">Enable Firefox Labs</string>
     <!-- Label for enabling top sites pager layout -->
@@ -107,10 +114,8 @@
     <string name="preferences_debug_settings_add_shortcuts_improvement" translatable="false">Enable Add Shortcuts Improvement</string>
     <!-- Label for enabling Merino Client -->
     <string name="preferences_debug_settings_merino_client" translatable="false">Enable Merino Client</string>
-    <!-- Label for enabling Merino Manifest -->
-    <string name="preferences_debug_settings_merino_manifest" translatable="false">Enable Merino Manifest</string>
-    <!-- Label for enabling Mozilla Ads Client -->
-    <string name="preferences_debug_settings_mozilla_ads_client" translatable="false">Enable Mozilla Ads Client</string>
+    <!-- Label for enabling Mozilla Ads Client for Sponsored Stories -->
+    <string name="preferences_debug_settings_ads_client_for_stories" translatable="false">Enable Ads Client for Stories</string>
     <!-- Label for enabling the custom tab extension -->
     <string name="preferences_debug_settings_custom_tab_extensions" translatable="false">Enable Custom Tab Extension List</string>
     <!-- Label for enabling Firefox Suggest -->
@@ -129,8 +134,6 @@
     <string name="preferences_debug_settings_microsurvey_feature" translatable="false">Enable Microsurvey Feature</string>
     <!-- Label for enabling shake to summarize -->
     <string name="preferences_key_enable_shake_to_summarize" translatable="false">Enable Shake to Summarize Feature Flag</string>
-    <!-- Label for enabling Unified Trust Panel -->
-    <string name="preferences_debug_settings_unified_trust_panel" translatable="false">Enable Unified Trust Panel</string>
     <!-- Label for enabling remote search configuration -->
     <string name="preferences_debug_settings_remote_search_configuration" translatable="false">Enable Remote Search Configuration (requires restart)</string>
     <!-- Label for enabling Address Sync -->
@@ -141,6 +144,10 @@
     <string name="preferences_debug_settings_enable_persistent_onboarding" translatable="false">Show onboarding on each app cold open</string>
     <!-- Label for enabling Homepage Sports Widget -->
     <string name="preferences_debug_settings_homepage_sports_widget" translatable="false">Enable Homepage Sports Widget</string>
+    <!-- Label for enabling Homepage Customization -->
+    <string name="preferences_debug_settings_homepage_customization" translatable="false">Enable Homepage Customization</string>
+    <!-- Label for enabling trending and recent searches on the Homepage Search -->
+    <string name="preferences_debug_settings_homepage_trending_recent_search" translatable="false">Enable Trending and Recent Search on Homepage</string>
 
     <!-- Search Optimization Secret Settings -->
     <string name="preferences_debug_settings_search_optimization" translatable="false">Search Optimization Feature</string>
@@ -169,6 +176,7 @@
     <!-- Label for toggling the Tab Groups feature -->
     <string name="preferences_tab_groups_feature" translatable="false">Enable Tab Groups</string>
     <string name="preferences_tab_groups_drag_and_drop" translatable="false">Enable Tab Groups Drag and Drop</string>
+    <string name="preferences_tab_groups_live_reorder" translatable="false">Enable Live Reorder for Drag and Drop</string>
     <string name="preferences_tab_groups_onboarding" translatable="false">Enable Tab Groups Onboarding</string>
 
     <!-- Label for toggling the Tab Manager opening animation -->
@@ -178,7 +186,7 @@
     <string name="preferences_terms_of_use_debug_timer" translatable="false">30s ToU timer enabled</string>
     <string name="preferences_terms_of_use_latest_update_date" translatable="false">Set latest ToU update date to now</string>
 
-  <!-- Label for enabling IPProtection through secret settings -->
+    <!-- Label for enabling IPProtection through secret settings -->
     <string name="preferences_debug_settings_ip_protection" translatable="false">Enable IP Protection UI</string>
 
     <!-- Label for enabling LNA blocking -->
@@ -189,6 +197,9 @@
     <!-- Label for enabling isolated content processes in secret settings. -->
     <string name="preferences_debug_settings_isolated_process" translatable="false">Enable Isolated Content Process (requires restart)</string>
     <string name="preferences_debug_settings_app_zygote" translatable="false">Enable Isolated Processes with Zygote Preloading (requires restart)</string>
+
+    <!-- Label for enabling uninstall survey in secret settings. -->
+    <string name="preferences_debug_settings_uninstall_survey">Enable Uninstall Survey</string>
 
     <!-- Label for the defaults section and reset action in secret settings. -->
     <string name="preferences_debug_settings_reset_defaults" translatable="false">Reset switches to defaults</string>
@@ -324,10 +335,10 @@
     <string name="crash_debug_startup_crash_warning">This will start the startup crash activity in a new process and terminate the current process.</string>
 
     <!-- Firefox Labs -->
-    <!-- The name of an experimental feature displayed in theFirefox Labs screen. This features allows the user to open the homepage as a new tab. -->
-    <string name="firefox_labs_homepage_as_a_new_tab">Homepage as a New Tab</string>
-    <!-- The description of the "Homepage as a New Tab" feature in the Firefox Labs screen. -->
-    <string name="firefox_labs_homepage_as_a_new_tab_description">With this feature enabled, Homepage will behave as a tab.</string>
+    <!-- The name of an experimental feature displayed in the Firefox Labs screen. This feature appends a star to the Settings toolbar title. This string is for testing purposes only. -->
+    <string name="firefox_labs_test_lab_title">Add a star to settings</string>
+    <!-- The description of the "Add a star to settings" feature in the Firefox Labs screen. This string is for testing purposes only. -->
+    <string name="firefox_labs_test_lab_description">Appends a star to the settings toolbar title. (Experiment is for testing purposes only.)</string>
 
     <!-- Debug drawer tab group tools -->
     <!-- The title of the debug drawer tab to help populate tab groups-->
@@ -363,6 +374,8 @@
     <string name="debug_drawer_tab_group_tools_creation_button_auto_populate">Auto-populate tab groups</string>
     <!--  The button text to close all tab groups in the tab group creation tool. -->
     <string name="debug_drawer_tab_group_tools_creation_button_remove_all">Remove all tab groups</string>
+  <!--  The button text to reset the tab group onboarding state in the tab group creation tool. -->
+  <string name="debug_drawer_tab_group_tools_creation_button_reset_onboarding">Reset tab group onboarding</string>
 
     <!-- Debug drawer tab process tools -->
     <!-- The title of the Tab Process Exits feature in the Debug Drawer. -->
@@ -376,6 +389,18 @@
     <string name="preferences_import_bookmarks">Import Bookmarks</string>
     <!-- Label for the secret settings preference to enable Import Bookmarks -->
     <string name="preferences_debug_settings_import_bookmarks">Enable Import Bookmarks</string>
+
+    <!-- Debug info -->
+    <!-- The title of the Debug info bottom sheet. -->
+    <string name="debug_info_title">Debug info</string>
+    <!-- The title of the Debug info JSON report bottom sheet. -->
+    <string name="debug_info_json_title">Debug info JSON</string>
+    <!-- Button label that opens the JSON report view in the debug info bottom sheet. -->
+    <string name="debug_info_view_json_report" translatable="false">View JSON report</string>
+    <!-- Status badge label shown when a debug info item is enabled. -->
+    <string name="debug_info_enabled" translatable="false">Enabled</string>
+    <!-- Status badge label shown when a debug info item is disabled. -->
+    <string name="debug_info_disabled" translatable="false">Disabled</string>
 
     <!-- Label for the secret settings preference to enable Import Passwords -->
     <string name="preferences_debug_settings_import_passwords">Enable Import Passwords</string>

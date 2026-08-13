@@ -224,7 +224,7 @@ class MediaSessionConduit {
     uint32_t mLibwebrtcTimestampMs;
     uint32_t mSrc;
   };
-  mutable std::map<SourceKey, dom::RTCRtpSourceEntry, std::greater<SourceKey>>
+  mutable std::map<SourceKey, dom::RTCRtpSourceEntry, std::greater<>>
       mSourcesCache;
   // Accessed only on main thread. A flag saying whether mSourcesCache needs
   // updating. Ensures that get*Sources() appear stable from javascript
@@ -391,6 +391,8 @@ class VideoSessionConduit : public MediaSessionConduit {
       dom::Sequence<dom::RTCVideoFrameHistoryInternal>* outHistories) const = 0;
 
   virtual Maybe<Ssrc> GetAssociatedLocalRtxSSRC(Ssrc aSsrc) const = 0;
+
+  virtual Maybe<Ssrc> GetAssociatedRemoteRtxSSRC() const = 0;
 
   virtual Maybe<gfx::IntSize> GetLastResolution() const = 0;
   virtual AbstractCanonical<Maybe<gfx::IntSize>>* CanonicalReceivingSize() = 0;

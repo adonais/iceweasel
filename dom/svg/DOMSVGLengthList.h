@@ -103,12 +103,12 @@ class DOMSVGLengthList final : public nsISupports, public nsWrapperCache {
 
   /**
    * This will normally be the same as InternalList().Length(), except if we've
-   * hit OOM in which case our length will be zero.
+   * hit OOM in which case our length will be zero or we've hit the maximum
+   * list length for the DOM list at some point in which case it may be smaller.
    */
   uint32_t LengthNoFlush() const {
-    MOZ_ASSERT(
-        mItems.Length() == 0 || mItems.Length() == InternalList().Length(),
-        "DOM wrapper's list length is out of sync");
+    MOZ_ASSERT(mItems.IsEmpty() || mItems.Length() <= InternalList().Length(),
+               "DOM wrapper's list length is out of sync");
     return mItems.Length();
   }
 
@@ -179,7 +179,7 @@ class DOMSVGLengthList final : public nsISupports, public nsWrapperCache {
   /// Returns the DOMSVGLength at aIndex, creating it if necessary.
   already_AddRefed<DOMSVGLength> GetItemAt(uint32_t aIndex);
 
-  void MaybeInsertNullInAnimValListAt(uint32_t aIndex);
+  bool MaybeInsertNullInAnimValListAt(uint32_t aIndex);
   void MaybeRemoveItemFromAnimValListAt(uint32_t aIndex);
 
   // Weak refs to our DOMSVGLength items. The items are friends and take care

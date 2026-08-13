@@ -427,6 +427,11 @@ async function runTestPrincipal(storageType) {
 add_task(function setup() {
   // Allow setting local storage in xpcshell tests.
   Services.prefs.setBoolPref("dom.storage.client_validation", false);
+
+  const { ensureNSSInitialized } = ChromeUtils.importESModule(
+    "resource://testing-common/dom/quota/test/modules/Utils.sys.mjs"
+  );
+  ensureNSSInitialized();
 });
 
 /**

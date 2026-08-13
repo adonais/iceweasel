@@ -5,8 +5,8 @@
 #ifndef mozilla_widget_WindowEvent_h
 #define mozilla_widget_WindowEvent_h
 
-#include "nsThreadUtils.h"
 #include "mozilla/jni/Natives.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla {
 namespace widget {

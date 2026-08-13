@@ -387,3 +387,112 @@ add_task(async function test_httpsonly_exceptions() {
     Ci.nsIPermissionManager.ALLOW_ACTION
   );
 });
+
+// SanitizeOnShutdown.Exceptions sets the persist-data-on-shutdown permission
+// that exempts a site from clear-on-shutdown (Bug 2049937).
+add_task(async function test_sanitizeonshutdown_exceptions() {
+  await setupPolicyEngineWithJson({
+    policies: {
+      SanitizeOnShutdown: {
+        Cookies: true,
+        Exceptions: ["https://persist.example.com"],
+      },
+    },
+  });
+  equal(
+    Services.policies.status,
+    Ci.nsIEnterprisePolicies.ACTIVE,
+    "Engine is active"
+  );
+
+  let uri = URI("https://persist.example.com");
+  equal(
+    PermissionTestUtils.testPermission(uri, "persist-data-on-shutdown"),
+    Ci.nsIPermissionManager.ALLOW_ACTION,
+    "Exception site has a persist-data-on-shutdown ALLOW permission"
+  );
+  let permission = PermissionTestUtils.getPermissionObject(
+    uri,
+    "persist-data-on-shutdown",
+    true
+  );
+  ok(permission, "Permission object exists");
+  equal(
+    permission.expireType,
+    Ci.nsIPermissionManager.EXPIRE_POLICY,
+    "Permission expireType is EXPIRE_POLICY"
+  );
+});
+
+// Backwards-compat shim (Bug 2051574): when SanitizeOnShutdown.Exceptions is
+// not set, Cookies.Allow also grants persist-data-on-shutdown so legacy
+// configurations keep exempting sites from clear-on-shutdown.
+add_task(async function test_cookies_allow_persists_on_shutdown_compat() {
+  await setupPolicyEngineWithJson({
+    policies: {
+      Cookies: {
+        Allow: ["https://cookieallow.example.com"],
+      },
+    },
+  });
+  let uri = URI("https://cookieallow.example.com");
+  equal(
+    PermissionTestUtils.testPermission(uri, "cookie"),
+    Ci.nsIPermissionManager.ALLOW_ACTION,
+    "Cookies.Allow sets the cookie permission"
+  );
+  equal(
+    PermissionTestUtils.testPermission(uri, "persist-data-on-shutdown"),
+    Ci.nsIPermissionManager.ALLOW_ACTION,
+    "Cookies.Allow also sets persist-data-on-shutdown for backwards compat"
+  );
+  let permission = PermissionTestUtils.getPermissionObject(
+    uri,
+    "persist-data-on-shutdown",
+    true
+  );
+  ok(permission, "Permission object exists");
+  equal(
+    permission.expireType,
+    Ci.nsIPermissionManager.EXPIRE_POLICY,
+    "Permission expireType is EXPIRE_POLICY"
+  );
+});
+
+// Once SanitizeOnShutdown.Exceptions is set, the admin has adopted the new
+// mechanism, so the Cookies.Allow compat shim must not also write
+// persist-data-on-shutdown (Bug 2051574).
+add_task(async function test_cookies_allow_no_persist_when_exceptions_set() {
+  await setupPolicyEngineWithJson({
+    policies: {
+      Cookies: {
+        Allow: ["https://cookieonly.example.com"],
+      },
+      SanitizeOnShutdown: {
+        Cookies: true,
+        Exceptions: ["https://persist.example.com"],
+      },
+    },
+  });
+  let cookieUri = URI("https://cookieonly.example.com");
+  equal(
+    PermissionTestUtils.testPermission(cookieUri, "cookie"),
+    Ci.nsIPermissionManager.ALLOW_ACTION,
+    "Cookies.Allow still sets the cookie permission"
+  );
+  equal(
+    PermissionTestUtils.testPermission(cookieUri, "persist-data-on-shutdown"),
+    Ci.nsIPermissionManager.UNKNOWN_ACTION,
+    "Cookies.Allow does not set persist-data-on-shutdown when " +
+      "SanitizeOnShutdown.Exceptions is present"
+  );
+  let exceptionUri = URI("https://persist.example.com");
+  equal(
+    PermissionTestUtils.testPermission(
+      exceptionUri,
+      "persist-data-on-shutdown"
+    ),
+    Ci.nsIPermissionManager.ALLOW_ACTION,
+    "SanitizeOnShutdown.Exceptions sets persist-data-on-shutdown"
+  );
+});

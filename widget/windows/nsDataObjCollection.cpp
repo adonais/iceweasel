@@ -2,15 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <shlobj.h>
-
-#include "mozilla/CheckedInt.h"
-#include "mozilla/ScopeExit.h"
 #include "nsDataObjCollection.h"
-#include "nsClipboard.h"
-#include "IEnumFE.h"
 
 #include <ole2.h>
+#include <shlobj.h>
+
+#include "IEnumFE.h"
+#include "mozilla/CheckedInt.h"
+#include "mozilla/ScopeExit.h"
+#include "nsClipboard.h"
 
 // {25589C3E-1FAC-47b9-BF43-CAEA89B79533}
 const IID IID_IDataObjCollection = {

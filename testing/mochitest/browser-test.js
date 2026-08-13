@@ -11,6 +11,11 @@ var { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
 
+var { uploadProfileArtifact, installProfilerDumpAndQuit } =
+  ChromeUtils.importESModule(
+    "resource://testing-common/TestProfilerArtifact.sys.mjs"
+  );
+
 ChromeUtils.defineESModuleGetters(this, {
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
 });
@@ -228,6 +233,46 @@ function Tester(aTests, structuredLogger, aCallback) {
   this.structuredLogger = structuredLogger;
   this.tests = aTests;
   this.callback = aCallback;
+
+  // When Gecko hits a fatal test-only condition during a profiled run, report
+  // it as a failure of the current test and save a profile before exiting,
+  // instead of crashing and losing the profile.
+  installProfilerDumpAndQuit(reason => {
+    // this.tests is nulled once the run finishes, so reading this.currentTest
+    // (which indexes into it) would throw during shutdown; index defensively.
+    let test = this.tests?.[this.currentTestIndex];
+    if (test) {
+      this.structuredLogger.testStatus(
+        test.path,
+        "fatal condition",
+        "FAIL",
+        "PASS",
+        reason
+      );
+      return {
+        testName: test.path,
+        logger: this.structuredLogger,
+        // Deferred until after the profile is saved and its location logged, so
+        // the upload message precedes test_end and dashboards find the profile.
+        endTest: () =>
+          this.structuredLogger.testEnd(test.path, "FAIL", "PASS", reason),
+      };
+    }
+
+    // No test is running: the run finished and we are shutting down. Report a
+    // top-level error (there is no test to tie a status to), and name the
+    // profile after the last manifest run rather than browser-test.js.
+    this.structuredLogger.error(`browser-test.js | ${reason}`);
+    let profileName = this._lastTestManifest
+      ? `${this._lastTestManifest.replace(/\.\w+$/, "").replace(/[:/]/g, "_")}_shutdown`
+      : "shutdown";
+    return {
+      testName: "browser-test.js",
+      profileName,
+      logger: this.structuredLogger,
+      testRunning: false,
+    };
+  });
 
   this._scriptLoader = Services.scriptloader;
   this.EventUtils = {};
@@ -679,6 +724,9 @@ Tester.prototype = {
     // Tests complete, notify the callback and return
     this.callback(this.tests);
     this.callback = null;
+    // Remember the last manifest before dropping the test list, so a fatal
+    // condition hit while shutting down can name its profile after it.
+    this._lastTestManifest = this.tests.at(-1)?.manifest;
     this.tests = null;
   },
 
@@ -913,41 +961,15 @@ Tester.prototype = {
 
   async notifyProfilerOfTestEnd() {
     // See if we should upload a profile of a failing test.
-    if (this.currentTest.failCount) {
-      // If MOZ_PROFILER_SHUTDOWN is set, the profiler got started from --profiler
-      // and a profile will be shown even if there's no test failure.
-      if (
-        Services.env.exists("MOZ_UPLOAD_DIR") &&
-        !Services.env.exists("MOZ_PROFILER_SHUTDOWN") &&
-        Services.profiler.IsActive()
-      ) {
-        let name = this.currentTest.path;
-        name = name.slice(name.lastIndexOf("/") + 1);
-        let filename = `profile_${name}.json`;
-        let path = Services.env.get("MOZ_UPLOAD_DIR");
-        let profilePath = PathUtils.join(path, filename);
-        try {
-          const { profile } =
-            await Services.profiler.getProfileDataAsGzippedArrayBuffer();
-          await IOUtils.write(profilePath, new Uint8Array(profile));
-          this.currentTest.addResult(
-            new testResult({
-              name:
-                "Found unexpected failures during the test; profile uploaded in " +
-                filename,
-            })
-          );
-        } catch (e) {
-          // If the profile is large, we may encounter out of memory errors.
-          this.currentTest.addResult(
-            new testResult({
-              name:
-                "Found unexpected failures during the test; failed to upload profile: " +
-                e,
-            })
-          );
-        }
-      }
+    // If MOZ_PROFILER_SHUTDOWN is set, the profiler got started from --profiler
+    // and a profile will be shown even if there's no test failure.
+    if (
+      this.currentTest.failCount &&
+      Services.env.exists("MOZ_UPLOAD_DIR") &&
+      !Services.env.exists("MOZ_PROFILER_SHUTDOWN") &&
+      Services.profiler.IsActive()
+    ) {
+      await uploadProfileArtifact(this.currentTest.path, this.structuredLogger);
     }
   },
 
@@ -1204,7 +1226,10 @@ Tester.prototype = {
         );
       }
 
+      // Last check for uncaught rejections followed by the cleanup of allowed
+      // rejections.
       this.PromiseTestUtils.assertNoUncaughtRejections();
+      this.PromiseTestUtils.clearAllowedUncaughtRejections();
 
       await this.notifyProfilerOfTestEnd();
 

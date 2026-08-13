@@ -42,8 +42,7 @@
         android:layout_height="wrap_content"
         android:text="@string/search_add_manually_example"
         android:textColor="@android:color/tertiary_text_dark"
-        android:paddingStart="5dp"
-        android:paddingLeft="5dp"/>
+        android:paddingStart="5dp"/>
 
     <ProgressBar
             android:id="@+id/progress"

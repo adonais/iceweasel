@@ -6,6 +6,7 @@
 #define nsCycleCollectionParticipant_h_
 
 #include <type_traits>
+
 #include "js/HeapAPI.h"
 #include "js/TypeDecls.h"
 #include "mozilla/MacroForEach.h"
@@ -541,7 +542,7 @@ class NS_NO_VTABLE nsXPCOMCycleCollectionParticipant
 
 // The default implementation of this class template is empty, because it
 // should never be used: see the partial specializations below.
-template <typename T, bool IsXPCOM = std::is_base_of<nsISupports, T>::value>
+template <typename T, bool IsXPCOM = std::is_base_of_v<nsISupports, T>>
 struct DowncastCCParticipantImpl {};
 
 // Specialization for XPCOM CC participants

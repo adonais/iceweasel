@@ -3,9 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "UnscaledFontFreeType.h"
+
+#include "Logging.h"
 #include "NativeFontResourceFreeType.h"
 #include "ScaledFontFreeType.h"
-#include "Logging.h"
 #include "StackArray.h"
 
 #include FT_MULTIPLE_MASTERS_H
@@ -13,10 +14,10 @@
 
 #include <dlfcn.h>
 #include <fcntl.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 namespace mozilla::gfx {
 

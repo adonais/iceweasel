@@ -5,8 +5,8 @@
 #ifndef mozilla_net_TRRQuery_h
 #define mozilla_net_TRRQuery_h
 
-#include "nsHostResolver.h"
 #include "DNSPacket.h"
+#include "nsHostResolver.h"
 
 namespace mozilla {
 namespace net {

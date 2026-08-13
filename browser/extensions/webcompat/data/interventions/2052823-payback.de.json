@@ -1,0 +1,99 @@
+{
+  "label": "payback.de",
+  "bugs": {
+    "2052823": {
+      "issue": "firefox-blocked-completely",
+      "matches": ["*://www.payback.de/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["windows"],
+      "alter_request_headers": [
+        {
+          "headers": ["Accept"],
+          "replacement": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8"
+        },
+        {
+          "headers": ["sec-ch-ua"],
+          "replacement": "\"Not;A=Brand\";v=\"8\", \"Chromium\";v=\"148\", \"Google Chrome\";v=\"148\""
+        },
+        {
+          "headers": ["sec-ch-ua-mobile"],
+          "replacement": "?0"
+        },
+        {
+          "headers": ["sec-ch-ua-platform"],
+          "replacement": "\"Windows\""
+        }
+      ],
+      "ua_string": ["Chrome"]
+    },
+    {
+      "platforms": ["mac"],
+      "alter_request_headers": [
+        {
+          "headers": ["Accept"],
+          "replacement": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8"
+        },
+        {
+          "headers": ["sec-ch-ua"],
+          "replacement": "\"Not;A=Brand\";v=\"8\", \"Chromium\";v=\"148\", \"Google Chrome\";v=\"148\""
+        },
+        {
+          "headers": ["sec-ch-ua-mobile"],
+          "replacement": "?0"
+        },
+        {
+          "headers": ["sec-ch-ua-platform"],
+          "replacement": "\"macOS\""
+        }
+      ],
+      "ua_string": ["Chrome"]
+    },
+    {
+      "platforms": ["linux"],
+      "alter_request_headers": [
+        {
+          "headers": ["Accept"],
+          "replacement": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8"
+        },
+        {
+          "headers": ["sec-ch-ua"],
+          "replacement": "\"Not;A=Brand\";v=\"8\", \"Chromium\";v=\"148\", \"Google Chrome\";v=\"148\""
+        },
+        {
+          "headers": ["sec-ch-ua-mobile"],
+          "replacement": "?0"
+        },
+        {
+          "headers": ["sec-ch-ua-platform"],
+          "replacement": "\"Linux\""
+        }
+      ],
+      "ua_string": ["Chrome"]
+    },
+    {
+      "platforms": ["android"],
+      "alter_request_headers": [
+        {
+          "headers": ["Accept"],
+          "replacement": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8"
+        },
+        {
+          "headers": ["sec-ch-ua"],
+          "replacement": "\"Not;A=Brand\";v=\"8\", \"Chromium\";v=\"148\", \"Google Chrome\";v=\"148\""
+        },
+        {
+          "headers": ["sec-ch-ua-mobile"],
+          "replacement": "?1"
+        },
+        {
+          "headers": ["sec-ch-ua-platform"],
+          "replacement": "\"Android\""
+        }
+      ],
+      "ua_string": ["Chrome"]
+    }
+  ]
+}

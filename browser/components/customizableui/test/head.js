@@ -495,7 +495,7 @@ function waitForOverflowButtonShown(win = window) {
   return waitForElementShown(ov.icon);
 }
 function waitForElementShown(element) {
-  return BrowserTestUtils.waitForCondition(() => {
+  return TestUtils.waitForCondition(() => {
     info("Checking if element has non-0 size");
     // We intentionally flush layout to ensure the element is actually shown.
     let rect = element.getBoundingClientRect();

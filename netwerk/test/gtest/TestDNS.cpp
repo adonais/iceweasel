@@ -6,7 +6,6 @@
 // invoked while nsHostResolver's mDBLock write lock is held.
 
 #include "gtest/gtest.h"
-
 #include "mozilla/CondVar.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/gtest/MozAssertions.h"

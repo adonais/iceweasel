@@ -5,12 +5,12 @@
 #ifndef ExpandedPrincipal_h
 #define ExpandedPrincipal_h
 
+#include "mozilla/BasePrincipal.h"
 #include "nsCOMPtr.h"
 #include "nsJSPrincipals.h"
+#include "nsNetUtil.h"
 #include "nsProxyRelease.h"
 #include "nsTArray.h"
-#include "nsNetUtil.h"
-#include "mozilla/BasePrincipal.h"
 
 class nsIContentSecurityPolicy;
 

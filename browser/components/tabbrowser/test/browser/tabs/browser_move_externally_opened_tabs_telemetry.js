@@ -39,7 +39,7 @@ async function moveTab(tab) {
   const tabMove = BrowserTestUtils.waitForEvent(tab, "TabMove");
   gBrowser.moveTabTo(tab, {
     tabIndex: 0,
-    isUserTriggered: true,
+    metricsContext: gBrowser.TabMetrics.userTriggeredContext(),
   });
   await tabMove;
 }

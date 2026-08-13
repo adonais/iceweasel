@@ -7,10 +7,10 @@
  * Test some corner cases from Bug 1849815 where empty web languages were causing
  * issues.
  */
-add_task(async function test_detected_language() {
+add_task(async function test_lang_tag_resolution() {
   const { cleanup, tab } = await loadTestPage({
-    // This page will get its language changed by the test.
-    page: ENGLISH_PAGE_URL,
+    // This page is replaced by an inline per-lang-tag test page.
+    page: BLANK_PAGE_URL,
     autoDownloadFromRemoteSettings: true,
     // Empty out the accept languages.
     languagePairs: [
@@ -23,18 +23,9 @@ add_task(async function test_detected_language() {
     ],
   });
 
-  async function getDetectedLanguagesFor(langTag) {
-    await SpecialPowers.spawn(
-      tab.linkedBrowser,
-      [{ langTag }],
-      function changeLanguage({ langTag }) {
-        content.document.body.parentNode.setAttribute("lang", langTag);
-      }
-    );
-    // Clear out the cached values.
-    getTranslationsParent().languageState.detectedLanguages = null;
+  async function getLangTagsFor(langTag) {
     const { docLangTag, userLangTag, isDocLangTagSupported } =
-      await getTranslationsParent().getDetectedLanguages(langTag);
+      await getLangTagsForLangTagTestPage(tab.linkedBrowser, langTag);
     return {
       docLangTag,
       userLangTag,
@@ -50,7 +41,7 @@ add_task(async function test_detected_language() {
     });
 
     Assert.deepEqual(
-      await getDetectedLanguagesFor("en"),
+      await getLangTagsFor("en"),
       {
         docLangTag: "en",
         userLangTag: null,
@@ -70,7 +61,7 @@ add_task(async function test_detected_language() {
     });
 
     Assert.deepEqual(
-      await getDetectedLanguagesFor("en"),
+      await getLangTagsFor("en"),
       {
         docLangTag: "en",
         userLangTag: null,
@@ -80,7 +71,7 @@ add_task(async function test_detected_language() {
     );
 
     Assert.deepEqual(
-      await getDetectedLanguagesFor("es"),
+      await getLangTagsFor("es"),
       {
         docLangTag: "es",
         userLangTag: "en",

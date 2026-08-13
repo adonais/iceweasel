@@ -328,7 +328,7 @@ inline bool StyleAtom::IsStatic() const { return !!(_0 & 1); }
 
 inline nsAtom* StyleAtom::AsAtom() const {
   if (IsStatic()) {
-    return const_cast<nsStaticAtom*>(&detail::gGkAtoms.mAtoms[_0 >> 1]);
+    return nsGkAtoms::GetAtomByIndex(_0 >> 1);
   }
   return reinterpret_cast<nsAtom*>(_0);
 }
@@ -348,7 +348,7 @@ inline void StyleAtom::Release() {
 inline StyleAtom::StyleAtom(already_AddRefed<nsAtom> aAtom) {
   nsAtom* atom = aAtom.take();
   if (atom->IsStatic()) {
-    size_t index = atom->AsStatic() - &detail::gGkAtoms.mAtoms[0];
+    size_t index = nsGkAtoms::IndexOf(atom->AsStatic());
     _0 = (index << 1) | 1;
   } else {
     _0 = reinterpret_cast<uintptr_t>(atom);
@@ -1533,7 +1533,66 @@ StyleTreeScoped<StyleAnchorNameIdent>::AsSpan() const {
 }
 
 inline StyleNumericType::StyleNumericType()
-    : exponents{}, percent_hint(StyleOptional<StyleNumericBaseType>::None()) {}
+    : exponents{},
+      percent_hint(StyleOptional<StyleNumericBaseType>::None()),
+      non_zero_count(0),
+      non_zero_except_percent_count(0) {}
+
+inline StyleNumericType StyleNumericType::Empty() { return StyleNumericType(); }
+
+// See declaration for synchronization requirements.
+inline StyleNumericType StyleNumericType::WithBaseType(
+    StyleNumericBaseType aBaseType) {
+  auto result = Empty();
+  result.exponents[static_cast<size_t>(aBaseType)] = 1;
+  result.non_zero_count = 1;
+
+  if (aBaseType != StyleNumericBaseType::Percent) {
+    result.non_zero_except_percent_count = 1;
+  }
+
+  return result;
+}
+
+inline StyleNumericType StyleNumericType::Number() { return Empty(); }
+
+inline StyleNumericType StyleNumericType::Percent() {
+  return WithBaseType(StyleNumericBaseType::Percent);
+}
+
+inline StyleNumericType StyleNumericType::Length() {
+  return WithBaseType(StyleNumericBaseType::Length);
+}
+
+inline StyleNumericType StyleNumericType::Angle() {
+  return WithBaseType(StyleNumericBaseType::Angle);
+}
+
+inline StyleNumericType StyleNumericType::Time() {
+  return WithBaseType(StyleNumericBaseType::Time);
+}
+
+inline StyleNumericType StyleNumericType::Frequency() {
+  return WithBaseType(StyleNumericBaseType::Frequency);
+}
+
+inline StyleNumericType StyleNumericType::Resolution() {
+  return WithBaseType(StyleNumericBaseType::Resolution);
+}
+
+inline StyleNumericType StyleNumericType::Flex() {
+  return WithBaseType(StyleNumericBaseType::Flex);
+}
+
+inline int32_t StyleNumericType::Exponent(
+    StyleNumericBaseType aBaseType) const {
+  return exponents[static_cast<size_t>(aBaseType)];
+}
+
+inline bool StyleNumericType::operator==(const StyleNumericType& aOther) const {
+  return ArrayEqual(exponents, aOther.exponents) &&
+         percent_hint == aOther.percent_hint;
+}
 
 }  // namespace mozilla
 

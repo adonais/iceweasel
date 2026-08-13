@@ -181,7 +181,7 @@ newtab-menu-save-to-pocket = Sekles ɣer { -pocket-brand-name }
 newtab-menu-delete-pocket = Kkes si { -pocket-brand-name }
 newtab-menu-archive-pocket = Ḥrez di { -pocket-brand-name }
 newtab-menu-show-privacy-info = Wid yettbeddan fell-aɣ akked tudert-ik tabaḍnit
-newtab-menu-about-fakespot = Γef { -fakespot-brand-name }
+newtab-menu-about-fakespot = Ɣef { -fakespot-brand-name }
 # Report is a verb (i.e. report issue with the content).
 newtab-menu-report = Aneqqis
 # Context menu option to personalize New Tab recommended stories by blocking a section of stories,

@@ -175,14 +175,12 @@ import org.mozilla.fenix.browser.store.BrowserScreenState
 import org.mozilla.fenix.browser.store.BrowserScreenStore
 import org.mozilla.fenix.browser.tabstrip.TabStrip
 import org.mozilla.fenix.components.AppStore
-import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.components.FenixAutocompletePrompt
 import org.mozilla.fenix.components.FenixEmailMaskPrompt
 import org.mozilla.fenix.components.FenixSuggestStrongPasswordPrompt
 import org.mozilla.fenix.components.FindInPageIntegration
 import org.mozilla.fenix.components.accounts.FxaWebChannelIntegration
 import org.mozilla.fenix.components.appstate.AppAction
-import org.mozilla.fenix.components.appstate.AppAction.MessagingAction
 import org.mozilla.fenix.components.appstate.AppAction.MessagingAction.MicrosurveyAction
 import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.components.toolbar.BottomToolbarContainerIntegration
@@ -266,6 +264,7 @@ abstract class BaseBrowserFragment :
     private var creditCardSelectBar: AutocompletePrompt<CreditCardEntry>? = null
     private var suggestStrongPasswordBar: PasswordPromptView? = null
     private var emailMaskBar: EmailMaskPromptView? = null
+    private var currentMicrosurvey: MicrosurveyUIData? = null
     internal var blackScreenOverlay: ComposeView? = null
     private lateinit var startForResult: ActivityResultLauncher<Intent>
 
@@ -490,6 +489,7 @@ abstract class BaseBrowserFragment :
             observer = CloseLastSyncedTabObserver(
                 scope = viewLifecycleOwner.lifecycleScope,
                 navController = findNavController(),
+                settings = requireComponents.settings,
             ),
             view = view,
         )
@@ -741,6 +741,10 @@ abstract class BaseBrowserFragment :
             },
             onNeedToRequestPermissions = { permissions ->
                 requestPermissions(permissions, REQUEST_CODE_DOWNLOAD_PERMISSIONS)
+            },
+            dismissCustomFirstPartyDownloadDialog = {
+                dismissRenameDialog()
+                dismissDownloadDialogs()
             },
             customFirstPartyDownloadDialog = {
                     currentDownloadState,
@@ -1258,8 +1262,14 @@ abstract class BaseBrowserFragment :
                 shouldShowDoNotAskAgainCheckBox = context.components.appStore.state.mode != BrowsingMode.Private,
                 store = store,
                 shouldHide = {
-                    val state = requireComponents.appStore.state
-                    state.isPrivateScreenLocked && state.mode.isPrivate
+                    // if the fragment is detached,
+                    // returning true will hide the site permission prompt rather than crash
+                    if (this.context == null) {
+                        true
+                    } else {
+                        val state = requireComponents.appStore.state
+                        state.isPrivateScreenLocked && state.mode.isPrivate
+                    }
                 },
             ),
             owner = this,
@@ -1456,7 +1466,7 @@ abstract class BaseBrowserFragment :
     ): @Composable () -> Unit = {
         FirefoxTheme {
             TabStrip(
-                showActionButtons = false,
+                showTabCounterButton = false,
                 onAddTabClick = {
                     if (settings.enableHomepageAsNewTab) {
                         requireComponents.useCases.fenixBrowserUseCases.addNewHomepageTab(
@@ -1465,7 +1475,7 @@ abstract class BaseBrowserFragment :
                     } else {
                         findNavController().navigate(
                             NavGraphDirections.actionGlobalHome(
-                                focusOnAddressBar = true,
+                                focusOnAddressBar = !settings.enableHomepageTrendingRecentSearch,
                             ),
                         )
                     }
@@ -1713,15 +1723,17 @@ abstract class BaseBrowserFragment :
         if (context.components.settings.isExperimentationEnabled &&
             context.components.settings.microsurveyFeatureEnabled
         ) {
+            val messagingFeature = MessagingFeature(
+                appStore = requireComponents.appStore,
+                surface = FenixMessageSurfaceId.MICROSURVEY,
+            )
             messagingFeatureMicrosurvey.set(
-                feature = MessagingFeature(
-                    appStore = requireComponents.appStore,
-                    surface = FenixMessageSurfaceId.MICROSURVEY,
-                    runWhenReadyQueue = requireComponents.performance.visualCompletenessQueue,
-                ),
+                feature = messagingFeature,
                 owner = viewLifecycleOwner,
                 view = binding.root,
             )
+
+            viewLifecycleOwner.lifecycle.addObserver(messagingFeature)
         }
     }
 
@@ -1811,8 +1823,6 @@ abstract class BaseBrowserFragment :
     private fun removeBottomToolbarDivider() {
         browserToolbar.layout.elevation = 0.0f
     }
-
-    private var currentMicrosurvey: MicrosurveyUIData? = null
 
     /**
      * Listens for the microsurvey message and initializes the microsurvey prompt if one is available.
@@ -1957,8 +1967,6 @@ abstract class BaseBrowserFragment :
         }
         hideToolbar()
 
-        evaluateMessagesForMicrosurvey(components)
-
         BiometricAuthenticationManager.biometricAuthenticationNeededInfo.shouldShowAuthenticationPrompt =
             true
         BiometricAuthenticationManager.biometricAuthenticationNeededInfo.authenticationStatus =
@@ -1973,9 +1981,6 @@ abstract class BaseBrowserFragment :
             )
         }
     }
-
-    private fun evaluateMessagesForMicrosurvey(components: Components) =
-        components.appStore.dispatch(MessagingAction.Evaluate(FenixMessageSurfaceId.MICROSURVEY))
 
     @CallSuper
     override fun onPause() {
@@ -2238,10 +2243,7 @@ abstract class BaseBrowserFragment :
             (activity as? HomeActivity)?.let { homeActivity ->
                 // ExternalAppBrowserActivity exclusively handles it's own theming unless in private mode.
                 if (homeActivity !is ExternalAppBrowserActivity || homeActivity.browsingModeManager.mode.isPrivate) {
-                    homeActivity.themeManager.applyStatusBarTheme(
-                        homeActivity,
-                        requireComponents.settings.isTabStripEnabled,
-                    )
+                    homeActivity.themeManager.applyStatusBarTheme(homeActivity)
                 }
             }
             collapseBrowserView()
@@ -2353,6 +2355,7 @@ abstract class BaseBrowserFragment :
         awesomeBarComposable = null
         browserNavigationBar = null
         blackScreenOverlay = null
+        currentMicrosurvey = null
         _binding = null
     }
 

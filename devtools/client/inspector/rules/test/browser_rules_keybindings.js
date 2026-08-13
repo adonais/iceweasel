@@ -204,14 +204,10 @@ add_task(async function testKeyboardNavigationInElementRule() {
   EventUtils.sendString("tomato", view.styleWindow);
 
   info("Typing Enter should close the input and focus the value span");
-  const onValueDone = view.once("ruleview-changed");
-  // The element rule is reset when a property is added, which impacts how we deal
-  // with the focused element.
-  const onRuleEditorFocusReset = view.once("rule-editor-focus-reset");
+  const onValueDone = view.inspector.once("rule-view-refreshed");
   EventUtils.sendKey("Return");
 
   await onValueDone;
-  await onRuleEditorFocusReset;
   await onStyleAttributeMutation;
 
   is(

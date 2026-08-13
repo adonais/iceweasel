@@ -17,6 +17,7 @@
 #include "wasm/WasmBCFrame.h"
 
 #include "mozilla/Likely.h"
+
 #include "wasm/WasmBaselineCompile.h"  // For BaseLocalIter
 #include "wasm/WasmBCClass.h"
 

@@ -5,13 +5,10 @@
 #include <string.h>
 
 #include "gc/GC.h"
-
 #include "js/RootingAPI.h"
 #include "js/StableStringChars.h"
 #include "js/String.h"  // JS::StringToLinearString
-
 #include "jsapi-tests/tests.h"
-
 #include "vm/JSContext.h"
 #include "vm/StringType.h"
 

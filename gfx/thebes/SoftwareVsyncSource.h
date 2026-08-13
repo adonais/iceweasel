@@ -6,13 +6,13 @@
 #ifndef GFX_SOFTWARE_VSYNC_SOURCE_H
 #define GFX_SOFTWARE_VSYNC_SOURCE_H
 
+#include "VsyncSource.h"
+#include "base/thread.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
-#include "base/thread.h"
 #include "nsISupportsImpl.h"
-#include "VsyncSource.h"
 
 namespace mozilla::gfx {
 

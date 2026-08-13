@@ -175,6 +175,10 @@ sealed class Permission {
         override val id: String? = "AppLocationFine",
         override val desc: String? = "",
     ) : Permission()
+    data class AppLocalNetworkAccess(
+        override val id: String? = "AppLocalNetworkAccess",
+        override val desc: String? = "",
+    ) : Permission()
 
     data class Generic(
         override val id: String? = "Generic",

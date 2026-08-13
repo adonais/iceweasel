@@ -1,0 +1,74 @@
+<!doctype html>
+<meta charset=utf-8>
+<title>Bug 1805447: Check that DTLS handshake errors are surfaced</title>
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<script src="/webrtc/RTCPeerConnection-helper.js"></script>
+<script>
+"use strict";
+
+async function withPrefs(prefs, func) {
+  await SpecialPowers.pushPrefEnv({ set: prefs });
+  try {
+    return await func();
+  } finally {
+    await SpecialPowers.popPrefEnv();
+  }
+}
+
+// We use prefs to force DTLS handshake failures, which is not possible in wpt.
+promise_test(async t => {
+  let offerer;
+  // Make offerer use only DTLS 1.2
+  await withPrefs([["media.peerconnection.dtls.version.max", 771]], async () => {
+    offerer = new RTCPeerConnection();
+    t.add_cleanup(() => offerer.close());
+    const stream = await getNoiseStream({ audio: true });
+    offerer.addTrack(stream.getTracks()[0]);
+    await offerer.setLocalDescription();
+    // Pref is checked in the transport code, so give that time to happen; init
+    // should be done if we've seen a trickle candidate.
+    await new Promise(r => offerer.onicecandidate = r);
+  });
+
+  // Make answerer use only DTLS 1.3
+  await withPrefs([["media.peerconnection.dtls.version.min", 772]], async () => {
+    const answerer = new RTCPeerConnection();
+    t.add_cleanup(() => answerer.close());
+    exchangeIceCandidates(offerer, answerer);
+    await exchangeOfferAnswer(offerer, answerer);
+
+    const answererTransport = answerer.getSenders()[0].transport;
+    const answererErrorPromise = new Promise(r => {
+      answererTransport.onerror = r;
+    });
+
+    const offererTransport = offerer.getSenders()[0].transport;
+    const offererErrorPromise = new Promise(r => {
+      offererTransport.onerror = r;
+    });
+
+    const answererError = await answererErrorPromise;
+    assert_true(answererError instanceof RTCErrorEvent);
+    assert_true(answererError.error instanceof RTCError);
+    assert_equals(answererError.error.errorDetail, "dtls-failure");
+    // Here we expect a protocol_version alert (70)
+    // See https://datatracker.ietf.org/doc/html/rfc8446#appendix-D.1
+    // answerer is the DTLS client, so it is the offerer that will alert
+    assert_equals(answererError.error.sentAlert, null);
+    assert_equals(answererError.error.receivedAlert, 70);
+    assert_not_equals(answererError.error.message.length, 0);
+    assert_equals(answererError.error.name, 'OperationError');
+
+    const offererError = await offererErrorPromise;
+    assert_true(offererError instanceof RTCErrorEvent);
+    assert_true(offererError.error instanceof RTCError);
+    assert_equals(offererError.error.errorDetail, "dtls-failure");
+    assert_equals(offererError.error.sentAlert, 70);
+    assert_equals(offererError.error.receivedAlert, null);
+    assert_not_equals(offererError.error.message.length, 0);
+    assert_equals(offererError.error.name, 'OperationError');
+  });
+}, 'DTLS version mismatch results in the correct error events');
+
+</script>

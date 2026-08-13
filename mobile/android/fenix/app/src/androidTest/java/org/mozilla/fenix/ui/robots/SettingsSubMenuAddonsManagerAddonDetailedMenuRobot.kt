@@ -37,6 +37,13 @@ class SettingsSubMenuAddonsManagerAddonDetailedMenuRobot {
         Log.i(TAG, "disableExtension: Clicked the enable/disable extension toggle")
     }
 
+    fun openSettings() {
+        Log.i(TAG, "openSettings: Trying to click the add-on settings row")
+        onView(withId(R.id.settings)).check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
+        onView(withId(R.id.settings)).click()
+        Log.i(TAG, "openSettings: Clicked the add-on settings row")
+    }
+
     class Transition(private val composeTestRule: ComposeTestRule) {
         fun goBack(interact: SettingsSubMenuAddonsManagerRobot.() -> Unit): SettingsSubMenuAddonsManagerRobot.Transition {
             Log.i(TAG, "goBack: Trying to click the navigate up button")

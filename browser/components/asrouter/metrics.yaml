@@ -34,6 +34,27 @@ messaging_system:
     send_in_pings:
       - messaging-system
 
+  last_window_close_trigger_bypassed:
+    type: counter
+    lifetime: ping
+    description: |
+      How often a user closes the last browser window a second time while a
+      lastWindowClose-triggered message from a previous close attempt on that
+      same window is still pending, causing that close to bypass waiting for
+      the message (and any action it may still be running) to finish.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2022656
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2022656
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - mviar@mozilla.com
+      - omc-core@mozilla.com
+    expires: never
+    send_in_pings:
+      - messaging-system
+
   event_reason: &event_reason
     type: string
     lifetime: ping

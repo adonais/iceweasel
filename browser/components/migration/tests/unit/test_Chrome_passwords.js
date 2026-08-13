@@ -176,6 +176,17 @@ function checkLoginsAreEqual(passwordManagerLogin, chromeLogin, id) {
   );
 }
 
+// getAllLogins() doesn't guarantee any particular ordering, so match each
+// expected login to its actual counterpart by a stable key rather than by index.
+function loginKey(login) {
+  return [login.origin, login.httpRealm, login.username].join("|");
+}
+
+function findMatchingLogin(logins, expected) {
+  const key = loginKey(expected);
+  return logins.find(login => loginKey(login) === key);
+}
+
 function generateDifferentLogin(login) {
   const newLogin = Cc["@mozilla.org/login-manager/loginInfo;1"].createInstance(
     Ci.nsILoginInfo
@@ -308,8 +319,10 @@ add_task(async function test_importIntoEmptyDB() {
     "Check telemetry matches the actual import."
   );
 
-  for (let i = 0; i < TEST_LOGINS.length; i++) {
-    checkLoginsAreEqual(logins[i], TEST_LOGINS[i], i + 1);
+  for (const expected of TEST_LOGINS) {
+    const actual = findMatchingLogin(logins, expected);
+    Assert.ok(actual, "Found imported login for ID " + expected.id);
+    checkLoginsAreEqual(actual, expected, expected.id);
   }
 });
 
@@ -345,7 +358,9 @@ add_task(async function test_importExistingLogins() {
   );
 
   for (let i = 0; i < newLogins.length; i++) {
-    checkLoginsAreEqual(logins[i], newLogins[i], i + 1);
+    const actual = findMatchingLogin(logins, newLogins[i]);
+    Assert.ok(actual, "Found existing login " + (i + 1));
+    checkLoginsAreEqual(actual, newLogins[i], i + 1);
   }
   // Migrate the logins.
   await promiseMigration(
@@ -368,6 +383,8 @@ add_task(async function test_importExistingLogins() {
   );
 
   for (let i = 0; i < newLogins.length; i++) {
-    checkLoginsAreEqual(logins[i], newLogins[i], i + 1);
+    const actual = findMatchingLogin(logins, newLogins[i]);
+    Assert.ok(actual, "Existing login " + (i + 1) + " was not overwritten");
+    checkLoginsAreEqual(actual, newLogins[i], i + 1);
   }
 });

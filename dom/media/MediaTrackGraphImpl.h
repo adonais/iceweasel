@@ -423,12 +423,12 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
    * Returns smallest value of t such that t is a multiple of
    * WEBAUDIO_BLOCK_SIZE and t >= aTime.
    */
-  static GraphTime RoundUpToEndOfAudioBlock(GraphTime aTime);
+  static MediaTime RoundUpToEndOfAudioBlock(MediaTime aTime);
   /**
    * Returns smallest value of t such that t is a multiple of
    * WEBAUDIO_BLOCK_SIZE and t > aTime.
    */
-  static GraphTime RoundUpToNextAudioBlock(GraphTime aTime);
+  static MediaTime RoundUpToNextAudioBlock(MediaTime aTime);
   /**
    * Produce data for all tracks >= aTrackIndex for the current time interval.
    * Advances block by block, each iteration producing data for all tracks

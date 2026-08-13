@@ -57,10 +57,10 @@ class WebPlatformTestsRunner:
     def __init__(self, setup):
         self.setup = setup
 
-    def setup_logging(self, **kwargs):
+    def logging_manager(self, **kwargs):
         from tools.wpt import run
 
-        return run.setup_logging(
+        return run.GlobalLogger(
             kwargs,
             {self.setup.default_log_type: sys.stdout},
             formatter_defaults={"screenshot": True},
@@ -89,10 +89,20 @@ class WebPlatformTestsRunner:
         log_buffer = CriticalLogBuffer()
         logger.add_handler(log_buffer)
 
+        # wptrunner.start() unconditionally calls logger.shutdown() in its
+        # finally block. When invoked from `mach test`, the logger is shared
+        # across multiple WPT invocations (one per subsuite bucket), so
+        # shutting it down after the first run kills it for all subsequent
+        # runs. Temporarily replace shutdown with a no-op so the caller
+        # retains control over the logger lifetime.
+        original_shutdown = logger.shutdown
+        logger.shutdown = lambda *args, **kwargs: None
+
         result = 1
         try:
             result = wptrunner.start(**kwargs)
         finally:
+            logger.shutdown = original_shutdown
             if int(result) != 0:
                 self._process_log_errors(logger, log_buffer, kwargs)
             logger.remove_handler(log_buffer)

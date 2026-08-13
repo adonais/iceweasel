@@ -430,6 +430,16 @@ class SystemEngineSession(
     }
 
     /**
+     * See [EngineSession.getBrokenSiteReport]
+     */
+    override fun getBrokenSiteReport(
+        onResult: (JSONObject) -> Unit,
+        onException: (Throwable) -> Unit,
+    ) {
+        throw UnsupportedOperationException("Getting broken site report is not available in this engine")
+    }
+
+    /**
      * See [EngineSession.getWebCompatInfo]
      */
     override fun getWebCompatInfo(

@@ -524,3 +524,163 @@ add_task(async function test_moveTabBackwardCollapsedTabGroups() {
   await removeTabGroup(group2);
   BrowserTestUtils.removeTab(tab5);
 });
+
+add_task(async function test_moveTabToStart() {
+  let tab1 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  let tab2 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  let tab3 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  gBrowser.selectedTab = tab3;
+
+  info("validate the starting order of the tabs");
+  assertTabIndexesMatch([
+    [tab1, 1],
+    [tab2, 2],
+    [tab3, 3],
+  ]);
+
+  gBrowser.moveTabToStart();
+  info("tab3 should move to the start of the tab strip");
+  assertTabIndexesMatch([
+    [tab1, 2],
+    [tab2, 3],
+    [tab3, 0],
+  ]);
+
+  gBrowser.moveTabToStart();
+  info("tab3 is already at the start, should not move");
+  assertTabIndexesMatch([
+    [tab1, 2],
+    [tab2, 3],
+    [tab3, 0],
+  ]);
+
+  BrowserTestUtils.removeTab(tab1);
+  BrowserTestUtils.removeTab(tab2);
+  BrowserTestUtils.removeTab(tab3);
+});
+
+add_task(async function test_moveTabToEnd() {
+  let tab1 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  let tab2 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  let tab3 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  gBrowser.selectedTab = tab1;
+
+  info("validate the starting order of the tabs");
+  assertTabIndexesMatch([
+    [tab1, 1],
+    [tab2, 2],
+    [tab3, 3],
+  ]);
+
+  gBrowser.moveTabToEnd();
+  info("tab1 should move to the end of the tab strip");
+  assertTabIndexesMatch([
+    [tab1, 3],
+    [tab2, 1],
+    [tab3, 2],
+  ]);
+
+  gBrowser.moveTabToEnd();
+  info("tab1 is already at the end, should not move");
+  assertTabIndexesMatch([
+    [tab1, 3],
+    [tab2, 1],
+    [tab3, 2],
+  ]);
+
+  BrowserTestUtils.removeTab(tab1);
+  BrowserTestUtils.removeTab(tab2);
+  BrowserTestUtils.removeTab(tab3);
+});
+
+add_task(async function test_moveTabToStartPinnedTabs() {
+  let tab1 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  let tab2 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  let tab3 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  let tab4 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  gBrowser.pinTab(tab1);
+  gBrowser.pinTab(tab2);
+
+  info("validate the starting order of the tabs");
+  assertTabIndexesMatch([
+    [tab1, 0],
+    [tab2, 1],
+    [tab3, 3],
+    [tab4, 4],
+  ]);
+
+  gBrowser.selectedTab = tab4;
+
+  gBrowser.moveTabToStart();
+  info(
+    "unpinned tab should move to the start of unpinned tabs, not before pinned tabs"
+  );
+  assertTabIndexesMatch([
+    [tab1, 0],
+    [tab2, 1],
+    [tab4, 2],
+    [tab3, 4],
+  ]);
+
+  gBrowser.selectedTab = tab2;
+
+  gBrowser.moveTabToStart();
+  info("pinned tab should move to the start of pinned tabs");
+  assertTabIndexesMatch([
+    [tab1, 1],
+    [tab2, 0],
+    [tab4, 2],
+    [tab3, 4],
+  ]);
+
+  BrowserTestUtils.removeTab(tab1);
+  BrowserTestUtils.removeTab(tab2);
+  BrowserTestUtils.removeTab(tab3);
+  BrowserTestUtils.removeTab(tab4);
+});
+
+add_task(async function test_moveTabToEndPinnedTabs() {
+  let tab1 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  let tab2 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  let tab3 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  let tab4 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  gBrowser.pinTab(tab1);
+  gBrowser.pinTab(tab2);
+
+  info("validate the starting order of the tabs");
+  assertTabIndexesMatch([
+    [tab1, 0],
+    [tab2, 1],
+    [tab3, 3],
+    [tab4, 4],
+  ]);
+
+  gBrowser.selectedTab = tab1;
+
+  gBrowser.moveTabToEnd();
+  info(
+    "pinned tab should move to the end of pinned tabs, not after unpinned tabs"
+  );
+  assertTabIndexesMatch([
+    [tab1, 1],
+    [tab2, 0],
+    [tab3, 3],
+    [tab4, 4],
+  ]);
+
+  gBrowser.selectedTab = tab3;
+
+  gBrowser.moveTabToEnd();
+  info("unpinned tab should move to the end of all tabs");
+  assertTabIndexesMatch([
+    [tab1, 1],
+    [tab2, 0],
+    [tab3, 4],
+    [tab4, 3],
+  ]);
+
+  BrowserTestUtils.removeTab(tab1);
+  BrowserTestUtils.removeTab(tab2);
+  BrowserTestUtils.removeTab(tab3);
+  BrowserTestUtils.removeTab(tab4);
+});

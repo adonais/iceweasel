@@ -8,6 +8,7 @@
 #include "mozilla/Omnijar.h"
 #include "mozilla/ipc/SharedMemoryHandle.h"
 #include "mozilla/ipc/SharedMemoryMapping.h"
+#include "mozilla/Utf16.h"
 #include "nsContentUtils.h"
 #include "nsEscape.h"
 #include "nsIChannel.h"
@@ -335,9 +336,9 @@ nsresult nsHyphenator::Hyphenate(const nsAString& aString,
     uint32_t ch = aString[i];
     chLen = 1;
 
-    if (NS_IS_HIGH_SURROGATE(ch)) {
-      if (i + 1 < aString.Length() && NS_IS_LOW_SURROGATE(aString[i + 1])) {
-        ch = SURROGATE_TO_UCS4(ch, aString[i + 1]);
+    if (mozilla::IsHighSurrogate(ch)) {
+      if (i + 1 < aString.Length() && mozilla::IsLowSurrogate(aString[i + 1])) {
+        ch = mozilla::SurrogateToUCS4(ch, aString[i + 1]);
         chLen = 2;
       } else {
         NS_WARNING("unpaired surrogate found during hyphenation");
@@ -377,13 +378,13 @@ void nsHyphenator::HyphenateWord(const nsAString& aString, uint32_t aStart,
   while (cur < end) {
     uint32_t ch = *cur++;
 
-    if (NS_IS_HIGH_SURROGATE(ch)) {
-      if (cur < end && NS_IS_LOW_SURROGATE(*cur)) {
-        ch = SURROGATE_TO_UCS4(ch, *cur++);
+    if (mozilla::IsHighSurrogate(ch)) {
+      if (cur < end && mozilla::IsLowSurrogate(*cur)) {
+        ch = mozilla::SurrogateToUCS4(ch, *cur++);
       } else {
         return;  // unpaired surrogate: bail out, don't hyphenate broken text
       }
-    } else if (NS_IS_LOW_SURROGATE(ch)) {
+    } else if (mozilla::IsLowSurrogate(ch)) {
       return;  // unpaired surrogate
     }
 

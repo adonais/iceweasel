@@ -32,7 +32,6 @@
 #include "js/Utility.h"
 #include "js/Vector.h"
 #include "threading/ExclusiveData.h"
-
 #include "util/Text.h"
 #include "vm/MutexIDs.h"
 #include "vm/Realm.h"

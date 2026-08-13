@@ -67,9 +67,13 @@ export class WorkerExtensionError extends DOMException {
 /**
  * Similar to a WeakMap, but creates a new key with the given
  * constructor if one is not present.
+ *
+ * @template {WeakKey} K
+ * @template V
+ * @augments {WeakMap<K, V>}
  */
-// @ts-ignore (https://github.com/microsoft/TypeScript/issues/56664)
 class DefaultWeakMap extends WeakMap {
+  /** @param {(key: K) => V} [defaultConstructor] */
   constructor(defaultConstructor = undefined, init = undefined) {
     super(init);
     if (defaultConstructor) {
@@ -314,6 +318,7 @@ async function makeDataURI(iconUrl) {
   let buffer = await response.arrayBuffer();
   let contentType = response.headers.get("content-type");
   let bytes = new Uint8Array(buffer);
+  // @ts-ignore: strictBindCallApply wants number[] but we have Uint8Array.
   let str = String.fromCharCode.apply(null, bytes);
   return `data:${contentType};base64,${btoa(str)}`;
 }

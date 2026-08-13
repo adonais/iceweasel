@@ -7,7 +7,6 @@ package mozilla.components.support
 import mozilla.appservices.RustComponentsInitializer
 import mozilla.components.concept.base.crash.CrashReporting
 import mozilla.components.support.base.log.Log
-import mozilla.components.support.rusterrors.initializeRustErrors
 import mozilla.components.support.rustlog.RustLog
 
 /**
@@ -26,10 +25,6 @@ object AppServicesInitializer {
     fun init(config: Config) {
         // Rust components must be initialized at the very beginning, before any other Rust call, ...
         RustComponentsInitializer.init()
-
-        if (config.crashReporting != null) {
-            initializeRustErrors(config.crashReporting)
-        }
 
         // ... but RustHttpConfig.setClient() and RustLog.enable() can be called later.
         RustLog.apply {

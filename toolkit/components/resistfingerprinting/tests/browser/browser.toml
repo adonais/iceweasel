@@ -91,6 +91,8 @@ support-files = ["file_pdf.pdf"]
 
 ["browser_usercharacteristics.js"]
 
+["browser_usercharacteristics_canvas_font.js"]
+
 ["browser_usercharacteristics_canvas_filtering.js"]
 skip-if = [
   "os == 'win' && arch == 'x86'", # OOM on win32 due to memory constraints

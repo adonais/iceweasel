@@ -8,6 +8,10 @@ const { ASRouterScreenUtils } = ChromeUtils.importESModule(
   "resource:///modules/asrouter/ASRouterScreenUtils.sys.mjs"
 );
 
+const { WIN_OS_PIN_PROMPT_ENABLED } = ChromeUtils.importESModule(
+  "resource:///modules/asrouter/MessagingTargetingConstants.sys.mjs"
+);
+
 const sandbox = sinon.createSandbox();
 const mockAddonAndLocaleAPIs = getAddonAndLocalAPIsMocker(this, sandbox);
 add_task(function initSandbox() {
@@ -15,7 +19,6 @@ add_task(function initSandbox() {
     Services.prefs.clearUserPref(
       "messaging-system-action.showRestoreFromBackup"
     );
-    Services.prefs.clearUserPref("messaging-system-action.showEmbeddedImport");
     sandbox.restore();
   });
 });
@@ -51,8 +54,7 @@ async function openAboutWelcome() {
   await pushPrefs(
     // Speed up the tests by disabling transitions.
     ["browser.aboutwelcome.transitions", false],
-    ["intl.multilingual.aboutWelcome.languageMismatchEnabled", true],
-    ["messaging-system-action.showEmbeddedImport", true]
+    ["intl.multilingual.aboutWelcome.languageMismatchEnabled", true]
   );
   await setAboutWelcomePref(true);
 
@@ -62,13 +64,8 @@ async function openAboutWelcome() {
       info(`evaluateScreenTargeting called with args: ${args}`);
       // Renders easy setup import screen as first screen to prevent pin/default dialog boxes breaking tests
       const falseTargeting = [
-        `isSmartWindowOnboarding && doesAppNeedPin && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser`,
-        `isSmartWindowOnboarding && (!doesAppNeedPin || (unhandledCampaignAction == 'PIN_FIREFOX_TO_TASKBAR')) && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser`,
-        `isSmartWindowOnboarding && doesAppNeedPin && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && (!'browser.shell.checkDefaultBrowser'|preferenceValue || isDefaultBrowser || (unhandledCampaignAction == 'SET_DEFAULT_BROWSER'))`,
-        `isSmartWindowOnboarding && (!doesAppNeedPin || (unhandledCampaignAction == 'PIN_FIREFOX_TO_TASKBAR') || (unhandledCampaignAction == 'PIN_AND_DEFAULT')) && (!'browser.shell.checkDefaultBrowser'|preferenceValue || isDefaultBrowser || (unhandledCampaignAction == 'SET_DEFAULT_BROWSER') || (unhandledCampaignAction == 'PIN_AND_DEFAULT'))`,
-        "doesAppNeedPin && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser",
-        "!doesAppNeedPin && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser",
-        "(unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && doesAppNeedPin && (!'browser.shell.checkDefaultBrowser'|preferenceValue || isDefaultBrowser || (unhandledCampaignAction == 'SET_DEFAULT_BROWSER'))",
+        "isSmartWindowOnboarding",
+        `doesAppNeedPin && !${WIN_OS_PIN_PROMPT_ENABLED} && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') || ((!doesAppNeedPin || ${WIN_OS_PIN_PROMPT_ENABLED}) && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser)`,
         "isDeviceMigration",
         "backupRestoreEnabled && 'messaging-system-action.showRestoreFromBackup' |preferenceValue == true",
         "backupRestoreEnabled && !hasSelectableProfiles && (backupsInfo.found && !backupsInfo.multipleBackupsFound)",

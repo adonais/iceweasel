@@ -347,8 +347,12 @@ class DebuggingModule extends WindowGlobalBiDiModule {
     // Save the current pause location for hasMoved() checks
     this.#previousPauseLocation = { line, column };
 
-    // Set the paused frame on the message handler so other modules can access it
-    this.messageHandler.setPausedDebuggerFrame(frame);
+    // Set the paused debugger environment on the message handler so other
+    // modules can access it.
+    this.messageHandler.debuggerEnvironment = {
+      frame,
+      global: this.#dbg.makeGlobalObjectReference(this.messageHandler.window),
+    };
 
     this.emitEvent("moz:debugging.paused", {
       context: this.messageHandler.context,
@@ -368,8 +372,8 @@ class DebuggingModule extends WindowGlobalBiDiModule {
       this.#eventLoopEntered = false;
     }
 
-    // Clear the paused frame when resuming
-    this.messageHandler.setPausedDebuggerFrame(null);
+    // Clear the paused debugger environment when resuming.
+    this.messageHandler.debuggerEnvironment = null;
 
     return undefined;
   };
@@ -607,11 +611,11 @@ class DebuggingModule extends WindowGlobalBiDiModule {
 
   _resume() {
     if (this.#eventLoopEntered && lazy.jsInspector.lastNestRequestor === this) {
-      const frame = this.messageHandler.getPausedDebuggerFrame();
-      if (frame) {
+      const debuggerEnvironment = this.messageHandler.debuggerEnvironment;
+      if (debuggerEnvironment) {
         // Clear any stepping hooks
-        frame.onStep = undefined;
-        frame.onPop = undefined;
+        debuggerEnvironment.frame.onStep = undefined;
+        debuggerEnvironment.frame.onPop = undefined;
       }
 
       this.#dbg.onEnterFrame = undefined;
@@ -625,19 +629,19 @@ class DebuggingModule extends WindowGlobalBiDiModule {
 
   _stepInto() {
     if (this.#eventLoopEntered && lazy.jsInspector.lastNestRequestor === this) {
-      const frame = this.messageHandler.getPausedDebuggerFrame();
-      if (frame) {
+      const debuggerEnvironment = this.messageHandler.debuggerEnvironment;
+      if (debuggerEnvironment) {
         const { onEnterFrame, onStep, onPop } = this.#makeSteppingHooks({
           steppingType: "step",
-          startFrame: frame,
+          startFrame: debuggerEnvironment.frame,
         });
 
         // Attach onEnterFrame globally to catch function calls
         this.#dbg.onEnterFrame = onEnterFrame;
 
         // Attach onStep and onPop to current frame
-        frame.onStep = onStep;
-        frame.onPop = onPop;
+        debuggerEnvironment.frame.onStep = onStep;
+        debuggerEnvironment.frame.onPop = onPop;
       }
 
       lazy.jsInspector.exitNestedEventLoop();
@@ -646,14 +650,14 @@ class DebuggingModule extends WindowGlobalBiDiModule {
 
   _stepOut() {
     if (this.#eventLoopEntered && lazy.jsInspector.lastNestRequestor === this) {
-      const frame = this.messageHandler.getPausedDebuggerFrame();
-      if (frame) {
+      const debuggerEnvironment = this.messageHandler.debuggerEnvironment;
+      if (debuggerEnvironment) {
         const { onPop } = this.#makeSteppingHooks({
           steppingType: "finish",
-          startFrame: frame,
+          startFrame: debuggerEnvironment.frame,
         });
 
-        frame.onPop = onPop;
+        debuggerEnvironment.frame.onPop = onPop;
       }
 
       lazy.jsInspector.exitNestedEventLoop();
@@ -662,15 +666,15 @@ class DebuggingModule extends WindowGlobalBiDiModule {
 
   _stepOver() {
     if (this.#eventLoopEntered && lazy.jsInspector.lastNestRequestor === this) {
-      const frame = this.messageHandler.getPausedDebuggerFrame();
-      if (frame) {
+      const debuggerEnvironment = this.messageHandler.debuggerEnvironment;
+      if (debuggerEnvironment) {
         const { onStep, onPop } = this.#makeSteppingHooks({
           steppingType: "next",
-          startFrame: frame,
+          startFrame: debuggerEnvironment.frame,
         });
 
-        frame.onStep = onStep;
-        frame.onPop = onPop;
+        debuggerEnvironment.frame.onStep = onStep;
+        debuggerEnvironment.frame.onPop = onPop;
       }
 
       lazy.jsInspector.exitNestedEventLoop();

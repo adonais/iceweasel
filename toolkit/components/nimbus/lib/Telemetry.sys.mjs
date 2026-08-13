@@ -55,6 +55,7 @@ const RemoteSettingsSyncErrorReason = Object.freeze({
   LAST_MODIFIED_EXCEPTION: "last-modified-exception",
   NOT_YET_SYNCED: "not-yet-synced",
   NULL_LAST_MODIFIED: "null-last-modified",
+  MISSING_SIGNATURE: "missing-signature",
 });
 
 /**
@@ -166,6 +167,14 @@ export const NimbusTelemetry = {
     conflict_slug,
     migration,
   }) {
+    // Do not record unsupported feature telemetry.
+    if (
+      reason === EnrollmentStatusReason.ERROR &&
+      error_string === ValidationFailureReason.UNSUPPORTED_FEATURES
+    ) {
+      return;
+    }
+
     Glean.nimbusEvents.enrollmentStatus.record({
       slug,
       status,

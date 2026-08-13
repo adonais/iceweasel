@@ -4,10 +4,9 @@
 
 #include "mozilla/layers/ProfilerScreenshots.h"
 
-#include "mozilla/TimeStamp.h"
-
 #include "GeckoProfiler.h"
 #include "gfxUtils.h"
+#include "mozilla/TimeStamp.h"
 #include "nsThreadUtils.h"
 
 using namespace mozilla;

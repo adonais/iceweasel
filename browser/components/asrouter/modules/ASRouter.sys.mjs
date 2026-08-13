@@ -44,6 +44,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PanelTestProvider: "resource:///modules/asrouter/PanelTestProvider.sys.mjs",
   RemoteL10n: "resource:///modules/asrouter/RemoteL10n.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
+  SidebarChatBotPromo:
+    "resource:///modules/asrouter/SidebarChatBotPromo.sys.mjs",
   SmartWindowNewTabPromo:
     "resource:///modules/asrouter/SmartWindowNewTabPromo.sys.mjs",
   SpecialMessageActions:
@@ -459,7 +461,20 @@ export const MessageLoaderUtils = {
         );
       }
 
-      const enrollments = featureAPI.getAllEnrollments();
+      let enrollments = featureAPI.getAllEnrollments();
+      // Features that don't support coenrollment can have two "active"
+      // enrollments at a time, 1 rollout and 1 experiment. But experiments take
+      // precedence over rollouts, so if both are active, we only ingest the
+      // experiment's messages. Coenrolling features don't have this limitation,
+      // so for those we include all active enrollments.
+      if (!featureAPI.allowCoenrollment) {
+        if (enrollments.length > 1) {
+          enrollments = enrollments.filter(
+            enrollment => !enrollment.meta.isRollout
+          );
+        }
+      }
+
       // If this doesn't return anything at all, there's something wrong with
       // the feature itself (since it otherwise returns at least an empty array)
       if (!enrollments) {
@@ -522,8 +537,12 @@ export const MessageLoaderUtils = {
           for (const branchMessage of branchMessages) {
             // If you want a message to record reach events, opt in by setting
             // recordReach to true. Reach events only get recorded when the
-            // message's trigger fires, so the message must have a trigger.
-            if (!branchMessage?.recordReach || !branchMessage?.trigger) {
+            // message's trigger fires, so the message must have at least one
+            // trigger.
+            if (
+              !branchMessage?.recordReach ||
+              !lazy.ASRouterTargeting.getMessageTriggers(branchMessage).length
+            ) {
               continue;
             }
             let reachId = `${meta.slug}:${branch.slug}:${branchMessage.id}`;
@@ -1071,19 +1090,21 @@ export class _ASRouter {
       // Some messages have triggers that require us to initalise trigger listeners
       const unseenListeners = new Set(lazy.ASRouterTriggerListeners.keys());
       for (const message of newState.messages) {
-        const { trigger } = message;
-        if (
-          trigger &&
-          lazy.ASRouterTriggerListeners.has(trigger.id) &&
-          !this._shouldSkipForAutomation(message)
-        ) {
-          lazy.ASRouterTriggerListeners.get(trigger.id).init(
-            this._triggerHandler,
-            trigger.params,
-            trigger.patterns,
-            trigger.regexPatterns
-          );
-          unseenListeners.delete(trigger.id);
+        if (this._shouldSkipForAutomation(message)) {
+          continue;
+        }
+        for (const trigger of lazy.ASRouterTargeting.getMessageTriggers(
+          message
+        )) {
+          if (trigger && lazy.ASRouterTriggerListeners.has(trigger.id)) {
+            lazy.ASRouterTriggerListeners.get(trigger.id).init(
+              this._triggerHandler,
+              trigger.params,
+              trigger.patterns,
+              trigger.regexPatterns
+            );
+            unseenListeners.delete(trigger.id);
+          }
         }
       }
       // We don't need these listeners, but they may have previously been
@@ -1626,11 +1647,20 @@ export class _ASRouter {
     return ALLOWED_ACTION_MESSAGE_ACTIONS.includes(action.type);
   }
 
-  routeCFRMessage(message, browser, trigger, force = false) {
-    if (!message) {
+  routeCFRMessage(originalMessage, browser, trigger, force = false) {
+    if (!originalMessage) {
       return { message: {} };
     }
+    const message = force
+      ? MessageLoaderUtils._delocalizeValues(originalMessage)
+      : originalMessage;
 
+    // Callers that need to know when it's safe to act on the fact that a
+    // message finished being shown (currently only browser.js's
+    // lastWindowClose trigger, which waits on this before letting the window
+    // close) can await this. Most templates are fire-and-forget and never
+    // reassign it, so it stays resolved.
+    let closedPromise = Promise.resolve();
     switch (message.template) {
       case "cfr_doorhanger":
       case "milestone_message":
@@ -1720,7 +1750,10 @@ export class _ASRouter {
         );
         break;
       case "spotlight":
-        lazy.Spotlight.showSpotlightDialog(
+        // Deliberately the only template that reassigns closedPromise: it's
+        // the only template with a modal, so it's the only one browser.js's
+        // lastWindowClose trigger needs to wait on before closing the window.
+        closedPromise = lazy.Spotlight.showSpotlightDialog(
           browser,
           message,
           this.dispatchCFRAction
@@ -1752,6 +1785,9 @@ export class _ASRouter {
       case "menu_message":
         lazy.MenuMessage.showMenuMessage(browser, message, trigger, force);
         break;
+      case "sidebar_chatbot_promo":
+        lazy.SidebarChatBotPromo.showPromo(browser, message, force);
+        break;
       case "smart_window_newtab_promo":
         lazy.SmartWindowNewTabPromo.showPromo(browser, message, trigger, force);
         break;
@@ -1767,7 +1803,7 @@ export class _ASRouter {
       }
     }
 
-    return { message };
+    return { message, closedPromise };
   }
 
   async addScreenImpression(screen) {
@@ -2143,16 +2179,22 @@ export class _ASRouter {
           lazy.ASRouterPreferences.console.debug(m.id, " filtered by template");
           return false;
         }
-        if (triggerId && !m.trigger) {
-          lazy.ASRouterPreferences.console.debug(m.id, " filtered by trigger");
-          return false;
-        }
-        if (triggerId && m.trigger.id !== triggerId) {
-          lazy.ASRouterPreferences.console.debug(
-            m.id,
-            " filtered by triggerId"
-          );
-          return false;
+        if (triggerId) {
+          const triggers = lazy.ASRouterTargeting.getMessageTriggers(m);
+          if (!triggers.length) {
+            lazy.ASRouterPreferences.console.debug(
+              m.id,
+              " filtered by trigger"
+            );
+            return false;
+          }
+          if (!triggers.some(t => t.id === triggerId)) {
+            lazy.ASRouterPreferences.console.debug(
+              m.id,
+              " filtered by triggerId"
+            );
+            return false;
+          }
         }
         // Show message after checking it's  profile scope.
         if (!this.hasValidProfileScope(m)) {
@@ -2535,6 +2577,33 @@ export class _ASRouter {
   }
 
   /**
+   * Synchronous check for whether any currently loaded message could possibly
+   * respond to the given trigger, without evaluating targeting. Intended for
+   * callers that want to avoid a full sendTriggerMessage call when nothing
+   * could show regardless. Besides the trigger match itself, this also rules
+   * out messages we already know can't show because they're blocked or over
+   * their frequency cap, since both of those are cheap, synchronous checks.
+   * Targeting is the only part that requires the async evaluation a full
+   * sendTriggerMessage call goes through.
+   *
+   * A false result means nothing will show. A true result means a message
+   * match is possible, but targeting still has to run to know for sure.
+   *
+   * @param {string} triggerId
+   * @returns {boolean}
+   */
+  hasMessageForTrigger(triggerId) {
+    return this.state.messages.some(
+      m =>
+        lazy.ASRouterTargeting.getMessageTriggers(m).some(
+          t => t.id === triggerId
+        ) &&
+        this.isUnblockedMessage(m) &&
+        this.isBelowFrequencyCaps(m)
+    );
+  }
+
+  /**
    * Fire a trigger, look for a matching message, and route it to the
    * appropriate message handler/messaging surface.
    *
@@ -2653,9 +2722,17 @@ export class _ASRouter {
       return;
     }
     await this.loadMessagesFromAllProviders([experimentProvider]);
+
+    if (lazy.ASRouterTriggerListeners.get("nimbusUpdate")?.initialized) {
+      const browser =
+        Services.wm.getMostRecentBrowserWindow()?.gBrowser?.selectedBrowser;
+
+      await this.sendTriggerMessage({ browser, id: "nimbusUpdate" }, true);
+    }
   }
 
   async forcePBWindow(browser, msg) {
+    const delocalizedMsg = MessageLoaderUtils._delocalizeValues(msg);
     const privateBrowserOpener = await new Promise(
       (
         resolveOnContentBrowserCreated // wrap this in a promise to give back the right browser
@@ -2677,7 +2754,7 @@ export class _ASRouter {
       // setTimeout is necessary to make sure the private browsing window has a chance to open before the message is sent
       privateBrowserOpener.browsingContext.currentWindowGlobal
         .getActor("AboutPrivateBrowsing")
-        .sendAsyncMessage("ShowDevToolsMessage", msg);
+        .sendAsyncMessage("ShowDevToolsMessage", delocalizedMsg);
     }, 200);
 
     return privateBrowserOpener;

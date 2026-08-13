@@ -100,16 +100,31 @@ def make_taskgraph():
             {"a-1": 100, "a-2": 100},
             id="rebuild 100",
         ),
+        pytest.param(
+            {
+                "try_mode": "try_task_config",
+                "try_task_config": {
+                    "rebuild": 10,
+                    "tasks": ["c-*"],
+                },
+                "project": "try",
+            },
+            {"c": 10},
+            id="duplicates single dynamic chunk",
+        ),
     ),
 )
 def test_try_task_duplicates(make_taskgraph, graph_config, params, expected):
     taskb = Task(kind="test", label="b", attributes={}, task={})
     task1 = Task(kind="test", label="a-1", attributes={}, task={})
     task2 = Task(kind="test", label="a-2", attributes={}, task={})
+    # Dynamic chunking that fits in a single chunk yields no numeric suffix.
+    taskc = Task(kind="test", label="c", attributes={}, task={})
     taskgraph, label_to_taskid = make_taskgraph({
         taskb.label: taskb,
         task1.label: task1,
         task2.label: task2,
+        taskc.label: taskc,
     })
 
     taskgraph, label_to_taskid = morph.add_try_task_duplicates(

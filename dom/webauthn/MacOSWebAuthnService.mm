@@ -217,7 +217,14 @@ API_AVAILABLE(macos(13.3))
 API_AVAILABLE(macos(13.3))
 @interface MacOSAuthenticatorPresentationContextProvider
     : NSObject <ASAuthorizationControllerPresentationContextProviding>
-@property(nonatomic, strong) NSWindow* window;
+// We store the window number rather than a strong reference to the NSWindow so
+// that an in-flight (or stalled) passkey handshake never keeps the requesting
+// browser window alive past its close. A retained window that has been -close'd
+// lingers as an invisible "ghost" that still captures mouse events (bug
+// 2015460). The anchor is resolved lazily from the number; if the window has
+// since closed, -windowWithWindowNumber: returns nil, which is an acceptable
+// anchor.
+@property(nonatomic) NSInteger windowNumber;
 @end
 
 namespace mozilla::dom {
@@ -543,9 +550,9 @@ NSDictionary<NSData*, ASAuthorizationPublicKeyCredentialPRFAssertionInputValues*
            NS_ConvertUTF16toUTF8(errorDomain).get(), error.code,
            NS_ConvertUTF16toUTF8(errorDescription).get()));
   nsresult rv = NS_ERROR_DOM_NOT_ALLOWED_ERR;
-  // For some reason, the error for "the credential used in a registration was
-  // on the exclude list" is in the "WKErrorDomain" domain with code 8, which
-  // is presumably WKErrorDuplicateCredential.
+  // On older macOS versions, the excluded-credential error is reported in the
+  // "WKErrorDomain" domain with code 8 (WKErrorDuplicateCredential) rather
+  // than as ASAuthorizationErrorMatchedExcludedCredential.
   const NSInteger WKErrorDuplicateCredential = 8;
   if (errorDomain.EqualsLiteral("WKErrorDomain") &&
       error.code == WKErrorDuplicateCredential) {
@@ -554,6 +561,9 @@ NSDictionary<NSData*, ASAuthorizationPublicKeyCredentialPRFAssertionInputValues*
     switch (error.code) {
       case ASAuthorizationErrorCanceled:
         rv = NS_ERROR_DOM_NOT_ALLOWED_ERR;
+        break;
+      case ASAuthorizationErrorMatchedExcludedCredential:
+        rv = NS_ERROR_DOM_INVALID_STATE_ERR;
         break;
       case ASAuthorizationErrorFailed:
         // The message is right, but it's not about indexeddb.
@@ -574,11 +584,11 @@ NSDictionary<NSData*, ASAuthorizationPublicKeyCredentialPRFAssertionInputValues*
 @end
 
 @implementation MacOSAuthenticatorPresentationContextProvider
-@synthesize window = window;
+@synthesize windowNumber = windowNumber;
 
 - (ASPresentationAnchor)presentationAnchorForAuthorizationController:
     (ASAuthorizationController*)controller {
-  return window;
+  return [NSApp windowWithWindowNumber:windowNumber];
 }
 @end
 
@@ -979,7 +989,7 @@ void MacOSWebAuthnService::PerformRequests(
   MOZ_ASSERT(!mPresentationContextProvider);
   mPresentationContextProvider =
       [[MacOSAuthenticatorPresentationContextProvider alloc] init];
-  mPresentationContextProvider.window = window;
+  mPresentationContextProvider.windowNumber = window.windowNumber;
   mAuthorizationController.presentationContextProvider =
       mPresentationContextProvider;
 

@@ -3,10 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "DeviceAttachmentsD3D11.h"
-#include "mozilla/gfx/Logging.h"
-#include "mozilla/layers/Compositor.h"
+
 #include "CompositorD3D11Shaders.h"
 #include "ShaderDefinitionsD3D11.h"
+#include "mozilla/gfx/Logging.h"
+#include "mozilla/layers/Compositor.h"
 
 namespace mozilla {
 namespace layers {

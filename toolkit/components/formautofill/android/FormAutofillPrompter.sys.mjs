@@ -10,6 +10,7 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  Address: "resource://gre/modules/GeckoViewAutocomplete.sys.mjs",
   CreditCard: "resource://gre/modules/GeckoViewAutocomplete.sys.mjs",
   GeckoViewAutocomplete: "resource://gre/modules/GeckoViewAutocomplete.sys.mjs",
   GeckoViewPrompter: "resource://gre/modules/GeckoViewPrompter.sys.mjs",
@@ -33,13 +34,37 @@ export let FormAutofillPrompter = {
     };
   },
 
+  _createAddressMessage(addresses) {
+    return {
+      // Sync with PromptController
+      type: "Autocomplete:Save:Address",
+      addresses,
+    };
+  },
+
   async promptToSaveAddress(
-    _browser,
-    _storage,
-    _flowId,
-    { _oldRecord, _newRecord }
+    browser,
+    storage,
+    flowId,
+    { oldRecord, newRecord }
   ) {
-    throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
+    if (oldRecord) {
+      newRecord = { ...oldRecord, ...newRecord };
+    }
+
+    const prompt = new lazy.GeckoViewPrompter(browser.documentGlobal);
+    prompt.asyncShowPrompt(
+      this._createAddressMessage([lazy.Address.fromGecko(newRecord)]),
+      result => {
+        const selectedAddress = result?.selection?.value;
+
+        if (!selectedAddress) {
+          return;
+        }
+
+        lazy.GeckoViewAutocomplete.onAddressSave(selectedAddress);
+      }
+    );
   },
 
   async promptToSaveCreditCard(

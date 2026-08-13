@@ -2,14 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "gtest/gtest.h"
-
 #include "APZCTreeManagerTester.h"
 #include "APZTestCommon.h"
 #include "InputUtils.h"
 #include "apz/src/AsyncPanZoomController.h"
 #include "apz/src/InputBlockState.h"
 #include "apz/src/OverscrollHandoffState.h"
+#include "gtest/gtest.h"
 #include "mozilla/layers/IAPZCTreeManager.h"
 
 class APZCArePointerEventsConsumable : public APZCTreeManagerTester {

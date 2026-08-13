@@ -6,7 +6,6 @@
 #define mozilla_net_CookieParser_h
 
 #include "CookieCommons.h"
-
 #include "CookieValidation.h"
 #include "mozilla/net/NeckoChannelParams.h"
 #include "nsCOMPtr.h"

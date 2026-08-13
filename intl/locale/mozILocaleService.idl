@@ -208,4 +208,27 @@ interface mozILocaleService : nsISupports
    * when hitting return/enter in the URL bar.
    */
   readonly attribute ACString urlFixupSuffix;
+
+  /**
+   * Returns whether aFtlPath is translated at least aMinCoverage (0.0-1.0) in
+   * the locale Firefox is effectively displaying. When that locale is the
+   * source locale (en-US, or any locale falling back to it), everything counts
+   * as fully covered. If aOverridePref names a boolean pref set to true, returns
+   * true regardless of coverage.
+   */
+  boolean isLocalizedEnough(in ACString aFtlPath,
+                            in ACString aOverridePref,
+                            in double aMinCoverage);
+
+  /**
+   * Returns whether every message in aRequiredIds is translated in aFtlPath in
+   * the locale Firefox is effectively displaying. A message counts as missing
+   * if it or any of its attributes is missing. When that locale is the source
+   * locale (en-US, or any locale falling back to it), everything counts as
+   * fully localized. If aOverridePref names a boolean pref set to true, returns
+   * true regardless of coverage.
+   */
+  boolean areMessagesLocalized(in ACString aFtlPath,
+                               in Array<ACString> aRequiredIds,
+                               in ACString aOverridePref);
 };

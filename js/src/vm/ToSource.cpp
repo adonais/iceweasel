@@ -19,18 +19,19 @@
 #include "js/Printer.h"             // QuoteString
 #include "js/Symbol.h"              // SymbolCode, JS::WellKnownSymbolLimit
 #include "js/TypeDecls.h"  // Rooted{Object, String, Value}, HandleValue, Latin1Char
-#include "js/Utility.h"               // UniqueChars
-#include "js/Value.h"                 // JS::Value
-#include "util/StringBuilder.h"       // JSStringBuilder
-#include "vm/ErrorObject.h"           // ErrorObject, ErrorToSource
-#include "vm/Interpreter.h"           // Call
-#include "vm/JSContext.h"             // JSContext
-#include "vm/JSFunction.h"            // JSFunction, fun_toStringHelper
-#include "vm/SelfHosting.h"           // CallSelfHostedFunction
-#include "vm/Stack.h"                 // FixedInvokeArgs
-#include "vm/StaticStrings.h"         // StaticStrings
-#include "vm/StringType.h"            // NewStringCopy{N,Z}, ToString
-#include "vm/SymbolType.h"            // Symbol
+#include "js/Utility.h"          // UniqueChars
+#include "js/Value.h"            // JS::Value
+#include "util/StringBuilder.h"  // JSStringBuilder
+#include "vm/ErrorObject.h"      // ErrorObject, ErrorToSource
+#include "vm/Interpreter.h"      // Call
+#include "vm/JSContext.h"        // JSContext
+#include "vm/JSFunction.h"       // JSFunction, fun_toStringHelper
+#include "vm/SelfHosting.h"      // CallSelfHostedFunction
+#include "vm/Stack.h"            // FixedInvokeArgs
+#include "vm/StaticStrings.h"    // StaticStrings
+#include "vm/StringType.h"       // NewStringCopy{N,Z}, ToString
+#include "vm/SymbolType.h"       // Symbol
+
 #include "vm/JSContext-inl.h"         // JSContext::check
 #include "vm/JSObject-inl.h"          // IsCallable
 #include "vm/ObjectOperations-inl.h"  // GetProperty

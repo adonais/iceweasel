@@ -134,7 +134,7 @@ add_task(async function test_cancelSelectionClosesInitialSibling() {
   await BrowserTestUtils.switchTab(gBrowser, tab2);
   helper2.triggerUIFromToolbar();
   await helper2.waitForOverlay();
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     async () => await helper2.isOverlayInitialized(),
     "Right browser overlay should be initialized"
   );
@@ -164,7 +164,7 @@ add_task(async function test_cancelSelectionClosesInitialSibling() {
   info("Waiting for exitObserved");
   await exitObserved;
   info("exitObserved, Waiting for tab2 to be not initialized");
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     async () => !(await helper2.isOverlayInitialized()),
     "Right browser overlay should be closed after left browser cancelled its selection"
   );

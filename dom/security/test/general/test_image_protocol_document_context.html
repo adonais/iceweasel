@@ -1,0 +1,84 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Bug 2044313 - page-icon, moz-icon and moz-remote-image only load in an image context</title>
+  <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="chrome://mochikit/content/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<script>
+// The page-icon, moz-icon and moz-remote-image protocols return images and
+// must only be loadable in an image context. Loading them as a document
+// (here: in an <iframe>) has to be blocked, while loading them as an <img>
+// keeps working. This test runs in a chrome document, which is privileged
+// enough to load these internal protocols in the first place.
+
+const SVG_DATA_URI =
+  "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'><rect width='16' height='16' fill='red'/></svg>";
+
+const IMAGE_PROTOCOL_URLS = {
+  "moz-icon": "moz-icon://.html?size=16",
+  "page-icon": "page-icon:test",
+  "moz-remote-image":
+    "moz-remote-image://?" +
+    new URLSearchParams({ url: SVG_DATA_URI, width: 16, height: 16 }),
+};
+
+// Resolves true if the <img> fires "load", false if it fires "error".
+function loadAsImage(url) {
+  return new Promise(resolve => {
+    let img = document.createElement("img");
+    img.addEventListener("load", () => resolve(true), { once: true });
+    img.addEventListener("error", () => resolve(false), { once: true });
+    img.src = url;
+  });
+}
+
+// Resolves with the documentURI the iframe ended up at. A blocked load is
+// aborted, so the iframe never navigates away from "about:blank" (and even if
+// a future change shows an error page instead, it still won't be `url`).
+function loadAsDocument(url) {
+  return new Promise(resolve => {
+    let iframe = document.createElement("iframe");
+    let settle = () => {
+      let uri = "about:blank";
+      try {
+        uri = iframe.contentDocument?.documentURI ?? "about:blank";
+      } catch (e) {}
+      iframe.remove();
+      resolve(uri);
+    };
+    iframe.addEventListener("load", () => {
+      // Ignore the initial about:blank load that happens on insertion.
+      if (iframe.contentDocument?.documentURI !== "about:blank") {
+        settle();
+      }
+    });
+    // Blocked loads never fire a "load" for the resource, so time out.
+    setTimeout(settle, 2000);
+    iframe.src = url;
+    document.body.appendChild(iframe);
+  });
+}
+
+add_task(async function image_context_is_allowed() {
+  for (let [name, url] of Object.entries(IMAGE_PROTOCOL_URLS)) {
+    let loaded = await loadAsImage(url);
+    ok(loaded, `${name} loads in an image context`);
+  }
+});
+
+add_task(async function document_context_is_blocked() {
+  for (let [name, url] of Object.entries(IMAGE_PROTOCOL_URLS)) {
+    let documentURI = await loadAsDocument(url);
+    isnot(
+      documentURI,
+      url,
+      `${name} must be blocked when loaded as a document`
+    );
+  }
+});
+</script>
+</body>
+</html>

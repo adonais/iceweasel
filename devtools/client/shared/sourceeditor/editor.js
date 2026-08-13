@@ -538,6 +538,32 @@ class Editor extends EventEmitter {
     }
   }
 
+  /**
+   * Checks if the update to the content of the current document
+   * from a direct user interaction.
+   *
+   * @param {object} viewUpdate
+   * @returns {boolean}
+   */
+  isViewUpdateFromUserInput(viewUpdate) {
+    const {
+      codemirrorState: { Transaction },
+    } = this.#CodeMirror6;
+    // Make sure document has changed, ensuring user events like selections don't count.
+    if (viewUpdate.docChanged) {
+      // Check transactions for any that are direct user input, not changes from Y.js or another extension.
+      for (const transaction of viewUpdate.transactions) {
+        // Not using Transaction.isUserEvent because that only checks for a specific User event type ( "input", "delete", etc.).
+        // Checking the annotation directly allows for any type of user event.
+        const userEventType = transaction.annotation(Transaction.userEvent);
+        if (userEventType) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   // This update listener allows listening to the changes
   // to the codemiror editor.
   setUpdateListener(listener = null) {
@@ -2363,15 +2389,24 @@ class Editor extends EventEmitter {
    * Get the functions symbols for the current source loaded in the
    * the editor.
    *
+   * @param {number} sourceId - The id for the source, this used to cache and retrieve a cached syntax tree
    * @param {number} maxResults - The maximum no of results to display
    */
-  async getFunctionSymbols(maxResults) {
+  async getFunctionSymbols(sourceId, maxResults) {
     const cm = editors.get(this);
-    const { codemirrorLanguage } = this.#CodeMirror6;
+    const {
+      codemirrorLanguage,
+      codemirrorLangJavascript: { javascriptLanguage },
+    } = this.#CodeMirror6;
 
     const functionSymbols = [];
     let resultsCount = 0;
     await lezerUtils.walkTree(cm, codemirrorLanguage, {
+      tree: lezerUtils.getTree(
+        javascriptLanguage,
+        sourceId,
+        cm.state.doc.toString()
+      ),
       filterSet: lezerUtils.nodeTypeSets.functionsDeclAndExpr,
       enterVisitor: node => {
         if (resultsCount == maxResults) {
@@ -2400,7 +2435,6 @@ class Editor extends EventEmitter {
         });
         resultsCount++;
       },
-      forceParseTo: cm.state.doc.length,
     });
 
     return functionSymbols;
@@ -2409,14 +2443,23 @@ class Editor extends EventEmitter {
   /**
    * Get the class symbols for the current source loaded in the the editor.
    *
+   * @param {number} sourceId - The id for the source, this used to cache and retrieve a cached syntax tree
    * @returns
    */
-  async getClassSymbols() {
+  async getClassSymbols(sourceId) {
     const cm = editors.get(this);
-    const { codemirrorLanguage } = this.#CodeMirror6;
+    const {
+      codemirrorLanguage,
+      codemirrorLangJavascript: { javascriptLanguage },
+    } = this.#CodeMirror6;
 
     const classSymbols = [];
     await lezerUtils.walkTree(cm, codemirrorLanguage, {
+      tree: lezerUtils.getTree(
+        javascriptLanguage,
+        sourceId,
+        cm.state.doc.toString()
+      ),
       filterSet: lezerUtils.nodeTypeSets.classes,
       enterVisitor: node => {
         const classVarDefNode = node.node.firstChild.nextSibling;
@@ -2431,7 +2474,6 @@ class Editor extends EventEmitter {
           },
         });
       },
-      forceParseTo: cm.state.doc.length,
     });
 
     return classSymbols;
@@ -4069,6 +4111,13 @@ class Editor extends EventEmitter {
     const offset = this.#positionToOffset(line);
     const el = this.#getElementAtOffset(offset);
     return el.closest(".cm-line");
+  }
+
+  // Used only in tests
+  // Only used for CM6
+  isReadOnly() {
+    const cm = editors.get(this);
+    return cm.state.readOnly;
   }
 
   // Used only in tests

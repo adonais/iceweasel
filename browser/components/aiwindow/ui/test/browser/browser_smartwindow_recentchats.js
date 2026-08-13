@@ -205,7 +205,7 @@ describe("recent chats", () => {
 
       const sidebarBrowser =
         gAiWindow.document.getElementById("ai-window-browser");
-      await BrowserTestUtils.waitForCondition(() =>
+      await TestUtils.waitForCondition(() =>
         AIWindowUI.isSidebarOpen(gAiWindow)
       );
 

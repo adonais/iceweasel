@@ -73,15 +73,7 @@ class WorkerDebuggerEnumerator final : public nsSimpleEnumerator {
  public:
   explicit WorkerDebuggerEnumerator(
       const nsTArray<nsCOMPtr<nsIWorkerDebugger>>& aDebuggers)
-      : mIndex(0) {
-    for (const auto& debugger : aDebuggers) {
-      bool isRemote;
-      (void)debugger->GetIsRemote(&isRemote);
-      if (!isRemote) {
-        mDebuggers.AppendElement(debugger);
-      }
-    }
-  }
+      : mDebuggers(aDebuggers.Clone()), mIndex(0) {}
 
   NS_DECL_NSISIMPLEENUMERATOR
 
@@ -279,9 +271,9 @@ void WorkerDebuggerManager::RegisterDebugger(
   AssertIsOnMainThread();
 
   mDebuggers.AppendElement(aRemoteWorkerDebugger);
-  //  for (const auto& listener : CloneListeners()) {
-  //    listener->OnRegister(aRemoteWorkerDebugger);
-  //  }
+  for (const auto& listener : CloneListeners()) {
+    listener->OnRegister(aRemoteWorkerDebugger);
+  }
 }
 
 void WorkerDebuggerManager::UnregisterDebugger(
@@ -290,9 +282,9 @@ void WorkerDebuggerManager::UnregisterDebugger(
   AssertIsOnMainThread();
 
   mDebuggers.RemoveElement(aRemoteWorkerDebugger);
-  //  for (const auto& listener : CloneListeners()) {
-  //    listener->OnUnregister(aRemoteWorkerDebugger);
-  //  }
+  for (const auto& listener : CloneListeners()) {
+    listener->OnUnregister(aRemoteWorkerDebugger);
+  }
 }
 
 void WorkerDebuggerManager::RegisterDebuggerMainThread(

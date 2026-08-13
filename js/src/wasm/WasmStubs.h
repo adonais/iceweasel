@@ -257,7 +257,7 @@ extern bool GenerateEntryStubs(jit::MacroAssembler& masm,
                                size_t funcExportIndex, const FuncExport& fe,
                                const FuncType& funcType,
                                const mozilla::Maybe<jit::ImmPtr>& callee,
-                               bool isAsmJS, CodeRangeVector* codeRanges);
+                               CodeRangeVector* codeRanges);
 
 extern void GenerateTrapExitRegisterOffsets(jit::RegisterOffsets* offsets,
                                             size_t* numWords);

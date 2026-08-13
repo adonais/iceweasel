@@ -3,14 +3,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "CookieParser.h"
+
 #include "CookieLogging.h"
 #include "CookieValidation.h"
-
 #include "mozilla/CheckedInt.h"
-#include "mozilla/glean/NetwerkMetrics.h"
-#include "mozilla/net/Cookie.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/TextUtils.h"
+#include "mozilla/glean/NetwerkMetrics.h"
+#include "mozilla/net/Cookie.h"
 #include "nsIConsoleReportCollector.h"
 #include "nsIScriptError.h"
 #include "nsIURI.h"

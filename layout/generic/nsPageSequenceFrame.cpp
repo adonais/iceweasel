@@ -13,6 +13,8 @@
 #include "mozilla/ReflowInput.h"
 #include "mozilla/StaticPresData.h"
 #include "mozilla/dom/HTMLCanvasElement.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/DrawEventRecorder.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/intl/AppDateTimeFormat.h"
 #include "nsCOMPtr.h"
@@ -549,12 +551,9 @@ static void GetPrintCanvasElementsInFrame(
   }
   for (const auto& childList : aFrame->ChildLists()) {
     for (nsIFrame* child : childList.mList) {
-      // Check if child is a nsHTMLCanvasFrame.
-      nsHTMLCanvasFrame* canvasFrame = do_QueryFrame(child);
-
-      // If there is a canvasFrame, try to get actual canvas element.
-      if (canvasFrame) {
-        HTMLCanvasElement* canvas =
+      // Check if child is a nsHTMLCanvasFrame, and get the canvas element.
+      if (nsHTMLCanvasFrame* canvasFrame = do_QueryFrame(child)) {
+        auto* canvas =
             HTMLCanvasElement::FromNodeOrNull(canvasFrame->GetContent());
         if (canvas && canvas->GetMozPrintCallback()) {
           aArr->AppendElement(canvas);
@@ -563,8 +562,7 @@ static void GetPrintCanvasElementsInFrame(
       }
 
       if (!child->PrincipalChildList().FirstChild()) {
-        nsSubDocumentFrame* subdocumentFrame = do_QueryFrame(child);
-        if (subdocumentFrame) {
+        if (nsSubDocumentFrame* subdocumentFrame = do_QueryFrame(child)) {
           // Descend into the subdocument
           nsIFrame* root = subdocumentFrame->GetSubdocumentRootFrame();
           child = root;
@@ -651,16 +649,18 @@ nsresult nsPageSequenceFrame::PrePrintNextSheet(nsITimerCallback* aCallback,
       UniquePtr<gfxContext> renderingContext = dc->CreateRenderingContext();
       NS_ENSURE_TRUE(renderingContext, NS_ERROR_OUT_OF_MEMORY);
 
-      DrawTarget* drawTarget = renderingContext->GetDrawTarget();
-      if (NS_WARN_IF(!drawTarget)) {
+      DrawTarget* referenceDt = renderingContext->GetDrawTarget();
+      if (NS_WARN_IF(!referenceDt)) {
         return NS_ERROR_FAILURE;
       }
 
       for (HTMLCanvasElement* canvas : Reversed(mCurrentCanvasList)) {
         CSSIntSize size = canvas->GetSize();
-
-        RefPtr<DrawTarget> canvasTarget = drawTarget->CreateSimilarDrawTarget(
-            size.ToUnknownSize(), drawTarget->GetFormat());
+        RefPtr recorder = MakeAndAddRef<gfx::DrawEventRecorderMemory>(nullptr);
+        RefPtr<DrawTarget> canvasTarget =
+            gfx::Factory::CreateRecordingDrawTarget(
+                recorder, referenceDt,
+                gfx::IntRect(gfx::IntPoint(), size.ToUnknownSize()));
         if (!canvasTarget) {
           continue;
         }

@@ -36,8 +36,8 @@ add_task(async function test_focus_preserved_after_toggle() {
   await statusCard.actionButtonEl.updateComplete;
 
   Assert.ok(
-    statusCard.statusBoxEl.titleEl.matches(":focus-within"),
-    "Focus switches to the title after action button toggled"
+    actionButton.matches(":focus-within"),
+    "Focus stays on the action button after toggled"
   );
 
   await closePanel();
@@ -80,8 +80,8 @@ add_task(async function test_focus_restored_after_activating() {
   await statusCard.actionButtonEl.updateComplete;
 
   Assert.ok(
-    statusCard.statusBoxEl.titleEl.matches(":focus-within"),
-    "Focus should move to the title after activating completes"
+    actionButton.matches(":focus-within"),
+    "Focus moves back to the action button after activating completes"
   );
 
   await closePanel();

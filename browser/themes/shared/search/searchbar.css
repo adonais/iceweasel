@@ -10,7 +10,7 @@
   fill: currentColor;
 }
 
-.search-one-offs:not([hidden]) {
+.search-one-offs {
   display: block;
   width: 100%;
 }
@@ -54,7 +54,7 @@
   padding-inline: 8px;
 }
 
-.search-panel-one-offs:not([hidden]),
+.search-panel-one-offs,
 .search-panel-one-offs-container {
   display: flex;
   flex-direction: row;

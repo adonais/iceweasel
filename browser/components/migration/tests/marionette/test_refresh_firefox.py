@@ -46,7 +46,7 @@ class TestFirefoxRefresh(MarionetteTestCase):
             """
           let [username, password, resolve] = arguments;
           let myLogin = new global.LoginInfo(
-            "test.marionette.mozilla.com",
+            "http://test.marionette.mozilla.com",
             "http://test.marionette.mozilla.com/some/form/",
             null,
             username,
@@ -307,8 +307,8 @@ class TestFirefoxRefresh(MarionetteTestCase):
             """
           let [resolve] = arguments;
           Services.logins.searchLoginsAsync({
-            origin: "test.marionette.mozilla.com",
-            formActionOrigin: "http://test.marionette.mozilla.com/some/form/",
+            origin: "http://test.marionette.mozilla.com",
+            formActionOrigin: "http://test.marionette.mozilla.com",
           }).then(ary => resolve(ary.length ? ary : {username: "null", password: "null"}));
         """
         )

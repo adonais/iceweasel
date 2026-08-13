@@ -76,6 +76,7 @@ function registerEventsActor() {
 
       allFrames: true,
       includeChrome: true,
+      safeForUntrustedWebProcess: true,
     });
 
     eventsActorRegistered = true;

@@ -5,7 +5,7 @@
 loader: taskgraph.loader.transform:loader
 
 transforms:
-    - gecko_taskgraph.transforms.test_apk:transforms
+    - taskgraph.transforms.task_context
     - gecko_taskgraph.transforms.job:transforms
     - gecko_taskgraph.transforms.task:transforms
 
@@ -15,6 +15,13 @@ kind-dependencies:
 task-defaults:
     run-on-repo-type: [hg]
     description: Runs UI tests for sanity checking startup on Nightly
+    task-context:
+        from-parameters:
+            level: level
+        substitution-fields:
+            - routes
+            - scopes
+            - extra.notify
     treeherder:
         kind: test
         tier: 1
@@ -47,59 +54,58 @@ task-defaults:
         notify:
             by-level:
                 '3':
-                    slackText: '${rootUrl}/tasks/${status.taskId} | ${task.metadata.name} | ${task.metadata.source}'
+                    slackText: '${{rootUrl}}/tasks/${{status.taskId}} | ${{task.metadata.name}} | ${{task.metadata.source}}'
                     slackBlocks: |
                         [
-                          {
+                          {{
                             "type": "header",
-                            "text": {
+                            "text": {{
                               "type": "plain_text",
-                              "text": "firefox-android :firefox: ${task.metadata.name} :x:\n "
-                            }
-                          },
-                          {
+                              "text": "firefox-android :firefox: ${{task.metadata.name}} :x:\n "
+                            }}
+                          }},
+                          {{
                             "type": "divider"
-                          },
-                          {
+                          }},
+                          {{
                              "type": "section",
-                             "text": {
+                             "text": {{
                                  "type": "mrkdwn",
-                                 "text": "*Task*: <${rootUrl}/tasks/${status.taskId}|Taskcluster>"
-                            }
-                          },
-                          {
+                                 "text": "*Task*: <${{rootUrl}}/tasks/${{status.taskId}}|Taskcluster>"
+                            }}
+                          }},
+                          {{
                             "type": "section",
-                            "text": {
+                            "text": {{
                               "type": "mrkdwn",
-                              "text": "*Owner*: ${task.metadata.owner}"
-                            }
-                          },
-                          {
+                              "text": "*Owner*: ${{task.metadata.owner}}"
+                            }}
+                          }},
+                          {{
                             "type": "section",
-                            "text": {
+                            "text": {{
                               "type": "mrkdwn",
-                              "text": "*Source*: <${task.payload.env.GECKO_BASE_REPOSITORY}/rev/${task.payload.env.GECKO_HEAD_REV}|Commit> :hg:"
-                            }
-                          },
-                          {
+                              "text": "*Source*: <${{task.payload.env.GECKO_BASE_REPOSITORY}}/rev/${{task.payload.env.GECKO_HEAD_REV}}|Commit> :hg:"
+                            }}
+                          }},
+                          {{
                             "type": "divider"
-                          },
-                          {
+                          }},
+                          {{
                             "type": "context",
                             "elements": [
-                                {
+                                {{
                                     "type": "mrkdwn",
                                     "text": ":testops-notify: created by <https://mozilla-hub.atlassian.net/wiki/spaces/MTE/overview|Mobile Test Engineering>"
-                                }
+                                }}
                             ]
-                          }
+                          }}
                         ]
                 'default': {}
 tasks:
     fenix-arm64-v8a-nightly-robo-opt:
         attributes:
             build-type: fenix-nightly
-            shipping-product: fenix
         description: Fenix Nightly Opt Robo Test (arm64-v8a)
         dependencies:
             signing: signing-apk-fenix-nightly
@@ -125,7 +131,6 @@ tasks:
     fenix-arm64-v8a-nightly:
         attributes:
             build-type: fenix-nightly-firebase
-            shipping-product: fenix
         dependencies:
             signing: signing-apk-fenix-nightly-firebase
             signing-android-test: signing-apk-fenix-android-test-nightly
@@ -154,7 +159,6 @@ tasks:
     fenix-armeabi-v7a-nightly:
         attributes:
             build-type: fenix-nightly-firebase
-            shipping-product: fenix
         dependencies:
             signing: signing-apk-fenix-nightly-firebase
             signing-android-test: signing-apk-fenix-android-test-nightly
@@ -183,7 +187,6 @@ tasks:
     focus-arm64-v8a-nightly:
         attributes:
             build-type: focus-nightly-firebase
-            shipping-product: focus
         dependencies:
             signed-apk-debug-apk: signing-apk-focus-nightly-firebase
             signed-apk-android-test: signing-apk-focus-android-test-nightly
@@ -212,7 +215,6 @@ tasks:
     focus-armeabi-v7a-nightly:
         attributes:
             build-type: focus-nightly-firebase
-            shipping-product: focus
         dependencies:
             signed-apk-debug-apk: signing-apk-focus-nightly-firebase
             signed-apk-android-test: signing-apk-focus-android-test-nightly
@@ -241,7 +243,6 @@ tasks:
     focus-arm64-v8a-nightly-robo-opt:
         attributes:
             build-type: focus-nightly
-            shipping-product: focus
         description: Focus Nightly Opt Robo Test (ARM)
         dependencies:
             signing: signing-apk-focus-nightly

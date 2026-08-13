@@ -200,8 +200,6 @@ JSValidatorChild::ValidatorResult JSValidatorChild::ShouldAllowJS(
   // Parse to JavaScript
   JS::PrefableCompileOptions prefableOptions;
   xpc::SetPrefableCompileOptions(prefableOptions);
-  // For the syntax validation purpose, asm.js doesn't need to be enabled.
-  prefableOptions.setAsmJSOption(JS::AsmJSOption::DisabledByAsmJSPref);
 
   JS::CompileOptions options(prefableOptions);
   RefPtr<JS::Stencil> stencil =

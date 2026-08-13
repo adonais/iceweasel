@@ -191,7 +191,7 @@ add_task(async function test_untrim() {
     }
 
     let trimmedValue = UrlbarTestUtils.trimURL(test.untrimmedValue);
-    gURLBar._setValue(test.untrimmedValue, {
+    gURLBar.setValue(test.untrimmedValue, {
       allowTrim: true,
       valueIsTyped: false,
     });

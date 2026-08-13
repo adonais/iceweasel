@@ -38,7 +38,7 @@ internal class BrowserToolbarSyncToBookmarksMiddleware(
                 .map { it.isEditMode() }
                 .onEach { isInEditMode ->
                     if (store.state.isSearching && !isInEditMode) {
-                        store.dispatch(SearchDismissed)
+                        store.dispatch(SearchAction.SearchDismissed)
                     }
                 }
                 .launchIn(scope)

@@ -89,7 +89,7 @@ add_task(
 
     let foundTestFunction = false;
     for (const sourceId in sources) {
-      const sourceText = sources[sourceId];
+      const sourceText = sources[sourceId]?.sourceText;
       if (
         typeof sourceText === "string" &&
         sourceText.includes("shutdownTestFn_" + token)

@@ -163,7 +163,7 @@ static bool BlockVectorContains(const BlockVector& vec,
 
 template <typename T, int N, typename AP>
 class Matrix {
-  static_assert(std::is_pointer<T>::value);
+  static_assert(std::is_pointer_v<T>);
   mozilla::Vector<T, N, AP> vec_;
   size_t size1_ = 0;
   size_t size2_ = 0;
@@ -283,7 +283,7 @@ static void DumpValueTable(const ValueTable& table, const char* tag) {
 
 template <typename T, int N, typename AP>
 class SimpleSet {
-  static_assert(std::is_pointer<T>::value);
+  static_assert(std::is_pointer_v<T>);
   mozilla::Vector<T, N, AP> vec_;
 
  public:

@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<body>
+<select id="s">
+  <option value="a">A</option>
+  <option value="b">B</option>
+</select>
+<script>
+window.addEventListener("beforeunload", function(event) {
+  event.preventDefault();
+});
+</script>
+</body>
+</html>

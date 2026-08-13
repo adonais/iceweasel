@@ -4,10 +4,11 @@
 
 /* Shared proto object for XPCWrappedNative. */
 
-#include "xpcprivate.h"
-#include "js/Object.h"  // JS::SetReservedSlot
 #include "pratom.h"
 #include "XPCMaps.h"
+#include "xpcprivate.h"
+
+#include "js/Object.h"  // JS::SetReservedSlot
 
 using namespace mozilla;
 

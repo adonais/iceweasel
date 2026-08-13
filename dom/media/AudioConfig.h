@@ -17,7 +17,7 @@ class AudioConfig {
  public:
   // Channel definition is conveniently defined to be in the same order as
   // WAVEFORMAT && SMPTE, even though this is unused for now.
-  enum Channel {
+  enum Channel : int32_t {
     CHANNEL_INVALID = -1,
     CHANNEL_FRONT_LEFT = 0,
     CHANNEL_FRONT_RIGHT,

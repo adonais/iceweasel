@@ -20,7 +20,7 @@ WebGLSync::WebGLSync(WebGLContext* webgl, GLenum condition, GLbitfield flags)
 WebGLSync::~WebGLSync() {
   if (!mContext) return;
   mContext->gl->fDeleteSync(mGLName);
-  mGLName = 0;
+  mGLName = nullptr;
 }
 
 ClientWaitSyncResult WebGLSync::ClientWaitSync(const GLbitfield flags,

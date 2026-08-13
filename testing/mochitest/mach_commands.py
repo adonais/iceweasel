@@ -356,6 +356,10 @@ def run_mochitest_general(
         )
 
     if not kwargs.get("log"):
+        if not kwargs.get("log_testsummary"):
+            kwargs["log_testsummary"] = [
+                command_context._get_state_filename("testsummary.jsonl")
+            ]
         # Create shared logger
         format_args = {"level": command_context._mach_context.settings["test"]["level"]}
         if len(tests) == 1:
@@ -586,6 +590,10 @@ def run_junit(command_context, no_install, **kwargs):
     if not kwargs.get("log"):
         from mozlog.commandline import setup_logging
 
+        if not kwargs.get("log_testsummary"):
+            kwargs["log_testsummary"] = [
+                command_context._get_state_filename("testsummary.jsonl")
+            ]
         format_args = {"level": command_context._mach_context.settings["test"]["level"]}
         default_format = command_context._mach_context.settings["test"]["format"]
         kwargs["log"] = setup_logging(

@@ -16,6 +16,11 @@ const { CustomizableUITestUtils } = ChromeUtils.importESModule(
 );
 let gCUITestUtils = new CustomizableUITestUtils(window);
 
+const FirefoxViewTestUtils = ChromeUtils.importESModule(
+  "resource://testing-common/FirefoxViewTestUtils.sys.mjs"
+);
+FirefoxViewTestUtils.init(this);
+
 const PERMISSIONS_PAGE =
   "https://example.com/browser/browser/base/content/test/permissions/permissions.html";
 const afterUrlBarButton = "fxa-toolbar-menu-button";
@@ -708,6 +713,8 @@ add_task(async function testFirefoxViewButtonNavigation() {
   await BrowserTestUtils.withNewTab(
     PERMISSIONS_PAGE,
     async function (aBrowser) {
+      FirefoxViewTestUtils.enableFirefoxViewButton(window);
+
       await SpecialPowers.spawn(aBrowser, [], async () => {
         content.document.querySelector("#camera").focus();
       });

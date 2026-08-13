@@ -10,9 +10,9 @@
 
 #include "mozilla/Variant.h"
 
-#include "nsITheme.h"
 #include "ThemeCocoa.h"
 #include "mozilla/dom/RustTypes.h"
+#include "nsITheme.h"
 
 @class MOZCellDrawWindow;
 @class MOZCellDrawView;

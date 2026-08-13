@@ -4,11 +4,12 @@
 
 /* Call context. */
 
-#include "xpcprivate.h"
 #include "jsfriendapi.h"
+#include "nsContentUtils.h"
+#include "xpcprivate.h"
+
 #include "js/Object.h"  // JS::GetClass, JS::GetReservedSlot
 #include "js/Wrapper.h"
-#include "nsContentUtils.h"
 
 using namespace mozilla;
 using namespace xpc;

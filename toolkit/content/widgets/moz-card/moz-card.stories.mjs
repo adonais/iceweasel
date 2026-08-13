@@ -23,6 +23,10 @@ moz-card-heading-with-icon =
       options: ["default", "accordion"],
       control: { type: "select" },
     },
+    spacing: {
+      options: ["default", "compact"],
+      control: { type: "select" },
+    },
     headingLevel: {
       options: [1, 2, 3, 4, 5, 6],
       control: { type: "select" },
@@ -45,6 +49,7 @@ const Template = ({
   l10nId,
   content,
   type,
+  spacing,
   headingLevel,
   iconSrc,
   expanded,
@@ -57,6 +62,7 @@ const Template = ({
   <main>
     <moz-card
       type=${ifDefined(type)}
+      spacing=${ifDefined(spacing)}
       headingLevel=${ifDefined(headingLevel)}
       iconSrc=${ifDefined(iconSrc)}
       data-l10n-id=${ifDefined(l10nId)}
@@ -83,6 +89,13 @@ WithHeadingLevel.args = {
 export const Default = Template.bind({});
 Default.args = {
   content: "This card only contains content",
+};
+
+export const Compact = Template.bind({});
+Compact.args = {
+  l10nId: "moz-card-heading",
+  content: "This is the content",
+  spacing: "compact",
 };
 
 export const Accordion = Template.bind({});

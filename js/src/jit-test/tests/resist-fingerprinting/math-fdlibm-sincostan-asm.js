@@ -1,5 +1,3 @@
-// |jit-test| skip-if: !isAsmJSCompilationAvailable()
-
 load(libdir + "asm.js");
 
 var g = newGlobal({alwaysUseFdlibm: true})
@@ -11,21 +9,21 @@ var code = (fun) => {
   })`;
 }
 
-// Linking RFP asm.js with non-RFP Math.sin.
+// RFP global with non-RFP Math.sin.
 let asmSin = g.eval(code("sin"));
 assertAsmLinkFail(asmSin, {Math: {sin: Math.sin}});
 
-// Linking RFP asm.js with RFP Math.sin
+// RFP global with RFP Math.sin
 const sin = asmLink(asmSin, {Math: {sin: g.Math.sin}});
 assertEq(sin(35*Math.LN2   ), -0.765996413898051);
 assertEq(sin(110*Math.LOG2E),  0.9989410140273757);
 assertEq(sin(7*Math.LOG10E ),  0.10135692924965616);
 
-// Linking non-RFP asm.js with RFP Math.sin
+// Non-RFP global with RFP Math.sin
 asmSin = eval(code("sin"))
 assertAsmLinkFail(asmSin, {Math: {sin: g.Math.sin}});
 
-// Linking non-RFP asm.js with non-RFP Math.sin (the "normal case")
+// Non-RFP global with non-RFP Math.sin (the "normal case")
 asmLink(asmSin, {Math: {sin: Math.sin}});
 
 // Testing cos

@@ -9,6 +9,7 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/dom/quota/Assertions.h"
+#include "mozilla/dom/quota/QuotaCommon.h"
 
 namespace mozilla::dom::quota {
 
@@ -39,10 +40,22 @@ void AssertNoOverflow(uint64_t aDest, T aArg) {
 }
 
 template <typename T, typename U>
-void AssertNoUnderflow(T aDest, U aArg) {
+void AssertNoUnderflow(T aDest, U aArg, const nsACString& context) {
   detail::IntChecker<T>::Assert(aDest);
   detail::IntChecker<T>::Assert(aArg);
-  MOZ_ASSERT(uint64_t(aDest) >= uint64_t(aArg));
+#if defined(NIGHTLY_BUILD) || defined(DEBUG)
+  {
+    const auto scope =
+        context.IsEmpty()
+            ? Nothing{}
+            : Some(quota::ScopedLogExtraInfo{
+                  quota::ScopedLogExtraInfo::kTagContextTainted, context});
+    const bool noUnderflow = uint64_t(aDest) >= uint64_t(aArg);
+    MOZ_ASSERT(noUnderflow);
+    QM_TRY(OkIf(noUnderflow), QM_VOID, QM_NO_CLEANUP,
+           ([&context]() { return ShouldReportUnderflow(context); }));
+  }
+#endif
 }
 
 }  // namespace mozilla::dom::quota

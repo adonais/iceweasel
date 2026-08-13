@@ -1000,6 +1000,16 @@ Collection.prototype = {
     );
   },
 
+  // Post a single, already-encrypted record immediately (no batching) and
+  // unconditionally (no X-If-Unmodified-Since). Used only by callers that own
+  // a device-exclusive record, eg, the tabs "quick write").
+  async postSingleRawRecord(record) {
+    return Resource.prototype.post.call(
+      this,
+      JSON.stringify([record.toJSON()])
+    );
+  },
+
   newPostQueue(log, timestamp, postCallback) {
     let poster = (data, headers, batch, commit) => {
       this.batch = batch;

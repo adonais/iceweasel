@@ -5,8 +5,8 @@
 #ifndef VibrancyManager_h
 #define VibrancyManager_h
 
-#include "mozilla/EnumeratedArray.h"
 #include "Units.h"
+#include "mozilla/EnumeratedArray.h"
 
 @class NSView;
 class nsCocoaWindow;

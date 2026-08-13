@@ -2,12 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "MOZDynamicCursor.h"
 #include "imgIContainer.h"
 #include "nsCocoaUtils.h"
-#include "MOZDynamicCursor.h"
-#include "nsObjCExceptions.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsIFile.h"
+#include "nsObjCExceptions.h"
 
 static MOZDynamicCursor* gInstance;
 static CGFloat sCurrentCursorScaleFactor = 0.0f;

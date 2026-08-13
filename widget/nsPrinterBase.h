@@ -5,14 +5,14 @@
 #ifndef nsPrinterBase_h_
 #define nsPrinterBase_h_
 
-#include "mozilla/gfx/Rect.h"
-#include "nsIPrinter.h"
-#include "nsTArray.h"
-#include "nsCycleCollectionParticipant.h"
-#include "nsISupportsImpl.h"
-#include "nsPrintSettingsImpl.h"
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/Result.h"
+#include "mozilla/gfx/Rect.h"
+#include "nsCycleCollectionParticipant.h"
+#include "nsIPrinter.h"
+#include "nsISupportsImpl.h"
+#include "nsPrintSettingsImpl.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 

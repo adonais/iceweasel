@@ -2,12 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/StopGapEventTarget.h"
+#include "Helpers.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/StopGapEventTarget.h"
 #include "mozilla/gtest/MozAssertions.h"
 #include "nsIRunnable.h"
 #include "nsThreadUtils.h"
-#include "Helpers.h"
 
 using mozilla::CancelableRunnable;
 using mozilla::MakeRefPtr;

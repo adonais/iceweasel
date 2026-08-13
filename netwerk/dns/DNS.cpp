@@ -4,14 +4,15 @@
 
 #include "mozilla/net/DNS.h"
 
+#include <string.h>
+
 #include "mozilla/Assertions.h"
-#include "mozilla/mozalloc.h"
 #include "mozilla/StaticPrefs_network.h"
+#include "mozilla/mozalloc.h"
 #include "nsContentUtils.h"
 #include "nsIOService.h"
 #include "nsPrintfCString.h"
 #include "nsString.h"
-#include <string.h>
 
 #ifdef XP_WIN
 #  include "ws2tcpip.h"

@@ -15,6 +15,7 @@ class EmptyParser(BaseTryParser):
         "chemspill-prio",
         "disable-pgo",
         "env",
+        "extensions",
         "gecko-profile",
         "pernosco",
         "routes",

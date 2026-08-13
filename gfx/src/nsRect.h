@@ -5,8 +5,10 @@
 #ifndef NSRECT_H
 #define NSRECT_H
 
-#include <stdint.h>          // for int32_t, int64_t
-#include <algorithm>         // for min/max
+#include <stdint.h>  // for int32_t, int64_t
+
+#include <algorithm>  // for min/max
+
 #include "mozilla/Likely.h"  // for MOZ_UNLIKELY
 #include "mozilla/gfx/BaseRect.h"
 #include "mozilla/gfx/Rect.h"

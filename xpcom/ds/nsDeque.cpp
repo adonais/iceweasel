@@ -3,10 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsDeque.h"
-#include "nsISupportsImpl.h"
+
 #include <string.h>
 
 #include "mozilla/CheckedInt.h"
+#include "nsISupportsImpl.h"
 
 #define modulus(x, y) ((x) % (y))
 

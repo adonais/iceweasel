@@ -15,9 +15,10 @@
 
 #ifdef MOZ_CHECK_JNI
 #  include <unistd.h>
-#  include "mozilla/Assertions.h"
+
 #  include "APKOpen.h"
 #  include "MainThreadUtils.h"
+#  include "mozilla/Assertions.h"
 #endif
 
 namespace mozilla {

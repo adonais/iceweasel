@@ -164,7 +164,7 @@ add_task(async function test_shouldShowFocusPromo() {
   Preferences.set("browser.promo.focus.enabled", false);
   Assert.ok(!BrowserUtils.shouldShowPromo(BrowserUtils.PromoType.FOCUS));
 
-  Preferences.resetBranch("browser.promo.focus");
+  Services.prefs.clearUserBranch("browser.promo.focus");
 });
 
 add_task(async function test_shouldShowPinPromo() {
@@ -187,7 +187,7 @@ add_task(async function test_shouldShowPinPromo() {
   Preferences.set("browser.promo.pin.enabled", false);
   Assert.ok(!BrowserUtils.shouldShowPromo(BrowserUtils.PromoType.PIN));
 
-  Preferences.resetBranch("browser.promo.pin");
+  Services.prefs.clearUserBranch("browser.promo.pin");
 });
 
 add_task(async function test_shouldShowRelayPromo() {
@@ -226,7 +226,7 @@ add_task(async function test_shouldShowCookieBannersPromo() {
     !BrowserUtils.shouldShowPromo(BrowserUtils.PromoType.COOKIE_BANNERS)
   );
 
-  Preferences.resetBranch("browser.promo.cookiebanners");
+  Services.prefs.clearUserBranch("browser.promo.cookiebanners");
 });
 
 add_task(function test_getShareableURL() {

@@ -3,8 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "DBusMenu.h"
-#include "prlink.h"
+
 #include "nsThreadUtils.h"
+#include "prlink.h"
 
 namespace mozilla::widget {
 

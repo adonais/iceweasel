@@ -573,3 +573,80 @@ export function computeRandScore(combinedItems, clusterKey, labelKey) {
   }
   return agreement / total_items;
 }
+
+/**
+ * Agglomerative (hierarchical) clustering with average linkage over cosine
+ * distance. Repeatedly merges the two closest clusters until the closest pair
+ * exceeds `threshold` (cosine distance), so the number of clusters emerges from
+ * the data rather than being chosen up front. Deterministic (no random init).
+ *
+ * @param {number[][]} data - item embeddings
+ * @param {number} threshold - cosine-distance cutoff to stop merging
+ * @returns {number[][]} clusters as arrays of item indices
+ */
+export function agglomerativeClusterCosine(data, threshold) {
+  const n = data.length;
+  if (n === 0) {
+    return [];
+  }
+  if (n === 1) {
+    return [[0]];
+  }
+  // Unit-normalize once so cosine similarity is just a dot product below.
+  const normed = data.map(vectorNormalize);
+  // Each item starts as its own singleton cluster; these track the clustering
+  // state (membership, which clusters are live, sizes) as clusters merge.
+  const members = data.map((_, i) => [i]);
+  const active = new Set(data.map((_, i) => i));
+  const size = new Array(n).fill(1);
+  // Pairwise cosine-distance matrix (between items to start, between clusters
+  // as they merge).
+  const D = Array.from({ length: n }, () => new Array(n).fill(0));
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      // Cosine distance; normed vectors are unit-length so cosine == dot.
+      D[i][j] = D[j][i] = 1 - dotProduct(normed[i], normed[j]);
+    }
+  }
+  // Greedily merge the two closest clusters until even the closest pair is
+  // farther apart than the threshold.
+  let num = n;
+  while (num > 1) {
+    // Find the two closest still-active clusters (mi, mj) at distance md.
+    const act = [...active];
+    let mi = -1;
+    let mj = -1;
+    let md = Infinity;
+    for (let a = 0; a < act.length; a++) {
+      for (let b = a + 1; b < act.length; b++) {
+        const d = D[act[a]][act[b]];
+        if (d < md) {
+          md = d;
+          mi = act[a];
+          mj = act[b];
+        }
+      }
+    }
+    // md is the global minimum, so if it exceeds the threshold nothing else
+    // could merge either -> stop.
+    if (md > threshold) {
+      break;
+    }
+    // Lance-Williams average-linkage update: the merged cluster's distance to
+    // every other cluster is the size-weighted average of mi's and mj's.
+    for (const m of active) {
+      if (m === mi || m === mj) {
+        continue;
+      }
+      D[mi][m] = D[m][mi] =
+        (size[mi] * D[mi][m] + size[mj] * D[mj][m]) / (size[mi] + size[mj]);
+    }
+    // Commit the merge: fold mj's members into mi and retire mj.
+    members[mi] = members[mi].concat(members[mj]);
+    size[mi] += size[mj];
+    active.delete(mj);
+    num--;
+  }
+  // Surviving clusters, each as a list of original item indices.
+  return [...active].map(i => members[i]);
+}

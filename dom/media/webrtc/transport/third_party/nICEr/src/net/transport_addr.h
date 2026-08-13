@@ -101,7 +101,7 @@ int nr_str_port_to_transport_addr(const char *str, UINT2 port, int protocol, nr_
 int nr_ip6_port_to_transport_addr(struct in6_addr* addr6, UINT2 port, int protocol, nr_transport_addr *addr);
 
 int nr_transport_addr_get_addrstring(const nr_transport_addr *addr, char *str, int maxlen);
-int nr_transport_addr_get_port(const nr_transport_addr *addr, int *port);
+int nr_transport_addr_get_port(const nr_transport_addr *addr, uint16_t *port);
 int nr_transport_addr_cmp(const nr_transport_addr *addr1,const nr_transport_addr *addr2,int mode);
 #define NR_TRANSPORT_ADDR_CMP_MODE_VERSION   1
 #define NR_TRANSPORT_ADDR_CMP_MODE_PROTOCOL  2

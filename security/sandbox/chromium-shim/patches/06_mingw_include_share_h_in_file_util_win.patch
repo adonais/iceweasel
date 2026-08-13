@@ -1,0 +1,17 @@
+share.h is not transitively included via io.h for MinGW
+
+diff --git a/base/files/file_util_win.cc b/base/files/file_util_win.cc
+index d69e6f7d78fe..d85cae1c99f2 100644
+--- a/base/files/file_util_win.cc
++++ b/base/files/file_util_win.cc
+@@ -9,6 +9,10 @@
+
+ #include <io.h>
+ #include <psapi.h>
++#if defined(__MINGW32__)
++// share.h is not transitively included via io.h for MinGW.
++#include <share.h>
++#endif  // defined(__MINGW32__)
+ #include <shellapi.h>
+ #include <shlobj.h>
+ #include <stddef.h>

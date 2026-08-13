@@ -2,39 +2,39 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsISupports.h"
 #include "mozilla/Components.h"
 #include "mozilla/ModuleUtils.h"
 #include "mozilla/WidgetUtils.h"
+#include "nsISupports.h"
 
 #include "nsWidgetsCID.h"
 
-#include "nsChildView.h"
 #include "nsAppShell.h"
 #include "nsAppShellSingleton.h"
-#include "nsFilePicker.h"
+#include "nsChildView.h"
 #include "nsColorPicker.h"
+#include "nsFilePicker.h"
 
-#include "nsClipboard.h"
-#include "nsClipboardHelper.h"
 #include "HeadlessClipboard.h"
 #include "gfxPlatform.h"
-#include "nsTransferable.h"
-#include "nsHTMLFormatConverter.h"
+#include "nsClipboard.h"
+#include "nsClipboardHelper.h"
 #include "nsDragService.h"
+#include "nsHTMLFormatConverter.h"
 #include "nsToolkit.h"
+#include "nsTransferable.h"
 
 #include "nsLookAndFeel.h"
 
+#include "MacOSNotificationCenter.h"
+#include "NativeKeyBindings.h"
 #include "nsSound.h"
 #include "nsUserIdleServiceX.h"
-#include "NativeKeyBindings.h"
-#include "MacOSNotificationCenter.h"
 
 #include "nsDeviceContextSpecX.h"
-#include "nsPrinterListCUPS.h"
-#include "nsPrintSettingsServiceX.h"
 #include "nsPrintDialogX.h"
+#include "nsPrintSettingsServiceX.h"
+#include "nsPrinterListCUPS.h"
 #include "nsToolkitCompsCID.h"
 
 #include "mozilla/widget/ScreenManager.h"

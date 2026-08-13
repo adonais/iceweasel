@@ -16,9 +16,9 @@
 #include <fstream>
 #include <utility>
 
+#include "GLBlitHelper.h"
 #include "gfxPlatform.h"
 #include "gfxUtils.h"
-#include "GLBlitHelper.h"
 #ifdef XP_MACOSX
 #  include "GLContextCGL.h"
 #else
@@ -26,13 +26,13 @@
 #endif
 #include "GLContextProvider.h"
 #include "MozFramebuffer.h"
+#include "ScopedGLHelpers.h"
+#include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/gfx/Swizzle.h"
+#include "mozilla/glean/GfxMetrics.h"
 #include "mozilla/layers/ScreenshotGrabber.h"
 #include "mozilla/layers/SurfacePoolCA.h"
-#include "mozilla/StaticPrefs_gfx.h"
-#include "mozilla/glean/GfxMetrics.h"
 #include "mozilla/webrender/RenderMacIOSurfaceTextureHost.h"
-#include "ScopedGLHelpers.h"
 
 @interface CALayer (PrivateSetContentsOpaque)
 - (void)setContentsOpaque:(BOOL)opaque;

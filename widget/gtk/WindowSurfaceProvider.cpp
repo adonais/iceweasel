@@ -5,30 +5,30 @@
 
 #include "WindowSurfaceProvider.h"
 
-#include "gfxPlatformGtk.h"
 #include "GtkCompositorWidget.h"
+#include "WidgetUtilsGtk.h"
+#include "gfxPlatformGtk.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "nsWindow.h"
-#include "mozilla/ScopeExit.h"
-#include "WidgetUtilsGtk.h"
 
 #ifdef MOZ_WAYLAND
-#  include "mozilla/StaticPrefs_widget.h"
 #  include "WindowSurfaceCairo.h"
 #  include "WindowSurfaceWaylandMultiBuffer.h"
+#  include "mozilla/StaticPrefs_widget.h"
 #endif
 #ifdef MOZ_X11
-#  include "mozilla/X11Util.h"
 #  include "WindowSurfaceX11Image.h"
 #  include "WindowSurfaceX11SHM.h"
+#  include "mozilla/X11Util.h"
 #endif
 
 #undef LOG
 #ifdef MOZ_LOGGING
+#  include "Units.h"
 #  include "mozilla/Logging.h"
 #  include "nsTArray.h"
-#  include "Units.h"
 extern mozilla::LazyLogModule gWidgetLog;
 #  define LOG(args) MOZ_LOG(gWidgetLog, mozilla::LogLevel::Debug, args)
 #else

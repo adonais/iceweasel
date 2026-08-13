@@ -260,6 +260,7 @@ class AppErrorBoundary extends Component {
         packet_type: clientPacket.type,
         server_stack: serverPacket.stack || "",
         server_content_process_stack: serverPacket.contentProcessStack || "",
+        session_duration: Math.floor(toolbox.telemetry.msSinceSessionStart()),
         session_id: toolbox.sessionId,
         stack: exception.stack || "",
       },

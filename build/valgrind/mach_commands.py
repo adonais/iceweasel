@@ -72,12 +72,13 @@ def valgrind_test(command_context, suppressions):
             prefs.update(Preferences.read_prefs(path))
 
         interpolation = {
-            "server": "%s:%d" % httpd.httpd.server_address,
+            "server": f"{httpd.httpd.server_address[0]}:{httpd.httpd.server_address[1]}",
         }
-        for k, v in prefs.items():
-            if isinstance(v, str):
-                v = v.format(**interpolation)
-            prefs[k] = Preferences.cast(v)
+        for pref_name, raw_pref_value in prefs.items():
+            interpolated_pref_value = raw_pref_value
+            if isinstance(raw_pref_value, str):
+                interpolated_pref_value = raw_pref_value.format(**interpolation)
+            prefs[pref_name] = Preferences.cast(interpolated_pref_value)
 
         quitter = os.path.join(
             command_context.topsrcdir, "tools", "quitter", "quitter@mozilla.org.xpi"
@@ -189,7 +190,7 @@ def valgrind_test(command_context, suppressions):
                 if "TASKCLUSTER_INSTANCE_TYPE" in os.environ:
                     # Include the instance type so results can be grouped.
                     data["suites"][0]["extraOptions"] = [
-                        "taskcluster-%s" % os.environ["TASKCLUSTER_INSTANCE_TYPE"],
+                        f"taskcluster-{os.environ['TASKCLUSTER_INSTANCE_TYPE']}",
                     ]
                 command_context.log(
                     logging.INFO,

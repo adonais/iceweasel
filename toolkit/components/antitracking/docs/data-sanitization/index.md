@@ -101,11 +101,12 @@ The recent revamp of them clear history dialog led to a combination of the vario
 - Categories are the same as for the “Clear recent history” dialog
 - Exceptions
 	- Sites which have a “cookie” permission, set to [ACCESS\_SESSION](https://searchfox.org/mozilla-central/rev/fbb1e8462ad82b0e76b5c13dd0d6280cfb69e68d/netwerk/cookie/nsICookiePermission.idl#28) always get cleared, even if sanitize-on-shutdown is disabled
-	- Sites which have a “cookie” permission set to [ACCESS\_ALLOW](https://searchfox.org/mozilla-central/rev/fbb1e8462ad82b0e76b5c13dd0d6280cfb69e68d/netwerk/cookie/nsICookiePermission.idl#19) are exempt from data clearing
-	- Caveat: When “site settings” is selected in the categories to be cleared, the Sanitizer will remove exception permissions too. This results in the above exceptions being cleared.
+	- Sites which have a “persist-data-on-shutdown” permission set to [ACCESS\_ALLOW](https://searchfox.org/mozilla-central/rev/fbb1e8462ad82b0e76b5c13dd0d6280cfb69e68d/netwerk/cookie/nsICookiePermission.idl#19) are exempt from data clearing (Bug 1767271 introduced this dedicated permission; previously the “cookie” permission set to ACCESS\_ALLOW served the same role, but it also disabled Total Cookie Protection for the listed sites — see Bug 1767271 for the split)
+	- A “cookie” ACCESS\_SESSION on the exact principal still forces clearing even when a “persist-data-on-shutdown” ALLOW is also present on that principal
+	- Caveat: When “site settings” is selected in a manual “Clear Now” the Sanitizer will remove the “persist-data-on-shutdown” permission too via `CLEAR_PERMISSIONS`, so the user can wipe their exception list. The shutdown path uses `CLEAR_SITE_PERMISSIONS` which preserves it.
 - Uses PrincipalsCollector to obtain a list of principals which have site data associated with them
 -  [getAllPrincipals](https://searchfox.org/mozilla-central/rev/6b8a3f804789fb865f42af54e9d2fef9dd3ec74d/toolkit/components/cleardata/PrincipalsCollector.sys.mjs#83) queries the QuotaManager, the cookie service and the service worker manager for principals
-- The list of principals obtained is checked for permission exceptions. Principals which set a cookie [ACCESS\_ALLOW](https://searchfox.org/mozilla-central/rev/fbb1e8462ad82b0e76b5c13dd0d6280cfb69e68d/netwerk/cookie/nsICookiePermission.idl#19) permission are removed from the list.
+- The list of principals obtained is checked for permission exceptions. Principals (or any ancestor in the same base domain) with a “persist-data-on-shutdown” [ACCESS\_ALLOW](https://searchfox.org/mozilla-central/rev/fbb1e8462ad82b0e76b5c13dd0d6280cfb69e68d/netwerk/cookie/nsICookiePermission.idl#19) permission are removed from the list.
 - Sanitizer.sys.mjs [calls the ClearDataService](https://searchfox.org/mozilla-central/rev/6b8a3f804789fb865f42af54e9d2fef9dd3ec74d/browser/modules/Sanitizer.sys.mjs#1299,1304-1309) to clear data for every principal from the filtered list
 - Source
 	- Most of the sanitize-on-shutdown logic is implemented in [Sanitizer.sys.mjs](https://searchfox.org/mozilla-central/rev/6b8a3f804789fb865f42af54e9d2fef9dd3ec74d/browser/modules/Sanitizer.sys.mjs)

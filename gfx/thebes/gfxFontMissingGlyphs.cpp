@@ -4,16 +4,16 @@
 
 #include "gfxFontMissingGlyphs.h"
 
+#include "LayerUserData.h"
+#include "TextDrawTarget.h"
 #include "gfxUtils.h"
+#include "mozilla/LinkedList.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Helpers.h"
 #include "mozilla/gfx/PathHelpers.h"
-#include "mozilla/LinkedList.h"
-#include "mozilla/RefPtr.h"
 #include "nsDeviceContext.h"
 #include "nsLayoutUtils.h"
-#include "TextDrawTarget.h"
-#include "LayerUserData.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;

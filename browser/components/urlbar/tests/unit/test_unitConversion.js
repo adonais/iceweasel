@@ -595,8 +595,8 @@ add_task(async function () {
 
       if (isActive) {
         provider.startQuery(context, (module, result) => {
-          Assert.equal(result.type, UrlbarUtils.RESULT_TYPE.DYNAMIC);
-          Assert.equal(result.source, UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL);
+          Assert.equal(result.type, UrlbarShared.RESULT_TYPE.DYNAMIC);
+          Assert.equal(result.source, UrlbarShared.RESULT_SOURCE.OTHER_LOCAL);
           Assert.equal(result.suggestedIndex, 1);
           Assert.equal(result.payload.input, queryString);
 

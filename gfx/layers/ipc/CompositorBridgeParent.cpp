@@ -4,37 +4,42 @@
 
 #include "mozilla/layers/CompositorBridgeParent.h"
 
-#include <stdio.h>   // for fprintf, stdout
 #include <stdint.h>  // for uint64_t
-#include <utility>   // for pair
+#include <stdio.h>   // for fprintf, stdout
 
+#include <utility>  // for pair
+
+#include "TreeTraversal.h"            // for ForEachNode
 #include "apz/src/APZCTreeManager.h"  // for APZCTreeManager
 #include "base/process.h"             // for ProcessId
 #include "gfxContext.h"               // for gfxContext
 #include "gfxPlatform.h"              // for gfxPlatform
-#include "TreeTraversal.h"            // for ForEachNode
 #ifdef MOZ_WIDGET_GTK
 #  include "gfxPlatformGtk.h"  // for gfxPlatform
 #endif
 #include "mozilla/AutoRestore.h"      // for AutoRestore
 #include "mozilla/ClearOnShutdown.h"  // for ClearOnShutdown
 #include "mozilla/DebugOnly.h"        // for DebugOnly
+#include "mozilla/ProfilerLabels.h"
+#include "mozilla/ProfilerMarkers.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/dom/BrowserParent.h"
-#include "mozilla/gfx/2D.h"       // for DrawTarget
+#include "mozilla/gfx/2D.h"  // for DrawTarget
+#include "mozilla/gfx/GPUParent.h"
+#include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/gfx/Point.h"    // for IntSize
 #include "mozilla/gfx/Rect.h"     // for IntSize
 #include "mozilla/gfx/gfxVars.h"  // for gfxVars
-#include "mozilla/gfx/GPUParent.h"
-#include "mozilla/gfx/GPUProcessManager.h"
+#include "mozilla/glean/GfxMetrics.h"
 #include "mozilla/layers/APZCTreeManagerParent.h"  // for APZCTreeManagerParent
 #include "mozilla/layers/APZSampler.h"             // for APZSampler
 #include "mozilla/layers/APZThreadUtils.h"         // for APZThreadUtils
 #include "mozilla/layers/APZUpdater.h"             // for APZUpdater
-#include "mozilla/layers/CompositionRecorder.h"    // for CompositionRecorder
-#include "mozilla/layers/Compositor.h"             // for Compositor
+#include "mozilla/layers/AsyncImagePipelineManager.h"
+#include "mozilla/layers/CompositionRecorder.h"  // for CompositionRecorder
+#include "mozilla/layers/Compositor.h"           // for Compositor
 #include "mozilla/layers/CompositorAnimationStorage.h"  // for CompositorAnimationStorage
 #include "mozilla/layers/CompositorManagerParent.h"  // for CompositorManagerParent
 #include "mozilla/layers/CompositorOGL.h"            // for CompositorOGL
@@ -51,14 +56,10 @@
 #include "mozilla/layers/RemoteContentController.h"
 #include "mozilla/layers/UiCompositorControllerParent.h"
 #include "mozilla/layers/WebRenderBridgeParent.h"
-#include "mozilla/layers/AsyncImagePipelineManager.h"
-#include "mozilla/webrender/WebRenderAPI.h"
-#include "mozilla/webrender/RenderThread.h"
 #include "mozilla/media/MediaSystemResourceService.h"  // for MediaSystemResourceService
 #include "mozilla/mozalloc.h"                          // for operator new, etc
-#include "mozilla/ProfilerLabels.h"
-#include "mozilla/ProfilerMarkers.h"
-#include "mozilla/glean/GfxMetrics.h"
+#include "mozilla/webrender/RenderThread.h"
+#include "mozilla/webrender/WebRenderAPI.h"
 #include "nsCOMPtr.h"         // for already_AddRefed
 #include "nsDebug.h"          // for NS_ASSERTION, etc
 #include "nsISupportsImpl.h"  // for MOZ_COUNT_CTOR, etc
@@ -69,11 +70,11 @@
 #  include "mozilla/layers/CompositorD3D11.h"
 #  include "mozilla/widget/WinCompositorWidget.h"
 #endif
-#include "mozilla/ipc/ProtocolTypes.h"
 #include "mozilla/Hal.h"
 #include "mozilla/HalTypes.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/VsyncDispatcher.h"
+#include "mozilla/ipc/ProtocolTypes.h"
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
 #  include "VsyncSource.h"
 #endif
@@ -154,6 +155,11 @@ bool CompositorBridgeParentBase::DeallocShmem(ipc::Shmem& aShmem) {
 bool CompositorBridgeParentBase::OwnsExternalImageId(
     const wr::ExternalImageId& aId) const {
   return mNamespace == static_cast<uint32_t>(wr::AsUint64(aId) >> 32);
+}
+
+bool CompositorBridgeParentBase::OwnsPipelineId(
+    const wr::PipelineId& aPipelineId) const {
+  return mNamespace == aPipelineId.mNamespace;
 }
 
 CompositorBridgeParent::LayerTreeState::LayerTreeState()

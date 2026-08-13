@@ -5,9 +5,9 @@
 #ifndef MOZILLA_GFX_RemoteTextureHostWrapper_H
 #define MOZILLA_GFX_RemoteTextureHostWrapper_H
 
+#include "mozilla/Monitor.h"
 #include "mozilla/layers/RemoteTextureMap.h"
 #include "mozilla/layers/TextureHost.h"
-#include "mozilla/Monitor.h"
 
 namespace mozilla::layers {
 

@@ -11,7 +11,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   QuickSuggest: "moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
-  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
 });
 
 const UTM_PARAMS = {
@@ -81,8 +81,8 @@ export class AddonSuggestions extends SuggestProvider {
     }
 
     return new lazy.UrlbarResult({
-      type: lazy.UrlbarUtils.RESULT_TYPE.URL,
-      source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
+      type: lazy.UrlbarShared.RESULT_TYPE.URL,
+      source: lazy.UrlbarShared.RESULT_SOURCE.SEARCH,
       isBestMatch: true,
       isBottomUrlSuggestion: true,
       suggestedIndex: 1,
@@ -116,7 +116,7 @@ export class AddonSuggestions extends SuggestProvider {
       commands.push({
         name: RESULT_MENU_COMMAND.SHOW_LESS_FREQUENTLY,
         l10n: {
-          id: "urlbar-result-menu-show-less-frequently",
+          id: "urlbar-result-menu-show-less-frequently2",
         },
       });
     }
@@ -125,20 +125,20 @@ export class AddonSuggestions extends SuggestProvider {
       {
         name: RESULT_MENU_COMMAND.DISMISS,
         l10n: {
-          id: "urlbar-result-menu-dismiss-suggestion",
+          id: "urlbar-result-menu-dismiss-suggestion2",
         },
       },
       {
         name: RESULT_MENU_COMMAND.NOT_INTERESTED,
         l10n: {
-          id: "firefox-suggest-command-dont-show-addons",
+          id: "firefox-suggest-command-dont-show-addons2",
         },
       },
       { name: "separator" },
       {
         name: RESULT_MENU_COMMAND.MANAGE,
         l10n: {
-          id: "urlbar-result-menu-manage-firefox-suggest",
+          id: "urlbar-result-menu-manage-firefox-suggest2",
         },
       }
     );
@@ -155,24 +155,22 @@ export class AddonSuggestions extends SuggestProvider {
       // selType == "dismiss" when the user presses the dismiss key shortcut.
       case RESULT_MENU_COMMAND.DISMISS:
         lazy.QuickSuggest.dismissResult(result);
-        result.acknowledgeDismissalL10n = {
-          id: "firefox-suggest-dismissal-acknowledgment-one",
-        };
-        controller.removeResult(result);
+        controller.removeResult(result, {
+          acknowledgeDismissalL10n: {
+            id: "firefox-suggest-dismissal-acknowledgment-one",
+          },
+        });
         break;
       case RESULT_MENU_COMMAND.NOT_INTERESTED:
         lazy.UrlbarPrefs.set("suggest.addons", false);
-        result.acknowledgeDismissalL10n = {
-          id: "urlbar-result-dismissal-acknowledgment-all",
-        };
-        controller.removeResult(result);
+        controller.removeResult(result, {
+          acknowledgeDismissalL10n: {
+            id: "urlbar-result-dismissal-acknowledgment-all",
+          },
+        });
         break;
       case RESULT_MENU_COMMAND.SHOW_LESS_FREQUENTLY:
-        controller.view.acknowledgeFeedback(result);
-        this.incrementShowLessFrequentlyCount();
-        if (!this.canShowLessFrequently) {
-          controller.view.invalidateResultMenuCommands();
-        }
+        this.handleShowLessFrequently(controller, result);
         lazy.UrlbarPrefs.set(
           "addons.minKeywordLength",
           searchString.length + 1

@@ -6,11 +6,11 @@
 #define CacheFileMetadata_h_
 
 #include "CacheFileIOManager.h"
-#include "CacheStorageService.h"
 #include "CacheHashUtils.h"
 #include "CacheObserver.h"
-#include "mozilla/EndianUtils.h"
+#include "CacheStorageService.h"
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/EndianUtils.h"
 #include "mozilla/NotNull.h"
 #include "nsString.h"
 
@@ -195,6 +195,13 @@ class CacheFileMetadata final : public CacheFileIOListener,
   uint32_t GetLastModified() const { return mMetaHdr.mLastModified; }
   uint32_t GetLastFetched() const { return mMetaHdr.mLastFetched; }
   uint32_t GetFetchCount() const { return mMetaHdr.mFetchCount; }
+  // Restore the access stats from the durable index value when an existing
+  // entry is loaded. Does not mark the metadata dirty: the entry file is not
+  // rewritten, the index remains the source of truth for these fields.
+  void RestoreAccessStats(uint32_t aLastFetched, uint32_t aFetchCount) {
+    mMetaHdr.mLastFetched = aLastFetched;
+    mMetaHdr.mFetchCount = aFetchCount;
+  }
   // Called by upper layers to indicate the entry this metadata belongs
   // with has been fetched, i.e. delivered to the consumer.
   void OnFetched();

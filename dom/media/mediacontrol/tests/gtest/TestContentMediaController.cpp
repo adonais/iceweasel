@@ -27,11 +27,35 @@ class FakeContentReceiver final : public ContentMediaControlKeyReceiver {
 
   void ClearKeys() { mReceivedKeys.Clear(); }
 
+  void SuspendForInterrupt() override { mSuspended = true; }
+  void ResumeFromInterrupt() override { mResumed = true; }
+
   bool mIsPlaying = false;
+  bool mSuspended = false;
+  bool mResumed = false;
 
  private:
   ~FakeContentReceiver() = default;
   nsTArray<MediaControlKey> mReceivedKeys;
+};
+
+// RAII helper that registers a receiver with the controller on construction
+// and removes it on destruction, so each test does not repeat the
+// AddReceiver/RemoveReceiver pair.
+class ScopedReceiver final {
+ public:
+  ScopedReceiver(ContentMediaController* aController,
+                 FakeContentReceiver* aReceiver,
+                 ControlType aType = ControlType::eControllable)
+      : mController(aController), mReceiver(aReceiver), mType(aType) {
+    mController->AddReceiver(mReceiver, mType);
+  }
+  ~ScopedReceiver() { mController->RemoveReceiver(mReceiver, mType); }
+
+ private:
+  RefPtr<ContentMediaController> mController;
+  RefPtr<FakeContentReceiver> mReceiver;
+  ControlType mType;
 };
 
 // ContentMediaController uses BrowsingContext internally for IPC, but in gtest
@@ -65,7 +89,7 @@ TEST(ContentMediaController, ControllableReceiverGetsAllKeys)
   RefPtr<ContentMediaController> controller =
       new ContentMediaController(FAKE_BC_ID);
   RefPtr<FakeContentReceiver> receiver = new FakeContentReceiver();
-  controller->AddReceiver(receiver);
+  ScopedReceiver scoped(controller, receiver);
 
   for (MediaControlKey key : kAllKeys) {
     receiver->ClearKeys();
@@ -73,8 +97,6 @@ TEST(ContentMediaController, ControllableReceiverGetsAllKeys)
     EXPECT_TRUE(receiver->HasReceivedKey(key))
         << "Controllable receiver should get key";
   }
-
-  controller->RemoveReceiver(receiver);
 }
 
 TEST(ContentMediaController, OnlyGetUncontrolKeys)
@@ -82,7 +104,7 @@ TEST(ContentMediaController, OnlyGetUncontrolKeys)
   RefPtr<ContentMediaController> controller =
       new ContentMediaController(FAKE_BC_ID);
   RefPtr<FakeContentReceiver> receiver = new FakeContentReceiver();
-  controller->AddReceiver(receiver, ControlType::eUncontrollable);
+  ScopedReceiver scoped(controller, receiver, ControlType::eUncontrollable);
 
   for (MediaControlKey key : kControlOnlyKeys) {
     receiver->ClearKeys();
@@ -97,6 +119,102 @@ TEST(ContentMediaController, OnlyGetUncontrolKeys)
     EXPECT_TRUE(receiver->HasReceivedKey(key))
         << "Uncontrollable receiver should get shared key";
   }
+}
 
-  controller->RemoveReceiver(receiver, ControlType::eUncontrollable);
+TEST(ContentMediaController, AudioFocusInterruptSuspendsBothBuckets)
+{
+  RefPtr<ContentMediaController> controller =
+      new ContentMediaController(FAKE_BC_ID);
+  RefPtr<FakeContentReceiver> controllable = new FakeContentReceiver();
+  RefPtr<FakeContentReceiver> uncontrollable = new FakeContentReceiver();
+  ScopedReceiver scopedControllable(controller, controllable,
+                                    ControlType::eControllable);
+  ScopedReceiver scopedUncontrollable(controller, uncontrollable,
+                                      ControlType::eUncontrollable);
+
+  controller->HandleAudioFocusInterrupt(AudioFocusInterruptAction::Suspend);
+
+  EXPECT_TRUE(controllable->mSuspended)
+      << "Interrupt suspend should reach controllable receiver";
+  EXPECT_TRUE(uncontrollable->mSuspended)
+      << "Interrupt suspend should reach uncontrollable receiver";
+}
+
+TEST(ContentMediaController, AudioFocusInterruptResumesBothBuckets)
+{
+  RefPtr<ContentMediaController> controller =
+      new ContentMediaController(FAKE_BC_ID);
+  RefPtr<FakeContentReceiver> controllable = new FakeContentReceiver();
+  RefPtr<FakeContentReceiver> uncontrollable = new FakeContentReceiver();
+  ScopedReceiver scopedControllable(controller, controllable,
+                                    ControlType::eControllable);
+  ScopedReceiver scopedUncontrollable(controller, uncontrollable,
+                                      ControlType::eUncontrollable);
+
+  controller->HandleAudioFocusInterrupt(AudioFocusInterruptAction::Resume);
+
+  EXPECT_TRUE(controllable->mResumed)
+      << "Interrupt resume should reach controllable receiver";
+  EXPECT_TRUE(uncontrollable->mResumed)
+      << "Interrupt resume should reach uncontrollable receiver";
+}
+
+TEST(ContentMediaController, AudioFocusInterruptTogglesInterruptedFlag)
+{
+  RefPtr<ContentMediaController> controller =
+      new ContentMediaController(FAKE_BC_ID);
+
+  EXPECT_FALSE(controller->IsAudioInterruptedByPlatform())
+      << "Interrupted flag should start clear";
+
+  controller->HandleAudioFocusInterrupt(AudioFocusInterruptAction::Suspend);
+  EXPECT_TRUE(controller->IsAudioInterruptedByPlatform())
+      << "Suspend interrupt should set the interrupted flag";
+
+  controller->HandleAudioFocusInterrupt(AudioFocusInterruptAction::Resume);
+  EXPECT_FALSE(controller->IsAudioInterruptedByPlatform())
+      << "Resume interrupt should clear the interrupted flag";
+}
+
+TEST(ContentMediaController, UserPauseDoesNotSuspendUncontrollable)
+{
+  RefPtr<ContentMediaController> controller =
+      new ContentMediaController(FAKE_BC_ID);
+  RefPtr<FakeContentReceiver> controllable = new FakeContentReceiver();
+  RefPtr<FakeContentReceiver> uncontrollable = new FakeContentReceiver();
+  ScopedReceiver scopedControllable(controller, controllable,
+                                    ControlType::eControllable);
+  ScopedReceiver scopedUncontrollable(controller, uncontrollable,
+                                      ControlType::eUncontrollable);
+
+  controller->HandleMediaKey(MediaControlKey::Pause);
+
+  EXPECT_FALSE(uncontrollable->mSuspended)
+      << "User pause must not interrupt-suspend uncontrollable receiver";
+  EXPECT_FALSE(uncontrollable->HasReceivedKey(MediaControlKey::Pause))
+      << "User pause must stay controllable-only";
+}
+
+// Symmetric anti-conflation guard to UserPauseDoesNotSuspendUncontrollable: a
+// user Play must drive the media-key path, never the interrupt-resume path.
+// (Reviving only the receivers an interrupt actually suspended is the
+// receiver's responsibility, e.g. AudioContext's suspended-by-interrupt
+// guard, and is exercised end-to-end by the Track D WPT, not here.)
+TEST(ContentMediaController, UserPlayDoesNotTriggerInterruptResume)
+{
+  RefPtr<ContentMediaController> controller =
+      new ContentMediaController(FAKE_BC_ID);
+  RefPtr<FakeContentReceiver> controllable = new FakeContentReceiver();
+  RefPtr<FakeContentReceiver> uncontrollable = new FakeContentReceiver();
+  ScopedReceiver scopedControllable(controller, controllable,
+                                    ControlType::eControllable);
+  ScopedReceiver scopedUncontrollable(controller, uncontrollable,
+                                      ControlType::eUncontrollable);
+
+  controller->HandleMediaKey(MediaControlKey::Play);
+
+  EXPECT_FALSE(controllable->mResumed)
+      << "User Play must not trigger an interrupt resume";
+  EXPECT_FALSE(uncontrollable->mResumed)
+      << "User Play must not reach the uncontrollable bucket";
 }

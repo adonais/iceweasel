@@ -1,7 +1,11 @@
 from io import StringIO
 
 import pytest
-from mozlog.formatters import ErrorSummaryFormatter, MachFormatter
+from mozlog.formatters import (
+    ErrorSummaryFormatter,
+    MachFormatter,
+    TestSummaryFormatter,
+)
 from mozlog.handlers import StreamHandler
 from mozlog.structuredlog import StructuredLogger
 
@@ -13,6 +17,7 @@ def get_logger():
     formatters = {
         "mach": MachFormatter,
         "errorsummary": ErrorSummaryFormatter,
+        "testsummary": TestSummaryFormatter,
     }
 
     def inner(name, **fmt_args):

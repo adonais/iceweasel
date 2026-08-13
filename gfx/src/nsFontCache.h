@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 #include <sys/types.h>
+
 #include "mozilla/RefPtr.h"
 #include "nsCOMPtr.h"
 #include "nsFontMetrics.h"

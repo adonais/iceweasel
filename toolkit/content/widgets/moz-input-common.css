@@ -183,3 +183,96 @@
     text-align: match-parent;
   }
 }
+
+/* Only Nova uses custom checkbox/radio styles. Previously, accent-color was the only customization. */
+@media -moz-pref("browser.nova.enabled") {
+  input[type="checkbox"],
+  input[type="radio"] {
+    appearance: none;
+    border: var(--border-width) solid var(--checkbox-border-color);
+    border-radius: var(--checkbox-border-radius);
+    background-color: var(--checkbox-background-color);
+    min-width: var(--checkbox-size);
+
+    &:active {
+      background-color: var(--checkbox-background-color-active);
+    }
+
+    &[disabled] {
+      background-color: var(--checkbox-background-color-disabled);
+      opacity: var(--checkbox-opacity-disabled);
+    }
+
+    &:focus-visible {
+      outline: var(--focus-outline);
+      outline-offset: var(--focus-outline-offset);
+    }
+
+    &:checked {
+      border-color: var(--checkbox-border-color-checked);
+
+      &:active {
+        border-color: var(--checkbox-border-color-checked-active);
+      }
+
+      &[disabled] {
+        border-color: var(--checkbox-border-color-checked-disabled);
+      }
+    }
+
+    label:hover &:not(:active, [disabled]) {
+      background-color: var(--checkbox-background-color-hover);
+
+      &:checked {
+        border-color: var(--checkbox-border-color-checked-hover);
+      }
+    }
+  }
+
+  input[type="checkbox"] {
+    &:checked {
+      background: url("chrome://global/content/elements/moz-checkbox-icon.svg") no-repeat center center / var(--icon-size-xsmall) var(--icon-size-xsmall);
+      background-color: var(--checkbox-background-color-checked);
+      -moz-context-properties: stroke;
+      stroke: light-dark(white, black);
+
+      &:active {
+        background-color: var(--checkbox-background-color-checked-active);
+      }
+
+      &[disabled] {
+        background-color: var(--checkbox-background-color-checked-disabled);
+      }
+    }
+
+    label:hover &:not(:active, [disabled]):checked {
+      background-color: var(--checkbox-background-color-checked-hover);
+    }
+  }
+
+  input[type="radio"] {
+    border-radius: var(--border-radius-circle);
+
+    &:checked {
+      --radio-indicator-background-color: var(--checkbox-background-color-checked);
+      forced-color-adjust: none;
+
+      background: radial-gradient(circle at 50%, var(--radio-indicator-background-color) 4px, transparent 4px);
+      background-color: transparent;
+
+      &:active {
+        --radio-indicator-background-color: var(--checkbox-background-color-checked-active);
+      }
+
+      &[disabled] {
+        --radio-indicator-background-color: var(--checkbox-background-color-checked-disabled);
+      }
+    }
+
+    label:hover &:not(:active, [disabled]):checked {
+      --radio-indicator-background-color: var(--checkbox-background-color-checked-hover);
+
+      background-color: transparent;
+    }
+  }
+}

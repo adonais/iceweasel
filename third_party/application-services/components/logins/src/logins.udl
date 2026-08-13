@@ -199,6 +199,15 @@ interface LoginStore {
     [Throws=LoginsApiError, Self=ByArc]
     sequence<boolean> delete_many(sequence<string> ids);
 
+    /// Delete all logins. Returns the ids of the deleted logins.
+    [Throws=LoginsApiError]
+    sequence<string> delete_all();
+
+    /// Delete all logins except the FxA session-credentials login. Returns the
+    /// ids of the deleted logins.
+    [Throws=LoginsApiError]
+    sequence<string> delete_all_except_fxa();
+
     /// Clear out locally stored logins data
     ///
     /// If sync is enabled, then we will try to recover the data on the next sync.
@@ -212,6 +221,10 @@ interface LoginStore {
     /// generated.
     [Throws=LoginsApiError]
     void wipe_local();
+
+    /// Like `wipe_local`, but preserves the FxA session-credentials login.
+    [Throws=LoginsApiError]
+    void wipe_local_except_fxa();
 
     [Throws=LoginsApiError, Self=ByArc]
     void reset();
@@ -291,22 +304,69 @@ interface LoginStore {
     [Throws=LoginsApiError]
     Login? get([ByRef] string id);
 
-    [Throws=LoginsApiError]
-    void set_checkpoint([ByRef] string checkpoint);
-
-    [Throws=LoginsApiError]
-    string? get_checkpoint();
-
     /// Run maintenance on the DB
     ///
     /// This is intended to be run during idle time and will take steps / to clean up / shrink the
     /// database.
     [Throws=LoginsApiError]
-    void run_maintenance();
+    void run_maintenance(optional RunMaintenanceOptions? options=null);
 
     [Self=ByArc]
     void register_with_sync_manager();
 
+    /// Returns a bridged sync engine for Desktop's Sync framework.
+    /// Without this UDL entry the engine is invisible to JS: UniFFI generates
+    /// the XPCOM glue that lets JS call `rustStore.bridgedEngine()`.
+    [Throws=LoginsApiError, Self=ByArc]
+    LoginsBridgedEngine bridged_engine();
+
     [Self=ByArc]
     void shutdown();
+};
+
+/// The Desktop-facing bridged sync engine. The canonical docs are in
+/// https://searchfox.org/mozilla-central/source/services/interfaces/mozIBridgedSyncEngine.idl
+/// It's only actually used on Desktop, but it's fine to expose this everywhere.
+/// NOTE: all timestamps here are milliseconds.
+interface LoginsBridgedEngine {
+    [Throws=LoginsApiError]
+    i64 last_sync();
+
+    [Throws=LoginsApiError]
+    void set_last_sync(i64 last_sync);
+
+    [Throws=LoginsApiError]
+    string? sync_id();
+
+    [Throws=LoginsApiError]
+    string reset_sync_id();
+
+    [Throws=LoginsApiError]
+    string ensure_current_sync_id([ByRef]string new_sync_id);
+
+    [Throws=LoginsApiError]
+    void sync_started();
+
+    [Throws=LoginsApiError]
+    void store_incoming(sequence<string> incoming_envelopes_as_json);
+
+    [Throws=LoginsApiError]
+    sequence<string> apply();
+
+    [Throws=LoginsApiError]
+    void set_uploaded(i64 new_timestamp, sequence<string> uploaded_ids);
+
+    [Throws=LoginsApiError]
+    void sync_finished();
+
+    [Throws=LoginsApiError]
+    void reset();
+
+    [Throws=LoginsApiError]
+    void wipe();
+};
+
+dictionary RunMaintenanceOptions {
+    // Wipe un-decryptable logins.  These will hopefully come back on the next sync.
+    boolean delete_undecryptable_records_for_remote_replacement=true;
 };

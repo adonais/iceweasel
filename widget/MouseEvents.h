@@ -320,6 +320,18 @@ class WidgetMouseEventBase : public WidgetInputEvent {
     return mMessage == ePointerMove && buttonsLoseTheButton;
   }
 
+  [[nodiscard]] int16_t ComputeButtonsBeforeDispatch() const {
+    if (IsPressingButton()) {
+      return mButtons &
+             ~MouseButtonsFlagToChange(static_cast<MouseButton>(mButton));
+    }
+    if (IsReleasingButton()) {
+      return mButtons |
+             MouseButtonsFlagToChange(static_cast<MouseButton>(mButton));
+    }
+    return mButtons;
+  }
+
   [[nodiscard]] static bool InputSourceSupportsHover(uint16_t aInputSource);
 
   /**

@@ -1,0 +1,59 @@
+From 5f6518cc841a6834f4423cdfa2280803210bd8ca Mon Sep 17 00:00:00 2001
+From: Jamie Nicol <jnicol@mozilla.com>
+Date: Tue, 5 May 2026 10:20:09 +0100
+Subject: [PATCH] Avoid adding disabled backends' files to
+ angle_code_affecting_program_serialize
+
+This should have no functional change, as we explicitly disable these
+backends in `gn-configs/angle.json`. This prevents pulling in these
+otherwise unused files when vendoring ANGLE into Firefox.
+---
+ src/angle_program_serialize_data_version.gni | 24 ++++++++++++--------
+ 1 file changed, 15 insertions(+), 9 deletions(-)
+
+diff --git a/src/angle_program_serialize_data_version.gni b/src/angle_program_serialize_data_version.gni
+index 97f511c954..9ee9169ce8 100644
+--- a/src/angle_program_serialize_data_version.gni
++++ b/src/angle_program_serialize_data_version.gni
+@@ -42,13 +42,17 @@ angle_code_affecting_program_serialize += angle_preprocessor_sources
+ 
+ angle_dependencies_affecting_program_serialize = []
+ 
+-vulkan_backend_dir = "libANGLE/renderer/vulkan/"
+-angle_code_affecting_program_serialize +=
+-    rebase_path(vulkan_backend_sources, angle_root, vulkan_backend_dir)
++if (angle_enable_vulkan) {
++  vulkan_backend_dir = "libANGLE/renderer/vulkan/"
++  angle_code_affecting_program_serialize +=
++      rebase_path(vulkan_backend_sources, angle_root, vulkan_backend_dir)
++}
+ 
+-gl_backend_dir = "libANGLE/renderer/gl/"
+-angle_code_affecting_program_serialize +=
+-    rebase_path(gl_backend_sources, angle_root, gl_backend_dir)
++if (angle_enable_gl) {
++  gl_backend_dir = "libANGLE/renderer/gl/"
++  angle_code_affecting_program_serialize +=
++      rebase_path(gl_backend_sources, angle_root, gl_backend_dir)
++}
+ 
+ d3d_backend_dir = "libANGLE/renderer/d3d/"
+ angle_code_affecting_program_serialize +=
+@@ -64,9 +68,11 @@ if (angle_enable_d3d11) {
+       rebase_path(d3d11_backend_sources, angle_root, d3d_backend_dir)
+ }
+ 
+-null_backend_dir = "libANGLE/renderer/null/"
+-angle_code_affecting_program_serialize +=
+-    rebase_path(null_backend_sources, angle_root, null_backend_dir)
++if (angle_enable_null) {
++  null_backend_dir = "libANGLE/renderer/null/"
++  angle_code_affecting_program_serialize +=
++      rebase_path(null_backend_sources, angle_root, null_backend_dir)
++}
+ 
+ if (angle_enable_metal) {
+   metal_backend_dir = "libANGLE/renderer/metal/"
+-- 
+2.54.0
+

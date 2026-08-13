@@ -1,0 +1,24 @@
+diff --git a/ggml/src/gguf.cpp b/ggml/src/gguf.cpp
+index c4b9b54290ea..ffbfccec4a60 100644
+--- a/ggml/src/gguf.cpp
++++ b/ggml/src/gguf.cpp
+@@ -14,6 +14,7 @@
+ #include <stdexcept>
+ #include <string>
+ #include <vector>
++#include <cerrno>
+ 
+ #include "moz-overrides.h"
+ 
+diff --git a/src/llama-model-loader.cpp b/src/llama-model-loader.cpp
+index e3e93b135e96..d75719583881 100644
+--- a/src/llama-model-loader.cpp
++++ b/src/llama-model-loader.cpp
+@@ -11,6 +11,7 @@
+ #include <cstdint>
+ #include <cstring>
+ #include <regex>
++#include <mutex>
+ 
+ #include "moz-overrides.h"
+ 

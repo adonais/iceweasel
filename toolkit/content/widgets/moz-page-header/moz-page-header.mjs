@@ -56,7 +56,7 @@ export class MozPageHeader extends MozLitElement {
     }
     return html`<moz-button
       type="ghost"
-      data-l10n-id="back-nav-button-title"
+      data-l10n-id="back-nav-button-title2"
       iconsrc="chrome://global/skin/icons/arrow-left.svg"
       class="back-button"
       @click=${this.handleBack}

@@ -362,7 +362,14 @@ async function test_submit_telemetry(tc) {
         }
 
         info("Waiting for doorhanger");
+        let storageChangedPromise = TestUtils.topicObserved(
+          "passwordmgr-storage-changed"
+        );
         await clickDoorhangerButton(notif, REMEMBER_BUTTON);
+        // Clicking the button persists the login asynchronously and only then
+        // records the telemetry event. Wait for the storage change so the
+        // event is recorded before we read it and before the next action runs.
+        await storageChangedPromise;
       }
     );
   }

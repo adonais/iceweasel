@@ -1,0 +1,43 @@
+<!DOCTYPE HTML>
+<meta charset="utf-8">
+<script src="apz_test_utils.js"></script>
+<script src="apz_test_native_event_utils.js"></script>
+<script src="/tests/SimpleTest/paint_listener.js"></script>
+<style>
+html { scroll-behavior: smooth; }
+body { margin: 0; height: 500vh; }
+</style>
+<script>
+"use strict";
+
+async function test() {
+  // When a scroll listener calls scrollTo() with the current scroll position
+  // during a wheel-triggered smooth scroll animation, the animation should not
+  // be cancelled.
+  let scrollYAtListener = 0;
+  window.addEventListener("scroll", () => {
+    scrollYAtListener = window.scrollY;
+    window.scrollTo(0, window.scrollY);
+  }, { once: true });
+
+  const scrollEndPromise = promiseScrollend(window);
+
+  await synthesizeNativeWheel(window, 50, 50, 0, -500);
+  await scrollEndPromise;
+  await promiseApzFlushedRepaints();
+
+  ok(
+    window.scrollY > scrollYAtListener,
+    `Wheel scroll should have continued past ${scrollYAtListener} after scrollTo() in scroll listener, got ${window.scrollY}`
+  );
+}
+
+if (getPlatform() == "android") {
+  ok(true, "Skipping test because native wheel events are not supported on Android");
+  subtestDone();
+} else {
+  waitUntilApzStable()
+  .then(test)
+  .then(subtestDone, subtestFailed);
+}
+</script>

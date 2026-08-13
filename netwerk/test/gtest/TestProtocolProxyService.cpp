@@ -1,15 +1,14 @@
-#include "gtest/gtest.h"
-
-#include "nsCOMPtr.h"
-#include "nsNetCID.h"
-#include "nsString.h"
-#include "nsComponentManagerUtils.h"
 #include "../../base/nsProtocolProxyService.h"
-#include "nsServiceManagerUtils.h"
+#include "gtest/gtest.h"
 #include "mozilla/Preferences.h"
-#include "nsNetUtil.h"
-#include "prenv.h"
+#include "nsCOMPtr.h"
+#include "nsComponentManagerUtils.h"
 #include "nsISystemProxySettings.h"
+#include "nsNetCID.h"
+#include "nsNetUtil.h"
+#include "nsServiceManagerUtils.h"
+#include "nsString.h"
+#include "prenv.h"
 
 namespace mozilla {
 namespace net {

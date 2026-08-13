@@ -127,7 +127,7 @@ nsresult txExecutionState::init(
 
   // Initiate first instruction. This has to be done last since findTemplate
   // might use us.
-  txStylesheet::ImportFrame* frame = 0;
+  txStylesheet::ImportFrame* frame = nullptr;
   txExpandedName nullName;
   txInstruction* templ;
   rv =

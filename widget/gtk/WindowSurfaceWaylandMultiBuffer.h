@@ -6,14 +6,14 @@
 #ifndef MOZILLA_WIDGET_GTK_WINDOW_SURFACE_WAYLAND_MULTI_BUFFER_H
 #define MOZILLA_WIDGET_GTK_WINDOW_SURFACE_WAYLAND_MULTI_BUFFER_H
 
+#include "WaylandBuffer.h"
+#include "WindowSurface.h"
+#include "mozilla/Mutex.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Types.h"
-#include "mozilla/Mutex.h"
 #include "nsTArray.h"
 #include "nsWaylandDisplay.h"
 #include "nsWindow.h"
-#include "WaylandBuffer.h"
-#include "WindowSurface.h"
 
 namespace mozilla::widget {
 

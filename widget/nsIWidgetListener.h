@@ -5,12 +5,11 @@
 #ifndef nsIWidgetListener_h_
 #define nsIWidgetListener_h_
 
-#include "mozilla/EventForwards.h"
-#include "mozilla/layers/LayersTypes.h"
-#include "mozilla/TimeStamp.h"
-
-#include "nsRegionFwd.h"
 #include "Units.h"
+#include "mozilla/EventForwards.h"
+#include "mozilla/TimeStamp.h"
+#include "mozilla/layers/LayersTypes.h"
+#include "nsRegionFwd.h"
 
 class nsView;
 class nsIWidget;

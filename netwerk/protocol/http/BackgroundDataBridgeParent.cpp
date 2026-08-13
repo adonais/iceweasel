@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/net/BackgroundDataBridgeParent.h"
+
 #include "mozilla/net/SocketProcessChild.h"
 
 namespace mozilla {

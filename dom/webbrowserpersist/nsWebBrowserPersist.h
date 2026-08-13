@@ -27,6 +27,7 @@
 #include "nsTArray.h"
 #include "nsWeakReference.h"
 
+class nsIReferrerInfo;
 class nsIStorageStream;
 class nsIWebBrowserPersistDocument;
 
@@ -95,8 +96,9 @@ class nsWebBrowserPersist final : public nsIInterfaceRequestor,
       nsIURI* aURI, nsIWebBrowserPersistDocument* aDoc,
       nsContentPolicyType aContentPolicyType, bool aNeedsPersisting,
       URIData** aData);
-  nsresult MakeOutputStream(nsIURI* aFile, nsIOutputStream** aOutputStream);
-  nsresult MakeOutputStreamFromFile(nsIFile* aFile,
+  nsresult MakeOutputStream(nsIURI* aFile, nsIURI* aSourceURI,
+                            nsIOutputStream** aOutputStream);
+  nsresult MakeOutputStreamFromFile(nsIFile* aFile, nsIURI* aSourceURI,
                                     nsIOutputStream** aOutputStream);
   nsresult MakeOutputStreamFromURI(nsIURI* aURI, nsIOutputStream** aOutStream);
   nsresult CreateChannelFromURI(nsIURI* aURI, nsIChannel** aChannel);
@@ -143,6 +145,7 @@ class nsWebBrowserPersist final : public nsIInterfaceRequestor,
 
   nsCOMPtr<nsIMIMEService> mMIMEService;
   nsCOMPtr<nsIURI> mURI;
+  nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
   nsCOMPtr<nsIWebProgressListener> mProgressListener;
   /**
    * Progress listener for 64-bit values; this is the same object as

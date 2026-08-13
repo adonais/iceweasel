@@ -361,7 +361,6 @@ networking:
       - necko@mozilla.com
       - acreskey@mozilla.com
     expires: never
-    telemetry_mirror: DNS_LOOKUP_TIME
 
   trr_dns_start: &trr_dns_start
     type: labeled_timing_distribution
@@ -657,7 +656,6 @@ networking:
       - necko@mozilla.com
       - acreskey@mozilla.com
     expires: never
-    telemetry_mirror: NETWORKING_DOWNLOAD_THROUGHPUT_HTTP_2
 
   http_2_download_throughput_10_50: &http_2_download_throughput_10_50
     type: custom_distribution
@@ -707,7 +705,6 @@ networking:
       - necko@mozilla.com
       - acreskey@mozilla.com
     expires: never
-    telemetry_mirror: NETWORKING_DOWNLOAD_THROUGHPUT_HTTP_3
 
   http_3_download_throughput_10_50: &http_3_download_throughput_10_50
     type: custom_distribution
@@ -1054,6 +1051,27 @@ networking:
       - black-hole
       - bleaching
       - received-unsent-ect-1
+
+  http_3_quic_version:
+    type: labeled_counter
+    description: >
+      The QUIC version negotiated for an HTTP/3 connection, recorded once per
+      connection that completes its handshake. Used to track the effect of
+      enabling compatible version negotiation (RFC 9368/9369), i.e. how often
+      connections end up on QUIC v2 versus v1.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2040450
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2040450
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - necko@mozilla.com
+      - minden@mozilla.com
+    expires: never
+    labels:
+      - v1
+      - v2
 
   http_3_loss_ratio:
     type: custom_distribution
@@ -1584,6 +1602,66 @@ networking:
       - necko@mozilla.com
       - omansfeld@mozilla.com
     expires: 157
+
+  http_3_rtt:
+    type: custom_distribution
+    range_min: 1
+    range_max: 10000
+    bucket_count: 100
+    histogram_type: exponential
+    unit: ms
+    description: >
+      HTTP3: The smoothed round-trip time estimate in milliseconds on the connection's primary path, sampled at connection close.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2050587
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2050587
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - necko@mozilla.com
+      - minden@mozilla.com
+    expires: never
+
+  http_3_rtt_var:
+    type: custom_distribution
+    range_min: 1
+    range_max: 10000
+    bucket_count: 100
+    histogram_type: exponential
+    unit: ms
+    description: >
+      HTTP3: The round-trip time variation in milliseconds on the connection's primary path, sampled at connection close.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2050587
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2050587
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - necko@mozilla.com
+      - minden@mozilla.com
+    expires: never
+
+  http_3_min_rtt:
+    type: custom_distribution
+    range_min: 1
+    range_max: 10000
+    bucket_count: 100
+    histogram_type: exponential
+    unit: ms
+    description: >
+      HTTP3: The minimum round-trip time in milliseconds observed on the connection's primary path, sampled at connection close.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2050587
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2050587
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - necko@mozilla.com
+      - minden@mozilla.com
+    expires: never
 
   http_3_congestion_event_count:
     type: custom_distribution
@@ -2233,13 +2311,14 @@ networking:
     bugs:
     - https://bugzilla.mozilla.org/show_bug.cgi?id=1960582
     - https://bugzilla.mozilla.org/show_bug.cgi?id=2010463
+    - https://bugzilla.mozilla.org/show_bug.cgi?id=2048455
     data_reviews:
     - https://bugzilla.mozilla.org/show_bug.cgi?id=1960582
     notification_emails:
      - smayya@mozilla.com
      - vgosu@mozilla.com
      - necko@gmail.com
-    expires: 155
+    expires: 160
     labels:
       - private_to_local_http
       - private_to_local_https
@@ -2259,13 +2338,14 @@ networking:
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1960582
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2010463
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2048459
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1960582
     notification_emails:
       - smayya@mozilla.com
       - vgosu@mozilla.com
       - necko@mozilla.com
-    expires: 155
+    expires: 160
     labels:
       - localhost
       - local_network
@@ -2293,6 +2373,7 @@ networking:
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1989916
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2010465
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2048457
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1989916#c5
     data_sensitivity:
@@ -2303,7 +2384,7 @@ networking:
       - necko@mozilla.com
     send_in_pings:
       - local-network-access
-    expires: 155
+    expires: 160
     extra_keys:
       top_level_site:
         description: The base domain (eTLD+1) of the top-level document/main window.
@@ -2830,7 +2911,6 @@ network:
     notification_emails:
       - necko@mozilla.com
     expires: never
-    telemetry_mirror: h#NETWORK_ID_ONLINE
 
   backgroundfilesaver_thread_count:
     type: custom_distribution
@@ -2911,7 +2991,6 @@ network:
       - necko@mozilla.com
       - kershaw@mozilla.com
     expires: never
-    telemetry_mirror: h#REL_PRELOAD_MISS_RATIO
 
   urlclassifier_harmful_addon_block:
     type: event

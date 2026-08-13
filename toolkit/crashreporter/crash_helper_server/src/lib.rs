@@ -37,6 +37,7 @@ pub unsafe extern "C" fn crash_generator_logic_desktop(
     client_handle: *const c_char,
     breakpad_data: BreakpadRawData,
     minidump_path: *const c_char,
+    build_id: *const c_char,
     listener: *const c_char,
     pipe: *const c_char,
 ) -> i32 {
@@ -66,6 +67,11 @@ pub unsafe extern "C" fn crash_generator_logic_desktop(
         .into_string()
         .unwrap();
     let minidump_path = OsString::from(minidump_path);
+    let build_id = unsafe { CStr::from_ptr(build_id) };
+    let build_id = unwrap_with_message(
+        build_id.to_str(),
+        "BuildID is not a valid UTF-8 string"
+    ).to_string();
     let listener = unsafe { CStr::from_ptr(listener) };
     let listener = unwrap_with_message(
         IPCListener::deserialize(listener, client_pid),
@@ -98,6 +104,7 @@ pub unsafe extern "C" fn crash_generator_logic_desktop(
         connector,
         breakpad_data,
         minidump_path,
+        build_id,
     );
 
     match ipc_server {
@@ -126,6 +133,7 @@ pub unsafe extern "C" fn crash_generator_logic_desktop(
 #[cfg(target_os = "android")]
 #[no_mangle]
 pub unsafe extern "C" fn crash_generator_logic_android(
+    build_id: *const c_char,
     pid: Pid,
     breakpad_data: BreakpadRawData,
     minidump_path: *const c_char,
@@ -133,6 +141,10 @@ pub unsafe extern "C" fn crash_generator_logic_android(
 ) {
     logging::init();
 
+    let build_id = unsafe { CStr::from_ptr(build_id) }
+        .to_owned()
+        .into_string()
+        .unwrap();
     let breakpad_data = BreakpadData::new(breakpad_data);
     let minidump_path = unsafe { CStr::from_ptr(minidump_path) }
         .to_owned()
@@ -143,7 +155,8 @@ pub unsafe extern "C" fn crash_generator_logic_android(
     // On Android the main thread is used to respond to the intents so we
     // can't block it. Run the crash generation loop in a separate thread.
     let _ = std::thread::spawn(move || {
-        let listener = IPCListener::new(0).expect("IPCListener creation failed!");
+        let listener = IPCListener::new(0)
+            .expect("IPCListener creation failed!");
         // SAFETY: The `pipe` file descriptor passed in from the caller is
         // guaranteed to be valid.
         let connector = match unsafe { IPCConnector::from_raw_connector(pipe) } {
@@ -160,6 +173,7 @@ pub unsafe extern "C" fn crash_generator_logic_android(
             connector,
             breakpad_data,
             minidump_path,
+            build_id,
         ) {
             Ok(ipc_server) => ipc_server,
             Err(error) => {

@@ -103,4 +103,18 @@
   moz-button {
     min-width: fit-content;
   }
+
+  // @nova-cleanup(remove-conditional)
+  .nova-enabled & {
+    background-color: var(--background-color-box);
+    border-radius: var(--border-radius-large);
+
+    .activation-window-message-inner h2 {
+      font-weight: var(--font-weight-semibold);
+    }
+
+    moz-button {
+      min-width: auto;
+    }
+  }
 }

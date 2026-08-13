@@ -5,8 +5,9 @@
 #ifndef mozilla_net_ProxyConfigLookupChild_h
 #define mozilla_net_ProxyConfigLookupChild_h
 
-#include "mozilla/net/PProxyConfigLookupChild.h"
 #include <functional>
+
+#include "mozilla/net/PProxyConfigLookupChild.h"
 
 class nsIProxyInfo;
 

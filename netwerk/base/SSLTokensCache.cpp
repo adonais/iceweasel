@@ -4,34 +4,37 @@
 
 #include "SSLTokensCache.h"
 
-#include "mozilla/Components.h"
-
 #include "CertVerifier.h"
+#include "CommonSocketControl.h"
+#include "TransportSecurityInfo.h"
 #include "brotli/decode.h"
 #include "brotli/encode.h"
-#include "CommonSocketControl.h"
-#include "mozilla/EndianUtils.h"
-#include "TransportSecurityInfo.h"
 #include "mozilla/ArrayAlgorithm.h"
-#include "mozilla/glean/NetwerkMetrics.h"
+#include "mozilla/Components.h"
+#include "mozilla/EndianUtils.h"
 #include "mozilla/Logging.h"
-#include "mozilla/Preferences.h"
 #include "mozilla/OriginAttributes.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_privacy.h"
-#include "nsAppDirectoryServiceDefs.h"
-#include "nsDirectoryServiceUtils.h"
-#include "nsIOService.h"
-#include "nsIEventTarget.h"
-#include "nsThreadUtils.h"
-#include "nsIObserverService.h"
-#include "prtime.h"
-#include "ssl.h"
-#include "sslexp.h"
-#include "mozilla/net/ssl_tokens_cache.h"
+#include "mozilla/dom/Promise.h"
+#include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/ipc/ByteBuf.h"
 #include "mozilla/net/SocketProcessChild.h"
 #include "mozilla/net/SocketProcessParent.h"
+#include "mozilla/net/ssl_tokens_cache.h"
+#include "nsAppDirectoryServiceDefs.h"
+#include "nsDirectoryServiceUtils.h"
+#include "nsIEventTarget.h"
+#include "nsIGlobalObject.h"
+#include "nsIOService.h"
+#include "nsIObserverService.h"
+#include "nsThreadUtils.h"
+#include "nss.h"
+#include "prtime.h"
+#include "ssl.h"
+#include "sslexp.h"
+#include "xpcpublic.h"
 
 namespace mozilla {
 namespace net {
@@ -425,7 +428,8 @@ OriginAttributes SSLTokensCache::OAFromPeerId(const nsACString& aPeerId) {
   OriginAttributes oa;
   int32_t caretPos = aPeerId.FindChar('^');
   if (caretPos != kNotFound) {
-    nsAutoCString suffix(Substring(aPeerId, caretPos + 1));
+    // PopulateFromSuffix expects the full OA suffix including the leading '^'.
+    nsAutoCString suffix(Substring(aPeerId, caretPos));
     (void)oa.PopulateFromSuffix(suffix);
   }
   return oa;
@@ -481,11 +485,10 @@ nsresult SSLTokensCache::Init() {
 
     RegisterWeakMemoryReporter(gInstance);
 
-    // Register unconditionally: user prefs are applied during
-    // profile-after-change, after Init() runs.
     nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
     if (obs && XRE_IsParentProcess()) {
       obs->AddObserver(gInstance, "profile-after-change", false);
+      obs->AddObserver(gInstance, "last-pb-context-exited", false);
     }
 
     if (!StaticPrefs::network_ssl_tokens_cache_persistence()) {
@@ -550,7 +553,10 @@ nsresult SSLTokensCache::Shutdown() {
       obs->RemoveObserver(instance, "idle-daily");
     }
     if (XRE_IsParentProcess()) {
+      Preferences::UnregisterCallback(&SSLTokensCache::ReconcilePersistence,
+                                      "network.ssl_tokens_cache_persistence");
       obs->RemoveObserver(instance, "profile-after-change");
+      obs->RemoveObserver(instance, "last-pb-context-exited");
     }
   }
   return NS_OK;
@@ -999,6 +1005,69 @@ static void DispatchFileRemoval(nsCOMPtr<nsIFile> aBackingFile) {
 }
 
 // static
+void SSLTokensCache::ClearPrivateBrowsing() {
+  LOG(("SSLTokensCache::ClearPrivateBrowsing"));
+  StaticMutexAutoLock lock(sLock);
+  if (!gInstance) {
+    return;
+  }
+  gInstance->RemoveMatchingLocked([](const nsACString& aKey) {
+    // Non-PBM keys have no '^' OA suffix at all — skip full deserialization.
+    if (!aKey.Contains('^')) return false;
+    return OAFromPeerId(aKey).mPrivateBrowsingId != 0;
+  });
+}
+
+template <typename SendFn>
+static void ForwardToSocketProcess(SendFn aSend) {
+  if (!XRE_IsParentProcess()) {
+    return;
+  }
+  if (nsIOService::UseSocketProcess() && gIOService) {
+    gIOService->CallOrWaitForSocketProcess([send = std::move(aSend)]() {
+      RefPtr<SocketProcessParent> socketParent =
+          SocketProcessParent::GetSingleton();
+      if (socketParent) {
+        send(socketParent);
+      }
+    });
+  }
+}
+
+// static
+void SSLTokensCache::ForwardClearToSocketProcess() {
+  ForwardToSocketProcess(
+      [](SocketProcessParent* p) { (void)p->SendClearSessionCache(); });
+}
+
+static void MaybeClearNSSSessionCache() {
+  if (NSS_IsInitialized()) {
+    SSL_ClearSessionCache();
+  }
+}
+
+// static
+void SSLTokensCache::ClearSessionCacheAndTokens() {
+  MaybeClearNSSSessionCache();
+  Clear();
+  ForwardClearToSocketProcess();
+}
+
+// static
+void SSLTokensCache::ForwardClearPrivateBrowsingToSocketProcess() {
+  ForwardToSocketProcess([](SocketProcessParent* p) {
+    (void)p->SendClearPrivateBrowsingSessionCache();
+  });
+}
+
+// static
+void SSLTokensCache::ClearSessionCacheAndPBMTokens() {
+  MOZ_ASSERT(!XRE_IsParentProcess());
+  MaybeClearNSSSessionCache();
+  ClearPrivateBrowsing();
+}
+
+// static
 void SSLTokensCache::Clear() {
   LOG(("SSLTokensCache::Clear"));
 
@@ -1229,6 +1298,15 @@ void SSLTokensCache::RemoveByHostAndOAPattern(
 }
 
 // static
+void SSLTokensCache::ClearSessionCacheAndTokensForHost(
+    const nsACString& aHost, const mozilla::OriginAttributesPattern& aPattern) {
+  LOG(("SSLTokensCache::ClearSessionCacheAndTokensForHost"));
+  MaybeClearNSSSessionCache();
+  RemoveByHostAndOAPattern(aHost, aPattern);
+  ForwardClearToSocketProcess();
+}
+
+// static
 void SSLTokensCache::RemoveBySiteAndOAPattern(
     const nsACString& aSite, const mozilla::OriginAttributesPattern& aPattern) {
   LOG(("SSLTokensCache::RemoveBySiteAndOAPattern"));
@@ -1330,6 +1408,69 @@ void SSLTokensCache::PutForTest(const nsACString& aKey) {
 
 #endif  // ENABLE_TESTS
 
+// static
+void SSLTokensCache::ReconcilePersistence(const char*, void*) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+  if (!obs) {
+    return;
+  }
+
+  bool wantPersistence = StaticPrefs::network_ssl_tokens_cache_persistence();
+  bool addObservers = false;
+  bool removeObservers = false;
+  nsCString loadPath;
+  uint32_t loadGen = 0;
+  RefPtr<SSLTokensCache> instance;
+  nsCOMPtr<nsIFile> backingFileToRemove;
+  nsCOMPtr<nsISerialEventTarget> backingTaskQueue;
+  {
+    StaticMutexAutoLock lock(sLock);
+    instance = gInstance;
+    if (!instance) {
+      return;
+    }
+    bool wasRegistered = instance->mWriteObserversRegistered;
+    instance->mWriteObserversRegistered = wantPersistence;
+    addObservers = wantPersistence && !wasRegistered;
+    removeObservers = !wantPersistence && wasRegistered;
+    if (wantPersistence && !instance->mBackingFile) {
+      loadPath = SetupPersistenceLocked(loadGen);
+    }
+    if (!wantPersistence) {
+      backingFileToRemove = std::move(instance->mBackingFile);
+      // Capture the queue before nulling so the deletion can be ordered
+      // after any write tasks already queued on it.
+      backingTaskQueue = std::move(instance->mWriteTaskQueue);
+      instance->ClearCacheLocked();
+    }
+  }
+  if (backingFileToRemove) {
+    if (backingTaskQueue) {
+      // Route deletion through the serial write queue so it runs after any
+      // pending write task (mirrors the pattern in Clear()).
+      InvokeAsync(backingTaskQueue.get(), __func__,
+                  [bf = std::move(backingFileToRemove)]() mutable {
+                    RemoveFilesSync(bf);
+                    return GenericPromise::CreateAndResolve(true, __func__);
+                  });
+    } else {
+      DispatchFileRemoval(std::move(backingFileToRemove));
+    }
+  }
+  if (addObservers) {
+    obs->AddObserver(instance, "application-background", false);
+    obs->AddObserver(instance, "idle-daily", false);
+  } else if (removeObservers) {
+    obs->RemoveObserver(instance, "application-background");
+    obs->RemoveObserver(instance, "idle-daily");
+  }
+  if (wantPersistence) {
+    DispatchLoad(std::move(loadPath), loadGen);
+    instance->RegisterShutdownBlocker();
+  }
+}
+
 NS_IMETHODIMP
 SSLTokensCache::Observe(nsISupports* aSubject, const char* aTopic,
                         const char16_t* aData) {
@@ -1340,46 +1481,22 @@ SSLTokensCache::Observe(nsISupports* aSubject, const char* aTopic,
   } else if (!strcmp(aTopic, "profile-after-change")) {
     MOZ_ASSERT(XRE_IsParentProcess());
     LOG(("SSLTokensCache::Observe [topic=profile-after-change]"));
-    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-    if (!obs) {
-      return NS_OK;
+    ReconcilePersistence();
+    if (!mPrefCallbackRegistered) {
+      // Register for live pref changes now that the JS environment is ready.
+      // Registering earlier (in Init()) would fire the callback during startup
+      // pref-loading before the JS module loader is initialised.
+      Preferences::RegisterCallback(&SSLTokensCache::ReconcilePersistence,
+                                    "network.ssl_tokens_cache_persistence");
+      mPrefCallbackRegistered = true;
     }
-
-    // Reconcile persistence state with the pref, which may differ from
-    // what Init() saw (user.js is applied between Init() and here).
-    bool wantPersistence = StaticPrefs::network_ssl_tokens_cache_persistence();
-    bool addObservers = false;
-    bool removeObservers = false;
-    nsCString loadPath;
-    uint32_t loadGen = 0;
-    {
-      StaticMutexAutoLock lock(sLock);
-      if (gInstance) {
-        bool wasRegistered = gInstance->mWriteObserversRegistered;
-        gInstance->mWriteObserversRegistered = wantPersistence;
-        addObservers = wantPersistence && !wasRegistered;
-        removeObservers = !wantPersistence && wasRegistered;
-        if (wantPersistence && !gInstance->mBackingFile) {
-          loadPath = SetupPersistenceLocked(loadGen);
-        }
-        if (!wantPersistence) {
-          gInstance->mBackingFile = nullptr;
-          gInstance->mWriteTaskQueue = nullptr;
-          gInstance->ClearCacheLocked();
-        }
-      }
-    }
-    if (addObservers) {
-      obs->AddObserver(this, "application-background", false);
-      obs->AddObserver(this, "idle-daily", false);
-    } else if (removeObservers) {
-      obs->RemoveObserver(this, "application-background");
-      obs->RemoveObserver(this, "idle-daily");
-    }
-    if (wantPersistence) {
-      DispatchLoad(std::move(loadPath), loadGen);
-      RegisterShutdownBlocker();
-    }
+  } else if (!strcmp(aTopic, "last-pb-context-exited")) {
+    MOZ_ASSERT(XRE_IsParentProcess());
+    LOG(("SSLTokensCache::Observe [topic=last-pb-context-exited]"));
+    // Remove only PBM entries from this process's token cache.
+    ClearPrivateBrowsing();
+    // Forward a PBM-scoped clear to the socket process.
+    ForwardClearPrivateBrowsingToSocketProcess();
   }
   return NS_OK;
 }
@@ -1498,6 +1615,111 @@ void SSLTokensCache::RemoveShutdownBlocker() {
     barrier->RemoveBlocker(this);
   }
 }
+
+#ifdef ENABLE_TESTS
+NS_IMPL_ISUPPORTS(SSLTokensCacheService, nsISSLTokensCache,
+                  nsISSLTokensCacheTest)
+#else
+NS_IMPL_ISUPPORTS(SSLTokensCacheService, nsISSLTokensCache)
+#endif
+
+// Most of nsISSLTokensCache is parent-process-only; the socket process has
+// no way to serve these requests itself.
+static nsresult EnsureParentProcess() {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  return XRE_IsParentProcess() ? NS_OK : NS_ERROR_NOT_AVAILABLE;
+}
+
+NS_IMETHODIMP
+SSLTokensCacheService::ClearSSLExternalAndInternalSessionCache() {
+  nsresult rv = EnsureParentProcess();
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  SSLTokensCache::ClearSessionCacheAndTokens();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+SSLTokensCacheService::AsyncClearSSLExternalAndInternalSessionCache(
+    JSContext* aCx, mozilla::dom::Promise** aPromise) {
+  nsresult rv = EnsureParentProcess();
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  nsIGlobalObject* globalObject = xpc::CurrentNativeGlobal(aCx);
+  if (NS_WARN_IF(!globalObject)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  ErrorResult result;
+  RefPtr<mozilla::dom::Promise> promise =
+      mozilla::dom::Promise::Create(globalObject, result);
+  if (NS_WARN_IF(result.Failed())) {
+    return result.StealNSResult();
+  }
+
+  if (nsIOService::UseSocketProcess() && gIOService) {
+    gIOService->CallOrWaitForSocketProcess([p = RefPtr{promise}]() {
+      RefPtr<SocketProcessParent> socketParent =
+          SocketProcessParent::GetSingleton();
+      (void)socketParent->SendClearSessionCache()->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [promise = RefPtr{p}] { promise->MaybeResolveWithUndefined(); },
+          [promise = RefPtr{p}] { promise->MaybeReject(NS_ERROR_UNEXPECTED); });
+    });
+  } else {
+    promise->MaybeResolveWithUndefined();
+  }
+  SSLTokensCache::ClearSessionCacheAndTokens();
+  promise.forget(aPromise);
+  return NS_OK;
+}
+
+template <typename F>
+static nsresult WithParsedOAPattern(const nsAString& aPatternJson, F&& aFunc) {
+  nsresult rv = EnsureParentProcess();
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  mozilla::OriginAttributesPattern pattern;
+  if (!pattern.Init(aPatternJson)) {
+    return NS_ERROR_INVALID_ARG;
+  }
+  aFunc(pattern);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+SSLTokensCacheService::RemoveSSLTokensByHostAndOriginAttributesPattern(
+    const nsACString& aHost, const nsAString& aPattern) {
+  return WithParsedOAPattern(aPattern, [&aHost](const auto& pattern) {
+    SSLTokensCache::RemoveByHostAndOAPattern(aHost, pattern);
+  });
+}
+
+NS_IMETHODIMP
+SSLTokensCacheService::RemoveSSLTokensBySiteAndOriginAttributesPattern(
+    const nsACString& aSite, const nsAString& aPattern) {
+  return WithParsedOAPattern(aPattern, [&aSite](const auto& pattern) {
+    SSLTokensCache::RemoveBySiteAndOAPattern(aSite, pattern);
+  });
+}
+
+#ifdef ENABLE_TESTS
+NS_IMETHODIMP
+SSLTokensCacheService::CountSSLTokens(uint32_t* aCount) {
+  *aCount = SSLTokensCache::CountForTest();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+SSLTokensCacheService::PutSSLTokenForTest(const nsACString& aKey) {
+  SSLTokensCache::PutForTest(aKey);
+  return NS_OK;
+}
+#endif  // ENABLE_TESTS
 
 }  // namespace net
 }  // namespace mozilla

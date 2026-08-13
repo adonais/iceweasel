@@ -4,7 +4,6 @@
 
 
 import logging
-import os
 import re
 
 import taskcluster_urls
@@ -26,9 +25,7 @@ task. You may need to wait for it to begin running.
 ###
 # Security Concerns
 #
-# An "interactive task" is, quite literally, shell access to a worker. That
-# is limited by being in a Docker container, but we assume that Docker has
-# bugs so we do not want to rely on container isolation exclusively.
+# An "interactive task" is, quite literally, shell access to a worker.
 #
 # Interactive tasks should never be allowed on hosts that build binaries
 # leading to a release -- level 3 builders.
@@ -39,7 +36,7 @@ task. You may need to wait for it to begin running.
 # Interactive tasks must not have any routes that might make them appear
 # in the index to be used by other production tasks.
 #
-# Interactive tasks should not be able to write to any docker-worker caches.
+# Interactive tasks should not be able to write to any shared caches.
 
 SCOPE_WHITELIST = [
     # these are not actually secrets, and just about everything needs them
@@ -63,20 +60,24 @@ SCOPE_WHITELIST = [
     re.compile(r"^docker-worker:capability:privileged$"),
     re.compile(r"^docker-worker:cache:gecko-level-1-checkouts.*$"),
     re.compile(r"^docker-worker:cache:gecko-level-1-tooltool-cache.*$"),
+    re.compile(r"^generic-worker:cache:gecko-level-1-checkouts.*$"),
+    re.compile(r"^generic-worker:cache:gecko-level-1-tooltool-cache.*$"),
 ]
 
 
 def context(params):
-    # available for any docker-worker tasks at levels 1, 2; and for
+    # available for docker-worker and generic-worker tasks at levels 1, 2; and for
     # test tasks on level 3 (level-3 builders are firewalled off)
     if int(params["level"]) < 3:
-        return [{"worker-implementation": "docker-worker"}]
+        return [
+            {"worker-implementation": "docker-worker"},
+            {"worker-implementation": "generic-worker"},
+        ]
     return [
-        {"worker-implementation": "docker-worker", "kind": kind} for kind in TEST_KINDS
+        {"worker-implementation": impl, "kind": kind}
+        for impl in ("docker-worker", "generic-worker")
+        for kind in TEST_KINDS
     ]
-    # Windows is not supported by one-click loaners yet. See
-    # https://wiki.mozilla.org/ReleaseEngineering/How_To/Self_Provision_a_TaskCluster_Windows_Instance
-    # for instructions for using them.
 
 
 @register_callback_action(
@@ -106,8 +107,7 @@ def context(params):
 )
 def create_interactive_action(parameters, graph_config, input, task_group_id, task_id):
     # fetch the original task definition from the taskgraph, to avoid
-    # creating interactive copies of unexpected tasks.  Note that this only applies
-    # to docker-worker tasks, so we can assume the docker-worker payload format.
+    # creating interactive copies of unexpected tasks.
     decision_task_id, full_task_graph, label_to_taskid, _ = fetch_graph_and_labels(
         parameters, graph_config
     )
@@ -143,15 +143,23 @@ def create_interactive_action(parameters, graph_config, input, task_group_id, ta
         payload["maxRunTime"] = max(3600 * 3, payload.get("maxRunTime", 0))
 
         # no caches or artifacts
-        payload["cache"] = {}
-        payload["artifacts"] = {}
+        worker_impl = task_def.get("tags", {}).get("worker-implementation")
+        if worker_impl == "generic-worker":
+            # strip writable caches from mounts; read-only mounts are fine
+            payload["mounts"] = [
+                m for m in payload.get("mounts", []) if "cacheName" not in m
+            ]
+            payload["artifacts"] = []
+            # runAsAdministrator would be rejected without its scope anyway, but
+            # remove it explicitly to avoid a malformed-payload exception
+            payload.get("features", {}).pop("runAsAdministrator", None)
+        else:
+            payload["cache"] = {}
+            payload["artifacts"] = {}
 
         # enable interactive mode
         payload.setdefault("features", {})["interactive"] = True
         payload.setdefault("env", {})["TASKCLUSTER_INTERACTIVE"] = "true"
-
-        for key in task_def["payload"]["env"].keys():
-            payload["env"][key] = task_def["payload"]["env"].get(key, "")
 
         # add notification
         email = input.get("notify")
@@ -174,16 +182,13 @@ def create_interactive_action(parameters, graph_config, input, task_group_id, ta
 
         return task
 
-    # Create the task and any of its dependencies. This uses a new taskGroupId to avoid
-    # polluting the existing taskGroup with interactive tasks.
-    action_task_id = os.environ.get("TASK_ID")
     label_to_taskid = create_tasks(
         graph_config,
         [label],
         full_task_graph,
         label_to_taskid,
         parameters,
-        decision_task_id=action_task_id,
+        decision_task_id=decision_task_id,
         modifier=edit,
     )
 

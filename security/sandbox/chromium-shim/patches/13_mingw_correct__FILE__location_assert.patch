@@ -1,0 +1,25 @@
+# HG changeset patch
+# User Bob Owen <bobowencode@gmail.com>
+Correct __FILE__ location assert for mozilla build.
+diff --git a/base/location.cc b/base/location.cc
+--- a/base/location.cc
++++ b/base/location.cc
+@@ -14,17 +14,17 @@ constexpr bool StrEndsWith(const char* n
+ #if defined(COMPILER_MSVC)
+ #include <intrin.h>
+ #endif
+ 
+ namespace base {
+ 
+ namespace {
+ 
+-#if defined(__clang__) && defined(_MSC_VER)
++#if defined(__clang__) && defined(_WIN32)
+ constexpr std::string_view kThisFilePath = "base\\location.cc";
+ #else
+ constexpr std::string_view kThisFilePath = "base/location.cc";
+ #endif
+ 
+ // Finds the length of the build folder prefix from the file path.
+ // TODO(ssid): Strip prefixes from stored strings in the binary. This code only
+ // skips the prefix while reading the file name strings at runtime.

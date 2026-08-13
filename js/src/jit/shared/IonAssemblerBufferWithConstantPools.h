@@ -5,11 +5,13 @@
 #ifndef jit_shared_IonAssemblerBufferWithConstantPools_h
 #define jit_shared_IonAssemblerBufferWithConstantPools_h
 
+#include "mozilla/Attributes.h"
 #include "mozilla/CheckedInt.h"
 
 #include <algorithm>
 #include <bit>
 #include <deque>
+#include <type_traits>
 
 #include "jit/JitSpewer.h"
 #include "jit/shared/IonAssemblerBuffer.h"
@@ -127,7 +129,7 @@
 //
 //   veneer
 //     Space for a branch veneer, guaranteed to be <= deadline. At this
-//     position, guardSize_ * InstSize bytes are allocated. They should be
+//     position, veneerSize_ * InstSize bytes are allocated. They should be
 //     initialized to the proper unconditional branch instruction.
 //
 //   Unbound branches to the same unbound label are organized as a linked list:
@@ -397,12 +399,6 @@ struct Pool {
   // bias of 8.
   const unsigned bias_;
 
-  // The content of the pool entries.
-  Vector<PoolAllocUnit, 8, LifoAllocPolicy<Fallible>> poolData_;
-
-  // Flag that tracks OOM conditions. This is set after any append failed.
-  bool oom_;
-
   // The limiting instruction and pool-entry pair. The instruction program
   // counter relative offset of this limiting instruction will go out of range
   // first as the pool position moves forward. It is more efficient to track
@@ -411,9 +407,15 @@ struct Pool {
   //
   // 1. The actual offset of the limiting instruction referencing the limiting
   // pool entry.
-  BufferOffset limitingUser;
+  BufferOffset limitingUser{};
   // 2. The pool entry index of the limiting pool entry.
-  unsigned limitingUsee;
+  unsigned limitingUsee = INT_MIN;
+
+  // Flag that tracks OOM conditions. This is set after any append failed.
+  bool oom_ = false;
+
+  // The content of the pool entries.
+  Vector<PoolAllocUnit, 8, LifoAllocPolicy<Fallible>> poolData_;
 
  public:
   // A record of the code offset of instructions that reference pool
@@ -422,15 +424,12 @@ struct Pool {
   // occurs when each pool is finished, see finishPool().
   Vector<BufferOffset, 8, LifoAllocPolicy<Fallible>> loadOffsets;
 
-  // Create a Pool. Don't allocate anything from lifoAloc, just capture its
+  // Create a Pool. Don't allocate anything from lifoAlloc, just capture its
   // reference.
-  explicit Pool(size_t maxOffset, unsigned bias, LifoAlloc& lifoAlloc)
+  Pool(size_t maxOffset, unsigned bias, LifoAlloc& lifoAlloc)
       : maxOffset_(maxOffset),
         bias_(bias),
         poolData_(lifoAlloc),
-        oom_(false),
-        limitingUser(),
-        limitingUsee(INT_MIN),
         loadOffsets(lifoAlloc) {}
 
   // If poolData() returns nullptr then oom_ will also be true.
@@ -439,8 +438,6 @@ struct Pool {
   unsigned numEntries() const { return poolData_.length(); }
 
   size_t getPoolSize() const { return numEntries() * sizeof(PoolAllocUnit); }
-
-  bool oom() const { return oom_; }
 
   // Update the instruction/pool-entry pair that limits the position of the
   // pool. The nextInst is the actual offset of the new instruction being
@@ -501,6 +498,25 @@ struct Pool {
   }
 };
 
+// Empty pool optimisation for assembler buffers which don't use constant pools.
+//
+// Implements only a subset of the Pool interface.
+struct EmptyPool final {
+  EmptyPool(size_t maxOffset, unsigned bias, LifoAlloc& lifoAlloc) {}
+
+  unsigned numEntries() const {
+    // Always zero entries.
+    return 0;
+  }
+
+  size_t getPoolSize() const { return numEntries() * sizeof(PoolAllocUnit); }
+
+  bool checkFull(size_t poolOffset) const {
+    // Never full.
+    return false;
+  }
+};
+
 struct AssemblerBufferSettings {
   // Size in bytes of the fixed-size instructions. This should be equal to
   // sizeof(Inst). This is only needed here because the buffer is defined before
@@ -513,6 +529,9 @@ struct AssemblerBufferSettings {
   // The size of the header that is put at the beginning of a full pool, in
   // instruction sized units.
   unsigned headerSize;
+
+  // The size of a veneer branch, in instructions.
+  unsigned veneerSize;
 
   // The bias on pc relative addressing mode offsets, in units of bytes. The
   // ARM has a bias of 8 bytes.
@@ -562,8 +581,8 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
   // The size of a pool guard, in instructions. A branch around the pool.
   static constexpr unsigned GuardSize = settings.guardSize;
 
-  // Veneer branch is expected to have the same size as a pool guard branch.
-  static constexpr unsigned VeneerSize = settings.guardSize;
+  // The size of a veneer branch, in instructions.
+  static constexpr unsigned VeneerSize = settings.veneerSize;
 
   // The size of the header that is put at the beginning of a full pool, in
   // instruction sized units.
@@ -573,8 +592,13 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
   // ARM has a bias of 8 bytes.
   static constexpr unsigned PcBias = settings.pcBias;
 
+  // Constant pool support can be disabled by setting the header size to zero.
+  static constexpr bool UseConstantPools = HeaderSize > 0;
+
+  using PoolImpl = std::conditional_t<UseConstantPools, Pool, EmptyPool>;
+
   // The current working pool. Copied out as needed before resetting.
-  Pool pool_;
+  MOZ_NO_UNIQUE_ADDRESS PoolImpl pool_;
 
   // Set of short-range forward branches that have not yet been bound.
   // We may need to insert veneers if the final label turns out to be out of
@@ -663,6 +687,28 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
   static const unsigned OOM_FAIL = unsigned(-1);
   static const unsigned DUMMY_INDEX = unsigned(-2);
 
+  size_t sizeOfPrimaryVeneers() const {
+    // When VeneerSize > 1, it is possible for branch deadlines to
+    // expire faster than we can insert veneers. Suppose branches are 4 bytes
+    // each and veneers are 8 bytes each, we could have the following deadline
+    // set:
+    //
+    //   Range 0: 40, 44, 48
+    //
+    // It is not good enough to start inserting veneers at the 40 deadline; we
+    // would not be able to create veneers for the 44 deadline.
+    // Instead, we need to start at 32:
+    //
+    //   32: veneer(40)
+    //   40: veneer(44)
+    //   48: veneer(48)
+    //
+    // This is a pretty conservative solution to the problem: We reserve space
+    // for all deadlines in the range with the most pending deadlines, assuming
+    // worst case deadlines.
+    return (VeneerSize - 1) * branchDeadlines_.maxRangeSize() * InstSize;
+  }
+
   size_t sizeOfSecondaryVeneers(unsigned numNewDeadlines = 0) const {
     // When NumShortBranchRanges > 1, it is possible for branch deadlines to
     // expire faster than we can insert veneers. Suppose branches are 4 bytes
@@ -717,9 +763,10 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
       size_t deadline = branchDeadlines_.earliestDeadline().getOffset();
       size_t poolEnd = poolOffset + pool_.getPoolSize() +
                        numPoolEntries * sizeof(PoolAllocUnit);
+      size_t primaryVeneers = sizeOfPrimaryVeneers();
       size_t secondaryVeneers = sizeOfSecondaryVeneers(numNewDeadlines);
 
-      if (deadline < poolEnd + secondaryVeneers) {
+      if (deadline < poolEnd + primaryVeneers + secondaryVeneers) {
         return false;
       }
     }
@@ -728,11 +775,15 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
   }
 
   unsigned insertEntryForwards(unsigned numInst, unsigned numPoolEntries,
-                               uint8_t* inst, uint8_t* data) {
-    // If inserting pool entries then find a new limiter before we do the
-    // range check.
-    if (numPoolEntries) {
-      pool_.updateLimiter(BufferOffset(sizeExcludingCurrentPool()));
+                               uint8_t* data) {
+    if constexpr (UseConstantPools) {
+      // If inserting pool entries then find a new limiter before we do the
+      // range check.
+      if (numPoolEntries) {
+        pool_.updateLimiter(BufferOffset(sizeExcludingCurrentPool()));
+      }
+    } else {
+      MOZ_ASSERT(numPoolEntries == 0);
     }
 
     if (!hasSpaceForInsts(numInst, numPoolEntries)) {
@@ -747,16 +798,19 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
       if (this->oom()) {
         return OOM_FAIL;
       }
-      return insertEntryForwards(numInst, numPoolEntries, inst, data);
+      return insertEntryForwards(numInst, numPoolEntries, data);
     }
-    if (numPoolEntries) {
-      unsigned result = pool_.insertEntry(numPoolEntries, data,
-                                          this->nextOffset(), this->lifoAlloc_);
-      if (result == Pool::OOM_FAIL) {
-        this->fail_oom();
-        return OOM_FAIL;
+
+    if constexpr (UseConstantPools) {
+      if (numPoolEntries) {
+        unsigned result = pool_.insertEntry(
+            numPoolEntries, data, this->nextOffset(), this->lifoAlloc_);
+        if (result == Pool::OOM_FAIL) {
+          this->fail_oom();
+          return OOM_FAIL;
+        }
+        return result;
       }
-      return result;
     }
 
     // The pool entry index is returned above when allocating an entry, but
@@ -809,17 +863,20 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
 #endif
 
     // Insert the pool value.
-    unsigned index = insertEntryForwards(numInst, numPoolEntries, inst, data);
+    unsigned index = insertEntryForwards(numInst, numPoolEntries, data);
     if (this->oom()) {
       return BufferOffset();
     }
 
     // Now to get an instruction to write.
-    if (numPoolEntries) {
-      JitSpew(JitSpew_Pools, "Entry has index %u, offset %zu", index,
-              sizeExcludingCurrentPool());
-      Asm::InsertIndexIntoTag(inst, index);
+    if constexpr (UseConstantPools) {
+      if (numPoolEntries) {
+        JitSpew(JitSpew_Pools, "Entry has index %u, offset %zu", index,
+                sizeExcludingCurrentPool());
+        Asm::InsertIndexIntoTag(inst, index);
+      }
     }
+
     // Now inst is a valid thing to insert into the instruction stream.
     return this->putBytes(numInst * InstSize, inst);
   }
@@ -928,7 +985,9 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
     size_t nextOffset = sizeExcludingCurrentPool();
     size_t poolOffset = nextOffset + (GuardSize + HeaderSize) * InstSize;
     mozilla::CheckedInt<size_t> poolFreeSpace(reservedBytes);
-    auto future = (poolOffset + sizeOfSecondaryVeneers()) + poolFreeSpace;
+    auto future =
+        (poolOffset + sizeOfPrimaryVeneers() + sizeOfSecondaryVeneers()) +
+        poolFreeSpace;
     return !future.isValid() || deadline < future.value();
   }
 
@@ -954,9 +1013,13 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
 
     // Dump the pool with a guard branch around the pool.
     BufferOffset guard = this->putBytes(GuardSize * InstSize, nullptr);
-    BufferOffset header = this->putBytes(HeaderSize * InstSize, nullptr);
-    BufferOffset data =
-        this->putBytes(pool_.getPoolSize(), (const uint8_t*)pool_.poolData());
+    BufferOffset header;
+    BufferOffset data;
+    if constexpr (UseConstantPools) {
+      header = this->putBytes(HeaderSize * InstSize, nullptr);
+      data =
+          this->putBytes(pool_.getPoolSize(), (const uint8_t*)pool_.poolData());
+    }
     if (this->oom()) {
       return;
     }
@@ -987,34 +1050,37 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
     // Fill them in.
     BufferOffset afterPool = this->nextOffset();
     Asm::WritePoolGuard(guard, this->getInst(guard), afterPool);
-    Asm::WritePoolHeader((uint8_t*)this->getInst(header), &pool_, false);
+    if constexpr (UseConstantPools) {
+      Asm::WritePoolHeader((uint8_t*)this->getInst(header), &pool_, false);
 
-    // With the pool's final position determined it is now possible to patch
-    // the instructions that reference entries in this pool, and this is
-    // done incrementally as each pool is finished.
-    size_t poolOffset = data.getOffset();
+      // With the pool's final position determined it is now possible to patch
+      // the instructions that reference entries in this pool, and this is
+      // done incrementally as each pool is finished.
+      size_t poolOffset = data.getOffset();
 
-    unsigned idx = 0;
-    for (BufferOffset* iter = pool_.loadOffsets.begin();
-         iter != pool_.loadOffsets.end(); ++iter, ++idx) {
-      // All entries should be before the pool.
-      MOZ_ASSERT(iter->getOffset() < guard.getOffset());
+      unsigned idx = 0;
+      for (BufferOffset* iter = pool_.loadOffsets.begin();
+           iter != pool_.loadOffsets.end(); ++iter, ++idx) {
+        // All entries should be before the pool.
+        MOZ_ASSERT(iter->getOffset() < guard.getOffset());
 
-      // Everything here is known so we can safely do the necessary
-      // substitutions.
-      Inst* inst = this->getInst(*iter);
-      size_t codeOffset = poolOffset - iter->getOffset();
+        // Everything here is known so we can safely do the necessary
+        // substitutions.
+        Inst* inst = this->getInst(*iter);
+        size_t codeOffset = poolOffset - iter->getOffset();
 
-      // That is, PatchConstantPoolLoad wants to be handed the address of
-      // the pool entry that is being loaded.  We need to do a non-trivial
-      // amount of math here, since the pool that we've made does not
-      // actually reside there in memory.
-      JitSpew(JitSpew_Pools, "Fixing entry %d offset to %zu", idx, codeOffset);
-      Asm::PatchConstantPoolLoad(inst, (uint8_t*)inst + codeOffset);
+        // That is, PatchConstantPoolLoad wants to be handed the address of
+        // the pool entry that is being loaded.  We need to do a non-trivial
+        // amount of math here, since the pool that we've made does not
+        // actually reside there in memory.
+        JitSpew(JitSpew_Pools, "Fixing entry %d offset to %zu", idx,
+                codeOffset);
+        Asm::PatchConstantPoolLoad(inst, (uint8_t*)inst + codeOffset);
+      }
+
+      // Reset everything to the state that it was in when we started.
+      pool_.reset();
     }
-
-    // Reset everything to the state that it was in when we started.
-    pool_.reset();
   }
 
  public:

@@ -281,17 +281,18 @@ enum ContentAnalysisRequest_Reason : int {
   ContentAnalysisRequest_Reason_SYSTEM_DIALOG_PRINT = 5,
   ContentAnalysisRequest_Reason_NORMAL_DOWNLOAD = 6,
   ContentAnalysisRequest_Reason_SAVE_AS_DOWNLOAD = 7,
+  ContentAnalysisRequest_Reason_CLIPBOARD_COPY = 8,
 };
 
 extern const uint32_t ContentAnalysisRequest_Reason_internal_data_[];
 inline constexpr ContentAnalysisRequest_Reason ContentAnalysisRequest_Reason_Reason_MIN =
     static_cast<ContentAnalysisRequest_Reason>(0);
 inline constexpr ContentAnalysisRequest_Reason ContentAnalysisRequest_Reason_Reason_MAX =
-    static_cast<ContentAnalysisRequest_Reason>(7);
+    static_cast<ContentAnalysisRequest_Reason>(8);
 [[nodiscard]] inline bool ContentAnalysisRequest_Reason_IsValid(int value) {
-  return 0 <= value && value <= 7;
+  return 0 <= value && value <= 8;
 }
-inline constexpr int ContentAnalysisRequest_Reason_Reason_ARRAYSIZE = 7 + 1;
+inline constexpr int ContentAnalysisRequest_Reason_Reason_ARRAYSIZE = 8 + 1;
 [[nodiscard]] const ::std::string& ContentAnalysisRequest_Reason_Name(ContentAnalysisRequest_Reason value);
 template <typename T>
 [[nodiscard]] const ::std::string& ContentAnalysisRequest_Reason_Name(T value) {
@@ -412,17 +413,18 @@ enum AnalysisConnector : int {
   BULK_DATA_ENTRY = 3,
   PRINT = 4,
   FILE_TRANSFER = 5,
+  DATA_COPIED = 6,
 };
 
 extern const uint32_t AnalysisConnector_internal_data_[];
 inline constexpr AnalysisConnector AnalysisConnector_MIN =
     static_cast<AnalysisConnector>(0);
 inline constexpr AnalysisConnector AnalysisConnector_MAX =
-    static_cast<AnalysisConnector>(5);
+    static_cast<AnalysisConnector>(6);
 [[nodiscard]] inline bool AnalysisConnector_IsValid(int value) {
-  return 0 <= value && value <= 5;
+  return 0 <= value && value <= 6;
 }
-inline constexpr int AnalysisConnector_ARRAYSIZE = 5 + 1;
+inline constexpr int AnalysisConnector_ARRAYSIZE = 6 + 1;
 [[nodiscard]] const ::std::string& AnalysisConnector_Name(AnalysisConnector value);
 template <typename T>
 [[nodiscard]] const ::std::string& AnalysisConnector_Name(T value) {
@@ -3341,6 +3343,7 @@ class  PROTOBUF_FUTURE_ADD_EARLY_WARN_UNUSED ContentAnalysisRequest final : publ
   static constexpr Reason SYSTEM_DIALOG_PRINT = ContentAnalysisRequest_Reason_SYSTEM_DIALOG_PRINT;
   static constexpr Reason NORMAL_DOWNLOAD = ContentAnalysisRequest_Reason_NORMAL_DOWNLOAD;
   static constexpr Reason SAVE_AS_DOWNLOAD = ContentAnalysisRequest_Reason_SAVE_AS_DOWNLOAD;
+  static constexpr Reason CLIPBOARD_COPY = ContentAnalysisRequest_Reason_CLIPBOARD_COPY;
   [[nodiscard]] static inline bool Reason_IsValid(int value) {
     return ContentAnalysisRequest_Reason_IsValid(value);
   }

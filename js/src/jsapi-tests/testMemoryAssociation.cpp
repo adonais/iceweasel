@@ -4,12 +4,12 @@
 
 #include "jsapi.h"
 #include "jspubtd.h"
+
 #include "js/Class.h"
 #include "js/GCAPI.h"
 #include "js/MemoryFunctions.h"
 #include "js/SliceBudget.h"
 #include "js/TypeDecls.h"
-
 #include "jsapi-tests/tests.h"
 
 static const JS::MemoryUse TestUse1 = JS::MemoryUse::XPCWrappedNative;

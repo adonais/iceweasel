@@ -321,7 +321,7 @@ add_task(async function test_onSync_updates_allowlist() {
       impressionType: "view",
     });
 
-    await BrowserTestUtils.waitForCondition(() => conversionStub.calledOnce);
+    await TestUtils.waitForCondition(() => conversionStub.calledOnce);
     Assert.ok(
       conversionStub.calledOnce,
       "onAttributionConversion was called after onSync updated allowlist"

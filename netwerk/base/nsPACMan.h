@@ -5,21 +5,21 @@
 #ifndef nsPACMan_h_
 #define nsPACMan_h_
 
+#include "ProxyAutoConfig.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/DataMutex.h"
-#include "mozilla/Monitor.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Logging.h"
-#include "mozilla/net/NeckoTargetHolder.h"
+#include "mozilla/Monitor.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/net/NeckoTargetHolder.h"
 #include "nsCOMPtr.h"
 #include "nsIChannelEventSink.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsIStreamLoader.h"
-#include "nsThreadUtils.h"
 #include "nsIURI.h"
 #include "nsString.h"
-#include "ProxyAutoConfig.h"
+#include "nsThreadUtils.h"
 
 class nsISystemProxySettings;
 class nsIDHCPClient;

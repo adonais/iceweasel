@@ -73,6 +73,7 @@ import mozilla.components.compose.base.theme.layout.AcornWindowSize.Companion.is
 import org.mozilla.fenix.R
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.TabsTrayTestTag.BOTTOM_SHEET_COLOR_LIST
+import org.mozilla.fenix.tabstray.TabsTrayTestTag.EDIT_BOTTOM_SHEET_SAVE
 import org.mozilla.fenix.tabstray.data.TabGroupTheme
 import org.mozilla.fenix.tabstray.redux.action.TabGroupAction
 import org.mozilla.fenix.tabstray.redux.state.TabGroupFormState
@@ -93,34 +94,13 @@ private val FOCUS_REQUEST_DELAY = 50.milliseconds
 /**
  * Prompt to edit a tab group.
  *
- * @param tabsTrayStore [TabsTrayStore] used to listen for changes to
- * [TabsTrayState].
+ * @param formState The current snapshot of [TabGroupFormState].
+ * @param onTabGroupNameChange Invoked when the tab group's name updates.
+ * @param onTabGroupThemeChange Invoked when the tab group's theme updates.
+ * @param onConfirmSave Invoked when the clicks to save the tab group.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditTabGroup(
-    tabsTrayStore: TabsTrayStore,
-) {
-    val formState by tabsTrayStore.tabGroupFormStateFlow.collectAsState(
-        initial = tabsTrayStore.state.tabGroupState.formState ?: return,
-    )
-
-    EditTabGroupContent(
-        formState = formState,
-        onTabGroupNameChange = { newName ->
-            tabsTrayStore.dispatch(TabGroupAction.NameChanged(newName))
-        },
-        onTabGroupThemeChange = { newTheme ->
-            tabsTrayStore.dispatch(TabGroupAction.ThemeChanged(newTheme))
-        },
-        onConfirmSave = {
-            tabsTrayStore.dispatch(TabGroupAction.SaveClicked)
-        },
-    )
-}
-
-@Composable
-private fun EditTabGroupContent(
     formState: TabGroupFormState,
     onTabGroupNameChange: (String) -> Unit,
     onTabGroupThemeChange: (TabGroupTheme) -> Unit,
@@ -174,7 +154,8 @@ private fun EditTabGroupContent(
 
             FilledButton(
                 text = stringResource(R.string.create_tab_group_save_button),
-                modifier = Modifier.padding(end = 12.dp),
+                modifier = Modifier.padding(end = FirefoxTheme.layout.space.static150)
+                    .testTag(EDIT_BOTTOM_SHEET_SAVE),
                 onClick = onConfirmSave,
             )
         }
@@ -429,7 +410,7 @@ private fun EditTabGroupContentPreview(
 ) {
     FirefoxTheme {
         Surface {
-            EditTabGroupContent(
+            EditTabGroup(
                 formState = formState,
                 onConfirmSave = {},
                 onTabGroupNameChange = {},
@@ -459,6 +440,7 @@ private fun EditTabGroupBottomSheetPreview(
             ),
         )
     }
+    val state by tabsTrayStore.stateFlow.collectAsState()
 
     FirefoxTheme(theme) {
         Surface {
@@ -477,7 +459,16 @@ private fun EditTabGroupBottomSheetPreview(
                 onDismissRequest = {},
             ) {
                 EditTabGroup(
-                    tabsTrayStore = tabsTrayStore,
+                    formState = state.tabGroupState.formState!!,
+                    onTabGroupNameChange = { newName ->
+                        tabsTrayStore.dispatch(TabGroupAction.NameChanged(newName))
+                    },
+                    onTabGroupThemeChange = { newTheme ->
+                        tabsTrayStore.dispatch(TabGroupAction.ThemeChanged(newTheme))
+                    },
+                    onConfirmSave = {
+                        tabsTrayStore.dispatch(TabGroupAction.SaveClicked)
+                    },
                 )
             }
         }

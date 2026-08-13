@@ -8,10 +8,10 @@
 #include <utility>
 
 #include "js/Debug.h"
-#include "js/friend/DumpFunctions.h"
-#include "js/friend/MicroTask.h"
 #include "js/GCAPI.h"
 #include "js/Utility.h"
+#include "js/friend/DumpFunctions.h"
+#include "js/friend/MicroTask.h"
 #include "jsapi.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/AutoRestore.h"
@@ -23,11 +23,13 @@
 #include "mozilla/ProfilerRunnable.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/StaticPrefs_javascript.h"
+#include "mozilla/dom/CallbackObject.h"
 #include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/DOMJSClass.h"
 #include "mozilla/dom/FinalizationRegistryBinding.h"
-#include "mozilla/dom/CallbackObject.h"
+#include "mozilla/dom/Promise.h"
 #include "mozilla/dom/PromiseDebugging.h"
+#include "mozilla/dom/PromiseDebuggingBinding.h"
 #include "mozilla/dom/PromiseRejectionEvent.h"
 #include "mozilla/dom/PromiseRejectionEventBinding.h"
 #include "mozilla/dom/RootedDictionary.h"
@@ -849,7 +851,7 @@ static bool ExtractTaskData(
 static bool CanRunJSCallback(nsIGlobalObject* aGlobalObject,
                              JSObject* aCallbackGlobal,
                              nsIGlobalObject* aIncumbentGlobal) {
-  if (aGlobalObject->IsScriptForbidden(aCallbackGlobal, false)) {
+  if (!aGlobalObject->CanRunJSMicroTask(aCallbackGlobal)) {
     return false;
   }
 
@@ -1317,6 +1319,7 @@ NS_IMETHODIMP CycleCollectedJSContext::NotifyUnhandledRejections::Run() {
 
     // Only fire unhandledrejection if the promise is still not handled;
     uint64_t promiseID = JS::GetPromiseID(promiseObj);
+    bool defaultPrevented = false;
     if (!JS::GetPromiseIsHandled(promiseObj)) {
       if (nsCOMPtr<EventTarget> target =
               do_QueryInterface(promise->GetParentObject())) {
@@ -1328,24 +1331,37 @@ NS_IMETHODIMP CycleCollectedJSContext::NotifyUnhandledRejections::Run() {
         RefPtr<PromiseRejectionEvent> event =
             PromiseRejectionEvent::Constructor(target, u"unhandledrejection"_ns,
                                                init);
-        // We don't use the result of dispatching event here to check whether
-        // to report the Promise to console.
         target->DispatchEvent(*event);
+        defaultPrevented = event->DefaultPrevented();
       }
     }
 
     cccx = CycleCollectedJSContext::Get();
     NS_ENSURE_STATE(cccx);
+
+    // Notify observers only if still unhandled (matches old
+    // FlushUncaughtRejectionsInternal behavior for observer consumers
+    // like PromiseTestUtils).
     if (!JS::GetPromiseIsHandled(promiseObj)) {
-      DebugOnly<bool> isFound =
-          cccx->mPendingUnhandledRejections.Remove(promiseID);
-      MOZ_ASSERT(isFound);
+      auto& observers = cccx->mUncaughtRejectionObservers;
+      for (size_t j = 0; j < observers.Length(); ++j) {
+        RefPtr<UncaughtRejectionObserver> obs =
+            static_cast<UncaughtRejectionObserver*>(observers[j].get());
+        obs->OnLeftUncaught(promiseObj, IgnoreErrors());
+      }
     }
 
-    // If a rejected promise is being handled in "unhandledrejection" event
-    // handler, it should be removed from the table in
-    // PromiseRejectionTrackerCallback.
-    MOZ_ASSERT(!cccx->mPendingUnhandledRejections.Lookup(promiseID));
+    // Report to console regardless of handled state — this matches the
+    // pre-existing behavior where FlushRejections reported before handling
+    // could occur. Only preventDefault() suppresses the console report.
+    if (!defaultPrevented) {
+      JSAutoRealm ar(cccx->Context(), promiseObj);
+      Promise::ReportRejectedPromise(cccx->Context(), promiseObj);
+    }
+
+    // Remove from the pending table. May already be removed if the
+    // promise was handled between tracking and now.
+    cccx->mPendingUnhandledRejections.Remove(promiseID);
   }
   return NS_OK;
 }
@@ -1354,6 +1370,10 @@ nsresult CycleCollectedJSContext::NotifyUnhandledRejections::Cancel() {
   CycleCollectedJSContext* cccx = CycleCollectedJSContext::Get();
   NS_ENSURE_STATE(cccx);
 
+  // The runnable was canceled, so the unhandledrejection event will never
+  // fire. Report any still-unhandled rejections directly to observers and
+  // the console, since the deferred path in FlushUncaughtRejectionsInternal
+  // already skipped them.
   for (size_t i = 0; i < mUnhandledRejections.Length(); ++i) {
     RefPtr<Promise>& promise = mUnhandledRejections[i];
     if (!promise) {
@@ -1361,6 +1381,24 @@ nsresult CycleCollectedJSContext::NotifyUnhandledRejections::Cancel() {
     }
 
     JS::RootedObject promiseObj(cccx->RootingCx(), promise->PromiseObj());
+
+    if (!JS::GetPromiseIsHandled(promiseObj)) {
+      bool suppressReporting = false;
+      auto& observers = cccx->mUncaughtRejectionObservers;
+      for (size_t j = 0; j < observers.Length(); ++j) {
+        RefPtr<UncaughtRejectionObserver> obs =
+            static_cast<UncaughtRejectionObserver*>(observers[j].get());
+        if (obs->OnLeftUncaught(promiseObj, IgnoreErrors())) {
+          suppressReporting = true;
+        }
+      }
+
+      if (!suppressReporting) {
+        JSAutoRealm ar(cccx->Context(), promiseObj);
+        Promise::ReportRejectedPromise(cccx->Context(), promiseObj);
+      }
+    }
+
     cccx->mPendingUnhandledRejections.Remove(JS::GetPromiseID(promiseObj));
   }
   return NS_OK;

@@ -24,6 +24,7 @@ const {
 } = require("resource://devtools/client/inspector/shared/utils.js");
 const { debounce } = require("resource://devtools/shared/debounce.js");
 const EventEmitter = require("resource://devtools/shared/event-emitter.js");
+const CssLogic = require("resource://devtools/shared/inspector/css-logic.js");
 
 loader.lazyRequireGetter(
   this,
@@ -1405,15 +1406,48 @@ class CssRuleView extends EventEmitter {
 
   async #populate() {
     try {
-      const elementStyle = this.elementStyle;
+      let focusedElSelector;
+      // `createEditors()` is going to create/modify/update/move DOM Elements
+      // whereas we would like to preserve the focus state.
+      //
+      // Compute the selector early, before some other parallel work can blur the selected
+      // declaration DOM element while waiting for async `ElementStyle.populate()` method.
+      let focusedElement;
+      if (this.element.contains(this.styleDocument.activeElement)) {
+        focusedElement = this.styleDocument.activeElement;
+        focusedElSelector = CssLogic.findCssSelector(focusedElement);
+      }
 
+      const elementStyle = this.elementStyle;
       await this.elementStyle.populate();
 
       if (this.elementStyle !== elementStyle || this.isDestroyed) {
         return;
       }
 
+      // If, by the time we start updating the DOM, the previously focused element
+      // has been removed from the DOM, stop trying to restore focus on it.
+      //
+      // `ElementStyle.populate()` will remove from the DOM the removed CSS rules.
+      if (
+        focusedElement &&
+        !focusedElement?.isConnected &&
+        !this.styleDocument.querySelector(focusedElSelector)
+      ) {
+        focusedElSelector = "";
+      }
+
       await this.#createEditors();
+
+      // Set focus if the focus is still in the current document (avoid stealing
+      // the focus, see Bug 1911627).
+      if (focusedElSelector && this.styleDocument.hasFocus()) {
+        const elementToFocus =
+          this.styleDocument.querySelector(focusedElSelector);
+        if (elementToFocus && this.element.contains(elementToFocus)) {
+          elementToFocus.focus();
+        }
+      }
 
       // Notify anyone that cares that we refreshed.
       this.inspector.emit("rule-view-refreshed");

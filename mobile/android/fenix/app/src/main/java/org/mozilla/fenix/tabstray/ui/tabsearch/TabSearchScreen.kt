@@ -27,7 +27,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSearchBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,7 +49,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.flow.map
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.searchbar.TopSearchBar
@@ -77,15 +75,15 @@ private val SearchResultsPadding = 16.dp
 /**
  * The top-level Composable for the Tab Search feature within the Tab Manager.
  *
- * @param store [TabsTrayStore] used to listen for changes to [TabsTrayState].
+ * @param state The current snapshot of [TabSearchState].
+ * @param onAction Invoked to pass upwards a [TabsTrayAction] in response to a UI event.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TabSearchScreen(
-    store: TabsTrayStore,
+    state: TabSearchState,
+    onAction: (TabsTrayAction) -> Unit,
 ) {
-    val state by remember { store.stateFlow.map { it.tabSearchState } }
-        .collectAsState(initial = store.state.tabSearchState)
     val searchBarState = rememberSearchBarState()
     var expanded by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
@@ -103,9 +101,9 @@ fun TabSearchScreen(
                     .focusRequester(focusRequester)
                     .padding(horizontal = 8.dp),
                 query = state.query,
-                onQueryChange = { store.dispatch(TabSearchAction.SearchQueryChanged(it)) },
+                onQueryChange = { onAction(TabSearchAction.SearchQueryChanged(it)) },
                 onSearch = { submitted ->
-                    store.dispatch(TabSearchAction.SearchQueryChanged(submitted))
+                    onAction(TabSearchAction.SearchQueryChanged(submitted))
                     focusManager.clearFocus()
                     keyboardController?.hide()
                 },
@@ -120,7 +118,7 @@ fun TabSearchScreen(
                             expanded = false
                             focusManager.clearFocus(force = true)
                             keyboardController?.hide()
-                            store.dispatch(TabsTrayAction.NavigateBackInvoked)
+                            onAction(TabsTrayAction.NavigateBackInvoked)
                         },
                         contentDescription = stringResource(
                             id = R.string.tab_manager_search_bar_back_content_description,
@@ -151,7 +149,7 @@ fun TabSearchScreen(
                     query = state.query,
                     modifier = Modifier
                         .padding(horizontal = SearchResultsPadding),
-                    onSearchResultClicked = { store.dispatch(TabSearchAction.SearchResultClicked(it)) },
+                    onSearchResultClicked = { onAction(TabSearchAction.SearchResultClicked(it)) },
                 )
             }
         }
@@ -355,6 +353,9 @@ private fun TabSearchScreenPreview(
     }
 
     FirefoxTheme {
-        TabSearchScreen(store = store)
+        TabSearchScreen(
+            state = store.state.tabSearchState,
+            onAction = store::dispatch,
+        )
     }
 }

@@ -16,6 +16,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlbarTokenizer:
     "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
 });
@@ -46,7 +47,10 @@ export class UrlbarProviderRestrictKeywords extends UrlbarProvider {
       return false;
     }
 
-    return !queryContext.searchMode && queryContext.trimmedSearchString == "@";
+    return (
+      !queryContext.restrictInSearchMode() &&
+      queryContext.trimmedSearchString == "@"
+    );
   }
 
   /**
@@ -70,8 +74,8 @@ export class UrlbarProviderRestrictKeywords extends UrlbarProvider {
       )?.icon;
 
       let result = new lazy.UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.RESTRICT,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        type: lazy.UrlbarShared.RESULT_TYPE.RESTRICT,
+        source: lazy.UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         hideRowLabel: true,
         payload: {
           icon,

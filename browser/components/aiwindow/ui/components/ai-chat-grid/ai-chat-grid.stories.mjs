@@ -6,7 +6,7 @@ import { html } from "chrome://global/content/vendor/lit.all.mjs";
 import "chrome://browser/content/aiwindow/components/ai-chat-grid.mjs";
 import "chrome://browser/content/aiwindow/components/ai-chat-card.mjs";
 
-window.MozXULElement.insertFTLIfNeeded("locales-preview/aiWindow.ftl");
+window.MozXULElement.insertFTLIfNeeded("browser/aiWindow.ftl");
 
 export default {
   title: "Domain-specific UI Widgets/AI Window/AI Chat Grid",

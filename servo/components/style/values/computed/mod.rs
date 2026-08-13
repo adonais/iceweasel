@@ -59,7 +59,7 @@ pub use self::border::{
 pub use self::box_::{
     AlignmentBaseline, Appearance, BaselineShift, BaselineSource, BreakBetween, BreakWithin, Clear,
     Contain, ContainIntrinsicSize, ContainerName, ContainerType, ContentVisibility, Display,
-    DominantBaseline, Float, LineClamp, Overflow, OverflowAnchor, OverflowClipMargin,
+    DominantBaseline, Float, LineClamp, MarginTrim, Overflow, OverflowAnchor, OverflowClipMargin,
     OverscrollBehavior, Perspective, PositionProperty, Resize, ScrollSnapAlign, ScrollSnapAxis,
     ScrollSnapStop, ScrollSnapStrictness, ScrollSnapType, ScrollbarGutter, TouchAction, WillChange,
     WritingModeProperty, Zoom,
@@ -81,7 +81,7 @@ pub use self::font::{
 pub use self::font::{FontVariantAlternates, FontWeight};
 pub use self::font::{FontVariantEastAsian, FontVariationSettings};
 pub use self::font::{MathDepth, MozScriptMinSize, MozScriptSizeMultiplier, XLang, XTextScale};
-pub use self::image::{Gradient, Image, ImageRendering, LineDirection};
+pub use self::image::{Gradient, Image, ImageDecoding, ImageRendering, LineDirection};
 pub use self::length::{CSSPixelLength, NonNegativeLength};
 pub use self::length::{Length, LengthOrNumber, LengthPercentage, NonNegativeLengthOrNumber};
 pub use self::length::{LengthOrAuto, LengthPercentageOrAuto, Margin, MaxSize, Size};
@@ -481,7 +481,8 @@ impl<'a> Context<'a> {
         //
         // As a loosely-matched reference, the tree-counting function can only match if
         // the declaration is in the same or descendant shadow tree of the element. It
-        // does not match if the declaration is in a containing tree, so it must return 0.
+        // does not match if the declaration is in a containing tree, so it must return
+        // the default sibling index and count of 1.
         if self
             .current_scope()
             .shadow_order()
@@ -533,7 +534,6 @@ impl<'a> Context<'a> {
     }
 
     /// Apply text-zoom if enabled.
-    #[cfg(feature = "gecko")]
     pub fn maybe_zoom_text(&self, size: CSSPixelLength) -> CSSPixelLength {
         if self
             .style()
@@ -545,12 +545,6 @@ impl<'a> Context<'a> {
         } else {
             size
         }
-    }
-
-    /// (Servo doesn't do text-zoom)
-    #[cfg(feature = "servo")]
-    pub fn maybe_zoom_text(&self, size: CSSPixelLength) -> CSSPixelLength {
-        size
     }
 }
 

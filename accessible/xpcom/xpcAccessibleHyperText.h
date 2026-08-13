@@ -5,11 +5,10 @@
 #ifndef mozilla_a11y_xpcAccessibleHyperText_h_
 #define mozilla_a11y_xpcAccessibleHyperText_h_
 
-#include "nsIAccessibleText.h"
-#include "nsIAccessibleHyperText.h"
-#include "nsIAccessibleEditableText.h"
-
 #include "HyperTextAccessible.h"
+#include "nsIAccessibleEditableText.h"
+#include "nsIAccessibleHyperText.h"
+#include "nsIAccessibleText.h"
 #include "xpcAccessibleGeneric.h"
 
 namespace mozilla {

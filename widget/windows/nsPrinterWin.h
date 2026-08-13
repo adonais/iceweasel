@@ -5,8 +5,8 @@
 #ifndef nsPrinterWin_h_
 #define nsPrinterWin_h_
 
-#include "nsPrinterBase.h"
 #include "mozilla/DataMutex.h"
+#include "nsPrinterBase.h"
 #include "nsTArrayForwardDeclare.h"
 
 class nsPrinterWin final : public nsPrinterBase {

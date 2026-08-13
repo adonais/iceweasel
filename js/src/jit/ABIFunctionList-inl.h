@@ -35,12 +35,10 @@
 #include "jit/Ion.h"          // js::jit::LazyLinkTopActivation
 #include "jit/JitFrames.h"    // HandleException
 #include "jit/VMFunctions.h"  // Rest of js::jit::* functions.
-
-#include "js/CallArgs.h"     // JSNative
-#include "js/Conversions.h"  // JS::ToInt32
+#include "js/CallArgs.h"      // JSNative
+#include "js/Conversions.h"   // JS::ToInt32
 // JSJitGetterOp, JSJitSetterOp, JSJitMethodOp
 #include "js/experimental/JitInfo.h"
-
 #include "proxy/Proxy.h"          // js::ProxyGetProperty
 #include "util/PortableMath.h"    // js::NumberMod
 #include "vm/ArgumentsObject.h"   // js::ArgumentsObject::finishForIonPure

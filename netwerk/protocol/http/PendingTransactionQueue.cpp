@@ -12,9 +12,9 @@
 #define LOG_ENABLED() LOG5_ENABLED()
 
 #include "PendingTransactionQueue.h"
-#include "nsHttpHandler.h"
 #include "mozilla/ChaosMode.h"
 #include "mozilla/StaticPrefs_network.h"
+#include "nsHttpHandler.h"
 
 namespace mozilla {
 namespace net {

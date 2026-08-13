@@ -7,11 +7,11 @@
 #ifndef xptcall_h_
 #define xptcall_h_
 
-#include "nscore.h"
-#include "nsISupports.h"
-#include "xptinfo.h"
 #include "js/Value.h"
 #include "mozilla/MemoryReporting.h"
+#include "nsISupports.h"
+#include "nscore.h"
+#include "xptinfo.h"
 
 struct nsXPTCMiniVariant {
   // No ctors or dtors so that we can use arrays of these on the stack

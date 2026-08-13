@@ -88,7 +88,7 @@ async function runPurgeTest(expectTrackerPurged) {
  */
 async function waitForAllowListState(allowedSiteHosts) {
   // Ensure the site host exception list has been imported correctly.
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return strArrayMatches(
       bounceTrackingProtection.testGetSiteHostExceptions(),
       allowedSiteHosts

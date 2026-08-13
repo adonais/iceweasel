@@ -3,9 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SlicedInputStream.h"
-#include "mozilla/ipc/InputStreamUtils.h"
+
 #include "mozilla/CheckedInt.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/ipc/InputStreamUtils.h"
 #include "nsISeekableStream.h"
 #include "nsStreamUtils.h"
 

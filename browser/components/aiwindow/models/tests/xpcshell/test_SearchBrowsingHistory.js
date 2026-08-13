@@ -713,9 +713,14 @@ add_task(async function test_hybrid_semantic_respects_distance_threshold() {
   sb.restore();
 
   // Float prefs are stored as char prefs.
-  Services.prefs.setCharPref("places.semanticHistory.distanceThreshold", "0.5");
+  Services.prefs.setCharPref(
+    "places.semanticHistory.smartwindow.distanceThreshold",
+    "0.5"
+  );
   registerCleanupFunction(() => {
-    Services.prefs.clearUserPref("places.semanticHistory.distanceThreshold");
+    Services.prefs.clearUserPref(
+      "places.semanticHistory.smartwindow.distanceThreshold"
+    );
   });
 
   const makeVector = (size, components) => {

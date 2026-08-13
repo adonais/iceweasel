@@ -60,6 +60,10 @@ class ConnectionAttempt : public nsSupportsWeakReference {
   void SetAllow1918(bool val) { mAllow1918 = val; }
   bool HasConnected() { return mHasConnected; }
 
+  // Drop our reference to the real transaction without acting on it, so a
+  // following Abandon()'s teardown won't re-queue or close it (bug 2051415).
+  void ForgetRealTransaction() { mTransaction = nullptr; }
+
  protected:
   virtual ~ConnectionAttempt() = default;
 

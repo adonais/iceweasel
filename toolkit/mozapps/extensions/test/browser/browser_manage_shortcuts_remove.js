@@ -23,7 +23,7 @@ function getShortcutByName(doc, extension, name) {
 
 async function waitForShortcutSet(input, expected) {
   let doc = input.ownerDocument;
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => input.getAttribute("shortcut") == expected,
     `Shortcut should be set to ${JSON.stringify(expected)}`
   );

@@ -40,8 +40,6 @@ private fun reducer(state: MenuState, action: MenuAction): MenuState {
         is MenuAction.CustomMenuItemAction,
         is MenuAction.CustomizeReaderView,
         is MenuAction.Navigate,
-        is MenuAction.OnCFRShown,
-        is MenuAction.OnCFRDismiss,
         is MenuAction.OnSummarizationMenuExposed,
         is MenuAction.MoveToNonPrivateTab,
         -> state

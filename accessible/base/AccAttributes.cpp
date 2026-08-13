@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "AccAttributes.h"
+
 #include "StyleInfo.h"
 #include "mozilla/ToString.h"
 #include "nsAtom.h"

@@ -3,13 +3,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 // HttpLog.h should generally be included first
-#include "HttpLog.h"
-
 #include "SpeculativeTransaction.h"
+
 #include "HTTPSRecordResolver.h"
-#include "nsICachingChannel.h"
+#include "HttpLog.h"
 #include "nsHttpConnectionMgr.h"
 #include "nsHttpHandler.h"
+#include "nsICachingChannel.h"
 
 namespace mozilla {
 namespace net {

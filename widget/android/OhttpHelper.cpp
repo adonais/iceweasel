@@ -6,9 +6,8 @@
 
 #include "WebExecutorSupport.h"
 #include "mozilla/ClearOnShutdown.h"
-#include "mozilla/java/WebMessageWrappers.h"
 #include "mozilla/Preferences.h"
-
+#include "mozilla/java/WebMessageWrappers.h"
 #include "nsContentUtils.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
 #include "nsIChannel.h"

@@ -165,14 +165,15 @@ void IDBRequest::Reset() {
   mError = nullptr;
 }
 
-void IDBRequest::SetError(nsresult aRv) {
+void IDBRequest::SetError(nsresult aRv, const nsACString& aMessage) {
   AssertIsOnOwningThread();
   MOZ_ASSERT(NS_FAILED(aRv));
   MOZ_ASSERT(NS_ERROR_GET_MODULE(aRv) == NS_ERROR_MODULE_DOM_INDEXEDDB);
   MOZ_ASSERT(!mError);
 
   mHaveResultOrErrorCode = true;
-  mError = DOMException::Create(aRv);
+  mError = aMessage.IsEmpty() ? DOMException::Create(aRv)
+                              : DOMException::Create(aRv, aMessage);
   mErrorCode = aRv;
 
   mResultVal.setUndefined();

@@ -4,12 +4,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "WidgetUtils.h"
-
 #include "mozilla/TextEvents.h"
-
 #include "nsIBaseWindow.h"
-#include "nsIDocShellTreeItem.h"
 #include "nsIDocShell.h"
+#include "nsIDocShellTreeItem.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsPIDOMWindow.h"
 #include "nsPIDOMWindowInlines.h"

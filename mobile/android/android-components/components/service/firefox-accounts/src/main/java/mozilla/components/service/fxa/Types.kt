@@ -19,6 +19,7 @@ import mozilla.components.concept.sync.DeviceCapability
 import mozilla.components.concept.sync.DeviceType
 import mozilla.components.concept.sync.OAuthScopedKey
 import mozilla.components.concept.sync.SyncAuthInfo
+import mozilla.components.concept.sync.SyncEngine
 import mozilla.components.concept.sync.TabPrivacy
 import mozilla.appservices.fxaclient.DeviceCapability as RustDeviceCapability
 import mozilla.appservices.fxaclient.DevicePushSubscription as RustDevicePushSubscription
@@ -44,7 +45,8 @@ fun String?.toAuthType(): AuthType {
  * @property authType Type of authentication which caused this object to be created.
  * @property code OAuth code.
  * @property state OAuth state.
- * @property declinedEngines An optional list of [SyncEngine]s that user declined to sync.
+ * @property declinedEngines An optional list of [mozilla.components.concept.sync.SyncEngine]s
+ * that user declined to sync.
  */
 data class FxaAuthData(
     val authType: AuthType,

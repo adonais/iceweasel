@@ -4,16 +4,25 @@
 
 #include "KeyboardLayout.h"
 
+#include <windows.h>
+#include <winnls.h>
+#include <winuser.h>
+
+#include <algorithm>
+
+#include "WidgetUtils.h"
+#include "WinUtils.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/Logging.h"
-#include "mozilla/MouseEvents.h"
 #include "mozilla/MiscEvents.h"
+#include "mozilla/MouseEvents.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPrefs_ui.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TextEvents.h"
+#include "mozilla/Utf16.h"
 #include "mozilla/widget/WinRegistry.h"
-
+#include "npapi.h"
 #include "nsExceptionHandler.h"
 #include "nsGkAtoms.h"
 #include "nsIUserIdleServiceInternal.h"
@@ -24,16 +33,6 @@
 #include "nsTArray.h"
 #include "nsUnicharUtils.h"
 #include "nsWindowDbg.h"
-
-#include "WidgetUtils.h"
-#include "WinUtils.h"
-
-#include "npapi.h"
-
-#include <windows.h>
-#include <winnls.h>
-#include <winuser.h>
-#include <algorithm>
 
 #ifndef WINABLEAPI
 #  include <winable.h>
@@ -412,13 +411,13 @@ static const nsCString GetCharacterCodeName(WPARAM aCharCode) {
       if (aCharCode < ' ' || (aCharCode >= 0x80 && aCharCode < 0xA0)) {
         return nsPrintfCString("control (0x%04zX)", aCharCode);
       }
-      if (NS_IS_HIGH_SURROGATE(aCharCode)) {
+      if (mozilla::IsHighSurrogate(aCharCode)) {
         return nsPrintfCString("high surrogate (0x%04zX)", aCharCode);
       }
-      if (NS_IS_LOW_SURROGATE(aCharCode)) {
+      if (mozilla::IsLowSurrogate(aCharCode)) {
         return nsPrintfCString("low surrogate (0x%04zX)", aCharCode);
       }
-      return IS_IN_BMP(aCharCode)
+      return mozilla::IsInBMP(aCharCode)
                  ? nsPrintfCString(
                        "'%s' (0x%04zX)",
                        NS_ConvertUTF16toUTF8(nsAutoString(aCharCode)).get(),

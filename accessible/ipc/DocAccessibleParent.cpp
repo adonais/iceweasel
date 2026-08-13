@@ -2,28 +2,29 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "DocAccessibleParent.h"
+
 #include "ARIAMap.h"
 #include "CacheConstants.h"
 #include "CachedTableAccessible.h"
-#include "DocAccessibleParent.h"
 #ifdef MOZ_ENABLE_SKIA_PDF
 #  include "mozilla/a11y/PdfStructTreeBuilder.h"
 #endif
-#include "mozilla/a11y/Platform.h"
+#include "Relation.h"
+#include "RootAccessible.h"
+#include "TextRange.h"
 #include "mozilla/Components.h"  // for mozilla::components
+#include "mozilla/PerfStats.h"
+#include "mozilla/ProfilerMarkers.h"
+#include "mozilla/a11y/Platform.h"
 #include "mozilla/dom/BrowserBridgeParent.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
-#include "mozilla/PerfStats.h"
-#include "mozilla/ProfilerMarkers.h"
-#include "nsAccessibilityService.h"
-#include "xpcAccessibleDocument.h"
-#include "xpcAccEvents.h"
 #include "nsAccUtils.h"
+#include "nsAccessibilityService.h"
 #include "nsIIOService.h"
-#include "TextRange.h"
-#include "Relation.h"
-#include "RootAccessible.h"
+#include "xpcAccEvents.h"
+#include "xpcAccessibleDocument.h"
 
 #if defined(XP_WIN)
 #  include "Compatibility.h"
@@ -126,6 +127,10 @@ already_AddRefed<DocAccessibleParent> DocAccessibleParent::New() {
 void DocAccessibleParent::SetBrowsingContext(
     dom::CanonicalBrowsingContext* aBrowsingContext) {
   mBrowsingContext = aBrowsingContext;
+}
+
+dom::BrowserParent* DocAccessibleParent::Manager() const {
+  return static_cast<dom::BrowserParent*>(PDocAccessibleParent::Manager());
 }
 
 mozilla::ipc::IPCResult DocAccessibleParent::ProcessShowEvent(
@@ -360,7 +365,7 @@ bool DocAccessibleParent::AttachChild(RemoteAccessible* aParent,
   aParent->AddChildAt(aIndex, aChild);
   aChild->SetParent(aParent);
   // ProxyCreated might have already been called if aChild is being moved.
-  if (!aChild->GetWrapper()) {
+  if (!aChild->GetWrapper() && !IsPrintDoc()) {
     ProxyCreated(aChild);
   }
   if (aChild->IsTableRow() || aChild->IsTableCell()) {
@@ -1065,7 +1070,7 @@ ipc::IPCResult DocAccessibleParent::AddChildDoc(DocAccessibleParent* aChildDoc,
   outerDoc->SetChildDoc(aChildDoc);
   mChildDocs.AppendElement(aChildDoc->mActorID);
 
-  if (aCreating) {
+  if (aCreating && !aChildDoc->IsPrintDoc()) {
     ProxyCreated(aChildDoc);
   }
 
@@ -1117,7 +1122,7 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvShutdown() {
   ACQUIRE_ANDROID_LOCK
   Destroy();
 
-  auto mgr = static_cast<dom::BrowserParent*>(Manager());
+  auto mgr = Manager();
   if (!mgr->IsDestroyed()) {
     if (!PDocAccessibleParent::Send__delete__(this)) {
       return IPC_FAIL_NO_REASON(mgr);
@@ -1291,7 +1296,7 @@ void DocAccessibleParent::MaybeInitWindowEmulation() {
     rect.MoveToX(rootRect.X() - rect.X());
     rect.MoveToY(rect.Y() - rootRect.Y());
 
-    auto browserParent = static_cast<dom::BrowserParent*>(Manager());
+    auto browserParent = Manager();
     isActive = browserParent->GetDocShellIsActive();
   }
 

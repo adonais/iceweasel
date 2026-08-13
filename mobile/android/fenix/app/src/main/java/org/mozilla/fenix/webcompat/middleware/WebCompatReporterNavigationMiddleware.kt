@@ -23,6 +23,11 @@ class WebCompatReporterNavigationMiddleware : Middleware<WebCompatReporterState,
         next(action)
 
         when (action) {
+            is WebCompatReporterAction.ReasonChanged -> {
+                if (action.newReason == WebCompatReporterState.BrokenSiteReason.DeceptiveSite) {
+                    store.dispatch(WebCompatReporterAction.DeceptiveSiteReportSelected)
+                }
+            }
             is WebCompatReporterAction.NavigationAction ->
                 (store as WebCompatReporterStore).emitNavAction(
                     action = action,

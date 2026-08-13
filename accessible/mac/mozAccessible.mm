@@ -26,6 +26,7 @@
 #include "RootAccessible.h"
 #include "mozilla/a11y/PDocAccessible.h"
 #include "mozilla/dom/BrowserParent.h"
+#include "mozilla/dom/Document.h"
 #include "OuterDocAccessible.h"
 #include "nsIAccessibleAnnouncementEvent.h"
 #include "nsChildView.h"
@@ -432,11 +433,17 @@ static bool IsNonNativePopover(Accessible* aAccessible) {
     }
   }
 
+  // `macSubrole` may be the literal `nil` specified in RoleMap. We cast it to
+  // NSString* before dispatching on it because `nil` expands to `nullptr`
+  // during macro substitution, per a typedef in the SDK. The compiler won't
+  // allow an obj cpp message send on a `nullptr`, though dispatcing on `nil` is
+  // traditionally supported and safe in obj cpp.
 #define ROLE(geckoRole, stringRole, ariaRole, atkRole, macRole, macSubrole, \
              msaaRole, ia2Role, androidClass, iosIsElement, uiaControlType, \
              nameRule)                                                      \
   case roles::geckoRole:                                                    \
-    if (![macSubrole isEqualToString:NSAccessibilityUnknownSubrole]) {      \
+    if (![(NSString*)macSubrole                                             \
+            isEqualToString:NSAccessibilityUnknownSubrole]) {               \
       return macSubrole;                                                    \
     } else {                                                                \
       break;                                                                \
@@ -875,11 +882,23 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
 }
 
 - (NSArray*)moxLinkedUIElements {
-  return [self getRelationsByType:RelationType::FLOWS_TO];
+  // AAM says to use this method to expose both flows-to and controller-for
+  // relations.
+  NSArray* controls = [self getRelationsByType:RelationType::CONTROLLER_FOR];
+  NSArray* flows = [self getRelationsByType:RelationType::FLOWS_TO];
+
+  if ([controls count] && [flows count]) {
+    // If both are used, construct an array that holds all targets.
+    NSArray* allLinkedElements = [controls arrayByAddingObjectsFromArray:flows];
+    // Remove duplicates before returning
+    return [[NSSet setWithArray:allLinkedElements] allObjects];
+  }
+  // If we only have one relation, return only that rel's targets.
+  return [controls count] ? controls : flows;
 }
 
-- (NSArray*)moxARIAControls {
-  return [self getRelationsByType:RelationType::CONTROLLER_FOR];
+- (NSArray*)moxDetailsElements {
+  return [self getRelationsByType:RelationType::DETAILS];
 }
 
 - (mozAccessible*)topWebArea {
@@ -1182,7 +1201,7 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
   if (UAZoomEnabled()) {
     UAZoomChangeFocus(
         &objectRect,
-        focusType == kUAZoomFocusTypeInsertionPoint ? &highlightRect : NULL,
+        focusType == kUAZoomFocusTypeInsertionPoint ? &highlightRect : nullptr,
         focusType);
   }
 }

@@ -5,7 +5,12 @@
 package org.mozilla.fenix.messaging
 
 import android.view.View
+import androidx.concurrent.futures.await
 import androidx.lifecycle.LifecycleOwner
+import androidx.work.Configuration
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
+import androidx.work.testing.WorkManagerTestInitHelper
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -14,16 +19,62 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import mozilla.components.service.nimbus.NimbusApi
 import mozilla.components.support.test.robolectric.testContext
+import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.experiments.nimbus.NimbusInterface
+import org.mozilla.fenix.messaging.MessageNotificationWorker.Companion.cancelMessageNotificationWorker
+import org.mozilla.fenix.messaging.MessageNotificationWorker.Companion.setMessageNotificationWorker
 import org.mozilla.fenix.messaging.MessageNotificationWorker.Companion.tryFetchAndApplyNimbusExperiments
 import org.robolectric.RobolectricTestRunner
 
+private const val MESSAGE_WORK_NAME = "org.mozilla.fenix.message.work"
+
 @RunWith(RobolectricTestRunner::class)
 class MessageNotificationWorkerTest {
+
+    @Before
+    fun setUp() {
+        WorkManagerTestInitHelper.initializeTestWorkManager(testContext, Configuration.Builder().build())
+    }
+
+    @After
+    fun tearDown() {
+        WorkManagerTestInitHelper.closeWorkDatabase()
+    }
+
+    @Test
+    fun `GIVEN the message notification work is enqueued WHEN cancelMessageNotificationWorker is called THEN the work is cancelled`() =
+        runTest {
+            setMessageNotificationWorker(testContext)
+
+            val workManager = WorkManager.getInstance(testContext)
+            val messageNotificationWorkExists = workManager.getWorkInfosForUniqueWork(MESSAGE_WORK_NAME)
+                .await()
+                .isNotEmpty()
+            assertTrue(messageNotificationWorkExists)
+
+            cancelMessageNotificationWorker(testContext)
+
+            val messageNotificationWorkData = workManager.getWorkInfosForUniqueWork(MESSAGE_WORK_NAME).await()
+            val messageNotificationWorkState = messageNotificationWorkData.first().state
+            assertEquals(WorkInfo.State.CANCELLED, messageNotificationWorkState)
+        }
+
+    @Test
+    fun `GIVEN the message notification work is not enqueued WHEN cancelMessageNotificationWorker is called THEN it completes without scheduling any work`() =
+        runTest {
+            val workManager = WorkManager.getInstance(testContext)
+            assertTrue(workManager.getWorkInfosForUniqueWork(MESSAGE_WORK_NAME).await().isEmpty())
+
+            cancelMessageNotificationWorker(testContext)
+
+            assertTrue(workManager.getWorkInfosForUniqueWork(MESSAGE_WORK_NAME).await().isEmpty())
+        }
 
     @Test
     fun `WHEN fetch and apply operations complete within the timeout THEN tryFetchAndApplyNimbusMessages returns true`() =
@@ -179,7 +230,7 @@ private class FakeNimbus(
         }
     }
 
-    override fun applyPendingExperiments(): Job {
+    override fun applyPendingExperiments(initial: Boolean): Job {
         applyPendingExperimentsWasCalled = true
         return coroutineScope.launch {
             delay(applyExperimentDelayMillis) // simulate async apply.

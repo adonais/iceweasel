@@ -8,7 +8,6 @@ import { AIWindowUI } from "moz-src:///browser/components/aiwindow/ui/modules/AI
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
-  URILoadingHelper: "resource:///modules/URILoadingHelper.sys.mjs",
 });
 
 const MAX_RECENT_CHATS = 4;
@@ -122,17 +121,6 @@ export class AIWindowMenu {
     }
 
     const win = event.target.documentGlobal;
-    const mostRecentPage = conversation.getMostRecentPageVisited();
-    const url = mostRecentPage?.href ?? win.BROWSER_NEW_TAB_URL;
-
-    lazy.URILoadingHelper.openTrustedLinkIn(win, url, where, {
-      resolveOnContentBrowserCreated: async targetBrowser => {
-        if (url === win.BROWSER_NEW_TAB_URL) {
-          AIWindowUI.openInFullWindow(targetBrowser, conversation);
-        } else {
-          AIWindowUI.openSidebar(targetBrowser.documentGlobal, conversation);
-        }
-      },
-    });
+    AIWindowUI.reopenConversationInTab(win, conversation, where);
   }
 }

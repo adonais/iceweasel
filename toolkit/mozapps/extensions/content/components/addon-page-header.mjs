@@ -42,6 +42,7 @@ class AddonPageHeader extends AboutAddonsHTMLElement {
               ></moz-button>
             </div>
           </div>
+          <aboutaddons-themes-mode></aboutaddons-themes-mode>
         </div>
         <global-warnings></global-warnings>
       </template>

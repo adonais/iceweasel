@@ -22,23 +22,23 @@
 
 extern mozilla::LogModule* GetMediaSourceLog();
 
-#define MSE_DEBUG(arg, ...)                                              \
-  DDMOZ_LOG(GetMediaSourceLog(), mozilla::LogLevel::Debug, "::%s: " arg, \
-            __func__, ##__VA_ARGS__)
-#define MSE_DEBUGV(arg, ...)                                               \
-  DDMOZ_LOG(GetMediaSourceLog(), mozilla::LogLevel::Verbose, "::%s: " arg, \
-            __func__, ##__VA_ARGS__)
+#define MSE_DEBUG(arg, ...)                                                  \
+  DDMOZ_LOG_FMT(GetMediaSourceLog(), mozilla::LogLevel::Debug, "::{}: " arg, \
+                __func__, ##__VA_ARGS__)
+#define MSE_DEBUGV(arg, ...)                                                   \
+  DDMOZ_LOG_FMT(GetMediaSourceLog(), mozilla::LogLevel::Verbose, "::{}: " arg, \
+                __func__, ##__VA_ARGS__)
 
 mozilla::LogModule* GetMediaSourceSamplesLog() {
   static mozilla::LazyLogModule sLogModule("MediaSourceSamples");
   return sLogModule;
 }
-#define SAMPLE_DEBUG(arg, ...)                                    \
-  DDMOZ_LOG(GetMediaSourceSamplesLog(), mozilla::LogLevel::Debug, \
-            "::%s: " arg, __func__, ##__VA_ARGS__)
-#define SAMPLE_DEBUGV(arg, ...)                                     \
-  DDMOZ_LOG(GetMediaSourceSamplesLog(), mozilla::LogLevel::Verbose, \
-            "::%s: " arg, __func__, ##__VA_ARGS__)
+#define SAMPLE_DEBUG(arg, ...)                                        \
+  DDMOZ_LOG_FMT(GetMediaSourceSamplesLog(), mozilla::LogLevel::Debug, \
+                "::{}: " arg, __func__, ##__VA_ARGS__)
+#define SAMPLE_DEBUGV(arg, ...)                                         \
+  DDMOZ_LOG_FMT(GetMediaSourceSamplesLog(), mozilla::LogLevel::Verbose, \
+                "::{}: " arg, __func__, ##__VA_ARGS__)
 
 namespace mozilla {
 
@@ -112,7 +112,7 @@ RefPtr<TrackBuffersManager::AppendPromise> TrackBuffersManager::AppendData(
     const SourceBufferAttributes& aAttributes) {
   MOZ_ASSERT(NS_IsMainThread());
   RefPtr<MediaByteBuffer> data(aData);
-  MSE_DEBUG("Appending %zu bytes", data->Length());
+  MSE_DEBUG("Appending {} bytes", data->Length());
 
   Reopen();
 
@@ -140,7 +140,7 @@ void TrackBuffersManager::QueueTask(SourceBufferTask* aTask) {
   if (!taskQueue) {
     MOZ_ASSERT(aTask->GetType() == SourceBufferTask::Type::Detach,
                "only detach task could happen here!");
-    MSE_DEBUG("Could not queue the task '%s' without task queue",
+    MSE_DEBUG("Could not queue the task '{}' without task queue",
               aTask->GetTypeName());
     return;
   }
@@ -175,7 +175,7 @@ void TrackBuffersManager::ProcessTasks() {
     }
     MOZ_RELEASE_ASSERT(task->GetType() == SourceBufferTask::Type::Detach,
                        "only detach task could happen here!");
-    MSE_DEBUG("Could not process the task '%s' after detached",
+    MSE_DEBUG("Could not process the task '{}' after detached",
               task->GetTypeName());
     return;
   }
@@ -194,7 +194,7 @@ void TrackBuffersManager::ProcessTasks() {
     return;
   }
 
-  MSE_DEBUG("Process task '%s'", task->GetTypeName());
+  MSE_DEBUG("Process task '{}'", task->GetTypeName());
   switch (task->GetType()) {
     case Type::AppendBuffer:
       mCurrentTask = task;
@@ -207,8 +207,8 @@ void TrackBuffersManager::ProcessTasks() {
         // the data into a new buffer to clear out data no longer in the span.
         MSE_DEBUG(
             "mInputBuffer not empty during append -- data will be copied to "
-            "new buffer. mInputBuffer->Length()=%zu "
-            "mInputBuffer->Buffer()->Length()=%zu",
+            "new buffer. mInputBuffer->Length()={} "
+            "mInputBuffer->Buffer()->Length()={}",
             mInputBuffer->Length(), mInputBuffer->Buffer()->Length());
         const RefPtr<MediaByteBuffer> newBuffer{new MediaByteBuffer()};
         // Set capacity outside of ctor to let us explicitly handle OOM.
@@ -258,7 +258,7 @@ void TrackBuffersManager::ProcessTasks() {
       return;
     case Type::ChangeType:
       MOZ_RELEASE_ASSERT(!mCurrentTask);
-      MSE_DEBUG("Processing type change from %s -> %s",
+      MSE_DEBUG("Processing type change from {} -> {}",
                 mType.OriginalString().get(),
                 task->As<ChangeTypeTask>()->mType.OriginalString().get());
       mType = task->As<ChangeTypeTask>()->mType;
@@ -318,7 +318,7 @@ void TrackBuffersManager::ResetParserState(
 RefPtr<TrackBuffersManager::RangeRemovalPromise>
 TrackBuffersManager::RangeRemoval(TimeUnit aStart, TimeUnit aEnd) {
   MOZ_ASSERT(NS_IsMainThread());
-  MSE_DEBUG("From %.2f to %.2f", aStart.ToSeconds(), aEnd.ToSeconds());
+  MSE_DEBUG("From {:.2f} to {:.2f}", aStart.ToSeconds(), aEnd.ToSeconds());
 
   Reopen();
 
@@ -341,12 +341,11 @@ TrackBuffersManager::EvictDataResult TrackBuffersManager::EvictData(
   const uint32_t canEvict =
       Evictable(HasVideo() ? TrackInfo::kVideoTrack : TrackInfo::kAudioTrack);
 
-  MSE_DEBUG("currentTime=%" PRId64 " buffered=%" PRId64
-            "kB, eviction threshold=%" PRId64
-            "kB, "
-            "evict=%" PRId64 "kB canevict=%" PRIu32 "kB",
-            aPlaybackTime.ToMicroseconds(), GetSize() / 1024,
-            EvictionThreshold(aType) / 1024, toEvict / 1024, canEvict / 1024);
+  MSE_DEBUG(
+      "currentTime={} buffered={}kB, eviction threshold={}kB, "
+      "evict={}kB canevict={}kB",
+      aPlaybackTime.ToMicroseconds(), GetSize() / 1024,
+      EvictionThreshold(aType) / 1024, toEvict / 1024, canEvict / 1024);
 
   if (toEvict <= 0) {
     mEvictionState = EvictionState::NO_EVICTION_NEEDED;
@@ -365,8 +364,7 @@ TrackBuffersManager::EvictDataResult TrackBuffersManager::EvictData(
     mEvictionState = EvictionState::EVICTION_NEEDED;
     result = EvictDataResult::NO_DATA_EVICTED;
   }
-  MSE_DEBUG("Reached our size limit, schedule eviction of %" PRId64
-            " bytes (%s)",
+  MSE_DEBUG("Reached our size limit, schedule eviction of {} bytes ({})",
             toEvict,
             result == EvictDataResult::BUFFER_FULL ? "buffer full"
                                                    : "no data evicted");
@@ -384,9 +382,8 @@ void TrackBuffersManager::EvictDataWithoutSize(TrackType aType,
   const double watermarkRatio = bufferedSz / (double)(evictionSize);  // can > 1
 
   MSE_DEBUG(
-      "EvictDataWithoutSize, track=%s, buffered=%u"
-      "kB, eviction threshold=%" PRId64 "kB, wRatio=%f, target=%" PRId64
-      ", bufferedRange=%s",
+      "EvictDataWithoutSize, track={}, buffered={}kB, eviction threshold={}kB, "
+      "wRatio={:f}, target={}, bufferedRange={}",
       TrackTypeToStr(aType), bufferedSz / 1024, evictionSize / 1024,
       watermarkRatio, aTarget.ToMicroseconds(),
       DumpTimeRanges(track.mBufferedRanges).get());
@@ -551,7 +548,7 @@ void TrackBuffersManager::DoEvictData(const TimeUnit& aPlaybackTime,
                                       Maybe<int64_t> aSizeToEvict) {
   mTaskQueueCapability->AssertOnCurrentThread();
   AUTO_PROFILER_LABEL("TrackBuffersManager::DoEvictData", MEDIA_PLAYBACK);
-  MSE_DEBUG("DoEvictData, time=%" PRId64, aPlaybackTime.ToMicroseconds());
+  MSE_DEBUG("DoEvictData, time={}", aPlaybackTime.ToMicroseconds());
 
   mEvictionState = EvictionState::EVICTION_COMPLETED;
 
@@ -600,7 +597,7 @@ void TrackBuffersManager::DoEvictData(const TimeUnit& aPlaybackTime,
     // (maybe X±100)
     const TimeUnit start = track.mBufferedRanges.GetStart();
     const TimeUnit end = track.mBufferedRanges.GetEnd();
-    MSE_DEBUG("PlaybackTime=%" PRId64 ", extents=[%" PRId64 ", %" PRId64 "]",
+    MSE_DEBUG("PlaybackTime={}, extents=[{}, {}]",
               aPlaybackTime.ToMicroseconds(), start.ToMicroseconds(),
               end.ToMicroseconds());
     if (end - aPlaybackTime > aPlaybackTime - start) {
@@ -610,7 +607,7 @@ void TrackBuffersManager::DoEvictData(const TimeUnit& aPlaybackTime,
         toEvict -= AssertedCast<int64_t>(
             buffer[evictedFramesStartIndex]->ComputedSizeOfIncludingThis());
       }
-      MSE_DEBUG("Auto evicting %" PRId64 " bytes [%" PRId64 ", inf] from tail",
+      MSE_DEBUG("Auto evicting {} bytes [{}, inf] from tail",
                 sizeToEvict - toEvict,
                 buffer[evictedFramesStartIndex]->mTime.ToMicroseconds());
       CodedFrameRemoval(TimeInterval(buffer[evictedFramesStartIndex]->mTime,
@@ -634,8 +631,7 @@ void TrackBuffersManager::DoEvictData(const TimeUnit& aPlaybackTime,
       TimeUnit start = track.mBufferedRanges[0].mStart;
       TimeUnit end =
           buffer[lastKeyFrameIndex]->mTime - TimeUnit::FromMicroseconds(1);
-      MSE_DEBUG("Auto evicting %" PRId64 " bytes [%" PRId64 ", %" PRId64
-                "] from head",
+      MSE_DEBUG("Auto evicting {} bytes [{}, {}] from head",
                 sizeToEvict - toEvict, start.ToMicroseconds(),
                 end.ToMicroseconds());
       if (end > start) {
@@ -671,7 +667,7 @@ void TrackBuffersManager::DoEvictData(const TimeUnit& aPlaybackTime,
   const int64_t finalSize = mSizeSourceBuffer - sizeToEvict;
 
   if (lastKeyFrameIndex > 0) {
-    MSE_DEBUG("Step1. Evicting %" PRId64 " bytes prior currentTime",
+    MSE_DEBUG("Step1. Evicting {} bytes prior currentTime",
               sizeToEvict - toEvict);
     TimeUnit start = track.mBufferedRanges[0].mStart;
     TimeUnit end =
@@ -717,7 +713,7 @@ void TrackBuffersManager::DoEvictData(const TimeUnit& aPlaybackTime,
     toEvict -= AssertedCast<int64_t>(frame->ComputedSizeOfIncludingThis());
   }
   if (evictedFramesStartIndex < buffer.Length()) {
-    MSE_DEBUG("Step2. Evicting %" PRId64 " bytes from trailing data",
+    MSE_DEBUG("Step2. Evicting {} bytes from trailing data",
               mSizeSourceBuffer - finalSize - toEvict);
     CodedFrameRemoval(TimeInterval(buffer[evictedFramesStartIndex]->mTime,
                                    TimeUnit::FromInfinity()));
@@ -739,16 +735,16 @@ TrackBuffersManager::CodedFrameRemovalWithPromise(
 bool TrackBuffersManager::CodedFrameRemoval(const TimeInterval& aInterval) {
   MOZ_ASSERT(OnTaskQueue());
   AUTO_PROFILER_LABEL("TrackBuffersManager::CodedFrameRemoval", MEDIA_PLAYBACK);
-  MSE_DEBUG("From %.2fs to %.2f", aInterval.mStart.ToSeconds(),
+  MSE_DEBUG("From {:.2f}s to {:.2f}", aInterval.mStart.ToSeconds(),
             aInterval.mEnd.ToSeconds());
 
 #if DEBUG
   if (HasVideo()) {
-    MSE_DEBUG("before video ranges=%s",
+    MSE_DEBUG("before video ranges={}",
               DumpTimeRangesRaw(mVideoTracks.mBufferedRanges).get());
   }
   if (HasAudio()) {
-    MSE_DEBUG("before audio ranges=%s",
+    MSE_DEBUG("before audio ranges={}",
               DumpTimeRangesRaw(mAudioTracks.mBufferedRanges).get());
   }
 #endif
@@ -762,7 +758,7 @@ bool TrackBuffersManager::CodedFrameRemoval(const TimeInterval& aInterval) {
 
   // 3. For each track buffer in this source buffer, run the following steps:
   for (auto* track : GetTracksList()) {
-    MSE_DEBUGV("Processing %s track", track->mInfo->mMimeType.get());
+    MSE_DEBUGV("Processing {} track", track->mInfo->mMimeType.get());
     // 1. Let remove end timestamp be the current value of duration
     // See bug: https://www.w3.org/Bugs/Public/show_bug.cgi?id=28727
     // At worse we will remove all frames until the end, unless a key frame is
@@ -909,11 +905,11 @@ void TrackBuffersManager::UpdateBufferedRanges() {
 
 #if DEBUG
   if (HasVideo()) {
-    MSE_DEBUG("after video ranges=%s",
+    MSE_DEBUG("after video ranges={}",
               DumpTimeRangesRaw(mVideoTracks.mBufferedRanges).get());
   }
   if (HasAudio()) {
-    MSE_DEBUG("after audio ranges=%s",
+    MSE_DEBUG("after audio ranges={}",
               DumpTimeRangesRaw(mAudioTracks.mBufferedRanges).get());
   }
 #endif
@@ -1050,7 +1046,7 @@ void TrackBuffersManager::SegmentParserLoop() {
           if (profiler_thread_is_being_profiled_for_markers()) {
             PROFILER_MARKER_TEXT("Re-create demuxer", MEDIA_PLAYBACK, {}, msg);
           }
-          MSE_DEBUG("%s", msg.get());
+          MSE_DEBUG("{}", msg.get());
           mFrameEndTimeBeforeRecreateDemuxer = Some(end);
           ResetDemuxingState();
           return;
@@ -1126,7 +1122,7 @@ void TrackBuffersManager::NeedMoreData() {
 
 void TrackBuffersManager::RejectAppend(const MediaResult& aRejectValue,
                                        const char* aName) {
-  MSE_DEBUG("rv=%" PRIu32, static_cast<uint32_t>(aRejectValue.Code()));
+  MSE_DEBUG("rv={}", static_cast<uint32_t>(aRejectValue.Code()));
   MOZ_DIAGNOSTIC_ASSERT(mCurrentTask &&
                         mCurrentTask->GetType() ==
                             SourceBufferTask::Type::AppendBuffer);
@@ -1165,7 +1161,7 @@ void TrackBuffersManager::ShutdownDemuxers() {
 
 void TrackBuffersManager::CreateDemuxerforMIMEType() {
   mTaskQueueCapability->AssertOnCurrentThread();
-  MSE_DEBUG("mType.OriginalString=%s", mType.OriginalString().get());
+  MSE_DEBUG("mType.OriginalString={}", mType.OriginalString().get());
   ShutdownDemuxers();
 
   if (mType.Type() == MEDIAMIMETYPE(VIDEO_WEBM) ||
@@ -1173,7 +1169,7 @@ void TrackBuffersManager::CreateDemuxerforMIMEType() {
     if (mFrameEndTimeBeforeRecreateDemuxer) {
       MSE_DEBUG(
           "CreateDemuxerFromMimeType: "
-          "mFrameEndTimeBeforeRecreateDemuxer=%" PRId64,
+          "mFrameEndTimeBeforeRecreateDemuxer={}",
           mFrameEndTimeBeforeRecreateDemuxer->ToMicroseconds());
     }
     mInputDemuxer = new WebMDemuxer(mCurrentInputBuffer, true,
@@ -1726,7 +1722,7 @@ TrackBuffersManager::CodedFrameProcessing() {
 void TrackBuffersManager::OnDemuxFailed(TrackType aTrack,
                                         const MediaResult& aError) {
   MOZ_ASSERT(OnTaskQueue());
-  MSE_DEBUG("Failed to demux %s, failure:%s",
+  MSE_DEBUG("Failed to demux {}, failure:{}",
             aTrack == TrackType::kVideoTrack ? "video" : "audio",
             aError.ErrorName().get());
   switch (aError.Code()) {
@@ -1778,7 +1774,7 @@ void TrackBuffersManager::OnVideoDemuxCompleted(
   mTaskQueueCapability->AssertOnCurrentThread();
   mVideoTracks.mDemuxRequest.Complete();
   mVideoTracks.mQueuedSamples.AppendElements(aSamples->GetSamples());
-  MSE_DEBUG("%zu video samples demuxed, queued-sz=%zu",
+  MSE_DEBUG("{} video samples demuxed, queued-sz={}",
             aSamples->GetSamples().Length(),
             mVideoTracks.mQueuedSamples.Length());
 
@@ -1802,7 +1798,7 @@ void TrackBuffersManager::DoDemuxAudio() {
 void TrackBuffersManager::OnAudioDemuxCompleted(
     const RefPtr<MediaTrackDemuxer::SamplesHolder>& aSamples) {
   mTaskQueueCapability->AssertOnCurrentThread();
-  MSE_DEBUG("%zu audio samples demuxed", aSamples->GetSamples().Length());
+  MSE_DEBUG("{} audio samples demuxed", aSamples->GetSamples().Length());
   // When using MSE, it's possible for each fragments to have their own
   // duration, with a duration that is incorrectly rounded. Ignore the trimming
   // information set by the demuxer to ensure a continous playback.
@@ -2001,7 +1997,7 @@ void TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples,
     aSample->mDuration = aInterval.Length();
     aSample->mTrackInfo = trackBuffer.mLastInfo;
     SAMPLE_DEBUGV(
-        "Add sample [%" PRId64 "%s,%" PRId64 "%s] by interval %s",
+        "Add sample [{}{},{}{}] by interval {}",
         aSample->mTime.ToMicroseconds(), aSample->mTime.ToString().get(),
         aSample->GetEndTime().ToMicroseconds(),
         aSample->GetEndTime().ToString().get(), aInterval.ToString().get());
@@ -2051,7 +2047,7 @@ void TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples,
         if (profiler_thread_is_being_profiled_for_markers()) {
           PROFILER_MARKER_TEXT("Skipping Frame", MEDIA_PLAYBACK, {}, msg);
         }
-        SAMPLE_DEBUGV("%s", msg.get());
+        SAMPLE_DEBUGV("{}", msg.get());
         continue;
       }
       // 2. Set the need random access point flag on track buffer to false.
@@ -2098,8 +2094,8 @@ void TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples,
         !decodeTimestamp.IsValid()) {
       SAMPLE_DEBUG(
           "Skipping sample with invalid timestamp after applying offset "
-          "(intervalStart valid: %s, intervalEnd valid: %s, decodeTimestamp "
-          "valid: %s)",
+          "(intervalStart valid: {}, intervalEnd valid: {}, decodeTimestamp "
+          "valid: {})",
           intervalStart.IsValid() ? "yes" : "no",
           intervalEnd.IsValid() ? "yes" : "no",
           decodeTimestamp.IsValid() ? "yes" : "no");
@@ -2109,8 +2105,8 @@ void TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples,
     TimeInterval sampleInterval(intervalStart, intervalEnd);
 
     SAMPLE_DEBUG(
-        "Processing %s frame [%" PRId64 "%s,%" PRId64 "%s] (adjusted:[%" PRId64
-        "%s,%" PRId64 "%s]), dts:%" PRId64 ", duration:%" PRId64 ", kf:%d)",
+        "Processing {} frame [{}{},{}{}] (adjusted:[{}{},{}{}]), dts:{}, "
+        "duration:{}, kf:{})",
         aTrackData.mInfo->mMimeType.get(), sample->mTime.ToMicroseconds(),
         sample->mTime.ToString().get(), sample->GetEndTime().ToMicroseconds(),
         sample->GetEndTime().ToString().get(),
@@ -2231,8 +2227,7 @@ void TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples,
         //    support gapless audio splicing.
         TimeInterval intersection = appendWindow.Intersection(sampleInterval);
         sample->mOriginalPresentationWindow = Some(sampleInterval);
-        MSE_DEBUGV("will truncate frame from [%" PRId64 "%s,%" PRId64
-                   "%s] to [%" PRId64 "%s,%" PRId64 "%s]",
+        MSE_DEBUGV("will truncate frame from [{}{},{}{}] to [{}{},{}{}]",
                    sampleInterval.mStart.ToMicroseconds(),
                    sampleInterval.mStart.ToString().get(),
                    sampleInterval.mEnd.ToMicroseconds(),
@@ -2246,14 +2241,15 @@ void TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples,
         sample->mOriginalPresentationWindow = Some(sampleInterval);
         sample->mTimecode = decodeTimestamp;
         previouslyDroppedSample = sample;
-        MSE_DEBUGV("frame [%" PRId64 "%s,%" PRId64
-                   "%s] outside appendWindow [%f.6%s,%f.6%s] dropping",
-                   sampleInterval.mStart.ToMicroseconds(),
-                   sampleInterval.mStart.ToString().get(),
-                   sampleInterval.mEnd.ToMicroseconds(),
-                   sampleInterval.mEnd.ToString().get(), mAppendWindow.mStart,
-                   appendWindow.mStart.ToString().get(), mAppendWindow.mEnd,
-                   appendWindow.mEnd.ToString().get());
+        MSE_DEBUGV(
+            "frame [{}{},{}{}] outside appendWindow [{}.6{},{}.6{}] "
+            "dropping",
+            sampleInterval.mStart.ToMicroseconds(),
+            sampleInterval.mStart.ToString().get(),
+            sampleInterval.mEnd.ToMicroseconds(),
+            sampleInterval.mEnd.ToString().get(), mAppendWindow.mStart,
+            appendWindow.mStart.ToString().get(), mAppendWindow.mEnd,
+            appendWindow.mEnd.ToString().get());
         if (samples.Length()) {
           // We are creating a discontinuity in the samples.
           // Insert the samples processed so far.
@@ -2376,8 +2372,8 @@ void TrackBuffersManager::InsertFrames(TrackBuffer& aSamples,
   // added to.
   auto& trackBuffer = aTrackData;
 
-  MSE_DEBUGV("Processing %zu %s frames(start:%" PRId64 " end:%" PRId64 ")",
-             aSamples.Length(), aTrackData.mInfo->mMimeType.get(),
+  MSE_DEBUGV("Processing {} {} frames(start:{} end:{})", aSamples.Length(),
+             aTrackData.mInfo->mMimeType.get(),
              aIntervals.GetStart().ToMicroseconds(),
              aIntervals.GetEnd().ToMicroseconds());
   PROFILER_MARKER_FMT("InsertFrames", MEDIA_PLAYBACK, {},
@@ -2472,7 +2468,7 @@ void TrackBuffersManager::InsertFrames(TrackBuffer& aSamples,
   // Update our buffered range with new sample interval.
   trackBuffer.mBufferedRanges += aIntervals;
 
-  MSE_DEBUG("Inserted %s frame:%s, buffered-range:%s, mHighestEndTimestamp=%s",
+  MSE_DEBUG("Inserted {} frame:{}, buffered-range:{}, mHighestEndTimestamp={}",
             aTrackData.mInfo->mMimeType.get(), DumpTimeRanges(aIntervals).get(),
             DumpTimeRanges(trackBuffer.mBufferedRanges).get(),
             trackBuffer.mHighestEndTimestamp
@@ -2528,8 +2524,7 @@ uint32_t TrackBuffersManager::RemoveFrames(const TimeIntervals& aIntervals,
     if (intervals.ContainsStrict(sample->mTime)) {
       // The start of this existing frame will be overwritten, we drop that
       // entire frame.
-      MSE_DEBUGV("overriding start of frame [%" PRId64 ",%" PRId64
-                 "] with [%" PRId64 ",%" PRId64 "] dropping",
+      MSE_DEBUGV("overriding start of frame [{},{}] with [{},{}] dropping",
                  sample->mTime.ToMicroseconds(),
                  sample->GetEndTime().ToMicroseconds(),
                  intervals.GetStart().ToMicroseconds(),
@@ -2557,16 +2552,14 @@ uint32_t TrackBuffersManager::RemoveFrames(const TimeIntervals& aIntervals,
       MOZ_ASSERT(startTime > sample->mTime);
       sample->mDuration = startTime - sample->mTime;
       MOZ_DIAGNOSTIC_ASSERT(sample->mDuration.IsValid());
-      MSE_DEBUGV("partial overwrite of frame [%" PRId64 ",%" PRId64
-                 "] with [%" PRId64 ",%" PRId64
-                 "] trim to "
-                 "[%" PRId64 ",%" PRId64 "]",
-                 sampleInterval.mStart.ToMicroseconds(),
-                 sampleInterval.mEnd.ToMicroseconds(),
-                 intervals.GetStart().ToMicroseconds(),
-                 intervals.GetEnd().ToMicroseconds(),
-                 sample->mTime.ToMicroseconds(),
-                 sample->GetEndTime().ToMicroseconds());
+      MSE_DEBUGV(
+          "partial overwrite of frame [{},{}] with [{},{}] trim to "
+          "[{},{}]",
+          sampleInterval.mStart.ToMicroseconds(),
+          sampleInterval.mEnd.ToMicroseconds(),
+          intervals.GetStart().ToMicroseconds(),
+          intervals.GetEnd().ToMicroseconds(), sample->mTime.ToMicroseconds(),
+          sample->GetEndTime().ToMicroseconds());
       continue;
     }
 
@@ -2609,7 +2602,7 @@ uint32_t TrackBuffersManager::RemoveFrames(const TimeIntervals& aIntervals,
                       lastRemovedIndex - firstRemovedIndex.ref() + 1,
                       removedIntervals.GetStart().ToSeconds(),
                       removedIntervals.GetEnd().ToSeconds());
-  MSE_DEBUG("%s", msg.get());
+  MSE_DEBUG("{}", msg.get());
   if (profiler_thread_is_being_profiled_for_markers()) {
     PROFILER_MARKER_TEXT("RemoveFrames", MEDIA_PLAYBACK, {}, msg);
   }
@@ -2649,7 +2642,7 @@ uint32_t TrackBuffersManager::RemoveFrames(const TimeIntervals& aIntervals,
   }
 
   // Update our buffered range to exclude the range just removed.
-  MSE_DEBUG("Removing %s from bufferedRange %s",
+  MSE_DEBUG("Removing {} from bufferedRange {}",
             DumpTimeRanges(removedIntervals).get(),
             DumpTimeRanges(aTrackData.mBufferedRanges).get());
   aTrackData.mBufferedRanges -= removedIntervals;
@@ -2690,7 +2683,7 @@ uint32_t TrackBuffersManager::RemoveFrames(const TimeIntervals& aIntervals,
     }
     ++removedInterval;
   }
-  MSE_DEBUG("Removing %s from mSanitizedBufferedRanges %s",
+  MSE_DEBUG("Removing {} from mSanitizedBufferedRanges {}",
             DumpTimeRanges(gaps).get(),
             DumpTimeRanges(aTrackData.mSanitizedBufferedRanges).get());
   aTrackData.mSanitizedBufferedRanges -= gaps;
@@ -2713,8 +2706,8 @@ uint32_t TrackBuffersManager::RemoveFrames(const TimeIntervals& aIntervals,
   }
 
   MSE_DEBUG(
-      "After removing frames, %s data sz=%zu, highestStartTimestamp=% " PRId64
-      ", bufferedRange=%s, sanitizedBufferedRanges=%s",
+      "After removing frames, {} data sz={}, highestStartTimestamp={: }"
+      ", bufferedRange={}, sanitizedBufferedRanges={}",
       aTrackData.mInfo->mMimeType.get(), data.Length(),
       aTrackData.mHighestStartTimestamp.ToMicroseconds(),
       DumpTimeRanges(aTrackData.mBufferedRanges).get(),
@@ -2805,7 +2798,7 @@ TrackBuffersManager::GetTracksList() const {
 }
 
 void TrackBuffersManager::SetAppendState(AppendState aAppendState) {
-  MSE_DEBUG("AppendState changed from %s to %s",
+  MSE_DEBUG("AppendState changed from {} to {}",
             SourceBufferAttributes::EnumValueToString(
                 mSourceBufferAttributes->GetAppendState()),
             SourceBufferAttributes::EnumValueToString(aAppendState));
@@ -2873,7 +2866,7 @@ TimeUnit TrackBuffersManager::HighestEndTime(
 
 void TrackBuffersManager::ResetEvictionIndex(TrackData& aTrackData) {
   MutexAutoLock mut(mMutex);
-  MSE_DEBUG("ResetEvictionIndex for %s", aTrackData.mInfo->mMimeType.get());
+  MSE_DEBUG("ResetEvictionIndex for {}", aTrackData.mInfo->mMimeType.get());
   aTrackData.mEvictionIndex.Reset();
 }
 
@@ -2894,7 +2887,7 @@ void TrackBuffersManager::UpdateEvictionIndex(TrackData& aTrackData,
   aTrackData.mEvictionIndex.mLastIndex = currentIndex;
   MutexAutoLock mut(mMutex);
   aTrackData.mEvictionIndex.mEvictable += evictable;
-  MSE_DEBUG("UpdateEvictionIndex for %s (idx=%u, evictable=%u)",
+  MSE_DEBUG("UpdateEvictionIndex for {} (idx={}, evictable={})",
             aTrackData.mInfo->mMimeType.get(),
             aTrackData.mEvictionIndex.mLastIndex,
             aTrackData.mEvictionIndex.mEvictable);
@@ -2928,7 +2921,7 @@ TimeUnit TrackBuffersManager::Seek(TrackInfo::TrackType aTrack,
   AUTO_PROFILER_LABEL("TrackBuffersManager::Seek", MEDIA_PLAYBACK);
   auto& trackBuffer = GetTracksData(aTrack);
   const TrackBuffersManager::TrackBuffer& track = GetTrackBuffer(aTrack);
-  MSE_DEBUG("Seek, track=%s, target=%" PRId64, TrackTypeToStr(aTrack),
+  MSE_DEBUG("Seek, track={}, target={}", TrackTypeToStr(aTrack),
             aTime.ToMicroseconds());
 
   if (!track.Length()) {
@@ -2975,10 +2968,9 @@ TimeUnit TrackBuffersManager::Seek(TrackInfo::TrackType aTrack,
       break;
     }
   }
-  MSE_DEBUG("Keyframe %s found at %" PRId64 " @ %u",
-            lastKeyFrameTime.isSome() ? "" : "not",
-            lastKeyFrameTime.refOr(TimeUnit()).ToMicroseconds(),
-            lastKeyFrameIndex);
+  MSE_DEBUG(
+      "Keyframe {} found at {} @ {}", lastKeyFrameTime.isSome() ? "" : "not",
+      lastKeyFrameTime.refOr(TimeUnit()).ToMicroseconds(), lastKeyFrameIndex);
 
   trackBuffer.mNextGetSampleIndex = Some(lastKeyFrameIndex);
   trackBuffer.mNextSampleTimecode = lastKeyFrameTimecode;
@@ -3070,8 +3062,8 @@ const MediaRawData* TrackBuffersManager::GetSample(TrackInfo::TrackType aTrack,
 
   if (aIndex >= track.Length()) {
     MSE_DEBUGV(
-        "Can't get sample due to reaching to the end, index=%u, "
-        "length=%zu",
+        "Can't get sample due to reaching to the end, index={}, "
+        "length={}",
         aIndex, track.Length());
     // reached the end.
     return nullptr;
@@ -3079,10 +3071,11 @@ const MediaRawData* TrackBuffersManager::GetSample(TrackInfo::TrackType aTrack,
 
   if (!(aExpectedDts + aFuzz).IsValid() || !(aExpectedPts + aFuzz).IsValid()) {
     // Time overflow, it seems like we also reached the end.
-    MSE_DEBUGV("Can't get sample due to time overflow, expectedPts=%" PRId64
-               ", aExpectedDts=%" PRId64 ", fuzz=%" PRId64,
-               aExpectedPts.ToMicroseconds(), aExpectedPts.ToMicroseconds(),
-               aFuzz.ToMicroseconds());
+    MSE_DEBUGV(
+        "Can't get sample due to time overflow, expectedPts={}"
+        ", aExpectedDts={}, fuzz={}",
+        aExpectedPts.ToMicroseconds(), aExpectedPts.ToMicroseconds(),
+        aFuzz.ToMicroseconds());
     return nullptr;
   }
 
@@ -3093,11 +3086,12 @@ const MediaRawData* TrackBuffersManager::GetSample(TrackInfo::TrackType aTrack,
     return sample;
   }
 
-  MSE_DEBUGV("Can't get sample due to big gap, sample=%" PRId64
-             ", expectedPts=%" PRId64 ", aExpectedDts=%" PRId64
-             ", fuzz=%" PRId64,
-             sample->mTime.ToMicroseconds(), aExpectedPts.ToMicroseconds(),
-             aExpectedPts.ToMicroseconds(), aFuzz.ToMicroseconds());
+  MSE_DEBUGV(
+      "Can't get sample due to big gap, sample={}"
+      ", expectedPts={}, aExpectedDts={}"
+      ", fuzz={}",
+      sample->mTime.ToMicroseconds(), aExpectedPts.ToMicroseconds(),
+      aExpectedPts.ToMicroseconds(), aFuzz.ToMicroseconds());
 
   // Gap is too big. End of Stream or Waiting for Data.
   // TODO, check that we have continuous data based on the sanitized buffered
@@ -3303,7 +3297,7 @@ nsresult TrackBuffersManager::SetNextGetSampleIndexIfNeeded(
   int32_t pos = FindCurrentPosition(aTrack, aFuzz);
   if (pos < 0) {
     // Not found, must wait for more data.
-    MSE_DEBUG("Couldn't find sample (pts:%" PRId64 " dts:%" PRId64 ")",
+    MSE_DEBUG("Couldn't find sample (pts:{} dts:{})",
               trackData.mNextSampleTime.ToMicroseconds(),
               trackData.mNextSampleTimecode.ToMicroseconds());
     return NS_ERROR_DOM_MEDIA_WAITING_FOR_DATA;

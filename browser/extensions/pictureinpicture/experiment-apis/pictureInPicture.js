@@ -7,8 +7,10 @@
 /* global AppConstants, ChromeUtils, ExtensionAPI, Services */
 
 ChromeUtils.defineESModuleGetters(this, {
-  KEYBOARD_CONTROLS: "resource://gre/modules/PictureInPictureControls.sys.mjs",
-  TOGGLE_POLICIES: "resource://gre/modules/PictureInPictureControls.sys.mjs",
+  KEYBOARD_CONTROLS:
+    "moz-src:///toolkit/components/pictureinpicture/PictureInPictureControls.sys.mjs",
+  TOGGLE_POLICIES:
+    "moz-src:///toolkit/components/pictureinpicture/PictureInPictureControls.sys.mjs",
 });
 
 const TOGGLE_ENABLED_PREF =

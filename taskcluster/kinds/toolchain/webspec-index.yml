@@ -1,0 +1,87 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+---
+task-defaults:
+    description: "webspec-index toolchain build"
+    attributes:
+        local-toolchain: true
+    worker-type: b-linux-docker-amd
+    worker:
+        max-run-time: 1800
+    run:
+        script: build-rust-based-toolchain.sh
+        toolchain-artifact: public/build/webspec-index.tar.zst
+    fetches:
+        fetch:
+            - webspec-index
+
+linux64-webspec-index:
+    treeherder:
+        symbol: TL(webspec-index)
+    run:
+        arguments: ['x86_64-unknown-linux-gnu']
+    fetches:
+        toolchain:
+            - linux64-clang-toolchain
+            - linux64-rust-toolchain
+            - linux64-toolchain-sysroot
+
+linux64-aarch64-webspec-index:
+    treeherder:
+        symbol: TLA64(webspec-index)
+    run:
+        arguments: ['aarch64-unknown-linux-gnu']
+    fetches:
+        toolchain:
+            - linux64-clang-toolchain
+            - linux64-rust-toolchain
+            - linux64-aarch64-toolchain-sysroot
+
+macosx64-webspec-index:
+    treeherder:
+        symbol: TM(webspec-index)
+    run:
+        arguments: ['x86_64-apple-darwin']
+    fetches:
+        toolchain:
+            - linux64-clang-toolchain
+            - linux64-rust-macos-toolchain
+            - macosx64-sdk-toolchain
+
+macosx64-aarch64-webspec-index:
+    treeherder:
+        symbol: TMA64(webspec-index)
+    run:
+        arguments: ['aarch64-apple-darwin']
+    fetches:
+        toolchain:
+            - linux64-clang-toolchain
+            - linux64-rust-macos-toolchain
+            - macosx64-sdk-toolchain
+
+win32-webspec-index:
+    treeherder:
+        symbol: TW32(webspec-index)
+    worker:
+        env:
+            EXTRA_PATH: /builds/worker/fetches/nasm
+    run:
+        arguments: ['i686-pc-windows-msvc']
+    fetches:
+        toolchain:
+            - linux64-clang-toolchain
+            - linux64-nasm
+            - linux64-rust-windows-toolchain
+            - vs-toolchain
+
+win64-webspec-index:
+    treeherder:
+        symbol: TW64(webspec-index)
+    run:
+        arguments: ['x86_64-pc-windows-msvc']
+    fetches:
+        toolchain:
+            - linux64-clang-toolchain
+            - linux64-rust-windows-toolchain
+            - vs-toolchain

@@ -48,6 +48,34 @@ TEST_P(TlsKeyExchangeTest13, Secp384r1Mlkem1024Supported) {
             ssl_auth_rsa_sign, ssl_sig_rsa_pss_rsae_sha256);
 }
 
+TEST_P(TlsKeyExchangeTest13, Mlkem1024Supported) {
+  EnsureKeyShareSetup();
+  ConfigNamedGroups({ssl_grp_kem_mlkem1024});
+
+  Connect();
+  CheckKeys(ssl_kea_kem, ssl_grp_kem_mlkem1024, ssl_auth_rsa_sign,
+            ssl_sig_rsa_pss_rsae_sha256);
+}
+
+TEST_P(TlsKeyExchangeTest13, Mlkem1024ClientDisabledByPolicy) {
+  EnsureKeyShareSetup();
+  client_->SetPolicy(SEC_OID_ML_KEM_1024, 0, NSS_USE_ALG_IN_SSL_KX);
+  ConfigNamedGroups({ssl_grp_kem_mlkem1024, ssl_grp_ec_secp256r1});
+
+  Connect();
+  CheckKEXDetails({ssl_grp_ec_secp256r1}, {ssl_grp_ec_secp256r1});
+}
+
+TEST_P(TlsKeyExchangeTest13, Mlkem1024ServerDisabledByPolicy) {
+  EnsureKeyShareSetup();
+  server_->SetPolicy(SEC_OID_ML_KEM_1024, 0, NSS_USE_ALG_IN_SSL_KX);
+  ConfigNamedGroups({ssl_grp_kem_mlkem1024, ssl_grp_ec_secp256r1});
+
+  Connect();
+  CheckKEXDetails({ssl_grp_kem_mlkem1024, ssl_grp_ec_secp256r1},
+                  {ssl_grp_kem_mlkem1024}, ssl_grp_ec_secp256r1);
+}
+
 TEST_P(TlsKeyExchangeTest, Tls12ClientMlkem768x25519NotSupported) {
   EnsureKeyShareSetup();
   client_->SetVersionRange(SSL_LIBRARY_VERSION_TLS_1_2,
@@ -540,5 +568,175 @@ INSTANTIATE_TEST_SUITE_P(
                       Mlkem768x25519ShareDamager::modify_ecdh,
                       Mlkem768x25519ShareDamager::modify_mlkem,
                       Mlkem768x25519ShareDamager::modify_mlkem_pubkey_mod_q));
+
+// Damages the standalone ML-KEM-1024 key share. Unlike the hybrid share, the
+// key_exchange field is exactly the ML-KEM encapsulation key (client) or
+// ciphertext (server), with no ECDH component.
+class Mlkem1024ShareDamager : public TlsExtensionFilter {
+ public:
+  typedef enum {
+    extend,
+    truncate,
+    modify_mlkem,
+    modify_mlkem_pubkey_mod_q,
+  } damage_type;
+
+  Mlkem1024ShareDamager(const std::shared_ptr<TlsAgent>& a, damage_type damage)
+      : TlsExtensionFilter(a), damage_(damage) {}
+
+  virtual PacketFilter::Action FilterExtension(uint16_t extension_type,
+                                               const DataBuffer& input,
+                                               DataBuffer* output) {
+    if (extension_type != ssl_tls13_key_share_xtn) {
+      return KEEP;
+    }
+
+    // Find the ML-KEM-1024 share.
+    size_t offset = 0;
+    if (agent()->role() == TlsAgent::CLIENT) {
+      offset += 2;  // skip KeyShareClientHello length
+    }
+
+    uint32_t named_group;
+    uint32_t named_group_len;
+    input.Read(offset, 2, &named_group);
+    input.Read(offset + 2, 2, &named_group_len);
+    while (named_group != ssl_grp_kem_mlkem1024) {
+      offset += 2 + 2 + named_group_len;
+      input.Read(offset, 2, &named_group);
+      input.Read(offset + 2, 2, &named_group_len);
+    }
+    EXPECT_EQ(named_group, ssl_grp_kem_mlkem1024);
+
+    DataBuffer key_share(input.data() + offset, 2 + 2 + named_group_len);
+    unsigned char* mlkem_component = key_share.data() + 2 + 2;
+
+    switch (damage_) {
+      case Mlkem1024ShareDamager::extend:
+        // Append 4 bytes to the share.
+        uint32_t current_len;
+        key_share.Read(2, 2, &current_len);
+        key_share.Write(key_share.len(), current_len, 4);
+        key_share.Write(2, current_len + 4, 2);
+        break;
+      case Mlkem1024ShareDamager::truncate:
+        // Drop the last 4 bytes of the share.
+        key_share.Truncate(key_share.len() - 4);
+        key_share.Write(2, named_group_len - 4, 2);
+        break;
+      case Mlkem1024ShareDamager::modify_mlkem:
+        // Flip a bit in the last byte (rho seed of a public key, or the tail of
+        // a ciphertext). Either way the derived secret won't match.
+        mlkem_component[named_group_len - 1] ^= 0x01;
+        break;
+      case Mlkem1024ShareDamager::modify_mlkem_pubkey_mod_q:
+        if (agent()->role() == TlsAgent::CLIENT) {
+          // Rewrite the client's public key with 12-bit coefficients in the
+          // same equivalence class mod 3329. The FIPS-203 input validation
+          // (encapsulation key check) on the server should reject it.
+          for (size_t i = 0; i < named_group_len - 32; i += 3) {
+            uint16_t coeff0 =
+                mlkem_component[i] | ((mlkem_component[i + 1] & 0x0f) << 8);
+            uint16_t coeff1 =
+                (mlkem_component[i + 1] >> 4) | ((mlkem_component[i + 2]) << 4);
+            if (coeff0 < 4096 - 3329) {
+              coeff0 += 3329;
+            }
+            if (coeff1 < 4096 - 3329) {
+              coeff1 += 3329;
+            }
+            mlkem_component[i] = coeff0;
+            mlkem_component[i + 1] = (coeff0 >> 8) + ((coeff1 & 0x0f) << 4);
+            mlkem_component[i + 2] = coeff1 >> 4;
+          }
+        }
+        break;
+    }
+
+    *output = input;
+    output->Splice(key_share, offset, 2 + 2 + named_group_len);
+
+    // Fix the KeyShareClientHello length if necessary.
+    if (agent()->role() == TlsAgent::CLIENT &&
+        key_share.len() != 2 + 2 + named_group_len) {
+      output->Write(0, static_cast<uint32_t>(output->len() - 2), 2);
+    }
+
+    return CHANGE;
+  }
+
+ private:
+  damage_type damage_;
+};
+
+class TlsMlkem1024DamageTest
+    : public TlsConnectTestBase,
+      public ::testing::WithParamInterface<Mlkem1024ShareDamager::damage_type> {
+ public:
+  TlsMlkem1024DamageTest()
+      : TlsConnectTestBase(ssl_variant_stream, SSL_LIBRARY_VERSION_TLS_1_3) {}
+
+ protected:
+  void Damage(const std::shared_ptr<TlsAgent>& agent) {
+    EnsureTlsSetup();
+    client_->ConfigNamedGroups({ssl_grp_kem_mlkem1024});
+    server_->ConfigNamedGroups({ssl_grp_kem_mlkem1024});
+    MakeTlsFilter<Mlkem1024ShareDamager>(agent, GetParam());
+  }
+};
+
+TEST_P(TlsMlkem1024DamageTest, DamageClientShare) {
+  Damage(client_);
+
+  switch (GetParam()) {
+    case Mlkem1024ShareDamager::extend:
+    case Mlkem1024ShareDamager::truncate:
+      ConnectExpectAlert(server_, kTlsAlertIllegalParameter);
+      server_->CheckErrorCode(SSL_ERROR_RX_MALFORMED_KEY_SHARE);
+      break;
+    case Mlkem1024ShareDamager::modify_mlkem_pubkey_mod_q:
+      ConnectExpectAlert(server_, kTlsAlertIllegalParameter);
+      server_->CheckErrorCode(SEC_ERROR_INVALID_ARGS);
+      break;
+    case Mlkem1024ShareDamager::modify_mlkem:
+      client_->ExpectSendAlert(kTlsAlertBadRecordMac);
+      server_->ExpectSendAlert(kTlsAlertBadRecordMac);
+      ConnectExpectFail();
+      client_->CheckErrorCode(SSL_ERROR_BAD_MAC_READ);
+      server_->CheckErrorCode(SSL_ERROR_BAD_MAC_READ);
+      break;
+  }
+}
+
+TEST_P(TlsMlkem1024DamageTest, DamageServerShare) {
+  Damage(server_);
+
+  switch (GetParam()) {
+    case Mlkem1024ShareDamager::extend:
+    case Mlkem1024ShareDamager::truncate:
+      client_->ExpectSendAlert(kTlsAlertIllegalParameter);
+      server_->ExpectSendAlert(kTlsAlertUnexpectedMessage);
+      ConnectExpectFail();
+      client_->CheckErrorCode(SSL_ERROR_RX_MALFORMED_KEY_SHARE);
+      break;
+    case Mlkem1024ShareDamager::modify_mlkem:
+      client_->ExpectSendAlert(kTlsAlertBadRecordMac);
+      server_->ExpectSendAlert(kTlsAlertBadRecordMac);
+      ConnectExpectFail();
+      client_->CheckErrorCode(SSL_ERROR_BAD_MAC_READ);
+      server_->CheckErrorCode(SSL_ERROR_BAD_MAC_READ);
+      break;
+    case Mlkem1024ShareDamager::modify_mlkem_pubkey_mod_q:
+      // The server sends a ciphertext, not a public key, so nothing changes.
+      break;
+  }
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    TlsMlkem1024DamageTest, TlsMlkem1024DamageTest,
+    ::testing::Values(Mlkem1024ShareDamager::extend,
+                      Mlkem1024ShareDamager::truncate,
+                      Mlkem1024ShareDamager::modify_mlkem,
+                      Mlkem1024ShareDamager::modify_mlkem_pubkey_mod_q));
 
 }  // namespace nss_test

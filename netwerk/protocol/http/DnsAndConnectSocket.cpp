@@ -3,30 +3,30 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 // HttpLog.h should generally be included first
-#include "HttpLog.h"
-
-#include "ConnectionHandle.h"
 #include "DnsAndConnectSocket.h"
-#include "nsHttpConnection.h"
-#include "nsIClassOfService.h"
-#include "nsIDNSRecord.h"
-#include "nsIInterfaceRequestorUtils.h"
-#include "nsIHttpActivityObserver.h"
-#include "nsSocketTransportService2.h"
-#include "nsDNSService2.h"
-#include "nsQueryObject.h"
-#include "nsURLHelper.h"
+
+#include "ConnectionEntry.h"
+#include "ConnectionHandle.h"
+#include "HttpConnectionUDP.h"
+#include "HttpLog.h"
+#include "NullHttpTransaction.h"
 #include "mozilla/Components.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
-#include "nsHttpHandler.h"
-#include "nsHttpConnectionMgr.h"
-#include "ConnectionEntry.h"
-#include "HttpConnectionUDP.h"
-#include "NullHttpTransaction.h"
-#include "nsServiceManagerUtils.h"
 #include "mozilla/net/NeckoChannelParams.h"  // For HttpActivityArgs.
+#include "nsDNSService2.h"
+#include "nsHttpConnection.h"
+#include "nsHttpConnectionMgr.h"
+#include "nsHttpHandler.h"
+#include "nsIClassOfService.h"
+#include "nsIDNSRecord.h"
+#include "nsIHttpActivityObserver.h"
+#include "nsIInterfaceRequestorUtils.h"
+#include "nsQueryObject.h"
+#include "nsServiceManagerUtils.h"
+#include "nsSocketTransportService2.h"
+#include "nsURLHelper.h"
 
 // Log on level :5, instead of default :4.
 #undef LOG

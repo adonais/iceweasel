@@ -10,6 +10,11 @@
 #ifndef mozilla_image_SurfaceCache_h
 #define mozilla_image_SurfaceCache_h
 
+#include "ImageRegion.h"
+#include "PlaybackType.h"
+#include "SurfaceFlags.h"
+#include "gfx2DGlue.h"
+#include "gfxPoint.h"                 // for gfxSize
 #include "mozilla/HashFunctions.h"    // for HashGeneric and AddToHash
 #include "mozilla/Maybe.h"            // for Maybe
 #include "mozilla/MemoryReporting.h"  // for MallocSizeOf
@@ -17,12 +22,7 @@
 #include "mozilla/SVGImageContext.h"  // for SVGImageContext
 #include "mozilla/gfx/2D.h"           // for SourceSurface
 #include "mozilla/gfx/Point.h"        // for mozilla::gfx::IntSize
-#include "gfx2DGlue.h"
-#include "gfxPoint.h"  // for gfxSize
-#include "nsCOMPtr.h"  // for already_AddRefed
-#include "ImageRegion.h"
-#include "PlaybackType.h"
-#include "SurfaceFlags.h"
+#include "nsCOMPtr.h"                 // for already_AddRefed
 
 namespace mozilla {
 namespace image {

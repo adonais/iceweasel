@@ -7,9 +7,9 @@
 
 #include <windows.h>
 
+#include "gfxFont.h"
 #include "mozilla/EnumeratedArray.h"
 #include "nsXPLookAndFeel.h"
-#include "gfxFont.h"
 
 /*
  * Gesture System Metrics

@@ -32,13 +32,8 @@ PartitionedStorageHelper.runTest(
     });
   },
 
-  async _ => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  }
+  // Cleanup callback
+  clearSiteTestData
 );
 
 PartitionedStorageHelper.runPartitioningTest(
@@ -85,11 +80,5 @@ PartitionedStorageHelper.runPartitioningTest(
   },
 
   // cleanup
-  async _ => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  }
+  clearSiteTestData
 );

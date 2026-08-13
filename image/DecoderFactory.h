@@ -7,13 +7,13 @@
 #define mozilla_image_DecoderFactory_h
 
 #include "DecoderFlags.h"
+#include "Orientation.h"
+#include "SurfaceFlags.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/image/ImageUtils.h"
 #include "nsCOMPtr.h"
-#include "Orientation.h"
-#include "SurfaceFlags.h"
 
 namespace mozilla::image {
 

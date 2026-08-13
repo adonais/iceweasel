@@ -97,7 +97,7 @@ use xpcom::{
 };
 
 #[xpcom(implement(nsILimitedAccessFeature), nonatomic)]
-struct LimitedAccessFeature {
+pub struct LimitedAccessFeature {
     feature_id: String,
     token: String,
     attestation: String,
@@ -146,28 +146,37 @@ impl LimitedAccessFeature {
 pub struct LimitedAccessFeatureService {}
 
 impl LimitedAccessFeatureService {
-    xpcom_method!(get_taskbar_pin_feature_id => GetTaskbarPinFeatureId() -> nsACString);
-    pub fn get_taskbar_pin_feature_id(&self) -> Result<nsCString, nsresult> {
-        Ok(nsCString::from("com.microsoft.windows.taskbar.pin"))
+    pub fn new() -> RefPtr<Self> {
+        Self::allocate(InitLimitedAccessFeatureService {})
     }
 
-    xpcom_method!(generate_limited_access_feature => GenerateLimitedAccessFeature(featureId: *const nsACString) -> *const nsILimitedAccessFeature);
     pub fn generate_limited_access_feature(
         &self,
         feature_id: &nsACString,
-    ) -> Result<RefPtr<nsILimitedAccessFeature>, nsresult> {
+    ) -> Result<RefPtr<LimitedAccessFeature>, nsresult> {
         let (family_name, publisher_id) = get_package_identity()?;
         let token = generate_token(&feature_id.to_utf8(), &family_name)
             .inspect_err(|e| log::error!("Error generating feature token: {e:?}"))?;
         let attestation = generate_attestation(&feature_id.to_utf8(), &publisher_id);
 
-        let feature = LimitedAccessFeature::allocate(InitLimitedAccessFeature {
+        Ok(LimitedAccessFeature::allocate(InitLimitedAccessFeature {
             feature_id: feature_id.to_utf8().into(),
             token,
-            attestation: attestation,
-        });
+            attestation,
+        }))
+    }
 
-        feature
+    xpcom_method!(get_taskbar_pin_feature_id => GetTaskbarPinFeatureId() -> nsACString);
+    pub fn get_taskbar_pin_feature_id(&self) -> Result<nsCString, nsresult> {
+        Ok(nsCString::from("com.microsoft.windows.taskbar.pin"))
+    }
+
+    xpcom_method!(generate_xpcom_limited_access_feature => GenerateLimitedAccessFeature(featureId: *const nsACString) -> *const nsILimitedAccessFeature);
+    fn generate_xpcom_limited_access_feature(
+        &self,
+        feature_id: &nsACString,
+    ) -> Result<RefPtr<nsILimitedAccessFeature>, nsresult> {
+        self.generate_limited_access_feature(feature_id)?
             .query_interface::<nsILimitedAccessFeature>()
             .ok_or(NS_ERROR_UNEXPECTED)
     }
@@ -229,7 +238,7 @@ fn generate_attestation(feature_id: &str, publisher_id: &PublisherId) -> String 
 // The Family Name associated to the application.
 //
 // For packaged MSIX installs this is derived as `"{Name}_{Publisher ID}"` from
-// `<Identity Name="" Publisher="">` in AppxManfiest.xml. Note that `Publisher`
+// `<Identity Name="" Publisher="">` in AppxManifest.xml. Note that `Publisher`
 // is not equivalent to `PublisherId`.
 //
 // For unpackaged applications this is set by `Identity LimitedAccessFeature` in
@@ -241,7 +250,7 @@ struct FamilyName<'a>(Cow<'a, str>);
 // For packaged MSIX installs this is derived as a hash of `<Identity
 // Publisher="">` from AppxManifest.xml.
 //
-// For unpackaged applications this this is inferred from last 13 characters of
+// For unpackaged applications this is inferred from last 13 characters of
 // Package Family Name defined by `Identity LimitedAccessFeature` in the
 // embedded .rc resource file.
 struct PublisherId<'a>(Cow<'a, str>);
@@ -286,13 +295,13 @@ fn get_package_identity<'a>() -> Result<(FamilyName<'a>, PublisherId<'a>), nsres
 ///
 /// # Safety
 ///
-/// This function much be called with valid `iid` and `result` pointers.
+/// This function must be called with valid `iid` and `result` pointers.
 #[unsafe(no_mangle)]
 pub extern "C" fn new_limited_access_feature_service(
     iid: *const xpcom::nsIID,
     result: *mut *mut xpcom::reexports::libc::c_void,
 ) -> nsresult {
-    let service = LimitedAccessFeatureService::allocate(InitLimitedAccessFeatureService {});
+    let service = LimitedAccessFeatureService::new();
     // SAFETY: The caller is responsible to pass a valid IID and pointer-to-pointer.
     unsafe { service.QueryInterface(iid, result) }
 }

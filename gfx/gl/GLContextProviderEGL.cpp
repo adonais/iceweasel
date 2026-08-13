@@ -29,6 +29,7 @@
 #  ifdef MOZ_WIDGET_ANDROID
 #    include <android/native_window.h>
 #    include <android/native_window_jni.h>
+
 #    include "mozilla/jni/Utils.h"
 #    include "mozilla/widget/AndroidCompositorWidget.h"
 #  endif
@@ -46,33 +47,35 @@
 #  error "Platform not recognized"
 #endif
 
-#include "gfxCrashReporterUtils.h"
-#include "gfxFailure.h"
-#include "gfxPlatform.h"
-#include "gfxUtils.h"
 #include "GLBlitHelper.h"
 #include "GLContextEGL.h"
 #include "GLContextProvider.h"
 #include "GLLibraryEGL.h"
 #include "GLLibraryLoader.h"
+#include "ScopedGLHelpers.h"
+#include "gfxCrashReporterUtils.h"
+#include "gfxFailure.h"
+#include "gfxPlatform.h"
+#include "gfxUtils.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_gfx.h"
-#include "mozilla/gfx/gfxVars.h"
+#include "mozilla/StaticPrefs_gl.h"
 #include "mozilla/gfx/BuildConstants.h"
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/CompositorOptions.h"
 #include "mozilla/widget/CompositorWidget.h"
 #include "nsDebug.h"
 #include "nsIWidget.h"
 #include "nsThreadUtils.h"
-#include "ScopedGLHelpers.h"
 
 #if defined(MOZ_WIDGET_GTK)
 #  include "mozilla/widget/GtkCompositorWidget.h"
 #  if defined(MOZ_WAYLAND)
 #    include <gdk/gdkwayland.h>
 #    include <wayland-egl.h>
+
 #    include "mozilla/WidgetUtilsGtk.h"
 #    include "mozilla/widget/nsWaylandDisplay.h"
 #  endif
@@ -221,7 +224,8 @@ already_AddRefed<GLContext> GLContextEGLFactory::CreateImpl(
     gfxCriticalNote << "Failed[3] to load EGL library: " << failureId.get();
     return nullptr;
   }
-  const auto egl = lib->CreateDisplay(true, false, &failureId);
+  const auto egl = lib->CreateDisplay(
+      EGLCreateDisplayFlags{.mForceAccel = true}, &failureId);
   if (!egl) {
     gfxCriticalNote << "Failed[3] to create EGL library  display: "
                     << failureId.get();
@@ -562,6 +566,49 @@ bool GLContextEGL::HasExtBufferAge() const {
 
 bool GLContextEGL::HasKhrPartialUpdate() const {
   return mEgl->IsExtensionSupported(EGLExtension::KHR_partial_update);
+}
+
+EGLint GLContextEGL::GetBindToTextureTargetANGLE() const {
+  if (mBindToTextureTargetANGLE) {
+    return *mBindToTextureTargetANGLE;
+  }
+
+  if (!mEgl->IsExtensionSupported(
+          mozilla::gl::EGLExtension::ANGLE_iosurface_client_buffer)) {
+    gfxCriticalErrorOnce()
+        << "Extension EGL_ANGLE_iosurface_client_buffer not supported";
+    mBindToTextureTargetANGLE.emplace(LOCAL_EGL_TEXTURE_2D);
+    return LOCAL_EGL_TEXTURE_2D;
+  }
+
+  EGLint eglTarget;
+  if (!mEgl->fGetConfigAttrib(
+          mSurfaceConfig, LOCAL_EGL_BIND_TO_TEXTURE_TARGET_ANGLE, &eglTarget)) {
+    const EGLint err = mEgl->mLib->fGetError();
+    gfxCriticalErrorOnce()
+        << "Querying EGL_BIND_TO_TEXTURE_TARGET_ANGLE failed: "
+        << gfx::hexa(err);
+    mBindToTextureTargetANGLE.emplace(LOCAL_EGL_TEXTURE_2D);
+    return LOCAL_EGL_TEXTURE_2D;
+  }
+  mBindToTextureTargetANGLE.emplace(eglTarget);
+  return eglTarget;
+}
+
+GLenum GLContextEGL::GetPreferredMacIOSurfaceTextureTarget() const {
+  const auto eglTarget = GetBindToTextureTargetANGLE();
+  switch (eglTarget) {
+    case LOCAL_EGL_TEXTURE_2D:
+      return LOCAL_GL_TEXTURE_2D;
+      break;
+    case LOCAL_EGL_TEXTURE_RECTANGLE_ANGLE:
+      return LOCAL_GL_TEXTURE_RECTANGLE_ARB;
+      break;
+    default:
+      gfxCriticalErrorOnce() << "Unexpected EGL_BIND_TO_TEXTURE_TARGET_ANGLE: "
+                             << gfx::hexa(eglTarget);
+      return LOCAL_GL_TEXTURE_2D;
+  }
 }
 
 GLint GLContextEGL::GetBufferAge() const {
@@ -1215,9 +1262,18 @@ already_AddRefed<GLContext> GLContextProviderEGL::CreateHeadless(
     const GLContextCreateDesc& desc, nsACString* const out_failureId) {
   bool useSoftwareDisplay =
       static_cast<bool>(desc.flags & CreateContextFlags::FORBID_HARDWARE);
-  const auto display = useSoftwareDisplay
-                           ? CreateSoftwareEglDisplay(out_failureId)
-                           : DefaultEglDisplay(out_failureId);
+  const bool useHighPowerDisplay =
+      (desc.flags & CreateContextFlags::HIGH_POWER) &&
+      StaticPrefs::gl_allow_high_power();
+
+  std::shared_ptr<EglDisplay> display;
+  if (useSoftwareDisplay) {
+    display = CreateSoftwareEglDisplay(out_failureId);
+  } else if (useHighPowerDisplay) {
+    display = CreateHighPowerEglDisplay(out_failureId);
+  } else {
+    display = DefaultEglDisplay(out_failureId);
+  }
   if (!display) {
     return nullptr;
   }

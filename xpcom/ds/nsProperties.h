@@ -5,9 +5,9 @@
 #ifndef nsProperties_h_
 #define nsProperties_h_
 
+#include "nsHashKeys.h"
 #include "nsIProperties.h"
 #include "nsInterfaceHashtable.h"
-#include "nsHashKeys.h"
 
 typedef nsInterfaceHashtable<nsCharPtrHashKey, nsISupports>
     nsProperties_HashBase;

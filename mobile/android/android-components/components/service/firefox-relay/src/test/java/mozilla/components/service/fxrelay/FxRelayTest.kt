@@ -12,7 +12,6 @@ import mozilla.appservices.relay.RelayClientInterface
 import mozilla.appservices.relay.RelayProfile
 import mozilla.components.concept.sync.AccessTokenInfo
 import mozilla.components.concept.sync.AttachedClient
-import mozilla.components.concept.sync.AuthFlowUrl
 import mozilla.components.concept.sync.DeviceConstellation
 import mozilla.components.concept.sync.FxAEntryPoint
 import mozilla.components.concept.sync.OAuthAccount
@@ -349,22 +348,10 @@ class FxRelayTest {
         }
 
         override suspend fun getAttachedClient(): List<AttachedClient> = emptyList()
-        override suspend fun beginOAuthFlow(
-            scopes: Set<String>,
-            entryPoint: FxAEntryPoint,
-        ): AuthFlowUrl? = null
-
-        override suspend fun beginPairingFlow(
-            pairingUrl: String,
-            scopes: Set<String>,
-            entryPoint: FxAEntryPoint,
-        ): AuthFlowUrl? = null
-
         override fun getCurrentDeviceId(): String? = null
         override suspend fun handleWebChannelLogin(jsonPayload: String) = Unit
         override fun getSignedInUserForWebChannel(): String? = null
         override suspend fun getProfile(ignoreCache: Boolean): Profile? = null
-        override suspend fun completeOAuthFlow(code: String, state: String) = false
         override fun authErrorDetected() = Unit
         override suspend fun checkAuthorizationStatus(singleScope: String): Boolean? = null
         override suspend fun getTokenServerEndpointURL(): String? = null

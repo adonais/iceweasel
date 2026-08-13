@@ -97,14 +97,14 @@ export class TranslationsUtils {
    *
    * If one language tag belongs to one of our models, and the other
    * language tag is determined to be a match, then it is determined
-   * that the model is compatible to for translation with that language.
+   * that the model is compatible for translation with that language.
    *
    * @param {string} lhsLangTag - The left-hand-side language tag to compare.
    * @param {string} rhsLangTag - The right-hand-side language tag to compare.
    *
    * @returns {boolean}
-   *  `true`  if the language tags match, either directly or after normalization.
-   *  `false` if either tag is invalid or empty, or if they do not match.
+   *  `true`  if the language tags are the same string, or if valid tags match after canonicalization or normalization.
+   *  `false` if either tag is empty, or if they are invalid and not the same string, or if valid tags do not match.
    *
    * @see https://datatracker.ietf.org/doc/html/rfc5646#appendix-A
    */
@@ -118,18 +118,29 @@ export class TranslationsUtils {
       return true;
     }
 
-    if (lhsLangTag.split("-")[0] !== rhsLangTag.split("-")[0]) {
-      // The language components of the tags do not match so there is no need to normalize them and compare.
-      return false;
-    }
-
     try {
+      // The language tags did not match, so attempt to canonicalize them and check again.
+      const canonicalLhsLangTag = Intl.getCanonicalLocales(lhsLangTag)[0];
+      const canonicalRhsLangTag = Intl.getCanonicalLocales(rhsLangTag)[0];
+
+      if (canonicalLhsLangTag === canonicalRhsLangTag) {
+        return true;
+      }
+
+      if (
+        canonicalLhsLangTag.split("-")[0] !== canonicalRhsLangTag.split("-")[0]
+      ) {
+        // The language components of the canonicalized tags do not match,
+        // so there is no need to further normalize them and compare.
+        return false;
+      }
+
       return (
-        TranslationsUtils.#normalizeLangTag(lhsLangTag) ===
-        TranslationsUtils.#normalizeLangTag(rhsLangTag)
+        TranslationsUtils.#normalizeLangTag(canonicalLhsLangTag) ===
+        TranslationsUtils.#normalizeLangTag(canonicalRhsLangTag)
       );
     } catch {
-      // One of the locales is not valid, just continue on to return false.
+      // At least one of the locales is not valid, just continue on to return false.
     }
 
     return false;

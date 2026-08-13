@@ -4,16 +4,15 @@
 
 #include "nsPrintSettingsServiceWin.h"
 
+#include "chrome/common/ipc_channel.h"
+#include "ipc/IPCMessageUtils.h"
+#include "mozilla/embedding/PPrintingTypes.h"
 #include "nsCOMPtr.h"
-#include "nsPrintSettingsWin.h"
-#include "nsPrintDialogUtil.h"
-
 #include "nsGfxCIID.h"
 #include "nsIServiceManager.h"
+#include "nsPrintDialogUtil.h"
+#include "nsPrintSettingsWin.h"
 #include "nsWindowsHelpers.h"
-#include "ipc/IPCMessageUtils.h"
-#include "chrome/common/ipc_channel.h"
-#include "mozilla/embedding/PPrintingTypes.h"
 
 using namespace mozilla::embedding;
 

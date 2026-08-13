@@ -2,43 +2,42 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "PrecompiledScript.h"
-
-#include "nsIIncrementalStreamLoader.h"
-#include "nsIURI.h"
-#include "nsIChannel.h"
-#include "nsNetUtil.h"
-#include "nsThreadUtils.h"
-
-#include "jsapi.h"
-#include "jsfriendapi.h"
-#include "js/CompileOptions.h"  // JS::CompileOptions, JS::OwningCompileOptions
-#include "js/CompilationAndEvaluation.h"
-#include "js/experimental/CompileScript.h"  // JS::CompileGlobalScriptToStencil, JS::NewFrontendContext, JS::DestroyFrontendContext, JS::SetNativeStackQuota, JS::ThreadStackQuotaForSize, JS::HadFrontendErrors, JS::ConvertFrontendErrorsToRuntimeErrors
-#include "js/experimental/JSStencil.h"  // JS::Stencil, JS::CompileGlobalScriptToStencil, JS::InstantiateGlobalStencil
-#include "js/SourceText.h"  // JS::SourceText
-#include "js/Utility.h"
-
 #include "mozilla/AlreadyAddRefed.h"  // already_AddRefed
 #include "mozilla/Assertions.h"       // MOZ_ASSERT
 #include "mozilla/Attributes.h"
 #include "mozilla/ClearOnShutdown.h"  // RunOnShutdown
-#include "mozilla/EventQueue.h"       // EventQueuePriority
-#include "mozilla/Mutex.h"
-#include "mozilla/SchedulerGroup.h"
-#include "mozilla/StaticMutex.h"
-#include "mozilla/StaticPrefs_javascript.h"
 #include "mozilla/dom/ChromeUtils.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ScriptLoader.h"
+#include "mozilla/EventQueue.h"  // EventQueuePriority
 #include "mozilla/HoldDropJSObjects.h"
-#include "mozilla/RefPtr.h"          // RefPtr
+#include "mozilla/Mutex.h"
+#include "mozilla/RefPtr.h"  // RefPtr
+#include "mozilla/SchedulerGroup.h"
+#include "mozilla/StaticMutex.h"
+#include "mozilla/StaticPrefs_javascript.h"
 #include "mozilla/TaskController.h"  // TaskController, Task
 #include "mozilla/ThreadSafety.h"    // MOZ_GUARDED_BY
 #include "mozilla/Utf8.h"            // Utf8Unit
 #include "mozilla/Vector.h"
+
+#include "jsapi.h"
+#include "jsfriendapi.h"
 #include "nsCCUncollectableMarker.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsIChannel.h"
+#include "nsIIncrementalStreamLoader.h"
+#include "nsIURI.h"
+#include "nsNetUtil.h"
+#include "nsThreadUtils.h"
+#include "PrecompiledScript.h"
+
+#include "js/CompilationAndEvaluation.h"
+#include "js/CompileOptions.h"  // JS::CompileOptions, JS::OwningCompileOptions
+#include "js/experimental/CompileScript.h"  // JS::CompileGlobalScriptToStencil, JS::NewFrontendContext, JS::DestroyFrontendContext, JS::SetNativeStackQuota, JS::ThreadStackQuotaForSize, JS::HadFrontendErrors, JS::ConvertFrontendErrorsToRuntimeErrors
+#include "js/experimental/JSStencil.h"  // JS::Stencil, JS::CompileGlobalScriptToStencil, JS::InstantiateGlobalStencil
+#include "js/SourceText.h"  // JS::SourceText
+#include "js/Utility.h"
 
 using namespace JS;
 using namespace mozilla;

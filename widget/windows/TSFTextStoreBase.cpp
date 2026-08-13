@@ -4,6 +4,10 @@
 
 #include "TSFTextStoreBase.h"
 
+#include <comutil.h>  // for _bstr_t
+#include <oleauto.h>  // for SysAllocString
+#include <olectl.h>
+
 #include "IMMHandler.h"
 #include "TSFInputScope.h"
 #include "TSFTextStore.h"
@@ -18,10 +22,6 @@
 #include "mozilla/TextEvents.h"
 #include "mozilla/ToString.h"
 #include "nsWindow.h"
-
-#include <comutil.h>  // for _bstr_t
-#include <oleauto.h>  // for SysAllocString
-#include <olectl.h>
 
 // For collecting other people's log, tell `MOZ_LOG=IMEHandler:4,sync`
 // rather than `MOZ_LOG=IMEHandler:5,sync` since using `5` may create too
@@ -1001,16 +1001,12 @@ STDMETHODIMP TSFTextStoreBase::InsertEmbeddedAtSelection(
 }
 
 HRESULT TSFTextStoreBase::HandleRequestAttrs(DWORD aFlags, ULONG aFilterCount,
-                                             const TS_ATTRID* aFilterAttrs,
-                                             int32_t aNumOfSupportedAttrs) {
-  MOZ_ASSERT(aNumOfSupportedAttrs == TSFUtils::NUM_OF_SUPPORTED_ATTRS ||
-             aNumOfSupportedAttrs ==
-                 TSFUtils::NUM_OF_SUPPORTED_ATTRS_IN_EMPTY_TEXT_STORE);
+                                             const TS_ATTRID* aFilterAttrs) {
   MOZ_LOG(gIMELog, LogLevel::Info,
           ("0x%p TSFTextStoreBase::HandleRequestAttrs(aFlags=%s, "
-           "aFilterCount=%lu, aNumOfSupportedAttrs=%d)",
+           "aFilterCount=%lu), GetNumberOfSupportedAttrs()=%zu",
            this, AutoFindFlagsCString(aFlags).get(), aFilterCount,
-           aNumOfSupportedAttrs));
+           GetNumberOfSupportedAttrs()));
 
   // This is a little weird! RequestSupportedAttrs gives us advanced notice
   // of a support query via RetrieveRequestedAttrs for a specific attribute.
@@ -1018,7 +1014,7 @@ HRESULT TSFTextStoreBase::HandleRequestAttrs(DWORD aFlags, ULONG aFilterCount,
   // support, but the text service will only want the input scope object
   // returned in RetrieveRequestedAttrs if the dwFlags passed in here contains
   // TS_ATTR_FIND_WANT_VALUE.
-  for (const int32_t i : IntegerRange(aNumOfSupportedAttrs)) {
+  for (const int32_t i : IntegerRange(GetNumberOfSupportedAttrs())) {
     mRequestedAttrs[i] = false;
   }
   mRequestedAttrValues = !!(aFlags & TS_ATTR_FIND_WANT_VALUE);
@@ -1028,10 +1024,9 @@ HRESULT TSFTextStoreBase::HandleRequestAttrs(DWORD aFlags, ULONG aFilterCount,
             ("0x%p   TSFEmptyTextStore::HandleRequestAttrs(), "
              "requested attr=%s",
              this, AutoGuidCString(aFilterAttrs[i]).get()));
-    TSFUtils::AttrIndex index =
-        TSFUtils::GetRequestedAttrIndex(aFilterAttrs[i]);
-    if (index != TSFUtils::AttrIndex::NotSupported) {
-      mRequestedAttrs[index] = true;
+    AttrIndex index = GetRequestedAttrIndex(aFilterAttrs[i]);
+    if (index != AttrIndex::NotSupported) {
+      mRequestedAttrs[static_cast<size_t>(index)] = true;
     }
   }
   return S_OK;
@@ -1040,13 +1035,9 @@ HRESULT TSFTextStoreBase::HandleRequestAttrs(DWORD aFlags, ULONG aFilterCount,
 // To test the document URL result, define this to out put it to the stdout
 // #define DEBUG_PRINT_DOCUMENT_URL
 
-HRESULT TSFTextStoreBase::RetrieveRequestedAttrsInternal(
-    ULONG ulCount, TS_ATTRVAL* paAttrVals, ULONG* pcFetched,
-    int32_t aNumOfSupportedAttrs) {
-  MOZ_ASSERT(aNumOfSupportedAttrs == TSFUtils::NUM_OF_SUPPORTED_ATTRS ||
-             aNumOfSupportedAttrs ==
-                 TSFUtils::NUM_OF_SUPPORTED_ATTRS_IN_EMPTY_TEXT_STORE);
-
+HRESULT TSFTextStoreBase::RetrieveRequestedAttrsInternal(ULONG ulCount,
+                                                         TS_ATTRVAL* paAttrVals,
+                                                         ULONG* pcFetched) {
   if (!pcFetched || !paAttrVals) {
     MOZ_LOG(gIMELog, LogLevel::Error,
             ("0x%p TSFTextStoreBase::RetrieveRequestedAttrs() FAILED due to "
@@ -1057,7 +1048,7 @@ HRESULT TSFTextStoreBase::RetrieveRequestedAttrsInternal(
 
   const ULONG expectedCount = [&]() {
     ULONG count = 0;
-    for (int32_t i : IntegerRange(aNumOfSupportedAttrs)) {
+    for (int32_t i : IntegerRange(GetNumberOfSupportedAttrs())) {
       if (mRequestedAttrs[i]) {
         count++;
       }
@@ -1082,13 +1073,13 @@ HRESULT TSFTextStoreBase::RetrieveRequestedAttrsInternal(
 #endif  // #ifdef DEBUG_PRINT_DOCUMENT_URL
 
   int32_t count = 0;
-  for (int32_t i = 0; i < TSFUtils::NUM_OF_SUPPORTED_ATTRS; i++) {
+  for (const uint32_t i : IntegerRange(GetNumberOfSupportedAttrs())) {
     if (!mRequestedAttrs[i]) {
       continue;
     }
     mRequestedAttrs[i] = false;
 
-    TS_ATTRID attrID = TSFUtils::GetAttrID(static_cast<TSFUtils::AttrIndex>(i));
+    TS_ATTRID attrID = GetAttrID(static_cast<AttrIndex>(i));
 
     MOZ_LOG(gIMELog, LogLevel::Info,
             ("0x%p   TSFTextStoreBase::RetrieveRequestedAttrs() for %s", this,
@@ -1100,19 +1091,19 @@ HRESULT TSFTextStoreBase::RetrieveRequestedAttrsInternal(
     if (!mRequestedAttrValues) {
       paAttrVals[count].varValue.vt = VT_EMPTY;
     } else {
-      switch (i) {
-        case TSFUtils::AttrIndex::InputScope: {
+      switch (static_cast<AttrIndex>(i)) {
+        case AttrIndex::InputScope: {
           paAttrVals[count].varValue.vt = VT_UNKNOWN;
           auto inputScope = MakeRefPtr<TSFInputScope>(mInputScopes);
           paAttrVals[count].varValue.punkVal = inputScope.forget().take();
           break;
         }
-        case TSFUtils::AttrIndex::DocumentURL: {
+        case AttrIndex::DocumentURL: {
           paAttrVals[count].varValue.vt = VT_BSTR;
           paAttrVals[count].varValue.bstrVal = GetExposingURL();
           break;
         }
-        case TSFUtils::AttrIndex::TextVerticalWriting: {
+        case AttrIndex::TextVerticalWriting: {
           const Maybe<WritingMode> writingMode = GetWritingMode();
           paAttrVals[count].varValue.vt = VT_BOOL;
           paAttrVals[count].varValue.boolVal =
@@ -1120,7 +1111,7 @@ HRESULT TSFTextStoreBase::RetrieveRequestedAttrsInternal(
                                                                 : VARIANT_FALSE;
           break;
         }
-        case TSFUtils::AttrIndex::TextOrientation: {
+        case AttrIndex::TextOrientation: {
           const Maybe<WritingMode> writingMode = GetWritingMode();
           paAttrVals[count].varValue.vt = VT_I4;
           paAttrVals[count].varValue.lVal =
@@ -1277,23 +1268,59 @@ void TSFTextStoreBase::NotifyTSFOfInputContextChange(AttrIndices aAttrIndices) {
       ("0x%p TSFTextStoreBase::NotifyTSFOfInputContextChange(), mSink=0x%p, "
        "DocumentURL is changed=%s, InputScope is changed=%s",
        this, mSink.get(),
-       aAttrIndices.contains(TSFUtils::AttrIndex::DocumentURL) ? "Yes" : "No",
-       aAttrIndices.contains(TSFUtils::AttrIndex::InputScope) ? "Yes" : "No"));
+       aAttrIndices.contains(AttrIndex::DocumentURL) ? "Yes" : "No",
+       aAttrIndices.contains(AttrIndex::InputScope) ? "Yes" : "No"));
 
   if (!mSink) {
     return;
   }
 
   AutoTArray<TS_ATTRID, 2> attrIDs;
-  if (aAttrIndices.contains(TSFUtils::AttrIndex::DocumentURL)) {
-    attrIDs.AppendElement(
-        TSFUtils::GetAttrID(TSFUtils::AttrIndex::DocumentURL));
+  if (aAttrIndices.contains(AttrIndex::DocumentURL)) {
+    attrIDs.AppendElement(GetAttrID(AttrIndex::DocumentURL));
   }
-  if (aAttrIndices.contains(TSFUtils::AttrIndex::InputScope)) {
-    attrIDs.AppendElement(TSFUtils::GetAttrID(TSFUtils::AttrIndex::InputScope));
+  if (aAttrIndices.contains(AttrIndex::InputScope)) {
+    attrIDs.AppendElement(GetAttrID(AttrIndex::InputScope));
   }
   RefPtr<ITextStoreACPSink> sink(mSink);
   sink->OnAttrsChange(0, 0, attrIDs.Length(), attrIDs.Elements());
+}
+
+auto TSFTextStoreBase::GetRequestedAttrIndex(const TS_ATTRID& aAttrID) const
+    -> AttrIndex {
+  if (IsEqualGUID(aAttrID, GUID_PROP_INPUTSCOPE)) {
+    return AttrIndex::InputScope;
+  }
+  if (IsEqualGUID(aAttrID, TSFUtils::sGUID_PROP_URL)) {
+    return AttrIndex::DocumentURL;
+  }
+  if (IsEditable()) {
+    if (IsEqualGUID(aAttrID, TSFUtils::TSATTRID_Text_VerticalWriting_Ref())) {
+      return AttrIndex::TextVerticalWriting;
+    }
+    if (IsEqualGUID(aAttrID, TSFUtils::TSATTRID_Text_Orientation_Ref())) {
+      return AttrIndex::TextOrientation;
+    }
+  }
+  return AttrIndex::NotSupported;
+}
+
+TS_ATTRID TSFTextStoreBase::GetAttrID(AttrIndex aIndex) const {
+  switch (aIndex) {
+    case AttrIndex::InputScope:
+      return GUID_PROP_INPUTSCOPE;
+    case AttrIndex::DocumentURL:
+      return TSFUtils::sGUID_PROP_URL;
+    case AttrIndex::TextVerticalWriting:
+      return IsEditable() ? TSFUtils::TSATTRID_Text_VerticalWriting_Ref()
+                          : GUID_NULL;
+    case AttrIndex::TextOrientation:
+      return IsEditable() ? TSFUtils::TSATTRID_Text_Orientation_Ref()
+                          : GUID_NULL;
+    default:
+      MOZ_CRASH("Invalid index? Or not implemented yet?");
+      return GUID_NULL;
+  }
 }
 
 }  // namespace mozilla::widget

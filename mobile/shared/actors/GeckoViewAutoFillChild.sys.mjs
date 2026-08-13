@@ -112,7 +112,7 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
 
     const loginManagerChild = lazy.LoginManagerChild.forWindow(window);
     const docState = loginManagerChild.stateForDocument(
-      passwordField.ownerDocument
+      passwordField?.ownerDocument || aFormLike.rootElement.ownerDocument
     );
     const [usernameField] = docState.getUserNameAndPasswordFields(
       passwordField || aFormLike.elements[0]
@@ -136,8 +136,8 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
           (!usernameField ||
             element.type != "text" ||
             element == usernameField ||
-            (element.getAutocompleteInfo() &&
-              element.getAutocompleteInfo().fieldName == "email"))
+            element.getAutocompleteInfo()?.fieldName == "email" ||
+            element.list?.options?.length)
       )
       .map(element => {
         sendFocusEvent |= element === focusedElement;
@@ -255,6 +255,7 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
         right: bounds.right,
         bottom: bounds.bottom,
       },
+      datalist: [],
     };
 
     if (aElement === aUsernameField) {
@@ -266,6 +267,13 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
         const autocompleteAttr = autocompleteInfo.fieldName;
         if (autocompleteAttr == "email") {
           info.type = "email";
+        }
+      }
+
+      if (aElement.list?.options) {
+        debug`${aElement.tagName} has ${aElement.list.options.length} items in datalist`;
+        for (const item of aElement.list.options) {
+          info.datalist.push(item.value);
         }
       }
     }
@@ -304,7 +312,27 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
   onFocus(aTarget) {
     debug`Auto-fill focus on ${aTarget && aTarget.tagName}`;
 
-    const info = aTarget && this._autofillInfos?.get(aTarget);
+    const info = (() => {
+      if (!aTarget) {
+        // focus is blur
+        return null;
+      }
+      const targetInfo = this._autofillInfos?.get(aTarget);
+      if (targetInfo) {
+        return targetInfo;
+      }
+      if (!aTarget.list) {
+        return null;
+      }
+      // Focused element has datalist.
+      if (aTarget.form) {
+        this.addElement(lazy.FormLikeFactory.createFromForm(aTarget.form));
+      } else {
+        this.addElement(lazy.FormLikeFactory.createFromField(aTarget));
+      }
+      return this._autofillInfos?.get(aTarget);
+    })();
+
     if (info) {
       const win = aTarget.documentGlobal;
       const bounds = aTarget.getBoundingClientRect();

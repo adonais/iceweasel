@@ -196,108 +196,8 @@ add_task(async function test_expanded_state_for_always_show() {
   await BrowserTestUtils.closeWindow(newWin);
 });
 
-add_task(async function test_states_for_hide_sidebar() {
-  // With horizontal tabs and visibility set to "hide-sidebar", check launcher is initially visible
-  await SpecialPowers.pushPrefEnv({
-    set: [[VERTICAL_TABS_PREF, false]],
-  });
-  await SidebarTestUtils.waitForTabstripOrientation(window, "horizontal");
-
-  const { sidebarContainer, sidebarMain, toolbarButton } = SidebarController;
-
-  Assert.equal(
-    Services.prefs.getStringPref(SIDEBAR_VISIBILITY_PREF),
-    "hide-sidebar",
-    "Sanity check the visibility pref when verticalTabs are disabled"
-  );
-  // The sidebar launcher should be initially visible when visibility is "hide-sidebar"
-  Assert.ok(
-    !SidebarController.sidebarContainer.hidden,
-    "The launcher is initially visible"
-  );
-  Assert.ok(
-    !SidebarController.toolbarButton.checked,
-    "The toolbar button is not checked in horizontal tabs mode even when the launcher is visible"
-  );
-
-  const checkStates = async (
-    { hidden },
-    container = sidebarContainer,
-    component = sidebarMain,
-    button = toolbarButton
-  ) => {
-    info(`Waiting for container to become ${hidden ? "hidden" : "not hidden"}`);
-    await BrowserTestUtils.waitForMutationCondition(
-      container,
-      { attributes: true, attributeFilter: ["hidden"] },
-      () => container.hidden == hidden
-    );
-    ok(
-      true,
-      hidden ? "Sidebar container is hidden." : "Sidebar container is shown."
-    );
-    info("Waiting for component to be not expanded");
-    await BrowserTestUtils.waitForMutationCondition(
-      component,
-      { attributes: true, attributeFilter: ["expanded"] },
-      () => !component.expanded
-    );
-    ok(true, "Sidebar should not be expanded");
-    info("Waiting for button to never be highlighted in horizontal tabs mode");
-    await BrowserTestUtils.waitForMutationCondition(
-      button,
-      { attributes: true, attributeFilter: ["checked", "expanded"] },
-      () => !button.checked && !button.hasAttribute("expanded")
-    );
-    ok(
-      true,
-      "Toolbar button is not checked in horizontal tabs mode and expanded attribute is absent."
-    );
-    Assert.deepEqual(
-      document.l10n.getAttributes(button),
-      {
-        id: hidden
-          ? "sidebar-widget-show-sidebar2"
-          : "sidebar-widget-hide-sidebar2",
-        args:
-          AppConstants.platform === "macosx"
-            ? { shortcut: "⌃Z" }
-            : { shortcut: "Alt+Ctrl+Z" },
-      },
-      "Toolbar button has the correct tooltip."
-    );
-  };
-
-  info("Check the launcher is initially visible");
-  await checkStates({ hidden: false });
-
-  info("Hide sidebar using the toolbar button.");
-  await SimpleTest.promiseFocus(window);
-  EventUtils.synthesizeMouseAtCenter(toolbarButton, {}, window);
-  await checkStates({ hidden: true });
-  Assert.ok(
-    !toolbarButton.checked,
-    "The toolbar button is unchecked after hiding the launcher"
-  );
-
-  info("Check states on a new window.");
-  const newWin = await BrowserTestUtils.openNewBrowserWindow();
-  await SidebarTestUtils.waitForTabstripOrientation(newWin, "horizontal");
-  await checkStates(
-    { hidden: true },
-    newWin.SidebarController.sidebarContainer,
-    newWin.SidebarController.sidebarMain,
-    newWin.SidebarController.toolbarButton
-  );
-  Assert.ok(
-    !newWin.SidebarController.toolbarButton.checked,
-    "The toolbar button in the new window is unchecked when the launcher is hidden"
-  );
-
-  await BrowserTestUtils.closeWindow(newWin);
-  await SpecialPowers.popPrefEnv();
-  await SidebarTestUtils.waitForTabstripOrientation(window, "vertical");
-});
+// Horizontal-tabs "hide sidebar" mode (launcher hidden, toolbar button toggles
+// the panel) is covered by browser_hide_sidebar.js.
 
 add_task(async function test_toolbar_sidebar_badges() {
   const SIDEBAR_COMMAND_ID = "viewGenaiChatSidebar";
@@ -557,11 +457,17 @@ add_task(async function test_sidebar_button_runtime_pref_enabled() {
  * Check that keyboard shortcut toggles sidebar
  */
 add_task(async function test_keyboard_shortcut() {
-  // When the button was removed, "hide-sidebar" was set automatically. Revert for this test.
-  // Expanded is the default when "hide-sidebar" is set - revert to collapsed.
+  // The keyboard shortcut expands/collapses the launcher, which only has an
+  // expanded state with vertical tabs. A prior test removed the sidebar button,
+  // which can force horizontal tabs, so re-assert vertical tabs and always-show
+  // and start from a collapsed launcher for this test.
   await SpecialPowers.pushPrefEnv({
-    set: [[SIDEBAR_VISIBILITY_PREF, "always-show"]],
+    set: [
+      [VERTICAL_TABS_PREF, true],
+      [SIDEBAR_VISIBILITY_PREF, "always-show"],
+    ],
   });
+  await SidebarTestUtils.waitForTabstripOrientation(window, "vertical");
   await SidebarController.updateUIState({ launcherExpanded: false });
 
   const sidebar = document.querySelector("sidebar-main");

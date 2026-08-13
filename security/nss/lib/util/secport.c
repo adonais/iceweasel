@@ -220,31 +220,39 @@ PORT_SafeZero(void *p, size_t n)
 #ifdef __STDC_LIB_EXT1__
     /* if the os implements C11 annex K, use memset_s */
     memset_s(p, n, 0, n);
-#else
-    /* _DEFAULT_SORUCE  == BSD source in GCC based environments
+#elif (defined(_DEFAULT_SOURCE) || defined(_BSD_SOURCE)) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 25))
+    /* _DEFAULT_SOURCE == BSD source in GCC based environments
      * if other environmens support explicit_bzero, their defines
      * should be added here */
-#if (defined(_DEFAULT_SOURCE) || defined(_BSD_SOURCE)) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 25))
     explicit_bzero(p, n);
-#else
-#ifdef XP_WIN
+#elif defined(XP_WIN)
     /* windows has a secure zero funtion */
     SecureZeroMemory(p, n);
+#elif defined(__GNUC__) || defined(__clang__)
+    /* Platforms without memset_s/explicit_bzero (notably macOS/AArch64):
+     * use the libc's optimized (vectorized) memset, and follow it with an
+     * inline-asm memory clobber so the compiler cannot treat the zeroing as
+     * a dead store and elide it. */
+    if (p != NULL) {
+        memset(p, 0, n);
+        __asm__ __volatile__(""
+                             :
+                             : "r"(p)
+                             : "memory");
+    }
 #else
-    /* if the os doesn't support one of the above, but does support
-     * memset_explicit, you can add the definition for memset with the
-     * appropriate define check here */
-    /* define an explicitly implementated Safe zero if the OS
-     * doesn't provide one */
+    /* Last resort for toolchains that support none of the above and lack GNU/
+     * Clang inline asm: write through a volatile pointer so the compiler is
+     * (best-effort) not permitted to elide the zeroing. If the OS provides
+     * another secure-zero primitive (e.g. memset_explicit), add a branch for
+     * it above with the appropriate define check. */
     if (p != NULL) {
         volatile unsigned char *__vl = (unsigned char *)p;
         size_t __nl = n;
         while (__nl--)
             *__vl++ = 0;
     }
-#endif /* no windows SecureZeroMemory */
-#endif /* no explicit_bzero */
-#endif /* no memset_s */
+#endif
 }
 
 /********************* Arena code follows *****************************

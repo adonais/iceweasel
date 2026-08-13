@@ -5,13 +5,11 @@
 import static org.mozilla.conventions.BuildConfigKt.updateExtensionVersion
 
 plugins {
+    id 'com.android.application'
     alias(libs.plugins.dependency.analysis)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.parcelize)
 }
-
-apply plugin: 'com.android.application'
-apply plugin: 'kotlin-parcelize'
 
 android {
     compileSdk { version = release(config.compileSdkMajorVersion) { minorApiLevel = config.compileSdkMinorVersion } }
@@ -81,7 +79,7 @@ dependencies {
 
     implementation libs.androidx.activity
     implementation libs.androidx.appcompat
-    implementation libs.androidx.core.ktx
+    implementation libs.androidx.core
     implementation platform(libs.androidx.compose.bom)
     implementation libs.androidx.compose.foundation
     implementation libs.androidx.compose.material3

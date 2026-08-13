@@ -76,6 +76,7 @@ When a component needs distinct treatment for IC and HCM users, the recommended 
   }
 }
 ```
+
 A rule that belongs in both IC and HCM (e.g. removing child outlines from a button with both an icon and a label so only the button wrapper shows a focus ring) should use bare `@media (prefers-contrast)` without the `not (forced-colors)` exclusion.
 
 **IC-specific color improvements:** IC users on macOS keep the default Firefox color scheme and should not receive a reduced-palette experience. If a foreground color modification on a control could meaningfully improve contrast for IC users, it can go in the `prefers-contrast and (not (forced-colors))` block — but only using non-system color tokens. There are currently no design system tokens specifically for IC color improvements beyond borders.
@@ -172,7 +173,6 @@ These checks apply when you're writing `forced-colors` overrides. They ensure yo
 
 When choosing tokens for an element in HCM, identify the semantic role of the element (interactive control, selected item, static page content, link text, disabled content), find the appropriate token family in the [tokens table](https://firefoxux.github.io/firefox-desktop-components/?path=/story/docs-tokens-table--default), then use that family consistently across background, text, and border. Do not mix component-specific tokens with generic ones, or tokens from unrelated components.
 
-
 ```css
 /* WRONG — mixing component families */
 --my-wrong-bg: var(--button-background-color-primary);
@@ -189,7 +189,6 @@ When choosing tokens for an element in HCM, identify the semantic role of the el
 --my-text: var(--button-text-color-primary);
 --my-border: var(--button-border-color-primary);
 ```
-
 
 **Token families inside our design system tokens set have already been audited for HCM compliance**. By sticking with one family, you're guaranteed to avoid pair mismatches.
 
@@ -290,8 +289,6 @@ Before using a token in a `forced-colors` block, look it up in the [Firefox desi
 In addition, you should build and test your patch on Windows when possible.
 Testing chrome patches in Firefox using FF HCM will not produce the same results as testing on Windows with Windows HCM enabled. Please read about the differences between FF HCM and Windows HCM in the [Colors and High Contrast Mode in Firefox](ColorsAndHighContrastMode.md) documentation.
 
-
-
 ---
 
 ### Check 9: Do ghost components have appropriate tokens set in HCM?
@@ -362,7 +359,6 @@ If the same border is appropriate for both IC and HCM, set it in a bare `@media 
   padding: var(--space-small);
 }
 ```
-
 
 ---
 

@@ -2,20 +2,19 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <android/log.h>
+#include <dirent.h>
+
+#include "gfxAndroidPlatform.h"
 #include "mozilla/Base64.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/MemoryReporting.h"
-
-#include "mozilla/dom/ContentChild.h"
-#include "gfxAndroidPlatform.h"
 #include "mozilla/Omnijar.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/UniquePtrExtensions.h"
+#include "mozilla/dom/ContentChild.h"
 #include "nsReadableUtils.h"
-
 #include "nsXULAppAPI.h"
-#include <dirent.h>
-#include <android/log.h>
 #define ALOG(args...) __android_log_print(ANDROID_LOG_INFO, "Gecko", ##args)
 
 #include "ft2build.h"
@@ -23,41 +22,38 @@
 #include FT_TRUETYPE_TAGS_H
 #include FT_TRUETYPE_TABLES_H
 #include FT_MULTIPLE_MASTERS_H
+#include "SharedFontList-impl.h"
 #include "cairo-ft.h"
-
 #include "gfxFT2FontList.h"
 #include "gfxFT2Fonts.h"
 #include "gfxFT2Utils.h"
-#include "gfxUserFontSet.h"
 #include "gfxFontUtils.h"
-#include "SharedFontList-impl.h"
+#include "gfxUserFontSet.h"
 #define StandardFonts
 #include "StandardFonts-android.inc"
 #undef StandardFonts
-#include "harfbuzz/hb-ot.h"  // for name ID constants
-
-#include "nsServiceManagerUtils.h"
-#include "nsIGfxInfo.h"
-#include "mozilla/Components.h"
-#include "nsIObserverService.h"
-#include "nsTArray.h"
-#include "nsUnicharUtils.h"
-#include "nsCRT.h"
-
-#include "nsDirectoryServiceUtils.h"
-#include "nsDirectoryServiceDefs.h"
-#include "nsAppDirectoryServiceDefs.h"
-#include "nsMemory.h"
-#include "nsPresContext.h"
-#include "gfxFontConstants.h"
-
-#include "mozilla/EndianUtils.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/scache/StartupCache.h"
-#include "mozilla/glean/GfxMetrics.h"
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+
+#include "gfxFontConstants.h"
+#include "harfbuzz/hb-ot.h"  // for name ID constants
+#include "mozilla/Components.h"
+#include "mozilla/EndianUtils.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/glean/GfxMetrics.h"
+#include "mozilla/scache/StartupCache.h"
+#include "nsAppDirectoryServiceDefs.h"
+#include "nsCRT.h"
+#include "nsDirectoryServiceDefs.h"
+#include "nsDirectoryServiceUtils.h"
+#include "nsIGfxInfo.h"
+#include "nsIObserverService.h"
+#include "nsMemory.h"
+#include "nsPresContext.h"
+#include "nsServiceManagerUtils.h"
+#include "nsTArray.h"
+#include "nsUnicharUtils.h"
 
 #ifdef MOZ_WIDGET_ANDROID
 #  include "AndroidBuild.h"
@@ -230,8 +226,13 @@ gfxFont* FT2FontEntry::CreateFontInstance(const gfxFontStyle* aStyle) {
     loadFlags &= ~FT_LOAD_NO_AUTOHINT;
   }
 
-  RefPtr<UnscaledFontFreeType> unscaledFont(mUnscaledFont);
+  RefPtr<UnscaledFontFreeType> unscaledFont;
+  {
+    AutoReadLock lock(mLock);
+    unscaledFont = RefPtr<UnscaledFontFreeType>(mUnscaledFont);
+  }
   if (!unscaledFont) {
+    AutoWriteLock lock(mLock);
     RefPtr<SharedFTFace> origFace(mFTFace);
     unscaledFont = !mFilename.IsEmpty() && mFilename[0] == '/'
                        ? new UnscaledFontFreeType(mFilename.get(), mFTFontIndex,

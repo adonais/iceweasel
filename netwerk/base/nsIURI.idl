@@ -307,6 +307,16 @@ interface nsIURI : nsISupports
      */
     nsIURIMutator mutate();
 
+    /**
+     * Returns `HashString(spec)`. C++-only helper for URI-keyed hash tables
+     * (e.g. the image cache), which may hash the same URI several times.
+     * Implementations whose spec is immutable once the URI is published may
+     * cache this value to avoid rescanning a potentially very large spec, such
+     * as a data: URI. The value is only guaranteed to match HashString() of the
+     * current spec; do not persist it.
+     */
+    [notxpcom, nostdcall] unsigned long specHash();
+
     %{C++
     // MOZ_DBG support
     friend std::ostream& operator<<(std::ostream& aOut, const nsIURI& aURI) {

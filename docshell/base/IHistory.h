@@ -127,7 +127,12 @@ class IHistory : public nsISupports {
      * caused by HSTS or HTTPS-Only/First upgrading to the HTTPS version of the
      * URI.
      */
-    REDIRECT_SOURCE_UPGRADED = 1 << 6
+    REDIRECT_SOURCE_UPGRADED = 1 << 6,
+    /**
+     * Indicates the URI was reached via a POST navigation. History
+     * implementations may choose to handle these differently (e.g. omit them).
+     */
+    SOURCE_IS_POST_RESPONSE = 1 << 7
   };
 
   /**

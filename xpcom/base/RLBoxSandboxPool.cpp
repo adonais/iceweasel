@@ -2,10 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsThreadUtils.h"
+#include "mozilla/RLBoxSandboxPool.h"
+
 #include "mozilla/AppShutdown.h"
 #include "mozilla/DebugOnly.h"
-#include "mozilla/RLBoxSandboxPool.h"
+#include "nsThreadUtils.h"
 #ifdef MOZ_USING_WASM_SANDBOXING
 #  include "wasm2c_rt_mem.h"
 #endif

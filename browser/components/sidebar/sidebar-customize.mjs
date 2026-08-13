@@ -91,6 +91,7 @@ export class SidebarCustomize extends SidebarPage {
     visibilityInput: "#hide-sidebar",
     verticalTabsInput: "#vertical-tabs",
     expandOnHoverInput: "#expand-on-hover",
+    openToolsFromSidebarInput: "#open-tools-from-sidebar",
   };
 
   connectedCallback() {
@@ -261,6 +262,21 @@ export class SidebarCustomize extends SidebarPage {
             )}
             </moz-checkbox>
           </moz-fieldset>
+          <moz-fieldset
+            class="customize-group medium-top-margin no-end-margin no-label"
+            ?disabled=${this.verticalTabsEnabled}
+          >
+            <moz-checkbox
+              type="checkbox"
+              id="open-tools-from-sidebar"
+              name="openToolsFromSidebar"
+              data-l10n-id="sidebar-open-tools-from-sidebar"
+              @change=${this.#handleOpenToolsFromSidebarChange}
+              ?checked=${
+                this.verticalTabsEnabled || this.visibility !== "hide-launcher"
+              }
+            ></moz-checkbox>
+          </moz-fieldset>
           <moz-fieldset class="customize-group medium-top-margin no-label">
             <moz-checkbox
               type="checkbox"
@@ -329,6 +345,17 @@ export class SidebarCustomize extends SidebarPage {
     );
     Glean.sidebarCustomize.sidebarDisplay.record({
       preference: e.target.checked ? "hide" : "always",
+    });
+  }
+
+  #handleOpenToolsFromSidebarChange(e) {
+    e.stopPropagation();
+    // Checked: tools open from the launcher (the horizontal-tabs default).
+    // Unchecked: the launcher is replaced by the panel switcher dropdown.
+    this.visibility = e.target.checked ? "hide-on-close" : "hide-launcher";
+    Services.prefs.setStringPref(VISIBILITY_SETTING_PREF, this.visibility);
+    Glean.sidebarCustomize.sidebarDisplay.record({
+      preference: e.target.checked ? "always" : "hide",
     });
   }
 

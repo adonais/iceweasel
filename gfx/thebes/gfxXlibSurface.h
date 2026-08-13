@@ -5,14 +5,12 @@
 #ifndef GFX_XLIBSURFACE_H
 #define GFX_XLIBSURFACE_H
 
-#include "gfxASurface.h"
-
 #include <X11/Xlib.h>
-#include "X11UndefineNone.h"
 
 #include "GLXLibrary.h"
+#include "X11UndefineNone.h"
+#include "gfxASurface.h"
 #include "mozilla/gfx/XlibDisplay.h"
-
 #include "nsSize.h"
 
 // Although the dimension parameters in the xCreatePixmapReq wire protocol are

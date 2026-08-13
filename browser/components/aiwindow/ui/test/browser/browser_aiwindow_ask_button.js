@@ -73,6 +73,11 @@ add_task(async function test_ask_button() {
       "Ask button is initially visible for AI Window"
     );
 
+    const focusAskButton = () => {
+      askButton.focus();
+      Services.focus.setFocus(askButton, Services.focus.FLAG_BYKEY);
+    };
+
     // Navigation away from aiWindow.html may auto-open the sidebar via
     // AIWindowTabStatesManager, wait for it to settle then ensure closed.
     await TestUtils.waitForCondition(
@@ -125,11 +130,11 @@ add_task(async function test_ask_button() {
       "false",
       "Ask button has aria-expanded=false after second click"
     );
+    await waitForSidebarClosed(win);
     Assert.ok(sidebar.collapsed, "AI Sidebar is hidden after second click");
 
     askButton.setAttribute("tabindex", "-1");
-    askButton.focus();
-    Services.focus.setFocus(askButton, Services.focus.FLAG_BYKEY);
+    focusAskButton();
     EventUtils.synthesizeKey("KEY_Enter", {}, win);
 
     await BrowserTestUtils.waitForMutationCondition(
@@ -144,6 +149,7 @@ add_task(async function test_ask_button() {
     );
     Assert.ok(!sidebar.hidden, "AI Sidebar is not hidden after tab enter");
 
+    focusAskButton();
     EventUtils.synthesizeKey("KEY_Enter", {}, win);
 
     await BrowserTestUtils.waitForMutationCondition(
@@ -156,8 +162,10 @@ add_task(async function test_ask_button() {
       "false",
       "Ask button has aria-expanded=false after second tab enter"
     );
+    await waitForSidebarClosed(win);
     Assert.ok(sidebar.collapsed, "AI Sidebar is hidden after second tab enter");
 
+    focusAskButton();
     EventUtils.synthesizeKey(" ", {}, win);
 
     await BrowserTestUtils.waitForMutationCondition(
@@ -172,6 +180,7 @@ add_task(async function test_ask_button() {
     );
     Assert.ok(!sidebar.hidden, "AI Sidebar is not hidden after space");
 
+    focusAskButton();
     EventUtils.synthesizeKey(" ", {}, win);
 
     await BrowserTestUtils.waitForMutationCondition(
@@ -184,6 +193,7 @@ add_task(async function test_ask_button() {
       "false",
       "Ask button has aria-expanded=false after second space"
     );
+    await waitForSidebarClosed(win);
     Assert.ok(sidebar.collapsed, "AI Sidebar is hidden after second space");
     askButton.removeAttribute("tabindex");
   } finally {
@@ -278,10 +288,7 @@ add_task(async function test_sidebar_close_button() {
 
     closeButton.click();
 
-    await TestUtils.waitForCondition(
-      () => !AIWindowUI.isSidebarOpen(win),
-      "Wait for sidebar to close after clicking close button"
-    );
+    await waitForSidebarClosed(win);
 
     Assert.ok(
       sidebar.collapsed,

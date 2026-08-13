@@ -4,16 +4,15 @@
 
 #include "DocumentLoadListener.h"
 
-#include "imgLoader.h"
 #include "NeckoCommon.h"
-#include "nsLoadGroup.h"
+#include "imgLoader.h"
 #include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/AppShutdown.h"
+#include "mozilla/Components.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/DynamicFpiNavigationHeuristic.h"
-#include "mozilla/Components.h"
+#include "mozilla/ExtensionPolicyService.h"
 #include "mozilla/LoadInfo.h"
-#include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ResultVariant.h"
@@ -21,30 +20,37 @@
 #include "mozilla/StaticPrefs_extensions.h"
 #include "mozilla/StaticPrefs_fission.h"
 #include "mozilla/StaticPrefs_security.h"
+#include "mozilla/StoragePrincipalHelper.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/BrowsingContextGroup.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/ChildProcessChannelListener.h"
 #include "mozilla/dom/ClientChannelHelper.h"
 #include "mozilla/dom/ContentParent.h"
-#include "mozilla/dom/ParentProcessChannelHandle.h"
 #include "mozilla/dom/ContentProcessManager.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/dom/ParentProcessChannelHandle.h"
 #include "mozilla/dom/ProcessIsolation.h"
+#include "mozilla/dom/ReferrerInfo.h"
+#include "mozilla/dom/RemoteWebProgressRequest.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/dom/ipc/IdType.h"
+#include "mozilla/dom/nsHTTPSOnlyUtils.h"
+#include "mozilla/intl/Localization.h"
+#include "mozilla/ipc/PBackgroundSharedTypes.h"
+#include "mozilla/net/ChannelClassifierUtils.h"
 #include "mozilla/net/CookieJarSettings.h"
 #include "mozilla/net/HttpChannelParent.h"
 #include "mozilla/net/RedirectChannelRegistrar.h"
-#include "nsContentSecurityUtils.h"
 #include "nsContentSecurityManager.h"
+#include "nsContentSecurityUtils.h"
+#include "nsDOMNavigationTiming.h"
+#include "nsDSURIContentListener.h"
+#include "nsDocLoader.h"  // for FormatStatusMessage
 #include "nsDocShell.h"
 #include "nsDocShellLoadState.h"
 #include "nsDocShellLoadTypes.h"
-#include "nsDOMNavigationTiming.h"
-#include "nsDSURIContentListener.h"
-#include "nsObjectLoadingContent.h"
-#include "nsOpenWindowInfo.h"
 #include "nsExternalHelperAppService.h"
 #include "nsHttpChannel.h"
 #include "nsIBrowser.h"
@@ -53,26 +59,20 @@
 #include "nsINetworkInterceptController.h"
 #include "nsIStreamConverterService.h"
 #include "nsIViewSourceChannel.h"
-#include "nsImportModule.h"
 #include "nsIXULRuntime.h"
+#include "nsImportModule.h"
+#include "nsLoadGroup.h"
 #include "nsMimeTypes.h"
+#include "nsObjectLoadingContent.h"
+#include "nsOpenWindowInfo.h"
 #include "nsQueryObject.h"
 #include "nsRedirectHistoryEntry.h"
+#include "nsSHistory.h"
 #include "nsSandboxFlags.h"
 #include "nsScriptSecurityManager.h"
-#include "nsSHistory.h"
 #include "nsStringStream.h"
 #include "nsURILoader.h"
 #include "nsWebNavigationInfo.h"
-#include "mozilla/dom/BrowserParent.h"
-#include "mozilla/dom/Element.h"
-#include "mozilla/dom/nsHTTPSOnlyUtils.h"
-#include "mozilla/dom/ReferrerInfo.h"
-#include "mozilla/dom/RemoteWebProgressRequest.h"
-#include "mozilla/net/ChannelClassifierUtils.h"
-#include "mozilla/ExtensionPolicyService.h"
-#include "mozilla/intl/Localization.h"
-#include "nsDocLoader.h"  // for FormatStatusMessage
 
 #ifdef ANDROID
 #  include "mozilla/widget/nsWindow.h"
@@ -543,9 +543,9 @@ void DocumentLoadListener::AddURIVisit(nsIChannel* aChannel,
          nsILoadInfo::HTTPS_ONLY_UPGRADED_LISTENER_NOT_REGISTERED |
          nsILoadInfo::HTTPS_ONLY_UPGRADED_LISTENER_REGISTERED)));
 
-  nsDocShell::InternalAddURIVisit(uri, previousURI, previousFlags,
-                                  responseStatus, browsingContext, widget,
-                                  mLoadStateLoadType, wasUpgraded);
+  nsDocShell::InternalAddURIVisit(
+      uri, previousURI, previousFlags, responseStatus, browsingContext, widget,
+      mLoadStateLoadType, wasUpgraded, net::ChannelIsPost(aChannel));
 }
 
 CanonicalBrowsingContext* DocumentLoadListener::GetLoadingBrowsingContext()
@@ -661,6 +661,9 @@ static Result<SessionHistoryEntry*, const char*> ValidateHistoryLoad(
   if (!uriEq(snapshot->GetURI(), aLoadState->URI())) {
     return Err("URI");
   }
+  if (!uriEq(snapshot->GetUnstrippedURI(), aLoadState->GetUnstrippedURI())) {
+    return Err("UnstrippedURI");
+  }
   if (!uriEq(snapshot->GetOriginalURI(), aLoadState->OriginalURI())) {
     return Err("OriginalURI");
   }
@@ -669,9 +672,15 @@ static Result<SessionHistoryEntry*, const char*> ValidateHistoryLoad(
              aLoadState->ResultPrincipalURI())) {
     return Err("ResultPrincipalURI");
   }
-  if (!uriEq(snapshot->GetUnstrippedURI(), aLoadState->GetUnstrippedURI())) {
-    return Err("UnstrippedURI");
+  if (!uriEq(snapshot->GetBaseURI(), aLoadState->BaseURI())) {
+    return Err("BaseURI");
   }
+
+  if (snapshot->GetSrcdocData().valueOr(VoidString()) !=
+      aLoadState->SrcdocData()) {
+    return Err("SrcdocData");
+  }
+
   if (!principalEq(snapshot->GetTriggeringPrincipal(),
                    aLoadState->TriggeringPrincipal())) {
     return Err("TriggeringPrincipal");
@@ -775,7 +784,9 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
 
   if (aLoadState->GetRemoteTypeOverride()) {
     if (!mIsDocumentLoad || !NS_IsAboutBlank(aLoadState->URI()) ||
-        !loadingContext->IsTopContent()) {
+        !loadingContext->IsTopContent() ||
+        aLoadState->GetEffectiveTriggeringRemoteType() != NOT_REMOTE_TYPE ||
+        aLoadState->LoadIsFromSessionHistory()) {
       LOG(
           ("DocumentLoadListener::Open with invalid remoteTypeOverride "
            "[this=%p]",
@@ -2236,8 +2247,7 @@ DocumentLoadListener::RedirectToRealChannel(
     mChannel->GetStatus(&status);
     bool updateGHistory =
         nsDocShell::ShouldUpdateGlobalHistory(mLoadStateLoadType);
-    if (NS_SUCCEEDED(status) && updateGHistory &&
-        !net::ChannelIsPost(mChannel)) {
+    if (NS_SUCCEEDED(status) && updateGHistory) {
       AddURIVisit(mChannel, aLoadFlags);
     }
   }
@@ -2441,14 +2451,23 @@ void DocumentLoadListener::TriggerRedirectToRealChannel(
     // NOTE: Keep this in sync with the similar check in
     // BrowserParent::RecvNewWindowGlobal.
     EnumSet<ValidatePrincipalOptions> validationOptions = {};
-    // FIXME(bug 1698087): chrome://devtools/**/webextension-fallback.html
-    // Automation-Only: chrome://reftest/** + blank subframes
-    if (docURI->SchemeIs("chrome") ||
-        (xpc::IsInAutomation() && NS_IsAboutBlank(docURI) &&
-         GetParentWindowContext() &&
-         GetParentWindowContext()->Manager()->Manager() == contentParent &&
-         GetParentWindowContext()->DocumentPrincipal()->IsSystemPrincipal())) {
-      validationOptions += ValidatePrincipalOptions::AllowSystem;
+    if (xpc::IsInAutomation()) {
+      // Automation-Only: chrome://reftest/** + blank subframes
+      bool isChromeReftest = false;
+      if (docURI->SchemeIs("chrome")) {
+        nsAutoCString host;
+        docURI->GetHost(host);
+        isChromeReftest = host.EqualsLiteral("reftest");
+      }
+
+      if (isChromeReftest ||
+          (NS_IsAboutBlank(docURI) && GetParentWindowContext() &&
+           GetParentWindowContext()->Manager()->Manager() == contentParent &&
+           GetParentWindowContext()
+               ->DocumentPrincipal()
+               ->IsSystemPrincipal())) {
+        validationOptions += ValidatePrincipalOptions::AllowSystem;
+      }
     }
     if (!contentParent->ValidatePrincipal(unsandboxedPrincipal,
                                           validationOptions)) {

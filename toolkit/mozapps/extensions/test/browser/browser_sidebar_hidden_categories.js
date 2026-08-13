@@ -120,7 +120,7 @@ add_task(async function testLocalesHiddenWhenUninstalled() {
   // and so the assertion may hit a race if any of the
   // providers is taking longer to resolve the getAddonsByTypes
   // async call.
-  await BrowserTestUtils.waitForCondition(async () => {
+  await TestUtils.waitForCondition(async () => {
     const button = await asyncGetCategoryButton(win, "locale");
     return button.hidden;
   }, "Wait for the locale category button to be hidden");
@@ -141,7 +141,7 @@ add_task(async function testLocalesHiddenWithoutDelay() {
   });
   let win = await viewLoaded;
 
-  await BrowserTestUtils.waitForCondition(async () => {
+  await TestUtils.waitForCondition(async () => {
     const button = await asyncGetCategoryButton(win, "locale");
     return button.hidden;
   }, "Wait for the locale category button to be hidden");
@@ -164,7 +164,7 @@ add_task(async function testLocalesShownAfterDelay() {
   });
   let win = await viewLoaded;
 
-  await BrowserTestUtils.waitForCondition(async () => {
+  await TestUtils.waitForCondition(async () => {
     const button = await asyncGetCategoryButton(win, "locale");
     return !button.hidden;
   }, "Wait for the locale category button to be shown");

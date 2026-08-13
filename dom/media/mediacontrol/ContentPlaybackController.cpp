@@ -198,6 +198,19 @@ void ContentPlaybackController::Unmute() {
   NotifyContentMediaControlKeyReceiver(MediaControlKey::Unmute);
 }
 
+void ContentMediaControlKeyHandler::HandleAudioFocusInterrupt(
+    BrowsingContext* aContext, AudioFocusInterruptAction aAction) {
+  MOZ_ASSERT(aContext);
+  // The web content doesn't exist in this browsing context.
+  if (!aContext->GetDocShell()) {
+    return;
+  }
+  if (ContentMediaControlKeyReceiver* receiver =
+          ContentMediaControlKeyReceiver::Get(aContext)) {
+    receiver->HandleAudioFocusInterrupt(aAction);
+  }
+}
+
 void ContentMediaControlKeyHandler::HandleMediaControlAction(
     BrowsingContext* aContext, const MediaControlAction& aAction) {
   MOZ_ASSERT(aContext);

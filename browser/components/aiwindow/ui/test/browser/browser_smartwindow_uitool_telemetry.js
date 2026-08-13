@@ -484,3 +484,200 @@ add_task(async function test_multiple_events_recorded_separately() {
     "Second event has correct reason"
   );
 });
+
+// Tab Group Tests
+
+add_task(async function test_recordBrowserActionPrompt_group_tabs() {
+  Services.fog.testResetFOG();
+
+  const testData = {
+    location: "sidebar",
+    chat_id: "test-chat-group-123",
+    message_seq: 5,
+    action_type: "group_tabs",
+    prompt_type: "safety_confirmation",
+    reason: "user_action",
+    candidates: 5,
+    preselected: 0,
+  };
+
+  ToolUITelemetry.recordBrowserActionPrompt(testData);
+
+  const events = Glean.smartWindow.browserActionPrompt.testGetValue();
+  Assert.equal(
+    events?.length,
+    1,
+    "One browser action prompt event was recorded for group_tabs"
+  );
+
+  const event = events[0];
+  Assert.equal(
+    event.extra.action_type,
+    "group_tabs",
+    "Action type is group_tabs"
+  );
+  Assert.equal(
+    event.extra.candidates,
+    String(testData.candidates),
+    "Candidates matches expected value"
+  );
+  Assert.equal(
+    event.extra.reason,
+    testData.reason,
+    "Reason matches expected value"
+  );
+});
+
+add_task(
+  async function test_recordBrowserActionPromptResponse_group_tabs_confirm() {
+    Services.fog.testResetFOG();
+
+    const testData = {
+      location: "sidebar",
+      chat_id: "test-chat-group-confirm",
+      message_seq: 10,
+      action_type: "group_tabs",
+      prompt_type: "safety_confirmation",
+      response: "confirm",
+      selected: 4,
+      reason: "user_action",
+    };
+
+    ToolUITelemetry.recordBrowserActionPromptResponse(testData);
+
+    const events = Glean.smartWindow.browserActionPromptResponse.testGetValue();
+    Assert.equal(
+      events?.length,
+      1,
+      "One browser action prompt response event was recorded for group_tabs"
+    );
+
+    const event = events[0];
+    Assert.equal(
+      event.extra.action_type,
+      "group_tabs",
+      "Action type is group_tabs"
+    );
+    Assert.equal(event.extra.response, "confirm", "Response is confirm");
+    Assert.equal(
+      event.extra.selected,
+      String(testData.selected),
+      "Selected count matches expected value"
+    );
+  }
+);
+
+add_task(
+  async function test_recordBrowserActionPromptResponse_group_tabs_cancel() {
+    Services.fog.testResetFOG();
+
+    const testData = {
+      location: "fullpage",
+      chat_id: "test-chat-group-cancel",
+      message_seq: 7,
+      action_type: "group_tabs",
+      prompt_type: "safety_confirmation",
+      response: "cancel",
+      selected: 0,
+      reason: "user_action",
+    };
+
+    ToolUITelemetry.recordBrowserActionPromptResponse(testData);
+
+    const events = Glean.smartWindow.browserActionPromptResponse.testGetValue();
+    Assert.equal(
+      events?.length,
+      1,
+      "One browser action prompt response event was recorded for group_tabs cancellation"
+    );
+
+    const event = events[0];
+    Assert.equal(
+      event.extra.action_type,
+      "group_tabs",
+      "Action type is group_tabs"
+    );
+    Assert.equal(event.extra.response, "cancel", "Response is cancel");
+    Assert.equal(
+      event.extra.selected,
+      "0",
+      "Selected count is 0 for cancellation"
+    );
+  }
+);
+
+add_task(async function test_recordBrowserActionUndo_group_tabs_success() {
+  Services.fog.testResetFOG();
+
+  const testData = {
+    location: "sidebar",
+    chat_id: "test-chat-undo-group-success",
+    message_seq: 3,
+    action_type: "group_tabs",
+    tabs_restored: 5,
+    time_delta: 3000,
+    result: "success",
+    error: "",
+  };
+
+  ToolUITelemetry.recordBrowserActionUndo(testData);
+
+  const events = Glean.smartWindow.browserActionUndo.testGetValue();
+  Assert.equal(
+    events?.length,
+    1,
+    "One browser action undo event was recorded for group_tabs"
+  );
+
+  const event = events[0];
+  Assert.equal(
+    event.extra.action_type,
+    "group_tabs",
+    "Action type is group_tabs"
+  );
+  Assert.equal(
+    event.extra.tabs_restored,
+    String(testData.tabs_restored),
+    "Tabs restored (ungrouped) count matches expected value"
+  );
+  Assert.equal(event.extra.result, "success", "Result is success");
+  Assert.equal(event.extra.error, "", "Error field is empty for success");
+});
+
+add_task(async function test_recordBrowserActionUndo_group_tabs_error() {
+  Services.fog.testResetFOG();
+
+  const testData = {
+    location: "fullpage",
+    chat_id: "test-chat-undo-group-error",
+    message_seq: 4,
+    action_type: "group_tabs",
+    tabs_restored: 0,
+    time_delta: 2000,
+    result: "error",
+    error: "ungroup_failed",
+  };
+
+  ToolUITelemetry.recordBrowserActionUndo(testData);
+
+  const events = Glean.smartWindow.browserActionUndo.testGetValue();
+  Assert.equal(
+    events?.length,
+    1,
+    "One browser action undo event was recorded for group_tabs error"
+  );
+
+  const event = events[0];
+  Assert.equal(
+    event.extra.action_type,
+    "group_tabs",
+    "Action type is group_tabs"
+  );
+  Assert.equal(event.extra.tabs_restored, "0", "Tabs restored is 0 for error");
+  Assert.equal(event.extra.result, "error", "Result is error");
+  Assert.equal(
+    event.extra.error,
+    "ungroup_failed",
+    "Error field contains the error message"
+  );
+});

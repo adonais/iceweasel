@@ -250,7 +250,7 @@ void nsMathMLmoFrame::ProcessOperatorData() {
         } else {
           return;
         }
-        PresContext()->Document()->WarnOnceAbout(
+        PresContext()->Document()->WarnOnceAndReportAbout(
             dom::DeprecatedOperations::eMathML_DeprecatedMoExplicitAccent,
             false, params);
       }();

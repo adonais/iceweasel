@@ -7,6 +7,10 @@ const { RunSearch } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs"
 );
 
+registerCleanupFunction(() => {
+  Services.prefs.clearUserPref("browser.smartwindow.lastSmartWindowUsageTime");
+});
+
 /**
  * Test that run_search tool calls work end-to-end from the AI window.
  *
@@ -73,6 +77,7 @@ async function preloadAndCloseSidebar(win, aiTab) {
   );
 
   await AIWindowUI.openSidebar(win);
+  await AIWindowUI.focusSidebar(win);
   await assertSidebarSmartbarFocused(win, "Preloaded sidebar");
   AIWindowUI.closeSidebar(win, "test");
 
@@ -259,7 +264,7 @@ add_task(
 
           const sidebarBrowser =
             win.document.getElementById("ai-window-browser");
-          await BrowserTestUtils.waitForCondition(() => {
+          await TestUtils.waitForCondition(() => {
             const el =
               sidebarBrowser.contentDocument?.querySelector("ai-window");
             return el?.shadowRoot;

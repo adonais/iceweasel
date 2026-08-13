@@ -9,13 +9,13 @@
 #  error "This header is only usable from within libxul (MOZILLA_INTERNAL_API)."
 #endif
 
-#include "nsDebug.h"
-#include "nsColor.h"
-#include "nsString.h"
-#include "nsTArray.h"
+#include "mozilla/ColorScheme.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/widget/ThemeChangeKind.h"
-#include "mozilla/ColorScheme.h"
+#include "nsColor.h"
+#include "nsDebug.h"
+#include "nsString.h"
+#include "nsTArray.h"
 
 struct gfxFontStyle;
 

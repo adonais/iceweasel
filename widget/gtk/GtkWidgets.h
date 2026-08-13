@@ -6,6 +6,7 @@
 #define mozilla_widget_GtkWidgets_h
 
 #include <gtk/gtk.h>
+
 #include <cstdint>
 
 namespace mozilla::widget::GtkWidgets {

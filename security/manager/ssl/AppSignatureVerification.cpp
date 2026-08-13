@@ -2,9 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsNSSCertificateDB.h"
-
 #include "AppSignatureVerification.h"
+
 #include "AppTrustDomain.h"
 #include "CryptoTask.h"
 #include "NSSCertDBTrustDomain.h"
@@ -15,10 +14,13 @@
 #include "cosec.h"
 #include "mozilla/Base64.h"
 #include "mozilla/Casting.h"
-#include "mozilla/glean/SecurityManagerSslMetrics.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/glean/SecurityManagerSslMetrics.h"
+#include "mozpkix/pkix.h"
+#include "mozpkix/pkixnss.h"
+#include "mozpkix/pkixutil.h"
 #include "nsCOMPtr.h"
 #include "nsComponentManagerUtils.h"
 #include "nsDependentString.h"
@@ -28,13 +30,11 @@
 #include "nsIStringEnumerator.h"
 #include "nsIZipReader.h"
 #include "nsNSSCertificate.h"
+#include "nsNSSCertificateDB.h"
 #include "nsNetUtil.h"
 #include "nsProxyRelease.h"
 #include "nsString.h"
 #include "nsTHashtable.h"
-#include "mozpkix/pkix.h"
-#include "mozpkix/pkixnss.h"
-#include "mozpkix/pkixutil.h"
 #include "secerr.h"
 #include "secmime.h"
 

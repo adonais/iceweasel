@@ -192,13 +192,12 @@ nsPrefetchNode::OnStartRequest(nsIRequest* aRequest) {
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aRequest, &rv);
   if (NS_FAILED(rv)) return rv;
 
-  // if the load is cross origin without CORS, or the CORS access is rejected,
-  // always fire load event to avoid leaking site information.
+  // A "cors" response whose CORS check fails is a network error, so it fires
+  // the error event. Only an opaque (no-cors) response always fires load: the
+  // CORS check is skipped there to avoid leaking cross-origin information.
+  // https://fetch.spec.whatwg.org/#concept-http-fetch
   nsCOMPtr<nsILoadInfo> loadInfo = httpChannel->LoadInfo();
-  mShouldFireLoadEvent =
-      loadInfo->GetTainting() == LoadTainting::Opaque ||
-      (loadInfo->GetTainting() == LoadTainting::CORS &&
-       (NS_FAILED(httpChannel->GetStatus(&rv)) || NS_FAILED(rv)));
+  mShouldFireLoadEvent = loadInfo->GetTainting() == LoadTainting::Opaque;
 
   // no need to prefetch http error page
   bool requestSucceeded;
@@ -215,8 +214,12 @@ nsPrefetchNode::OnStartRequest(nsIRequest* aRequest) {
   bool fromCache;
   if (NS_SUCCEEDED(cacheInfoChannel->IsFromCache(&fromCache)) && fromCache) {
     LOG(("document is already in the cache; canceling prefetch\n"));
-    // although it's canceled we still want to fire load event
-    mShouldFireLoadEvent = true;
+    // Cancelled, but still fire load only if the channel succeeded. A failure
+    // status (e.g. a failed CORS check) is a network error and fires error.
+    nsresult status;
+    if (NS_SUCCEEDED(aRequest->GetStatus(&status)) && NS_SUCCEEDED(status)) {
+      mShouldFireLoadEvent = true;
+    }
     return NS_BINDING_ABORTED;
   }
 

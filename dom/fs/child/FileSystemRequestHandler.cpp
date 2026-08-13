@@ -256,7 +256,7 @@ void ResolveCallback(FileSystemResolveResponse&& aResponse,
 }
 
 template <class TResponse, class TReturns, class... Args,
-          std::enable_if_t<std::is_same<TReturns, void>::value, bool> = true>
+          std::enable_if_t<std::is_same_v<TReturns, void>, bool> = true>
 mozilla::ipc::ResolveCallback<TResponse> SelectResolveCallback(
     RefPtr<Promise> aPromise,  // NOLINT(performance-unnecessary-value-param)
     Args&&... args) {
@@ -268,7 +268,7 @@ mozilla::ipc::ResolveCallback<TResponse> SelectResolveCallback(
 }
 
 template <class TResponse, class TReturns, class... Args,
-          std::enable_if_t<!std::is_same<TReturns, void>::value, bool> = true>
+          std::enable_if_t<!std::is_same_v<TReturns, void>, bool> = true>
 mozilla::ipc::ResolveCallback<TResponse> SelectResolveCallback(
     RefPtr<Promise> aPromise,  // NOLINT(performance-unnecessary-value-param)
     Args&&... args) {

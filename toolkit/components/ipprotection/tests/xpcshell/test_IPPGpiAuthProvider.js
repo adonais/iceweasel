@@ -56,6 +56,7 @@ function makeProvider(sandbox, gpiToken = "fake-gpi-token") {
   sandbox.stub(provider, "_unregisterGpiListener");
   sandbox.stub(provider, "_dispatchGpiWarmUp");
   sandbox.stub(provider, "_onGpiWarmUpCompleted");
+  sandbox.stub(provider, "_onGpiWarmUpFailed");
   sandbox.stub(provider, "_fetchGpiToken").resolves(gpiToken);
   return provider;
 }
@@ -127,9 +128,15 @@ add_task(async function test_isReady_becomes_true_after_warmup_event() {
   const provider = makeProvider(sandbox);
   provider._onGpiWarmUpCompleted.restore();
   provider.init();
-  Assert.ok(!provider.isReady, "Not ready before GPI:WarmUpCompleted");
+  Assert.ok(
+    !provider.isReady,
+    "Not ready before GeckoView:IPProtection:GPI:WarmUpCompleted"
+  );
   provider._onGpiWarmUpCompleted();
-  Assert.ok(provider.isReady, "Ready after GPI:WarmUpCompleted");
+  Assert.ok(
+    provider.isReady,
+    "Ready after GeckoView:IPProtection:GPI:WarmUpCompleted"
+  );
   provider.uninit();
   sandbox.restore();
 });

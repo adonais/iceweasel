@@ -8,7 +8,7 @@
   },
   "interventions": [
     {
-      "platforms": ["android"],
+      "platforms": ["all"],
       "ua_string": ["add_Chrome"]
     }
   ]

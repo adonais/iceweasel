@@ -3,17 +3,18 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <memory>
+
+#include "VideoUtils.h"
 #include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "gtest/gtest-spi.h"
-#include "nsThreadPool.h"
-#include "nsThread.h"
+#include "gtest/gtest.h"
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/TaskQueue.h"
 #include "mozilla/ThrottledEventQueue.h"
 #include "nsITargetShutdownTask.h"
-#include "VideoUtils.h"
+#include "nsThread.h"
+#include "nsThreadPool.h"
 
 namespace TestTaskQueue {
 

@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 @import "chrome://global/skin/colorpicker-common.css";
+@import "chrome://devtools/content/shared/components/MdnLink.css";
 
 :root {
   --accessibility-contrast-swatch-border-color: var(--grey-40);
@@ -55,6 +56,9 @@
 .contrast-ratio-range {
   display: flex;
   align-items: stretch;
+  flex-wrap: wrap;
+  row-gap: 4px;
+  margin-block-start: 8px;
 }
 
 .contrast-ratio-range {
@@ -144,30 +148,12 @@
   unicode-bidi: isolate;
 }
 
-.learn-more {
-  background-repeat: no-repeat;
-  -moz-context-properties: fill;
-  background-image: url(resource://devtools-shared-images/info-small.svg);
-  background-color: transparent;
-  fill: var(--theme-icon-dimmed-color);
-  border: none;
+.spectrum-color-contrast .learn-more-link {
   margin-inline-start: auto;
-  margin-block-start: 1px;
-  aspect-ratio: 1 / 1;
-  width: 12px;
+  color: var(--theme-link-color);
+  font-size: 10px;
 }
 
-.learn-more:-moz-locale-dir(ltr) {
-  margin-inline-end: -5px;
-}
-
-.learn-more:-moz-locale-dir(rtl) {
-  margin-inline-end: -2px;
-}
-
-.learn-more:hover,
-.learn-more:focus {
-  fill: var(--theme-icon-hover-color);
-  cursor: pointer;
-  outline: none;
+.spectrum-color-contrast.range .contrast-ratio-header-and-single-ratio .learn-more-link {
+  display: none;
 }

@@ -32,7 +32,7 @@ add_task(
         });
 
         let areObserservesRegistered;
-        await BrowserTestUtils.waitForCondition(function () {
+        await TestUtils.waitForCondition(function () {
           areObserservesRegistered = listService.testHasStripOnShareObservers();
           return areObserservesRegistered == stripOnShareEnabled;
         }, "waiting for init of URLQueryStrippingListService ensuring observers have time to register if they need");
@@ -63,7 +63,7 @@ add_task(
         });
 
         let areObserservesRegistered;
-        await BrowserTestUtils.waitForCondition(function () {
+        await TestUtils.waitForCondition(function () {
           areObserservesRegistered = listService.testHasQPSObservers();
           return areObserservesRegistered == queryStrippingEnabled;
         }, "waiting for init of URLQueryStrippingListService ensuring observers have time to register if they need");

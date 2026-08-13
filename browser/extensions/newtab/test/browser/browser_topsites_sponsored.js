@@ -31,7 +31,7 @@ async function newtabWithSponsoredTopsites(callback = () => {}) {
   );
 
   // Wait for the re-broadcast to conclude and for sponsored topsites to render.
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       SpecialPowers.spawn(
         browser,

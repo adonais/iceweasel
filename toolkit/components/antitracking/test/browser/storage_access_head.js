@@ -245,15 +245,6 @@ async function requestStorageAccessAndExpectFailure() {
   SpecialPowers.wrap(document).clearUserGestureActivation();
 }
 
-async function cleanUpData() {
-  await new Promise(resolve => {
-    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-      resolve()
-    );
-  });
-  ok(true, "Deleted all data.");
-}
-
 async function setPreferences() {
   await SpecialPowers.pushPrefEnv({
     set: [

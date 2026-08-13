@@ -4,9 +4,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "TaskbarTabPreview.h"
-#include "nsWindowGfx.h"
-#include "WinUtils.h"
+
 #include <nsITaskbarPreviewController.h>
+
+#include "WinUtils.h"
+#include "nsWindowGfx.h"
 
 #define TASKBARPREVIEW_HWNDID L"TaskbarTabPreviewHwnd"
 

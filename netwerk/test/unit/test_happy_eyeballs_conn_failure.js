@@ -72,7 +72,9 @@ add_setup(async function () {
 
 async function resetConnections() {
   Services.obs.notifyObservers(null, "net:cancel-all-connections");
-  let nssComponent = Cc["@mozilla.org/psm;1"].getService(Ci.nsINSSComponent);
+  let nssComponent = Cc["@mozilla.org/network/ssl-tokens-cache;1"].getService(
+    Ci.nsISSLTokensCache
+  );
   await nssComponent.asyncClearSSLExternalAndInternalSessionCache();
   Services.dns.clearCache(true);
   // eslint-disable-next-line mozilla/no-arbitrary-setTimeout

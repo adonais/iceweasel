@@ -4,10 +4,11 @@
 #ifndef _nsNativeDragSource_h_
 #define _nsNativeDragSource_h_
 
-#include "nscore.h"
 #include <ole2.h>
 #include <oleidl.h>
+
 #include "mozilla/RefPtr.h"
+#include "nscore.h"
 
 namespace mozilla {
 namespace dom {

@@ -7,12 +7,13 @@
 
 #include <gio/gio.h>
 #include <gmodule.h>
+
 #include <memory>
 
+#include "MainThreadUtils.h"
 #include "mozilla/Base64.h"
 #include "mozilla/GUniquePtr.h"
 #include "mozilla/Logging.h"
-#include "MainThreadUtils.h"
 #include "prlink.h"
 
 // This is the implementation of LibSecret, an instantiation of OSKeyStore for

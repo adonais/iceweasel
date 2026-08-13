@@ -5,30 +5,30 @@
 #include "ShutdownPhase.h"
 #ifdef XP_WIN
 #  include <windows.h>
+
 #  include "mozilla/PreXULSkeletonUI.h"
 #else
 #  include <unistd.h>
 #endif
 
+#include "AppShutdown.h"
 #include "ProfilerControl.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/CmdLineAndEnvUtils.h"
+#include "mozilla/LateWriteChecks.h"
 #include "mozilla/PoisonIOInterposer.h"
 #include "mozilla/Printf.h"
-#include "mozilla/scache/StartupCache.h"
+#include "mozilla/Services.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/StartupTimeline.h"
 #include "mozilla/StaticPrefs_toolkit.h"
-#include "mozilla/LateWriteChecks.h"
-#include "mozilla/Services.h"
+#include "mozilla/scache/StartupCache.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsAppRunner.h"
 #include "nsDirectoryServiceUtils.h"
 #include "nsExceptionHandler.h"
 #include "nsICertStorage.h"
 #include "nsThreadUtils.h"
-
-#include "AppShutdown.h"
 
 // TODO: understand why on Android we cannot include this and if we should
 #ifndef ANDROID

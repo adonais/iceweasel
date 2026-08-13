@@ -32,12 +32,11 @@ struct DxgiAdapterDesc {
 
 namespace IPC {
 
-template <>
-struct ParamTraits<DxgiAdapterDesc> {
-  typedef DxgiAdapterDesc paramType;
-  static void Write(MessageWriter* aWriter, const paramType& aParam);
-  static bool Read(MessageReader* aReader, paramType* aResult);
-};
+#if defined(XP_WIN)
+DECLARE_IPC_SERIALIZER(DxgiAdapterDesc);
+#else
+DEFINE_IPC_SERIALIZER_WITHOUT_FIELDS(DxgiAdapterDesc);
+#endif
 
 }  // namespace IPC
 

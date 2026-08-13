@@ -20,7 +20,6 @@
 
 #include "util/Text.h"
 #include "vm/GlobalObject.h"
-
 #include "wasm/WasmBuiltinModuleGenerated.h"
 #include "wasm/WasmFeatures.h"
 #include "wasm/WasmGenerator.h"

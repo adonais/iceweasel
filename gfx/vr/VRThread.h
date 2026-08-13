@@ -5,8 +5,8 @@
 #ifndef GFX_VR_THREAD_H
 #define GFX_VR_THREAD_H
 
-#include "nsISupportsImpl.h"
 #include "base/thread.h"  // for Thread
+#include "nsISupportsImpl.h"
 
 namespace mozilla {
 namespace gfx {

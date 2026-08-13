@@ -1,4 +1,4 @@
-// |jit-test| --ion-offthread-compile=off; skip-if: !isAsmJSCompilationAvailable()
+// |jit-test| --ion-offthread-compile=off
 
 load(libdir + "asm.js");
 

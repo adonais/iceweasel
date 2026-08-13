@@ -23,27 +23,55 @@ async function triggerSaveAs({ selector }) {
   contextMenu.activateItem(saveLinkCommand);
 }
 
+let tempDir;
+
+// Final file path for download.
 let destFilePath;
 
-add_setup(async () => {
-  mockCA = await mockContentAnalysisService(mockCA);
-});
+// path to file that is a copy of the file sent to CA, so we can (async) check
+// that it is the same file.
+let copiedScannedFilePath;
 
-function setupMockFilePicker() {
-  const tempDir = Services.dirsvc.get("TmpD", Ci.nsIFile);
+add_setup(async () => {
+  tempDir = Services.dirsvc.get("TmpD", Ci.nsIFile);
   tempDir.append("test-download-dir");
   if (!tempDir.exists()) {
     tempDir.create(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
   }
+  registerCleanupFunction(function () {
+    if (tempDir.exists()) {
+      tempDir.remove(true);
+    }
+  });
 
+  let oldAnalyzeContentRequestPrivate = mockCA.analyzeContentRequestPrivate;
+  mockCA.analyzeContentRequestPrivate = function (
+    request,
+    autoAcknowledge,
+    callback
+  ) {
+    // Copy the file being scanned now because the original (a .part file) is
+    // renamed or removed once the download completes.
+    let requestFile = new FileUtils.File(request.filePath);
+    requestFile.copyTo(tempDir, "file.copy");
+    let tempDirClone = tempDir.clone();
+    tempDirClone.append("file.copy");
+    copiedScannedFilePath = tempDirClone.path;
+    oldAnalyzeContentRequestPrivate.call(
+      this,
+      request,
+      autoAcknowledge,
+      callback
+    );
+  };
+  mockCA = await mockContentAnalysisService(mockCA);
+});
+
+function setupMockFilePicker() {
   let MockFilePicker = SpecialPowers.MockFilePicker;
   MockFilePicker.init();
   registerCleanupFunction(function () {
     MockFilePicker.cleanup();
-
-    if (tempDir.exists()) {
-      tempDir.remove(true);
-    }
   });
 
   MockFilePicker.displayDirectory = tempDir;
@@ -59,7 +87,7 @@ function setupMockFilePicker() {
   };
 }
 
-function assertContentAnalysisDownloadRequest(request, expectedFilePath) {
+async function assertContentAnalysisDownloadRequest(request) {
   is(request.url.spec, DOWNLOAD_URL, "request has correct URL");
   is(
     request.analysisType,
@@ -76,7 +104,17 @@ function assertContentAnalysisDownloadRequest(request, expectedFilePath) {
     Ci.nsIContentAnalysisRequest.eDownload,
     "request has correct operationTypeForDisplay"
   );
-  is(request.filePath, expectedFilePath, "request filePath should match");
+  // Compare file contents, not file names, as the download name will be the
+  // temporary name assigned before content analysis approval.
+  let scannedBytes = await IOUtils.read(copiedScannedFilePath);
+  let expectedBytes = new Uint8Array(
+    await (await fetch(DOWNLOAD_URL)).arrayBuffer()
+  );
+  Assert.deepEqual(
+    scannedBytes,
+    expectedBytes,
+    "scanned file is download file"
+  );
   ok(!request.textContent?.length, "request textContent should be empty");
   is(
     request.userActionRequestsCount,
@@ -84,8 +122,7 @@ function assertContentAnalysisDownloadRequest(request, expectedFilePath) {
     "request userActionRequestsCount should match"
   );
   ok(request.userActionId.length, "request userActionId should not be empty");
-  is(request.printDataHandle, 0, "request printDataHandle should be 0");
-  is(request.printDataSize, 0, "request printDataSize should be 0");
+  is(request.getPrintData().length, 0, "request should have no print data");
   ok(!!request.requestToken.length, "request requestToken should not be empty");
 }
 
@@ -110,8 +147,9 @@ add_task(async function test_download_content_analysis_download_save_as() {
     );
   }, "Wait for the file to be downloaded");
   is(mockCA.calls.length, 1, "Content analysis should be called once");
-  assertContentAnalysisDownloadRequest(mockCA.calls[0], destFilePath);
+  await assertContentAnalysisDownloadRequest(mockCA.calls[0]);
   await IOUtils.remove(destFilePath);
+  await IOUtils.remove(copiedScannedFilePath);
 
   await SpecialPowers.popPrefEnv();
 });

@@ -421,11 +421,13 @@ tls13_CheckCertDelegationUsage(sslSocket *ss)
      * it to negotiate delegated credentials.
      */
     found = PR_FALSE;
-    for (i = 0; cert->extensions[i] != NULL; i++) {
-        ext = cert->extensions[i];
-        if (SECITEM_CompareItem(&ext->id, &delegUsageOid) == SECEqual) {
-            found = PR_TRUE;
-            break;
+    if (cert->extensions) {
+        for (i = 0; cert->extensions[i] != NULL; i++) {
+            ext = cert->extensions[i];
+            if (SECITEM_CompareItem(&ext->id, &delegUsageOid) == SECEqual) {
+                found = PR_TRUE;
+                break;
+            }
         }
     }
 

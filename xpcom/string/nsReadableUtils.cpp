@@ -5,12 +5,11 @@
 #include "nsReadableUtils.h"
 
 #include "mozilla/CheckedInt.h"
+#include "mozilla/Utf16.h"
 #include "mozilla/Utf8.h"
-
-#include "nscore.h"
 #include "nsString.h"
 #include "nsTArray.h"
-#include "nsUTF8Utils.h"
+#include "nscore.h"
 
 using mozilla::Span;
 
@@ -580,7 +579,7 @@ const nsCString& VoidCString() {
 }
 
 int32_t CompareUTF8toUTF16(const nsACString& aUTF8String,
-                           const nsAString& aUTF16String, bool* aErr) {
+                           const nsAString& aUTF16String) {
   const char* u8;
   const char* u8end;
   aUTF8String.BeginReading(u8);
@@ -601,10 +600,14 @@ int32_t CompareUTF8toUTF16(const nsACString& aUTF8String,
     if (u16 == u16end) {
       return 1;
     }
-    // No need for ASCII optimization, since both NextChar()
-    // calls get inlined.
-    uint32_t scalar8 = UTF8CharEnumerator::NextChar(&u8, u8end, aErr);
-    uint32_t scalar16 = UTF16CharEnumerator::NextChar(&u16, u16end, aErr);
+    char32_t scalar8;
+    mozilla::Utf8Unit unit(*u8++);
+    if (mozilla::IsAscii(unit)) {
+      scalar8 = unit.toUint8();
+    } else {
+      scalar8 = LossyDecodeOneUtf8CodePoint(unit, &u8, u8end);
+    }
+    uint32_t scalar16 = mozilla::DecodeOneUtf16CodePoint(&u16, u16end);
     if (scalar16 == scalar8) {
       continue;
     }
@@ -616,11 +619,11 @@ int32_t CompareUTF8toUTF16(const nsACString& aUTF8String,
 }
 
 void AppendUCS4ToUTF16(const uint32_t aSource, nsAString& aDest) {
-  NS_ASSERTION(IS_VALID_CHAR(aSource), "Invalid UCS4 char");
-  if (IS_IN_BMP(aSource)) {
+  NS_ASSERTION(mozilla::IsValidCodePoint(aSource), "Invalid UCS4 char");
+  if (mozilla::IsInBMP(aSource)) {
     aDest.Append(char16_t(aSource));
   } else {
-    aDest.Append(H_SURROGATE(aSource));
-    aDest.Append(L_SURROGATE(aSource));
+    aDest.Append(mozilla::HighSurrogate(aSource));
+    aDest.Append(mozilla::LowSurrogate(aSource));
   }
 }

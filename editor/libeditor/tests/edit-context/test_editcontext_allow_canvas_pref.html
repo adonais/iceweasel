@@ -1,0 +1,48 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test the dom.editcontext.allow_canvas preference</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="/tests/SimpleTest/EventUtils.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<canvas></canvas>
+<script>
+'use strict';
+const canvas = document.querySelector('canvas');
+const editContext = new EditContext();
+function getException() {
+  try {
+    canvas.editContext = editContext;
+    return null;
+  } catch (e) {
+    return e;
+  }
+}
+
+add_task(async () => {
+  await SpecialPowers.pushPrefEnv({ set: [["dom.editcontext.allow_canvas", true ]] });
+  ok(!getException(), 'Should allow attaching EditContext to <canvas> when dom.editcontext.allow_canvas is true.');
+  canvas.editContext = null;
+});
+
+add_task(async () => {
+  await SpecialPowers.pushPrefEnv({ set: [["dom.editcontext.allow_canvas", false ]] });
+  let e = getException();
+  ok(e, 'Should not allow attaching EditContext to <canvas> when dom.editcontext.allow_canvas is false.');
+  ok(e instanceof DOMException && e.name === 'NotSupportedError',
+     'Should throw a NotSupportedError.');
+  ok(!canvas.editContext, 'editContext property should not be set on <canvas>');
+  isDeeply(editContext.attachedElements(), [], 'attachedElements() should return an empty list');
+  let gotTextUpdate = false;
+  editContext.ontextupdate = () => gotTextUpdate = true;
+  canvas.focus();
+  sendChar('a');
+  ok(!gotTextUpdate, 'Should not receive textupdate event.');
+});
+
+</script>
+</body>
+</html>

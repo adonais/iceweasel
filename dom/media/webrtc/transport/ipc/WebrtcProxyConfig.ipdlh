@@ -10,7 +10,6 @@ namespace net {
 
 struct WebrtcProxyConfig {
   TabId tabId;
-  nsCString alpn;
   LoadInfoArgs loadInfoArgs;
   bool forceProxy;
 };

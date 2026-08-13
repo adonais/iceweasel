@@ -1,5 +1,3 @@
-// |jit-test| skip-if: !isAsmJSCompilationAvailable()
-
 load(libdir + "asm.js");
 load(libdir + "asserts.js");
 
@@ -21,7 +19,8 @@ var buffer = new ArrayBuffer(BUF_MIN);
 var {get, set} = asmLink(m, this, null, buffer);
 set(4, 42);
 assertEq(get(4), 42);
-assertThrowsInstanceOf(() => detachArrayBuffer(buffer), Error);
+detachArrayBuffer(buffer);
+assertEq(buffer.detached, true);
 
 var m = asmCompile('stdlib', 'foreign', 'buffer',
                   `"use asm";
@@ -37,7 +36,8 @@ var m = asmCompile('stdlib', 'foreign', 'buffer',
 var buffer = new ArrayBuffer(BUF_MIN);
 function ffi1()
 {
-    assertThrowsInstanceOf(() => detachArrayBuffer(buffer), Error);
+    detachArrayBuffer(buffer);
+    assertEq(buffer.detached, true);
 }
 
 var inner = asmLink(m, this, {ffi: ffi1}, buffer);

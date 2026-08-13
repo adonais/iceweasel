@@ -55,6 +55,7 @@ Assertions.h:
     - MOZ_DIAGNOSTIC_ASSERT
     - MOZ_ASSERT
     - MOZ_RELEASE_ASSERT
+    - MOZ_CRASH_UNSAFE
     - MOZ_CRASH_UNSAFE_PRINTF
     - MOZ_DIAGNOSTIC_CRASH
     - MOZ_CRASH
@@ -384,8 +385,8 @@ HashFunctions.h:
     - ScrambleHashCode
     - AddToHash
     - HashGeneric
-    - HashStringUntilZero
-    - HashStringKnownLength
+    - HashLatin1AsUTF16
+    - HashUTF8AsUTF16
     - HashString
     - HashBytes
 
@@ -808,6 +809,14 @@ TextUtils.h:
     - IsAsciiAlphanumeric
     - AsciiAlphanumericToNumber
 
+TiedFields.h:
+  types:
+    - PaddingField
+  functions:
+    - AreAllBytesTiedFields
+    - AssertTiedFieldsAreExhaustive
+    - TiedFields
+
 ThreadLocal.h:
   macros:
     - MOZ_THREAD_LOCAL
@@ -895,6 +904,23 @@ UniquePtr.h:
     - WrapUnique
     - TempPtrToSetter
 
+Utf16.h:
+  variables:
+    - kPlane1Base
+    - kReplacementChar
+    - kUnicodeMax
+  functions:
+    - IsInBMP
+    - IsHighSurrogate
+    - IsLowSurrogate
+    - IsSurrogate
+    - IsSurrogatePair
+    - IsValidCodePoint
+    - HighSurrogate
+    - LowSurrogate
+    - SurrogateToUCS4
+    - DecodeOneUtf16CodePoint
+
 Utf8.h:
   functions:
     - encoding_utf8_valid_up_to
@@ -910,6 +936,7 @@ Utf8.h:
     - IsTrailingUnit
     - DecodeOneUtf8CodePointInline
     - DecodeOneUtf8CodePoint
+    - LossyDecodeOneUtf8CodePoint
   types:
     - Utf8Unit
 

@@ -65,10 +65,18 @@ def mock_push_to_lando_try():
 def patch_vcs(monkeypatch):
     attrs = {
         "path": push.vcs.path,
+        "push.return_value": "abc123fakegitsha",
     }
     mock = MagicMock()
     mock.configure_mock(**attrs)
     monkeypatch.setattr(push, "vcs", mock)
+
+
+@pytest.fixture(autouse=True)
+def mock_taskcluster_secret(monkeypatch):
+    mock_client = MagicMock()
+    mock_client.get.return_value = {"secret": {"ssh_privkey": "fake_ssh_key"}}
+    monkeypatch.setattr(push, "get_client", MagicMock(return_value=mock_client))
 
 
 @pytest.fixture(scope="session")

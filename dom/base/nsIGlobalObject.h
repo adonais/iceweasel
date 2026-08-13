@@ -113,6 +113,15 @@ class nsIGlobalObject : public nsISupports {
                          bool aIsJSImplementedWebIDL = false) const;
 
   /**
+   * Should a JavaScript microtask be allowed to run from this global?
+   *
+   * This is slightly different than IsScriptForbidden since the HTML
+   * specification allows the enqueue and dequeue of jobs in detached
+   * iframes.
+   */
+  bool CanRunJSMicroTask(JSObject* aCallbackGlobal) const;
+
+  /**
    * Return the JSObject for this global, if it still has one.  Otherwise return
    * null.
    *

@@ -1,4 +1,5 @@
 [DEFAULT]
+dupe-manifest = true
 support-files = [
   "../widgets/popup_shared.js",
   "../widgets/tree_shared.js",
@@ -50,6 +51,7 @@ support-files = [
 ]
 prefs = [
   "gfx.font_rendering.fallback.async=false",
+  "browser.nova.enabled=false",
 ]
 
 ["test_about_networking.html"]

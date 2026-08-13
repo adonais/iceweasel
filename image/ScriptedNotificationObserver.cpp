@@ -4,9 +4,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ScriptedNotificationObserver.h"
+
 #include "imgIScriptedNotificationObserver.h"
-#include "nsCycleCollectionParticipant.h"
 #include "nsContentUtils.h"  // for nsAutoScriptBlocker
+#include "nsCycleCollectionParticipant.h"
 
 namespace mozilla {
 namespace image {

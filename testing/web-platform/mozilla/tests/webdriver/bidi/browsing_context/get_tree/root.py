@@ -4,7 +4,7 @@ from tests.bidi.browsing_context import assert_browsing_context
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.mark.allow_system_access
+@pytest.mark.geckodriver(allow_system_access=True)
 async def test_custom_chrome_window(
     bidi_session, default_chrome_handler, new_chrome_window
 ):

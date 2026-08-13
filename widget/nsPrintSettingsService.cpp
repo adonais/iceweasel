@@ -4,24 +4,22 @@
 
 #include "nsPrintSettingsService.h"
 
+#include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs_print.h"
 #include "mozilla/embedding/PPrintingTypes.h"
 #include "mozilla/layout/RemotePrintJobChild.h"
+#include "nsArray.h"
 #include "nsCoord.h"
 #include "nsIPrinterList.h"
-#include "nsReadableUtils.h"
+#include "nsIStringEnumerator.h"
 #include "nsPrintSettingsImpl.h"
+#include "nsPrintfCString.h"
+#include "nsReadableUtils.h"
 #include "nsServiceManagerUtils.h"
 #include "nsSize.h"
-
-#include "nsArray.h"
 #include "nsXPCOM.h"
 #include "nsXULAppAPI.h"
-
-#include "nsIStringEnumerator.h"
 #include "stdlib.h"
-#include "mozilla/StaticPrefs_print.h"
-#include "mozilla/Preferences.h"
-#include "nsPrintfCString.h"
 
 using namespace mozilla;
 using namespace mozilla::embedding;

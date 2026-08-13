@@ -11,7 +11,7 @@ add_setup(async () => {
   await SidebarTestUtils.ensureLauncherVisible(window);
   Assert.equal(
     SidebarController.sidebarRevampVisibility,
-    "hide-sidebar",
+    "hide-on-close",
     "revamp.visibility has the expected value"
   );
 });
@@ -386,7 +386,7 @@ add_task(async function test_toggle_vertical_tabs_from_sidebar_button() {
   await SidebarTestUtils.waitForTabstripOrientation(window, "horizontal");
   Assert.equal(
     Services.prefs.getStringPref(SIDEBAR_VISIBILITY_PREF),
-    "hide-sidebar",
+    "hide-on-close",
     "Sanity check the visibilty pref when verticalTabs are disabled"
   );
 
@@ -444,7 +444,7 @@ add_task(async function test_toggle_vertical_tabs_from_sidebar_button() {
   ok(!gBrowser.tabContainer.verticalMode, "Vertical tabs are disabled.");
   Assert.equal(
     Services.prefs.getStringPref(SIDEBAR_VISIBILITY_PREF),
-    "hide-sidebar",
+    "hide-on-close",
     "Sanity check the visibilty pref when verticalTabs are disabled"
   );
   toolbarContextMenu.hidePopup();

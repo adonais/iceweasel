@@ -46,17 +46,20 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.GleanMetrics.AndroidAutofill
 import org.mozilla.fenix.GleanMetrics.Awesomebar
 import org.mozilla.fenix.GleanMetrics.BrowserSearch
+import org.mozilla.fenix.GleanMetrics.ContextMenu
 import org.mozilla.fenix.GleanMetrics.ContextualMenu
 import org.mozilla.fenix.GleanMetrics.CreditCards
 import org.mozilla.fenix.GleanMetrics.GeneratedPasswordDialog
 import org.mozilla.fenix.GleanMetrics.LoginDialog
 import org.mozilla.fenix.GleanMetrics.MediaNotification
+import org.mozilla.fenix.GleanMetrics.NativeShareSheet
 import org.mozilla.fenix.GleanMetrics.PerfAwesomebar
 import org.mozilla.fenix.GleanMetrics.ProgressiveWebApp
 import org.mozilla.fenix.GleanMetrics.SitePermissions
 import org.mozilla.fenix.GleanMetrics.SyncedTabs
 import org.mozilla.fenix.GleanMetrics.TrackingProtection
 import org.mozilla.fenix.components.metrics.ReleaseMetricController.Companion
+import org.mozilla.fenix.components.metrics.ReleaseMetricController.Companion.SHARE_LINK_CONTEXT_MENU_ITEM_ID
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
@@ -505,6 +508,30 @@ class MetricControllerTest {
         assertNotNull(MediaNotification.pause.testGetValue())
         assertEquals(1, MediaNotification.pause.testGetValue()!!.size)
         assertNull(MediaNotification.pause.testGetValue()!!.single().extra)
+
+        // Verify the next action
+        fact = Fact(Component.FEATURE_MEDIA, Action.NEXT, MediaFacts.Items.NOTIFICATION)
+        assertNull(MediaNotification.next.testGetValue())
+
+        controller.run {
+            fact.process()
+        }
+
+        assertNotNull(MediaNotification.next.testGetValue())
+        assertEquals(1, MediaNotification.next.testGetValue()!!.size)
+        assertNull(MediaNotification.next.testGetValue()!!.single().extra)
+
+        // Verify the previous action
+        fact = Fact(Component.FEATURE_MEDIA, Action.PREVIOUS, MediaFacts.Items.NOTIFICATION)
+        assertNull(MediaNotification.previous.testGetValue())
+
+        controller.run {
+            fact.process()
+        }
+
+        assertNotNull(MediaNotification.previous.testGetValue())
+        assertEquals(1, MediaNotification.previous.testGetValue()!!.size)
+        assertNull(MediaNotification.previous.testGetValue()!!.single().extra)
     }
 
     @Test
@@ -676,6 +703,32 @@ class MetricControllerTest {
         assertNotNull(ContextualMenu.shareTapped.testGetValue())
         assertEquals(1, ContextualMenu.shareTapped.testGetValue()!!.size)
         assertNull(ContextualMenu.shareTapped.testGetValue()!!.single().extra)
+    }
+
+    @Test
+    fun `WHEN the share-link context menu item is tapped THEN native_share_sheet_shown is recorded with context_menu_link source`() {
+        val controller = createReleaseMetricController()
+        val fact = Fact(
+            Component.FEATURE_CONTEXTMENU,
+            mockk(relaxed = true),
+            ContextMenuFacts.Items.ITEM,
+            metadata = mapOf("item" to SHARE_LINK_CONTEXT_MENU_ITEM_ID),
+        )
+
+        assertNull(NativeShareSheet.shown.testGetValue())
+
+        with(controller) {
+            fact.process()
+        }
+
+        val shownEvents = NativeShareSheet.shown.testGetValue()
+        assertEquals(1, shownEvents?.size)
+        assertEquals("context_menu_link", shownEvents?.single()?.extra?.get("source"))
+
+        // The existing ContextMenu.itemTapped recording continues to fire alongside.
+        val tappedEvents = ContextMenu.itemTapped.testGetValue()
+        assertEquals(1, tappedEvents?.size)
+        assertEquals("share_link", tappedEvents?.single()?.extra?.get("named"))
     }
 
     @Test

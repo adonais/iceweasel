@@ -106,11 +106,23 @@ const DEFAULT_ACTIONS = {
         .doCommand();
     },
   },
+  manageai: {
+    l10nCommands: ["quickactions-cmd-manageai"],
+    icon: "chrome://global/skin/icons/highlights.svg",
+    label: "quickactions-manageai",
+    onPick: openUrlFun("about:preferences#ai"),
+  },
   downloads: {
     l10nCommands: ["quickactions-cmd-downloads"],
     icon: "chrome://browser/skin/downloads/downloads.svg",
     label: "quickactions-downloads2",
     onPick: openUrlFun("about:downloads"),
+  },
+  editpdf: {
+    l10nCommands: ["quickactions-cmd-editpdf"],
+    icon: "chrome://global/skin/icons/pdf.svg",
+    label: "quickactions-editpdf",
+    onPick: openUrlFun("about:pdf"),
   },
   extensions: {
     l10nCommands: ["quickactions-cmd-extensions2"],

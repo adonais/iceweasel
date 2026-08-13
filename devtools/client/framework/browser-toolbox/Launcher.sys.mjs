@@ -278,7 +278,7 @@ export class BrowserToolboxLauncher extends EventEmitter {
    * @param {boolean} options.forceMultiprocess: Set to true to force the Browser Toolbox to be in
    *                    multiprocess mode.
    */
-  #create({ forceMultiprocess } = {}) {
+  async #create({ forceMultiprocess } = {}) {
     dumpn("Initializing chrome debugging process.");
 
     let command = Services.dirsvc.get("XREExeF", Ci.nsIFile).path;
@@ -304,12 +304,19 @@ export class BrowserToolboxLauncher extends EventEmitter {
       BROWSER_TOOLBOX_WINDOW_URL,
     ];
 
+    // get() returns an empty string for non-existing variables, so we need to
+    // check explicitly with exists().
+    function envForChild(p) {
+      if (!Services.env.exists(p)) {
+        return null;
+      }
+      return Services.env.get(p);
+    }
+
     const environment = {
       // Allow recording the startup of the browser toolbox when setting
       // MOZ_BROWSER_TOOLBOX_PROFILER_STARTUP=1 when running firefox.
-      MOZ_PROFILER_STARTUP: Services.env.get(
-        "MOZ_BROWSER_TOOLBOX_PROFILER_STARTUP"
-      ),
+      MOZ_PROFILER_STARTUP: envForChild("MOZ_BROWSER_TOOLBOX_PROFILER_STARTUP"),
       // And prevent profiling any subsequent toolbox
       MOZ_BROWSER_TOOLBOX_PROFILER_STARTUP: "0",
 
@@ -322,15 +329,17 @@ export class BrowserToolboxLauncher extends EventEmitter {
       // Never enable Marionette for the new process.
       MOZ_MARIONETTE: null,
       // Don't inherit debug settings from the process launching us.  This can
-      // cause errors when log files collide.
-      MOZ_LOG: null,
-      MOZ_LOG_FILE: null,
+      // cause errors when log files collide. But allow logging via and env var
+      // so that we can debug the toolbox when needed.
+      MOZ_LOG: envForChild("MOZ_BROWSER_TOOLBOX_LOG"),
+      MOZ_LOG_FILE: envForChild("MOZ_BROWSER_TOOLBOX_LOG_FILE"),
       XPCOM_MEM_BLOAT_LOG: null,
       XPCOM_MEM_LEAK_LOG: null,
       XPCOM_MEM_LOG_CLASSES: null,
       XPCOM_MEM_REFCNT_LOG: null,
       XRE_PROFILE_PATH: null,
       XRE_PROFILE_LOCAL_PATH: null,
+      XDG_ACTIVATION_TOKEN: await ChromeUtils.requestXDGActivationToken(),
     };
 
     // During local development, incremental builds can trigger the main process
@@ -344,56 +353,52 @@ export class BrowserToolboxLauncher extends EventEmitter {
       args.push("-purgecaches");
     }
 
-    dump(`Starting Browser Toolbox ${command} ${args.join(" ")}\n`);
-    IOUtils.makeDirectory(profilePath, { ignoreExisting: true })
-      .then(() =>
-        Subprocess.call({
-          command,
-          arguments: args,
-          environmentAppend: true,
-          stderr: "stdout",
-          environment,
-        })
-      )
-      .then(proc => {
-        this.#dbgProcess = proc;
-
-        this.#telemetry.toolOpened("jsbrowserdebugger", this);
-
-        dumpn("Chrome toolbox is now running...");
-        this.emit("run", this, proc, this.#dbgProfilePath);
-
-        proc.stdin.close();
-        const dumpPipe = async pipe => {
-          let leftover = "";
-          let data = await pipe.readString();
-          while (data) {
-            data = leftover + data;
-            const lines = data.split(/\r\n|\r|\n/);
-            if (lines.length) {
-              for (const line of lines.slice(0, -1)) {
-                dump(`${proc.pid}> ${line}\n`);
-              }
-              leftover = lines[lines.length - 1];
-            }
-            data = await pipe.readString();
-          }
-          if (leftover) {
-            dump(`${proc.pid}> ${leftover}\n`);
-          }
-        };
-        dumpPipe(proc.stdout);
-
-        proc.wait().then(() => this.close());
-
-        return proc;
-      })
-      .catch(err => {
-        console.log(
-          `Error loading Browser Toolbox: ${command} ${args.join(" ")}`,
-          err
-        );
+    try {
+      dump(`Starting Browser Toolbox ${command} ${args.join(" ")}\n`);
+      await IOUtils.makeDirectory(profilePath, { ignoreExisting: true });
+      const proc = await Subprocess.call({
+        command,
+        arguments: args,
+        environmentAppend: true,
+        stderr: "stdout",
+        environment,
       });
+
+      this.#dbgProcess = proc;
+
+      this.#telemetry.toolOpened("jsbrowserdebugger", this);
+
+      dumpn("Chrome toolbox is now running...");
+      this.emit("run", this, proc, this.#dbgProfilePath);
+
+      proc.stdin.close();
+      const dumpPipe = async pipe => {
+        let leftover = "";
+        let data = await pipe.readString();
+        while (data) {
+          data = leftover + data;
+          const lines = data.split(/\r\n|\r|\n/);
+          if (lines.length) {
+            for (const line of lines.slice(0, -1)) {
+              dump(`${proc.pid}> ${line}\n`);
+            }
+            leftover = lines[lines.length - 1];
+          }
+          data = await pipe.readString();
+        }
+        if (leftover) {
+          dump(`${proc.pid}> ${leftover}\n`);
+        }
+      };
+      dumpPipe(proc.stdout);
+
+      proc.wait().then(() => this.close());
+    } catch (err) {
+      console.log(
+        `Error loading Browser Toolbox: ${command} ${args.join(" ")}`,
+        err
+      );
+    }
   }
 
   /**
@@ -451,8 +456,8 @@ function dumpn(str) {
 
 var wantLogging = Services.prefs.getBoolPref("devtools.debugger.log");
 const prefObserver = {
-  observe: (...args) => {
-    wantLogging = Services.prefs.getBoolPref(args.pop());
+  observe: () => {
+    wantLogging = Services.prefs.getBoolPref("devtools.debugger.log");
   },
 };
 Services.prefs.addObserver("devtools.debugger.log", prefObserver);

@@ -21,9 +21,13 @@ task-defaults:
     task-context:
         from-custom:
             - release-level
+        from-parameters:
+            version: version
+            release-type: release_type
         substitution-fields:
             - worker-type
             - scopes
+            - routes
     worker-type: shipit
     worker:
         implementation: shipit-shipped
@@ -32,9 +36,18 @@ task-defaults:
             production:
                 - project:releng:ship-it:server:production
                 - project:releng:ship-it:action:mark-as-shipped
+                - queue:route:notify.slack-channel.C6HD6P4TF.on-completed
             staging:
                 - project:releng:ship-it:server:staging
                 - project:releng:ship-it:action:mark-as-shipped
+    routes:
+        by-release-type:
+            release:
+                by-release-level:
+                    production:
+                        - notify.slack-channel.C6HD6P4TF.on-completed  # release-coordination
+                    staging: []
+            default: []
     run-on-projects: []
     shipping-phase: ship
 
@@ -42,6 +55,16 @@ tasks:
     firefox:
         name: release-firefox_mark_as_shipped
         shipping-product: firefox
+        extra:
+            notify:
+                slackText: |-
+                    Firefox Desktop {version} is live and rolled out at 25%.
+                    We will increase the rollout to 100% tomorrow if no major issue is reported.
+                    - <https://www.firefox.com/firefox/{version}/releasenotes/|Desktop {version} Release Notes>
+        task-context:
+            substitution-fields:
+                - extra.notify.slackText
+
 
     devedition:
         name: release-devedition_mark_as_shipped
@@ -50,3 +73,12 @@ tasks:
     firefox-android:
         name: release-firefox-android_mark_as_shipped
         shipping-product: firefox-android
+        extra:
+            notify:
+                slackText: |-
+                    Fenix/Focus/Klar {version} are live and rolled out at 25%.
+                    We will increase the rollout to 100% tomorrow if no major issue is reported.
+                    - <https://www.firefox.com/firefox/android/{version}/releasenotes/|Android {version} Release Notes>
+        task-context:
+            substitution-fields:
+                - extra.notify.slackText

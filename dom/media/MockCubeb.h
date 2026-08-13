@@ -121,7 +121,7 @@ static int cubeb_mock_get_max_channel_count(cubeb* context,
 
 // Mock cubeb impl, only supports device enumeration for now.
 cubeb_ops const mock_ops = {
-    /*.init =*/NULL,
+    /*.init =*/nullptr,
     /*.get_backend_id =*/cubeb_mock_get_backend_id,
     /*.get_max_channel_count =*/cubeb_mock_get_max_channel_count,
     /*.get_min_latency =*/cubeb_mock_get_min_latency,
@@ -136,16 +136,16 @@ cubeb_ops const mock_ops = {
     /*.stream_start =*/cubeb_mock_stream_start,
     /*.stream_stop =*/cubeb_mock_stream_stop,
     /*.stream_get_position =*/cubeb_mock_stream_get_position,
-    /*.stream_get_latency =*/NULL,
-    /*.stream_get_input_latency =*/NULL,
+    /*.stream_get_latency =*/nullptr,
+    /*.stream_get_input_latency =*/nullptr,
     /*.stream_set_volume =*/cubeb_mock_stream_set_volume,
     /*.stream_set_name =*/cubeb_mock_stream_set_name,
-    /*.stream_get_current_device =*/NULL,
+    /*.stream_get_current_device =*/nullptr,
 
-    /*.stream_set_input_mute =*/NULL,
+    /*.stream_set_input_mute =*/nullptr,
     /*.stream_set_input_processing_params =*/
     cubeb_mock_stream_set_input_processing_params,
-    /*.stream_device_destroy =*/NULL,
+    /*.stream_device_destroy =*/nullptr,
     /*.stream_register_device_changed_callback =*/
     cubeb_mock_stream_register_device_changed_callback,
     /*.register_device_collection_changed =*/
@@ -193,9 +193,9 @@ class MockCubebStream {
   cubeb_stream* AsCubebStream() MOZ_EXCLUDES(mMutex);
   static MockCubebStream* AsMock(cubeb_stream* aStream);
 
-  char const* StreamName() const MOZ_EXCLUDES(mMutex) {
+  nsCString StreamName() const MOZ_EXCLUDES(mMutex) {
     MutexAutoLock l(mMutex);
-    return mName.get();
+    return mName;
   }
   cubeb_devid GetInputDeviceID() const;
   cubeb_devid GetOutputDeviceID() const;
@@ -207,6 +207,11 @@ class MockCubebStream {
   Maybe<cubeb_state> State() const MOZ_EXCLUDES(mMutex);
 
   void SetDriftFactor(float aDriftFactor) MOZ_EXCLUDES(mMutex);
+  // Simulate a backend whose play cursor lags the write cursor by the output
+  // latency, as real cubeb backends do, whether they compute the latency
+  // themselves or read it from an OS API. Position() then reports the play
+  // cursor, clamped to 0 while fewer than aFrames have been written.
+  void SetOutputLatencyFrames(uint32_t aFrames) MOZ_EXCLUDES(mMutex);
   void ForceError() MOZ_EXCLUDES(mMutex);
   void ForceDeviceChanged() MOZ_EXCLUDES(mMutex);
   void Thaw() MOZ_EXCLUDES(mMutex);
@@ -308,6 +313,9 @@ class MockCubebStream {
   bool mForceDeviceChanged MOZ_GUARDED_BY(mMutex) = false;
   bool mDestroyed MOZ_GUARDED_BY(mMutex) = false;
   uint64_t mPosition MOZ_GUARDED_BY(mMutex) = 0;
+  // Output latency in frames by which the reported play cursor lags mPosition,
+  // the write cursor. 0 means the play cursor equals the write cursor.
+  uint32_t mOutputLatencyFrames MOZ_GUARDED_BY(mMutex) = 0;
   AudioGenerator<AudioDataValue> mAudioGenerator MOZ_GUARDED_BY(mMutex);
   AudioVerifier<AudioDataValue> mAudioVerifier MOZ_GUARDED_BY(mMutex);
 
@@ -485,6 +493,13 @@ class MockCubeb {
   void StartStream(MockCubebStream* aStream);
   void StopStream(MockCubebStream* aStream);
 
+  // Output latency in frames applied to every stream this context creates, so
+  // their reported play cursor lags the write cursor like a real device. Set it
+  // before the streams under test are created.
+  void SetDefaultOutputLatencyFrames(uint32_t aFrames) {
+    mDefaultOutputLatencyFrames = aFrames;
+  }
+
   // Simulates the audio thread. The thread is created at Start and destroyed
   // at Stop. At next StreamStart a new thread is created.
   static void ThreadFunction_s(MockCubeb* aContext) {
@@ -513,6 +528,8 @@ class MockCubeb {
   int mInputProcessingParamsApplyRv = CUBEB_OK;
   const RunningMode mRunningMode;
   Atomic<bool> mStreamInitErrorState;
+  // Output latency applied to each stream created by this context.
+  Atomic<uint32_t> mDefaultOutputLatencyFrames{0};
   // Whether new MockCubebStreams should be frozen on start.
   Atomic<bool> mStreamStartFreezeEnabled{false};
   // Whether the audio thread is forced, i.e., whether it remains active even

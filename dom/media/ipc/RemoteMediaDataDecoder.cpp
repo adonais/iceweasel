@@ -11,9 +11,9 @@ namespace mozilla {
 #ifdef LOG
 #  undef LOG
 #endif  // LOG
-#define LOG(arg, ...)                                                  \
-  DDMOZ_LOG(sPDMLog, mozilla::LogLevel::Debug, "::%s: " arg, __func__, \
-            ##__VA_ARGS__)
+#define LOG(arg, ...)                                                      \
+  DDMOZ_LOG_FMT(sPDMLog, mozilla::LogLevel::Debug, "::{}: " arg, __func__, \
+                ##__VA_ARGS__)
 
 RemoteMediaDataDecoder::RemoteMediaDataDecoder(RemoteDecoderChild* aChild)
     : mChild(aChild),
@@ -23,7 +23,7 @@ RemoteMediaDataDecoder::RemoteMediaDataDecoder(RemoteDecoderChild* aChild)
       mIsHardwareAccelerated(false),
       mConversion(ConversionRequired::kNeedNone),
       mShouldDecoderAlwaysBeRecycled(false) {
-  LOG("%p is created", this);
+  LOG("{} is created", fmt::ptr(this));
 }
 
 RemoteMediaDataDecoder::~RemoteMediaDataDecoder() {
@@ -42,7 +42,7 @@ RemoteMediaDataDecoder::~RemoteMediaDataDecoder() {
               });
         }));
   }
-  LOG("%p is released", this);
+  LOG("{} is released", fmt::ptr(this));
 }
 
 RefPtr<MediaDataDecoder::InitPromise> RemoteMediaDataDecoder::Init() {
@@ -73,9 +73,10 @@ RefPtr<MediaDataDecoder::InitPromise> RemoteMediaDataDecoder::Init() {
             mDecodeProperties = mChild->GetDecodeProperties();
             mShouldDecoderAlwaysBeRecycled =
                 mChild->ShouldDecoderAlwaysBeRecycled();
-            LOG("%p RemoteDecoderChild has been initialized - description: %s, "
-                "process: %s, codec: %s",
-                this, mDescription.get(), mProcessName.get(), mCodecName.get());
+            LOG("{} RemoteDecoderChild has been initialized - description: {}, "
+                "process: {}, codec: {}",
+                fmt::ptr(this), mDescription.get(), mProcessName.get(),
+                mCodecName.get());
             return InitPromise::CreateAndResolve(aTrack, __func__);
           },
           [self](const MediaResult& aError) {

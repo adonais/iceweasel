@@ -11,7 +11,8 @@
 
 #include <stddef.h>  // for size_t
 
-#include "NamespaceImports.h"   // for Value, MutableHandleValue, HandleObject
+#include "NamespaceImports.h"  // for Value, MutableHandleValue, HandleObject
+
 #include "debugger/DebugAPI.h"  // for ResumeMode
 #include "debugger/Debugger.h"  // for ResumeMode, Handler, Debugger
 #include "gc/Barrier.h"         // for HeapPtr
@@ -204,7 +205,26 @@ class DebuggerFrame : public NativeObject {
   bool isOnStack(JSContext* cx) const;
   bool isOnStackOrSuspendedWasmStack() const;
 
-  bool isSuspended() const;
+  // True if this frame is on a wasm::ContStack (has WASM_CONT_FRAME_PTR_SLOT
+  // set). Note this does not imply the frame is currently suspended.
+  bool isWasmContFrame() const;
+
+  // True if this frame is a suspended generator/async frame, i.e. it has
+  // generator info and the generator object reports itself as suspended. This
+  // only covers JS generator/async suspension, not wasm continuations; see
+  // isSuspendedWasmFrame() for those, and isSuspended() for either.
+  bool isSuspendedGeneratorFrame() const;
+
+  // True if this frame is a wasm continuation that is currently suspended (e.g.
+  // a JSPI continuation waiting on a promise) and may be resumed later. Unlike
+  // isSuspendedGeneratorFrame(), which only covers generator/async suspension,
+  // this covers wasm stack-switching continuations.
+  bool isSuspendedWasmFrame(JSContext* cx) const;
+
+  // True if this frame is suspended in any sense, i.e. it is either a suspended
+  // generator/async frame or a suspended-resumable wasm continuation. A frame
+  // that is neither on-stack nor suspended is terminated.
+  bool isSuspended(JSContext* cx) const;
 
   OnStepHandler* onStepHandler() const;
   OnPopHandler* onPopHandler() const;
@@ -305,7 +325,7 @@ class DebuggerFrame : public NativeObject {
 
   void terminate(JS::GCContext* gcx, AbstractFramePtr frame);
   void onGeneratorClosed(JS::GCContext* gcx);
-  void suspend(JS::GCContext* gcx);
+  void suspendGeneratorFrame(JS::GCContext* gcx);
 
   [[nodiscard]] bool replaceFrameIterData(JSContext* cx, const FrameIter&);
 

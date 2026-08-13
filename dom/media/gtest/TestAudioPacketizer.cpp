@@ -69,7 +69,7 @@ TEST(AudioPacketizer, Test)
         AutoBuffer<int16_t> b(441 * channels);
         int16_t prevEnd = seqEnd;
         seqEnd = Sequence(b.Get(), channels * 441, prevEnd);
-        ap.Input(b.Get(), 441);
+        EXPECT_TRUE(NS_SUCCEEDED(ap.Input(b.Get(), 441)));
         std::unique_ptr<int16_t[]> out(ap.Output());
         IsSequence(out.get(), 441 * channels, prevEnd);
       }
@@ -86,8 +86,8 @@ TEST(AudioPacketizer, Test)
         seqEnd = Sequence(b.Get(), 441 * channels, prevEnd0);
         int16_t prevEnd1 = seqEnd;
         seqEnd = Sequence(b1.Get(), 441 * channels, seqEnd);
-        ap.Input(b.Get(), 441);
-        ap.Input(b1.Get(), 441);
+        EXPECT_TRUE(NS_SUCCEEDED(ap.Input(b.Get(), 441)));
+        EXPECT_TRUE(NS_SUCCEEDED(ap.Input(b1.Get(), 441)));
         std::unique_ptr<int16_t[]> out(ap.Output());
         std::unique_ptr<int16_t[]> out2(ap.Output());
         IsSequence(out.get(), 441 * channels, prevEnd0);
@@ -105,8 +105,8 @@ TEST(AudioPacketizer, Test)
         AutoBuffer<int16_t> b1(480 * channels);
         prevSeq = Sequence(b.Get(), 480 * channels, prevSeq);
         prevSeq = Sequence(b1.Get(), 480 * channels, prevSeq);
-        ap.Input(b.Get(), 480);
-        ap.Input(b1.Get(), 480);
+        EXPECT_TRUE(NS_SUCCEEDED(ap.Input(b.Get(), 480)));
+        EXPECT_TRUE(NS_SUCCEEDED(ap.Input(b1.Get(), 480)));
         std::unique_ptr<int16_t[]> out(ap.Output());
         std::unique_ptr<int16_t[]> out2(ap.Output());
         IsSequence(out.get(), 441 * channels, prevEnd);
@@ -134,7 +134,7 @@ TEST(AudioPacketizer, Test)
           }
           phase++;
         }
-        ap.Input(b.Get(), 128);
+        EXPECT_TRUE(NS_SUCCEEDED(ap.Input(b.Get(), 128)));
         while (ap.PacketsAvailable()) {
           std::unique_ptr<int16_t[]> packet(ap.Output());
           for (uint32_t k = 0; k < ap.mPacketSize; k++) {
@@ -152,7 +152,7 @@ TEST(AudioPacketizer, Test)
       AudioPacketizer<int16_t, int16_t> ap(441, channels);
       AutoBuffer<int16_t> b(440 * channels);
       Sequence(b.Get(), 440 * channels);
-      ap.Input(b.Get(), 440);
+      EXPECT_TRUE(NS_SUCCEEDED(ap.Input(b.Get(), 440)));
       EXPECT_EQ(ap.FramesAvailable(), 440U);
       ap.Clear();
       EXPECT_EQ(ap.FramesAvailable(), 0U);
@@ -178,7 +178,7 @@ TEST(TimedPacketizer, Test)
   for (int16_t i = 0; i < 10; i++) {
     AutoBuffer<int16_t> b(inputPacketSize * channels);
     prevSeq = Sequence(b.Get(), inputPacketSize * channels, prevSeq);
-    tp.Input(b.Get(), inputPacketSize);
+    EXPECT_TRUE(NS_SUCCEEDED(tp.Input(b.Get(), inputPacketSize)));
     while (tp.PacketsAvailable()) {
       media::TimeUnit ts = tp.Output(packet.Elements());
       IsSequence(packet.Elements(), packetSize * channels, prevEnd);

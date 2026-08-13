@@ -5,8 +5,8 @@
 #ifndef nsXPTCUtils_h_
 #define nsXPTCUtils_h_
 
-#include "xptcall.h"
 #include "mozilla/MemoryReporting.h"
+#include "xptcall.h"
 
 /**
  * A helper class that initializes an xptcall helper at construction

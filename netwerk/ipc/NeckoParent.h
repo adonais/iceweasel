@@ -6,9 +6,9 @@
 #define mozilla_net_NeckoParent_h
 
 #include "mozilla/BasePrincipal.h"
-#include "mozilla/net/PNeckoParent.h"
-#include "mozilla/net/NeckoCommon.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/net/NeckoCommon.h"
+#include "mozilla/net/PNeckoParent.h"
 #include "nsIAuthPrompt2.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsNetUtil.h"
@@ -154,6 +154,9 @@ class NeckoParent : public PNeckoParent {
       const nsIDNSService::DNSFlags& flags, const nsresult& reason);
   PWebSocketEventListenerParent* AllocPWebSocketEventListenerParent(
       const uint64_t& aInnerWindowID);
+  virtual mozilla::ipc::IPCResult RecvPWebSocketEventListenerConstructor(
+      PWebSocketEventListenerParent* aActor,
+      const uint64_t& aInnerWindowID) override;
   bool DeallocPWebSocketEventListenerParent(PWebSocketEventListenerParent*);
 
   mozilla::ipc::IPCResult RecvConnectBaseChannel(const uint32_t& channelId);

@@ -62,8 +62,10 @@ const testMaxWidth = async function (editor) {
   checkScrollbars(editor.input);
 
   info("Delete all characters on line 3.");
-  while (getLines(editor.input) === 3) {
+  while (getLines(editor.input) === 3 && editor.input.value) {
     EventUtils.sendKey("BACK_SPACE");
+    // wait for a tick so the input can be re-rendered
+    await waitForTick();
     checkScrollbars(editor.input);
   }
 
@@ -76,8 +78,10 @@ const testMaxWidth = async function (editor) {
   checkScrollbars(editor.input);
 
   info("Delete all characters on line 2.");
-  while (getLines(editor.input) === 2) {
+  while (getLines(editor.input) === 2 && editor.input.value) {
     EventUtils.sendKey("BACK_SPACE");
+    // wait for a tick so the input can be re-rendered
+    await waitForTick();
     checkScrollbars(editor.input);
   }
 
@@ -85,8 +89,10 @@ const testMaxWidth = async function (editor) {
   checkScrollbars(editor.input);
 
   info("Delete all characters.");
-  while (editor.input.value !== "") {
+  while (editor.input.value) {
     EventUtils.sendKey("BACK_SPACE");
+    // wait for a tick so the input can be re-rendered
+    await waitForTick();
     checkScrollbars(editor.input);
   }
 

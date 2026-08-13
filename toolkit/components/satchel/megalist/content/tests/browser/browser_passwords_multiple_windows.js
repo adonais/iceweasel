@@ -30,7 +30,7 @@ add_task(async function test_notification_is_only_shown_in_triggered_window() {
 
   const passwordCard = megalist.querySelector("password-card");
   await waitForReauth(() => passwordCard.editBtn.click());
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => megalist.querySelector("login-form"),
     "Login form failed to render"
   );

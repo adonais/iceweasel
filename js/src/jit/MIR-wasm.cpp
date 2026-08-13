@@ -307,33 +307,6 @@ bool MWasmAlignmentCheck::congruentTo(const MDefinition* ins) const {
   return byteSize_ == check->byteSize() && congruentIfOperandsEqual(check);
 }
 
-MDefinition::AliasType MAsmJSLoadHeap::mightAlias(
-    const MDefinition* def) const {
-  if (def->isAsmJSStoreHeap()) {
-    const MAsmJSStoreHeap* store = def->toAsmJSStoreHeap();
-    if (store->accessType() != accessType()) {
-      return AliasType::MayAlias;
-    }
-    if (!base()->isConstant() || !store->base()->isConstant()) {
-      return AliasType::MayAlias;
-    }
-    const MConstant* otherBase = store->base()->toConstant();
-    if (base()->toConstant()->equals(otherBase)) {
-      return AliasType::MayAlias;
-    }
-    return AliasType::NoAlias;
-  }
-  return AliasType::MayAlias;
-}
-
-bool MAsmJSLoadHeap::congruentTo(const MDefinition* ins) const {
-  if (!ins->isAsmJSLoadHeap()) {
-    return false;
-  }
-  const MAsmJSLoadHeap* load = ins->toAsmJSLoadHeap();
-  return load->accessType() == accessType() && congruentIfOperandsEqual(load);
-}
-
 MDefinition::AliasType MWasmLoadInstanceDataField::mightAlias(
     const MDefinition* def) const {
   if (def->isWasmStoreInstanceDataField()) {

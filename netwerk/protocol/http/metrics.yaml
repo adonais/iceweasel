@@ -133,26 +133,47 @@ netwerk:
       - necko@mozilla.com
     expires: never
 
-  happy_eyeballs_connection_establishment_time:
-    type: labeled_custom_distribution
+  happy_eyeballs_end_to_end_time_succeeded:
+    type: custom_distribution
     description: >
-      Happy Eyeballs: end-to-end time in milliseconds from algorithm start
-      to a successful connection or final failure, keyed by whether the
-      algorithm ultimately succeeded or failed.
+      Happy Eyeballs: end-to-end time in milliseconds for the whole algorithm
+      run, from algorithm start to a successful connection.
     range_min: 1
     range_max: 10000
     bucket_count: 100
     histogram_type: exponential
     unit: ms
-    labels:
-      - succeeded
-      - failed
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2026606
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2046018
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2048168
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2026606
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2046018
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2048168
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+
+  happy_eyeballs_end_to_end_time_failed:
+    type: custom_distribution
+    description: >
+      Happy Eyeballs: end-to-end time in milliseconds for the whole algorithm
+      run, from algorithm start to final failure (all connection attempts
+      failed).
+    range_min: 1
+    range_max: 10000
+    bucket_count: 100
+    histogram_type: exponential
+    unit: ms
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2026606
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2046018
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2048168
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2026606
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2046018
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2048168
     notification_emails:
       - necko@mozilla.com
     expires: never
@@ -261,6 +282,43 @@ netwerk:
       - necko@mozilla.com
     expires: never
 
+  happy_eyeballs_https_rr_features_by_resolver:
+    type: dual_labeled_counter
+    description: >
+      Happy Eyeballs: which connection-bootstrapping features the HTTPS DNS
+      records carried, combined across all HTTPS records received for a
+      connection (the union of features over every record, not per record),
+      split by the resolver type (DoH/TRR vs native) that produced the HTTPS
+      response. The "total" category is incremented once per connection that
+      saw at least one non-empty HTTPS record and serves as the denominator;
+      each feature category is incremented once per connection whose combined
+      records carried that feature. "ech" and the address hints can only be
+      delivered ahead of the first connection via the DNS record, not via an
+      Alt-Svc header. Used to compare how often DoH versus native resolution
+      yields a usable (and h3-capable) HTTPS record. This is the resolver-split
+      companion of happy_eyeballs_https_rr_features.
+    dual_labels:
+      key:
+        labels:
+          - doh
+          - native
+        description: The resolver type that produced the HTTPS DNS response.
+      category:
+        labels:
+          - total
+          - h3_alpn
+          - ech
+          - ipv4hint
+          - ipv6hint
+        description: Which bootstrapping feature the HTTPS records carried.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2043832
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2043832
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+
 network:
   byte_range_request:
     type: labeled_counter
@@ -276,6 +334,90 @@ network:
     notification_emails:
       - necko@mozilla.com
     expires: never
+
+  no_vary_search_header_received:
+    type: counter
+    description: >
+      Number of cacheable HTTP responses that carried a No-Vary-Search
+      response header. Only counts responses that reach the cache-write
+      path; headers on non-cacheable responses are not counted.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2038028
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2038028
+    notification_emails:
+      - necko@mozilla.com
+    expires: 166
+
+  no_vary_search_match:
+    type: labeled_counter
+    labels:
+      - matched
+      - not_matched
+    description: >
+      Outcome of a No-Vary-Search secondary cache lookup, recorded only when
+      the secondary index had at least one candidate for the request's base
+      path. 'matched' means an equivalent cached entry was found and used as a
+      cache hit that exact-URL matching would have missed; 'not_matched' means
+      candidates existed but none were equivalent.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2038028
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2038028
+    notification_emails:
+      - necko@mozilla.com
+    expires: 166
+
+  no_vary_search_rule_type:
+    type: labeled_counter
+    labels:
+      - exact_match
+      - ignore_all
+      - blocklist
+      - allowlist
+    description: >
+      The parsed variation rule of each received No-Vary-Search header,
+      recorded once per cacheable response. 'exact_match' includes both
+      key-order-only headers and headers that failed to parse.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2038028
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2038028
+    notification_emails:
+      - necko@mozilla.com
+    expires: 166
+
+  no_vary_search_parse_error:
+    type: counter
+    description: >
+      Number of received No-Vary-Search headers (on cacheable responses) that
+      failed to parse and fell back to exact-match behavior.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2038028
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2038028
+    notification_emails:
+      - necko@mozilla.com
+    expires: 166
+
+  no_vary_search_hit_by_rule:
+    type: labeled_counter
+    labels:
+      - exact_match
+      - ignore_all
+      - blocklist
+      - allowlist
+    description: >
+      Breakdown by variation rule of the cache hits won via No-Vary-Search
+      (the 'matched' outcome of no_vary_search_match). The sum across labels
+      equals no_vary_search_match['matched'].
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2038028
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2038028
+    notification_emails:
+      - necko@mozilla.com
+    expires: 166
 
   cache_read_time:
     type: timing_distribution

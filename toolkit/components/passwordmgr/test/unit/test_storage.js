@@ -11,6 +11,11 @@
 
 // Globals
 
+const isRustBackend = Services.prefs.getBoolPref(
+  "signon.storage.rust.enabled",
+  false
+);
+
 async function reloadAndCheckLoginsGen(aExpectedLogins) {
   await LoginTestUtils.reloadData();
   await LoginTestUtils.checkLogins(aExpectedLogins);
@@ -23,7 +28,10 @@ async function reloadAndCheckLoginsGen(aExpectedLogins) {
  * Tests addLogin with valid non-ASCII characters.
  */
 add_task(async function test_storage_addLogin_nonascii() {
-  let origin = "http://" + String.fromCharCode(355) + ".example.com";
+  // Rust store validates origins
+  let origin = isRustBackend
+    ? "http://valid.example.com"
+    : "http://" + String.fromCharCode(355) + ".example.com";
 
   // Store the strings "user" and "pass" using similarly looking glyphs.
   let loginInfo = TestData.formLogin({
@@ -61,6 +69,8 @@ add_task(async function test_storage_addLogin_newlines() {
  * Tests addLogin with a single dot in fields where it is allowed.
  *
  * These tests exist to verify the legacy "signons.txt" storage format.
+ *
+ * Not supported in Rust store.
  */
 add_task(async function test_storage_addLogin_dot() {
   let loginInfo = TestData.formLogin({ origin: ".", passwordField: "." });
@@ -70,14 +80,14 @@ add_task(async function test_storage_addLogin_dot() {
   loginInfo = TestData.authLogin({ httpRealm: "." });
   await Services.logins.addLoginAsync(loginInfo);
   await reloadAndCheckLoginsGen([loginInfo]);
-});
+}).skip(isRustBackend);
 
 /**
- * Tests addLogin with parentheses in origins.
+ * Tests addLogin with parentheses in http realms.
  *
  * These tests exist to verify the legacy "signons.txt" storage format.
  */
-add_task(async function test_storage_addLogin_parentheses() {
+add_task(async function test_storage_addLogin_http_realm_parentheses() {
   let loginList = [
     TestData.authLogin({ httpRealm: "(realm" }),
     TestData.authLogin({ httpRealm: "realm)" }),
@@ -92,6 +102,29 @@ add_task(async function test_storage_addLogin_parentheses() {
   await reloadAndCheckLoginsGen(loginList);
 });
 
+/**
+ * Tests addLogin with parentheses in origins.
+ *
+ * These tests exist to verify the legacy "signons.txt" storage format.
+ *
+ * Not supported in Rust store.
+ */
+add_task(async function test_storage_addLogin_parentheses() {
+  let loginList = [
+    TestData.authLogin({ origin: "http://parens(.example.com" }),
+    TestData.authLogin({ origin: "http://parens).example.com" }),
+    TestData.authLogin({ origin: "http://parens(example).example.com" }),
+    TestData.authLogin({ origin: "http://parens)example(.example.com" }),
+  ];
+  await Services.logins.addLogins(loginList);
+  await reloadAndCheckLoginsGen(loginList);
+}).skip(isRustBackend);
+
+/**
+ * Tests an internal test helper
+ *
+ * Not supported in Rust store.
+ */
 add_task(async function test_listInvalidOrigins() {
   await Services.logins.addLoginAsync(
     TestData.formLogin({ origin: "not a url" })
@@ -100,4 +133,4 @@ add_task(async function test_listInvalidOrigins() {
   Assert.equal(invalid.length, 1);
   Assert.equal(invalid[0].origin, "not a url");
   LoginTestUtils.clearData();
-});
+}).skip(isRustBackend);

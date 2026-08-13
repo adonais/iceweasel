@@ -11,7 +11,7 @@ const WORKER_URL = BASE_URL + "WorkerDebugger.initialize_es_worker.js";
 const DEBUGGER_URL =
   BASE_URL + "WorkerDebugger.initialize_debugger_es_worker.js";
 
-add_task(async function test() {
+async function doTest() {
   const onDbg = waitForRegister(WORKER_URL);
   const worker = new Worker(WORKER_URL, { type: "module" });
 
@@ -36,7 +36,22 @@ add_task(async function test() {
 
   info("Waiting for debugger script to be evaluated and dispatching a message");
   await onDebuggerScriptEvaluated;
-});
+}
+
+// Run once per dom.worker.remoteDebugger.enabled value so the worker debugger
+// is exercised against both the local WorkerDebugger and the parent-process
+// RemoteWorkerDebugger (bug 1944240).
+for (const remoteDebuggerEnabled of [false, true]) {
+  add_task(async function test() {
+    await SpecialPowers.pushPrefEnv({
+      set: [["dom.worker.remoteDebugger.enabled", remoteDebuggerEnabled]],
+    });
+    info(
+      "Running with dom.worker.remoteDebugger.enabled=" + remoteDebuggerEnabled
+    );
+    await doTest();
+  });
+}
 
 function waitForRegister(url, dbgUrl) {
   return new Promise(function (resolve) {

@@ -3,33 +3,43 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 :host {
+  --card-padding: var(--space-xsmall);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  --card-border-radius: 12px;
+  --card-box-shadow: none;
+  --ai-chat-card-thumbnail-background: var(--background-color-box);
+
+  @media -moz-pref("browser.nova.enabled") {
+    --card-border-radius: var(--border-radius-medium);
+  }
+
   @media not (forced-colors) {
-    --card-background-color: light-dark(var(--color-violet-10), var(--color-violet-50));
     --card-border-color: light-dark(var(--color-violet-10), var(--color-violet-50));
     --box-shadow-level-4: 0 4px 12px 2px rgba(58, 15, 110, 0.24);
+    --ai-chat-card-thumbnail-background: light-dark(var(--color-violet-10), var(--color-violet-50));
   }
 }
 
 .ai-chat-card {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  box-sizing: border-box;
-  padding: var(--space-xsmall);
-
-  /* @TODO: Replace 12px with token Bug 2030460 */
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  border-radius: 12px;
-
-  border: var(--card-border);
-  background: var(--background-color-box);
-  box-shadow: var(--box-shadow-level-2);
-
-  text-decoration: none;
+  display: block;
+  border-radius: var(--card-border-radius);
   overflow: hidden;
-  text-overflow: ellipsis;
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- history thumbnail Figma */
-  width: 100%;
+  box-shadow: var(--box-shadow-level-2);
+  text-decoration: none;
+  color: var(--text-color);
+
+  &:hover,
+  &:active {
+    box-shadow: var(--box-shadow-level-4);
+  }
+
+  &:active {
+    outline: 1px solid var(--focus-outline-color);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--focus-outline-color);
+  }
 
   img.thumbnail,
   div.thumbnail {
@@ -38,8 +48,8 @@
     height: auto;
     aspect-ratio: 1.55;
     object-fit: cover;
-    border-radius: var(--border-radius-medium);
-    background: var(--card-background-color);
+    border-radius: calc(var(--card-border-radius) - var(--card-padding));
+    background: var(--ai-chat-card-thumbnail-background);
   }
 
   div.thumbnail {
@@ -69,8 +79,6 @@
     color: var(--text-color);
     font-size: var(--font-size-small);
     font-weight: var(--font-weight-semibold);
-    font-style: normal;
-    line-height: normal;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
@@ -80,21 +88,19 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-xsmall);
-    padding: var(--space-xsmall);
-    align-self: stretch;
+    margin-block-start: var(--space-xsmall);
+    padding-inline: var(--space-xsmall);
+    padding-block-end: var(--space-xsmall);
 
     .meta {
       display: flex;
       gap: var(--space-xsmall);
-      align-content: center;
       justify-content: space-between;
       width: 100%;
       color: var(--text-color-deemphasized);
       letter-spacing: 0.22px;
       font-size: var(--font-size-small);
       line-height: var(--font-size-small);
-      font-style: normal;
-      font-weight: var(--font-weight);
 
       .timestamp {
         text-align: end;
@@ -120,23 +126,10 @@
       }
     }
   }
-
-  &:hover,
-  &:active {
-    box-shadow: var(--box-shadow-level-4);
-  }
-
-  &:active {
-    outline: 1px solid var(--focus-outline-color);
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--focus-outline-color);
-  }
 }
 
 .ai-chat-card-thumbnail-fallback {
-  border-radius: var(--border-radius-medium);
+  border-radius: calc(var(--card-border-radius) - var(--card-padding));
   overflow: hidden;
 
   .background {

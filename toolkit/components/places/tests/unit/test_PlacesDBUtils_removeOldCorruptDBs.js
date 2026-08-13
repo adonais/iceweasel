@@ -23,7 +23,15 @@ async function createfiles() {
 
 add_task(async function removefiles() {
   await createfiles();
-  await PlacesDBUtils.runTasks([PlacesDBUtils.removeOldCorruptDBs]);
+  let tasksStatusMap = await PlacesDBUtils.runTasks([
+    PlacesDBUtils.removeOldCorruptDBs,
+  ]);
+  for (let [name, { succeeded, logs }] of tasksStatusMap) {
+    info(
+      `Task ${name} ${succeeded ? "succeeded" : "failed"}:\n${logs.join("\n")}`
+    );
+    Assert.ok(succeeded, `Task ${name} should have succeeded`);
+  }
   for (let i = 0; i < TEMP_FILES_TO_CREATE; i++) {
     let fileName = "places.sqlite" + (i > 0 ? "-" + i : "") + ".corrupt";
     let filePath = PathUtils.join(PathUtils.profileDir, fileName);

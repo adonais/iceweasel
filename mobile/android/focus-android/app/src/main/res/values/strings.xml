@@ -59,7 +59,7 @@
     <string name="menu_settings">Settings</string>
     <string name="menu_about">About</string>
     <string name="menu_help">Help</string>
-    
+
     <string name="menu_terms_of_use">Terms of Use</string>
 
     <!-- Menu item: This is the label for a menu entry that shows how many trackers have been blocked
@@ -141,7 +141,7 @@
 
     <!-- Content of about focus. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
          %2$s is the url for the learn-more link. -->
-    <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s puts you in control.</p>
+    <string name="about_content" tools:ignore="BrandUsage,IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s puts you in control.</p>
 <p>Use it as a private browser:
   <ul>
     <li>Search and browse right in the app</li>
@@ -271,7 +271,7 @@
     <string name="preference_autocomplete_add_hint">Paste or enter URL</string>
 
     <!-- Example how a custom domain autocomplete URL be added (e.g. without http://) -->
-    <string name="preference_autocomplete_add_example2">Example: mozilla.org</string>
+    <string name="preference_autocomplete_add_example2" tools:ignore="BrandUsage">Example: mozilla.org</string>
 
     <!-- To be removed once the new hint has been translated -->
     <string name="preference_autocomplete_add_example">Example: example.com</string>
@@ -346,18 +346,18 @@
       %1$s will be replaced by the app name (e.g. Firefox Focus) -->
     <string name="preference_default_browser2">Make %1$s default browser</string>
 
-    <string name="preference_category_mozilla">Mozilla</string>
+    <string name="preference_category_mozilla" tools:ignore="BrandUsage">Mozilla</string>
     <string name="preference_mozilla_telemetry2">Send usage data</string>
 
     <!-- A link to SUMO at the end of the summary (preference_mozilla_telemetry_summary2) of the "Send anonymous usage data" setting. -->
     <string name="preference_mozilla_telemetry_summary">Learn more</string>
 
     <!-- %1$s will be replaced with the name of the app (e.g. Firefox Focus) -->
-    <string name="preference_mozilla_telemetry_summary2">Mozilla strives to collect only what we need to provide and improve %1$s for everyone.</string>
+    <string name="preference_mozilla_telemetry_summary2" tools:ignore="BrandUsage">Mozilla strives to collect only what we need to provide and improve %1$s for everyone.</string>
 
     <!-- Preference switch for daily usage ping data collection -->
     <string name="preference_daily_usage_ping_title">Daily usage ping</string>
-    <string name="preference_daily_usage_ping_description">This helps Mozilla to estimate active users.</string>
+    <string name="preference_daily_usage_ping_description" tools:ignore="BrandUsage">This helps Mozilla to estimate active users.</string>
     <string name="preference_daily_usage_ping_learn_more">Learn more</string>
 
     <!-- In-app link (in settings) to Focus privacy notice. -->
@@ -934,7 +934,7 @@
     <string name="tab_crash_report_close_tab_button_label">Close Tab</string>
 
     <!-- Label for the checkbox to send the tab crash report to Mozilla -->
-    <string name="crash_report_send_crash_label">Send crash report to Mozilla</string>
+    <string name="crash_report_send_crash_label" tools:ignore="BrandUsage">Send crash report to Mozilla</string>
 
     <!-- Tracking protection bottom sheet -->
 

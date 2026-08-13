@@ -274,9 +274,37 @@ already_AddRefed<CommandEncoder> Device::CreateCommandEncoder(
 
 already_AddRefed<RenderBundleEncoder> Device::CreateRenderBundleEncoder(
     const dom::GPURenderBundleEncoderDescriptor& aDesc) {
-  auto id = ffi::wgpu_client_make_render_bundle_encoder_id(GetClient());
-  RefPtr<RenderBundleEncoder> encoder =
-      new RenderBundleEncoder(this, id, aDesc);
+  ffi::WGPURenderBundleEncoderDescriptor desc = {};
+  desc.sample_count = aDesc.mSampleCount;
+
+  webgpu::StringHelper label(aDesc.mLabel);
+  desc.label = label.Get();
+
+  ffi::WGPUTextureFormat depthStencilFormat = {ffi::WGPUTextureFormat_Sentinel};
+  if (aDesc.mDepthStencilFormat.WasPassed()) {
+    depthStencilFormat =
+        ConvertTextureFormat(aDesc.mDepthStencilFormat.Value());
+    desc.depth_stencil_format = &depthStencilFormat;
+  }
+
+  std::vector<ffi::WGPUFfiOption_TextureFormat> colorFormats = {};
+  for (const auto i : IntegerRange(aDesc.mColorFormats.Length())) {
+    ffi::WGPUFfiOption_TextureFormat opt = {};
+    if (aDesc.mColorFormats[i].IsNull()) {
+      opt.tag = ffi::WGPUFfiOption_TextureFormat_None_TextureFormat;
+    } else {
+      opt.tag = ffi::WGPUFfiOption_TextureFormat_Some_TextureFormat;
+      opt.some = ConvertTextureFormat(aDesc.mColorFormats[i].Value());
+    }
+    colorFormats.push_back(opt);
+  }
+
+  desc.color_formats = {colorFormats.data(), colorFormats.size()};
+
+  RawId id = ffi::wgpu_client_create_render_bundle_encoder(GetClient(), GetId(),
+                                                           &desc);
+
+  RefPtr<RenderBundleEncoder> encoder = new RenderBundleEncoder(this, id);
   encoder->SetLabel(aDesc.mLabel);
   return encoder.forget();
 }

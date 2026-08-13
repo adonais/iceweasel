@@ -39,26 +39,30 @@ using namespace mozilla::dom;
 
 namespace {
 
-template <int N>
-static int Aligned(int aValue) {
-  if (aValue < N) {
-    return N;
-  }
-
-  // The `- 1` avoids overreaching when `aValue % N == 0`.
-  return (((aValue - 1) / N) + 1) * N;
-}
+// Cap on input dimensions. Without this, valid int32_t dimensions can produce
+// large-but-non-overflowing size_t values, causing the OS to thrash or kill
+// lower priority processes when there are too many page faults. 16384 (16K)
+// bounds the allocation to ~384 MB.
+constexpr int32_t kMaxI420Dimension = 16384;
 
 template <int Alignment>
-size_t I420Size(int aWidth, int aHeight) {
-  int yStride = Aligned<Alignment>(aWidth);
-  int yHeight = aHeight;
-  size_t yPlaneSize = yStride * yHeight;
+mozilla::Result<size_t, nsresult> CalculateI420FrameSize(int32_t aWidth,
+                                                         int32_t aHeight) {
+  MOZ_ASSERT(Alignment >= 1 && Alignment <= 16);
 
-  int uvStride = Aligned<Alignment>((aWidth + 1) / 2);
-  int uvHeight = (aHeight + 1) / 2;
-  size_t uvPlaneSize = uvStride * uvHeight;
-
+  if (aWidth <= 0 || aHeight <= 0 || aWidth > kMaxI420Dimension ||
+      aHeight > kMaxI420Dimension) {
+    return Err(NS_ERROR_INVALID_ARG);
+  }
+  constexpr size_t N = static_cast<size_t>(Alignment);
+  auto aligned = [](size_t v) -> size_t {
+    // The `- 1` avoids overreaching when `v % N == 0`.
+    return v < N ? N : ((v - 1) / N + 1) * N;
+  };
+  const size_t w = static_cast<size_t>(aWidth);
+  const size_t h = static_cast<size_t>(aHeight);
+  const size_t yPlaneSize = aligned(w) * h;
+  const size_t uvPlaneSize = aligned((w + 1) / 2) * ((h + 1) / 2);
   return yPlaneSize + uvPlaneSize * 2;
 }
 
@@ -207,6 +211,13 @@ void VP8TrackEncoder::SetMaxKeyFrameDistance(int32_t aMaxKeyFrameDistance) {
 nsresult VP8TrackEncoder::Init(int32_t aWidth, int32_t aHeight,
                                int32_t aDisplayWidth, int32_t aDisplayHeight,
                                float aEstimatedFrameRate) {
+  auto frameSizeResult =
+      CalculateI420FrameSize<I420_STRIDE_ALIGN>(aWidth, aHeight);
+  if (frameSizeResult.isErr()) {
+    VP8LOG(LogLevel::Warning, "Invalid size: {}x{}", aWidth, aHeight);
+    return NS_ERROR_FAILURE;
+  }
+
   if (aDisplayWidth < 1 || aDisplayHeight < 1) {
     return NS_ERROR_FAILURE;
   }
@@ -223,12 +234,12 @@ nsresult VP8TrackEncoder::Init(int32_t aWidth, int32_t aHeight,
 
   MOZ_ASSERT(!mI420Frame);
   MOZ_ASSERT(mI420FrameSize == 0);
-  const size_t neededSize = I420Size<I420_STRIDE_ALIGN>(aWidth, aHeight);
-  mI420Frame.reset(new (fallible) uint8_t[neededSize]);
-  mI420FrameSize = mI420Frame ? neededSize : 0;
+  const size_t frameSize = frameSizeResult.unwrap();
+  mI420Frame.reset(new (fallible) uint8_t[frameSize]);
+  mI420FrameSize = mI420Frame ? frameSize : 0;
   if (!mI420Frame) {
     VP8LOG(LogLevel::Warning, "Allocating I420 frame of size {} failed",
-           neededSize);
+           frameSize);
     return NS_ERROR_FAILURE;
   }
   vpx_img_wrap(&mVPXImageWrapper, VPX_IMG_FMT_I420, aWidth, aHeight,
@@ -256,6 +267,8 @@ nsresult VP8TrackEncoder::Init(int32_t aWidth, int32_t aHeight,
 
 nsresult VP8TrackEncoder::InitInternal(int32_t aWidth, int32_t aHeight,
                                        int32_t aMaxKeyFrameDistance) {
+  MOZ_ASSERT(CalculateI420FrameSize<I420_STRIDE_ALIGN>(aWidth, aHeight).isOk());
+
   if (aWidth < 1 || aHeight < 1) {
     return NS_ERROR_FAILURE;
   }
@@ -295,11 +308,6 @@ nsresult VP8TrackEncoder::InitInternal(int32_t aWidth, int32_t aHeight,
 
 nsresult VP8TrackEncoder::Reconfigure(int32_t aWidth, int32_t aHeight,
                                       int32_t aMaxKeyFrameDistance) {
-  if (aWidth <= 0 || aHeight <= 0) {
-    MOZ_ASSERT(false);
-    return NS_ERROR_FAILURE;
-  }
-
   if (!mInitialized) {
     MOZ_ASSERT(false);
     return NS_ERROR_FAILURE;
@@ -310,15 +318,21 @@ nsresult VP8TrackEncoder::Reconfigure(int32_t aWidth, int32_t aHeight,
   if (aWidth != mFrameWidth || aHeight != mFrameHeight) {
     VP8LOG(LogLevel::Info, "Dynamic resolution change ({}x{} -> {}x{}).",
            mFrameWidth, mFrameHeight, aWidth, aHeight);
-    const size_t neededSize = I420Size<I420_STRIDE_ALIGN>(aWidth, aHeight);
-    if (neededSize > mI420FrameSize) {
+    auto newSizeResult =
+        CalculateI420FrameSize<I420_STRIDE_ALIGN>(aWidth, aHeight);
+    if (newSizeResult.isErr()) {
+      VP8LOG(LogLevel::Warning, "Invalid size: {}x{}", aWidth, aHeight);
+      return NS_ERROR_FAILURE;
+    }
+    const size_t newSize = newSizeResult.unwrap();
+    if (newSize > mI420FrameSize) {
       needsReInit = true;
-      mI420Frame.reset(new (fallible) uint8_t[neededSize]);
-      mI420FrameSize = mI420Frame ? neededSize : 0;
+      mI420Frame.reset(new (fallible) uint8_t[newSize]);
+      mI420FrameSize = mI420Frame ? newSize : 0;
     }
     if (!mI420Frame) {
       VP8LOG(LogLevel::Warning, "Allocating I420 frame of size {} failed",
-             neededSize);
+             newSize);
       return NS_ERROR_FAILURE;
     }
     vpx_img_wrap(&mVPXImageWrapper, VPX_IMG_FMT_I420, aWidth, aHeight,
@@ -645,16 +659,21 @@ nsresult VP8TrackEncoder::Encode(VideoSegment* aSegment) {
 }
 
 nsresult VP8TrackEncoder::PrepareRawFrame(VideoChunk& aChunk) {
-  gfx::IntSize intrinsicSize = aChunk.mFrame.GetIntrinsicSize();
   RefPtr<Image> img;
   if (aChunk.mFrame.GetForceBlack() || aChunk.IsNull()) {
-    if (!mMuteFrame || mMuteFrame->GetSize() != intrinsicSize) {
-      mMuteFrame = mozilla::VideoFrame::CreateBlackImage(intrinsicSize);
+    // Generate the black frame at the source image's size, or the encoder's
+    // coded size when the chunk carries no image, matching the real-frame path.
+    Image* chunkImage = aChunk.mFrame.GetImage();
+    const gfx::IntSize blackImageSize =
+        chunkImage ? chunkImage->GetSize()
+                   : gfx::IntSize(mFrameWidth, mFrameHeight);
+    if (!mMuteFrame || mMuteFrame->GetSize() != blackImageSize) {
+      mMuteFrame = aChunk.mFrame.CloneAsBlackImage(blackImageSize);
     }
     if (!mMuteFrame) {
       VP8LOG(LogLevel::Warning, "Failed to allocate black image of size {}x{}",
-             intrinsicSize.width, intrinsicSize.height);
-      return NS_OK;
+             blackImageSize.width, blackImageSize.height);
+      return NS_ERROR_FAILURE;
     }
     img = mMuteFrame;
   } else {

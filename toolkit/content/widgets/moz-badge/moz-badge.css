@@ -8,7 +8,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-xsmall);
-  padding: 0 var(--space-xsmall);
+  padding: var(--badge-padding-block) var(--badge-padding-inline);
   width: fit-content;
   color: var(--badge-text-color);
   /* Use outline so the border doesn't overlay the background and the size of
@@ -27,7 +27,7 @@
 
 .moz-badge-label {
   font-size: var(--font-size-small);
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--badge-font-weight);
 }
 
 :host([type="new"]) {

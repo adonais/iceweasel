@@ -35,6 +35,13 @@
 
 "use strict";
 
+// Legacy wildcard form action origins are not supported by the Rust logins
+// store, yet. See Bug 2052516
+const isRustBackend = Services.prefs.getBoolPref(
+  "signon.storage.rust.enabled",
+  false
+);
+
 // Tests
 
 /**
@@ -62,7 +69,7 @@ add_task(async function test_addLogin_wildcard() {
   // Form logins can be added for other hosts.
   loginInfo = TestData.formLogin({ origin: "http://other.example.com" });
   await Services.logins.addLoginAsync(loginInfo);
-});
+}).skip(isRustBackend);
 
 /**
  * Verifies that searchLogins and countLogins include all logins
@@ -96,7 +103,7 @@ add_task(async function test_search_all_wildcard() {
     ),
     1
   );
-});
+}).skip(isRustBackend);
 
 /**
  * Verifies that specifying an empty string for formActionOrigin in searchLogins
@@ -112,4 +119,4 @@ add_task(async function test_searchLogins_wildcard() {
     formActionOrigin: "",
   });
   LoginTestUtils.assertLoginListsEqual(logins, [loginInfo]);
-});
+}).skip(isRustBackend);

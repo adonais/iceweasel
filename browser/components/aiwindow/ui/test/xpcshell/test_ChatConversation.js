@@ -832,6 +832,53 @@ add_task(
   }
 );
 
+add_task(function test_ChatConversation_rehydratesHistoryResultsPool() {
+  const records = [
+    { url: "https://example.com/1", title: "Page 1" },
+    { url: "https://example.com/2", title: "Page 2" },
+  ];
+  const message = new ChatMessage({
+    ordinal: 1,
+    role: MESSAGE_ROLE.ASSISTANT,
+    turnIndex: 0,
+    content: { type: "text", body: "Here is what I found" },
+    historyResults: records,
+  });
+
+  const conversation = new ChatConversation({ messages: [message] });
+
+  Assert.deepEqual(
+    conversation.getHistoryResultsSnapshot(),
+    records,
+    "constructor rehydrates the history results pool from message snapshots"
+  );
+});
+
+add_task(
+  async function test_receiveResponse_snapshotsHistoryResultsOnMessage() {
+    const conversation = new ChatConversation({});
+    conversation.addAssistantMessage("text", "");
+    const assistantMsg = conversation.messages.at(-1);
+
+    const records = [{ url: "https://example.com/1", title: "Page 1" }];
+    conversation.addHistoryResults(records);
+
+    async function* emptyStream() {}
+    await conversation.receiveResponse(emptyStream());
+
+    Assert.deepEqual(
+      assistantMsg.historyResults,
+      conversation.getHistoryResultsSnapshot(),
+      "receiveResponse snapshots the history results pool onto the completed message"
+    );
+    Assert.equal(
+      assistantMsg.historyResults.length,
+      1,
+      "the snapshot contains the searched record"
+    );
+  }
+);
+
 add_task(async function test_addUserMessage_sets_memories_fields() {
   const conversation = new ChatConversation({});
 

@@ -5,10 +5,11 @@
 
 #include "nsIconProtocolHandler.h"
 
+#include "nsCOMPtr.h"
+#include "nsCRT.h"
+#include "nsContentUtils.h"
 #include "nsIconChannel.h"
 #include "nsIconURI.h"
-#include "nsCRT.h"
-#include "nsCOMPtr.h"
 #include "nsNetCID.h"
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -38,16 +39,19 @@ nsIconProtocolHandler::AllowPort(int32_t port, const char* scheme,
 }
 
 NS_IMETHODIMP
-nsIconProtocolHandler::NewChannel(nsIURI* url, nsILoadInfo* aLoadInfo,
+nsIconProtocolHandler::NewChannel(nsIURI* aUrl, nsILoadInfo* aLoadInfo,
                                   nsIChannel** result) {
-  NS_ENSURE_ARG_POINTER(url);
+  if (!nsContentUtils::IsImageType(aLoadInfo->GetExternalContentPolicyType())) {
+    return NS_ERROR_CONTENT_BLOCKED;
+  }
+
   nsIconChannel* channel = new nsIconChannel;
   if (!channel) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
   NS_ADDREF(channel);
 
-  nsresult rv = channel->Init(url, aLoadInfo);
+  nsresult rv = channel->Init(aUrl, aLoadInfo);
   if (NS_FAILED(rv)) {
     NS_RELEASE(channel);
     return rv;

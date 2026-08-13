@@ -5,11 +5,9 @@
 #include "ia2AccessibleImage.h"
 
 #include "AccessibleImage_i.c"
-
-#include "ImageAccessible.h"
 #include "IUnknownImpl.h"
+#include "ImageAccessible.h"
 #include "nsIAccessibleTypes.h"
-
 #include "nsString.h"
 
 using namespace mozilla;

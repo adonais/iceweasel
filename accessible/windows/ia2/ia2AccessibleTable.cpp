@@ -5,9 +5,8 @@
 #include "ia2AccessibleTable.h"
 
 #include "Accessible2.h"
-#include "AccessibleTable_i.c"
 #include "AccessibleTable2_i.c"
-
+#include "AccessibleTable_i.c"
 #include "IUnknownImpl.h"
 #include "mozilla/a11y/Accessible.h"
 #include "mozilla/a11y/TableAccessible.h"

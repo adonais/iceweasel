@@ -4,18 +4,16 @@
 
 #include "AccEvent.h"
 
-#include "nsAccUtils.h"
-#include "xpcAccEvents.h"
 #include "States.h"
 #include "TextRange.h"
-#include "xpcAccessibleDocument.h"
-#include "xpcAccessibleTextRange.h"
-
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/UserActivation.h"
-
+#include "nsAccUtils.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIMutableArray.h"
+#include "xpcAccEvents.h"
+#include "xpcAccessibleDocument.h"
+#include "xpcAccessibleTextRange.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;

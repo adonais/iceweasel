@@ -5,9 +5,7 @@
 
 import logging
 
-import taskcluster_urls as liburls
 from taskcluster import Hooks
-from taskgraph.util import taskcluster as tc_util
 from taskgraph.util.taskcluster import (
     get_root_url,
     get_task_definition,
@@ -15,13 +13,6 @@ from taskgraph.util.taskcluster import (
 )
 
 logger = logging.getLogger(__name__)
-
-
-def get_index_url(index_path, multiple=False, block_proxy=True):
-    index_tmpl = liburls.api(
-        get_root_url(block_proxy=block_proxy), "index", "v1", "task{}/{}"
-    )
-    return index_tmpl.format("s" if multiple else "", index_path)
 
 
 def insert_index(index_path, task_id, data=None):
@@ -39,47 +30,6 @@ def insert_index(index_path, task_id, data=None):
         },
     )
     return response
-
-
-def status_task(task_id):
-    """Gets the status of a task given a task_id.
-
-    In testing mode, just logs that it would have retrieved status.
-
-    Args:
-        task_id (str): A task id.
-
-    Returns:
-        dict: A dictionary object as defined here:
-          https://docs.taskcluster.net/docs/reference/platform/queue/api#status
-    """
-    if tc_util.testing:
-        logger.info(f"Would have gotten status for {task_id}.")
-    else:
-        queue = get_taskcluster_client("queue")
-        response = queue.status(task_id)
-        if response:
-            return response.get("status", {})
-
-
-def state_task(task_id):
-    """Gets the state of a task given a task_id.
-
-    In testing mode, just logs that it would have retrieved state. This is a subset of the
-    data returned by :func:`status_task`.
-
-    Args:
-        task_id (str): A task id.
-
-    Returns:
-        str: The state of the task, one of
-          ``pending, running, completed, failed, exception, unknown``.
-    """
-    if tc_util.testing:
-        logger.info(f"Would have gotten state for {task_id}.")
-    else:
-        status = status_task(task_id).get("state") or "unknown"
-        return status
 
 
 def trigger_hook(hook_group_id, hook_id, hook_payload):

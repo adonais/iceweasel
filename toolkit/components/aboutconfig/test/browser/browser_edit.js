@@ -254,7 +254,7 @@ add_task(async function test_modify() {
   // affect later tests.
   let invalidFormPopup = window.document.getElementById("invalid-form-popup");
   invalidFormPopup.hidePopup();
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return invalidFormPopup.state == "closed";
   }, "form validation popup closed");
 });

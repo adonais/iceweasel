@@ -103,6 +103,7 @@ export function makeShareResult({ share = null } = {}) {
  */
 class ContentSharingUtilsClass {
   #validator = null;
+  #linkValidator = null;
 
   get isEnabled() {
     let isPrivate = lazy.PrivateBrowsingUtils.isWindowPrivate(
@@ -132,6 +133,22 @@ class ContentSharingUtilsClass {
     const schema = await loadContentSharingSchema();
     this.#validator = new lazy.JsonSchema.Validator(schema);
     return this.#validator;
+  }
+
+  /**
+   * Validator for a single link against the schema's Link definition, used to
+   * drop individual links that wouldn't pass full-share validation. Must be
+   * warmed (awaited) before the synchronous buildShare/makeValidLink run.
+   */
+  async getLinkValidator() {
+    if (this.#linkValidator) {
+      return this.#linkValidator;
+    }
+
+    const schema = await loadContentSharingSchema();
+    const linkSchema = { $schema: schema.$schema, ...schema.$defs.Link };
+    this.#linkValidator = new lazy.JsonSchema.Validator(linkSchema);
+    return this.#linkValidator;
   }
 
   /**
@@ -175,6 +192,7 @@ class ContentSharingUtilsClass {
         title: t.label,
       })),
     };
+    await this.getLinkValidator();
     const result = this.buildShare(shareObject);
 
     result.share.title = await lazy.contentSharingL10n.formatValue(
@@ -209,6 +227,7 @@ class ContentSharingUtilsClass {
         };
       }),
     };
+    await this.getLinkValidator();
     const result = this.buildShare(shareObject);
     await this.#createLinkAndOpenModal(result, "tab_group");
   }
@@ -251,6 +270,7 @@ class ContentSharingUtilsClass {
 
     bookmark.type = "bookmarks";
 
+    await this.getLinkValidator();
     return this.buildShare(bookmark);
   }
 
@@ -282,10 +302,16 @@ class ContentSharingUtilsClass {
       return null;
     }
 
-    return {
+    const link = {
       url: url.toString().slice(0, 4000),
       title: linkObject.title?.slice(0, 100) ?? "",
     };
+
+    if (!this.#linkValidator?.validate(link).valid) {
+      return null;
+    }
+
+    return link;
   }
 
   /**
@@ -340,7 +366,18 @@ class ContentSharingUtilsClass {
         linkOrNestShare.type = "bookmarks";
 
         currentCount.value += 1;
-        links.push(this.buildShare(linkOrNestShare, currentCount).share);
+        const { share: nestedShare } = this.buildShare(
+          linkOrNestShare,
+          currentCount
+        );
+        // Skip nested folders whose links were all dropped: an empty links
+        // array fails the schema's minItems and would invalidate the whole
+        // share.
+        if (nestedShare.links.length) {
+          links.push(nestedShare);
+        } else {
+          currentCount.value -= 1;
+        }
       }
     }
 

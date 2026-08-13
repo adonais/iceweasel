@@ -4,16 +4,16 @@
 
 #import <Vision/Vision.h>
 
-#include "mozilla/dom/Promise.h"
-#include "mozilla/gfx/2D.h"
-#include "mozilla/ErrorResult.h"
 #include "ErrorList.h"
-#include "nsClipboard.h"
-#include "nsCocoaUtils.h"
+#include "mozilla/ErrorResult.h"
 #include "mozilla/MacStringHelpers.h"
 #include "mozilla/ScopeExit.h"
-#include "mozilla/widget/TextRecognition.h"
 #include "mozilla/dom/PContent.h"
+#include "mozilla/dom/Promise.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/widget/TextRecognition.h"
+#include "nsClipboard.h"
+#include "nsCocoaUtils.h"
 
 namespace mozilla::widget {
 

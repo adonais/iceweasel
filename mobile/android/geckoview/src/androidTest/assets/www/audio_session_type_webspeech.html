@@ -1,0 +1,40 @@
+<!doctype html>
+<!-- Speaks via Web Speech so the tab's effective audio-session type is "transient". -->
+<html>
+  <head>
+    <title>audio session type: web speech</title>
+  </head>
+  <body>
+    <script>
+      // Pin the test fake-synth voice (see
+      // dom/media/webspeech/synth/test/nsFakeSynthServices.cpp). The "it-IT-noend"
+      // voice fires "start" but never auto-fires "end", so the tab stays audible
+      // and its effective audio-session type stays "transient". Without an
+      // explicit voice the Android platform SpeechSynthesisService wins voice
+      // selection and never speaks on the emulator, so the transient type would
+      // never be registered.
+      function speak() {
+        const utterance = new SpeechSynthesisUtterance(
+          "testing audio session type for web speech"
+        );
+        utterance.lang = "it-IT-noend";
+        speechSynthesis.speak(utterance);
+      }
+      function fakeVoiceReady() {
+        return speechSynthesis.getVoices().some(v => v.lang === "it-IT-noend");
+      }
+      window.onload = () => {
+        if (fakeVoiceReady()) {
+          speak();
+          return;
+        }
+        speechSynthesis.addEventListener("voiceschanged", function handler() {
+          if (fakeVoiceReady()) {
+            speechSynthesis.removeEventListener("voiceschanged", handler);
+            speak();
+          }
+        });
+      };
+    </script>
+  </body>
+</html>

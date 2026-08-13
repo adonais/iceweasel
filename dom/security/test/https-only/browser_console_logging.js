@@ -102,7 +102,7 @@ add_task(async function () {
   // 3. Make Websocket request
   new WebSocket("ws://does.not.exist");
 
-  await BrowserTestUtils.waitForCondition(() => tests.length === 0);
+  await TestUtils.waitForCondition(() => tests.length === 0);
 
   // Clean up
   Services.console.unregisterListener(on_new_message);

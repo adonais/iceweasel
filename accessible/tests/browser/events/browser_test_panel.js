@@ -33,7 +33,7 @@ async function runTests(browser) {
     ".popup-notification-primary-button"
   );
   const buttonLabel = primaryButton.shadowRoot.querySelector("label");
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     try {
       return getAccessible(buttonLabel, [nsIAccessible])?.childCount > 0;
     } catch {

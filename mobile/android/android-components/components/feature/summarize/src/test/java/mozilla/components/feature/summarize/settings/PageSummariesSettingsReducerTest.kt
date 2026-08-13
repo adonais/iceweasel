@@ -4,6 +4,7 @@
 
 package mozilla.components.feature.summarize.settings
 
+import mozilla.components.lib.shake.ShakeSensitivity
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -51,6 +52,31 @@ class PageSummariesSettingsReducerTest {
         val result = summarizeSettingsReducer(state, ShakeToSummarizePreferenceToggled)
 
         assertEquals(state.copy(isGestureEnabled = false), result)
+    }
+
+    @Test
+    fun `WHEN shake sensitivity is changed THEN it is updated in the state`() {
+        val state = SummarizeSettingsState(
+            isFeatureEnabled = true,
+            isGestureEnabled = true,
+            shakeSensitivity = ShakeSensitivity.Medium,
+        )
+        val result = summarizeSettingsReducer(
+            state,
+            ShakeSensitivityChanged(ShakeSensitivity.High),
+        )
+
+        assertEquals(state.copy(shakeSensitivity = ShakeSensitivity.High), result)
+    }
+
+    @Test
+    fun `WHEN summarize pages is toggled THEN sensitivity is the same`() {
+        val state = SummarizeSettingsState(shakeSensitivity = ShakeSensitivity.High)
+        val result = summarizeSettingsReducer(
+            state,
+            SummarizePagesPreferenceToggled,
+        )
+        assertEquals(ShakeSensitivity.High, result.shakeSensitivity)
     }
 
     @Test

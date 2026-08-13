@@ -5,8 +5,9 @@
 #ifndef jit_riscv64_SharedICHelpers_riscv64_inl_h
 #define jit_riscv64_SharedICHelpers_riscv64_inl_h
 
-#include "jit/BaselineFrame.h"
 #include "jit/SharedICHelpers.h"
+
+#include "jit/BaselineFrame.h"
 
 namespace js {
 namespace jit {

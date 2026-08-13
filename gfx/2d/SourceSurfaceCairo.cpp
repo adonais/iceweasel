@@ -3,10 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SourceSurfaceCairo.h"
+
+#include "DataSourceSurfaceWrapper.h"
 #include "DrawTargetCairo.h"
 #include "HelpersCairo.h"
-#include "DataSourceSurfaceWrapper.h"
-
 #include "cairo.h"
 
 namespace mozilla {

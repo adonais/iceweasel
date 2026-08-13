@@ -15,7 +15,62 @@ export class AIChatTable extends MozLitElement {
   static properties = {
     messageId: { type: String, attribute: "message-id" },
     lineRange: { type: Array, attribute: "data-line-range" },
+    isOverflowing: { type: Boolean, state: true },
   };
+
+  #scrollContainer = null;
+  #resizeObserver = null;
+  #observedTable = null;
+
+  constructor() {
+    super();
+    this.isOverflowing = false;
+  }
+
+  firstUpdated() {
+    this.#scrollContainer = this.renderRoot.querySelector(
+      ".table-scroll-container"
+    );
+    this.#resizeObserver = new ResizeObserver(() => this.#updateOverflow());
+    this.#resizeObserver.observe(this.#scrollContainer);
+    this.#observeTable();
+    this.#updateOverflow();
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.#resizeObserver?.disconnect();
+    this.#resizeObserver = null;
+    this.#scrollContainer = null;
+    this.#observedTable = null;
+  }
+
+  #observeTable() {
+    const table = this.querySelector("table");
+    if (table === this.#observedTable) {
+      return;
+    }
+    if (this.#observedTable) {
+      this.#resizeObserver?.unobserve(this.#observedTable);
+    }
+    this.#observedTable = table;
+    if (table) {
+      this.#resizeObserver?.observe(table);
+    }
+  }
+
+  #onSlotChange() {
+    this.#observeTable();
+    this.#updateOverflow();
+  }
+
+  #updateOverflow() {
+    const container = this.#scrollContainer;
+    if (!container) {
+      return;
+    }
+    this.isOverflowing = container.scrollWidth - container.clientWidth > 1;
+  }
 
   #handleCopyTable() {
     this.dispatchEvent(
@@ -49,8 +104,16 @@ export class AIChatTable extends MozLitElement {
             ></moz-button>`
           : nothing}
         <div class="table-scroll-container">
-          <slot></slot>
+          <slot @slotchange=${this.#onSlotChange}></slot>
         </div>
+        ${this.isOverflowing
+          ? html`<div class="table-scroll-indicator">
+              <span
+                class="table-scroll-indicator-label"
+                data-l10n-id="aiwindow-table-scroll-indicator"
+              ></span>
+            </div>`
+          : nothing}
       </div>
     `;
   }

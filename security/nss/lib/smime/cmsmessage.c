@@ -270,6 +270,7 @@ NSS_CMSMessage_IsEncrypted(NSSCMSMessage *cmsg)
          cinfo = NSS_CMSContentInfo_GetChildContentInfo(cinfo)) {
         switch (NSS_CMSContentInfo_GetContentTypeTag(cinfo)) {
             case SEC_OID_PKCS7_ENVELOPED_DATA:
+            case SEC_OID_CMS_AUTH_ENVELOPED_DATA:
             case SEC_OID_PKCS7_ENCRYPTED_DATA:
                 return PR_TRUE;
             default:

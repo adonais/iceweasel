@@ -281,6 +281,38 @@ MOZ_ALWAYS_INLINE uint16_t packToFloat10(float fp32) {
   }
 }
 
+MOZ_ALWAYS_INLINE float unpackFromFloat11(uint16_t fp11) {
+  const uint32_t exponent = (fp11 >> 6) & 0x1F;
+  const uint32_t mantissa = fp11 & 0x3F;
+
+  if (exponent == 0x1F) {
+    // INF or NaN
+    return BitwiseCast<float>(0x7F800000 | (mantissa << 17));
+  }
+  if (exponent == 0) {
+    // Zero or denormalized: mantissa * 2^-20.
+    return float(mantissa) / float(1 << 20);
+  }
+  // Normalized: rebias the exponent for float32 (127 - 15 = 112).
+  return BitwiseCast<float>(((exponent + 112) << 23) | (mantissa << 17));
+}
+
+MOZ_ALWAYS_INLINE float unpackFromFloat10(uint16_t fp10) {
+  const uint32_t exponent = (fp10 >> 5) & 0x1F;
+  const uint32_t mantissa = fp10 & 0x1F;
+
+  if (exponent == 0x1F) {
+    // INF or NaN
+    return BitwiseCast<float>(0x7F800000 | (mantissa << 18));
+  }
+  if (exponent == 0) {
+    // Zero or denormalized: mantissa * 2^-19.
+    return float(mantissa) / float(1 << 19);
+  }
+  // Normalized: rebias the exponent for float32 (127 - 15 = 112).
+  return BitwiseCast<float>(((exponent + 112) << 23) | (mantissa << 18));
+}
+
 enum class WebGLTexelPremultiplicationOp : int {
   None,
   Premultiply,
@@ -369,6 +401,7 @@ inline size_t TexelBytesForFormat(WebGLTexelFormat format) {
     case WebGLTexelFormat::RG16F:
     case WebGLTexelFormat::RGB11F11F10F:
     case WebGLTexelFormat::RGBA8:
+    case WebGLTexelFormat::RGBX8:
     case WebGLTexelFormat::BGRX8:
     case WebGLTexelFormat::BGRA8:
       return 4;
@@ -416,7 +449,8 @@ MOZ_ALWAYS_INLINE bool HasColor(WebGLTexelFormat format) {
       format == WebGLTexelFormat::RGBA8 ||
       format == WebGLTexelFormat::RGBA16F ||
       format == WebGLTexelFormat::RGBA32F ||
-      format == WebGLTexelFormat::BGRX8 || format == WebGLTexelFormat::BGRA8);
+      format == WebGLTexelFormat::RGBX8 || format == WebGLTexelFormat::BGRX8 ||
+      format == WebGLTexelFormat::BGRA8);
 }
 
 /****** BEGIN CODE SHARED WITH WEBKIT ******/
@@ -430,7 +464,11 @@ MOZ_ALWAYS_INLINE bool HasColor(WebGLTexelFormat format) {
 template <WebGLTexelFormat Format, typename SrcType, typename DstType>
 MOZ_ALWAYS_INLINE void unpack(const SrcType* __restrict src,
                               DstType* __restrict dst) {
-  MOZ_ASSERT(false, "Unimplemented texture format conversion");
+  // Every source format dispatched by WebGLImageConverter::run() must have an
+  // unpack specialization; a silent fallthrough here would leave the
+  // intermediate texel uninitialized and leak host memory into textures, so
+  // crash in all build types instead.
+  MOZ_CRASH("GFX: Unimplemented texture format unpacking");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -518,6 +556,33 @@ MOZ_ALWAYS_INLINE void unpack<WebGLTexelFormat::RA32F, float, float>(
   dst[3] = src[1];
 }
 
+template <>
+MOZ_ALWAYS_INLINE void unpack<WebGLTexelFormat::RG8, uint8_t, uint8_t>(
+    const uint8_t* __restrict src, uint8_t* __restrict dst) {
+  dst[0] = src[0];
+  dst[1] = src[1];
+  dst[2] = 0;
+  dst[3] = 0xFF;
+}
+
+template <>
+MOZ_ALWAYS_INLINE void unpack<WebGLTexelFormat::RG16F, uint16_t, uint16_t>(
+    const uint16_t* __restrict src, uint16_t* __restrict dst) {
+  dst[0] = src[0];
+  dst[1] = src[1];
+  dst[2] = kFloat16Value_Zero;
+  dst[3] = kFloat16Value_One;
+}
+
+template <>
+MOZ_ALWAYS_INLINE void unpack<WebGLTexelFormat::RG32F, float, float>(
+    const float* __restrict src, float* __restrict dst) {
+  dst[0] = src[0];
+  dst[1] = src[1];
+  dst[2] = 0.0f;
+  dst[3] = 1.0f;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // 3-channel formats
 template <>
@@ -557,6 +622,16 @@ MOZ_ALWAYS_INLINE void unpack<WebGLTexelFormat::RGB32F, float, float>(
   dst[0] = src[0];
   dst[1] = src[1];
   dst[2] = src[2];
+  dst[3] = 1.0f;
+}
+
+template <>
+MOZ_ALWAYS_INLINE void unpack<WebGLTexelFormat::RGB11F11F10F, uint32_t, float>(
+    const uint32_t* __restrict src, float* __restrict dst) {
+  const uint32_t packedValue = src[0];
+  dst[0] = unpackFromFloat11(uint16_t(packedValue & 0x7FF));
+  dst[1] = unpackFromFloat11(uint16_t((packedValue >> 11) & 0x7FF));
+  dst[2] = unpackFromFloat10(uint16_t((packedValue >> 22) & 0x3FF));
   dst[3] = 1.0f;
 }
 
@@ -618,6 +693,15 @@ MOZ_ALWAYS_INLINE void unpack<WebGLTexelFormat::RGBA32F, float, float>(
 
 ////////////////////////////////////////////////////////////////////////////////
 // DOM element formats
+template <>
+MOZ_ALWAYS_INLINE void unpack<WebGLTexelFormat::RGBX8, uint8_t, uint8_t>(
+    const uint8_t* __restrict src, uint8_t* __restrict dst) {
+  dst[0] = src[0];
+  dst[1] = src[1];
+  dst[2] = src[2];
+  dst[3] = 0xFF;
+}
+
 template <>
 MOZ_ALWAYS_INLINE void unpack<WebGLTexelFormat::BGRX8, uint8_t, uint8_t>(
     const uint8_t* __restrict src, uint8_t* __restrict dst) {

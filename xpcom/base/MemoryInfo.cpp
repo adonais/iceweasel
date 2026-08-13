@@ -4,10 +4,11 @@
 
 #include "mozilla/MemoryInfo.h"
 
-#include "mozilla/DebugOnly.h"
+#include <windows.h>
 
 #include <algorithm>
-#include <windows.h>
+
+#include "mozilla/DebugOnly.h"
 
 namespace mozilla {
 

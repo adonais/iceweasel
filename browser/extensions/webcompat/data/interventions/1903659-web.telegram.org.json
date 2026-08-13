@@ -1,0 +1,16 @@
+{
+  "label": "web.telegram.org ('A' version)",
+  "bugs": {
+    "1903659": {
+      "issue": "firefox-blocked-completely",
+      "matches": ["*://web.telegram.org/a/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "only_channels": ["nightly"],
+      "ua_string": ["Chrome_with_FxQuantum"]
+    }
+  ]
+}

@@ -56,6 +56,7 @@ class MicrosurveyUIDataTest {
             question = "test question",
             answers = answersText,
             utmContent = "test utm content",
+            maxNumberLines = 2,
         )
         val actual = message.toMicrosurveyUIData()
         assertEquals(expected.copy(answers = emptyList()), actual?.copy(answers = emptyList()))
@@ -129,6 +130,7 @@ class MicrosurveyUIDataTest {
             question = "test question",
             answers = answersText,
             utmContent = "test utm content",
+            maxNumberLines = 2,
         )
         val actual = message.toMicrosurveyUIData()
         assertEquals(expected.copy(answers = emptyList()), actual?.copy(answers = emptyList()))
@@ -155,6 +157,7 @@ class MicrosurveyUIDataTest {
             question = "test question",
             answers = answersText,
             utmContent = null,
+            maxNumberLines = 2,
         )
         val actual = message.toMicrosurveyUIData()
         assertEquals(expected.copy(answers = emptyList()), actual?.copy(answers = emptyList()))

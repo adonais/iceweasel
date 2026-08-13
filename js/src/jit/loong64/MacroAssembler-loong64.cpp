@@ -5178,16 +5178,17 @@ FaultingCodeOffset MacroAssemblerLOONG64Compat::store32(Register src,
 }
 
 template <typename T>
-void MacroAssemblerLOONG64Compat::storePtr(ImmWord imm, T address) {
+FaultingCodeOffset MacroAssemblerLOONG64Compat::storePtr(ImmWord imm,
+                                                         T address) {
   UseScratchRegisterScope temps(asMasm());
   Register scratch = temps.Acquire();
   ma_li(scratch, imm);
-  ma_store(scratch, address, SizeDouble);
+  return ma_store(scratch, address, SizeDouble);
 }
 
-template void MacroAssemblerLOONG64Compat::storePtr<Address>(ImmWord imm,
-                                                             Address address);
-template void MacroAssemblerLOONG64Compat::storePtr<BaseIndex>(
+template FaultingCodeOffset MacroAssemblerLOONG64Compat::storePtr<Address>(
+    ImmWord imm, Address address);
+template FaultingCodeOffset MacroAssemblerLOONG64Compat::storePtr<BaseIndex>(
     ImmWord imm, BaseIndex address);
 
 template <typename T>

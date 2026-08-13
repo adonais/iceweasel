@@ -3382,7 +3382,7 @@ bool wasm::GenerateEntryStubs(const CodeMetadata& codeMeta,
       continue;
     }
     if (!GenerateEntryStubs(masm, i, fe, funcType, noAbsolute,
-                            codeMeta.isAsmJS(), &code->codeRanges)) {
+                            &code->codeRanges)) {
       return false;
     }
   }
@@ -3397,10 +3397,9 @@ bool wasm::GenerateEntryStubs(const CodeMetadata& codeMeta,
 
 bool wasm::GenerateEntryStubs(MacroAssembler& masm, size_t funcExportIndex,
                               const FuncExport& fe, const FuncType& funcType,
-                              const Maybe<ImmPtr>& callee, bool isAsmJS,
+                              const Maybe<ImmPtr>& callee,
                               CodeRangeVector* codeRanges) {
   MOZ_ASSERT(!callee == fe.hasEagerStubs());
-  MOZ_ASSERT_IF(isAsmJS, fe.hasEagerStubs());
 
   Offsets offsets;
   if (!GenerateInterpEntry(masm, fe, funcType, callee, &offsets)) {
@@ -3411,7 +3410,7 @@ bool wasm::GenerateEntryStubs(MacroAssembler& masm, size_t funcExportIndex,
     return false;
   }
 
-  if (isAsmJS || !funcType.canHaveJitEntry()) {
+  if (!funcType.canHaveJitEntry()) {
     return true;
   }
 
@@ -3536,7 +3535,7 @@ bool wasm::GenerateStubs(const CodeMetadata& codeMeta,
       continue;
     }
     if (!GenerateEntryStubs(masm, i, fe, funcType, noAbsolute,
-                            codeMeta.isAsmJS(), &code->codeRanges)) {
+                            &code->codeRanges)) {
       return false;
     }
   }

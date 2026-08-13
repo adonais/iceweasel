@@ -3,15 +3,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use api::{
-    ColorF, ColorU, RasterSpace,
-    LineOrientation, LineStyle, Shadow,
+    ColorF,
+    LineOrientation, LineStyle,
 };
 use api::units::*;
 use euclid::Scale;
 use crate::render_task::{RenderTask, RenderTaskKind};
 use crate::render_task_cache::{RenderTaskCacheKey, RenderTaskCacheKeyKind, RenderTaskParent};
 use crate::render_task_graph::RenderTaskId;
-use crate::scene_building::{CreateShadow, IsVisible};
+use crate::scene_building::{IsVisible};
 use crate::frame_builder::{FrameBuildingContext, FrameBuildingState};
 use crate::intern;
 use crate::internal_types::LayoutPrimitiveInfo;
@@ -36,34 +36,11 @@ pub struct LineDecorationCacheKey {
     pub size: LayoutSizeAu,
 }
 
-/// Identifying key for a line decoration. The mask tile size
-/// (`LineDecorationCacheKey`) is intentionally not part of the intern
-/// key — it is a deterministic function of `style`, `orientation`,
-/// `wavy_line_thickness`, and the prim's per-frame local rect, and is
-/// rebuilt during frame building.
-#[derive(Clone, Debug, Hash, MallocSizeOf, PartialEq, Eq)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct LineDecoration {
-    pub style: LineStyle,
-    pub orientation: LineOrientation,
-    pub wavy_line_thickness: Au,
-    pub color: ColorU,
-}
+// `LineDecoration` now lives in `webrender_api::interned_prims` so content-process
+// interning can hold it. Re-exported to keep existing references working.
+pub use api::interned_prims::LineDecoration;
 
 pub type LineDecorationKey = PrimKey<LineDecoration>;
-
-impl LineDecorationKey {
-    pub fn new(
-        info: &LayoutPrimitiveInfo,
-        line_dec: LineDecoration,
-    ) -> Self {
-        LineDecorationKey {
-            common: info.into(),
-            kind: line_dec,
-        }
-    }
-}
 
 impl intern::InternDebug for LineDecorationKey {}
 
@@ -225,7 +202,7 @@ impl InternablePrimitive for LineDecoration {
         info: &LayoutPrimitiveInfo,
     ) -> LineDecorationKey {
         LineDecorationKey::new(
-            info,
+            info.into(),
             self,
         )
     }
@@ -241,21 +218,6 @@ impl InternablePrimitive for LineDecoration {
     }
 }
 
-impl CreateShadow for LineDecoration {
-    fn create_shadow(
-        &self,
-        shadow: &Shadow,
-        _: bool,
-        _: RasterSpace,
-    ) -> Self {
-        LineDecoration {
-            style: self.style,
-            orientation: self.orientation,
-            wavy_line_thickness: self.wavy_line_thickness,
-            color: shadow.color.into(),
-        }
-    }
-}
 
 impl IsVisible for LineDecoration {
     fn is_visible(&self) -> bool {
@@ -342,6 +304,6 @@ fn test_struct_sizes() {
     // (b) You made a structure larger. This is not necessarily a problem, but should only
     //     be done with care, and after checking if talos performance regresses badly.
     assert_eq!(mem::size_of::<LineDecoration>(), 12, "LineDecoration size changed");
-    assert_eq!(mem::size_of::<LineDecorationTemplate>(), 32, "LineDecorationTemplate size changed");
+    assert_eq!(mem::size_of::<LineDecorationTemplate>(), 28, "LineDecorationTemplate size changed");
     assert_eq!(mem::size_of::<LineDecorationKey>(), 16, "LineDecorationKey size changed");
 }

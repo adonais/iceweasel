@@ -288,8 +288,8 @@ void HRTFElevation::getKernelsFromAzimuth(
   bool isIndexGood = azimuthIndex < numKernels;
   MOZ_ASSERT(isIndexGood);
   if (!isIndexGood) {
-    kernelL = 0;
-    kernelR = 0;
+    kernelL = nullptr;
+    kernelR = nullptr;
     return;
   }
 

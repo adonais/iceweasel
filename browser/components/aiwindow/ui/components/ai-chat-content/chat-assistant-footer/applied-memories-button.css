@@ -127,14 +127,8 @@
       --button-text-color-ghost-selected: var(--button-text-color-ghost-hover);
 
       .retry-without-memories-button {
-        --button-background-color-ghost-hover: light-dark(
-          color-mix(in srgb, var(--color-violet-60) 15%, transparent),
-          color-mix(in srgb, var(--color-violet-40) 25%, transparent)
-        );
-        --button-background-color-ghost-active: light-dark(
-          color-mix(in srgb, var(--color-violet-60) 27%, transparent),
-          color-mix(in srgb, var(--color-violet-40) 40%, transparent)
-        );
+        --button-background-color-ghost-hover: var(--smartwindow-panel-item-background-color-hover);
+        --button-background-color-ghost-active: var(--smartwindow-panel-item-background-color-active);
         --button-text-color-ghost: light-dark(var(--color-violet-60), var(--color-violet-30));
         --button-text-color-ghost-hover: light-dark(var(--color-violet-60), var(--color-violet-30));
       }
@@ -306,7 +300,7 @@ moz-button.memories-trigger {
   --box-padding: var(--aiwindow-memory-item-padding);
 
   &:hover .memories-remove-button,
-  &:focus-within .memories-remove-button {
+  & .memories-remove-button:focus-visible {
     opacity: 1;
     pointer-events: auto;
   }
@@ -349,7 +343,7 @@ moz-button.memories-remove-button::part(button) {
   width: var(--aiwindow-action-row-button-width);
   gap: var(--space-xsmall);
 
-  --button-alignment: var(--aiwindow-action-row-button-alignment);
+  --button-content-alignment: var(--aiwindow-action-row-button-alignment);
   --button-padding: var(--aiwindow-action-row-button-padding);
   --button-font-weight: var(--button-font-weight);
 }

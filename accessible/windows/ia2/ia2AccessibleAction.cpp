@@ -5,7 +5,6 @@
 #include "ia2AccessibleAction.h"
 
 #include "AccessibleAction_i.c"
-
 #include "AccessibleWrap.h"
 #include "IUnknownImpl.h"
 #include "MsaaAccessible.h"

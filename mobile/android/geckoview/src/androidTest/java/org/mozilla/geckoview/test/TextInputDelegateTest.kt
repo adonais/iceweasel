@@ -1832,4 +1832,46 @@ class TextInputDelegateTest : BaseSessionTest() {
 
         assertText("committed text is \"foo@12\"", ic, "foo@12")
     }
+
+    @WithDisplay(width = 100, height = 100)
+    @Test
+    fun inputConnection_newWindow() {
+        sessionRule.setPrefsUntilTestEnd(mapOf("dom.disable_open_during_load" to false))
+
+        assumeThat("input only", id, equalTo("#input"))
+
+        mainSession.loadTestPath(HELLO_HTML_PATH)
+        mainSession.waitForPageStop()
+
+        // Switching to a new session by window.open.
+        val newSession = sessionRule.createClosedSession()
+        mainSession.delegateDuringNextWait(object : GeckoSession.NavigationDelegate {
+            override fun onNewSession(session: GeckoSession, uri: String): GeckoResult<GeckoSession>? {
+                return GeckoResult.fromValue(newSession)
+            }
+        })
+
+        // evaluatePromiseJS doesn't wait for executing window.open. We don't want to wait for this.
+        mainSession.evaluatePromiseJS("window.open('forms3.html', 'test')")
+        newSession.waitUntilCalled(GeckoSession.ProgressDelegate::class, "onPageStop")
+
+        newSession.textInput.view = View(InstrumentationRegistry.getInstrumentation().targetContext)
+
+        // Simulate a user action so we're allowed to show/hide the keyboard.
+        newSession.pressKey(KeyEvent.KEYCODE_CTRL_LEFT)
+        newSession.evaluateJS("document.querySelector('#user1').focus()")
+        newSession.waitUntilCalled(GeckoSession.TextInputDelegate::class, "restartInput")
+
+        val ic = newSession.textInput.onCreateInputConnection(EditorInfo())!!
+
+        val promise = newSession.evaluatePromiseJS(
+            """
+            new Promise(r => document.querySelector('#user1').addEventListener('input', r, { once: true }))
+            """.trimIndent(),
+        )
+        ic.commitText("foo", 1)
+        promise.value
+
+        assertThat("Can commit text", getText(ic), equalTo("foo"))
+    }
 }

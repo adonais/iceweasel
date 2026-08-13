@@ -15,7 +15,6 @@ import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
 import org.gradle.api.tasks.Input
 import org.gradle.build.event.BuildEventsListenerRegistry
-import org.gradle.internal.scopeids.id.BuildInvocationScopeId
 import org.gradle.kotlin.dsl.always
 import org.gradle.tooling.events.FinishEvent
 import org.gradle.tooling.events.OperationCompletionListener
@@ -27,6 +26,7 @@ import java.io.File
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 import java.util.Optional
 import java.util.concurrent.atomic.AtomicReference
 import javax.inject.Inject
@@ -70,7 +70,7 @@ abstract class BuildMetricsService @Inject constructor(
                 "path" to event.descriptor.taskPath,
                 "start" to dateFormatter.format(Instant.ofEpochMilli(startMs).atZone(ZoneId.systemDefault())),
                 "stop" to dateFormatter.format(Instant.ofEpochMilli(stopMs).atZone(ZoneId.systemDefault())),
-                "duration" to String.format("%.3f", (stopMs - startMs) / 1_000.0),
+                "duration" to String.format(Locale.ROOT, "%.3f", (stopMs - startMs) / 1_000.0),
                 "status" to status
             )
         }
@@ -78,13 +78,13 @@ abstract class BuildMetricsService @Inject constructor(
 
     override fun close() {
         val invocationEnd = System.currentTimeMillis()
-        val invocationDuration = String.format("%.3f", (invocationEnd - invocationStart) / 1_000.0)
+        val invocationDuration = String.format(Locale.ROOT, "%.3f", (invocationEnd - invocationStart) / 1_000.0)
 
         val configStartFormatted = dateFormatter.format(
             Instant.ofEpochMilli(configStart).atZone(ZoneId.systemDefault())
         )
         val configEndFormatted = dateFormatter.format(Instant.ofEpochMilli(configEnd).atZone(ZoneId.systemDefault()))
-        val configDuration = String.format("%.3f", (configEnd - configStart) / 1_000.0)
+        val configDuration = String.format(Locale.ROOT, "%.3f", (configEnd - configStart) / 1_000.0)
 
         val content = mapOf(
             "invocation" to mapOf(
@@ -172,8 +172,10 @@ abstract class DependenciesPlugin : Plugin<Settings> {
     @get:Inject
     protected abstract val buildEventsListenerRegistry: BuildEventsListenerRegistry
 
+    // No public Gradle API exposes a unique build-invocation id.
     @get:Inject
-    protected abstract val buildInvocationScopeId: BuildInvocationScopeId
+    @Suppress("InternalGradleApiUsage")
+    protected abstract val buildInvocationScopeId: org.gradle.internal.scopeids.id.BuildInvocationScopeId
 
     companion object {
         private val rootGradleBuild = AtomicReference<Gradle?>(null)
@@ -217,6 +219,7 @@ abstract class DependenciesPlugin : Plugin<Settings> {
         ) {
             val outputDir = rootGradle.startParameter.projectProperties["buildMetricsOutputDir"]
                 ?: throw IllegalStateException("buildMetricsOutputDir property is required when buildMetrics is enabled")
+            @Suppress("InternalGradleApiUsage")
             val fileSuffix = rootGradle.startParameter.projectProperties["buildMetricsFileSuffix"]
                 ?: buildInvocationScopeId.id.toString()
 
@@ -244,7 +247,7 @@ object ComponentsDependencies {
     val mozilla_appservices_search = "${ApplicationServicesConfig.groupId}:search:${ApplicationServicesConfig.version}"
     val mozilla_appservices_tabs = "${ApplicationServicesConfig.groupId}:tabs:${ApplicationServicesConfig.version}"
     val mozilla_appservices_suggest = "${ApplicationServicesConfig.groupId}:suggest:${ApplicationServicesConfig.version}"
-    val mozilla_appservices_httpconfig = "${ApplicationServicesConfig.groupId}:httpconfig:${ApplicationServicesConfig.version}"
+    val mozilla_appservices_viaduct = "${ApplicationServicesConfig.groupId}:viaduct:${ApplicationServicesConfig.version}"
     val mozilla_appservices_init_rust_components = "${ApplicationServicesConfig.groupId}:init_rust_components:${ApplicationServicesConfig.version}"
     val mozilla_appservices_full_megazord = "${ApplicationServicesConfig.groupId}:full-megazord:${ApplicationServicesConfig.version}"
     val mozilla_appservices_full_megazord_libsForTests = "${ApplicationServicesConfig.groupId}:full-megazord-libsForTests:${ApplicationServicesConfig.version}"

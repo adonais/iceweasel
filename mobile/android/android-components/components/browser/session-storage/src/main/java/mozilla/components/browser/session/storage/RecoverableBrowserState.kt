@@ -14,9 +14,12 @@ import mozilla.components.browser.state.state.recover.RecoverableTab
  * @param selectedTabId The ID of the selected tab in [tabs]. Or `null` if no selection was restored.
  * @param tabPartitions A mapping of IDs to the corresponding [TabPartition]. A partition
  * is used to store tab groups for a specific feature.
+ * @param isTranslationsEngineSupported The last persisted value of whether the translations engine
+ * supports the device architecture, or `null` if it was never determined before persisting.
  */
 data class RecoverableBrowserState(
     val tabs: List<RecoverableTab>,
     val selectedTabId: String?,
     val tabPartitions: Map<String, TabPartition>,
+    val isTranslationsEngineSupported: Boolean? = null,
 )

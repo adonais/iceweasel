@@ -1,30 +1,37 @@
 From: Michael Froman <mfroman@mozilla.com>
-Date: Mon, 29 Dec 2025 13:18:00 -0600
-Subject: Bug 2006933 - (fix-932f274e86) don't include rtc_error.h, forward
- declare RTCError
+Date: Fri, 16 Jan 2026 16:48:00 -0600
+Subject: Bug 2010312 - (fix-dc65955c6d) fix base-toolchains build
 
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/fb61f91d422c3d77545d0d10778314eb958fc8c6
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/6c3f917f52d45566db7b5916b74f792928456dff
 ---
- api/rtp_parameters.h | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ call/rtp_transport_controller_send.cc | 9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
 
-diff --git a/api/rtp_parameters.h b/api/rtp_parameters.h
-index 88a8df3ac1..d645f85bb8 100644
---- a/api/rtp_parameters.h
-+++ b/api/rtp_parameters.h
-@@ -24,7 +24,6 @@
- #include "absl/strings/string_view.h"
- #include "api/media_types.h"
- #include "api/priority.h"
--#include "api/rtc_error.h"
- #include "api/rtp_transceiver_direction.h"
- #include "api/video/resolution.h"
- #include "api/video_codecs/scalability_mode.h"
-@@ -32,6 +31,7 @@
- #include "rtc_base/system/rtc_export.h"
+diff --git a/call/rtp_transport_controller_send.cc b/call/rtp_transport_controller_send.cc
+index 2731bb827a..dd2d791c1c 100644
+--- a/call/rtp_transport_controller_send.cc
++++ b/call/rtp_transport_controller_send.cc
+@@ -733,19 +733,18 @@ void RtpTransportControllerSend::ComputeStatsFromCongestionControlFeedback(
  
- namespace webrtc {
-+class RTCError;
- class StringBuilder;
- 
- using CodecParameterMap = std::map<std::string, std::string>;
+     if (packet_info.IsReceived()) {
+       switch (packet_info.ecn) {
+-        using enum EcnMarking;
+-        case kEct1:
++        case EcnMarking::kEct1:
+           ++stats->num_packets_received_with_ect1;
+           break;
+-        case kCe:
++        case EcnMarking::kCe:
+           ++stats->num_packets_received_with_ce;
+           break;
+-        case kNotEct:
++        case EcnMarking::kNotEct:
+           if (packet_info.sent_with_ect1) {
+             ++stats->num_packets_with_bleached_ect1_marking;
+           }
+           break;
+-        case kEct0:
++        case EcnMarking::kEct0:
+           break;
+       }
+     }

@@ -3,77 +3,33 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "AccEvent.h"
-#include "LocalAccessible-inl.h"
-
-#include "EmbeddedObjCollector.h"
 #include "AccGroupInfo.h"
 #include "AccIterator.h"
+#include "ApplicationAccessible.h"
 #include "CachedTableAccessible.h"
 #include "CssAltContent.h"
 #include "DocAccessible-inl.h"
-#include "mozilla/a11y/AccAttributes.h"
-#include "mozilla/a11y/DocAccessibleChild.h"
-#include "mozilla/a11y/Platform.h"
-#include "mozilla/FocusModel.h"
-#include "nsAccUtils.h"
-#include "nsMenuPopupFrame.h"
-#include "nsAccessibilityService.h"
-#include "ApplicationAccessible.h"
-#include "mozilla/dom/ContentList.h"
-#include "nsGenericHTMLElement.h"
-#include "NotificationController.h"
-#include "nsEventShell.h"
-#include "nsTextEquivUtils.h"
+#include "EmbeddedObjCollector.h"
 #include "EventTree.h"
+#include "HTMLElementAccessibles.h"
+#include "HTMLSelectAccessible.h"
+#include "HTMLTableAccessible.h"
+#include "ImageAccessible.h"
+#include "LocalAccessible-inl.h"
+#include "NotificationController.h"
 #include "OuterDocAccessible.h"
 #include "Pivot.h"
 #include "Relation.h"
-#include "mozilla/a11y/Role.h"
 #include "RootAccessible.h"
 #include "States.h"
 #include "TextLeafAccessible.h"
 #include "TextLeafRange.h"
 #include "TextRange.h"
-#include "HTMLElementAccessibles.h"
-#include "HTMLSelectAccessible.h"
-#include "HTMLTableAccessible.h"
-#include "ImageAccessible.h"
-
-#include "nsComputedDOMStyle.h"
-#include "nsGkAtoms.h"
-#include "nsIDOMXULButtonElement.h"
-#include "nsIDOMXULSelectCntrlEl.h"
-#include "nsIDOMXULSelectCntrlItemEl.h"
-#include "nsIMutationObserver.h"
-
-#include "mozilla/dom/Document.h"
-#include "mozilla/dom/HTMLAnchorElement.h"
-#include "mozilla/dom/HTMLFormElement.h"
-#include "mozilla/dom/HTMLHeadingElement.h"
-#include "mozilla/dom/HTMLInputElement.h"
-#include "mozilla/dom/NodeList.h"
-#include "mozilla/dom/PopoverData.h"
-#include "mozilla/gfx/Matrix.h"
-#include "nsIContent.h"
-#include "nsIFormControl.h"
-
-#include "nsDisplayList.h"
-#include "nsLayoutUtils.h"
-#include "nsPresContext.h"
-#include "nsIFrame.h"
-#include "nsTextFrame.h"
-#include "nsIDocShellTreeItem.h"
-#include "nsStyleStructInlines.h"
-#include "nsFocusManager.h"
-
-#include "nsString.h"
-#include "nsAtom.h"
-#include "nsContainerFrame.h"
-
 #include "mozilla/Assertions.h"
 #include "mozilla/BasicEvents.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/FloatingPoint.h"
+#include "mozilla/FocusModel.h"
 #include "mozilla/PerfStats.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ProfilerMarkers.h"
@@ -81,11 +37,49 @@
 #include "mozilla/StaticPrefs_accessibility.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_ui.h"
+#include "mozilla/a11y/AccAttributes.h"
+#include "mozilla/a11y/DocAccessibleChild.h"
+#include "mozilla/a11y/Platform.h"
+#include "mozilla/a11y/Role.h"
+#include "mozilla/dom/ContentList.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/HTMLAnchorElement.h"
+#include "mozilla/dom/HTMLFormElement.h"
+#include "mozilla/dom/HTMLHeadingElement.h"
+#include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/HTMLLabelElement.h"
 #include "mozilla/dom/KeyboardEventBinding.h"
+#include "mozilla/dom/NodeList.h"
+#include "mozilla/dom/PopoverData.h"
 #include "mozilla/dom/TreeWalker.h"
 #include "mozilla/dom/UserActivation.h"
+#include "mozilla/gfx/Matrix.h"
+#include "nsAccUtils.h"
+#include "nsAccessibilityService.h"
+#include "nsAtom.h"
+#include "nsComputedDOMStyle.h"
+#include "nsContainerFrame.h"
+#include "nsDisplayList.h"
+#include "nsEventShell.h"
+#include "nsFocusManager.h"
+#include "nsGenericHTMLElement.h"
+#include "nsGkAtoms.h"
+#include "nsIContent.h"
+#include "nsIDOMXULButtonElement.h"
+#include "nsIDOMXULSelectCntrlEl.h"
+#include "nsIDOMXULSelectCntrlItemEl.h"
+#include "nsIDocShellTreeItem.h"
+#include "nsIFormControl.h"
+#include "nsIFrame.h"
+#include "nsIMutationObserver.h"
+#include "nsLayoutUtils.h"
+#include "nsMenuPopupFrame.h"
+#include "nsPresContext.h"
+#include "nsString.h"
+#include "nsStyleStructInlines.h"
+#include "nsTextEquivUtils.h"
+#include "nsTextFrame.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;
@@ -1595,9 +1589,11 @@ void LocalAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
     LocalAccessible* widget = nsAccUtils::GetSelectableContainer(this, State());
     if (widget) {
       AccSelChangeEvent::SelChangeType selChangeType;
-      if (aNameSpaceID != kNameSpaceID_None) {
-        selChangeType = elm->AttrValueIs(aNameSpaceID, aAttribute,
-                                         nsGkAtoms::_true, eCaseMatters)
+      if (aAttribute == nsGkAtoms::selected) {
+        // The condition above guarantees a XUL element here. In XUL, `selected`
+        // is a boolean attribute whose mere presence indicates selection,
+        // unlike aria-selected which is "true"/"false".
+        selChangeType = elm->HasAttr(nsGkAtoms::selected)
                             ? AccSelChangeEvent::eSelectionAdd
                             : AccSelChangeEvent::eSelectionRemove;
       } else {
@@ -2926,9 +2922,9 @@ void LocalAccessible::BindToParent(LocalAccessible* aParent,
     }
   }
 
-  mContextFlags |=
-      static_cast<uint32_t>((mParent->IsAlert() || mParent->IsInsideAlert())) &
-      eInsideAlert;
+  if (mParent->IsAlert() || mParent->IsInsideAlert()) {
+    mContextFlags |= eInsideAlert;
+  }
 
   if (IsTableRow() || IsTableCell()) {
     CachedTableAccessible::Invalidate(this);
@@ -2946,7 +2942,7 @@ void LocalAccessible::BindToParent(LocalAccessible* aParent,
     // queue cache updates for that popover's invokers. This handles the case
     // where interactive descendants are added to the hint popover after it's
     // already been shown.
-    if (aParent && aParent->Elm() && IsOpenHintPopover(aParent->Elm())) {
+    if (aParent->Elm() && IsOpenHintPopover(aParent->Elm())) {
       mDoc->QueueCacheUpdateForPopoverInvokers(aParent->Elm());
     }
   }

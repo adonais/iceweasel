@@ -12,6 +12,7 @@
 #include "mozilla/IntegerRange.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/Utf16.h"
 #include "mozilla/dom/Text.h"
 #include "mozilla/intl/Bidi.h"
 #include "nsBidiUtils.h"
@@ -1195,7 +1196,7 @@ void nsBidiPresUtils::TraverseFrames(nsIFrame* aCurrentFrame,
     if (childFrame->IsPlaceholderFrame()) {
       nsIFrame* realFrame =
           nsPlaceholderFrame::GetRealFrameForPlaceholder(childFrame);
-      if (realFrame->IsLetterFrame()) {
+      if (realFrame && realFrame->IsLetterFrame()) {
         frame = realFrame;
       }
     }
@@ -1441,7 +1442,7 @@ bool nsBidiPresUtils::ChildListMayRequireBidi(nsIFrame* aFirstChild,
     if (childFrame->IsPlaceholderFrame()) {
       nsIFrame* realFrame =
           nsPlaceholderFrame::GetRealFrameForPlaceholder(childFrame);
-      if (realFrame->IsLetterFrame()) {
+      if (realFrame && realFrame->IsLetterFrame()) {
         frame = realFrame;
       }
     }
@@ -1652,9 +1653,7 @@ void nsBidiPresUtils::IsFirstOrLast(nsIFrame* aFrame,
   // Reduce number of remaining frames of the continuation chain on the line.
   firstFrameState->mFrameCount--;
 
-  nsInlineFrame* testFrame = do_QueryFrame(aFrame);
-
-  if (testFrame) {
+  if (aFrame->IsInlineFrameOrSubclass()) {
     aFrame->AddStateBits(NS_INLINE_FRAME_BIDI_VISUAL_STATE_IS_SET);
 
     if (aIsFirst) {
@@ -2121,8 +2120,8 @@ void nsBidiPresUtils::CalculateBidiClass(
       bidiClass = BidiClass::RightToLeftArabic;
     } else {
       if (offset + 1 < aBidiClassLimit &&
-          NS_IS_SURROGATE_PAIR(ch, aText[offset + 1])) {
-        ch = SURROGATE_TO_UCS4(ch, aText[offset + 1]);
+          mozilla::IsSurrogatePair(ch, aText[offset + 1])) {
+        ch = mozilla::SurrogateToUCS4(ch, aText[offset + 1]);
         charLen = 2;
       }
       bidiClass = intl::UnicodeProperties::GetBidiClass(ch);
@@ -2182,7 +2181,7 @@ nsresult nsBidiPresUtils::ProcessText(const char16_t* aText, size_t aLength,
   // For a single-char string, or a string that is purely LTR, use a simplified
   // path as it cannot have multiple direction or bidi-class runs.
   if (aLength == 1 ||
-      (aLength == 2 && NS_IS_SURROGATE_PAIR(aText[0], aText[1])) ||
+      (aLength == 2 && mozilla::IsSurrogatePair(aText[0], aText[1])) ||
       (aBaseLevel.Direction() == BidiDirection::LTR &&
        !encoding_mem_is_utf16_bidi(aText, aLength))) {
     ProcessSimpleRun(aText, aLength, aBaseLevel, aPresContext, aprocessor,
@@ -2395,9 +2394,9 @@ void nsBidiPresUtils::ProcessSimpleRun(const char16_t* aText, size_t aLength,
   }
   // Get bidi class from the first (or only) character.
   uint32_t ch = aText[0];
-  if (aLength > 1 && NS_IS_HIGH_SURROGATE(ch) &&
-      NS_IS_LOW_SURROGATE(aText[1])) {
-    ch = SURROGATE_TO_UCS4(aText[0], aText[1]);
+  if (aLength > 1 && mozilla::IsHighSurrogate(ch) &&
+      mozilla::IsLowSurrogate(aText[1])) {
+    ch = mozilla::SurrogateToUCS4(aText[0], aText[1]);
   }
   BidiClass bidiClass = intl::UnicodeProperties::GetBidiClass(ch);
 

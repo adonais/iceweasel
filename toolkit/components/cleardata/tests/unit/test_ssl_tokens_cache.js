@@ -5,14 +5,15 @@
 
 /**
  * End-to-end tests for TlsTokenCacheCleaner via nsIClearDataService.
- * PutSSLTokenForTest / CountSSLTokens are test-only helpers on nsINSSComponent
- * that let us seed and verify tokens without full TLS infrastructure.
+ * PutSSLTokenForTest / CountSSLTokens are test-only helpers on
+ * nsISSLTokensCacheTest that let us seed and verify tokens without full TLS
+ * infrastructure.
  * The actual removal correctness is also covered by TestSSLTokensCache gtests.
  */
 
-const nssTestComponent = Cc["@mozilla.org/psm;1"].getService(
-  Ci.nsISSLTokensCacheTest
-);
+const nssTestComponent = Cc[
+  "@mozilla.org/network/ssl-tokens-cache;1"
+].getService(Ci.nsISSLTokensCacheTest);
 
 const FLAGS = Ci.nsIClearDataService.CLEAR_TLS_TOKEN_CACHE;
 const TEST_KEY = "example.com:443";

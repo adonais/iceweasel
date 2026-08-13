@@ -6,6 +6,7 @@
 #define MacLaunchHelper_h_
 
 #include <unistd.h>
+#include <os/log.h>
 
 #ifdef __OBJC__
 #  include <Foundation/Foundation.h>
@@ -24,10 +25,12 @@ extern "C" {
  * process to terminate. When the process terminates, aPid will be set to the
  * pid of the terminated process to confirm that it executed successfully.
  */
-void LaunchChildMac(int aArgc, char** aArgv, pid_t* aPid = 0);
+void LaunchChildMac(int aArgc, char** aArgv, pid_t* aPid = nullptr);
 void LaunchMacApp(int aArgc, char** aArgv);
-bool LaunchElevatedUpdate(int aArgc, char** aArgv, pid_t* aPid = 0);
-bool InstallPrivilegedHelper();
+bool LaunchElevatedUpdate(int aArgc, char** aArgv, pid_t* aPid = nullptr);
+bool InstallPrivilegedHelperWithId(const char* helperId,
+                                   os_log_t logger = OS_LOG_DEFAULT);
+bool InstallElevatedUpdater();
 void AbortElevatedUpdate();
 }
 

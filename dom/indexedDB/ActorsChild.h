@@ -19,6 +19,7 @@
 #include "mozilla/dom/indexedDB/PBackgroundIDBTransactionChild.h"
 #include "mozilla/dom/indexedDB/PBackgroundIDBVersionChangeTransactionChild.h"
 #include "mozilla/dom/indexedDB/PBackgroundIndexedDBUtilsChild.h"
+#include "mozilla/dom/indexedDB/TransactionOpResult.h"
 #include "nsCOMPtr.h"
 #include "nsTArray.h"
 
@@ -441,7 +442,7 @@ class BackgroundRequestChild final : public BackgroundRequestChildBase,
       nsTArray<StructuredCloneReadInfoChild>& aOut);
 
   [[nodiscard]]
-  nsCOMPtr<nsIRunnable> HandleResponse(nsresult aResponse);
+  nsCOMPtr<nsIRunnable> HandleResponse(const TransactionOpResult& aResponse);
 
   [[nodiscard]]
   nsCOMPtr<nsIRunnable> HandleResponse(Key&& aResponse);

@@ -190,11 +190,7 @@ add_setup(async function () {
   registerCleanupFunction(async _ => {
     UrlClassifierTestUtils.cleanupTestTrackers();
 
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
+    await clearSiteTestData();
   });
 });
 

@@ -12,6 +12,8 @@ FINAL_LIBRARY = "xul"
 EXPORTS.mozilla.glean += [
     "!GleanMetrics.h",
     "!GleanPings.h",
+    "ipc/FOGTransportChild.h",
+    "ipc/FOGTransportParent.h",
 ]
 
 EXPORTS.mozilla.glean.bindings += [
@@ -23,6 +25,10 @@ include("glean.mozbuild")
 
 EXPORTS.mozilla.glean.bindings.jog += [
     "bindings/jog/JOG.h",
+]
+
+IPDL_SOURCES += [
+    "ipc/PFOGTransport.ipdl",
 ]
 
 if CONFIG["COMPILE_ENVIRONMENT"]:
@@ -69,6 +75,8 @@ UNIFIED_SOURCES += [
     "bindings/private/Url.cpp",
     "bindings/private/Uuid.cpp",
     "ipc/FOGIPC.cpp",
+    "ipc/FOGTransportChild.cpp",
+    "ipc/FOGTransportParent.cpp",
     "ipc/Support.cpp",
 ]
 

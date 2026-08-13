@@ -7,5 +7,6 @@
   &[uidensity="compact"] {
     --panel-menuitem-margin-inline: var(--dimension-4);
     --panel-menuitem-padding-block: var(--dimension-4);
+    --panel-separator-padding-inline: 4px;
   }
 }

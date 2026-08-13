@@ -15,9 +15,7 @@ const lazy = XPCOMUtils.declareLazy({
     // IndexedDB backend database when it is detected as corrupted
     // for debugging purpose.
     pref: "extensions.webextensions.keepStorageOnCorrupted.storageLocal",
-    // TODO(Bug 1992973): change the default behavior as part of enabling auto-reset
-    // corrupted storage.local IndexedDB databases on all channels.
-    default: true,
+    default: false,
   },
 });
 
@@ -209,9 +207,11 @@ export class ExtensionStorageLocalIDB extends IndexedDB {
     ensureAddonPolicyIsActive();
 
     // The db is opened using an extension principal isolated in a reserved user context id.
-    let result = await super.openForPrincipal(storagePrincipal, IDB_NAME, {
-      version: IDB_VERSION,
-    });
+    let result = /** @type {ExtensionStorageLocalIDB} */ (
+      await super.openForPrincipal(storagePrincipal, IDB_NAME, {
+        version: IDB_VERSION,
+      })
+    );
     result.#storagePrincipal = storagePrincipal;
     result.#addonId = addonId;
 
@@ -226,8 +226,11 @@ export class ExtensionStorageLocalIDB extends IndexedDB {
       Glean.extensionsData.storageLocalCorruptedReset.record({
         addon_id: addonId,
         reason: "ObjectStoreNotFound",
+        // @ts-ignore bug 1863760
         is_addon_active: !!addonPolicy.active,
+        // @ts-ignore bug 1863760
         after_reset: false,
+        // @ts-ignore bug 1863760
         reset_disabled: lazy.disabledAutoResetOnCorrupted,
       });
 
@@ -245,17 +248,22 @@ export class ExtensionStorageLocalIDB extends IndexedDB {
 
         // Now try again to open the db, which should create the object store
         // from the onupgradedneeded event listener.
-        result = await super.openForPrincipal(storagePrincipal, IDB_NAME, {
-          version: IDB_VERSION,
-        });
+        result = /** @type {ExtensionStorageLocalIDB} */ (
+          await super.openForPrincipal(storagePrincipal, IDB_NAME, {
+            version: IDB_VERSION,
+          })
+        );
         // throw an error more specific than "An unexpected error occurred" if objectStoreNames
         // doesn't still include the expected object store name.
         if (this.isMissingObjectStore(result.db)) {
           Glean.extensionsData.storageLocalCorruptedReset.record({
             addon_id: storagePrincipal.addonId,
             reason: "ObjectStoreNotFound",
+            // @ts-ignore bug 1863760
             is_addon_active: !!addonPolicy.active,
+            // @ts-ignore bug 1863760
             after_reset: true,
+            // @ts-ignore bug 1863760
             reset_disabled: lazy.disabledAutoResetOnCorrupted,
             reset_error_name: resetErrorName,
           });
@@ -269,7 +277,6 @@ export class ExtensionStorageLocalIDB extends IndexedDB {
     // the call is ready to resolve successfully.
     ensureAddonPolicyIsActive();
 
-    /** @type {Promise<ExtensionStorageLocalIDB>} */
     return result;
   }
 
@@ -541,6 +548,7 @@ export class ExtensionStorageLocalIDB extends IndexedDB {
         Glean.extensionsData.storageLocalCorruptedReset.record({
           addon_id: this.#addonId,
           reason: `RejectedClear:${errorName}`,
+          // @ts-ignore bug 1863760
           is_addon_active: !!this.#storagePrincipal.addonPolicy?.active,
         });
         await this.dropAndReopen();
@@ -802,7 +810,7 @@ export var ExtensionStorageIDB = {
    * child context is going to ask the main process only once per child process, and on the
    * main process side the backend selection and data migration will happen only once.
    *
-   * @param {import("ExtensionPageChild.sys.mjs").ExtensionBaseContextChild} context
+   * @param {import("./ExtensionPageChild.sys.mjs").ExtensionBaseContextChild} context
    *        The extension context that is selecting the storage backend.
    *
    * @returns {Promise<object>}
@@ -956,7 +964,7 @@ export var ExtensionStorageIDB = {
    * from the internal IndexedDB operations have to be converted into an ExtensionError
    * to be accessible to the extension code).
    *
-   * @typedef {import("ExtensionUtils.sys.mjs").ExtensionError} ExtensionError
+   * @typedef {import("./ExtensionUtils.sys.mjs").ExtensionError} ExtensionError
    *
    * @param {object} params
    * @param {Error|ExtensionError|DOMException} params.error

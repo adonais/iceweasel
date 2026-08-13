@@ -42,6 +42,7 @@ import androidx.core.view.WindowInsetsCompat
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.base.theme.layout.AcornWindowSize.Companion.isLargeWindow
 import mozilla.components.compose.cfr.CFRPopup
+import mozilla.components.compose.cfr.CFRPopupBackground
 import mozilla.components.compose.cfr.CFRPopupContent
 import mozilla.components.feature.prompts.R
 import mozilla.components.support.utils.ext.isLandscape
@@ -135,20 +136,17 @@ private fun isLandscapeNotTablet(): Boolean {
 @Composable
 private fun Cfr(onDismiss: () -> Unit, cfrText: String) {
     CFRPopupContent(
-        popupBodyColors = listOf(
-            AcornTheme.colors.layerGradientEnd.toArgb(),
-            AcornTheme.colors.layerGradientStart.toArgb(),
-        ),
+        popupBodyColors = CFRPopupBackground.Gradient(brush = AcornTheme.gradients.cfr.brush),
         showDismissButton = true,
-        dismissButtonColor = AcornTheme.colors.iconOnColor.toArgb(),
+        dismissButtonColor = Color.White.toArgb(),
         indicatorDirection = CFRPopup.IndicatorDirection.DOWN,
         indicatorArrowStartOffset = indicatorArrowStartOffset,
         onDismiss = { onDismiss() },
         title = {
             Text(
                 text = cfrText,
-                color = AcornTheme.colors.textOnColorPrimary,
-                style = AcornTheme.typography.subtitle2,
+                color = Color.White,
+                style = AcornTheme.typography.headline8,
             )
         },
         text = { },

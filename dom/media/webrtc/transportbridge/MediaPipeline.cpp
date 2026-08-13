@@ -199,7 +199,10 @@ class AudioProxyThread {
       mPacket = MakeUnique<int16_t[]>(audio_10ms * aChannels);
     }
 
-    mPacketizer->Input(aAudioData, aFrameCount);
+    // aFrameCount is one graph iteration's worth and the packetizer is drained
+    // to under one packet every call, with channels capped at two (above), so
+    // the queued sample count stays small and Input always succeeds here.
+    MOZ_ALWAYS_TRUE(NS_SUCCEEDED(mPacketizer->Input(aAudioData, aFrameCount)));
 
     while (mPacketizer->PacketsAvailable()) {
       mPacketizer->Output(mPacket.get());
@@ -396,7 +399,8 @@ void MediaPipeline::GetContributingSourceStats(
 
 void MediaPipeline::RtpStateChange(const std::string& aTransportId,
                                    TransportLayer::State aState,
-                                   const nsTArray<nsTArray<uint8_t>>&) {
+                                   const nsTArray<nsTArray<uint8_t>>&,
+                                   Maybe<dom::RTCErrorParams>) {
   if (mTransportId != aTransportId) {
     return;
   }
@@ -405,7 +409,8 @@ void MediaPipeline::RtpStateChange(const std::string& aTransportId,
 }
 
 void MediaPipeline::RtcpStateChange(const std::string& aTransportId,
-                                    TransportLayer::State aState) {
+                                    TransportLayer::State aState,
+                                    Maybe<dom::RTCErrorParams>) {
   if (mTransportId != aTransportId) {
     return;
   }

@@ -9,9 +9,9 @@
 // https://www.rfc-editor.org/rfc/rfc7541.txt
 
 #include "mozilla/Attributes.h"
+#include "mozilla/Mutex.h"
 #include "nsDeque.h"
 #include "nsString.h"
-#include "mozilla/Mutex.h"
 
 namespace mozilla {
 namespace net {

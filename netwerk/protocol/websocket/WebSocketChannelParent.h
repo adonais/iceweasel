@@ -5,13 +5,13 @@
 #ifndef mozilla_net_WebSocketChannelParent_h
 #define mozilla_net_WebSocketChannelParent_h
 
-#include "mozilla/net/PWebSocketParent.h"
 #include "mozilla/net/NeckoParent.h"
-#include "nsIInterfaceRequestor.h"
-#include "nsIWebSocketListener.h"
-#include "nsIWebSocketChannel.h"
-#include "nsILoadContext.h"
+#include "mozilla/net/PWebSocketParent.h"
 #include "nsCOMPtr.h"
+#include "nsIInterfaceRequestor.h"
+#include "nsILoadContext.h"
+#include "nsIWebSocketChannel.h"
+#include "nsIWebSocketListener.h"
 #include "nsString.h"
 
 class nsIAuthPromptProvider;

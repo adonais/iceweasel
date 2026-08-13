@@ -9,6 +9,9 @@ const { SafariProfileMigrator } = ChromeUtils.importESModule(
 const { LoginCSVImport } = ChromeUtils.importESModule(
   "resource://gre/modules/LoginCSVImport.sys.mjs"
 );
+const { MigrationWizardChild } = ChromeUtils.importESModule(
+  "resource:///actors/MigrationWizardChild.sys.mjs"
+);
 
 const TEST_FILE_PATH = getTestFilePath("dummy_file.csv");
 
@@ -66,18 +69,34 @@ add_setup(async function () {
  *    {Promise} wizardDone
  *      A Promise that resolves once the migration wizard reports that a
  *      migration has completed.
+ *    {string} expectedPage
+ *      The name of the Safari password permission page that was shown,
+ *      which varies depending on isSequoiaOrLater.
+ * @param {boolean} [isSequoiaOrLater=true]
+ *   Controls which set of Safari password import instructions is shown by
+ *   stubbing the OS version check. True simulates macOS Sequoia (15) or
+ *   later, false simulates an earlier version of macOS.
  * @returns {Promise<undefined>}
  */
 async function testSafariPasswordHelper(
   expectsFilePicker,
   migrateBookmarks,
   shouldPasswordImportFail,
-  taskFn
+  taskFn,
+  isSequoiaOrLater = true
 ) {
   let sandbox = sinon.createSandbox();
   registerCleanupFunction(() => {
     sandbox.restore();
   });
+
+  sandbox
+    .stub(MigrationWizardChild, "isMacOSSequoiaOrLater")
+    .returns(isSequoiaOrLater);
+
+  let expectedPage = isSequoiaOrLater
+    ? MigrationWizardConstants.PAGES.SAFARI_PASSWORD_PERMISSION
+    : MigrationWizardConstants.PAGES.SAFARI_PASSWORD_PERMISSION_PRE_SEQUOIA;
 
   let safariMigrator = new SafariProfileMigrator();
   sandbox.stub(MigrationUtils, "getMigrator").resolves(safariMigrator);
@@ -200,10 +219,7 @@ async function testSafariPasswordHelper(
         deck,
         { attributeFilter: ["selected-view"] },
         () => {
-          return (
-            deck.getAttribute("selected-view") ==
-            "page-" + MigrationWizardConstants.PAGES.SAFARI_PASSWORD_PERMISSION
-          );
+          return deck.getAttribute("selected-view") == "page-" + expectedPage;
         }
       );
 
@@ -218,7 +234,8 @@ async function testSafariPasswordHelper(
       importFromCSVStub,
       didMigration,
       migrateStub,
-      wizardDone
+      wizardDone,
+      expectedPage
     );
 
     let dialog = prefsWin.document.querySelector("#migrationWizardDialog");
@@ -407,4 +424,100 @@ add_task(async function test_safari_password_skip() {
       ]);
     }
   );
+});
+
+/**
+ * Tests that on versions of macOS before Sequoia, the wizard shows the
+ * pre-Sequoia Safari password import instructions, and that importing from a
+ * CSV file still works from that page.
+ */
+add_task(async function test_safari_password_pre_sequoia_instructions() {
+  await testSafariPasswordHelper(
+    true,
+    false,
+    false,
+    async (
+      wizard,
+      filePickerShownPromise,
+      importFromCSVStub,
+      didMigration,
+      migrateStub,
+      wizardDone,
+      expectedPage
+    ) => {
+      Assert.equal(
+        expectedPage,
+        MigrationWizardConstants.PAGES.SAFARI_PASSWORD_PERMISSION_PRE_SEQUOIA,
+        "Should have shown the pre-Sequoia Safari password instructions."
+      );
+
+      let shadow = wizard.openOrClosedShadowRoot;
+      let manualPasswordImportSelect = shadow.querySelector(
+        "div[name='page-safari-password-permission-pre-sequoia'] .manual-password-import-select"
+      );
+      manualPasswordImportSelect.click();
+      await filePickerShownPromise;
+      Assert.ok(true, "File picker was shown.");
+
+      await wizardDone;
+
+      assertQuantitiesShown(wizard, [
+        MigrationWizardConstants.DISPLAYED_RESOURCE_TYPES.PASSWORDS,
+      ]);
+
+      Assert.ok(importFromCSVStub.called, "Importing from CSV was called.");
+    },
+    false
+  );
+});
+
+/**
+ * Tests that a MigrationWizard:LaunchMacOSPasswordsApp event dispatched from
+ * the wizard causes the parent to attempt to launch the macOS Passwords app
+ * (without actually launching it for the test).
+ */
+add_task(async function test_launch_macos_passwords_app() {
+  let sandbox = sinon.createSandbox();
+
+  try {
+    let safariMigrator = new SafariProfileMigrator();
+    sandbox.stub(MigrationUtils, "getMigrator").resolves(safariMigrator);
+
+    // We're not testing the permission flow here, so let's pretend that we
+    // always have permission to read resources from the disk.
+    sandbox
+      .stub(SafariProfileMigrator.prototype, "hasPermissions")
+      .resolves(true);
+
+    // Have the migrator claim that only BOOKMARKS are only available.
+    sandbox
+      .stub(SafariProfileMigrator.prototype, "getMigrateData")
+      .resolves(MigrationUtils.resourceTypes.BOOKMARKS);
+
+    // Return a fake nsIFile whose path really exists (so the parent's async
+    // existence check passes on any platform) and whose launch() resolves a
+    // Promise instead of launching the real Passwords app.
+    let launched = Promise.withResolvers();
+    sandbox.stub(FileUtils, "File").returns({
+      // We stub the `path` so that even on macOS systems where the Passwords
+      // app doesn't happen to exist in the default location, this test should
+      // still run properly.
+      path: PathUtils.profileDir,
+      launch: () => launched.resolve(),
+    });
+
+    await withMigrationWizardDialog(async prefsWin => {
+      let wizard = prefsWin.document.body.querySelector("migration-wizard");
+      wizard.dispatchEvent(
+        new prefsWin.CustomEvent("MigrationWizard:LaunchMacOSPasswordsApp", {
+          bubbles: true,
+        })
+      );
+
+      await launched.promise;
+      Assert.ok(true, "Attempted to launch the Passwords app.");
+    });
+  } finally {
+    sandbox.restore();
+  }
 });

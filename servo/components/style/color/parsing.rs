@@ -17,6 +17,7 @@ use crate::derives::*;
 use crate::{
     parser::{Parse, ParserContext},
     values::{
+        computed::Color as ComputedColor,
         generics::{calc::CalcUnits, Optional},
         specified::{angle::NoCalcAngle, calc::Leaf, color::Color as SpecifiedColor},
     },
@@ -158,7 +159,10 @@ impl ToCss for ChannelKeyword {
             Self::Y => "y",
             Self::Z => "z",
             _ => {
-                debug_assert!(false, "tried to serialize unexpected multi-value ChannelKeyword");
+                debug_assert!(
+                    false,
+                    "tried to serialize unexpected multi-value ChannelKeyword"
+                );
                 ""
             },
         })
@@ -202,16 +206,15 @@ pub fn parse_color_with<'i, 't>(
             let name = name.clone();
             return input.parse_nested_block(|arguments| {
                 let color_function = parse_color_function(context, name, arguments)?;
-
-                if color_function.has_origin_color() {
-                    // Preserve the color as it was parsed.
-                    Ok(SpecifiedColor::ColorFunction(Box::new(color_function)))
-                } else if let Ok(resolved) = color_function.resolve_to_absolute(None) {
-                    Ok(SpecifiedColor::from_absolute_color(resolved))
-                } else {
-                    // The color could not be eagerly resolved, so preserve the original color.
-                    Ok(SpecifiedColor::ColorFunction(Box::new(color_function)))
+                if !color_function.has_origin_color() {
+                    if let Ok(ComputedColor::Absolute(resolved)) =
+                        color_function.to_computed_color(None)
+                    {
+                        return Ok(SpecifiedColor::from_absolute_color(resolved));
+                    }
                 }
+                // Preserve the color as it was parsed.
+                Ok(SpecifiedColor::ColorFunction(Box::new(color_function)))
             });
         },
         _ => Err(()),
@@ -236,6 +239,13 @@ fn parse_color_function<'i, 't>(
         "oklab" => parse_lab_like(context, arguments, origin_color, ColorFunction::Oklab),
         "oklch" => parse_lch_like(context, arguments, origin_color, ColorFunction::Oklch),
         "color" => parse_color_with_color_space(context, arguments, origin_color),
+        "alpha" if static_prefs::pref!("layout.css.alpha-color-function.enabled") => {
+            parse_relative_alpha(
+                context,
+                arguments,
+                origin_color.ok_or_else(|| arguments.new_custom_error(StyleParseErrorKind::UnspecifiedError))?
+            )
+        },
         _ => return Err(arguments.new_unexpected_token_error(Token::Ident(name))),
     }?;
     arguments.expect_exhausted()?;
@@ -485,6 +495,17 @@ fn parse_color_with_color_space<'i, 't>(
         alpha,
         color_space.into(),
     ))
+}
+
+/// Parse the alpha() function.
+#[inline]
+fn parse_relative_alpha<'i, 't>(
+    context: &ParserContext,
+    arguments: &mut Parser<'i, 't>,
+    origin_color: SpecifiedColor,
+) -> Result<ColorFunction<SpecifiedColor>, ParseError<'i>> {
+    let alpha = parse_modern_alpha(context, arguments, ChannelKeyword::ALPHA)?;
+    Ok(ColorFunction::Alpha(origin_color.into(), alpha))
 }
 
 /// Either a percentage or a number.

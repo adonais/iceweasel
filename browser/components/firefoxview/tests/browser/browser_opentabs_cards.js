@@ -108,7 +108,7 @@ add_task(async function open_tab_same_window() {
     await promiseHidden;
   });
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => originalTab.selected,
     "The original tab is selected."
   );
@@ -130,7 +130,7 @@ add_task(async function open_tab_same_window() {
     await promiseHidden;
   });
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => newTab.selected,
     "The new tab is selected."
   );
@@ -359,7 +359,7 @@ add_task(async function styling_for_multiple_windows() {
       ".view-opentabs-card-container"
     );
     info("waiting for card-count to reflect 2 windows");
-    await BrowserTestUtils.waitForCondition(() => {
+    await TestUtils.waitForCondition(() => {
       return cardContainer.getAttribute("card-count") == "two";
     });
     is(
@@ -393,7 +393,7 @@ add_task(async function styling_for_multiple_windows() {
       ".view-opentabs-card-container"
     );
 
-    await BrowserTestUtils.waitForCondition(() => {
+    await TestUtils.waitForCondition(() => {
       return cardContainer.getAttribute("card-count") == "three-or-more";
     });
     ok(

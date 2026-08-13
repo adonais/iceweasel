@@ -3,13 +3,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <windows.h>
+#include "TaskbarPreviewButton.h"
+
+#include <imgIContainer.h>
 #include <strsafe.h>
+#include <windows.h>
 
 #include "TaskbarWindowPreview.h"
-#include "TaskbarPreviewButton.h"
 #include "nsWindowGfx.h"
-#include <imgIContainer.h>
 
 namespace mozilla {
 namespace widget {

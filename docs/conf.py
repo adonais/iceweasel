@@ -176,6 +176,43 @@ def add_github_source_link(app, pagename, templatename, context, doctree):
     context["github_source_path"] = "docs/" + staging_relpath
 
 
+def make_sphinx_js_skip_missing_objects():
+    """Skip sphinx-js directives whose object jsdoc didn't produce.
+
+    The ``js:autoclass``/``js:autofunction`` directives abort the whole build
+    (``SphinxError``, sphinx return code 2) when the jsdoc analysis didn't yield
+    a doclet for the referenced object. That analysis runs over the entire JS
+    source tree and is intermittently incomplete in CI, which makes these
+    directives fail non-deterministically -- most often on the first one read,
+    ``browser/urlbar/UrlbarController``. Skip the offending directive (and log
+    it) instead of failing the whole documentation build; the page still renders
+    in full whenever the doclet is available.
+    """
+    try:
+        from sphinx.errors import SphinxError
+        from sphinx.util import logging as sphinx_logging
+        from sphinx_js.renderers import JsRenderer
+    except ImportError:
+        return
+
+    logger = sphinx_logging.getLogger("sphinx_js.renderers")
+    original_rst_nodes = JsRenderer.rst_nodes
+
+    def rst_nodes(self):
+        try:
+            return original_rst_nodes(self)
+        except SphinxError as exc:
+            if "No documentation was found for object" not in str(exc):
+                raise
+            logger.info(f"{exc} Skipping directive.")
+            return []
+
+    JsRenderer.rst_nodes = rst_nodes
+
+
+make_sphinx_js_skip_missing_objects()
+
+
 def setup(app):
     app.add_css_file("custom_theme.css")
     app.connect("html-page-context", install_sphinx_design)

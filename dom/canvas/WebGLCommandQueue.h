@@ -214,15 +214,15 @@ class EmptyMethodDispatcher {
 // -
 
 template <typename ReturnT, typename ObjectT, typename... Args>
-std::tuple<std::remove_cv_t<std::remove_reference_t<Args>>...> ArgsTuple(
+std::tuple<std::remove_cvref_t<Args>...> ArgsTuple(
     ReturnT (ObjectT::*)(Args... args)) {
-  return std::tuple<std::remove_cv_t<std::remove_reference_t<Args>>...>{};
+  return std::tuple<std::remove_cvref_t<Args>...>{};
 }
 
 template <typename ReturnT, typename ObjectT, typename... Args>
-std::tuple<std::remove_cv_t<std::remove_reference_t<Args>>...> ArgsTuple(
+std::tuple<std::remove_cvref_t<Args>...> ArgsTuple(
     ReturnT (ObjectT::*)(Args... args) const) {
-  return std::tuple<std::remove_cv_t<std::remove_reference_t<Args>>...>{};
+  return std::tuple<std::remove_cvref_t<Args>...>{};
 }
 
 // Derived type must be parameterized by the ID.

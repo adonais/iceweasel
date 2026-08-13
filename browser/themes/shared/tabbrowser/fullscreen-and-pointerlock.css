@@ -4,12 +4,21 @@
 
 :root[inDOMFullscreen] #navigator-toolbox,
 :root[inDOMFullscreen] #fullscr-toggler,
-:root[inDOMFullscreen] #sidebar-box,
 :root[inDOMFullscreen] #sidebar-container,
+:root[fullscreenNavToolboxHidden] #sidebar-launcher-splitter,
+:root[inDOMFullscreen] #sidebar-box,
 :root[inDOMFullscreen] #sidebar-splitter,
-:root[inDOMFullscreen] #sidebar-launcher-splitter,
 :root[inFullscreen]:not([macOSNativeFullscreen]) toolbar:not([fullscreentoolbar="true"]) {
   visibility: collapse;
+}
+
+/* Skip the subtree rather than collapse it: `visibility` is inherited, so it
+ * restyled a row per tab with vertical tabs (bug 2054085). */
+:root[fullscreenNavToolboxHidden]:not([inDOMFullscreen]) #sidebar-container {
+  content-visibility: hidden;
+  /* Also drops the inline width of a user-resized launcher. */
+  flex-basis: 0;
+  min-width: 0;
 }
 
 /* AI window splitter and box use visibility:collapse, not display:none, so

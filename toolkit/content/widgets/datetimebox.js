@@ -1108,7 +1108,7 @@ this.DateTimeBoxWidget = class {
     this.mInputElement.setUserInput(value);
   }
 
-  setFieldsFromPicker({ year, month, day, hour, minute }) {
+  setFieldsFromPicker({ year, month, day, hour, minute, second, millisecond }) {
     if (!this.isEmpty(hour)) {
       this.setFieldValue(this.mHourField, hour);
       if (this.mHour12) {
@@ -1120,6 +1120,14 @@ this.DateTimeBoxWidget = class {
 
     if (!this.isEmpty(minute)) {
       this.setFieldValue(this.mMinuteField, minute);
+    }
+
+    if (!this.isEmpty(second)) {
+      this.setFieldValue(this.mSecondField, second);
+    }
+
+    if (!this.isEmpty(millisecond)) {
+      this.setFieldValue(this.mMillisecField, millisecond);
     }
 
     if (!this.isEmpty(year)) {

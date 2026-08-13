@@ -12,6 +12,7 @@ import stat
 import sys
 import tarfile
 import tempfile
+import zipfile
 from collections import defaultdict
 
 import buildconfig
@@ -99,6 +100,34 @@ def list_of_paths_to_readable_string(paths):
         final_string = final_string[:-2]
 
     return final_string + "]"
+
+
+def safe_extract_tar(tar, path=".", *, numeric_owner=False):
+    def validate_tar_member(member, path):
+        def is_within_directory(directory, target):
+            real_directory = os.path.realpath(directory)
+            real_target = os.path.realpath(target)
+            prefix = os.path.commonprefix([real_directory, real_target])
+            return prefix == real_directory
+
+        member_path = os.path.join(path, member.name)
+        if not is_within_directory(path, member_path):
+            raise Exception("Attempted path traversal in tar file: " + member.name)
+        if member.issym():
+            link_path = os.path.join(os.path.dirname(member_path), member.linkname)
+            if not is_within_directory(path, link_path):
+                raise Exception(
+                    "Attempted link path traversal in tar file: " + member.name
+                )
+        if member.mode & (stat.S_ISUID | stat.S_ISGID):
+            raise Exception("Attempted setuid or setgid in tar file: " + member.name)
+
+    def _files(tar, path):
+        for member in tar:
+            validate_tar_member(member, path)
+            yield member
+
+    tar.extractall(path, members=_files(tar, path), numeric_owner=numeric_owner)
 
 
 class VendorManifest(MozbuildObject):
@@ -438,35 +467,6 @@ class VendorManifest(MozbuildObject):
     def fetch_and_unpack(self, revision):
         """Fetch and unpack upstream source"""
 
-        def validate_tar_member(member, path):
-            def is_within_directory(directory, target):
-                real_directory = os.path.realpath(directory)
-                real_target = os.path.realpath(target)
-                prefix = os.path.commonprefix([real_directory, real_target])
-                return prefix == real_directory
-
-            member_path = os.path.join(path, member.name)
-            if not is_within_directory(path, member_path):
-                raise Exception("Attempted path traversal in tar file: " + member.name)
-            if member.issym():
-                link_path = os.path.join(os.path.dirname(member_path), member.linkname)
-                if not is_within_directory(path, link_path):
-                    raise Exception(
-                        "Attempted link path traversal in tar file: " + member.name
-                    )
-            if member.mode & (stat.S_ISUID | stat.S_ISGID):
-                raise Exception(
-                    "Attempted setuid or setgid in tar file: " + member.name
-                )
-
-        def safe_extract(tar, path=".", *, numeric_owner=False):
-            def _files(tar, path):
-                for member in tar:
-                    validate_tar_member(member, path)
-                    yield member
-
-            tar.extractall(path, members=_files(tar, path), numeric_owner=numeric_owner)
-
         release_artifact = self.manifest["vendoring"].get("release-artifact", False)
 
         if release_artifact:
@@ -511,25 +511,46 @@ class VendorManifest(MozbuildObject):
                         mozfile.remove(file)
 
                 self.logInfo({"vd": vendor_dir}, "Unpacking upstream files for {vd}.")
-                with tarfile.open(tmptarfile.name) as tar:
-                    safe_extract(tar, tmpextractdir.name)
 
-                    def get_first_dir(p):
-                        halves = os.path.split(p)
-                        return get_first_dir(halves[0]) if halves[0] else halves[1]
+                def get_first_dir(p):
+                    halves = os.path.split(p)
+                    return get_first_dir(halves[0]) if halves[0] else halves[1]
 
-                    one_prefix = get_first_dir(tar.getnames()[0])
-                    has_prefix = all(
-                        map(lambda name: name.startswith(one_prefix), tar.getnames())
-                    )
+                if zipfile.is_zipfile(tmptarfile.name):
+                    with zipfile.ZipFile(tmptarfile.name) as zf:
+                        zf.extractall(tmpextractdir.name)
+                        one_prefix = get_first_dir(zf.namelist()[0])
+                        has_prefix = all(
+                            map(
+                                lambda name: name.startswith(one_prefix),
+                                zf.namelist(),
+                            )
+                        )
+                    if has_prefix:
+                        zipdir = mozpath.join(tmpextractdir.name, one_prefix)
+                        mozfile.copy_contents(
+                            zipdir, tmpextractdir.name, ignore_dangling_symlinks=True
+                        )
+                        mozfile.remove(zipdir)
+                else:
+                    with tarfile.open(tmptarfile.name) as tar:
+                        safe_extract_tar(tar, tmpextractdir.name)
 
-                # GitLab puts everything down a directory; move it up.
-                if has_prefix:
-                    tardir = mozpath.join(tmpextractdir.name, one_prefix)
-                    mozfile.copy_contents(
-                        tardir, tmpextractdir.name, ignore_dangling_symlinks=True
-                    )
-                    mozfile.remove(tardir)
+                        one_prefix = get_first_dir(tar.getnames()[0])
+                        has_prefix = all(
+                            map(
+                                lambda name: name.startswith(one_prefix),
+                                tar.getnames(),
+                            )
+                        )
+
+                    # GitLab puts everything down a directory; move it up.
+                    if has_prefix:
+                        tardir = mozpath.join(tmpextractdir.name, one_prefix)
+                        mozfile.copy_contents(
+                            tardir, tmpextractdir.name, ignore_dangling_symlinks=True
+                        )
+                        mozfile.remove(tardir)
 
                 if self.should_perform_step("include"):
                     self.logInfo({}, "Retaining wanted files from upstream changes.")

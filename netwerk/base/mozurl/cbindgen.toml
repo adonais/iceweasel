@@ -10,6 +10,9 @@ header = """/* This Source Code Form is subject to the terms of the Mozilla Publ
  """
 autogen_warning = """/* DO NOT MODIFY THIS MANUALLY! This file was generated using cbindgen. */
 
+#include "nsError.h"
+#include "nsString.h"
+
 namespace mozilla {
 namespace net {
 class MozURL;
@@ -49,7 +52,6 @@ line_length = 100
 tab_width = 2
 language = "C++"
 namespaces = []
-includes = ["nsError.h", "nsString.h"]
 
 [export]
 exclude = ["Gecko_StrictFileOriginPolicy", "MozURL", "SpecSlice", "mozurl_new", "mozurl_clone", "mozurl_common_base"]

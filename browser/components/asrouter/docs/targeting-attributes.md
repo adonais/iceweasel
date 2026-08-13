@@ -195,7 +195,7 @@ Behaves the same as `isDefaultBrowser`, but retrieves the current value directly
 
 ### `isDefaultHandler`
 
-Is Firefox the user's default handler for various file extensions?
+Is Firefox the user's default handler for various file extensions and protocols?
 
 Windows-only.
 
@@ -205,6 +205,7 @@ Windows-only.
 declare const isDefaultHandler: {
   pdf: boolean;
   html: boolean;
+  mailto: boolean;
 };
 ```
 
@@ -212,6 +213,16 @@ declare const isDefaultHandler: {
 * Is Firefox the default PDF handler?
 ```ts
 isDefaultHandler.pdf
+```
+
+* Is Firefox the default mailto protocol handler?
+```ts
+isDefaultHandler.mailto
+```
+
+* Prompt to set Firefox as default when on their configured email site
+```ts
+host == mailtoHandlerHost && !isDefaultHandler.mailto
 ```
 
 ### `defaultPDFHandler`
@@ -230,6 +241,35 @@ declare const defaultPDFHandler: {
   // Is the default PDF handler a known browser?
   knownBrowser: boolean;
 };
+```
+
+### `mailtoHandlerHost`
+
+The host of the web service Firefox is configured to hand `mailto:` links to
+(e.g. `"mail.google.com"`), or `null` if Firefox has no configured web handler
+for `mailto:`. This reflects only Firefox's own handler setting, not the
+OS-level `mailto:` default (see [`isDefaultHandler`](#isdefaulthandler)), and
+says nothing about whether the preferred action is "always ask".
+
+Windows-only.
+
+#### Definition
+
+```ts
+declare const mailtoHandlerHost: string | null;
+```
+
+#### Examples
+
+* Is the user currently on their configured mail host? (Pair with a trigger that
+  exposes the navigated `host`, such as `openURL`.)
+```java
+host == mailtoHandlerHost && !isDefaultHandler.mailto
+```
+
+* Prompt only when on Gmail and Firefox isn't the OS default
+```java
+mailtoHandlerHost == "mail.google.com" && !isDefaultHandler.mailto
 ```
 
 ### `firefoxVersion`
@@ -254,6 +294,18 @@ Is the launch on login option enabled?
 
 ```ts
 declare const launchOnLoginEnabled: boolean;
+```
+
+### `launchOnLoginAllowedByPolicy`
+
+Whether launch on login is allowed to be enabled, i.e. it has not been overridden
+by Windows Settings or enterprise policy. Mirrors the `isAllowedByPolicy` value
+from `getLaunchOnLoginEnablementDetails()`. Always `false` on non-Windows
+platforms. Use together with `launchOnLoginEnabled` to target users who do not
+have launch on login enabled but for whom it could be enabled.
+
+```ts
+declare const launchOnLoginAllowedByPolicy: boolean;
 ```
 
 ### `locale`

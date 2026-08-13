@@ -4,16 +4,16 @@
 
 #include "VerifySSLServerCertParent.h"
 
-#include "cert.h"
-#include "nsNSSComponent.h"
-#include "secerr.h"
-#include "SharedCertVerifier.h"
 #include "NSSCertDBTrustDomain.h"
 #include "SSLServerCertVerification.h"
-#include "nsNSSIOLayer.h"
-#include "nsISocketProvider.h"
+#include "SharedCertVerifier.h"
+#include "cert.h"
 #include "mozilla/Components.h"
 #include "mozilla/psm/EnabledSignatureSchemes.h"
+#include "nsISocketProvider.h"
+#include "nsNSSComponent.h"
+#include "nsNSSIOLayer.h"
+#include "secerr.h"
 
 extern mozilla::LazyLogModule gPIPNSSLog;
 

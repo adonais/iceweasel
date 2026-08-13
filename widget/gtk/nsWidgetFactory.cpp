@@ -4,32 +4,33 @@
 
 #include "nsWidgetFactory.h"
 
-#include "mozilla/Components.h"
-#include "mozilla/WidgetUtils.h"
-#include "NativeKeyBindings.h"
-#include "nsWidgetsCID.h"
-#include "nsAppShell.h"
-#include "nsAppShellSingleton.h"
-#include "nsIWidget.h"
-#include "nsGtkKeyUtils.h"
-#include "nsLookAndFeel.h"
-#include "nsWindow.h"
-#include "nsHTMLFormatConverter.h"
 #include "HeadlessClipboard.h"
 #include "IMContextWrapper.h"
-#include "nsClipboard.h"
+#include "NativeKeyBindings.h"
 #include "TaskbarProgress.h"
-#include "nsFilePicker.h"
-#include "nsSound.h"
-#include "nsGTKToolkit.h"
 #include "WakeLockListener.h"
+#include "mozilla/Components.h"
+#include "mozilla/WidgetUtils.h"
+#include "nsAppShell.h"
+#include "nsAppShellSingleton.h"
+#include "nsClipboard.h"
+#include "nsFilePicker.h"
+#include "nsGTKToolkit.h"
+#include "nsGtkKeyUtils.h"
+#include "nsHTMLFormatConverter.h"
+#include "nsIWidget.h"
+#include "nsLookAndFeel.h"
+#include "nsSound.h"
+#include "nsWidgetsCID.h"
+#include "nsWindow.h"
 #if defined(MOZ_WAYLAND) && defined(MOZ_ENABLE_DBUS)
 #  include "FileTransferPortal.h"
 #endif
+#include <gtk/gtk.h>
+
 #include "DMABufDevice.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/widget/ScreenManager.h"
-#include <gtk/gtk.h>
 
 using namespace mozilla;
 using namespace mozilla::widget;

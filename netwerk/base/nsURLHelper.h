@@ -5,11 +5,12 @@
 #ifndef nsURLHelper_h_
 #define nsURLHelper_h_
 
+#include <mozilla/CompactPair.h>
+#include <mozilla/Maybe.h>
+
+#include "nsASCIIMask.h"
 #include "nsString.h"
 #include "nsTArray.h"
-#include "nsASCIIMask.h"
-#include <mozilla/Maybe.h>
-#include <mozilla/CompactPair.h>
 
 class nsIFile;
 class nsIURLParser;

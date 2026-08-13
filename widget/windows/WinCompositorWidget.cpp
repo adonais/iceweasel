@@ -4,6 +4,11 @@
 
 #include "WinCompositorWidget.h"
 
+#include <ddraw.h>
+
+#include "VRShMem.h"
+#include "VsyncDispatcher.h"
+#include "WinCompositorWindowThread.h"
 #include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/gfx/DeviceManagerDx.h"
 #include "mozilla/gfx/Point.h"
@@ -12,11 +17,6 @@
 #include "mozilla/webrender/RenderThread.h"
 #include "mozilla/widget/PlatformWidgetTypes.h"
 #include "nsWindow.h"
-#include "VsyncDispatcher.h"
-#include "WinCompositorWindowThread.h"
-#include "VRShMem.h"
-
-#include <ddraw.h>
 
 namespace mozilla {
 namespace widget {

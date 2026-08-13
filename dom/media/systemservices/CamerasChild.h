@@ -194,6 +194,7 @@ class CamerasChild final : public PCamerasChild {
                        char* unique_idUTF8,
                        const unsigned int unique_idUTF8Length, bool* scary);
   int EnsureInitialized(CaptureEngine aCapEngine);
+  int InvalidateDesktopCaptureDeviceCache(CaptureEngine aCapEngine);
 
   template <typename This>
   int ConnectDeviceListChangeListener(MediaEventListener* aListener,

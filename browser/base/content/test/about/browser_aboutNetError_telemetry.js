@@ -5,6 +5,14 @@
 
 const NET_ERROR_PAGE = "https://does-not-exist.test";
 const BAD_CERT = "https://expired.example.com/";
+const AUTH_ROUTE =
+  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  "http://example.com/browser/browser/base/content/test/about/basic_auth_route.sjs";
+const HTTP_AUTH_PREFS = [
+  ["dom.security.https_first", false],
+  ["network.http.basic_http_auth.enabled", false],
+  ["browser.http.blank_page_with_error_response.enabled", true],
+];
 
 const VALID_CAPTIVE_PORTAL_STATES = [
   "unknown",
@@ -36,7 +44,43 @@ function assertNeterrorLoadEvent(
   Assert.equal(event.extra.trr_only, "false", "trr_only is false");
 }
 
-// -- Felt Privacy path (default) --
+async function openNetErrorPage(url, prefs = []) {
+  if (prefs.length) {
+    await SpecialPowers.pushPrefEnv({ set: prefs });
+  }
+  await Services.fog.testFlushAllChildren();
+  Services.fog.testResetFOG();
+  let pageLoaded;
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    () => {
+      gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, url);
+      pageLoaded = BrowserTestUtils.waitForErrorPage(gBrowser.selectedBrowser);
+    },
+    false
+  );
+  await pageLoaded;
+  return tab;
+}
+
+async function clickNetErrorCardButton(browser, buttonProp) {
+  await SpecialPowers.spawn(browser, [buttonProp], async prop => {
+    const card =
+      content.document.querySelector("net-error-card")?.wrappedJSObject;
+    await card.getUpdateComplete();
+    const el = await ContentTaskUtils.waitForCondition(
+      () => card[prop],
+      `Waiting for ${prop}`
+    );
+    el.click();
+  });
+}
+
+function assertNeterrorClickEvent(events, errorCode) {
+  Assert.equal(events.length, 1, "One click event recorded");
+  Assert.equal(events[0].extra.value, errorCode, `value is ${errorCode}`);
+  Assert.equal(events[0].extra.is_frame, "false", "Not in an iframe");
+}
 
 // Test: load_aboutneterror fires for a DNS error (top-level)
 add_task(async function test_feltprivacy_neterror_load() {
@@ -158,6 +202,77 @@ add_task(async function test_legacy_certerror_no_neterror() {
   let events = Glean.securityUiNeterror.loadAboutneterror.testGetValue();
   Assert.equal(events, null, "No neterror event for cert errors (legacy)");
 
+  BrowserTestUtils.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
+});
+
+// -- Felt Privacy net-error click events --
+
+// Test: click_try_again_button fires on a net error page
+add_task(async function test_feltprivacy_neterror_click_try_again() {
+  let tab = await openNetErrorPage(NET_ERROR_PAGE);
+  let browser = gBrowser.selectedBrowser;
+  let nextErrorPage = BrowserTestUtils.waitForErrorPage(browser);
+
+  await clickNetErrorCardButton(browser, "tryAgainButton");
+  await nextErrorPage;
+
+  let events = await TestUtils.waitForCondition(
+    () => getGleanEvents(Glean.securityUiNeterror.clickTryAgainButton),
+    "Waiting for clickTryAgainButton Glean event"
+  );
+  assertNeterrorClickEvent(events, "dnsNotFound");
+  BrowserTestUtils.removeTab(tab);
+});
+
+// Test: click_learn_more_link fires on a net error page
+add_task(async function test_feltprivacy_neterror_click_learn_more() {
+  let tab = await openNetErrorPage(NET_ERROR_PAGE);
+  let browser = gBrowser.selectedBrowser;
+  let newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser);
+
+  await clickNetErrorCardButton(browser, "learnMoreLink");
+  let learnMoreTab = await newTabPromise;
+
+  let events = await TestUtils.waitForCondition(
+    () => getGleanEvents(Glean.securityUiNeterror.clickLearnMoreLink),
+    "Waiting for clickLearnMoreLink Glean event"
+  );
+  assertNeterrorClickEvent(events, "dnsNotFound");
+  BrowserTestUtils.removeTab(learnMoreTab);
+  BrowserTestUtils.removeTab(tab);
+});
+
+// Test: click_advanced_button fires on a net error page
+add_task(async function test_feltprivacy_neterror_click_advanced_button() {
+  let tab = await openNetErrorPage(AUTH_ROUTE, HTTP_AUTH_PREFS);
+  let browser = gBrowser.selectedBrowser;
+
+  await clickNetErrorCardButton(browser, "advancedButton");
+
+  let events = await TestUtils.waitForCondition(
+    () => getGleanEvents(Glean.securityUiNeterror.clickAdvancedButton),
+    "Waiting for clickAdvancedButton Glean event"
+  );
+  assertNeterrorClickEvent(events, "basicHttpAuthDisabled");
+  BrowserTestUtils.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
+});
+
+// Test: click_return_button_adv fires on a net error page
+add_task(async function test_feltprivacy_neterror_click_return_button_adv() {
+  let tab = await openNetErrorPage(AUTH_ROUTE, HTTP_AUTH_PREFS);
+  let browser = gBrowser.selectedBrowser;
+  let navPromise = BrowserTestUtils.browserLoaded(browser);
+
+  await clickNetErrorCardButton(browser, "returnButton");
+  await navPromise;
+
+  let events = await TestUtils.waitForCondition(
+    () => getGleanEvents(Glean.securityUiNeterror.clickReturnButtonAdv),
+    "Waiting for clickReturnButtonAdv Glean event"
+  );
+  assertNeterrorClickEvent(events, "basicHttpAuthDisabled");
   BrowserTestUtils.removeTab(tab);
   await SpecialPowers.popPrefEnv();
 });

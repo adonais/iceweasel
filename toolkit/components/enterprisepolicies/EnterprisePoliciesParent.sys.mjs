@@ -7,9 +7,9 @@ import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  JsonSchemaValidator:
-    "resource://gre/modules/components-utils/JsonSchemaValidator.sys.mjs",
   Policies: "resource:///modules/policies/Policies.sys.mjs",
+  PolicySchemaValidator:
+    "resource://gre/modules/policies/PolicySchemaValidator.sys.mjs",
   WindowsGPOParser: "resource://gre/modules/policies/WindowsGPOParser.sys.mjs",
   macOSPoliciesParser:
     "resource://gre/modules/policies/macOSPoliciesParser.sys.mjs",
@@ -55,14 +55,12 @@ ChromeUtils.defineLazyGetter(lazy, "log", () => {
   });
 });
 
-const isXpcshell = Services.env.exists("XPCSHELL_TEST_PROFILE_DIR");
+// Testing escapes in this file must key on Cu.isInAutomation.
 
-// On Nightly under a test harness, ignore real system/user policies so a
-// developer's local policies.json or registry entries don't leak into tests.
-// Restricted to Nightly so release builds never expose a way to bypass
-// enterprise policies via a test env var.
+// On Nightly in automation, ignore real system/user policies so a developer's
+// local policies.json or registry entries don't leak into tests.
 function shouldIgnoreLocalPolicies() {
-  return AppConstants.NIGHTLY_BUILD && (Cu.isInAutomation || isXpcshell);
+  return AppConstants.NIGHTLY_BUILD && Cu.isInAutomation;
 }
 
 // We're only testing for empty objects, not
@@ -115,7 +113,7 @@ EnterprisePoliciesManager.prototype = {
       Services.prefs.clearUserPref(PREF_POLICIES_APPLIED);
     }
 
-    let provider = this._chooseProvider();
+    let provider = this._buildProvider();
 
     if (provider.failed) {
       this.status = Ci.nsIEnterprisePolicies.FAILED;
@@ -161,24 +159,32 @@ EnterprisePoliciesManager.prototype = {
     Glean.policies.isEnterprise.set(this.isEnterprise);
   },
 
-  _chooseProvider() {
-    let platformProvider = null;
-    if (AppConstants.platform == "win" && AppConstants.MOZ_SYSTEM_POLICIES) {
-      platformProvider = new WindowsGPOPoliciesProvider();
-    } else if (
-      AppConstants.platform == "macosx" &&
-      AppConstants.MOZ_SYSTEM_POLICIES
-    ) {
-      platformProvider = new macOSPoliciesProvider();
-    }
-    let jsonProvider = new JSONPoliciesProvider();
-    if (platformProvider && platformProvider.hasPolicies) {
-      if (jsonProvider.hasPolicies) {
-        return new CombinedProvider(platformProvider, jsonProvider);
+  /**
+   * Build the policies provider. Every available source (JSON, platform)
+   * is added to a single CombinedProvider, in increasing order of precedence.
+   *
+   * @returns {CombinedProvider} the combined policies provider
+   */
+  _buildProvider() {
+    const provider = new CombinedProvider();
+
+    // Providers are added from lowest to highest precedence; each one takes
+    // precedence over those added before it when top-level policies conflict.
+    lazy.log.debug("Adding JSON provider.");
+    provider.push(new JSONPoliciesProvider());
+
+    if (AppConstants.MOZ_SYSTEM_POLICIES) {
+      if (AppConstants.platform == "win") {
+        lazy.log.debug("Adding Windows GPO platform provider.");
+        provider.push(new WindowsGPOPoliciesProvider());
+      } else if (AppConstants.platform == "macosx") {
+        lazy.log.debug("Adding macOS platform provider.");
+        provider.push(new macOSPoliciesProvider());
       }
-      return platformProvider;
     }
-    return jsonProvider;
+
+    provider.mergePolicies();
+    return provider;
   },
 
   _activatePolicies(unparsedPolicies) {
@@ -195,13 +201,18 @@ EnterprisePoliciesManager.prototype = {
         continue;
       }
 
-      let { valid: parametersAreValid, parsedValue: parsedParameters } =
-        lazy.JsonSchemaValidator.validate(policyParameters, policySchema, {
-          allowAdditionalProperties: true,
-        });
+      let {
+        valid: parametersAreValid,
+        parsedValue: parsedParameters,
+        error: validationError,
+      } = lazy.PolicySchemaValidator.validate(policyParameters, policySchema, {
+        allowAdditionalProperties: true,
+      });
 
       if (!parametersAreValid) {
-        lazy.log.error(`Invalid parameters specified for ${policyName}.`);
+        lazy.log.error(
+          `Invalid parameters specified for ${policyName}: ${validationError.message}`
+        );
         continue;
       }
 
@@ -606,6 +617,28 @@ let ExtensionPolicies = null;
 let ExtensionSettings = null;
 let InstallSources = null;
 
+/**
+ * Basic policies provider
+ */
+class PoliciesProvider {
+  constructor() {
+    this._policies = null;
+    this._failed = false;
+  }
+
+  get policies() {
+    return this._policies;
+  }
+
+  get hasPolicies() {
+    return this._policies !== null && !isEmptyObject(this._policies);
+  }
+
+  get failed() {
+    return this._failed;
+  }
+}
+
 /*
  * JSON PROVIDER OF POLICIES
  *
@@ -614,22 +647,10 @@ let InstallSources = null;
  * in the installation's distribution folder.
  */
 
-class JSONPoliciesProvider {
+class JSONPoliciesProvider extends PoliciesProvider {
   constructor() {
-    this._policies = null;
+    super();
     this._readData();
-  }
-
-  get hasPolicies() {
-    return this._policies !== null && !isEmptyObject(this._policies);
-  }
-
-  get policies() {
-    return this._policies;
-  }
-
-  get failed() {
-    return this._failed;
   }
 
   _getLocalConfigurationFile() {
@@ -684,7 +705,7 @@ class JSONPoliciesProvider {
     // work as expected.
     if (
       alternatePath &&
-      (Cu.isInAutomation || AppConstants.NIGHTLY_BUILD || isXpcshell) &&
+      (Cu.isInAutomation || AppConstants.NIGHTLY_BUILD) &&
       (!configFile || !configFile.exists())
     ) {
       if (alternatePath.startsWith(MAGIC_TEST_ROOT_PREFIX)) {
@@ -744,9 +765,9 @@ class JSONPoliciesProvider {
   }
 }
 
-class WindowsGPOPoliciesProvider {
+class WindowsGPOPoliciesProvider extends PoliciesProvider {
   constructor() {
-    this._policies = null;
+    super();
 
     let wrk = Cc["@mozilla.org/windows-registry-key;1"].createInstance(
       Ci.nsIWindowsRegKey
@@ -756,27 +777,15 @@ class WindowsGPOPoliciesProvider {
     // user policies first and then replace them if necessary.
     this._readData(wrk, wrk.ROOT_KEY_CURRENT_USER);
     // We don't access machine policies in testing
-    if (!Cu.isInAutomation && !isXpcshell) {
+    if (!Cu.isInAutomation) {
       this._readData(wrk, wrk.ROOT_KEY_LOCAL_MACHINE);
     }
-  }
-
-  get hasPolicies() {
-    return this._policies !== null && !isEmptyObject(this._policies);
-  }
-
-  get policies() {
-    return this._policies;
-  }
-
-  get failed() {
-    return this._failed;
   }
 
   _readData(wrk, root) {
     try {
       let regLocation = "SOFTWARE\\Policies";
-      if (Cu.isInAutomation || isXpcshell) {
+      if (Cu.isInAutomation) {
         let altLocation = Services.prefs.getStringPref(PREF_ALTERNATE_GPO, "");
         if (altLocation) {
           regLocation = altLocation;
@@ -805,9 +814,9 @@ class WindowsGPOPoliciesProvider {
   }
 }
 
-class macOSPoliciesProvider {
+class macOSPoliciesProvider extends PoliciesProvider {
   constructor() {
-    this._policies = null;
+    super();
     let prefReader = Cc["@mozilla.org/mac-preferences-reader;1"].createInstance(
       Ci.nsIMacPreferencesReader
     );
@@ -816,43 +825,34 @@ class macOSPoliciesProvider {
     }
     this._policies = lazy.macOSPoliciesParser.readPolicies(prefReader);
   }
-
-  get hasPolicies() {
-    return this._policies !== null && Object.keys(this._policies).length;
-  }
-
-  get policies() {
-    return this._policies;
-  }
-
-  get failed() {
-    return this._failed;
-  }
 }
 
-class CombinedProvider {
-  constructor(primaryProvider, secondaryProvider) {
-    // Combine policies with primaryProvider taking precedence.
-    // We only do this for top level policies.
-    this._policies = primaryProvider._policies;
-    for (let policyName of Object.keys(secondaryProvider.policies)) {
-      if (!(policyName in this._policies)) {
-        this._policies[policyName] = secondaryProvider.policies[policyName];
-      }
-    }
+export class CombinedProvider extends PoliciesProvider {
+  constructor() {
+    super();
+    this._providers = [];
   }
 
-  get hasPolicies() {
-    // Combined provider always has policies.
-    return true;
+  /**
+   * Add a provider. It takes precedence over any previously added providers
+   * when merging conflicting top-level policies.
+   *
+   * @param {PoliciesProvider} provider provider to add
+   */
+  push(provider) {
+    this._providers.push(provider);
   }
 
-  get policies() {
-    return this._policies;
+  mergePolicies() {
+    // Combine the top-level policies of every provider, with providers added
+    // later taking precedence over those added earlier.
+    this._policies = Object.assign({}, ...this._providers.map(p => p.policies));
   }
 
   get failed() {
-    // Combined provider never fails.
-    return false;
+    // A failed provider only fails the engine if it left us without any
+    // policies to apply. If any provider supplied policies we proceed
+    // and ignore the failed source.
+    return this._providers.some(p => p.failed) && !this.hasPolicies;
   }
 }

@@ -5,8 +5,8 @@
 #ifndef nsLinebreakConverter_h_
 #define nsLinebreakConverter_h_
 
-#include "nscore.h"
 #include "nsString.h"
+#include "nscore.h"
 
 // utility class for converting between different line breaks.
 

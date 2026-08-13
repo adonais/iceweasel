@@ -55,15 +55,15 @@ class Benchmark:
     def start_http_server(self):
         self.host = self.config["host"]
         self.port = int(self.test.get("benchmark_port") or self._pick_free_port())
-        _webserver = "%s:%d" % (self.host, self.port)
+        _webserver = f"{self.host}:{self.port}"
 
         self.httpd = self.setup_webserver(_webserver)
         self.server_thread = threading.Thread(target=self.httpd.serve_forever)
         self.server_thread.start()
 
     def setup_webserver(self, webserver):
-        LOG.info("starting webserver on %r" % webserver)
-        LOG.info("serving benchmarks from here: %s" % self.bench_dir)
+        LOG.info(f"starting webserver on {webserver!r}")
+        LOG.info(f"serving benchmarks from here: {self.bench_dir}")
 
         self.host, self.port = webserver.split(":")
 

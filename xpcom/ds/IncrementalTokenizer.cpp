@@ -4,11 +4,11 @@
 
 #include "mozilla/IncrementalTokenizer.h"
 
-#include "mozilla/AutoRestore.h"
-
-#include "nsIInputStream.h"
-#include "IncrementalTokenizer.h"
 #include <algorithm>
+
+#include "IncrementalTokenizer.h"
+#include "mozilla/AutoRestore.h"
+#include "nsIInputStream.h"
 
 namespace mozilla {
 

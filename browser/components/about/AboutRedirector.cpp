@@ -138,6 +138,13 @@ static const RedirEntry kRedirMap[] = {
          nsIAboutModule::URI_MUST_LOAD_IN_CHILD | nsIAboutModule::ALLOW_SCRIPT |
          nsIAboutModule::URI_CAN_LOAD_IN_PRIVILEGEDABOUT_PROCESS |
          nsIAboutModule::IS_SECURE_CHROME_UI},
+#ifdef MOZ_NORMANDY
+    {"studies", "resource://normandy-content/about-studies/about-studies.html",
+     nsIAboutModule::ALLOW_SCRIPT | nsIAboutModule::IS_SECURE_CHROME_UI |
+         nsIAboutModule::URI_CAN_LOAD_IN_PRIVILEGEDABOUT_PROCESS |
+         nsIAboutModule::URI_MUST_LOAD_IN_CHILD |
+         nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT},
+#endif
 #ifdef MOZ_SELECTABLE_PROFILES
     {"profilemanager", "chrome://browser/content/profiles/profiles.html",
      nsIAboutModule::ALLOW_SCRIPT | nsIAboutModule::IS_SECURE_CHROME_UI |

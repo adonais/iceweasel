@@ -17,7 +17,7 @@ Differential Revision: https://phabricator.services.mozilla.com/D29474
 diff --git a/sandbox/win/src/process_mitigations.cc b/sandbox/win/src/process_mitigations.cc
 --- a/sandbox/win/src/process_mitigations.cc
 +++ b/sandbox/win/src/process_mitigations.cc
-@@ -431,16 +431,21 @@ void ConvertProcessMitigationsToPolicy(M
+@@ -442,16 +442,21 @@ void ConvertProcessMitigationsToPolicy(M
      *policy_value_1 |=
          PROCESS_CREATION_MITIGATION_POLICY_EXTENSION_POINT_DISABLE_ALWAYS_ON;
    }
@@ -42,14 +42,14 @@ diff --git a/sandbox/win/src/process_mitigations.cc b/sandbox/win/src/process_mi
 diff --git a/sandbox/win/src/security_level.h b/sandbox/win/src/security_level.h
 --- a/sandbox/win/src/security_level.h
 +++ b/sandbox/win/src/security_level.h
-@@ -285,11 +285,20 @@ const MitigationFlags MITIGATION_IMAGE_L
- // PROCESS_CREATION_MITIGATION_POLICY2_CET_USER_SHADOW_STACKS_STRICT_MODE.
- const MitigationFlags MITIGATION_CET_STRICT_MODE = 0x02000000;
- 
- // Prevents application from sending FSCTL* control codes to NtFsControlFile,
- // with a few exceptions for named pipes as documented on MSDN. Corresponds to
+@@ -290,11 +290,20 @@ const MitigationFlags MITIGATION_IMAGE_L
  // PROCESS_CREATION_MITIGATION_POLICY2_FSCTL_SYSTEM_CALL_DISABLE_ALWAYS_ON.
  const MitigationFlags MITIGATION_FSCTL_DISABLED = 0x04000000;
+ 
+ // Restrict a process thread to never share a CPU core with another process
+ // thread outside of its security domain. Corresponds to
+ // PROCESS_CREATION_MITIGATION_POLICY2_RESTRICT_CORE_SHARING_ALWAYS_ON.
+ const MitigationFlags MITIGATION_RESTRICT_CORE_SHARING = 0x08000000;
  
 +// Begin Mozilla-added flags.
 +// Working down from the high bit to avoid conflict with new upstream flags.

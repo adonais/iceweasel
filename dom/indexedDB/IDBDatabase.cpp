@@ -21,6 +21,7 @@
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/Services.h"
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/BlobImpl.h"
 #include "mozilla/dom/DOMStringListBinding.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Exceptions.h"
@@ -729,19 +730,16 @@ PBackgroundIDBDatabaseFileChild* IDBDatabase::GetOrCreateFileActorForBlob(
   AssertIsOnOwningThread();
   MOZ_ASSERT(mBackgroundActor);
 
-  // We use the File's nsIWeakReference as the key to the table because
-  // a) it is unique per blob, b) it is reference-counted so that we can
-  // guarantee that it stays alive, and c) it doesn't hold the actual File
-  // alive.
-  nsWeakPtr weakRef = do_GetWeakReference(&aBlob);
-  MOZ_ASSERT(weakRef);
+  BlobImpl* blobImpl = aBlob.Impl();
+  MOZ_ASSERT(blobImpl);
+
+  // We use the BlobImpl as the key to the table because it uniquely identifies
+  // the underlying blob data. The key is stored as a ThreadSafeWeakPtr, so it
+  // is reference-counted and remains valid for lookups, but does not keep the
+  // BlobImpl alive.
 
   PBackgroundIDBDatabaseFileChild* actor = nullptr;
-
-  if (!mFileActors.Get(weakRef, &actor)) {
-    BlobImpl* blobImpl = aBlob.Impl();
-    MOZ_ASSERT(blobImpl);
-
+  if (!mFileActors.Get(blobImpl, &actor)) {
     IPCBlob ipcBlob;
     nsresult rv = IPCBlobUtils::Serialize(blobImpl, ipcBlob);
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -756,7 +754,7 @@ PBackgroundIDBDatabaseFileChild* IDBDatabase::GetOrCreateFileActorForBlob(
       return nullptr;
     }
 
-    mFileActors.InsertOrUpdate(weakRef, actor);
+    mFileActors.InsertOrUpdate(blobImpl, actor);
   }
 
   MOZ_ASSERT(actor);
@@ -814,18 +812,13 @@ void IDBDatabase::ExpireFileActors(bool aExpireAll) {
 
   if (mBackgroundActor && mFileActors.Count()) {
     for (auto iter = mFileActors.Iter(); !iter.Done(); iter.Next()) {
-      nsISupports* key = iter.Key();
+      RefPtr<BlobImpl> key = iter.Key();
       PBackgroundIDBDatabaseFileChild* actor = iter.Data();
-      MOZ_ASSERT(key);
       MOZ_ASSERT(actor);
 
       bool shouldExpire = aExpireAll;
       if (!shouldExpire) {
-        nsWeakPtr weakRef = do_QueryInterface(key);
-        MOZ_ASSERT(weakRef);
-
-        nsCOMPtr<nsISupports> referent = do_QueryReferent(weakRef);
-        shouldExpire = !referent;
+        shouldExpire = !key;
       }
 
       if (shouldExpire) {

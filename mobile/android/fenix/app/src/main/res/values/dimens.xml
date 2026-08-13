@@ -49,8 +49,6 @@
     <dimen name="section_header_height">48dp</dimen>
     <dimen name="dialog_edit_text_horizontal_padding">20dp</dimen>
 
-    <!--Quick Settings-->
-    <dimen name="quicksettings_item_height">48dp</dimen>
     <dimen name="tracking_protection_item_height">48dp</dimen>
     <dimen name="tracking_protection_item_margin_end">16dp</dimen>
     <dimen name="tracking_protection_item_margin_bottom">18dp</dimen>

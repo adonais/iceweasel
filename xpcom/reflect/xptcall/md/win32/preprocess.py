@@ -4,7 +4,6 @@
 
 import errno
 import os
-import shlex
 import subprocess
 import sys
 import tempfile
@@ -14,7 +13,7 @@ from mozfile import which
 
 
 def preprocess(out, asm_file):
-    cxx = shlex.split(buildconfig.substs["CXX"])
+    cxx = buildconfig.substs["CXX"]
     if not os.path.exists(cxx[0]):
         tool = cxx[0]
         cxx[0] = which(tool)

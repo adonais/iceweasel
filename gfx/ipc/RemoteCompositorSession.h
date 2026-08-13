@@ -5,8 +5,8 @@
 #define include_mozilla_gfx_ipc_RemoteCompositorSession_h
 
 #include "CompositorSession.h"
-#include "mozilla/gfx/Point.h"
 #include "Units.h"
+#include "mozilla/gfx/Point.h"
 
 class nsIWidget;
 

@@ -38,6 +38,8 @@ user_pref("dom.allow_scripts_to_close_windows", true);
 user_pref("dom.disable_open_during_load", false);
 user_pref("dom.disable_window_flip", true);
 user_pref("dom.disable_window_move_resize", true);
+// Enough so that they survive across the warm page reloads, and then some.
+user_pref("layout.css.stylesheet-cache.timeout_ms", 1000000);
 // required to prevent non-local access to push.services.mozilla.com
 user_pref("dom.push.connection.enabled", false);
 user_pref("extensions.autoDisableScopes", 10);

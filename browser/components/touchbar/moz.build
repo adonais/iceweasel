@@ -7,7 +7,7 @@ with Files("**"):
 
 BROWSER_CHROME_MANIFESTS += ["tests/browser/browser.toml"]
 
-EXTRA_JS_MODULES += [
+MOZ_SRC_FILES += [
     "MacTouchBar.sys.mjs",
 ]
 

@@ -4,10 +4,10 @@
 
 #include "HeadlessScreenHelper.h"
 
-#include "prenv.h"
-#include "mozilla/dom/DOMTypes.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/dom/DOMTypes.h"
 #include "nsTArray.h"
+#include "prenv.h"
 
 namespace mozilla {
 namespace widget {

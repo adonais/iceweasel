@@ -9,10 +9,10 @@
     <title>Bug 1019441: Marionette tests for AccessibleCaret (multiple lines)</title>
   </head>
   <body>
-    <div><textarea id="textarea2" style="width: 10em; height: 6em; overflow: auto;">First Line&#13;&#10;&#13;&#10;Second Line&#13;&#10;&#13;&#10;Third Line</textarea></div>
+    <div><textarea id="textarea2" style="width: 10em; height: 6em; overflow: auto;">First Line&#13;&#10;Second Line&#13;&#10;&#13;&#10;Third Line</textarea></div>
     <br>
-    <div style="width: 10em; height: 6em; overflow: auto;" id="contenteditable2" contenteditable="true">First Line<br><br>Second Line<br><br>Third Line</div>
+    <div style="width: 10em; height: 6em; overflow: auto;" id="contenteditable2" contenteditable="true">First Line<br>Second Line<br><br>Third Line</div>
     <br>
-    <div style="width: 10em; height: 6em; overflow: auto;" id="content2">First Line<br><br>Second Line<br><br>Third Line</div>
+    <div style="width: 10em; height: 6em; overflow: auto;" id="content2">First Line<br>Second Line<br><br>Third Line</div>
   </body>
 </html>

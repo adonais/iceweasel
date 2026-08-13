@@ -11,6 +11,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   processExtraData:
     "chrome://remote/content/webdriver-bidi/modules/Intercept.sys.mjs",
   TabManager: "chrome://remote/content/shared/TabManager.sys.mjs",
+  UserContextManager:
+    "chrome://remote/content/shared/UserContextManager.sys.mjs",
 });
 
 class LogModule extends Module {
@@ -27,6 +29,9 @@ class LogModule extends Module {
       // Resolve browsing context to a Navigable id.
       payload.source.context =
         lazy.NavigableManager.getIdForBrowsingContext(browsingContext);
+      // Resolve the user context id for the browsing context.
+      payload.source.userContext =
+        lazy.UserContextManager.getIdByBrowsingContext(browsingContext);
 
       payload = lazy.processExtraData(this.messageHandler.sessionId, payload);
     }

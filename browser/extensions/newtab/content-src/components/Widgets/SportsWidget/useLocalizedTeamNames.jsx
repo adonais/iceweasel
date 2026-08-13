@@ -5,17 +5,26 @@
 import { useEffect, useState } from "react";
 import { TEAM_REGION_CODES } from "./teamRegions.mjs";
 
-// FIFA team codes whose localized names must come from Fluent because
+// Team codes whose localized names must come from Fluent because
 // Intl.DisplayNames cannot produce a usable result: England and Scotland
 // have no ISO 3166-1 code, and Bosnia and Herzegovina / Ivory Coast /
 // DR Congo differ in wording from what UX wants to show.
+//
+// CDR is the non-standard key the production Merino API uses for
+// DR Congo; it aliases to COD's Fluent string via FLUENT_OVERRIDE_ALIASES
+// so we don't ship a duplicate string.
 export const FLUENT_OVERRIDE_KEYS = new Set([
   "BIH",
+  "CDR",
   "CIV",
   "COD",
   "ENG",
   "SCO",
 ]);
+
+const FLUENT_OVERRIDE_ALIASES = {
+  CDR: "COD",
+};
 
 /**
  * Resolves localized country names for `teams`. Returns `null` until
@@ -37,13 +46,16 @@ export function useLocalizedTeamNames(teams) {
       // The override strings ship as attribute-only Fluent messages
       // (`.label = ...`), so we use formatMessages and read the label
       // attribute rather than formatValues (which would return null).
-      const messages = overrideKeys.length
-        ? await document.l10n.formatMessages(
+      const messages =
+        (overrideKeys.length &&
+          (await document.l10n?.formatMessages?.(
             overrideKeys.map(key => ({
-              id: `newtab-sports-widget-team-name-label-${key.toLowerCase()}`,
+              id: `newtab-sports-widget-team-name-label-${(
+                FLUENT_OVERRIDE_ALIASES[key] || key
+              ).toLowerCase()}`,
             }))
-          )
-        : [];
+          ))) ||
+        [];
 
       if (cancelled) {
         return;

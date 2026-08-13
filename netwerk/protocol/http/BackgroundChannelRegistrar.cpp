@@ -4,10 +4,10 @@
 
 #include "BackgroundChannelRegistrar.h"
 
-#include "mozilla/ClearOnShutdown.h"
-#include "mozilla/StaticPtr.h"
 #include "HttpBackgroundChannelParent.h"
 #include "HttpChannelParent.h"
+#include "mozilla/ClearOnShutdown.h"
+#include "mozilla/StaticPtr.h"
 #include "nsXULAppAPI.h"
 
 namespace {

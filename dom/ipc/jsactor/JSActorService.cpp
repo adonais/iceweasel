@@ -32,6 +32,8 @@
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "nsIObserverService.h"
 
+mozilla::LazyLogModule gJSActorServiceLog("JSActorService");
+
 namespace mozilla::dom {
 namespace {
 StaticRefPtr<JSActorService> gJSActorService;
@@ -51,6 +53,18 @@ already_AddRefed<JSActorService> JSActorService::GetSingleton() {
 
   RefPtr<JSActorService> service = gJSActorService.get();
   return service.forget();
+}
+
+template <typename ActorOptionsT>
+static void LogActorRegistration(const char* aActorType,
+                                 const nsACString& aName,
+                                 const ActorOptionsT& aOptions) {
+  MOZ_LOG_FMT(gJSActorServiceLog, mozilla::LogLevel::Info,
+              "registered {} '{}': {{{}{}{} }}\n", aActorType,
+              PromiseFlatCString(aName).get(),
+              aOptions.mParent.WasPassed() ? " parent," : "",
+              aOptions.mChild.WasPassed() ? " child," : "",
+              aOptions.mRemoteTypes.WasPassed() ? " remoteTypes," : "");
 }
 
 void JSActorService::RegisterWindowActor(const nsACString& aName,
@@ -104,6 +118,8 @@ void JSActorService::RegisterWindowActor(const nsACString& aName,
   for (EventTarget* target : mChromeEventTargets) {
     proto->RegisterListenersFor(target);
   }
+
+  LogActorRegistration("JSWindowActor", aName, aOptions);
 
   // Add observers to the protocol.
   proto->AddObservers();
@@ -276,6 +292,8 @@ void JSActorService::RegisterProcessActor(const nsACString& aName,
     (void)cp->SendInitJSActorInfos(contentInfos, windowInfos);
   }
 
+  LogActorRegistration("JSProcessActor", aName, aOptions);
+
   // Add observers to the protocol.
   proto->AddObservers();
 }
@@ -335,18 +353,46 @@ JSActorService::GetJSWindowActorProtocol(const nsACString& aName) {
   return mWindowActorDescriptors.Get(aName);
 }
 
-bool JSActorProtocol::RemoteTypePrefixMatches(const nsACString& aRemoteType) {
-  if (mRemoteTypes.IsEmpty()) {
-    return true;
-  }
-
+static nsDependentCSubstring RemoteTypePrefixForMatch(
+    const nsACString& aRemoteType) {
   nsDependentCSubstring remoteTypePrefix(RemoteTypePrefix(aRemoteType));
-
   // The actual remote type for the parent process is the empty string, so
   // change it to something we can actually match.
   MOZ_ASSERT(!StringBeginsWith(remoteTypePrefix, "parent"_ns));
   if (aRemoteType == NOT_REMOTE_TYPE) {
     remoteTypePrefix.AssignLiteral("parent");
+  }
+  return remoteTypePrefix;
+}
+
+void JSActorProtocol::LogMatch(const nsACString& aRemoteType) {
+  if (!MOZ_LOG_TEST(gJSActorServiceLog, LogLevel::Info)) {
+    return;
+  }
+
+  nsDependentCSubstring remoteTypePrefix(RemoteTypePrefixForMatch(aRemoteType));
+  if (mLoggedRemoteTypes.Contains(remoteTypePrefix)) {
+    return;
+  }
+
+  mLoggedRemoteTypes.AppendElement(remoteTypePrefix);
+  MOZ_LOG_FMT(gJSActorServiceLog, LogLevel::Info,
+              "JSActor '{}' matched remoteType '{}'", mName.get(),
+              PromiseFlatCString(remoteTypePrefix).get());
+}
+
+bool JSActorProtocol::RemoteTypePrefixMatches(const nsACString& aRemoteType) {
+  nsDependentCSubstring remoteTypePrefix(RemoteTypePrefixForMatch(aRemoteType));
+
+  if (StaticPrefs::dom_jsipc_check_safeForUntrustedWebProcess() &&
+      !mSafeForUntrustedWebProcess &&
+      (StringBeginsWith(remoteTypePrefix, "web"_ns) ||
+       StringBeginsWith(remoteTypePrefix, "file"_ns))) {
+    return false;
+  }
+
+  if (mRemoteTypes.IsEmpty()) {
+    return true;
   }
 
   for (auto& remoteType : mRemoteTypes) {

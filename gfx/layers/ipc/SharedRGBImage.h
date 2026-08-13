@@ -10,6 +10,7 @@
 
 #include "ImageContainer.h"  // for ISharedImage, Image, etc
 #include "gfxTypes.h"
+#include "mozilla/DataMutex.h"  // for DataMutex
 #include "mozilla/RefPtr.h"     // for RefPtr
 #include "mozilla/gfx/Point.h"  // for IntSize
 #include "mozilla/gfx/Types.h"  // for SurfaceFormat
@@ -49,7 +50,7 @@ class SharedRGBImage : public Image {
   RefPtr<TextureClient> mTextureClient;
   RefPtr<ImageClient> mCompositable;
   RefPtr<TextureClientRecycleAllocator> mRecycleAllocator;
-  RefPtr<gfx::SourceSurface> mSourceSurface;
+  DataMutex<RefPtr<gfx::SourceSurface>> mSourceSurface;
 };
 
 }  // namespace layers

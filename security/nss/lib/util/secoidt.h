@@ -545,6 +545,8 @@ typedef enum {
     SEC_OID_ML_KEM_768 = 397,
     SEC_OID_ML_KEM_1024 = 398,
 
+    SEC_OID_CMS_AUTH_ENVELOPED_DATA = 399,
+
     SEC_OID_TOTAL
 } SECOidTag;
 

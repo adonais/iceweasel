@@ -1,7 +1,16 @@
-function run_test() {
+const testUtils = Cc[
+  "@mozilla.org/toolkit/crashreporter-test-utils;1"
+].getService(Ci.nsICrashReporterTestUtils);
+
+add_task(async function test_moz_crashreporter() {
   dump("INFO | test_crashreporter.js | Get crashreporter service.\n");
   var cr = Services.appinfo;
   Assert.ok(Services.appinfo.crashReporterEnabled);
+
+  // We don't export the PID on Windows, skip that particular check there.
+  if (AppConstants.platform != "win") {
+    Assert.greater(testUtils.getCrashHelperPid(), 0);
+  }
 
   try {
     cr.serverURL;
@@ -96,4 +105,53 @@ function run_test() {
   Assert.equal(cr.minidumpPath.path, cwd.path);
 
   Services.prefs.clearUserPref("toolkit.crash_annotation.testing_validation");
-}
+});
+
+add_task(async function test_moz_crashreporter_disable() {
+  if (!AppConstants.MOZ_BACKGROUNDTASKS) {
+    return;
+  }
+
+  const { Subprocess } = ChromeUtils.importESModule(
+    "resource://gre/modules/Subprocess.sys.mjs"
+  );
+
+  let bin = Services.dirsvc.get("GreBinD", Ci.nsIFile);
+  if (AppConstants.platform === "win") {
+    bin.append(AppConstants.MOZ_APP_NAME + ".exe");
+  } else {
+    bin.append(AppConstants.MOZ_APP_NAME);
+  }
+
+  let protocolHandler = Services.io
+    .getProtocolHandler("resource")
+    .QueryInterface(Ci.nsIResProtocolHandler);
+  let testingCommonURI = protocolHandler.getSubstitution("testing-common");
+
+  const proc = await Subprocess.call({
+    command: bin.path,
+    arguments: ["--backgroundtask", "crashReporterStatus"],
+    environment: {
+      MOZ_CRASHREPORTER_DISABLE: "1",
+      MOZ_CRASHREPORTER: "",
+      XPCSHELL_TESTING_MODULES_URI: testingCommonURI.spec,
+    },
+    environmentAppend: true,
+    stderr: "stdout",
+  });
+
+  let output = "";
+  let chunk;
+  while ((chunk = await proc.stdout.readString())) {
+    output += chunk;
+  }
+  await proc.wait();
+
+  const match = output.match(/CRASH_INFO=(\{.*\})/);
+  Assert.ok(match, `subprocess emitted CRASH_INFO (output: ${output})`);
+  const info = JSON.parse(match[1]);
+  Assert.equal(info.crashReporterEnabled, false);
+  Assert.equal(info.crashHelperPid, 0);
+  Assert.equal(info.serverURL.error, Cr.NS_ERROR_NOT_INITIALIZED);
+  Assert.equal(info.minidumpPath.error, Cr.NS_ERROR_NOT_INITIALIZED);
+});

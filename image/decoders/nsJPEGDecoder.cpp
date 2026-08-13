@@ -3,25 +3,21 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "ImageLogging.h"  // Must appear first.
-
 #include "nsJPEGDecoder.h"
 
 #include <cstdint>
 
-#include "imgFrame.h"
-#include "Orientation.h"
 #include "EXIF.h"
+#include "ImageLogging.h"  // Must appear first.
+#include "Orientation.h"
 #include "SurfacePipeFactory.h"
-
-#include "nspr.h"
-#include "nsCRT.h"
 #include "gfxColor.h"
-
-#include "jerror.h"
-
 #include "gfxPlatform.h"
+#include "imgFrame.h"
+#include "jerror.h"
 #include "mozilla/gfx/Types.h"
+#include "nsCRT.h"
+#include "nspr.h"
 
 static void cmyk_convert_bgra(uint32_t* aInput, uint32_t* aOutput,
                               int32_t aWidth, bool aIsInverted);

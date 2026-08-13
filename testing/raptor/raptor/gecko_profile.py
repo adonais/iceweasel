@@ -167,7 +167,7 @@ class GeckoProfile(RaptorProfiling):
             for profile_info in profiles:
                 profile_path = profile_info["path"]
 
-                LOG.info("Opening profile at %s" % profile_path)
+                LOG.info(f"Opening profile at {profile_path}")
                 try:
                     profile = self._open_profile_file(profile_path)
                 except FileNotFoundError:
@@ -177,7 +177,7 @@ class GeckoProfile(RaptorProfiling):
                         LOG.error("Profile not found.")
                     continue
 
-                LOG.info("Symbolicating profile from %s" % profile_path)
+                LOG.info(f"Symbolicating profile from {profile_path}")
                 symbolicated_profile = self._symbolicate_profile(
                     profile, missing_symbols_zip, symbolicator
                 )
@@ -196,7 +196,7 @@ class GeckoProfile(RaptorProfiling):
                         if test_type == "pageload"
                         else test_type
                     )
-                    folder_name = "%s-%s" % (self.test_config["name"], test_run_type)
+                    folder_name = f"{self.test_config['name']}-{test_run_type}"
                     iteration = str(os.path.split(profile_path)[-1].split("-")[-1])
                     if test_type == "pageload" and profile_info["type"] == "cold":
                         iteration_type = "browser-cycle"
@@ -208,8 +208,8 @@ class GeckoProfile(RaptorProfiling):
                     path_in_zip = os.path.join(folder_name, profile_name)
 
                     LOG.info(
-                        "Adding profile %s to archive %s as %s"
-                        % (profile_path, self.profile_arcname, path_in_zip)
+                        f"Adding profile {profile_path} to archive "
+                        f"{self.profile_arcname} as {path_in_zip}"
                     )
                     arc.writestr(
                         path_in_zip,
@@ -219,8 +219,8 @@ class GeckoProfile(RaptorProfiling):
                     )
                 except Exception:
                     LOG.exception(
-                        "Failed to add symbolicated profile %s to archive %s"
-                        % (profile_path, self.profile_arcname)
+                        f"Failed to add symbolicated profile {profile_path} to "
+                        f"archive {self.profile_arcname}"
                     )
                     raise
 
@@ -232,7 +232,7 @@ class GeckoProfile(RaptorProfiling):
         """
         Clean up temp folders created with the instance creation.
         """
-        mozfile.remove(self.temp_profile_dir)
+        super().clean()
         if self.cleanup:
             for symbol_path in self.symbol_paths.values():
                 mozfile.remove(symbol_path)

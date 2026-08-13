@@ -10,9 +10,9 @@
 
 #include "GLTypes.h"
 #include "mozilla/HashFunctions.h"
+#include "mozilla/TimeStamp.h"
 #include "mozilla/layers/ScreenshotGrabber.h"
 #include "mozilla/webrender/RenderCompositor.h"
-#include "mozilla/TimeStamp.h"
 
 namespace mozilla {
 

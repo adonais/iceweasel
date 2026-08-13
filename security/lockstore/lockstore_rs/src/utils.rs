@@ -26,5 +26,5 @@ pub fn value_to_bytes(value: &Value) -> Result<Vec<u8>, LockstoreError> {
     // Decode from base64
     base64::engine::general_purpose::STANDARD
         .decode(base64_str)
-        .map_err(|e| LockstoreError::Serialization(format!("Failed to decode base64: {}", e)))
+        .map_err(|e| LockstoreError::Serialization(format!("Failed to decode base64: {e}")))
 }

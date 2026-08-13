@@ -8,9 +8,9 @@
 #include <utility>
 
 #include "CFTypeRefPtr.h"
+#include "GLBlitHelper.h"
 #include "gfxPlatform.h"
 #include "gfxUtils.h"
-#include "GLBlitHelper.h"
 #ifdef XP_MACOSX
 #  include "GLContextCGL.h"
 #else
@@ -18,11 +18,11 @@
 #endif
 #include "GLContextProvider.h"
 #include "MozFramebuffer.h"
+#include "NativeLayerCA.h"
+#include "ScopedGLHelpers.h"
 #include "mozilla/gfx/Swizzle.h"
 #include "mozilla/glean/GfxMetrics.h"
 #include "mozilla/webrender/RenderMacIOSurfaceTextureHost.h"
-#include "NativeLayerCA.h"
-#include "ScopedGLHelpers.h"
 
 namespace mozilla {
 namespace layers {

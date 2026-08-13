@@ -7,6 +7,7 @@
 #include "ChildIterator.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/DOMRect.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/dom/XULTreeElementBinding.h"

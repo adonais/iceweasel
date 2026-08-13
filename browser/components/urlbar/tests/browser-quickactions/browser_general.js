@@ -25,7 +25,7 @@ const DUMMY_PAGE =
 let testActionCalled = 0;
 
 const assertAction = async name => {
-  await BrowserTestUtils.waitForCondition(() =>
+  await TestUtils.waitForCondition(() =>
     window.document.querySelector(`.urlbarView-action-btn[data-action=${name}]`)
   );
   Assert.ok(true, `We found action "${name}`);
@@ -55,7 +55,7 @@ async function enterActionsMode() {
   });
   EventUtils.synthesizeKey("KEY_Tab");
   await UrlbarTestUtils.assertSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.ACTIONS,
+    source: UrlbarShared.RESULT_SOURCE.ACTIONS,
     entry: "keywordoffer",
     restrictType: "keyword",
   });
@@ -118,7 +118,12 @@ add_task(async function basic() {
   EventUtils.synthesizeKey("KEY_Tab", {}, window);
   assertAccessibilityWhenSelected("testaction");
   EventUtils.synthesizeKey("KEY_Enter", {}, window);
-  Assert.equal(testActionCalled, 1, "Test action was called");
+  // The action's onPick runs parent-side, so on the actor message path it fires
+  // asynchronously after the pick rather than synchronously.
+  await TestUtils.waitForCondition(
+    () => testActionCalled == 1,
+    "Test action was called"
+  );
 });
 
 add_task(async function match_in_phrase() {
@@ -205,7 +210,10 @@ add_task(async function testAfterTabSwitch() {
   EventUtils.synthesizeKey("KEY_Tab", {}, window);
   assertAccessibilityWhenSelected("testaction");
   EventUtils.synthesizeKey("KEY_Enter", {}, window);
-  Assert.equal(testActionCalled, 2, "Test action was called");
+  await TestUtils.waitForCondition(
+    () => testActionCalled == 2,
+    "Test action was called"
+  );
 
   BrowserTestUtils.removeTab(tab2);
 });
@@ -316,7 +324,7 @@ add_task(async function test_update_in_actions_mode() {
       window,
       value: "update",
     });
-    let updateButton = await BrowserTestUtils.waitForCondition(() =>
+    let updateButton = await TestUtils.waitForCondition(() =>
       window.document.querySelector(
         `.urlbarView-action-btn[data-action=update]`
       )
@@ -333,7 +341,7 @@ add_task(async function test_update_in_actions_mode() {
       window,
       value: "update",
     });
-    updateButton = await BrowserTestUtils.waitForCondition(() =>
+    updateButton = await TestUtils.waitForCondition(() =>
       window.document.querySelector(
         `.urlbarView-action-btn[data-action=update]`
       )
@@ -398,7 +406,7 @@ async function clickQuickActionOneoffButton() {
 
   EventUtils.synthesizeMouseAtCenter(oneOffButton, {}, window);
   await UrlbarTestUtils.assertSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.ACTIONS,
+    source: UrlbarShared.RESULT_SOURCE.ACTIONS,
     entry: "oneoff",
   });
 }
@@ -418,7 +426,7 @@ add_task(async function test_searchMode() {
   EventUtils.synthesizeKey("KEY_Tab");
 
   await UrlbarTestUtils.assertSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.ACTIONS,
+    source: UrlbarShared.RESULT_SOURCE.ACTIONS,
     entry: "keywordoffer",
     restrictType: "keyword",
   });

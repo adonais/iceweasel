@@ -244,7 +244,7 @@ export async function doTask(defaultAgent, force) {
     let winTaskbar = Cc["@mozilla.org/windows-taskbar;1"].getService(
       Ci.nsIWinTaskbar
     );
-    let pinned = await shellService.isCurrentAppPinnedToTaskbarAsync(
+    let pinned = await shellService.isCurrentAppPinnedToTaskbar(
       winTaskbar.defaultGroupId
     );
     isTaskbarPinned = pinned ? "IsPinned" : "NotPinned";

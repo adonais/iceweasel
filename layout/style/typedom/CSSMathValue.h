@@ -5,6 +5,7 @@
 #ifndef LAYOUT_STYLE_TYPEDOM_CSSMATHVALUE_H_
 #define LAYOUT_STYLE_TYPEDOM_CSSMATHVALUE_H_
 
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/CSSMathClampBindingFwd.h"
 #include "mozilla/dom/CSSMathInvertBindingFwd.h"
 #include "mozilla/dom/CSSMathMaxBindingFwd.h"
@@ -22,6 +23,8 @@ class nsISupports;
 namespace mozilla {
 
 struct CSSPropertyId;
+template <typename T>
+class MovingNotNull;
 struct StyleMathValue;
 
 namespace dom {
@@ -41,6 +44,10 @@ class CSSMathValue : public CSSNumericValue {
   };
 
   CSSMathValue(nsCOMPtr<nsISupports> aParent, MathValueType aMathValueType);
+
+  CSSMathValue(nsCOMPtr<nsISupports> aParent,
+               MovingNotNull<UniquePtr<StyleNumericType>> aNumericType,
+               MathValueType aMathValueType);
 
   static RefPtr<CSSMathValue> Create(nsCOMPtr<nsISupports> aParent,
                                      const StyleMathValue& aMathValue);

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "absl/time/time.h"
+
 #include "absl/time/civil_time.h"
 
 #if defined(_MSC_VER)
@@ -91,7 +92,7 @@ MATCHER_P(TimevalMatcher, tv, "") {
 }
 
 TEST(Time, ConstExpr) {
-  static_assert(std::is_trivially_destructible<absl::Time>::value,
+  static_assert(std::is_trivially_destructible_v<absl::Time>,
                 "Time is documented as being trivially destructible");
   constexpr absl::Time t0 = absl::UnixEpoch();
   static_assert(t0 == absl::UnixEpoch(), "UnixEpoch");

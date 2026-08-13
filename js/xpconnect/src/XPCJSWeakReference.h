@@ -5,8 +5,8 @@
 #ifndef xpcjsweakreference_h_
 #define xpcjsweakreference_h_
 
-#include "xpcIJSWeakReference.h"
 #include "nsIWeakReferenceUtils.h"
+#include "xpcIJSWeakReference.h"
 
 class xpcJSWeakReference final : public xpcIJSWeakReference {
   ~xpcJSWeakReference() = default;

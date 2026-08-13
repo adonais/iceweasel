@@ -32,7 +32,7 @@ add_task(async function test_tabicon_after_bg_tab_crash() {
       // Because there is debounce logic in FaviconLoader.sys.mjs to reduce the
       // favicon loads, we have to wait some time before checking that icon was
       // stored properly.
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => {
           return gBrowser.getIcon() != null;
         },

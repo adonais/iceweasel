@@ -48,11 +48,23 @@ struct CallbackInfo {
 class AudioClock {
  public:
   explicit AudioClock(uint32_t aInRate);
+  // Out-of-line so FrameHistory only needs to be a complete type in
+  // AudioStream.cpp; this lets other translation units construct and destroy an
+  // AudioClock without FrameHistory's definition, e.g. gtest.
+  ~AudioClock();
 
   // Update the number of samples that has been written in the audio backend.
   // Called on the audio thread only.
   void UpdateFrameHistory(uint32_t aServiced, uint32_t aUnderrun,
                           bool aAudioThreadChanged);
+
+  // Rebase the clock for a stream reused across a seek so the reported playback
+  // position resumes from zero. |aBaseOffset| is the current raw engine frame
+  // count. Safe to call while the audio callback is still running (the stream
+  // is reused, not stopped): on macOS it only touches owner/consumer-thread
+  // state, elsewhere it takes mMutex. Must be called on the same
+  // (owner/consumer) thread as GetPosition.
+  void Rebase(int64_t aBaseOffset);
 
   /**
    * @param aFrames The playback position in frames of the audio engine.
@@ -191,6 +203,38 @@ class AudioBufferWriter : public AudioBufferCursor {
   using AudioBufferCursor::Available;
 };
 
+// AudioStream owns a single cubeb output stream and runs a small state machine
+// over the cubeb lifetime (see the StreamState enum):
+//
+//   INITIALIZED --Start()--> STARTED <==Resume()/Pause()==> STOPPED
+//        |                       |                             |
+//        | Start() fails         | cubeb stop/start fails      |
+//        |                       | or StateCallback(ERROR)     |
+//        v                       v                             v
+//        +---------------------> ERRORED <-------------------- +
+//
+//   STARTED/STOPPED --StateCallback(end-of-stream)--> DRAINED
+//   any state ---------------ShutDown()-------------> SHUTDOWN  (terminal)
+//
+// DRAINED and ERRORED are terminal for playback; only ShutDown() leaves them.
+// SHUTDOWN is final.
+//
+// AudioStream runs in one of two modes, the standard mode and the keep-running
+// mode, both exercised in normal playback.
+//
+// In the standard mode mState mirrors the physical cubeb stream: Pause() calls
+// cubeb_stream_stop, Resume() calls cubeb_stream_start, and re-pausing an
+// already stopped stream (or re-resuming an already started one) is disallowed.
+//
+// The keep-running mode, toggled by SetKeepRunningMode(), reuses the stream
+// across a seek instead of destroying it. When it is on and cubeb is physically
+// running, Pause()/Resume() update just the STARTED/STOPPED value and do NOT
+// stop or start cubeb, so mState becomes a logical view that can differ from
+// the still-running physical stream, and re-entering the same state is a
+// harmless no-op. If cubeb is not running, pause/resume fall back to the
+// standard stop/start path. Skipping the backend calls is safe because playback
+// is driven by the ring buffer and the frame-counter clock, never by mState.
+//
 // Access to a single instance of this class must be synchronized by
 // callers, or made from a single thread.  One exception is that access to
 // GetPosition, GetPositionInFrames, SetVolume, and Get{Rate,Channels},
@@ -240,6 +284,21 @@ class AudioStream final {
 
   // Closes the stream. All future use of the stream is an error.
   void ShutDown();
+
+  // Turn the keep-running mode on or off. When on, a pause across a seek keeps
+  // the audio stream alive and reusable instead of tearing it down.
+  void SetKeepRunningMode(bool aKeepRunning);
+
+  // Rebase the clock of the still-running reused stream to its current
+  // position, so the reported playback time resumes from the seek target. Does
+  // not touch the ended promise.
+  void RebaseLive();
+
+  // Re-arm the ended promise for a reused stream: resolve any outstanding one
+  // and return a fresh promise, or a rejected one if the stream errored while
+  // it stayed running. Kept separate from RebaseLive() because re-arming the
+  // end signal and rebasing the clock are unrelated concerns.
+  RefPtr<MediaSink::EndedPromise> ReinitEndedPromise();
 
   // Set the current volume of the audio playback. This is a value from
   // 0 (meaning muted) to 1 (meaning full volume).  Thread-safe.
@@ -372,6 +431,16 @@ class AudioStream final {
   // Audio thread only
   bool mAudioThreadChanged = false;
   Atomic<bool> mCallbacksStarted;
+
+  // The keep-running mode. When on, a pause across a seek leaves the cubeb
+  // stream running and pause/resume only track the logical playing state, so
+  // the stream can be reused instead of being torn down and recreated.
+  Atomic<bool> mKeepRunning{false};
+
+  // Whether the cubeb stream is currently physically running, i.e. started and
+  // not yet stopped. Only read and written on the owner thread, so it needs no
+  // synchronization.
+  bool mCubebStarted = false;
 };
 
 }  // namespace mozilla

@@ -39,9 +39,11 @@ are listed in the order they fire.
 | `browser-window-load-before-sessionstore-init` | During the window `load` event, before SessionStore initializes the window. For components that must be ready before session restore runs. |
 | `browser-window-load` | During the window `load` event, after SessionStore has initialized the window. |
 | `browser-window-delayed-startup` | After the window's first paint, for code that can run after the window is visible. |
+| `browser-window-sessionstore-initialized` | Fired from the window's delayed startup once SessionStore is initialized. |
 | `browser-window-location-change` | Fires on every `XULBrowserWindow.onLocationChange` for the window. |
 | `browser-window-unload-begin` | At the very start of window unload, before checking whether the window finished loading. Runs even if the window never fully loaded. |
 | `browser-window-unload` | During window unload, before `Tabbrowser` is destroyed. Preferred entry point for window unload cleanup. |
+| `browser-window-unload-delayed-startup` | During window unload, before `Tabbrowser` is destroyed. Teardown counterpart to `browser-window-delayed-startup`; only fires if the window's delayed startup actually ran. |
 | `browser-window-unload-tabbrowser` | During window unload, destroys the `Tabbrowser`. **Internal category - do not add consumers here.** |
 | `browser-window-final-unload` | During window unload, after `Tabbrowser` is destroyed. |
 

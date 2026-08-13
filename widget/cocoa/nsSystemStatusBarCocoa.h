@@ -6,8 +6,8 @@
 #define nsSystemStatusBarCocoa_h_
 
 #include "mozilla/RefPtr.h"
-#include "nsISystemStatusBar.h"
 #include "nsClassHashtable.h"
+#include "nsISystemStatusBar.h"
 
 namespace mozilla::widget {
 class NativeMenuMac;

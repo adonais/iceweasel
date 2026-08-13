@@ -127,6 +127,16 @@ async function popupShown() {
   startTest();
 }
 
+// The menu is anchored at the vertical center of the screen: it opens downward
+// or flips upward when it wouldn't fit below. Accept either.
+function isAnchoredAtScreenCenter(rect, marginTop, marginBottom, label) {
+  var anchor = Math.floor(screen.height / 2);
+  var top = Math.round(rect.top - marginTop) + gScreenY;
+  var bottom = Math.round(rect.bottom - marginBottom) + gScreenY;
+  ok(top == anchor || bottom == anchor,
+     `${label} top (anchor=${anchor}, top=${top}, bottom=${bottom})`);
+}
+
 async function startTest()
 {
   if (gTests[gTestIndex] == "menu movement")
@@ -146,11 +156,8 @@ async function startTest()
 
   info(`${gTests[gTestIndex]}: ${JSON.stringify(rect)} | ${screen.width}x${screen.height} | ${gScreenY}`);
   if (gTestIndex == 0) {
-    // the popup should be in the center of the screen
-    // note that if the height is odd, the y-offset will have been rounded
-    // down when we pass the fractional value to openPopupAtScreen above.
-    is(Math.round(rect.top - marginTop) + gScreenY, Math.floor(screen.height / 2),
-                              gTests[gTestIndex] + " top");
+    // the popup should be centered vertically on the screen
+    isAnchoredAtScreenCenter(rect, marginTop, marginBottom, gTests[gTestIndex]);
     ok(Math.round(rect.bottom - marginBottom) + gScreenY < screen.height,
                   gTests[gTestIndex] + " bottom");
     ok(!gOverflowed && !gUnderflowed, gTests[gTestIndex] + " overflow")
@@ -193,10 +200,7 @@ async function startTest()
     }
   }
   else if (gTestIndex == 4) {
-    // note that if the height is odd, the y-offset will have been rounded
-    // down when we pass the fractional value to openPopupAtScreen above.
-    is(Math.round(rect.top - marginTop) + gScreenY, Math.floor(screen.height / 2),
-                              gTests[gTestIndex] + " top");
+    isAnchoredAtScreenCenter(rect, marginTop, marginBottom, gTests[gTestIndex]);
     ok(Math.round(rect.bottom) + gScreenY < screen.height,
                                 gTests[gTestIndex] + " bottom");
     ok(!gOverflowed && gUnderflowed, gTests[gTestIndex] + " overflow");
@@ -443,7 +447,8 @@ function platformIsMac()
 
 function canOverlapOSChrome()
 {
-  return navigator.platform.startsWith("Win");
+  // Bug 1251981: no platform allows popups to overlap OS chrome anymore
+  return false;
 }
 
 window.arguments[0].SimpleTest.waitForFocus(runTests, window);

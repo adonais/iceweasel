@@ -51,14 +51,14 @@ add_task(async function test_section_hidden_when_feature_gate_disabled() {
     { gBrowser, url: "about:preferences#connectionSecurity" },
     async function (browser) {
       let doc = browser.contentDocument;
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => doc.querySelector(GROUP_SELECTOR),
         "Wait for setting group"
       );
       let settingGroup = doc.querySelector(GROUP_SELECTOR);
 
       // The visibility logic is asynchronous for Lit-based setting groups.
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => BrowserTestUtils.isHidden(settingGroup),
         "Wait for setting group to be hidden"
       );
@@ -88,13 +88,13 @@ add_task(async function test_section_shown_when_feature_gate_enabled() {
     { gBrowser, url: "about:preferences#connectionSecurity" },
     async function (browser) {
       let doc = browser.contentDocument;
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => doc.querySelector(GROUP_SELECTOR),
         "Wait for setting group"
       );
       let settingGroup = doc.querySelector(GROUP_SELECTOR);
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => BrowserTestUtils.isVisible(settingGroup),
         "Wait for setting group to be visible"
       );
@@ -103,7 +103,7 @@ add_task(async function test_section_shown_when_feature_gate_enabled() {
         "Privacy panel setting group is visible when featureGate is true"
       );
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => doc.getElementById(CHECKBOX_ID),
         "Wait for checkbox"
       );
@@ -189,7 +189,7 @@ add_task(async function test_checkbox_reflects_pref() {
       { gBrowser, url: "about:preferences#connectionSecurity" },
       async function (browser) {
         let doc = browser.contentDocument;
-        await BrowserTestUtils.waitForCondition(
+        await TestUtils.waitForCondition(
           () => doc.getElementById(CHECKBOX_ID),
           "Wait for checkbox"
         );
@@ -220,7 +220,7 @@ add_task(
       { gBrowser, url: "about:preferences#connectionSecurity" },
       async function (browser) {
         let doc = browser.contentDocument;
-        await BrowserTestUtils.waitForCondition(
+        await TestUtils.waitForCondition(
           () => doc.getElementById(CHECKBOX_ID),
           "Wait for checkbox"
         );
@@ -250,7 +250,7 @@ add_task(async function test_hidden_when_both_gates_disabled() {
     { gBrowser, url: "about:preferences#connectionSecurity" },
     async function (browser) {
       let doc = browser.contentDocument;
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => doc.getElementById(CHECKBOX_ID),
         "Wait for checkbox"
       );
@@ -279,7 +279,7 @@ add_task(async function test_visibility_after_global_gate_toggle() {
     { gBrowser, url: "about:preferences#connectionSecurity" },
     async function (browser) {
       let doc = browser.contentDocument;
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => doc.getElementById(CHECKBOX_ID),
         "Wait for checkbox"
       );
@@ -294,7 +294,7 @@ add_task(async function test_visibility_after_global_gate_toggle() {
       await BrowserTestUtils.browserLoaded(browser);
 
       doc = browser.contentDocument;
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => doc.getElementById(CHECKBOX_ID),
         "Wait for checkbox after reload"
       );

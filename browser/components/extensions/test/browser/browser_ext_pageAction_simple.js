@@ -154,7 +154,7 @@ add_task(async function test_pageAction_icon_on_subframe_navigation() {
     makeWidgetId(extension.id)
   );
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return document.getElementById(pageActionId);
   }, "pageAction is initially visible");
 
@@ -178,7 +178,7 @@ add_task(async function test_pageAction_icon_on_subframe_navigation() {
     }
   );
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return document.getElementById(pageActionId);
   }, "pageAction should be visible when a subframe is created");
 
@@ -203,7 +203,7 @@ add_task(async function test_pageAction_icon_on_subframe_navigation() {
 
   info("Subframe location changed");
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return document.getElementById(pageActionId);
   }, "pageAction should be visible after a subframe navigation");
 

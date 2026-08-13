@@ -28,6 +28,14 @@ prefs = [
 
 ["browser_translations_full_page_intersection_find_bar_multi_tab.js"]
 
+["browser_translations_full_page_intersection_iframe_content_eager.js"]
+
+["browser_translations_full_page_intersection_iframe_find_bar.js"]
+
+["browser_translations_full_page_intersection_iframe_lazy.js"]
+
+["browser_translations_full_page_intersection_iframe_mutations_lazy.js"]
+
 ["browser_translations_full_page_intersection_lazy.js"]
 
 ["browser_translations_full_page_intersection_mutations_content_eager.js"]

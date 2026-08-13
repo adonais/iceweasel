@@ -402,7 +402,7 @@ async function runTest(options) {
       );
     }
 
-    await BrowserTestUtils.waitForCondition(async () => {
+    await TestUtils.waitForCondition(async () => {
       return button.pressed == !enabled;
     }, "button changed state");
   }
@@ -444,7 +444,7 @@ async function runTest(options) {
       "permission was toggled"
     );
 
-    await BrowserTestUtils.waitForCondition(async () => {
+    await TestUtils.waitForCondition(async () => {
       return button.pressed == !enabled;
     }, "button changed state");
   }

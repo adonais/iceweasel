@@ -65,6 +65,8 @@
 #include "MediaStreamTrack.h"
 #include "RTCDataChannel.h"
 #include "RTCDtlsTransport.h"
+#include "RTCIceCandidate.h"
+#include "RTCIceCandidatePair.h"
 #include "RTCSctpTransport.h"
 #include "VideoStreamTrack.h"
 #include "WebrtcGlobalInformation.h"
@@ -1780,15 +1782,25 @@ PeerConnectionImpl::AddIceCandidate(
     const dom::Nullable<unsigned short>& aLevel) {
   PC_AUTO_ENTER_API_CALL(true);
 
-  if (mForceIceTcp &&
-      std::string::npos != std::string(aCandidate).find(" UDP ")) {
-    CSFLogError(LOGTAG, "Blocking remote UDP candidate: %s", aCandidate);
+  // TODO(https://bugzilla.mozilla.org/show_bug.cgi?id=2036944)
+  // Tighten this up.
+
+  // We may end up storing an RTCIceCandidate for this when we implement
+  // RTCIceTransport.getRemoteCandidates(), in which case it will handle
+  // stripping the "a=" off.
+  std::string candidate(aCandidate);
+  if (candidate.find("a=") == 0) {
+    candidate = candidate.substr(2);
+  }
+
+  if (mForceIceTcp && std::string::npos != candidate.find(" UDP ")) {
+    CSFLogError(LOGTAG, "Blocking remote UDP candidate: %s", candidate.c_str());
     return NS_OK;
   }
 
   STAMP_TIMECARD(mTimeCard, "Add Ice Candidate");
 
-  CSFLogDebug(LOGTAG, "AddIceCandidate: %s %s", aCandidate, aUfrag);
+  CSFLogDebug(LOGTAG, "AddIceCandidate: %s %s", candidate.c_str(), aUfrag);
 
   std::string transportId;
   Maybe<unsigned short> level;
@@ -1800,15 +1812,15 @@ PeerConnectionImpl::AddIceCandidate(
       "AddIceCandidate is chained, which means it should never "
       "run while an sRD/sLD is in progress");
   JsepSession::Result result = mJsepSession->AddRemoteIceCandidate(
-      aCandidate, aMid, level, aUfrag, &transportId);
+      candidate, aMid, level, aUfrag, &transportId);
 
   if (!result.mError.isSome()) {
     // We do not bother the MediaTransportHandler about this before
     // offer/answer concludes.  Once offer/answer concludes, we will extract
     // these candidates from the remote SDP.
     if (mSignalingState == RTCSignalingState::Stable && !transportId.empty()) {
-      AddIceCandidate(aCandidate, transportId, aUfrag);
-      mRawTrickledCandidates.push_back(aCandidate);
+      AddIceCandidate(candidate, transportId, aUfrag);
+      mRawTrickledCandidates.push_back(candidate);
     }
     // Spec says we queue a task for these updates
     GetMainThreadSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
@@ -1829,7 +1841,7 @@ PeerConnectionImpl::AddIceCandidate(
     CSFLogError(LOGTAG,
                 "Failed to incorporate remote candidate into SDP:"
                 " res = %u, candidate = %s, level = %i, error = %s",
-                static_cast<unsigned>(*result.mError), aCandidate,
+                static_cast<unsigned>(*result.mError), candidate.c_str(),
                 level.valueOr(-1), errorString.c_str());
 
     GetMainThreadSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
@@ -1904,7 +1916,8 @@ nsresult PeerConnectionImpl::OnAlpnNegotiated(const std::string& aAlpn,
 
 void PeerConnectionImpl::OnDtlsStateChange(
     const std::string& aTransportId, TransportLayer::State aState,
-    const nsTArray<nsTArray<uint8_t>>& aRemoteCerts) {
+    const nsTArray<nsTArray<uint8_t>>& aRemoteCerts,
+    Maybe<dom::RTCErrorParams> aError) {
   MOZ_ASSERT(NS_IsMainThread(), "Wrong thread");
   RefPtr<PeerConnectionImpl> kungFuDeathGrip(this);
   if (IsClosed()) {
@@ -1923,7 +1936,7 @@ void PeerConnectionImpl::OnDtlsStateChange(
   for (const auto& cert : aRemoteCerts) {
     certsCopy.AppendElement(cert.Clone());
   }
-  dtlsTransport->UpdateState(aState, std::move(certsCopy));
+  dtlsTransport->UpdateState(aState, std::move(certsCopy), aError);
   // Whenever the state of an RTCDtlsTransport changes or when the [[IsClosed]]
   // slot turns true, the user agent MUST update the connection state by
   // queueing a task that runs the following steps:
@@ -1947,8 +1960,9 @@ void PeerConnectionImpl::OnDtlsStateChange(
 }
 
 void PeerConnectionImpl::OnRtcpStateChange(const std::string& aTransportId,
-                                           TransportLayer::State aState) {
-  OnDtlsStateChange(aTransportId, aState, {});
+                                           TransportLayer::State aState,
+                                           Maybe<dom::RTCErrorParams> aError) {
+  OnDtlsStateChange(aTransportId, aState, {}, aError);
 }
 
 RTCPeerConnectionState PeerConnectionImpl::GetNewConnectionState() const {
@@ -2440,6 +2454,7 @@ PeerConnectionImpl::Close() {
   }
 
   mSignalingState = RTCSignalingState::Closed;
+  mIceConnectionState = RTCIceConnectionState::Closed;
   mConnectionState = RTCPeerConnectionState::Closed;
 
   if (!mTransportHandler) {
@@ -3360,15 +3375,18 @@ void PeerConnectionImpl::SendLocalIceCandidateToContent(
                               ObString(ufrag.c_str()), rv);
 }
 
+// Implements the steps to "change the selected candidate pair and state".
+// https://w3c.github.io/webrtc-pc/#dfn-change-the-selected-candidate-pair-and-state
 void PeerConnectionImpl::IceConnectionStateChange(
-    const std::string& aTransportId, dom::RTCIceTransportState domState) {
+    const std::string& aTransportId, dom::RTCIceTransportState domState,
+    const Maybe<dom::IceCandidateAttributePair>& aSelectedPair) {
   MOZ_ASSERT(NS_IsMainThread(), "Wrong thread");
 
-  // Let connection be the RTCPeerConnection object associated with this ICE
-  // Agent.
+  // 1. Let connection be the RTCPeerConnection object associated with this
+  //    ICE Agent.
   RefPtr<PeerConnectionImpl> connection(this);
 
-  // If connection.[[IsClosed]] is true, abort these steps.
+  // 2. If connection.[[IsClosed]] is true, abort these steps.
   if (IsClosed()) {
     return;
   }
@@ -3376,7 +3394,7 @@ void PeerConnectionImpl::IceConnectionStateChange(
   CSFLogDebug(LOGTAG, "IceConnectionStateChange: %s %d (%p)",
               aTransportId.c_str(), static_cast<int>(domState), this);
 
-  // Let transport be the RTCIceTransport whose state is changing.
+  // 3. Let transport be the RTCIceTransport whose state is changing.
   nsCString key(aTransportId.data(), aTransportId.size());
   RefPtr<RTCDtlsTransport> dtlsTransport =
       mTransportIdToRTCDtlsTransport.Get(key);
@@ -3389,53 +3407,91 @@ void PeerConnectionImpl::IceConnectionStateChange(
     mTransportIdToRTCDtlsTransport.Remove(key);
   }
 
-  // Let selectedCandidatePairChanged be false.
-  // TODO(bug 1307994)
+  // 4. Let selectedCandidatePairChanged be false.
+  bool selectedCandidatePairChanged = false;
 
-  // Let transportIceConnectionStateChanged be false.
+  // 5. Let transportIceConnectionStateChanged be false.
   bool transportIceConnectionStateChanged = false;
 
-  // Let connectionIceConnectionStateChanged be false.
+  // 6. Let connectionIceConnectionStateChanged be false.
   bool connectionIceConnectionStateChanged = false;
 
-  // Let connectionStateChanged be false.
+  // 7. Let connectionStateChanged be false.
   bool connectionStateChanged = false;
 
-  if (transport->State() == domState) {
-    return;
+  // 8. If transport's selected candidate pair was changed, run the
+  //    following steps:
+  RefPtr<RTCIceCandidatePair> oldPair = transport->GetSelectedCandidatePair();
+  bool noChange = false;
+  if (!oldPair && aSelectedPair.isNothing()) {
+    noChange = true;
+  } else if (oldPair && aSelectedPair.isSome()) {
+    // Compare against the internal (un-redacted) candidate strings.
+    noChange = oldPair->Local()->CandidateInternal().EqualsASCII(
+                   aSelectedPair->local().get()) &&
+               oldPair->Remote()->CandidateInternal().EqualsASCII(
+                   aSelectedPair->remote().get());
   }
 
-  // If transport's RTCIceTransportState was changed, run the following steps:
+  if (!noChange) {
+    // 8.1. Let newCandidatePair be the result of creating an
+    //      RTCIceCandidatePair with local and remote, representing the
+    //      local and remote candidates of the indicated pair if one is
+    //      selected, and null otherwise.
+    RefPtr<RTCIceCandidatePair> newCandidatePair;
+    if (aSelectedPair.isSome()) {
+      nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(mWindow);
+      RefPtr<RTCIceCandidate> local =
+          RTCIceCandidate::FromAttribute(global, aSelectedPair->local());
+      RefPtr<RTCIceCandidate> remote = RTCIceCandidate::FromAttribute(
+          global, aSelectedPair->remote(), /*aRemote=*/true);
+      newCandidatePair = new RTCIceCandidatePair(global, local, remote);
+    }
 
-  // Set transport.[[IceTransportState]] to the new indicated
-  // RTCIceTransportState.
-  transport->SetState(domState);
+    // 8.2. Set transport.[[SelectedCandidatePair]] to newCandidatePair.
+    transport->SetSelectedCandidatePair(newCandidatePair);
 
-  // Set transportIceConnectionStateChanged to true.
-  transportIceConnectionStateChanged = true;
-
-  // Set connection.[[IceConnectionState]] to the value of deriving a new state
-  // value as described by the RTCIceConnectionState enum.
-  if (UpdateIceConnectionState()) {
-    // If connection.[[IceConnectionState]] changed in the previous step, set
-    // connectionIceConnectionStateChanged to true.
-    connectionIceConnectionStateChanged = true;
+    // 8.3. Set selectedCandidatePairChanged to true.
+    selectedCandidatePairChanged = true;
   }
 
-  // Set connection.[[ConnectionState]] to the value of deriving a new state
-  // value as described by the RTCPeerConnectionState enum.
-  if (UpdateConnectionState()) {
-    // If connection.[[ConnectionState]] changed in the previous step, set
-    // connectionStateChanged to true.
-    connectionStateChanged = true;
+  // 9. If transport's RTCIceTransportState was changed, run the following
+  //    steps:
+  if (transport->State() != domState) {
+    // 9.1. Set transport.[[IceTransportState]] to the new indicated
+    //      RTCIceTransportState.
+    transport->SetState(domState);
+
+    // 9.2. Set transportIceConnectionStateChanged to true.
+    transportIceConnectionStateChanged = true;
+
+    // 9.3. Set connection.[[IceConnectionState]] to the value of deriving
+    //      a new state value as described by the RTCIceConnectionState
+    //      enum.
+    if (UpdateIceConnectionState()) {
+      // 9.4. If connection.[[IceConnectionState]] changed in the previous
+      //      step, set connectionIceConnectionStateChanged to true.
+      connectionIceConnectionStateChanged = true;
+    }
+
+    // 9.5. Set connection.[[ConnectionState]] to the value of deriving a
+    //      new state value as described by the RTCPeerConnectionState
+    //      enum.
+    if (UpdateConnectionState()) {
+      // 9.6. If connection.[[ConnectionState]] changed in the previous
+      //      step, set connectionStateChanged to true.
+      connectionStateChanged = true;
+    }
   }
 
-  // If selectedCandidatePairChanged is true, fire an event named
-  // selectedcandidatepairchange at transport.
-  // TODO(bug 1307994)
+  // 10. If selectedCandidatePairChanged is true, fire an event named
+  //     selectedcandidatepairchange at transport.
+  if (selectedCandidatePairChanged) {
+    transport->FireSelectedCandidatePairChangeEvent();
+  }
 
-  // If transportIceConnectionStateChanged is true, fire an event named
-  // statechange at transport.
+  // 11. If transportIceConnectionStateChanged is true, fire an event
+  //     named statechange at transport.
   if (transportIceConnectionStateChanged) {
     transport->FireStateChangeEvent();
   }
@@ -3443,14 +3499,14 @@ void PeerConnectionImpl::IceConnectionStateChange(
   WrappableJSErrorResult rv;
   RefPtr<PeerConnectionObserver> pcObserver(mPCObserver);
 
-  // If connectionIceConnectionStateChanged is true, fire an event named
-  // iceconnectionstatechange at connection.
+  // 12. If connectionIceConnectionStateChanged is true, fire an event
+  //     named iceconnectionstatechange at connection.
   if (connectionIceConnectionStateChanged) {
     pcObserver->OnStateChange(PCObserverStateType::IceConnectionState, rv);
   }
 
-  // If connectionStateChanged is true, fire an event named
-  // connectionstatechange at connection.
+  // 13. If connectionStateChanged is true, fire an event named
+  //     connectionstatechange at connection.
   if (connectionStateChanged) {
     pcObserver->OnStateChange(PCObserverStateType::ConnectionState, rv);
   }
@@ -4792,7 +4848,6 @@ std::unique_ptr<NrSocketProxyConfig> PeerConnectionImpl::GetProxyConfig()
     return nullptr;
   }
 
-  nsCString alpn = "webrtc,c-webrtc"_ns;
   auto* browserChild = BrowserChild::GetFrom(mWindow);
   if (!browserChild) {
     // Android doesn't have browser child apparently...
@@ -4819,7 +4874,7 @@ std::unique_ptr<NrSocketProxyConfig> PeerConnectionImpl::GetProxyConfig()
   MOZ_ALWAYS_SUCCEEDS(
       mozilla::ipc::LoadInfoToLoadInfoArgs(loadInfo, &loadInfoArgs));
   return std::make_unique<NrSocketProxyConfig>(
-      net::WebrtcProxyConfig(id, alpn, loadInfoArgs, mForceProxy));
+      net::WebrtcProxyConfig(id, loadInfoArgs, mForceProxy));
 }
 
 MOZ_RUNINIT std::map<uint64_t, PeerConnectionAutoTimer>

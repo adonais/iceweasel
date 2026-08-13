@@ -5,10 +5,10 @@
 #ifndef nsSyncStreamListener_h_
 #define nsSyncStreamListener_h_
 
-#include "nsISyncStreamListener.h"
+#include "nsCOMPtr.h"
 #include "nsIInputStream.h"
 #include "nsIOutputStream.h"
-#include "nsCOMPtr.h"
+#include "nsISyncStreamListener.h"
 
 //-----------------------------------------------------------------------------
 

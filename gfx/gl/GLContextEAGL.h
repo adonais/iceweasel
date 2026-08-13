@@ -5,9 +5,9 @@
 #ifndef GLCONTEXTEAGL_H_
 #define GLCONTEXTEAGL_H_
 
-#include "GLContext.h"
-
 #include <CoreGraphics/CoreGraphics.h>
+
+#include "GLContext.h"
 #ifdef __OBJC__
 #  include <OpenGLES/EAGL.h>
 #else
@@ -34,7 +34,7 @@ class GLContextEAGL : public GLContext {
   }
 
   static GLContextEAGL* Cast(GLContext* gl) {
-    MOZ_ASSERT(gl->GetContextType() == GLContextType::EAGL);
+    MOZ_RELEASE_ASSERT(gl->GetContextType() == GLContextType::EAGL);
     return static_cast<GLContextEAGL*>(gl);
   }
 
@@ -53,6 +53,12 @@ class GLContextEAGL : public GLContext {
   virtual void GetWSIInfo(nsCString* const out) const override;
 
   virtual GLuint GetDefaultFramebuffer() override { return mBackbufferFB; }
+
+  GLenum GetPreferredMacIOSurfaceTextureTarget() const override {
+    // GL_TEXTURE_RECTANGLE_ARB does not exist in OpenGL ES (which is used on
+    // iOS). Instead GL_TEXTURE_2D supports arbitrary dimensions.
+    return LOCAL_GL_TEXTURE_2D;
+  }
 
  private:
   GLuint mBackbufferRB = 0;

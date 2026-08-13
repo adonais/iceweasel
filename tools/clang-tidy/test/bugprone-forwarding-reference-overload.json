@@ -1,0 +1,8 @@
+[
+  [
+    "warning",
+    "constructor accepting a forwarding reference can hide the copy and move constructors",
+    "bugprone-forwarding-reference-overload"
+  ],
+  { "reliability": "high" }
+]

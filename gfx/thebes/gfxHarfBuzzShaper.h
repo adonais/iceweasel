@@ -6,11 +6,10 @@
 #define GFX_HARFBUZZSHAPER_H
 
 #include "gfxFont.h"
-
 #include "harfbuzz/hb.h"
-#include "nsUnicodeProperties.h"
 #include "mozilla/MruCache.h"
 #include "mozilla/RecursiveMutex.h"
+#include "nsUnicodeProperties.h"
 
 class gfxHarfBuzzShaper : public gfxFontShaper {
   // private static methods for HarfBuzz callbacks:

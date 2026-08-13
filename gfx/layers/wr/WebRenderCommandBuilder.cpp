@@ -4,14 +4,20 @@
 
 #include "WebRenderCommandBuilder.h"
 
+#include <cstdint>
+
+#include "MediaInfo.h"
+#include "UnitTransforms.h"
+#include "WebRenderCanvasRenderer.h"
+#include "gfxEnv.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/EffectCompositor.h"
 #include "mozilla/ProfilerLabels.h"
-#include "mozilla/StaticPrefs_gfx.h"
-#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/SVGGeometryFrame.h"
 #include "mozilla/SVGImageFrame.h"
+#include "mozilla/StaticPrefs_gfx.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Logging.h"
@@ -20,23 +26,17 @@
 #include "mozilla/layers/AnimationHelper.h"
 #include "mozilla/layers/ClipManager.h"
 #include "mozilla/layers/ImageClient.h"
-#include "mozilla/layers/RenderRootStateManager.h"
-#include "mozilla/layers/WebRenderBridgeChild.h"
-#include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/layers/IpcResourceUpdateQueue.h"
+#include "mozilla/layers/RenderRootStateManager.h"
 #include "mozilla/layers/SharedSurfacesChild.h"
 #include "mozilla/layers/SourceSurfaceSharedData.h"
 #include "mozilla/layers/StackingContextHelper.h"
+#include "mozilla/layers/WebRenderBridgeChild.h"
 #include "mozilla/layers/WebRenderDrawEventRecorder.h"
-#include "UnitTransforms.h"
-#include "gfxEnv.h"
-#include "MediaInfo.h"
+#include "mozilla/layers/WebRenderLayerManager.h"
 #include "nsDisplayListInvalidation.h"
 #include "nsLayoutUtils.h"
 #include "nsTHashSet.h"
-#include "WebRenderCanvasRenderer.h"
-
-#include <cstdint>
 
 namespace mozilla::layers {
 

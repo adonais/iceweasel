@@ -1,6 +1,20 @@
 <!-- This Source Code Form is subject to the terms of the Mozilla Public
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
-  <path fill="context-fill" fill-opacity="context-fill-opacity" d="M6.854 10.854l2-2A.5.5 0 0 0 9 8.5v-4a.5.5 0 0 0-1 0v3.793l-1.854 1.853a.5.5 0 1 0 .707.707zM8 0a8.011 8.011 0 0 0-7 4.184V1.5a.5.5 0 0 0-1 0v5a.5.5 0 0 0 .5.5h5a.5.5 0 0 0 0-1H2.344a.938.938 0 0 0 .056-.085 6 6 0 1 1 0 4.184 1 1 0 0 0-1.873.7A7.991 7.991 0 1 0 8 0z"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="context-fill" fill-opacity="context-fill-opacity">
+<style>
+.nova { display: none; }
+
+@media -moz-pref("browser.nova.enabled") {
+  .proton { display: none; }
+  .nova { display: revert; }
+}
+</style>
+<g class="proton">
+  <path d="M6.854 10.854l2-2A.5.5 0 0 0 9 8.5v-4a.5.5 0 0 0-1 0v3.793l-1.854 1.853a.5.5 0 1 0 .707.707zM8 0a8.011 8.011 0 0 0-7 4.184V1.5a.5.5 0 0 0-1 0v5a.5.5 0 0 0 .5.5h5a.5.5 0 0 0 0-1H2.344a.938.938 0 0 0 .056-.085 6 6 0 1 1 0 4.184 1 1 0 0 0-1.873.7A7.991 7.991 0 1 0 8 0z"/>
+</g>
+<g class="nova">
+  <path d="M8.51 2a6.5 6.5 0 1 1-6.195 8.474.75.75 0 0 1 1.43-.455 5 5 0 1 0 1.33-5.15l1.278 1.277A.5.5 0 0 1 5.999 7H2.5a.5.5 0 0 1-.5-.5V3.001a.5.5 0 0 1 .854-.354l1.16 1.16A6.48 6.48 0 0 1 8.51 2" />
+  <path d="M8.646 5a.75.75 0 0 1 .75.75v2.736c0 .041.021.077.055.097l1.608.929a.75.75 0 0 1-.75 1.298L8.7 9.884a1.61 1.61 0 0 1-.805-1.397V5.75a.75.75 0 0 1 .75-.75" />
+</g>
 </svg>

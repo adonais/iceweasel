@@ -5,19 +5,19 @@
 #include "CompositorAnimationStorage.h"
 
 #include "AnimationHelper.h"
-#include "mozilla/gfx/MatrixFwd.h"
-#include "mozilla/layers/APZSampler.h"              // for APZSampler
-#include "mozilla/layers/CompositorBridgeParent.h"  // for CompositorBridgeParent
-#include "mozilla/layers/CompositorThread.h"  // for CompositorThreadHolder
-#include "mozilla/layers/OMTAController.h"    // for OMTAController
+#include "TreeTraversal.h"  // for ForEachNode, BreadthFirstSearch
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/ServoStyleConsts.h"
+#include "mozilla/gfx/MatrixFwd.h"
+#include "mozilla/layers/APZSampler.h"              // for APZSampler
+#include "mozilla/layers/CompositorBridgeParent.h"  // for CompositorBridgeParent
+#include "mozilla/layers/CompositorThread.h"   // for CompositorThreadHolder
+#include "mozilla/layers/OMTAController.h"     // for OMTAController
 #include "mozilla/webrender/WebRenderTypes.h"  // for ToWrTransformProperty, etc
 #include "nsDeviceContext.h"                   // for AppUnitsPerCSSPixel
 #include "nsDisplayList.h"                     // for nsDisplayTransform, etc
 #include "nsLayoutUtils.h"
-#include "TreeTraversal.h"  // for ForEachNode, BreadthFirstSearch
 
 namespace geckoprofiler::markers {
 

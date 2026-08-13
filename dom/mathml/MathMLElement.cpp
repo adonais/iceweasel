@@ -121,7 +121,7 @@ bool MathMLElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
         aAttribute == nsGkAtoms::href && !mNodeInfo->Equals(nsGkAtoms::a)) {
       AutoTArray<nsString, 1> params;
       params.AppendElement(mNodeInfo->NodeName());
-      OwnerDoc()->WarnOnceAbout(
+      OwnerDoc()->WarnOnceAndReportAbout(
           dom::DeprecatedOperations::
               eMathML_DeprecatedHrefLinkOnNonAnchorElement,
           /* asError */ false, params);
@@ -210,7 +210,7 @@ bool MathMLElement::ParseNamedSpaceValue(const nsString& aString,
   if (0 != i) {
     AutoTArray<nsString, 1> params;
     params.AppendElement(aString);
-    aDocument.WarnOnceAbout(
+    aDocument.WarnOnceAndReportAbout(
         dom::DeprecatedOperations::eMathML_DeprecatedMathSpaceValue2, false,
         params);
     aCSSValue.SetFloatValue(float(i) / float(18), eCSSUnit_EM);
@@ -575,7 +575,7 @@ void MathMLElement::MapGlobalMathMLAttributesInto(
             // triggered a warning.
             AutoTArray<nsString, 1> params;
             params.AppendElement(str);
-            aBuilder.Document().WarnOnceAbout(
+            aBuilder.Document().WarnOnceAndReportAbout(
                 dom::DeprecatedOperations::eMathML_DeprecatedMathVariant, false,
                 params);
           }

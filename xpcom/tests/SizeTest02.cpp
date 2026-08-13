@@ -1,7 +1,7 @@
 // Test02.cpp
 
-#include "nsINode.h"
 #include "nsCOMPtr.h"
+#include "nsINode.h"
 #include "nsString.h"
 
 NS_DEF_PTR(nsINode);

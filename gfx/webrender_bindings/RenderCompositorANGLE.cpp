@@ -4,30 +4,30 @@
 
 #include "RenderCompositorANGLE.h"
 
+#include <d3d11.h>
+#include <dcomp.h>
+#include <dxgi1_2.h>
+
+#include "FxROutputHandler.h"
 #include "GLContext.h"
 #include "GLContextEGL.h"
 #include "GLContextProvider.h"
-#include "mozilla/gfx/DeviceManagerDx.h"
-#include "mozilla/gfx/gfxVars.h"
-#include "mozilla/gfx/Logging.h"
-#include "mozilla/gfx/StackArray.h"
-#include "mozilla/layers/FenceD3D11.h"
-#include "mozilla/layers/TextureD3D11.h"
-#include "mozilla/layers/HelpersD3D11.h"
-#include "mozilla/layers/SyncObject.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/StaticPrefs_gfx.h"
+#include "mozilla/gfx/DeviceManagerDx.h"
+#include "mozilla/gfx/Logging.h"
+#include "mozilla/gfx/StackArray.h"
+#include "mozilla/gfx/gfxVars.h"
+#include "mozilla/glean/GfxMetrics.h"
+#include "mozilla/layers/FenceD3D11.h"
+#include "mozilla/layers/HelpersD3D11.h"
+#include "mozilla/layers/SyncObject.h"
+#include "mozilla/layers/TextureD3D11.h"
 #include "mozilla/webrender/DCLayerTree.h"
 #include "mozilla/webrender/RenderThread.h"
 #include "mozilla/widget/CompositorWidget.h"
 #include "mozilla/widget/WinCompositorWidget.h"
-#include "mozilla/glean/GfxMetrics.h"
 #include "nsPrintfCString.h"
-#include "FxROutputHandler.h"
-
-#include <d3d11.h>
-#include <dcomp.h>
-#include <dxgi1_2.h>
 
 // Flag for PrintWindow() that is defined in Winuser.h. It is defined since
 // Windows 8.1. This allows PrintWindow to capture window content that is
@@ -179,20 +179,13 @@ bool RenderCompositorANGLE::Initialize(nsACString& aError) {
 }
 
 HWND RenderCompositorANGLE::GetCompositorHwnd() {
-  HWND hwnd = 0;
-
   if (XRE_IsGPUProcess()) {
-    hwnd = mWidget->AsWindows()->GetCompositorHwnd();
-  } else if (
-      StaticPrefs::
-          gfx_webrender_enabled_no_gpu_process_with_angle_win_AtStartup()) {
-    MOZ_ASSERT(XRE_IsParentProcess());
-
-    // When GPU process does not exist, we do not need to use compositor window.
-    hwnd = mWidget->AsWindows()->GetHwnd();
+    return mWidget->AsWindows()->GetCompositorHwnd();
   }
 
-  return hwnd;
+  MOZ_ASSERT(XRE_IsParentProcess());
+  // When GPU process does not exist, we do not need to use compositor window.
+  return mWidget->AsWindows()->GetHwnd();
 }
 
 bool RenderCompositorANGLE::CreateSwapChainForHWND() {

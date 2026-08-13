@@ -15,7 +15,7 @@ struct DefaultHasher<nsTString<T>> {
   using Lookup = nsTString<T>;
 
   static mozilla::HashNumber hash(const Lookup& aLookup) {
-    return mozilla::HashString(aLookup.get());
+    return mozilla::HashString(aLookup.get(), aLookup.Length());
   }
 
   static bool match(const Key& aKey, const Lookup& aLookup) {

@@ -513,11 +513,6 @@ class Value {
  private:
   explicit constexpr Value(uint64_t asBits) : asBits_(asBits) {}
 
-  static uint64_t bitsFromDouble(double d) {
-    d = CanonicalizeNaN(d);
-    return mozilla::BitwiseCast<uint64_t>(d);
-  }
-
   static_assert(sizeof(JSValueType) == 1,
                 "type bits must fit in a single byte");
   static_assert(sizeof(JSValueTag) == 4,
@@ -550,11 +545,10 @@ class Value {
     return fromTagAndPayload(JSVAL_TAG_INT32, uint32_t(i));
   }
 
-  static Value fromDouble(double d) { return fromRawBits(bitsFromDouble(d)); }
-
   /**
    * Returns false if creating a NumberValue containing the given type would
-   * be lossy, true otherwise.
+   * be lossy, true otherwise. Note that this will return false for NaN,
+   * despite NaN being representable as a double, because NaN !== NaN.
    */
   template <typename T>
   static bool isNumberRepresentable(const T t) {
@@ -579,12 +573,16 @@ class Value {
   }
 
   void setDouble(double d) {
-    asBits_ = bitsFromDouble(d);
+    d = CanonicalizeNaN(d);
+    asBits_ = mozilla::BitwiseCast<uint64_t>(d);
     MOZ_ASSERT(isDouble());
   }
 
   // Like setDouble but only canonicalizes NaNs on architectures with
-  // non-canonical hardware NaNs (see JS_NONCANONICAL_HARDWARE_NAN).
+  // non-canonical hardware NaNs (see JS_NONCANONICAL_HARDWARE_NAN). Because
+  // storing a non-canonical NaN breaks the Value representation, this should
+  // only be used in performance-sensitive SpiderMonkey code where the input is
+  // guaranteed not to be a non-canonical NaN.
   void setDoubleAssumeCanonicalNaN(double d) {
 #if defined(JS_NONCANONICAL_HARDWARE_NAN)
     d = CanonicalizeNaN(d);
@@ -710,8 +708,11 @@ class Value {
     }
   }
 
-  // Like setNumber(double), but skips NaN canonicalization. See
-  // setDoubleAssumeCanonicalNaN.
+  // Like setNumber(double) but only canonicalizes NaNs on architectures with
+  // non-canonical hardware NaNs (see JS_NONCANONICAL_HARDWARE_NAN). Because
+  // storing a non-canonical NaN breaks the Value representation, this should
+  // only be used in performance-sensitive SpiderMonkey code where the input is
+  // guaranteed not to be a non-canonical NaN.
   void setNumberAssumeCanonicalNaN(double d) {
     int32_t i;
     if (mozilla::NumberIsInt32(d, &i)) {
@@ -1140,10 +1141,6 @@ static inline Value DoubleValueAssumeCanonicalNaN(double dbl) {
   return v;
 }
 
-static inline Value CanonicalizedDoubleValue(double d) {
-  return DoubleValue(d);
-}
-
 static inline Value NaNValue() {
   return Value::fromRawBits(detail::CanonicalizedNaNBits);
 }
@@ -1213,8 +1210,7 @@ static inline Value MagicValueUint32(uint32_t payload) {
 }
 
 static constexpr Value NumberValue(uint32_t i) {
-  return i <= JSVAL_INT_MAX ? Int32Value(int32_t(i))
-                            : Value::fromDouble(double(i));
+  return i <= JSVAL_INT_MAX ? Int32Value(int32_t(i)) : DoubleValue(double(i));
 }
 
 template <typename T>

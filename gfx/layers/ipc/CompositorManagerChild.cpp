@@ -4,17 +4,17 @@
 
 #include "mozilla/layers/CompositorManagerChild.h"
 
+#include "VsyncSource.h"
 #include "mozilla/StaticPrefs_layers.h"
+#include "mozilla/dom/BrowserChild.h"  // for BrowserChild
+#include "mozilla/dom/ContentChild.h"  // for ContentChild
+#include "mozilla/gfx/CanvasShutdownManager.h"
+#include "mozilla/gfx/GPUProcessManager.h"
+#include "mozilla/gfx/gfxVars.h"
+#include "mozilla/ipc/Endpoint.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/CompositorManagerParent.h"
 #include "mozilla/layers/CompositorThread.h"
-#include "mozilla/gfx/CanvasShutdownManager.h"
-#include "mozilla/gfx/gfxVars.h"
-#include "mozilla/gfx/GPUProcessManager.h"
-#include "mozilla/dom/ContentChild.h"  // for ContentChild
-#include "mozilla/dom/BrowserChild.h"  // for BrowserChild
-#include "mozilla/ipc/Endpoint.h"
-#include "VsyncSource.h"
 
 namespace mozilla {
 namespace layers {

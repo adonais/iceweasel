@@ -1521,7 +1521,7 @@ void nsCSPContext::HandleInternalPageViolation(
 
   extra.baseline =
       Some(aCSPViolationData.mViolatedPolicyIndex == 0 &&
-           aInit.mOriginalPolicy == nsContentSecurityUtils::kBaselineChromeCSP);
+           aInit.mOriginalPolicy == nsContentSecurityUtils::kBaselineSystemCSP);
 
   glean::security::csp_violation_internal_page.Record(Some(extra));
 

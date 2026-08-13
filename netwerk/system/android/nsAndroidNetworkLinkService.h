@@ -5,9 +5,9 @@
 #ifndef NSANDROIDNETWORKLINKSERVICE_H_
 #define NSANDROIDNETWORKLINKSERVICE_H_
 
+#include "../netlink/NetlinkService.h"
 #include "nsINetworkLinkService.h"
 #include "nsIObserver.h"
-#include "../netlink/NetlinkService.h"
 
 class nsAndroidNetworkLinkService
     : public nsINetworkLinkService,

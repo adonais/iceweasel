@@ -5,8 +5,8 @@
 #ifndef mozilla_net_NeckoChild_h
 #define mozilla_net_NeckoChild_h
 
-#include "mozilla/net/PNeckoChild.h"
 #include "mozilla/net/NeckoCommon.h"
+#include "mozilla/net/PNeckoChild.h"
 
 namespace mozilla {
 namespace net {

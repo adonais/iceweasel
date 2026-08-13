@@ -5,9 +5,10 @@
 #ifndef nsDragService_h_
 #define nsDragService_h_
 
-#include "nsBaseDragService.h"
-#include <windows.h>
 #include <shlobj.h>
+#include <windows.h>
+
+#include "nsBaseDragService.h"
 
 struct IDataObject;
 class nsDataObjCollection;

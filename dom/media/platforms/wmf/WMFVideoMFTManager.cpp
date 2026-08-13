@@ -705,11 +705,25 @@ WMFVideoMFTManager::CreateBasicVideoFrame(IMFSample* aSample,
     // Store YCbCr to 3 ID3D11Texture2Ds
     image = new IMFYCbCrImage(buffer, twoDBuffer, mKnowsCompositor,
                               mImageContainer);
-    VideoData::SetVideoDataToImage(image, mVideoInfo, b, pictureRegion, false);
+    if (MediaResult r = VideoData::SetVideoDataToImage(image, mVideoInfo, b,
+                                                       pictureRegion, false);
+        NS_FAILED(r)) {
+      LOG("CreateBasicVideoFrame: failed to set video data to image (D3D11 "
+          "texture path): {}",
+          r.Description().get());
+      return E_FAIL;
+    }
   } else {
     // Store YCbCr to shmem
     image = mImageContainer->CreatePlanarYCbCrImage();
-    VideoData::SetVideoDataToImage(image, mVideoInfo, b, pictureRegion, true);
+    if (MediaResult r = VideoData::SetVideoDataToImage(image, mVideoInfo, b,
+                                                       pictureRegion, true);
+        NS_FAILED(r)) {
+      LOG("CreateBasicVideoFrame: failed to set video data to image (shmem "
+          "path): {}",
+          r.Description().get());
+      return E_FAIL;
+    }
   }
 
   RefPtr<VideoData> v = VideoData::CreateFromImage(

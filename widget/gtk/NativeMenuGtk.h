@@ -5,10 +5,10 @@
 #ifndef mozilla_widget_NativeMenuGtk_h
 #define mozilla_widget_NativeMenuGtk_h
 
+#include "GRefPtr.h"
+#include "mozilla/EventForwards.h"
 #include "mozilla/RefCounted.h"
 #include "mozilla/widget/NativeMenu.h"
-#include "mozilla/EventForwards.h"
-#include "GRefPtr.h"
 
 struct org_kde_kwin_appmenu;
 

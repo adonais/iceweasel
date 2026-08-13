@@ -6,6 +6,7 @@
 #define RetrievalContextX11_h
 
 #include <gtk/gtk.h>
+
 #include "nsClipboard.h"
 
 namespace mozilla::widget {

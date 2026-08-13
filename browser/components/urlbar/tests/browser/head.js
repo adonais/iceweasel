@@ -14,8 +14,8 @@ ChromeUtils.defineESModuleGetters(this, {
   SearchUITestUtils: "resource://testing-common/SearchUITestUtils.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   TelemetryTestUtils: "resource://testing-common/TelemetryTestUtils.sys.mjs",
-  UrlbarController:
-    "moz-src:///browser/components/urlbar/UrlbarController.sys.mjs",
+  UrlbarParentController:
+    "moz-src:///browser/components/urlbar/UrlbarParentController.sys.mjs",
   UrlbarQueryContext:
     "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",

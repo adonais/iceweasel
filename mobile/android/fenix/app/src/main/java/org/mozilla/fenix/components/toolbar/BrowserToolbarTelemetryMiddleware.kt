@@ -22,6 +22,7 @@ import org.mozilla.fenix.components.toolbar.DisplayActions.NavigateForwardLongCl
 import org.mozilla.fenix.components.toolbar.DisplayActions.RefreshClicked
 import org.mozilla.fenix.components.toolbar.DisplayActions.ShareClicked
 import org.mozilla.fenix.components.toolbar.DisplayActions.StopRefreshClicked
+import org.mozilla.fenix.components.toolbar.DisplayActions.SummarizeClicked
 import org.mozilla.fenix.components.toolbar.DisplayActions.TranslateClicked
 import org.mozilla.fenix.components.toolbar.PageEndActionsInteractions.ReaderModeClicked
 import org.mozilla.fenix.components.toolbar.StartPageActions.SiteInfoClicked
@@ -44,6 +45,7 @@ import org.mozilla.fenix.telemetry.ACTION_REFRESH_CLICKED
 import org.mozilla.fenix.telemetry.ACTION_SECURITY_INDICATOR_CLICKED
 import org.mozilla.fenix.telemetry.ACTION_SHARE_CLICKED
 import org.mozilla.fenix.telemetry.ACTION_STOP_CLICKED
+import org.mozilla.fenix.telemetry.ACTION_SUMMARIZE_CLICKED
 import org.mozilla.fenix.telemetry.ACTION_TAB_COUNTER_CLICKED
 import org.mozilla.fenix.telemetry.ACTION_TAB_COUNTER_LONG_CLICKED
 import org.mozilla.fenix.telemetry.ACTION_TRANSLATE_CLICKED
@@ -53,6 +55,7 @@ import org.mozilla.fenix.telemetry.SOURCE_BROWSER_START
 import org.mozilla.fenix.telemetry.SOURCE_NAVIGATION_BAR
 import org.mozilla.fenix.telemetry.SOURCE_PAGE_END
 import org.mozilla.fenix.telemetry.SOURCE_PAGE_START
+import org.mozilla.fenix.telemetry.SURFACE_BROWSER
 
 /**
  * [Middleware] responsible for recording telemetry of actions triggered by compose toolbars.
@@ -119,6 +122,9 @@ class BrowserToolbarTelemetryMiddleware : Middleware<BrowserToolbarState, Browse
             is SiteInfoClicked -> {
                 trackToolbarEvent(ToolbarActionRecord.SecurityIndicatorClicked, action.source)
             }
+            is SummarizeClicked -> {
+                trackToolbarEvent(ToolbarActionRecord.SummarizeClicked, action.source)
+            }
             else -> {}
         }
 
@@ -145,6 +151,7 @@ class BrowserToolbarTelemetryMiddleware : Middleware<BrowserToolbarState, Browse
         data object TranslateClicked : ToolbarActionRecord(ACTION_TRANSLATE_CLICKED)
         data object HomepageClicked : ToolbarActionRecord(ACTION_HOME_CLICKED)
         data object SecurityIndicatorClicked : ToolbarActionRecord(ACTION_SECURITY_INDICATOR_CLICKED)
+        data object SummarizeClicked : ToolbarActionRecord(ACTION_SUMMARIZE_CLICKED)
     }
 
     private fun trackToolbarEvent(
@@ -158,6 +165,7 @@ class BrowserToolbarTelemetryMiddleware : Middleware<BrowserToolbarState, Browse
                         source = SOURCE_ADDRESS_BAR,
                         item = toolbarActionRecord.action,
                         extra = source.telemetryName(),
+                        surface = SURFACE_BROWSER,
                     ),
                 )
 
@@ -166,6 +174,7 @@ class BrowserToolbarTelemetryMiddleware : Middleware<BrowserToolbarState, Browse
                     Toolbar.ButtonTappedExtra(
                         source = SOURCE_NAVIGATION_BAR,
                         item = toolbarActionRecord.action,
+                        surface = SURFACE_BROWSER,
                     ),
                 )
 

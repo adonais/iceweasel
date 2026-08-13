@@ -15,9 +15,8 @@
 #endif
 
 #include "nsComponentManagerUtils.h"
-#include "nsServiceManagerUtils.h"
-
 #include "nsIComponentManager.h"
+#include "nsServiceManagerUtils.h"
 
 #ifndef MOZILLA_INTERNAL_API
 

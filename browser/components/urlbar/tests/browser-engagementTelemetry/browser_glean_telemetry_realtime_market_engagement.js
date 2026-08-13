@@ -43,7 +43,7 @@ add_task(async function click() {
     EventUtils.synthesizeMouseAtCenter(target, {});
     await onLocationChange;
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         engagement_type: "click",
         selected_result: "merino_market",
@@ -64,7 +64,7 @@ add_task(async function enter() {
     EventUtils.synthesizeKey("KEY_Enter");
     await onLocationChange;
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         engagement_type: "enter",
         selected_result: "merino_market",

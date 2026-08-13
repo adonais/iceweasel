@@ -6,13 +6,14 @@
  * WinPointerEvents - Helper functions to retrieve PointerEvent's attributes
  */
 
-#include "nscore.h"
-#include "nsWindowDefs.h"
 #include "WinPointerEvents.h"
+
 #include "WinUtils.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/MouseEventBinding.h"
+#include "nsWindowDefs.h"
+#include "nscore.h"
 
 using namespace mozilla;
 using namespace mozilla::widget;

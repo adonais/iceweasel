@@ -7,8 +7,10 @@
 #include "mozilla/Components.h"
 #include "mozilla/Logging.h"
 #include "mozilla/MediaManager.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/dom/AudioContext.h"
+#include "mozilla/dom/ContentMediaController.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/FeaturePolicyUtils.h"
 #include "mozilla/dom/HTMLMediaElement.h"
@@ -223,7 +225,32 @@ static bool IsGVAutoplayRequestAllowed(const HTMLMediaElement& aElement,
 }
 #endif
 
+/* static */
+bool AutoplayPolicy::IsAudioInterruptedByPlatform(nsPIDOMWindowInner* aWindow) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!StaticPrefs::dom_audio_session_block_start_during_interrupt_enabled()) {
+    return false;
+  }
+  if (!aWindow) {
+    return false;
+  }
+  ContentMediaController* controller =
+      nsGlobalWindowInner::Cast(aWindow)->GetContentMediaController();
+  return controller && controller->IsAudioInterruptedByPlatform();
+}
+
 static bool IsAllowedToPlayInternal(const HTMLMediaElement& aElement) {
+  // While the platform has interrupted the tab's audio, block only audible
+  // media from starting on its own. Inaudible media (muted, zero volume, or no
+  // audio track) does not compete for audio focus, so it is left to the normal
+  // autoplay rules below.
+  if (!IsMediaElementInaudible(aElement) &&
+      AutoplayPolicy::IsAudioInterruptedByPlatform(
+          aElement.OwnerDoc()->GetInnerWindow())) {
+    AUTOPLAY_LOG("Media {} blocked: audible playback interrupted by platform",
+                 fmt::ptr(&aElement));
+    return false;
+  }
 #if defined(MOZ_WIDGET_ANDROID)
   if (StaticPrefs::media_geckoview_autoplay_request()) {
     return IsGVAutoplayRequestAllowed(
@@ -295,6 +322,12 @@ bool AutoplayPolicy::IsAllowedToPlay(const AudioContext& aContext) {
     return true;
   }
 
+  if (IsAudioInterruptedByPlatform(aContext.GetOwnerWindow())) {
+    AUTOPLAY_LOG("AudioContext {} blocked: audio interrupted by platform",
+                 fmt::ptr(&aContext));
+    return false;
+  }
+
   if (!IsEnableBlockingWebAudioByUserGesturePolicy()) {
     return true;
   }
@@ -328,6 +361,9 @@ enum class DocumentAutoplayPolicy : uint8_t {
 
 /* static */
 DocumentAutoplayPolicy IsDocAllowedToPlay(const Document& aDocument) {
+  // TODO(bug 2050309): when the platform has interrupted the tab's audio,
+  // return Disallowed here so the Autoplay Policy Detection API mirrors the
+  // IsAllowedToPlay gate. The web-observable reflection is a follow-up.
   RefPtr<nsPIDOMWindowInner> window = aDocument.GetInnerWindow();
 
 #if defined(MOZ_WIDGET_ANDROID)
@@ -400,6 +436,9 @@ uint32_t AutoplayPolicy::GetSiteAutoplayPermission(nsIPrincipal* aPrincipal) {
 /* static */
 dom::AutoplayPolicy AutoplayPolicy::GetAutoplayPolicy(
     const dom::HTMLMediaElement& aElement) {
+  // TODO(bug 2050309): when the platform has interrupted the tab's audio,
+  // report Disallowed here so the Autoplay Policy Detection API mirrors the
+  // IsAllowedToPlay gate. The web-observable reflection is a follow-up.
   // Note, the site permission can contain following values :
   // - UNKNOWN_ACTION : no permission set for this site
   // - ALLOW_ACTION : allowed to autoplay

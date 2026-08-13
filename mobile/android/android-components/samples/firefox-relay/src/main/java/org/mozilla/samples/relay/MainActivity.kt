@@ -20,16 +20,15 @@ import mozilla.components.concept.sync.AuthType
 import mozilla.components.concept.sync.DeviceConfig
 import mozilla.components.concept.sync.DeviceType
 import mozilla.components.concept.sync.OAuthAccount
+import mozilla.components.concept.sync.PeriodicSyncConfig
 import mozilla.components.concept.sync.Profile
+import mozilla.components.concept.sync.SyncConfig
+import mozilla.components.concept.sync.SyncEngine
 import mozilla.components.lib.fetch.httpurlconnection.HttpURLConnectionClient
 import mozilla.components.lib.state.ext.flow
 import mozilla.components.service.fxa.FxaAuthData
-import mozilla.components.service.fxa.PeriodicSyncConfig
-import mozilla.components.service.fxa.SyncConfig
-import mozilla.components.service.fxa.SyncEngine
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.service.fxa.manager.SCOPE_PROFILE
-import mozilla.components.service.fxa.manager.SCOPE_SESSION
 import mozilla.components.service.fxa.manager.SCOPE_SYNC
 import mozilla.components.service.fxa.sync.SyncReason
 import mozilla.components.service.fxa.toAuthType
@@ -62,7 +61,6 @@ open class MainActivity : AppCompatActivity(), LoginFragment.OnLoginCompleteList
             SyncConfig(setOf(SyncEngine.Passwords), PeriodicSyncConfig()),
             setOf(
                 SCOPE_SYNC,
-                SCOPE_SESSION,
                 SCOPE_RELAY,
                 SCOPE_PROFILE,
             ),

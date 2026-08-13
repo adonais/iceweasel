@@ -61,7 +61,7 @@ add_task(async function test_rules_getter_no_duplicates() {
   // The rule import is async because it needs to fetch rules from
   // RemoteSettings. Wait for the test rules to be applied.
   // See CookieBannerListService#importAllRules.
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => Services.cookieBanners.rules.length,
     "Waiting for test rules to be imported."
   );

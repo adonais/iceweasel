@@ -39,9 +39,7 @@ SimpleTest.waitForFocus(function() {
       // Make sure we got the HTML flavour we asked for and that our
       // string is included without additional spaces.
       return (
-        (SpecialPowers.getBoolPref("dom.serializer.includeCommonAncestor.enabled")
-          ? value.includes("korean-text")
-          : !value.includes("korean-text")) && value.includes("안".repeat(160))
+        !value.includes("korean-text") && value.includes("안".repeat(160))
       );
     },
     function setup() {

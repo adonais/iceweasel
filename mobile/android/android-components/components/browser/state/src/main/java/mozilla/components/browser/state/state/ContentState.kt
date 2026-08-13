@@ -106,4 +106,10 @@ data class ContentState(
     val isSearch: Boolean = false,
     val isPdf: Boolean = false,
     val hasFormData: Boolean = false,
-)
+) {
+    /**
+     * Use both [loading] and [progress] to determine whether the page is loading.
+     */
+    val isLoading: Boolean
+        get() = loading && progress < 100
+}

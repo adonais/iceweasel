@@ -112,7 +112,7 @@ add_task(async function basic() {
       await onSubMenuShown;
 
       info(`Select sub menu item '${subMenuItemLabel}'`);
-      await BrowserTestUtils.waitForCondition(() =>
+      await TestUtils.waitForCondition(() =>
         [...menuItem.menupopup.children].find(i => i.label == subMenuItemLabel)
       );
       let subMenuItem = [...menuItem.menupopup.children].find(
@@ -131,7 +131,7 @@ add_task(async function basic() {
         if (expectedOption.background) {
           Assert.notEqual(target, gBrowser.selectedTab);
         } else {
-          await BrowserTestUtils.waitForCondition(
+          await TestUtils.waitForCondition(
             () => target == gBrowser.selectedTab
           );
           Assert.equal(target, gBrowser.selectedTab);
@@ -239,4 +239,54 @@ add_task(async function no_context_menu() {
 
     await SpecialPowers.popPrefEnv();
   }
+});
+
+// Neither activateItem() nor dispatching a "click" triggers a mousedown, so
+// this test dispatches a bare mousedown to verify that the view stays open
+// when a mousedown is fired on the context menu. It does not actually open the
+// result, since a menu item isn't activated by a mousedown alone. Real-clicking
+// a context menu item isn't feasible cross-platform (on macOS the native menu
+// item has no layout box, and synthesizing a click crashes on Windows), so we
+// scope this test to the mousedown behavior only.
+add_task(async function keep_view_open_on_context_menu_mousedown() {
+  info("Open urlbar results");
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    value: "exa",
+    window,
+    fireInputEvent: true,
+  });
+  let { element } = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
+
+  info("Open context menu");
+  let contextMenu = document.getElementById("urlbarView-context-menu");
+  let onMenuShown = BrowserTestUtils.waitForEvent(document, "popupshown");
+  EventUtils.synthesizeMouseAtCenter(element.row, {
+    button: 2,
+    type: "mousedown",
+  });
+  EventUtils.synthesizeMouseAtCenter(element.row, {
+    button: 2,
+    type: "contextmenu",
+  });
+  await onMenuShown;
+  Assert.ok(
+    gURLBar.view.isOpen,
+    "The view should remain open after the context menu is shown"
+  );
+
+  info("Mouse down on a context menu item");
+  let menuItem = [...contextMenu.children].find(
+    i => i.label == "Open in New Tab"
+  );
+  menuItem.dispatchEvent(
+    new MouseEvent("mousedown", { bubbles: true, button: 0, view: window })
+  );
+
+  Assert.ok(
+    gURLBar.view.isOpen,
+    "The view stays open after a mousedown on the context menu"
+  );
+
+  contextMenu.hidePopup();
+  gURLBar.view.close();
 });

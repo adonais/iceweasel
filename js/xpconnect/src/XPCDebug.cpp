@@ -2,15 +2,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "xpcprivate.h"
-#include "js/friend/DumpFunctions.h"  // JS::FormatStackDump
-#include "nsThreadUtils.h"
-#include "nsContentUtils.h"
-
 #include "mozilla/Sprintf.h"
+
+#include "nsContentUtils.h"
+#include "nsThreadUtils.h"
+#include "xpcprivate.h"
+
+#include "js/friend/DumpFunctions.h"  // JS::FormatStackDump
 
 #ifdef XP_WIN
 #  include <windows.h>
+
 #  include "nsPrintfCString.h"
 #endif
 

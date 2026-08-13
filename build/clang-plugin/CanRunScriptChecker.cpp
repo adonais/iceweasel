@@ -249,7 +249,11 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
                   OptionalInvalidExplicitArg, expr().bind("constructExpr"))),
 
               // We want to match the parent function.
-              optionally(forFunction(functionDecl().bind("nonCanRunScriptParentFunction")))),
+              optionally(forFunction(functionDecl().bind("nonCanRunScriptParentFunction"))),
+
+              // Not concerned by standard headers or third party.
+              isFirstParty()
+              ),
       this);
 }
 

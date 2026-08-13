@@ -2,31 +2,30 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "NetlinkService.h"
+
 #include <arpa/inet.h>
-#include <netinet/ether.h>
+#include <ifaddrs.h>
+#include <linux/rtnetlink.h>
 #include <net/if.h>
+#include <netinet/ether.h>
+#include <netinet/in.h>
 #include <poll.h>
 #include <unistd.h>
-#include <linux/rtnetlink.h>
-#include <ifaddrs.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 
-#include "nsThreadUtils.h"
-#include "NetlinkService.h"
-#include "nsIThread.h"
-#include "nsString.h"
-#include "nsPrintfCString.h"
-#include "mozilla/Logging.h"
 #include "../../base/IPv6Utils.h"
 #include "../LinkServiceCommon.h"
 #include "../NetworkLinkServiceDefines.h"
-
 #include "mozilla/Base64.h"
+#include "mozilla/DebugOnly.h"
 #include "mozilla/FunctionTypeTraits.h"
+#include "mozilla/Logging.h"
 #include "mozilla/ProfilerThreadSleep.h"
 #include "mozilla/glean/NetwerkMetrics.h"
-#include "mozilla/DebugOnly.h"
+#include "nsIThread.h"
+#include "nsPrintfCString.h"
+#include "nsString.h"
+#include "nsThreadUtils.h"
 
 #if defined(HAVE_RES_NINIT)
 #  include <netinet/in.h>

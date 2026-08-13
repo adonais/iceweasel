@@ -5,13 +5,13 @@
 #ifndef nsAboutCacheEntry_h_
 #define nsAboutCacheEntry_h_
 
+#include "nsCOMPtr.h"
 #include "nsIAboutModule.h"
-#include "nsICacheEntryOpenCallback.h"
 #include "nsICacheEntry.h"
+#include "nsICacheEntryOpenCallback.h"
+#include "nsIChannel.h"
 #include "nsIStreamListener.h"
 #include "nsString.h"
-#include "nsCOMPtr.h"
-#include "nsIChannel.h"
 
 class nsIAsyncOutputStream;
 class nsIInputStream;

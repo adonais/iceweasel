@@ -6,14 +6,16 @@
 
 const {
   Component,
+  createFactory,
 } = require("resource://devtools/client/shared/vendor/react.mjs");
 const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.mjs");
 const {
   p,
-  a,
 } = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
 
-const { openDocLink } = require("resource://devtools/client/shared/link.js");
+const MDNLink = createFactory(
+  require("resource://devtools/client/shared/components/MdnLink.js")
+);
 
 /**
  * Localization friendly component for rendering a block of text with a "Learn more" link
@@ -27,7 +29,6 @@ class LearnMoreLink extends Component {
       learnMoreStringKey: PropTypes.string.isRequired,
       l10n: PropTypes.object.isRequired,
       messageStringKey: PropTypes.string.isRequired,
-      onClick: PropTypes.func,
     };
   }
 
@@ -37,24 +38,12 @@ class LearnMoreLink extends Component {
       learnMoreStringKey: null,
       l10n: null,
       messageStringKey: null,
-      onClick: LearnMoreLink.openDocOnClick,
     };
   }
 
-  static openDocOnClick(event) {
-    event.preventDefault();
-    openDocLink(event.target.href);
-  }
-
   render() {
-    const {
-      className,
-      href,
-      learnMoreStringKey,
-      l10n,
-      messageStringKey,
-      onClick,
-    } = this.props;
+    const { className, href, learnMoreStringKey, l10n, messageStringKey } =
+      this.props;
     const learnMoreString = l10n.getStr(learnMoreStringKey);
     const messageString = l10n.getFormatStr(messageStringKey, learnMoreString);
 
@@ -62,7 +51,7 @@ class LearnMoreLink extends Component {
     // results.
     const re = new RegExp(`(\\b${learnMoreString}\\b)`);
     const contents = messageString.split(re);
-    contents[1] = a({ className: "link", href, onClick }, contents[1]);
+    contents[1] = MDNLink({ url: href }, contents[1]);
 
     return p(
       {

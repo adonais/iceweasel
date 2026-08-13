@@ -348,7 +348,7 @@ function createSourceObject({
 }
 
 /**
- * Create the source object for a source mapped original source that is stored in sources.js reducer.
+ * Create the source object for a source mapped original (script/stylesheet) source that is stored in sources.js reducer.
  * These original sources referred to by source maps.
  * This isn't code that runs in the runtime, so it isn't associated with anything
  * on the server side. It is associated with a generated source for the related bundle file
@@ -362,33 +362,39 @@ function createSourceObject({
  *        The Source object for the related generated source this original source maps to.
  */
 export function createSourceMapOriginalSource(id, url, generatedSource) {
-  return {
-    ...createSourceObject({
-      id,
-      url,
-      isOriginal: true,
-      generatedSource,
-    }),
-    type: ResourceCommand.TYPES.SOURCE,
-  };
+  const type = generatedSource.isStyleSheet
+    ? ResourceCommand.TYPES.STYLESHEET
+    : ResourceCommand.TYPES.SOURCE;
+  return createSourceObject({
+    id,
+    url,
+    isOriginal: true,
+    generatedSource,
+    isStyleSheet: generatedSource.isStyleSheet,
+    type,
+  });
 }
 
 /**
- * Create the source object for a pretty printed original source that is stored in sources.js reducer.
+ * Create the source object for a pretty printed original script source that is stored in sources.js reducer.
  * These original pretty printed sources aren't code that run in the runtime,
  * so it isn't associated with anything on the server side.
  * It is associated with a generated source for the non-pretty-printed file
  * which itself relates to an actual code that runs in the runtime.
  *
  * @param {string} id
- *        The ID of the source, computed by pretty print.
+ *        The ID of the script source, computed by pretty print.
  * @param {string} url
  *        The URL of the pretty-printed source file.
  *        This URL doesn't work. It is the URL of the non-pretty-printed file with ":formated" suffix.
  * @param {object} generatedSource
  *        The Source object for the related minimized source that related to this pretty printed source.
  */
-export function createPrettyPrintOriginalSource(id, url, generatedSource) {
+export function createPrettyPrintOriginalScriptSource(
+  id,
+  url,
+  generatedSource
+) {
   return {
     ...createSourceObject({
       id,
@@ -398,6 +404,36 @@ export function createPrettyPrintOriginalSource(id, url, generatedSource) {
       generatedSource,
     }),
     type: ResourceCommand.TYPES.SOURCE,
+  };
+}
+
+/**
+ * Create the source object for a pretty printed original stylesheet source that is stored in sources.js reducer.
+ * See `createPrettyPrintOriginalScriptSource`
+ *
+ * @param {string} id
+ *        The ID of the stylesheet source, computed by pretty print.
+ * @param {string} url
+ *        The URL of the pretty-printed source file.
+ *        This URL doesn't work. It is the URL of the non-pretty-printed file with ":formated" suffix.
+ * @param {object} generatedSource
+ *        The Source object for the related minimized source that related to this pretty printed source.
+ */
+export function createPrettyPrintOriginalStyleSheetSource(
+  id,
+  url,
+  generatedSource
+) {
+  return {
+    ...createSourceObject({
+      id,
+      url,
+      isOriginal: true,
+      isPrettyPrinted: true,
+      generatedSource,
+    }),
+    isStyleSheet: generatedSource.isStyleSheet,
+    type: ResourceCommand.TYPES.STYLESHEET,
   };
 }
 

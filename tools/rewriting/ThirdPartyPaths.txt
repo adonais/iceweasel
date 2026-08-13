@@ -35,6 +35,7 @@ dom/media/platforms/ffmpeg/ffmpeg59/
 dom/media/platforms/ffmpeg/ffmpeg60/
 dom/media/platforms/ffmpeg/ffmpeg61/
 dom/media/platforms/ffmpeg/ffmpeg62/
+dom/media/platforms/ffmpeg/ffmpeg63/
 dom/media/platforms/ffmpeg/libav53/
 dom/media/platforms/ffmpeg/libav54/
 dom/media/platforms/ffmpeg/libav55/
@@ -88,6 +89,7 @@ gfx/vr/service/openvr/src/strtools_public.cpp
 gfx/vr/service/openvr/src/strtools_public.h
 gfx/vr/service/openvr/src/vrpathregistry_public.cpp
 gfx/vr/service/openvr/src/vrpathregistry_public.h
+gfx/vr/service/osvr/
 gfx/wr/
 gfx/ycbcr/
 intl/icu/

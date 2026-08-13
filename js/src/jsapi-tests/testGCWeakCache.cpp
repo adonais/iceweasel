@@ -7,7 +7,6 @@
 #include "js/GCHashTable.h"
 #include "js/RootingAPI.h"
 #include "js/SweepingAPI.h"
-
 #include "jsapi-tests/tests.h"
 
 using namespace js;

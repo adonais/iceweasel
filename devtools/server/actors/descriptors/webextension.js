@@ -194,7 +194,7 @@ class WebExtensionDescriptorActor extends Actor {
 
     // Add the addonId in the URL to retrieve this information in other devtools
     // helpers. The addonId is usually populated in the principal, but this will
-    // not be the case for the fallback window because it is loaded from chrome://
+    // not be the case for the fallback window because it is loaded from resource://
     // instead of moz-extension://${addonId}
     this._browser.setAttribute(
       "src",

@@ -12,6 +12,7 @@ import {
   resolveWidgetSize,
   resolveWidgetOrder,
   resolveWidgetHasSidebar,
+  resolveCrosswordEndpoint,
   PREF_WIDGETS_ORDER,
 } from "common/WidgetsRegistry.mjs";
 
@@ -97,17 +98,33 @@ describe("getWidgetOrder", () => {
 
   it("respects a fully-specified custom order", () => {
     expect(
-      getWidgetOrder("focusTimer,lists,weather,sportsWidget,clocks")
-    ).toEqual(["focusTimer", "lists", "weather", "sportsWidget", "clocks"]);
+      getWidgetOrder(
+        "focusTimer,lists,weather,sportsWidget,clocks,privacy,crossword"
+      )
+    ).toEqual([
+      "focusTimer",
+      "lists",
+      "weather",
+      "sportsWidget",
+      "clocks",
+      "privacy",
+      "crossword",
+      "pictureOfTheDay",
+      "stocks",
+    ]);
   });
 
   it("appends missing registry IDs after saved ones", () => {
     expect(getWidgetOrder("weather")).toEqual([
       "weather",
+      "pictureOfTheDay",
       "sportsWidget",
       "clocks",
       "lists",
       "focusTimer",
+      "privacy",
+      "crossword",
+      "stocks",
     ]);
   });
 
@@ -115,9 +132,13 @@ describe("getWidgetOrder", () => {
     expect(getWidgetOrder("unknownWidget,lists,weather")).toEqual([
       "lists",
       "weather",
+      "pictureOfTheDay",
       "sportsWidget",
       "clocks",
       "focusTimer",
+      "privacy",
+      "crossword",
+      "stocks",
     ]);
   });
 
@@ -132,9 +153,13 @@ describe("getWidgetOrder", () => {
     expect(result).toEqual([
       "focusTimer",
       "lists",
+      "pictureOfTheDay",
       "sportsWidget",
       "clocks",
       "weather",
+      "privacy",
+      "crossword",
+      "stocks",
     ]);
     expect(result.length).toBe(registryIds.length);
   });
@@ -150,7 +175,17 @@ describe("resolveWidgetOrder", () => {
   it("uses the user-saved order when set", () => {
     expect(
       resolveWidgetOrder({ [PREF_WIDGETS_ORDER]: "weather,lists,focusTimer" })
-    ).toEqual(["weather", "lists", "focusTimer", "sportsWidget", "clocks"]);
+    ).toEqual([
+      "weather",
+      "lists",
+      "focusTimer",
+      "pictureOfTheDay",
+      "sportsWidget",
+      "clocks",
+      "privacy",
+      "crossword",
+      "stocks",
+    ]);
   });
 
   it("uses trainhop order when no user order is saved", () => {
@@ -159,7 +194,17 @@ describe("resolveWidgetOrder", () => {
         [PREF_WIDGETS_ORDER]: "",
         trainhopConfig: { widgets: { order: "focusTimer,weather,lists" } },
       })
-    ).toEqual(["focusTimer", "weather", "lists", "sportsWidget", "clocks"]);
+    ).toEqual([
+      "focusTimer",
+      "weather",
+      "lists",
+      "pictureOfTheDay",
+      "sportsWidget",
+      "clocks",
+      "privacy",
+      "crossword",
+      "stocks",
+    ]);
   });
 
   it("user order takes precedence over trainhop order", () => {
@@ -168,7 +213,17 @@ describe("resolveWidgetOrder", () => {
         [PREF_WIDGETS_ORDER]: "lists,focusTimer,weather",
         trainhopConfig: { widgets: { order: "weather,lists,focusTimer" } },
       })
-    ).toEqual(["lists", "focusTimer", "weather", "sportsWidget", "clocks"]);
+    ).toEqual([
+      "lists",
+      "focusTimer",
+      "weather",
+      "pictureOfTheDay",
+      "sportsWidget",
+      "clocks",
+      "privacy",
+      "crossword",
+      "stocks",
+    ]);
   });
 });
 
@@ -216,6 +271,26 @@ describe("isWidgetAddable", () => {
       isWidgetAddable(listsWidget, {
         [listsWidget.systemEnabledPref]: true,
         [listsWidget.enabledPref]: false,
+      })
+    ).toBe(true);
+  });
+
+  it("is addable when revealed via the dedicated widgetPictureOfTheDay namespace", () => {
+    const potd = WIDGET_REGISTRY.find(w => w.id === "pictureOfTheDay");
+    expect(
+      isWidgetAddable(potd, {
+        [potd.systemEnabledPref]: false,
+        trainhopConfig: { widgetPictureOfTheDay: { visible: true } },
+      })
+    ).toBe(true);
+  });
+
+  it("is addable when revealed via the dedicated widgetCrossword namespace", () => {
+    const crossword = WIDGET_REGISTRY.find(w => w.id === "crossword");
+    expect(
+      isWidgetAddable(crossword, {
+        [crossword.systemEnabledPref]: false,
+        trainhopConfig: { widgetCrossword: { visible: true } },
       })
     ).toBe(true);
   });
@@ -329,6 +404,52 @@ describe("resolveWidgetSize", () => {
       })
     ).toBe("medium");
   });
+
+  it("prefers the dedicated widgetPictureOfTheDay size over the shared widgets key", () => {
+    const potd = WIDGET_REGISTRY.find(w => w.id === "pictureOfTheDay");
+    expect(
+      resolveWidgetSize(potd, {
+        [potd.sizePref]: "",
+        trainhopConfig: {
+          widgetPictureOfTheDay: { size: "large" },
+          widgets: { [potd.trainhopSizeKey]: "medium" },
+        },
+      })
+    ).toBe("large");
+  });
+
+  it("falls back to the shared widgets size key for POTD when no dedicated size", () => {
+    const potd = WIDGET_REGISTRY.find(w => w.id === "pictureOfTheDay");
+    expect(
+      resolveWidgetSize(potd, {
+        [potd.sizePref]: "",
+        trainhopConfig: { widgets: { [potd.trainhopSizeKey]: "large" } },
+      })
+    ).toBe("large");
+  });
+
+  it("prefers the dedicated widgetCrossword size over the shared widgets key", () => {
+    const crossword = WIDGET_REGISTRY.find(w => w.id === "crossword");
+    expect(
+      resolveWidgetSize(crossword, {
+        [crossword.sizePref]: "",
+        trainhopConfig: {
+          widgetCrossword: { size: "large" },
+          widgets: { [crossword.trainhopSizeKey]: "medium" },
+        },
+      })
+    ).toBe("large");
+  });
+
+  it("falls back to the shared widgets size key for crossword when no dedicated size", () => {
+    const crossword = WIDGET_REGISTRY.find(w => w.id === "crossword");
+    expect(
+      resolveWidgetSize(crossword, {
+        [crossword.sizePref]: "",
+        trainhopConfig: { widgets: { [crossword.trainhopSizeKey]: "large" } },
+      })
+    ).toBe("large");
+  });
 });
 
 describe("resolveWidgetHasSidebar", () => {
@@ -361,5 +482,38 @@ describe("resolveWidgetHasSidebar", () => {
         },
       })
     ).toBe(true);
+  });
+});
+
+describe("resolveCrosswordEndpoint", () => {
+  const dedicatedEndpoint = "https://dedicated.example.com/index.html";
+  const sharedEndpoint = "https://shared.example.com/index.html";
+  const prefEndpoint = "https://pref.example.com/index.html";
+
+  it("prefers the dedicated widgetCrossword endpoint over the shared key and pref", () => {
+    expect(
+      resolveCrosswordEndpoint({
+        "widgets.crossword.endpoint": prefEndpoint,
+        trainhopConfig: {
+          widgetCrossword: { endpoint: dedicatedEndpoint },
+          widgets: { crosswordEndpoint: sharedEndpoint },
+        },
+      })
+    ).toBe(dedicatedEndpoint);
+  });
+
+  it("falls back to the shared widgets endpoint when no dedicated endpoint", () => {
+    expect(
+      resolveCrosswordEndpoint({
+        "widgets.crossword.endpoint": prefEndpoint,
+        trainhopConfig: { widgets: { crosswordEndpoint: sharedEndpoint } },
+      })
+    ).toBe(sharedEndpoint);
+  });
+
+  it("falls back to the raw pref when no trainhop override is present", () => {
+    expect(
+      resolveCrosswordEndpoint({ "widgets.crossword.endpoint": prefEndpoint })
+    ).toBe(prefEndpoint);
   });
 });

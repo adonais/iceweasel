@@ -63,7 +63,11 @@ nsImageRenderer::nsImageRenderer(nsIFrame* aForFrame, const StyleImage* aImage,
       mSize(0, 0),
       mFlags(aFlags),
       mExtendMode(ExtendMode::CLAMP),
-      mMaskOp(StyleMaskMode::MatchSource) {}
+      mMaskOp(StyleMaskMode::MatchSource) {
+  if (aForFrame->UsedImageDecoding() == StyleImageDecoding::Sync) {
+    mFlags |= FLAG_SYNC_DECODE_IMAGES;
+  }
+}
 
 using SymbolicImageKey = std::tuple<RefPtr<nsAtom>, int, nscolor>;
 struct SymbolicImageEntry {

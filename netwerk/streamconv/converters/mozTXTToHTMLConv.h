@@ -11,9 +11,9 @@
 #define _mozTXTToHTMLConv_h_
 
 #include "mozITXTToHTMLConv.h"
+#include "nsCOMPtr.h"
 #include "nsIThreadRetargetableStreamListener.h"
 #include "nsString.h"
-#include "nsCOMPtr.h"
 
 class nsIIOService;
 

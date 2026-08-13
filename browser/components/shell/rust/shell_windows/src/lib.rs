@@ -9,3 +9,5 @@
 
 mod limited_access_features;
 mod secondary_tiles;
+mod taskbar;
+mod util;

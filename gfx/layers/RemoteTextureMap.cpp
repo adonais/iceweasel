@@ -9,8 +9,11 @@
 
 #include "CompositableHost.h"
 #include "ImageDataSerializer.h"
-#include "mozilla/ipc/ProtocolUtils.h"
+#include "SharedSurface.h"
+#include "mozilla/StaticPrefs_gfx.h"
+#include "mozilla/StaticPrefs_webgl.h"
 #include "mozilla/gfx/gfxVars.h"
+#include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/layers/AsyncImagePipelineManager.h"
 #include "mozilla/layers/BufferTexture.h"
 #include "mozilla/layers/CompositorThread.h"
@@ -18,11 +21,8 @@
 #include "mozilla/layers/RemoteTextureHostWrapper.h"
 #include "mozilla/layers/TextureClientSharedSurface.h"
 #include "mozilla/layers/WebRenderTextureHost.h"
-#include "mozilla/StaticPrefs_gfx.h"
-#include "mozilla/StaticPrefs_webgl.h"
 #include "mozilla/webgpu/SharedTexture.h"
 #include "mozilla/webrender/RenderThread.h"
-#include "SharedSurface.h"
 
 namespace mozilla::layers {
 

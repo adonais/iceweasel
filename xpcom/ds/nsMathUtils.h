@@ -5,9 +5,11 @@
 #ifndef nsMathUtils_h_
 #define nsMathUtils_h_
 
-#include "nscore.h"
-#include <cmath>
 #include <float.h>
+
+#include <cmath>
+
+#include "nscore.h"
 
 #if defined(XP_SOLARIS)
 #  include <ieeefp.h>

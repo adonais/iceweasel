@@ -1,0 +1,21 @@
+{
+  "label": "resultadosegundavuelta.onpe.gob.pe",
+  "bugs": {
+    "2045731": {
+      "issue": "unsupported-warning",
+      "matches": ["https://resultadosegundavuelta.onpe.gob.pe/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "hide_messages": [
+        {
+          "container": "onpe-disclaimer-browser",
+          "message": "Chrome",
+          "click_adjacent": ".close-btn"
+        }
+      ]
+    }
+  ]
+}

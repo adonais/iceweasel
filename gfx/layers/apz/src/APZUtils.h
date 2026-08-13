@@ -11,15 +11,16 @@
 // Do not include this header from source files outside of gfx/layers.
 
 #include <stdint.h>  // for uint32_t
-#include "gfxTypes.h"
+
 #include "FrameMetrics.h"
 #include "LayersTypes.h"
 #include "UnitTransforms.h"
+#include "gfxTypes.h"
+#include "mozilla/EnumSet.h"
+#include "mozilla/FloatingPoint.h"
 #include "mozilla/gfx/CompositorHitTestInfo.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/layers/APZPublicUtils.h"  // for DispatchToContent
-#include "mozilla/EnumSet.h"
-#include "mozilla/FloatingPoint.h"
 
 namespace mozilla {
 

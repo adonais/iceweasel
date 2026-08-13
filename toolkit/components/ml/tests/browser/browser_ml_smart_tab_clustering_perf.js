@@ -460,7 +460,11 @@ add_task(async function test_topic_model() {
 });
 
 const N_TABS = [5];
-const methods = ["NEAREST_NEIGHBORS_ANCHOR", "LOGISTIC_REGRESSION_ANCHOR"];
+const methods = [
+  "NEAREST_NEIGHBORS_ANCHOR",
+  "LOGISTIC_REGRESSION_ANCHOR",
+  "AGGLOMERATIVE",
+];
 const nTabMetrics = {};
 
 for (let method of methods) {
@@ -494,15 +498,10 @@ add_task(async function test_n_clustering() {
       for (let i = 0; i < 1; i++) {
         const samples = generateSamples(labels, null, n);
         let startTime = performance.now();
-        if (method === "KMEANS_ANCHOR" && n <= 50) {
-          await stgManager.generateClusters(
-            samples.labels,
-            null,
-            0,
-            null,
-            [0],
-            []
-          );
+        if (method === "AGGLOMERATIVE") {
+          // De-novo clustering with agglomerative (HAC), the default method.
+          stgManager.setClusteringMethod("AGGLOMERATIVE");
+          await stgManager.generateClusters(samples.labels, null, 0);
         } else if (method === "NEAREST_NEIGHBORS_ANCHOR") {
           await stgManager.findNearestNeighbors({
             allTabs: samples.labels,

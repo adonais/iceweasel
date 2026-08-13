@@ -15,7 +15,9 @@
  */
 
 #include "wasm/WasmGC.h"
+
 #include "wasm/WasmInstance.h"
+
 #include "jit/MacroAssembler-inl.h"
 
 using namespace js;
@@ -442,8 +444,7 @@ bool wasm::IsPlausibleStackMapKey(const uint8_t* nextPC) {
            ((insn[-1] & kBaseOpcodeMask) == JAL) ||               // jal
            ((insn[-2] & kBaseOpcodeMask) == JAL &&
             insn[-1] == 0x00000013 /* addi zero, zero, 0 */) ||  // jal; nop
-           (insn[-1] == 0x00100073 &&
-            (insn[-2] & kITypeMask) == RO_CSRRWI)));  // wasm trap
+           (insn[-1] == 0xc0035073)));  // "csrwi csr_cycle, 0x6";
 #  else
   MOZ_CRASH("IsValidStackMapKey: requires implementation on this platform");
 #  endif

@@ -264,7 +264,9 @@ Window includes WindowLocalStorage;
 
 // http://www.whatwg.org/specs/web-apps/current-work/
 partial interface Window {
+  [Deprecated=UseOfCaptureEvents]
   undefined captureEvents();
+  [Deprecated=UseOfReleaseEvents]
   undefined releaseEvents();
 };
 
@@ -511,7 +513,8 @@ partial interface Window {
   [Replaceable, Throws] readonly attribute long   scrollMaxX;
   [Replaceable, Throws] readonly attribute long   scrollMaxY;
 
-  [Throws, Deprecated=FullscreenAttribute] attribute boolean fullScreen;
+  // XXX This should be a ChromeOnly attribute
+  [Throws, NeedsCallerType] attribute boolean fullScreen;
 
   undefined                 updateCommands(DOMString action);
 

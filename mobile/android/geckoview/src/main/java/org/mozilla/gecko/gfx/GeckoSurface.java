@@ -4,16 +4,12 @@
 
 package org.mozilla.gecko.gfx;
 
-import static org.mozilla.geckoview.BuildConfig.DEBUG_BUILD;
-
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.view.Surface;
 import org.mozilla.gecko.annotation.WrapForJNI;
 
 public final class GeckoSurface implements Parcelable {
-  private static final String LOGTAG = "GeckoSurface";
-
   private Surface mSurface;
   private long mHandle;
   private boolean mIsSingleBuffer;
@@ -21,17 +17,12 @@ public final class GeckoSurface implements Parcelable {
   private boolean mOwned = true;
   private volatile boolean mIsReleased = false;
 
-  private int mMyPid;
-  // Locally allocated surface/texture. Do not pass it over IPC.
-  private GeckoSurface mSyncSurface;
-
   @WrapForJNI(exceptionMode = "nsresult")
   public GeckoSurface(final GeckoSurfaceTexture gst) {
     mSurface = new Surface(gst);
     mHandle = gst.getHandle();
     mIsSingleBuffer = gst.isSingleBuffer();
     mIsAvailable = true;
-    mMyPid = android.os.Process.myPid();
   }
 
   public GeckoSurface(final Parcel p) {
@@ -39,7 +30,6 @@ public final class GeckoSurface implements Parcelable {
     mHandle = p.readLong();
     mIsSingleBuffer = p.readByte() == 1;
     mIsAvailable = p.readByte() == 1;
-    mMyPid = p.readInt();
   }
 
   public static final Parcelable.Creator<GeckoSurface> CREATOR =
@@ -76,7 +66,6 @@ public final class GeckoSurface implements Parcelable {
     out.writeLong(mHandle);
     out.writeByte((byte) (mIsSingleBuffer ? 1 : 0));
     out.writeByte((byte) (mIsAvailable ? 1 : 0));
-    out.writeInt(mMyPid);
   }
 
   public void release() {
@@ -84,15 +73,6 @@ public final class GeckoSurface implements Parcelable {
       return;
     }
     mIsReleased = true;
-
-    if (mSyncSurface != null) {
-      mSyncSurface.release();
-      final GeckoSurfaceTexture gst = GeckoSurfaceTexture.lookup(mSyncSurface.getHandle());
-      if (gst != null) {
-        gst.decrementUse();
-      }
-      mSyncSurface = null;
-    }
 
     if (mOwned) {
       mSurface.release();
@@ -122,29 +102,5 @@ public final class GeckoSurface implements Parcelable {
   @WrapForJNI
   public void setAvailable(final boolean available) {
     mIsAvailable = available;
-  }
-
-  /* package */ boolean inProcess() {
-    return android.os.Process.myPid() == mMyPid;
-  }
-
-  /* package */ SyncConfig initSyncSurface(final int width, final int height) {
-    if (DEBUG_BUILD) {
-      if (inProcess()) {
-        throw new AssertionError("no need for sync when allocated in process");
-      }
-    }
-    if (GeckoSurfaceTexture.lookup(mHandle) != null) {
-      throw new AssertionError("texture#" + mHandle + " already in use.");
-    }
-    final GeckoSurfaceTexture texture = GeckoSurfaceTexture.acquire(true, mHandle);
-    if (texture != null) {
-      texture.setDefaultBufferSize(width, height);
-      texture.track(mHandle);
-      mSyncSurface = new GeckoSurface(texture);
-      return new SyncConfig(mHandle, mSyncSurface, width, height);
-    }
-
-    return null;
   }
 }

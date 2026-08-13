@@ -546,7 +546,18 @@ BrowserTabList.prototype.handleEvent = DevToolsUtils.makeInfallible(function (
     case "TabClose": {
       const actor = this._actorByBrowser.get(browser);
       if (actor) {
-        this._handleActorClose(actor, browser);
+        // When we are moving the Tab to another top level window,
+        // `adoptedBy` will refer to the new Tab. Otherwise this attribute will be null.
+        // Ignore TabClose in this condition.
+        const { adoptedBy } = event.detail;
+        if (adoptedBy) {
+          actor.swapBrowser(adoptedBy.linkedBrowser);
+          // Also swap the browsers the our internal Map
+          this._actorByBrowser.delete(browser);
+          this._actorByBrowser.set(adoptedBy.linkedBrowser, actor);
+        } else {
+          this._handleActorClose(actor, browser);
+        }
       }
       break;
     }

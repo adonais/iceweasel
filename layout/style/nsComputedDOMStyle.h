@@ -107,6 +107,12 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
 
   float UsedFontSize() final;
 
+  // Note that some non-custom properties don't appear in the computed style,
+  // if they're internal properties or so.
+  static uint32_t NonCustomPropertyCount();
+  static NonCustomCSSPropertyId NonCustomPropertyAt(uint32_t);
+  static bool HasNonCustomProperty(NonCustomCSSPropertyId);
+
   void GetCSSImageURLs(const nsACString& aPropertyName,
                        nsTArray<nsCString>& aImageURLs,
                        mozilla::ErrorResult& aRv) final;

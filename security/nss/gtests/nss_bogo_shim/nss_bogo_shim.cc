@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <memory>
+#include <vector>
 #include "nspr.h"
 #include "nss.h"
 #include "prio.h"
@@ -20,6 +21,7 @@
 #include "sslproto.h"
 #include "nss_scoped_ptrs.h"
 #include "sslimpl.h"
+#include "dtlscon.h"
 #include "tls13ech.h"
 #include "base64.h"
 
@@ -32,6 +34,195 @@ static const char* kVersionDisableFlags[] = {"no-ssl3", "no-tls1", "no-tls11",
 const unsigned char kBogoDummyData[] = {'h', 'e', 'l', 'l', 'o'};
 
 bool exitCodeUnimplemented = false;
+
+// PacketAdaptor: BoringSSL bogo packet-framing protocol over TCP for DTLS
+// tests. Each DTLS datagram is wrapped as: 'P' + 4-byte big-endian length +
+// payload. Control opcodes:
+//   'T' + 8-byte ns  — simulate a read timeout (expire DTLS timers, reply 't')
+//   'M' + 4-byte mtu — update the DTLS path MTU
+//   'E' + 8-byte ns  — expected next timeout hint (ignored)
+
+struct PacketAdaptorData {
+  PRFileDesc* transport;
+  PRFileDesc* ssl_fd;
+};
+
+static PRDescIdentity gPacketAdaptorId = PR_INVALID_IO_LAYER;
+
+static PacketAdaptorData* GetPacketAdaptorData(PRFileDesc* fd) {
+  return reinterpret_cast<PacketAdaptorData*>(fd->secret);
+}
+
+static bool PacketAdaptorReadExact(PRFileDesc* transport, void* buf,
+                                   size_t len) {
+  uint8_t* ptr = static_cast<uint8_t*>(buf);
+  while (len > 0) {
+    PRInt32 rv = transport->methods->recv(
+        transport, ptr, static_cast<PRInt32>(len), 0, PR_INTERVAL_NO_TIMEOUT);
+    if (rv <= 0) return false;
+    ptr += rv;
+    len -= static_cast<size_t>(rv);
+  }
+  return true;
+}
+
+static PRInt32 PacketAdaptorRecv(PRFileDesc* fd, void* buf, PRInt32 amount,
+                                 PRIntn flags, PRIntervalTime timeout) {
+  auto* data = GetPacketAdaptorData(fd);
+  PRFileDesc* transport = data->transport;
+
+  for (;;) {
+    uint8_t opcode;
+    if (!PacketAdaptorReadExact(transport, &opcode, 1)) return -1;
+
+    switch (opcode) {
+      case 'P': {
+        PRUint32 lb;
+        if (!PacketAdaptorReadExact(transport, &lb, 4)) return -1;
+        lb = PR_ntohl(lb);
+        PRUint32 n =
+            (amount >= 0 && PRUint32(amount) < lb) ? PRUint32(amount) : lb;
+        if (!PacketAdaptorReadExact(transport, buf, n)) return -1;
+        if (lb > n) {
+          std::vector<uint8_t> drain(lb - n);
+          if (!PacketAdaptorReadExact(transport, drain.data(), drain.size()))
+            return -1;
+        }
+        return static_cast<PRInt32>(n);
+      }
+
+      case 'T': {
+        PRUint64 timeout_ns;
+        if (!PacketAdaptorReadExact(transport, &timeout_ns, 8)) return -1;
+        timeout_ns = PR_ntohll(timeout_ns);
+        PRIntervalTime elapsed =
+            PR_MillisecondsToInterval(PRUint32(timeout_ns / PR_NSEC_PER_MSEC));
+        if (data->ssl_fd) {
+          sslSocket* ss = ssl_FindSocket(data->ssl_fd);
+          if (ss) {
+            ssl_GetSSL3HandshakeLock(ss);
+            PRIntervalTime now = PR_IntervalNow();
+            for (size_t i = 0; i < PR_ARRAY_SIZE(ss->ssl3.hs.timers); ++i) {
+              if (ss->ssl3.hs.timers[i].cb) {
+                ss->ssl3.hs.timers[i].started = now - elapsed;
+              }
+            }
+            ssl_ReleaseSSL3HandshakeLock(ss);
+          }
+        }
+        uint8_t ack = 't';
+        if (transport->methods->send(transport, &ack, 1, 0,
+                                     PR_INTERVAL_NO_TIMEOUT) != 1) {
+          return -1;
+        }
+        // Return WOULD_BLOCK so that ssl3gthr.c calls dtls_CheckTimer().
+        PR_SetError(PR_WOULD_BLOCK_ERROR, 0);
+        return -1;
+      }
+
+      case 'M': {
+        PRUint32 mtu;
+        if (!PacketAdaptorReadExact(transport, &mtu, 4)) return -1;
+        mtu = PR_ntohl(mtu);
+        if (data->ssl_fd) {
+          sslSocket* ss = ssl_FindSocket(data->ssl_fd);
+          if (ss) dtls_SetMTU(ss, PRUint16(mtu));
+        }
+        break;
+      }
+
+      case 'E': {
+        uint8_t nb[8];
+        if (!PacketAdaptorReadExact(transport, nb, 8)) return -1;
+        break;
+      }
+
+      default:
+        std::cerr << "PacketAdaptor: unknown opcode " << int(opcode) << "\n";
+        PR_SetError(PR_IO_ERROR, 0);
+        return -1;
+    }
+  }
+}
+
+static PRInt32 PacketAdaptorSend(PRFileDesc* fd, const void* buf,
+                                 PRInt32 amount, PRIntn flags,
+                                 PRIntervalTime timeout) {
+  PRFileDesc* transport = GetPacketAdaptorData(fd)->transport;
+  uint8_t hdr[5] = {'P', uint8_t(amount >> 24), uint8_t(amount >> 16),
+                    uint8_t(amount >> 8), uint8_t(amount)};
+  if (transport->methods->send(transport, hdr, 5, 0, PR_INTERVAL_NO_TIMEOUT) !=
+      5)
+    return -1;
+  return transport->methods->send(transport, buf, amount, 0,
+                                  PR_INTERVAL_NO_TIMEOUT);
+}
+
+static PRInt32 PacketAdaptorRead(PRFileDesc* fd, void* buf, PRInt32 amount) {
+  return PacketAdaptorRecv(fd, buf, amount, 0, PR_INTERVAL_NO_TIMEOUT);
+}
+
+static PRInt32 PacketAdaptorWrite(PRFileDesc* fd, const void* buf,
+                                  PRInt32 amount) {
+  return PacketAdaptorSend(fd, buf, amount, 0, PR_INTERVAL_NO_TIMEOUT);
+}
+
+static PRStatus PacketAdaptorClose(PRFileDesc* fd) {
+  fd->secret = nullptr;
+  fd->dtor(fd);
+  return PR_SUCCESS;
+}
+
+static PRStatus PacketAdaptorGetPeerName(PRFileDesc* fd, PRNetAddr* addr) {
+  PRFileDesc* t = GetPacketAdaptorData(fd)->transport;
+  return t->methods->getpeername(t, addr);
+}
+static PRStatus PacketAdaptorGetSockName(PRFileDesc* fd, PRNetAddr* addr) {
+  PRFileDesc* t = GetPacketAdaptorData(fd)->transport;
+  return t->methods->getsockname(t, addr);
+}
+static PRStatus PacketAdaptorGetSockOpt(PRFileDesc* fd,
+                                        PRSocketOptionData* opt) {
+  PRFileDesc* t = GetPacketAdaptorData(fd)->transport;
+  return t->methods->getsocketoption(t, opt);
+}
+static PRStatus PacketAdaptorSetSockOpt(PRFileDesc* fd,
+                                        const PRSocketOptionData* opt) {
+  PRFileDesc* t = GetPacketAdaptorData(fd)->transport;
+  return t->methods->setsocketoption(t, opt);
+}
+static PRInt16 PacketAdaptorPoll(PRFileDesc* fd, PRInt16 in_flags,
+                                 PRInt16* out_flags) {
+  PRFileDesc* t = GetPacketAdaptorData(fd)->transport;
+  return t->methods->poll(t, in_flags, out_flags);
+}
+
+static PRIOMethods gPacketAdaptorMethods;
+
+static PRFileDesc* CreatePacketAdaptor(PacketAdaptorData* data) {
+  if (gPacketAdaptorId == PR_INVALID_IO_LAYER) {
+    gPacketAdaptorId = PR_GetUniqueIdentity("bogo-packet-adaptor");
+    if (gPacketAdaptorId == PR_INVALID_IO_LAYER) return nullptr;
+    gPacketAdaptorMethods = *PR_GetDefaultIOMethods();
+    gPacketAdaptorMethods.recv = PacketAdaptorRecv;
+    gPacketAdaptorMethods.send = PacketAdaptorSend;
+    gPacketAdaptorMethods.read = PacketAdaptorRead;
+    gPacketAdaptorMethods.write = PacketAdaptorWrite;
+    gPacketAdaptorMethods.close = PacketAdaptorClose;
+    gPacketAdaptorMethods.getpeername = PacketAdaptorGetPeerName;
+    gPacketAdaptorMethods.getsockname = PacketAdaptorGetSockName;
+    gPacketAdaptorMethods.getsocketoption = PacketAdaptorGetSockOpt;
+    gPacketAdaptorMethods.setsocketoption = PacketAdaptorSetSockOpt;
+    gPacketAdaptorMethods.poll = PacketAdaptorPoll;
+  }
+
+  PRFileDesc* fd =
+      PR_CreateIOLayerStub(gPacketAdaptorId, &gPacketAdaptorMethods);
+  if (!fd) return nullptr;
+
+  fd->secret = reinterpret_cast<PRFilePrivate*>(data);
+  return fd;
+}
 
 std::string FormatError(PRErrorCode code) {
   return std::string(":") + PORT_ErrorToName(code) + ":" + ":" +
@@ -58,8 +249,10 @@ class TestAgent {
   }
 
   bool Init() {
-    if (!ConnectTcp()) {
-      return false;
+    if (cfg_.get<bool>("dtls")) {
+      if (!ConnectDtls()) return false;
+    } else {
+      if (!ConnectTcp()) return false;
     }
 
     if (!SetupKeys()) {
@@ -90,6 +283,30 @@ class TestAgent {
     }
     pr_fd_.release();
 
+    return true;
+  }
+
+  bool ConnectDtls() {
+    if (!(cfg_.get<bool>("ipv6") && OpenConnection("::1")) &&
+        !OpenConnection("127.0.0.1")) {
+      return false;
+    }
+
+    adaptor_data_.transport = pr_fd_.get();
+    adaptor_data_.ssl_fd = nullptr;
+    ScopedPRFileDesc adaptor(CreatePacketAdaptor(&adaptor_data_));
+    if (!adaptor) {
+      return false;
+    }
+
+    ssl_fd_ = ScopedPRFileDesc(DTLS_ImportFD(NULL, adaptor.get()));
+    if (!ssl_fd_) {
+      return false;
+    }
+    PRFileDesc* imported = adaptor.release();
+    (void)imported;
+
+    adaptor_data_.ssl_fd = ssl_fd_.get();
     return true;
   }
 
@@ -276,15 +493,28 @@ class TestAgent {
   }
 
   bool SetupOptions() {
-    SECStatus rv =
-        SSL_OptionSet(ssl_fd_.get(), SSL_ENABLE_TLS13_COMPAT_MODE, PR_TRUE);
-    if (rv != SECSuccess) return false;
+    bool is_dtls = cfg_.get<bool>("dtls");
 
-    rv = SSL_OptionSet(ssl_fd_.get(), SSL_ENABLE_SESSION_TICKETS, PR_TRUE);
-    if (rv != SECSuccess) return false;
+    if (!is_dtls) {
+      SECStatus rv =
+          SSL_OptionSet(ssl_fd_.get(), SSL_ENABLE_TLS13_COMPAT_MODE, PR_TRUE);
+      if (rv != SECSuccess) {
+        return false;
+      }
+    }
+
+    SECStatus rv =
+        SSL_OptionSet(ssl_fd_.get(), SSL_ENABLE_SESSION_TICKETS, PR_TRUE);
+    if (rv != SECSuccess) {
+      return false;
+    }
 
     SSLVersionRange vrange;
-    if (!GetVersionRange(&vrange, ssl_variant_stream)) return false;
+    SSLProtocolVariant variant =
+        is_dtls ? ssl_variant_datagram : ssl_variant_stream;
+    if (!GetVersionRange(&vrange, variant)) {
+      return false;
+    }
 
     rv = SSL_VersionRangeSet(ssl_fd_.get(), &vrange);
     if (rv != SECSuccess) return false;
@@ -400,10 +630,12 @@ class TestAgent {
                        PR_TRUE);
     if (rv != SECSuccess) return false;
 
-    if (cfg_.get<bool>("server")) {
-      // BoGo expects servers to enable ECH (backend) by default
+    if (cfg_.get<bool>("server") && !is_dtls) {
+      // BoGo expects TLS servers to enable ECH (backend) by default
       rv = SSLExp_EnableTls13BackendEch(ssl_fd_.get(), true);
-      if (rv != SECSuccess) return false;
+      if (rv != SECSuccess) {
+        return false;
+      }
     }
 
     if (cfg_.get<bool>("enable-ech-grease")) {
@@ -435,11 +667,14 @@ class TestAgent {
       if (rv != SECSuccess) {
         return false;
       }
-      // Xyber768 is disabled by policy by default, so if it's requested
-      // we need to update the policy flags as well.
+      // Xyber768 and ML-KEM-1024 are disabled by policy by default, so if
+      // they're requested we need to update the policy flags as well.
       for (auto group : groups) {
         if (group == ssl_grp_kem_xyber768d00) {
           NSS_SetAlgorithmPolicy(SEC_OID_XYBER768D00, NSS_USE_ALG_IN_SSL_KX, 0);
+        }
+        if (group == ssl_grp_kem_mlkem1024) {
+          NSS_SetAlgorithmPolicy(SEC_OID_ML_KEM_1024, NSS_USE_ALG_IN_SSL_KX, 0);
         }
       }
     }
@@ -1111,6 +1346,7 @@ class TestAgent {
  private:
   const Config& cfg_;
   ScopedPRFileDesc pr_fd_;
+  PacketAdaptorData adaptor_data_{};
   ScopedPRFileDesc ssl_fd_;
   ScopedCERTCertificate cert_;
   ScopedSECKEYPrivateKey key_;
@@ -1123,6 +1359,7 @@ std::unique_ptr<const Config> ReadConfig(int argc, char** argv) {
   cfg->AddEntry<bool>("ipv6", false);
   cfg->AddEntry<int>("shim-id", 0);
   cfg->AddEntry<bool>("server", false);
+  cfg->AddEntry<bool>("dtls", false);
   cfg->AddEntry<int>("resume-count", 0);
   cfg->AddEntry<std::string>("key-file", "");
   cfg->AddEntry<std::string>("cert-file", "");
@@ -1185,6 +1422,7 @@ std::unique_ptr<const Config> ReadConfig(int argc, char** argv) {
       break;
     case Config::kUnknownFlag:
       exitCodeUnimplemented = true;
+      return nullptr;
     default:
       return nullptr;
   }

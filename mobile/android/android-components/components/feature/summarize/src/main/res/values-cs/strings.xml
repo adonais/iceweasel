@@ -95,6 +95,10 @@
   <string name="mozac_ai_controls_page_summary_description">Stránky a souhrny se nikdy neukládají.</string>
   <!-- Button text for the Error dismiss button on Shake to Summarize -->
   <string name="mozac_summarize_error_dissmiss">Zavřít</string>
+  <!-- Title for the Mozilla account sign-in screen, shown when summarization results in a connection failure. -->
+  <string name="mozac_summarize_fxa_sign_in_title">Přihlásit se a vytvořit souhrn</string>
+  <!-- Message on the sign-in screen, inviting the user to continue with an existing Mozilla account or create a new one -->
+  <string xmlns:ns0="http://schemas.android.com/tools" name="mozac_summarize_fxa_sign_in_message" ns0:ignore="BrandUsage">Chcete-li pokračovat, použijte svůj účet Mozilla, nebo si jej vytvořte a začněte.</string>
   <!-- Label for the button that starts the sign-in flow -->
   <string name="mozac_summarize_fxa_sign_in_button_positive">Přihlásit se</string>
 </resources>

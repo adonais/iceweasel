@@ -36,6 +36,11 @@ sealed interface AcornGradientType {
      * @property angleInDegrees Angle of the gradient axis.
      */
     data class Linear(val angleInDegrees: Float) : AcornGradientType
+
+    /**
+     * A vertical gradient.
+     */
+    data object Vertical : AcornGradientType
 }
 
 /**
@@ -57,6 +62,10 @@ data class AcornGradient(
             colorStops = colorStops,
             angleInDegrees = type.angleInDegrees,
         )
+
+        AcornGradientType.Vertical -> Brush.verticalGradient(
+            colorStops = colorStops.map { it.position to it.color }.toTypedArray(),
+        )
     }
 }
 
@@ -67,6 +76,7 @@ data class AcornGradient(
  * @param accent More prominent gradient color against surface, for bold brand accents.
  * @param accentSubtle Less prominent gradient color against surface, for subtle brand accents.
  * @param tabOutline Border around active tabs.
+ * @param privacyMask Use for the mask on the 72x72 private mode icon.
  */
 @Immutable
 data class AcornGradientScheme(
@@ -74,6 +84,7 @@ data class AcornGradientScheme(
     val accent: AcornGradient,
     val accentSubtle: AcornGradient,
     val tabOutline: AcornGradient,
+    val privacyMask: AcornGradient,
 )
 
 private val cfr = AcornGradient(
@@ -100,6 +111,14 @@ private val tabOutline = AcornGradient(
     ),
 )
 
+private val privacyMask = AcornGradient(
+    type = AcornGradientType.Vertical,
+    colorStops = listOf(
+        ColorStop(0f, NovaColors.Violet20),
+        ColorStop(1f, NovaColors.White),
+    ),
+)
+
 val lightAcornGradientScheme = AcornGradientScheme(
     cfr = cfr,
     accent = AcornGradient(
@@ -117,6 +136,7 @@ val lightAcornGradientScheme = AcornGradientScheme(
         ),
     ),
     tabOutline = tabOutline,
+    privacyMask = privacyMask,
 )
 
 val darkAcornGradientScheme = AcornGradientScheme(
@@ -130,6 +150,7 @@ val darkAcornGradientScheme = AcornGradientScheme(
         ),
     ),
     tabOutline = tabOutline,
+    privacyMask = privacyMask,
 )
 
 val privateAcornGradientScheme = AcornGradientScheme(
@@ -143,6 +164,7 @@ val privateAcornGradientScheme = AcornGradientScheme(
         ),
     ),
     tabOutline = tabOutline,
+    privacyMask = privacyMask,
 )
 
 internal val localAcornGradients = staticCompositionLocalOf {
@@ -193,5 +215,13 @@ private fun AccentSubtleGradientPreview() {
 private fun TabOutlineGradientPreview() {
     AcornTheme {
         GradientSwatch(gradient = AcornTheme.gradients.tabOutline)
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun PrivacyMaskGradientPreview() {
+    AcornTheme {
+        GradientSwatch(gradient = AcornTheme.gradients.privacyMask)
     }
 }

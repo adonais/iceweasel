@@ -20,6 +20,10 @@
     padding-block-end: var(--space-small);
     position: relative;
     z-index: var(--browser-area-z-index-sidebar);
+
+    :root[uidensity="compact"] & {
+      width: 280px;
+    }
   }
 
   &[sidebarcommand="viewGenaiChatSidebar"] {
@@ -284,6 +288,31 @@ sidebar-main,
   }
 }
 
+/* Drive the sidebar-main shadow DOM's launcher button inline padding from the
+ * document's uidensity. Custom properties inherit across shadow boundaries,
+ * so this value is consumed by sidebar-main.css. Note that we round the
+ * padding to the nearest 0.5px, so that the combined start+end padding will be
+ * a whole number of CSS pixels. */
+:root {
+  --sidebar-launcher-button-padding-inline: round(var(--space-medium), 0.5px);
+
+  &[uidensity="compact"] {
+    /* 32px icon button + 2 * 2px = 36px collapsed sidebar. */
+    --sidebar-launcher-button-padding-inline: 2px;
+
+    --sidebar-expanded-launcher-width: 240px;
+
+    /* 28px icon button + 2 * 7px = 42px collapsed sidebar. */
+    @media -moz-pref("sidebar.verticalTabs") {
+      --sidebar-launcher-button-padding-inline: 7px;
+    }
+  }
+
+  @media -moz-pref("browser.nova.enabled") and (not -moz-pref("sidebar.verticalTabs")) {
+    --sidebar-launcher-button-padding-inline: 4px;
+  }
+}
+
 /* Expand on hover */
 
 :root[sidebar-expand-on-hover] {
@@ -337,6 +366,10 @@ sidebar-main,
     }
 
     @media -moz-pref("browser.nova.enabled") {
+      :root[uidensity="compact"] & {
+        --chrome-window-gap: 2px;
+        margin-block-start: var(--chrome-window-gap);
+      }
       border-radius: var(--chrome-block-radius);
       background-color: var(--toolbar-background-color);
       position: absolute;
@@ -433,6 +466,9 @@ sidebar-main,
     }
 
     @media -moz-pref("browser.nova.enabled") {
+      :root[uidensity="compact"] & {
+        --chrome-window-gap: 2px;
+      }
       &:not([sidebar-positionend])[sidebar-panel-open] {
         margin-inline-start: calc(var(--sidebar-launcher-collapsed-width) + var(--chrome-window-gap));
       }
@@ -460,6 +496,7 @@ sidebar-main,
     background-color: var(--sidebar-background-color);
     color: var(--sidebar-text-color);
     padding-block-end: 0;
+    border-inline-start: none;
   }
 
   #sidebar {
@@ -478,6 +515,11 @@ sidebar-main,
     width: var(--chrome-window-gap);
     border-inline: none;
     margin-inline: calc(-1 * var(--chrome-window-gap) + 1px);
+
+    :root[uidensity="compact"] & {
+      width: 2px;
+      margin-inline: -2px;
+    }
   }
 
   /* When no panel is open, the launcher splitter sits between sidebar-main and
@@ -485,6 +527,11 @@ sidebar-main,
    * between sidebar-main and the content area matches the sidebar-box case. */
   #sidebar-container:not([sidebar-panel-open]) + #sidebar-launcher-splitter {
     margin-inline: calc(-1 * var(--chrome-window-gap) + 1px);
+
+    :root[uidensity="compact"] & {
+      width: 2px;
+      margin-inline: -2px;
+    }
   }
 
   /* When the closest split-view panel is selected, its outline extends into
@@ -520,7 +567,9 @@ sidebar-main,
     }
   }
 
-  #sidebar-box[sidebar-panel-open] {
+  /* Straighten out the leading edge of the panel, if it's adjacent to the
+   * launcher + splitter. */
+  #sidebar-container:not([hidden]) ~ #sidebar-box[sidebar-panel-open] {
     &:not([sidebar-positionend]) {
       border-start-start-radius: 0;
       border-end-start-radius: 0;
@@ -529,6 +578,16 @@ sidebar-main,
     &[sidebar-positionend] {
       border-start-end-radius: 0;
       border-end-end-radius: 0;
+    }
+  }
+
+  @media not -moz-pref("sidebar.verticalTabs") {
+    #sidebar-box[sidebar-panel-open]:not([sidebar-positionend]) {
+      margin-inline-start: calc(-1 * var(--chrome-window-gap));
+    }
+
+    #sidebar-box[sidebar-panel-open][sidebar-positionend] {
+      margin-inline-end: calc(-1 * var(--chrome-window-gap));
     }
   }
 }

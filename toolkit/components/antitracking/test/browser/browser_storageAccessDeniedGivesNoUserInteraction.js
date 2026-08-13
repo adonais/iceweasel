@@ -7,9 +7,12 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-add_task(async function testGrantGivesPermission() {
+add_setup(async function () {
   await setPreferences();
+  registerCleanupFunction(clearSiteTestData);
+});
 
+add_task(async function testGrantGivesPermission() {
   await openPageAndRunCode(
     TEST_TOP_PAGE,
     getExpectPopupAndClick("reject"),
@@ -24,7 +27,4 @@ add_task(async function testGrantGivesPermission() {
       url: "https://tracking.example.org/",
     }
   );
-
-  await cleanUpData();
-  await SpecialPowers.flushPrefEnv();
 });

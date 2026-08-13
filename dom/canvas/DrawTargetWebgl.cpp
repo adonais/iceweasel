@@ -1255,13 +1255,14 @@ bool SharedContextWebgl::ReadInto(uint8_t* aDstData, int32_t aDstStride,
   desc.srcOffset = *ivec2::From(aBounds);
   desc.size = *uvec2::FromSize(aBounds);
   desc.packState.rowLength = aDstStride / BytesPerPixel(aFormat);
+  bool success = true;
   if (aBuffer) {
     mWebgl->BindBuffer(LOCAL_GL_PIXEL_PACK_BUFFER, aBuffer);
     mWebgl->ReadPixelsPbo(desc, 0);
-    mWebgl->BindBuffer(LOCAL_GL_PIXEL_PACK_BUFFER, 0);
+    mWebgl->BindBuffer(LOCAL_GL_PIXEL_PACK_BUFFER, nullptr);
   } else {
     Range<uint8_t> range = {aDstData, size_t(aDstStride) * aBounds.height};
-    mWebgl->ReadPixelsInto(desc, range);
+    success = !mWebgl->ReadPixelsInto(desc, range).subrect.IsEmpty();
   }
 
   // Restore the actual framebuffer after reading is done.
@@ -1269,7 +1270,7 @@ bool SharedContextWebgl::ReadInto(uint8_t* aDstData, int32_t aDstStride,
     RestoreCurrentTarget();
   }
 
-  return true;
+  return success;
 }
 
 already_AddRefed<DataSourceSurface> SharedContextWebgl::ReadSnapshot(
@@ -1348,7 +1349,7 @@ already_AddRefed<WebGLBuffer> SharedContextWebgl::ReadSnapshotIntoPBO(
   mWebgl->BindBuffer(LOCAL_GL_PIXEL_PACK_BUFFER, pbo);
   mWebgl->UninitializedBufferData_SizeOnly(LOCAL_GL_PIXEL_PACK_BUFFER, bufSize,
                                            LOCAL_GL_STREAM_READ);
-  mWebgl->BindBuffer(LOCAL_GL_PIXEL_PACK_BUFFER, 0);
+  mWebgl->BindBuffer(LOCAL_GL_PIXEL_PACK_BUFFER, nullptr);
   if (!ReadInto(nullptr, pboStride.value(), format, bounds, aHandle, pbo)) {
     return nullptr;
   }
@@ -1396,7 +1397,7 @@ already_AddRefed<DataSourceSurface> SharedContextWebgl::ReadSnapshotFromPBO(
       LOCAL_GL_PIXEL_PACK_BUFFER, 0, range, aSize.height,
       BytesPerPixel(aFormat) * aSize.width, pboStride.value(),
       dstMap.GetStride());
-  mWebgl->BindBuffer(LOCAL_GL_PIXEL_PACK_BUFFER, 0);
+  mWebgl->BindBuffer(LOCAL_GL_PIXEL_PACK_BUFFER, nullptr);
   if (success) {
     return surface.forget();
   }
@@ -2680,7 +2681,7 @@ bool SharedContextWebgl::UploadSurface(DataSourceSurface* aData,
     mWebgl->BindTexture(LOCAL_GL_TEXTURE_2D, mLastTexture);
   }
   if (!aData && aZero) {
-    mWebgl->BindBuffer(LOCAL_GL_PIXEL_UNPACK_BUFFER, 0);
+    mWebgl->BindBuffer(LOCAL_GL_PIXEL_UNPACK_BUFFER, nullptr);
   }
   return true;
 }
@@ -2778,6 +2779,10 @@ void SharedContextWebgl::BindScratchFramebuffer(TextureHandle* aHandle,
 already_AddRefed<TextureHandle> SharedContextWebgl::AllocateTextureHandle(
     SurfaceFormat aFormat, const IntSize& aSize, bool aAllowShared,
     bool aRenderable, const WebGLTexture* aAvoid) {
+  // Don't allow allocating textures bigger than the reported limit.
+  if (size_t(std::max(aSize.width, aSize.height)) > mMaxTextureSize) {
+    return nullptr;
+  }
   RefPtr<TextureHandle> handle;
   // Calculate the bytes that would be used by this texture handle, and prune
   // enough other textures to ensure we have that much usable texture space
@@ -4131,7 +4136,8 @@ already_AddRefed<TextureHandle> SharedContextWebgl::ResolveFilterInputAccel(
     const IntRect& aSourceRect, const Matrix& aDestTransform,
     const DrawOptions& aOptions, const StrokeOptions* aStrokeOptions,
     SurfaceFormat aFormat) {
-  if (SupportsDrawOptions(aOptions) != SupportsDrawOptionsStatus::Yes) {
+  if (SupportsDrawOptions(aOptions) != SupportsDrawOptionsStatus::Yes ||
+      !aPath || aPath->GetBackendType() != BackendType::SKIA) {
     return nullptr;
   }
   if (IsContextLost()) {
@@ -6744,6 +6750,9 @@ already_AddRefed<FilterNode> DrawTargetWebgl::DeferFilterInput(
     const Path* aPath, const Pattern& aPattern, const IntRect& aSourceRect,
     const IntPoint& aDestOffset, const DrawOptions& aOptions,
     const StrokeOptions* aStrokeOptions) {
+  if (!aPath || aPath->GetBackendType() != BackendType::SKIA) {
+    return nullptr;
+  }
   RefPtr<FilterNode> filter = new FilterNodeDeferInputWebgl(
       do_AddRef((Path*)aPath), aPattern, aSourceRect,
       GetTransform().PostTranslate(aDestOffset), aOptions, aStrokeOptions);

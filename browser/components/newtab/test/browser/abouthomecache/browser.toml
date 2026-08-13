@@ -28,6 +28,8 @@ prefs = [
 
 ["browser_clearCacheAndUninit.js"]
 
+["browser_csp_sync.js"]
+
 ["browser_disabled.js"]
 
 ["browser_experiments_api_control.js"]

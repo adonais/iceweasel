@@ -128,8 +128,8 @@ bool RResumePoint::recover(JSContext* cx, SnapshotIterator& iter) const {
 }
 
 bool MBitNot::writeRecoverData(CompactBufferWriter& writer) const {
-  // 64-bit int bitnots exist only when compiling wasm; they exist neither for
-  // JS nor asm.js.  So we don't expect them here.
+  // 64-bit int bitnots exist only when compiling wasm; they do not exist
+  // for JS.  So we don't expect them here.
   MOZ_ASSERT(type() != MIRType::Int64);
   MOZ_ASSERT(canRecoverOnBailout());
   writer.writeUnsigned(uint32_t(RInstruction::Recover_BitNot));
@@ -1976,6 +1976,23 @@ bool RTruncateToInt32::recover(JSContext* cx, SnapshotIterator& iter) const {
   }
 
   iter.storeInstructionResult(Int32Value(trunc));
+  return true;
+}
+
+bool MCanonicalizeNaN::writeRecoverData(CompactBufferWriter& writer) const {
+  MOZ_ASSERT(canRecoverOnBailout());
+  writer.writeUnsigned(uint32_t(RInstruction::Recover_CanonicalizeNaN));
+  return true;
+}
+
+RCanonicalizeNaN::RCanonicalizeNaN(CompactBufferReader& reader) {}
+
+bool RCanonicalizeNaN::recover(JSContext* cx, SnapshotIterator& iter) const {
+  // NaN values are canoncalized when reading from the frame.
+  Value value = iter.read();
+  MOZ_RELEASE_ASSERT(value.isNumber());
+
+  iter.storeInstructionResult(value);
   return true;
 }
 

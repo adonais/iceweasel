@@ -19,6 +19,14 @@ const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
 
+const { TabStateFlusher } = ChromeUtils.importESModule(
+  "resource:///modules/sessionstore/TabStateFlusher.sys.mjs"
+);
+
+const { MockEngineManager } = ChromeUtils.importESModule(
+  "resource://testing-common/AIWindowTestUtils.sys.mjs"
+);
+
 function createMockConversation(id = "test-restore-id") {
   const conversation = new ChatConversation({
     id,
@@ -293,6 +301,112 @@ describe("AI Window session restore", () => {
       Assert.ok(
         AIWindowUI.isSidebarOpen(win),
         "Sidebar should be open with tab A's conversation after switching back"
+      );
+    });
+  });
+
+  describe("reopen closed tab", () => {
+    let convId, mockEngineManager, reopenedTab;
+
+    beforeEach(async () => {
+      findStub.restore();
+      mockEngineManager = new MockEngineManager();
+      await SpecialPowers.pushPrefEnv({
+        set: [["browser.smartwindow.sidebar.openByDefault", true]],
+      });
+
+      await closeRecordedTab();
+
+      Assert.equal(
+        SessionStore.getClosedTabCountForWindow(win),
+        1,
+        "Closed tab should be recorded by SessionStore"
+      );
+
+      reopenedTab = SessionStore.undoCloseTab(win, 0, win);
+    });
+
+    afterEach(async () => {
+      if (reopenedTab) {
+        await BrowserTestUtils.removeTab(reopenedTab);
+        reopenedTab = null;
+      }
+      mockEngineManager.cleanupMocks();
+    });
+
+    async function getSidebarBrowser() {
+      const sidebarBrowser = await TestUtils.waitForCondition(
+        () => win.document.getElementById("ai-window-browser"),
+        "Sidebar browser should be in the DOM"
+      );
+      await TestUtils.waitForCondition(
+        () =>
+          sidebarBrowser.contentDocument?.querySelector("ai-window:defined"),
+        "Sidebar ai-window should be loaded"
+      );
+      return sidebarBrowser;
+    }
+
+    // Drives a real conversation through the sidebar smartbar, then closes the
+    // tab so SessionStore records a closed tab "Reopen Closed Tab" can restore.
+    async function closeRecordedTab() {
+      const tab = await BrowserTestUtils.openNewForegroundTab(
+        win.gBrowser,
+        "https://example.com/"
+      );
+      const sidebarBrowser = await getSidebarBrowser();
+
+      await typeInSmartbar(sidebarBrowser, "hello");
+      await submitSmartbar(sidebarBrowser);
+      await mockEngineManager.respondTo({
+        purpose: "chat",
+        response: "Response from assistant",
+      });
+
+      convId = await getConversationId(sidebarBrowser);
+
+      await TabStateFlusher.flush(tab.linkedBrowser);
+
+      const sessionUpdate = BrowserTestUtils.waitForSessionStoreUpdate(tab);
+      BrowserTestUtils.removeTab(tab);
+      await sessionUpdate;
+    }
+
+    it("restores the tab's conversation after reopening a closed tab", async () => {
+      // Wait for the restored tab to finish loading example.com. By then the
+      // restore and read path has had its chance to reopen the conversation
+      await BrowserTestUtils.browserLoaded(
+        win.gBrowser.selectedBrowser,
+        false,
+        "https://example.com/"
+      );
+
+      const sidebarBrowser = await getSidebarBrowser();
+
+      // the restored conversation should reload its messages into the sidebar
+      const messages = await TestUtils.waitForCondition(async () => {
+        const msgs = await getSidebarChatMessages(sidebarBrowser);
+        return msgs.length === 2 ? msgs : null;
+      }, "Sidebar should restore both messages");
+
+      const reloadedConvId = await getConversationId(sidebarBrowser);
+      Assert.equal(
+        reloadedConvId,
+        convId,
+        "Reopened tab should restore its conversation id"
+      );
+
+      Assert.equal(messages[0].role, "user", "First message is the user turn");
+      Assert.equal(messages[0].message, "hello", "user turn restored");
+      Assert.equal(
+        messages[1].role,
+        "assistant",
+        "Second message is the assistant turn"
+      );
+      Assert.equal(
+        messages[1].message,
+        "Response from assistant",
+        "assistant turn restored"
       );
     });
   });

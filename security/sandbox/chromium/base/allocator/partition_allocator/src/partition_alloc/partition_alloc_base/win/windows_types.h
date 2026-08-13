@@ -5,11 +5,13 @@
 // This file contains defines and typedefs that allow popular Windows types to
 // be used without the overhead of including windows.h.
 
-#ifndef BASE_ALLOCATOR_PARTITION_ALLOCATOR_SRC_PARTITION_ALLOC_PARTITION_ALLOC_BASE_WIN_WINDOWS_TYPES_H_
-#define BASE_ALLOCATOR_PARTITION_ALLOCATOR_SRC_PARTITION_ALLOC_PARTITION_ALLOC_BASE_WIN_WINDOWS_TYPES_H_
+#ifndef PARTITION_ALLOC_PARTITION_ALLOC_BASE_WIN_WINDOWS_TYPES_H_
+#define PARTITION_ALLOC_PARTITION_ALLOC_BASE_WIN_WINDOWS_TYPES_H_
 
 // Needed for function prototypes.
 #include <specstrings.h>
+
+#include <cstdint>
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,8 +21,8 @@ extern "C" {
 
 typedef unsigned long DWORD;
 typedef long LONG;
-typedef __int64 LONGLONG;
-typedef unsigned __int64 ULONGLONG;
+typedef int64_t LONGLONG;
+typedef uint64_t ULONGLONG;
 
 #define VOID void
 typedef char CHAR;
@@ -29,7 +31,7 @@ typedef long LONG;
 typedef int INT;
 typedef unsigned int UINT;
 typedef unsigned int* PUINT;
-typedef unsigned __int64 UINT64;
+typedef uint64_t UINT64;
 typedef void* LPVOID;
 typedef void* PVOID;
 typedef void* HANDLE;
@@ -40,6 +42,11 @@ typedef DWORD ULONG;
 typedef unsigned short WORD;
 typedef WORD UWORD;
 typedef WORD ATOM;
+#if defined(_WIN64)
+typedef int64_t PA_LONG_PTR, *PA_PLONG_PTR;
+#else
+typedef int32_t PA_LONG_PTR, *PA_PLONG_PTR;
+#endif
 
 // Forward declare some Windows struct/typedef sets.
 
@@ -51,6 +58,16 @@ typedef struct _FILETIME FILETIME;
 struct PA_CHROME_SRWLOCK {
   PVOID Ptr;
 };
+
+// Define some commonly used Windows constants. Note that the layout of these
+// macros - including internal spacing - must be 100% consistent with windows.h.
+
+// clang-format off
+
+#ifndef INVALID_HANDLE_VALUE
+// Work around there being two slightly different definitions in the SDK.
+#define INVALID_HANDLE_VALUE ((HANDLE)(PA_LONG_PTR)-1)
+#endif
 
 // The trailing white-spaces after this macro are required, for compatibility
 // with the definition in winnt.h.
@@ -87,4 +104,4 @@ WINBASEAPI VOID WINAPI SetLastError(_In_ DWORD dwErrCode);
 }
 #endif
 
-#endif  // BASE_ALLOCATOR_PARTITION_ALLOCATOR_SRC_PARTITION_ALLOC_PARTITION_ALLOC_BASE_WIN_WINDOWS_TYPES_H_
+#endif  // PARTITION_ALLOC_PARTITION_ALLOC_BASE_WIN_WINDOWS_TYPES_H_

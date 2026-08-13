@@ -6,7 +6,6 @@
 #define A64_ASSEMBLER_A64_H_
 
 #include "jit/arm64/vixl/Assembler-vixl.h"
-
 #include "jit/CompactBuffer.h"
 #include "jit/shared/Disassembler-shared.h"
 #include "wasm/WasmTypeDecls.h"

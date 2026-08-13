@@ -29,6 +29,7 @@ ALLOWED_ISEARLYSTARTUP_FEATURE_IDS = {
     "aboutwelcome",
     "bounceTrackingProtection",
     "newtab",
+    "opaqueResponseBlocking",  # Requires C++ API for exposure events
     "pocketNewtab",
     "preonboarding",
     "testFeature",

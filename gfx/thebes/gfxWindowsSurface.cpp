@@ -3,15 +3,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "gfxWindowsSurface.h"
+
+#include "cairo-win32.h"
+#include "cairo.h"
 #include "gfxContext.h"
 #include "gfxPlatform.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/HelpersCairo.h"
 #include "mozilla/gfx/Logging.h"
-
-#include "cairo.h"
-#include "cairo-win32.h"
-
 #include "nsString.h"
 
 gfxWindowsSurface::gfxWindowsSurface(HDC dc, uint32_t flags) : mDC(dc) {

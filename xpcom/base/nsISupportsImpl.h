@@ -6,23 +6,24 @@
 #ifndef nsISupportsImpl_h_
 #define nsISupportsImpl_h_
 
-#include "nscore.h"
 #include "nsISupports.h"
 #include "nsISupportsUtils.h"
+#include "nscore.h"
 
 #if !defined(XPCOM_GLUE_AVOID_NSPR)
 #  include "prthread.h" /* needed for cargo-culting headers */
 #endif
 
-#include "nsDebug.h"
-#include "nsXPCOM.h"
 #include <atomic>
 #include <type_traits>
 #include <utility>
-#include "mozilla/Attributes.h"
+
 #include "mozilla/Assertions.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/MacroArgs.h"
 #include "mozilla/MacroForEach.h"
+#include "nsDebug.h"
+#include "nsXPCOM.h"
 
 #define MOZ_ASSERT_TYPE_OK_FOR_REFCOUNTING(X)            \
   static_assert(!std::is_destructible_v<X>,              \
@@ -67,6 +68,7 @@ class nsISerialEventTarget;
 class nsAutoOwningEventTarget {
  public:
   nsAutoOwningEventTarget();
+  explicit nsAutoOwningEventTarget(nsISerialEventTarget* aTarget);
 
   nsAutoOwningEventTarget(const nsAutoOwningEventTarget& aOther);
 
@@ -128,7 +130,7 @@ class nsAutoOwningEventTarget {
                   "Token '" #_type "' is not a class type.")
 
 #  define MOZ_ASSERT_NOT_ISUPPORTS(_type)                                     \
-    static_assert(!std::is_base_of<nsISupports, _type>::value,                \
+    static_assert(!std::is_base_of_v<nsISupports, _type>,                     \
                   "nsISupports classes don't need to call MOZ_COUNT_CTOR or " \
                   "MOZ_COUNT_DTOR");
 

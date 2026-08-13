@@ -30,6 +30,10 @@ enum class ScriptKind : uint8_t {
 
   // This is a import map JSON loaded by <script type="importmap">.
   eImportMap,
+
+  // This is a speculation rules JSON loaded by
+  // <script type="speculationrules">.
+  eSpeculationRules,
 };
 
 }  // namespace JS::loader

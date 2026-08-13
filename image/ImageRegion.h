@@ -5,6 +5,7 @@
 #ifndef mozilla_image_ImageRegion_h
 #define mozilla_image_ImageRegion_h
 
+#include "PLDHashTable.h"  // for PLDHashNumber
 #include "gfxMatrix.h"
 #include "gfxPoint.h"
 #include "gfxRect.h"
@@ -12,7 +13,6 @@
 #include "mozilla/gfx/Matrix.h"
 #include "mozilla/gfx/Types.h"
 #include "nsSize.h"
-#include "PLDHashTable.h"  // for PLDHashNumber
 
 namespace mozilla {
 namespace image {

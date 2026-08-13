@@ -24,6 +24,11 @@ const { Multilingual } = ChromeUtils.importESModule(
   { global: "current" }
 );
 
+const { DefaultBrowserHelper } = ChromeUtils.importESModule(
+  "chrome://browser/content/preferences/DefaultBrowserHelper.mjs",
+  { global: "current" }
+);
+
 ChromeUtils.defineESModuleGetters(this, {
   BackgroundUpdate: "resource://gre/modules/BackgroundUpdate.sys.mjs",
   UpdateListener: "resource://gre/modules/UpdateListener.sys.mjs",
@@ -366,157 +371,14 @@ Preferences.addSetting({
   },
 });
 
-/**
- * A helper object containing all logic related to
- * setting the browser as the user's default.
- */
-const DefaultBrowserHelper = {
-  /**
-   * @type {number}
-   */
-  _backoffIndex: 0,
-
-  /**
-   * @type {number | undefined}
-   */
-  _pollingTimer: undefined,
-
-  /**
-   * Keeps track of the last known browser
-   * default value set to compare while polling.
-   *
-   * @type {boolean | undefined}
-   */
-  _lastPolledIsDefault: undefined,
-
-  /**
-   * @type {typeof import('../shell/ShellService.sys.mjs').ShellService | undefined}
-   */
-  get shellSvc() {
-    return (
-      AppConstants.HAVE_SHELL_SERVICE &&
-      // @ts-ignore from utilityOverlay.js
-      getShellService()
-    );
-  },
-
-  /**
-   * Sets up polling of whether the browser is set to default,
-   * and calls provided hasChanged function when the state changes.
-   *
-   * @param {Function} hasChanged
-   */
-  pollForDefaultChanges(hasChanged) {
-    if (this._pollingTimer) {
-      return;
-    }
-    this._lastPolledIsDefault = this.isBrowserDefault;
-
-    // Exponential backoff mechanism will delay the polling times if user doesn't
-    // trigger SetDefaultBrowser for a long time.
-    const backoffTimes = [
-      1000, 1000, 1000, 1000, 2000, 2000, 2000, 5000, 5000, 10000,
-    ];
-
-    const pollForDefaultBrowser = () => {
-      if (
-        (location.hash == "" ||
-          location.hash == "#general" ||
-          location.hash == "#sync") &&
-        document.visibilityState == "visible"
-      ) {
-        const { isBrowserDefault } = this;
-        if (isBrowserDefault !== this._lastPolledIsDefault) {
-          this._lastPolledIsDefault = isBrowserDefault;
-          hasChanged();
-        }
-      }
-
-      if (!this._pollingTimer) {
-        return;
-      }
-
-      // approximately a "requestIdleInterval"
-      this._pollingTimer = window.setTimeout(
-        () => {
-          window.requestIdleCallback(pollForDefaultBrowser);
-        },
-        backoffTimes[
-          this._backoffIndex + 1 < backoffTimes.length
-            ? this._backoffIndex++
-            : backoffTimes.length - 1
-        ]
-      );
-    };
-
-    this._pollingTimer = window.setTimeout(() => {
-      window.requestIdleCallback(pollForDefaultBrowser);
-    }, backoffTimes[this._backoffIndex]);
-  },
-
-  /**
-   * Stops timer for polling changes.
-   */
-  clearPollingForDefaultChanges() {
-    if (this._pollingTimer) {
-      clearTimeout(this._pollingTimer);
-      this._pollingTimer = undefined;
-    }
-  },
-
-  /**
-   *  Checks if the browser is default through the shell service.
-   */
-  get isBrowserDefault() {
-    if (!this.canCheck) {
-      return false;
-    }
-    return this.shellSvc?.isDefaultBrowser(false, true);
-  },
-
-  /**
-   * Attempts to set the browser as the user's
-   * default through the shell service.
-   *
-   * @returns {Promise<void>}
-   */
-  async setDefaultBrowser() {
-    // Reset exponential backoff delay time in order to do visual update in pollForDefaultBrowser.
-    this._backoffIndex = 0;
-
-    try {
-      await this.shellSvc?.setDefaultBrowser(false);
-    } catch (e) {
-      console.error(e);
-    }
-  },
-
-  /**
-   * Checks whether the browser is capable of being made default.
-   *
-   * @type {boolean}
-   */
-  get canCheck() {
-    return (
-      this.shellSvc &&
-      /**
-       * Flatpak does not support setting nor detection of default browser
-       */
-      !gGIOService?.isRunningUnderFlatpak
-    );
-  },
-};
-
 Preferences.addSetting({
   id: "alwaysCheckDefault",
   pref: "browser.shell.checkDefaultBrowser",
   setup: emitChange => {
     if (!DefaultBrowserHelper.canCheck) {
-      return;
+      return undefined;
     }
-    DefaultBrowserHelper.pollForDefaultChanges(emitChange);
-    // eslint-disable-next-line consistent-return
-    return () => DefaultBrowserHelper.clearPollingForDefaultChanges();
+    return DefaultBrowserHelper.pollForDefaultChanges(emitChange);
   },
   /**
    * Show button for setting browser as default browser or information that
@@ -533,14 +395,18 @@ Preferences.addSetting({
   id: "isDefaultPane",
   deps: ["alwaysCheckDefault"],
   visible: () =>
-    DefaultBrowserHelper.canCheck && DefaultBrowserHelper.isBrowserDefault,
+    DefaultBrowserHelper.canCheck &&
+    DefaultBrowserHelper.isBrowserDefault &&
+    Services.policies.isAllowed("setDefaultBrowser"),
 });
 
 Preferences.addSetting({
   id: "isNotDefaultPane",
   deps: ["alwaysCheckDefault"],
   visible: () =>
-    DefaultBrowserHelper.canCheck && !DefaultBrowserHelper.isBrowserDefault,
+    DefaultBrowserHelper.canCheck &&
+    !DefaultBrowserHelper.isBrowserDefault &&
+    Services.policies.isAllowed("setDefaultBrowser"),
   onUserClick: (e, { alwaysCheckDefault }) => {
     if (!DefaultBrowserHelper.canCheck) {
       return;
@@ -709,7 +575,7 @@ function createStartupConfig(hidden = false) {
 SettingGroupManager.registerGroups({
   defaultBrowser: createDefaultBrowserConfig(),
   startup: createStartupConfig(
-    Services.prefs.getBoolPref("browser-settings-redesign.enabled", false)
+    Services.prefs.getBoolPref("browser.settings-redesign.enabled", false)
   ),
 });
 

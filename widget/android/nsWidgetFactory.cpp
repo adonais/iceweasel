@@ -3,11 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/WidgetUtils.h"
-
 #include "nsAppShell.h"
-
-#include "nsLookAndFeel.h"
 #include "nsAppShellSingleton.h"
+#include "nsLookAndFeel.h"
 
 nsresult nsWidgetAndroidModuleCtor() { return nsAppShellInit(); }
 

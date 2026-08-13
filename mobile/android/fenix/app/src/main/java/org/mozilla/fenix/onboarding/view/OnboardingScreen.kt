@@ -6,6 +6,7 @@ package org.mozilla.fenix.onboarding.view
 
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
+import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -71,6 +72,7 @@ private val SMALL_SCREEN_MAX_HEIGHT = 570.dp
  * A screen for displaying onboarding.
  *
  * @param pagesToDisplay List of pages to be displayed in onboarding pager ui.
+ * @param initialPageIndex The initial page index of the pager.
  * @param onMakeFirefoxDefaultClick Invoked when positive button on default browser page is clicked.
  * @param onSkipDefaultClick Invoked when negative button on default browser page is clicked.
  * @param onSignInButtonClick Invoked when the positive button on the sign in page is clicked.
@@ -98,6 +100,7 @@ private val SMALL_SCREEN_MAX_HEIGHT = 570.dp
 @Suppress("LongParameterList", "LongMethod")
 fun OnboardingScreen(
     pagesToDisplay: MutableList<OnboardingPageUiData>,
+    initialPageIndex: Int,
     onMakeFirefoxDefaultClick: () -> Unit,
     onSkipDefaultClick: () -> Unit,
     onSignInButtonClick: () -> Unit,
@@ -119,7 +122,10 @@ fun OnboardingScreen(
     onNavigateToNextPage: () -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
-    val pagerState = rememberPagerState(pageCount = { pagesToDisplay.size })
+    val pagerState = rememberPagerState(
+        initialPage = resumedPageIndex(initialPageIndex, pagesToDisplay.size),
+        pageCount = { pagesToDisplay.size },
+    )
     val isSignedIn: State<Boolean?> = components.backgroundServices.syncStore
         .observeAsComposableState { it.account != null }
     val widgetPinnedFlow: StateFlow<Boolean> = WidgetPinnedState.isPinned
@@ -240,6 +246,28 @@ fun OnboardingScreen(
         },
         onboardingStore = onboardingStore,
     )
+}
+
+/**
+ * Returns the page index to resume onboarding on, keeping the persisted [pageIndex] when it
+ * still points at an existing page, otherwise falling back to the last available page.
+ *
+ * The persisted index could become stale as the set of onboarding pages is built from runtime
+ * conditions (e.g. whether Firefox is already the default browser) and can also change with
+ * experiment rollouts, so between launches it can grow, shrink, or be reordered, potentially leaving
+ * the saved index pointing past the end of the current page list. Bounding it to the last available
+ * page both prevents an out-of-bounds access and resumes as close as possible to where the user left off.
+ *
+ * @param pageIndex The page index to resume from.
+ * @param pageCount The number of pages for the current onboarding flow.
+ */
+@VisibleForTesting
+internal fun resumedPageIndex(pageIndex: Int, pageCount: Int): Int {
+    // Upper bound for the resumed index. The maxOf guard is defensive:
+    // onboarding flows are expected to contain at least one page.
+    val lastPageIndex = maxOf(0, pageCount - 1)
+    // Bound the saved index to the available pages so a stale value can't point past the last page.
+    return pageIndex.coerceIn(0, lastPageIndex)
 }
 
 private fun setToDefaultClick(

@@ -389,7 +389,7 @@ void OnlineSpeechRecognitionService::DoSTT() {
     }
     if (bodyStream) {
       rv = uploadChan->ExplicitSetUploadStream(bodyStream, "audio/ogg"_ns,
-                                               length, "POST"_ns, false);
+                                               length, "POST"_ns);
       MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv));
     }
   }

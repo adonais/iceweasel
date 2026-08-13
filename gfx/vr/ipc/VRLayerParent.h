@@ -5,8 +5,8 @@
 #ifndef GFX_VR_LAYERPARENT_H
 #define GFX_VR_LAYERPARENT_H
 
-#include "mozilla/gfx/PVRLayerParent.h"
 #include "gfxVR.h"
+#include "mozilla/gfx/PVRLayerParent.h"
 
 namespace mozilla {
 namespace gfx {

@@ -2890,6 +2890,7 @@ class NetworkModule extends RootBiDiModule {
     const navigation = request.navigationId;
     let contextId = null;
     let topContextId = null;
+    let userContextId = null;
     if (request.contextId) {
       // Retrieve the top browsing context id for this network event.
       contextId = request.contextId;
@@ -2898,6 +2899,8 @@ class NetworkModule extends RootBiDiModule {
       topContextId = lazy.NavigableManager.getIdForBrowsingContext(
         browsingContext.top
       );
+      userContextId =
+        lazy.UserContextManager.getIdByBrowsingContext(browsingContext);
     }
 
     const intercepts = this.#getNetworkIntercepts(event, request, topContextId);
@@ -2911,6 +2914,7 @@ class NetworkModule extends RootBiDiModule {
       redirectCount,
       request: requestData,
       timestamp,
+      userContext: userContextId,
     };
 
     if (isBlocked) {

@@ -11,8 +11,8 @@
 #include "GPUParent.h"
 #include "GPUProcessHost.h"
 #include "GPUProcessManager.h"
-#include "gfxGradientCache.h"
 #include "GfxInfoBase.h"
+#include "MediaCodecsSupport.h"
 #include "VRGPUChild.h"
 #include "VRManager.h"
 #include "VRManagerParent.h"
@@ -20,8 +20,8 @@
 #include "cairo.h"
 #include "gfxConfig.h"
 #include "gfxCrashReporterUtils.h"
+#include "gfxGradientCache.h"
 #include "gfxPlatform.h"
-#include "MediaCodecsSupport.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Components.h"
 #include "mozilla/FOGIPC.h"
@@ -72,6 +72,7 @@
 #  include <process.h>
 #  include <windows.h>
 
+#  include "WMFDecoderModule.h"
 #  include "gfxDWriteFonts.h"
 #  include "gfxWindowsPlatform.h"
 #  include "mozilla/gfx/DeviceManagerDx.h"
@@ -79,7 +80,6 @@
 #  include "mozilla/layers/GpuProcessD3D11TextureMap.h"
 #  include "mozilla/layers/TextureD3D11.h"
 #  include "mozilla/widget/WinCompositorWindowThread.h"
-#  include "WMFDecoderModule.h"
 #else
 #  include <unistd.h>
 #endif
@@ -90,6 +90,7 @@
 #endif
 #ifdef ANDROID
 #  include "mozilla/layers/AndroidHardwareBuffer.h"
+#  include "mozilla/layers/AndroidImageReader.h"
 #  include "skia/include/ports/SkTypeface_cairo.h"
 #endif
 #include "ChildProfilerController.h"
@@ -389,6 +390,10 @@ mozilla::ipc::IPCResult GPUParent::RecvInit(
 
   if (gfxVars::UseAHardwareBufferSharedSurfaceWebglOop()) {
     layers::AndroidHardwareBufferManager::Init();
+  }
+
+  if (gfxVars::UseAImageReaderVideoGpuProcessAndroid()) {
+    layers::GpuProcessAndroidImageReaderMap::Init();
   }
 
 #endif
@@ -757,6 +762,9 @@ void GPUParent::ActorDestroy(ActorDestroyReason aWhy) {
         CanvasRenderThread::Shutdown();
         CompositorThreadHolder::Shutdown();
         RemoteTextureMap::Shutdown();
+#ifdef ANDROID
+        layers::GpuProcessAndroidImageReaderMap::Shutdown();
+#endif
         // There is a case that RenderThread exists when gfxVars::UseWebRender()
         // is false. This could happen when WebRender was fallbacked to
         // compositor.
@@ -774,13 +782,11 @@ void GPUParent::ActorDestroy(ActorDestroyReason aWhy) {
         // Shut down the default GL context provider.
         gl::GLContextProvider::Shutdown();
 
-#if defined(XP_WIN)
-        // The above shutdown calls operate on the available context providers
-        // on most platforms.  Windows is a "special snowflake", though, and has
-        // three context providers available, so we have to shut all of them
-        // down. We should only support the default GL provider on Windows;
-        // then, this could go away. Unfortunately, we currently support WGL
-        // (the default) for WebGL on Optimus.
+#if defined(XP_WIN) || defined(XP_MACOSX)
+        // The above shutdown call shuts down the default context provider,
+        // which is the only context provider on most platforms. Windows and
+        // Mac, however, may initialize EGL for ANGLE in addition to their
+        // respective defaults.
         gl::GLContextProviderEGL::Shutdown();
 #endif
 

@@ -31,7 +31,7 @@ use crate::invalidation::compare::{OpacityBindingInfo, ColorBindingInfo};
 use crate::picture::{SurfaceTextureDescriptor, PictureCompositeMode, SurfaceIndex, clamp};
 use crate::picture::{get_relative_scale_offset, PictureInstance};
 use crate::picture::MAX_COMPOSITOR_SURFACES_SIZE;
-use crate::prim_store::{PrimitiveInstance, PrimitiveKind, PrimitiveScratchBuffer, PictureIndex};
+use crate::prim_store::{ClipSnap, PrimitiveInstance, PrimitiveKind, PrimitiveScratchBuffer, PictureIndex};
 use crate::prim_store::PrimitiveInstanceIndex;
 use crate::print_tree::{PrintTreePrinter, PrintTree};
 use crate::{profiler, render_backend::DataStores};
@@ -815,6 +815,8 @@ pub struct TileCacheInstance {
     /// A list of extra dirty invalidation tests that can only be checked once we
     /// know the dirty rect of all tiles
     deferred_dirty_tests: Vec<DeferredDirtyTest>,
+    /// A list of pic_coverage_rect of Picture with mix blend that could affect to underlays.
+    pub mix_blend_pic_rects: Vec<PictureRect>,
     /// Is there a backdrop associated with this cache
     pub found_prims_after_backdrop: bool,
     pub backdrop_surface: Option<BackdropSurface>,
@@ -886,6 +888,7 @@ impl TileCacheInstance {
             current_raster_scale: 1.0,
             current_surface_traversal_depth: 0,
             deferred_dirty_tests: Vec::new(),
+            mix_blend_pic_rects: Vec::new(),
             found_prims_after_backdrop: false,
             backdrop_surface: None,
             underlays: Vec::new(),
@@ -1040,6 +1043,7 @@ impl TileCacheInstance {
         self.local_rect = pic_rect;
         self.local_clip_rect = PictureRect::max_rect();
         self.deferred_dirty_tests.clear();
+        self.mix_blend_pic_rects.clear();
         self.underlays.clear();
         self.overlay_region = PictureRect::zero();
         self.yuv_images_remaining = self.yuv_images_count;
@@ -1083,14 +1087,25 @@ impl TileCacheInstance {
 
             let mut clip_snapper = SpaceSnapper::new(surface, frame_context.spatial_tree);
 
+            // The tile cache's shared clip is never a text run: it snaps its
+            // chain to nearest when it carries a real clip root, otherwise it
+            // leaves it exact (matching the device-space sentinel behavior).
+            let clip_snap = if frame_state.clip_tree.get_leaf(shared_clip_leaf_id).prim_clip_root
+                != ClipNodeId::INVALID {
+                ClipSnap::Nearest
+            } else {
+                ClipSnap::Exact
+            };
+
             frame_state.clip_store.set_active_clips(
                 self.spatial_node_index,
                 map_local_to_picture.ref_spatial_node_index,
                 surface.visibility_spatial_node_index,
                 &mut clip_snapper,
+                clip_snap,
                 shared_clip_leaf_id,
                 frame_context.spatial_tree,
-                &mut frame_state.data_stores.clip,
+                &frame_state.data_stores.clip,
                 &frame_state.clip_tree,
             );
 
@@ -1102,7 +1117,7 @@ impl TileCacheInstance {
                 &mut frame_state.frame_gpu_data.f32,
                 frame_state.resource_cache,
                 &surface.culling_rect,
-                &mut frame_state.data_stores.clip,
+                &frame_state.data_stores.clip,
                 frame_state.rg_builder,
                 true,
             );
@@ -2673,9 +2688,20 @@ impl TileCacheInstance {
             }
             PrimitiveKind::LineDecoration { .. } |
             PrimitiveKind::NormalBorder { .. } |
-            PrimitiveKind::BoxShadow { .. } |
-            PrimitiveKind::TextRun { .. } => {
+            PrimitiveKind::BoxShadow { .. } => {
                 // These don't contribute dependencies
+            }
+            PrimitiveKind::TextRun { .. } => {
+                // A text run under an animated transform is rasterized in local
+                // space (see TextRunTemplate::get_raster_space_for_prim, bug
+                // 2053638). Record that as a dependency so the tile invalidates
+                // when the animation ends and the text returns to the crisp
+                // device path - the raster-space flip alone changes neither
+                // prim_uid nor the vert corners, so nothing else would catch it
+                // (bug 2056306).
+                prim_info.raster_space_animating = frame_context.spatial_tree
+                    .get_spatial_node(prim_spatial_node_index)
+                    .is_ancestor_or_self_animating;
             }
         };
 
@@ -3009,7 +3035,7 @@ impl TileCacheInstance {
             surface.used_this_frame
         });
 
-        if !self.underlays.is_empty() && !self.deferred_dirty_tests.is_empty() {
+        if !self.underlays.is_empty() && (!self.deferred_dirty_tests.is_empty() || !self.mix_blend_pic_rects.is_empty()) {
             let is_yuv_8bit = |desc: &ExternalSurfaceDescriptor| {
                 matches!(
                     desc.dependency,
@@ -3026,13 +3052,20 @@ impl TileCacheInstance {
                     .any(|dirty_test| dirty_test.prim_rect.intersects(&desc.local_rect))
             };
 
-            // Cancel underlay if underlay intersects with backdrop filter and bit depth is 8 bits
+            let intersects_with_mix_blend = |desc: &ExternalSurfaceDescriptor| {
+                self.mix_blend_pic_rects
+                    .iter()
+                    .any(|rect| rect.intersects(&desc.local_rect))
+            };
+
+            // Cancel underlay if underlay intersects with backdrop filter or mix-blend-mode and bit depth is 8 bits
             // XXX WebRender does not support full HDR yet. HDR requires external composite to show correct colors.
             let (underlays, cancel_underlays): (Vec<_>, Vec<_>) =
                 self.underlays
                     .iter()
                     .partition(|desc| {
-                        !is_yuv_8bit(desc) || !intersects_with_dirty_tests(desc)
+                        !is_yuv_8bit(desc) ||
+                        (!intersects_with_dirty_tests(desc) && !intersects_with_mix_blend(desc))
                     });
 
             if !cancel_underlays.is_empty() {

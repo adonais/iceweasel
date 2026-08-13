@@ -8,8 +8,6 @@
 
 :host,
 :root {
-  --urlbarView-secondary-text-color: color-mix(in srgb, currentColor 73%, transparent);
-
   --urlbarView-action-slide-in-distance: 200px;
 
   --urlbarView-small-font-size: 0.85em;
@@ -18,13 +16,11 @@
      and selected rows while keeping the view's entire hover area contiguous. */
   --urlbarView-row-gutter: var(--space-xsmall);
   --urlbarView-row-border: var(--urlbarView-row-gutter) solid transparent;
-  --urlbarView-row-border-radius: calc(var(--urlbar-inner-border-radius) + var(--urlbarView-row-gutter));
+  --urlbarView-row-border-radius: var(--urlbarview-border-radius);
   --urlbarView-row-background-clip: padding-box;
 
-  --urlbarView-row-padding-block: var(--space-small);
   --urlbarView-row-padding-inline: var(--urlbar-icon-padding);
-  --urlbarView-row-min-height: var(--size-item-large);
-  --urlbarView-row-inner-min-height: calc(var(--urlbarView-row-min-height) - var(--urlbarView-row-padding-block) * 2);
+  --urlbarView-row-inner-min-height: calc(var(--urlbarview-row-min-height) - var(--urlbarview-row-padding-block) * 2);
 
   --urlbarView-padding: calc(var(--space-large) - var(--urlbarView-row-gutter));
 
@@ -33,19 +29,21 @@
      may be other icon types of various sizes. All icons no larger than rich
      search suggestion icons should be center-aligned along one vertical axis.
      Larger icons should be left-aligned with rich search suggestion icons. */
-  --urlbarView-favicon-size: 16px;
   --urlbarView-rich-search-suggestion-icon-size: 28px;
+  --urlbarView-rich-search-suggestion-icon-border-radius: var(--border-radius-small);
   --urlbarView-top-pick-icon-size: 58px;
+  --urlbarView-top-pick-icon-border-radius: calc(
+    var(--urlbarView-row-border-radius) - min(var(--urlbarView-row-padding-block), var(--urlbarView-row-padding-inline))
+  );
 
   /* Icon margin-end not taking into account the size of the icon */
   --urlbarView-icon-margin-end-base: calc(var(--urlbar-icon-padding) + var(--identity-box-margin-inline));
 
-  --urlbarView-favicon-margin-start: calc((var(--urlbarView-rich-search-suggestion-icon-size) - var(--urlbarView-favicon-size)) / 2);
+  --urlbarView-favicon-margin-start: calc((var(--urlbarView-rich-search-suggestion-icon-size) - var(--urlbarview-favicon-size)) / 2);
   --urlbarView-favicon-margin-end: calc(var(--urlbarView-icon-margin-end-base) + var(--urlbarView-favicon-margin-start));
 
-  --urlbarView-icon-border-radius-rounded: calc(
-    var(--urlbarView-row-border-radius) - min(var(--urlbarView-row-padding-block), var(--urlbarView-row-padding-inline))
-  );
+  --urlbarView-favicon-mask-size: 24px;
+  --urlbarView-favicon-mask-position: calc((var(--urlbarview-favicon-size) - var(--urlbarView-favicon-mask-size)) / 2);
 
   --urlbarView-result-button-size: 24px;
   --urlbarView-result-button-background-opacity: 60%;
@@ -66,9 +64,6 @@
   --urlbarView-labeled-row-label-top: calc(-1.27em - 2px);
   --urlbarView-labeled-tip-margin-top-extra: 8px;
 
-  --urlbarView-action-button-background-color: color-mix(in srgb, var(--urlbarview-background-color-hover) 50%, transparent);
-  --urlbarView-action-button-hover-background-color: var(--urlbarview-background-color-hover);
-
   --urlbarView-tail150-overlay-background: var(--color-violet-90);
   --urlbarView-tail150-overlay-color: var(--color-gray-0);
   --urlbarView-tail150-canvas-background: var(--color-violet-110);
@@ -88,7 +83,7 @@
 
   @media (prefers-contrast) {
     --urlbarView-result-button-background-opacity: 100%;
-    --urlbarView-secondary-text-color: currentColor;
+    --urlbarview-text-color-secondary: currentColor;
   }
 }
 
@@ -107,6 +102,7 @@
 
 .urlbarView-results {
   white-space: nowrap;
+  container-type: inline-size;
 
   .urlbar:not([noresults]) > .urlbarView > .urlbarView-body-outer > .urlbarView-body-inner > & {
     padding-block-start: var(--urlbarView-padding);
@@ -120,7 +116,7 @@
 /* Row structure */
 
 .urlbarView-row {
-  --urlbarView-icon-size: var(--urlbarView-favicon-size);
+  --urlbarView-icon-size: var(--urlbarview-favicon-size);
   --urlbarView-icon-border-radius: 0;
   --urlbarView-icon-margin-start: max(0px, (var(--urlbarView-rich-search-suggestion-icon-size) - var(--urlbarView-icon-size)) / 2);
   --urlbarView-icon-margin-end: calc(var(--urlbarView-icon-margin-end-base) + var(--urlbarView-icon-margin-start));
@@ -150,7 +146,7 @@
 
   &:not([type="tip"], [type="dynamic"]) {
     :root:not([uidensity="compact"]) & {
-      min-height: var(--urlbarView-row-min-height);
+      min-height: var(--urlbarview-row-min-height);
     }
     :root[uidensity="touch"] & {
       padding-block: 11px;
@@ -158,8 +154,8 @@
   }
 
   &[type="rich-search"] {
-    --urlbarView-icon-size: 28px;
-    --urlbarView-icon-border-radius: var(--urlbarView-icon-border-radius-rounded);
+    --urlbarView-icon-size: var(--urlbarView-rich-search-suggestion-icon-size);
+    --urlbarView-icon-border-radius: var(--urlbarView-rich-search-suggestion-icon-border-radius);
 
     :root:not([uidensity="compact"]) & {
       min-height: 46px;
@@ -178,7 +174,7 @@
   flex: auto;
   overflow: hidden;
   padding-inline: var(--urlbarView-row-padding-inline);
-  padding-block: var(--urlbarView-row-padding-block);
+  padding-block: var(--urlbarview-row-padding-block);
 
   :root:not([uidensity="compact"]) & {
     min-height: var(--urlbarView-row-inner-min-height);
@@ -198,7 +194,6 @@
 .urlbarView-row-body-top-no-wrap {
   display: flex;
   align-items: baseline;
-  flex: 0 0 auto;
   min-width: 0;
   max-width: 100%;
 }
@@ -209,7 +204,7 @@
   white-space: normal;
 
   .urlbarView-row:not([selected]) > .urlbarView-row-inner > .urlbarView-row-body > & {
-    color: var(--urlbarView-secondary-text-color);
+    color: var(--urlbarview-text-color-secondary);
   }
 }
 
@@ -237,12 +232,28 @@
 @media screen and (min-height: 600px) {
   /* Enable wrapping when the window is narrow (the "wrap" attribute, set in JS)
      but not too short, since wrapping in that case would cause fewer rows to be
-     shown. Wrap the URL under the title and other no-wrap elements. */
-  .urlbarView-results[wrap] > .urlbarView-row[has-url] > .urlbarView-row-inner > .urlbarView-row-body > .urlbarView-row-body-top {
-    flex-wrap: wrap;
+     shown. Wrap the URL under the title and other no-wrap elements.
+
+     Switch-to-tab rows are excluded because their URL is collapsed, which would
+     leave an empty second row and misplace the chiclet. The exception is when
+     `action-override` is active: then the chiclet is hidden and the URL is
+     shown, so it should wrap under the title like other rows. */
+  .urlbarView-results[wrap] > .urlbarView-row[has-url]:not([type="switchtab"]) > .urlbarView-row-inner > .urlbarView-row-body > .urlbarView-row-body-top,
+  .urlbarView[action-override]
+    .urlbarView-results[wrap]
+    > .urlbarView-row[has-url][type="switchtab"]
+    > .urlbarView-row-inner
+    > .urlbarView-row-body
+    > .urlbarView-row-body-top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 0;
+    grid-template-areas:
+      "title title"
+      "url   explanation";
+    row-gap: 2px;
 
     > .urlbarView-row-body-top-no-wrap {
-      flex-basis: 100%;
+      grid-area: title;
       max-width: 100%;
 
       > .urlbarView-title-separator {
@@ -250,10 +261,27 @@
       }
     }
 
-    > .urlbarView-url,
-    > .urlbarView-explanation {
-      margin-top: 2px;
+    > .urlbarView-url {
+      grid-area: url;
     }
+
+    > .urlbarView-explanation {
+      grid-area: explanation;
+    }
+  }
+}
+
+@container (width >= 450px) {
+  .urlbarView-row[has-explanation]:is([selected], :hover) > .urlbarView-row-inner > .urlbarView-row-body > .urlbarView-row-body-top > .urlbarView-explanation {
+    visibility: visible;
+  }
+
+  .urlbarView-results[wrap]
+    > .urlbarView-row[has-explanation]:is([selected], :hover)
+    > .urlbarView-row-inner
+    > .urlbarView-row-body
+    > .urlbarView-row-body-top {
+    grid-template-columns: minmax(0, 1fr) minmax(0, max-content);
   }
 }
 
@@ -288,6 +316,8 @@
   background-repeat: no-repeat;
   background-size: contain;
   object-fit: contain;
+  mask-mode: luminance;
+  mask-position: var(--urlbarView-favicon-mask-position);
   -moz-context-properties: fill, fill-opacity;
 
   .urlbarView-row[tail-suggestion] > .urlbarView-row-inner > & {
@@ -307,26 +337,13 @@
 
 .urlbarView-type-icon {
   position: absolute;
-  width: var(--icon-size-xsmall);
-  height: var(--icon-size-xsmall);
+  width: var(--urlbarView-favicon-mask-size);
+  height: var(--urlbarView-favicon-mask-size);
   align-self: center;
-  margin-top: var(--urlbarView-favicon-size);
-  margin-inline-start: calc(var(--urlbarView-icon-margin-start) + var(--urlbarView-favicon-size) - 6px);
+  margin-inline-start: calc(var(--urlbarView-icon-margin-start) + var(--urlbarView-favicon-mask-position));
   background-repeat: no-repeat;
-  background-size: contain;
   -moz-context-properties: fill, stroke;
-  stroke: var(--toolbar-field-background-color-focus);
-
-  /* Favicon badges have this priority: pinned > bookmark. */
-  .urlbarView-row[type="bookmark"] > .urlbarView-row-inner > & {
-    background-image: url(chrome://browser/skin/bookmark-12.svg);
-    fill: var(--toolbarbutton-icon-fill-attention);
-  }
-
-  .urlbarView-row[pinned] > .urlbarView-row-inner > & {
-    background-image: url(chrome://browser/skin/pin-12.svg);
-    fill: light-dark(rgb(91, 91, 102), rgb(251, 251, 254));
-  }
+  fill: var(--toolbarbutton-icon-fill-attention);
 
   /* The following badges are used for debugging purposes */
   @media -moz-pref("browser.urlbar.showDebuggingIcons") {
@@ -352,6 +369,68 @@
   }
 }
 
+.urlbarView-row:is([type="bookmark"], [type^="bookmark_"]) > .urlbarView-row-inner {
+  > .urlbarView-favicon {
+    mask-image: url(chrome://browser/skin/urlbar/badge-bookmark.svg#ltr-mask);
+    &:-moz-locale-dir(rtl) {
+      mask-image: url(chrome://browser/skin/urlbar/badge-bookmark.svg#rtl-mask);
+    }
+  }
+  > .urlbarView-type-icon {
+    background-image: url(chrome://browser/skin/urlbar/badge-bookmark.svg#ltr-icon);
+    &:-moz-locale-dir(rtl) {
+      background-image: url(chrome://browser/skin/urlbar/badge-bookmark.svg#rtl-icon);
+    }
+  }
+}
+
+.urlbarView-row:is([type="adaptive-history"], [type="history"], [type^="history_"], [type="semantic-history"]) > .urlbarView-row-inner {
+  > .urlbarView-favicon {
+    mask-image: url(chrome://browser/skin/urlbar/badge-history.svg#ltr-mask);
+    &:-moz-locale-dir(rtl) {
+      mask-image: url(chrome://browser/skin/urlbar/badge-history.svg#rtl-mask);
+    }
+  }
+  > .urlbarView-type-icon {
+    background-image: url(chrome://browser/skin/urlbar/badge-history.svg#ltr-icon);
+    &:-moz-locale-dir(rtl) {
+      background-image: url(chrome://browser/skin/urlbar/badge-history.svg#rtl-icon);
+    }
+  }
+}
+
+.urlbarView-row:is([type="remotetab"], [type="switchtab"], [type="tab"], [type^="tab_"]) > .urlbarView-row-inner {
+  > .urlbarView-favicon {
+    mask-image: url(chrome://browser/skin/urlbar/badge-tab.svg#ltr-mask);
+    &:-moz-locale-dir(rtl) {
+      mask-image: url(chrome://browser/skin/urlbar/badge-tab.svg#rtl-mask);
+    }
+  }
+  > .urlbarView-type-icon {
+    background-image: url(chrome://browser/skin/urlbar/badge-tab.svg#ltr-icon);
+    &:-moz-locale-dir(rtl) {
+      background-image: url(chrome://browser/skin/urlbar/badge-tab.svg#rtl-icon);
+    }
+  }
+}
+
+/* `pinned` is currently only set on top sites, which have `type="top_site"`, so
+   this rule is mutually exclusive with the other badge rules. */
+.urlbarView-row[pinned] > .urlbarView-row-inner {
+  > .urlbarView-favicon {
+    mask-image: url(chrome://browser/skin/urlbar/badge-pin.svg#ltr-mask);
+    &:-moz-locale-dir(rtl) {
+      mask-image: url(chrome://browser/skin/urlbar/badge-pin.svg#rtl-mask);
+    }
+  }
+  > .urlbarView-type-icon {
+    background-image: url(chrome://browser/skin/urlbar/badge-pin.svg#ltr-icon);
+    &:-moz-locale-dir(rtl) {
+      background-image: url(chrome://browser/skin/urlbar/badge-pin.svg#rtl-icon);
+    }
+  }
+}
+
 /* Buttons */
 
 .urlbarView-row-buttons {
@@ -372,7 +451,7 @@
   -moz-context-properties: fill, fill-opacity;
   border-radius: var(--border-radius-circle);
 
-  &:not(:hover, [selected], [primary], [open]) {
+  &:not(:hover, [selected], [primary], [aria-expanded="true"]) {
     @media (prefers-contrast) {
       outline: 1px solid currentColor;
       outline-offset: -1px;
@@ -392,12 +471,12 @@
     }
   }
 
-  .urlbarView-row:is([row-selectable]:hover, [selected]) > &:not(:hover, [open]) {
+  .urlbarView-row:is([row-selectable]:hover, [selected]) > &:not(:hover, [aria-expanded="true"]) {
     color: var(--urlbarView-result-button-selected-color);
     background-color: var(--urlbarView-result-button-selected-background-color);
   }
 
-  &:is(:hover, [open]) {
+  &:is(:hover, [aria-expanded="true"]) {
     color: var(--urlbarView-result-button-hover-color);
     background-color: var(--urlbarView-result-button-hover-background-color);
   }
@@ -416,7 +495,7 @@
   .urlbarView-results:not([disable-resultmenu-autohide])
     > .urlbarView-row:not(:hover, [selected], [descendant-selected])
     > .urlbarView-row-buttons
-    > &:not([open]):first-child:empty {
+    > &:not([aria-expanded="true"]):first-child:empty {
     /* The realtime suggestions' style will be broken if the width will be
        changed by hover. Thus we use the visibility instead of display to keep
        the element size */
@@ -450,6 +529,12 @@
   }
 }
 
+/* This should be supported within panel-{item,list} rather than modifying it, to be fixed by
+   https://bugzilla.mozilla.org/show_bug.cgi?id=1826841 */
+.urlbarView-result-menuitem::part(button) {
+  padding-inline-start: 12px;
+}
+
 /* Button with label, e.g. tip button */
 
 .urlbarView-button:where(:not(:empty):not(.urlbarView-button-result-menu)),
@@ -465,7 +550,7 @@
   flex-basis: initial;
   flex-shrink: 0;
 
-  &:not(:hover, [open]) {
+  &:not(:hover, [aria-expanded="true"]) {
     background-color: var(--button-background-color);
   }
 
@@ -564,12 +649,12 @@
     bottom: 0.72em;
     font-size: var(--urlbarView-small-font-size);
     margin-inline-start: calc(var(--urlbarView-row-padding-inline) + var(--urlbarView-favicon-margin-start));
-    padding-inline-start: calc(var(--urlbarView-favicon-size) + var(--urlbarView-favicon-margin-end));
+    padding-inline-start: calc(var(--urlbarview-favicon-size) + var(--urlbarView-favicon-margin-end));
     background-image: url("chrome://branding/content/icon32.png");
     background-repeat: no-repeat;
     background-position: 0 center;
-    background-size: var(--urlbarView-favicon-size);
-    min-height: var(--urlbarView-favicon-size);
+    background-size: var(--urlbarview-favicon-size);
+    min-height: var(--urlbarview-favicon-size);
   }
 }
 
@@ -580,11 +665,12 @@
   /* Explicitly set line-height to avoid excessively tall rows if the title triggers use of
      fallback fonts with extreme metrics. */
   line-height: 1.4;
+  flex: 1;
 }
 
 /* user context box */
 .urlbarView-userContext {
-  border-top: 4px solid var(--identity-tab-color);
+  border-top: 4px solid var(--identity-stroke-color);
 }
 
 .urlbarView-userContext-icon {
@@ -721,7 +807,7 @@
 .urlbarView-row[has-action]:is([type="switchtab"], [type="remotetab"], [type="clipboard"]) {
   .urlbarView-action {
     border-radius: var(--urlbar-border-radius);
-    padding: 4px 8px;
+    padding: 4px var(--space-medium);
     margin-block: -2px;
     margin-inline-start: 8px;
 
@@ -740,23 +826,23 @@
 
     -moz-context-properties: fill, fill-opacity;
 
-    border-inline: 1px solid var(--border-color-deemphasized);
-    border-block-end: 1px solid var(--border-color-deemphasized);
+    border-inline: 1px solid currentColor;
+    border-block-end: 1px solid currentColor;
 
     &.urlbarView-switchToTab {
-      padding-inline-start: calc(var(--urlbarView-favicon-size) + 8px);
+      padding-inline-start: calc(var(--space-medium) + var(--urlbarview-favicon-size) + var(--space-small));
       background-image: url("chrome://browser/content/firefoxview/view-opentabs.svg");
       background-repeat: no-repeat;
-      background-position: 4px center;
-      background-size: var(--urlbarView-favicon-size);
+      background-position: var(--space-medium) center;
+      background-size: var(--urlbarview-favicon-size);
+
+      &:-moz-locale-dir(rtl) {
+        background-position-x: right var(--space-medium);
+      }
     }
 
     &:not(.urlbarView-userContext) {
-      border-block-start: 1px solid var(--border-color-deemphasized);
-    }
-
-    &:-moz-locale-dir(rtl) {
-      background-position-x: right 4px;
+      border-block-start: 1px solid currentColor;
     }
   }
 }
@@ -779,7 +865,6 @@
 
 .urlbarView-url,
 .urlbarView-explanation {
-  flex: auto;
   font-size: var(--urlbarView-small-font-size);
   /* Increase line-height to avoid cutting overhanging glyphs due to masking on
      the element */
@@ -799,17 +884,25 @@
   }
 }
 
-.urlbarView-explanation {
-  visibility: collapse;
+.urlbarView-url {
+  flex: 1 1 auto;
 }
 
-.urlbarView-row[has-explanation]:is([selected], :hover) > .urlbarView-row-inner > .urlbarView-row-body > .urlbarView-row-body-top {
-  > .urlbarView-explanation {
-    visibility: visible;
+.urlbarView-explanation {
+  visibility: collapse;
+  margin-inline: calc(var(--urlbarView-row-padding-inline) + var(--urlbarView-icon-margin-start));
+  flex: 0 0 auto;
+
+  .urlbarView-row[has-menu-button] & {
+    margin-inline-end: 0;
   }
-  > .urlbarView-url {
-    visibility: collapse;
-  }
+}
+
+.urlbarView-url[overflow] ~ .urlbarView-explanation::before,
+.urlbarView-explanation-bookmarked:not(:empty) + .urlbarView-explanation-last-visited:not(:empty)::before {
+  content: var(--urlbarView-separator-char);
+  margin: 0 var(--urlbarView-separator-margin-inline);
+  opacity: var(--opacity-deemphasized-strong);
 }
 
 .urlbarView-title[is-url]:-moz-locale-dir(rtl),
@@ -869,7 +962,7 @@
   }
 
   > .urlbarView-row-inner {
-    min-height: var(--urlbarView-row-min-height);
+    min-height: var(--urlbarview-row-min-height);
     align-items: center;
 
     /* Add space between the tip title (and the rest of row-inner) and its
@@ -957,12 +1050,13 @@
 
 .urlbarView-row[is-top-pick] {
   --urlbarView-icon-size: var(--urlbarView-top-pick-icon-size);
-  --urlbarView-icon-border-radius: var(--urlbarView-icon-border-radius-rounded);
+  --urlbarView-icon-border-radius: var(--urlbarView-top-pick-icon-border-radius);
 }
 
 @media not -moz-pref("browser.urlbar.quicksuggest.ampTopPickUseNovaIconSize") {
   .urlbarView-row[type$="_adm_sponsored"][is-top-pick] {
     --urlbarView-icon-size: var(--urlbarView-rich-search-suggestion-icon-size);
+    --urlbarView-icon-border-radius: var(--urlbarView-rich-search-suggestion-icon-border-radius);
   }
 }
 
@@ -977,7 +1071,7 @@
   > .urlbarView-row-inner > .urlbarView-favicon {
     padding: calc((var(--urlbarView-top-pick-icon-size) - 24px) / 2);
     background-color: var(--urlbar-box-background-color-focus);
-    border-radius: var(--urlbarView-icon-border-radius-rounded);
+    border-radius: var(--urlbarView-top-pick-icon-border-radius);
   }
 
   &:is([selected], :hover) > .urlbarView-row-inner > .urlbarView-favicon {
@@ -1102,9 +1196,9 @@
 
 .urlbarView-actions-container {
   margin-inline-start: calc(
-    var(--urlbarView-row-padding-inline) + var(--urlbarView-favicon-margin-start) + var(--urlbarView-favicon-size) + var(--urlbarView-icon-margin-end)
+    var(--urlbarView-row-padding-inline) + var(--urlbarView-favicon-margin-start) + var(--urlbarview-favicon-size) + var(--urlbarView-icon-margin-end)
   );
-  margin-block-end: var(--urlbarView-row-padding-block);
+  margin-block-end: var(--urlbarview-row-padding-block);
 }
 
 .urlbarView-action-btn {
@@ -1115,18 +1209,18 @@
   padding: 0.4em 0.6em;
   display: inline-flex;
   align-items: center;
-  background-color: var(--urlbarView-action-button-background-color);
+  background-color: var(--urlbarview-action-button-background-color);
   margin-inline-end: var(--space-large);
 
   > img {
     width: 16px;
     height: 16px;
-    margin-inline-end: 0.4em;
+    margin-inline-end: var(--space-medium);
     -moz-context-properties: fill, fill-opacity;
   }
 
   &:hover {
-    background-color: var(--urlbarView-action-button-hover-background-color);
+    background-color: var(--urlbarview-action-button-background-color-hover);
   }
 
   &[selected],
@@ -1135,7 +1229,7 @@
   }
 
   &.urlbarView-userContext {
-    border-top-color: var(--identity-tab-color);
+    border-top-color: var(--identity-stroke-color);
   }
 
   .urlbarView[action-override] &[data-action="tabswitch"] {
@@ -1168,7 +1262,7 @@
 .urlbarView-row[tip-type="realtime_opt_in"] {
   /* `margin-block-end` is large to give enough spacing between the opt-in and the
      row label in the next row. */
-  margin-block: var(--urlbarView-row-padding-block) calc(5 * var(--urlbarView-row-padding-block));
+  margin-block: var(--urlbarview-row-padding-block) calc(5 * var(--urlbarview-row-padding-block));
   padding-block: 0;
   border-block: none;
   border-radius: var(--border-radius-medium);
@@ -1287,7 +1381,7 @@
       height: var(--urlbarView-top-pick-icon-size);
       margin-inline-end: var(--space-medium);
       border: 1px solid transparent;
-      border-radius: var(--urlbarView-icon-border-radius-rounded);
+      border-radius: var(--urlbarView-top-pick-icon-border-radius);
 
       fill: currentColor;
       fill-opacity: var(--urlbar-icon-fill-opacity);
@@ -1317,7 +1411,7 @@
       }
 
       .urlbarView-row:not([selected]) > .urlbarView-realtime-root > .urlbarView-realtime-item:not([selected]) > & > .urlbarView-realtime-description-bottom {
-        color: var(--urlbarView-secondary-text-color);
+        color: var(--urlbarview-text-color-secondary);
       }
 
       > .urlbarView-realtime-description-top > .urlbarView-realtime-description-separator-dot,
@@ -1436,7 +1530,7 @@
     width: var(--urlbarView-top-pick-icon-size);
     height: var(--urlbarView-top-pick-icon-size);
     flex-basis: var(--urlbarView-top-pick-icon-size);
-    border-radius: var(--urlbarView-icon-border-radius-rounded);
+    border-radius: var(--urlbarView-top-pick-icon-border-radius);
   }
 
   > .urlbarView-realtime-description {

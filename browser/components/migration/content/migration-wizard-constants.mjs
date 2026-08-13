@@ -19,6 +19,8 @@ export const MigrationWizardConstants = Object.freeze({
     PROGRESS: "progress",
     FILE_IMPORT_PROGRESS: "file-import-progress",
     SAFARI_PERMISSION: "safari-permission",
+    SAFARI_PASSWORD_PERMISSION_PRE_SEQUOIA:
+      "safari-password-permission-pre-sequoia",
     SAFARI_PASSWORD_PERMISSION: "safari-password-permission",
     CHROME_WINDOWS_PASSWORD_PERMISSION: "chrome-windows-password-permission",
     NO_BROWSERS_FOUND: "no-browsers-found",

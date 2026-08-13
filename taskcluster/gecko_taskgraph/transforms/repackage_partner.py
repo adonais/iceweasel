@@ -8,6 +8,7 @@ Transform the repackage task into an actual task description.
 import copy
 from typing import Optional
 
+from mozilla_taskgraph.util.attributes import copy_attributes_from_dependent_job
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.dependencies import get_primary_dependency
 from taskgraph.util.schema import Schema, optionally_keyed_by, resolve_keyed_by
@@ -17,7 +18,6 @@ from gecko_taskgraph.transforms.repackage import (
     PACKAGE_FORMATS as PACKAGE_FORMATS_VANILLA,
 )
 from gecko_taskgraph.transforms.task import TaskDescriptionSchema
-from gecko_taskgraph.util.attributes import copy_attributes_from_dependent_job
 from gecko_taskgraph.util.partners import get_partner_config_by_kind
 from gecko_taskgraph.util.platforms import archive_format, executable_extension
 from gecko_taskgraph.util.workertypes import worker_type_implementation

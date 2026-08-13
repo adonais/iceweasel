@@ -7,15 +7,15 @@
 #define mozilla_image_ProgressTracker_h
 
 #include "CopyOnWrite.h"
+#include "IProgressObserver.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/WeakPtr.h"
-#include "nsTHashMap.h"
 #include "nsCOMPtr.h"
+#include "nsRect.h"
+#include "nsTHashMap.h"
 #include "nsTObserverArray.h"
 #include "nsThreadUtils.h"
-#include "nsRect.h"
-#include "IProgressObserver.h"
 
 class nsIRunnable;
 
@@ -205,7 +205,7 @@ class ProgressTracker : public mozilla::SupportsWeakPtr {
   // other imagelib runnables.
   class RenderBlockingRunnable final : public PrioritizableRunnable {
     explicit RenderBlockingRunnable(
-        already_AddRefed<AsyncNotifyRunnable>&& aEvent);
+        already_AddRefed<AsyncNotifyRunnable> aEvent);
     virtual ~RenderBlockingRunnable() = default;
 
    public:
@@ -213,7 +213,7 @@ class ProgressTracker : public mozilla::SupportsWeakPtr {
     void RemoveObserver(IProgressObserver* aObserver);
 
     static already_AddRefed<RenderBlockingRunnable> Create(
-        already_AddRefed<AsyncNotifyRunnable>&& aEvent);
+        already_AddRefed<AsyncNotifyRunnable> aEvent);
   };
 
   // The runnable, if any, that we've scheduled to deliver async notifications.

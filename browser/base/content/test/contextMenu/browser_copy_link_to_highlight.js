@@ -91,7 +91,7 @@ add_task(async function copiesToClipboard() {
       await SimpleTest.promiseClipboardChange(
         "https://www.example.com/?stripParam=1234#:~:text=eiusmod%20tempor%20incididunt&text=labore",
         async () => {
-          await BrowserTestUtils.waitForCondition(
+          await TestUtils.waitForCondition(
             () => !copyLinkToHighlight.disabled,
             "Waiting for copyLinkToHighlight to become enabled"
           );
@@ -112,7 +112,7 @@ add_task(async function copiesCleanLinkToClipboard() {
       await SimpleTest.promiseClipboardChange(
         "https://www.example.com/#:~:text=eiusmod%20tempor%20incididunt&text=labore",
         async () => {
-          await BrowserTestUtils.waitForCondition(
+          await TestUtils.waitForCondition(
             () => !copyCleanLinkToHighlight.disabled,
             "Waiting for copyLinkToHighlight to become enabled"
           );
@@ -133,7 +133,7 @@ add_task(async function copiesToClipWithExistingHighlightAndNoSelection() {
       await SimpleTest.promiseClipboardChange(
         "https://www.example.com/?stripParam=1234#:~:text=Lorem",
         async () => {
-          await BrowserTestUtils.waitForCondition(
+          await TestUtils.waitForCondition(
             () =>
               !copyLinkToHighlight.hasAttribute("disabled") ||
               copyLinkToHighlight.getAttribute("disabled") === "false",
@@ -157,7 +157,7 @@ add_task(async function copiesToClipWithExistingHighlightAndSelection() {
       await SimpleTest.promiseClipboardChange(
         "https://www.example.com/?stripParam=1234#:~:text=eiusmod%20tempor%20incididunt&text=labore",
         async () => {
-          await BrowserTestUtils.waitForCondition(
+          await TestUtils.waitForCondition(
             () =>
               !copyLinkToHighlight.hasAttribute("disabled") ||
               copyLinkToHighlight.getAttribute("disabled") === "false",

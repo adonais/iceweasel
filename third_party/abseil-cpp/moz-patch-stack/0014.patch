@@ -1,30 +1,27 @@
-From: Michael Froman <mfroman@mozilla.com>
-Date: Thu, 10 Jul 2025 10:39:00 -0500
-Subject: Bug 1978462 - disable ABSL_HAVE_LEAK_SANITIZER due to missing symbols
- (like __lsan_ignore_object)
+From: Ryan VanderMeulen <rvandermeulen@mozilla.com>
+Date: Wed, 13 May 2026 00:00:00 +0000
+Subject: Bug 1989886 - Suppress sign-compare in abseil CHECK_OP macros.
+ r?#firefox-build-system-reviewers
 
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/fdbec58643d95ef27963b070e162931c6354d1e8
 ---
- abseil-cpp/absl/base/config.h | 2 ++
- 1 file changed, 2 insertions(+)
+ abseil-cpp/absl/log/internal/check_op.h | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-diff --git a/abseil-cpp/absl/base/config.h b/abseil-cpp/absl/base/config.h
-index 7ae83241314..753bce47007 100644
---- a/abseil-cpp/absl/base/config.h
-+++ b/abseil-cpp/absl/base/config.h
-@@ -714,6 +714,7 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
- // LeakSanitizer is available does not mean it is active. Use the
- // always-available run-time interface in //absl/debugging/leak_check.h for
- // interacting with LeakSanitizer.
-+#if 0 // mozilla - builds fail missing lsan symbols like __lsan_ignore_object
- #ifdef ABSL_HAVE_LEAK_SANITIZER
- #error "ABSL_HAVE_LEAK_SANITIZER cannot be directly set."
- #elif defined(LEAK_SANITIZER)
-@@ -728,6 +729,7 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
- // GCC or Clang using the LeakSanitizer integrated into AddressSanitizer.
- #define ABSL_HAVE_LEAK_SANITIZER 1
+diff --git a/abseil-cpp/absl/log/internal/check_op.h b/abseil-cpp/absl/log/internal/check_op.h
+index 9bf908e834d..b2b47d0b861 100644
+--- a/abseil-cpp/absl/log/internal/check_op.h
++++ b/abseil-cpp/absl/log/internal/check_op.h
+@@ -479,6 +479,13 @@ ABSL_LOG_INTERNAL_DEFINE_MAKE_CHECK_OP_STRING_EXTERN(const void* absl_nonnull);
+   MakeCheckOpString<U1, U2>(v1, v2, exprtext)
  #endif
-+#endif
  
- // ABSL_HAVE_CLASS_TEMPLATE_ARGUMENT_DEDUCTION
- //
++// Comparing mixed signed/unsigned values is intentional in CHECK_OP. A
++// push/pop pragma does not interact correctly with macro definitions, so
++// suppress without restoring. This header is transitively included by all
++// protobuf-generated headers, so this pragma affects entire translation
++// units that include any .pb.h file.
++#pragma GCC diagnostic ignored "-Wsign-compare"
++
+ // Helper functions for `ABSL_LOG_INTERNAL_CHECK_OP` macro family.  The
+ // `(int, int)` override works around the issue that the compiler will not
+ // instantiate the template version of the function on values of unnamed enum

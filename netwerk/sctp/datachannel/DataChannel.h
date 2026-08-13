@@ -5,27 +5,28 @@
 #ifndef NETWERK_SCTP_DATACHANNEL_DATACHANNEL_H_
 #define NETWERK_SCTP_DATACHANNEL_DATACHANNEL_H_
 
+#include <errno.h>
+
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
-#include <errno.h>
-#include "nsISupports.h"
-#include "nsCOMPtr.h"
+
+#include "DataChannelProtocol.h"
+#include "MediaEventSource.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/Mutex.h"
 #include "mozilla/StopGapEventTarget.h"
 #include "mozilla/WeakPtr.h"
-#include "mozilla/dom/RTCStatsReportBinding.h"
-#include "nsString.h"
-#include "nsThreadUtils.h"
-#include "nsTArray.h"
-#include "nsDeque.h"
 #include "mozilla/dom/Blob.h"
-#include "mozilla/Mutex.h"
-#include "DataChannelProtocol.h"
+#include "mozilla/dom/RTCStatsReportBinding.h"
 #include "mozilla/net/NeckoTargetHolder.h"
-#include "MediaEventSource.h"
-
+#include "nsCOMPtr.h"
+#include "nsDeque.h"
+#include "nsISupports.h"
+#include "nsString.h"
+#include "nsTArray.h"
+#include "nsThreadUtils.h"
 #include "transport/transportlayer.h"  // For TransportLayer::State
 
 namespace mozilla {
@@ -37,6 +38,7 @@ class MediaTransportHandler;
 namespace dom {
 class RTCDataChannel;
 struct RTCStatsCollection;
+class RTCErrorParams;
 };  // namespace dom
 
 enum class DataChannelConnectionState { Connecting, Open, Closed };
@@ -217,7 +219,8 @@ class DataChannelConnection : public net::NeckoTargetHolder {
                           const uint16_t aRemotePort);
   void TransportStateChange(const std::string& aTransportId,
                             TransportLayer::State aState,
-                            const nsTArray<nsTArray<uint8_t>>& aRemoteCerts);
+                            const nsTArray<nsTArray<uint8_t>>& aRemoteCerts,
+                            Maybe<dom::RTCErrorParams>);
   void SetSignals(const std::string& aTransportId);
 
   [[nodiscard]] already_AddRefed<DataChannel> Open(

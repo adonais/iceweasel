@@ -1,14 +1,4 @@
 {
-  "text": {
-    "color": {
-      "@base": {
-        "value": "{text.color.@base}"
-      },
-      "filled": {
-        "value": "{button.text.color.primary.@base}"
-      }
-    }
-  },
   "background": {
     "color": {
       "filled": {
@@ -32,6 +22,21 @@
     },
     "radius": {
       "value": "{border.radius.circle}"
+    }
+  },
+  "padding": {
+    "block": {
+      "value": "1px"
+    }
+  },
+  "text": {
+    "color": {
+      "@base": {
+        "value": "{text.color.@base}"
+      },
+      "filled": {
+        "value": "{button.text.color.primary.@base}"
+      }
     }
   }
 }

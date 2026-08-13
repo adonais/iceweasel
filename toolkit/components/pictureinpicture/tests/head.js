@@ -4,7 +4,7 @@
 "use strict";
 
 const { TOGGLE_POLICIES } = ChromeUtils.importESModule(
-  "resource://gre/modules/PictureInPictureControls.sys.mjs"
+  "moz-src:///toolkit/components/pictureinpicture/PictureInPictureControls.sys.mjs"
 );
 
 const TEST_ROOT = getRootDirectory(gTestPath).replace(
@@ -342,7 +342,7 @@ async function assertTogglePolicy(
 
     if (policy) {
       const { TOGGLE_POLICY_STRINGS } = ChromeUtils.importESModule(
-        "resource://gre/modules/PictureInPictureControls.sys.mjs"
+        "moz-src:///toolkit/components/pictureinpicture/PictureInPictureControls.sys.mjs"
       );
       let policyAttr = toggle.getAttribute("policy");
       Assert.equal(
@@ -877,7 +877,7 @@ async function promiseFullscreenEntered(window, asyncFn) {
 
   await entered;
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return !gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.getActor(
       "DOMFullscreen"
     ).timerId;
@@ -913,7 +913,7 @@ async function promiseFullscreenExited(window, asyncFn) {
 
   await exited;
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return !gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.getActor(
       "DOMFullscreen"
     ).timerId;

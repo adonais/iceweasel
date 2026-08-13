@@ -130,11 +130,42 @@ RemoteWorkerDebuggerChild::RemoteWorkerDebuggerChild(
 
 RemoteWorkerDebuggerChild::~RemoteWorkerDebuggerChild() = default;
 
+void RemoteWorkerDebuggerChild::DispatchInitialize(const nsString& aURL) {
+  WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
+  MOZ_ASSERT_DEBUG_OR_FUZZING(workerPrivate);
+  RefPtr<CompileRemoteDebuggerScriptRunnable> runnable =
+      new CompileRemoteDebuggerScriptRunnable(workerPrivate, aURL, nullptr);
+  (void)NS_WARN_IF(!runnable->Dispatch(workerPrivate));
+  (void)SendSetAsInitialized();
+}
+
+void RemoteWorkerDebuggerChild::DispatchMessageEvent(const nsString& aMessage) {
+  WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
+  MOZ_ASSERT_DEBUG_OR_FUZZING(workerPrivate);
+  RefPtr<RemoteDebuggerMessageEventRunnable> runnable =
+      new RemoteDebuggerMessageEventRunnable(aMessage);
+  (void)NS_WARN_IF(!runnable->Dispatch(workerPrivate));
+}
+
 mozilla::ipc::IPCResult RemoteWorkerDebuggerChild::RecvRegisterDone() {
   WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
   MOZ_ASSERT_DEBUG_OR_FUZZING(workerPrivate);
 
   workerPrivate->SetIsRemoteDebuggerRegistered(true);
+
+  // The worker's main thread is no longer blocked in EnableRemoteDebugger, so
+  // it can now service the synchronous debugger-script load. Flush anything
+  // that arrived during registration, compiling the debugger script before
+  // delivering buffered messages (e.g. the DevTools "connect" packet).
+  mRegisterDone = true;
+  if (mPendingInitialize) {
+    DispatchInitialize(*mPendingInitialize);
+    mPendingInitialize.reset();
+  }
+  for (const auto& message : mPendingMessages) {
+    DispatchMessageEvent(message);
+  }
+  mPendingMessages.Clear();
   return IPC_OK();
 }
 
@@ -149,12 +180,14 @@ mozilla::ipc::IPCResult RemoteWorkerDebuggerChild::RecvUnregisterDone() {
 mozilla::ipc::IPCResult RemoteWorkerDebuggerChild::RecvInitialize(
     const nsString& aURL) {
   if (!mIsInitialized) {
-    WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
-    MOZ_ASSERT_DEBUG_OR_FUZZING(workerPrivate);
-    RefPtr<CompileRemoteDebuggerScriptRunnable> runnable =
-        new CompileRemoteDebuggerScriptRunnable(workerPrivate, aURL, nullptr);
-    (void)NS_WARN_IF(!runnable->Dispatch(workerPrivate));
-    (void)SendSetAsInitialized();
+    if (mRegisterDone) {
+      DispatchInitialize(aURL);
+    } else {
+      // Buffered until RecvRegisterDone; see the comment there and in the
+      // header. Loading the script now would deadlock against the worker's
+      // main thread, which is still blocked in EnableRemoteDebugger.
+      mPendingInitialize.emplace(aURL);
+    }
   }
   mIsInitialized = true;
   return IPC_OK();
@@ -162,11 +195,11 @@ mozilla::ipc::IPCResult RemoteWorkerDebuggerChild::RecvInitialize(
 
 mozilla::ipc::IPCResult RemoteWorkerDebuggerChild::RecvPostMessage(
     const nsString& aMessage) {
-  WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
-  MOZ_ASSERT_DEBUG_OR_FUZZING(workerPrivate);
-  RefPtr<RemoteDebuggerMessageEventRunnable> runnable =
-      new RemoteDebuggerMessageEventRunnable(aMessage);
-  (void)NS_WARN_IF(!runnable->Dispatch(workerPrivate));
+  if (mRegisterDone) {
+    DispatchMessageEvent(aMessage);
+  } else {
+    mPendingMessages.AppendElement(aMessage);
+  }
   return IPC_OK();
 }
 

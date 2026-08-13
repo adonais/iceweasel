@@ -11,8 +11,9 @@ once a parent is removed from the pool, its children are removed as well.
 (See [actor-registration.md](actor-registration.md) for more information about how to implement a new one)
 
 Two tests are highlighting the basics of DevTools backend:
-* [browser_document_rdp_basics.js](https://searchfox.org/firefox-main/source/devtools/server/tests/browser/browser_document_rdp_basics.js) is sending RDP packet manually (JSON objects),
-* [browser_document_devtools_basics.js](https://searchfox.org/firefox-main/source/devtools/server/tests/browser/browser_document_devtools_basics.js) is using Protocol.js Fronts.
+
+- [browser_document_rdp_basics.js](https://searchfox.org/firefox-main/source/devtools/server/tests/browser/browser_document_rdp_basics.js) is sending RDP packet manually (JSON objects),
+- [browser_document_devtools_basics.js](https://searchfox.org/firefox-main/source/devtools/server/tests/browser/browser_document_devtools_basics.js) is using Protocol.js Fronts.
 
 The overall hierarchy of actors looks like this:
 

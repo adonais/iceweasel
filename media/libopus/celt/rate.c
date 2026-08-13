@@ -749,7 +749,7 @@ void clt_compute_extra_allocation(const CELTMode *m, const CELTMode *qext_mode, 
    if (qext_mode != NULL) {
       celt_assert(end==m->nbEBands);
       tot_bands = end + qext_end;
-      tot_samples = qext_mode->eBands[qext_end]*C<<LM;
+      tot_samples = (qext_mode->eBands[qext_end]-m->eBands[start])*C<<LM;
    } else {
       tot_bands = end;
       tot_samples = (m->eBands[end]-m->eBands[start])*C<<LM;
@@ -793,7 +793,7 @@ void clt_compute_extra_allocation(const CELTMode *m, const CELTMode *qext_mode, 
       if (qext_mode != NULL) {
          opus_val16 min_depth = 0;
          /* If we have enough bits, give at least 1 bit of depth to all higher bands up to 40 kHz. */
-         if (total >= 3*C*(qext_mode->eBands[qext_end]-qext_mode->eBands[start])<<LM<<BITRES && (toneishness < QCONST32(.98f, 29) || tone_freq > 1.33f))
+         if (total >= 3*C*(qext_mode->eBands[qext_end]-qext_mode->eBands[0])<<LM<<BITRES && (toneishness < QCONST32(.98f, 29) || tone_freq > QCONST16(1.33f, 13)))
             min_depth = QCONST16(1.f, 10);
          for (i=0;i<qext_end;i++) {
             Ncoef[end+i] = (qext_mode->eBands[i+1]-qext_mode->eBands[i])*C<<LM;
@@ -809,11 +809,15 @@ void clt_compute_extra_allocation(const CELTMode *m, const CELTMode *qext_mode, 
          }
       }
       ALLOC(follower, tot_bands, opus_val16);
-      for (i=start+2;i<tot_bands-2;i++) {
-         follower[i] = median_of_5_val16(&flatE[i-2]);
+      if (tot_bands - start >= 5) {
+         for (i=start+2;i<tot_bands-2;i++) {
+            follower[i] = median_of_5_val16(&flatE[i-2]);
+         }
+         follower[start] = follower[start+1] = follower[start+2];
+         follower[tot_bands-1] = follower[tot_bands-2] = follower[tot_bands-3];
+      } else {
+         for (i=start;i<tot_bands;i++) follower[i] = flatE[i];
       }
-      follower[start] = follower[start+1] = follower[start+2];
-      follower[tot_bands-1] = follower[tot_bands-2] = follower[tot_bands-3];
       for (i=start+1;i<tot_bands;i++) {
          follower[i] = MAX16(follower[i], follower[i-1]-QCONST16(1.f, 10));
       }

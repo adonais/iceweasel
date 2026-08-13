@@ -47,3 +47,31 @@ export function formatRemainingBandwidth(remainingBytes, locale = undefined) {
     useGB: true,
   };
 }
+
+/**
+ * Returns a principal reflecting the user-visible URL for
+ * the provided browser, rather than the loaded document's principal.
+ * This especially matters for pages rendered through Firefox's built-in
+ * viewers (e.g. PDF, JSON), where the content document principal is a
+ * `resource://pdf.js` or `resource://devtools` origin even though the
+ * URL bar still shows the underlying http(s) URL. Using the URL bar
+ * URI ensures the IP Protection panel and toolbar button operate
+ * against the site the user actually navigated to.
+ *
+ * @param {object} gBrowser
+ *  The window's gBrowser.
+ * @returns {nsIPrincipal|null}
+ *  The principal for the current page, or null if it can't be derived.
+ */
+export function getSitePrincipal(gBrowser) {
+  let uri = gBrowser?.currentURI;
+  if (!uri) {
+    return null;
+  }
+  let originAttributes =
+    gBrowser.selectedBrowser?.browsingContext?.originAttributes ?? {};
+  return Services.scriptSecurityManager.createContentPrincipal(
+    uri,
+    originAttributes
+  );
+}

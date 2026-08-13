@@ -69,7 +69,7 @@ add_task(async function () {
   ok(oneOffs.selectedButton, "There is a selected one-off button");
   await UrlbarTestUtils.assertSearchMode(window, {
     engineName: oneOffs.selectedButton.engine.name,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     entry: "oneoff",
     isPreview: true,
   });
@@ -100,7 +100,7 @@ add_task(async function () {
   ok(oneOffs.selectedButton, "There is a selected one-off button");
   await UrlbarTestUtils.assertSearchMode(window, {
     engineName: oneOffs.selectedButton.engine.name,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     entry: "oneoff",
     isPreview: true,
   });

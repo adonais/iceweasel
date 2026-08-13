@@ -8,6 +8,7 @@ use nss_rs::aead::{Aead, AeadAlgorithms, Mode};
 use nss_rs::p11;
 use nss_rs::SymKey;
 use serde::{Deserialize, Serialize};
+use zeroize::Zeroizing;
 
 pub const DEFAULT_CIPHER_SUITE: CipherSuite = CipherSuite::Aes256Gcm;
 
@@ -23,43 +24,40 @@ pub enum CipherSuite {
 impl CipherSuite {
     pub const fn key_size(&self) -> usize {
         match self {
-            CipherSuite::Aes256Gcm => 32,
-            CipherSuite::ChaCha20Poly1305 => 32,
+            Self::Aes256Gcm | Self::ChaCha20Poly1305 => 32,
         }
     }
 
     pub const fn nonce_size(&self) -> usize {
         match self {
-            CipherSuite::Aes256Gcm => 12,
-            CipherSuite::ChaCha20Poly1305 => 12,
+            Self::Aes256Gcm | Self::ChaCha20Poly1305 => 12,
         }
     }
 
     pub const fn tag_size(&self) -> usize {
         match self {
-            CipherSuite::Aes256Gcm => 16,
-            CipherSuite::ChaCha20Poly1305 => 16,
+            Self::Aes256Gcm | Self::ChaCha20Poly1305 => 16,
         }
     }
 
     pub(crate) fn to_nss_algorithm(self) -> AeadAlgorithms {
         match self {
-            CipherSuite::Aes256Gcm => AeadAlgorithms::Aes256Gcm,
-            CipherSuite::ChaCha20Poly1305 => AeadAlgorithms::ChaCha20Poly1305,
+            Self::Aes256Gcm => AeadAlgorithms::Aes256Gcm,
+            Self::ChaCha20Poly1305 => AeadAlgorithms::ChaCha20Poly1305,
         }
     }
 
     pub fn as_str(&self) -> &str {
         match self {
-            CipherSuite::Aes256Gcm => "aes256gcm",
-            CipherSuite::ChaCha20Poly1305 => "chacha20poly1305",
+            Self::Aes256Gcm => "aes256gcm",
+            Self::ChaCha20Poly1305 => "chacha20poly1305",
         }
     }
 
     pub fn parse(s: &str) -> Option<Self> {
         match s {
-            "aes256gcm" => Some(CipherSuite::Aes256Gcm),
-            "chacha20poly1305" => Some(CipherSuite::ChaCha20Poly1305),
+            "aes256gcm" => Some(Self::Aes256Gcm),
+            "chacha20poly1305" => Some(Self::ChaCha20Poly1305),
             _ => None,
         }
     }
@@ -100,8 +98,10 @@ fn random_bytes(size: usize) -> Vec<u8> {
     buf
 }
 
-pub fn generate_random_key(cipher_suite: CipherSuite) -> Vec<u8> {
-    random_bytes(cipher_suite.key_size())
+/// Fresh random symmetric key material, wrapped in `Zeroizing` so it is
+/// wiped from memory when the last owner drops it.
+pub fn generate_random_key(cipher_suite: CipherSuite) -> Zeroizing<Vec<u8>> {
+    Zeroizing::new(random_bytes(cipher_suite.key_size()))
 }
 
 pub fn generate_random_nonce(cipher_suite: CipherSuite) -> Vec<u8> {
@@ -129,7 +129,7 @@ pub fn encrypt_with_symkey(
 
     let alg = cipher_suite.to_nss_algorithm();
     let mut aead = Aead::new(Mode::Encrypt, alg, key, nonce_bytes)
-        .map_err(|e| LockstoreError::Encryption(format!("Failed to create AEAD: {}", e)))?;
+        .map_err(|e| LockstoreError::Encryption(format!("Failed to create AEAD: {e}")))?;
 
     // The cipher-suite id is prepended to the blob as its first byte;
     // pass that same byte as AAD so the AEAD tag authenticates it
@@ -138,7 +138,7 @@ pub fn encrypt_with_symkey(
     let aad = [cipher_suite_id(cipher_suite)];
     let ciphertext = aead
         .encrypt(&aad, plaintext)
-        .map_err(|e| LockstoreError::Encryption(format!("Encryption failed: {}", e)))?;
+        .map_err(|e| LockstoreError::Encryption(format!("Encryption failed: {e}")))?;
 
     let mut result = Vec::with_capacity(1 + nonce.len() + ciphertext.len());
     result.push(aad[0]);
@@ -150,7 +150,10 @@ pub fn encrypt_with_symkey(
 
 /// Decrypts data produced by `encrypt_with_symkey` or `encrypt_with_key`.
 /// The cipher suite is inferred from the blob's leading byte.
-pub fn decrypt_with_symkey(ciphertext: &[u8], key: &SymKey) -> Result<Vec<u8>, LockstoreError> {
+pub fn decrypt_with_symkey(
+    ciphertext: &[u8],
+    key: &SymKey,
+) -> Result<Zeroizing<Vec<u8>>, LockstoreError> {
     if ciphertext.is_empty() {
         return Err(LockstoreError::Decryption(
             "Ciphertext is empty".to_string(),
@@ -159,7 +162,7 @@ pub fn decrypt_with_symkey(ciphertext: &[u8], key: &SymKey) -> Result<Vec<u8>, L
 
     let suite_byte = ciphertext[0];
     let cipher_suite = cipher_suite_from_id(suite_byte).ok_or_else(|| {
-        LockstoreError::Decryption(format!("Unknown cipher suite id: {}", suite_byte))
+        LockstoreError::Decryption(format!("Unknown cipher suite id: {suite_byte}"))
     })?;
     let ciphertext = &ciphertext[1..];
     let nonce_size = cipher_suite.nonce_size();
@@ -176,16 +179,16 @@ pub fn decrypt_with_symkey(ciphertext: &[u8], key: &SymKey) -> Result<Vec<u8>, L
 
     let alg = cipher_suite.to_nss_algorithm();
     let mut aead = Aead::new(Mode::Decrypt, alg, key, nonce_bytes)
-        .map_err(|e| LockstoreError::Decryption(format!("Failed to create AEAD: {}", e)))?;
+        .map_err(|e| LockstoreError::Decryption(format!("Failed to create AEAD: {e}")))?;
 
     // AAD = the suite-id prefix byte (see `encrypt_with_symkey`); tag
     // verification fails if the prefix has been tampered with.
     let aad = [suite_byte];
     let plaintext = aead
         .decrypt(&aad, 0, actual_ciphertext)
-        .map_err(|e| LockstoreError::Decryption(format!("Decryption failed: {}", e)))?;
+        .map_err(|e| LockstoreError::Decryption(format!("Decryption failed: {e}")))?;
 
-    Ok(plaintext)
+    Ok(Zeroizing::new(plaintext))
 }
 
 /// Encrypts data using AEAD with raw key bytes.
@@ -204,13 +207,16 @@ pub fn encrypt_with_key(
     }
     let alg = cipher_suite.to_nss_algorithm();
     let nss_key = Aead::import_key(alg, key)
-        .map_err(|e| LockstoreError::Encryption(format!("Failed to import key: {}", e)))?;
+        .map_err(|e| LockstoreError::Encryption(format!("Failed to import key: {e}")))?;
     encrypt_with_symkey(plaintext, &nss_key, cipher_suite)
 }
 
 /// Decrypts data produced by `encrypt_with_key`.
 /// The cipher suite is inferred from the blob's leading byte.
-pub fn decrypt_with_key(ciphertext: &[u8], key: &[u8]) -> Result<Vec<u8>, LockstoreError> {
+pub fn decrypt_with_key(
+    ciphertext: &[u8],
+    key: &[u8],
+) -> Result<Zeroizing<Vec<u8>>, LockstoreError> {
     if ciphertext.is_empty() {
         return Err(LockstoreError::Decryption(
             "Ciphertext is empty".to_string(),
@@ -228,16 +234,19 @@ pub fn decrypt_with_key(ciphertext: &[u8], key: &[u8]) -> Result<Vec<u8>, Lockst
     }
     let alg = cipher_suite.to_nss_algorithm();
     let nss_key = Aead::import_key(alg, key)
-        .map_err(|e| LockstoreError::Decryption(format!("Failed to import key: {}", e)))?;
+        .map_err(|e| LockstoreError::Decryption(format!("Failed to import key: {e}")))?;
     decrypt_with_symkey(ciphertext, &nss_key)
 }
 
-/// Overwrites a stored value with zeros of the same size (does not delete).
+/// Overwrites a *persisted* stored value with zeros of the same size (does
+/// not delete the row).
 ///
-/// Note: this is best-effort in-memory sanitization only. SQLite's WAL/journal
+/// This scrubs bytes at rest in the kvstore and is unrelated to the
+/// `zeroize` crate, which wipes in-memory buffers; the name makes the
+/// on-disk scope explicit. Note: this is best-effort — SQLite's WAL/journal
 /// mode means the original bytes may persist on disk until the relevant WAL
 /// pages are checkpointed and overwritten.
-pub fn zeroize(store: &Store, db_name: &str, key_name: &str) -> Result<(), LockstoreError> {
+pub fn zeroize_on_disk(store: &Store, db_name: &str, key_name: &str) -> Result<(), LockstoreError> {
     let db = Database::new(store, db_name);
     let key = Key::from(key_name);
     if let Some(value) = db.get(&key, &GetOptions::default())? {
@@ -251,7 +260,7 @@ pub fn zeroize(store: &Store, db_name: &str, key_name: &str) -> Result<(), Locks
 
 /// Overwrites a stored value with zeros, then deletes the entry.
 pub fn secure_delete(store: &Store, db_name: &str, key_name: &str) -> Result<(), LockstoreError> {
-    zeroize(store, db_name, key_name)?;
+    zeroize_on_disk(store, db_name, key_name)?;
     let db = Database::new(store, db_name);
     let key = Key::from(key_name);
     db.delete(&key)?;

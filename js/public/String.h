@@ -7,15 +7,15 @@
 #ifndef js_String_h
 #define js_String_h
 
-#include "js/shadow/String.h"  // JS::shadow::String
+#include "mozilla/Assertions.h"  // MOZ_ASSERT
+#include "mozilla/Attributes.h"  // MOZ_ALWAYS_INLINE
+#include "mozilla/Likely.h"      // MOZ_LIKELY
+#include "mozilla/Maybe.h"       // mozilla::Maybe
+#include "mozilla/Range.h"       // mozilla::Range
+#include "mozilla/RefPtr.h"      // RefPtr
+#include "mozilla/Span.h"        // mozilla::Span
 
-#include "mozilla/Assertions.h"    // MOZ_ASSERT
-#include "mozilla/Attributes.h"    // MOZ_ALWAYS_INLINE
-#include "mozilla/Likely.h"        // MOZ_LIKELY
-#include "mozilla/Maybe.h"         // mozilla::Maybe
-#include "mozilla/Range.h"         // mozilla::Range
-#include "mozilla/RefPtr.h"        // RefPtr
-#include "mozilla/Span.h"          // mozilla::Span
+#include "js/shadow/String.h"      // JS::shadow::String
                                    // std::tuple
 #include "mozilla/StringBuffer.h"  // mozilla::StringBuffer
 

@@ -78,6 +78,7 @@ rtc_library("call_interfaces") {
     "../rtc_base/network:sent_packet",
     "../system_wrappers",
     "../video/config:encoder_config",
+    "//third_party/abseil-cpp/absl/base:nullability",
     "//third_party/abseil-cpp/absl/functional:any_invocable",
     "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/strings:string_view",
@@ -145,8 +146,11 @@ rtc_library("rtp_receiver") {
   ]
   deps = [
     ":rtp_interfaces",
+    "../api:scoped_refptr",
     "../api:sequence_checker",
     "../api/environment",
+    "../api/task_queue",
+    "../api/task_queue:pending_task_safety_flag",
     "../logging:rtc_event_rtp_rtcp",
     "../modules/rtp_rtcp",
     "../modules/rtp_rtcp:rtp_rtcp_format",
@@ -157,6 +161,7 @@ rtc_library("rtp_receiver") {
     "../rtc_base/containers:flat_map",
     "../rtc_base/containers:flat_set",
     "../rtc_base/system:no_unique_address",
+    "//third_party/abseil-cpp/absl/base:nullability",
     "//third_party/abseil-cpp/absl/strings:string_view",
   ]
 }
@@ -178,6 +183,7 @@ rtc_library("rtp_sender") {
     "../api:fec_controller_api",
     "../api:field_trials_view",
     "../api:frame_transformer_interface",
+    "../api:rtp_header_extension_id",
     "../api:rtp_headers",
     "../api:rtp_packet_sender",
     "../api:rtp_parameters",
@@ -340,6 +346,7 @@ rtc_library("call") {
     "../rtc_base:stringutils",
     "../rtc_base:threading",
     "../rtc_base:timeutils",
+    "../rtc_base/containers:flat_set",
     "../rtc_base/experiments:field_trial_parser",
     "../rtc_base/network:sent_packet",
     "../rtc_base/system:no_unique_address",
@@ -350,6 +357,7 @@ rtc_library("call") {
     "../video:decode_synchronizer",
     "../video/config:encoder_config",
     "adaptation:resource_adaptation",
+    "//third_party/abseil-cpp/absl/base:nullability",
     "//third_party/abseil-cpp/absl/functional:bind_front",
     "//third_party/abseil-cpp/absl/strings:string_view",
   ]
@@ -362,10 +370,13 @@ rtc_library("payload_type_picker") {
   ]
   deps = [
     ":payload_type",
+    "../api:field_trials_view",
     "../api:payload_type",
     "../api:rtc_error",
+    "../api:rtp_header_extension_id",
     "../api:rtp_parameters",
     "../api/audio_codecs:audio_codecs_api",
+    "../api/environment",
     "../media:codec",
     "../media:media_constants",
     "../rtc_base:checks",
@@ -373,6 +384,7 @@ rtc_library("payload_type_picker") {
     "../rtc_base:stringutils",
     "../rtc_base/containers:flat_map",
     "../rtc_base/containers:flat_set",
+    "../system_wrappers:metrics",
     "//third_party/abseil-cpp/absl/strings",
   ]
 }
@@ -382,6 +394,7 @@ rtc_source_set("payload_type") {
   deps = [
     "../api:payload_type",
     "../api:rtc_error",
+    "../api:rtp_header_extension_id",
     "../api:rtp_parameters",
     "../media:codec",
     "//third_party/abseil-cpp/absl/strings:string_view",
@@ -455,7 +468,8 @@ rtc_library("video_receive_stream_api") {
 }
 
 rtc_library("simulated_network") {
-  # TODO(bugs.webrtc.org/14525): Remove target and directly depend on test/network:simulated_network.
+  # TODO(bugs.webrtc.org/14525): Remove target and directly depend on
+  # test/network:simulated_network.
   sources = [ "simulated_network.h" ]
   deps = [ "../test/network:simulated_network" ]
 }
@@ -654,8 +668,10 @@ if (rtc_include_tests) {
       deps = [
         ":call",
         ":call_interfaces",
+        ":rtp_interfaces",
         ":rtp_receiver",
         "../api:rtp_headers",
+        "../api:scoped_refptr",
         "../api:transport_api",
         "../api/environment:environment_factory",
         "../logging:mocks",
@@ -674,10 +690,16 @@ if (rtc_include_tests) {
         ":call_interfaces",
         ":payload_type",
         ":payload_type_picker",
+        "../api:field_trials",
         "../api:payload_type",
+        "../api:rtc_error",
+        "../api:rtp_header_extension_id",
+        "../api:rtp_parameters",
+        "../api/environment",
         "../api/video_codecs:video_codecs_api",
         "../media:codec",
         "../media:media_constants",
+        "../test:create_test_environment",
         "../test:test_support",
         "//third_party/abseil-cpp/absl/strings",
       ]
@@ -994,8 +1016,12 @@ if (rtc_include_tests) {
       ":payload_type_picker",
       "../api:payload_type",
       "../api:rtc_error",
+      "../api:rtp_header_extension_id",
       "../api:rtp_parameters",
       "../media:codec",
+      "../rtc_base:checks",
+      "../rtc_base/containers:flat_map",
+      "//third_party/abseil-cpp/absl/strings",
       "//third_party/abseil-cpp/absl/strings:string_view",
     ]
   }

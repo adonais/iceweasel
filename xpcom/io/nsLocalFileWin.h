@@ -5,20 +5,19 @@
 #ifndef _nsLocalFileWIN_H_
 #define _nsLocalFileWIN_H_
 
-#include "nscore.h"
-#include "nsError.h"
-#include "nsString.h"
+#include <shlobj.h>
+#include <sys/stat.h>
+#include <windows.h>
+
 #include "nsCRT.h"
+#include "nsError.h"
+#include "nsIClassInfoImpl.h"
 #include "nsIFile.h"
 #include "nsILocalFileWin.h"
-#include "nsIClassInfoImpl.h"
+#include "nsString.h"
 #include "nsWindowsHelpers.h"
+#include "nscore.h"
 #include "prio.h"
-
-#include <windows.h>
-#include <shlobj.h>
-
-#include <sys/stat.h>
 
 class nsLocalFile final : public nsILocalFileWin {
  public:

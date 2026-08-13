@@ -7,9 +7,10 @@
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/CORSMode.h"
-#include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/ReferrerPolicyBinding.h"
 #include "mozilla/dom/RequestBinding.h"  // RequestPriority
+#include "mozilla/MemoryReporting.h"
+
 #include "nsCOMPtr.h"
 #include "nsIPrincipal.h"
 

@@ -4,17 +4,15 @@
 
 #include "XULComboboxAccessible.h"
 
-#include "LocalAccessible-inl.h"
-#include "nsAccessibilityService.h"
 #include "DocAccessible.h"
-#include "nsCoreUtils.h"
-#include "nsFocusManager.h"
-
+#include "LocalAccessible-inl.h"
+#include "States.h"
 #include "mozilla/a11y/DocAccessibleParent.h"
 #include "mozilla/a11y/Role.h"
-#include "States.h"
-
 #include "mozilla/dom/Element.h"
+#include "nsAccessibilityService.h"
+#include "nsCoreUtils.h"
+#include "nsFocusManager.h"
 #include "nsIDOMXULMenuListElement.h"
 
 using namespace mozilla::a11y;

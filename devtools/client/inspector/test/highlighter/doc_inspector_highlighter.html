@@ -58,6 +58,15 @@
        /* large number so the view-transition pseudo elements are available during the whole test */
        animation-duration: 3600s;
     }
+
+    select {
+      appearance: base-select;
+    }
+    select::picker-icon {
+      background-color: hotpink;
+      width: 20px;
+      height: 20px;
+    }
     </style>
   </head>
   <body>
@@ -69,6 +78,11 @@
       <li>Cats</li>
     </ul>
     <dialog>My Modal</dialog>
+    <select>
+      <option>Apricot</option>
+      <option>Banana</option>
+      <option>Cherry</option>
+    </select>
     <script>
       "use strict";
 

@@ -6,11 +6,11 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   MerinoClient: "moz-src:///browser/components/urlbar/MerinoClient.sys.mjs",
-  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "logger", () =>
-  lazy.UrlbarUtils.getLogger({ prefix: "GeolocationUtils" })
+  lazy.UrlbarShared.getLogger({ prefix: "GeolocationUtils" })
 );
 
 // Cache period for Merino's geolocation response. This is intentionally a small

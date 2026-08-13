@@ -23,3 +23,20 @@ GeneratedFile(
         "/toolkit/themes/shared/design-system/src/tokens/base/color.nova.tokens.json",
     ],
 )
+
+GeneratedFile(
+    "aiwindow-nova/manifest.json",
+    script="process_tokens.py",
+    entry_point="process_tokens",
+    inputs=[
+        "aiwindow-nova/manifest.in.json",
+        "/browser/themes/shared/tabbrowser/tab.nova.tokens.json",
+        "/browser/themes/shared/urlbar/urlbarview.tokens.json",
+        "/toolkit/themes/shared/design-system/src/tokens/base/background.nova.tokens.json",
+        "/toolkit/themes/shared/design-system/src/tokens/base/color.tokens.json",
+        "/toolkit/themes/shared/design-system/src/tokens/base/color.nova.tokens.json",
+        "/toolkit/themes/shared/design-system/src/tokens/base/text.nova.tokens.json",
+        "/toolkit/themes/shared/design-system/src/tokens/components/toolbar.nova.tokens.json",
+        "/toolkit/themes/shared/design-system/src/tokens/components/toolbarbutton.nova.tokens.json",
+    ],
+)

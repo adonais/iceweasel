@@ -2,34 +2,25 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use api::{PropertyBinding, ColorU, ColorF, Shadow, RasterSpace};
-use crate::scene_building::{CreateShadow, IsVisible};
+use api::{PropertyBinding, ColorF};
+use crate::scene_building::{IsVisible};
 use crate::intern;
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::prim_store::{
     PrimKey, InternablePrimitive, PrimitiveStore, PrimitiveKind,
-    PrimTemplate, PrimTemplateCommonData, PrimitiveOpacity,
+    PrimTemplate, PrimTemplateCommonData,
 };
-use crate::frame_builder::FrameBuildingState;
 use crate::scene::SceneProperties;
 use std::ops;
 
-#[derive(Debug, Clone, Eq, MallocSizeOf, PartialEq, Hash)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct RectanglePrim {
-    pub color: PropertyBinding<ColorU>,
-}
+// `RectanglePrim` now lives in `webrender_api::interned_prims` so content-process
+// interning can hold it. Re-exported to keep existing references working.
+pub use api::interned_prims::RectanglePrim;
 
 pub type RectangleKey = PrimKey<RectanglePrim>;
 
 pub type RectangleDataHandle = intern::Handle<RectanglePrim>;
 
-impl RectangleKey {
-    pub fn new(info: &LayoutPrimitiveInfo, kind: RectanglePrim) -> Self {
-        RectangleKey { common: info.into(), kind }
-    }
-}
 
 impl intern::InternDebug for RectangleKey {}
 
@@ -45,7 +36,7 @@ impl InternablePrimitive for RectanglePrim {
         self,
         info: &LayoutPrimitiveInfo,
     ) -> RectangleKey {
-        RectangleKey::new(info, self)
+        RectangleKey::new(info.into(), self)
     }
 
     fn make_instance_kind(
@@ -68,18 +59,6 @@ impl IsVisible for RectanglePrim {
     }
 }
 
-impl CreateShadow for RectanglePrim {
-    fn create_shadow(
-        &self,
-        shadow: &Shadow,
-        _: bool,
-        _: RasterSpace,
-    ) -> RectanglePrim {
-        RectanglePrim {
-            color: PropertyBinding::Value(shadow.color.into()),
-        }
-    }
-}
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -118,26 +97,11 @@ impl From<RectangleKey> for RectangleTemplate {
     }
 }
 
-impl RectangleTemplate {
-    pub fn update(
-        &mut self,
-        frame_state: &mut FrameBuildingState,
-        scene_properties: &SceneProperties,
-    ) {
-        let mut writer = frame_state.frame_gpu_data.f32.write_blocks(1);
-        writer.push_one(scene_properties.resolve_color(&self.kind.color).premultiplied());
-        self.common.gpu_buffer_address = writer.finish();
-        self.opacity = PrimitiveOpacity::from_alpha(
-            scene_properties.resolve_color(&self.kind.color).a
-        );
-    }
-}
-
 #[test]
 #[cfg(target_pointer_width = "64")]
 fn test_struct_sizes() {
     use std::mem;
     assert_eq!(mem::size_of::<RectanglePrim>(), 16, "RectanglePrim size changed");
-    assert_eq!(mem::size_of::<RectangleTemplate>(), 36, "RectangleTemplate size changed");
+    assert_eq!(mem::size_of::<RectangleTemplate>(), 32, "RectangleTemplate size changed");
     assert_eq!(mem::size_of::<RectangleKey>(), 20, "RectangleKey size changed");
 }

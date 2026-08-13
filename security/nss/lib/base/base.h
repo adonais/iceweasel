@@ -367,8 +367,13 @@ extern const NSSError NSS_ERROR_ARENA_MARKED_BY_ANOTHER_THREAD;
  *  A pointer to the new segment of zeroed memory
  */
 
-#define nss_ZNEWARRAY(arenaOpt, type, quantity) \
-    ((type *)nss_ZAlloc((arenaOpt), sizeof(type) * (quantity)))
+/* Reject quantities whose byte size would overflow PRUint32
+ * (nss_ZAlloc's size parameter). */
+#define nss_ZNEWARRAY(arenaOpt, type, quantity)                     \
+    ((type *)(((PRUint64)(quantity) > PR_UINT32_MAX / sizeof(type)) \
+                  ? NULL                                            \
+                  : nss_ZAlloc((arenaOpt),                          \
+                               (PRUint32)(sizeof(type) * (PRUint64)(quantity)))))
 
 /*
  * nss_ZREALLOCARRAY
@@ -387,8 +392,13 @@ extern const NSSError NSS_ERROR_ARENA_MARKED_BY_ANOTHER_THREAD;
  *  NULL upon error
  *  A pointer to the replacement segment of memory
  */
-#define nss_ZREALLOCARRAY(p, type, quantity) \
-    ((type *)nss_ZRealloc((p), sizeof(type) * (quantity)))
+/* Reject quantities whose byte size would overflow PRUint32
+ * (nss_ZRealloc's size parameter). */
+#define nss_ZREALLOCARRAY(p, type, quantity)                        \
+    ((type *)(((PRUint64)(quantity) > PR_UINT32_MAX / sizeof(type)) \
+                  ? NULL                                            \
+                  : nss_ZRealloc((p),                               \
+                                 (PRUint32)(sizeof(type) * (PRUint64)(quantity)))))
 
 /*
  * nssArena_verifyPointer

@@ -2,11 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "gtest/gtest.h"
 #include "mozilla/CondVar.h"
 #include "mozilla/Monitor.h"
-#include "mozilla/ReentrantMonitor.h"
 #include "mozilla/Mutex.h"
-#include "gtest/gtest.h"
+#include "mozilla/ReentrantMonitor.h"
 
 using namespace mozilla;
 

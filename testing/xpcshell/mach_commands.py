@@ -240,6 +240,10 @@ def run_xpcshell_test(command_context, test_objects=None, **params):
 
     created_logger = False
     if not params.get("log"):
+        if not params.get("log_testsummary"):
+            params["log_testsummary"] = [
+                command_context._get_state_filename("testsummary.jsonl")
+            ]
         log_defaults = {
             command_context._mach_context.settings["test"]["format"]: sys.stdout
         }

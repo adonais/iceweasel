@@ -6,12 +6,12 @@
 #define mozilla_net_CookieServiceChild_h_
 
 #include "CookieKey.h"
+#include "mozIThirdPartyUtil.h"
 #include "mozilla/net/PCookieServiceChild.h"
 #include "nsClassHashtable.h"
 #include "nsICookieService.h"
-#include "mozIThirdPartyUtil.h"
-#include "nsWeakReference.h"
 #include "nsThreadUtils.h"
+#include "nsWeakReference.h"
 
 class nsIEffectiveTLDService;
 class nsILoadInfo;

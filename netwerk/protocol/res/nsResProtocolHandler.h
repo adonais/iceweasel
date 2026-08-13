@@ -6,7 +6,6 @@
 #define nsResProtocolHandler_h_
 
 #include "mozilla/net/SubstitutingProtocolHandler.h"
-
 #include "nsIResProtocolHandler.h"
 #include "nsInterfaceHashtable.h"
 #include "nsWeakReference.h"

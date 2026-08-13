@@ -2,41 +2,38 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "AndroidBridge.h"
+
+#include <GLES2/gl2.h>
 #include <android/log.h>
 #include <dlfcn.h>
 #include <math.h>
-#include <GLES2/gl2.h>
-
-#include "mozilla/layers/CompositorBridgeChild.h"
-#include "mozilla/layers/CompositorBridgeParent.h"
-
-#include "mozilla/Hal.h"
-#include "nsXULAppAPI.h"
 #include <prthread.h>
-#include "AndroidBridge.h"
+
 #include "AndroidBridgeUtilities.h"
-#include "nsAlertsUtils.h"
-#include "nsAppShell.h"
-#include "nsOSHelperAppService.h"
-#include "nsWindow.h"
-#include "mozilla/Preferences.h"
-#include "nsThreadUtils.h"
-#include "nsPresContext.h"
-#include "nsPIDOMWindow.h"
-#include "mozilla/ClearOnShutdown.h"
-#include "mozilla/Mutex.h"
-#include "nsPrintfCString.h"
-#include "nsContentUtils.h"
-#include "MessageQueue.h"
-
 #include "EventDispatcher.h"
-
-#include "mozilla/TimeStamp.h"
+#include "MessageQueue.h"
 #include "WidgetUtils.h"
-
+#include "mozilla/ClearOnShutdown.h"
+#include "mozilla/Hal.h"
+#include "mozilla/Mutex.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/TimeStamp.h"
 #include "mozilla/java/EventDispatcherWrappers.h"
 #include "mozilla/java/GeckoAppShellWrappers.h"
 #include "mozilla/java/GeckoThreadWrappers.h"
+#include "mozilla/layers/CompositorBridgeChild.h"
+#include "mozilla/layers/CompositorBridgeParent.h"
+#include "nsAlertsUtils.h"
+#include "nsAppShell.h"
+#include "nsContentUtils.h"
+#include "nsOSHelperAppService.h"
+#include "nsPIDOMWindow.h"
+#include "nsPresContext.h"
+#include "nsPrintfCString.h"
+#include "nsThreadUtils.h"
+#include "nsWindow.h"
+#include "nsXULAppAPI.h"
 
 using namespace mozilla;
 

@@ -49,7 +49,7 @@ VideoCaptureIos::~VideoCaptureIos() {
 webrtc::scoped_refptr<VideoCaptureModule> VideoCaptureIos::Create(
     Clock* _Nonnull clock, const char* _Null_unspecified deviceUniqueIdUTF8) {
   if (!deviceUniqueIdUTF8[0]) {
-    return NULL;
+    return nullptr;
   }
 
   webrtc::scoped_refptr<VideoCaptureIos> capture_module(

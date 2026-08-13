@@ -145,22 +145,6 @@ const CONFIG_WITH_MODIFIED_CLASSIFICATION = [
   },
 ];
 
-const CONFIG_WITH_MODIFIED_NAME = [
-  {
-    identifier: "originalDefault",
-    base: {
-      name: "Modified Engine Name",
-      urls: {
-        search: {
-          base: "https://example.com/search",
-          searchTermParamName: "q",
-        },
-      },
-      classification: "general",
-    },
-  },
-];
-
 const testSearchEngine = {
   id: "originalDefault",
   providerId: "originalDefault",
@@ -226,8 +210,8 @@ async function checkTelemetry(
     snapshot = await Glean.searchEngineDefault.changed.testGetValue();
   }
 
-  // additionalEventsExpected should be true whenever we expect something
-  // stored in AppProvidedConfigEngine.#prevEngineInfo to have changed.
+  // additionalEventsExpected should be true whenever we expect an additional
+  // engine update due to the new details being different.
   if (additionalEventsExpected) {
     delete snapshot[0].timestamp;
     Assert.deepEqual(
@@ -409,43 +393,29 @@ add_task(async function test_user_changes_separate_private_pref() {
     false
   );
 
-  await checkTelemetry("user_private_split", testNewDefaultEngine, null, true);
+  await checkTelemetry("user_private_split", testPrefEngine, null, true);
 });
 
 add_task(async function test_ui_enabled_with_separate_default_notifies() {
   Services.prefs.setBoolPref(
     SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
-    false
+    true
   );
   Services.prefs.setBoolPref(
     SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
     true
   );
 
+  await SearchService.setDefaultPrivate(
+    SearchService.getEngineById("newDefault"),
+    SearchService.CHANGE_REASON.UNKNOWN
+  );
+
   clearTelemetry();
 
+  // Disabling the UI pref notifies because the private engine (newDefault)
+  // differs from the normal default (testPrefEngine).
   let defaultChanged = SearchTestUtils.promiseSearchNotification(
-    SearchUtils.MODIFIED_TYPE.DEFAULT_PRIVATE,
-    SearchUtils.TOPIC_ENGINE_MODIFIED
-  );
-
-  Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
-    true
-  );
-  await defaultChanged;
-
-  await checkTelemetry(
-    "user_private_pref_enabled",
-    null,
-    testNewDefaultEngine,
-    true
-  );
-
-  clearTelemetry();
-
-  // Reset the pref so that we are no longer in an experiment.
-  defaultChanged = SearchTestUtils.promiseSearchNotification(
     SearchUtils.MODIFIED_TYPE.DEFAULT_PRIVATE,
     SearchUtils.TOPIC_ENGINE_MODIFIED
   );
@@ -460,6 +430,25 @@ add_task(async function test_ui_enabled_with_separate_default_notifies() {
     testNewDefaultEngine,
     null,
     true
+  );
+
+  clearTelemetry();
+
+  // Re-enabling the UI pref: the saved private engine was cleared when the pref
+  // was turned off, so the private engine falls back to the app default (same
+  // as the normal default). No notification fires, but telemetry records the change.
+  Services.prefs.setBoolPref(
+    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
+    true
+  );
+
+  await checkTelemetry("user_private_pref_enabled", null, testPrefEngine, true);
+
+  clearTelemetry();
+
+  Services.prefs.setBoolPref(
+    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
+    false
   );
 });
 
@@ -588,20 +577,12 @@ add_task(async function test_default_engine_update() {
   await extension.unload();
 });
 
-add_task(async function test_only_notify_on_relevant_engine_property_change() {
-  clearTelemetry();
+add_task(async function test_non_telemetry_event_change_config_engine() {
+  // Test changing a non-telemetry event parameter for a config engine, this should
+  // not trigger a telemetry event.
   await SearchTestUtils.updateRemoteSettingsConfig(BASE_CONFIG);
+  clearTelemetry();
 
-  // Since SearchUtils.notifyAction can be called for multiple different search
-  // engine topics, `resetPrevEngineInfo` is a better way to track
-  // notifications in this case.
-  let notificationSpy = sinon.spy(
-    AppProvidedConfigEngine.prototype,
-    "_resetPrevEngineInfo"
-  );
-
-  // Change an engine property that is not stored in
-  // AppProvidedConfigEngine.#prevEngineInfo.
   let reloadObserved =
     SearchTestUtils.promiseSearchNotification("engines-reloaded");
   await SearchTestUtils.updateRemoteSettingsConfig(
@@ -609,56 +590,66 @@ add_task(async function test_only_notify_on_relevant_engine_property_change() {
   );
   await reloadObserved;
 
-  Assert.equal(
-    notificationSpy.callCount,
-    0,
-    "Should not have sent a notification"
-  );
+  // Ensure any pending notifications have cleared.
+  await TestUtils.waitForTick();
 
-  notificationSpy.restore();
+  let snapshot = await Glean.searchEngineDefault.changed.testGetValue();
+  Assert.ok(
+    !snapshot,
+    "Should not have received any events for a non-telemetry related change to a config engine"
+  );
 });
 
-add_task(
-  async function test_multiple_updates_only_notify_on_relevant_engine_property_change() {
-    clearTelemetry();
-    await SearchTestUtils.updateRemoteSettingsConfig(BASE_CONFIG);
+add_task(async function test_non_telemetry_event_change_addon_engine() {
+  // Test changing a non-telemetry event parameter for an add-on engine, this should
+  // not trigger a telemetry event.
+  clearTelemetry();
+  let extension = await SearchTestUtils.installSearchExtension(
+    {
+      name: "engine",
+      id: "engine@tests.mozilla.org",
+      search_url_get_params: `q={searchTerms}`,
+      search_url: "https://www.google.com/search",
+      encoding: "UTF-8",
+      version: "1.0",
+    },
+    { skipUnload: true }
+  );
+  let engine = SearchService.getEngineByName("engine");
 
-    // Since SearchUtils.notifyAction can be called for multiple different search
-    // engine topics, `resetPrevEngineInfo` is a better way to track
-    // notifications in this case.
-    let notificationSpy = sinon.spy(
-      AppProvidedConfigEngine.prototype,
-      "_resetPrevEngineInfo"
-    );
+  Assert.ok(!!engine, "Should have loaded the engine");
 
-    // Change an engine property that is not stored in
-    // AppProvidedConfigEngine.#prevEngineInfo.
-    let reloadObserved1 =
-      SearchTestUtils.promiseSearchNotification("engines-reloaded");
-    await SearchTestUtils.updateRemoteSettingsConfig(
-      CONFIG_WITH_MODIFIED_CLASSIFICATION
-    );
-    await reloadObserved1;
+  await SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
 
-    Assert.equal(
-      notificationSpy.callCount,
-      0,
-      "Should not have sent a notification"
-    );
+  clearTelemetry();
 
-    // Now change an engine property that is stored in
-    // AppProvidedConfigEngine.#prevEngineInfo.
-    let reloadObserved2 =
-      SearchTestUtils.promiseSearchNotification("engines-reloaded");
-    await SearchTestUtils.updateRemoteSettingsConfig(CONFIG_WITH_MODIFIED_NAME);
-    await reloadObserved2;
+  let promiseChanged = TestUtils.topicObserved(
+    "browser-search-engine-modified",
+    (eng, verb) => verb == "engine-changed"
+  );
+  let manifest = SearchTestUtils.createEngineManifest({
+    name: "engine",
+    id: "engine@tests.mozilla.org",
+    search_url_get_params: `q={searchTerms}`,
+    search_url: "https://www.google.com/search",
+    encoding: "UTF-16",
+    version: "2.0",
+  });
 
-    Assert.equal(
-      notificationSpy.callCount,
-      1,
-      "Should have sent a notification"
-    );
+  await extension.upgrade({
+    useAddonManager: "permanent",
+    manifest,
+  });
+  await AddonTestUtils.waitForSearchProviderStartup(extension);
+  await promiseChanged;
 
-    notificationSpy.restore();
-  }
-);
+  // Ensure any pending notifications have cleared.
+  await TestUtils.waitForTick();
+
+  let snapshot = await Glean.searchEngineDefault.changed.testGetValue();
+  Assert.ok(
+    !snapshot,
+    "Should not have received any events for a non-telemetry related change to an add-on engine"
+  );
+  await extension.unload();
+});

@@ -5,12 +5,13 @@
 #ifndef widget_windows_RemoteBackbuffer_h
 #define widget_windows_RemoteBackbuffer_h
 
-#include "nsIWidget.h"
-#include "mozilla/widget/PCompositorWidgetParent.h"
+#include <windows.h>
+
 #include "mozilla/Maybe.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/widget/PCompositorWidgetParent.h"
+#include "nsIWidget.h"
 #include "prthread.h"
-#include <windows.h>
 
 namespace mozilla {
 namespace widget {

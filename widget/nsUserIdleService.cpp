@@ -2,23 +2,25 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "nsUserIdleService.h"
+
+#include <algorithm>
+
+#include "mozilla/AppShutdown.h"
+#include "mozilla/Logging.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/Services.h"
+#include "mozilla/dom/ContentChild.h"
+#include "mozilla/glean/WidgetMetrics.h"
+#include "nsCOMArray.h"
+#include "nsDebug.h"
 #include "nsError.h"
 #include "nsIAsyncShutdown.h"
-#include "nsUserIdleService.h"
-#include "nsString.h"
 #include "nsIObserverService.h"
-#include "nsDebug.h"
-#include "nsCOMArray.h"
+#include "nsString.h"
 #include "nsXULAppAPI.h"
 #include "prinrval.h"
-#include "mozilla/Logging.h"
 #include "prtime.h"
-#include "mozilla/AppShutdown.h"
-#include "mozilla/dom/ContentChild.h"
-#include "mozilla/Services.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/glean/WidgetMetrics.h"
-#include <algorithm>
 
 #ifdef MOZ_WIDGET_ANDROID
 #  include <android/log.h>

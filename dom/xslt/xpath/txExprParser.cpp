@@ -425,7 +425,7 @@ nsresult txExprParser::createFunctionCall(txExprLexer& lexer,
     if (rv == NS_ERROR_NOT_IMPLEMENTED) {
       // this should just happen for unparsed-entity-uri()
       NS_ASSERTION(!fnCall, "Now is it implemented or not?");
-      rv = parseParameters(0, lexer, aContext);
+      rv = parseParameters(nullptr, lexer, aContext);
       NS_ENSURE_SUCCESS(rv, rv);
 
       *aResult = new txLiteralExpr(tok->Value() + u" not implemented."_ns);
@@ -556,7 +556,7 @@ nsresult txExprParser::createLocationStep(txExprLexer& lexer,
  */
 nsresult txExprParser::createNodeTypeTest(txExprLexer& lexer,
                                           txNodeTest** aTest) {
-  *aTest = 0;
+  *aTest = nullptr;
   UniquePtr<txNodeTypeTest> nodeTest;
 
   Token* nodeTok = lexer.peek();
@@ -833,7 +833,7 @@ nsresult txExprParser::resolveQName(const nsAString& aQName, nsAtom** aPrefix,
   }
   aNamespace = kNameSpaceID_None;
   // the lexer dealt with idx == 0
-  *aPrefix = 0;
+  *aPrefix = nullptr;
   if (aIsNameTest && aContext->caseInsensitiveNameTests()) {
     nsAutoString lcname;
     nsContentUtils::ASCIIToLower(aQName, lcname);

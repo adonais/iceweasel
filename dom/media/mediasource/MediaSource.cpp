@@ -46,12 +46,12 @@ mozilla::LogModule* GetMediaSourceAPILog() {
   return sLogModule;
 }
 
-#define MSE_DEBUG(arg, ...)                                              \
-  DDMOZ_LOG(GetMediaSourceLog(), mozilla::LogLevel::Debug, "::%s: " arg, \
-            __func__, ##__VA_ARGS__)
-#define MSE_API(arg, ...)                                                   \
-  DDMOZ_LOG(GetMediaSourceAPILog(), mozilla::LogLevel::Debug, "::%s: " arg, \
-            __func__, ##__VA_ARGS__)
+#define MSE_DEBUG(arg, ...)                                                  \
+  DDMOZ_LOG_FMT(GetMediaSourceLog(), mozilla::LogLevel::Debug, "::{}: " arg, \
+                __func__, ##__VA_ARGS__)
+#define MSE_API(arg, ...)                                         \
+  DDMOZ_LOG_FMT(GetMediaSourceAPILog(), mozilla::LogLevel::Debug, \
+                "::{}: " arg, __func__, ##__VA_ARGS__)
 
 // Arbitrary limit.
 static const unsigned int MAX_SOURCE_BUFFERS = 16;
@@ -247,24 +247,24 @@ void MediaSource::SetDuration(double aDuration, ErrorResult& aRv) {
   MOZ_ASSERT(NS_IsMainThread());
   if (aDuration < 0 || std::isnan(aDuration)) {
     nsPrintfCString error("Invalid duration value %f", aDuration);
-    MSE_API("SetDuration(aDuration=%f, invalid value)", aDuration);
+    MSE_API("SetDuration(aDuration={:f}, invalid value)", aDuration);
     aRv.ThrowTypeError(error);
     return;
   }
   if (mReadyState != MediaSourceReadyState::Open ||
       mSourceBuffers->AnyUpdating()) {
-    MSE_API("SetDuration(aDuration=%f, invalid state)", aDuration);
+    MSE_API("SetDuration(aDuration={:f}, invalid state)", aDuration);
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
   DurationChange(aDuration, aRv);
-  MSE_API("SetDuration(aDuration=%f, errorCode=%d)", aDuration,
+  MSE_API("SetDuration(aDuration={:f}, errorCode={})", aDuration,
           aRv.ErrorCodeAsInt());
 }
 
 void MediaSource::SetDuration(const media::TimeUnit& aDuration) {
   MOZ_ASSERT(NS_IsMainThread());
-  MSE_API("SetDuration(aDuration=%f)", aDuration.ToSeconds());
+  MSE_API("SetDuration(aDuration={:f})", aDuration.ToSeconds());
   mDecoder->SetMediaSourceDuration(aDuration);
 }
 
@@ -281,7 +281,7 @@ already_AddRefed<SourceBuffer> MediaSource::AddSourceBuffer(
   RecordTypeForTelemetry(aType, window);
   bool supported = !aRv.Failed();
   diagnostics.StoreFormatDiagnostics(doc, aType, supported, __func__);
-  MSE_API("AddSourceBuffer(aType=%s)%s", NS_ConvertUTF16toUTF8(aType).get(),
+  MSE_API("AddSourceBuffer(aType={}){}", NS_ConvertUTF16toUTF8(aType).get(),
           supported ? "" : " [not supported]");
   if (!supported) {
     return nullptr;
@@ -302,7 +302,7 @@ already_AddRefed<SourceBuffer> MediaSource::AddSourceBuffer(
   RefPtr<SourceBuffer> sourceBuffer = new SourceBuffer(this, *containerType);
   mSourceBuffers->Append(sourceBuffer);
   DDLINKCHILD("sourcebuffer[]", sourceBuffer.get());
-  MSE_DEBUG("sourceBuffer=%p", sourceBuffer.get());
+  MSE_DEBUG("sourceBuffer={}", fmt::ptr(sourceBuffer.get()));
   return sourceBuffer.forget();
 }
 
@@ -341,7 +341,7 @@ RefPtr<MediaSource::ActiveCompletionPromise> MediaSource::SourceBufferIsActive(
 
 void MediaSource::CompletePendingTransactions() {
   MOZ_ASSERT(NS_IsMainThread());
-  MSE_DEBUG("Resolving %u promises", unsigned(mCompletionPromises.Length()));
+  MSE_DEBUG("Resolving {} promises", unsigned(mCompletionPromises.Length()));
   for (auto& promise : mCompletionPromises) {
     promise.Resolve(true, __func__);
   }
@@ -352,7 +352,7 @@ void MediaSource::RemoveSourceBuffer(SourceBuffer& aSourceBuffer,
                                      ErrorResult& aRv) {
   MOZ_ASSERT(NS_IsMainThread());
   SourceBuffer* sourceBuffer = &aSourceBuffer;
-  MSE_API("RemoveSourceBuffer(aSourceBuffer=%p)", sourceBuffer);
+  MSE_API("RemoveSourceBuffer(aSourceBuffer={})", fmt::ptr(sourceBuffer));
   if (!mSourceBuffers->Contains(sourceBuffer)) {
     aRv.Throw(NS_ERROR_DOM_NOT_FOUND_ERR);
     return;
@@ -380,7 +380,7 @@ void MediaSource::RemoveSourceBuffer(SourceBuffer& aSourceBuffer,
 void MediaSource::EndOfStream(
     const Optional<MediaSourceEndOfStreamError>& aError, ErrorResult& aRv) {
   MOZ_ASSERT(NS_IsMainThread());
-  MSE_API("EndOfStream(aError=%d)",
+  MSE_API("EndOfStream(aError={})",
           aError.WasPassed() ? uint32_t(aError.Value()) : 0);
   if (mReadyState != MediaSourceReadyState::Open ||
       mSourceBuffers->AnyUpdating()) {
@@ -413,7 +413,7 @@ void MediaSource::EndOfStream(
 
 void MediaSource::EndOfStream(const MediaResult& aError) {
   MOZ_ASSERT(NS_IsMainThread());
-  MSE_API("EndOfStream(aError=%s)", aError.ErrorName().get());
+  MSE_API("EndOfStream(aError={})", aError.ErrorName().get());
 
   SetReadyState(MediaSourceReadyState::Ended);
   mSourceBuffers->SetEnded(Optional(MediaSourceEndOfStreamError::Decode));
@@ -484,7 +484,8 @@ void MediaSource::ClearLiveSeekableRange(ErrorResult& aRv) {
 
 bool MediaSource::Attach(MediaSourceDecoder* aDecoder) {
   MOZ_ASSERT(NS_IsMainThread());
-  MSE_DEBUG("Attach(aDecoder=%p) owner=%p", aDecoder, aDecoder->GetOwner());
+  MSE_DEBUG("Attach(aDecoder={}) owner={}", fmt::ptr(aDecoder),
+            fmt::ptr(aDecoder->GetOwner()));
   MOZ_ASSERT(aDecoder);
   MOZ_ASSERT(aDecoder->GetOwner());
   if (mReadyState != MediaSourceReadyState::Closed) {
@@ -502,8 +503,8 @@ bool MediaSource::Attach(MediaSourceDecoder* aDecoder) {
 void MediaSource::Detach() {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(mCompletionPromises.IsEmpty());
-  MSE_DEBUG("mDecoder=%p owner=%p", mDecoder.get(),
-            mDecoder ? mDecoder->GetOwner() : nullptr);
+  MSE_DEBUG("mDecoder={} owner={}", fmt::ptr(mDecoder.get()),
+            fmt::ptr(mDecoder ? mDecoder->GetOwner() : nullptr));
   if (!mDecoder) {
     MOZ_ASSERT(mReadyState == MediaSourceReadyState::Closed);
     MOZ_ASSERT(mActiveSourceBuffers->IsEmpty() && mSourceBuffers->IsEmpty());
@@ -536,14 +537,15 @@ MediaSource::MediaSource(nsPIDOMWindowInner* aWindow)
     mPrincipal = sop->GetPrincipal();
   }
 
-  MSE_API("MediaSource(aWindow=%p) mSourceBuffers=%p mActiveSourceBuffers=%p",
-          aWindow, mSourceBuffers.get(), mActiveSourceBuffers.get());
+  MSE_API("MediaSource(aWindow={}) mSourceBuffers={} mActiveSourceBuffers={}",
+          fmt::ptr(aWindow), fmt::ptr(mSourceBuffers.get()),
+          fmt::ptr(mActiveSourceBuffers.get()));
 }
 
 void MediaSource::SetReadyState(MediaSourceReadyState aState) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aState != mReadyState);
-  MSE_DEBUG("SetReadyState(aState=%" PRIu32 ") mReadyState=%" PRIu32,
+  MSE_DEBUG("SetReadyState(aState={}) mReadyState={}",
             static_cast<uint32_t>(aState), static_cast<uint32_t>(mReadyState));
 
   MediaSourceReadyState oldState = mReadyState;
@@ -578,12 +580,12 @@ void MediaSource::SetReadyState(MediaSourceReadyState aState) {
 
 void MediaSource::DispatchSimpleEvent(const char* aName) {
   MOZ_ASSERT(NS_IsMainThread());
-  MSE_API("Dispatch event '%s'", aName);
+  MSE_API("Dispatch event '{}'", aName);
   DispatchTrustedEvent(NS_ConvertUTF8toUTF16(aName));
 }
 
 void MediaSource::QueueAsyncSimpleEvent(const char* aName) {
-  MSE_DEBUG("Queuing event '%s'", aName);
+  MSE_DEBUG("Queuing event '{}'", aName);
   nsCOMPtr<nsIRunnable> event = new AsyncEventRunner<MediaSource>(this, aName);
   mAbstractMainThread->Dispatch(event.forget());
 }
@@ -614,7 +616,7 @@ void MediaSource::DurationChangeOnEndOfStream() {
   // SourceBuffer.buffered getter.  Do this before comparison because
   // mDecoder->GetDuration() may have been similarly truncated.
   media::TimeUnit newDuration = highestEndTime.ToBase(USECS_PER_S);
-  MSE_DEBUG("DurationChangeOnEndOfStream(newDuration=%s)",
+  MSE_DEBUG("DurationChangeOnEndOfStream(newDuration={})",
             newDuration.ToString().get());
   if (mDecoder->GetDuration() == newDuration.ToSeconds()) {
     return;
@@ -627,7 +629,7 @@ void MediaSource::DurationChangeOnEndOfStream() {
 
 void MediaSource::DurationChange(double aNewDuration, ErrorResult& aRv) {
   MOZ_ASSERT(NS_IsMainThread());
-  MSE_DEBUG("DurationChange(aNewDuration=%f)", aNewDuration);
+  MSE_DEBUG("DurationChange(aNewDuration={:f})", aNewDuration);
 
   // 1. If the current value of duration is equal to new duration, then return.
   if (mDecoder->GetDuration() == aNewDuration) {

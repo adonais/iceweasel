@@ -7,8 +7,8 @@
 #ifndef mozilla_RecursiveMutex_h
 #define mozilla_RecursiveMutex_h
 
-#include "mozilla/ThreadSafety.h"
 #include "mozilla/BlockingResourceBase.h"
+#include "mozilla/ThreadSafety.h"
 
 #ifndef XP_WIN
 #  include <pthread.h>

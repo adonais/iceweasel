@@ -16,6 +16,15 @@ import org.mozilla.geckoview.MediaSession as GeckoViewMediaSession
 private const val ARTWORK_RETRIEVE_TIMEOUT = 1000L
 private const val ARTWORK_IMAGE_SIZE = 48
 
+private fun String.toAudioSessionType(): MediaSession.AudioSessionType = when (this) {
+    "playback" -> MediaSession.AudioSessionType.PLAYBACK
+    "transient" -> MediaSession.AudioSessionType.TRANSIENT
+    "transient-solo" -> MediaSession.AudioSessionType.TRANSIENT_SOLO
+    "ambient" -> MediaSession.AudioSessionType.AMBIENT
+    "play-and-record" -> MediaSession.AudioSessionType.PLAY_AND_RECORD
+    else -> MediaSession.AudioSessionType.AUTO
+}
+
 internal class GeckoMediaSessionDelegate(
     private val engineSession: GeckoEngineSession,
 ) : GeckoViewMediaSession.Delegate {
@@ -29,6 +38,16 @@ internal class GeckoMediaSessionDelegate(
     override fun onDeactivated(session: GeckoSession, mediaSession: GeckoViewMediaSession) {
         engineSession.notifyObservers {
             onMediaDeactivated()
+        }
+    }
+
+    override fun onAudioSessionTypeChanged(
+        session: GeckoSession,
+        mediaSession: GeckoViewMediaSession,
+        type: String,
+    ) {
+        engineSession.notifyObservers {
+            onMediaAudioSessionTypeChanged(type.toAudioSessionType())
         }
     }
 

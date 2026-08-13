@@ -10,6 +10,7 @@
 #include <stdarg.h>
 
 #include "jstypes.h"
+
 #include "js/Utility.h"
 
 /* Wrappers for mozilla::Smprintf and friends that are used throughout

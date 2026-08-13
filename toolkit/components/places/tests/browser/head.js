@@ -66,7 +66,7 @@ async function assertLinkVisitedStatus(
   url,
   { visitCount: expectedVisitCount, isVisited: expectedVisited }
 ) {
-  await BrowserTestUtils.waitForCondition(async () => {
+  await TestUtils.waitForCondition(async () => {
     let visitCount =
       (await PlacesTestUtils.getDatabaseValue("moz_places", "visit_count", {
         url,

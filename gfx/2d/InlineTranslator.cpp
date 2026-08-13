@@ -3,8 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "InlineTranslator.h"
-#include "RecordedEventImpl.h"
 
+#include "RecordedEventImpl.h"
 #include "mozilla/gfx/RecordingTypes.h"
 
 using namespace mozilla::gfx;

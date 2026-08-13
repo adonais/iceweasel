@@ -438,7 +438,7 @@ class ModuleEntry:
           std::is_same_v<already_AddRefed<T>, decltype(%(constructor)s())>,
           "Singleton constructor must return already_AddRefed");
       static_assert(
-          std::is_base_of<%(type)s, T>::value,
+          std::is_base_of_v<%(type)s, T>,
           "Singleton constructor must return correct already_AddRefed");
 
 """ % {

@@ -117,7 +117,8 @@
     .clocks-timezone,
     .clocks-time,
     .clocks-edit-item,
-    .clocks-edit-item-actions {
+    .clocks-edit-item-actions,
+    .clocks-row-actions {
       transition: none;
     }
 
@@ -142,10 +143,14 @@
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     block-size: 276px;
     padding: var(--space-medium);
-    background: var(--newtab-background-card);
+    background: var(--newtab-background-color-secondary);
     border: var(--border-width) solid var(--border-color);
     border-radius: var(--border-radius-large);
     box-shadow: var(--box-shadow-level-4);
+
+    @media (prefers-contrast) {
+      background-color: var(--background-color-box);
+    }
   }
 
   .clocks-location-wrapper {
@@ -170,10 +175,14 @@
     max-block-size: 180px;
     overflow-y: auto;
     padding: var(--space-xsmall);
-    background: var(--newtab-background-card);
+    background: var(--newtab-background-color-secondary);
     border: var(--border-width) solid var(--border-color);
     border-radius: var(--border-radius-medium);
     box-shadow: var(--box-shadow-level-4);
+
+    @media (prefers-contrast) {
+      background-color: var(--background-color-box);
+    }
   }
 
   .clocks-search-no-results {
@@ -273,22 +282,18 @@
     inset-block: 0;
     margin-block: auto;
     block-size: fit-content;
+
+    // Opacity-hidden overlay (not collapsed) so the VoiceOver cursor can still
+    // reach Edit/Remove; revealed on :hover / :focus-within. Bug 2040677.
     opacity: 0;
-    visibility: hidden;
     pointer-events: none;
-    transition:
-      opacity 180ms ease,
-      visibility 0s linear 180ms;
+    transition: opacity 180ms ease;
   }
 
   .clocks-edit-item:hover .clocks-edit-item-actions,
   .clocks-edit-item:focus-within .clocks-edit-item-actions {
     opacity: 1;
-    visibility: visible;
     pointer-events: auto;
-    transition:
-      opacity 180ms ease,
-      visibility 0s;
   }
 
   .clocks-edit-item-button::part(button) {
@@ -380,6 +385,7 @@
   .clocks-row {
     display: flex;
     align-items: center;
+    position: relative;
     color: var(--text-color);
     min-inline-size: 0;
     transition:
@@ -388,10 +394,20 @@
   }
 
   .clocks-row-actions {
-    display: none;
+    display: flex;
     align-items: center;
     gap: var(--space-small);
-    margin-inline-start: auto;
+
+    // Opacity-hidden overlay so the VoiceOver cursor reaches every clock's
+    // Edit/Remove; revealed on :hover / :focus-within. Bug 2040677.
+    position: absolute;
+    inset-inline-end: 0;
+    inset-block: 0;
+    margin-block: auto;
+    block-size: fit-content;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms ease;
   }
 
   .clocks-row-action-button::part(button) {
@@ -412,10 +428,8 @@
     border-radius: var(--border-radius-small);
   }
 
-  // Large-only: time and actions share one grid cell so toggling
-  // between them doesn't reflow the row. Medium rows are column-
-  // direction; the same grid there would collapse meta to ~the time's
-  // max-content and clip the city.
+  // Large-only: the time keeps a fixed grid cell so the overlay can fade in
+  // over it without reflowing. Medium's column grid would clip the city.
   &.large-widget .clocks-row.has-inline-actions.hides-time-on-inline-actions {
     display: grid;
     grid-template-columns: minmax(0, 1fr) max-content;
@@ -424,24 +438,10 @@
       grid-column: 1;
     }
 
-    .clocks-time,
-    .clocks-row-actions {
+    .clocks-time {
       grid-column: 2;
       grid-row: 1;
       justify-self: end;
-    }
-
-    .clocks-row-actions {
-      display: flex;
-      margin-inline-start: 0;
-      visibility: hidden;
-      pointer-events: none;
-    }
-
-    &:hover .clocks-row-actions,
-    &:focus-within .clocks-row-actions {
-      visibility: visible;
-      pointer-events: auto;
     }
 
     &:hover .clocks-time,
@@ -452,7 +452,8 @@
 
   .clocks-row.has-inline-actions:hover .clocks-row-actions,
   .clocks-row.has-inline-actions:focus-within .clocks-row-actions {
-    display: flex;
+    opacity: 1;
+    pointer-events: auto;
   }
 
   // Medium collapses the time so the action buttons take its place.
@@ -779,6 +780,14 @@
       flex: 0 0 auto;
     }
 
+    // Column rows: sit the overlay at the bottom-end, inset within the widget.
+    .clocks-row-actions {
+      inset-block-start: auto;
+      inset-block-end: var(--space-small);
+      inset-inline-end: var(--space-small);
+      margin: 0;
+    }
+
     .clocks-row + .clocks-row::before {
       content: '';
       position: absolute;
@@ -801,6 +810,20 @@
     &[data-clock-count='3'] .clocks-time {
       // stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens, declaration-property-value-disallowed-list
       font-size: calc(var(--font-size-heading-large) - 3px);
+    }
+
+    // 3-clock: on hover the actions rejoin the flow to take the hidden time's
+    // bottom-start slot; the resting overlay matches that corner.
+    &[data-clock-count='3'] {
+      .clocks-row-actions {
+        inset-inline-start: var(--space-small);
+        inset-inline-end: auto;
+      }
+
+      .clocks-row.has-inline-actions:hover .clocks-row-actions,
+      .clocks-row.has-inline-actions:focus-within .clocks-row-actions {
+        position: static;
+      }
     }
 
     &[data-clock-count='4'] .clocks-time {
@@ -829,9 +852,7 @@
       }
 
       .clocks-row-actions {
-        align-self: center;
         gap: var(--space-xsmall);
-        margin-inline: 0;
       }
 
       .clocks-row-action-button::part(button) {
@@ -849,14 +870,35 @@
       padding-block-start: 0;
     }
 
+    // Meta on top, time + button share a bottom row; align-items centres the
+    // button against the taller time.
     .clocks-row {
-      align-items: stretch;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      grid-template-rows: 1fr auto;
+      align-items: center;
+      column-gap: var(--space-small);
     }
 
+    .clocks-meta {
+      grid-column: 1 / -1;
+      grid-row: 1;
+      align-self: start;
+    }
+
+    .clocks-time {
+      grid-column: 1;
+      grid-row: 2;
+    }
+
+    // Rejoin the grid (base rule floats it) to share the time's row.
     .clocks-row-actions {
-      position: absolute;
-      inset-inline-end: 0;
-      inset-block-end: 0;
+      position: static;
+      grid-column: 2;
+      grid-row: 2;
+      align-self: center;
+      justify-self: end;
+      inset: auto;
       margin: 0;
     }
   }
@@ -931,11 +973,21 @@
   }
 
   &.large-widget.is-hero {
+    // Meta on top, time + button share a bottom row; align-items centres the
+    // button against the tall time.
     .clocks-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      grid-template-rows: 1fr auto;
+      align-items: center;
+      column-gap: var(--space-small);
       flex: 1 1 auto;
-      flex-direction: column;
-      justify-content: space-between;
-      align-items: stretch;
+    }
+
+    .clocks-meta {
+      grid-column: 1 / -1;
+      grid-row: 1;
+      align-self: start;
     }
 
     .clocks-label {
@@ -955,13 +1007,18 @@
       // 56px doesn't map to any standard font-size token.
       /* stylelint-disable-next-line declaration-property-value-disallowed-list, stylelint-plugin-mozilla/use-design-tokens */
       font-size: 56px;
-      align-self: flex-start;
+      grid-column: 1;
+      grid-row: 2;
     }
 
+    // Rejoin the grid (base rule floats it) to share the time's row.
     .clocks-row-actions {
-      position: absolute;
-      inset-inline-end: 0;
-      inset-block-end: 0;
+      position: static;
+      grid-column: 2;
+      grid-row: 2;
+      align-self: center;
+      justify-self: end;
+      inset: auto;
       margin: 0;
     }
 

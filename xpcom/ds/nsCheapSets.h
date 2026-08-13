@@ -5,8 +5,9 @@
 #ifndef _nsCheapSets_h_
 #define _nsCheapSets_h_
 
-#include "nsTHashtable.h"
 #include <stdint.h>
+
+#include "nsTHashtable.h"
 
 enum nsCheapSetOperator {
   OpNext = 0,    // enumerator says continue

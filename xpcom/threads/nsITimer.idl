@@ -361,7 +361,7 @@ NS_NewTimerWithFuncCallback(nsTimerCallbackFunc aCallback,
 #define NS_DECL_NSITIMERCALLBACK                                        \
   NS_IMETHOD Notify(nsITimer *timer) override;                          \
   inline void _ensure_GetName_exists(void) {                            \
-    static_assert(std::is_convertible<decltype(this), nsINamed*>::value, \
+    static_assert(std::is_convertible_v<decltype(this), nsINamed*>,     \
                   "nsITimerCallback implementations must also implement nsINamed");     \
   }
 #endif

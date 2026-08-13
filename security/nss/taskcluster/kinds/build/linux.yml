@@ -8,28 +8,28 @@ task-defaults:
               path: /builds/worker/artifacts
               name: public
 
-linux32/opt:
-    description: "Linux 32 (opt)"
+linux-x86/opt:
+    description: "Linux x86 (opt)"
 
-linux32/debug:
-    description: "Linux 32 (debug)"
+linux-x86/debug:
+    description: "Linux x86 (debug)"
 
-linux32/debug-make:
-    description: "Linux 32 (debug, make)"
+linux-x86/debug-make:
+    description: "Linux x86 (debug, make)"
     attributes:
         make: true
 
-linux32/debug-fuzz:
-    description: "Linux 32 (debug, fuzz)"
+linux-x86/debug-fuzz:
+    description: "Linux x86 (debug, fuzz)"
     attributes:
         fuzz: true
         certs: false
 
-linux64/opt:
-    description: "Linux 64 (opt)"
+linux-x64/opt:
+    description: "Linux x64 (opt)"
 
-linux64-asan/debug:
-    description: "Linux 64 (ASan, debug)"
+linux-x64-asan/debug:
+    description: "Linux x64 (ASan, debug)"
     worker:
         env:
             UBSAN_OPTIONS: "print_stacktrace=1"
@@ -42,29 +42,64 @@ linux64-asan/debug:
     attributes:
         asan: true
 
-linux64/debug:
-    description: "Linux 64 (debug)"
+linux-x64/debug:
+    description: "Linux x64 (debug)"
 
-linux64/debug-make:
-    description: "Linux 64 (debug, make)"
+linux-x64/debug-make:
+    description: "Linux x64 (debug, make)"
     attributes:
         make: true
 
-linux64/opt-make:
-    description: "Linux 64 (opt, make)"
+linux-x64/opt-make:
+    description: "Linux x64 (opt, make)"
     attributes:
         make: true
     worker:
         env:
             BUILD_OPT: "1"
 
-linux64/opt-fips:
-    description: "Linux 64 (FIPS opt)"
+linux-x64/opt-fips:
+    description: "Linux x64 (FIPS opt)"
 
-linux64/debug-fuzz:
-    description: "Linux 64 (debug, fuzz)"
+linux-x64/debug-fuzz:
+    description: "Linux x64 (debug, fuzz)"
     attributes:
         fuzz: true
         certs: false
     worker:
         allow-ptrace: true
+
+# Linux aarch64 (ARM64) builds. Platform names follow <os>-<arch>, so this is
+# linux-aarch64 (cf. linux-x86 / linux-x64 above). It contains "64" so
+# USE_64/native GYP kick in. The x86-only build variants (extra compilers,
+# modular, dbm) are NOT wanted here; the add_variants transform skips them for
+# any platform containing "aarch64". Builds run on the aarch64 worker pool and
+# use the aarch64 docker images.
+linux-aarch64/opt:
+    description: "Linux AArch64 (opt)"
+    worker-type: b-linux-aarch64
+
+linux-aarch64/debug:
+    description: "Linux AArch64 (debug)"
+    worker-type: b-linux-aarch64
+
+linux-aarch64/debug-make:
+    description: "Linux AArch64 (debug, make)"
+    worker-type: b-linux-aarch64
+    attributes:
+        make: true
+
+linux-aarch64-asan/debug:
+    description: "Linux AArch64 (ASan, debug)"
+    worker-type: b-linux-aarch64
+    worker:
+        env:
+            UBSAN_OPTIONS: "print_stacktrace=1"
+            NSS_DISABLE_ARENA_FREE_LIST: "1"
+            NSS_DISABLE_UNLOAD: "1"
+            CC: "clang"
+            CCC: "clang++"
+            CFLAGS: "-O2"
+        allow-ptrace: true
+    attributes:
+        asan: true

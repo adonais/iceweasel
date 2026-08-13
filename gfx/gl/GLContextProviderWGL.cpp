@@ -5,24 +5,21 @@
 #include "GLContextProvider.h"
 #include "GLContextWGL.h"
 #include "GLLibraryLoader.h"
-#include "nsDebug.h"
-#include "nsIWidget.h"
+#include "gfxCrashReporterUtils.h"
 #include "gfxPlatform.h"
 #include "gfxWindowsSurface.h"
-
-#include "gfxCrashReporterUtils.h"
-
-#include "prenv.h"
-
-#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/SharedLibrary.h"
 #include "mozilla/StaticPrefs_gl.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/CompositorOptions.h"
 #include "mozilla/widget/CompositorWidget.h"
 #include "mozilla/widget/WinCompositorWidget.h"
+#include "nsDebug.h"
+#include "nsIWidget.h"
+#include "prenv.h"
 
 namespace mozilla {
 namespace gl {

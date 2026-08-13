@@ -6,25 +6,24 @@
 
 #include <stdlib.h>
 
-#include <mach/mach_port.h>
-#include <mach/mach_interface.h>
 #include <mach/mach_init.h>
+#include <mach/mach_interface.h>
+#include <mach/mach_port.h>
 
 extern "C" {
 #include <mach-o/getsect.h>
 }
-#include <unistd.h>
 #include <dlfcn.h>
+#include <unistd.h>
 
 #import <Cocoa/Cocoa.h>
-#import <IOKit/pwr_mgt/IOPMLib.h>
 #import <IOKit/IOMessage.h>
+#import <IOKit/pwr_mgt/IOPMLib.h>
 
 #include "nsCocoaUtils.h"
 #include "nsObjCExceptions.h"
 
 #include "nsIRollupListener.h"
-#include "nsIWidget.h"
 #include "nsIWidget.h"
 
 #include "nsIObserverService.h"

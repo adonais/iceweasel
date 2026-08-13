@@ -6,14 +6,14 @@
 #ifndef mozilla_image_FrameAnimator_h
 #define mozilla_image_FrameAnimator_h
 
+#include "SurfaceCache.h"
+#include "gfxTypes.h"
+#include "imgFrame.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/StaticPrefs_image.h"
 #include "mozilla/TimeStamp.h"
-#include "gfxTypes.h"
-#include "imgFrame.h"
 #include "nsCOMPtr.h"
 #include "nsRect.h"
-#include "SurfaceCache.h"
 
 namespace mozilla {
 namespace image {

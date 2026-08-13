@@ -1,6 +1,6 @@
 <!-- go/cmark -->
 
-<!--* freshness: {owner: 'danilchap' reviewed: '2025-10-28'} *-->
+<!--* freshness: {owner: 'danilchap' reviewed: '2026-05-15'} *-->
 
 # WebRTC coding style guide
 
@@ -92,8 +92,12 @@ using OldTypeName ABSL_DEPRECATE_AND_INLINE() = NewTypeName;
 NOTE 1: The annotation goes on the declaration in the `.h` file, not the
 definition in the `.cc` file!
 
-NOTE 2: In order to have unit tests that use the deprecated function without
-getting errors, do something like this:
+NOTE 2: In Chromium and WebRTC [ABSL_DEPRECATE_AND_INLINE] macro is patched not
+to add [[deprecated]] attribute. That allows to use the macro before all usage
+in Chromium and WebRTC are cleaned up to a non-deprecated variant.
+
+NOTE 3: In order to use the [[deprecated]] function without getting errors,
+for example in a unit test, do something like this:
 
 ```cpp
 std::pony DEPRECATED_PonyPlz(const std::pony_spec& ps);
@@ -103,18 +107,18 @@ inline std::pony PonyPlz(const std::pony_spec& ps) {
 }
 ```
 
-or wrap the test with
+In other words, rename the existing function, and provide an inline wrapper
+using the original name that calls it. That way, callers who are willing to call
+it using the `DEPRECATED_`-prefixed name don't get the warning.
+
+Alternatively, wrap the code with
 
 ```cpp
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-  TEST_...
+  PonyPlz(...);
 #pragma clang diagnostic pop
 ```
-
-In other words, rename the existing function, and provide an inline wrapper
-using the original name that calls it. That way, callers who are willing to call
-it using the `DEPRECATED_`-prefixed name don't get the warning.
 
 ### std::span
 
@@ -127,10 +131,10 @@ allow the callee to change the array size.
 For example,
 
 | instead of | use |
-|-------------------------------------|----------------------| |
-`const std::vector<T>&` | `std::span<const T>` | |
-`const T* ptr, size_t num_elements` | `std::span<const T>` | |
-`T* ptr, size_t num_elements` | `std::span<T>` |
+|-------------------------------------|----------------------|
+| `const std::vector<T>&` | `std::span<const T>` |
+| `const T* ptr, size_t num_elements` | `std::span<const T>` |
+| `T* ptr, size_t num_elements` | `std::span<T>` |
 
 See the [cpp reference][span] for more detailed docs.
 
@@ -164,10 +168,6 @@ The following string building tools are NOT recommended:
   speed, not code size, and have significant code size overhead.
 - [`std::strcat`][std-strcat]. It is too easy to create buffer overflows.
 
-### Callbacks
-
-Prefer `webrtc::CallbackList`, and manage thread safety yourself.
-
 ### Smart pointers
 
 The following smart pointer types are recommended:
@@ -194,10 +194,12 @@ more.
 ### `std::function`
 
 `std::function` is allowed, but remember that it's not the right tool for every
-occasion. Prefer to use interfaces when that makes sense, and consider
-`webrtc::FunctionView` for cases where the callee will not save the function
-object. Prefer `absl::AnyInvocable` over `std::function` when you can accomplish
-the task by moving the callable instead of copying it.
+occasion. Prefer to use interfaces when that makes sense.
+
+- Prefer `webrtc::FunctionView` for cases where the callee will not save the
+function object.
+- Prefer `absl::AnyInvocable` when you can accomplish the task by moving the
+callable instead of copying it.
 
 ### Forward declarations
 
@@ -268,11 +270,11 @@ configuration, only use the following [GN templates][gn-templ].
 
 | instead of | use |
 |------------------|-----------------------------------------------------------------------------------------|
-| `executable` | `rtc_executable` | | `shared_library` | `rtc_shared_library` |
-| `source_set` | `rtc_source_set` (only for header only libraries, for
-everything else use `rtc_library`)| | `static_library` | `rtc_static_library`
-(use `rtc_library` unless you really need `rtc_static_library`) | | `test` |
-`rtc_test` |
+| `executable` | `rtc_executable` |
+| `shared_library` | `rtc_shared_library` |
+| `source_set` | `rtc_library` (for header only libraries you may use `rtc_source_set`) |
+| `static_library` | `rtc_static_library` (use `rtc_library` unless you really need `rtc_static_library`) |
+| `test` | `rtc_test` |
 
 ### Target visibility and the native API
 
@@ -320,10 +322,6 @@ When combined with the `-Wundef` compiler option, this produces compile time
 warnings if preprocessor symbols are misspelled, or used without corresponding
 build rules to set them.
 
-### Markdown formatting
-
-Markdown formatting is enabled by adding .style.mdformat to the root, which
-means that all changes to .md files will be reformatted by "git cl format".
 
 [abseil]: https://abseil.io/about/
 [absl_deprecate_and_inline]: https://source.chromium.org/chromium/chromium/src/+/main:third_party/abseil-cpp/absl/base/macros.h?q=ABSL_DEPRECATE_AND_INLINE

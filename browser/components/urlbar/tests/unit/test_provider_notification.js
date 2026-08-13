@@ -11,8 +11,8 @@ add_setup(async function () {
   firstProvider = new UrlbarTestUtils.TestProvider({
     results: [
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         payload: {
           url: "https://mozilla.com/",
           tags: [],
@@ -32,8 +32,8 @@ add_setup(async function () {
   secondProvider = new UrlbarTestUtils.TestProvider({
     results: [
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         payload: {
           url: "https://example.com/",
           tags: [],
@@ -68,7 +68,7 @@ add_task(async function testOnEngagementNotification() {
     uri: "https://mozilla.com/",
     title: "mozilla.com",
     providerName: "firstProvider",
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
   });
 
   await check_results({
@@ -79,7 +79,7 @@ add_task(async function testOnEngagementNotification() {
         uri: "https://example.com/",
         title: "example.com",
         providerName: "secondProvider",
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
       }),
     ],
   });
@@ -117,13 +117,13 @@ add_task(async function testOnAbandonmentNotification() {
         uri: "https://mozilla.com/",
         title: "mozilla.com",
         providerName: "firstProvider",
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
       }),
       makeVisitResult(context, {
         uri: "https://example.com/",
         title: "example.com",
         providerName: "secondProvider",
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
       }),
     ],
   });
@@ -156,7 +156,7 @@ add_task(async function testOnImpressionNotification() {
     uri: "https://mozilla.com/",
     title: "mozilla.com",
     providerName: "firstProvider",
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
   });
 
   await check_results({
@@ -167,7 +167,7 @@ add_task(async function testOnImpressionNotification() {
         uri: "https://example.com/",
         title: "example.com",
         providerName: "secondProvider",
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
       }),
     ],
   });
@@ -223,7 +223,7 @@ add_task(async function testOnSearchSessionEndNotification() {
     uri: "https://mozilla.com/",
     title: "mozilla.com",
     providerName: "firstProvider",
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
   });
 
   await check_results({
@@ -234,7 +234,7 @@ add_task(async function testOnSearchSessionEndNotification() {
         uri: "https://example.com/",
         title: "example.com",
         providerName: "secondProvider",
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
       }),
     ],
   });

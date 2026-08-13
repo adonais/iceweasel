@@ -183,10 +183,26 @@ private fun IconCategoryRow(
     }
 }
 
+// 8dp icons
+
+private val iconsChevrons8 = listOf(
+    iconsR.drawable.mozac_ic_chevron_down_8,
+)
+
+private val iconsMedia8 = listOf(
+    iconsR.drawable.mozac_ic_stop_8,
+)
+
+private val iconsPin8 = listOf(
+    iconsR.drawable.mozac_ic_pin_8,
+)
+
 // 16dp icons
 
-private val iconsArrowsAndChevrons16 = listOf(
+private val iconsArrowsChevrons16 = listOf(
     iconsR.drawable.mozac_ic_chevron_right_16,
+    iconsR.drawable.mozac_ic_chevron_down_16,
+    iconsR.drawable.mozac_ic_chevron_up_16,
 )
 
 private val iconsBadges16 = listOf(
@@ -199,8 +215,17 @@ private val iconsCheckmarks16 = listOf(
     iconsR.drawable.mozac_ic_checkmark_16,
 )
 
+private val iconsExternalLink16 = listOf(
+    iconsR.drawable.mozac_ic_external_link_16,
+)
+
 private val iconsGlobe16 = listOf(
     iconsR.drawable.mozac_ic_globe_16,
+)
+
+private val iconsLock16 = listOf(
+    iconsR.drawable.mozac_ic_lock_16,
+    iconsR.drawable.mozac_ic_lock_slash_16,
 )
 
 private val iconsMail16 = listOf(
@@ -208,16 +233,35 @@ private val iconsMail16 = listOf(
     iconsR.drawable.mozac_ic_email_shield_16,
 )
 
+private val iconsNotification16 = listOf(
+    iconsR.drawable.mozac_ic_notification_dot_fill_16,
+)
+
 private val iconsShield16 = listOf(
     iconsR.drawable.mozac_ic_shield_slash_fill_16,
     iconsR.drawable.mozac_ic_shield_checkmark_fill_16,
 )
 
+private val iconsStar16 = listOf(
+    iconsR.drawable.mozac_ic_sponsored_star_16,
+)
+
 // 20dp icons
 
-private val iconsArrowsAndChevrons20 = listOf(
+private val iconsAdBlocker20 = listOf(
+    iconsR.drawable.mozac_ic_ad_blocker_cross_20,
+    iconsR.drawable.mozac_ic_ad_blocker_checkmark_20,
+)
+
+private val iconsAlerts20 = listOf(
+    iconsR.drawable.mozac_ic_warning_fill_20,
+)
+
+private val iconsArrowsChevrons20 = listOf(
+    iconsR.drawable.mozac_ic_arrow_clockwise_20,
     iconsR.drawable.mozac_ic_chevron_down_20,
     iconsR.drawable.mozac_ic_chevron_up_20,
+    iconsR.drawable.mozac_ic_chevron_right_20,
 )
 
 private val iconsBadges20 = listOf(
@@ -229,9 +273,10 @@ private val iconsBadges20 = listOf(
 private val iconsBookmark20 = listOf(
     iconsR.drawable.mozac_ic_bookmark_20,
     iconsR.drawable.mozac_ic_bookmark_fill_20,
+    iconsR.drawable.mozac_ic_bookmark_half_fill_20,
 )
 
-private val iconsClose20 = listOf(
+private val iconsCloseCancel20 = listOf(
     iconsR.drawable.mozac_ic_cross_20,
     iconsR.drawable.mozac_ic_cross_circle_fill_20,
 )
@@ -244,9 +289,25 @@ private val iconsLightning20 = listOf(
     iconsR.drawable.mozac_ic_lightning_20,
 )
 
+private val iconsLock20 = listOf(
+    iconsR.drawable.mozac_ic_lock_20,
+)
+
+private val iconsLogos20 = listOf(
+    iconsR.drawable.mozac_ic_logo_google_lens_20,
+)
+
 private val iconsMail20 = listOf(
     iconsR.drawable.mozac_ic_email_mask_20,
     iconsR.drawable.mozac_ic_email_shield_20,
+)
+
+private val iconsPermissions20 = listOf(
+    iconsR.drawable.mozac_ic_microphone_20,
+)
+
+private val iconsNightMode20 = listOf(
+    iconsR.drawable.mozac_ic_night_mode_20,
 )
 
 private val iconsPrivateMode20 = listOf(
@@ -262,11 +323,29 @@ private val iconsRatings20 = listOf(
 
 private val iconsReaderView20 = listOf(
     iconsR.drawable.mozac_ic_reader_view_20,
+    iconsR.drawable.mozac_ic_reader_summarize_20,
+    iconsR.drawable.mozac_ic_reader_summarize_fill_20,
+)
+
+private val iconsSearch20 = listOf(
+    iconsR.drawable.mozac_ic_search_20,
+)
+
+private val iconsShare20 = listOf(
+    iconsR.drawable.mozac_ic_share_ios_20,
 )
 
 private val iconsShield20 = listOf(
     iconsR.drawable.mozac_ic_shield_slash_20,
     iconsR.drawable.mozac_ic_shield_checkmark_20,
+    iconsR.drawable.mozac_ic_shield_cross_20,
+    iconsR.drawable.mozac_ic_shield_slash_fill_20,
+    iconsR.drawable.mozac_ic_shield_checkmark_fill_20,
+)
+
+private val iconsSun20 = listOf(
+    iconsR.drawable.mozac_ic_sun_20,
+    iconsR.drawable.mozac_ic_sun_fill_20,
 )
 
 private val iconsSync20 = listOf(
@@ -288,7 +367,7 @@ private val iconsAdd24 = listOf(
     iconsR.drawable.mozac_ic_add_to_homescreen_24,
 )
 
-private val iconsAlerts24 = listOf(
+private val iconsAlertsInfoHelp24 = listOf(
     iconsR.drawable.mozac_ic_critical_24,
     iconsR.drawable.mozac_ic_critical_fill_24,
     iconsR.drawable.mozac_ic_help_circle_24,
@@ -300,17 +379,19 @@ private val iconsAlerts24 = listOf(
     iconsR.drawable.mozac_ic_warning_fill_24,
 )
 
-private val iconsAppMenu24 = listOf(
+private val iconsAudio24 = listOf(
+    iconsR.drawable.mozac_ic_audio_wave_24,
+)
+
+private val iconsAppMenuMore24 = listOf(
     iconsR.drawable.mozac_ic_app_menu_24,
     iconsR.drawable.mozac_ic_app_menu_space_24,
-    iconsR.drawable.mozac_ic_ellipsis_horizontal_24,
     iconsR.drawable.mozac_ic_more_horizontal_round_24,
-    iconsR.drawable.mozac_ic_ellipsis_vertical_24,
     iconsR.drawable.mozac_ic_more_vertical_round_24,
     iconsR.drawable.mozac_ic_more_grid_24,
 )
 
-private val iconsArrowsAndChevrons24 = listOf(
+private val iconsArrowsChevrons24 = listOf(
     iconsR.drawable.mozac_ic_append_up_left_24,
     iconsR.drawable.mozac_ic_append_up_right_24,
     iconsR.drawable.mozac_ic_append_down_left_24,
@@ -323,6 +404,7 @@ private val iconsArrowsAndChevrons24 = listOf(
     iconsR.drawable.mozac_ic_chevron_down_24,
     iconsR.drawable.mozac_ic_chevron_up_24,
     iconsR.drawable.mozac_ic_arrow_trending_24,
+    iconsR.drawable.mozac_ic_arrow_trending_down_24,
 )
 
 private val iconsAvatar24 = listOf(
@@ -342,6 +424,7 @@ private val iconsBookmark24 = listOf(
 
 private val iconsCheckmark24 = listOf(
     iconsR.drawable.mozac_ic_checkmark_24,
+    iconsR.drawable.mozac_ic_select_all_24,
 )
 
 private val iconsClearClose24 = listOf(
@@ -370,7 +453,9 @@ private val iconsDevices24 = listOf(
     iconsR.drawable.mozac_ic_device_desktop_24,
     iconsR.drawable.mozac_ic_device_desktop_fill_24,
     iconsR.drawable.mozac_ic_device_desktop_send_24,
+    iconsR.drawable.mozac_ic_other_device_shortcuts_24,
     iconsR.drawable.mozac_ic_device_mobile_24,
+    iconsR.drawable.mozac_ic_device_tablet_24,
 )
 
 private val iconsDownloadSave24 = listOf(
@@ -450,20 +535,31 @@ private val iconsLock24 = listOf(
     iconsR.drawable.mozac_ic_lock_24,
     iconsR.drawable.mozac_ic_lock_slash_24,
     iconsR.drawable.mozac_ic_lock_warning_24,
-    iconsR.drawable.mozac_ic_lock_fill_24,
-    iconsR.drawable.mozac_ic_lock_slash_fill_24,
-    iconsR.drawable.mozac_ic_lock_warning_fill_24,
 )
 
 private val iconsLogos24 = listOf(
     iconsR.drawable.mozac_ic_logo_firefox_24,
     iconsR.drawable.mozac_ic_logo_chrome_24,
     iconsR.drawable.mozac_ic_logo_safari_24,
+    iconsR.drawable.mozac_ic_logo_google_lens_24,
 )
 
 private val iconsMail24 = listOf(
     iconsR.drawable.mozac_ic_email_mask_24,
     iconsR.drawable.mozac_ic_email_shield_24,
+)
+
+private val iconsMedia24 = listOf(
+    iconsR.drawable.mozac_ic_play_fill_24,
+    iconsR.drawable.mozac_ic_pause_24,
+    iconsR.drawable.mozac_ic_play_previous_fill_24,
+    iconsR.drawable.mozac_ic_play_next_fill_24,
+    iconsR.drawable.mozac_ic_seek_backward_fill_24,
+    iconsR.drawable.mozac_ic_seek_forward_fill_24,
+)
+
+private val iconsNews24 = listOf(
+    iconsR.drawable.mozac_ic_newsfeed_24,
 )
 
 private val iconsNightMode24 = listOf(
@@ -472,8 +568,8 @@ private val iconsNightMode24 = listOf(
 )
 
 private val iconsNotifications24 = listOf(
-    iconsR.drawable.mozac_ic_notification_24,
-    iconsR.drawable.mozac_ic_notification_slash_24,
+    iconsR.drawable.mozac_ic_notification_dot_fill_24,
+    iconsR.drawable.mozac_ic_notification_dot_24,
 )
 
 private val iconsPage24 = listOf(
@@ -505,6 +601,10 @@ private val iconsPermissions24 = listOf(
     iconsR.drawable.mozac_ic_eye_slash_24,
     iconsR.drawable.mozac_ic_storage_24,
     iconsR.drawable.mozac_ic_storage_slash_24,
+    iconsR.drawable.mozac_ic_local_host_24,
+    iconsR.drawable.mozac_ic_local_host_slash_24,
+    iconsR.drawable.mozac_ic_local_network_24,
+    iconsR.drawable.mozac_ic_local_network_slash_24,
     iconsR.drawable.mozac_ic_plugin_24,
     iconsR.drawable.mozac_ic_login_24,
     iconsR.drawable.mozac_ic_permissions_24,
@@ -516,11 +616,6 @@ private val iconsPin24 = listOf(
     iconsR.drawable.mozac_ic_pin_fill_24,
     iconsR.drawable.mozac_ic_pin_slash_24,
     iconsR.drawable.mozac_ic_pin_slash_fill_24,
-)
-
-private val iconsPlayPause24 = listOf(
-    iconsR.drawable.mozac_ic_play_fill_24,
-    iconsR.drawable.mozac_ic_pause_24,
 )
 
 private val iconsPrint24 = listOf(
@@ -543,8 +638,12 @@ private val iconsReaderView24 = listOf(
     iconsR.drawable.mozac_ic_reader_view_customize_24,
     iconsR.drawable.mozac_ic_reading_list_24,
     iconsR.drawable.mozac_ic_reading_list_add_24,
-    iconsR.drawable.mozac_ic_reading_list_slash_24,
     iconsR.drawable.mozac_ic_reading_list_slash_fill_24,
+    iconsR.drawable.mozac_ic_reading_list_slash_24,
+)
+
+private val iconsReport24 = listOf(
+    iconsR.drawable.mozac_ic_report_24,
 )
 
 private val iconsSearch24 = listOf(
@@ -572,15 +671,6 @@ private val iconsShield24 = listOf(
     iconsR.drawable.mozac_ic_shield_dot_24,
 )
 
-private val iconsShopping24 = listOf(
-    iconsR.drawable.mozac_ic_competitiveness_24,
-    iconsR.drawable.mozac_ic_packaging_24,
-    iconsR.drawable.mozac_ic_price_24,
-    iconsR.drawable.mozac_ic_quality_24,
-    iconsR.drawable.mozac_ic_shipping_24,
-    iconsR.drawable.mozac_ic_shopping_24,
-)
-
 private val iconsSort24 = listOf(
     iconsR.drawable.mozac_ic_sort_24,
 )
@@ -596,6 +686,15 @@ private val iconsSports24 = listOf(
     iconsR.drawable.mozac_ic_cricket_24,
 )
 
+private val iconsSubtract24 = listOf(
+    iconsR.drawable.mozac_ic_subtract_24,
+)
+
+private val iconsSun24 = listOf(
+    iconsR.drawable.mozac_ic_sun_24,
+    iconsR.drawable.mozac_ic_sun_fill_24,
+)
+
 private val iconsSwap24 = listOf(
     iconsR.drawable.mozac_ic_swap_horizontal_24,
 )
@@ -603,13 +702,16 @@ private val iconsSwap24 = listOf(
 private val iconsSync24 = listOf(
     iconsR.drawable.mozac_ic_sync_24,
     iconsR.drawable.mozac_ic_sync_tabs_24,
+    iconsR.drawable.mozac_ic_cloud_24,
 )
 
 private val iconsTabs24 = listOf(
     iconsR.drawable.mozac_ic_tab_tray_24,
+    iconsR.drawable.mozac_ic_tab_number_24,
     iconsR.drawable.mozac_ic_tab_24,
     iconsR.drawable.mozac_ic_tab_group_24,
     iconsR.drawable.mozac_ic_tab_group_close_24,
+    iconsR.drawable.mozac_ic_tab_ungroup_24,
 )
 
 private val iconsThemes24 = listOf(
@@ -628,12 +730,12 @@ private val iconsTrackers24 = listOf(
     iconsR.drawable.mozac_ic_fingerprinter_24,
     iconsR.drawable.mozac_ic_cookies_24,
     iconsR.drawable.mozac_ic_cookies_slash_24,
-    iconsR.drawable.mozac_ic_social_tracker_24,
 )
 
 private val iconsTranslate24 = listOf(
     iconsR.drawable.mozac_ic_translate_24,
     iconsR.drawable.mozac_ic_translate_active_24,
+    iconsR.drawable.mozac_ic_translate_active_alt_24,
 )
 
 private val iconsWallpaper24 = listOf(
@@ -642,11 +744,6 @@ private val iconsWallpaper24 = listOf(
 
 private val iconsWhatsNew24 = listOf(
     iconsR.drawable.mozac_ic_whats_new_24,
-)
-
-private val iconsZoom24 = listOf(
-    iconsR.drawable.mozac_ic_page_zoom_24,
-    iconsR.drawable.mozac_ic_page_zoom_fill_24,
 )
 
 // 48dp icons
@@ -659,6 +756,7 @@ private val iconsPrivateMode48 = listOf(
 
 private val iconsPrivateMode72 = listOf(
     iconsR.drawable.mozac_ic_private_mode_fill_72,
+    iconsR.drawable.mozac_ic_private_mode_circle_fill_72,
 )
 
 private val iconsSync72 = listOf(
@@ -671,30 +769,51 @@ private val iconsTabs72 = listOf(
 
 private val iconSizeSections = listOf(
     IconSizeSection(
+        size = 8,
+        categories = listOf(
+            IconCategory("Chevrons", iconsChevrons8),
+            IconCategory("Media", iconsMedia8),
+            IconCategory("Pin", iconsPin8),
+        ),
+    ),
+    IconSizeSection(
         size = 16,
         categories = listOf(
-            IconCategory("Arrows & Chevrons", iconsArrowsAndChevrons16),
+            IconCategory("Arrows & Chevrons", iconsArrowsChevrons16),
             IconCategory("Badges", iconsBadges16),
             IconCategory("Checkmarks", iconsCheckmarks16),
+            IconCategory("External Link", iconsExternalLink16),
             IconCategory("Globe", iconsGlobe16),
+            IconCategory("Lock", iconsLock16),
             IconCategory("Mail", iconsMail16),
+            IconCategory("Notification", iconsNotification16),
             IconCategory("Shield", iconsShield16),
+            IconCategory("Star", iconsStar16),
         ),
     ),
     IconSizeSection(
         size = 20,
         categories = listOf(
-            IconCategory("Arrows & Chevrons", iconsArrowsAndChevrons20),
+            IconCategory("Ad Blocker", iconsAdBlocker20),
+            IconCategory("Alerts", iconsAlerts20),
+            IconCategory("Arrows & Chevrons", iconsArrowsChevrons20),
             IconCategory("Badges", iconsBadges20),
             IconCategory("Bookmark", iconsBookmark20),
-            IconCategory("Close, Cancel", iconsClose20),
+            IconCategory("Close, Cancel", iconsCloseCancel20),
             IconCategory("Globe", iconsGlobe20),
             IconCategory("Lightning", iconsLightning20),
+            IconCategory("Lock", iconsLock20),
+            IconCategory("Logos", iconsLogos20),
             IconCategory("Mail", iconsMail20),
+            IconCategory("Permissions", iconsPermissions20),
+            IconCategory("Night Mode", iconsNightMode20),
             IconCategory("Private Mode", iconsPrivateMode20),
             IconCategory("Ratings", iconsRatings20),
             IconCategory("Reader View", iconsReaderView20),
+            IconCategory("Search", iconsSearch20),
+            IconCategory("Share", iconsShare20),
             IconCategory("Shield", iconsShield20),
+            IconCategory("Sun", iconsSun20),
             IconCategory("Sync", iconsSync20),
             IconCategory("Translate", iconsTranslate20),
         ),
@@ -704,9 +823,10 @@ private val iconSizeSections = listOf(
         categories = listOf(
             IconCategory("Accessibility", iconsAccessibility24),
             IconCategory("Add", iconsAdd24),
-            IconCategory("Alerts, Info, Help", iconsAlerts24),
-            IconCategory("App Menu, More", iconsAppMenu24),
-            IconCategory("Arrows & Chevrons", iconsArrowsAndChevrons24),
+            IconCategory("Alerts, Info, Help", iconsAlertsInfoHelp24),
+            IconCategory("Audio", iconsAudio24),
+            IconCategory("App Menu, More", iconsAppMenuMore24),
+            IconCategory("Arrows & Chevrons", iconsArrowsChevrons24),
             IconCategory("Avatar", iconsAvatar24),
             IconCategory("Bookmark", iconsBookmark24),
             IconCategory("Checkmark", iconsCheckmark24),
@@ -734,6 +854,8 @@ private val iconSizeSections = listOf(
             IconCategory("Lock", iconsLock24),
             IconCategory("Logos", iconsLogos24),
             IconCategory("Mail", iconsMail24),
+            IconCategory("Media", iconsMedia24),
+            IconCategory("News", iconsNews24),
             IconCategory("Night Mode", iconsNightMode24),
             IconCategory("Notifications", iconsNotifications24),
             IconCategory("Page", iconsPage24),
@@ -741,18 +863,19 @@ private val iconSizeSections = listOf(
             IconCategory("Payment", iconsPayment24),
             IconCategory("Permissions", iconsPermissions24),
             IconCategory("Pin", iconsPin24),
-            IconCategory("Play, Pause", iconsPlayPause24),
             IconCategory("Print", iconsPrint24),
             IconCategory("Private Mode", iconsPrivateMode24),
             IconCategory("QR Code", iconsQrCode24),
             IconCategory("Reader View", iconsReaderView24),
+            IconCategory("Report", iconsReport24),
             IconCategory("Search", iconsSearch24),
             IconCategory("Settings, Tools", iconsSettingsTools24),
             IconCategory("Share", iconsShare24),
             IconCategory("Shield", iconsShield24),
-            IconCategory("Shopping", iconsShopping24),
             IconCategory("Sort", iconsSort24),
             IconCategory("Sports", iconsSports24),
+            IconCategory("Subtract", iconsSubtract24),
+            IconCategory("Sun", iconsSun24),
             IconCategory("Swap", iconsSwap24),
             IconCategory("Sync", iconsSync24),
             IconCategory("Tabs", iconsTabs24),
@@ -762,13 +885,12 @@ private val iconSizeSections = listOf(
             IconCategory("Translate", iconsTranslate24),
             IconCategory("Wallpaper", iconsWallpaper24),
             IconCategory("What's New", iconsWhatsNew24),
-            IconCategory("Zoom", iconsZoom24),
         ),
     ),
     IconSizeSection(
         size = 48,
         categories = listOf(
-            IconCategory("Private Mode", iconsPrivateMode48, tint = Color.Unspecified),
+            IconCategory("Private Mode", iconsPrivateMode48),
         ),
     ),
     IconSizeSection(

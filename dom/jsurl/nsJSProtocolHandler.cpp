@@ -16,6 +16,7 @@
 #include "mozilla/SourceLocation.h"
 #include "mozilla/TextUtils.h"
 #include "mozilla/dom/AutoEntryScript.h"
+#include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/DOMSecurityMonitor.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/JSExecutionUtils.h"  // mozilla::dom::Compile, mozilla::dom::EvaluationExceptionToNSResult
@@ -536,6 +537,9 @@ nsresult nsJSChannel::Init(nsIURI* aURI, nsILoadInfo* aLoadInfo) {
   RefPtr<nsJSURI> jsURI;
   nsresult rv = aURI->QueryInterface(kJSURICID, getter_AddRefs(jsURI));
   NS_ENSURE_SUCCESS(rv, rv);
+
+  // Defensively mark the current process as untrusted.
+  mozilla::dom::ContentChild::MaybeBecomeUntrusted();
 
   // Create the nsIStreamIO layer used by the nsIStreamIOChannel.
   mJSURIStream = new JSURLInputStream();

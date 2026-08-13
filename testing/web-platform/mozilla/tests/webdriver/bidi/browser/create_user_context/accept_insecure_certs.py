@@ -20,9 +20,9 @@ pytestmark = pytest.mark.asyncio
 )
 async def test_accept_insecure_certs(
     configuration,
+    geckodriver,
     url,
     create_custom_profile,
-    geckodriver,
     accept_insecure_certs_in_session,
     accept_insecure_certs_in_user_context,
 ):
@@ -30,16 +30,11 @@ async def test_accept_insecure_certs(
     # loading a HTTPS page will cause an insecure certificate error
     custom_profile = create_custom_profile(clone=False)
 
-    config = deepcopy(configuration)
-    config["capabilities"]["moz:firefoxOptions"]["args"] = [
-        "--profile",
-        custom_profile.profile,
-    ]
     # Capability matching not implemented yet for WebDriver BiDi (bug 1713784)
-    config["capabilities"]["webSocketUrl"] = True
+    config = deepcopy(configuration)
     config["capabilities"]["acceptInsecureCerts"] = accept_insecure_certs_in_session
 
-    driver = geckodriver(config=config)
+    driver = geckodriver(config=config, profile=custom_profile)
     driver.new_session()
 
     bidi_session = driver.session.bidi_session

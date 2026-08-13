@@ -15,10 +15,10 @@ interface AnimationPlaybackEvent : Event {
               optional AnimationPlaybackEventInit eventInitDict = {});
 
   readonly attribute CSSNumberish? currentTime;
-  readonly attribute double? timelineTime;
+  readonly attribute CSSNumberish? timelineTime;
 };
 
 dictionary AnimationPlaybackEventInit : EventInit {
   CSSNumberish? currentTime = null;
-  double? timelineTime = null;
+  CSSNumberish? timelineTime = null;
 };

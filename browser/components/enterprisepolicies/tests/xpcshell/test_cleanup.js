@@ -9,34 +9,30 @@ async function checkMessages(expectedResult) {
   let onBeforeUIStartup = false;
   let onAllWindowsRestored = false;
 
-  let errorListener = {
-    observe(subject) {
-      let message = subject.wrappedJSObject.arguments[0];
-      if (message.includes("_cleanup from onBeforeAddons")) {
+  let cleanupObserver = (subject, topic, data) => {
+    switch (data) {
+      case "onBeforeAddons":
         onBeforeAddons = true;
-      } else if (message.includes("_cleanup from onProfileAfterChange")) {
+        break;
+      case "onProfileAfterChange":
         onProfileAfterChange = true;
-      } else if (message.includes("_cleanup from onBeforeUIStartup")) {
+        break;
+      case "onBeforeUIStartup":
         onBeforeUIStartup = true;
-      } else if (message.includes("_cleanup from onAllWindowsRestored")) {
+        break;
+      case "onAllWindowsRestored":
         onAllWindowsRestored = true;
-      }
-    },
+        break;
+    }
   };
 
-  Services.console.registerListener(errorListener);
-
-  const ConsoleAPIStorage = Cc["@mozilla.org/consoleAPI-storage;1"].getService(
-    Ci.nsIConsoleAPIStorage
-  );
-  ConsoleAPIStorage.addLogEventListener(
-    errorListener.observe,
-    Cc["@mozilla.org/systemprincipal;1"].createInstance(Ci.nsIPrincipal)
-  );
+  Services.obs.addObserver(cleanupObserver, "EnterprisePolicies:Cleanup");
 
   await setupPolicyEngineWithJson({
     policies: {},
   });
+
+  Services.obs.removeObserver(cleanupObserver, "EnterprisePolicies:Cleanup");
 
   equal(
     onBeforeAddons,

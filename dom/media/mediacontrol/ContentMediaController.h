@@ -7,11 +7,18 @@
 
 #include "MediaControlKeySource.h"
 #include "MediaStatusManager.h"
+#include "mozilla/DefineEnum.h"
 #include "mozilla/dom/AudioSessionBinding.h"
 
 namespace mozilla::dom {
 
 class BrowsingContext;
+
+// Direction of an audio-focus interrupt dispatched to content media receivers.
+// Suspend silences the tab's potentially audible sources on a focus loss;
+// Resume resumes the ones the interrupt suspended on a focus gain.
+MOZ_DEFINE_ENUM_CLASS_WITH_BASE_AND_TOSTRING(AudioFocusInterruptAction, uint8_t,
+                                             (Suspend, Resume));
 
 /**
  * ContentMediaControlKeyReceiver is an interface which is used to receive media
@@ -29,6 +36,19 @@ class ContentMediaControlKeyReceiver {
                               const MediaControlActionParams& aParams = {}) = 0;
 
   virtual bool IsPlaying() const = 0;
+
+  // Audio-focus interrupt verbs. These are distinct from the user Pause/Play
+  // media-key path: an interrupt suspends every potentially audible receiver
+  // and a later resume resumes only what the interrupt suspended. Default no-op
+  // so that receivers which do not participate in interrupt handling need no
+  // change.
+  virtual void SuspendForInterrupt() {}
+  virtual void ResumeFromInterrupt() {}
+
+  // Dispatch an audio-focus interrupt. ContentMediaController overrides this to
+  // fan the interrupt out to its potentially audible receivers; leaf receivers
+  // rely on the suspend/resume verbs above and leave this as a no-op.
+  virtual void HandleAudioFocusInterrupt(AudioFocusInterruptAction aAction) {}
 };
 
 /**
@@ -109,6 +129,14 @@ class ContentMediaController final : public ContentMediaAgent,
   void HandleMediaKey(MediaControlKey aKey,
                       const MediaControlActionParams& aParams = {}) override;
 
+  // Dispatch an audio-focus interrupt to every potentially audible receiver in
+  // both the controllable and uncontrollable buckets.
+  void HandleAudioFocusInterrupt(AudioFocusInterruptAction aAction) override;
+
+  bool IsAudioInterruptedByPlatform() const {
+    return mAudioInterruptedByPlatform;
+  }
+
  private:
   ~ContentMediaController() = default;
 
@@ -119,6 +147,11 @@ class ContentMediaController final : public ContentMediaAgent,
 
   nsTArray<RefPtr<ContentMediaControlKeyReceiver>> mControllableReceivers;
   nsTArray<RefPtr<ContentMediaControlKeyReceiver>> mUncontrollableReceivers;
+
+  // True while the platform has interrupted the tab's audio (an audio-focus
+  // loss): no audible sound may start while set, so page-initiated start and
+  // resume are gated; cleared when the platform ends the interrupt.
+  bool mAudioInterruptedByPlatform = false;
 };
 
 }  // namespace mozilla::dom

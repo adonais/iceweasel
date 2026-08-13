@@ -29,6 +29,32 @@ function updateTabContextMenu(tab) {
   menu.hidePopup();
 }
 
+// Open the tab context menu for `tab` and leave it open, resolving to the
+// #tabContextMenu element once shown. Pair with closeTabContextMenu().
+async function openTabContextMenu(tab = gBrowser.selectedTab) {
+  const tabContextMenu = document.getElementById("tabContextMenu");
+  const contextMenuShown = BrowserTestUtils.waitForPopupEvent(
+    tabContextMenu,
+    "shown"
+  );
+  tab.scrollIntoView({ behavior: "instant" });
+  EventUtils.synthesizeMouseAtCenter(
+    tab,
+    { type: "contextmenu", button: 2 },
+    window
+  );
+  await contextMenuShown;
+  return tabContextMenu;
+}
+
+async function closeTabContextMenu(
+  menu = document.getElementById("tabContextMenu")
+) {
+  const contextMenuHidden = BrowserTestUtils.waitForPopupEvent(menu, "hidden");
+  menu.hidePopup();
+  await contextMenuHidden;
+}
+
 function triggerClickOn(target, options) {
   let promise = BrowserTestUtils.waitForEvent(target, "click");
   if (AppConstants.platform == "macosx") {
@@ -307,11 +333,11 @@ async function dragAndDrop(
   // Ensure dnd suppression is cleared.
   EventUtils.synthesizeMouseAtCenter(tab2, { type: "mouseup" }, destWindow);
   if (!copy && destWindow == origWindow) {
-    await BrowserTestUtils.waitForCondition(() => {
+    await TestUtils.waitForCondition(() => {
       return tab1.elementIndex != originalIndex;
     }, "Waiting for tab position to be updated");
   } else if (destWindow != origWindow) {
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => tab1.closing,
       "Waiting for tab closing"
     );

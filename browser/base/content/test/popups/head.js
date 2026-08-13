@@ -10,7 +10,7 @@ const gfxInfo = Cc["@mozilla.org/gfx/info;1"].getService(
 async function waitForBlockedPopups(numberOfPopups, { doc }) {
   let toolbarDoc = doc || document;
   let menupopup = toolbarDoc.getElementById("blockedPopupOptions");
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     let popups = menupopup.querySelectorAll("[popupReportIndex]");
     return popups.length == numberOfPopups;
   }, `Waiting for ${numberOfPopups} popups`);

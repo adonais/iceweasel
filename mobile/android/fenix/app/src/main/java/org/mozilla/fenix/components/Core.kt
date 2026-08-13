@@ -7,7 +7,6 @@ package org.mozilla.fenix.components
 import android.content.Context
 import android.content.res.Configuration
 import androidx.core.content.ContextCompat
-import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
@@ -17,8 +16,6 @@ import kotlinx.coroutines.withContext
 import mozilla.components.browser.domains.autocomplete.BaseDomainAutocompleteProvider
 import mozilla.components.browser.domains.autocomplete.ShippedDomainsProvider
 import mozilla.components.browser.engine.gecko.GeckoEngine
-import mozilla.components.browser.engine.gecko.cookiebanners.GeckoCookieBannersStorage
-import mozilla.components.browser.engine.gecko.cookiebanners.ReportSiteDomainsRepository
 import mozilla.components.browser.engine.gecko.fetch.GeckoViewFetchClient
 import mozilla.components.browser.engine.gecko.permission.GeckoSitePermissionsStorage
 import mozilla.components.browser.engine.gecko.util.EngineDownloadDelegate
@@ -90,11 +87,8 @@ import mozilla.components.service.location.LocationService
 import mozilla.components.service.location.MozillaLocationService
 import mozilla.components.service.mars.MacTopSitesProvider
 import mozilla.components.service.mars.MacTopSitesRequestConfig
-import mozilla.components.service.mars.MarsTopSitesProvider
-import mozilla.components.service.mars.MarsTopSitesRequestConfig
 import mozilla.components.service.mars.NEW_TAB_TILE_1_PLACEMENT_KEY
 import mozilla.components.service.mars.NEW_TAB_TILE_2_PLACEMENT_KEY
-import mozilla.components.service.mars.Placement
 import mozilla.components.service.mars.contile.ContileTopSitesUpdater
 import mozilla.components.service.merino.manifest.MerinoManifestProvider
 import mozilla.components.service.pocket.ContentRecommendationsRequestConfig
@@ -316,17 +310,6 @@ class Core(
         )
     }
 
-    private val Context.dataStore by preferencesDataStore(
-        name = ReportSiteDomainsRepository.REPORT_SITE_DOMAINS_REPOSITORY_NAME,
-    )
-
-    val cookieBannersStorage by lazyMonitored {
-        GeckoCookieBannersStorage(
-            geckoRuntime,
-            ReportSiteDomainsRepository(context.dataStore),
-        )
-    }
-
     val geckoSitePermissionsStorage by lazyMonitored {
         GeckoSitePermissionsStorage(geckoRuntime, OnDiskSitePermissionsStorage(context))
     }
@@ -528,7 +511,6 @@ class Core(
             context = context,
             httpClient = client,
             manifestProvider = merinoManifestProvider,
-            useMerinoManifest = context.components.settings.enableMerinoManifest,
         )
     }
 
@@ -630,7 +612,6 @@ class Core(
     val pocketStoriesConfig by lazyMonitored {
         PocketStoriesConfig(
             client,
-            Frequency(4, TimeUnit.HOURS),
             contentRecommendationsParams = ContentRecommendationsRequestConfig(
                 locale = LocaleManager.getSelectedLocale(context).toLanguageTag(),
             ),
@@ -647,28 +628,6 @@ class Core(
         )
     }
     val pocketStoriesService by lazyMonitored { PocketStoriesService(context, pocketStoriesConfig) }
-
-    val marsTopSitesProvider by lazyMonitored {
-        MarsTopSitesProvider(
-            context = context,
-            client = client,
-            requestConfig = MarsTopSitesRequestConfig(
-                contextId = context.components.settings.contileContextId,
-                userAgent = engine.settings.userAgentString,
-                placements = listOf(
-                    Placement(
-                        placement = NEW_TAB_TILE_1_PLACEMENT_KEY,
-                        count = 1,
-                    ),
-                    Placement(
-                        placement = NEW_TAB_TILE_2_PLACEMENT_KEY,
-                        count = 1,
-                    ),
-                ),
-            ),
-            maxCacheAgeInSeconds = MARS_TOP_SITES_MAX_CACHE_AGE,
-        )
-    }
 
     val macTopSitesProvider by lazyMonitored {
         MacTopSitesProvider(
@@ -687,11 +646,7 @@ class Core(
     val contileTopSitesUpdater by lazyMonitored {
         ContileTopSitesUpdater(
             context = context,
-            provider = if (context.components.settings.enableMozillaAdsClient) {
-                macTopSitesProvider
-            } else {
-                marsTopSitesProvider
-            },
+            provider = macTopSitesProvider,
             frequency = Frequency(3, TimeUnit.HOURS),
         )
     }
@@ -700,11 +655,7 @@ class Core(
         DefaultTopSitesStorage(
             pinnedSitesStorage = pinnedSiteStorage,
             historyStorage = historyStorage,
-            topSitesProvider = if (context.components.settings.enableMozillaAdsClient) {
-                macTopSitesProvider
-            } else {
-                marsTopSitesProvider
-            },
+            topSitesProvider = macTopSitesProvider,
         )
     }
 
@@ -809,7 +760,6 @@ class Core(
         private const val KEY_STORAGE_NAME = "core_prefs"
         private const val RECENTLY_CLOSED_MAX = 10
         const val HISTORY_METADATA_MAX_AGE_IN_MS = 14 * 24 * 60 * 60 * 1000 // 14 days
-        private const val MARS_TOP_SITES_MAX_CACHE_AGE = 1800L // 30 minutes
 
         // Maximum number of suggestions returned from the history search engine source.
         const val METADATA_HISTORY_SUGGESTION_LIMIT = 100

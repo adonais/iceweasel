@@ -5,13 +5,12 @@
 #ifndef MOZILLA_GFX_RENDERCOMPOSITOR_H
 #define MOZILLA_GFX_RENDERCOMPOSITOR_H
 
+#include "GLTypes.h"
+#include "Units.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/layers/Fence.h"
 #include "mozilla/webrender/WebRenderTypes.h"
-#include "Units.h"
-
-#include "GLTypes.h"
 
 namespace mozilla {
 
@@ -235,7 +234,7 @@ class RenderCompositor {
 #ifdef MOZ_WIDGET_ANDROID
   virtual bool MaybeCaptureScreenPixels(
       const gfx::IntRect& aSourceRect,
-      RefPtr<layers::AndroidHardwareBuffer> aHardwareBuffer) {
+      layers::AndroidHardwareBuffer* aHardwareBuffer) {
     return false;
   }
 #endif

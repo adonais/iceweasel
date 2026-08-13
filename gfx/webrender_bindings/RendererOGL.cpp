@@ -4,13 +4,12 @@
 
 #include "RendererOGL.h"
 
-#include "base/task.h"
 #include "GLContext.h"
-#include "mozilla/gfx/Logging.h"
+#include "base/task.h"
 #include "mozilla/Logging.h"
-
-#include "mozilla/gfx/gfxVars.h"
+#include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/Types.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/Fence.h"
@@ -22,8 +21,8 @@
 
 #ifdef MOZ_WIDGET_ANDROID
 #  include "GLContextEGL.h"
-#  include "mozilla/layers/AndroidHardwareBuffer.h"
 #  include "ScopedGLHelpers.h"
+#  include "mozilla/layers/AndroidHardwareBuffer.h"
 #endif
 
 namespace mozilla {
@@ -469,7 +468,13 @@ Maybe<layers::FrameRecording> RendererOGL::EndRecording() {
 
 #ifdef MOZ_WIDGET_ANDROID
 RefPtr<RendererOGL::ScreenPixelsPromise> RendererOGL::RequestScreenPixels(
-    gfx::IntRect aSourceRect, gfx::IntSize aDestSize) {
+    gfx::IntRect aSourceRect,
+    RefPtr<layers::AndroidHardwareBuffer> aHardwareBuffer) {
+  if (!aHardwareBuffer) {
+    return ScreenPixelsPromise::CreateAndReject(NS_ERROR_ILLEGAL_VALUE,
+                                                __func__);
+  }
+
   // If a new request is made we no longer care about the result of the previous
   // one, so just reject it if it exists.
   if (mPendingScreenPixelsRequest) {
@@ -478,7 +483,7 @@ RefPtr<RendererOGL::ScreenPixelsPromise> RendererOGL::RequestScreenPixels(
   }
   mPendingScreenPixelsRequest.emplace(ScreenPixelsRequest{
       .mSourceRect = aSourceRect,
-      .mDestSize = aDestSize,
+      .mHardwareBuffer = std::move(aHardwareBuffer),
       .mPromise = new ScreenPixelsPromise::Private(__func__),
   });
   return mPendingScreenPixelsRequest->mPromise;
@@ -491,19 +496,16 @@ void RendererOGL::MaybeCaptureScreenPixels() {
 
   auto request = mPendingScreenPixelsRequest.extract();
 
-  const RefPtr<layers::AndroidHardwareBuffer> hardwareBuffer =
-      layers::AndroidHardwareBuffer::Create(request.mDestSize,
-                                            gfx::SurfaceFormat::R8G8B8A8);
-
   if (mCompositor->MaybeCaptureScreenPixels(request.mSourceRect,
-                                            hardwareBuffer)) {
-    request.mPromise->Resolve(hardwareBuffer, __func__);
+                                            request.mHardwareBuffer)) {
+    request.mPromise->Resolve(Ok{}, __func__);
     return;
   }
 
   auto* const gle = gl::GLContextEGL::Cast(gl());
   const auto& egl = gle->mEgl;
-  gl::ScopedEGLImageForAndroidHardwareBuffer eglImage(gle, hardwareBuffer);
+  gl::ScopedEGLImageForAndroidHardwareBuffer eglImage(gle,
+                                                      request.mHardwareBuffer);
   gl::ScopedBindFramebuffer scopedBind(gl());
   gl::ScopedRenderbuffer rb(gl());
   gl()->fBindRenderbuffer(LOCAL_GL_RENDERBUFFER, rb);
@@ -517,7 +519,7 @@ void RendererOGL::MaybeCaptureScreenPixels() {
                 request.mSourceRect.x,
                 mCompositor->GetBufferSize().height - request.mSourceRect.y,
                 request.mSourceRect.width, -request.mSourceRect.height);
-  const auto destRect = gfx::IntRect({}, hardwareBuffer->mSize);
+  const auto destRect = gfx::IntRect({}, request.mHardwareBuffer->mSize);
   gl()->BindReadFB(0);
   gl()->BindDrawFB(fb.FB());
   gl()->fBlitFramebuffer(srcRect.x, srcRect.y, srcRect.XMost(), srcRect.YMost(),
@@ -529,12 +531,12 @@ void RendererOGL::MaybeCaptureScreenPixels() {
           egl->fCreateSync(LOCAL_EGL_SYNC_NATIVE_FENCE_ANDROID, nullptr)) {
     auto fence = UniqueFileHandle(egl->fDupNativeFenceFDANDROID(sync));
     if (fence) {
-      hardwareBuffer->SetAcquireFence(std::move(fence));
+      request.mHardwareBuffer->SetAcquireFence(std::move(fence));
     }
     egl->fDestroySync(sync);
   }
 
-  request.mPromise->Resolve(hardwareBuffer, __func__);
+  request.mPromise->Resolve(Ok{}, __func__);
 }
 #endif
 

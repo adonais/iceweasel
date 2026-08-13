@@ -1,0 +1,56 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+@import url("chrome://browser/content/usercontext/usercontext.css");
+
+.container-editor {
+  display: flex;
+  padding: var(--space-large);
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-large);
+
+  moz-input-text::part(label) {
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .swatches::part(inputs) {
+    justify-content: space-between;
+  }
+
+  .swatch {
+    --visual-picker-item-border-radius: var(--border-radius-circle);
+    --visual-picker-item-border-color: transparent;
+    inline-size: var(--size-item-large);
+    block-size: var(--size-item-large);
+
+    .userContext-icon {
+      display: block;
+      inline-size: 100%;
+      block-size: 100%;
+      background-size: 22px;
+    }
+  }
+
+  .icon-swatches .userContext-icon {
+    fill: var(--icon-color);
+    background-size: 16px;
+  }
+
+  @media -moz-pref("browser.nova.enabled") {
+    .color-swatches .userContext-icon {
+      background-image: radial-gradient(circle 11px at center, var(--identity-stroke-color) 100%, transparent 100%);
+    }
+  }
+}
+
+/* When the URL-bar container indicator is revealed solely to anchor the
+   container-creation panel, keep it as a minimal, empty anchor. */
+#userContext-icons.container-anchor-pinned {
+  min-inline-size: var(--size-item-small);
+}
+
+#userContext-icons.container-anchor-pinned > * {
+  display: none;
+}

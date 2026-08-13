@@ -5,10 +5,10 @@
 #ifndef nsStreamTransportService_h_
 #define nsStreamTransportService_h_
 
-#include "nsIStreamTransportService.h"
+#include "nsCOMPtr.h"
 #include "nsIEventTarget.h"
 #include "nsIObserver.h"
-#include "nsCOMPtr.h"
+#include "nsIStreamTransportService.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
 

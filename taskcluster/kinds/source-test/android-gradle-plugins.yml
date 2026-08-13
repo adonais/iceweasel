@@ -16,7 +16,6 @@ task-defaults:
     worker:
         docker-image: {in-tree: android-build}
         max-run-time: 1800
-    run-on-repo-type: [hg]
     fetches:
         toolchain:
             - linux64-android-gradle-dependencies

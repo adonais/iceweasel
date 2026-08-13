@@ -8,10 +8,10 @@
 #include <d3d11_1.h>
 
 #include "gfxPlatform.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/Types.h"
 #include "mozilla/layers/TextureD3D11.h"
-#include "mozilla/Maybe.h"
 
 namespace mozilla {
 namespace layers {

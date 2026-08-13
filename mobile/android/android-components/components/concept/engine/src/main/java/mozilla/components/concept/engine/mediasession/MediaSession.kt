@@ -126,6 +126,20 @@ class MediaSession {
     }
 
     /**
+     * The W3C Audio Session type a tab is currently claiming, used to pick the
+     * matching platform audio-focus request. Mirrors the AudioSessionType
+     * WebIDL enum; see https://w3c.github.io/audio-session/#audio-session-type
+     */
+    enum class AudioSessionType {
+        AUTO,
+        PLAYBACK,
+        TRANSIENT,
+        TRANSIENT_SOLO,
+        AMBIENT,
+        PLAY_AND_RECORD,
+    }
+
+    /**
      * Controller for controlling playback of a media element.
      */
     interface Controller {

@@ -29,6 +29,40 @@ codegenTestARM64_adhoc(
     'f',
     'strh    wzr, \\[x\\d+, x0\\]');
 
+// i64 scalar stores with zero constant
+
+codegenTestARM64_adhoc(
+    `(module
+       (memory 1)
+       (func (export "f") (param i32)
+         (i64.store (local.get 0) (i64.const 0))))`,
+    'f',
+    'str     xzr, \\[x\\d+, x0\\]');
+
+codegenTestARM64_adhoc(
+    `(module
+       (memory 1)
+       (func (export "f") (param i32)
+         (i64.store8 (local.get 0) (i64.const 0))))`,
+    'f',
+    'strb    wzr, \\[x\\d+, x0\\]');
+
+codegenTestARM64_adhoc(
+    `(module
+       (memory 1)
+       (func (export "f") (param i32)
+         (i64.store16 (local.get 0) (i64.const 0))))`,
+    'f',
+    'strh    wzr, \\[x\\d+, x0\\]');
+
+codegenTestARM64_adhoc(
+    `(module
+       (memory 1)
+       (func (export "f") (param i32)
+         (i64.store32 (local.get 0) (i64.const 0))))`,
+    'f',
+    'str     wzr, \\[x\\d+, x0\\]');
+
 if (wasmSimdEnabled()) {
     // i32x4.replace_lane with zero scalar: wzr, no prior mov to materialise zero
     codegenTestARM64_adhoc(

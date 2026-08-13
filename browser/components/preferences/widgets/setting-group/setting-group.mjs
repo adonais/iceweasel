@@ -9,6 +9,7 @@ import {
   spread,
 } from "chrome://browser/content/preferences/widgets/setting-element.mjs";
 import { SettingControl } from "chrome://browser/content/preferences/widgets/setting-control.mjs";
+import { SettingGroupManager } from "chrome://browser/content/preferences/config/SettingGroupManager.mjs";
 
 /**
  * @import { SettingElementConfig } from "chrome://browser/content/preferences/widgets/setting-element.mjs"
@@ -110,6 +111,31 @@ export class SettingGroup extends SettingElement {
 
   createRenderRoot() {
     return this;
+  }
+
+  /**
+   * Unsubscribe callback for the late-registration listener. See
+   * connectedCallback for why.
+   *
+   * @type {(() => void) | null}
+   */
+  #unsubscribeGroupRegister = null;
+
+  connectedCallback() {
+    super.connectedCallback();
+    // This element can render before its config is available. Initialize once
+    // the group registers, which can happen later (bug 2051119).
+    this.#unsubscribeGroupRegister = SettingGroupManager.onRegister(id => {
+      if (id === this.groupId && !this.config) {
+        window.initSettingGroup(id);
+      }
+    });
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.#unsubscribeGroupRegister?.();
+    this.#unsubscribeGroupRegister = null;
   }
 
   willUpdate() {

@@ -56,6 +56,7 @@ EXPORTS.mozilla.dom.indexedDB += [
     "KeyPath.h",
     "SerializationHelpers.h",
     "ThreadLocal.h",
+    "TransactionOpResult.h",
 ]
 
 XPCOM_MANIFESTS += [
@@ -88,6 +89,7 @@ UNIFIED_SOURCES += [
     "ReportInternalError.cpp",
     "SchemaUpgrades.cpp",
     "ScriptErrorHelper.cpp",
+    "TransactionOpResult.cpp",
 ]
 
 SOURCES += [

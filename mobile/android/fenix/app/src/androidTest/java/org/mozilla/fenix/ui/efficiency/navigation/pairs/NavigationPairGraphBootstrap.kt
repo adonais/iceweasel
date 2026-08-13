@@ -19,7 +19,6 @@ object NavigationPairGraphBootstrap {
         val composeRule = AndroidComposeTestRuleV2(
             HomeActivityIntentTestRule(
                 skipOnboarding = true,
-                isMenuRedesignCFREnabled = false,
                 isPageLoadTranslationsPromptEnabled = false,
             ),
         ) { it.activity }

@@ -37,23 +37,28 @@ async function waitForCacheEntry(urlString) {
 
   await TestUtils.waitForCondition(() => {
     try {
-      return storage.exists(uri, "");
+      return storage.exists(uri, "moz-cached-ohttp");
     } catch (e) {
       return false;
     }
   });
 
   let entry = await new Promise((resolve, reject) => {
-    storage.asyncOpenURI(uri, "", Ci.nsICacheStorage.OPEN_READONLY, {
-      onCacheEntryCheck: () => Ci.nsICacheEntryOpenCallback.ENTRY_WANTED,
-      onCacheEntryAvailable: (foundEntry, isNew, status) => {
-        if (Components.isSuccessCode(status)) {
-          resolve(foundEntry);
-        } else {
-          reject(new Error(`Cache entry operation failed: ${status}`));
-        }
-      },
-    });
+    storage.asyncOpenURI(
+      uri,
+      "moz-cached-ohttp",
+      Ci.nsICacheStorage.OPEN_READONLY,
+      {
+        onCacheEntryCheck: () => Ci.nsICacheEntryOpenCallback.ENTRY_WANTED,
+        onCacheEntryAvailable: (foundEntry, isNew, status) => {
+          if (Components.isSuccessCode(status)) {
+            resolve(foundEntry);
+          } else {
+            reject(new Error(`Cache entry operation failed: ${status}`));
+          }
+        },
+      }
+    );
   });
 
   await TestUtils.waitForCondition(() => {

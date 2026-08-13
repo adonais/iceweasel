@@ -8,14 +8,8 @@
 namespace IPC {
 
 static const uint16_t kDynamicAtomToken = 0xffff;
-static const uint16_t kAtomsCount =
-    static_cast<uint16_t>(mozilla::detail::GkAtoms::Atoms::AtomsCount);
 
-static_assert(static_cast<size_t>(
-                  mozilla::detail::GkAtoms::Atoms::AtomsCount) == kAtomsCount,
-              "Number of static atoms must fit in a uint16_t");
-
-static_assert(kDynamicAtomToken >= kAtomsCount,
+static_assert(kDynamicAtomToken >= nsGkAtoms::kStaticAtomCount,
               "Exceeded supported number of static atoms");
 
 /* static */
@@ -25,7 +19,7 @@ void ParamTraits<nsAtom*>::Write(MessageWriter* aWriter, const nsAtom* aParam) {
   if (aParam->IsStatic()) {
     const nsStaticAtom* atom = aParam->AsStatic();
     uint16_t index = static_cast<uint16_t>(nsGkAtoms::IndexOf(atom));
-    MOZ_ASSERT(index < kAtomsCount);
+    MOZ_ASSERT(index < nsGkAtoms::kStaticAtomCount);
     WriteParam(aWriter, index);
     return;
   }
@@ -45,7 +39,7 @@ bool ParamTraits<nsAtom*>::Read(MessageReader* aReader,
     return false;
   }
   if (token != kDynamicAtomToken) {
-    if (token >= kAtomsCount) {
+    if (token >= nsGkAtoms::kStaticAtomCount) {
       return false;
     }
     *aResult = nsGkAtoms::GetAtomByIndex(token);

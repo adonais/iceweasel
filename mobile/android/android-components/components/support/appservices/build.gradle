@@ -3,11 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 plugins {
+    id 'com.android.library'
     alias(libs.plugins.dependency.analysis)
 }
-
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
 
 android {
     namespace = 'mozilla.components.support.appservices'
@@ -19,7 +17,7 @@ dependencies {
 
     implementation ComponentsDependencies.mozilla_appservices_errorsupport
     implementation ComponentsDependencies.mozilla_appservices_fxrelay
-    implementation (ComponentsDependencies.mozilla_appservices_httpconfig) {
+    implementation (ComponentsDependencies.mozilla_appservices_viaduct) {
         // Override the version of concept-fetch that A-S depends on,
         // since we want to replace it with our own.
         exclude group: 'org.mozilla.components', module: 'concept-fetch'

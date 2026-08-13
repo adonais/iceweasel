@@ -773,6 +773,16 @@ partial namespace ChromeUtils {
   Promise<ParentProcInfoDictionary> requestProcInfo();
 
   /**
+   * Requests an XDG activation token from the Wayland compositor.
+   * See: https://wayland.app/protocols/xdg-activation-v1
+   *
+   * Resolves with null on non-Wayland platforms, or when no token could be
+   * obtained.
+   */
+  [NewObject]
+  Promise<UTF8String?> requestXDGActivationToken();
+
+  /**
    * For testing purpose.
    */
   [ChromeOnly]

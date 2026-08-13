@@ -152,6 +152,7 @@ interface nsIContentAnalysisRequest : nsISupports
     eBulkDataEntry = 3,
     ePrint = 4,
     eFileTransfer = 5,
+    eDataCopied = 6,
   };
   readonly attribute nsIContentAnalysisRequest_AnalysisType analysisType;
 
@@ -174,6 +175,9 @@ interface nsIContentAnalysisRequest : nsISupports
     // Only possible for the eFileDownloaded AnalysisType
     eNormalDownload = 6,
     eSaveAsDownload = 7,
+
+    // Only possible for the eDataCopied AnalysisType
+    eClipboardCopy = 8,
   };
   readonly attribute nsIContentAnalysisRequest_Reason reason;
 
@@ -211,11 +215,10 @@ interface nsIContentAnalysisRequest : nsISupports
   // defined.
   readonly attribute AString filePath;
 
-  // HANDLE to the printed data in PDF format.
-  readonly attribute unsigned long long printDataHandle;
-
-  // Size of the data stored in printDataHandle.
-  readonly attribute unsigned long long printDataSize;
+  // The printed data to analyze, in PDF format. Used by backends that read the
+  // PDF bytes directly; the external-agent backend builds the Windows
+  // shared-memory HANDLE it sends to the agent from these bytes.
+  Array<octet> getPrintData();
 
   // Name of the printer being printed to.
   readonly attribute AString printerName;
@@ -515,4 +518,63 @@ interface nsIContentAnalysis : nsISupports
    * Force the content analysis client to be recreated. For use in tests only.
    */
   void forceRecreateClientForTest();
+};
+
+/**
+ * A single Content Analysis rule passed to the built-in DLP module
+ */
+[scriptable, uuid(b7e6d5c4-3a2f-4e1d-8c9b-0a1f2e3d4c5b)]
+interface nsIContentAnalysisRule : nsISupports {
+  // Values for `verdict`
+  const octet REPORT = 0;
+  const octet WARN = 1;
+  const octet BLOCK = 2;
+
+  // Stable rule identifier (config "Name").
+  readonly attribute AString name;
+
+  // Operations this rule applies to, as nsIContentAnalysisRequest.AnalysisType
+  // values. Empty means it applies to all operations.
+  readonly attribute Array<unsigned long> operations;
+
+  // Hosts the rule applies to (config "Domains"); a request matches when its URL
+  // host equals one of these or is a subdomain of it. Empty means any host.
+  readonly attribute Array<AString> domains;
+
+  // Regular expressions tested against the request content; the rule matches if any
+  // one matches. Empty means no content restriction.
+  readonly attribute Array<AString> contentPatterns;
+
+  // The action to apply on a match; one of the constants above.
+  readonly attribute octet verdict;
+
+  // Optional user-facing message (config "Message"); empty if none.
+  readonly attribute AString message;
+};
+
+/**
+ * Runs an in-process WebAssembly DLP module. Implemented in JS
+ * (ContentAnalysisWasmRunner.sys.mjs). The parent-process service reads and
+ * signature-checks the module out of the configured extension, then compiles and
+ * runs it in a content process (via the ContentAnalysisWasm actor) because the
+ * parent process forbids wasm compilation. The C++ WasmModuleBackend calls this.
+ */
+[scriptable, uuid(909ea37a-71a0-4454-82ec-98a64087fe22)]
+interface nsIContentAnalysisWasmRunner : nsISupports {
+  /**
+   * Analyze a request asynchronously.
+   *
+   * @param aRequestBytes  Serialized content_analysis.sdk.ContentAnalysisRequest.
+   * @param aContentBytes  Bytes for file_path/print_data content,
+   *                       or empty for inline text_content requests.
+   * @param aRules         DLP rules to evaluate. The runner marshals these into the
+   *                       module's FfiRule ABI.
+   * @return A Promise that resolves with the serialized
+   *         content_analysis.sdk.ContentAnalysisResponse (as an Array<octet>), or
+   *         rejects if the module is unavailable or the extension is not acceptably
+   *         signed.
+   */
+  Promise analyze(in Array<octet> aRequestBytes,
+                  in Array<octet> aContentBytes,
+                  in Array<nsIContentAnalysisRule> aRules);
 };

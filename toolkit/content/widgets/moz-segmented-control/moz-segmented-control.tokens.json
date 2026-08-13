@@ -1,0 +1,16 @@
+{
+  "border": {
+    "@base": {
+      "value": "{border.width} solid {segmented-control.border.color}"
+    },
+    "color": {
+      "value": "{border.color.interactive.@base}"
+    },
+    "radius": {
+      "value": "calc({button.border.radius} + {focus.outline.width} + {focus.outline.offset} + {border.width})"
+    }
+  },
+  "padding": {
+    "value": "{space.xsmall}"
+  }
+}

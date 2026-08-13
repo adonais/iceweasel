@@ -3,16 +3,16 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "FuzzyLayer.h"
-#include "nsTHashMap.h"
+
+#include "mozilla/Logging.h"
+#include "mozilla/StaticMutex.h"
 #include "nsDeque.h"
 #include "nsIRunnable.h"
 #include "nsSocketTransportService2.h"
+#include "nsTHashMap.h"
 #include "nsThreadUtils.h"
-
-#include "prmem.h"
 #include "prio.h"
-#include "mozilla/Logging.h"
-#include "mozilla/StaticMutex.h"
+#include "prmem.h"
 
 namespace mozilla {
 namespace net {
@@ -42,7 +42,10 @@ constinit static nsTHashMap<nsPtrHashKey<PRFileDesc>, NetworkFuzzingBuffer*>
     gConnectedNetworkFuzzingBuffers;
 
 // This holds all buffers for connections we can still open.
-MOZ_RUNINIT static nsDeque<NetworkFuzzingBuffer> gNetworkFuzzingBuffers;
+// Intentionally leaked to avoid destructor running after XPCOM shutdown
+// (nsDeque dtor -> NS_LogDtor -> mutex lock on already-destroyed mutex).
+MOZ_RUNINIT static nsDeque<NetworkFuzzingBuffer>& gNetworkFuzzingBuffers =
+    *new nsDeque<NetworkFuzzingBuffer>();
 
 // This is `true` once all connections are closed and either there are
 // no buffers left to be used or all remaining buffers are marked optional.

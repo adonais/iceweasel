@@ -2572,8 +2572,8 @@ class HTMLEditUtils final {
   static Maybe<uint32_t> GetPreviousNonCollapsibleCharOffset(
       const EditorDOMPointBase<PT, CT>& aPoint,
       const WalkTextOptions& aWalkTextOptions = {}) {
-    static_assert(std::is_same<PT, RefPtr<Text>>::value ||
-                  std::is_same<PT, Text*>::value);
+    static_assert(std::is_same_v<PT, RefPtr<Text>> ||
+                  std::is_same_v<PT, Text*>);
     MOZ_ASSERT(aPoint.IsSetAndValid());
     return GetPreviousNonCollapsibleCharOffset(
         *aPoint.template ContainerAs<Text>(), aPoint.Offset(),
@@ -2631,8 +2631,8 @@ class HTMLEditUtils final {
   static Maybe<uint32_t> GetInclusiveNextNonCollapsibleCharOffset(
       const EditorDOMPointBase<PT, CT>& aPoint,
       const WalkTextOptions& aWalkTextOptions = {}) {
-    static_assert(std::is_same<PT, RefPtr<Text>>::value ||
-                  std::is_same<PT, Text*>::value);
+    static_assert(std::is_same_v<PT, RefPtr<Text>> ||
+                  std::is_same_v<PT, Text*>);
     MOZ_ASSERT(aPoint.IsSetAndValid());
     return GetInclusiveNextNonCollapsibleCharOffset(
         *aPoint.template ContainerAs<Text>(), aPoint.Offset(),
@@ -2675,8 +2675,8 @@ class HTMLEditUtils final {
   static uint32_t GetFirstWhiteSpaceOffsetCollapsedWith(
       const EditorDOMPointBase<PT, CT>& aPoint,
       const WalkTextOptions& aWalkTextOptions = {}) {
-    static_assert(std::is_same<PT, RefPtr<Text>>::value ||
-                  std::is_same<PT, Text*>::value);
+    static_assert(std::is_same_v<PT, RefPtr<Text>> ||
+                  std::is_same_v<PT, Text*>);
     MOZ_ASSERT(aPoint.IsSetAndValid());
     MOZ_ASSERT(!aPoint.IsEndOfContainer());
     MOZ_ASSERT_IF(

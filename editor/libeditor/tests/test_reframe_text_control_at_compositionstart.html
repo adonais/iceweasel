@@ -1,0 +1,108 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title></title>
+<script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
+<script src="chrome://mochikit/content/tests/SimpleTest/EventUtils.js"></script>
+<link rel="stylesheet"  href="chrome://mochikit/content/tests/SimpleTest/test.css">
+<script>
+"use strict";
+
+SimpleTest.waitForExplicitFinish();
+SimpleTest.waitForFocus(async () => {
+  function stringifySelectionChangeNotification(aNotification) {
+    return `{ type: ${aNotification.type}, ${
+      aNotification.hasRange
+        ? `offset: ${aNotification.offset}, length: ${aNotification.length}`
+        : `hasRange: false`
+    }, causedByComposition: ${aNotification.causedByComposition}, causedBySelectionEvent: ${
+      aNotification.causedBySelectionEvent
+    }, occurredDuringComposition: ${aNotification.occurredDuringComposition} }`;
+  }
+  function stringifySelectionChangeNotifications(aNotifications) {
+    let result = "[";
+    for (const notification of aNotifications) {
+      if (result != "[") {
+        result += ", ";
+      }
+      result += stringifySelectionChangeNotification(notification);
+    }
+    return result += "]";
+  }
+  let selectionChanges = [];
+  function callback(aTIP, aNotification) {
+    console.info(aNotification.type);
+    switch (aNotification.type) {
+      case "request-to-commit":
+        aTIP.commitComposition();
+        break;
+      case "request-to-cancel":
+        aTIP.cancelComposition();
+        break;
+      case "notify-selection-change":
+        selectionChanges.push({
+          type: aNotification.type,
+          hasRange: aNotification.hasRange,
+          offset: aNotification.hasRange ? aNotification.offset : null,
+          length: aNotification.hasRange ? aNotification.length : null,
+          causedByComposition: aNotification.causedByComposition,
+          causedBySelectionEvent: aNotification.causedBySelectionEvent,
+          occurredDuringComposition: aNotification.occurredDuringComposition,
+        });
+      break;
+    }
+    return true;
+  }
+
+  const input = document.querySelector("input");
+  input.focus();
+  input.getBoundingClientRect();
+  input.addEventListener("compositionstart", () => {
+    input.style.display = "none";
+  });
+  input.addEventListener("input", () => {
+    input.style.display = "inline";
+    input.getBoundingClientRect();
+  });
+  selectionChanges = [];
+  synthesizeCompositionChange({
+    composition: {
+      string: "a",
+      clauses: [
+        {length: 1, attr: COMPOSITION_ATTR_RAW_CLAUSE},
+      ],
+    },
+    caret: {start: 1, length: 0},
+  }, window, callback);
+  await new Promise(resolve => SimpleTest.executeSoon(resolve));
+  is(
+    stringifySelectionChangeNotifications(selectionChanges),
+    stringifySelectionChangeNotifications([
+      {
+        type: "notify-selection-change",
+        hasRange: true,
+        offset: 1,
+        length: 0,
+        // The selection changes during recreating TextEditor should be treated
+        // as caused by handling composition because the selection changes are
+        // required to preserve the selection in the previous editor instance.
+        causedByComposition: true,
+        causedBySelectionEvent: false,
+        occurredDuringComposition: true,
+      }
+    ], "causedByComposition should be true while the TextEditor having composition is being recreated")
+  );
+  is(
+    input.value,
+    "a",
+    "The composition string should not be lost"
+  );
+  SimpleTest.finish();
+});
+</script>
+</head>
+<body>
+<input>
+</body>
+</html>

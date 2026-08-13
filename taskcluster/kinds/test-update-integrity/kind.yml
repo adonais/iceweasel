@@ -27,6 +27,12 @@ only-for-build-platforms:
     - win32-shippable/opt
     - win64-shippable/opt
     - win64-aarch64-shippable/opt
+    - linux64-devedition/opt
+    - linux64-aarch64-devedition/opt
+    - macosx64-devedition/opt
+    - win32-devedition/opt
+    - win64-devedition/opt
+    - win64-aarch64-devedition/opt
 
 tasks:
     test-update-integrity:
@@ -66,10 +72,16 @@ tasks:
                 try: ftp.stage.mozaws.net/pub
                 default: archive.mozilla.org/pub
 
+        # The product to give to Marannon; note that this is explicitly different
+        # than the `shipping-product` attribute that is already set on these tasks.
+        # It must be the product used in filenames, installed directory names, etc.
+        # For both Firefox and DevEdition, "firefox" is the correct string.
+        product: firefox
+
         treeherder:
             symbol: UpInt({locale})
             kind: other
-            tier: 3
+            tier: 2
         worker:
             artifacts:
                 - name: public/build

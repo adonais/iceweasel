@@ -60,6 +60,9 @@ add_task(
     );
 
     await navigate("Navigate to a French page.", { url: FRENCH_PAGE_URL });
+    await waitForDocumentLanguageMetadata(gBrowser.selectedBrowser, {
+      htmlLangAttribute: "fr",
+    });
     await TestTranslationsTelemetry.assertEvent(
       Glean.translationsSelectTranslationsPanel.close,
       {

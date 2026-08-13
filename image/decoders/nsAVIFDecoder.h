@@ -6,15 +6,15 @@
 #ifndef mozilla_image_decoders_nsAVIFDecoder_h
 #define mozilla_image_decoders_nsAVIFDecoder_h
 
+#include <aom/aom_decoder.h>
+
 #include "Decoder.h"
-#include "mozilla/gfx/Types.h"
 #include "MP4Metadata.h"
-#include "mp4parse.h"
 #include "SampleIterator.h"
 #include "SurfacePipe.h"
-
-#include <aom/aom_decoder.h>
 #include "dav1d/dav1d.h"
+#include "mozilla/gfx/Types.h"
+#include "mp4parse.h"
 
 namespace mozilla {
 namespace image {

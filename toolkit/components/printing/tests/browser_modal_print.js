@@ -133,7 +133,7 @@ add_task(async function testTabOrder() {
       // Shift + Tab to the toolbar and continue Shift + Tabbing until you reach the toolbox
       info("Shift + Tab to sidebar");
       EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => document.activeElement.tagName.includes("sidebar-main"),
         `Sidebar has focus`
       );
@@ -154,7 +154,7 @@ add_task(async function testTabOrder() {
       // Tab to the toolbar and continue Tabbing until you reach the print preview
       info("Tab to sidebar");
       EventUtils.synthesizeKey("KEY_Tab");
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => document.activeElement.tagName.includes("sidebar-main"),
         `Sidebar has focus`
       );

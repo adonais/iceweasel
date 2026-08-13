@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "jit/BaselineCompileTask.h"
+
 #include "jit/JitRuntime.h"
 #include "jit/JitScript.h"
 #include "vm/HelperThreadState.h"

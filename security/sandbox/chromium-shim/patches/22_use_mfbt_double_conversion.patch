@@ -2,12 +2,12 @@ diff --git a/base/strings/string_number_conversions_internal.h b/base/strings/st
 index 8b71b0ae11363..3b5eda1fe3eb6 100644
 --- a/base/strings/string_number_conversions_internal.h
 +++ b/base/strings/string_number_conversions_internal.h
-@@ -21,7 +21,7 @@
+@@ -18,7 +18,7 @@
  #include "base/logging.h"
  #include "base/numerics/safe_math.h"
  #include "base/strings/string_util.h"
 -#include "base/third_party/double_conversion/double-conversion/double-conversion.h"
 +#include "double-conversion/double-conversion.h"
- #include "third_party/abseil-cpp/absl/types/optional.h"
  
- namespace base {
+ namespace base::internal {
+ 

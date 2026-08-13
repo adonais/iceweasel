@@ -5,12 +5,14 @@
 #include "nsImportModule.h"
 
 #include "mozilla/dom/ScriptSettings.h"
+
 #include "mozJSModuleLoader.h"
 #include "nsContentUtils.h"
 #include "nsExceptionHandler.h"
 #include "nsPrintfCString.h"
-#include "xpcpublic.h"
 #include "xpcprivate.h"
+#include "xpcpublic.h"
+
 #include "js/PropertyAndElement.h"  // JS_GetProperty
 
 using mozilla::dom::AutoJSAPI;

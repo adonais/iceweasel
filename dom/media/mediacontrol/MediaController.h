@@ -21,6 +21,7 @@
 namespace mozilla::dom {
 
 class BrowsingContext;
+enum class AudioFocusInterruptAction : uint8_t;
 
 /**
  * IMediaController is an interface which includes control related methods and
@@ -118,10 +119,21 @@ class MediaController final : public DOMEventTargetHelper,
   void Mute() override;
   void Unmute() override;
 
+  // Chrome-only audio-focus-aware pause/resume (see MediaController.webidl).
+  // These are distinct from Play()/Pause(): PauseWithReason with a "user"
+  // reason is the ordinary user transport, but a "system-*" reason pauses for
+  // an audio-focus loss and suspends even sources the user cannot control.
+  // Resume() is the counterpart to that system pause: it revives only what a
+  // transient interrupt suspended, and is not Play(), which is the user
+  // starting playback.
+  void PauseWithReason(AudioFocusLossReason aReason);
+  void Resume();
+
   uint64_t Id() const override;
   bool IsAudible() const override;
   bool IsPlaying() const override;
   bool IsActive() const override;
+  bool IsMuted() const;
 
   // IMediaInfoUpdater's methods
   void NotifyMediaPlaybackChanged(uint64_t aBrowsingContextId,
@@ -130,6 +142,7 @@ class MediaController final : public DOMEventTargetHelper,
       uint64_t aBrowsingContextId, MediaAudibleState aState,
       ControlType aType = ControlType::eControllable,
       AudioSessionType aSessionType = AudioSessionType::Playback) override;
+  void NotifyBrowsingContextDiscarded(uint64_t aBrowsingContextId) override;
   void SetIsInPictureInPictureMode(uint64_t aBrowsingContextId,
                                    bool aIsInPictureInPictureMode) override;
   void NotifyMediaFullScreenState(uint64_t aBrowsingContextId,
@@ -170,6 +183,11 @@ class MediaController final : public DOMEventTargetHelper,
   // Forget any per-AudioSession state stored for the given browsing context.
   void ClearAudioSessionFor(uint64_t aBrowsingContextId);
 
+  // Interrupt or restore the tab's selected audio session on an audio-focus
+  // change. aKind distinguishes a non-resumable loss from a transient one.
+  void InterruptAudioSession(AudioSessionInterruptKind aKind);
+  void RestoreAudioSession();
+
   // The audio-session type the tab is currently exposing to chrome
   // consumers. Returns Auto when the tab is producing no audio.
   AudioSessionType GetEffectiveAudioSessionType() const;
@@ -190,6 +208,11 @@ class MediaController final : public DOMEventTargetHelper,
   void HandleActualPlaybackStateChanged();
   void UpdateMediaControlActionToContentMediaIfNeeded(
       const MediaControlAction& aAction);
+  // Dispatch an audio-focus interrupt (suspend or resume) to every browsing
+  // context in the tab so uncontrollable receivers can react even on an
+  // inactive controller.
+  void UpdateMediaSessionInterruptToContentMediaIfNeeded(
+      AudioFocusInterruptAction aAction);
   void HandleSupportedMediaSessionActionsChanged(
       const nsTArray<MediaSessionAction>& aSupportedAction);
 
@@ -221,6 +244,7 @@ class MediaController final : public DOMEventTargetHelper,
 
   bool mIsActive = false;
   bool mShutdown = false;
+  bool mIsMuted = false;
   bool mIsInPictureInPictureMode = false;
   bool mIsInFullScreenMode = false;
 

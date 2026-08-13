@@ -1,0 +1,18 @@
+{
+  "label": "the-image-editor.com",
+  "bugs": {
+    "2058162": {
+      "issue": "broken-layout",
+      "matches": ["*://www.the-image-editor.com/image/*"]
+    }
+  },
+  "css": {
+    "allow_body_scrollbar": "body { overflow-y: auto !important; }"
+  },
+  "interventions": [
+    {
+      "platforms": ["desktop"],
+      "css": ["allow_body_scrollbar"]
+    }
+  ]
+}

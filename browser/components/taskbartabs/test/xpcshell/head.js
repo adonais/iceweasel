@@ -4,11 +4,17 @@
 
 "use strict";
 
+const head = {};
+ChromeUtils.defineESModuleGetters(head, {
+  TaskbarTabsRegistry:
+    "resource:///modules/taskbartabs/TaskbarTabsRegistry.sys.mjs",
+});
+
 /**
  * Creates a new Taskbar Tab within the registry, and asserts that it does not
  * already exist.
  *
- * (This function is also in xpcshell/head.js.)
+ * (This function is also in browser/head.js.)
  *
  * @param {TaskbarTabsRegistry|TaskbarTabs} aRegistry
  *   The registry to create the taskbar tab in.
@@ -29,4 +35,21 @@ function createTaskbarTab(aRegistry, ...args) {
   }
 
   return check(result);
+}
+
+/**
+ * Creates a TaskbarTabsRegistry that doesn't save anything on disk.
+ *
+ * (This function is also in browser/head.js.)
+ *
+ * @returns {TaskbarTabsRegistry}
+ *   The newly-created registry, which will be empty.
+ */
+function createInMemoryRegistry() {
+  return new head.TaskbarTabsRegistry(
+    {
+      save: () => {},
+    },
+    []
+  );
 }

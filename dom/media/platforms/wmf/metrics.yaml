@@ -22,6 +22,7 @@ mfcdm:
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1873394
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2026435
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2047749
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1873394#c7
     data_sensitivity:
@@ -47,8 +48,13 @@ mfcdm:
       dropped_frames:
         description: The amount of video frames don't get rendered but dropped
         type: quantity
-    expires: 158
-    telemetry_mirror: Mfcdm_EmePlayback_Gecko
+      ended_in_error:
+        description: Whether the playback session ended because of a decode error
+        type: boolean
+      last_platform_error:
+        description: The last platform specific error code seen during the session, eg. HResult on Windows
+        type: quantity
+    expires: 165
   error:
     type: event
     description:
@@ -61,6 +67,7 @@ mfcdm:
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1873394
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2026435
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2047749
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1873394#c7
     data_sensitivity:
@@ -89,8 +96,102 @@ mfcdm:
       platform_error:
         description: The platform specific error code, eg. HResult on Windows
         type: quantity
-    expires: 158
-    telemetry_mirror: Mfcdm_Error_Gecko
+      adapter_vendor_id:
+        description: The primary GPU adapter vendor id, eg. 0x10de
+        type: string
+      adapter_device_id:
+        description: The primary GPU adapter device id
+        type: string
+      adapter_driver_version:
+        description: The primary GPU adapter driver version
+        type: string
+    expires: 165
+  recovery:
+    type: event
+    description:
+      Record an attempt to recover the media engine after a hardware context
+      reset, and whether the engine became ready again afterwards.
+    metadata:
+      tags:
+        - 'Core :: Audio/Video: Playback'
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2047749
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2047749
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - media-alerts@mozilla.com
+    extra_keys:
+      recovered:
+        description: Whether the engine became ready again after the recovery attempt
+        type: boolean
+      attempts:
+        description: The number of recovery attempts made in this recovery sequence
+        type: quantity
+      platform_error:
+        description: The platform specific error code that triggered the reset, eg. HResult on Windows
+        type: quantity
+      key_system:
+        description: The key system being used when the recovery happened
+        type: string
+      current_state:
+        description: The state of the external state machine when the recovery happened
+        type: string
+    expires: 165
+  protected_readiness:
+    type: event
+    description:
+      Recorded for a protected (hardware DRM) playback activation at three
+      phases (the `phase` key); GateHeld when the gate engages and holds
+      activation, Succeeded when a frame is produced, and Failed when an
+      activation error occurs. Each event captures which readiness conditions
+      had settled, how long the gate held, and the bounded-recovery count, so the
+      recovery rate, the gate's added latency, and gate hangs (a GateHeld with
+      no later Succeeded/Failed for the session) are all observable.
+    metadata:
+      tags:
+        - 'Core :: Audio/Video: Playback'
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2048342
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2048342
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - media-alerts@mozilla.com
+    extra_keys:
+      readiness:
+        description: Per-condition readiness summary (Ready/Pending/Failed) at the outcome. Decryptor is reported but is not part of the activation gate.
+        type: string
+      platform_error:
+        description: The protected-activation error HResult, or 0 on success
+        type: quantity
+      phase:
+        description: When this event was recorded - GateHeld (the gate is holding activation until readiness settles), Succeeded (a protected frame was produced), or Failed (a protected-activation error occurred)
+        type: string
+      reaction:
+        description: On a Failed phase with the gate enabled, the bounded-recovery decision - Recover (a recovery was attempted) or Terminal (surfaced to EME, budget spent). Absent on the GateHeld and Succeeded phases, and when the gate is disabled.
+        type: string
+      recovery_count:
+        description: The number of bounded protected-activation recoveries consumed this session at the time of this event
+        type: quantity
+      gate_wait_ms:
+        description: Milliseconds the activation was held by the gate before this outcome (0 if it was not held)
+        type: quantity
+      key_system:
+        description: The key system used for the protected playback
+        type: string
+      adapter_vendor_id:
+        description: The primary GPU adapter vendor id, eg. 0x10de
+        type: string
+      adapter_device_id:
+        description: The primary GPU adapter device id
+        type: string
+      adapter_driver_version:
+        description: The primary GPU adapter driver version
+        type: string
+    expires: 165
 
 media:
   wmf_codec_no_extension:

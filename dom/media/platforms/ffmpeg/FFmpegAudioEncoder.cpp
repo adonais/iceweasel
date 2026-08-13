@@ -69,7 +69,21 @@ MediaResult FFmpegAudioEncoder<LIBAV_VER>::InitEncoder() {
   // Find a compatible input rate for the codec, update the encoder config, and
   // note the rate at which this instance was configured.
   mInputSampleRate = AssertedCast<int>(mConfig.mSampleRate);
-  if (codec->supported_samplerates) {
+  const int* supportedSampleRatesList = nullptr;
+#if LIBAVCODEC_VERSION_MAJOR >= 63
+  // FFmpeg 63 replaced AVCodec::supported_samplerates with this query API.
+  if (mLib->avcodec_get_supported_config) {
+    const void* configs = nullptr;
+    if (mLib->avcodec_get_supported_config(mCodecContext, codec,
+                                           AV_CODEC_CONFIG_SAMPLE_RATE, 0,
+                                           &configs, nullptr) >= 0) {
+      supportedSampleRatesList = static_cast<const int*>(configs);
+    }
+  }
+#else
+  supportedSampleRatesList = codec->supported_samplerates;
+#endif
+  if (supportedSampleRatesList) {
     // Ensure the sample-rate list is sorted, iterate and either find that the
     // sample rate is supported, or pick the same rate just above the audio
     // input sample-rate (as to not lose information). If the audio is higher
@@ -77,7 +91,7 @@ MediaResult FFmpegAudioEncoder<LIBAV_VER>::InitEncoder() {
     // sample-rate supported by the codec. This is the case when encoding high
     // samplerate audio to opus.
     AutoTArray<int, 16> supportedSampleRates;
-    IterateZeroTerminated(codec->supported_samplerates,
+    IterateZeroTerminated(supportedSampleRatesList,
                           [&supportedSampleRates](int aRate) mutable {
                             supportedSampleRates.AppendElement(aRate);
                           });
@@ -357,28 +371,59 @@ Result<MediaDataEncoder::EncodedData, MediaResult> FFmpegAudioEncoder<
   Span<float> audio = sample->Data();
 
   if (mResampler) {
-    // Ensure that all input frames are consumed each time by oversizing the
-    // output buffer.
-    int bufferLengthGuess = std::ceil(2. * AssertedCast<float>(audio.size()) *
-                                      mConfig.mSampleRate / mInputSampleRate);
-    mTempBuffer.SetLength(bufferLengthGuess);
-    uint32_t inputFrames = audio.size() / mConfig.mNumberOfChannels;
-    uint32_t inputFramesProcessed = inputFrames;
-    uint32_t outputFrames = bufferLengthGuess / mConfig.mNumberOfChannels;
+    const uint32_t channels = mConfig.mNumberOfChannels;
+    // speex takes the input frame count as a uint32, so validate the
+    // size_t -> uint32 narrowing rather than truncating a large span silently.
+    CheckedUint32 inputFrames(audio.size());
+    inputFrames /= channels;
+    if (!inputFrames.isValid()) {
+      return Err(MediaResult(NS_ERROR_DOM_MEDIA_OVERFLOW_ERR,
+                             "Audio resampler input too large"_ns));
+    }
+    // Oversize the output by floor + 1 per channel: +1 keeps capacity >= 1
+    // (speex consumes nothing at 0 capacity) and rounds up, so the single speex
+    // call below consumes every input frame. Compute in 64-bit so the
+    // inputFrames * codecRate product does not wrap before the division brings
+    // it back into range; CheckedUint32 then rejects a result too large to
+    // hold.
+    uint64_t scaledOutputFrames = static_cast<uint64_t>(inputFrames.value()) *
+                                      mConfig.mSampleRate /
+                                      AssertedCast<uint32_t>(mInputSampleRate) +
+                                  1u;
+    CheckedUint32 outputFrames(scaledOutputFrames);
+    CheckedUint32 outputSamples = outputFrames * channels;
+    if (!outputSamples.isValid()) {
+      return Err(MediaResult(NS_ERROR_DOM_MEDIA_OVERFLOW_ERR,
+                             "Invalid audio resampler output size"_ns));
+    }
+    if (!mTempBuffer.SetLength(outputSamples.value(), fallible)) {
+      return Err(
+          MediaResult(NS_ERROR_OUT_OF_MEMORY,
+                      "Audio resampler output buffer allocation failed"_ns));
+    }
+    uint32_t inputFramesProcessed = inputFrames.value();
+    uint32_t outputFramesWritten = outputFrames.value();
     DebugOnly<int> rv = speex_resampler_process_interleaved_float(
         mResampler.get(), audio.data(), &inputFramesProcessed,
-        mTempBuffer.Elements(), &outputFrames);
-    audio = Span<float>(mTempBuffer.Elements(),
-                        outputFrames * mConfig.mNumberOfChannels);
-    MOZ_ASSERT(inputFrames == inputFramesProcessed,
-               "increate the buffer to consume all input each time");
+        mTempBuffer.Elements(), &outputFramesWritten);
+    FFMPEG_LOGV(
+        "Resampled %u -> %u frames (%dHz -> %uHz, %u ch), %u-sample buffer",
+        inputFramesProcessed, outputFramesWritten, mInputSampleRate,
+        mConfig.mSampleRate, channels, outputSamples.value());
+    audio = Span<float>(mTempBuffer.Elements(), outputFramesWritten * channels);
+    MOZ_ASSERT(inputFrames.value() == inputFramesProcessed,
+               "the output buffer must be large enough to consume all input");
     MOZ_ASSERT(rv == RESAMPLER_ERR_SUCCESS);
   }
 
   EncodedData output;
   MediaResult rv = NS_OK;
 
-  mPacketizer->Input(audio.data(), audio.Length() / mConfig.mNumberOfChannels);
+  nsresult inputRv = mPacketizer->Input(
+      audio.data(), audio.Length() / mConfig.mNumberOfChannels);
+  if (NS_FAILED(inputRv)) {
+    return Err(MediaResult(inputRv, "Failed to feed the audio packetizer"_ns));
+  }
 
   // Dequeue and encode each packet
   while (mPacketizer->PacketsAvailable() && rv.Code() == NS_OK) {
@@ -389,11 +434,13 @@ Result<MediaDataEncoder::EncodedData, MediaResult> FFmpegAudioEncoder<
     FFMPEG_LOG("Encoding {} frames, pts: {}", mPacketizer->PacketSize(),
                pts.ToString().get());
     auto encodeResult = EncodeOnePacket(audio, pts);
-    if (encodeResult.isOk()) {
-      output.AppendElements(std::move(encodeResult.unwrap()));
-    } else {
+    if (encodeResult.isErr()) {
+      // Drop the packetizer so a reused encoder doesn't carry stale buffered
+      // samples; reset() (unlike Clear()) also re-seeds the timestamp baseline.
+      mPacketizer.reset();
       return encodeResult;
     }
+    output.AppendElements(std::move(encodeResult.unwrap()));
     pts += media::TimeUnit(mPacketizer->PacketSize(), mConfig.mSampleRate);
   }
   return std::move(output);
@@ -417,12 +464,13 @@ FFmpegAudioEncoder<LIBAV_VER>::DrainWithModernAPIs() {
   auto audio =
       Span(mTempBuffer.Elements(), written * mPacketizer->ChannelCount());
   auto encodeResult = EncodeOnePacket(audio, pts);
-  if (encodeResult.isOk()) {
-    auto array = encodeResult.unwrap();
-    output.AppendElements(std::move(array));
-  } else {
+  if (encodeResult.isErr()) {
+    // Drop the packetizer so a subsequent reuse re-seeds a clean state.
+    mPacketizer.reset();
     return encodeResult;
   }
+  auto array = encodeResult.unwrap();
+  output.AppendElements(std::move(array));
   // Now, drain the encoder
   auto drainResult = FFmpegDataEncoder<LIBAV_VER>::DrainWithModernAPIs();
   if (drainResult.isOk()) {

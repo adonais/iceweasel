@@ -2,22 +2,17 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
     <path
         android:fillColor="@color/mozac_ui_icons_fill"
-        android:pathData="M6 11h2.25v2.25H6V11z"
-        tools:ignore="VectorRaster" />
+        android:pathData="M7.25,10.5C7.94,10.5 8.5,11.059 8.5,11.75C8.5,12.44 7.94,13 7.25,13C6.56,13 6,12.44 6,11.75C6,11.059 6.56,10.5 7.25,10.5Z" />
     <path
         android:fillColor="@color/mozac_ui_icons_fill"
-        android:fillType="evenOdd"
-        android:pathData="M22 20.752L3.238 1.99 2 3.228 4.773 6H4.5A2.502 2.502 0 0 0 2 8.5v7C2 16.879 3.121 18 4.5 18h12.273l3.99 3.99L22 20.752zm-6.977-4.502l-8.5-8.5H4.5A0.752 0.752 0 0 0 3.75 8.5v7c0 0.413 0.337 0.75 0.75 0.75h10.523z"
-        tools:ignore="VectorRaster" />
+        android:pathData="M3.256,2.255C3.598,1.914 4.152,1.914 4.494,2.255L8.352,6.113H8.354L10.024,7.783H10.021L22.744,20.506C23.086,20.847 23.086,21.402 22.744,21.744C22.402,22.086 21.848,22.086 21.506,21.744L17.495,17.733C15.666,17.91 13.82,18 12.001,18C9.583,18 7.139,17.843 4.739,17.534C3.178,17.332 2.001,15.995 2.001,14.426V9.566C2.001,7.998 3.165,6.663 4.709,6.464C5.161,6.405 5.614,6.354 6.068,6.306L3.256,3.494C2.914,3.152 2.914,2.597 3.256,2.255ZM7.68,7.918C6.76,7.989 5.843,8.083 4.933,8.201C4.259,8.288 3.75,8.875 3.75,9.566V14.426C3.75,15.118 4.271,15.708 4.962,15.797C8.561,16.26 12.227,16.35 15.854,16.091L7.68,7.918Z" />
     <path
         android:fillColor="@color/mozac_ui_icons_fill"
-        android:pathData="M11.109 7.75H19.5c0.413 0 0.75 0.337 0.75 0.75v7a0.744 0.744 0 0 1-0.659 0.732l1.325 1.325A2.497 2.497 0 0 0 22 15.5v-7C22 7.121 20.879 6 19.5 6H9.359l1.75 1.75z"
-        tools:ignore="VectorRaster" />
+        android:pathData="M10.384,6.024C13.351,5.94 16.329,6.085 19.261,6.462C20.822,6.664 21.999,7.999 21.999,9.568V14.429C21.999,15.307 21.625,16.104 21.032,16.677L19.791,15.435C20.067,15.181 20.25,14.83 20.25,14.429V9.568C20.25,8.876 19.729,8.287 19.038,8.198C16.748,7.902 14.417,7.753 12.108,7.748L12.107,7.749L10.384,6.024Z" />
 </vector>

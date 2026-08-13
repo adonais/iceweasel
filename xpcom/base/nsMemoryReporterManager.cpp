@@ -4,39 +4,39 @@
 
 #include "nsMemoryReporterManager.h"
 
+#include "GeckoProfilerReporter.h"
 #include "nsAtomTable.h"
-#include "nsCOMPtr.h"
 #include "nsCOMArray.h"
+#include "nsCOMPtr.h"
+#include "nsIGlobalObject.h"
+#include "nsIOService.h"
+#include "nsIObserverService.h"
+#include "nsITimer.h"
+#include "nsIXPConnect.h"
+#include "nsPIDOMWindow.h"
 #include "nsPrintfCString.h"
 #include "nsProxyRelease.h"
 #include "nsServiceManagerUtils.h"
-#include "nsITimer.h"
 #include "nsThreadManager.h"
 #include "nsThreadUtils.h"
-#include "nsPIDOMWindow.h"
-#include "nsIObserverService.h"
-#include "nsIOService.h"
-#include "nsIGlobalObject.h"
-#include "nsIXPConnect.h"
-#include "GeckoProfilerReporter.h"
 #if defined(XP_UNIX) || defined(MOZ_DMD)
 #  include "nsMemoryInfoDumper.h"
 #endif
-#include "nsNetCID.h"
-#include "nsThread.h"
 #include "VRProcessManager.h"
 #include "mozilla/MemoryReportingProcess.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/StaticPrefs_memory.h"
 #include "mozilla/RDDProcessManager.h"
 #include "mozilla/Services.h"
-#include "mozilla/glean/XpcomMetrics.h"
+#include "mozilla/StaticPrefs_memory.h"
 #include "mozilla/UniquePtrExtensions.h"
-#include "mozilla/dom/MemoryReportTypes.h"
 #include "mozilla/dom/ContentParent.h"
+#include "mozilla/dom/MemoryReportTypes.h"
 #include "mozilla/gfx/GPUProcessManager.h"
-#include "mozilla/ipc/UtilityProcessManager.h"
+#include "mozilla/glean/XpcomMetrics.h"
 #include "mozilla/ipc/FileDescriptorUtils.h"
+#include "mozilla/ipc/UtilityProcessManager.h"
+#include "nsNetCID.h"
+#include "nsThread.h"
 #ifdef MOZ_PHC
 #  include "PHC.h"
 #endif
@@ -47,9 +47,9 @@
 #endif
 
 #ifdef XP_WIN
-#  include "mozilla/MemoryInfo.h"
-
 #  include <process.h>
+
+#  include "mozilla/MemoryInfo.h"
 #  ifndef getpid
 #    define getpid _getpid
 #  endif
@@ -63,11 +63,11 @@ using namespace dom;
 
 #if defined(XP_LINUX)
 
-#  include "mozilla/MemoryMapping.h"
-
 #  include <malloc.h>
-#  include <string.h>
 #  include <stdlib.h>
+#  include <string.h>
+
+#  include "mozilla/MemoryMapping.h"
 
 [[nodiscard]] static nsresult GetProcSelfStatmField(int aField, int64_t* aN) {
   // There are more than two fields, but we're only interested in the first
@@ -232,6 +232,7 @@ using namespace dom;
 
 #  ifdef __FreeBSD__
 #    include <libutil.h>
+
 #    include <algorithm>
 
 [[nodiscard]] static nsresult GetKinfoVmentrySelf(int64_t* aPrss,
@@ -286,8 +287,8 @@ using namespace dom;
 
 #elif defined(SOLARIS)
 
-#  include <procfs.h>
 #  include <fcntl.h>
+#  include <procfs.h>
 #  include <unistd.h>
 
 static void XMappingIter(int64_t& aVsize, int64_t& aResident,
@@ -574,8 +575,9 @@ static bool InSharedRegion(mach_vm_address_t aAddr, cpu_type_t aType) {
 
 #elif defined(XP_WIN)
 
-#  include <windows.h>
 #  include <psapi.h>
+#  include <windows.h>
+
 #  include <algorithm>
 
 #  include "nsTHashMap.h"

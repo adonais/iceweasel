@@ -16,6 +16,7 @@ TESTING_JS_MODULES += [
     "sinon-7.2.7.js",
     "Sinon.sys.mjs",
     "StructuredLog.sys.mjs",
+    "TestProfilerArtifact.sys.mjs",
     "TestUtils.sys.mjs",
     "XPCShellContentUtils.sys.mjs",
 ]

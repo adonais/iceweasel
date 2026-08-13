@@ -22,6 +22,7 @@
 #include "jit/CalleeToken.h"
 #include "jit/Ion.h"
 #include "jit/IonOptimizationLevels.h"
+#include "jit/JitcodeMap.h"
 #include "jit/JitCommon.h"
 #include "jit/JitRuntime.h"
 #include "jit/JitSpewer.h"
@@ -222,7 +223,7 @@ bool BaselineCompileTask::OffThreadBaselineCompilationAvailable(
   if (script->isDebuggee()) {
     return false;
   }
-  if (JS::Prefs::experimental_self_hosted_cache() && script->selfHosted()) {
+  if (IsRealmIndependentBaselineCode(script)) {
     return false;
   }
   return CanUseExtraThreads();
@@ -442,7 +443,7 @@ MethodStatus jit::BaselineCompile(JSContext* cx, JSScript* script,
   TempAllocator temp(&cx->tempLifoAlloc());
 
   mozilla::Maybe<JSAutoNullableRealm> ar;
-  if (JS::Prefs::experimental_self_hosted_cache() && script->selfHosted()) {
+  if (IsRealmIndependentBaselineCode(script)) {
     // realm-independent scripts should not have a realm set
     ar.emplace(cx, nullptr);
   }
@@ -881,6 +882,9 @@ void BaselineScript::trace(JSTracer* trc) {
 void BaselineScript::Destroy(JS::GCContext* gcx, BaselineScript* script) {
   MOZ_ASSERT(!script->hasPendingIonCompileTask());
 
+  // Trigger write barrier since we are destroying this outside GC.
+  script->method_ = nullptr;
+
   // This allocation is tracked by JSScript::setBaselineScriptImpl.
   gcx->deleteUntracked(script);
 }
@@ -1290,6 +1294,28 @@ void jit::AddSizeOfBaselineData(JSScript* script,
   }
 }
 
+// Baseline scripts compiled while the profiler was disabled don't have a
+// JitcodeGlobalTable entry. Register one so the profiler can resolve frames
+// for baseline code that is still on the stack. This is best-effort: on
+// failure the sampler simply won't resolve frames for this code.
+static void EnsureBaselineJitcodeGlobalEntry(JSContext* cx, JSScript* script) {
+  JitRuntime* jrt = cx->runtime()->jitRuntime();
+  if (!jrt->hasJitcodeGlobalTable()) {
+    return;
+  }
+  JitcodeGlobalTable* table = jrt->getJitcodeGlobalTable();
+
+  JitCode* code = script->baselineScript()->method();
+  JitcodeGlobalEntry* existing = table->lookup(code->raw());
+  if (existing && existing->jitcode() == code) {
+    return;
+  }
+
+  if (!AddBaselineJitcodeGlobalEntry(cx, script, code)) {
+    cx->recoverFromOutOfMemory();
+  }
+}
+
 void jit::ToggleBaselineProfiling(JSContext* cx, bool enable) {
   JitRuntime* jrt = cx->runtime()->jitRuntime();
   if (!jrt) {
@@ -1309,6 +1335,9 @@ void jit::ToggleBaselineProfiling(JSContext* cx, bool enable) {
         jitScript->ensureProfilerScriptSource(cx, script);
       }
       if (script->hasBaselineScript()) {
+        if (enable) {
+          EnsureBaselineJitcodeGlobalEntry(cx, script);
+        }
         BaselineScript* baselineScript = script->baselineScript();
         if (baselineScript->isProfilerInstrumentationOn() != enable) {
           AutoWritableJitCode awjc(baselineScript->method());

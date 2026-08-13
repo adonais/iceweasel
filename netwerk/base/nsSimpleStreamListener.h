@@ -5,9 +5,9 @@
 #ifndef nsSimpleStreamListener_h_
 #define nsSimpleStreamListener_h_
 
-#include "nsISimpleStreamListener.h"
-#include "nsIOutputStream.h"
 #include "nsCOMPtr.h"
+#include "nsIOutputStream.h"
+#include "nsISimpleStreamListener.h"
 
 namespace mozilla {
 namespace net {

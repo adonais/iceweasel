@@ -2,17 +2,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "CTPolicyEnforcer.h"
-
-#include <algorithm>
 #include <stdint.h>
 
+#include <algorithm>
+
 #include "CTLogVerifier.h"
+#include "CTPolicyEnforcer.h"
 #include "CTVerifyResult.h"
 #include "SignedCertificateTimestamp.h"
-#include "mozpkix/Time.h"
 #include "gtest/gtest.h"
 #include "hasht.h"
+#include "mozpkix/Time.h"
 #include "prtime.h"
 
 namespace mozilla {

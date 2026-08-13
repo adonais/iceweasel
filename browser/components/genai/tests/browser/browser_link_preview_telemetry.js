@@ -79,9 +79,6 @@ add_task(async function test_link_preview_ai_consent_continue_ui_interaction() {
     ],
   });
 
-  let events = Glean.genaiLinkpreview.cardAiConsent.testGetValue();
-  Assert.equal(events.length, 1, "One deny opt-in event recorded");
-
   const generateStub = sinon.stub(LinkPreviewModel, "generateTextAI");
 
   const READABLE_PAGE_URL =
@@ -93,6 +90,21 @@ add_task(async function test_link_preview_ai_consent_continue_ui_interaction() {
   const panel = await waitForPanelOpen();
   const card = panel.querySelector("link-preview-card");
   ok(card, "card created for link preview");
+
+  if (!LinkPreview.canRunOnDevice) {
+    await card.updateComplete;
+    ok(
+      !card.shadowRoot.querySelector("model-optin"),
+      "no opt-in prompt rendered without a backend"
+    );
+    panel.remove();
+    generateStub.restore();
+    LinkPreview.keyboardComboActive = false;
+    return;
+  }
+
+  let events = Glean.genaiLinkpreview.cardAiConsent.testGetValue();
+  Assert.equal(events.length, 1, "One deny opt-in event recorded");
 
   const modelOptinElement = await TestUtils.waitForCondition(() => {
     if (card.shadowRoot) {
@@ -146,9 +158,6 @@ add_task(async function test_link_preview_ai_consent_cancel_ui_interaction() {
     ],
   });
 
-  let events = Glean.genaiLinkpreview.cardAiConsent.testGetValue();
-  Assert.equal(events.length, 1, "One deny opt-in event recorded");
-
   const generateStub = sinon.stub(LinkPreviewModel, "generateTextAI");
 
   const READABLE_PAGE_URL =
@@ -160,6 +169,21 @@ add_task(async function test_link_preview_ai_consent_cancel_ui_interaction() {
   const panel = await waitForPanelOpen();
   const card = panel.querySelector("link-preview-card");
   ok(card, "card created for link preview");
+
+  if (!LinkPreview.canRunOnDevice) {
+    await card.updateComplete;
+    ok(
+      !card.shadowRoot.querySelector("model-optin"),
+      "no opt-in prompt rendered without a backend"
+    );
+    panel.remove();
+    generateStub.restore();
+    LinkPreview.keyboardComboActive = false;
+    return;
+  }
+
+  let events = Glean.genaiLinkpreview.cardAiConsent.testGetValue();
+  Assert.equal(events.length, 1, "One deny opt-in event recorded");
 
   const modelOptinElement = await TestUtils.waitForCondition(() => {
     if (card.shadowRoot) {
@@ -215,9 +239,6 @@ add_task(async function test_toggle_expand_collapse_telemetry() {
     ],
   });
 
-  let events = Glean.genaiLinkpreview.keyPointsToggle.testGetValue();
-  Assert.equal(events.length, 1, "One keyPointsToggle event recorded");
-
   const generateStub = sinon.stub(LinkPreviewModel, "generateTextAI");
 
   const READABLE_PAGE_URL =
@@ -229,6 +250,21 @@ add_task(async function test_toggle_expand_collapse_telemetry() {
   const panel = await waitForPanelOpen();
   const card = panel.querySelector("link-preview-card");
   ok(card, "Card created for link preview");
+
+  if (!LinkPreview.canRunOnDevice) {
+    await card.updateComplete;
+    ok(
+      !card.shadowRoot.querySelector(".keypoints-header"),
+      "no key points header to toggle without a backend"
+    );
+    panel.remove();
+    generateStub.restore();
+    LinkPreview.keyboardComboActive = false;
+    return;
+  }
+
+  let events = Glean.genaiLinkpreview.keyPointsToggle.testGetValue();
+  Assert.equal(events.length, 1, "One keyPointsToggle event recorded");
 
   is(card.collapsed, false, "Card should start expanded");
 
@@ -289,9 +325,6 @@ add_task(
       ],
     });
 
-    let events = Glean.genaiLinkpreview.cardAiConsent.testGetValue();
-    Assert.equal(events.length, 1, "One deny opt-in event recorded");
-
     const generateStub = sinon.stub(LinkPreviewModel, "generateTextAI");
 
     const READABLE_PAGE_URL =
@@ -303,6 +336,21 @@ add_task(
     const panel = await waitForPanelOpen();
     const card = panel.querySelector("link-preview-card");
     ok(card, "card created for link preview");
+
+    if (!LinkPreview.canRunOnDevice) {
+      await card.updateComplete;
+      ok(
+        !card.shadowRoot.querySelector("model-optin"),
+        "no opt-in prompt rendered without a backend"
+      );
+      panel.remove();
+      generateStub.restore();
+      LinkPreview.keyboardComboActive = false;
+      return;
+    }
+
+    let events = Glean.genaiLinkpreview.cardAiConsent.testGetValue();
+    Assert.equal(events.length, 1, "One deny opt-in event recorded");
 
     const modelOptinElement = await TestUtils.waitForCondition(() => {
       if (card.shadowRoot) {

@@ -1,0 +1,143 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Video controls test - muted content attribute</title>
+    <script src="/tests/SimpleTest/SimpleTest.js"></script>
+    <script src="/tests/SimpleTest/EventUtils.js"></script>
+    <script type="text/javascript" src="head.js"></script>
+    <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+  </head>
+  <body>
+    <div id="content">
+      <video id="video" controls src="video.webm"></video>
+      <video id="latchedVideo" controls src="video.webm"></video>
+    </div>
+
+    <script class="testbody" type="application/javascript">
+      async function waitForMetadata(video) {
+        if (video.readyState >= video.HAVE_METADATA) {
+          return;
+        }
+        await new Promise(resolve =>
+          video.addEventListener("loadedmetadata", resolve, { once: true })
+        );
+      }
+
+      add_setup(async function () {
+        await SpecialPowers.pushPrefEnv({
+          set: [["dom.media.muted-state.enabled", true]],
+        });
+      });
+
+      add_task(async function muted_content_attribute_updates_mute_button() {
+        const video = document.getElementById("video");
+        await waitForMetadata(video);
+
+        const muteButton = getElementWithinVideo(video, "muteButton");
+
+        let volumeChangeCount = 0;
+        video.addEventListener("volumechange", () => volumeChangeCount++);
+
+        await checkMuted(video, muteButton, false, "initial state");
+
+        video.setAttribute("muted", "");
+        await checkMuted(
+          video,
+          muteButton,
+          true,
+          "after setAttribute('muted')"
+        );
+
+        video.removeAttribute("muted");
+        await checkMuted(
+          video,
+          muteButton,
+          false,
+          "after removeAttribute('muted')"
+        );
+
+        video.toggleAttribute("muted");
+        await checkMuted(
+          video,
+          muteButton,
+          true,
+          "after toggleAttribute('muted') on"
+        );
+
+        video.toggleAttribute("muted");
+        await checkMuted(
+          video,
+          muteButton,
+          false,
+          "after toggleAttribute('muted') off"
+        );
+
+        is(
+          volumeChangeCount,
+          0,
+          "muted content attribute changes must not fire volumechange"
+        );
+      });
+
+      // Once the muted IDL setter has latched the muted state out of its default, the
+      // muted content attribute no longer affects the element, so the mute button
+      // must not follow content-attribute changes.
+      add_task(async function muted_content_attribute_inert_after_setter() {
+        const video = document.getElementById("latchedVideo");
+        await waitForMetadata(video);
+
+        const muteButton = getElementWithinVideo(video, "muteButton");
+
+        video.muted = true;
+        await flushUAWidget();
+        ok(
+          muteButton.hasAttribute("muted"),
+          "mute button is muted after the muted setter"
+        );
+
+        video.removeAttribute("muted");
+        await flushUAWidget();
+        ok(
+          muteButton.hasAttribute("muted"),
+          "removeAttribute('muted') does not unmute the button after the setter"
+        );
+
+        video.muted = false;
+        await flushUAWidget();
+        ok(
+          !muteButton.hasAttribute("muted"),
+          "mute button is unmuted after the muted setter"
+        );
+
+        video.setAttribute("muted", "");
+        await flushUAWidget();
+        ok(
+          !muteButton.hasAttribute("muted"),
+          "setAttribute('muted') does not mute the button after the setter"
+        );
+      });
+
+      // Following are helper functions.
+
+      // NotifyUAWidgetSetupOrChange dispatches from a script runner, so yield to let
+      // the resulting onchange() repaint the mute button before asserting.
+      function flushUAWidget() {
+        return new Promise(resolve => SimpleTest.executeSoon(resolve));
+      }
+
+      // The mute button assertion is the regression guard for this bug; the
+      // muted/:muted checks are sanity baselines that hold regardless of the controls
+      // refresh.
+      async function checkMuted(video, muteButton, expected, desc) {
+        await flushUAWidget();
+        is(video.muted, expected, `${desc}: video.muted`);
+        is(video.matches(":muted"), expected, `${desc}: :muted pseudo-class`);
+        is(
+          muteButton.hasAttribute("muted"),
+          expected,
+          `${desc}: mute button muted attribute`
+        );
+      }
+    </script>
+  </body>
+</html>

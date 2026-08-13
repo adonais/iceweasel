@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.modifier.animateRotation
 import mozilla.components.compose.base.theme.AcornTheme
 import androidx.compose.material3.FloatingActionButton as M3FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults as M3FloatingActionButtonDefaults
@@ -53,6 +54,41 @@ fun FloatingActionButton(
     elevation: FloatingActionButtonElevation = M3FloatingActionButtonDefaults.elevation(),
     onClick: () -> Unit,
 ) {
+    FloatingActionButton(
+        modifier = modifier,
+        icon = {
+            Icon(
+                painter = icon,
+                contentDescription = contentDescription,
+            )
+        },
+        label = label,
+        colors = colors,
+        elevation = elevation,
+        onClick = onClick,
+    )
+}
+
+/**
+ * Floating action button with an icon slot for custom content layout.
+ *
+ * @param modifier [Modifier] to be applied to the action button.
+ * @param icon [Composable] icon to be displayed inside the action button.
+ * @param label Text to be displayed next to the icon.
+ * @param colors The [FloatingActionButtonColors] used to color this FAB.
+ * @param elevation [FloatingActionButtonElevation] used to resolve the elevation for this FAB in
+ * different states. This controls the size of the shadow below the FAB.
+ * @param onClick Invoked when the button is clicked.
+ */
+@Composable
+fun FloatingActionButton(
+    modifier: Modifier = Modifier,
+    icon: (@Composable () -> Unit),
+    label: String? = null,
+    colors: FloatingActionButtonColors = FloatingActionButtonDefaults.colorsPrimary(),
+    elevation: FloatingActionButtonElevation = M3FloatingActionButtonDefaults.elevation(),
+    onClick: () -> Unit,
+) {
     M3FloatingActionButton(
         onClick = onClick,
         modifier = modifier,
@@ -67,10 +103,7 @@ fun FloatingActionButton(
                 .animateContentSize(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                painter = icon,
-                contentDescription = contentDescription,
-            )
+            icon()
 
             if (!label.isNullOrBlank()) {
                 Spacer(Modifier.width(12.dp))
@@ -117,6 +150,30 @@ private fun CustomFloatingActionButtonPreview() {
                     containerColor = MaterialTheme.colorScheme.secondary,
                     contentColor = MaterialTheme.colorScheme.onSecondary,
                 ),
+                onClick = {
+                    label = if (label == null) "LABEL" else null
+                },
+            )
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun CustomIconFloatingActionButtonPreview() {
+    var label by remember { mutableStateOf<String?>("ANIMATED") }
+
+    AcornTheme {
+        Box(Modifier.wrapContentSize()) {
+            FloatingActionButton(
+                label = label,
+                icon = {
+                    Icon(
+                        painter = painterResource(iconsR.drawable.mozac_ic_plus_24),
+                        contentDescription = "Icon description",
+                        modifier = Modifier.animateRotation(),
+                    )
+                },
                 onClick = {
                     label = if (label == null) "LABEL" else null
                 },

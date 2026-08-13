@@ -6,9 +6,10 @@
 #define MOZ_CONTAINER_WAYLAND_H_
 
 #include <gtk/gtk.h>
-#include "mozilla/Mutex.h"
-#include "WindowSurface.h"
+
 #include "WaylandSurface.h"
+#include "WindowSurface.h"
+#include "mozilla/Mutex.h"
 
 /*
  * MozContainer

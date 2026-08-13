@@ -91,7 +91,7 @@ add_task(async function portNoMatch() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: "http://example.com:8999/f",
         title: "example.com:8999/f",
         iconUri: "page-icon:http://example.com:8999/",
@@ -221,13 +221,13 @@ add_task(async function uriFragmentCaseSensitiveNoMatch() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: "http://example.com/#t",
         title: "http://example.com/#t",
         heuristic: true,
       }),
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         uri: "http://example.com/#TEST",
         title: "test visit for http://example.com/#TEST",
         tags: [],
@@ -252,7 +252,7 @@ add_task(async function uriFragmentCaseSensitive() {
     completed: "http://example.com/#TEST",
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         uri: "http://example.com/#TEST",
         title: "test visit for http://example.com/#TEST",
         heuristic: true,
@@ -739,8 +739,8 @@ add_nonadaptive_autofill_task(async function viewSourceAsPrefix() {
       matches: [
         {
           heuristic: true,
-          type: UrlbarUtils.RESULT_TYPE.URL,
-          source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+          type: UrlbarShared.RESULT_TYPE.URL,
+          source: UrlbarShared.RESULT_SOURCE.HISTORY,
         },
         makeBookmarkResult(context, {
           uri: address,
@@ -791,8 +791,8 @@ add_nonadaptive_autofill_task(async function dataAsPrefix() {
       matches: [
         {
           heuristic: true,
-          type: UrlbarUtils.RESULT_TYPE.URL,
-          source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+          type: UrlbarShared.RESULT_TYPE.URL,
+          source: UrlbarShared.RESULT_SOURCE.HISTORY,
         },
         makeBookmarkResult(context, {
           uri: address,
@@ -830,8 +830,8 @@ add_task(async function aboutAsPrefix() {
       matches: [
         {
           heuristic: true,
-          type: UrlbarUtils.RESULT_TYPE.URL,
-          source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+          type: UrlbarShared.RESULT_TYPE.URL,
+          source: UrlbarShared.RESULT_SOURCE.HISTORY,
         },
       ],
     });

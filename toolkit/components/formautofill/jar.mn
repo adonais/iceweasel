@@ -14,4 +14,5 @@ toolkit.jar:
 #else
   res/autofill/FormAutofillPrompter.sys.mjs (./default/FormAutofillPrompter.sys.mjs)
   res/autofill/FormAutofillStorage.sys.mjs (./default/FormAutofillStorage.sys.mjs)
+  res/autofill/PassportStorage.sys.mjs (./default/PassportStorage.sys.mjs)
 #endif

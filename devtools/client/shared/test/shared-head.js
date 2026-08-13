@@ -1155,7 +1155,7 @@ async function waitFor(
       : maxTries;
 
   try {
-    const value = await BrowserTestUtils.waitForCondition(
+    const value = await TestUtils.waitForCondition(
       condition,
       message,
       interval,

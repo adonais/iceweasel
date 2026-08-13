@@ -11,9 +11,9 @@
 #elif defined(XP_DARWIN)
 #  include <CoreFoundation/CoreFoundation.h>
 #elif defined(XP_UNIX)
-#  include <unistd.h>
 #  include <stdlib.h>
 #  include <string.h>
+#  include <unistd.h>
 #endif
 #if defined(__FreeBSD__) || defined(__DragonFly__) || \
     defined(__FreeBSD_kernel__) || defined(__NetBSD__) || defined(__OpenBSD__)

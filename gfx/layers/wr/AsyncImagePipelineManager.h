@@ -8,10 +8,10 @@
 #include <vector>
 
 #include "CompositableHost.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/layers/RemoteTextureMap.h"
 #include "mozilla/layers/TextureHost.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/webrender/WebRenderAPI.h"
 #include "mozilla/webrender/WebRenderTypes.h"
 #include "nsClassHashtable.h"

@@ -5,9 +5,9 @@
 #include "PrintTargetWindows.h"
 
 #include "cairo-win32.h"
-#include "mozilla/gfx/HelpersCairo.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/WidgetUtils.h"
+#include "mozilla/gfx/HelpersCairo.h"
 #include "nsCoord.h"
 #include "nsIContentAnalysis.h"
 #include "nsIWidget.h"

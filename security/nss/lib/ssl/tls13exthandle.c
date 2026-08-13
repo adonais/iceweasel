@@ -65,17 +65,21 @@ tls13_SizeOfKeyShareEntry(const sslEphemeralKeyPair *keyPair)
     /* Size = NamedGroup(2) + length(2) + opaque<?> share */
     PRUint32 size = 2 + 2;
 
-    const SECKEYPublicKey *pubKey = keyPair->keys->pubKey;
-    switch (pubKey->keyType) {
-        case ecKey:
-            size += pubKey->u.ec.publicValue.len;
-            break;
-        case dhKey:
-            size += pubKey->u.dh.prime.len;
-            break;
-        default:
-            PORT_Assert(0);
-            return 0;
+    /* A standalone KEM share has no ECDH `keys`; only the KEM key/ciphertext
+     * contributes to the size below. */
+    if (keyPair->keys) {
+        const SECKEYPublicKey *pubKey = keyPair->keys->pubKey;
+        switch (pubKey->keyType) {
+            case ecKey:
+                size += pubKey->u.ec.publicValue.len;
+                break;
+            case dhKey:
+                size += pubKey->u.dh.prime.len;
+                break;
+            default:
+                PORT_Assert(0);
+                return 0;
+        }
     }
 
     if (keyPair->kemKeys) {
@@ -83,16 +87,17 @@ tls13_SizeOfKeyShareEntry(const sslEphemeralKeyPair *keyPair)
         PORT_Assert(keyPair->group->name == ssl_grp_kem_xyber768d00 ||
                     keyPair->group->name == ssl_grp_kem_mlkem768x25519 ||
                     keyPair->group->name == ssl_grp_kem_secp256r1mlkem768 ||
-                    keyPair->group->name == ssl_grp_kem_secp384r1mlkem1024);
-        pubKey = keyPair->kemKeys->pubKey;
-        size += pubKey->u.kyber.publicValue.len;
+                    keyPair->group->name == ssl_grp_kem_secp384r1mlkem1024 ||
+                    keyPair->group->name == ssl_grp_kem_mlkem1024);
+        size += keyPair->kemKeys->pubKey->u.kyber.publicValue.len;
     }
     if (keyPair->kemCt) {
         PORT_Assert(!keyPair->kemKeys);
         PORT_Assert(keyPair->group->name == ssl_grp_kem_xyber768d00 ||
                     keyPair->group->name == ssl_grp_kem_mlkem768x25519 ||
                     keyPair->group->name == ssl_grp_kem_secp256r1mlkem768 ||
-                    keyPair->group->name == ssl_grp_kem_secp384r1mlkem1024);
+                    keyPair->group->name == ssl_grp_kem_secp384r1mlkem1024 ||
+                    keyPair->group->name == ssl_grp_kem_mlkem1024);
         size += keyPair->kemCt->len;
     }
 
@@ -156,6 +161,28 @@ tls13_WriteHybridHybridKeyFirst(sslBuffer *buf, sslEphemeralKeyPair *keyPair)
 }
 
 static SECStatus
+tls13_WriteKEMKeyShare(sslBuffer *buf, sslEphemeralKeyPair *keyPair)
+{
+    PORT_Assert(keyPair->group->name == ssl_grp_kem_mlkem1024);
+    PORT_Assert(!keyPair->keys);
+
+    /* Standalone KEM: write only the ML-KEM encapsulation key (client) or the
+     * ciphertext (server). There is no ECDH share. */
+    if (keyPair->kemKeys) {
+        PORT_Assert(!keyPair->kemCt);
+        return sslBuffer_Append(buf,
+                                keyPair->kemKeys->pubKey->u.kyber.publicValue.data,
+                                keyPair->kemKeys->pubKey->u.kyber.publicValue.len);
+    }
+    if (keyPair->kemCt) {
+        return sslBuffer_Append(buf, keyPair->kemCt->data, keyPair->kemCt->len);
+    }
+    PORT_Assert(0);
+    PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+    return SECFailure;
+}
+
+static SECStatus
 tls13_WriteKeyExchangeInfo(sslBuffer *buf, sslEphemeralKeyPair *keyPair)
 {
     SECStatus rv;
@@ -202,6 +229,9 @@ tls13_EncodeKeyShareEntry(sslBuffer *buf, sslEphemeralKeyPair *keyPair)
         case ssl_grp_kem_secp384r1mlkem1024:
         case ssl_grp_kem_xyber768d00:
             rv = tls13_WriteHybridECCKeyFirst(buf, keyPair);
+            break;
+        case ssl_grp_kem_mlkem1024:
+            rv = tls13_WriteKEMKeyShare(buf, keyPair);
             break;
         default:
             rv = tls13_WriteKeyExchangeInfo(buf, keyPair);

@@ -6,8 +6,6 @@
 
 #include "mozilla/AppShutdown.h"
 #include "mozilla/Logging.h"
-
-#include "mozilla/AppShutdown.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/ReentrantMonitor.h"
 #include "mozilla/Services.h"
@@ -17,8 +15,8 @@
 #include "nsIObserver.h"
 #include "nsIObserverService.h"
 #include "nsIThreadManager.h"
-#include "nsThreadPool.h"
 #include "nsTHashMap.h"
+#include "nsThreadPool.h"
 #include "nsXPCOMCIDInternal.h"
 
 static mozilla::LazyLogModule sSharedThreadPoolLog("SharedThreadPool");

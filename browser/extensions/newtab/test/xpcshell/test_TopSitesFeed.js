@@ -2405,6 +2405,41 @@ add_task(async function test_improvesearch_noDefaultSearchTile_experiment() {
   }
 });
 
+add_task(async function test_sponsored_tile_retained_when_default_search() {
+  // Bug 1957165: when the user's default search engine matches a sponsored
+  // tile's hostname (e.g. setting Amazon as default search), the sponsored
+  // tile must still be shown so the sponsored slate stays full.
+  let sandbox = sinon.createSandbox();
+  const NO_DEFAULT_SEARCH_TILE_PREF = "improvesearch.noDefaultSearchTile";
+
+  sandbox.stub(SearchService, "getDefault").resolves({ identifier: "google" });
+  let feed = getTopSitesFeedForTest(sandbox);
+  feed.store.state.Prefs.values[NO_DEFAULT_SEARCH_TILE_PREF] = true;
+  feed.store.state.Prefs.values.showSponsoredTopSites = true;
+
+  sandbox.stub(feed, "_currentSearchHostname").get(() => "amazon");
+
+  DEFAULT_TOP_SITES.length = 0;
+  DEFAULT_TOP_SITES.push({
+    url: "https://amazon.com",
+    hostname: "amazon",
+    sponsored_position: 1,
+    label: "Amazon",
+  });
+  gGetTopSitesStub.resolves([{ url: "https://foo.com" }]);
+
+  let urlsReturned = (await feed.getLinksWithDefaults()).map(link => link?.url);
+  Assert.ok(
+    urlsReturned.includes("https://amazon.com"),
+    "sponsored Amazon tile is retained even though Amazon is the default " +
+      "search engine"
+  );
+
+  DEFAULT_TOP_SITES.length = 0;
+  gGetTopSitesStub.resolves(FAKE_LINKS);
+  sandbox.restore();
+});
+
 add_task(
   async function test_improvesearch_noDefaultSearchTile_experiment_part_2() {
     let sandbox = sinon.createSandbox();
@@ -2426,10 +2461,16 @@ add_task(
       let feed = prepFeed(getTopSitesFeedForTest(sandbox));
       feed.store.state.Prefs.values[NO_DEFAULT_SEARCH_TILE_PREF] = true;
       sandbox.stub(feed, "refresh");
+      sandbox.stub(feed._contile, "refresh");
 
       feed.observe(null, "browser-search-engine-modified", "engine-default");
       Assert.equal(feed._currentSearchHostname, "duckduckgo");
       Assert.ok(feed.refresh.calledOnce, "feed.refresh called once");
+      Assert.ok(
+        feed._contile.refresh.calledOnce,
+        "feed._contile.refresh called once so sponsored tiles are rebuilt " +
+          "for the new default search engine"
+      );
 
       gGetTopSitesStub.resolves(FAKE_LINKS);
       sandbox.restore();
@@ -3631,7 +3672,7 @@ add_task(async function test_ContileIntegration() {
             count: 1,
           },
         ],
-        blocks: [""],
+        blocks: ["duckduckgo"],
       })
     );
     sandbox.restore();
@@ -3786,7 +3827,7 @@ add_task(async function test_ContileIntegration() {
             count: 1,
           },
         ],
-        blocks: [""],
+        blocks: ["duckduckgo"],
       })
     );
     sandbox.restore();
@@ -3828,5 +3869,215 @@ add_task(async function test_readDefaults_invalid_blocked_sponsors_pref() {
 
   Services.prefs.clearUserPref("browser.topsites.useRemoteSetting");
   Services.prefs.clearUserPref(TOP_SITES_BLOCKED_SPONSORS_PREF);
+  sandbox.restore();
+});
+
+// Guards the fragile pinnedLinks._links write in _saveGroupedPins: the k-th pin
+// must land in the k-th occupied slot so the sparse hole pattern is preserved for
+// the classic renderer, extras append densely, and removing a pin remaps cleanly.
+add_task(async function test_saveGroupedPins_preserves_hole_pattern() {
+  let sandbox = sinon.createSandbox();
+  let feed = getTopSitesFeedForTest(sandbox);
+  feed.pinnedCache = { expire: sandbox.stub() };
+
+  const A = { url: "https://a.com" };
+  const B = { url: "https://b.com" };
+  const C = { url: "https://c.com" };
+  const D = { url: "https://d.com" };
+
+  // Holes serialize to null on persistence, so normalize the sparse _links the
+  // same way before comparing.
+  const persisted = () =>
+    JSON.parse(JSON.stringify(NewTabUtils.pinnedLinks._links));
+
+  const origLinks = NewTabUtils.pinnedLinks._links;
+  // Sparse layout: pins occupy slots 0, 2, 4 with holes at 1 and 3.
+  sandbox
+    .stub(NewTabUtils.pinnedLinks, "links")
+    .get(() => [A, null, B, null, C]);
+  let saveStub = sandbox.stub(NewTabUtils.pinnedLinks, "save");
+
+  // Reorder within the group: each pin maps to the k-th occupied slot, gaps stay.
+  feed._saveGroupedPins([B, A, C]);
+  Assert.deepEqual(
+    persisted(),
+    [B, null, A, null, C],
+    "reorder maps k-th pin to k-th occupied slot, holes preserved"
+  );
+  Assert.ok(saveStub.called, "persisted via save()");
+
+  // A pin beyond the occupied slots appends densely after the last one.
+  feed._saveGroupedPins([A, B, C, D]);
+  Assert.deepEqual(
+    persisted(),
+    [A, null, B, null, C, D],
+    "extra pin appends densely after the existing hole pattern"
+  );
+
+  // Toggling a pin off remaps the remaining group onto the leading slots.
+  feed._saveGroupedPins([A, C]);
+  Assert.deepEqual(
+    persisted(),
+    [A, null, C],
+    "removing a pin remaps remaining pins to the first occupied slots"
+  );
+
+  NewTabUtils.pinnedLinks._links = origLinks;
+  sandbox.restore();
+});
+
+// True if the feed dispatched a topSitesRows grow (optionally to a given value).
+function dispatchedRowGrow(feed, value) {
+  return feed.store.dispatch.calledWithMatch({
+    data:
+      value === undefined
+        ? { name: "topSitesRows" }
+        : { name: "topSitesRows", value },
+  });
+}
+
+add_task(async function test_pinSiteAtGrouped_growsRowWhenFullOfPins() {
+  let sandbox = sinon.createSandbox();
+  let feed = getTopSitesFeedForTest(sandbox);
+  // _groupedPins derives from pinnedLinks.links; an empty group is enough here
+  // since the appended url isn't already pinned.
+  sandbox.stub(NewTabUtils.pinnedLinks, "links").get(() => []);
+  sandbox.stub(feed, "_saveGroupedPins");
+  sandbox.stub(feed, "_clearLinkCustomScreenshot").resolves();
+
+  // A pinned slot at getTopSitesCount - 1 means the visible grid is full of pins.
+  let setGrid = (rows, lastPinned) => {
+    feed.store.dispatch.resetHistory();
+    feed.store.state.Prefs.values = {
+      topSitesRows: rows,
+      topSitesMaxSitesPerRow: 8,
+    };
+    feed.store.state.TopSites.rows = Array(rows * 8).fill("site");
+    if (lastPinned) {
+      feed.store.state.TopSites.rows[rows * 8 - 1] = { isPinned: true };
+    }
+  };
+
+  info("grows a row when the visible grid is full of pins, below max rows");
+  setGrid(1, true);
+  await feed._pinSiteAtGrouped({ url: "https://new1.com" });
+  Assert.ok(dispatchedRowGrow(feed, 2), "grew to keep the new pin visible");
+
+  info("does not grow when the last visible slot is a frecency tile");
+  setGrid(1, false);
+  await feed._pinSiteAtGrouped({ url: "https://new2.com" });
+  Assert.ok(
+    !dispatchedRowGrow(feed),
+    "no grow: a frecency tile can be pushed off instead"
+  );
+
+  info("does not grow once already at the max rows");
+  setGrid(4, true);
+  await feed._pinSiteAtGrouped({ url: "https://new3.com" });
+  Assert.ok(!dispatchedRowGrow(feed), "no grow at the max rows");
+
+  sandbox.restore();
+});
+
+add_task(async function test_pin_replacesLastFrecencyTileOnFullRow() {
+  let sandbox = sinon.createSandbox();
+  let feed = getTopSitesFeedForTest(sandbox);
+  // Classic mode (grouped pref unset). Stub side effects so only pin()'s
+  // eviction/grow decision is under test. Identity index adjustment keeps the
+  // asserted pin slot readable (no preceding sponsored tiles to shift over).
+  sandbox.stub(feed, "_adjustPinIndexForSponsoredLinks").callsFake((s, i) => i);
+  let pinStub = sandbox.stub(NewTabUtils.pinnedLinks, "pin");
+  sandbox.stub(feed, "_clearLinkCustomScreenshot").resolves();
+  sandbox.stub(feed, "_broadcastPinnedSitesUpdated");
+
+  // The add button on a full row sends the slot just past the visible grid.
+  let pinPastGrid = (rows, gridRows) => {
+    feed.store.dispatch.resetHistory();
+    pinStub.resetHistory();
+    feed.store.state.Prefs.values = {
+      topSitesRows: gridRows,
+      topSitesMaxSitesPerRow: 8,
+    };
+    feed.store.state.TopSites.rows = rows;
+    return feed.pin({
+      data: { site: { url: "https://new.com" }, index: gridRows * 8 },
+    });
+  };
+
+  info("replaces the last frecency tile instead of growing a row");
+  await pinPastGrid(Array(8).fill("site"), 1);
+  Assert.ok(!dispatchedRowGrow(feed), "no grow: a frecency tile was replaced");
+  Assert.equal(
+    pinStub.getCall(0).args[1],
+    7,
+    "pinned at the last frecency slot"
+  );
+
+  info("replaces the last frecency tile even when a later slot is pinned");
+  let scattered = Array(8).fill("site");
+  scattered[7] = { isPinned: true };
+  await pinPastGrid(scattered, 1);
+  Assert.ok(
+    !dispatchedRowGrow(feed),
+    "no grow: an earlier frecency tile was replaced"
+  );
+  Assert.equal(
+    pinStub.getCall(0).args[1],
+    6,
+    "pinned at the last frecency slot, not the last position"
+  );
+
+  info("skips sponsored tiles when choosing the tile to replace");
+  let withSponsored = Array(8).fill("site");
+  withSponsored[7] = { sponsored_position: 1 };
+  await pinPastGrid(withSponsored, 1);
+  Assert.equal(
+    pinStub.getCall(0).args[1],
+    6,
+    "did not replace the sponsored tile"
+  );
+
+  info("grows a row when every visible slot is pinned or sponsored");
+  await pinPastGrid(Array(8).fill({ isPinned: true }), 1);
+  Assert.ok(dispatchedRowGrow(feed, 2), "grew: no frecency tile to replace");
+
+  info("does not grow once already at the max rows");
+  await pinPastGrid(Array(32).fill({ isPinned: true }), 4);
+  Assert.ok(!dispatchedRowGrow(feed), "no grow at the max rows");
+
+  sandbox.restore();
+});
+
+// Re-pinning a grouped site with a changed custom screenshot URL must clear the
+// stale cached screenshot. Regression test for the redundant pinnedCache.expire()
+// in _saveGroupedPins, which made _clearLinkCustomScreenshot compare new===new.
+add_task(async function test_pinSiteAtGrouped_clears_stale_custom_screenshot() {
+  let sandbox = sinon.createSandbox();
+  let feed = getTopSitesFeedForTest(sandbox);
+
+  const url = "https://example.com/";
+  const origLinks = NewTabUtils.pinnedLinks._links;
+  // Live backing array so a (buggy) expire would resurface the freshly-saved pin.
+  NewTabUtils.pinnedLinks._links = [{ url, customScreenshotURL: "old-shot" }];
+  sandbox
+    .stub(NewTabUtils.pinnedLinks, "links")
+    .get(() => NewTabUtils.pinnedLinks._links);
+  sandbox.stub(NewTabUtils.pinnedLinks, "save");
+
+  // Prime the cache and stamp a screenshot on the pinned link.
+  let pinned = await feed.pinnedCache.request();
+  pinned[0].__sharedCache.updateLink("screenshot", "cached-screenshot");
+
+  // Edit: re-pin the same site with a different custom screenshot URL.
+  await feed._pinSiteAtGrouped({ url, customScreenshotURL: "new-shot" });
+
+  pinned = await feed.pinnedCache.request();
+  Assert.equal(
+    pinned.find(p => p && p.url === url).screenshot,
+    undefined,
+    "stale custom screenshot cleared when re-pinning with a new custom URL"
+  );
+
+  NewTabUtils.pinnedLinks._links = origLinks;
   sandbox.restore();
 });

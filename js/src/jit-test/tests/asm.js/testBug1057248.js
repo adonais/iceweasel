@@ -1,4 +1,4 @@
-// |jit-test| skip-if: !this.SharedArrayBuffer || !isAsmJSCompilationAvailable()
+// |jit-test| skip-if: !this.SharedArrayBuffer
 
 Random = {
     weighted: function(wa) {

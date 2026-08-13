@@ -25,6 +25,7 @@ class MOZ_NON_TEMPORARY_CLASS ProcessRuntime final {
     // it should be treated identically to GeckoBrowserParent.
     Launcher = GeckoBrowserParent,
     GeckoChild,
+    GeckoContent,
     Service,
   };
 
@@ -56,10 +57,8 @@ class MOZ_NON_TEMPORARY_CLASS ProcessRuntime final {
  private:
 #if defined(MOZILLA_INTERNAL_API)
   explicit ProcessRuntime(const GeckoProcessType aProcessType);
-#  if defined(MOZ_SANDBOX)
-  void InitUsingPersistentMTAThread(const nsAutoHandle& aCurThreadToken);
-#  endif  // defined(MOZ_SANDBOX)
-#endif    // defined(MOZILLA_INTERNAL_API)
+  void InitUsingPersistentMTAThread(bool aNeedsSandboxedInit);
+#endif  // defined(MOZILLA_INTERNAL_API)
   void InitInsideApartment();
 
 #if defined(MOZILLA_INTERNAL_API)

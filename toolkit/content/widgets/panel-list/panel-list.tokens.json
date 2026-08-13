@@ -1,0 +1,43 @@
+{
+  "nova": {
+    "border": {
+      "color": {
+        "value": "{panel.border.color}"
+      }
+    },
+    "box": {
+      "shadow": {
+        "@base": {
+          "value": "{panel.box.shadow.@base}"
+        }
+      }
+    }
+  },
+  "background": {
+    "color": {
+      "@base": {
+        "value": "{background.color.box.@base}"
+      }
+    }
+  },
+  "border": {
+    "color": {
+      "value": "{border.color.deemphasized.@base}"
+    },
+    "radius": {
+      "value": "{panel.border.radius}"
+    }
+  },
+  "box": {
+    "shadow": {
+      "@base": {
+        "value": "{popup.box.shadow}"
+      }
+    }
+  },
+  "text": {
+    "color": {
+      "value": "{text.color.@base}"
+    }
+  }
+}

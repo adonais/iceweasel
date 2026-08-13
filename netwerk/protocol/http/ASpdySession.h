@@ -6,9 +6,9 @@
 #define mozilla_net_ASpdySession_h
 
 #include "nsAHttpTransaction.h"
-#include "prinrval.h"
 #include "nsHttp.h"
 #include "nsString.h"
+#include "prinrval.h"
 
 class nsISocketTransport;
 

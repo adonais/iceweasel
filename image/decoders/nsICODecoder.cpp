@@ -11,8 +11,8 @@
 
 #include "RasterImage.h"
 #include "mozilla/EndianUtils.h"
-#include "mozilla/gfx/Swizzle.h"
 #include "mozilla/UniquePtrExtensions.h"
+#include "mozilla/gfx/Swizzle.h"
 
 using namespace mozilla::gfx;
 

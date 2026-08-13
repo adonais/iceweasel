@@ -9,14 +9,13 @@
 #include "AutoClose.h"
 #include "HttpBaseChannel.h"
 #include "HttpTransactionShell.h"
-#include "nsHttpResponseHead.h"
-#include "nsIReplacedHttpResponse.h"
 #include "TimingStruct.h"
 #include "mozilla/AtomicBitfields.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/extensions/PStreamFilterParent.h"
 #include "mozilla/net/DocumentLoadListener.h"
+#include "nsHttpResponseHead.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
 #include "nsICacheEntry.h"
 #include "nsICacheEntryOpenCallback.h"
@@ -26,6 +25,7 @@
 #include "nsIEarlyHintObserver.h"
 #include "nsIHttpAuthenticableChannel.h"
 #include "nsIProtocolProxyCallback.h"
+#include "nsIReplacedHttpResponse.h"
 #include "nsIRequestContext.h"
 #include "nsIStreamListener.h"
 #include "nsIThreadRetargetableRequest.h"
@@ -220,6 +220,8 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   enum class SnifferType { Media, Image };
   void DisableIsOpaqueResponseAllowedAfterSniffCheck(SnifferType aType);
+
+  void OnOpaqueResponseAllowed() override;
 
  public: /* internal necko use only */
   uint32_t GetRequestTime() const { return mRequestTime; }
@@ -626,6 +628,11 @@ class nsHttpChannel final : public HttpBaseChannel,
   // Needed because calling openAlternativeOutputStream needs a reference
   // to the cache entry.
   nsCOMPtr<nsICacheEntry> mAltDataCacheEntry;
+  // Holds the cache entry whose ORB validation is still pending when
+  // CloseCacheEntry() runs. ORB's JavaScript validation completes
+  // asynchronously, after the entry has already been committed, so we keep a
+  // reference here in order to doom the entry if the response ends up blocked.
+  nsCOMPtr<nsICacheEntry> mORBValidationCacheEntry;
 
   nsCOMPtr<nsIURI> mCacheEntryURI;
   nsCString mCacheIdExtension;
@@ -832,6 +839,14 @@ class nsHttpChannel final : public HttpBaseChannel,
   nsresult OnSuspendTimeout();
   void CancelNetworkRequest(nsresult aStatus);
 
+  // Backstop for a wedged cache entry: arm/cancel a one-shot timer while the
+  // channel is parked in AwaitingCacheCallbacks(), and force the load to the
+  // network if the cache callback never arrives.  See
+  // network.cache.entry_wait_timeout_ms.
+  void MaybeStartCacheWaitTimer();
+  void CancelCacheWaitTimer();
+  nsresult OnCacheWaitTimeout();
+
   nsresult LogConsoleError(const char* aTag);
 
   void SetHTTPSSVCRecord(already_AddRefed<nsIDNSHTTPSSVCRecord> aRecord);
@@ -847,12 +862,25 @@ class nsHttpChannel final : public HttpBaseChannel,
   // cache. When the timer fires we'll notify the cache entry to make
   // all other listeners continue.
   nsCOMPtr<nsITimer> mSuspendTimer;
+  // Backstop timer armed while parked in AwaitingCacheCallbacks(); if the
+  // cache entry callback never arrives we give up and race to the network.
+  nsCOMPtr<nsITimer> mCacheWaitTimer;
+  // Set once the cache-wait backstop has fired and we've forced the network,
+  // so a late OnCacheEntryAvailable callback is ignored.
+  bool mCacheWaitTimedOut{false};
   // Tri-state to track whether anti-tracking classification happened
   // and has completed or not.
   // Nothing: No anti-tracking classification
   // Some(true): classification ongoing
   // Some(false): classification done
   Maybe<Atomic<bool>> mSuspendAfterExamineResponse;
+  // Set while a Suspend() taken by MaybeSuspendAfterExamineResponse() is
+  // outstanding, i.e. not yet undone by
+  // CancelSuspendOrResumeAfterExamineResponse(). Guards the compensating
+  // Resume() so it fires at most once per real Suspend(), even though
+  // CancelSuspendOrResumeAfterExamineResponse() can now be reached both from
+  // the classification callback and from CancelInternal.
+  Atomic<bool> mSuspendedForExamineResponse{false};
   bool mWritingToCache = false;
   bool mWaitingForProxy = false;
   bool mStaleRevalidation = false;

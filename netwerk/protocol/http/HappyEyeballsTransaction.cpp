@@ -3,14 +3,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 // HttpLog.h should generally be included first
-#include "HttpLog.h"
-
 #include "HappyEyeballsTransaction.h"
 
 #include "ConnectionHandle.h"
-#include "HttpConnectionBase.h"
 #include "Http2Session.h"
 #include "Http3Session.h"
+#include "HttpConnectionBase.h"
+#include "HttpLog.h"
 #include "nsHttpConnection.h"
 #include "nsHttpTransaction.h"
 #include "nsITLSSocketControl.h"
@@ -81,6 +80,33 @@ void HappyEyeballsTransaction::OnTransportStatus(nsITransport* aTransport,
   }
 }
 
+bool HappyEyeballsTransaction::Do0RTT(bool aCanSendEarlyData) {
+  if (!mZeroRttHandle) {
+    return false;
+  }
+
+  // WebSocket / WebTransport upgrades over HTTP/2 (or HTTP/3) use extended
+  // CONNECT, which can't be issued before the peer's
+  // SETTINGS_ENABLE_CONNECT_PROTOCOL is known — i.e. it can't be sent as TLS
+  // early data — and the 0-RTT adoption path can't graft the real transaction
+  // onto a muxed session as a tunnel. Decline 0-RTT for an upgrade on a
+  // multiplexed racer; the connection still resumes TLS and the upgrade is
+  // dispatched through the tunnel post-handshake. Over HTTP/1 the upgrade is a
+  // plain request, so 0-RTT is safe.
+  if (nsHttpTransaction* real = mZeroRttHandle->RealTxn()) {
+    if (real->IsWebsocketUpgrade() || real->IsForWebTransport()) {
+      nsAHttpConnection* handle = Connection();
+      RefPtr<HttpConnectionBase> base =
+          handle ? handle->HttpConnection() : nullptr;
+      if (base && (base->UsingSpdy() || base->UsingHttp3())) {
+        return false;
+      }
+    }
+  }
+
+  return mZeroRttHandle->Do0RTT(this, aCanSendEarlyData);
+}
+
 nsresult HappyEyeballsTransaction::ReadSegments(nsAHttpSegmentReader* aReader,
                                                 uint32_t aCount,
                                                 uint32_t* aCountRead) {
@@ -125,10 +151,15 @@ nsresult HappyEyeballsTransaction::ReadSegments(nsAHttpSegmentReader* aReader,
 nsresult HappyEyeballsTransaction::WriteSegments(nsAHttpSegmentWriter* aWriter,
                                                  uint32_t aCount,
                                                  uint32_t* aCountWritten) {
-  // OnSocketReadable calls WriteSegments after EnsureNPNComplete returns true,
-  // which can happen after our Finish0RTT already closed the HET (e.g. the
-  // PostProcessNPNSetup path has no early return on Finish0RTT failure).
-  if (mState == State::Closed) {
+  LOG(("HappyEyeballsTransaction::WriteSegments %p mState=%d", this,
+       (uint32_t)mState));
+  // Only the adopted winner has had its carrier swapped to the real txn, so it
+  // is the only state in which the carrier should never route response bytes
+  // here. A Racing attempt that lost the race can still receive early server
+  // data (e.g. an h3 0-RTT loser's stream delivers HeaderReady before the
+  // attempt is torn down); a Closed one can be hit after Finish0RTT closed it.
+  // In both cases drop the bytes rather than assert.
+  if (mState != State::Adopted) {
     return NS_BASE_STREAM_CLOSED;
   }
   MOZ_ASSERT_UNREACHABLE("Should not be called");
@@ -254,7 +285,7 @@ bool HappyEyeballsTransaction::AllowedToConnectToIpAddressSpace(
   return real->AllowedToConnectToIpAddressSpace(aTargetIpAddressSpace);
 }
 
-nsHttpRequestHead* HappyEyeballsTransaction::RequestHead() {
+const nsHttpRequestHead* HappyEyeballsTransaction::RequestHead() {
   if (mZeroRttHandle) {
     if (nsHttpTransaction* real = mZeroRttHandle->RealTxn()) {
       return real->RequestHead();

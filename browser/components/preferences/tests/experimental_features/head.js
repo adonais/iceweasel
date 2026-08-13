@@ -2,7 +2,7 @@
    http://creativecommons.org/publicdomain/zero/1.0/ */
 
 Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/browser/components/preferences/tests/head.js",
+  "chrome://mochitests/content/browser/browser/components/preferences/tests/head-common.js",
   this
 );
 
@@ -84,6 +84,10 @@ const DEFAULT_LABS_RECIPES = [
     requiresRestart: false,
   }),
 ];
+
+add_setup(function setup() {
+  registerCleanupFunction(NimbusTestUtils.disableSignatureVerification());
+});
 
 async function setupLabsTest(recipes) {
   await SpecialPowers.pushPrefEnv({

@@ -5,11 +5,11 @@
 #ifndef GTEST_MOCKWIDGET_H
 #define GTEST_MOCKWIDGET_H
 
+#include "GLContext.h"
+#include "GLContextProvider.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/widget/InProcessCompositorWidget.h"
 #include "nsIWidget.h"
-#include "GLContext.h"
-#include "GLContextProvider.h"
 
 using mozilla::gl::CreateContextFlags;
 using mozilla::gl::GLContext;

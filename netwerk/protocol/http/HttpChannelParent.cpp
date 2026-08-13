@@ -3,67 +3,66 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 // HttpLog.h should generally be included first
-#include "ErrorList.h"
-#include "HttpLog.h"
-
-#include "mozilla/ConsoleReportCollector.h"
-#include "mozilla/dom/BrowsingContext.h"
-#include "mozilla/ipc/IPCStreamUtils.h"
-#include "mozilla/net/EarlyHintRegistrar.h"
 #include "mozilla/net/HttpChannelParent.h"
-#include "mozilla/net/CacheEntryWriteHandleParent.h"
-#include "mozilla/dom/ContentParent.h"
-#include "mozilla/dom/ContentProcessManager.h"
-#include "mozilla/dom/Element.h"
-#include "mozilla/dom/ServiceWorkerUtils.h"
-#include "mozilla/dom/BrowserParent.h"
-#include "mozilla/dom/WindowGlobalParent.h"
-#include "mozilla/net/NeckoParent.h"
-#include "mozilla/net/ExecuteIfOnMainThreadEventTarget.h"
-#include "mozilla/net/CookieServiceParent.h"
-#include "nsIClassOfService.h"
+
+#include "ErrorList.h"
+#include "HttpBackgroundChannelParent.h"
+#include "HttpLog.h"
+#include "ParentChannelListener.h"
+#include "SerializedLoadContext.h"
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/Components.h"
+#include "mozilla/ConsoleReportCollector.h"
 #include "mozilla/InputStreamLengthHelper.h"
 #include "mozilla/IntegerPrintfMacros.h"
+#include "mozilla/LoadInfo.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StoragePrincipalHelper.h"
-#include "HttpBackgroundChannelParent.h"
-#include "ParentChannelListener.h"
-#include "nsDebug.h"
-#include "nsICacheInfoChannel.h"
-#include "nsHttpHandler.h"
-#include "nsNetCID.h"
-#include "nsNetUtil.h"
-#include "nsISupportsPriority.h"
-#include "mozilla/net/BackgroundChannelRegistrar.h"
-#include "nsSerializationHelper.h"
-#include "nsISerializable.h"
+#include "mozilla/dom/BrowserParent.h"
+#include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/ContentParent.h"
+#include "mozilla/dom/ContentProcessManager.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/dom/ServiceWorkerUtils.h"
+#include "mozilla/dom/WindowGlobalParent.h"
+#include "mozilla/ipc/BackgroundUtils.h"
+#include "mozilla/ipc/IPCStreamUtils.h"
 #include "mozilla/ipc/InputStreamUtils.h"
 #include "mozilla/ipc/URIUtils.h"
-#include "SerializedLoadContext.h"
+#include "mozilla/net/BackgroundChannelRegistrar.h"
+#include "mozilla/net/CacheEntryWriteHandleParent.h"
+#include "mozilla/net/ChannelEventQueue.h"
+#include "mozilla/net/CookieServiceParent.h"
+#include "mozilla/net/EarlyHintRegistrar.h"
+#include "mozilla/net/ExecuteIfOnMainThreadEventTarget.h"
+#include "mozilla/net/NeckoParent.h"
+#include "mozilla/net/RedirectChannelRegistrar.h"
+#include "nsCORSListenerProxy.h"
+#include "nsDebug.h"
+#include "nsHttpHandler.h"
 #include "nsIAuthPrompt.h"
 #include "nsIAuthPrompt2.h"
-#include "mozilla/ipc/BackgroundUtils.h"
-#include "mozilla/LoadInfo.h"
-#include "nsQueryObject.h"
-#include "mozilla/BasePrincipal.h"
-#include "nsCORSListenerProxy.h"
+#include "nsICacheInfoChannel.h"
+#include "nsIClassOfService.h"
 #include "nsIIPCSerializableInputStream.h"
+#include "nsIMultiPartChannel.h"
 #include "nsIPrompt.h"
 #include "nsIPromptFactory.h"
-#include "mozilla/net/ChannelEventQueue.h"
-#include "mozilla/net/RedirectChannelRegistrar.h"
-#include "nsIWindowWatcher.h"
-#include "mozilla/dom/Document.h"
 #include "nsISecureBrowserUI.h"
+#include "nsISerializable.h"
+#include "nsISupportsPriority.h"
+#include "nsIViewSourceChannel.h"
+#include "nsIWindowWatcher.h"
+#include "nsNetCID.h"
+#include "nsNetUtil.h"
+#include "nsQueryObject.h"
+#include "nsSerializationHelper.h"
 #include "nsStreamUtils.h"
 #include "nsStringStream.h"
 #include "nsThreadUtils.h"
-#include "nsQueryObject.h"
-#include "nsIMultiPartChannel.h"
-#include "nsIViewSourceChannel.h"
 
 using namespace mozilla;
 
@@ -163,13 +162,12 @@ bool HttpChannelParent::Init(const HttpChannelCreationArgs& aArgs) {
       return DoAsyncOpen(
           a.uri(), a.original(), a.doc(), a.referrerInfo(), a.apiRedirectTo(),
           a.topWindowURI(), a.loadFlags(), a.requestHeaders(),
-          a.requestMethod(), a.uploadStream(), a.uploadStreamHasHeaders(),
-          a.priority(), a.classOfService(), a.redirectionLimit(), a.allowSTS(),
-          a.thirdPartyFlags(), a.resumeAt(), a.startPos(), a.entityID(),
-          a.allowSpdy(), a.allowHttp3(), a.allowAltSvc(), a.beConservative(),
-          a.bypassProxy(), a.tlsFlags(), a.loadInfo(), a.cacheKey(),
-          a.requestContextID(), a.preflightArgs(), a.initialRwin(),
-          a.blockAuthPrompt(), a.allowStaleCacheContent(),
+          a.requestMethod(), a.uploadStream(), a.priority(), a.classOfService(),
+          a.redirectionLimit(), a.allowSTS(), a.thirdPartyFlags(), a.resumeAt(),
+          a.startPos(), a.entityID(), a.allowSpdy(), a.allowHttp3(),
+          a.allowAltSvc(), a.beConservative(), a.bypassProxy(), a.tlsFlags(),
+          a.loadInfo(), a.cacheKey(), a.requestContextID(), a.preflightArgs(),
+          a.initialRwin(), a.blockAuthPrompt(), a.allowStaleCacheContent(),
           a.preferCacheLoadOverBypass(), a.contentTypeHint(), a.requestMode(),
           a.redirectMode(), a.channelId(), a.contentWindowId(),
           a.preferredAlternativeTypes(), a.browserId(),
@@ -426,15 +424,14 @@ bool HttpChannelParent::DoAsyncOpen(
     nsIReferrerInfo* aReferrerInfo, nsIURI* aAPIRedirectToURI,
     nsIURI* aTopWindowURI, const uint32_t& aLoadFlags,
     const RequestHeaderTuples& requestHeaders, const nsCString& requestMethod,
-    const Maybe<IPCStream>& uploadStream, const bool& uploadStreamHasHeaders,
-    const int16_t& priority, const ClassOfService& classOfService,
-    const uint8_t& redirectionLimit, const bool& allowSTS,
-    const uint32_t& thirdPartyFlags, const bool& doResumeAt,
-    const uint64_t& startPos, const nsCString& entityID, const bool& allowSpdy,
-    const bool& allowHttp3, const bool& allowAltSvc, const bool& beConservative,
-    const bool& bypassProxy, const uint32_t& tlsFlags,
-    const LoadInfoArgs& aLoadInfoArgs, const uint32_t& aCacheKey,
-    const uint64_t& aRequestContextID,
+    const Maybe<IPCStream>& uploadStream, const int16_t& priority,
+    const ClassOfService& classOfService, const uint8_t& redirectionLimit,
+    const bool& allowSTS, const uint32_t& thirdPartyFlags,
+    const bool& doResumeAt, const uint64_t& startPos, const nsCString& entityID,
+    const bool& allowSpdy, const bool& allowHttp3, const bool& allowAltSvc,
+    const bool& beConservative, const bool& bypassProxy,
+    const uint32_t& tlsFlags, const LoadInfoArgs& aLoadInfoArgs,
+    const uint32_t& aCacheKey, const uint64_t& aRequestContextID,
     const Maybe<CorsPreflightArgs>& aCorsPreflightArgs,
     const uint32_t& aInitialRwin, const bool& aBlockAuthPrompt,
     const bool& aAllowStaleCacheContent, const bool& aPreferCacheLoadOverBypass,
@@ -599,8 +596,6 @@ bool HttpChannelParent::DoAsyncOpen(
     if (NS_FAILED(rv)) {
       return SendFailedAsyncOpen(rv);
     }
-
-    httpChannel->SetUploadStreamHasHeaders(uploadStreamHasHeaders);
   }
 
   nsCOMPtr<nsICacheInfoChannel> cacheChannel =
@@ -916,9 +911,40 @@ mozilla::ipc::IPCResult HttpChannelParent::RecvRedirect2Verify(
       }
 
       if (aTargetLoadInfoForwarder.isSome()) {
+        const auto& fw = aTargetLoadInfoForwarder.ref();
+        auto* cp = static_cast<ContentParent*>(Manager()->Manager());
+        auto checkPrincipalInfo =
+            [&](const PrincipalInfo& aPrincipalInfo) -> bool {
+          auto principalOrErr = PrincipalInfoToPrincipal(aPrincipalInfo);
+          if (principalOrErr.isErr()) {
+            return false;
+          }
+          nsCOMPtr<nsIPrincipal> principal = principalOrErr.unwrap();
+          if (!cp->ValidatePrincipal(principal,
+                                     {ValidatePrincipalOptions::AllowSystem})) {
+            ContentParent::LogAndAssertFailedPrincipalValidationInfo(principal,
+                                                                     __func__);
+            return false;
+          }
+          return true;
+        };
+
+        if (fw.reservedClientInfo().isSome() &&
+            !checkPrincipalInfo(
+                fw.reservedClientInfo().ref().principalInfo())) {
+          return IPC_FAIL(this, "Invalid reservedClientInfo principal");
+        }
+        if (fw.initialClientInfo().isSome() &&
+            !checkPrincipalInfo(fw.initialClientInfo().ref().principalInfo())) {
+          return IPC_FAIL(this, "Invalid initialClientInfo principal");
+        }
+        if (fw.controller().isSome() &&
+            !checkPrincipalInfo(fw.controller().ref().principalInfo())) {
+          return IPC_FAIL(this, "Invalid controller principal");
+        }
+
         nsCOMPtr<nsILoadInfo> newLoadInfo = newHttpChannel->LoadInfo();
-        rv = MergeChildLoadInfoForwarder(aTargetLoadInfoForwarder.ref(),
-                                         newLoadInfo);
+        rv = MergeChildLoadInfoForwarder(fw, newLoadInfo);
         if (NS_FAILED(rv) && NS_SUCCEEDED(result)) {
           result = rv;
         }

@@ -7,6 +7,7 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/NotNull.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSMathNegate.h"
@@ -19,8 +20,10 @@
 namespace mozilla::dom {
 
 CSSMathSum::CSSMathSum(nsCOMPtr<nsISupports> aParent,
+                       MovingNotNull<UniquePtr<StyleNumericType>> aNumericType,
                        RefPtr<CSSNumericArray> aValues)
-    : CSSMathValue(std::move(aParent), MathValueType::MathSum),
+    : CSSMathValue(std::move(aParent), std::move(aNumericType),
+                   MathValueType::MathSum),
       mValues(std::move(aValues)) {}
 
 // static
@@ -28,13 +31,16 @@ RefPtr<CSSMathSum> CSSMathSum::Create(nsCOMPtr<nsISupports> aParent,
                                       const StyleMathSum& aMathSum) {
   nsTArray<RefPtr<CSSNumericValue>> values;
 
-  for (const auto& value : aMathSum) {
+  for (const auto& value : aMathSum.values) {
     values.AppendElement(CSSNumericValue::Create(aParent, value));
   }
 
   auto array = MakeRefPtr<CSSNumericArray>(aParent, std::move(values));
 
-  return MakeRefPtr<CSSMathSum>(std::move(aParent), std::move(array));
+  return MakeRefPtr<CSSMathSum>(
+      std::move(aParent),
+      WrapMovingNotNull(MakeUnique<StyleNumericType>(aMathSum.numeric_type)),
+      std::move(array));
 }
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(CSSMathSum, CSSMathValue)
@@ -72,13 +78,27 @@ already_AddRefed<CSSMathSum> CSSMathSum::Constructor(
     return nullptr;
   }
 
-  // XXX Step 3 is not yet implemented!
+  // Step 3.
+
+  AutoTArray<const StyleNumericType*, 8> numericTypes;
+  numericTypes.SetCapacity(values.Length());
+
+  for (const auto& value : values) {
+    numericTypes.AppendElement(&value->GetNumericType());
+  }
+
+  auto numericType = MakeUnique<StyleNumericType>();
+  if (!Servo_NumericType_AddTypes(&numericTypes, numericType.get())) {
+    aRv.ThrowTypeError("Incompatible types");
+    return nullptr;
+  }
 
   // Step 4.
 
   auto array = MakeRefPtr<CSSNumericArray>(global, std::move(values));
 
-  return MakeAndAddRef<CSSMathSum>(global, std::move(array));
+  return MakeAndAddRef<CSSMathSum>(
+      global, WrapMovingNotNull(std::move(numericType)), std::move(array));
 }
 
 CSSNumericArray* CSSMathSum::Values() const { return mValues; }
@@ -130,7 +150,7 @@ StyleMathSum CSSMathSum::ToStyleMathSum() const {
     values.AppendElement(value->ToStyleNumericValue());
   }
 
-  return StyleMathSum{std::move(values)};
+  return StyleMathSum{GetNumericType(), std::move(values)};
 }
 
 const CSSMathSum& CSSMathValue::GetAsCSSMathSum() const {

@@ -60,7 +60,7 @@ class TextDirectiveFinder final {
    * Since measured function might called multiple times, we accumulate values
    * and report them in destructor.
    */
-  TimeStamp::DurationType mFindTextDirectivesDuration{0};
+  TimeStamp::DurationType mFindTextDirectivesDuration{};
   int64_t mFoundDirectiveCount{0};
 };
 }  // namespace mozilla::dom

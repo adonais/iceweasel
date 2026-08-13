@@ -28,6 +28,9 @@ var subtests = [
   {"file": "helper_bug2041154-irregular-static.html",
    "prefs": [...getPrefs("TOUCH_EVENTS:PAN"),
              ["apz.fastpath_apz_aware_listener.enabled", true]]},
+  {"file": "helper_bug2052759.html",
+   "prefs": [...getPrefs("TOUCH_EVENTS:PAN"),
+             ["apz.fastpath_apz_aware_listener.enabled", true]]},
 
   // Add new subtests here. If this starts timing out because it's taking too
   // long, create a test_group_touchevents-8.html file. Refer to 1423011#c57

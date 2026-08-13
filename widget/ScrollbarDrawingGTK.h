@@ -5,9 +5,9 @@
 #ifndef mozilla_widget_ScrollbarDrawingGTK_h
 #define mozilla_widget_ScrollbarDrawingGTK_h
 
+#include "ScrollbarDrawing.h"
 #include "nsITheme.h"
 #include "nsNativeTheme.h"
-#include "ScrollbarDrawing.h"
 
 namespace mozilla::widget {
 

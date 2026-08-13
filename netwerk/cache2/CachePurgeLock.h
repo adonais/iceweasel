@@ -5,8 +5,8 @@
 #ifndef mozilla_net_CachePurgeLock_h_
 #define mozilla_net_CachePurgeLock_h_
 
-#include "nsICachePurgeLock.h"
 #include "mozilla/MultiInstanceLock.h"
+#include "nsICachePurgeLock.h"
 
 namespace mozilla::net {
 

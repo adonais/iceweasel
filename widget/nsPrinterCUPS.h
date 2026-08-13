@@ -5,14 +5,13 @@
 #ifndef nsPrinterCUPS_h_
 #define nsPrinterCUPS_h_
 
-#include "nsPrinterBase.h"
-#include "nsPrintSettingsImpl.h"
-#include "nsCUPSShim.h"
-#include "nsString.h"
-
 #include "mozilla/DataMutex.h"
 #include "mozilla/FunctionRef.h"
 #include "mozilla/RecursiveMutex.h"
+#include "nsCUPSShim.h"
+#include "nsPrintSettingsImpl.h"
+#include "nsPrinterBase.h"
+#include "nsString.h"
 
 /**
  * @brief Interface to help implementing nsIPrinter using a CUPS printer.

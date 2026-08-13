@@ -41,6 +41,7 @@ import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.home.HomeFragmentDirections
 import org.mozilla.fenix.home.mars.MARSUseCases
 import org.mozilla.fenix.home.pocket.controller.DefaultPocketStoriesController
+import org.mozilla.fenix.home.pocket.controller.StoriesImpressionSource
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.Stories.markAsOpenedFromHomeScreen
 import org.mozilla.fenix.utils.Stories.markAsOpenedFromStoriesScreen
@@ -226,6 +227,7 @@ class DefaultPocketStoriesControllerTest {
                     impressions = listOf(
                         PocketImpression(story = storyShown, position = 3),
                     ),
+                    source = StoriesImpressionSource.HOMEPAGE,
                 ),
             )
         }
@@ -266,6 +268,7 @@ class DefaultPocketStoriesControllerTest {
                     impressions = listOf(
                         PocketImpression(story = sponsoredContent, position = 3),
                     ),
+                    source = StoriesImpressionSource.HOMEPAGE,
                 ),
             )
         }
@@ -282,7 +285,7 @@ class DefaultPocketStoriesControllerTest {
 
         assertNull(Pocket.homeRecsShown.testGetValue())
 
-        controller.handleStoriesShown(storiesShown)
+        controller.handleStoriesShown(storiesShown, StoriesImpressionSource.HOMEPAGE)
 
         verify {
             store.dispatch(
@@ -291,13 +294,50 @@ class DefaultPocketStoriesControllerTest {
                         PocketImpression(story = recommendation, position = 0),
                         PocketImpression(story = story, position = 1),
                     ),
+                    source = StoriesImpressionSource.HOMEPAGE,
                 ),
             )
         }
 
         assertNotNull(Pocket.homeRecsShown.testGetValue())
         assertEquals(1, Pocket.homeRecsShown.testGetValue()!!.size)
-        assertNull(Pocket.homeRecsShown.testGetValue()!!.single().extra)
+        assertEquals(
+            "homepage",
+            Pocket.homeRecsShown.testGetValue()!!.single().extra?.get("source"),
+        )
+    }
+
+    @Test
+    fun `WHEN new stories are shown on the stories screen THEN update the State and record telemetry`() = runTest {
+        val store = spyk(AppStore())
+        val controller = createController(scope = this, appStore = store)
+        val recommendation = mockk<ContentRecommendation>()
+        val story = mockk<PocketStory>()
+        val sponsoredStory = mockk<PocketSponsoredStory>()
+        val storiesShown = listOf(recommendation, story, sponsoredStory)
+
+        assertNull(Pocket.homeRecsShown.testGetValue())
+
+        controller.handleStoriesShown(storiesShown, StoriesImpressionSource.STORIES_SCREEN)
+
+        verify {
+            store.dispatch(
+                ContentRecommendationsAction.PocketStoriesShown(
+                    impressions = listOf(
+                        PocketImpression(story = recommendation, position = 0),
+                        PocketImpression(story = story, position = 1),
+                    ),
+                    source = StoriesImpressionSource.STORIES_SCREEN,
+                ),
+            )
+        }
+
+        assertNotNull(Pocket.homeRecsShown.testGetValue())
+        assertEquals(1, Pocket.homeRecsShown.testGetValue()!!.size)
+        assertEquals(
+            "stories_screen",
+            Pocket.homeRecsShown.testGetValue()!!.single().extra?.get("source"),
+        )
     }
 
     @Test
@@ -314,7 +354,11 @@ class DefaultPocketStoriesControllerTest {
         val controller = createController(scope = this)
         assertNull(Pocket.homeRecsStoryClicked.testGetValue())
 
-        controller.handleStoryClicked(story, storyPosition = Triple(1, 2, 3))
+        controller.handleStoryClicked(
+            story,
+            storyPosition = Triple(1, 2, 3),
+            source = StoriesImpressionSource.HOMEPAGE,
+        )
 
         verify {
             navController.navigate(R.id.browserFragment)
@@ -332,6 +376,48 @@ class DefaultPocketStoriesControllerTest {
         assertEquals("1x2", event.single().extra!!["position"])
         assertTrue(event.single().extra!!.containsKey("times_shown"))
         assertEquals(story.timesShown.inc().toString(), event.single().extra!!["times_shown"])
+        assertTrue(event.single().extra!!.containsKey("source"))
+        assertEquals("homepage", event.single().extra!!["source"])
+    }
+
+    @Test
+    fun `WHEN a recommended story is clicked on the stories screen THEN open that story's url using HomeActivity and record telemetry`() = runTest {
+        val story = PocketRecommendedStory(
+            title = "",
+            url = "testLink",
+            imageUrl = "",
+            publisher = "",
+            category = "",
+            timeToRead = 0,
+            timesShown = 123,
+        )
+        val controller = createController(scope = this)
+        assertNull(Pocket.homeRecsStoryClicked.testGetValue())
+
+        controller.handleStoryClicked(
+            story,
+            storyPosition = Triple(1, 2, 3),
+            source = StoriesImpressionSource.STORIES_SCREEN,
+        )
+
+        verify {
+            navController.navigate(R.id.browserFragment)
+            fenixBrowserUseCases.loadUrlOrSearch(
+                searchTermOrURL = story.url,
+                newTab = true,
+                private = false,
+            )
+        }
+
+        assertNotNull(Pocket.homeRecsStoryClicked.testGetValue())
+        val event = Pocket.homeRecsStoryClicked.testGetValue()!!
+        assertEquals(1, event.size)
+        assertTrue(event.single().extra!!.containsKey("position"))
+        assertEquals("1x2", event.single().extra!!["position"])
+        assertTrue(event.single().extra!!.containsKey("times_shown"))
+        assertEquals(story.timesShown.inc().toString(), event.single().extra!!["times_shown"])
+        assertTrue(event.single().extra!!.containsKey("source"))
+        assertEquals("stories_screen", event.single().extra!!["source"])
     }
 
     @Test
@@ -350,7 +436,11 @@ class DefaultPocketStoriesControllerTest {
         val controller = createController(scope = this)
         assertNull(Pocket.homeRecsStoryClicked.testGetValue())
 
-        controller.handleStoryClicked(story, storyPosition = Triple(1, 2, 3))
+        controller.handleStoryClicked(
+            story,
+            storyPosition = Triple(1, 2, 3),
+            source = StoriesImpressionSource.HOMEPAGE,
+        )
 
         verify {
             navController.navigate(R.id.browserFragment)
@@ -368,6 +458,8 @@ class DefaultPocketStoriesControllerTest {
         assertEquals("1x2", event.single().extra!!["position"])
         assertTrue(event.single().extra!!.containsKey("times_shown"))
         assertEquals(story.timesShown.inc().toString(), event.single().extra!!["times_shown"])
+        assertTrue(event.single().extra!!.containsKey("source"))
+        assertEquals("homepage", event.single().extra!!["source"])
     }
 
     @Test
@@ -391,7 +483,11 @@ class DefaultPocketStoriesControllerTest {
 
         assertNull(Pocket.homeRecsSpocClicked.testGetValue())
 
-        controller.handleStoryClicked(sponsoredContent, storyPosition = Triple(2, 3, 4))
+        controller.handleStoryClicked(
+            sponsoredContent,
+            storyPosition = Triple(2, 3, 4),
+            source = StoriesImpressionSource.HOMEPAGE,
+        )
         testScheduler.advanceUntilIdle()
 
         assertEquals(1, Pocket.homeRecsSpocClicked.testGetValue()!!.size)
@@ -416,7 +512,11 @@ class DefaultPocketStoriesControllerTest {
         val story = PocketRecommendedStory("", "url", "", "", "", 0, 0)
         val controller = createController(scope = this)
 
-        controller.handleStoryClicked(story, storyPosition = Triple(1, 2, 3))
+        controller.handleStoryClicked(
+            story,
+            storyPosition = Triple(1, 2, 3),
+            source = StoriesImpressionSource.HOMEPAGE,
+        )
 
         verifyOrder {
             navController.navigate(R.id.browserFragment)
@@ -435,7 +535,11 @@ class DefaultPocketStoriesControllerTest {
         val story = PocketRecommendedStory("", "url", "", "", "", 0, 0)
         val controller = createController(scope = this)
 
-        controller.handleStoryClicked(story, storyPosition = Triple(1, 2, 3))
+        controller.handleStoryClicked(
+            story,
+            storyPosition = Triple(1, 2, 3),
+            source = StoriesImpressionSource.HOMEPAGE,
+        )
 
         verifyOrder {
             navController.navigate(R.id.browserFragment)
@@ -454,7 +558,11 @@ class DefaultPocketStoriesControllerTest {
         val story = PocketRecommendedStory("", originalURL, "", "", "", 0, 0)
         val controller = createController(scope = this)
 
-        controller.handleStoryClicked(story, storyPosition = Triple(1, 2, 3))
+        controller.handleStoryClicked(
+            story,
+            storyPosition = Triple(1, 2, 3),
+            source = StoriesImpressionSource.HOMEPAGE,
+        )
 
         verifyOrder {
             navController.navigate(R.id.browserFragment)
@@ -473,7 +581,11 @@ class DefaultPocketStoriesControllerTest {
         val story = PocketRecommendedStory("", originalURL, "", "", "", 0, 0)
         val controller = createController(scope = this)
 
-        controller.handleStoryClicked(story, storyPosition = Triple(1, 2, 3))
+        controller.handleStoryClicked(
+            story,
+            storyPosition = Triple(1, 2, 3),
+            source = StoriesImpressionSource.HOMEPAGE,
+        )
 
         verifyOrder {
             navController.navigate(R.id.browserFragment)

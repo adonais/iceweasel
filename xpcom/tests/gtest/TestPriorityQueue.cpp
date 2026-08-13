@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsTPriorityQueue.h"
 #include "gtest/gtest.h"
+#include "nsTPriorityQueue.h"
 
 template <class T, class Compare>
 void CheckPopSequence(const nsTPriorityQueue<T, Compare>& aQueue,

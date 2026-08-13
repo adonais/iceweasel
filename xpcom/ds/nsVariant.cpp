@@ -3,16 +3,18 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsVariant.h"
-#include "prprf.h"
-#include "prdtoa.h"
+
 #include <math.h>
-#include "nsCycleCollectionParticipant.h"
-#include "xptinfo.h"
-#include "nsReadableUtils.h"
-#include "nsString.h"
-#include "nsCRTGlue.h"
+
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Printf.h"
+#include "nsCRTGlue.h"
+#include "nsCycleCollectionParticipant.h"
+#include "nsReadableUtils.h"
+#include "nsString.h"
+#include "prdtoa.h"
+#include "prprf.h"
+#include "xptinfo.h"
 
 /***************************************************************************/
 // Helpers for static convert functions...
@@ -602,37 +604,24 @@ nsresult nsDiscriminatedUnion::ConvertToUint64(uint64_t* aResult) const {
 /***************************************************************************/
 
 bool nsDiscriminatedUnion::String2ID(nsID* aPid) const {
-  nsAutoString tempString;
-  nsAString* pString;
-
   switch (mType) {
     case nsIDataType::VTYPE_CHAR_STR:
     case nsIDataType::VTYPE_STRING_SIZE_IS:
-      return aPid->Parse(u.str.mStringValue);
+      return aPid->Parse(nsDependentCString(u.str.mStringValue));
     case nsIDataType::VTYPE_CSTRING:
-      return aPid->Parse(PromiseFlatCString(*u.mCStringValue).get());
+      return aPid->Parse(*u.mCStringValue);
     case nsIDataType::VTYPE_UTF8STRING:
-      return aPid->Parse(PromiseFlatUTF8String(*u.mUTF8StringValue).get());
+      return aPid->Parse(*u.mUTF8StringValue);
     case nsIDataType::VTYPE_ASTRING:
-      pString = u.mAStringValue;
-      break;
+      return aPid->Parse(NS_ConvertUTF16toUTF8(*u.mAStringValue));
     case nsIDataType::VTYPE_WCHAR_STR:
     case nsIDataType::VTYPE_WSTRING_SIZE_IS:
-      tempString.Assign(u.wstr.mWStringValue);
-      pString = &tempString;
-      break;
+      return aPid->Parse(
+          NS_ConvertUTF16toUTF8(nsDependentString(u.wstr.mWStringValue)));
     default:
       NS_ERROR("bad type in call to String2ID");
       return false;
   }
-
-  char* pChars = ToNewCString(*pString, mozilla::fallible);
-  if (!pChars) {
-    return false;
-  }
-  bool result = aPid->Parse(pChars);
-  free(pChars);
-  return result;
 }
 
 nsresult nsDiscriminatedUnion::ConvertToID(nsID* aResult) const {

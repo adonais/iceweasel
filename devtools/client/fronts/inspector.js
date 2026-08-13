@@ -64,6 +64,20 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
       onAvailable: this.noopStylesheetListener,
     });
 
+    // @backward-compat { version 154 } Firefox 154 started supporting toggling
+    // global highlighters via Target Actor Configuration. We no longer need to watch
+    // for will-navigate to clear frontend highlighters and can remove this code.
+    const { configuration } =
+      this.targetFront.commands.targetConfigurationCommand;
+    if ("enabledHighlighters" in configuration) {
+      await resourceCommand.watchResources(
+        [resourceCommand.TYPES.DOCUMENT_EVENT],
+        {
+          onAvailable: this.#documentEventListener,
+        }
+      );
+    }
+
     // Bail out if the inspector is closed while watchResources was pending
     if (this.isDestroyed()) {
       return null;
@@ -94,6 +108,22 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
     // element, coming from another process/target/WalkerFront.
     await this.walker.reparentRemoteFrame();
   }
+
+  // @backward-compat { version 154 } Firefox 154 started supporting toggling
+  // global highlighters via Target Actor Configuration. We no longer need to watch
+  // for will-navigate to clear frontend highlighters and can remove this code.
+  #documentEventListener = resources => {
+    const willNavigate = resources.some(
+      resource =>
+        resource.name == "will-navigate" && resource.targetFront.isTopLevel
+    );
+    if (!willNavigate) {
+      return;
+    }
+    // Manually clear the highlighters on the frontend, to replicate what happens
+    // on the backend and avoid keeping defunct enabled highlighters
+    this._highlighters.clear();
+  };
 
   hasHighlighter(type) {
     return this._highlighters.has(type);
@@ -128,13 +158,16 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
     resourceCommand.unwatchResources([resourceCommand.TYPES.STYLESHEET], {
       onAvailable: this.noopStylesheetListener,
     });
+    resourceCommand.unwatchResources([resourceCommand.TYPES.DOCUMENT_EVENT], {
+      onAvailable: this.#documentEventListener,
+    });
     this.resourceCommand = null;
 
     this.walker = null;
 
     // CustomHighlighter fronts are managed by InspectorFront and so will be
     // automatically destroyed. But we have to clear the `_highlighters`
-    // Map as well as explicitly call `finalize` request on all of them.
+    // Map as well as explicitly call `destroy` request on all of them.
     this.destroyHighlighters();
     super.destroy();
   }
@@ -151,16 +184,24 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
     }
 
     const highlighter = this._highlighters.get(type);
-    if (!highlighter.isDestroyed()) {
-      highlighter.finalize();
-    }
+    highlighter.destroy();
     this._highlighters.delete(type);
   }
 
-  async getHighlighterByType(typeName) {
+  /**
+   * Retrieve the HighlighterFront for a given highlighter type.
+   *
+   * @param {string} typeName
+   *        Highlighter type coming from devtools/shared/highlighters.mjs
+   * @param {boolean} forceNew
+   *        In case you are always expecting to instantiate a new Front instance,
+   *        set this argument to true.
+   * @return {HighlighterFront}
+   */
+  async getHighlighterByType(typeName, forceNew = false) {
     let highlighter = null;
     try {
-      highlighter = await super.getHighlighterByType(typeName);
+      highlighter = await super.getHighlighterByType(typeName, forceNew);
     } catch (_) {
       throw new Error(
         "The target doesn't support " +
@@ -191,7 +232,7 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
     let front = this._highlighters.get(type);
     let pendingGetHighlighter = this._pendingGetHighlighterMap.get(type);
 
-    if (!front && !pendingGetHighlighter) {
+    if ((!front || front.isDestroyed()) && !pendingGetHighlighter) {
       pendingGetHighlighter = (async () => {
         const highlighter = await this.getHighlighterByType(type);
         this._highlighters.set(type, highlighter);

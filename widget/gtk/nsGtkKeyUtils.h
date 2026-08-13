@@ -5,11 +5,11 @@
 #ifndef _nsGdkKeyUtils_h_
 #define _nsGdkKeyUtils_h_
 
+#include <gdk/gdk.h>
+
 #include "mozilla/EventForwards.h"
 #include "nsIWidget.h"
 #include "nsTArray.h"
-
-#include <gdk/gdk.h>
 #ifdef MOZ_X11
 #  include <X11/XKBlib.h>
 #endif

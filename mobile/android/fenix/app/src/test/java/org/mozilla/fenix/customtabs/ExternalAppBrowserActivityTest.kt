@@ -6,6 +6,7 @@ package org.mozilla.fenix.customtabs
 
 import android.content.Intent
 import android.os.Bundle
+import androidx.lifecycle.Lifecycle
 import androidx.navigation.NavController
 import io.mockk.Called
 import io.mockk.Runs
@@ -89,6 +90,15 @@ class ExternalAppBrowserActivityTest {
 
         activity.handleNewIntent(intent)
         verify { intent wasNot Called }
+    }
+
+    @Test
+    fun `WHEN addAboutHomeBinding is invoked THEN do nothing`() {
+        val activity = spyk(ExternalAppBrowserActivity())
+        val lifecycle: Lifecycle = mockk()
+
+        activity.addAboutHomeBinding(lifecycle)
+        verify { lifecycle wasNot Called }
     }
 
     @Test

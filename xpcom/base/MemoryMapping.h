@@ -6,6 +6,7 @@
 #define mozilla_MemoryMapping_h
 
 #include <cstdint>
+
 #include "mozilla/EnumSet.h"
 #include "nsString.h"
 #include "nsTArrayForwardDeclare.h"

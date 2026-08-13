@@ -107,7 +107,7 @@ nsresult txStylesheet::findTemplate(const txXPathNode& aNode,
   }
 
 #if defined(TX_TO_STRING)
-  txPattern* match = 0;
+  txPattern* match = nullptr;
 #endif
 
   ImportFrame* frame;

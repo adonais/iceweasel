@@ -87,10 +87,10 @@ class BackgroundParent final {
   // See ContentParent::ValidatePrincipal for an analog.
   static bool ValidatePrincipal(
       PBackgroundParent* aBackgroundActor, nsIPrincipal* aPrincipal,
-      const EnumSet<dom::ValidatePrincipalOptions>& aOptions);
+      const EnumSet<dom::ValidatePrincipalOptions>& aOptions = {});
   static bool ValidatePrincipalInfo(
       PBackgroundParent* aBackgroundActor, const PrincipalInfo& aPrincipalInfo,
-      const EnumSet<dom::ValidatePrincipalOptions>& aOptions);
+      const EnumSet<dom::ValidatePrincipalOptions>& aOptions = {});
 
   static void KillHardAsync(PBackgroundParent* aBackgroundActor,
                             const nsACString& aReason);

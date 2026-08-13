@@ -6,19 +6,18 @@
 #ifndef mozilla_image_imgRequest_h
 #define mozilla_image_imgRequest_h
 
-#include "nsIChannelEventSink.h"
-#include "nsIInterfaceRequestor.h"
-#include "nsIStreamListener.h"
-#include "nsIThreadRetargetableStreamListener.h"
-#include "nsIPrincipal.h"
-
+#include "ImageCacheKey.h"
+#include "mozilla/Mutex.h"
 #include "nsCOMPtr.h"
-#include "nsProxyRelease.h"
-#include "nsString.h"
 #include "nsError.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
-#include "mozilla/Mutex.h"
-#include "ImageCacheKey.h"
+#include "nsIChannelEventSink.h"
+#include "nsIInterfaceRequestor.h"
+#include "nsIPrincipal.h"
+#include "nsIStreamListener.h"
+#include "nsIThreadRetargetableStreamListener.h"
+#include "nsProxyRelease.h"
+#include "nsString.h"
 
 class imgCacheValidator;
 class imgLoader;

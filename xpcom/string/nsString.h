@@ -9,13 +9,10 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/Char16.h"
-
-#include "nsStringFwd.h"
-
 #include "nsAString.h"
 #include "nsDependentSubstring.h"
 #include "nsReadableUtils.h"
-
+#include "nsStringFwd.h"
 #include "nsTString.h"
 
 static_assert(sizeof(char16_t) == 2, "size of char16_t must be 2");

@@ -171,6 +171,7 @@ class nsLayoutUtils {
   typedef mozilla::gfx::RectCornerRadii RectCornerRadii;
   typedef mozilla::gfx::StrokeOptions StrokeOptions;
   typedef mozilla::image::ImgDrawResult ImgDrawResult;
+  using imgDrawingParams = mozilla::image::imgDrawingParams;
 
   using nsDisplayItem = mozilla::nsDisplayItem;
   using nsDisplayList = mozilla::nsDisplayList;
@@ -651,6 +652,14 @@ class nsLayoutUtils {
       nsIFrame* aFrame, uint32_t aFlags = 0);
 
   /**
+   * Walk up the scroll-container ancestor chain starting at |aSearchFrame| and
+   * return the ViewID of the nearest scroll container whose scrolled content
+   * already has one, or NULL_SCROLL_ID if none does.
+   */
+  static mozilla::layers::ScrollableLayerGuid::ViewID GetNearestScrollIdFor(
+      nsIFrame* aSearchFrame);
+
+  /**
    * GetScrolledRect returns the range of allowable scroll offsets
    * for aScrolledFrame, assuming the scrollable overflow area is
    * aScrolledFrameOverflowArea and the scrollport size is aScrollPortSize.
@@ -1029,8 +1038,15 @@ class nsLayoutUtils {
    * Whether the frame should snap to grid. This will end up being passed
    * as the aRounded parameter in PostTranslate above. SVG frames should
    * not have their translation rounded.
+   *
+   * When aBuilder is supplied and is painting for WebRender, reference-frame
+   * origin snapping is left to WebRender (so it can remove the fractional
+   * external scroll offset reliably) and this returns false under the
+   * layout.disable-pixel-alignment pref. The drawSnapshot / non-WebRender path
+   * (no aBuilder, or not painting for WebRender) keeps snapping.
    */
-  static bool ShouldSnapToGrid(const nsIFrame* aFrame);
+  static bool ShouldSnapToGrid(const nsIFrame* aFrame,
+                               const nsDisplayListBuilder* aBuilder = nullptr);
 
   /**
    * Get the border-box of aElement's primary frame, transformed it to be
@@ -1851,10 +1867,13 @@ class nsLayoutUtils {
    * Helper function for drawing text-shadow. The callback's job
    * is to draw whatever needs to be blurred onto the given context.
    */
-  typedef void (*TextShadowCallback)(gfxContext* aCtx, nsPoint aShadowOffset,
+  typedef void (*TextShadowCallback)(gfxContext* aCtx,
+                                     imgDrawingParams& aImgParams,
+                                     const nsPoint& aShadowOffset,
                                      const nscolor& aShadowColor, void* aData);
 
   static void PaintTextShadow(const nsIFrame* aFrame, gfxContext* aContext,
+                              imgDrawingParams& aImgParams,
                               const nsRect& aTextRect, const nsRect& aDirtyRect,
                               const nscolor& aForegroundColor,
                               TextShadowCallback aCallback,
@@ -2605,7 +2624,6 @@ class nsLayoutUtils {
   /**
    * Unions the overflow areas of the children of aFrame with aOverflowAreas.
    * aSkipChildLists specifies any child lists that should be skipped.
-   * FrameChildListID::Popup is always skipped.
    */
   static void UnionChildOverflow(
       nsIFrame* aFrame, mozilla::OverflowAreas& aOverflowAreas,

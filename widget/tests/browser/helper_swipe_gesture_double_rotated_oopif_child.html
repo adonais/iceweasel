@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+#container {
+  position: absolute;
+  width: 100vh;
+  height: 100vw;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  transform: rotate(270deg) translateX(-100%);
+  transform-origin: top left;
+}
+
+#container > div {
+  height: 400vw;
+  background: linear-gradient(#eee, #999);
+}
+</style>
+</head>
+<body>
+<div id="container">
+  <div></div>
+</div>
+</body>
+</html>

@@ -7,7 +7,6 @@
 #include "2D.h"     // for DrawTarget
 #include "Point.h"  // for IntSize
 #include "Types.h"  // for SurfaceFormat
-
 #include "nsRegion.h"
 
 namespace mozilla {

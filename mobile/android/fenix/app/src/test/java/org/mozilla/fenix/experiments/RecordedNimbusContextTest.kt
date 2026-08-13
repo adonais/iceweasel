@@ -76,6 +76,8 @@ class RecordedNimbusContextTest {
                 putJsonArray("addon_ids") {}
                 put("tou_points", 3)
                 put("user_disabled_ai", true)
+                put("are_notifications_enabled", false)
+                put("are_marketing_notifications_enabled", false)
             },
             contextAsJson,
         )
@@ -123,6 +125,8 @@ class RecordedNimbusContextTest {
                 put("no_shortcuts_or_stories_opt_outs", true)
                 put("tou_points", 3)
                 put("user_disabled_ai", true)
+                put("are_notifications_enabled", false)
+                put("are_marketing_notifications_enabled", false)
             },
             recordedValue?.jsonObject,
         )

@@ -5,21 +5,23 @@
 #ifndef GFX_CANVASRENDERER_H
 #define GFX_CANVASRENDERER_H
 
-#include <memory>            // for weak_ptr
-#include <stdint.h>          // for uint32_t
+#include <stdint.h>  // for uint32_t
+
+#include <memory>  // for weak_ptr
+
 #include "GLContextTypes.h"  // for GLContext
 #include "gfxContext.h"      // for gfxContext, etc
+#include "gfxPlatform.h"     // for gfxImageFormat
 #include "gfxTypes.h"
-#include "gfxPlatform.h"          // for gfxImageFormat
-#include "mozilla/Assertions.h"   // for MOZ_ASSERT, etc
+#include "mozilla/Assertions.h"  // for MOZ_ASSERT, etc
+#include "mozilla/Maybe.h"
 #include "mozilla/Preferences.h"  // for Preferences
 #include "mozilla/RefPtr.h"       // for RefPtr
+#include "mozilla/WeakPtr.h"      // for WeakPtr
 #include "mozilla/gfx/2D.h"       // for DrawTarget
-#include "mozilla/Maybe.h"
-#include "mozilla/mozalloc.h"  // for operator delete, etc
-#include "mozilla/WeakPtr.h"   // for WeakPtr
-#include "nsISupportsImpl.h"   // for MOZ_COUNT_CTOR, etc
+#include "mozilla/mozalloc.h"     // for operator delete, etc
 #include "nsICanvasRenderingContextInternal.h"
+#include "nsISupportsImpl.h"  // for MOZ_COUNT_CTOR, etc
 
 namespace mozilla {
 namespace layers {

@@ -7,6 +7,8 @@
 
 #include "nsIHttpAuthManager.h"
 
+class nsIHttpAuthCache;
+
 namespace mozilla {
 namespace net {
 

@@ -1,6 +1,5 @@
 #include "gtest/MozGTestBench.h"  // For MOZ_GTEST_BENCH
 #include "gtest/gtest.h"
-
 #include "nsURLHelper.h"
 
 TEST(TestIsValidIp, IPV4Localhost)

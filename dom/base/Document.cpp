@@ -192,6 +192,7 @@
 #include "mozilla/dom/HTMLMediaElement.h"
 #include "mozilla/dom/HTMLMetaElement.h"
 #include "mozilla/dom/HTMLObjectElement.h"
+#include "mozilla/dom/HTMLSelectElement.h"
 #include "mozilla/dom/HTMLSharedElement.h"
 #include "mozilla/dom/HTMLTextAreaElement.h"
 #include "mozilla/dom/HTMLVideoElement.h"
@@ -228,6 +229,7 @@
 #include "mozilla/dom/ProcessingInstruction.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/PromiseNativeHandler.h"
+#include "mozilla/dom/ReferrerPolicyBinding.h"
 #include "mozilla/dom/RemoteBrowser.h"
 #include "mozilla/dom/ReportDeliver.h"
 #include "mozilla/dom/ResizeObserver.h"
@@ -245,6 +247,8 @@
 #include "mozilla/dom/ServiceWorkerManager.h"
 #include "mozilla/dom/ShadowIncludingTreeIterator.h"
 #include "mozilla/dom/ShadowRoot.h"
+#include "mozilla/dom/SpeculationRuleSet.h"
+#include "mozilla/dom/SpeculationRules.h"
 #include "mozilla/dom/StyleSheetApplicableStateChangeEvent.h"
 #include "mozilla/dom/StyleSheetApplicableStateChangeEventBinding.h"
 #include "mozilla/dom/StyleSheetList.h"
@@ -301,6 +305,7 @@
 #include "mozilla/net/NeckoChannelParams.h"
 #include "mozilla/net/RequestContextService.h"
 #include "nsAboutProtocolUtils.h"
+#include "nsAnimationManager.h"
 #include "nsAtom.h"
 #include "nsAttrValue.h"
 #include "nsAttrValueInlines.h"
@@ -489,6 +494,7 @@ mozilla::LazyLogModule gSHIPBFCacheLog("SHIPBFCache");
 mozilla::LazyLogModule gTimeoutDeferralLog("TimeoutDefer");
 mozilla::LazyLogModule gUseCountersLog("UseCounters");
 static mozilla::LazyLogModule gFingerprinterDetection("FingerprinterDetection");
+extern mozilla::LazyLogModule gFocusNavigationLog;
 
 namespace mozilla {
 
@@ -555,20 +561,112 @@ static nsresult GetHttpChannelHelper(nsIChannel* aChannel,
   return NS_OK;
 }
 
-}  // namespace dom
+class IdentifierMapContentList final : public HTMLCollection {
+ public:
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(IdentifierMapContentList,
+                                           HTMLCollection)
 
-#define NAME_NOT_VALID ((SimpleContentList*)1)
+  enum class Kind : uint8_t {
+    WindowName,
+    DocumentName,
+  };
+
+  explicit IdentifierMapContentList(Document* aDoc, nsAtom* aName, Kind aKind)
+      : mDocument(aDoc), mName(aName), mKind(aKind) {}
+
+  void BringSelfUpToDate() {
+    if (mValid) {
+      return;
+    }
+    MOZ_ASSERT(mElements.IsEmpty());
+    mValid = true;
+    auto* entry = mDocument->LookupIdentifierInMap(mName.get());
+    if (!entry) {
+      return;
+    }
+    AutoTArray<Element*, 8> elements;
+    if (mKind == Kind::DocumentName) {
+      entry->GetDocumentNameElements(elements);
+    } else {
+      entry->GetWindowNameElements(elements);
+    }
+    mElements.AppendElements(elements);
+  };
+
+  void Invalidate() {
+    Reset();
+    mValid = false;
+  }
+
+  void SetKnownContents(Span<Element* const> aElements) {
+    MOZ_ASSERT(!mValid);
+    MOZ_ASSERT(mElements.IsEmpty());
+    mElements.AppendElements(aElements);
+    mValid = true;
+  }
+
+  nsINode* GetParentObject() override { return mDocument; }
+
+  uint32_t Length() override {
+    BringSelfUpToDate();
+    return mElements.Length();
+  }
+
+  Element* Item(uint32_t aIndex) override {
+    BringSelfUpToDate();
+    nsIContent* content = mElements.SafeElementAt(aIndex);
+    return content ? content->AsElement() : nullptr;
+  }
+
+  Element* GetFirstNamedElement(const nsAString& aName, bool& aFound) override {
+    BringSelfUpToDate();
+    return HTMLCollection::DefaultGetFirstNamedElement(aName, aFound);
+  }
+
+  void GetSupportedNames(nsTArray<nsString>& aNames) override {
+    BringSelfUpToDate();
+    HTMLCollection::GetSupportedNames(aNames, nullptr);
+  }
+
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override {
+    return HTMLCollection_Binding::Wrap(aCx, this, aGivenProto);
+  }
+
+ protected:
+  ~IdentifierMapContentList() override = default;
+
+  RefPtr<Document> mDocument;
+  RefPtr<nsAtom> mName;
+  bool mValid = false;
+  const Kind mKind;
+};
+
+NS_IMPL_CYCLE_COLLECTION_INHERITED(IdentifierMapContentList, HTMLCollection,
+                                   mDocument)
+
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(IdentifierMapContentList)
+NS_INTERFACE_MAP_END_INHERITING(HTMLCollection)
+
+NS_IMPL_ADDREF_INHERITED(IdentifierMapContentList, HTMLCollection)
+NS_IMPL_RELEASE_INHERITED(IdentifierMapContentList, HTMLCollection)
+
+}  // namespace dom
 
 IdentifierMapEntry::IdentifierMapEntry(
     const IdentifierMapEntry::DependentAtomOrString* aKey)
-    : mKey(aKey ? *aKey : nullptr) {}
+    : mKey(aKey->mAtom ? do_AddRef(aKey->mAtom) : NS_Atomize(*aKey->mString)) {}
+
+IdentifierMapEntry::~IdentifierMapEntry() = default;
+IdentifierMapEntry::IdentifierMapEntry(IdentifierMapEntry&&) = default;
 
 void IdentifierMapEntry::Traverse(
     nsCycleCollectionTraversalCallback* aCallback) {
   NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(*aCallback,
-                                     "mIdentifierMap mNameContentList");
+                                     "mIdentifierMap mWindowNameContentList");
   aCallback->NoteXPCOMChild(
-      static_cast<mozilla::dom::NodeList*>(mNameContentList));
+      static_cast<mozilla::dom::NodeList*>(mWindowNameContentList));
 
   NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(*aCallback,
                                      "mIdentifierMap mDocumentNameContentList");
@@ -584,12 +682,17 @@ void IdentifierMapEntry::Traverse(
 }
 
 bool IdentifierMapEntry::IsEmpty() {
-  return mIdContentList.IsEmpty() && !mNameContentList &&
-         !mDocumentNameContentList && !mChangeCallbacks && !mImageElement;
+  return mIdList.IsEmpty() && mNameList.IsEmpty() && !mChangeCallbacks &&
+         !mImageElement;
 }
 
-bool IdentifierMapEntry::HasNameElement() const {
-  return mNameContentList && mNameContentList->Length() != 0;
+bool IdentifierMapEntry::HasWindowNameElement() const {
+  for (auto* el : mNameList.AsSpan()) {
+    if (nsGenericHTMLElement::ShouldExposeNameAsWindowProperty(el)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 void IdentifierMapEntry::AddContentChangeCallback(
@@ -633,13 +736,15 @@ void IdentifierMapEntry::FireChangeCallbacks(Element* aOldElement,
 
 void IdentifierMapEntry::AddIdElement(Element* aElement) {
   MOZ_ASSERT(aElement, "Must have element");
-  MOZ_ASSERT(!mIdContentList.Contains(nullptr), "Why is null in our list?");
+  MOZ_ASSERT(!mIdList.Contains(nullptr), "Why is null in our list?");
 
-  size_t index = mIdContentList.Insert(*aElement);
+  size_t index = mIdList.Insert(*aElement);
   if (index == 0) {
-    Element* oldElement = mIdContentList.SafeElementAt(1, nullptr);
+    Element* oldElement = mIdList.SafeElementAt(1, nullptr);
     FireChangeCallbacks(oldElement, aElement);
   }
+
+  InvalidateDocumentNameContentList();
 }
 
 void IdentifierMapEntry::RemoveIdElement(Element* aElement) {
@@ -651,18 +756,19 @@ void IdentifierMapEntry::RemoveIdElement(Element* aElement) {
   // This could fire in OOM situations
   // Only assert this in HTML documents for now as XUL does all sorts of weird
   // crap.
-  NS_ASSERTION(!aElement->OwnerDoc()->IsHTMLDocument() ||
-                   mIdContentList.Contains(aElement),
-               "Removing id entry that doesn't exist");
+  NS_ASSERTION(
+      !aElement->OwnerDoc()->IsHTMLDocument() || mIdList.Contains(aElement),
+      "Removing id entry that doesn't exist");
 
   // XXXbz should this ever Compact() I guess when all the content is gone
   // we'll just get cleaned up in the natural order of things...
-  Element* currentElement = mIdContentList.SafeElementAt(0, nullptr);
-  mIdContentList.RemoveElement(*aElement);
+  Element* currentElement = mIdList.SafeElementAt(0, nullptr);
+  mIdList.RemoveElement(*aElement);
   if (currentElement == aElement) {
-    FireChangeCallbacks(currentElement,
-                        mIdContentList.SafeElementAt(0, nullptr));
+    FireChangeCallbacks(currentElement, mIdList.SafeElementAt(0, nullptr));
   }
+
+  InvalidateDocumentNameContentList();
 }
 
 void IdentifierMapEntry::SetImageElement(Element* aElement) {
@@ -675,12 +781,13 @@ void IdentifierMapEntry::SetImageElement(Element* aElement) {
 }
 
 void IdentifierMapEntry::ClearAndNotify() {
-  Element* currentElement = mIdContentList.SafeElementAt(0, nullptr);
-  mIdContentList.Clear();
+  Element* currentElement = mIdList.SafeElementAt(0, nullptr);
+  mIdList.Clear();
   if (currentElement) {
     FireChangeCallbacks(currentElement, nullptr);
   }
-  mNameContentList = nullptr;
+  mNameList.Clear();
+  mWindowNameContentList = nullptr;
   mDocumentNameContentList = nullptr;
   if (mImageElement) {
     SetImageElement(nullptr);
@@ -688,38 +795,113 @@ void IdentifierMapEntry::ClearAndNotify() {
   mChangeCallbacks = nullptr;
 }
 
-void IdentifierMapEntry::AddNameElement(nsINode* aNode, Element* aElement) {
-  if (!mNameContentList) {
-    mNameContentList = new dom::SimpleHTMLCollection(aNode);
-  }
-
-  mNameContentList->AppendElement(aElement);
+void IdentifierMapEntry::AddNameElement(Element* aElement) {
+  mNameList.Insert(*aElement);
+  InvalidateWindowNameContentList();
+  InvalidateDocumentNameContentList();
 }
 
 void IdentifierMapEntry::RemoveNameElement(Element* aElement) {
-  if (mNameContentList) {
-    mNameContentList->RemoveElement(aElement);
-  }
-}
-
-void IdentifierMapEntry::AddDocumentNameElement(
-    Document* aDocument, nsGenericHTMLElement* aElement) {
-  if (!mDocumentNameContentList) {
-    mDocumentNameContentList = new dom::SimpleHTMLCollection(aDocument);
-  }
-
-  mDocumentNameContentList->AppendElement(aElement);
-}
-
-void IdentifierMapEntry::RemoveDocumentNameElement(
-    nsGenericHTMLElement* aElement) {
-  if (mDocumentNameContentList) {
-    mDocumentNameContentList->RemoveElement(aElement);
-  }
+  mNameList.RemoveElement(*aElement);
+  InvalidateWindowNameContentList();
+  InvalidateDocumentNameContentList();
 }
 
 bool IdentifierMapEntry::HasDocumentNameElement() const {
-  return mDocumentNameContentList && mDocumentNameContentList->Length() != 0;
+  for (auto* el : mNameList.AsSpan()) {
+    if (nsGenericHTMLElement::ShouldExposeNameAsHTMLDocumentProperty(el)) {
+      return true;
+    }
+  }
+  for (auto* el : mIdList.AsSpan()) {
+    if (nsGenericHTMLElement::ShouldExposeIdAsHTMLDocumentProperty(el)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void IdentifierMapEntry::GetWindowNameElements(
+    nsTArray<Element*>& aElements) const {
+  for (auto* el : mNameList.AsSpan()) {
+    if (nsGenericHTMLElement::ShouldExposeNameAsWindowProperty(el)) {
+      aElements.AppendElement(el);
+    }
+  }
+}
+
+void IdentifierMapEntry::GetDocumentNameElements(
+    nsTArray<Element*>& aElements) const {
+  bool hasName = false;
+  bool hasId = false;
+  for (auto* el : mNameList.AsSpan()) {
+    if (nsGenericHTMLElement::ShouldExposeNameAsHTMLDocumentProperty(el)) {
+      hasName = true;
+      aElements.AppendElement(el);
+    }
+  }
+  for (auto* el : mIdList.AsSpan()) {
+    if (!nsGenericHTMLElement::ShouldExposeIdAsHTMLDocumentProperty(el)) {
+      continue;
+    }
+    if (el->HasName() &&
+        el->GetParsedAttr(nsGkAtoms::name)->GetAtomValue() == el->GetID()) {
+      // Would be a duplicate.
+      continue;
+    }
+    hasId = true;
+    aElements.AppendElement(el);
+  }
+  // If we only pulled from one array we're already sorted.
+  if (hasId && hasName) {
+    struct Comparator {
+      Comparator() = default;
+      mutable nsContentUtils::NodeIndexCache mCache;
+      int operator()(Element* aA, Element* aB) const {
+        return nsContentUtils::CompareTreePosition<TreeKind::DOM>(
+            aA, aB, nullptr, &mCache);
+      }
+    };
+    aElements.Sort(Comparator());
+  }
+}
+
+dom::HTMLCollection* IdentifierMapEntry::GetWindowNameContentList() const {
+  return mWindowNameContentList;
+}
+
+dom::HTMLCollection& IdentifierMapEntry::CreateWindowNameContentList(
+    Document* aDoc, Span<Element*> aKnownElements) {
+  MOZ_ASSERT(!mWindowNameContentList);
+  mWindowNameContentList = new dom::IdentifierMapContentList(
+      aDoc, mKey, dom::IdentifierMapContentList::Kind::WindowName);
+  mWindowNameContentList->SetKnownContents(aKnownElements);
+  return *mWindowNameContentList;
+}
+
+dom::HTMLCollection* IdentifierMapEntry::GetDocumentNameContentList() const {
+  return mDocumentNameContentList;
+}
+
+dom::HTMLCollection& IdentifierMapEntry::CreateDocumentNameContentList(
+    Document* aDoc, Span<Element*> aKnownElements) {
+  MOZ_ASSERT(!mDocumentNameContentList);
+  mDocumentNameContentList = new dom::IdentifierMapContentList(
+      aDoc, mKey, dom::IdentifierMapContentList::Kind::DocumentName);
+  mDocumentNameContentList->SetKnownContents(aKnownElements);
+  return *mDocumentNameContentList;
+}
+
+void IdentifierMapEntry::InvalidateWindowNameContentList() {
+  if (mWindowNameContentList) {
+    mWindowNameContentList->Invalidate();
+  }
+}
+
+void IdentifierMapEntry::InvalidateDocumentNameContentList() {
+  if (mDocumentNameContentList) {
+    mDocumentNameContentList->Invalidate();
+  }
 }
 
 bool IdentifierMapEntry::HasIdElementExposedAsHTMLDocumentProperty() const {
@@ -728,10 +910,7 @@ bool IdentifierMapEntry::HasIdElementExposedAsHTMLDocumentProperty() const {
          nsGenericHTMLElement::ShouldExposeIdAsHTMLDocumentProperty(idElement);
 }
 
-size_t IdentifierMapEntry::SizeOfExcludingThis(
-    MallocSizeOf aMallocSizeOf) const {
-  return mKey.mString.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
-}
+size_t IdentifierMapEntry::SizeOfExcludingThis(MallocSizeOf) const { return 0; }
 
 class OnloadBlocker final : public nsIRequest {
  public:
@@ -1397,6 +1576,8 @@ Document::Document(const char* aContentType,
       mHasBeenRevealed(false),
       mAutoSizesEnabled(StaticPrefs::dom_image_sizes_auto_enabled()),
       mWasFocusedElementRemoved(false),
+      mHasScopedCustomElementRegistry(false),
+      mSelectionMoreRecentThanFocus(false),
       mXMLDeclarationBits(0),
       mOnloadBlockCount(0),
       mWriteLevel(0),
@@ -2298,7 +2479,8 @@ Document::~Document() {
   // Clear mObservers to keep it in sync with the mutationobserver list
   mObservers.Clear();
 
-  mIntersectionObservers.Clear();
+  mIntersectionObservers.clear();
+  mResizeObservers.clear();
 
   if (mStyleSheetSetList) {
     mStyleSheetSetList->Disconnect();
@@ -2469,7 +2651,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(Document)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mCachedAncestorOrigins)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDisplayDocument)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFontFaceSet)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFocusNavigationStartingPoint)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPreviouslyFocusedContent)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mReadyForIdle)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocumentL10n)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFragmentDirective)
@@ -2526,6 +2708,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(Document)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mViewTransitionUpdateCallbacks)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocGroup)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFrameRequestManager)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSpeculationRules)
 
   // Traverse all our nsCOMArrays.
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPreloadingImages)
@@ -2625,7 +2808,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Document)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mElementsObservedForLastRememberedSize);
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mActiveEditContext)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mFontFaceSet)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mFocusNavigationStartingPoint)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mPreviouslyFocusedContent)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mReadyForIdle)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocumentL10n)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mFragmentDirective)
@@ -2662,6 +2845,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Document)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPreloadReferrerInfo)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPictureInPictureElement)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPopoverHintStackParent)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mSpeculationRules)
 
   if (tmp->mDocGroup && tmp->mDocGroup->GetBrowsingContextGroup()) {
     tmp->mDocGroup->GetBrowsingContextGroup()->RemoveDocument(tmp,
@@ -2677,7 +2861,8 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Document)
 
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPreloadingImages)
 
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mIntersectionObservers)
+  tmp->mIntersectionObservers.clear();
+  tmp->mResizeObservers.clear();
 
   if (tmp->mListenerManager) {
     tmp->mListenerManager->Disconnect();
@@ -3368,7 +3553,7 @@ bool Document::IsCallerChromeOrAddon(JSContext* aCx, JSObject* aObject) {
 
 static void CheckIsBadPolicy(nsILoadInfo::CrossOriginOpenerPolicy aPolicy,
                              BrowsingContext* aContext, nsIChannel* aChannel) {
-#if defined(EARLY_BETA_OR_EARLIER)
+#if defined(NIGHTLY_BUILD)
   auto requireCORP =
       nsILoadInfo::OPENER_POLICY_SAME_ORIGIN_EMBEDDER_POLICY_REQUIRE_CORP;
 
@@ -3396,7 +3581,7 @@ static void CheckIsBadPolicy(nsILoadInfo::CrossOriginOpenerPolicy aPolicy,
                         "Assert due to clearing REQUIRE_CORP.");
   MOZ_DIAGNOSTIC_ASSERT(aContext->GetOpenerPolicy() == requireCORP,
                         "Assert due to setting REQUIRE_CORP.");
-#endif  // defined(EARLY_BETA_OR_EARLIER)
+#endif  // defined(NIGHTLY_BUILD)
 }
 
 void Document::ApplyCspFromLoadInfo(nsILoadInfo* aLoadInfo) {
@@ -3794,13 +3979,18 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
     return rv;
   }
 
-  if (mDocumentURI && mDocumentURI->SchemeIs("chrome") &&
+  nsCOMPtr<nsIPrincipal> principal = NodePrincipal();
+  if ((principal->IsSystemPrincipal() ||
+       (mDocumentURI && mDocumentURI->SchemeIs("chrome"))) &&
       StaticPrefs::security_chrome_baseline_csp_enabled()) {
     nsAutoCString spec;
-    mDocumentURI->GetSpec(spec);
-    if (!nsContentSecurityUtils::IsExemptedFromBaselineChromeCSP(spec)) {
+    if (mDocumentURI) {
+      mDocumentURI->GetSpec(spec);
+    }
+    if (spec.IsEmpty() ||
+        !nsContentSecurityUtils::IsExemptedFromBaselineSystemCSP(spec)) {
       rv = CSP_AppendCSPFromHeader(
-          csp, nsContentSecurityUtils::kBaselineChromeCSP, false);
+          csp, nsContentSecurityUtils::kBaselineSystemCSP, false);
       NS_ENSURE_SUCCESS(rv, rv);
     }
   }
@@ -3824,7 +4014,6 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
   NS_ConvertASCIItoUTF16 cspROHeaderValue(tCspROHeaderValue);
 
   // Check if this is a document from a WebExtension.
-  nsCOMPtr<nsIPrincipal> principal = NodePrincipal();
   MOZ_ASSERT(!BasePrincipal::Cast(principal)->Is<ExpandedPrincipal>());
   auto addonPolicy = BasePrincipal::Cast(principal)->AddonPolicy();
 
@@ -3848,9 +4037,12 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
 
   // ----- if the doc is an addon, apply its CSP.
   if (addonPolicy) {
-    csp->AppendPolicy(addonPolicy->BaseCSP(), false, false);
-
-    csp->AppendPolicy(addonPolicy->ExtensionPageCSP(), false, false);
+    if (addonPolicy->Core()->IsSandboxPage(mDocumentURI)) {
+      csp->AppendPolicy(addonPolicy->SandboxPageCSP(), false, false);
+    } else {
+      csp->AppendPolicy(addonPolicy->BaseCSP(), false, false);
+      csp->AppendPolicy(addonPolicy->ExtensionPageCSP(), false, false);
+    }
   }
 
   // ----- if there's a full-strength CSP header, apply it.
@@ -4313,21 +4505,45 @@ static void IncrementExpandoGeneration(Document& aDoc) {
   ++aDoc.mExpandoAndGeneration.generation;
 }
 
+// The HTML spec has this awkward special-case where we are supposed to expose
+// an image in document['id'], iff the image has a name, see
+// https://html.spec.whatwg.org/#dom-document-nameditem-filter:
+//
+//    img elements that have an id content attribute whose value is name,
+//    and that have a non-empty name content attribute present also.
+//
+// This means that whenever an <img> element with an id wins or loses a name, we
+// need to invalidate the relevant content list.
+static void MaybeInvalidateDocumentNameListForImageElementName(
+    Document& aDoc, Element& aElement) {
+  if (!aElement.HasID() || !aElement.IsHTMLElement(nsGkAtoms::img)) {
+    return;
+  }
+  if (auto* entry = aDoc.LookupIdentifierInMap(aElement.GetID())) {
+    entry->InvalidateDocumentNameContentList();
+  }
+}
+
 void Document::AddToNameTable(Element* aElement, nsAtom* aName) {
-  MOZ_ASSERT(nsGenericHTMLElement::ShouldExposeNameAsWindowProperty(aElement),
-             "Only put elements that need to be exposed as window['name'] in "
-             "the named table.");
+  MOZ_ASSERT(aElement->IsHTMLElement() && nsGenericHTMLElement::CanHaveName(
+                                              aElement->NodeInfo()->NameAtom()),
+             "Only put elements that need to be exposed as window['name'] or "
+             "document['name'] in the named table.");
 
   IdentifierMapEntry* entry = mIdentifierMap.PutEntry(aName);
-
-  // Null for out-of-memory
-  if (entry) {
-    if (!entry->HasNameElement() &&
-        !entry->HasIdElementExposedAsHTMLDocumentProperty()) {
-      IncrementExpandoGeneration(*this);
-    }
-    entry->AddNameElement(this, aElement);
+  if (!entry) {
+    // out-of-memory
+    return;
   }
+  // FIXME(emilio, bug 2053910): This should check for document name elements
+  // instead...
+  if (!entry->HasWindowNameElement() &&
+      !entry->HasIdElementExposedAsHTMLDocumentProperty()) {
+    IncrementExpandoGeneration(*this);
+  }
+  entry->AddNameElement(aElement);
+
+  MaybeInvalidateDocumentNameListForImageElementName(*this, *aElement);
 }
 
 void Document::RemoveFromNameTable(Element* aElement, nsAtom* aName) {
@@ -4335,56 +4551,35 @@ void Document::RemoveFromNameTable(Element* aElement, nsAtom* aName) {
   if (mIdentifierMap.Count() == 0) return;
 
   IdentifierMapEntry* entry = mIdentifierMap.GetEntry(aName);
-  if (!entry)  // Could be false if the element was anonymous, hence never added
+  if (!entry) {
+    // Could be null if the element was anonymous, hence never added
     return;
+  }
 
   entry->RemoveNameElement(aElement);
-  if (!entry->HasNameElement() &&
+  // FIXME(emilio, bug 2053910): same as above.
+  if (!entry->HasWindowNameElement() &&
       !entry->HasIdElementExposedAsHTMLDocumentProperty()) {
     IncrementExpandoGeneration(*this);
   }
-}
 
-void Document::AddToDocumentNameTable(nsGenericHTMLElement* aElement,
-                                      nsAtom* aName) {
-  MOZ_ASSERT(
-      nsGenericHTMLElement::ShouldExposeIdAsHTMLDocumentProperty(aElement) ||
-          nsGenericHTMLElement::ShouldExposeNameAsHTMLDocumentProperty(
-              aElement),
-      "Only put elements that need to be exposed as document['name'] in "
-      "the document named table.");
-
-  if (IdentifierMapEntry* entry = mIdentifierMap.PutEntry(aName)) {
-    entry->AddDocumentNameElement(this, aElement);
-  }
-}
-
-void Document::RemoveFromDocumentNameTable(nsGenericHTMLElement* aElement,
-                                           nsAtom* aName) {
-  if (mIdentifierMap.Count() == 0) {
-    return;
-  }
-
-  if (IdentifierMapEntry* entry = mIdentifierMap.GetEntry(aName)) {
-    entry->RemoveDocumentNameElement(aElement);
-    BaseContentList* list = entry->GetDocumentNameContentList();
-    if (!list || list->Length() == 0) {
-      IncrementExpandoGeneration(*this);
-    }
-  }
+  MaybeInvalidateDocumentNameListForImageElementName(*this, *aElement);
 }
 
 void Document::AddToIdTable(Element* aElement, nsAtom* aId) {
   IdentifierMapEntry* entry = mIdentifierMap.PutEntry(aId);
-
-  if (entry) { /* True except on OOM */
-    if (nsGenericHTMLElement::ShouldExposeIdAsHTMLDocumentProperty(aElement) &&
-        !entry->HasNameElement() &&
-        !entry->HasIdElementExposedAsHTMLDocumentProperty()) {
-      IncrementExpandoGeneration(*this);
-    }
-    entry->AddIdElement(aElement);
+  if (!entry) {
+    return;  // Only on OOM.
   }
+
+  // FIXME(emilio, bug 2053910): same as above.
+  if (nsGenericHTMLElement::ShouldExposeIdAsHTMLDocumentProperty(aElement) &&
+      !entry->HasWindowNameElement() &&
+      !entry->HasIdElementExposedAsHTMLDocumentProperty()) {
+    IncrementExpandoGeneration(*this);
+  }
+
+  entry->AddIdElement(aElement);
 }
 
 void Document::RemoveFromIdTable(Element* aElement, nsAtom* aId) {
@@ -4400,8 +4595,9 @@ void Document::RemoveFromIdTable(Element* aElement, nsAtom* aId) {
     return;
 
   entry->RemoveIdElement(aElement);
+  // FIXME(emilio, bug 2053910): same as above.
   if (nsGenericHTMLElement::ShouldExposeIdAsHTMLDocumentProperty(aElement) &&
-      !entry->HasNameElement() &&
+      !entry->HasWindowNameElement() &&
       !entry->HasIdElementExposedAsHTMLDocumentProperty()) {
     IncrementExpandoGeneration(*this);
   }
@@ -4697,7 +4893,7 @@ bool Document::AllowsL10n() const {
 
 DocumentTimeline* Document::Timeline() {
   if (!mDocumentTimeline) {
-    mDocumentTimeline = new DocumentTimeline(this, TimeDuration(0));
+    mDocumentTimeline = new DocumentTimeline(this, TimeDuration());
   }
 
   return mDocumentTimeline;
@@ -5506,7 +5702,7 @@ bool Document::AutoEditorCommandTarget::IsEditable(Document* aDocument) const {
     doc->FlushPendingNotifications(FlushType::Frames);
   }
   EditorBase* targetEditor = GetTargetEditor();
-  if (targetEditor && targetEditor->GetEditContext()) {
+  if (targetEditor && targetEditor->ComputeEditContext()) {
     // EditContext should be treated as non-editable for the purposes of
     // execCommand: https://github.com/w3c/edit-context/issues/71
     return false;
@@ -6736,15 +6932,18 @@ void Document::SetLastFocusTime(const TimeStamp& aFocusTime) {
   mLastFocusTime = aFocusTime;
 }
 
-void Document::SetFocusNavigationStartingPoint(nsIContent* aContent,
-                                               bool aWillBeRemoved) {
+void Document::SetPreviouslyFocusedContent(nsIContent* aContent,
+                                           bool aWillBeRemoved) {
+  MOZ_LOG_FMT(gFocusNavigationLog, LogLevel::Debug,
+              "Set previously-focused content to {} (will be removed = {})",
+              aContent ? ToString(*aContent).c_str() : "null", aWillBeRemoved);
   mWasFocusedElementRemoved = aWillBeRemoved;
   if (!aWillBeRemoved) {
-    mFocusNavigationStartingPoint = aContent;
+    mPreviouslyFocusedContent = aContent;
     return;
   }
   if (!aContent) {
-    mFocusNavigationStartingPoint = nullptr;
+    mPreviouslyFocusedContent = nullptr;
     return;
   }
 
@@ -6755,15 +6954,15 @@ void Document::SetFocusNavigationStartingPoint(nsIContent* aContent,
        aContent = parent, parent = aContent->GetFlattenedTreeParent()) {
     FlattenedChildIterator iterator(parent);
     if (NS_WARN_IF(!iterator.Seek(aContent))) {
-      mFocusNavigationStartingPoint = nullptr;
+      mPreviouslyFocusedContent = nullptr;
       return;
     }
     if (auto* sibling = iterator.GetPreviousChild()) {
-      mFocusNavigationStartingPoint = sibling;
+      mPreviouslyFocusedContent = sibling;
       return;
     }
   }
-  mFocusNavigationStartingPoint = nullptr;
+  mPreviouslyFocusedContent = nullptr;
 }
 
 void Document::GetReferrer(nsACString& aReferrer) const {
@@ -7152,11 +7351,11 @@ void Document::SetFgColor(const nsAString& aFgColor) {
 }
 
 void Document::CaptureEvents() {
-  WarnOnceAbout(DeprecatedOperations::eUseOfCaptureEvents);
+  // Intentionally a no-op, as this API is deprecated.
 }
 
 void Document::ReleaseEvents() {
-  WarnOnceAbout(DeprecatedOperations::eUseOfReleaseEvents);
+  // Intentionally a no-op, as this API is deprecated.
 }
 
 HTMLAllCollection* Document::All() {
@@ -8120,36 +8319,37 @@ DocGroup* Document::GetDocGroupOrCreate() {
 
 void Document::SetScopeObject(nsIGlobalObject* aGlobal) {
   mScopeObject = do_GetWeakReference(aGlobal);
-  if (aGlobal) {
-    mHasHadScriptHandlingObject = true;
+  if (!aGlobal) {
+    return;
+  }
+  mHasHadScriptHandlingObject = true;
 
-    nsPIDOMWindowInner* window = aGlobal->GetAsInnerWindow();
-    if (!window) {
-      return;
-    }
+  nsPIDOMWindowInner* window = aGlobal->GetAsInnerWindow();
+  if (!window) {
+    return;
+  }
 
-    // Attempt to join a DocGroup based on our global and container now that our
-    // principal is locked in (due to being added to a window).
-    DocGroup* docGroup = GetDocGroupOrCreate();
-    if (!docGroup) {
-      // If we failed to join a DocGroup, inherit from our parent window.
-      //
-      // NOTE: It is possible for Document to be cross-origin to window while
-      // loading a cross-origin data document over XHR with CORS. In that case,
-      // the DocGroup can have a key which does not match NodePrincipal().
-      MOZ_ASSERT(!mDocumentContainer,
-                 "Must have DocGroup if loaded in a DocShell");
-      mDocGroup = window->GetDocGroup();
-      mDocGroup->AddDocument(this);
-    }
+  // Attempt to join a DocGroup based on our global and container now that our
+  // principal is locked in (due to being added to a window).
+  DocGroup* docGroup = GetDocGroupOrCreate();
+  if (!docGroup) {
+    // If we failed to join a DocGroup, inherit from our parent window.
+    //
+    // NOTE: It is possible for Document to be cross-origin to window while
+    // loading a cross-origin data document over XHR with CORS. In that case,
+    // the DocGroup can have a key which does not match NodePrincipal().
+    MOZ_ASSERT(!mDocumentContainer,
+               "Must have DocGroup if loaded in a DocShell");
+    mDocGroup = window->GetDocGroup();
+    mDocGroup->AddDocument(this);
+  }
 
 #ifdef DEBUG
-    AssertDocGroupMatchesKey();
+  AssertDocGroupMatchesKey();
 #endif
-    MOZ_ASSERT_IF(
-        mNodeInfoManager->GetArenaAllocator(),
-        mNodeInfoManager->GetArenaAllocator() == mDocGroup->ArenaAllocator());
-  }
+  MOZ_ASSERT_IF(
+      mNodeInfoManager->GetArenaAllocator(),
+      mNodeInfoManager->GetArenaAllocator() == mDocGroup->ArenaAllocator());
 }
 
 bool Document::ContainsEMEContent() {
@@ -9015,6 +9215,49 @@ bool IsLowercaseASCII(const nsAString& aValue) {
   return true;
 }
 
+// https://dom.spec.whatwg.org/#flatten-element-creation-options
+void Document::FlattenElementCreationOptions(
+    const ElementCreationOptionsOrString& aOptions, const nsString*& aIs,
+    Maybe<RefPtr<CustomElementRegistry>>& aRegistry, ErrorResult& rv) {
+  // 1. Let registry be the result of looking up a custom element registry given
+  // document.
+  // (This is handled implicitly by aRegistry being Nothing())
+
+  // 2. Let is be null.
+
+  // 3. If options is a dictionary:
+  if (!aOptions.IsElementCreationOptions()) {
+    return;
+  }
+  const ElementCreationOptions& options =
+      aOptions.GetAsElementCreationOptions();
+
+  // 3.1. If options["is"] exists, then set is to it.
+  if (options.mIs.WasPassed()) {
+    aIs = &options.mIs.Value();
+  }
+  // 3.2. If options["customElementRegistry"] exists:
+  if (options.mCustomElementRegistry.WasPassed()) {
+    // 3.2.1. If is is non-null, then throw a "NotSupportedError" DOMException.
+    if (aIs) {
+      rv.ThrowNotSupportedError(
+          "Cannot specify both 'is' and 'customElementRegistry' options");
+      return;
+    }
+    // 3.2.2. Set registry to options["customElementRegistry"].
+    aRegistry.emplace(options.mCustomElementRegistry.Value());
+    CustomElementRegistry* registry = aRegistry.ref();
+    // 3.3. If registry is non-null, registry’s is scoped is false, and registry
+    // is not document’s custom element registry, then throw a
+    // "NotSupportedError" DOMException.
+    if (registry && !registry->IsScoped() &&
+        registry != GetCustomElementRegistry()) {
+      rv.ThrowNotSupportedError(
+          "Cannot use a global CustomElementRegistry from another document");
+    }
+  }
+}
+
 /* https://dom.spec.whatwg.org/#dom-document-createelement */
 already_AddRefed<Element> Document::CreateElement(
     const nsAString& aTagName, const ElementCreationOptionsOrString& aOptions,
@@ -9036,20 +9279,18 @@ already_AddRefed<Element> Document::CreateElement(
 
   // 3. Let registry and is be the result of flattening element creation
   //    options given options and this.
-  // TODO(keithamus): Scoped Element Registries (`registry`).
   const nsString* is = nullptr;
+  Maybe<RefPtr<CustomElementRegistry>> customElementRegistry;
+  FlattenElementCreationOptions(aOptions, is, customElementRegistry, rv);
+  if (rv.Failed()) {
+    return nullptr;
+  }
+
+  // Non-standard 'pseudo' option.
   PseudoStyleType pseudoType = PseudoStyleType::NotPseudo;
   if (aOptions.IsElementCreationOptions()) {
     const ElementCreationOptions& options =
         aOptions.GetAsElementCreationOptions();
-
-    if (options.mIs.WasPassed()) {
-      is = &options.mIs.Value();
-    }
-
-    // XXX: Non-standard 'pseudo' option.
-    // Check 'pseudo' and throw an exception if it's not one allowed
-    // with CSS_PSEUDO_ELEMENT_IS_JS_CREATED_NAC.
     if (options.mPseudo.WasPassed()) {
       Maybe<PseudoStyleRequest> request = PseudoStyleRequest::Parse(
           options.mPseudo.Value(), DefaultStyleAttrURLData());
@@ -9066,10 +9307,14 @@ already_AddRefed<Element> Document::CreateElement(
   //    this's content type is "application/xhtml+xml"; otherwise null.
   // 5. Return the result of creating an element given this, localName,
   //    namespace, null, is, true, and registry.
-  RefPtr<Element> elem = CreateElem(needsLowercase ? lcTagName : aTagName,
-                                    nullptr, mDefaultElementType, is);
 
-  // XXX: Non-standard 'pseudo' option.
+  // nsContentUtils::NewXULOrHTMLElement handles tri-state logic of
+  // customElementRegistry
+  RefPtr<Element> elem =
+      CreateElem(needsLowercase ? lcTagName : aTagName, nullptr,
+                 mDefaultElementType, is, std::move(customElementRegistry));
+
+  // ChromeOnly 'pseudo' option.
   if (pseudoType != PseudoStyleType::NotPseudo) {
     elem->SetPseudoElementType(pseudoType);
   }
@@ -9094,21 +9339,18 @@ already_AddRefed<Element> Document::CreateElementNS(
 
   // 2. Let registry and is be the result of flattening element creation
   //    options given options and this.
-  // TODO(keithamus): Scoped Element Registries (`registry`).
   const nsString* is = nullptr;
-  if (aOptions.IsElementCreationOptions()) {
-    const ElementCreationOptions& options =
-        aOptions.GetAsElementCreationOptions();
-    if (options.mIs.WasPassed()) {
-      is = &options.mIs.Value();
-    }
+  Maybe<RefPtr<CustomElementRegistry>> customElementRegistry;
+  FlattenElementCreationOptions(aOptions, is, customElementRegistry, rv);
+  if (rv.Failed()) {
+    return nullptr;
   }
 
   // 3. Return the result of creating an element given document, localName,
   //    namespace, prefix, is, true, and registry.
   nsCOMPtr<Element> element;
   rv = NS_NewElement(getter_AddRefs(element), nodeInfo.forget(),
-                     NOT_FROM_PARSER, is);
+                     NOT_FROM_PARSER, is, std::move(customElementRegistry));
   if (rv.Failed()) {
     return nullptr;
   }
@@ -9126,15 +9368,14 @@ already_AddRefed<Element> Document::CreateXULElement(
   }
 
   const nsString* is = nullptr;
-  if (aOptions.IsElementCreationOptions()) {
-    const ElementCreationOptions& options =
-        aOptions.GetAsElementCreationOptions();
-    if (options.mIs.WasPassed()) {
-      is = &options.mIs.Value();
-    }
+  Maybe<RefPtr<CustomElementRegistry>> customElementRegistry;
+  FlattenElementCreationOptions(aOptions, is, customElementRegistry, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
   }
 
-  RefPtr<Element> elem = CreateElem(aTagName, nullptr, kNameSpaceID_XUL, is);
+  RefPtr<Element> elem = CreateElem(aTagName, nullptr, kNameSpaceID_XUL, is,
+                                    customElementRegistry);
   if (!elem) {
     aRv.Throw(NS_ERROR_NOT_AVAILABLE);
     return nullptr;
@@ -11763,7 +12004,7 @@ void Document::RetrieveRelevantHeaders(nsIChannel* aChannel) {
         // add more http headers if you need
         // XXXbz don't add content-location support without reading bug
         // 238654 and its dependencies/dups first.
-        0};
+        nullptr};
 
     nsAutoCString headerVal;
     const char* const* name = headers;
@@ -11877,10 +12118,10 @@ CustomElementRegistry* Document::GetEffectiveGlobalCustomElementRegistry() {
   return nullptr;
 }
 
-already_AddRefed<Element> Document::CreateElem(const nsAString& aName,
-                                               nsAtom* aPrefix,
-                                               int32_t aNamespaceID,
-                                               const nsAString* aIs) {
+already_AddRefed<Element> Document::CreateElem(
+    const nsAString& aName, nsAtom* aPrefix, int32_t aNamespaceID,
+    const nsAString* aIs,
+    Maybe<RefPtr<CustomElementRegistry>> aCustomElementRegistry) {
 #ifdef DEBUG
   if (!aPrefix) {
     NS_ASSERTION(nsContentUtils::IsValidElementLocalName(aName),
@@ -11905,8 +12146,9 @@ already_AddRefed<Element> Document::CreateElem(const nsAString& aName,
   NS_ENSURE_TRUE(nodeInfo, nullptr);
 
   nsCOMPtr<Element> element;
-  nsresult rv = NS_NewElement(getter_AddRefs(element), nodeInfo.forget(),
-                              NOT_FROM_PARSER, aIs);
+  nsresult rv =
+      NS_NewElement(getter_AddRefs(element), nodeInfo.forget(), NOT_FROM_PARSER,
+                    aIs, std::move(aCustomElementRegistry));
   return NS_SUCCEEDED(rv) ? element.forget() : nullptr;
 }
 
@@ -13487,7 +13729,7 @@ bool Document::IsActive() const {
 
 uint32_t Document::LastScrollGeneration() const {
   if (nsPresContext* pc = GetPresContext()) {
-    pc->LastScrollGeneration();
+    return pc->LastScrollGeneration();
   }
 
   return 0;
@@ -13496,7 +13738,7 @@ uint32_t Document::LastScrollGeneration() const {
 bool Document::HasBeenScrolledSince(
     const uint32_t& aLastScrollGeneration) const {
   if (nsPresContext* pc = GetPresContext()) {
-    pc->HasBeenScrolledSince(aLastScrollGeneration);
+    return pc->HasBeenScrolledSince(aLastScrollGeneration);
   }
 
   return false;
@@ -14435,7 +14677,9 @@ bool Document::HasWarnedAbout(DeprecatedOperations aOperation) const {
 
 void Document::WarnOnceAbout(
     DeprecatedOperations aOperation, bool asError /* = false */,
-    const nsTArray<nsString>& aParams /* = empty array */) const {
+    const nsTArray<nsString>& aParams /* = empty array */,
+    const SourceLocation& aLocation /* = mozilla::JSCallingLocation::Get() */)
+    const {
   MOZ_ASSERT(NS_IsMainThread());
   if (HasWarnedAbout(aOperation)) {
     return;
@@ -14446,7 +14690,30 @@ void Document::WarnOnceAbout(
       asError ? nsIScriptError::errorFlag : nsIScriptError::warningFlag;
   nsContentUtils::ReportToConsole(
       flags, "DOM Core"_ns, this, PropertiesFile::DOM_PROPERTIES,
-      kDeprecationWarnings[static_cast<size_t>(aOperation)], aParams);
+      kDeprecationWarnings[static_cast<size_t>(aOperation)], aParams,
+      aLocation);
+}
+
+void Document::WarnOnceAndReportAbout(
+    DeprecatedOperations aOperation, bool asError /* = false */,
+    const nsTArray<nsString>& aParams /* = empty array */,
+    const JSCallingLocation&
+        aLocation /* = mozilla::JSCallingLocation::Get() */) const {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  Document::WarnOnceAbout(aOperation, asError, aParams, aLocation);
+
+  nsCOMPtr<nsIURI> uri = GetDocumentURI();
+  if (NS_WARN_IF(!uri)) {
+    return;
+  }
+
+  nsIGlobalObject* global = GetScopeObject();
+  if (NS_WARN_IF(!global)) {
+    return;
+  }
+
+  nsContentUtils::ReportDeprecation(global, this, uri, aOperation, aLocation);
 }
 
 bool Document::HasWarnedAbout(DocumentWarnings aWarning) const {
@@ -16436,6 +16703,7 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
 
   if (PopoverData* popoverData = popoverHTMLEl->GetPopoverData()) {
     // 14. Set element's popover trigger to null.
+    RefPtr<Element> invoker = popoverData->GetInvoker();
     popoverData->SetInvoker(nullptr);
 
     // 15. Set element's opened in popover mode to null.
@@ -16444,6 +16712,10 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
     // 16. Set element's popover visibility state to hidden.
     popoverHTMLEl->PopoverPseudoStateUpdate(false, true);
     popoverData->SetPopoverVisibilityState(PopoverVisibilityState::Hidden);
+
+    if (auto* select = HTMLSelectElement::FromNodeOrNull(invoker)) {
+      select->OnPopoverStateChanged(false);
+    }
   }
 
   // 17. If element is document's hint stack parent, or document's showing hint
@@ -17346,10 +17618,6 @@ void Document::DocAddSizeOfExcludingThis(nsWindowSizes& aWindowSizes) const {
         mCSSLoader->SizeOfIncludingThis(aWindowSizes.mState.mMallocSizeOf);
   }
 
-  aWindowSizes.mDOMSizes.mDOMResizeObserverControllerSize +=
-      mResizeObservers.ShallowSizeOfExcludingThis(
-          aWindowSizes.mState.mMallocSizeOf);
-
   if (mAttributeStyles) {
     aWindowSizes.mDOMSizes.mDOMOtherSize +=
         mAttributeStyles->DOMSizeOfIncludingThis(
@@ -18126,7 +18394,7 @@ WindowContext* Document::GetWindowContextForPageUseCounters() const {
 }
 
 void Document::UpdateIntersections(TimeStamp aNowTime) {
-  if (!mIntersectionObservers.IsEmpty()) {
+  if (!mIntersectionObservers.isEmpty()) {
     DOMHighResTimeStamp time = 0;
     if (nsPIDOMWindowInner* win = GetInnerWindow()) {
       if (Performance* perf = win->GetPerformance()) {
@@ -18253,9 +18521,25 @@ void Document::SynchronouslyUpdateRemoteBrowserDimensions(
   UpdateRemoteFrameEffects(aIncludeInactive);
 }
 
+void Document::AddIntersectionObserver(DOMIntersectionObserver& aObserver) {
+  MOZ_DIAGNOSTIC_ASSERT(!aObserver.isInList(),
+                        "Intersection observer already in a list");
+  mIntersectionObservers.insertBack(&aObserver);
+}
+
+void Document::RemoveIntersectionObserver(DOMIntersectionObserver& aObserver) {
+  if (aObserver.isInList()) {
+    aObserver.remove();
+  }
+}
+
 void Document::NotifyIntersectionObservers() {
-  const auto observers = ToTArray<nsTArray<RefPtr<DOMIntersectionObserver>>>(
-      mIntersectionObservers);
+  // Snapshot the observers: the callbacks can register/unregister observers,
+  // and the RefPtrs keep them alive across the notification.
+  AutoTArray<RefPtr<DOMIntersectionObserver>, 8> observers;
+  for (DOMIntersectionObserver* observer : mIntersectionObservers) {
+    observers.AppendElement(observer);
+  }
   for (const auto& observer : observers) {
     // MOZ_KnownLive because the 'observers' array guarantees to keep it
     // alive.
@@ -19288,6 +19572,9 @@ void Document::DetermineProximityToViewportAndNotifyResizeObservers() {
   //
   // Bug 2040244 - Move this into RO loop.
   // https://github.com/whatwg/html/pull/11613
+  if (auto* pc = GetPresContext()) {
+    pc->AnimationManager()->UpdateDeferredTimelineChanges();
+  }
   if (mTimelinesController.UpdateStaleTimelines()) {
     FlushPendingNotifications(ctf);
   }
@@ -19315,6 +19602,18 @@ void Document::DetermineProximityToViewportAndNotifyResizeObservers() {
   ps->NotifyFontFaceSetOnRefresh();
 }
 
+void Document::AddResizeObserver(ResizeObserver& aObserver) {
+  MOZ_DIAGNOSTIC_ASSERT(!aObserver.isInList(),
+                        "Resize observer already in a list");
+  mResizeObservers.insertBack(&aObserver);
+}
+
+void Document::RemoveResizeObserver(ResizeObserver& aObserver) {
+  if (aObserver.isInList()) {
+    aObserver.remove();
+  }
+}
+
 void Document::GatherAllActiveResizeObservations(uint32_t aDepth) {
   for (ResizeObserver* observer : mResizeObservers) {
     observer->GatherActiveObservations(aDepth);
@@ -19326,8 +19625,10 @@ uint32_t Document::BroadcastAllActiveResizeObservations() {
 
   // Copy the observers as this invokes the callbacks and could register and
   // unregister observers at will.
-  const auto observers =
-      ToTArray<nsTArray<RefPtr<ResizeObserver>>>(mResizeObservers);
+  AutoTArray<RefPtr<ResizeObserver>, 8> observers;
+  for (ResizeObserver* observer : mResizeObservers) {
+    observers.AppendElement(observer);
+  }
   for (const auto& observer : observers) {
     // MOZ_KnownLive because 'observers' is guaranteed to keep it
     // alive.
@@ -19345,7 +19646,7 @@ uint32_t Document::BroadcastAllActiveResizeObservations() {
 }
 
 bool Document::HasAnySkippedResizeObservations() const {
-  for (const auto& observer : mResizeObservers) {
+  for (const auto* observer : mResizeObservers) {
     if (observer->HasSkippedObservations()) {
       return true;
     }
@@ -19354,7 +19655,7 @@ bool Document::HasAnySkippedResizeObservations() const {
 }
 
 bool Document::HasAnyActiveResizeObservations() const {
-  for (const auto& observer : mResizeObservers) {
+  for (const auto* observer : mResizeObservers) {
     if (observer->HasActiveObservations()) {
       return true;
     }
@@ -21225,6 +21526,13 @@ FullscreenKeyboardLock Document::GetFullscreenKeyboardLockStatus() const {
 bool Document::HasFullscreenKeyboardLockEnabled() {
   Element* elem = GetUnretargetedFullscreenElement();
   return elem && elem->State().HasState(ElementState::FULLSCREEN_KEYBOARD_LOCK);
+}
+
+class SpeculationRules& Document::SpeculationRules() {
+  if (!mSpeculationRules) {
+    mSpeculationRules = MakeRefPtr<class SpeculationRules>(this);
+  }
+  return *mSpeculationRules;
 }
 
 }  // namespace mozilla::dom

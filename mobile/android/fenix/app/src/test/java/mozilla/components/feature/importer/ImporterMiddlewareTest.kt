@@ -13,6 +13,7 @@ import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.bookmarks.file.BookmarksFileImporter
+import mozilla.components.concept.bookmarks.file.BookmarksImporterError
 import org.junit.runner.RunWith
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -34,6 +35,16 @@ class ImporterMiddlewareTest {
     }
 
     @Test
+    fun `when ImportStarted is received, the state is transitioned to Loading`() =
+        runTest {
+            val store = middleware.makeStore()
+
+            store.dispatch(ImporterAction.ImportStarted)
+
+            assertEquals(ImporterState.Loading, store.state)
+        }
+
+    @Test
     fun `when ImportCancelled action is received while import is in progress, the state is transitioned to Cancelled`() =
         runTest {
             // Given a store
@@ -51,7 +62,7 @@ class ImporterMiddlewareTest {
 
             // Then verify that the state is updated to canceled
             assertEquals(
-                ImporterState.Finished(result = ImporterResult.Canceled),
+                ImporterState.Finished(result = ImporterEvent.Canceled),
                 store.state,
             )
         }
@@ -75,7 +86,7 @@ class ImporterMiddlewareTest {
             // Then verify that the state remains "failed"
             val finalState = store.state
             assertIs<ImporterState.Finished>(finalState)
-            assertIs<ImporterResult.Failure>(finalState.result)
+            assertIs<ImporterEvent.Failure>(finalState.result)
         }
 
     @Test
@@ -99,8 +110,50 @@ class ImporterMiddlewareTest {
             // Then verify that the state remains "success"
             val finalState = store.state
             assertIs<ImporterState.Finished>(finalState)
-            assertIs<ImporterResult.Success>(finalState.result)
+            assertIs<ImporterEvent.Success>(finalState.result)
         }
+
+    @Test
+    fun `when import fails with a BookmarksImporterError, the error is preserved`() = runTest {
+        // Given a store
+        val store = middleware.makeStore()
+
+        // And that a file has been selected and the import failed with a specific error
+        val error = BookmarksImporterError.FileReadError(cause = Throwable("cannot open file"))
+        importer.expectedImportResult = Result.failure(error)
+        store.dispatch(ImporterAction.FileSelected(uri = Uri.EMPTY))
+
+        // And that the import has finished
+        scope.advanceUntilIdle()
+
+        // Then verify that the state is "failed" and the original error is preserved
+        val result = (store.state as? ImporterState.Finished)?.result
+
+        assertIs<ImporterEvent.Failure>(result)
+        assertEquals(error, result.error)
+    }
+
+    @Test
+    fun `when import fails with a generic error, it is wrapped as an UnknownImporterError`() = runTest {
+        // Given a store
+        val store = middleware.makeStore()
+
+        // And that a file has been selected and the import failed with a generic throwable
+        val cause = Throwable("Booo")
+        importer.expectedImportResult = Result.failure(cause)
+        store.dispatch(ImporterAction.FileSelected(uri = Uri.EMPTY))
+
+        // And that the import has finished
+        scope.advanceUntilIdle()
+
+        // Then verify that the result is a failure and the cause is wrapped as an UnknownImporterError
+        val result = (store.state as? ImporterState.Finished)?.result
+        assertIs<ImporterEvent.Failure>(result)
+
+        val error = result.error
+        assertIs<BookmarksImporterError.UnknownImporterError>(error)
+        assertEquals(cause, error.cause)
+    }
 
     private fun ImporterMiddleware.makeStore(
         initialState: ImporterState = ImporterState.Inert,
@@ -108,7 +161,7 @@ class ImporterMiddlewareTest {
         return ImporterStore(
             initialState = initialState,
             middleware = listOf(this),
-            reducer = ::importerReducer,
+            reducer = { _, action -> importerReducer(action) },
         )
     }
 

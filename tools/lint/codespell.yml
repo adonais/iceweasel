@@ -2,12 +2,12 @@
 codespell:
     description: Check code for common misspellings
     include:
-        - browser/base/content/docs/
         - browser/branding/
         - browser/components/asrouter/docs/
         - browser/components/places/docs/
         - browser/components/search/docs/
         - browser/components/search/schema/
+        - browser/components/tabbrowser/docs/
         - browser/components/touchbar/docs/
         - browser/components/urlbar/docs/
         - browser/extensions/newtab/docs/
@@ -64,6 +64,7 @@ codespell:
         - xpcom/docs/
     exclude:
         - devtools/docs/contributor/tools/storage/
+        - docs/mots/index.*
         - remote/test/puppeteer/
         - tools/lint/cpp/mingw-headers.txt
         - tools/lint/test/test_codespell.py

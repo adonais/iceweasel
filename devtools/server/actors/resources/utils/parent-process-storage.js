@@ -67,9 +67,11 @@ class ParentProcessStorage {
     );
 
     if (watcherActor.sessionContext.type == "browser-element") {
-      const { browsingContext, innerWindowID: innerWindowId } =
-        watcherActor.browserElement;
-      await this._spawnActor(browsingContext.id, innerWindowId);
+      const { browsingContext } = watcherActor;
+      await this._spawnActor(
+        browsingContext.id,
+        browsingContext.currentWindowGlobal.innerWindowId
+      );
     } else if (watcherActor.sessionContext.type == "webextension") {
       // As the top level actor may change over time for the web extension,
       // we don't have a good browsingContextID/innerWindowId to reference.

@@ -8,7 +8,7 @@
 
 // https://drafts.css-houdini.org/css-typed-om-1/#csshwb
 // TODO: Expose to LayoutWorklet
-[Exposed=(Window, Worker, PaintWorklet), Pref="layout.css.typed-om.enabled"]
+[Exposed=(Window, Worker, PaintWorklet), Func="mozilla::dom::CSSColorValue::IsEnabled"]
 interface CSSHWB : CSSColorValue {
   [Throws] constructor(CSSNumericValue h, CSSNumberish w, CSSNumberish b, optional CSSNumberish alpha = 1);
   // TODO: Change to [SetterThrows] once the h attribute is fully implemented

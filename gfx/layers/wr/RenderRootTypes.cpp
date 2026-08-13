@@ -3,8 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "RenderRootTypes.h"
-#include "mozilla/layers/WebRenderMessageUtils.h"
+
 #include "mozilla/layers/WebRenderBridgeChild.h"
+#include "mozilla/layers/WebRenderMessageUtils.h"
 
 using namespace mozilla::layers;
 

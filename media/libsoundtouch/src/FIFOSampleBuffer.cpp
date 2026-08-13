@@ -71,13 +71,10 @@ FIFOSampleBuffer::~FIFOSampleBuffer()
 // Sets number of channels, 1 = mono, 2 = stereo
 void FIFOSampleBuffer::setChannels(int numChannels)
 {
-    uint usedBytes;
-
     if (!verifyNumberOfChannels(numChannels)) return;
-
-    usedBytes = channels * samplesInBuffer;
+    // clear the buffer as nr of channels change
+    clear();
     channels = (uint)numChannels;
-    samplesInBuffer = usedBytes / channels;
 }
 
 

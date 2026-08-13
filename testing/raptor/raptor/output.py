@@ -126,7 +126,7 @@ class PerftestOutput(metaclass=ABCMeta):
 
         for data_set in self.supporting_data:
             data_type = data_set["type"]
-            LOG.info("summarizing %s data" % data_type)
+            LOG.info(f"summarizing {data_type} data")
 
             if data_type not in support_data_by_type:
                 support_data_by_type[data_type] = {
@@ -141,7 +141,7 @@ class PerftestOutput(metaclass=ABCMeta):
 
             suite_name = data_set["test"]
             if data_set.get("suite-suffix-type", True):
-                suite_name = "%s-%s" % (data_set["test"], data_set["type"])
+                suite_name = f"{data_set['test']}-{data_set['type']}"
 
             suite = {
                 "name": suite_name,
@@ -228,8 +228,7 @@ class PerftestOutput(metaclass=ABCMeta):
         if self.summarized_results == {}:
             success = False
             LOG.error(
-                "no summarized raptor results found for any of %s"
-                % ", ".join(test_names)
+                f"no summarized raptor results found for any of {', '.join(test_names)}"
             )
         else:
             for suite in self.summarized_results["suites"]:
@@ -248,7 +247,7 @@ class PerftestOutput(metaclass=ABCMeta):
                 try:
                     tname = ".".join(parts[:-1])
                 except Exception as e:
-                    LOG.info("no alias found on test, ignoring: %s" % e)
+                    LOG.info(f"no alias found on test, ignoring: {e}")
                     pass
 
                 # Since test names might have been modified, check if
@@ -260,17 +259,17 @@ class PerftestOutput(metaclass=ABCMeta):
                         break
                 if not found:
                     success = False
-                    LOG.error("no summarized raptor results found for %s" % (tname))
+                    LOG.error(f"no summarized raptor results found for {tname}")
 
             with open(results_path, "w") as f:
                 for result in self.summarized_results:
-                    f.write("%s\n" % result)
+                    f.write(f"{result}\n")
 
         if len(self.summarized_screenshots) > 0:
             with open(screenshot_path, "w") as f:
                 for result in self.summarized_screenshots:
-                    f.write("%s\n" % result)
-            LOG.info("screen captures can be found locally at: %s" % screenshot_path)
+                    f.write(f"{result}\n")
+            LOG.info(f"screen captures can be found locally at: {screenshot_path}")
 
         # now that we've checked for screen captures too, if there were no actual
         # test results we can bail out here
@@ -283,7 +282,7 @@ class PerftestOutput(metaclass=ABCMeta):
         if test_type == "scenario":
             # if a resource-usage flag was supplied the perfherder data
             # will still be output from output_supporting_data
-            LOG.info("scenario test type was run %s" % not_posting)
+            LOG.info(f"scenario test type was run {not_posting}")
             output_perf_data = False
 
         if self.browser_name:
@@ -307,7 +306,7 @@ class PerftestOutput(metaclass=ABCMeta):
             # data (i.e. power) and the regular Raptor test result
             # Both are already available as separate PERFHERDER_DATA json blobs
             if len(self.summarized_supporting_data) == 0:
-                LOG.info("PERFHERDER_DATA: %s" % json.dumps(self.summarized_results))
+                LOG.info(f"PERFHERDER_DATA: {json.dumps(self.summarized_results)}")
                 total_perfdata = 1
             else:
                 LOG.info(
@@ -317,7 +316,7 @@ class PerftestOutput(metaclass=ABCMeta):
         json.dump(
             self.summarized_results, open(results_path, "w"), indent=2, sort_keys=True
         )
-        LOG.info("results can also be found locally at: %s" % results_path)
+        LOG.info(f"results can also be found locally at: {results_path}")
 
         return success, total_perfdata
 
@@ -333,7 +332,7 @@ class PerftestOutput(metaclass=ABCMeta):
         """
         if len(self.summarized_supporting_data) == 0:
             LOG.error(
-                "no summarized supporting data found for %s" % ", ".join(test_names)
+                f"no summarized supporting data found for {', '.join(test_names)}"
             )
             return False, 0
 
@@ -347,19 +346,18 @@ class PerftestOutput(metaclass=ABCMeta):
                 # and made into a tc artifact accessible in treeherder as perfherder-data.json)
                 results_path = os.path.join(
                     os.path.dirname(os.environ["MOZ_UPLOAD_DIR"]),
-                    "raptor-%s.json" % data_type,
+                    f"raptor-{data_type}.json",
                 )
             else:
-                results_path = os.path.join(os.getcwd(), "raptor-%s.json" % data_type)
+                results_path = os.path.join(os.getcwd(), f"raptor-{data_type}.json")
 
             # dump data to raptor-data.json artifact
             json.dump(next_data_set, open(results_path, "w"), indent=2, sort_keys=True)
 
             # the output that treeherder expects to find
-            LOG.info("PERFHERDER_DATA: %s" % json.dumps(next_data_set))
+            LOG.info(f"PERFHERDER_DATA: {json.dumps(next_data_set)}")
             LOG.info(
-                "%s results can also be found locally at: %s"
-                % (data_type, results_path)
+                f"{data_type} results can also be found locally at: {results_path}"
             )
             total_perfdata += 1
 
@@ -391,7 +389,7 @@ class PerftestOutput(metaclass=ABCMeta):
             # the 16 test values, not the sub test values.
             if len(results) != 160:
                 raise Exception(
-                    "Speedometer has 160 subtests, found: %s instead" % len(results)
+                    f"Speedometer has 160 subtests, found: {len(results)} instead"
                 )
 
             results = results[9::10]
@@ -527,7 +525,7 @@ class PerftestOutput(metaclass=ABCMeta):
             if unit in ["KB", "mAh", "mWh"]:
                 return sum(_filter(vals))
 
-            raise NotImplementedError("Unit %s not suported" % unit)
+            raise NotImplementedError(f"Unit {unit} not suported")
 
         if len(vals) > 1:
             # pylint: disable=W1633
@@ -868,7 +866,7 @@ class PerftestOutput(metaclass=ABCMeta):
             if self.subtest_alert_on is not None:
                 if name in self.subtest_alert_on:
                     LOG.info(
-                        "turning on subtest alerting for measurement type: %s" % name
+                        f"turning on subtest alerting for measurement type: {name}"
                     )
                     _subtests[name]["shouldAlert"] = True
 
@@ -877,8 +875,9 @@ class PerftestOutput(metaclass=ABCMeta):
             for _sub, _value in pagecycle[0].items():
                 if _value["decodedFrames"] == 0:
                     failed_tests.append(
-                        "%s test Failed. decodedFrames %s droppedFrames %s."
-                        % (_sub, _value["decodedFrames"], _value["droppedFrames"])
+                        f"{_sub} test Failed. "
+                        f"decodedFrames {_value['decodedFrames']} "
+                        f"droppedFrames {_value['droppedFrames']}."
                     )
 
                 try:
@@ -905,7 +904,7 @@ class PerftestOutput(metaclass=ABCMeta):
 
         # Check if any youtube test failed and generate exception
         if len(failed_tests) > 0:
-            [LOG.warning("Youtube sub-test FAILED: %s" % test) for test in failed_tests]
+            [LOG.warning(f"Youtube sub-test FAILED: {test}") for test in failed_tests]
             # TODO: Change this to raise Exception after we figure out the failing tests
             LOG.warning(
                 "Youtube playback sub-tests failed!!! "
@@ -1308,7 +1307,7 @@ class RaptorOutput(PerftestOutput):
 
         # check if we actually have any results
         if len(self.results) == 0:
-            LOG.error("no raptor test results found for %s" % ", ".join(test_names))
+            LOG.error(f"no raptor test results found for {', '.join(test_names)}")
             return
 
         for test in self.results:
@@ -1368,8 +1367,8 @@ class RaptorOutput(PerftestOutput):
                     if test["cold"] is False:
                         # for warm page-load, ignore first value due to 1st pageload noise
                         LOG.info(
-                            "ignoring the first %s value due to initial pageload noise"
-                            % measurement_name
+                            f"ignoring the first {measurement_name} value due to "
+                            "initial pageload noise"
                         )
                         filtered_values = filters.ignore_first(
                             new_subtest["replicates"], 1
@@ -1394,16 +1393,16 @@ class RaptorOutput(PerftestOutput):
                     if self.subtest_alert_on is not None:
                         if measurement_name in self.subtest_alert_on:
                             LOG.info(
-                                "turning on subtest alerting for measurement type: %s"
-                                % measurement_name
+                                "turning on subtest alerting for measurement type: "
+                                f"{measurement_name}"
                             )
                             new_subtest["shouldAlert"] = True
                         else:
                             # Explicitly set `shouldAlert` to False so that the measurement
                             # is not alerted on. Otherwise Perfherder defaults to alerting
                             LOG.info(
-                                "turning off subtest alerting for measurement type: %s"
-                                % measurement_name
+                                "turning off subtest alerting for measurement type: "
+                                f"{measurement_name}"
                             )
                             new_subtest["shouldAlert"] = False
 
@@ -1446,8 +1445,8 @@ class RaptorOutput(PerftestOutput):
 
             else:
                 LOG.error(
-                    "output.summarize received unsupported test results type for %s"
-                    % test["name"]
+                    "output.summarize received unsupported test results type for "
+                    f"{test['name']}"
                 )
                 return
 
@@ -1538,8 +1537,7 @@ class RaptorOutput(PerftestOutput):
             suite_name = next_suite["details"]["name"]
             browser_cycle = next_suite["details"]["browser_cycle"]
             LOG.info(
-                "combining results from browser cycle %d for %s"
-                % (browser_cycle, suite_name)
+                f"combining results from browser cycle {browser_cycle} for {suite_name}"
             )
             if suite_name not in combined_suites:
                 # first browser cycle so just take entire entry to start with
@@ -1558,7 +1556,7 @@ class RaptorOutput(PerftestOutput):
                     for combined_subtest in combined_suites[suite_name]["subtests"]:
                         if combined_subtest["name"] == next_subtest["name"]:
                             # add subtest (measurement type) replicates to the combined entry
-                            LOG.info("adding replicates for %s" % next_subtest["name"])
+                            LOG.info(f"adding replicates for {next_subtest['name']}")
                             combined_subtest["replicates"].extend(
                                 next_subtest["replicates"]
                             )
@@ -1567,7 +1565,7 @@ class RaptorOutput(PerftestOutput):
                     # result entry; if it is for the same suite name add it - this could happen
                     # as ttfi may not be available in every browser cycle
                     if not found_subtest:
-                        LOG.info("adding replicates for %s" % next_subtest["name"])
+                        LOG.info(f"adding replicates for {next_subtest['name']}")
                         combined_suites[next_suite["details"]["name"]][
                             "subtests"
                         ].append(next_subtest)
@@ -1624,20 +1622,13 @@ class RaptorOutput(PerftestOutput):
 
         for screenshot in screenshots:
             self.summarized_screenshots.append(
-                """<tr>
-            <th>%s</th>
-            <th> %s</th>
+                f"""<tr>
+            <th>{screenshot["test_name"]}</th>
+            <th> {screenshot["page_cycle"]}</th>
             <th>
-                <img src="%s" alt="%s %s" width="320" height="240">
+                <img src="{screenshot["screenshot"]}" alt="{screenshot["test_name"]} {screenshot["page_cycle"]}" width="320" height="240">
             </th>
             </tr>"""
-                % (
-                    screenshot["test_name"],
-                    screenshot["page_cycle"],
-                    screenshot["screenshot"],
-                    screenshot["test_name"],
-                    screenshot["page_cycle"],
-                )
             )
 
         self.summarized_screenshots.append("""</table></body> </html>""")
@@ -1823,9 +1814,7 @@ class BrowsertimeOutput(PerftestOutput):
 
         # check if we actually have any results
         if len(self.results) == 0:
-            LOG.error(
-                "no browsertime test results found for %s" % ", ".join(test_names)
-            )
+            LOG.error(f"no browsertime test results found for {', '.join(test_names)}")
             return
 
         test_results = {"framework": {"name": "browsertime"}}
@@ -1926,8 +1915,8 @@ class BrowsertimeOutput(PerftestOutput):
                 if self.subtest_alert_on is not None:
                     if measurement_name in self.subtest_alert_on:
                         LOG.info(
-                            "turning on subtest alerting for measurement type: %s"
-                            % measurement_name
+                            "turning on subtest alerting for measurement type: "
+                            f"{measurement_name}"
                         )
                         subtest["shouldAlert"] = True
                         if self.app in (
@@ -1941,8 +1930,8 @@ class BrowsertimeOutput(PerftestOutput):
                         # Explicitly set `shouldAlert` to False so that the measurement
                         # is not alerted on. Otherwise Perfherder defaults to alerting.
                         LOG.info(
-                            "turning off subtest alerting for measurement type: %s"
-                            % measurement_name
+                            "turning off subtest alerting for measurement type: "
+                            f"{measurement_name}"
                         )
                         subtest["shouldAlert"] = False
                 subtest["replicates"] = replicates

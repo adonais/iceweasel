@@ -1,0 +1,17 @@
+{
+  "label": "thnet.gov.cn",
+  "bugs": {
+    "1934534": {
+      "issue": "broken-scrolling",
+      "matches": ["*://*.thnet.gov.cn/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["desktop"],
+      "content_scripts": {
+        "js": ["emulate_MouseWheel_events.js"]
+      }
+    }
+  ]
+}

@@ -7,10 +7,10 @@
 
 #include <type_traits>
 
-#include "nsString.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/UniquePtr.h"
+#include "nsString.h"
 #include "nsTArray.h"
 
 namespace mozilla {

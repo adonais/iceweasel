@@ -1,0 +1,248 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test that character bounds are reported correctly for DOM-based EditContext.</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="/tests/SimpleTest/EventUtils.js"></script>
+  <script src="common.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<div>foo</div>
+<canvas></canvas>
+<script>
+'use strict';
+
+let firedCharacterBoundsUpdate = false;
+const editContext = new EditContext();
+// Use some strange rectangles that don't mean anything
+const bounds = new Array(200).fill().map((_, i) => new DOMRect(i*i+5*i+23, i+44, i+5, i+10));
+
+function rectUnion(r1, r2) {
+  const left = Math.min(r1.left, r2.left);
+  const top  = Math.min(r1.top, r2.top);
+  return new DOMRect(
+    left,
+    top,
+    Math.max(r1.left + r1.width - left, r2.left + r2.width - left),
+    Math.max(r1.top + r1.height - top, r2.top + r2.height - top),
+  );
+}
+
+function clearRectCache() {
+  // Blurring and focusing the editor should clear the
+  // text rect cache (so we can check that
+  // characterboundsupdate is fired as it should be).
+  const host = document.activeElement;
+  host.blur();
+  host.focus();
+  // Also clear the current character bounds
+  editContext.updateCharacterBounds(0, []);
+}
+
+// Add information about active EditContext to assertion message
+function formatMessage(message) {
+  let text = document.activeElement.editContext.text;
+  if (text.length > 10) {
+    text = text.substring(0, 10) + '...';
+  }
+  const editContextType = document.activeElement.tagName === 'CANVAS'
+         ? '<canvas>-based EditContext'
+         : 'DOM-based EditContext';
+  return `${message} (${editContextType}, text=${text})`;
+}
+
+function checkText(startOffset, count) {
+  const expectedText = editContext.text.substring(startOffset, startOffset + count);
+  let result = synthesizeQueryTextContent(startOffset, count);
+  ok(!firedCharacterBoundsUpdate,
+     formatMessage('Should not fire characterboundsupdate when querying text.'));
+  firedCharacterBoundsUpdate = false;
+  ok(result.succeeded,
+     formatMessage('QueryTextContent should succeed on EditContext.'));
+  is(result.text, expectedText,
+     formatMessage('QueryTextContent should get content from EditContext.text.'));
+}
+
+function checkTextRelative(startOffset, count) {
+  startOffset += editContext.selectionStart;
+  const expectedText = editContext.text.substring(startOffset, startOffset + count);
+  let result = synthesizeQueryTextContent(startOffset, count, true);
+  ok(!firedCharacterBoundsUpdate,
+     formatMessage('Should not fire characterboundsupdate when querying text.'));
+  firedCharacterBoundsUpdate = false;
+  ok(result.succeeded,
+     formatMessage('QueryTextContent should succeed on EditContext.'));
+  is(result.text, expectedText,
+     formatMessage('QueryTextContent should get content from EditContext.text, applying relative offset to EditContext.selectionStart.'));
+}
+
+function getTextRectArray(start, count) {
+  clearRectCache();
+  let result = synthesizeQueryTextRectArray(start, count);
+  ok(firedCharacterBoundsUpdate,
+     formatMessage('Should fire characterboundsupdate when querying text rect array.'));
+  firedCharacterBoundsUpdate = false;
+  ok(result.succeeded,
+     formatMessage('QueryTextRectArray should succeed on EditContext.'));
+  const rects = [];
+  for (let i = start; i < start+Math.max(count, 1); i++) {
+    const left = {}, top = {}, width = {}, height = {};
+    result.getCharacterRect(i-start, left, top, width, height);
+    rects.push({left: left.value, top: top.value, width: width.value, height: height.value});
+  }
+  return rects;
+}
+
+function checkTextRectArray(start, count) {
+  const rects = getTextRectArray(start, count);
+  info(start + ' ' + count);
+  for (let i = start; i < start+count; i++) {
+    checkRect(rects[i-start], bounds[i],
+              formatMessage('synthesizeQueryTextRectArray should give rectangles provided in updateCharacterBounds.'));
+  }
+}
+
+function checkTextRect(start, count) {
+  clearRectCache();
+  let result = synthesizeQueryTextRect(start, count);
+  ok(firedCharacterBoundsUpdate,
+     formatMessage('Should fire characterboundsupdate when querying text rect.'));
+  firedCharacterBoundsUpdate = false;
+  ok(result.succeeded,
+     formatMessage('QueryTextRect should succeed on EditContext.'));
+  let union = bounds.slice(start, start + count).reduce(rectUnion);
+  checkRect(result, union,
+            formatMessage('QueryTextRect should give union of rectangles provided in updateCharacterBounds.'));
+}
+
+function checkCharacterAtPoint(characterIndex) {
+  clearRectCache();
+  const rect = convertToRootRelativeRect(bounds[characterIndex]);
+  let result = synthesizeCharAtPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+  ok(firedCharacterBoundsUpdate,
+     formatMessage('Should fire characterboundsupdate when querying character at point.'));
+  firedCharacterBoundsUpdate = false;
+  ok(result.succeeded,
+     formatMessage('QueryCharacterAtPoint should succeed on EditContext.'));
+  ok(!result.notFound,
+     formatMessage('QueryCharacterAtPoint should find the character.'));
+  is(result.offset, characterIndex,
+     formatMessage('QueryCharacterAtPoint should give an offset based on rectangles provided in updateCharacterBounds.'));
+  ok(!result.tentativeCaretOffsetNotFound,
+     formatMessage('QueryCharacterAtPoint should give a tentative caret offset.'));
+  is(result.tentativeCaretOffset, characterIndex,
+     formatMessage('QueryCharacterAtPoint should give a tentative caret offset based on rectangles provided in updateCharacterBounds.'));
+}
+
+function compositionUpdate(newString) {
+  synthesizeCompositionChange({
+    composition: {
+      string: newString,
+      clauses: [
+        {length: newString.length, attr: COMPOSITION_ATTR_RAW_CLAUSE },
+      ]
+    },
+    caret: {
+      start: newString.length,
+      length: 0,
+    },
+    key: {
+      key: 'a',
+    }
+  });
+}
+
+function compositionEnd() {
+  synthesizeComposition({
+    type: 'compositioncommitasis',
+    key: {
+      key: 'b'
+    }
+  });
+}
+
+const domHost = document.querySelector('div');
+const canvasHost = document.querySelector('canvas');
+
+async function runTests(aHost) {
+  await SimpleTest.promiseFocus();
+  domHost.editContext = null;
+  canvasHost.editContext = null;
+  aHost.editContext = editContext;
+  aHost.focus();
+  editContext.updateText(0, editContext.text.length, 'something else');
+  editContext.updateSelection(3, 3);
+  let characterBoundsUpdateRange;
+  editContext.addEventListener('characterboundsupdate', e => {
+    firedCharacterBoundsUpdate = true;
+    characterBoundsUpdateRange = `${e.rangeStart}-${e.rangeEnd}`;
+    editContext.updateCharacterBounds(0, bounds);
+  });
+  firedCharacterBoundsUpdate = false;
+  checkText(4, 5);
+  checkText(0, 0);
+  checkText(0, editContext.text.length);
+  checkTextRelative(2, 5);
+  checkTextRelative(-1, 0);
+  checkTextRelative(-3, editContext.text.length);
+
+  is(domHost.textContent, 'foo', formatMessage('DOM content should be unchanged.'));
+
+  editContext.updateCharacterBounds(0, bounds);
+  checkTextRectArray(0, editContext.text.length);
+  checkTextRectArray(3, 2);
+  checkTextRect(0, editContext.text.length);
+  checkTextRect(3, 2);
+
+  for (let i = 0; i < editContext.text.length; i++) {
+    checkCharacterAtPoint(i);
+  }
+
+  let rects = getTextRectArray(0, 0);
+  is(rects.length, 1, formatMessage('QueryTextRectArray should still give a caret rect if count is 0.'));
+  checkRect(rects[0],
+            {left: bounds[0].left, top: bounds[0].top, width: 1, height: bounds[0].height},
+            formatMessage('QueryTextRectArray should give first character rect collapsed to the left.'));
+
+  rects = getTextRectArray(editContext.text.length, 0);
+  is(rects.length, 1,
+     formatMessage('QueryTextRectArray should still give a caret rect if count is 0.'));
+  let lastBound = bounds[editContext.text.length - 1];
+  checkRect(rects[0],
+            {left: lastBound.left + lastBound.width, top: lastBound.top, width: 1, height: lastBound.height},
+            formatMessage('QueryTextRectArray should give last character rect collapsed to the right.'));
+
+  aHost.style.writingMode = 'vertical-rl';
+  rects = getTextRectArray(0, 0);
+  is(rects.length, 1,
+     formatMessage('QueryTextRectArray should still give a caret rect if count is 0.'));
+  checkRect(rects[0],
+            {left: bounds[0].left, top: bounds[0].top, width: bounds[0].width, height: 1},
+            formatMessage('QueryTextRectArray should give first character rect collapsed to the top for vertical writing mode.'));
+  rects = getTextRectArray(editContext.text.length, 0);
+  is(rects.length, 1,
+     formatMessage('QueryTextRectArray should still give a caret rect if count is 0.'));
+  checkRect(rects[0],
+            {left: lastBound.left, top: lastBound.top + lastBound.height, width: lastBound.width, height: 1},
+            formatMessage('QueryTextRectArray should give last character rect collapsed to the bottom for vertical writing mode.'));
+
+  editContext.updateText(0, editContext.text.length, 'fooạ̀́bar');
+  checkTextRectArray(5, 1);
+  is(characterBoundsUpdateRange, '3-7',
+     formatMessage('characterboundsupdate offsets should not be in the middle of a grapheme cluster.'));
+  const longText = 'test'.repeat(20);
+  const graphemeCluster = '🏳️‍🌈';
+  editContext.updateText(0, editContext.text.length, longText + graphemeCluster + longText);
+  checkTextRectArray(longText.length + 2, 1);
+  is(characterBoundsUpdateRange, `${longText.length}-${longText.length+graphemeCluster.length}`,
+     formatMessage('characterboundsupdate offsets should not be in the middle of a grapheme cluster.'));
+}
+
+add_task(() => runTests(domHost));
+add_task(() => runTests(canvasHost));
+
+</script>
+</body>
+</html>

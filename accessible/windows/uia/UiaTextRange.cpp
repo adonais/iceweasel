@@ -4,13 +4,15 @@
 
 #include "UiaTextRange.h"
 
+#include <comdef.h>
+#include <propvarutil.h>
+
+#include <unordered_set>
+
+#include "TextLeafRange.h"
 #include "mozilla/a11y/HyperTextAccessibleBase.h"
 #include "nsAccUtils.h"
 #include "nsIAccessibleTypes.h"
-#include "TextLeafRange.h"
-#include <comdef.h>
-#include <propvarutil.h>
-#include <unordered_set>
 
 namespace mozilla::a11y {
 

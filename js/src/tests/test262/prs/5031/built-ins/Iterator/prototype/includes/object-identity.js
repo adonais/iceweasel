@@ -8,11 +8,29 @@ description: >
 features: [iterator-includes]
 ---*/
 
-let o = {};
+let o = {
+  get toString() {
+    throw new Test262Error();
+  },
+  get valueOf() {
+    throw new Test262Error();
+  }
+};
 let arr = [o];
 
-assert.sameValue(arr.values().includes({}), false);
+assert.sameValue(arr.values().includes({
+  get toString() {
+    throw new Test262Error();
+  },
+  get valueOf() {
+    throw new Test262Error();
+  }
+}), false);
+
+assert.sameValue(arr.values().includes(""), false);
+
 assert.sameValue(arr.values().includes(o), true);
+
 assert.sameValue([].values().includes(o), false);
 
 reportCompare(0, 0);

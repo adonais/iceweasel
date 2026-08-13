@@ -2,13 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "WebSocketLog.h"
 #include "WebSocketConnectionChild.h"
 
 #include "WebSocketConnection.h"
+#include "WebSocketLog.h"
+#include "mozilla/Components.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/net/SocketProcessBackgroundChild.h"
-#include "mozilla/Components.h"
 #include "nsISerializable.h"
 #include "nsITLSSocketControl.h"
 #include "nsITransportSecurityInfo.h"

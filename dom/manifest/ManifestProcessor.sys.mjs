@@ -39,10 +39,10 @@ const textDirections = new Set(["ltr", "rtl", "auto"]);
 
 // ValueExtractor is used by the various processors to get values
 // from the manifest and to report errors.
-import { ValueExtractor } from "resource://gre/modules/ValueExtractor.sys.mjs";
+import { ValueExtractor } from "moz-src:///dom/manifest/ValueExtractor.sys.mjs";
 
 // ImageObjectProcessor is used to process things like icons and images
-import { ImageObjectProcessor } from "resource://gre/modules/ImageObjectProcessor.sys.mjs";
+import { ImageObjectProcessor } from "moz-src:///dom/manifest/ImageObjectProcessor.sys.mjs";
 
 const domBundle = Services.strings.createBundle(
   "chrome://global/locale/dom/dom.properties"

@@ -2,13 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "jit/shared/CodeGenerator-shared-inl.h"
+#include "jit/CodeGenerator.h"
 
 #include "mozilla/DebugOnly.h"
 
 #include <utility>
 
-#include "jit/CodeGenerator.h"
 #include "jit/CompactBuffer.h"
 #include "jit/CompileInfo.h"
 #include "jit/InlineScriptTree.h"
@@ -24,6 +23,7 @@
 #include "util/Memory.h"
 
 #include "jit/MacroAssembler-inl.h"
+#include "jit/shared/CodeGenerator-shared-inl.h"
 #include "vm/JSScript-inl.h"
 
 using namespace js;

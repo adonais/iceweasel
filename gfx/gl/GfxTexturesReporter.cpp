@@ -2,11 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <string>
-#include <sstream>
-#include "nsExceptionHandler.h"
 #include "GfxTexturesReporter.h"
+
+#include <sstream>
+#include <string>
+
 #include "mozilla/StaticPrefs_gfx.h"
+#include "nsExceptionHandler.h"
 
 using namespace mozilla::gl;
 

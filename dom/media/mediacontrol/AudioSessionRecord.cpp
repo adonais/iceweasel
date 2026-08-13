@@ -54,9 +54,9 @@ void AudioSessionRecord::DispatchStateChange(uint64_t aBcId) const {
   if (!wgp) {
     return;
   }
-  MOZ_LOG(gMediaControlLog, LogLevel::Debug,
-          ("AudioSessionRecord bc=%" PRIu64 ", DispatchStateChange state=%s",
-           aBcId, GetEnumString(mState).get()));
+  MOZ_LOG_FMT(gMediaControlLog, LogLevel::Debug,
+              "AudioSessionRecord bc={}, DispatchStateChange state={}", aBcId,
+              GetEnumString(mState).get());
   (void)wgp->SendNotifyAudioSessionStateChanged(mState);
 }
 

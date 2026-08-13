@@ -17,11 +17,46 @@ const METRIC_SOURCE = Object.freeze({
   TAB_MENU: "tab_menu",
   TAB_STRIP: "tab_strip",
   DRAG_AND_DROP: "drag",
+  // Keyboard shortcut (Ctrl+W, Ctrl+F4, Ctrl+Shift+PageUp/Down, etc.)
+  KEYBOARD: "keyboard",
+  // Middle-clicking on a tab
+  MIDDLE_CLICK: "middle_click",
+  // Mouse wheel scrolling on the tab strip
+  MOUSE_WHEEL: "mouse_wheel",
+  // A trackpad or touch screen gesture
+  GESTURE: "gesture",
   // "Search & Suggest," i.e. URL bar suggested actions while typing
   SUGGEST: "suggest",
   // History > Recently Closed Tabs menu, undo recently closed tab, etc.
   RECENT_TABS: "recent",
+  // A messaging action.
+  MESSAGING: "messaging",
+  // The ctrl-tab UI.
+  CTRL_TAB: "ctrl_tab",
+  // The Smart Window "Group my tabs" suggestion panel.
+  SMART_WINDOW_GROUP_SUGGESTIONS: "smartwindow_group_suggestions",
   UNKNOWN: "unknown",
+});
+
+/**
+ * The action for telemetry. When adding to this list you MUST update the labels
+ * for the tab.action and tab.tab_count counters in `metrics.yaml`.
+ */
+const METRIC_ACTION = Object.freeze({
+  // A tab became the displayed tab.
+  ACTIVATE: "activate",
+  // Tabs were moved to a previously existing window.
+  ADOPT: "adopt",
+  // Tabs were detached to a new window.
+  DETACH: "detach",
+  // Tabs were closed.
+  CLOSE: "close",
+  // Tabs were moved within the same window.
+  MOVE: "move",
+  // Tabs were pinned.
+  PIN: "pin",
+  // Tabs were unpinned.
+  UNPIN: "unpin",
 });
 
 const METRIC_TABS_LAYOUT = Object.freeze({
@@ -50,7 +85,21 @@ const METRIC_GROUP_TYPE = Object.freeze({
  *   The system, surface, or control the user used to take this action.
  *   @see TabMetrics.METRIC_SOURCE for possible values.
  *   Defaults to "unknown".
+ * @property {boolean} [isDecomposed=false]
+ *   Some combination operations are handled internally individually, moving
+ *   five tabs is split into five moves for instance. This flag is set to true
+ *   if this is one of the individual events
  */
+
+/**
+ * An unknown context.
+ *
+ * @type {TabMetricsContext}
+ */
+const UNKNOWN_CONTEXT = Object.freeze({
+  isUserTriggered: false,
+  telemetrySource: METRIC_SOURCE.UNKNOWN,
+});
 
 /**
  * Creates a `TabMetricsContext` object for a user event originating from
@@ -68,10 +117,47 @@ function userTriggeredContext(telemetrySource) {
   };
 }
 
+/**
+ * Creates a copy of the context for decomposed events.
+ *
+ * @param {TabMetricsContext} metricsContext
+ * @returns {TabMetricsContext}
+ */
+function decomposedContext(metricsContext) {
+  return {
+    ...metricsContext,
+    isDecomposed: true,
+  };
+}
+
+function sourceForEvent(event) {
+  if (!event) {
+    return METRIC_SOURCE.UNKNOWN;
+  }
+
+  if (event.type == "DOMMouseScroll") {
+    return METRIC_SOURCE.MOUSE_WHEEL;
+  }
+
+  if (SimpleGestureEvent.isInstance(event)) {
+    return METRIC_SOURCE.GESTURE;
+  }
+
+  if (KeyboardEvent.isInstance(event)) {
+    return METRIC_SOURCE.KEYBOARD;
+  }
+
+  return METRIC_SOURCE.UNKNOWN;
+}
+
 export const TabMetrics = {
   METRIC_SOURCE,
+  METRIC_ACTION,
   METRIC_TABS_LAYOUT,
   METRIC_REOPEN_TYPE,
   METRIC_GROUP_TYPE,
+  UNKNOWN_CONTEXT,
+  sourceForEvent,
   userTriggeredContext,
+  decomposedContext,
 };

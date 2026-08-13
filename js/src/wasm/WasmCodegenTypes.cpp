@@ -17,6 +17,7 @@
 #include "wasm/WasmCodegenTypes.h"
 
 #include "mozilla/PodOperations.h"
+
 #include "wasm/WasmExprType.h"
 #include "wasm/WasmStubs.h"
 #include "wasm/WasmSummarizeInsn.h"
@@ -299,17 +300,8 @@ bool CallSites::lookup(uint32_t returnAddressOffset,
   return false;
 }
 
-CallIndirectId CallIndirectId::forAsmJSFunc() {
-  return CallIndirectId(CallIndirectIdKind::AsmJS);
-}
-
 CallIndirectId CallIndirectId::forFunc(const CodeMetadata& codeMeta,
                                        uint32_t funcIndex) {
-  // asm.js tables are homogenous and don't require a signature check
-  if (codeMeta.isAsmJS()) {
-    return CallIndirectId::forAsmJSFunc();
-  }
-
   FuncDesc func = codeMeta.funcs[funcIndex];
   if (!func.canRefFunc()) {
     return CallIndirectId();
@@ -320,11 +312,6 @@ CallIndirectId CallIndirectId::forFunc(const CodeMetadata& codeMeta,
 
 CallIndirectId CallIndirectId::forFuncType(const CodeMetadata& codeMeta,
                                            uint32_t funcTypeIndex) {
-  // asm.js tables are homogenous and don't require a signature check
-  if (codeMeta.isAsmJS()) {
-    return CallIndirectId::forAsmJSFunc();
-  }
-
   const TypeDef& typeDef = codeMeta.types->type(funcTypeIndex);
   const FuncType& funcType = typeDef.funcType();
   CallIndirectId callIndirectId;
@@ -362,14 +349,6 @@ CalleeDesc CalleeDesc::wasmTable(const CodeMetadata& codeMeta,
   c.u.table.minLength_ = desc.initialLength();
   c.u.table.maxLength_ = desc.maximumLength();
   c.u.table.callIndirectId_ = callIndirectId;
-  return c;
-}
-CalleeDesc CalleeDesc::asmJSTable(const CodeMetadata& codeMeta,
-                                  uint32_t tableIndex) {
-  CalleeDesc c;
-  c.which_ = AsmJSTable;
-  c.u.table.instanceDataOffset_ =
-      codeMeta.offsetOfTableInstanceData(tableIndex);
   return c;
 }
 CalleeDesc CalleeDesc::builtin(SymbolicAddress callee) {

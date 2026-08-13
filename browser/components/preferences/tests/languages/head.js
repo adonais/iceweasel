@@ -4,7 +4,7 @@
 /* eslint-disable no-unused-vars */
 
 Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/browser/components/preferences/tests/head.js",
+  "chrome://mochitests/content/browser/browser/components/preferences/tests/head-common.js",
   this
 );
 
@@ -12,7 +12,7 @@ const { AddonTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/AddonTestUtils.sys.mjs"
 );
 const { LangPackMatcher } = ChromeUtils.importESModule(
-  "resource://gre/modules/LangPackMatcher.sys.mjs"
+  "moz-src:///intl/locale/LangPackMatcher.sys.mjs"
 );
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"

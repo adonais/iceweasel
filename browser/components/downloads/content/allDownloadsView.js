@@ -752,8 +752,13 @@ DownloadsPlacesView.prototype = {
     contextMenu.querySelector(".downloadCopyLocationMenuItem").hidden =
       !Array.prototype.some.call(
         this._richlistbox.selectedItems,
-        el => !!el._shell.download.source?.url
+        el =>
+          !!el._shell.download.source?.url &&
+          !el._shell.download.source?.isDataURICleared
       );
+    contextMenu.querySelector(".downloadLinksSeparator").hidden =
+      contextMenu.querySelector(".downloadCopyLocationMenuItem").hidden &&
+      contextMenu.querySelector(".downloadOpenReferrerMenuItem").hidden;
 
     let download = element._shell.download;
     if (!download.stopped) {

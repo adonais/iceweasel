@@ -80,15 +80,12 @@ void FilterInstance::PaintFilteredFrame(
     return;
   }
 
-  gfxMatrix scaleMatrix(scaleFactors.xScale, 0.0f, 0.0f, scaleFactors.yScale,
-                        0.0f, 0.0f);
+  auto cssDevPixelScale =
+      aFilteredFrame->PresContext()->CSSToDevPixelScale().scale;
 
-  gfxMatrix reverseScaleMatrix = scaleMatrix;
-  DebugOnly<bool> invertible = reverseScaleMatrix.Invert();
-  MOZ_ASSERT(invertible);
-
-  gfxMatrix scaleMatrixInDevUnits =
-      scaleMatrix * SVGUtils::GetCSSPxToDevPxMatrix(aFilteredFrame);
+  gfxMatrix scaleMatrixInDevUnits(scaleFactors.xScale * cssDevPixelScale, 0.0f,
+                                  0.0f, scaleFactors.yScale * cssDevPixelScale,
+                                  0.0f, 0.0f);
 
   // Hardcode InputIsTainted to true because we don't want JS to be able to
   // read the rendered contents of aFilteredFrame.
@@ -98,6 +95,9 @@ void FilterInstance::PaintFilteredFrame(
                           scaleMatrixInDevUnits, aDirtyArea, nullptr, nullptr,
                           aOverrideBBox);
   if (instance.IsInitialized()) {
+    gfxMatrix reverseScaleMatrix(1.0 / scaleFactors.xScale, 0.0f, 0.0f,
+                                 1.0 / scaleFactors.yScale, 0.0f, 0.0f);
+
     // Pull scale vector out of aCtx's transform, put all scale factors, which
     // includes css and css-to-dev-px scale, into scaleMatrixInDevUnits.
     aCtx->SetMatrixDouble(reverseScaleMatrix * aCtx->CurrentMatrixDouble());
@@ -196,6 +196,12 @@ WrFiltersStatus FilterInstance::BuildWebRenderFiltersImpl(
     return WrFiltersStatus::DISABLED_FOR_PERFORMANCE;
   }
 
+  size_t primitiveCount = instance.mFilterDescription.mPrimitives.Length();
+
+  aWrFilters.filters.SetCapacity(primitiveCount * 2 + 1);
+  aWrFilters.filter_datas.SetCapacity(primitiveCount);
+  aWrFilters.values.SetCapacity(primitiveCount);
+
   Maybe<IntRect> finalClip;
   bool srgb = true;
   // We currently apply the clip on the stacking context after applying filters,
@@ -273,8 +279,8 @@ WrFiltersStatus FilterInstance::BuildWebRenderFiltersImpl(
 
       const Size& stdDev = blur.mStdDeviation;
       if (stdDev.width != 0.0 || stdDev.height != 0.0) {
-        aWrFilters.filters.AppendElement(
-            wr::FilterOp::Blur(stdDev.width, stdDev.height));
+        aWrFilters.filters.AppendElement(wr::FilterOp::Blur(
+            stdDev.width, stdDev.height, /* should_inflate */ true));
       } else {
         filterIsNoop = true;
       }

@@ -26,7 +26,12 @@ export class AutoScrollParent extends JSWindowActorParent {
         if (!requestedInForegroundTab) {
           return Promise.resolve({ autoscrollEnabled: false, usingAPZ: false });
         }
-        return Promise.resolve(browser.startScroll(data));
+        return Promise.resolve(
+          browser.startScroll({
+            ...data,
+            browsingContext: this.browsingContext,
+          })
+        );
       case "Autoscroll:MaybeStartInParent": {
         // Don't start autoscroll if the tab has already been a background tab.
         if (!requestedInForegroundTab) {

@@ -220,9 +220,9 @@ static bool AppendFunctionIndexName(uint32_t funcIndex, UTF8Bytes* bytes) {
          bytes->append(afterFuncIndex, strlen(afterFuncIndex));
 }
 
-bool CodeMetadata::getFuncNameForWasm(NameContext ctx, uint32_t funcIndex,
-                                      const ShareableBytes* nameSectionPayload,
-                                      UTF8Bytes* name) const {
+bool CodeMetadata::getFuncName(NameContext ctx, uint32_t funcIndex,
+                               const ShareableBytes* nameSectionPayload,
+                               UTF8Bytes* name) const {
   if (nameSection && nameSection->moduleName.length != 0) {
     if (!AppendName(nameSectionPayload->vector, nameSection->moduleName,
                     name)) {
@@ -258,7 +258,6 @@ size_t CodeMetadata::sizeOfExcludingThis(
          SizeOfMaybeExcludingThis(nameSection, mallocSizeOf) +
          funcs.sizeOfExcludingThis(mallocSizeOf) +
          elemSegmentTypes.sizeOfExcludingThis(mallocSizeOf) +
-         asmJSSigToTableIndex.sizeOfExcludingThis(mallocSizeOf) +
          customSectionRanges.sizeOfExcludingThis(mallocSizeOf);
 }
 

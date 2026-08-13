@@ -3,17 +3,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "Compatibility.h"
-
-#include "mozilla/a11y/Platform.h"
-#include "mozilla/UniquePtrExtensions.h"
+#include "NtUndoc.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/WindowsVersion.h"
+#include "mozilla/a11y/Platform.h"
 #include "nsReadableUtils.h"
 #include "nsString.h"
 #include "nsTHashSet.h"
 #include "nsWindowsHelpers.h"
-
-#include "NtUndoc.h"
 
 using namespace mozilla;
 

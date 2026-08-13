@@ -13,7 +13,7 @@ use crate::font_metrics::{FontMetrics, FontMetricsOrientation};
 #[cfg(feature = "gecko")]
 use crate::gecko_bindings::structs::GeckoFontMetrics;
 use crate::parser::{Parse, ParserContext};
-use crate::typed_om::{NumericValue, ToTyped, TypedValue, UnitValue};
+use crate::typed_om::{NumericType, NumericValue, ToTyped, TypedValue, UnitValue};
 use crate::values::computed::{self, CSSPixelLength, Context, FontSize};
 use crate::values::generics::length as generics;
 use crate::values::generics::length::{
@@ -1058,9 +1058,11 @@ impl ToCss for NoCalcLength {
 
 impl ToTyped for NoCalcLength {
     fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
+        let numeric_type = NumericType::length();
         let value = self.unitless_value();
         let unit = CssString::from(self.unit());
         dest.push(TypedValue::Numeric(NumericValue::Unit(UnitValue {
+            numeric_type,
             value,
             unit,
         })));
@@ -1561,7 +1563,10 @@ impl LengthPercentage {
         )
     }
 
-    /// Computes this specified value without style context. This fails for calc and non-px units.
+    /// Computes this specified value without style context. This succeeds for
+    /// absolute lengths, percentages, and calc() expressions combining only
+    /// those; it fails (returns None) for anything that needs a context to
+    /// resolve, e.g. font- or viewport-relative units.
     pub fn compute_without_context(&self) -> Option<computed::LengthPercentage> {
         use crate::values::normalize;
         match self {
@@ -1572,7 +1577,7 @@ impl LengthPercentage {
             Self::Percentage(ref pc) => Some(computed::LengthPercentage::new_percent(
                 computed::Percentage(normalize(pc.get())),
             )),
-            _ => None,
+            Self::Calc(ref calc) => calc.compute_without_context(),
         }
     }
 }

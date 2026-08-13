@@ -5,7 +5,9 @@
 package mozilla.components.service.merino.manifest
 
 import android.content.res.AssetManager
+import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import mozilla.components.support.ktx.android.net.hostWithoutCommonPrefixes
 import mozilla.components.support.test.any
 import mozilla.components.support.test.mock
 import org.junit.Assert.assertEquals
@@ -85,6 +87,27 @@ class MerinoManifestProviderTest {
         val domains = provider.getTopDomains(limit = 2)
         assertEquals(2, domains.size)
         assertTrue("ranks should be non-decreasing", domains[0].rank <= domains[1].rank)
+    }
+
+    @Test
+    fun `GIVEN excluded domains WHEN the top domains are fetched THEN returned domains do not include the excluded domains`() {
+        val provider = providerWith(TEST_JSON)
+        val excludedDomains = provider.getTopDomains(limit = 3).map { it.url.toUri().hostWithoutCommonPrefixes }
+
+        val domains = provider.getTopDomains(excludedDomains = excludedDomains.filterNotNull().toSet())
+
+        assertTrue(domains.none { it.url.toUri().hostWithoutCommonPrefixes in excludedDomains })
+    }
+
+    @Test
+    fun `GIVEN excluded domains and a limit WHEN the top domains are fetched THEN return the expected number of domains`() {
+        val provider = providerWith(TEST_JSON)
+        val excluded = provider.getTopDomains(limit = 2).map { it.url.toUri().hostWithoutCommonPrefixes }
+
+        val domains = provider.getTopDomains(limit = 2, excludedDomains = excluded.filterNotNull().toSet())
+
+        assertEquals(2, domains.size)
+        assertTrue(domains.none { it.url.toUri().hostWithoutCommonPrefixes in excluded })
     }
 
     @Test

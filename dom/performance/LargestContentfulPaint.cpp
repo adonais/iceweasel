@@ -17,6 +17,7 @@
 #include "mozilla/nsVideoFrame.h"
 #include "nsContentUtils.h"
 #include "nsGkAtoms.h"
+#include "nsIContentInlines.h"
 #include "nsLayoutUtils.h"
 #include "nsRFPService.h"
 

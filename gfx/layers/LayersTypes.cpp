@@ -5,8 +5,9 @@
 #include "LayersTypes.h"
 
 #include <cinttypes>
-#include "nsPrintfCString.h"
+
 #include "mozilla/gfx/gfxVars.h"
+#include "nsPrintfCString.h"
 
 #ifdef XP_WIN
 #  include "gfxConfig.h"
@@ -93,6 +94,23 @@ CompositeProcessFencesHolderId CompositeProcessFencesHolderId::GetNext() {
 
   static std::atomic<uint64_t> sCounter = 0;
   return CompositeProcessFencesHolderId{++sCounter};
+}
+
+/* static */
+GpuProcessAndroidImageReaderId GpuProcessAndroidImageReaderId::GetNext() {
+  if (!XRE_IsGPUProcess()) {
+    MOZ_ASSERT_UNREACHABLE("unexpected to be called");
+    return GpuProcessAndroidImageReaderId{};
+  }
+
+  static std::atomic<uint64_t> sCounter = 0;
+  return GpuProcessAndroidImageReaderId{++sCounter};
+}
+
+/* static */
+AndroidMediaCodecFrameId AndroidMediaCodecFrameId::GetNext() {
+  static std::atomic<uint64_t> sCounter = 0;
+  return AndroidMediaCodecFrameId{++sCounter};
 }
 
 std::ostream& operator<<(std::ostream& os, ScrollDirection aDirection) {

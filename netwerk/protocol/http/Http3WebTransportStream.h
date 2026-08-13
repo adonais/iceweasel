@@ -7,8 +7,8 @@
 
 #include <functional>
 
-#include "WebTransportStreamBase.h"
 #include "Http3StreamBase.h"
+#include "WebTransportStreamBase.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
 #include "mozilla/ResultVariant.h"

@@ -404,13 +404,6 @@ const featureDescriptions = [
     recommended: true,
   },
   {
-    name: "CPU Utilization",
-    value: "cpu",
-    title:
-      "Record how much CPU has been used between samples by each profiled thread.",
-    recommended: true,
-  },
-  {
     name: "Memory Tracking",
     value: "memory",
     title:

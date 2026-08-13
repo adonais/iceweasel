@@ -5,12 +5,13 @@
 #ifndef nsBaseChannel_h_
 #define nsBaseChannel_h_
 
-#include "mozilla/dom/MimeType.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/MimeType.h"
 #include "mozilla/net/NeckoTargetHolder.h"
 #include "mozilla/net/PrivateBrowsingChannel.h"
+#include "nsCOMPtr.h"
 #include "nsHashPropertyBag.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
 #include "nsIBaseChannel.h"
@@ -28,7 +29,6 @@
 #include "nsInputStreamPump.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
-#include "nsCOMPtr.h"
 
 class nsIInputStream;
 class nsICancelable;

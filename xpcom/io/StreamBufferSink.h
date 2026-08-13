@@ -6,6 +6,7 @@
 #define mozilla_StreamBufferSink_h
 
 #include <cstddef>
+
 #include "mozilla/Span.h"
 #include "nsString.h"
 

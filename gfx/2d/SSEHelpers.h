@@ -5,8 +5,8 @@
 #ifndef GFX_2D_SSEHELPERS_H_
 #define GFX_2D_SSEHELPERS_H_
 
-#include <xmmintrin.h>
 #include <emmintrin.h>
+#include <xmmintrin.h>
 
 /* Before Nehalem _mm_loadu_si128 could be very slow, this trick is a little
  * faster. Once enough people are on architectures where _mm_loadu_si128 is

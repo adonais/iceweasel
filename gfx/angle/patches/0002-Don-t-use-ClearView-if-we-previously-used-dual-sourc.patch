@@ -1,0 +1,176 @@
+From d9c5b07d9b3abde2c17f4085e18f951a50a97e0f Mon Sep 17 00:00:00 2001
+From: Jeff Muizelaar <jrmuizel@gmail.com>
+Date: Wed, 6 May 2020 14:04:42 -0400
+Subject: [PATCH] Don't use ClearView if we previously used dual source
+ blending on Intel gen6. (#22)
+
+Doing a ClearView after a dual source blend seems to cause a TDR on
+Intel SandyBridge. Presumeably this is because the ClearView is
+implemented as a regular draw and the driver doesn't properly set up the
+state.
+
+If we detect that this is going to happen we fall back to the manual
+draw call path. This lets us use ClearView most of the time still.
+---
+ .../platform/autogen/FeaturesD3D_autogen.h    |  6 +++
+ include/platform/d3d_features.json            |  8 ++++
+ src/libANGLE/renderer/d3d/d3d11/Clear11.cpp   | 43 +++++++++++++++++--
+ .../renderer/d3d/d3d11/renderer11_utils.cpp   | 12 ++++--
+ util/autogen/angle_features_autogen.cpp       |  1 +
+ util/autogen/angle_features_autogen.h         |  1 +
+ 6 files changed, 63 insertions(+), 8 deletions(-)
+
+diff --git a/include/platform/autogen/FeaturesD3D_autogen.h b/include/platform/autogen/FeaturesD3D_autogen.h
+index 6c29dc7f81..0dd1015cbe 100644
+--- a/include/platform/autogen/FeaturesD3D_autogen.h
++++ b/include/platform/autogen/FeaturesD3D_autogen.h
+@@ -110,6 +110,12 @@ struct FeaturesD3D : FeatureSetBase
+         &members,
+     };
+ 
++    FeatureInfo emulateClearViewAfterDualSourceBlending = {
++        "emulateClearViewAfterDualSourceBlending",
++        FeatureCategory::D3DWorkarounds,
++        &members,
++    };
++
+     FeatureInfo useSystemMemoryForConstantBuffers = {
+         "useSystemMemoryForConstantBuffers",
+         FeatureCategory::D3DWorkarounds,
+diff --git a/include/platform/d3d_features.json b/include/platform/d3d_features.json
+index 175ed88d90..941918c8d0 100644
+--- a/include/platform/d3d_features.json
++++ b/include/platform/d3d_features.json
+@@ -120,6 +120,14 @@
+             ],
+             "issue": "https://crbug.com/655534"
+         },
++        {
++            "name": "emulate_clear_view_after_dual_source_blending",
++            "category": "Workarounds",
++            "description": [
++                "On Sandybridge, calling ClearView after using dual source blending causes hardware to hang"
++            ],
++            "issue": "https://bugzilla.mozilla.org/show_bug.cgi?id=1633628"
++        },
+         {
+             "name": "use_system_memory_for_constant_buffers",
+             "category": "Workarounds",
+diff --git a/src/libANGLE/renderer/d3d/d3d11/Clear11.cpp b/src/libANGLE/renderer/d3d/d3d11/Clear11.cpp
+index 9a02fff5ad..764349c3d0 100644
+--- a/src/libANGLE/renderer/d3d/d3d11/Clear11.cpp
++++ b/src/libANGLE/renderer/d3d/d3d11/Clear11.cpp
+@@ -474,10 +474,45 @@ angle::Result Clear11::clearFramebuffer(const gl::Context *context,
+         const auto &framebufferRTV = renderTarget->getRenderTargetView();
+         ASSERT(framebufferRTV.valid());
+ 
+-        if ((!(mRenderer->getRenderer11DeviceCaps().supportsClearView) && needScissoredClear) ||
+-            clearParams.colorType != GL_FLOAT || (formatInfo.redBits > 0 && !r) ||
+-            (formatInfo.greenBits > 0 && !g) || (formatInfo.blueBits > 0 && !b) ||
+-            (formatInfo.alphaBits > 0 && !a))
++        bool canClearView = mRenderer->getRenderer11DeviceCaps().supportsClearView;
++        if (canClearView &&
++            mRenderer->getFeatures().emulateClearViewAfterDualSourceBlending.enabled)
++        {
++            // Check the current state to see if we were using dual source blending
++            const auto isDualSource = [](const auto blend) {
++                switch (blend)
++                {
++                    case D3D11_BLEND_SRC1_COLOR:
++                    case D3D11_BLEND_INV_SRC1_COLOR:
++                    case D3D11_BLEND_SRC1_ALPHA:
++                    case D3D11_BLEND_INV_SRC1_ALPHA:
++                        return true;
++                    default:
++                        return false;
++                }
++            };
++            FLOAT blendFactor[4];
++            UINT sampleMask;
++            ID3D11BlendState *blendState;
++            deviceContext->OMGetBlendState(&blendState, blendFactor, &sampleMask);
++            if (blendState)
++            {
++                D3D11_BLEND_DESC blendDesc;
++                blendState->GetDesc(&blendDesc);
++                // You can only use dual source blending on slot 0 so only check there
++                if (isDualSource(blendDesc.RenderTarget[0].SrcBlend) ||
++                    isDualSource(blendDesc.RenderTarget[0].DestBlend) ||
++                    isDualSource(blendDesc.RenderTarget[0].SrcBlendAlpha) ||
++                    isDualSource(blendDesc.RenderTarget[0].DestBlendAlpha))
++                {
++                    canClearView = false;
++                }
++            }
++        }
++
++        if ((!canClearView && needScissoredClear) || clearParams.colorType != GL_FLOAT ||
++            (formatInfo.redBits > 0 && !r) || (formatInfo.greenBits > 0 && !g) ||
++            (formatInfo.blueBits > 0 && !b) || (formatInfo.alphaBits > 0 && !a))
+         {
+             rtvs[numRtvs]     = framebufferRTV.get();
+             rtvMasks[numRtvs] = gl_d3d11::GetColorMask(formatInfo) & colorMask;
+diff --git a/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.cpp b/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.cpp
+index b6c796dfaf..af7969dcf0 100644
+--- a/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.cpp
++++ b/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.cpp
+@@ -2416,6 +2416,7 @@ void InitializeFeatures(const Renderer11DeviceCaps &deviceCaps,
+     bool isBroadwell       = false;
+     bool isHaswell         = false;
+     bool isIvyBridge       = false;
++    bool isSandyBridge     = false;
+     bool isAMD             = IsAMD(adapterDesc.VendorId);
+     bool isFeatureLevel9_3 = deviceCaps.featureLevel <= D3D_FEATURE_LEVEL_9_3;
+ 
+@@ -2424,10 +2425,11 @@ void InitializeFeatures(const Renderer11DeviceCaps &deviceCaps,
+     {
+         capsVersion = d3d11_gl::GetIntelDriverVersion(deviceCaps.driverVersion);
+ 
+-        isSkylake   = IsSkylake(adapterDesc.DeviceId);
+-        isBroadwell = IsBroadwell(adapterDesc.DeviceId);
+-        isHaswell   = IsHaswell(adapterDesc.DeviceId);
+-        isIvyBridge = IsIvyBridge(adapterDesc.DeviceId);
++        isSkylake     = IsSkylake(adapterDesc.DeviceId);
++        isBroadwell   = IsBroadwell(adapterDesc.DeviceId);
++        isHaswell     = IsHaswell(adapterDesc.DeviceId);
++        isIvyBridge   = IsIvyBridge(adapterDesc.DeviceId);
++        isSandyBridge = IsSandyBridge(adapterDesc.DeviceId);
+     }
+ 
+     if (isNvidia)
+@@ -2486,6 +2488,8 @@ void InitializeFeatures(const Renderer11DeviceCaps &deviceCaps,
+     ANGLE_FEATURE_CONDITION(features, setDataFasterThanImageUploadOn128bitFormats,
+                             !(isIvyBridge || isBroadwell || isHaswell));
+ 
++    ANGLE_FEATURE_CONDITION(features, emulateClearViewAfterDualSourceBlending, isSandyBridge);
++
+     ANGLE_FEATURE_CONDITION(features, disableB5G6R5Support,
+                             (isIntel && capsVersion >= angle::VersionTriple(15, 0, 0) &&
+                              capsVersion < angle::VersionTriple(15, 4539, 0)) ||
+diff --git a/util/autogen/angle_features_autogen.cpp b/util/autogen/angle_features_autogen.cpp
+index 317e27e398..49e00dcb3a 100644
+--- a/util/autogen/angle_features_autogen.cpp
++++ b/util/autogen/angle_features_autogen.cpp
+@@ -132,6 +132,7 @@ constexpr PackedEnumMap<Feature, const char *> kFeatureNames = {{
+     {Feature::EmulateAdvancedBlendEquations, "emulateAdvancedBlendEquations"},
+     {Feature::EmulateAlphaToCoverage, "emulateAlphaToCoverage"},
+     {Feature::EmulateAtan2Float, "emulateAtan2Float"},
++    {Feature::EmulateClearViewAfterDualSourceBlending, "emulateClearViewAfterDualSourceBlending"},
+     {Feature::EmulateClipDistanceState, "emulateClipDistanceState"},
+     {Feature::EmulateClipOrigin, "emulateClipOrigin"},
+     {Feature::EmulateCopyTexImage2D, "emulateCopyTexImage2D"},
+diff --git a/util/autogen/angle_features_autogen.h b/util/autogen/angle_features_autogen.h
+index 2627f9652d..e916dc0807 100644
+--- a/util/autogen/angle_features_autogen.h
++++ b/util/autogen/angle_features_autogen.h
+@@ -132,6 +132,7 @@ enum class Feature
+     EmulateAdvancedBlendEquations,
+     EmulateAlphaToCoverage,
+     EmulateAtan2Float,
++    EmulateClearViewAfterDualSourceBlending,
+     EmulateClipDistanceState,
+     EmulateClipOrigin,
+     EmulateCopyTexImage2D,
+-- 
+2.54.0
+

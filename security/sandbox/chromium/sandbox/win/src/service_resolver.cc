@@ -35,7 +35,6 @@ NTSTATUS ServiceResolverThunk::ResolveTarget(const void* module,
 
   if (!*address) {
     NOTREACHED();
-    return STATUS_UNSUCCESSFUL;
   }
 
   return STATUS_SUCCESS;

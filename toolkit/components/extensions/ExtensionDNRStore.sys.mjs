@@ -864,7 +864,7 @@ class RulesetsStore {
    *        `enabledRulesetIds` contains the IDs of disabled rulesets that
    *        should be enabled. Already-enabled rulesets are not included in
    *        `enabledRulesetIds`.
-   * @param {import("ExtensionDNR.sys.mjs").RuleQuotaCounter} [options.ruleQuotaCounter]
+   * @param {import("./ExtensionDNR.sys.mjs").RuleQuotaCounter} [options.ruleQuotaCounter]
    *        The counter of already-enabled rules that are not part of
    *        `enabledRulesetIds`. Set when `isUpdateEnabledRulesets` is true.
    *        This method may mutate its internal counters.
@@ -1000,7 +1000,7 @@ class RulesetsStore {
    * of raw rules data (e.g. in form of plain objects read from the static rules
    * JSON files or the dynamicRuleset property from the extension DNR store data).
    *
-   * @typedef {import("ExtensionDNR.sys.mjs").Rule} Rule
+   * @typedef {import("./ExtensionDNR.sys.mjs").Rule} Rule
    *
    * @param   {Extension}     extension
    * @param   {string}        rulesetId

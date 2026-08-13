@@ -115,6 +115,7 @@ add_task(async function () {
     },
     matches: [subframeURI],
     allFrames: true,
+    safeForUntrustedWebProcess: true,
   });
 
   // Create a tab, and load a remote subframe with the specific URI in it.

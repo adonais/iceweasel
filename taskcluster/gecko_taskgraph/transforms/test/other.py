@@ -15,13 +15,12 @@ from taskgraph.util.attributes import keymatch
 from taskgraph.util.keyed_by import evaluate_keyed_by
 from taskgraph.util.readonlydict import ReadOnlyDict
 from taskgraph.util.schema import Schema, resolve_keyed_by
-from taskgraph.util.taskcluster import get_artifact_path
+from taskgraph.util.taskcluster import get_artifact_path, get_index_url
 from taskgraph.util.templates import merge
 
 from gecko_taskgraph.transforms.test.variant import TEST_VARIANTS
 from gecko_taskgraph.util.perftest import is_external_browser
 from gecko_taskgraph.util.platforms import platform_family
-from gecko_taskgraph.util.taskcluster import get_index_url
 
 transforms = TransformSequence()
 
@@ -414,8 +413,6 @@ def setup_browsertime(config, tasks):
 
         chromium_fetches = {
             "linux.*": ["linux64-cft-cd-canary"],
-            "macosx1400.*": ["mac-cft-cd-arm-canary"],
-            "macosx1470.*": ["mac-cft-cd-canary"],
             "macosx1500.*": ["mac-cft-cd-arm-canary"],
             "windows.*-64.*": ["win64-cft-cd-canary"],
             "android.*": ["linux64-cft-cd-canary"],

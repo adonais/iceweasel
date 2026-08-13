@@ -162,6 +162,15 @@ async function updateStyleSheetContent(sourceActor, text, isTransitionEnabled) {
   return stylesheetsFront.update(id, text, isTransitionEnabled, "debugger");
 }
 
+async function toggleStylesheetVisibility(sourceActor) {
+  const { targetFront, id } = sourceActor;
+  if (!targetFront) {
+    return null;
+  }
+  const styleSheetsFront = await targetFront.getFront("stylesheets");
+  return styleSheetsFront.toggleDisabled(id);
+}
+
 async function setXHRBreakpoint(path, method) {
   const hasWatcherSupport = commands.targetCommand.hasTargetWatcherSupport();
   if (!hasWatcherSupport) {
@@ -513,6 +522,7 @@ const clientCommands = {
   fetchAncestorFramePositions,
   toggleJavaScriptEnabled,
   updateStyleSheetContent,
+  toggleStylesheetVisibility,
 };
 
 export { setupCommands, clientCommands };

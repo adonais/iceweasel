@@ -103,9 +103,9 @@ add_task(
         await openACPopup(popup, browser, "#form-basic-username");
 
         const secondLoginItem = popup.firstChild.getItemAtIndex(1);
-        const secondLoginItemSecondaryAction = secondLoginItem.querySelector(
-          ".ac-secondary-action"
-        );
+        const secondLoginItemSecondaryAction = secondLoginItem
+          .querySelector("autocomplete-row-item")
+          .shadowRoot.querySelector("moz-button.secondary-action");
 
         Assert.ok(
           !secondLoginItemSecondaryAction.checkVisibility({
@@ -117,7 +117,7 @@ add_task(
         await EventUtils.synthesizeKey("KEY_ArrowDown");
         await EventUtils.synthesizeKey("KEY_ArrowDown");
 
-        await BrowserTestUtils.waitForCondition(
+        await TestUtils.waitForCondition(
           () => secondLoginItem.attributes.selected,
           "Wait for second login to become active"
         );
@@ -150,6 +150,171 @@ add_task(
     );
   }
 );
+
+add_task(
+  async function test_edit_button_keyboard_opens_about_logins_with_preselected_login() {
+    for (const activationKey of ["KEY_Enter", " "]) {
+      await BrowserTestUtils.withNewTab(
+        {
+          gBrowser,
+          url: TEST_URL_PATH,
+        },
+        async function (browser) {
+          const popup = document.getElementById("PopupAutoComplete");
+
+          await openACPopup(popup, browser, "#form-basic-username");
+
+          const secondLoginItem = popup.firstChild.getItemAtIndex(1);
+          const secondLoginRowItem = secondLoginItem.querySelector(
+            "autocomplete-row-item"
+          );
+          const secondaryAction = secondLoginRowItem.shadowRoot.querySelector(
+            "moz-button.secondary-action"
+          );
+
+          await EventUtils.synthesizeKey("KEY_ArrowDown");
+          await EventUtils.synthesizeKey("KEY_ArrowDown");
+          await TestUtils.waitForCondition(
+            () => secondLoginItem.hasAttribute("selected"),
+            "Wait for second login to become active"
+          );
+
+          await EventUtils.synthesizeKey("KEY_Tab");
+          await TestUtils.waitForCondition(
+            () => secondLoginRowItem.hasAttribute("subfocused"),
+            "Wait for edit button to become sub-focused via Tab"
+          );
+
+          Assert.ok(
+            secondaryAction.checkVisibility({ checkVisibilityCSS: true }),
+            "Secondary action should be visible when sub-focused"
+          );
+
+          const aboutLoginsTabPromise = BrowserTestUtils.waitForNewTab(
+            gBrowser,
+            url => url.includes(ABOUT_LOGINS_ORIGIN),
+            true
+          );
+
+          await EventUtils.synthesizeKey(activationKey);
+          const aboutLoginsTab = await aboutLoginsTabPromise;
+
+          await SpecialPowers.spawn(
+            aboutLoginsTab.linkedBrowser,
+            [{ expectedGuid: LOGINS_DATA[2].guid }],
+            isExpectedLoginItemSelected
+          );
+
+          await closePopup(popup);
+          gBrowser.removeTab(aboutLoginsTab);
+        }
+      );
+    }
+  }
+);
+
+add_task(async function test_edit_button_subfocus_cleared_by_navigation() {
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: TEST_URL_PATH,
+    },
+    async function (browser) {
+      const popup = document.getElementById("PopupAutoComplete");
+
+      await openACPopup(popup, browser, "#form-basic-username");
+
+      const secondLoginItem = popup.firstChild.getItemAtIndex(1);
+      const secondLoginRowItem = secondLoginItem.querySelector(
+        "autocomplete-row-item"
+      );
+
+      await EventUtils.synthesizeKey("KEY_ArrowDown");
+      await EventUtils.synthesizeKey("KEY_ArrowDown");
+      await TestUtils.waitForCondition(
+        () => secondLoginItem.hasAttribute("selected"),
+        "Wait for second login to become active"
+      );
+
+      await EventUtils.synthesizeKey("KEY_Tab");
+      await TestUtils.waitForCondition(
+        () => secondLoginRowItem.hasAttribute("subfocused"),
+        "Edit button sub-focused after Tab"
+      );
+
+      await EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
+      await TestUtils.waitForCondition(
+        () => !secondLoginRowItem.hasAttribute("subfocused"),
+        "Shift+Tab returns sub-focus to the row"
+      );
+
+      await EventUtils.synthesizeKey("KEY_Tab");
+      await TestUtils.waitForCondition(
+        () => secondLoginRowItem.hasAttribute("subfocused"),
+        "Edit button sub-focused after Tab again"
+      );
+
+      await EventUtils.synthesizeKey("KEY_ArrowUp");
+      await TestUtils.waitForCondition(
+        () => !secondLoginRowItem.hasAttribute("subfocused"),
+        "Arrow navigation clears sub-focus"
+      );
+
+      await closePopup(popup);
+    }
+  );
+});
+
+add_task(async function test_edit_button_subfocus_announced_to_a11y() {
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: TEST_URL_PATH,
+    },
+    async function (browser) {
+      const popup = document.getElementById("PopupAutoComplete");
+
+      await openACPopup(popup, browser, "#form-basic-username");
+
+      const secondLoginItem = popup.firstChild.getItemAtIndex(1);
+      const secondLoginRowItem = secondLoginItem.querySelector(
+        "autocomplete-row-item"
+      );
+
+      const announced = [];
+      const originalAnnounce = window.A11yUtils.announce;
+      window.A11yUtils.announce = args => {
+        announced.push(args);
+        return originalAnnounce.call(window.A11yUtils, args);
+      };
+
+      try {
+        await EventUtils.synthesizeKey("KEY_ArrowDown");
+        await EventUtils.synthesizeKey("KEY_ArrowDown");
+        await TestUtils.waitForCondition(
+          () => secondLoginItem.hasAttribute("selected"),
+          "Wait for second login to become active"
+        );
+
+        await EventUtils.synthesizeKey("KEY_Tab");
+        await TestUtils.waitForCondition(
+          () => secondLoginRowItem.hasAttribute("subfocused"),
+          "Wait for edit button to become sub-focused via Tab"
+        );
+
+        const label = secondLoginRowItem.actions.secondary.label;
+        Assert.ok(
+          announced.some(args => args?.raw === label),
+          "Sub-focusing the edit button announces its label to assistive technology"
+        );
+      } finally {
+        window.A11yUtils.announce = originalAnnounce;
+      }
+
+      await closePopup(popup);
+    }
+  );
+});
 
 add_task(
   async function test_password_menu_opens_about_logins_with_preselected_login() {

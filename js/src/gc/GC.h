@@ -99,6 +99,8 @@ class ArenaChunk;
 extern bool GetGCParameterInfo(const char* name, JSGCParamKey* keyOut,
                                bool* writableOut);
 
+extern bool IsGCParameterFuzzingSafe(JSGCParamKey key);
+
 namespace gc {
 
 void FinishGC(JSContext* cx, JS::GCReason = JS::GCReason::FINISH_GC);

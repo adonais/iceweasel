@@ -16,6 +16,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <functional>
+#include <numeric>
 #include <optional>
 #include <ostream>
 #include <vector>
@@ -985,8 +986,8 @@ inline void DequantizeMonotonic(const Span<float> vals) {
     const auto prev_part_last = part_first - 1;
     const auto part_last = next_part_first - 1;
     const auto line = TwoPoints<float>{
-        {-0.5, (*prev_part_last + *part_first) / 2},
-        {part.size() - 0.5f, (*part_last + *next_part_first) / 2},
+        {-0.5, std::midpoint(*prev_part_last, *part_first)},
+        {part.size() - 0.5f, std::midpoint(*part_last, *next_part_first)},
     };
     LinearFill(part, line);
   }
@@ -994,13 +995,13 @@ inline void DequantizeMonotonic(const Span<float> vals) {
   static constexpr bool INFER_HEAD_TAIL_FROM_BODY_EDGE = false;
   // Basically ignore contents of head and tail, and infer from edges of body.
   // print("3: %s\n", to_str(vals).c_str());
-  if (!IsMonotonic(head, std::less<float>{})) {
+  if (!IsMonotonic(head, std::less<>{})) {
     if (!INFER_HEAD_TAIL_FROM_BODY_EDGE) {
-      LinearFill(head,
-                 {
-                     {0, *head.begin()},
-                     {head.size() - 0.5f, (*(head.end() - 1) + *head_end) / 2},
-                 });
+      LinearFill(head, {
+                           {0, *head.begin()},
+                           {head.size() - 0.5f,
+                            std::midpoint(*(head.end() - 1), *head_end)},
+                       });
     } else {
       LinearFill(head, {
                            {head.size() + 0.0f, *head_end},
@@ -1008,12 +1009,13 @@ inline void DequantizeMonotonic(const Span<float> vals) {
                        });
     }
   }
-  if (!IsMonotonic(tail, std::less<float>{})) {
+  if (!IsMonotonic(tail, std::less<>{})) {
     if (!INFER_HEAD_TAIL_FROM_BODY_EDGE) {
-      LinearFill(tail, {
-                           {-0.5, (*(tail_begin - 1) + *tail.begin()) / 2},
-                           {tail.size() - 1.0f, *(tail.end() - 1)},
-                       });
+      LinearFill(tail,
+                 {
+                     {-0.5, std::midpoint(*(tail_begin - 1), *tail.begin())},
+                     {tail.size() - 1.0f, *(tail.end() - 1)},
+                 });
     } else {
       LinearFill(tail, {
                            {-2.0f, *(tail_begin - 2)},
@@ -1022,7 +1024,7 @@ inline void DequantizeMonotonic(const Span<float> vals) {
     }
   }
   // print("3: %s\n", to_str(vals).c_str());
-  MOZ_ASSERT(IsMonotonic(vals, std::less<float>{}));
+  MOZ_ASSERT(IsMonotonic(vals, std::less<>{}));
 
   // Rescale, because we tend to lose range.
   static constexpr bool RESCALE = false;
@@ -1041,14 +1043,14 @@ static void InvertLut(const In& lut, Out* const out_invertedLut) {
   MOZ_ASSERT(IsMonotonic(lut));
   auto plut = &lut;
   auto vec = std::vector<float>{};
-  if (!IsMonotonic(lut, std::less<float>{})) {
+  if (!IsMonotonic(lut, std::less<>{})) {
     // print("Not strictly monotonic...\n");
     vec.assign(lut.begin(), lut.end());
     DequantizeMonotonic(vec);
     plut = &vec;
     // print("  Now strictly monotonic: %i: %s\n",
-    //   int(IsMonotonic(*plut, std::less<float>{})), to_str(*plut).c_str());
-    MOZ_ASSERT(IsMonotonic(*plut, std::less<float>{}));
+    //   int(IsMonotonic(*plut, std::less<>{})), to_str(*plut).c_str());
+    MOZ_ASSERT(IsMonotonic(*plut, std::less<>{}));
   }
   MOZ_ASSERT(plut->size() >= 2);
 
@@ -1060,7 +1062,7 @@ static void InvertLut(const In& lut, Out* const out_invertedLut) {
   }
 
   MOZ_ASSERT(IsMonotonic(ret));
-  MOZ_ASSERT(IsMonotonic(ret, std::less<float>{}));
+  MOZ_ASSERT(IsMonotonic(ret, std::less<>{}));
 }
 
 // -

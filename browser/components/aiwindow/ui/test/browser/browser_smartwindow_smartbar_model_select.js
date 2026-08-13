@@ -22,6 +22,7 @@ add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.smartwindow.firstrun.modelChoice", DEFAULT_MODEL_CHOICE_ID],
+      ["places.semanticHistory.smartwindow.featureGate", false],
     ],
   });
 });
@@ -40,6 +41,56 @@ async function waitForSelectedModel(browser, expectedModel) {
       { attributes: true },
       () => aiWindowElement.selectedModelId === expected
     );
+  });
+}
+
+/**
+ * Opens the model select panel, returns the choice IDs of the items showing the
+ * selected-model checkmark, then closes the panel again.
+ *
+ * @param {MozBrowser} browser - The browser element
+ * @returns {Promise<string[]>} Choice IDs of items with a checkmark
+ */
+async function getCheckedModelChoiceIds(browser) {
+  return SpecialPowers.spawn(browser, [], async () => {
+    const aiWindowElement = content.document.querySelector("ai-window");
+    const smartbar = aiWindowElement.shadowRoot.querySelector(
+      "#ai-window-smartbar"
+    );
+    const modelSelect = smartbar.querySelector("input-model-select");
+    const triggerButton = modelSelect.shadowRoot.querySelector("moz-button");
+    const panelList = modelSelect.shadowRoot.querySelector("panel-list");
+
+    // Selecting a model leaves the panel open, so only toggle it open when it
+    // is currently closed.
+    if (!panelList.hasAttribute("open")) {
+      triggerButton.click();
+      await ContentTaskUtils.waitForMutationCondition(
+        panelList,
+        { attributes: true },
+        () => panelList.hasAttribute("open")
+      );
+    }
+    await modelSelect.updateComplete;
+
+    const checkedIds = [];
+    for (const item of panelList.querySelectorAll("button.model-item")) {
+      if (item.querySelector(".model-item-check")) {
+        const iconSrc = item
+          .querySelector(".model-item-icon")
+          .getAttribute("src");
+        checkedIds.push(iconSrc.match(/model-choice-(\d+)\.svg/)?.[1]);
+      }
+    }
+
+    triggerButton.click();
+    await ContentTaskUtils.waitForMutationCondition(
+      panelList,
+      { attributes: true },
+      () => !panelList.hasAttribute("open")
+    );
+
+    return checkedIds;
   });
 }
 
@@ -109,6 +160,40 @@ add_task(async function test_smartbar_model_select_panel_shows_default_badge() {
     await restore();
   }
 });
+
+add_task(
+  async function test_smartbar_model_select_check_marks_selected_model() {
+    const { restore } = await stubEngineNetworkBoundaries({
+      serverOptions: null,
+    });
+
+    try {
+      const win = await openAIWindow();
+      const browser = win.gBrowser.selectedBrowser;
+
+      // A fresh tab starts on the user's currently selected model (the saved
+      // modelChoice pref), so the check sits on that selection.
+      Assert.deepEqual(
+        await getCheckedModelChoiceIds(browser),
+        [DEFAULT_MODEL_CHOICE_ID],
+        "The checkmark should be on the currently selected model"
+      );
+
+      // Switching models should move the check to the new selection, proving
+      // the check tracks the selected model rather than any fixed default.
+      await switchSmartbarModel(browser, "1");
+      Assert.deepEqual(
+        await getCheckedModelChoiceIds(browser),
+        ["1"],
+        "The checkmark should follow the newly selected model"
+      );
+
+      await BrowserTestUtils.closeWindow(win);
+    } finally {
+      await restore();
+    }
+  }
+);
 
 add_task(
   async function test_smartbar_model_select_shows_custom_model_when_configured() {
@@ -314,7 +399,7 @@ add_task(async function test_model_switch_routes_to_correct_endpoint() {
     // Test initial preset turn
     await typeInSmartbar(browser, "Preset message");
     await submitSmartbar(browser);
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => presetRequests.length,
       "MLPA endpoint should receive the preset request"
     );
@@ -329,7 +414,7 @@ add_task(async function test_model_switch_routes_to_correct_endpoint() {
     await switchSmartbarModel(browser, "0");
     await typeInSmartbar(browser, "Custom message");
     await submitSmartbar(browser);
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => customRequests.length,
       "Custom endpoint should receive the custom-model request"
     );

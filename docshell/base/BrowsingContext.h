@@ -34,7 +34,6 @@
 #include "nsIDOMGeoPosition.h"
 
 class nsDocShellLoadState;
-class nsGeolocationService;
 class nsGlobalWindowInner;
 class nsGlobalWindowOuter;
 class nsIPrincipal;
@@ -53,6 +52,7 @@ struct ParamTraits;
 namespace mozilla {
 
 class ErrorResult;
+class GeolocationService;
 class LogModule;
 
 namespace ipc {
@@ -532,7 +532,7 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   bool IsContentSubframe() const { return IsContent() && IsSubframe(); }
 
-  RefPtr<nsGeolocationService> GetGeolocationServiceOverride();
+  RefPtr<GeolocationService> GetGeolocationServiceOverride();
 
   // non-zero
   uint64_t Id() const { return mBrowsingContextId; }
@@ -1723,7 +1723,7 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   nsTArray<RefPtr<WindowContext>> mWindowContexts;
   RefPtr<WindowContext> mCurrentWindowContext;
 
-  RefPtr<nsGeolocationService> mGeolocationServiceOverride;
+  RefPtr<GeolocationService> mGeolocationServiceOverride;
 
   // This is a weak reference. It will be updated automatically during sweeping
   // by SweepWindowProxies.

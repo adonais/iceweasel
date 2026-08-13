@@ -23,7 +23,8 @@ use std::os::windows::ffi::OsStringExt;
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
+use std::thread::JoinHandle;
 use std::time::Duration;
 use std::{env, mem, ptr, slice};
 use thin_vec::ThinVec;
@@ -751,12 +752,19 @@ pub extern "C" fn wr_renderer_map_and_recycle_screenshot(
     dst_buffer: *mut u8,
     dst_buffer_len: usize,
     dst_stride: usize,
+    dest_format: ImageFormat,
 ) -> bool {
     renderer.map_and_recycle_screenshot(
         handle,
         unsafe { make_slice_mut(dst_buffer, dst_buffer_len) },
         dst_stride,
+        dest_format,
     )
+}
+
+#[no_mangle]
+pub extern "C" fn wr_renderer_supports_bgra_readback(renderer: &Renderer) -> bool {
+    renderer.supports_bgra_readback()
 }
 
 #[no_mangle]
@@ -1120,7 +1128,10 @@ extern "C" {
     fn wr_register_thread_local_arena();
 }
 
-pub struct WrThreadPool(Arc<rayon::ThreadPool>);
+pub struct WrThreadPool {
+    workers: Arc<rayon::ThreadPool>,
+    join_handles: Mutex<Vec<JoinHandle<()>>>,
+}
 
 #[no_mangle]
 pub extern "C" fn wr_thread_pool_new(low_priority: bool) -> *mut WrThreadPool {
@@ -1134,19 +1145,33 @@ pub extern "C" fn wr_thread_pool_new(low_priority: bool) -> *mut WrThreadPool {
     let num_threads = num_cpus::get().min(max);
 
     let priority_tag = if low_priority { "LP" } else { "" };
+    let thread_name = move |idx| format!("WRWorker{}#{}", priority_tag, idx);
 
     let use_thread_local_arena = static_prefs::pref!("gfx.webrender.worker-thread-local-arena");
+    let join_handles = Mutex::new(Vec::new());
 
     let worker = rayon::ThreadPoolBuilder::new()
-        .thread_name(move |idx| format!("WRWorker{}#{}", priority_tag, idx))
+        .thread_name(move |idx| thread_name(idx))
         .num_threads(num_threads)
+        .spawn_handler(|thread| {
+            let mut builder = std::thread::Builder::new();
+            if let Some(name) = thread.name() {
+                builder = builder.name(name.to_string());
+            }
+            if let Some(stack_size) = thread.stack_size() {
+                builder = builder.stack_size(stack_size);
+            }
+            let handle = builder.spawn(|| thread.run())?;
+            join_handles.lock().unwrap().push(handle);
+            Ok(())
+        })
         .start_handler(move |idx| {
             if use_thread_local_arena {
                 unsafe {
                     wr_register_thread_local_arena();
                 }
             }
-            let name = format!("WRWorker{}#{}", priority_tag, idx);
+            let name = thread_name(idx);
             register_thread_with_profiler(name.clone());
             gecko_profiler::register_thread(&name);
         })
@@ -1157,12 +1182,26 @@ pub extern "C" fn wr_thread_pool_new(low_priority: bool) -> *mut WrThreadPool {
 
     let workers = Arc::new(worker.unwrap());
 
-    Box::into_raw(Box::new(WrThreadPool(workers)))
+    Box::into_raw(Box::new(WrThreadPool { workers, join_handles }))
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn wr_thread_pool_delete(thread_pool: *mut WrThreadPool) {
-    mem::drop(Box::from_raw(thread_pool));
+pub unsafe extern "C" fn wr_thread_pool_delete(thread_pool: *mut WrThreadPool, join_workers: bool) {
+    let WrThreadPool { workers, join_handles } = *Box::from_raw(thread_pool);
+
+    if !join_workers {
+        return;
+    }
+
+    let Some(workers) = Arc::into_inner(workers) else {
+        panic!("All other references to workers must be dropped before calling wr_thread_pool_delete");
+    };
+    mem::drop(workers);
+
+    let join_handles = join_handles.into_inner().unwrap();
+    for join_handle in join_handles {
+        let _ = join_handle.join();
+    }
 }
 
 pub struct WrChunkPool(Arc<ChunkPool>);
@@ -1187,7 +1226,7 @@ pub unsafe extern "C" fn wr_program_cache_new(
     prof_path: &nsAString,
     thread_pool: *mut WrThreadPool,
 ) -> *mut WrProgramCache {
-    let workers = &(*thread_pool).0;
+    let workers = &(*thread_pool).workers;
     let program_cache = WrProgramCache::new(prof_path, workers);
     Box::into_raw(Box::new(program_cache))
 }
@@ -2025,12 +2064,12 @@ pub extern "C" fn wr_window_new(
 
     info!("WebRender - OpenGL version new {}", version);
 
-    let workers = unsafe { Arc::clone(&(*thread_pool).0) };
+    let workers = unsafe { Arc::clone(&(*thread_pool).workers) };
     let workers_low_priority = unsafe {
         if support_low_priority_threadpool {
-            Arc::clone(&(*thread_pool_low_priority).0)
+            Arc::clone(&(*thread_pool_low_priority).workers)
         } else {
-            Arc::clone(&(*thread_pool).0)
+            Arc::clone(&(*thread_pool).workers)
         }
     };
 
@@ -3804,6 +3843,49 @@ pub extern "C" fn wr_dp_push_yuv_NV16_image(
         &prim_info,
         bounds,
         YuvData::NV16(image_key_0, image_key_1),
+        color_depth,
+        color_space,
+        color_range,
+        image_rendering,
+    );
+}
+
+/// Push a 2 planar P210 image.
+#[no_mangle]
+pub extern "C" fn wr_dp_push_yuv_P210_image(
+    state: &mut WrState,
+    bounds: LayoutRect,
+    clip: LayoutRect,
+    is_backface_visible: bool,
+    parent: &WrSpaceAndClipChain,
+    image_key_0: WrImageKey,
+    image_key_1: WrImageKey,
+    color_depth: WrColorDepth,
+    color_space: WrYuvColorSpace,
+    color_range: WrColorRange,
+    image_rendering: ImageRendering,
+    prefer_compositor_surface: bool,
+    supports_external_compositing: bool,
+) {
+    debug_assert!(unsafe { is_in_main_thread() || is_in_compositor_thread() });
+
+    let space_and_clip = parent.to_webrender(state.pipeline_id);
+
+    let prim_info = CommonItemProperties {
+        clip_rect: clip,
+        clip_chain_id: space_and_clip.clip_chain_id,
+        spatial_id: space_and_clip.spatial_id,
+        flags: prim_flags2(
+            is_backface_visible,
+            prefer_compositor_surface,
+            supports_external_compositing,
+        ),
+    };
+
+    state.frame_builder.dl_builder.push_yuv_image(
+        &prim_info,
+        bounds,
+        YuvData::P210(image_key_0, image_key_1),
         color_depth,
         color_space,
         color_range,

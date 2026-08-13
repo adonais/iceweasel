@@ -6,8 +6,8 @@
 #define mozilla_net_ProtocolHandlerInfo_h
 
 #include "mozilla/Variant.h"
-#include "nsProxyRelease.h"
 #include "nsIProtocolHandler.h"
+#include "nsProxyRelease.h"
 
 namespace mozilla {
 namespace xpcom {

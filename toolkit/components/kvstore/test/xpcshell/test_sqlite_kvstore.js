@@ -4,7 +4,9 @@
 "use strict";
 
 const { KeyValueService, SQLiteKeyValueService, KeyValueImporter } =
-  ChromeUtils.importESModule("resource://gre/modules/kvstore.sys.mjs");
+  ChromeUtils.importESModule(
+    "moz-src:///toolkit/components/kvstore/kvstore.sys.mjs"
+  );
 
 add_setup(async function setup() {
   do_get_profile();

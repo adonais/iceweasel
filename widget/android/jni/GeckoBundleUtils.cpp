@@ -5,11 +5,10 @@
 #include "mozilla/jni/GeckoBundleUtils.h"
 
 #include "JavaBuiltins.h"
-#include "js/Warnings.h"
-#include "nsJSUtils.h"
-
 #include "js/Array.h"
+#include "js/Warnings.h"
 #include "js/experimental/TypedData.h"
+#include "nsJSUtils.h"
 
 namespace mozilla::jni {
 namespace detail {

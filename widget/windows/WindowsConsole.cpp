@@ -4,10 +4,11 @@
 
 #include "WindowsConsole.h"
 
-#include <windows.h>
 #include <fcntl.h>
-#include <cstdio>
 #include <io.h>
+#include <windows.h>
+
+#include <cstdio>
 
 namespace mozilla {
 

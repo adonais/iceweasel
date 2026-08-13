@@ -3,9 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "xpcAccessiblePivot.h"
-#include "xpcAccessibleDocument.h"
 
 #include "Pivot.h"
+#include "xpcAccessibleDocument.h"
 
 using namespace mozilla::a11y;
 

@@ -2,27 +2,29 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "WaiveXrayWrapper.h"
-#include "FilteringWrapper.h"
-#include "XrayWrapper.h"
-#include "AccessCheck.h"
-#include "XPCWrapper.h"
-#include "ChromeObjectWrapper.h"
 #include "WrapperFactory.h"
 
-#include "xpcprivate.h"
-#include "XPCMaps.h"
 #include "mozilla/dom/BindingUtils.h"
-#include "jsfriendapi.h"
-#include "js/friend/WindowProxy.h"  // js::IsWindow, js::IsWindowProxy
-#include "js/friend/Wrapper.h"      // js::NukeCrossCompartmentWrapperIfExists
-#include "js/Object.h"              // JS::GetPrivate, JS::GetCompartment
-#include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/MaybeCrossOriginObject.h"
+#include "mozilla/dom/ScriptSettings.h"
+
+#include "AccessCheck.h"
+#include "ChromeObjectWrapper.h"
+#include "FilteringWrapper.h"
+#include "jsfriendapi.h"
 #include "nsContentUtils.h"
 #include "nsGlobalWindowInner.h"
 #include "nsPIDOMWindowInlines.h"
 #include "nsXULAppAPI.h"
+#include "WaiveXrayWrapper.h"
+#include "XPCMaps.h"
+#include "xpcprivate.h"
+#include "XPCWrapper.h"
+#include "XrayWrapper.h"
+
+#include "js/friend/WindowProxy.h"  // js::IsWindow, js::IsWindowProxy
+#include "js/friend/Wrapper.h"      // js::NukeCrossCompartmentWrapperIfExists
+#include "js/Object.h"              // JS::GetPrivate, JS::GetCompartment
 
 using namespace JS;
 using namespace js;

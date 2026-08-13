@@ -2,13 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "jsapi-tests/tests.h"
+
 #include "mozilla/Utf8.h"  // mozilla::Utf8Unit
 
 #include "jsapi.h"
 
 #include "js/CompilationAndEvaluation.h"  // JS::Compile
 #include "js/SourceText.h"                // JS::Source{Ownership,Text}
-#include "jsapi-tests/tests.h"
 #include "util/Text.h"
 
 static const char code[] =

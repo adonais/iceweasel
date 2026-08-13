@@ -100,8 +100,14 @@ function ts_interface(iface) {
     lines.push("}  // global\n");
 
     for (let e of iface.enums) {
+      lines.push(
+        `/** <!-- binding_to(idl, class, XPIDL_${iface.id}_${e.id}) --> */`
+      );
       lines.push(`declare enum ${iface.id}_${e.id} {`);
       for (let v of e.variants) {
+        lines.push(
+          `  /** <!-- binding_to(idl, const, XPIDL_${iface.id}_${e.id}_${v.name}) --> */`
+        );
         lines.push(`  ${v.name} = ${v.value},`);
       }
       lines.push("}\n");
@@ -118,12 +124,21 @@ function ts_interface(iface) {
 
   // Handle [function] interfaces.
   if (iface.callable) {
+    lines.push(
+      `/** <!-- binding_to(idl, interface_name, XPIDL_${iface.id}) --> */`
+    );
     lines.push(`type ${iface.id} = Callable<{`);
   } else {
+    lines.push(
+      `/** <!-- binding_to(idl, interface_name, XPIDL_${iface.id}) --> */`
+    );
     lines.push(`interface ${iface.id} ${base ? `extends ${base} ` : ""}{`);
   }
 
   for (let c of iface.consts) {
+    lines.push(
+      `  /** <!-- binding_to(idl, const, XPIDL_${iface.id}_${c.name}) --> */`
+    );
     lines.push(`  readonly ${c.name}?: ${c.value};`);
   }
 
@@ -134,8 +149,14 @@ function ts_interface(iface) {
 
   for (let m of iface.members) {
     if (!m.args) {
+      lines.push(
+        `  /** <!-- binding_to(idl, attribute, XPIDL_${iface.id}_${m.name}) --> */`
+      );
       lines.push(`  ${m.readonly ? "readonly " : ""}${m.name}: ${m.type};`);
     } else {
+      lines.push(
+        `  /** <!-- binding_to(idl, method, XPIDL_${iface.id}_${m.name}) --> */`
+      );
       let args = [];
       for (let arg of m.args) {
         // If this is the generic parameter, adjust its type.

@@ -31,39 +31,49 @@ namespace mozilla::dom::quota {
  *  --------+-----------------------------------------------+
  *    4096
  *
- *  The layout of CipherMetadata and CipherPayload is version-specific.
+ *  This class only exposes the on-disk (= ciphertext-side) byte regions
+ *  above. The internal layout of CipherMetadata and of the decrypted
+ *  CipherPayload is the responsibility of separate view classes:
+ *
+ *    - CipherMetadata: version-specific. See
+ *      EncryptedRandomAccessBlockCipherMetadataViewV1 (for V1).
+ *
+ *    - Decrypted CipherPayload: version-independent. See
+ *      DecryptedRandomAccessBlockCipherPayloadView. The view is applied
+ *      to the decrypted plaintext (held in a separate buffer by the
+ *      caller), not to the encrypted bytes stored in this block.
  */
 class EncryptedRandomAccessBlock {
  public:
   static constexpr size_t BlockSize = 4096;
+
+  using VersionType = uint16_t;
+  static constexpr VersionType kEncryptedRandomAccessBlockLatestVersion = 1;
 
   template <size_t N>
   using ConstSpan = Span<const uint8_t, N>;
   template <size_t N>
   using MutableSpan = Span<uint8_t, N>;
 
-  EncryptedRandomAccessBlock() {
+  explicit EncryptedRandomAccessBlock(
+      VersionType aVersion = kEncryptedRandomAccessBlockLatestVersion) {
     mData.SetLength(BlockSize);
 
     // Zero-initialize the whole block so that reserved/unused bytes do not
     // expose stale data. This follows the same rationale as EncryptedBlock
     // (Bug 1867394).
     std::fill(mData.begin(), mData.end(), 0);
+
+    SetVersion(aVersion);
   }
 
   static constexpr size_t CipherMetadataSize = 32;
 
- private:
   static constexpr size_t HeaderSize = 32;
 
-  using VersionType = uint16_t;
+ private:
   static constexpr size_t VersionSize = sizeof(VersionType);
   static_assert(VersionSize == 2, "Version should take 2 bytes on disk.");
-
-  static constexpr size_t CipherPayloadSize =
-      BlockSize - HeaderSize - CipherMetadataSize;
-  static_assert(CipherPayloadSize == 4032,
-                "CipherPayload should take 4032 bytes on disk.");
 
  public:
   ConstSpan<HeaderSize> Header() const {
@@ -94,6 +104,11 @@ class EncryptedRandomAccessBlock {
     return MutableWholeBlock().Subspan<HeaderSize, CipherMetadataSize>();
   }
 
+  static constexpr size_t CipherPayloadSize =
+      BlockSize - HeaderSize - CipherMetadataSize;
+  static_assert(CipherPayloadSize == 4032,
+                "CipherPayload should take 4032 bytes on disk.");
+
   ConstSpan<CipherPayloadSize> CipherPayload() const {
     return WholeBlock()
         .Subspan<HeaderSize + CipherMetadataSize, CipherPayloadSize>();
@@ -108,9 +123,11 @@ class EncryptedRandomAccessBlock {
     memcpy(mData.Elements(), aData.data(), BlockSize);
   }
 
- private:
   ConstSpan<BlockSize> WholeBlock() const { return mData; }
+
   MutableSpan<BlockSize> MutableWholeBlock() { return mData; }
+
+ private:
   nsTArray<uint8_t> mData;
 };
 

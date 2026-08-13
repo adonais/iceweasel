@@ -670,6 +670,10 @@ ssl_DecodeResumptionToken(sslSessionID *sid, const PRUint8 *encodedToken,
     if (sslRead_ReadNumber(&reader, 1, &tmpInt) != SECSuccess) {
         return SECFailure;
     }
+    if (tmpInt > WRAPPED_MASTER_SECRET_SIZE) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return SECFailure;
+    }
     sid->u.ssl3.keys.wrapped_master_secret_len = (PRUint8)tmpInt;
     if (sslRead_ReadNumber(&reader, 1, &tmpInt) != SECSuccess) {
         return SECFailure;

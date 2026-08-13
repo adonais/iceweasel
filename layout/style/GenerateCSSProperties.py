@@ -386,13 +386,12 @@ def gen_ns_css_props(output):
 
     properties = [
         PropertyWrapper(i, p)
-        for i, p in enumerate(raw_properties.longhands + raw_properties.shorthands)
-        if p.type() != "alias"
+        for i, p in enumerate(raw_properties.all_properties_and_aliases())
     ]
 
     # Generate kIDLNameTable
     output.write(
-        "const char* const nsCSSProps::" "kIDLNameTable[eCSSProperty_COUNT] = {\n"
+        "const char* const nsCSSProps::kIDLNameTable[eCSSProperty_COUNT_with_aliases] = {\n"
     )
     for p in properties:
         if p.idlname is None:
@@ -406,8 +405,7 @@ def gen_ns_css_props(output):
     ps = [(p, position) for position, p in enumerate(ps)]
     ps.sort(key=lambda item: item[0].index)
     output.write(
-        "const int32_t nsCSSProps::"
-        "kIDLNameSortPositionTable[eCSSProperty_COUNT] = {\n"
+        "const int32_t nsCSSProps::kIDLNameSortPositionTable[eCSSProperty_COUNT_with_aliases] = {\n"
     )
     for p, position in ps:
         output.write("  {},\n".format(position))
@@ -415,7 +413,7 @@ def gen_ns_css_props(output):
 
     # Generate preferences table
     output.write(
-        "const nsCSSProps::PropertyPref " "nsCSSProps::kPropertyPrefTable[] = {\n"
+        "const nsCSSProps::PropertyPref nsCSSProps::kPropertyPrefTable[] = {\n"
     )
     for p in raw_properties.all_properties_and_aliases():
         if not p.gecko_pref:
@@ -457,7 +455,9 @@ def gen_ns_css_props(output):
     )
     for p in properties:
         output.write(
-            'static_assert(eCSSProperty_{} == {}, "{}");\n'.format(p.ident, p.index, msg)
+            'static_assert({} == {}, "{}");\n'.format(
+                p.noncustomcsspropertyid(), p.index, msg
+            )
         )
 
     output.write("\n")
@@ -575,6 +575,7 @@ def gen_css_properties_js(output):
         "-moz-top-layer",                     # parsed by UA sheets only
         "-moz-min-font-size-ratio",           # parsed by UA sheets only
         "-moz-box-collapse",                  # chrome-only internal properties
+        "-moz-image-decoding",                # chrome-only internal properties
         "-moz-subtree-hidden-only-visually",  # chrome-only internal properties
         "-moz-user-focus",                    # chrome-only internal properties
         "-moz-window-input-region-margin",    # chrome-only internal properties

@@ -2,16 +2,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsIPrincipal.h"
-#include "xpcpublic.h"
-#include "nsString.h"
 #include "nsJSPrincipals.h"
-#include "nsCOMPtr.h"
+
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/dom/StructuredCloneTags.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
+#include "nsCOMPtr.h"
+#include "nsIPrincipal.h"
+#include "nsString.h"
+#include "xpcpublic.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

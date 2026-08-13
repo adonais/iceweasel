@@ -284,6 +284,22 @@ void MediaEngineWebRTC::EnumerateDevices(
   }
 }
 
+void MediaEngineWebRTC::InvalidateDesktopCaptureDeviceCache(
+    MediaSourceEnum aMediaSource) {
+  AssertIsOnOwningThread();
+  switch (aMediaSource) {
+    case MediaSourceEnum::Browser:
+    case MediaSourceEnum::Screen:
+    case MediaSourceEnum::Window:
+      GetChildAndCall(
+          &CamerasChild::InvalidateDesktopCaptureDeviceCache,
+          MediaEngineRemoteVideoSource::CaptureEngine(aMediaSource));
+      break;
+    default:
+      break;
+  }
+}
+
 RefPtr<MediaEngineSource> MediaEngineWebRTC::CreateSource(
     const MediaDevice* aMediaDevice) {
   MOZ_ASSERT(aMediaDevice->mEngine == this);

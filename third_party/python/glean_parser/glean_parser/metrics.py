@@ -61,6 +61,7 @@ class Metric:
         data_sensitivity: Optional[List[str]] = None,
         defined_in: Optional[Dict] = None,
         telemetry_mirror: Optional[str] = None,
+        in_session: bool = False,
         _config: Optional[Dict[str, Any]] = None,
         _validated: bool = False,
     ):
@@ -98,6 +99,8 @@ class Metric:
         self.defined_in = defined_in
         if telemetry_mirror is not None:
             self.telemetry_mirror = telemetry_mirror
+        if not hasattr(self, "in_session"):
+            self.in_session = in_session
 
         # _validated indicates whether this metric has already been jsonschema
         # validated (but not any of the Python-level validation).
@@ -312,6 +315,7 @@ class Event(Metric):
 
     def __init__(self, *args, **kwargs):
         self.extra_keys = kwargs.pop("extra_keys", {})
+        self.in_session = kwargs.pop("in_session", True)
         self.validate_extra_keys(self.extra_keys, kwargs.get("_config", {}))
         super().__init__(*args, **kwargs)
         self._generate_enums = [("allowed_extra_keys_with_types", "Extra")]

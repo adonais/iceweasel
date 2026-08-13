@@ -3,16 +3,16 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "DirectManipulationOwner.h"
-#include "nsWindow.h"
-#include "WinModifierKeyState.h"
+
 #include "InputData.h"
 #include "UnitTransforms.h"
+#include "WinModifierKeyState.h"
+#include "directmanipulation.h"
 #include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/SwipeTracker.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/VsyncDispatcher.h"
-
-#include "directmanipulation.h"
+#include "nsWindow.h"
 
 namespace mozilla {
 namespace widget {

@@ -1,4 +1,4 @@
-// |jit-test| skip-if: !isAsmJSCompilationAvailable() || helperThreadCount() === 0
+// |jit-test| skip-if: helperThreadCount() === 0
 
 load(libdir + "asm.js");
 
@@ -16,6 +16,4 @@ for (var i = 0; i < 10; i++) {
     var f = new Function(module);
     var stencil = finishOffThreadStencil();
     var g = evalStencil(stencil);
-    assertEq(isAsmJSModule(f), true);
-    assertEq(isAsmJSModule(g), true);
 }

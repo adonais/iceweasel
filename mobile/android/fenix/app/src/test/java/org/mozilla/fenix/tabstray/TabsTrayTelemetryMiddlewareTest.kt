@@ -31,6 +31,7 @@ import org.mozilla.fenix.tabstray.redux.state.TabGroupFormState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
 import org.robolectric.RobolectricTestRunner
+import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
@@ -461,22 +462,77 @@ class TabsTrayTelemetryMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN a target tab WHEN DragAndDropCompleted is dispatched THEN the drag_and_drop metric is reported`() {
+    fun `WHEN NewTabGroupFabClicked is dispatched THEN the tab group creation mode fab metric is reported`() {
+        assertNull(Metrics.tabGroupCreationMode["fab"].testGetValue())
+
+        store.dispatch(TabGroupAction.NewTabGroupFabClicked)
+
+        assertEquals(1, Metrics.tabGroupCreationMode["fab"].testGetValue())
+    }
+
+    @Test
+    fun `GIVEN a target tab WHEN DragAndDropTwoTabs is dispatched THEN the drag_and_drop metric is reported if both are tabs`() {
         assertNull(Metrics.tabGroupCreationMode["drag_and_drop"].testGetValue())
 
-        val mockTargetTab = createTab(url = "www.example.com").copy(id = "target_id")
+        val mockSourceTab = createTab(url = "www.source.com").copy(id = "source_id")
+        val mockTargetTab = createTab(url = "www.target.com").copy(id = "target_id")
         store = TabsTrayStore(
             middlewares = listOf(tabsTrayTelemetryMiddleware),
             initialState = TabsTrayState(
                 normalTabsState = TabsTrayState.NormalTabsState(
-                    items = listOf(mockTargetTab),
+                    items = listOf(mockSourceTab, mockTargetTab),
                 ),
             ),
         )
 
-        store.dispatch(TabGroupAction.DragAndDropCompleted(sourceId = "source_id", destinationId = "target_id"))
+        store.dispatch(TabGroupAction.DragAndDropInitiated(sourceId = "source_id", destinationId = "target_id"))
 
         assertEquals(1, Metrics.tabGroupCreationMode["drag_and_drop"].testGetValue())
+    }
+
+    @Test
+    fun `GIVEN a source group WHEN DragAndDropTwoTabs is dispatched THEN the drag_and_drop metric is NOT reported`() {
+        assertNull(Metrics.tabGroupCreationMode["drag_and_drop"].testGetValue())
+
+        val mockSourceGroup = createTabGroup(id = "source_id")
+        val mockTargetTab = createTab(url = "www.target.com").copy(id = "target_id")
+        store = TabsTrayStore(
+            middlewares = listOf(tabsTrayTelemetryMiddleware),
+            initialState = TabsTrayState(
+                normalTabsState = TabsTrayState.NormalTabsState(
+                    items = listOf(mockSourceGroup, mockTargetTab),
+                ),
+            ),
+        )
+
+        store.dispatch(TabGroupAction.DragAndDropTwoTabs(sourceTabId = "source_id", destinationTabId = "target_id"))
+
+        assertNull(Metrics.tabGroupCreationMode["drag_and_drop"].testGetValue())
+    }
+
+    @Test
+    fun `GIVEN a target group WHEN DragAndDropTwoTabs is dispatched THEN the drag_and_drop metric is NOT reported`() {
+        assertNull(Metrics.tabGroupCreationMode["drag_and_drop"].testGetValue())
+
+        val mockSourceTab = createTab(url = "www.source.com").copy(id = "source_id")
+        val mockTargetGroup = TabsTrayItem.TabGroup(
+            id = "target_id",
+            title = "Test",
+            theme = TabGroupTheme.default,
+            tabs = mutableListOf(),
+        )
+        store = TabsTrayStore(
+            middlewares = listOf(tabsTrayTelemetryMiddleware),
+            initialState = TabsTrayState(
+                normalTabsState = TabsTrayState.NormalTabsState(
+                    items = listOf(mockSourceTab, mockTargetGroup),
+                ),
+            ),
+        )
+
+        store.dispatch(TabGroupAction.DragAndDropTwoTabs(sourceTabId = "source_id", destinationTabId = "target_id"))
+
+        assertNull(Metrics.tabGroupCreationMode["drag_and_drop"].testGetValue())
     }
 
     /**
@@ -782,5 +838,152 @@ class TabsTrayTelemetryMiddlewareTest {
                 ),
             ),
         )
+    }
+
+    @Test
+    fun `GIVEN creating a new group WHEN SaveClicked is dispatched THEN tabGroupNamed and tabGroupCreated are reported`() {
+        assertNull(TabsTray.tabGroupNamed.testGetValue())
+        assertNull(TabsTray.tabGroupCreated.testGetValue())
+
+        val createFormState = TabGroupFormState(
+            tabGroupId = null,
+            name = "New Name",
+            edited = true,
+        )
+        store = TabsTrayStore(
+            middlewares = listOf(tabsTrayTelemetryMiddleware),
+            initialState = TabsTrayState(
+                tabGroupState = TabsTrayState.TabGroupState(formState = createFormState),
+            ),
+        )
+
+        store.dispatch(TabGroupAction.SaveClicked)
+
+        assertNotNull(TabsTray.tabGroupNamed.testGetValue())
+        assertNotNull(TabsTray.tabGroupCreated.testGetValue())
+    }
+
+    @Test
+    fun `GIVEN editing an existing group WHEN SaveClicked is dispatched with a new name THEN tabGroupNameChanged is reported`() {
+        assertNull(TabsTray.tabGroupNameChanged.testGetValue())
+
+        val groupId = "existing_id"
+        val originalGroup = TabsTrayItem.TabGroup(
+            id = groupId,
+            title = "Old Name",
+            theme = TabGroupTheme.default,
+            tabs = mutableListOf(),
+        )
+        val editFormState = TabGroupFormState(
+            tabGroupId = groupId,
+            name = "New Name",
+            edited = true,
+        )
+        store = TabsTrayStore(
+            middlewares = listOf(tabsTrayTelemetryMiddleware),
+            initialState = TabsTrayState(
+                tabGroupState = TabsTrayState.TabGroupState(
+                    groups = listOf(originalGroup),
+                    formState = editFormState,
+                ),
+            ),
+        )
+
+        store.dispatch(TabGroupAction.SaveClicked)
+
+        assertNotNull(TabsTray.tabGroupNameChanged.testGetValue())
+    }
+
+    @Test
+    fun `GIVEN editing an existing group WHEN SaveClicked is dispatched with the same name THEN tabGroupNameChanged is NOT reported`() {
+        assertNull(TabsTray.tabGroupNameChanged.testGetValue())
+
+        val groupId = "existing_id"
+        val originalGroup = TabsTrayItem.TabGroup(
+            id = groupId,
+            title = "Same Name",
+            theme = TabGroupTheme.default,
+            tabs = mutableListOf(),
+        )
+        val editFormState = TabGroupFormState(
+            tabGroupId = groupId,
+            name = "Same Name",
+            edited = true,
+        )
+        store = TabsTrayStore(
+            middlewares = listOf(tabsTrayTelemetryMiddleware),
+            initialState = TabsTrayState(
+                tabGroupState = TabsTrayState.TabGroupState(
+                    groups = listOf(originalGroup),
+                    formState = editFormState,
+                ),
+            ),
+        )
+
+        store.dispatch(TabGroupAction.SaveClicked)
+
+        assertNull(TabsTray.tabGroupNameChanged.testGetValue())
+    }
+
+    @Test
+    fun `GIVEN creating a new group WHEN ThemeChanged is dispatched THEN tabGroupColorAssigned is reported`() {
+        assertNull(TabsTray.tabGroupColorAssigned.testGetValue())
+
+        val createFormState = TabGroupFormState(
+            tabGroupId = null,
+            name = "Group",
+        )
+        store = TabsTrayStore(
+            middlewares = listOf(tabsTrayTelemetryMiddleware),
+            initialState = TabsTrayState(
+                tabGroupState = TabsTrayState.TabGroupState(formState = createFormState),
+            ),
+        )
+
+        store.dispatch(TabGroupAction.ThemeChanged(TabGroupTheme.Red))
+
+        assertNotNull(TabsTray.tabGroupColorAssigned.testGetValue())
+        val snapshot = TabsTray.tabGroupColorAssigned.testGetValue()!!
+        assertEquals(TabGroupTheme.Red.name, snapshot.single().extra?.getValue("color"))
+    }
+
+    @Test
+    fun `GIVEN editing an existing group WHEN ThemeChanged is dispatched THEN tabGroupColorChanged is reported`() {
+        assertNull(TabsTray.tabGroupColorChanged.testGetValue())
+
+        val editFormState = TabGroupFormState(
+            tabGroupId = "existing_id",
+            name = "Group",
+        )
+        store = TabsTrayStore(
+            middlewares = listOf(tabsTrayTelemetryMiddleware),
+            initialState = TabsTrayState(
+                tabGroupState = TabsTrayState.TabGroupState(formState = editFormState),
+            ),
+        )
+
+        store.dispatch(TabGroupAction.ThemeChanged(TabGroupTheme.Yellow))
+
+        assertNotNull(TabsTray.tabGroupColorChanged.testGetValue())
+        val snapshot = TabsTray.tabGroupColorChanged.testGetValue()!!
+        assertEquals(TabGroupTheme.Yellow.name, snapshot.single().extra?.getValue("tab_group_color_changed"))
+    }
+
+    @Test
+    fun `WHEN EditTabGroupClicked is dispatched THEN tabGroupEdited is reported`() {
+        assertNull(TabsTray.tabGroupEdited.testGetValue())
+
+        store.dispatch(
+            TabGroupAction.EditTabGroupClicked(
+                TabsTrayItem.TabGroup(
+                    id = UUID.randomUUID().toString(),
+                    title = "Test",
+                    theme = TabGroupTheme.default,
+                    tabs = mutableListOf(),
+                ),
+            ),
+        )
+
+        assertNotNull(TabsTray.tabGroupEdited.testGetValue())
     }
 }

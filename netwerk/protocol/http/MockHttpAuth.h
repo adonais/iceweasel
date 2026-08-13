@@ -5,6 +5,7 @@
 #ifndef MockHttpAuth_h_
 #define MockHttpAuth_h_
 
+#include "nsCOMPtr.h"
 #include "nsIHttpAuthenticator.h"
 
 namespace mozilla::net {

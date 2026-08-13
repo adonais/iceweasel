@@ -157,7 +157,7 @@ template <typename TValue>
 const TValue* FindInBufferAVX2(const TValue* ptr, TValue value, size_t length) {
   static_assert(sizeof(TValue) == 1 || sizeof(TValue) == 2 ||
                 sizeof(TValue) == 4 || sizeof(TValue) == 8);
-  static_assert(std::is_unsigned<TValue>::value);
+  static_assert(std::is_unsigned_v<TValue>);
 
   // Load our needle into a 32-byte register
   __m256i needle;

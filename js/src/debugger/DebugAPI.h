@@ -25,7 +25,8 @@ class AutoSuppressGC;
 }  // namespace gc
 
 namespace wasm {
-class ContStack;
+class DebugFrame;
+class Instance;
 }  // namespace wasm
 
 /**
@@ -102,6 +103,19 @@ class DebugAPI {
    */
   static inline void traceGeneratorFrame(JSTracer* tracer,
                                          AbstractGeneratorObject* generator);
+
+#ifdef ENABLE_WASM_JSPI
+  /*
+   * Trace the inferred owning edge from a suspended wasm continuation (|src|)
+   * to one suspended Debugger.Frame, if it has hooks. Called per debug-enabled
+   * frame from ContStack::traceSuspended while marking. Analogous to
+   * traceGeneratorFrame: the ContObject keeps its hooked Debugger.Frames (and
+   * their Debugger) alive while it can still be resumed.
+   */
+  static void traceWasmContFrame(JSTracer* tracer, JSObject* src,
+                                 wasm::DebugFrame* debugFrame,
+                                 wasm::Instance* instance);
+#endif
 
   // Trace cross compartment edges in all debuggers relevant to the current GC.
   static void traceCrossCompartmentEdges(JSTracer* tracer);
@@ -279,21 +293,12 @@ class DebugAPI {
 
   // Notify any Debugger instances observing this promise's global that a new
   // promise was allocated.
-  static inline void onNewPromise(JSContext* cx,
+  //
+  // If the hook code modifies the Promise state, this throws an error and
+  // returns false.
+  static inline bool onNewPromise(JSContext* cx,
                                   Handle<PromiseObject*> promise);
 
-  // Notify any Debugger instances observing this promise's global that the
-  // promise has settled (ie, it has either been fulfilled or rejected). Note
-  // that this is *not* equivalent to the promise resolution (ie, the promise's
-  // fate getting locked in) because you can resolve a promise with another
-  // pending promise, in which case neither promise has settled yet.
-  //
-  // This should never be called on the same promise more than once, because a
-  // promise can only make the transition from unsettled to settled once.
-  static inline void onPromiseSettled(JSContext* cx,
-                                      Handle<PromiseObject*> promise);
-
-  // Notify any Debugger instances that a new global object has been created.
   static inline void onNewGlobalObject(JSContext* cx,
                                        Handle<GlobalObject*> global);
 
@@ -304,9 +309,6 @@ class DebugAPI {
 
   // Whether any debugger is observing JS execution coverage in a global.
   static bool debuggerObservesCoverage(GlobalObject* global);
-
-  // Whether any Debugger is observing asm.js execution in a global.
-  static bool debuggerObservesAsmJS(GlobalObject* global);
 
   // Whether any Debugger is observing WebAssembly execution in a global.
   static bool debuggerObservesWasm(GlobalObject* global);
@@ -398,10 +400,8 @@ class DebugAPI {
                                                       AbstractFramePtr frame);
   static void slowPathOnNewWasmInstance(
       JSContext* cx, Handle<WasmInstanceObject*> wasmInstance);
-  static void slowPathOnNewPromise(JSContext* cx,
+  static bool slowPathOnNewPromise(JSContext* cx,
                                    Handle<PromiseObject*> promise);
-  static void slowPathOnPromiseSettled(JSContext* cx,
-                                       Handle<PromiseObject*> promise);
   static bool inFrameMaps(AbstractFramePtr frame);
   static void slowPathTraceGeneratorFrame(JSTracer* tracer,
                                           AbstractGeneratorObject* generator);

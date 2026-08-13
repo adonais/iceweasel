@@ -360,6 +360,8 @@ bool JSWindowActorProtocol::Matches(BrowsingContext* aBrowsingContext,
     }
   }
 
+  LogMatch(aRemoteType);
+
   return true;
 }
 

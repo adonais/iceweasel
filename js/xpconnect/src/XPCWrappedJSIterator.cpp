@@ -2,12 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "xpcprivate.h"
-
-#include "mozilla/Try.h"
 #include "mozilla/dom/IteratorResultBinding.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/Try.h"
+
+#include "xpcprivate.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

@@ -3,6 +3,43 @@
 
 const SVG_URL = "chrome://global/skin/icons/defaultFavicon.svg";
 
+async function testViolation({ contentWindow, contentDocument }, sourceFile) {
+  let ran = false;
+  contentWindow.on_click = function () {
+    ran = true;
+  };
+
+  let violationPromise = BrowserTestUtils.waitForEvent(
+    contentDocument,
+    "securitypolicyviolation"
+  );
+
+  contentDocument.documentElement.setAttribute("onclick", "on_click()");
+  // The document is not meant to be clicked.
+  AccessibilityUtils.setEnv({
+    mustHaveAccessibleRule: false,
+  });
+  contentDocument.documentElement.dispatchEvent(new MouseEvent("click"));
+  AccessibilityUtils.resetEnv();
+
+  is(ran, false, "Event handler should not run");
+
+  info("Waiting for securitypolicyviolation");
+  let violation = await violationPromise;
+  is(
+    violation.effectiveDirective,
+    "script-src-attr",
+    "effectiveDirective matches"
+  );
+  ok(violation.sourceFile.endsWith(sourceFile), "sourceFile matches");
+  is(violation.disposition, "enforce", "disposition matches");
+  is(
+    violation.originalPolicy,
+    "script-src chrome: resource: moz-src:",
+    "baseline policy was used"
+  );
+}
+
 add_task(async function test_baseline_blocks() {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -14,45 +51,7 @@ add_task(async function test_baseline_blocks() {
 
   // Ensure SVG without an explicit CSP still automatically enforces the baseline CSP.
   await BrowserTestUtils.withNewTab(SVG_URL, async function (browser) {
-    let { contentWindow, contentDocument } = browser;
-
-    let ran = false;
-    contentWindow.on_click = function () {
-      ran = true;
-    };
-
-    let violationPromise = BrowserTestUtils.waitForEvent(
-      contentDocument,
-      "securitypolicyviolation"
-    );
-
-    contentDocument.documentElement.setAttribute("onclick", "on_click()");
-    // The document is not meant to be clicked.
-    AccessibilityUtils.setEnv({
-      mustHaveAccessibleRule: false,
-    });
-    contentDocument.documentElement.dispatchEvent(new MouseEvent("click"));
-    AccessibilityUtils.resetEnv();
-
-    is(ran, false, "Event handler should not run");
-
-    info("Waiting for securitypolicyviolation");
-    let violation = await violationPromise;
-    is(
-      violation.effectiveDirective,
-      "script-src-attr",
-      "effectiveDirective matches"
-    );
-    ok(
-      violation.sourceFile.endsWith("browser_csp_baseline.js"),
-      "sourceFile matches"
-    );
-    is(violation.disposition, "enforce", "disposition matches");
-    is(
-      violation.originalPolicy,
-      "script-src chrome: resource: moz-src:",
-      "baseline policy was used"
-    );
+    await testViolation(browser, "browser_csp_baseline.js");
   });
 
   let testValue = Glean.security.cspViolationInternalPage.testGetValue();
@@ -69,4 +68,25 @@ add_task(async function test_baseline_blocks() {
   );
   is(extra.blockeduritype, "inline", "violation's `blockeduritype` is correct");
   is(extra.sample, "on_click()", "violation's sample is correct");
+});
+
+add_task(async function test_baseline_blocks() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["security.csp.testing.allow_internal_csp_violation", true],
+      ["security.chrome_baseline_csp.enabled", true],
+    ],
+  });
+
+  let iframe = document.createElement("iframe");
+  document.documentElement.append(iframe);
+
+  ok(
+    iframe.contentDocument.nodePrincipal.isSystemPrincipal,
+    "iframe should be running with the SystemPrincipal"
+  );
+
+  await testViolation(iframe, "chrome");
+
+  iframe.remove();
 });

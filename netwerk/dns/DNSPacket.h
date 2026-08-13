@@ -5,14 +5,14 @@
 #ifndef mozilla_net_DNSPacket_h_
 #define mozilla_net_DNSPacket_h_
 
+#include <functional>
+
+#include "DNS.h"
+#include "DNSByTypeRecord.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
 #include "nsClassHashtable.h"
 #include "nsIDNSService.h"
-#include "DNS.h"
-#include "DNSByTypeRecord.h"
-
-#include <functional>
 
 namespace mozilla {
 namespace net {

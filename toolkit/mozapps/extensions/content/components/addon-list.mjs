@@ -5,6 +5,7 @@
 import {
   AddonManagerListenerHandler,
   isPending,
+  openAmoInTab,
   shouldSkipAnimations,
 } from "../aboutaddons-utils.mjs";
 
@@ -230,6 +231,7 @@ export class AddonList extends HTMLElement {
       }
     }
 
+    // Empty extensions list message shown when Nova isn't enabled.
     let messageContainer = document.createElement("p");
     messageContainer.id = "empty-addons-message";
     let a = document.createElement("a");
@@ -240,7 +242,35 @@ export class AddonList extends HTMLElement {
       domain: a.hostname,
     });
     messageContainer.appendChild(a);
-    return messageContainer;
+
+    // Empty extensions list promo shown when Nova is enabled.
+    let emptyExtensionsListPromo = document.createElement("addons-promo");
+    emptyExtensionsListPromo.id = "empty-addons-promo";
+    emptyExtensionsListPromo.imageSrc =
+      "chrome://mozapps/skin/extensions/kit-addons.svg";
+    emptyExtensionsListPromo.imageAlignment = "start";
+    emptyExtensionsListPromo.textCentered = true;
+    document.l10n.setAttributes(
+      emptyExtensionsListPromo,
+      "list-empty-get-extensions-promo"
+    );
+    let promoBoxBtn = document.createElement("moz-button");
+    promoBoxBtn.size = "large";
+    promoBoxBtn.slot = "actions";
+    promoBoxBtn.onclick = () =>
+      openAmoInTab(null, {
+        utmContent: "find-more-promo-empty-list",
+      });
+    document.l10n.setAttributes(
+      promoBoxBtn,
+      "list-empty-get-extensions-promo-button"
+    );
+    emptyExtensionsListPromo.append(promoBoxBtn);
+
+    const emptyStateFragment = document.createDocumentFragment();
+    emptyStateFragment.appendChild(messageContainer);
+    emptyStateFragment.appendChild(emptyExtensionsListPromo);
+    return emptyStateFragment;
   }
 
   updateSectionIfEmpty(section) {

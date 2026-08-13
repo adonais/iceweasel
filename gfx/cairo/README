@@ -41,3 +41,5 @@ pixman-export.patch: make sure pixman symbols are not exported in libxul
 pixman-interp.patch: use lower quality interpolation by default on mobile
 
 pixman-rename.patch: include pixman-rename.h for renaming of external symbols
+
+pixman-edge-saturate.patch: Saturate when rounding up trapezoid edges

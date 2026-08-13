@@ -11,7 +11,7 @@ ChromeUtils.defineESModuleGetters(this, {
 });
 
 async function promisePageActionPanelOpen(win = window, eventDict = {}) {
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     // Wait for the main page action button to become visible.  It's hidden for
     // some URIs, so depending on when this is called, it may not yet be quite
     // visible.  It's up to the caller to make sure it will be visible.

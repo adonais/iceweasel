@@ -236,6 +236,7 @@ function doPageNavigation(params) {
       // They require messages from "browsers", "test", and "" to pass.
       // See bug 1784831 and bug 1883434 for more context.
       messageManagerGroups: ["browsers", "test", ""],
+      safeForUntrustedWebProcess: true,
     });
     DocShellHelpersParent.eventsToListenFor = eventsToListenFor;
     DocShellHelpersParent.observers = observers;

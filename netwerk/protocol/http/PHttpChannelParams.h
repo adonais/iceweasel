@@ -7,7 +7,6 @@
 
 #define ALLOW_LATE_NSHTTP_H_INCLUDE 1
 #include "base/basictypes.h"
-
 #include "ipc/EnumSerializer.h"
 #include "ipc/IPCMessageUtils.h"
 #include "ipc/IPCMessageUtilsSpecializations.h"
@@ -51,27 +50,8 @@ struct HttpVersionValidator {
 
 namespace IPC {
 
-template <>
-struct ParamTraits<mozilla::net::RequestHeaderTuple> {
-  typedef mozilla::net::RequestHeaderTuple paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mHeader);
-    WriteParam(aWriter, aParam.mValue);
-    WriteParam(aWriter, aParam.mMerge);
-    WriteParam(aWriter, aParam.mEmpty);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    if (!ReadParam(aReader, &aResult->mHeader) ||
-        !ReadParam(aReader, &aResult->mValue) ||
-        !ReadParam(aReader, &aResult->mMerge) ||
-        !ReadParam(aReader, &aResult->mEmpty))
-      return false;
-
-    return true;
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::net::RequestHeaderTuple, mHeader,
+                                  mValue, mMerge, mEmpty);
 
 template <>
 struct ParamTraits<mozilla::net::HttpVersion>

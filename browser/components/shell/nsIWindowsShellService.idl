@@ -118,8 +118,6 @@ interface nsIWindowsShellService : nsIShellService
    * The APIs used within this function are MSIX only and
    * will also not work on MINGW.
    *
-   * @param aCheckOnly If only testing whether pinning is possible
-   *
    * @return True if the application was successfully pinned
    *              to the Start Menu.
    *
@@ -133,7 +131,7 @@ interface nsIWindowsShellService : nsIShellService
    *         For Windows API failures
    */
   [implicit_jscontext]
-  Promise pinCurrentAppToStartMenuAsync(in boolean aCheckOnly);
+  Promise pinCurrentAppToStartMenu();
 
   /*
    * Whether the current app is among Windows Start Menu pins
@@ -153,7 +151,7 @@ interface nsIWindowsShellService : nsIShellService
    *         For Windows API failures
    */
   [implicit_jscontext]
-  Promise isCurrentAppPinnedToStartMenuAsync();
+  Promise isCurrentAppPinnedToStartMenu();
 
   /*
    * Disables the startup task corresponding to the provided taskId
@@ -181,7 +179,7 @@ interface nsIWindowsShellService : nsIShellService
    *         For other types of failures
    */
   [implicit_jscontext]
-  Promise enableLaunchOnLoginMSIXAsync(in AString aTaskId);
+  Promise enableLaunchOnLoginMSIX(in AString aTaskId);
 
   /*
    * Disables the startup task corresponding to the provided taskId
@@ -206,7 +204,17 @@ interface nsIWindowsShellService : nsIShellService
    *         For other types of failures
    */
   [implicit_jscontext]
-  Promise disableLaunchOnLoginMSIXAsync(in AString aTaskId);
+  Promise disableLaunchOnLoginMSIX(in AString aTaskId);
+
+  /*
+   * Status of launch on login enablement.
+   */
+  cenum LaunchOnLoginEnabledEnumerator : 8 {
+    LAUNCH_ON_LOGIN_DISABLED_BY_SETTINGS = 0,
+    LAUNCH_ON_LOGIN_DISABLED = 1,
+    LAUNCH_ON_LOGIN_ENABLED = 2,
+    LAUNCH_ON_LOGIN_ENABLED_BY_POLICY = 3,
+  };
 
   /*
    * Determines if the startup task corresponding to the provided taskId to
@@ -231,16 +239,22 @@ interface nsIWindowsShellService : nsIShellService
    * @throws NS_ERROR_FAILURE
    *         For other types of failures
    */
-
-  cenum LaunchOnLoginEnabledEnumerator : 8 {
-    LAUNCH_ON_LOGIN_DISABLED_BY_SETTINGS = 0,
-    LAUNCH_ON_LOGIN_DISABLED = 1,
-    LAUNCH_ON_LOGIN_ENABLED = 2,
-    LAUNCH_ON_LOGIN_ENABLED_BY_POLICY = 3,
-  };
-
   [implicit_jscontext]
-  Promise getLaunchOnLoginEnabledMSIXAsync(in AString aTaskId);
+  Promise getLaunchOnLoginEnabledMSIX(in AString aTaskId);
+
+  /*
+   * Result for attempts to pin to taskbar.
+   */
+  cenum PinResult : 8 {
+    // Successfully pinned.
+    PINNED,
+    // User or system rejected pin attempt.
+    REJECTED,
+    // Result of pin attempt unknown. Examples include when we intentionally
+    // return before the user choice is known, and when using APIs which don't
+    // provide means to know the success or failure of the pin attempt.
+    UNKNOWN,
+  };
 
   /*
    * Pin the current app to the taskbar. If aPrivateBrowsing is true, the
@@ -249,10 +263,10 @@ interface nsIWindowsShellService : nsIShellService
    *
    * This MUST only be used in response to an active request from the user.
    *
-   * If it exists, uses an existing shortcut on the Desktop or Start Menu,
+   * If it exists, uses an existing shortcut on the User or Common Start Menu,
    * which would have been created by the installer (for All Users or
    * Current User). If none can be found, one will be created with the correct
-   * AUMID for proper launching and grouping.
+   * AUMID in the User Start Menu for proper launching and grouping.
    *
    * NOTE: It is possible for the shortcut match to fail even when a
    * shortcut refers to the current executable, if the paths differ due
@@ -260,9 +274,6 @@ interface nsIWindowsShellService : nsIShellService
    *
    * This will definitely fail on an OS before Windows 10 build 1809
    * (October 2018 Update).
-   *
-   * NOTE: Can only run on the main thread, but the actual work occurs on a
-   * background thread.
    *
    * @param aPrivateBrowsing
    *        Pins private browsing.
@@ -279,34 +290,27 @@ interface nsIWindowsShellService : nsIShellService
    *
    * @rejects NS_ERROR_FILE_NOT_FOUND
    *          if a shortcut matching this app's AUMID and exe path wasn't found
+              in shell:appsfolder
    *
-   * @returns {Promise<void>} A promise that resolves to |undefined| if
-   *                          successful or rejects with an nserror.
+   * @returns {Promise<PinResult>} A Promise that resolves to
+   *                               nsIWindowsShellService_PinResult if
+   *                               successful or rejects with an nserror.
    */
   [implicit_jscontext]
-  Promise pinCurrentAppToTaskbarAsync(in boolean aPrivateBrowsing, [optional] in boolean aFireAndForget);
+  Promise pinCurrentAppToTaskbar(in boolean aPrivateBrowsing, [optional] in boolean aFireAndForget);
 
   /*
-   * Do a dry run of pinCurrentAppToTaskbar().
+   * Checks if a taskbar pinning API is available.
    *
-   * NOTE: Can only be run on the main thread, but the actual work occurs on a
-   * background thread.
-   *
-   * This does all the same checks and setup, throws the same errors, but doesn't
-   * do the final step of creating the pin.
-   *
-   * @throws same as pinCurrentAppToTaskbarAsync()
-   * @rejects same as pinCurrentAppToTaskbarAsync()
-   * @returns same as pinCurrentAppToTaskbarAsync()
+   * @throws NS_ERROR_NOT_SAME_THREAD
+   *         if called off main thread
+   * @throws NS_ERROR_NOT_AVAILABLE
+   *         if pinning APIs are unavailable for use
    */
-  [implicit_jscontext]
-  Promise checkPinCurrentAppToTaskbarAsync(in boolean aPrivateBrowsing);
+  void canPinToTaskbar();
 
   /*
    * Search for the current executable among taskbar pins
-   *
-   * NOTE: Can only be run on the main thread, but the actual work occurs on a
-   * background thread.
    *
    * NOTE: It is possible for the check to fail even when a taskbar pin refers
    * to this executable, if the paths differ due to e.g. symlinks.
@@ -319,7 +323,7 @@ interface nsIWindowsShellService : nsIShellService
    *
    */
   [implicit_jscontext]
-  Promise isCurrentAppPinnedToTaskbarAsync(in AString aumid);
+  Promise isCurrentAppPinnedToTaskbar(in AString aumid);
 
   /*
    * Similar to createShortcut except it removes most of the checking in that
@@ -335,6 +339,9 @@ interface nsIWindowsShellService : nsIShellService
    * @param  aShortcutRelativePath
    *         The path to the .lnk file that should be pinned to the taskbar,
    *         relative to aShortcutFolder.
+   * @returns {Promise<PinResult>} A Promise that resolves to
+   *                               nsIWindowsShellService_PinResult if
+   *                               successful or rejects with an nserror.
    */
   [implicit_jscontext]
   Promise pinShortcutToTaskbar(
@@ -472,4 +479,58 @@ interface nsIWindowsShellService : nsIShellService
    *         cannot be determined.
    */
   AString queryCurrentDefaultHandlerFor(in AString aFileExtensionOrProtocol);
+
+  /*
+   * Update the icons of existing .lnk shortcuts. Loads each shortcut, calls
+   * IShellLinkW::SetIconLocation, saves it, and notifies the shell so Explorer
+   * re-reads the icon. Shortcuts that don't exist or cannot be updated are
+   * ignored.
+   *
+   * @param aShortcutPaths
+   *        Absolute paths to the .lnk files to modify.
+   * @param aIconPath
+   *        Absolute path to the icon source. Either an .ico file or an
+   *        executable/DLL containing icon resources.
+   * @param aIconResourceId
+   *        Resource ID of the icon within aIconPath to use (e.g.
+   *        IDI_CUSTOM_RETRO when aIconPath is firefox.exe). The icon is
+   *        referenced by resource ID rather than positional index so the
+   *        reference stays valid no matter what order icons are embedded in
+   *        aIconPath. Pass 0 to use the binary's default icon.
+   *
+   * @returns {Promise<void, nsresult>} Resolves when one or more shortcut
+   *        is successfully updated, rejects with an nserror if no shortcuts
+   *        were updated or on unrecoverable failure.
+   *
+   * @throws NS_ERROR_NOT_SAME_THREAD if not run on the main thread.
+   * @rejects NS_ERROR_NOT_AVAILABLE when no shortcuts were able to be updated.
+   * @rejects NS_ERROR_FAILURE for Windows API failures.
+   */
+  [implicit_jscontext]
+  Promise setShortcutsIcon(in Array<AString> aShortcutPaths,
+                          in AString aIconPath,
+                          in unsigned short aIconResourceId);
+
+  /*
+   * Enumerate the .lnk files for this install across the per-user shortcut
+   * locations (taskbar pin folder, Desktop, Start Menu Programs) whose AUMID
+   * matches aAppUserModelId and whose target matches the currently running
+   * executable.
+   *
+   * Common (all-users) locations are not currently scanned: they typically
+   * require elevation to modify, and changing them would alter the icon that
+   * other users on the machine see. The intended use is "find every shortcut I
+   * am allowed to update without prompting."
+   *
+   * @param aAppUserModelId
+   *        AUMID identifying this install's shortcuts.
+   *
+   * @returns {Promise<Array<AString>>} Resolves with absolute paths to all
+   *          matching shortcuts. May be empty.
+   *
+   * @throws NS_ERROR_NOT_SAME_THREAD if not run on the main thread.
+   * @rejects NS_ERROR_FAILURE on Windows API initialization failure.
+   */
+  [implicit_jscontext]
+  Promise enumerateInstallShortcuts(in AString aAppUserModelId);
 };

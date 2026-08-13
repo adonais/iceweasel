@@ -7,13 +7,13 @@
 
 #include <type_traits>
 
-#include "nscore.h"
+#include "mozilla/RefPtr.h"
+#include "nsDebug.h"
+#include "nsError.h"
 #include "nsIOutputStream.h"
 #include "nsISupports.h"
-#include "nsError.h"
-#include "nsDebug.h"
 #include "nsISupportsImpl.h"
-#include "mozilla/RefPtr.h"
+#include "nscore.h"
 
 /**
  * Macro for adding a reference to an interface.

@@ -187,6 +187,8 @@ support-files = [
 
 ["browser_inspector_highlighter-selector_02.js"]
 
+["browser_inspector_highlighter-svg-document.js"]
+
 ["browser_inspector_highlighter-viewport-size.js"]
 
 ["browser_inspector_highlighter-zoom.js"]

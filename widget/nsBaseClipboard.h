@@ -6,13 +6,13 @@
 #define nsBaseClipboard_h_
 
 #include "mozilla/Array.h"
-#include "mozilla/dom/PContent.h"
 #include "mozilla/Logging.h"
 #include "mozilla/MoveOnlyFunction.h"
 #include "mozilla/Result.h"
+#include "mozilla/dom/PContent.h"
+#include "nsCOMPtr.h"
 #include "nsIClipboard.h"
 #include "nsITransferable.h"
-#include "nsCOMPtr.h"
 
 extern mozilla::LazyLogModule gWidgetClipboardLog;
 #define MOZ_CLIPBOARD_LOG(...) \
@@ -90,6 +90,8 @@ class nsBaseClipboard : public nsIClipboard {
       mozilla::Result<nsCOMPtr<nsISupports>, nsresult>)>;
   using HasMatchingFlavorsCallback = mozilla::MoveOnlyFunction<void(
       mozilla::Result<nsTArray<nsCString>, nsresult>)>;
+  using GetWebCustomFormatsCallback = mozilla::MoveOnlyFunction<void(
+      mozilla::Result<nsTArray<nsCString>, nsresult>)>;
 
   mozilla::Maybe<uint64_t> GetClipboardCacheInnerWindowId(
       ClipboardType aClipboardType);
@@ -130,7 +132,34 @@ class nsBaseClipboard : public nsIClipboard {
       const nsTArray<nsCString>& aFlavorList, ClipboardType aWhichClipboard,
       HasMatchingFlavorsCallback&& aCallback);
 
+  nsTArray<nsCString> GetWebCustomFormatsFromClipboard(
+      ClipboardType aWhichClipboard);
+
   void ClearClipboardCache(ClipboardType aClipboardType);
+
+  /**
+   *  This method is used to check if the passed in flavor is a valid flavor
+   *  for nsIClipboard.
+   *  @param aFlavor [in] the web custom format to be checked.
+   *  @return        false, if aFlavor is a invalid, otherwise, true.
+   *
+   *                 mimeType is a valid flavor.
+   *                 mimeType with parameters is a valid flavor.
+   *                 any string not a web custom format is a valid flavor.
+   *                 web custom format is a valid flavor.
+   *                 web custom format with parameters is not valid flavor.
+   *
+   *  example:  "text/plain" -> true             // mimeType
+   *            "text/plain;foo=1" -> true       // mimeType with parameters
+   *            "web text/plain" -> true         // A valid web custom format
+   *            "web " - false                   // Not a valid web custom
+   *                                                format
+   *            "web text/plain;foo=1" -> false  // A web custom format with
+   *                                             // parameters is invalid
+   *            "Not MimeType" -> true           // any string which is not web
+   *                                             // custom format
+   */
+  static bool IsValidFlavor(const nsACString& aFlavor);
 
  private:
   void RejectPendingAsyncSetDataRequestIfAny(ClipboardType aClipboardType);

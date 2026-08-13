@@ -40,10 +40,11 @@ class WinFileDialogParent final : private PWinFileDialogParent {
 
   [[nodiscard]] RefPtr<ShowFileDialogPromise> ShowFileDialogImpl(
       HWND parent, const FileDialogType& type,
-      mozilla::Span<Command const> commands);
+      mozilla::Span<Command const> commands, bool aNeedsInputProtection);
 
   [[nodiscard]] RefPtr<ShowFolderDialogPromise> ShowFolderDialogImpl(
-      HWND parent, mozilla::Span<Command const> commands);
+      HWND parent, mozilla::Span<Command const> commands,
+      bool aNeedsInputProtection);
 
  private:
   ~WinFileDialogParent();

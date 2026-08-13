@@ -49,6 +49,10 @@
         app:destination="@id/microsurveyDialogFragment" />
 
     <action
+        android:id="@+id/action_global_uninstall_survey_dialog"
+        app:destination="@id/uninstallSurveyBottomSheetFragment" />
+
+    <action
         android:id="@+id/action_global_terms_of_use_dialog"
         app:destination="@+id/termsOfUseDialogFragment"
         app:launchSingleTop="true" />
@@ -171,18 +175,6 @@
         app:popEnterAnim="@anim/slide_in_left"
         app:popExitAnim="@anim/slide_out_right" />
     <action
-        android:id="@+id/action_global_trackingProtectionPanelDialogFragment"
-        app:destination="@id/trackingProtectionPanelDialogFragment" />
-    <action
-        android:id="@+id/action_global_cookieBannerProtectionPanelDialogFragment"
-        app:destination="@id/cookieBannerPanelDialogFragment" />
-    <action
-        android:id="@+id/action_global_quickSettingsSheetDialogFragment"
-        app:destination="@id/quickSettingsSheetDialogFragment" />
-    <action
-        android:id="@+id/action_global_connectionDetailsDialogFragment"
-        app:destination="@id/connectionPanelDialogFragment" />
-    <action
         android:id="@+id/action_global_tabManagementFragment"
         app:destination="@id/tabManagementFragment" />
     <action
@@ -221,6 +213,10 @@
     <action
         android:id="@+id/action_global_aiControlsFragment"
         app:destination="@+id/aiControlsFragment"/>
+
+    <action
+        android:id="@+id/action_global_protections_dashboard"
+        app:destination="@+id/global_protections_dashboard"/>
 
     <fragment
         android:id="@+id/tabManagementFragment"
@@ -351,6 +347,15 @@
     </dialog>
 
     <dialog
+      android:id="@+id/uninstallSurveyBottomSheetFragment"
+      android:name="org.mozilla.fenix.experiments.UninstallSurveyBottomSheetFragment">
+      <argument
+        android:name="microsurvey_id"
+        app:argType="string"
+        app:nullable="false" />
+    </dialog>
+
+    <dialog
         android:id="@+id/termsOfUseDialogFragment"
         android:name="org.mozilla.fenix.termsofuse.ui.TermsOfUseBottomSheetFragment">
         <argument
@@ -410,9 +415,6 @@
         <action
             android:id="@+id/action_browserFragment_to_pwaOnboardingDialogFragment"
             app:destination="@id/pwaOnboardingDialogFragment" />
-        <action
-            android:id="@+id/action_browserFragment_to_quickSettingsSheetDialogFragment"
-            app:destination="@id/quickSettingsSheetDialogFragment" />
         <action
             android:id="@+id/action_browserFragment_to_trustPanelFragment"
             app:destination="@id/trust_panel_graph" />
@@ -583,10 +585,6 @@
         <action
             android:id="@+id/action_settingsFragment_to_settingsSearchFragment"
             app:destination="@id/settingsSearchFragment"
-            app:enterAnim="@anim/slide_in_right"
-            app:exitAnim="@anim/slide_out_left"
-            app:popEnterAnim="@anim/slide_in_left"
-            app:popExitAnim="@anim/slide_out_right"
             app:popUpTo="@id/settingsFragment" />
         <action
             android:id="@+id/action_settingsFragment_to_dataChoicesFragment"
@@ -1054,10 +1052,6 @@
         <action
             android:id="@+id/action_secretSettingsFragment_to_secretSettingsSearchFragment"
             app:destination="@id/secretSettingsSearchFragment"
-            app:enterAnim="@anim/slide_in_right"
-            app:exitAnim="@anim/slide_out_left"
-            app:popEnterAnim="@anim/slide_in_left"
-            app:popExitAnim="@anim/slide_out_right"
             app:popUpTo="@id/secretSettingsPreference" />
         <action
             android:id="@+id/action_secretSettingsFragment_to_remoteSettingsServerFragment"
@@ -1073,7 +1067,13 @@
             app:exitAnim="@anim/slide_out_left"
             app:popEnterAnim="@anim/slide_in_left"
             app:popExitAnim="@anim/slide_out_right" />
+        <action
+            android:id="@+id/action_secretSettingsFragment_to_debugInfoBottomSheetFragment"
+            app:destination="@id/debugInfoBottomSheetFragment" />
     </fragment>
+    <dialog
+        android:id="@+id/debugInfoBottomSheetFragment"
+        android:name="org.mozilla.fenix.debugsettings.info.DebugInfoBottomSheetFragment" />
     <fragment
         android:id="@+id/secretSettingsSearchFragment"
         android:name="org.mozilla.fenix.settings.settingssearch.secretsettings.SecretSettingsSearchFragment"
@@ -1248,47 +1248,6 @@
             app:argType="string"
             app:nullable="true" />
     </dialog>
-    <dialog
-        android:id="@+id/quickSettingsSheetDialogFragment"
-        android:name="org.mozilla.fenix.settings.quicksettings.QuickSettingsSheetDialogFragment"
-        tools:layout="@layout/fragment_quick_settings_dialog_sheet">
-        <argument
-            android:name="sessionId"
-            app:argType="string" />
-        <argument
-            android:name="title"
-            app:argType="string" />
-        <argument
-            android:name="url"
-            app:argType="string" />
-        <argument
-            android:name="isLocalPdf"
-            app:argType="boolean" />
-        <argument
-            android:name="isSecured"
-            app:argType="boolean" />
-        <argument
-            android:name="sitePermissions"
-            app:argType="mozilla.components.concept.engine.permission.SitePermissions"
-            app:nullable="true" />
-        <argument
-            android:name="gravity"
-            android:defaultValue="80"
-            app:argType="integer" />
-        <argument
-            android:name="certificateName"
-            android:defaultValue=" "
-            app:argType="string" />
-        <argument
-            android:name="permissionHighlights"
-            app:argType="mozilla.components.browser.state.state.content.PermissionHighlightsState" />
-        <argument
-            android:name="isTrackingProtectionEnabled"
-            app:argType="boolean" />
-        <argument
-            android:name="cookieBannerUIMode"
-            app:argType="org.mozilla.fenix.trackingprotection.CookieBannerUIMode" />
-    </dialog>
     <fragment
         android:id="@+id/accountProblemFragment"
         android:name="org.mozilla.fenix.settings.account.AccountProblemFragment">
@@ -1303,90 +1262,6 @@
         android:id="@+id/signOutFragment"
         android:name="org.mozilla.fenix.settings.account.SignOutFragment"
         tools:layout="@layout/fragment_sign_out" />
-    <dialog
-        android:id="@+id/trackingProtectionPanelDialogFragment"
-        android:name="org.mozilla.fenix.trackingprotection.TrackingProtectionPanelDialogFragment"
-        tools:layout="@layout/fragment_tracking_protection">
-        <argument
-            android:name="sessionId"
-            app:argType="string" />
-        <argument
-            android:name="url"
-            app:argType="string" />
-        <argument
-            android:name="trackingProtectionEnabled"
-            app:argType="boolean" />
-        <argument
-            android:name="cookieBannerUIMode"
-            app:argType="org.mozilla.fenix.trackingprotection.CookieBannerUIMode" />
-        <argument
-            android:name="gravity"
-            android:defaultValue="80"
-            app:argType="integer" />
-        <argument
-            android:name="sitePermissions"
-            app:argType="mozilla.components.concept.engine.permission.SitePermissions"
-            app:nullable="true" />
-    </dialog>
-    <dialog
-        android:id="@+id/connectionPanelDialogFragment"
-        android:name="org.mozilla.fenix.settings.quicksettings.ConnectionPanelDialogFragment"
-        tools:layout="@layout/quicksettings_website_info">
-        <argument
-            android:name="sessionId"
-            app:argType="string" />
-        <argument
-            android:name="title"
-            app:argType="string" />
-        <argument
-            android:name="url"
-            app:argType="string" />
-        <argument
-            android:name="isLocalPdf"
-            app:argType="boolean" />
-        <argument
-            android:name="isSecured"
-            app:argType="boolean" />
-        <argument
-            android:name="certificateName"
-            android:defaultValue=" "
-            app:argType="string" />
-        <argument
-            android:name="sitePermissions"
-            app:argType="mozilla.components.concept.engine.permission.SitePermissions"
-            app:nullable="true" />
-        <argument
-            android:name="gravity"
-            android:defaultValue="80"
-            app:argType="integer" />
-    </dialog>
-
-    <dialog
-        android:id="@+id/cookieBannerPanelDialogFragment"
-        android:name="org.mozilla.fenix.settings.quicksettings.protections.cookiebanners.CookieBannerPanelDialogFragment"
-        tools:layout="@layout/quicksettings_website_info">
-        <argument
-            android:name="sessionId"
-            app:argType="string" />
-        <argument
-            android:name="url"
-            app:argType="string" />
-        <argument
-            android:name="trackingProtectionEnabled"
-            app:argType="boolean" />
-        <argument
-            android:name="cookieBannerUIMode"
-            app:argType="org.mozilla.fenix.trackingprotection.CookieBannerUIMode" />
-        <argument
-            android:name="gravity"
-            android:defaultValue="80"
-            app:argType="integer" />
-        <argument
-            android:name="sitePermissions"
-            app:argType="mozilla.components.concept.engine.permission.SitePermissions"
-            app:nullable="true" />
-
-    </dialog>
     <fragment
         android:id="@+id/trackingProtectionBlockingFragment"
         android:name="org.mozilla.fenix.trackingprotection.TrackingProtectionBlockingFragment"
@@ -1957,9 +1832,6 @@
             android:name="isTrackingProtectionEnabled"
             app:argType="boolean" />
         <argument
-            android:name="cookieBannerUIMode"
-            app:argType="org.mozilla.fenix.trackingprotection.CookieBannerUIMode" />
-        <argument
             android:name="isLocalPdf"
             app:argType="boolean" />
         <dialog
@@ -1991,9 +1863,6 @@
             <argument
                 android:name="isTrackingProtectionEnabled"
                 app:argType="boolean" />
-            <argument
-                android:name="cookieBannerUIMode"
-                app:argType="org.mozilla.fenix.trackingprotection.CookieBannerUIMode" />
             <argument
                 android:name="isLocalPdf"
                 app:argType="boolean" />

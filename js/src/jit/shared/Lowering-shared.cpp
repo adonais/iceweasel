@@ -2,15 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "jit/shared/Lowering-shared-inl.h"
+#include "jit/Lowering.h"
 
 #include "jit/LIR.h"
-#include "jit/Lowering.h"
 #include "jit/MIR-wasm.h"
 #include "jit/MIR.h"
 #include "jit/ScalarTypeUtils.h"
-
 #include "vm/SymbolType.h"
+
+#include "jit/shared/Lowering-shared-inl.h"
 
 using namespace js;
 using namespace jit;

@@ -620,7 +620,7 @@ already_AddRefed<DetailedPromise> MediaKeySession::MakePromise(
 void MediaKeySession::SetExpiration(double aExpiration) {
   EME_LOG("MediaKeySession[{},'{}'] SetExpiry({:.12f}) ({:.2f} hours from now)",
           fmt::ptr(this), NS_ConvertUTF16toUTF8(mSessionId).get(), aExpiration,
-          (aExpiration - 1000.0 * double(time(0))) / (1000.0 * 60 * 60));
+          (aExpiration - 1000.0 * double(time(nullptr))) / (1000.0 * 60 * 60));
   mExpiration = aExpiration;
 }
 

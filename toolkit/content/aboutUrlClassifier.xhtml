@@ -120,6 +120,129 @@
       </tbody>
     </table>
   </div>
+  <div id="content-classifier">
+    <h2 class="major-section" data-l10n-id="url-classifier-content-classifier-title"></h2>
+    <div class="options">
+      <table>
+        <tbody>
+        <tr>
+          <th class="column" data-l10n-id="url-classifier-content-classifier-url"></th>
+          <td>
+            <input id="content-classifier-url" type="text" value=""/>
+          </td>
+        </tr>
+        <tr>
+          <th class="column" data-l10n-id="url-classifier-content-classifier-loading-url"></th>
+          <td>
+            <div>
+              <label class="toggle-container-with-text">
+                <input id="content-classifier-loading-url-enabled" type="checkbox"/>
+                <span data-l10n-id="url-classifier-content-classifier-loading-url-enabled"></span>
+              </label>
+            </div>
+            <div>
+              <input id="content-classifier-loading-url" type="text" value="" disabled="disabled"/>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <th class="column" data-l10n-id="url-classifier-content-classifier-top-window-url"></th>
+          <td>
+            <div>
+              <label class="toggle-container-with-text">
+                <input id="content-classifier-top-window-url-enabled" type="checkbox"/>
+                <span data-l10n-id="url-classifier-content-classifier-top-window-url-enabled"></span>
+              </label>
+            </div>
+            <div>
+              <input id="content-classifier-top-window-url" type="text" value="" disabled="disabled"/>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <th class="column" data-l10n-id="url-classifier-content-classifier-destination-type"></th>
+          <td>
+            <select id="content-classifier-request-type">
+              <option value="other">other</option>
+              <option value="csp_report">csp_report</option>
+              <option value="document">document</option>
+              <option value="font">font</option>
+              <option value="image">image</option>
+              <option value="media">media</option>
+              <option value="object">object</option>
+              <option value="ping">ping</option>
+              <option value="script">script</option>
+              <option value="stylesheet">stylesheet</option>
+              <option value="subdocument">subdocument</option>
+              <option value="websocket">websocket</option>
+              <option value="xmlhttprequest">xmlhttprequest</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <th class="column" data-l10n-id="url-classifier-content-classifier-flags"></th>
+          <td>
+            <div>
+              <label class="toggle-container-with-text">
+                <input id="content-classifier-pbm" type="checkbox"/>
+                <span data-l10n-id="url-classifier-content-classifier-pbm"></span>
+              </label>
+            </div>
+            <div>
+              <label class="toggle-container-with-text">
+                <input id="content-classifier-force-third-party" type="checkbox"/>
+                <span data-l10n-id="url-classifier-content-classifier-force-third-party"></span>
+              </label>
+            </div>
+            <div>
+              <label class="toggle-container-with-text">
+                <input id="content-classifier-non-recommended-addon" type="checkbox"/>
+                <span data-l10n-id="url-classifier-content-classifier-non-recommended-addon"></span>
+              </label>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <th class="column" data-l10n-id="url-classifier-content-classifier-probes"></th>
+          <td>
+            <div>
+              <button id="content-classifier-probe-blocking" data-l10n-id="url-classifier-content-classifier-probe-blocking-btn"></button>
+            </div>
+            <div>
+              <button id="content-classifier-probe-annotate" data-l10n-id="url-classifier-content-classifier-probe-annotate-btn"></button>
+            </div>
+            <div>
+              <select id="content-classifier-feature"></select>
+              <button id="content-classifier-probe-feature" data-l10n-id="url-classifier-content-classifier-probe-feature-btn"></button>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <th class="column" data-l10n-id="url-classifier-content-classifier-results"></th>
+          <td>
+            <div id="content-classifier-verdict" class="content-classifier-verdict"></div>
+            <details>
+              <summary data-l10n-id="url-classifier-content-classifier-engine-details"></summary>
+              <table class="content-classifier-results">
+                <thead>
+                  <tr>
+                    <th data-l10n-id="url-classifier-content-classifier-col-feature"></th>
+                    <th data-l10n-id="url-classifier-content-classifier-col-matched"></th>
+                    <th data-l10n-id="url-classifier-content-classifier-col-exception"></th>
+                    <th data-l10n-id="url-classifier-content-classifier-col-important"></th>
+                    <th data-l10n-id="url-classifier-content-classifier-col-engine-result"></th>
+                  </tr>
+                </thead>
+                <tbody id="content-classifier-results-body">
+                </tbody>
+              </table>
+            </details>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
   <div id="debug">
     <h2 class="major-section" data-l10n-id="url-classifier-debug-title"></h2>
     <div id="debug-modules" class="options">

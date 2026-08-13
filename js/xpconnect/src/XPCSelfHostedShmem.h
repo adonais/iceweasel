@@ -5,10 +5,11 @@
 #ifndef xpcselfhostedshmem_h_
 #define xpcselfhostedshmem_h_
 
-#include "mozilla/Span.h"
-#include "mozilla/StaticPtr.h"
 #include "mozilla/ipc/SharedMemoryHandle.h"
 #include "mozilla/ipc/SharedMemoryMapping.h"
+#include "mozilla/Span.h"
+#include "mozilla/StaticPtr.h"
+
 #include "nsIMemoryReporter.h"
 #include "nsIObserver.h"
 #include "nsIThread.h"

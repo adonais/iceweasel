@@ -4,24 +4,23 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "TaskbarPreview.h"
-#include <nsITaskbarPreviewController.h>
-#include <windows.h>
 
-#include <nsError.h>
 #include <nsCOMPtr.h>
+#include <nsError.h>
+#include <nsITaskbarPreviewController.h>
 #include <nsIWidget.h>
 #include <nsServiceManagerUtils.h>
+#include <windows.h>
 
-#include "nsWindow.h"
-#include "nsAppShell.h"
-#include "nsComponentManagerUtils.h"
 #include "TaskbarPreviewButton.h"
 #include "WinUtils.h"
-
+#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/dom/HTMLCanvasElement.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/DataSurfaceHelpers.h"
-#include "mozilla/StaticPrefs_layout.h"
+#include "nsAppShell.h"
+#include "nsComponentManagerUtils.h"
+#include "nsWindow.h"
 
 // Defined in dwmapi in a header that needs a higher numbered _WINNT #define
 #ifndef DWM_SIT_DISPLAYFRAME

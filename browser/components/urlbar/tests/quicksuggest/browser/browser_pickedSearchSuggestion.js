@@ -199,7 +199,7 @@ add_task(async function appProvidedNonDefault() {
 
     await UrlbarTestUtils.enterSearchMode(window, {
       engineName: "appEngine2",
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      source: UrlbarShared.RESULT_SOURCE.SEARCH,
     });
 
     let loadPromise = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);

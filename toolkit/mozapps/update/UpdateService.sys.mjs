@@ -10,7 +10,7 @@ import {
   BitsRequest,
   BitsUnknownError,
   BitsVerificationError,
-} from "resource://gre/modules/Bits.sys.mjs";
+} from "moz-src:///toolkit/components/bitsdownload/Bits.sys.mjs";
 import { FileUtils } from "resource://gre/modules/FileUtils.sys.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 

@@ -88,7 +88,7 @@ add_task(async function test_vendored_events_dispatcher() {
     },
   });
 
-  await BrowserTestUtils.waitForCondition(() => events.length === 1);
+  await TestUtils.waitForCondition(() => events.length === 1);
   is(events[0], "vendoredWindowGlobalEventValue");
 
   await rootMessageHandler.eventsDispatcher.on(
@@ -107,7 +107,7 @@ add_task(async function test_vendored_events_dispatcher() {
     },
   });
 
-  await BrowserTestUtils.waitForCondition(() => events.length === 2);
+  await TestUtils.waitForCondition(() => events.length === 2);
   is(events[1], "vendoredRootEventValue");
 
   rootMessageHandler.destroy();

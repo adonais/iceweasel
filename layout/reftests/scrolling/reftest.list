@@ -129,6 +129,19 @@ pref(layout.disable-pixel-alignment,true) fuzzy-if(Android||cocoaWidget,255-255,
 pref(layout.disable-pixel-alignment,true) fuzzy-if(Android||cocoaWidget,255-255,296-321) fails-if(useDrawSnapshot) == snapped-scrolled-content-1.html?text=1&top=0&scrollIntoViewPos=4.4 snapped-scrolled-content-ref.html?text=1&offset=4
 pref(layout.disable-pixel-alignment,true) fuzzy-if(Android||cocoaWidget,255-255,296-321) fails-if(useDrawSnapshot) == snapped-scrolled-content-1.html?text=1&top=0&scrollIntoViewPos=3.7 snapped-scrolled-content-ref.html?text=1&offset=4
 
+# Reference-frame origin snapping under a fractional scroll offset (bug 1774315).
+# Google Docs draws content as SVG canvas tiles; with pixel alignment disabled
+# the SVG reference-frame origin must not be snapped in Gecko (scrolled space),
+# or the external-scroll-offset normalization leaves a sub-pixel residue that
+# mis-places the tiles by a device pixel (a visible seam at tile boundaries).
+# blob-seam: real-world repro (overflow:hidden tiles vs continuous reference);
+# the small residual is the overflow:hidden-vs-visible bottom-edge antialiasing.
+# blob-seam-noclip: clips removed, so the only difference is APZ async scroll
+# (test) vs main-thread scroll (ref) -- confirms both paths snap the origin
+# identically. Skipped under drawSnapshot, which doesn't apply APZ async scroll.
+pref(layout.disable-pixel-alignment,true) fuzzy(0-57,0-331) == blob-seam.html blob-seam-ref.html
+pref(layout.disable-pixel-alignment,true) fuzzy(0-240,0-1024) skip-if(useDrawSnapshot) == blob-seam-noclip.html blob-seam-noclip-ref.html
+
 # Tests for "overflow" styles that may be propagated to the viewport:
 == propagated-overflow-style-1a.html propagated-overflow-style-1-ref.html
 == propagated-overflow-style-1b.html propagated-overflow-style-1-ref.html

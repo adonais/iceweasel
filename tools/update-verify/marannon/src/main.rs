@@ -3,6 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 mod cli;
 mod downloader;
+mod errorhandling;
 mod runner;
 mod test;
 mod updater;
@@ -14,12 +15,13 @@ use std::process::exit;
 use std::thread;
 use tempfile::TempDir;
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use env_logger::{Builder, Env};
 use log::info;
 
 use crate::cli::Args;
 use crate::downloader::{FileDownloader, UreqDownloader};
+use crate::errorhandling::panic_message;
 use crate::runner::RealRunner;
 use crate::test::{run_tests, Test, TestResult};
 
@@ -48,7 +50,7 @@ fn main() -> Result<()> {
 
     let mut cache_dir = tmpdir.clone();
     cache_dir.push("download_cache");
-    create_dir(&cache_dir)?;
+    create_dir(&cache_dir).context(format!("couldn't create dir {}", cache_dir.display()))?;
 
     let downloader = UreqDownloader;
     let runner = RealRunner;
@@ -63,10 +65,17 @@ fn main() -> Result<()> {
     let mut tests = Vec::new();
     let mut download_dir = tmpdir.clone();
     download_dir.push("from_builds");
-    create_dir(download_dir.as_path())?;
+    create_dir(download_dir.as_path())
+        .context(format!("couldn't create dir {}", download_dir.display()))?;
 
-    if !exists(&args.artifact_dir)? {
-        create_dir(&args.artifact_dir)?;
+    if !exists(&args.artifact_dir).context(format!(
+        "couldn't check for existence of {}",
+        args.artifact_dir.display()
+    ))? {
+        create_dir(&args.artifact_dir).context(format!(
+            "couldn't create dir {}",
+            &args.artifact_dir.display()
+        ))?;
     }
 
     // Associate URLs of files we'll be downloading with an on-disk location.
@@ -116,9 +125,14 @@ fn main() -> Result<()> {
 
         // Join the threads, check for errors
         for h in handles {
-            h.join()
-                // Handle errors that come up when joining the thread
-                .map_err(|_| anyhow::anyhow!("download thread panicked"))?;
+            let chunk_results = h.join().map_err(|e| {
+                let msg = panic_message(e);
+                return anyhow!("download thread panicked: {msg}");
+            })?;
+            // Check the results returned by `fetch`
+            for result in chunk_results {
+                result?;
+            }
         }
 
         return Ok(());
@@ -152,7 +166,7 @@ fn main() -> Result<()> {
         &args.target_platform,
         &args.to_installer,
         &args.channel,
-        &args.appname,
+        &args.product,
         args.cert_dir.as_deref(),
         &args.cert_override,
         tests,

@@ -17,15 +17,15 @@ static inline bool EqualContainers(const Container1& lhs,
   return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
 }
 
-#define WASM_DECLARE_POD_VECTOR(Type, VectorName)                      \
-  }                                                                    \
-  }                                                                    \
-  static_assert(std::is_trivially_copyable<js::wasm::Type>::value,     \
-                "Must be trivially copyable");                         \
-  static_assert(std::is_trivially_destructible<js::wasm::Type>::value, \
-                "Must be trivially destructible");                     \
-  namespace js {                                                       \
-  namespace wasm {                                                     \
+#define WASM_DECLARE_POD_VECTOR(Type, VectorName)                 \
+  }                                                               \
+  }                                                               \
+  static_assert(std::is_trivially_copyable_v<js::wasm::Type>,     \
+                "Must be trivially copyable");                    \
+  static_assert(std::is_trivially_destructible_v<js::wasm::Type>, \
+                "Must be trivially destructible");                \
+  namespace js {                                                  \
+  namespace wasm {                                                \
   using VectorName = Vector<Type, 0, SystemAllocPolicy>;
 
 template <class T>

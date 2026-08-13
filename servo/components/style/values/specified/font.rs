@@ -344,16 +344,6 @@ pub const FONT_STYLE_OBLIQUE_MAX_ANGLE_DEGREES: f32 = 90.;
 pub const FONT_STYLE_OBLIQUE_MIN_ANGLE_DEGREES: f32 = -90.;
 
 impl SpecifiedFontStyle {
-    /// Gets a clamped angle in degrees from a specified Angle.
-    pub fn compute_angle_degrees(angle: &Angle) -> Option<f32> {
-        Some(
-            angle
-                .degrees()?
-                .max(FONT_STYLE_OBLIQUE_MIN_ANGLE_DEGREES)
-                .min(FONT_STYLE_OBLIQUE_MAX_ANGLE_DEGREES),
-        )
-    }
-
     /// Parse a suitable angle for font-style: oblique.
     pub fn parse_angle<'i, 't>(
         context: &ParserContext,
@@ -566,8 +556,10 @@ impl Default for FontSizeKeyword {
     ComputeSquaredDistance,
     Copy,
     Debug,
+    Deserialize,
     MallocSizeOf,
     PartialEq,
+    Serialize,
     ToAnimatedValue,
     ToAnimatedZero,
     ToComputedValue,
@@ -576,7 +568,6 @@ impl Default for FontSizeKeyword {
     ToShmem,
     ToTyped,
 )]
-#[cfg_attr(feature = "servo", derive(Serialize, Deserialize))]
 /// Additional information for keyword-derived font sizes.
 pub struct KeywordInfo {
     /// The keyword used
@@ -667,8 +658,7 @@ pub enum FontSize {
 }
 
 /// Specifies a prioritized list of font family names or generic family names.
-#[derive(Clone, Debug, Eq, PartialEq, ToCss, ToShmem, ToTyped)]
-#[cfg_attr(feature = "servo", derive(Hash))]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, ToCss, ToShmem, ToTyped)]
 #[typed(todo_derive_fields)]
 pub enum FontFamily {
     /// List of `font-family`
@@ -1019,11 +1009,35 @@ impl FontSize {
                     }
                 },
             };
+        let size = NonNegative(Self::quantize_font_size(size));
         computed::FontSize {
-            computed_size: NonNegative(size),
-            used_size: NonNegative(size),
+            computed_size: size,
+            used_size: size,
             keyword_info: info,
         }
+    }
+
+    /// Quantize a value intended for use as a font size, to avoid creating a near-infinity
+    /// of different styles and font instances when "random" floating-point sizes are used.
+    #[inline]
+    pub fn quantize_font_size(size: CSSPixelLength) -> CSSPixelLength {
+        // Based on the Veltkamp-Dekker float-splitting algorithm, see e.g.
+        // https://indico.cern.ch/event/313684/contributions/1687773/attachments/600513/826490/FPArith-Part2.pdf
+        // A 32-bit float has 24 bits of precision (23 stored, plus an implicit 1 bit
+        // at the start of the mantissa).
+        // (Compare also QuantizeFontSize in dom/canvas/CanvasRenderingContext2D.cpp.)
+        // If we ever change the representation of CSSPixelLength (e.g. to f64 or some fixed-point type)
+        // this will need to be revised.
+        size_of_test!(CSSPixelLength, std::mem::size_of::<f32>());
+        const BITS_TO_DROP: u32 = 14; // leaving 10 bits of precision
+        const SCALE_PLUS_ONE: f32 = ((1 << BITS_TO_DROP) + 1) as f32;
+        const LIMIT: f32 = f32::MAX / SCALE_PLUS_ONE;
+        if size.px() >= LIMIT {
+            return CSSPixelLength::new(LIMIT);
+        }
+        let d = size.px() * SCALE_PLUS_ONE;
+        let t = d - size.px();
+        CSSPixelLength::new(d - t)
     }
 }
 
@@ -1307,10 +1321,13 @@ impl Parse for FontVariantAlternates {
     Clone,
     Copy,
     Debug,
+    Deserialize,
     Eq,
+    Hash,
     MallocSizeOf,
     PartialEq,
     Parse,
+    Serialize,
     SpecifiedValueInfo,
     ToComputedValue,
     ToCss,
@@ -1318,7 +1335,6 @@ impl Parse for FontVariantAlternates {
     ToShmem,
     ToTyped,
 )]
-#[cfg_attr(feature = "servo", derive(Deserialize, Hash, Serialize))]
 #[css(bitflags(
     single = "normal",
     mixed = "jis78,jis83,jis90,jis04,simplified,traditional,full-width,proportional-width,ruby",
@@ -1377,10 +1393,13 @@ impl FontVariantEastAsian {
     Clone,
     Copy,
     Debug,
+    Deserialize,
     Eq,
+    Hash,
     MallocSizeOf,
     PartialEq,
     Parse,
+    Serialize,
     SpecifiedValueInfo,
     ToComputedValue,
     ToCss,
@@ -1388,7 +1407,6 @@ impl FontVariantEastAsian {
     ToShmem,
     ToTyped,
 )]
-#[cfg_attr(feature = "servo", derive(Deserialize, Hash, Serialize))]
 #[css(bitflags(
     single = "normal,none",
     mixed = "common-ligatures,no-common-ligatures,discretionary-ligatures,no-discretionary-ligatures,historical-ligatures,no-historical-ligatures,contextual,no-contextual",
@@ -1444,10 +1462,13 @@ impl FontVariantLigatures {
     Clone,
     Copy,
     Debug,
+    Deserialize,
     Eq,
+    Hash,
     MallocSizeOf,
     PartialEq,
     Parse,
+    Serialize,
     SpecifiedValueInfo,
     ToComputedValue,
     ToCss,
@@ -1460,7 +1481,6 @@ impl FontVariantLigatures {
     mixed = "lining-nums,oldstyle-nums,proportional-nums,tabular-nums,diagonal-fractions,stacked-fractions,ordinal,slashed-zero",
     validate_mixed = "Self::validate_mixed_flags",
 ))]
-#[cfg_attr(feature = "servo", derive(Serialize, Deserialize, Hash))]
 #[repr(C)]
 pub struct FontVariantNumeric(u8);
 bitflags! {
@@ -1571,11 +1591,13 @@ impl Parse for FontLanguageOverride {
     Clone,
     Copy,
     Debug,
+    Deserialize,
     Eq,
     Hash,
     MallocSizeOf,
     Parse,
     PartialEq,
+    Serialize,
     SpecifiedValueInfo,
     ToComputedValue,
     ToCss,
@@ -1583,7 +1605,6 @@ impl Parse for FontLanguageOverride {
     ToShmem,
     ToTyped,
 )]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 pub enum FontSynthesis {
     /// This attribute may be synthesized if not supported by a face.
     Auto,
@@ -1779,9 +1800,11 @@ impl MetricsOverride {
     Clone,
     Copy,
     Debug,
+    Deserialize,
     MallocSizeOf,
     Parse,
     PartialEq,
+    Serialize,
     SpecifiedValueInfo,
     ToComputedValue,
     ToCss,
@@ -1811,8 +1834,12 @@ impl XTextScale {
 #[derive(
     Clone,
     Debug,
+    Deserialize,
+    Eq,
+    Hash,
     MallocSizeOf,
     PartialEq,
+    Serialize,
     SpecifiedValueInfo,
     ToComputedValue,
     ToCss,
@@ -1820,7 +1847,6 @@ impl XTextScale {
     ToShmem,
     ToTyped,
 )]
-#[cfg_attr(feature = "servo", derive(Deserialize, Eq, Hash, Serialize))]
 /// Internal property that reflects the lang attribute
 pub struct XLang(#[css(skip)] pub Atom);
 
@@ -1970,8 +1996,6 @@ impl ToComputedValue for LineHeight {
     fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
         match self {
             GenericLineHeight::Normal => GenericLineHeight::Normal,
-            #[cfg(feature = "gecko")]
-            GenericLineHeight::MozBlockHeight => GenericLineHeight::MozBlockHeight,
             GenericLineHeight::Number(ref number) => {
                 GenericLineHeight::Number(number.to_computed_value(context))
             },
@@ -2016,8 +2040,6 @@ impl ToComputedValue for LineHeight {
     fn from_computed_value(computed: &Self::ComputedValue) -> Self {
         match *computed {
             GenericLineHeight::Normal => GenericLineHeight::Normal,
-            #[cfg(feature = "gecko")]
-            GenericLineHeight::MozBlockHeight => GenericLineHeight::MozBlockHeight,
             GenericLineHeight::Number(ref number) => {
                 GenericLineHeight::Number(NonNegativeNumber::from_computed_value(number))
             },

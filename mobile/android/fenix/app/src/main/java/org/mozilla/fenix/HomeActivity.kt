@@ -37,6 +37,7 @@ import androidx.core.net.toUri
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.text.layoutDirection
 import androidx.core.view.doOnLayout
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.NavDirections
@@ -103,6 +104,7 @@ import org.mozilla.fenix.browser.BrowserFragment
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.browser.browsingmode.DefaultBrowsingModeManager
+import org.mozilla.fenix.components.DefaultShortcutManagerCompatWrapper
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppAction.ShareAction
 import org.mozilla.fenix.components.appstate.OrientationMode
@@ -127,6 +129,7 @@ import org.mozilla.fenix.debugsettings.ui.FenixOverlay
 import org.mozilla.fenix.downloads.DownloadSnackbar
 import org.mozilla.fenix.e2e.EdgeToEdgeFragmentLifecycleCallbacks
 import org.mozilla.fenix.experiments.ResearchSurfaceDialogFragment
+import org.mozilla.fenix.experiments.UninstallSurveyManager
 import org.mozilla.fenix.ext.alreadyOnDestination
 import org.mozilla.fenix.ext.breadcrumb
 import org.mozilla.fenix.ext.components
@@ -156,6 +159,8 @@ import org.mozilla.fenix.home.topsites.DefaultTopSitesBinding
 import org.mozilla.fenix.messaging.FenixMessageSurfaceId
 import org.mozilla.fenix.messaging.MessageNotificationWorker
 import org.mozilla.fenix.nimbus.FxNimbus
+import org.mozilla.fenix.onboarding.ensureMarketingChannelExists
+import org.mozilla.fenix.onboarding.seedOnboardingCompletedTimestampForDebugIfNeeded
 import org.mozilla.fenix.pbmlock.DefaultPrivateBrowsingLockStorage
 import org.mozilla.fenix.pbmlock.PrivateBrowsingLockFeature
 import org.mozilla.fenix.perf.DefaultStartupPathProvider
@@ -179,6 +184,7 @@ import org.mozilla.fenix.splashscreen.SplashScreenOperation
 import org.mozilla.fenix.tabhistory.TabHistoryDialogFragment
 import org.mozilla.fenix.theme.DefaultThemeManager
 import org.mozilla.fenix.theme.StatusBarColorManager
+import org.mozilla.fenix.theme.TabStripStatusBarView
 import org.mozilla.fenix.theme.ThemeManager
 import org.mozilla.fenix.translations.TranslationsAIControllableFeatureRegistrar
 import org.mozilla.fenix.translations.TranslationsEnabledSettings
@@ -365,6 +371,10 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
         )
     }
 
+    private val uninstallSurveyManager by lazy {
+        UninstallSurveyManager(this, DefaultShortcutManagerCompatWrapper())
+    }
+
     // See onKeyDown for why this is necessary
     private var backLongPressJob: Job? = null
 
@@ -455,6 +465,8 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
         binding = ActivityHomeBinding.inflate(layoutInflater)
 
         Performance.processIntentIfPerformanceTest(intent, this)
+
+        components.settings.seedOnboardingCompletedTimestampForDebugIfNeeded()
 
         val shouldShowOnboarding = !intent.isAllowedDuringOnboardingIntent(packageName) &&
             with(components) {
@@ -579,16 +591,11 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             extensionsProcessDisabledForegroundController,
             extensionsProcessDisabledBackgroundController,
             serviceWorkerSupport,
-            aboutHomeBinding,
             crashReporterBinding,
             defaultTopSitesBinding,
             TopSitesRefresher(
                 settings = components.settings,
-                topSitesProvider = if (components.settings.enableMozillaAdsClient) {
-                    components.core.macTopSitesProvider
-                } else {
-                    components.core.marsTopSitesProvider
-                },
+                topSitesProvider = components.core.macTopSitesProvider,
                 startupPathProvider = startupPathProvider,
                 visualCompletenessQueue = components.performance.visualCompletenessQueue,
             ),
@@ -600,6 +607,8 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             translationsAIControllableFeatureRegistrar,
             ipProtectionPrompter,
         )
+
+        addAboutHomeBinding(lifecycle)
 
         if (!isCustomTabIntent(intent)) {
             lifecycle.addObserver(webExtensionPromptFeature)
@@ -621,7 +630,16 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
         components.core.requestInterceptor.setNavigationController(navHost.navController)
 
         supportFragmentManager.registerFragmentLifecycleCallbacks(
-            StatusBarColorManager(themeManager, this, components.settings.isTabStripEnabled),
+            StatusBarColorManager(
+                themeManager = themeManager,
+                activity = this,
+                appStore = components.appStore,
+                settings = components.settings,
+                tabStripStatusBarView = TabStripStatusBarView(
+                    rootView = window.decorView as ViewGroup,
+                    lifecycle = lifecycle,
+                ),
+            ),
             true,
         )
 
@@ -663,6 +681,14 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             owner = this,
             onBackPressedCallback = onBackPressedCallback,
         )
+
+        lifecycleScope.launch(IO) {
+            uninstallSurveyManager.updateUninstallSurveyShortcut()
+        }
+
+        if (components.settings.uninstallSurveyFeatureFlagEnabled) {
+            uninstallSurveyManager.showUninstallSurvey(intent, navHost.navController)
+        }
 
         StartupTimeline.onActivityCreateEndHome(this) // DO NOT MOVE ANYTHING BELOW HERE.
     }
@@ -757,12 +783,18 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             GrowthDataWorker.sendActivatedSignalIfNeeded(applicationContext)
             FontEnumerationWorker.sendActivatedSignalIfNeeded(applicationContext)
 
-            if (NotificationManagerCompat.from(applicationContext).areNotificationsEnabled()) {
-                MessageNotificationWorker.setMessageNotificationWorker(applicationContext)
-            }
-
             if (components.core.sentFromFirefoxManager.shouldShowSnackbar) {
                 components.appStore.dispatch(ShareAction.ShareToWhatsApp)
+            }
+        }
+
+        lifecycleScope.launch(IO) {
+            // Register the [MARKETING_CHANNEL_ID] channel so that it appears in the Android Settings App.
+            ensureMarketingChannelExists(applicationContext)
+            if (NotificationManagerCompat.from(applicationContext).areNotificationsEnabled()) {
+                MessageNotificationWorker.setMessageNotificationWorker(applicationContext)
+            } else {
+                MessageNotificationWorker.cancelMessageNotificationWorker(applicationContext)
             }
         }
 
@@ -1417,6 +1449,11 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
         navController.navigate(NavGraphDirections.actionStartupHome())
     }
 
+    @VisibleForTesting
+    internal open fun addAboutHomeBinding(lifecycle: Lifecycle) {
+        lifecycle.addObserver(aboutHomeBinding)
+    }
+
     final override fun attachBaseContext(base: Context) {
         base.components.strictMode.allowViolation(StrictMode::allowThreadDiskReads) {
             super.attachBaseContext(base)
@@ -1628,10 +1665,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
     }
 
     private fun showCrashReporter(crashIDs: List<String>?) {
-        if (!components.settings.useNewCrashReporterFlow) {
-            return
-        }
-
         UnsubmittedCrashDialog.create(crashIDs = crashIDs)
             .show(supportFragmentManager, UnsubmittedCrashDialog.TAG)
     }
@@ -1643,6 +1676,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
         const val PRIVATE_BROWSING_MODE = "private_browsing_mode"
         const val START_IN_RECENTS_SCREEN = "start_in_recents_screen"
         const val OPEN_PASSWORD_MANAGER = "open_password_manager"
+        const val UNINSTALL_SURVEY = "uninstall_survey"
         const val APP_ICON = "APP_ICON"
 
         // PWA must have been used within last 30 days to be considered "recently used" for the

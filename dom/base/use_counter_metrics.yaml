@@ -108,8 +108,8 @@ use.counter:
     send_in_pings:
       - use-counters
 
-# Total of 2570 use counter metrics (excludes denominators).
-# Total of 403 'page' use counters.
+# Total of 2573 use counter metrics (excludes denominators).
+# Total of 402 'page' use counters.
 use.counter.page:
   svgsvgelement_getelementbyid:
     type: counter
@@ -485,44 +485,10 @@ use.counter.page:
     send_in_pings:
       - use-counters
 
-  js_asmjs:
-    type: counter
-    description: >
-      Whether a page uses asm.js.
-      Compare against `use.counter.top_level_content_documents_destroyed`
-      to calculate the rate.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    notification_emails:
-      - dom-core@mozilla.com
-      - emilio@mozilla.com
-    expires: never
-    send_in_pings:
-      - use-counters
-
   js_wasm:
     type: counter
     description: >
       Whether a page uses WebAssembly.
-      Compare against `use.counter.top_level_content_documents_destroyed`
-      to calculate the rate.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    notification_emails:
-      - dom-core@mozilla.com
-      - emilio@mozilla.com
-    expires: never
-    send_in_pings:
-      - use-counters
-
-  js_use_asm:
-    type: counter
-    description: >
-      Whether a page has instantiated a script containing "use asm" either in the top level or a nested function.
       Compare against `use.counter.top_level_content_documents_destroyed`
       to calculate the rate.
     bugs:
@@ -6911,6 +6877,23 @@ use.counter.page:
     send_in_pings:
       - use-counters
 
+  edit_context_canvas:
+    type: counter
+    description: >
+      Whether a page attaches an EditContext to a canvas element.
+      Compare against `use.counter.top_level_content_documents_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
   element_requestpointerlock:
     type: counter
     description: >
@@ -7338,44 +7321,10 @@ use.counter.doc:
     send_in_pings:
       - use-counters
 
-  js_asmjs:
-    type: counter
-    description: >
-      Whether a document uses asm.js.
-      Compare against `use.counter.content_documents_destroyed`
-      to calculate the rate.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    notification_emails:
-      - dom-core@mozilla.com
-      - emilio@mozilla.com
-    expires: never
-    send_in_pings:
-      - use-counters
-
   js_wasm:
     type: counter
     description: >
       Whether a document uses WebAssembly.
-      Compare against `use.counter.content_documents_destroyed`
-      to calculate the rate.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    notification_emails:
-      - dom-core@mozilla.com
-      - emilio@mozilla.com
-    expires: never
-    send_in_pings:
-      - use-counters
-
-  js_use_asm:
-    type: counter
-    description: >
-      Whether a document has instantiated a script containing "use asm" either in the top level or a nested function.
       Compare against `use.counter.content_documents_destroyed`
       to calculate the rate.
     bugs:
@@ -13764,6 +13713,23 @@ use.counter.doc:
     send_in_pings:
       - use-counters
 
+  edit_context_canvas:
+    type: counter
+    description: >
+      Whether a document attaches an EditContext to a canvas element.
+      Compare against `use.counter.content_documents_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
   element_requestpointerlock:
     type: counter
     description: >
@@ -19044,7 +19010,7 @@ use.counter.deprecated_ops.doc:
     send_in_pings:
       - use-counters
 
-# Total of 729 'CSS (page)' use counters.
+# Total of 731 'CSS (page)' use counters.
 use.counter.css.page:
   css_align_items:
     type: counter
@@ -19828,6 +19794,23 @@ use.counter.css.page:
     send_in_pings:
       - use-counters
 
+  css_margin_trim:
+    type: counter
+    description: >
+      Whether a page used the CSS property margin-trim.
+      Compare against `use.counter.top_level_content_documents_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
   css_mask_type:
     type: counter
     description: >
@@ -20019,6 +20002,23 @@ use.counter.css.page:
     type: counter
     description: >
       Whether a page used the CSS property -moz-float-edge.
+      Compare against `use.counter.top_level_content_documents_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
+  css_moz_image_decoding:
+    type: counter
+    description: >
+      Whether a page used the CSS property -moz-image-decoding.
       Compare against `use.counter.top_level_content_documents_destroyed`
       to calculate the rate.
     bugs:
@@ -23687,23 +23687,6 @@ use.counter.css.page:
     send_in_pings:
       - use-counters
 
-  css_webkit_line_clamp:
-    type: counter
-    description: >
-      Whether a page used the CSS property -webkit-line-clamp.
-      Compare against `use.counter.top_level_content_documents_destroyed`
-      to calculate the rate.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    notification_emails:
-      - dom-core@mozilla.com
-      - emilio@mozilla.com
-    expires: never
-    send_in_pings:
-      - use-counters
-
   css_webkit_text_stroke_width:
     type: counter
     description: >
@@ -23793,6 +23776,40 @@ use.counter.css.page:
     type: counter
     description: >
       Whether a page used the CSS property zoom.
+      Compare against `use.counter.top_level_content_documents_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
+  css_line_clamp:
+    type: counter
+    description: >
+      Whether a page used the CSS property line-clamp.
+      Compare against `use.counter.top_level_content_documents_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
+  css_webkit_line_clamp:
+    type: counter
+    description: >
+      Whether a page used the CSS property -webkit-line-clamp.
       Compare against `use.counter.top_level_content_documents_destroyed`
       to calculate the rate.
     bugs:
@@ -31439,7 +31456,7 @@ use.counter.css.page:
     send_in_pings:
       - use-counters
 
-# Total of 729 'CSS (document)' use counters.
+# Total of 731 'CSS (document)' use counters.
 use.counter.css.doc:
   css_align_items:
     type: counter
@@ -32223,6 +32240,23 @@ use.counter.css.doc:
     send_in_pings:
       - use-counters
 
+  css_margin_trim:
+    type: counter
+    description: >
+      Whether a document used the CSS property margin-trim.
+      Compare against `use.counter.content_documents_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
   css_mask_type:
     type: counter
     description: >
@@ -32414,6 +32448,23 @@ use.counter.css.doc:
     type: counter
     description: >
       Whether a document used the CSS property -moz-float-edge.
+      Compare against `use.counter.content_documents_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
+  css_moz_image_decoding:
+    type: counter
+    description: >
+      Whether a document used the CSS property -moz-image-decoding.
       Compare against `use.counter.content_documents_destroyed`
       to calculate the rate.
     bugs:
@@ -36082,23 +36133,6 @@ use.counter.css.doc:
     send_in_pings:
       - use-counters
 
-  css_webkit_line_clamp:
-    type: counter
-    description: >
-      Whether a document used the CSS property -webkit-line-clamp.
-      Compare against `use.counter.content_documents_destroyed`
-      to calculate the rate.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    notification_emails:
-      - dom-core@mozilla.com
-      - emilio@mozilla.com
-    expires: never
-    send_in_pings:
-      - use-counters
-
   css_webkit_text_stroke_width:
     type: counter
     description: >
@@ -36188,6 +36222,40 @@ use.counter.css.doc:
     type: counter
     description: >
       Whether a document used the CSS property zoom.
+      Compare against `use.counter.content_documents_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
+  css_line_clamp:
+    type: counter
+    description: >
+      Whether a document used the CSS property line-clamp.
+      Compare against `use.counter.content_documents_destroyed`
+      to calculate the rate.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
+    notification_emails:
+      - dom-core@mozilla.com
+      - emilio@mozilla.com
+    expires: never
+    send_in_pings:
+      - use-counters
+
+  css_webkit_line_clamp:
+    type: counter
+    description: >
+      Whether a document used the CSS property -webkit-line-clamp.
       Compare against `use.counter.content_documents_destroyed`
       to calculate the rate.
     bugs:

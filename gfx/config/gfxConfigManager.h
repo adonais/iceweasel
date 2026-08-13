@@ -26,14 +26,15 @@ class gfxConfigManager {
         mFeatureWrScissoredCacheClears(nullptr),
         mFeatureHwCompositing(nullptr),
         mFeatureD3D11HwAngle(nullptr),
+        mFeatureMetalAngle(nullptr),
+        mFeatureWrAngleBackend(nullptr),
         mFeatureD3D11Compositing(nullptr),
         mFeatureGPUProcess(nullptr),
         mFeatureGLNorm16Textures(nullptr),
         mWrForceEnabled(false),
         mWrSoftwareForceEnabled(false),
         mWrCompositorForceEnabled(false),
-        mWrForceAngle(false),
-        mWrForceAngleNoGPUProcess(false),
+        mWrRequireAngle(false),
         mWrDCompWinEnabled(false),
         mWrCompositorDCompRequired(false),
         mWrForcePartialPresent(false),
@@ -70,6 +71,8 @@ class gfxConfigManager {
 
   FeatureState* mFeatureHwCompositing;
   FeatureState* mFeatureD3D11HwAngle;
+  FeatureState* mFeatureMetalAngle;
+  FeatureState* mFeatureWrAngleBackend;
   FeatureState* mFeatureD3D11Compositing;
   FeatureState* mFeatureGPUProcess;
   FeatureState* mFeatureGLNorm16Textures;
@@ -78,11 +81,11 @@ class gfxConfigManager {
    * Prefs
    */
   Maybe<bool> mWrCompositorEnabled;
+  Maybe<bool> mWrAngleEnabled;
   bool mWrForceEnabled;
   bool mWrSoftwareForceEnabled;
   bool mWrCompositorForceEnabled;
-  bool mWrForceAngle;
-  bool mWrForceAngleNoGPUProcess;
+  bool mWrRequireAngle;
   bool mWrDCompWinEnabled;
   bool mWrCompositorDCompRequired;
   bool mWrForcePartialPresent;

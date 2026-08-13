@@ -8,6 +8,7 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import mozilla.components.browser.engine.gecko.ext.toAddress
 import mozilla.components.browser.engine.gecko.ext.toAutocompleteAddress
 import mozilla.components.browser.engine.gecko.ext.toCreditCardEntry
 import mozilla.components.browser.engine.gecko.ext.toLoginEntry
@@ -84,6 +85,13 @@ class GeckoAutocompleteStorageDelegate(
         @OptIn(DelicateCoroutinesApi::class)
         GlobalScope.launch(IO) {
             creditCardsAddressesStorageDelegate.onCreditCardSave(creditCard.toCreditCardEntry())
+        }
+    }
+
+    override fun onAddressSave(address: Autocomplete.Address) {
+        @OptIn(DelicateCoroutinesApi::class)
+        GlobalScope.launch(IO) {
+            creditCardsAddressesStorageDelegate.onAddressSave(address.toAddress())
         }
     }
 

@@ -21,7 +21,6 @@
 #include "wasm/WasmMemory.h"
 
 #include "jit/MacroAssembler-inl.h"
-
 #include "wasm/WasmBCClass-inl.h"
 #include "wasm/WasmBCCodegen-inl.h"
 #include "wasm/WasmBCRegDefs-inl.h"

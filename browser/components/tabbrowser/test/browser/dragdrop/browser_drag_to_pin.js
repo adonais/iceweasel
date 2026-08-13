@@ -138,6 +138,8 @@ add_task(async function test_pin_to_promo_card_vertical() {
       ["sidebar.verticalTabs", true],
       ["sidebar.verticalTabs.dragToPinPromo.dismissed", false],
       ["sidebar.visibility", "always-show"],
+      // Bug 2052309: promo card is hidden when Nova is enabled.
+      ["browser.nova.enabled", false],
     ],
   });
 

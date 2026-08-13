@@ -6,21 +6,22 @@
 
 #include <string.h>  // for memcpy, memset
 
-#include "GLImages.h"    // for SurfaceTextureImage
+#include "GLImages.h"  // for SurfaceTextureImage
+#include "GPUVideoImage.h"
 #include "MediaInfo.h"   // VideoInfo::Rotation
 #include "YCbCrUtils.h"  // for YCbCr conversions
 #include "gfx2DGlue.h"
 #include "gfxPlatform.h"  // for gfxPlatform
 #include "gfxUtils.h"     // for gfxUtils
-#include "GPUVideoImage.h"
 #include "libyuv.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/RefPtr.h"  // for already_AddRefed
 #include "mozilla/StaticPrefs_layers.h"
+#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/gfx/2D.h"
-#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/Swizzle.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/ipc/CrossProcessMutex.h"  // for CrossProcessMutex, etc
 #include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/layers/ImageBridgeChild.h"     // for ImageBridgeChild
@@ -30,9 +31,8 @@
 #include "mozilla/layers/SharedPlanarYCbCrImage.h"
 #include "mozilla/layers/SharedRGBImage.h"
 #include "mozilla/layers/TextureClientRecycleAllocator.h"
-#include "mozilla/UniquePtrExtensions.h"
-#include "nsProxyRelease.h"
 #include "nsISupportsUtils.h"  // for NS_IF_ADDREF
+#include "nsProxyRelease.h"
 
 #ifdef XP_DARWIN
 #  include "MacIOSurfaceImage.h"
@@ -895,7 +895,13 @@ static void CopyPlane(uint8_t* aDst, const uint8_t* aSrc,
   int32_t width = aSize.width;
   const int32_t rowBytes = width * aBytesPerElement;
 
-  MOZ_RELEASE_ASSERT(rowBytes <= aStride);
+  // The interleaved (aSkip != 0) path steps over skipped elements between
+  // pixels, so a row reaches further than the packed width. Computed with
+  // 64-bit arithmetic.
+  const int64_t srcRowSpan =
+      (static_cast<int64_t>(width) + static_cast<int64_t>(width - 1) * aSkip) *
+      aBytesPerElement;
+  MOZ_RELEASE_ASSERT(srcRowSpan <= aStride);
 
   if (!aSkip) {
     // Fast path: planar input.
@@ -1028,6 +1034,53 @@ IntSize NVImage::GetSize() const { return mSize; }
 
 IntRect NVImage::GetPictureRect() const { return mData.mPictureRect; }
 
+// Planar I420 conversion of an NV12/NV21 image: mBuffer owns the pixels, mData
+// points into it.
+struct I420Buffer {
+  UniquePtr<uint8_t[]> mBuffer;
+  PlanarYCbCrData mData;
+};
+
+// Convert |aData| (NV12 or NV21) to planar I420 in a freshly allocated buffer.
+// Returns an empty buffer (null mBuffer) if the required length overflows.
+static I420Buffer CreateI420Buffer(const PlanarYCbCrData& aData) {
+  // NV12/NV21 store interleaved chroma with Cb and Cr in adjacent bytes.
+  MOZ_ASSERT(aData.mCbSkip == 1 && aData.mCrSkip == 1,
+             "CreateI420Buffer expects NV12 or NV21 (interleaved chroma)");
+  MOZ_ASSERT((int)std::abs(aData.mCbChannel - aData.mCrChannel) == 1,
+             "NV12/NV21 chroma planes must be adjacent (interleaved)");
+  auto ySize = aData.YDataSize();
+  auto cbcrSize = aData.CbCrDataSize();
+  const CheckedInt32 bufferLength =
+      CheckedInt32(ySize.height) * aData.mYStride +
+      CheckedInt32(cbcrSize.height) * cbcrSize.width * 2;
+  if (NS_WARN_IF(!bufferLength.isValid())) {
+    return {};
+  }
+  I420Buffer result{MakeUnique<uint8_t[]>(bufferLength.value()), aData};
+
+  PlanarYCbCrData& dst = result.mData;
+  dst.mCbCrStride = cbcrSize.width;
+  dst.mCbSkip = 0;
+  dst.mCrSkip = 0;
+  dst.mYChannel = result.mBuffer.get();
+  dst.mCbChannel = dst.mYChannel + ySize.height * dst.mYStride;
+  dst.mCrChannel = dst.mCbChannel + cbcrSize.height * dst.mCbCrStride;
+
+  if (aData.mCbChannel < aData.mCrChannel) {  // NV12
+    libyuv::NV12ToI420(aData.mYChannel, aData.mYStride, aData.mCbChannel,
+                       aData.mCbCrStride, dst.mYChannel, dst.mYStride,
+                       dst.mCbChannel, dst.mCbCrStride, dst.mCrChannel,
+                       dst.mCbCrStride, ySize.width, ySize.height);
+  } else {  // NV21
+    libyuv::NV21ToI420(aData.mYChannel, aData.mYStride, aData.mCrChannel,
+                       aData.mCbCrStride, dst.mYChannel, dst.mYStride,
+                       dst.mCbChannel, dst.mCbCrStride, dst.mCrChannel,
+                       dst.mCbCrStride, ySize.width, ySize.height);
+  }
+  return result;
+}
+
 already_AddRefed<SourceSurface> NVImage::GetAsSourceSurface() {
   if (RefPtr<gfx::DataSourceSurface> cached = mSourceSurface.Get()) {
     return cached.forget();
@@ -1035,37 +1088,16 @@ already_AddRefed<SourceSurface> NVImage::GetAsSourceSurface() {
 
   // Convert the current NV12 or NV21 data to YUV420P so that we can follow the
   // logics in PlanarYCbCrImage::GetAsSourceSurface().
-  auto ySize = mData.YDataSize();
-  auto cbcrSize = mData.CbCrDataSize();
-  const int bufferLength =
-      ySize.height * mData.mYStride + cbcrSize.height * cbcrSize.width * 2;
-  auto buffer = MakeUnique<uint8_t[]>(bufferLength);
-
-  Data aData = mData;
-  aData.mCbCrStride = cbcrSize.width;
-  aData.mCbSkip = 0;
-  aData.mCrSkip = 0;
-  aData.mYChannel = buffer.get();
-  aData.mCbChannel = aData.mYChannel + ySize.height * aData.mYStride;
-  aData.mCrChannel = aData.mCbChannel + cbcrSize.height * aData.mCbCrStride;
-
-  if (mData.mCbChannel < mData.mCrChannel) {  // NV12
-    libyuv::NV12ToI420(mData.mYChannel, mData.mYStride, mData.mCbChannel,
-                       mData.mCbCrStride, aData.mYChannel, aData.mYStride,
-                       aData.mCbChannel, aData.mCbCrStride, aData.mCrChannel,
-                       aData.mCbCrStride, ySize.width, ySize.height);
-  } else {  // NV21
-    libyuv::NV21ToI420(mData.mYChannel, mData.mYStride, mData.mCrChannel,
-                       mData.mCbCrStride, aData.mYChannel, aData.mYStride,
-                       aData.mCbChannel, aData.mCbCrStride, aData.mCrChannel,
-                       aData.mCbCrStride, ySize.width, ySize.height);
+  auto i420 = CreateI420Buffer(mData);
+  if (!i420.mBuffer) {
+    return nullptr;
   }
 
   // The logics in PlanarYCbCrImage::GetAsSourceSurface().
   gfx::IntSize size(mSize);
   gfx::SurfaceFormat format = gfx::ImageFormatToSurfaceFormat(
       gfxPlatform::GetPlatform()->GetOffscreenFormat());
-  gfx::GetYCbCrToRGBDestFormatAndSize(aData, format, size);
+  gfx::GetYCbCrToRGBDestFormatAndSize(i420.mData, format, size);
   if (mSize.width > PlanarYCbCrImage::MAX_DIMENSION ||
       mSize.height > PlanarYCbCrImage::MAX_DIMENSION) {
     NS_ERROR("Illegal image dest width or height");
@@ -1084,7 +1116,7 @@ already_AddRefed<SourceSurface> NVImage::GetAsSourceSurface() {
   }
 
   if (NS_WARN_IF(NS_FAILED(gfx::ConvertYCbCrToRGB(
-          aData, format, size, mapping.GetData(), mapping.GetStride())))) {
+          i420.mData, format, size, mapping.GetData(), mapping.GetStride())))) {
     return nullptr;
   }
 
@@ -1098,43 +1130,23 @@ nsresult NVImage::BuildSurfaceDescriptorBuffer(
     const std::function<MemoryOrShmem(uint32_t)>& aAllocate) {
   // Convert the current NV12 or NV21 data to YUV420P so that we can follow the
   // logics in PlanarYCbCrImage::GetAsSourceSurface().
-  auto ySize = mData.YDataSize();
-  auto cbcrSize = mData.CbCrDataSize();
-
-  Data aData = mData;
-  aData.mCbCrStride = cbcrSize.width;
-  aData.mCbSkip = 0;
-  aData.mCrSkip = 0;
-  aData.mCbChannel = aData.mYChannel + ySize.height * aData.mYStride;
-  aData.mCrChannel = aData.mCbChannel + cbcrSize.height * aData.mCbCrStride;
-
-  UniquePtr<uint8_t[]> buffer;
-
   RefPtr<gfx::DataSourceSurface> sourceSurface = mSourceSurface.Get();
+  I420Buffer i420;
   if (!sourceSurface) {
-    const int bufferLength =
-        ySize.height * mData.mYStride + cbcrSize.height * cbcrSize.width * 2;
-    buffer = MakeUnique<uint8_t[]>(bufferLength);
-    aData.mYChannel = buffer.get();
-
-    if (mData.mCbChannel < mData.mCrChannel) {  // NV12
-      libyuv::NV12ToI420(mData.mYChannel, mData.mYStride, mData.mCbChannel,
-                         mData.mCbCrStride, aData.mYChannel, aData.mYStride,
-                         aData.mCbChannel, aData.mCbCrStride, aData.mCrChannel,
-                         aData.mCbCrStride, ySize.width, ySize.height);
-    } else {  // NV21
-      libyuv::NV21ToI420(mData.mYChannel, mData.mYStride, mData.mCrChannel,
-                         mData.mCbCrStride, aData.mYChannel, aData.mYStride,
-                         aData.mCbChannel, aData.mCbCrStride, aData.mCrChannel,
-                         aData.mCbCrStride, ySize.width, ySize.height);
+    i420 = CreateI420Buffer(mData);
+    if (!i420.mBuffer) {
+      return NS_ERROR_INVALID_ARG;
     }
   }
 
-  // The logics in PlanarYCbCrImage::GetAsSourceSurface().
+  // The logics in PlanarYCbCrImage::GetAsSourceSurface(). mData is used here
+  // rather than i420.mData because only the chroma subsampling and picture size
+  // are read, which are identical, and i420.mData is left unset on the
+  // cached-surface path.
   gfx::IntSize size(mSize);
   gfx::SurfaceFormat format = gfx::ImageFormatToSurfaceFormat(
       gfxPlatform::GetPlatform()->GetOffscreenFormat());
-  gfx::GetYCbCrToRGBDestFormatAndSize(aData, format, size);
+  gfx::GetYCbCrToRGBDestFormatAndSize(mData, format, size);
   if (mSize.width > PlanarYCbCrImage::MAX_DIMENSION ||
       mSize.height > PlanarYCbCrImage::MAX_DIMENSION) {
     NS_ERROR("Illegal image dest width or height");
@@ -1154,7 +1166,7 @@ nsresult NVImage::BuildSurfaceDescriptorBuffer(
   }
 
   if (!sourceSurface) {
-    rv = gfx::ConvertYCbCrToRGB(aData, format, size, output, stride);
+    rv = gfx::ConvertYCbCrToRGB(i420.mData, format, size, output, stride);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       MOZ_ASSERT_UNREACHABLE("Failed to convert YUV into RGB data");
       return rv;

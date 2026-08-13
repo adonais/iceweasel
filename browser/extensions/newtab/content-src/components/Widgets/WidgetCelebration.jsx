@@ -13,8 +13,6 @@ const DEFAULT_GRADIENT_STOPS = [
 
 const DEFAULT_CONFETTI_COUNT = 42;
 
-// Flat confetti shapes (border-radius + clip-path) used by the default "mixed"
-// confetti.
 const CONFETTI_SHAPES = [
   { radius: "1px", clip: "none" }, // rectangle / streamer
   { radius: "50%", clip: "none" }, // circle / oval
@@ -22,9 +20,6 @@ const CONFETTI_SHAPES = [
   { radius: "0", clip: "polygon(50% 0%, 0% 100%, 100% 100%)" }, // triangle
 ];
 
-// The "soccer" shape mode mixes team-colored soccer balls (the `ball` entries)
-// with the smaller flat shapes. Duplicate `{ ball: true }` to weight balls more
-// heavily relative to the flat confetti.
 const SOCCER_POOL = [
   { ball: true },
   { ball: true },
@@ -33,57 +28,38 @@ const SOCCER_POOL = [
   ...CONFETTI_SHAPES,
 ];
 
-// Deterministic [0, 1) pseudo-random so confetti pieces stay stable across the
-// re-renders within a single celebration run (keyed by celebrationId) but vary
-// from one run to the next.
+// Stable within a celebration run, varied between runs.
 const celebrationRandom = seed => {
   const value = Math.sin(seed) * 10000;
   return value - Math.floor(value);
 };
 
-// Builds the confetti pieces for one run from the supplied colors, randomizing
-// position/size/fall/spin per piece via CSS custom props. "soccer" draws from
-// SOCCER_POOL (team-colored balls mixed with flat shapes); otherwise from the
-// flat-only CONFETTI_SHAPES.
 const buildConfettiPieces = (run, colors, count, shapeMode) => {
   const pool = shapeMode === "soccer" ? SOCCER_POOL : CONFETTI_SHAPES;
-  // Sports spreads its confetti into a continuous shower: pieces sit in even
-  // columns (no clumping) and enter staggered over ~1.1s rather than bursting
-  // together. delay + duration stays under the celebration lifecycle (hold +
-  // exit) so every piece still finishes before the overlay unmounts.
   const spread = shapeMode === "soccer";
   return Array.from({ length: count }, (_, i) => {
     const base = (run + 1) * 100 + i;
     const color = colors[i % colors.length];
     const shape = pool[Math.floor(celebrationRandom(base + 6) * pool.length)];
     const isBall = !!shape.ball;
-    // Soccer balls are larger and square so the panel pattern reads; flat
-    // shapes are smaller thin slivers.
     const width = isBall
       ? Math.round(12 + celebrationRandom(base + 0.5) * 5)
       : Math.round(6 + celebrationRandom(base + 0.5) * 4);
     const height = isBall
       ? width
       : Math.round(width * (1.4 + celebrationRandom(base + 5) * 0.8));
-    // Even column placement (with sub-column jitter) for the shower; pure
-    // random otherwise. Capped at 98% so wide pieces don't overflow the edge.
     const left = spread
       ? `${Math.min(
           ((i + celebrationRandom(base + 7)) / count) * 100,
           98
         ).toFixed(2)}%`
       : `${(celebrationRandom(base) * 100).toFixed(2)}%`;
-    // Staggered entry (random across the run, so no left-to-right wipe) vs the
-    // tight 0-350ms burst the other widgets use.
     const delay = spread
       ? `${Math.round(celebrationRandom(base + 1) * 1100)}ms`
       : `${Math.round(celebrationRandom(base + 1) * 350)}ms`;
-    // Slow fall, but delay + duration stays under the celebration lifecycle
-    // (hold + exit) so pieces finish before the overlay unmounts.
     const duration = spread
       ? `${Math.round(2600 + celebrationRandom(base + 2) * 800)}ms`
       : `${Math.round(3000 + celebrationRandom(base + 2) * 1200)}ms`;
-    // Moderate sway + spin for the shower; wider tumble otherwise.
     const rotate = spread
       ? `${Math.round(celebrationRandom(base + 3) * 400 - 200)}deg`
       : `${Math.round(celebrationRandom(base + 3) * 720 - 360)}deg`;
@@ -107,7 +83,31 @@ const buildConfettiPieces = (run, colors, count, shapeMode) => {
   });
 };
 
-// Maps a piece's values onto the CSS custom props its rule reads.
+const FIREWORK_SPARKS = 16;
+
+const buildFireworks = (run, colors, count) =>
+  Array.from({ length: count }, (_burst, b) => {
+    const base = (run + 1) * 1000 + b * 37;
+    const color = colors[b % colors.length];
+    const left = `${(10 + celebrationRandom(base) * 80).toFixed(1)}%`;
+    const topPct = `${(8 + celebrationRandom(base + 1) * 38).toFixed(1)}%`;
+    const burstDelay = Math.round(celebrationRandom(base + 2) * 2200);
+    const sizeScale = 0.7 + celebrationRandom(base + 4);
+    const radius = (24 + celebrationRandom(base + 3) * 14) * sizeScale;
+    const sparks = Array.from({ length: FIREWORK_SPARKS }, (_spark, s) => {
+      const angle =
+        (s / FIREWORK_SPARKS) * 2 * Math.PI + celebrationRandom(base + s) * 0.5;
+      const dist = radius * (0.7 + celebrationRandom(base + s + 0.5) * 0.6);
+      return {
+        id: s,
+        dx: `${Math.round(Math.cos(angle) * dist)}px`,
+        dy: `${Math.round(Math.sin(angle) * dist)}px`,
+        delay: `${burstDelay + Math.round(celebrationRandom(base + s + 0.7) * 40)}ms`,
+      };
+    });
+    return { id: b, left, top: topPct, color, scale: sizeScale, sparks };
+  });
+
 const confettiPieceStyle = piece => ({
   "--confetti-x": piece.left,
   "--confetti-w": piece.width,
@@ -128,6 +128,7 @@ export const WidgetCelebration = ({
   confettiColors,
   confettiCount = DEFAULT_CONFETTI_COUNT,
   confettiShape = "mixed",
+  fireworkBursts = 0,
   gradientStops = DEFAULT_GRADIENT_STOPS,
   headlineL10nId,
   illustrationSrc,
@@ -136,10 +137,8 @@ export const WidgetCelebration = ({
 }) => {
   const className = suffix =>
     suffix ? `${classNamePrefix}-${suffix}` : classNamePrefix;
-  // Only expose the live region when there's copy to announce; a copy-less
-  // celebration (e.g. sports) is purely decorative.
+  // Copy-less celebrations are purely decorative.
   const hasCopy = !!(headlineL10nId || subheadL10nId);
-  // Deterministic, so it's safe to compute on every render without reshuffling.
   const confettiPieces = confettiColors?.length
     ? buildConfettiPieces(
         celebrationId,
@@ -148,6 +147,10 @@ export const WidgetCelebration = ({
         confettiShape
       )
     : [];
+  const fireworks =
+    fireworkBursts && confettiColors?.length
+      ? buildFireworks(celebrationId, confettiColors, fireworkBursts)
+      : [];
   const ballSymbolId = `${classNamePrefix}-ball-${celebrationId}`;
   const resolvedIllustrationSrc = illustrationSrc?.endsWith(".svg")
     ? `${illustrationSrc}?run=${celebrationId}`
@@ -224,8 +227,6 @@ export const WidgetCelebration = ({
       </div>
       {confettiPieces.length ? (
         <div className={className("confetti")} aria-hidden="true">
-          {/* Soccer-ball geometry defined once; each ball piece references it
-              via <use> and tints the body through currentColor. */}
           <svg className={className("confetti-defs")} aria-hidden="true">
             <symbol id={ballSymbolId} viewBox="0 0 24 24">
               <circle
@@ -267,6 +268,34 @@ export const WidgetCelebration = ({
               />
             )
           )}
+        </div>
+      ) : null}
+      {fireworks.length ? (
+        <div className={className("fireworks")} aria-hidden="true">
+          {fireworks.map(burst => (
+            <div
+              key={burst.id}
+              className={className("firework")}
+              style={{
+                "--fw-left": burst.left,
+                "--fw-top": burst.top,
+                "--fw-scale": burst.scale,
+                color: burst.color,
+              }}
+            >
+              {burst.sparks.map(spark => (
+                <i
+                  key={spark.id}
+                  className={className("firework-spark")}
+                  style={{
+                    "--fw-dx": spark.dx,
+                    "--fw-dy": spark.dy,
+                    "--fw-delay": spark.delay,
+                  }}
+                />
+              ))}
+            </div>
+          ))}
         </div>
       ) : null}
       {hasCopy ? (

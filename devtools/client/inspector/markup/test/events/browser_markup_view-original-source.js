@@ -43,7 +43,7 @@ add_task(async function () {
   const dbg = toolbox.getPanel("jsdebugger");
 
   let source;
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => {
       source = dbg._selectors.getSelectedSource(dbg._getState());
       return !!source;

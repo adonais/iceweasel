@@ -5,13 +5,13 @@
 #ifndef GFX_ANIMATIONINFO_H
 #define GFX_ANIMATIONINFO_H
 
-#include "nsCSSPropertyIDSet.h"
-#include "nsDisplayItemTypes.h"
 #include "mozilla/Array.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/FunctionRef.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/layers/AnimationStorageData.h"
 #include "mozilla/layers/LayersMessages.h"  // for TransformData
+#include "nsCSSPropertyIDSet.h"
+#include "nsDisplayItemTypes.h"
 
 struct RawServoAnimationValue;
 class nsIContent;

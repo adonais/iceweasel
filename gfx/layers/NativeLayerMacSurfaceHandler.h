@@ -5,12 +5,11 @@
 #ifndef mozilla_layers_NativeLayerMacSurfaceHandler_h
 #define mozilla_layers_NativeLayerMacSurfaceHandler_h
 
+#include "CFTypeRefPtr.h"
+#include "GLTypes.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/gfx/MacIOSurface.h"
 #include "mozilla/gfx/Types.h"
-
-#include "CFTypeRefPtr.h"
-#include "GLTypes.h"
 #include "nsISupportsImpl.h"
 #include "nsRegion.h"
 

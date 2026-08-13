@@ -3,6 +3,12 @@ https://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
+// This is only used in the json store.
+const isRustBackend = Services.prefs.getBoolPref(
+  "signon.storage.rust.enabled",
+  false
+);
+
 const EXPECTED_LOGINS = LoginTestUtils.testData.loginList();
 
 add_setup(async function () {
@@ -14,14 +20,14 @@ add_setup(async function () {
   Services.prefs.setIntPref("security.sdr.mechanism", 0);
   await Services.logins.removeAllLoginsAsync();
   await Services.logins.addLogins(EXPECTED_LOGINS);
-});
+}).skip(isRustBackend);
 
 add_task(async function test_before_reencrypt() {
   await LoginTestUtils.checkLogins(
     EXPECTED_LOGINS,
     "Logins should have the expected value before any reencryption"
   );
-});
+}).skip(isRustBackend);
 
 add_task(async function test_reencrypt_same_mechanism() {
   await Services.logins.reencryptAllLogins();
@@ -30,7 +36,7 @@ add_task(async function test_reencrypt_same_mechanism() {
     EXPECTED_LOGINS,
     "Logins should stay the same after regular migration"
   );
-});
+}).skip(isRustBackend);
 
 add_task(async function test_reencrypt_new_mechanism() {
   Services.prefs.setIntPref("security.sdr.mechanism", 1);
@@ -41,7 +47,7 @@ add_task(async function test_reencrypt_new_mechanism() {
     EXPECTED_LOGINS,
     "Logins should stay the same after regular migration"
   );
-});
+}).skip(isRustBackend);
 
 add_task(async function test_reencrypt_mixed_mechanism() {
   Services.prefs.setIntPref("security.sdr.mechanism", 0);
@@ -62,7 +68,7 @@ add_task(async function test_reencrypt_mixed_mechanism() {
     EXPECTED_LOGINS,
     "Logins should stay the same after mixed migration"
   );
-});
+}).skip(isRustBackend);
 
 add_task(async function test_reencrypt_race() {
   const reencryptionPromise = Services.logins.reencryptAllLogins();
@@ -82,7 +88,7 @@ add_task(async function test_reencrypt_race() {
     newLogins,
     "In case of other racing login modifications, they should prevail"
   );
-});
+}).skip(isRustBackend);
 
 add_task(async function test_reencrypt_no_logins_present() {
   await Services.logins.removeAllLoginsAsync();
@@ -93,4 +99,4 @@ add_task(async function test_reencrypt_no_logins_present() {
     [],
     "The reencryption should go through without problems if no logins are present at all"
   );
-});
+}).skip(isRustBackend);

@@ -28,7 +28,6 @@ import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.browserScreen
 import org.mozilla.fenix.ui.robots.clickPageObject
 import org.mozilla.fenix.ui.robots.customTabScreen
-import org.mozilla.fenix.ui.robots.enhancedTrackingProtection
 import org.mozilla.fenix.ui.robots.homeScreen
 import org.mozilla.fenix.ui.robots.notificationShade
 import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
@@ -253,48 +252,6 @@ class CustomTabsTest {
         }
         homeScreen(composeTestRule) {
             verifyHomeScreenAppBarItems()
-        }
-    }
-
-    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2239117
-    @Test
-    fun verifyCustomTabETPSheetAndToggleTest() {
-        val customTabPage = mockWebServer.getGenericAsset(1)
-
-        intentReceiverActivityTestRule.launchActivity(
-            createCustomTabIntent(
-                pageUrl = customTabPage.url.toString(),
-                customActionButtonDescription = customTabActionButton,
-            ),
-        )
-
-        browserScreen(composeTestRule) {
-        }.openSiteSecuritySheet {
-            verifyEnhancedTrackingProtectionSheetStatus(status = "ON", state = true)
-        }.toggleEnhancedTrackingProtectionFromSheet {
-            verifyEnhancedTrackingProtectionSheetStatus(status = "OFF", state = false)
-        }.closeSiteSecuritySheet(composeTestRule) {
-        }
-
-        openAppFromExternalLink(composeTestRule, customTabPage.url.toString())
-
-        browserScreen(composeTestRule) {
-        }.openThreeDotMenu {
-        }.clickSettingsButton {
-        }.openEnhancedTrackingProtectionSubMenu {
-            switchEnhancedTrackingProtectionToggle()
-            verifyEnhancedTrackingProtectionOptionsEnabled(enabled = false)
-        }
-
-        exitMenu()
-
-        browserScreen(composeTestRule) {
-        }.goBack {
-            // Actually exiting to the previously opened custom tab
-        }
-
-        enhancedTrackingProtection {
-            verifyETPSectionIsDisplayedInQuickSettingsSheet(isDisplayed = false)
         }
     }
 }

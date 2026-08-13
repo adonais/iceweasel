@@ -244,6 +244,10 @@ class ReflowOutput {
   // (generational) block-end margin value.
   CollapsingMargin mCarriedOutBEndMargin;
 
+  // Set when the frame needs to retry reflow to apply text-box-trim-end
+  // at a fragment boundary.
+  bool mNeedsTextBoxTrimAtFragmentEndRetry = false;
+
   // For frames that have content that overflow their content area
   // (HasOverflowAreas() is true) these rectangles represent the total
   // area of the frame including visible overflow, i.e., don't include

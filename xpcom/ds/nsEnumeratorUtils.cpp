@@ -4,11 +4,10 @@
 
 #include "nsEnumeratorUtils.h"
 
+#include "mozilla/RefPtr.h"
+#include "nsCOMPtr.h"
 #include "nsIStringEnumerator.h"
 #include "nsSimpleEnumerator.h"
-
-#include "nsCOMPtr.h"
-#include "mozilla/RefPtr.h"
 
 class EmptyEnumeratorImpl : public nsSimpleEnumerator,
                             public nsIUTF8StringEnumerator,

@@ -80,6 +80,23 @@ add_setup(async function () {
   SearchSERPTelemetry.overrideSearchTelemetryForTests(TEST_PROVIDER_INFO);
   await waitForIdle();
 
+  // These tests simulate download failures by omitting the attachment from the
+  // cache and expect each failure to be reported quickly (within TIMEOUT_IN_MS).
+  // Without a mock server, the real download hits the network via
+  // downloadAsBytes(). On Beta/Release the test-only server override is ignored
+  // (see Utils.allowServerURL), so the request reaches the production server and
+  // takes several seconds to time out per attempt, blowing the test's timeout.
+  // Stub downloadAsBytes() to fail immediately: cached attachments are still
+  // served by download() before it is reached, so the fail-then-succeed flows
+  // keep working.
+  let sandbox = sinon.createSandbox();
+  sandbox
+    .stub(client.attachments, "downloadAsBytes")
+    .rejects(new Error("Simulated Download Error"));
+  registerCleanupFunction(() => {
+    sandbox.restore();
+  });
+
   await db.clear();
 
   // If the pref is by default on, disable it as the following tests toggle

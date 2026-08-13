@@ -7,10 +7,10 @@
 
 #include <jni.h>
 
+#include "AndroidBridge.h"
 #include "mozilla/jni/Refs.h"
 #include "mozilla/jni/Types.h"
 #include "mozilla/jni/Utils.h"
-#include "AndroidBridge.h"
 
 namespace mozilla {
 namespace jni {

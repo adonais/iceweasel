@@ -5,7 +5,7 @@
 with Files("**"):
     BUG_COMPONENT = ("Core", "DOM: Navigation")
 
-EXTRA_JS_MODULES += [
+MOZ_SRC_FILES += [
     "RemoteWebNavigation.sys.mjs",
 ]
 

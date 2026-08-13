@@ -8,20 +8,24 @@ description: >
 features: [iterator-includes]
 ---*/
 
-class IteratorThrows extends Iterator {
+let counter = 0;
+let iterator = {
+  __proto__: Iterator.prototype,
   next() {
-    return {
-      done: false,
-      value: 0,
-    };
-  }
-
+    if (counter === 0) {
+      ++counter;
+      return { done: false, value: 0 };
+    } else {
+      return { done: true, value: undefined };
+    }
+  },
   return() {
     throw new Test262Error();
   }
-}
+};
 
-let iterator = new IteratorThrows();
+assert.sameValue(iterator.includes(1), false);
+counter = 0;
 
 assert.throws(Test262Error, function() {
   iterator.includes(0);

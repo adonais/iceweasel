@@ -5,8 +5,8 @@
 #ifndef GFX_WEBRENDERCANVASRENDERER_H
 #define GFX_WEBRENDERCANVASRENDERER_H
 
-#include "mozilla/layers/RenderRootStateManager.h"
 #include "ShareableCanvasRenderer.h"
+#include "mozilla/layers/RenderRootStateManager.h"
 
 namespace mozilla {
 namespace layers {

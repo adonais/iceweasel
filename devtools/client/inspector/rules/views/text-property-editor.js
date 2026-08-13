@@ -32,12 +32,6 @@ loader.lazyRequireGetter(
   "resource://devtools/shared/css/parsing-utils.js",
   true
 );
-loader.lazyRequireGetter(
-  this,
-  "findCssSelector",
-  "resource://devtools/shared/inspector/css-logic.js",
-  true
-);
 loader.lazyGetter(this, "PROPERTY_NAME_INPUT_LABEL", function () {
   return l10n("rule.propertyName.label");
 });
@@ -647,6 +641,8 @@ class TextPropertyEditor {
         // @backward-compat { version 153 } Server support for CSS explainers was added
         // in 153, so the line below can be removed once it hits release.
         this.rule.domRule.supportsCssExplainers,
+      siblingCount: this.rule.siblingCount,
+      siblingIndex: this.rule.siblingIndex,
     };
 
     if (this.rule.darkColorScheme !== undefined) {
@@ -666,12 +662,6 @@ class TextPropertyEditor {
         value: frag.textContent,
         priority: this.prop.priority,
       };
-    }
-
-    // Save focused element inside value span if one exists before wiping the innerHTML
-    let focusedElSelector = null;
-    if (this.valueSpan.contains(this.doc.activeElement)) {
-      focusedElSelector = findCssSelector(this.doc.activeElement);
     }
 
     this.valueSpan.innerHTML = "";
@@ -791,16 +781,6 @@ class TextPropertyEditor {
 
     // Update the rule property highlight.
     this.ruleView.updatePropertyHighlight(this);
-
-    // Restore focus back to the element whose markup was recreated above, if
-    // the focus is still in the current document (avoid stealing the focus, see
-    // Bug 1911627).
-    if (this.doc.hasFocus() && focusedElSelector) {
-      const elementToFocus = this.doc.querySelector(focusedElSelector);
-      if (elementToFocus) {
-        elementToFocus.focus();
-      }
-    }
   };
 
   /**

@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "jit/JitScript-inl.h"
-
 #include "mozilla/BinarySearch.h"
 #include "mozilla/CheckedInt.h"
 
@@ -30,6 +28,7 @@
 #include "vm/JSScript.h"
 
 #include "gc/GCContext-inl.h"
+#include "jit/JitScript-inl.h"
 #include "jit/JSJitFrameIter-inl.h"
 #include "vm/JSContext-inl.h"
 #include "vm/JSScript-inl.h"
@@ -141,6 +140,9 @@ bool JSScript::createJitScript(JSContext* cx) {
       jit::OptimizationInfo::baseWarmUpThresholdForScript(cx, this);
   jitScript->setIonThreshold(baseWarmUpThreshold);
 
+  // Ensure concurrent marking doesn't see uninitialized jitScript.
+  MemoryReleaseFence(cx->zone());
+
   warmUpData_.initJitScript(jitScript.release());
   AddCellMemory(this, allocSize.value(), MemoryUse::JitScript);
 
@@ -195,17 +197,17 @@ void JitScript::trace(JSTracer* trc) {
 
   icScript_.trace(trc);
 
-  if (hasBaselineScript()) {
-    baselineScript()->trace(trc);
+  BaselineScript* baselineScript = baselineScript_.getForTracing();
+  if (baselineScript && IsBaselineScript(baselineScript)) {
+    baselineScript->trace(trc);
   }
 
-  if (hasIonScript()) {
-    ionScript()->trace(trc);
+  IonScript* ionScript = ionScript_.getForTracing();
+  if (ionScript && IsIonScript(ionScript)) {
+    ionScript->trace(trc);
   }
 
-  if (templateEnv_.isSome()) {
-    TraceEdge(trc, templateEnv_.ptr(), "jitscript-template-env");
-  }
+  TraceEdge(trc, &templateEnv_, "jitscript-template-env");
 
   if (hasInliningRoot()) {
     inliningRoot()->trace(trc);
@@ -419,6 +421,7 @@ void JitScript::prepareForDestruction(Zone* zone) {
   owningScript_ = nullptr;
   baselineScript_.set(zone, nullptr);
   ionScript_.set(zone, nullptr);
+  templateEnv_ = nullptr;
 }
 
 struct FallbackStubs {
@@ -531,6 +534,8 @@ void JitScript::purgeStubs(JSScript* script, ICStubSpace& newStubSpace) {
 }
 
 void ICScript::purgeStubs(Zone* zone, ICStubSpace& newStubSpace) {
+  gc::AutoMarkingLock lock(zone, markingLock());
+
   for (size_t i = 0; i < numICEntries(); i++) {
     ICEntry& entry = icEntry(i);
     ICFallbackStub* fallback = fallbackStub(i);
@@ -574,20 +579,22 @@ void ICScript::purgeStubs(Zone* zone, ICStubSpace& newStubSpace) {
 
     MOZ_ASSERT(!hasInlinedChild(fallback->pcOffset()));
 
-    fallback->discardStubs(zone, &entry);
+    fallback->discardStubs(zone, &entry, lock);
     fallback->state().reset();
   }
 }
 
 bool JitScript::ensureHasCachedBaselineJitData(JSContext* cx,
                                                HandleScript script) {
-  if (templateEnv_.isSome()) {
+  if (flags_.initializedTemplateEnv) {
     return true;
   }
 
+  MOZ_ASSERT(!templateEnv_);
+
   if (!script->function() ||
       !script->function()->needsFunctionEnvironmentObjects()) {
-    templateEnv_.emplace();
+    flags_.initializedTemplateEnv = true;
     return true;
   }
 
@@ -608,7 +615,8 @@ bool JitScript::ensureHasCachedBaselineJitData(JSContext* cx,
     }
   }
 
-  templateEnv_.emplace(templateEnv);
+  templateEnv_ = templateEnv;
+  flags_.initializedTemplateEnv = true;
   return true;
 }
 

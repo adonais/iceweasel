@@ -10,7 +10,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
-  Utils: "resource://services-settings/Utils.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "log", () => {
@@ -21,9 +20,8 @@ ChromeUtils.defineLazyGetter(lazy, "log", () => {
 });
 
 const CACHE_KEY = "frecency_boost_cache";
-const RS_FALLBACK_BASE_URL =
-  "https://firefox-settings-attachments.cdn.mozilla.net/";
 const SPONSORED_TILE_PARTNER_FREC_BOOST = "frec-boost";
+const FALLBACK_FAVICON_DATA_URI = "data:,";
 const DEFAULT_SOV_NUM_ITEMS = 200;
 
 export class FrecencyBoostProvider {
@@ -91,8 +89,8 @@ export class FrecencyBoostProvider {
    * @param {object} record - Remote Settings record with title, domain, redirect_url, and attachment
    */
   async _importFrecencyBoostedSponsor(record) {
-    const { title, domain, redirect_url, attachment } = record;
-    const faviconDataURI = await this._fetchSponsorFaviconAsDataURI(attachment);
+    const faviconDataURI = await this._fetchSponsorFaviconAsDataURI(record);
+    const { title, domain, redirect_url } = record;
     const hostname = lazy.NewTabUtils.shortURL({ url: domain });
 
     const sponsorData = {
@@ -109,32 +107,25 @@ export class FrecencyBoostProvider {
   /**
    * Fetch favicon from Remote Settings attachment and return as data URI.
    *
-   * @param {object} attachment - Remote Settings attachment object
+   * @param {object} record - Remote Settings record object
    * @returns {Promise<string|null>} Favicon data URI, or null on error
    */
-  async _fetchSponsorFaviconAsDataURI(attachment) {
-    let baseAttachmentURL = RS_FALLBACK_BASE_URL;
+  async _fetchSponsorFaviconAsDataURI(record) {
+    if (!this._frecencyBoostRS) {
+      return FALLBACK_FAVICON_DATA_URI;
+    }
     try {
-      baseAttachmentURL = await lazy.Utils.baseAttachmentsURL();
+      const { buffer } =
+        await this._frecencyBoostRS.attachments.download(record);
+      const base64String = buffer.toString("base64");
+      return `data:${record.attachment.mimetype};base64,${base64String}`;
     } catch (error) {
       lazy.log.warn(
-        `Error fetching remote settings base url from CDN. Falling back to ${RS_FALLBACK_BASE_URL}`,
+        `Error fetching favicon from Remote Settings. Falling back to empty version`,
         error
       );
+      return FALLBACK_FAVICON_DATA_URI;
     }
-
-    const faviconURL = baseAttachmentURL + attachment.location;
-    const response = await fetch(faviconURL);
-
-    const blob = await response.blob();
-    const dataURI = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.addEventListener("load", () => resolve(reader.result));
-      reader.addEventListener("error", reject);
-      reader.readAsDataURL(blob);
-    });
-
-    return dataURI;
   }
 
   /**

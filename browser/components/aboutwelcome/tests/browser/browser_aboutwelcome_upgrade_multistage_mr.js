@@ -87,7 +87,7 @@ async function openMRUpgradeWelcome(screensToTest) {
 }
 
 async function clickVisibleButton(browser, selector) {
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => browser.document.querySelector(selector),
     `waiting for selector ${selector}`,
     200, // interval
@@ -116,7 +116,7 @@ async function test_upgrade_screen_content(
 }
 
 async function waitForDialogClose(browser) {
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !browser.top?.document.querySelector(".dialogFrame"),
     "waiting for dialog to close"
   );
@@ -176,8 +176,8 @@ add_task(async function test_aboutwelcome_upgrade_mr_private_pin() {
     "pinFirefoxToTaskbar should have been called twice"
   );
   Assert.notEqual(
-    pinStub.firstCall.lastArg,
-    pinStub.secondCall.lastArg,
+    pinStub.firstCall.lastArg?.privatePin,
+    pinStub.secondCall.lastArg?.privatePin,
     "pinFirefoxToTaskbar should have been called once for private, once not"
   );
 

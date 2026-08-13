@@ -14,9 +14,9 @@ ChromeUtils.defineLazyGetter(lazy, "console", () => {
 
 ChromeUtils.defineESModuleGetters(lazy, {
   CaptchaDetectionPingUtils:
-    "resource://gre/modules/CaptchaDetectionPingUtils.sys.mjs",
+    "moz-src:///toolkit/components/captchadetection/CaptchaDetectionPingUtils.sys.mjs",
   CaptchaResponseObserver:
-    "resource://gre/modules/CaptchaResponseObserver.sys.mjs",
+    "moz-src:///toolkit/components/captchadetection/CaptchaResponseObserver.sys.mjs",
 });
 
 /**

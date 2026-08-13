@@ -44,7 +44,7 @@
     position: absolute;
     inset-block-end: calc(var(--space-xlarge) * -1);
     inset-inline-end: 0;
-    font-size: var(--font-size-xsmall);
+    font-size: var(--newtab-font-size-xsmall);
 
     .sponsored-text {
       visibility: hidden;
@@ -58,7 +58,7 @@
       background: url('chrome://global/skin/icons/arrow-right.svg') no-repeat right center;
       -moz-context-properties: fill;
       fill: currentColor;
-      font-size: var(--font-size-xsmall);
+      font-size: var(--newtab-font-size-xsmall);
 
       &:dir(rtl) {
         background-image: url('chrome://global/skin/icons/arrow-left.svg');
@@ -125,7 +125,7 @@
       align-self: flex-start;
       margin-inline-start: auto;
       color: var(--text-color-deemphasized);
-      font-size: var(--font-size-xsmall);
+      font-size: var(--newtab-font-size-xsmall);
       gap: var(--space-small);
 
       .high-temperature,
@@ -393,6 +393,7 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
+      gap: var(--space-small);
       height: 100%;
     }
 
@@ -452,7 +453,26 @@
 
     &.small-widget {
       .weather-opt-in-container-title {
-        padding-block-start: var(--space-small);
+        padding-block-start: var(--space-medium);
+        font-size: var(--newtab-font-size-xsmall);
+        line-height: 1.25;
+      }
+
+      // Float a spacer into the top-inline-end corner so the heading wraps
+      // around the context menu button, then reclaims full width below it.
+      .weather-opt-in-container-title::before {
+        content: '';
+        float: inline-end;
+        width: calc(var(--space-xlarge) + var(--space-large));
+        height: var(--space-medium);
+      }
+
+      .weather-opt-in-container-buttons {
+        padding-inline: var(--space-medium);
+      }
+
+      .weather-text-link {
+        font-size: var(--newtab-font-size-xsmall);
       }
     }
 

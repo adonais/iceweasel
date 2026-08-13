@@ -33,8 +33,6 @@ class WeakRefObject : public gc::ObserverListObject {
   static void trace(JSTracer* trc, JSObject* obj);
   static void finalize(JS::GCContext* gcx, JSObject* obj);
 
-  static bool preserveDOMWrapper(JSContext* cx, HandleObject obj);
-
   static bool deref(JSContext* cx, unsigned argc, Value* vp);
   static void readBarrier(JSContext* cx, Handle<WeakRefObject*> self);
 };

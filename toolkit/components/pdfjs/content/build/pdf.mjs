@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.346
- * pdfjsBuild = e75a7cfd6
+ * pdfjsVersion = 6.1.335
+ * pdfjsBuild = dd7e3731d
  */
 
 ;// ./src/shared/util.js
@@ -32,7 +32,7 @@ const F32_BBOX_INIT = new Float32Array(BBOX_INIT);
 const FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
 const LINE_FACTOR = 1.35;
 const LINE_DESCENT_FACTOR = 0.35;
-const BASELINE_FACTOR = LINE_DESCENT_FACTOR / LINE_FACTOR;
+const BASELINE_FACTOR = (/* unused pure expression or super */ null && (LINE_DESCENT_FACTOR / LINE_FACTOR));
 const SVG_NS = "http://www.w3.org/2000/svg";
 const RenderingIntentFlag = {
   ANY: 0x01,
@@ -138,11 +138,19 @@ const AnnotationType = {
   TRAPNET: 23,
   WATERMARK: 24,
   THREED: 25,
-  REDACT: 26
+  REDACT: 26,
+  RICHMEDIA: 27
 };
 const AnnotationReplyType = (/* unused pure expression or super */ null && ({
   GROUP: "Group",
   REPLY: "R"
+}));
+const AnnotationRenditionOperation = (/* unused pure expression or super */ null && ({
+  PLAY_OR_RESUME: 0,
+  STOP: 1,
+  PAUSE: 2,
+  RESUME: 3,
+  PLAY: 4
 }));
 const AnnotationFlag = (/* unused pure expression or super */ null && ({
   INVISIBLE: 0x01,
@@ -527,6 +535,9 @@ class FeatureTest {
     input.value = "#ff000080";
     return shadow(this, "isAlphaColorInputSupported", input.value !== "#ff0000");
   }
+  static get isBackdropFilterSupported() {
+    return shadow(this, "isBackdropFilterSupported", typeof CSS !== "undefined" && CSS.supports("backdrop-filter", "blur(1px)"));
+  }
 }
 class Util {
   static get hexNums() {
@@ -778,6 +789,7 @@ function _isValidExplicitDest(validRef, validName, dest) {
 const makeArr = () => [];
 const makeMap = () => new Map();
 const makeObj = () => Object.create(null);
+const makeSet = () => new Set();
 
 ;// ./src/shared/math_clamp.js
 function MathClamp(v, min, max) {
@@ -1990,7 +2002,7 @@ class FloatingToolbar {
 }
 
 ;// ./src/shared/internal_evt.js
-const INTERNAL_EVT = "ba480cbc-beb0-4b9d-9c8e-d0795f27ee33";
+const INTERNAL_EVT = "ef6148f6-6ec0-4217-9ce6-b56c33db7fbd";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -2614,7 +2626,7 @@ class AnnotationEditorUIManager {
       capture: true,
       signal
     });
-    window.addEventListener("beforeunload", this.#beforeUnload.bind(this), {
+    window.addEventListener("beforeunload", this.endCurrentEditing.bind(this), {
       capture: true,
       signal
     });
@@ -2970,7 +2982,7 @@ class AnnotationEditorUIManager {
   commentSelection(methodOfCreation = "") {
     this.highlightSelection(methodOfCreation, true);
   }
-  #beforeUnload(e) {
+  endCurrentEditing() {
     this.commitOrRemove();
     this.currentLayer?.endDrawingSession(false);
   }
@@ -3767,9 +3779,6 @@ class AnnotationEditorUIManager {
     this.#dispatchUpdateStates({
       hasSelectedEditor: true
     });
-  }
-  isSelected(editor) {
-    return this.#selectedEditors.has(editor);
   }
   get firstSelectedEditor() {
     return this.#selectedEditors.values().next().value;
@@ -8770,6 +8779,118 @@ class MessageHandler {
   }
 }
 
+;// ./src/shared/image_utils.js
+/* unused harmony import specifier */ var image_utils_ImageKind;
+/* unused harmony import specifier */ var image_utils_FeatureTest;
+
+function convertToRGBA(params) {
+  switch (params.kind) {
+    case image_utils_ImageKind.GRAYSCALE_1BPP:
+      return convertBlackAndWhiteToRGBA(params);
+    case image_utils_ImageKind.RGB_24BPP:
+      return convertRGBToRGBA(params);
+  }
+  return null;
+}
+function convertBlackAndWhiteToRGBA({
+  src,
+  srcPos = 0,
+  dest,
+  width,
+  height,
+  nonBlackColor = 0xffffffff,
+  inverseDecode = false
+}) {
+  const black = FeatureTest.isLittleEndian ? 0xff000000 : 0x000000ff;
+  const [zeroMapping, oneMapping] = inverseDecode ? [nonBlackColor, black] : [black, nonBlackColor];
+  const widthInSource = width >> 3;
+  const widthRemainder = width & 7;
+  const xorMask = zeroMapping ^ oneMapping;
+  const srcLength = src.length;
+  dest = new Uint32Array(dest.buffer);
+  let destPos = 0;
+  for (let i = 0; i < height; ++i) {
+    for (const max = srcPos + widthInSource; srcPos < max; ++srcPos, destPos += 8) {
+      const elem = src[srcPos];
+      dest[destPos] = zeroMapping ^ -(elem >> 7 & 1) & xorMask;
+      dest[destPos + 1] = zeroMapping ^ -(elem >> 6 & 1) & xorMask;
+      dest[destPos + 2] = zeroMapping ^ -(elem >> 5 & 1) & xorMask;
+      dest[destPos + 3] = zeroMapping ^ -(elem >> 4 & 1) & xorMask;
+      dest[destPos + 4] = zeroMapping ^ -(elem >> 3 & 1) & xorMask;
+      dest[destPos + 5] = zeroMapping ^ -(elem >> 2 & 1) & xorMask;
+      dest[destPos + 6] = zeroMapping ^ -(elem >> 1 & 1) & xorMask;
+      dest[destPos + 7] = zeroMapping ^ -(elem & 1) & xorMask;
+    }
+    if (widthRemainder === 0) {
+      continue;
+    }
+    const elem = srcPos < srcLength ? src[srcPos++] : 255;
+    for (let j = 0; j < widthRemainder; ++j, ++destPos) {
+      dest[destPos] = zeroMapping ^ -(elem >> 7 - j & 1) & xorMask;
+    }
+  }
+  return {
+    srcPos,
+    destPos
+  };
+}
+function convertRGBToRGBA({
+  src,
+  srcPos = 0,
+  dest,
+  destPos = 0,
+  width,
+  height
+}) {
+  let i = 0;
+  const len = width * height * 3;
+  const len32 = len >> 2;
+  const src32 = new Uint32Array(src.buffer, srcPos, len32);
+  const alphaMask = FeatureTest.isLittleEndian ? 0xff000000 : 0xff;
+  if (FeatureTest.isLittleEndian) {
+    for (; i < len32 - 2; i += 3, destPos += 4) {
+      const s1 = src32[i],
+        s2 = src32[i + 1],
+        s3 = src32[i + 2];
+      dest[destPos] = s1 | alphaMask;
+      dest[destPos + 1] = s1 >>> 24 | s2 << 8 | alphaMask;
+      dest[destPos + 2] = s2 >>> 16 | s3 << 16 | alphaMask;
+      dest[destPos + 3] = s3 >>> 8 | alphaMask;
+    }
+    for (let j = i * 4, jj = srcPos + len; j < jj; j += 3) {
+      dest[destPos++] = src[j] | src[j + 1] << 8 | src[j + 2] << 16 | alphaMask;
+    }
+  } else {
+    for (; i < len32 - 2; i += 3, destPos += 4) {
+      const s1 = src32[i],
+        s2 = src32[i + 1],
+        s3 = src32[i + 2];
+      dest[destPos] = s1 | alphaMask;
+      dest[destPos + 1] = s1 << 24 | s2 >>> 8 | alphaMask;
+      dest[destPos + 2] = s2 << 16 | s3 >>> 16 | alphaMask;
+      dest[destPos + 3] = s3 << 8 | alphaMask;
+    }
+    for (let j = i * 4, jj = srcPos + len; j < jj; j += 3) {
+      dest[destPos++] = src[j] << 24 | src[j + 1] << 16 | src[j + 2] << 8 | alphaMask;
+    }
+  }
+  return {
+    srcPos: srcPos + len,
+    destPos
+  };
+}
+function grayToRGBA(src, dest) {
+  if (image_utils_FeatureTest.isLittleEndian) {
+    for (let i = 0, ii = src.length; i < ii; i++) {
+      dest[i] = src[i] * 0x10101 | 0xff000000;
+    }
+  } else {
+    for (let i = 0, ii = src.length; i < ii; i++) {
+      dest[i] = src[i] * 0x1010100 | 0x000000ff;
+    }
+  }
+}
+
 ;// ./src/display/webgpu.js
 const MESH_WGSL = `
 struct Uniforms {
@@ -9586,118 +9707,6 @@ class TilingPattern {
   }
 }
 
-;// ./src/shared/image_utils.js
-/* unused harmony import specifier */ var image_utils_ImageKind;
-/* unused harmony import specifier */ var image_utils_FeatureTest;
-
-function convertToRGBA(params) {
-  switch (params.kind) {
-    case image_utils_ImageKind.GRAYSCALE_1BPP:
-      return convertBlackAndWhiteToRGBA(params);
-    case image_utils_ImageKind.RGB_24BPP:
-      return convertRGBToRGBA(params);
-  }
-  return null;
-}
-function convertBlackAndWhiteToRGBA({
-  src,
-  srcPos = 0,
-  dest,
-  width,
-  height,
-  nonBlackColor = 0xffffffff,
-  inverseDecode = false
-}) {
-  const black = FeatureTest.isLittleEndian ? 0xff000000 : 0x000000ff;
-  const [zeroMapping, oneMapping] = inverseDecode ? [nonBlackColor, black] : [black, nonBlackColor];
-  const widthInSource = width >> 3;
-  const widthRemainder = width & 7;
-  const xorMask = zeroMapping ^ oneMapping;
-  const srcLength = src.length;
-  dest = new Uint32Array(dest.buffer);
-  let destPos = 0;
-  for (let i = 0; i < height; ++i) {
-    for (const max = srcPos + widthInSource; srcPos < max; ++srcPos, destPos += 8) {
-      const elem = src[srcPos];
-      dest[destPos] = zeroMapping ^ -(elem >> 7 & 1) & xorMask;
-      dest[destPos + 1] = zeroMapping ^ -(elem >> 6 & 1) & xorMask;
-      dest[destPos + 2] = zeroMapping ^ -(elem >> 5 & 1) & xorMask;
-      dest[destPos + 3] = zeroMapping ^ -(elem >> 4 & 1) & xorMask;
-      dest[destPos + 4] = zeroMapping ^ -(elem >> 3 & 1) & xorMask;
-      dest[destPos + 5] = zeroMapping ^ -(elem >> 2 & 1) & xorMask;
-      dest[destPos + 6] = zeroMapping ^ -(elem >> 1 & 1) & xorMask;
-      dest[destPos + 7] = zeroMapping ^ -(elem & 1) & xorMask;
-    }
-    if (widthRemainder === 0) {
-      continue;
-    }
-    const elem = srcPos < srcLength ? src[srcPos++] : 255;
-    for (let j = 0; j < widthRemainder; ++j, ++destPos) {
-      dest[destPos] = zeroMapping ^ -(elem >> 7 - j & 1) & xorMask;
-    }
-  }
-  return {
-    srcPos,
-    destPos
-  };
-}
-function convertRGBToRGBA({
-  src,
-  srcPos = 0,
-  dest,
-  destPos = 0,
-  width,
-  height
-}) {
-  let i = 0;
-  const len = width * height * 3;
-  const len32 = len >> 2;
-  const src32 = new Uint32Array(src.buffer, srcPos, len32);
-  const alphaMask = image_utils_FeatureTest.isLittleEndian ? 0xff000000 : 0xff;
-  if (image_utils_FeatureTest.isLittleEndian) {
-    for (; i < len32 - 2; i += 3, destPos += 4) {
-      const s1 = src32[i],
-        s2 = src32[i + 1],
-        s3 = src32[i + 2];
-      dest[destPos] = s1 | alphaMask;
-      dest[destPos + 1] = s1 >>> 24 | s2 << 8 | alphaMask;
-      dest[destPos + 2] = s2 >>> 16 | s3 << 16 | alphaMask;
-      dest[destPos + 3] = s3 >>> 8 | alphaMask;
-    }
-    for (let j = i * 4, jj = srcPos + len; j < jj; j += 3) {
-      dest[destPos++] = src[j] | src[j + 1] << 8 | src[j + 2] << 16 | alphaMask;
-    }
-  } else {
-    for (; i < len32 - 2; i += 3, destPos += 4) {
-      const s1 = src32[i],
-        s2 = src32[i + 1],
-        s3 = src32[i + 2];
-      dest[destPos] = s1 | alphaMask;
-      dest[destPos + 1] = s1 << 24 | s2 >>> 8 | alphaMask;
-      dest[destPos + 2] = s2 << 16 | s3 >>> 16 | alphaMask;
-      dest[destPos + 3] = s3 << 8 | alphaMask;
-    }
-    for (let j = i * 4, jj = srcPos + len; j < jj; j += 3) {
-      dest[destPos++] = src[j] << 24 | src[j + 1] << 16 | src[j + 2] << 8 | alphaMask;
-    }
-  }
-  return {
-    srcPos: srcPos + len,
-    destPos
-  };
-}
-function grayToRGBA(src, dest) {
-  if (image_utils_FeatureTest.isLittleEndian) {
-    for (let i = 0, ii = src.length; i < ii; i++) {
-      dest[i] = src[i] * 0x10101 | 0xff000000;
-    }
-  } else {
-    for (let i = 0, ii = src.length; i < ii; i++) {
-      dest[i] = src[i] * 0x1010100 | 0x000000ff;
-    }
-  }
-}
-
 ;// ./src/display/canvas.js
 
 
@@ -9840,24 +9849,21 @@ class CanvasExtraState {
   }
 }
 function putBinaryImageData(ctx, imgData) {
-  if (imgData instanceof ImageData) {
-    ctx.putImageData(imgData, 0, 0);
-    return;
-  }
-  const height = imgData.height,
-    width = imgData.width;
+  const {
+    width,
+    height,
+    kind
+  } = imgData;
   const partialChunkHeight = height % FULL_CHUNK_HEIGHT;
   const fullChunks = (height - partialChunkHeight) / FULL_CHUNK_HEIGHT;
   const totalChunks = partialChunkHeight === 0 ? fullChunks : fullChunks + 1;
   const chunkImgData = ctx.createImageData(width, FULL_CHUNK_HEIGHT);
-  let srcPos = 0,
-    destPos;
+  let srcPos = 0;
   const src = imgData.data;
   const dest = chunkImgData.data;
-  let i, j, thisChunkHeight, elemsInThisChunk;
-  if (imgData.kind === ImageKind.GRAYSCALE_1BPP) {
+  let i;
+  if (kind === ImageKind.GRAYSCALE_1BPP) {
     for (i = 0; i < totalChunks; i++) {
-      thisChunkHeight = i < fullChunks ? FULL_CHUNK_HEIGHT : partialChunkHeight;
       ({
         srcPos
       } = convertBlackAndWhiteToRGBA({
@@ -9865,13 +9871,13 @@ function putBinaryImageData(ctx, imgData) {
         srcPos,
         dest,
         width,
-        height: thisChunkHeight
+        height: i < fullChunks ? FULL_CHUNK_HEIGHT : partialChunkHeight
       }));
       ctx.putImageData(chunkImgData, 0, i * FULL_CHUNK_HEIGHT);
     }
-  } else if (imgData.kind === ImageKind.RGBA_32BPP) {
-    j = 0;
-    elemsInThisChunk = width * FULL_CHUNK_HEIGHT * 4;
+  } else if (kind === ImageKind.RGBA_32BPP) {
+    let j = 0;
+    let elemsInThisChunk = width * FULL_CHUNK_HEIGHT * 4;
     for (i = 0; i < fullChunks; i++) {
       dest.set(src.subarray(srcPos, srcPos + elemsInThisChunk));
       srcPos += elemsInThisChunk;
@@ -9883,25 +9889,21 @@ function putBinaryImageData(ctx, imgData) {
       dest.set(src.subarray(srcPos, srcPos + elemsInThisChunk));
       ctx.putImageData(chunkImgData, 0, j);
     }
-  } else if (imgData.kind === ImageKind.RGB_24BPP) {
-    thisChunkHeight = FULL_CHUNK_HEIGHT;
-    elemsInThisChunk = width * thisChunkHeight;
+  } else if (kind === ImageKind.RGB_24BPP) {
     for (i = 0; i < totalChunks; i++) {
-      if (i >= fullChunks) {
-        thisChunkHeight = partialChunkHeight;
-        elemsInThisChunk = width * thisChunkHeight;
-      }
-      destPos = 0;
-      for (j = elemsInThisChunk; j--;) {
-        dest[destPos++] = src[srcPos++];
-        dest[destPos++] = src[srcPos++];
-        dest[destPos++] = src[srcPos++];
-        dest[destPos++] = 255;
-      }
+      ({
+        srcPos
+      } = convertRGBToRGBA({
+        src,
+        srcPos,
+        dest: new Uint32Array(dest.buffer),
+        width,
+        height: i < fullChunks ? FULL_CHUNK_HEIGHT : partialChunkHeight
+      }));
       ctx.putImageData(chunkImgData, 0, i * FULL_CHUNK_HEIGHT);
     }
   } else {
-    throw new Error(`bad image kind: ${imgData.kind}`);
+    throw new Error(`bad image kind: ${kind}`);
   }
 }
 function putBinaryImageMask(ctx, imgData) {
@@ -9909,8 +9911,10 @@ function putBinaryImageMask(ctx, imgData) {
     ctx.drawImage(imgData.bitmap, 0, 0);
     return;
   }
-  const height = imgData.height,
-    width = imgData.width;
+  const {
+    width,
+    height
+  } = imgData;
   const partialChunkHeight = height % FULL_CHUNK_HEIGHT;
   const fullChunks = (height - partialChunkHeight) / FULL_CHUNK_HEIGHT;
   const totalChunks = partialChunkHeight === 0 ? fullChunks : fullChunks + 1;
@@ -9919,7 +9923,6 @@ function putBinaryImageMask(ctx, imgData) {
   const src = imgData.data;
   const dest = chunkImgData.data;
   for (let i = 0; i < totalChunks; i++) {
-    const thisChunkHeight = i < fullChunks ? FULL_CHUNK_HEIGHT : partialChunkHeight;
     ({
       srcPos
     } = convertBlackAndWhiteToRGBA({
@@ -9927,7 +9930,7 @@ function putBinaryImageMask(ctx, imgData) {
       srcPos,
       dest,
       width,
-      height: thisChunkHeight,
+      height: i < fullChunks ? FULL_CHUNK_HEIGHT : partialChunkHeight,
       nonBlackColor: 0
     }));
     ctx.putImageData(chunkImgData, 0, i * FULL_CHUNK_HEIGHT);
@@ -11291,12 +11294,12 @@ class CanvasGraphics {
       this.showType3Text(opIdx, glyphs);
       this.dependencyTracker?.recordShowTextOperation(opIdx);
       this.#endKnockoutElement(started);
-      return undefined;
+      return;
     }
     const fontSize = current.fontSize;
     if (fontSize === 0) {
       this.dependencyTracker?.recordOperation(opIdx);
-      return undefined;
+      return;
     }
     const started = this.#beginKnockoutElement(current.fillAlpha);
     const ctx = this.ctx;
@@ -11370,7 +11373,7 @@ class CanvasGraphics {
       ctx.restore();
       this.compose();
       this.#endKnockoutElement(started);
-      return undefined;
+      return;
     }
     let x = 0,
       i;
@@ -11441,7 +11444,6 @@ class CanvasGraphics {
     this.compose();
     this.dependencyTracker?.recordShowTextOperation(opIdx);
     this.#endKnockoutElement(started);
-    return undefined;
   }
   showType3Text(opIdx, glyphs) {
     const ctx = this.ctx;
@@ -11484,6 +11486,10 @@ class CanvasGraphics {
         warn(`Type3 character "${glyph.operatorListId}" is not available.`);
       } else if (this.contentVisible) {
         this.save();
+        if (operatorList.fnArray[0] === OPS.setCharWidth) {
+          current.fillAlpha = current.strokeAlpha = 1;
+          ctx.globalAlpha = 1;
+        }
         ctx.scale(fontSize, fontSize);
         ctx.transform(...fontMatrix);
         this.executeOperatorList(operatorList);
@@ -11643,10 +11649,7 @@ class CanvasGraphics {
       this.current.activeSMask = null;
     }
     const currentCtx = this.ctx;
-    if (!group.isolated && !group.knockout && this.#knockoutGroupLevel === 0) {
-      info("TODO: Fully support non-isolated non-knockout groups.");
-    }
-    if (!group.needsIsolation && !group.knockout && !group.isGray && this.#knockoutGroupLevel === 0 && currentCtx.globalAlpha === 1 && currentCtx.globalCompositeOperation === "source-over" && !inSMaskMode) {
+    if ((!group.needsIsolation || !group.isolated && !group.hasSoftMask) && !group.knockout && !group.isGray && this.#knockoutGroupLevel === 0 && currentCtx.globalAlpha === 1 && currentCtx.globalCompositeOperation === "source-over" && !inSMaskMode) {
       if (group.bbox) {
         let clip = new Path2D();
         const [x0, y0, x1, y1] = group.bbox;
@@ -11662,6 +11665,9 @@ class CanvasGraphics {
       this.#groupStackMeta.push(null);
       this.groupLevel++;
       return;
+    }
+    if (!group.isolated && !group.knockout && this.#knockoutGroupLevel === 0) {
+      info("TODO: Fully support non-isolated non-knockout groups.");
     }
     const currentTransform = getCurrentTransform(currentCtx);
     if (group.matrix) {
@@ -12130,8 +12136,6 @@ class CanvasGraphics {
       const result = this.applyTransferMapsToBitmap(imgData);
       imgToPaint = result.img;
       inlineImgCanvas = result.canvasEntry;
-    } else if (typeof HTMLElement === "function" && imgData instanceof HTMLElement || !imgData.data) {
-      imgToPaint = imgData;
     } else {
       const tmpCanvas = this.canvasFactory.create(width, height);
       putBinaryImageData(tmpCanvas.context, imgData);
@@ -12362,13 +12366,6 @@ for (const op in OPS) {
   }
 }
 
-;// ./src/display/stubs.js
-const DOMBinaryDataFactory = null;
-const getNetworkStream = null;
-const NodeBinaryDataFactory = null;
-const NodeCanvasFactory = null;
-const NodeFilterFactory = null;
-
 ;// ./src/display/canvas_factory.js
 
 class BaseCanvasFactory {
@@ -12598,7 +12595,7 @@ class DOMFilterFactory extends BaseFilterFactory {
     fgColor = Util.makeHexColor(...fgRGB);
     const bgRGB = this.#getRGB(bgColor);
     bgColor = Util.makeHexColor(...bgRGB);
-    this.#defs.style.color = "";
+    this.#resetDefsColor();
     if (fgColor === "#000000" && bgColor === "#ffffff" || fgColor === bgColor) {
       return info.url;
     }
@@ -12738,7 +12735,7 @@ class DOMFilterFactory extends BaseFilterFactory {
     if (bgGray < fgGray) {
       [fgGray, bgGray, newFgRGB, newBgRGB] = [bgGray, fgGray, newBgRGB, newFgRGB];
     }
-    this.#defs.style.color = "";
+    this.#resetDefsColor();
     const getSteps = (fg, bg, n) => {
       const arr = new Array(256);
       const step = (bgGray - fgGray) / n;
@@ -12815,12 +12812,18 @@ class DOMFilterFactory extends BaseFilterFactory {
     this.#appendFeFunc(feComponentTransfer, "feFuncA", aTable);
   }
   #getRGB(color) {
-    this.#defs.style.color = color;
-    return getRGB(getComputedStyle(this.#defs).getPropertyValue("color"));
+    this.#defs.style.color = "CanvasText";
+    this.#defs.style.backgroundColor = color;
+    return getRGB(getComputedStyle(this.#defs).getPropertyValue("background-color"));
   }
   #getRGBA(color) {
-    this.#defs.style.color = color;
-    return getRGBA(getComputedStyle(this.#defs).getPropertyValue("color"));
+    this.#defs.style.color = "CanvasText";
+    this.#defs.style.backgroundColor = color;
+    return getRGBA(getComputedStyle(this.#defs).getPropertyValue("background-color"));
+  }
+  #resetDefsColor() {
+    this.#defs.style.color = "";
+    this.#defs.style.backgroundColor = "";
   }
   #getOpaqueTextColor(color) {
     const [r, g, b, alpha] = this.#getRGBA(color);
@@ -13927,7 +13930,7 @@ class TextLayer {
           this.#container = document.createElement("span");
           this.#container.classList.add("markedContent");
           if (item.id) {
-            this.#container.setAttribute("id", `${item.id}`);
+            this.#container.setAttribute("id", item.id);
           }
           if (item.tag === "Artifact") {
             this.#container.ariaHidden = true;
@@ -14171,10 +14174,10 @@ function getDocument(src = {}) {
   const wasmUrl = getFactoryUrlProp(src.wasmUrl);
   const ignoreErrors = src.stopAtErrors !== true;
   const maxImageSize = Number.isInteger(src.maxImageSize) && src.maxImageSize > -1 ? src.maxImageSize : -1;
-  const isOffscreenCanvasSupported = typeof src.isOffscreenCanvasSupported === "boolean" ? src.isOffscreenCanvasSupported : !isNodeJS;
-  const isImageDecoderSupported = typeof src.isImageDecoderSupported === "boolean" ? src.isImageDecoderSupported : !isNodeJS;
+  const isOffscreenCanvasSupported = typeof src.isOffscreenCanvasSupported === "boolean" ? src.isOffscreenCanvasSupported : !(/* inlined export .isNodeJS */false);
+  const isImageDecoderSupported = typeof src.isImageDecoderSupported === "boolean" ? src.isImageDecoderSupported : !(/* inlined export .isNodeJS */false);
   const canvasMaxAreaInBytes = Number.isInteger(src.canvasMaxAreaInBytes) ? src.canvasMaxAreaInBytes : -1;
-  const disableFontFace = typeof src.disableFontFace === "boolean" ? src.disableFontFace : isNodeJS;
+  const disableFontFace = typeof src.disableFontFace === "boolean" ? src.disableFontFace : (/* inlined export .isNodeJS */false);
   const fontExtraProperties = src.fontExtraProperties === true;
   const enableXfa = src.enableXfa === true;
   const ownerDocument = src.ownerDocument || globalThis.document;
@@ -14184,13 +14187,13 @@ function getDocument(src = {}) {
   const pdfBug = src.pdfBug === true;
   const CanvasFactory = src.CanvasFactory || DOMCanvasFactory;
   const FilterFactory = src.FilterFactory || DOMFilterFactory;
-  const BinaryDataFactory = src.BinaryDataFactory || DOMBinaryDataFactory;
+  const BinaryDataFactory = src.BinaryDataFactory || (/* inlined export .DOMBinaryDataFactory */null);
   const enableHWA = src.enableHWA === true;
   const enableWebGPU = src.enableWebGPU === true;
   const gpuPromise = enableWebGPU ? initGPU() : Promise.resolve(false);
   const useWasm = src.useWasm !== false;
   const pagesMapper = src.pagesMapper || new PagesMapper();
-  const useSystemFonts = typeof src.useSystemFonts === "boolean" ? src.useSystemFonts : !isNodeJS && !disableFontFace;
+  const useSystemFonts = typeof src.useSystemFonts === "boolean" ? src.useSystemFonts : !(/* inlined export .isNodeJS */false) && !disableFontFace;
   const useWorkerFetch = typeof src.useWorkerFetch === "boolean" ? src.useWorkerFetch : true;
   const styleElement = null;
   setVerbosityLevel(verbosity);
@@ -14214,7 +14217,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "6.0.346",
+    apiVersion: "6.1.335",
     data,
     password,
     disableAutoFetch,
@@ -14476,6 +14479,12 @@ class PDFDocumentProxy {
   }
   getFieldObjects() {
     return this._transport.getFieldObjects();
+  }
+  getSignatures() {
+    return this._transport.getSignatures();
+  }
+  getSignatureData(id) {
+    return this._transport.getSignatureData(id);
   }
   hasJSActions() {
     return this._transport.hasJSActions();
@@ -15563,6 +15572,12 @@ class WorkerTransport {
   getFieldObjects() {
     return this.#cacheSimpleMethod("GetFieldObjects");
   }
+  getSignatures() {
+    return this.#cacheSimpleMethod("GetSignatures");
+  }
+  getSignatureData(id) {
+    return this.messageHandler.sendWithPromise("GetSignatureData", id);
+  }
   hasJSActions() {
     return this.#cacheSimpleMethod("HasJSActions");
   }
@@ -15863,8 +15878,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "6.0.346";
-const build = "e75a7cfd6";
+const version = "6.1.335";
+const build = "dd7e3731d";
 
 ;// ./src/display/editor/color_picker.js
 
@@ -16349,6 +16364,10 @@ class AnnotationElementFactory {
         return new StampAnnotationElement(parameters);
       case AnnotationType.FILEATTACHMENT:
         return new FileAttachmentAnnotationElement(parameters);
+      case AnnotationType.RICHMEDIA:
+      case AnnotationType.SCREEN:
+      case AnnotationType.SOUND:
+        return new MediaAnnotationElement(parameters);
       default:
         return new AnnotationElement(parameters);
     }
@@ -16585,7 +16604,7 @@ class AnnotationElement {
     } = this;
     const container = document.createElement("section");
     container.setAttribute("data-annotation-id", data.id);
-    if (!(this instanceof WidgetAnnotationElement) && !(this instanceof LinkAnnotationElement)) {
+    if (!(this instanceof WidgetAnnotationElement) && !(this instanceof LinkAnnotationElement) && !(this instanceof MediaAnnotationElement)) {
       container.tabIndex = 0;
     }
     const {
@@ -17017,6 +17036,10 @@ class AnnotationElement {
   get height() {
     return this.data.rect[3] - this.data.rect[1];
   }
+  _setBackgroundColor(element) {
+    const color = this.data.backgroundColor || null;
+    element.style.backgroundColor = color === null ? "transparent" : Util.makeHexColor(...color);
+  }
 }
 class EditorAnnotationElement extends AnnotationElement {
   constructor(parameters) {
@@ -17197,9 +17220,7 @@ class LinkAnnotationElement extends AnnotationElement {
     if (data.overlaidText) {
       link.title = data.overlaidText;
     }
-    if (!link.onclick) {
-      link.onclick = () => false;
-    }
+    link.onclick ||= () => false;
     this.#setInternalLink();
   }
   _bindResetFormAction(link, resetForm) {
@@ -17392,10 +17413,6 @@ class WidgetAnnotationElement extends AnnotationElement {
       }
     }
   }
-  _setBackgroundColor(element) {
-    const color = this.data.backgroundColor || null;
-    element.style.backgroundColor = color === null ? "transparent" : Util.makeHexColor(...color);
-  }
   _setTextStyle(element) {
     const TEXT_ALIGNMENT = ["left", "center", "right"];
     const {
@@ -17408,12 +17425,12 @@ class WidgetAnnotationElement extends AnnotationElement {
     const roundToOneDecimal = x => Math.round(10 * x) / 10;
     if (this.data.multiLine) {
       const height = Math.abs(this.data.rect[3] - this.data.rect[1] - BORDER_SIZE);
-      const numberOfLines = Math.round(height / (LINE_FACTOR * fontSize)) || 1;
+      const numberOfLines = Math.round(height / ((/* inlined export .LINE_FACTOR */1.35) * fontSize)) || 1;
       const lineHeight = height / numberOfLines;
-      computedFontSize = Math.min(fontSize, roundToOneDecimal(lineHeight / LINE_FACTOR));
+      computedFontSize = Math.min(fontSize, roundToOneDecimal(lineHeight / (/* inlined export .LINE_FACTOR */1.35)));
     } else {
       const height = Math.abs(this.data.rect[3] - this.data.rect[1] - BORDER_SIZE);
-      computedFontSize = Math.min(fontSize, roundToOneDecimal(height / LINE_FACTOR));
+      computedFontSize = Math.min(fontSize, roundToOneDecimal(height / (/* inlined export .LINE_FACTOR */1.35)));
     }
     style.fontSize = `calc(${computedFontSize}px * var(--total-scale-factor))`;
     style.color = Util.makeHexColor(...fontColor);
@@ -19131,10 +19148,10 @@ class InkAnnotationElement extends AnnotationElement {
     g.setAttribute("stroke", "transparent");
     g.setAttribute("fill", "transparent");
     g.setAttribute("transform", transform);
-    for (let i = 0, ii = inkLists.length; i < ii; i++) {
+    for (const inkList of inkLists) {
       const polyline = this.svgFactory.createElement(this.svgElementName);
       this.#polylines.push(polyline);
-      polyline.setAttribute("points", inkLists[i].join(","));
+      polyline.setAttribute("points", inkList.join(","));
       g.append(polyline);
     }
     if (!popupRef && this.hasPopupData) {
@@ -19388,6 +19405,120 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
     }
   }
 }
+class MediaAnnotationElement extends AnnotationElement {
+  #abortController = new AbortController();
+  #contentUrl = null;
+  #media = null;
+  constructor(parameters) {
+    super(parameters, {
+      isRenderable: !!parameters.data.richMedia
+    });
+  }
+  render() {
+    this.container.classList.add("mediaAnnotation");
+    const {
+      filename
+    } = this.data.richMedia;
+    const button = document.createElement("button");
+    button.className = "mediaPlayButton";
+    button.type = "button";
+    button.title = button.ariaLabel = filename;
+    button.addEventListener("click", () => this.#load(button), {
+      signal: this.#abortController.signal
+    });
+    this.container.append(button);
+    return this.container;
+  }
+  async #load(button) {
+    const {
+      fileId,
+      filename,
+      contentType
+    } = this.data.richMedia;
+    button.disabled = true;
+    let content;
+    try {
+      content = await this.linkService.getAttachmentContent(fileId);
+    } catch {
+      return;
+    } finally {
+      button.disabled = false;
+    }
+    if (!content || !button.isConnected) {
+      return;
+    }
+    const {
+      signal
+    } = this.#abortController;
+    const url = URL.createObjectURL(new Blob([content], {
+      type: contentType
+    }));
+    this.#contentUrl = url;
+    const isAudio = contentType.startsWith("audio/");
+    const media = document.createElement(isAudio ? "audio" : "video");
+    this.#media = media;
+    media.className = "mediaContent";
+    this._setBackgroundColor(media);
+    media.src = url;
+    media.title = filename;
+    media.controls = true;
+    media.autoplay = true;
+    media.tabIndex = 0;
+    if (isAudio) {
+      let hovered = false;
+      let focused = false;
+      const updateControls = () => {
+        media.controls = hovered || focused;
+      };
+      this.container.addEventListener("pointerenter", () => {
+        hovered = true;
+        updateControls();
+      }, {
+        signal
+      });
+      this.container.addEventListener("pointerleave", () => {
+        hovered = false;
+        updateControls();
+      }, {
+        signal
+      });
+      this.container.addEventListener("focusin", () => {
+        focused = true;
+        updateControls();
+      }, {
+        signal
+      });
+      this.container.addEventListener("focusout", () => {
+        focused = false;
+        updateControls();
+      }, {
+        signal
+      });
+    }
+    media.addEventListener("emptied", () => this.#revokeContentUrl(url), {
+      once: true,
+      signal
+    });
+    button.replaceWith(media);
+    media.play().catch(() => {});
+  }
+  #revokeContentUrl(url = this.#contentUrl) {
+    if (url && url === this.#contentUrl) {
+      URL.revokeObjectURL(url);
+      this.#contentUrl = null;
+    }
+  }
+  destroy() {
+    this.#abortController.abort();
+    if (this.#media) {
+      this.#media.pause();
+      this.#media.removeAttribute("src");
+      this.#media.load();
+      this.#media = null;
+    }
+    this.#revokeContentUrl();
+  }
+}
 class AnnotationLayer {
   #accessibilityManager = null;
   #annotationCanvasMap = null;
@@ -19614,6 +19745,15 @@ class AnnotationLayer {
     }
     this.#setAnnotationCanvasMap();
     layer.hidden = false;
+  }
+  destroy() {
+    for (const element of this.#elements) {
+      element.destroy?.();
+      this.#accessibilityManager?.removePointerInTextLayer(element.contentElement);
+    }
+    this.#elements.length = 0;
+    this.#editableAnnotations.clear();
+    this.div.replaceChildren();
   }
   #setAnnotationCanvasMap() {
     if (!this.#annotationCanvasMap) {
@@ -20289,7 +20429,7 @@ class FreeTextEditor extends AnnotationEditor {
           }
         }
       } = data;
-      if (!textContent || textContent.length === 0) {
+      if (!textContent?.length) {
         return null;
       }
       initialData = data = {
@@ -21052,9 +21192,6 @@ class HighlightOutline extends Outline {
   }
   get box() {
     return this.#box;
-  }
-  get classNamesForOutlining() {
-    return ["highlightOutline"];
   }
 }
 class FreeHighlightOutliner extends FreeDrawOutliner {
@@ -22642,7 +22779,7 @@ class InkDrawOutliner {
     return Outline._normalizePoint(x, y, this.#parentWidth, this.#parentHeight, this.#rotation);
   }
   isEmpty() {
-    return !this.#lines || this.#lines.length === 0;
+    return !this.#lines?.length;
   }
   isCancellable() {
     return this.#points.length <= 10;
@@ -24871,9 +25008,7 @@ class StampEditor extends AnnotationEditor {
     }
   }
   copyCanvas(maxDataDimension, maxPreviewDimension, createImageData = false) {
-    if (!maxDataDimension) {
-      maxDataDimension = 224;
-    }
+    maxDataDimension ||= 224;
     const {
       width: bitmapWidth,
       height: bitmapHeight
@@ -26698,6 +26833,7 @@ globalThis.pdfjsLib = {
   makeArr: makeArr,
   makeMap: makeMap,
   makeObj: makeObj,
+  makeSet: makeSet,
   MathClamp: MathClamp,
   noContextMenu: noContextMenu,
   normalizeUnicode: normalizeUnicode,
@@ -26728,4 +26864,4 @@ globalThis.pdfjsLib = {
   XfaLayer: XfaLayer
 };
 
-export { AbortException, AnnotationEditorLayer, AnnotationEditorParamsType, AnnotationEditorType, AnnotationEditorUIManager, AnnotationLayer, AnnotationMode, AnnotationType, CSSConstants, ColorPicker, DOMSVGFactory, DrawLayer, FeatureTest, GlobalWorkerOptions, ImageKind, InvalidPDFException, MathClamp, OPS, OutputScale, PDFDataRangeTransport, PDFDateString, PDFWorker, PasswordException, PasswordResponses, PermissionFlag, PixelsPerInch, RenderingCancelledException, ResponseException, SignatureExtractor, SupportedImageMimeTypes, TextLayer, TextLayerImages, TouchManager, Util, VerbosityLevel, XfaLayer, applyOpacity, build, createValidAbsoluteUrl, fetchData, findContrastColor, getDocument, getFilenameFromUrl, getPdfFilenameFromUrl, getRGB, getRGBA, getUuid, isDataScheme, isPdfFile, isValidExplicitDest, makeArr, makeMap, makeObj, noContextMenu, normalizeUnicode, renderRichText, setLayerDimensions, shadow, stopEvent, updateUrlHash, version };
+export { AbortException, AnnotationEditorLayer, AnnotationEditorParamsType, AnnotationEditorType, AnnotationEditorUIManager, AnnotationLayer, AnnotationMode, AnnotationType, CSSConstants, ColorPicker, DOMSVGFactory, DrawLayer, FeatureTest, GlobalWorkerOptions, ImageKind, InvalidPDFException, MathClamp, OPS, OutputScale, PDFDataRangeTransport, PDFDateString, PDFWorker, PasswordException, PasswordResponses, PermissionFlag, PixelsPerInch, RenderingCancelledException, ResponseException, SignatureExtractor, SupportedImageMimeTypes, TextLayer, TextLayerImages, TouchManager, Util, VerbosityLevel, XfaLayer, applyOpacity, build, createValidAbsoluteUrl, fetchData, findContrastColor, getDocument, getFilenameFromUrl, getPdfFilenameFromUrl, getRGB, getRGBA, getUuid, isDataScheme, isPdfFile, isValidExplicitDest, makeArr, makeMap, makeObj, makeSet, noContextMenu, normalizeUnicode, renderRichText, setLayerDimensions, shadow, stopEvent, updateUrlHash, version };

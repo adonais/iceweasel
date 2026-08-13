@@ -10,6 +10,7 @@
 #include "mozilla/Maybe.h"
 
 #include <stdint.h>
+
 #include "NamespaceImports.h"
 
 #include "jit/CacheIR.h"

@@ -1,6 +1,11 @@
 /* Any copyright is dedicated to the Public Domain.
    http://creativecommons.org/publicdomain/zero/1.0/ */
 
+const FirefoxViewTestUtils = ChromeUtils.importESModule(
+  "resource://testing-common/FirefoxViewTestUtils.sys.mjs"
+);
+FirefoxViewTestUtils.init(this);
+
 async function openTabMenuFor(tab) {
   let tabMenu = tab.ownerDocument.getElementById("tabContextMenu");
 
@@ -35,6 +40,7 @@ add_setup(async function () {
     uriString: "http://mochi.test:8888/#originalTab",
   });
   let originalTab = gBrowser.selectedTab;
+  FirefoxViewTestUtils.enableFirefoxViewButton(window);
   // switch to Firefox View tab to initialize it
   FirefoxViewHandler.openTab();
   // switch back to the original tab since tests expect this

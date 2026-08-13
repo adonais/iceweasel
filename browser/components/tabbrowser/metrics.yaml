@@ -982,6 +982,92 @@ splitview:
         description: Rounded percentage of view area width
         type: quantity
 
+tab:
+  actions:
+    type: labeled_counter
+    description: >
+      Records how many times the user invoked a specific action regardless of
+      how many tabs were included in the action.
+    bugs:
+      - https://bugzil.la/2039847
+    data_reviews:
+      - https://bugzil.la/2039847
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - dao@mozilla.com
+      - dtownsend@mozilla.com
+    expires: never
+    labels:
+      - "activate"
+      - "adopt"
+      - "close"
+      - "detach"
+      - "move"
+      - "pin"
+      - "unpin"
+
+  tab_count:
+    type: labeled_counter
+    description: >
+      Records how many tabs were impacted by actions the user took.
+    bugs:
+      - https://bugzil.la/2039847
+    data_reviews:
+      - https://bugzil.la/2039847
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - dao@mozilla.com
+      - dtownsend@mozilla.com
+    expires: never
+    labels:
+      - "activate"
+      - "adopt"
+      - "close"
+      - "detach"
+      - "move"
+      - "pin"
+      - "unpin"
+
+  interaction:
+    type: event
+    description: >
+      Recorded when the user performs some action in the tab strip.
+    bugs:
+      - https://bugzil.la/2039847
+    data_reviews:
+      - https://bugzil.la/2039847
+    notification_emails:
+      - dao@mozilla.com
+      - dtownsend@mozilla.com
+    data_sensitivity:
+      - interaction
+    extra_keys:
+      action:
+        description: >
+          The type of interaction (see METRIC_ACTION in `TabMetrics.sys.mjs`):
+            * activate
+            * adopt
+            * close
+            * detach
+            * move
+            * pin
+            * unpin
+        type: string
+      source:
+        description: >
+          The UI mechanism used, see METRIC_SOURCE in `TabMetrics.sys.mjs`.
+        type: string
+      layout:
+        description: "The tab strip layout: horizontal or vertical."
+        type: string
+      tab_count:
+        description: >
+          The number of tabs involved in the action.
+        type: quantity
+    expires: never
+
 performance.interaction:
   tab_switch_composite:
     type: timing_distribution

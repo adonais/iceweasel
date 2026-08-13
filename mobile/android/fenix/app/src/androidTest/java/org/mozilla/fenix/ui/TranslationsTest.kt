@@ -32,7 +32,6 @@ class TranslationsTest {
         AndroidComposeTestRuleV2(
             HomeActivityIntentTestRule(
                 skipOnboarding = true,
-                isMenuRedesignCFREnabled = false,
                 isPageLoadTranslationsPromptEnabled = true,
             ),
         ) { it.activity }

@@ -64,7 +64,7 @@ SETUP = {
         jj git init --colocate
         jj config set --repo user.name "Testing McTesterson"
         jj config set --repo user.email "test@example.org"
-        jj describe --reset-author --no-edit
+        jj metaedit --update-author
         jj abandon
         """,
         """

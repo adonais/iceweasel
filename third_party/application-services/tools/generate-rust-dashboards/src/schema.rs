@@ -35,6 +35,7 @@ pub struct Dashboard {
 #[serde(rename_all = "lowercase")]
 pub enum Panel {
     Row(PanelRow),
+    Text(TextPanel),
     Logs(LogPanel),
     TimeSeries(TimeSeriesPanel),
     PieChart(PieChartPanel),
@@ -45,6 +46,14 @@ pub enum Panel {
 pub struct PanelRow {
     pub title: String,
     pub collapsed: bool,
+    pub grid_pos: GridPos,
+}
+
+#[derive(Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TextPanel {
+    pub content: String,
+    pub mode: String,
     pub grid_pos: GridPos,
 }
 
@@ -234,6 +243,29 @@ pub enum Transformation {
         regex: String,
         rename_pattern: String,
     },
+    #[serde(rename_all = "camelCase")]
+    CalculateField(CalculateFieldOptions),
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+#[serde(tag = "mode")]
+pub enum CalculateFieldOptions {
+    #[serde(rename_all = "camelCase")]
+    WindowFunctions {
+        window: WindowFunctionWindow,
+        replace_fields: bool,
+    },
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WindowFunctionWindow {
+    pub field: String,
+    pub reducer: String,
+    pub window_alignment: String,
+    pub window_size_mode: String,
+    pub window_size: f32,
 }
 
 #[derive(Default, Serialize, Clone, Copy)]
@@ -482,6 +514,7 @@ impl Panel {
     fn grid_pos_mut(&mut self) -> &mut GridPos {
         match self {
             Self::Row(p) => &mut p.grid_pos,
+            Self::Text(p) => &mut p.grid_pos,
             Self::Logs(p) => &mut p.grid_pos,
             Self::TimeSeries(p) => &mut p.grid_pos,
             Self::PieChart(p) => &mut p.grid_pos,
@@ -492,6 +525,12 @@ impl Panel {
 impl From<PanelRow> for Panel {
     fn from(p: PanelRow) -> Self {
         Self::Row(p)
+    }
+}
+
+impl From<TextPanel> for Panel {
+    fn from(p: TextPanel) -> Self {
+        Self::Text(p)
     }
 }
 

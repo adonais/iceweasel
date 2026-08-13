@@ -8,5 +8,29 @@
     android:viewportHeight="24">
     <path
         android:fillColor="@color/mozac_ui_icons_fill"
-        android:pathData="M4 4.5h2.5V7H4V4.5zm2.5 6H4V13h2.5v-2.5zm6.75 0h-2.5V13h2.5v-2.5zm4.25 0H20V13h-2.5v-2.5zm-11 6H4V19h2.5v-2.5zm4.25 0h2.5V19h-2.5v-2.5zm9.25 0h-2.5V19H20v-2.5zm-6.75-12h-2.5V7h2.5V4.5zm4.25 0H20V7h-2.5V4.5z" />
+        android:pathData="M7,16.5C7.276,16.5 7.5,16.724 7.5,17V18.5C7.5,18.776 7.276,19 7,19H5.5C5.224,19 5,18.776 5,18.5V17C5,16.724 5.224,16.5 5.5,16.5H7Z" />
+    <path
+        android:fillColor="@color/mozac_ui_icons_fill"
+        android:pathData="M12.75,16.5C13.026,16.5 13.25,16.724 13.25,17V18.5C13.25,18.776 13.026,19 12.75,19H11.25C10.974,19 10.75,18.776 10.75,18.5V17C10.75,16.724 10.974,16.5 11.25,16.5H12.75Z" />
+    <path
+        android:fillColor="@color/mozac_ui_icons_fill"
+        android:pathData="M18.5,16.5C18.776,16.5 19,16.724 19,17V18.5C19,18.776 18.776,19 18.5,19H17C16.724,19 16.5,18.776 16.5,18.5V17C16.5,16.724 16.724,16.5 17,16.5H18.5Z" />
+    <path
+        android:fillColor="@color/mozac_ui_icons_fill"
+        android:pathData="M7,10.75C7.276,10.75 7.5,10.974 7.5,11.25V12.75C7.5,13.026 7.276,13.25 7,13.25H5.5C5.224,13.25 5,13.026 5,12.75V11.25C5,10.974 5.224,10.75 5.5,10.75H7Z" />
+    <path
+        android:fillColor="@color/mozac_ui_icons_fill"
+        android:pathData="M12.75,10.75C13.026,10.75 13.25,10.974 13.25,11.25V12.75C13.25,13.026 13.026,13.25 12.75,13.25H11.25C10.974,13.25 10.75,13.026 10.75,12.75V11.25C10.75,10.974 10.974,10.75 11.25,10.75H12.75Z" />
+    <path
+        android:fillColor="@color/mozac_ui_icons_fill"
+        android:pathData="M18.5,10.75C18.776,10.75 19,10.974 19,11.25V12.75C19,13.026 18.776,13.25 18.5,13.25H17C16.724,13.25 16.5,13.026 16.5,12.75V11.25C16.5,10.974 16.724,10.75 17,10.75H18.5Z" />
+    <path
+        android:fillColor="@color/mozac_ui_icons_fill"
+        android:pathData="M7,5C7.276,5 7.5,5.224 7.5,5.5V7C7.5,7.276 7.276,7.5 7,7.5H5.5C5.224,7.5 5,7.276 5,7V5.5C5,5.224 5.224,5 5.5,5H7Z" />
+    <path
+        android:fillColor="@color/mozac_ui_icons_fill"
+        android:pathData="M12.75,5C13.026,5 13.25,5.224 13.25,5.5V7C13.25,7.276 13.026,7.5 12.75,7.5H11.25C10.974,7.5 10.75,7.276 10.75,7V5.5C10.75,5.224 10.974,5 11.25,5H12.75Z" />
+    <path
+        android:fillColor="@color/mozac_ui_icons_fill"
+        android:pathData="M18.5,5C18.776,5 19,5.224 19,5.5V7C19,7.276 18.776,7.5 18.5,7.5H17C16.724,7.5 16.5,7.276 16.5,7V5.5C16.5,5.224 16.724,5 17,5H18.5Z" />
 </vector>

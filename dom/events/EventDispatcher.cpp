@@ -16,6 +16,7 @@
 #include "DeviceMotionEvent.h"
 #include "DragEvent.h"
 #include "KeyboardEvent.h"
+#include "mozilla/Array.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ContentEvents.h"
@@ -694,14 +695,15 @@ void EventTargetChainItem::HandleEventTargetChain(
   }
 }
 
-// There are often 2 nested event dispatches ongoing at the same time, so
-// have 2 separate caches.
+// There are often several nested event dispatches ongoing at the same time
+// (for example a click's activation behavior dispatches a change event, whose
+// listener dispatches a further composed event), so keep a small pool of
+// caches rather than reallocating the chain storage for the deeper levels.
 static const uint32_t kCachedMainThreadChainSize = 128;
-struct CachedChains {
-  nsTArray<EventTargetChainItem> mChain1;
-  nsTArray<EventTargetChainItem> mChain2;
-};
-static CachedChains* sCachedMainThreadChains = nullptr;
+static const uint32_t kNumCachedMainThreadChains = 4;
+using CachedMainThreadChains =
+    mozilla::Array<nsTArray<EventTargetChainItem>, kNumCachedMainThreadChains>;
+static CachedMainThreadChains* sCachedMainThreadChains = nullptr;
 
 /* static */
 void EventDispatcher::Shutdown() {
@@ -1078,16 +1080,21 @@ nsresult EventDispatcher::Dispatch(EventTarget* aTarget,
   nsTArray<EventTargetChainItem> chain;
   if (cd.IsMainThread()) {
     if (!sCachedMainThreadChains) {
-      sCachedMainThreadChains = new CachedChains();
+      sCachedMainThreadChains = new CachedMainThreadChains();
     }
 
-    if (sCachedMainThreadChains->mChain1.Capacity() ==
-        kCachedMainThreadChainSize) {
-      chain = std::move(sCachedMainThreadChains->mChain1);
-    } else if (sCachedMainThreadChains->mChain2.Capacity() ==
-               kCachedMainThreadChainSize) {
-      chain = std::move(sCachedMainThreadChains->mChain2);
-    } else {
+    // Reuse the first cached chain whose storage is still allocated. If every
+    // slot is checked out by an outer (nested) dispatch, allocate fresh
+    // storage; it is donated back to the pool on the way out.
+    bool reused = false;
+    for (auto& cached : *sCachedMainThreadChains) {
+      if (cached.Capacity() == kCachedMainThreadChainSize) {
+        chain = std::move(cached);
+        reused = true;
+        break;
+      }
+    }
+    if (!reused) {
       chain.SetCapacity(kCachedMainThreadChainSize);
     }
   }
@@ -1455,14 +1462,13 @@ nsresult EventDispatcher::Dispatch(EventTarget* aTarget,
 
   if (cd.IsMainThread() && chain.Capacity() == kCachedMainThreadChainSize &&
       sCachedMainThreadChains) {
-    if (sCachedMainThreadChains->mChain1.Capacity() !=
-        kCachedMainThreadChainSize) {
-      chain.ClearAndRetainStorage();
-      chain.SwapElements(sCachedMainThreadChains->mChain1);
-    } else if (sCachedMainThreadChains->mChain2.Capacity() !=
-               kCachedMainThreadChainSize) {
-      chain.ClearAndRetainStorage();
-      chain.SwapElements(sCachedMainThreadChains->mChain2);
+    // Return the storage to the first free slot in the pool.
+    for (auto& cached : *sCachedMainThreadChains) {
+      if (cached.Capacity() != kCachedMainThreadChainSize) {
+        chain.ClearAndRetainStorage();
+        chain.SwapElements(cached);
+        break;
+      }
     }
   }
 

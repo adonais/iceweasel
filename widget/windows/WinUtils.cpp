@@ -8,65 +8,76 @@
 #include <psapi.h>
 #include <winioctl.h>
 
-#include "gfxPlatform.h"
-#include "gfxUtils.h"
-#include "nsWindow.h"
-#include "nsWindowDefs.h"
 #include "InputDeviceUtils.h"
 #include "KeyboardLayout.h"
+#include "WindowsUIUtils.h"
+#include "gfxPlatform.h"
+#include "gfxUtils.h"
+#include "imgIContainer.h"
+#include "imgITools.h"
 #include "mozilla/BackgroundHangMonitor.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/Logging.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/ProfilerThreadSleep.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/SchedulerGroup.h"
 #include "mozilla/StaticPrefs_widget.h"
+#include "mozilla/WinHeaderOnlyUtils.h"
+#include "mozilla/WindowsVersion.h"
 #include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/DataSurfaceHelpers.h"
 #include "mozilla/gfx/DisplayConfigWindows.h"
 #include "mozilla/gfx/Logging.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/ProfilerThreadSleep.h"
-#include "mozilla/RefPtr.h"
-#include "mozilla/SchedulerGroup.h"
-#include "mozilla/WindowsVersion.h"
-#include "mozilla/WinHeaderOnlyUtils.h"
-#include "nsIContentPolicy.h"
-#include "WindowsUIUtils.h"
+#include "mozilla/widget/WinRegistry.h"
 #include "nsContentUtils.h"
-#include "nsLookAndFeel.h"
-
-#include "mozilla/Logging.h"
-
-#include "nsString.h"
 #include "nsDirectoryServiceUtils.h"
-#include "imgIContainer.h"
-#include "imgITools.h"
-#include "nsNetUtil.h"
+#include "nsIContentPolicy.h"
 #include "nsIOutputStream.h"
+#include "nsIReferrerInfo.h"
+#include "nsIURIMutator.h"
+#include "nsLookAndFeel.h"
 #include "nsNetCID.h"
+#include "nsNetUtil.h"
+#include "nsString.h"
+#include "nsWindow.h"
+#include "nsWindowDefs.h"
 #include "prtime.h"
 #ifdef MOZ_PLACES
 #  include "mozilla/places/nsFaviconService.h"
 #endif
-#include "nsIDownloader.h"
-#include "nsIChannel.h"
-#include "nsIThread.h"
-#include "MainThreadUtils.h"
-#include "nsLookAndFeel.h"
-#include "nsUnicharUtils.h"
-#include "nsWindowsHelpers.h"
-#include "WinWindowOcclusionTracker.h"
-
-#include <textstor.h>
-#include "TSFUtils.h"
-
 #include <shellscalingapi.h>
 #include <shlobj.h>
 #include <shlwapi.h>
+#include <textstor.h>
+
+#include "MainThreadUtils.h"
+#include "TSFUtils.h"
+#include "WinWindowOcclusionTracker.h"
+#include "nsIChannel.h"
+#include "nsIDownloader.h"
+#include "nsIThread.h"
+#include "nsLookAndFeel.h"
+#include "nsUnicharUtils.h"
+#include "nsWindowsHelpers.h"
 
 mozilla::LazyLogModule gWindowsLog("Widget");
 
 using namespace mozilla::gfx;
 
 namespace mozilla::widget {
+
+/**
+ * Security Zone constants.
+ */
+enum Zone {
+  ZONE_MY_COMPUTER = 0ul,
+  ZONE_INTRANET = 1ul,
+  ZONE_TRUSTED = 2ul,
+  ZONE_INTERNET = 3ul,
+  ZONE_RESTRICTED = 4ul
+};
 
 #ifdef MOZ_PLACES
 NS_IMPL_ISUPPORTS(myDownloadObserver, nsIDownloadObserver)
@@ -492,6 +503,23 @@ void WinUtils::SetNSWindowPtr(HWND aWnd, nsWindow* aWindow) {
 nsWindow* WinUtils::GetNSWindowPtr(HWND aWnd) {
   MOZ_ASSERT(NS_IsMainThread());
   return sExtantNSWindows.Get(aWnd);  // or nullptr
+}
+
+/* static */
+bool WinUtils::QueryCloaked(HWND aWnd) {
+  // Safe to call off the main thread: this is a standalone DWM query that does
+  // not touch any nsWindow state. The window occlusion calculator relies on it
+  // from its own thread.
+  DWORD cloakedState = 0;
+  HRESULT hr = ::DwmGetWindowAttribute(aWnd, DWMWA_CLOAKED, &cloakedState,
+                                       sizeof(cloakedState));
+  if (FAILED(hr)) {
+    static mozilla::LazyLogModule sCloakingLog("DWMCloaking");
+    MOZ_LOG(sCloakingLog, LogLevel::Warning,
+            ("failed (%08lX) to query cloaking state for HWND %p", hr, aWnd));
+    return false;
+  }
+  return cloakedState != 0;
 }
 
 /* static */
@@ -2027,6 +2055,174 @@ static BOOL CALLBACK InvalidateWindowPreviewsProc(HWND aHwnd, LPARAM aLParam) {
 
 void WinUtils::InvalidateWindowPreviews() {
   ::EnumWindows(InvalidateWindowPreviewsProc, 0);
+}
+
+static Result<DWORD, nsresult> MapUrlToZone(const nsAString& aURL) {
+  RefPtr<IInternetSecurityManager> inetSecMgr;
+  if (FAILED(CoCreateInstance(CLSID_InternetSecurityManager, NULL, CLSCTX_ALL,
+                              IID_IInternetSecurityManager,
+                              getter_AddRefs(inetSecMgr)))) {
+    return Err(NS_ERROR_UNEXPECTED);
+  }
+
+  DWORD zone;
+  if (inetSecMgr->MapUrlToZone(PromiseFlatString(aURL).get(), &zone, 0) !=
+      S_OK) {
+    return Err(NS_ERROR_UNEXPECTED);
+  }
+  return zone;
+}
+
+static bool ShouldSaveZoneInformation() {
+  WinRegistry::Key key(
+      HKEY_CURRENT_USER,
+      u"Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Attachments"_ns,
+      WinRegistry::KeyMode::QueryValue);
+
+  // Key values: 1 = do not store zone info.  2 = store zone info.
+  // Return true to save zone info on any error, such as the key not being
+  // present.
+  return !key ||
+         (key.GetValueAsDword(u"SaveZoneInformation"_ns).valueOr(2) != 1);
+}
+
+/**
+ * Builds a key and URL value pair for the "Zone.Identifier" Alternate Data
+ * Stream.
+ *
+ * @param aKey
+ *        String to write before the "=" sign. This is not validated.
+ * @param aUrl
+ *        URL string to write after the "=" sign. Only the "http(s)" and
+ *        "ftp" schemes are allowed, and usernames and passwords are
+ *        stripped.
+ * @param aFallback
+ *        Value to place after the "=" sign in case the URL scheme is not
+ *        allowed. If unspecified, an empty string is returned when the
+ *        scheme is not allowed.
+ * @return Line to add to the stream, including the final CRLF, or an empty
+ *         string if the validation failed.
+ */
+static nsCString ZoneIdKey(const nsACString& aKey, const nsACString& aUrl,
+                           const Maybe<nsCString>& aFallback = Nothing()) {
+  nsCString url;
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv = NS_NewURI(getter_AddRefs(uri), aUrl);
+  NS_ENSURE_SUCCESS(rv, ""_ns);
+  nsAutoCString scheme;
+  rv = uri->GetScheme(scheme);
+  NS_ENSURE_SUCCESS(rv, ""_ns);
+  auto isPermittedScheme =
+      scheme == "http" || scheme == "https" || scheme == "ftp";
+
+  if (isPermittedScheme) {
+    // Remove the user password if set.
+    rv = NS_MutateURI(uri).SetUserPass(""_ns).Finalize(uri);
+    NS_ENSURE_SUCCESS(rv, ""_ns);
+    rv = uri->GetSpec(url);
+    NS_ENSURE_SUCCESS(rv, ""_ns);
+  } else if (aFallback) {
+    url = *aFallback;
+  } else {
+    return ""_ns;
+  }
+  return aKey + "="_ns + url + "\r\n"_ns;
+}
+
+/* static */
+Result<bool, nsresult> WinUtils::MaybeWriteFileZoneIdSync(
+    nsIFile* aSaveFile, nsIURI* aSourceURI, nsIReferrerInfo* aReferrerInfo,
+    bool aShouldStoreUrls) {
+  NS_ENSURE_TRUE(aSaveFile, Err(NS_ERROR_INVALID_ARG));
+  NS_ENSURE_TRUE(aSourceURI, Err(NS_ERROR_INVALID_ARG));
+
+  // Only write zone info if registry says so.
+  if (!ShouldSaveZoneInformation()) {
+    return false;
+  }
+
+  nsCString sourceUrl;
+  MOZ_TRY(aSourceURI->GetSpec(sourceUrl));
+  nsCString referrerSpec;
+  if (aReferrerInfo) {
+    MOZ_TRY(aReferrerInfo->GetComputedReferrerSpec(referrerSpec));
+  }
+
+  // Default to Internet Zone if mapUrlToZone fails.
+  auto zone = MapUrlToZone(NS_ConvertUTF8toUTF16(sourceUrl))
+                  .unwrapOr(Zone::ZONE_INTERNET);
+
+  // Don't write zone IDs for Local, Intranet, or Trusted sites
+  // to match Windows behavior.
+  if (zone < Zone::ZONE_INTERNET) {
+    return false;
+  }
+
+  // Check that file still exists first.
+  bool exists;
+  MOZ_TRY(aSaveFile->Exists(&exists));
+  if (!exists) {
+    // We don't consider this an error.
+    NS_WARNING("Attempted to set zone id on non-existent file.");
+    return false;
+  }
+
+  nsAutoCString zoneId;
+  zoneId.AppendPrintf("[ZoneTransfer]\r\nZoneId=%lu\r\n", zone);
+  if (aShouldStoreUrls) {
+    zoneId += ZoneIdKey("ReferrerUrl"_ns, referrerSpec) +
+              ZoneIdKey("HostUrl"_ns, sourceUrl, Some("about:internet"_ns));
+  }
+
+  // Build the ADS path.  Use extended-length path syntax so that paths are not
+  // subject to the 260 character limit, which could be exceeded when we append
+  // ":Zone.Identifier".
+  nsString savePath;
+  MOZ_TRY(aSaveFile->GetPath(savePath));
+
+  auto isSlash = [](char aCh) { return aCh == '/' || aCh == '\\'; };
+  bool isUNC =
+      savePath.Length() >= 2 && isSlash(savePath[0]) && isSlash(savePath[1]);
+  nsString adsPath = isUNC ? u"\\\\?\\UNC\\"_ns + Substring(savePath, 2)
+                           : u"\\\\?\\"_ns + savePath;
+  adsPath += u":Zone.Identifier"_ns;
+
+  nsCOMPtr<nsIFile> adsFile;
+  MOZ_TRY(NS_NewLocalFile(adsPath, getter_AddRefs(adsFile)));
+
+  nsCOMPtr<nsIOutputStream> stream;
+  MOZ_TRY(NS_NewLocalFileOutputStream(getter_AddRefs(stream), adsFile,
+                                      PR_WRONLY | PR_TRUNCATE | PR_CREATE_FILE,
+                                      0666));
+
+  uint32_t bytesWritten;
+  MOZ_TRY(stream->Write(zoneId.get(), zoneId.Length(), &bytesWritten));
+  NS_ENSURE_TRUE(zoneId.Length() == bytesWritten,
+                 Err(NS_ERROR_FILE_NO_DEVICE_SPACE));
+  return true;
+}
+
+/* static */
+RefPtr<WinUtils::WriteFileZonePromise> WinUtils::MaybeWriteFileZoneId(
+    nsIFile* aSaveFile, nsIURI* aSourceURI, nsIReferrerInfo* aReferrerInfo,
+    bool aShouldStoreUrls) {
+  RefPtr promise = MakeRefPtr<WriteFileZonePromise::Private>(__func__);
+  nsresult rv = NS_DispatchBackgroundTask(NS_NewRunnableFunction(
+      "WriteFileZoneId",
+      [saveFile = RefPtr{aSaveFile}, sourceURI = RefPtr{aSourceURI},
+       referrerInfo = RefPtr{aReferrerInfo}, aShouldStoreUrls, promise]() {
+        auto result = MaybeWriteFileZoneIdSync(saveFile, sourceURI,
+                                               referrerInfo, aShouldStoreUrls);
+        if (result.isOk()) {
+          promise->Resolve(result.unwrap(), __func__);
+        } else {
+          promise->Reject(result.unwrapErr(), __func__);
+        }
+      }));
+  if (NS_FAILED(rv)) {
+    promise->Reject(rv, __func__);
+  }
+  return promise;
 }
 
 // There are undocumented APIs to query/change the system DPI settings found by

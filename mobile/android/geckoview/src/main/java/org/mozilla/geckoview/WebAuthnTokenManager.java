@@ -4,6 +4,7 @@
 
 package org.mozilla.geckoview;
 
+import android.annotation.SuppressLint;
 import android.app.PendingIntent;
 import android.net.Uri;
 import android.os.Build;
@@ -301,6 +302,9 @@ import org.mozilla.gecko.util.WebAuthnUtils;
     return result;
   }
 
+  // ThreadConstraint false positive: runs in a GeckoResult continuation on the UI thread, which
+  // lint cannot model.
+  @SuppressLint("ThreadConstraint")
   @WrapForJNI(calledFrom = "gecko")
   private static GeckoResult<WebAuthnUtils.MakeCredentialResponse> webAuthnMakeCredential(
       final GeckoBundle credentialBundle,
@@ -510,6 +514,9 @@ import org.mozilla.gecko.util.WebAuthnUtils;
     return result;
   }
 
+  // ThreadConstraint false positive: runs in a GeckoResult continuation on the UI thread, which
+  // lint cannot model.
+  @SuppressLint("ThreadConstraint")
   @WrapForJNI(calledFrom = "gecko")
   private static GeckoResult<WebAuthnUtils.GetAssertionResponse> webAuthnGetAssertion(
       final ByteBuffer challenge,

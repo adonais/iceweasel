@@ -9,6 +9,8 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   NavigableManager: "chrome://remote/content/shared/NavigableManager.sys.mjs",
   TabManager: "chrome://remote/content/shared/TabManager.sys.mjs",
+  UserContextManager:
+    "chrome://remote/content/shared/UserContextManager.sys.mjs",
 });
 
 class InputModule extends Module {
@@ -25,6 +27,9 @@ class InputModule extends Module {
       // Resolve browsing context to a Navigable id.
       payload.context =
         lazy.NavigableManager.getIdForBrowsingContext(browsingContext);
+      // Resolve the user context id for the browsing context.
+      payload.userContext =
+        lazy.UserContextManager.getIdByBrowsingContext(browsingContext);
     }
 
     return payload;

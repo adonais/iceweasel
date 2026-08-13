@@ -36,6 +36,8 @@ using mozilla::wr::ExternalImageId from "mozilla/webrender/WebRenderTypes.h";
 using mozilla::layers::SurfaceDescriptorRemoteDecoderId from "mozilla/layers/LayersTypes.h";
 using mozilla::ipc::ActorId from "mozilla/ipc/ProtocolUtils.h";
 [MoveOnly] using mozilla::ipc::ReadOnlySharedMemoryHandle from "mozilla/ipc/SharedMemoryHandle.h";
+using mozilla::layers::GpuProcessAndroidImageReaderId from "mozilla/layers/LayersTypes.h";
+using mozilla::layers::AndroidMediaCodecFrameId from "mozilla/layers/LayersTypes.h";
 
 namespace mozilla {
 namespace layers {
@@ -117,6 +119,14 @@ namespace layers {
   SurfaceFormat format;
 };
 
+[Comparable] struct AndroidImageReaderImageDescriptor {
+  GpuProcessAndroidImageReaderId imageReaderId;
+  AndroidMediaCodecFrameId frameId;
+  IntSize size;
+  SurfaceFormat format;
+};
+
+
 [Comparable] struct EGLImageDescriptor {
   uintptr_t image; // `EGLImage` is a `void*`.
   uintptr_t fence;
@@ -144,6 +154,7 @@ namespace layers {
   SurfaceDescriptorDMABuf;
   SurfaceDescriptorMacIOSurface;
   SurfaceDescriptorDcompSurface;
+  AndroidImageReaderImageDescriptor;
   null_t;
 };
 
@@ -230,6 +241,7 @@ struct SurfaceDescriptorShared
   SurfaceDescriptorDMABuf;
   SurfaceTextureDescriptor;
   SurfaceDescriptorAndroidHardwareBuffer;
+  AndroidImageReaderImageDescriptor;
   EGLImageDescriptor;
   SurfaceDescriptorMacIOSurface;
   SurfaceDescriptorSharedGLTexture;

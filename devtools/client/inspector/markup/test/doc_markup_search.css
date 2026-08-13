@@ -16,3 +16,11 @@
 dialog::backdrop {
   background-color: rgb(from hotpink r g b / 0.2);
 }
+
+select {
+  appearance: base-select;
+}
+/* stylelint-disable-next-line selector-pseudo-element-no-unknown */
+select::picker-icon {
+  background-color: hotpink;
+}

@@ -3,8 +3,6 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SandboxBrokerClient.h"
-#include "SandboxInfo.h"
-#include "SandboxLogging.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -16,9 +14,11 @@
 #include <sys/un.h>
 #include <unistd.h>
 
+#include "SandboxInfo.h"
+#include "SandboxLogging.h"
+#include "base/strings/safe_sprintf.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"
-#include "base/strings/safe_sprintf.h"
 
 namespace mozilla {
 

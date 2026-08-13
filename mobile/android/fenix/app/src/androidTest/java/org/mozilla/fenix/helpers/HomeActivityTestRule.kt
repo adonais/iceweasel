@@ -54,15 +54,12 @@ class HomeActivityTestRule(
         isWallpaperOnboardingEnabled: Boolean = settings.showWallpaperOnboarding,
         isDeleteSitePermissionsEnabled: Boolean = settings.deleteSitePermissions,
         isOpenInAppBannerEnabled: Boolean = settings.shouldShowOpenInAppBanner,
-        isUnifiedTrustPanelEnabled: Boolean = false,
         isHomepageSportsWidgetVisible: Boolean = false,
         etpPolicy: ETPPolicy = getETPPolicy(settings),
         isLocationPermissionEnabled: SitePermissionsRules.Action = getFeaturePermission(PhoneFeature.LOCATION, settings),
-        isMenuRedesignCFREnabled: Boolean = false,
         isPageLoadTranslationsPromptEnabled: Boolean = false,
         isMicrosurveyEnabled: Boolean = settings.microsurveyFeatureEnabled,
         shouldUseBottomToolbar: Boolean = settings.shouldUseBottomToolbar,
-        isUseNewCrashReporterFlow: Boolean = false,
         isIPProtectionEnabled: Boolean = false,
         isTabSwipeCFREnabled: Boolean = false,
         isTermsOfServiceAccepted: Boolean = true,
@@ -81,15 +78,12 @@ class HomeActivityTestRule(
         this.isWallpaperOnboardingEnabled = isWallpaperOnboardingEnabled
         this.isDeleteSitePermissionsEnabled = isDeleteSitePermissionsEnabled
         this.isOpenInAppBannerEnabled = isOpenInAppBannerEnabled
-        this.isUnifiedTrustPanelEnabled = isUnifiedTrustPanelEnabled
         this.isHomepageSportsWidgetVisible = isHomepageSportsWidgetVisible
         this.etpPolicy = etpPolicy
         this.isLocationPermissionEnabled = isLocationPermissionEnabled
-        this.isMenuRedesignCFREnabled = isMenuRedesignCFREnabled
         this.enableOrDisablePageLoadTranslationsPrompt(isPageLoadTranslationsPromptEnabled)
         this.isMicrosurveyEnabled = isMicrosurveyEnabled
         this.shouldUseBottomToolbar = shouldUseBottomToolbar
-        this.isUseNewCrashReporterFlow = isUseNewCrashReporterFlow
         this.enableOrDisableIPProtection(isIPProtectionEnabled)
         this.isTabSwipeCFREnabled = isTabSwipeCFREnabled
         this.isTermsOfServiceAccepted = isTermsOfServiceAccepted
@@ -160,7 +154,6 @@ class HomeActivityTestRule(
             shouldUseBottomToolbar = true,
             isPageLoadTranslationsPromptEnabled = false,
             isIPProtectionEnabled = false,
-            isUseNewCrashReporterFlow = useNewCrashReporterFlow,
             isTabSwipeCFREnabled = true,
             hasSeenShakeToSummarizeToolbarCfr = true,
             isTermsOfServiceAccepted = true,
@@ -197,11 +190,9 @@ class HomeActivityIntentTestRule internal constructor(
         isWallpaperOnboardingEnabled: Boolean = settings.showWallpaperOnboarding,
         isDeleteSitePermissionsEnabled: Boolean = settings.deleteSitePermissions,
         isOpenInAppBannerEnabled: Boolean = settings.shouldShowOpenInAppBanner,
-        isUnifiedTrustPanelEnabled: Boolean = false,
         isHomepageSportsWidgetVisible: Boolean = false,
         etpPolicy: ETPPolicy = getETPPolicy(settings),
         isLocationPermissionEnabled: SitePermissionsRules.Action = getFeaturePermission(PhoneFeature.LOCATION, settings),
-        isMenuRedesignCFREnabled: Boolean = false,
         isPageLoadTranslationsPromptEnabled: Boolean = false,
         isMicrosurveyEnabled: Boolean = settings.microsurveyFeatureEnabled,
         shouldUseBottomToolbar: Boolean = settings.shouldUseBottomToolbar,
@@ -225,11 +216,9 @@ class HomeActivityIntentTestRule internal constructor(
         this.isWallpaperOnboardingEnabled = isWallpaperOnboardingEnabled
         this.isDeleteSitePermissionsEnabled = isDeleteSitePermissionsEnabled
         this.isOpenInAppBannerEnabled = isOpenInAppBannerEnabled
-        this.isUnifiedTrustPanelEnabled = isUnifiedTrustPanelEnabled
         this.isHomepageSportsWidgetVisible = isHomepageSportsWidgetVisible
         this.etpPolicy = etpPolicy
         this.isLocationPermissionEnabled = isLocationPermissionEnabled
-        this.isMenuRedesignCFREnabled = isMenuRedesignCFREnabled
         this.enableOrDisablePageLoadTranslationsPrompt(isPageLoadTranslationsPromptEnabled)
         this.isMicrosurveyEnabled = isMicrosurveyEnabled
         this.shouldUseBottomToolbar = shouldUseBottomToolbar
@@ -307,11 +296,9 @@ class HomeActivityIntentTestRule internal constructor(
         isWallpaperOnboardingEnabled = settings.showWallpaperOnboarding
         isDeleteSitePermissionsEnabled = settings.deleteSitePermissions
         isOpenInAppBannerEnabled = settings.shouldShowOpenInAppBanner
-        isUnifiedTrustPanelEnabled = settings.enableUnifiedTrustPanel
         isHomepageSportsWidgetVisible = settings.showHomepageSportsWidget
         etpPolicy = getETPPolicy(settings)
         isLocationPermissionEnabled = getFeaturePermission(PhoneFeature.LOCATION, settings)
-        isMenuRedesignCFREnabled = settings.shouldShowMenuCFR
         isMicrosurveyEnabled = settings.microsurveyFeatureEnabled
         shouldUseBottomToolbar = settings.shouldUseBottomToolbar
         isTabSwipeCFREnabled = !settings.hasShownTabSwipeCFR

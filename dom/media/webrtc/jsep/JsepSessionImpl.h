@@ -20,6 +20,14 @@
 
 namespace mozilla {
 
+// Due to the mixing of parsing and validation during the parse step it is
+// necessary to distinguish between the two types of failures.
+enum class JsepParseTimeExceptionType {
+  None,
+  Operation,
+  InvalidAccess,
+};
+
 // JsepSessionImpl members that have default copy c'tors, to simplify the
 // implementation of the copy c'tor for JsepSessionImpl
 class JsepSessionCopyableStuff {
@@ -208,7 +216,8 @@ class JsepSessionImpl : public JsepSession, public JsepSessionCopyableStuff {
   nsresult SetupIds();
   void SetState(JsepSignalingState state);
   // Non-const so it can set mLastError
-  nsresult ParseSdp(const std::string& sdp, UniquePtr<Sdp>* parsedp);
+  JsepParseTimeExceptionType ParseSdp(const std::string& sdp,
+                                      UniquePtr<Sdp>* parsedp);
   nsresult SetLocalDescriptionOffer(UniquePtr<Sdp> offer);
   nsresult SetLocalDescriptionAnswer(JsepSdpType type, UniquePtr<Sdp> answer);
   nsresult SetRemoteDescriptionOffer(UniquePtr<Sdp> offer);

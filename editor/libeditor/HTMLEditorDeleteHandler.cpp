@@ -524,7 +524,7 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleDeleteSelection(
   MOZ_ASSERT(aStripWrappers == nsIEditor::eStrip ||
              aStripWrappers == nsIEditor::eNoStrip);
 
-  if (RefPtr<EditContext> editContext = GetEditContext()) {
+  if (RefPtr editContext = GetEditActionEditContext()) {
     MOZ_ASSERT(
         GetTopLevelEditSubAction() == EditSubAction::eDeleteSelectedContent,
         "Should not reach here if deletion is for preparing to insert text.");
@@ -541,7 +541,7 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleDeleteSelection(
       if (NS_WARN_IF(Destroyed())) {
         return Err(NS_ERROR_EDITOR_DESTROYED);
       }
-      if (editContext != GetEditContext()) {
+      if (EditContextChangedSinceStartOfEditAction()) {
         // textupdate handler deactivated this EditContext
         return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
       }
@@ -556,7 +556,7 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleDeleteSelection(
     if (NS_WARN_IF(Destroyed())) {
       return Err(NS_ERROR_EDITOR_DESTROYED);
     }
-    if (NS_WARN_IF(editContext != GetEditContext())) {
+    if (EditContextChangedSinceStartOfEditAction()) {
       // EditContext was deactivated by reflow
       return Err(NS_ERROR_FAILURE);
     }
@@ -576,20 +576,46 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleDeleteSelection(
     nsresult rv = deleteHandler.ComputeRangesToDelete(
         *this, aDirectionAndAmount, rangeArray, *textContainer);
     NS_ENSURE_SUCCESS(rv, Err(rv));
+    if (rangeArray.Ranges().IsEmpty()) {
+      // Deletion was cancelled by AutoCaretBidiLevelManager
+      return EditActionResult::HandledResult();
+    }
     EditorDOMPoint deletionStart =
         rangeArray.GetFirstRangeStartPoint<EditorDOMPoint>();
     EditorDOMPoint deletionEnd =
         rangeArray.GetFirstRangeEndPoint<EditorDOMPoint>();
     MOZ_ASSERT(deletionStart.GetContainer() == text);
     MOZ_ASSERT(deletionEnd.GetContainer() == text);
+    RefPtr<nsFrameSelection> frameSelection =
+        SelectionRef().GetFrameSelection();
+    if (NS_WARN_IF(!frameSelection)) {
+      return Err(NS_ERROR_FAILURE);
+    }
+    AutoCaretBidiLevelManager bidiLevelManager(*this, aDirectionAndAmount,
+                                               *editContext);
     editContext->UpdateTextAndFireEvent(deletionStart.Offset(),
                                         deletionEnd.Offset(), u""_ns);
     if (NS_WARN_IF(Destroyed())) {
       return Err(NS_ERROR_EDITOR_DESTROYED);
     }
-    if (editContext != GetEditContext()) {
+    if (EditContextChangedSinceStartOfEditAction()) {
       // textupdate handler deactivated this EditContext
       return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+    }
+
+    // Set caret association according to whether this is a forward or backward
+    // deletion, so that the caret moves to the position of the deleted text in
+    // BiDi cases.
+    // However, we don't want to do this if the textupdate handler
+    // changed the text next to the caret, since then this may not be a simple
+    // deletion.
+    if (!editContext->WasTextNextToCaretChangedByTextUpdateHandler()) {
+      bidiLevelManager.MaybeUpdateCaretBidiLevel(*this);
+      frameSelection->SetHint(DirectionIsBackspace(aDirectionAndAmount)
+                                  ? CaretAssociationHint::Before
+                                  : CaretAssociationHint::After);
+      // Otherwise DeleteSelectionAsSubAction will overwrite this.
+      TopLevelEditSubActionDataRef().mDidExplicitlySetInterLine = true;
     }
     return EditActionResult::HandledResult();
   }

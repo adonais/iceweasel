@@ -418,7 +418,7 @@ void SVGUseElement::UpdateShadowTree() {
   if (!shadow) {
     ShadowRootInit init;
     init.mMode = ShadowRootMode::Closed;
-    shadow = AttachShadowWithoutNameChecks(init);
+    shadow = AttachShadowWithoutNameChecks(init, Nothing());
   }
   MOZ_ASSERT(shadow);
 

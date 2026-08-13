@@ -33,8 +33,6 @@ task-defaults:
 tasks:
     fenix:
         description: 'Generate macrobenchmark apks for fenix with baseline profile.'
-        attributes:
-            shipping-product: fenix
         dependencies:
             build-fat-aar: build-fat-aar-android-geckoview-fat-aar/opt
             baseline-profile: generate-baseline-profile-firebase-fenix

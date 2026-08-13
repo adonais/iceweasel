@@ -122,7 +122,7 @@ bool TelemetryIOInterposeObserver::ReflectFileStats(FileIOEntryType* entry,
 
     // Array we want to report
     JS::RootedValueArray<6> stats(cx);
-    stats[0].set(JS_NumberValue(fileStats.totalTime));
+    stats[0].setNumber(fileStats.totalTime);
     stats[1].setNumber(fileStats.creates);
     stats[2].setNumber(fileStats.reads);
     stats[3].setNumber(fileStats.writes);

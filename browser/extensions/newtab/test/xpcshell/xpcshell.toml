@@ -13,6 +13,10 @@ prefs = [
 ["test_AboutHomeStartupCacheWorker.js"]
 support-files = ["topstories.json"]
 
+["test_ActivityStream_contextualAds.js"]
+
+["test_AdsClient.js"]
+
 ["test_AdsFeed.js"]
 
 ["test_ExternalComponentsFeed.js"]
@@ -37,7 +41,11 @@ support-files = ["topstories.json"]
 
 ["test_NewTabMessaging.js"]
 
+["test_PictureOfTheDayFeed.js"]
+
 ["test_PlacesFeed.js"]
+
+["test_PrivacyFeed.js"]
 
 ["test_RemoteRenderer.js"]
 prefs = [
@@ -54,6 +62,8 @@ tags = "remote-settings"
 ["test_SportsFeed.js"]
 
 ["test_StartupCacheInit.js"]
+
+["test_StocksFeed.js"]
 
 ["test_Store.js"]
 

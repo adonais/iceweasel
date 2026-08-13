@@ -8,6 +8,28 @@ const { AIWindowUI } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/AIWindowUI.sys.mjs"
 );
 
+const { require: devtoolsRequire } = ChromeUtils.importESModule(
+  "resource://devtools/shared/loader/Loader.sys.mjs"
+);
+const { gDevTools } = devtoolsRequire(
+  "resource://devtools/client/framework/devtools.js"
+);
+
+// Opening the sidebar and devtools toolbox sets prefs at runtime.
+registerCleanupFunction(() => {
+  for (const pref of [
+    "browser.smartwindow.lastSmartWindowUsageTime",
+    "browser.smartwindow.sidebar.emptyCloseCount",
+    "places.semanticHistory.initialized",
+    "devtools.everOpened",
+    "devtools.toolsidebar-width.inspector",
+    "devtools.toolsidebar-height.inspector",
+    "devtools.toolsidebar-width.inspector.splitsidebar",
+  ]) {
+    Services.prefs.clearUserPref(pref);
+  }
+});
+
 // Switching to a new AIWindow tab from a tab with the sidebar open closes the sidebar
 add_task(async function test_new_tab_closes_opened_sidebar_convo() {
   const { restore } = await stubEngineNetworkBoundaries();
@@ -273,6 +295,64 @@ add_task(async function test_ask_button_close_persists_across_navigation() {
   }
 });
 
+// Only animate sidebar open/close on button click
+add_task(async function test_slide_reserved_for_ask_close_button() {
+  await SpecialPowers.pushPrefEnv({ set: [["ui.prefersReducedMotion", 0]] });
+
+  const { restore } = await stubEngineNetworkBoundaries();
+
+  let win;
+  try {
+    win = await openAIWindow();
+    const box = win.document.getElementById(AIWindowUI.BOX_ID);
+    const browser = win.gBrowser.selectedBrowser;
+
+    await promiseNavigateAndLoad(browser, "https://example.com/");
+    Assert.ok(AIWindowUI.isSidebarOpen(win), "Sidebar should start open");
+
+    // Close button: slides
+    AIWindowUI.closeSidebar(win, "toggle");
+    Assert.greater(
+      box.getAnimations().length,
+      0,
+      "Closing via the Close button should animate"
+    );
+    await waitForSidebarClosed(win);
+
+    // Ask button (via toggleSidebar): slides
+    AIWindowUI.toggleSidebar(win);
+    Assert.greater(
+      box.getAnimations().length,
+      0,
+      "Opening via the Ask button should animate"
+    );
+    await waitForSidebarOpen(win);
+
+    // Tab-switch close (no source): instant
+    AIWindowUI.closeSidebar(win);
+    Assert.equal(
+      box.getAnimations().length,
+      0,
+      "A sourceless close should commit instantly without animating"
+    );
+    Assert.ok(!AIWindowUI.isSidebarOpen(win), "Sidebar should be closed");
+
+    // Tab-switch open: instant
+    const openPromise = AIWindowUI.openSidebar(win);
+    Assert.equal(
+      box.getAnimations().length,
+      0,
+      "openSidebar should commit instantly without animating"
+    );
+    Assert.ok(AIWindowUI.isSidebarOpen(win), "Sidebar should be open");
+    await openPromise;
+  } finally {
+    await BrowserTestUtils.closeWindow(win);
+    await restore();
+    await SpecialPowers.popPrefEnv();
+  }
+});
+
 add_task(
   async function test_tabs_after_first_should_open_sidebar_on_site_navigation() {
     let gAiWindow, newTab;
@@ -306,3 +386,112 @@ add_task(
     }
   }
 );
+
+// Attempting to overdrag the sidebar does not extend into the content area.
+add_task(async function test_sidebar_splitter_clamps_at_max_width() {
+  let gAiWindow;
+
+  try {
+    gAiWindow = await openAIWindow();
+    await promiseNavigateAndLoad(
+      gAiWindow.gBrowser.selectedBrowser,
+      "https://example.com/"
+    );
+    AIWindowUI.openSidebar(gAiWindow, null);
+    await waitForSidebarOpen(gAiWindow);
+
+    const { box, splitter } = AIWindowUI._getSidebarElements(gAiWindow);
+    const sidebarMaxWidth = parseInt(gAiWindow.getComputedStyle(box).maxWidth);
+
+    const maxDragDistance = -1 * gAiWindow.innerWidth;
+    AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
+    EventUtils.synthesizeMouseAtCenter(
+      splitter,
+      { type: "mousedown" },
+      gAiWindow
+    );
+    // Attempt to overdrag by 1px.
+    EventUtils.synthesizeMouse(
+      splitter,
+      maxDragDistance - 1,
+      0,
+      { type: "mousemove" },
+      gAiWindow
+    );
+    EventUtils.synthesizeMouse(splitter, 0, 0, { type: "mouseup" }, gAiWindow);
+    AccessibilityUtils.resetEnv();
+
+    const sidebarWidth = box.getBoundingClientRect().width;
+    Assert.equal(
+      sidebarWidth,
+      sidebarMaxWidth,
+      "The sidebar can’t be dragged past its max width."
+    );
+  } finally {
+    AIWindowUI.closeSidebar(gAiWindow);
+    await BrowserTestUtils.closeWindow(gAiWindow);
+  }
+});
+
+// Overdragging the sidebar does not extend over a side-docked devtools toolbox.
+add_task(async function test_sidebar_splitter_does_not_drag_over_devtools() {
+  let gAiWindow, toolbox;
+  try {
+    gAiWindow = await openAIWindow();
+    await promiseNavigateAndLoad(
+      gAiWindow.gBrowser.selectedBrowser,
+      "https://example.com/"
+    );
+    AIWindowUI.openSidebar(gAiWindow, null);
+    await waitForSidebarOpen(gAiWindow);
+
+    toolbox = await gDevTools.showToolboxForTab(
+      gAiWindow.gBrowser.selectedTab,
+      {
+        hostType: "right",
+      }
+    );
+    const toolboxWidth = toolbox.win.innerWidth;
+    const browserStack = gAiWindow.gBrowser
+      .getPanel()
+      .querySelector(".browserStack");
+    const contentAreaMin = parseInt(
+      gAiWindow.getComputedStyle(browserStack).minWidth
+    );
+
+    const { splitter } = AIWindowUI._getSidebarElements(gAiWindow);
+    const maxDragDistance = -1 * gAiWindow.innerWidth;
+    AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
+    EventUtils.synthesizeMouseAtCenter(
+      splitter,
+      { type: "mousedown" },
+      gAiWindow
+    );
+    // Attempt to overdrag by 1px.
+    EventUtils.synthesizeMouse(
+      splitter,
+      maxDragDistance - 1,
+      0,
+      { type: "mousemove" },
+      gAiWindow
+    );
+    EventUtils.synthesizeMouse(splitter, 0, 0, { type: "mouseup" }, gAiWindow);
+    AccessibilityUtils.resetEnv();
+
+    // Sidebar splitter stops at the devtools toolbox.
+    Assert.equal(
+      browserStack.getBoundingClientRect().width,
+      contentAreaMin,
+      "The page content keeps its minimum width."
+    );
+    Assert.equal(
+      Math.abs(toolbox.win.innerWidth - toolboxWidth),
+      0,
+      "The devtools toolbox is not covered by the sidebar."
+    );
+  } finally {
+    await toolbox?.destroy();
+    AIWindowUI.closeSidebar(gAiWindow);
+    await BrowserTestUtils.closeWindow(gAiWindow);
+  }
+});

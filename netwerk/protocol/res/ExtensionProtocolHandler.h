@@ -5,10 +5,10 @@
 #ifndef ExtensionProtocolHandler_h_
 #define ExtensionProtocolHandler_h_
 
-#include "mozilla/net/NeckoParent.h"
+#include "SubstitutingProtocolHandler.h"
 #include "mozilla/LazyIdleThread.h"
 #include "mozilla/Result.h"
-#include "SubstitutingProtocolHandler.h"
+#include "mozilla/net/NeckoParent.h"
 
 namespace mozilla {
 namespace net {

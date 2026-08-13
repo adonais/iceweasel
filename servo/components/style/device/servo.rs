@@ -13,8 +13,11 @@ use crate::media_queries::MediaType;
 use crate::properties::style_structs::Font;
 use crate::properties::ComputedValues;
 use crate::queries::values::PrefersColorScheme;
+use crate::servo::media_features::PointerCapabilities;
 use crate::values::computed::font::GenericFontFamily;
-use crate::values::computed::{CSSPixelLength, Length, LineHeight, NonNegativeLength};
+use crate::values::computed::{
+    CSSPixelLength, Length, LineHeight, LinkParameters, NonNegativeLength,
+};
 use crate::values::specified::color::{ColorSchemeFlags, ForcedColors, SystemColor};
 use crate::values::specified::font::{
     QueryFontMetricsFlags, FONT_MEDIUM_CAP_PX, FONT_MEDIUM_CH_PX, FONT_MEDIUM_EX_PX,
@@ -56,6 +59,8 @@ pub(super) struct ExtraDeviceData {
     media_type: MediaType,
     /// The current viewport size, in CSS pixels.
     viewport_size: Size2D<f32, CSSPixel>,
+    /// The current screen size, in device pixels.
+    device_size: Size2D<f32, DevicePixel>,
     /// The current device pixel ratio, from CSS pixels to device pixels.
     device_pixel_ratio: Scale<f32, CSSPixel, DevicePixel>,
     /// The current quirks mode.
@@ -64,6 +69,12 @@ pub(super) struct ExtraDeviceData {
     /// Whether the user prefers light mode or dark mode
     #[ignore_malloc_size_of = "Pure stack type"]
     prefers_color_scheme: PrefersColorScheme,
+    /// The capabilities of the primary pointer input
+    #[ignore_malloc_size_of = "Pure stack type"]
+    primary_pointer_capabilities: PointerCapabilities,
+    /// The union of the capabilities of all pointer inputs
+    #[ignore_malloc_size_of = "Pure stack type"]
+    all_pointer_capabilities: PointerCapabilities,
     /// An implementation of a trait which implements support for querying font metrics.
     #[ignore_malloc_size_of = "Owned by embedder"]
     font_metrics_provider: Box<dyn FontMetricsProvider>,
@@ -75,10 +86,13 @@ impl Device {
         media_type: MediaType,
         quirks_mode: QuirksMode,
         viewport_size: Size2D<f32, CSSPixel>,
+        device_size: Size2D<f32, DevicePixel>,
         device_pixel_ratio: Scale<f32, CSSPixel, DevicePixel>,
         font_metrics_provider: Box<dyn FontMetricsProvider>,
         default_values: Arc<ComputedValues>,
         prefers_color_scheme: PrefersColorScheme,
+        primary_pointer_capabilities: PointerCapabilities,
+        all_pointer_capabilities: PointerCapabilities,
     ) -> Device {
         let root_style = RwLock::new(Arc::clone(&default_values));
         Device {
@@ -101,9 +115,12 @@ impl Device {
             extra: ExtraDeviceData {
                 media_type,
                 viewport_size,
+                device_size,
                 device_pixel_ratio,
                 quirks_mode,
                 prefers_color_scheme,
+                primary_pointer_capabilities,
+                all_pointer_capabilities,
                 font_metrics_provider,
             },
         }
@@ -207,6 +224,21 @@ impl Device {
         self.extra.device_pixel_ratio = device_pixel_ratio;
     }
 
+    /// Set the device size on this [`Device`] (e.g. the available screen dimensions).
+    ///
+    /// Note that this does not update any associated `Stylist`. For this you must call
+    /// `Stylist::media_features_change_changed_style` and
+    /// `Stylist::force_stylesheet_origins_dirty`.
+    pub fn set_device_size(&mut self, device_size: Size2D<f32, DevicePixel>) {
+        self.extra.device_size = device_size;
+    }
+
+    /// Returns the screen size of the current device in app units.
+    #[inline]
+    pub fn device_size(&self) -> Size2D<f32, DevicePixel> {
+        self.extra.device_size
+    }
+
     /// Gets the size of the scrollbar in CSS pixels.
     pub fn scrollbar_inline_size(&self) -> CSSPixelLength {
         // TODO: implement this.
@@ -228,6 +260,15 @@ impl Device {
         self.extra
             .font_metrics_provider
             .query_font_metrics(vertical, font, base_size, flags)
+    }
+
+    /// Set the media type on this [`Device`].
+    ///
+    /// Note that this does not update any associated `Stylist`. For this you must call
+    /// `Stylist::media_features_change_changed_style` and
+    /// `Stylist::force_stylesheet_origins_dirty`.
+    pub fn set_media_type(&mut self, media_type: MediaType) {
+        self.extra.media_type = media_type;
     }
 
     /// Return the media type of the current device.
@@ -262,6 +303,34 @@ impl Device {
     /// Returns the color scheme of this [`Device`].
     pub fn color_scheme(&self) -> PrefersColorScheme {
         self.extra.prefers_color_scheme
+    }
+
+    /// Set the [`PointerCapbabilities`] value for the primary pointer on this [`Device`]
+    ///
+    /// Note that this does not update any associated `Stylist`. For this you must call
+    /// `Stylist::media_features_change_changed_style` and
+    /// `Stylist::force_stylesheet_origins_dirty`.
+    pub fn set_primary_pointer_capabilities(&mut self, capabilities: PointerCapabilities) {
+        self.extra.primary_pointer_capabilities = capabilities;
+    }
+
+    /// Returns the pointer capabilities of this [`Device`].
+    pub fn primary_pointer_capabilities(&self) -> PointerCapabilities {
+        self.extra.primary_pointer_capabilities
+    }
+
+    /// Set the [`PointerCapbabilities`] value for all pointers on this [`Device`]
+    ///
+    /// Note that this does not update any associated `Stylist`. For this you must call
+    /// `Stylist::media_features_change_changed_style` and
+    /// `Stylist::force_stylesheet_origins_dirty`.
+    pub fn set_all_pointer_capabilities(&mut self, capabilities: PointerCapabilities) {
+        self.extra.all_pointer_capabilities = capabilities;
+    }
+
+    /// Returns the pointer capabilities of this [`Device`].
+    pub fn all_pointer_capabilities(&self) -> PointerCapabilities {
+        self.extra.all_pointer_capabilities
     }
 
     pub(crate) fn is_dark_color_scheme(&self, _: ColorSchemeFlags) -> bool {
@@ -383,6 +452,13 @@ impl Device {
         }
     }
 
+    /// Returns the current effective text zoom.
+    #[inline]
+    pub(super) fn text_zoom(&self) -> f32 {
+        // (Servo doesn't do text-zoom)
+        1.
+    }
+
     /// Returns safe area insets
     pub fn safe_area_insets(&self) -> SideOffsets2D<f32, CSSPixel> {
         SideOffsets2D::zero()
@@ -409,5 +485,12 @@ impl Device {
     #[inline]
     pub fn chrome_rules_enabled_for_document(&self) -> bool {
         false
+    }
+
+    /// Returns the link-parameters that have been set for this document.
+    /// <https://drafts.csswg.org/css-link-params-1/>
+    #[inline]
+    pub fn link_parameters(&self) -> Option<&LinkParameters> {
+        None
     }
 }

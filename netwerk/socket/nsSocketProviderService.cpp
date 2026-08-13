@@ -2,18 +2,19 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsString.h"
-#include "nsISocketProvider.h"
+#include "nsSocketProviderService.h"
+
+#include "mozilla/ClearOnShutdown.h"
+#include "nsCRT.h"
 #include "nsError.h"
+#include "nsISocketProvider.h"
 #include "nsNSSComponent.h"
 #include "nsSOCKSSocketProvider.h"
-#include "nsSocketProviderService.h"
 #include "nsSSLSocketProvider.h"
+#include "nsString.h"
 #include "nsTLSSocketProvider.h"
-#include "nsUDPSocketProvider.h"
-#include "mozilla/ClearOnShutdown.h"
 #include "nsThreadUtils.h"
-#include "nsCRT.h"
+#include "nsUDPSocketProvider.h"
 
 mozilla::StaticRefPtr<nsSocketProviderService>
     nsSocketProviderService::gSingleton;

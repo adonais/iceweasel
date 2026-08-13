@@ -190,7 +190,7 @@ extern JS_PUBLIC_API void RunJobs(JSContext* cx);
 
 extern JS_PUBLIC_API JS::Zone* GetRealmZone(JS::Realm* realm);
 
-using PreserveWrapperCallback = bool (*)(JSContext*, JS::HandleObject);
+using PreserveWrapperCallback = void (*)(JSContext*, JS::HandleObject);
 using HasReleasedWrapperCallback = bool (*)(JS::HandleObject);
 
 extern JS_PUBLIC_API bool IsSystemRealm(JS::Realm* realm);
@@ -631,7 +631,30 @@ class MOZ_STACK_CLASS JS_PUBLIC_API AutoAssertNoContentJS {
  * SharedArrayBuffers which may also be referred to from other zones. Adding the
  * memory usage of multiple zones may lead to an over-estimate.
  */
-extern JS_PUBLIC_API uint64_t GetMemoryUsageForZone(JS::Zone* zone);
+extern JS_PUBLIC_API size_t GetMemoryUsageForZone(JS::Zone* zone);
+
+/**
+ * This function reports the amount of GC heap memory referred to from this
+ * zone.
+ *
+ */
+extern JS_PUBLIC_API size_t GetGCHeapSizeForZone(JS::Zone* zone);
+
+/**
+ * This function reports the size of all malloc memory referred to from this
+ * zone.
+ *
+ * Note that malloc memory referred to from this zone can include
+ * SharedArrayBuffers which may also be referred to from other zones. Adding the
+ * memory usage of multiple zones may lead to an over-estimate.
+ */
+extern JS_PUBLIC_API size_t GetMallocHeapSizeForZone(JS::Zone* zone);
+
+/**
+ * This function reports the amount of JIT memory used by this zone.
+ *
+ */
+extern JS_PUBLIC_API size_t GetJITHeapSizeForZone(JS::Zone* zone);
 
 enum class MemoryUse : uint8_t;
 

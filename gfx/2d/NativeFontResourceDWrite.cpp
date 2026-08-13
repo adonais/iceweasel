@@ -3,11 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "NativeFontResourceDWrite.h"
-#include "UnscaledFontDWrite.h"
 
 #include <unordered_map>
 
 #include "Logging.h"
+#include "UnscaledFontDWrite.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticMutex.h"
 #include "nsTArray.h"

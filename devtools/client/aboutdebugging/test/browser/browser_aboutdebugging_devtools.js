@@ -20,9 +20,8 @@ add_task(async function () {
   const { document, tab, window } = await openAboutDebugging();
   await selectThisFirefoxPage(document, window.AboutDebugging.store);
 
-  const connectSidebarItem = findSidebarItemByText("Setup", document);
-  const connectLink = connectSidebarItem.querySelector(".qa-sidebar-link");
-  ok(connectSidebarItem, "Found the Connect sidebar item");
+  const setupSidebarItem = findSidebarItemByText("Setup", document);
+  ok(setupSidebarItem, "Found the Setup sidebar item");
 
   info("Open devtools on the current about:debugging tab");
   const toolbox = await openToolboxForTab(tab, "inspector");
@@ -32,8 +31,8 @@ add_task(async function () {
   const store = window.AboutDebugging.store;
   await waitForAboutDebuggingRequests(store);
 
-  info("Click on the Connect item in the sidebar");
-  connectLink.click();
+  info("Click on the Setup item in the sidebar");
+  selectSidebarItemPage("Setup", document);
   await waitForDispatch(store, "UNWATCH_RUNTIME_SUCCESS");
 
   info("Wait until Connect page is displayed");

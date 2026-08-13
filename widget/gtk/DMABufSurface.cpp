@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "DMABufSurface.h"
+
 #include "DMABufDevice.h"
 #include "DMABufFormats.h"
 
@@ -10,8 +11,9 @@
 #  include "nsWaylandDisplay.h"
 #endif
 
-#include <gbm.h>
+#include <dlfcn.h>
 #include <fcntl.h>
+#include <gbm.h>
 #include <getopt.h>
 #include <signal.h>
 #include <stdbool.h>
@@ -19,10 +21,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <sys/time.h>
-#include <dlfcn.h>
 #include <sys/mman.h>
+#include <sys/time.h>
+#include <unistd.h>
 #ifdef HAVE_EVENTFD
 #  include <sys/eventfd.h>
 #endif
@@ -45,20 +46,20 @@
 #  define DRM_FORMAT_MOD_INVALID ((1ULL << 56) - 1)
 #endif
 
-#include "mozilla/widget/va_drmcommon.h"
-#include "mozilla/gfx/2D.h"
-#include "mozilla/gfx/FileHandleWrapper.h"
-#include "GLContextTypes.h"  // for GLContext, etc
+#include "GLBlitHelper.h"
 #include "GLContextEGL.h"
 #include "GLContextProvider.h"
-#include "ScopedGLHelpers.h"
-#include "GLBlitHelper.h"
+#include "GLContextTypes.h"  // for GLContext, etc
 #include "GLReadTexImageHelper.h"
-#include "nsGtkUtils.h"
 #include "ImageContainer.h"
-#include "mozilla/layers/LayersSurfaces.h"
+#include "ScopedGLHelpers.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/FileHandleWrapper.h"
 #include "mozilla/gfx/gfxVars.h"
+#include "mozilla/layers/LayersSurfaces.h"
+#include "mozilla/widget/va_drmcommon.h"
+#include "nsGtkUtils.h"
 #include "nsIMemoryReporter.h"
 
 /* C++ / C typecast macros for special EGL handle values */
@@ -77,9 +78,9 @@ using namespace mozilla::gfx;
 #undef LOGDMABUF
 #undef LOGDMABUFREF
 #ifdef MOZ_LOGGING
+#  include "Units.h"
 #  include "mozilla/Logging.h"
 #  include "nsTArray.h"
-#  include "Units.h"
 
 extern mozilla::LazyLogModule gDmabufLog;
 #  define LOGDMABUF(str, ...)                     \

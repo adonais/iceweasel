@@ -8,7 +8,6 @@
 #include "gc/Barrier.h"
 #include "jit/InvalidationScriptSet.h"
 #include "js/SweepingAPI.h"
-
 #include "vm/GuardFuse.h"
 class JSScript;
 

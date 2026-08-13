@@ -6,6 +6,7 @@
 #define LAYOUT_STYLE_TYPEDOM_CSSUNITVALUE_H_
 
 #include "js/TypeDecls.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/CSSNumericValue.h"
 #include "nsString.h"
 
@@ -21,6 +22,8 @@ namespace mozilla {
 
 struct CSSPropertyId;
 class ErrorResult;
+template <typename T>
+class MovingNotNull;
 struct StyleUnitValue;
 
 namespace dom {
@@ -29,10 +32,12 @@ class GlobalObject;
 
 class CSSUnitValue final : public CSSNumericValue {
  public:
-  CSSUnitValue(nsCOMPtr<nsISupports> aParent, double aValue,
-               const nsACString& aUnit);
+  CSSUnitValue(nsCOMPtr<nsISupports> aParent,
+               MovingNotNull<UniquePtr<StyleNumericType>> aNumericType,
+               double aValue, const nsACString& aUnit);
 
   static RefPtr<CSSUnitValue> Create(nsCOMPtr<nsISupports> aParent,
+                                     const StyleNumericType& aNumericType,
                                      double aValue, const nsACString& aUnit);
 
   static RefPtr<CSSUnitValue> Create(nsCOMPtr<nsISupports> aParent,
@@ -71,6 +76,10 @@ class CSSUnitValue final : public CSSNumericValue {
   double mValue;
   const nsCString mUnit;
 };
+
+already_AddRefed<CSSUnitValue> MakeCSSUnitValue(
+    nsCOMPtr<nsISupports> aParent, const StyleNumericType& aNumericType,
+    double aValue, const nsACString& aUnit);
 
 }  // namespace dom
 }  // namespace mozilla

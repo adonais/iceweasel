@@ -10,7 +10,7 @@
 // statements in the built aboutwelcome.css file.
 @import 'feature-callout';
 
-/* stylelint-disable max-nesting-depth */
+// stylelint-disable max-nesting-depth
 
 $break-point-small: 570px;
 $break-point-medium: 610px;
@@ -63,6 +63,10 @@ html {
 
       .logo-container {
         pointer-events: none;
+      }
+
+      .main-content {
+        background-color: var(--background-color-box);
       }
 
       .screen {
@@ -323,7 +327,8 @@ html {
 
   .main-content {
     background-color: var(--background-color-canvas);
-    border-radius: var(--border-radius-large);
+    // Fallback value can be removed after Nova has reached release
+    border-radius: var(--border-radius-xlarge, 16px);
     box-shadow: 0 2px 14px 0 rgba(0, 0, 0, 20%);
     display: flex;
     flex-direction: column;
@@ -404,6 +409,7 @@ html {
 
   @mixin text-link-styles {
     background: none;
+    border: none;
     text-decoration: underline;
     cursor: pointer;
     color: var(--link-color);
@@ -430,22 +436,24 @@ html {
     overflow: hidden;
 
     &.light-text {
-      --text-color: rgb(251, 251, 254);
-      --button-text-color-primary: rgb(43, 42, 51);
-      --button-text-color-primary-hover: rgb(43, 42, 51);
-      --button-background-color-primary: rgb(0, 221, 255);
-      --button-background-color-primary-hover: rgb(128, 235, 255);
-      --button-background-color-primary-active: rgb(170, 242, 255);
+      // fallback values can be removed after Nova has reached release
+      --text-color: var(--color-violet-desaturated-0, rgb(251, 251, 254));
+      --button-text-color-primary: #252428;
+      --button-text-color-primary-hover: #252428;
+      --button-background-color-primary: #D4C1FF;
+      --button-background-color-primary-hover: #B89CFF;
+      --button-background-color-primary-active: #9871FF;
       --button-text-color: var(--text-color);
     }
 
     &.dark-text {
-      --text-color: rgb(21,  20,  26);
-      --button-text-color-primary: rgb(251, 251, 254);
-      --button-text-color-primary-hover: rgb(251, 251, 254);
-      --button-background-color-primary: #0061E0;
-      --button-background-color-primary-hover: #0250BB;
-      --button-background-color-primary-active: #053E94;
+      // fallback values can be removed after Nova has reached release
+      --text-color: var(--color-violet-desaturated-90, rgb(21,  20,  26));
+      --button-text-color-primary: #FFF;
+      --button-text-color-primary-hover: #FFF;
+      --button-background-color-primary: #764EDD;
+      --button-background-color-primary-hover: #5939A8;
+      --button-background-color-primary-active: #3E2976;
       --button-border-color-primary: transparent;
       --button-border-color-primary-hover: transparent;
       --button-text-color: var(--text-color);
@@ -456,8 +464,9 @@ html {
     }
 
     &[pos='center'] {
-      background-color: rgba(21, 20, 26, 50%);
+      background-color: var(--background-color-overlay);
       min-width: $main-section-width;
+      border-radius: var(--border-radius-xlarge, 16px);
 
       &.with-noodles {
         // Adjust for noodles partially extending out from the square modal
@@ -466,6 +475,30 @@ html {
 
         .section-main {
           height: $main-section-width;
+        }
+      }
+
+      @media (not (prefers-contrast)) and (-moz-pref('browser.nova.enabled')) {
+        // Nova gradient border
+        &.zap-border {
+          .main-content {
+            background: linear-gradient(96deg, #B89CFF 20.68%, #FF9565 79.34%) border-box border-area, image(var(--background-color-box)) padding-box;
+            border: 1px solid transparent;
+          }
+        }
+
+        // Nova gradient shadow
+        &.zap-shadow {
+          .section-main::before {
+            content: '';
+            position: absolute;
+            z-index: -1;
+            inset: 7px;
+            border-radius: 60px;
+            box-shadow: -12px -12px 70px 0 light-dark(#E7D9FF, rgba(99, 47, 200, 80%)),
+              10px 10px 70px 0 light-dark(#FFD3B7, rgba(255, 138, 87, 80%));
+            transition: var(--transition);
+          }
         }
       }
 
@@ -534,7 +567,7 @@ html {
 
         .main-content {
           background-color: var(--background-color-canvas);
-          border-radius: var(--border-radius-medium);
+          border-radius: var(--border-radius-xlarge, 8px);
           box-shadow: 0 2px 14px rgba(58, 57, 68, 20%);
           overflow: hidden;
 
@@ -720,10 +753,29 @@ html {
           box-shadow: 0 2px 14px 0 rgba(0, 0, 0, 20%);
           width: $split-section-width + $split-section-width;
           height: $split-screen-height;
-          border-radius: var(--border-radius-medium);
+          border-radius: var(--border-radius-xlarge, 8px);
           inset: 0;
           margin: auto;
           pointer-events: none;
+        }
+
+        @media (not (prefers-contrast)) and (-moz-pref('browser.nova.enabled')) {
+          // Nova gradient border for split layout
+          &.zap-border {
+            &::before {
+              background: linear-gradient(96deg, #B89CFF 20.68%, #FF9565 79.34%) border-box border-area, image(var(--background-color-box)) padding-box;
+              border: 1px solid transparent;
+            }
+          }
+
+          // Nova gradient shadow for split layout
+          &.zap-shadow {
+            &::before {
+              box-shadow: -12px -12px 70px 0 light-dark(#E7D9FF, rgba(99, 47, 200, 80%)),
+                10px 10px 70px 0 light-dark(#FFD3B7, rgba(255, 138, 87, 80%));
+              transition: var(--transition);
+            }
+          }
         }
       }
 
@@ -785,7 +837,7 @@ html {
         }
 
         .main-content {
-          border-radius: 0 var(--border-radius-medium) var(--border-radius-medium) 0;
+          border-radius: 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0;
           overflow: hidden;
           padding-inline: 35px 20px;
           padding-block: 120px 0;
@@ -796,7 +848,7 @@ html {
           }
 
           &:dir(rtl) {
-            border-radius: var(--border-radius-medium) 0 0 var(--border-radius-medium);
+            border-radius: var(--border-radius-xlarge, 8px) 0 0 var(--border-radius-xlarge, 8px);
           }
 
           .legal-paragraph {
@@ -829,6 +881,7 @@ html {
 
               button {
                 cursor: pointer;
+                border-radius: 0;
               }
             }
 
@@ -1001,7 +1054,7 @@ html {
       .section-secondary {
         --mr-secondary-position: center center / auto 350px;
 
-        border-radius: var(--border-radius-medium) 0 0 var(--border-radius-medium);
+        border-radius: var(--border-radius-xlarge, 8px) 0 0 var(--border-radius-xlarge, 8px);
         margin: auto 0 auto auto;
         display: flex;
         align-items: center;
@@ -1010,7 +1063,7 @@ html {
         position: relative;
 
         &:dir(rtl) {
-          border-radius: 0 var(--border-radius-medium) var(--border-radius-medium) 0;
+          border-radius: 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0;
           margin: auto;
           margin-inline-end: 0;
         }
@@ -1118,10 +1171,10 @@ html {
 
             margin: auto;
             margin-inline-end: 0;
-            border-radius: var(--border-radius-medium) 0 0 var(--border-radius-medium);
+            border-radius: var(--border-radius-xlarge, 8px) 0 0 var(--border-radius-xlarge, 8px);
 
             &:dir(rtl) {
-              border-radius: 0 var(--border-radius-medium) var(--border-radius-medium) 0;
+              border-radius: 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0;
               margin: auto;
               margin-inline-end: 0;
             }
@@ -1130,10 +1183,10 @@ html {
           .section-secondary {
             margin: auto;
             margin-inline-start: 0;
-            border-radius: 0 var(--border-radius-medium) var(--border-radius-medium) 0;
+            border-radius: 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0;
 
             &:dir(rtl) {
-              border-radius: var(--border-radius-medium) 0 0 var(--border-radius-medium);
+              border-radius: var(--border-radius-xlarge, 8px) 0 0 var(--border-radius-xlarge, 8px);
               margin: auto;
               margin-inline-start: 0;
             }
@@ -1158,10 +1211,10 @@ html {
 
             margin: auto;
             margin-inline-end: 0;
-            border-radius: var(--border-radius-medium) 0 0 var(--border-radius-medium);
+            border-radius: var(--border-radius-xlarge, 8px) 0 0 var(--border-radius-xlarge, 8px);
 
             &:dir(rtl) {
-              border-radius: 0 var(--border-radius-medium) var(--border-radius-medium) 0;
+              border-radius: 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0;
               margin: auto;
               margin-inline-end: 0;
             }
@@ -1170,10 +1223,10 @@ html {
           .section-secondary {
             margin: auto;
             margin-inline-start: 0;
-            border-radius: 0 var(--border-radius-medium) var(--border-radius-medium) 0;
+            border-radius: 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0;
 
             &:dir(rtl) {
-              border-radius: var(--border-radius-medium) 0 0 var(--border-radius-medium);
+              border-radius: var(--border-radius-xlarge, 8px) 0 0 var(--border-radius-xlarge, 8px);
               margin: auto;
               margin-inline-start: 0;
             }
@@ -1490,14 +1543,14 @@ html {
             flex-direction: column;
 
             .section-secondary {
-              border-radius: var(--border-radius-medium) var(--border-radius-medium) 0 0;
+              border-radius: var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0 0;
               margin: auto;
               margin-bottom: 0;
 
               &:dir(rtl) {
                 margin: auto;
                 margin-bottom: 0;
-                border-radius: var(--border-radius-medium) var(--border-radius-medium) 0 0;
+                border-radius: var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0 0;
               }
             }
 
@@ -1505,12 +1558,12 @@ html {
               height: auto;
               margin: auto;
               margin-top: 0;
-              border-radius: 0 0 var(--border-radius-medium) var(--border-radius-medium);
+              border-radius: 0 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px);
 
               &:dir(rtl) {
                 margin: auto;
                 margin-top: 0;
-                border-radius: 0 0 var(--border-radius-medium) var(--border-radius-medium);
+                border-radius: 0 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px);
               }
             }
           }
@@ -1523,7 +1576,7 @@ html {
           .section-secondary {
             --mr-secondary-position: center center / 75%;
 
-            border-radius: var(--border-radius-medium) var(--border-radius-medium) 0 0;
+            border-radius: var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0 0;
             margin: auto;
             margin-bottom: 0;
             height: $small-secondary-section-height;
@@ -1547,7 +1600,7 @@ html {
             &:dir(rtl) {
               margin: auto;
               margin-bottom: 0;
-              border-radius: var(--border-radius-medium) var(--border-radius-medium) 0 0;
+              border-radius: var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0 0;
             }
 
             &.with-secondary-section-hidden {
@@ -1582,16 +1635,16 @@ html {
 
               .main-content {
                 padding: 50px 0 0;
-                border-radius: var(--border-radius-medium);
+                border-radius: var(--border-radius-xlarge, 8px);
 
                 &:dir(rtl) {
-                  border-radius: var(--border-radius-medium);
+                  border-radius: var(--border-radius-xlarge, 8px);
                 }
               }
             }
 
             .main-content {
-              border-radius: 0 0 var(--border-radius-medium) var(--border-radius-medium);
+              border-radius: 0 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px);
               padding: 30px 0 0;
 
               .main-content-inner {
@@ -1674,7 +1727,7 @@ html {
               margin-top: 0;
 
               .main-content {
-                border-radius: 0 0 var(--border-radius-medium) var(--border-radius-medium);
+                border-radius: 0 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px);
               }
             }
           }
@@ -1693,10 +1746,10 @@ html {
 
               margin: auto;
               margin-inline-end: 0;
-              border-radius: var(--border-radius-medium) 0 0 var(--border-radius-medium);
+              border-radius: var(--border-radius-xlarge, 8px) 0 0 var(--border-radius-xlarge, 8px);
 
               &:dir(rtl) {
-                border-radius: 0 var(--border-radius-medium) var(--border-radius-medium) 0;
+                border-radius: 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0;
                 margin: auto;
                 margin-inline-end: 0;
               }
@@ -1705,10 +1758,10 @@ html {
             .section-secondary {
               margin: auto;
               margin-inline-start: 0;
-              border-radius: 0 var(--border-radius-medium) var(--border-radius-medium) 0;
+              border-radius: 0 var(--border-radius-xlarge, 8px) var(--border-radius-xlarge, 8px) 0;
 
               &:dir(rtl) {
-                border-radius: var(--border-radius-medium) 0 0 var(--border-radius-medium);
+                border-radius: var(--border-radius-xlarge, 8px) 0 0 var(--border-radius-xlarge, 8px);
                 margin: auto;
                 margin-inline-start: 0;
               }
@@ -2050,22 +2103,44 @@ html {
           top: -10px;
           line-height: 1;
 
+          @media (-moz-pref('browser.nova.enabled')) {
+            border-radius: var(--border-radius-xlarge);
+            right: 10px;
+            top: -12px;
+            align-content: center;
+          }
+
           &.centered {
             /* stylelint-disable-next-line */
             border-radius: 8px 8px 0 0;
             background-color: var(--button-background-color-primary);
             position: relative;
             right: unset;
-            top: -6px;
+            top: unset;
             line-height: 0.75;
             width: 100%;
             box-sizing: border-box;
+
+            @media (-moz-pref('browser.nova.enabled')) {
+              top: -5px;
+              align-content: center;
+            }
 
             &.backup {
               /* stylelint-disable-next-line */
               border-radius: 10px 10px 0 0;
               background-color: var(--picker-backup-flair-background);
               color: var(--picker-backup-flair-color);
+
+              @media (-moz-pref('browser.nova.enabled')) {
+                border-radius: var(--border-radius-xlarge);
+                background-color: var(--button-background-color-primary);
+                color: var(--button-text-color-primary);
+                padding-inline: 12px;
+                align-content: center;
+                top: -9px;
+                width: unset;
+              }
 
               &.spacer {
                 background-color: transparent;
@@ -2411,6 +2486,7 @@ html {
         background-position: center;
         box-shadow: none;
         border: 0;
+        border-radius: 0;
       }
 
       &:not(:first-child) {
@@ -2714,6 +2790,27 @@ html {
         pointer-events: none;
       }
     }
+
+    &.always-visible {
+      .pinnable-sites-pin-button {
+        pointer-events: auto;
+        background-color: var(--button-background-color-primary-disabled);
+        color: var(--button-text-color-primary-disabled);
+        opacity: var(--button-opacity-disabled);
+
+        &:hover:not(:disabled) {
+          background-color: var(--button-background-color-primary);
+          color: var(--button-text-color-primary);
+          opacity: 1;
+        }
+
+        &:disabled {
+          opacity: 1;
+          background-color: var(--button-background-color-primary);
+          color: var(--button-text-color-primary);
+        }
+      }
+    }
   }
 
   .tile-title-container {
@@ -2751,6 +2848,7 @@ html {
     display: block;
     float: inline-end;
     background: url('chrome://global/skin/icons/close.svg') no-repeat center / 16px;
+    border-color: transparent;
     height: var(--size-item-large);
     width: var(--size-item-large);
     align-self: end;
@@ -2988,6 +3086,8 @@ html {
       &:not(.submenu-button) {
         border-start-end-radius: 0;
         border-end-end-radius: 0;
+        // stylelint-disable-next-line declaration-no-important
+        border-inline-end-width: 0 !important;
         margin-inline-end: 0;
       }
 
@@ -2999,16 +3099,38 @@ html {
     .submenu-button {
       border-start-start-radius: 0;
       border-end-start-radius: 0;
-      margin-inline-start: 1px;
-      padding: var(--space-small);
-      min-width: 30px;
+      // This needs to be marked important because we set border on hover.
+      // stylelint-disable-next-line declaration-no-important
+      border-inline-start-width: 0 !important;
+      margin-inline-start: 0;
+      padding: 8px;
+      min-height: var(--button-min-height-small, 24px);
+      min-width: var(--button-min-height-small, 24px);
       box-sizing: border-box;
-      background-image: url('chrome://global/skin/icons/arrow-down.svg');
+      background-image: url('chrome://browser/content/asrouter/assets/arrow-down-tiny.svg');
       background-repeat: no-repeat;
       background-size: 16px;
       background-position: center;
       -moz-context-properties: fill;
       fill: currentColor;
+      position: relative;
+
+      // Divider between the main button and the submenu button
+      &::before {
+        content: '';
+        position: absolute;
+        pointer-events: none;
+        width: 1px;
+        inset-block: 4px;
+        inset-inline-start: 0;
+        border-inline-start: 1px solid var(--button-border-color);
+      }
+    }
+
+    // Hide the divider on interactive states
+    > button:is(:focus-visible, :hover, [open]) + .submenu-button::before,
+    > .submenu-button:is(:focus-visible, :hover, [open])::before {
+      visibility: hidden;
     }
   }
 
@@ -3200,6 +3322,8 @@ html {
 
     .dialog-initial {
       .main-content,
+      .section-main,
+      ::before,
       .dismiss-button,
       .more-button {
         translate: 0 calc(-2 * var(--translate));
@@ -3241,39 +3365,97 @@ html {
   }
 
   .system-prompt-spotlight {
-    .inline-icon-container {
-      display: flex;
-    }
+    user-select: none;
 
-    .welcome-text {
-      align-items: flex-start;
-      padding: 5px;
+    .main-content {
+      // Imitating the rules in commonDialog.css
+      min-width: 29em;
+      font-size: 12px;
+      padding: 16px 12px;
+      border-radius: var(--border-radius-medium);
 
-      h2 {
-        text-align: start;
-        margin: 0;
-        margin-block: 10px 15px;
+      &.no-steps {
+        margin-inline: auto;
       }
-    }
 
-    .brand-logo {
-      margin-block: var(--space-xxsmall);
-    }
+      .main-content-inner {
+        gap: 16px;
 
-    .multi-select-container {
-      margin-inline-start: 23px;
-      margin-block-end: 17px;
-    }
+        .inline-icon-container {
+          display: flex;
+          flex-flow: row wrap;
+          align-items: center;
+          gap: 6px;
 
-    .additional-cta-container {
-      display: flex;
-      flex-direction: row-reverse;
-      padding-inline-end: 15px;
-    }
+          .logo-container {
+            display: flex;
 
-    .main-content.no-steps {
-      padding-bottom: var(--space-medium);
-      margin-inline: auto;
+            .brand-logo {
+              margin: 0;
+            }
+          }
+        }
+
+        .welcome-text {
+          align-items: flex-start;
+          padding: 0;
+          margin: 0 4px;
+          gap: 16px;
+
+          h1 {
+            font-size: 12px;
+            letter-spacing: normal;
+            margin: 0;
+          }
+
+          h2 {
+            font-size: 12px;
+            letter-spacing: normal;
+            text-align: start;
+            margin: 0;
+          }
+        }
+
+        .multi-select-container {
+          margin: 0;
+          font-size: 12px;
+          gap: 8px;
+
+          .checkbox-container {
+            margin: 0 4px;
+
+            // Replace the inline margin on the checkbox with an inline padding
+            // on the label, so that if you hover in the space between the label
+            // and the checkbox, the area is still clickable and you still get
+            // the hover styles. This happens automatically with XUL dialogs
+            // (like the one we're imitating) due to their use of a <checkbox>
+            // element, but we don't have that in HTML, so we need to do it
+            // manually.
+            > input {
+              margin: 0;
+            }
+
+            > label {
+              padding-inline: var(--checkbox-margin-inline) 0;
+            }
+          }
+        }
+
+        .additional-cta-container {
+          display: flex;
+          flex-direction: row-reverse;
+        }
+
+        .primary,
+        .secondary,
+        .additional-cta,
+        .submenu-button {
+          font-size: 12px;
+          line-height: normal;
+          padding: var(--button-padding);
+          margin: 0 4px;
+        }
+      }
     }
   }
 
@@ -3333,6 +3515,8 @@ html {
       }
 
       .main-content,
+      .section-main,
+      ::before,
       .dismiss-button,
       .more-button {
         opacity: 0;

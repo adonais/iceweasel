@@ -12,8 +12,10 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.gradle.kotlin.dsl.withType
 import org.json.JSONArray
@@ -35,6 +37,8 @@ class ApkSizePlugin : Plugin<Project> {
                 task.configure {
                     artifactsDirectory.set(variant.artifacts.get(SingleArtifact.APK))
                     artifactsLoader.set(variant.artifacts.getBuiltArtifactsLoader())
+                    mozAutomation.set(project.providers.environmentVariable("MOZ_AUTOMATION"))
+                    mozPerfherderUpload.set(project.providers.environmentVariable("MOZ_PERFHERDER_UPLOAD"))
                 }
             }
         }
@@ -59,6 +63,14 @@ abstract class ApkSizeTask : DefaultTask() {
     @get:Internal
     abstract val artifactsLoader: Property<BuiltArtifactsLoader>
 
+    @get:Input
+    @get:Optional
+    abstract val mozAutomation: Property<String>
+
+    @get:Input
+    @get:Optional
+    abstract val mozPerfherderUpload: Property<String>
+
     @TaskAction
     fun logApkSize() {
         val builtArtifacts = artifactsLoader.get().load(artifactsDirectory.get())
@@ -68,8 +80,8 @@ abstract class ApkSizeTask : DefaultTask() {
         val apkSizes = determineApkSizes(builtArtifacts.elements)
         val json = buildPerfherderJson(variantName, apkSizes)
 
-        val isAutomation = System.getenv("MOZ_AUTOMATION") == "1"
-        val uploadPath = System.getenv("MOZ_PERFHERDER_UPLOAD")
+        val isAutomation = mozAutomation.orNull == "1"
+        val uploadPath = mozPerfherderUpload.orNull
         if (isAutomation && uploadPath != null) {
             println("PERFHERDER_DATA: $json")
             val outputFile = File(uploadPath)

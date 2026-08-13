@@ -1,16 +1,16 @@
 diff --git a/src/llama-model-loader.cpp b/src/llama-model-loader.cpp
-index 1a90a1eb88..6f5f3d2868 100644
+index 4456259be12d..63dd7ada91f5 100644
 --- a/src/llama-model-loader.cpp
 +++ b/src/llama-model-loader.cpp
-@@ -5,7 +5,6 @@
- #include <array>
+@@ -10,7 +10,6 @@
  #include <cinttypes>
+ #include <cstdint>
  #include <cstring>
 -#include <future>
+ #include <regex>
  
  #include "moz-overrides.h"
- 
-@@ -926,7 +925,7 @@
+@@ -1422,7 +1421,7 @@ bool llama_model_loader::load_all_data(
      GGML_ASSERT(size_data != 0 && "call init_mappings() first");
  
      std::vector<no_init<uint8_t>> read_buf;
@@ -19,7 +19,7 @@ index 1a90a1eb88..6f5f3d2868 100644
  
      // 4 staging buffers for async uploads, each sized 1MB seems to be a good default for single NVMe drives.
      // NVMe raid configurations might require more / larger buffers.
-@@ -1041,9 +1040,7 @@
+@@ -1546,9 +1545,7 @@ bool llama_model_loader::load_all_data(
              uint8_t * data = (uint8_t *) mapping->addr() + weight->offs;
  
              if (check_tensors) {
@@ -30,7 +30,7 @@ index 1a90a1eb88..6f5f3d2868 100644
              }
  
              GGML_ASSERT(buf_mmap || cur->data); // either we have a buffer to allocate the tensor in, or it is already allocated
-@@ -1066,9 +1063,7 @@
+@@ -1572,9 +1569,7 @@ bool llama_model_loader::load_all_data(
                  file->seek(weight->offs, SEEK_SET);
                  file->read_raw(cur->data, n_size);
                  if (check_tensors) {
@@ -41,7 +41,7 @@ index 1a90a1eb88..6f5f3d2868 100644
                  }
              } else {
                  // If upload_backend is valid load the tensor in chunks to pinned memory and upload the buffers asynchronously to the GPU.
-@@ -1116,8 +1111,7 @@
+@@ -1657,8 +1652,7 @@ bool llama_model_loader::load_all_data(
  
      // check validation results
      bool validation_failed = false;

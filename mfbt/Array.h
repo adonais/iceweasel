@@ -76,6 +76,10 @@ class MOZ_GSL_OWNER Array {
   // Method for std::size.
   constexpr size_t size() const { return Length; }
 
+  // Methods for std::data.
+  constexpr T* data() { return mArr; }
+  constexpr const T* data() const { return mArr; }
+
   // Methods for reverse iterating.
   reverse_iterator rbegin() { return reverse_iterator(end()); }
   const_reverse_iterator rbegin() const {

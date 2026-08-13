@@ -437,11 +437,14 @@ class GeckoInstance:
             "MOZ_CRASHREPORTER_SHUTDOWN": "1",
         })
 
-        extra_args = ["-marionette", "-remote-allow-system-access"]
+        # Default to allow system access unless it is already set.
+        if env.get("MOZ_REMOTE_ALLOW_SYSTEM_ACCESS") is None:
+            env.update({"MOZ_REMOTE_ALLOW_SYSTEM_ACCESS": "1"})
+
         args = {
             "binary": self.binary,
             "profile": self.profile,
-            "cmdargs": extra_args + self.app_args,
+            "cmdargs": self.app_args + ["-marionette"],
             "env": env,
             "symbols_path": self.symbols_path,
             "process_args": process_args,
@@ -655,6 +658,8 @@ class DesktopInstance(GeckoInstance):
         # Background thumbnails in particular cause grief, and disabling thumbnails
         # in general can"t hurt - we re-enable them when tests need them
         "browser.pagethumbnails.capturing_disabled": True,
+        # Do not show the preonboarding modal/splash which can interfere with tests
+        "browser.preonboarding.enabled": False,
         # Disable safe browsing / tracking protection updates
         "browser.safebrowsing.update.enabled": False,
         # Disable updates to search engines

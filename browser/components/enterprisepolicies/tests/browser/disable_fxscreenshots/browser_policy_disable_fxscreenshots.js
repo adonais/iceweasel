@@ -49,7 +49,7 @@ add_task(async function test_disable_firefox_screenshots() {
     "Screenshots pref is disabled"
   );
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !ScreenshotsUtils.initialized,
     "Wait for the screenshot component to be uninitialized"
   );

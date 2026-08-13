@@ -5,10 +5,10 @@
 #ifndef GFX_RENDERROOTTYPES_H
 #define GFX_RENDERROOTTYPES_H
 
-#include "mozilla/webrender/WebRenderAPI.h"
-#include "mozilla/webrender/WebRenderTypes.h"
 #include "mozilla/layers/WebRenderMessages.h"
 #include "mozilla/layers/WebRenderScrollData.h"
+#include "mozilla/webrender/WebRenderAPI.h"
+#include "mozilla/webrender/WebRenderTypes.h"
 
 namespace mozilla {
 

@@ -5,9 +5,9 @@
 #ifndef nsPaperMargin_h_
 #define nsPaperMargin_h_
 
-#include "nsISupportsImpl.h"
-#include "nsIPaperMargin.h"
 #include "mozilla/gfx/Rect.h"
+#include "nsIPaperMargin.h"
+#include "nsISupportsImpl.h"
 
 class nsPaperMargin final : public nsIPaperMargin {
   using MarginDouble = mozilla::gfx::MarginDouble;

@@ -2,14 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "gtest/gtest.h"
-
 #include "TransportSecurityInfo.h"
+#include "gtest/gtest.h"
+#include "mozilla/Maybe.h"
 #include "nsCOMPtr.h"
 #include "nsITransportSecurityInfo.h"
 #include "nsIX509Cert.h"
 #include "nsString.h"
-#include "mozilla/Maybe.h"
 
 using namespace mozilla;
 using namespace mozilla::psm;

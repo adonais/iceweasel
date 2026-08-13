@@ -4,26 +4,26 @@
 
 #include "VRManagerChild.h"
 
+#include "VRDisplayClient.h"
 #include "VRLayerChild.h"
 #include "VRManagerParent.h"
 #include "VRThread.h"
-#include "VRDisplayClient.h"
-#include "nsGlobalWindowInner.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/StaticPtr.h"
-#include "mozilla/layers/CompositorThread.h"  // for CompositorThread
+#include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/GamepadManager.h"
 #include "mozilla/dom/Navigator.h"
 #include "mozilla/dom/VREventObserver.h"
 #include "mozilla/dom/WebXRBinding.h"
 #include "mozilla/dom/WindowBinding.h"  // for FrameRequestCallback
-#include "mozilla/dom/XRSystem.h"
 #include "mozilla/dom/XRFrame.h"
-#include "mozilla/dom/ContentChild.h"
-#include "nsContentUtils.h"
-#include "mozilla/dom/GamepadManager.h"
+#include "mozilla/dom/XRSystem.h"
 #include "mozilla/ipc/Endpoint.h"
+#include "mozilla/layers/CompositorThread.h"  // for CompositorThread
 #include "mozilla/layers/SyncObject.h"
 #include "mozilla/layers/TextureForwarder.h"
+#include "nsContentUtils.h"
+#include "nsGlobalWindowInner.h"
 
 using namespace mozilla::dom;
 

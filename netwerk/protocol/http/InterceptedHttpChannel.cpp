@@ -3,21 +3,22 @@
  *  file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "InterceptedHttpChannel.h"
+
 #include "NetworkMarker.h"
-#include "nsContentSecurityManager.h"
-#include "nsEscape.h"
+#include "mozilla/Logging.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/dom/ChannelInfo.h"
 #include "mozilla/dom/PerformanceStorage.h"
 #include "mozilla/glean/DomServiceworkersMetrics.h"
+#include "nsContentSecurityManager.h"
+#include "nsEscape.h"
 #include "nsHttpChannel.h"
 #include "nsIHttpHeaderVisitor.h"
 #include "nsIRedirectResultListener.h"
-#include "nsStringStream.h"
-#include "nsStreamUtils.h"
 #include "nsQueryObject.h"
-#include "mozilla/Logging.h"
+#include "nsStreamUtils.h"
+#include "nsStringStream.h"
 
 namespace mozilla::net {
 
@@ -913,6 +914,10 @@ InterceptedHttpChannel::StartSynthesizedResponse(
   }
 
   mResponseHead = std::move(mSynthesizedResponseHead);
+
+  if (mLoadInfo->GetTainting() == LoadTainting::Opaque) {
+    StoreAllRedirectsSameOriginIgnoringInternal(false);
+  }
 
   if (ShouldRedirect()) {
     rv = FollowSyntheticRedirect();

@@ -5,14 +5,13 @@
 #ifndef ACCESSIBLE_HYPERTEXT_H
 #define ACCESSIBLE_HYPERTEXT_H
 
-#include "nsISupports.h"
-
-#include "ia2AccessibleEditableText.h"
-#include "ia2AccessibleText.h"
-#include "ia2AccessibleTextSelectionContainer.h"
 #include "AccessibleHypertext2.h"
 #include "IUnknownImpl.h"
 #include "MsaaAccessible.h"
+#include "ia2AccessibleEditableText.h"
+#include "ia2AccessibleText.h"
+#include "ia2AccessibleTextSelectionContainer.h"
+#include "nsISupports.h"
 
 namespace mozilla {
 namespace a11y {

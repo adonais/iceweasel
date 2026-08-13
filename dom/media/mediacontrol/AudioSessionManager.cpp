@@ -13,6 +13,11 @@
   MOZ_LOG_FMT(gMediaControlLog, LogLevel::Debug, \
               "AudioSessionManager={}, " msg, fmt::ptr(this), ##__VA_ARGS__)
 
+#undef LOGW
+#define LOGW(msg, ...)                             \
+  MOZ_LOG_FMT(gMediaControlLog, LogLevel::Warning, \
+              "AudioSessionManager={}, " msg, fmt::ptr(this), ##__VA_ARGS__)
+
 namespace mozilla::dom {
 
 AudioSessionManager::AudioSessionManager(MediaController* aController)
@@ -76,10 +81,112 @@ void AudioSessionManager::NotifyAudibilityChanged(uint64_t aBrowsingContextId) {
 }
 
 void AudioSessionManager::NotifyBcDiscarded(uint64_t aBrowsingContextId) {
+  RemoveInterruptedBcId(aBrowsingContextId);
   if (mAudioSessions.Remove(aBrowsingContextId)) {
     LOG("NotifyBcDiscarded bc={}", aBrowsingContextId);
     UpdateSelectedAudioSession();
     MaybeFireEffectiveTypeChanged();
+  }
+}
+
+void AudioSessionManager::InterruptAudioSessions(
+    AudioSessionInterruptKind aKind) {
+  const bool permanent = aKind == AudioSessionInterruptKind::Permanent;
+  // A system audio-focus loss interrupts every active session in the tab,
+  // regardless of audio-session type. Exclusivity (spec section 5.4) governs
+  // only how sessions mix with one another, not immunity from a system
+  // interruption (section 5.2), so an ambient session is interrupted by e.g.
+  // an incoming call just like a playback one. A transient loss moves each
+  // active session to `interrupted` (resumable); a permanent loss moves each
+  // to `inactive` (not resumable).
+  // https://w3c.github.io/audio-session/#dom-audiosessionstate-interrupted
+  //
+  // Collect the targets first: SetAudioSessionState mutates mAudioSessions and
+  // re-runs selection, so we must not iterate the map while mutating it.
+  AutoTArray<uint64_t, 4> toInterrupt;
+  [[maybe_unused]] size_t exclusiveActiveCount = 0;
+  for (const auto& entry : mAudioSessions) {
+    if (entry.GetData().GetState() != AudioSessionState::Active) {
+      continue;
+    }
+    toInterrupt.AppendElement(entry.GetKey());
+    if (IsExclusiveAudioSessionType(EffectiveTypeForBc(entry.GetKey()))) {
+      ++exclusiveActiveCount;
+    }
+  }
+  // Per spec §5.3.4 at most one exclusive session is active at a time, so the
+  // interrupted set carries at most one exclusive session and restoring them
+  // cannot produce two active exclusive sessions.
+  MOZ_ASSERT(exclusiveActiveCount <= 1,
+             "more than one exclusive audio session was active");
+  // A permanent loss also tears down sessions already left transiently
+  // interrupted (a transient loss escalating to a permanent one before focus
+  // returns), since they can no longer be restored.
+  if (permanent) {
+    for (const uint64_t bcId : mInterruptedBcIds) {
+      toInterrupt.AppendElement(bcId);
+    }
+    ClearInterruptedBcIds();
+  }
+  LOG("InterruptAudioSessions kind={}, count={}", EnumValueToString(aKind),
+      toInterrupt.Length());
+  for (const uint64_t bcId : toInterrupt) {
+    if (!mAudioSessions.Lookup(bcId)) {
+      // Interrupting a session never inactivates another (the §5.4 cascade
+      // only runs for a session going active), so a collected record should
+      // still be present here.
+      LOGW("InterruptAudioSessions: record for bc={} vanished", bcId);
+      continue;
+    }
+    if (permanent) {
+      SetAudioSessionState(bcId, AudioSessionState::Inactive);
+    } else {
+      AddInterruptedBcId(bcId);
+      SetAudioSessionState(bcId, AudioSessionState::Interrupted);
+    }
+  }
+}
+
+void AudioSessionManager::RestoreAudioSessions() {
+  if (mInterruptedBcIds.IsEmpty()) {
+    LOG("RestoreAudioSessions skipped: nothing interrupted");
+    return;
+  }
+  // Snapshot then clear, since SetAudioSessionState mutates state and re-runs
+  // the selection cascade.
+  AutoTArray<uint64_t, 4> toRestore;
+  for (const uint64_t bcId : mInterruptedBcIds) {
+    toRestore.AppendElement(bcId);
+  }
+  ClearInterruptedBcIds();
+  for (const uint64_t bcId : toRestore) {
+    auto entry = mAudioSessions.Lookup(bcId);
+    if (!entry || entry.Data().GetState() != AudioSessionState::Interrupted) {
+      LOG("RestoreAudioSessions bc={} skipped: {}", bcId,
+          !entry ? "no record" : "not interrupted");
+      continue;
+    }
+    LOG("RestoreAudioSessions bc={}", bcId);
+    SetAudioSessionState(bcId, AudioSessionState::Active);
+  }
+}
+
+void AudioSessionManager::AddInterruptedBcId(uint64_t aBrowsingContextId) {
+  if (mInterruptedBcIds.EnsureInserted(aBrowsingContextId)) {
+    LOG("InterruptedBcIds += bc={}", aBrowsingContextId);
+  }
+}
+
+void AudioSessionManager::RemoveInterruptedBcId(uint64_t aBrowsingContextId) {
+  if (mInterruptedBcIds.EnsureRemoved(aBrowsingContextId)) {
+    LOG("InterruptedBcIds -= bc={}", aBrowsingContextId);
+  }
+}
+
+void AudioSessionManager::ClearInterruptedBcIds() {
+  if (!mInterruptedBcIds.IsEmpty()) {
+    LOG("InterruptedBcIds cleared (count={})", mInterruptedBcIds.Count());
+    mInterruptedBcIds.Clear();
   }
 }
 
@@ -151,8 +258,7 @@ void AudioSessionManager::UpdateAllAudioSessionStates(uint64_t aUpdatedBcId) {
   // updated session.
   auto updatedEntry = mAudioSessions.Lookup(aUpdatedBcId);
   if (MOZ_UNLIKELY(!updatedEntry)) {
-    LOG("[warning] UpdateAllAudioSessionStates: no record for bc={}",
-        aUpdatedBcId);
+    LOGW("UpdateAllAudioSessionStates: no record for bc={}", aUpdatedBcId);
     return;
   }
   const AudioSessionType updatedType = EffectiveTypeForBc(aUpdatedBcId);

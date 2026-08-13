@@ -7,7 +7,10 @@
 //! [calc]: https://drafts.csswg.org/css-values/#calc-notation
 
 use crate::derives::*;
-use crate::typed_om::{MathValue, NumericValue, ToTyped, TypedValue};
+use crate::typed_om::{
+    MathClamp, MathInvert, MathMax, MathMin, MathNegate, MathProduct, MathSum, MathValue,
+    NumericValue, ToTyped, TypedValue,
+};
 use crate::values::generics::length::GenericAnchorSizeFunction;
 use crate::values::generics::position::{GenericAnchorFunction, GenericAnchorSide};
 use crate::values::generics::Optional;
@@ -115,6 +118,45 @@ pub enum RoundingStrategy {
     /// `round(to-zero, a, b)`
     /// round a to the nearest multiple of b that is towards zero
     ToZero,
+}
+
+/// The clamping mode used in `progress()`
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    ToAnimatedZero,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(u8)]
+pub enum ProgressClampingMode {
+    /// `progress(value, start, end)`
+    /// Progress result is clamped to the range [0, 1}.
+    #[css(skip)]
+    Clamp,
+    /// `progress(no-clamp value, start, end)`
+    /// Progress result can be any number.
+    NoClamp,
+}
+
+impl ProgressClampingMode {
+    fn evaluate(self, value: f32, start: f32, end: f32) -> f32 {
+        if start == end && self == Self::Clamp {
+            return 0.;
+        }
+        let progress = crate::values::normalize((value - start) / (end - start));
+        match self {
+            Self::Clamp => progress.max(0.).min(1.),
+            Self::NoClamp => progress,
+        }
+    }
 }
 
 /// This determines the order in which we serialize members of a calc() sum.
@@ -337,6 +379,17 @@ pub enum GenericCalcNode<L> {
     Abs(Box<Self>),
     /// A `sign()` function.
     Sign(Box<Self>),
+    /// A `progress()` function.
+    Progress {
+        /// Clamping mode for the result.
+        clamping_mode: ProgressClampingMode,
+        /// The progress value calculation.
+        value: Box<Self>,
+        /// The progress start calculation.
+        start: Box<Self>,
+        /// The progress end calculation.
+        end: Box<Self>,
+    },
     /// An `anchor()` function.
     Anchor(Box<GenericCalcAnchorFunction<L>>),
     /// An `anchor-size()` function.
@@ -723,6 +776,17 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
                 }
                 CalcUnits::empty()
             },
+            CalcNode::Progress {
+                value, start, end, ..
+            } => {
+                let value_unit = value.unit()?;
+                let start_unit = start.unit()?;
+                let end_unit = end.unit()?;
+                if !value_unit.can_sum_with(start_unit) || !value_unit.can_sum_with(end_unit) {
+                    return Err(());
+                }
+                CalcUnits::empty()
+            },
         })
     }
 
@@ -834,6 +898,7 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
             | CalcNode::Log(..)
             | CalcNode::Exp(..)
             | CalcNode::Abs(..)
+            | CalcNode::Progress { .. }
             | CalcNode::Anchor(..)
             | CalcNode::AnchorSize(..) => {
                 wrap_self_in_negate(self);
@@ -975,7 +1040,8 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
                 | CalcNode::Pow(..)
                 | CalcNode::Sqrt(_)
                 | CalcNode::Log(..)
-                | CalcNode::Exp(_) => Err(()),
+                | CalcNode::Exp(_)
+                | CalcNode::Progress { .. } => Err(()),
             }
         }
 
@@ -1079,6 +1145,22 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
             Self::Exp(ref c) => CalcNode::Exp(Box::new(c.map_leaves_internal(map))),
             Self::Abs(ref c) => CalcNode::Abs(Box::new(c.map_leaves_internal(map))),
             Self::Sign(ref c) => CalcNode::Sign(Box::new(c.map_leaves_internal(map))),
+            Self::Progress {
+                clamping_mode,
+                ref value,
+                ref start,
+                ref end,
+            } => {
+                let value = Box::new(value.map_leaves_internal(map));
+                let start = Box::new(start.map_leaves_internal(map));
+                let end = Box::new(end.map_leaves_internal(map));
+                CalcNode::Progress {
+                    clamping_mode,
+                    value,
+                    start,
+                    end,
+                }
+            },
             Self::Anchor(ref f) => CalcNode::Anchor(Box::new(GenericAnchorFunction {
                 target_element: f.target_element.clone(),
                 side: match &f.side {
@@ -1452,6 +1534,24 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
                 let result = c.resolve_internal(leaf_to_output_fn)?;
                 Ok(L::sign_from(&result)?)
             },
+            Self::Progress {
+                clamping_mode,
+                ref value,
+                ref start,
+                ref end,
+            } => {
+                let value = value.resolve_internal(leaf_to_output_fn)?;
+                let start = start.resolve_internal(leaf_to_output_fn)?;
+                let end = end.resolve_internal(leaf_to_output_fn)?;
+                if !value.is_same_unit_as(&start) || !value.is_same_unit_as(&end) {
+                    return Err(());
+                }
+
+                let value = value.unitless_value().ok_or(())?;
+                let start = start.unitless_value().ok_or(())?;
+                let end = end.unitless_value().ok_or(())?;
+                Ok(L::new_number(clamping_mode.evaluate(value, start, end)))
+            },
             Self::Anchor(_) | Self::AnchorSize(_) => Err(()),
         }
     }
@@ -1525,6 +1625,13 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
             } => {
                 dividend.map_node_internal(mapping_fn)?;
                 divisor.map_node_internal(mapping_fn)?;
+            },
+            Self::Progress {
+                value, start, end, ..
+            } => {
+                value.map_node_internal(mapping_fn)?;
+                start.map_node_internal(mapping_fn)?;
+                end.map_node_internal(mapping_fn)?;
             },
         };
         Ok(())
@@ -1631,6 +1738,16 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
             },
             Self::Abs(ref mut value) | Self::Sign(ref mut value) => {
                 value.visit_depth_first_internal(f);
+            },
+            Self::Progress {
+                ref mut value,
+                ref mut start,
+                ref mut end,
+                ..
+            } => {
+                value.visit_depth_first_internal(f);
+                start.visit_depth_first_internal(f);
+                end.visit_depth_first_internal(f);
             },
             Self::Leaf(..) | Self::Anchor(..) | Self::AnchorSize(..) => {},
         }
@@ -2205,6 +2322,34 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
                     },
                 }
             },
+            Self::Progress {
+                clamping_mode,
+                ref mut value,
+                ref mut start,
+                ref mut end,
+            } => {
+                if let (
+                    CalcNode::Leaf(ref value),
+                    CalcNode::Leaf(ref start),
+                    CalcNode::Leaf(ref end),
+                ) = (&**value, &**start, &**end)
+                {
+                    if value.is_same_unit_as(start) && value.is_same_unit_as(end) {
+                        if let (Some(value), Some(start), Some(end)) = (
+                            value.unitless_value(),
+                            start.unitless_value(),
+                            end.unitless_value(),
+                        ) {
+                            let mut result = Self::Leaf(L::new_number(
+                                clamping_mode.evaluate(value, start, end),
+                            ));
+                            replace_self_with!(&mut result);
+                            return SimplificationResult::Simplified;
+                        }
+                    }
+                }
+                return SimplificationResult::Unchanged;
+            },
             Self::Leaf(ref mut l) => {
                 return l.simplify();
             },
@@ -2327,6 +2472,10 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
             },
             Self::Sign(_) => {
                 dest.write_str("sign(")?;
+                true
+            },
+            Self::Progress { .. } => {
+                dest.write_str("progress(")?;
                 true
             },
             Self::Negate(_) => {
@@ -2497,6 +2646,22 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
             Self::Abs(ref v) | Self::Sign(ref v) => {
                 v.to_css_impl(dest, ArgumentLevel::ArgumentRoot)?
             },
+            Self::Progress {
+                clamping_mode,
+                ref value,
+                ref start,
+                ref end,
+            } => {
+                if clamping_mode == ProgressClampingMode::NoClamp {
+                    clamping_mode.to_css(dest)?;
+                    dest.write_char(' ')?;
+                }
+                value.to_css_impl(dest, ArgumentLevel::ArgumentRoot)?;
+                dest.write_str(", ")?;
+                start.to_css_impl(dest, ArgumentLevel::ArgumentRoot)?;
+                dest.write_str(", ")?;
+                end.to_css_impl(dest, ArgumentLevel::ArgumentRoot)?;
+            },
             Self::Leaf(ref l) => l.to_css(dest)?,
             Self::Anchor(ref f) => f.to_css(dest)?,
             Self::AnchorSize(ref f) => f.to_css(dest)?,
@@ -2522,7 +2687,7 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
                     match level {
                         ArgumentLevel::CalculationRoot => {
                             dest.push(TypedValue::Numeric(NumericValue::Math(MathValue::Sum(
-                                ThinVec::from([inner]),
+                                MathSum::try_from_numeric_values(ThinVec::from([inner]))?,
                             ))));
                         },
                         ArgumentLevel::ArgumentRoot | ArgumentLevel::Nested => {
@@ -2550,7 +2715,7 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
                     .ok_or(())?;
 
                 dest.push(TypedValue::Numeric(NumericValue::Math(MathValue::Invert(
-                    Box::new(inner),
+                    MathInvert::from_numeric_value(inner),
                 ))));
                 Ok(())
             },
@@ -2571,9 +2736,9 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
 
                                     let inner = negated.to_numeric_value().ok_or(())?;
 
-                                    values.push(NumericValue::Math(MathValue::Negate(Box::new(
-                                        inner,
-                                    ))));
+                                    values.push(NumericValue::Math(MathValue::Negate(
+                                        MathNegate::from_numeric_value(inner),
+                                    )));
                                 } else {
                                     let inner = l.to_numeric_value().ok_or(())?;
 
@@ -2585,7 +2750,9 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
                                     .to_numeric_value()
                                     .ok_or(())?;
 
-                                values.push(NumericValue::Math(MathValue::Negate(Box::new(inner))));
+                                values.push(NumericValue::Math(MathValue::Negate(
+                                    MathNegate::from_numeric_value(inner),
+                                )));
                             },
                             _ => {
                                 let inner = CalcNodeWithLevel::nested(child)
@@ -2607,7 +2774,7 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
                 }
 
                 dest.push(TypedValue::Numeric(NumericValue::Math(MathValue::Sum(
-                    values,
+                    MathSum::try_from_numeric_values(values)?,
                 ))));
                 Ok(())
             },
@@ -2623,7 +2790,9 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
                                     .to_numeric_value()
                                     .ok_or(())?;
 
-                                values.push(NumericValue::Math(MathValue::Invert(Box::new(inner))));
+                                values.push(NumericValue::Math(MathValue::Invert(
+                                    MathInvert::from_numeric_value(inner),
+                                )));
                             },
                             _ => {
                                 let inner = CalcNodeWithLevel::nested(child)
@@ -2645,7 +2814,7 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
                 }
 
                 dest.push(TypedValue::Numeric(NumericValue::Math(MathValue::Product(
-                    values,
+                    MathProduct::try_from_numeric_values(values)?,
                 ))));
                 Ok(())
             },
@@ -2661,8 +2830,8 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
                 }
 
                 let math_value = match op {
-                    MinMaxOp::Min => MathValue::Min(values),
-                    MinMaxOp::Max => MathValue::Max(values),
+                    MinMaxOp::Min => MathValue::Min(MathMin::try_from_numeric_values(values)?),
+                    MinMaxOp::Max => MathValue::Max(MathMax::try_from_numeric_values(values)?),
                 };
 
                 dest.push(TypedValue::Numeric(NumericValue::Math(math_value)));
@@ -2686,7 +2855,7 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
                     .ok_or(())?;
 
                 dest.push(TypedValue::Numeric(NumericValue::Math(MathValue::Clamp(
-                    [lower, value, upper].into(),
+                    MathClamp::try_from_numeric_values([lower, value, upper].into())?,
                 ))));
                 Ok(())
             },

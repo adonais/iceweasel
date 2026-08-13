@@ -245,6 +245,20 @@ class TextInputProcessor final : public nsITextInputProcessor,
   bool mForTests;
 };
 
+// See nsITextInputProcessorListener documentation in
+// nsITextInputProcessorCallback.idl.
+class TextInputProcessorListener final : public nsITextInputProcessorListener {
+ public:
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_NSITEXTINPUTPROCESSORCALLBACK
+  NS_DECL_NSITEXTINPUTPROCESSORLISTENER
+  NS_DECL_CYCLE_COLLECTION_CLASS(TextInputProcessorListener)
+ private:
+  ~TextInputProcessorListener() = default;
+  nsITextInputProcessorNotification* mNotification = nullptr;  // weak
+  nsCOMPtr<nsITextInputProcessorListenerCallback> mCallback;
+};
+
 }  // namespace mozilla
 
 #endif  // #ifndef mozilla_dom_textinputprocessor_h_

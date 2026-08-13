@@ -34,7 +34,9 @@
 #include "api/function_view.h"
 #include "api/make_ref_counted.h"
 #include "api/media_types.h"
+#include "api/rtp_header_extension_id.h"
 #include "api/rtp_headers.h"
+#include "api/rtp_parameters.h"
 #include "api/scoped_refptr.h"
 #include "api/sequence_checker.h"
 #include "api/task_queue/pending_task_safety_flag.h"
@@ -207,7 +209,7 @@ class ChannelSend : public ChannelSendInterface,
                                         int payload_frequency) override;
 
   // RTP+RTCP
-  void SetSendAudioLevelIndicationStatus(bool enable, int id) override;
+  void SetSendAudioLevelIndicationStatus(RtpHeaderExtensionId id) override;
 
   void RegisterSenderCongestionControlObjects(
       RtpTransportControllerSendInterface* transport) override;
@@ -572,15 +574,13 @@ ChannelSend::ChannelSend(
   configuration.rtcp_report_interval_ms = rtcp_report_interval_ms;
   configuration.rtcp_packet_type_counter_observer = this;
   configuration.local_media_ssrc = ssrc;
+  configuration.rtcp_mode = RtcpMode::kCompound;
 
   rtp_rtcp_ = ModuleRtpRtcpImpl2::CreateSendModule(env_, configuration);
   rtp_rtcp_->SetSendingMediaStatus(false);
 
   rtp_sender_audio_ =
       std::make_unique<RTPSenderAudio>(&env_.clock(), rtp_rtcp_->RtpSender());
-
-  // Ensure that RTCP is enabled by default for the created channel.
-  rtp_rtcp_->SetRTCPStatus(RtcpMode::kCompound);
 
   int error = audio_coding_->RegisterTransportCallback(this);
   RTC_DCHECK_EQ(0, error);
@@ -794,10 +794,10 @@ void ChannelSend::SetSendTelephoneEventPayloadType(int payload_type,
                                           payload_frequency, 0, 0);
 }
 
-void ChannelSend::SetSendAudioLevelIndicationStatus(bool enable, int id) {
+void ChannelSend::SetSendAudioLevelIndicationStatus(RtpHeaderExtensionId id) {
   RTC_DCHECK_RUN_ON(worker_thread_);
-  include_audio_level_indication_.store(enable);
-  if (enable) {
+  include_audio_level_indication_.store(id.IsSet());
+  if (id.IsSet()) {
     rtp_rtcp_->RegisterRtpHeaderExtension(AudioLevelExtension::Uri(), id);
   } else {
     rtp_rtcp_->DeregisterSendRtpHeaderExtension(AudioLevelExtension::Uri());

@@ -1050,14 +1050,36 @@ bool ForOfDisposalEmitter::prepareForForOfIteratorClose() {
 
   // [stack] EXC THROWING
 
+  if (hasAwaitUsing()) {
+    if (!bce_->emit1(JSOp::GetRval)) {
+      // [stack] EXC THROWING RVAL
+      return false;
+    }
+    if (!bce_->emitUnpickN(2)) {
+      // [stack] RVAL EXC THROWING
+      return false;
+    }
+  }
+
   if (!bce_->emit1(JSOp::Swap)) {
-    // [stack] THROWING EXC
+    // [stack] RVAL? THROWING EXC
     return false;
   }
 
   if (!emitDisposeResourcesForEnvironment(*es)) {
-    // [stack] EXC THROWING
+    // [stack] RVAL? EXC THROWING
     return false;
+  }
+
+  if (hasAwaitUsing()) {
+    if (!bce_->emitPickN(2)) {
+      // [stack] EXC THROWING RVAL
+      return false;
+    }
+    if (!bce_->emit1(JSOp::SetRval)) {
+      // [stack] EXC THROWING
+      return false;
+    }
   }
 
   // The ForOfIteratorClose logic can be emitted multiple times (due different

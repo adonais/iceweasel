@@ -76,7 +76,11 @@ class _TabState {
 
     tabData.hidden = tab.hidden;
 
-    if (browser.audioMuted) {
+    // Collect tab.muted, the muted attribute that only muting through the tab
+    // sets, rather than browser.audioMuted, which is a live read of the media
+    // controller and so also covers internal mutes, such as the one a closing
+    // tab gets, that must not outlive the tab.
+    if (tab.muted) {
       tabData.muted = true;
       tabData.muteReason = tab.muteReason;
     }

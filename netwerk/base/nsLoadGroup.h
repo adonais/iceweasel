@@ -5,14 +5,14 @@
 #ifndef nsLoadGroup_h_
 #define nsLoadGroup_h_
 
+#include "mozilla/TimeStamp.h"
+#include "nsCOMPtr.h"
 #include "nsILoadGroup.h"
 #include "nsILoadGroupChild.h"
 #include "nsIObserver.h"
-#include "nsCOMPtr.h"
-#include "nsWeakReference.h"
 #include "nsISupportsPriority.h"
 #include "nsTHashSet.h"
-#include "mozilla/TimeStamp.h"
+#include "nsWeakReference.h"
 
 class nsIRequestContext;
 class nsIRequestContextService;

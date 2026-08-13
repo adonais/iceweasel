@@ -4,31 +4,29 @@
 
 // Tests for MacIOSurfaceHelpers: verifies that CPU readback of MacIOSurfaces
 // via CreateSourceSurfaceFromMacIOSurface produces correct BGRA pixel values
-// for 10-bit biplanar formats (P010, NV16).
+// for 8-bit and 10-bit biplanar formats (NV12, NV16, P010, P210).
 
+#include "MacIOSurfaceHelpers.h"
 #include "gtest/gtest.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/MacIOSurface.h"
-#include "MacIOSurfaceHelpers.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;
 using namespace mozilla::layers;
 
-static void FillBiPlanarSurface(MacIOSurface* aSurface, uint16_t aYVal,
-                                uint16_t aCbCrVal) {
-  uint16_t* yPlane =
-      reinterpret_cast<uint16_t*>(aSurface->GetBaseAddressOfPlane(0));
-  size_t yStride = aSurface->GetBytesPerRow(0) / sizeof(uint16_t);
+template <typename T>
+static void FillBiPlanarSurface(MacIOSurface* aSurface, T aYVal, T aCbCrVal) {
+  T* yPlane = reinterpret_cast<T*>(aSurface->GetBaseAddressOfPlane(0));
+  size_t yStride = aSurface->GetBytesPerRow(0) / sizeof(T);
   for (size_t y = 0; y < aSurface->GetDevicePixelHeight(0); y++) {
     for (size_t x = 0; x < aSurface->GetDevicePixelWidth(0); x++) {
       yPlane[y * yStride + x] = aYVal;
     }
   }
 
-  uint16_t* cbcrPlane =
-      reinterpret_cast<uint16_t*>(aSurface->GetBaseAddressOfPlane(1));
-  size_t cbcrStride = aSurface->GetBytesPerRow(1) / sizeof(uint16_t);
+  T* cbcrPlane = reinterpret_cast<T*>(aSurface->GetBaseAddressOfPlane(1));
+  size_t cbcrStride = aSurface->GetBytesPerRow(1) / sizeof(T);
   for (size_t y = 0; y < aSurface->GetDevicePixelHeight(1); y++) {
     for (size_t x = 0; x < aSurface->GetDevicePixelWidth(1); x++) {
       cbcrPlane[y * cbcrStride + x * 2] = aCbCrVal;
@@ -39,16 +37,23 @@ static void FillBiPlanarSurface(MacIOSurface* aSurface, uint16_t aYVal,
 
 static void TestBiPlanarMidGrayReadback(const IntSize& aYSize,
                                         const IntSize& aCbCrSize,
-                                        ChromaSubsampling aSubsampling) {
+                                        ChromaSubsampling aSubsampling,
+                                        ColorDepth aColorDepth) {
   RefPtr<MacIOSurface> surface = MacIOSurface::CreateBiPlanarSurface(
       aYSize, aCbCrSize, aSubsampling, YUVColorSpace::BT709,
-      TransferFunction::BT709, ColorRange::FULL, ColorDepth::COLOR_10,
+      TransferFunction::BT709, ColorRange::FULL, aColorDepth,
       MacIOSurface::AllowAlpha::Yes);
   ASSERT_TRUE(surface);
 
-  // Mid-gray in 10-bit full range: Y=Cb=Cr=512, stored in bits 15:6.
   ASSERT_TRUE(surface->Lock(false));
-  FillBiPlanarSurface(surface, uint16_t(512) << 6, uint16_t(512) << 6);
+  if (aColorDepth == ColorDepth::COLOR_8) {
+    // Mid-gray in 8-bit full range: Y=Cb=Cr=128.
+    FillBiPlanarSurface<uint8_t>(surface, 128, 128);
+  } else {
+    // Mid-gray in 10-bit full range: Y=Cb=Cr=512, stored in bits 15:6.
+    FillBiPlanarSurface<uint16_t>(surface, uint16_t(512) << 6,
+                                  uint16_t(512) << 6);
+  }
   surface->Unlock();
 
   RefPtr<SourceSurface> sourceSurface =
@@ -76,19 +81,38 @@ static void TestBiPlanarMidGrayReadback(const IntSize& aYSize,
   }
 }
 
-// Tests that a P010 (10-bit 4:2:0 biplanar) IOSurface filled with mid-gray
+// Tests that an NV12 (8-bit 4:2:0 biplanar) IOSurface filled with mid-gray
 // produces the correct BGRA output via CreateSourceSurfaceFromMacIOSurface.
-TEST(MacIOSurfaceHelpers, P010Readback)
+TEST(MacIOSurfaceHelpers, NV12Readback)
 {
-  ASSERT_NO_FATAL_FAILURE(
-      TestBiPlanarMidGrayReadback(IntSize(16, 16), IntSize(8, 8),
-                                  ChromaSubsampling::HALF_WIDTH_AND_HEIGHT));
+  ASSERT_NO_FATAL_FAILURE(TestBiPlanarMidGrayReadback(
+      IntSize(16, 16), IntSize(8, 8), ChromaSubsampling::HALF_WIDTH_AND_HEIGHT,
+      ColorDepth::COLOR_8));
 }
 
-// Tests that an NV16 (10-bit 4:2:2 biplanar) IOSurface filled with mid-gray
+// Tests that an NV16 (8-bit 4:2:2 biplanar) IOSurface filled with mid-gray
 // produces the correct BGRA output via CreateSourceSurfaceFromMacIOSurface.
 TEST(MacIOSurfaceHelpers, NV16Readback)
 {
   ASSERT_NO_FATAL_FAILURE(TestBiPlanarMidGrayReadback(
-      IntSize(16, 16), IntSize(8, 16), ChromaSubsampling::HALF_WIDTH));
+      IntSize(16, 16), IntSize(8, 16), ChromaSubsampling::HALF_WIDTH,
+      ColorDepth::COLOR_8));
+}
+
+// Tests that a P010 (10-bit 4:2:0 biplanar) IOSurface filled with mid-gray
+// produces the correct BGRA output via CreateSourceSurfaceFromMacIOSurface.
+TEST(MacIOSurfaceHelpers, P010Readback)
+{
+  ASSERT_NO_FATAL_FAILURE(TestBiPlanarMidGrayReadback(
+      IntSize(16, 16), IntSize(8, 8), ChromaSubsampling::HALF_WIDTH_AND_HEIGHT,
+      ColorDepth::COLOR_10));
+}
+
+// Tests that an P210 (10-bit 4:2:2 biplanar) IOSurface filled with mid-gray
+// produces the correct BGRA output via CreateSourceSurfaceFromMacIOSurface.
+TEST(MacIOSurfaceHelpers, P210Readback)
+{
+  ASSERT_NO_FATAL_FAILURE(TestBiPlanarMidGrayReadback(
+      IntSize(16, 16), IntSize(8, 16), ChromaSubsampling::HALF_WIDTH,
+      ColorDepth::COLOR_10));
 }

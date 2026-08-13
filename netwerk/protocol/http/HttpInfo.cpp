@@ -3,11 +3,11 @@
  * file, You can obtain one at http:mozilla.org/MPL/2.0/. */
 
 // HttpLog.h should generally be included first
-#include "HttpLog.h"
-
-#include "nsHttpHandler.h"
-#include "nsHttpConnectionMgr.h"
 #include "HttpInfo.h"
+
+#include "HttpLog.h"
+#include "nsHttpConnectionMgr.h"
+#include "nsHttpHandler.h"
 
 void mozilla::net::HttpInfo::GetHttpConnectionData(
     nsTArray<HttpRetParams>* args) {

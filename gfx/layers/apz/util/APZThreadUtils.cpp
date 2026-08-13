@@ -7,7 +7,6 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ProfilerRunnable.h"
 #include "mozilla/StaticMutex.h"
-
 #include "nsISerialEventTarget.h"
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"

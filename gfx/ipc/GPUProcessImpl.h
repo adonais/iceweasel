@@ -4,8 +4,8 @@
 #ifndef _include_gfx_ipc_GPUProcessImpl_h_
 #define _include_gfx_ipc_GPUProcessImpl_h_
 
-#include "mozilla/ipc/ProcessChild.h"
 #include "GPUParent.h"
+#include "mozilla/ipc/ProcessChild.h"
 
 #if defined(XP_WIN)
 #  include "mozilla/mscom/ProcessRuntime.h"

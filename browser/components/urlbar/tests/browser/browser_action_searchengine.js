@@ -38,7 +38,7 @@ async function testSearch(win, expectedName, expectedBaseUrl) {
 
   Assert.equal(
     result.type,
-    UrlbarUtils.RESULT_TYPE.SEARCH,
+    UrlbarShared.RESULT_TYPE.SEARCH,
     "Should have type search"
   );
   Assert.deepEqual(

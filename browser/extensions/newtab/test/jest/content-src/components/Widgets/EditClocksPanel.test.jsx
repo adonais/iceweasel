@@ -89,13 +89,39 @@ describe("<EditClocksPanel>", () => {
       });
     });
 
-    it("hides the nickname subtitle from AT when no label is set", () => {
+    it("keeps the nickname subtitle out of the a11y tree (the row's aria-label covers it)", () => {
       const { container } = renderPanel();
-      const subtitle = container
-        .querySelectorAll(".clocks-edit-item")[1]
-        .querySelector(".clocks-edit-subtitle");
-      expect(subtitle.getAttribute("aria-hidden")).toBe("true");
-      expect(subtitle.hasAttribute("data-l10n-id")).toBe(false);
+      const items = container.querySelectorAll(".clocks-edit-item");
+      items.forEach(item => {
+        expect(
+          item
+            .querySelector(".clocks-edit-subtitle")
+            .getAttribute("aria-hidden")
+        ).toBe("true");
+      });
+    });
+
+    it("sets an aria-label l10n id that includes the nickname when a label is set", () => {
+      const { container } = renderPanel();
+      const items = container.querySelectorAll(".clocks-edit-item");
+      expect(items[0].getAttribute("data-l10n-id")).toBe(
+        "newtab-clock-widget-edit-item-with-nickname"
+      );
+      expect(JSON.parse(items[0].getAttribute("data-l10n-args"))).toEqual({
+        city: "Berlin",
+        nickname: "Home",
+      });
+    });
+
+    it("falls back to a city-only aria-label when no nickname is set", () => {
+      const { container } = renderPanel();
+      const items = container.querySelectorAll(".clocks-edit-item");
+      expect(items[1].getAttribute("data-l10n-id")).toBe(
+        "newtab-clock-widget-edit-item"
+      );
+      expect(JSON.parse(items[1].getAttribute("data-l10n-args"))).toEqual({
+        city: "New York",
+      });
     });
 
     it("makes each clock item focusable for keyboard hover-reveal", () => {

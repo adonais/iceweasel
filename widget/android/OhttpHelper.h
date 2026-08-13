@@ -5,11 +5,9 @@
 #ifndef OhttpHelper_h_
 #define OhttpHelper_h_
 
+#include "mozilla/StaticPtr.h"
 #include "mozilla/java/GeckoResultWrappers.h"
 #include "mozilla/java/WebRequestWrappers.h"
-
-#include "mozilla/StaticPtr.h"
-
 #include "nsIChannel.h"
 #include "nsISupports.h"
 

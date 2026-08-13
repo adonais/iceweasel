@@ -5,8 +5,8 @@
 #ifndef mozilla_widget_EventDispatcher_h
 #define mozilla_widget_EventDispatcher_h
 
-#include <objc/objc.h>
 #include <CoreFoundation/CoreFoundation.h>
+#include <objc/objc.h>
 
 #include "mozilla/widget/EventDispatcherBase.h"
 

@@ -10,8 +10,8 @@
 #include "WMFClearKeyActivate.h"
 #include "WMFClearKeyCDM.h"
 #include "WMFClearKeyDecryptor.h"
-#include "WMFClearKeyUtils.h"
 #include "WMFClearKeyOutputPolicy.h"
+#include "WMFClearKeyUtils.h"
 
 namespace mozilla {
 

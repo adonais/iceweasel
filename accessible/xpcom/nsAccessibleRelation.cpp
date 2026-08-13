@@ -5,10 +5,9 @@
 #include "nsAccessibleRelation.h"
 
 #include "Relation.h"
-#include "xpcAccessibleDocument.h"
-
 #include "nsArrayUtils.h"
 #include "nsComponentManagerUtils.h"
+#include "xpcAccessibleDocument.h"
 
 using namespace mozilla::a11y;
 

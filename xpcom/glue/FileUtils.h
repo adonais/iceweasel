@@ -12,12 +12,12 @@
 #elif defined(XP_WIN)
 #  include <io.h>
 #endif
-#include "prio.h"
-#include "prlink.h"
-
-#include "nsIFile.h"
 #include <errno.h>
 #include <limits.h>
+
+#include "nsIFile.h"
+#include "prio.h"
+#include "prlink.h"
 
 namespace mozilla {
 

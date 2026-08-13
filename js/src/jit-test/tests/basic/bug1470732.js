@@ -1,4 +1,7 @@
-// |jit-test| skip-if: helperThreadCount() === 0
+// |jit-test| skip-if: helperThreadCount() === 0 || (getBuildConfiguration("asan") && getBuildConfiguration("pointer-byte-size") === 4)
+
+// This test is skipped on 32-bit ASan builds because it frequently OOMs.
+
 var i = 0;
 while(i++ < 500) {
   evalInWorker(`

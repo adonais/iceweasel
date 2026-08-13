@@ -68,7 +68,7 @@ class alignas(8) IonScript final : public TrailingArray<IonScript> {
   Offset allocBytes_ = 0;
 
   // Code pointer containing the actual method.
-  HeapPtr<JitCode*> method_{nullptr};
+  GCPtr<JitCode*> method_{nullptr};
 
   // Entrypoint for OSR, or nullptr.
   jsbytecode* osrPc_ = nullptr;
@@ -134,6 +134,10 @@ class alignas(8) IonScript final : public TrailingArray<IonScript> {
   // A hash of the ICScripts used in this compilation.
   mozilla::HashNumber icHash_ = 0;
 #endif
+
+  // Lock used to synchronise IonIC stub chain mutation on the main thread with
+  // a concurrent marking thread tracing the ICs.
+  gc::MarkingLock markingLock_;
 
   // End of fields.
 
@@ -395,6 +399,8 @@ class alignas(8) IonScript final : public TrailingArray<IonScript> {
   void copyRuntimeData(const uint8_t* data);
   void copyICEntries(const uint32_t* icEntries);
   void copySafepoints(const SafepointWriter* writer);
+
+  gc::MarkingLock& markingLock() { return markingLock_; }
 
   bool invalidated() const { return invalidationCount_ != 0; }
 

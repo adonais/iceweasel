@@ -161,7 +161,7 @@ add_task(async function topSitesTabSwitch() {
   });
   Assert.ok(gURLBar.view.isOpen, "UrlbarView should be open.");
   await UrlbarTestUtils.promiseSearchComplete(window);
-  await checkResults(window, UrlbarUtils.RESULT_TYPE.TAB_SWITCH);
+  await checkResults(window, UrlbarShared.RESULT_TYPE.TAB_SWITCH);
   await UrlbarTestUtils.promisePopupClose(window);
 
   info("Test in a private window, switch to tab should not be offered");
@@ -180,7 +180,7 @@ add_task(async function topSitesTabSwitch() {
 
   Assert.ok(urlbar.view.isOpen, "UrlbarView should be open.");
   await UrlbarTestUtils.promiseSearchComplete(privateWin);
-  await checkResults(privateWin, UrlbarUtils.RESULT_TYPE.URL);
+  await checkResults(privateWin, UrlbarShared.RESULT_TYPE.URL);
   await UrlbarTestUtils.promisePopupClose(privateWin);
   await BrowserTestUtils.closeWindow(privateWin);
 

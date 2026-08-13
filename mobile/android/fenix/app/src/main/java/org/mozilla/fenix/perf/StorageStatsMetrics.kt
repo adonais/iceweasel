@@ -15,6 +15,7 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.fenix.GleanMetrics.StorageStats as Metrics
 
 /**
@@ -25,6 +26,8 @@ import org.mozilla.fenix.GleanMetrics.StorageStats as Metrics
  * platforms.
  */
 object StorageStatsMetrics {
+
+    private val logger = Logger("StorageStatsMetrics")
 
     @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
     fun report(context: Context) {
@@ -51,8 +54,20 @@ object StorageStatsMetrics {
                 //
                 // So we call from a worker thread and measure the duration to make sure it's not
                 // too slow.
-                storageStatsManager.queryStatsForUid(appInfo.storageUuid, appInfo.uid)
-            }
+
+                // Bug 2008785 - we are getting unusual crashes that seem to be related to the sharedUserId
+                // causing a RuntimeException when querying storage stats.
+                // We catch and swallow the exception since this information is used only for telemetry
+                // and not used for anything functional, we should not crash if we get into that situation.
+                // That unfortunately means we have to try-catch a generic RuntimeException
+                @Suppress("TooGenericExceptionCaught")
+                try {
+                    storageStatsManager.queryStatsForUid(appInfo.storageUuid, appInfo.uid)
+                } catch (exception: RuntimeException) {
+                    logger.error("Failed to query storage stats", exception)
+                    null
+                }
+            } ?: return@let
 
             // dataBytes includes the cache so we subtract it.
             val justDataDirBytes = storageStats.dataBytes - storageStats.cacheBytes

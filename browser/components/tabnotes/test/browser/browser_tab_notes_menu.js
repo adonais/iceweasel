@@ -211,7 +211,7 @@ add_task(async function test_saveTabNote() {
   EventUtils.sendString("Lorem ipsum dolor", window);
 
   let saveButton = tabNoteMenu.querySelector("#tab-note-editor-button-save");
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return !saveButton.disabled;
   });
 
@@ -260,7 +260,7 @@ add_task(async function test_editTabNote() {
   EventUtils.sendString(updatedNoteValue, window);
 
   let saveButton = tabNoteMenu.querySelector("#tab-note-editor-button-save");
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return !saveButton.disabled;
   });
 
@@ -269,7 +269,7 @@ add_task(async function test_editTabNote() {
   tabNoteMenu.querySelector("#tab-note-editor-button-save").click();
   await Promise.all([menuHidden, tabNoteEdited]);
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => Glean.tabNotes.edited.testGetValue()?.length,
     "wait for event to be recorded"
   );
@@ -335,7 +335,7 @@ add_task(async function test_deleteTabNote() {
   deleteButton.click();
   await tabNoteRemoved;
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => Glean.tabNotes.deleted.testGetValue()?.length,
     "wait for event to be recorded"
   );

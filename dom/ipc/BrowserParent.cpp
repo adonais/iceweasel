@@ -61,6 +61,7 @@
 #include "mozilla/layout/RemoteLayerTreeOwner.h"
 #include "mozilla/net/CookieJarSettings.h"
 #include "mozilla/net/NeckoChild.h"
+#include "mozilla/widget/Screen.h"
 #include "nsCOMPtr.h"
 #include "nsContentPermissionHelper.h"
 #include "nsContentUtils.h"
@@ -1093,6 +1094,27 @@ mozilla::ipc::IPCResult BrowserParent::RecvSetDimensions(
     aRequest.mHeight.apply(rescaleFunc);
   }
 
+  // Nothing further down keeps the size near the size of the screen that the
+  // window is on, so do it here. We allow twice the screen size because the
+  // size we get for a screen is not always accurate, on Wayland in particular,
+  // and all we need is to keep the size in a range the window can be given. For
+  // a request that carries inner dimensions this is a looser bound than it
+  // looks, since the outer size is larger.
+  nsCOMPtr<nsIWidget> mainWidget;
+  treeOwnerAsWin->GetMainWidget(getter_AddRefs(mainWidget));
+  if (mainWidget) {
+    if (RefPtr<widget::Screen> screen = mainWidget->GetWidgetScreen()) {
+      const LayoutDeviceIntSize availSize = screen->GetAvailRect().Size();
+      auto clampTo = [](Maybe<LayoutDeviceIntCoord>& aValue, int32_t aMax) {
+        if (aValue) {
+          *aValue = std::min<int32_t>(*aValue, aMax);
+        }
+      };
+      clampTo(aRequest.mWidth, 2 * availSize.width);
+      clampTo(aRequest.mHeight, 2 * availSize.height);
+    }
+  }
+
   // treeOwner is the chrome tree owner, but we wan't the content tree owner.
   nsCOMPtr<nsIWebBrowserChrome> webBrowserChrome = do_GetInterface(treeOwner);
   NS_ENSURE_TRUE(webBrowserChrome, IPC_OK());
@@ -1215,7 +1237,7 @@ void BrowserParent::Deactivate(bool aWindowLowering, uint64_t aActionId) {
 #ifdef ACCESSIBILITY
 a11y::PDocAccessibleParent* BrowserParent::AllocPDocAccessibleParent(
     PDocAccessibleParent* aParent, const uint64_t&,
-    const MaybeDiscardedBrowsingContext&) {
+    const MaybeDiscardedBrowsingContext&, const bool&) {
   // Reference freed in DeallocPDocAccessibleParent.
   return a11y::DocAccessibleParent::New().take();
 }
@@ -1229,11 +1251,13 @@ bool BrowserParent::DeallocPDocAccessibleParent(PDocAccessibleParent* aParent) {
 mozilla::ipc::IPCResult BrowserParent::RecvPDocAccessibleConstructor(
     PDocAccessibleParent* aDoc, PDocAccessibleParent* aParentDoc,
     const uint64_t& aParentID,
-    const MaybeDiscardedBrowsingContext& aBrowsingContext) {
+    const MaybeDiscardedBrowsingContext& aBrowsingContext,
+    const bool& aIsPrintDoc) {
 #  if defined(ANDROID)
   MonitorAutoLock mal(nsAccessibilityService::GetAndroidMonitor());
 #  endif
   auto doc = static_cast<a11y::DocAccessibleParent*>(aDoc);
+  doc->SetIsPrintDoc(aIsPrintDoc);
 
   // If this tab is already shutting down just mark the new actor as shutdown
   // and ignore it.  When the tab actor is destroyed it will be too.
@@ -1297,7 +1321,9 @@ mozilla::ipc::IPCResult BrowserParent::RecvPDocAccessibleConstructor(
     // In this case, we don't get aParentDoc and aParentID.
     MOZ_ASSERT(!aParentDoc && !aParentID);
     doc->SetTopLevelInContentProcess();
-    a11y::ProxyCreated(doc);
+    if (!doc->IsPrintDoc()) {
+      a11y::ProxyCreated(doc);
+    }
     // It's possible the embedder accessible hasn't been set yet; e.g.
     // a hidden iframe. In that case, embedderDoc will be null and this will
     // be handled when the embedder is set.
@@ -1321,7 +1347,9 @@ mozilla::ipc::IPCResult BrowserParent::RecvPDocAccessibleConstructor(
     doc->SetTopLevel();
     a11y::DocManager::RemoteDocAdded(doc);
 #  ifdef XP_WIN
-    doc->MaybeInitWindowEmulation();
+    if (!aIsPrintDoc) {
+      doc->MaybeInitWindowEmulation();
+    }
 #  endif
   }
   return IPC_OK();
@@ -1386,13 +1414,20 @@ IPCResult BrowserParent::RecvNewWindowGlobal(
   // NOTE: Keep this in sync with the similar check in
   // DocumentLoadListener::TriggerRedirectToRealChannel.
   EnumSet<ValidatePrincipalOptions> validationOptions = {};
-  // FIXME(bug 1698087): chrome://devtools/**/webextension-fallback.html
-  // Automation-Only: chrome://reftest/** + blank subframes
-  if (docURI->SchemeIs("chrome") ||
-      (xpc::IsInAutomation() && NS_IsAboutBlank(docURI) && parentWgp &&
-       parentWgp->Manager() == this &&
-       parentWgp->DocumentPrincipal()->IsSystemPrincipal())) {
-    validationOptions += ValidatePrincipalOptions::AllowSystem;
+  if (xpc::IsInAutomation()) {
+    // Automation-Only: chrome://reftest/** + blank subframes
+    bool isChromeReftest = false;
+    if (docURI->SchemeIs("chrome")) {
+      nsAutoCString host;
+      docURI->GetHost(host);
+      isChromeReftest = host.EqualsLiteral("reftest");
+    }
+
+    if (isChromeReftest ||
+        (NS_IsAboutBlank(docURI) && parentWgp && parentWgp->Manager() == this &&
+         parentWgp->DocumentPrincipal()->IsSystemPrincipal())) {
+      validationOptions += ValidatePrincipalOptions::AllowSystem;
+    }
   }
   if (!Manager()->ValidatePrincipal(aInit.principal(), validationOptions)) {
     return ContentParent::PrincipalValidationIpcFail(aInit.principal(), this,
@@ -3940,6 +3975,12 @@ mozilla::ipc::IPCResult BrowserParent::RecvInvokeDragSession(
     // session.
     Manager()->SetInputPriorityEventEnabled(true);
     return IPC_OK();
+  }
+
+  if (!Manager()->ValidatePrincipal(aPrincipal,
+                                    {ValidatePrincipalOptions::AllowNullPtr})) {
+    return ContentParent::PrincipalValidationIpcFail(aPrincipal, this,
+                                                     __func__);
   }
 
   nsCOMPtr<nsICookieJarSettings> cookieJarSettings;

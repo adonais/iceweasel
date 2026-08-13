@@ -8,13 +8,15 @@ description: >
 features: [iterator-includes]
 ---*/
 
-class NonObjectIterator extends Iterator {
+let iterator = {
+  __proto__: Iterator.prototype,
   next() {
     return null;
+  },
+  get return() {
+    throw new Test262Error();
   }
-}
-
-let iterator = new NonObjectIterator();
+};
 
 assert.throws(TypeError, function() {
   iterator.includes(0);

@@ -282,8 +282,8 @@ function prepareFilePicker(filename) {
  *     True if the saved file is supposed to be empty.
  */
 async function writeTextContentToPath(textContent, path, isEmpty = false) {
-  await BrowserTestUtils.waitForCondition(() => IOUtils.exists(path));
-  await BrowserTestUtils.waitForCondition(async () => {
+  await TestUtils.waitForCondition(() => IOUtils.exists(path));
+  await TestUtils.waitForCondition(async () => {
     const { size } = await IOUtils.stat(path);
     if (isEmpty) {
       return size === 0;

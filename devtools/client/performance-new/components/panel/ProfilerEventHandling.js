@@ -5,7 +5,6 @@
 
 /**
  * @typedef {import("../../@types/perf").PerfFront} PerfFront
- * @typedef {import("../../@types/perf").RecordingState} RecordingState
  * @typedef {import("../../@types/perf").State} StoreState
  * @typedef {import("../../@types/perf").RootTraits} RootTraits
  * @typedef {import("../../@types/perf").PanelWindow} PanelWindow
@@ -18,7 +17,6 @@
 
 /**
  * @typedef {object} StateProps
- * @property {RecordingState} recordingState
  * @property {boolean?} isSupportedPlatform
  */
 
@@ -80,25 +78,6 @@ class ProfilerEventHandling extends PureComponent {
     this.props.perfFront.on("profiler-stopped", reportProfilerStopped);
   }
 
-  componentWillUnmount() {
-    switch (this.props.recordingState) {
-      case "not-yet-known":
-      case "available-to-record":
-      case "request-to-stop-profiler":
-      case "request-to-get-profile-and-stop-profiler":
-        // Do nothing for these states.
-        break;
-
-      case "recording":
-      case "request-to-start-recording":
-        this.props.perfFront.stopProfilerAndDiscardProfile();
-        break;
-
-      default:
-        throw new Error("Unhandled recording state.");
-    }
-  }
-
   render() {
     return null;
   }
@@ -110,7 +89,6 @@ class ProfilerEventHandling extends PureComponent {
  */
 function mapStateToProps(state) {
   return {
-    recordingState: selectors.getRecordingState(state),
     isSupportedPlatform: selectors.getIsSupportedPlatform(state),
   };
 }

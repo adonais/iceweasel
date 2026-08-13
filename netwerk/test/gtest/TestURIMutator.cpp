@@ -1,10 +1,10 @@
 #include "gtest/gtest.h"
 #include "nsCOMPtr.h"
-#include "nsNetCID.h"
 #include "nsIURIMutator.h"
 #include "nsIURL.h"
-#include "nsThreadPool.h"
+#include "nsNetCID.h"
 #include "nsNetUtil.h"
+#include "nsThreadPool.h"
 
 TEST(TestURIMutator, Mutator)
 {

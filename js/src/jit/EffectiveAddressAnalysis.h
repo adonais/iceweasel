@@ -8,19 +8,13 @@
 namespace js {
 namespace jit {
 
-class MIRGenerator;
 class MIRGraph;
 
 class EffectiveAddressAnalysis {
-  const MIRGenerator* mir_;
   MIRGraph& graph_;
 
-  template <typename AsmJSMemoryAccess>
-  void analyzeAsmJSHeapAccess(AsmJSMemoryAccess* ins);
-
  public:
-  EffectiveAddressAnalysis(const MIRGenerator* mir, MIRGraph& graph)
-      : mir_(mir), graph_(graph) {}
+  explicit EffectiveAddressAnalysis(MIRGraph& graph) : graph_(graph) {}
 
   [[nodiscard]] bool analyze();
 };

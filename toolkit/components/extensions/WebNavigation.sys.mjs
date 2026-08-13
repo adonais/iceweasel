@@ -9,7 +9,7 @@ const lazy = XPCOMUtils.declareLazy({
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   ClickHandlerParent: "resource:///actors/ClickHandlerParent.sys.mjs",
-  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   WebNavigationFrames: "resource://gre/modules/WebNavigationFrames.sys.mjs",
 });
 
@@ -126,9 +126,9 @@ export var WebNavigationManager = {
    *   The data for the autocompleted item.
    * @param {object} [acData.result]
    *   The result information associated with the navigation action.
-   * @param {Items<typeof lazy.UrlbarUtils.RESULT_TYPE>} [acData.result.type]
+   * @param {Items<typeof lazy.UrlbarShared.RESULT_TYPE>} [acData.result.type]
    *   The result type associated with the navigation action.
-   * @param {Items<typeof lazy.UrlbarUtils.RESULT_SOURCE>} [acData.result.source]
+   * @param {Items<typeof lazy.UrlbarShared.RESULT_SOURCE>} [acData.result.source]
    *   The result source associated with the navigation action.
    */
   onURLBarUserStartNavigation(acData) {
@@ -140,35 +140,35 @@ export var WebNavigationManager = {
       tabTransitionData.typed = true;
     } else {
       switch (acData.result.type) {
-        case lazy.UrlbarUtils.RESULT_TYPE.KEYWORD:
+        case lazy.UrlbarShared.RESULT_TYPE.KEYWORD:
           tabTransitionData.keyword = true;
           break;
-        case lazy.UrlbarUtils.RESULT_TYPE.SEARCH:
+        case lazy.UrlbarShared.RESULT_TYPE.SEARCH:
           tabTransitionData.generated = true;
           break;
-        case lazy.UrlbarUtils.RESULT_TYPE.URL:
+        case lazy.UrlbarShared.RESULT_TYPE.URL:
           if (
-            acData.result.source == lazy.UrlbarUtils.RESULT_SOURCE.BOOKMARKS
+            acData.result.source == lazy.UrlbarShared.RESULT_SOURCE.BOOKMARKS
           ) {
             tabTransitionData.auto_bookmark = true;
           } else {
             tabTransitionData.typed = true;
           }
           break;
-        case lazy.UrlbarUtils.RESULT_TYPE.REMOTE_TAB:
+        case lazy.UrlbarShared.RESULT_TYPE.REMOTE_TAB:
           // Remote tab are autocomplete results related to
           // tab urls from a remote synchronized Firefox.
           tabTransitionData.typed = true;
           break;
-        case lazy.UrlbarUtils.RESULT_TYPE.TAB_SWITCH:
+        case lazy.UrlbarShared.RESULT_TYPE.TAB_SWITCH:
         // This "switchtab" autocompletion should be ignored, because
         // it is not related to a navigation.
         // Fall through.
-        case lazy.UrlbarUtils.RESULT_TYPE.OMNIBOX:
+        case lazy.UrlbarShared.RESULT_TYPE.OMNIBOX:
         // "Omnibox" should be ignored as the add-on may or may not initiate
         // a navigation on the item being selected.
         // Fall through.
-        case lazy.UrlbarUtils.RESULT_TYPE.TIP:
+        case lazy.UrlbarShared.RESULT_TYPE.TIP:
           // "Tip" should be ignored since the tip will only initiate navigation
           // if there is a valid buttonUrl property, which is optional.
           throw new Error(

@@ -90,7 +90,7 @@ add_task(async function test_network_offline() {
       .querySelector("moz-button[data-action='network-offline']")
       .buttonEl.click();
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => TabsSetupFlowManager.tryToClearError.calledOnce
     );
 
@@ -375,7 +375,7 @@ add_task(async function test_multiple_errors() {
     await navigateToViewAndWait(document, "syncedtabs");
     // Simulate conditions in which both the locked password and sync error
     // messages could be shown
-    LoginTestUtils.primaryPassword.enable();
+    await LoginTestUtils.primaryPassword.enable();
     Services.obs.notifyObservers(null, UIState.ON_UPDATE);
     Services.obs.notifyObservers(null, "weave:service:sync:error");
 
@@ -411,7 +411,7 @@ add_task(async function test_multiple_errors() {
     );
 
     // Clear the primary password error message
-    LoginTestUtils.primaryPassword.disable();
+    await LoginTestUtils.primaryPassword.disable();
     Services.obs.notifyObservers(null, UIState.ON_UPDATE);
 
     info("Waiting for the sync error message to be shown");

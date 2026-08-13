@@ -6,8 +6,8 @@
 static const int args_length = 4;
 #if defined(XP_WIN) && defined(_MSC_VER)
 #  define _UNICODE
-#  include <tchar.h>
 #  include <stdio.h>
+#  include <tchar.h>
 
 static const _TCHAR* expected_utf16[args_length] = {
     // Latin-1
@@ -45,8 +45,8 @@ int wmain(int argc, _TCHAR* argv[]) {
   return 0;
 }
 #else
-#  include <string.h>
 #  include <stdio.h>
+#  include <string.h>
 
 static const char* expected_utf8[args_length] = {
     // Latin-1

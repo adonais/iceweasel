@@ -67,7 +67,7 @@ nsresult HTMLEditor::InsertLineBreakAsSubAction() {
     }
   }
 
-  if (GetEditContext()) {
+  if (GetEditActionEditContext()) {
     // Don't insert line break if there is an EditContext
     return NS_OK;
   }

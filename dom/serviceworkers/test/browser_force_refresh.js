@@ -70,6 +70,7 @@ function test() {
           },
         },
         allFrames: true,
+        safeForUntrustedWebProcess: true,
       });
 
       // create a new tab and load test url

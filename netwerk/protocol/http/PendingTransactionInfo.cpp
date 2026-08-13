@@ -3,9 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 // HttpLog.h should generally be included first
-#include "HttpLog.h"
-
 #include "PendingTransactionInfo.h"
+
+#include "HttpLog.h"
 #include "NullHttpTransaction.h"
 
 // Log on level :5, instead of default :4.

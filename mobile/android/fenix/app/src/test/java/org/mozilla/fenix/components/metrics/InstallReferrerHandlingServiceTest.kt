@@ -574,6 +574,224 @@ internal class InstallReferrerHandlingServiceTest {
             val xReferrer = "utm_source=x&utm_medium=paid"
             assertTrue(InstallReferrerHandlingService.shouldShowMarketingOnboarding(xReferrer, distributionIdManager))
         }
+
+    @Test
+    fun `WHEN installReferrerResponse is null or blank THEN isMolocoAttribution returns false`() {
+        assertFalse(InstallReferrerHandlingService.isMolocoAttribution(null))
+        assertFalse(InstallReferrerHandlingService.isMolocoAttribution(""))
+        assertFalse(InstallReferrerHandlingService.isMolocoAttribution(" "))
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has a Moloco adjust_external_click_id THEN isMolocoAttribution returns true`() {
+        assertTrue(
+            InstallReferrerHandlingService.isMolocoAttribution(
+                "adjust_external_click_id=moloco_9b1deb4d-3b7d-4bad-9bdd-2b0d7b3d41a6",
+            ),
+        )
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has a mixed-case Moloco adjust_external_click_id THEN isMolocoAttribution returns true`() {
+        assertTrue(InstallReferrerHandlingService.isMolocoAttribution("adjust_external_click_id=Moloco_abc"))
+        assertTrue(InstallReferrerHandlingService.isMolocoAttribution("adjust_external_click_id=MOLOCO_abc"))
+        assertTrue(InstallReferrerHandlingService.isMolocoAttribution("adjust_external_click_id%3Dmoloco_abc"))
+        assertTrue(InstallReferrerHandlingService.isMolocoAttribution("adjust_external_click_id%3DMoLoCo_abc"))
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has a malformed percent escape THEN isMolocoAttribution falls back to raw parsing`() {
+        assertTrue(
+            InstallReferrerHandlingService.isMolocoAttribution(
+                "adjust_external_click_id=moloco_abc123&malformed=%",
+            ),
+        )
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has a non-Moloco adjust_external_click_id THEN isMolocoAttribution returns false`() {
+        assertFalse(
+            InstallReferrerHandlingService.isMolocoAttribution(
+                "adjust_external_click_id=reddit_abc123",
+            ),
+        )
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has no adjust_external_click_id THEN isMolocoAttribution returns false`() {
+        assertFalse(InstallReferrerHandlingService.isMolocoAttribution("utm_source=google&utm_medium=cpc"))
+    }
+
+    @Test
+    fun `GIVEN a Moloco-attributed referrer on OK response WHEN start is called THEN isUserMolocoAttributed is true`() {
+        val referrer = "adjust_external_click_id=moloco_9b1deb4d-3b7d-4bad-9bdd-2b0d7b3d41a6&utm_medium=paid"
+        val service = fakeService(
+            responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+            referrerResponse = referrer,
+        )
+
+        service.start()
+
+        assertTrue(testContext.components.settings.isUserMolocoAttributed)
+    }
+
+    @Test
+    fun `GIVEN a non-Moloco referrer on OK response WHEN start is called THEN isUserMolocoAttributed is false`() {
+        testContext.components.settings.isUserMolocoAttributed = true
+        val service = fakeService(
+            responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+            referrerResponse = "utm_source=google&utm_medium=cpc",
+        )
+
+        service.start()
+
+        assertFalse(testContext.components.settings.isUserMolocoAttributed)
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse is a Moloco attribution THEN we should show marketing onboarding`() =
+        runBlocking {
+            val molocoReferrer = "adjust_external_click_id=moloco_9b1deb4d-3b7d-4bad-9bdd-2b0d7b3d41a6&utm_medium=paid"
+            assertTrue(
+                InstallReferrerHandlingService.shouldShowMarketingOnboarding(molocoReferrer, distributionIdManager),
+            )
+        }
+
+    @Test
+    fun `WHEN installReferrerResponse is null or blank THEN isRakutenAttribution returns false`() {
+        assertFalse(InstallReferrerHandlingService.isRakutenAttribution(null))
+        assertFalse(InstallReferrerHandlingService.isRakutenAttribution(""))
+        assertFalse(InstallReferrerHandlingService.isRakutenAttribution(" "))
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has utm_source Rakuten THEN isRakutenAttribution returns true`() {
+        assertTrue(InstallReferrerHandlingService.isRakutenAttribution("utm_source=Rakuten&utm_medium=paid"))
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has a mixed-case utm_source Rakuten THEN isRakutenAttribution returns true`() {
+        assertTrue(InstallReferrerHandlingService.isRakutenAttribution("utm_source=rakuten&utm_medium=paid"))
+        assertTrue(InstallReferrerHandlingService.isRakutenAttribution("utm_source%3DRAKUTEN&utm_medium=paid"))
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has a malformed percent escape THEN isRakutenAttribution falls back to raw parsing`() {
+        assertTrue(InstallReferrerHandlingService.isRakutenAttribution("utm_source=Rakuten&malformed=%"))
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has a non-Rakuten utm_source THEN isRakutenAttribution returns false`() {
+        assertFalse(InstallReferrerHandlingService.isRakutenAttribution("utm_source=google&utm_medium=cpc"))
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has a utm_source that merely starts with Rakuten THEN isRakutenAttribution returns false`() {
+        assertFalse(InstallReferrerHandlingService.isRakutenAttribution("utm_source=Rakutens&utm_medium=cpc"))
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has no utm_source THEN isRakutenAttribution returns false`() {
+        assertFalse(InstallReferrerHandlingService.isRakutenAttribution("adjust_external_click_id=reddit_abc"))
+    }
+
+    @Test
+    fun `GIVEN a Rakuten-attributed referrer on OK response WHEN start is called THEN isUserRakutenAttributed is true`() {
+        val referrer = "utm_source=Rakuten&utm_medium=paid"
+        val service = fakeService(
+            responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+            referrerResponse = referrer,
+        )
+
+        service.start()
+
+        assertTrue(testContext.components.settings.isUserRakutenAttributed)
+    }
+
+    @Test
+    fun `GIVEN a non-Rakuten referrer on OK response WHEN start is called THEN isUserRakutenAttributed is false`() {
+        testContext.components.settings.isUserRakutenAttributed = true
+        val service = fakeService(
+            responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+            referrerResponse = "utm_source=google&utm_medium=cpc",
+        )
+
+        service.start()
+
+        assertFalse(testContext.components.settings.isUserRakutenAttributed)
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse is a Rakuten attribution THEN we should show marketing onboarding`() =
+        runBlocking {
+            val rakutenReferrer = "utm_source=Rakuten&utm_medium=paid"
+            assertTrue(
+                InstallReferrerHandlingService.shouldShowMarketingOnboarding(rakutenReferrer, distributionIdManager),
+            )
+        }
+
+    @Test
+    fun `WHEN installReferrerResponse is null or blank THEN isSkyflagAttribution returns false`() {
+        assertFalse(InstallReferrerHandlingService.isSkyflagAttribution(null))
+        assertFalse(InstallReferrerHandlingService.isSkyflagAttribution(""))
+        assertFalse(InstallReferrerHandlingService.isSkyflagAttribution(" "))
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has utm_source skyflag THEN isSkyflagAttribution returns true`() {
+        assertTrue(InstallReferrerHandlingService.isSkyflagAttribution("utm_source=skyflag&utm_medium=paid"))
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has a mixed-case utm_source skyflag THEN isSkyflagAttribution returns true`() {
+        assertTrue(InstallReferrerHandlingService.isSkyflagAttribution("utm_source=Skyflag&utm_medium=paid"))
+        assertTrue(InstallReferrerHandlingService.isSkyflagAttribution("utm_source%3Dskyflag&utm_medium=paid"))
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has a non-Skyflag utm_source THEN isSkyflagAttribution returns false`() {
+        assertFalse(InstallReferrerHandlingService.isSkyflagAttribution("utm_source=google&utm_medium=cpc"))
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse has a utm_source that merely starts with skyflag THEN isSkyflagAttribution returns false`() {
+        assertFalse(InstallReferrerHandlingService.isSkyflagAttribution("utm_source=skyflagged&utm_medium=cpc"))
+    }
+
+    @Test
+    fun `GIVEN a Skyflag-attributed referrer on OK response WHEN start is called THEN isUserSkyflagAttributed is true`() {
+        val referrer = "utm_source=skyflag&utm_medium=paid"
+        val service = fakeService(
+            responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+            referrerResponse = referrer,
+        )
+
+        service.start()
+
+        assertTrue(testContext.components.settings.isUserSkyflagAttributed)
+    }
+
+    @Test
+    fun `GIVEN a non-Skyflag referrer on OK response WHEN start is called THEN isUserSkyflagAttributed is false`() {
+        testContext.components.settings.isUserSkyflagAttributed = true
+        val service = fakeService(
+            responseCode = InstallReferrerClient.InstallReferrerResponse.OK,
+            referrerResponse = "utm_source=google&utm_medium=cpc",
+        )
+
+        service.start()
+
+        assertFalse(testContext.components.settings.isUserSkyflagAttributed)
+    }
+
+    @Test
+    fun `WHEN installReferrerResponse is a Skyflag attribution THEN we should show marketing onboarding`() =
+        runBlocking {
+            val skyflagReferrer = "utm_source=skyflag&utm_medium=paid"
+            assertTrue(
+                InstallReferrerHandlingService.shouldShowMarketingOnboarding(skyflagReferrer, distributionIdManager),
+            )
+        }
 }
 
 private class FakeReferrerClient(

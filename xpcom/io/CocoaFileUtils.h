@@ -8,10 +8,11 @@
 #ifndef CocoaFileUtils_h_
 #define CocoaFileUtils_h_
 
-#include "CFTypeRefPtr.h"
-#include "nscore.h"
-#include "nsString.h"
 #include <CoreFoundation/CoreFoundation.h>
+
+#include "CFTypeRefPtr.h"
+#include "nsString.h"
+#include "nscore.h"
 
 namespace CocoaFileUtils {
 

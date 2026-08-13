@@ -2,17 +2,19 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "OpenVRSession.h"
+
 #include <fstream>
-#include "mozilla/JSONStringWriteFuncs.h"
+
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/JSONStringWriteFuncs.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "nsIThread.h"
 #include "nsString.h"
 
-#include "OpenVRSession.h"
-#include "mozilla/StaticPrefs_dom.h"
-
 #if defined(XP_WIN)
 #  include <d3d11.h>
+
 #  include "mozilla/gfx/DeviceManagerDx.h"
 #elif defined(XP_MACOSX)
 #  include "mozilla/gfx/MacIOSurface.h"
@@ -22,15 +24,15 @@
 #  include <sys/stat.h>  // for umask()
 #endif
 
-#include "mozilla/dom/GamepadEventTypes.h"
-#include "mozilla/dom/GamepadBinding.h"
-#include "binding/OpenVRCosmosBinding.h"
-#include "binding/OpenVRKnucklesBinding.h"
-#include "binding/OpenVRViveBinding.h"
 #include "OpenVRCosmosMapper.h"
 #include "OpenVRDefaultMapper.h"
 #include "OpenVRKnucklesMapper.h"
 #include "OpenVRViveMapper.h"
+#include "binding/OpenVRCosmosBinding.h"
+#include "binding/OpenVRKnucklesBinding.h"
+#include "binding/OpenVRViveBinding.h"
+#include "mozilla/dom/GamepadBinding.h"
+#include "mozilla/dom/GamepadEventTypes.h"
 #if defined(XP_WIN)  // Windows Mixed Reality is only available in Windows.
 #  include "OpenVRWMRMapper.h"
 #  include "binding/OpenVRWMRBinding.h"

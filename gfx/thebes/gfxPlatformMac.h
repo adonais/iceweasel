@@ -5,9 +5,9 @@
 #ifndef GFX_PLATFORM_MAC_H
 #define GFX_PLATFORM_MAC_H
 
-#include "nsTArrayForwardDeclare.h"
 #include "gfxPlatform.h"
 #include "mozilla/LookAndFeel.h"
+#include "nsTArrayForwardDeclare.h"
 
 namespace mozilla {
 namespace gfx {

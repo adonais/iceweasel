@@ -4,11 +4,11 @@
 
 #include "ScrollbarDrawingWin.h"
 
-#include "mozilla/gfx/Helpers.h"
+#include "Theme.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/StaticPrefs_widget.h"
+#include "mozilla/gfx/Helpers.h"
 #include "nsLayoutUtils.h"
-#include "Theme.h"
 #include "nsNativeTheme.h"
 
 namespace mozilla::widget {

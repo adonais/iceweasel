@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/Maybe.h"
 #include "mozilla/Sprintf.h"
 
 #include <algorithm>
@@ -1285,28 +1284,56 @@ void GCRuntime::checkHeapBeforeMinorGC(AutoHeapSession& session) {
 #endif
 
 // Return whether an arbitrary pointer is within a cell with the given
-// traceKind. Only for assertions and js::debug::* APIs.
+// traceKind. Only for assertions and js::debug::* APIs. Note that this works at
+// a chunk level yet does not dereference the chunk pointer except to see what
+// type of chunk it is; everything else is pointer comparisons only.
 bool GCRuntime::isPointerWithinTenuredCell(void* ptr, JS::TraceKind traceKind) {
+  ArenaChunk* maybeChunk =
+      ArenaChunk::fromAddress(reinterpret_cast<uintptr_t>(ptr));
+
   AutoLockGC lock(this);
 
-  mozilla::Maybe<bool> result;
-  forEachNonEmptyChunk(lock, [&](ArenaChunk* chunk) {
-    if (result.isSome()) {
-      return;
+  auto check = [=](ArenaChunk* chunk) -> std::tuple<bool, bool> {
+    if (chunk != maybeChunk) {
+      return {false, false};
     }
     MOZ_ASSERT(!chunk->isNurseryChunk());
-    if (ptr >= &chunk->arenas[0] && ptr < &chunk->arenas[ArenasPerChunk]) {
-      bool found = false;
-      auto* arena = reinterpret_cast<Arena*>(uintptr_t(ptr) & ~ArenaMask);
-      if (arena->allocated()) {
-        found = traceKind == JS::TraceKind::Null ||
-                MapAllocToTraceKind(arena->getAllocKind()) == traceKind;
-      }
-      result.emplace(found);
-    }
-  });
+    MOZ_ASSERT(ptr >= &chunk->arenas[0] &&
+               ptr < &chunk->arenas[ArenasPerChunk]);
+    auto* arena = reinterpret_cast<Arena*>(uintptr_t(ptr) & ~ArenaMask);
+    // Note: a background process might be freeing arenas and so this would race
+    // on arena->allocKind, but that should only happen problematic cases
+    // anywhere (we shouldn't have an edge coming from a dead arena) so it
+    // doesn't much matter if it gives an assertion failure or a tsan error.
+    bool matches = traceKind == JS::TraceKind::Null ||
+                   MapAllocToTraceKind(arena->getAllocKind()) == traceKind;
+    return {true, matches};
+  };
 
-  return result.valueOr(false);
+  for (AllZonesIter zone(this); !zone.done(); zone.next()) {
+    if (ArenaChunk* chunk = zone->currentChunk_) {
+      auto [found, matches] = check(chunk);
+      if (found) {
+        return matches;
+      }
+    }
+    for (auto chunk = zone->availableChunks(lock).iter(); !chunk.done();
+         chunk.next()) {
+      auto [found, matches] = check(chunk);
+      if (found) {
+        return matches;
+      }
+    }
+    for (auto chunk = zone->fullChunks(lock).iter(); !chunk.done();
+         chunk.next()) {
+      auto [found, matches] = check(chunk);
+      if (found) {
+        return matches;
+      }
+    }
+  }
+
+  return false;
 }
 
 bool GCRuntime::isPointerWithinBufferAlloc(void* ptr) {

@@ -4,6 +4,12 @@
 const { PasswordValidator } = ChromeUtils.importESModule(
   "resource://services-sync/engines/passwords.sys.mjs"
 );
+const { BridgedEngine } = ChromeUtils.importESModule(
+  "resource://services-sync/bridged_engine.sys.mjs"
+);
+const { Service } = ChromeUtils.importESModule(
+  "resource://services-sync/service.sys.mjs"
+);
 
 function getDummyServerAndClient() {
   return {
@@ -172,5 +178,60 @@ add_task(async function test_duplicates() {
     let expected = validator.emptyProblemData();
     expected.duplicates.push("33333");
     deepEqual(problemData, expected);
+  }
+});
+
+// A bridged engine (eg, the Rust logins engine) decrypts records with
+// RawCryptoWrapper, so their cleartext is the raw payload string rather than a
+// parsed object. `getServerItems` must still yield objects to the validator,
+// otherwise every server record looks like it has no id and every local login
+// is wrongly reported as `serverMissing`.
+add_task(async function test_bridged_engine_server_items() {
+  let engine = new BridgedEngine("Passwords", Service);
+  engine._bridge = {
+    storageVersion: 1,
+    resetSyncId() {
+      return "syncIDAAAAAA";
+    },
+  };
+  engine.enabled = true;
+
+  let server = await serverForFoo(engine);
+  try {
+    await SyncTestingInfrastructure(server);
+
+    let guid = "{1e110b98-1407-4801-baf1-f6ca91e0f982}";
+    let login = {
+      id: guid,
+      hostname: "https://accounts.google.com",
+      formSubmitURL: "https://accounts.google.com",
+      username: "iosmztest",
+      password: "test15mz",
+      usernameField: "Email",
+      passwordField: "Passwd",
+    };
+    server
+      .user("foo")
+      .collection("passwords")
+      .insert(guid, encryptPayload(login), new_timestamp());
+
+    let validator = new PasswordValidator();
+    let serverItems = await validator.getServerItems(engine);
+    let clientItems = [{ ...login, guid, httpRealm: null }];
+
+    let { problemData } = await validator.compareClientWithServer(
+      clientItems,
+      serverItems
+    );
+
+    equal(
+      problemData.serverMissing.length,
+      0,
+      "A record present on the server must not be reported as serverMissing"
+    );
+    deepEqual(problemData, validator.emptyProblemData());
+  } finally {
+    await promiseStopServer(server);
+    await engine.finalize();
   }
 });

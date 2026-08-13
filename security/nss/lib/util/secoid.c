@@ -256,6 +256,7 @@ CONST_OID pkcs9SDSICertificate[] = { PKCS9_CERT_TYPES, 2 };
 CONST_OID pkcs9X509CRL[] = { PKCS9_CRL_TYPES, 1 };
 
 /* RFC2630 (CMS) OIDs */
+CONST_OID cmsAuthEnvelopedData[] = { PKCS9_SMIME_IDS, 1, 23 };
 CONST_OID cmsESDH[] = { PKCS9_SMIME_ALGS, 5 };
 CONST_OID cms3DESwrap[] = { PKCS9_SMIME_ALGS, 6 };
 CONST_OID cmsRC2wrap[] = { PKCS9_SMIME_ALGS, 7 };
@@ -1878,34 +1879,34 @@ const static SECOidData oids[SEC_OID_TOTAL] = {
        "X9.62 elliptic edwards curve public key", CKM_EC_EDWARDS_KEY_PAIR_GEN, INVALID_CERT_EXTENSION),
 
     OD(dhSinglePassstdDHsha1kdfscheme, SEC_OID_DHSINGLEPASS_STDDH_SHA1KDF_SCHEME,
-       "Eliptic Curve Diffie-Hellman Single Pass Standard with SHA1 KDF", CKM_ECDH1_DERIVE,
+       "Elliptic Curve Diffie-Hellman Single Pass Standard with SHA1 KDF", CKM_ECDH1_DERIVE,
        INVALID_CERT_EXTENSION),
     OD(dhSinglePassstdDHsha224kdfscheme, SEC_OID_DHSINGLEPASS_STDDH_SHA224KDF_SCHEME,
-       "Eliptic Curve Diffie-Hellman Single Pass Standard with SHA224 KDF", CKM_ECDH1_DERIVE,
+       "Elliptic Curve Diffie-Hellman Single Pass Standard with SHA224 KDF", CKM_ECDH1_DERIVE,
        INVALID_CERT_EXTENSION),
     OD(dhSinglePassstdDHsha256kdfscheme, SEC_OID_DHSINGLEPASS_STDDH_SHA256KDF_SCHEME,
-       "Eliptic Curve Diffie-Hellman Single Pass Standard with SHA256 KDF", CKM_ECDH1_DERIVE,
+       "Elliptic Curve Diffie-Hellman Single Pass Standard with SHA256 KDF", CKM_ECDH1_DERIVE,
        INVALID_CERT_EXTENSION),
     OD(dhSinglePassstdDHsha384kdfscheme, SEC_OID_DHSINGLEPASS_STDDH_SHA384KDF_SCHEME,
-       "Eliptic Curve Diffie-Hellman Single Pass Standard with SHA384 KDF", CKM_ECDH1_DERIVE,
+       "Elliptic Curve Diffie-Hellman Single Pass Standard with SHA384 KDF", CKM_ECDH1_DERIVE,
        INVALID_CERT_EXTENSION),
     OD(dhSinglePassstdDHsha512kdfscheme, SEC_OID_DHSINGLEPASS_STDDH_SHA512KDF_SCHEME,
-       "Eliptic Curve Diffie-Hellman Single Pass Standard with SHA512 KDF", CKM_ECDH1_DERIVE,
+       "Elliptic Curve Diffie-Hellman Single Pass Standard with SHA512 KDF", CKM_ECDH1_DERIVE,
        INVALID_CERT_EXTENSION),
     OD(dhSinglePasscofactorDHsha1kdfscheme, SEC_OID_DHSINGLEPASS_COFACTORDH_SHA1KDF_SCHEME,
-       "Eliptic Curve Diffie-Hellman Single Pass Cofactor with SHA1 KDF", CKM_ECDH1_COFACTOR_DERIVE,
+       "Elliptic Curve Diffie-Hellman Single Pass Cofactor with SHA1 KDF", CKM_ECDH1_COFACTOR_DERIVE,
        INVALID_CERT_EXTENSION),
     OD(dhSinglePasscofactorDHsha224kdfscheme, SEC_OID_DHSINGLEPASS_COFACTORDH_SHA224KDF_SCHEME,
-       "Eliptic Curve Diffie-Hellman Single Pass Cofactor with SHA224 KDF", CKM_ECDH1_COFACTOR_DERIVE,
+       "Elliptic Curve Diffie-Hellman Single Pass Cofactor with SHA224 KDF", CKM_ECDH1_COFACTOR_DERIVE,
        INVALID_CERT_EXTENSION),
     OD(dhSinglePasscofactorDHsha256kdfscheme, SEC_OID_DHSINGLEPASS_COFACTORDH_SHA256KDF_SCHEME,
-       "Eliptic Curve Diffie-Hellman Single Pass Cofactor with SHA256 KDF", CKM_ECDH1_COFACTOR_DERIVE,
+       "Elliptic Curve Diffie-Hellman Single Pass Cofactor with SHA256 KDF", CKM_ECDH1_COFACTOR_DERIVE,
        INVALID_CERT_EXTENSION),
     OD(dhSinglePasscofactorDHsha384kdfscheme, SEC_OID_DHSINGLEPASS_COFACTORDH_SHA384KDF_SCHEME,
-       "Eliptic Curve Diffie-Hellman Single Pass Cofactor with SHA384 KDF", CKM_ECDH1_COFACTOR_DERIVE,
+       "Elliptic Curve Diffie-Hellman Single Pass Cofactor with SHA384 KDF", CKM_ECDH1_COFACTOR_DERIVE,
        INVALID_CERT_EXTENSION),
     OD(dhSinglePasscofactorDHsha512kdfscheme, SEC_OID_DHSINGLEPASS_COFACTORDH_SHA512KDF_SCHEME,
-       "Eliptic Curve Diffie-Hellman Single Pass Cofactor with SHA512 KDF", CKM_ECDH1_COFACTOR_DERIVE,
+       "Elliptic Curve Diffie-Hellman Single Pass Cofactor with SHA512 KDF", CKM_ECDH1_COFACTOR_DERIVE,
        INVALID_CERT_EXTENSION),
     ODE(SEC_OID_RC2_64_CBC, "RC2-64-CBC", CKM_RC2_CBC, INVALID_CERT_EXTENSION),
     ODE(SEC_OID_RC2_128_CBC, "RC2-128-CBC", CKM_RC2_CBC, INVALID_CERT_EXTENSION),
@@ -1928,6 +1929,10 @@ const static SECOidData oids[SEC_OID_TOTAL] = {
     OD(mlKem512, SEC_OID_ML_KEM_512, "ML-KEM-512", CKM_ML_KEM, INVALID_CERT_EXTENSION),
     OD(mlKem768, SEC_OID_ML_KEM_768, "ML-KEM-768", CKM_ML_KEM, INVALID_CERT_EXTENSION),
     OD(mlKem1024, SEC_OID_ML_KEM_1024, "ML-KEM-1024", CKM_ML_KEM, INVALID_CERT_EXTENSION),
+
+    OD(cmsAuthEnvelopedData, SEC_OID_CMS_AUTH_ENVELOPED_DATA,
+       "CMS AuthEnvelopedData",
+       CKM_INVALID_MECHANISM, INVALID_CERT_EXTENSION),
 
 };
 
@@ -2273,6 +2278,12 @@ SECOID_Init(void)
      * S/MIME policies after this, then S/MIME will enable the traditional
      * algs when it initializes */
     (void)NSS_SetAlgorithmPolicyAll(0, NSS_USE_ALG_IN_SMIME);
+
+    /* ML-KEM-1024 is off by default in TLS key exchange; applications must
+     * opt in with
+     *   NSS_SetAlgorithmPolicy(SEC_OID_ML_KEM_1024, NSS_USE_ALG_IN_SSL_KX, 0);
+     * before it is offered in the supported_groups extension. */
+    (void)NSS_SetAlgorithmPolicy(SEC_OID_ML_KEM_1024, 0, NSS_USE_ALG_IN_SSL_KX);
 
     return (SECSuccess);
 }

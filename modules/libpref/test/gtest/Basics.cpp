@@ -14,6 +14,25 @@
 
 using namespace mozilla;
 
+// ---------------------------------------------------------------------------
+// Helpers shared by the CallbackTrie tests below.
+// ---------------------------------------------------------------------------
+namespace {
+
+struct CallbackOrder {
+  nsTArray<int>* order;
+  int id;
+};
+
+void TrackOrder(const char*, void* aData) {
+  auto* d = static_cast<CallbackOrder*>(aData);
+  d->order->AppendElement(d->id);
+}
+
+void IncrementCount(const char*, void* aData) { (*static_cast<int*>(aData))++; }
+
+}  // namespace
+
 class TestWeakPrefObserver final : public nsIObserver,
                                    public nsSupportsWeakReference {
  public:
@@ -216,4 +235,298 @@ TEST(PrefsBasics, FreeObserverListRemovesAllCallbacks)
   // Releasing branchB removes the remaining one.
   branchB = nullptr;
   EXPECT_EQ(Preferences::GetCallbackCount(), baselineCount);
+}
+
+// ---------------------------------------------------------------------------
+// CallbackTrie tests — verify HashedSegmentsTrie notification semantics.
+// ---------------------------------------------------------------------------
+
+// Callback at the exact pref name fires when that pref changes.
+TEST(PrefsCallbackTrie, ExactMatch)
+{
+  int count = 0;
+  Preferences::SetBool("test.trie.exact", false);
+  ASSERT_TRUE(NS_SUCCEEDED(Preferences::RegisterCallback(
+      IncrementCount, "test.trie.exact", &count)));
+  Preferences::SetBool("test.trie.exact", true);
+  EXPECT_EQ(count, 1);
+  Preferences::UnregisterCallback(IncrementCount, "test.trie.exact", &count);
+}
+
+// Prefix callback at an ancestor fires when a deeper descendant pref changes.
+TEST(PrefsCallbackTrie, PrefixAncestorFiresForDescendant)
+{
+  int count = 0;
+  Preferences::SetBool("test.trie.anc.deep.pref", false);
+  ASSERT_TRUE(NS_SUCCEEDED(Preferences::RegisterPrefixCallback(
+      IncrementCount, "test.trie.anc"_ns, &count)));
+  Preferences::SetBool("test.trie.anc.deep.pref", true);
+  EXPECT_EQ(count, 1);
+  Preferences::UnregisterPrefixCallback(IncrementCount, "test.trie.anc"_ns,
+                                        &count);
+}
+
+// Exact callback at an ancestor does NOT fire when a descendant pref changes.
+TEST(PrefsCallbackTrie, ExactAncestorDoesNotFireForDescendant)
+{
+  int count = 0;
+  Preferences::SetBool("test.trie.anc.exact.pref", false);
+  ASSERT_TRUE(NS_SUCCEEDED(Preferences::RegisterCallback(
+      IncrementCount, "test.trie.anc.exact"_ns, &count)));
+  Preferences::SetBool("test.trie.anc.exact.pref", true);
+  EXPECT_EQ(count, 0);
+  Preferences::UnregisterCallback(IncrementCount, "test.trie.anc.exact"_ns,
+                                  &count);
+}
+
+// Callback does NOT fire for a sibling pref (different child at the same
+// depth).
+TEST(PrefsCallbackTrie, NoFireForSibling)
+{
+  int count = 0;
+  Preferences::SetBool("test.trie.sib.b", false);
+  ASSERT_TRUE(NS_SUCCEEDED(Preferences::RegisterCallback(
+      IncrementCount, "test.trie.sib.a", &count)));
+  Preferences::SetBool("test.trie.sib.b", true);
+  EXPECT_EQ(count, 0);
+  Preferences::UnregisterCallback(IncrementCount, "test.trie.sib.a", &count);
+}
+
+// Callback does NOT fire for a pref whose name shares a prefix at the byte
+// level but is a different dot-separated segment ("ab" vs "abc").
+TEST(PrefsCallbackTrie, NoFireForPrefixSubstring)
+{
+  int count = 0;
+  Preferences::SetBool("test.trie.seg.abc", false);
+  ASSERT_TRUE(NS_SUCCEEDED(Preferences::RegisterCallback(
+      IncrementCount, "test.trie.seg.ab", &count)));
+  Preferences::SetBool("test.trie.seg.abc", true);
+  EXPECT_EQ(count, 0);
+  Preferences::UnregisterCallback(IncrementCount, "test.trie.seg.ab", &count);
+}
+
+// Prefix callbacks at ancestor nodes fire before callbacks at deeper nodes.
+TEST(PrefsCallbackTrie, AncestorBeforeDescendantOrder)
+{
+  nsTArray<int> order;
+  CallbackOrder dataA{&order, 1};
+  CallbackOrder dataAB{&order, 2};
+  CallbackOrder dataABC{&order, 3};
+
+  Preferences::SetBool("test.trie.order.a.b.c", false);
+  ASSERT_TRUE(NS_SUCCEEDED(Preferences::RegisterPrefixCallback(
+      TrackOrder, "test.trie.order.a"_ns, &dataA)));
+  ASSERT_TRUE(NS_SUCCEEDED(Preferences::RegisterPrefixCallback(
+      TrackOrder, "test.trie.order.a.b"_ns, &dataAB)));
+  ASSERT_TRUE(NS_SUCCEEDED(Preferences::RegisterCallback(
+      TrackOrder, "test.trie.order.a.b.c"_ns, &dataABC)));
+
+  Preferences::SetBool("test.trie.order.a.b.c", true);
+  ASSERT_EQ(order.Length(), 3u);
+  EXPECT_EQ(order[0], 1);
+  EXPECT_EQ(order[1], 2);
+  EXPECT_EQ(order[2], 3);
+
+  Preferences::UnregisterPrefixCallback(TrackOrder, "test.trie.order.a"_ns,
+                                        &dataA);
+  Preferences::UnregisterPrefixCallback(TrackOrder, "test.trie.order.a.b"_ns,
+                                        &dataAB);
+  Preferences::UnregisterCallback(TrackOrder, "test.trie.order.a.b.c"_ns,
+                                  &dataABC);
+}
+
+// Within a single trie node, callbacks fire in LIFO order (most recently
+// registered fires first).
+TEST(PrefsCallbackTrie, LIFOWithinNode)
+{
+  nsTArray<int> order;
+  CallbackOrder data1{&order, 1};
+  CallbackOrder data2{&order, 2};
+
+  Preferences::SetBool("test.trie.lifo", false);
+  ASSERT_TRUE(NS_SUCCEEDED(
+      Preferences::RegisterCallback(TrackOrder, "test.trie.lifo", &data1)));
+  ASSERT_TRUE(NS_SUCCEEDED(
+      Preferences::RegisterCallback(TrackOrder, "test.trie.lifo", &data2)));
+
+  Preferences::SetBool("test.trie.lifo", true);
+  ASSERT_EQ(order.Length(), 2u);
+  EXPECT_EQ(order[0], 2);
+  EXPECT_EQ(order[1], 1);
+
+  Preferences::UnregisterCallback(TrackOrder, "test.trie.lifo", &data1);
+  Preferences::UnregisterCallback(TrackOrder, "test.trie.lifo", &data2);
+}
+
+// Even when a leaf callback is registered before its ancestor prefix callback,
+// the ancestor still fires first (trie depth determines order, not creation
+// order).
+TEST(PrefsCallbackTrie, LeafRegisteredBeforeAncestor)
+{
+  nsTArray<int> order;
+  CallbackOrder dataLeaf{&order, 2};
+  CallbackOrder dataAncestor{&order, 1};
+
+  Preferences::SetBool("test.trie.corder.a.b.c", false);
+  ASSERT_TRUE(NS_SUCCEEDED(Preferences::RegisterCallback(
+      TrackOrder, "test.trie.corder.a.b.c"_ns, &dataLeaf)));
+  ASSERT_TRUE(NS_SUCCEEDED(Preferences::RegisterPrefixCallback(
+      TrackOrder, "test.trie.corder.a"_ns, &dataAncestor)));
+
+  Preferences::SetBool("test.trie.corder.a.b.c", true);
+  ASSERT_EQ(order.Length(), 2u);
+  EXPECT_EQ(order[0], 1);
+  EXPECT_EQ(order[1], 2);
+
+  Preferences::UnregisterCallback(TrackOrder, "test.trie.corder.a.b.c"_ns,
+                                  &dataLeaf);
+  Preferences::UnregisterPrefixCallback(TrackOrder, "test.trie.corder.a"_ns,
+                                        &dataAncestor);
+}
+
+// A domain registered with a trailing dot is equivalent to one without.
+TEST(PrefsCallbackTrie, TrailingDotEquivalence)
+{
+  int count = 0;
+  Preferences::SetBool("test.trie.dot.a.b", false);
+  ASSERT_TRUE(NS_SUCCEEDED(Preferences::RegisterPrefixCallback(
+      IncrementCount, "test.trie.dot.a."_ns, &count)));
+  Preferences::SetBool("test.trie.dot.a.b", true);
+  EXPECT_EQ(count, 1);
+  // Unregistering without the trailing dot should remove the same node.
+  Preferences::UnregisterPrefixCallback(IncrementCount, "test.trie.dot.a"_ns,
+                                        &count);
+  Preferences::SetBool("test.trie.dot.a.b", false);
+  EXPECT_EQ(count, 1);
+}
+
+// ---------------------------------------------------------------------------
+// Compact / MarkDead tests — verify lazy-unregister behavior.
+// ---------------------------------------------------------------------------
+
+// Unregistering a callback marks it dead immediately; a pref change before
+// the idle sweep does not fire the dead callback but does fire live siblings
+// registered at the same path.
+TEST(PrefsCallbackTrie, DeadCallbackSkippedBeforeSweep)
+{
+  int deadCount = 0;
+  int liveCount = 0;
+
+  Preferences::SetBool("test.trie.dead1", false);
+  ASSERT_TRUE(NS_SUCCEEDED(Preferences::RegisterCallback(
+      IncrementCount, "test.trie.dead1", &deadCount)));
+  ASSERT_TRUE(NS_SUCCEEDED(Preferences::RegisterCallback(
+      IncrementCount, "test.trie.dead1", &liveCount)));
+
+  Preferences::UnregisterCallback(IncrementCount, "test.trie.dead1",
+                                  &deadCount);
+
+  // Fire before the idle sweep — the dead callback must not fire.
+  Preferences::SetBool("test.trie.dead1", true);
+  EXPECT_EQ(deadCount, 0);
+  EXPECT_EQ(liveCount, 1);
+
+  Preferences::UnregisterCallback(IncrementCount, "test.trie.dead1",
+                                  &liveCount);
+}
+
+// A "one-shot" callback that unregisters itself during its own execution.
+// NotifyCallbacks does not Compact; the self-removed callback is only marked
+// dead (Func == null) and the node lingers until the idle sweep.  A deeper
+// callback at the same change must still fire on the first notification, and
+// the dead callback must not fire on subsequent notifications because
+// NotifyMatching skips null-Func nodes when building each snapshot.
+namespace {
+
+struct OneShotData {
+  int count = 0;
+  nsCString path;
+  static void Callback(const char*, void* aData) {
+    auto* d = static_cast<OneShotData*>(aData);
+    ++d->count;
+    Preferences::UnregisterPrefixCallback(Callback, d->path, d);
+  }
+};
+
+}  // namespace
+
+TEST(PrefsCallbackTrie, DeadNodeSkippedAfterSelfUnregister)
+{
+  int deeperCount = 0;
+  OneShotData oneShot;
+  oneShot.path = "test.trie.oneshot.a.b"_ns;
+
+  Preferences::SetBool("test.trie.oneshot.a.b.c", false);
+  // Register one-shot at ancestor (prefix) and a persistent callback at deeper
+  // path.
+  ASSERT_TRUE(NS_SUCCEEDED(Preferences::RegisterPrefixCallback(
+      OneShotData::Callback, "test.trie.oneshot.a.b"_ns, &oneShot)));
+  ASSERT_TRUE(NS_SUCCEEDED(Preferences::RegisterCallback(
+      IncrementCount, "test.trie.oneshot.a.b.c"_ns, &deeperCount)));
+
+  // First change: one-shot fires (and marks itself dead), deeper fires.  The
+  // dead node is not compacted here; it is just skipped on later snapshots.
+  Preferences::SetBool("test.trie.oneshot.a.b.c", true);
+  EXPECT_EQ(oneShot.count, 1);
+  EXPECT_EQ(deeperCount, 1);
+
+  // Second change: one-shot is gone; deeper still fires.
+  Preferences::SetBool("test.trie.oneshot.a.b.c", false);
+  EXPECT_EQ(oneShot.count, 1);
+  EXPECT_EQ(deeperCount, 2);
+
+  Preferences::UnregisterCallback(IncrementCount, "test.trie.oneshot.a.b.c"_ns,
+                                  &deeperCount);
+}
+
+// A callback at an ancestor unregisters a callback at a descendant path while
+// both are in the same notification round.  The descendant callback is in the
+// snapshot taken by NotifyMatching but must be skipped (Func == null) when the
+// notification loop reaches it.  Subsequent notifications only fire the
+// ancestor.
+namespace {
+
+struct CrossUnregData {
+  int count = 0;
+  int* targetCount = nullptr;  // points to the count of the node to unregister
+
+  static void Callback(const char*, void* aData) {
+    auto* d = static_cast<CrossUnregData*>(aData);
+    ++d->count;
+    if (d->targetCount) {
+      Preferences::UnregisterCallback(IncrementCount, "test.trie.cross.a.b",
+                                      d->targetCount);
+      d->targetCount = nullptr;
+    }
+  }
+};
+
+}  // namespace
+
+TEST(PrefsCallbackTrie, DeadNodeSkippedAfterCrossNodeUnregister)
+{
+  int descendantCount = 0;
+  CrossUnregData ancestor;
+  ancestor.targetCount = &descendantCount;
+
+  Preferences::SetBool("test.trie.cross.a.b", false);
+  // Ancestor fires first (shallower depth, prefix registration).
+  ASSERT_TRUE(NS_SUCCEEDED(Preferences::RegisterPrefixCallback(
+      CrossUnregData::Callback, "test.trie.cross.a"_ns, &ancestor)));
+  ASSERT_TRUE(NS_SUCCEEDED(Preferences::RegisterCallback(
+      IncrementCount, "test.trie.cross.a.b"_ns, &descendantCount)));
+
+  // First change: ancestor fires and unregisters the descendant.
+  // The descendant is in the toNotify snapshot but is skipped (Func == null).
+  Preferences::SetBool("test.trie.cross.a.b", true);
+  EXPECT_EQ(ancestor.count, 1);
+  EXPECT_EQ(descendantCount, 0);
+
+  // Second change: only the ancestor fires; descendant was removed by Compact.
+  Preferences::SetBool("test.trie.cross.a.b", false);
+  EXPECT_EQ(ancestor.count, 2);
+  EXPECT_EQ(descendantCount, 0);
+
+  Preferences::UnregisterPrefixCallback(CrossUnregData::Callback,
+                                        "test.trie.cross.a"_ns, &ancestor);
 }

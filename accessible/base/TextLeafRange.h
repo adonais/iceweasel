@@ -8,9 +8,9 @@
 #include <stdint.h>
 
 #include "AccAttributes.h"
+#include "mozilla/FunctionRef.h"
 #include "nsDirection.h"
 #include "nsIAccessibleText.h"
-#include "mozilla/FunctionRef.h"
 
 namespace mozilla {
 namespace dom {

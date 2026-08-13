@@ -200,6 +200,14 @@ void PEMFactory::InitUtilityPEMs() {
 }
 
 void PEMFactory::InitContentPEMs() {
+  if (StaticPrefs::media_use_remote_encoder_video() &&
+      StaticPrefs::media_gpu_process_encoder()) {
+    if (RefPtr<PlatformEncoderModule> pem =
+            RemoteEncoderModule::Create(RemoteMediaIn::GpuProcess)) {
+      mCurrentPEMs.AppendElement(std::move(pem));
+    }
+  }
+
   if ((StaticPrefs::media_use_remote_encoder_video() ||
        StaticPrefs::media_use_remote_encoder_audio()) &&
       StaticPrefs::media_rdd_process_enabled()) {
@@ -358,8 +366,13 @@ already_AddRefed<MediaDataEncoder> PEMFactory::CreateEncoder(
     return nullptr;
   }
 
-  return aConfig.IsVideo() ? m->CreateVideoEncoder(aConfig, aTaskQueue)
-                           : nullptr;
+  if (aConfig.IsVideo()) {
+    return m->CreateVideoEncoder(aConfig, aTaskQueue);
+  }
+  if (aConfig.IsAudio()) {
+    return m->CreateAudioEncoder(aConfig, aTaskQueue);
+  }
+  return nullptr;
 }
 
 RefPtr<PlatformEncoderModule::CreateEncoderPromise>

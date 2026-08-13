@@ -8,7 +8,6 @@ SOURCES += [
     "/mfbt/Assertions.cpp",
     "/mfbt/Poison.cpp",
     "/mfbt/RandomNum.cpp",
-    "/mfbt/RefCounted.cpp",
     "/mfbt/TaggedAnonymousMemory.cpp",
     "/mozglue/misc/StackWalk.cpp",
     "Replay.cpp",
@@ -32,11 +31,6 @@ elif CONFIG["OS_TARGET"] == "Android":
     # lower. We have our own definition of the function, so it doesn't matter.
     SOURCES["Replay.cpp"].flags += ["-Wno-unguarded-availability"]
 
-
-if CONFIG["MOZ_REPLACE_MALLOC_STATIC"] and (CONFIG["MOZ_DMD"] or CONFIG["MOZ_PHC"]):
-    UNIFIED_SOURCES += [
-        "/mfbt/HashFunctions.cpp",
-    ]
 
 if CONFIG["OS_ARCH"] == "WINNT":
     OS_LIBS += [
@@ -80,8 +74,6 @@ USE_LIBS += [
 
 # The memory library defines this, so it's needed here too.
 DEFINES["IMPL_MFBT"] = True
-
-DEFINES["MOZ_SUPPORT_LEAKCHECKING"] = True
 
 OS_LIBS += CONFIG["LIBATOMIC_LIBS"]
 

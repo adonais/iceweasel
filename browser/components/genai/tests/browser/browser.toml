@@ -31,6 +31,8 @@ skip-if = [
   "verify-standalone",
 ]
 
+["browser_chat_promo.js"]
+
 ["browser_chat_prompt.js"]
 
 ["browser_chat_request.js"]

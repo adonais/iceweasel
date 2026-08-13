@@ -8,6 +8,7 @@ prefs = [
 
 ["test_condition_evaluator.js"]
 ["test_decision_types.js"]
+["test_download_rs_attachment_failure.js"]
 ["test_json_policy_system.js"]
 ["test_ml_engine_security.js"]
 ["test_policy_evaluator.js"]

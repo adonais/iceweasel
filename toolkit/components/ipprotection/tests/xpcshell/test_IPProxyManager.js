@@ -17,6 +17,28 @@ const { IPPChannelFilter } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/ipprotection/IPPChannelFilter.sys.mjs"
 );
 
+const TIMEOUT_PREF = "browser.ipProtection.guardian.timeout";
+const RETRY_AFTER_PREF = "browser.ipProtection.guardian.retryAfter";
+const ATTEMPT_TIMEOUT_PREF = "browser.ipProtection.guardian.attemptTimeout";
+
+/**
+ * Returns a promise that never resolves and rejects with the signal's reason
+ * once it aborts, modelling a fetch that hangs until it is cancelled.
+ *
+ * @param {AbortSignal} signal
+ */
+function hangUntilAbort(signal) {
+  return new Promise((_resolve, reject) => {
+    if (signal?.aborted) {
+      reject(signal.reason);
+      return;
+    }
+    signal?.addEventListener("abort", () => reject(signal.reason), {
+      once: true,
+    });
+  });
+}
+
 add_setup(async function () {
   await putServerInRemoteSettings();
 });
@@ -300,7 +322,7 @@ add_task(async function test_IPPProxyStates_error() {
   await activeEvent;
 
   IPPDummyAuthProvider.setProxyPass({
-    status: 500,
+    status: 403,
     error: undefined,
     pass: undefined,
     usage: undefined,
@@ -362,7 +384,7 @@ add_task(async function test_IPPProxyManager_non_string_error_normalized() {
 
   // Simulate a provider surfacing a non-string error
   IPPDummyAuthProvider.setProxyPass({
-    status: 500,
+    status: 403,
     error: new Error("boom"),
     pass: undefined,
     usage: undefined,
@@ -977,6 +999,56 @@ add_task(async function test_IPPProxyManager_rotateProxyPass_changes_pass() {
   IPProtectionService.uninit();
 });
 
+/**
+ * fromResponse anchors a proxy pass to the local clock at receipt: the pass is
+ * valid from now for the token's lifetime (exp - nbf), regardless of how far
+ * Guardian's clock has drifted from ours. This preserves rotation scheduling
+ * even for a token that looks long-expired to a skewed client, and is what
+ * prevents the 0ms rotation-reschedule loop.
+ */
+add_task(async function test_ProxyPass_fromResponse_reanchors_to_now() {
+  const now = Temporal.Now.instant();
+  const cases = [
+    {
+      desc: "large drift (client clock ~2h ahead of a 1h token)",
+      from: now.subtract({ hours: 2 }),
+      until: now.subtract({ hours: 1 }),
+    },
+    {
+      desc: "accurate clock (freshly issued 24h token)",
+      from: now.subtract({ seconds: 30 }),
+      until: now.add({ hours: 24 }),
+    },
+  ];
+
+  for (const { desc, from, until } of cases) {
+    const token = createProxyPassToken(from, until);
+    const response = { ok: true, json: async () => ({ token }) };
+
+    const pass = await ProxyPass.fromResponse(response);
+    Assert.ok(pass, `${desc}: fromResponse returns a pass`);
+
+    const lifetimeMs = until.epochMilliseconds - from.epochMilliseconds;
+    const expectedFromMs = Temporal.Now.instant().epochMilliseconds;
+
+    Assert.less(
+      Math.abs(pass.from.epochMilliseconds - expectedFromMs),
+      1000,
+      `${desc}: from is re-anchored to now`
+    );
+    Assert.less(
+      Math.abs(pass.until.epochMilliseconds - (expectedFromMs + lifetimeMs)),
+      1000,
+      `${desc}: the token lifetime is preserved`
+    );
+    Assert.ok(pass.isValid(), `${desc}: pass is valid`);
+    Assert.ok(
+      !pass.shouldRotate(),
+      `${desc}: a just-received pass does not want immediate rotation`
+    );
+  }
+});
+
 add_task(async function test_IPPProxyManager_stop_during_rotation() {
   let sandbox = sinon.createSandbox();
   setupStubs({ validProxyPass: true });
@@ -1048,6 +1120,198 @@ add_task(async function test_IPPProxyManager_stop_during_rotation() {
 
   IPProtectionService.uninit();
   sandbox.restore();
+});
+
+add_task(
+  async function test_IPPProxyManager_rotation_retries_transient_error() {
+    let sandbox = sinon.createSandbox();
+    setupStubs({ validProxyPass: true });
+    try {
+      await initServiceToReady();
+      await IPPProxyManager.start();
+
+      Services.prefs.setIntPref(RETRY_AFTER_PREF, 1);
+      Services.prefs.setIntPref(TIMEOUT_PREF, 10000);
+
+      const validPass = new ProxyPass(createProxyPassToken());
+      const transient = { status: 503 };
+      const fetchStub = sandbox.stub(IPPDummyAuthProvider, "fetchProxyPass");
+      fetchStub.onCall(0).resolves(transient);
+      fetchStub.onCall(1).resolves(transient);
+      fetchStub.resolves({ status: 200, pass: validPass });
+
+      const newPass = await IPPProxyManager.rotateProxyPass();
+
+      Assert.ok(newPass, "Rotation should return a pass once the 5xx clears");
+      Assert.equal(
+        newPass.token,
+        validPass.token,
+        "Rotation should return the pass fetched after the retries"
+      );
+      Assert.greaterOrEqual(
+        fetchStub.callCount,
+        3,
+        "A 5xx response should be retried until it succeeds"
+      );
+      Assert.equal(
+        IPPProxyManager.state,
+        IPPProxyStates.ACTIVE,
+        "Proxy should stay ACTIVE after a successful retried rotation"
+      );
+    } finally {
+      sandbox.restore();
+      await IPPProxyManager.stop(false).catch(() => {});
+      IPProtectionService.uninit();
+      Services.prefs.clearUserPref(RETRY_AFTER_PREF);
+      Services.prefs.clearUserPref(TIMEOUT_PREF);
+    }
+  }
+);
+
+add_task(async function test_IPPProxyManager_rotation_retries_offline_errors() {
+  const { IPPNetworkUtils } = ChromeUtils.importESModule(
+    "moz-src:///toolkit/components/ipprotection/IPPNetworkUtils.sys.mjs"
+  );
+  let sandbox = sinon.createSandbox();
+  setupStubs({ validProxyPass: true });
+  try {
+    await initServiceToReady();
+    await IPPProxyManager.start();
+
+    Services.prefs.setIntPref(RETRY_AFTER_PREF, 5);
+    Services.prefs.setIntPref(TIMEOUT_PREF, 100);
+
+    sandbox.stub(IPPNetworkUtils, "isOffline").get(() => true);
+    const fetchSpy = sandbox.spy(IPPDummyAuthProvider, "fetchProxyPass");
+    IPPDummyAuthProvider.setProxyPassError(new Error("network down"));
+
+    const errorEvent = waitForProxyState(IPPProxyStates.ERROR);
+    const result = await IPPProxyManager.rotateProxyPass();
+    await errorEvent;
+
+    Assert.equal(
+      result,
+      null,
+      "Rotation should not surface an offline error directly"
+    );
+    Assert.greater(
+      fetchSpy.callCount,
+      1,
+      "An offline failure should be retried rather than thrown"
+    );
+    Assert.equal(
+      IPPProxyManager.state,
+      IPPProxyStates.ERROR,
+      "Proxy should move to ERROR when offline retries time out"
+    );
+  } finally {
+    IPPDummyAuthProvider.setProxyPassError(null);
+    sandbox.restore();
+    await IPPProxyManager.stop(false).catch(() => {});
+    IPProtectionService.uninit();
+    Services.prefs.clearUserPref(RETRY_AFTER_PREF);
+    Services.prefs.clearUserPref(TIMEOUT_PREF);
+  }
+});
+
+/**
+ * A single fetch that hangs (flaky transport) is bounded by the per-attempt
+ * timeout and retried, rather than consuming the whole rotation budget. Once the
+ * transport recovers the rotation succeeds.
+ */
+add_task(async function test_rotation_recovers_from_slow_fetch() {
+  let sandbox = sinon.createSandbox();
+  setupStubs({ validProxyPass: true });
+  try {
+    await initServiceToReady();
+    await IPPProxyManager.start();
+
+    Services.prefs.setIntPref(ATTEMPT_TIMEOUT_PREF, 20);
+    Services.prefs.setIntPref(RETRY_AFTER_PREF, 1);
+    Services.prefs.setIntPref(TIMEOUT_PREF, 10000);
+
+    const validPass = new ProxyPass(createProxyPassToken());
+    const fetchStub = sandbox.stub(IPPDummyAuthProvider, "fetchProxyPass");
+    fetchStub.onCall(0).callsFake(signal => hangUntilAbort(signal));
+    fetchStub.onCall(1).callsFake(signal => hangUntilAbort(signal));
+    fetchStub.resolves({ status: 200, pass: validPass });
+
+    const newPass = await IPPProxyManager.rotateProxyPass();
+
+    Assert.ok(newPass, "Rotation should succeed once the transport recovers");
+    Assert.equal(
+      newPass.token,
+      validPass.token,
+      "Rotation should return the pass fetched after the slow attempts"
+    );
+    Assert.greaterOrEqual(
+      fetchStub.callCount,
+      3,
+      "A hanging fetch should be aborted per-attempt and retried"
+    );
+    Assert.equal(
+      IPPProxyManager.state,
+      IPPProxyStates.ACTIVE,
+      "Proxy should stay ACTIVE after recovering from slow fetches"
+    );
+  } finally {
+    sandbox.restore();
+    await IPPProxyManager.stop(false).catch(() => {});
+    IPProtectionService.uninit();
+    Services.prefs.clearUserPref(ATTEMPT_TIMEOUT_PREF);
+    Services.prefs.clearUserPref(RETRY_AFTER_PREF);
+    Services.prefs.clearUserPref(TIMEOUT_PREF);
+  }
+});
+
+/**
+ * A fetch that hangs indefinitely is retried multiple times within the overall
+ * budget thanks to the per-attempt timeout, then moves to ERROR once the budget
+ * is exhausted. Without the per-attempt timeout a single hang would consume the
+ * whole budget in one attempt.
+ */
+add_task(async function test_rotation_retries_slow_fetch_until_budget() {
+  let sandbox = sinon.createSandbox();
+  setupStubs({ validProxyPass: true });
+  try {
+    await initServiceToReady();
+    await IPPProxyManager.start();
+
+    Services.prefs.setIntPref(ATTEMPT_TIMEOUT_PREF, 20);
+    Services.prefs.setIntPref(RETRY_AFTER_PREF, 1);
+    Services.prefs.setIntPref(TIMEOUT_PREF, 200);
+
+    const fetchSpy = sandbox.spy(IPPDummyAuthProvider, "fetchProxyPass");
+    IPPDummyAuthProvider.setProxyPassHang(true);
+
+    const errorEvent = waitForProxyState(IPPProxyStates.ERROR);
+    const result = await IPPProxyManager.rotateProxyPass();
+    await errorEvent;
+
+    Assert.equal(
+      result,
+      null,
+      "A perpetually hanging fetch fails the rotation"
+    );
+    Assert.greater(
+      fetchSpy.callCount,
+      1,
+      "A hanging fetch should be retried across the budget, not consume it once"
+    );
+    Assert.equal(
+      IPPProxyManager.state,
+      IPPProxyStates.ERROR,
+      "Proxy should move to ERROR when the overall budget is exhausted"
+    );
+  } finally {
+    IPPDummyAuthProvider.setProxyPassHang(false);
+    sandbox.restore();
+    await IPPProxyManager.stop(false).catch(() => {});
+    IPProtectionService.uninit();
+    Services.prefs.clearUserPref(ATTEMPT_TIMEOUT_PREF);
+    Services.prefs.clearUserPref(RETRY_AFTER_PREF);
+    Services.prefs.clearUserPref(TIMEOUT_PREF);
+  }
 });
 
 add_task(async function test_IPPProxyManager_restores_cached_usage() {

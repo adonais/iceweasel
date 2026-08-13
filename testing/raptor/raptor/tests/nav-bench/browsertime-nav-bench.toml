@@ -1,0 +1,104 @@
+[DEFAULT]
+accept_zero_vismet = false
+alert_on = "SpeedIndex"
+alert_threshold = 5.0
+apps = "firefox, chrome"
+browser_cycles = 10
+cold = "true"
+verbose = true
+browsertime_visualmetrics = true
+gecko_profile_interval = 1
+interactive = true
+lower_is_better = false
+measure = "SpeedIndex"
+owner = "PerfTest Team"
+page_cycles = 1
+page_timeout = 600000
+playback = "mitmproxy"
+playback_version = "12.2.1"
+support_class = "nav_bench.py"
+custom_data = true
+type = "pageload"
+unit = "score"
+use_live_sites = false
+# Test prefs use a newline-separated key=value string, NOT a TOML
+# inline table. raptor's _convert_prefs_to_dict (browsertime/base.py)
+# splits on "\n" and "=", and manifestparser stringifies inline tables
+# via str(dict) which produces ":"-separated repr, not "=" — meaning
+# inline-table prefs are silently dropped. See:
+#   testing/mozbase/manifestparser/manifestparser/toml.py:read_toml
+#   testing/raptor/raptor/browsertime/base.py:_convert_prefs_to_dict
+preferences = """
+fission.bfcacheInParent=false
+browser.sessionhistory.max_total_viewers=0
+network.http.http3.enable=false
+network.http.altsvc.enabled=false
+network.dns.forceResolve=192.0.2.1
+"""
+
+# Composite test: one browser launch loads all sites in sequence.
+#
+#   wait 30s        -> initial idle / browser warmup
+#   per site:
+#     measure "<site>-load"     -> initial navigation (every site)
+#   bbc, ddg only:
+#     measure "<site>-subnav"   -> warm hard-nav via click.bySelectorAndWait.
+#                                  amazon and wikipedia subnavs were
+#                                  dropped because their SpeedIndex CV%
+#                                  was too high (15% and 536%).
+#
+# Each browser_cycle yields: 5 loads + 2 subnavs (bbc, ddg) = 7 samples.
+# Set browser_cycles to control replicate count. Score per cycle =
+# 60000 / SpeedIndex_ms (LoadLine2-style); aggregated as geomean across
+# all (sites x phases x cycles) for the overall score.
+
+[nav-bench]
+playback_manifests_dir = "nav-bench"
+playback_pageset_manifest = "mitm12-darwin-firefox-amazon-nav.manifest,mitm12-darwin-firefox-bbc-nav.manifest,mitm12-darwin-firefox-duckduckgo-nav.manifest,mitm12-darwin-firefox-reddit-nav.manifest,mitm12-darwin-firefox-wikipedia-nav.manifest"
+test_url = "about:blank"
+test_cmds = [
+    ["wait.byTime", "30000"],
+
+    ["measure.start", "amazon-nav-load"],
+    ["navigate", "https://www.amazon.ca/s?k=laptop&ref=nb_sb_noss_1"],
+    ["wait.byTime", "2000"],
+    ["measure.stop", ""],
+    ["navigate", "about:blank"],
+    ["wait.byTime", "1000"],
+
+    ["measure.start", "bbc-nav-load"],
+    ["navigate", "https://www.bbc.com/news/"],
+    ["wait.byTime", "2000"],
+    ["measure.stop", ""],
+    ["measure.start", "bbc-nav-subnav"],
+    ["click.bySelectorAndWait", 'a[href*="bbcindepth"]'],
+    ["wait.byTime", "2000"],
+    ["measure.stop", ""],
+    ["navigate", "about:blank"],
+    ["wait.byTime", "1000"],
+
+    ["measure.start", "duckduckgo-nav-load"],
+    ["navigate", "https://duckduckgo.com/?q=mandelbrot+set"],
+    ["wait.byTime", "2000"],
+    ["measure.stop", ""],
+    ["measure.start", "duckduckgo-nav-subnav"],
+    ["click.bySelectorAndWait", "nav ul li:nth-of-type(2) > a"],
+    ["wait.byTime", "2000"],
+    ["measure.stop", ""],
+    ["navigate", "about:blank"],
+    ["wait.byTime", "1000"],
+
+    ["measure.start", "reddit-nav-load"],
+    ["navigate", "https://www.reddit.com/r/IAmA/comments/m8n4vt/im_bill_gates_cochair_of_the_bill_and_melinda/"],
+    ["wait.byTime", "3000"],
+    ["measure.stop", ""],
+    ["navigate", "about:blank"],
+    ["wait.byTime", "1000"],
+
+    ["measure.start", "wikipedia-nav-load"],
+    ["navigate", "https://en.wikipedia.org/wiki/Barack_Obama"],
+    ["wait.byTime", "2000"],
+    ["measure.stop", ""],
+    ["navigate", "about:blank"],
+    ["wait.byTime", "1000"],
+]

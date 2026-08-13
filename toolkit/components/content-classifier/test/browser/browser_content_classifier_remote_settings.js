@@ -560,9 +560,11 @@ add_task(async function test_rs_back_to_back_sync_updates() {
   // with fresh per-feature versions; both fetches read rule B from
   // the local DB; both produce engine-with-rule-B. The older closure
   // must not clobber the newer install — that's what per-feature
-  // versioning guarantees. waitForListsSettled drains both rebuilds
-  // before we sample state.
-  let settled = waitForListsSettled();
+  // versioning guarantees. Unlike the single-sync case, this is the one
+  // spot that can legitimately produce two notifications, so require the
+  // first then drain a quiet window: that gives any stale closure a chance
+  // to (wrongly) clobber the newer install before we sample state.
+  let settled = waitForListsSettled({ minNotifies: 1, quietMs: 200 });
   await client.emit("sync", {
     data: {
       created: [],

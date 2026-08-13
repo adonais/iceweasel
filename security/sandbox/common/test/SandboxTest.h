@@ -4,11 +4,11 @@
 #ifndef mozilla_SandboxTest_h
 #define mozilla_SandboxTest_h
 
+#include "GMPService.h"
 #include "SandboxTestingParent.h"
 #include "mozISandboxTest.h"
 #include "mozilla/GfxMessageUtils.h"
 #include "mozilla/MozPromise.h"
-#include "GMPService.h"
 #include "nsTArray.h"
 
 #if !defined(MOZ_DEBUG) || !defined(ENABLE_TESTS)

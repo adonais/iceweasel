@@ -525,6 +525,9 @@ tasks:
             by-test-platform:
                 .*-tsan.*: 2700
                 linux.*/debug: 2700
+                windows.*-ccov.*: 2700
+                windows.*-asan.*: 2700
+                windows.*/debug: 2700
                 default: 1800
         mozharness:
             mochitest-flavor: browser
@@ -576,11 +579,15 @@ tasks:
         suite:
             name: mochitest-browser-screenshots
         treeherder-symbol: M(ss)
+        index:
+            product: test
+            job-name: mochitest-browser-screenshots
         loopback-video: true
-        variants: ["no-fission"]
         run-on-projects:
             by-test-platform:
                 linux2404-64.*/opt: ['trunk']
+                windows11-64-25h2.*/opt: ['trunk']
+                macosx1500-aarch64/opt: ['trunk']
                 default: []
         max-run-time: 3600
         mozharness:

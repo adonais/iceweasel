@@ -1,11 +1,9 @@
 #include "gtest/gtest.h"
-
 #include "mozilla/FilePreferences.h"
-
-#include "nsDirectoryServiceDefs.h"
-#include "nsDirectoryServiceUtils.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ScopeExit.h"
+#include "nsDirectoryServiceDefs.h"
+#include "nsDirectoryServiceUtils.h"
 #include "nsIDirectoryEnumerator.h"
 
 using namespace mozilla;

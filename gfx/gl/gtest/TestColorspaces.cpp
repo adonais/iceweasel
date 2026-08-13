@@ -2,11 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "gtest/gtest.h"
-#include "Colorspaces.h"
-
 #include <array>
 #include <limits>
+
+#include "Colorspaces.h"
+#include "gtest/gtest.h"
 
 namespace mozilla::color {
 mat4 YuvFromYcbcr(const YcbcrDesc&);

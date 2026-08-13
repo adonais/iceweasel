@@ -14,7 +14,7 @@ Only things that can be tested using JavaScript (with chrome privileges!) can be
 tested with this framework. Given some creativity, that's actually much more
 than you might first think, but it's not possible to write Mochitest tests to
 directly test a non-scripted C++ component, for example. (Use a compiled-code
-test like [GTest](/gtest/index.rst) to do that.)
+test like [GTest](/gtest/index.md) to do that.)
 
 ## Running tests
 

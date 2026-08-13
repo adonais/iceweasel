@@ -45,7 +45,6 @@ class NoFunctionTypeMockingDetectorTest : LintDetectorTest() {
     @Test
     fun `explicit Function0 type argument is flagged`() {
         lint()
-            .allowMissingSdk()
             .files(
                 mockkStubs,
                 TestFiles.kotlin(
@@ -66,7 +65,6 @@ class NoFunctionTypeMockingDetectorTest : LintDetectorTest() {
     @Test
     fun `explicit Function1 type argument is flagged`() {
         lint()
-            .allowMissingSdk()
             .files(
                 mockkStubs,
                 TestFiles.kotlin(
@@ -87,7 +85,6 @@ class NoFunctionTypeMockingDetectorTest : LintDetectorTest() {
     @Test
     fun `multi-arg function type is flagged`() {
         lint()
-            .allowMissingSdk()
             .files(
                 mockkStubs,
                 TestFiles.kotlin(
@@ -108,7 +105,6 @@ class NoFunctionTypeMockingDetectorTest : LintDetectorTest() {
     @Test
     fun `suspend function type is flagged`() {
         lint()
-            .allowMissingSdk()
             .files(
                 mockkStubs,
                 TestFiles.kotlin(
@@ -129,7 +125,6 @@ class NoFunctionTypeMockingDetectorTest : LintDetectorTest() {
     @Test
     fun `spyk of function type is flagged`() {
         lint()
-            .allowMissingSdk()
             .files(
                 mockkStubs,
                 TestFiles.kotlin(
@@ -150,7 +145,6 @@ class NoFunctionTypeMockingDetectorTest : LintDetectorTest() {
     @Test
     fun `function type inferred from property type is flagged`() {
         lint()
-            .allowMissingSdk()
             .files(
                 mockkStubs,
                 TestFiles.kotlin(
@@ -171,7 +165,6 @@ class NoFunctionTypeMockingDetectorTest : LintDetectorTest() {
     @Test
     fun `mockk of a non-function type is not flagged`() {
         lint()
-            .allowMissingSdk()
             .files(
                 mockkStubs,
                 TestFiles.kotlin(
@@ -192,7 +185,6 @@ class NoFunctionTypeMockingDetectorTest : LintDetectorTest() {
     @Test
     fun `unrelated mockk-named function is not flagged`() {
         lint()
-            .allowMissingSdk()
             .files(
                 TestFiles.kotlin(
                     """
@@ -211,7 +203,6 @@ class NoFunctionTypeMockingDetectorTest : LintDetectorTest() {
     @Test
     fun `spyk of a real instance whose type is not a function type is not flagged`() {
         lint()
-            .allowMissingSdk()
             .files(
                 mockkStubs,
                 TestFiles.kotlin(
@@ -232,7 +223,6 @@ class NoFunctionTypeMockingDetectorTest : LintDetectorTest() {
     @Test
     fun `function-typed property assigned a plain lambda alongside an unrelated mockk is not flagged`() {
         lint()
-            .allowMissingSdk()
             .files(
                 mockkStubs,
                 TestFiles.kotlin(
@@ -256,7 +246,6 @@ class NoFunctionTypeMockingDetectorTest : LintDetectorTest() {
     @Test
     fun `function-typed lateinit assigned a plain lambda alongside an unrelated mockk is not flagged`() {
         lint()
-            .allowMissingSdk()
             .files(
                 mockkStubs,
                 TestFiles.kotlin(

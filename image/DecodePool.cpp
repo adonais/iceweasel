@@ -6,6 +6,10 @@
 
 #include <algorithm>
 
+#include "Decoder.h"
+#include "IDecodingTask.h"
+#include "RasterImage.h"
+#include "mozilla/AppShutdown.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/ProfilerLabels.h"
@@ -14,7 +18,6 @@
 #include "mozilla/StaticPrefs_image.h"
 #include "mozilla/TaskController.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/AppShutdown.h"
 #include "nsCOMPtr.h"
 #include "nsIObserverService.h"
 #include "nsThreadManager.h"
@@ -22,12 +25,9 @@
 #include "nsXPCOMCIDInternal.h"
 #include "prsystem.h"
 
-#include "Decoder.h"
-#include "IDecodingTask.h"
-#include "RasterImage.h"
-
 #if defined(XP_WIN)
 #  include <objbase.h>
+
 #  include "mozilla/WindowsProcessMitigations.h"
 #endif
 

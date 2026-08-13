@@ -11,12 +11,12 @@
 #ifndef mozilla_image_Downscaler_h
 #define mozilla_image_Downscaler_h
 
+#include "gfxPoint.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/UniquePtr.h"
-#include "gfxPoint.h"
-#include "nsRect.h"
 #include "mozilla/gfx/ConvolutionFilter.h"
 #include "mozilla/gfx/Matrix.h"
+#include "nsRect.h"
 
 namespace mozilla {
 namespace image {

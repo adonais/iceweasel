@@ -122,13 +122,6 @@ object HistorySelectors {
         groups = listOf("deleteConfirmation"),
     )
 
-    val BROWSING_DATA_DELETED_SNACKBAR = Selector(
-        strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
-        value = "Browsing data deleted",
-        description = "Browsing data deleted snackbar message",
-        groups = listOf(),
-    )
-
     val all = listOf(
         TOOLBAR_TITLE,
         NAVIGATE_BACK_BUTTON,
@@ -146,6 +139,5 @@ object HistorySelectors {
         DELETE_CONFIRMATION_DIALOG_MESSAGE,
         DELETE_EVERYTHING_OPTION_BUTTON,
         DELETE_CONFIRM_BUTTON,
-        BROWSING_DATA_DELETED_SNACKBAR,
     )
 }

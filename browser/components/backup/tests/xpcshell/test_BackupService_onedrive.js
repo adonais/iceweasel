@@ -193,7 +193,9 @@ add_task(async function test_findBackupInDocsAfterSignInToOneDrive() {
     path: oneDriveDir,
   }));
 
-  const result = await backupService.findBackupsInWellKnownLocations();
+  const result = await backupService.findBackupsInWellKnownLocations({
+    validateFile: false,
+  });
   Assert.ok(result.found, "Backup found in Documents");
 
   sandbox.restore();
@@ -229,7 +231,9 @@ add_task(async function test_findBackupInOneDriveDocsAfterSignInToOneDrive() {
     path: oneDriveDir,
   }));
 
-  const result = await backupService.findBackupsInWellKnownLocations();
+  const result = await backupService.findBackupsInWellKnownLocations({
+    validateFile: false,
+  });
   Assert.ok(result.found, "Backup found in OneDrive/Documents");
 
   sandbox.restore();

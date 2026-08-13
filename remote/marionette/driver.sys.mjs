@@ -2029,6 +2029,23 @@ export class GeckoDriver {
       return;
     }
 
+    if (!lazy.RemoteAgent.allowSystemAccess) {
+      const { sessionHistory } = browsingContext;
+      const targetEntry = sessionHistory.getEntryAtIndex(
+        sessionHistory.index - 1
+      );
+
+      // Disallow navigating back to privileged URLs
+      // unless system access is enabled.
+      if (
+        !lazy.isWebdriverSafeNavigationURL(targetEntry.URI, browsingContext)
+      ) {
+        throw new lazy.error.UnsupportedOperationError(
+          lazy.truncate`Navigation to "${targetEntry.URI.spec}" is not allowed in this context`
+        );
+      }
+    }
+
     await lazy.navigate.waitForNavigationCompleted(this, () => {
       browsingContext.goBack();
     });
@@ -2057,6 +2074,23 @@ export class GeckoDriver {
     // If there is no history, just return
     if (!browsingContext.embedderElement?.canGoForward) {
       return;
+    }
+
+    if (!lazy.RemoteAgent.allowSystemAccess) {
+      const { sessionHistory } = browsingContext;
+      const targetEntry = sessionHistory.getEntryAtIndex(
+        sessionHistory.index + 1
+      );
+
+      // Disallow navigating forward to privileged URLs
+      // unless system access is enabled.
+      if (
+        !lazy.isWebdriverSafeNavigationURL(targetEntry.URI, browsingContext)
+      ) {
+        throw new lazy.error.UnsupportedOperationError(
+          lazy.truncate`Navigation to "${targetEntry.URI.spec}" is not allowed in this context`
+        );
+      }
     }
 
     await lazy.navigate.waitForNavigationCompleted(this, () => {
@@ -2894,6 +2928,20 @@ export class GeckoDriver {
       this.getBrowsingContext({ top: true })
     );
     await this.#handleUserPrompts();
+
+    // Disallow refreshing privileged URLs
+    // unless system access is enabled.
+    if (
+      !lazy.RemoteAgent.allowSystemAccess &&
+      !lazy.isWebdriverSafeNavigationURL(
+        browsingContext.currentURI,
+        browsingContext
+      )
+    ) {
+      throw new lazy.error.UnsupportedOperationError(
+        lazy.truncate`Refreshing "${browsingContext.currentURI.spec}" is not allowed in this context`
+      );
+    }
 
     // Switch to the top-level browsing context before navigating
     this.currentSession.contentBrowsingContext = browsingContext;

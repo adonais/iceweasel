@@ -5,13 +5,13 @@
 #ifndef GFX_FT2FONTS_H
 #define GFX_FT2FONTS_H
 
-#include "mozilla/MemoryReporting.h"
-#include "gfxTypes.h"
-#include "gfxFont.h"
-#include "gfxFT2FontBase.h"
 #include "gfxContext.h"
+#include "gfxFT2FontBase.h"
+#include "gfxFont.h"
 #include "gfxFontUtils.h"
+#include "gfxTypes.h"
 #include "gfxUserFontSet.h"
+#include "mozilla/MemoryReporting.h"
 
 class FT2FontEntry;
 

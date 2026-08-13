@@ -134,7 +134,7 @@ const isMSIX =
 
 const TEST_SET_DEFAULT_AND_PIN_CONTENT = [
   {
-    id: "AW_EASY_SETUP_NEEDS_DEFAULT_AND_PIN",
+    id: "AW_EASY_SETUP",
     content: {
       position: "split",
       split_narrow_bkg_position: "-60px",
@@ -810,7 +810,7 @@ add_task(async function test_AMO_untranslated_strings() {
     ],
 
     //Unexpected selectors:
-    ["main.AW_EASY_SETUP_NEEDS_DEFAULT"]
+    ["main.AW_EASY_SETUP"]
   );
 
   registerCleanupFunction(async () => {

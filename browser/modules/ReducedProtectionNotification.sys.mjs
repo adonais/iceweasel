@@ -171,6 +171,15 @@ export const ReducedProtectionNotification = {
                   .PRIVACY_TRACKINGPROTECTION_SOCIALTRACKING_ENABLED,
                 Ci.nsIScopedPrefs
                   .PRIVACY_TRACKINGPROTECTION_EMAILTRACKING_ENABLED,
+                Ci.nsIScopedPrefs.PRIVACY_TRACKINGPROTECTION_CONTENT_ENABLED,
+                Ci.nsIScopedPrefs
+                  .PRIVACY_TRACKINGPROTECTION_CONTENT_CRYPTOMINING_ENABLED,
+                Ci.nsIScopedPrefs
+                  .PRIVACY_TRACKINGPROTECTION_CONTENT_FINGERPRINTING_ENABLED,
+                Ci.nsIScopedPrefs
+                  .PRIVACY_TRACKINGPROTECTION_CONTENT_SOCIALTRACKING_ENABLED,
+                Ci.nsIScopedPrefs
+                  .PRIVACY_TRACKINGPROTECTION_CONTENT_EMAILTRACKING_ENABLED,
               ]) {
                 scopedPrefs.setBoolPrefScoped(pref, bc, false);
               }

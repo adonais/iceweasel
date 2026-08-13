@@ -15,14 +15,20 @@
 #include "absl/profiling/internal/sample_recorder.h"
 
 #include <atomic>
+#include <cassert>
+#include <cstddef>
+#include <cstdint>
 #include <random>
 #include <vector>
 
 #include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "absl/base/thread_annotations.h"
+#include "absl/random/random.h"
 #include "absl/synchronization/internal/thread_pool.h"
 #include "absl/synchronization/mutex.h"
 #include "absl/synchronization/notification.h"
+#include "absl/time/clock.h"
 #include "absl/time/time.h"
 
 namespace absl {
@@ -43,15 +49,17 @@ struct Info : public Sample<Info> {
 
 std::vector<size_t> GetSizes(SampleRecorder<Info>* s) {
   std::vector<size_t> res;
-  s->Iterate([&](const Info& info) {
+  EXPECT_EQ(s->Iterate([&](const Info& info) {
     res.push_back(info.size.load(std::memory_order_acquire));
-  });
+  }),
+            0);
   return res;
 }
 
 std::vector<int64_t> GetWeights(SampleRecorder<Info>* s) {
   std::vector<int64_t> res;
-  s->Iterate([&](const Info& info) { res.push_back(info.weight); });
+  EXPECT_EQ(s->Iterate([&](const Info& info) { res.push_back(info.weight); }),
+            0);
   return res;
 }
 
@@ -112,9 +120,7 @@ TEST(SampleRecorderTest, MultiThreaded) {
 
   for (int i = 0; i < 10; ++i) {
     pool.Schedule([&sampler, &stop, i]() {
-      std::random_device rd;
-      std::mt19937 gen(rd());
-
+      absl::InsecureBitGen gen;
       std::vector<Info*> infoz;
       while (!stop.HasBeenNotified()) {
         if (infoz.empty()) {
@@ -137,9 +143,10 @@ TEST(SampleRecorderTest, MultiThreaded) {
           }
           case 2: {
             absl::Duration oldest = absl::ZeroDuration();
-            sampler.Iterate([&](const Info& info) {
+            EXPECT_EQ(sampler.Iterate([&](const Info& info) {
               oldest = std::max(oldest, absl::Now() - info.create_time);
-            });
+            }),
+                      0);
             ASSERT_GE(oldest, absl::ZeroDuration());
             break;
           }

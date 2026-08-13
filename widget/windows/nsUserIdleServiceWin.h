@@ -5,8 +5,8 @@
 #ifndef nsUserIdleServiceWin_h_
 #define nsUserIdleServiceWin_h_
 
-#include "nsUserIdleService.h"
 #include "mozilla/AppShutdown.h"
+#include "nsUserIdleService.h"
 
 /* NOTE: Compare of GetTickCount() could overflow.  This corrects for
  * overflow situations.

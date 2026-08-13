@@ -234,6 +234,18 @@ sealed class PromptRequest(
     ) : PromptRequest(), Dismissible
 
     /**
+     * Value type that represents a request for a save address prompt.
+     * @property address the [Address] to save or update.
+     * @property onConfirm callback that is called when the user confirms the save address request.
+     * @property onDismiss callback to let the page know the user dismissed the dialog.
+     */
+    data class SaveAddress(
+        val address: Address,
+        val onConfirm: (Address) -> Unit,
+        override val onDismiss: () -> Unit,
+    ) : PromptRequest(shouldDismissOnLoad = false), Dismissible
+
+    /**
      * Value type that represents a request for an alert prompt to enter a message.
      * @property title title of the dialog.
      * @property inputLabel the label of the field the user should fill.

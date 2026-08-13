@@ -18,93 +18,66 @@ MenuMessage displays a contextual call-to-action card inside Firefox's panel men
 
 ## Layouts
 
-- **`column`** (default): Illustration above text with a button stack below.
+![MenuMessage Column Bottom Layout](./menu-message-bottom-layout.png)
+- **`column`** (default): Illustration above text with a button stack below. Set `imagePosition: "bottom"` to render the illustration full-bleed at the bottom of the card instead.
+![MenuMessage Row Layout](./menu-message.png)
 - **`row`**: Text on the left, button and illustration on the right.
-- **`simple`**: Single row with primary text and button only — no image or secondary text.
+![MenuMessage Simple Layout](./menu-message-simple-layout.png)
+- **`simple`**: Single row with primary text and button only — no image, secondary text or close button.
+![MenuMessage Split Layout](./menu-message-split-layout.png)
+- **`split`**: Two-column layout (illustration and copy). Use `imagePosition` `"start"` or `"end"` to swap which side the illustration sits on and `"bottom"` to have it aligned block-end. Default is `"end"`.
 
 ## Testing Menu Messages
+Previewing the layout options and configurations can be done through `./mach storybook` or through `about:asrouter`, as seen below. See the [MenuMessage Schema](https://searchfox.org/mozilla-central/source/browser/components/asrouter/content-src/templates/OnboardingMessage/MenuMessage.schema.json) for the available configuration options.
 
-### Via the dev tools:
+### Using ASRouter devtools:
 1. Set `browser.newtabpage.activity-stream.asrouter.devtoolsEnabled` to `true` in `about:config`
 2. Go to `about:asrouter`
 3. Select `panel` as the provider and find messages with `"template": "menu_message"`
-4. Click **Show** — the `testingTriggerContext` field on the message determines which menu surface is simulated
+4. Click **Show** — the `testingTriggerContext` field on the message determines which menu surface is simulated (`app_menu` or `fxa_cta`).
 5. Paste custom JSON in the text area and click **Modify** to preview changes
 
-### Via Experiments:
-[Messaging Journey](https://experimenter.info/messaging/desktop-messaging-journey)
-
-## Example JSON
-
-### PXI Menu — `fxa_cta` with row layout
+### Example JSON
 
 ```json
 {
-  "id": "FXA_ACCOUNTS_PXIMENU_ROW_LAYOUT",
-  "template": "menu_message",
-  "content": {
-    "messageType": "fxa_cta",
-    "layout": "row",
-    "primaryText": "Bounce between devices",
-    "secondaryText": "Sync and encrypt your bookmarks, passwords, and more on all your devices.",
-    "primaryActionText": "Sign up",
-    "primaryAction": {
-      "type": "FXA_SIGNIN_FLOW",
-      "data": {
-        "where": "tab",
-        "extraParams": {
-          "utm_source": "firefox-desktop",
-          "utm_medium": "product",
-          "utm_campaign": "some-campaign",
-          "utm_content": "some-content"
+    "id": "EXAMPLE_PXI_MENU_SPLIT_LAYOUT",
+    "template": "menu_message",
+    "content": {
+        "layout": "split",
+        "messageType": "fxa_cta",
+        "primaryText": {
+            "string_id": "fxa-menu-message-sync-devices-primary-text"
         },
-        "autoClose": false
-      }
+        "secondaryText": {
+            "string_id": "fxa-menu-message-sync-devices-secondary-text2"
+        },
+        "primaryActionText": {
+            "string_id": "fxa-menu-message-sign-in-button"
+        },
+        "imageURL": "chrome://browser/content/asrouter/assets/kit-peek.svg",
+        "imageVerticalBottomOffset": -8,
+        "imagePosition": "bottom",
+        "imageWidth": 95,
+        "primaryAction": {
+            "type": "FXA_SIGNIN_FLOW",
+            "data": {
+                "where": "tab",
+                "autoClose": false
+            }
+        },
+        "closeAction": {
+            "type": "BLOCK_MESSAGE",
+            "data": {
+                "id": "EXAMPLE_PXI_MENU_SPLIT_LAYOUT"
+            }
+        }
     },
-    "closeAction": {
-      "type": "BLOCK_MESSAGE",
-      "data": {
-        "id": "FXA_ACCOUNTS_PXIMENU_ROW_LAYOUT"
-      }
+    "trigger": {
+        "id": "menuOpened"
     },
-    "imageURL": "chrome://browser/content/asrouter/assets/fox-with-devices.svg",
-    "imageWidth": 100,
-    "imageVerticalTopOffset": -4,
-    "imageVerticalBottomOffset": -32,
-    "containerVerticalBottomOffset": 20
-  },
-  "trigger": { "id": "menuOpened" },
-  "testingTriggerContext": "pxi_menu"
-}
-```
-
-### App Menu — `default_cta` with simple layout
-
-```json
-{
-  "id": "APP_MENU_DEFAULT_CTA_EXAMPLE",
-  "template": "menu_message",
-  "content": {
-    "messageType": "default_cta",
-    "layout": "simple",
-    "primaryText": "Try Firefox Relay",
-    "primaryActionText": "Learn more",
-    "primaryAction": {
-      "type": "OPEN_URL",
-      "data": {
-        "args": "https://relay.firefox.com/",
-        "where": "tab"
-      }
-    },
-    "closeAction": {
-      "type": "BLOCK_MESSAGE",
-      "data": {
-        "id": "APP_MENU_DEFAULT_CTA_EXAMPLE"
-      }
-    }
-  },
-  "trigger": { "id": "menuOpened" },
-  "testingTriggerContext": "app_menu"
+    "testingTriggerContext": "pxi_menu",
+    "groups": [],
 }
 ```
 

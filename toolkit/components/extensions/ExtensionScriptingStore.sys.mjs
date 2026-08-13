@@ -8,7 +8,7 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = XPCOMUtils.declareLazy({
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
-  KeyValueService: "resource://gre/modules/kvstore.sys.mjs",
+  KeyValueService: "moz-src:///toolkit/components/kvstore/kvstore.sys.mjs",
 });
 
 class Store {

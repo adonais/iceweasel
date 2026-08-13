@@ -7,10 +7,10 @@
 
 #include <queue>
 
-#include "mozilla/layers/TextureHost.h"
-#include "mozilla/RefPtr.h"
-#include "mozilla/webrender/webrender_ffi.h"
 #include "Units.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/layers/TextureHost.h"
+#include "mozilla/webrender/webrender_ffi.h"
 
 namespace mozilla {
 

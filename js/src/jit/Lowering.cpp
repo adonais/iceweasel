@@ -1486,15 +1486,15 @@ void LIRGenerator::visitCompare(MCompare* comp) {
       comp->compareType() == MCompare::Compare_Symbol ||
       comp->compareType() == MCompare::Compare_WasmAnyRef) {
     JSOp op = ReorderComparison(comp->jsop(), &left, &right);
-    LAllocation lhs = useRegister(left);
+    LAllocation lhs = useRegisterAtStart(left);
     LAllocation rhs;
     if (comp->isInt32Comparison() ||
         comp->compareType() == MCompare::Compare_UInt32 ||
         comp->compareType() == MCompare::Compare_IntPtr ||
         comp->compareType() == MCompare::Compare_UIntPtr) {
-      rhs = useAnyOrInt32Constant(right);
+      rhs = useAnyOrInt32ConstantAtStart(right);
     } else {
-      rhs = useAny(right);
+      rhs = useAnyAtStart(right);
     }
     define(new (alloc()) LCompare(lhs, rhs, op), comp);
     return;
@@ -1504,8 +1504,8 @@ void LIRGenerator::visitCompare(MCompare* comp) {
   if (comp->compareType() == MCompare::Compare_Int64 ||
       comp->compareType() == MCompare::Compare_UInt64) {
     JSOp op = ReorderComparison(comp->jsop(), &left, &right);
-    define(new (alloc()) LCompareI64(useInt64Register(left),
-                                     useInt64OrConstant(right), op),
+    define(new (alloc()) LCompareI64(useInt64RegisterAtStart(left),
+                                     useInt64OrConstantAtStart(right), op),
            comp);
     return;
   }
@@ -1986,7 +1986,7 @@ void LIRGenerator::visitMinMax(MMinMax* ins) {
   }
 
   // Input reuse is OK (for now) even on ARM64: floating min/max are fairly
-  // expensive due to SNaN -> QNaN conversion, and int min/max is for asm.js.
+  // expensive due to SNaN -> QNaN conversion.
   defineReuseInput(lir, ins, 0);
 }
 
@@ -3612,30 +3612,50 @@ void LIRGenerator::visitInt32ToIntPtr(MInt32ToIntPtr* ins) {
   // If the result is only used by instructions that expect a bounds-checked
   // index, we must have eliminated or hoisted a bounds check and we can assume
   // the index is non-negative. This lets us generate more efficient code.
-  if (ins->canBeNegative()) {
-    bool canBeNegative = false;
-    for (MUseDefIterator iter(ins); iter; iter++) {
-      if (iter.def()->isSpectreMaskIndex()) {
-        continue;
-      }
-      if (iter.def()->isLoadUnboxedScalar() ||
-          iter.def()->isStoreUnboxedScalar() ||
-          iter.def()->isLoadDataViewElement() ||
-          iter.def()->isStoreDataViewElement()) {
-        MOZ_ASSERT(iter.def()->indexOf(iter.use()) == 1,
-                   "unexpected non-index operand use");
-        continue;
-      }
-
+  //
+  // The no-op lowering with |redefine| shares the input's virtual register and
+  // 32-bit spill slot, so all instruction uses must read from a register:
+  // registers hold Int32 values zero-extended, which matches the sign-extended
+  // IntPtr value because we only do this when the value is non-negative. A
+  // pointer-width memory read would instead also consume bytes from the
+  // adjacent stack slot. Snapshots handle this separately with
+  // RValueAllocation::IntPtrInt32.
+  bool canBeNegative = false;
+  bool canRedefine = true;
+  for (MUseDefIterator iter(ins); iter; iter++) {
+    MDefinition* def = iter.def();
+    size_t index = def->indexOf(iter.use());
+    if (def->isLoadUnboxedScalar() || def->isStoreUnboxedScalar() ||
+        def->isLoadDataViewElement() || def->isStoreDataViewElement()) {
+      // The bounds-checked index is lowered with useRegisterOrIndexConstant.
+      static_assert(MLoadUnboxedScalar::indexOperand == 1);
+      static_assert(MStoreUnboxedScalar::indexOperand == 1);
+      static_assert(MLoadDataViewElement::indexOperand == 1);
+      static_assert(MStoreDataViewElement::indexOperand == 1);
+      MOZ_RELEASE_ASSERT(index == 1);
+      continue;
+    }
+    if (def->isSpectreMaskIndex() && index == MSpectreMaskIndex::indexOperand) {
+      // The bounds-checked index is lowered with useRegister.
+      continue;
+    }
+    if (def->isBoundsCheck() && index == MBoundsCheck::indexOperand) {
+      // The index operand is lowered with useRegisterOrInt32Constant, but
+      // because this is the instruction performing the check it implies
+      // nothing about the sign.
       canBeNegative = true;
-      break;
+      continue;
     }
-    if (!canBeNegative) {
-      ins->setCanNotBeNegative();
-    }
+    // Don't optimize other uses.
+    canBeNegative = true;
+    canRedefine = false;
+    break;
+  }
+  if (!canBeNegative) {
+    ins->setCanNotBeNegative();
   }
 
-  if (ins->canBeNegative()) {
+  if (ins->canBeNegative() || !canRedefine) {
     auto* lir = new (alloc()) LInt32ToIntPtr(useAnyAtStart(input));
     define(lir, ins);
   } else {
@@ -5980,9 +6000,9 @@ void LIRGenerator::visitCallSetArrayLength(MCallSetArrayLength* ins) {
 void LIRGenerator::visitMegamorphicLoadSlot(MMegamorphicLoadSlot* ins) {
   MOZ_ASSERT(ins->object()->type() == MIRType::Object);
   auto* lir = new (alloc())
-      LMegamorphicLoadSlot(useRegisterAtStart(ins->object()),
+      LMegamorphicLoadSlot(useFixedAtStart(ins->object(), CallTempReg3),
                            tempFixed(CallTempReg0), tempFixed(CallTempReg1),
-                           tempFixed(CallTempReg2), tempFixed(CallTempReg3));
+                           tempFixed(CallTempReg2), tempFixed(CallTempReg4));
   assignSnapshot(lir, ins->bailoutKind());
   defineReturn(lir, ins);
 }
@@ -5994,7 +6014,7 @@ void LIRGenerator::visitMegamorphicLoadSlotPermissive(
   static_assert(IonGenericCallArgcReg == CallTempReg2);
 
   auto* lir = new (alloc()) LMegamorphicLoadSlotPermissive(
-      useRegisterAtStart(ins->object()), tempFixed(CallTempReg0),
+      useFixedAtStart(ins->object(), CallTempReg3), tempFixed(CallTempReg0),
       tempFixed(IonGenericCallCalleeReg), tempFixed(IonGenericCallArgcReg),
       tempFixed(CallTempReg4));
   defineReturn(lir, ins);
@@ -6007,7 +6027,7 @@ void LIRGenerator::visitMegamorphicLoadSlotByValue(
   MOZ_ASSERT(ins->object()->type() == MIRType::Object);
   MOZ_ASSERT(ins->idVal()->type() == MIRType::Value);
   auto* lir = new (alloc()) LMegamorphicLoadSlotByValue(
-      useRegisterAtStart(ins->object()), useBoxAtStart(ins->idVal()),
+      useFixedAtStart(ins->object(), CallTempReg3), useBoxAtStart(ins->idVal()),
       tempFixed(CallTempReg0), tempFixed(CallTempReg1),
       tempFixed(CallTempReg2));
   assignSnapshot(lir, ins->bailoutKind());
@@ -6020,9 +6040,9 @@ void LIRGenerator::visitMegamorphicLoadSlotByValuePermissive(
   MOZ_ASSERT(ins->idVal()->type() == MIRType::Value);
 #ifdef JS_CODEGEN_X86
   auto* lir = new (alloc()) LMegamorphicLoadSlotByValuePermissive(
-      useRegisterAtStart(ins->object()), useBoxAtStart(ins->idVal()),
-      tempFixed(CallTempReg0), tempFixed(IonGenericCallCalleeReg),
-      tempFixed(IonGenericCallArgcReg));
+      useFixedAtStart(ins->object(), CallTempReg3), useBoxAtStart(ins->idVal()),
+      tempFixed(CallTempReg0), tempFixed(CallTempReg1),
+      tempFixed(CallTempReg2));
   defineReturn(lir, ins);
   assignSafepoint(lir, ins);
 #else
@@ -6030,7 +6050,7 @@ void LIRGenerator::visitMegamorphicLoadSlotByValuePermissive(
   static_assert(IonGenericCallArgcReg == CallTempReg2);
 
   auto* lir = new (alloc()) LMegamorphicLoadSlotByValuePermissive(
-      useRegisterAtStart(ins->object()), useBoxAtStart(ins->idVal()),
+      useFixedAtStart(ins->object(), CallTempReg3), useBoxAtStart(ins->idVal()),
       tempFixed(CallTempReg0), tempFixed(IonGenericCallCalleeReg),
       tempFixed(IonGenericCallArgcReg), tempFixed(CallTempReg4));
   defineReturn(lir, ins);
@@ -7061,7 +7081,9 @@ void LIRGenerator::visitWasmDerivedIndexPointer(MWasmDerivedIndexPointer* ins) {
 void LIRGenerator::visitWasmStoreRef(MWasmStoreRef* ins) {
   LAllocation instance = useRegister(ins->instance());
   LAllocation valueBase = useFixed(ins->valueBase(), PreBarrierReg);
-  LAllocation value = useRegister(ins->value());
+  LAllocation value = ins->value()->isWasmNullConstant()
+                          ? LAllocation()
+                          : useRegister(ins->value());
   uint32_t valueOffset = ins->offset();
   add(new (alloc())
           LWasmStoreRef(instance, valueBase, value, temp(), valueOffset,
@@ -7071,6 +7093,11 @@ void LIRGenerator::visitWasmStoreRef(MWasmStoreRef* ins) {
 
 void LIRGenerator::visitWasmPostWriteBarrierWholeCell(
     MWasmPostWriteBarrierWholeCell* ins) {
+  // No post-write barrier needed for null stores.
+  if (ins->value()->isWasmNullConstant()) {
+    return;
+  }
+
   LWasmPostWriteBarrierWholeCell* lir = new (alloc())
       LWasmPostWriteBarrierWholeCell(useFixed(ins->instance(), InstanceReg),
                                      useRegister(ins->object()),
@@ -7081,6 +7108,11 @@ void LIRGenerator::visitWasmPostWriteBarrierWholeCell(
 
 void LIRGenerator::visitWasmPostWriteBarrierEdgeAtIndex(
     MWasmPostWriteBarrierEdgeAtIndex* ins) {
+  // No post-write barrier needed for null stores.
+  if (ins->value()->isWasmNullConstant()) {
+    return;
+  }
+
   LWasmPostWriteBarrierEdgeAtIndex* lir =
       new (alloc()) LWasmPostWriteBarrierEdgeAtIndex(
           useFixed(ins->instance(), InstanceReg), useRegister(ins->object()),
@@ -8379,6 +8411,10 @@ void LIRGenerator::visitConstantProto(MConstantProto* ins) {
 }
 
 void LIRGenerator::visitWasmNullConstant(MWasmNullConstant* ins) {
+  if (ins->canEmitAtUses()) {
+    emitAtUses(ins);
+    return;
+  }
   define(new (alloc()) LWasmNullConstant(), ins);
 }
 
@@ -8787,7 +8823,9 @@ void LIRGenerator::visitWasmStoreField(MWasmStoreField* ins) {
 void LIRGenerator::visitWasmStoreFieldRef(MWasmStoreFieldRef* ins) {
   LAllocation instance = useRegister(ins->instance());
   LAllocation base = useFixed(ins->base(), PreBarrierReg);
-  LAllocation value = useRegister(ins->value());
+  LAllocation value = ins->value()->isWasmNullConstant()
+                          ? LAllocation()
+                          : useRegister(ins->value());
   uint32_t offset = ins->offset();
   add(new (alloc()) LWasmStoreRef(instance, base, value, temp(), offset,
                                   ins->maybeTrap(), ins->preBarrierKind()),
@@ -8825,7 +8863,9 @@ void LIRGenerator::visitWasmStoreElementRef(MWasmStoreElementRef* ins) {
   LAllocation instance = useRegister(ins->instance());
   LAllocation base = useFixed(ins->base(), PreBarrierReg);
   LAllocation index = useRegister(ins->index());
-  LAllocation value = useRegister(ins->value());
+  LAllocation value = ins->value()->isWasmNullConstant()
+                          ? LAllocation()
+                          : useRegister(ins->value());
   bool needTemps = ins->preBarrierKind() == WasmPreBarrierKind::Normal;
   LDefinition temp0 = needTemps ? temp() : LDefinition::BogusTemp();
   LDefinition temp1 = needTemps ? temp() : LDefinition::BogusTemp();

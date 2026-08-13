@@ -5,10 +5,10 @@
 #ifndef nsToolkit_h_
 #define nsToolkit_h_
 
-#include "nsdefs.h"
+#include <windows.h>
 
 #include "nsCOMPtr.h"
-#include <windows.h>
+#include "nsdefs.h"
 
 // Avoid including windowsx.h to prevent macro pollution
 #ifndef GET_X_LPARAM

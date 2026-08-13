@@ -14,7 +14,6 @@ import mozilla.appservices.adsclient.MozAdsTile
 import mozilla.components.concept.base.crash.CrashReporting
 import mozilla.components.feature.top.sites.TopSite
 import mozilla.components.support.test.any
-import mozilla.components.support.test.argumentCaptor
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.whenever
 import org.junit.After
@@ -54,12 +53,13 @@ class MacTopSitesProviderTest {
             requestConfig = getRequestConfig(placements = placements),
         )
         val tiles = createTiles(count = 3)
+        val expectedRequests = placements.map { MozAdsPlacementRequest(placementId = it, iabContent = null) }
 
-        whenever(client.requestTileAds(mozAdRequests = any(), options = any())).thenReturn(tiles)
+        whenever(client.requestTileAds(mozAdRequests = expectedRequests)).thenReturn(tiles)
 
         val topSites = provider.getTopSites()
 
-        verify(client).requestTileAds(mozAdRequests = any(), options = any())
+        verify(client).requestTileAds(mozAdRequests = expectedRequests)
 
         assertEquals(3, topSites.size)
         placements.forEachIndexed { i, placement ->
@@ -77,17 +77,13 @@ class MacTopSitesProviderTest {
             adsClientProvider = lazy { MozAdsClientProvider },
             requestConfig = getRequestConfig(placements),
         )
-        val captor = argumentCaptor<List<MozAdsPlacementRequest>>()
+        val expectedRequests = placements.map { MozAdsPlacementRequest(placementId = it, iabContent = null) }
 
-        whenever(client.requestTileAds(mozAdRequests = any(), options = any())).thenReturn(createTiles())
+        whenever(client.requestTileAds(mozAdRequests = expectedRequests)).thenReturn(createTiles())
 
         provider.getTopSites()
 
-        verify(client).requestTileAds(mozAdRequests = captor.capture(), options = any())
-
-        val capturedRequests = captor.value
-        assertEquals(placements.size, capturedRequests.size)
-        assertEquals(capturedRequests.map { it.placementId }, placements)
+        verify(client).requestTileAds(mozAdRequests = expectedRequests)
     }
 
     @Test
@@ -99,11 +95,11 @@ class MacTopSitesProviderTest {
         )
         val exception = MozAdsClientApiException.Other("test error")
 
-        whenever(client.requestTileAds(mozAdRequests = any(), options = any())).thenThrow(exception)
+        whenever(client.requestTileAds(mozAdRequests = emptyList())).thenThrow(exception)
 
         val topSites = provider.getTopSites()
 
-        verify(client).requestTileAds(mozAdRequests = any(), options = any())
+        verify(client).requestTileAds(mozAdRequests = emptyList())
 
         assertEquals(0, topSites.size)
         verify(crashReporter).recordCrashBreadcrumb(breadcrumb = any())

@@ -397,13 +397,13 @@ add_task(async function test_tabGroupContextMenuMoveTabToGroupBasics() {
       Assert.ok(
         group2Item.style
           .getPropertyValue("--tab-group-color")
-          .includes("--tab-group-color-blue"),
+          .includes("--tab-group-blue"),
         "group2 menu item chicklet has correct color"
       );
       Assert.ok(
         group2Item.style
           .getPropertyValue("--tab-group-color-invert")
-          .includes("--tab-group-color-blue-invert"),
+          .includes("--tab-group-blue-invert"),
         "group2 menu item chicklet has correct inverted color"
       );
 
@@ -421,13 +421,13 @@ add_task(async function test_tabGroupContextMenuMoveTabToGroupBasics() {
       Assert.ok(
         group1Item.style
           .getPropertyValue("--tab-group-color")
-          .includes("--tab-group-color-red"),
+          .includes("--tab-group-red"),
         "group1 menu item chicklet has correct color"
       );
       Assert.ok(
         group1Item.style
           .getPropertyValue("--tab-group-color-invert")
-          .includes("--tab-group-color-red-invert"),
+          .includes("--tab-group-red-invert"),
         "group1 menu item chicklet has correct inverted color"
       );
 
@@ -882,13 +882,13 @@ add_task(async function test_tabGroupContextMenuSavedGroupsAndNoOpenGroups() {
     Assert.ok(
       savedGroupMenuItem.style
         .getPropertyValue("--tab-group-color")
-        .includes("--tab-group-color-blue"),
+        .includes("--tab-group-blue"),
       "Saved group icon has correct color"
     );
     Assert.ok(
       savedGroupMenuItem.style
         .getPropertyValue("--tab-group-color-invert")
-        .includes("--tab-group-color-blue-invert"),
+        .includes("--tab-group-blue-invert"),
       "Saved group icon has correct inverted color"
     );
   });
@@ -1228,7 +1228,7 @@ add_task(
     );
 
     // Use waitForCondition instead of assert because the TabClose event fires before the tab is fully removed from the DOM
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => gBrowser.tabs.length == 1,
       "Only one tab remains on the tab strip"
     );

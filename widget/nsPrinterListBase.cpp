@@ -3,13 +3,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsPrinterListBase.h"
+
 #include "PrintBackgroundTask.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/gfx/Rect.h"
 #include "mozilla/IntegerRange.h"
-#include "mozilla/intl/Localization.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/gfx/Rect.h"
+#include "mozilla/intl/Localization.h"
 #include "xpcpublic.h"
 
 using namespace mozilla;

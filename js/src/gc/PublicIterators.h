@@ -10,6 +10,7 @@
 #define gc_PublicIterators_h
 
 #include "jstypes.h"
+
 #include "gc/GCRuntime.h"
 #include "gc/IteratorUtils.h"
 #include "gc/Zone.h"

@@ -5,30 +5,33 @@
 #ifndef MOZ_WAYLAND_DISPLAY_H_
 #define MOZ_WAYLAND_DISPLAY_H_
 
+#include <gbm.h>
 #include <time.h>
-#include "DMABufDevice.h"
 
+// clang-format off
+// The protocol headers depend on declarations in mozwayland.h
 #include "mozilla/widget/mozwayland.h"
+// clang-format on
+
+#include "DMABufDevice.h"
+#include "mozilla/widget/color-management-v1-client-protocol.h"
+#include "mozilla/widget/color-representation-v1-client-protocol.h"
 #include "mozilla/widget/fractional-scale-v1-client-protocol.h"
 #include "mozilla/widget/gtk-primary-selection-client-protocol.h"
 #include "mozilla/widget/idle-inhibit-unstable-v1-client-protocol.h"
 #include "mozilla/widget/kde-appmenu-client-protocol.h"
 #include "mozilla/widget/linux-dmabuf-unstable-v1-client-protocol.h"
-#include "mozilla/widget/primary-selection-unstable-v1-client-protocol.h"
 #include "mozilla/widget/pointer-constraints-unstable-v1-client-protocol.h"
 #include "mozilla/widget/pointer-gestures-unstable-v1-client-protocol.h"
+#include "mozilla/widget/primary-selection-unstable-v1-client-protocol.h"
 #include "mozilla/widget/relative-pointer-unstable-v1-client-protocol.h"
 #include "mozilla/widget/viewporter-client-protocol.h"
 #include "mozilla/widget/xdg-activation-v1-client-protocol.h"
 #include "mozilla/widget/xdg-output-unstable-v1-client-protocol.h"
-#include "mozilla/widget/color-management-v1-client-protocol.h"
-#include "mozilla/widget/color-representation-v1-client-protocol.h"
+#include "mozilla/widget/xdg-session-management-v1-client-protocol.h"
 #include "mozilla/widget/xdg-shell-client-protocol.h"
 #include "mozilla/widget/xx-fractional-scale-v2-client-protocol.h"
 #include "mozilla/widget/xx-pip-v1-client-protocol.h"
-#include "mozilla/widget/xx-session-management-v1-client-protocol.h"
-
-#include <gbm.h>
 
 using GdkMonitor = struct _GdkMonitor;
 
@@ -157,15 +160,16 @@ class nsWaylandDisplay {
   void SetFixes(wl_fixes* aFixes);
   wl_fixes* GetFixes() const { return mFixes; }
 
-  static void SessionCreate(void* aData, xx_session_v1* aSession,
+  static void SessionCreate(void* aData, xdg_session_v1* aSession,
                             const char* aSessionId);
-  static void SessionRestore(void* aData, xx_session_v1* aSession);
-  static void SessionReplace(void* aData, xx_session_v1* aSession);
+  static void SessionRestore(void* aData, xdg_session_v1* aSession);
+  static void SessionReplace(void* aData, xdg_session_v1* aSession);
 
-  xx_session_manager_v1* GetSessionManager() { return mSessionManager; }
-  void SetSessionManager(xx_session_manager_v1* aSessionManager);
+  xdg_session_manager_v1* GetSessionManager() { return mSessionManager; }
+  void SetSessionManager(xdg_session_manager_v1* aSessionManager);
+  void SessionManagerInit();
   void CreateSession(const char* aSessionId = nullptr);
-  xx_session_v1* GetSession() { return mWaylandSession; }
+  xdg_session_v1* GetSession() { return mWaylandSession; }
 
   static void AsyncRoundtripCallback(void* aData, wl_callback* aCallback,
                                      uint32_t aTime);
@@ -229,8 +233,8 @@ class nsWaylandDisplay {
   wp_color_representation_manager_v1* mColorRepresentationManager = nullptr;
   xx_pip_shell_v1* mPipShell = nullptr;
   xdg_wm_base* mWmBase = nullptr;
-  xx_session_manager_v1* mSessionManager = nullptr;
-  xx_session_v1* mWaylandSession = nullptr;
+  xdg_session_manager_v1* mSessionManager = nullptr;
+  xdg_session_v1* mWaylandSession = nullptr;
   nsCString mWaylandSessionId;
   RefPtr<DMABufFormats> mFormats;
   GList* mAsyncRoundtrips = nullptr;

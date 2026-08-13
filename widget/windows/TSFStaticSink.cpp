@@ -4,17 +4,18 @@
 
 #include "TSFStaticSink.h"
 
+#include <comutil.h>  // for _bstr_t
+#include <oleauto.h>  // for SysAllocString
+#include <olectl.h>
+
 #include "TSFTextStore.h"
 #include "TSFUtils.h"
 #include "WinIMEHandler.h"
 #include "WinMessages.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Logging.h"
+#include "mozilla/Utf16.h"
 #include "mozilla/glean/WidgetWindowsMetrics.h"
-
-#include <comutil.h>  // for _bstr_t
-#include <oleauto.h>  // for SysAllocString
-#include <olectl.h>
 
 extern mozilla::LazyLogModule gIMELog;  // defined in TSFUtils.cpp
 
@@ -78,8 +79,8 @@ bool TSFStaticSink::GetActiveTIPNameForTelemetry(nsAString& aName) {
   description.Assign(sInstance->mActiveTIPKeyboardDescription);
   static const uint32_t kMaxDescriptionLength = 72 - aName.Length();
   if (description.Length() > kMaxDescriptionLength) {
-    if (NS_IS_LOW_SURROGATE(description[kMaxDescriptionLength - 1]) &&
-        NS_IS_HIGH_SURROGATE(description[kMaxDescriptionLength - 2])) {
+    if (mozilla::IsLowSurrogate(description[kMaxDescriptionLength - 1]) &&
+        mozilla::IsHighSurrogate(description[kMaxDescriptionLength - 2])) {
       description.Truncate(kMaxDescriptionLength - 2);
     } else {
       description.Truncate(kMaxDescriptionLength - 1);

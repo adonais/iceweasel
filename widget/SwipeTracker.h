@@ -6,12 +6,12 @@
 #define SwipeTracker_h
 
 #include "EventForwards.h"
-#include "mozilla/layers/AxisPhysicsMSDModel.h"
+#include "Units.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/layers/AxisPhysicsMSDModel.h"
 #include "nsIWeakReferenceUtils.h"
 #include "nsRefreshObservers.h"
-#include "Units.h"
 
 class nsIWidget;
 class nsRefreshDriver;

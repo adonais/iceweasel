@@ -20,6 +20,10 @@
 #include "jsapi.h"
 #include "jstypes.h"
 
+#if defined(ANDROID) && (defined(__arm__) || defined(__aarch64__))
+#  include <android/api-level.h>
+#endif
+
 #include "jit/InlinableNatives.h"
 #include "js/Class.h"
 #include "js/ForOfIterator.h"
@@ -57,6 +61,27 @@ bool js::math_use_fdlibm_for_sin_cos_tan() {
 static inline bool UseFdlibmForSinCosTan(const CallArgs& args) {
   return math_use_fdlibm_for_sin_cos_tan() ||
          args.callee().nonCCWRealm()->creationOptions().alwaysUseFdlibm();
+}
+
+static MOZ_ALWAYS_INLINE double pow_libm_or_fdlibm(double x, double y) {
+#if defined(ANDROID) && (defined(__arm__) || defined(__aarch64__))
+  // ARM Android API <= 28 ships bionic's old FreeBSD e_pow.c on devices
+  // whose OEM didn't backport arm-optimized-routines, returning a 1-ULP
+  // off result for Math.pow(PI, -100) (1.9275814160560204e-50 vs the
+  // modern-libm consensus 1.9275814160560206e-50). Use fdlibm_pow on
+  // those devices to pin the consensus value; let API >= 29 (which
+  // AOSP moved to arm-optimized-routines) keep the fast bionic path.
+  // android_get_device_api_level() result is cached in a function-local
+  // static, so the cost after the first call is one branch.
+  static const int sApiLevel = android_get_device_api_level();
+  if (sApiLevel <= 28) {
+    return fdlibm_pow(x, y);
+  }
+#endif
+  // Every other platform's libm pow already produces the consensus value
+  // for the inputs the math fingerprint samples, so we keep the faster
+  // platform path.
+  return std::pow(x, y);
 }
 
 // Stack alignment on x86 Windows is 4 byte. Align to 16 bytes when calling
@@ -466,10 +491,13 @@ double js::powi(double x, int32_t y) {
       }
     }
 
-    // Fall-back to use std::pow to reduce floating point precision errors.
+    // Fall-back to libm pow to reduce floating point precision errors.
+    // |pow_libm_or_fdlibm| dispatches to fdlibm on the ARM Android subset
+    // whose bionic pow diverges; everywhere else it's plain std::pow.
   }
 
-  return std::pow(x, static_cast<double>(y));  // Avoid pow(double, int).
+  return pow_libm_or_fdlibm(x,
+                            static_cast<double>(y));  // Avoid pow(double, int).
 }
 
 double js::ecmaPow(double x, double y) {
@@ -499,7 +527,9 @@ double js::ecmaPow(double x, double y) {
 
   /*
    * Special case for square roots. Note that pow(x, 0.5) != sqrt(x)
-   * when x = -0.0, so we have to guard for this.
+   * when x = -0.0, so we have to guard for this. std::sqrt is IEEE-mandated
+   * correctly-rounded and is bit-deterministic across platforms (FSQRT /
+   * SQRTSD), so we use it here.
    */
   if (std::isfinite(x) && x != 0.0) {
     if (y == 0.5) {
@@ -509,7 +539,7 @@ double js::ecmaPow(double x, double y) {
       return 1.0 / std::sqrt(x);
     }
   }
-  return std::pow(x, y);
+  return pow_libm_or_fdlibm(x, y);
 }
 
 static bool math_pow(JSContext* cx, unsigned argc, Value* vp) {
@@ -886,7 +916,9 @@ static bool math_sign(JSContext* cx, unsigned argc, Value* vp) {
 
 double js::math_cbrt_impl(double x) {
   AutoUnsafeCallWithABI unsafe;
-  return fdlibm_cbrt(x);
+  // fdlibm_cbrt can return a non-canonical NaN when the thread has FTZ/DAZ
+  // enabled (see --disable-main-thread-denormals), so canonicalize the result.
+  return JS::CanonicalizeNaN(fdlibm_cbrt(x));
 }
 
 static bool math_cbrt(JSContext* cx, unsigned argc, Value* vp) {
@@ -1229,7 +1261,8 @@ static const JSPropertySpec math_static_properties[] = {
 
 static JSObject* CreateMathObject(JSContext* cx, JSProtoKey key) {
   RootedObject proto(cx, &cx->global()->getObjectPrototype());
-  return NewTenuredObjectWithGivenProto(cx, &MathClass, proto);
+  return NewObjectWithGivenProto(cx, &MathClass, proto,
+                                 {.newKind = TenuredObject});
 }
 
 static const ClassSpec MathClassSpec = {

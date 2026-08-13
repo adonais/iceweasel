@@ -318,7 +318,9 @@ export class DevToolsProcessParent extends JSProcessActorParent {
     // Use a timeout to detect when it happens.
     const timeout = setTimeout(() => {
       this.#frozen = true;
-      console.error(
+      // A process being slow to reply is common and recoverable, especially
+      // during startup, so log this as a warning rather than an error.
+      console.warn(
         `Content process ${osPid} isn't responsive while sending "${msg}" request. DevTools will ignore this process for now.`
       );
       // Do not consider timeout as an error as it may easily break the frontend.
@@ -338,7 +340,7 @@ export class DevToolsProcessParent extends JSProcessActorParent {
       // Ignore frozen processes when the JS Process Actor is destroyed.
       // Either the process was shut down or DevTools unregistered the Actor.
       if (this.#frozen && !this.#destroyed) {
-        console.error(
+        console.warn(
           `Content process ${osPid} is responsive again. DevTools resumes operations against it.`
         );
       }

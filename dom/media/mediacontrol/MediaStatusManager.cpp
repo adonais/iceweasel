@@ -7,6 +7,7 @@
 #include "MediaControlService.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/MediaControlUtils.h"
 #include "mozilla/dom/WindowGlobalParent.h"
@@ -520,6 +521,23 @@ MediaSessionPlaybackState MediaStatusManager::PlaybackState() const {
 
 bool MediaStatusManager::IsMediaAudible() const {
   return mPlaybackStatusDelegate.IsAudible();
+}
+
+void MediaStatusManager::NotifyBrowsingContextDiscarded(
+    uint64_t aBrowsingContextId) {
+  // When a child browsing context is destroyed (e.g. an iframe is removed),
+  // clear its state so things associated with that state do not remain stuck,
+  // then re-evaluate the active audible context in case the discarded context
+  // was the current one.
+  LOG("NotifyBrowsingContextDiscarded context %" PRIu64, aBrowsingContextId);
+  Maybe<uint64_t> oldActiveContextId =
+      mPlaybackStatusDelegate.GetActiveAudibleControllableContextId();
+  mPlaybackStatusDelegate.ClearBrowsingContext(aBrowsingContextId);
+  Maybe<uint64_t> newActiveContextId =
+      mPlaybackStatusDelegate.GetActiveAudibleControllableContextId();
+  if (oldActiveContextId != newActiveContextId) {
+    HandleActiveAudibleControllableContextChanged(newActiveContextId);
+  }
 }
 
 bool MediaStatusManager::IsMediaPlaying() const {

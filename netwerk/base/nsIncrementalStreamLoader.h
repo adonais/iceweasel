@@ -5,11 +5,11 @@
 #ifndef nsIncrementalStreamLoader_h_
 #define nsIncrementalStreamLoader_h_
 
-#include "nsIThreadRetargetableStreamListener.h"
-#include "nsIIncrementalStreamLoader.h"
-#include "nsCOMPtr.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Vector.h"
+#include "nsCOMPtr.h"
+#include "nsIIncrementalStreamLoader.h"
+#include "nsIThreadRetargetableStreamListener.h"
 
 class nsIRequest;
 

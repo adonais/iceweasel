@@ -17,8 +17,8 @@ add_task(async function slowHeuristicSelected() {
   // during the test.
   let engine = await SearchService.getDefault();
   let heuristicResult = new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.SEARCH,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    type: UrlbarShared.RESULT_TYPE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     heuristic: true,
     payload: {
       suggestion: "test",
@@ -53,12 +53,12 @@ add_task(async function slowHeuristicSelected() {
 
   // The first result should be the heuristic and it should be selected.
   let actualHeuristic = await UrlbarTestUtils.getDetailsOfResultAt(win, 0);
-  Assert.equal(actualHeuristic.type, UrlbarUtils.RESULT_TYPE.SEARCH);
+  Assert.equal(actualHeuristic.type, UrlbarShared.RESULT_TYPE.SEARCH);
   Assert.equal(UrlbarTestUtils.getSelectedElementIndex(win), 0);
 
   // Check the second result for good measure.
   let actualNonHeuristic = await UrlbarTestUtils.getDetailsOfResultAt(win, 1);
-  Assert.equal(actualNonHeuristic.type, UrlbarUtils.RESULT_TYPE.TIP);
+  Assert.equal(actualNonHeuristic.type, UrlbarShared.RESULT_TYPE.TIP);
 
   await UrlbarTestUtils.promisePopupClose(win);
   providersManager.unregisterProvider(heuristicProvider);
@@ -75,8 +75,8 @@ add_task(async function oneOffRemainsSelected() {
   // during the test.
   let engine = await SearchService.getDefault();
   let heuristicResult = new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.SEARCH,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    type: UrlbarShared.RESULT_TYPE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     heuristic: true,
     payload: {
       suggestion: "test",
@@ -121,11 +121,11 @@ add_task(async function oneOffRemainsSelected() {
 
   // The first result should be the heuristic.
   let actualHeuristic = await UrlbarTestUtils.getDetailsOfResultAt(win, 0);
-  Assert.equal(actualHeuristic.type, UrlbarUtils.RESULT_TYPE.SEARCH);
+  Assert.equal(actualHeuristic.type, UrlbarShared.RESULT_TYPE.SEARCH);
 
   // Check the second result for good measure.
   let actualNonHeuristic = await UrlbarTestUtils.getDetailsOfResultAt(win, 1);
-  Assert.equal(actualNonHeuristic.type, UrlbarUtils.RESULT_TYPE.TIP);
+  Assert.equal(actualNonHeuristic.type, UrlbarShared.RESULT_TYPE.TIP);
 
   // No result should be selected.
   Assert.equal(UrlbarTestUtils.getSelectedElement(win), null);
@@ -145,8 +145,8 @@ add_task(async function oneOffRemainsSelected() {
 
 function makeTipResult({ suggestedIndex }) {
   return new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.TIP,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    type: UrlbarShared.RESULT_TYPE.TIP,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     suggestedIndex,
     payload: {
       helpUrl: "http://example.com/",

@@ -260,6 +260,34 @@ class DefaultTabManagerControllerTest {
     }
 
     @Test
+    fun `GIVEN homepage trending and recent searches are enabled WHEN the normal fab is clicked THEN the home screen is opened without focusing the address bar`() {
+        every { settings.enableHomepageTrendingRecentSearch } returns true
+
+        val target = createController()
+        target.handleNormalTabsFabClick()
+
+        verify {
+            navController.navigate(
+                TabManagementFragmentDirections.actionGlobalHome(focusOnAddressBar = false),
+            )
+        }
+    }
+
+    @Test
+    fun `GIVEN homepage trending and recent searches are enabled WHEN the private fab is clicked THEN the home screen is opened without focusing the address bar`() {
+        every { settings.enableHomepageTrendingRecentSearch } returns true
+
+        val target = createController()
+        target.handlePrivateTabsFabClick()
+
+        verify {
+            navController.navigate(
+                TabManagementFragmentDirections.actionGlobalHome(focusOnAddressBar = false),
+            )
+        }
+    }
+
+    @Test
     fun `GIVEN private mode WHEN the fab is clicked THEN Event#NewPrivateTabTapped is added to telemetry`() {
         assertNull(TabsTray.newPrivateTabTapped.testGetValue())
 

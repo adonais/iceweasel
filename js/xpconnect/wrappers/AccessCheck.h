@@ -5,9 +5,10 @@
 #ifndef AccessCheck_h_
 #define AccessCheck_h_
 
+#include "nsString.h"
+
 #include "js/Id.h"
 #include "js/Wrapper.h"
-#include "nsString.h"
 
 #ifdef XP_MACOSX
 // AssertMacros.h defines 'check' which conflicts with the method declarations

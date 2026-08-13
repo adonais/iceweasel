@@ -2,9 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsIThread.h"
-
+#include "gtest/gtest.h"
+#include "mozilla/Assertions.h"
+#include "mozilla/ReentrantMonitor.h"
+#include "mozilla/gtest/MozAssertions.h"
 #include "nsComponentManagerUtils.h"
+#include "nsIThread.h"
 #include "nsThreadPool.h"
 #include "nsThreadUtils.h"
 #include "nsXPCOMCIDInternal.h"
@@ -12,12 +15,6 @@
 #include "prinrval.h"
 #include "prmon.h"
 #include "prthread.h"
-#include "mozilla/Assertions.h"
-#include "mozilla/gtest/MozAssertions.h"
-
-#include "mozilla/ReentrantMonitor.h"
-
-#include "gtest/gtest.h"
 
 using namespace mozilla;
 

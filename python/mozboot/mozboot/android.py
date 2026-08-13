@@ -26,8 +26,8 @@ from mozboot.bootstrap import MOZCONFIG_SUGGESTION_TEMPLATE
 # to pass down the NDK version to all relevant places, so we have this global
 # variable.
 NDK_VERSION = "r29"
-CMDLINE_TOOLS_VERSION_STRING = "20.0"
-CMDLINE_TOOLS_VERSION = "14742923"
+CMDLINE_TOOLS_VERSION_STRING = "21.0"
+CMDLINE_TOOLS_VERSION = "15641748"
 
 BUNDLETOOL_VERSION = "1.18.3"
 BUNDLETOOL_URL = f"https://github.com/google/bundletool/releases/download/{BUNDLETOOL_VERSION}/bundletool-all-{BUNDLETOOL_VERSION}.jar"

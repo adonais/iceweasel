@@ -9,7 +9,6 @@
 
 #include "FontVisibilityProvider.h"
 #include "MainThreadUtils.h"
-#include "ScriptLoader.h"
 #include "js/ContextOptions.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
@@ -588,6 +587,30 @@ class WorkerPrivate final
   MOZ_CAN_RUN_SCRIPT void ProcessSingleDebuggerRunnable();
   void ClearDebuggerEventQueue();
 
+  // True if the debugger queue holds any RemoteWorkerDebugger IPC handshake
+  // runnable that a nested sync loop should service right now
+  // (mProcessDebuggerIPCHandshake is set and this worker uses the remote
+  // debugger). Scans the whole queue, not just the front: an IPC handshake
+  // reply can sit behind a deferred debugger script/message runnable, and it
+  // must still run so the blocked parent thread proceeds. See bug 2053827.
+  bool HasPendingDebuggerIPCHandshakeRunnable() MOZ_REQUIRES(mMutex);
+
+  // Remove and return the first (FIFO) RemoteWorkerDebugger IPC handshake
+  // runnable in the debugger queue, leaving every other runnable queued in its
+  // original relative order (so deferred debugger script/message runnables stay
+  // deferred). Returns nullptr if there is none; the caller owns the result.
+  WorkerRunnable* TakeFirstDebuggerIPCHandshakeRunnable() MOZ_REQUIRES(mMutex);
+
+  // Run a single debugger IPC handshake runnable (see above) if one is queued.
+  // RunCurrentSyncLoop calls this one runnable at a time, re-checking control
+  // runnables between each, so IPC handshake runnables take priority over
+  // deferred debugger runnables without starving control runnables.
+  //
+  // Deliberately not MOZ_CAN_RUN_SCRIPT: IPC handshake runnables only mutate
+  // debugger state and dispatch follow-up work, never running script, so this
+  // can be called from RunCurrentSyncLoop (which is not MOZ_CAN_RUN_SCRIPT).
+  void ProcessNextDebuggerIPCHandshakeRunnable();
+
   void OnProcessNextEvent();
 
   void AfterProcessNextEvent();
@@ -757,6 +780,11 @@ class WorkerPrivate final
   // worker, so WorkerPrivate* should be safe in the moment of calling.
   // We would like to have stronger type-system annotated/enforced handling.
   WorkerPrivate* GetParent() const { return mParent; }
+
+  nsISerialEventTarget* GetSchedulingEventTarget() {
+    WorkerPrivate* parent = GetParent();
+    return parent ? parent->ControlEventTarget() : MainThreadEventTarget();
+  }
 
   // Returns the top level worker. It can be the current worker if it's the top
   // level one.
@@ -1090,6 +1118,13 @@ class WorkerPrivate final
 
   void DisableRemoteDebuggerOnWorkerThread(const bool& aForShutdown = false);
 
+  // Whether this worker exposes its debugger through the parent-process
+  // RemoteWorkerDebugger mechanism (true) or registers its nsIWorkerDebugger on
+  // the local main thread (false). Latched at construction from
+  // dom.worker.remoteDebugger.enabled; always false in the parent process. The
+  // two mechanisms are mutually exclusive for a given worker.
+  bool UseRemoteDebugger() const { return mUseRemoteDebugger; }
+
   void SetIsQueued(const bool& aQueued);
 
   bool IsQueued() const;
@@ -1385,6 +1420,16 @@ class WorkerPrivate final
 
   nsresult UnregisterShutdownTask(nsITargetShutdownTask* aTask);
 
+  // Shutdown tasks registered via the debugger-only event target (i.e. the
+  // RemoteWorkerDebugger's MessageChannel). These run on worker shutdown like
+  // regular shutdown tasks, but are tracked separately so they do NOT keep the
+  // worker ineligible for CC: an idle, otherwise-unreferenced worker that only
+  // has a remote debugger registered must still be collectable, otherwise the
+  // Worker<->WorkerPrivate cycle never breaks (bug 1944240).
+  nsresult RegisterDebuggerShutdownTask(nsITargetShutdownTask* aTask);
+
+  nsresult UnregisterDebuggerShutdownTask(nsITargetShutdownTask* aTask);
+
   // Internal logic to dispatch a runnable. This is separate from Dispatch()
   // to allow runnables to be atomically dispatched in bulk.
   nsresult DispatchLockHeld(already_AddRefed<WorkerRunnable> aRunnable,
@@ -1555,7 +1600,19 @@ class WorkerPrivate final
   mozilla::ipc::Endpoint<PRemoteWorkerDebuggerParent> mDebuggerParentEp;
   bool mRemoteDebuggerRegistered MOZ_GUARDED_BY(mMutex);
   bool mRemoteDebuggerReady MOZ_GUARDED_BY(mMutex);
+  // True while the parent thread is blocked in Enable/DisableRemoteDebugger
+  // waiting for the register/unregister handshake reply (RecvRegisterDone /
+  // RecvUnregisterDone) to run on the worker thread. That reply is delivered on
+  // the worker's debugger queue, which a nested sync loop (RunCurrentSyncLoop)
+  // does not otherwise drain, so if the worker is in such a loop the parent
+  // thread would block forever (bug 2053827). While this is set,
+  // RunCurrentSyncLoop services the debugger queue's IPC-message runnables so
+  // the handshake can complete. Set/cleared on the parent thread and read on
+  // the worker thread, both under mMutex.
+  bool mProcessDebuggerIPCHandshake MOZ_GUARDED_BY(mMutex);
   bool mIsQueued;  // Should only touched on parent thread.
+  // Immutable after construction, safe to read from any thread.
+  const bool mUseRemoteDebugger;
   mozilla::CondVar mDebuggerBindingCondVar MOZ_GUARDED_BY(mMutex);
   RefPtr<WorkerEventTarget> mWorkerDebuggerEventTarget;
 
@@ -1754,6 +1811,10 @@ class WorkerPrivate final
   HashMap<JS::Dispatchable*, RefPtr<StrongWorkerRef>> mPendingJSAsyncTasks;
 
   TargetShutdownTaskSet mShutdownTasks MOZ_GUARDED_BY(mMutex);
+  // Shutdown tasks from the RemoteWorkerDebugger's MessageChannel. Kept out of
+  // mShutdownTasks so they don't block CC eligibility (see
+  // RegisterDebuggerShutdownTask); still run on shutdown.
+  TargetShutdownTaskSet mDebuggerShutdownTasks MOZ_GUARDED_BY(mMutex);
   bool mShutdownTasksRun MOZ_GUARDED_BY(mMutex) = false;
 
   bool mCCFlagSaysEligible MOZ_GUARDED_BY(mMutex){true};

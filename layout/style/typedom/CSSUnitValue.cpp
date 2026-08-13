@@ -9,6 +9,7 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/CSSPropertyId.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/NotNull.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/BindingDeclarations.h"
@@ -16,29 +17,38 @@
 
 namespace mozilla::dom {
 
-CSSUnitValue::CSSUnitValue(nsCOMPtr<nsISupports> aParent, double aValue,
-                           const nsACString& aUnit)
-    : CSSNumericValue(std::move(aParent), NumericValueType::UnitValue),
+CSSUnitValue::CSSUnitValue(
+    nsCOMPtr<nsISupports> aParent,
+    MovingNotNull<UniquePtr<StyleNumericType>> aNumericType, double aValue,
+    const nsACString& aUnit)
+    : CSSNumericValue(std::move(aParent), std::move(aNumericType),
+                      NumericValueType::UnitValue),
       mValue(aValue),
       mUnit(aUnit) {}
 
 // static
 RefPtr<CSSUnitValue> CSSUnitValue::Create(nsCOMPtr<nsISupports> aParent,
+                                          const StyleNumericType& aNumericType,
                                           double aValue,
                                           const nsACString& aUnit) {
-  return MakeRefPtr<CSSUnitValue>(std::move(aParent), aValue, aUnit);
+  return MakeRefPtr<CSSUnitValue>(
+      std::move(aParent),
+      WrapMovingNotNull(MakeUnique<StyleNumericType>(aNumericType)), aValue,
+      aUnit);
 }
 
 // static
 RefPtr<CSSUnitValue> CSSUnitValue::Create(nsCOMPtr<nsISupports> aParent,
                                           double aValue) {
-  return Create(std::move(aParent), aValue, "number"_ns);
+  return Create(std::move(aParent), StyleNumericType::Number(), aValue,
+                "number"_ns);
 }
 
 // static
 RefPtr<CSSUnitValue> CSSUnitValue::Create(nsCOMPtr<nsISupports> aParent,
                                           const StyleUnitValue& aUnitValue) {
-  return Create(std::move(aParent), aUnitValue.value, aUnitValue.unit);
+  return Create(std::move(aParent), aUnitValue.numeric_type, aUnitValue.value,
+                aUnitValue.unit);
 }
 
 JSObject* CSSUnitValue::WrapObject(JSContext* aCx,
@@ -61,15 +71,17 @@ already_AddRefed<CSSUnitValue> CSSUnitValue::Constructor(
 
   // Step 1.
 
-  StyleNumericType numericType;
-  if (!Servo_NumericType_Create(&aUnit, &numericType)) {
+  auto numericType = MakeUnique<StyleNumericType>();
+  if (!Servo_NumericType_Create(&aUnit, numericType.get())) {
     aRv.ThrowTypeError("Invalid unit: "_ns + aUnit);
     return nullptr;
   }
 
   // Step 2.
 
-  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports(), aValue, aUnit);
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports(),
+                                     WrapMovingNotNull(std::move(numericType)),
+                                     aValue, aUnit);
 }
 
 double CSSUnitValue::Value() const { return mValue; }
@@ -195,7 +207,7 @@ void CSSUnitValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
 }
 
 StyleUnitValue CSSUnitValue::ToStyleUnitValue() const {
-  return StyleUnitValue(mValue, StyleCssString(mUnit));
+  return StyleUnitValue(*mNumericType, mValue, StyleCssString(mUnit));
 }
 
 const CSSUnitValue& CSSNumericValue::GetAsCSSUnitValue() const {
@@ -208,6 +220,13 @@ CSSUnitValue& CSSNumericValue::GetAsCSSUnitValue() {
   MOZ_DIAGNOSTIC_ASSERT(mNumericValueType == NumericValueType::UnitValue);
 
   return *static_cast<CSSUnitValue*>(this);
+}
+
+already_AddRefed<CSSUnitValue> MakeCSSUnitValue(
+    nsCOMPtr<nsISupports> aParent, const StyleNumericType& aNumericType,
+    double aValue, const nsACString& aUnit) {
+  return CSSUnitValue::Create(std::move(aParent), aNumericType, aValue, aUnit)
+      .forget();
 }
 
 }  // namespace mozilla::dom

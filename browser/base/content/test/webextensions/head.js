@@ -196,7 +196,7 @@ function waitAboutAddonsViewLoaded(doc) {
 async function triggerPageOptionsAction(win, action) {
   let button = win.document.querySelector(`#page-options [action="${action}"]`);
   // Button is temporarily disabled on click. Wait in case we just clicked.
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !button.disabled,
     "Wait for button to become enabled"
   );
@@ -490,8 +490,6 @@ async function interactiveUpdateTest(autoUpdate, checkFn) {
     ],
   });
 
-  AddonTestUtils.hookAMTelemetryEvents();
-
   // Trigger an update check, manually applying the update if we're testing
   // without auto-update.
   async function triggerUpdate(win, addon) {
@@ -588,12 +586,6 @@ async function interactiveUpdateTest(autoUpdate, checkFn) {
   await addon.uninstall();
   await SpecialPowers.popPrefEnv();
 
-  const collectedUpdateEvents = AddonTestUtils.getAMTelemetryEvents().filter(
-    evt => {
-      return evt.method === "update";
-    }
-  );
-
   const expectedSteps = [
     // First update is cancelled on the permission prompt.
     "started",
@@ -609,12 +601,6 @@ async function interactiveUpdateTest(autoUpdate, checkFn) {
     "completed",
   ];
 
-  Assert.deepEqual(
-    expectedSteps,
-    collectedUpdateEvents.map(evt => evt.extra.step),
-    "Got the expected sequence on update telemetry events"
-  );
-
   let gleanEvents = AddonTestUtils.getAMGleanEvents("update");
   Services.fog.testResetFOG();
 
@@ -622,23 +608,6 @@ async function interactiveUpdateTest(autoUpdate, checkFn) {
     expectedSteps,
     gleanEvents.map(e => e.step),
     "Got the expected sequence on update Glean events."
-  );
-
-  ok(
-    collectedUpdateEvents.every(evt => evt.extra.addon_id === ID),
-    "Every update telemetry event should have the expected addon_id extra var"
-  );
-
-  ok(
-    collectedUpdateEvents.every(
-      evt => evt.extra.source === FAKE_INSTALL_SOURCE
-    ),
-    "Every update telemetry event should have the expected source extra var"
-  );
-
-  ok(
-    collectedUpdateEvents.every(evt => evt.extra.updated_from === "user"),
-    "Every update telemetry event should have the update_from extra var 'user'"
   );
 
   for (let e of gleanEvents) {
@@ -653,33 +622,6 @@ async function interactiveUpdateTest(autoUpdate, checkFn) {
       Assert.greater(parseInt(e.download_time), 0, "Valid download_time.");
     }
   }
-
-  let hasPermissionsExtras = collectedUpdateEvents
-    .filter(evt => {
-      return evt.extra.step === "permissions_prompt";
-    })
-    .every(evt => {
-      return Number.isInteger(parseInt(evt.extra.num_strings, 10));
-    });
-
-  ok(
-    hasPermissionsExtras,
-    "Every 'permissions_prompt' update telemetry event should have the permissions extra vars"
-  );
-
-  let hasDownloadTimeExtras = collectedUpdateEvents
-    .filter(evt => {
-      return evt.extra.step === "download_completed";
-    })
-    .every(evt => {
-      const download_time = parseInt(evt.extra.download_time, 10);
-      return !isNaN(download_time) && download_time > 0;
-    });
-
-  ok(
-    hasDownloadTimeExtras,
-    "Every 'download_completed' update telemetry event should have a download_time extra vars"
-  );
 }
 
 async function getCachedPermissions(extensionId) {

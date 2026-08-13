@@ -7,14 +7,14 @@
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Atomics.h"
-#include "nsIWebSocketEventService.h"
 #include "nsCOMPtr.h"
 #include "nsClassHashtable.h"
 #include "nsHashKeys.h"
 #include "nsIObserver.h"
 #include "nsISupportsImpl.h"
-#include "nsTArray.h"
 #include "nsIWeakReferenceUtils.h"
+#include "nsIWebSocketEventService.h"
+#include "nsTArray.h"
 #include "nsTHashMap.h"
 
 class nsIWebSocketImpl;

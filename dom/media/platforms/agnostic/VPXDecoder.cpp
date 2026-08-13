@@ -23,9 +23,9 @@
 #include "prsystem.h"
 
 #undef LOG
-#define LOG(arg, ...)                                                  \
-  DDMOZ_LOG(sPDMLog, mozilla::LogLevel::Debug, "::%s: " arg, __func__, \
-            ##__VA_ARGS__)
+#define LOG(arg, ...)                                                      \
+  DDMOZ_LOG_FMT(sPDMLog, mozilla::LogLevel::Debug, "::{}: " arg, __func__, \
+                ##__VA_ARGS__)
 
 namespace mozilla {
 
@@ -152,7 +152,7 @@ RefPtr<MediaDataDecoder::DecodePromise> VPXDecoder::ProcessDecode(
 
   if (vpx_codec_err_t r = vpx_codec_decode(&mVPX, aSample->Data(),
                                            aSample->Size(), nullptr, 0)) {
-    LOG("VPX Decode error: %s", vpx_codec_err_to_string(r));
+    LOG("VPX Decode error: {}", vpx_codec_err_to_string(r));
     return DecodePromise::CreateAndReject(
         MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR,
                     RESULT_DETAIL("VPX error: %s", vpx_codec_err_to_string(r))),
@@ -258,7 +258,7 @@ RefPtr<MediaDataDecoder::DecodePromise> VPXDecoder::ProcessDecode(
           aSample->mTimecode, mInfo.ScaledImageRect(img->d_w, img->d_h));
     }
     if (videoDataResult.isErr()) {
-      LOG("Image allocation error source %ux%u display %ux%u picture %ux%u",
+      LOG("Image allocation error source {}x{} display {}x{} picture {}x{}",
           img->d_w, img->d_h, mInfo.mDisplay.width, mInfo.mDisplay.height,
           mInfo.mImage.width, mInfo.mImage.height);
       return DecodePromise::CreateAndReject(videoDataResult.unwrapErr(),
@@ -312,7 +312,7 @@ MediaResult VPXDecoder::DecodeAlpha(vpx_image_t** aImgAlpha,
   vpx_codec_err_t r = vpx_codec_decode(&mVPXAlpha, aSample->AlphaData(),
                                        aSample->AlphaSize(), nullptr, 0);
   if (r) {
-    LOG("VPX decode alpha error: %s", vpx_codec_err_to_string(r));
+    LOG("VPX decode alpha error: {}", vpx_codec_err_to_string(r));
     return MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR,
                        RESULT_DETAIL("VPX decode alpha error: %s",
                                      vpx_codec_err_to_string(r)));

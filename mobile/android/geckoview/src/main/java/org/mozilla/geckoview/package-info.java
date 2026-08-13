@@ -31,6 +31,7 @@
  *   <li>{@link android.Manifest.permission#WRITE_EXTERNAL_STORAGE}
  *   <li>{@link android.Manifest.permission#CAMERA}
  *   <li>{@link android.Manifest.permission#RECORD_AUDIO}
+ *   <li>{@link android.Manifest.permission#ACCESS_LOCAL_NETWORK}
  * </ul>
  *
  * For a detailed change log of the API see: <a href="./doc-files/CHANGELOG"

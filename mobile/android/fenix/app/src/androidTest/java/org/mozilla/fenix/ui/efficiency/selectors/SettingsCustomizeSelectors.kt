@@ -64,5 +64,8 @@ object SettingsCustomizeSelectors {
         SHOW_TOOLBAR_TOGGLE,
         SELECT_APP_ICON_TITLE,
         APP_ICON_DEFAULT,
+        TOOLBAR_LAYOUT_SIMPLE,
+        TOOLBAR_LAYOUT_EXPANDED,
+        TOOLBAR_POSITION_BOTTOM,
     )
 }

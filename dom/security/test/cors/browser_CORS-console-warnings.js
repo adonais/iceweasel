@@ -95,7 +95,7 @@ add_task(async function () {
     gBrowser,
     test_two_uri + "#finishedTestTwo"
   );
-  await BrowserTestUtils.waitForCondition(() => messages_seen > 0);
+  await TestUtils.waitForCondition(() => messages_seen > 0);
 
   Assert.greater(messages_seen, 0, "Saw " + messages_seen + " messages.");
 

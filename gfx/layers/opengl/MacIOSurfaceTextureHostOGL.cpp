@@ -3,8 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "MacIOSurfaceTextureHostOGL.h"
-#include "mozilla/gfx/gfxVars.h"
+
 #include "mozilla/gfx/MacIOSurface.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/GpuFence.h"
 #include "mozilla/webrender/RenderMacIOSurfaceTextureHost.h"
 #include "mozilla/webrender/RenderThread.h"
@@ -107,7 +108,8 @@ uint32_t MacIOSurfaceTextureHostOGL::NumSubTextures() {
     }
     case gfx::SurfaceFormat::NV12:
     case gfx::SurfaceFormat::P010:
-    case gfx::SurfaceFormat::NV16: {
+    case gfx::SurfaceFormat::NV16:
+    case gfx::SurfaceFormat::P210: {
       return 2;
     }
     default: {
@@ -125,8 +127,8 @@ void MacIOSurfaceTextureHostOGL::PushResourceUpdates(
   auto method = aOp == TextureHost::ADD_IMAGE
                     ? &wr::TransactionBuilder::AddExternalImage
                     : &wr::TransactionBuilder::UpdateExternalImage;
-  auto imageType =
-      wr::ExternalImageType::TextureHandle(wr::ImageBufferKind::TextureRect);
+  auto imageType = wr::ExternalImageType::TextureHandle(
+      aResources.GetCapabilities().mIOSurfaceImageKind);
 
   switch (GetFormat()) {
     case gfx::SurfaceFormat::B8G8R8A8:
@@ -160,7 +162,8 @@ void MacIOSurfaceTextureHostOGL::PushResourceUpdates(
                            /* aNormalizedUvs */ false);
       break;
     }
-    case gfx::SurfaceFormat::NV12: {
+    case gfx::SurfaceFormat::NV12:
+    case gfx::SurfaceFormat::NV16: {
       if (aImageKeys.length() != 2 || mSurface->GetPlaneCount() != 2) {
         MOZ_ASSERT_UNREACHABLE("unexpected key length or plane count");
         return;
@@ -181,7 +184,7 @@ void MacIOSurfaceTextureHostOGL::PushResourceUpdates(
     }
     case gfx::SurfaceFormat::P010:
     case gfx::SurfaceFormat::P016:
-    case gfx::SurfaceFormat::NV16: {
+    case gfx::SurfaceFormat::P210: {
       if (aImageKeys.length() != 2 || mSurface->GetPlaneCount() != 2) {
         MOZ_ASSERT_UNREACHABLE("unexpected key length or plane count");
         return;
@@ -273,6 +276,18 @@ void MacIOSurfaceTextureHostOGL::PushDisplayItems(
         return;
       }
       aBuilder.PushNV16Image(
+          aBounds, aClip, true, aImageKeys[0], aImageKeys[1],
+          wr::ColorDepth::Color8, wr::ToWrYuvColorSpace(GetYUVColorSpace()),
+          wr::ToWrColorRange(GetColorRange()), aFilter, preferCompositorSurface,
+          /* aSupportsExternalCompositing */ true);
+      break;
+    }
+    case gfx::SurfaceFormat::P210: {
+      if (aImageKeys.length() != 2 || mSurface->GetPlaneCount() != 2) {
+        MOZ_ASSERT_UNREACHABLE("unexpected key length or plane count");
+        return;
+      }
+      aBuilder.PushP210Image(
           aBounds, aClip, true, aImageKeys[0], aImageKeys[1],
           wr::ColorDepth::Color10, wr::ToWrYuvColorSpace(GetYUVColorSpace()),
           wr::ToWrColorRange(GetColorRange()), aFilter, preferCompositorSurface,

@@ -32,6 +32,8 @@ run-if = [
 
 ["browser_bug1791083.js"]
 
+["browser_bug1850539.js"]
+
 ["browser_css_registered_property.js"]
 
 ["browser_disableDialogs_onbeforeunload.js"]

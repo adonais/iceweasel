@@ -5,15 +5,13 @@
 #ifndef nsDeviceContextSpecX_h_
 #define nsDeviceContextSpecX_h_
 
+#include <ApplicationServices/ApplicationServices.h>
+
+#include "mozilla/gfx/PrintPromise.h"
+#include "nsCOMPtr.h"
 #include "nsIDeviceContextSpec.h"
 #include "nsIPrinter.h"
 #include "nsIPrinterList.h"
-
-#include "nsCOMPtr.h"
-
-#include "mozilla/gfx/PrintPromise.h"
-
-#include <ApplicationServices/ApplicationServices.h>
 
 class nsDeviceContextSpecX : public nsIDeviceContextSpec {
  public:

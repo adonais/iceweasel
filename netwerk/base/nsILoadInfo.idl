@@ -1621,17 +1621,12 @@ interface nsILoadInfo : nsISupports
    * credentialless enabled in Origin Trial.
    */
   [infallible] attribute boolean isOriginTrialCoepCredentiallessEnabledForTopLevel;
+
   /**
    * This attribute will be true if this is a load triggered by a media
    * element.
    */
   [infallible] attribute boolean isMediaRequest;
-
-  /**
-   * This attribute will be true if this is a load triggered by a media
-   * element and it's an initial request.
-   */
-  [infallible] attribute boolean isMediaInitialRequest;
 
   /**
    * This attribute will be true if the fetch request is from object or embed

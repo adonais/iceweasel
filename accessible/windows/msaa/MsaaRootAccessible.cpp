@@ -2,15 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "MsaaRootAccessible.h"
+
+#include <oleauto.h>
+
+#include "EnumVariant.h"
+#include "Relation.h"
+#include "RootAccessible.h"
 #include "mozilla/a11y/Compatibility.h"
 #include "mozilla/a11y/DocAccessibleParent.h"
 #include "mozilla/dom/BrowserParent.h"
-#include "MsaaRootAccessible.h"
-#include "Relation.h"
-#include "RootAccessible.h"
-#include "EnumVariant.h"
-
-#include <oleauto.h>
 
 using namespace mozilla;
 using namespace mozilla::a11y;

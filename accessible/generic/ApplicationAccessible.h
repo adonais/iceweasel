@@ -6,7 +6,6 @@
 #define mozilla_a11y_ApplicationAccessible_h_
 
 #include "AccessibleWrap.h"
-
 #include "nsIXULAppInfo.h"
 
 namespace mozilla {

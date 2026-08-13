@@ -1,0 +1,126 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+  ### This moz.build was AUTOMATICALLY GENERATED from a GN config,  ###
+  ### DO NOT edit it by hand.                                       ###
+
+COMPILE_FLAGS["OS_INCLUDES"] = []
+AllowCompilerWarnings()
+
+DEFINES["ANGLE_DISABLE_POOL_ALLOC"] = True
+DEFINES["ANGLE_ENABLE_CONTEXT_MUTEX"] = "1"
+DEFINES["ANGLE_ENABLE_D3D11"] = True
+DEFINES["ANGLE_ENABLE_D3D9"] = True
+DEFINES["ANGLE_ENABLE_DEBUG_ANNOTATIONS"] = False
+DEFINES["ANGLE_ENABLE_KEYEDMUTEX"] = True
+DEFINES["ANGLE_ENABLE_SHARE_CONTEXT_LOCK"] = "1"
+DEFINES["ANGLE_IS_WIN"] = True
+DEFINES["ANGLE_PLATFORM_EXPORT"] = ""
+DEFINES["ANGLE_PRELOADED_D3DCOMPILER_MODULE_NAMES"] = "{ \"d3dcompiler_47.dll\", \"d3dcompiler_46.dll\", \"d3dcompiler_43.dll\" }"
+DEFINES["ANGLE_SKIP_DXGI_1_2_CHECK"] = True
+DEFINES["CERT_CHAIN_PARA_HAS_EXTRA_FIELDS"] = True
+DEFINES["LIBANGLE_IMPLEMENTATION"] = True
+DEFINES["NOMINMAX"] = True
+DEFINES["NTDDI_VERSION"] = "0x0A000000"
+DEFINES["PSAPI_VERSION"] = "2"
+DEFINES["UNICODE"] = True
+DEFINES["USE_AURA"] = "1"
+DEFINES["WIN32"] = True
+DEFINES["WIN32_LEAN_AND_MEAN"] = True
+DEFINES["WINAPI_FAMILY"] = "WINAPI_FAMILY_DESKTOP_APP"
+DEFINES["WINVER"] = "0x0A00"
+DEFINES["_ATL_NO_OPENGL"] = True
+DEFINES["_CRT_NONSTDC_NO_WARNINGS"] = True
+DEFINES["_CRT_RAND_S"] = True
+DEFINES["_CRT_SECURE_NO_DEPRECATE"] = True
+DEFINES["_HAS_EXCEPTIONS"] = "0"
+DEFINES["_HAS_NODISCARD"] = True
+DEFINES["_SCL_SECURE_NO_DEPRECATE"] = True
+DEFINES["_SECURE_ATL"] = True
+DEFINES["_UNICODE"] = True
+DEFINES["_WIN32_WINNT"] = "0x0A00"
+DEFINES["_WINDOWS"] = True
+DEFINES["_WINSOCK_DEPRECATED_NO_WARNINGS"] = True
+DEFINES["__STD_C"] = True
+
+LOCAL_INCLUDES += [
+    "!/ipc/ipdl/_ipdlheaders",
+    "/ipc/chromium/src",
+    "/third_party/angle/include/",
+    "/third_party/angle/src/",
+    "/third_party/angle/src/common/base/",
+    "/third_party/angle/src/common/third_party/xxhash/",
+    "/tools/profiler/public"
+]
+
+OS_LIBS += [
+    "dxgi",
+    "dxguid",
+    "setupapi",
+    "synchronization"
+]
+
+SOURCES += [
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/win32/NativeWindow11Win32.cpp"
+]
+
+UNIFIED_SOURCES += [
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/Blit11.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/Buffer11.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/Clear11.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/Context11.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/DebugAnnotator11.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/Device11.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/ExternalImageSiblingImpl11.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/Fence11.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/formatutils11.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/Framebuffer11.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/Image11.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/IndexBuffer11.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/InputLayoutCache.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/MappedSubresourceVerifier11.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/PixelTransfer11.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/Program11.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/ProgramPipeline11.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/Query11.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/Renderer11.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/RenderStateCache.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/RenderTarget11.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/ResourceManager11.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/ShaderExecutable11.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/StateManager11.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/StreamProducerD3DTexture.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/SwapChain11.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/texture_format_table.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/texture_format_table_autogen.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/TextureStorage11.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/TransformFeedback11.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/Trim11.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/VertexArray11.cpp",
+    "/third_party/angle/src/libANGLE/renderer/d3d/d3d11/VertexBuffer11.cpp"
+]
+
+USE_LIBS += [
+    "angle_d3d_shared_gn"
+]
+
+if not CONFIG["MOZ_DEBUG"]:
+
+    DEFINES["DYNAMIC_ANNOTATIONS_ENABLED"] = "0"
+    DEFINES["NDEBUG"] = True
+    DEFINES["NVALGRIND"] = True
+
+if CONFIG["MOZ_DEBUG"] == "1":
+
+    DEFINES["ANGLE_DEBUG_LAYERS_ENABLED"] = True
+    DEFINES["DYNAMIC_ANNOTATIONS_ENABLED"] = "1"
+    DEFINES["_HAS_ITERATOR_DEBUGGING"] = "0"
+
+if CONFIG["TARGET_CPU"] == "aarch64":
+
+    DEFINES["__ARM_NEON__"] = "1"
+
+Library("angle_d3d11_backend_gn")

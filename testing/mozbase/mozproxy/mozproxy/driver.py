@@ -85,7 +85,6 @@ def main():
         default=False,
         help="Enable or disable inject_deterministic script when recording.",
     )
-
     mozlog.commandline.add_logging_group(parser)
 
     args = parser.parse_args()
@@ -131,7 +130,7 @@ def main():
             if len(args.file) > 1:
                 raise Exception("Please provide only one recording file!")
 
-            LOG.info("Recording will be saved to: %s" % args.file)
+            LOG.info(f"Recording will be saved to: {args.file}")
             proxy_service = get_playback({
                 "run_local": args.local,
                 "host": args.host,
@@ -147,9 +146,9 @@ def main():
                 "verbose": args.verbose,
                 "inject_deterministic": args.deterministic,
             })
-        LOG.info("Proxy settings %s" % proxy_service)
+        LOG.info(f"Proxy settings {proxy_service}")
         proxy_service.start()
-        LOG.info("Proxy running on port %d" % proxy_service.port)
+        LOG.info(f"Proxy running on port {proxy_service.port}")
         # Wait for a keyboard interrupt from the caller so we know when to
         # terminate.
         proxy_service.wait()

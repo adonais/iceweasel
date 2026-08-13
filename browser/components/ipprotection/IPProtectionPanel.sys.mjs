@@ -11,6 +11,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   IPPExceptionsManager:
     "moz-src:///toolkit/components/ipprotection/IPPExceptionsManager.sys.mjs",
+  IPPPrincipalRules:
+    "moz-src:///toolkit/components/ipprotection/IPPExceptionsManager.sys.mjs",
   IPPOnboardingMessage:
     "moz-src:///browser/components/ipprotection/IPPOnboardingMessageHelper.sys.mjs",
   ERRORS: "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
@@ -34,6 +36,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/customizableui/PanelMultiView.sys.mjs",
   SpecialMessageActions:
     "resource://messaging-system/lib/SpecialMessageActions.sys.mjs",
+  ShellService: "moz-src:///browser/components/shell/ShellService.sys.mjs",
 });
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
@@ -43,6 +46,7 @@ import {
   LINKS,
   SIGNIN_DATA,
 } from "chrome://browser/content/ipprotection/ipprotection-constants.mjs";
+import { getSitePrincipal } from "chrome://browser/content/ipprotection/ipprotection-utils.mjs";
 
 const BANDWIDTH_THRESHOLD_PREF = "browser.ipProtection.bandwidthThreshold";
 const BANDWIDTH_WARNING_DISMISSED_PREF =
@@ -146,6 +150,8 @@ export class IPProtectionPanel {
    *  True if the VPN service is in the process of connecting, else false.
    * @property {boolean} showLocationButtonBadge
    *  True if the "new" badge on the location selection button should be visible.
+   * @property {boolean} isPremium
+   * True if the current device has Firefox set as the default browser or the user has a Mozilla VPN subscription and/or unlimited bandwidth
    */
 
   /**
@@ -181,9 +187,7 @@ export class IPProtectionPanel {
     const backButton = view.querySelector(".subviewbutton-back");
     const locationsList = view.querySelector("locations-list");
     const listItems = locationsList
-      ? Array.from(
-          locationsList.querySelectorAll(".location-item:not([disabled])")
-        )
+      ? Array.from(locationsList.querySelectorAll(".location-item"))
       : [];
     const promoButton = view.querySelector("moz-promo moz-button");
     const focused = view.ownerDocument.activeElement;
@@ -234,6 +238,12 @@ export class IPProtectionPanel {
         this.#locationsClosedByKeyboard = true;
         this.panelMultiView?.goBack();
       }
+
+      if (focused?.hasAttribute("aria-disabled")) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
       return;
     }
 
@@ -351,6 +361,19 @@ export class IPProtectionPanel {
     );
   }
 
+  get isDefaultBrowser() {
+    let isDefaultBrowser = lazy.ShellService.isDefaultBrowser();
+    return isDefaultBrowser;
+  }
+
+  get isPremium() {
+    let isPremium =
+      !this.#getBandwidthUsage() ||
+      lazy.IPProtectionService.authProvider.hasUpgraded ||
+      this.isDefaultBrowser;
+    return isPremium;
+  }
+
   /**
    * Creates an instance of IPProtectionPanel for a specific browser window.
    *
@@ -389,6 +412,7 @@ export class IPProtectionPanel {
         LOCATION_BADGE_DISMISSED_PREF,
         false
       ),
+      isPremium: this.isPremium,
     };
 
     // The progress listener to listen for page navigations.
@@ -487,10 +511,19 @@ export class IPProtectionPanel {
     const win = this.#window.get();
     const inPrivateBrowsing =
       !!win && lazy.PrivateBrowsingUtils.isWindowPrivate(win);
+
+    let country = this.state.location;
+    if (!this.isPremium && country) {
+      const location = lazy.IPProtectionServerlist.getLocation(country);
+      if (location?.country.locked) {
+        country = undefined;
+      }
+    }
+
     const { error } = await lazy.IPPProxyManager.start(
       true,
       inPrivateBrowsing,
-      this.state.location
+      country
     );
     if (error && error !== lazy.ERRORS.CANCELED) {
       const errorMessage =
@@ -560,7 +593,11 @@ export class IPProtectionPanel {
       });
     }
 
+    // Only check default browser on panel open if not premium to limit calls to the Shell Service
+    const isPremium = this.state.isPremium ? true : this.isPremium;
+
     this.setState({
+      isPremium,
       isSiteExceptionsEnabled: this.isExceptionsFeatureEnabled,
       bandwidthWarning: this.#shouldShowBandwidthWarning(),
     });
@@ -1028,7 +1065,7 @@ export class IPProtectionPanel {
   }
 
   /**
-   * Gets siteData by reading the current content principal.
+   * Gets siteData by reading the current URL bar's URI.
    *
    * @returns {object|null}
    *  An object with data relevant to a site (eg. isExclusion),
@@ -1038,17 +1075,14 @@ export class IPProtectionPanel {
    */
 
   #getSiteData() {
-    const principal = this.gBrowser?.contentPrincipal;
-
-    if (!principal) {
+    const principal = getSitePrincipal(this.gBrowser);
+    if (!principal || !lazy.IPPExceptionsManager.canManage(principal)) {
       return null;
     }
-
-    const isExclusion = lazy.IPPExceptionsManager.hasExclusion(principal);
-    const isPrivileged = this._isPrivilegedPage(principal);
-
-    let siteData = !isPrivileged ? { isExclusion } : null;
-    return siteData;
+    const isExclusion =
+      lazy.IPPExceptionsManager.getPrincipalRule(principal) ===
+      lazy.IPPPrincipalRules.EXCLUDED;
+    return { isExclusion };
   }
 
   /**
@@ -1082,23 +1116,6 @@ export class IPProtectionPanel {
     }
 
     return null;
-  }
-
-  /**
-   * Checks if the given principal represents a privileged page.
-   *
-   * @param {nsIPrincipal} principal
-   *  The principal to evaluate.
-   * @returns {boolean}
-   *  True if the page is privileged (about: pages or system principal).
-   */
-  _isPrivilegedPage(principal) {
-    // Ignore about: pages for automated tests, which load in about:blank pages by default.
-    // Do not register this method as private though so that we can stub it.
-    return (
-      (principal.schemeIs("about") || principal.isSystemPrincipal) &&
-      !Cu.isInAutomation
-    );
   }
 
   /**
@@ -1172,13 +1189,13 @@ export class IPProtectionPanel {
       });
     } else if (event.type == "IPProtection:UserEnableVPNForSite") {
       const win = event.target.documentGlobal;
-      const principal = win?.gBrowser.contentPrincipal;
+      const principal = getSitePrincipal(win?.gBrowser);
 
       lazy.IPPExceptionsManager.setExclusion(principal, false);
       Glean.ipprotection.exclusionToggled.record({ excluded: false });
     } else if (event.type == "IPProtection:UserDisableVPNForSite") {
       const win = event.target.documentGlobal;
-      const principal = win?.gBrowser.contentPrincipal;
+      const principal = getSitePrincipal(win?.gBrowser);
 
       lazy.IPPExceptionsManager.setExclusion(principal, true);
       Glean.ipprotection.exclusionToggled.record({ excluded: true });

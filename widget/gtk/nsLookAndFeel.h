@@ -6,8 +6,8 @@
 #define _nsLookAndFeel
 
 #include "X11UndefineNone.h"
-#include "nsXPLookAndFeel.h"
 #include "gfxFont.h"
+#include "nsXPLookAndFeel.h"
 
 struct _GtkStyle;
 typedef struct _GDBusProxy GDBusProxy;

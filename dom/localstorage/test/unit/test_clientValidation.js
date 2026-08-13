@@ -9,7 +9,7 @@
  * access to LocalStorage.
  */
 add_task(async function testSteps() {
-  const principal = getPrincipal("http://example.com");
+  const principal = getDefaultPrincipal();
 
   info("Setting prefs");
 

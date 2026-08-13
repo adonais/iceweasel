@@ -65,7 +65,7 @@ class dmd_allocator {
 // -
 
 template <class Key, class T, class Hash = std::hash<Key>,
-          class KeyEqual = std::equal_to<Key>,
+          class KeyEqual = std::equal_to<>,
           class Allocator = dmd_allocator<std::pair<const Key, T>>,
           class _StdT = std::unordered_map<Key, T, Hash, KeyEqual, Allocator>>
 class dmd_unordered_map : public _StdT {
@@ -81,7 +81,7 @@ class dmd_unordered_map : public _StdT {
 // -
 
 template <class Key, class Hash = std::hash<Key>,
-          class KeyEqual = std::equal_to<Key>,
+          class KeyEqual = std::equal_to<>,
           class Allocator = dmd_allocator<Key>,
           class _StdT = std::unordered_set<Key, Hash, KeyEqual, Allocator>>
 class dmd_unordered_set : public _StdT {

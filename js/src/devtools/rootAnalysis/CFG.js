@@ -1189,10 +1189,36 @@ function synthesizeDestructorName(className) {
     const parts = className.split("::");
     const mangled_dtor = "_ZN" + parts.map(p => mangle(p)).join("") + "D2Ev";
     const pretty_dtor = `void ${className}::~${parts.at(-1)}()`;
+    const synthesized = mangled_dtor + "$" + pretty_dtor;
+    // Only rewrite `shared_ptr<T>::~shared_ptr()` into a direct `T::~T()` call
+    // when that destructor actually exists in the analyzed corpus. The known
+    // cases where it is absent are:
+    //
+    // - `T::~T()`'s is defined out-of-line in an external library (e.g.,
+    //   `std::__future_base::_State_baseV2` in `libstdc++`)
+    // - `T` is a polymorphic base held via `std::shared_ptr<T>`, where the
+    //   deleter runs the derived destructor and the base object (D2) destructor
+    //   is never emitted under this name. (e.g., `angle::Closure`)
+    //
+    // In those cases, and where `xdb` also has no entry for the synthesized
+    // destructor name, return nothing so the `std::shared_ptr<T>` destructor
+    // call is analyzed normally, rather than replaced (and thereby suppressed).
+    if (typeof xdb !== "undefined") {
+        const xdb_entry = xdb.read_entry(synthesized);
+        const has_no_xdb_entry = !xdb_entry.contents;
+        xdb.free_string(xdb_entry);
+
+        if (has_no_xdb_entry) {
+            printErr(
+                `skipping synthesized entry not found in \`xdb\`: ${synthesized}`
+            );
+            return;
+        }
+    }
     // Note that there will be a later check to verify that the function name
     // synthesized here is an actual function, and assert if not (see
     // assertFunctionExists() in computeCallgraph.js.)
-    return mangled_dtor + "$" + pretty_dtor;
+    return synthesized;
 }
 
 function getCallEdgeProperties(ffg, body, edge, calleeName) {

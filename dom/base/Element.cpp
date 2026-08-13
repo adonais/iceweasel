@@ -23,6 +23,7 @@
 #include "mozAutoDocUpdate.h"
 #include "mozilla/AnimationComparator.h"
 #include "mozilla/AnimationTarget.h"
+#include "mozilla/AnimationUtils.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/Components.h"
@@ -579,6 +580,14 @@ void Element::SetCustomElementRegistry(
   }
 }
 
+void Element::SetKeepCustomElementRegistryNull() {
+  MOZ_ASSERT(StaticPrefs::dom_scoped_custom_element_registries_enabled());
+  MOZ_ASSERT(!HasCustomElementRegistry(),
+             "We shouldn't set a custom element registry without clearing "
+             "first");
+  SetCustomElementRegistryState(CustomElementRegistryState::Null);
+}
+
 /* https://dom.spec.whatwg.org/#element-custom-element-registry */
 CustomElementRegistry* Element::GetCustomElementRegistry() {
   switch (GetCustomElementRegistryState()) {
@@ -589,7 +598,6 @@ CustomElementRegistry* Element::GetCustomElementRegistry() {
     case CustomElementRegistryState::Scoped: {
       RefPtr<CustomElementRegistry> registry =
           CustomElementRegistry::GetScopedRegistry(*this);
-      MOZ_ASSERT(registry);
       return registry;
     }
   }
@@ -1458,7 +1466,7 @@ already_AddRefed<ShadowRoot> Element::AttachShadow(const ShadowRootInit& aInit,
   // 2. If init["customElementRegistry"] exists, then set registry to it.
   // 3. If registry is non-null, registry's is scoped is false, and registry is
   //    not this's node document's custom element registry, then throw.
-  Maybe<CustomElementRegistry*> registry;
+  Maybe<RefPtr<CustomElementRegistry>> registry;
   if (StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
     CustomElementRegistry* docRegistry = OwnerDoc()->GetCustomElementRegistry();
     if (aInit.mCustomElementRegistry.WasPassed()) {
@@ -1517,7 +1525,8 @@ already_AddRefed<ShadowRoot> Element::AttachShadow(const ShadowRootInit& aInit,
 
 /* https://dom.spec.whatwg.org/#concept-attach-a-shadow-root */
 already_AddRefed<ShadowRoot> Element::AttachShadowWithoutNameChecks(
-    const ShadowRootInit& aInit, const Maybe<CustomElementRegistry*>& aRegistry,
+    const ShadowRootInit& aInit,
+    const Maybe<RefPtr<CustomElementRegistry>>& aRegistry,
     CustomSlotDispatch aCustomSlotDispatch, bool aNotify) {
   nsAutoScriptBlocker scriptBlocker;
 
@@ -1794,20 +1803,20 @@ void Element::SetAttribute(const nsAString& aName, const nsAString& aValue,
   }
 
   nsAutoString nameToUse;
-  const nsAttrName* name = InternalGetAttrNameFromQName(aName, &nameToUse);
+  RefPtr<nsAtom> nameAtom;
+  const nsAttrName* name =
+      InternalGetAttrNameFromQName(aName, &nameToUse, &nameAtom);
   if (!name) {
-    RefPtr<nsAtom> nameAtom = NS_AtomizeMainThread(nameToUse);
     if (!nameAtom) {
-      aError.Throw(NS_ERROR_OUT_OF_MEMORY);
-      return;
+      nameAtom = NS_AtomizeMainThread(nameToUse);
     }
-    aError = SetAttr(kNameSpaceID_None, nameAtom, aValue, aTriggeringPrincipal,
-                     true);
+    aError = SetAttr(kNameSpaceID_None, nameAtom, nullptr, aValue,
+                     aTriggeringPrincipal, true, IsKnownNewAttr::Yes);
     return;
   }
 
   aError = SetAttr(name->NamespaceID(), name->LocalName(), name->GetPrefix(),
-                   aValue, aTriggeringPrincipal, true);
+                   aValue, aTriggeringPrincipal, true, IsKnownNewAttr::No);
 }
 
 void Element::RemoveAttribute(const nsAString& aName, ErrorResult& aError) {
@@ -1884,7 +1893,7 @@ void Element::SetAttributeNS(const nsAString& aNamespaceURI,
   }
 
   aError = SetAttr(ni->NamespaceID(), ni->NameAtom(), ni->GetPrefixAtom(),
-                   aValue, aTriggeringPrincipal, true);
+                   aValue, aTriggeringPrincipal, true, IsKnownNewAttr::No);
 }
 
 already_AddRefed<nsIPrincipal> Element::CreateDevtoolsPrincipal() {
@@ -1920,10 +1929,15 @@ void Element::SetAttribute(
   }
 
   nsAutoString nameToUse;
-  const nsAttrName* name = InternalGetAttrNameFromQName(aName, &nameToUse);
+  RefPtr<nsAtom> nameAtom;
+  const nsAttrName* name =
+      InternalGetAttrNameFromQName(aName, &nameToUse, &nameAtom);
   if (!name) {
-    RefPtr<nsAtom> nameAtom = NS_AtomizeMainThread(nameToUse);
+    if (!nameAtom) {
+      nameAtom = NS_AtomizeMainThread(nameToUse);
+    }
     Maybe<nsAutoString> compliantStringHolder;
+    nsMutationGuard guard;
     const nsAString* compliantString =
         TrustedTypeUtils::GetTrustedTypesCompliantAttributeValue(
             *this, nameAtom, kNameSpaceID_None, aValue, aTriggeringPrincipal,
@@ -1931,8 +1945,12 @@ void Element::SetAttribute(
     if (aError.Failed()) {
       return;
     }
-    aError = SetAttr(kNameSpaceID_None, nameAtom, *compliantString,
-                     aTriggeringPrincipal, true);
+    // The fast path is only safe if nothing script-runnable above mutated
+    // mAttrs out from under us.
+    const IsKnownNewAttr isKnownNew =
+        guard.Mutated(0) ? IsKnownNewAttr::No : IsKnownNewAttr::Yes;
+    aError = SetAttr(kNameSpaceID_None, nameAtom, nullptr, *compliantString,
+                     aTriggeringPrincipal, true, isKnownNew);
     return;
   }
 
@@ -1948,7 +1966,8 @@ void Element::SetAttribute(
   }
   if (!guard.Mutated(0)) {
     aError = SetAttr(name->NamespaceID(), name->LocalName(), name->GetPrefix(),
-                     *compliantString, aTriggeringPrincipal, true);
+                     *compliantString, aTriggeringPrincipal, true,
+                     IsKnownNewAttr::No);
     return;
   }
 
@@ -1980,8 +1999,9 @@ void Element::SetAttributeNS(
   if (aError.Failed()) {
     return;
   }
-  aError = SetAttr(ni->NamespaceID(), ni->NameAtom(), ni->GetPrefixAtom(),
-                   *compliantString, aTriggeringPrincipal, true);
+  aError =
+      SetAttr(ni->NamespaceID(), ni->NameAtom(), ni->GetPrefixAtom(),
+              *compliantString, aTriggeringPrincipal, true, IsKnownNewAttr::No);
 }
 
 void Element::SetAttributeDevtools(const nsAString& aName,
@@ -2766,26 +2786,6 @@ bool Element::HasVisibleScrollbars() {
   return scrollFrame && !scrollFrame->GetScrollbarVisibility().isEmpty();
 }
 
-// Hash function for bloom filter (k=2)
-// Returns 64-bit value with bit 0 set to 1 and 2 bits set in available range.
-static uint64_t HashForBloomFilter(const nsAtom* aAtom) {
-  if (!aAtom) {
-    return 1ULL;  // Just the tag bit
-  }
-  // On 32-bit platforms, we have 31 bits for bloom + 1 tag bit
-  // On 64-bit platforms, we have 63 bits for bloom + 1 tag bit
-  constexpr int kAttrBloomBits = sizeof(uintptr_t) == 4 ? 31 : 63;
-
-  uint32_t hash = aAtom->hash();
-  uint64_t filter = 1ULL;
-  // Set 2 bits in the available range (bits 1-31 on 32-bit, 1-63 on 64-bit)
-  uint32_t bit1 = hash % kAttrBloomBits;
-  uint32_t bit2 = (hash >> 6) % kAttrBloomBits;
-  filter |= 1ULL << (1 + bit1);
-  filter |= 1ULL << (1 + bit2);
-  return filter;
-}
-
 // Propagates this element's bloom filter up the tree by OR-ing it with
 // all ancestor element bloom filters, stopping early if no new bits are added.
 void Element::PropagateBloomFilterToParents() {
@@ -2818,11 +2818,11 @@ static uint64_t HashClassesForBloom(const nsAttrValue* aValue) {
     const mozilla::AttrAtomArray* array = aValue->GetAtomArrayValue();
     if (array) {
       for (const RefPtr<nsAtom>& className : array->mArray) {
-        filter |= HashForBloomFilter(className);
+        filter |= AttrArray::HashForBloomFilter(className);
       }
     }
   } else if (aValue->Type() == nsAttrValue::eAtom) {
-    filter |= HashForBloomFilter(aValue->GetAtomValue());
+    filter |= AttrArray::HashForBloomFilter(aValue->GetAtomValue());
   }
 #ifdef DEBUG
   else {
@@ -2856,14 +2856,14 @@ void Element::VerifySubtreeBloomFilter() const {
     MOZ_ASSERT(attrName, "Attribute name should not be null");
     if (attrName->NamespaceEquals(kNameSpaceID_None)) {
       nsAtom* localName = attrName->LocalName();
-      expectedBloom |= HashForBloomFilter(localName);
+      expectedBloom |= AttrArray::HashForBloomFilter(localName);
 
       if (!localName->IsAsciiLowercase()) {
         Document* doc = OwnerDoc();
         if (!IsHTMLElement() && doc->IsHTMLDocument()) {
           RefPtr<nsAtom> lowercaseAttr(localName);
           ToLowerCaseASCII(lowercaseAttr);
-          expectedBloom |= HashForBloomFilter(lowercaseAttr);
+          expectedBloom |= AttrArray::HashForBloomFilter(lowercaseAttr);
         }
       }
     }
@@ -2871,6 +2871,12 @@ void Element::VerifySubtreeBloomFilter() const {
 
   // Hash class names
   expectedBloom |= HashClassesForBloom(GetClasses());
+
+  // Hash our local name
+  uint64_t localNameHash = NodeInfo()->NameBloomFilterHash();
+  MOZ_ASSERT(localNameHash ==
+             AttrArray::HashForBloomFilter(NodeInfo()->NameAtom()));
+  expectedBloom |= localNameHash;
 
   // Include children's bloom filters
   for (Element* child = GetFirstElementChild(); child;
@@ -2896,7 +2902,7 @@ void Element::UpdateSubtreeBloomFilterForClass(const nsAttrValue* aClassValue) {
 
 void Element::UpdateSubtreeBloomFilterForAttribute(nsAtom* aAttribute) {
   MOZ_ASSERT(aAttribute, "Attribute should not be null");
-  mAttrs.UpdateSubtreeBloomFilter(HashForBloomFilter(aAttribute));
+  mAttrs.UpdateSubtreeBloomFilter(AttrArray::HashForBloomFilter(aAttribute));
 
   // For non-HTML elements, also add the lowercase hash.
   // This ensures querySelector can find these attributes with case-insensitive
@@ -2905,7 +2911,8 @@ void Element::UpdateSubtreeBloomFilterForAttribute(nsAtom* aAttribute) {
   if (!aAttribute->IsAsciiLowercase() && !IsHTMLElement()) {
     RefPtr<nsAtom> lowercaseAttr(aAttribute);
     ToLowerCaseASCII(lowercaseAttr);
-    mAttrs.UpdateSubtreeBloomFilter(HashForBloomFilter(lowercaseAttr));
+    mAttrs.UpdateSubtreeBloomFilter(
+        AttrArray::HashForBloomFilter(lowercaseAttr));
   }
 }
 
@@ -2919,8 +2926,8 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
   MOZ_ASSERT(!IsInComposedDoc(), "Already have a document.  Unbind first!");
   // Note that as we recurse into the kids, they'll have a non-null parent.  So
   // only assert if our parent is _changing_ while we have a parent.
-  MOZ_ASSERT(!GetParentNode() || &aParent == GetParentNode(),
-             "Already have a parent.  Unbind first!");
+  MOZ_DIAGNOSTIC_ASSERT(!GetParentNode() || &aParent == GetParentNode(),
+                        "Already have a different parent.  Unbind first!");
 
   const bool hadParent = !!GetParentNode();
 
@@ -3489,19 +3496,20 @@ void Element::SetEventHandler(nsAtom* aEventName, const nsAString& aValue,
 //----------------------------------------------------------------------
 
 const nsAttrName* Element::InternalGetAttrNameFromQName(
-    const nsAString& aStr, nsAutoString* aNameToUse) const {
+    const nsAString& aStr, nsAutoString* aNameToUse,
+    RefPtr<nsAtom>* aOutAtom) const {
   MOZ_ASSERT(!aNameToUse || aNameToUse->IsEmpty());
   const nsAttrName* val = nullptr;
   if (IsHTMLElement() && IsInHTMLDocument()) {
     nsAutoString lower;
     nsAutoString& outStr = aNameToUse ? *aNameToUse : lower;
     nsContentUtils::ASCIIToLower(aStr, outStr);
-    val = mAttrs.GetExistingAttrNameFromQName(outStr);
+    val = mAttrs.GetExistingAttrNameFromQName(outStr, aOutAtom);
     if (val) {
       outStr.Truncate();
     }
   } else {
-    val = mAttrs.GetExistingAttrNameFromQName(aStr);
+    val = mAttrs.GetExistingAttrNameFromQName(aStr, aOutAtom);
     if (!val && aNameToUse) {
       *aNameToUse = aStr;
     }
@@ -3586,28 +3594,32 @@ nsresult Element::SetClassAttrFromParser(nsAtom* aValue) {
                           nullptr,  // old value
                           value, nullptr, AttrModType::Addition,
                           false,  // notify
-                          kCallAfterSetAttr, document, updateBatch);
+                          kCallAfterSetAttr, document, updateBatch,
+                          IsKnownNewAttr::Yes);
 }
 
 nsresult Element::SetAttr(int32_t aNamespaceID, nsAtom* aName, nsAtom* aPrefix,
                           const nsAString& aValue,
-                          nsIPrincipal* aSubjectPrincipal, bool aNotify) {
+                          nsIPrincipal* aSubjectPrincipal, bool aNotify,
+                          IsKnownNewAttr aIsKnownNew) {
   // Keep this in sync with SetParsedAttr below and SetSingleClassFromParser
   // above.
   const nsAttrValueOrString valueForComparison(aValue);
-  return SetAttrInternal(aNamespaceID, aName, aPrefix, valueForComparison,
-                         aSubjectPrincipal, aNotify,
-                         [&](nsAttrValue& attrValue) {
-                           if (!ParseAttribute(aNamespaceID, aName, aValue,
-                                               aSubjectPrincipal, attrValue)) {
-                             attrValue.SetTo(aValue);
-                           }
-                         });
+  return SetAttrInternal(
+      aNamespaceID, aName, aPrefix, valueForComparison, aSubjectPrincipal,
+      aNotify,
+      [&](nsAttrValue& attrValue) {
+        if (!ParseAttribute(aNamespaceID, aName, aValue, aSubjectPrincipal,
+                            attrValue)) {
+          attrValue.SetTo(aValue);
+        }
+      },
+      aIsKnownNew);
 }
 
 nsresult Element::SetAndSwapAttr(nsAtom* aLocalName, nsAttrValue& aValue,
-                                 bool* aHadValue) {
-  MOZ_TRY(mAttrs.SetAndSwapAttr(aLocalName, aValue, aHadValue));
+                                 bool* aHadValue, IsKnownNewAttr aIsKnownNew) {
+  MOZ_TRY(mAttrs.SetAndSwapAttr(aLocalName, aValue, aHadValue, aIsKnownNew));
 
   if (aLocalName == nsGkAtoms::_class) {
     UpdateSubtreeBloomFilterForClass(GetClasses());
@@ -3619,8 +3631,9 @@ nsresult Element::SetAndSwapAttr(nsAtom* aLocalName, nsAttrValue& aValue,
 }
 
 nsresult Element::SetAndSwapAttr(mozilla::dom::NodeInfo* aName,
-                                 nsAttrValue& aValue, bool* aHadValue) {
-  MOZ_TRY(mAttrs.SetAndSwapAttr(aName, aValue, aHadValue));
+                                 nsAttrValue& aValue, bool* aHadValue,
+                                 IsKnownNewAttr aIsKnownNew) {
+  MOZ_TRY(mAttrs.SetAndSwapAttr(aName, aValue, aHadValue, aIsKnownNew));
 
   // Only update bloom filter for null-namespace attributes, since the
   // querySelector bloom filter optimization only applies to those.
@@ -3643,14 +3656,16 @@ nsresult Element::SetAttr(int32_t aNamespaceID, nsAtom* aName, nsAtom* aPrefix,
   // above.
   const nsDependentAtomString valueString(aValue);
   const nsAttrValueOrString valueForComparison(valueString);
-  return SetAttrInternal(aNamespaceID, aName, aPrefix, valueForComparison,
-                         aSubjectPrincipal, aNotify,
-                         [&](nsAttrValue& attrValue) {
-                           if (!ParseAttribute(aNamespaceID, aName, valueString,
-                                               aSubjectPrincipal, attrValue)) {
-                             attrValue.SetTo(aValue);
-                           }
-                         });
+  return SetAttrInternal(
+      aNamespaceID, aName, aPrefix, valueForComparison, aSubjectPrincipal,
+      aNotify,
+      [&](nsAttrValue& attrValue) {
+        if (!ParseAttribute(aNamespaceID, aName, valueString, aSubjectPrincipal,
+                            attrValue)) {
+          attrValue.SetTo(aValue);
+        }
+      },
+      IsKnownNewAttr::No);
 }
 
 template <typename ParseFunc>
@@ -3658,17 +3673,23 @@ nsresult Element::SetAttrInternal(int32_t aNamespaceID, nsAtom* aName,
                                   nsAtom* aPrefix,
                                   const nsAttrValueOrString& aValue,
                                   nsIPrincipal* aSubjectPrincipal, bool aNotify,
-                                  ParseFunc&& aParseFn) {
+                                  ParseFunc&& aParseFn,
+                                  IsKnownNewAttr aIsKnownNew) {
   NS_ENSURE_ARG_POINTER(aName);
   NS_ASSERTION(aNamespaceID != kNameSpaceID_Unknown,
                "Don't call SetAttr with unknown namespace");
 
   AttrModType modType{0};  // NOTE: Initialized with invalid value.
   nsAttrValue oldValue;
-  bool oldValueSet;
+  bool oldValueSet = false;
 
-  if (OnlyNotifySameValueSet(aNamespaceID, aName, aPrefix, aValue, aNotify,
-                             oldValue, &modType, &oldValueSet)) {
+  if (aIsKnownNew == IsKnownNewAttr::Yes) {
+    MOZ_ASSERT(mAttrs.IndexOfAttr(aName, aNamespaceID) == -1,
+               "Caller asserted attribute is new but it already exists");
+    modType = AttrModType::Addition;
+  } else if (OnlyNotifySameValueSet(aNamespaceID, aName, aPrefix, aValue,
+                                    aNotify, oldValue, &modType,
+                                    &oldValueSet)) {
     return NS_OK;
   }
 
@@ -3685,19 +3706,19 @@ nsresult Element::SetAttrInternal(int32_t aNamespaceID, nsAtom* aName,
   nsAttrValue attrValue;
   aParseFn(attrValue);
 
-  BeforeSetAttr(aNamespaceID, aName, &attrValue, aNotify);
+  if (aName->IsStatic()) {
+    BeforeSetAttr(aNamespaceID, aName, &attrValue, aNotify);
+  }
 
-  PreIdMaybeChange(aNamespaceID, aName, &attrValue);
-
-  return SetAttrAndNotify(aNamespaceID, aName, aPrefix,
-                          oldValueSet ? &oldValue : nullptr, attrValue,
-                          aSubjectPrincipal, modType, aNotify,
-                          kCallAfterSetAttr, document, updateBatch);
+  return SetAttrAndNotify(
+      aNamespaceID, aName, aPrefix, oldValueSet ? &oldValue : nullptr,
+      attrValue, aSubjectPrincipal, modType, aNotify, kCallAfterSetAttr,
+      document, updateBatch, aIsKnownNew);
 }
 
 nsresult Element::SetParsedAttr(int32_t aNamespaceID, nsAtom* aName,
                                 nsAtom* aPrefix, nsAttrValue& aParsedValue,
-                                bool aNotify) {
+                                bool aNotify, IsKnownNewAttr aIsKnownNew) {
   // Keep this in sync with SetAttr and SetSingleClassFromParser above
 
   NS_ENSURE_ARG_POINTER(aName);
@@ -3706,9 +3727,13 @@ nsresult Element::SetParsedAttr(int32_t aNamespaceID, nsAtom* aName,
 
   AttrModType modType{0};  // NOTE: Initialized with invalid value.
   nsAttrValue oldValue;
-  bool oldValueSet;
+  bool oldValueSet = false;
 
-  {
+  if (aIsKnownNew == IsKnownNewAttr::Yes) {
+    MOZ_ASSERT(mAttrs.IndexOfAttr(aName, aNamespaceID) == -1,
+               "Caller asserted attribute is new but it already exists");
+    modType = AttrModType::Addition;
+  } else {
     const nsAttrValueOrString value(aParsedValue);
     if (OnlyNotifySameValueSet(aNamespaceID, aName, aPrefix, value, aNotify,
                                oldValue, &modType, &oldValueSet)) {
@@ -3724,14 +3749,14 @@ nsresult Element::SetParsedAttr(int32_t aNamespaceID, nsAtom* aName,
                                                  modType);
   }
 
-  BeforeSetAttr(aNamespaceID, aName, &aParsedValue, aNotify);
-
-  PreIdMaybeChange(aNamespaceID, aName, &aParsedValue);
+  if (aName->IsStatic()) {
+    BeforeSetAttr(aNamespaceID, aName, &aParsedValue, aNotify);
+  }
 
   return SetAttrAndNotify(aNamespaceID, aName, aPrefix,
                           oldValueSet ? &oldValue : nullptr, aParsedValue,
                           nullptr, modType, aNotify, kCallAfterSetAttr,
-                          document, updateBatch);
+                          document, updateBatch, aIsKnownNew);
 }
 
 static MOZ_ALWAYS_INLINE void SetLifecycleCallbackNamespaceURI(
@@ -3811,11 +3836,7 @@ nsresult Element::SetNoNameSpaceAttrOnNewlyCreatedElement(
       }
     } else {
       RefPtr<nsAtom> valueAtom = aValue.ForgetAtom();
-      if (namePtr == nsGkAtoms::id) {
-        // Keep in sync with PostIdMaybeChange!
-        SetHasID();
-        // Not adding to table since not in doc or in doc fragment.
-      } else if (namePtr == nsGkAtoms::contenteditable) {
+      if (namePtr == nsGkAtoms::contenteditable) {
         // See below for the empty-value case.
         // Splitting this like this is a micro optimization to avoid the check
         // for non-parsed string attributes.
@@ -3918,7 +3939,9 @@ nsresult Element::SetNoNameSpaceAttrOnNewlyCreatedElement(
   // we only call this from the HTML parser and not from the prototype content
   // sink.
 
-  AfterSetAttr(kNameSpaceID_None, namePtr, valuePtr, nullptr, nullptr, false);
+  if (namePtr->IsStatic()) {
+    AfterSetAttr(kNameSpaceID_None, namePtr, valuePtr, nullptr, nullptr, false);
+  }
 
   // No `dir` handling; see above.
   // No notification.
@@ -3930,7 +3953,7 @@ nsresult Element::SetAttrAndNotify(
     const nsAttrValue* aOldValue, nsAttrValue& aParsedValue,
     nsIPrincipal* aSubjectPrincipal, AttrModType aModType, bool aNotify,
     bool aCallAfterSetAttr, Document* aComposedDocument,
-    const mozAutoDocUpdate& aGuard) {
+    const mozAutoDocUpdate& aGuard, IsKnownNewAttr aIsKnownNew) {
   // NOTE: Please keep changes to this method in sync with
   // `SetNoNameSpaceAttrOnNewlyCreatedElement`!
   nsMutationGuard::DidMutate();
@@ -3952,7 +3975,7 @@ nsresult Element::SetAttrAndNotify(
       hadDirAuto = HasDirAuto();  // already takes bdi into account
     }
 
-    MOZ_TRY(SetAndSwapAttr(aName, aParsedValue, &oldValueSet));
+    MOZ_TRY(SetAndSwapAttr(aName, aParsedValue, &oldValueSet, aIsKnownNew));
     if (IsAttributeMapped(aName) && !IsPendingMappedAttributeEvaluation()) {
       mAttrs.InfallibleMarkAsPendingPresAttributeEvaluation();
       if (Document* doc = GetComposedDoc()) {
@@ -3962,10 +3985,8 @@ nsresult Element::SetAttrAndNotify(
   } else {
     RefPtr<mozilla::dom::NodeInfo> ni = NodeInfoManager()->GetNodeInfo(
         aName, aPrefix, aNamespaceID, ATTRIBUTE_NODE);
-    MOZ_TRY(SetAndSwapAttr(ni, aParsedValue, &oldValueSet));
+    MOZ_TRY(SetAndSwapAttr(ni, aParsedValue, &oldValueSet, aIsKnownNew));
   }
-
-  PostIdMaybeChange(aNamespaceID, aName, &valueForAfterSetAttr);
 
   // If the old value owns its own data, we know it is OK to keep using it.
   // oldValue will be null if there was no previously set value
@@ -4018,7 +4039,7 @@ nsresult Element::SetAttrAndNotify(
     }
   }
 
-  if (aCallAfterSetAttr) {
+  if (aCallAfterSetAttr && aName->IsStatic()) {
     AfterSetAttr(aNamespaceID, aName, &valueForAfterSetAttr, oldValue,
                  aSubjectPrincipal, aNotify);
 
@@ -4094,18 +4115,20 @@ bool Element::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
 
 void Element::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
                             const nsAttrValue* aValue, bool aNotify) {
-  if (aNamespaceID == kNameSpaceID_None) {
-    if (aName == nsGkAtoms::_class && aValue) {
-      // Note: This flag is asymmetrical. It is never unset and isn't exact.
-      // If it is ever made to be exact, we probably need to handle this
-      // similarly to how ids are handled in PreIdMaybeChange and
-      // PostIdMaybeChange.
-      // Note that SetSingleClassFromParser inlines BeforeSetAttr and
-      // calls SetMayHaveClass directly. Making a subclass take action
-      // on the class attribute in a BeforeSetAttr override would
-      // require revising SetSingleClassFromParser.
-      SetMayHaveClass();
-    }
+  MOZ_ASSERT(aName->IsStatic());
+  if (aNamespaceID != kNameSpaceID_None) {
+    return;
+  }
+  if (aName == nsGkAtoms::_class && aValue) {
+    // Note: This flag is asymmetrical. It is never unset and isn't exact.
+    // Note that SetSingleClassFromParser inlines BeforeSetAttr and
+    // calls SetMayHaveClass directly. Making a subclass take action
+    // on the class attribute in a BeforeSetAttr override would
+    // require revising SetSingleClassFromParser.
+    SetMayHaveClass();
+  }
+  if (aName == nsGkAtoms::id) {
+    PreIdMaybeChange(aValue);
   }
 }
 
@@ -4114,55 +4137,48 @@ void Element::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
                            const nsAttrValue* aOldValue,
                            nsIPrincipal* aMaybeScriptedPrincipal,
                            bool aNotify) {
-  if (aNamespaceID == kNameSpaceID_None) {
-    if (aName == nsGkAtoms::part) {
-      bool isPart = !!aValue;
-      if (HasPartAttribute() != isPart) {
-        SetHasPartAttribute(isPart);
-        if (ShadowRoot* shadow = GetContainingShadow()) {
-          if (isPart) {
-            shadow->PartAdded(*this);
-          } else {
-            shadow->PartRemoved(*this);
-          }
+  MOZ_ASSERT(aName->IsStatic());
+  if (aNamespaceID != kNameSpaceID_None) {
+    return;
+  }
+  if (aName == nsGkAtoms::id) {
+    PostIdMaybeChange(aValue);
+  } else if (aName == nsGkAtoms::part) {
+    bool isPart = !!aValue;
+    if (HasPartAttribute() != isPart) {
+      SetHasPartAttribute(isPart);
+      if (ShadowRoot* shadow = GetContainingShadow()) {
+        if (isPart) {
+          shadow->PartAdded(*this);
+        } else {
+          shadow->PartRemoved(*this);
         }
       }
-      MOZ_ASSERT(HasPartAttribute() == isPart);
-    } else if (aName == nsGkAtoms::slot && GetParent()) {
-      if (ShadowRoot* shadow = GetParent()->GetShadowRoot()) {
-        shadow->MaybeReassignContent(*this);
-      }
-    } else if (aName == nsGkAtoms::aria_activedescendant) {
-      ClearExplicitlySetAttrElement(aName);
-      IDREFAttributeValueChanged(aName, aValue);
-    } else if (aName == nsGkAtoms::aria_controls ||
-               aName == nsGkAtoms::aria_describedby ||
-               aName == nsGkAtoms::aria_details ||
-               aName == nsGkAtoms::aria_errormessage ||
-               aName == nsGkAtoms::aria_flowto ||
-               aName == nsGkAtoms::aria_labelledby ||
-               aName == nsGkAtoms::aria_owns) {
-      ClearExplicitlySetAttrElements(aName);
     }
+    MOZ_ASSERT(HasPartAttribute() == isPart);
+  } else if (aName == nsGkAtoms::slot && GetParent()) {
+    if (ShadowRoot* shadow = GetParent()->GetShadowRoot()) {
+      shadow->MaybeReassignContent(*this);
+    }
+  } else if (aName == nsGkAtoms::aria_activedescendant) {
+    ClearExplicitlySetAttrElement(aName);
+    IDREFAttributeValueChanged(aName, aValue);
+  } else if (aName == nsGkAtoms::aria_controls ||
+             aName == nsGkAtoms::aria_describedby ||
+             aName == nsGkAtoms::aria_details ||
+             aName == nsGkAtoms::aria_errormessage ||
+             aName == nsGkAtoms::aria_flowto ||
+             aName == nsGkAtoms::aria_labelledby ||
+             aName == nsGkAtoms::aria_owns) {
+    ClearExplicitlySetAttrElements(aName);
   }
 }
 
-void Element::PreIdMaybeChange(int32_t aNamespaceID, nsAtom* aName,
-                               const nsAttrValue* aValue) {
-  if (aNamespaceID != kNameSpaceID_None || aName != nsGkAtoms::id) {
-    return;
-  }
+void Element::PreIdMaybeChange(const nsAttrValue* aValue) {
   RemoveFromIdTable();
 }
 
-void Element::PostIdMaybeChange(int32_t aNamespaceID, nsAtom* aName,
-                                const nsAttrValue* aValue) {
-  if (aNamespaceID != kNameSpaceID_None || aName != nsGkAtoms::id) {
-    return;
-  }
-
-  // Keep in sync with SetNoNameSpaceAttrOnNewlyCreatedElement!
-
+void Element::PostIdMaybeChange(const nsAttrValue* aValue) {
   // id="" means that the element has no id, not that it has an empty
   // string as the id.
   if (aValue && !aValue->IsEmptyString()) {
@@ -4259,9 +4275,9 @@ nsresult Element::UnsetAttr(int32_t aNameSpaceID, nsAtom* aName, bool aNotify) {
                                                  AttrModType::Removal);
   }
 
-  BeforeSetAttr(aNameSpaceID, aName, nullptr, aNotify);
-
-  PreIdMaybeChange(aNameSpaceID, aName, nullptr);
+  if (aName->IsStatic()) {
+    BeforeSetAttr(aNameSpaceID, aName, nullptr, aNotify);
+  }
 
   // Clear the attribute out from attribute map.
   nsDOMSlots* slots = GetExistingDOMSlots();
@@ -4292,8 +4308,6 @@ nsresult Element::UnsetAttr(int32_t aNameSpaceID, nsAtom* aName, bool aNotify) {
   nsAttrValue oldValue;
   MOZ_TRY(mAttrs.RemoveAttrAt(index, oldValue));
 
-  PostIdMaybeChange(aNameSpaceID, aName, nullptr);
-
   const CustomElementData* data = GetCustomElementData();
   if (data && data->mState == CustomElementData::State::eCustom) {
     CustomElementDefinition* definition = data->GetCustomElementDefinition();
@@ -4309,7 +4323,9 @@ nsresult Element::UnsetAttr(int32_t aNameSpaceID, nsAtom* aName, bool aNotify) {
     }
   }
 
-  AfterSetAttr(aNameSpaceID, aName, nullptr, &oldValue, nullptr, aNotify);
+  if (aName->IsStatic()) {
+    AfterSetAttr(aNameSpaceID, aName, nullptr, &oldValue, nullptr, aNotify);
+  }
 
   if (aNotify) {
     // We can always pass oldValue here since there is no new value which could
@@ -4770,14 +4786,18 @@ nsresult Element::CopyInnerTo(Element* aDst) {
     } else if (isSVG) {
       nsAutoString valStr;
       value->ToString(valStr);
+      // aDst started empty via EnsureCapacityToClone, so every attribute here
+      // is a fresh addition and the fast path is safe.
       MOZ_TRY(aDst->SetAttr(name->NamespaceID(), name->LocalName(),
-                            name->GetPrefix(), valStr, false));
+                            name->GetPrefix(), valStr, nullptr, false,
+                            IsKnownNewAttr::Yes));
       continue;
     }
     MOZ_ASSERT(value->StoresOwnData());
     nsAttrValue valueCopy(*info.mValue);
     MOZ_TRY(aDst->SetParsedAttr(name->NamespaceID(), name->LocalName(),
-                                name->GetPrefix(), valueCopy, false));
+                                name->GetPrefix(), valueCopy, false,
+                                IsKnownNewAttr::Yes));
   }
 
   // https://dom.spec.whatwg.org/#clone-a-single-node
@@ -5145,9 +5165,17 @@ already_AddRefed<Animation> Element::Animate(
   }
 
   // Step 5. If options is a KeyframeAnimationOptions object, assign the value
-  // of the id member of options to animation's id attribute.
+  // of the id member of options to animation's id attribute, and (Web
+  // Animations Level 2) apply its rangeStart and rangeEnd members to the
+  // animation's animation range.
   if (aOptions.IsKeyframeAnimationOptions()) {
-    animation->SetId(aOptions.GetAsKeyframeAnimationOptions().mId);
+    const KeyframeAnimationOptions& options =
+        aOptions.GetAsKeyframeAnimationOptions();
+    animation->SetId(options.mId);
+    if (!AnimationUtils::ApplyKeyframeAnimationRange(options, animation,
+                                                     aError)) {
+      return nullptr;
+    }
   }
 
   // Step 6. Play animation.
@@ -5302,6 +5330,12 @@ void Element::GetAnimationsWithoutFlush(
     } else if (IsGeneratedContentContainerForBackdrop()) {
       elem = GetParentElement();
       pseudoRequest.mType = PseudoStyleType::Backdrop;
+    } else if (IsGeneratedContentContainerForCheckmark()) {
+      elem = GetParentElement();
+      pseudoRequest.mType = PseudoStyleType::Checkmark;
+    } else if (IsGeneratedContentContainerForPickerIcon()) {
+      elem = GetParentElement();
+      pseudoRequest.mType = PseudoStyleType::PickerIcon;
     }
 
     if (!elem) {
@@ -5787,6 +5821,8 @@ Element* Element::GetPseudoElement(const PseudoStyleRequest& aRequest) const {
       return nsLayoutUtils::GetBackdropPseudo(this);
     case PseudoStyleType::Checkmark:
       return nsLayoutUtils::GetCheckmarkPseudo(this);
+    case PseudoStyleType::PickerIcon:
+      return nsLayoutUtils::GetPickerIconPseudo(this);
     case PseudoStyleType::ViewTransition:
     case PseudoStyleType::ViewTransitionGroup:
     case PseudoStyleType::ViewTransitionImagePair:

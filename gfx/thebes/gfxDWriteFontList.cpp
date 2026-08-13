@@ -2,37 +2,36 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/FontPropertyTypes.h"
-#include "mozilla/MemoryReporting.h"
-#include "mozilla/intl/OSPreferences.h"
-
 #include "gfxDWriteFontList.h"
-#include "gfxDWriteFonts.h"
+
+#include "../2d/AutoHelpersWin.h"
+#include "SharedFontList-impl.h"
 #include "gfxDWriteCommon.h"
-#include "nsUnicharUtils.h"
-#include "nsPresContext.h"
-#include "nsServiceManagerUtils.h"
-#include "nsCharSeparatedTokenizer.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/gfx/Logging.h"
+#include "gfxDWriteFonts.h"
+#include "gfxRect.h"
+#include "harfbuzz/hb.h"
 #include "mozilla/EndianUtils.h"
+#include "mozilla/FontPropertyTypes.h"
 #include "mozilla/LookAndFeel.h"
+#include "mozilla/MemoryReporting.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/StaticPrefs_gfx.h"
-#include "mozilla/glean/GfxMetrics.h"
+#include "mozilla/Utf16.h"
 #include "mozilla/WindowsProcessMitigations.h"
-#include "nsDirectoryServiceUtils.h"
-#include "nsDirectoryServiceDefs.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/gfx/Logging.h"
+#include "mozilla/glean/GfxMetrics.h"
+#include "mozilla/intl/OSPreferences.h"
 #include "nsAppDirectoryServiceDefs.h"
+#include "nsCharSeparatedTokenizer.h"
+#include "nsDirectoryServiceDefs.h"
+#include "nsDirectoryServiceUtils.h"
+#include "nsPresContext.h"
+#include "nsServiceManagerUtils.h"
+#include "nsUnicharUtils.h"
 #include "nsWindowsHelpers.h"
-
-#include "../2d/AutoHelpersWin.h"
-#include "gfxRect.h"
-#include "SharedFontList-impl.h"
-
-#include "harfbuzz/hb.h"
 
 #define StandardFonts
 #include "StandardFonts-win10.inc"
@@ -707,7 +706,11 @@ gfxFont* gfxDWriteFontEntry::CreateFontInstance(
       useBoldSim ? DWRITE_FONT_SIMULATIONS_BOLD : DWRITE_FONT_SIMULATIONS_NONE;
   ThreadSafeWeakPtr<UnscaledFontDWrite>& unscaledFontPtr =
       useBoldSim ? mUnscaledFontBold : mUnscaledFont;
-  RefPtr<UnscaledFontDWrite> unscaledFont(unscaledFontPtr);
+  RefPtr<UnscaledFontDWrite> unscaledFont;
+  {
+    AutoReadLock lock(mLock);
+    unscaledFont = RefPtr<UnscaledFontDWrite>(unscaledFontPtr);
+  }
   if (!unscaledFont) {
     RefPtr<IDWriteFontFace> fontFace;
     nsresult rv =
@@ -715,6 +718,7 @@ gfxFont* gfxDWriteFontEntry::CreateFontInstance(
     if (NS_FAILED(rv)) {
       return nullptr;
     }
+    AutoWriteLock lock(mLock);
     // Only pass in the underlying IDWriteFont if the unscaled font doesn't
     // reflect a data font. This signals whether or not we can safely query
     // a descriptor to represent the font for various transport use-cases.
@@ -2305,13 +2309,13 @@ gfxFontEntry* gfxDWriteFontList::PlatformGlobalFontFallback(
   wchar_t str[16];
   uint32_t strLen;
 
-  if (IS_IN_BMP(aCh)) {
+  if (mozilla::IsInBMP(aCh)) {
     str[0] = static_cast<wchar_t>(aCh);
     str[1] = 0;
     strLen = 1;
   } else {
-    str[0] = static_cast<wchar_t>(H_SURROGATE(aCh));
-    str[1] = static_cast<wchar_t>(L_SURROGATE(aCh));
+    str[0] = static_cast<wchar_t>(mozilla::HighSurrogate(aCh));
+    str[1] = static_cast<wchar_t>(mozilla::LowSurrogate(aCh));
     str[2] = 0;
     strLen = 2;
   }

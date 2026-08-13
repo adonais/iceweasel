@@ -510,7 +510,7 @@ describe("<Weather> (Widgets/Weather)", () => {
       ).toBeInTheDocument();
     });
 
-    it("hides temp unit items when opt-in is enabled (shortened menu)", () => {
+    it("hides temp unit items while the opt-in card is showing (shortened menu)", () => {
       const { container } = renderWeather("small", optInMockState);
       expect(
         container.querySelector(
@@ -522,6 +522,15 @@ describe("<Weather> (Widgets/Weather)", () => {
           "panel-item[data-l10n-id='newtab-weather-menu-change-temperature-units-fahrenheit']"
         )
       ).not.toBeInTheDocument();
+    });
+
+    it("shows temp unit items in an opt-in region once the user has accepted", () => {
+      const { container } = renderWeather("medium", optInAcceptedState);
+      expect(
+        container.querySelector(
+          "panel-item[data-l10n-id='newtab-weather-menu-change-temperature-units-celsius']"
+        )
+      ).toBeInTheDocument();
     });
   });
 
@@ -709,6 +718,7 @@ describe("<Weather> (Widgets/Weather)", () => {
         type: at.OPEN_LINK,
         data: {
           url: "https://support.mozilla.org/kb/firefox-new-tab-widgets",
+          where: "tab",
         },
       });
       expect(dispatch.mock.calls[1][0]).toMatchObject({
@@ -1002,6 +1012,10 @@ describe("<Weather> (Widgets/Weather)", () => {
           "panel-item[data-l10n-id='newtab-weather-menu-change-temperature-units-celsius']"
         )
       ).not.toBeInTheDocument();
+      // With the top items hidden during opt-in, the footer divider is
+      // suppressed so the menu doesn't start with a stray separator.
+      const menu = container.querySelector("#weather-widget-context-menu");
+      expect(menu.firstElementChild.tagName.toLowerCase()).not.toBe("hr");
     });
 
     it("dispatches opt-in accepted actions when use-location is clicked", () => {

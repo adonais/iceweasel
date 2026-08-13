@@ -85,10 +85,11 @@ class MediaTransportParent::Impl : public sigslot::has_slots<> {
         mParent->SendOnGatheringStateChange(aTransportId, aState));
   }
 
-  void OnConnectionStateChange(const std::string& aTransportId,
-                               dom::RTCIceTransportState aState) {
-    NS_ENSURE_TRUE_VOID(
-        mParent->SendOnConnectionStateChange(aTransportId, aState));
+  void OnConnectionStateChange(
+      const std::string& aTransportId, dom::RTCIceTransportState aState,
+      const Maybe<dom::IceCandidateAttributePair>& aSelectedPair) {
+    NS_ENSURE_TRUE_VOID(mParent->SendOnConnectionStateChange(
+        aTransportId, aState, aSelectedPair));
   }
 
   void OnPacketReceived(const std::string& aTransportId,
@@ -103,14 +104,17 @@ class MediaTransportParent::Impl : public sigslot::has_slots<> {
 
   void OnStateChange(const std::string& aTransportId,
                      TransportLayer::State aState,
-                     const nsTArray<nsTArray<uint8_t>>& aRemoteCerts) {
+                     const nsTArray<nsTArray<uint8_t>>& aRemoteCerts,
+                     Maybe<RTCErrorParams> aError) {
     NS_ENSURE_TRUE_VOID(
-        mParent->SendOnStateChange(aTransportId, aState, aRemoteCerts));
+        mParent->SendOnStateChange(aTransportId, aState, aRemoteCerts, aError));
   }
 
   void OnRtcpStateChange(const std::string& aTransportId,
-                         TransportLayer::State aState) {
-    NS_ENSURE_TRUE_VOID(mParent->SendOnRtcpStateChange(aTransportId, aState));
+                         TransportLayer::State aState,
+                         Maybe<RTCErrorParams> aError) {
+    NS_ENSURE_TRUE_VOID(
+        mParent->SendOnRtcpStateChange(aTransportId, aState, aError));
   }
 
   RefPtr<MediaTransportHandler> mHandler;

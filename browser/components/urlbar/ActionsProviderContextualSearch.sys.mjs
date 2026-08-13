@@ -72,7 +72,7 @@ class ProviderContextualSearch extends ActionsProvider {
     return (
       queryContext.trimmedSearchString &&
       lazy.UrlbarPrefs.getScotchBonnetPref(ENABLED_PREF) &&
-      !queryContext.searchMode &&
+      !queryContext.restrictInSearchMode() &&
       lazy.UrlbarPrefs.get("suggest.engines")
     );
   }
@@ -95,6 +95,7 @@ class ProviderContextualSearch extends ActionsProvider {
   async #createActionResult({ type, engine, key = "contextual-search" }) {
     let icon = engine?.icon || (await engine?.getIconURL?.()) || DEFAULT_ICON;
     let result = {
+      providerName: this.name,
       key,
       l10nId: "urlbar-result-search-with",
       l10nArgs: { engine: engine.name || engine.title },
@@ -362,7 +363,12 @@ class ProviderContextualSearch extends ActionsProvider {
   async #performSearch(engine, search, controller, enterSearchMode) {
     const [url] = UrlbarUtils.getSearchQueryUrl(engine, search);
     if (enterSearchMode) {
-      controller.input.search(search, { searchEngine: engine });
+      // Pass only the fields `search()` reads, as a plain object, so it stays
+      // structured-cloneable when this runs parent-side on the actor message
+      // path (the engine itself can't cross the boundary).
+      controller.input.search(search, {
+        searchEngine: { name: engine.name, aliases: engine.aliases },
+      });
     }
     controller.browserWindow.gBrowser.fixupAndLoadURIString(url, {
       triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),

@@ -6,6 +6,7 @@
 #define mozilla_urlclassiferipcutils_h
 
 #include "ipc/EnumSerializer.h"
+#include "ipc/IPCMessageUtils.h"
 #include "nsIUrlClassifierFeature.h"
 #include "nsIClassifiedChannel.h"
 
@@ -18,27 +19,8 @@ struct ParamTraits<nsIUrlClassifierFeature::listType>
           nsIUrlClassifierFeature::listType::blocklist,
           nsIUrlClassifierFeature::listType::entitylist> {};
 
-template <>
-struct ParamTraits<mozilla::net::ClassificationFlags> {
-  static void Write(MessageWriter* aWriter,
-                    const mozilla::net::ClassificationFlags& aParam) {
-    WriteParam(aWriter, aParam.firstPartyFlags);
-    WriteParam(aWriter, aParam.thirdPartyFlags);
-  }
-
-  static bool Read(MessageReader* aReader,
-                   mozilla::net::ClassificationFlags* aResult) {
-    uint32_t firstPartyFlags;
-    uint32_t thirdPartyFlags;
-    if (!ReadParam(aReader, &firstPartyFlags) ||
-        !ReadParam(aReader, &thirdPartyFlags)) {
-      return false;
-    }
-    aResult->firstPartyFlags = firstPartyFlags;
-    aResult->thirdPartyFlags = thirdPartyFlags;
-    return true;
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::net::ClassificationFlags,
+                                  firstPartyFlags, thirdPartyFlags);
 
 }  // namespace IPC
 

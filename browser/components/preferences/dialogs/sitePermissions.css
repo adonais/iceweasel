@@ -2,6 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+.actionButtons {
+  justify-content: flex-start;
+}
+
 .website-name,
 label.website-status {
   overflow: hidden;
@@ -43,6 +47,36 @@ menulist.website-status {
   width: calc(35% - 5px);
 }
 
+#siteCol > .treecol-sortdirection,
+#statusCol > .treecol-sortdirection {
+  list-style-image: url("chrome://global/skin/icons/arrow-down.svg");
+}
+
+#siteCol[sortDirection="ascending"] > .treecol-sortdirection,
+#statusCol[sortDirection="ascending"] > .treecol-sortdirection {
+  transform: rotate(180deg);
+}
+
+#siteCol[sortDirection="descending"] > .treecol-sortdirection,
+#statusCol[sortDirection="descending"] > .treecol-sortdirection {
+  transform: rotate(0deg);
+}
+
+.website-icon {
+  width: var(--icon-size);
+  height: var(--icon-size);
+  flex-shrink: 0;
+  margin-inline-start: var(--space-xsmall);
+  -moz-context-properties: fill;
+  fill: currentColor;
+}
+
+.website-icon::selection,
+.website-icon::-moz-selection {
+  color: transparent;
+  background: transparent;
+}
+
 #browserNotificationsPermissionExtensionContent,
 #permissionsDisableDescription {
   margin-inline-start: 32px;
@@ -55,4 +89,8 @@ menulist.website-status {
 #permissionsDisableCheckbox {
   margin-inline-start: 4px;
   padding-top: 10px;
+}
+
+.permissions-input-buttons {
+  margin-block-start: var(--space-small);
 }

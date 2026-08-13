@@ -3,8 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "HttpTrafficAnalyzer.h"
-#include "HttpLog.h"
 
+#include "HttpLog.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "nsSocketTransportService2.h"

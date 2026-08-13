@@ -35,6 +35,8 @@ support-files = [
 
 ["test_CreditCard.js"]
 
+["test_DateNormalizationUtils.js"]
+
 ["test_DeferredTask.js"]
 skip-if = [
   "os == 'android'",

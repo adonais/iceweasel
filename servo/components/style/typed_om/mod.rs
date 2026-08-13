@@ -22,6 +22,8 @@ pub mod numeric_declaration;
 pub mod numeric_type;
 pub mod sum_value;
 
+pub use numeric_type::NumericType;
+
 /// A single segment of an unparsed Typed OM value.
 ///
 /// This corresponds to the `CSSUnparsedSegment` union in the Typed OM
@@ -106,6 +108,9 @@ pub struct KeywordValue(pub CssString);
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub struct UnitValue {
+    /// The numeric type associated with this value.
+    pub numeric_type: NumericType,
+
     /// The numeric component of the value.
     pub value: f32,
 
@@ -134,41 +139,187 @@ impl UnitValue {
 /// This corresponds to `CSSMathSum` in the Typed OM specification. A sum
 /// value represents an expression such as `10px + 2em`. Each entry is itself
 /// a `NumericValue`, allowing nested sums if needed.
-pub type MathSum = ThinVec<NumericValue>;
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct MathSum {
+    /// The numeric type associated with this sum.
+    pub numeric_type: NumericType,
+
+    /// The list of numeric terms that make up the sum.
+    pub values: ThinVec<NumericValue>,
+}
+
+impl MathSum {
+    /// Creates a math sum from a sequence of numeric values.
+    ///
+    /// Returns an error if the values do not have addable numeric types.
+    pub fn try_from_numeric_values(values: ThinVec<NumericValue>) -> Result<Self, ()> {
+        let numeric_type = NumericType::add_types(values.iter().map(|v| v.numeric_type()))?;
+
+        Ok(Self {
+            numeric_type,
+            values,
+        })
+    }
+
+    /// Creates a math sum from a previously validated sequence of numeric
+    /// values.
+    pub fn from_numeric_values_unchecked(values: ThinVec<NumericValue>) -> Self {
+        let result = Self::try_from_numeric_values(values);
+        debug_assert!(result.is_ok(), "Expected addable values");
+
+        result.unwrap_or_else(|_| Self {
+            numeric_type: NumericType::number(),
+            values: ThinVec::from([NumericValue::zero()]),
+        })
+    }
+}
 
 /// A product of numeric values.
 ///
 /// This corresponds to `CSSMathProduct` in the Typed OM specification. A
 /// product value represents an expression such as `10px * 2`. Each entry is
 /// itself a `NumericValue`, allowing nested math expressions if needed.
-pub type MathProduct = ThinVec<NumericValue>;
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct MathProduct {
+    /// The numeric type associated with this product.
+    pub numeric_type: NumericType,
+
+    /// The list of numeric terms that make up the product.
+    pub values: ThinVec<NumericValue>,
+}
+
+impl MathProduct {
+    /// Creates a math product from a sequence of numeric values.
+    ///
+    /// Returns an error if the values do not have multipliable numeric types.
+    pub fn try_from_numeric_values(values: ThinVec<NumericValue>) -> Result<Self, ()> {
+        let numeric_type = NumericType::multiply_types(values.iter().map(|v| v.numeric_type()))?;
+
+        Ok(Self {
+            numeric_type,
+            values,
+        })
+    }
+}
 
 /// A negated numeric value.
 ///
 /// This corresponds to `CSSMathNegate` in the Typed OM specification. A negate
 /// expression represents constructs such as `-10px` or `-(10px + 2em)`.
-pub type MathNegate = Box<NumericValue>;
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct MathNegate {
+    /// The numeric type associated with this negate.
+    pub numeric_type: NumericType,
+
+    /// The numeric value being negated.
+    pub value: Box<NumericValue>,
+}
+
+impl MathNegate {
+    /// Creates a math negate from a numeric value.
+    ///
+    /// The numeric type is the same as the type of the negated value.
+    pub fn from_numeric_value(value: NumericValue) -> Self {
+        let numeric_type = value.numeric_type().clone();
+
+        Self {
+            numeric_type,
+            value: Box::new(value),
+        }
+    }
+}
 
 /// An inverted numeric value.
 ///
 /// This corresponds to `CSSMathInvert` in the Typed OM specification. An
 /// invert expression represents constructs such as `1 / 2`, `1 / 10px`, or
 /// more generally the reciprocal of another numeric value.
-pub type MathInvert = Box<NumericValue>;
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct MathInvert {
+    /// The numeric type associated with this invert.
+    pub numeric_type: NumericType,
+
+    /// The numeric value being inverted.
+    pub value: Box<NumericValue>,
+}
+
+impl MathInvert {
+    /// Creates a math invert from a numeric value.
+    ///
+    /// The numeric type is the same as the input type, but with all exponent
+    /// values negated.
+    pub fn from_numeric_value(value: NumericValue) -> Self {
+        let mut numeric_type = value.numeric_type().clone();
+        numeric_type.invert();
+
+        Self {
+            numeric_type,
+            value: Box::new(value),
+        }
+    }
+}
 
 /// A minimum expression over numeric values.
 ///
 /// This corresponds to `CSSMathMin` in the Typed OM specification. A minimum
 /// expression represents constructs such as `min(10px, 20%)`. Each entry is
 /// itself a `NumericValue`, allowing nested math expressions if needed.
-pub type MathMin = ThinVec<NumericValue>;
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct MathMin {
+    /// The numeric type associated with this min.
+    pub numeric_type: NumericType,
+
+    /// The list of numeric terms that make up the min.
+    pub values: ThinVec<NumericValue>,
+}
+
+impl MathMin {
+    /// Creates a math min from a sequence of numeric values.
+    ///
+    /// Returns an error if the values do not have addable numeric types.
+    pub fn try_from_numeric_values(values: ThinVec<NumericValue>) -> Result<Self, ()> {
+        let numeric_type = NumericType::add_types(values.iter().map(|v| v.numeric_type()))?;
+
+        Ok(Self {
+            numeric_type,
+            values,
+        })
+    }
+}
 
 /// A maximum expression over numeric values.
 ///
 /// This corresponds to `CSSMathMax` in the Typed OM specification. A maximum
 /// expression represents constructs such as `max(10px, 20%)`. Each entry is
 /// itself a `NumericValue`, allowing nested math expressions if needed.
-pub type MathMax = ThinVec<NumericValue>;
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct MathMax {
+    /// The numeric type associated with this max.
+    pub numeric_type: NumericType,
+
+    /// The list of numeric terms that make up the max.
+    pub values: ThinVec<NumericValue>,
+}
+
+impl MathMax {
+    /// Creates a math max from a sequence of numeric values.
+    ///
+    /// Returns an error if the values do not have addable numeric types.
+    pub fn try_from_numeric_values(values: ThinVec<NumericValue>) -> Result<Self, ()> {
+        let numeric_type = NumericType::add_types(values.iter().map(|v| v.numeric_type()))?;
+
+        Ok(Self {
+            numeric_type,
+            values,
+        })
+    }
+}
 
 /// A clamp expression over numeric values.
 ///
@@ -177,7 +328,30 @@ pub type MathMax = ThinVec<NumericValue>;
 ///
 /// The array entries correspond to the lower bound, value, and upper bound,
 /// respectively.
-pub type MathClamp = crate::OwnedArray<NumericValue, 3>;
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct MathClamp {
+    /// The numeric type associated with this clamp.
+    pub numeric_type: NumericType,
+
+    /// The lower bound, value, and upper bound of the clamp expression, in
+    /// that order.
+    pub values: crate::OwnedArray<NumericValue, 3>,
+}
+
+impl MathClamp {
+    /// Creates a math clamp from a sequence of numeric values.
+    ///
+    /// Returns an error if the values do not have addable numeric types.
+    pub fn try_from_numeric_values(values: crate::OwnedArray<NumericValue, 3>) -> Result<Self, ()> {
+        let numeric_type = NumericType::add_types(values.iter().map(|v| v.numeric_type()))?;
+
+        Ok(Self {
+            numeric_type,
+            values,
+        })
+    }
+}
 
 /// A math expression used by the Typed OM.
 ///
@@ -222,6 +396,21 @@ pub enum MathValue {
     Clamp(MathClamp),
 }
 
+impl MathValue {
+    /// Returns the numeric type associated with this math value.
+    pub fn numeric_type(&self) -> &NumericType {
+        match self {
+            Self::Sum(math_sum) => &math_sum.numeric_type,
+            Self::Product(math_product) => &math_product.numeric_type,
+            Self::Negate(math_negate) => &math_negate.numeric_type,
+            Self::Invert(math_invert) => &math_invert.numeric_type,
+            Self::Min(math_min) => &math_min.numeric_type,
+            Self::Max(math_max) => &math_max.numeric_type,
+            Self::Clamp(math_clamp) => &math_clamp.numeric_type,
+        }
+    }
+}
+
 /// A numeric value used by the Typed OM.
 ///
 /// This corresponds to `CSSNumericValue` and its subclasses in the Typed OM
@@ -250,9 +439,18 @@ impl NumericValue {
     #[inline]
     pub fn zero_px() -> Self {
         Self::Unit(UnitValue {
+            numeric_type: NumericType::length(),
             value: 0.0,
             unit: CssString::from("px"),
         })
+    }
+
+    /// Returns the numeric type associated with this numeric value.
+    pub fn numeric_type(&self) -> &NumericType {
+        match self {
+            Self::Unit(unit_value) => &unit_value.numeric_type,
+            Self::Math(math_value) => math_value.numeric_type(),
+        }
     }
 }
 
@@ -260,6 +458,7 @@ impl Zero for NumericValue {
     #[inline]
     fn zero() -> Self {
         Self::Unit(UnitValue {
+            numeric_type: NumericType::number(),
             value: 0.0,
             unit: CssString::from("number"),
         })
@@ -278,6 +477,7 @@ impl One for NumericValue {
     #[inline]
     fn one() -> Self {
         Self::Unit(UnitValue {
+            numeric_type: NumericType::number(),
             value: 1.0,
             unit: CssString::from("number"),
         })
@@ -749,9 +949,11 @@ where
 
 impl ToTyped for Au {
     fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
+        let numeric_type = NumericType::length();
         let value = self.to_f32_px();
         let unit = CssString::from("px");
         dest.push(TypedValue::Numeric(NumericValue::Unit(UnitValue {
+            numeric_type,
             value,
             unit,
         })));
@@ -764,6 +966,7 @@ macro_rules! impl_to_typed_for_predefined_type {
         impl<'a> ToTyped for $name {
             fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
                 dest.push(TypedValue::Numeric(NumericValue::Unit(UnitValue {
+                    numeric_type: NumericType::number(),
                     value: *self as f32,
                     unit: CssString::from("number"),
                 })));

@@ -1,0 +1,21 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <meta charset='utf-8'/>
+    <title>WebGL test: creation with powerPreference "high-performance" succeeds.</title>
+    <script src="/tests/SimpleTest/SimpleTest.js"></script>
+    <link rel="stylesheet" href="/tests/SimpleTest/test.css">
+  </head>
+  <body>
+    <script>
+
+'use strict';
+
+const canvas = document.createElement('canvas');
+const attrs = { powerPreference: 'high-performance' };
+const gl = canvas.getContext('webgl2', attrs) || canvas.getContext('webgl', attrs);
+ok(gl, 'WebGL creation with powerPreference: "high-performance" should succeed.');
+
+    </script>
+  </body>
+</html>

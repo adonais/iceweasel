@@ -4,16 +4,50 @@
 
 /* The "Components" xpcom objects for JavaScript. */
 
-#include "xpcprivate.h"
-#include "xpc_make_class.h"
-#include "XPCJSWeakReference.h"
+#include "mozilla/AppShutdown.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/BasePrincipal.h"
+#include "mozilla/dom/BindingUtils.h"
+#include "mozilla/dom/DOMException.h"
+#include "mozilla/dom/DOMExceptionBinding.h"
+#include "mozilla/dom/Exceptions.h"
+#include "mozilla/dom/RemoteObjectProxy.h"
+#include "mozilla/dom/StructuredCloneTags.h"
+#include "mozilla/dom/WindowBinding.h"
+#include "mozilla/EditorSpellCheck.h"
+#include "mozilla/LoadContext.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/ResultExtensions.h"
+#include "mozilla/TimeStamp.h"
+#include "mozilla/Try.h"
+#include "mozilla/URLPreloader.h"
+
 #include "AccessCheck.h"
-#include "WrapperFactory.h"
-#include "nsJSUtils.h"
+#include "GeckoProfiler.h"
+#include "jsfriendapi.h"
 #include "mozJSModuleLoader.h"
+#include "nsCommandLine.h"
+#include "nsCommandParams.h"
 #include "nsContentUtils.h"
 #include "nsCycleCollector.h"
-#include "jsfriendapi.h"
+#include "nsGlobalWindowInner.h"
+#include "nsICycleCollectorListener.h"
+#include "nsIDocumentEncoder.h"
+#include "nsIException.h"
+#include "nsIScriptError.h"
+#include "nsJSEnvironment.h"
+#include "nsJSUtils.h"
+#include "nsPersistentProperties.h"
+#include "nsPIDOMWindow.h"
+#include "nsScriptError.h"
+#include "nsWindowMemoryReporter.h"
+#include "nsZipArchive.h"
+#include "ProfilerControl.h"
+#include "WrapperFactory.h"
+#include "xpc_make_class.h"
+#include "XPCJSWeakReference.h"
+#include "xpcprivate.h"
+
 #include "js/Array.h"  // JS::IsArrayObject
 #include "js/CallAndConstruct.h"  // JS::IsCallable, JS_CallFunctionName, JS_CallFunctionValue
 #include "js/CharacterEncoding.h"
@@ -22,38 +56,6 @@
 #include "js/PropertyAndElement.h"  // JS_DefineProperty, JS_DefinePropertyById, JS_Enumerate, JS_GetProperty, JS_GetPropertyById, JS_HasProperty, JS_SetProperty, JS_SetPropertyById
 #include "js/SavedFrameAPI.h"
 #include "js/StructuredClone.h"
-#include "mozilla/AppShutdown.h"
-#include "mozilla/Attributes.h"
-#include "mozilla/LoadContext.h"
-#include "mozilla/Preferences.h"
-#include "nsJSEnvironment.h"
-#include "mozilla/BasePrincipal.h"
-#include "mozilla/TimeStamp.h"
-#include "mozilla/ResultExtensions.h"
-#include "mozilla/Try.h"
-#include "mozilla/URLPreloader.h"
-#include "mozilla/dom/DOMException.h"
-#include "mozilla/dom/DOMExceptionBinding.h"
-#include "mozilla/dom/Exceptions.h"
-#include "mozilla/dom/BindingUtils.h"
-#include "mozilla/dom/RemoteObjectProxy.h"
-#include "mozilla/dom/StructuredCloneTags.h"
-#include "mozilla/dom/WindowBinding.h"
-#include "nsZipArchive.h"
-#include "nsWindowMemoryReporter.h"
-#include "nsICycleCollectorListener.h"
-#include "nsIException.h"
-#include "nsIScriptError.h"
-#include "nsPIDOMWindow.h"
-#include "nsGlobalWindowInner.h"
-#include "nsScriptError.h"
-#include "GeckoProfiler.h"
-#include "ProfilerControl.h"
-#include "mozilla/EditorSpellCheck.h"
-#include "nsCommandLine.h"
-#include "nsCommandParams.h"
-#include "nsPersistentProperties.h"
-#include "nsIDocumentEncoder.h"
 
 using namespace mozilla;
 using namespace JS;
@@ -635,13 +637,13 @@ nsresult nsXPCComponents_ID::CallOrConstruct(nsIXPConnectWrappedNative* wrapper,
     return ThrowAndFail(NS_ERROR_XPC_BAD_ID_STRING, cx, _retval);
   }
 
-  JS::UniqueChars bytes = JS_EncodeStringToLatin1(cx, jsstr);
-  if (!bytes) {
+  JS::UniqueChars chars = JS_EncodeStringToLatin1(cx, jsstr);
+  if (!chars) {
     return ThrowAndFail(NS_ERROR_XPC_BAD_ID_STRING, cx, _retval);
   }
 
   nsID id;
-  if (!id.Parse(bytes.get())) {
+  if (!id.Parse(nsDependentCString(chars.get()))) {
     return ThrowAndFail(NS_ERROR_XPC_BAD_ID_STRING, cx, _retval);
   }
 
@@ -2585,3 +2587,8 @@ ComponentsSH::PreCreate(nsISupports* nativeObj, JSContext* cx,
   *parentObj = self->GetScope()->GetGlobalForWrappedNatives();
   return NS_OK;
 }
+
+// These functions are used in the implementation of ffi bindings for
+// xpcom::xpc from Rust.
+
+extern "C" bool Gecko_IsInAutomation() { return xpc::IsInAutomation(); }

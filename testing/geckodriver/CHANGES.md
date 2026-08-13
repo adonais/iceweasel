@@ -3,6 +3,30 @@
 
 All notable changes to this program are documented in this file.
 
+## 0.37.1 (2026-07-21, `<TODO>`)
+
+### Known problems
+
+- _Startup hang with Firefox running in a container (e.g. snap, flatpak):_
+
+  When Firefox is packaged inside a container (like the default Firefox browser
+  shipped with Ubuntu versions since 22.04), it may see a different filesystem
+  to the host. This can affect access to the generated profile directory, which
+  may result in a hang when starting Firefox. Workarounds are listed in the
+  geckodriver [usage documentation].
+
+### Changed
+
+- Browser UI testing for Firefox now requires the geckodriver
+  [`--allow-system-access`] command-line argument. Setting the
+  Firefox `--remote-allow-system-access` command-line argument
+  via `moz:firefoxOptions` is no longer supported.
+
+### Fixed
+
+- Fixed a regression in geckodriver 0.37.0 that could cause Firefox for Android
+  to exit immediately on startup on non-rooted Android devices.
+
 ## 0.37.0 (2026-06-03, `253b85235865`)
 
 ### Known problems
@@ -14,6 +38,9 @@ All notable changes to this program are documented in this file.
   to the host. This can affect access to the generated profile directory, which
   may result in a hang when starting Firefox. Workarounds are listed in the
   geckodriver [usage documentation].
+
+- On non-rooted Android devices, geckodriver 0.37.0 may cause Firefox for Android
+  to exit immediately on startup. This issue is fixed in geckodriver 0.37.1.
 
 ### Added
 
@@ -47,12 +74,12 @@ All notable changes to this program are documented in this file.
   a graceful shutdown of Firefox first, falling back to a forced kill
   if necessary to avoid leaving behind orphaned processes.
 
-- Invalid files encountered when extracting a custom profile now
-  raise an error.
-
 - Updated geckodriver to the Rust 2024 edition.
 
 ### Fixed
+
+- Invalid files encountered when extracting a custom profile now
+  raise an error.
 
 - Fixed an issue where an already running Firefox package on Android
   was not correctly force-stopped before launching a new session.

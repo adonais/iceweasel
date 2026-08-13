@@ -31,6 +31,7 @@ import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.utils.BackInvokedHandler
 import org.mozilla.fenix.R
 import org.mozilla.fenix.home.fake.FakeHomepagePreview
+import org.mozilla.fenix.home.topsites.AddShortcutSource
 import org.mozilla.fenix.home.topsites.interactor.TopSiteInteractor
 import org.mozilla.fenix.home.topsites.store.DialogState
 import org.mozilla.fenix.home.topsites.store.PopularSite
@@ -80,7 +81,7 @@ fun ShortcutsScreen(
                     ) {
                         Icon(
                             painter = painterResource(iconsR.drawable.mozac_ic_back_24),
-                            contentDescription = "",
+                            contentDescription = null,
                         )
                     }
                 },
@@ -105,10 +106,22 @@ fun ShortcutsScreen(
         onDismiss = { store.dispatch(ShortcutsAction.CloseDialog) },
         onAddWebsiteClicked = { store.dispatch(ShortcutsAction.ShowAddShortcutDialog) },
         onSaveShortcut = { title, url ->
-            store.dispatch(ShortcutsAction.SaveShortcut(title = title, url = url))
+            store.dispatch(
+                ShortcutsAction.SaveShortcut(
+                    title = title,
+                    url = url,
+                    source = AddShortcutSource.MANUAL,
+                ),
+            )
         },
         onAddPopularSiteClick = { site ->
-            store.dispatch(ShortcutsAction.SaveShortcut(title = site.title, url = site.url))
+            store.dispatch(
+                ShortcutsAction.SaveShortcut(
+                    title = site.title,
+                    url = site.url,
+                    source = AddShortcutSource.POPULAR,
+                ),
+            )
         },
     )
 }

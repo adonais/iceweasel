@@ -92,7 +92,11 @@ add_task(async function test_skip_generate_if_non_eng() {
   );
   await BrowserTestUtils.waitForEvent(panel, "popupshown");
 
-  is(generateStub.callCount, 1, "generateTextAI for allowed language");
+  is(
+    generateStub.callCount,
+    LinkPreview.canRunOnDevice ? 1 : 0,
+    "generateTextAI called for allowed language only when backend is available"
+  );
 
   panel.remove();
   generateStub.restore();
@@ -516,6 +520,22 @@ add_task(async function test_link_preview_panel_shown() {
 
   await BrowserTestUtils.waitForEvent(panel, "popupshown");
 
+  if (!LinkPreview.canRunOnDevice) {
+    const previewCard = panel.querySelector("link-preview-card");
+    ok(previewCard, "card still renders the regular preview without a backend");
+    await previewCard.updateComplete;
+    ok(!previewCard.generating, "card is not generating without a backend");
+    ok(
+      !previewCard.shadowRoot.querySelector(".keypoints-header"),
+      "no key points section without a backend"
+    );
+    is(stub.callCount, 0, "generateTextAI not called without a backend");
+    panel.remove();
+    stub.restore();
+    LinkPreview.keyboardComboActive = false;
+    return;
+  }
+
   is(stub.callCount, 1, "would have generated key points");
   events = Glean.genaiLinkpreview.fetch.testGetValue();
   is(events[0].extra.description, "true", "got description");
@@ -723,7 +743,66 @@ add_task(async function test_no_key_points_in_disallowed_region() {
 
   Services.prefs.clearUserPref("browser.ml.linkPreview.noKeyPointsRegions");
 
-  ok(LinkPreview.canShowKeyPoints, "could show key points");
+  is(
+    LinkPreview.canShowKeyPoints,
+    LinkPreview.canRunOnDevice,
+    "key points track hardware support once the region is allowed"
+  );
+});
+
+/**
+ * Test that no key points are generated and no key points UI is rendered when
+ * the device hardware cannot run the llama.cpp backend, while the rest of the
+ * preview card still renders.
+ */
+add_task(async function test_no_key_points_on_unsupported_hardware() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ml.linkPreview.enabled", true]],
+  });
+
+  const canRunStub = sinon.stub(LinkPreview, "canRunOnDevice").get(() => false);
+  const generateStub = sinon.stub(LinkPreviewModel, "generateTextAI");
+
+  ok(
+    !LinkPreview.canShowKeyPoints,
+    "should not show key points on unsupported hardware"
+  );
+
+  LinkPreview.keyboardComboActive = true;
+  XULBrowserWindow.setOverLink(
+    "https://example.com/browser/browser/components/genai/tests/browser/data/readableEn.html",
+    {}
+  );
+
+  let panel = await TestUtils.waitForCondition(() =>
+    document.getElementById("link-preview-panel")
+  );
+  await BrowserTestUtils.waitForEvent(panel, "popupshown");
+
+  is(
+    generateStub.callCount,
+    0,
+    "generateTextAI should not be called on unsupported hardware"
+  );
+
+  const card = panel.querySelector("link-preview-card");
+  ok(card, "card still renders the regular preview");
+  await card.updateComplete;
+  ok(
+    !card.shadowRoot.querySelector(".keypoints-header"),
+    "key points section should not be rendered"
+  );
+
+  panel.remove();
+  LinkPreview.keyboardComboActive = false;
+  generateStub.restore();
+  canRunStub.restore();
+
+  is(
+    LinkPreview.canShowKeyPoints,
+    LinkPreview.canRunOnDevice,
+    "key points track hardware support once the stub is restored"
+  );
 });
 
 /**
@@ -750,6 +829,22 @@ add_task(async function test_link_preview_error_rendered() {
 
   const card = panel.querySelector("link-preview-card");
   ok(card, "Found link-preview-card in panel");
+
+  if (!LinkPreview.canRunOnDevice) {
+    await card.updateComplete;
+    ok(
+      !card.shadowRoot.querySelector(".keypoints-header"),
+      "no key points section without a backend"
+    );
+    ok(
+      !card.shadowRoot.querySelector(".og-error-message"),
+      "no key points error message rendered without a backend"
+    );
+    panel.remove();
+    generateStub.restore();
+    LinkPreview.keyboardComboActive = false;
+    return;
+  }
 
   // Check that errors are off by default.
   ok(
@@ -896,6 +991,23 @@ add_task(async function test_toggle_expand_collapse() {
   const card = panel.querySelector("link-preview-card");
   ok(card, "Card created for link preview");
 
+  if (!LinkPreview.canRunOnDevice) {
+    await card.updateComplete;
+    ok(
+      !card.shadowRoot.querySelector(".keypoints-header"),
+      "no key points header to toggle without a backend"
+    );
+    is(
+      generateStub.callCount,
+      0,
+      "generateTextAI not called without a backend"
+    );
+    panel.remove();
+    generateStub.restore();
+    LinkPreview.keyboardComboActive = false;
+    return;
+  }
+
   is(card.collapsed, false, "Card should start expanded");
   is(
     generateStub.callCount,
@@ -1015,10 +1127,14 @@ add_task(async function test_key_points_in_supported_locale() {
 
   is(
     generateStub.callCount,
-    1,
-    "generateTextAI should be called when locale is supported"
+    LinkPreview.canRunOnDevice ? 1 : 0,
+    "generateTextAI called for a supported locale only when backend is available"
   );
-  ok(LinkPreview.canShowKeyPoints, "should show key points");
+  is(
+    LinkPreview.canShowKeyPoints,
+    LinkPreview.canRunOnDevice,
+    "key points track hardware support in a supported locale"
+  );
 
   panel.remove();
   LinkPreview.keyboardComboActive = false;

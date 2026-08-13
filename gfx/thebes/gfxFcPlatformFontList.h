@@ -5,14 +5,14 @@
 #ifndef GFXFCPLATFORMFONTLIST_H_
 #define GFXFCPLATFORMFONTLIST_H_
 
+#include <fontconfig/fontconfig.h>
+
+#include "ft2build.h"
 #include "gfxFT2FontBase.h"
 #include "gfxPlatformFontList.h"
 #include "mozilla/FontPropertyTypes.h"
 #include "mozilla/RefPtr.h"
 #include "nsClassHashtable.h"
-
-#include <fontconfig/fontconfig.h>
-#include "ft2build.h"
 #include FT_FREETYPE_H
 #include FT_TRUETYPE_TABLES_H
 #include FT_MULTIPLE_MASTERS_H

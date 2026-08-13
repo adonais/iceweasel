@@ -5,9 +5,8 @@
 #ifndef AccEvent_H_
 #define AccEvent_H_
 
-#include "nsIAccessibleEvent.h"
-
 #include "mozilla/a11y/LocalAccessible.h"
+#include "nsIAccessibleEvent.h"
 
 class nsEventShell;
 namespace mozilla {

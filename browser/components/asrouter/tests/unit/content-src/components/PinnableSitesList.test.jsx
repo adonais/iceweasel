@@ -280,6 +280,72 @@ describe("PinnableSitesList component", () => {
     );
   });
 
+  it("does not add the always-visible class by default", () => {
+    const wrapper = mount(
+      <PinnableSitesList
+        tile={TILE}
+        messageId="TEST_MSG"
+        handleAction={handleAction}
+      />
+    );
+    assert.equal(
+      wrapper.find("ul.pinnable-sites-list.always-visible").length,
+      0,
+      "list is not always-visible without the flag"
+    );
+  });
+
+  it("adds the always-visible class when tile.alwaysShowPinButton is set", () => {
+    const wrapper = mount(
+      <PinnableSitesList
+        tile={{ ...TILE, alwaysShowPinButton: true }}
+        messageId="TEST_MSG"
+        handleAction={handleAction}
+      />
+    );
+    assert.equal(
+      wrapper.find("ul.pinnable-sites-list.always-visible").length,
+      1,
+      "list gets the always-visible modifier class"
+    );
+  });
+
+  it("calls setPinnedSite after a successful pin", async () => {
+    const setPinnedSite = sandbox.stub();
+    const wrapper = mount(
+      <PinnableSitesList
+        tile={TILE}
+        messageId="TEST_MSG"
+        handleAction={handleAction}
+        setPinnedSite={setPinnedSite}
+      />
+    );
+    wrapper.find(".pinnable-sites-pin-button").first().simulate("click");
+    await handleAction.firstCall.returnValue;
+
+    assert.ok(setPinnedSite.calledOnce, "setPinnedSite called on success");
+  });
+
+  it("calls setPinnedSite when the site was already pinned (result === null)", async () => {
+    handleAction.resolves(null);
+    const setPinnedSite = sandbox.stub();
+    const wrapper = mount(
+      <PinnableSitesList
+        tile={TILE}
+        messageId="TEST_MSG"
+        handleAction={handleAction}
+        setPinnedSite={setPinnedSite}
+      />
+    );
+    wrapper.find(".pinnable-sites-pin-button").first().simulate("click");
+    await handleAction.firstCall.returnValue;
+
+    assert.ok(
+      setPinnedSite.calledOnce,
+      "setPinnedSite called when already pinned"
+    );
+  });
+
   it("only affects the clicked item's button state", async () => {
     const wrapper = mount(
       <PinnableSitesList

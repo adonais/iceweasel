@@ -4,32 +4,33 @@
 
 /* Wrapper object for reflecting native xpcom objects into JavaScript. */
 
-#include "xpcprivate.h"
-#include "XPCMaps.h"
+#include "mozilla/DeferredFinalize.h"
+#include "mozilla/dom/BindingUtils.h"
+#include "mozilla/Likely.h"
+#include "mozilla/ProfilerLabels.h"
+#include "mozilla/Sprintf.h"
+
+#include <algorithm>
+#include <new>
+#include <stdint.h>
+
+#include "AccessCheck.h"
+#include "jsfriendapi.h"
+#include "nsContentUtils.h"
+#include "nsCycleCollectionNoteRootCallback.h"
 #include "nsWrapperCacheInlines.h"
+#include "WrapperFactory.h"
 #include "XPCLog.h"
+#include "XPCMaps.h"
+#include "xpcprivate.h"
+#include "XrayWrapper.h"
+
 #include "js/Array.h"                   // JS::GetArrayLength, JS::IsArrayObject
 #include "js/experimental/TypedData.h"  // JS_GetTypedArrayLength, JS_IsTypedArrayObject
 #include "js/MemoryFunctions.h"
 #include "js/Object.h"  // JS::GetPrivate, JS::SetPrivate, JS::SetReservedSlot
 #include "js/Printf.h"
 #include "js/PropertyAndElement.h"  // JS_GetProperty, JS_GetPropertyById, JS_SetProperty, JS_SetPropertyById
-#include "jsfriendapi.h"
-#include "AccessCheck.h"
-#include "WrapperFactory.h"
-#include "XrayWrapper.h"
-
-#include "nsContentUtils.h"
-#include "nsCycleCollectionNoteRootCallback.h"
-
-#include <new>
-#include <stdint.h>
-#include "mozilla/DeferredFinalize.h"
-#include "mozilla/Likely.h"
-#include "mozilla/Sprintf.h"
-#include "mozilla/dom/BindingUtils.h"
-#include "mozilla/ProfilerLabels.h"
-#include <algorithm>
 
 using namespace xpc;
 using namespace mozilla;

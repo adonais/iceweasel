@@ -4,7 +4,6 @@
 ---
 task-defaults:
     description: 'Validate android strings.xml with moz.l10n'
-    run-on-repo-type: [hg]
     run:
         using: run-task
         cwd: '{checkout}'

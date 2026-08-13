@@ -24,14 +24,14 @@ add_task(async function test_button_removed() {
   const { SidebarController } = window;
   await SidebarController.show("viewBookmarksSidebar");
 
-  let sidebarButton = await BrowserTestUtils.waitForCondition(
+  let sidebarButton = await TestUtils.waitForCondition(
     () => document.getElementById("sidebar-button"),
     "Sidebar button is shown."
   );
   ok(sidebarButton, "Sidebar button is shown.");
   let sidebarMain = document.getElementById("sidebar-container");
   ok(sidebarMain, "Sidebar launcher is shown.");
-  let sidebarBox = await BrowserTestUtils.waitForCondition(
+  let sidebarBox = await TestUtils.waitForCondition(
     () => document.getElementById("sidebar-box"),
     "Sidebar panel is shown."
   );
@@ -49,7 +49,7 @@ add_task(async function test_button_removed() {
   CustomizableUI.removeWidgetFromArea("sidebar-button");
   await BrowserTestUtils.switchTab(gBrowser, nonCustomizingTab);
   await finishedCustomizing;
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     sidebarButton = document.getElementById("sidebar-button");
     return !sidebarButton && sidebarMain.hidden && sidebarBox.hidden;
   }, "Sidebar button, panel and launcher are not present");

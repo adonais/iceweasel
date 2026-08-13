@@ -268,6 +268,7 @@ add_task(async function test_openai_fxaccount_token() {
   let capturedFxaHeader = null;
   let capturedServiceTypeHeader = null;
   let capturedChatIdHeader = null;
+  let capturedUserAgentHeader = null;
   const { server: mockServer, port } = startMockOpenAI({
     echo: "Response with FxA token",
     onRequest: req => {
@@ -280,6 +281,9 @@ add_task(async function test_openai_fxaccount_token() {
         }
         if (req.hasHeader("chat-id")) {
           capturedChatIdHeader = req.getHeader("chat-id");
+        }
+        if (req.hasHeader("user-agent")) {
+          capturedUserAgentHeader = req.getHeader("user-agent");
         }
       } catch (e) {
         info("Failed to get header: " + e);
@@ -338,6 +342,12 @@ add_task(async function test_openai_fxaccount_token() {
       capturedChatIdHeader,
       chatId,
       `chat-id header should be included in request headers. Expected: ${chatId}, Got: ${capturedChatIdHeader}`
+    );
+
+    Assert.equal(
+      capturedUserAgentHeader,
+      navigator.userAgent,
+      "User-Agent header should be the browser's user agent"
     );
 
     info("Test without fxAccountToken - should not include header");

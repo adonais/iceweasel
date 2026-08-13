@@ -246,3 +246,99 @@
   fill: currentColor;
   margin-top: 4px;
 }
+
+/* Nova design system styling for the profiler recording panel when it is
+ * embedded in about:debugging (the "devtools-remote" page context). */
+@media -moz-pref("browser.nova.enabled") {
+  .perf-devtools-remote {
+    --theme-focus-outline-color: var(--focus-outline-color);
+    --theme-focus-outline: var(--theme-focus-outline-size) solid var(--theme-focus-outline-color);
+
+    color: var(--text-color);
+
+    .perf-photon-button {
+      height: auto;
+      min-height: var(--button-min-height);
+      padding: var(--button-padding);
+      border: var(--button-border);
+      border-radius: var(--button-border-radius);
+      background-color: var(--button-background-color);
+      color: var(--button-text-color);
+      font-size: var(--button-font-size);
+      font-weight: var(--button-font-weight);
+
+      &:hover:not([disabled]) {
+        background-color: var(--button-background-color-hover);
+        border-color: var(--button-border-color-hover);
+        color: var(--button-text-color-hover);
+      }
+
+      &:hover:active:not([disabled]) {
+        background-color: var(--button-background-color-active);
+        border-color: var(--button-border-color-active);
+        color: var(--button-text-color-active);
+      }
+    }
+
+    .perf-photon-button-primary {
+      background-color: var(--button-background-color-primary);
+      border-color: var(--button-border-color-primary);
+      color: var(--button-text-color-primary);
+
+      &:hover:not([disabled]) {
+        background-color: var(--button-background-color-primary-hover);
+        border-color: var(--button-border-color-primary-hover);
+        color: var(--button-text-color-primary-hover);
+      }
+
+      &:hover:active:not([disabled]) {
+        background-color: var(--button-background-color-primary-active);
+        border-color: var(--button-border-color-primary-active);
+        color: var(--button-text-color-primary-active);
+      }
+
+      /* The trailing "open in new tab" icon should follow the button text color. */
+      .perf-button-image {
+        fill: var(--button-text-color-primary);
+      }
+    }
+
+    .perf-presets-select {
+      min-height: var(--button-min-height);
+      padding-block: var(--button-padding-block);
+      padding-inline: var(--button-padding-inline);
+      border: var(--border-width) solid var(--border-color-interactive);
+      border-radius: var(--button-border-radius);
+      background-color: var(--button-background-color);
+      color: var(--button-text-color);
+      background-position: right var(--space-small) center;
+      font-size: var(--font-size-root);
+      font-weight: var(--button-font-weight);
+
+      &:dir(rtl) {
+        background-position-x: left var(--space-small);
+      }
+
+      &:hover {
+        border-color: var(--border-color-interactive-hover);
+        background-color: var(--button-background-color-hover);
+      }
+    }
+
+    .perf-external-link {
+      color: var(--link-color);
+
+      &:hover {
+        color: var(--link-color-hover);
+      }
+
+      &:active {
+        color: var(--link-color-active);
+      }
+    }
+
+    .perf-presets-hr {
+      border-top-color: var(--border-color-deemphasized);
+    }
+  }
+}

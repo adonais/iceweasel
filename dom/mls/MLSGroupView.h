@@ -15,7 +15,7 @@ namespace mozilla::dom {
 
 class MLSGroupView final : public nsISupports, public nsWrapperCache {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(MLSGroupView)
 
   explicit MLSGroupView(MLS* aMLS, nsTArray<uint8_t>&& aGroupId,

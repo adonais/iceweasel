@@ -1,0 +1,88 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <script type="application/javascript" src="pc.js"></script>
+</head>
+<body>
+<pre id="test">
+<script type="application/javascript">
+createHTML({
+  bug: "1834806",
+  title: "Live-updating encoding.active for audio"
+});
+
+let sender, receiver;
+
+async function packetsReceivedDuring(intervalMs) {
+  const before = Array.from((await receiver.getStats()).values())
+    .find(stat => stat.type == "inbound-rtp");
+  await wait(intervalMs);
+  const after = Array.from((await receiver.getStats()).values())
+    .find(stat => stat.type == "inbound-rtp");
+  info(`inbound-rtp packetsReceived ${before.packetsReceived} -> ` +
+    `${after.packetsReceived}`);
+  return after.packetsReceived - before.packetsReceived;
+}
+
+async function setActive(active) {
+  const parameters = sender.getParameters();
+  parameters.encodings[0].active = active;
+  await sender.setParameters(parameters);
+  is(sender.getParameters().encodings[0].active, active,
+    `getParameters reflects active=${active}`);
+}
+
+runNetworkTest(async function (options) {
+  let test = new PeerConnectionTest(options);
+  test.setMediaConstraints([{audio: true}], []);
+  test.chain.append([
+    function CHECK_PRECONDITIONS() {
+      is(test.pcLocal._pc.getSenders().length, 1,
+        "Should have 1 local sender");
+      is(test.pcRemote._pc.getReceivers().length, 1,
+        "Should have 1 remote receiver");
+
+      sender = test.pcLocal._pc.getSenders()[0];
+      receiver = test.pcRemote._pc.getReceivers()[0];
+    },
+    async function PC_LOCAL_ACTIVE_TRUE_TRANSMITS() {
+      const received = await packetsReceivedDuring(2000);
+      ok(received > 0,
+        `Packets are received while active is true (${received})`);
+    },
+    async function PC_LOCAL_ACTIVE_FALSE_STOPS_TRANSMIT() {
+      await setActive(false);
+      // Wait for the deactivation to propagate to the receiver.
+      let received;
+      for (let i = 0; i < 50 && received !== 0; i++) {
+        received = await packetsReceivedDuring(100);
+      }
+      is(received, 0,
+        "Packets stop being received while active is false");
+    },
+    async function PC_LOCAL_INSERT_DTMF_WHILE_INACTIVE() {
+      // While inactive the send stream is torn down. Inserting DTMF must not
+      // crash the conduit (bug 2054208).
+      ok(sender.dtmf, "Audio sender has a DTMFSender");
+      sender.dtmf.insertDTMF("1");
+      await wait(500);
+      ok(true, "Inserting DTMF while inactive does not crash");
+    },
+    async function PC_LOCAL_ACTIVE_TRUE_RESUMES_TRANSMIT() {
+      await setActive(true);
+      // Wait for the reactivation to propagate to the receiver.
+      let received = 0;
+      for (let i = 0; i < 50 && received === 0; i++) {
+        received = await packetsReceivedDuring(100);
+      }
+      ok(received > 0,
+        `Packets resume being received when active is set back to true ` +
+        `(${received})`);
+    },
+  ]);
+  await test.run();
+});
+</script>
+</pre>
+</body>
+</html>

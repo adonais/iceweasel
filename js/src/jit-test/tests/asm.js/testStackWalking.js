@@ -30,13 +30,10 @@ for (var i = 0; i < 15; i++) {
     matchStack(stack, ['dumpStack', 'f']);
 }
 
-if (isAsmJSCompilationAvailable()) {
-    var callFFI = asmCompile('global', 'ffis', USE_ASM + "var ffi=ffis.ffi; function f() { return ffi()|0 } return f");
-    assertEq(isAsmJSModule(callFFI), true);
-    stack = null;
-    f();
-    matchStack(stack, ['dumpStack', 'f']);
-}
+var callFFI = asmCompile('global', 'ffis', USE_ASM + "var ffi=ffis.ffi; function f() { return ffi()|0 } return f");
+stack = null;
+f();
+matchStack(stack, ['dumpStack', 'f']);
 
 var f1 = asmLink(callFFI, null, {ffi:dumpStack});
 var f2 = asmLink(callFFI, null, {ffi:function middle() { f1() }});

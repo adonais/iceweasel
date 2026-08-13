@@ -132,6 +132,8 @@ skip-if = [
 
 ["browser_ml_heuristics.js"]
 
+["browser_ml_native_onnx_availability.js"]
+
 ["browser_nested_forms.js"]
 
 ["browser_page_navigation_in_subtree.js"]

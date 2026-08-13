@@ -37,7 +37,30 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 typedef enum {HOST=1, SERVER_REFLEXIVE, PEER_REFLEXIVE, RELAYED, CTYPE_MAX} nr_ice_candidate_type;
 
-struct nr_ice_candidate_ {
+/* The fields of a candidate that are derivable purely from parsing the
+ * candidate attribute string, with no dependency on any nICEr runtime
+ * state (ctx, sockets, streams, etc.). Hoisted out so that code outside
+ * nICEr can parse a candidate attribute without setting up the rest of
+ * the machinery. Owns |foundation|, |raw_addr|, and |raw_raddr|; callers
+ * that allocate one of these are responsible for free()ing those. */
+struct nr_ice_candidate_parsedbits {
+  nr_ice_candidate_type type;
+  nr_socket_tcp_type tcp_type;
+  UCHAR component_id;
+  nr_transport_addr addr;
+  nr_transport_addr base;
+  char *foundation;
+  /* Raw connection-address / rel-addr strings as they appeared in the
+   * candidate attribute, without any parse/normalize round-trip. In other
+   * words, an uncompressed IPv6 literal stays uncompressed. |raw_raddr| is
+   * null for host candidates. No spec currently requires the raw form to be
+   * preserved like this, but all browsers do. */
+  char *raw_addr;
+  char *raw_raddr;
+  UINT4 priority;
+};
+
+struct nr_ice_candidate_ : public nr_ice_candidate_parsedbits {
   char *label;
   char codeword[5];
   int state;
@@ -55,18 +78,10 @@ struct nr_ice_candidate_ {
   nr_socket *osock;                   /* The socket to write to */
   nr_ice_media_stream *stream;        /* The media stream this is associated with */
   nr_ice_component *component;        /* The component this is associated with */
-  nr_ice_candidate_type type;         /* The type of the candidate (S 4.1.1) */
-  nr_socket_tcp_type tcp_type;
-  UCHAR component_id;                 /* The component id (S 4.1.2.1) */
-  nr_transport_addr addr;             /* The advertised address;
-                                         JDR calls this the candidate */
-  nr_transport_addr base;             /* The base address (S 2.1)*/
   /* This is mainly to avoid forgetting tcp/tls relay protocol, since the base
    * of relay candidates is the TURN server's allocation address, which will be UDP */
   UCHAR local_protocol;    /* IPPROTO_TCP, IPPROTO_UDP. */
   char *mdns_addr;                    /* MDNS address, if any */
-  char *foundation;                   /* Foundation for the candidate (S 4) */
-  UINT4 priority;                     /* The priority value (S 5.4 */
   nr_ice_stun_server *stun_server;
   nr_transport_addr stun_server_addr; /* Resolved STUN server address */
   void *delay_timer;
@@ -113,8 +128,14 @@ void nr_ice_candidate_compute_codeword(nr_ice_candidate *cand);
 int nr_ice_candidate_process_stun(nr_ice_candidate *cand, UCHAR *msg, int len, nr_transport_addr *faddr);
 int nr_ice_candidate_destroy(nr_ice_candidate **candp);
 void nr_ice_candidate_stop_gathering(nr_ice_candidate *cand);
-int nr_ice_format_candidate_attribute(nr_ice_candidate *cand, char *attr, int maxlen, int obfuscate_srflx_addr);
-int nr_ice_peer_candidate_from_attribute(nr_ice_ctx *ctx,char *attr,nr_ice_media_stream *stream,nr_ice_candidate **candp);
+int nr_ice_format_candidate_attribute(nr_ice_candidate *cand, char *attr, int maxlen, int obfuscate_raddr);
+int nr_ice_peer_candidate_from_attribute(nr_ice_ctx *ctx,const char *attr,nr_ice_media_stream *stream,nr_ice_candidate **candp);
+/* Parses a candidate attribute string into the parse-only fields.
+ * |bits| must be zero-initialized by the caller. On success, the caller
+ * owns |bits->foundation| and is responsible for freeing it. On failure,
+ * |bits| is left in an indeterminate state; the caller should still free
+ * |bits->foundation| since some fields may have been populated. */
+int nr_ice_parse_candidate_attribute(const char *attr, struct nr_ice_candidate_parsedbits *bits);
 int nr_ice_peer_peer_rflx_candidate_create(nr_ice_ctx *ctx, const char *label, nr_ice_component *comp,nr_transport_addr *addr, nr_ice_candidate **candp);
 int nr_ice_candidate_compute_priority(nr_ice_candidate *cand);
 

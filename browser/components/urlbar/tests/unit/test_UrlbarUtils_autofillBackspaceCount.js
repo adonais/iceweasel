@@ -363,3 +363,50 @@ add_task(async function recordAutofillBackspace_ignores_unparseable_url() {
   await UrlbarUtils.recordAutofillBackspace("not a url");
   Assert.equal(UrlbarUtils._backspaceBlocks.size, 0, "Map is unchanged");
 });
+
+add_task(async function getBackspaceBlock_returns_and_consumes_blocked_entry() {
+  resetCounts();
+  let url = "https://example.com/";
+  await PlacesTestUtils.addVisits(url);
+
+  for (let i = 0; i < BACKSPACE_THRESHOLD; i++) {
+    await UrlbarUtils.recordAutofillBackspace(url);
+  }
+
+  let entry = UrlbarUtils.getBackspaceBlock(url);
+  Assert.greater(entry.blockedAt, 0, "Returns blockedAt timestamp");
+  Assert.equal(entry.level, "origin", "Level is origin for root URL");
+
+  Assert.equal(
+    UrlbarUtils.getBackspaceBlock(url),
+    null,
+    "Second call returns null after consuming the entry"
+  );
+
+  await PlacesUtils.history.clear();
+});
+
+add_task(
+  async function getBackspaceBlock_does_not_consume_sub_threshold_entry() {
+    resetCounts();
+    let url = "https://example.com/path";
+    await PlacesTestUtils.addVisits(url);
+
+    for (let i = 0; i < BACKSPACE_THRESHOLD - 1; i++) {
+      await UrlbarUtils.recordAutofillBackspace(url);
+    }
+
+    Assert.equal(
+      UrlbarUtils.getBackspaceBlock(url),
+      null,
+      "Returns null for sub-threshold entry"
+    );
+    Assert.equal(
+      UrlbarUtils._backspaceBlocks.get("page:example.com").count,
+      BACKSPACE_THRESHOLD - 1,
+      "Sub-threshold entry is still present after getBackspaceBlock"
+    );
+
+    await PlacesUtils.history.clear();
+  }
+);

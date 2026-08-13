@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<!-- Bug 2051166: text under a non-scaling (translate/opacity) transform
+     animation must be device-snapped, not rasterized in local space. When it
+     is rasterized locally and the surface composites at a fractional device
+     offset, the glyphs resample and look blurry. This test box has a (constant,
+     so position-stable) transform animation; the reference is an identical box
+     with a static transform. They only match when the animated box takes the
+     device-raster path and snaps (i.e. with the fix). disable-pixel-alignment
+     keeps the box at a fractional device offset, which is required to trigger
+     the blur. -->
+<html class="reftest-wait">
+<meta charset="utf-8">
+<style>
+  body { margin: 0; }
+  .box {
+    position: absolute;
+    top: 20px;
+    left: 24.4px;          /* fractional device offset at devPixelsPerPx=1 */
+    font: 16px/1.4 sans-serif;
+    color: #000;
+    background: #fff;
+    white-space: pre;
+  }
+  .anim { animation: hold 100s linear infinite; }
+  @keyframes hold {
+    from { transform: translateX(0px); }
+    to   { transform: translateX(0px); }
+  }
+</style>
+<div class="box anim">The quick brown fox jumps over 0123456789</div>
+<script>
+  // Snapshot once the animation is active and a frame has painted.
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    document.documentElement.classList.remove("reftest-wait");
+  }));
+</script>

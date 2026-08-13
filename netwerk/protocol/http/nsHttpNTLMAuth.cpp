@@ -3,37 +3,37 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 // HttpLog.h should generally be included first
-#include "HttpLog.h"
-
 #include "nsHttpNTLMAuth.h"
-#include "nsIAuthModule.h"
+
+#include "HttpLog.h"
 #include "nsCOMPtr.h"
+#include "nsIAuthModule.h"
 #include "nsServiceManagerUtils.h"
 #include "plbase64.h"
 #include "prnetdb.h"
 
 //-----------------------------------------------------------------------------
 
-#include "nsIPrefBranch.h"
 #include "nsIHttpAuthenticableChannel.h"
+#include "nsIPrefBranch.h"
 #include "nsIURI.h"
 #ifdef XP_WIN
 #  include "nsIChannel.h"
-#  include "nsIX509Cert.h"
 #  include "nsITransportSecurityInfo.h"
+#  include "nsIX509Cert.h"
 #endif
 #include "mozilla/Base64.h"
 #include "mozilla/CheckedInt.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/Tokenizer.h"
-#include "nsCRT.h"
-#include "nsNetUtil.h"
-#include "nsIChannel.h"
-#include "nsUnicharUtils.h"
-#include "mozilla/net/HttpAuthUtils.h"
 #include "mozilla/ClearOnShutdown.h"
-#include "mozilla/net/DNS.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/StaticPrefs_browser.h"
+#include "mozilla/Tokenizer.h"
+#include "mozilla/net/DNS.h"
+#include "mozilla/net/HttpAuthUtils.h"
+#include "nsCRT.h"
+#include "nsIChannel.h"
+#include "nsNetUtil.h"
+#include "nsUnicharUtils.h"
 
 namespace mozilla {
 namespace net {

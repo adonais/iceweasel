@@ -3,12 +3,12 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #include "xptinfo.h"
-#include "nsISupports.h"
-#include "mozilla/dom/DOMJSClass.h"
-#include "mozilla/dom/BindingUtils.h"
 
-#include "jsfriendapi.h"
 #include "js/Symbol.h"
+#include "jsfriendapi.h"
+#include "mozilla/dom/BindingUtils.h"
+#include "mozilla/dom/DOMJSClass.h"
+#include "nsISupports.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

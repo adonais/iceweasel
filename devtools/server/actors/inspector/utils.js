@@ -175,7 +175,8 @@ function getTreeWalkerFilter(options) {
         node.nodeName === "_moz_generated_content_marker" ||
         node.nodeName === "_moz_generated_content_before" ||
         node.nodeName === "_moz_generated_content_after" ||
-        node.nodeName === "_moz_generated_content_backdrop")
+        node.nodeName === "_moz_generated_content_backdrop" ||
+        node.nodeName === "_moz_generated_content_picker_icon")
     ) {
       return nodeFilterConstants.FILTER_ACCEPT;
     }

@@ -22,7 +22,7 @@ using TimeUnit = media::TimeUnit;
 
 extern LazyLogModule gMediaDecoderLog;
 #define LOG(x, ...) \
-  DDMOZ_LOG(gMediaDecoderLog, LogLevel::Debug, x, ##__VA_ARGS__)
+  DDMOZ_LOG_FMT(gMediaDecoderLog, LogLevel::Debug, x, ##__VA_ARGS__)
 #define LOGD(x, ...) \
   MOZ_LOG_FMT(gMediaDecoderLog, LogLevel::Debug, x, ##__VA_ARGS__)
 
@@ -307,7 +307,7 @@ void ChannelMediaDecoder::NotifyDownloadEnded(nsresult aStatus) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_DIAGNOSTIC_ASSERT(!IsShutdown());
 
-  LOG("NotifyDownloadEnded, status=%" PRIx32, static_cast<uint32_t>(aStatus));
+  LOG("NotifyDownloadEnded, status={:x}", static_cast<uint32_t>(aStatus));
 
   if (NS_SUCCEEDED(aStatus)) {
     // Download ends successfully. This is a stream with a finite length.

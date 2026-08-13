@@ -49,7 +49,7 @@ async function zoomNewTab(changeZoom, message) {
     Ci.nsIContentPrefService2
   );
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return new Promise(resolve => {
       cps2.getByDomainAndName(
         "about:newtab",

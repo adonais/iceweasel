@@ -93,6 +93,15 @@ home-prefs-sports-widget-header =
 # Clock is a widget on New Tab that displays time zones around the world.
 home-prefs-clocks-header =
     .label = Cloc
+# Privacy is a widget on New Tab that shows tracking protection activity.
+home-prefs-privacy-header =
+    .label = Preifatrwydd
+# Stocks is a widget on New Tab that shows stock ticker prices.
+home-prefs-stocks-header =
+    .label = Stociau
+# Picture of the day is a widget on New Tab that shows a daily Wikimedia Commons image.
+home-prefs-picture-header =
+    .label = Darlun y dydd
 home-prefs-mission-message2 =
     .message = Mae ein noddwyr yn cefnogi ein cenhadaeth i adeiladu gwe well
 home-prefs-manage-topics-link2 =
@@ -156,6 +165,259 @@ home-prefs-support-firefox-header-srd =
     .label = Cefnogi { -brand-product-name }
 home-prefs-mission-message-learn-more-link-srd = Dyma sut
 
+## Strings for the Privacy widget
+
+# Context menu item linking to more information about the Privacy widget.
+newtab-privacy-menu-learn-more = Dysgu rhagor
+
+## Privacy widget — count readout
+
+# Label shown under the large tracker-count number, appearing like:
+# Line 1: 86
+# Line 2: Trackers blocked today
+# Translations can be adjusted to "Today's blocked trackers" or something
+# similar if this fixed order causes issues.
+# Variables:
+#   $count (number) - Number of trackers blocked today
+newtab-privacy-trackers-blocked-today =
+    { $count ->
+        [zero] Tracwyr wedi'u rhwystro heddiw
+        [one] Traciwr wedi'i rwystro heddiw
+        [two] Tracwyr wedi'u rhwystro heddiw
+        [few] Tracwyr wedi'u rhwystro heddiw
+        [many] Tracwyr wedi'u rhwystro heddiw
+       *[other] Tracwyr wedi'u rhwystro heddiw
+    }
+# Second line of the readout, under the large number and "Trackers blocked
+# today". Counts the sites those trackers were blocked on. The English is
+# shortened from "Blocked across { $count } sites" — translate it that fuller way
+# if the short fragment doesn't work in your language.
+# Variables:
+#   $count (number) - Number of sites where trackers were blocked
+newtab-privacy-across-sites =
+    { $count ->
+        [zero] Ar draws { $count } gwefannau
+        [one] Ar draws { $count } gwefan
+        [two] Ar draws { $count } wefan
+        [few] Ar draws { $count } gwefan
+        [many] Ar draws { $count } gwefan
+       *[other] Ar draws { $count } gwefan
+    }
+
+## Privacy widget — empty state
+
+# Shown when no trackers have been blocked yet today.
+newtab-privacy-empty = Mae { -brand-short-name } yn rhwystro tracwyr wrth i chi bori. Byddwch yn eu gweld nhw yma.
+
+## Privacy widget — informational messages
+##
+## Rotating "info" secondary messages. Each message has a body plus a matched
+## "-cta" button label sharing the same id stem (the CTA button isn't rendered
+## yet; the labels are authored so the pairing is ready).
+
+newtab-privacy-message-info-1 = Mae { -brand-short-name } yn rhwystro tracwyr yn awtomatig wrth i chi bori.
+newtab-privacy-message-info-1-cta = Dyma'r diogelwch
+newtab-privacy-message-info-2 = Mae rhwystro tracwyr yn helpu i atal cwmnïau rhag eich dilyn ar-lein.
+newtab-privacy-message-info-2-cta = Dyma'r diogelwch
+newtab-privacy-message-info-3 = Mae gan lawer o wefannau dracwyr felly gall cwmnïau dydych chi erioed wedi ymweld â nhw eich dilyn ar-lein.
+newtab-privacy-message-info-3-cta = Dyma'r diogelwch
+newtab-privacy-message-info-4 = Mae dewis { -brand-short-name } yn golygu dewis blaenori diogelwch.
+newtab-privacy-message-info-4-cta = Dyma'r diogelwch
+newtab-privacy-message-info-5 = Mae tracwyr sydd wedi'u rhwystro'n golygu y gall llai o gwmnïau eich dilyn ar draws gwefannau.
+newtab-privacy-message-info-5-cta = Dyma'r diogelwch
+newtab-privacy-message-info-6 = Cadwch eich data gyda { -brand-short-name }. Dydyn ni byth yn ei werthu, ond efallai y bydd porwyr eraill yn gwneud.
+newtab-privacy-message-info-6-cta = Dysgu rhagor
+newtab-privacy-message-info-7 = Gweld pa dracwyr mae { -brand-short-name } wedi'u rhwystro.
+newtab-privacy-message-info-7-cta = Dyma'r diogelwch
+newtab-privacy-message-info-8 = Mae pori gyda { -brand-short-name } yn cefnogi cenhadaeth { -vendor-short-name } i adeiladu gwe well.
+newtab-privacy-message-info-8-cta = Dysgu rhagor
+newtab-privacy-message-info-9 = Gwnewch { -brand-short-name } eich porwr chi ar gyfer preifatrwydd cynhenid.
+newtab-privacy-message-info-9-cta = Ei wneud yr arferol
+newtab-privacy-message-info-10 = Cadw cyfrineiriau yn { -brand-short-name } i ddefnyddio mewngofnodi cryf, unigryw ym mhobman.
+newtab-privacy-message-info-10-cta = Mynd i gyfrineiriau
+newtab-privacy-message-info-11 = Darganfod sut mae { -brand-short-name } yn helpu i gadw'ch pori'n fwy preifat.
+newtab-privacy-message-info-11-cta = Dysgu rhagor
+newtab-privacy-message-info-12 = Gall rhwystro tracwyr helpu i arbed lled band ar gynlluniau data cyfyngedig.
+newtab-privacy-message-info-12-cta = Dyma'r diogelwch
+newtab-privacy-message-info-13 = Mae { -brand-short-name } yn rhwystro tracwyr, gan ryddhau lled band ar gyfer ffrydio llyfnach.
+newtab-privacy-message-info-13-cta = Dyma'r diogelwch
+
+## Privacy widget — promotional messages
+##
+## Rotating "promo" secondary messages suggesting another Firefox feature. Each
+## has a body plus a matched "-cta" button label.
+
+newtab-privacy-message-promo-monitor-1 = Darganfod a yw'ch manylion personol yn ymddangos mewn tor-data.
+newtab-privacy-message-promo-monitor-1-cta = Dysgu rhagor
+newtab-privacy-message-promo-monitor-2 = Diogelu eich manylion gyda monitro tor-data am ddim, ar gyfer hyd at 20 e-bost.
+newtab-privacy-message-promo-monitor-2-cta = Dysgu rhagor
+newtab-privacy-message-promo-signin-1 = Cadw nodau tudalen, cyfrineiriau a thabiau wedi'u hamgryptio ar draws dyfeisiau gyda'ch cyfrif { -vendor-short-name }.
+newtab-privacy-message-promo-signin-1-cta = Mewngofnodi
+newtab-privacy-message-promo-vpn-1 = Yn siopa ar Wi-Fi cyhoeddus? Trowch y VPN cynhenid ymlaen i gael diogelwch ychwanegol.
+newtab-privacy-message-promo-vpn-1-cta = Agor y VPN
+newtab-privacy-message-promo-vpn-2 = Yn defnyddio Wi-Fi maes awyr? Diogelwch eich pori trwy droi'r VPN cynhenid ymlaen.
+newtab-privacy-message-promo-vpn-2-cta = Agor y VPN
+newtab-privacy-message-promo-vpn-3 = Trowch y VPN cynhenid ymlaen i helpu i gadw'ch lleoliad yn fwy preifat.
+newtab-privacy-message-promo-vpn-3-cta = Agor y VPN
+newtab-privacy-message-promo-private-window-1 = Rhowch gynnig ar ffenestr breifat i bori'n fwy preifat wrth ddefnyddio cyfrifiadur rydych yn ei rannu.
+newtab-privacy-message-promo-private-window-1-cta = Agor ffenestr breifat
+newtab-privacy-message-promo-relay-1 = Cadw eich e-bost go iawn ar gyfer pobl rydych chi'n ymddiried ynddyn nhw; defnyddio arall-enw e-bost ar gyfer cofrestru.
+newtab-privacy-message-promo-relay-1-cta = Cael arallenwau
+newtab-privacy-message-promo-relay-2 = Diogelu eich blwch derbyn rhag sbam gydag arallenwau e-bost am ddim.
+newtab-privacy-message-promo-relay-2-cta = Cael arallenwau
+newtab-privacy-message-promo-relay-3 = Cael 50 arallenw e-bost am ddim i helpu i gadw'ch e-bost go iawn yn breifat.
+newtab-privacy-message-promo-relay-3-cta = Cael arallenwau
+
+## Privacy widget — celebration messages
+##
+## Earned "celebration" moments (milestones, daily cap, streak, first
+## protection). Count-bearing ones interpolate { $count }.
+
+# Variables:
+#   $count (number) - Trackers blocked this week
+newtab-privacy-message-milestone-week =
+    { $count ->
+        [zero] Does { $count } traciwr wedi'u rhwystro yr wythnos hon. Dyma fydd { -brand-short-name } yn eu cadw allan o'ch ffordd
+        [one] Mae { $count } traciwr wedi'i rwystro yr wythnos hon. Dyma beth mae { -brand-short-name } yn ei cadw allan o'ch ffordd
+        [two] Mae { $count } draciwr wedi'u rhwystro yr wythnos hon. Dyma beth mae { -brand-short-name } yn eu cadw allan o'ch ffordd
+        [few] Mae { $count } traciwr wedi'u rhwystro yr wythnos hon. Dyma beth mae { -brand-short-name } yn eu cadw allan o'ch ffordd
+        [many] Mae { $count } thraciwr wedi'u rhwystro yr wythnos hon. Dyma beth mae { -brand-short-name } yn eu cadw allan o'ch ffordd
+       *[other] Mae { $count } traciwr wedi'u rhwystro yr wythnos hon. Dyma beth mae { -brand-short-name } yn eu cadw allan o'ch ffordd
+    }
+newtab-privacy-message-milestone-week-cta = Dyma'r diogelwch
+# Variables:
+#   $count (number) - Trackers blocked this month
+newtab-privacy-message-milestone-month =
+    { $count ->
+        [zero] Does { $count } tracwyr wedi'u rhwystro'r mis yma. Bydd hyn yn un cam bach ar gyfer preifatrwydd. Un cam mawr ar gyfer tawelwch meddwl.
+        [one] Mae { $count } traciwr wedi'i rwystro'r mis yma. Un cam bach ar gyfer preifatrwydd. Un cam mawr ar gyfer tawelwch meddwl.
+        [two] Mae { $count } draciwr wedi'u rhwystro'r mis yma. Un cam bach ar gyfer preifatrwydd. Un cam mawr ar gyfer tawelwch meddwl.
+        [few] Mae { $count } thraciwr wedi'u rhwystro'r mis yma. Un cam bach ar gyfer preifatrwydd. Un cam mawr ar gyfer tawelwch meddwl.
+        [many] Mae { $count } thraciwr wedi'u rhwystro'r mis yma. Un cam bach ar gyfer preifatrwydd. Un cam mawr ar gyfer tawelwch meddwl.
+       *[other] Mae { $count } traciwr wedi'u rhwystro'r mis yma. Un cam bach ar gyfer preifatrwydd. Un cam mawr ar gyfer tawelwch meddwl.
+    }
+newtab-privacy-message-milestone-month-cta = Dyma'r diogelwch
+# Variables:
+#   $count (number) - Trackers blocked this year
+newtab-privacy-message-milestone-year =
+    { $count ->
+        [zero] Does { $count } tracwyr wedi'u rhwystro eleni. Dyma flwyddyn bwerus o ddiogelu eich preifatrwydd.
+        [one] Mae { $count } traciwr wedi'i rwystro eleni. Dyma flwyddyn bwerus o ddiogelu eich preifatrwydd.
+        [two] Mae { $count } draciwr wedi'u rhwystro eleni. Dyma flwyddyn bwerus o ddiogelu eich preifatrwydd.
+        [few] Mae { $count } traciwr wedi'u rhwystro eleni. Mae honno'n flwyddyn bwerus o ddiogelu eich preifatrwydd.
+        [many] Mae { $count } traciwr wedi'u rhwystro eleni. Dyma flwyddyn bwerus o ddiogelu eich preifatrwydd.
+       *[other] Mae { $count } traciwr wedi'u rhwystro eleni. Dyma flwyddyn bwerus o ddiogelu eich preifatrwydd.
+    }
+newtab-privacy-message-milestone-year-cta = Dyma'r diogelwch
+# Variables:
+#   $count (number) - Trackers blocked all-time
+newtab-privacy-message-milestone-total =
+    { $count ->
+        [zero] { $count } tracwyr wedi'u rhwystro. Dyna gynnydd mawr tuag at breifatrwydd ar eich telerau chi.
+        [one] { $count } traciwr wedi'i rwystro. Dyna gynnydd mawr tuag at breifatrwydd ar eich telerau chi.
+        [two] { $count } draciwr wedi'u rhwystro. Dyna gynnydd mawr tuag at breifatrwydd ar eich telerau chi.
+        [few] { $count } traciwr wedi'u rhwystro. Dyna gynnydd mawr tuag at breifatrwydd ar eich telerau chi.
+        [many] { $count } traciwr wedi'u rhwystro. Dyna gynnydd mawr tuag at breifatrwydd ar eich telerau chi.
+       *[other] { $count } traciwr wedi'u rhwystro. Dyna gynnydd mawr tuag at breifatrwydd ar eich telerau chi.
+    }
+newtab-privacy-message-milestone-total-cta = Dyma'r diogelwch
+# Shown when today's blocked-tracker count reaches the display cap ("100+").
+newtab-privacy-message-daily-cap = (100+ o dracwyr wedi'u rhwystro heddiw.) Mae llai o dracwyr yn golygu mwy o breifatrwydd.
+newtab-privacy-message-daily-cap-cta = Dyma'r diogelwch
+# Variables:
+#   $count (number) - Consecutive days the user has had trackers blocked
+newtab-privacy-message-streak =
+    { $count ->
+        [zero] Dydych heb eich diogelu am { $count } diwrnodau.
+        [one] Rydych wedi'ch diogelu am { $count } diwrnod.
+        [two] Rydych wedi'ch diogelu am { $count } ddiwrnod yn olynol.
+        [few] Rydych wedi'ch diogelu am { $count } diwrnod yn olynol.
+        [many] Rydych wedi'ch diogelu am { $count } diwrnod yn olynol.
+       *[other] Rydych wedi'ch diogelu am { $count } diwrnod yn olynol.
+    }
+newtab-privacy-message-streak-cta = Dyma'r diogelwch
+# Shown the first time the tracker count goes above zero.
+newtab-privacy-message-first-protection = Cadwch i bori, bydd { -brand-short-name } yn dal i rwystro.
+newtab-privacy-message-first-protection-cta = Dyma'r diogelwch
+
+## Strings for the Stocks widget
+
+# Context menu item for searching stock ticker symbols.
+newtab-stocks-menu-search = Chwilio symbolau'r ticiwr
+# Context menu item linking to more information about the Stocks widget.
+newtab-stocks-menu-learn-more = Dysgu rhagor
+# "Stocks widget options" is an icon-only button in the widget toolbar — the
+# attributes are consumed as tooltip/screen-reader label only. The button
+# never renders visible text.
+newtab-stocks-widget-menu-button =
+    .title = Dewisiadau'r teclyn stociau
+    .aria-label = Dewisiadau'r teclyn stociau
+# Heading for the Stocks widget.
+newtab-stocks-widget-title = Stociau
+
+## Screen-reader summary of a stock ticker.
+## Variables:
+##   $name (String) - the full fund/ETF name, e.g. "SPDR S&P 500 ETF Trust".
+##   $change (String) - the day's percentage change, e.g. "+2.1%".
+##   $price (String) - the last price, e.g. "$559.44".
+
+# Stock increased (went up) during the day
+newtab-stocks-ticker-status-up = { $name }, i fyny { $change }, { $price }
+# Stock decreased (went down) during the day
+newtab-stocks-ticker-status-down = { $name }, i lawr { $change }, { $price }
+# Stock didn't change during the day
+newtab-stocks-ticker-status-flat = { $name }, dim newid, { $change }, { $price }
+
+## Strings for the Picture of the Day widget
+
+# Title shown at the top of the widget, with the source name appended.
+# "Wikimedia Commons" is a brand name and should not be translated.
+newtab-picture-header = Darlun y dydd · Wikimedia Commons
+# Shorter title shown at the top of the widget, without the source name.
+newtab-picture-header-main = Darlun y dydd
+# Attribution line shown under the title once a picture loads: an author
+# credit, a link to the picture's source page, and a link to its license.
+# "©" is the copyright symbol.
+# $author (string) - the name of the image's author.
+newtab-picture-attribution-author = © { $author }
+# Link to the picture's source page (its Wikimedia Commons file page).
+# "Wikimedia Commons" is a brand name and should not be translated.
+newtab-picture-attribution-source-link = Comin Wikimedia
+# Screen-reader label for the license link; the visible text is the license
+# name (for example "CC BY-SA 4.0") provided with the picture.
+# $license (string) - the name of the license.
+newtab-picture-attribution-license =
+    .aria-label = Gweld trwydded { $license }
+# Tooltip and screen-reader label for the icon-only button that opens the
+# widget's context menu. The button never renders visible text.
+newtab-picture-widget-menu-button =
+    .title = Dewisiadau darlun y dydd
+    .aria-label = Dewisiadau darlun y dydd
+# Button that sets the current picture as the New Tab background wallpaper. The
+# button collapses to an icon when not hovered/focused, so .title is its tooltip.
+newtab-picture-set-wallpaper =
+    .label = Gosod y papur wal
+    .title = Gosod y papur wal
+    .aria-label = Gosod darlun y dydd heddiw fel eich papur wal
+# Context menu item that opens the New Tab customization panel.
+newtab-picture-menu-manage-wallpaper = Rheoli papur wal
+# Context menu item that hides today’s picture, replacing it with an existing
+# wallpaper.
+newtab-picture-menu-hide-photo = Cuddio darlun heddiw
+# Context menu item that restores today’s picture after it has been hidden.
+newtab-picture-menu-show-photo = Dangos darlun heddiw
+# Context menu item linking to more information about the widget.
+newtab-picture-menu-learn-more = Dysgu rhagor
+# Icon button shown on the widget once the picture is hidden; restores it.
+newtab-picture-show-button =
+    .title = Dangos darlun heddiw
+    .aria-label = Dangos darlun heddiw
+# Shown when there is no new picture to display yet.
+newtab-picture-check-back = Dewch nôl yfory am lun newydd
+# Screen-reader text alternative for the picture; fallback used when the source
+# provides no localized description.
+newtab-picture-image-alt = Darlun y dydd Comin Wikimedia
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -191,6 +453,7 @@ newtab-topsites-add-shortcut-label = Ychwanegu Llwybr Byr
 newtab-topsites-add-shortcut-title =
     .title = Ychwanegu Llwybr Byr
     .aria-label = Ychwanegu Llwybr Byr
+newtab-shortcuts-pinned-area = Ardal wedi'i Phinio
 newtab-topsites-title-label = Teitl
 newtab-topsites-title-input =
     .placeholder = Rhoi teitl
@@ -261,7 +524,7 @@ newtab-menu-open-new-window = Agor mewn Ffenestr Newydd
 newtab-menu-open-new-private-window = Agor mewn Ffenestr Preifat Newydd
 newtab-menu-dismiss = Cau
 newtab-menu-pin = Pinio
-newtab-menu-unpin = Dad-binio
+newtab-menu-unpin = Dadbinio
 newtab-menu-delete-history = Dileu o'r Hanes
 newtab-menu-save-to-pocket = Cadw i { -pocket-brand-name }
 newtab-menu-delete-pocket = Dileu o { -pocket-brand-name }
@@ -489,6 +752,8 @@ newtab-recommended-stories-toggle =
     .label = Straeon cymeradwy
 newtab-custom-stories-personalized-toggle =
     .label = Straeon
+newtab-custom-stories-personalized-checkbox =
+    .label = Straeon personol ar sail eich gweithgaredd
 newtab-custom-stories-personalized-checkbox-label = Straeon personol ar sail eich gweithgaredd
 newtab-custom-pocket-sponsored = Straeon wedi'u noddi
 newtab-custom-pocket-show-recent-saves = Dangos pethau gadwyd yn ddiweddar
@@ -509,6 +774,12 @@ newtab-custom-widget-clock-toggle =
     .label = Cloc
 newtab-custom-widget-sports-toggle2 =
     .label = Chwaraeon
+newtab-custom-widget-privacy-toggle =
+    .label = Preifatrwydd
+newtab-custom-widget-stocks-toggle =
+    .label = Stociau
+newtab-custom-widget-picture-toggle =
+    .label = Darlun y dydd
 newtab-custom-widget-section-title = Teclynnau
 newtab-custom-widget-section-toggle =
     .label = Teclynnau
@@ -985,13 +1256,15 @@ newtab-widget-timer-reset =
 newtab-widget-timer-menu-notifications = Diffodd hysbysiadau
 newtab-widget-timer-menu-notifications-on = Troi hysbysiadau ymlaen
 newtab-widget-timer-menu-learn-more = Dysgu rhagor
+newtab-widget-timer-menu-button =
+    .aria-label = Dewisiadau amserydd
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = Prif Benawdau
 newtab-daily-briefing-card-menu-dismiss = Cau
 # Variables:
 #   $minutes (number) - Time since the feed has been refreshed
 newtab-daily-briefing-card-timestamp = Diweddarwyd { $minutes }m yn ôl
-newtab-widget-message-title = Canolbwyntio gyda rhestrau a'r amserydd mewnol
+newtab-widget-message-title = Canolbwyntio gyda rhestrau a'r amserydd cynhenid
 # to-dos stands for "things to do".
 newtab-widget-message-copy = O negeseuon atgoffa cyflym i dasgau bob dydd, sesiynau canolbwyntio i egwyliau ymarfer corff — cadwch i'r dasg ac amser.
 # One spot refers to a dedicated section on new tab to manage and use widgets
@@ -1111,6 +1384,8 @@ newtab-sports-widget-show-less =
 # Toggle that filters the list of teams the user follows
 newtab-sports-widget-followed-only-toggle =
     .label = Dim ond timau sy'n cael eu dilyn
+# Status shown when more matches are being fetched.
+newtab-sports-widget-loading-more = Wrthi'n llwytho mwy o gydweddu…
 # Watch is a verb (as in watch matches online).
 newtab-sports-widget-watch =
     .label = Gwylio
@@ -1190,6 +1465,9 @@ newtab-sports-widget-third-place = Yn Drydydd
 newtab-sports-widget-runner-up = Yn Ail
 newtab-sports-widget-champions = Pencampwyr
 newtab-sports-widget-world-cup-champions = Pencampwyr Cwpan y Byd 2026
+# Compact champions label for the medium-size widget result card; the larger
+# card uses newtab-sports-widget-world-cup-champions.
+newtab-sports-widget-world-cup-champions-short = Pencampwyr 2026
 # Variables:
 #   $date (Date) - The match start time
 newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
@@ -1288,12 +1566,23 @@ newtab-sports-widget-team-tbd = I'w benderfynu
 newtab-sports-widget-message-wallpapers-title = Cychwyn Cwpan y Byd gyda phapurau wal newydd
 newtab-sports-widget-message-wallpapers-body = Dewch ag ychydig o egni diwrnod gêm i'ch porwr ar gyfer y twrnamaint.
 newtab-sports-widget-message-wallpapers-cta = Dewis papur wal
+newtab-sports-widget-message-wallpapers-semifinals-title = Cael papur wal newydd ar gyfer y rowndiau cynderfynol
+newtab-sports-widget-message-wallpapers-semifinals-body = Patatoi ar gyfer gemau mwyaf Cwpan y Byd.
 newtab-sports-widget-message-add-widgets-cta =
     .label = Ychwanegu teclyn
 newtab-sports-widget-message-day-in-play-title = Cadwch eich diwrnod ar waith gyda theclynnau { -brand-product-name }
 newtab-sports-widget-message-day-in-play-body = Dilynwch Gwpan y Byd, cadw ar y dasg, dilyn amser o amgylch y byd, a mwy.
 newtab-sports-widget-message-explore-widgets-cta =
     .label = Archwilio'r teclynnau
+
+## Survey prompts shown after the World Cup to gather feedback on the widgets experience.
+
+newtab-sports-widget-message-survey-title = Helpwch ni i wella teclynnau
+newtab-sports-widget-message-survey-body = Dyna ddiwedd ar Gwpan y Byd. Rhannwch eich adborth am y profiad.
+newtab-sports-widget-message-survey-widget-title = Sut oedd teclyn Cwpan y Byd?
+newtab-sports-widget-message-survey-widget-body = Rhannwch eich adborth i'n helpu ni i wella teclynnau'r dyfodol. Yna, rhowch gynnig ar yr un newydd yn eich tîm.
+newtab-sports-widget-message-survey-cta =
+    .label = Llenwch yr Arolwg
 
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input

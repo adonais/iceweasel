@@ -6,6 +6,7 @@
 #define NeqoHttp3Conn_h_
 
 #include <cstdint>
+
 #include "mozilla/net/neqo_glue_ffi_generated.h"
 
 namespace mozilla {

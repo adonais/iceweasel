@@ -21,7 +21,6 @@
 #include "js/friend/ErrorMessages.h"  // JSMSG_*
 #include "js/Printf.h"
 #include "js/Value.h"
-
 #include "vm/JSAtomUtils.h"  // Atomize
 #include "vm/JSObject.h"
 #include "vm/StringType.h"

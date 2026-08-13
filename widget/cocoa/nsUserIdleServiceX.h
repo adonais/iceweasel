@@ -5,8 +5,8 @@
 #ifndef nsUserIdleServiceX_h_
 #define nsUserIdleServiceX_h_
 
-#include "nsUserIdleService.h"
 #include "mozilla/AppShutdown.h"
+#include "nsUserIdleService.h"
 
 class nsUserIdleServiceX : public nsUserIdleService {
  public:

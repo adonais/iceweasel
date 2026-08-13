@@ -3,36 +3,22 @@
     "@base": {
       "value": {
         "forcedColors": "LinkText",
-        "brand": {
-          "default": "{color.accent.primary.@base}"
-        },
-        "nativeTheme": "LinkText",
-        "platform": {
-          "light": "{color.blue.60}",
-          "dark": "{color.cyan.30}"
-        }
+        "default": "{color.accent.primary.@base}",
+        "nativeTheme": "LinkText"
       }
     },
     "hover": {
       "value": {
         "forcedColors": "LinkText",
-        "brand": {
-          "default": "{color.accent.primary.hover}"
-        },
-        "platform": {
-          "default": "color-mix(in srgb, black 10%, {link.color.@base})"
-        }
+        "default": "{color.accent.primary.hover}",
+        "nativeTheme": "color-mix(in srgb, black 10%, {link.color.@base})"
       }
     },
     "active": {
       "value": {
         "forcedColors": "ActiveText",
-        "brand": {
-          "default": "{color.accent.primary.active}"
-        },
-        "platform": {
-          "default": "color-mix(in srgb, black 20%, {link.color.@base})"
-        }
+        "default": "{color.accent.primary.active}",
+        "nativeTheme": "color-mix(in srgb, black 20%, {link.color.@base})"
       }
     },
     "visited": {

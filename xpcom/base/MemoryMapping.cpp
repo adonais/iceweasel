@@ -4,12 +4,12 @@
 
 #include "mozilla/MemoryMapping.h"
 
+#include <fstream>
+#include <sstream>
+#include <string>
+
 #include "mozilla/BinarySearch.h"
 #include "mozilla/FileUtils.h"
-
-#include <fstream>
-#include <string>
-#include <sstream>
 
 namespace mozilla {
 

@@ -6,8 +6,13 @@ EXPORTS.mozilla += [
     "sandboxTarget.h",
 ]
 
+EXPORTS.mozilla.sandboxing += [
+    "TargetGeckoServicesImpl.h",
+]
+
 SOURCES += [
     "sandboxTarget.cpp",
+    "TargetGeckoServicesImpl.cpp",
 ]
 
 LOCAL_INCLUDES += [

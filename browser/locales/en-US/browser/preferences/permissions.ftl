@@ -47,15 +47,15 @@ permissions-status =
     .label = Status
 
 permissions-remove =
-    .label = Remove Website
+    .label = Remove website
     .accesskey = R
 
 permissions-remove-all =
-    .label = Remove All Websites
+    .label = Remove all websites
     .accesskey = e
 
-permission-dialog =
-    .buttonlabelaccept = Save Changes
+permissions-save-changes-2 =
+    .buttonlabelaccept = Save changes
     .buttonaccesskeyaccept = S
 
 permissions-autoplay-menu = Default for all websites:
@@ -108,6 +108,13 @@ permissions-exceptions-cookie-window2 =
     .style = { permissions-window2.style }
 permissions-exceptions-cookie-desc = You can specify which websites are always or never allowed to use cookies and site data.  Type the exact address of the site you want to manage and then click Block, Allow for Session, or Allow.
 
+## Exceptions - Clear on Shutdown
+
+permissions-exceptions-shutdown-clearing-window =
+    .title = Exceptions - Clear History on Shutdown
+    .style = { permissions-window2.style }
+permissions-exceptions-shutdown-clearing-desc = You can specify which websites will keep their data when { -brand-short-name } clears history on close. Type the exact address of the site you want to manage and then click Allow.
+
 ## Exceptions - HTTPS-Only Mode
 
 permissions-exceptions-https-only-window2 =
@@ -125,7 +132,7 @@ permissions-exceptions-popup-desc2 = You can specify which websites are allowed 
 ## Exceptions - Saved Passwords
 
 permissions-exceptions-saved-passwords-window =
-    .title = Exceptions - Saved Passwords
+    .title = Exceptions - saved passwords
     .style = { permissions-window2.style }
 permissions-exceptions-saved-passwords-desc = { -brand-short-name } won’t save passwords for sites listed here.
 

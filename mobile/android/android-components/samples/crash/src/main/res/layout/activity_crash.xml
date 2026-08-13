@@ -10,6 +10,7 @@
     android:orientation="vertical">
 
     <Button
+        style="@style/Mozac.Widgets.NeutralButton"
         android:id="@+id/crashButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -17,6 +18,7 @@
         android:textAlignment="center" />
 
     <Button
+        style="@style/Mozac.Widgets.NeutralButton"
         android:id="@+id/fatalCrashButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -24,6 +26,7 @@
         android:textAlignment="center" />
 
     <Button
+        style="@style/Mozac.Widgets.NeutralButton"
         android:id="@+id/fatalServiceCrashButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -31,6 +34,7 @@
         android:textAlignment="center" />
 
     <Button
+        style="@style/Mozac.Widgets.NeutralButton"
         android:id="@+id/crashList"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

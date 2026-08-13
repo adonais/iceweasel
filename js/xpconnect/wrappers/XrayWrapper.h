@@ -5,17 +5,17 @@
 #ifndef XrayWrapper_h
 #define XrayWrapper_h
 
+#include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/Maybe.h"
-
-#include "WrapperFactory.h"
 
 #include "jsapi.h"
 #include "jsfriendapi.h"
+#include "WrapperFactory.h"
+
 #include "js/friend/XrayJitInfo.h"  // JS::XrayJitInfo
 #include "js/Object.h"              // JS::GetReservedSlot
 #include "js/Proxy.h"
 #include "js/Wrapper.h"
-#include "mozilla/dom/ScriptSettings.h"
 
 // Slot where Xray functions for Web IDL methods store a pointer to
 // the Xray wrapper they're associated with.

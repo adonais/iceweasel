@@ -1,6 +1,8 @@
-#include "gtest/gtest.h"
 #include <stdint.h>
+
 #include <utility>
+
+#include "gtest/gtest.h"
 #include "nsString.h"
 
 extern "C" {

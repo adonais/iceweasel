@@ -5,13 +5,14 @@
 #ifndef XPCOM_DS_NSTHASHMAP_H_
 #define XPCOM_DS_NSTHASHMAP_H_
 
+#include <type_traits>
+
 #include "mozilla/RefPtr.h"
+#include "nsAtomHashKeys.h"
 #include "nsBaseHashtable.h"
 #include "nsCOMPtr.h"
 #include "nsHashKeys.h"
-#include "nsAtomHashKeys.h"
 #include "nsHashtablesFwd.h"
-#include <type_traits>
 
 namespace mozilla::detail {
 template <class KeyType>

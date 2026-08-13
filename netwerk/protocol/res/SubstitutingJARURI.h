@@ -6,11 +6,11 @@
 #define SubstitutingJARURI_h
 
 #include "nsIIPCSerializableURI.h"
-#include "nsIStandardURL.h"
-#include "nsIURL.h"
-#include "nsIURIWithSizeOf.h"
-#include "nsJARURI.h"
 #include "nsISerializable.h"
+#include "nsIStandardURL.h"
+#include "nsIURIWithSizeOf.h"
+#include "nsIURL.h"
+#include "nsJARURI.h"
 
 namespace mozilla {
 namespace net {
@@ -28,7 +28,8 @@ class SubstitutingJARURI : public nsIJARURI,
                            public nsIStandardURL,
                            public nsISerializable,
                            public nsIIPCSerializableURI,
-                           public nsIURIWithSizeOf {
+                           public nsIURIWithSizeOf,
+                           public URIHasher {
  protected:
   // Contains the resource://-like URI to be mapped. nsIURI and nsIURL will
   // forward to this.
@@ -68,6 +69,11 @@ class SubstitutingJARURI : public nsIJARURI,
   // Forward the rest of nsIURI to mSource
   NS_IMETHOD GetSpec(nsACString& aSpec) override {
     return !mSource ? NS_ERROR_NULL_POINTER : mSource->GetSpec(aSpec);
+  }
+  uint32_t SpecHash() override {
+    nsAutoCString spec;
+    (void)GetSpec(spec);
+    return CachedSpecHash(spec);
   }
   NS_IMETHOD GetPrePath(nsACString& aPrePath) override {
     return !mSource ? NS_ERROR_NULL_POINTER : mSource->GetPrePath(aPrePath);

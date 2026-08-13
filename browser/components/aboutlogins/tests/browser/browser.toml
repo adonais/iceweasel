@@ -96,6 +96,9 @@ skip-if = [
 ]
 
 ["browser_removeAllDialog.js"]
+skip-if = [
+  "os == 'win'", # Bug 2055830
+]
 
 ["browser_sessionRestore.js"]
 skip-if = [

@@ -144,7 +144,6 @@ ModuleGenerator::~ModuleGenerator() {
 }
 
 bool ModuleGenerator::initializeCompleteTier(
-    CodeMetadataForAsmJS* codeMetaForAsmJS,
     const CodeTailMetadata* existingCodeTailMeta) {
   MOZ_ASSERT(compileState_ != CompileState::LazyTier2);
 
@@ -157,12 +156,6 @@ bool ModuleGenerator::initializeCompleteTier(
     return false;
   }
 
-  // If codeMetaForAsmJS is null, we're compiling wasm; else we're compiling
-  // asm.js, in whih case it contains wasm::Code-lifetime asm.js-specific
-  // information.
-  MOZ_ASSERT(isAsmJS() == !!codeMetaForAsmJS);
-  codeMetaForAsmJS_ = codeMetaForAsmJS;
-
   // Generate the shared stubs block, if we're compiling tier-1
   if (compilingTier1() && !prepareTier1()) {
     return false;
@@ -174,7 +167,6 @@ bool ModuleGenerator::initializeCompleteTier(
 bool ModuleGenerator::initializePartialTier(const Code& code,
                                             uint32_t funcIndex) {
   MOZ_ASSERT(compileState_ == CompileState::LazyTier2);
-  MOZ_ASSERT(!isAsmJS());
 
   // The implied codeMeta must be consistent with the one we already have.
   MOZ_ASSERT(&code.codeMeta() == codeMeta_);
@@ -797,16 +789,15 @@ bool ModuleGenerator::finishOutstandingTask() {
 }
 
 bool ModuleGenerator::compileFuncDef(uint32_t funcIndex,
-                                     uint32_t lineOrBytecode,
-                                     const uint8_t* begin, const uint8_t* end,
-                                     Uint32Vector&& lineNums) {
+                                     uint32_t bytecodeOffset,
+                                     const uint8_t* begin, const uint8_t* end) {
   MOZ_ASSERT(!finishedFuncDefs_);
   MOZ_ASSERT(funcIndex < codeMeta_->numFuncs());
 
   if (compilingTier1()) {
     static_assert(MaxFunctionBytes < UINT32_MAX);
     uint32_t bodyLength = (uint32_t)(end - begin);
-    funcDefRanges_.infallibleAppend(BytecodeRange(lineOrBytecode, bodyLength));
+    funcDefRanges_.infallibleAppend(BytecodeRange(bytecodeOffset, bodyLength));
   }
 
   uint32_t threshold;
@@ -844,8 +835,8 @@ bool ModuleGenerator::compileFuncDef(uint32_t funcIndex,
     currentTask_ = freeTasks_.popCopy();
   }
 
-  if (!currentTask_->inputs.emplaceBack(funcIndex, lineOrBytecode, begin, end,
-                                        std::move(lineNums))) {
+  if (!currentTask_->inputs.emplaceBack(funcIndex, bytecodeOffset, begin,
+                                        end)) {
     return false;
   }
 
@@ -1171,7 +1162,7 @@ bool ModuleGenerator::startCompleteTier() {
 bool ModuleGenerator::startPartialTier(uint32_t funcIndex) {
 #ifdef JS_JITSPEW
   UTF8Bytes name;
-  if (!codeMeta_->getFuncNameForWasm(
+  if (!codeMeta_->getFuncName(
           NameContext::Standalone, funcIndex,
           partialTieringCode_->codeTailMeta().nameSectionPayload.get(),
           &name) ||
@@ -1242,7 +1233,7 @@ bool ModuleGenerator::finishTier(CompileAndLinkStats* tierStats,
 }
 
 // Complete all tier-1 construction and return the resulting Module.  For this
-// we will need both codeMeta_ (and maybe codeMetaForAsmJS_) and moduleMeta_.
+// we will need both codeMeta_ and moduleMeta_.
 SharedModule ModuleGenerator::finishModule(
     const BytecodeBufferOrSource& bytecode, ModuleMetadata& moduleMeta,
     JS::OptimizedEncodingListener* maybeCompleteTier2Listener) {
@@ -1387,16 +1378,15 @@ SharedModule ModuleGenerator::finishModule(
 
   // Now that we have the name section we can send our blocks to the profiler.
   sharedStubs_.codeBlock->sendToProfiler(
-      *codeMeta_, *codeTailMeta, codeMetaForAsmJS_,
+      *codeMeta_, *codeTailMeta,
       FuncIonPerfSpewerSpan(sharedStubs_.funcIonSpewers),
       FuncBaselinePerfSpewerSpan(sharedStubs_.funcBaselineSpewers));
   tier1Result.codeBlock->sendToProfiler(
-      *codeMeta_, *codeTailMeta, codeMetaForAsmJS_,
+      *codeMeta_, *codeTailMeta,
       FuncIonPerfSpewerSpan(tier1Result.funcIonSpewers),
       FuncBaselinePerfSpewerSpan(tier1Result.funcBaselineSpewers));
 
-  MutableCode code =
-      js_new<Code>(mode(), *codeMeta_, *codeTailMeta, codeMetaForAsmJS_);
+  MutableCode code = js_new<Code>(mode(), *codeMeta_, *codeTailMeta);
   if (!code || !code->initialize(std::move(funcImports_),
                                  std::move(sharedStubs_.codeBlock),
                                  std::move(sharedStubs_.linkData),
@@ -1421,11 +1411,10 @@ SharedModule ModuleGenerator::finishModule(
     return nullptr;
   }
 
-  // If we can serialize (not asm.js), are not planning on serializing already
+  // If we can serialize, are not planning on serializing already
   // and are testing serialization, then do a roundtrip through serialization
   // to test it out.
-  if (!isAsmJS() && compileArgs_->features.testSerialization &&
-      module->canSerialize()) {
+  if (compileArgs_->features.testSerialization && module->canSerialize()) {
     MOZ_RELEASE_ASSERT(mode() == CompileMode::Once &&
                        tier() == Tier::Serialized);
 
@@ -1513,7 +1502,7 @@ bool ModuleGenerator::finishTier2(const Module& module) {
 
   // While we still have the func spewers, send the code block to the profiler.
   tier2Result.codeBlock->sendToProfiler(
-      *codeMeta_, module.codeTailMeta(), codeMetaForAsmJS_,
+      *codeMeta_, module.codeTailMeta(),
       FuncIonPerfSpewerSpan(tier2Result.funcIonSpewers),
       FuncBaselinePerfSpewerSpan(tier2Result.funcBaselineSpewers));
 
@@ -1539,7 +1528,7 @@ bool ModuleGenerator::finishPartialTier2() {
 
   // While we still have the func spewers, send the code block to the profiler.
   tier2Result.codeBlock->sendToProfiler(
-      *codeMeta_, partialTieringCode_->codeTailMeta(), codeMetaForAsmJS_,
+      *codeMeta_, partialTieringCode_->codeTailMeta(),
       FuncIonPerfSpewerSpan(tier2Result.funcIonSpewers),
       FuncBaselinePerfSpewerSpan(tier2Result.funcBaselineSpewers));
 

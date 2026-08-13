@@ -9,6 +9,7 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/DebugOnly.h"
+
 #include "util/Memory.h"
 
 #include "gc/Nursery-inl.h"
@@ -212,8 +213,12 @@ MOZ_ALWAYS_INLINE WasmArrayObject* WasmArrayObject::createArrayOOL(
       MaxNurseryTrailerSize);
   if (MOZ_UNLIKELY(!oolAlloc)) {
     // AllocateCellBuffer will have called ReportOutOfMemory(cx) itself.
+
+    // Initialize the failed array as an inline array to avoid issues with a
+    // null data pointer.
     arrayObj->numElements_ = 0;
-    arrayObj->data_ = nullptr;
+    arrayObj->data_ = arrayObj->inlineArrayData<uint8_t>();
+    MOZ_ASSERT(arrayObj->isDataInline());
     return nullptr;
   }
 

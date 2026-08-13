@@ -62,6 +62,7 @@ add_task(async function test_edit_profile_delete() {
         nameInput.dispatchEvent(new content.Event("input"));
 
         let deleteButton = editProfileCard.deleteButton;
+        deleteButton.scrollIntoView();
         EventUtils.synthesizeMouseAtCenter(deleteButton, {}, content);
       });
 
@@ -175,7 +176,7 @@ add_task(async function test_edit_profile_avatar() {
         await editProfileCard.updateComplete;
 
         EventUtils.synthesizeMouseAtCenter(
-          editProfileCard.avatarSelectorLink,
+          editProfileCard.avatarSelectorButton,
           {},
           content
         );
@@ -371,6 +372,7 @@ add_task(async function test_edit_profile_explore_more_themes() {
         // To simplify the test, deactivate the link before clicking.
         editProfileCard.moreThemesLink.href = "#";
         editProfileCard.moreThemesLink.target = "";
+        editProfileCard.moreThemesLink.scrollIntoView();
         EventUtils.synthesizeMouseAtCenter(
           editProfileCard.moreThemesLink,
           {},
@@ -429,6 +431,7 @@ add_task(async function test_edit_profile_displayed_closed_telemetry() {
         await editProfileCard.updateComplete;
 
         // Click the done editing button to trigger closed event.
+        editProfileCard.doneButton.scrollIntoView();
         EventUtils.synthesizeMouseAtCenter(
           editProfileCard.doneButton,
           {},
@@ -472,7 +475,7 @@ add_task(async function test_avatar_picker_arrow_key_support() {
         await editProfileCard.updateComplete;
 
         EventUtils.synthesizeMouseAtCenter(
-          editProfileCard.avatarSelectorLink,
+          editProfileCard.avatarSelectorButton,
           {},
           content
         );
@@ -779,16 +782,17 @@ add_task(async function test_edit_link_keyboard_accessibility() {
         );
         await editProfileCard.updateComplete;
 
-        let editLink = editProfileCard.avatarSelectorLink;
+        let editButton = editProfileCard.avatarSelectorButton;
 
-        Assert.ok(editLink, "Edit link should exist");
+        Assert.ok(editButton, "Edit button should exist");
+
+        editButton.focus();
         Assert.equal(
-          editLink.getAttribute("tabindex"),
-          "0",
-          "Edit link should be focusable"
+          editProfileCard.shadowRoot.activeElement,
+          editButton,
+          "Edit button should be focusable"
         );
 
-        editLink.focus();
         let avatarSelector = editProfileCard.avatarSelector;
         Assert.ok(avatarSelector.hidden, "Avatar selector should start hidden");
 

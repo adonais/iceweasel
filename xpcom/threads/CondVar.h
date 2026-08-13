@@ -6,8 +6,8 @@
 #define mozilla_CondVar_h
 
 #include "mozilla/BlockingResourceBase.h"
-#include "mozilla/PlatformConditionVariable.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/PlatformConditionVariable.h"
 #include "mozilla/TimeStamp.h"
 
 #if defined(MOZILLA_INTERNAL_API) && !defined(DEBUG)

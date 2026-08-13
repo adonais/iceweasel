@@ -1,27 +1,30 @@
-From: Michael Froman <mfroman@mozilla.com>
-Date: Mon, 21 Jul 2025 15:50:00 -0500
-Subject: Bug 1978462 - disable absl nullability specifiers since libwebrtc has
- too many warnings. r?ng!
+From: Ryan VanderMeulen <rvandermeulen@mozilla.com>
+Date: Mon, 29 Jun 2026 13:07:08 -0400
+Subject: Bug 1965053 - silence -Wcomma and -Wtautological-type-limit-compare
+ warnings in the abseil build. r?mjf
 
-There are too many places in libwebrtc that are not yet marked
-with nullability type specifiers.  We need to disable them until
-that is fixed upstream.
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/f3b19b7999b3271ca5858d587673e3eb43525c32
 ---
- abseil-cpp/absl/base/nullability.h | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ abseil-cpp/absl.gni | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-diff --git a/abseil-cpp/absl/base/nullability.h b/abseil-cpp/absl/base/nullability.h
-index d11da5793b3..af684f09460 100644
---- a/abseil-cpp/absl/base/nullability.h
-+++ b/abseil-cpp/absl/base/nullability.h
-@@ -221,7 +221,8 @@
- #define ABSL_POINTERS_DEFAULT_NONNULL
+diff --git a/abseil-cpp/absl.gni b/abseil-cpp/absl.gni
+index 9e1c844bf3b..8cb6e8b61d4 100644
+--- a/abseil-cpp/absl.gni
++++ b/abseil-cpp/absl.gni
+@@ -40,6 +40,16 @@ template("absl_source_set") {
  
- #if defined(__clang__) && !defined(__OBJC__) && \
--    ABSL_HAVE_FEATURE(nullability_on_classes)
-+    ABSL_HAVE_FEATURE(nullability_on_classes) && \
-+    0 // mozilla - stop warnings in libwebrtc for "missing a nullability type specifier"
- // absl_nonnull (default with `ABSL_POINTERS_DEFAULT_NONNULL`)
- //
- // The indicated pointer is never null. It is the responsibility of the provider
+       if (moz_webrtc_build) {
+         configs -= [ "//chromium/build/config/compiler:prevent_unsafe_narrowing" ]
++
++        # Silence -Wcomma / -Wtautological-type-limit-compare spam from
++        # third-party abseil sources. See bug 1965053.
++        if (!defined(cflags_cc)) {
++          cflags_cc = []
++        }
++        cflags_cc += [
++          "-Wno-comma",
++          "-Wno-tautological-type-limit-compare",
++        ]
+       }
+ 
+       if (!defined(defines)) {

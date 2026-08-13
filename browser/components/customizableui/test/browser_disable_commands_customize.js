@@ -84,3 +84,47 @@ add_task(async function test_dont_disable_when_moving() {
     "Button should still have a command attribute."
   );
 });
+
+/**
+ * Regression test for bug 2040682: Buttons whose `command` attribute is moved
+ * onto the toolbarpaletteitem wrapper while in customize mode (i.e. buttons
+ * without keepbroadcastattributeswhencustomizing) should not keep the
+ * temporarily-disabled state of their command after being added to a toolbar.
+ */
+add_task(async function test_dont_disable_non_broadcast_button_when_moving() {
+  const kWidgetId = "open-file-button";
+  CustomizableUI.reset();
+  registerCleanupFunction(() => CustomizableUI.reset());
+
+  let button = gNavToolbox.palette.querySelector("#" + kWidgetId);
+  ok(button, "open-file-button starts in the palette.");
+  ok(
+    !button.hasAttribute("keepbroadcastattributeswhencustomizing"),
+    "open-file-button does not keep broadcast attributes"
+  );
+
+  await startCustomizing();
+  CustomizableUI.addWidgetToArea(kWidgetId, "nav-bar");
+  await endCustomizing();
+
+  is(
+    CustomizableUI.getPlacementOfWidget(kWidgetId).area,
+    "nav-bar",
+    "Button is in the nav-bar after adding."
+  );
+  ok(
+    !button.hasAttribute("disabled"),
+    "Button should not be disabled after adding to a toolbar in customize mode."
+  );
+  is(
+    button.getAttribute("command"),
+    "Browser:OpenFile",
+    "Button still drives Browser:OpenFile after exit."
+  );
+
+  let openFileCommand = document.getElementById("Browser:OpenFile");
+  ok(
+    !openFileCommand.hasAttribute("disabled"),
+    "Browser:OpenFile command should be enabled after exiting customize mode."
+  );
+});

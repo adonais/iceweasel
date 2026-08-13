@@ -33,9 +33,11 @@ void AudioSegment::ApplyVolume(float aVolume) {
 }
 
 template <typename T>
-void AudioSegment::Resample(nsAutoRef<SpeexResamplerState>& aResampler,
-                            uint32_t* aResamplerChannelCount, uint32_t aInRate,
-                            uint32_t aOutRate) {
+nsresult AudioSegment::Resample(nsAutoRef<SpeexResamplerState>& aResampler,
+                                uint32_t* aResamplerChannelCount,
+                                uint32_t aInRate, uint32_t aOutRate) {
+  MOZ_ASSERT(aInRate > 0);
+  MOZ_ASSERT(aOutRate > 0);
   mDuration = 0;
 
   for (ChunkIterator ci(*this); !ci.IsEnded(); ci.Next()) {
@@ -48,6 +50,7 @@ void AudioSegment::Resample(nsAutoRef<SpeexResamplerState>& aResampler,
       mDuration += c.mDuration;
       continue;
     }
+    MOZ_ASSERT(c.mDuration > 0);
     uint32_t channels = c.mChannelData.Length();
     // This might introduce a discontinuity, but a channel count change in the
     // middle of a stream is not that common. This also initializes the
@@ -62,16 +65,26 @@ void AudioSegment::Resample(nsAutoRef<SpeexResamplerState>& aResampler,
     }
     output.SetLength(channels);
     bufferPtrs.SetLength(channels);
-    uint32_t inFrames = c.mDuration;
-    // Round up to allocate; the last frame may not be used.
-    NS_ASSERTION((UINT64_MAX - aInRate + 1) / c.mDuration >= aOutRate,
-                 "Dropping samples");
-    uint32_t outSize =
-        (static_cast<uint64_t>(c.mDuration) * aOutRate + aInRate - 1) / aInRate;
+    // Round up in 64 bits, and reject a size that will not fit in uint32_t,
+    // which would otherwise silently drop part of the chunk. Clearing keeps
+    // mDuration the sum of the chunk durations.
+    CheckedUint32 outSizeChecked =
+        ((CheckedInt<uint64_t>(c.mDuration) * aOutRate + (aInRate - 1)) /
+         aInRate)
+            .toChecked<uint32_t>();
+    if (!outSizeChecked.isValid()) {
+      Clear();
+      return NS_ERROR_DOM_MEDIA_OVERFLOW_ERR;
+    }
+    uint32_t outSize = outSizeChecked.value();
     for (uint32_t i = 0; i < channels; i++) {
       T* out = output[i].AppendElements(outSize);
       uint32_t outFrames = outSize;
 
+      // Speex overwrites this count, so reset it for each channel: sharing one
+      // variable would resample later channels from fewer frames and leave
+      // their buffers short of the duration the chunk advertises.
+      uint32_t inFrames = c.mDuration;
       const T* in = static_cast<const T*>(c.mChannelData[i]);
       dom::WebAudioUtils::SpeexResamplerProcess(aResampler.get(), i, in,
                                                 &inFrames, out, &outFrames);
@@ -79,6 +92,7 @@ void AudioSegment::Resample(nsAutoRef<SpeexResamplerState>& aResampler,
 
       bufferPtrs[i] = out;
       output[i].SetLength(outFrames);
+      MOZ_ASSERT(output[i].Length() == output[0].Length());
     }
     MOZ_ASSERT(channels > 0);
     c.mDuration = output[0].Length();
@@ -88,13 +102,14 @@ void AudioSegment::Resample(nsAutoRef<SpeexResamplerState>& aResampler,
     }
     mDuration += c.mDuration;
   }
+  return NS_OK;
 }
 
-void AudioSegment::ResampleChunks(nsAutoRef<SpeexResamplerState>& aResampler,
-                                  uint32_t* aResamplerChannelCount,
-                                  uint32_t aInRate, uint32_t aOutRate) {
+nsresult AudioSegment::ResampleChunks(
+    nsAutoRef<SpeexResamplerState>& aResampler,
+    uint32_t* aResamplerChannelCount, uint32_t aInRate, uint32_t aOutRate) {
   if (mChunks.IsEmpty()) {
-    return;
+    return NS_OK;
   }
 
   AudioSampleFormat format = AUDIO_FORMAT_SILENCE;
@@ -110,14 +125,14 @@ void AudioSegment::ResampleChunks(nsAutoRef<SpeexResamplerState>& aResampler,
     // the chunks duration.
     case AUDIO_FORMAT_SILENCE:
     case AUDIO_FORMAT_FLOAT32:
-      Resample<float>(aResampler, aResamplerChannelCount, aInRate, aOutRate);
-      break;
+      return Resample<float>(aResampler, aResamplerChannelCount, aInRate,
+                             aOutRate);
     case AUDIO_FORMAT_S16:
-      Resample<int16_t>(aResampler, aResamplerChannelCount, aInRate, aOutRate);
-      break;
+      return Resample<int16_t>(aResampler, aResamplerChannelCount, aInRate,
+                               aOutRate);
     default:
       MOZ_ASSERT(false);
-      break;
+      return NS_ERROR_UNEXPECTED;
   }
 }
 

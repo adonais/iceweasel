@@ -3,16 +3,17 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "IMFYCbCrImage.h"
+
 #include "mozilla/gfx/DeviceManagerDx.h"
-#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/Types.h"
-#include "mozilla/layers/TextureD3D11.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/CompositableClient.h"
 #include "mozilla/layers/CompositableForwarder.h"
+#include "mozilla/layers/CompositeProcessD3D11FencesHolderMap.h"
 #include "mozilla/layers/D3D11YCbCrImage.h"
 #include "mozilla/layers/FenceD3D11.h"
-#include "mozilla/layers/CompositeProcessD3D11FencesHolderMap.h"
 #include "mozilla/layers/TextureClient.h"
+#include "mozilla/layers/TextureD3D11.h"
 
 namespace mozilla {
 namespace layers {

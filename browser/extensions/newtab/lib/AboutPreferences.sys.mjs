@@ -412,6 +412,38 @@ export class AboutPreferences {
         type: "bool",
       },
       {
+        id: "browser.newtabpage.activity-stream.widgets.system.privacy.enabled",
+        type: "bool",
+      },
+      {
+        id: "browser.newtabpage.activity-stream.widgets.privacy.enabled",
+        type: "bool",
+      },
+      {
+        id: "browser.newtabpage.activity-stream.widgets.system.crossword.enabled",
+        type: "bool",
+      },
+      {
+        id: "browser.newtabpage.activity-stream.widgets.crossword.enabled",
+        type: "bool",
+      },
+      {
+        id: "browser.newtabpage.activity-stream.widgets.system.stocks.enabled",
+        type: "bool",
+      },
+      {
+        id: "browser.newtabpage.activity-stream.widgets.stocks.enabled",
+        type: "bool",
+      },
+      {
+        id: "browser.newtabpage.activity-stream.widgets.system.pictureOfTheDay.enabled",
+        type: "bool",
+      },
+      {
+        id: "browser.newtabpage.activity-stream.widgets.pictureOfTheDay.enabled",
+        type: "bool",
+      },
+      {
         id: "browser.newtabpage.activity-stream.feeds.topsites",
         type: "bool",
       },
@@ -1341,6 +1373,54 @@ export class AboutPreferences {
       visible: widgetToggleVisible("clocks"),
     });
 
+    Preferences.addSetting({
+      id: "privacyEnabled",
+      pref: "browser.newtabpage.activity-stream.widgets.system.privacy.enabled",
+    });
+
+    Preferences.addSetting({
+      id: "privacy",
+      pref: "browser.newtabpage.activity-stream.widgets.privacy.enabled",
+      deps: ["privacyEnabled"],
+      visible: widgetToggleVisible("privacy"),
+    });
+
+    Preferences.addSetting({
+      id: "crosswordEnabled",
+      pref: "browser.newtabpage.activity-stream.widgets.system.crossword.enabled",
+    });
+
+    Preferences.addSetting({
+      id: "crossword",
+      pref: "browser.newtabpage.activity-stream.widgets.crossword.enabled",
+      deps: ["crosswordEnabled"],
+      visible: widgetToggleVisible("crossword"),
+    });
+
+    Preferences.addSetting({
+      id: "stocksEnabled",
+      pref: "browser.newtabpage.activity-stream.widgets.system.stocks.enabled",
+    });
+
+    Preferences.addSetting({
+      id: "stocks",
+      pref: "browser.newtabpage.activity-stream.widgets.stocks.enabled",
+      deps: ["stocksEnabled"],
+      visible: widgetToggleVisible("stocks"),
+    });
+
+    Preferences.addSetting({
+      id: "pictureOfTheDayEnabled",
+      pref: "browser.newtabpage.activity-stream.widgets.system.pictureOfTheDay.enabled",
+    });
+
+    Preferences.addSetting({
+      id: "pictureOfTheDay",
+      pref: "browser.newtabpage.activity-stream.widgets.pictureOfTheDay.enabled",
+      deps: ["pictureOfTheDayEnabled"],
+      visible: widgetToggleVisible("pictureOfTheDay"),
+    });
+
     // Shortcuts
     Preferences.addSetting({
       id: "shortcuts",
@@ -1553,6 +1633,22 @@ export class AboutPreferences {
             {
               id: "clocks",
               l10nId: "home-prefs-clocks-header",
+            },
+            {
+              id: "privacy",
+              l10nId: "home-prefs-privacy-header",
+            },
+            {
+              id: "crossword",
+              l10nId: "home-prefs-crossword-widget-header",
+            },
+            {
+              id: "stocks",
+              l10nId: "home-prefs-stocks-header",
+            },
+            {
+              id: "pictureOfTheDay",
+              l10nId: "home-prefs-picture-header",
             },
             ...(novaEnabled && widgetsSystemEnabled ? [weatherItem] : []),
           ],

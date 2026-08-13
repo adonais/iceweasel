@@ -1,0 +1,16 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+#include "nsISupports.idl"
+
+/**
+ * This service manages geolocation providers and receives updates from them.
+ *
+ * TODO(krosylight): Expose more functions here
+ */
+[scriptable, uuid(e0d3b40f-7c72-4d08-95d5-a7320c20af14)]
+interface nsIGeolocationService : nsISupports
+{
+  void stopDevice();
+};

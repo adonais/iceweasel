@@ -133,16 +133,6 @@
           '.',
         ],
         'conditions': [
-          ['OS == "android" and target_arch == "arm64"', {
-            'ldflags': [
-              '-Wl,--dynamic-linker,/system/bin/linker64',
-            ],
-          }],
-          ['OS == "android" and target_arch != "arm64"', {
-            'ldflags': [
-              '-Wl,--dynamic-linker,/system/bin/linker',
-            ],
-          }],
           ['target_arch == "armv7" or target_arch == "arm64" and moz_have_arm_i8mm_and_dot_prod == 1 and build_with_mozilla == 1', {
             'dependencies': [
                  ':libyuv_neon',

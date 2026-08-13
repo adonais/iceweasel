@@ -6,6 +6,7 @@
 
 package org.mozilla.fenix.ui.robots
 
+import android.graphics.drawable.ColorDrawable
 import android.util.Log
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assert
@@ -16,9 +17,11 @@ import androidx.compose.ui.test.hasAnyChild
 import androidx.compose.ui.test.hasAnySibling
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -28,6 +31,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTouchInput
+import androidx.core.content.ContextCompat
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions
 import androidx.test.espresso.assertion.PositionAssertions.isPartiallyBelow
@@ -126,6 +130,53 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
         }
     }
 
+    fun <A : androidx.activity.ComponentActivity, R : org.junit.rules.TestRule> verifyWindowBackgroundDrawable(
+        composeTestRule: AndroidComposeTestRule<R, A>,
+        expectedDrawableRes: Int,
+        timeoutMillis: Long = 5_000,
+    ) {
+        val activity = composeTestRule.activity
+
+        composeTestRule.waitUntil(timeoutMillis) {
+            val actualBg = activity.window?.decorView?.background ?: return@waitUntil false
+            val expectedBg = ContextCompat.getDrawable(activity, expectedDrawableRes) ?: return@waitUntil false
+
+            when {
+                // If both are ColorDrawables, strictly compare their actual color integers
+                actualBg is ColorDrawable && expectedBg is ColorDrawable -> {
+                    actualBg.color == expectedBg.color
+                }
+                else -> {
+                    actualBg.constantState == expectedBg.constantState
+                }
+            }
+        }
+    }
+
+    fun <A : androidx.activity.ComponentActivity, R : org.junit.rules.TestRule> verifyEdgeToEdgeWallpaperApplied(
+        composeTestRule: AndroidComposeTestRule<R, A>,
+    ) {
+        Log.i(TAG, "verifyEdgeToEdgeWallpaperApplied: Verifying edge-to-edge wallpaper background")
+        verifyWindowBackgroundDrawable(composeTestRule, R.drawable.home_background_gradient)
+        Log.i(TAG, "verifyEdgeToEdgeWallpaperApplied: Verified edge-to-edge wallpaper background")
+    }
+
+    fun <A : androidx.activity.ComponentActivity, R : org.junit.rules.TestRule> verifyDefaultWallpaperApplied(
+        composeTestRule: AndroidComposeTestRule<R, A>,
+    ) {
+        Log.i(TAG, "verifyDefaultWallpaperApplied: Verifying default wallpaper background")
+        verifyWindowBackgroundDrawable(composeTestRule, R.color.fx_mobile_surface)
+        Log.i(TAG, "verifyDefaultWallpaperApplied: Verified default wallpaper background")
+    }
+
+    fun <A : androidx.activity.ComponentActivity, R : org.junit.rules.TestRule> verifyPrivateModeBackgroundApplied(
+        composeTestRule: AndroidComposeTestRule<R, A>,
+    ) {
+        Log.i(TAG, "verifyPrivateModeBackgroundApplied: Verifying private mode background is applied")
+        verifyWindowBackgroundDrawable(composeTestRule, R.color.fx_mobile_private_surface)
+        Log.i(TAG, "verifyPrivateModeBackgroundApplied: Verified private mode background is applied")
+    }
+
     @OptIn(ExperimentalTestApi::class)
     fun verifyExistingTopSitesList() {
         Log.i(TAG, "verifyExistingTopSitesList: Waiting for $waitingTime ms until the top sites list exists")
@@ -165,6 +216,15 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
             exists = false,
         )
 
+    fun sponsoredTopSitesLoaded(): Boolean {
+        mDevice.waitForIdle()
+        val loaded = mDevice.findObject(UiSelector().resourceId("top_sites_list.top_site_item"))
+            .getChild(UiSelector().textContains(getStringResource(R.string.top_sites_sponsored_label)))
+            .exists()
+        Log.i(TAG, "sponsoredTopSitesLoaded: sponsored top sites present = $loaded")
+        return loaded
+    }
+
     @OptIn(ExperimentalTestApi::class)
     fun verifyExistingTopSitesTabs(vararg titles: String) {
         titles.forEach { title ->
@@ -178,6 +238,13 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
             this@HomeScreenRobot.composeTestRule.topSiteItem(title).assertExists()
             Log.i(TAG, "verifyExistingTopSiteItem: Verified that the top site with title: $title exists")
         }
+    }
+
+    fun verifyAddShortcutExists() {
+        Log.i(TAG, "verifyAddShortcutExists: Trying to verify that the \"Add shortcut\" button exists")
+        this@HomeScreenRobot.composeTestRule.onNodeWithTag(TopSitesTestTag.ADD_SHORTCUT_ROOT).assertExists()
+        this@HomeScreenRobot.composeTestRule.onNodeWithTag(TopSitesTestTag.ADD_SHORTCUT_TITLE, useUnmergedTree = true).assert(hasText("Add shortcut"))
+        Log.i(TAG, "verifyAddShortcutExists: Verified that the \"Add shortcut\" button exists")
     }
 
     fun verifySponsoredShortcutDetails(sponsoredShortcutTitle: String, position: Int) {
@@ -407,17 +474,32 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
         composeTestRule.onNodeWithContentDescription(getStringResource(R.string.nova_onboarding_tou_body_line_3, argument = getStringResource(R.string.nova_onboarding_tou_body_line_3_link_text)) + " " + getStringResource(composeBaseR.string.mozac_compose_base_link_text_links_available), useUnmergedTree = true).assertIsDisplayed()
         Log.i(TAG, "verifyTheTermsOfUseOnboardingCard: Verified the \"Terms of use\" third message is displayed")
         Log.i(TAG, "verifyTheTermsOfUseOnboardingCard: Trying to verify the \"Terms of use\" \"Continue\" button is displayed")
-        composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_continue_button)).assertIsDisplayed()
+        composeTestRule.onAllNodesWithText(getStringResource(R.string.nova_onboarding_continue_button)).onFirst().assertIsDisplayed()
         Log.i(TAG, "verifyTheTermsOfUseOnboardingCard: Verified the \"Terms of use\" \"Continue\" button is displayed")
     }
 
     fun clickTheOnboardingCardContinueButton() {
         Log.i(TAG, "clickTheOnboardingCardContinueButton: Trying to click the \"Continue\" button")
-        composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_continue_button), useUnmergedTree = true).performClick()
+        composeTestRule.onAllNodesWithText(getStringResource(R.string.nova_onboarding_continue_button), useUnmergedTree = true).onFirst().performClick()
         Log.i(TAG, "clickTheOnboardingCardContinueButton: Clicked the \"Continue\" button")
         Log.i(TAG, "clickTheOnboardingCardContinueButton: Waiting for compose rule to be idle")
         composeTestRule.waitForIdle()
         Log.i(TAG, "clickTheOnboardingCardContinueButton: Waited for compose rule to be idle")
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    fun clickContinueIfMarketingCardShown() {
+        val marketingCardExists = composeTestRule.onAllNodes(
+            hasText(getStringResource(R.string.nova_onboarding_marketing_title), substring = true),
+        ).fetchSemanticsNodes().isNotEmpty()
+
+        if (marketingCardExists) {
+            Log.i(TAG, "Onboarding marketing card shown, clicking continue")
+            verifyTheHelpUsBuildABetterInternetOnboardingCard()
+            clickTheOnboardingCardContinueButton()
+        } else {
+            Log.i(TAG, "Onboarding marketing card not shown, skipping")
+        }
     }
 
     @OptIn(ExperimentalTestApi::class)
@@ -529,7 +611,7 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
         composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_toolbar_selection_bottom_label)).assertIsDisplayed()
         Log.i(TAG, "verifyTheChooseYourAddressBarOnboardingCard: Verified the \"Choose your address bar\" onboarding card button is displayed")
         Log.i(TAG, "verifyTheChooseYourAddressBarOnboardingCard: Trying to verify the \"Choose your address bar\" onboarding card \"Continue\" button is displayed")
-        composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_continue_button)).assertIsDisplayed()
+        composeTestRule.onAllNodesWithText(getStringResource(R.string.nova_onboarding_continue_button)).onFirst().assertIsDisplayed()
         Log.i(TAG, "verifyTheChooseYourAddressBarOnboardingCard: Verified the \"Choose your address bar\" onboarding card \"Continue\" button is displayed")
     }
 
@@ -541,6 +623,15 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
             ),
         ).swipeRight(3)
         Log.i(TAG, "swipeRightTheChooseYourAddressBarOnboardingCard: Performed swipe right action on the \"Start syncing\" onboarding card")
+    }
+
+    fun verifyTheHelpUsBuildABetterInternetOnboardingCard() {
+        Log.i(TAG, "verifyTheHelpUsBuildABetterInternetOnboardingCard: Trying to verify the \"Help us build a better internet\" onboarding card title is displayed")
+        composeTestRule.onNodeWithText(getStringResource(R.string.nova_onboarding_marketing_title)).assertIsDisplayed()
+        Log.i(TAG, "verifyTheHelpUsBuildABetterInternetOnboardingCard: Verified the \"Help us build a better internet\" onboarding card title is displayed")
+        Log.i(TAG, "verifyTheHelpUsBuildABetterInternetOnboardingCard: Trying to verify the \"Help us build a better internet\" onboarding card \"Continue\" button is displayed")
+        composeTestRule.onAllNodesWithText(getStringResource(R.string.nova_onboarding_continue_button)).onFirst().assertIsDisplayed()
+        Log.i(TAG, "verifyTheHelpUsBuildABetterInternetOnboardingCard: Verified the \"Help us build a better internet\" onboarding card \"Continue\" button is displayed")
     }
 
     fun clickTheTurnOnNotificationsOnboardingCardButton() {

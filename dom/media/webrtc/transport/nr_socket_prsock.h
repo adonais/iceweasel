@@ -99,7 +99,7 @@ class NrSocketBase {
   // NrTcpSocketIpc as appropriate.
   static int CreateSocket(nr_transport_addr* addr, RefPtr<NrSocketBase>* sock,
                           const std::shared_ptr<NrSocketProxyConfig>& config);
-  static bool IsForbiddenAddress(nr_transport_addr* addr);
+  static bool IsForbiddenAddress(const nr_transport_addr* addr);
 
   // the nr_socket APIs
   virtual int create(nr_transport_addr* addr) = 0;
@@ -310,6 +310,6 @@ int nr_praddr_to_transport_addr(const PRNetAddr* praddr,
                                 nr_transport_addr* addr, int protocol,
                                 int keep);
 int nr_transport_addr_get_addrstring_and_port(const nr_transport_addr* addr,
-                                              nsACString* host, int32_t* port);
+                                              nsACString* host, uint16_t* port);
 }  // namespace mozilla
 #endif

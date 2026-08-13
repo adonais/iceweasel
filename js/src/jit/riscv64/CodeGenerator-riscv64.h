@@ -55,7 +55,7 @@ class CodeGeneratorRiscv64 : public CodeGeneratorShared {
     UseScratchRegisterScope temps(&masm);
     Register scratch = temps.Acquire();
     masm.andi(scratch, reg, 0xFF);
-    masm.ma_b(scratch, scratch, &bail, Assembler::Zero);
+    masm.ma_b(scratch, scratch, &bail, Assembler::Zero, LongJump);
     bailoutFrom(&bail, snapshot);
   }
 
@@ -63,12 +63,6 @@ class CodeGeneratorRiscv64 : public CodeGeneratorShared {
   void bailout(LSnapshot* snapshot);
 
   bool generateOutOfLineCode();
-
-  template <typename T>
-  void branchToBlock(Register lhs, T rhs, MBasicBlock* mir,
-                     Assembler::Condition cond) {
-    masm.ma_b(lhs, rhs, skipTrivialBlocks(mir)->lir()->label(), cond);
-  }
 
   enum FloatFormat { SingleFloat, DoubleFloat };
   void branchToBlock(FloatFormat fmt, FloatRegister lhs, FloatRegister rhs,

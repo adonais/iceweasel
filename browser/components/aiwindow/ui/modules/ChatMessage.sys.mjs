@@ -5,6 +5,8 @@
 
 import { Message } from "moz-src:///browser/components/aiwindow/models/Message.sys.mjs";
 
+/** @typedef {import("./ChatConversation.sys.mjs").PooledHistoryResult} PooledHistoryResult */
+
 const TOKEN_LABELS = {
   EXISTING_MEMORY: "existing_memory",
   SEARCH: "search",
@@ -63,6 +65,7 @@ export class ChatMessage extends Message {
   pageHistoryDeleted;
   tokens;
   toolUIData;
+  historyResults;
   kit;
 
   /**
@@ -115,6 +118,9 @@ export class ChatMessage extends Message {
    * @param {?object} param.toolUIData - Tool UI data to render with this message
    * @param {?string} param.toolCallId - id of the tool call this message responds to (role == tool)
    * @param {?string} param.toolName - function name for tool messages (role == tool)
+   * @param {PooledHistoryResult[]} [param.historyResults = []] - Snapshot of the
+   * conversation history results pool as of this message's completion, used to
+   * restore the history thumbnail grid.
    */
   constructor({
     ordinal,
@@ -140,6 +146,7 @@ export class ChatMessage extends Message {
     toolUIData = null,
     toolCallId = null,
     toolName = null,
+    historyResults = [],
   } = {}) {
     super({
       id,
@@ -166,6 +173,7 @@ export class ChatMessage extends Message {
     this.followUpSuggestions = followUpSuggestions;
     this.pageHistoryDeleted = pageHistoryDeleted;
     this.toolUIData = toolUIData;
+    this.historyResults = historyResults;
     this.tokens = {
       search: [],
       existing_memory: [],
@@ -309,15 +317,19 @@ export class UserRoleOpts {
 export class ChatMinimal {
   #id;
   #title;
+  #pageUrl;
 
   /**
    * @param {object} params
    * @param {string} params.convId
    * @param {string} params.title
+   * @param {?string} [params.pageUrl] - URL of the page the chat was about,
+   *   used to render a site favicon. Null for chats not tied to a page.
    */
-  constructor({ convId, title }) {
+  constructor({ convId, title, pageUrl = null }) {
     this.#id = convId;
     this.#title = title;
+    this.#pageUrl = pageUrl;
   }
 
   get id() {
@@ -326,6 +338,10 @@ export class ChatMinimal {
 
   get title() {
     return this.#title;
+  }
+
+  get pageUrl() {
+    return this.#pageUrl;
   }
 }
 

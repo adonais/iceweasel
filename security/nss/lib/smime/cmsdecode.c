@@ -165,6 +165,9 @@ nss_cms_decoder_notify(void *arg, PRBool before, void *dest, int depth)
                     case SEC_OID_PKCS7_ENVELOPED_DATA:
                         p7dcx->content.envelopedData->cmsg = p7dcx->cmsg;
                         break;
+                    case SEC_OID_CMS_AUTH_ENVELOPED_DATA:
+                        p7dcx->content.authEnvelopedData->cmsg = p7dcx->cmsg;
+                        break;
                     case SEC_OID_PKCS7_ENCRYPTED_DATA:
                         p7dcx->content.encryptedData->cmsg = p7dcx->cmsg;
                         break;
@@ -175,27 +178,36 @@ nss_cms_decoder_notify(void *arg, PRBool before, void *dest, int depth)
             }
 
             if (before && dest == &(cinfo->rawContent)) {
-                /* we want the ASN.1 decoder to deliver the decoded bytes to us
-                 ** from now on
-                 */
-                SEC_ASN1DecoderSetFilterProc(p7dcx->dcx,
-                                             nss_cms_decoder_update_filter,
-                                             p7dcx, (PRBool)(p7dcx->cb != NULL));
+                if (p7dcx->type == SEC_OID_CMS_AUTH_ENVELOPED_DATA) {
+                    if (NSS_CMSAuthEnvelopedData_Decode_BeforeData(
+                            p7dcx->content.authEnvelopedData) != SECSuccess) {
+                        p7dcx->error = PORT_GetError();
+                    }
+                } else {
+                    /* we want the ASN.1 decoder to deliver the decoded bytes
+                     ** to us from now on */
+                    SEC_ASN1DecoderSetFilterProc(
+                        p7dcx->dcx, nss_cms_decoder_update_filter, p7dcx,
+                        (PRBool)(p7dcx->cb != NULL));
 
-                /* we're right in front of the data */
-                if (nss_cms_before_data(p7dcx) != SECSuccess) {
-                    SEC_ASN1DecoderClearFilterProc(p7dcx->dcx);
-                    /* stop all processing */
-                    p7dcx->error = PORT_GetError();
+                    /* we're right in front of the data */
+                    if (nss_cms_before_data(p7dcx) != SECSuccess) {
+                        SEC_ASN1DecoderClearFilterProc(p7dcx->dcx);
+                        /* stop all processing */
+                        p7dcx->error = PORT_GetError();
+                    }
                 }
             }
             if (after && dest == &(cinfo->rawContent)) {
-                /* we're right after of the data */
-                if (nss_cms_after_data(p7dcx) != SECSuccess)
-                    p7dcx->error = PORT_GetError();
-
+                if (p7dcx->type != SEC_OID_CMS_AUTH_ENVELOPED_DATA) {
+                    /* we're right after of the data */
+                    if (nss_cms_after_data(p7dcx) != SECSuccess)
+                        p7dcx->error = PORT_GetError();
+                }
                 /* we don't need to see the contents anymore */
-                SEC_ASN1DecoderClearFilterProc(p7dcx->dcx);
+                if (p7dcx->type != SEC_OID_CMS_AUTH_ENVELOPED_DATA) {
+                    SEC_ASN1DecoderClearFilterProc(p7dcx->dcx);
+                }
             }
         }
     } else {
@@ -379,6 +391,10 @@ nss_cms_after_data(NSSCMSDecoderContext *p7dcx)
             rv = NSS_CMSEnvelopedData_Decode_AfterData(
                 p7dcx->content.envelopedData);
             break;
+        case SEC_OID_CMS_AUTH_ENVELOPED_DATA:
+            /* AEAD needs mac, which isn't available yet */
+            rv = SECSuccess;
+            break;
         case SEC_OID_PKCS7_DIGESTED_DATA:
             rv = NSS_CMSDigestedData_Decode_AfterData(
                 p7dcx->content.digestedData);
@@ -432,6 +448,28 @@ nss_cms_after_end_inner(NSSCMSDecoderContext *p7dcx, unsigned int depth)
             if (p7dcx->content.envelopedData)
                 rv = NSS_CMSEnvelopedData_Decode_AfterEnd(
                     p7dcx->content.envelopedData);
+            break;
+        case SEC_OID_CMS_AUTH_ENVELOPED_DATA:
+            if (p7dcx->content.authEnvelopedData) {
+                SECStatus aerv = NSS_CMSAuthEnvelopedData_Decode_AfterEnd(
+                    p7dcx->content.authEnvelopedData);
+                if (aerv == SECSuccess) {
+                    NSSCMSContentInfo *acinfo =
+                        &(p7dcx->content.authEnvelopedData->contentInfo);
+                    if (acinfo->rawContent && acinfo->rawContent->len) {
+                        if (p7dcx->cb != NULL) {
+                            (*p7dcx->cb)(p7dcx->cb_arg,
+                                         (const char *)acinfo->rawContent->data,
+                                         acinfo->rawContent->len);
+                        }
+                        /* Also set content pointer for callers using GetContent */
+                        acinfo->content.pointer = acinfo->rawContent;
+                    }
+                }
+                if (aerv != SECSuccess) {
+                    rv = aerv;
+                }
+            }
             break;
         case SEC_OID_PKCS7_DIGESTED_DATA:
             if (p7dcx->content.digestedData)
@@ -716,7 +754,9 @@ NSS_CMSDecoder_Update(NSSCMSDecoderContext *p7dcx, const char *buf,
     SECStatus rv = SECSuccess;
     if (p7dcx->dcx != NULL && p7dcx->error == 0) {
         /* if error is set already, don't bother */
-        if ((p7dcx->type == SEC_OID_PKCS7_SIGNED_DATA) && (p7dcx->first_decoded == PR_TRUE) && (buf[0] == SEC_ASN1_INTEGER)) {
+        if ((p7dcx->type == SEC_OID_PKCS7_SIGNED_DATA) &&
+            (p7dcx->first_decoded == PR_TRUE) &&
+            (len > 0 && buf[0] == SEC_ASN1_INTEGER)) {
             /* Microsoft Windows 2008 left out the Sequence wrapping in some
              * of their kerberos replies. If we are here, we most likely are
              * dealing with one of those replies. Supply the Sequence wrap

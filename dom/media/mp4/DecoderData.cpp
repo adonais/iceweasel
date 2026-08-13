@@ -339,6 +339,10 @@ MediaResult MP4VideoInfo::Update(const Mp4parseTrackInfo* track,
   mDisplay.height = AssertedCast<int32_t>(video->display_height);
   mImage.width = video->sample_info[0].image_width;
   mImage.height = video->sample_info[0].image_height;
+  if (!IsValidVideoDisplaySize(mDisplay)) {
+    return MediaResult(NS_ERROR_DOM_MEDIA_METADATA_ERR,
+                       RESULT_DETAIL("MP4 track display size is invalid"));
+  }
   mRotation = ToSupportedRotation(video->rotation);
   Mp4parseByteData extraData = video->sample_info[0].extra_data;
   // If length is 0 we append nothing

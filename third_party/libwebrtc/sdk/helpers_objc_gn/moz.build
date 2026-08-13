@@ -48,6 +48,12 @@ LOCAL_INCLUDES += [
     "/tools/profiler/public"
 ]
 
+OS_LIBS += [
+    "-framework AVFoundation",
+    "-framework CoreMedia",
+    "-framework Foundation"
+]
+
 UNIFIED_SOURCES += [
     "/third_party/libwebrtc/sdk/objc/helpers/AVCaptureSession+DevicePosition.mm",
     "/third_party/libwebrtc/sdk/objc/helpers/NSString+StdString.mm",

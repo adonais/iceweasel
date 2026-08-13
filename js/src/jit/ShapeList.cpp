@@ -22,7 +22,8 @@ const JSClassOps ShapeListObject::classOps_ = {
 };
 
 /* static */ ShapeListObject* ShapeListObject::create(JSContext* cx) {
-  NativeObject* obj = NewTenuredObjectWithGivenProto(cx, &class_, nullptr);
+  NativeObject* obj =
+      NewObjectWithGivenProto(cx, &class_, nullptr, {.newKind = TenuredObject});
   if (!obj) {
     return nullptr;
   }
@@ -96,7 +97,8 @@ const JSClassOps ShapeListWithOffsetsObject::classOps_ = {
 
 /* static */ ShapeListWithOffsetsObject* ShapeListWithOffsetsObject::create(
     JSContext* cx) {
-  NativeObject* obj = NewTenuredObjectWithGivenProto(cx, &class_, nullptr);
+  NativeObject* obj =
+      NewObjectWithGivenProto(cx, &class_, nullptr, {.newKind = TenuredObject});
   if (!obj) {
     return nullptr;
   }

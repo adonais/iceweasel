@@ -108,33 +108,34 @@ sdnAccessible::scrollTo(boolean aScrollTopLeft) {
 }
 
 STDMETHODIMP
-sdnAccessible::get_parentNode(ISimpleDOMNode __RPC_FAR* __RPC_FAR* aNode) {
+sdnAccessible::get_parentNode(ISimpleDOMNode __RPC_FAR * __RPC_FAR * aNode) {
   return E_NOTIMPL;
 }
 
 STDMETHODIMP
-sdnAccessible::get_firstChild(ISimpleDOMNode __RPC_FAR* __RPC_FAR* aNode) {
+sdnAccessible::get_firstChild(ISimpleDOMNode __RPC_FAR * __RPC_FAR * aNode) {
   return E_NOTIMPL;
 }
 
 STDMETHODIMP
-sdnAccessible::get_lastChild(ISimpleDOMNode __RPC_FAR* __RPC_FAR* aNode) {
+sdnAccessible::get_lastChild(ISimpleDOMNode __RPC_FAR * __RPC_FAR * aNode) {
   return E_NOTIMPL;
 }
 
 STDMETHODIMP
-sdnAccessible::get_previousSibling(ISimpleDOMNode __RPC_FAR* __RPC_FAR* aNode) {
+sdnAccessible::get_previousSibling(ISimpleDOMNode __RPC_FAR * __RPC_FAR *
+                                   aNode) {
   return E_NOTIMPL;
 }
 
 STDMETHODIMP
-sdnAccessible::get_nextSibling(ISimpleDOMNode __RPC_FAR* __RPC_FAR* aNode) {
+sdnAccessible::get_nextSibling(ISimpleDOMNode __RPC_FAR * __RPC_FAR * aNode) {
   return E_NOTIMPL;
 }
 
 STDMETHODIMP
 sdnAccessible::get_childAt(unsigned aChildIndex,
-                           ISimpleDOMNode __RPC_FAR* __RPC_FAR* aNode) {
+                           ISimpleDOMNode __RPC_FAR * __RPC_FAR * aNode) {
   return E_NOTIMPL;
 }
 
@@ -173,7 +174,8 @@ sdnAccessible::get_innerHTML(BSTR __RPC_FAR* aInnerHTML) {
 }
 
 STDMETHODIMP
-sdnAccessible::get_localInterface(void __RPC_FAR* __RPC_FAR* aLocalInterface) {
+sdnAccessible::get_localInterface(void __RPC_FAR * __RPC_FAR *
+                                  aLocalInterface) {
   if (!aLocalInterface) return E_INVALIDARG;
   *aLocalInterface = nullptr;
 

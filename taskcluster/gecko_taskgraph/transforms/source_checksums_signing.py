@@ -7,12 +7,12 @@ Transform the checksums signing task into an actual task description.
 
 from typing import Optional
 
+from mozilla_taskgraph.util.attributes import copy_attributes_from_dependent_job
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.dependencies import get_primary_dependency
 from taskgraph.util.schema import Schema
 
 from gecko_taskgraph.transforms.task import TaskDescriptionSchema
-from gecko_taskgraph.util.attributes import copy_attributes_from_dependent_job
 from gecko_taskgraph.util.scriptworker import get_signing_type
 
 

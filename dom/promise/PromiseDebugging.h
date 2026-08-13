@@ -60,7 +60,7 @@ class PromiseDebugging {
   static void FlushUncaughtRejections();
 
  protected:
-  static void FlushUncaughtRejectionsInternal();
+  static void FlushUncaughtRejectionsInternal(bool aDeferToEventPath = true);
   friend class FlushRejections;
   friend class mozilla::dom::WorkerPrivate;
 

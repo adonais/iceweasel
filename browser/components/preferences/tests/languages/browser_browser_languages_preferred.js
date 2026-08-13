@@ -90,7 +90,7 @@ add_task(async function testLanguageChangeLiveReload() {
 
   await changeLocale(doc, "fr");
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => Services.locale.requestedLocales.includes("fr"),
     "The fr locale is applied immediately with live reload"
   );

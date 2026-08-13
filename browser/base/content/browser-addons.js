@@ -2483,11 +2483,11 @@ var gUnifiedExtensions = {
         } else if (!policies.length) {
           document.l10n.setAttributes(
             emptyStateBox.querySelector("h2"),
-            "unified-extensions-empty-reason-zero-extensions-onboarding"
+            "unified-extensions-empty-reason-zero-extensions-onboarding2"
           );
           document.l10n.setAttributes(
             emptyStateBox.querySelector("description"),
-            "unified-extensions-empty-content-explain-extensions-onboarding"
+            "unified-extensions-empty-content-explain-extensions-onboarding2"
           );
           emptyStateBox.hidden = false;
 

@@ -35,7 +35,7 @@ add_task(async function test_fxa_badge_shown_nodelay() {
   let fxaButton = browserWindow.document.getElementById(msg.content.target);
   fxaButton.click();
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       !browserWindow.document
         .getElementById(msg.content.target)
@@ -46,7 +46,7 @@ add_task(async function test_fxa_badge_shown_nodelay() {
 
   ToolbarBadgeHub.registerBadgeNotificationListener(msg);
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       browserWindow.document
         .getElementById(msg.content.target)
@@ -58,7 +58,7 @@ add_task(async function test_fxa_badge_shown_nodelay() {
   let newWin = await BrowserTestUtils.openNewBrowserWindow();
   browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       browserWindow.document
         .getElementById(msg.content.target)
@@ -74,7 +74,7 @@ add_task(async function test_fxa_badge_shown_nodelay() {
   fxaButton = document.getElementById(msg.content.target);
   fxaButton.click();
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       !browserWindow.document
         .getElementById(msg.content.target)
@@ -99,7 +99,7 @@ add_task(async function test_fxa_badge_shown_withdelay() {
   let fxaButton = browserWindow.document.getElementById(msg.content.target);
   fxaButton.click();
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       !browserWindow.document
         .getElementById(msg.content.target)
@@ -110,7 +110,7 @@ add_task(async function test_fxa_badge_shown_withdelay() {
 
   ToolbarBadgeHub.registerBadgeNotificationListener(msg);
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       browserWindow.document
         .getElementById(msg.content.target)
@@ -122,7 +122,7 @@ add_task(async function test_fxa_badge_shown_withdelay() {
   let newWin = await BrowserTestUtils.openNewBrowserWindow();
   browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       browserWindow.document
         .getElementById(msg.content.target)
@@ -138,7 +138,7 @@ add_task(async function test_fxa_badge_shown_withdelay() {
   fxaButton = document.getElementById(msg.content.target);
   fxaButton.click();
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       !browserWindow.document
         .getElementById(msg.content.target)

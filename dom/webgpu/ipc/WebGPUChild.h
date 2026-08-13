@@ -101,11 +101,6 @@ class WebGPUChild final : public PWebGPUChild {
  public:
   explicit WebGPUChild();
 
-  RawId RenderBundleEncoderFinish(ffi::WGPURenderBundleEncoder& aEncoder,
-                                  RawId aDeviceId,
-                                  const dom::GPURenderBundleDescriptor& aDesc);
-  RawId RenderBundleEncoderFinishError(RawId aDeviceId, const nsString& aLabel);
-
   ffi::WGPUClient* GetClient() const { return mClient.get(); }
 
   void SwapChainPresent(RawId aTextureId,

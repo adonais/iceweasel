@@ -12,6 +12,7 @@
 #include "vm/NativeObject.h"
 #include "vm/PlainObject.h"
 #include "vm/Realm.h"
+#include "vm/TypedArrayObject.h"
 
 #include "vm/Compartment-inl.h"
 #include "vm/JSObject-inl.h"
@@ -146,6 +147,16 @@ void MaybePopReturnFuses(JSContext* cx, Handle<NativeObject*> nobj) {
   }
 }
 
+void MaybePopTypedArrayConstructorSpeciesFuses(JSContext* cx,
+                                               NativeObject* nobj) {
+  MOZ_ASSERT(nobj->hasRealmFuseProperty());
+
+  if (IsTypedArrayConstructor(nobj)) {
+    nobj->realm()->realmFuses.optimizeTypedArraySpeciesFuse.popFuse(
+        cx, nobj->realm()->realmFuses);
+  }
+}
+
 // static
 bool Watchtower::watchPropertyAddSlow(JSContext* cx, Handle<NativeObject*> obj,
                                       HandleId id) {
@@ -163,6 +174,11 @@ bool Watchtower::watchPropertyAddSlow(JSContext* cx, Handle<NativeObject*> obj,
       MaybePopReturnFuses(cx, obj);
     }
   }
+  if (MOZ_UNLIKELY(obj->hasRealmFuseProperty())) {
+    if (id.isWellKnownSymbol(JS::SymbolCode::species)) {
+      MaybePopTypedArrayConstructorSpeciesFuses(cx, obj);
+    }
+  }
 
   if (MOZ_UNLIKELY(obj->useWatchtowerTestingLog())) {
     RootedValue val(cx, IdToValue(id));
@@ -174,7 +190,7 @@ bool Watchtower::watchPropertyAddSlow(JSContext* cx, Handle<NativeObject*> obj,
   return true;
 }
 
-static bool ReshapeForProtoMutation(JSContext* cx, HandleObject obj) {
+static bool ReshapeForProtoMutation(JSContext* cx, Handle<NativeObject*> obj) {
   // To avoid the JIT guarding on each prototype in the proto chain to detect
   // prototype mutation, we can instead reshape the rest of the proto chain such
   // that a guard on any of them is sufficient. To avoid excessive reshaping and
@@ -258,16 +274,18 @@ static_assert(
     "IsTypedArrayProtoKey(JSProto_TypedArray) is expected to return false");
 
 static bool WatchProtoChangeImpl(JSContext* cx, HandleObject obj) {
-  if (!obj->isUsedAsPrototype()) {
+  if (!obj->is<NativeObject>()) {
     return true;
   }
-  if (!ReshapeForProtoMutation(cx, obj)) {
-    return false;
-  }
-  if (obj->is<NativeObject>()) {
-    InvalidateMegamorphicCache(cx, obj.as<NativeObject>());
+  auto nobj = obj.as<NativeObject>();
 
-    NativeObject* nobj = &obj->as<NativeObject>();
+  if (nobj->isUsedAsPrototype()) {
+    if (!ReshapeForProtoMutation(cx, nobj)) {
+      return false;
+    }
+
+    InvalidateMegamorphicCache(cx, nobj);
+
     if (nobj == nobj->global().maybeGetArrayIteratorPrototype()) {
       nobj->realm()->realmFuses.arrayIteratorPrototypeHasIteratorProto.popFuse(
           cx, nobj->realm()->realmFuses);
@@ -284,6 +302,10 @@ static bool WatchProtoChangeImpl(JSContext* cx, HandleObject obj) {
       nobj->realm()->realmFuses.optimizeTypedArraySpeciesFuse.popFuse(
           cx, nobj->realm()->realmFuses);
     }
+  }
+
+  if (MOZ_UNLIKELY(nobj->hasRealmFuseProperty())) {
+    MaybePopTypedArrayConstructorSpeciesFuses(cx, nobj);
   }
 
   return true;

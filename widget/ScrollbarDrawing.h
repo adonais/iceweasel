@@ -5,13 +5,13 @@
 #ifndef mozilla_widget_ScrollbarDrawing_h
 #define mozilla_widget_ScrollbarDrawing_h
 
+#include "ThemeColors.h"
+#include "ThemeDrawing.h"
+#include "Units.h"
 #include "mozilla/dom/RustTypes.h"
 #include "mozilla/gfx/2D.h"
 #include "nsColor.h"
 #include "nsITheme.h"
-#include "ThemeColors.h"
-#include "ThemeDrawing.h"
-#include "Units.h"
 
 class nsScrollbarFrame;
 

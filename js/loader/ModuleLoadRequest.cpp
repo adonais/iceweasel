@@ -5,11 +5,11 @@
 #include "ModuleLoadRequest.h"
 
 #include "mozilla/DebugOnly.h"
-#include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/dom/ScriptLoadContext.h"
+#include "mozilla/HoldDropJSObjects.h"
 
-#include "LoadedScript.h"
 #include "LoadContextBase.h"
+#include "LoadedScript.h"
 #include "ModuleLoaderBase.h"
 
 namespace JS::loader {
@@ -98,6 +98,15 @@ void ModuleLoadRequest::ModuleLoaded() {
 
   if (FetchInfo()->IsForModulePreload() != mLoadContext->IsPreload()) {
     FetchInfo()->SetForModulePreload(mLoadContext->IsPreload());
+  }
+
+  // A module script fetched during preload can be reused by a normal load whose
+  // top-level request never matched a preload entry, so the preload-promotion
+  // path never clears the module script's preload flag. Clear it here so the
+  // shared module script reflects that it is now part of a normal load.
+  MOZ_ASSERT(mModuleScript);
+  if (!mLoadContext->IsPreload() && mModuleScript->ForPreload()) {
+    mModuleScript->SetForPreload(false);
   }
 }
 

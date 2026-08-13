@@ -69,9 +69,9 @@ enum class ThreadProfilingFeatures : uint32_t {
 template <typename... Ts>
 [[nodiscard]] constexpr ThreadProfilingFeatures Combine(
     ThreadProfilingFeatures a1, Ts... as) {
-  static_assert((true && ... &&
-                 std::is_same_v<std::remove_cv_t<std::remove_reference_t<Ts>>,
-                                ThreadProfilingFeatures>));
+  static_assert(
+      (true && ... &&
+       std::is_same_v<std::remove_cvref_t<Ts>, ThreadProfilingFeatures>));
   return static_cast<ThreadProfilingFeatures>(
       (static_cast<std::underlying_type_t<ThreadProfilingFeatures>>(a1) | ... |
        static_cast<std::underlying_type_t<ThreadProfilingFeatures>>(as)));
@@ -82,9 +82,9 @@ template <typename... Ts>
 template <typename... Ts>
 [[nodiscard]] constexpr ThreadProfilingFeatures Intersect(
     ThreadProfilingFeatures a1, Ts... as) {
-  static_assert((true && ... &&
-                 std::is_same_v<std::remove_cv_t<std::remove_reference_t<Ts>>,
-                                ThreadProfilingFeatures>));
+  static_assert(
+      (true && ... &&
+       std::is_same_v<std::remove_cvref_t<Ts>, ThreadProfilingFeatures>));
   return static_cast<ThreadProfilingFeatures>(
       (static_cast<std::underlying_type_t<ThreadProfilingFeatures>>(a1) & ... &
        static_cast<std::underlying_type_t<ThreadProfilingFeatures>>(as)));
@@ -366,7 +366,16 @@ class ThreadRegistrationUnlockedConstReaderAndAtomicRW
   }
 
 #ifdef NIGHTLY_BUILD
-  void RecordWakeCount() const;
+  // Updates this thread's recorded wake-up/CPU-use counters and records the
+  // "Thread CPU use" profiler marker. If there is new data to report to Glean,
+  // returns true and fills the out-params; the caller is then responsible for
+  // calling mozilla::glean::RecordThreadCpuUse. Returning the data rather than
+  // reporting it here lets callers that hold the ThreadRegistry lock defer the
+  // Glean call until after they release it, avoiding a lock-order inversion
+  // with the Glean/Telemetry locks.
+  [[nodiscard]] bool RecordWakeCount(nsACString& aThreadName,
+                                     uint64_t& aCpuTimeMs,
+                                     uint64_t& aWakeCount) const;
 #endif
 
   // This is called on every profiler restart. Put things that should happen

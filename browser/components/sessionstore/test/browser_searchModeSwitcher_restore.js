@@ -80,7 +80,7 @@ add_task(async function () {
   is(win.gBrowser.tabs.length, 3, "The restored window should have 3 tabs");
 
   // Search mode switcher icon update will trigger once.
-  await BrowserTestUtils.waitForCondition(() => updateCalled > 1);
+  await TestUtils.waitForCondition(() => updateCalled > 1);
 
   let searchModeSwitcherIconUrl = win.gURLBar
     .querySelector(".searchmode-switcher")
@@ -95,9 +95,7 @@ add_task(async function () {
   persistSandbox.restore();
 
   // Wait for any ongoing calls to defaultEngine.getIconURL() to finish.
-  await BrowserTestUtils.waitForCondition(
-    () => !defaultEngineIconCallsStack.length
-  );
+  await TestUtils.waitForCondition(() => !defaultEngineIconCallsStack.length);
 
   await BrowserTestUtils.closeWindow(win);
 

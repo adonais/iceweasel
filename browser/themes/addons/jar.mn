@@ -16,7 +16,14 @@ browser.jar:
   content/builtin-themes/light/icon.svg            (light/icon.svg)
   content/builtin-themes/light/manifest.json       (light/manifest.json)
 
-  content/builtin-themes/aiwindow/manifest.json       (aiwindow/manifest.json)
-  content/builtin-themes/aiwindow/aiwindow-theme.css  (aiwindow/aiwindow-theme.css)
+  content/builtin-themes/aiwindow/manifest.json        (aiwindow/manifest.json)
+  content/builtin-themes/aiwindow/aiwindow-theme.css   (aiwindow/aiwindow-theme.css)
+
+  content/builtin-themes/aiwindow-nova/manifest.json   (aiwindow-nova/manifest.json)
+  content/builtin-themes/aiwindow-nova/aiwindow-theme-nova.css  (aiwindow-nova/aiwindow-theme-nova.css)
 
   content/builtin-themes/privatewindow/manifest.json            (privatewindow/manifest.json)
+
+%  resource extra-themes-previews %content/extra-themes-previews/
+
+  content/extra-themes-previews                        (extra-themes-previews/*.svg)

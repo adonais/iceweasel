@@ -6,8 +6,8 @@
 #define widget_android_CompositorWidgetChild_h
 
 #include "AndroidCompositorWidget.h"
-#include "mozilla/widget/PCompositorWidgetChild.h"
 #include "mozilla/widget/CompositorWidgetVsyncObserver.h"
+#include "mozilla/widget/PCompositorWidgetChild.h"
 
 namespace mozilla {
 namespace widget {

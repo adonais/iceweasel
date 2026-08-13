@@ -299,13 +299,18 @@ class App extends Component {
   }
 
   renderFilterBar() {
-    const { closeSplitConsole, filterBarDisplayMode, webConsoleUI } =
-      this.props;
+    const {
+      closeSplitConsole,
+      filterBarDisplayMode,
+      serviceContainer,
+      webConsoleUI,
+    } = this.props;
 
     return FilterBar({
       key: "filterbar",
       closeSplitConsole,
       displayMode: filterBarDisplayMode,
+      serviceContainer,
       webConsoleUI,
     });
   }

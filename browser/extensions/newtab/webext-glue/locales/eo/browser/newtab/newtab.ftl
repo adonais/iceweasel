@@ -93,6 +93,9 @@ home-prefs-sports-widget-header =
 # Clock is a widget on New Tab that displays time zones around the world.
 home-prefs-clocks-header =
     .label = Horloĝo
+# Privacy is a widget on New Tab that shows tracking protection activity.
+home-prefs-privacy-header =
+    .label = Privateco
 home-prefs-mission-message2 =
     .message = Niaj patronoj subtenas nian mision: krei pli bonan interreton.
 home-prefs-manage-topics-link2 =
@@ -151,6 +154,11 @@ home-prefs-weather-header-srd =
 home-prefs-support-firefox-header-srd =
     .label = Helpi { -brand-product-name }
 home-prefs-mission-message-learn-more-link-srd = Malkovri kiel
+
+## Strings for the Privacy widget
+
+# Context menu item linking to more information about the Privacy widget.
+newtab-privacy-menu-learn-more = Pli da informo
 
 ## Search box component.
 
@@ -472,6 +480,8 @@ newtab-recommended-stories-toggle =
     .label = Rekomenditaj artikoloj
 newtab-custom-stories-personalized-toggle =
     .label = Artikoloj
+newtab-custom-stories-personalized-checkbox =
+    .label = Personecigitaj artikoloj laŭ via retumo
 newtab-custom-stories-personalized-checkbox-label = Personecigitaj artikoloj laŭ via retumo
 newtab-custom-pocket-sponsored = Patronitaj artikoloj
 newtab-custom-pocket-show-recent-saves = Montri ĵusajn konservojn
@@ -492,6 +502,8 @@ newtab-custom-widget-clock-toggle =
     .label = Horloĝo
 newtab-custom-widget-sports-toggle2 =
     .label = Sporto
+newtab-custom-widget-privacy-toggle =
+    .label = Privateco
 newtab-custom-widget-section-title = Komponantoj
 newtab-custom-widget-section-toggle =
     .label = Komponantoj
@@ -968,6 +980,8 @@ newtab-widget-timer-reset =
 newtab-widget-timer-menu-notifications = Malŝalti sciigojn
 newtab-widget-timer-menu-notifications-on = Ŝalti sciigojn
 newtab-widget-timer-menu-learn-more = Pli da informo
+newtab-widget-timer-menu-button =
+    .aria-label = Ebloj de tempumilo
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = Ĉefaj titoloj
 newtab-daily-briefing-card-menu-dismiss = Ignori
@@ -1086,6 +1100,8 @@ newtab-sports-widget-show-less =
 # Toggle that filters the list of teams the user follows
 newtab-sports-widget-followed-only-toggle =
     .label = Nur sekvataj teamoj
+# Status shown when more matches are being fetched.
+newtab-sports-widget-loading-more = Ŝargado de pli da kongruaĵoj…
 # Watch is a verb (as in watch matches online).
 newtab-sports-widget-watch =
     .label = Spekti
@@ -1165,6 +1181,9 @@ newtab-sports-widget-third-place = Tria loko
 newtab-sports-widget-runner-up = Dua loko
 newtab-sports-widget-champions = Ĉampionoj
 newtab-sports-widget-world-cup-champions = Ĉampionoj de la piedpilka mondpokalo 2026
+# Compact champions label for the medium-size widget result card; the larger
+# card uses newtab-sports-widget-world-cup-champions.
+newtab-sports-widget-world-cup-champions-short = Ĉampionoj 2026
 # Variables:
 #   $date (Date) - The match start time
 newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
@@ -1263,6 +1282,8 @@ newtab-sports-widget-team-tbd = Difinota
 newtab-sports-widget-message-wallpapers-title = Komencu la mondpokalon kun novaj ekranfonoj
 newtab-sports-widget-message-wallpapers-body = Aldonu iom da luda energio al via retumilo.
 newtab-sports-widget-message-wallpapers-cta = Elekti ekranfonon
+newtab-sports-widget-message-wallpapers-semifinals-title = Ricevu novan ekranfonon por la duonfinaloj
+newtab-sports-widget-message-wallpapers-semifinals-body = Preparu la etoson por la plej gravaj ludoj de la mondpokalo.
 newtab-sports-widget-message-add-widgets-cta =
     .label = Aldoni komponantojn
 newtab-sports-widget-message-day-in-play-title = Restu en la etoso pokala per la komponantoj de { -brand-product-name }

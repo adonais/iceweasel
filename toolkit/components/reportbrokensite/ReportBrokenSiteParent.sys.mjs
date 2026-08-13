@@ -121,7 +121,7 @@ export class ReportBrokenSiteParent extends JSWindowActorParent {
           glean: "browserInfo.app",
         },
         platform: {
-          do_not_preview: true,
+          doNotPreview: true,
           value: browser.platform.name,
           // Gleans sends this for us in the base ping
         },
@@ -187,12 +187,12 @@ export class ReportBrokenSiteParent extends JSWindowActorParent {
         isTabSpecific: true,
         consoleLog: {
           value: consoleLog,
-          do_not_preview: true,
+          doNotPreview: true,
           // Only sent to webcompat.com with send more info, not with Glean.
         },
         favicon: {
           value: favicon,
-          do_not_preview: true,
+          doNotPreview: true,
           // Only to be displayed to the user on the UI, not to be sent to Glean.
         },
         languages: {
@@ -202,12 +202,12 @@ export class ReportBrokenSiteParent extends JSWindowActorParent {
         screenshot: {
           isTabSpecific: true,
           value: screenshot,
-          do_not_preview: true,
+          doNotPreview: true,
           // Binary data not sent by Glean
         },
         url: {
           value: url,
-          do_not_preview: true,
+          doNotPreview: true,
           // Duplicate value used only for sanity-checking.
         },
         useragentString: {
@@ -536,6 +536,10 @@ export class ReportBrokenSiteParent extends JSWindowActorParent {
       osVersion: this.#getSysinfoProperty("version", null),
       name: AppConstants.platform,
     };
+    if (info.osVersion !== null) {
+      // Android can return a number, but we want a string.
+      info.osVersion = String(info.osVersion);
+    }
     if (info.os === "android") {
       info.device = this.#getSysinfoProperty("device", null);
       info.isTablet = this.#getSysinfoProperty("tablet", false);

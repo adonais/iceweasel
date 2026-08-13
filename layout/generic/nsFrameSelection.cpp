@@ -790,6 +790,21 @@ nsresult nsFrameSelection::MoveCaret(nsDirection aDirection,
   }
 
   const RefPtr<Selection> sel = &NormalSelection();
+  if (const nsRange* anchorFocusRange = sel->GetAnchorFocusRange()) {
+    if (NS_WARN_IF(!anchorFocusRange->IsPositioned())) {
+      return NS_ERROR_FAILURE;
+    }
+    // If the selection range to be modified is outside the limiters, we should
+    // not touch it.
+    if (!mLimiters.RangeInLimiters(*anchorFocusRange)) [[unlikely]] {
+      // We don't want the caller to fall the per line move back to a complete
+      // move in this case. So, let's return "did nothing".
+      return NS_SUCCESS_DOM_NO_OPERATION;
+    }
+  } else {
+    // No range to modify.
+    return NS_ERROR_FAILURE;
+  }
 
   auto scrollFlags = ScrollFlags::None;
   if (sel->IsEditorSelection()) {
@@ -1172,8 +1187,9 @@ void nsFrameSelection::MaintainedRange::AdjustNormalSelection(
 
   NS_ASSERTION(aOffset >= 0, "aOffset should not be negative");
   const Maybe<int32_t> relToStart =
-      nsContentUtils::ComparePoints_AllowNegativeOffsets(
-          rangeStartNode, rangeStartOffset, aContent, aOffset);
+      nsContentUtils::ComparePoints_AllowNegativeOffsets<
+          TreeKind::ShadowIncludingDOM>(rangeStartNode, rangeStartOffset,
+                                        aContent, aOffset);
   if (NS_WARN_IF(!relToStart)) {
     // Potentially handle this properly when Selection across Shadow DOM
     // boundary is implemented
@@ -1182,8 +1198,9 @@ void nsFrameSelection::MaintainedRange::AdjustNormalSelection(
   }
 
   const Maybe<int32_t> relToEnd =
-      nsContentUtils::ComparePoints_AllowNegativeOffsets(
-          rangeEndNode, rangeEndOffset, aContent, aOffset);
+      nsContentUtils::ComparePoints_AllowNegativeOffsets<
+          TreeKind::ShadowIncludingDOM>(rangeEndNode, rangeEndOffset, aContent,
+                                        aOffset);
   if (NS_WARN_IF(!relToEnd)) {
     // Potentially handle this properly when Selection across Shadow DOM
     // boundary is implemented
@@ -1209,9 +1226,11 @@ void nsFrameSelection::MaintainedRange::AdjustContentOffsets(
     nsIFrame::ContentOffsets& aOffsets, StopAtScroller aStopAtScroller) const {
   // Adjust offsets according to maintained amount
   if (mRange && mAmount != eSelectNoAmount) {
-    const Maybe<int32_t> relativePosition = nsContentUtils::ComparePoints(
-        mRange->StartRef(), RawRangeBoundary(aOffsets.content, aOffsets.offset,
-                                             RangeBoundarySetBy::Offset));
+    const Maybe<int32_t> relativePosition =
+        nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+            mRange->StartRef(),
+            RawRangeBoundary(aOffsets.content, aOffsets.offset,
+                             RangeBoundarySetBy::Offset));
     if (NS_WARN_IF(!relativePosition)) {
       // Potentially handle this properly when Selection across Shadow DOM
       // boundary is implemented

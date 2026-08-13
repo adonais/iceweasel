@@ -9,29 +9,30 @@
 #include <gtk/gtk.h>
 
 #include "CompositorWidget.h"
+#include "IMContextWrapper.h"
+#include "LookAndFeel.h"
 #include "MozContainer.h"
-#include "WaylandSurfaceLock.h"
 #include "VsyncSource.h"
+#include "WaylandSurfaceLock.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/RWLock.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TouchEvents.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/RWLock.h"
 #include "mozilla/gfx/BaseMargin.h"
 #include "mozilla/widget/WindowSurface.h"
 #include "mozilla/widget/WindowSurfaceProvider.h"
-#include "nsIWidget.h"
 #include "nsIDragService.h"
+#include "nsIWidget.h"
 #include "nsRefPtrHashtable.h"
-#include "IMContextWrapper.h"
-#include "LookAndFeel.h"
 
 #ifdef ACCESSIBILITY
 #  include "mozilla/a11y/LocalAccessible.h"
 #endif
 #ifdef MOZ_X11
 #  include <gdk/gdkx.h>
+
 #  include "X11UndefineNone.h"
 #endif
 
@@ -39,9 +40,9 @@
 #  undef LOG
 #  undef LOGVERBOSE
 
+#  include "Units.h"
 #  include "mozilla/Logging.h"
 #  include "nsTArray.h"
-#  include "Units.h"
 
 extern mozilla::LazyLogModule gWidgetLog;
 extern mozilla::LazyLogModule gWidgetDragLog;

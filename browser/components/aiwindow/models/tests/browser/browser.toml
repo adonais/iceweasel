@@ -4,16 +4,17 @@ support-files = [
 ]
 prefs = [
   "browser.smartwindow.enabled=true",
-  # Keep any unmocked engine request local: fire-and-forget work such as
-  # runLLMaJTelemetry can outlive a test and would otherwise reach production.
-  "browser.smartwindow.endpoint=http://localhost:0/v1",
 ]
 
+["browser_conversation.js"]
 ["browser_conversation_starters.js"]
 ["browser_conversation_stream.js"]
 
 ["browser_getCurrentTabMetadata.js"]
 ["browser_get_page_content.js"]
+["browser_monitor_agent.js"]
+["browser_monitor_store.js"]
+["browser_schedule.js"]
 ["browser_search_the_web.js"]
 ["browser_title_generation.js"]
 ["browser_utils_fxAccount.js"]

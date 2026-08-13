@@ -301,7 +301,7 @@ static Result<Ok, PreXULSkeletonUIError> GetSkeletonUILock() {
   // could reasonably collide, or casing could potentially affect things, but
   // the theory is that that should be uncommon enough and the failure case
   // mild enough that this is fine.
-  uint32_t binPathHash = HashString(binPath.get());
+  uint32_t binPathHash = HashString(binPath.get(), wcslen(binPath.get()));
   swprintf(installHash.get(), hexHashSize, L"%08x", binPathHash);
 
   std::wstring lockFilePath;

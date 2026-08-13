@@ -7,6 +7,7 @@
 #define mozilla_image_FrameTimeout_h
 
 #include <stdint.h>
+
 #include "mozilla/Assertions.h"
 
 namespace mozilla {

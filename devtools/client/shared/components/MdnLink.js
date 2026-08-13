@@ -15,14 +15,20 @@ loader.lazyRequireGetter(
   true
 );
 
-function MDNLink({ url, title }) {
-  return a({
-    className:
-      "devtools-button learn-more-link" +
-      (url.startsWith("https://developer.mozilla.org") ? " mdn-link" : ""),
-    title,
-    onClick: e => onLearnMoreClick(e, url),
-  });
+function MDNLink({ url, title, children }) {
+  return a(
+    {
+      className:
+        "learn-more-link" +
+        // we don't want a button if the component has children (usually text)
+        (children ? "" : " devtools-button") +
+        (url.startsWith("https://developer.mozilla.org") ? " mdn-link" : ""),
+      href: url,
+      title,
+      onClick: e => onLearnMoreClick(e, url),
+    },
+    children
+  );
 }
 
 MDNLink.displayName = "MDNLink";

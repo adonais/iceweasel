@@ -1,0 +1,70 @@
+task-defaults:
+    worker:
+        env:
+            TC_PARENT_TASK_ID: {task-reference: "<build>"}
+            NSS_CYCLES: standard
+            NSS_TESTS: ssl_gtests gtests
+    from-deps:
+        kinds: [build]
+        with-attributes:
+            nspr: [false]
+            dbm: [false]
+            cc: [false]
+            modular: [false]
+            fuzz: [false]
+
+# Default and SWCrypto group under Gtest(...) on non-FIPS builds. The FIPS
+# build carries its own treeherder group (FIPS(B)) and the test transform wraps
+# a dependent's symbol with it, so a grouped symbol here would nest into the
+# illegal FIPS(Gtest(Default)); the FIPS build is handled separately below with
+# a flat symbol.
+gtests:
+    description: Gtests
+    treeherder:
+        symbol: Gtest(Default)
+    from-deps:
+        with-attributes:
+            make-fips: [false]
+
+# Run the gtests with every hardware-accelerated code path disabled, forcing
+# the portable software implementations. The flags cover all architectures
+# (x86, ARM, PPC); each is a no-op on platforms that don't read it. Note that
+# x86 SHA-NI is gated by NSS_DISABLE_HW_SHA, while ARM SHA uses the numbered
+# NSS_DISABLE_HW_SHA1/HW_SHA2 -- so all three are needed here.
+gtests-swcrypto:
+    description: Gtests, software crypto only (all HW crypto disabled)
+    treeherder:
+        symbol: Gtest(SWCrypto)
+    from-deps:
+        with-attributes:
+            make-fips: [false]
+    worker:
+        env:
+            NSS_DISABLE_HW_AES: "1"
+            NSS_DISABLE_PCLMUL: "1"
+            NSS_DISABLE_HW_SHA: "1"
+            NSS_DISABLE_HW_SHA1: "1"
+            NSS_DISABLE_HW_SHA2: "1"
+            NSS_DISABLE_AVX: "1"
+            NSS_DISABLE_AVX2: "1"
+            NSS_DISABLE_ADX: "1"
+            NSS_DISABLE_SSSE3: "1"
+            NSS_DISABLE_SSE4_1: "1"
+            NSS_DISABLE_SSE4_2: "1"
+            NSS_DISABLE_ARM_NEON: "1"
+            NSS_DISABLE_ARM32_NEON: "1"
+            NSS_DISABLE_PMULL: "1"
+            NSS_DISABLE_PPC_GHASH: "1"
+            NSS_DISABLE_ALTIVEC: "1"
+            NSS_DISABLE_CRYPTO_VSX: "1"
+
+# Gtests on the FIPS build. The symbol is intentionally flat: the FIPS build's
+# treeherder group wraps it into FIPS(Gtest) on the opt-fips platform row, and
+# the preserved inner "Gtest" symbol keeps it selectable via `-u gtest`.
+gtests-fips:
+    description: Gtests (FIPS)
+    treeherder:
+        symbol: Gtest
+    from-deps:
+        with-attributes:
+            make-fips: [true]

@@ -23,6 +23,7 @@
 #include "mozilla/TimingParams.h"
 #include "mozilla/dom/BaseKeyframeTypesBinding.h"  // For FastBaseKeyframe etc.
 #include "mozilla/dom/BindingCallContext.h"
+#include "mozilla/dom/CSSUnitValue.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/KeyframeEffect.h"  // For PropertyValuesPair etc.
 #include "mozilla/dom/KeyframeEffectBinding.h"
@@ -224,6 +225,20 @@ static void GetKeyframeListFromPropertyIndexedKeyframe(
 static void DistributeRange(const Range<Keyframe*>& aRange);
 
 static void DoComputeMissingKeyframeOffsets(nsTArray<Keyframe*>& aKeyframes);
+
+static Maybe<Keyframe::OffsetType> ValidateUTF8StringOffset(
+    const nsCString& aOffset, ErrorResult& aRv);
+
+static Maybe<Keyframe::OffsetType> ValidateCSSNumericValueOffset(
+    const dom::CSSNumericValue& aOffset, ErrorResult& aRv);
+
+static Maybe<Keyframe::OffsetType> ValidateTimelineRangeOffset(
+    const dom::TimelineRangeOffset& aOffset, ErrorResult& aRv);
+
+static Maybe<Keyframe::OffsetType> ValidateKeyframeOffset(
+    const dom::OwningDoubleOrCSSNumericValueOrTimelineRangeOffsetOrUTF8String&
+        aOffset,
+    ErrorResult& aRv);
 
 // ------------------------------------------------------------------
 //
@@ -531,7 +546,7 @@ static bool ConvertKeyframeSequence(JSContext* aCx, dom::Document* aDocument,
   // Parsing errors should only be reported after we have finished iterating
   // through all values. If we have any early returns while iterating, we should
   // ignore parsing errors.
-  IgnoredErrorResult parseEasingResult;
+  IgnoredErrorResult parseErrorResult;
 
   for (;;) {
     bool done;
@@ -568,10 +583,11 @@ static bool ConvertKeyframeSequence(JSContext* aCx, dom::Document* aDocument,
       return false;
     }
 
-    if (!keyframeDict.mOffset.IsNull()) {
-      // FIXME: Bug 2016574. Support TimelineRangeOffset dictionary.
-      keyframe->mOffset.emplace(
-          Keyframe::OffsetType::PercentageOffset(keyframeDict.mOffset.Value()));
+    if (!parseErrorResult.Failed() && !keyframeDict.mOffset.IsNull()) {
+      if (auto offset = ValidateKeyframeOffset(keyframeDict.mOffset.Value(),
+                                               parseErrorResult)) {
+        keyframe->mOffset = std::move(offset);
+      }
     }
 
     keyframe->mComposite = keyframeDict.mComposite;
@@ -586,14 +602,14 @@ static bool ConvertKeyframeSequence(JSContext* aCx, dom::Document* aDocument,
       }
     }
 
-    if (!parseEasingResult.Failed()) {
+    if (!parseErrorResult.Failed()) {
       keyframe->mTimingFunction =
-          TimingParams::ParseEasing(keyframeDict.mEasing, parseEasingResult);
+          TimingParams::ParseEasing(keyframeDict.mEasing, parseErrorResult);
       // Even if the above fails, we still need to continue reading off all the
-      // properties since checking the validity of easing should be treated as
-      // a separate step that happens *after* all the other processing in this
-      // loop since (since it is never likely to be handled by WebIDL unlike the
-      // rest of this loop).
+      // properties since checking the validity of easing/offset should be
+      // treated as a separate step that happens *after* all the other
+      // processing in this loop (since it is never likely to be handled by
+      // WebIDL unlike the rest of this loop).
     }
 
     for (PropertyValuesPair& pair : propertyValuePairs) {
@@ -621,8 +637,9 @@ static bool ConvertKeyframeSequence(JSContext* aCx, dom::Document* aDocument,
     }
   }
 
-  // Throw any errors we encountered while parsing 'easing' properties.
-  if (parseEasingResult.MaybeSetPendingException(aCx)) {
+  // Throw any errors we encountered while parsing 'offset' and 'easing'
+  // properties.
+  if (parseErrorResult.MaybeSetPendingException(aCx)) {
     return false;
   }
 
@@ -810,6 +827,8 @@ static Maybe<PropertyValuePair> MakePropertyValuePair(
  * Checks that the given keyframes are loosely ordered (each keyframe's
  * offset that is not null is greater than or equal to the previous
  * non-null offset) and that all values are within the range [0.0, 1.0].
+ * Note that the loose ordering and bounds checks have been relaxed to
+ * only apply to explicit keyframe offsets (i.e. double offset).
  *
  * @return true if the keyframes' offsets are correctly ordered and
  *   within range; false otherwise.
@@ -818,10 +837,9 @@ static bool HasValidOffsets(const nsTArray<Keyframe>& aKeyframes) {
   double offset = 0.0;
   for (const Keyframe& keyframe : aKeyframes) {
     if (keyframe.mOffset) {
-      // FIXME: Bug 2016574. This function is called from the process of
-      // script-generated keyframes, so we don't need to worry about range names
-      // now.
-      MOZ_ASSERT(keyframe.mOffset->IsPercentageOffset());
+      if (!keyframe.mOffset->IsPercentageOffset()) {
+        continue;
+      }
       double thisOffset = keyframe.mOffset->mPercentage;
       if (thisOffset < offset || thisOffset > 1.0f) {
         return false;
@@ -1174,29 +1192,83 @@ static void GetKeyframeListFromPropertyIndexedKeyframe(
   //
   // This corresponds to step 5, "Otherwise," branch, substeps 5-6 of
   // https://drafts.csswg.org/web-animations/#processing-a-keyframes-argument
-  const FallibleTArray<Nullable<double>>* offsets = nullptr;
-  AutoTArray<Nullable<double>, 1> singleOffset;
-  auto& offset = keyframeDict.mOffset;
-  if (offset.IsDouble()) {
-    singleOffset.AppendElement(offset.GetAsDouble());
-    // dom::Sequence is a fallible but AutoTArray is infallible and we need to
-    // point to one or the other. Fortunately, fallible and infallible array
-    // types can be implicitly converted provided they are const.
-    const FallibleTArray<Nullable<double>>& asFallibleArray = singleOffset;
-    offsets = &asFallibleArray;
-  } else if (offset.IsDoubleOrNullSequence()) {
-    offsets = &offset.GetAsDoubleOrNullSequence();
+  //
+  // 5. Let offsets be a sequence of nullable double values assigned based on
+  // the type of the offset member of the property-indexed keyframe as follows:
+  // Note: Since we replace "double?" with
+  // "(CSSNumberish or TimelineRangeOffset or UTF8String)", so we tweak this
+  // step to use Nullable<Keyframe::OffsetType>.
+  nsTArray<Maybe<Keyframe::OffsetType>> offsets(1);
+  if (!keyframeDict.mOffset.IsNull()) {
+    const auto& offset = keyframeDict.mOffset.Value();
+    if (offset.IsDouble()) {
+      offsets.AppendElement(
+          Some(Keyframe::OffsetType::PercentageOffset(offset.GetAsDouble())));
+    } else if (offset.IsCSSNumericValue()) {
+      if (auto result = ValidateCSSNumericValueOffset(
+              offset.GetAsCSSNumericValue(), aRv)) {
+        offsets.AppendElement(std::move(result));
+      }
+    } else if (offset.IsTimelineRangeOffset()) {
+      if (auto result = ValidateTimelineRangeOffset(
+              offset.GetAsTimelineRangeOffset(), aRv)) {
+        offsets.AppendElement(std::move(result));
+      }
+    } else if (offset.IsUTF8String()) {
+      if (auto result =
+              ValidateUTF8StringOffset(offset.GetAsUTF8String(), aRv)) {
+        offsets.AppendElement(std::move(result));
+      }
+    } else if (
+        // Should be a sequence of nullable KeyframeOffset.
+        // i.e. sequence<(CSSNumberish or TimelineRangeOffset or UTF8String)?>
+        offset
+            .IsDoubleOrCSSNumericValueOrTimelineRangeOffsetOrUTF8StringOrNullSequence()) {
+      const auto& sequence =
+          offset
+              .GetAsDoubleOrCSSNumericValueOrTimelineRangeOffsetOrUTF8StringOrNullSequence();
+      offsets.SetCapacity(sequence.Length());
+      for (const auto& value : sequence) {
+        if (value.IsNull()) {
+          offsets.AppendElement(Nothing());
+          continue;
+        }
+        auto result = ValidateKeyframeOffset(value.Value(), aRv);
+        if (aRv.Failed()) {
+          // We got the parse error and so don't have result.
+          break;
+        }
+        MOZ_ASSERT(result);
+        offsets.AppendElement(std::move(result));
+      }
+    }
   }
-  // If offset.IsNull() is true, then we want to leave the mOffset member of
-  // each keyframe with its initialized value of null. By leaving |offsets|
-  // as nullptr here, we skip updating mOffset below.
 
+  // In the spec, TypeErrors arising from invalid offsets are thrown at the end
+  // of the procedure. However, it only mentions the loosely sorted check and
+  // the range check of the double offset (which will be done below). Therefore,
+  // we clear the result and return for parsing errors here tentatively before
+  // the check of the valid offset to avoid the redundant operations.
+  if (aRv.Failed()) {
+    // Note: We throw TypeErrors above already and come here directly so we can
+    // just clear the result (just like other places to handle TypeErrors) and
+    // return.
+    aResult.Clear();
+    return;
+  }
+
+  // 6. Assign each value in offsets to the keyframe offset of the keyframe with
+  // the corresponding position in processed keyframes until the end of either
+  // sequence is reached.
+  //
+  // If keyframeDict.mOffset.IsNull() is true, then we want to leave the mOffset
+  // member of each keyframe with its initialized value of null. By leaving
+  // |offsets| as nullptr here, we skip updating mOffset below.
   size_t offsetsToFill =
-      offsets ? std::min(offsets->Length(), aResult.Length()) : 0;
+      offsets.IsEmpty() ? 0 : std::min(offsets.Length(), aResult.Length());
   for (size_t i = 0; i < offsetsToFill; i++) {
-    if (!offsets->ElementAt(i).IsNull()) {
-      aResult[i].mOffset.emplace(Keyframe::OffsetType::PercentageOffset(
-          offsets->ElementAt(i).Value()));
+    if (offsets.ElementAt(i)) {
+      std::swap(aResult[i].mOffset, offsets.ElementAt(i));
     }
   }
 
@@ -1361,6 +1433,119 @@ static void DoComputeMissingKeyframeOffsets(nsTArray<Keyframe*>& aKeyframes) {
     DistributeRange(Range<Keyframe*>(keyframeA, keyframeB + 1));
     keyframeA = keyframeB;
   }
+}
+
+/**
+ * Validate the keyframe offset as a UTF8String.
+ *
+ * @param aOffset The UTF8String from JS.
+ * @return The validated offset, or null if the offset is invalid.
+ */
+static Maybe<Keyframe::OffsetType> ValidateUTF8StringOffset(
+    const nsCString& aOffset, ErrorResult& aRv) {
+  // Parse as <keyframe-selector>:
+  //   from | to | <percentage [0,100]> | <timeline-range-name> <percentage>
+  // https://drafts.csswg.org/web-animations-2/#keyframe-offset-type
+  StyleTimelineRangeName name = StyleTimelineRangeName::None;
+  double percentage = 0.0;
+  if (!Servo_ParseKeyframeSelector(&aOffset, &name, &percentage)) {
+    aRv.ThrowTypeError("Invalid string of the keyframe offset.");
+    return Nothing();
+  }
+  return Some(Keyframe::OffsetType{name, percentage});
+}
+
+/**
+ * Validate the keyframe offset as a CSSNumericValue. Only percentage is
+ * acceptable for now.
+ *
+ * @param aOffset The CSSNumericValue object from JS.
+ * @return The validated offset, or null if the offset is invalid.
+ */
+static Maybe<Keyframe::OffsetType> ValidateCSSNumericValueOffset(
+    const dom::CSSNumericValue& aOffset, ErrorResult& aRv) {
+  if (!StaticPrefs::layout_css_typed_om_enabled() ||
+      !StaticPrefs::layout_css_scroll_driven_animations_enabled()) {
+    aRv.ThrowTypeError(
+        "CSSNumericValue is not supported for keyframe offsets.");
+    return Nothing();
+  }
+
+  RefPtr<dom::CSSUnitValue> asPercent =
+      aOffset.GetAsCSSNumericValue().To("percent"_ns, aRv);
+  return asPercent ? Some(Keyframe::OffsetType::PercentageOffset(
+                         asPercent->Value() / 100.0))
+                   : Nothing();
+}
+
+/**
+ * Validate the TimelineRangeOffset of a keyframe. The syntax of the timeline
+ * range should be the same as:
+ * "<timeline-range-name> <percentage>", defined in <keyframe-selector>.
+ * https://drafts.csswg.org/scroll-animations-1/#named-range-keyframes
+ *
+ * @param aOffset The TimelineRangeOffset object from JS.
+ * @return The validated offset, or null if the offset is invalid.
+ */
+static Maybe<Keyframe::OffsetType> ValidateTimelineRangeOffset(
+    const dom::TimelineRangeOffset& aOffset, ErrorResult& aRv) {
+  if (!StaticPrefs::layout_css_typed_om_enabled() ||
+      !StaticPrefs::layout_css_scroll_driven_animations_enabled()) {
+    aRv.ThrowTypeError(
+        "TimelineRagneOffset is not supported for keyframe offsets.");
+    return Nothing();
+  }
+
+  const auto& rangeName = aOffset.mRangeName;
+  const auto& offset = aOffset.mOffset;
+  if (!offset.WasPassed()) {
+    if (rangeName.WasPassed()) {
+      // If the <timeline-range-name> is provided, there must be a
+      // <percentage>, otherwse it's an error.
+      aRv.ThrowTypeError("Invalid syntax of the timeline range offset.");
+    }
+    // The same as null offset.
+    return Nothing();
+  }
+
+  // So now, it is an offset or a pair of range name and offset.
+  StyleTimelineRangeName name = StyleTimelineRangeName::None;
+  if (rangeName.WasPassed() &&
+      !Servo_ParseTimelineRangeName(&rangeName.Value(), &name)) {
+    aRv.ThrowTypeError("Invalid string of the timeline range name.");
+    return Nothing();
+  }
+  RefPtr<dom::CSSUnitValue> asPercent = offset.Value().To("percent"_ns, aRv);
+  return asPercent
+             ? Some(Keyframe::OffsetType{name, asPercent->Value() / 100.0})
+             : Nothing();
+}
+
+/**
+ * Validate the offset of a keyframe.
+ * https://drafts.csswg.org/web-animations-2/#keyframe-offset-type
+ *
+ * @param aOffset The sequence of keyframe offsets from JS.
+ * @return The validated offset, or null if the offset is invalid.
+ */
+static Maybe<Keyframe::OffsetType> ValidateKeyframeOffset(
+    const dom::OwningDoubleOrCSSNumericValueOrTimelineRangeOffsetOrUTF8String&
+        aOffset,
+    ErrorResult& aRv) {
+  if (aOffset.IsDouble()) {
+    return Some(Keyframe::OffsetType::PercentageOffset(aOffset.GetAsDouble()));
+  }
+
+  if (aOffset.IsUTF8String()) {
+    return ValidateUTF8StringOffset(aOffset.GetAsUTF8String(), aRv);
+  }
+
+  if (aOffset.IsCSSNumericValue()) {
+    return ValidateCSSNumericValueOffset(aOffset.GetAsCSSNumericValue(), aRv);
+  }
+
+  MOZ_ASSERT(aOffset.IsTimelineRangeOffset());
+  return ValidateTimelineRangeOffset(aOffset.GetAsTimelineRangeOffset(), aRv);
 }
 
 }  // namespace mozilla

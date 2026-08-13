@@ -686,6 +686,8 @@
   margin-block: -1px;
   border: none;
   outline-offset: 1px;
+  min-width: 1ch;
+
   &:focus-visible {
     /* Unset the outline box shadow to prevent overlapping previous/next properties.
        This is safe since those input won't be this part of the UI won't get */

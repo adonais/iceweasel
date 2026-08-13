@@ -384,7 +384,7 @@ void DarwinGamepadService::DeviceRemoved(IOHIDDeviceRef device) {
   for (Gamepad& gamepad : mGamepads) {
     if (gamepad == device) {
       IOHIDDeviceRegisterInputReportCallback(
-          device, gamepad.mInputReport.Elements(), 0, NULL,
+          device, gamepad.mInputReport.Elements(), 0, nullptr,
           gamepad.mInputReportContext.get());
 
       gamepad.mInputReportContext.reset();

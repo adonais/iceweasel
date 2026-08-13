@@ -3,11 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 plugins {
+    id 'com.android.library'
     alias(libs.plugins.dependency.analysis)
 }
-
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
 
 android {
     namespace = 'mozilla.components.browser.menu2'
@@ -23,7 +21,7 @@ dependencies {
     implementation libs.androidx.cardview
     implementation libs.androidx.constraintlayout
     implementation libs.androidx.coordinatorlayout
-    implementation libs.androidx.core.ktx
+    implementation libs.androidx.core
     implementation libs.androidx.recyclerview
     implementation libs.kotlinx.coroutines
 

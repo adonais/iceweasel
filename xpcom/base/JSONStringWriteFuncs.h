@@ -5,10 +5,10 @@
 #ifndef JSONSTRINGWRITEFUNCS_H
 #define JSONSTRINGWRITEFUNCS_H
 
+#include <type_traits>
+
 #include "mozilla/JSONWriter.h"
 #include "nsString.h"
-
-#include <type_traits>
 
 namespace mozilla {
 

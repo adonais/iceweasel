@@ -1,5 +1,3 @@
-// |jit-test| skip-if: !isAsmJSCompilationAvailable()
-
 load(libdir + "asm.js");
 load(libdir + "asserts.js");
 
@@ -11,8 +9,12 @@ new Int32Array(ab)[0] = 42;
 var f = asmLink(asmCompile('stdlib', 'ffi', 'buf', code), this, null, ab);
 assertEq(f(), 42);
 
-assertThrowsInstanceOf(() => detachArrayBuffer(ab), Error);
-assertEq(f(), 42);
+detachArrayBuffer(ab);
+assertEq(ab.detached, true);
+assertEq(f(), 0);
 
-assertThrowsInstanceOf(() => serialize(ab, [ab]), Error);
-assertEq(f(), 42);
+var ab2 = new ArrayBuffer(BUF_MIN);
+new Int32Array(ab2)[0] = 7;
+var transferred = serialize(ab2, [ab2]);
+assertEq(ab2.detached, true);
+assertEq(transferred !== null, true);

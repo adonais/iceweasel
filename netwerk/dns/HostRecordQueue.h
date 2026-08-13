@@ -6,6 +6,7 @@
 #define HostRecordQueue_h_
 
 #include <functional>
+
 #include "mozilla/Mutex.h"
 #include "nsHostRecord.h"
 #include "nsRefPtrHashtable.h"

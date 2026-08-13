@@ -9,8 +9,8 @@
 
 #include "mozilla/BasicEvents.h"
 #include "mozilla/Maybe.h"
-#include "nsCOMPtr.h"
 #include "nsAtom.h"
+#include "nsCOMPtr.h"
 #include "nsGkAtoms.h"
 #include "nsITransferable.h"
 #include "nsString.h"

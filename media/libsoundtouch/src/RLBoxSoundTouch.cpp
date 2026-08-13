@@ -4,6 +4,7 @@
 
 #include "mozilla/Assertions.h"
 #include "RLBoxSoundTouch.h"
+#include "rlbox_wasm2c_thread_locals.h"
 
 using namespace rlbox;
 using namespace mozilla;
@@ -152,6 +153,12 @@ uint RLBoxSoundTouch::receiveSamples(AudioDataValue* aOutput,
 
 void RLBoxSoundTouch::flush() {
   return mSandbox.invoke_sandbox_function(Flush, mTimeStretcher);
+}
+
+void RLBoxSoundTouch::redirectRLBoxSbxGrowFail(void (*fn)()) {
+#ifdef MOZ_WASM_SANDBOXING_SOUNDTOUCH
+  moz_wasm2c_set_memgrow_redirect_target(fn);
+#endif
 }
 
 void RLBoxSoundTouch::resizeSampleBuffer(uint aNewSize) {

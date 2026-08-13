@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.13.2" type="baseline" client="gradle" dependencies="false" name="AGP (8.13.2)" variant="all" version="8.13.2">
+<issues format="6" by="lint 9.2.1" type="baseline" client="gradle" dependencies="false" name="AGP (9.2.1)" variant="all" version="9.2.1">
 
     <issue
         id="ComposeIconButtonUsage"
@@ -30,30 +30,580 @@
         errorLine2="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/org/mozilla/fenix/browser/tabstrip/TabStrip.kt"
-            line="33"
+            line="34"
             column="1"/>
     </issue>
 
     <issue
-        id="DuplicateIncludedIds"
-        message="Duplicate id @+id/toolbar_simple_preview, defined or included multiple times in layout/preference_toolbar_shortcut.xml: [layout/preference_toolbar_shortcut.xml => layout/toolbar_simple_shortcut_preview.xml defines @+id/toolbar_simple_preview, layout/preference_toolbar_shortcut.xml => layout/toolbar_simple_no_shortcut_preview.xml defines @+id/toolbar_simple_preview]"
-        errorLine1="    &lt;include"
-        errorLine2="    ^">
+        id="CustomViewStyleable"
+        message="By convention, the custom view (`TrackingProtectionCategoryItem`) and the declare-styleable (`TrackingProtectionCategory`) should have the same name (various editor features rely on this convention)"
+        errorLine1="            R.styleable.TrackingProtectionCategory,"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/layout/preference_toolbar_shortcut.xml"
+            file="src/main/java/org/mozilla/fenix/trackingprotection/TrackingProtectionCategoryItem.kt"
             line="28"
-            column="5"
-            message="Duplicate id @+id/toolbar_simple_preview, defined or included multiple times in layout/preference_toolbar_shortcut.xml: [layout/preference_toolbar_shortcut.xml => layout/toolbar_simple_shortcut_preview.xml defines @+id/toolbar_simple_preview, layout/preference_toolbar_shortcut.xml => layout/toolbar_simple_no_shortcut_preview.xml defines @+id/toolbar_simple_preview]"/>
+            column="13"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="        val currentTime = System.currentTimeMillis()"
+        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/layout/toolbar_simple_shortcut_preview.xml"
-            line="13"
-            column="9"
-            message="Defined here, included via layout/preference_toolbar_shortcut.xml => layout/toolbar_simple_shortcut_preview.xml defines @+id/toolbar_simple_preview"/>
+            file="src/main/java/org/mozilla/fenix/utils/AccessibilityUtils.kt"
+            line="71"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="                val current = System.currentTimeMillis()"
+        errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/layout/toolbar_simple_no_shortcut_preview.xml"
-            line="15"
-            column="5"
-            message="Defined here, included via layout/preference_toolbar_shortcut.xml => layout/toolbar_simple_no_shortcut_preview.xml defines @+id/toolbar_simple_preview"/>
+            file="src/main/java/org/mozilla/fenix/settings/account/AccountSettingsFragment.kt"
+            line="540"
+            column="31"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="            val currentTime = System.currentTimeMillis()"
+        errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/components/bookmarks/BookmarksUseCase.kt"
+            line="163"
+            column="31"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="        requireComponents.settings.lastBrowseActivity = System.currentTimeMillis()"
+        errorLine2="                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/browser/BrowserFragment.kt"
+            line="573"
+            column="57"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="                        currentTimeInMillis = { System.currentTimeMillis() },"
+        errorLine2="                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/components/Components.kt"
+            line="353"
+            column="49"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="    var now = System.currentTimeMillis()"
+        errorLine2="              ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/debugsettings/crashtools/CrashTools.kt"
+            line="48"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="            now = System.currentTimeMillis()"
+        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/debugsettings/crashtools/CrashTools.kt"
+            line="52"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="                        System.currentTimeMillis() - Core.HISTORY_METADATA_MAX_AGE_IN_MS,"
+        errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/FenixApplication.kt"
+            line="499"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="        if (!System.currentTimeMillis().isAfterFirstWeekFromInstall(applicationContext) ||"
+        errorLine2="             ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/components/metrics/GrowthDataWorker.kt"
+            line="29"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="        val now = System.currentTimeMillis()"
+        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/historymetadata/HistoryMetadataService.kt"
+            line="93"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="        requireComponents.settings.lastHomeActivity = System.currentTimeMillis()"
+        errorLine2="                                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/home/HomeFragment.kt"
+            line="1419"
+            column="55"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="        currentTimeMillis: Long = System.currentTimeMillis(),"
+        errorLine2="                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/ipprotection/IPProtectionManager.kt"
+            line="24"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="        settings.lastCfrShownTimeInMillis = System.currentTimeMillis()"
+        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/browser/infobanner/InfoBanner.kt"
+            line="66"
+            column="45"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="            val imageFile = File(imageDir, &quot;lens_capture_${System.currentTimeMillis()}.jpg&quot;)"
+        errorLine2="                                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/components/lens/LensCameraFragment.kt"
+            line="565"
+            column="60"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="            &quot;&amp;st=${System.currentTimeMillis()}&quot;"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/components/LensImageUploader.kt"
+            line="245"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="        settings.lastCfrShownTimeInMillis = System.currentTimeMillis()"
+        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/components/menu/middleware/MenuDialogMiddleware.kt"
+            line="440"
+            column="45"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="            setWhen(System.currentTimeMillis())"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/components/NotificationManager.kt"
+            line="106"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="                .setWhen(System.currentTimeMillis())"
+        errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/components/NotificationManager.kt"
+            line="147"
+            column="26"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="        settings.onboardingCompletedTimestamp = System.currentTimeMillis()"
+        errorLine2="                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/onboarding/OnboardingFragment.kt"
+            line="374"
+            column="49"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="        requireComponents.settings.lastSetAsDefaultPromptShownTimeInMillis = System.currentTimeMillis()"
+        errorLine2="                                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/onboarding/OnboardingFragment.kt"
+            line="440"
+            column="78"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="    fun onAcceptTermsButtonClicked(nowMillis: Long = System.currentTimeMillis()) = Unit"
+        errorLine2="                                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/onboarding/view/OnboardingPageState.kt"
+            line="123"
+            column="54"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="    fun updatePrivacyNoticeBannerDisplayedPreference(nowMillis: Long = System.currentTimeMillis())"
+        errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/termsofuse/store/PrivacyNoticeBannerRepository.kt"
+            line="17"
+            column="72"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="            System.currentTimeMillis()"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/termsofuse/store/PrivacyNoticeBannerRepository.kt"
+            line="37"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="                            settings.lastCfrShownTimeInMillis = System.currentTimeMillis()"
+        errorLine2="                                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/shortcut/PwaOnboardingObserver.kt"
+            line="58"
+            column="65"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="        val file = File(downloadsDir, &quot;qr_code_${System.currentTimeMillis()}.png&quot;)"
+        errorLine2="                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/components/menu/share/QRCodeDownloader.kt"
+            line="63"
+            column="50"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="            put(MediaStore.Downloads.DISPLAY_NAME, &quot;qr_code_${System.currentTimeMillis()}.png&quot;)"
+        errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/components/menu/share/QRCodeDownloader.kt"
+            line="82"
+            column="63"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="                val currentTime = System.currentTimeMillis()"
+        errorLine2="                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/home/recentsyncedtabs/RecentSyncedTabFeature.kt"
+            line="137"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="    activity.components.settings.setToDefaultPromptRequested = System.currentTimeMillis()"
+        errorLine2="                                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/home/SetToDefaultPromptRequest.kt"
+            line="97"
+            column="64"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="        get() = (System.currentTimeMillis() - lastCfrShownTimeInMillis) > THREE_DAYS_MS"
+        errorLine2="                 ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/utils/Settings.kt"
+            line="376"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="    internal fun timeNowInMillis(): Long = System.currentTimeMillis()"
+        errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/utils/Settings.kt"
+            line="1051"
+            column="44"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="        val now = System.currentTimeMillis()"
+        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/utils/Settings.kt"
+            line="2868"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="        lastSetAsDefaultPromptShownTimeInMillis = System.currentTimeMillis()"
+        errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/utils/Settings.kt"
+            line="2894"
+            column="51"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="            (System.currentTimeMillis() - newsButtonAnimationLastShownMillis >= ONE_WEEK_MS)"
+        errorLine2="             ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/utils/Settings.kt"
+            line="3135"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="        newsButtonAnimationLastShownMillis = System.currentTimeMillis()"
+        errorLine2="                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/utils/Settings.kt"
+            line="3143"
+            column="46"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="                summarizeDurationMs = (System.currentTimeMillis() - sessionTelemetry.startTimeMillis).toInt(),"
+        errorLine2="                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/summarization/SummarizationTelemetryMiddleware.kt"
+            line="250"
+            column="40"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="    val timestamp = System.currentTimeMillis()"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/debugsettings/tabs/TabGroupTools.kt"
+            line="142"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="            lastModified = System.currentTimeMillis(),"
+        errorLine2="                           ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/debugsettings/tabs/TabGroupTools.kt"
+            line="185"
+            column="28"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="                val daysSince = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(numDays)"
+        errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/tabstray/controller/TabManagerController.kt"
+            line="468"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="        createdAt = if (isInactive) 0L else System.currentTimeMillis(),"
+        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/debugsettings/tabs/TabTools.kt"
+            line="112"
+            column="45"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="        val elapsed = System.currentTimeMillis() - lastVisibleAt"
+        errorLine2="                      ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/telemetry/TelemetryMiddleware.kt"
+            line="230"
+            column="23"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="        currentTimeInMillis: Long = System.currentTimeMillis(),"
+        errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/termsofuse/TermsOfUseManager.kt"
+            line="41"
+            column="37"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="    fun updateHasAcceptedTermsOfUsePreference(nowMillis: Long = System.currentTimeMillis())"
+        errorLine2="                                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/termsofuse/store/TermsOfUsePromptRepository.kt"
+            line="42"
+            column="65"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="    fun updateLastTermsOfUsePromptTimeInMillis(currentTimeInMillis: Long = System.currentTimeMillis())"
+        errorLine2="                                                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/termsofuse/store/TermsOfUsePromptRepository.kt"
+            line="54"
+            column="76"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="            storage.setDateOfUpdate(System.currentTimeMillis())"
+        errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/whatsnew/WhatsNew.kt"
+            line="35"
+            column="37"/>
+    </issue>
+
+    <issue
+        id="NoSystemCurrentTimeMillis"
+        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
+        errorLine1="        return TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - updateDay)"
+        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/whatsnew/WhatsNewStorage.kt"
+            line="58"
+            column="45"/>
+    </issue>
+
+    <issue
+        id="UseFragmentContent"
+        message="Prefer content {} instead of manually constructing a ComposeView in onCreateView()."
+        errorLine1="        return ComposeView(requireContext()).apply {"
+        errorLine2="               ~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/bookmarks/BookmarkFragment.kt"
+            line="99"
+            column="16"/>
+    </issue>
+
+    <issue
+        id="UseFragmentContent"
+        message="Prefer content {} instead of manually constructing a ComposeView in onCreateView()."
+        errorLine1="        return ComposeView(requireContext()).apply {"
+        errorLine2="               ~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/bookmarks/EditBookmarkFragment.kt"
+            line="48"
+            column="16"/>
+    </issue>
+
+    <issue
+        id="UseFragmentContent"
+        message="Prefer content {} instead of manually constructing a ComposeView in onCreateView()."
+        errorLine1="        return ComposeView(requireContext()).apply {"
+        errorLine2="               ~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/components/lens/LensCameraFragment.kt"
+            line="210"
+            column="16"/>
+    </issue>
+
+    <issue
+        id="UseFragmentContent"
+        message="Prefer content {} instead of manually constructing a ComposeView in onCreateView()."
+        errorLine1="    ): View = ComposeView(requireContext()).apply {"
+        errorLine2="              ~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/components/menu/MenuDialogFragment.kt"
+            line="259"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="UseFragmentContent"
+        message="Prefer content {} instead of manually constructing a ComposeView in onCreateView()."
+        errorLine1="    ): View = ComposeView(requireContext()).apply {"
+        errorLine2="              ~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/translations/TranslationsDialogFragment.kt"
+            line="97"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="UseFragmentContent"
+        message="Prefer content {} instead of manually constructing a ComposeView in onCreateView()."
+        errorLine1="        return ComposeView(requireContext()).apply {"
+        errorLine2="               ~~~~~~~~~~~">
+        <location
+            file="src/main/java/org/mozilla/fenix/pbmlock/UnlockPrivateTabsFragment.kt"
+            line="57"
+            column="16"/>
     </issue>
 
     <issue
@@ -63,7 +613,7 @@
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/org/mozilla/fenix/ext/Context.kt"
-            line="88"
+            line="79"
             column="9"/>
     </issue>
 
@@ -312,17 +862,6 @@
     <issue
         id="VectorRaster"
         message="Limit vector icons sizes to 200×200 to keep icon drawing fast; see https://developer.android.com/studio/write/vector-asset-studio#when for more"
-        errorLine1="    android:width=&quot;244dp&quot;"
-        errorLine2="                   ~~~~~">
-        <location
-            file="src/main/res/drawable/ic_onboarding_marketing_redesign.xml"
-            line="5"
-            column="20"/>
-    </issue>
-
-    <issue
-        id="VectorRaster"
-        message="Limit vector icons sizes to 200×200 to keep icon drawing fast; see https://developer.android.com/studio/write/vector-asset-studio#when for more"
         errorLine1="    android:width=&quot;312dp&quot;"
         errorLine2="                   ~~~~~">
         <location
@@ -351,17 +890,6 @@
             file="src/main/res/drawable/ic_onboarding_welcome.xml"
             line="5"
             column="128"/>
-    </issue>
-
-    <issue
-        id="VectorRaster"
-        message="Limit vector icons sizes to 200×200 to keep icon drawing fast; see https://developer.android.com/studio/write/vector-asset-studio#when for more"
-        errorLine1="    android:width=&quot;263dp&quot;"
-        errorLine2="                   ~~~~~">
-        <location
-            file="src/main/res/drawable/ic_pick_a_theme.xml"
-            line="6"
-            column="20"/>
     </issue>
 
     <issue
@@ -442,13 +970,24 @@
     </issue>
 
     <issue
+        id="VectorRaster"
+        message="Limit vector icons sizes to 200×200 to keep icon drawing fast; see https://developer.android.com/studio/write/vector-asset-studio#when for more"
+        errorLine1="  android:width=&quot;380dp&quot;"
+        errorLine2="                 ~~~~~">
+        <location
+            file="src/main/res/drawable/sports_widget_celebration.xml"
+            line="17"
+            column="18"/>
+    </issue>
+
+    <issue
         id="VisibleForTests"
         message="This method should only be accessed from tests or within private scope"
         errorLine1="                recentTabs = state.recentTabs.filterOutTab(action.recentTab),"
         errorLine2="                                              ~~~~~~~~~~~~">
         <location
             file="src/main/java/org/mozilla/fenix/components/appstate/AppStoreReducer.kt"
-            line="87"
+            line="88"
             column="47"/>
     </issue>
 
@@ -459,7 +998,7 @@
         errorLine2="        ~~~~~~~~~~~~~">
         <location
             file="src/main/java/org/mozilla/fenix/browser/BrowserFragment.kt"
-            line="754"
+            line="407"
             column="9"/>
     </issue>
 
@@ -470,7 +1009,7 @@
         errorLine2="             ~~~~~~~">
         <location
             file="src/main/java/org/mozilla/fenix/browser/infobanner/DynamicInfoBanner.kt"
-            line="49"
+            line="51"
             column="14"/>
     </issue>
 
@@ -558,7 +1097,7 @@
         errorLine2="  ^">
         <location
             file="src/main/res/values-zh-rTW/strings.xml"
-            line="724"
+            line="683"
             column="3"/>
     </issue>
 
@@ -569,7 +1108,7 @@
         errorLine2="  ^">
         <location
             file="src/main/res/values-ja/strings.xml"
-            line="1757"
+            line="1758"
             column="3"/>
     </issue>
 
@@ -580,7 +1119,7 @@
         errorLine2="  ^">
         <location
             file="src/main/res/values-zh-rTW/strings.xml"
-            line="1881"
+            line="1792"
             column="3"/>
     </issue>
 
@@ -591,7 +1130,7 @@
         errorLine2="         ~~~~~~~~">
         <location
             file="src/main/AndroidManifest.xml"
-            line="741"
+            line="752"
             column="10"/>
     </issue>
 
@@ -602,7 +1141,7 @@
         errorLine2="                             ~~~~~">
         <location
             file="src/main/AndroidManifest.xml"
-            line="65"
+            line="69"
             column="30"/>
     </issue>
 
@@ -636,28 +1175,6 @@
         <location
             file="src/main/res/layout/component_collection_creation_select_collection.xml"
             line="111"
-            column="6"/>
-    </issue>
-
-    <issue
-        id="MozMultipleConstraintLayouts"
-        message="Flatten the view hierarchy by using one `ConstraintLayout`, if possible. If the alternative is several nested `ViewGroup`, it may not help performance and this may be worth suppressing."
-        errorLine1="    &lt;androidx.constraintlayout.widget.ConstraintLayout"
-        errorLine2="     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/component_tracking_protection_panel.xml"
-            line="15"
-            column="6"/>
-    </issue>
-
-    <issue
-        id="MozMultipleConstraintLayouts"
-        message="Flatten the view hierarchy by using one `ConstraintLayout`, if possible. If the alternative is several nested `ViewGroup`, it may not help performance and this may be worth suppressing."
-        errorLine1="    &lt;androidx.constraintlayout.widget.ConstraintLayout"
-        errorLine2="     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/component_tracking_protection_panel.xml"
-            line="216"
             column="6"/>
     </issue>
 
@@ -848,15 +1365,16 @@
             column="10"/>
     </issue>
 
+
     <issue
-        id="MozMultipleConstraintLayoutsAndCustomViews"
-        message="Custom views extending `ConstraintLayout` are less efficient because they cannot share other `ConstraintLayout` defined in file."
-        errorLine1="    &lt;org.mozilla.fenix.trackingprotection.SwitchWithDescription"
-        errorLine2="     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        id="FrequentlyChangingValue"
+        message="Reading a value annotated with @FrequentlyChangingValue inside composition"
+        errorLine1="    val position = pagerState.currentPage + pagerState.currentPageOffsetFraction"
+        errorLine2="                                                       ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/res/layout/quicksettings_protections_panel.xml"
-            line="18"
-            column="6"/>
+            file="src/main/java/org/mozilla/fenix/home/sports/ui/SportsCardPager.kt"
+            line="370"
+            column="56"/>
     </issue>
 
     <issue
@@ -914,16 +1432,6 @@
             column="5"/>
     </issue>
 
-    <issue
-        id="Overdraw"
-        message="Possible overdraw: Root element paints background `?attr/colorSurface` with a theme that also paints a background (inferred theme is `@style/NormalTheme`)"
-        errorLine1="    android:background=&quot;?attr/colorSurface&quot;>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/component_cookie_banner_details_panel.xml"
-            line="11"
-            column="5"/>
-    </issue>
 
     <issue
         id="Overdraw"
@@ -936,27 +1444,7 @@
             column="5"/>
     </issue>
 
-    <issue
-        id="Overdraw"
-        message="Possible overdraw: Root element paints background `?attr/colorSurface` with a theme that also paints a background (inferred theme is `@style/NormalTheme`)"
-        errorLine1="    android:background=&quot;?attr/colorSurface&quot;>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/component_tracking_protection_panel.xml"
-            line="13"
-            column="5"/>
-    </issue>
 
-    <issue
-        id="Overdraw"
-        message="Possible overdraw: Root element paints background `?attr/colorSurface` with a theme that also paints a background (inferred theme is `@style/NormalTheme`)"
-        errorLine1="    android:background=&quot;?attr/colorSurface&quot;"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/connection_details_website_info.xml"
-            line="13"
-            column="5"/>
-    </issue>
 
     <issue
         id="Overdraw"
@@ -1010,17 +1498,6 @@
         <location
             file="src/main/res/layout/fragment_pwa_onboarding.xml"
             line="11"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="Overdraw"
-        message="Possible overdraw: Root element paints background `?attr/scrimBackground` with a theme that also paints a background (inferred theme is `@style/NormalTheme`)"
-        errorLine1="    android:background=&quot;?attr/scrimBackground&quot;>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/fragment_search_dialog.xml"
-            line="13"
             column="5"/>
     </issue>
 
@@ -1174,7 +1651,7 @@
         errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values-vi/strings.xml"
-            line="4226"
+            line="4214"
             column="62"/>
     </issue>
 
@@ -1185,7 +1662,7 @@
         errorLine2="                                             ~~~~~~~~~~">
         <location
             file="src/main/res/values-ru/strings.xml"
-            line="4462"
+            line="4473"
             column="46"/>
     </issue>
 
@@ -1207,36 +1684,22 @@
     </issue>
 
     <issue
-        id="IconLocation"
-        message="Found bitmap drawable `res/drawable/ic_japan_onboarding_favicon.webp` in densityless folder">
-        <location
-            file="src/main/res/drawable/ic_japan_onboarding_favicon.webp"/>
-    </issue>
-
-    <issue
-        id="IconLocation"
-        message="Found bitmap drawable `res/drawable/ic_wordmark_logo.webp` in densityless folder">
-        <location
-            file="src/main/res/drawable/ic_wordmark_logo.webp"/>
-    </issue>
-
-    <issue
         id="IconDensities"
-        message="Missing the following drawables in `drawable-hdpi`: flag_ar.webp, flag_at.webp, flag_au.webp, flag_ba.webp, flag_be.webp... (43 more)">
+        message="Missing the following drawables in `drawable-hdpi`: firefox_sport.webp, flag_ar.webp, flag_at.webp, flag_au.webp, flag_ba.webp... (44 more)">
         <location
             file="src/main/res/drawable-hdpi"/>
     </issue>
 
     <issue
         id="IconDensities"
-        message="Missing the following drawables in `drawable-mdpi`: fenix_search_widget.webp, flag_ar.webp, flag_at.webp, flag_au.webp, flag_ba.webp... (44 more)">
+        message="Missing the following drawables in `drawable-mdpi`: fenix_search_widget.webp, firefox_sport.webp, flag_ar.webp, flag_at.webp, flag_au.webp... (45 more)">
         <location
             file="src/main/res/drawable-mdpi"/>
     </issue>
 
     <issue
         id="IconDensities"
-        message="Missing the following drawables in `drawable-xhdpi`: fenix_search_widget.webp, flag_ar.webp, flag_at.webp, flag_au.webp, flag_ba.webp... (44 more)">
+        message="Missing the following drawables in `drawable-xhdpi`: fenix_search_widget.webp, firefox_sport.webp, flag_ar.webp, flag_at.webp, flag_au.webp... (45 more)">
         <location
             file="src/main/res/drawable-xhdpi"/>
     </issue>
@@ -1246,72 +1709,6 @@
         message="Missing the following drawables in `drawable-xxhdpi`: fenix_search_widget.webp (found in drawable-hdpi)">
         <location
             file="src/main/res/drawable-xxhdpi"/>
-    </issue>
-
-    <issue
-        id="ClickableViewAccessibility"
-        message="Custom view ``SearchDialogFragmentConstraintLayout`` has `setOnTouchListener` called on it but does not override `performClick`"
-        errorLine1="                binding.searchWrapper.setOnTouchListener { _, _ ->"
-        errorLine2="                ^">
-        <location
-            file="src/main/java/org/mozilla/fenix/search/SearchDialogFragment.kt"
-            line="411"
-            column="17"/>
-    </issue>
-
-    <issue
-        id="ClickableViewAccessibility"
-        message="`onTouch` lambda should call `View#performClick` when a click is detected"
-        errorLine1="                binding.searchWrapper.setOnTouchListener { _, _ ->"
-        errorLine2="                                                         ^">
-        <location
-            file="src/main/java/org/mozilla/fenix/search/SearchDialogFragment.kt"
-            line="411"
-            column="58"/>
-    </issue>
-
-    <issue
-        id="ClickableViewAccessibility"
-        message="Custom view ``SearchDialogFragmentConstraintLayout`` has `setOnTouchListener` called on it but does not override `performClick`"
-        errorLine1="                binding.searchWrapper.setOnTouchListener { _, _ ->"
-        errorLine2="                ^">
-        <location
-            file="src/main/java/org/mozilla/fenix/search/SearchDialogFragment.kt"
-            line="421"
-            column="17"/>
-    </issue>
-
-    <issue
-        id="ClickableViewAccessibility"
-        message="`onTouch` lambda should call `View#performClick` when a click is detected"
-        errorLine1="                binding.searchWrapper.setOnTouchListener { _, _ ->"
-        errorLine2="                                                         ^">
-        <location
-            file="src/main/java/org/mozilla/fenix/search/SearchDialogFragment.kt"
-            line="421"
-            column="58"/>
-    </issue>
-
-    <issue
-        id="ClickableViewAccessibility"
-        message="Custom view ``SearchDialogFragmentConstraintLayout`` has `setOnTouchListener` called on it but does not override `performClick`"
-        errorLine1="                binding.searchWrapper.setOnTouchListener { _, _ ->"
-        errorLine2="                ^">
-        <location
-            file="src/main/java/org/mozilla/fenix/search/SearchDialogFragment.kt"
-            line="427"
-            column="17"/>
-    </issue>
-
-    <issue
-        id="ClickableViewAccessibility"
-        message="`onTouch` lambda should call `View#performClick` when a click is detected"
-        errorLine1="                binding.searchWrapper.setOnTouchListener { _, _ ->"
-        errorLine2="                                                         ^">
-        <location
-            file="src/main/java/org/mozilla/fenix/search/SearchDialogFragment.kt"
-            line="427"
-            column="58"/>
     </issue>
 
     <issue
@@ -1345,567 +1742,6 @@
             file="src/main/res/layout/checkbox_left_sub_preference.xml"
             line="15"
             column="5"/>
-    </issue>
-
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="        val currentTime = System.currentTimeMillis()"
-        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/utils/AccessibilityUtils.kt"
-            line="71"
-            column="27"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="                val current = System.currentTimeMillis()"
-        errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/settings/account/AccountSettingsFragment.kt"
-            line="542"
-            column="31"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="            val currentTime = System.currentTimeMillis()"
-        errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/components/bookmarks/BookmarksUseCase.kt"
-            line="85"
-            column="31"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="        requireContext().settings().lastBrowseActivity = System.currentTimeMillis()"
-        errorLine2="                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/browser/BrowserFragment.kt"
-            line="575"
-            column="58"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="                        currentTimeInMillis = { System.currentTimeMillis() },"
-        errorLine2="                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/components/Components.kt"
-            line="343"
-            column="49"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="    var now = System.currentTimeMillis()"
-        errorLine2="              ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/debugsettings/crashtools/CrashTools.kt"
-            line="48"
-            column="15"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="            now = System.currentTimeMillis()"
-        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/debugsettings/crashtools/CrashTools.kt"
-            line="52"
-            column="19"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="                        System.currentTimeMillis() - Core.HISTORY_METADATA_MAX_AGE_IN_MS,"
-        errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/FenixApplication.kt"
-            line="500"
-            column="25"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="                val start = System.currentTimeMillis()"
-        errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/FenixApplication.kt"
-            line="580"
-            column="29"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="                        durationMs = (System.currentTimeMillis() - start).toInt(),"
-        errorLine2="                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/FenixApplication.kt"
-            line="584"
-            column="39"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="        if (!System.currentTimeMillis().isAfterFirstWeekFromInstall(applicationContext) ||"
-        errorLine2="             ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/components/metrics/GrowthDataWorker.kt"
-            line="29"
-            column="14"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="        val now = System.currentTimeMillis()"
-        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/historymetadata/HistoryMetadataService.kt"
-            line="93"
-            column="19"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="        currentTimeMillis: Long = System.currentTimeMillis(),"
-        errorLine2="                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/ipprotection/IPProtectionManager.kt"
-            line="24"
-            column="35"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="        context.settings().lastCfrShownTimeInMillis = System.currentTimeMillis()"
-        errorLine2="                                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/browser/infobanner/InfoBanner.kt"
-            line="64"
-            column="55"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="            val imageFile = File(imageDir, &quot;lens_capture_${System.currentTimeMillis()}.jpg&quot;)"
-        errorLine2="                                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/components/lens/LensCameraFragment.kt"
-            line="440"
-            column="60"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="        val timestamp = System.currentTimeMillis()"
-        errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/components/LensImageUploader.kt"
-            line="65"
-            column="25"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="        settings.lastCfrShownTimeInMillis = System.currentTimeMillis()"
-        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/components/menu/middleware/MenuDialogMiddleware.kt"
-            line="452"
-            column="45"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="            val currentTime = System.currentTimeMillis()"
-        errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/components/metrics/MetricsStorage.kt"
-            line="73"
-            column="31"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="                settings.resumeGrowthLastSent = System.currentTimeMillis()"
-        errorLine2="                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/components/metrics/MetricsStorage.kt"
-            line="147"
-            column="49"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="                settings.uriLoadGrowthLastSent = System.currentTimeMillis()"
-        errorLine2="                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/components/metrics/MetricsStorage.kt"
-            line="151"
-            column="50"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="        if (!settings.usageTimeGrowthSent &amp;&amp; System.currentTimeMillis().duringFirstDay()) {"
-        errorLine2="                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/components/metrics/MetricsStorage.kt"
-            line="199"
-            column="46"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="    private fun Long.hasBeenMoreThanDaySince() = System.currentTimeMillis() - this > DAY_MILLIS"
-        errorLine2="                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/components/metrics/MetricsStorage.kt"
-            line="327"
-            column="50"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="        val currentTime = System.currentTimeMillis()"
-        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/components/metrics/MetricsStorage.kt"
-            line="357"
-            column="27"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="            setWhen(System.currentTimeMillis())"
-        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/components/NotificationManager.kt"
-            line="106"
-            column="21"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="                .setWhen(System.currentTimeMillis())"
-        errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/components/NotificationManager.kt"
-            line="147"
-            column="26"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="        settings.onboardingCompletedTimestamp = System.currentTimeMillis()"
-        errorLine2="                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/onboarding/OnboardingFragment.kt"
-            line="512"
-            column="49"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="        requireContext().settings().lastSetAsDefaultPromptShownTimeInMillis = System.currentTimeMillis()"
-        errorLine2="                                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/onboarding/OnboardingFragment.kt"
-            line="598"
-            column="79"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="    fun onAcceptTermsButtonClicked(nowMillis: Long = System.currentTimeMillis()) = Unit"
-        errorLine2="                                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/onboarding/view/OnboardingPageState.kt"
-            line="167"
-            column="54"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="    fun updatePrivacyNoticeBannerDisplayedPreference(nowMillis: Long = System.currentTimeMillis())"
-        errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/termsofuse/store/PrivacyNoticeBannerRepository.kt"
-            line="17"
-            column="72"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="            System.currentTimeMillis()"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/termsofuse/store/PrivacyNoticeBannerRepository.kt"
-            line="37"
-            column="13"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="                            settings.lastCfrShownTimeInMillis = System.currentTimeMillis()"
-        errorLine2="                                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/shortcut/PwaOnboardingObserver.kt"
-            line="58"
-            column="65"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="        val file = File(downloadsDir, &quot;qr_code_${System.currentTimeMillis()}.png&quot;)"
-        errorLine2="                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/components/menu/share/QRCodeDownloader.kt"
-            line="63"
-            column="50"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="            put(MediaStore.Downloads.DISPLAY_NAME, &quot;qr_code_${System.currentTimeMillis()}.png&quot;)"
-        errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/components/menu/share/QRCodeDownloader.kt"
-            line="82"
-            column="63"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="                val currentTime = System.currentTimeMillis()"
-        errorLine2="                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/home/recentsyncedtabs/RecentSyncedTabFeature.kt"
-            line="132"
-            column="35"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="    activity.settings().setToDefaultPromptRequested = System.currentTimeMillis()"
-        errorLine2="                                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/home/SetToDefaultPromptRequest.kt"
-            line="97"
-            column="55"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="        get() = (System.currentTimeMillis() - lastCfrShownTimeInMillis) > THREE_DAYS_MS"
-        errorLine2="                 ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/utils/Settings.kt"
-            line="374"
-            column="18"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="    internal fun timeNowInMillis(): Long = System.currentTimeMillis()"
-        errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/utils/Settings.kt"
-            line="1019"
-            column="44"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="        val now = System.currentTimeMillis()"
-        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/utils/Settings.kt"
-            line="2870"
-            column="19"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="        lastSetAsDefaultPromptShownTimeInMillis = System.currentTimeMillis()"
-        errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/utils/Settings.kt"
-            line="2896"
-            column="51"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="            (System.currentTimeMillis() - newsButtonAnimationLastShownMillis >= ONE_WEEK_MS)"
-        errorLine2="             ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/utils/Settings.kt"
-            line="3145"
-            column="14"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="        newsButtonAnimationLastShownMillis = System.currentTimeMillis()"
-        errorLine2="                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/utils/Settings.kt"
-            line="3153"
-            column="46"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="                summarizeDurationMs = (System.currentTimeMillis() - sessionTelemetry.startTimeMillis).toInt(),"
-        errorLine2="                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/summarization/SummarizationTelemetryMiddleware.kt"
-            line="170"
-            column="40"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="    val timestamp = System.currentTimeMillis()"
-        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/debugsettings/tabs/TabGroupTools.kt"
-            line="118"
-            column="21"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="            lastModified = System.currentTimeMillis(),"
-        errorLine2="                           ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/debugsettings/tabs/TabGroupTools.kt"
-            line="161"
-            column="28"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="                                            System.currentTimeMillis()"
-        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/tabstray/ui/TabManagementFragment.kt"
-            line="374"
-            column="45"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="                                            System.currentTimeMillis()"
-        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/tabstray/ui/TabManagementFragment.kt"
-            line="380"
-            column="45"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="                                            System.currentTimeMillis()"
-        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/tabstray/ui/TabManagementFragment.kt"
-            line="391"
-            column="45"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="                                            System.currentTimeMillis()"
-        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/tabstray/ui/TabManagementFragment.kt"
-            line="399"
-            column="45"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="                val daysSince = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(numDays)"
-        errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/tabstray/controller/TabManagerController.kt"
-            line="407"
-            column="33"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="        createdAt = if (isInactive) 0L else System.currentTimeMillis(),"
-        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/debugsettings/tabs/TabTools.kt"
-            line="112"
-            column="45"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="        val elapsed = System.currentTimeMillis() - lastVisibleAt"
-        errorLine2="                      ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/telemetry/TelemetryMiddleware.kt"
-            line="230"
-            column="23"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="        currentTimeInMillis: Long = System.currentTimeMillis(),"
-        errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/termsofuse/TermsOfUseManager.kt"
-            line="41"
-            column="37"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="    fun updateHasAcceptedTermsOfUsePreference(nowMillis: Long = System.currentTimeMillis())"
-        errorLine2="                                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/termsofuse/store/TermsOfUsePromptRepository.kt"
-            line="42"
-            column="65"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="    fun updateLastTermsOfUsePromptTimeInMillis(currentTimeInMillis: Long = System.currentTimeMillis())"
-        errorLine2="                                                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/termsofuse/store/TermsOfUsePromptRepository.kt"
-            line="54"
-            column="76"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="            storage.setDateOfUpdate(System.currentTimeMillis())"
-        errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/whatsnew/WhatsNew.kt"
-            line="35"
-            column="37"/>
-    </issue>
-    <issue
-        id="NoSystemCurrentTimeMillis"
-        message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
-        errorLine1="        return TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - updateDay)"
-        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/fenix/whatsnew/WhatsNewStorage.kt"
-            line="58"
-            column="45"/>
     </issue>
 
 </issues>

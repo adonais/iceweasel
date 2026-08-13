@@ -5,12 +5,12 @@
 #ifndef mozilla_net_InterceptionInfo_h
 #define mozilla_net_InterceptionInfo_h
 
+#include "nsCOMPtr.h"
 #include "nsIContentPolicy.h"
 #include "nsIInterceptionInfo.h"
 #include "nsIPrincipal.h"
 #include "nsIRedirectHistoryEntry.h"
 #include "nsTArray.h"
-#include "nsCOMPtr.h"
 
 namespace mozilla::net {
 

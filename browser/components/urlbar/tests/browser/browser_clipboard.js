@@ -319,7 +319,7 @@ add_task(async function emptySearch_withClipboardEntry() {
       value: "",
     });
     await UrlbarTestUtils.enterSearchMode(window, {
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
     });
 
     let urls = [];

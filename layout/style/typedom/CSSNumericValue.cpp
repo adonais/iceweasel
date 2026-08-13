@@ -4,6 +4,7 @@
 
 #include "mozilla/dom/CSSNumericValue.h"
 
+#include "TypedOMUtils.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ErrorResult.h"
@@ -21,6 +22,15 @@ namespace mozilla::dom {
 CSSNumericValue::CSSNumericValue(nsCOMPtr<nsISupports> aParent,
                                  NumericValueType aNumericValueType)
     : CSSStyleValue(std::move(aParent), StyleValueType::NumericValue),
+      mNumericType(WrapMovingNotNull(MakeUnique<StyleNumericType>())),
+      mNumericValueType(aNumericValueType) {}
+
+CSSNumericValue::CSSNumericValue(
+    nsCOMPtr<nsISupports> aParent,
+    MovingNotNull<UniquePtr<StyleNumericType>> aNumericType,
+    NumericValueType aNumericValueType)
+    : CSSStyleValue(std::move(aParent), StyleValueType::NumericValue),
+      mNumericType(std::move(aNumericType)),
       mNumericValueType(aNumericValueType) {}
 
 // https://drafts.css-houdini.org/css-typed-om-1/#rectify-a-numberish-value
@@ -125,8 +135,11 @@ bool CSSNumericValue::Equals(const Sequence<OwningCSSNumberish>& aValue) {
 already_AddRefed<CSSUnitValue> CSSNumericValue::To(const nsACString& aUnit,
                                                    ErrorResult& aRv) const {
   // Step 1.
-  // TODO: Let type be the result of creating a type from unit. If type is
-  // failure, throw a SyntaxError.
+  StyleNumericType numericType;
+  if (!Servo_NumericType_Create(&aUnit, &numericType)) {
+    aRv.ThrowSyntaxError("Invalid unit: "_ns + aUnit);
+    return nullptr;
+  }
 
   // Step 2.
   auto styleNumericValue = ToStyleNumericValue();
@@ -155,11 +168,30 @@ already_AddRefed<CSSUnitValue> CSSNumericValue::To(const nsACString& aUnit,
 already_AddRefed<CSSMathSum> CSSNumericValue::ToSum(
     const Sequence<nsCString>& aUnits, ErrorResult& aRv) const {
   // Step 1.
-  // TODO: For each unit in units, if the result of creating a type from unit
-  // is failure, throw a SyntaxError.
+  AutoTArray<StyleNumericType, 4> numericTypes;
+  numericTypes.SetCapacity(aUnits.Length());
 
-  // TODO: The toSum() algorithm should also verify that the requested units
-  // are addable with each other (file a spec issue).
+  for (const auto& unit : aUnits) {
+    StyleNumericType* numericType = numericTypes.AppendElement();
+    if (!Servo_NumericType_Create(&unit, numericType)) {
+      aRv.ThrowSyntaxError("Invalid unit: "_ns + unit);
+      return nullptr;
+    }
+  }
+
+  // The spec currently relies on CSSMathSum construction to reject requested
+  // units that are not addable. Since the numeric types for all requested
+  // units must already be created, validate addability here instead so
+  // incompatible units fail early and the remaining algorithm can be skipped.
+  //
+  // TODO: Propose making this an explicit step in the specification.
+  if (!numericTypes.IsEmpty()) {
+    StyleNumericType numericType;
+    if (!Servo_NumericType_AddTypesFromValues(&numericTypes, &numericType)) {
+      aRv.ThrowTypeError("Units are not addable");
+      return nullptr;
+    }
+  }
 
   // Step 2.
   auto styleNumericValue = ToStyleNumericValue();
@@ -186,7 +218,32 @@ already_AddRefed<CSSMathSum> CSSNumericValue::ToSum(
   return mathSum.forget();
 }
 
-void CSSNumericValue::Type(CSSNumericType& aRetVal) {}
+// Step 2-3 of:
+// https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-type
+void CSSNumericValue::Type(CSSNumericType& aRetVal) {
+  // Step 2.
+
+  // StyleALL_NUMERIC_BASE_TYPES[index] and CSSNUMERIC_TYPED_FIELDS[index]
+  // refer to the same numeric base type by parallel-array convention. The
+  // static_asserts in TypedOMUtils.cpp guarantee StyleNumericBaseType and
+  // CSSNumericBaseType discriminants match, so the index can be used to look
+  // up both the exponent and the field.
+  for (size_t index = 0; index < StyleNUMERIC_BASE_TYPE_COUNT; index++) {
+    auto baseType = StyleALL_NUMERIC_BASE_TYPES[index];
+
+    if (auto power = mNumericType->Exponent(baseType)) {
+      (aRetVal.*CSSNUMERIC_TYPE_FIELDS[index]).Construct(power);
+    }
+  }
+
+  // Step 3.
+  if (const auto& percentHint = mNumericType->percent_hint) {
+    // The cast is safe, StyleNumericBaseType and CSSNumericBaseType have
+    // matching discriminants, verified by static_asserts in TypedOMUtils.cpp.
+    aRetVal.mPercentHint.Construct(
+        static_cast<CSSNumericBaseType>(*percentHint));
+  }
+}
 
 // https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-parse
 //

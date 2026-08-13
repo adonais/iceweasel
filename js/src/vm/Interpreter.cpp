@@ -6,8 +6,6 @@
  * JavaScript bytecode interpreter.
  */
 
-#include "vm/Interpreter-inl.h"
-
 #include "mozilla/DebugOnly.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/Maybe.h"
@@ -43,6 +41,8 @@
 #include "vm/BigIntType.h"
 #include "vm/BytecodeUtil.h"  // JSDVG_SEARCH_STACK
 #include "vm/ConstantCompareOperand.h"
+
+#include "vm/Interpreter-inl.h"
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 #  include "vm/ErrorObject.h"
 #endif
@@ -4650,15 +4650,9 @@ JSObject* js::LambdaOptimizedFallback(JSContext* cx, HandleFunction fun,
 
 JSObject* js::Lambda(JSContext* cx, HandleFunction fun, HandleObject parent,
                      gc::Heap heap, gc::AllocSite* site) {
-  JSFunction* clone;
-  if (fun->isNativeFun()) {
-    MOZ_ASSERT(IsAsmJSModule(fun));
-    MOZ_ASSERT(heap == gc::Heap::Default);  // Not supported.
-    clone = CloneAsmJSModuleFunction(cx, fun);
-  } else {
-    RootedObject proto(cx, fun->staticPrototype());
-    clone = CloneFunctionReuseScript(cx, fun, parent, proto, heap, site);
-  }
+  RootedObject proto(cx, fun->staticPrototype());
+  JSFunction* clone =
+      CloneFunctionReuseScript(cx, fun, parent, proto, heap, site);
   if (!clone) {
     return nullptr;
   }
@@ -5177,7 +5171,7 @@ JSObject* js::NewObjectOperation(JSContext* cx, HandleScript script,
   uint8_t propCount = GET_UINT8(pc);
   if (propCount > 0) {
     gc::AllocKind allocKind = gc::GetGCObjectKind(propCount);
-    return NewPlainObjectWithAllocKind(cx, allocKind);
+    return NewPlainObject(cx, {.allocKind = allocKind});
   }
   return NewPlainObject(cx);
 }

@@ -50,6 +50,11 @@ private fun JsonWriter.state(
     name(Keys.SELECTED_TAB_ID_KEY)
     value(state.selectedTabId)
 
+    state.translationEngine.isEngineSupported?.let { isEngineSupported ->
+        name(Keys.TRANSLATIONS_ENGINE_IS_SUPPORTED_KEY)
+        value(isEngineSupported)
+    }
+
     name(Keys.SESSION_STATE_TUPLES_KEY)
 
     beginArray()

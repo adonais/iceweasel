@@ -241,13 +241,13 @@ add_task(async function test_arrow_navigation_keeps_headers_visible() {
     const rect = siteCards[i].summaryEl.getBoundingClientRect();
     const containerRect = scrollContainer.getBoundingClientRect();
     Assert.greaterOrEqual(
-      rect.top,
-      containerRect.top,
+      Math.round(rect.top),
+      Math.round(containerRect.top),
       `Header ${i} top is within the visible scroll area.`
     );
     Assert.lessOrEqual(
-      rect.bottom,
-      containerRect.bottom,
+      Math.round(rect.bottom),
+      Math.round(containerRect.bottom),
       `Header ${i} bottom is within the visible scroll area.`
     );
   }

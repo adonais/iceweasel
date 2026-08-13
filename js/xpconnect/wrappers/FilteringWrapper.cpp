@@ -3,15 +3,17 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "FilteringWrapper.h"
+
+#include "mozilla/ErrorResult.h"
+
 #include "AccessCheck.h"
 #include "ChromeObjectWrapper.h"
-#include "XrayWrapper.h"
-#include "nsJSUtils.h"
-#include "mozilla/ErrorResult.h"
-#include "xpcpublic.h"
-#include "xpcprivate.h"
-
 #include "jsapi.h"
+#include "nsJSUtils.h"
+#include "xpcprivate.h"
+#include "xpcpublic.h"
+#include "XrayWrapper.h"
+
 #include "js/Symbol.h"
 
 using namespace JS;

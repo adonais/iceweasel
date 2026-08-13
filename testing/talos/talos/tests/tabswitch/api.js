@@ -38,6 +38,7 @@ this.tabswitch = class extends ExtensionAPI {
                 DOMDocElementInserted: { capture: true },
               },
             },
+            safeForUntrustedWebProcess: true,
           });
 
           return () => {

@@ -11,13 +11,13 @@
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/StaticAnalysisFunctions.h"
 #include "mozilla/TextEvents.h"
+#include "mozilla/Utf16.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/KeyboardEvent.h"
 #include "nsDebug.h"
 #include "nsMenuPopupFrame.h"
 #include "nsString.h"
 #include "nsStringFwd.h"
-#include "nsUTF8Utils.h"
 #include "nsXULElement.h"
 #include "nsXULPopupManager.h"
 
@@ -301,7 +301,7 @@ XULButtonElement* XULMenuParentElement::FindMenuWithShortcut(
     ToLowerCase(shortcutKey);
     const char16_t* start = shortcutKey.BeginReading();
     const char16_t* end = shortcutKey.EndReading();
-    uint32_t ch = UTF16CharEnumerator::NextChar(&start, end);
+    uint32_t ch = DecodeOneUtf16CodePoint(&start, end);
     size_t index = accessKeys.IndexOf(ch);
     if (index == AccessKeyArray::NoIndex) {
       continue;

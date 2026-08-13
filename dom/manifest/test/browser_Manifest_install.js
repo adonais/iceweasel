@@ -1,7 +1,7 @@
 "use strict";
 
 const { Manifests } = ChromeUtils.importESModule(
-  "resource://gre/modules/Manifest.sys.mjs"
+  "moz-src:///dom/manifest/Manifest.sys.mjs"
 );
 
 const defaultURL = new URL(

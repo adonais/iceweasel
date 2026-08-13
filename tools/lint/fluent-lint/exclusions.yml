@@ -166,6 +166,9 @@ CO01:
         - about-debugging-browser-version-too-recent
         # devtools/client/locales/en-US/application.ftl
         - manifest-loaded-devtools-error
+        # devtools/client/locales/en-US/toolbox-options.ftl
+        - options-netmonitor-label
+        - options-netmonitor-body-limit-tooltip
         # devtools/shared/locales/en-US/webconsole-commands.ftl
         - webconsole-commands-usage-block
         # toolkit/about/aboutAddons.ftl

@@ -4,17 +4,16 @@
 
 #include "ShareableCanvasRenderer.h"
 
+#include "ClientWebGLContext.h"
+#include "GLScreenBuffer.h"
+#include "SharedSurfaceGL.h"
+#include "gfxUtils.h"
 #include "mozilla/dom/WebGLTypes.h"
 #include "mozilla/gfx/2D.h"
-#include "mozilla/layers/TextureClientSharedSurface.h"
 #include "mozilla/layers/CompositableForwarder.h"
+#include "mozilla/layers/TextureClientSharedSurface.h"
 #include "mozilla/layers/TextureForwarder.h"
-
-#include "ClientWebGLContext.h"
-#include "gfxUtils.h"
-#include "GLScreenBuffer.h"
 #include "nsICanvasRenderingContextInternal.h"
-#include "SharedSurfaceGL.h"
 
 using namespace mozilla::gfx;
 

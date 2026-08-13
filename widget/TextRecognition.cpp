@@ -3,12 +3,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "TextRecognition.h"
+
+#include "imgIContainer.h"
+#include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ShadowRoot.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/dom/ContentChild.h"
 #include "nsTextNode.h"
-#include "imgIContainer.h"
 
 using namespace mozilla::dom;
 

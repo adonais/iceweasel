@@ -11,6 +11,7 @@ const TEST_URL = URL_ROOT + "doc_markup_search.html";
 const DEVTOOLS_SEARCH_HIGHLIGHT_NAME = "devtools-search";
 
 add_task(async function () {
+  await pushPref("dom.select.customizable_select.enabled", true);
   const { inspector } = await openInspectorForURL(TEST_URL);
 
   let container = await getContainerForSelector("em", inspector, true);
@@ -267,6 +268,14 @@ add_task(async function () {
   );
   // no highlighting as the `content` text isn't displayed in the markup view
   checkHighlightedSearchResults(inspector, []);
+
+  await searchInMarkupView(inspector, "::picker-icon");
+  is(
+    inspector.selection.nodeFront.displayName,
+    "::picker-icon",
+    "The ::picker-icon element is selected"
+  );
+  checkHighlightedSearchResults(inspector, ["::picker-icon"]);
 
   info("Search for view-transition pseudo elements");
   // Trigger the view transition

@@ -1,4 +1,5 @@
 ---
+name: firefox-desktop-frontend
 description: You MUST use this skill when working with HTML, JS, CSS and other front-end code.
 ---
 

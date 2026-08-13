@@ -20,7 +20,6 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
+import mozilla.components.compose.base.button.OutlinedButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.perf.ApplicationExitInfoMetrics
 import org.mozilla.fenix.perf.ProcessExitRecord
@@ -169,9 +169,10 @@ private fun ProcessTypeFilter(
     }
 
     Box {
-        OutlinedButton(onClick = { expanded = !expanded }) {
-            Text(text = label, style = FirefoxTheme.typography.body2)
-        }
+        OutlinedButton(
+            text = label,
+            onClick = { expanded = !expanded },
+        )
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },

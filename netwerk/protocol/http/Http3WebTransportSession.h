@@ -5,10 +5,10 @@
 #ifndef mozilla_net_Http3WebTransportSession_h
 #define mozilla_net_Http3WebTransportSession_h
 
-#include "WebTransportSessionBase.h"
 #include "Http3StreamBase.h"
-#include "nsIWebTransport.h"
+#include "WebTransportSessionBase.h"
 #include "mozilla/net/NeqoHttp3Conn.h"
+#include "nsIWebTransport.h"
 
 namespace mozilla::net {
 

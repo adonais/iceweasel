@@ -6,6 +6,7 @@
 #define mozilla_BasePrincipal_h
 
 #include <stdint.h>
+
 #include "ErrorList.h"
 #include "js/TypeDecls.h"
 #include "mozilla/AlreadyAddRefed.h"

@@ -10,7 +10,7 @@ const lazy = XPCOMUtils.declareLazy({
   ObliviousHTTP: "resource://gre/modules/ObliviousHTTP.sys.mjs",
   SkippableTimer: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
-  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
 });
 
 /**
@@ -48,7 +48,7 @@ const SESSION_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 export class MerinoClient {
   #lazy = XPCOMUtils.declareLazy({
     logger: () =>
-      lazy.UrlbarUtils.getLogger({ prefix: `MerinoClient [${this.#name}]` }),
+      lazy.UrlbarShared.getLogger({ prefix: `MerinoClient [${this.#name}]` }),
   });
 
   /**

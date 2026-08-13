@@ -37,7 +37,8 @@ object FindInPageSelectors {
         groups = listOf("requiredForPage"),
     )
 
-    fun resultCounterSelector(text: String) = Selector(
+    @Suppress("ktlint:standard:function-naming", "FunctionName")
+    fun RESULT_COUNTER(text: String = "") = Selector(
         strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
         value = text,
         description = "Find in page result counter '$text'",
@@ -49,5 +50,6 @@ object FindInPageSelectors {
         FIND_IN_PAGE_QUERY,
         FIND_IN_PAGE_NEXT_BUTTON,
         FIND_IN_PAGE_PREV_BUTTON,
+        RESULT_COUNTER(),
     )
 }

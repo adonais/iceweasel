@@ -5,8 +5,8 @@
 #ifndef mozilla_net_WebTransportCertificateVerifier_h
 #define mozilla_net_WebTransportCertificateVerifier_h
 
-#include "nsTArray.h"
 #include "nsIWebTransport.h"
+#include "nsTArray.h"
 #include "nss/mozpkix/pkixtypes.h"
 
 namespace mozilla::net {

@@ -7,6 +7,7 @@ import importlib.util
 import sys
 import types
 from pathlib import Path
+from unittest import mock
 
 from mozunit import main
 
@@ -274,6 +275,54 @@ def test_cache_lookup_none_local_hash(tmp_path):
     )
 
     assert result is None
+
+
+def test_download_file_succeeds_first_try(tmp_path):
+    url = "https://archive.mozilla.org/firefox.mar"
+    dest = str(tmp_path / "out.mar")
+
+    with mock.patch.object(mz.urllib.request, "urlretrieve") as urlretrieve:
+        with mock.patch.object(mz.time, "sleep") as sleep:
+            mz.download_file(url, dest, allow_staging=False)
+
+    urlretrieve.assert_called_once_with(url, dest)
+    sleep.assert_not_called()
+
+
+def test_download_file_retries_then_succeeds(tmp_path):
+    url = "https://archive.mozilla.org/firefox.mar"
+    dest = str(tmp_path / "out.mar")
+
+    with mock.patch.object(
+        mz.urllib.request,
+        "urlretrieve",
+        side_effect=[OSError("boom"), OSError("boom"), None],
+    ) as urlretrieve:
+        with mock.patch.object(mz.time, "sleep") as sleep:
+            mz.download_file(url, dest, allow_staging=False)
+
+    assert urlretrieve.call_count == 3
+    assert sleep.call_count == 2
+
+
+def test_download_file_raises_after_exhausting_retries(tmp_path):
+    url = "https://archive.mozilla.org/firefox.mar"
+    dest = str(tmp_path / "out.mar")
+
+    with mock.patch.object(
+        mz.urllib.request,
+        "urlretrieve",
+        side_effect=OSError("boom"),
+    ) as urlretrieve:
+        with mock.patch.object(mz.time, "sleep"):
+            try:
+                mz.download_file(url, dest, allow_staging=False)
+            except mz.DownloadError:
+                pass
+            else:
+                raise AssertionError("Expected DownloadError to be raised")
+
+    assert urlretrieve.call_count == mz.DOWNLOAD_ATTEMPTS
 
 
 if __name__ == "__main__":

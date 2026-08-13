@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "AxisPhysicsMSDModel.h"
+
 #include <math.h>  // for sqrt and fabs
 
 namespace mozilla {

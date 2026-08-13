@@ -489,11 +489,12 @@ export class LoginManagerParent extends JSWindowActorParent {
     }
   }
 
-  #onOpenPreferences(hostname, entryPoint) {
+  #onOpenPreferences(hostname, entryPoint, loginGuid) {
     const window = this.getRootBrowser().documentGlobal;
     lazy.LoginHelper.openPasswordManager(window, {
       filterString: hostname,
       entryPoint,
+      loginGuid,
     });
   }
 
@@ -1048,6 +1049,10 @@ export class LoginManagerParent extends JSWindowActorParent {
     // we don't auto-save logins on form submit
     let notifySaved = false;
 
+    // Resolve the browser to anchor the doorhanger on before any async storage
+    // call.
+    const promptBrowser = lazy.LoginHelper.getBrowserForPrompt(browser);
+
     if (autoFilledLoginGuid) {
       let loginsForGuid = await Services.logins.searchLoginsAsync({
         guid: autoFilledLoginGuid,
@@ -1108,7 +1113,6 @@ export class LoginManagerParent extends JSWindowActorParent {
       existingLogin = this.#findSameLogin(logins, formLogin);
     }
 
-    const promptBrowser = lazy.LoginHelper.getBrowserForPrompt(browser);
     const prompter = this._getPrompter(browser);
 
     if (!canMatchExistingLogin) {
@@ -1238,6 +1242,13 @@ export class LoginManagerParent extends JSWindowActorParent {
       );
       return;
     }
+
+    // Stop-gap until bug 2055772 (a systemic AbortController-based solution):
+    // use a local counter to serialize subsequent calls so that only the most
+    // recent edit updates the doorhanger. Every keystroke triggers its own
+    // async run and these can finish out of order.
+    this._editSeq = (this._editSeq ?? 0) + 1;
+    const seq = this._editSeq;
 
     let framePrincipalOrigin =
       browsingContext.currentWindowGlobal.documentPrincipal.origin;
@@ -1440,6 +1451,13 @@ export class LoginManagerParent extends JSWindowActorParent {
       lazy.log("Not auto-saving this login.");
     }
 
+    if (seq !== this._editSeq) {
+      lazy.log(
+        "A newer password edit superseded this one; skipping doorhanger."
+      );
+      return;
+    }
+
     const prompter = this._getPrompter(browser);
     const promptBrowser = lazy.LoginHelper.getBrowserForPrompt(browser);
 
@@ -1547,12 +1565,23 @@ export class LoginManagerParent extends JSWindowActorParent {
     switch (message) {
       // Called when clicking the open preference entry in the autocomplete
       case "PasswordManager:OpenPreferences": {
-        this.#onOpenPreferences(data.hostname, data.entryPoint);
+        this.#onOpenPreferences(data.hostname, data.entryPoint, data.loginGuid);
         break;
       }
 
       case "PasswordManager:OpenImportableLearnMore": {
         this.#onOpenImportableLearnMore();
+        break;
+      }
+
+      case "PasswordManager:OpenInsecureFieldWarningLearnMore": {
+        const window = this.getRootBrowser().documentGlobal;
+        const baseURL = Services.urlFormatter.formatURLPref(
+          "app.support.baseURL"
+        );
+        window.openTrustedLinkIn(baseURL + "insecure-password", "tab", {
+          relatedToCurrent: true,
+        });
         break;
       }
 

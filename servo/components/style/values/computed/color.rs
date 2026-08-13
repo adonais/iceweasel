@@ -5,13 +5,15 @@
 //! Computed color values.
 
 use crate::color::AbsoluteColor;
+use crate::typed_om::{KeywordValue, ToTyped, TypedValue};
 use crate::values::animated::ToAnimatedZero;
 use crate::values::computed::percentage::Percentage;
 use crate::values::generics::color::{
     GenericCaretColor, GenericColor, GenericColorMix, GenericColorOrAuto,
 };
 use std::fmt::{self, Write};
-use style_traits::{CssWriter, ToCss};
+use style_traits::{CssString, CssWriter, ToCss};
+use thin_vec::ThinVec;
 
 pub use crate::values::specified::color::{ColorScheme, ForcedColorAdjust, PrintColorAdjust};
 
@@ -43,6 +45,20 @@ impl ToCss for Color {
     }
 }
 
+impl ToTyped for Color {
+    fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
+        match *self {
+            Self::CurrentColor => {
+                dest.push(TypedValue::Keyword(KeywordValue(CssString::from(
+                    "currentcolor",
+                ))));
+                Ok(())
+            },
+            _ => Err(()),
+        }
+    }
+}
+
 impl Color {
     /// A fully transparent color.
     pub const TRANSPARENT_BLACK: Self = Self::Absolute(AbsoluteColor::TRANSPARENT_BLACK);
@@ -63,8 +79,7 @@ impl Color {
         }
     }
 
-    /// Combine this complex color with the given foreground color into an
-    /// absolute color.
+    /// Combine this complex color with the given foreground color into an absolute color.
     pub fn resolve_to_absolute(&self, current_color: &AbsoluteColor) -> AbsoluteColor {
         match *self {
             Self::Absolute(c) => c,
@@ -75,12 +90,14 @@ impl Color {
             Self::ColorMix(ref mix) => {
                 use crate::color::mix;
 
+                let fill = mix.omitted_weight().unwrap_or(0.0);
+
                 mix::mix_many(
                     mix.interpolation,
                     mix.items.iter().map(|item| {
                         mix::ColorMixItem::new(
                             item.color.resolve_to_absolute(current_color),
-                            item.percentage.0,
+                            item.percentage.as_ref().map_or(fill, |p| p.0),
                         )
                     }),
                     mix.flags,
@@ -88,14 +105,19 @@ impl Color {
             },
             Self::ContrastColor(ref c) => {
                 let bg_color = c.resolve_to_absolute(current_color);
-                if Self::contrast_ratio(&bg_color, &AbsoluteColor::BLACK)
-                    > Self::contrast_ratio(&bg_color, &AbsoluteColor::WHITE)
-                {
-                    AbsoluteColor::BLACK
-                } else {
-                    AbsoluteColor::WHITE
-                }
+                Self::resolve_contrast_color(&bg_color)
             },
+        }
+    }
+
+    /// Performs the resolution of contrast-color given a background color.
+    pub fn resolve_contrast_color(bg_color: &AbsoluteColor) -> AbsoluteColor {
+        if Self::contrast_ratio(&bg_color, &AbsoluteColor::BLACK)
+            > Self::contrast_ratio(&bg_color, &AbsoluteColor::WHITE)
+        {
+            AbsoluteColor::BLACK
+        } else {
+            AbsoluteColor::WHITE
         }
     }
 

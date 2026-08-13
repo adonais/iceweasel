@@ -12,7 +12,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -22,22 +21,20 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.home.HomeSectionHeader
 import org.mozilla.fenix.home.fake.FakeHomepagePreview
 import org.mozilla.fenix.home.pocket.PocketState
+import org.mozilla.fenix.home.pocket.controller.StoriesImpressionSource
 import org.mozilla.fenix.home.pocket.interactor.PocketStoriesInteractor
 import org.mozilla.fenix.theme.FirefoxTheme
-import org.mozilla.fenix.wallpapers.WallpaperState
 
 /**
  * Pocket section for the homepage.
  *
  * @param state The [PocketState] representing the UI state.
- * @param cardBackgroundColor The [Color] of the card backgrounds.
  * @param interactor [PocketStoriesInteractor] for interactions with the UI.
  * @param horizontalPadding Horizontal padding to apply to outermost column.
  */
 @Composable
 fun PocketSection(
     state: PocketState,
-    cardBackgroundColor: Color,
     interactor: PocketStoriesInteractor,
     horizontalPadding: Dp = dimensionResource(R.dimen.home_item_horizontal_margin),
 ) {
@@ -45,7 +42,10 @@ fun PocketSection(
         // We should report back when a certain story is actually being displayed.
         // Cannot do it reliably so for now we'll just mass report everything as being displayed.
         state.stories.let {
-            interactor.onStoriesShown(storiesShown = it)
+            interactor.onStoriesShown(
+                storiesShown = it,
+                source = StoriesImpressionSource.HOMEPAGE,
+            )
         }
     }
 
@@ -63,9 +63,10 @@ fun PocketSection(
         Stories(
             stories = state.stories,
             contentPadding = horizontalPadding,
-            backgroundColor = cardBackgroundColor,
             onStoryShown = interactor::onStoryShown,
-            onStoryClicked = interactor::onStoryClicked,
+            onStoryClicked = { story, position ->
+                interactor.onStoryClicked(story, position, StoriesImpressionSource.HOMEPAGE)
+            },
         )
     }
 }
@@ -77,7 +78,6 @@ private fun PocketSectionPreview() {
         Surface {
             PocketSection(
                 state = FakeHomepagePreview.pocketState(),
-                cardBackgroundColor = WallpaperState.default.cardBackgroundColor,
                 interactor = FakeHomepagePreview.homepageInteractor,
                 horizontalPadding = 0.dp,
             )

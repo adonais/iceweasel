@@ -1,2 +1,15 @@
+# Skip the WebGPU crashtests if:
+# - Linux (`gtkWidget`) release_or_beta, because WebGPU is not supported yet.
+# - No GPU process (`nogpu`), unless Linux, because WebGPU is disabled
+#   on Mac/Windows when there is no GPU process.
+# - Software rendering (`swgl`). It is possible to use WebGPU with a
+#   software renderer, but not all such CI configs were working when
+#   tested.
+# - Android, because WebGPU is not supported yet
+# - Anything that's not 64-bit x86 or ARM (32-bit builds or any unusual
+#   architecture)
+defaults skip-if((gtkWidget&&release_or_beta)||(nogpu&&!gtkWidget)||swgl||Android||(!x86_64&&!aarch64))
+
 load 1809567.html
 load 1907222_truncate_error.html
+load 2014639.html

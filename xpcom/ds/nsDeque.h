@@ -26,9 +26,9 @@
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/fallible.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/fallible.h"
 #include "nsCOMPtr.h"
 #include "nsDebug.h"
 #include "nsISupports.h"

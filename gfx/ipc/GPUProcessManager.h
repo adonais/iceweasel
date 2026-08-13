@@ -4,14 +4,14 @@
 #ifndef _include_mozilla_gfx_ipc_GPUProcessManager_h_
 #define _include_mozilla_gfx_ipc_GPUProcessManager_h_
 
+#include "Units.h"
 #include "base/basictypes.h"
 #include "base/process.h"
-#include "Units.h"
+#include "mozilla/Hal.h"
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/gfx/GPUProcessHost.h"
 #include "mozilla/gfx/PGPUChild.h"
 #include "mozilla/gfx/Point.h"
-#include "mozilla/Hal.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/ipc/TaskFactory.h"
 #include "mozilla/layers/LayersTypes.h"

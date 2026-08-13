@@ -256,6 +256,12 @@ ifdef LIB
 export LIB
 endif
 
+# Export so sccache (used as a compiler wrapper) rewrites paths under these
+# base directories to relative ones, sharing cache hits across worktrees.
+ifdef SCCACHE_BASEDIRS
+export SCCACHE_BASEDIRS
+endif
+
 ifeq ($(OS_ARCH),WINNT)
 ifneq (,$(filter msvc clang-cl,$(CC_TYPE)))
 WIN32_EXE_LDFLAGS += $(WIN32_EXE_DEFAULT_LDFLAGS)

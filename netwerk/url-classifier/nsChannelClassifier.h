@@ -5,9 +5,9 @@
 #ifndef nsChannelClassifier_h_
 #define nsChannelClassifier_h_
 
+#include "nsCOMPtr.h"
 #include "nsIObserver.h"
 #include "nsIURIClassifier.h"
-#include "nsCOMPtr.h"
 
 class nsIChannel;
 

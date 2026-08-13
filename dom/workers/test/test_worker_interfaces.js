@@ -157,6 +157,58 @@ let interfaceNamesInGlobalScope = [
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "ByteLengthQueuingStrategy", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "CSSImageValue", insecureContext: true, nightly: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "CSSKeywordValue", insecureContext: true, nightly: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "CSSMathClamp", insecureContext: true, nightly: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "CSSMathInvert", insecureContext: true, nightly: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "CSSMathMax", insecureContext: true, nightly: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "CSSMathMin", insecureContext: true, nightly: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "CSSMathNegate", insecureContext: true, nightly: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "CSSMathProduct", insecureContext: true, nightly: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "CSSMathSum", insecureContext: true, nightly: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "CSSMathValue", insecureContext: true, nightly: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "CSSMatrixComponent", insecureContext: true, nightly: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "CSSNumericArray", insecureContext: true, nightly: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "CSSNumericValue", insecureContext: true, nightly: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "CSSPerspective", insecureContext: true, nightly: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "CSSRotate", insecureContext: true, nightly: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "CSSScale", insecureContext: true, nightly: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "CSSSkew", insecureContext: true, nightly: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "CSSSkewX", insecureContext: true, nightly: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "CSSSkewY", insecureContext: true, nightly: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "CSSStyleValue", insecureContext: true, nightly: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "CSSTransformComponent", insecureContext: true, nightly: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "CSSTransformValue", insecureContext: true, nightly: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "CSSTranslate", insecureContext: true, nightly: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "CSSUnitValue", insecureContext: true, nightly: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "CSSUnparsedValue", insecureContext: true, nightly: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "CSSVariableReferenceValue", insecureContext: true, nightly: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
   "Cache",
   // IMPORTANT: Do not change this list without review from a DOM peer!
   "CacheStorage",
@@ -534,6 +586,8 @@ let interfaceNamesInGlobalScope = [
   "ServiceWorkerRegistration",
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "StorageManager", fennec: false },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "StylePropertyMapReadOnly", insecureContext: true, nightly: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "SubtleCrypto" },
   // IMPORTANT: Do not change this list without review from a DOM peer!

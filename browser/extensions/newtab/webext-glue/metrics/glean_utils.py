@@ -3,10 +3,9 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import enum
+import json
 import sys
 from os import path
-
-from mozfile import json
 
 ROOT_PATH = path.abspath(
     path.join(
@@ -61,10 +60,13 @@ def output_file_with_key(objs, output_fd, options={}):
             return value.name
         if isinstance(value, Rate):  # `numerators` for an external Denominator metric
             args = []
-            for arg_name in jog.common_metric_data_args[:-1]:
+            for arg_name in jog.common_metric_data_args:
+                if arg_name == "dynamic_label":
+                    args.append(None)
+                    continue
                 args.append(getattr(value, arg_name))
-            args.append(None)
             return args
+        return type(value).__name__
         return json.dumps(value)
 
     # Process metrics

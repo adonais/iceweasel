@@ -5,6 +5,9 @@
 #ifndef Helpers_h
 #define Helpers_h
 
+#include <stdint.h>
+
+#include "mozilla/Queue.h"
 #include "nsCOMPtr.h"
 #include "nsIAsyncInputStream.h"
 #include "nsIAsyncOutputStream.h"
@@ -13,8 +16,6 @@
 #include "nsStringStream.h"
 #include "nsTArrayForwardDeclare.h"
 #include "nsThreadUtils.h"
-#include "mozilla/Queue.h"
-#include <stdint.h>
 
 class nsIInputStream;
 class nsIOutputStream;

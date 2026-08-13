@@ -72,11 +72,9 @@ class CompactPair {
  * will return a CompactPair<Foo, Bar>.
  */
 template <typename A, typename B>
-CompactPair<std::remove_cv_t<std::remove_reference_t<A>>,
-            std::remove_cv_t<std::remove_reference_t<B>>>
-MakeCompactPair(A&& aA, B&& aB) {
-  return CompactPair<std::remove_cv_t<std::remove_reference_t<A>>,
-                     std::remove_cv_t<std::remove_reference_t<B>>>(
+CompactPair<std::remove_cvref_t<A>, std::remove_cvref_t<B>> MakeCompactPair(
+    A&& aA, B&& aB) {
+  return CompactPair<std::remove_cvref_t<A>, std::remove_cvref_t<B>>(
       std::forward<A>(aA), std::forward<B>(aB));
 }
 

@@ -15,11 +15,25 @@
       font-size: var(--font-size-root);
       margin: 0;
     }
+
+    .button-wrapper {
+      align-self: flex-start;
+    }
   }
 
   .highlight-popover-image {
     width: 100%;
     height: auto;
     border-radius: var(--border-radius-small);
+  }
+
+  // The survey illustration is a compact tile grid, not a full-width banner
+  // like the other widgets-callout images, so stretching it to 100% makes the
+  // popover too tall. Constrain to the Figma image-slot width (169px) and
+  // center it; the source PNG scales to fit.
+  .widgets-survey-callout .highlight-popover-image {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    width: 169px;
+    align-self: center;
   }
 }

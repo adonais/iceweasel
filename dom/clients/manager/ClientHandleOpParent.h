@@ -25,7 +25,7 @@ class ClientHandleOpParent final : public PClientHandleOpParent {
   ClientHandleOpParent() = default;
   ~ClientHandleOpParent() = default;
 
-  void Init(ClientOpConstructorArgs&& aArgs);
+  mozilla::ipc::IPCResult Init(ClientOpConstructorArgs&& aArgs);
 };
 
 }  // namespace mozilla::dom

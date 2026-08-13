@@ -8,6 +8,7 @@ DevToolsModules(
     "Headers.mjs",
     "HeadersPanel.mjs",
     "HeadersToolbar.mjs",
+    "JsonBreadcrumb.mjs",
     "JsonPanel.mjs",
     "JsonToolbar.mjs",
     "LiveText.mjs",

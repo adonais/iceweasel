@@ -13,12 +13,12 @@ mozilla::LogModule* GetSourceBufferResourceLog() {
   return sLogModule;
 }
 
-#define SBR_DEBUG(arg, ...)                                         \
-  DDMOZ_LOG(GetSourceBufferResourceLog(), mozilla::LogLevel::Debug, \
-            "::%s: " arg, __func__, ##__VA_ARGS__)
-#define SBR_DEBUGV(arg, ...)                                          \
-  DDMOZ_LOG(GetSourceBufferResourceLog(), mozilla::LogLevel::Verbose, \
-            "::%s: " arg, __func__, ##__VA_ARGS__)
+#define SBR_DEBUG(arg, ...)                                             \
+  DDMOZ_LOG_FMT(GetSourceBufferResourceLog(), mozilla::LogLevel::Debug, \
+                "::{}: " arg, __func__, ##__VA_ARGS__)
+#define SBR_DEBUGV(arg, ...)                                              \
+  DDMOZ_LOG_FMT(GetSourceBufferResourceLog(), mozilla::LogLevel::Verbose, \
+                "::{}: " arg, __func__, ##__VA_ARGS__)
 
 namespace mozilla {
 
@@ -31,8 +31,8 @@ RefPtr<GenericPromise> SourceBufferResource::Close() {
 
 nsresult SourceBufferResource::ReadAt(int64_t aOffset, char* aBuffer,
                                       uint32_t aCount, uint32_t* aBytes) {
-  SBR_DEBUG("ReadAt(aOffset=%" PRId64 ", aBuffer=%p, aCount=%u, aBytes=%p)",
-            aOffset, aBytes, aCount, aBytes);
+  SBR_DEBUG("ReadAt(aOffset={}, aBuffer={}, aCount={}, aBytes={})", aOffset,
+            fmt::ptr(aBytes), aCount, fmt::ptr(aBytes));
   return ReadAtInternal(aOffset, aBuffer, aCount, aBytes);
 }
 
@@ -43,8 +43,7 @@ nsresult SourceBufferResource::ReadAtInternal(int64_t aOffset, char* aBuffer,
   MOZ_ASSERT(aOffset >= 0);
   uint32_t available = mInputBuffer.GetLength() - aOffset;
   uint32_t count = std::min(aCount, available);
-  SBR_DEBUGV("offset=%" PRId64 " GetLength()=%" PRIu64
-             " available=%u count=%u mEnded=%d",
+  SBR_DEBUGV("offset={} GetLength()={} available={} count={} mEnded={}",
              aOffset, mInputBuffer.GetLength(), available, count, mEnded);
 
   if (mClosed) {
@@ -81,8 +80,8 @@ nsresult SourceBufferResource::ReadAtInternal(int64_t aOffset, char* aBuffer,
 
 nsresult SourceBufferResource::ReadFromCache(char* aBuffer, int64_t aOffset,
                                              uint32_t aCount) {
-  SBR_DEBUG("ReadFromCache(aBuffer=%p, aOffset=%" PRId64 ", aCount=%u)",
-            aBuffer, aOffset, aCount);
+  SBR_DEBUG("ReadFromCache(aBuffer={}, aOffset={}, aCount={})",
+            fmt::ptr(aBuffer), aOffset, aCount);
   uint32_t bytesRead;
   nsresult rv = ReadAtInternal(aOffset, aBuffer, aCount, &bytesRead);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -94,17 +93,15 @@ nsresult SourceBufferResource::ReadFromCache(char* aBuffer, int64_t aOffset,
 uint32_t SourceBufferResource::EvictData(uint64_t aPlaybackOffset,
                                          int64_t aThreshold) {
   MOZ_ASSERT(OnThread());
-  SBR_DEBUG("EvictData(aPlaybackOffset=%" PRIu64
-            ","
-            "aThreshold=%" PRId64 ")",
-            aPlaybackOffset, aThreshold);
+  SBR_DEBUG("EvictData(aPlaybackOffset={},aThreshold={})", aPlaybackOffset,
+            aThreshold);
   uint32_t result = mInputBuffer.Evict(aPlaybackOffset, aThreshold);
   return result;
 }
 
 void SourceBufferResource::EvictBefore(uint64_t aOffset) {
   MOZ_ASSERT(OnThread());
-  SBR_DEBUG("EvictBefore(aOffset=%" PRIu64 ")", aOffset);
+  SBR_DEBUG("EvictBefore(aOffset={})", aOffset);
 
   mInputBuffer.EvictBefore(aOffset);
 }
@@ -121,7 +118,7 @@ void SourceBufferResource::AppendData(MediaByteBuffer* aData) {
 
 void SourceBufferResource::AppendData(const MediaSpan& aData) {
   MOZ_ASSERT(OnThread());
-  SBR_DEBUG("AppendData(aData=%p, aLength=%zu)", aData.Elements(),
+  SBR_DEBUG("AppendData(aData={}, aLength={})", fmt::ptr(aData.Elements()),
             aData.Length());
   mInputBuffer.AppendItem(aData);
   mEnded = false;

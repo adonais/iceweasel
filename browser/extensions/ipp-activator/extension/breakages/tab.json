@@ -18,56 +18,8 @@
           "end": "2026-07-20T23:59:59Z"
         },
         {
-          "type": "or",
-          "conditions": [
-            {
-              "type": "vpn",
-              "active": true
-            },
-            {
-              "type": "and",
-              "conditions": [
-                {
-                  "type": "not",
-                  "condition": {
-                    "type": "region",
-                    "regions": ["US"]
-                  }
-                },
-                {
-                  "type": "region",
-                  "regions": [
-                    "AU",
-                    "AT",
-                    "BE",
-                    "BG",
-                    "CA",
-                    "CL",
-                    "CO",
-                    "DK",
-                    "FI",
-                    "FR",
-                    "DE",
-                    "IE",
-                    "IT",
-                    "MY",
-                    "MX",
-                    "NL",
-                    "NZ",
-                    "NO",
-                    "PT",
-                    "SG",
-                    "ZA",
-                    "ES",
-                    "SE",
-                    "TH",
-                    "GB",
-                    "US"
-                  ]
-                }
-              ]
-            }
-          ]
+          "type": "vpn",
+          "active": true
         }
       ]
     }
@@ -84,56 +36,8 @@
           "end": "2026-07-20T23:59:59Z"
         },
         {
-          "type": "or",
-          "conditions": [
-            {
-              "type": "vpn",
-              "active": true
-            },
-            {
-              "type": "and",
-              "conditions": [
-                {
-                  "type": "not",
-                  "condition": {
-                    "type": "region",
-                    "regions": ["DE"]
-                  }
-                },
-                {
-                  "type": "region",
-                  "regions": [
-                    "AU",
-                    "AT",
-                    "BE",
-                    "BG",
-                    "CA",
-                    "CL",
-                    "CO",
-                    "DK",
-                    "FI",
-                    "FR",
-                    "DE",
-                    "IE",
-                    "IT",
-                    "MY",
-                    "MX",
-                    "NL",
-                    "NZ",
-                    "NO",
-                    "PT",
-                    "SG",
-                    "ZA",
-                    "ES",
-                    "SE",
-                    "TH",
-                    "GB",
-                    "US"
-                  ]
-                }
-              ]
-            }
-          ]
+          "type": "vpn",
+          "active": true
         }
       ]
     }
@@ -150,56 +54,8 @@
           "end": "2026-07-20T23:59:59Z"
         },
         {
-          "type": "or",
-          "conditions": [
-            {
-              "type": "vpn",
-              "active": true
-            },
-            {
-              "type": "and",
-              "conditions": [
-                {
-                  "type": "not",
-                  "condition": {
-                    "type": "region",
-                    "regions": ["FR"]
-                  }
-                },
-                {
-                  "type": "region",
-                  "regions": [
-                    "AU",
-                    "AT",
-                    "BE",
-                    "BG",
-                    "CA",
-                    "CL",
-                    "CO",
-                    "DK",
-                    "FI",
-                    "FR",
-                    "DE",
-                    "IE",
-                    "IT",
-                    "MY",
-                    "MX",
-                    "NL",
-                    "NZ",
-                    "NO",
-                    "PT",
-                    "SG",
-                    "ZA",
-                    "ES",
-                    "SE",
-                    "TH",
-                    "GB",
-                    "US"
-                  ]
-                }
-              ]
-            }
-          ]
+          "type": "vpn",
+          "active": true
         }
       ]
     }
@@ -216,56 +72,8 @@
           "end": "2026-07-20T23:59:59Z"
         },
         {
-          "type": "or",
-          "conditions": [
-            {
-              "type": "vpn",
-              "active": true
-            },
-            {
-              "type": "and",
-              "conditions": [
-                {
-                  "type": "not",
-                  "condition": {
-                    "type": "region",
-                    "regions": ["IT"]
-                  }
-                },
-                {
-                  "type": "region",
-                  "regions": [
-                    "AU",
-                    "AT",
-                    "BE",
-                    "BG",
-                    "CA",
-                    "CL",
-                    "CO",
-                    "DK",
-                    "FI",
-                    "FR",
-                    "DE",
-                    "IE",
-                    "IT",
-                    "MY",
-                    "MX",
-                    "NL",
-                    "NZ",
-                    "NO",
-                    "PT",
-                    "SG",
-                    "ZA",
-                    "ES",
-                    "SE",
-                    "TH",
-                    "GB",
-                    "US"
-                  ]
-                }
-              ]
-            }
-          ]
+          "type": "vpn",
+          "active": true
         }
       ]
     }
@@ -286,56 +94,8 @@
           "pattern": "^https?://(www\\.)?rtve\\.es/play(/|$)"
         },
         {
-          "type": "or",
-          "conditions": [
-            {
-              "type": "vpn",
-              "active": true
-            },
-            {
-              "type": "and",
-              "conditions": [
-                {
-                  "type": "not",
-                  "condition": {
-                    "type": "region",
-                    "regions": ["ES"]
-                  }
-                },
-                {
-                  "type": "region",
-                  "regions": [
-                    "AU",
-                    "AT",
-                    "BE",
-                    "BG",
-                    "CA",
-                    "CL",
-                    "CO",
-                    "DK",
-                    "FI",
-                    "FR",
-                    "DE",
-                    "IE",
-                    "IT",
-                    "MY",
-                    "MX",
-                    "NL",
-                    "NZ",
-                    "NO",
-                    "PT",
-                    "SG",
-                    "ZA",
-                    "ES",
-                    "SE",
-                    "TH",
-                    "GB",
-                    "US"
-                  ]
-                }
-              ]
-            }
-          ]
+          "type": "vpn",
+          "active": true
         }
       ]
     }
@@ -362,56 +122,8 @@
                   "pattern": "^https?://(www\\.)?dazn\\.com/it-IT(/|$)"
                 },
                 {
-                  "type": "or",
-                  "conditions": [
-                    {
-                      "type": "vpn",
-                      "active": true
-                    },
-                    {
-                      "type": "and",
-                      "conditions": [
-                        {
-                          "type": "not",
-                          "condition": {
-                            "type": "region",
-                            "regions": ["IT"]
-                          }
-                        },
-                        {
-                          "type": "region",
-                          "regions": [
-                            "AU",
-                            "AT",
-                            "BE",
-                            "BG",
-                            "CA",
-                            "CL",
-                            "CO",
-                            "DK",
-                            "FI",
-                            "FR",
-                            "DE",
-                            "IE",
-                            "IT",
-                            "MY",
-                            "MX",
-                            "NL",
-                            "NZ",
-                            "NO",
-                            "PT",
-                            "SG",
-                            "ZA",
-                            "ES",
-                            "SE",
-                            "TH",
-                            "GB",
-                            "US"
-                          ]
-                        }
-                      ]
-                    }
-                  ]
+                  "type": "vpn",
+                  "active": true
                 }
               ]
             },
@@ -423,56 +135,8 @@
                   "pattern": "^https?://(www\\.)?dazn\\.com/es-ES(/|$)"
                 },
                 {
-                  "type": "or",
-                  "conditions": [
-                    {
-                      "type": "vpn",
-                      "active": true
-                    },
-                    {
-                      "type": "and",
-                      "conditions": [
-                        {
-                          "type": "not",
-                          "condition": {
-                            "type": "region",
-                            "regions": ["ES"]
-                          }
-                        },
-                        {
-                          "type": "region",
-                          "regions": [
-                            "AU",
-                            "AT",
-                            "BE",
-                            "BG",
-                            "CA",
-                            "CL",
-                            "CO",
-                            "DK",
-                            "FI",
-                            "FR",
-                            "DE",
-                            "IE",
-                            "IT",
-                            "MY",
-                            "MX",
-                            "NL",
-                            "NZ",
-                            "NO",
-                            "PT",
-                            "SG",
-                            "ZA",
-                            "ES",
-                            "SE",
-                            "TH",
-                            "GB",
-                            "US"
-                          ]
-                        }
-                      ]
-                    }
-                  ]
+                  "type": "vpn",
+                  "active": true
                 }
               ]
             }
@@ -493,56 +157,8 @@
           "end": "2026-07-20T23:59:59Z"
         },
         {
-          "type": "or",
-          "conditions": [
-            {
-              "type": "vpn",
-              "active": true
-            },
-            {
-              "type": "and",
-              "conditions": [
-                {
-                  "type": "not",
-                  "condition": {
-                    "type": "region",
-                    "regions": ["CA"]
-                  }
-                },
-                {
-                  "type": "region",
-                  "regions": [
-                    "AU",
-                    "AT",
-                    "BE",
-                    "BG",
-                    "CA",
-                    "CL",
-                    "CO",
-                    "DK",
-                    "FI",
-                    "FR",
-                    "DE",
-                    "IE",
-                    "IT",
-                    "MY",
-                    "MX",
-                    "NL",
-                    "NZ",
-                    "NO",
-                    "PT",
-                    "SG",
-                    "ZA",
-                    "ES",
-                    "SE",
-                    "TH",
-                    "GB",
-                    "US"
-                  ]
-                }
-              ]
-            }
-          ]
+          "type": "vpn",
+          "active": true
         }
       ]
     }
@@ -563,56 +179,8 @@
           "pattern": "^https?://(www\\.)?bbc\\.co\\.uk/iplayer(/|$)"
         },
         {
-          "type": "or",
-          "conditions": [
-            {
-              "type": "vpn",
-              "active": true
-            },
-            {
-              "type": "and",
-              "conditions": [
-                {
-                  "type": "not",
-                  "condition": {
-                    "type": "region",
-                    "regions": ["GB"]
-                  }
-                },
-                {
-                  "type": "region",
-                  "regions": [
-                    "AU",
-                    "AT",
-                    "BE",
-                    "BG",
-                    "CA",
-                    "CL",
-                    "CO",
-                    "DK",
-                    "FI",
-                    "FR",
-                    "DE",
-                    "IE",
-                    "IT",
-                    "MY",
-                    "MX",
-                    "NL",
-                    "NZ",
-                    "NO",
-                    "PT",
-                    "SG",
-                    "ZA",
-                    "ES",
-                    "SE",
-                    "TH",
-                    "GB",
-                    "US"
-                  ]
-                }
-              ]
-            }
-          ]
+          "type": "vpn",
+          "active": true
         }
       ]
     }
@@ -629,56 +197,8 @@
           "end": "2026-07-20T23:59:59Z"
         },
         {
-          "type": "or",
-          "conditions": [
-            {
-              "type": "vpn",
-              "active": true
-            },
-            {
-              "type": "and",
-              "conditions": [
-                {
-                  "type": "not",
-                  "condition": {
-                    "type": "region",
-                    "regions": ["GB"]
-                  }
-                },
-                {
-                  "type": "region",
-                  "regions": [
-                    "AU",
-                    "AT",
-                    "BE",
-                    "BG",
-                    "CA",
-                    "CL",
-                    "CO",
-                    "DK",
-                    "FI",
-                    "FR",
-                    "DE",
-                    "IE",
-                    "IT",
-                    "MY",
-                    "MX",
-                    "NL",
-                    "NZ",
-                    "NO",
-                    "PT",
-                    "SG",
-                    "ZA",
-                    "ES",
-                    "SE",
-                    "TH",
-                    "GB",
-                    "US"
-                  ]
-                }
-              ]
-            }
-          ]
+          "type": "vpn",
+          "active": true
         }
       ]
     }
@@ -695,56 +215,8 @@
           "end": "2026-07-20T23:59:59Z"
         },
         {
-          "type": "or",
-          "conditions": [
-            {
-              "type": "vpn",
-              "active": true
-            },
-            {
-              "type": "and",
-              "conditions": [
-                {
-                  "type": "not",
-                  "condition": {
-                    "type": "region",
-                    "regions": ["MX"]
-                  }
-                },
-                {
-                  "type": "region",
-                  "regions": [
-                    "AU",
-                    "AT",
-                    "BE",
-                    "BG",
-                    "CA",
-                    "CL",
-                    "CO",
-                    "DK",
-                    "FI",
-                    "FR",
-                    "DE",
-                    "IE",
-                    "IT",
-                    "MY",
-                    "MX",
-                    "NL",
-                    "NZ",
-                    "NO",
-                    "PT",
-                    "SG",
-                    "ZA",
-                    "ES",
-                    "SE",
-                    "TH",
-                    "GB",
-                    "US"
-                  ]
-                }
-              ]
-            }
-          ]
+          "type": "vpn",
+          "active": true
         }
       ]
     }
@@ -761,56 +233,8 @@
           "end": "2026-07-20T23:59:59Z"
         },
         {
-          "type": "or",
-          "conditions": [
-            {
-              "type": "vpn",
-              "active": true
-            },
-            {
-              "type": "and",
-              "conditions": [
-                {
-                  "type": "not",
-                  "condition": {
-                    "type": "region",
-                    "regions": ["AU"]
-                  }
-                },
-                {
-                  "type": "region",
-                  "regions": [
-                    "AU",
-                    "AT",
-                    "BE",
-                    "BG",
-                    "CA",
-                    "CL",
-                    "CO",
-                    "DK",
-                    "FI",
-                    "FR",
-                    "DE",
-                    "IE",
-                    "IT",
-                    "MY",
-                    "MX",
-                    "NL",
-                    "NZ",
-                    "NO",
-                    "PT",
-                    "SG",
-                    "ZA",
-                    "ES",
-                    "SE",
-                    "TH",
-                    "GB",
-                    "US"
-                  ]
-                }
-              ]
-            }
-          ]
+          "type": "vpn",
+          "active": true
         }
       ]
     }
@@ -827,56 +251,8 @@
           "end": "2026-07-20T23:59:59Z"
         },
         {
-          "type": "or",
-          "conditions": [
-            {
-              "type": "vpn",
-              "active": true
-            },
-            {
-              "type": "and",
-              "conditions": [
-                {
-                  "type": "not",
-                  "condition": {
-                    "type": "region",
-                    "regions": ["NL"]
-                  }
-                },
-                {
-                  "type": "region",
-                  "regions": [
-                    "AU",
-                    "AT",
-                    "BE",
-                    "BG",
-                    "CA",
-                    "CL",
-                    "CO",
-                    "DK",
-                    "FI",
-                    "FR",
-                    "DE",
-                    "IE",
-                    "IT",
-                    "MY",
-                    "MX",
-                    "NL",
-                    "NZ",
-                    "NO",
-                    "PT",
-                    "SG",
-                    "ZA",
-                    "ES",
-                    "SE",
-                    "TH",
-                    "GB",
-                    "US"
-                  ]
-                }
-              ]
-            }
-          ]
+          "type": "vpn",
+          "active": true
         }
       ]
     }
@@ -893,56 +269,8 @@
           "end": "2026-07-20T23:59:59Z"
         },
         {
-          "type": "or",
-          "conditions": [
-            {
-              "type": "vpn",
-              "active": true
-            },
-            {
-              "type": "and",
-              "conditions": [
-                {
-                  "type": "not",
-                  "condition": {
-                    "type": "region",
-                    "regions": ["AT"]
-                  }
-                },
-                {
-                  "type": "region",
-                  "regions": [
-                    "AU",
-                    "AT",
-                    "BE",
-                    "BG",
-                    "CA",
-                    "CL",
-                    "CO",
-                    "DK",
-                    "FI",
-                    "FR",
-                    "DE",
-                    "IE",
-                    "IT",
-                    "MY",
-                    "MX",
-                    "NL",
-                    "NZ",
-                    "NO",
-                    "PT",
-                    "SG",
-                    "ZA",
-                    "ES",
-                    "SE",
-                    "TH",
-                    "GB",
-                    "US"
-                  ]
-                }
-              ]
-            }
-          ]
+          "type": "vpn",
+          "active": true
         }
       ]
     }
@@ -959,56 +287,8 @@
           "end": "2026-07-20T23:59:59Z"
         },
         {
-          "type": "or",
-          "conditions": [
-            {
-              "type": "vpn",
-              "active": true
-            },
-            {
-              "type": "and",
-              "conditions": [
-                {
-                  "type": "not",
-                  "condition": {
-                    "type": "region",
-                    "regions": ["BE"]
-                  }
-                },
-                {
-                  "type": "region",
-                  "regions": [
-                    "AU",
-                    "AT",
-                    "BE",
-                    "BG",
-                    "CA",
-                    "CL",
-                    "CO",
-                    "DK",
-                    "FI",
-                    "FR",
-                    "DE",
-                    "IE",
-                    "IT",
-                    "MY",
-                    "MX",
-                    "NL",
-                    "NZ",
-                    "NO",
-                    "PT",
-                    "SG",
-                    "ZA",
-                    "ES",
-                    "SE",
-                    "TH",
-                    "GB",
-                    "US"
-                  ]
-                }
-              ]
-            }
-          ]
+          "type": "vpn",
+          "active": true
         }
       ]
     }
@@ -1025,56 +305,8 @@
           "end": "2026-07-20T23:59:59Z"
         },
         {
-          "type": "or",
-          "conditions": [
-            {
-              "type": "vpn",
-              "active": true
-            },
-            {
-              "type": "and",
-              "conditions": [
-                {
-                  "type": "not",
-                  "condition": {
-                    "type": "region",
-                    "regions": ["FI"]
-                  }
-                },
-                {
-                  "type": "region",
-                  "regions": [
-                    "AU",
-                    "AT",
-                    "BE",
-                    "BG",
-                    "CA",
-                    "CL",
-                    "CO",
-                    "DK",
-                    "FI",
-                    "FR",
-                    "DE",
-                    "IE",
-                    "IT",
-                    "MY",
-                    "MX",
-                    "NL",
-                    "NZ",
-                    "NO",
-                    "PT",
-                    "SG",
-                    "ZA",
-                    "ES",
-                    "SE",
-                    "TH",
-                    "GB",
-                    "US"
-                  ]
-                }
-              ]
-            }
-          ]
+          "type": "vpn",
+          "active": true
         }
       ]
     }
@@ -1091,56 +323,8 @@
           "end": "2026-07-20T23:59:59Z"
         },
         {
-          "type": "or",
-          "conditions": [
-            {
-              "type": "vpn",
-              "active": true
-            },
-            {
-              "type": "and",
-              "conditions": [
-                {
-                  "type": "not",
-                  "condition": {
-                    "type": "region",
-                    "regions": ["CO"]
-                  }
-                },
-                {
-                  "type": "region",
-                  "regions": [
-                    "AU",
-                    "AT",
-                    "BE",
-                    "BG",
-                    "CA",
-                    "CL",
-                    "CO",
-                    "DK",
-                    "FI",
-                    "FR",
-                    "DE",
-                    "IE",
-                    "IT",
-                    "MY",
-                    "MX",
-                    "NL",
-                    "NZ",
-                    "NO",
-                    "PT",
-                    "SG",
-                    "ZA",
-                    "ES",
-                    "SE",
-                    "TH",
-                    "GB",
-                    "US"
-                  ]
-                }
-              ]
-            }
-          ]
+          "type": "vpn",
+          "active": true
         }
       ]
     }
@@ -1161,56 +345,8 @@
           "pattern": "^https?://(www\\.)?winplay\\.co/co(/|$)"
         },
         {
-          "type": "or",
-          "conditions": [
-            {
-              "type": "vpn",
-              "active": true
-            },
-            {
-              "type": "and",
-              "conditions": [
-                {
-                  "type": "not",
-                  "condition": {
-                    "type": "region",
-                    "regions": ["CO"]
-                  }
-                },
-                {
-                  "type": "region",
-                  "regions": [
-                    "AU",
-                    "AT",
-                    "BE",
-                    "BG",
-                    "CA",
-                    "CL",
-                    "CO",
-                    "DK",
-                    "FI",
-                    "FR",
-                    "DE",
-                    "IE",
-                    "IT",
-                    "MY",
-                    "MX",
-                    "NL",
-                    "NZ",
-                    "NO",
-                    "PT",
-                    "SG",
-                    "ZA",
-                    "ES",
-                    "SE",
-                    "TH",
-                    "GB",
-                    "US"
-                  ]
-                }
-              ]
-            }
-          ]
+          "type": "vpn",
+          "active": true
         }
       ]
     }
@@ -1227,56 +363,8 @@
           "end": "2026-07-20T23:59:59Z"
         },
         {
-          "type": "or",
-          "conditions": [
-            {
-              "type": "vpn",
-              "active": true
-            },
-            {
-              "type": "and",
-              "conditions": [
-                {
-                  "type": "not",
-                  "condition": {
-                    "type": "region",
-                    "regions": ["SE"]
-                  }
-                },
-                {
-                  "type": "region",
-                  "regions": [
-                    "AU",
-                    "AT",
-                    "BE",
-                    "BG",
-                    "CA",
-                    "CL",
-                    "CO",
-                    "DK",
-                    "FI",
-                    "FR",
-                    "DE",
-                    "IE",
-                    "IT",
-                    "MY",
-                    "MX",
-                    "NL",
-                    "NZ",
-                    "NO",
-                    "PT",
-                    "SG",
-                    "ZA",
-                    "ES",
-                    "SE",
-                    "TH",
-                    "GB",
-                    "US"
-                  ]
-                }
-              ]
-            }
-          ]
+          "type": "vpn",
+          "active": true
         }
       ]
     }
@@ -1293,56 +381,8 @@
           "end": "2026-07-20T23:59:59Z"
         },
         {
-          "type": "or",
-          "conditions": [
-            {
-              "type": "vpn",
-              "active": true
-            },
-            {
-              "type": "and",
-              "conditions": [
-                {
-                  "type": "not",
-                  "condition": {
-                    "type": "region",
-                    "regions": ["PT"]
-                  }
-                },
-                {
-                  "type": "region",
-                  "regions": [
-                    "AU",
-                    "AT",
-                    "BE",
-                    "BG",
-                    "CA",
-                    "CL",
-                    "CO",
-                    "DK",
-                    "FI",
-                    "FR",
-                    "DE",
-                    "IE",
-                    "IT",
-                    "MY",
-                    "MX",
-                    "NL",
-                    "NZ",
-                    "NO",
-                    "PT",
-                    "SG",
-                    "ZA",
-                    "ES",
-                    "SE",
-                    "TH",
-                    "GB",
-                    "US"
-                  ]
-                }
-              ]
-            }
-          ]
+          "type": "vpn",
+          "active": true
         }
       ]
     }
@@ -1359,56 +399,8 @@
           "end": "2026-07-20T23:59:59Z"
         },
         {
-          "type": "or",
-          "conditions": [
-            {
-              "type": "vpn",
-              "active": true
-            },
-            {
-              "type": "and",
-              "conditions": [
-                {
-                  "type": "not",
-                  "condition": {
-                    "type": "region",
-                    "regions": ["CL"]
-                  }
-                },
-                {
-                  "type": "region",
-                  "regions": [
-                    "AU",
-                    "AT",
-                    "BE",
-                    "BG",
-                    "CA",
-                    "CL",
-                    "CO",
-                    "DK",
-                    "FI",
-                    "FR",
-                    "DE",
-                    "IE",
-                    "IT",
-                    "MY",
-                    "MX",
-                    "NL",
-                    "NZ",
-                    "NO",
-                    "PT",
-                    "SG",
-                    "ZA",
-                    "ES",
-                    "SE",
-                    "TH",
-                    "GB",
-                    "US"
-                  ]
-                }
-              ]
-            }
-          ]
+          "type": "vpn",
+          "active": true
         }
       ]
     }
@@ -1425,56 +417,8 @@
           "end": "2026-07-20T23:59:59Z"
         },
         {
-          "type": "or",
-          "conditions": [
-            {
-              "type": "vpn",
-              "active": true
-            },
-            {
-              "type": "and",
-              "conditions": [
-                {
-                  "type": "not",
-                  "condition": {
-                    "type": "region",
-                    "regions": ["BG"]
-                  }
-                },
-                {
-                  "type": "region",
-                  "regions": [
-                    "AU",
-                    "AT",
-                    "BE",
-                    "BG",
-                    "CA",
-                    "CL",
-                    "CO",
-                    "DK",
-                    "FI",
-                    "FR",
-                    "DE",
-                    "IE",
-                    "IT",
-                    "MY",
-                    "MX",
-                    "NL",
-                    "NZ",
-                    "NO",
-                    "PT",
-                    "SG",
-                    "ZA",
-                    "ES",
-                    "SE",
-                    "TH",
-                    "GB",
-                    "US"
-                  ]
-                }
-              ]
-            }
-          ]
+          "type": "vpn",
+          "active": true
         }
       ]
     }
@@ -1495,56 +439,8 @@
           "pattern": "^https?://(www\\.)?dr\\.dk/drtv(/|$)"
         },
         {
-          "type": "or",
-          "conditions": [
-            {
-              "type": "vpn",
-              "active": true
-            },
-            {
-              "type": "and",
-              "conditions": [
-                {
-                  "type": "not",
-                  "condition": {
-                    "type": "region",
-                    "regions": ["DK"]
-                  }
-                },
-                {
-                  "type": "region",
-                  "regions": [
-                    "AU",
-                    "AT",
-                    "BE",
-                    "BG",
-                    "CA",
-                    "CL",
-                    "CO",
-                    "DK",
-                    "FI",
-                    "FR",
-                    "DE",
-                    "IE",
-                    "IT",
-                    "MY",
-                    "MX",
-                    "NL",
-                    "NZ",
-                    "NO",
-                    "PT",
-                    "SG",
-                    "ZA",
-                    "ES",
-                    "SE",
-                    "TH",
-                    "GB",
-                    "US"
-                  ]
-                }
-              ]
-            }
-          ]
+          "type": "vpn",
+          "active": true
         }
       ]
     }
@@ -1561,56 +457,8 @@
           "end": "2026-07-20T23:59:59Z"
         },
         {
-          "type": "or",
-          "conditions": [
-            {
-              "type": "vpn",
-              "active": true
-            },
-            {
-              "type": "and",
-              "conditions": [
-                {
-                  "type": "not",
-                  "condition": {
-                    "type": "region",
-                    "regions": ["DK"]
-                  }
-                },
-                {
-                  "type": "region",
-                  "regions": [
-                    "AU",
-                    "AT",
-                    "BE",
-                    "BG",
-                    "CA",
-                    "CL",
-                    "CO",
-                    "DK",
-                    "FI",
-                    "FR",
-                    "DE",
-                    "IE",
-                    "IT",
-                    "MY",
-                    "MX",
-                    "NL",
-                    "NZ",
-                    "NO",
-                    "PT",
-                    "SG",
-                    "ZA",
-                    "ES",
-                    "SE",
-                    "TH",
-                    "GB",
-                    "US"
-                  ]
-                }
-              ]
-            }
-          ]
+          "type": "vpn",
+          "active": true
         }
       ]
     }
@@ -1627,56 +475,8 @@
           "end": "2026-07-20T23:59:59Z"
         },
         {
-          "type": "or",
-          "conditions": [
-            {
-              "type": "vpn",
-              "active": true
-            },
-            {
-              "type": "and",
-              "conditions": [
-                {
-                  "type": "not",
-                  "condition": {
-                    "type": "region",
-                    "regions": ["NO"]
-                  }
-                },
-                {
-                  "type": "region",
-                  "regions": [
-                    "AU",
-                    "AT",
-                    "BE",
-                    "BG",
-                    "CA",
-                    "CL",
-                    "CO",
-                    "DK",
-                    "FI",
-                    "FR",
-                    "DE",
-                    "IE",
-                    "IT",
-                    "MY",
-                    "MX",
-                    "NL",
-                    "NZ",
-                    "NO",
-                    "PT",
-                    "SG",
-                    "ZA",
-                    "ES",
-                    "SE",
-                    "TH",
-                    "GB",
-                    "US"
-                  ]
-                }
-              ]
-            }
-          ]
+          "type": "vpn",
+          "active": true
         }
       ]
     }
@@ -1693,56 +493,8 @@
           "end": "2026-07-20T23:59:59Z"
         },
         {
-          "type": "or",
-          "conditions": [
-            {
-              "type": "vpn",
-              "active": true
-            },
-            {
-              "type": "and",
-              "conditions": [
-                {
-                  "type": "not",
-                  "condition": {
-                    "type": "region",
-                    "regions": ["NZ"]
-                  }
-                },
-                {
-                  "type": "region",
-                  "regions": [
-                    "AU",
-                    "AT",
-                    "BE",
-                    "BG",
-                    "CA",
-                    "CL",
-                    "CO",
-                    "DK",
-                    "FI",
-                    "FR",
-                    "DE",
-                    "IE",
-                    "IT",
-                    "MY",
-                    "MX",
-                    "NL",
-                    "NZ",
-                    "NO",
-                    "PT",
-                    "SG",
-                    "ZA",
-                    "ES",
-                    "SE",
-                    "TH",
-                    "GB",
-                    "US"
-                  ]
-                }
-              ]
-            }
-          ]
+          "type": "vpn",
+          "active": true
         }
       ]
     }
@@ -1763,56 +515,8 @@
           "pattern": "^https?://(www\\.)?rte\\.ie/player(/|$)"
         },
         {
-          "type": "or",
-          "conditions": [
-            {
-              "type": "vpn",
-              "active": true
-            },
-            {
-              "type": "and",
-              "conditions": [
-                {
-                  "type": "not",
-                  "condition": {
-                    "type": "region",
-                    "regions": ["IE"]
-                  }
-                },
-                {
-                  "type": "region",
-                  "regions": [
-                    "AU",
-                    "AT",
-                    "BE",
-                    "BG",
-                    "CA",
-                    "CL",
-                    "CO",
-                    "DK",
-                    "FI",
-                    "FR",
-                    "DE",
-                    "IE",
-                    "IT",
-                    "MY",
-                    "MX",
-                    "NL",
-                    "NZ",
-                    "NO",
-                    "PT",
-                    "SG",
-                    "ZA",
-                    "ES",
-                    "SE",
-                    "TH",
-                    "GB",
-                    "US"
-                  ]
-                }
-              ]
-            }
-          ]
+          "type": "vpn",
+          "active": true
         }
       ]
     }

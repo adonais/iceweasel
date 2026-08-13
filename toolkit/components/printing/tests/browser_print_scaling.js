@@ -35,7 +35,7 @@ add_task(async function testInvalidScaleResetAfterDestinationChange() {
 
     // Select a new printer
     await helper.dispatchSettingsChange({ printerName: mockPrinterName });
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => scaleError.hidden,
       "Wait for scale error to be hidden"
     );

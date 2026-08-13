@@ -94,7 +94,8 @@ add_task(async function test_config_updated_engine_changes() {
 
   Assert.deepEqual(
     enginesModified.sort(),
-    [],
+    // These don't actually change, but we still notify they're modified anyway.
+    ["appDefault", "non-experiment"],
     "Should have modified the expected engines"
   );
 

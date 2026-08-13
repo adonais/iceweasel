@@ -8,9 +8,9 @@
 #include <unordered_map>  // for std::unordered_map
 #include <unordered_set>  // for std::unordered_set
 
+#include "mozilla/Mutex.h"                       // for Mutex
 #include "mozilla/layers/FocusTarget.h"          // for FocusTarget
 #include "mozilla/layers/ScrollableLayerGuid.h"  // for ViewID
-#include "mozilla/Mutex.h"                       // for Mutex
 
 namespace mozilla {
 namespace layers {

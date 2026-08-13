@@ -5,8 +5,8 @@
 #ifndef mozilla_image_decoders_icon_nsIconProtocolHandler_h
 #define mozilla_image_decoders_icon_nsIconProtocolHandler_h
 
-#include "nsWeakReference.h"
 #include "nsIProtocolHandler.h"
+#include "nsWeakReference.h"
 
 class nsIconProtocolHandler : public nsIProtocolHandler,
                               public nsSupportsWeakReference {

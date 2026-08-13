@@ -349,10 +349,10 @@ add_task(async function () {
   node = node.firstElementChild;
   is(node.getAttribute("itemtype"), "client", "node is a client entry");
   is(node.textContent, "My Desktop", "correct client");
-  // Next node is an hbox, that contains the tab and potentially
+  // Next node is a toolbaritem, that contains the tab and potentially
   // a button for closing the tab remotely
   node = node.nextElementSibling;
-  is(node.nodeName, "hbox");
+  is(node.nodeName, "toolbaritem");
   // Next entry is the most-recent tab
   let childNode = node.firstElementChild;
   is(childNode.getAttribute("itemtype"), "tab", "node is a tab");
@@ -360,14 +360,14 @@ add_task(async function () {
 
   // Next entry is the next-most-recent tab
   node = node.nextElementSibling;
-  is(node.nodeName, "hbox");
+  is(node.nodeName, "toolbaritem");
   childNode = node.firstElementChild;
   is(childNode.getAttribute("itemtype"), "tab", "node is a tab");
   is(childNode.getAttribute("label"), "http://example.com/5");
 
   // Next entry is the least-recent tab from the first client.
   node = node.nextElementSibling;
-  is(node.nodeName, "hbox");
+  is(node.nodeName, "toolbaritem");
   childNode = node.firstElementChild;
   is(childNode.getAttribute("itemtype"), "tab", "node is a tab");
   is(childNode.getAttribute("label"), "http://example.com/1");
@@ -389,7 +389,7 @@ add_task(async function () {
   is(node.textContent, "My Other Desktop", "correct client");
   // Its single tab
   node = node.nextElementSibling;
-  is(node.nodeName, "hbox");
+  is(node.nodeName, "toolbaritem");
   childNode = node.firstElementChild;
   is(childNode.getAttribute("itemtype"), "tab", "node is a tab");
   is(childNode.getAttribute("label"), "http://example.com/6");
@@ -511,7 +511,7 @@ add_task(async function () {
     is(node.textContent, "My Desktop", "correct client");
     for (let i = 0; i < tabsShownCount; i++) {
       node = node.nextElementSibling;
-      is(node.nodeName, "hbox");
+      is(node.nodeName, "toolbaritem");
       let childNode = node.firstElementChild;
       is(childNode.getAttribute("itemtype"), "tab", "node is a tab");
       is(

@@ -238,6 +238,8 @@ interface nsIPrefBranch : nsISupports
    *
    * @note
    * This method does nothing if this object is a default branch.
+   *
+   * @see clearUserBranch
    */
   void clearUserPref(in string aPrefName);
 
@@ -352,6 +354,22 @@ interface nsIPrefBranch : nsISupports
    */
   void    unlockPref(in string aPrefName);
 
+  /**
+   * Called to reset all of the preferences referenced by this branch to their
+   * default
+   * Called to clear the user set value from all preferences referenced by this
+   * branch. This will, in effect, reset the value of the preferences to their
+   * default value. If no default value exists the preference will cease to exist.
+   *
+   * @param aStartingAt The point on the branch at which to start the clearing
+   *                    the preferences. Pass in "" to remove all preferences
+   *                    referenced by this branch.
+   *
+   * @throws Error The preference(s) do not exist or an error occurred.
+   *
+   * @see clearUserPref
+   */
+  void clearUserBranch(in string aStartingAt);
 
   /**
    * Called to remove all of the preferences referenced by this branch.
@@ -403,7 +421,14 @@ interface nsIPrefBranch : nsISupports
    *                  be the name of an entire branch to observe.
    *                  e.g. Holding the "root" prefbranch and calling
    *                  addObserver("foo.bar.", ...) will observe changes to
-   *                  foo.bar.baz and foo.bar.bzip
+   *                  foo.bar.baz and foo.bar.bzip.
+   *                  Matching is done on dot-segment boundaries: the observer
+   *                  fires for aDomain itself and for any pref that extends it
+   *                  by one or more whole `.`-delimited segments, but not for a
+   *                  pref that merely shares a leading substring (e.g.
+   *                  addObserver("foo.bar", ...) does not fire for foo.barbaz).
+   *                  A trailing `.` is optional and is normalized away, so
+   *                  "foo.bar" and "foo.bar." register the same observer.
    * @param aObserver The object to be notified if the preference changes.
    * @param aHoldWeak true  Hold a weak reference to |aObserver|. The object
    *                        must implement the nsISupportsWeakReference

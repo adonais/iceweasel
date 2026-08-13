@@ -174,7 +174,7 @@ private fun AddFolderPreview() {
             bookmarksEditFolderState = null,
             bookmarksMultiselectMoveState = null,
             isLoading = false,
-            isSearching = false,
+            searchState = null,
         ),
     )
     FirefoxTheme {

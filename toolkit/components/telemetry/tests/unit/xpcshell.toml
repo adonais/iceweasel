@@ -52,6 +52,7 @@ run-if = [
 ]
 
 ["test_PingAPI.js"]
+requesttimeoutfactor = 3  # Slow on macosx1500
 run-if = [
   "os != 'android'", # Legacy telemetry is a lways disabled on Android
 ]

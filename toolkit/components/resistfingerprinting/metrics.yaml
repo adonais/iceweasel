@@ -5512,6 +5512,74 @@ characteristics:
     data_sensitivity:
       - interaction
 
+  font_smoothing_type:
+    type: quantity
+    unit: int
+    description: >
+      The system font-smoothing type, normalized across platforms: 0 = disabled,
+      1 = grayscale (standard), 2 = subpixel. On Windows this is the
+      subpixel-vs-grayscale type (SPI_GETFONTSMOOTHINGTYPE), distinct from
+      text_anti_aliasing (which records the ClearType contrast level). On Linux
+      it is the GNOME org.gnome.desktop.interface font-antialiasing setting
+      (rgba/grayscale/none). Not set on macOS (grayscale-only, no subpixel type)
+      or where the value cannot be determined.
+    lifetime: application
+    send_in_pings:
+      - user-characteristics
+    notification_emails:
+      - tom@mozilla.com
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1898586
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1898586#c5
+    expires: never
+    data_sensitivity:
+      - interaction
+
+  font_hinting:
+    type: string
+    description: >
+      The font hinting style. On Linux this is the GNOME
+      org.gnome.desktop.interface font-hinting setting, one of "none", "slight",
+      "medium", or "full". Hinting reshapes glyph outlines, so it affects
+      rasterized output including canvas text readback. Not set on other
+      platforms, which expose no comparable per-user setting.
+    lifetime: application
+    send_in_pings:
+      - user-characteristics
+    notification_emails:
+      - tom@mozilla.com
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1898586
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1898586#c5
+    expires: never
+    data_sensitivity:
+      - interaction
+
+  font_rgba_order:
+    type: string
+    description: >
+      The subpixel (LCD) element order. On Linux this is the GNOME
+      org.gnome.desktop.interface font-rgba-order setting, one of "rgba", "rgb",
+      "bgr", "vrgb", or "vbgr". On Windows it is the ClearType orientation
+      (SPI_GETFONTSMOOTHINGORIENTATION), normalized to "rgb" or "bgr" (Windows
+      exposes no vertical variants). Only affects rendering when subpixel
+      antialiasing is active (see font_smoothing_type); it does not affect
+      canvas readback, which is grayscale. Not set on macOS or Android.
+    lifetime: application
+    send_in_pings:
+      - user-characteristics
+    notification_emails:
+      - tom@mozilla.com
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1898586
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1898586#c5
+    expires: never
+    data_sensitivity:
+      - interaction
+
   audio_fingerprint:
     type: quantity
     unit: int

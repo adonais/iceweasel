@@ -1,4 +1,5 @@
 ---
+name: file-good-first-bug
 description: Use this skill when the user wants to file good-first-bugs in Bugzilla for Firefox. A good-first-bug is a narrow, self-contained, low-risk task scoped so a first-time contributor can land it without deep context. Sources include lint warnings, small typos, dead-code removal, mechanical refactors, docs conversions, or any other small task the user points at. Produces prefilled `enter_bug.cgi` URLs the user clicks to submit. Trigger on phrases like "file a good first bug", "open good first bugs for X", "create a good-first-bug from this".
 ---
 
@@ -69,6 +70,12 @@ Set the Bugzilla whiteboard (`status_whiteboard`) to `[lang=LANGUAGE]` so newcom
 
 Pick the language of the file the contributor will actually edit. If a bug spans languages, list both: `[lang=rust][lang=python]`.
 
+## Mentor
+
+Always set a mentor (`bug_mentors`) on the bug, defaulting to the bug filer. Without a mentor the bug won't show up in some good-first-bug dashboards, and a newcomer's comments or questions may be lost because nobody is clearly responsible for answering them.
+
+The filer is the person running this skill - use their Bugzilla email (the email of the user submitting the bug). If you don't know it, ask the user. Pass it to the URL builder with `--mentor`.
+
 ## Comment body template
 
 The body must be self-sufficient. Adapt this skeleton:
@@ -106,10 +113,10 @@ The last paragraph (about auto-assignment) is canonical - keep it verbatim.
 Use the helper script `scripts/build_url.py` (path relative to this skill file) to generate each prefilled `enter_bug.cgi` URL:
 
 ```bash
-./scripts/build_url.py "<title>" "<comment>" --tracker 1361342 --lang rust
+./scripts/build_url.py "<title>" "<comment>" --tracker 1361342 --lang rust --mentor you@mozilla.com
 ```
 
-Run it with `--help` for the full list of options (`--product`, `--component`, `--tracker`, `--keywords`, `--lang`). It can also be imported and its `build_url()` function called directly.
+Run it with `--help` for the full list of options (`--product`, `--component`, `--tracker`, `--keywords`, `--lang`, `--mentor`). It can also be imported and its `build_url()` function called directly. Always pass `--mentor` with the filer's email (see [Mentor](#mentor)).
 
 ## Example: lint warnings (canonical case)
 
@@ -149,6 +156,7 @@ awk '/^\// { f=$0; next } /warning/ { c[f]++; lines[f]=lines[f] "\n" $0 }
 ## Reminders
 
 - **One bug per atomic task** unless the user opts into a combined bug.
+- **Always set a mentor** (`--mentor`), defaulting to the bug filer - otherwise the bug is invisible in some dashboards and questions go unanswered.
 - **Don't auto-assign** - the template explicitly tells contributors not to ask.
 - **Push back on scope** that's too big, too vague, or requires design decisions - those are not good-first-bugs.
 - **Match the component to the work** - don't dump everything under Lint and Formatting if the bug isn't a lint bug.

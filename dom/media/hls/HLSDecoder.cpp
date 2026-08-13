@@ -33,7 +33,7 @@
 #include "nsIChannel.h"
 #include "nsIHttpChannel.h"
 #include "nsILoadInfo.h"
-#include "nsIURL.h"
+#include "nsMimeTypes.h"
 #include "nsNetUtil.h"
 #include "nsThreadUtils.h"
 
@@ -52,7 +52,6 @@ class HLSResourceCallbacksSupport
 
   explicit HLSResourceCallbacksSupport(HLSDecoder* aResource);
   void Detach();
-  void OnLoad(jni::String::Param aUrl);
   void OnDataArrived();
   void OnError(int aErrorCode);
   // Called by ExoPlayer on its loader thread to fetch HLS resource specified
@@ -64,45 +63,70 @@ class HLSResourceCallbacksSupport
   ~HLSResourceCallbacksSupport() {}
   void DoOpenChannel(java::WebRequest::Param aRequest,
                      java::GeckoResult::Param aResult);
+  // Called on the main thread when a Necko channel response header arrives.
+  // Records media usage telemetry and updates the content principal for
+  // non-manifest responses.
+  void NotifyChannelResponse(nsIChannel* aChannel);
 
   Mutex mMutex MOZ_UNANNOTATED;
   HLSDecoder* mDecoder;
+};
 
-  // Listener to bridge Necko HTTP channel response back to the
-  // GeckoResult<WebResponse> returned by OnOpenChannel().
-  class GeckoHttpChannelListener final : public GeckoViewStreamListener {
-   public:
-    NS_INLINE_DECL_REFCOUNTING_INHERITED(GeckoHttpChannelListener,
-                                         GeckoViewStreamListener)
+// Listener to bridges a Necko HTTP channel response back to the
+// GeckoResult<WebResponse> returned by OnOpenChannel(). Also hooks into the
+// response to update decoder state via an caller-supplied callback.
+class GeckoHttpChannelListener final : public GeckoViewStreamListener {
+ public:
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(GeckoHttpChannelListener,
+                                       GeckoViewStreamListener)
 
-    explicit GeckoHttpChannelListener(java::GeckoResult::Param aResult)
-        : mResult(aResult) {
-      MOZ_ASSERT(NS_IsMainThread());
-      MOZ_ASSERT(mResult);
+  GeckoHttpChannelListener(java::GeckoResult::Param aResult,
+                           std::function<void(nsIChannel*)> aOnResponse)
+      : mResult(aResult), mOnResponse(std::move(aOnResponse)) {
+    MOZ_ASSERT(NS_IsMainThread());
+    MOZ_ASSERT(mResult);
+  }
+
+ protected:
+  // Overridden to intercept response headers before the body stream is handed
+  // to the Java side, giving mOnResponse a chance to inspect the channel while
+  // Necko state (content type, result principal) is still accessible.
+  nsresult HandleWebResponse(nsIRequest* aRequest) override {
+    MOZ_ASSERT(NS_IsMainThread());
+    nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aRequest);
+    if (httpChannel) {
+      uint32_t statusCode = 0;
+      if (NS_SUCCEEDED(httpChannel->GetResponseStatus(&statusCode)) &&
+          statusCode >= 200 && statusCode < 300) {
+        // Only notify on success: an error response body has a meaningless
+        // MIME type (e.g. text/html for a 404), which would corrupt the
+        // one-shot media-usage telemetry and the content principal.
+        mOnResponse(httpChannel);
+      }
     }
+    return GeckoViewStreamListener::HandleWebResponse(aRequest);
+  }
 
-   protected:
-    void SendWebResponse(java::WebResponse::Param aResponse) override {
-      MOZ_ASSERT(mResult);
-      HLS_DEBUG("GeckoHttpChannelListener", "Status code=%" PRIi32,
-                aResponse->StatusCode());
-      mResult->Complete(aResponse);
-      mResult = nullptr;
-    }
+  void SendWebResponse(java::WebResponse::Param aResponse) override {
+    MOZ_ASSERT(mResult);
+    HLS_DEBUG("GeckoHttpChannelListener", "Status code={}",
+              aResponse->StatusCode());
+    mResult->Complete(aResponse);
+    mResult = nullptr;
+  }
 
-    void CompleteWithError(nsresult aStatus, nsIChannel* aChannel) override {
-      MOZ_ASSERT(mResult);
-      HLS_DEBUG("GeckoHttpChannelListener", "error=%s",
-                format_as(aStatus).get());
-      widget::WebExecutorSupport::CompleteWithError(mResult, aStatus, aChannel);
-      mResult = nullptr;
-    }
+  void CompleteWithError(nsresult aStatus, nsIChannel* aChannel) override {
+    MOZ_ASSERT(mResult);
+    HLS_DEBUG("GeckoHttpChannelListener", "error={}", aStatus);
+    widget::WebExecutorSupport::CompleteWithError(mResult, aStatus, aChannel);
+    mResult = nullptr;
+  }
 
-   private:
-    ~GeckoHttpChannelListener() = default;
+ private:
+  ~GeckoHttpChannelListener() = default;
 
-    java::GeckoResult::GlobalRef mResult;
-  };
+  java::GeckoResult::GlobalRef mResult;
+  std::function<void(nsIChannel*)> mOnResponse;
 };
 
 HLSResourceCallbacksSupport::HLSResourceCallbacksSupport(HLSDecoder* aDecoder)
@@ -116,19 +140,29 @@ void HLSResourceCallbacksSupport::Detach() {
   mDecoder = nullptr;
 }
 
-void HLSResourceCallbacksSupport::OnLoad(jni::String::Param aUrl) {
-  MutexAutoLock lock(mMutex);
+void HLSResourceCallbacksSupport::NotifyChannelResponse(nsIChannel* aChannel) {
+  MOZ_ASSERT(NS_IsMainThread());
   if (!mDecoder) {
     return;
   }
-  RefPtr<HLSResourceCallbacksSupport> self = this;
-  jni::String::GlobalRef url = std::move(aUrl);
-  NS_DispatchToMainThread(NS_NewRunnableFunction(
-      "HLSResourceCallbacksSupport::OnLoad", [self, url]() -> void {
-        if (self->mDecoder) {
-          self->mDecoder->NotifyLoad(url->ToCString());
-        }
-      }));
+  nsAutoCString contentType;
+  aChannel->GetContentType(contentType);
+  // Skip HLS manifest responses; only process media segment responses.
+  if (contentType.EqualsLiteral(APPLICATION_MPEGURL) ||
+      contentType.EqualsLiteral(AUDIO_MPEG_URL) ||
+      contentType.EqualsLiteral("application/x-mpegurl")) {
+    return;
+  }
+  mDecoder->RecordMediaUsage(contentType);
+  nsIScriptSecurityManager* secMan = nsContentUtils::GetSecurityManager();
+  if (secMan) {
+    nsCOMPtr<nsIPrincipal> principal;
+    if (NS_SUCCEEDED(secMan->GetChannelResultPrincipal(
+            aChannel, getter_AddRefs(principal))) &&
+        principal) {
+      mDecoder->UpdateCurrentPrincipal(principal);
+    }
+  }
 }
 
 void HLSResourceCallbacksSupport::OnDataArrived() {
@@ -212,12 +246,12 @@ void HLSResourceCallbacksSupport::DoOpenChannel(
       java::WebMessage::LocalRef(aRequest.Cast<java::WebMessage>());
   const nsCString uriStr = requestBase->Uri()->ToCString();
 
-  HLS_DEBUG("HLSResourceCallbacksSupport", "URI=%s", uriStr.get());
+  HLS_DEBUG("HLSResourceCallbacksSupport", "URI={}", uriStr.get());
   nsCOMPtr<nsIURI> uri;
   nsresult rv = NS_NewURI(getter_AddRefs(uri), uriStr);
   if (NS_FAILED(rv)) {
     HLS_DEBUG("HLSResourceCallbacksSupport",
-              "FAIL: cannot create URI, error=%s", format_as(rv).get());
+              "FAIL: cannot create URI, error={}", rv);
     widget::WebExecutorSupport::CompleteWithError(aResult, rv);
     return;
   }
@@ -241,10 +275,13 @@ void HLSResourceCallbacksSupport::DoOpenChannel(
                                             secFlags, contentType);
   if (NS_FAILED(rv)) {
     HLS_DEBUG("HLSResourceCallbacksSupport",
-              "FAIL: cannot create channel, error=%s", format_as(rv).get());
+              "FAIL: cannot create channel, error={}", rv);
     widget::WebExecutorSupport::CompleteWithError(aResult, rv);
     return;
   }
+
+  nsCOMPtr<nsILoadInfo> loadInfo = newChannel->LoadInfo();
+  loadInfo->SetIsMediaRequest(true);
 
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(newChannel);
   if (httpChannel) {
@@ -258,18 +295,20 @@ void HLSResourceCallbacksSupport::DoOpenChannel(
       rv = httpChannel->SetRequestHeader(name, value, false);
       if (NS_FAILED(rv)) {
         HLS_DEBUG("HLSResourceCallbacksSupport",
-                  "WARN: cannot set header '%s: %s', error=%s", name.get(),
-                  value.get(), format_as(rv).get());
+                  "WARN: cannot set header '{}: {}', error={}", name.get(),
+                  value.get(), rv);
       }
     }
   }
 
-  auto listener = MakeRefPtr<GeckoHttpChannelListener>(aResult);
+  auto listener = MakeRefPtr<GeckoHttpChannelListener>(
+      aResult, [self = RefPtr{this}](nsIChannel* aChannel) {
+        self->NotifyChannelResponse(aChannel);
+      });
   newChannel->SetNotificationCallbacks(listener);
   rv = newChannel->AsyncOpen(listener);
   if (NS_FAILED(rv)) {
-    HLS_DEBUG("HLSResourceCallbacksSupport", "FAIL: cannot open, error=%s",
-              format_as(rv).get());
+    HLS_DEBUG("HLSResourceCallbacksSupport", "FAIL: cannot open, error={}", rv);
     widget::WebExecutorSupport::CompleteWithError(aResult, rv, newChannel);
   }
 }
@@ -421,49 +460,31 @@ void HLSDecoder::NotifyDataArrived() {
   GetOwner()->DownloadProgressed();
 }
 
-void HLSDecoder::NotifyLoad(nsCString aMediaUrl) {
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_DIAGNOSTIC_ASSERT(!IsShutdown());
-
-  nsCOMPtr<nsIURI> uri;
-  nsresult rv = NS_NewURI(getter_AddRefs(uri), aMediaUrl.Data());
-  NS_ENSURE_SUCCESS_VOID(rv);
-
-  RecordMediaUsage(uri);
-  UpdateCurrentPrincipal(uri);
-}
-
-void HLSDecoder::RecordMediaUsage(nsIURI* aMediaUri) {
+void HLSDecoder::RecordMediaUsage(const nsCString& aMimeType) {
   if (mUsageRecorded) {
     return;
   }
-
-  nsresult rv;
-  nsCOMPtr<nsIURL> url = do_QueryInterface(aMediaUri, &rv);
-  NS_ENSURE_SUCCESS_VOID(rv);
-
   // TODO: get hostname. See bug 1887053.
-  nsAutoCString mediaExt;
-  (void)url->GetFileExtension(mediaExt);
-  glean::hls::MediaLoadExtra extra = {.mediaExtension = Some(mediaExt.get())};
+  glean::hls::MediaLoadExtra extra = {.mediaContentType =
+                                          Some(aMimeType.get())};
   glean::hls::media_load.Record(Some(extra));
   mUsageRecorded = true;
 }
 
-// Should be called when the decoder loads media from a URL to ensure the
-// principal of the media element is appropriately set for CORS.
-void HLSDecoder::UpdateCurrentPrincipal(nsIURI* aMediaUri) {
-  nsCOMPtr<nsIPrincipal> principal = GetContentPrincipal(aMediaUri);
-  MOZ_DIAGNOSTIC_ASSERT(principal);
+// Should be called when the decoder loads media to ensure the principal of the
+// media element is appropriately set for CORS.
+void HLSDecoder::UpdateCurrentPrincipal(nsIPrincipal* aPrincipal) {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_DIAGNOSTIC_ASSERT(aPrincipal);
 
   // Check the subsumption of old and new principals. Should be either
   // equal or disjoint.
-  if (!mContentPrincipal || principal->GetIsNullPrincipal()) {
-    mContentPrincipal = std::move(principal);
-  } else if (principal->Equals(mContentPrincipal)) {
+  if (!mContentPrincipal || aPrincipal->GetIsNullPrincipal()) {
+    mContentPrincipal = aPrincipal;
+  } else if (aPrincipal->Equals(mContentPrincipal)) {
     return;
-  } else if (!principal->Subsumes(mContentPrincipal) &&
-             !mContentPrincipal->Subsumes(principal)) {
+  } else if (!aPrincipal->Subsumes(mContentPrincipal) &&
+             !mContentPrincipal->Subsumes(aPrincipal)) {
     // Principals are disjoint -- no access.
     mContentPrincipal = NullPrincipal::Create(OriginAttributes());
   } else {
@@ -471,30 +492,6 @@ void HLSDecoder::UpdateCurrentPrincipal(nsIURI* aMediaUri) {
     mContentPrincipal = nullptr;
   }
   MediaDecoder::NotifyPrincipalChanged();
-}
-
-already_AddRefed<nsIPrincipal> HLSDecoder::GetContentPrincipal(
-    nsIURI* aMediaUri) {
-  RefPtr<dom::HTMLMediaElement> element = GetOwner()->GetMediaElement();
-  nsSecurityFlags securityFlags =
-      element->ShouldCheckAllowOrigin()
-          ? nsILoadInfo::SEC_REQUIRE_CORS_INHERITS_SEC_CONTEXT
-          : nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_INHERITS_SEC_CONTEXT;
-  if (element->GetCORSMode() == CORS_USE_CREDENTIALS) {
-    securityFlags |= nsILoadInfo::SEC_COOKIES_INCLUDE;
-  }
-  nsCOMPtr<nsIPrincipal> principal = NullPrincipal::Create(OriginAttributes());
-  nsCOMPtr<nsIChannel> channel;
-  nsresult rv = NS_NewChannel(
-      getter_AddRefs(channel), aMediaUri, static_cast<dom::Element*>(element),
-      securityFlags, nsIContentPolicy::TYPE_INTERNAL_VIDEO);
-  NS_ENSURE_SUCCESS(rv, principal.forget());
-  nsIScriptSecurityManager* secMan = nsContentUtils::GetSecurityManager();
-  if (!secMan) {
-    return principal.forget();
-  }
-  secMan->GetChannelResultPrincipal(channel, getter_AddRefs(principal));
-  return principal.forget();
 }
 
 }  // namespace mozilla

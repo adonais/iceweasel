@@ -364,7 +364,7 @@ class AMOAddonsProviderTest {
     }
 
     @Test
-    fun `loadIconAsync - with a successful status will return a bitmap`() = runTest(dispatcher) {
+    fun `loadIcon - with a successful status will return a bitmap`() = runTest(dispatcher) {
         val mockedClient = mock<Client>()
         val mockedResponse = mock<Response>()
         val stream: InputStream = javaClass.getResourceAsStream("/png/mozac.png")!!.buffered()
@@ -376,12 +376,12 @@ class AMOAddonsProviderTest {
 
         val provider = AMOAddonsProvider(testContext, client = mockedClient, ioDispatcher = dispatcher)
 
-        val bitmap = provider.loadIconAsync("id", "https://example.com/image.png").await()
+        val bitmap = provider.loadIcon("id", "https://example.com/image.png")
         assertIs<Bitmap>(bitmap)
     }
 
     @Test
-    fun `loadIconAsync - will return bitmap from the cache when available`() = runTest(dispatcher) {
+    fun `loadIcon - will return bitmap from the cache when available`() = runTest(dispatcher) {
         val mockedClient = mock<Client>()
         val expectedIcon = mock<Bitmap>()
 
@@ -389,7 +389,7 @@ class AMOAddonsProviderTest {
 
         provider.iconsCache["id"] = expectedIcon
 
-        val bitmap = provider.loadIconAsync("id", "https://example.com/image.png").await()
+        val bitmap = provider.loadIcon("id", "https://example.com/image.png")
 
         verify(mockedClient, times(0)).fetch(any())
         assertEquals(expectedIcon, bitmap)
@@ -397,11 +397,11 @@ class AMOAddonsProviderTest {
     }
 
     @Test
-    fun `loadIconAsync - with an unsuccessful status will return null`() = runTest(dispatcher) {
+    fun `loadIcon - with an unsuccessful status will return null`() = runTest(dispatcher) {
         val mockedClient = prepareClient(status = 500)
         val provider = AMOAddonsProvider(testContext, client = mockedClient, ioDispatcher = dispatcher)
 
-        val bitmap = provider.loadIconAsync("id", "https://example.com/image.png").await()
+        val bitmap = provider.loadIcon("id", "https://example.com/image.png")
         assertNull(bitmap)
     }
 

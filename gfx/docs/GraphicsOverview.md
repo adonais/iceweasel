@@ -1,6 +1,6 @@
 # Graphics Overview
 
-## Work in progress. Possibly incorrect or incomplete.
+## Work in progress. Possibly incorrect or incomplete
 
 ## Jargon
 

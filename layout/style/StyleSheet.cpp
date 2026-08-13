@@ -149,7 +149,9 @@ void StyleSheet::LastRelease() {
 
   if (mInner) {
     MOZ_ASSERT(mInner->mSheets.Contains(this), "Our mInner should include us.");
-    mInner->RemoveSheet(this);
+    if (mInner->RemoveSheet(this)) {
+      delete mInner;
+    }
     mInner = nullptr;
   }
 
@@ -165,7 +167,8 @@ void StyleSheet::UnlinkInner() {
   // We can only have a cycle through our inner if we have a unique inner,
   // because otherwise there are no JS wrappers for anything in the inner.
   if (mInner->mSheets.Length() != 1) {
-    mInner->RemoveSheet(this);
+    DebugOnly<bool> last = mInner->RemoveSheet(this);
+    MOZ_ASSERT(!last, "Should not have been the only sheet for this inner!");
     mInner = nullptr;
     return;
   }
@@ -365,7 +368,7 @@ void StyleSheetInfo::AddSheet(StyleSheet* aSheet) {
   mSheets.AppendElement(aSheet);
 }
 
-void StyleSheetInfo::RemoveSheet(StyleSheet* aSheet) {
+bool StyleSheetInfo::RemoveSheet(StyleSheet* aSheet) {
   // Fix up the parent pointer in children lists.
   StyleSheet* newParent =
       aSheet == mSheets[0] ? mSheets.SafeElementAt(1) : mSheets[0];
@@ -379,8 +382,7 @@ void StyleSheetInfo::RemoveSheet(StyleSheet* aSheet) {
 
   if (mSheets.Length() == 1) {
     NS_ASSERTION(aSheet == mSheets.ElementAt(0), "bad parent");
-    delete this;
-    return;
+    return true;
   }
 
   mSheets.UnorderedRemoveElement(aSheet);
@@ -391,6 +393,7 @@ void StyleSheetInfo::RemoveSheet(StyleSheet* aSheet) {
     // the cache eventually.
     SharedStyleSheetCache::ScheduleGC();
   }
+  return false;
 }
 
 void StyleSheet::GetType(nsAString& aType) { aType.AssignLiteral("text/css"); }
@@ -489,7 +492,10 @@ void StyleSheet::EnsureUniqueInner() {
   StyleSheetInfo* clone = mInner->CloneFor(this);
   MOZ_ASSERT(clone);
 
-  mInner->RemoveSheet(this);
+  DebugOnly<bool> last = mInner->RemoveSheet(this);
+  MOZ_ASSERT(
+      !last,
+      "HasUniqueInner implies mInner should have pointed to more than this");
   mInner = clone;
 
   // Fixup the child lists and parent links in the Servo sheet. This is done

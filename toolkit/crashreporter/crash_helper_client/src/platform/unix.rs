@@ -15,7 +15,7 @@ use nix::{
 };
 use std::{
     env,
-    ffi::{CStr, CString},
+    ffi::{c_char, CStr, CString},
     os::{
         fd::{AsFd, AsRawFd},
         unix::ffi::OsStringExt,
@@ -29,6 +29,7 @@ impl CrashHelperClient {
         program: *const BreakpadChar,
         breakpad_data: BreakpadData,
         minidump_path: *const BreakpadChar,
+        build_id: *const c_char,
     ) -> Result<CrashHelperClient> {
         let channel = IPCChannel::new()?;
         let (_listener, server_endpoint, client_endpoint) = channel.deconstruct();
@@ -42,12 +43,16 @@ impl CrashHelperClient {
         // SAFETY: `minidump_path` is guaranteed to point to a valid
         // nul-terminated string by the caller.
         let minidump_path = unsafe { CStr::from_ptr(minidump_path) };
+        // SAFETY: `build_id` is guaranteed to point to a valid nul-terminated
+        // string by the caller.
+        let build_id = unsafe { CStr::from_ptr(build_id) };
 
         let pid = CrashHelperClient::spawn_crash_helper(
             program,
             breakpad_data,
             minidump_path,
             server_endpoint,
+            build_id,
         )?;
 
         let rendezvous = Self::prepare_for_minidump(Some(pid), /* id */ 0).unwrap();
@@ -65,6 +70,7 @@ impl CrashHelperClient {
         breakpad_data: CString,
         minidump_path: &CStr,
         server_endpoint: IPCConnector,
+        build_id: &CStr,
     ) -> Result<Pid> {
         let parent_pid = getpid().to_string();
         let parent_pid_arg = unsafe { CString::from_vec_unchecked(parent_pid.into_bytes()) };
@@ -100,6 +106,7 @@ impl CrashHelperClient {
                 &breakpad_data,
                 minidump_path,
                 &endpoint_arg,
+                build_id,
             ],
             env.as_slice(),
         )?;

@@ -5,9 +5,9 @@
 #ifndef mozilla_layers_DragMetrics_h
 #define mozilla_layers_DragMetrics_h
 
-#include "mozilla/layers/ScrollableLayerGuid.h"
 #include "LayersTypes.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/layers/ScrollableLayerGuid.h"
 
 namespace IPC {
 template <typename T>

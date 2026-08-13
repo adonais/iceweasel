@@ -80,7 +80,7 @@ add_task(async function () {
     autofilled: "example.com/",
     modified: "exam",
     keys: ["KEY_Delete"],
-    type: UrlbarUtils.RESULT_TYPE.SEARCH,
+    type: UrlbarShared.RESULT_TYPE.SEARCH,
   });
   await test_autocomplete({
     desc: "DELETE the final slash should visit",
@@ -88,7 +88,7 @@ add_task(async function () {
     autofilled: "example.com/",
     modified: "example.com",
     keys: ["KEY_Delete"],
-    type: UrlbarUtils.RESULT_TYPE.URL,
+    type: UrlbarShared.RESULT_TYPE.URL,
   });
 
   await test_autocomplete({
@@ -97,7 +97,7 @@ add_task(async function () {
     autofilled: "example.com/",
     modified: "exam",
     keys: ["KEY_Backspace"],
-    type: UrlbarUtils.RESULT_TYPE.SEARCH,
+    type: UrlbarShared.RESULT_TYPE.SEARCH,
   });
   await test_autocomplete({
     desc: "BACK_SPACE the final slash should visit",
@@ -105,7 +105,7 @@ add_task(async function () {
     autofilled: "example.com/",
     modified: "example.com",
     keys: ["KEY_Backspace"],
-    type: UrlbarUtils.RESULT_TYPE.URL,
+    type: UrlbarShared.RESULT_TYPE.URL,
   });
 
   await test_autocomplete({
@@ -114,7 +114,7 @@ add_task(async function () {
     autofilled: "example.com/",
     modified: "exa",
     keys: ["KEY_Delete", "KEY_Backspace"],
-    type: UrlbarUtils.RESULT_TYPE.SEARCH,
+    type: UrlbarShared.RESULT_TYPE.SEARCH,
   });
   await test_autocomplete({
     desc: "DELETE the final slash, then BACK_SPACE, should search",
@@ -122,7 +122,7 @@ add_task(async function () {
     autofilled: "example.com/",
     modified: "example.co",
     keys: ["KEY_Delete", "KEY_Backspace"],
-    type: UrlbarUtils.RESULT_TYPE.URL,
+    type: UrlbarShared.RESULT_TYPE.URL,
   });
 
   await test_autocomplete({
@@ -131,7 +131,7 @@ add_task(async function () {
     autofilled: "example.com/",
     modified: "exa",
     keys: ["KEY_Backspace", "KEY_Backspace"],
-    type: UrlbarUtils.RESULT_TYPE.SEARCH,
+    type: UrlbarShared.RESULT_TYPE.SEARCH,
   });
   await test_autocomplete({
     desc: "BACK_SPACE the final slash, then BACK_SPACE, should search",
@@ -139,7 +139,7 @@ add_task(async function () {
     autofilled: "example.com/",
     modified: "example.co",
     keys: ["KEY_Backspace", "KEY_Backspace"],
-    type: UrlbarUtils.RESULT_TYPE.URL,
+    type: UrlbarShared.RESULT_TYPE.URL,
   });
 
   await test_autocomplete({
@@ -148,7 +148,7 @@ add_task(async function () {
     autofilled: "example.com/",
     modified: "e",
     keys: ["KEY_Backspace"],
-    type: UrlbarUtils.RESULT_TYPE.SEARCH,
+    type: UrlbarShared.RESULT_TYPE.SEARCH,
     onAutoFill: () => {
       gURLBar.blur();
       gURLBar.focus();
@@ -170,7 +170,7 @@ add_task(async function () {
     autofilled: "example.com/",
     modified: "e",
     keys: ["KEY_ArrowLeft", "KEY_Delete"],
-    type: UrlbarUtils.RESULT_TYPE.SEARCH,
+    type: UrlbarShared.RESULT_TYPE.SEARCH,
     onAutoFill: () => {
       gURLBar.blur();
       gURLBar.focus();
@@ -192,7 +192,7 @@ add_task(async function () {
     autofilled: "example.com/",
     modified: "e",
     keys: ["KEY_Backspace", "KEY_Backspace"],
-    type: UrlbarUtils.RESULT_TYPE.SEARCH,
+    type: UrlbarShared.RESULT_TYPE.SEARCH,
     onAutoFill: () => {
       gURLBar.blur();
       gURLBar.focus();
@@ -215,7 +215,7 @@ add_task(async function () {
     autofilled: "example.com/",
     modified: "example.com",
     keys: ["KEY_ArrowRight", "KEY_Backspace"],
-    type: UrlbarUtils.RESULT_TYPE.URL,
+    type: UrlbarShared.RESULT_TYPE.URL,
   });
 
   await test_autocomplete({
@@ -230,7 +230,7 @@ add_task(async function () {
       ["KEY_ArrowLeft", { shiftKey: true }],
       "KEY_Backspace",
     ],
-    type: UrlbarUtils.RESULT_TYPE.SEARCH,
+    type: UrlbarShared.RESULT_TYPE.SEARCH,
   });
 
   await test_autocomplete({
@@ -244,7 +244,7 @@ add_task(async function () {
         : "KEY_End",
       "KEY_Backspace",
     ],
-    type: UrlbarUtils.RESULT_TYPE.URL,
+    type: UrlbarShared.RESULT_TYPE.URL,
   });
 
   await test_autocomplete({
@@ -253,7 +253,7 @@ add_task(async function () {
     autofilled: "example.com/",
     modified: "example.com",
     keys: ["KEY_Backspace"],
-    type: UrlbarUtils.RESULT_TYPE.URL,
+    type: UrlbarShared.RESULT_TYPE.URL,
     onAutoFill: () => {
       // This assumes that the center of the input is to the right of the end
       // of the text, so the caret is placed at the end of the text on click.
@@ -267,7 +267,7 @@ add_task(async function () {
     autofilled: "example.com/",
     modified: "http://example.com/fo",
     keys: ["KEY_ArrowDown", "KEY_Backspace"],
-    type: UrlbarUtils.RESULT_TYPE.URL,
+    type: UrlbarShared.RESULT_TYPE.URL,
   });
 
   await PlacesUtils.history.clear();

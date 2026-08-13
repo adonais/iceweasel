@@ -5,16 +5,16 @@
 #include "SwipeTracker.h"
 
 #include "InputData.h"
+#include "UnitTransforms.h"
 #include "mozilla/FlushType.h"
 #include "mozilla/PresShell.h"
-#include "mozilla/StaticPrefs_widget.h"
 #include "mozilla/StaticPrefs_browser.h"
+#include "mozilla/StaticPrefs_widget.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/TouchEvents.h"
 #include "mozilla/dom/SimpleGestureEventBinding.h"
 #include "nsIWidget.h"
 #include "nsRefreshDriver.h"
-#include "UnitTransforms.h"
 
 // These values were tweaked to make the physics feel similar to the native
 // swipe.

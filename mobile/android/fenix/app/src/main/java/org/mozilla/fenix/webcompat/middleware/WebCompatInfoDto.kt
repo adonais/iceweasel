@@ -4,36 +4,58 @@
 
 package org.mozilla.fenix.webcompat.middleware
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * WebCompat data wrapper class.
  *
- * @property antitracking The anti-tracking data associated with the current tab.
- * @property browser The browser data.
- * @property devicePixelRatio The device pixel ratio.
- * @property frameworks The frameworks data associated with the current tab.
- * @property languages The languages associated with the current tab.
- * @property url The url associated with the current tab.
- * @property userAgent The user agent associated with the current tab.
+ * @property antitracking Key anti-tracking data.
+ * @property app Key build information for Firefox.
+ * @property browserInfo Profile info such as addons and experiments.
+ * @property frameworks Which website frameworks were seen on the current tab.
+ * @property graphics Key data about Firefox's graphical capabilities.
+ * @property prefs Values of key about:config preferences.
+ * @property system Key information about the user's device or operating system.
+ * @property tabInfo Key information about the tab being reported.
  */
 @Serializable
 data class WebCompatInfoDto(
     val antitracking: WebCompatAntiTrackingDto,
-    val browser: WebCompatBrowserDto,
-    val devicePixelRatio: Double,
+    val app: WebCompatAppDto,
+    val browserInfo: WebCompatBrowserInfoDto,
     val frameworks: WebCompatFrameworksDto,
-    val languages: List<String>,
-    val url: String,
-    val userAgent: String,
+    val graphics: WebCompatGraphicsDto,
+    val prefs: WebCompatPrefsDto,
+    val system: WebCompatSystemDto,
+    val tabInfo: WebCompatTabInfoDto,
 ) {
+    /**
+     * Common wrapper/format for values from getBrokenSiteReport
+     *
+     * @property value The actual value.
+     * @property glean Which glean object to send this value as in reports.
+     * @property doNotPreview Whether to include this datum on the report preview.
+     * @property isTabSpecific Whether this datum is specific to the tab being reported.
+     */
+    @Serializable
+    data class WebCompatObjectDto<T>(
+      val value: T,
+      val glean: String? = null,
+      val doNotPreview: Boolean? = null,
+      val isTabSpecific: Boolean? = null,
+    )
 
     /**
      * WebCompat anti-tracking data associated with the current tab.
      *
+     * @property isTabSpecific Whether this group of data is specific to the tab's origin.
      * @property blockList The blocklist string.
      * @property blockedOrigins The list of URLs currently blocked by ETP.
      * @property btpHasPurgedSite Whether the current tab has recently been purged by Bounce Tracking Protection.
@@ -45,34 +67,50 @@ data class WebCompatInfoDto(
      */
     @Serializable
     data class WebCompatAntiTrackingDto(
-        val blockList: String,
-        val blockedOrigins: List<String>,
-        val btpHasPurgedSite: Boolean,
-        val etpCategory: String,
-        val hasMixedActiveContentBlocked: Boolean,
-        val hasMixedDisplayContentBlocked: Boolean,
-        val hasTrackingContentBlocked: Boolean,
-        val isPrivateBrowsing: Boolean,
+        val isTabSpecific: Boolean? = null,
+        val blockList: WebCompatObjectDto<String>,
+        val blockedOrigins: WebCompatObjectDto<List<String>>,
+        val btpHasPurgedSite: WebCompatObjectDto<Boolean>,
+        val etpCategory: WebCompatObjectDto<String>,
+        val hasMixedActiveContentBlocked: WebCompatObjectDto<Boolean>,
+        val hasMixedDisplayContentBlocked: WebCompatObjectDto<Boolean>,
+        val hasTrackingContentBlocked: WebCompatObjectDto<Boolean>,
+        val isPrivateBrowsing: WebCompatObjectDto<Boolean>,
+    )
+
+    /**
+     * WebCompat app data.
+     *
+     * @property isTabSpecific Whether this group of data is specific to the tab's origin.
+     * @property applicationName The name of this browser.
+     * @property buildId The Firefox build ID.
+     * @property defaultLocales The locales data.
+     * @property defaultUseragentString The default useragent string used by this browser.
+     * @property fissionEnabled Whether Fission is enabled.
+     * @property version The Firefox version.
+     */
+    @Serializable
+    data class WebCompatAppDto(
+        val isTabSpecific: Boolean? = null,
+        val applicationName: WebCompatObjectDto<String>,
+        val buildId: WebCompatObjectDto<String>,
+        val defaultLocales: WebCompatObjectDto<List<String>>,
+        val defaultUseragentString: WebCompatObjectDto<String>,
+        val fissionEnabled: WebCompatObjectDto<Boolean>,
+        val version: WebCompatObjectDto<String>,
     )
 
     /**
      * WebCompat browser data.
+     * Note: experiment info contained in this JSON is ignored; we must pull it in from elsewhere.
      *
-     * @property addons The addon data.
-     * @property app The app data.
-     * @property graphics The graphics data.
-     * @property locales The locales data.
-     * @property platform The platform data.
-     * @property prefs The prefs data.
+     * @property isTabSpecific Whether this group of data is specific to the tab's origin.
+     * @property addons Info about active add-ons.
      */
     @Serializable
-    data class WebCompatBrowserDto(
-        val addons: List<AddonDto>,
-        val app: AppDto? = null,
-        val graphics: GraphicsDto? = null,
-        val locales: List<String>,
-        val platform: PlatformDto,
-        val prefs: PrefsDto,
+    data class WebCompatBrowserInfoDto(
+        val isTabSpecific: Boolean? = null,
+        val addons: WebCompatObjectDto<List<AddonDto>>,
     ) {
         /**
          * WebCompat addon data.
@@ -89,97 +127,157 @@ data class WebCompatInfoDto(
             val temporary: Boolean,
             val version: String,
         )
-
-        /**
-         * WebCompat app data.
-         *
-         * @property defaultUserAgent The default user agent.
-         */
-        @Serializable
-        data class AppDto(
-            val defaultUserAgent: String,
-        )
-
-        /**
-         * WebCompat graphics data.
-         *
-         * @property devices The devices data, with vendorID and deviceID.
-         * @property drivers The drivers data, with renderer and version.
-         * @property features The features data.
-         * @property hasTouchScreen Whether the device has a touch screen.
-         * @property monitors The monitors data, with screenWidth, screenHeight, and scale.
-         */
-        @Serializable
-        data class GraphicsDto(
-            val devices: JsonArray? = null,
-            val drivers: JsonArray,
-            val features: JsonObject? = null,
-            val hasTouchScreen: Boolean? = null,
-            val monitors: JsonArray? = null,
-        )
-
-        /**
-         * WebCompat platform data.
-         *
-         * @property fissionEnabled Whether or not Fission is enabled.
-         * @property memoryMB The amount of RAM the device has in MB.
-         */
-        @Serializable
-        data class PlatformDto(
-            val fissionEnabled: Boolean,
-            val memoryMB: Long,
-        )
-
-        /**
-         * WebCompat prefs data.
-         *
-         * @property browserOpaqueResponseBlocking The value of browser.opaqueResponseBlocking.
-         * @property extensionsInstallTriggerEnabled The value of extensions.InstallTrigger.enabled.
-         * @property gfxWebRenderSoftware The value of gfx.webrender.software.
-         * @property networkCookieBehavior The value of network.cookie.cookieBehavior.
-         * @property privacyGlobalPrivacyControlEnabled The value of privacy.globalprivacycontrol.enabled.
-         * @property privacyResistFingerprinting The value of privacy.resistFingerprinting.
-         */
-        @Serializable
-        data class PrefsDto(
-            @SerialName(BROWSER_OPAQUE_RESPONSE_BLOCKING_KEY) val browserOpaqueResponseBlocking: Boolean,
-            @SerialName(EXTENSIONS_INSTALL_TRIGGER_ENABLED_KEY) val extensionsInstallTriggerEnabled: Boolean,
-            @SerialName(GFX_WEB_RENDER_SOFTWARE_KEY) val gfxWebRenderSoftware: Boolean,
-            @SerialName(NETWORK_COOKIE_BEHAVIOR_KEY) val networkCookieBehavior: Long,
-            @SerialName(PRIVACY_GLOBAL_PRIVACY_CONTROL_ENABLED_KEY)
-            val privacyGlobalPrivacyControlEnabled: Boolean,
-            @SerialName(PRIVACY_RESIST_FINGERPRINTING_KEY) val privacyResistFingerprinting: Boolean,
-        ) {
-            /**
-             * @see [PrefsDto].
-             */
-            companion object {
-                private const val BROWSER_OPAQUE_RESPONSE_BLOCKING_KEY = "browser.opaqueResponseBlocking"
-
-                private const val EXTENSIONS_INSTALL_TRIGGER_ENABLED_KEY = "extensions.InstallTrigger.enabled"
-
-                private const val GFX_WEB_RENDER_SOFTWARE_KEY = "gfx.webrender.software"
-
-                private const val NETWORK_COOKIE_BEHAVIOR_KEY = "network.cookie.cookieBehavior"
-
-                private const val PRIVACY_GLOBAL_PRIVACY_CONTROL_ENABLED_KEY = "privacy.globalprivacycontrol.enabled"
-
-                private const val PRIVACY_RESIST_FINGERPRINTING_KEY = "privacy.resistFingerprinting"
-            }
-        }
     }
 
     /**
      * WebCompat frameworks data.
      *
+     * @property isTabSpecific Whether this group of data is specific to the tab's origin.
      * @property fastclick Whether the FastClick web library was detected on the current tab.
      * @property marfeel Whether the Marfeel web framework was detected on the current tab.
      * @property mobify Whether the Mobify web framework was detected on the original tab.
      */
     @Serializable
     data class WebCompatFrameworksDto(
-        val fastclick: Boolean,
-        val marfeel: Boolean,
-        val mobify: Boolean,
+        val isTabSpecific: Boolean? = null,
+        val fastclick: WebCompatObjectDto<Boolean>,
+        val marfeel: WebCompatObjectDto<Boolean>,
+        val mobify: WebCompatObjectDto<Boolean>,
     )
+
+    /**
+     * WebCompat graphics data.
+     *
+     * @property isTabSpecific Whether this group of data is specific to the tab's origin.
+     * @property devices The devices data, with vendorID and deviceID.
+     * @property devicePixelRatio The value of devicePixelRatio on the top browser window.
+     * @property drivers The drivers data, with renderer and version.
+     * @property features The features data.
+     * @property hasTouchScreen Whether the device has a touch screen.
+     * @property monitors The monitors data, with screenWidth, screenHeight, and scale.
+     */
+    @Serializable
+    data class WebCompatGraphicsDto(
+        val isTabSpecific: Boolean? = null,
+        val devices: WebCompatObjectDto<JsonArray?>,
+        val devicePixelRatio: WebCompatObjectDto<Double>,
+        val drivers: WebCompatObjectDto<JsonArray>,
+        val features: WebCompatObjectDto<JsonObject?>,
+        val hasTouchScreen: WebCompatObjectDto<Boolean?>,
+        val monitors: WebCompatObjectDto<JsonArray?>,
+    )
+
+    /**
+     * WebCompat prefs data.
+     *
+     * @property isTabSpecific Whether this group of data is specific to the tab's origin.
+     * @property cookieBehavior Value of network.cookie.cookieBehavior.
+     * @property forcedAcceleratedLayers Value of layers.acceleration_force.enabled.
+     * @property globalPrivacyControlEnabled Value of privacy.globalprivacycontrol.enabled.
+     * @property installtriggerEnabled Value of extensions.InstallTrigger.enabled.
+     * @property opaqueResponseBlocking Value of browser.opaqueResponseBlocking.
+     * @property resistFingerprintingEnabled Value of privacy.resistFingerprinting.
+     * @property softwareWebrender Value of gfx.webrender.software.
+     * @property thirdPartyCookieBlockingEnabled Value of network.cookie.cookieBehavior.optInPartitioning.
+     * @property thirdPartyCookieBlockingEnabledInPbm Value of network.cookie.cookieBehavior.optInPartitioning.pbmode.
+     */
+    @Serializable
+    data class WebCompatPrefsDto(
+        val isTabSpecific: Boolean? = null,
+        val cookieBehavior: WebCompatObjectDto<Long>,
+        val forcedAcceleratedLayers: WebCompatObjectDto<Boolean>,
+        val globalPrivacyControlEnabled: WebCompatObjectDto<Boolean>,
+        val installtriggerEnabled: WebCompatObjectDto<Boolean>,
+        val opaqueResponseBlocking: WebCompatObjectDto<Boolean>,
+        val resistFingerprintingEnabled: WebCompatObjectDto<Boolean>,
+        val softwareWebrender: WebCompatObjectDto<Boolean>,
+        val thirdPartyCookieBlockingEnabled: WebCompatObjectDto<Boolean>,
+        val thirdPartyCookieBlockingEnabledInPbm: WebCompatObjectDto<Boolean>,
+    )
+
+    /**
+     * WebCompat system data.
+     *
+     * @property isTabSpecific Whether this group of data is specific to the tab's origin.
+     * @property isTablet Whether the device is a tablet.
+     * @property memory The amount of RAM the device has.
+     * @property osArchitecture The operating system's architecture.
+     * @property osName The operating system's name.
+     * @property osVersion The operating system's version.
+     */
+    @Serializable
+    data class WebCompatSystemDto(
+        val isTabSpecific: Boolean? = null,
+        val isTablet: WebCompatObjectDto<Boolean>,
+        val memory: WebCompatObjectDto<Long>,
+        val osArchitecture: WebCompatObjectDto<String>,
+        val osName: WebCompatObjectDto<String>,
+        val osVersion: WebCompatObjectDto<String>,
+    )
+
+    /**
+     * WebCompat tab data.
+     *
+     * @property isTabSpecific Whether this group of data is specific to the tab's origin.
+     * @property languages navigator.languages presented to the site.
+     * @property screenshot A screenshot of the tab.
+     * @property url The document.location of the top frame on the tab.
+     * @property useragentString The UA string actually presented to the site.
+     */
+    @Serializable
+    data class WebCompatTabInfoDto(
+        val isTabSpecific: Boolean? = null,
+        val languages: WebCompatObjectDto<List<String>>,
+        val screenshot: WebCompatObjectDto<String?>,
+        val url: WebCompatObjectDto<String>,
+        val useragentString: WebCompatObjectDto<String>,
+    )
+
+    companion object {
+
+        private const val TAB_SPECIFIC_KEY = "isTabSpecific"
+
+        private val JsonObject.isTabSpecific: Boolean
+            get() = this.boolean(TAB_SPECIFIC_KEY)
+
+        private fun JsonObject.boolean(key: String): Boolean = this[key]?.jsonPrimitive?.booleanOrNull == true
+
+        /**
+         * Adds a WebCompatInfoDto's contents to a JSON object meant for Report Broken Site preview feature.
+         *
+         * @param webCompatInfoDto the WebCompatInfoDto to add
+         * @param noTabSpecificData whether or not to avoid tab-specific data
+         */
+        fun JsonObject.addWebCompatInfo(
+            webCompatInfoDto: WebCompatInfoDto,
+            noTabSpecificData: Boolean = false,
+        ): JsonObject {
+            // Filter out the screenshot and other not-to-be-previewed data, as well as
+            // any data which is tab-specific if the user has changed the URL enough to
+            // make it unlikely to be the URL for the tab we recorded.
+            val webCompatJSON = Json.encodeToJsonElement(serializer(), webCompatInfoDto).jsonObject
+
+            val webCompatPreview = webCompatJSON.mapNotNull { (groupName, groupElement) ->
+                    val items = groupElement.jsonObject
+                    if (noTabSpecificData && items.isTabSpecific) {
+                        return@mapNotNull null
+                    }
+
+                    val values = items
+                        .filterKeys { it != TAB_SPECIFIC_KEY }
+                        .filterNot { (_, itemElement) ->
+                            val item = itemElement.jsonObject
+                            val doNotPreview = item.boolean("doNotPreview")
+                            doNotPreview || (noTabSpecificData && item.isTabSpecific)
+                        }
+                        .mapValues { (_, itemElement) ->
+                            itemElement.jsonObject["value"] ?: JsonNull
+                        }
+
+                    groupName to JsonObject(values)
+                }.toMap()
+
+            return JsonObject(this + webCompatPreview)
+         }
+    }
 }

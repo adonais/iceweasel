@@ -40,8 +40,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   HomePage: "resource:///modules/HomePage.sys.mjs",
   ObliviousHTTP: "resource://gre/modules/ObliviousHTTP.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
-  TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.sys.mjs",
-  UTEventReporting: "resource://newtab/lib/UTEventReporting.sys.mjs",
   NewTabContentPing: "resource://newtab/lib/NewTabContentPing.sys.mjs",
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
@@ -49,7 +47,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 export const PREF_IMPRESSION_ID = "impressionId";
 export const TELEMETRY_PREF = "telemetry";
-export const EVENTS_TELEMETRY_PREF = "telemetry.ut.events";
 export const PREF_UNIFIED_ADS_SPOCS_ENABLED = "unifiedAds.spocs.enabled";
 export const PREF_UNIFIED_ADS_TILES_ENABLED = "unifiedAds.tiles.enabled";
 const PREF_ENDPOINTS = "discoverystream.endpoints";
@@ -194,10 +191,6 @@ export class TelemetryFeed {
 
   get telemetryEnabled() {
     return this._prefs.get(TELEMETRY_PREF);
-  }
-
-  get eventTelemetryEnabled() {
-    return this._prefs.get(EVENTS_TELEMETRY_PREF);
   }
 
   get privatePingEnabled() {
@@ -525,16 +518,6 @@ export class TelemetryFeed {
   }
 
   /**
-   * Lazily initialize UTEventReporting to send pings
-   */
-  get utEvents() {
-    Object.defineProperty(this, "utEvents", {
-      value: new lazy.UTEventReporting(),
-    });
-    return this.utEvents;
-  }
-
-  /**
    * Get encoded user preferences, multiple prefs will be combined via bitwise OR operator
    */
   get userPreferences() {
@@ -700,8 +683,6 @@ export class TelemetryFeed {
       return;
     }
 
-    let sessionEndEvent = this.createSessionEndEvent(session);
-    this.sendUTEvent(sessionEndEvent, this.utEvents.sendSessionEndEvent);
     this.sessions.delete(portID);
   }
 
@@ -718,58 +699,6 @@ export class TelemetryFeed {
     );
     session.perf.is_preloaded =
       action.data.browser.getAttribute("preloadedState") === "preloaded";
-  }
-
-  /**
-   * createPing - Create a ping with common properties
-   *
-   * @param  {string} id The portID of the session, if a session is relevant (optional)
-   * @return {obj}    A telemetry ping
-   */
-  createPing(portID) {
-    const ping = {
-      addon_version: Services.appinfo.appBuildID,
-      locale: Services.locale.appLocaleAsBCP47,
-      user_prefs: this.userPreferences,
-    };
-
-    // If the ping is part of a user session, add session-related info
-    if (portID) {
-      const session = this.sessions.get(portID) || this.addSession(portID);
-      Object.assign(ping, { session_id: session.session_id });
-
-      if (session.page) {
-        Object.assign(ping, { page: session.page });
-      }
-    }
-    return ping;
-  }
-
-  createUserEvent(action) {
-    return Object.assign(
-      this.createPing(au.getPortIdOfSender(action)),
-      action.data,
-      { action: "activity_stream_user_event" }
-    );
-  }
-
-  createSessionEndEvent(session) {
-    return Object.assign(this.createPing(), {
-      session_id: session.session_id,
-      page: session.page,
-      session_duration: session.session_duration,
-      action: "activity_stream_session",
-      perf: session.perf,
-      profile_creation_date:
-        lazy.TelemetryEnvironment.currentEnvironment.profile.resetDate ||
-        lazy.TelemetryEnvironment.currentEnvironment.profile.creationDate,
-    });
-  }
-
-  sendUTEvent(event_object, eventFunction) {
-    if (this.telemetryEnabled && this.eventTelemetryEnabled) {
-      eventFunction(event_object);
-    }
   }
 
   sovEnabled() {
@@ -919,11 +848,6 @@ export class TelemetryFeed {
   }
 
   handleUserEvent(action) {
-    let userEvent = this.createUserEvent(action);
-    try {
-      this.sendUTEvent(userEvent, this.utEvents.sendUserEvent);
-    } catch (error) {}
-
     const session = this.sessions.get(au.getPortIdOfSender(action));
     if (!session) {
       return;
@@ -1484,6 +1408,9 @@ export class TelemetryFeed {
         break;
       case at.NEW_TAB_UNLOAD:
         this.endSession(au.getPortIdOfSender(action));
+        break;
+      case at.NEW_TAB_SCROLL:
+        Glean.newtab.scroll.set(true);
         break;
       case at.SAVE_SESSION_PERF_DATA:
         this.saveSessionPerfData(au.getPortIdOfSender(action), action.data);

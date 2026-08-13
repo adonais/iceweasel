@@ -115,9 +115,9 @@ class NoDestructor {
   // Forwards arguments to the T's constructor: calls T(args...).
   template <typename... Ts,
             // Disable this overload when it might collide with copy/move.
-            typename std::enable_if<!std::is_same<void(std::decay_t<Ts>&...),
-                                                  void(NoDestructor&)>::value,
-                                    int>::type = 0>
+            std::enable_if_t<!std::is_same_v<void(std::decay_t<Ts>&...),
+                                             void(NoDestructor&)>,
+                             int> = 0>
   explicit constexpr NoDestructor(Ts&&... args)
       : impl_(std::forward<Ts>(args)...) {}
 
@@ -135,11 +135,11 @@ class NoDestructor {
   // Pretend to be a smart pointer to T with deep constness.
   // Never returns a null pointer.
   T& operator*() { return *get(); }
-  absl::Nonnull<T*> operator->() { return get(); }
-  absl::Nonnull<T*> get() { return impl_.get(); }
+  T* absl_nonnull operator->() { return get(); }
+  T* absl_nonnull get() { return impl_.get(); }
   const T& operator*() const { return *get(); }
-  absl::Nonnull<const T*> operator->() const { return get(); }
-  absl::Nonnull<const T*> get() const { return impl_.get(); }
+  const T* absl_nonnull operator->() const { return get(); }
+  const T* absl_nonnull get() const { return impl_.get(); }
 
  private:
   class DirectImpl {
@@ -147,8 +147,8 @@ class NoDestructor {
     template <typename... Args>
     explicit constexpr DirectImpl(Args&&... args)
         : value_(std::forward<Args>(args)...) {}
-    absl::Nonnull<const T*> get() const { return &value_; }
-    absl::Nonnull<T*> get() { return &value_; }
+    const T* absl_nonnull get() const { return &value_; }
+    T* absl_nonnull get() { return &value_; }
 
    private:
     T value_;
@@ -160,10 +160,10 @@ class NoDestructor {
     explicit PlacementImpl(Args&&... args) {
       new (&space_) T(std::forward<Args>(args)...);
     }
-    absl::Nonnull<const T*> get() const {
+    const T* absl_nonnull get() const {
       return std::launder(reinterpret_cast<const T*>(&space_));
     }
-    absl::Nonnull<T*> get() {
+    T* absl_nonnull get() {
       return std::launder(reinterpret_cast<T*>(&space_));
     }
 
@@ -175,7 +175,7 @@ class NoDestructor {
   // potential once-init runtime initialization. It somewhat defeats the
   // purpose of NoDestructor in this case, but this makes the class more
   // friendly to generic code.
-  std::conditional_t<std::is_trivially_destructible<T>::value, DirectImpl,
+  std::conditional_t<std::is_trivially_destructible_v<T>, DirectImpl,
                      PlacementImpl>
       impl_;
 };

@@ -132,14 +132,10 @@ class TestMemoryUsage(AwsyTestCase):
             self.setupTp6()
 
         self.logger.info(
-            "areweslimyet run by %d pages, %d iterations,"
-            " %d perTabPause, %d settleWaitTime"
-            % (
-                self._pages_to_load,
-                self._iterations,
-                self._perTabPause,
-                self._settleWaitTime,
-            )
+            f"areweslimyet run by {self._pages_to_load} pages, "
+            f"{self._iterations} iterations,"
+            f" {self._perTabPause} perTabPause, "
+            f"{self._settleWaitTime} settleWaitTime"
         )
         self.logger.info("done setting up!")
 
@@ -171,12 +167,12 @@ class TestMemoryUsage(AwsyTestCase):
         try:
             result = self.marionette.execute_script(script, script_timeout=180000)
         except JavascriptException as e:
-            self.logger.error("removePreloadedBrowser() JavaScript error: %s" % e)
+            self.logger.error(f"removePreloadedBrowser() JavaScript error: {e}")
         except ScriptTimeoutException:
             self.logger.error("removePreloadedBrowser() timed out")
         except Exception:
             self.logger.error(
-                "removePreloadedBrowser() Unexpected error: %s" % sys.exc_info()[0]
+                f"removePreloadedBrowser() Unexpected error: {sys.exc_info()[0]}"
             )
         else:
             if result:

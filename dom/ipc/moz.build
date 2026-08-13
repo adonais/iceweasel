@@ -22,7 +22,7 @@ XPCOM_MANIFESTS += [
     "components.conf",
 ]
 
-EXTRA_JS_MODULES += [
+MOZ_SRC_FILES += [
     "ManifestMessagesChild.sys.mjs",
 ]
 
@@ -96,6 +96,7 @@ EXPORTS.mozilla.dom += [
     "VsyncWorkerChild.h",
     "WindowGlobalActor.h",
     "WindowGlobalChild.h",
+    "WindowGlobalMessageUtils.h",
     "WindowGlobalParent.h",
 ]
 

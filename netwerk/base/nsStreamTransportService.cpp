@@ -3,22 +3,22 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsStreamTransportService.h"
-#include "ErrorList.h"
-#include "nsXPCOMCIDInternal.h"
-#include "nsNetSegmentUtils.h"
-#include "nsTransportUtils.h"
-#include "nsStreamUtils.h"
-#include "nsError.h"
-#include "nsNetCID.h"
 
-#include "nsIAsyncInputStream.h"
-#include "nsIAsyncOutputStream.h"
-#include "nsIPipe.h"
-#include "nsITransport.h"
-#include "nsIObserverService.h"
-#include "nsThreadPool.h"
+#include "ErrorList.h"
 #include "mozilla/Components.h"
 #include "mozilla/Services.h"
+#include "nsError.h"
+#include "nsIAsyncInputStream.h"
+#include "nsIAsyncOutputStream.h"
+#include "nsIObserverService.h"
+#include "nsIPipe.h"
+#include "nsITransport.h"
+#include "nsNetCID.h"
+#include "nsNetSegmentUtils.h"
+#include "nsStreamUtils.h"
+#include "nsThreadPool.h"
+#include "nsTransportUtils.h"
+#include "nsXPCOMCIDInternal.h"
 
 namespace mozilla {
 namespace net {

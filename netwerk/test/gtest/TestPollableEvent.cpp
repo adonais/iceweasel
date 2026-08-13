@@ -2,14 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "../../base/PollableEvent.h"
+#include "../../base/nsSocketTransportService2.h"
 #include "TestCommon.h"
 #include "gtest/gtest.h"
-
 #include "mozilla/gtest/MozAssertions.h"
 #include "nsCOMPtr.h"
 #include "nsISocketTransport.h"
-#include "../../base/nsSocketTransportService2.h"
-#include "../../base/PollableEvent.h"
 #include "nsServiceManagerUtils.h"
 #include "nsThreadUtils.h"
 

@@ -12,6 +12,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlUtils: "resource://gre/modules/UrlUtils.sys.mjs",
 });
 
@@ -51,7 +52,7 @@ export class UrlbarProviderClipboard extends UrlbarProvider {
       !lazy.UrlbarPrefs.get("clipboard.featureGate") ||
       !lazy.UrlbarPrefs.get("suggest.clipboard") ||
       queryContext.searchString ||
-      queryContext.searchMode
+      queryContext.restrictInSearchMode()
     ) {
       return false;
     }
@@ -116,8 +117,8 @@ export class UrlbarProviderClipboard extends UrlbarProvider {
   async startQuery(queryContext, addCallback) {
     // If the query was started, isActive should have cached a url already.
     let result = new lazy.UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+      type: lazy.UrlbarShared.RESULT_TYPE.URL,
+      source: lazy.UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
       payload: {
         title: UrlbarUtils.prepareUrlForDisplay(this.#previousClipboard.value, {
           trimURL: false,

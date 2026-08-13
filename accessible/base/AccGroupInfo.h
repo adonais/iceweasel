@@ -5,9 +5,9 @@
 #ifndef AccGroupInfo_h_
 #define AccGroupInfo_h_
 
-#include "nsISupportsImpl.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/a11y/Role.h"
+#include "nsISupportsImpl.h"
 
 namespace mozilla {
 namespace a11y {

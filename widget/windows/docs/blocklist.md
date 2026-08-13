@@ -96,9 +96,10 @@ Variable += [
 | Variable  | ALL_PROCESSES \| BROWSER_PROCESS \| CHILD_PROCESSES \| GMPLUGIN_PROCESSES \| GPU_PROCESSES \| SOCKET_PROCESSES \| UTILITY_PROCESSES |
 | EntryType | DllBlocklistEntry \| A11yBlocklistEntry \| RedirectToNoOpEntryPoint                                                                 |
 | Name      | A case-insensitive string representing a DLL's filename to block                                                                    |
-| Version   | One of the following formats:> - ALL_VERSIONS \| UNVERSIONED
+| Version   | One of the following formats:> - ALL_VERSIONS \| UNVERSIONED |
+
 > - A tuple consisting of four digits
-> - A 32-bit integer representing a Unix timestamp with PETimeStamp                                                                                                                                     |
+> - A 32-bit integer representing a Unix timestamp with PETimeStamp |
 
 #### Variable
 

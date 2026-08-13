@@ -8,11 +8,11 @@
 // and then check for those with an 802.11 media type and able to return
 // a list of stations. This is similar to ifconfig(8).
 
-#include <sys/types.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
 #include <net/if.h>
 #include <net/if_media.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #ifdef __DragonFly__
 #  include <netproto/802_11/ieee80211_ioctl.h>
 #else

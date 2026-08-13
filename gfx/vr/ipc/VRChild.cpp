@@ -3,15 +3,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "VRChild.h"
+
 #include "VRProcessManager.h"
 #include "VRProcessParent.h"
 #include "gfxConfig.h"
-
-#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/ClearOnShutdown.h"
-#include "mozilla/glean/IpcMetrics.h"
 #include "mozilla/VsyncDispatcher.h"
 #include "mozilla/dom/MemoryReportRequest.h"
+#include "mozilla/gfx/gfxVars.h"
+#include "mozilla/glean/IpcMetrics.h"
 
 namespace mozilla {
 namespace gfx {

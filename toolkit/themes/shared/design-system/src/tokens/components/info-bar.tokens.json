@@ -1,0 +1,28 @@
+{
+  "border": {
+    "color": {
+      "value": {
+        "light": "{color.violet-desaturated.20}",
+        "dark": "{color.gray.60}",
+        "nativeTheme": "{toolbarseparator.color}",
+        "prefersContrast": "CanvasText"
+      }
+    }
+  },
+  "margin": {
+    "block": {
+      "start": {
+        "value": "4px"
+      },
+      "end": {
+        "value": "4px"
+      },
+      "nova-end": {
+        "value": "0"
+      }
+    },
+    "inline": {
+      "value": "4px"
+    }
+  }
+}

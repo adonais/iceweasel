@@ -61,6 +61,7 @@ import org.mozilla.fenix.home.recenttabs.RecentTab
 import org.mozilla.fenix.home.topsites.ui.HomepageCard
 import org.mozilla.fenix.home.topsites.ui.homepageCardImageShape
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.wallpapers.WallpaperTheme
 
 private const val THUMBNAIL_SIZE = 108
 
@@ -76,7 +77,7 @@ private const val THUMBNAIL_SIZE = 108
 fun RecentTabs(
     recentTabs: List<RecentTab>,
     menuItems: List<RecentTabMenuItem>,
-    backgroundColor: Color = MaterialTheme.colorScheme.surfaceBright,
+    backgroundColor: Color = WallpaperTheme.cardBackgroundColor,
     onRecentTabClick: (String) -> Unit = {},
 ) {
     Column(

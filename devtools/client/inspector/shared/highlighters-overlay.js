@@ -441,7 +441,7 @@ class HighlightersOverlay extends EventEmitter {
     if (max === 1) {
       highlighter = await inspectorFront.getOrCreateHighlighterByType(type);
     } else {
-      highlighter = await inspectorFront.getHighlighterByType(type);
+      highlighter = await inspectorFront.getHighlighterByType(type, true);
     }
 
     return highlighter;
@@ -1950,7 +1950,7 @@ class HighlightersOverlay extends EventEmitter {
 
     for (const type in this.highlighters) {
       if (this.highlighters[type]) {
-        this.highlighters[type].finalize();
+        this.highlighters[type].destroy();
         this.highlighters[type] = null;
       }
     }

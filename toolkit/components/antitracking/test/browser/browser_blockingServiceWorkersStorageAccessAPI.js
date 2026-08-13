@@ -1,7 +1,5 @@
 /* import-globals-from antitracking_head.js */
 
-requestLongerTimeout(2);
-
 AntiTracking.runTest(
   "ServiceWorkers and Storage Access API",
   async _ => {
@@ -115,13 +113,8 @@ AntiTracking.runTest(
       )
       .catch(e => ok(false, "Promise rejected: " + e));
   },
-  async _ => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  },
+  // Cleanup callback
+  clearSiteTestData,
   [
     ["dom.serviceWorkers.exemptFromPerDomainMax", true],
     ["dom.ipc.processCount", 1],

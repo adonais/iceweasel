@@ -34,6 +34,8 @@ class IPPDummyAuthProviderSingleton extends IPPAuthProvider {
   #getEntitlementResponse = null;
   #proxyPassResponse = null;
   #proxyPassError = null;
+  #proxyPassHang = false;
+  #proxyPassResolveOnAbort = null;
   #proxyUsageResponse = null;
 
   get helpers() {
@@ -133,7 +135,34 @@ class IPPDummyAuthProviderSingleton extends IPPAuthProvider {
     return this.#getEntitlementResponse;
   }
 
-  async fetchProxyPass() {
+  async fetchProxyPass(abortSignal = null) {
+    if (this.#proxyPassResolveOnAbort) {
+      const response = this.#proxyPassResolveOnAbort;
+      return new Promise(resolve => {
+        if (abortSignal?.aborted) {
+          resolve(response);
+          return;
+        }
+        abortSignal?.addEventListener("abort", () => resolve(response), {
+          once: true,
+        });
+      });
+    }
+    if (this.#proxyPassHang) {
+      return new Promise((_resolve, reject) => {
+        if (abortSignal?.aborted) {
+          reject(abortSignal.reason);
+          return;
+        }
+        abortSignal?.addEventListener(
+          "abort",
+          () => reject(abortSignal.reason),
+          {
+            once: true,
+          }
+        );
+      });
+    }
     if (this.#proxyPassError) {
       throw this.#proxyPassError;
     }
@@ -188,6 +217,27 @@ class IPPDummyAuthProviderSingleton extends IPPAuthProvider {
    */
   setProxyPassError(error) {
     this.#proxyPassError = error;
+  }
+
+  /**
+   * Test API: make fetchProxyPass() resolve with the given response only once
+   * its abort signal fires, modelling a fetch that beats the connect timeout to
+   * the line. Pass `null` to restore the normal response path.
+   *
+   * @param {object|null} response
+   */
+  setProxyPassResolveOnAbort(response) {
+    this.#proxyPassResolveOnAbort = response;
+  }
+
+  /**
+   * Test API: make fetchProxyPass() hang until its abort signal fires, rejecting
+   * with the signal's reason. Used to exercise the connect timeout.
+   *
+   * @param {boolean} hang
+   */
+  setProxyPassHang(hang) {
+    this.#proxyPassHang = hang;
   }
 
   /**

@@ -154,6 +154,32 @@ ifeq ($(CPU_ARCH),aarch64)
             EXTRA_SRCS += aes-armv8.c ghash-aarch64.c sha1-armv8.c sha256-armv8.c
         endif
     endif
+    # AArch64 AES-GCM implementation from AWS-LC. Not supported on Windows.
+    ifndef USE_STUB_BUILD
+    ifneq ($(OS_TARGET),WINNT)
+        DEFINES += -DHAVE_PLATFORM_GCM
+        EXTRA_SRCS += aarch64-gcm-wrap.c
+        AARCH64_GCM = 1
+        # The .S assembly files are preprocessed and therefore not handled by
+        # the ASFILES suffix substitution (which only matches $(ASM_SUFFIX)),
+        # so add their object files to OBJS explicitly. This must happen before
+        # coreconf/rules.mk is included so they become link prerequisites. The
+        # C wrapper rides along in EXTRA_SRCS, which the parent (loader-only)
+        # build discards by resetting CSRCS; the OBJS addition bypasses that, so
+        # restrict it to the child build that compiles the real library.
+        AARCH64_GCM_ASFILES = \
+            aarch64-gcm-slothy/gcm-128-enc.S \
+            aarch64-gcm-slothy/gcm-192-enc.S \
+            aarch64-gcm-slothy/gcm-256-enc.S \
+            aarch64-gcm-slothy/gcm-128-dec.S \
+            aarch64-gcm-slothy/gcm-192-dec.S \
+            aarch64-gcm-slothy/gcm-256-dec.S \
+            $(NULL)
+        ifdef FREEBL_CHILD_BUILD
+            OBJS += $(addprefix $(OBJDIR)/$(PROG_PREFIX), $(AARCH64_GCM_ASFILES:.S=$(OBJ_SUFFIX)))
+        endif
+    endif
+    endif
 endif
 ifeq ($(CPU_ARCH),arm)
 ifndef NSS_DISABLE_ARM32_NEON
@@ -761,6 +787,16 @@ $(OBJDIR)/$(PROG_PREFIX)aes-armv8$(OBJ_SUFFIX): CFLAGS += -march=armv8-a+crypto
 $(OBJDIR)/$(PROG_PREFIX)ghash-aarch64$(OBJ_SUFFIX): CFLAGS += -march=armv8-a+crypto
 $(OBJDIR)/$(PROG_PREFIX)sha1-armv8$(OBJ_SUFFIX): CFLAGS += -march=armv8-a+crypto
 $(OBJDIR)/$(PROG_PREFIX)sha256-armv8$(OBJ_SUFFIX): CFLAGS += -march=armv8-a+crypto
+endif
+
+ifdef AARCH64_GCM
+# Compile the preprocessed .S assembly with an explicit rule. The generic
+# pattern rules for .s and .S share the same target pattern, so leaving these
+# to implicit-rule resolution lets make chain through a generated .s file and
+# (with some make versions) delete the .S source as an intermediate.
+$(addprefix $(OBJDIR)/$(PROG_PREFIX), $(AARCH64_GCM_ASFILES:.S=$(OBJ_SUFFIX))): $(OBJDIR)/$(PROG_PREFIX)%$(OBJ_SUFFIX): %.S | $$(@D)/d
+	$(CC) -o $@ -c $(CFLAGS) -march=armv8-a+crypto $<
+$(OBJDIR)/$(PROG_PREFIX)aarch64-gcm-wrap$(OBJ_SUFFIX): CFLAGS += -march=armv8-a+crypto
 endif
 
 ifeq ($(CPU_ARCH),ppc)

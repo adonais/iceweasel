@@ -1,0 +1,115 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/* Default view as a sticky sidebar */
+
+.customkeys-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  padding-block-start: var(--space-xxlarge);
+  padding-block-end: var(--space-large);
+  padding-inline: var(--space-xsmall);
+  background-color: var(--background-color-canvas);
+  overflow-y: auto;
+}
+
+.customkeys-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+  flex-wrap: wrap;
+}
+
+.brand-logo {
+  width: var(--icon-size-large);
+  height: var(--icon-size-large);
+  flex-shrink: 0;
+}
+
+.customkeys-title {
+  margin: 0;
+}
+
+.customkeys-description {
+  margin-block-end: var(--space-xxlarge);
+  margin-inline: 0;
+  font-size: var(--font-size-root);
+}
+
+.customkeys-sidebar-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-small);
+}
+
+#resetAll {
+  width: 100%;
+}
+
+/* Medium viewport (601–950px) as a sticky header with actions on one row */
+
+@media (max-width: 950px) {
+  .customkeys-sidebar {
+    position: sticky;
+    top: 0;
+    height: auto;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    padding-block: var(--space-xxlarge);
+    padding-inline: calc(var(--space-xlarge) * 2);
+    z-index: 1;
+  }
+
+  .customkeys-heading {
+    flex: 1 1 100%;
+  }
+
+  .customkeys-description {
+    flex: 1 1 100%;
+    margin-block-end: var(--space-xlarge);
+  }
+
+  .customkeys-sidebar-actions {
+    flex: 1 1 auto;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  #search {
+    flex: 2;
+  }
+
+  #resetAll {
+    flex: 1;
+    white-space: nowrap;
+    width: initial;
+  }
+}
+
+/* Small viewport as a sticky header with actions on their own rows */
+
+@media (max-width: 600px) {
+  .customkeys-sidebar {
+    padding-inline: var(--space-large);
+  }
+
+  .customkeys-description {
+    margin-block-end: var(--space-xxlarge);
+  }
+
+  .customkeys-sidebar-actions {
+    flex-direction: column;
+  }
+
+  #search,
+  #resetAll {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}

@@ -8,17 +8,14 @@
 #include <stddef.h>  // size_t
 #include <stdint.h>  // uint32_t
 
-#include "js/TypeDecls.h"  // JS::Latin1Char
-
-#include "mozilla/RefPtr.h"  // RefPtr
-
-#include "nsCOMPtr.h"  // nsCOMPtr
-#include "nsDebug.h"   // NS_WARNING
-#include "nsIURI.h"    // nsIURI
-
 #include "ContentPrincipal.h"
 #include "OriginAttributes.h"
 #include "SharedJSONHandler.h"
+#include "js/TypeDecls.h"    // JS::Latin1Char
+#include "mozilla/RefPtr.h"  // RefPtr
+#include "nsCOMPtr.h"        // nsCOMPtr
+#include "nsDebug.h"         // NS_WARNING
+#include "nsIURI.h"          // nsIURI
 
 namespace mozilla {
 

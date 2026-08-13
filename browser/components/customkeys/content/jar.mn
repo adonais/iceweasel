@@ -6,3 +6,5 @@ browser.jar:
   content/browser/customkeys/customkeys.css
   content/browser/customkeys/customkeys.html
   content/browser/customkeys/customkeys.js
+  content/browser/customkeys/customkeys-sidebar.mjs
+  content/browser/customkeys/customkeys-sidebar.css

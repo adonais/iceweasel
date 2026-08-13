@@ -6,10 +6,11 @@
 #define mozilla_TimelineCollection_h
 
 #include "mozilla/LinkedList.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/PseudoStyleRequest.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/dom/TimelineName.h"
 #include "nsAtomHashKeys.h"
+#include "nsStyleConsts.h"
 #include "nsTHashMap.h"
 
 class nsAtom;
@@ -19,6 +20,12 @@ namespace dom {
 class Element;
 }
 
+template <class TimelineType>
+struct TimelineEntry {
+  RefPtr<TimelineType> mTimeline = {};
+  StyleCascadeLevel mCascadeLevel = {};
+};
+
 // The collection of ScrollTimeline or ViewTimeline. We use the template class
 // to share the implementation for these two timeline types.
 template <class TimelineType>
@@ -26,7 +33,9 @@ class TimelineCollection final
     : public LinkedListElement<TimelineCollection<TimelineType>> {
  public:
   using SelfType = TimelineCollection<TimelineType>;
-  using TimelineMap = nsTHashMap<RefPtr<const nsAtom>, RefPtr<TimelineType>>;
+
+  using TimelineMap =
+      nsTHashMap<RefPtr<const nsAtom>, TimelineEntry<TimelineType>>;
 
   TimelineCollection(dom::Element& aElement,
                      const PseudoStyleRequest& aPseudoRequest)
@@ -36,13 +45,21 @@ class TimelineCollection final
 
   ~TimelineCollection();
 
-  already_AddRefed<TimelineType> Lookup(const nsAtom* aName) const {
-    return mTimelines.Get(aName).forget();
+  TimelineEntry<TimelineType> Lookup(const nsAtom* aName) const {
+    auto entry = mTimelines.MaybeGet(aName);
+    if (!entry) {
+      return {};
+    }
+    return *entry;
   }
 
   already_AddRefed<TimelineType> Extract(const nsAtom* aName) {
-    Maybe<RefPtr<TimelineType>> timeline = mTimelines.Extract(aName);
-    return timeline ? timeline->forget() : nullptr;
+    auto entry = mTimelines.Extract(aName);
+    if (!entry) {
+      return nullptr;
+    }
+    // We're about to replace this entry, don't care about cascade level.
+    return entry->mTimeline.forget();
   }
 
   void Swap(TimelineMap& aValue) { mTimelines.SwapElements(aValue); }

@@ -728,10 +728,7 @@ describe("Add-on installation doorhangers", function () {
     ).then(newTab => (tab = newTab));
     await progressPromise;
     let installDialog = await dialogPromise;
-    await BrowserTestUtils.waitForCondition(
-      () => !!tab,
-      "tab should be present"
-    );
+    await TestUtils.waitForCondition(() => !!tab, "tab should be present");
 
     is(
       gBrowser.selectedTab,
@@ -1016,7 +1013,7 @@ describe("Add-on installation doorhangers", function () {
         "Should have seen the right message"
       );
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => panel.state === "open",
         "Wait for the panel to reach the open state"
       );

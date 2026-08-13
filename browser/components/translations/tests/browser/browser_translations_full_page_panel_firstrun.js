@@ -53,3 +53,32 @@ add_task(async function test_translations_panel_firstrun() {
 
   await cleanup();
 });
+
+/**
+ * Tests that reactive language-state updates do not clobber the first-run
+ * intro header while the panel is open.
+ */
+add_task(
+  async function test_translations_panel_firstrun_language_state_update() {
+    const { cleanup } = await loadTestPage({
+      page: SPANISH_PAGE_URL,
+      languagePairs: LANGUAGE_PAIRS,
+    });
+
+    await FullPageTranslationsTestUtils.openPanel({
+      expectedFromLanguage: "es",
+      expectedToLanguage: "en",
+      onOpenPanel: FullPageTranslationsTestUtils.assertPanelViewIntro,
+    });
+
+    TranslationsParent.getTranslationsActor(
+      gBrowser.selectedBrowser
+    ).languageState.dispatch({ reason: "test" });
+
+    FullPageTranslationsTestUtils.assertPanelViewIntro();
+
+    await FullPageTranslationsTestUtils.clickCancelButton();
+
+    await cleanup();
+  }
+);

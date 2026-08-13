@@ -47,11 +47,56 @@ add_setup(async function () {
   });
 
   await SpecialPowers.pushPrefEnv({
-    set: [["extensions.formautofill.useml", true]],
+    set: [
+      ["extensions.formautofill.useml", true],
+      ["extensions.formautofill.useml.nativeOnnxAvailable", true],
+      ["extensions.formautofill.useml.succeeded", false],
+    ],
   });
 });
 
 add_heuristic_tests([
+  // This first test should run with "extensions.formautofill.useml.succeeded" set to false, so
+  // should use heuristics and not ML inference.
+  {
+    fixtureData: `
+      <p><label>givenname: <input type="text" id="given-name" name="given-name"/></label></p>
+      <p><label>familyname: <input type="text" id="family-name" name="family-name"/></label></p>
+      <p><label>organization: <input type="text" id="organization" name="organization" autocomplete="organization"/></label></p>
+      <p><label>streetAddress: <input type="search" id="street-address" name="street-address"/></label></p>
+      <p><label>addressLevel2: <input type="text" id="address-level2" name="address-level2" /></label></p>
+      <p><label>addressLevel1: <input type="text" id="address-level1" name="address-level1" autocomplete="off"/></label></p>
+      <p><label>postalCode: <input type="text" id="postal-code" name="postal-code" autocomplete="unknown"/></label></p>
+      <p><label>country: <input type="text" id="country" name="country"/></label></p>
+      <p><label>tel: <input type="text" id="tel" name="tel" autocomplete="tel"/></label></p>
+      <p><label>email: <input type="email" id="email" name="email"/></label></p>`,
+    onTestComplete: async () => {
+      // Assign the preference after the test.
+      Services.prefs.setBoolPref(
+        "extensions.formautofill.useml.successful",
+        true
+      );
+    },
+    expectedResult: [
+      {
+        default: {
+          reason: "regex-heuristic",
+        },
+        fields: [
+          { fieldName: "given-name" },
+          { fieldName: "family-name" },
+          { fieldName: "organization", reason: "autocomplete" },
+          { fieldName: "street-address" },
+          { fieldName: "address-level2" },
+          { fieldName: "address-level1" },
+          { fieldName: "postal-code" },
+          { fieldName: "country" },
+          { fieldName: "tel", reason: "autocomplete" },
+          { fieldName: "email" },
+        ],
+      },
+    ],
+  },
   {
     fixtureData: `
       <p><label>givenname: <input type="text" id="given-name" name="given-name"/></label></p>

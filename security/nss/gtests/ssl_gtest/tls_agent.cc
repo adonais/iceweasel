@@ -534,6 +534,7 @@ const std::vector<SSLNamedGroup> kAllDHEGroups = {
     ssl_grp_kem_mlkem768x25519,
     ssl_grp_kem_secp256r1mlkem768,
     ssl_grp_kem_secp384r1mlkem1024,
+    ssl_grp_kem_mlkem1024,
 };
 
 const std::vector<SSLNamedGroup> kNonPQDHEGroups = {
@@ -569,6 +570,7 @@ const std::vector<SSLNamedGroup> kFasterDHEGroups = {
     ssl_grp_kem_mlkem768x25519,
     ssl_grp_kem_secp256r1mlkem768,
     ssl_grp_kem_secp384r1mlkem1024,
+    ssl_grp_kem_mlkem1024,
 };
 
 const std::vector<SSLNamedGroup> kEcdhHybridGroups = {
@@ -751,6 +753,7 @@ void TlsAgent::CheckKEA(SSLKEAType kea, SSLNamedGroup kea_group,
         break;
       case ssl_grp_kem_secp256r1mlkem768:
       case ssl_grp_ec_secp256r1:
+      case ssl_grp_kem_mlkem1024:
         kea_size = 256;
         break;
       case ssl_grp_kem_secp384r1mlkem1024:

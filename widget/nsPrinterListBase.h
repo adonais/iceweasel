@@ -5,9 +5,8 @@
 #ifndef nsPrinterListBase_h_
 #define nsPrinterListBase_h_
 
-#include "nsIPrinterList.h"
-
 #include "nsCycleCollectionParticipant.h"
+#include "nsIPrinterList.h"
 #include "nsISupportsImpl.h"
 #include "nsPaper.h"
 #include "nsString.h"

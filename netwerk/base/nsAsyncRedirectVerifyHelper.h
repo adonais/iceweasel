@@ -5,14 +5,15 @@
 #ifndef nsAsyncRedirectVerifyHelper_h
 #define nsAsyncRedirectVerifyHelper_h
 
-#include "nsIRunnable.h"
-#include "nsIChannelEventSink.h"
-#include "nsIAsyncVerifyRedirectCallback.h"
-#include "nsINamed.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsIAsyncVerifyRedirectCallback.h"
+#include "nsIChannelEventSink.h"
+#include "nsINamed.h"
+#include "nsIRunnable.h"
 
 class nsIChannel;
+class nsIEventTarget;
 
 namespace mozilla {
 namespace net {

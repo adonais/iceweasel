@@ -51,7 +51,6 @@ import org.mozilla.fenix.components.search.HISTORY_SEARCH_ENGINE_ID
 import org.mozilla.fenix.components.search.TABS_SEARCH_ENGINE_ID
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.telemetryName
-import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.search.SearchFragmentAction.Init
 import org.mozilla.fenix.search.SearchFragmentAction.PrivateSuggestionsCardAccepted
 import org.mozilla.fenix.search.SearchFragmentAction.SearchEnginesSelectedActions
@@ -67,6 +66,8 @@ import org.mozilla.fenix.search.awesomebar.SearchSuggestionsProvidersBuilder
 import org.mozilla.fenix.search.awesomebar.toSearchProviderState
 import org.mozilla.fenix.telemetry.ACTION_SEARCH_ENGINE_SELECTED
 import org.mozilla.fenix.telemetry.SOURCE_ADDRESS_BAR
+import org.mozilla.fenix.telemetry.SURFACE_BROWSER
+import org.mozilla.fenix.telemetry.SURFACE_HOME
 import org.mozilla.fenix.utils.Settings
 import mozilla.components.lib.state.Action as MVIAction
 
@@ -237,7 +238,7 @@ class FenixSearchMiddleware(
     ) {
         val shouldShowTrendingSearches = store.state.run {
             (showTrendingSearches || showRecentSearches) &&
-                (searchStartedForCurrentUrl || FxNimbus.features.searchSuggestionsOnHomepage.value().enabled)
+                (searchStartedForCurrentUrl || settings.enableHomepageTrendingRecentSearch)
         }
         val shouldShowSearchSuggestions = with(store.state) {
             url != query && query.isNotBlank()
@@ -414,6 +415,7 @@ class FenixSearchMiddleware(
                 source = SOURCE_ADDRESS_BAR,
                 item = ACTION_SEARCH_ENGINE_SELECTED,
                 extra = searchEngine.telemetryName(),
+                surface = if (store.state.tabId == null) SURFACE_HOME else SURFACE_BROWSER,
             ),
         )
     }

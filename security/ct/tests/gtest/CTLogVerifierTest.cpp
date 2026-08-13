@@ -4,10 +4,9 @@
 
 #include "CTLogVerifier.h"
 #include "CTTestUtils.h"
+#include "gtest/gtest.h"
 #include "nss.h"
 #include "signature_cache_ffi.h"
-
-#include "gtest/gtest.h"
 
 namespace mozilla {
 namespace ct {

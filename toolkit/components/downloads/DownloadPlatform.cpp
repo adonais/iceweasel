@@ -21,6 +21,7 @@
 #  include <urlmon.h>
 #  include "nsILocalFileWin.h"
 #  include "WinTaskbar.h"
+#  include "WinUtils.h"
 #endif
 
 #ifdef XP_MACOSX
@@ -75,10 +76,10 @@ CFURLRef CreateCFURLFromNSIURI(nsIURI* aURI) {
   CFStringRef urlStr = ::CFStringCreateWithCString(
       kCFAllocatorDefault, spec.get(), kCFStringEncodingUTF8);
   if (!urlStr) {
-    return NULL;
+    return nullptr;
   }
 
-  CFURLRef url = ::CFURLCreateWithString(kCFAllocatorDefault, urlStr, NULL);
+  CFURLRef url = ::CFURLCreateWithString(kCFAllocatorDefault, urlStr, nullptr);
 
   ::CFRelease(urlStr);
 
@@ -195,7 +196,7 @@ nsresult DownloadPlatform::DownloadDone(nsIURI* aSource, nsIURI* aReferrer,
     ::CFRelease(observedObject);
 
     // Add OS X origin and referrer file metadata
-    CFStringRef pathCFStr = NULL;
+    CFStringRef pathCFStr = nullptr;
     if (!path.IsEmpty()) {
       pathCFStr = ::CFStringCreateWithCharacters(
           kCFAllocatorDefault, (const UniChar*)path.get(), path.Length());
@@ -255,28 +256,43 @@ nsresult DownloadPlatform::DownloadDone(nsIURI* aSource, nsIURI* aReferrer,
   return rv;
 }
 
-nsresult DownloadPlatform::MapUrlToZone(const nsAString& aURL,
-                                        uint32_t* aZone) {
+nsresult DownloadPlatform::MaybeWriteDownloadOriginInformation(
+    nsIFile* aTargetFile, nsIURI* aSourceUrl, nsIReferrerInfo* aReferrerInfo,
+    bool aIsPrivate, JSContext* aCx, dom::Promise** aPromise) {
+  NS_ENSURE_ARG(aCx);
+  NS_ENSURE_ARG(aPromise);
+
+  nsIGlobalObject* globalObject =
+      xpc::NativeGlobal(JS::CurrentGlobalOrNull(aCx));
+  if (NS_WARN_IF(!globalObject)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  mozilla::ErrorResult result;
+  RefPtr domPromise = dom::Promise::Create(globalObject, result);
+  if (NS_WARN_IF(result.Failed())) {
+    return result.StealNSResult();
+  }
+
 #ifdef XP_WIN
-  RefPtr<IInternetSecurityManager> inetSecMgr;
-  if (FAILED(CoCreateInstance(CLSID_InternetSecurityManager, NULL, CLSCTX_ALL,
-                              IID_IInternetSecurityManager,
-                              getter_AddRefs(inetSecMgr)))) {
-    return NS_ERROR_UNEXPECTED;
-  }
+  NS_ENSURE_ARG(aTargetFile);
+  NS_ENSURE_ARG(aSourceUrl);
 
-  DWORD zone;
-  if (inetSecMgr->MapUrlToZone(PromiseFlatString(aURL).get(), &zone, 0) !=
-      S_OK) {
-    return NS_ERROR_UNEXPECTED;
-  } else {
-    *aZone = zone;
-  }
+  RefPtr mozPromise = widget::WinUtils::MaybeWriteFileZoneId(
+      aTargetFile, aSourceUrl, aReferrerInfo, !aIsPrivate);
+  MOZ_ASSERT(mozPromise);
 
-  return NS_OK;
+  mozPromise->Then(
+      GetCurrentSerialEventTarget(), __func__,
+      [domPromise](bool aSuccess) { domPromise->MaybeResolve(aSuccess); },
+      [domPromise](nsresult aRv) { domPromise->MaybeReject(aRv); });
 #else
-  return NS_ERROR_NOT_IMPLEMENTED;
+  // Not an error but nothing was written.
+  domPromise->MaybeResolve(false);
 #endif
+
+  domPromise.forget(aPromise);
+  return NS_OK;
 }
 
 // Check if a URI is likely to be web-based, by checking its URI flags.

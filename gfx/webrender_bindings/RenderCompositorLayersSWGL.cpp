@@ -8,11 +8,11 @@
 
 #include "GLContext.h"
 #include "GLContextEGL.h"
+#include "RenderCompositorRecordedFrame.h"
 #include "mozilla/layers/BuildConstants.h"
 #include "mozilla/layers/Effects.h"
 #include "mozilla/layers/TextureHostOGL.h"
 #include "mozilla/widget/CompositorWidget.h"
-#include "RenderCompositorRecordedFrame.h"
 
 #if defined(XP_WIN)
 #  include "mozilla/webrender/RenderCompositorD3D11SWGL.h"
@@ -292,7 +292,8 @@ void RenderCompositorLayersSWGL::AttachExternalImage(
 #elif defined(ANDROID)
   MOZ_RELEASE_ASSERT(image->AsRenderAndroidHardwareBufferTextureHost() ||
                      image->AsRenderAndroidSurfaceTextureHost() ||
-                     image->AsRenderEGLImageTextureHost());
+                     image->AsRenderEGLImageTextureHost() ||
+                     image->AsRenderAndroidImageReaderImageTextureHost());
 #endif
 
   auto surfaceCursor = mSurfaces.find(aId);

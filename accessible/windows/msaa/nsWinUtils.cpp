@@ -7,14 +7,13 @@
 #include "Compatibility.h"
 #include "DocAccessible.h"
 #include "MsaaAccessible.h"
-#include "nsAccessibilityService.h"
-#include "nsCoreUtils.h"
-
-#include "mozilla/a11y/DocAccessibleParent.h"
 #include "mozilla/Preferences.h"
-#include "nsArrayUtils.h"
+#include "mozilla/a11y/DocAccessibleParent.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
+#include "nsAccessibilityService.h"
+#include "nsArrayUtils.h"
+#include "nsCoreUtils.h"
 #include "nsXULAppAPI.h"
 
 using namespace mozilla;

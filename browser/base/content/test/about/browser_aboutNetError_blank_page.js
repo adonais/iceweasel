@@ -8,7 +8,7 @@ const BLANK_PAGE =
 
 async function getConnectionState() {
   document.getElementById("trust-icon-container").click();
-  let popup = await BrowserTestUtils.waitForCondition(
+  let popup = await TestUtils.waitForCondition(
     () => document.getElementById("trustpanel-popup"),
     "Waiting for trustpanel-popup to be instantiated"
   );

@@ -63,8 +63,10 @@ import mozilla.components.lib.state.ext.flow
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.base.utils.NamedThreadFactory
 import mozilla.components.support.ktx.kotlin.isUrl
+import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.GleanMetrics.Toolbar
+import org.mozilla.fenix.GleanMetrics.ToolbarGoogleLensButton
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.BrowserFragmentDirections
@@ -100,6 +102,8 @@ import org.mozilla.fenix.telemetry.ACTION_MICROPHONE_CLICKED
 import org.mozilla.fenix.telemetry.ACTION_QR_CLICKED
 import org.mozilla.fenix.telemetry.ACTION_SEARCH_ENGINE_SELECTOR_CLICKED
 import org.mozilla.fenix.telemetry.SOURCE_ADDRESS_BAR
+import org.mozilla.fenix.telemetry.SURFACE_BROWSER
+import org.mozilla.fenix.telemetry.SURFACE_HOME
 import org.mozilla.fenix.utils.Settings
 import java.util.concurrent.Executors
 import kotlin.coroutines.CoroutineContext
@@ -261,17 +265,23 @@ class BrowserToolbarSearchMiddleware(
         appStore.dispatch(SearchEnded)
     }
 
+    private fun recordButtonTapped(item: String) {
+        val surface = if (appStore.state.searchState.sourceTabId == null) SURFACE_HOME else SURFACE_BROWSER
+        Toolbar.buttonTapped.record(
+            Toolbar.ButtonTappedExtra(
+                source = SOURCE_ADDRESS_BAR,
+                item = item,
+                surface = surface,
+            ),
+        )
+    }
+
     private fun handleToolbarButtonsActions(
         store: Store<BrowserToolbarState, BrowserToolbarAction>,
         action: BrowserToolbarAction,
     ) = when (action) {
         is SearchSelectorClicked -> {
-            Toolbar.buttonTapped.record(
-                Toolbar.ButtonTappedExtra(
-                    source = SOURCE_ADDRESS_BAR,
-                    item = ACTION_SEARCH_ENGINE_SELECTOR_CLICKED,
-                ),
-            )
+            recordButtonTapped(ACTION_SEARCH_ENGINE_SELECTOR_CLICKED)
         }
 
         is SearchSettingsItemClicked -> {
@@ -295,9 +305,7 @@ class BrowserToolbarSearchMiddleware(
         }
 
         is ClearSearchClicked -> {
-            Toolbar.buttonTapped.record(
-                Toolbar.ButtonTappedExtra(source = SOURCE_ADDRESS_BAR, item = ACTION_CLEAR_CLICKED),
-            )
+            recordButtonTapped(ACTION_CLEAR_CLICKED)
             store.dispatch(SearchQueryUpdated(BrowserToolbarQuery("")))
         }
 
@@ -307,17 +315,14 @@ class BrowserToolbarSearchMiddleware(
         }
 
         is QrScannerClicked -> {
-            Toolbar.buttonTapped.record(
-                Toolbar.ButtonTappedExtra(source = SOURCE_ADDRESS_BAR, item = ACTION_QR_CLICKED),
-            )
+            recordButtonTapped(ACTION_QR_CLICKED)
             observeQrScannerInput(store)
             appStore.dispatch(QrScannerRequested)
         }
 
         is LensButtonClicked -> {
-            Toolbar.buttonTapped.record(
-                Toolbar.ButtonTappedExtra(source = SOURCE_ADDRESS_BAR, item = ACTION_LENS_CLICKED),
-            )
+            recordButtonTapped(ACTION_LENS_CLICKED)
+            ToolbarGoogleLensButton.tapped.record(NoExtras())
             observeLensInput()
             // The Lens camera screen lets the user toggle to QR scanning; observe both
             // result streams so a QR string returned from the Lens flow still lands in
@@ -327,9 +332,7 @@ class BrowserToolbarSearchMiddleware(
         }
 
         is VoiceSearchButtonClicked -> {
-            Toolbar.buttonTapped.record(
-                Toolbar.ButtonTappedExtra(source = SOURCE_ADDRESS_BAR, item = ACTION_MICROPHONE_CLICKED),
-            )
+            recordButtonTapped(ACTION_MICROPHONE_CLICKED)
             appStore.dispatch(VoiceInputRequested)
         }
 
@@ -572,13 +575,16 @@ class BrowserToolbarSearchMiddleware(
                 ),
             )
         } else if (isValidSearchEngine) {
-            if (settings.googleLensIntegrationEnabled &&
-                settings.googleLensIntegrationUserEnabled &&
+            val isLensEnabled = settings.googleLensIntegrationEnabled &&
+                settings.googleLensIntegrationUserEnabled
+
+            if (isLensEnabled &&
+                !browsingModeManager.mode.isPrivate &&
                 selectedSearchEngine.isGoogleSearchEngine()
             ) {
                 add(
                     ActionButtonRes(
-                        drawableResId = R.drawable.ic_logo_google_lens_24,
+                        drawableResId = iconsR.drawable.mozac_ic_logo_google_lens_24,
                         contentDescription = R.string.lens_search_content_description,
                         state = ActionButton.State.DEFAULT,
                         onClick = LensButtonClicked,

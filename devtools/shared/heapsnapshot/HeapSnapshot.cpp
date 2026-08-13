@@ -826,7 +826,11 @@ class TwoByteString
   };
 
  public:
+  // NOTE: The type requirement prevents this constructor to shadow default
+  // copy/move constructor, see
+  // https://clang.llvm.org/extra/clang-tidy/checks/bugprone/forwarding-reference-overload.html
   template <typename T>
+    requires(std::is_constructible_v<Base, T>)
   MOZ_IMPLICIT TwoByteString(T&& rhs) : Base(std::forward<T>(rhs)) {}
 
   template <typename T>
@@ -836,6 +840,9 @@ class TwoByteString
     new (this) TwoByteString(std::forward<T>(rhs));
     return *this;
   }
+
+  TwoByteString(TwoByteString&&) = default;
+  TwoByteString& operator=(TwoByteString&&) = default;
 
   TwoByteString(const TwoByteString&) = delete;
   TwoByteString& operator=(const TwoByteString&) = delete;

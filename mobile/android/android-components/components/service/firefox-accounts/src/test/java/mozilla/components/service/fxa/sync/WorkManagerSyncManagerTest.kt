@@ -10,8 +10,8 @@ import androidx.work.WorkInfo
 import androidx.work.WorkerParameters
 import androidx.work.impl.utils.taskexecutor.TaskExecutor
 import androidx.work.testing.WorkManagerTestInitHelper
-import mozilla.components.service.fxa.SyncConfig
-import mozilla.components.service.fxa.SyncEngine
+import mozilla.components.concept.sync.SyncConfig
+import mozilla.components.concept.sync.SyncEngine
 import mozilla.components.service.fxa.sync.FakeSyncStatusObserver.Event.OnIdle
 import mozilla.components.service.fxa.sync.FakeSyncStatusObserver.Event.OnStarted
 import mozilla.components.service.fxa.sync.WorkManagerSyncWorker.Companion.SYNC_STAGGER_BUFFER_MS

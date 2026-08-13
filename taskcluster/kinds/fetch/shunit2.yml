@@ -1,0 +1,12 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+---
+shunit2:
+    description: shunit2 shell testing framework
+    fetch:
+        type: static-url
+        url: https://raw.githubusercontent.com/kward/shunit2/e35296d3be2bcde770f2989d9c09fd1a2af6b567/shunit2
+        sha256: 4767575770c2c94c77aa3482f034274ee7bacaf35cb7185881ee9172c5a3f2fc
+        size: 47602
+        artifact-name: shunit2

@@ -915,8 +915,11 @@ void AudioInputProcessing::PacketizeAndProcess(AudioProcessingTrack* aTrack,
 
   // Packetize our input data into 10ms chunks, deinterleave into planar channel
   // buffers, process, and append to the right MediaStreamTrack.
-  mPacketizerInput->Input(mInterleavedBuffer.Elements(),
-                          static_cast<uint32_t>(frameCount));
+  // frameCount is one graph iteration's worth and the packetizer is drained to
+  // under one packet each call, so the queued sample count stays small and
+  // Input always succeeds here.
+  MOZ_ALWAYS_TRUE(NS_SUCCEEDED(mPacketizerInput->Input(
+      mInterleavedBuffer.Elements(), static_cast<uint32_t>(frameCount))));
 
   // Update mChunksInPacketizer and make sure the precondition for the
   // Principal-labelling logic still holds.

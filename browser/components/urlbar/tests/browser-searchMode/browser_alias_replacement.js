@@ -190,7 +190,7 @@ add_task(async function () {
   const selectedEngine = oneOffs.selectedButton.engine;
   await UrlbarTestUtils.assertSearchMode(window, {
     engineName: selectedEngine.name,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     entry: "oneoff",
     isPreview: true,
   });
@@ -206,7 +206,7 @@ add_task(async function () {
   );
   await UrlbarTestUtils.assertSearchMode(window, {
     engineName: selectedEngine.name,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     entry: "oneoff",
   });
 

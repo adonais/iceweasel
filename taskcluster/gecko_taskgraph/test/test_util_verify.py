@@ -56,13 +56,13 @@ class PyTestSingleDocPath:
         documentation exists for kinds and attributes.
         """
         verify_docs(
-            filename="kinds.rst",
+            filename="kinds.md",
             identifiers=["build", "packages", "toolchain"],
             appearing_as="heading",
         )
         with pytest.raises(Exception, match="missing from doc file"):
             verify_docs(
-                filename="kinds.rst",
+                filename="kinds.md",
                 identifiers=["build", "packages", "badvalue"],
                 appearing_as="heading",
             )
@@ -73,13 +73,13 @@ class PyTestSingleDocPath:
         task parameters and run-using functions.
         """
         verify_docs(
-            filename="parameters.rst",
+            filename="parameters.md",
             identifiers=["base_repository", "head_repository", "owner"],
             appearing_as="inline-literal",
         )
         with pytest.raises(Exception, match="missing from doc file"):
             verify_docs(
-                filename="parameters.rst",
+                filename="parameters.md",
                 identifiers=["base_repository", "head_repository", "badvalue"],
                 appearing_as="inline-literal",
             )
@@ -104,18 +104,18 @@ class PyTestTwoDocPaths:
         produce an error.
         """
         verify_docs(
-            filename="kinds.rst",
+            filename="kinds.md",
             identifiers=["build", "packages", "toolchain"],
             appearing_as="heading",
         )
         verify_docs(
-            filename="kinds.rst",
+            filename="kinds.md",
             identifiers=["build", "packages", "newkind"],
             appearing_as="heading",
         )
         with pytest.raises(Exception, match="missing from doc file"):
             verify_docs(
-                filename="kinds.rst",
+                filename="kinds.md",
                 identifiers=["build", "packages", "badvalue"],
                 appearing_as="heading",
             )
@@ -127,18 +127,18 @@ class PyTestTwoDocPaths:
         the second check looks for an identifier in the added documentation path.
         """
         verify_docs(
-            filename="parameters.rst",
+            filename="parameters.md",
             identifiers=["base_repository", "head_repository", "owner"],
             appearing_as="inline-literal",
         )
         verify_docs(
-            filename="parameters.rst",
+            filename="parameters.md",
             identifiers=["base_repository", "head_repository", "newparameter"],
             appearing_as="inline-literal",
         )
         with pytest.raises(Exception, match="missing from doc file"):
             verify_docs(
-                filename="parameters.rst",
+                filename="parameters.md",
                 identifiers=["base_repository", "head_repository", "badvalue"],
                 appearing_as="inline-literal",
             )

@@ -3,19 +3,19 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "GfxInfo.h"
+
 #include "AndroidBuild.h"
 #include "GLContext.h"
 #include "GLContextProvider.h"
-#include "nsUnicharUtils.h"
-#include "prenv.h"
-#include "nsExceptionHandler.h"
-#include "nsHashKeys.h"
-#include "nsVersionComparator.h"
-#include "nsServiceManagerUtils.h"
-
 #include "mozilla/Preferences.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/java/HardwareCodecCapabilityUtilsWrappers.h"
+#include "nsExceptionHandler.h"
+#include "nsHashKeys.h"
+#include "nsServiceManagerUtils.h"
+#include "nsUnicharUtils.h"
+#include "nsVersionComparator.h"
+#include "prenv.h"
 
 namespace mozilla {
 namespace widget {

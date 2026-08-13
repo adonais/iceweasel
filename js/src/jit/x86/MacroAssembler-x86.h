@@ -695,8 +695,10 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared {
     load64(address, dest);
   }
   template <typename T>
-  void storePtr(ImmWord imm, T address) {
+  FaultingCodeOffset storePtr(ImmWord imm, T address) {
+    FaultingCodeOffset fco = FaultingCodeOffset(currentOffset());
     movl(Imm32(imm.value), Operand(address));
+    return fco;
   }
   template <typename T>
   void storePtr(ImmPtr imm, T address) {

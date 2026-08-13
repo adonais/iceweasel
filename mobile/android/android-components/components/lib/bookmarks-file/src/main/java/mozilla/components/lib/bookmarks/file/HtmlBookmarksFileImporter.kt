@@ -13,6 +13,7 @@ import kotlinx.coroutines.withContext
 import mozilla.components.concept.bookmark.parser.BookmarksFileParser
 import mozilla.components.concept.bookmarks.file.BookmarksFileImporter
 import mozilla.components.concept.bookmarks.file.BookmarksFileImporter.ImportResult
+import mozilla.components.concept.bookmarks.file.BookmarksImporterError
 import mozilla.components.concept.storage.bookmarks.BookmarkInserter
 import mozilla.components.concept.storage.bookmarks.InsertableBookmarkTreeRoot
 import java.io.InputStream
@@ -56,6 +57,8 @@ internal fun interface UriOpener {
                 withContext(ioDispatcher) {
                     runCatching {
                         requireNotNull(context.contentResolver.openInputStream(uri))
+                    }.onFailure {
+                        if (it is CancellationException) throw it
                     }
                 }
             }
@@ -70,13 +73,25 @@ internal class HtmlBookmarksFileImporter(
 ) : BookmarksFileImporter {
 
     override suspend fun importBookmarksFromUri(uri: Uri) = runCatching {
-            val inputStream = uriOpener.open(uri).getOrThrow()
-            val parseResult = inputStream.use { parser.parse(it) }.getOrThrow()
-            val tree = InsertableBookmarkTreeRoot(parentGuid = parentGuid, rootFolder = parseResult.folder)
-            val guid = inserter.insertTree(tree).getOrThrow()
+        val inputStream = uriOpener.open(uri)
+            .getOrThrowError { BookmarksImporterError.FileReadError(it) }
+        val parseResult = inputStream.use { parser.parse(it) }
+            .getOrThrowError { BookmarksImporterError.FileParseError(it) }
+        val tree =
+            InsertableBookmarkTreeRoot(parentGuid = parentGuid, rootFolder = parseResult.folder)
+        val guid = inserter.insertTree(tree).getOrThrowError {
+            BookmarksImporterError.BookmarksSaveError(it)
+        }
 
-            ImportResult(guid, parseResult.bookmarksCount)
+        ImportResult(guid, parseResult.bookmarksCount)
     }.onFailure {
         if (it is CancellationException) throw it
+    }
+
+    private inline fun <T> Result<T>.getOrThrowError(map: (Throwable) -> Throwable): T {
+        return getOrElse {
+            if (it is CancellationException) throw it
+            throw map(it)
+        }
     }
 }

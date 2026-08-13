@@ -7,29 +7,29 @@
 
 #include <stdint.h>
 
-#include "gfxTypes.h"
-#include "gfxPoint.h"
+#include "DrawMode.h"
+#include "X11UndefineNone.h"
 #include "gfxFont.h"
 #include "gfxFontConstants.h"
-#include "gfxSkipChars.h"
 #include "gfxPlatform.h"
 #include "gfxPlatformFontList.h"
+#include "gfxPoint.h"
 #include "gfxScriptItemizer.h"
+#include "gfxSkipChars.h"
+#include "gfxTypes.h"
 #include "gfxUserFontSet.h"
 #include "gfxUtils.h"
+#include "harfbuzz/hb.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/intl/UnicodeScriptCodes.h"
+#include "nsColor.h"
+#include "nsFrameList.h"
 #include "nsPoint.h"
 #include "nsString.h"
 #include "nsTArray.h"
 #include "nsTHashSet.h"
 #include "nsTextFrameUtils.h"
-#include "DrawMode.h"
-#include "harfbuzz/hb.h"
-#include "nsColor.h"
-#include "nsFrameList.h"
-#include "X11UndefineNone.h"
 
 #ifdef DEBUG_FRAME_DUMP
 #  include <stdio.h>
@@ -104,6 +104,7 @@ class gfxTextRun : public gfxShapedText {
  public:
   typedef gfxFont::RunMetrics Metrics;
   typedef mozilla::gfx::DrawTarget DrawTarget;
+  using imgDrawingParams = mozilla::image::imgDrawingParams;
 
   // Public textrun API for general use
 
@@ -254,6 +255,8 @@ class gfxTextRun : public gfxShapedText {
     // Return the appUnitsPerDevUnit value to be used when measuring.
     // Only called if the hyphen width is requested.
     virtual uint32_t GetAppUnitsPerDevUnit() const = 0;
+
+    virtual nscoord LetterSpacing() const = 0;
   };
 
   struct MOZ_STACK_CLASS DrawParams {
@@ -297,7 +300,7 @@ class gfxTextRun : public gfxShapedText {
    * if they overlap (perhaps due to negative spacing).
    */
   void Draw(const Range aRange, const mozilla::gfx::Point aPt,
-            const DrawParams& aParams) const;
+            const DrawParams& aParams, imgDrawingParams& aImgParams) const;
 
   /**
    * Draws the emphasis marks for this text run. Uses only GetSpacing
@@ -307,7 +310,8 @@ class gfxTextRun : public gfxShapedText {
   void DrawEmphasisMarks(gfxContext* aContext, gfxTextRun* aMark,
                          gfxFloat aMarkAdvance, mozilla::gfx::Point aPt,
                          Range aRange, const PropertyProvider* aProvider,
-                         mozilla::gfx::PaletteCache& aPaletteCache) const;
+                         mozilla::gfx::PaletteCache& aPaletteCache,
+                         imgDrawingParams& aImgParams) const;
 
   /**
    * Computes the ReflowMetrics for a substring.
@@ -349,7 +353,7 @@ class gfxTextRun : public gfxShapedText {
    * Computes the minimum advance width for a substring assuming line
    * breaking is allowed everywhere.
    */
-  gfxFloat GetMinAdvanceWidth(Range aRange) const;
+  gfxFloat GetMinAdvanceWidth(Range aRange, nscoord aLetterSpacing) const;
 
   /**
    * Clear all stored line breaks for the given range (both before and after),
@@ -773,7 +777,8 @@ class gfxTextRun : public gfxShapedText {
     mShapingState = aShapingState;
   }
 
-  int32_t GetAdvanceForGlyph(uint32_t aIndex) const {
+  nscoord GetAdvanceForGlyph(uint32_t aIndex,
+                             nscoord aLetterSpacing = 0) const {
     const CompressedGlyph& glyphData = mCharacterGlyphs[aIndex];
     if (glyphData.IsSimpleGlyph()) {
       return glyphData.GetSimpleAdvance();
@@ -782,10 +787,14 @@ class gfxTextRun : public gfxShapedText {
     if (!glyphCount) {
       return 0;
     }
-    const DetailedGlyph* details = GetDetailedGlyphs(aIndex);
-    int32_t advance = 0;
-    for (uint32_t j = 0; j < glyphCount; ++j, ++details) {
+    const DetailedGlyph* details = GetDetailedGlyphs(aIndex, glyphCount);
+    nscoord advance = 0;
+    if (glyphData.ApplyLetterSpacingBetweenDetailedGlyphs()) {
+      advance += (glyphCount - 1) * aLetterSpacing;
+    }
+    while (glyphCount--) {
       advance += details->mAdvance;
+      ++details;
     }
     return advance;
   }
@@ -823,7 +832,7 @@ class gfxTextRun : public gfxShapedText {
   // **** general helpers ****
 
   // Get the total advance for a range of glyphs.
-  int32_t GetAdvanceForGlyphs(Range aRange) const;
+  int32_t GetAdvanceForGlyphs(Range aRange, nscoord aLetterSpacing) const;
 
   // Spacing for characters outside the range aSpacingStart/aSpacingEnd
   // is assumed to be zero; such characters are not passed to aProvider.
@@ -851,6 +860,7 @@ class gfxTextRun : public gfxShapedText {
                            mozilla::gfx::Point* aPt,
                            const PropertyProvider* aProvider,
                            TextRunDrawParams& aParams,
+                           imgDrawingParams& aImgParams,
                            mozilla::gfx::ShapedTextFlags aOrientation) const;
   // Advance aRange.start to the start of the nearest ligature, back
   // up aRange.end to the nearest ligature end; may result in
@@ -877,7 +887,7 @@ class gfxTextRun : public gfxShapedText {
   // **** drawing helper ****
   void DrawGlyphs(gfxFont* aFont, Range aRange, mozilla::gfx::Point* aPt,
                   const PropertyProvider* aProvider, Range aSpacingRange,
-                  TextRunDrawParams& aParams,
+                  TextRunDrawParams& aParams, imgDrawingParams& aImgParams,
                   mozilla::gfx::ShapedTextFlags aOrientation) const;
 
   // The textrun holds either a single GlyphRun -or- an array.

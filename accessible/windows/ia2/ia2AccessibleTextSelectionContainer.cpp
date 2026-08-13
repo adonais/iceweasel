@@ -5,10 +5,10 @@
 #include "ia2AccessibleTextSelectionContainer.h"
 
 #include "AccessibleTextSelectionContainer_i.c"
+#include "TextLeafRange.h"
+#include "TextRange.h"
 #include "ia2AccessibleHypertext.h"
 #include "mozilla/a11y/HyperTextAccessibleBase.h"
-#include "TextRange.h"
-#include "TextLeafRange.h"
 
 using namespace mozilla::a11y;
 

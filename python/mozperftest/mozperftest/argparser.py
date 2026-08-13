@@ -121,6 +121,15 @@ class Options:
                 "has implemented it)."
             ),
         },
+        "--install-extension": {
+            "action": "append",
+            "default": [],
+            "help": (
+                "Install a webextension into the test profile before running. "
+                "Accepts a .xpi URL or a local .xpi path. May be specified "
+                "multiple times."
+            ),
+        },
     }
 
     args = copy.deepcopy(general_args)

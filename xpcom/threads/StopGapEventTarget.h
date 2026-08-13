@@ -5,12 +5,12 @@
 #ifndef mozilla_StopGapEventTarget_h
 #define mozilla_StopGapEventTarget_h
 
-#include "nsISerialEventTarget.h"
-#include "nsCOMPtr.h"
-#include "nsISupports.h"
-#include "nsTArray.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/Queue.h"
+#include "nsCOMPtr.h"
+#include "nsISerialEventTarget.h"
+#include "nsISupports.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 

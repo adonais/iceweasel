@@ -8,7 +8,7 @@
 
 // https://drafts.css-houdini.org/css-typed-om-1/#csslab
 // TODO: Expose to LayoutWorklet
-[Exposed=(Window, Worker, PaintWorklet), Pref="layout.css.typed-om.enabled"]
+[Exposed=(Window, Worker, PaintWorklet), Func="mozilla::dom::CSSColorValue::IsEnabled"]
 interface CSSLab : CSSColorValue {
   [Throws] constructor(CSSColorPercent l, CSSColorNumber a, CSSColorNumber b, optional CSSColorPercent alpha = 1);
   [SetterThrows] attribute CSSColorPercent l;

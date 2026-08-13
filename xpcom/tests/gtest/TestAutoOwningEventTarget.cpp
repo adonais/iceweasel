@@ -2,15 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "gtest/gtest.h"
+#include "mozilla/SyncRunnable.h"
+#include "mozilla/TaskQueue.h"
+#include "mozilla/gtest/MozAssertions.h"
 #include "nsCOMPtr.h"
 #include "nsISupportsImpl.h"
 #include "nsNetCID.h"
 #include "nsServiceManagerUtils.h"
 #include "nsThreadUtils.h"
-#include "gtest/gtest.h"
-#include "mozilla/SyncRunnable.h"
-#include "mozilla/TaskQueue.h"
-#include "mozilla/gtest/MozAssertions.h"
 
 namespace TestAutoOwningEventTarget {
 

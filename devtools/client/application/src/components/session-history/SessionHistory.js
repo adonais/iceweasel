@@ -16,6 +16,12 @@ const {
 } = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
 const FluentReact = require("resource://devtools/client/shared/vendor/fluent-react.js");
 const Localized = createFactory(FluentReact.Localized);
+const {
+  services,
+} = require("resource://devtools/client/application/src/modules/application-services.js");
+const {
+  l10n,
+} = require("resource://devtools/client/application/src/modules/l10n.js");
 
 const spacerCell = { "aria-hidden": true };
 
@@ -61,12 +67,29 @@ function SessionHistoryDiagram({ current, diagrams, entriesByKey }) {
     }
   }
 
+  const canNavigate = services.canNavigateToSessionHistoryIndex();
+  const baseThProps = canNavigate ? {} : { class: "disabled" };
+
   const headerCells = [];
   for (let i = 0; i < diagrams.length; i++) {
     const { start, end } = diagrams[i];
     for (let index = start; index < end; index++) {
-      const props = index == current ? { id: "current" } : {};
-      headerCells.push(createElement("th", props, index));
+      const isCurrent = index == current;
+      const props = isCurrent ? { id: "current", ...baseThProps } : baseThProps;
+      // The current entry is rendered as a button for visual consistency, but
+      // navigating to it would only reload the current document. We skip the
+      // navigation to avoid issuing a redundant session history load. We also
+      // skip it when the target doesn't support navigation by index.
+      const buttonProps =
+        !canNavigate || isCurrent
+          ? {}
+          : {
+              onClick: () => services.navigateToSessionHistoryIndex(index),
+              title: l10n.getString("session-history-navigate-button-title", {
+                index,
+              }),
+            };
+      headerCells.push(createElement("th", props, button(buttonProps, index)));
     }
     if (i < diagrams.length - 1) {
       headerCells.push(createElement("th", spacerCell));

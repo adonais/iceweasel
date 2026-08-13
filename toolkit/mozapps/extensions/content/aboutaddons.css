@@ -126,6 +126,22 @@ search-addons {
   display: none;
 }
 
+aboutaddons-themes-mode {
+  display: none;
+
+  /* Show the aboutaddons-themes-mode in theme list view
+   * and align it to the main content */
+  addon-page-header[current-view="list"][type="theme"] & {
+    display: block;
+    margin-inline-start: var(--main-margin-start);
+    width: calc(var(--page-main-content-width) - var(--space-medium));
+
+    @media not -moz-pref("browser.nova.enabled") {
+      display: none;
+    }
+  }
+}
+
 #main {
   margin-inline-start: var(--main-margin-start);
   margin-bottom: 28px;
@@ -226,6 +242,12 @@ addon-card[expanded] .update-postponed-bar,
 }
 
 /* Theme preview image. */
+theme-preview {
+  /* The theme-preview component is a pure abstraction that doesn't participate
+   * to the page layout */
+  display: contents;
+}
+
 .card-heading-image {
   /* If the width, height or aspect ratio changes, don't forget to update the
    * getScreenshotUrlForAddon function in aboutaddons.js */
@@ -705,7 +727,7 @@ button.tab-button:-moz-focusring {
   box-shadow: none;
 }
 
-section:not(:empty) ~ #empty-addons-message {
+section:not(:empty) ~ :is(#empty-addons-message, #empty-addons-promo) {
   display: none;
 }
 
@@ -730,5 +752,16 @@ section:not(:empty) ~ #empty-addons-message {
     height: 5px;
     border-radius: var(--border-radius-circle);
     background-color: var(--color-accent-primary);
+  }
+}
+
+@media -moz-pref("browser.nova.enabled") {
+  [is="recommended-footer"] > .amo-link-container,
+  #empty-addons-message {
+    display: none;
+  }
+
+  addon-list:not([type="extension"]) #empty-addons-promo {
+    display: none;
   }
 }

@@ -7,6 +7,7 @@
 
 #include "mozilla/HashFunctions.h"
 
+#include "nsHashKeys.h"
 #include "nsString.h"
 #if defined XP_WIN
 #  include "WinUtils.h"
@@ -43,7 +44,7 @@ static void BuildClassName(const char* aProgram, const char* aProfile,
   aClassName.AppendPrintf("_%s_RemoteWindow", aProfile);
 
   if (aClassName.Length() > ClassNameMaxLength) {
-    mozilla::HashNumber hash = mozilla::HashString(aClassName.get());
+    mozilla::HashNumber hash = mozilla::HashString(aClassName);
     aClassName.Truncate();
     aClassName.AppendPrintf("Mozilla_%08x_RemoteWindow", hash);
   }

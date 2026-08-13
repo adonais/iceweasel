@@ -5,12 +5,12 @@
 #ifndef mozilla_layers_CanvasChild_h
 #define mozilla_layers_CanvasChild_h
 
+#include "mozilla/WeakPtr.h"
 #include "mozilla/gfx/RecordedEvent.h"
 #include "mozilla/ipc/CrossProcessSemaphore.h"
 #include "mozilla/ipc/SharedMemoryMapping.h"
 #include "mozilla/layers/PCanvasChild.h"
 #include "mozilla/layers/SourceSurfaceSharedData.h"
-#include "mozilla/WeakPtr.h"
 
 class nsICanvasRenderingContextInternal;
 

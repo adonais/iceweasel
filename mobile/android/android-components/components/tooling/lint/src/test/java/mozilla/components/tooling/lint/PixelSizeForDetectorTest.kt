@@ -41,7 +41,6 @@ class PixelSizeForDetectorTest : LintDetectorTest() {
     @Test
     fun `getDimensionPixelSize in fenix package reports warning`() {
         lint()
-            .allowMissingSdk()
             .files(
                 resourcesStub,
                 contextStub,
@@ -66,7 +65,6 @@ class PixelSizeForDetectorTest : LintDetectorTest() {
     @Test
     fun `getDimensionPixelSize outside fenix package is clean`() {
         lint()
-            .allowMissingSdk()
             .files(
                 resourcesStub,
                 contextStub,
@@ -90,7 +88,6 @@ class PixelSizeForDetectorTest : LintDetectorTest() {
     @Test
     fun `getDimension on resources is clean`() {
         lint()
-            .allowMissingSdk()
             .files(
                 resourcesStub,
                 contextStub,
@@ -114,7 +111,6 @@ class PixelSizeForDetectorTest : LintDetectorTest() {
     @Test
     fun `getDimensionPixelSize on unrelated class is clean`() {
         lint()
-            .allowMissingSdk()
             .files(
                 TestFiles.kotlin(
                     """
@@ -137,7 +133,6 @@ class PixelSizeForDetectorTest : LintDetectorTest() {
     @Test
     fun `getDimensionPixelSize from Java in fenix package reports warning`() {
         lint()
-            .allowMissingSdk()
             .files(
                 resourcesStub,
                 contextStub,

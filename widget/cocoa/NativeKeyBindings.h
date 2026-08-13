@@ -6,8 +6,8 @@
 #define NativeKeyBindings_h
 
 #include "mozilla/EventForwards.h"
-#include "nsTHashMap.h"
 #include "nsIWidget.h"
+#include "nsTHashMap.h"
 
 struct objc_selector;
 

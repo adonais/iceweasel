@@ -6,10 +6,9 @@
 
 #include <stdlib.h>
 
-#include "prlock.h"
-
 #include "nsClassHashtable.h"
 #include "nsTArray.h"
+#include "prlock.h"
 
 namespace mozilla {
 

@@ -9,7 +9,6 @@ import android.net.Uri;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
-import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.media3.common.C;
 import androidx.media3.common.Format;
@@ -29,10 +28,7 @@ import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.RendererCapabilities;
 import androidx.media3.exoplayer.RenderersFactory;
 import androidx.media3.exoplayer.hls.HlsMediaSource;
-import androidx.media3.exoplayer.source.LoadEventInfo;
-import androidx.media3.exoplayer.source.MediaLoadData;
 import androidx.media3.exoplayer.source.MediaSource;
-import androidx.media3.exoplayer.source.MediaSourceEventListener;
 import androidx.media3.exoplayer.source.TrackGroupArray;
 import androidx.media3.exoplayer.trackselection.AdaptiveTrackSelection;
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector;
@@ -233,34 +229,6 @@ public class GeckoHlsPlayer
     }
   }
 
-  @UnstableApi
-  private final class SourceEventListener implements MediaSourceEventListener {
-    @Override
-    public void onLoadStarted(
-        final int windowIndex,
-        @Nullable final MediaSource.MediaPeriodId mediaPeriodId,
-        final LoadEventInfo loadEventInfo,
-        final MediaLoadData mediaLoadData,
-        final int retryCount) {
-      assertTrue(isPlayerThread());
-
-      synchronized (GeckoHlsPlayer.this) {
-        if (mediaLoadData.dataType != C.DATA_TYPE_MEDIA) {
-          // Don't report non-media URLs.
-          return;
-        }
-        if (mResourceCallbacks == null || loadEventInfo.uri == null || mReleasing) {
-          return;
-        }
-
-        if (DEBUG) {
-          Log.d(LOGTAG, "on-load: url=" + loadEventInfo.uri);
-        }
-        mResourceCallbacks.onLoad(loadEventInfo.uri.toString());
-      }
-    }
-  }
-
   public final class ComponentEventDispatcher {
     // Called from GeckoHls{Audio,Video}Renderer/ExoPlayer internal playback thread
     // or GeckoHlsPlayerThread.
@@ -417,6 +385,25 @@ public class GeckoHlsPlayer
     if (!isLoading) {
       if (mMediaDecoderPlayState != MediaDecoderPlayState.PLAY_STATE_PLAYING) {
         suspendExoplayer();
+      }
+      // A fully loaded (static timeline) source that is still buffering without
+      // an initialized demuxer produced no playable samples for its declared
+      // tracks (e.g. an HLS segment that is not actually media). Nothing more
+      // will load, so surface the failure instead of hanging forever.
+      if (!mIsDemuxerInitDone
+          && !isLiveStream()
+          && mPlayer != null
+          && mPlayer.getPlaybackState() == Player.STATE_BUFFERING) {
+        mIsPlayerInitDone = false;
+        if (!mReleasing) {
+          if (mResourceCallbacks != null) {
+            mResourceCallbacks.onError(ResourceError.UNSUPPORTED.code());
+          }
+          if (mDemuxerCallbacks != null) {
+            mDemuxerCallbacks.onError(DemuxerError.UNSUPPORTED.code());
+          }
+        }
+        return;
       }
       // To update buffered position.
       mComponentEventDispatcher.onDataArrived(C.TRACK_TYPE_DEFAULT);
@@ -788,7 +775,6 @@ public class GeckoHlsPlayer
     final Uri uri = Uri.parse(url);
     final MediaSource mediaSource =
         buildDataSourceFactory(ctx).createMediaSource(MediaItem.fromUri(uri));
-    mediaSource.addEventListener(mMainHandler, new SourceEventListener());
     if (DEBUG) {
       Log.d(LOGTAG, "Uri is " + uri + ", ContentType is " + Util.inferContentType(uri));
     }

@@ -2,20 +2,21 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "WebSocketLog.h"
 #include "BaseWebSocketChannel.h"
-#include "mozilla/dom/Document.h"
+
+#include "LoadInfo.h"
 #include "MainThreadUtils.h"
+#include "WebSocketLog.h"
+#include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/Document.h"
 #include "nsContentUtils.h"
 #include "nsIClassifiedChannel.h"
+#include "nsIInterfaceRequestor.h"
 #include "nsILoadGroup.h"
 #include "nsINode.h"
-#include "nsIInterfaceRequestor.h"
+#include "nsITransportProvider.h"
 #include "nsProxyRelease.h"
 #include "nsStandardURL.h"
-#include "LoadInfo.h"
-#include "mozilla/dom/ContentChild.h"
-#include "nsITransportProvider.h"
 
 using mozilla::dom::ContentChild;
 
@@ -219,14 +220,25 @@ BaseWebSocketChannel::InitLoadInfoNative(
     nsINode* aLoadingNode, nsIPrincipal* aLoadingPrincipal,
     nsIPrincipal* aTriggeringPrincipal,
     nsICookieJarSettings* aCookieJarSettings, uint32_t aSecurityFlags,
-    nsContentPolicyType aContentPolicyType, uint32_t aSandboxFlags) {
+    nsContentPolicyType aContentPolicyType,
+    const Maybe<mozilla::dom::ClientInfo>& aClientInfo,
+    uint32_t aSandboxFlags) {
+  MOZ_ASSERT(NS_IsMainThread());
   mLoadInfo = MOZ_TRY(LoadInfo::Create(
       aLoadingPrincipal, aTriggeringPrincipal, aLoadingNode, aSecurityFlags,
-      aContentPolicyType, Maybe<mozilla::dom::ClientInfo>(),
+      aContentPolicyType, aClientInfo,
       Maybe<mozilla::dom::ServiceWorkerDescriptor>(), aSandboxFlags));
   if (aCookieJarSettings) {
     mLoadInfo->SetCookieJarSettings(aCookieJarSettings);
   }
+
+  // The CSP content-policy check for WebSockets is performed manually in
+  // WebSocketImpl::Init, which is responsible for sending any violation report.
+  // The real channel is opened in the parent process
+  // (WebSocketChannelParent::RecvAsyncOpen), where it runs its own
+  // content-security check on this LoadInfo. Disable reporting for that
+  // parent-side check so a CSP violation is reported exactly once.
+  mLoadInfo->SetSendCSPViolationEvents(false);
 
   if (aLoadingNode) {
     RefPtr<dom::Document> doc = aLoadingNode->OwnerDoc();
@@ -247,9 +259,9 @@ BaseWebSocketChannel::InitLoadInfo(nsINode* aLoadingNode,
                                    nsIPrincipal* aTriggeringPrincipal,
                                    uint32_t aSecurityFlags,
                                    nsContentPolicyType aContentPolicyType) {
-  return InitLoadInfoNative(aLoadingNode, aLoadingPrincipal,
-                            aTriggeringPrincipal, nullptr, aSecurityFlags,
-                            aContentPolicyType, 0);
+  return InitLoadInfoNative(
+      aLoadingNode, aLoadingPrincipal, aTriggeringPrincipal, nullptr,
+      aSecurityFlags, aContentPolicyType, Maybe<mozilla::dom::ClientInfo>(), 0);
 }
 
 NS_IMETHODIMP

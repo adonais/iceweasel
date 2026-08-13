@@ -427,7 +427,7 @@ class MarkingTracerT
   void pushThing(T* thing);
 
   void eagerlyMarkChildren(JSString* str);
-  void eagerlyMarkChildren(JSLinearString* str);
+  void eagerlyMarkChildren(JSLinearString* str, uint32_t flags);
   void eagerlyMarkChildren(JSRope* rope);
   void eagerlyMarkChildren(Shape* shape);
   void eagerlyMarkChildren(BaseShape* shape);

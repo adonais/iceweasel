@@ -6,9 +6,9 @@
 
 #include "nsMacUserActivityUpdater.h"
 
+#include "gfxPlatform.h"
 #include "nsCocoaUtils.h"
 #include "nsIBaseWindow.h"
-#include "gfxPlatform.h"
 
 NS_IMPL_ISUPPORTS(nsMacUserActivityUpdater, nsIMacUserActivityUpdater)
 

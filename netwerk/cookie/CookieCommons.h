@@ -6,11 +6,12 @@
 #define mozilla_net_CookieCommons_h
 
 #include <cstdint>
+
 #include "mozIThirdPartyUtil.h"
-#include "prtime.h"
-#include "nsString.h"
-#include "nsICookie.h"
 #include "mozilla/net/NeckoChannelParams.h"
+#include "nsICookie.h"
+#include "nsString.h"
+#include "prtime.h"
 
 class nsIChannel;
 class nsICookieJarSettings;

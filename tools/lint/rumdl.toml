@@ -5,6 +5,7 @@
 disable = [
     "MD013",  # line-length: noisy on prose-heavy docs
     "MD033",  # inline HTML: used intentionally in many docs
+    "MD036",  # emphasis-as-heading: intentional emphasis (TODO notes, italic asides) is not a heading
     "MD041",  # first-line-h1: Sphinx/myst pages don't always start with H1
     "MD040",  # fenced-code-language: MyST directive fences (```{toctree}, ```{eval-rst}) trigger this and autofix breaks them
     "MD051",  # link-fragments: noisy on docs converted from RST (underscore-style anchors)

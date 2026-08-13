@@ -1,4 +1,14 @@
 {
+  "background": {
+    "color": {
+      "@base": {
+        "value": "{toolbar.field.background.color.@base}"
+      },
+      "focus": {
+        "value": "{toolbar.field.background.color.focus}"
+      }
+    }
+  },
   "border": {
     "radius": {
       "value": "{button.border.radius}"
@@ -11,7 +21,7 @@
           "value": {
             "light": "white",
             "dark": "rgb(66, 65, 77)",
-            "nativeTheme": "light-dark({button.background.color.hover}, color-mix(in srgb, currentColor 16%, transparent))"
+            "nativeTheme": "{button.background.color.@base}"
           }
         },
         "hover": {

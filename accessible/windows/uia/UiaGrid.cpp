@@ -2,11 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "UiaGrid.h"
+
+#include "Pivot.h"
 #include "ia2AccessibleTable.h"
 #include "mozilla/a11y/TableAccessible.h"
 #include "nsIAccessiblePivot.h"
-#include "Pivot.h"
-#include "UiaGrid.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;

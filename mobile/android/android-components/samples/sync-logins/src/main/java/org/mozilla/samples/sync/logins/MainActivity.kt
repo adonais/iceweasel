@@ -22,16 +22,15 @@ import mozilla.components.concept.sync.AuthType
 import mozilla.components.concept.sync.DeviceConfig
 import mozilla.components.concept.sync.DeviceType
 import mozilla.components.concept.sync.OAuthAccount
+import mozilla.components.concept.sync.PeriodicSyncConfig
 import mozilla.components.concept.sync.Profile
+import mozilla.components.concept.sync.SyncConfig
+import mozilla.components.concept.sync.SyncEngine
 import mozilla.components.lib.dataprotect.SecureAbove22Preferences
 import mozilla.components.lib.fetch.httpurlconnection.HttpURLConnectionClient
 import mozilla.components.service.fxa.FirefoxAccount
 import mozilla.components.service.fxa.FxaAuthData
-import mozilla.components.service.fxa.PeriodicSyncConfig
-import mozilla.components.service.fxa.SyncConfig
-import mozilla.components.service.fxa.SyncEngine
 import mozilla.components.service.fxa.manager.FxaAccountManager
-import mozilla.components.service.fxa.manager.SCOPE_SESSION
 import mozilla.components.service.fxa.manager.SCOPE_SYNC
 import mozilla.components.service.fxa.sync.GlobalSyncableStoreProvider
 import mozilla.components.service.fxa.sync.SyncReason
@@ -48,7 +47,11 @@ import kotlin.coroutines.CoroutineContext
 const val CLIENT_ID = "3c49430b43dfba77"
 const val REDIRECT_URL = "https://accounts.firefox.com/oauth/success/$CLIENT_ID"
 
-class MainActivity : AppCompatActivity(), LoginFragment.OnLoginCompleteListener, CoroutineScope, SyncStatusObserver {
+class MainActivity :
+    AppCompatActivity(),
+    LoginFragment.OnLoginCompleteListener,
+    CoroutineScope,
+    SyncStatusObserver {
     private lateinit var keyStorage: SecureAbove22Preferences
 
     private val loginsStorage = lazy {
@@ -67,7 +70,6 @@ class MainActivity : AppCompatActivity(), LoginFragment.OnLoginCompleteListener,
             SyncConfig(setOf(SyncEngine.Passwords), PeriodicSyncConfig()),
             setOf(
                 SCOPE_SYNC,
-                SCOPE_SESSION,
             ),
         )
     }
@@ -114,9 +116,11 @@ class MainActivity : AppCompatActivity(), LoginFragment.OnLoginCompleteListener,
 
         findViewById<View>(R.id.buttonWebView).setOnClickListener {
             launch {
-                val authUrl = accountManager.beginAuthentication(entrypoint = SampleFxAEntryPoint.HomeMenu)
+                val authUrl =
+                    accountManager.beginAuthentication(entrypoint = SampleFxAEntryPoint.HomeMenu)
                 if (authUrl == null) {
-                    Toast.makeText(this@MainActivity, "Account auth error", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this@MainActivity, "Account auth error", Toast.LENGTH_LONG)
+                        .show()
                     return@launch
                 }
                 openWebView(authUrl)
@@ -127,14 +131,16 @@ class MainActivity : AppCompatActivity(), LoginFragment.OnLoginCompleteListener,
     private val accountObserver = object : AccountObserver {
 
         @Suppress("EmptyFunctionBlock")
-        override fun onLoggedOut() {}
+        override fun onLoggedOut() {
+        }
 
         override fun onAuthenticated(account: OAuthAccount, authType: AuthType) {
             launch { accountManager.syncNow(SyncReason.User) }
         }
 
         @Suppress("EmptyFunctionBlock")
-        override fun onProfileUpdated(profile: Profile) {}
+        override fun onProfileUpdated(profile: Profile) {
+        }
 
         override fun onAuthenticationProblems() {
             launch {
@@ -157,7 +163,12 @@ class MainActivity : AppCompatActivity(), LoginFragment.OnLoginCompleteListener,
         }
     }
 
-    override fun onLoginComplete(code: String, state: String, action: String?, fragment: LoginFragment) {
+    override fun onLoginComplete(
+        code: String,
+        state: String,
+        action: String?,
+        fragment: LoginFragment,
+    ) {
         launch {
             val authType = action?.toAuthType() ?: AuthType.Signin
             accountManager.finishAuthentication(FxaAuthData(authType, code = code, state = state))

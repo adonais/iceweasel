@@ -6,6 +6,7 @@ package org.mozilla.fenix.settings.biometric.ext
 
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE
+import androidx.biometric.BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED
 import androidx.biometric.BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE
 import androidx.biometric.BiometricManager.BIOMETRIC_SUCCESS
 import io.mockk.every
@@ -25,18 +26,37 @@ class BiometricManagerKtTest {
     }
 
     @Test
-    fun `isHardwareAvailable checks status`() {
+    fun `isBiometricHardwareAvailable checks status`() {
         every { manager.canAuthenticate(any()) }.answers { BIOMETRIC_ERROR_NO_HARDWARE }
 
-        assertFalse(manager.isHardwareAvailable())
+        assertFalse(manager.isBiometricHardwareAvailable())
 
         every { manager.canAuthenticate(any()) }.answers { BIOMETRIC_ERROR_HW_UNAVAILABLE }
 
-        assertFalse(manager.isHardwareAvailable())
+        assertFalse(manager.isBiometricHardwareAvailable())
 
         every { manager.canAuthenticate(any()) }.answers { BIOMETRIC_SUCCESS }
 
-        assertTrue(manager.isHardwareAvailable())
+        assertTrue(manager.isBiometricHardwareAvailable())
+    }
+
+    @Test
+    fun `isDeviceLockCapable checks status`() {
+        every { manager.canAuthenticate(any()) }.answers { BIOMETRIC_ERROR_NO_HARDWARE }
+
+        assertFalse(manager.isDeviceLockCapable())
+
+        every { manager.canAuthenticate(any()) }.answers { BIOMETRIC_ERROR_HW_UNAVAILABLE }
+
+        assertFalse(manager.isDeviceLockCapable())
+
+        every { manager.canAuthenticate(any()) }.answers { BIOMETRIC_ERROR_NONE_ENROLLED }
+
+        assertTrue(manager.isDeviceLockCapable())
+
+        every { manager.canAuthenticate(any()) }.answers { BIOMETRIC_SUCCESS }
+
+        assertTrue(manager.isDeviceLockCapable())
     }
 
     @Test

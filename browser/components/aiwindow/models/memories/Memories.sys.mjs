@@ -5,16 +5,17 @@
 /**
  * This module defines functions to generate, deduplicate, and filter memories.
  *
- * The primary method in this module is `generateMemories`, which orchestrates the entire pipeline:
- * 1. Generates initial memories from a specified user data user
- * 2. Filters out low-quality (generic/ephemeral) AND sensitive memories
- * 3. Deduplicates the newly generated memories against all existing memories
- * 4. Returns the final list of memories objects
+ * The primary method is `runSessionMemoryPipeline`, which orchestrates the
+ * pipeline over a batch of unified session bundles (see `buildSessions`):
+ * 1. Generates initial memories, one LLM call per chunk of <=MAX_SESSIONS_PER_BATCH sessions
+ * 2. Filters out low-quality (generic/ephemeral) AND sensitive memories (one global call)
+ * 3. Deduplicates the newly generated memories against all existing memories (one global call)
+ * 4. Returns the final memory objects plus the watermark the caller should advance to
  *
- * `generateMemories` requires 3 arguments:
+ * `runSessionMemoryPipeline` requires:
  * 1. `conversation`: a Conversation instance, reused across the three LLM calls (each step clears messages before setSystemMessage / addUserMessage)
- * 2. `sources`: an object mapping user data source types to aggregated records (i.e., {history: [domainItems, titleItems, searchItems]})
- * 3. `existingMemoriesList`: an array of existing memory summary strings to deduplicate against
+ * 2. `sessions`: gate-filtered session bundles from `buildSessions`
+ * 3. `existingMemoriesList`: existing memory summary strings to deduplicate against
  */
 
 import {
@@ -28,16 +29,28 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   loadPrompt:
     "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs",
+  setTimeout: "resource://gre/modules/Timer.sys.mjs",
 });
 
 import {
-  HISTORY,
-  CONVERSATION,
   CATEGORIES,
   CATEGORIES_LIST,
   INTENTS,
   INTENTS_LIST,
   MAX_MEMORY_SUMMARY_LENGTH,
+  HISTORY,
+  CONVERSATION,
+  CONVERSATION_USER_REQUEST as USER,
+  SESSION,
+  MEMORY_TYPE_SHORT_TERM_MEMORY,
+  MEMORY_SENSITIVITY_CATEGORY_NOT_SENSITIVE,
+  INITIAL_MEMORY_TYPE_STRENGTH,
+  MEMORY_EVIDENCE_WEIGHT,
+  MEMORY_LIFETIME_ACCESSED_WEIGHT,
+  MEMORY_MERGE_COUNT_WEIGHT,
+  MEMORY_USER_REQUEST_MODIFIER,
+  MEMORY_FRECENCY_MAX_DAYS,
+  MEMORY_FRECENCY_DAY_HALFLIFE,
 } from "./MemoriesConstants.sys.mjs";
 
 import {
@@ -46,64 +59,191 @@ import {
   MEMORIES_DEDUPLICATION_SCHEMA,
 } from "moz-src:///browser/components/aiwindow/models/memories/MemoriesSchemas.sys.mjs";
 
+// Pipeline input key for unified session bundles.
+const SESSIONS = "sessions";
+
+// Max number of session bundles sent to the LLM in a single generation call.
+const MAX_SESSIONS_PER_BATCH = 10;
+
+// Max number of retries on transient errors for a single batch before raising the 429 up to the caller.
+const MAX_RETRIES_PER_BATCH = 3;
+
+// Number of MS to wait before retrying a transient error
+const INITIAL_MEMORY_GENERATION_BATCH_RETRY_DELAY_MS = 12000;
+
 /**
- * Generates, deduplicates, and filters memories end-to-end
+ * Generates, filters, and deduplicates memories from a batch of unified session
+ * bundles.
  *
- * This is the main pipeline function.
+ * Sessions are processed in chunks of at most {@link MAX_SESSIONS_PER_BATCH}:
+ * each chunk is one generation call. Candidate memories from every chunk are
+ * accumulated, then the expensive quality+sensitivity filter and the dedup pass
+ * each run ONCE over the whole pool (cheap rejection first, single global
+ * comparison last). Running them globally is what lets dedup catch duplicates
+ * that surfaced across different chunks.
+ *
+ * A chunk that fails on a 429 (rate limit) is retried before aborting the whole pipeline:
+ * the error is re-thrown so the caller can back off, nothing is persisted, and the run is
+ * retried in full next time. A chunk that fails on any other (deterministic)
+ * error loses its candidates and the watermark advances past it, since retrying
+ * it would only wedge the pipeline.
  *
  * @param {Conversation} conversation           Conversation reused across the pipeline (cleared between calls)
- * @param {object} sources                      User data source type to aggregrated records (i.e., {history: [domainItems, titleItems, searchItems]})
- * @param {Array<string>} existingMemoriesList  List of existing memory summary strings to deduplicate against
- * @returns {Promise<Array<Map<{
- *  category: string,
- *  intent: string,
- *  memory_summary: string,
- *  score: number,
- * }>>>}                                        Promise resolving the final list of generated, deduplicated, and filtered memory objects
+ * @param {Array<object>} sessions              Session bundles from `buildSessions` (gate-filtered by the caller)
+ * @param {Array<string>} existingMemoriesList  Existing memory summary strings to deduplicate against
+ * @param {object} [opts]
+ * @param {number} [opts.batchSize]             Max sessions per generation call
+ * @param {number} [opts.maxBatchRetries]       Max retries per batch per generation call
+ * @param {number} [opts.initialMemoryGenerationRetryDelayMS] Number of MS to delay before retrying a transient error
+ * @returns {Promise<{memories: Array<object>, processedThroughMs: number}>}
+ *   `memories` is the final list of generated, filtered, deduplicated memory
+ *   objects. `processedThroughMs` is the max `session_end_ms` the caller should
+ *   advance its watermark to: the latest chunk that either succeeded or failed
+ *   deterministically.
+ * @throws Re-throws a 429 (rate limit) error from any LLM call so the caller can
+ *   trigger its back-off.
  */
-export async function generateMemories(
+export async function runSessionMemoryPipeline(
   conversation,
-  sources,
-  existingMemoriesList
+  sessions,
+  existingMemoriesList,
+  {
+    batchSize = MAX_SESSIONS_PER_BATCH,
+    maxBatchRetries = MAX_RETRIES_PER_BATCH,
+    initialMemoryGenerationRetryDelayMS = INITIAL_MEMORY_GENERATION_BATCH_RETRY_DELAY_MS,
+  } = {}
 ) {
-  // Step 1: Generate initial memories
-  const initialMemories = await generateInitialMemoriesList(
-    conversation,
-    sources
-  );
-  // If we don't generate any new memories, just return an empty list immediately instead of doing the rest of the steps
-  if (!initialMemories || initialMemories.length === 0) {
-    return [];
+  const candidateMemories = [];
+  let processedThroughMs = 0;
+
+  // Step 1: Per-batch generation. Accumulate candidates across all batches.
+  for (let i = 0; i < sessions.length; i += batchSize) {
+    const batch = sessions.slice(i, i + batchSize);
+    const batchMaxEndMs = batch.reduce(
+      (max, session) => Math.max(max, session.session_end_ms),
+      0
+    );
+
+    let batchHandled = false;
+    let lastRetryableError;
+    for (let attempt = 0; attempt < maxBatchRetries; attempt++) {
+      try {
+        const batchMemories = await generateInitialMemoriesList(conversation, {
+          [SESSIONS]: batch,
+        });
+        candidateMemories.push(...batchMemories);
+        processedThroughMs = Math.max(processedThroughMs, batchMaxEndMs);
+        batchHandled = true;
+        break;
+      } catch (e) {
+        if (openAIEngine.isRetryableError(e)) {
+          // Transient error: these may be simple rate limiting or budget errors
+          // In the event it's just rate limiting, retrying the current batch after 2 minutes to salvage the run
+          lastRetryableError = e;
+          await new Promise(r =>
+            lazy.setTimeout(r, initialMemoryGenerationRetryDelayMS)
+          );
+          continue;
+        }
+        // Deterministic failure: retrying won't help, so advance past this batch
+        // (its candidates are lost) instead of wedging the pipeline on it.
+        processedThroughMs = Math.max(processedThroughMs, batchMaxEndMs);
+        console.error(
+          "runSessionMemoryPipeline: batch generation failed; skipping past it",
+          e
+        );
+        batchHandled = true;
+        break;
+      }
+    }
+    if (!batchHandled) {
+      // Retries exhausted on a transient error: propagate so the caller can
+      // back off and retry. Watermark is not advanced.
+      throw lastRetryableError;
+    }
   }
 
-  // Step 2: Filter out low-quality and sensitive memories
-  const initialMemoriesSummaries = initialMemories.map(
+  if (!candidateMemories.length) {
+    return { memories: [], processedThroughMs };
+  }
+
+  // Step 2: Single global quality+sensitivity filter over the full candidate pool.
+  const candidateSummaries = candidateMemories.map(
     memory => memory.memory_summary
   );
-  const filteredMemoriesSummaries = await applyQualityAndSensitivityFilter(
+  const filteredSummaries = await applyQualityAndSensitivityFilter(
     conversation,
-    initialMemoriesSummaries
+    candidateSummaries
   );
-  if (!filteredMemoriesSummaries || filteredMemoriesSummaries.length === 0) {
-    return [];
+  if (!filteredSummaries || !filteredSummaries.length) {
+    return { memories: [], processedThroughMs };
   }
 
-  // Step 3: Deduplicate against existing memories
-  const dedupedMemoriesSummaries = await deduplicateMemories(
+  // Step 3: Single global dedup against the existing store (and across batches).
+  const dedupedSummaries = await deduplicateMemories(
     conversation,
     existingMemoriesList,
-    filteredMemoriesSummaries
+    filteredSummaries
   );
-  // If we don't have any deduped memories, no new memories were generated or we ran into an unexpected JSON parse error, so return an empty list
-  if (!dedupedMemoriesSummaries || dedupedMemoriesSummaries.length === 0) {
-    return [];
+  if (!dedupedSummaries || !dedupedSummaries.length) {
+    return { memories: [], processedThroughMs };
   }
 
-  // Step 4: Map back to full memory objects
-  return await mapFilteredMemoriesToInitialList(
-    initialMemories,
-    dedupedMemoriesSummaries
+  // Step 4: Map surviving summaries back to full memory objects.
+  const memories = await mapFilteredMemoriesToInitialList(
+    candidateMemories,
+    dedupedSummaries
   );
+  return { memories, processedThroughMs };
+}
+
+/**
+ * Computes the strength of a memory based on:
+ *  1. Type
+ *  2. Amount of supporting evidence
+ *  3. Number of times it was used over its lifetime
+ *  4. Number of memories that were merged to create it
+ *
+ * @param {object} memory   Memory object
+ * @returns {number}        Computed memory strength
+ */
+export function computeMemoryStrength(memory) {
+  // If the memory was derived from a user request, add a large constant to boost its strength
+  let user_request_modifier;
+  if (memory.sources.includes(USER)) {
+    user_request_modifier = MEMORY_USER_REQUEST_MODIFIER;
+  } else {
+    user_request_modifier = 0;
+  }
+
+  return (
+    INITIAL_MEMORY_TYPE_STRENGTH[memory.type] +
+    user_request_modifier +
+    Object.values(memory.source_ids).reduce((sum, currentSource) => {
+      return sum + currentSource.length;
+    }, 0) *
+      MEMORY_EVIDENCE_WEIGHT +
+    memory.lifetime_accessed_count * MEMORY_LIFETIME_ACCESSED_WEIGHT +
+    memory.merge_count * MEMORY_MERGE_COUNT_WEIGHT
+  );
+}
+
+/**
+ * Computes a memory's frecency using its 7-day rolling usage count
+ *
+ * @param {object} memory   Memory object
+ * @returns {number}        Computed memory frecency
+ */
+export function computeMemoryFrecency(memory) {
+  let frecency = 0;
+
+  for (let day = 0; day < MEMORY_FRECENCY_MAX_DAYS; day++) {
+    frecency +=
+      memory.recent_accessed_counts[day] *
+      Math.pow(0.5, day / MEMORY_FRECENCY_DAY_HALFLIFE);
+  }
+
+  return frecency;
 }
 
 /**
@@ -132,51 +272,52 @@ export function getFormattedMemoryAttributeList(attributeName) {
 }
 
 /**
- * Renders recent history records into CSV tables for prompt input
+ * Renders a batch of unified session bundles into prompt text. Each session is
+ * a time-window bundle of searches, page titles, and chat messages that
+ * occurred together. Source IDs are intentionally NOT rendered: they stay
+ * client-side and are never sent to the LLM.
  *
- * @param {Array<Array<string>>} domainItems   List of aggregated domain items
- * @param {Array<Array<string>>} titleItems    List of aggregated title items
- * @param {Array<object>} searchItems          List of aggregated search items
- * @returns {Promise<string>}   Promise resolving recent browser history rendered as CSV tables
+ * @param {Array<object>} sessions  Session bundles produced by `buildSessions`
+ * @returns {string}                Prompt-ready text, one block per session
  */
-export async function renderRecentHistoryForPrompt(
-  domainItems,
-  titleItems,
-  searchItems
-) {
-  let finalCSV = "";
+export function renderSessionsForPrompt(sessions) {
+  const blocks = [];
+  sessions.forEach((session, index) => {
+    const lines = [];
+    const date = new Date(session.session_start_ms).toISOString().slice(0, 10);
+    lines.push(`# Session ${index + 1} (${date})`);
 
-  if (titleItems.length) {
-    let titleRecordsTable = ["Website Title,Importance Score"];
-    for (const titleItem of titleItems) {
-      titleRecordsTable.push(titleItem.join(","));
-    }
-    finalCSV += "# Website Titles\n" + titleRecordsTable.join("\n") + "\n\n";
-  }
-
-  if (searchItems.length) {
-    let searchRecordsTable = ["Search Query,Importance Score"];
-    for (const searchItem of searchItems) {
-      for (const searchText of searchItem.q) {
-        searchRecordsTable.push(`${searchText},${searchItem.r}`);
+    if (session.search_queries.length) {
+      lines.push("## Web Searches");
+      for (const query of session.search_queries) {
+        lines.push(`- ${query}`);
       }
     }
-    finalCSV += "# Web Searches\n" + searchRecordsTable.join("\n");
-  }
 
-  return finalCSV.trim();
-}
-
-export async function renderRecentConversationForPrompt(conversationMessages) {
-  let finalCSV = "";
-  if (conversationMessages.length) {
-    let conversationRecordsTable = ["Message"];
-    for (const message of conversationMessages) {
-      conversationRecordsTable.push(`${message.content}`);
+    if (session.titles.length) {
+      lines.push("## Website Titles");
+      for (const title of session.titles) {
+        lines.push(`- ${title}`);
+      }
     }
-    finalCSV += "# Chat History\n" + conversationRecordsTable.join("\n");
-  }
-  return finalCSV.trim();
+
+    if (session.chats.length) {
+      const chatLines = [];
+      for (const message of session.chats) {
+        const content =
+          typeof message.content === "string" ? message.content.trim() : "";
+        if (content) {
+          chatLines.push(`- ${content}`);
+        }
+      }
+      if (chatLines.length) {
+        lines.push("## Chat", ...chatLines);
+      }
+    }
+
+    blocks.push(lines.join("\n"));
+  });
+  return blocks.join("\n\n").trim();
 }
 
 /**
@@ -209,7 +350,7 @@ function sanitizeMemory(memory) {
 
   // Check that the candidate memory object has all the required string fields
   for (const field of ["category", "intent", "memory_summary", "reasoning"]) {
-    if (!(field in memory) && typeof memory[field] !== "string") {
+    if (!(field in memory) || typeof memory[field] !== "string") {
       return null;
     }
   }
@@ -222,12 +363,95 @@ function sanitizeMemory(memory) {
     score = 5;
   }
 
+  const evidence = Array.isArray(memory.evidence) ? memory.evidence : [];
+
   return {
     category: memory.category,
     intent: memory.intent,
     memory_summary: memory.memory_summary,
     reasoning: memory.reasoning,
     score,
+    source: deriveSource(evidence),
+    keywords: memory.entities,
+    // Retained transiently so `generateInitialMemoriesList` can attribute
+    // source IDs; stripped before the memory leaves that function.
+    evidence,
+  };
+}
+
+/**
+ * Derives a memory's source tag from the types of its supporting evidence.
+ * Evidence types come from the LLM as one of "title" | "search" | "chat" |
+ * "user". Browsing + any conversational evidence is cross-modal (SESSION);
+ * a direct user query (USER) takes precedence over multi-turn chat.
+ *
+ * @param {Array<object>} evidence  Evidence items, each with a `type`
+ * @returns {string}                One of HISTORY, CONVERSATION, USER, or SESSION
+ */
+function deriveSource(evidence) {
+  if (!Array.isArray(evidence) || !evidence.length) {
+    return SESSION;
+  }
+  const types = new Set(evidence.map(e => e?.type));
+  const hasBrowse = types.has("title") || types.has("search");
+  const hasUser = types.has("user");
+  const hasChat = types.has("chat");
+  if (hasBrowse && (hasChat || hasUser)) {
+    return SESSION;
+  }
+  if (hasBrowse) {
+    return HISTORY;
+  }
+  if (hasUser) {
+    return USER;
+  }
+  if (hasChat) {
+    return CONVERSATION;
+  }
+  return SESSION;
+}
+
+/**
+ * Attributes the real source IDs behind a memory by matching its verbatim
+ * evidence strings back to the sessions that produced them. IDs are never sent
+ * to the LLM.
+ *
+ * Attribution is session-level: if any evidence string appears in a session's
+ * browse content (titles/queries) or chat content, that session's history /
+ * conversation source IDs are credited to the memory.
+ *
+ * @param {Array<object>} evidence  Evidence items with verbatim `value` strings
+ * @param {Array<object>} sessions  The batch's session bundles from `buildSessions`
+ * @returns {{history_source_ids: Array<string|number>, conversation_source_ids: Array<string>}}
+ */
+function attributeSourceIds(evidence, sessions) {
+  const historyIds = new Set();
+  const conversationIds = new Set();
+
+  for (const item of evidence) {
+    const value = typeof item?.value === "string" ? item.value : "";
+    if (!value) {
+      continue;
+    }
+    for (const session of sessions) {
+      const inBrowse =
+        session.search_queries.includes(value) ||
+        session.titles.includes(value);
+      const inChat = session.chats?.some(
+        msg => typeof msg.content === "string" && msg.content.includes(value)
+      );
+      if (inBrowse) {
+        session.history_source_ids.forEach(id => historyIds.add(id));
+      }
+      if (inChat) {
+        session.conversation_source_ids.forEach(id => conversationIds.add(id));
+      }
+    }
+  }
+
+  return {
+    history_source_ids: [...historyIds],
+    conversation_source_ids: [...conversationIds],
   };
 }
 
@@ -269,12 +493,7 @@ function normalizeMemoryList(parsed) {
  *
  * @param {Conversation} conversation  Conversation reused across the pipeline (cleared between calls)
  * @param {object} sources  User data source type to aggregrated records (i.e., {history: [domainItems, titleItems, searchItems]})
- * @returns {Promise<Array<Map<{
- *  category: string,
- *  intent: string,
- *  memory_summary: string,
- *  score: number,
- * }>>>}                    Promise resolving the list of generated memories
+ * @returns {Promise<Array<object>>}  Promise resolving the list of generated memories
  */
 export async function generateInitialMemoriesList(conversation, sources) {
   const [{ prompt: systemPrompt }, { prompt: userPromptTemplate }] =
@@ -283,20 +502,10 @@ export async function generateInitialMemoriesList(conversation, sources) {
       lazy.loadPrompt(MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_USER),
     ]);
 
-  // Build sources string
+  // Build sources string from the unified session bundles.
   let profileRecordsRenderedStr = "";
-  if (sources.hasOwnProperty(HISTORY)) {
-    const [domainItems, titleItems, searchItems] = sources[HISTORY];
-    profileRecordsRenderedStr += await renderRecentHistoryForPrompt(
-      domainItems,
-      titleItems,
-      searchItems
-    );
-  }
-  if (sources.hasOwnProperty(CONVERSATION)) {
-    profileRecordsRenderedStr += await renderRecentConversationForPrompt(
-      sources[CONVERSATION]
-    );
+  if (sources.hasOwnProperty(SESSIONS)) {
+    profileRecordsRenderedStr += renderSessionsForPrompt(sources[SESSIONS]);
   }
 
   const userPrompt = renderPrompt(userPromptTemplate, {
@@ -314,7 +523,48 @@ export async function generateInitialMemoriesList(conversation, sources) {
   });
 
   const parsed = parseAndExtractJSON(response, []);
-  return normalizeMemoryList(parsed);
+
+  // Join real source IDs back from the sessions client-side, then drop the
+  // transient evidence (never persisted).
+  const sessions = sources[SESSIONS] ?? [];
+
+  // Add and fill metadata fields for the new memories list
+  const now = Date.now();
+  return normalizeMemoryList(parsed).map(memory => {
+    const m = {
+      // System fields
+      type: MEMORY_TYPE_SHORT_TERM_MEMORY,
+      sources: [memory.source],
+      source_ids: attributeSourceIds(memory.evidence, sessions),
+      sensitivity_category: MEMORY_SENSITIVITY_CATEGORY_NOT_SENSITIVE,
+      is_deleted: false,
+
+      // Descriptive fields
+      memory_summary: memory.memory_summary,
+      reasoning: memory.reasoning,
+      tags: [`category:${memory.category}`, `intent:${memory.intent}`],
+      keywords: memory.keywords,
+      component_summaries: [],
+
+      // Tracker fields
+      created_at: now,
+      updated_at: now,
+      last_accessed: null,
+      recent_accessed_counts: Object.fromEntries(
+        Array.from({ length: MEMORY_FRECENCY_MAX_DAYS }, (_, i) => [i, 0])
+      ),
+      lifetime_accessed_count: 0,
+      frecency: 0,
+      merge_count: 0,
+    };
+
+    // Delete the evidence attribute after it's been used to derive the source_ids
+    delete memory.evidence;
+    // Compute strength after we've added the necessary calculation components above
+    m.strength = computeMemoryStrength(m);
+
+    return m;
+  });
 }
 
 /**

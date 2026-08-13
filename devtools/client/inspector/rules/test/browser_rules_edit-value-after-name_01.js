@@ -75,23 +75,23 @@ async function testColorValueSpanClickWithoutNameChange(propEditor, view) {
 
 async function testColorValueSpanClickAfterNameChange(propEditor, view) {
   info("Test click on color span after property name change");
-  const colorSpan = propEditor.valueSpan.querySelector(".ruleview-color");
 
   info("Focus the color name span");
   await focusEditableField(view, propEditor.nameSpan);
   let editor = inplaceEditor(propEditor.doc.activeElement);
 
   info(
-    "Modify the property to border-color to trigger the " +
-      "property-value-updated event"
+    "Modify the property to border-color to trigger the property-value-updated event"
   );
   editor.input.value = "border-color";
 
   const onRuleViewChanged = view.once("ruleview-changed");
   const onPropertyValueUpdate = view.once("property-value-updated");
 
-  info("blur propEditor.nameSpan by clicking on the color span");
-  EventUtils.synthesizeMouse(colorSpan, 1, 1, {}, propEditor.doc.defaultView);
+  info("blur propEditor.nameSpan by clicking on the value span");
+  // focusEditableField does a proper mousedown/mouseup sequence which seems to be necessary
+  // to avoid accessibility check failures
+  await focusEditableField(view, propEditor.valueSpan);
 
   info(
     "wait for ruleview-changed event to be triggered to prevent pending requests"

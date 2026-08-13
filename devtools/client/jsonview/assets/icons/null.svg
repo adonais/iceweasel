@@ -1,0 +1,11 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+- License, v. 2.0. If a copy of the MPL was not distributed with this
+- file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="context-fill">
+    <g stroke-width="0"></g>
+    <g stroke-linecap="round" stroke-linejoin="round"></g>
+    <g>
+        <circle cx="12" cy="12" r="8" stroke="context-stroke" stroke-width="2" fill="none" />
+        <line x1="4" y1="20" x2="20" y2="4" stroke="context-stroke" stroke-width="2" />
+    </g>
+</svg>

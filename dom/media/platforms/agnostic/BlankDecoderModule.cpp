@@ -4,6 +4,8 @@
 
 #include "BlankDecoderModule.h"
 
+#include <numbers>
+
 #include "ImageContainer.h"
 #include "MediaData.h"
 #include "MediaInfo.h"
@@ -96,7 +98,7 @@ already_AddRefed<MediaData> BlankAudioDataCreator::Create(
     return nullptr;
   }
   // Fill the sound buffer with an A4 tone.
-  static const float pi = 3.14159265f;
+  static const float pi = std::numbers::pi_v<float>;
   static const float noteHz = 440.0f;
   for (int i = 0; i < frames.value(); i++) {
     float f = sin(2 * pi * noteHz * mFrameSum / mSampleRate);

@@ -1,17 +1,17 @@
 diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
 --- a/expat/lib/xmlparse.c
 +++ b/expat/lib/xmlparse.c
-@@ -791,6 +791,9 @@ struct XML_ParserStruct {
+@@ -827,6 +827,9 @@ struct XML_ParserStruct {
    ENTITY_STATS m_entity_stats;
  #endif
    XML_Bool m_reenter;
 +/* BEGIN MOZILLA CHANGE (Report opening tag of mismatched closing tag) */
 +  const XML_Char* m_mismatch;
 +/* END MOZILLA CHANGE */
+   unsigned m_handlerCallDepth;
  };
  
- #if XML_GE == 1
-@@ -1538,6 +1541,10 @@ parserCreate(const XML_Char *encodingName,
+@@ -1467,6 +1470,10 @@ parserCreate(const XML_Char *encodingName,
      parser->m_internalEncoding = XmlGetInternalEncoding();
    }
  
@@ -22,7 +22,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
    return parser;
  }
  
-@@ -3593,6 +3600,33 @@ doContent(XML_Parser parser, int startTagLevel, const ENCODING *enc,
+@@ -3552,6 +3559,33 @@ doContent(XML_Parser parser, int startTagLevel, const ENCODING *enc,
          len = XmlNameLength(enc, rawName);
          if (len != tag->rawNameLength
              || memcmp(tag->rawName, rawName, len) != 0) {

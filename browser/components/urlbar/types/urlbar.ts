@@ -4,10 +4,14 @@
 
 // These types are commonly passed as parameters with the Urlbar code. We
 // define them here to avoid having to `@import` them into each module.
-// TypeScript will still warn about attempting to call `new UrlbarController()`
-// and similar actions because these are only defined as types and not values.
+// TypeScript will still warn about attempting to call
+// `new UrlbarParentController()` and similar actions because these are only
+// defined as types and not values.
 
-type UrlbarController = import("../UrlbarController.sys.mjs").UrlbarController;
+type UrlbarChildController =
+  import("../content/UrlbarChildController.mjs").UrlbarChildController;
+type UrlbarParentController =
+  import("../UrlbarParentController.sys.mjs").UrlbarParentController;
 type UrlbarInput = import("../content/UrlbarInput.mjs").UrlbarInput;
 type UrlbarQueryContext = import("../UrlbarUtils.sys.mjs").UrlbarQueryContext;
 type UrlbarResult = import("../content/UrlbarResult.mjs").UrlbarResult;

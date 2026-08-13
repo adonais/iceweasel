@@ -5,11 +5,11 @@
 #ifndef IPC_ShadowLayerUtils_h
 #define IPC_ShadowLayerUtils_h
 
-#include "ipc/EnumSerializer.h"
-#include "ipc/IPCMessageUtils.h"
 #include "GLContextTypes.h"
 #include "SurfaceDescriptor.h"
 #include "SurfaceTypes.h"
+#include "ipc/EnumSerializer.h"
+#include "ipc/IPCMessageUtils.h"
 #include "mozilla/WidgetUtils.h"
 
 namespace IPC {

@@ -69,6 +69,7 @@
 #include "mozilla/dom/Selection.h"
 
 #include "mozilla/dom/ContentList.h"
+#include "mozilla/Utf16.h"
 #include "nsContentUtils.h"
 #include "nsCRT.h"
 #include "nsDebug.h"
@@ -480,17 +481,22 @@ void HTMLEditor::PreDestroy() {
   PreDestroyInternal();
 }
 
-bool HTMLEditor::IsStyleEditable() const {
+bool HTMLEditor::IsStyleEditable(const Element* aEditingHost) const {
   if (IsInDesignMode()) {
     return true;
   }
   if (IsPlaintextMailComposer()) {
     return false;
   }
-  const Element* const editingHost = ComputeEditingHost(LimitInBodyElement::No);
+  const Element* const editingHost =
+      aEditingHost ? aEditingHost : ComputeEditingHost(LimitInBodyElement::No);
   // Let's return true if there is no focused editing host for the backward
   // compatibility.
-  return !editingHost || !editingHost->IsContentEditablePlainTextOnly();
+  if (!editingHost) {
+    return true;
+  }
+  return !editingHost->IsContentEditablePlainTextOnly() &&
+         !editingHost->HasFlag(ELEMENT_HAS_EDIT_CONTEXT);
 }
 
 NS_IMETHODIMP HTMLEditor::GetDocumentCharacterSet(nsACString& aCharacterSet) {
@@ -1061,7 +1067,7 @@ bool HTMLEditor::EntireDocumentIsEditable() const {
           (document->GetBody() && document->GetBody()->IsEditable()));
 }
 
-dom::EditContext* HTMLEditor::GetEditContext() const {
+dom::EditContext* HTMLEditor::ComputeEditContext() const {
   if (!StaticPrefs::dom_editcontext_enabled() ||
       !EditContext::IsAnyAttached()) {
     return nullptr;
@@ -1071,6 +1077,11 @@ dom::EditContext* HTMLEditor::GetEditContext() const {
     return element->GetEditContext();
   }
   return nullptr;
+}
+
+bool HTMLEditor::IsFiringTextUpdate() const {
+  EditContext* editContext = GetEditActionEditContext();
+  return editContext && editContext->IsFiringTextUpdate();
 }
 
 void HTMLEditor::CreateEventListeners() {
@@ -1589,7 +1600,7 @@ nsresult HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
   if (!StaticPrefs::dom_event_keypress_dispatch_once_per_surrogate_pair() &&
       !StaticPrefs::dom_event_keypress_key_allow_lone_surrogate() &&
       aKeyboardEvent->mKeyValue.IsEmpty() &&
-      IS_SURROGATE(aKeyboardEvent->mCharCode)) {
+      mozilla::IsSurrogate(aKeyboardEvent->mCharCode)) {
     return NS_OK;
   }
   nsAutoString str(aKeyboardEvent->mKeyValue);
@@ -2314,7 +2325,7 @@ nsresult HTMLEditor::FormatBlockAsAction(const nsAString& aParagraphFormat,
 
   const RefPtr<Element> editingHost =
       ComputeEditingHost(LimitInBodyElement::No);
-  if (!editingHost || editingHost->IsContentEditablePlainTextOnly()) {
+  if (!editingHost || !IsStyleEditable(editingHost)) {
     return NS_SUCCESS_DOM_NO_OPERATION;
   }
 
@@ -2367,7 +2378,7 @@ nsresult HTMLEditor::SetParagraphStateAsAction(
 
   const RefPtr<Element> editingHost =
       ComputeEditingHost(LimitInBodyElement::No);
-  if (!editingHost || editingHost->IsContentEditablePlainTextOnly()) {
+  if (!editingHost || !IsStyleEditable(editingHost)) {
     return NS_SUCCESS_DOM_NO_OPERATION;
   }
 
@@ -2817,7 +2828,7 @@ nsresult HTMLEditor::MakeOrChangeListAsAction(
 
   const RefPtr<Element> editingHost =
       ComputeEditingHost(LimitInBodyElement::No);
-  if (!editingHost || editingHost->IsContentEditablePlainTextOnly()) {
+  if (!editingHost || !IsStyleEditable(editingHost)) {
     return NS_SUCCESS_DOM_NO_OPERATION;
   }
 
@@ -3053,7 +3064,7 @@ nsresult HTMLEditor::IndentAsAction(nsIPrincipal* aPrincipal) {
 
   const RefPtr<Element> editingHost =
       ComputeEditingHost(LimitInBodyElement::No);
-  if (!editingHost || editingHost->IsContentEditablePlainTextOnly()) {
+  if (!editingHost || !IsStyleEditable(editingHost)) {
     return NS_SUCCESS_DOM_NO_OPERATION;
   }
 
@@ -3085,7 +3096,7 @@ nsresult HTMLEditor::OutdentAsAction(nsIPrincipal* aPrincipal) {
 
   const RefPtr<Element> editingHost =
       ComputeEditingHost(LimitInBodyElement::No);
-  if (!editingHost || editingHost->IsContentEditablePlainTextOnly()) {
+  if (!editingHost || !IsStyleEditable(editingHost)) {
     return NS_SUCCESS_DOM_NO_OPERATION;
   }
 
@@ -3116,7 +3127,7 @@ nsresult HTMLEditor::AlignAsAction(const nsAString& aAlignType,
 
   const RefPtr<Element> editingHost =
       ComputeEditingHost(LimitInBodyElement::No);
-  if (!editingHost || editingHost->IsContentEditablePlainTextOnly()) {
+  if (!editingHost || !IsStyleEditable(editingHost)) {
     return NS_SUCCESS_DOM_NO_OPERATION;
   }
 
@@ -3726,8 +3737,7 @@ nsresult HTMLEditor::InsertLinkAroundSelectionAsAction(
     return NS_ERROR_FAILURE;
   }
 
-  if (IsPlaintextMailComposer() ||
-      editingHost->IsContentEditablePlainTextOnly()) {
+  if (!IsStyleEditable(editingHost)) {
     return NS_SUCCESS_DOM_NO_OPERATION;
   }
 

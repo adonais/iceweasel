@@ -7,17 +7,16 @@
  * to generate (one or more) ocsp responses.
  */
 
+#include "OCSPCommon.h"
+#include "ScopedNSSTypes.h"
+#include "TLSServer.h"
 #include "cert.h"
 #include "nspr.h"
 #include "nss.h"
 #include "plarenas.h"
 #include "prerror.h"
-#include "ssl.h"
 #include "secerr.h"
-
-#include "OCSPCommon.h"
-#include "ScopedNSSTypes.h"
-#include "TLSServer.h"
+#include "ssl.h"
 
 using namespace mozilla;
 using namespace mozilla::test;

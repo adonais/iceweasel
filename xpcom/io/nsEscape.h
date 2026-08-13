@@ -8,10 +8,11 @@
 #ifndef ESCAPE_H_
 #define ESCAPE_H_
 
-#include "nscore.h"
+#include <functional>
+
 #include "nsError.h"
 #include "nsString.h"
-#include <functional>
+#include "nscore.h"
 
 /**
  * Valid mask values for nsEscape

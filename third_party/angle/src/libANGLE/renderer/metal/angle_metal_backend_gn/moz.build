@@ -1,0 +1,117 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+  ### This moz.build was AUTOMATICALLY GENERATED from a GN config,  ###
+  ### DO NOT edit it by hand.                                       ###
+
+CMMFLAGS += [
+    "-Wno-unguarded-availability"
+]
+
+COMPILE_FLAGS["OS_INCLUDES"] = []
+AllowCompilerWarnings()
+
+DEFINES["ANGLE_DISABLE_POOL_ALLOC"] = True
+DEFINES["ANGLE_ENABLE_CONTEXT_MUTEX"] = "1"
+DEFINES["ANGLE_ENABLE_DEBUG_ANNOTATIONS"] = False
+DEFINES["ANGLE_ENABLE_KEYEDMUTEX"] = True
+DEFINES["ANGLE_ENABLE_METAL"] = True
+DEFINES["ANGLE_ENABLE_SHARE_CONTEXT_LOCK"] = "1"
+DEFINES["ANGLE_PLATFORM_EXPORT"] = ""
+DEFINES["ANGLE_SKIP_DXGI_1_2_CHECK"] = True
+DEFINES["LIBANGLE_IMPLEMENTATION"] = True
+DEFINES["__STDC_CONSTANT_MACROS"] = True
+DEFINES["__STDC_FORMAT_MACROS"] = True
+
+LOCAL_INCLUDES += [
+    "!/ipc/ipdl/_ipdlheaders",
+    "!/third_party/angle/gen",
+    "/ipc/chromium/src",
+    "/third_party/angle/include/",
+    "/third_party/angle/src/",
+    "/third_party/angle/src/common/base/",
+    "/third_party/angle/src/common/third_party/xxhash/",
+    "/tools/profiler/public"
+]
+
+OS_LIBS += [
+    "-framework Cocoa",
+    "-framework CoreFoundation",
+    "-framework CoreGraphics",
+    "-framework IOKit",
+    "-framework IOSurface",
+    "-framework Metal",
+    "-framework QuartzCore"
+]
+
+SOURCES += [
+    "/third_party/angle/src/libANGLE/renderer/metal/ProgramExecutableMtl.mm"
+]
+
+UNIFIED_SOURCES += [
+    "/third_party/angle/src/libANGLE/renderer/metal/blocklayoutMetal.cpp",
+    "/third_party/angle/src/libANGLE/renderer/metal/BufferMtl.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/CompilerMtl.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/ContextMtl.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/DeviceMtl.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/DisplayMtl.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/FrameBufferMtl.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/ImageMtl.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/IOSurfaceSurfaceMtl.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/mtl_buffer_manager.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/mtl_buffer_pool.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/mtl_command_buffer.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/mtl_common.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/mtl_context_device.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/mtl_format_table_autogen.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/mtl_format_utils.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/mtl_library_cache.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/mtl_msl_utils.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/mtl_occlusion_query_pool.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/mtl_pipeline_cache.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/mtl_render_utils.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/mtl_resources.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/mtl_state_cache.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/mtl_utils.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/ProgramMtl.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/ProvokingVertexHelper.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/QueryMtl.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/RenderBufferMtl.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/renderermtl_utils.cpp",
+    "/third_party/angle/src/libANGLE/renderer/metal/RenderTargetMtl.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/SamplerMtl.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/ShaderMtl.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/SurfaceMtl.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/SyncMtl.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/TextureMtl.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/TransformFeedbackMtl.mm",
+    "/third_party/angle/src/libANGLE/renderer/metal/VertexArrayMtl.mm"
+]
+
+USE_LIBS += [
+    "angle_common_gn",
+    "angle_gpu_info_util_gn",
+    "ANGLE_headers_gn",
+    "angle_image_util_gn",
+    "translator_gn"
+]
+
+if not CONFIG["MOZ_DEBUG"]:
+
+    DEFINES["DYNAMIC_ANNOTATIONS_ENABLED"] = "0"
+    DEFINES["NDEBUG"] = True
+    DEFINES["NVALGRIND"] = True
+
+if CONFIG["MOZ_DEBUG"] == "1":
+
+    DEFINES["ANGLE_DEBUG_LAYERS_ENABLED"] = True
+    DEFINES["DYNAMIC_ANNOTATIONS_ENABLED"] = "1"
+    DEFINES["_DEBUG"] = True
+
+if CONFIG["TARGET_CPU"] == "aarch64":
+
+    DEFINES["__ARM_NEON__"] = "1"
+
+Library("angle_metal_backend_gn")

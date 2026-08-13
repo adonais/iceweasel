@@ -91,6 +91,9 @@ home-prefs-sports-widget-header =
 # Clock is a widget on New Tab that displays time zones around the world.
 home-prefs-clocks-header =
     .label = ساعة
+# Privacy is a widget on New Tab that shows tracking protection activity.
+home-prefs-privacy-header =
+    .label = الخصوصية
 home-prefs-mission-message2 =
     .message = يدعم رعاتنا مهمتنا في بناء شبكة إنترنت أفضل.
 home-prefs-manage-topics-link2 =
@@ -153,6 +156,69 @@ home-prefs-weather-header-srd =
 home-prefs-support-firefox-header-srd =
     .label = ادعم { -brand-product-name }
 home-prefs-mission-message-learn-more-link-srd = اكتشف كيف
+
+## Strings for the Privacy widget
+
+# Context menu item linking to more information about the Privacy widget.
+newtab-privacy-menu-learn-more = اطّلع على المزيد
+
+## Privacy widget — informational messages
+##
+## Rotating "info" secondary messages. Each message has a body plus a matched
+## "-cta" button label sharing the same id stem (the CTA button isn't rendered
+## yet; the labels are authored so the pairing is ready).
+
+newtab-privacy-message-info-1-cta = اطّلع على الحمايات
+newtab-privacy-message-info-2 = يساعد حظر التتبع في منع الشركات من ملاحقتك عبر الإنترنت.
+newtab-privacy-message-info-2-cta = اطّلع على الحمايات
+newtab-privacy-message-info-3-cta = اطّلع على الحمايات
+newtab-privacy-message-info-4-cta = اطّلع على الحمايات
+newtab-privacy-message-info-5-cta = اطّلع على الحمايات
+newtab-privacy-message-info-6-cta = اطّلع على المزيد
+newtab-privacy-message-info-7-cta = اطّلع على الحمايات
+newtab-privacy-message-info-8 = إن التصفح باستخدام { -brand-short-name } يدعم مهمة { -vendor-short-name } في بناء شبكة وِب أفضل.
+newtab-privacy-message-info-8-cta = اطّلع على المزيد
+newtab-privacy-message-info-9 = اجعل { -brand-short-name } متصفحك المفضل للخصوصية المدمجة.
+newtab-privacy-message-info-9-cta = اجعله المبدئي
+newtab-privacy-message-info-10 = احفظ كلمات السر في { -brand-short-name } لاستخدام ولوجات قوية وفريدة في كل مكان.
+newtab-privacy-message-info-10-cta = انتقل إلى كلمات السر
+newtab-privacy-message-info-11 = اكتشف كيف يساعد { -brand-short-name } في الحفاظ على خصوصية تصفحك.
+newtab-privacy-message-info-11-cta = اطّلع على المزيد
+newtab-privacy-message-info-12-cta = اطّلع على الحمايات
+newtab-privacy-message-info-13-cta = اطّلع على الحمايات
+
+## Privacy widget — promotional messages
+##
+## Rotating "promo" secondary messages suggesting another Firefox feature. Each
+## has a body plus a matched "-cta" button label.
+
+newtab-privacy-message-promo-monitor-1-cta = اطّلع على المزيد
+newtab-privacy-message-promo-monitor-2-cta = اطّلع على المزيد
+newtab-privacy-message-promo-signin-1-cta = لِج
+newtab-privacy-message-promo-private-window-1-cta = افتح نافذة خاصة
+
+## Privacy widget — celebration messages
+##
+## Earned "celebration" moments (milestones, daily cap, streak, first
+## protection). Count-bearing ones interpolate { $count }.
+
+newtab-privacy-message-milestone-week-cta = اطّلع على الحمايات
+newtab-privacy-message-milestone-month-cta = اطّلع على الحمايات
+newtab-privacy-message-milestone-year-cta = اطّلع على الحمايات
+newtab-privacy-message-milestone-total-cta = اطّلع على الحمايات
+newtab-privacy-message-daily-cap-cta = اطّلع على الحمايات
+newtab-privacy-message-streak-cta = اطّلع على الحمايات
+newtab-privacy-message-first-protection-cta = اطّلع على الحمايات
+
+## Strings for the Stocks widget
+
+# Context menu item linking to more information about the Stocks widget.
+newtab-stocks-menu-learn-more = اطّلع على المزيد
+
+## Strings for the Picture of the Day widget
+
+# Context menu item linking to more information about the widget.
+newtab-picture-menu-learn-more = اطّلع على المزيد
 
 ## Search box component.
 
@@ -478,6 +544,8 @@ newtab-recommended-stories-toggle =
     .label = القصص المُقترحة
 newtab-custom-stories-personalized-toggle =
     .label = القصص
+newtab-custom-stories-personalized-checkbox =
+    .label = قصص مخصّصة بناءً على نشاطك
 newtab-custom-stories-personalized-checkbox-label = قصص مخصّصة بناءً على نشاطك
 newtab-custom-pocket-sponsored = قصص مموّلة
 newtab-custom-pocket-show-recent-saves = أظهِر عمليات الحفظ الأخيرة
@@ -489,6 +557,8 @@ newtab-custom-widget-lists-toggle =
     .label = قوائم
 newtab-custom-widget-timer-toggle =
     .label = المؤقت
+newtab-custom-widget-privacy-toggle =
+    .label = الخصوصية
 newtab-widget-manage-widget-button =
     .label = أدر الويدجات
 # Tooltip for close button
@@ -855,6 +925,8 @@ newtab-widget-timer-reset =
 newtab-widget-timer-menu-notifications = عطّل الإشعارات
 newtab-widget-timer-menu-notifications-on = فعّل الإشعارات
 newtab-widget-timer-menu-learn-more = اطّلع على المزيد
+newtab-widget-timer-menu-button =
+    .aria-label = خيارات المؤقت
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = أهم العناوين
 newtab-daily-briefing-card-menu-dismiss = أهمِل
@@ -930,6 +1002,7 @@ newtab-activation-window-message-values-focus-message = يتيح لك { -brand-p
 
 ## Strings for the Clock widget
 
+newtab-clock-widget-menu-learn-more = اطّلع على المزيد
 newtab-clock-widget-menu-edit = حرّر الساعات
 newtab-clock-widget-menu-switch-to-12h = بدّل إلى نظام الـ 12 ساعة
 newtab-clock-widget-menu-switch-to-24h = بدّل إلى نظام الـ 24 ساعة

@@ -10,7 +10,8 @@
 #include <stddef.h>  // size_t
 #include <stdint.h>  // uint8_t, INT32_MAX
 
-#include "jsapi.h"           // JS_NewObject
+#include "jsapi.h"  // JS_NewObject
+
 #include "js/Class.h"        // JSClassOps, JSClass, JSCLASS_*
 #include "js/ErrorReport.h"  // JS_ReportErrorASCII
 #include "js/experimental/JSStencil.h"  // JS::Stencil, JS::StencilAddRef, JS::StencilRelease

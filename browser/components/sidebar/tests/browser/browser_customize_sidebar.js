@@ -74,7 +74,7 @@ add_task(async function test_customize_sidebar_actions() {
   for (const toolInput of customizeComponent.toolInputs) {
     let toolDisabledInitialState = !toolInput.checked;
     toolInput.click();
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => {
         let toggledTool = SidebarController.toolsAndExtensions.get(
           toolInput.id
@@ -95,7 +95,7 @@ add_task(async function test_customize_sidebar_actions() {
       }.`
     );
     toolInput.click();
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => {
         let toggledTool = SidebarController.toolsAndExtensions.get(
           toolInput.id
@@ -189,7 +189,7 @@ add_task(async function test_customize_position_setting() {
   const newWin = await BrowserTestUtils.openNewBrowserWindow();
   const newPanel = await showCustomizePanel(newWin);
   const newSidebarBox = newWin.document.getElementById("sidebar-box");
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => BrowserTestUtils.isVisible(newSidebarBox),
     "Sidebar panel is visible"
   );
@@ -289,6 +289,132 @@ add_task(async function test_vertical_tabs_setting() {
   await BrowserTestUtils.closeWindow(newWin);
 
   Services.prefs.clearUserPref(VERTICAL_TABS_PREF);
+});
+
+add_task(async function test_open_tools_from_sidebar_horizontal() {
+  await SpecialPowers.pushPrefEnv({
+    set: [[VERTICAL_TABS_PREF, false]],
+  });
+  await SidebarTestUtils.waitForTabstripOrientation(window, "horizontal");
+
+  const panel = await showCustomizePanel(window);
+  const input = panel.openToolsFromSidebarInput;
+  ok(input, "Open tools from sidebar checkbox is shown.");
+  ok(
+    input.checked,
+    "Open tools from sidebar is checked by default for horizontal tabs."
+  );
+  ok(
+    !input.disabled,
+    "Open tools from sidebar is customizable for horizontal tabs."
+  );
+
+  info("Uncheck to turn on the panel switcher dropdown.");
+  input.click();
+  await panel.updateComplete;
+  ok(!input.checked, "Open tools from sidebar is unchecked.");
+  is(
+    Services.prefs.getStringPref(SIDEBAR_VISIBILITY_PREF),
+    "hide-launcher",
+    "Unchecking turns on the panel switcher dropdown (hide-launcher)."
+  );
+
+  // Let the launcher's overflow IntersectionObserver run while the
+  // launcher is hidden and ensure we aren't left with a sidebar
+  // with unexpectedly hidden buttons
+  const { sidebarMain } = window.SidebarController;
+  await sidebarMain.updateComplete;
+  await waitForRepaint();
+  for (const button of sidebarMain.toolButtons) {
+    isnot(
+      button.style.visibility,
+      "hidden",
+      `Tool button ${button.getAttribute("view")} isn't hidden while the ` +
+        `launcher is hidden.`
+    );
+  }
+
+  input.click();
+  await panel.updateComplete;
+  ok(input.checked, "Open tools from sidebar is checked again.");
+  is(
+    Services.prefs.getStringPref(SIDEBAR_VISIBILITY_PREF),
+    "hide-on-close",
+    "Checking 'Open tools from sidebar' option places tool buttons back in the launcher."
+  );
+
+  await sidebarMain.updateComplete;
+  await waitForRepaint();
+  ok(sidebarMain.toolButtons.length, "Launcher still has tool buttons.");
+  for (const button of sidebarMain.toolButtons) {
+    is(
+      window.getComputedStyle(button).visibility,
+      "visible",
+      `Tool button ${button.getAttribute("view")} is visible in the launcher.`
+    );
+  }
+
+  Services.prefs.clearUserPref(SIDEBAR_VISIBILITY_PREF);
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_open_tools_from_sidebar_vertical_disabled() {
+  await SpecialPowers.pushPrefEnv({
+    set: [[VERTICAL_TABS_PREF, false]],
+  });
+  await SidebarTestUtils.waitForTabstripOrientation(window, "horizontal");
+
+  const panel = await showCustomizePanel(window);
+  ok(!panel.verticalTabsInput.checked, "Horizontal tabs to start.");
+  ok(
+    !panel.openToolsFromSidebarInput.disabled,
+    "Open tools from sidebar is enabled with horizontal tabs."
+  );
+
+  info("Enable vertical tabs.");
+  panel.verticalTabsInput.click();
+  await SidebarTestUtils.waitForTabstripOrientation(window, "vertical");
+  await TestUtils.waitForCondition(
+    () => panel.openToolsFromSidebarInput?.disabled,
+    "Open tools from sidebar becomes disabled when vertical tabs is enabled."
+  );
+  ok(
+    panel.openToolsFromSidebarInput.checked,
+    "Open tools from sidebar is shown checked with vertical tabs."
+  );
+  ok(
+    panel.openToolsFromSidebarInput.disabled,
+    "Open tools from sidebar is disabled with vertical tabs."
+  );
+
+  Services.prefs.clearUserPref(VERTICAL_TABS_PREF);
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_open_tools_from_sidebar_vertical_initial_load() {
+  // Regression test for bug 2052275: when the customize panel is opened for the
+  // first time while vertical tabs are already enabled, "Open tools from
+  // sidebar" must be disabled without first toggling the vertical tabs option.
+  await SpecialPowers.pushPrefEnv({
+    set: [[VERTICAL_TABS_PREF, true]],
+  });
+
+  const win = await BrowserTestUtils.openNewBrowserWindow();
+  await SidebarTestUtils.waitForTabstripOrientation(win, "vertical");
+
+  const panel = await showCustomizePanel(win);
+  ok(panel.verticalTabsInput.checked, "Vertical tabs enabled on initial load.");
+  ok(
+    panel.openToolsFromSidebarInput.checked,
+    "Open tools from sidebar is shown checked with vertical tabs."
+  );
+  ok(
+    panel.openToolsFromSidebarInput.disabled,
+    "Open tools from sidebar is disabled on initial load with vertical tabs."
+  );
+
+  await BrowserTestUtils.closeWindow(win);
+  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function test_keyboard_navigation_away_from_settings_link() {

@@ -5,19 +5,18 @@
 #ifndef GFX_WINDOWSDWRITEFONTS_H
 #define GFX_WINDOWSDWRITEFONTS_H
 
-#include "mozilla/Atomics.h"
-#include "mozilla/MemoryReporting.h"
-#include "mozilla/UniquePtr.h"
 #include <dwrite_1.h>
 
 #include "gfxDWriteCommon.h"
 #include "gfxFont.h"
 #include "gfxUserFontSet.h"
-#include "nsTHashMap.h"
-#include "nsHashKeys.h"
-
-#include "mozilla/gfx/gfxVars.h"
+#include "mozilla/Atomics.h"
+#include "mozilla/MemoryReporting.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/UnscaledFontDWrite.h"
+#include "mozilla/gfx/gfxVars.h"
+#include "nsHashKeys.h"
+#include "nsTHashMap.h"
 
 /**
  * \brief Class representing a font face for a font entry.
@@ -50,7 +49,7 @@ class gfxDWriteFont final : public gfxFont {
   RunMetrics Measure(const gfxTextRun* aTextRun, uint32_t aStart, uint32_t aEnd,
                      BoundingBoxType aBoundingBoxType,
                      DrawTarget* aDrawTargetForTightBoundingBox,
-                     Spacing* aSpacing,
+                     Spacing* aSpacing, nscoord aLetterSpacing,
                      mozilla::gfx::ShapedTextFlags aOrientation) override;
 
   bool ProvidesGlyphWidths() const override;
@@ -100,14 +99,14 @@ class gfxDWriteFont final : public gfxFont {
   bool mUseSubpixelPositions;
   bool mAllowManualShowGlyphs;
 
-  // Used to record the sUseClearType setting at the time mAzureScaledFont
-  // was set up, so we can tell if it's stale and needs to be re-created.
-  mozilla::Atomic<bool> mAzureScaledFontUsedClearType;
-
   // Cache the GDI version of the ScaledFont so that font keys and other
   // meta-data can remain stable even if there is thrashing between GDI and
   // non-GDI usage.
   mozilla::Atomic<mozilla::gfx::ScaledFont*> mAzureScaledFontGDI;
+
+  // Cache the ClearType-enabled versions of ScaledFonts if setting is toggled.
+  mozilla::Atomic<mozilla::gfx::ScaledFont*> mAzureScaledFontClearType;
+  mozilla::Atomic<mozilla::gfx::ScaledFont*> mAzureScaledFontGDIClearType;
 
   bool UsingClearType() {
     return mozilla::gfx::gfxVars::SystemTextQuality() == CLEARTYPE_QUALITY;

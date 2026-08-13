@@ -5,8 +5,6 @@
 #ifndef vm_GlobalObject_h
 #define vm_GlobalObject_h
 
-#include "js/GlobalObject.h"
-
 #include "mozilla/Assertions.h"
 #include "mozilla/EnumeratedArray.h"
 
@@ -17,6 +15,8 @@
 #include "jspubtd.h"
 #include "jstypes.h"
 #include "NamespaceImports.h"
+
+#include "js/GlobalObject.h"
 
 #ifdef JS_HAS_INTL_API
 #  include "builtin/intl/GlobalIntlData.h"

@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "UrlClassifierExceptionListEntry.h"
+
 #include "mozilla/ErrorResult.h"
 #include "mozilla/StaticPrefs_privacy.h"
 

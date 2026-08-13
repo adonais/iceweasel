@@ -57,7 +57,7 @@ class WebCompatReporterStoreTest {
     }
 
     @Test
-    fun `WHEN the broken URL is updated with an extension URL THEN the state should have an input error`() {
+    fun `WHEN the broken URL is updated with an extension URL THEN the state should hzave an input error`() {
         store.dispatch(WebCompatReporterAction.BrokenSiteChanged(newUrl = "moz-extension://test"))
         assertTrue(store.state.hasUrlTextError)
     }
@@ -71,12 +71,10 @@ class WebCompatReporterStoreTest {
     @Test
     fun `WHEN the reason is not empty THEN the state should not have an input error`() {
         assertNull(store.state.reason)
-        assertTrue(store.state.hasReasonDropdownError)
 
         store.dispatch(WebCompatReporterAction.ReasonChanged(WebCompatReporterState.BrokenSiteReason.Slow))
 
         assertNotNull(store.state.reason)
-        assertFalse(store.state.hasReasonDropdownError)
     }
 
     @Test
@@ -88,7 +86,6 @@ class WebCompatReporterStoreTest {
         )
 
         assertNull(store.state.reason)
-        assertTrue(store.state.hasReasonDropdownError)
     }
 
     @Test
@@ -101,7 +98,6 @@ class WebCompatReporterStoreTest {
         )
 
         assertFalse(store.state.hasUrlTextError)
-        assertFalse(store.state.hasReasonDropdownError)
         assertTrue(store.state.isSubmitEnabled)
     }
 
@@ -115,7 +111,6 @@ class WebCompatReporterStoreTest {
         )
 
         assertTrue(store.state.hasUrlTextError)
-        assertFalse(store.state.hasReasonDropdownError)
         assertFalse(store.state.isSubmitEnabled)
     }
 
@@ -129,13 +124,20 @@ class WebCompatReporterStoreTest {
         )
 
         assertFalse(store.state.hasUrlTextError)
-        assertTrue(store.state.hasReasonDropdownError)
         assertFalse(store.state.isSubmitEnabled)
     }
 
     @Test
     fun `WHEN the reason is updated THEN the state should be updated`() {
         val expected = WebCompatReporterState.BrokenSiteReason.Slow
+
+        store.dispatch(WebCompatReporterAction.ReasonChanged(newReason = expected))
+        assertEquals(expected, store.state.reason)
+    }
+
+    @Test
+    fun `WHEN the deceptive site reason is selected THEN the state should be updated`() {
+        val expected = WebCompatReporterState.BrokenSiteReason.DeceptiveSite
 
         store.dispatch(WebCompatReporterAction.ReasonChanged(newReason = expected))
         assertEquals(expected, store.state.reason)
@@ -166,18 +168,10 @@ class WebCompatReporterStoreTest {
     }
 
     @Test
-    fun `WHEN the send more info button is clicked THEN the state remains the same`() {
+    fun `WHEN the deceptive site report is selected THEN the state remains the same`() {
         val expected = store.state
 
-        store.dispatch(WebCompatReporterAction.AddMoreInfoClicked)
-        assertEquals(expected, store.state)
-    }
-
-    @Test
-    fun `WHEN the send more info button is submitted THEN the state remains the same`() {
-        val expected = store.state
-
-        store.dispatch(WebCompatReporterAction.SendMoreInfoSubmitted)
+        store.dispatch(WebCompatReporterAction.DeceptiveSiteReportSelected)
         assertEquals(expected, store.state)
     }
 
@@ -194,14 +188,6 @@ class WebCompatReporterStoreTest {
         val expected = store.state
 
         store.dispatch(WebCompatReporterAction.CancelClicked)
-        assertEquals(expected, store.state)
-    }
-
-    @Test
-    fun `WHEN the back button is clicked THEN the state remains the same`() {
-        val expected = store.state
-
-        store.dispatch(WebCompatReporterAction.BackPressed)
         assertEquals(expected, store.state)
     }
 

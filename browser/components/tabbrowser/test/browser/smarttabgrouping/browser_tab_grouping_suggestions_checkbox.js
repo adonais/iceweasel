@@ -19,7 +19,7 @@
 async function openCreatePanel(tabgroupPanel, tab) {
   let panelShown = BrowserTestUtils.waitForPopupEvent(tabgroupPanel, "shown");
   gBrowser.addTabGroup([tab], {
-    isUserTriggered: true,
+    metricsContext: gBrowser.TabMetrics.userTriggeredContext(),
   });
   await panelShown;
 }
@@ -132,7 +132,7 @@ add_task(async function test_smart_tab_group_suggestions_checkbox_selection() {
   suggestButton.click();
 
   // Wait for moz-checkbox suggestion rows to be created.
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       tabgroupPanel.querySelectorAll(".tab-group-suggestion-checkbox")
         .length === suggestedTabs.length,

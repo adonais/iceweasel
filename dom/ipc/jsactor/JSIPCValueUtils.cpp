@@ -649,7 +649,7 @@ void JSIPCValueUtils::ToJSVal(JSContext* aCx, JSIPCValue&& aIn,
       return;
 
     case JSIPCValue::Tdouble:
-      aOut.set(JS_NumberValue(aIn.get_double()));
+      aOut.setNumber(aIn.get_double());
       return;
 
     case JSIPCValue::Tint32_t:

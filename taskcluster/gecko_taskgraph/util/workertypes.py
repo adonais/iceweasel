@@ -4,10 +4,9 @@
 
 import functools
 
+from mozilla_taskgraph.util.attributes import release_level as _release_level
 from taskgraph.util.attributes import keymatch
 from taskgraph.util.keyed_by import evaluate_keyed_by
-
-from gecko_taskgraph.util.attributes import release_level as _release_level
 
 WORKER_TYPES = {
     "gce/gecko-1-b-linux": ("docker-worker", "linux"),
@@ -94,7 +93,7 @@ def get_worker_type(graph_config, parameters, worker_type):
         graph_config,
         worker_type,
         parameters["level"],
-        _release_level(parameters),
+        _release_level(graph_config["release-branches"], parameters),
         parameters.get("project"),
     )
     return worker_config["provisioner"], worker_config["worker-type"]

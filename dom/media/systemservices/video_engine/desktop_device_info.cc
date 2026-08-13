@@ -77,10 +77,6 @@ const Device* DesktopDeviceInfoImpl<Type, Device>::getSource(
 
 static std::map<intptr_t, TabSource> InitializeTabList() {
   std::map<intptr_t, TabSource> tabList;
-  if (!mozilla::StaticPrefs::media_getusermedia_browser_enabled()) {
-    return tabList;
-  }
-
   // This is a sync dispatch to main thread, which is unfortunate. To
   // call JavaScript we have to be on main thread, but the remaining
   // DesktopCapturer very much wants to be off main thread. This might

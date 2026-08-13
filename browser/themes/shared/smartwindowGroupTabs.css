@@ -1,0 +1,258 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/* Smart Window "Organize Tabs" panels. These are chrome-side XUL <panel>s */
+#smartwindow-group-tabs-panel,
+#smartwindow-group-tabs-flyout {
+  --panel-padding: var(--space-small) 0;
+  font: menu;
+}
+
+#smartwindow-group-tabs-panel {
+  --panel-width: 23em;
+}
+
+#smartwindow-group-tabs-flyout {
+  --panel-width: 22em;
+}
+
+.swgt-card,
+.swgt-flyout {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.swgt-header {
+  margin: 0;
+  padding: var(--panel-menuitem-padding);
+  font-size: inherit;
+  font-weight: var(--font-weight-semibold);
+  text-align: center;
+}
+
+.swgt-separator {
+  /* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
+  height: var(--border-width);
+  background-color: var(--panel-separator-color);
+  /* stylelint-enable stylelint-plugin-mozilla/use-design-tokens */
+  margin: var(--panel-separator-padding);
+  border: none;
+}
+
+.swgt-section {
+  box-sizing: border-box;
+  margin: var(--panel-menuitem-margin);
+  padding: var(--panel-menuitem-padding);
+  padding-block: var(--space-xsmall);
+  font-weight: inherit;
+  color: var(--text-color-deemphasized);
+}
+
+.swgt-row,
+.swgt-flyout-tab,
+.swgt-recent-row {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+  margin: var(--panel-menuitem-margin);
+  padding: var(--panel-menuitem-padding);
+  border-radius: var(--panel-menuitem-border-radius);
+}
+
+.swgt-row,
+.swgt-flyout-tab {
+  appearance: none;
+  border: none;
+  background-color: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.swgt-row:hover,
+.swgt-row.is-active,
+.swgt-flyout-tab:hover {
+  background-color: var(--button-background-color-menu-hover);
+  color: var(--button-text-color-menu-hover);
+}
+
+/* The card takes programmatic focus when the panel opens (to move screen-reader
+ * focus into the dialog); it is not a keyboard stop, so it shows no ring. The
+ * controls inside it do. */
+.swgt-card:focus-visible {
+  outline: none;
+}
+
+.swgt-row:focus-visible,
+.swgt-flyout-tab:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-outline-inset);
+}
+
+.swgt-row-label,
+.swgt-flyout-tab-label {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.swgt-favicons {
+  display: flex;
+  align-items: center;
+  flex: none;
+}
+
+.swgt-favicon {
+  width: var(--size-item-small);
+  height: var(--size-item-small);
+  border-radius: var(--border-radius-xsmall);
+  background-color: var(--background-color-box);
+  box-shadow: var(--box-shadow-level-1);
+  flex: none;
+
+  @media (forced-colors: active) {
+    /* Without the shadow the overlapping edges need an outline to stay apart. */
+    box-shadow: none;
+    outline: var(--border-width) solid var(--border-color);
+  }
+}
+
+/* Overlap the row's favicons, leading icon on top. */
+.swgt-favicons > .swgt-favicon {
+  position: relative;
+
+  &:not(:first-child) {
+    margin-inline-start: calc(-1 * var(--space-small));
+  }
+
+  &:nth-child(1) {
+    z-index: 2;
+  }
+
+  &:nth-child(2) {
+    z-index: 1;
+  }
+}
+
+.swgt-swatch {
+  width: var(--size-item-small);
+  height: var(--size-item-small);
+  border-radius: var(--border-radius-xsmall);
+  flex: none;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens --
+     set inline per group by the card, from the tab strip's --tab-group-* palette. */
+  background-color: var(--swgt-swatch-color);
+}
+
+.swgt-message {
+  margin: var(--panel-menuitem-margin);
+  padding: var(--panel-menuitem-padding);
+  color: var(--text-color-deemphasized);
+}
+
+@media not (prefers-contrast) {
+  .swgt-loading {
+    --swgt-loading-gradient: linear-gradient(
+      90deg,
+      var(--color-violet-50) 0%,
+      var(--color-violet-40) 22%,
+      var(--color-pink-40) 42%,
+      var(--color-pink-30) 52%,
+      var(--color-violet-40) 72%,
+      var(--color-violet-50) 100%
+    );
+    background-image: var(--swgt-loading-gradient);
+    background-size: 200% auto;
+    background-clip: text;
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens --
+       the gradient above is the text color. */
+    color: transparent;
+    font-weight: var(--font-weight-semibold);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .swgt-loading {
+      animation: swgtLoadingShimmer 2s ease-in-out infinite;
+    }
+  }
+}
+
+@keyframes swgtLoadingShimmer {
+  from {
+    background-position: 100% center;
+  }
+
+  to {
+    background-position: -100% center;
+  }
+}
+
+.swgt-note {
+  --swgt-note-background: var(--background-color-box);
+  --swgt-note-border-color: var(--border-color);
+  display: flex;
+  align-items: center;
+  margin: var(--space-medium) var(--panel-menuitem-margin-inline);
+  padding: var(--space-medium);
+  background-color: var(--swgt-note-background);
+  border: var(--border-width) solid var(--swgt-note-border-color);
+  border-radius: var(--border-radius-medium);
+  overflow: hidden;
+
+  @media not (prefers-contrast) {
+    --swgt-note-background: light-dark(var(--color-violet-0), color-mix(in srgb, var(--color-violet-50) 12%, transparent));
+    --swgt-note-border-color: light-dark(var(--color-violet-10), color-mix(in srgb, var(--color-violet-50) 35%, transparent));
+  }
+}
+
+.swgt-note > .swgt-message {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+}
+
+/* Spans the note's full height, so the note's bottom edge crops the artwork
+ * the way the design crops it. */
+.swgt-note-art {
+  flex: none;
+  /* stylelint-disable stylelint-plugin-mozilla/use-design-tokens --
+     the artwork is cropped at 56px in the design and no size token matches. */
+  width: 56px;
+  height: 56px;
+  /* stylelint-enable stylelint-plugin-mozilla/use-design-tokens */
+  margin-block: calc(-1 * var(--space-medium));
+  margin-inline-start: var(--space-medium);
+  background-image: url("chrome://browser/content/aiwindow/assets/kit-meditating.svg");
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: center;
+
+  @media (forced-colors: active) {
+    display: none;
+  }
+}
+
+.swgt-flyout-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.swgt-ungroup {
+  color: var(--text-color-deemphasized);
+}
+
+.swgt-ungroup-icon {
+  width: var(--icon-size);
+  height: var(--icon-size);
+  flex: none;
+  background-color: currentColor;
+  mask: url("chrome://global/skin/icons/undo.svg") no-repeat center / var(--icon-size) var(--icon-size);
+}

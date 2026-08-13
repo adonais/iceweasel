@@ -649,7 +649,7 @@ void viaduct_necko_backend_send_request(const ViaductRequest* request,
 
           rv = uploadChannel->ExplicitSetUploadStream(
               bodyStream, VoidCString(), guard.Request()->body_len,
-              nsDependentCString(methodStr), false);
+              nsDependentCString(methodStr));
           if (NS_FAILED(rv)) {
             guard.CompleteWithError(rv, "Failed to set upload stream");
             return;

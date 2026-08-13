@@ -23,7 +23,10 @@ Cc["@mozilla.org/serviceworkers/manager;1"].getService(
 );
 
 add_task(async function run_test() {
-  do_get_profile();
+  // Pass `true` to emit "profile-after-change" so the bounce tracking
+  // protection service can initialize when sanitize-on-shutdown clears its
+  // state (see bug 1991526).
+  do_get_profile(true);
   let SSService = Cc["@mozilla.org/ssservice;1"].getService(
     Ci.nsISiteSecurityService
   );
@@ -36,11 +39,24 @@ add_task(async function run_test() {
       : false;
   });
 
-  // Configure Firefox to clear this data on shutdown.
+  // Configure clear-on-shutdown explicitly. "cache" removes the HSTS state this
+  // test checks (CLEAR_ALL_CACHES includes CLEAR_HSTS) so it stays on. We also
+  // skip the v1->v2 migration that runs at shutdown, which would otherwise
+  // re-enable "browsingHistoryAndDownloads" from the conditioned profile and
+  // clear its large places.sqlite, timing out the test (bug 2048727).
   Services.prefs.setBoolPref(
-    Sanitizer.PREF_SHUTDOWN_BRANCH + "siteSettings",
+    "privacy.sanitize.clearOnShutdown.hasMigratedToNewPrefs3",
     true
   );
+  for (let category of ["cache", "cookiesAndStorage", "siteSettings"]) {
+    Services.prefs.setBoolPref(Sanitizer.PREF_SHUTDOWN_BRANCH + category, true);
+  }
+  for (let category of ["browsingHistoryAndDownloads", "formdata"]) {
+    Services.prefs.setBoolPref(
+      Sanitizer.PREF_SHUTDOWN_BRANCH + category,
+      false
+    );
+  }
   Services.prefs.setBoolPref(Sanitizer.PREF_SANITIZE_ON_SHUTDOWN, true);
 
   // Simulate shutdown.

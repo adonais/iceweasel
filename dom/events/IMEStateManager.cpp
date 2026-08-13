@@ -476,12 +476,44 @@ nsresult IMEStateManager::OnRemoveContent(nsPresContext& aPresContext,
     nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
         "IMEStateManager::RecreateIMEContentObserverWhenContentRemoved",
         [presContext = OwningNonNull{aPresContext}]() {
-          MOZ_ASSERT(sFocusedPresContext == presContext);
-          MOZ_ASSERT(!sFocusedElement);
-          if (HTMLEditor* const htmlEditor =
-                  nsContentUtils::GetHTMLEditor(presContext)) {
-            CreateIMEContentObserver(*htmlEditor, nullptr);
+          // If focus has been changed, we need to do nothing.
+          if (sFocusedPresContext != presContext || sFocusedElement)
+              [[unlikely]] {
+            return;
           }
+          // Otherwise, we need to recreate IMEContentObserver if there is no
+          // proper IMEContentObserver has not been created.
+          const RefPtr<HTMLEditor> htmlEditor =
+              nsContentUtils::GetHTMLEditor(presContext);
+          if (!htmlEditor) [[unlikely]] {
+            return;
+          }
+          if (sActiveIMEContentObserver) {
+            // If we've already created IMEContentObserver and it is observing
+            // for the HTMLEditor, we need to do nothing.
+            if (sActiveIMEContentObserver->IsObserving(presContext, nullptr)) {
+              return;
+            }
+            NS_WARNING(
+                "There is unexpected IMEContentObserver, we'll recreate it...");
+            // Then, destroy the unnecessary observer.
+            DestroyIMEContentObserver();
+            // NOTIFY_IME_OF_BLUR **might** cause changing the DOM focus because
+            // if we're in the parent process, the widget may call native IME
+            // synchronously.
+            if (sFocusedPresContext != presContext || sFocusedElement)
+                [[unlikely]] {
+              MOZ_ASSERT(XRE_IsParentProcess());
+              return;
+            }
+            if (sActiveIMEContentObserver) {
+              MOZ_ASSERT(XRE_IsParentProcess());
+              MOZ_ASSERT(
+                  sActiveIMEContentObserver->IsObserving(presContext, nullptr));
+              return;
+            }
+          }
+          CreateIMEContentObserver(*htmlEditor, nullptr);
         }));
   }
 

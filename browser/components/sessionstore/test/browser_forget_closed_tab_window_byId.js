@@ -121,7 +121,7 @@ add_task(async function closeAndForgetTabsFromTabGroups() {
   await removePromise;
   await TabStateFlusher.flushWindow(newWin);
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return SessionStore.getClosedTabCount(newWin) == 1;
   }, "Grouped tab is closed");
 

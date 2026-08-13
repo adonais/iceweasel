@@ -4,6 +4,7 @@
 
 package mozilla.components.feature.importer
 
+import mozilla.components.concept.bookmarks.file.BookmarksImporterError
 import mozilla.components.lib.state.State
 
 /**
@@ -24,23 +25,26 @@ sealed interface ImporterState : State {
      *
      * @property result The outcome of the import.
      */
-    data class Finished(val result: ImporterResult) : ImporterState
+    data class Finished(val result: ImporterEvent) : ImporterState
 }
 
 /**
- * Represents the outcome of a completed import operation.
+ * Represents a discrete event emitted by the importer during the import lifecycle.
  */
-sealed interface ImporterResult {
+sealed interface ImporterEvent {
+    /** The import process has started. */
+    data object Started : ImporterEvent
+
     /**
      * The import succeeded.
      *
      * @property importCount The number of items imported.
      */
-    data class Success(val importCount: Int) : ImporterResult
+    data class Success(val importCount: Int) : ImporterEvent
 
     /** The import failed due to an error. */
-    data object Failure : ImporterResult
+    data class Failure(val error: BookmarksImporterError) : ImporterEvent
 
     /** The user cancelled the import. */
-    data object Canceled : ImporterResult
+    data object Canceled : ImporterEvent
 }

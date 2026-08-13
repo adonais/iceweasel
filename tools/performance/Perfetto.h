@@ -270,7 +270,6 @@ void EmitPerfettoTrackEvent(const mozilla::ProfilerString8View& aName,
   const char* categoryName =
       ProfilerCategoryNames[static_cast<uint32_t>(aCategory.GetCategory())];
   perfetto::DynamicCategory category{categoryName};
-  perfetto::DynamicString name{nameStr, nameSv.length()};
 
   // If the Marker has payload fields, we can annotate them in the perfetto
   // track event. Otherwise, we define an empty lambda which does nothing.
@@ -296,8 +295,7 @@ void EmitPerfettoTrackEvent(const mozilla::ProfilerString8View& aName,
   }
 
   // Create a unique id for each marker so it has it's own track.
-  mozilla::HashNumber hash =
-      mozilla::HashStringKnownLength(nameStr, nameSv.length());
+  mozilla::HashNumber hash = mozilla::HashString(nameStr, nameSv.length());
 
   switch (phase) {
     case mozilla::MarkerTiming::Phase::Interval: {
@@ -307,15 +305,20 @@ void EmitPerfettoTrackEvent(const mozilla::ProfilerString8View& aName,
           hash, endTime.RawClockMonotonicNanosecondsSinceBoot());
       perfetto::Track track(hash);
 
-      PERFETTO_TRACE_EVENT_BEGIN(category, name, track, startTime);
+      PERFETTO_TRACE_EVENT_BEGIN(
+          category, (perfetto::DynamicString{nameStr, nameSv.length()}), track,
+          startTime);
       PERFETTO_TRACE_EVENT_END(category, track, endTime, annotateTrackEvent);
     } break;
     case mozilla::MarkerTiming::Phase::Instant: {
-      PERFETTO_TRACE_EVENT_INSTANT(category, name, startTime);
+      PERFETTO_TRACE_EVENT_INSTANT(
+          category, (perfetto::DynamicString{nameStr, nameSv.length()}),
+          startTime);
     } break;
     case mozilla::MarkerTiming::Phase::IntervalStart: {
-      PERFETTO_TRACE_EVENT_BEGIN(category, name, perfetto::Track(hash),
-                                 startTime);
+      PERFETTO_TRACE_EVENT_BEGIN(
+          category, (perfetto::DynamicString{nameStr, nameSv.length()}),
+          perfetto::Track(hash), startTime);
     } break;
     case mozilla::MarkerTiming::Phase::IntervalEnd: {
       PERFETTO_TRACE_EVENT_END(category, perfetto::Track(hash), endTime,

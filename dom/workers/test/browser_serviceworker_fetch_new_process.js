@@ -12,12 +12,6 @@ const TEST_BLOB_CONTENTS = `I'm a disk-backed test blob! Hooray!`;
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
-      // Set preferences so that opening a page with the origin "example.org"
-      // will result in a remoteType of "privilegedmozilla" for both the
-      // page and the ServiceWorker.
-      ["browser.tabs.remote.separatePrivilegedMozillaWebContentProcess", true],
-      ["browser.tabs.remote.separatedMozillaDomains", "example.org"],
-      ["dom.ipc.processCount.privilegedmozilla", 1],
       ["dom.ipc.processPrelaunch.enabled", false],
       ["dom.serviceWorkers.enabled", true],
       ["dom.serviceWorkers.testing.enabled", true],
@@ -26,6 +20,14 @@ add_setup(async function () {
       // `waitForWorkerAndProcessShutdown`.
       ["dom.serviceWorkers.idle_timeout", 299999],
       ["dom.serviceWorkers.idle_extended_timeout", 299999],
+      // This test introspects worker process placement via the content-process
+      // nsIWorkerDebuggerManager enumeration, which only lists workers whose
+      // debugger lives in the content process. Force the local WorkerDebugger
+      // instead of the parent-process RemoteWorkerDebugger (bug 1944240). Remove
+      // this pin (or the test) once the local WorkerDebugger mechanism is
+      // removed; this legacy worker-introspection path still needs to be
+      // modernized to the RemoteWorkerDebugger model.
+      ["dom.worker.remoteDebugger.enabled", false],
     ],
   });
 });
@@ -327,35 +329,32 @@ add_task(async function test() {
 
   let initialSums = getSWTelemetrySums();
 
-  // ## Isolated Privileged Process
-  // Trigger a straightforward intercepted navigation with no request body that
-  // returns a synthetic response.
-  await do_test_sw("example.org", "privilegedmozilla", "synthetic", null);
-
-  // Trigger an intercepted navigation with FormData containing an
-  // <input type="file"> which will result in the request body containing a
-  // RemoteLazyInputStream which will be consumed in the content process by the
-  // ServiceWorker while generating the synthetic response.
   const fileBlob = await makeFileBlob(TEST_BLOB_CONTENTS);
-  await do_test_sw("example.org", "privilegedmozilla", "synthetic", fileBlob);
-
-  // Trigger an intercepted navigation with FormData containing an
-  // <input type="file"> which will result in the request body containing a
-  // RemoteLazyInputStream which will be relayed back to the parent process
-  // via direct invocation of fetch() on the event.request but without any
-  // cloning.
-  await do_test_sw("example.org", "privilegedmozilla", "fetch", fileBlob);
-
-  // Same as the above but cloning the request before fetching it.
-  await do_test_sw("example.org", "privilegedmozilla", "clone", fileBlob);
 
   // ## Fission Isolation
   if (Services.appinfo.fissionAutostart) {
     // ## ServiceWorker isolation
     const isolateUrl = "example.com";
     const isolateRemoteType = `webServiceWorker=https://` + isolateUrl;
+    // Trigger a straightforward intercepted navigation with no request body
+    // that returns a synthetic response.
     await do_test_sw(isolateUrl, isolateRemoteType, "synthetic", null);
+
+    // Trigger an intercepted navigation with FormData containing an
+    // <input type="file"> which will result in the request body containing a
+    // RemoteLazyInputStream which will be consumed in the content process by
+    // the ServiceWorker while generating the synthetic response.
     await do_test_sw(isolateUrl, isolateRemoteType, "synthetic", fileBlob);
+
+    // Trigger an intercepted navigation with FormData containing an
+    // <input type="file"> which will result in the request body containing a
+    // RemoteLazyInputStream which will be relayed back to the parent process
+    // via direct invocation of fetch() on the event.request but without any
+    // cloning.
+    await do_test_sw(isolateUrl, isolateRemoteType, "fetch", fileBlob);
+
+    // Same as the above but cloning the request before fetching it.
+    await do_test_sw(isolateUrl, isolateRemoteType, "clone", fileBlob);
   }
   let telemetrySums = getSWTelemetrySums();
   info(JSON.stringify(telemetrySums));

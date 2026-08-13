@@ -5,6 +5,8 @@
 #ifndef jit_PerfSpewer_h
 #define jit_PerfSpewer_h
 
+#include "mozilla/Maybe.h"
+
 #ifdef JS_ION_PERF
 #  include <stdio.h>
 #endif
@@ -16,6 +18,8 @@
 #ifdef JS_JITSPEW
 #  include "jit/GraphSpewer.h"
 #endif
+
+#include "vm/GeckoProfiler.h"
 
 class JSScript;
 enum class JSOp : uint8_t;
@@ -42,7 +46,10 @@ using ProfilerJitCodeVector = Vector<JS::JitCodeRecord, 0, SystemAllocPolicy>;
 
 void ResetPerfSpewer(bool enabled);
 
-struct AutoLockPerfSpewer {
+class AutoLockPerfSpewer {
+  mozilla::Maybe<AutoSuppressProfilerSampling> asps;
+
+ public:
   AutoLockPerfSpewer();
   ~AutoLockPerfSpewer();
 };

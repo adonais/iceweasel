@@ -1376,7 +1376,8 @@ static JSObject* CreateTemporalObject(JSContext* cx, JSProtoKey key) {
 
   // The |Temporal| object is just a plain object with some "static" data
   // properties and some constructor properties.
-  return NewTenuredObjectWithGivenProto<TemporalObject>(cx, proto);
+  return NewObjectWithGivenProto<TemporalObject>(cx, proto,
+                                                 {.newKind = TenuredObject});
 }
 
 /**

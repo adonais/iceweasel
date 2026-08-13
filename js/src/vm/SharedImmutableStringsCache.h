@@ -16,7 +16,6 @@
 #include "js/HashTable.h"
 #include "js/UniquePtr.h"
 #include "js/Utility.h"
-
 #include "threading/ExclusiveData.h"
 
 namespace js {

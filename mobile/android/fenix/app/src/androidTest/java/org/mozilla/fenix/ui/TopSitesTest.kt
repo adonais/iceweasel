@@ -4,10 +4,14 @@
 
 package org.mozilla.fenix.ui
 
+import android.util.Log
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.R
+import org.mozilla.fenix.customannotations.Converted
 import org.mozilla.fenix.customannotations.SmokeTest
+import org.mozilla.fenix.helpers.Constants.RETRY_COUNT
+import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.Constants.defaultTopSitesList
 import org.mozilla.fenix.helpers.DataGenerationHelper.generateRandomString
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
@@ -47,6 +51,11 @@ class TopSitesTest {
     val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/532598
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.ShortcutsTest#addAWebsiteAsATopSiteTest"],
+        bug = 2048243,
+        since = "2026-06",
+    )
     @SmokeTest
     @Test
     fun addAWebsiteAsATopSiteTest() {
@@ -207,11 +216,30 @@ class TopSitesTest {
     // Expected for en-us defaults
     @Test
     fun verifyENLocalesDefaultTopSitesListTest() {
+        for (i in 1..RETRY_COUNT) {
+            var sponsoredTilesLoaded = false
+            homeScreen(composeTestRule) {
+                verifyExistingTopSitesList()
+                sponsoredTilesLoaded = sponsoredTopSitesLoaded()
+            }
+            if (sponsoredTilesLoaded) {
+                break
+            }
+            Log.i(TAG, "setUp: Started try #$i")
+
+            homeScreen(composeTestRule) {
+            }.openTabDrawer {
+            }.openNewTab {
+            }.dismissSearchBar {
+            }
+        }
+
         homeScreen(composeTestRule) {
             verifyExistingTopSitesList()
             defaultTopSitesList.values.forEach { value ->
                 verifyExistingTopSitesTabs(value)
             }
+            verifyAddShortcutExists()
         }
     }
 

@@ -41,12 +41,12 @@ add_setup(async function () {
   // Reload the providers
   await ASRouter._updateMessageProviders();
   await ASRouter.loadMessagesFromAllProviders();
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => ASRouter.state.messages.length > initialMsgCount,
     "Should load the extra heartbeat message"
   );
 
-  BrowserTestUtils.waitForCondition(
+  TestUtils.waitForCondition(
     () => ASRouter.state.messages.find(m => m.id === testMessage.id),
     "Wait to load the message"
   );
@@ -60,7 +60,7 @@ add_setup(async function () {
     // Reload the providers
     await ASRouter._updateMessageProviders();
     await ASRouter.loadMessagesFromAllProviders();
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => ASRouter.state.messages.length === initialMsgCount,
       "Should reset messages"
     );
@@ -102,7 +102,7 @@ add_task(async function test_heartbeat_tactic_2() {
     ],
   });
 
-  await BrowserTestUtils.waitForCondition(async () => {
+  await TestUtils.waitForCondition(async () => {
     const msgs = await client.get();
     return msgs.find(m => m.id === groupConfiguration.id);
   }, "Wait for RS message");
@@ -111,7 +111,7 @@ add_task(async function test_heartbeat_tactic_2() {
   await ASRouter._updateMessageProviders();
   await ASRouter.loadAllMessageGroups();
 
-  let groupState = await BrowserTestUtils.waitForCondition(
+  let groupState = await TestUtils.waitForCondition(
     () => ASRouter.state.groups.find(g => g.id === groupConfiguration.id),
     "Wait for group config to load"
   );
@@ -123,12 +123,12 @@ add_task(async function test_heartbeat_tactic_2() {
 
   let chiclet = document.getElementById("contextual-feature-recommendation");
   Assert.ok(chiclet, "CFR chiclet element found (tab1)");
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !chiclet.hidden,
     "Chiclet should be visible (tab1)"
   );
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       ASRouter.state.messageImpressions[msg.id] &&
       ASRouter.state.messageImpressions[msg.id].length === 1,
@@ -141,12 +141,12 @@ add_task(async function test_heartbeat_tactic_2() {
   BrowserTestUtils.startLoadingURIString(tab2.linkedBrowser, TEST_URL);
 
   Assert.ok(chiclet, "CFR chiclet element found (tab2)");
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !chiclet.hidden,
     "Chiclet should be visible (tab2)"
   );
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       ASRouter.state.messageImpressions[msg.id] &&
       ASRouter.state.messageImpressions[msg.id].length === 2,
@@ -163,7 +163,7 @@ add_task(async function test_heartbeat_tactic_2() {
   let tab3 = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
   BrowserTestUtils.startLoadingURIString(tab3.linkedBrowser, TEST_URL);
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => chiclet.hidden,
     "Heartbeat button should be hidden"
   );

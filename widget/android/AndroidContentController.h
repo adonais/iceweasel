@@ -5,10 +5,10 @@
 #ifndef AndroidContentController_h_
 #define AndroidContentController_h_
 
-#include "mozilla/layers/ChromeProcessController.h"
 #include "mozilla/EventForwards.h"  // for Modifiers
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/layers/ChromeProcessController.h"
 #include "nsTArray.h"
 #include "nsWindow.h"
 

@@ -3,16 +3,19 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "gfxFT2FontBase.h"
+
+#include <dlfcn.h>
+
+#include <algorithm>
+#include <limits>
+
 #include "gfxFT2Utils.h"
-#include "harfbuzz/hb.h"
-#include "mozilla/Likely.h"
-#include "mozilla/StaticPrefs_gfx.h"
 #include "gfxFontConstants.h"
 #include "gfxFontUtils.h"
 #include "gfxHarfBuzzShaper.h"
-#include <algorithm>
-#include <dlfcn.h>
-#include <limits>
+#include "harfbuzz/hb.h"
+#include "mozilla/Likely.h"
+#include "mozilla/StaticPrefs_gfx.h"
 
 #include FT_TRUETYPE_TAGS_H
 #include FT_TRUETYPE_TABLES_H
@@ -471,11 +474,6 @@ void gfxFT2FontBase::InitMetrics() {
 
   if (os2 && os2->sxHeight && yScale > 0.0) {
     mMetrics.xHeight = os2->sxHeight * yScale;
-  } else {
-    // CSS 2.1, section 4.3.2 Lengths: "In the cases where it is
-    // impossible or impractical to determine the x-height, a value of
-    // 0.5em should be used."
-    mMetrics.xHeight = 0.5 * emHeight;
   }
 
   // aveCharWidth is used for the width of text input elements so be
@@ -491,8 +489,6 @@ void gfxFT2FontBase::InitMetrics() {
 
   if (os2 && os2->sCapHeight && yScale > 0.0) {
     mMetrics.capHeight = os2->sCapHeight * yScale;
-  } else {
-    mMetrics.capHeight = mMetrics.maxAscent;
   }
 
   // Release the face lock to safely load glyphs with GetCharExtents if
@@ -533,12 +529,19 @@ void gfxFT2FontBase::InitMetrics() {
     if (GetCharExtents('x', &xWidth, &xBounds) && xBounds.y < 0.0) {
       mMetrics.xHeight = -xBounds.y;
       mMetrics.aveCharWidth = std::max(mMetrics.aveCharWidth, xWidth);
+    } else {
+      // CSS 2.1, section 4.3.2 Lengths: "In the cases where it is
+      // impossible or impractical to determine the x-height, a value of
+      // 0.5em should be used."
+      mMetrics.xHeight = 0.5 * emHeight;
     }
   }
 
   if (mMetrics.capHeight == 0.0) {
     if (GetCharExtents('H', nullptr, &xBounds) && xBounds.y < 0.0) {
       mMetrics.capHeight = -xBounds.y;
+    } else {
+      mMetrics.capHeight = mMetrics.maxAscent;
     }
   }
 

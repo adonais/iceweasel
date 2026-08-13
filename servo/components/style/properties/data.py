@@ -66,6 +66,73 @@ PRIORITARY_PROPERTIES = set(
     ]
 )
 
+# Set of prioritary properties and dependencies between them.
+#
+# Some properties must depend on appearance because of the @appearance-base rule.
+# If a property doesn't depend on `appearance` (either directly or transitively), then
+# declarations inside the @appearance-base rule might not apply consistently.
+#
+# We don't want to necessarily make all properties work in @appearance-base, however.
+# For example we don't want to mess with writing-modes etc there, so we can skip the
+# dependency.
+PRIORITARY_PROPERTY_DEPENDENCIES = {
+    # Needed for @appearance-base
+    "-moz-default-appearance": [],
+    "appearance": ["-moz-default-appearance"],
+    # Language affects font-family and thus other prioritary font properties.
+    "-x-lang": [],
+    # font-family potentially changes keyword font sizes, we want to apply text
+    # un-scaling after it.
+    "-x-text-scale": ["font-family"],
+    # Affects all colors due to forced-colors mode.
+    "forced-color-adjust": [],
+    # color-scheme potentially affects all colors via light-dark() / system colors.
+    # It depends on forced-color-adjust because it's one of the
+    # "ignored_when_colors_disabled" properties.
+    "color-scheme": ["forced-color-adjust"],
+    # Affects all lengths.
+    "zoom": [],
+    # Affects the `math` keyword font-size.
+    "math-depth": [],
+    # Affects min font-size.
+    "-moz-min-font-size-ratio": [],
+    # Default font-family depends on language.
+    "font-family": ["-x-lang", "appearance"],
+    # font-size depends on zoom because it's a length, and other properties because of
+    # their respective size implications, see their comments.
+    "font-size": [
+        "zoom",
+        "math-depth",
+        "-x-text-scale",
+        "-moz-min-font-size-ratio",
+    ],
+    # Various font properties affect primary font selection, which affect all other
+    # lengths (other than font-size) via font-relative units.
+    "font-size-adjust": ["appearance"],
+    "font-weight": ["appearance"],
+    "font-stretch": ["appearance"],
+    "font-style": ["appearance"],
+    # Writing-mode properties affect logical -> physical property conversions, but also
+    # font metrics.
+    "direction": [],
+    "writing-mode": [],
+    "text-orientation": [],
+    # Line-height depends on the primary font and writing-mode because it can be a
+    # length.
+    "line-height": [
+        "direction",
+        "writing-mode",
+        "text-orientation",
+        "font-size",
+        "font-weight",
+        "font-stretch",
+        "font-style",
+        "font-size-adjust",
+    ],
+}
+
+PRIORITARY_PROPERTIES = set(PRIORITARY_PROPERTY_DEPENDENCIES.keys())
+
 VISITED_DEPENDENT_PROPERTIES = set(
     [
         "column-rule-color",
@@ -590,6 +657,7 @@ class Longhand(Property):
                 "FontVariantLigatures",
                 "FontVariantNumeric",
                 "GridAutoFlow",
+                "ImageDecoding",
                 "ImageRendering",
                 "Inert",
                 "PositionArea",
@@ -600,6 +668,7 @@ class Longhand(Property):
                 "SelfAlignment",
                 "JustifyItems",
                 "LineBreak",
+                "MarginTrim",
                 "MasonryAutoFlow",
                 "MozTheme",
                 "BoolInteger",
@@ -1208,11 +1277,14 @@ class PropertyRestrictions:
     # https://drafts.csswg.org/css-pseudo/#placeholder
     #
     # The spec says that placeholder and first-line have the same restrictions,
-    # but that's not true in Gecko and we also allow a handful other properties
-    # for ::placeholder.
+    # except those defined in css-inline.
+    # We also allow a handful other properties for ::placeholder, which is allowed by
+    # the spec.
     @staticmethod
     def placeholder(data):
         props = PropertyRestrictions.first_line(data)
+        for p in PropertyRestrictions.spec(data, "css-inline"):
+            props.discard(p)
         props.add("opacity")
         props.add("text-overflow")
         props.add("text-align")

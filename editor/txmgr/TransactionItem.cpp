@@ -19,7 +19,7 @@
 namespace mozilla {
 
 TransactionItem::TransactionItem(nsITransaction* aTransaction)
-    : mTransaction(aTransaction), mUndoStack(0), mRedoStack(0) {}
+    : mTransaction(aTransaction), mUndoStack(nullptr), mRedoStack(nullptr) {}
 
 TransactionItem::~TransactionItem() {
   delete mRedoStack;

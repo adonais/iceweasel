@@ -6,10 +6,9 @@
 #define GFX_VR_LAYERCHILD_H
 
 #include "VRManagerChild.h"
-
+#include "gfxVR.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/gfx/PVRLayerChild.h"
-#include "gfxVR.h"
 
 class nsICanvasRenderingContextInternal;
 

@@ -116,7 +116,7 @@ add_task(async function test_captivePortalTab_noLnaPrompt() {
   );
 
   // Wait for the fetch to complete and the page content to be updated
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       SpecialPowers.spawn(portalTab.linkedBrowser, [], () => {
         return content.document.body.textContent === "hello";
@@ -148,7 +148,7 @@ add_task(async function test_captivePortalTab_noLnaPrompt() {
       content.fetch(`http://localhost:${port}/`);
     }
   );
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       PopupNotifications.getNotification(
         "loopback-network",
@@ -184,7 +184,7 @@ add_task(async function test_regularTab_noLnaPrompt_duringCaptivePortal() {
   );
 
   // Wait for the fetch to complete and the page content to be updated
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       SpecialPowers.spawn(tab.linkedBrowser, [], () => {
         return content.document.body.textContent === "hello";

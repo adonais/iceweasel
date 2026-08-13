@@ -3,16 +3,16 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 // HttpLog.h should generally be included first
-#include "HttpLog.h"
-
 #include "HttpTransactionParent.h"
 
+#include "HttpLog.h"
 #include "HttpTrafficAnalyzer.h"
 #include "mozilla/ipc/IPCStreamUtils.h"
 #include "mozilla/net/ChannelEventQueue.h"
 #include "mozilla/net/InputChannelThrottleQueueParent.h"
 #include "mozilla/net/SocketProcessParent.h"
 #include "nsHttpHandler.h"
+#include "nsIRequestContext.h"
 #include "nsIThreadRetargetableStreamListener.h"
 #include "nsITransportSecurityInfo.h"
 #include "nsNetUtil.h"
@@ -21,7 +21,6 @@
 #include "nsSerializationHelper.h"
 #include "nsStreamUtils.h"
 #include "nsStringStream.h"
-#include "nsIRequestContext.h"
 
 namespace mozilla::net {
 
@@ -96,11 +95,11 @@ HttpTransactionParent::~HttpTransactionParent() {
 nsresult HttpTransactionParent::Init(
     uint32_t caps, nsHttpConnectionInfo* cinfo, nsHttpRequestHead* requestHead,
     nsIInputStream* requestBody, uint64_t requestContentLength,
-    bool requestBodyHasHeaders, nsIEventTarget* target,
-    nsIInterfaceRequestor* callbacks, nsITransportEventSink* eventsink,
-    uint64_t browserId, HttpTrafficCategory trafficCategory,
-    nsIRequestContext* requestContext, ClassOfService classOfService,
-    uint32_t initialRwin, bool responseTimeoutEnabled, uint64_t channelId,
+    nsIEventTarget* target, nsIInterfaceRequestor* callbacks,
+    nsITransportEventSink* eventsink, uint64_t browserId,
+    HttpTrafficCategory trafficCategory, nsIRequestContext* requestContext,
+    ClassOfService classOfService, uint32_t initialRwin,
+    bool responseTimeoutEnabled, uint64_t channelId,
     TransactionObserverFunc&& transactionObserver,
     nsILoadInfo::IPAddressSpace aParentIpAddressSpace,
     const LNAPerms& aLnaPermissionStatus) {
@@ -150,17 +149,16 @@ nsresult HttpTransactionParent::Init(
   // TODO: Figure out if we have to implement nsIThreadRetargetableRequest in
   // bug 1544378.
   if (!SendInit(caps, infoArgs, *requestHead, ipcStream, requestContentLength,
-                requestBodyHasHeaders, browserId, trafficCategory,
-                requestContextID, classOfService, initialRwin,
-                responseTimeoutEnabled, mChannelId, !!mTransactionObserver,
-                throttleQueue, mIsDocumentLoad, aParentIpAddressSpace,
-                aLnaPermissionStatus, mRedirectStart, mRedirectEnd)) {
+                browserId, trafficCategory, requestContextID, classOfService,
+                initialRwin, responseTimeoutEnabled, mChannelId,
+                !!mTransactionObserver, throttleQueue, mIsDocumentLoad,
+                aParentIpAddressSpace, aLnaPermissionStatus, mRedirectStart,
+                mRedirectEnd)) {
     return NS_ERROR_FAILURE;
   }
 
   nsCString reqHeaderBuf = nsHttp::ConvertRequestHeadToString(
-      *requestHead, !!requestBody, requestBodyHasHeaders,
-      cinfo->UsingConnect());
+      *requestHead, !!requestBody, false, cinfo->UsingConnect());
   requestContentLength += reqHeaderBuf.Length();
 
   mRequestSize = InScriptableRange(requestContentLength)

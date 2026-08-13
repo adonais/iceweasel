@@ -26,7 +26,7 @@ add_task(async function test_restrictions() {
 
   info("Bookmark restrict");
   let results = await get_results({
-    sources: [UrlbarUtils.RESULT_SOURCE.BOOKMARKS],
+    sources: [UrlbarShared.RESULT_SOURCE.BOOKMARKS],
     searchString: "match",
   });
   // Skip the heuristic result.
@@ -37,7 +37,7 @@ add_task(async function test_restrictions() {
 
   info("History restrict");
   results = await get_results({
-    sources: [UrlbarUtils.RESULT_SOURCE.HISTORY],
+    sources: [UrlbarShared.RESULT_SOURCE.HISTORY],
     searchString: "match",
   });
   // Skip the heuristic result.
@@ -48,7 +48,7 @@ add_task(async function test_restrictions() {
 
   info("tabs restrict");
   results = await get_results({
-    sources: [UrlbarUtils.RESULT_SOURCE.TABS],
+    sources: [UrlbarShared.RESULT_SOURCE.TABS],
     searchString: "match",
   });
   // Skip the heuristic result.
@@ -59,7 +59,7 @@ add_task(async function test_restrictions() {
 
   info("search restrict");
   results = await get_results({
-    sources: [UrlbarUtils.RESULT_SOURCE.SEARCH],
+    sources: [UrlbarShared.RESULT_SOURCE.SEARCH],
     searchString: "match",
   });
   Assert.ok(
@@ -69,7 +69,7 @@ add_task(async function test_restrictions() {
 
   info("search restrict should ignore restriction token");
   results = await get_results({
-    sources: [UrlbarUtils.RESULT_SOURCE.SEARCH],
+    sources: [UrlbarShared.RESULT_SOURCE.SEARCH],
     searchString: `${UrlbarShared.RESTRICT_TOKENS.BOOKMARK} match`,
   });
   Assert.ok(
@@ -84,7 +84,7 @@ add_task(async function test_restrictions() {
 
   info("search restrict with other engine");
   results = await get_results({
-    sources: [UrlbarUtils.RESULT_SOURCE.SEARCH],
+    sources: [UrlbarShared.RESULT_SOURCE.SEARCH],
     searchString: "match",
     engineName: "Test",
   });
@@ -104,7 +104,7 @@ async function get_results(test) {
   };
   if (test.engineName) {
     options.searchMode = {
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      source: UrlbarShared.RESULT_SOURCE.SEARCH,
       engineName: test.engineName,
     };
   }

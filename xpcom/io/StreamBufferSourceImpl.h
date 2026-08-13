@@ -6,7 +6,6 @@
 #define mozilla_StreamBufferSourceImpl_h
 
 #include "mozilla/StreamBufferSource.h"
-
 #include "mozilla/Vector.h"
 #include "nsTArray.h"
 

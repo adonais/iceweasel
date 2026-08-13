@@ -16,6 +16,7 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.view.doOnNextLayout
 import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.selector.getNormalOrPrivateTabs
@@ -43,17 +44,22 @@ import mozilla.components.support.ktx.kotlin.applyRegistrableDomainSpan
 import mozilla.components.support.ktx.kotlin.isContentUrl
 import mozilla.components.support.ktx.util.URLStringUtils
 import org.mozilla.fenix.R
+import org.mozilla.fenix.browser.browsingmode.BrowsingMode.Normal
+import org.mozilla.fenix.browser.browsingmode.BrowsingMode.Private
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.databinding.TabPreviewBinding
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.isTallWindow
 import org.mozilla.fenix.ext.isWideWindow
 import org.mozilla.fenix.home.toolbar.BrowserSimpleToolbar
+import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.search.BrowserToolbarSearchMiddleware
 import org.mozilla.fenix.settings.ShortcutType
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.translations.TranslationsEnabledSettings
 import kotlin.math.min
 import mozilla.components.browser.toolbar.R as toolbarR
+import mozilla.components.feature.summarize.R as summariesR
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -68,6 +74,10 @@ class TabPreview @JvmOverloads constructor(
 ) : CoordinatorLayout(context, attrs, defStyle) {
     private val binding = TabPreviewBinding.inflate(LayoutInflater.from(context), this)
     private val thumbnailLoader = ThumbnailLoader(context.components.core.thumbnailStorage)
+    private val appStore = context.components.appStore
+    private val browserStore = context.components.core.store
+    private val summarizationFeatureSettings = context.components.core.summarizeFeatureSettings
+    private val translationsFeatureSettings = TranslationsEnabledSettings.dataStore(context)
 
     private lateinit var mockToolbarView: View
     private val browserToolbarStore: BrowserToolbarStore by lazy(LazyThreadSafetyMode.NONE) {
@@ -87,6 +97,7 @@ class TabPreview @JvmOverloads constructor(
         Share,
         Translate,
         Homepage,
+        Summarize,
     }
 
     private data class ToolbarActionConfig(
@@ -229,6 +240,16 @@ class TabPreview @JvmOverloads constructor(
             ToolbarAction.Homepage -> ActionButtonRes(
                 drawableResId = iconsR.drawable.mozac_ic_home_24,
                 contentDescription = R.string.browser_menu_homepage,
+                onClick = object : BrowserToolbarEvent {},
+            )
+
+            ToolbarAction.Summarize -> ActionButtonRes(
+                drawableResId = iconsR.drawable.mozac_ic_lightning_24,
+                contentDescription = summariesR.string.mozac_summarize_settings_summarize_pages,
+                state = when (appStore.state.mode) {
+                    Normal -> ActionButton.State.DEFAULT
+                    Private -> ActionButton.State.DISABLED
+                },
                 onClick = object : BrowserToolbarEvent {},
             )
         }
@@ -488,7 +509,7 @@ class TabPreview @JvmOverloads constructor(
         val isTallWindow = context.isTallWindow()
         val shouldUseExpandedToolbar = settings.shouldUseExpandedToolbar
 
-        val primarySlotAction = ShortcutType.fromValue(settings.toolbarSimpleShortcutKey)?.toToolbarAction(tab)
+        val primarySlotAction = ShortcutType.fromValue(settings.activeSimpleToolbarShortcutKey)?.toToolbarAction(tab)
 
         return listOfNotNull(
             primarySlotAction?.let {
@@ -565,9 +586,25 @@ class TabPreview @JvmOverloads constructor(
         ShortcutType.NEW_TAB -> ToolbarAction.NewTab
         ShortcutType.SHARE -> ToolbarAction.Share
         ShortcutType.BOOKMARK -> getBookmarkAction(tab)
-        ShortcutType.TRANSLATE -> ToolbarAction.Translate
+        ShortcutType.TRANSLATE -> when (isTranslationsFeatureAvailable()) {
+            true -> ToolbarAction.Translate
+            else -> ToolbarAction.NewTab
+        }
         ShortcutType.HOMEPAGE -> ToolbarAction.Homepage
         ShortcutType.BACK -> ToolbarAction.Back
+        ShortcutType.SUMMARIZE -> when {
+            summarizationFeatureSettings.canShowFeature -> ToolbarAction.Summarize
+            // The tab strip already provides a new tab button, so fall back to the default tab strip shortcut.
+            context.components.settings.isTabStripEnabled -> ToolbarAction.Share
+            else -> ToolbarAction.NewTab
+        }
         ShortcutType.NONE -> null
+    }
+
+    private suspend fun isTranslationsFeatureAvailable(): Boolean {
+        val isTranslationEngineSupported = browserStore.state.translationEngine.isEngineSupported ?: false
+        return isTranslationEngineSupported &&
+            FxNimbus.features.translations.value().mainFlowToolbarEnabled &&
+            translationsFeatureSettings.isEnabled.first()
     }
 }

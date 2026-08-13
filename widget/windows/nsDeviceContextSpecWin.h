@@ -5,13 +5,14 @@
 #ifndef nsDeviceContextSpecWin_h_
 #define nsDeviceContextSpecWin_h_
 
-#include "nsCOMPtr.h"
-#include "nsIDeviceContextSpec.h"
-#include "nsPrinterListBase.h"
-#include "nsIPrintSettings.h"
 #include <windows.h>
+
 #include "mozilla/RefPtr.h"
 #include "mozilla/gfx/PrintPromise.h"
+#include "nsCOMPtr.h"
+#include "nsIDeviceContextSpec.h"
+#include "nsIPrintSettings.h"
+#include "nsPrinterListBase.h"
 
 class nsIFile;
 class nsIWidget;

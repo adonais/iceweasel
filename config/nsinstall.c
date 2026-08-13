@@ -312,7 +312,6 @@ int main(int argc, char** argv) {
   todir = malloc(PATH_MAX + 1);
   todir = getwd(todir);
 #endif
-  tdlen = strlen(todir);
   xchdir(cwd);
   tdlen = strlen(todir);
 

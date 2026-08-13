@@ -101,7 +101,9 @@ add_task(async function removeAll() {
   );
 
   info("Clicking remove all.");
-  doc.getElementById("removeAllPermissions").click();
+  let removeAllButton = doc.getElementById("removeAllPermissions");
+  await removeAllButton.updateComplete;
+  removeAllButton.click();
 
   info("Waiting for all list items to be cleared.");
   await BrowserTestUtils.waitForMutationCondition(

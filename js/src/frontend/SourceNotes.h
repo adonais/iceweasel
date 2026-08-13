@@ -12,6 +12,7 @@
 #include <stdint.h>   // int8_t, uint8_t, uint32_t
 
 #include "jstypes.h"  // js::{Bit, BitMask}
+
 #include "js/ColumnNumber.h"  // JS::ColumnNumberOffset, JS::LimitedColumnNumberOneOrigin
 
 namespace js {

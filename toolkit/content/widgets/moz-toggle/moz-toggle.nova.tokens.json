@@ -1,0 +1,26 @@
+{
+  "background": {
+    "color": {
+      "pressed": {
+        "@base": {
+          "value": "{button.background.color.primary.@base}"
+        },
+        "hover": {
+          "value": "{button.background.color.primary.hover}"
+        },
+        "active": {
+          "value": "{button.background.color.primary.active}"
+        }
+      }
+    }
+  },
+  "dot": {
+    "background": {
+      "color": {
+        "on-pressed": {
+          "value": "{background.color.box.@base}"
+        }
+      }
+    }
+  }
+}

@@ -4,33 +4,33 @@
 
 #include "mozilla/FileUtils.h"
 
+#include "mozilla/BaseProfilerMarkers.h"
+#include "mozilla/MemUtils.h"
 #include "nscore.h"
 #include "private/pprio.h"
 #include "prmem.h"
-#include "mozilla/BaseProfilerMarkers.h"
-#include "mozilla/MemUtils.h"
 
 #if defined(XP_MACOSX)
 #  include <fcntl.h>
-#  include <unistd.h>
-#  include <mach/machine.h>
+#  include <limits.h>
 #  include <mach-o/fat.h>
 #  include <mach-o/loader.h>
+#  include <mach/machine.h>
 #  include <sys/mman.h>
 #  include <sys/stat.h>
-#  include <limits.h>
+#  include <unistd.h>
 #elif defined(XP_UNIX)
 #  include <fcntl.h>
 #  include <unistd.h>
 #  if defined(LINUX)
 #    include <elf.h>
 #  endif
-#  include <sys/types.h>
 #  include <sys/stat.h>
+#  include <sys/types.h>
 #elif defined(XP_WIN)
-#  include <nsWindowsHelpers.h>
 #  include <mozilla/NativeNt.h>
 #  include <mozilla/ScopeExit.h>
+#  include <nsWindowsHelpers.h>
 #endif
 
 // Functions that are not to be used in standalone glue must be implemented

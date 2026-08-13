@@ -540,8 +540,8 @@ class LexicalScope : public Scope {
 
   template <typename NameT>
   using AbstractData =
-      typename std::conditional_t<std::is_same<NameT, JSAtom>::value,
-                                  RuntimeData, ParserData>;
+      typename std::conditional_t<std::is_same_v<NameT, JSAtom>, RuntimeData,
+                                  ParserData>;
 
  private:
   static void prepareForScopeCreation(ScopeKind kind, uint32_t firstFrameSlot,
@@ -616,8 +616,8 @@ class ClassBodyScope : public Scope {
 
   template <typename NameT>
   using AbstractData =
-      typename std::conditional_t<std::is_same<NameT, JSAtom>::value,
-                                  RuntimeData, ParserData>;
+      typename std::conditional_t<std::is_same_v<NameT, JSAtom>, RuntimeData,
+                                  ParserData>;
 
  private:
   static void prepareForScopeCreation(ScopeKind kind, uint32_t firstFrameSlot,
@@ -732,8 +732,8 @@ class FunctionScope : public Scope {
 
   template <typename NameT>
   using AbstractData =
-      typename std::conditional_t<std::is_same<NameT, JSAtom>::value,
-                                  RuntimeData, ParserData>;
+      typename std::conditional_t<std::is_same_v<NameT, JSAtom>, RuntimeData,
+                                  ParserData>;
 
   static void prepareForScopeCreation(FunctionScope::ParserData* data,
                                       bool hasParameterExprs,
@@ -798,8 +798,8 @@ class VarScope : public Scope {
 
   template <typename NameT>
   using AbstractData =
-      typename std::conditional_t<std::is_same<NameT, JSAtom>::value,
-                                  RuntimeData, ParserData>;
+      typename std::conditional_t<std::is_same_v<NameT, JSAtom>, RuntimeData,
+                                  ParserData>;
 
  private:
   static void prepareForScopeCreation(ScopeKind kind,
@@ -866,8 +866,8 @@ class GlobalScope : public Scope {
 
   template <typename NameT>
   using AbstractData =
-      typename std::conditional_t<std::is_same<NameT, JSAtom>::value,
-                                  RuntimeData, ParserData>;
+      typename std::conditional_t<std::is_same_v<NameT, JSAtom>, RuntimeData,
+                                  ParserData>;
 
   static GlobalScope* createEmpty(JSContext* cx, ScopeKind kind);
 
@@ -944,8 +944,8 @@ class EvalScope : public Scope {
 
   template <typename NameT>
   using AbstractData =
-      typename std::conditional_t<std::is_same<NameT, JSAtom>::value,
-                                  RuntimeData, ParserData>;
+      typename std::conditional_t<std::is_same_v<NameT, JSAtom>, RuntimeData,
+                                  ParserData>;
 
  private:
   static void prepareForScopeCreation(ScopeKind scopeKind,
@@ -1026,8 +1026,8 @@ class ModuleScope : public Scope {
 
   template <typename NameT>
   using AbstractData =
-      typename std::conditional_t<std::is_same<NameT, JSAtom>::value,
-                                  RuntimeData, ParserData>;
+      typename std::conditional_t<std::is_same_v<NameT, JSAtom>, RuntimeData,
+                                  ParserData>;
 
  private:
   static void prepareForScopeCreation(ModuleScope::ParserData* data,
@@ -1088,8 +1088,8 @@ class WasmInstanceScope : public Scope {
 
   template <typename NameT>
   using AbstractData =
-      typename std::conditional_t<std::is_same<NameT, JSAtom>::value,
-                                  RuntimeData, ParserData>;
+      typename std::conditional_t<std::is_same_v<NameT, JSAtom>, RuntimeData,
+                                  ParserData>;
 
   static WasmInstanceScope* create(JSContext* cx,
                                    Handle<WasmInstanceObject*> instance);
@@ -1138,8 +1138,8 @@ class WasmFunctionScope : public Scope {
 
   template <typename NameT>
   using AbstractData =
-      typename std::conditional_t<std::is_same<NameT, JSAtom>::value,
-                                  RuntimeData, ParserData>;
+      typename std::conditional_t<std::is_same_v<NameT, JSAtom>, RuntimeData,
+                                  ParserData>;
 
   static WasmFunctionScope* create(JSContext* cx, Handle<Scope*> enclosing,
                                    uint32_t funcIndex);

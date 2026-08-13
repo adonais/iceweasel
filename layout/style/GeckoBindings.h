@@ -373,6 +373,10 @@ nscoord Gecko_CalcLineHeight(const mozilla::StyleLineHeight*,
                              const nsStyleFont* aAgainstFont,
                              const mozilla::dom::Element* aElement);
 
+// Given a font size (i.e. the em unit) in CSS px, return the value to use for
+// text-decoration-inset:auto.
+float Gecko_CalcAutoDecorationInset(float aFontSize);
+
 // Get an element snapshot for a given element from the table.
 const mozilla::ServoElementSnapshot* Gecko_GetElementSnapshot(
     const mozilla::ServoElementSnapshotTable* table,

@@ -5,23 +5,23 @@
 #ifndef mozilla_TaskController_h
 #define mozilla_TaskController_h
 
+#include <atomic>
+#include <set>
+#include <stack>
+#include <vector>
+
 #include "MainThreadUtils.h"
 #include "mozilla/CondVar.h"
+#include "mozilla/EventQueue.h"
 #include "mozilla/IdlePeriodState.h"
-#include "mozilla/RefPtr.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/StaticString.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/EventQueue.h"
 #include "mozilla/UniquePtr.h"
 #include "nsISupportsImpl.h"
 #include "nsThreadUtils.h"  // for MOZ_COLLECTING_RUNNABLE_TELEMETRY
-
-#include <atomic>
-#include <vector>
-#include <set>
-#include <stack>
 
 class nsIRunnable;
 class nsIThreadObserver;

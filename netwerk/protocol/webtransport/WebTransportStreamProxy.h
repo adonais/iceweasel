@@ -5,11 +5,11 @@
 #ifndef mozilla_net_WebTransportStreamProxy_h
 #define mozilla_net_WebTransportStreamProxy_h
 
+#include "WebTransportStreamBase.h"
+#include "nsCOMPtr.h"
 #include "nsIAsyncInputStream.h"
 #include "nsIAsyncOutputStream.h"
 #include "nsIWebTransportStream.h"
-#include "nsCOMPtr.h"
-#include "WebTransportStreamBase.h"
 
 namespace mozilla::net {
 

@@ -4,6 +4,9 @@
 
 package mozilla.components.service.mars
 
+const val NEW_TAB_TILE_1_PLACEMENT_KEY = "newtab_mobile_tile_1"
+const val NEW_TAB_TILE_2_PLACEMENT_KEY = "newtab_mobile_tile_2"
+
 /**
  * Configuration for the top sites tile request.
  *

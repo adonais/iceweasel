@@ -53,6 +53,7 @@ Result<indexedDB::GetAllOptions, ErrorResult> GetAllOptionsFromQueryOrOptions(
     RootedDictionary<IDBGetAllOptions> options(aCx);
     if (NS_WARN_IF(!options.Init(aCx, aQueryOrOptions))) {
       ErrorResult rv;
+      rv.MightThrowJSException();
       rv.StealExceptionFromJSContext(aCx);
       if (!rv.Failed()) {
         rv.Throw(NS_ERROR_DOM_INDEXEDDB_DATA_ERR);

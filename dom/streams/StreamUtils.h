@@ -29,7 +29,7 @@ MOZ_CAN_RUN_SCRIPT static already_AddRefed<Promise> PromisifyAlgorithm(
   // Step 1. Let result be the result of running (algorithm). If this throws an
   // exception e, return a promise rejected with e.
   RefPtr<Promise> result;
-  if constexpr (!std::is_same<decltype(aFunc(aRv)), void>::value) {
+  if constexpr (!std::is_same_v<decltype(aFunc(aRv)), void>) {
     result = aFunc(aRv);
   } else {
     aFunc(aRv);

@@ -5,8 +5,8 @@
 #ifndef nsAppFileLocationProvider_h
 #define nsAppFileLocationProvider_h
 
-#include "nsIDirectoryService.h"
 #include "nsCOMPtr.h"
+#include "nsIDirectoryService.h"
 
 class nsIFile;
 

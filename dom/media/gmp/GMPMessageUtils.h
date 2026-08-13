@@ -171,33 +171,9 @@ template <>
 struct ParamTraits<cdm::MessageType>
     : public EnumSerializer<cdm::MessageType, CDMMessageTypeEnumValidator> {};
 
-template <>
-struct ParamTraits<GMPSimulcastStream> {
-  typedef GMPSimulcastStream paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mWidth);
-    WriteParam(aWriter, aParam.mHeight);
-    WriteParam(aWriter, aParam.mNumberOfTemporalLayers);
-    WriteParam(aWriter, aParam.mMaxBitrate);
-    WriteParam(aWriter, aParam.mTargetBitrate);
-    WriteParam(aWriter, aParam.mMinBitrate);
-    WriteParam(aWriter, aParam.mQPMax);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    if (ReadParam(aReader, &(aResult->mWidth)) &&
-        ReadParam(aReader, &(aResult->mHeight)) &&
-        ReadParam(aReader, &(aResult->mNumberOfTemporalLayers)) &&
-        ReadParam(aReader, &(aResult->mMaxBitrate)) &&
-        ReadParam(aReader, &(aResult->mTargetBitrate)) &&
-        ReadParam(aReader, &(aResult->mMinBitrate)) &&
-        ReadParam(aReader, &(aResult->mQPMax))) {
-      return true;
-    }
-    return false;
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(GMPSimulcastStream, mWidth, mHeight,
+                                  mNumberOfTemporalLayers, mMaxBitrate,
+                                  mTargetBitrate, mMinBitrate, mQPMax);
 
 template <>
 struct ParamTraits<GMPVideoCodec> {

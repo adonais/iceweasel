@@ -10,7 +10,6 @@
 #ifndef SHELL_WINDOWS11TASKBARPINNING_H_
 #define SHELL_WINDOWS11TASKBARPINNING_H_
 
-#include "nsString.h"
 #include <wrl.h>
 #include <windows.h>  // for HRESULT
 
@@ -27,10 +26,6 @@ struct Win11PinToTaskBarResult {
   HRESULT errorCode;
   Win11PinToTaskBarResultStatus result;
 };
-
-Win11PinToTaskBarResult PinCurrentAppToTaskbarWin11(
-    bool aCheckOnly, const nsAString& aAppUserModelId,
-    const bool aFireAndForget);
 
 Win11PinToTaskBarResult IsCurrentAppPinnedToTaskbarWin11();
 

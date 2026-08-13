@@ -4,11 +4,11 @@
 #include "gtest/gtest.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ContentPrincipal.h"
+#include "mozilla/ExpandedPrincipal.h"
+#include "mozilla/LoadInfo.h"
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/SystemPrincipal.h"
-#include "mozilla/ExpandedPrincipal.h"
 #include "nsContentUtils.h"
-#include "mozilla/LoadInfo.h"
 
 namespace mozilla {
 

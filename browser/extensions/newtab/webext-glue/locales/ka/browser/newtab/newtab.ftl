@@ -93,6 +93,15 @@ home-prefs-sports-widget-header =
 # Clock is a widget on New Tab that displays time zones around the world.
 home-prefs-clocks-header =
     .label = საათი
+# Privacy is a widget on New Tab that shows tracking protection activity.
+home-prefs-privacy-header =
+    .label = პირადულობა
+# Stocks is a widget on New Tab that shows stock ticker prices.
+home-prefs-stocks-header =
+    .label = აქციები
+# Picture of the day is a widget on New Tab that shows a daily Wikimedia Commons image.
+home-prefs-picture-header =
+    .label = დღის სურათი
 home-prefs-mission-message2 =
     .message = ჩვენი დამკვეთები მხარს უჭერენ ჩვენს მიზანს უკეთესი ვებსივრცის ჩამოსაყალიბებლად.
 home-prefs-manage-topics-link2 =
@@ -152,6 +161,120 @@ home-prefs-support-firefox-header-srd =
     .label = თანადგომა – { -brand-product-name }
 home-prefs-mission-message-learn-more-link-srd = იხილეთ, როგორ
 
+## Strings for the Privacy widget
+
+# Context menu item linking to more information about the Privacy widget.
+newtab-privacy-menu-learn-more = ვრცლად
+
+## Privacy widget — count readout
+
+# Label shown under the large tracker-count number, appearing like:
+# Line 1: 86
+# Line 2: Trackers blocked today
+# Translations can be adjusted to "Today's blocked trackers" or something
+# similar if this fixed order causes issues.
+# Variables:
+#   $count (number) - Number of trackers blocked today
+newtab-privacy-trackers-blocked-today =
+    { $count ->
+        [one] შეზღუდული მეთვალყურეები დღეს
+       *[other] შეზღუდული მეთვალყურეები დღეს
+    }
+# Second line of the readout, under the large number and "Trackers blocked
+# today". Counts the sites those trackers were blocked on. The English is
+# shortened from "Blocked across { $count } sites" — translate it that fuller way
+# if the short fragment doesn't work in your language.
+# Variables:
+#   $count (number) - Number of sites where trackers were blocked
+newtab-privacy-across-sites =
+    { $count ->
+        [one] { $count } საიტზე
+       *[other] { $count } საიტზე
+    }
+
+## Privacy widget — empty state
+
+# Shown when no trackers have been blocked yet today.
+newtab-privacy-empty = { -brand-short-name } ზღუდავს მეთვალყურეებს გვერდების თვალიერებისას. მათ ჩამონათვალს იხილავთ აქ.
+
+## Privacy widget — informational messages
+##
+## Rotating "info" secondary messages. Each message has a body plus a matched
+## "-cta" button label sharing the same id stem (the CTA button isn't rendered
+## yet; the labels are authored so the pairing is ready).
+
+newtab-privacy-message-info-1 = { -brand-short-name } თავისთავად ზღუდავს მეთვალყურეებს გვერდების თვალიერებისას.
+newtab-privacy-message-info-1-cta = დაცვის შესახებ
+newtab-privacy-message-info-2-cta = დაცვის შესახებ
+newtab-privacy-message-info-3-cta = დაცვის შესახებ
+newtab-privacy-message-info-4-cta = დაცვის შესახებ
+newtab-privacy-message-info-5-cta = დაცვის შესახებ
+newtab-privacy-message-info-6-cta = ვრცლად
+newtab-privacy-message-info-7 = ნახეთ, რომელ მეთვალყურეებს ზღუდავს { -brand-short-name }.
+newtab-privacy-message-info-7-cta = დაცვის შესახებ
+newtab-privacy-message-info-8-cta = ვრცლად
+newtab-privacy-message-info-9-cta = ნაგულისხმევად მითითება
+newtab-privacy-message-info-10-cta = გადასვლა პაროლებზე
+newtab-privacy-message-info-11-cta = ვრცლად
+newtab-privacy-message-info-12-cta = დაცვის შესახებ
+newtab-privacy-message-info-13-cta = დაცვის შესახებ
+
+## Privacy widget — promotional messages
+##
+## Rotating "promo" secondary messages suggesting another Firefox feature. Each
+## has a body plus a matched "-cta" button label.
+
+newtab-privacy-message-promo-monitor-1-cta = ვრცლად
+newtab-privacy-message-promo-monitor-2-cta = ვრცლად
+
+## Privacy widget — celebration messages
+##
+## Earned "celebration" moments (milestones, daily cap, streak, first
+## protection). Count-bearing ones interpolate { $count }.
+
+newtab-privacy-message-milestone-week-cta = დაცვის შესახებ
+newtab-privacy-message-milestone-month-cta = დაცვის შესახებ
+newtab-privacy-message-milestone-year-cta = დაცვის შესახებ
+newtab-privacy-message-milestone-total-cta = დაცვის შესახებ
+newtab-privacy-message-daily-cap-cta = დაცვის შესახებ
+newtab-privacy-message-streak-cta = დაცვის შესახებ
+newtab-privacy-message-first-protection-cta = დაცვის შესახებ
+
+## Strings for the Stocks widget
+
+# Context menu item linking to more information about the Stocks widget.
+newtab-stocks-menu-learn-more = ვრცლად
+
+## Strings for the Picture of the Day widget
+
+# Title shown at the top of the widget, with the source name appended.
+# "Wikimedia Commons" is a brand name and should not be translated.
+newtab-picture-header = დღის სურათი · Wikimedia Commons
+# Button that sets the current picture as the New Tab background wallpaper. The
+# button collapses to an icon when not hovered/focused, so .title is its tooltip.
+newtab-picture-set-wallpaper =
+    .label = ფონის დაყენება
+    .title = ფონის დაყენება
+    .aria-label = დააყენეთ ფონად დღის სურათი
+# Context menu item that opens the New Tab customization panel.
+newtab-picture-menu-manage-wallpaper = ფონის მართვა
+# Context menu item that hides today’s picture, replacing it with an existing
+# wallpaper.
+newtab-picture-menu-hide-photo = დღის სურათის დამალვა
+# Context menu item that restores today’s picture after it has been hidden.
+newtab-picture-menu-show-photo = დღის სურათის ჩვენება
+# Context menu item linking to more information about the widget.
+newtab-picture-menu-learn-more = ვრცლად
+# Icon button shown on the widget once the picture is hidden; restores it.
+newtab-picture-show-button =
+    .title = დღის სურათის ჩვენება
+    .aria-label = დღის სურათის ჩვენება
+# Shown when there is no new picture to display yet.
+newtab-picture-check-back = ხვალაც შეამოწმეთ ახალი სურათი
+# Screen-reader text alternative for the picture; fallback used when the source
+# provides no localized description.
+newtab-picture-image-alt = Wikimedia Commons – დღის სურათი
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -187,6 +310,7 @@ newtab-topsites-add-shortcut-label = მალსახმობის დამ
 newtab-topsites-add-shortcut-title =
     .title = მალსახმობის დამატება
     .aria-label = მალსახმობის დამატება
+newtab-shortcuts-pinned-area = მიმაგრებული არე
 newtab-topsites-title-label = დასახელება
 newtab-topsites-title-input =
     .placeholder = სათაურის შეყვანა
@@ -403,7 +527,7 @@ newtab-discovery-empty-section-topstories-timed-out = ჰმ! თითქმი
 newtab-pocket-read-more = მეტად გავრცელებული საკითხები:
 newtab-pocket-new-topics-title = გსურთ, მეტი ამბების მონახვა? იხილეთ, გავრცელებული თემებისთვის { -pocket-brand-name }
 newtab-pocket-more-recommendations = მეტი შემოთავაზებები
-newtab-pocket-learn-more = იხილეთ ვრცლად
+newtab-pocket-learn-more = ვრცლად
 newtab-pocket-cta-button = გამოიყენეთ { -pocket-brand-name }
 newtab-pocket-cta-text = გადაინახეთ სასურველი შიგთავსი { -pocket-brand-name }-ში და მიეცით გონებას საკვები, შთამბეჭდავი საკითხავი მასალის სახით.
 newtab-pocket-pocket-firefox-family = { -pocket-brand-name } ეკუთვნის { -brand-product-name }-ოჯახს
@@ -475,6 +599,8 @@ newtab-recommended-stories-toggle =
     .label = შემოთავაზებული ამბები
 newtab-custom-stories-personalized-toggle =
     .label = ამბები
+newtab-custom-stories-personalized-checkbox =
+    .label = თქვენს საქმიანობაზე მორგებული ამბები
 newtab-custom-stories-personalized-checkbox-label = თქვენს საქმიანობაზე მორგებული ამბები
 newtab-custom-pocket-sponsored = ამბები დამკვეთებისგან
 newtab-custom-pocket-show-recent-saves = ბოლოს შენახულის ჩვენება
@@ -1167,7 +1293,7 @@ newtab-sports-widget-world-cup-champions = 2026 მსოფლიოს გა�
 # Variables:
 #   $date (Date) - The match start time
 newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
-newtab-sports-widget-match-full-time = დასრულდა
+newtab-sports-widget-match-full-time = ძირითადი
 newtab-sports-widget-match-penalties = თერთმეტმეტრიანები
 
 ## Accessible labels for match rows in the sports widget. These are read by

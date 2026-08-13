@@ -49,7 +49,7 @@ add_task(async function test_swap_protocol() {
       makeVisitResult(context, {
         uri: `${searchString}/`,
         title: "title",
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         heuristic: true,
       }),
       makeVisitResult(context, { uri: uri5.spec, title: "title" }),
@@ -65,7 +65,7 @@ add_task(async function test_swap_protocol() {
       makeVisitResult(context, {
         uri: `${searchString}/`,
         title: "title",
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         heuristic: true,
       }),
       makeVisitResult(context, { uri: uri3.spec, title: "title" }),
@@ -83,7 +83,7 @@ add_task(async function test_swap_protocol() {
       makeVisitResult(context, {
         uri: `${searchString}/`,
         title: `${searchString}/`,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         heuristic: true,
       }),
       makeVisitResult(context, { uri: uri3.spec, title: "title" }),
@@ -99,7 +99,7 @@ add_task(async function test_swap_protocol() {
       makeVisitResult(context, {
         uri: `${searchString}/`,
         title: `${searchString}/`,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         heuristic: true,
       }),
       makeVisitResult(context, { uri: uri3.spec, title: "title" }),
@@ -117,7 +117,7 @@ add_task(async function test_swap_protocol() {
       makeVisitResult(context, {
         uri: `${searchString}/`,
         title: `${searchString}/`,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         heuristic: true,
       }),
       makeVisitResult(context, { uri: uri5.spec, title: "title" }),
@@ -133,7 +133,7 @@ add_task(async function test_swap_protocol() {
       makeVisitResult(context, {
         uri: `${searchString}/`,
         title: `${searchString}/`,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         heuristic: true,
       }),
       makeVisitResult(context, { uri: uri3.spec, title: "title" }),
@@ -151,7 +151,7 @@ add_task(async function test_swap_protocol() {
       makeVisitResult(context, {
         uri: `http://${searchString}/`,
         title: "title",
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         heuristic: true,
       }),
       makeVisitResult(context, { uri: uri5.spec, title: "title" }),
@@ -182,7 +182,7 @@ add_task(async function test_swap_protocol() {
       makeVisitResult(context, {
         uri: `${searchString}/`,
         title: `${searchString}/`,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         heuristic: true,
       }),
       makeVisitResult(context, { uri: uri5.spec, title: "title" }),
@@ -200,7 +200,7 @@ add_task(async function test_swap_protocol() {
       makeVisitResult(context, {
         uri: `${searchString}/`,
         title: `${searchString}/`,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         heuristic: true,
       }),
     ],
@@ -229,7 +229,7 @@ add_task(async function test_swap_protocol() {
       makeVisitResult(context, {
         uri: `${searchString}/`,
         title: `${searchString}/`,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         heuristic: true,
       }),
       makeVisitResult(context, { uri: uri5.spec, title: "title" }),
@@ -246,7 +246,7 @@ add_task(async function test_swap_protocol() {
       makeVisitResult(context, {
         uri: `${searchString}/`,
         title: `${searchString}/`,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         heuristic: true,
       }),
     ],
@@ -275,7 +275,7 @@ add_task(async function test_swap_protocol() {
       makeVisitResult(context, {
         uri: `${searchString}/`,
         title: `${searchString}/`,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         heuristic: true,
       }),
       makeVisitResult(context, { uri: uri5.spec, title: "title" }),
@@ -292,7 +292,7 @@ add_task(async function test_swap_protocol() {
       makeVisitResult(context, {
         uri: `${searchString}/`,
         title: `${searchString}/`,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         heuristic: true,
       }),
     ],

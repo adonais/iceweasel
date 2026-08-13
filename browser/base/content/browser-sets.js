@@ -10,6 +10,7 @@ document.addEventListener(
       TranslationsParent: "resource://gre/actors/TranslationsParent.sys.mjs",
       AIWindowUI:
         "moz-src:///browser/components/aiwindow/ui/modules/AIWindowUI.sys.mjs",
+      Referrals: "resource:///modules/referrals/Referrals.sys.mjs",
     });
 
     // <commandset id="mainCommandSet"> defined in browser-sets.inc.xhtml
@@ -142,6 +143,12 @@ document.addEventListener(
               targetLanguage: "derive",
             }).catch(console.error);
             break;
+          case "cmd_editPDF":
+            switchToTabHavingURI("about:pdf", true);
+            break;
+          case "cmd_openReferrals":
+            lazy.Referrals.openReferralsTab(window);
+            break;
           case "Browser:AddBookmarkAs":
             PlacesCommandHook.bookmarkPage();
             break;
@@ -183,10 +190,18 @@ document.addEventListener(
             BrowserCommands.duplicateTab();
             break;
           case "Browser:NextTab":
-            gBrowser.tabContainer.advanceSelectedTab(1, true);
+            gBrowser.tabContainer.advanceSelectedTab(
+              1,
+              true,
+              event.sourceEvent
+            );
             break;
           case "Browser:PrevTab":
-            gBrowser.tabContainer.advanceSelectedTab(-1, true);
+            gBrowser.tabContainer.advanceSelectedTab(
+              -1,
+              true,
+              event.sourceEvent
+            );
             break;
           case "Browser:ShowAllTabs":
             gTabsPanel.showAllTabsPanel();
@@ -227,6 +242,9 @@ document.addEventListener(
             break;
           case "Browser:NewUserContextTab":
             openNewUserContextTab(event.sourceEvent);
+            break;
+          case "Browser:AddContainer":
+            gContainerCreation.open();
             break;
           case "Browser:OpenAboutContainers":
             openPreferences("paneContainers");
@@ -365,12 +383,23 @@ document.addEventListener(
         case "key_selectTab7":
         case "key_selectTab8": {
           let index = event.target.id.at(-1) - 1;
-          gBrowser.selectTabAtIndex(index, event);
+          gBrowser.selectTabAtIndex(index, {
+            event,
+            metricsContext: gBrowser.TabMetrics.userTriggeredContext(
+              gBrowser.TabMetrics.METRIC_SOURCE.KEYBOARD
+            ),
+          });
           break;
         }
-        case "key_selectLastTab":
-          gBrowser.selectTabAtIndex(-1, event);
+        case "key_selectLastTab": {
+          gBrowser.selectTabAtIndex(-1, {
+            event,
+            metricsContext: gBrowser.TabMetrics.userTriggeredContext(
+              gBrowser.TabMetrics.METRIC_SOURCE.KEYBOARD
+            ),
+          });
           break;
+        }
 
         case "key_openHelpMac":
           openHelpLink("firefox-osxkey");

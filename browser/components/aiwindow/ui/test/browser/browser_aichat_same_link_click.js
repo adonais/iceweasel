@@ -83,7 +83,7 @@ describe("AI Chat same-link click handling", () => {
 
       await dispatchOpenLinkEvent(chatTab.linkedBrowser, TEST_URL);
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => stub.calls === 1,
         "AIWindowUI.handleSameLinkClick should be called for same URL"
       );

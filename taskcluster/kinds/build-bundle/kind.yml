@@ -28,8 +28,6 @@ task-defaults:
 
 tasks:
     focus-debug:
-        attributes:
-            shipping-product: focus
         dependencies:
             build-fat-aar: build-fat-aar-android-geckoview-fat-aar/opt
         description: 'Focus debug AAB build from source code'
@@ -43,8 +41,6 @@ tasks:
             symbol: focus-debug(AABf)
 
     klar-debug:
-        attributes:
-            shipping-product: focus
         dependencies:
             build-fat-aar: build-fat-aar-android-geckoview-fat-aar/opt
         description: 'Klar debug AAB build from source code'
@@ -58,8 +54,6 @@ tasks:
             symbol: focus-debug(AABkl)
 
     fenix-debug:
-        attributes:
-            shipping-product: fenix
         dependencies:
             build-fat-aar: build-fat-aar-android-geckoview-fat-aar/opt
         description: 'Fenix debug AAB build from source code'
@@ -75,7 +69,6 @@ tasks:
     focus-release:
         attributes:
             release-type: release
-            shipping-product: focus
         shipping-product: firefox-android
         dependencies:
             build-fat-aar: build-fat-aar-android-geckoview-fat-aar-shippable/opt
@@ -96,7 +89,6 @@ tasks:
     klar-release:
         attributes:
             release-type: release
-            shipping-product: focus
         shipping-product: firefox-android
         dependencies:
             build-fat-aar: build-fat-aar-android-geckoview-fat-aar-shippable/opt
@@ -117,7 +109,6 @@ tasks:
     fenix-release:
         attributes:
             release-type: release
-            shipping-product: fenix
         shipping-product: firefox-android
         dependencies:
             build-fat-aar: build-fat-aar-android-geckoview-fat-aar-shippable/opt
@@ -142,8 +133,6 @@ tasks:
             symbol: fenix-release(AAB)
 
     focus-nightly:
-        attributes:
-            shipping-product: focus
         dependencies:
             build-fat-aar: build-fat-aar-android-geckoview-fat-aar-shippable/opt
         description: 'Focus nightly AAB build from source code'
@@ -160,8 +149,6 @@ tasks:
             symbol: focus-nightly(AABf)
 
     fenix-nightly:
-        attributes:
-            shipping-product: fenix
         dependencies:
             build-fat-aar: build-fat-aar-android-geckoview-fat-aar-shippable/opt
             baseline-profile: generate-baseline-profile-firebase-fenix
@@ -186,7 +173,6 @@ tasks:
     focus-beta:
         attributes:
             release-type: beta
-            shipping-product: focus
         shipping-product: firefox-android
         dependencies:
             build-fat-aar: build-fat-aar-android-geckoview-fat-aar-shippable/opt
@@ -207,7 +193,6 @@ tasks:
     fenix-beta:
         attributes:
             release-type: beta
-            shipping-product: fenix
         shipping-product: firefox-android
         dependencies:
             build-fat-aar: build-fat-aar-android-geckoview-fat-aar-shippable/opt

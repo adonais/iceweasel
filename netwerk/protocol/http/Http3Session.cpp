@@ -2,13 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "ASpdySession.h"  // because of SoftStreamError()
 #include "Http3Session.h"
+
+#include "ASpdySession.h"  // because of SoftStreamError()
+#include "Http3ConnectUDPStream.h"
 #include "Http3Stream.h"
 #include "Http3StreamBase.h"
-#include "Http3WebTransportSession.h"
-#include "Http3ConnectUDPStream.h"
 #include "Http3StreamTunnel.h"
+#include "Http3WebTransportSession.h"
 #include "Http3WebTransportStream.h"
 #include "HttpConnectionUDP.h"
 #include "HttpLog.h"
@@ -16,6 +17,7 @@
 #include "SSLServerCertVerification.h"
 #include "SSLTokensCache.h"
 #include "ScopedNSSTypes.h"
+#include "WebTransportCertificateVerifier.h"
 #include "mozilla/RandomNum.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ScopeExit.h"
@@ -34,7 +36,6 @@
 #include "nsSocketTransportService2.h"
 #include "nsThreadUtils.h"
 #include "sslerr.h"
-#include "WebTransportCertificateVerifier.h"
 
 namespace mozilla::net {
 
@@ -663,15 +664,18 @@ nsresult Http3Session::ProcessEvents() {
              this, event.stop_sending.error));
         if (event.stop_sending.error == HTTP3_APP_ERROR_NO_ERROR) {
           RefPtr<Http3StreamBase> stream =
-              mStreamIdHash.Get(event.data_writable.stream_id);
+              mStreamIdHash.Get(event.stop_sending.stream_id);
           if (stream) {
-            RefPtr<Http3Stream> httpStream = stream->GetHttp3Stream();
-            MOZ_RELEASE_ASSERT(httpStream, "This must be a Http3Stream");
-            httpStream->StopSending();
+            if (RefPtr<Http3Stream> httpStream = stream->GetHttp3Stream()) {
+              httpStream->StopSending();
+            } else {
+              ResetOrStopSendingRecvd(event.stop_sending.stream_id,
+                                      event.stop_sending.error, STOP_SENDING);
+            }
           }
         } else {
-          ResetOrStopSendingRecvd(event.reset.stream_id, event.reset.error,
-                                  STOP_SENDING);
+          ResetOrStopSendingRecvd(event.stop_sending.stream_id,
+                                  event.stop_sending.error, STOP_SENDING);
         }
         break;
       case Http3Event::Tag::PushPromise:
@@ -2154,7 +2158,9 @@ void Http3Session::CloseInternal(bool aCallNeqoClose) {
 
   LOG(("Http3Session::Closing [this=%p]", this));
 
-  if (mState != CONNECTED) {
+  // A clean pre-CONNECTED shutdown closes with a success code; only flag a
+  // before-connected error when mError actually failed.
+  if (mState != CONNECTED && NS_FAILED(mError)) {
     mBeforeConnectedError = true;
   }
 
@@ -2185,7 +2191,7 @@ void Http3Session::SetProxyConnectFailed() {
   MOZ_ASSERT(false, "Http3Session::SetProxyConnectFailed()");
 }
 
-nsHttpRequestHead* Http3Session::RequestHead() {
+const nsHttpRequestHead* Http3Session::RequestHead() {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   MOZ_ASSERT(false,
              "Http3Session::RequestHead() "

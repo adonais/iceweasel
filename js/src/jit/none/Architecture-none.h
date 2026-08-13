@@ -8,7 +8,6 @@
 // JitSpewer.h is included through MacroAssembler implementations for other
 // platforms, so include it here to avoid inadvertent build bustage.
 #include "jit/JitSpewer.h"
-
 #include "jit/shared/Architecture-shared.h"
 
 namespace js {
@@ -152,7 +151,6 @@ struct FloatRegister {
   }
 };
 
-inline bool hasUnaliasedDouble() { MOZ_CRASH(); }
 inline bool hasMultiAlias() { MOZ_CRASH(); }
 
 static constexpr uint32_t ShadowStackSpace = 0;

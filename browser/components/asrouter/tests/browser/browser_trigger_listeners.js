@@ -103,7 +103,7 @@ async function test_formAutofillTrigger(settingsRedesignEnabled) {
             )
           )?.click()
         );
-        await BrowserTestUtils.waitForCondition(
+        await TestUtils.waitForCondition(
           () => browser.contentWindow?.gSubDialog?.dialogs.length
         );
       } else {
@@ -199,6 +199,16 @@ add_task(async function test_openURL_visit_counter() {
     stub.thirdCall.args[1].context.visitsCount,
     2,
     "Third call should have count 2 for http://example.com"
+  );
+  Assert.equal(
+    stub.firstCall.args[1].context.host,
+    "example.com",
+    "context.host is the navigated host"
+  );
+  Assert.equal(
+    stub.firstCall.args[1].context.url,
+    "https://example.com/",
+    "context.url is the navigated URL spec"
   );
 });
 
@@ -478,7 +488,7 @@ add_task(async function test_activityAfterIdleHiddenWindow() {
     handlerStub.callsFake(() => resolve(true))
   );
   window.minimize();
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => window.windowState === window.STATE_MINIMIZED,
     "Window should be minimized"
   );

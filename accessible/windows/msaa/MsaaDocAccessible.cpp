@@ -4,14 +4,14 @@
 
 #include "MsaaDocAccessible.h"
 
-#include "MsaaDocAccessible.h"
 #include "DocAccessibleChild.h"
-#include "mozilla/a11y/DocAccessibleParent.h"
-#include "nsAccessibilityService.h"
-#include "nsAccUtils.h"
-#include "nsWinUtils.h"
-#include "mozilla/a11y/Role.h"
 #include "ISimpleDOM.h"
+#include "MsaaDocAccessible.h"
+#include "mozilla/a11y/DocAccessibleParent.h"
+#include "mozilla/a11y/Role.h"
+#include "nsAccUtils.h"
+#include "nsAccessibilityService.h"
+#include "nsWinUtils.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;
@@ -53,7 +53,7 @@ IMPL_IUNKNOWN_QUERY_TAIL_INHERITED(ia2AccessibleHypertext)
 
 STDMETHODIMP
 MsaaDocAccessible::get_accParent(
-    /* [retval][out] */ IDispatch __RPC_FAR* __RPC_FAR* ppdispParent) {
+    /* [retval][out] */ IDispatch __RPC_FAR * __RPC_FAR * ppdispParent) {
   if (!mAcc) {
     return CO_E_OBJNOTCONNECTED;
   }

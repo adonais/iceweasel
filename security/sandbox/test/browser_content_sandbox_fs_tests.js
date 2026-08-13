@@ -634,6 +634,24 @@ async function testFileAccessLinuxOnly() {
   }
 
   await runTestsList(tests);
+
+  // A null path passed to unlink()/unlinkat() must be rejected by the sandbox
+  // syscall traps with EFAULT instead of crashing the content process
+  // (Coverity CID 1678881, 1679420). If the content process crashed, this
+  // SpecialPowers.spawn would not return and the harness would report a child
+  // process crash.
+  const EFAULT = 14;
+  let unlinkNull = await SpecialPowers.spawn(webBrowser, [], unlinkNullPath);
+  ok(
+    unlinkNull.ok,
+    "unlink/unlinkat with a null path did not crash the content process"
+  );
+  is(unlinkNull.unlinkErrno, EFAULT, "unlink(NULL) was rejected with EFAULT");
+  is(
+    unlinkNull.unlinkatErrno,
+    EFAULT,
+    "unlinkat(AT_FDCWD, NULL, 0) was rejected with EFAULT"
+  );
 }
 
 async function testFileAccessLinuxSnap() {

@@ -154,6 +154,8 @@ class StrongTypedef {
   T& get() { return mValue; }
   T const& get() const { return mValue; }
 
+  auto MutTiedFields() { return std::tie(mValue); }
+
  private:
   T mValue{};
 

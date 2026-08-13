@@ -8,9 +8,13 @@ support-files = [
 ]
 tags = "os_integration"
 
+["browser_search_history_restoration.js"]
+
 ["browser_search_no_results_change_category.js"]
 
 ["browser_search_results.js"]
+
+["browser_search_results_back_button.js"]
 
 ["browser_search_subdialog_tooltip_saved_addresses.js"]
 

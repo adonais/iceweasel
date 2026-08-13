@@ -490,7 +490,11 @@ export class AIChatMessage extends MozLitElement {
       new CustomEvent("AIChatContent:RequestAssets", {
         bubbles: true,
         composed: true,
-        detail: { messageId: this.messageId, items: requestItems },
+        detail: {
+          conversationId: this.conversationId,
+          messageId: this.messageId,
+          items: requestItems,
+        },
       })
     );
   }

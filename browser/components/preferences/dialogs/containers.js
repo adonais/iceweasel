@@ -4,8 +4,9 @@
 
 /* globals AdjustableTitle */
 
-const { ContextualIdentityService } = ChromeUtils.importESModule(
-  "resource://gre/modules/ContextualIdentityService.sys.mjs"
+const { ContainerEditor } = ChromeUtils.importESModule(
+  "chrome://browser/content/usercontext/ContainerEditor.mjs",
+  { global: "current" }
 );
 
 function setTitle() {
@@ -21,98 +22,22 @@ function setTitle() {
 }
 setTitle();
 
-let loadedResolvers = Promise.withResolvers();
-document.mozSubdialogReady = loadedResolvers.promise;
+window.addEventListener("DOMContentLoaded", () => {
+  AdjustableTitle.hide();
 
-class ContainerDialog {
-  constructor() {
-    let params = window.arguments[0] || {};
-    this.userContextId = params.userContextId || null;
-    this.identity = params.identity || {
-      name: "",
-      icon: ContextualIdentityService.containerIcons[0],
-      color: ContextualIdentityService.containerColors[0],
-    };
+  let editor = new ContainerEditor(
+    document.getElementById("containerEditorHost"),
+    window.arguments[0] || {}
+  );
+  editor.render();
 
-    this._dialog = document.querySelector("dialog");
-    this._form = document.getElementById("containerForm");
-    this._name = document.getElementById("name");
+  let dialog = document.querySelector("dialog");
+  let acceptButton = dialog.getButton("accept");
+  let updateValidity = () => {
+    acceptButton.disabled = !editor.isValid;
+  };
+  editor.form.addEventListener("input", updateValidity);
+  updateValidity();
 
-    this._name.value = this.identity.name;
-    this._form.addEventListener("input", () => this.validate());
-    document.addEventListener("dialogaccept", () => this.onAccept());
-  }
-
-  init() {
-    this._buildSwatches(
-      document.getElementById("colorSwatches"),
-      this.identity.color,
-      ContextualIdentityService.containerColors,
-      color => `identity-icon-circle identity-color-${color}`,
-      color => ContextualIdentityService.getContainerColorLabel(color)
-    );
-    this._buildSwatches(
-      document.getElementById("iconSwatches"),
-      this.identity.icon,
-      ContextualIdentityService.containerIcons,
-      icon => `identity-icon-${icon}`,
-      icon => ContextualIdentityService.getContainerIconLabel(icon)
-    );
-    this.validate();
-  }
-
-  _buildSwatches(picker, selected, values, iconClass, getLabel) {
-    for (let value of values) {
-      let title = getLabel(value);
-
-      let item = document.createElement("moz-visual-picker-item");
-      item.className = "swatch";
-      item.value = value;
-      item.ariaLabel = title;
-      item.title = title;
-
-      let icon = document.createElement("span");
-      icon.className = `userContext-icon ${iconClass(value)}`;
-
-      item.append(icon);
-      picker.append(item);
-    }
-
-    picker.value = selected;
-  }
-
-  validate() {
-    let nameValid = !!this._name.value.trim();
-    this._dialog.getButton("accept").disabled = !nameValid;
-  }
-
-  onAccept() {
-    let formData = new FormData(this._form);
-    let name = formData.get("name").trim();
-    let color = formData.get("color");
-    let icon = formData.get("icon");
-
-    if (!ContextualIdentityService.getContainerColorCode(color)) {
-      throw new Error("Internal error. The color value doesn't match.");
-    }
-    if (!ContextualIdentityService.getContainerIconURL(icon)) {
-      throw new Error("Internal error. The icon value doesn't match.");
-    }
-
-    if (this.userContextId) {
-      ContextualIdentityService.update(this.userContextId, name, icon, color);
-    } else {
-      ContextualIdentityService.create(name, icon, color);
-    }
-  }
-}
-
-window.addEventListener("DOMContentLoaded", async () => {
-  try {
-    AdjustableTitle.hide();
-    let dialog = new ContainerDialog();
-    await dialog.init();
-  } finally {
-    loadedResolvers.resolve();
-  }
+  document.addEventListener("dialogaccept", () => editor.commit());
 });

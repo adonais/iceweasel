@@ -5,11 +5,11 @@
 #ifndef MAI_HYPERLINK_H_
 #define MAI_HYPERLINK_H_
 
-#include "nsMai.h"
 #include "mozilla/a11y/Accessible.h"
 #include "mozilla/a11y/LocalAccessible.h"
 #include "mozilla/a11y/RemoteAccessible.h"
 #include "nsDebug.h"
+#include "nsMai.h"
 
 struct _AtkHyperlink;
 typedef struct _AtkHyperlink AtkHyperlink;

@@ -83,6 +83,31 @@ import:
                     - text: likert_scale_option_6
                       ordering: 5
 
+              # This message displays as a microsurvey prompt after the user taps on the Uninstall app shortcut.
+              microsurvey-uninstall-survey:
+                title: microsurvey_uninstall_survey_title
+                text: microsurvey_uninstall_survey_title
+                surface: microsurvey
+                trigger-if-all:
+                  - NEVER
+                style: MICROSURVEY
+                microsurvey-config:
+                  utm-content: "uninstall_shortcut"
+                  icon: ic_delete_black
+                  answers:
+                    - text: uninstall_survey_option_1_v2
+                      ordering: 0
+                    - text: uninstall_survey_option_2_v2
+                      ordering: 1
+                    - text: uninstall_survey_option_3_v2
+                      ordering: 2
+                    - text: uninstall_survey_option_4_v2
+                      ordering: 3
+                    - text: uninstall_survey_option_5_v2
+                      ordering: 4
+                    - text: uninstall_survey_option_6_v2
+                      ordering: 5
+
         # This message displays as a microsurvey prompt after the user taps on the `Print` menu.
         - channel: nightly
           value:
@@ -109,4 +134,29 @@ import:
                     - text: likert_scale_option_5
                       ordering: 4
                     - text: likert_scale_option_6
+                      ordering: 5
+
+              # This message displays as a microsurvey prompt after the user taps on the Uninstall app shortcut.
+              microsurvey-uninstall-survey:
+                title: microsurvey_uninstall_survey_title
+                text: microsurvey_uninstall_survey_title
+                surface: microsurvey
+                trigger-if-all:
+                  - NEVER
+                style: MICROSURVEY
+                microsurvey-config:
+                  utm-content: "uninstall_shortcut"
+                  icon: ic_delete_black
+                  answers:
+                    - text: uninstall_survey_option_1_v2
+                      ordering: 0
+                    - text: uninstall_survey_option_2_v2
+                      ordering: 1
+                    - text: uninstall_survey_option_3_v2
+                      ordering: 2
+                    - text: uninstall_survey_option_4_v2
+                      ordering: 3
+                    - text: uninstall_survey_option_5_v2
+                      ordering: 4
+                    - text: uninstall_survey_option_6_v2
                       ordering: 5

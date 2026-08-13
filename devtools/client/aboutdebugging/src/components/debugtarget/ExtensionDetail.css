@@ -23,5 +23,5 @@
 }
 
 .extension-backgroundscript__status--running::before {
-  background-color: var(--success-background);
+  background-color: var(--color-accent-attention);
 }

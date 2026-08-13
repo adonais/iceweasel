@@ -3,16 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ProxyAutoConfig.h"
-#include "nsICancelable.h"
-#include "nsIDNSListener.h"
-#include "nsIDNSRecord.h"
-#include "nsIDNSService.h"
-#include "nsINamed.h"
-#include "nsThreadUtils.h"
-#include "nsIConsoleService.h"
-#include "nsIURLParser.h"
-#include "nsJSUtils.h"
-#include "jsfriendapi.h"
+
 #include "js/CallAndConstruct.h"          // JS_CallFunctionName
 #include "js/CompilationAndEvaluation.h"  // JS::Compile
 #include "js/ContextOptions.h"
@@ -22,19 +13,29 @@
 #include "js/SourceText.h"  // JS::Source{Ownership,Text}
 #include "js/Utility.h"
 #include "js/Warnings.h"  // JS::SetWarningReporter
-#include "prnetdb.h"
-#include "nsITimer.h"
+#include "jsfriendapi.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/SpinEventLoopUntil.h"
+#include "mozilla/Utf8.h"  // mozilla::Utf8Unit
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/net/DNS.h"
-#include "mozilla/net/SocketProcessChild.h"
-#include "mozilla/net/SocketProcessParent.h"
 #include "mozilla/net/ProxyAutoConfigChild.h"
 #include "mozilla/net/ProxyAutoConfigParent.h"
-#include "mozilla/Utf8.h"  // mozilla::Utf8Unit
-#include "nsServiceManagerUtils.h"
+#include "mozilla/net/SocketProcessChild.h"
+#include "mozilla/net/SocketProcessParent.h"
+#include "nsICancelable.h"
+#include "nsIConsoleService.h"
+#include "nsIDNSListener.h"
+#include "nsIDNSRecord.h"
+#include "nsIDNSService.h"
+#include "nsINamed.h"
+#include "nsITimer.h"
+#include "nsIURLParser.h"
+#include "nsJSUtils.h"
 #include "nsNetCID.h"
+#include "nsServiceManagerUtils.h"
+#include "nsThreadUtils.h"
+#include "prnetdb.h"
 
 #if defined(XP_MACOSX)
 #  include "nsMacUtilsImpl.h"

@@ -3,10 +3,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/BasePrincipal.h"
 #include "nsSSLSocketProvider.h"
-#include "nsNSSIOLayer.h"
+
+#include "mozilla/BasePrincipal.h"
 #include "nsError.h"
+#include "nsNSSIOLayer.h"
 
 using mozilla::OriginAttributes;
 

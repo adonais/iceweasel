@@ -28,9 +28,7 @@
 // Replace try blocks by ifs
 #define try if (true)
 
-// This works because llama.cpp more or less consistently uses `e`, `err` and
-// `error` for the exception variable name, but might need adjustments.
+// This works because llama.cpp more or less consistently uses `e`, `err`,
+// `error` and `ex` for the exception variable name, but might need adjustments.
 #define catch(x) \
-    if (const std::exception &e = std::exception(), err = std::exception(), \
-        error = std::exception(); \
-        false)
+    if (static const std::exception e, err, error, ex; false)

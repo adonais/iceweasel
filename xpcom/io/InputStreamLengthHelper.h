@@ -7,8 +7,8 @@
 
 #include <functional>
 
-#include "nsISupportsImpl.h"
 #include "nsIInputStreamLength.h"
+#include "nsISupportsImpl.h"
 #include "nsThreadUtils.h"
 
 class nsIInputStream;

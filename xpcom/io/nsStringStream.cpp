@@ -6,23 +6,23 @@
  * Based on original code from nsIStringStream.cpp
  */
 
-#include "ipc/IPCMessageUtils.h"
-
 #include "nsStringStream.h"
-#include "nsStreamUtils.h"
-#include "nsReadableUtils.h"
-#include "nsICloneableInputStream.h"
-#include "nsISeekableStream.h"
-#include "nsISupportsPrimitives.h"
-#include "nsCRT.h"
-#include "prerror.h"
-#include "nsIClassInfoImpl.h"
-#include "mozilla/ipc/InputStreamUtils.h"
+
+#include "XPCOMModule.h"
+#include "ipc/IPCMessageUtils.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/ReentrantMonitor.h"
 #include "mozilla/StreamBufferSourceImpl.h"
+#include "mozilla/ipc/InputStreamUtils.h"
+#include "nsCRT.h"
+#include "nsIClassInfoImpl.h"
+#include "nsICloneableInputStream.h"
 #include "nsIIPCSerializableInputStream.h"
-#include "XPCOMModule.h"
+#include "nsISeekableStream.h"
+#include "nsISupportsPrimitives.h"
+#include "nsReadableUtils.h"
+#include "nsStreamUtils.h"
+#include "prerror.h"
 
 using namespace mozilla::ipc;
 using mozilla::fallible;

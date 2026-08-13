@@ -90,11 +90,11 @@ New ICU versions are announced on the [icu-announce](https://lists.sourceforge.n
 `intl/update-icu.sh` updates our ICU to a given ICU release: [^icu-git-argument]
 
 ```bash
-$ cd "$topsrcdir/intl"
-$ # Ensure certain Python modules in the tree are accessible when updating.
-$ export PYTHONPATH="$topsrcdir/python/mozbuild/"
-$ #               <URL to ICU Git>                       <release tag name>
-$ ./update-icu.sh https://github.com/unicode-org/icu.git release-67-1
+cd "$topsrcdir/intl"
+# Ensure certain Python modules in the tree are accessible when updating.
+export PYTHONPATH="$topsrcdir/python/mozbuild/"
+#               <URL to ICU Git>                       <release tag name>
+./update-icu.sh https://github.com/unicode-org/icu.git release-67-1
 ```
 
 [^icu-git-argument]: The ICU Git URL argument lets you update from a local ICU clone. This can speed up work when you’re updating to a new ICU release and need to adjust or add new local patches.
@@ -102,11 +102,11 @@ $ ./update-icu.sh https://github.com/unicode-org/icu.git release-67-1
 But usually you’ll want to update to the latest commit from the corresponding ICU maintenance branch so that you pick up fixes landed post-release:
 
 ```bash
-$ cd "$topsrcdir/intl"
-$ # Ensure certain Python modules in the tree are accessible when updating.
-$ export PYTHONPATH="$topsrcdir/python/mozbuild/"
-$ #               <URL to ICU Git>                       <maintenance name>
-$ ./update-icu.sh https://github.com/unicode-org/icu.git maint/maint-67
+cd "$topsrcdir/intl"
+# Ensure certain Python modules in the tree are accessible when updating.
+export PYTHONPATH="$topsrcdir/python/mozbuild/"
+#               <URL to ICU Git>                       <maintenance name>
+./update-icu.sh https://github.com/unicode-org/icu.git maint/maint-67
 ```
 
 Updating ICU will also update the language tag registry (which records language tag semantics needed to correctly implement `Intl` functionality). Therefore it’s likely necessary to update SpiderMonkey’s language tag handling after running this [^update-icu-warning-langtags]. See below where the `langtags` mode of `make_intl_data.py` is discussed.
@@ -144,8 +144,8 @@ Therefore, either (usually) after you update ICU *or* when a new `tzdata` releas
 First, make sure you have a usable `icupkg` on your system. [^icupkg-on-system] Then run the `update-tzdata.sh` script to update `intl/tzdata` and `icudtNNE.dat`:
 
 ```bash
-$ cd "$topsrcdir/intl"
-$ ./update-tzdata.sh 2020a # or whatever the latest release is
+cd "$topsrcdir/intl"
+./update-tzdata.sh 2020a # or whatever the latest release is
 ```
 
 [^icupkg-on-system]: To install `icupkg` on your system:
@@ -158,8 +158,8 @@ $ ./update-tzdata.sh 2020a # or whatever the latest release is
     If you’re on Windows, or for some reason you don’t want to use the `icupkg` now in your `$PATH`, you can manually specify it on the command line using the `-e /path/to/icupkg` flag:
 
     ```bash
-    $ cd "$topsrcdir/intl"
-    $ ./update-tzdata.sh -e /path/to/icupkg 2020a # or whatever the latest release is
+    cd "$topsrcdir/intl"
+    ./update-tzdata.sh -e /path/to/icupkg 2020a # or whatever the latest release is
     ```
 
     *In principle*, the `icupkg` you use *should* be the one from the ICU release/maintenance branch being built: if there’s a mismatch, you might encounter an ICU “format version not supported” error. If you’re on Windows, make sure to download a binary build for that release/branch. On other platforms, you might have to build your own ICU from source. The steps required to do this are left as an exercise for the reader. (In the somewhat longer term, the update commands might be changed to do this themselves.)
@@ -177,10 +177,10 @@ The ECMAScript Internationalization API requires that time zone identifiers (`Am
 Use `make_intl_data.py`’s `tzdata` mode to update time zone information:
 
 ```bash
-$ cd "$topsrcdir/js/src/builtin/intl"
-$ # make_intl_data.py requires yaml.
-$ export PYTHONPATH="$topsrcdir/third_party/python/PyYAML/lib3/"
-$ python3 ./make_intl_data.py tzdata
+cd "$topsrcdir/js/src/builtin/intl"
+# make_intl_data.py requires yaml.
+export PYTHONPATH="$topsrcdir/third_party/python/PyYAML/lib3/"
+python3 ./make_intl_data.py tzdata
 ```
 
 The `tzdata` mode accepts two optional arguments that generally will not be needed:
@@ -202,10 +202,10 @@ These decisions vary over time: as countries change [^soviet-union], as customs 
 Use `make_intl_data.py`’s `langtags` mode to update language tag information to the same CLDR version used by ICU:
 
 ```bash
-$ cd "$topsrcdir/js/src/builtin/intl"
-$ # make_intl_data.py requires yaml.
-$ export PYTHONPATH="$topsrcdir/third_party/python/PyYAML/lib3/"
-$ python3 ./make_intl_data.py langtags
+cd "$topsrcdir/js/src/builtin/intl"
+# make_intl_data.py requires yaml.
+export PYTHONPATH="$topsrcdir/third_party/python/PyYAML/lib3/"
+python3 ./make_intl_data.py langtags
 ```
 
 The CLDR version used will be printed in the header of CLDR-sensitive generated files. For example, `intl/components/src/LocaleGenerated.cpp` currently begins with:
@@ -225,10 +225,10 @@ Currency updates are fairly uncommon, so it’ll be rare to need to update curre
 Use `make_intl_data.py`’s `currency` mode to update currency fractional digit information:
 
 ```bash
-$ cd "$topsrcdir/js/src/builtin/intl"
-$ # make_intl_data.py requires yaml.
-$ export PYTHONPATH="$topsrcdir/third_party/python/PyYAML/lib3/"
-$ python3 ./make_intl_data.py currency
+cd "$topsrcdir/js/src/builtin/intl"
+# make_intl_data.py requires yaml.
+export PYTHONPATH="$topsrcdir/third_party/python/PyYAML/lib3/"
+python3 ./make_intl_data.py currency
 ```
 
 ##### Updating SpiderMonkey measurement formatting support
@@ -242,10 +242,10 @@ First, `intl/icu/data_filter.json` must be updated to incorporate localized stri
 Second, use `make_intl_data.py`’s `units` mode to update unit handling and associated tests in SpiderMonkey:
 
 ```bash
-$ cd "$topsrcdir/js/src/builtin/intl"
-$ # make_intl_data.py requires yaml.
-$ export PYTHONPATH="$topsrcdir/third_party/python/PyYAML/lib3/"
-$ python3 ./make_intl_data.py units
+cd "$topsrcdir/js/src/builtin/intl"
+# make_intl_data.py requires yaml.
+export PYTHONPATH="$topsrcdir/third_party/python/PyYAML/lib3/"
+python3 ./make_intl_data.py units
 ```
 
 ##### Updating SpiderMonkey numbering systems support
@@ -255,8 +255,8 @@ The `Intl` API also supports formatting numbers in various numbering systems (fo
 When the list of supported numbering systems needs to be updated, run `make_intl_data.py` with the `numbering` mode to update it and associated tests in SpiderMonkey:
 
 ```bash
-$ cd "$topsrcdir/js/src/builtin/intl"
-$ # make_intl_data.py requires yaml.
-$ export PYTHONPATH="$topsrcdir/third_party/python/PyYAML/lib3/"
-$ python3 ./make_intl_data.py numbering
+cd "$topsrcdir/js/src/builtin/intl"
+# make_intl_data.py requires yaml.
+export PYTHONPATH="$topsrcdir/third_party/python/PyYAML/lib3/"
+python3 ./make_intl_data.py numbering
 ```

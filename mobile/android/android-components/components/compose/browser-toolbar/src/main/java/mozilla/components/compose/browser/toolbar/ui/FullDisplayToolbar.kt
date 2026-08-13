@@ -65,6 +65,7 @@ internal fun FullDisplayToolbar(
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colorScheme.surface,
     outlineColor: Color = DividerDefaults.color,
+    browserActionsColor: Color? = null,
     browserActionsStartModifier: Modifier = Modifier,
     pageActionsStartModifier: Modifier = Modifier,
     originModifier: Modifier = Modifier,
@@ -81,11 +82,13 @@ internal fun FullDisplayToolbar(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (browserActionsStart.isNotEmpty()) {
-                    ActionContainer(
-                        actions = browserActionsStart,
-                        onInteraction = onInteraction,
-                        modifier = browserActionsStartModifier,
-                    )
+                    BrowserActionsColorScheme(browserActionsColor) {
+                        ActionContainer(
+                            actions = browserActionsStart,
+                            onInteraction = onInteraction,
+                            modifier = browserActionsStartModifier,
+                        )
+                    }
                 }
 
                 Row(
@@ -159,11 +162,13 @@ internal fun FullDisplayToolbar(
                 }
 
                 if (browserActionsEnd.isNotEmpty()) {
-                    ActionContainer(
-                        actions = browserActionsEnd,
-                        onInteraction = onInteraction,
-                        modifier = browserActionsEndModifier,
-                    )
+                    BrowserActionsColorScheme(browserActionsColor) {
+                        ActionContainer(
+                            actions = browserActionsEnd,
+                            onInteraction = onInteraction,
+                            modifier = browserActionsEndModifier,
+                        )
+                    }
                 }
             }
 
@@ -195,6 +200,26 @@ internal fun FullDisplayToolbar(
                 )
             }
         }
+    }
+}
+
+/**
+ * Overrides `onSurface` for [content] with [color] so browser action icons (and the tab counter)
+ * can be tinted independently of the page actions inside the address bar. A `null` [color] leaves
+ * the ambient color scheme untouched.
+ */
+@Composable
+private fun BrowserActionsColorScheme(
+    color: Color?,
+    content: @Composable () -> Unit,
+) {
+    if (color == null) {
+        content()
+    } else {
+        MaterialTheme(
+            colorScheme = MaterialTheme.colorScheme.copy(onSurface = color),
+            content = content,
+        )
     }
 }
 

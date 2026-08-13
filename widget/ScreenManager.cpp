@@ -5,10 +5,10 @@
 #include "ScreenManager.h"
 
 #include "mozilla/ClearOnShutdown.h"
-#include "mozilla/dom/ContentParent.h"
-#include "mozilla/dom/DOMTypes.h"
 #include "mozilla/Logging.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/dom/ContentParent.h"
+#include "mozilla/dom/DOMTypes.h"
 #ifdef MOZ_WAYLAND
 #  include "mozilla/WidgetUtilsGtk.h"
 #endif /* MOZ_WAYLAND */

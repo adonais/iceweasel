@@ -14,8 +14,7 @@
 #include "config/av1_rtcd.h"
 
 void av1_interp_cubic_rate_dist_sse2(const double *p1, const double *p2,
-                                     double x, double *const rate_f,
-                                     double *const distbysse_f) {
+                                     double x, double rate_dist_f[2]) {
   const __m128d half = _mm_set1_pd(0.5);
   const __m128d two = _mm_set1_pd(2.0);
   const __m128d three = _mm_set1_pd(3.0);
@@ -57,6 +56,5 @@ void av1_interp_cubic_rate_dist_sse2(const double *p1, const double *p2,
   __m128d reg_res_4 = _mm_mul_pd(_mm_mul_pd(half, reg_x), reg_res_3);
   reg_res_4 = _mm_add_pd(reg_p1, reg_res_4);
 
-  _mm_storel_pd(rate_f, reg_res_4);
-  _mm_storeh_pd(distbysse_f, reg_res_4);
+  _mm_storeu_pd(rate_dist_f, reg_res_4);
 }

@@ -36,7 +36,22 @@ internal object MediaSessionReducer {
                     action.fullScreen,
                     action.elementMetadata,
                 )
+            is MediaSessionAction.UpdateMediaAudioSessionTypeAction ->
+                state.updateAudioSessionType(action.tabId, action.audioSessionType)
         }
+    }
+}
+
+private fun BrowserState.updateAudioSessionType(
+    tabId: String,
+    audioSessionType: MediaSession.AudioSessionType,
+): BrowserState {
+    return updateTabOrCustomTabState(tabId) { current ->
+        current.createCopy(
+            mediaSessionState = current.mediaSessionState?.copy(
+                audioSessionType = audioSessionType,
+            ),
+        )
     }
 }
 

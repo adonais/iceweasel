@@ -698,13 +698,6 @@ PopupNotifications.prototype = {
 
     if (isActiveBrowser) {
       if (isActiveWindow) {
-        // Autofocus if the notification requests focus.
-        if (options && !options.dismissed && options.autofocus) {
-          this.panel.removeAttribute("noautofocus");
-        } else {
-          this.panel.setAttribute("noautofocus", "true");
-        }
-
         // show panel now
         this._update(
           notifications,
@@ -1380,6 +1373,17 @@ PopupNotifications.prototype = {
         this.panel.setAttribute("noautohide", "true");
       } else {
         this.panel.removeAttribute("noautohide");
+      }
+
+      // Autofocus the panel if any notification being shown requests focus.
+      // Done here when the panel is actually opened, rather than
+      // in show(), since a notification may be shown asynchronously (e.g. after the
+      // window/browser becomes active again following a navigation). This path
+      // reliably runs before openPopup() in every case.
+      if (notificationsToShow.some(n => !n.dismissed && n.options.autofocus)) {
+        this.panel.removeAttribute("noautofocus");
+      } else {
+        this.panel.setAttribute("noautofocus", "true");
       }
 
       notificationsToShow.forEach(function (n) {

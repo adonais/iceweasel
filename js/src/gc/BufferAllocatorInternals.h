@@ -369,7 +369,7 @@ struct BufferChunk
       public AllocSpace<BufferChunk, ChunkSize, MediumAllocGranularity> {
   MainThreadOrGCTaskData<Zone*> zone;
 
-  MainThreadOrGCTaskData<bool> allocatedDuringCollection;
+  mozilla::Atomic<bool, mozilla::Relaxed> allocatedDuringCollection;
   MainThreadOrGCTaskData<bool> stolenFromSweepList;
   MainThreadOrGCTaskData<bool> hasNurseryOwnedAllocs;
   MainThreadOrGCTaskData<bool> hasNurseryOwnedAllocsAfterSweep;

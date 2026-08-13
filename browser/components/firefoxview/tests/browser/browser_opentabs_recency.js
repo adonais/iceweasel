@@ -177,7 +177,7 @@ async function checkRecentTabList(browser, expected) {
   const tabListRows = await getTabRowsForCard(openTabsCard);
   Assert.ok(tabListRows, "Found the tab list element");
   let actual = Array.from(tabListRows).map(row => row.url);
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => ObjectUtils.deepEqual(actual, expected),
     "Waiting for tab list to hvae items with URLs in the expected order"
   );

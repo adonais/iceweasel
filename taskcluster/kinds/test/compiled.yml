@@ -75,6 +75,14 @@ gtest:
     mozharness:
         extra-options:
             by-variant:
+                1proc:
+                    by-test-platform:
+                        # TSAN adds significant per-process overhead that often
+                        # results in timeout, so run gtests as a single
+                        # process.
+                        .*-tsan.*:
+                            - --combine-suites
+                        default: []
                 inc-origin-init:
                     - --disable-e10s
                     - --enable-inc-origin-init

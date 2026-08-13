@@ -4,8 +4,8 @@
 #ifndef MACFINDERPROGRESS_H_
 #define MACFINDERPROGRESS_H_
 
-#include "nsIMacFinderProgress.h"
 #include "nsCOMPtr.h"
+#include "nsIMacFinderProgress.h"
 
 class nsMacFinderProgress : public nsIMacFinderProgress {
  public:

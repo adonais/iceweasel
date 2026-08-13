@@ -772,46 +772,6 @@ OpKind wasm::Classify(OpBytes op) {
         case MozOp::Limit:
           // Reject Limit for the MozPrefix encoding
           break;
-        case MozOp::TeeGlobal:
-          return OpKind::TeeGlobal;
-        case MozOp::I32BitNot:
-        case MozOp::I32Abs:
-        case MozOp::I32Neg:
-          return OpKind::Unary;
-        case MozOp::I32Min:
-        case MozOp::I32Max:
-        case MozOp::F64Mod:
-        case MozOp::F64Pow:
-        case MozOp::F64Atan2:
-          return OpKind::Binary;
-        case MozOp::F64SinNative:
-        case MozOp::F64SinFdlibm:
-        case MozOp::F64CosNative:
-        case MozOp::F64CosFdlibm:
-        case MozOp::F64TanNative:
-        case MozOp::F64TanFdlibm:
-        case MozOp::F64Asin:
-        case MozOp::F64Acos:
-        case MozOp::F64Atan:
-        case MozOp::F64Exp:
-        case MozOp::F64Log:
-          return OpKind::Unary;
-        case MozOp::I32TeeStore8:
-        case MozOp::I32TeeStore16:
-        case MozOp::I64TeeStore8:
-        case MozOp::I64TeeStore16:
-        case MozOp::I64TeeStore32:
-        case MozOp::I32TeeStore:
-        case MozOp::I64TeeStore:
-        case MozOp::F32TeeStore:
-        case MozOp::F64TeeStore:
-        case MozOp::F32TeeStoreF64:
-        case MozOp::F64TeeStoreF32:
-          return OpKind::TeeStore;
-        case MozOp::OldCallDirect:
-          return OpKind::OldCallDirect;
-        case MozOp::OldCallIndirect:
-          return OpKind::OldCallIndirect;
         case MozOp::CallBuiltinModuleFunc:
           return OpKind::CallBuiltinModuleFunc;
 #  ifdef ENABLE_WASM_JSPI

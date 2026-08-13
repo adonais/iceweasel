@@ -53,7 +53,7 @@ class AppleVTEncoder final : public MediaDataEncoder {
   }
 
   void OutputFrame(OSStatus aStatus, VTEncodeInfoFlags aFlags,
-                   CMSampleBufferRef aBuffer);
+                   CMSampleBufferRef aBuffer, void* aSourceFrameRefcon);
 
  private:
   enum class EncodeResult { Success, EncodeError, FrameDropped, EmptyBuffer };
@@ -63,7 +63,8 @@ class AppleVTEncoder final : public MediaDataEncoder {
   RefPtr<ReconfigurationPromise> ProcessReconfigure(
       const RefPtr<const EncoderConfigurationChangeList>&
           aConfigurationChanges);
-  void ProcessOutput(RefPtr<MediaRawData>&& aOutput, EncodeResult aResult);
+  void ProcessOutput(RefPtr<MediaRawData>&& aOutput, EncodeResult aResult,
+                     bool aWasForcedKeyframe = false);
   void ForceOutputIfNeeded();
   void MaybeResolveOrRejectEncodePromise();
   RefPtr<EncodePromise> ProcessDrain();

@@ -6,19 +6,19 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Logging.h"
+#include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/dom/WindowGlobalParent.h"
 #include "nsContentUtils.h"
-#include "nsIChannel.h"
 #include "nsDocShell.h"
+#include "nsIBrowser.h"
+#include "nsIChannel.h"
 #include "nsIDocShellTreeItem.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsITransportSecurityInfo.h"
 #include "nsIWebProgress.h"
 #include "nsNetUtil.h"
-#include "mozilla/dom/CanonicalBrowsingContext.h"
-#include "mozilla/dom/WindowGlobalParent.h"
-#include "mozilla/dom/Element.h"
-#include "nsIBrowser.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

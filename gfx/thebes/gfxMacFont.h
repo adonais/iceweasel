@@ -5,10 +5,10 @@
 #ifndef GFX_MACFONT_H
 #define GFX_MACFONT_H
 
-#include "mozilla/MemoryReporting.h"
-#include "gfxFont.h"
 #include <CoreText/CoreText.h>
 
+#include "gfxFont.h"
+#include "mozilla/MemoryReporting.h"
 #include "mozilla/gfx/UnscaledFontMac.h"
 
 class CTFontEntry;
@@ -24,7 +24,7 @@ class gfxMacFont final : public gfxFont {
   RunMetrics Measure(const gfxTextRun* aTextRun, uint32_t aStart, uint32_t aEnd,
                      BoundingBoxType aBoundingBoxType,
                      DrawTarget* aDrawTargetForTightBoundingBox,
-                     Spacing* aSpacing,
+                     Spacing* aSpacing, nscoord aLetterSpacing,
                      mozilla::gfx::ShapedTextFlags aOrientation) override;
 
   // We need to provide hinted (non-linear) glyph widths if using a font

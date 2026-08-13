@@ -7,6 +7,7 @@
 #endif  // !NIGHTLY_BUILD || MOZ_NO_SMART_CARDS
 
 #include "mozilla/psm/PKCS11ModuleParent.h"
+
 #include "nsNSSComponent.h"
 
 namespace mozilla::psm {

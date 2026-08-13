@@ -5,9 +5,9 @@
 #ifndef mozilla_widget_ThemeColors_h
 #define mozilla_widget_ThemeColors_h
 
+#include "mozilla/LookAndFeel.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/gfx/Types.h"
-#include "mozilla/LookAndFeel.h"
 #include "nsIFrame.h"
 
 namespace mozilla::widget {

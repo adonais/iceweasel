@@ -27,6 +27,7 @@
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_layers.h"
+#include "mozilla/dom/CSSUnitValue.h"
 #include "mozilla/dom/KeyframeEffectBinding.h"
 #include "mozilla/dom/MutationObservers.h"
 #include "mozilla/layers/AnimationInfo.h"
@@ -1227,7 +1228,7 @@ void KeyframeEffect::GetProperties(
 }
 
 void KeyframeEffect::GetKeyframes(JSContext* aCx, nsTArray<JSObject*>& aResult,
-                                  ErrorResult& aRv) const {
+                                  ErrorResult& aRv) {
   MOZ_ASSERT(aResult.IsEmpty());
   MOZ_ASSERT(!aRv.Failed());
 
@@ -1262,6 +1263,12 @@ void KeyframeEffect::GetKeyframes(JSContext* aCx, nsTArray<JSObject*>& aResult,
     computedStyle = GetTargetComputedStyle(Flush::Style);
   }
 
+  // Update computed offsets if needed. We do this after we flush the style.
+  if (mAnimation && mAnimation->GetTimeline()) {
+    MaybeUpdateKeyframeComputedOffsets(mAnimation->GetTimeline(),
+                                       mAnimation->GetTimelineRange());
+  }
+
   const StylePerDocumentStyleData* rawData =
       mDocument->EnsureStyleSet().RawData();
 
@@ -1287,10 +1294,26 @@ void KeyframeEffect::GetKeyframes(JSContext* aCx, nsTArray<JSObject*>& aResult,
     // Set up a dictionary object for the explicit members
     BaseComputedKeyframe keyframeDict;
     if (keyframe.mOffset) {
-      // FIXME: Bug 2016574. Add range name to BaseKeyframe.
-      if (!keyframe.mOffset->IsTimelineRangeOffset()) {
-        keyframeDict.mOffset.SetValue(keyframe.mOffset->mPercentage);
-      }
+      if (keyframe.mOffset->IsPercentageOffset()) {
+        // The percentage offset, so we use double. We don't use CSSNumericValue
+        // for backwards compatibility.
+        keyframeDict.mOffset.SetValue().RawSetAsDouble() =
+            keyframe.mOffset->mPercentage;
+      } else if (StaticPrefs::layout_css_typed_om_enabled()) {
+        // The timeline range offset.
+        MOZ_ASSERT(keyframe.mOffset->IsTimelineRangeOffset());
+
+        nsAutoCString rangeName;
+        Servo_SerializeTimelineRangeName(keyframe.mOffset->mRangeName,
+                                         &rangeName);
+        auto& offset =
+            keyframeDict.mOffset.SetValue().RawSetAsTimelineRangeOffset();
+        offset.mRangeName.Construct(std::move(rangeName));
+        offset.mOffset.Construct(MakeCSSUnitValue(
+            GetParentObject(), StyleNumericType::Percent(),
+            keyframe.mOffset->mPercentage * 100.0, "percent"_ns));
+      }  // else: if we don't enable the CSS Typed OM preference, we leave it
+         // null.
     }
     if (std::isnan(keyframe.mComputedOffset)) {
       MOZ_ASSERT(keyframe.IsRangedKeyframe(), "Invalid computed offset");
@@ -1637,6 +1660,12 @@ nsIFrame* KeyframeEffect::GetPrimaryFrame() const {
     case PseudoStyleType::Backdrop:
       frame = nsLayoutUtils::GetBackdropFrame(mTarget.mElement);
       break;
+    case PseudoStyleType::Checkmark:
+      frame = nsLayoutUtils::GetCheckmarkFrame(mTarget.mElement);
+      break;
+    case PseudoStyleType::PickerIcon:
+      frame = nsLayoutUtils::GetPickerIconFrame(mTarget.mElement);
+      break;
     case PseudoStyleType::ViewTransition:
     case PseudoStyleType::ViewTransitionGroup:
     case PseudoStyleType::ViewTransitionImagePair:
@@ -1887,6 +1916,14 @@ void KeyframeEffect::SetAnimation(Animation* aAnimation) {
 
   UpdateNormalizedTiming();
 
+  // The keyframe computed offsets may need to be updated because it is
+  // associated with a different animation (so the timeline and timeline ranges
+  // may be different), or we have to reset the offsets if it doens't have the
+  // associated animation.
+  MaybeUpdateKeyframeComputedOffsets(
+      mAnimation ? mAnimation->GetTimeline() : nullptr,
+      mAnimation ? mAnimation->GetTimelineRange() : AnimationRange());
+
   // The order of these function calls is important:
   // NotifyAnimationTimingUpdated() need the updated mIsRelevant flag to check
   // if it should create the effectSet or not, and MarkCascadeNeedsUpdate()
@@ -2049,7 +2086,7 @@ KeyframeEffect::MatchForCompositor KeyframeEffect::IsMatchForCompositor(
   if (mAnimation->UsingScrollTimeline()) {
     const ScrollTimeline* scrollTimeline =
         mAnimation->GetTimeline()->AsScrollTimeline();
-    const auto state = scrollTimeline->GetState();
+    const auto state = scrollTimeline->GetSnapshot();
     // We don't send this animation to the compositor if:
     // 1. The timeline doesn't have a source, in which case we don't need to
     //    run the compositor animations since we don't have its ViewID info for

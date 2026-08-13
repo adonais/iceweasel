@@ -5,14 +5,13 @@
 #ifndef nsCOMArray_h_
 #define nsCOMArray_h_
 
+#include <iterator>
+
 #include "mozilla/ArrayIterator.h"
 #include "mozilla/MemoryReporting.h"
-
 #include "nsCycleCollectionNoteChild.h"
-#include "nsTArray.h"
 #include "nsISupports.h"
-
-#include <iterator>
+#include "nsTArray.h"
 
 // See below for the definition of nsCOMArray<T>
 

@@ -213,13 +213,15 @@ void nsLineBox::List(FILE* out, const char* aPrefix,
   str += "line";
   nsIFrame::ListPtr(str, aFlags, this, "@");
   str += nsPrintfCString(
-      " count=%d state=%s,%s,%s,%s,%s,%s,clear-before:%s,clear-after:%s ",
+      " count=%d state=%s,%s,%s,%s,%s,%s,%s,%s,clear-before:%s,clear-after:%s ",
       GetChildCount(), IsBlock() ? "block" : "inline",
       IsDirty() ? "dirty" : "clean",
       IsPreviousMarginDirty() ? "prevmargindirty" : "prevmarginclean",
       IsImpactedByFloat() ? "impacted" : "not-impacted",
       IsLineWrapped() ? "wrapped" : "not-wrapped",
       HasForcedLineBreakAfter() ? "forced-break-after" : "no-break",
+      TextBoxTrimStartApplied() ? "trim-start" : "no-trim-start",
+      TextBoxTrimEndApplied() ? "trim-end" : "no-trim-end",
       UsedClearToString(FloatClearTypeBefore()),
       UsedClearToString(FloatClearTypeAfter()));
 

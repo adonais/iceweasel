@@ -13,9 +13,9 @@
 #ifndef _nsStorageStream_h_
 #define _nsStorageStream_h_
 
-#include "nsIStorageStream.h"
-#include "nsIOutputStream.h"
 #include "mozilla/Mutex.h"
+#include "nsIOutputStream.h"
+#include "nsIStorageStream.h"
 
 #define NS_STORAGESTREAM_CID                  \
   {/* 669a9795-6ff7-4ed4-9150-c34ce2971b63 */ \

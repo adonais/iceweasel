@@ -119,7 +119,7 @@
 #define MOZ_DEFINE_ENUM_IMPL(aEnumName, aClassSpec, aBaseSpec, aEnumerators) \
   enum aClassSpec aEnumName aBaseSpec{MOZ_UNWRAP_ARGS aEnumerators};         \
   constexpr size_t k##aEnumName##Count = MOZ_ARG_COUNT aEnumerators;         \
-  constexpr aEnumName kHighest##aEnumName =                                  \
+  [[maybe_unused]] constexpr aEnumName kHighest##aEnumName =                 \
       aEnumName(k##aEnumName##Count - 1);                                    \
   MOZ_FOR_EACH(MOZ_ASSERT_ENUMERATOR_HAS_NO_INITIALIZER, (aEnumName, ),      \
                aEnumerators)

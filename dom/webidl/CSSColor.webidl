@@ -8,7 +8,7 @@
 
 // https://drafts.css-houdini.org/css-typed-om-1/#csscolor
 // TODO: Expose to LayoutWorklet
-[Exposed=(Window, Worker, PaintWorklet), Pref="layout.css.typed-om.enabled"]
+[Exposed=(Window, Worker, PaintWorklet), Func="mozilla::dom::CSSColorValue::IsEnabled"]
 interface CSSColor : CSSColorValue {
   [Throws] constructor(CSSKeywordish colorSpace, sequence<CSSColorPercent> channels, optional CSSNumberish alpha = 1);
   [SetterThrows] attribute CSSKeywordish colorSpace;

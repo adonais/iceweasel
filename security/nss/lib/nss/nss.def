@@ -1314,3 +1314,10 @@ PK11_UnwrapPrivKeyByKeyType;
 ;+    local:
 ;+       *;
 ;+};
+;+NSS_3.126 { 	# NSS 3.126 release
+;+    global:
+PK11_CreatePrivateKeyFromTemplate;
+PK11_IsAEAD;
+;+    local:
+;+       *;
+;+};

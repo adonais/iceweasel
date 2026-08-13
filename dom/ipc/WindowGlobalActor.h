@@ -33,6 +33,11 @@ class WindowGlobalActor : public JSActorManager {
   // specific existing nsGlobalWindowInner.
   static WindowGlobalInit WindowInitializer(nsGlobalWindowInner* aWindow);
 
+  // The partitioned principal should be identical to the document principal,
+  // with the exception of the partitionKey origin attribute.
+  [[nodiscard]] static bool VerifyPartitionedPrincipalMatchesDocumentPrincipal(
+      nsIPrincipal* aPrincipal, nsIPrincipal* aPartitionedPrincipal);
+
  protected:
   virtual ~WindowGlobalActor() = default;
 

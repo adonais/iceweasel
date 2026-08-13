@@ -15,13 +15,13 @@
 #  undef LOGL
 #endif
 
-#define LOG(arg, ...)                                                  \
-  DDMOZ_LOG(sPDMLog, mozilla::LogLevel::Debug, "::%s: " arg, __func__, \
-            ##__VA_ARGS__)
+#define LOG(arg, ...)                                                      \
+  DDMOZ_LOG_FMT(sPDMLog, mozilla::LogLevel::Debug, "::{}: " arg, __func__, \
+                ##__VA_ARGS__)
 
-#define LOGL(arg, ...)                                                     \
-  DDMOZ_LOGEX(self.get(), sPDMLog, mozilla::LogLevel::Debug, "::%s: " arg, \
-              __func__, ##__VA_ARGS__)
+#define LOGL(arg, ...)                                                         \
+  DDMOZ_LOGEX_FMT(self.get(), sPDMLog, mozilla::LogLevel::Debug, "::{}: " arg, \
+                  __func__, ##__VA_ARGS__)
 
 #define CHECK_OMX_ERR(err)      \
   if (err != OMX_ErrorNone) {   \
@@ -154,7 +154,7 @@ RefPtr<MediaDataDecoder::InitPromise> OmxDataDecoder::Init() {
 
 RefPtr<MediaDataDecoder::DecodePromise> OmxDataDecoder::Decode(
     MediaRawData* aSample) {
-  LOG("sample %p", aSample);
+  LOG("sample {}", fmt::ptr(aSample));
   MOZ_ASSERT(mThread->IsOnCurrentThread());
   MOZ_ASSERT(mInitPromise.IsEmpty());
 
@@ -416,7 +416,7 @@ void OmxDataDecoder::EmptyBufferFailure(OmxBufferFailureHolder aFailureHolder) {
 
 void OmxDataDecoder::NotifyError(OMX_ERRORTYPE aOmxError, const char* aLine,
                                  const MediaResult& aError) {
-  LOG("NotifyError %d (%s) at %s", static_cast<int>(aOmxError),
+  LOG("NotifyError {} ({}) at {}", static_cast<int>(aOmxError),
       aError.ErrorName().get(), aLine);
   mDecodedData = DecodedData();
   mDecodePromise.RejectIfExists(aError, __func__);
@@ -461,8 +461,9 @@ void OmxDataDecoder::FillAndEmptyBuffers() {
       inbuf->mBuffer->nFlags |= OMX_BUFFERFLAG_EOS;
     }
 
-    LOG("feed sample %p to omx component, len %ld, flag %lX", data.get(),
-        inbuf->mBuffer->nFilledLen, inbuf->mBuffer->nFlags);
+    LOG("feed sample {} to omx component, len {}, flag {:X}",
+        fmt::ptr(data.get()), inbuf->mBuffer->nFilledLen,
+        inbuf->mBuffer->nFlags);
     mOmxLayer->EmptyBuffer(inbuf)->Then(mOmxTaskQueue, __func__, this,
                                         &OmxDataDecoder::EmptyBufferDone,
                                         &OmxDataDecoder::EmptyBufferFailure);
@@ -521,7 +522,7 @@ nsTArray<RefPtr<OmxPromiseLayer::BufferData>>* OmxDataDecoder::GetBuffers(
 
 void OmxDataDecoder::ResolveInitPromise(StaticString aMethodName) {
   MOZ_ASSERT(mOmxTaskQueue->IsCurrentThreadIn());
-  LOG("called from %s", aMethodName.get());
+  LOG("called from {}", aMethodName.get());
   mInitPromise.ResolveIfExists(mTrackInfo->GetType(), aMethodName);
 }
 
@@ -533,7 +534,7 @@ void OmxDataDecoder::RejectInitPromise(MediaResult aError,
 
 void OmxDataDecoder::OmxStateRunner() {
   MOZ_ASSERT(mOmxTaskQueue->IsCurrentThreadIn());
-  LOG("OMX state: %s", StateTypeToStr(mOmxState));
+  LOG("OMX state: {}", StateTypeToStr(mOmxState));
 
   // TODO: maybe it'd be better to use promise CompletionPromise() to replace
   //       this state machine.
@@ -559,7 +560,7 @@ void OmxDataDecoder::OmxStateRunner() {
                            OMX_DIRTYPE::OMX_DirOutput};
     for (const auto id : types) {
       if (NS_FAILED(AllocateBuffers(id))) {
-        LOG("Failed to allocate buffer on port %d", id);
+        LOG("Failed to allocate buffer on port {}", static_cast<int>(id));
         RejectInitPromise(NS_ERROR_DOM_MEDIA_FATAL_ERR, __func__);
         break;
       }
@@ -662,8 +663,8 @@ bool OmxDataDecoder::Event(OMX_EVENTTYPE aEvent, OMX_U32 aData1,
                     MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR, __func__));
         return true;
       }
-      LOG("WARNING: got none handle event: %d, aData1: %lu, aData2: %lu",
-          aEvent, aData1, aData2);
+      LOG("WARNING: got none handle event: {}, aData1: {}, aData2: {}",
+          static_cast<int>(aEvent), aData1, aData2);
       return false;
     }
   }
@@ -720,8 +721,8 @@ OmxDataDecoder::CollectBufferPromises(OMX_DIRTYPE aType) {
     }
   }
 
-  LOG("CollectBufferPromises: type %d, total %zu promiese", aType,
-      promises.Length());
+  LOG("CollectBufferPromises: type {}, total {} promiese",
+      static_cast<int>(aType), promises.Length());
   if (promises.Length()) {
     return OmxBufferPromise::All(mOmxTaskQueue, promises);
   }
@@ -758,7 +759,7 @@ void OmxDataDecoder::PortSettingsChanged() {
   RefPtr<OmxDataDecoder> self = this;
   if (def.bEnabled) {
     // 1. disable port.
-    LOG("PortSettingsChanged: disable port %lu", def.nPortIndex);
+    LOG("PortSettingsChanged: disable port {}", def.nPortIndex);
     mOmxLayer
         ->SendCommand(OMX_CommandPortDisable, mPortSettingsChanged, nullptr)
         ->Then(

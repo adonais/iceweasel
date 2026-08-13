@@ -17,19 +17,19 @@
 
 #include "ASpdySession.h"
 #include "ConnectionHandle.h"
+#include "Http3Session.h"
+#include "HttpConnectionUDP.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/glean/NetwerkMetrics.h"
-#include "HttpConnectionUDP.h"
+#include "nsComponentManagerUtils.h"
 #include "nsHttpConnectionMgr.h"
 #include "nsHttpHandler.h"
 #include "nsHttpTransaction.h"
-#include "Http3Session.h"
-#include "nsComponentManagerUtils.h"
 #include "nsIDNSRecord.h"
 #include "nsIHttpChannelInternal.h"
+#include "nsINetAddr.h"
 #include "nsISocketProvider.h"
 #include "nsNetAddr.h"
-#include "nsINetAddr.h"
 #include "nsStringStream.h"
 #include "nsThreadUtils.h"
 
@@ -109,7 +109,7 @@ class ConnectUDPTransaction : public nsAHttpTransaction {
   void SetProxyConnectFailed() override {
     mTransaction->SetProxyConnectFailed();
   }
-  nsHttpRequestHead* RequestHead() override {
+  const nsHttpRequestHead* RequestHead() override {
     return mTransaction->RequestHead();
   }
   uint32_t Http1xTransactionCount() override { return 0; }
@@ -168,6 +168,7 @@ class Http3ConnectTransaction : public ConnectUDPTransaction {
   }
 
   void Close(nsresult reason) override { mConnection = nullptr; }
+  const nsHttpRequestHead* RequestHead() override { return nullptr; }
 
  private:
   virtual ~Http3ConnectTransaction() {
@@ -717,6 +718,11 @@ bool HttpConnectionUDP::JoinConnection(const nsACString& hostname,
 }
 
 bool HttpConnectionUDP::CanReuse() {
+#ifdef DEBUG
+  if (StaticPrefs::network_http_http3_force_cannot_reuse_for_testing()) {
+    return false;
+  }
+#endif
   if (NS_FAILED(mErrorBeforeConnect)) {
     return false;
   }
@@ -728,6 +734,15 @@ bool HttpConnectionUDP::CanReuse() {
     return mHttp3Session->CanReuse();
   }
   return false;
+}
+
+bool HttpConnectionUDP::IsConnectedAndUnusable() {
+  // mExperienced is set only after the QUIC/TLS handshake completes and a real
+  // transaction is served, so it excludes still-handshaking connections (which
+  // report !CanReuse() transiently). Combined with !CanReuse() this identifies
+  // a connection that was usable and can no longer serve new transactions
+  // (either DontReuse'd or its Http3Session went away, e.g. GOAWAY).
+  return mExperienced && !CanReuse();
 }
 
 bool HttpConnectionUDP::CanDirectlyActivate() {

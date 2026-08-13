@@ -5,6 +5,7 @@
 DevToolsModules(
     "general.css",
     "headers-panel.css",
+    "json-breadcrumb.css",
     "json-panel.css",
     "main.css",
     "search-box.css",

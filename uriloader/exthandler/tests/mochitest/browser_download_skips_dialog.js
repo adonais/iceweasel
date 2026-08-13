@@ -34,7 +34,7 @@ add_task(async function skipDialogAndDownloadFile() {
   // We just open the file to be downloaded... and wait for it to be downloaded!
   // We see no dialogs to be accepted in the process.
   let download = await downloadFinishedPromise;
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => gBrowser.tabs.length == initialTabsCount + 2
   );
 

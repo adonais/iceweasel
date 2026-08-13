@@ -3,12 +3,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "VRServiceHost.h"
+
 #include "VRGPUChild.h"
+#include "VRManager.h"
 #include "VRPuppetCommandBuffer.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/gfx/GPUParent.h"
 #include "service/VRService.h"
-#include "VRManager.h"
 
 namespace mozilla {
 namespace gfx {

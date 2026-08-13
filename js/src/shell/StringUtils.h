@@ -9,6 +9,7 @@
 
 #include "js/StableStringChars.h"
 #include "js/String.h"
+#include "vm/StringType.h"
 
 namespace js {
 namespace shell {

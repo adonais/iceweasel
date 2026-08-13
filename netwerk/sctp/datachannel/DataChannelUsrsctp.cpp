@@ -30,8 +30,8 @@
 #  include "transport/runnable_utils.h"
 #endif
 
-#include "DataChannelUsrsctp.h"
 #include "DataChannelLog.h"
+#include "DataChannelUsrsctp.h"
 
 namespace mozilla {
 

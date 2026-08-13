@@ -810,6 +810,9 @@ function Barrier(name) {
         name,
         fetchState,
         getOrigin: () => getOrigin(topFrame, filename, lineNumber, stack),
+        // Time at which this blocker was registered, used as the start time of
+        // the profiler marker emitted when the blocker is removed.
+        addTime: ChromeUtils.now(),
       };
 
       this._waitForMe.add(promise);
@@ -1023,6 +1026,21 @@ Barrier.prototype = Object.freeze({
           // Report the problem as best as we can, then crash.
           let state = this.state;
 
+          // Emit a profiler marker for each blocker that is still pending, so
+          // the blockers responsible for the hang are visible in a profile
+          // captured at the timeout. The marker spans from when the blocker was
+          // registered to now.
+          for (let blocker of this._promiseToBlocker.values()) {
+            let { filename, lineNumber } = blocker.getOrigin();
+            ChromeUtils.addProfilerMarker(
+              "AsyncShutdown timeout",
+              { startTime: blocker.addTime },
+              `${topic}: ${blocker.name} (${filename}:${lineNumber}) - ${JSON.stringify(
+                safeGetState(blocker.fetchState)
+              )}`
+            );
+          }
+
           // If you change the following message, please make sure
           // that any information on the topic and state appears
           // within the first 200 characters of the message. This
@@ -1036,12 +1054,6 @@ Barrier.prototype = Object.freeze({
             " within a reasonable amount of time. Causing a crash to" +
             " ensure that we do not leave the user with an unresponsive" +
             " process draining resources.";
-          fatalerr(msg);
-          if (gBrokenAddBlockers.length) {
-            fatalerr(
-              "Broken addBlocker calls: " + JSON.stringify(gBrokenAddBlockers)
-            );
-          }
           if (Services.appinfo.crashReporterEnabled) {
             Services.appinfo.annotateCrashReport(
               "AsyncShutdownTimeout",
@@ -1062,6 +1074,32 @@ Barrier.prototype = Object.freeze({
             ({ filename, lineNumber } = blocker.getOrigin());
             break;
           }
+
+          // In a profiled test run, give the harness a chance to save a profile
+          // and end the process with an unmissable failure instead of crashing,
+          // so the profile leading up to the hang isn't lost. This mirrors
+          // MOZ_DUMP_PROFILE_OR_CRASH_UNSAFE: if the profiler is inactive, or no
+          // harness handles the notification, we fall through and crash below.
+          // The fatalerr() logging is deferred until after this so a run the
+          // harness handles (saving a profile and ending the process) doesn't
+          // also emit this crash's FATAL ERROR line.
+          if (Services.profiler.IsActive()) {
+            Services.obs.notifyObservers(null, "profiler-dump-and-quit", msg);
+          }
+
+          // If the profiler is mid-write on a scheduled dump, block here until
+          // it finishes rather than aborting over a half-written profile. When
+          // that dump exits the process on completion, this never returns and
+          // the abort below is avoided.
+          Services.profiler.waitForScheduledDump();
+
+          fatalerr(msg);
+          if (gBrokenAddBlockers.length) {
+            fatalerr(
+              "Broken addBlocker calls: " + JSON.stringify(gBrokenAddBlockers)
+            );
+          }
+
           lazy.gDebug.abort(filename, lineNumber);
         },
         function onSatisfied() {
@@ -1103,6 +1141,16 @@ Barrier.prototype = Object.freeze({
       // The blocker has already been removed
       return false;
     }
+
+    // Emit an interval profiler marker spanning the lifetime of the blocker, so
+    // we can see in profiles when each blocker was added and removed.
+    let blocker = this._promiseToBlocker.get(promise);
+    ChromeUtils.addProfilerMarker(
+      "AsyncShutdown blocker",
+      { startTime: blocker.addTime },
+      `${this._name}: ${blocker.name}`
+    );
+
     this._conditionToPromise.delete(condition);
     this._promiseToBlocker.delete(promise);
     return this._waitForMe.delete(promise);

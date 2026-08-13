@@ -62,11 +62,11 @@ function clearData({ deleteBy = "all", hasUserInput = false } = {}) {
   });
 }
 
-function runTest({ deleteBy, hasUserInput }) {
+async function runTest({ deleteBy, hasUserInput }) {
   testLoggedIn(false);
 
   info("Setup primary password and login");
-  LoginTestUtils.primaryPassword.enable(true);
+  await LoginTestUtils.primaryPassword.enable(true);
   testLoggedIn(true);
 
   info(
@@ -88,21 +88,21 @@ function runTest({ deleteBy, hasUserInput }) {
     Ci.nsISecretDecoderRing
   );
   sdr.logoutAndTeardown();
-  LoginTestUtils.primaryPassword.disable();
+  await LoginTestUtils.primaryPassword.disable();
 }
 
 add_task(async function test_deleteAll() {
-  runTest({ deleteBy: "all" });
+  await runTest({ deleteBy: "all" });
 });
 
 add_task(async function test_deleteByPrincipal() {
   for (let hasUserInput of [false, true]) {
-    runTest({ deleteBy: "principal", hasUserInput });
+    await runTest({ deleteBy: "principal", hasUserInput });
   }
 });
 
 add_task(async function test_deleteByBaseDomain() {
   for (let hasUserInput of [false, true]) {
-    runTest({ deleteBy: "baseDomain", hasUserInput });
+    await runTest({ deleteBy: "baseDomain", hasUserInput });
   }
 });

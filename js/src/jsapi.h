@@ -83,12 +83,6 @@ using StringVector = JS::GCVector<JSString*>;
 
 /************************************************************************/
 
-static MOZ_ALWAYS_INLINE JS::Value JS_NumberValue(double d) {
-  return JS::NumberValue(d);
-}
-
-/************************************************************************/
-
 JS_PUBLIC_API bool JS_StringHasBeenPinned(JSContext* cx, JSString* str);
 
 /************************************************************************/

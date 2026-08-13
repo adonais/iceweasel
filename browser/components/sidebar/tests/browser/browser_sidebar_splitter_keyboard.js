@@ -30,15 +30,8 @@ async function expectFocusAfterKey(expectedActiveElement, keyName, keyOptions) {
   );
 }
 
-async function openSidebarPanel(commandID = "viewBookmarksSidebar") {
-  let promiseFocused = BrowserTestUtils.waitForEvent(window, "SidebarFocused");
-  await SidebarController.show(commandID);
-  await promiseFocused;
-  await SidebarController.waitUntilStable();
-}
-
 async function setupSplitterTest() {
-  await openSidebarPanel();
+  await SidebarTestUtils.showPanel(window, "viewBookmarksSidebar");
 
   const splitter = document.getElementById("sidebar-splitter");
   const sidebarBrowser = SidebarController.browser;
@@ -94,7 +87,7 @@ async function test_sidebarSplitterTabOrder() {
     info("Shift+Tab from splitter -> sidebar browser");
     await expectFocusAfterKey(sidebarBrowser, "KEY_Tab", { shiftKey: true });
 
-    SidebarController.hide();
+    SidebarTestUtils.closePanel(window);
   });
 }
 
@@ -140,7 +133,7 @@ add_task(async function test_sidebarSplitterTabOrder_rightSide() {
   info("Shift+Tab from splitter -> content browser");
   await expectFocusAfterKey(contentBrowser, "KEY_Tab", { shiftKey: true });
 
-  SidebarController.hide();
+  SidebarTestUtils.closePanel(window);
   await SpecialPowers.popPrefEnv();
 }).skip(); // Bug 2024362
 
@@ -148,7 +141,7 @@ add_task(async function test_sidebarSplitterTabOrder_rightSide() {
  * Splitter is not focusable when the sidebar is closed.
  */
 add_task(async function test_sidebarSplitterNotFocusableWhenHidden() {
-  SidebarController.hide();
+  SidebarTestUtils.closePanel(window);
   await SidebarController.waitUntilStable();
 
   const splitter = document.getElementById("sidebar-splitter");
@@ -215,6 +208,51 @@ add_task(async function test_sidebarSplitterKeyboardResize() {
     "The sidebar shrank when pressing ArrowLeft (sidebar on left)"
   );
 
-  SidebarController.hide();
+  SidebarTestUtils.closePanel(window);
   await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_sidebar_splitter_has_a11y_attributes() {
+  const { splitter } = await setupSplitterTest();
+
+  // Check semantic attributes
+  Assert.ok(splitter.hasAttribute("role"), "Splitter has a role");
+  Assert.ok(
+    splitter.hasAttribute("aria-controls"),
+    "Splitter references the element it resizes"
+  );
+  await BrowserTestUtils.waitForMutationCondition(
+    splitter,
+    { attributeFilter: ["aria-label"] },
+    () => splitter.hasAttribute("aria-label")
+  );
+
+  // Check numeric (min, max, now) attributes
+  await BrowserTestUtils.waitForMutationCondition(
+    splitter,
+    { attributeFilter: ["aria-valuenow"] },
+    () => splitter.hasAttribute("aria-valuenow")
+  );
+  const valuemin = Number(splitter.getAttribute("aria-valuemin"));
+  const valuemax = Number(splitter.getAttribute("aria-valuemax"));
+  const valuenow = Number(splitter.getAttribute("aria-valuenow"));
+  Assert.ok(
+    isFinite(valuemin) && isFinite(valuemax) && isFinite(valuenow),
+    `Splitter has numeric aria-value attributes (min=${valuemin}, max=${valuemax}, now=${valuenow})`
+  );
+  Assert.ok(
+    valuemin <= valuenow && valuenow <= valuemax,
+    "aria-valuenow is between aria-valuemin and aria-valuemax"
+  );
+
+  info("Resize via keyboard, updating numeric aria-value attributes.");
+  Services.focus.setFocus(splitter, Services.focus.FLAG_BYKEY);
+  EventUtils.synthesizeKey("KEY_ArrowRight");
+  await BrowserTestUtils.waitForMutationCondition(
+    splitter,
+    { attributeFilter: ["aria-valuenow"] },
+    () => Number(splitter.getAttribute("aria-valuenow")) > valuenow
+  );
+
+  SidebarTestUtils.closePanel(window);
 });

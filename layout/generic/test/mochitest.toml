@@ -354,6 +354,8 @@ run-if = [
   "!release_or_beta", # requires Selection.getComposedRanges to be enabled (Nightly only)
 ]
 
+["test_selection_cross_svg_use_boundary.html"]
+
 ["test_selection_doubleclick.html"]
 
 ["test_selection_expanding.html"]

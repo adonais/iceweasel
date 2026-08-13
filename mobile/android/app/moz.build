@@ -23,7 +23,7 @@ if not CONFIG["MOZ_ANDROID_FAT_AAR_ARCHITECTURES"]:
 else:
     for arch in CONFIG["MOZ_ANDROID_FAT_AAR_ARCHITECTURES"]:
         FINAL_TARGET_FILES.defaults.pref[arch] += [
-            "!/dist/fat-aar/output/defaults/pref/{arch}/geckoview-prefs.js".format(
+            "!/dist/fat-aar/output/geckoview/defaults/pref/{arch}/geckoview-prefs.js".format(
                 arch=arch
             ),
         ]

@@ -211,6 +211,9 @@ var gHomePane = {
       this._updateMenuInterface("homeMode");
     };
 
+    // [pref-trie-audit] "browser.startup.homepage" is an ambiguous prefix of
+    // "browser.startup.homepage_override.buildID", "browser.startup.homepage_override.mstone";
+    // triggers only for the exact pref (the handler above guards with data != HOMEPAGE_PREF).
     Services.prefs.addObserver(this.HOMEPAGE_PREF, homePrefObserver);
     window.addEventListener("unload", () => {
       Services.prefs.removeObserver(this.HOMEPAGE_PREF, homePrefObserver);
@@ -246,6 +249,7 @@ var gHomePane = {
   watchHomeTabPrefChange() {
     const observer = () => this.toggleRestoreDefaultsBtn();
     Services.prefs.addObserver(this.ACTIVITY_STREAM_PREF_BRANCH, observer);
+    // [pref-trie-audit] see watchHomePrefChange above; same ambiguous prefix, same reasoning.
     Services.prefs.addObserver(this.HOMEPAGE_PREF, observer);
     Services.prefs.addObserver(this.NEWTAB_ENABLED_PREF, observer);
 

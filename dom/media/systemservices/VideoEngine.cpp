@@ -110,12 +110,18 @@ VideoEngine::GetOrCreateVideoCaptureDeviceInfo() {
 
 void VideoEngine::ClearVideoCaptureDeviceInfo() {
   LOG(("{}", __PRETTY_FUNCTION__));
+
   if (mDeviceInfo) {
     mDeviceInfo->DeRegisterVideoInputFeedBack(this);
-    OnDeviceChange();
+
+    if (mCaptureDevType == CaptureDeviceType::Camera) {
+      OnDeviceChange();
+    }
   }
+
   mDeviceInfo.reset();
   mVideoCaptureFactory->Invalidate();
+  mExpiryTime = webrtc::Timestamp::Zero();
 }
 
 already_AddRefed<VideoEngine> VideoEngine::Create(

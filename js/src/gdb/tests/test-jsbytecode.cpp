@@ -1,11 +1,13 @@
+#include "mozilla/Utf8.h"
+
 #include "gdb-tests.h"
+
 #include "js/CompilationAndEvaluation.h"
 #include "js/CompileOptions.h"
 #include "js/SourceText.h"
 #include "util/Text.h"
 #include "vm/JSFunction.h"
 #include "vm/JSScript.h"
-#include "mozilla/Utf8.h"
 
 FRAGMENT(jsbytecode, simple) {
   constexpr unsigned line0 = __LINE__;

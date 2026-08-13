@@ -3,15 +3,17 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsPrinterBase.h"
-#include "nsPaperMargin.h"
+
 #include <utility>
-#include "nsServiceManagerUtils.h"
-#include "nsPaper.h"
-#include "nsIPrintSettings.h"
-#include "nsPrintSettingsService.h"
+
 #include "PrintBackgroundTask.h"
 #include "mozilla/EnumeratedArrayCycleCollection.h"
 #include "mozilla/dom/Promise.h"
+#include "nsIPrintSettings.h"
+#include "nsPaper.h"
+#include "nsPaperMargin.h"
+#include "nsPrintSettingsService.h"
+#include "nsServiceManagerUtils.h"
 
 using namespace mozilla;
 using mozilla::dom::Promise;

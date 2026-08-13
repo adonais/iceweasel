@@ -497,10 +497,17 @@ extern "C" {
 // dom::Promise from Rust in xpcom crate.
 void DomPromise_AddRef(mozilla::dom::Promise* aPromise);
 void DomPromise_Release(mozilla::dom::Promise* aPromise);
-void DomPromise_RejectWithVariant(mozilla::dom::Promise* aPromise,
-                                  nsIVariant* aVariant);
+
+void DomPromise_ResolveWithUndefined(mozilla::dom::Promise* aPromise);
+void DomPromise_RejectWithUndefined(mozilla::dom::Promise* aPromise);
+
 void DomPromise_ResolveWithVariant(mozilla::dom::Promise* aPromise,
                                    nsIVariant* aVariant);
+void DomPromise_RejectWithVariant(mozilla::dom::Promise* aPromise,
+                                  nsIVariant* aVariant);
+
+void DomPromise_RejectWithNsresult(mozilla::dom::Promise* aPromise,
+                                   nsresult aResult);
 }
 
 #endif  // mozilla_dom_Promise_h

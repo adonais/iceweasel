@@ -8,10 +8,6 @@ import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.ToolbarSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.UnifiedTrustPanelSelectors
-import org.mozilla.fenix.ui.efficiency.selectors.UnifiedTrustPanelSelectors.CLEAR_COOKIES_AND_SITE_DATA_DIALOG_CANCEL_BUTTON
-import org.mozilla.fenix.ui.efficiency.selectors.UnifiedTrustPanelSelectors.CLEAR_COOKIES_AND_SITE_DATA_DIALOG_CLEAR_BUTTON
-import org.mozilla.fenix.ui.efficiency.selectors.UnifiedTrustPanelSelectors.CLEAR_COOKIES_AND_SITE_DATA_DIALOG_DESCRIPTION
-import org.mozilla.fenix.ui.efficiency.selectors.UnifiedTrustPanelSelectors.CLEAR_COOKIES_AND_SITE_DATA_DIALOG_TITLE
 
 class UnifiedTrustPanelPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) : BasePage(composeRule) {
     override val pageName = "UnifiedTrustPanelPage"
@@ -21,7 +17,7 @@ class UnifiedTrustPanelPage(composeRule: AndroidComposeTestRule<HomeActivityInte
             from = "BrowserPage",
             to = pageName,
             steps = listOf(
-                NavigationStep.Click(ToolbarSelectors.SITE_INFORMATION_BUTTON),
+                NavigationStep.ClickIfPresent(ToolbarSelectors.SECURE_SITE_INFORMATION_BUTTON),
             ),
         )
     }
@@ -36,10 +32,10 @@ class UnifiedTrustPanelPage(composeRule: AndroidComposeTestRule<HomeActivityInte
     }
 
     fun verifyTheClearCookiesAndSiteDataDialog(webSite: String): UnifiedTrustPanelPage {
-        mozVerify(CLEAR_COOKIES_AND_SITE_DATA_DIALOG_TITLE)
-        mozVerify(CLEAR_COOKIES_AND_SITE_DATA_DIALOG_DESCRIPTION(webSite))
-        mozVerify(CLEAR_COOKIES_AND_SITE_DATA_DIALOG_CLEAR_BUTTON)
-        mozVerify(CLEAR_COOKIES_AND_SITE_DATA_DIALOG_CANCEL_BUTTON)
+        mozVerify(UnifiedTrustPanelSelectors.CLEAR_COOKIES_AND_SITE_DATA_DIALOG_TITLE)
+        mozVerify(UnifiedTrustPanelSelectors.CLEAR_COOKIES_AND_SITE_DATA_DIALOG_DESCRIPTION(webSite))
+        mozVerify(UnifiedTrustPanelSelectors.CLEAR_COOKIES_AND_SITE_DATA_DIALOG_CLEAR_BUTTON)
+        mozVerify(UnifiedTrustPanelSelectors.CLEAR_COOKIES_AND_SITE_DATA_DIALOG_CANCEL_BUTTON)
 
         return this
     }

@@ -11,10 +11,10 @@
 #ifdef CAIRO_HAS_WIN32_SURFACE
 #  include "cairo-win32.h"
 #endif
+#include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/HelpersCairo.h"
 #include "mozilla/gfx/Logging.h"
-#include "mozilla/StaticPrefs_gfx.h"
 #include "nsReadableUtils.h"
 #include "nsString.h"
 #include "nsUTF8Utils.h"

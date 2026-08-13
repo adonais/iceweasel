@@ -467,11 +467,11 @@ int SimulcastEncoderAdapter::InitEncode(
         encoded_complete_callback_);
     if (total_streams_count_ == 1) {
       RTC_LOG(LS_ERROR) << "[SEA] InitEncode: failed with error code: "
-                        << WebRtcVideoCodecErrorToString(ret);
-      return ret;
+                        << WebRtcVideoCodecErrorToString(result);
+      return result;
     }
     RTC_LOG(LS_WARNING) << "[SEA] InitEncode: failed with error code: "
-                        << WebRtcVideoCodecErrorToString(ret)
+                        << WebRtcVideoCodecErrorToString(result)
                         << ". Falling back to multi-encoder mode.";
   }
 
@@ -508,7 +508,7 @@ int SimulcastEncoderAdapter::InitEncode(
       encoder_context.reset();
       Release();
       RTC_LOG(LS_ERROR) << "[SEA] InitEncode: failed with error code: "
-                        << WebRtcVideoCodecErrorToString(ret);
+                        << WebRtcVideoCodecErrorToString(result);
       return result;
     }
 
@@ -1006,15 +1006,19 @@ VideoCodec SimulcastEncoderAdapter::MakeStreamCodec(
   std::optional<ScalabilityMode> scalability_mode =
       stream_params.GetScalabilityMode();
   // To support the full set of scalability modes in the event that this is the
-  // only active encoding, prefer VideoCodec::GetScalabilityMode() if all other
-  // encodings are inactive.
-  bool only_active_stream = true;
-  for (int i = 0; i < codec.numberOfSimulcastStreams; ++i) {
-    if (i != stream_idx && codec.simulcastStream[i].active) {
-      only_active_stream = false;
-      break;
+  // only active encoding, prefer VideoCodec::GetScalabilityMode() - but only if
+  // it's the first simulcast layer in the list that is the only active one.
+  bool only_active_stream = false;
+  if (stream_idx == 0 && codec.simulcastStream[0].active) {
+    only_active_stream = true;
+    for (int i = 1; i < codec.numberOfSimulcastStreams; ++i) {
+      if (codec.simulcastStream[i].active) {
+        only_active_stream = false;
+        break;
+      }
     }
   }
+
   if (codec.GetScalabilityMode().has_value() && only_active_stream) {
     scalability_mode = codec.GetScalabilityMode();
   }

@@ -165,9 +165,6 @@ bool wasm::IonAvailable(JSContext* cx) {
   MOZ_ALWAYS_TRUE(IonDisabledByFeatures(cx, &isDisabled));
   return !isDisabled;
 }
-bool wasm::WasmCompilerForAsmJSAvailable(JSContext* cx) {
-  return IonAvailable(cx);
-}
 
 template <size_t ArrayLength>
 static inline bool Append(JSStringBuilder* reason, const char (&s)[ArrayLength],

@@ -5,7 +5,12 @@
 package org.mozilla.fenix.ui.robots
 
 import android.util.Log
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.ComposeTestRule
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers
@@ -24,6 +29,7 @@ import org.hamcrest.CoreMatchers.allOf
 import org.hamcrest.Matchers
 import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.Constants.TAG
+import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeShort
 import org.mozilla.fenix.helpers.TestHelper
 import org.mozilla.fenix.helpers.TestHelper.mDevice
@@ -389,12 +395,83 @@ class SettingsSubMenuHomepageRobot {
         }
     }
 
+    fun clickTheDefaultWallpaper(composeTestRule: ComposeTestRule) {
+        Log.i(TAG, "clickTheDefaultWallpaper: Trying to click default wallpaper")
+        composeTestRule.defaultWallpaper().performClick()
+        Log.i(TAG, "clickTheDefaultWallpaper: Clicked default wallpaper")
+        // Wait for the wallpaper state to propagate and background to be applied
+        composeTestRule.waitForIdle()
+        mDevice.waitForIdle()
+    }
+
+    fun verifyTheWallpapersSettingsPageHeader() {
+        Log.i(TAG, "verifyTheWallpapersSettingsPageHeader: Trying to verify that the \"Wallpapers\" header is visible")
+        wallpapersPageHeader()
+            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        Log.i(TAG, "verifyTheWallpapersSettingsPageHeader: Verified that the \"Wallpapers\" header is visible")
+        Log.i(TAG, "verifyTheWallpapersSettingsPageHeader: Trying to verify that the back button is visible")
+        wallpapersPageBackButton()
+            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        Log.i(TAG, "verifyTheWallpapersSettingsPageHeader: Verified that the back button is visible")
+    }
+
+    fun verifyClassicFirefoxSection(composeTestRule: ComposeTestRule) {
+        Log.i(TAG, "verifyClassicFirefoxSection: Trying to verify that the \"Classic Firefox\" wallpaper collection is visible")
+        composeTestRule.classicFirefoxWallpaperSectionHeader()
+            .assertIsDisplayed()
+        Log.i(TAG, "verifyClassicFirefoxSection: Verified that the \"Classic Firefox\" wallpaper collection is visible")
+    }
+
+    fun verifyEdgeToEdgeWallpaperIsDisplayed(composeTestRule: ComposeTestRule) {
+        Log.i(TAG, "verifyEdgeToEdgeWallpaperIsDisplayed: Trying to verify that edge-to-edge wallpaper is visible")
+        composeTestRule.edgeToEdgeWallpaper()
+            .assertIsDisplayed()
+        Log.i(TAG, "verifyEdgeToEdgeWallpaperIsDisplayed: Verified that edge-to-edge wallpaper is visible")
+    }
+
+    fun verifyDefaultWallpaperIsDisplayed(composeTestRule: ComposeTestRule) {
+        Log.i(TAG, "verifyDefaultWallpaperIsDisplayed: Trying to verify that default wallpaper is visible")
+        composeTestRule.defaultWallpaper()
+            .assertIsDisplayed()
+        Log.i(TAG, "verifyDefaultWallpaperIsDisplayed: Verified that default wallpaper is visible")
+    }
+
+    fun verifyEdgeToEdgeWallpaperIsSelected(composeTestRule: ComposeTestRule) {
+        Log.i(TAG, "verifyEdgeToEdgeWallpaperIsSelected: Trying to verify that edge-to-edge wallpaper is selected")
+        composeTestRule.edgeToEdgeWallpaperSelected()
+            .assertExists()
+        Log.i(TAG, "verifyEdgeToEdgeWallpaperIsSelected: Verified that edge-to-edge wallpaper is selected")
+    }
+
+    fun verifyDefaultWallpaperIsSelected(composeTestRule: ComposeTestRule) {
+        Log.i(TAG, "verifyDefaultWallpaperIsSelected: Trying to verify that default wallpaper is selected")
+        composeTestRule.defaultWallpaperSelected()
+            .assertExists()
+        Log.i(TAG, "verifyDefaultWallpaperIsSelected: Verified that default wallpaper is selected")
+    }
+
+    fun verifyEdgeToEdgeWallpaperIsNotSelected(composeTestRule: ComposeTestRule) {
+        Log.i(TAG, "verifyEdgeToEdgeWallpaperIsNotSelected: Trying to verify that edge-to-edge wallpaper is not selected")
+        composeTestRule.edgeToEdgeWallpaperSelected()
+            .assertDoesNotExist()
+        Log.i(TAG, "verifyEdgeToEdgeWallpaperIsNotSelected: Verified that edge-to-edge wallpaper is not selected")
+    }
+
+    fun verifyDefaultWallpaperIsNotSelected(composeTestRule: ComposeTestRule) {
+        Log.i(TAG, "verifyDefaultWallpaperIsNotSelected: Trying to verify that default wallpaper is not selected")
+        composeTestRule.defaultWallpaperSelected()
+            .assertDoesNotExist()
+        Log.i(TAG, "verifyDefaultWallpaperIsNotSelected: Verified that default wallpaper is not selected")
+    }
+
     class Transition {
 
         fun goBackToHomeScreen(composeTestRule: ComposeTestRule, interact: HomeScreenRobot.() -> Unit): HomeScreenRobot.Transition {
             Log.i(TAG, "goBackToHomeScreen: Trying to click the navigate up toolbar button")
             goBackButton().click()
             Log.i(TAG, "goBackToHomeScreen: Clicked the navigate up toolbar button")
+            composeTestRule.waitForIdle()
+            mDevice.waitForIdle()
 
             HomeScreenRobot(composeTestRule).interact()
             return HomeScreenRobot.Transition(composeTestRule)
@@ -419,6 +496,18 @@ class SettingsSubMenuHomepageRobot {
 
             HomeScreenRobot(composeTestRule).interact()
             return HomeScreenRobot.Transition(composeTestRule)
+        }
+
+        fun clickWallpapersMenuOption(interact: SettingsSubMenuHomepageRobot.() -> Unit): Transition {
+            Log.i(
+                TAG,
+                "clickWallpapersMenuOption: Trying to click the \"Wallpapers\" option in the homepage settings menu",
+            )
+            wallpapersOptionMenu().click()
+            Log.i(TAG, "clickWallpapersMenuOption: Clicked the \"Wallpapers\" option in the homepage settings menu")
+
+            SettingsSubMenuHomepageRobot().interact()
+            return Transition()
         }
     }
 }
@@ -474,3 +563,40 @@ private fun homepageAfterFourHoursButton() =
     )
 
 private fun goBackButton() = onView(allOf(withContentDescription(R.string.action_bar_up_description)))
+
+private fun wallpapersOptionMenu() = onView(withText(R.string.customize_wallpapers))
+
+private fun wallpapersPageHeader() = onView(withText(R.string.customize_wallpapers))
+
+private fun wallpapersPageBackButton() = onView(withContentDescription(R.string.action_bar_up_description))
+
+private fun ComposeTestRule.edgeToEdgeWallpaper() =
+    onNodeWithContentDescription(
+        getStringResource(R.string.wallpapers_item_name_content_description, "edge-to-edge"),
+        useUnmergedTree = true,
+    )
+
+private fun ComposeTestRule.defaultWallpaper() =
+    onNodeWithContentDescription(
+        getStringResource(R.string.wallpapers_item_name_content_description, "default"),
+        useUnmergedTree = true,
+    )
+
+private fun ComposeTestRule.edgeToEdgeWallpaperSelected() =
+    onNodeWithTag(
+        "wallpaper.thumbnail.selected.edge-to-edge",
+        useUnmergedTree = true,
+    )
+
+private fun ComposeTestRule.defaultWallpaperSelected() =
+    onNodeWithTag(
+        "wallpaper.thumbnail.selected.default",
+        useUnmergedTree = true,
+    )
+
+private fun ComposeTestRule.classicFirefoxWallpaperSectionHeader() =
+    onNodeWithText(
+        text = "Classic",
+        substring = true,
+        useUnmergedTree = true,
+    )

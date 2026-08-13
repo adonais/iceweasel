@@ -14,6 +14,7 @@
 #include "nsINestedURI.h"
 #include "nsIURIMutator.h"
 #include "nsIURIWithSizeOf.h"
+#include "URIHasher.h"
 
 #define NS_THIS_JARURI_IMPL_CID               \
   {/* 9a55f629-730b-4d08-b75b-fa7d9570a691 */ \
@@ -40,7 +41,8 @@ class nsJARURI final : public nsIJARURI,
                        public nsISerializable,
                        public nsINestedURI,
                        public nsIIPCSerializableURI,
-                       public nsIURIWithSizeOf {
+                       public nsIURIWithSizeOf,
+                       public mozilla::net::URIHasher {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIURI

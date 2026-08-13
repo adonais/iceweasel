@@ -142,7 +142,7 @@ TEST(Format, Basics) {
   time_zone tz = utc_time_zone();
   time_point<chrono::nanoseconds> tp = chrono::system_clock::from_time_t(0);
 
-  // Starts with a couple basic edge cases.
+  // Start with basic edge cases.
   EXPECT_EQ("", absl::time_internal::cctz::format("", tp, tz));
   EXPECT_EQ(" ", absl::time_internal::cctz::format(" ", tp, tz));
   EXPECT_EQ("  ", absl::time_internal::cctz::format("  ", tp, tz));
@@ -169,23 +169,22 @@ TEST(Format, Basics) {
 
 TEST(Format, PosixConversions) {
   const time_zone tz = utc_time_zone();
-  auto tp = chrono::system_clock::from_time_t(0);
+  auto tp =
+      chrono::system_clock::from_time_t(308189482);  // 1979-10-08T00:11:22Z
 
-  TestFormatSpecifier(tp, tz, "%d", "01");
-  TestFormatSpecifier(tp, tz, "%e", " 1");  // extension but internal support
+  TestFormatSpecifier(tp, tz, "%d", "08");
+  TestFormatSpecifier(tp, tz, "%e", " 8");  // extension but internal support
   TestFormatSpecifier(tp, tz, "%H", "00");
   TestFormatSpecifier(tp, tz, "%I", "12");
-  TestFormatSpecifier(tp, tz, "%j", "001");
-  TestFormatSpecifier(tp, tz, "%m", "01");
-  TestFormatSpecifier(tp, tz, "%M", "00");
-  TestFormatSpecifier(tp, tz, "%S", "00");
-  TestFormatSpecifier(tp, tz, "%U", "00");
-#if !defined(__EMSCRIPTEN__)
-  TestFormatSpecifier(tp, tz, "%w", "4");  // 4=Thursday
-#endif
-  TestFormatSpecifier(tp, tz, "%W", "00");
-  TestFormatSpecifier(tp, tz, "%y", "70");
-  TestFormatSpecifier(tp, tz, "%Y", "1970");
+  TestFormatSpecifier(tp, tz, "%j", "281");
+  TestFormatSpecifier(tp, tz, "%m", "10");
+  TestFormatSpecifier(tp, tz, "%M", "11");
+  TestFormatSpecifier(tp, tz, "%S", "22");
+  TestFormatSpecifier(tp, tz, "%U", "40");
+  TestFormatSpecifier(tp, tz, "%w", "1");  // 1=Monday
+  TestFormatSpecifier(tp, tz, "%W", "41");
+  TestFormatSpecifier(tp, tz, "%y", "79");
+  TestFormatSpecifier(tp, tz, "%Y", "1979");
   TestFormatSpecifier(tp, tz, "%z", "+0000");
   TestFormatSpecifier(tp, tz, "%Z", "UTC");
   TestFormatSpecifier(tp, tz, "%%", "%");
@@ -193,21 +192,21 @@ TEST(Format, PosixConversions) {
 #if defined(__linux__)
   // SU/C99/TZ extensions
   TestFormatSpecifier(tp, tz, "%C", "19");
-  TestFormatSpecifier(tp, tz, "%D", "01/01/70");
-  TestFormatSpecifier(tp, tz, "%F", "1970-01-01");
-  TestFormatSpecifier(tp, tz, "%g", "70");
-  TestFormatSpecifier(tp, tz, "%G", "1970");
+  TestFormatSpecifier(tp, tz, "%D", "10/08/79");
+  TestFormatSpecifier(tp, tz, "%F", "1979-10-08");
+  TestFormatSpecifier(tp, tz, "%g", "79");
+  TestFormatSpecifier(tp, tz, "%G", "1979");
 #if defined(__GLIBC__)
   TestFormatSpecifier(tp, tz, "%k", " 0");
   TestFormatSpecifier(tp, tz, "%l", "12");
 #endif
   TestFormatSpecifier(tp, tz, "%n", "\n");
-  TestFormatSpecifier(tp, tz, "%R", "00:00");
+  TestFormatSpecifier(tp, tz, "%R", "00:11");
   TestFormatSpecifier(tp, tz, "%t", "\t");
-  TestFormatSpecifier(tp, tz, "%T", "00:00:00");
-  TestFormatSpecifier(tp, tz, "%u", "4");  // 4=Thursday
-  TestFormatSpecifier(tp, tz, "%V", "01");
-  TestFormatSpecifier(tp, tz, "%s", "0");
+  TestFormatSpecifier(tp, tz, "%T", "00:11:22");
+  TestFormatSpecifier(tp, tz, "%u", "1");  // 1=Monday
+  TestFormatSpecifier(tp, tz, "%V", "41");
+  TestFormatSpecifier(tp, tz, "%s", "308189482");
 #endif
 }
 
@@ -787,6 +786,36 @@ TEST(Format, Week) {
             absl::time_internal::cctz::format("%Y-%W-%w", tp, utc));
 }
 
+TEST(Format, NULsInFormatString) {
+  time_zone tz = utc_time_zone();
+  time_point<chrono::nanoseconds> tp = chrono::system_clock::from_time_t(0);
+
+  // All NULs.
+  std::string nuls(32, '\0');
+  EXPECT_EQ(nuls, absl::time_internal::cctz::format(nuls, tp, tz));
+
+  // NULs amongst ordinary text plus the internal "%\0" specifier.
+  std::string percent_nul("\0X\0\0X%\0\0X\0\0X\0", 13);
+  EXPECT_EQ(percent_nul,
+            absl::time_internal::cctz::format(percent_nul, tp, tz));
+
+  // NULs amongst ordinary text plus a non-internal specifier (%I).
+  EXPECT_EQ(std::string("X\0\0\0X12\0X\0\0\0X", 13),
+            absl::time_internal::cctz::format(
+                std::string("X\0\0\0X%I\0X\0\0\0X", 13), tp, tz));
+
+#if defined(__linux__) && defined(__GLIBC__)
+  // Depending upon strftime() behavior on "%E"
+  // and "%O", "%E\0" and "%0\0" produce themselves.
+  std::string percent_E_nul("abc%E\0xyz", 9);
+  EXPECT_EQ(percent_E_nul,
+            absl::time_internal::cctz::format(percent_E_nul, tp, tz));
+  std::string percent_O_nul("abc%O\0xyz", 9);
+  EXPECT_EQ(percent_O_nul,
+            absl::time_internal::cctz::format(percent_O_nul, tp, tz));
+#endif
+}
+
 //
 // Testing parse()
 //
@@ -930,6 +959,9 @@ TEST(Parse, LeapSecond) {
 TEST(Parse, ErrorCases) {
   const time_zone tz = utc_time_zone();
   auto tp = chrono::system_clock::from_time_t(0);
+
+  // No data.
+  EXPECT_FALSE(parse("X", "", tz, &tp));
 
   // Illegal trailing data.
   EXPECT_FALSE(parse("%S", "123", tz, &tp));
@@ -1579,6 +1611,41 @@ TEST(Parse, WeekYearShift) {
   EXPECT_FALSE(parse("%Y-%U-%u", "9223372036854775807-53-7", utc, &tp));
 }
 
+TEST(Parse, NULsInFormatAndInputStrings) {
+  const time_zone utc = utc_time_zone();
+  time_point<absl::time_internal::cctz::seconds> tp;
+
+  // Check that NULs are parsed just like any other chars.
+  EXPECT_FALSE(
+      parse(std::string("abc\0def", 7), std::string("abc\0xyz", 7), utc, &tp));
+  EXPECT_FALSE(
+      parse(std::string("%Y\0def", 6), std::string("2026\0xyz", 8), utc, &tp));
+  EXPECT_TRUE(
+      parse(std::string("%Y\0xyz", 6), std::string("2026\0xyz", 8), utc, &tp));
+  ExpectTime(tp, utc, 2026, 1, 1, 0, 0, 0, 0, false, "UTC");
+
+  // All NULs.
+  std::string nuls(32, '\0');
+  EXPECT_TRUE(parse(nuls, nuls, utc, &tp));
+  ExpectTime(tp, utc, 1970, 1, 1, 0, 0, 0, 0, false, "UTC");
+
+  // The "%\0" specifier never matches, even on the empty string and itself.
+  std::string percent_nul("%\0", 2);
+  EXPECT_FALSE(parse(percent_nul, "", utc, &tp));
+  EXPECT_FALSE(parse(percent_nul, percent_nul, utc, &tp));
+
+#if defined(__linux__) && defined(__GLIBC__)
+  // Depending upon strptime() behavior on "%E"
+  // and "%O", "%E\0" and "%0\0" also never match.
+  std::string percent_E_nul("%E\0", 3);
+  EXPECT_FALSE(parse(percent_E_nul, "", utc, &tp));
+  EXPECT_FALSE(parse(percent_E_nul, percent_E_nul, utc, &tp));
+  std::string percent_O_nul("%O\0", 3);
+  EXPECT_FALSE(parse(percent_O_nul, "", utc, &tp));
+  EXPECT_FALSE(parse(percent_O_nul, percent_O_nul, utc, &tp));
+#endif
+}
+
 TEST(Parse, MaxRange) {
   const time_zone utc = utc_time_zone();
   time_point<absl::time_internal::cctz::seconds> tp;
@@ -1708,10 +1775,18 @@ TEST(FormatParse, RoundTrip) {
   const auto in = convert(civil_second(1977, 6, 28, 9, 8, 7), lax);
   const auto subseconds = chrono::nanoseconds(654321);
 
+  // No format specifiers, but include NUL.
+  {
+    time_point<chrono::nanoseconds> out;
+    const auto fmt = std::string("\0\1\2\3\4\5\6\7abcdefgh01234567");
+    const auto s = absl::time_internal::cctz::format(fmt, in, lax);
+    EXPECT_TRUE(parse(fmt, s, lax, &out)) << s;
+  }
+
   // RFC3339, which renders subseconds.
   {
     time_point<chrono::nanoseconds> out;
-    const std::string s =
+    const auto s =
         absl::time_internal::cctz::format(RFC3339_full, in + subseconds, lax);
     EXPECT_TRUE(parse(RFC3339_full, s, lax, &out)) << s;
     EXPECT_EQ(in + subseconds, out);  // RFC3339_full includes %Ez
@@ -1720,8 +1795,7 @@ TEST(FormatParse, RoundTrip) {
   // RFC1123, which only does whole seconds.
   {
     time_point<chrono::nanoseconds> out;
-    const std::string s =
-        absl::time_internal::cctz::format(RFC1123_full, in, lax);
+    const auto s = absl::time_internal::cctz::format(RFC1123_full, in, lax);
     EXPECT_TRUE(parse(RFC1123_full, s, lax, &out)) << s;
     EXPECT_EQ(in, out);  // RFC1123_full includes %z
   }
@@ -1739,7 +1813,7 @@ TEST(FormatParse, RoundTrip) {
   {
     time_point<chrono::nanoseconds> out;
     time_zone utc = utc_time_zone();
-    const std::string s = absl::time_internal::cctz::format("%c", in, utc);
+    const auto s = absl::time_internal::cctz::format("%c", in, utc);
     EXPECT_TRUE(parse("%c", s, utc, &out)) << s;
     EXPECT_EQ(in, out);
   }

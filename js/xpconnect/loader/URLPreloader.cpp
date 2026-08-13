@@ -2,33 +2,33 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "ScriptPreloader-inl.h"
 #include "mozilla/URLPreloader.h"
-#include "mozilla/loader/AutoMemMap.h"
 
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/FileUtils.h"
 #include "mozilla/IOBuffers.h"
+#include "mozilla/loader/AutoMemMap.h"
 #include "mozilla/Logging.h"
+#include "mozilla/scache/StartupCache.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Services.h"
 #include "mozilla/Try.h"
 #include "mozilla/Vector.h"
-#include "mozilla/scache/StartupCache.h"
 
 #include "crc32c.h"
 #include "MainThreadUtils.h"
-#include "nsPrintfCString.h"
 #include "nsDebug.h"
 #include "nsIFile.h"
 #include "nsIFileURL.h"
 #include "nsNetUtil.h"
+#include "nsPrintfCString.h"
 #include "nsPromiseFlatString.h"
 #include "nsProxyRelease.h"
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
 #include "nsZipArchive.h"
+#include "ScriptPreloader-inl.h"
 #include "xpcpublic.h"
 
 namespace mozilla {

@@ -3,11 +3,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsNamedPipeIOLayer.h"
 #include "nsSOCKSSocketProvider.h"
-#include "nsSOCKSIOLayer.h"
+
 #include "nsCOMPtr.h"
 #include "nsError.h"
+#include "nsNamedPipeIOLayer.h"
+#include "nsSOCKSIOLayer.h"
 
 using mozilla::OriginAttributes;
 using namespace mozilla::net;

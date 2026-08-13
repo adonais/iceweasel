@@ -5,8 +5,8 @@
 #ifndef widget_uikit_nsWidgetFactory_h
 #define widget_uikit_nsWidgetFactory_h
 
-#include "nscore.h"
 #include "nsID.h"
+#include "nscore.h"
 
 class nsISupports;
 

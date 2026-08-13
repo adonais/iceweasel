@@ -3,7 +3,6 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SandboxReporterClient.h"
-#include "SandboxLogging.h"
 
 #include <errno.h>
 #include <signal.h>
@@ -12,6 +11,7 @@
 #include <sys/types.h>
 #include <time.h>
 
+#include "SandboxLogging.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/PodOperations.h"
 #include "prenv.h"

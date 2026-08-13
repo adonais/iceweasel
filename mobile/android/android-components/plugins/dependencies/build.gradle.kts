@@ -3,8 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 plugins {
-    alias(libs.plugins.dependency.analysis)
     `kotlin-dsl`
+    alias(libs.plugins.android.lint.plugin)
+    alias(libs.plugins.dependency.analysis)
 }
 
 val mozconfig = gradle.extra["mozconfig"] as Map<*, *>
@@ -24,6 +25,8 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito)
     testRuntimeOnly(libs.junit.platform.launcher)
+
+    lintChecks(libs.androidx.lint)
 }
 
 tasks.test {

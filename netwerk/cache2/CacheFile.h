@@ -9,9 +9,9 @@
 #include "CacheFileIOManager.h"
 #include "CacheFileMetadata.h"
 #include "Dictionary.h"
-#include "nsRefPtrHashtable.h"
-#include "nsClassHashtable.h"
 #include "mozilla/Mutex.h"
+#include "nsClassHashtable.h"
+#include "nsRefPtrHashtable.h"
 
 class nsIAsyncOutputStream;
 class nsICacheEntry;

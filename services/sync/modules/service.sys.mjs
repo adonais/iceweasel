@@ -69,7 +69,12 @@ const fxAccounts = getFxAccountsSingleton();
 function getEngineModules() {
   let result = {
     Addons: { module: "addons.sys.mjs", symbol: "AddonsEngine" },
-    Password: { module: "passwords.sys.mjs", symbol: "PasswordEngine" },
+    Passwords: {
+      module: "passwords.sys.mjs",
+      controllingPref: "signon.storage.rust.active",
+      whenTrue: "RustPasswordEngine",
+      whenFalse: "PasswordEngine",
+    },
     Prefs: { module: "prefs.sys.mjs", symbol: "PrefsEngine" },
   };
   if (AppConstants.MOZ_APP_NAME != "thunderbird") {

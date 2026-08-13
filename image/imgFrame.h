@@ -12,10 +12,10 @@
 #include "AnimationParams.h"
 #include "MainThreadUtils.h"
 #include "gfxDrawable.h"
-#include "mozilla/layers/SourceSurfaceSharedData.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Monitor.h"
+#include "mozilla/layers/SourceSurfaceSharedData.h"
 #include "nsRect.h"
 
 namespace mozilla {

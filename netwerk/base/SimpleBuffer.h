@@ -11,10 +11,10 @@
   simpler result code semantics to deal with.
 */
 
-#include "prtypes.h"
 #include "ErrorList.h"
 #include "mozilla/LinkedList.h"
 #include "nsISupportsImpl.h"
+#include "prtypes.h"
 
 namespace mozilla {
 namespace net {

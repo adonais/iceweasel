@@ -99,7 +99,7 @@
   display: none;
 }
 
-:host(:is(:disabled, :read-only, [type="time"])) .datetime-picker-button {
+:host([type="time"]) .datetime-picker-button {
   display: none;
 }
 
@@ -119,4 +119,9 @@
       display: initial;
     }
   }
+}
+
+/* Must stay below the dom.forms.datetime.timepicker @media block to override its display: initial for disabled/read-only states. */
+:host(:is(:disabled, :read-only)) .datetime-picker-button {
+  display: none;
 }

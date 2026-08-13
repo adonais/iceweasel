@@ -848,7 +848,7 @@ add_test(function test_invalidHostChars() {
       "Trying to set hostname containing char code: " + i
     );
   }
-  for (let c of '@[]*<>|:"') {
+  for (let c of "@[]<>|:") {
     Assert.throws(
       () => {
         url = url

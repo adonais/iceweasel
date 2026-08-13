@@ -65,8 +65,29 @@ CREATE TABLE message (
   memories_applied_jsonb BLOB,
   web_search_queries_jsonb BLOB,
   page_history_deleted BOOLEAN NOT NULL DEFAULT false,
-  tool_ui_data_jsonb BLOB
+  tool_ui_data_jsonb BLOB -- Deprecated in v11 schema; migrated to tool_result
 ) WITHOUT ROWID;
+`;
+
+// TODO Bug 2050716 - clean up history_results rows when cleaning URL references
+// for 'Forget this site'
+export const TOOL_RESULT_TABLE = `
+CREATE TABLE IF NOT EXISTS tool_result (
+  message_id TEXT NOT NULL REFERENCES message(message_id) ON DELETE CASCADE,
+  type INTEGER NOT NULL,
+  ordinal INTEGER NOT NULL CHECK(ordinal >= 0),
+  payload_jsonb BLOB,
+  PRIMARY KEY (message_id, type, ordinal)
+) WITHOUT ROWID;
+`;
+
+// Partial index over the scalar $.url path of history_results rows so a
+// URL can be found without scanning the whole table.
+// 1 - TOOL_RESULT_TYPE.HISTORY_RESULTS
+export const TOOL_RESULT_HISTORY_URL_INDEX = `
+CREATE INDEX IF NOT EXISTS tool_result_history_url_idx
+  ON tool_result(json_extract(payload_jsonb, '$.url'))
+  WHERE type = 1;
 `;
 
 export const MESSAGE_ORDINAL_INDEX = `
@@ -116,28 +137,59 @@ INSERT INTO message (
   revision_root_message_id, ordinal, is_active_branch, role,
   model_id, params_jsonb, content_jsonb, usage_jsonb, page_url, turn_index,
   memories_enabled, memories_flag_source, memories_applied_jsonb,
-  web_search_queries_jsonb,
-  tool_ui_data_jsonb
+  web_search_queries_jsonb
 ) VALUES (
   :message_id, :conv_id, :created_date, :parent_message_id,
   :revision_root_message_id, :ordinal, :is_active_branch, :role,
   :model_id, jsonb(:params), jsonb(:content), jsonb(:usage), :page_url, :turn_index,
   :memories_enabled, :memories_flag_source, jsonb(:memories_applied_jsonb),
-  jsonb(:web_search_queries_jsonb),
-  jsonb(:tool_ui_data_jsonb)
+  jsonb(:web_search_queries_jsonb)
 )
 ON CONFLICT(message_id) DO UPDATE SET
   is_active_branch = :is_active_branch,
   memories_applied_jsonb = jsonb(:memories_applied_jsonb),
   content_jsonb = jsonb(:content),
-  web_search_queries_jsonb = jsonb(:web_search_queries_jsonb),
-  tool_ui_data_jsonb = jsonb(:tool_ui_data_jsonb);
+  web_search_queries_jsonb = jsonb(:web_search_queries_jsonb);
 `;
 
+export const TOOL_RESULT_INSERT = `
+INSERT INTO tool_result (message_id, type, ordinal, payload_jsonb)
+VALUES (:message_id, :type, :ordinal, jsonb(:payload))
+ON CONFLICT(message_id, type, ordinal) DO UPDATE SET
+  payload_jsonb = jsonb(:payload);
+`;
+
+// Folds a message's tool_result rows into one JSON object keyed by type, each
+// value an ordinal-ordered array of payloads. Correlates on the outer `message`
+// table, so it works on any query using SELECT with `FROM message`.
+export const TOOL_RESULTS_SUBQUERY = `(
+  SELECT json_group_object(t.type, json(t.payloads))
+  FROM (
+    SELECT type, json_group_array(json(payload_jsonb) ORDER BY ordinal) AS payloads
+    FROM tool_result
+    WHERE tool_result.message_id = message.message_id
+    GROUP BY type
+  ) t
+) AS tool_results`;
+
+// page_url is the most recent real (non-empty, non-about:) page the chat was
+// about, so the history menu can show that page's favicon; it falls back to the
+// conversation's own page_url. substr avoids a LIKE clause, which mozStorage
+// rejects unless the pattern is a bound parameter.
 export const CONVERSATIONS_MOST_RECENT = `
-SELECT conv_id, title
-FROM conversation
-ORDER BY updated_date DESC
+SELECT c.conv_id, c.title,
+  COALESCE(
+    (SELECT m.page_url FROM message m
+     WHERE m.conv_id = c.conv_id
+       AND m.is_active_branch
+       AND m.page_url != ''
+       AND substr(m.page_url, 1, 6) != 'about:'
+     ORDER BY m.created_date DESC
+     LIMIT 1),
+    c.page_url
+  ) AS page_url
+FROM conversation c
+ORDER BY c.updated_date DESC
 LIMIT :limit;
 `;
 
@@ -263,7 +315,7 @@ export function getConversationMessagesSql(amount) {
       json(memories_applied_jsonb) AS memories_applied,
       json(web_search_queries_jsonb) AS web_search_queries,
       json(content_jsonb) AS content, page_history_deleted,
-      json(tool_ui_data_jsonb) AS tool_ui_data
+      ${TOOL_RESULTS_SUBQUERY}
       FROM message
       WHERE conv_id IN(${new Array(amount).fill("?").join(",")})
       ORDER BY ordinal ASC;
@@ -353,7 +405,7 @@ SELECT
   json(memories_applied_jsonb) AS memories_applied,
   json(web_search_queries_jsonb) AS web_search_queries,
   json(content_jsonb) AS content, page_history_deleted,
-  json(tool_ui_data_jsonb) AS tool_ui_data
+  ${TOOL_RESULTS_SUBQUERY}
 FROM message
 WHERE created_date >= :start_date AND created_date <= :end_date
 ORDER BY created_date DESC
@@ -369,7 +421,7 @@ SELECT
   json(memories_applied_jsonb) AS memories_applied,
   json(web_search_queries_jsonb) AS web_search_queries,
   json(content_jsonb) AS content, page_history_deleted,
-  json(tool_ui_data_jsonb) AS tool_ui_data
+  ${TOOL_RESULTS_SUBQUERY}
 FROM message
 WHERE role = :role
   AND created_date >= :start_date AND created_date <= :end_date

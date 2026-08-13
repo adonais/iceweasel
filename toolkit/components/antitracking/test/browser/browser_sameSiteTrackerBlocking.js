@@ -1,6 +1,10 @@
 /* Any copyright is dedicated to the Public Domain.
  * https://creativecommons.org/publicdomain/zero/1.0/ */
 
+add_setup(function () {
+  registerCleanupFunction(clearSiteTestData);
+});
+
 add_task(async function () {
   info("Starting first party tracker test");
 
@@ -102,12 +106,4 @@ add_task(async function () {
   UrlClassifierTestUtils.cleanupTestTrackers();
   BrowserTestUtils.removeTab(tab);
   await SpecialPowers.flushPrefEnv();
-});
-
-add_task(async _ => {
-  await new Promise(resolve => {
-    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-      resolve()
-    );
-  });
 });

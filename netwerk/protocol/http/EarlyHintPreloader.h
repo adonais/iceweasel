@@ -5,10 +5,10 @@
 #ifndef mozilla_net_EarlyHintPreloader_h
 #define mozilla_net_EarlyHintPreloader_h
 
-#include "mozilla/dom/ipc/IdType.h"
+#include "NeckoCommon.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PreloadHashKey.h"
-#include "NeckoCommon.h"
+#include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/net/NeckoChannelParams.h"
 #include "nsHashtablesFwd.h"
 #include "nsIChannelEventSink.h"

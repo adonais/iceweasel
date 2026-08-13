@@ -8,15 +8,13 @@
 package org.mozilla.fenix.bookmarks
 
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -24,12 +22,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -44,30 +42,32 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberSearchBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.SaveableStateHolder
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.SoftwareKeyboardController
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CollectionInfo
@@ -81,7 +81,6 @@ import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.toColorInt
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -89,9 +88,6 @@ import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import mozilla.appservices.places.BookmarkRoot
-import mozilla.components.browser.state.action.AwesomeBarAction
-import mozilla.components.browser.state.search.SearchEngine
-import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.button.FloatingActionButton
 import mozilla.components.compose.base.button.IconButton
@@ -99,22 +95,16 @@ import mozilla.components.compose.base.button.OutlinedButton
 import mozilla.components.compose.base.button.TextButton
 import mozilla.components.compose.base.menu.DropdownMenu
 import mozilla.components.compose.base.menu.MenuItem
+import mozilla.components.compose.base.searchbar.TopSearchBar
 import mozilla.components.compose.base.snackbar.Snackbar
 import mozilla.components.compose.base.snackbar.displaySnackbar
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.textfield.TextField
 import mozilla.components.compose.base.utils.BackInvokedHandler
-import mozilla.components.compose.browser.awesomebar.AwesomeBar
-import mozilla.components.compose.browser.awesomebar.AwesomeBarDefaults
-import mozilla.components.compose.browser.awesomebar.AwesomeBarOrientation
-import mozilla.components.compose.browser.toolbar.BrowserToolbar
-import mozilla.components.compose.browser.toolbar.store.BrowserEditToolbarAction
-import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
-import mozilla.components.compose.browser.toolbar.ui.BrowserToolbarQuery
-import mozilla.components.concept.base.profiler.Profiler
-import mozilla.components.lib.state.ext.observeAsComposableState
-import mozilla.components.support.ktx.android.view.hideKeyboard
+import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_SEARCH_BOX
 import org.mozilla.fenix.R
+import org.mozilla.fenix.bookmarks.BookmarksTestTag.BOOKMARK_PLACEHOLDER
+import org.mozilla.fenix.bookmarks.BookmarksTestTag.BOOKMARK_SEARCH_ITEM
 import org.mozilla.fenix.bookmarks.BookmarksTestTag.BOOKMARK_TOOLBAR
 import org.mozilla.fenix.bookmarks.BookmarksTestTag.EDIT_BOOKMARK_ITEM_TITLE_TEXT_FIELD
 import org.mozilla.fenix.bookmarks.BookmarksTestTag.EDIT_BOOKMARK_ITEM_URL_TEXT_FIELD
@@ -122,22 +112,14 @@ import org.mozilla.fenix.bookmarks.ui.AddFolderScreen
 import org.mozilla.fenix.bookmarks.ui.EditFolderScreen
 import org.mozilla.fenix.bookmarks.ui.SelectFolderScreen
 import org.mozilla.fenix.components.AppStore
-import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.compose.Favicon
+import org.mozilla.fenix.compose.list.FaviconListItem
 import org.mozilla.fenix.compose.list.SelectableFaviconListItem
 import org.mozilla.fenix.compose.list.SelectableIconListItem
-import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.ext.getRootView
-import org.mozilla.fenix.search.SearchFragmentAction.SuggestionClicked
-import org.mozilla.fenix.search.SearchFragmentAction.SuggestionSelected
-import org.mozilla.fenix.search.SearchFragmentState
-import org.mozilla.fenix.search.SearchFragmentStore
-import org.mozilla.fenix.search.awesomebar.DeleteHistoryEntryDelegate
+import org.mozilla.fenix.tabstray.ui.tabpage.EmptyTabPage
 import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.ui.icons.R as iconsR
-
-private const val MATERIAL_DESIGN_SCRIM = "#52000000"
 
 /**
  * The UI host for the Bookmarks list screen and related subscreens.
@@ -145,11 +127,6 @@ private const val MATERIAL_DESIGN_SCRIM = "#52000000"
  * @param buildStore A builder function to construct a [BookmarksStore] using the NavController that's local
  * to the nav graph for the Bookmarks view hierarchy.
  * @param appStore [AppStore] for syncing with other application features.
- * @param browserStore [BrowserStore] for checking browser state and dispatching browser action.
- * @param toolbarStore [BrowserToolbarStore] controlling the search toolbar.
- * @param searchStore [SearchFragmentStore] controlling how search results are displayed.
- * @param bookmarksSearchEngine [SearchEngine] the default search engine to use when searching bookmarks.
- * @param profiler app profiler used to access firefox profile features.
  * @param startDestination the screen on which to initialize [BookmarksScreen] with.
  * @param bookmarkToLoad The guid of a bookmark to load when landing on the edit screen.
  */
@@ -157,11 +134,6 @@ private const val MATERIAL_DESIGN_SCRIM = "#52000000"
 internal fun BookmarksScreen(
     buildStore: (NavHostController) -> BookmarksStore,
     appStore: AppStore = components.appStore,
-    browserStore: BrowserStore = components.core.store,
-    toolbarStore: BrowserToolbarStore,
-    searchStore: SearchFragmentStore,
-    bookmarksSearchEngine: SearchEngine?,
-    profiler: Profiler? = components.core.engine.profiler,
     startDestination: String = BookmarksDestinations.LIST,
     bookmarkToLoad: String? = null,
 ) {
@@ -188,15 +160,7 @@ internal fun BookmarksScreen(
     ) {
         composable(route = BookmarksDestinations.LIST) {
             BackHandler { store.dispatch(BackClicked) }
-            BookmarksList(
-                store = store,
-                appStore = appStore,
-                browserStore = browserStore,
-                toolbarStore = toolbarStore,
-                searchStore = searchStore,
-                bookmarksSearchEngine = bookmarksSearchEngine,
-                profiler = profiler,
-            )
+            BookmarksList(store = store)
         }
         composable(route = BookmarksDestinations.ADD_FOLDER) {
             BackHandler { store.dispatch(BackClicked) }
@@ -229,33 +193,16 @@ internal object BookmarksDestinations {
  * The Bookmarks list screen.
  */
 @OptIn(ExperimentalLayoutApi::class) // for WindowInsets.isImeVisible
-@Suppress("LongMethod", "CognitiveComplexMethod", "CyclomaticComplexMethod")
+@Suppress("LongMethod", "CyclomaticComplexMethod")
 @Composable
 private fun BookmarksList(
     store: BookmarksStore,
-    appStore: AppStore,
-    browserStore: BrowserStore,
-    toolbarStore: BrowserToolbarStore,
-    searchStore: SearchFragmentStore,
-    bookmarksSearchEngine: SearchEngine?,
-    profiler: Profiler?,
 ) {
     val state by store.stateFlow.collectAsState()
-    val searchState = searchStore.observeAsComposableState { it }.value
-    val awesomebarBackground = AwesomeBarDefaults.colors().background
-    val awesomebarScrim by remember(searchState.query) {
-        derivedStateOf {
-            when (searchState.query.isNotEmpty()) {
-                true -> awesomebarBackground
-                else -> Color(MATERIAL_DESIGN_SCRIM.toColorInt())
-            }
-        }
-    }
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     val saveableStateHolder = rememberSaveableStateHolder()
 
-    val view = LocalView.current
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -309,28 +256,8 @@ private fun BookmarksList(
         }
     }
 
-    LaunchedEffect(state.isSearching) {
-        when (state.isSearching) {
-            true -> {
-                if (!appStore.state.searchState.isSearchActive) {
-                    bookmarksSearchEngine?.let {
-                        appStore.dispatch(AppAction.SearchAction.SearchEngineSelected(it, false))
-                    }
-                    appStore.dispatch(AppAction.SearchAction.SearchStarted())
-                }
-            }
-            false -> {
-                appStore.dispatch(AppAction.SearchAction.SearchEnded)
-                toolbarStore.dispatch(BrowserEditToolbarAction.SearchQueryUpdated(BrowserToolbarQuery("")))
-                browserStore.dispatch(AwesomeBarAction.EngagementFinished(abandoned = true))
-                focusManager.clearFocus()
-                keyboardController?.hide()
-            }
-        }
-    }
-
     BackInvokedHandler(state.isSearching) {
-        store.dispatch(SearchDismissed)
+        store.dispatch(SearchAction.SearchDismissed)
     }
 
     WarnDialog(store = store)
@@ -342,6 +269,9 @@ private fun BookmarksList(
             onDeleteTapped = { store.dispatch(DeletionDialogAction.DeleteTapped) },
         )
     }
+
+    var searchBarExpanded by remember { mutableStateOf(false) }
+    val focusRequester = remember { FocusRequester() }
 
     Scaffold(
         snackbarHost = {
@@ -355,152 +285,130 @@ private fun BookmarksList(
             }
         },
         floatingActionButton = {
-            if (!state.isLoading && state.emptyListState() == null) {
+            if (state.canEnterSearch) {
                 FloatingActionButton(
                     modifier = Modifier.onPlaced { fabHeight.intValue = it.size.height },
                     icon = painterResource(iconsR.drawable.mozac_ic_search_24),
                     contentDescription = stringResource(R.string.bookmark_search_button_content_description),
-                    onClick = { store.dispatch(SearchClicked) },
+                    onClick = { store.dispatch(SearchAction.SearchClicked) },
                 )
             }
         },
         topBar = {
             if (state.isSearching) {
-                BrowserToolbar(toolbarStore)
+                BookmarksSearchTopBar(
+                    searchQuery = state.searchState?.searchQuery ?: "",
+                    searchBarExpanded = searchBarExpanded,
+                    dispatcher = store::dispatch,
+                    onExpandedChange = { searchBarExpanded = it },
+                    focusRequester = focusRequester,
+                    focusManager = focusManager,
+                    keyboardController = keyboardController,
+                )
             } else {
                 BookmarksListTopBar(store = store)
             }
         },
     ) { paddingValues ->
-        if (state.isLoading) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-            return@Scaffold
-        }
 
         val emptyListState = state.emptyListState()
-        if (emptyListState != null) {
-            EmptyList(
-                state = emptyListState,
-                dispatcher = store::dispatch,
-            )
-            return@Scaffold
+        when {
+            state.isLoading -> {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            }
+            emptyListState != null -> {
+                EmptyList(
+                    state = emptyListState,
+                    dispatcher = store::dispatch,
+                )
+            }
+            state.isSearching -> {
+                BookmarksSearchListContent(
+                    bookmarkItems = state.bookmarkItems.bookmarks(),
+                    paddingValues = paddingValues,
+                    onBookmarkClicked = { item -> store.dispatch(BookmarkClicked(item)) },
+                )
+            }
+            else -> {
+                BookmarksListContent(
+                    state = store.state,
+                    saveableStateHolder = saveableStateHolder,
+                    paddingValues = paddingValues,
+                    fabHeight = fabHeight.intValue,
+                    dispatcher = store::dispatch,
+                )
+            }
         }
-        val inSelectionMode = state.selectedItems.isNotEmpty()
+    }
+}
 
-        saveableStateHolder.SaveableStateProvider(state.currentFolder.guid) {
-            LazyColumn(
-                modifier = Modifier
-                    .padding(paddingValues)
-                    .padding(vertical = 16.dp)
-                    .semantics {
-                        collectionInfo =
-                            CollectionInfo(rowCount = state.bookmarkItems.size, columnCount = 1)
-                    }
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                val folders = state.bookmarkItems.folders()
-                itemsIndexed(folders) { index, item ->
-                    var showMenu by remember { mutableStateOf(false) }
-                    val isSelected = item in state.selectedItems
+@Composable
+private fun BookmarksSearchListContent(
+    bookmarkItems: List<BookmarkItem.Bookmark>,
+    paddingValues: PaddingValues,
+    onBookmarkClicked: (BookmarkItem.Bookmark) -> Unit,
+) {
+    LazyColumn(modifier = Modifier.padding(paddingValues)) {
+        items(
+            items = bookmarkItems,
+            key = { it.guid },
+        ) { item ->
+            FaviconListItem(
+                label = item.title,
+                url = item.previewImageUrl,
+                description = item.url,
+                onClick = { onBookmarkClicked(item) },
+                modifier = Modifier.width(FirefoxTheme.layout.size.containerMaxWidth)
+                    .testTag(BOOKMARK_SEARCH_ITEM),
+            )
+        }
+    }
+}
 
-                    if (item.isDesktopFolder) {
-                        SelectableIconListItem(
-                            label = item.title,
-                            isSelected = item in state.selectedItems,
-                            description =
-                                stringResource(
-                                    R.string.bookmarks_folder_description,
-                                    item.nestedItemCount.toString(),
-                                ),
-                            onClick = { store.dispatch(FolderClicked(item)) },
-                            beforeIconPainter = painterResource(iconsR.drawable.mozac_ic_folder_24),
-                            modifier = Modifier
-                                .semantics(mergeDescendants = true) {
-                                    if (inSelectionMode) {
-                                        selected = isSelected
-                                    }
-                                    collectionItemInfo = CollectionItemInfo(
-                                        rowIndex = index,
-                                        rowSpan = 1,
-                                        columnSpan = 1,
-                                        columnIndex = 0,
-                                    )
-                                }
-                                .width(FirefoxTheme.layout.size.containerMaxWidth),
-                            labelModifier = Modifier.fillMaxWidth(),
-                        )
-                    } else {
-                        SelectableIconListItem(
-                            label = item.title,
-                            isSelected = isSelected,
-                            description = stringResource(
-                                id = R.string.bookmarks_folder_description,
+@Composable
+@Suppress("LongMethod", "CognitiveComplexMethod")
+private fun BookmarksListContent(
+    state: BookmarksState,
+    saveableStateHolder: SaveableStateHolder,
+    paddingValues: PaddingValues,
+    fabHeight: Int,
+    dispatcher: (BookmarksAction) -> Unit,
+) {
+    val inSelectionMode = state.selectedItems.isNotEmpty()
+
+    saveableStateHolder.SaveableStateProvider(state.currentFolder.guid) {
+        LazyColumn(
+            modifier = Modifier
+                .padding(paddingValues)
+                .padding(vertical = 16.dp)
+                .semantics {
+                    collectionInfo =
+                        CollectionInfo(rowCount = state.bookmarkItems.size, columnCount = 1)
+                }
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            val folders = state.bookmarkItems.folders()
+            itemsIndexed(
+                items = folders,
+                key = { _, item -> item.guid },
+            ) { index, item ->
+                var showMenu by remember { mutableStateOf(false) }
+                val isSelected = item in state.selectedItems
+
+                if (item.isDesktopFolder) {
+                    SelectableIconListItem(
+                        label = item.title,
+                        isSelected = item in state.selectedItems,
+                        description =
+                            stringResource(
+                                R.string.bookmarks_folder_description,
                                 item.nestedItemCount.toString(),
                             ),
-                            onClick = { store.dispatch(FolderClicked(item)) },
-                            onLongClick = { store.dispatch(FolderLongClicked(item)) },
-                            beforeIconPainter = painterResource(iconsR.drawable.mozac_ic_folder_24),
-                            modifier = Modifier
-                                .semantics(mergeDescendants = true) {
-                                    if (inSelectionMode) {
-                                        selected = isSelected
-                                    }
-                                    collectionItemInfo = CollectionItemInfo(
-                                        rowIndex = index,
-                                        rowSpan = 1,
-                                        columnSpan = 1,
-                                        columnIndex = 0,
-                                    )
-                                }
-                                .width(FirefoxTheme.layout.size.containerMaxWidth),
-                            labelModifier = Modifier.fillMaxWidth(),
-                        ) {
-                            Box {
-                                IconButton(
-                                    onClick = { showMenu = true },
-                                    contentDescription = stringResource(
-                                        R.string.bookmark_item_menu_button_content_description,
-                                        item.title,
-                                    ),
-                                    modifier = Modifier.size(24.dp),
-                                ) {
-                                    Icon(
-                                        painter = painterResource(iconsR.drawable.mozac_ic_ellipsis_vertical_24),
-                                        contentDescription = null,
-                                    )
-                                }
-
-                                BookmarkListFolderMenu(
-                                    showMenu = showMenu,
-                                    onDismissRequest = { showMenu = false },
-                                    folder = item,
-                                    store = store,
-                                )
-                            }
-                        }
-                    }
-                }
-
-                if (folders.isNotEmpty()) {
-                    item {
-                        HorizontalDivider()
-                    }
-                }
-
-                itemsIndexed(state.bookmarkItems.bookmarks()) { index, item ->
-                    var showMenu by remember { mutableStateOf(false) }
-                    val isSelected = item in state.selectedItems
-
-                    SelectableFaviconListItem(
-                        label = item.title,
-                        url = item.previewImageUrl,
-                        isSelected = isSelected,
-                        description = item.url,
-                        onClick = { store.dispatch(BookmarkClicked(item)) },
-                        onLongClick = { store.dispatch(BookmarkLongClicked(item)) },
+                        onClick = { dispatcher.invoke(FolderClicked(item)) },
+                        beforeIconPainter = painterResource(iconsR.drawable.mozac_ic_folder_24),
                         modifier = Modifier
                             .semantics(mergeDescendants = true) {
                                 if (inSelectionMode) {
@@ -514,6 +422,33 @@ private fun BookmarksList(
                                 )
                             }
                             .width(FirefoxTheme.layout.size.containerMaxWidth),
+                        labelModifier = Modifier.fillMaxWidth(),
+                    )
+                } else {
+                    SelectableIconListItem(
+                        label = item.title,
+                        isSelected = isSelected,
+                        description = stringResource(
+                            id = R.string.bookmarks_folder_description,
+                            item.nestedItemCount.toString(),
+                        ),
+                        onClick = { dispatcher.invoke(FolderClicked(item)) },
+                        onLongClick = { dispatcher.invoke(FolderLongClicked(item)) },
+                        beforeIconPainter = painterResource(iconsR.drawable.mozac_ic_folder_24),
+                        modifier = Modifier
+                            .semantics(mergeDescendants = true) {
+                                if (inSelectionMode) {
+                                    selected = isSelected
+                                }
+                                collectionItemInfo = CollectionItemInfo(
+                                    rowIndex = index,
+                                    rowSpan = 1,
+                                    columnSpan = 1,
+                                    columnIndex = 0,
+                                )
+                            }
+                            .width(FirefoxTheme.layout.size.containerMaxWidth),
+                        labelModifier = Modifier.fillMaxWidth(),
                     ) {
                         Box {
                             IconButton(
@@ -530,67 +465,74 @@ private fun BookmarksList(
                                 )
                             }
 
-                            BookmarkListItemMenu(
+                            BookmarkListFolderMenu(
                                 showMenu = showMenu,
                                 onDismissRequest = { showMenu = false },
-                                bookmark = item,
-                                store = store,
+                                folder = item,
+                                dispatcher = dispatcher,
                             )
                         }
                     }
                 }
-
-                fabOffsetSpace(fabHeight.intValue)
             }
-        }
 
-        if (state.isSearching && searchState.searchSuggestionsProviders.isNotEmpty()) {
-            val activity = LocalActivity.current
-            val deleteHistoryDelegate = remember(activity?.getRootView(), searchStore) {
-                activity?.getRootView()?.let {
-                    DeleteHistoryEntryDelegate(it, it.context.components, searchStore)
+            if (folders.isNotEmpty()) {
+                item {
+                    HorizontalDivider()
                 }
             }
 
-            Box(
-                modifier = Modifier
-                    .background(awesomebarScrim)
-                    .padding(paddingValues)
-                    .fillMaxSize()
-                    .pointerInput(WindowInsets.isImeVisible) {
-                        detectTapGestures(
-                            // Exit search for any touches in the empty area of the awesomebar.
-                            onPress = {
-                                focusManager.clearFocus()
-                                keyboardController?.hide()
-                                store.dispatch(SearchDismissed)
-                            },
+            itemsIndexed(state.bookmarkItems.bookmarks()) { index, item ->
+                var showMenu by remember { mutableStateOf(false) }
+                val isSelected = item in state.selectedItems
+
+                SelectableFaviconListItem(
+                    label = item.title,
+                    url = item.previewImageUrl,
+                    isSelected = isSelected,
+                    description = item.url,
+                    onClick = { dispatcher.invoke(BookmarkClicked(item)) },
+                    onLongClick = { dispatcher.invoke(BookmarkLongClicked(item)) },
+                    modifier = Modifier
+                        .semantics(mergeDescendants = true) {
+                            if (inSelectionMode) {
+                                selected = isSelected
+                            }
+                            collectionItemInfo = CollectionItemInfo(
+                                rowIndex = index,
+                                rowSpan = 1,
+                                columnSpan = 1,
+                                columnIndex = 0,
+                            )
+                        }
+                        .width(FirefoxTheme.layout.size.containerMaxWidth),
+                ) {
+                    Box {
+                        IconButton(
+                            onClick = { showMenu = true },
+                            contentDescription = stringResource(
+                                R.string.bookmark_item_menu_button_content_description,
+                                item.title,
+                            ),
+                            modifier = Modifier.size(24.dp),
+                        ) {
+                            Icon(
+                                painter = painterResource(iconsR.drawable.mozac_ic_ellipsis_vertical_24),
+                                contentDescription = null,
+                            )
+                        }
+
+                        BookmarkListItemMenu(
+                            showMenu = showMenu,
+                            onDismissRequest = { showMenu = false },
+                            bookmark = item,
+                            dispatcher = dispatcher,
                         )
-                    },
-            ) {
-                if (searchState.shouldShowSearchSuggestions) {
-                    AwesomeBar(
-                        text = searchState.query,
-                        providers = searchState.searchSuggestionsProviders,
-                        hiddenSuggestions = searchState.hiddenSuggestions,
-                        orientation = AwesomeBarOrientation.TOP,
-                        onSuggestionClicked = { suggestion ->
-                            searchStore.dispatch(SuggestionClicked(suggestion))
-                        },
-                        onAutoComplete = { suggestion ->
-                            searchStore.dispatch(SuggestionSelected(suggestion))
-                        },
-                        onRemoveClicked = { suggestion ->
-                            deleteHistoryDelegate?.handleDeletingHistoryEntry(suggestion)
-                        },
-                        onVisibilityStateUpdated = {
-                            browserStore.dispatch(AwesomeBarAction.VisibilityStateUpdated(it))
-                        },
-                        onScroll = { view.hideKeyboard() },
-                        profiler = profiler,
-                    )
+                    }
                 }
             }
+
+            fabOffsetSpace(fabHeight)
         }
     }
 }
@@ -602,6 +544,62 @@ private fun LazyListScope.fabOffsetSpace(fabHeight: Int) {
         }
         Spacer(modifier = Modifier.size(fabHeightDp))
     }
+}
+
+@Composable
+private fun BookmarksSearchTopBar(
+    searchQuery: String,
+    searchBarExpanded: Boolean,
+    dispatcher: (BookmarksAction) -> Unit,
+    onExpandedChange: (Boolean) -> Unit,
+    focusRequester: FocusRequester,
+    focusManager: FocusManager,
+    keyboardController: SoftwareKeyboardController?,
+) {
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
+
+    TopSearchBar(
+        state = rememberSearchBarState(),
+        modifier = Modifier
+            .focusRequester(focusRequester)
+            .testTag(ADDRESSBAR_SEARCH_BOX),
+        query = searchQuery,
+        onQueryChange = { dispatcher.invoke(SearchAction.SearchQueryChanged(it)) },
+        onSearch = {
+            focusManager.clearFocus()
+            keyboardController?.hide()
+        },
+        expanded = searchBarExpanded,
+        onExpandedChange = onExpandedChange,
+        placeholder = {
+            Text(
+                text = stringResource(R.string.bookmark_search_hint),
+                modifier = Modifier.testTag(BOOKMARK_PLACEHOLDER),
+            )
+        },
+        leadingIcon = {
+            IconButton(
+                onClick = {
+                    onExpandedChange(false)
+                    focusManager.clearFocus(true)
+                    keyboardController?.hide()
+                    dispatcher.invoke(SearchAction.SearchDismissed)
+                },
+                contentDescription = stringResource(R.string.bookmark_close_search_description),
+            ) {
+                Icon(
+                    painter = painterResource(id = iconsR.drawable.mozac_ic_back_24),
+                    contentDescription = null,
+                )
+            }
+        },
+        windowInsets = WindowInsets(
+            top = 0.dp,
+            bottom = 0.dp,
+        ),
+    )
 }
 
 @Composable
@@ -993,6 +991,7 @@ private fun RootBookmarksOverflowMenu(store: BookmarksStore) {
 }
 
 private sealed class EmptyListState {
+    data object NoSearchResults : EmptyListState()
     data object NotAuthenticated : EmptyListState()
     data object Authenticated : EmptyListState()
     data object Folder : EmptyListState()
@@ -1000,6 +999,8 @@ private sealed class EmptyListState {
 
 private fun BookmarksState.emptyListState(): EmptyListState? {
     return when {
+        isSearching && searchState?.searchQuery == "" && bookmarkItems.isEmpty() -> null
+        isSearching && bookmarkItems.isEmpty() -> EmptyListState.NoSearchResults
         bookmarkItems.isNotEmpty() -> null
         currentFolder.guid != BookmarkRoot.Mobile.id -> EmptyListState.Folder
         isSignedIntoSync -> EmptyListState.Authenticated
@@ -1025,6 +1026,7 @@ private fun EmptyList(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             when (state) {
+                EmptyListState.NoSearchResults -> NoSearchResults()
                 is EmptyListState.NotAuthenticated -> RootEmptyContent(
                     dispatcher,
                     showSignIn = true,
@@ -1040,13 +1042,43 @@ private fun EmptyList(
 }
 
 @Composable
+private fun NoSearchResults() {
+    EmptyTabPage {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Image(
+                modifier = Modifier.size(77.dp),
+                painter = painterResource(R.drawable.kit_search_error),
+                contentDescription = null,
+            )
+
+            Text(
+                text = stringResource(R.string.bookmark_no_search_results),
+                textAlign = TextAlign.Center,
+                style = FirefoxTheme.typography.body2,
+            )
+
+            Text(
+                text = stringResource(R.string.bookmark_no_search_results_additional_text),
+                textAlign = TextAlign.Center,
+                style = FirefoxTheme.typography.body2,
+            )
+        }
+    }
+}
+
+@Composable
 private fun RootEmptyContent(
     dispatcher: (BookmarksAction) -> Unit,
     showSignIn: Boolean,
 ) {
     Image(
         painter = painterResource(R.drawable.ic_kit_bookmarks_empty_state),
-        modifier = Modifier.width(204.dp).height(182.dp),
+        modifier = Modifier
+            .width(204.dp)
+            .height(182.dp),
         contentDescription = null,
     )
 
@@ -1100,7 +1132,6 @@ private fun FolderEmptyContent() {
 }
 
 @Composable
-@Suppress("Deprecation") // https://bugzilla.mozilla.org/show_bug.cgi?id=1927718
 private fun BookmarkSortOverflowMenu(
     showMenu: Boolean,
     onDismissRequest: () -> Unit,
@@ -1144,7 +1175,6 @@ private fun BookmarkSortOverflowMenu(
 }
 
 @Composable
-@Suppress("Deprecation") // https://bugzilla.mozilla.org/show_bug.cgi?id=1927718
 private fun BookmarkListOverflowMenu(
     showMenu: Boolean,
     onDismissRequest: () -> Unit,
@@ -1217,39 +1247,37 @@ private fun BookmarkListItemMenu(
     showMenu: Boolean,
     onDismissRequest: () -> Unit,
     bookmark: BookmarkItem.Bookmark,
-    store: BookmarksStore,
+    dispatcher: (BookmarksAction) -> Unit,
 ) {
     val menuItems = listOf(
         MenuItem.TextItem(
             text = Text.Resource(R.string.bookmark_menu_select_button),
-            onClick = { store.dispatch(BookmarksListMenuAction.Bookmark.SelectClicked(bookmark)) },
+            onClick = { dispatcher.invoke(BookmarksListMenuAction.Bookmark.SelectClicked(bookmark)) },
         ),
         MenuItem.TextItem(
             text = Text.Resource(R.string.bookmark_menu_edit_button),
-            onClick = { store.dispatch(BookmarksListMenuAction.Bookmark.EditClicked(bookmark)) },
+            onClick = { dispatcher.invoke(BookmarksListMenuAction.Bookmark.EditClicked(bookmark)) },
         ),
         MenuItem.TextItem(
             text = Text.Resource(R.string.bookmark_menu_move_button),
-            onClick = {
-                store.dispatch(BookmarksListMenuAction.Bookmark.MoveClicked(bookmark))
-            },
+            onClick = { dispatcher.invoke(BookmarksListMenuAction.Bookmark.MoveClicked(bookmark)) },
         ),
         MenuItem.TextItem(
             text = Text.Resource(R.string.bookmark_menu_share_button),
-            onClick = { store.dispatch(BookmarksListMenuAction.Bookmark.ShareClicked(bookmark)) },
+            onClick = { dispatcher.invoke(BookmarksListMenuAction.Bookmark.ShareClicked(bookmark)) },
         ),
         MenuItem.TextItem(
             text = Text.Resource(R.string.bookmark_menu_open_in_new_tab_button),
-            onClick = { store.dispatch(BookmarksListMenuAction.Bookmark.OpenInNormalTabClicked(bookmark)) },
+            onClick = { dispatcher.invoke(BookmarksListMenuAction.Bookmark.OpenInNormalTabClicked(bookmark)) },
         ),
         MenuItem.TextItem(
             text = Text.Resource(R.string.bookmark_menu_open_in_private_tab_button),
-            onClick = { store.dispatch(BookmarksListMenuAction.Bookmark.OpenInPrivateTabClicked(bookmark)) },
+            onClick = { dispatcher.invoke(BookmarksListMenuAction.Bookmark.OpenInPrivateTabClicked(bookmark)) },
         ),
         MenuItem.TextItem(
             text = Text.Resource(R.string.bookmark_menu_delete_button),
             level = MenuItem.FixedItem.Level.Critical,
-            onClick = { store.dispatch(BookmarksListMenuAction.Bookmark.DeleteClicked(bookmark)) },
+            onClick = { dispatcher.invoke(BookmarksListMenuAction.Bookmark.DeleteClicked(bookmark)) },
         ),
     )
     DropdownMenu(
@@ -1264,35 +1292,33 @@ private fun BookmarkListFolderMenu(
     showMenu: Boolean,
     onDismissRequest: () -> Unit,
     folder: BookmarkItem.Folder,
-    store: BookmarksStore,
+    dispatcher: (BookmarksAction) -> Unit,
 ) {
     val menuItems = listOf(
         MenuItem.TextItem(
             text = Text.Resource(R.string.bookmark_menu_select_button),
-            onClick = { store.dispatch(BookmarksListMenuAction.Folder.SelectClicked(folder)) },
+            onClick = { dispatcher.invoke(BookmarksListMenuAction.Folder.SelectClicked(folder)) },
         ),
         MenuItem.TextItem(
             text = Text.Resource(R.string.bookmark_menu_edit_button),
-            onClick = { store.dispatch(BookmarksListMenuAction.Folder.EditClicked(folder)) },
+            onClick = { dispatcher.invoke(BookmarksListMenuAction.Folder.EditClicked(folder)) },
         ),
         MenuItem.TextItem(
             text = Text.Resource(R.string.bookmark_menu_move_button),
-            onClick = {
-                store.dispatch(BookmarksListMenuAction.Folder.MoveClicked(folder))
-            },
+            onClick = { dispatcher.invoke(BookmarksListMenuAction.Folder.MoveClicked(folder)) },
         ),
         MenuItem.TextItem(
             text = Text.Resource(R.string.bookmark_menu_open_all_in_tabs_button),
-            onClick = { store.dispatch(BookmarksListMenuAction.Folder.OpenAllInNormalTabClicked(folder)) },
+            onClick = { dispatcher.invoke(BookmarksListMenuAction.Folder.OpenAllInNormalTabClicked(folder)) },
         ),
         MenuItem.TextItem(
             text = Text.Resource(R.string.bookmark_menu_open_all_in_private_tabs_button),
-            onClick = { store.dispatch(BookmarksListMenuAction.Folder.OpenAllInPrivateTabClicked(folder)) },
+            onClick = { dispatcher.invoke(BookmarksListMenuAction.Folder.OpenAllInPrivateTabClicked(folder)) },
         ),
         MenuItem.TextItem(
             text = Text.Resource(R.string.bookmark_menu_delete_button),
             level = MenuItem.FixedItem.Level.Critical,
-            onClick = { store.dispatch(BookmarksListMenuAction.Folder.DeleteClicked(folder)) },
+            onClick = { dispatcher.invoke(BookmarksListMenuAction.Folder.DeleteClicked(folder)) },
         ),
     )
     DropdownMenu(
@@ -1530,7 +1556,7 @@ private fun EditBookmarkScreenPreview() {
             bookmarksEditFolderState = null,
             bookmarksMultiselectMoveState = null,
             isLoading = false,
-            isSearching = false,
+            searchState = null,
         ),
     )
 
@@ -1581,7 +1607,7 @@ private fun BookmarksScreenPreview() {
                 bookmarksEditFolderState = null,
                 bookmarksMultiselectMoveState = null,
                 isLoading = false,
-                isSearching = false,
+                searchState = null,
             ),
         )
     }
@@ -1590,11 +1616,6 @@ private fun BookmarksScreenPreview() {
         BookmarksScreen(
             buildStore = store,
             appStore = AppStore(),
-            browserStore = BrowserStore(),
-            toolbarStore = BrowserToolbarStore(),
-            searchStore = SearchFragmentStore(SearchFragmentState.EMPTY),
-            bookmarksSearchEngine = null,
-            profiler = null,
         )
     }
 }
@@ -1627,7 +1648,7 @@ private fun EmptyBookmarksScreenPreview() {
                 bookmarksEditFolderState = null,
                 bookmarksMultiselectMoveState = null,
                 isLoading = false,
-                isSearching = false,
+                searchState = null,
             ),
         )
     }
@@ -1636,11 +1657,6 @@ private fun EmptyBookmarksScreenPreview() {
         BookmarksScreen(
             buildStore = store,
             appStore = AppStore(),
-            browserStore = BrowserStore(),
-            toolbarStore = BrowserToolbarStore(),
-            searchStore = SearchFragmentStore(SearchFragmentState.EMPTY),
-            bookmarksSearchEngine = null,
-            profiler = null,
         )
     }
 }

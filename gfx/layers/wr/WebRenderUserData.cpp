@@ -4,19 +4,19 @@
 
 #include "WebRenderUserData.h"
 
+#include "WebRenderCanvasRenderer.h"
 #include "mozilla/image/WebRenderImageProvider.h"
 #include "mozilla/layers/AnimationHelper.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/ImageClient.h"
-#include "mozilla/layers/WebRenderBridgeChild.h"
-#include "mozilla/layers/RenderRootStateManager.h"
-#include "mozilla/layers/WebRenderMessages.h"
 #include "mozilla/layers/IpcResourceUpdateQueue.h"
+#include "mozilla/layers/RenderRootStateManager.h"
 #include "mozilla/layers/SharedSurfacesChild.h"
+#include "mozilla/layers/WebRenderBridgeChild.h"
+#include "mozilla/layers/WebRenderMessages.h"
 #include "mozilla/webgpu/WebGPUChild.h"
 #include "nsDisplayListInvalidation.h"
 #include "nsIFrame.h"
-#include "WebRenderCanvasRenderer.h"
 
 using namespace mozilla::image;
 

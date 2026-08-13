@@ -30,6 +30,7 @@ export class MigrationWizard extends HTMLElement {
   #expandedDetails = false;
   #extensionsSuccessLink = null;
   #supportTextLinks = null;
+  #safariPasswordImportInstructions = null;
 
   static get markup() {
     return `
@@ -231,7 +232,7 @@ export class MigrationWizard extends HTMLElement {
             </moz-button-group>
           </div>
 
-          <div name="page-safari-password-permission">
+          <div name="page-safari-password-permission-pre-sequoia">
             <h1 data-l10n-id="migration-safari-password-import-header" part="header"></h1>
             <span data-l10n-id="migration-safari-password-import-steps-header"></span>
             <ol>
@@ -245,6 +246,20 @@ export class MigrationWizard extends HTMLElement {
             </ol>
             <moz-button-group class="buttons" part="buttons">
               <button class="manual-password-import-skip" data-l10n-id="migration-manual-password-import-skip-button"></button>
+              <button class="manual-password-import-select primary" data-l10n-id="migration-manual-password-import-select-button"></button>
+            </moz-button-group>
+          </div>
+
+          <div name="page-safari-password-permission">
+            <h1 data-l10n-id="migration-safari-password-import-header" part="header"></h1>
+            <ol id="migration-safari-password-import-instructions">
+              <li data-l10n-id="migration-safari-password-import-post-sequoia-step1"><a id="launch-macos-passwords-app" data-l10n-name="macos-passwords-app"></a></li>
+              <li data-l10n-id="migration-safari-password-import-post-sequoia-step2"></li>
+              <li data-l10n-id="migration-safari-password-import-post-sequoia-step3"></li>
+              <li data-l10n-id="migration-safari-password-import-post-sequoia-step4"></li>
+            </ol>
+            <moz-button-group class="buttons" part="buttons">
+              <button class="manual-password-import-skip" data-l10n-id="migration-manual-password-import-cancel-button"></button>
               <button class="manual-password-import-select primary" data-l10n-id="migration-manual-password-import-select-button"></button>
             </moz-button-group>
           </div>
@@ -383,6 +398,14 @@ export class MigrationWizard extends HTMLElement {
     this.#supportTextLinks.forEach(link =>
       link.addEventListener("click", this)
     );
+
+    // We put the click event listener on the instructions list rather than
+    // directly on the launch-macos-passwords-app node, since Fluent will
+    // replace that node after this constructor has run.
+    this.#safariPasswordImportInstructions = shadow.querySelector(
+      "#migration-safari-password-import-instructions"
+    );
+    this.#safariPasswordImportInstructions.addEventListener("click", this);
 
     this.#shadowRoot = shadow;
   }
@@ -1483,6 +1506,12 @@ export class MigrationWizard extends HTMLElement {
           detail: {
             allowOnlyFileMigrators: true,
           },
+        })
+      );
+    } else if (event.target.id == "launch-macos-passwords-app") {
+      this.dispatchEvent(
+        new CustomEvent("MigrationWizard:LaunchMacOSPasswordsApp", {
+          bubbles: true,
         })
       );
     } else if (event.target.classList.contains("manual-password-import-skip")) {

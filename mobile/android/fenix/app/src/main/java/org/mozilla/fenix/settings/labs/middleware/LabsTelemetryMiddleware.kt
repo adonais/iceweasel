@@ -27,7 +27,24 @@ class LabsTelemetryMiddleware : Middleware<LabsState, LabsAction> {
                 if (action.items.isEmpty()) {
                     FirefoxLabs.emptyStateShown.record()
                 }
+                recordInitialLabsFetch(action)
             }
+            is LabsAction.FetchFailed -> FirefoxLabs.fetchFailed.record()
+            is LabsAction.ToggleCompleted -> FirefoxLabs.toggleButtonPressed.record(
+                FirefoxLabs.ToggleButtonPressedExtra(
+                    slugId = action.slug,
+                    enabled = action.enabled,
+                    status = action.status,
+                ),
+            )
+            is LabsAction.RestoreDefaultsCompleted -> FirefoxLabs.restoreDefaultsDialog.record(
+                FirefoxLabs.RestoreDefaultsDialogExtra(
+                    slugIds = action.itemsChanged.joinToString(","),
+                    count = action.itemsChanged.size,
+                    didUserConfirm = true,
+                    succeeded = action.succeeded,
+                ),
+            )
             is LabsAction.ToggleLabsItem -> {
                 if (store.state.dialogState is DialogState.ToggleLabsItem) {
                     FirefoxLabs.toggledDialog.record(
@@ -37,22 +54,6 @@ class LabsTelemetryMiddleware : Middleware<LabsState, LabsAction> {
                         ),
                     )
                 }
-            }
-            is LabsAction.RestoreDefaults -> {
-                FirefoxLabs.restoreDefaultsDialog.record(
-                    FirefoxLabs.RestoreDefaultsDialogExtra(
-                        itemsChangedCount = store.state.labsItems.count { it.enrolled },
-                        didUserConfirm = true,
-                    ),
-                )
-            }
-            is LabsAction.ShowToggleLabsItemDialog -> {
-                FirefoxLabs.toggleButtonPressed.record(
-                    FirefoxLabs.ToggleButtonPressedExtra(
-                        slugId = action.item.slug,
-                        enabled = !action.item.enrolled,
-                    ),
-                )
             }
             is LabsAction.ShowRestoreDefaultsDialog -> {
                 FirefoxLabs.restoreDefaultsButtonPressed.record()
@@ -68,11 +69,14 @@ class LabsTelemetryMiddleware : Middleware<LabsState, LabsAction> {
                             ),
                         )
                     }
+                    // User canceled dialog
                     is DialogState.RestoreDefaults -> {
                         FirefoxLabs.restoreDefaultsDialog.record(
                             FirefoxLabs.RestoreDefaultsDialogExtra(
-                                itemsChangedCount = 0,
                                 didUserConfirm = false,
+                                slugIds = "",
+                                count = 0,
+                                succeeded = false,
                             ),
                         )
                     }
@@ -90,5 +94,14 @@ class LabsTelemetryMiddleware : Middleware<LabsState, LabsAction> {
         }
 
         next(action)
+    }
+
+    private fun recordInitialLabsFetch(action: LabsAction.UpdateLabsItems) {
+        FirefoxLabs.initialLabsFetch.record(
+            FirefoxLabs.InitialLabsFetchExtra(
+                slugIds = action.items.joinToString(",") { it.slug },
+                count = action.items.size,
+            ),
+        )
     }
 }

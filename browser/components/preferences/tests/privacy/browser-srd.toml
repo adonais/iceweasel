@@ -45,4 +45,6 @@ skip-if = [
 
 ["browser_sanitizeOnShutdown_prefLocked.js"]
 
+["browser_shutdownClearingExceptions.js"]
+
 ["browser_warning_permanent_private_browsing_srd.js"]

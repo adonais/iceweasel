@@ -6,6 +6,12 @@ name: raptor
 manifest: testing/raptor/raptor/raptor.toml
 static-only: False
 metrics:
+    "Seek Latency":
+        aliases:
+            - seekedWarmLatency
+            - seekedColdLatency
+        description: >
+            Time (in ms) from issuing a buffered currentTime seek to the seeked event, measured with the video decoder warm (kept playing) and cold (released while paused and recreated per seek).
     "cpu Time":
         aliases:
             - cpuTime
@@ -243,6 +249,9 @@ suites:
             addkBLN: "Use add API to send a couple of large Blobs to IndexedDB independently"
             constant-regression: "Generates a constant value that can be changed to induce a regression."
             getkeyrng: "Measures the speed of key-range based reads of IndexedDB"
+            idbCurNext: "Measures IDBIndex cursor iteration via continue() over many rows sharing an index value"
+            idbCurPKey: "Measures IDBIndex cursor iteration via continuePrimaryKey() over many rows sharing an index value"
+            idbCurPrev: "Measures IDBIndex cursor iteration via continue() in the prev direction over many rows sharing an index value"
             dns-multi: "Tests multi-domain DNS lookup and pageload performance via native DNS."
             dns-native: "Tests DNS lookup time via native DNS."
             trr-cira: "Tests DNS lookup time on a CIRA TRR server."
@@ -254,6 +263,11 @@ suites:
             trr-w-clou: "Tests DNS lookup time on a Cloudflare TRR server, with the TRR connection warmed up."
             trr-w-comc: "Tests DNS lookup time on a Comcast TRR server, with the TRR connection warmed up."
             trr-w-next: "Tests DNS lookup time on a NextDNS TRR server, with the TRR connection warmed up."
+            baseline: "Cross-browser baseline: measures connection time and protocol to an HTTP/3 site (cloudflare.com). Used on Chrome, where the Firefox-only Happy Eyeballs v3 and DoH preferences do not apply."
+            he3off-dns: "Measures connection time and protocol to an HTTP/3 site (cloudflare.com) with Happy Eyeballs v3 disabled, using native DNS."
+            he3off-doh: "Measures connection time and protocol to an HTTP/3 site (cloudflare.com) with Happy Eyeballs v3 disabled, using DoH (TRR mode 2, CIRA)."
+            he3on-dns: "Measures connection time and protocol to an HTTP/3 site (cloudflare.com) with Happy Eyeballs v3 enabled, using native DNS."
+            he3on-doh: "Measures connection time and protocol to an HTTP/3 site (cloudflare.com) with Happy Eyeballs v3 enabled, using DoH (TRR mode 2, CIRA)."
             upload: "Measures HTTP/2 file upload throughput with a remote server"
             upload-h3: "Measures HTTP/3 file upload throughput with a remote server"
             h2-upload: "Measures HTTP/2 file upload throughput with a local server"
@@ -263,7 +277,11 @@ suites:
             throttled: "Pageload test using a throttled network environment"
             sample-python-support: "A sample test that uses a python support file to modify the test command."
             connect: "Verifies that connection time on a pageload is zero when a speculative connection has first been made"
-            prefetch: "Speculation Rules prefetch test: clicks a link on a landing page whose inline speculationrules script (moderate eagerness) prefetches the target during hover, so a prefetch-capable browser serves the navigation from the prefetch cache."
+            media-seek: "Measures buffered video seek latency (time from a currentTime seek to the seeked event) with the decoder warm and cold."
+            prefetch-immediate: "Speculation Rules prefetch test (immediate eagerness): the inline speculationrules script prefetches the target as soon as it is parsed, then the link is clicked so a prefetch-capable browser serves the navigation from the prefetch cache."
+            prefetch-eager: "Speculation Rules prefetch test (eager eagerness): the inline speculationrules script prefetches the target on the slightest hover, then the link is clicked so a prefetch-capable browser serves the navigation from the prefetch cache."
+            prefetch-moderate: "Speculation Rules prefetch test (moderate eagerness): the inline speculationrules script prefetches the target after ~200 ms of sustained hover, then the link is clicked so a prefetch-capable browser serves the navigation from the prefetch cache."
+            prefetch-conservative: "Speculation Rules prefetch test (conservative eagerness): the inline speculationrules script prefetches the target on pointerdown, which is held so the prefetch can complete before release navigates, letting a prefetch-capable browser serve the navigation from the prefetch cache."
             tp6-bench: >
                 A pageload benchmark test that quickly runs through a selection of the
                 pages available to produce a single overall metric for fcp, lcp, and
@@ -308,6 +326,16 @@ suites:
             reddit-billgates-ama: "Navigates from the Bill Gates AMA to the Reddit members section."
             reddit-billgates-post-1: "Navigates the `thisisbillgates` user starting at the main user page, then to the posts, comments, hot, and top sections."
             reddit-billgates-post-2: "Navigates the `thisisbillgates` user starting at the main user page, then to the posts, comments, hot, and top sections."
+    nav-bench:
+        description: >
+            A composite benchmark that measures page loading and sub-navigation performance across
+            a set of representative sites. Not all sites perform sub-navigation; some are measured
+            for loading only. Produces a single score (higher is better) derived from the geomean
+            of SpeedIndex across all sites.
+        tests:
+            nav-bench: >
+                Runs the nav-bench composite across Amazon, BBC, DuckDuckGo, Reddit, and Wikipedia
+                in a single combined session.
     unittests:
         description: "These tests aren't used in standard testing, they are only used in the Raptor unit tests (they are similar to raptor-tp6 tests)."
         tests:

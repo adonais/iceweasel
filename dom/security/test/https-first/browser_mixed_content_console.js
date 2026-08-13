@@ -26,7 +26,7 @@ add_task(async function () {
   Services.console.registerListener(on_console_message);
   BrowserTestUtils.startLoadingURIString(gBrowser.selectedBrowser, kTestURI);
 
-  await BrowserTestUtils.waitForCondition(() => threeMessagesArrived === 3);
+  await TestUtils.waitForCondition(() => threeMessagesArrived === 3);
 
   Services.console.unregisterListener(on_console_message);
 });

@@ -3,17 +3,16 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "AccAttributes.h"
+#include "Relation.h"
+#include "RootAccessible.h"
 #include "nsAccUtils.h"
+#include "nsAccessibleRelation.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIAccessibleRelation.h"
 #include "nsIAccessibleRole.h"
-#include "nsAccessibleRelation.h"
-#include "Relation.h"
-#include "RootAccessible.h"
-#include "xpcAccessibleDocument.h"
-
 #include "nsIMutableArray.h"
 #include "nsPersistentProperties.h"
+#include "xpcAccessibleDocument.h"
 
 #ifdef MOZ_WIDGET_COCOA
 #  include "xpcAccessibleMacInterface.h"

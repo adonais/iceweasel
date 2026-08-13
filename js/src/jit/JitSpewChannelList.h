@@ -37,6 +37,7 @@
   _(UnrollDetails, "Wasm loop unrolling and peeling -- details")             \
   _(StubFolding, "CacheIR stub folding")                                     \
   _(StubFoldingDetails, "Spewing of stub content during folding")            \
+  _(CanonicalizeNaN, "NaN canonicalization")                                 \
                                                                              \
   /* BASELINE COMPILER SPEW */                                               \
   _(BaselineAbort, "Baseline compiler abort messages")                       \
@@ -95,6 +96,7 @@
   _("gcbarriers", RedundantGCBarriers)        \
   _("loadkeys", MarkLoadsUsedAsPropertyKeys)  \
   _("stubfolding", StubFolding)               \
+  _("canonicalize-nan", CanonicalizeNaN)      \
   _("profiling", Profiling)                   \
   _("dump-mir-expr", MIRExpressions)          \
   _("unroll", Unroll)                         \

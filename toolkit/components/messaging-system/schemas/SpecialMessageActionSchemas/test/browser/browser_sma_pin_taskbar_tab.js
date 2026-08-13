@@ -8,9 +8,7 @@ const { TaskbarTabs } = ChromeUtils.importESModule(
 );
 
 add_task(async function test_PIN_TASKBAR_TAB_success() {
-  const stub = sinon
-    .stub(TaskbarTabs, "findOrCreateTaskbarTab")
-    .resolves({ created: true });
+  const stub = sinon.stub(TaskbarTabs, "findOrCreateTaskbarTab").resolves();
 
   const action = {
     type: "PIN_TASKBAR_TAB",
@@ -28,32 +26,11 @@ add_task(async function test_PIN_TASKBAR_TAB_success() {
     1,
     "findOrCreateTaskbarTab called once for a fresh pin"
   );
-  Assert.equal(result, true, "returns true when the tab is newly created");
-
-  stub.restore();
-});
-
-add_task(async function test_PIN_TASKBAR_TAB_already_pinned() {
-  const stub = sinon
-    .stub(TaskbarTabs, "findOrCreateTaskbarTab")
-    .resolves({ created: false });
-
-  const action = {
-    type: "PIN_TASKBAR_TAB",
-    data: {
-      url: EXAMPLE_URL,
-      name: "Example",
-      iconUrl: "https://example.com/icon.png",
-    },
-  };
-
-  const result = await SMATestUtils.executeAndValidateAction(action);
-
-  Assert.strictEqual(
-    result,
-    null,
-    "returns null when the Taskbar Tab already exists and is pinned"
+  Assert.ok(
+    stub.firstCall.args[2]?.ensurePinned,
+    "requested to pin even if it already exists"
   );
+  Assert.equal(result, true, "returns true when the tab is newly created");
 
   stub.restore();
 });

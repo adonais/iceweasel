@@ -57,17 +57,6 @@ function testWithoutAwait() {
   const dbg = new Debugger(g);
   g.eval(declCode);
 
-  let onPromiseSettledCount = 0;
-  dbg.onPromiseSettled = function(promise) {
-    onPromiseSettledCount++;
-    // No promise should be rejected.
-    assertEq(promise.promiseState, "fulfilled");
-
-    // Async function's promise should have expected value.
-    if (onPromiseSettledCount == 1) {
-      assertEq(promise.promiseValue, "expected");
-    }
-  };
 
   let hitBreakpoint = false;
   dbg.onEnterFrame = function(frame) {
@@ -113,7 +102,6 @@ function testWithoutAwait() {
   drainJobQueue();
 
   assertEq(g.fulfilledValue, "expected");
-  assertEq(onPromiseSettledCount >= 1, true);
 }
 
 function testWithAwait() {
@@ -142,18 +130,6 @@ function testWithAwait() {
   const dbg = new Debugger(g);
   g.eval(declCode);
 
-  let onPromiseSettledCount = 0;
-  dbg.onPromiseSettled = function(promise) {
-    onPromiseSettledCount++;
-
-    // No promise should be rejected.
-    assertEq(promise.promiseState, "fulfilled");
-
-    // Async function's promise should have expected value.
-    if (onPromiseSettledCount == 2) {
-      assertEq(promise.promiseValue, "expected");
-    }
-  };
 
   let hitBreakpoint = false;
   dbg.onEnterFrame = function(frame) {
@@ -221,8 +197,7 @@ function testWithAwait() {
   drainJobQueue();
 
   assertEq(g.fulfilledValue2, "expected");
-  assertEq(g.rejected, false);
-  assertEq(onPromiseSettledCount >= 3, true);
+  assertEq(g.rejected, false)
 }
 
 testWithoutAwait();

@@ -48,6 +48,7 @@ import mozilla.components.ui.icons.R as iconsR
  * @param icon The survey icon, this will represent the feature the survey is for.
  * @param backgroundColor The view background color.
  * @param selectedAnswer The current selected answer. Will be null until user selects an option.
+ * @param maxLabelLines The maximum number of lines allowed for each answer text layout to prevent truncation.
  * @param onSelectionChange An event that updates the [selectedAnswer].
  */
 @Composable
@@ -57,6 +58,7 @@ fun MicrosurveyContent(
     @DrawableRes icon: Int = iconsR.drawable.mozac_ic_print_24,
     backgroundColor: Color = MaterialTheme.colorScheme.surfaceBright,
     selectedAnswer: String? = null,
+    maxLabelLines: Int = 2,
     onSelectionChange: (String) -> Unit,
 ) {
     Card(
@@ -82,6 +84,7 @@ fun MicrosurveyContent(
                     RadioButtonListItem(
                         label = it,
                         selected = selectedAnswer == it,
+                        maxLabelLines = maxLabelLines,
                         onClick = {
                             onSelectionChange.invoke(it)
                         },

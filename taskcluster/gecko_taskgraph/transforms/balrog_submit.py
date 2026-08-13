@@ -5,13 +5,13 @@
 Transform the per-locale balrog task into an actual task description.
 """
 
+from mozilla_taskgraph.util.attributes import copy_attributes_from_dependent_job
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.dependencies import get_primary_dependency
 from taskgraph.util.schema import Schema
 from taskgraph.util.treeherder import replace_group
 
 from gecko_taskgraph.transforms.task import TaskDescriptionSchema
-from gecko_taskgraph.util.attributes import copy_attributes_from_dependent_job
 
 
 class BalrogDescriptionSchema(Schema, kw_only=True):

@@ -3,11 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 plugins {
+    id 'com.android.library'
     alias(libs.plugins.dependency.analysis)
 }
-
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
 
 android {
     buildFeatures {
@@ -24,6 +22,9 @@ dependencies {
     implementation libs.kotlinx.coroutines
     implementation libs.google.material
     implementation project(':components:ui-widgets')
+
+    testImplementation libs.androidx.test.junit
+    testImplementation libs.kotlin.test
 }
 
 apply from: '../../../common-config.gradle'

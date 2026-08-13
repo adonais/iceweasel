@@ -252,18 +252,16 @@ this.addonsSearchDetection = class extends ExtensionAPI {
               }
             };
 
-            const ensureRegisterChannel = data => {
+            const ensureRegisterChannel = () => {
               // onRedirected depends on ChannelWrapper.getRegisteredChannel,
               // which in turn depends on registerTraceableChannel to have been
-              // called. When a blocking webRequest listener is present, the
-              // parent/ext-webRequest.js implementation already calls that.
+              // called, which happens when "blocking" is used with addListener.
               //
               // A downside to a blocking webRequest listener is that it delays
               // the network request until a roundtrip to the listener in the
               // extension process has happened. Since we don't need to handle
-              // the onBeforeRequest event, avoid the overhead by handling the
-              // event and registration here, in the parent process.
-              data.registerTraceableChannel(extension.policy, remoteTab);
+              // the onBeforeRequest event, we avoid overhead by registering a
+              // no-op listener here in the parent process.
             };
 
             const parsedFilter = {
@@ -274,7 +272,6 @@ this.addonsSearchDetection = class extends ExtensionAPI {
             WebRequest.onBeforeRequest.addListener(
               ensureRegisterChannel,
               parsedFilter,
-              // blocking is needed to unlock data.registerTraceableChannel.
               ["blocking"],
               {
                 addonId: extension.id,

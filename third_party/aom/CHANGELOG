@@ -1,3 +1,14 @@
+2026-05-22 v3.14.1
+  This release is ABI compatible with the last release. See
+  https://aomedia.googlesource.com/aom/+log/v3.14.0..v3.14.1 for all the
+  commits in this release.
+
+  - Bug Fixes
+    * b:513603812: NULL Pointer Dereference in validate_img
+      (av1_cx_iface.c) with 10-bit monochrome input
+    * oss-fuzz:514006304: Increase ctx->cx_data_sz to 2.5x uncomp frame
+      size
+
 2026-05-12 v3.14.0
   This release is ABI compatible with the last release.
 

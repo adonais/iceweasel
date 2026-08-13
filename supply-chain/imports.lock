@@ -261,15 +261,15 @@ user-login = "jrmuizel"
 user-name = "Jeff Muizelaar"
 
 [[publisher.glean]]
-version = "67.3.2"
-when = "2026-05-15"
+version = "68.0.1"
+when = "2026-07-07"
 user-id = 48
 user-login = "badboy"
 user-name = "Jan-Erik Rediger"
 
 [[publisher.glean-core]]
-version = "67.3.2"
-when = "2026-05-15"
+version = "68.0.1"
+when = "2026-07-07"
 user-id = 48
 user-login = "badboy"
 user-name = "Jan-Erik Rediger"
@@ -379,8 +379,8 @@ user-login = "alexcrichton"
 user-name = "Alex Crichton"
 
 [[publisher.libc]]
-version = "0.2.183"
-when = "2026-03-08"
+version = "0.2.186"
+when = "2026-04-23"
 user-id = 55123
 user-login = "rust-lang-owner"
 
@@ -3709,6 +3709,18 @@ no unsafe code.
 """
 aggregated-from = "https://raw.githubusercontent.com/mozilla/cargo-vet/main/supply-chain/audits.toml"
 
+[[audits.mozilla.audits.fallible-iterator]]
+who = "Jan-Erik Rediger <jrediger@mozilla.com>"
+criteria = "safe-to-deploy"
+version = "0.2.0"
+aggregated-from = "https://raw.githubusercontent.com/mozilla/glean/main/supply-chain/audits.toml"
+
+[[audits.mozilla.audits.fallible-streaming-iterator]]
+who = "Jan-Erik Rediger <jrediger@mozilla.com>"
+criteria = "safe-to-deploy"
+version = "0.1.9"
+aggregated-from = "https://raw.githubusercontent.com/mozilla/glean/main/supply-chain/audits.toml"
+
 [[audits.mozilla.audits.lazy_static]]
 who = "Nika Layzell <nika@thelayzells.com>"
 criteria = "safe-to-deploy"
@@ -3828,4 +3840,31 @@ aggregated-from = "https://raw.githubusercontent.com/mozilla/glean/main/supply-c
 who = "Lars Eggert <lars@eggert.org>"
 criteria = "safe-to-deploy"
 delta = "0.1.2 -> 0.1.4"
+aggregated-from = "https://raw.githubusercontent.com/mozilla/glean/main/supply-chain/audits.toml"
+
+[[audits.mozilla.audits.xshell]]
+who = "Jan-Erik Rediger <jrediger@mozilla.com>"
+criteria = "safe-to-deploy"
+version = "0.2.7"
+aggregated-from = "https://raw.githubusercontent.com/mozilla/glean/main/supply-chain/audits.toml"
+
+[[audits.mozilla.audits.xshell-macros]]
+who = "Jan-Erik Rediger <jrediger@mozilla.com>"
+criteria = "safe-to-deploy"
+version = "0.2.7"
+notes = "Straight-forward token stream parsing, no unsafe code"
+aggregated-from = "https://raw.githubusercontent.com/mozilla/glean/main/supply-chain/audits.toml"
+
+[[audits.mozilla.audits.xshell-venv]]
+who = "Jan-Erik Rediger <jrediger@mozilla.com>"
+criteria = "safe-to-deploy"
+version = "1.3.0"
+notes = "Maintained by me. I have written or reviewed all of the code."
+aggregated-from = "https://raw.githubusercontent.com/mozilla/glean/main/supply-chain/audits.toml"
+
+[[audits.mozilla.audits.xshell-venv]]
+who = "Jan-Erik Rediger <jrediger@mozilla.com>"
+criteria = "safe-to-deploy"
+delta = "1.3.0 -> 1.4.0"
+notes = "Maintained by me. I have written or reviewed all of the code."
 aggregated-from = "https://raw.githubusercontent.com/mozilla/glean/main/supply-chain/audits.toml"

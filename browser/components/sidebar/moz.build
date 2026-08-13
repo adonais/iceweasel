@@ -13,6 +13,7 @@ BROWSER_CHROME_MANIFESTS += [
 ]
 
 MOZ_SRC_FILES += [
+    "SidebarCollapsedWindows.sys.mjs",
     "SidebarManager.sys.mjs",
     "SidebarState.sys.mjs",
     "SidebarTreeView.sys.mjs",

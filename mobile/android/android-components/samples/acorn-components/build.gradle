@@ -3,12 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 plugins {
+    id 'com.android.application'
     alias(libs.plugins.dependency.analysis)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 }
 
-apply plugin: 'com.android.application'
 
 android {
     compileSdk { version = release(config.compileSdkMajorVersion) { minorApiLevel = config.compileSdkMinorVersion } }
@@ -39,16 +38,16 @@ android {
 
 dependencies {
     implementation project(':components:compose-base')
-    implementation project(':components:ui-icons')
     implementation project(':components:ui-colors')
+    implementation project(':components:ui-icons')
 
     implementation libs.androidx.activity
     implementation libs.androidx.appcompat
-    implementation libs.androidx.core.ktx
     implementation platform(libs.androidx.compose.bom)
     implementation libs.androidx.compose.foundation
     implementation libs.androidx.compose.material3
     implementation libs.androidx.compose.ui
     implementation libs.androidx.compose.ui.tooling
+    implementation libs.androidx.core
     implementation libs.androidx.navigation.compose
 }

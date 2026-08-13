@@ -152,7 +152,7 @@ add_task(async function test_website_confirmation_renders() {
       );
 
       // Verify it's in the correct location
-      const parent = confirmation.parentElement;
+      const parent = confirmation.parentElement.parentElement;
       Assert.ok(
         parent?.classList.contains("chat-bubble-assistant"),
         "ai-website-confirmation should be inside assistant message bubble"
@@ -189,6 +189,7 @@ add_task(async function test_action_result_renders_for_closed_tabs() {
         uiType: "ai-action-result",
         properties: {
           confirmedData: {
+            actionType: "close_tabs",
             selectedTabs: [
               {
                 linkedPanel: "panel-1",
@@ -223,7 +224,7 @@ add_task(async function test_action_result_renders_for_closed_tabs() {
       Assert.ok(actionResult, "ai-action-result component should be rendered");
 
       // Verify location
-      const parent = actionResult.parentElement;
+      const parent = actionResult.parentElement.parentElement;
       Assert.ok(
         parent?.classList.contains("chat-bubble-assistant"),
         "ai-action-result should be inside assistant message bubble"
@@ -260,6 +261,7 @@ add_task(async function test_action_result_renders_for_restored_tabs() {
         uiType: "ai-action-result",
         properties: {
           confirmedData: {
+            actionType: "close_tabs",
             wasRestored: true,
             restoredCount: 2,
             originalClosedTabs: [
@@ -296,10 +298,220 @@ add_task(async function test_action_result_renders_for_restored_tabs() {
       );
 
       // Verify it's in the assistant bubble
-      const parent = actionResult.parentElement;
+      const parent = actionResult.parentElement.parentElement;
       Assert.ok(
         parent?.classList.contains("chat-bubble-assistant"),
         "ai-action-result should be inside assistant message bubble"
+      );
+    });
+  } finally {
+    await BrowserTestUtils.closeWindow(win);
+    restoreSignIn();
+    await restore();
+  }
+});
+
+/**
+ * Test that tab group confirmation renders correctly
+ */
+add_task(async function test_tab_group_confirmation_renders() {
+  const restoreSignIn = skipSignIn();
+  const { restore } = await stubEngineNetworkBoundaries({
+    serverOptions: { streamChunks: ["Please confirm which tabs to group."] },
+  });
+  const win = await openAIWindow();
+
+  try {
+    const browser = win.gBrowser.selectedBrowser;
+    const aichatBrowser = await getAichatBrowser(browser);
+
+    // Set up conversation with tab group confirmation UI
+    await setupConversationWithToolUI(aichatBrowser, {
+      userMessage: "Group these tabs",
+      assistantMessage: "Please confirm which tabs to group.",
+      messageId: "msg-group",
+      toolUIData: {
+        toolCallId: "tool-group",
+        uiType: "tab-group-confirmation",
+        properties: {
+          tabs: [
+            {
+              linkedPanel: "panel-1",
+              url: "https://example.com",
+              title: "Example Site",
+              iconSrc: "chrome://branding/content/icon16.png",
+              checked: true,
+            },
+            {
+              linkedPanel: "panel-2",
+              url: "https://mozilla.org",
+              title: "Mozilla",
+              iconSrc: "chrome://branding/content/icon16.png",
+              checked: true,
+            },
+          ],
+          tabGroupLabel: "Research",
+        },
+      },
+    });
+
+    // Verify the confirmation UI renders
+    await SpecialPowers.spawn(aichatBrowser, [], async () => {
+      const chatContent = content.document.querySelector("ai-chat-content");
+
+      await ContentTaskUtils.waitForCondition(
+        () => chatContent.shadowRoot.querySelector("ai-website-confirmation"),
+        "Wait for ai-website-confirmation to render for tab group"
+      );
+
+      const confirmation = chatContent.shadowRoot.querySelector(
+        "ai-website-confirmation"
+      );
+      Assert.ok(
+        confirmation,
+        "ai-website-confirmation should render for tab groups"
+      );
+
+      // The component is rendered by ai-chat-content based on the toolUIData
+      // We verify it exists and is in the right place
+      const parent = confirmation.parentElement.parentElement;
+      Assert.ok(
+        parent?.classList.contains("chat-bubble-assistant"),
+        "Confirmation should be inside assistant message bubble"
+      );
+    });
+  } finally {
+    await BrowserTestUtils.closeWindow(win);
+    restoreSignIn();
+    await restore();
+  }
+});
+
+/**
+ * Test that ai-action-result renders for grouped tabs
+ */
+add_task(async function test_action_result_renders_for_grouped_tabs() {
+  const restoreSignIn = skipSignIn();
+  const { restore } = await stubEngineNetworkBoundaries({
+    serverOptions: { streamChunks: ["I've grouped those tabs for you."] },
+  });
+  const win = await openAIWindow();
+
+  try {
+    const browser = win.gBrowser.selectedBrowser;
+    const aichatBrowser = await getAichatBrowser(browser);
+
+    // Set up conversation with action result for grouped tabs
+    await setupConversationWithToolUI(aichatBrowser, {
+      userMessage: "Group the research tabs",
+      assistantMessage: "I've grouped those tabs for you.",
+      messageId: "msg-grouped",
+      toolUIData: {
+        toolCallId: "tool-grouped",
+        uiType: "ai-action-result",
+        properties: {
+          confirmedData: {
+            actionType: "group_tabs",
+            selectedTabs: [
+              {
+                url: "https://example.com",
+                title: "Example Site",
+              },
+              {
+                url: "https://mozilla.org",
+                title: "Mozilla",
+              },
+            ],
+            group: {
+              id: "group-123",
+              label: "Research",
+              color: "blue",
+              tabCount: 2,
+            },
+            operationId: "group-123",
+          },
+        },
+      },
+    });
+
+    // Verify the action result renders for grouped tabs
+    await SpecialPowers.spawn(aichatBrowser, [], async () => {
+      const chatContent = content.document.querySelector("ai-chat-content");
+
+      await ContentTaskUtils.waitForCondition(
+        () => chatContent.shadowRoot.querySelector("ai-action-result"),
+        "Wait for ai-action-result to render for grouped tabs"
+      );
+
+      const actionResult =
+        chatContent.shadowRoot.querySelector("ai-action-result");
+      Assert.ok(
+        actionResult,
+        "ai-action-result should render for grouped tabs"
+      );
+    });
+  } finally {
+    await BrowserTestUtils.closeWindow(win);
+    restoreSignIn();
+    await restore();
+  }
+});
+
+/**
+ * Test that ai-action-result renders for ungrouped tabs
+ */
+add_task(async function test_action_result_renders_for_ungrouped_tabs() {
+  const restoreSignIn = skipSignIn();
+  const { restore } = await stubEngineNetworkBoundaries({
+    serverOptions: { streamChunks: ["I've ungrouped those tabs."] },
+  });
+  const win = await openAIWindow();
+
+  try {
+    const browser = win.gBrowser.selectedBrowser;
+    const aichatBrowser = await getAichatBrowser(browser);
+
+    // Set up conversation with ungrouped tabs result
+    await setupConversationWithToolUI(aichatBrowser, {
+      userMessage: "Undo tab group",
+      assistantMessage: "I've ungrouped those tabs.",
+      messageId: "msg-ungrouped",
+      toolUIData: {
+        toolCallId: "tool-ungrouped",
+        uiType: "ai-action-result",
+        properties: {
+          confirmedData: {
+            actionType: "group_tabs",
+            wasRestored: true,
+            originalGroupedTabs: [
+              {
+                url: "https://example.com",
+                title: "Example Site",
+              },
+              {
+                url: "https://mozilla.org",
+                title: "Mozilla",
+              },
+            ],
+          },
+        },
+      },
+    });
+
+    // Verify the ungrouped action result renders
+    await SpecialPowers.spawn(aichatBrowser, [], async () => {
+      const chatContent = content.document.querySelector("ai-chat-content");
+
+      await ContentTaskUtils.waitForCondition(
+        () => chatContent.shadowRoot.querySelector("ai-action-result"),
+        "Wait for ai-action-result for ungrouped tabs"
+      );
+
+      const actionResult =
+        chatContent.shadowRoot.querySelector("ai-action-result");
+      Assert.ok(
+        actionResult,
+        "ai-action-result should render for ungrouped tabs"
       );
     });
   } finally {
@@ -446,6 +658,117 @@ add_task(async function test_confirmation_events_bubble_correctly() {
       content.document.removeEventListener(
         "ai-website-confirmation:submit",
         documentHandler
+      );
+    });
+  } finally {
+    await BrowserTestUtils.closeWindow(win);
+    restoreSignIn();
+    await restore();
+  }
+});
+
+/**
+ * Test that tab group confirmation events include tabGroupLabel
+ */
+add_task(async function test_tab_group_confirmation_event_detail() {
+  const restoreSignIn = skipSignIn();
+  const { restore } = await stubEngineNetworkBoundaries({
+    serverOptions: { streamChunks: ["Please confirm tabs to group."] },
+  });
+  const win = await openAIWindow();
+
+  try {
+    const browser = win.gBrowser.selectedBrowser;
+    const aichatBrowser = await getAichatBrowser(browser);
+
+    // Set up conversation with tab group confirmation
+    await setupConversationWithToolUI(aichatBrowser, {
+      userMessage: "Group tabs",
+      assistantMessage: "Please confirm tabs to group.",
+      messageId: "msg-group-event",
+      toolUIData: {
+        toolCallId: "tool-group-event",
+        uiType: "tab-group-confirmation",
+        properties: {
+          tabs: [
+            {
+              linkedPanel: "panel-1",
+              url: "https://example.com",
+              title: "Example",
+              checked: true,
+            },
+          ],
+          tabGroupLabel: "Work",
+        },
+      },
+    });
+
+    // Test that submit event includes tabGroupLabel
+    await SpecialPowers.spawn(aichatBrowser, [], async () => {
+      const chatContent = content.document.querySelector("ai-chat-content");
+
+      await ContentTaskUtils.waitForCondition(
+        () => chatContent.shadowRoot.querySelector("ai-website-confirmation"),
+        "Wait for confirmation component"
+      );
+
+      const confirmation = chatContent.shadowRoot.querySelector(
+        "ai-website-confirmation"
+      );
+
+      let receivedDetail = null;
+
+      // Listen for the submit event
+      const handler = event => {
+        receivedDetail = event.detail;
+      };
+      chatContent.addEventListener("ai-website-confirmation:submit", handler, {
+        once: true,
+      });
+
+      // Create and dispatch submit event with tabGroupLabel
+      const submitEvent = new content.CustomEvent(
+        "ai-website-confirmation:submit",
+        {
+          bubbles: true,
+          composed: true,
+          detail: {
+            selectedTabs: [
+              {
+                linkedPanel: "panel-1",
+                url: "https://example.com",
+                title: "Example",
+              },
+            ],
+            tabGroupLabel: "Work",
+          },
+        }
+      );
+
+      confirmation.dispatchEvent(submitEvent);
+
+      // Wait for event to process
+      await new Promise(resolve => content.setTimeout(resolve, 0));
+
+      // Verify event detail includes tabGroupLabel
+      Assert.ok(receivedDetail, "Should receive event detail");
+
+      Assert.equal(
+        receivedDetail.tabGroupLabel,
+        "Work",
+        "Event detail should include tabGroupLabel"
+      );
+
+      Assert.equal(
+        receivedDetail.selectedTabs.length,
+        1,
+        "Should have selected tabs"
+      );
+
+      // Cleanup
+      chatContent.removeEventListener(
+        "ai-website-confirmation:submit",
+        handler
       );
     });
   } finally {

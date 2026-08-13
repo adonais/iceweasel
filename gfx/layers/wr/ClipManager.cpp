@@ -6,17 +6,17 @@
 
 #include "DisplayItemClipChain.h"
 #include "FrameMetrics.h"
+#include "UnitTransforms.h"
 #include "mozilla/ScrollContainerFrame.h"
+#include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/layers/StackingContextHelper.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
-#include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/webrender/WebRenderAPI.h"
 #include "nsDisplayList.h"
 #include "nsLayoutUtils.h"
 #include "nsRefreshDriver.h"
 #include "nsStyleStructInlines.h"
-#include "UnitTransforms.h"
 
 static mozilla::LazyLogModule sClipLog("wr.clip");
 #define CLIP_LOG(...) MOZ_LOG(sClipLog, LogLevel::Debug, (__VA_ARGS__))

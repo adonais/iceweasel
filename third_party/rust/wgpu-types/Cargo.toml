@@ -13,8 +13,7 @@
 edition = "2021"
 rust-version = "1.87"
 name = "wgpu-types"
-version = "29.0.0"
-authors = ["gfx-rs developers"]
+version = "30.0.0"
 build = false
 autolib = false
 autobins = false
@@ -49,13 +48,19 @@ fragile-send-sync-non-atomic-wasm = []
 serde = [
     "dep:serde",
     "bitflags/serde",
+    "naga-types/serialize",
+    "naga-types/deserialize",
 ]
 std = [
     "js-sys?/std",
     "web-sys?/std",
+    "naga-types/std",
 ]
 strict_asserts = []
-trace = ["std"]
+trace = [
+    "std",
+    "serde/std",
+]
 web = [
     "dep:js-sys",
     "dep:web-sys",
@@ -83,6 +88,11 @@ optional = true
 [dependencies.log]
 version = "0.4.29"
 
+[dependencies.naga-types]
+version = "30.0.0"
+path = "../naga-types"
+features = []
+
 [dependencies.raw-window-handle]
 version = "0.6.2"
 default-features = false
@@ -103,7 +113,7 @@ version = "1.1"
 version = "0.2"
 
 [dev-dependencies.hashbrown]
-version = "0.16"
+version = "0.17"
 features = [
     "default-hasher",
     "inline-more",
@@ -118,13 +128,13 @@ default-features = false
 [dev-dependencies.serde_json]
 version = "1.0.143"
 
-[target.'cfg(target_arch = "wasm32")'.dependencies.js-sys]
-version = "0.3.85"
+[target.'cfg(target_family = "wasm")'.dependencies.js-sys]
+version = "0.3.100"
 optional = true
 default-features = false
 
-[target.'cfg(target_arch = "wasm32")'.dependencies.web-sys]
-version = "0.3.85"
+[target.'cfg(target_family = "wasm")'.dependencies.web-sys]
+version = "0.3.100"
 features = [
     "ImageBitmap",
     "ImageData",
@@ -141,6 +151,9 @@ default-features = false
 alloc_instead_of_core = "warn"
 std_instead_of_alloc = "warn"
 std_instead_of_core = "warn"
+
+[lints.rust]
+missing_debug_implementations = "warn"
 
 [lints.rust.unexpected_cfgs]
 level = "warn"

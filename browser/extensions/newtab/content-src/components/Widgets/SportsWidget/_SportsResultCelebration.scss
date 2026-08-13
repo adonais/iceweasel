@@ -1,0 +1,285 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+// Flag dimensions and raw mascot/gradient values have no design-system tokens.
+/* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
+
+.sports {
+  --sports-result-flag-width: 86px;
+  --sports-result-flag-height: 60px;
+
+  .sports-result-flag-wrapper {
+    display: inline-block;
+    line-height: 0;
+  }
+
+  .sports-result-flag {
+    inline-size: var(--sports-result-flag-width);
+    block-size: var(--sports-result-flag-height);
+    display: block;
+    border-radius: var(--border-radius-medium);
+    box-shadow: var(--box-shadow-level-2);
+    object-fit: cover;
+  }
+
+  .sports-result-text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-small);
+    align-items: center;
+  }
+
+  .sports-result-name {
+    font-size: var(--font-size-xlarge);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-color);
+    line-height: 1.1;
+    text-align: center;
+  }
+
+  .sports-result-placement {
+    font-size: var(--font-size-root);
+    color: var(--text-color);
+    line-height: 1.2;
+    max-inline-size: 10em;
+  }
+
+  .sports-result-team {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-small);
+    text-align: center;
+  }
+
+  .sports-result-surface {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    inline-size: 100%;
+    block-size: 100%;
+    background: var(--background-color-box);
+    border-radius: var(--border-radius-xlarge);
+    box-shadow: var(--box-shadow-level-2);
+    padding: var(--space-medium);
+  }
+
+  // Full-widget-frame overlay: the fox is pre-composited in the asset, so the
+  // video fills the widget and the asset itself places kit. object-position
+  // keeps it bottom-anchored when scaled down (e.g. the medium widget).
+  .sports-result-mascot {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: contain;
+    object-position: center bottom;
+    z-index: 2;
+    pointer-events: none;
+  }
+}
+
+.sports-result-card {
+  position: relative;
+  flex: 1;
+  display: flex;
+}
+
+// Large champion: the champion+ball asset is centered in its frame, so the
+// full-frame overlay would sit it dead-center over the flag + copy. Override it
+// to a smaller kit pinned in the bottom-inline-end corner. Not cropped:
+// block-size sets the size; inset-inline-end sets how far right.
+.sports.large-widget .sports-result-mascot-champion {
+  inset-block: auto -5%;
+  inset-inline: auto -20%;
+  inline-size: auto;
+  block-size: 75%;
+}
+
+// Medium champion: short, wide widget, so pin the full-frame champion+ball asset
+// smaller in the bottom-inline-end corner (logical insets keep it RTL-safe).
+.sports.medium-widget .sports-result-mascot-champion {
+  inset-block: auto -52.5%;
+  inset-inline: auto -20%;
+  inline-size: auto;
+  block-size: 155%;
+}
+
+// Third place: the full-body kit-default fox dropped below the bottom edge so
+// the widget's overflow:hidden crops it to head + shoulders in the
+// bottom-inline-end corner. block-size sets the kit size; inset-block-end sets
+// the crop line (less negative shows more of him, down toward the body).
+.sports.large-widget .sports-result-mascot-third {
+  inset-block: auto -30%;
+  inset-inline: auto -17.5%;
+  inline-size: auto;
+  block-size: 70%;
+}
+
+// The medium widget is shorter, so the third kit needs a larger block-size to
+// read at a comparable size, and less inline offset to sit further left.
+.sports.medium-widget .sports-result-mascot-third {
+  inset-block: auto -70%;
+  inset-inline: auto -15%;
+  inline-size: auto;
+  block-size: 140%;
+}
+
+.sports-result-card-medium {
+  .sports-result-surface {
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  .sports-result-team {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-medium);
+    text-align: start;
+  }
+}
+
+.sports-result-card-third.sports-result-card-large .sports-result-surface {
+  align-items: center;
+  justify-content: flex-start;
+  /* stylelint-disable-next-line declaration-property-value-disallowed-list */
+  padding-block-start: 32px;
+}
+
+.sports-result-final {
+  inline-size: 100%;
+  margin-block-start: auto;
+
+  .sports-match-row .sports-match-team {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-small);
+  }
+
+  .sports-match-row .sports-match-team:first-child {
+    flex-direction: row-reverse;
+  }
+
+  .sports-match-row .sports-match-upcoming .sports-match-time {
+    font-size: var(--font-size-root);
+  }
+
+  .sports-match-row .sports-match-upcoming .sports-match-date {
+    font-size: var(--font-size-small);
+  }
+}
+
+.sports-result-final-label {
+  margin: 0 0 var(--space-xxsmall);
+  color: var(--text-color-deemphasized);
+  font-size: var(--font-size-root);
+}
+
+.sports-podium {
+  position: relative;
+  flex: 1;
+  display: flex;
+}
+
+.sports .sports-podium-surface {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas:
+    'champion champion'
+    'runner-up third';
+  align-content: space-between;
+  justify-items: center;
+  gap: var(--space-small);
+}
+
+.sports-result-team-podium-champion {
+  grid-area: champion;
+  --sports-result-flag-width: 86px;
+  --sports-result-flag-height: 60px;
+}
+
+.sports-result-team-podium-runner-up,
+.sports-result-team-podium-third {
+  --sports-result-flag-width: 52px;
+  --sports-result-flag-height: 36px;
+}
+
+.sports-result-team-podium-runner-up {
+  grid-area: runner-up;
+  justify-self: start;
+}
+
+.sports-result-team-podium-third {
+  grid-area: third;
+  justify-self: end;
+}
+
+// The podium reuses the full-frame kit-default asset, but here the fox is
+// bottom-centered in the gap between the two lower flags rather than filling the
+// widget, so override the full-frame overlay with a scaled, centered video
+// (RTL-safe centering via auto inline margins). Not cropped: block-size alone
+// sets the size.
+.sports.large-widget .sports-result-mascot-podium {
+  inset-block: auto -35%;
+  inset-inline: 0;
+  margin-inline: auto;
+  inline-size: auto;
+  block-size: 80%;
+}
+
+.sports.is-result-view {
+  overflow: hidden;
+  border: none;
+
+  &:hover,
+  &:has(:focus-visible) {
+    outline: none;
+  }
+
+  --confetti-duration-scale: 1;
+  --confetti-delay-scale: 1.8;
+
+  --firework-start-delay: 2500ms;
+  --widget-celebration-hold-duration: 7600ms;
+
+  padding: calc(var(--space-small) + var(--space-xxsmall));
+  background: radial-gradient(
+    135% 115% at 50% 118%,
+    #592ACB 0%,
+    #834FCA 11%,
+    #AC74C8 22%,
+    #D698C7 33%,
+    #FFBDC5 44%,
+    #CC98AD 58%,
+    #98748F 72%,
+    #654F7C 86%,
+    #312A64 100%
+  );
+
+  > .sports-title-wrapper {
+    position: absolute;
+    inset-block-start: calc(var(--space-small) + var(--space-xxsmall));
+    inset-inline: calc(var(--space-small) + var(--space-xxsmall));
+    margin: 0;
+    z-index: 2;
+  }
+
+  > .sports-body {
+    position: relative;
+    z-index: 1;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+  }
+}
+
+.sports-result-card-champion.sports-result-card-large .sports-result-surface {
+  justify-content: flex-start;
+  /* stylelint-disable-next-line declaration-property-value-disallowed-list */
+  padding-block-start: 52px;
+}

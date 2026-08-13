@@ -109,8 +109,8 @@ add_task(async function manySuggestResults() {
   for (let i = 0; i < UrlbarPrefs.get("maxRichResults"); i++) {
     additionals.push(
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         payload: { url: "http://example.org/" + i },
       })
     );
@@ -444,6 +444,12 @@ add_task(async function globalAction() {
             actionsResults: [
               {
                 providerName: "ActionsProviderContextualSearch",
+                key: "matched-contextual-search",
+                l10nId: "urlbar-result-search-with",
+                l10nArgs: { engine: "Amp" },
+                icon: "chrome://browser/skin/search-engine-placeholder@2x.png",
+                dataset: { providesSearchMode: true },
+                engine: "Amp",
               },
             ],
             query: "",

@@ -6,22 +6,18 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 import { Region } from "resource://gre/modules/Region.sys.mjs";
 import { AddressMetaDataLoader } from "resource://gre/modules/shared/AddressMetaDataLoader.sys.mjs";
 
-const AUTOFILL_ADDRESSES_AVAILABLE_PREF =
-  "extensions.formautofill.addresses.supported";
-// This pref should be refactored after the migration of the old bool pref
-const AUTOFILL_CREDITCARDS_AVAILABLE_PREF =
-  "extensions.formautofill.creditCards.supported";
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  AutofillDataTypes: "resource://gre/modules/shared/AutofillDataTypes.sys.mjs",
+});
+
 const BROWSER_SEARCH_REGION_PREF = "browser.search.region";
-const CREDITCARDS_AUTOFILL_SUPPORTED_COUNTRIES_PREF =
-  "extensions.formautofill.creditCards.supportedCountries";
 const ENABLED_AUTOFILL_ADDRESSES_PREF =
   "extensions.formautofill.addresses.enabled";
 const ENABLED_AUTOFILL_ADDRESSES_CAPTURE_PREF =
   "extensions.formautofill.addresses.capture.enabled";
 const ENABLED_AUTOFILL_ADDRESSES_CAPTURE_REQUIRED_FIELDS_PREF =
   "extensions.formautofill.addresses.capture.requiredFields";
-const ENABLED_AUTOFILL_ADDRESSES_SUPPORTED_COUNTRIES_PREF =
-  "extensions.formautofill.addresses.supportedCountries";
 const ENABLED_AUTOFILL_CREDITCARDS_PREF =
   "extensions.formautofill.creditCards.enabled";
 const AUTOFILL_CREDITCARDS_OS_AUTH_LOCKED_PREF =
@@ -100,96 +96,91 @@ export const FormAutofill = {
   },
 
   /**
-   * Return true if address autofill is available for a specific country.
+   * Return true if the given data type's autofill is available for a specific
+   * country. Unlike `isAutofillTypeAvailable`, which tests the browser's own
+   * region, this tests a caller-supplied country (e.g. a record's country).
+   *
+   * @param {string} typeId
+   * @param {string} country A region code, or null/empty to ignore the region.
+   * @returns {boolean} `true` if the data type's autofill is available there
    */
-  isAutofillAddressesAvailableInCountry(country) {
-    if (FormAutofill._isAutofillAddressesAvailableInExperiment) {
+  isAutofillTypeAvailableInCountry(typeId, country) {
+    const type = lazy.AutofillDataTypes.get(typeId);
+    if (!type) {
+      return false;
+    }
+    if (Services.prefs.getBoolPref(type.experimentPref, false)) {
       return true;
     }
-
-    let available = FormAutofill._isAutofillAddressesAvailable;
+    const available = Services.prefs.getStringPref(type.availablePref, "off");
     if (country && available == "detect") {
-      return FormAutofill._addressAutofillSupportedCountries.includes(
-        country.toUpperCase()
-      );
+      return Services.prefs
+        .getStringPref(type.supportedCountriesPref, "")
+        .split(",")
+        .includes(country.toUpperCase());
     }
     return available == "on";
   },
-  get isAutofillEnabled() {
-    return this.isAutofillAddressesEnabled || this.isAutofillCreditCardsEnabled;
-  },
   /**
-   * Determines if the credit card autofill feature is available to use in the browser.
-   * If the feature is not available, then there are no user facing ways to enable it.
+   * Whether the given data type (by AutofillDataTypes id) is available to use
+   * in this browser. A type is available when its `availablePref` permits the
+   * current region (see `_isSupportedRegion`) or its optional `experimentPref`
+   * forces it on. If the feature is not available, there is no user-facing way
+   * to enable it.
    *
-   * @returns {boolean} `true` if credit card autofill is available
+   * @param {string} typeId
+   * @returns {boolean} `true` if the data type's autofill is available
    */
-  get isAutofillCreditCardsAvailable() {
-    return this._isSupportedRegion(
-      FormAutofill._isAutofillCreditCardsAvailable,
-      FormAutofill._creditCardAutofillSupportedCountries
-    );
-  },
-  /**
-   * Determines if the address autofill feature is available to use in the browser.
-   * If the feature is not available, then there are no user facing ways to enable it.
-   * Two conditions must be met for the autofill feature to be considered available:
-   *   1. Address autofill support is confirmed when:
-   *      - `extensions.formautofill.addresses.supported` is set to `on`.
-   *      - The user is located in a region supported by the feature
-   *        (`extensions.formautofill.creditCards.supportedCountries`).
-   *   2. Address autofill is enabled through a Nimbus experiment:
-   *      - The experiment pref `extensions.formautofill.addresses.experiments.enabled` is set to true.
-   *
-   * @returns {boolean} `true` if address autofill is available
-   */
-  get isAutofillAddressesAvailable() {
+  isAutofillTypeAvailable(typeId) {
+    const type = lazy.AutofillDataTypes.get(typeId);
+    if (!type) {
+      return false;
+    }
     const isUserInSupportedRegion = this._isSupportedRegion(
-      FormAutofill._isAutofillAddressesAvailable,
-      FormAutofill._addressAutofillSupportedCountries
+      Services.prefs.getStringPref(type.availablePref, "off"),
+      Services.prefs.getStringPref(type.supportedCountriesPref, "").split(",")
     );
     return (
       isUserInSupportedRegion ||
-      FormAutofill._isAutofillAddressesAvailableInExperiment
+      Services.prefs.getBoolPref(type.experimentPref, false)
     );
   },
+
   /**
-   * Determines if the user has enabled or disabled credit card autofill.
+   * Whether the user has enabled the given data type (by AutofillDataTypes id).
    *
-   * @returns {boolean} `true` if credit card autofill is enabled
+   * @param {string} typeId
+   * @returns {boolean} `true` if the data type's autofill is enabled
    */
-  get isAutofillCreditCardsEnabled() {
+  isAutofillTypeEnabled(typeId) {
+    const type = lazy.AutofillDataTypes.get(typeId);
     return (
-      this.isAutofillCreditCardsAvailable &&
-      FormAutofill._isAutofillCreditCardsEnabled
+      !!type &&
+      this.isAutofillTypeAvailable(typeId) &&
+      Services.prefs.getBoolPref(type.enabledPref, false)
     );
   },
+
   /**
-   * Determines if credit card autofill is locked by policy.
+   * Whether any autofill data type is available to use in this browser.
    *
-   * @returns {boolean} `true` if credit card autofill is locked
+   * @returns {boolean}
    */
-  get isAutofillCreditCardsLocked() {
-    return Services.prefs.prefIsLocked(ENABLED_AUTOFILL_CREDITCARDS_PREF);
-  },
-  /**
-   * Determines if the user has enabled or disabled address autofill.
-   *
-   * @returns {boolean} `true` if address autofill is enabled
-   */
-  get isAutofillAddressesEnabled() {
-    return (
-      this.isAutofillAddressesAvailable &&
-      FormAutofill._isAutofillAddressesEnabled
+  get isAnyAutofillFeatureAvailable() {
+    return lazy.AutofillDataTypes.all.some(type =>
+      this.isAutofillTypeAvailable(type.id)
     );
   },
+
   /**
-   * Determines if address autofill is locked by policy.
+   * Whether the user has any autofill data type enabled.
    *
-   * @returns {boolean} `true` if address autofill is locked
+   * @returns {boolean}
    */
-  get isAutofillAddressesLocked() {
-    return Services.prefs.prefIsLocked(ENABLED_AUTOFILL_ADDRESSES_PREF);
+  get isAutofillEnabled() {
+    return lazy.AutofillDataTypes.all.some(type =>
+      this.isAutofillTypeEnabled(type.id)
+    );
   },
 
   defineLogGetter(scope, logPrefix) {
@@ -238,48 +229,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 XPCOMUtils.defineLazyPreferenceGetter(
   FormAutofill,
-  "_isAutofillAddressesAvailable",
-  AUTOFILL_ADDRESSES_AVAILABLE_PREF
-);
-XPCOMUtils.defineLazyPreferenceGetter(
-  FormAutofill,
-  "_isAutofillAddressesEnabled",
-  ENABLED_AUTOFILL_ADDRESSES_PREF
-);
-XPCOMUtils.defineLazyPreferenceGetter(
-  FormAutofill,
   "isAutofillAddressesCaptureEnabled",
   ENABLED_AUTOFILL_ADDRESSES_CAPTURE_PREF
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   FormAutofill,
-  "_isAutofillCreditCardsAvailable",
-  AUTOFILL_CREDITCARDS_AVAILABLE_PREF
-);
-XPCOMUtils.defineLazyPreferenceGetter(
-  FormAutofill,
-  "_isAutofillCreditCardsEnabled",
-  ENABLED_AUTOFILL_CREDITCARDS_PREF
-);
-XPCOMUtils.defineLazyPreferenceGetter(
-  FormAutofill,
   "isAutofillCreditCardsHideUI",
   AUTOFILL_CREDITCARDS_HIDE_UI_PREF
-);
-XPCOMUtils.defineLazyPreferenceGetter(
-  FormAutofill,
-  "_addressAutofillSupportedCountries",
-  ENABLED_AUTOFILL_ADDRESSES_SUPPORTED_COUNTRIES_PREF,
-  null,
-  val => val.split(",")
-);
-XPCOMUtils.defineLazyPreferenceGetter(
-  FormAutofill,
-  "_creditCardAutofillSupportedCountries",
-  CREDITCARDS_AUTOFILL_SUPPORTED_COUNTRIES_PREF,
-  null,
-  null,
-  val => val.split(",")
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   FormAutofill,
@@ -318,12 +274,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   FormAutofill,
   "autofillSameOriginWithTop",
   ENABLED_AUTOFILL_SAME_ORIGIN_WITH_TOP
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  FormAutofill,
-  "_isAutofillAddressesAvailableInExperiment",
-  "extensions.formautofill.addresses.experiments.enabled"
 );
 
 XPCOMUtils.defineLazyPreferenceGetter(

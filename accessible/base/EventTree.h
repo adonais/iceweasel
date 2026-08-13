@@ -7,7 +7,6 @@
 
 #include "AccEvent.h"
 #include "LocalAccessible.h"
-
 #include "mozilla/a11y/DocAccessible.h"
 
 namespace mozilla {

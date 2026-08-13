@@ -3,16 +3,16 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ExpandedPrincipal.h"
+
+#include "ExpandedPrincipalJSONHandler.h"
+#include "SubsumedPrincipalJSONHandler.h"
+#include "js/JSON.h"
+#include "mozilla/Base64.h"
+#include "mozilla/JSONWriter.h"
+#include "mozilla/extensions/WebExtensionPolicy.h"
 #include "nsIClassInfoImpl.h"
 #include "nsIObjectInputStream.h"
 #include "nsReadableUtils.h"
-#include "mozilla/Base64.h"
-#include "mozilla/extensions/WebExtensionPolicy.h"
-#include "mozilla/JSONWriter.h"
-
-#include "js/JSON.h"
-#include "ExpandedPrincipalJSONHandler.h"
-#include "SubsumedPrincipalJSONHandler.h"
 
 using namespace mozilla;
 

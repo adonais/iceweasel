@@ -297,9 +297,7 @@ inline bool CanStartTypedArrayIndex(CharT ch) {
 
 [[nodiscard]] inline mozilla::Maybe<uint64_t> ToTypedArrayIndex(jsid id) {
   if (id.isInt()) {
-    int32_t i = id.toInt();
-    MOZ_ASSERT(i >= 0);
-    return mozilla::Some(i);
+    return mozilla::Some(id.toInt());
   }
 
   if (MOZ_UNLIKELY(!id.isString())) {

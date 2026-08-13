@@ -7,8 +7,8 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 const lazy = XPCOMUtils.declareLazy({
   IPPExceptionsManager:
     "moz-src:///toolkit/components/ipprotection/IPPExceptionsManager.sys.mjs",
-  IPProtectionService:
-    "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
+  IPPPrincipalRules:
+    "moz-src:///toolkit/components/ipprotection/IPPExceptionsManager.sys.mjs",
   ProxyService: {
     service: "@mozilla.org/network/protocol-proxy-service;1",
     iid: Ci.nsIProtocolProxyService,
@@ -20,14 +20,7 @@ const failOverTimeout = 10; // seconds
 
 const MODE_PREF = "browser.ipProtection.mode";
 
-const INCLUSION_PREF = "browser.ipProtection.inclusion.match_patterns";
-
 const isXpcshell = Services.env.exists("XPCSHELL_TEST_PROFILE_DIR");
-
-const MATCH_PATTERN_OPTIONS = {
-  ignorePath: true,
-  restrictSchemes: false,
-};
 
 /**
  * The IPP Mode the default behavior of Channels
@@ -58,22 +51,16 @@ const TRACKING_FLAGS =
   Ci.nsIClassifiedChannel.CLASSIFIED_TRACKING_SOCIAL |
   Ci.nsIClassifiedChannel.CLASSIFIED_TRACKING_CONTENT;
 
-const DEFAULT_EXCLUDED_URL_PREFS = [
-  "browser.ipProtection.guardian.endpoint",
-  "captivedetect.canonicalURL",
-];
-
 /**
  * IPPChannelFilter is a class that implements the nsIProtocolProxyChannelFilter
  *
  * While active it will review every request the browser makes.
  * Depending on IPPMode - it will proxy the request unless a rule is attached to the Destination.
  *
- * -> Exclusions can be made by putting the page into excludedPages OR by attaching the IPP-Deny permission to the Principal.
- *    See also IPPExceptionsManager.sys.mjs
- * -> Inclusions can be made by putting pages into the INCLUSION_PREF matchset
- *
- * If a Channel Matches both Exclusion and Inclusion Rule, the Inclusion Rule is taken.
+ * The include/exclude classification of a request's principal is delegated to
+ * IPPExceptionsManager (see IPPExceptionsManager.sys.mjs); shouldProxy only
+ * handles channel-object concerns (system-channel early-out, DoH/TRR bypass)
+ * and the channel -> principal selection.
  *
  */
 export class IPPChannelFilter {
@@ -81,11 +68,9 @@ export class IPPChannelFilter {
    * Creates a new IPPChannelFilter that can connect to a proxy server. After
    * created, the proxy can be immediately activated. It will suspend all the
    * received nsIChannel until the object is fully initialized.
-   *
-   * @param {Array<string>} [excludedPages] - list of page URLs whose *origin* should bypass the proxy
    */
-  static create(excludedPages = []) {
-    return new IPPChannelFilter(excludedPages);
+  static create() {
+    return new IPPChannelFilter();
   }
 
   /**
@@ -218,42 +203,13 @@ export class IPPChannelFilter {
     this.#processPendingChannels();
   }
 
-  /**
-   * @param {Array<string>} [excludedPages]
-   */
-  constructor(excludedPages = []) {
-    // Normalize and store excluded origins (scheme://host[:port])
-    this.#excludedOrigins = new Set();
-    excludedPages.forEach(url => {
-      this.addPageExclusion(url);
-    });
-    this.#inclusionSet = IPPChannelFilter.getInclusionList();
-
-    DEFAULT_EXCLUDED_URL_PREFS.forEach(pref => {
-      const prefValue = Services.prefs.getStringPref(pref, "");
-      if (prefValue) {
-        this.addPageExclusion(prefValue);
-      }
-    });
-
-    lazy.IPProtectionService.authProvider.excludedUrlPrefs.forEach(pref => {
-      const prefValue = Services.prefs.getStringPref(pref, "");
-      if (prefValue) {
-        this.addPageExclusion(prefValue);
-      }
-    });
-
+  constructor() {
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
       "mode",
       MODE_PREF,
       IPPMode.MODE_FULL
     );
-
-    this.#inclusionPrefObserver = () => {
-      this.#inclusionSet = IPPChannelFilter.getInclusionList();
-    };
-    Services.prefs.addObserver(INCLUSION_PREF, this.#inclusionPrefObserver);
   }
 
   /**
@@ -304,13 +260,51 @@ export class IPPChannelFilter {
     ) {
       return false;
     }
-    if (this.shouldInclude(channel)) {
+
+    // DoH traffic must bypass the proxy: in TRR_ONLY mode (Max Protection)
+    // sending DNS-over-HTTPS through the proxy creates a circular resolution
+    // dependency that breaks all DNS.
+    if (
+      channel instanceof Ci.nsIHttpChannelInternal &&
+      channel.isTRRServiceChannel
+    ) {
+      return false;
+    }
+
+    const principal = this.#principalForChannel(channel);
+    const rule = lazy.IPPExceptionsManager.getPrincipalRule(principal);
+    if (rule === lazy.IPPPrincipalRules.INCLUDED) {
       return true;
     }
-    if (this.shouldExclude(channel)) {
+    if (rule === lazy.IPPPrincipalRules.EXCLUDED) {
       return false;
     }
     return this.#matchMode(channel);
+  }
+
+  /**
+   * Selects the principal a proxy decision should be attributed to.
+   *
+   * Prefers a non-system loadingPrincipal, falling back to the channel URI
+   * principal. For downloads, uses the triggeringPrincipal instead so the
+   * exclusion is attributed to the originating page.
+   *
+   * @param {nsIChannel} channel
+   * @returns {nsIPrincipal}
+   */
+  #principalForChannel(channel) {
+    let { loadingPrincipal, triggeringPrincipal } = channel.loadInfo ?? {};
+    if (loadingPrincipal && !loadingPrincipal.isSystemPrincipal) {
+      return loadingPrincipal;
+    }
+    if (
+      channel.loadInfo?.isUserTriggeredSave &&
+      triggeringPrincipal &&
+      !triggeringPrincipal.isSystemPrincipal
+    ) {
+      return triggeringPrincipal;
+    }
+    return Services.scriptSecurityManager.getChannelURIPrincipal(channel);
   }
 
   #matchMode(channel) {
@@ -332,117 +326,6 @@ export class IPPChannelFilter {
   }
 
   /**
-   * Decides whether a channel *should* take the proxy
-   *
-   * @param {nsIChannel} channel
-   * @returns {boolean} - True: The channel *should* take the proxy.
-   */
-  shouldInclude(channel) {
-    try {
-      return this.#inclusionSet.matches(channel.URI);
-    } catch (_) {
-      return false;
-    }
-  }
-
-  /**
-   * Decide whether a channel should bypass the proxy based on origin.
-   *
-   * @param {nsIChannel} channel
-   * @returns {boolean}
-   */
-  shouldExclude(channel) {
-    try {
-      const uri = channel.URI; // nsIURI
-      if (!uri) {
-        return true;
-      }
-
-      if (!["http", "https"].includes(uri.scheme)) {
-        return true;
-      }
-
-      // DoH traffic must bypass the proxy: in TRR_ONLY mode (Max Protection)
-      // sending DNS-over-HTTPS through the proxy creates a circular
-      // resolution dependency that breaks all DNS.
-      if (
-        channel instanceof Ci.nsIHttpChannelInternal &&
-        channel.isTRRServiceChannel
-      ) {
-        return true;
-      }
-
-      // Prefer a non-system loadingPrincipal, falling back to the channel URI
-      // principal. For downloads, use the triggeringPrincipal instead so the
-      // exclusion is attributed to the originating page.
-      let { loadingPrincipal, triggeringPrincipal } = channel.loadInfo ?? {};
-      let principal;
-      if (loadingPrincipal && !loadingPrincipal.isSystemPrincipal) {
-        principal = loadingPrincipal;
-      } else if (
-        channel.loadInfo?.isUserTriggeredSave &&
-        triggeringPrincipal &&
-        !triggeringPrincipal.isSystemPrincipal
-      ) {
-        principal = triggeringPrincipal;
-      } else {
-        principal =
-          Services.scriptSecurityManager.getChannelURIPrincipal(channel);
-      }
-
-      if (IPPChannelFilter.isLocal(principal)) {
-        return true;
-      }
-
-      const origin = uri.prePath; // scheme://host[:port]
-
-      let hasExclusion = lazy.IPPExceptionsManager.hasExclusion(principal);
-
-      if (hasExclusion) {
-        return true;
-      }
-
-      return this.#excludedOrigins.has(origin);
-    } catch (_) {
-      return true;
-    }
-  }
-
-  static getInclusionList() {
-    let raw = Services.prefs.getStringPref(INCLUSION_PREF, "[]");
-    let arr = JSON.parse(raw);
-    if (!Array.isArray(arr)) {
-      throw new TypeError(`${INCLUSION_PREF} does not contain a JSON array`);
-    }
-    let patterns = arr.filter(s => typeof s === "string" && s.length);
-    return new MatchPatternSet(patterns, MATCH_PATTERN_OPTIONS);
-  }
-
-  /**
-   *
-   * @param {nsIPrincipal} principal
-   */
-  static isLocal(principal) {
-    return principal.isLoopbackHost || principal.isLocalIpAddress;
-  }
-
-  /**
-   * Adds a page URL to the exclusion list.
-   *
-   * @param {string} url - The URL to exclude.
-   * @param {Set<string>} [list] - The exclusion list to add the URL to.
-   */
-  addPageExclusion(url, list = this.#excludedOrigins) {
-    try {
-      const uri = Services.io.newURI(url);
-      // prePath is scheme://host[:port]
-      list.add(uri.prePath);
-    } catch (_) {
-      // ignore bad entries
-    }
-  }
-
-  /**
    * Starts the Channel Filter, feeding all following Requests through the proxy.
    */
   start() {
@@ -459,14 +342,6 @@ export class IPPChannelFilter {
   stop() {
     if (!this.#active) {
       return;
-    }
-
-    if (this.#inclusionPrefObserver) {
-      Services.prefs.removeObserver(
-        INCLUSION_PREF,
-        this.#inclusionPrefObserver
-      );
-      this.#inclusionPrefObserver = null;
     }
 
     lazy.ProxyService.unregisterChannelFilter(this);
@@ -593,10 +468,7 @@ export class IPPChannelFilter {
   #abort = new AbortController();
   #observers = [];
   #active = false;
-  #excludedOrigins = new Set();
   #pendingChannels = [];
-  #inclusionSet = new MatchPatternSet([], MATCH_PATTERN_OPTIONS);
-  #inclusionPrefObserver = null;
   #server = null;
   /** @type {import("./GuardianTypes.sys.mjs").ProxyPass | null} */
   #pass = null;

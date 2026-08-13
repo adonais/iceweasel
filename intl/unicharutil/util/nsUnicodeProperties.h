@@ -9,6 +9,7 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Span.h"
+#include "mozilla/Utf16.h"
 #include "nsBidiUtils.h"
 #include "nsUGenCategory.h"
 #include "harfbuzz/hb.h"
@@ -164,7 +165,8 @@ inline EmojiPresentation GetEmojiPresentation(uint32_t aCh) {
 
 // For 16-bit callers who don't care about decoding surrogates first.
 inline EmojiPresentation GetEmojiPresentation(char16_t aCh) {
-  return IS_SURROGATE(aCh) ? TextOnly : GetEmojiPresentation((uint32_t)aCh);
+  return mozilla::IsSurrogate(aCh) ? TextOnly
+                                   : GetEmojiPresentation((uint32_t)aCh);
 }
 
 // Reduced version of GetEmojiPresentation that handles only 8-bit character

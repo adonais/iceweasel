@@ -7,7 +7,7 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  CreditCard: "resource://gre/modules/CreditCard.sys.mjs",
+  FormHistory: "resource://gre/modules/FormHistory.sys.mjs",
   FormHistoryAutoCompleteResult:
     "resource://gre/modules/FormHistoryAutoComplete.sys.mjs",
   FormScenarios: "resource://gre/modules/FormScenarios.sys.mjs",
@@ -101,25 +101,13 @@ export class FormHistoryChild extends JSWindowActorChild {
         continue;
       }
 
-      // Don't save credit card numbers.
-      if (lazy.CreditCard.isValidNumber(value)) {
-        log("skipping saving a credit card number");
-        continue;
-      }
-
       const name = FormHistoryChild.getInputName(input);
       if (!name) {
         continue;
       }
 
-      if (name == "searchbar-history") {
-        log('addEntry for input name "' + name + '" is denied');
-        continue;
-      }
-
-      // Limit stored data to 200 characters.
-      if (name.length > 200 || value.length > 200) {
-        log("skipping input that has a name/value too large");
+      if (!lazy.FormHistory.isAllowedEntry(name, value)) {
+        log("skipping input that is not eligible to be stored");
         continue;
       }
 

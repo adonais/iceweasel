@@ -3,13 +3,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ParentChannelWrapper.h"
-#include "mozilla/net/HttpBaseChannel.h"
+
+#include "mozilla/dom/RemoteType.h"
 #include "mozilla/net/ChannelClassifierUtils.h"
+#include "mozilla/net/HttpBaseChannel.h"
 #include "mozilla/net/RedirectChannelRegistrar.h"
 #include "nsIViewSourceChannel.h"
 #include "nsNetUtil.h"
 #include "nsQueryObject.h"
-#include "mozilla/dom/RemoteType.h"
 
 namespace mozilla {
 namespace net {
@@ -26,8 +27,8 @@ void ParentChannelWrapper::Register(uint64_t aRegistrarId,
     return;
   }
   nsCOMPtr<nsIChannel> dummy;
-  MOZ_ALWAYS_SUCCEEDS(NS_LinkRedirectChannels(
-      aRegistrarId, aContentParentId, this, getter_AddRefs(dummy)));
+  MOZ_ALWAYS_SUCCEEDS(NS_LinkRedirectChannels(aRegistrarId, aContentParentId,
+                                              this, getter_AddRefs(dummy)));
 
 #ifdef DEBUG
   // The channel registered with the RedirectChannelRegistrar will be the inner

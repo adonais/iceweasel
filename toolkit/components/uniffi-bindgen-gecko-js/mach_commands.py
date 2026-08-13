@@ -5,6 +5,7 @@
 import argparse
 import os
 import subprocess
+import sys
 from enum import Enum
 
 from mach.decorators import Command, CommandArgument, SubCommand
@@ -31,6 +32,21 @@ def cargo_args_for_library(source_library):
     raise ValueError(source_library)
 
 
+def cargo_env_and_release_dir(command_context):
+    """Environment and release directory for building the UniFFI cargo packages.
+
+    Build into the objdir (via CARGO_TARGET_DIR) so the `mozbuild` crate's build
+    script -- pulled into the graph through ohttp's `app-svc` feature -- can
+    locate `config.status`, which it looks for among the ancestors of OUT_DIR.
+    A plain `target/` in the source tree has no such ancestor, so the build
+    would otherwise fail with `BUILDCONFIG_RS not defined`. This mirrors how the
+    rest of the build system invokes cargo.
+    """
+    env = dict(os.environ)
+    env["CARGO_TARGET_DIR"] = command_context.topobjdir
+    return env, os.path.join(command_context.topobjdir, "release")
+
+
 def build_gkrust_uniffi_library(command_context, source_library):
     uniffi_root = crate_root(command_context)
     print("Building gkrust-uniffi-components")
@@ -44,10 +60,23 @@ def build_gkrust_uniffi_library(command_context, source_library):
         source_library.value,
     ] + cargo_args_for_library(source_library)
     print(cmdline)
-    subprocess.check_call(cmdline, cwd=uniffi_root)
+    # nss_sys (via logins' keydb) and the mozbuild crate need an NSS library to
+    # link against. Run [app-services-repo]libs/verify-desktop-environment.sh
+    # to configure it (see bug 1981747 / D260481), or set MOZ_TOPOBJDIR to a
+    # populated objdir. Warn here so a missing environment is easier to diagnose
+    # than a raw link failure.
+    if "NSS_DIR" not in os.environ and "MOZ_TOPOBJDIR" not in os.environ:
+        print(
+            "warning: NSS build environment not detected; building the UniFFI "
+            + "library may fail to link against NSS. Run "
+            + "[app-services-repo]libs/verify-desktop-environment.sh to "
+            + "configure it.",
+            file=sys.stderr,
+        )
+    env, out_dir = cargo_env_and_release_dir(command_context)
+    subprocess.check_call(cmdline, cwd=uniffi_root, env=env)
     print()
 
-    out_dir = os.path.join(command_context.topsrcdir, "target", "release")
     basename = format(source_library.value.replace("-", "_"))
     filename_candidates = [
         # Linux / Darwin
@@ -77,11 +106,10 @@ def build_uniffi_bindgen_gecko_js(command_context):
         "--package",
         "uniffi-bindgen-gecko-js",
     ]
-    subprocess.check_call(cmdline, cwd=uniffi_root)
+    env, release_dir = cargo_env_and_release_dir(command_context)
+    subprocess.check_call(cmdline, cwd=uniffi_root, env=env)
     print()
-    return os.path.join(
-        command_context.topsrcdir, "target", "release", "uniffi-bindgen-gecko-js"
-    )
+    return os.path.join(release_dir, "uniffi-bindgen-gecko-js")
 
 
 @Command(

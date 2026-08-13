@@ -4,23 +4,22 @@
 
 #include "DrawTargetCairo.h"
 
-#include "SourceSurfaceCairo.h"
-#include "PathCairo.h"
-#include "HelpersCairo.h"
-#include "BorrowedContext.h"
-#include "FilterNodeSoftware.h"
-#include "mozilla/Vector.h"
-#include "mozilla/StaticPrefs_gfx.h"
-#include "mozilla/StaticPrefs_print.h"
-#include "nsPrintfCString.h"
-
-#include "cairo.h"
-#include "cairo-tee.h"
 #include <string.h>
 
 #include "Blur.h"
+#include "BorrowedContext.h"
+#include "FilterNodeSoftware.h"
+#include "HelpersCairo.h"
 #include "Logging.h"
+#include "PathCairo.h"
+#include "SourceSurfaceCairo.h"
 #include "Tools.h"
+#include "cairo-tee.h"
+#include "cairo.h"
+#include "mozilla/StaticPrefs_gfx.h"
+#include "mozilla/StaticPrefs_print.h"
+#include "mozilla/Vector.h"
+#include "nsPrintfCString.h"
 
 #ifdef CAIRO_HAS_QUARTZ_SURFACE
 #  include "cairo-quartz.h"

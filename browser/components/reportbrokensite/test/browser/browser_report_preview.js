@@ -47,8 +47,7 @@ async function getExpectedReportData(win, basic) {
     out[category] = Object.fromEntries(
       Object.entries(values)
         .filter(
-          ([key, { do_not_preview }]) =>
-            !do_not_preview && key != "isTabSpecific"
+          ([key, { doNotPreview }]) => !doNotPreview && key != "isTabSpecific"
         )
         .map(([name, { value }]) => [name, adjustForWrapping(value)])
     );
@@ -105,13 +104,13 @@ async function checkPreviewPanelUX(rbs) {
     const summary = details.querySelector("summary");
 
     rbs.click(summary);
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => details.open == !!idx,
       `Next preview item properly ${idx ? "opens" : "closes"}`
     );
 
     rbs.click(summary);
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => details.open == !idx,
       `Next preview item properly ${idx ? "closes" : "opens"} again`
     );

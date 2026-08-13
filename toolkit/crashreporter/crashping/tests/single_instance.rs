@@ -20,6 +20,7 @@ fn do_glean_init() {
             app_display_version: "version".into(),
             channel: None,
             locale: None,
+            os_version: None,
         },
     )
     .initialize()

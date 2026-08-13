@@ -1,4 +1,5 @@
 ---
+name: gecko-web-standard-implementation
 description: You MUST use this skill when working with C++, C, Rust code to implement or modify WebIDL interfaces and their native implementations.
 ---
 

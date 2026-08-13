@@ -15,7 +15,7 @@ const lazy = XPCOMUtils.declareLazy({
   ExtensionParent: "resource://gre/modules/ExtensionParent.sys.mjs",
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
   JSONFile: "resource://gre/modules/JSONFile.sys.mjs",
-  KeyValueService: "resource://gre/modules/kvstore.sys.mjs",
+  KeyValueService: "moz-src:///toolkit/components/kvstore/kvstore.sys.mjs",
   StartupCache: "resource://gre/modules/ExtensionParent.sys.mjs",
   Management: () => lazy.ExtensionParent.apiManager,
 });
@@ -422,7 +422,7 @@ export var ExtensionPermissions = {
    * Add new permissions for the given extension.  `permissions` is
    * in the format that is passed to browser.permissions.request().
    *
-   * @typedef {import("ExtensionCommon.sys.mjs").EventEmitter} EventEmitter
+   * @typedef {import("./ExtensionCommon.sys.mjs").EventEmitter} EventEmitter
    *
    * @param {string} extensionId The extension id
    * @param {Perms} perms Object with permissions and origins array.

@@ -90,7 +90,8 @@ list(APPEND AOM_AV1_COMMON_SOURCES
             "${AOM_ROOT}/av1/common/txb_common.c"
             "${AOM_ROOT}/av1/common/txb_common.h"
             "${AOM_ROOT}/av1/common/warped_motion.c"
-            "${AOM_ROOT}/av1/common/warped_motion.h")
+            "${AOM_ROOT}/av1/common/warped_motion.h"
+            "${AOM_ROOT}/av1/common/wedge_masks_data.inc")
 
 if(CONFIG_HIGHWAY)
   list(APPEND AOM_AV1_COMMON_SOURCES "${AOM_ROOT}/av1/common/selfguided_hwy.h")

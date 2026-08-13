@@ -21,11 +21,12 @@
 #endif
 
 #ifdef MOZ_WIDGET_ANDROID
+#  include <android/native_window.h>
+#  include <android/native_window_jni.h>
+
 #  include "mozilla/java/GeckoSurfaceTextureWrappers.h"
 #  include "mozilla/layers/AndroidHardwareBuffer.h"
 #  include "mozilla/widget/AndroidCompositorWidget.h"
-#  include <android/native_window.h>
-#  include <android/native_window_jni.h>
 #endif
 
 namespace mozilla::wr {

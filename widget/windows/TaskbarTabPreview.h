@@ -6,8 +6,8 @@
 #ifndef _mozilla_widget_TaskbarTabPreview_h_
 #define _mozilla_widget_TaskbarTabPreview_h_
 
-#include "nsITaskbarTabPreview.h"
 #include "TaskbarPreview.h"
+#include "nsITaskbarTabPreview.h"
 
 namespace mozilla {
 namespace widget {

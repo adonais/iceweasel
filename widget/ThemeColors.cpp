@@ -4,10 +4,10 @@
 
 #include "ThemeColors.h"
 
+#include "ThemeDrawing.h"
 #include "mozilla/RelativeLuminanceUtils.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/StaticPrefs_widget.h"
-#include "ThemeDrawing.h"
 #include "nsNativeTheme.h"
 
 using namespace mozilla::gfx;

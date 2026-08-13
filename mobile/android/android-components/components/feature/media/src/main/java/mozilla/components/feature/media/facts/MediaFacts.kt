@@ -24,6 +24,8 @@ class MediaFacts {
 
 internal fun emitNotificationPlayFact() = emitNotificationFact(Action.PLAY)
 internal fun emitNotificationPauseFact() = emitNotificationFact(Action.PAUSE)
+internal fun emitNotificationNextFact() = emitNotificationFact(Action.NEXT)
+internal fun emitNotificationPreviousFact() = emitNotificationFact(Action.PREVIOUS)
 
 internal fun emitStatePlayFact() = emitStateFact(Action.PLAY)
 internal fun emitStatePauseFact() = emitStateFact(Action.PAUSE)

@@ -18,7 +18,7 @@ from mozversioncontrol.errors import (
     CannotDeleteFromRootOfRepositoryException,
     MissingVCSExtension,
 )
-from mozversioncontrol.repo.base import Repository
+from mozversioncontrol.repo.base import HG_TRY_URL, Repository
 
 
 class HgRepository(Repository):
@@ -94,7 +94,7 @@ class HgRepository(Repository):
         self._client.close()
 
     def _run(self, *args, **runargs):
-        if not self._client.server:
+        if not self._client.server or runargs.get("env"):
             return super()._run(*args, **runargs)
 
         # hglib requires bytes on python 3
@@ -294,6 +294,7 @@ class HgRepository(Repository):
         ref: Optional[str] = None,
         dest_branch: Optional[str] = None,
         force: bool = False,
+        env: Optional[dict] = None,
     ):
         if ref and not remote:
             raise ValueError("Cannot specify ref without specifying remote")
@@ -305,7 +306,9 @@ class HgRepository(Repository):
             args.append(remote)
         if ref:
             args.extend(["-r", ref])
-        self._run(*args)
+
+        kwargs = {"env": env} if env else {}
+        self._run(*args, **kwargs)
 
     def _resolve_try_branch(self):
         return self.branch
@@ -317,6 +320,7 @@ class HgRepository(Repository):
         self,
         message: str,
         changed_files: dict[str, str] = {},
+        remote: str = HG_TRY_URL,
         allow_log_capture: bool = False,
     ):
         if changed_files:

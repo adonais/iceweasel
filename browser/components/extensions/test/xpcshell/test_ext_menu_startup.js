@@ -2,7 +2,7 @@
 
 ChromeUtils.defineESModuleGetters(this, {
   ExtensionMenus: "resource://gre/modules/ExtensionMenus.sys.mjs",
-  KeyValueService: "resource://gre/modules/kvstore.sys.mjs",
+  KeyValueService: "moz-src:///toolkit/components/kvstore/kvstore.sys.mjs",
   Management: "resource://gre/modules/Extension.sys.mjs",
 });
 

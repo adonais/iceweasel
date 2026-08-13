@@ -47,6 +47,20 @@ const EXTRA_RESPONSE_ARGS = {
 };
 
 /**
+ * Start a server and return the URL for one of its registered paths.
+ *
+ * @param {HttpServer} server
+ * @param {string} path
+ * @returns {string}
+ */
+function startServer(server, path) {
+  server.start(-1);
+  const { primaryHost, primaryPort } = server.identity;
+  // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+  return `http://${primaryHost}:${primaryPort}${path}`;
+}
+
+/**
  * Create an HTTP server that serves HTML once.
  *
  * @param {string} markup - The HTML content to serve
@@ -373,6 +387,56 @@ export const MLTestUtils = {
   },
 
   /**
+   * Serve a URL that accepts the request and never answers it, so the load
+   * never commits.
+   *
+   * @returns {{url: string, cleanup: () => Promise<void>}}
+   */
+  serveStalledPage() {
+    const server = new HttpServer();
+
+    /** @type {any} */
+    let heldResponse;
+
+    server.registerPathHandler("/stalled.html", (_request, response) => {
+      response.processAsync();
+      response.setHeader("Content-Type", "text/html; charset=utf-8");
+      heldResponse = response;
+    });
+
+    return {
+      url: startServer(server, "/stalled.html"),
+      async cleanup() {
+        // Release the held request so the server can stop.
+        heldResponse?.finish();
+        await new Promise(resolve => server.stop(resolve));
+      },
+    };
+  },
+
+  /**
+   * Serve a URL that redirects to another origin, the way bot detection sends a
+   * request off to a challenge page.
+   *
+   * @param {object} options
+   * @param {string} options.to - The absolute URL to redirect to.
+   * @returns {{url: string, cleanup: () => Promise<void>}}
+   */
+  serveRedirect({ to }) {
+    const server = new HttpServer();
+
+    server.registerPathHandler("/redirect.html", (request, response) => {
+      response.setStatusLine(request.httpVersion, 302, "Found");
+      response.setHeader("Location", to);
+    });
+
+    return {
+      url: startServer(server, "/redirect.html"),
+      cleanup: () => new Promise(resolve => server.stop(resolve)),
+    };
+  },
+
+  /**
    * Similar to serveHTML, but loads the HTML automatically in a tab.
    *
    * Example usage:
@@ -436,5 +500,134 @@ export const MLTestUtils = {
     }
 
     return { html };
+  },
+
+  /**
+   * Like serveHTMLInTab, but reuses a single HttpServer across many tabs. This
+   * avoids the cost of spinning up an HttpServer per tab when a test needs to
+   * open several pages (e.g. tab-list tests).
+   *
+   * cleanup() stops the HTTP server but does NOT remove the opened tabs. The
+   * caller is responsible for tab teardown — usually by closing the window
+   * that owns them via BrowserTestUtils.closeWindow(). Tabs opened into a
+   * persistent window (e.g. gBrowser) must be removed explicitly with
+   * BrowserTestUtils.removeTab().
+   *
+   * Example usage:
+   *   const server = await MLTestUtils.serveSharedHTMLInTab({ browser: gBrowser });
+   *   const { tab: t1 } = await server.openTab({ title: "First", body: "<p>1</p>" });
+   *   const { tab: t2 } = await server.openTab({ title: "Second", body: "<p>2</p>" });
+   *   await server.cleanup();
+   *
+   * @param {object} options
+   * @param {object} options.browser - The gBrowser object from test scope
+   * @param {number} [options.code] - HTTP status code (default: 200)
+   * @returns {Promise<{
+   *   openTab: (opts?: { title?: string, body?: string, browser?: object }) => Promise<{ tab: object, url: string }>,
+   *   cleanup: () => Promise<void>,
+   *   registerPathHandler: (path: string, handler: (request: object, response: object) => void) => void,
+   *   origin: string,
+   * }>}
+   */
+  async serveSharedHTMLInTab(options) {
+    const { browser: defaultBrowser, code = 200 } = options;
+
+    if (!defaultBrowser) {
+      throw new Error(
+        "browser is required. Pass it via serveSharedHTMLInTab({ browser: gBrowser })"
+      );
+    }
+
+    const server = new HttpServer();
+    server.start(-1);
+    const { primaryHost, primaryPort } = server.identity;
+    const encoder = new TextEncoder();
+
+    let nextPathId = 0;
+
+    async function openTab({
+      title = "",
+      body = "",
+      browser = defaultBrowser,
+    } = {}) {
+      const pathId = nextPathId++;
+      const path = `/page-${pathId}.html`;
+      // Assemble through the DOM so the title is inserted via textContent rather
+      // than hand-rolled escaping; body is intentional markup, set as innerHTML.
+      const doc = new DOMParser().parseFromString(
+        "<!DOCTYPE html><html><head><title></title></head><body></body></html>",
+        "text/html"
+      );
+      doc.title = title;
+      doc.body.innerHTML = body;
+      const markup = `<!DOCTYPE html>${doc.documentElement.outerHTML}`;
+      const htmlUtf8 = encoder.encode(markup);
+
+      /** @type {nsIHttpRequestHandler} */
+      const pageHandler = (request, response) => {
+        response.setHeader("Content-Type", "text/html; charset=utf-8");
+        response.setStatusLine(request.httpVersion, code, "");
+
+        const binaryOutputStream = Cc[
+          "@mozilla.org/binaryoutputstream;1"
+        ].createInstance(Ci.nsIBinaryOutputStream);
+
+        binaryOutputStream.setOutputStream(response.bodyOutputStream);
+        binaryOutputStream.writeByteArray(/** @type {any} */ (htmlUtf8));
+      };
+
+      server.registerPathHandler(path, pageHandler);
+
+      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      const url = `http://${primaryHost}:${primaryPort}${path}`;
+      const tab = await BrowserTestUtils.openNewForegroundTab(
+        browser,
+        url,
+        true // waitForLoad
+      );
+
+      // openNewForegroundTab resolves once the page has loaded, but the tab's
+      // label is derived from the document <title> and updated asynchronously
+      // via TabAttrModified, which can fire after load completes. Callers that
+      // read tab.label (e.g. the open-tabs metadata) would otherwise race
+      // against a stale label, so wait until it reflects the requested title.
+      if (title && tab.label !== title) {
+        await BrowserTestUtils.waitForEvent(
+          tab,
+          "TabAttrModified",
+          false,
+          () => tab.label === title
+        );
+      }
+
+      return { tab, url };
+    }
+
+    async function cleanup() {
+      await new Promise(resolve => server.stop(resolve));
+    }
+
+    return {
+      openTab,
+      cleanup,
+      /**
+       * Register a custom path handler on the shared HttpServer, e.g. to serve
+       * a body parameterised by query string.
+       *
+       * @param {string} path - The path to handle (e.g. "/serp.html").
+       * @param {(request: object, response: object) => void} handler
+       */
+      registerPathHandler(path, handler) {
+        server.registerPathHandler(path, handler);
+      },
+      /**
+       * Origin (e.g. http://localhost:PORT) of the shared HttpServer, for
+       * building absolute URLs to registered path handlers.
+       *
+       * @type {string}
+       */
+      // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+      origin: `http://${primaryHost}:${primaryPort}`,
+    };
   },
 };

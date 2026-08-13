@@ -10,9 +10,13 @@ loadScripts({ name: "role.js", dir: MOCHITESTS_DIR });
 addAccessibleTask(
   '<select id="select"></select>',
   async function (browser, accDoc) {
+    const isSelectListBox = e => {
+      return getAccessibleDOMNodeID(e.accessible.parent) == "select";
+    };
+
     let select = findAccessibleChildByID(accDoc, "select");
 
-    let onEvent = waitForEvent(EVENT_REORDER, "select");
+    let onEvent = waitForEvent(EVENT_REORDER, isSelectListBox);
     // Create a combobox with grouping and 2 standalone options
     await invokeContentTask(browser, [], () => {
       let doc = content.document;
@@ -56,7 +60,7 @@ addAccessibleTask(
     testAccessibleTree(select, tree);
     ok(!isDefunct(option1Node), "option shouldn't be defunct");
 
-    onEvent = waitForEvent(EVENT_REORDER, "select");
+    onEvent = waitForEvent(EVENT_REORDER, isSelectListBox);
     // Remove grouping from combobox
     await invokeContentTask(browser, [], () => {
       let contentSelect = content.document.getElementById("select");
@@ -77,7 +81,7 @@ addAccessibleTask(
       "removed option shouldn't be accessible anymore!"
     );
 
-    onEvent = waitForEvent(EVENT_REORDER, "select");
+    onEvent = waitForEvent(EVENT_REORDER, isSelectListBox);
     // Remove all options from combobox
     await invokeContentTask(browser, [], () => {
       let contentSelect = content.document.getElementById("select");

@@ -10,15 +10,14 @@
 #include <utility>
 
 #include "FrameMetrics.h"
+#include "ImageContainer.h"
 #include "VsyncSource.h"
 #include "chrome/common/ipc_message_utils.h"
-#include "ImageContainer.h"
 #include "ipc/EnumSerializer.h"
 #include "ipc/IPCMessageUtils.h"
 #include "mozilla/RelativeTo.h"
 #include "mozilla/ScrollSnapInfo.h"
 #include "mozilla/ServoBindings.h"
-#include "mozilla/ParamTraits_TiedFields.h"
 #include "mozilla/ipc/ByteBuf.h"
 #include "mozilla/ipc/ProtocolMessageUtils.h"
 #include "mozilla/ipc/RustMessageUtils.h"
@@ -27,6 +26,7 @@
 #include "mozilla/layers/CompositorOptions.h"
 #include "mozilla/layers/CompositorScrollUpdate.h"
 #include "mozilla/layers/CompositorTypes.h"
+#include "mozilla/layers/DoubleTapToZoom.h"
 #include "mozilla/layers/FocusTarget.h"
 #include "mozilla/layers/GeckoContentControllerTypes.h"
 #include "mozilla/layers/GpuFence.h"
@@ -37,7 +37,6 @@
 #include "mozilla/layers/RepaintRequest.h"
 #include "mozilla/layers/ScrollbarData.h"
 #include "nsSize.h"
-#include "mozilla/layers/DoubleTapToZoom.h"
 
 // For ParamTraits, could be moved to cpp file
 #include "ipc/nsGUIEventIPC.h"
@@ -58,38 +57,11 @@ template <typename T>
 struct ParamTraits<mozilla::layers::BaseTransactionId<T>>
     : public ParamTraits_TiedFields<mozilla::layers::BaseTransactionId<T>> {};
 
-template <>
-struct ParamTraits<mozilla::VsyncEvent> {
-  typedef mozilla::VsyncEvent paramType;
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::VsyncEvent, mId, mTime, mOutputTime);
 
-  static void Write(MessageWriter* writer, const paramType& param) {
-    WriteParam(writer, param.mId);
-    WriteParam(writer, param.mTime);
-    WriteParam(writer, param.mOutputTime);
-  }
-  static bool Read(MessageReader* reader, paramType* result) {
-    return ReadParam(reader, &result->mId) &&
-           ReadParam(reader, &result->mTime) &&
-           ReadParam(reader, &result->mOutputTime);
-  }
-};
-
-template <>
-struct ParamTraits<mozilla::layers::MatrixMessage> {
-  typedef mozilla::layers::MatrixMessage paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mMatrix);
-    WriteParam(aWriter, aParam.mTopLevelViewportVisibleRectInBrowserCoords);
-    WriteParam(aWriter, aParam.mLayersId);
-  }
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mMatrix) &&
-           ReadParam(aReader,
-                     &aResult->mTopLevelViewportVisibleRectInBrowserCoords) &&
-           ReadParam(aReader, &aResult->mLayersId);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::layers::MatrixMessage, mMatrix,
+                                  mTopLevelViewportVisibleRectInBrowserCoords,
+                                  mLayersId);
 
 template <>
 struct ParamTraits<mozilla::layers::WindowKind>
@@ -182,29 +154,9 @@ struct ParamTraits<mozilla::StyleOverflow>
                                                mozilla::StyleOverflow::Visible,
                                                mozilla::StyleOverflow::Clip> {};
 
-template <>
-struct ParamTraits<mozilla::layers::LayerHandle> {
-  typedef mozilla::layers::LayerHandle paramType;
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::layers::LayerHandle, mHandle);
 
-  static void Write(MessageWriter* writer, const paramType& param) {
-    WriteParam(writer, param.mHandle);
-  }
-  static bool Read(MessageReader* reader, paramType* result) {
-    return ReadParam(reader, &result->mHandle);
-  }
-};
-
-template <>
-struct ParamTraits<mozilla::layers::CompositableHandle> {
-  typedef mozilla::layers::CompositableHandle paramType;
-
-  static void Write(MessageWriter* writer, const paramType& param) {
-    WriteParam(writer, param.mHandle);
-  }
-  static bool Read(MessageReader* reader, paramType* result) {
-    return ReadParam(reader, &result->mHandle);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::layers::CompositableHandle, mHandle);
 
 template <>
 struct ParamTraits<mozilla::layers::CompositableHandleOwner>
@@ -213,9 +165,21 @@ struct ParamTraits<mozilla::layers::CompositableHandleOwner>
           mozilla::layers::CompositableHandleOwner::WebRenderBridge,
           mozilla::layers::CompositableHandleOwner::ImageBridge> {};
 
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::layers::RemoteTextureId, mId);
+
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::layers::RemoteTextureOwnerId, mId);
+
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(
+    mozilla::layers::SurfaceDescriptorRemoteDecoderId, mId);
+
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::layers::GpuProcessTextureId, mId);
+
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(
+    mozilla::layers::CompositeProcessFencesHolderId, mId);
+
 template <>
-struct ParamTraits<mozilla::layers::RemoteTextureId> {
-  typedef mozilla::layers::RemoteTextureId paramType;
+struct ParamTraits<mozilla::layers::GpuProcessAndroidImageReaderId> {
+  typedef mozilla::layers::GpuProcessAndroidImageReaderId paramType;
 
   static void Write(MessageWriter* writer, const paramType& param) {
     WriteParam(writer, param.mId);
@@ -226,44 +190,8 @@ struct ParamTraits<mozilla::layers::RemoteTextureId> {
 };
 
 template <>
-struct ParamTraits<mozilla::layers::RemoteTextureOwnerId> {
-  typedef mozilla::layers::RemoteTextureOwnerId paramType;
-
-  static void Write(MessageWriter* writer, const paramType& param) {
-    WriteParam(writer, param.mId);
-  }
-  static bool Read(MessageReader* reader, paramType* result) {
-    return ReadParam(reader, &result->mId);
-  }
-};
-
-template <>
-struct ParamTraits<mozilla::layers::SurfaceDescriptorRemoteDecoderId> {
-  typedef mozilla::layers::SurfaceDescriptorRemoteDecoderId paramType;
-
-  static void Write(MessageWriter* writer, const paramType& param) {
-    WriteParam(writer, param.mId);
-  }
-  static bool Read(MessageReader* reader, paramType* result) {
-    return ReadParam(reader, &result->mId);
-  }
-};
-
-template <>
-struct ParamTraits<mozilla::layers::GpuProcessTextureId> {
-  typedef mozilla::layers::GpuProcessTextureId paramType;
-
-  static void Write(MessageWriter* writer, const paramType& param) {
-    WriteParam(writer, param.mId);
-  }
-  static bool Read(MessageReader* reader, paramType* result) {
-    return ReadParam(reader, &result->mId);
-  }
-};
-
-template <>
-struct ParamTraits<mozilla::layers::CompositeProcessFencesHolderId> {
-  typedef mozilla::layers::CompositeProcessFencesHolderId paramType;
+struct ParamTraits<mozilla::layers::AndroidMediaCodecFrameId> {
+  typedef mozilla::layers::AndroidMediaCodecFrameId paramType;
 
   static void Write(MessageWriter* writer, const paramType& param) {
     WriteParam(writer, param.mId);
@@ -349,20 +277,8 @@ struct ParamTraits<mozilla::APZScrollAnimationType>
           mozilla::APZScrollAnimationType, mozilla::APZScrollAnimationType::No,
           mozilla::APZScrollAnimationType::TriggeredByUserInput> {};
 
-template <>
-struct ParamTraits<mozilla::ScrollSnapTargetIds> {
-  typedef mozilla::ScrollSnapTargetIds paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mIdsOnX);
-    WriteParam(aWriter, aParam.mIdsOnY);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mIdsOnX) &&
-           ReadParam(aReader, &aResult->mIdsOnY);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::ScrollSnapTargetIds, mIdsOnX,
+                                  mIdsOnY);
 
 template <>
 struct ParamTraits<mozilla::layers::RepaintRequest>
@@ -419,20 +335,7 @@ struct ParamTraits<mozilla::layers::RepaintRequest>
   }
 };
 
-template <>
-struct ParamTraits<nsSize> {
-  typedef nsSize paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.width);
-    WriteParam(aWriter, aParam.height);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->width) &&
-           ReadParam(aReader, &aResult->height);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(nsSize, width, height);
 
 template <>
 struct ParamTraits<mozilla::StyleScrollSnapStop>
@@ -451,78 +354,20 @@ struct ParamTraits<mozilla::ScrollSnapTargetId>
     : public EnumSerializer<mozilla::ScrollSnapTargetId,
                             ScrollSnapTargetIdValidator> {};
 
-template <>
-struct ParamTraits<mozilla::SnapPoint> {
-  typedef mozilla::SnapPoint paramType;
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::SnapPoint, mX, mY);
 
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mX);
-    WriteParam(aWriter, aParam.mY);
-  }
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::ScrollSnapInfo::SnapTarget,
+                                  mSnapPoint, mSnapArea, mScrollSnapStop,
+                                  mTargetId);
 
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mX) && ReadParam(aReader, &aResult->mY);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::ScrollSnapRange, mDirection,
+                                  mSnapArea, mTargetId);
 
-template <>
-struct ParamTraits<mozilla::ScrollSnapRange> {
-  typedef mozilla::ScrollSnapRange paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mDirection);
-    WriteParam(aWriter, aParam.mSnapArea);
-    WriteParam(aWriter, aParam.mTargetId);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mDirection) &&
-           ReadParam(aReader, &aResult->mSnapArea) &&
-           ReadParam(aReader, &aResult->mTargetId);
-  }
-};
-
-template <>
-struct ParamTraits<mozilla::ScrollSnapInfo::SnapTarget> {
-  typedef mozilla::ScrollSnapInfo::SnapTarget paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mSnapPoint);
-    WriteParam(aWriter, aParam.mSnapArea);
-    WriteParam(aWriter, aParam.mScrollSnapStop);
-    WriteParam(aWriter, aParam.mTargetId);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mSnapPoint) &&
-           ReadParam(aReader, &aResult->mSnapArea) &&
-           ReadParam(aReader, &aResult->mScrollSnapStop) &&
-           ReadParam(aReader, &aResult->mTargetId);
-  }
-};
-
-template <>
-struct ParamTraits<mozilla::ScrollSnapInfo> {
-  typedef mozilla::ScrollSnapInfo paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mScrollSnapStrictnessX);
-    WriteParam(aWriter, aParam.mScrollSnapStrictnessY);
-    WriteParam(aWriter, aParam.mSnapTargets);
-    WriteParam(aWriter, aParam.mXRangeWiderThanSnapport);
-    WriteParam(aWriter, aParam.mYRangeWiderThanSnapport);
-    WriteParam(aWriter, aParam.mSnapportSize);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return (ReadParam(aReader, &aResult->mScrollSnapStrictnessX) &&
-            ReadParam(aReader, &aResult->mScrollSnapStrictnessY) &&
-            ReadParam(aReader, &aResult->mSnapTargets) &&
-            ReadParam(aReader, &aResult->mXRangeWiderThanSnapport) &&
-            ReadParam(aReader, &aResult->mYRangeWiderThanSnapport) &&
-            ReadParam(aReader, &aResult->mSnapportSize));
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::ScrollSnapInfo,
+                                  mScrollSnapStrictnessX,
+                                  mScrollSnapStrictnessY, mSnapTargets,
+                                  mXRangeWiderThanSnapport,
+                                  mYRangeWiderThanSnapport, mSnapportSize);
 
 template <>
 struct ParamTraits<mozilla::layers::OverscrollBehaviorInfo>
@@ -540,7 +385,7 @@ template <>
 struct ParamTraits<mozilla::ScrollUpdateType>
     : public ContiguousEnumSerializerInclusive<
           mozilla::ScrollUpdateType, mozilla::ScrollUpdateType::Absolute,
-          mozilla::ScrollUpdateType::PureRelative> {};
+          mozilla::ScrollUpdateType::ZeroDeltaLayoutScroll> {};
 
 template <>
 struct ParamTraits<mozilla::ScrollMode>
@@ -568,36 +413,11 @@ struct ParamTraits<mozilla::ViewportType>
                                                mozilla::ViewportType::Visual> {
 };
 
-template <>
-struct ParamTraits<mozilla::ScrollPositionUpdate> {
-  typedef mozilla::ScrollPositionUpdate paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mScrollGeneration);
-    WriteParam(aWriter, aParam.mType);
-    WriteParam(aWriter, aParam.mScrollMode);
-    WriteParam(aWriter, aParam.mScrollOrigin);
-    WriteParam(aWriter, aParam.mDestination);
-    WriteParam(aWriter, aParam.mSource);
-    WriteParam(aWriter, aParam.mDelta);
-    WriteParam(aWriter, aParam.mViewportType);
-    WriteParam(aWriter, aParam.mTriggeredByScript);
-    WriteParam(aWriter, aParam.mSnapTargetIds);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mScrollGeneration) &&
-           ReadParam(aReader, &aResult->mType) &&
-           ReadParam(aReader, &aResult->mScrollMode) &&
-           ReadParam(aReader, &aResult->mScrollOrigin) &&
-           ReadParam(aReader, &aResult->mDestination) &&
-           ReadParam(aReader, &aResult->mSource) &&
-           ReadParam(aReader, &aResult->mDelta) &&
-           ReadParam(aReader, &aResult->mViewportType) &&
-           ReadParam(aReader, &aResult->mTriggeredByScript) &&
-           ReadParam(aReader, &aResult->mSnapTargetIds);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::ScrollPositionUpdate,
+                                  mScrollGeneration, mType, mScrollMode,
+                                  mScrollOrigin, mDestination, mSource, mDelta,
+                                  mViewportType, mTriggeredByScript,
+                                  mSnapTargetIds);
 
 template <>
 struct ParamTraits<mozilla::dom::InteractiveWidget>
@@ -632,6 +452,7 @@ struct ParamTraits<mozilla::layers::ScrollMetadata>
     WriteParam(aWriter, aParam.mOverflow);
     WriteParam(aWriter, aParam.mScrollUpdates);
     WriteParam(aWriter, aParam.mWritingMode);
+    WriteParam(aWriter, aParam.mScrollGenerationOnApz);
   }
 
   static bool ReadContentDescription(MessageReader* aReader,
@@ -674,66 +495,23 @@ struct ParamTraits<mozilla::layers::ScrollMetadata>
            ReadParam(aReader, &aResult->mOverscrollBehavior) &&
            ReadParam(aReader, &aResult->mOverflow) &&
            ReadParam(aReader, &aResult->mScrollUpdates) &&
-           ReadParam(aReader, &aResult->mWritingMode);
+           ReadParam(aReader, &aResult->mWritingMode) &&
+           ReadParam(aReader, &aResult->mScrollGenerationOnApz);
   }
 };
 
-template <>
-struct ParamTraits<mozilla::layers::TextureFactoryIdentifier> {
-  typedef mozilla::layers::TextureFactoryIdentifier paramType;
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::layers::TextureFactoryIdentifier,
+                                  mParentBackend, mWebRenderBackend,
+                                  mWebRenderCompositor, mParentProcessType,
+                                  mMaxTextureSize, mCompositorUseANGLE,
+                                  mCompositorUseDComp, mUseLayerCompositor,
+                                  mUseCompositorWnd, mSupportsTextureBlitting,
+                                  mSupportsPartialUploads,
+                                  mSupportsComponentAlpha, mSupportsD3D11NV12,
+                                  mSyncHandle);
 
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mParentBackend);
-    WriteParam(aWriter, aParam.mWebRenderBackend);
-    WriteParam(aWriter, aParam.mWebRenderCompositor);
-    WriteParam(aWriter, aParam.mParentProcessType);
-    WriteParam(aWriter, aParam.mMaxTextureSize);
-    WriteParam(aWriter, aParam.mCompositorUseANGLE);
-    WriteParam(aWriter, aParam.mCompositorUseDComp);
-    WriteParam(aWriter, aParam.mUseLayerCompositor);
-    WriteParam(aWriter, aParam.mUseCompositorWnd);
-    WriteParam(aWriter, aParam.mSupportsTextureBlitting);
-    WriteParam(aWriter, aParam.mSupportsPartialUploads);
-    WriteParam(aWriter, aParam.mSupportsComponentAlpha);
-    WriteParam(aWriter, aParam.mSupportsD3D11NV12);
-    WriteParam(aWriter, aParam.mSyncHandle);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    bool result = ReadParam(aReader, &aResult->mParentBackend) &&
-                  ReadParam(aReader, &aResult->mWebRenderBackend) &&
-                  ReadParam(aReader, &aResult->mWebRenderCompositor) &&
-                  ReadParam(aReader, &aResult->mParentProcessType) &&
-                  ReadParam(aReader, &aResult->mMaxTextureSize) &&
-                  ReadParam(aReader, &aResult->mCompositorUseANGLE) &&
-                  ReadParam(aReader, &aResult->mCompositorUseDComp) &&
-                  ReadParam(aReader, &aResult->mUseLayerCompositor) &&
-                  ReadParam(aReader, &aResult->mUseCompositorWnd) &&
-                  ReadParam(aReader, &aResult->mSupportsTextureBlitting) &&
-                  ReadParam(aReader, &aResult->mSupportsPartialUploads) &&
-                  ReadParam(aReader, &aResult->mSupportsComponentAlpha) &&
-                  ReadParam(aReader, &aResult->mSupportsD3D11NV12) &&
-                  ReadParam(aReader, &aResult->mSyncHandle);
-    return result;
-  }
-};
-
-template <>
-struct ParamTraits<mozilla::layers::TextureInfo> {
-  typedef mozilla::layers::TextureInfo paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mCompositableType);
-    WriteParam(aWriter, aParam.mUsageType);
-    WriteParam(aWriter, aParam.mTextureFlags);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mCompositableType) &&
-           ReadParam(aReader, &aResult->mUsageType) &&
-           ReadParam(aReader, &aResult->mTextureFlags);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::layers::TextureInfo,
+                                  mCompositableType, mUsageType, mTextureFlags);
 
 template <>
 struct ParamTraits<mozilla::layers::CompositableType>
@@ -749,22 +527,8 @@ struct ParamTraits<mozilla::layers::ImageUsageType>
                                       mozilla::layers::ImageUsageType::COUNT> {
 };
 
-template <>
-struct ParamTraits<mozilla::layers::ScrollableLayerGuid> {
-  typedef mozilla::layers::ScrollableLayerGuid paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mLayersId);
-    WriteParam(aWriter, aParam.mPresShellId);
-    WriteParam(aWriter, aParam.mScrollId);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return (ReadParam(aReader, &aResult->mLayersId) &&
-            ReadParam(aReader, &aResult->mPresShellId) &&
-            ReadParam(aReader, &aResult->mScrollId));
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::layers::ScrollableLayerGuid,
+                                  mLayersId, mPresShellId, mScrollId);
 
 template <>
 struct ParamTraits<nsEventStatus>
@@ -796,22 +560,8 @@ struct ParamTraits<mozilla::layers::ScrollDirections> {
   }
 };
 
-template <>
-struct ParamTraits<mozilla::layers::APZHandledResult> {
-  typedef mozilla::layers::APZHandledResult paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mPlace);
-    WriteParam(aWriter, aParam.mScrollableDirections);
-    WriteParam(aWriter, aParam.mOverscrollDirections);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return (ReadParam(aReader, &aResult->mPlace) &&
-            ReadParam(aReader, &aResult->mScrollableDirections) &&
-            ReadParam(aReader, &aResult->mOverscrollDirections));
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::layers::APZHandledResult, mPlace,
+                                  mScrollableDirections, mOverscrollDirections);
 
 template <>
 struct ParamTraits<mozilla::layers::APZEventResult> {
@@ -844,64 +594,19 @@ struct ParamTraits<mozilla::layers::APZEventResult> {
   }
 };
 
-template <>
-struct ParamTraits<mozilla::layers::ZoomConstraints> {
-  typedef mozilla::layers::ZoomConstraints paramType;
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::layers::ZoomConstraints, mAllowZoom,
+                                  mAllowDoubleTapZoom, mMinZoom, mMaxZoom);
 
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mAllowZoom);
-    WriteParam(aWriter, aParam.mAllowDoubleTapZoom);
-    WriteParam(aWriter, aParam.mMinZoom);
-    WriteParam(aWriter, aParam.mMaxZoom);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return (ReadParam(aReader, &aResult->mAllowZoom) &&
-            ReadParam(aReader, &aResult->mAllowDoubleTapZoom) &&
-            ReadParam(aReader, &aResult->mMinZoom) &&
-            ReadParam(aReader, &aResult->mMaxZoom));
-  }
-};
-
-template <>
-struct ParamTraits<mozilla::layers::FocusTarget::ScrollTargets> {
-  typedef mozilla::layers::FocusTarget::ScrollTargets paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mHorizontal);
-    WriteParam(aWriter, aParam.mVertical);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mHorizontal) &&
-           ReadParam(aReader, &aResult->mVertical);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::layers::FocusTarget::ScrollTargets,
+                                  mHorizontal, mVertical);
 
 template <>
 struct ParamTraits<mozilla::layers::FocusTarget::NoFocusTarget>
     : public EmptyStructSerializer<
           mozilla::layers::FocusTarget::NoFocusTarget> {};
 
-template <>
-struct ParamTraits<mozilla::layers::FocusTarget> {
-  typedef mozilla::layers::FocusTarget paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mSequenceNumber);
-    WriteParam(aWriter, aParam.mFocusHasKeyEventListeners);
-    WriteParam(aWriter, aParam.mData);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    if (!ReadParam(aReader, &aResult->mSequenceNumber) ||
-        !ReadParam(aReader, &aResult->mFocusHasKeyEventListeners) ||
-        !ReadParam(aReader, &aResult->mData)) {
-      return false;
-    }
-    return true;
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::layers::FocusTarget, mSequenceNumber,
+                                  mFocusHasKeyEventListeners, mData);
 
 template <>
 struct ParamTraits<
@@ -913,45 +618,13 @@ struct ParamTraits<
           mozilla::layers::KeyboardScrollAction::
               sHighestKeyboardScrollActionType> {};
 
-template <>
-struct ParamTraits<mozilla::layers::KeyboardScrollAction> {
-  typedef mozilla::layers::KeyboardScrollAction paramType;
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::layers::KeyboardScrollAction, mType,
+                                  mForward);
 
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mType);
-    WriteParam(aWriter, aParam.mForward);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mType) &&
-           ReadParam(aReader, &aResult->mForward);
-  }
-};
-
-template <>
-struct ParamTraits<mozilla::layers::KeyboardShortcut> {
-  typedef mozilla::layers::KeyboardShortcut paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mAction);
-    WriteParam(aWriter, aParam.mKeyCode);
-    WriteParam(aWriter, aParam.mCharCode);
-    WriteParam(aWriter, aParam.mModifiers);
-    WriteParam(aWriter, aParam.mModifiersMask);
-    WriteParam(aWriter, aParam.mEventType);
-    WriteParam(aWriter, aParam.mDispatchToContent);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mAction) &&
-           ReadParam(aReader, &aResult->mKeyCode) &&
-           ReadParam(aReader, &aResult->mCharCode) &&
-           ReadParam(aReader, &aResult->mModifiers) &&
-           ReadParam(aReader, &aResult->mModifiersMask) &&
-           ReadParam(aReader, &aResult->mEventType) &&
-           ReadParam(aReader, &aResult->mDispatchToContent);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::layers::KeyboardShortcut, mAction,
+                                  mKeyCode, mCharCode, mModifiers,
+                                  mModifiersMask, mEventType,
+                                  mDispatchToContent);
 
 template <>
 struct ParamTraits<mozilla::layers::KeyboardMap> {
@@ -992,26 +665,9 @@ struct ParamTraits<mozilla::layers::EventRegionsOverride>
           mozilla::layers::EventRegionsOverride,
           mozilla::layers::EventRegionsOverride::ALL_BITS> {};
 
-template <>
-struct ParamTraits<mozilla::layers::AsyncDragMetrics> {
-  typedef mozilla::layers::AsyncDragMetrics paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mViewId);
-    WriteParam(aWriter, aParam.mPresShellId);
-    WriteParam(aWriter, aParam.mDragStartSequenceNumber);
-    WriteParam(aWriter, aParam.mScrollbarDragOffset);
-    WriteParam(aWriter, aParam.mDirection);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return (ReadParam(aReader, &aResult->mViewId) &&
-            ReadParam(aReader, &aResult->mPresShellId) &&
-            ReadParam(aReader, &aResult->mDragStartSequenceNumber) &&
-            ReadParam(aReader, &aResult->mScrollbarDragOffset) &&
-            ReadParam(aReader, &aResult->mDirection));
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::layers::AsyncDragMetrics, mViewId,
+                                  mPresShellId, mDragStartSequenceNumber,
+                                  mScrollbarDragOffset, mDirection);
 
 template <>
 struct ParamTraits<mozilla::layers::BrowserGestureResponse>
@@ -1020,30 +676,11 @@ struct ParamTraits<mozilla::layers::BrowserGestureResponse>
           mozilla::layers::BrowserGestureResponse::NotConsumed,
           mozilla::layers::BrowserGestureResponse::Consumed> {};
 
-template <>
-struct ParamTraits<mozilla::layers::CompositorOptions> {
-  typedef mozilla::layers::CompositorOptions paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mUseAPZ);
-    WriteParam(aWriter, aParam.mUseSoftwareWebRender);
-    WriteParam(aWriter, aParam.mAllowSoftwareWebRenderD3D11);
-    WriteParam(aWriter, aParam.mAllowSoftwareWebRenderOGL);
-    WriteParam(aWriter, aParam.mInitiallyPaused);
-    WriteParam(aWriter, aParam.mNeedFastSnaphot);
-    WriteParam(aWriter, aParam.mAllowNativeCompositor);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mUseAPZ) &&
-           ReadParam(aReader, &aResult->mUseSoftwareWebRender) &&
-           ReadParam(aReader, &aResult->mAllowSoftwareWebRenderD3D11) &&
-           ReadParam(aReader, &aResult->mAllowSoftwareWebRenderOGL) &&
-           ReadParam(aReader, &aResult->mInitiallyPaused) &&
-           ReadParam(aReader, &aResult->mNeedFastSnaphot) &&
-           ReadParam(aReader, &aResult->mAllowNativeCompositor);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::layers::CompositorOptions, mUseAPZ,
+                                  mUseSoftwareWebRender,
+                                  mAllowSoftwareWebRenderD3D11,
+                                  mAllowSoftwareWebRenderOGL, mInitiallyPaused,
+                                  mNeedFastSnaphot, mAllowNativeCompositor);
 
 template <>
 struct ParamTraits<mozilla::layers::OverlaySupportType>
@@ -1052,47 +689,14 @@ struct ParamTraits<mozilla::layers::OverlaySupportType>
           mozilla::layers::OverlaySupportType::None,
           mozilla::layers::OverlaySupportType::MAX> {};
 
-template <>
-struct ParamTraits<mozilla::layers::OverlayInfo> {
-  typedef mozilla::layers::OverlayInfo paramType;
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::layers::OverlayInfo,
+                                  mSupportsOverlays, mNv12Overlay, mYuy2Overlay,
+                                  mBgra8Overlay, mRgb10a2Overlay,
+                                  mRgba16fOverlay, mSupportsVpSuperResolution,
+                                  mSupportsVpAutoHDR, mSupportsHDR);
 
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mSupportsOverlays);
-    WriteParam(aWriter, aParam.mNv12Overlay);
-    WriteParam(aWriter, aParam.mYuy2Overlay);
-    WriteParam(aWriter, aParam.mBgra8Overlay);
-    WriteParam(aWriter, aParam.mRgb10a2Overlay);
-    WriteParam(aWriter, aParam.mRgba16fOverlay);
-    WriteParam(aWriter, aParam.mSupportsVpSuperResolution);
-    WriteParam(aWriter, aParam.mSupportsVpAutoHDR);
-    WriteParam(aWriter, aParam.mSupportsHDR);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mSupportsOverlays) &&
-           ReadParam(aReader, &aResult->mNv12Overlay) &&
-           ReadParam(aReader, &aResult->mYuy2Overlay) &&
-           ReadParam(aReader, &aResult->mBgra8Overlay) &&
-           ReadParam(aReader, &aResult->mRgb10a2Overlay) &&
-           ReadParam(aReader, &aResult->mRgba16fOverlay) &&
-           ReadParam(aReader, &aResult->mSupportsVpSuperResolution) &&
-           ReadParam(aReader, &aResult->mSupportsVpAutoHDR) &&
-           ReadParam(aReader, &aResult->mSupportsHDR);
-  }
-};
-
-template <>
-struct ParamTraits<mozilla::layers::SwapChainInfo> {
-  typedef mozilla::layers::SwapChainInfo paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mTearingSupported);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mTearingSupported);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::layers::SwapChainInfo,
+                                  mTearingSupported);
 
 template <>
 struct ParamTraits<mozilla::layers::ScrollbarLayerType>
@@ -1101,36 +705,11 @@ struct ParamTraits<mozilla::layers::ScrollbarLayerType>
           mozilla::layers::ScrollbarLayerType::None,
           mozilla::layers::kHighestScrollbarLayerType> {};
 
-template <>
-struct ParamTraits<mozilla::layers::ScrollbarData> {
-  typedef mozilla::layers::ScrollbarData paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mDirection);
-    WriteParam(aWriter, aParam.mScrollbarLayerType);
-    WriteParam(aWriter, aParam.mThumbRatio);
-    WriteParam(aWriter, aParam.mThumbStart);
-    WriteParam(aWriter, aParam.mThumbLength);
-    WriteParam(aWriter, aParam.mThumbMinLength);
-    WriteParam(aWriter, aParam.mThumbIsAsyncDraggable);
-    WriteParam(aWriter, aParam.mScrollTrackStart);
-    WriteParam(aWriter, aParam.mScrollTrackLength);
-    WriteParam(aWriter, aParam.mTargetViewId);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mDirection) &&
-           ReadParam(aReader, &aResult->mScrollbarLayerType) &&
-           ReadParam(aReader, &aResult->mThumbRatio) &&
-           ReadParam(aReader, &aResult->mThumbStart) &&
-           ReadParam(aReader, &aResult->mThumbLength) &&
-           ReadParam(aReader, &aResult->mThumbMinLength) &&
-           ReadParam(aReader, &aResult->mThumbIsAsyncDraggable) &&
-           ReadParam(aReader, &aResult->mScrollTrackStart) &&
-           ReadParam(aReader, &aResult->mScrollTrackLength) &&
-           ReadParam(aReader, &aResult->mTargetViewId);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::layers::ScrollbarData, mDirection,
+                                  mScrollbarLayerType, mThumbRatio, mThumbStart,
+                                  mThumbLength, mThumbMinLength,
+                                  mThumbIsAsyncDraggable, mScrollTrackStart,
+                                  mScrollTrackLength, mTargetViewId);
 
 template <>
 struct ParamTraits<mozilla::layers::CompositionPayloadType>
@@ -1139,20 +718,8 @@ struct ParamTraits<mozilla::layers::CompositionPayloadType>
           mozilla::layers::CompositionPayloadType::eKeyPress,
           mozilla::layers::kHighestCompositionPayloadType> {};
 
-template <>
-struct ParamTraits<mozilla::layers::CompositionPayload> {
-  typedef mozilla::layers::CompositionPayload paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mType);
-    WriteParam(aWriter, aParam.mTimeStamp);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mType) &&
-           ReadParam(aReader, &aResult->mTimeStamp);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::layers::CompositionPayload, mType,
+                                  mTimeStamp);
 
 template <>
 struct ParamTraits<mozilla::layers::ClearImagesType>
@@ -1168,41 +735,13 @@ struct ParamTraits<mozilla::layers::CantZoomOutBehavior>
           mozilla::layers::CantZoomOutBehavior::Nothing,
           mozilla::layers::CantZoomOutBehavior::ZoomIn> {};
 
-template <>
-struct ParamTraits<mozilla::layers::ZoomTarget> {
-  typedef mozilla::layers::ZoomTarget paramType;
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::layers::ZoomTarget, targetRect,
+                                  cantZoomOutBehavior, elementBoundingRect,
+                                  documentRelativePointerPosition);
 
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.targetRect);
-    WriteParam(aWriter, aParam.cantZoomOutBehavior);
-    WriteParam(aWriter, aParam.elementBoundingRect);
-    WriteParam(aWriter, aParam.documentRelativePointerPosition);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return (ReadParam(aReader, &aResult->targetRect) &&
-            ReadParam(aReader, &aResult->cantZoomOutBehavior) &&
-            ReadParam(aReader, &aResult->elementBoundingRect) &&
-            ReadParam(aReader, &aResult->documentRelativePointerPosition));
-  }
-};
-
-template <>
-struct ParamTraits<mozilla::layers::DoubleTapToZoomMetrics> {
-  typedef mozilla::layers::DoubleTapToZoomMetrics paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mVisualViewport);
-    WriteParam(aWriter, aParam.mRootScrollableRect);
-    WriteParam(aWriter, aParam.mTransformMatrix);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return (ReadParam(aReader, &aResult->mVisualViewport) &&
-            ReadParam(aReader, &aResult->mRootScrollableRect) &&
-            ReadParam(aReader, &aResult->mTransformMatrix));
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::layers::DoubleTapToZoomMetrics,
+                                  mVisualViewport, mRootScrollableRect,
+                                  mTransformMatrix);
 
 template <>
 struct ParamTraits<mozilla::layers::CompositorScrollUpdate::Source>
@@ -1211,35 +750,12 @@ struct ParamTraits<mozilla::layers::CompositorScrollUpdate::Source>
           mozilla::layers::CompositorScrollUpdate::Source::UserInteraction,
           mozilla::layers::CompositorScrollUpdate::Source::Other> {};
 
-template <>
-struct ParamTraits<mozilla::layers::CompositorScrollUpdate::Metrics> {
-  typedef mozilla::layers::CompositorScrollUpdate::Metrics paramType;
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(
+    mozilla::layers::CompositorScrollUpdate::Metrics, mVisualScrollOffset,
+    mZoom);
 
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mVisualScrollOffset);
-    WriteParam(aWriter, aParam.mZoom);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return (ReadParam(aReader, &aResult->mVisualScrollOffset) &&
-            ReadParam(aReader, &aResult->mZoom));
-  }
-};
-
-template <>
-struct ParamTraits<mozilla::layers::CompositorScrollUpdate> {
-  typedef mozilla::layers::CompositorScrollUpdate paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mMetrics);
-    WriteParam(aWriter, aParam.mSource);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return (ReadParam(aReader, &aResult->mMetrics) &&
-            ReadParam(aReader, &aResult->mSource));
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::layers::CompositorScrollUpdate,
+                                  mMetrics, mSource);
 
 template <>
 struct ParamTraits<mozilla::layers::GpuFence*> {

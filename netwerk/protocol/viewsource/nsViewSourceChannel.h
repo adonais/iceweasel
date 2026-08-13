@@ -9,6 +9,7 @@
 #include "nsCOMPtr.h"
 #include "nsICachingChannel.h"
 #include "nsIChannelEventSink.h"
+#include "nsIChildChannel.h"
 #include "nsIFormPOSTActionChannel.h"
 #include "nsIHttpChannel.h"
 #include "nsIHttpChannelInternal.h"
@@ -16,7 +17,6 @@
 #include "nsIStreamListener.h"
 #include "nsIURI.h"
 #include "nsIViewSourceChannel.h"
-#include "nsIChildChannel.h"
 #include "nsString.h"
 
 class nsViewSourceChannel final : public nsIViewSourceChannel,

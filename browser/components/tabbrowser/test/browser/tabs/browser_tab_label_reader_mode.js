@@ -38,7 +38,7 @@ add_task(async function test_reader_mode_tab_label_shows_article_title() {
   await BrowserTestUtils.withNewTab(articleURL, async browser => {
     let tab = gBrowser.getTabForBrowser(browser);
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => browser.isArticle,
       "Article page should be detected as readable"
     );

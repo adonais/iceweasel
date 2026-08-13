@@ -144,12 +144,10 @@
           </thead>
           <tbody id="dns_trr_url"></tbody>
         </table>
-        <br /><br />
         <button
           id="clearDNSCache"
           data-l10n-id="about-networking-dns-clear-cache-button"
         ></button>
-        <br /><br />
         <table>
           <thead>
             <tr>
@@ -201,12 +199,14 @@
       </div>
 
       <div id="dnslookuptool" class="tab" hidden="true">
-        <label data-l10n-id="about-networking-dns-domain"></label>
-        <input type="text" name="host" id="host" />
-        <button
-          id="dnsLookupButton"
-          data-l10n-id="about-networking-dns-lookup-button"
-        ></button>
+        <div class="dns-lookup-controls">
+          <label data-l10n-id="about-networking-dns-domain"></label>
+          <input type="text" name="host" id="host" />
+          <button
+            id="dnsLookupButton"
+            data-l10n-id="about-networking-dns-lookup-button"
+          ></button>
+        </div>
         <hr />
         <table>
           <thead>

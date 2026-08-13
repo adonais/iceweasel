@@ -10,12 +10,12 @@
 #  include "GLContextEAGL.h"
 #endif
 
-#include "mozilla/gfx/Logging.h"
-#include "mozilla/layers/GpuFence.h"
+#include "ScopedGLHelpers.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/TimeStamp.h"
-#include "ScopedGLHelpers.h"
+#include "mozilla/gfx/Logging.h"
+#include "mozilla/layers/GpuFence.h"
 
 namespace mozilla {
 namespace wr {
@@ -24,13 +24,12 @@ static bool CreateTextureForPlane(uint8_t aPlaneID, gl::GLContext* aGL,
                                   MacIOSurface* aSurface, GLuint* aTexture) {
   MOZ_ASSERT(aGL && aSurface && aTexture);
 
+  const GLenum target = aGL->GetPreferredMacIOSurfaceTextureTarget();
+
   aGL->fGenTextures(1, aTexture);
-  ActivateBindAndTexParameteri(aGL, LOCAL_GL_TEXTURE0,
-                               LOCAL_GL_TEXTURE_RECTANGLE_ARB, *aTexture);
-  aGL->fTexParameteri(LOCAL_GL_TEXTURE_RECTANGLE_ARB, LOCAL_GL_TEXTURE_WRAP_T,
-                      LOCAL_GL_CLAMP_TO_EDGE);
-  aGL->fTexParameteri(LOCAL_GL_TEXTURE_RECTANGLE_ARB, LOCAL_GL_TEXTURE_WRAP_S,
-                      LOCAL_GL_CLAMP_TO_EDGE);
+  ActivateBindAndTexParameteri(aGL, LOCAL_GL_TEXTURE0, target, *aTexture);
+  aGL->fTexParameteri(target, LOCAL_GL_TEXTURE_WRAP_T, LOCAL_GL_CLAMP_TO_EDGE);
+  aGL->fTexParameteri(target, LOCAL_GL_TEXTURE_WRAP_S, LOCAL_GL_CLAMP_TO_EDGE);
 
   gfx::SurfaceFormat readFormat = gfx::SurfaceFormat::UNKNOWN;
   bool result = aSurface->BindTexImage(aGL, aPlaneID, &readFormat);
@@ -94,7 +93,9 @@ wr::WrExternalImage RenderMacIOSurfaceTextureHost::Lock(uint8_t aChannelIndex,
 
   if (!mTextureHandles[0]) {
 #ifdef XP_MACOSX
-    MOZ_ASSERT(gl::GLContextCGL::Cast(mGL.get())->GetCGLContext());
+    if (mGL->GetContextType() == gl::GLContextType::CGL) {
+      MOZ_ASSERT(gl::GLContextCGL::Cast(mGL.get())->GetCGLContext());
+    }
 #else
     MOZ_ASSERT(gl::GLContextEAGL::Cast(mGL.get())->GetEAGLContext());
 #endif

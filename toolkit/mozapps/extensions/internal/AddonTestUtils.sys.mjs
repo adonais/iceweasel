@@ -1889,66 +1889,38 @@ export var AddonTestUtils = {
   // AMTelemetry events helpers.
 
   /**
-   * Formerly this function re-routed telemetry events. Now it just ensures
-   * that there are no unexamined events after the test file is exiting.
+   * Assert that the expected "sitepermission" addon install telemetry steps
+   * were recorded, then optionally reset FOG so that a subsequent call only
+   * sees events recorded after the previous call to this helper.
+   *
+   * @param {object} options
+   * @param {Array<string>} options.expectedSteps
+   *        The expected step extra var values for install events.
+   * @param {boolean} [options.resetFOG]
+   *        Whether to reset FOG after the assertion. Defaults to false.
+   * @param {Function} [options.onEvent]
+   *        If provided, called once per matched event (extra object), e.g. to
+   *        accumulate values across several calls within the same test task.
    */
-  hookAMTelemetryEvents() {
-    this.testScope.registerCleanupFunction(() => {
-      this.testScope.Assert.deepEqual(
-        [],
-        this.getAMTelemetryEvents(),
-        "No unexamined telemetry events after test is finished"
-      );
+  assertSitePermissionInstallSteps({
+    expectedSteps,
+    resetFOG = false,
+    onEvent,
+  }) {
+    let amInstallEvents = this.getAMGleanEvents("install", {
+      addon_type: "sitepermission",
     });
-  },
-
-  /**
-   * Retrive any AMTelemetry event collected and clears _all_ telemetry events.
-   *
-   * @returns {Array<object>}
-   *          The array of the collected telemetry data.
-   */
-  getAMTelemetryEvents() {
-    // This duplicates some logic from TelemetryTestUtils.
-    let snapshots = Services.telemetry.snapshotEvents(
-      Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS,
-      /* clear = */ true
-    );
-    let events = (snapshots.parent ?? [])
-      .filter(entry => entry[1] == "addonsManager")
-      .map(entry => ({
-        // The callers don't expect the timestamp or the category.
-        method: entry[2],
-        object: entry[3],
-        value: entry[4],
-        extra: entry[5],
-      }));
-
-    return events;
-  },
-
-  /**
-   * Assert that the expected addon install telemetry steps were recorded.
-   *
-   * @param {Array<string>} expectedSteps
-   *        The expected extra.step values for install events.
-   * @param {string} [addonType]
-   *        If provided, only events with evt.object === addonType are considered.
-   *        If omitted, all install events are considered.
-   */
-  assertInstallTelemetryEvents(expectedSteps, addonType) {
-    let amInstallEvents = this.getAMTelemetryEvents()
-      .filter(
-        evt =>
-          evt.method === "install" &&
-          (addonType == null || evt.object === addonType)
-      )
-      .map(evt => evt.extra.step);
     this.testScope.Assert.deepEqual(
-      amInstallEvents,
+      amInstallEvents.map(evt => evt.step),
       expectedSteps,
-      `got expected${addonType != null ? ` ${addonType}` : ""} install telemetry events`
+      "got expected sitepermission install telemetry events"
     );
+    if (resetFOG) {
+      Services.fog.testResetFOG();
+    }
+    if (onEvent) {
+      amInstallEvents.forEach(onEvent);
+    }
   },
 
   /**

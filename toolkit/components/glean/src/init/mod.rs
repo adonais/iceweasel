@@ -6,7 +6,6 @@ use std::env;
 use std::ffi::{c_char, CStr, CString};
 use std::ops::DerefMut;
 use std::path::PathBuf;
-use std::time::Duration;
 
 use firefox_on_glean::{metrics, pings};
 use nserror::{nsresult, NS_ERROR_FAILURE};
@@ -16,7 +15,7 @@ use xpcom::interfaces::{
 };
 use xpcom::{RefPtr, XpCom};
 
-use glean::{ClientInfoMetrics, Configuration};
+use glean::{ClientInfoMetrics, Configuration, ConfigurationBuilder};
 
 #[cfg(not(target_os = "android"))]
 mod upload_pref;
@@ -145,6 +144,7 @@ fn build_configuration(
         app_display_version,
         channel: Some(channel),
         locale: Some(locale),
+        os_version: None, // TODO: bug 2017277
     };
     log::debug!("Client Info: {:#?}", client_info);
 
@@ -176,32 +176,20 @@ fn build_configuration(
     let pings_per_interval = unsafe { FOG_MaxPingLimit() };
     metrics::fog::max_pings_per_minute.set(pings_per_interval.into());
 
-    let rate_limit = Some(glean::PingRateLimit {
+    let rate_limit = glean::PingRateLimit {
         seconds_per_interval: 60,
         pings_per_interval,
-    });
-
-    let configuration = Configuration {
-        upload_enabled: false,
-        data_path,
-        application_id,
-        max_events: None,
-        delay_ping_lifetime_io: true,
-        server_endpoint: Some(server),
-        uploader: None,
-        use_core_mps: true,
-        trim_data_to_registered_pings: true,
-        log_level: None,
-        rate_limit,
-        enable_event_timestamps: true,
-        experimentation_id: None,
-        enable_internal_pings: true,
-        ping_schedule: pings::ping_schedule(),
-        ping_lifetime_threshold: 0,
-        ping_lifetime_max_time: Duration::ZERO,
     };
 
-    Ok((configuration, client_info))
+    let builder = ConfigurationBuilder::new(false, data_path, application_id)
+        .with_delay_ping_lifetime_io(true)
+        .with_server_endpoint(server)
+        .with_use_core_mps(true)
+        .with_trim_data_to_registered_pings(true)
+        .with_ping_schedule(pings::ping_schedule())
+        .with_rate_limit(rate_limit);
+
+    Ok((builder.build(), client_info))
 }
 
 #[cfg(not(target_os = "android"))]

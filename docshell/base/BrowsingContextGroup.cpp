@@ -740,7 +740,7 @@ Maybe<bool> BrowsingContextGroup::UsesOriginAgentCluster(
   MOZ_DIAGNOSTIC_ASSERT(
       XRE_IsParentProcess() ||
           ValidatePrincipalCouldPotentiallyBeLoadedBy(
-              aPrincipal, ContentChild::GetSingleton()->GetRemoteType(), {}),
+              aPrincipal, ContentChild::GetSingleton()->GetRemoteType()),
       "Attempting to create document with unexpected principal");
 
   if (auto entry = mUseOriginAgentCluster.Lookup(aPrincipal)) {

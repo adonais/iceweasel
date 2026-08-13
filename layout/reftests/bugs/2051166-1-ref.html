@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<!-- Reference for 2051166-1.html: an identical box with a *static* transform,
+     which always takes the device-raster path and renders sharp. -->
+<html>
+<meta charset="utf-8">
+<style>
+  body { margin: 0; }
+  .box {
+    position: absolute;
+    top: 20px;
+    left: 24.4px;
+    font: 16px/1.4 sans-serif;
+    color: #000;
+    background: #fff;
+    white-space: pre;
+    transform: translateX(0px);
+  }
+</style>
+<div class="box">The quick brown fox jumps over 0123456789</div>

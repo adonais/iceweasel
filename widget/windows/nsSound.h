@@ -6,10 +6,10 @@
 #ifndef _nsSound_h_
 #define _nsSound_h_
 
-#include "nsISound.h"
-#include "nsIObserver.h"
-#include "nsCOMPtr.h"
 #include "mozilla/StaticPtr.h"
+#include "nsCOMPtr.h"
+#include "nsIObserver.h"
+#include "nsISound.h"
 
 class nsIThread;
 class nsIRunnable;

@@ -15,5 +15,10 @@ internal object ShortcutStateReducer {
         is ShortcutAction.ShortcutAdded -> state.copy(
             snackbarState = SnackbarState.ShortcutAdded,
         )
+
+        is ShortcutAction.AddShortcutSheetShown,
+        is ShortcutAction.AddWebsiteDialogShown,
+        is ShortcutAction.FrecencyTopSitePromoted,
+            -> state
     }
 }

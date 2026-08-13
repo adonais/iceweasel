@@ -27,7 +27,7 @@ add_task(async function test_not_autofill_ws_1() {
       makeVisitResult(context, {
         uri: "http://mozilla.org/",
         title: "mozilla.org/",
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         heuristic: true,
       }),
       makeVisitResult(context, {
@@ -48,7 +48,7 @@ add_task(async function test_not_autofill_ws_2() {
         uri: "http://mozilla.org/",
         title: "mozilla.org/",
         iconUri: "page-icon:http://mozilla.org/",
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         heuristic: true,
       }),
       makeVisitResult(context, {
@@ -69,7 +69,7 @@ add_task(async function test_not_autofill_ws_3() {
         uri: "http://mozilla.org/link",
         title: "mozilla.org/link",
         iconUri: "page-icon:http://mozilla.org/",
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         heuristic: true,
       }),
       makeVisitResult(context, {
@@ -92,7 +92,7 @@ add_task(async function test_not_autofill_ws_4() {
         uri: "http://mozilla.org/link/",
         title: "test visit for http://mozilla.org/link/",
         iconUri: "page-icon:http://mozilla.org/link/",
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         heuristic: true,
       }),
     ],

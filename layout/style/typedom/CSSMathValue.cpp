@@ -5,6 +5,7 @@
 #include "mozilla/dom/CSSMathValue.h"
 
 #include "mozilla/Assertions.h"
+#include "mozilla/NotNull.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/CSSMathClamp.h"
@@ -21,6 +22,14 @@ namespace mozilla::dom {
 CSSMathValue::CSSMathValue(nsCOMPtr<nsISupports> aParent,
                            MathValueType aMathValueType)
     : CSSNumericValue(std::move(aParent), NumericValueType::MathValue),
+      mMathValueType(aMathValueType) {}
+
+CSSMathValue::CSSMathValue(
+    nsCOMPtr<nsISupports> aParent,
+    MovingNotNull<UniquePtr<StyleNumericType>> aNumericType,
+    MathValueType aMathValueType)
+    : CSSNumericValue(std::move(aParent), std::move(aNumericType),
+                      NumericValueType::MathValue),
       mMathValueType(aMathValueType) {}
 
 // static

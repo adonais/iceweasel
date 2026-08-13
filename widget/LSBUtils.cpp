@@ -5,10 +5,12 @@
 
 #include "LSBUtils.h"
 
+#include <unistd.h>
+
 #include <fstream>
 #include <string>
 #include <string_view>
-#include <unistd.h>
+
 #include "base/process_util.h"
 #include "mozilla/FileUtils.h"
 #include "mozilla/Result.h"

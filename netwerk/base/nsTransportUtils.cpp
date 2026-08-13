@@ -2,13 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "nsTransportUtils.h"
+
 #include "mozilla/Mutex.h"
 #include "nsCOMPtr.h"
 #include "nsITransport.h"
 #include "nsProxyRelease.h"
 #include "nsSocketTransportService2.h"
 #include "nsThreadUtils.h"
-#include "nsTransportUtils.h"
 
 using namespace mozilla;
 

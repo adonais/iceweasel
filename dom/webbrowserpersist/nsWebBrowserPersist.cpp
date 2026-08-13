@@ -54,6 +54,10 @@
 #include "nsStreamUtils.h"
 #include "nspr.h"
 
+#ifdef XP_WIN
+#  include "WinUtils.h"
+#endif  // XP_WIN
+
 using namespace mozilla;
 using namespace mozilla::dom;
 
@@ -728,8 +732,13 @@ void nsWebBrowserPersist::SerializeNextFile() {
       return;
     }
   }
+  nsAutoCString docURISpec;
+  nsCOMPtr<nsIURI> docURI;
+  if (NS_SUCCEEDED(docData->mDocument->GetDocumentURI(docURISpec))) {
+    NS_NewURI(getter_AddRefs(docURI), docURISpec);
+  }
   nsCOMPtr<nsIOutputStream> outputStream;
-  rv = MakeOutputStream(docData->mFile, getter_AddRefs(outputStream));
+  rv = MakeOutputStream(docData->mFile, docURI, getter_AddRefs(outputStream));
   if (NS_SUCCEEDED(rv) && !outputStream) {
     rv = NS_ERROR_FAILURE;
   }
@@ -998,7 +1007,8 @@ nsWebBrowserPersist::OnDataAvailable(nsIRequest* request,
     MutexAutoLock streamLock(data->mStreamMutex);
     // Make the output stream
     if (!data->mStream) {
-      rv = MakeOutputStream(data->mFile, getter_AddRefs(data->mStream));
+      rv = MakeOutputStream(data->mFile, data->mOriginalLocation,
+                            getter_AddRefs(data->mStream));
       if (NS_FAILED(rv)) {
         readError = false;
         cancel = true;
@@ -1346,6 +1356,7 @@ nsresult nsWebBrowserPersist::SaveURIInternal(
   nsresult rv = NS_OK;
 
   mURI = aURI;
+  mReferrerInfo = aReferrerInfo;
 
   nsLoadFlags loadFlags = nsIRequest::LOAD_NORMAL;
   if (mPersistFlags & PERSIST_FLAGS_BYPASS_CACHE) {
@@ -1553,6 +1564,7 @@ nsresult nsWebBrowserPersist::SaveDocumentDeferred(
 nsresult nsWebBrowserPersist::SaveDocumentInternal(
     nsIWebBrowserPersistDocument* aDocument, nsIURI* aFile, nsIURI* aDataPath) {
   mURI = nullptr;
+  mReferrerInfo = nullptr;
   NS_ENSURE_ARG_POINTER(aDocument);
   NS_ENSURE_ARG_POINTER(aFile);
 
@@ -1560,6 +1572,9 @@ nsresult nsWebBrowserPersist::SaveDocumentInternal(
   NS_ENSURE_SUCCESS(rv, rv);
 
   rv = aDocument->GetIsPrivate(&mIsPrivate);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = aDocument->GetReferrerInfo(getter_AddRefs(mReferrerInfo));
   NS_ENSURE_SUCCESS(rv, rv);
 
   // See if we can get the local file representation of this URI
@@ -2216,13 +2231,13 @@ nsresult nsWebBrowserPersist::CalculateAndAppendFileExt(
 
 // Note: the MakeOutputStream helpers can be called from a background thread.
 nsresult nsWebBrowserPersist::MakeOutputStream(
-    nsIURI* aURI, nsIOutputStream** aOutputStream) {
+    nsIURI* aURI, nsIURI* aSourceURI, nsIOutputStream** aOutputStream) {
   nsresult rv;
 
   nsCOMPtr<nsIFile> localFile;
   GetLocalFileFromURI(aURI, getter_AddRefs(localFile));
   if (localFile)
-    rv = MakeOutputStreamFromFile(localFile, aOutputStream);
+    rv = MakeOutputStreamFromFile(localFile, aSourceURI, aOutputStream);
   else
     rv = MakeOutputStreamFromURI(aURI, aOutputStream);
 
@@ -2230,7 +2245,7 @@ nsresult nsWebBrowserPersist::MakeOutputStream(
 }
 
 nsresult nsWebBrowserPersist::MakeOutputStreamFromFile(
-    nsIFile* aFile, nsIOutputStream** aOutputStream) {
+    nsIFile* aFile, nsIURI* aSourceURI, nsIOutputStream** aOutputStream) {
   nsresult rv = NS_OK;
 
   nsCOMPtr<nsIFileOutputStream> fileOutputStream =
@@ -2243,6 +2258,13 @@ nsresult nsWebBrowserPersist::MakeOutputStreamFromFile(
     ioFlags = PR_APPEND | PR_CREATE_FILE | PR_WRONLY;
   rv = fileOutputStream->Init(aFile, ioFlags, -1, 0);
   NS_ENSURE_SUCCESS(rv, rv);
+
+#ifdef XP_WIN
+  // Mark the file as coming from the correct zone for the URL, so the Windows
+  // UAC prompt shows for untrusted origins when the user opens it.
+  (void)mozilla::widget::WinUtils::MaybeWriteFileZoneIdSync(
+      aFile, aSourceURI, mReferrerInfo, !mIsPrivate);
+#endif
 
   rv = NS_NewBufferedOutputStream(aOutputStream, fileOutputStream.forget(),
                                   BUFFERED_OUTPUT_SIZE);

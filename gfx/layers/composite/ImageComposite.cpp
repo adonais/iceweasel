@@ -6,8 +6,8 @@
 
 #include <inttypes.h>
 
-#include "mozilla/ProfilerMarkers.h"
 #include "gfxPlatform.h"
+#include "mozilla/ProfilerMarkers.h"
 #include "nsPrintfCString.h"
 
 namespace mozilla {

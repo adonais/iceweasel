@@ -7,6 +7,7 @@
 
 #include "chrome/common/ipc_message_utils.h"
 #include "ipc/EnumSerializer.h"
+#include "ipc/IPCMessageUtils.h"
 #include "mozilla/dom/LSSnapshot.h"
 #include "mozilla/dom/LSValue.h"
 
@@ -35,24 +36,8 @@ struct ParamTraits<mozilla::dom::LSValue::ConversionType>
           mozilla::dom::LSValue::ConversionType::NONE,
           mozilla::dom::LSValue::ConversionType::NUM_TYPES> {};
 
-template <>
-struct ParamTraits<mozilla::dom::LSValue> {
-  typedef mozilla::dom::LSValue paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mBuffer);
-    WriteParam(aWriter, aParam.mUTF16Length);
-    WriteParam(aWriter, aParam.mConversionType);
-    WriteParam(aWriter, aParam.mCompressionType);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mBuffer) &&
-           ReadParam(aReader, &aResult->mUTF16Length) &&
-           ReadParam(aReader, &aResult->mConversionType) &&
-           ReadParam(aReader, &aResult->mCompressionType);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::LSValue, mBuffer, mUTF16Length,
+                                  mConversionType, mCompressionType);
 
 }  // namespace IPC
 

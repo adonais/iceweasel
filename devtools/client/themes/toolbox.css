@@ -631,8 +631,8 @@
 }
 
 :is(#toolbox-panel-webconsole, #toolbox-deck)[hidden] {
-  display: flex;
-  /* Override xul.css */
+  /* Override global.css and xul.css */
+  display: flex !important;
   visibility: hidden;
 }
 

@@ -8,7 +8,6 @@
 #include "js/MapAndSet.h"
 #include "js/RootingAPI.h"
 #include "js/Wrapper.h"
-
 #include "jsapi-tests/tests.h"
 
 BEGIN_TEST(testMap) {

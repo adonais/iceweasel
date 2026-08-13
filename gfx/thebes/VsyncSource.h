@@ -5,14 +5,14 @@
 #ifndef GFX_VSYNCSOURCE_H
 #define GFX_VSYNCSOURCE_H
 
-#include "nsTArray.h"
 #include "mozilla/DataMutex.h"
-#include "mozilla/RefPtr.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
-#include "nsISupportsImpl.h"
 #include "mozilla/layers/LayersTypes.h"
+#include "nsISupportsImpl.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 class VsyncDispatcher;

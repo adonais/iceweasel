@@ -4,13 +4,13 @@
 
 #include "nsTextEquivUtils.h"
 
-#include "LocalAccessible-inl.h"
 #include "AccIterator.h"
 #include "CssAltContent.h"
-#include "nsCoreUtils.h"
+#include "LocalAccessible-inl.h"
 #include "Relation.h"
 #include "mozilla/dom/ChildIterator.h"
 #include "mozilla/dom/Text.h"
+#include "nsCoreUtils.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;

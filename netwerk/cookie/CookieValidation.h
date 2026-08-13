@@ -5,8 +5,8 @@
 #ifndef mozilla_net_CookieValidation_h
 #define mozilla_net_CookieValidation_h
 
-#include "nsICookieValidation.h"
 #include "Cookie.h"
+#include "nsICookieValidation.h"
 
 class nsIConsoleReportCollector;
 

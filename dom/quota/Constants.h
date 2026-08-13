@@ -74,7 +74,16 @@ const uint32_t kNoQuotaVersion = 0;
 // changes, after a crash, or on Android in general, and the L2 quota info
 // cache is also unavailable due to the version bump, storage initialization
 // will have to fall back to the slowest path: a full storage scan.
-const uint32_t kCurrentQuotaVersion = 1;
+const uint32_t kCurrentQuotaVersion = 2;
+
+// Minimum quota version whose .metadata-v2 files carry valid usage data.
+// Origins at or above this version can be initialized from cached metadata
+// without a full directory scan.
+const uint32_t kMinUsableQuotaVersion = 1;
+
+constexpr bool IsInitializableQuotaVersion(uint32_t aVersion) {
+  return aVersion >= kMinUsableQuotaVersion && aVersion <= kCurrentQuotaVersion;
+}
 
 }  // namespace mozilla::dom::quota
 

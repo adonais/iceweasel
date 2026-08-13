@@ -15,9 +15,10 @@
  */
 
 #include "nsWildCard.h"
-#include "nsXPCOM.h"
+
 #include "nsCRTGlue.h"
 #include "nsCharTraits.h"
+#include "nsXPCOM.h"
 
 /* -------------------- ASCII-specific character methods ------------------- */
 

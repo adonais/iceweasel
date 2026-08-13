@@ -118,7 +118,7 @@ add_task(async function testRangeResetAfterPaperSize() {
     ok(rangeError.hidden, "Range error is hidden");
 
     helper.dispatchSettingsChange({ paperId: "iso_a3" });
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => helper.get("paper-size-picker").value == "iso_a3",
       "Wait for paper size select to update"
     );
@@ -155,7 +155,7 @@ add_task(async function testInvalidRangeResetAfterDestinationChange() {
 
     // Select a new printer
     helper.dispatchSettingsChange({ printerName: mockPrinterName });
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => rangeError.hidden,
       "Wait for range error to be hidden"
     );
@@ -350,7 +350,7 @@ add_task(async function testErrorClearedAfterSwitchingToAll() {
 
     await changeRangeTo(helper, "all");
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => rangeError.hidden,
       "Wait for range error to be hidden"
     );
@@ -512,7 +512,7 @@ add_task(async function testPageCountChangeRangeRerender() {
     let previewUpdateCount = 0;
     ok(!helper.hasPendingPreview, "No preview is pending");
     helper.doc.addEventListener("preview-updated", () => previewUpdateCount++);
-    let renderedTwice = BrowserTestUtils.waitForCondition(
+    let renderedTwice = TestUtils.waitForCondition(
       () => previewUpdateCount == 2
     );
 

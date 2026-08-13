@@ -4,10 +4,10 @@
 
 #include "GPUProcessManager.h"
 
-#include "gfxConfig.h"
-#include "gfxPlatform.h"
 #include "GPUProcessHost.h"
 #include "GPUProcessListener.h"
+#include "gfxConfig.h"
+#include "gfxPlatform.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/MemoryReportingProcess.h"
 #include "mozilla/Preferences.h"
@@ -16,14 +16,14 @@
 #include "mozilla/RemoteMediaManagerChild.h"
 #include "mozilla/RemoteMediaManagerParent.h"
 #include "mozilla/Sprintf.h"
-#include "mozilla/StaticPtr.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/StaticPrefs_media.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/dom/ContentParent.h"
-#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/GPUChild.h"
 #include "mozilla/gfx/GPUParent.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/glean/GfxMetrics.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/ProcessChild.h"
@@ -41,20 +41,20 @@
 #include "mozilla/layers/RemoteCompositorSession.h"
 #include "mozilla/layers/VideoBridgeParent.h"
 #include "mozilla/webrender/RenderThread.h"
+#include "mozilla/widget/CompositorWidget.h"
 #include "mozilla/widget/PlatformWidgetTypes.h"
 #include "nsAppRunner.h"
-#include "mozilla/widget/CompositorWidget.h"
 #ifdef MOZ_WIDGET_SUPPORTS_OOP_COMPOSITING
 #  include "mozilla/widget/CompositorWidgetChild.h"
 #endif
-#include "nsIWidget.h"
-#include "nsContentUtils.h"
 #include "VRManagerChild.h"
 #include "VRManagerParent.h"
 #include "VsyncBridgeChild.h"
 #include "VsyncIOThreadHolder.h"
 #include "VsyncSource.h"
+#include "nsContentUtils.h"
 #include "nsExceptionHandler.h"
+#include "nsIWidget.h"
 #include "nsPrintfCString.h"
 
 #ifdef MOZ_WMF_MEDIA_ENGINE
@@ -63,8 +63,8 @@
 
 #if defined(MOZ_WIDGET_ANDROID)
 #  include "mozilla/java/SurfaceControlManagerWrappers.h"
-#  include "mozilla/widget/AndroidUiThread.h"
 #  include "mozilla/layers/UiCompositorControllerChild.h"
+#  include "mozilla/widget/AndroidUiThread.h"
 #endif  // defined(MOZ_WIDGET_ANDROID)
 
 #if defined(XP_WIN)

@@ -69,6 +69,8 @@ subsuite = "mozbuild"
 
 ["frontend/test_emitter.py"]
 
+["frontend/test_file_info_reviewers.py"]
+
 ["frontend/test_namespaces.py"]
 
 ["frontend/test_reader.py"]

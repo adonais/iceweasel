@@ -6,7 +6,10 @@ package org.mozilla.fenix.components.appstate
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import org.mozilla.fenix.components.appstate.AppAction.ShortcutAction
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState
+import org.mozilla.fenix.home.topsites.AddShortcutEntryPoint
+import org.mozilla.fenix.home.topsites.AddShortcutSource
 
 class ShortcutStateReducerTest {
 
@@ -16,7 +19,13 @@ class ShortcutStateReducerTest {
         assertEquals(SnackbarState.None(), initialState.snackbarState)
 
         val finalState =
-            AppStoreReducer.reduce(initialState, AppAction.ShortcutAction.ShortcutAdded)
+            AppStoreReducer.reduce(
+                initialState,
+                ShortcutAction.ShortcutAdded(
+                    source = AddShortcutSource.MANUAL,
+                    entryPoint = AddShortcutEntryPoint.PAGE_MENU,
+                ),
+            )
 
         assertEquals(SnackbarState.ShortcutAdded, finalState.snackbarState)
     }

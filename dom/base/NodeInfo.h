@@ -56,6 +56,9 @@ class NodeInfo final {
    */
   nsAtom* NameAtom() const { return mInner.mName; }
 
+  // Return the bloom filter hash for NameAtom().
+  uint64_t NameBloomFilterHash() const { return mNameBloomHash; }
+
   /*
    * Get the qualified name from this node as a string, the qualified name
    * includes the prefix, if one exists.
@@ -78,9 +81,7 @@ class NodeInfo final {
   /**
    * Returns an nsHTMLTag value if this is for an HTML element node.
    */
-  const mozilla::Maybe<const nsHTMLTag>& HTMLTag() const {
-    return mInner.HTMLTag();
-  }
+  const mozilla::Maybe<const nsHTMLTag>& HTMLTag() const;
 
   /*
    * Get the prefix from this node as a string.
@@ -267,13 +268,12 @@ class NodeInfo final {
 
     uint32_t Hash() const {
       if (!mHash) {
-        mHash.emplace(mName ? mName->hash()
-                            : mozilla::HashString(*mNameString));
+        uint32_t nameHash =
+            mName ? mName->hash() : mozilla::HashString(*mNameString);
+        mHash.emplace(mozilla::AddToHash(nameHash, mNamespaceID, mNodeType));
       }
       return mHash.value();
     }
-
-    const mozilla::Maybe<const nsHTMLTag>& HTMLTag() const;
 
     nsAtom* const MOZ_OWNING_REF mName;
     nsAtom* MOZ_OWNING_REF mPrefix;
@@ -282,7 +282,6 @@ class NodeInfo final {
     const nsAString* const mNameString;
     nsAtom* MOZ_OWNING_REF mExtraName;  // Only used by PIs and DocTypes
     mutable mozilla::Maybe<const uint32_t> mHash;
-    mutable mozilla::Maybe<const nsHTMLTag> mHTMLTag;
   };
 
   // nsNodeInfoManager needs to pass mInner to the hash table.
@@ -310,6 +309,10 @@ class NodeInfo final {
   // localName for the node. This is either equal to mInner.mName, or a
   // void string, depending on mInner.mNodeType.
   nsString mLocalName;
+
+  // Bloom filter hash for the name.
+  uint64_t mNameBloomHash;
+  mutable Maybe<const nsHTMLTag> mHTMLTag;
 };
 
 }  // namespace mozilla::dom

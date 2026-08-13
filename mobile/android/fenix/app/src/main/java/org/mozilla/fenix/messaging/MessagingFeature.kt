@@ -4,9 +4,9 @@
 
 package org.mozilla.fenix.messaging
 
+import androidx.lifecycle.LifecycleOwner
 import mozilla.components.service.nimbus.messaging.MessageSurfaceId
 import mozilla.components.support.base.feature.LifecycleAwareFeature
-import mozilla.components.support.utils.RunWhenReadyQueue
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction.MessagingAction
 
@@ -16,13 +16,12 @@ import org.mozilla.fenix.components.appstate.AppAction.MessagingAction
 class MessagingFeature(
     val appStore: AppStore,
     val surface: MessageSurfaceId,
-    private val runWhenReadyQueue: RunWhenReadyQueue,
 ) : LifecycleAwareFeature {
 
-    override fun start() {
-        runWhenReadyQueue.runIfReadyOrQueue {
-            appStore.dispatch(MessagingAction.Evaluate(surface))
-        }
+    override fun start() = Unit
+
+    override fun onResume(owner: LifecycleOwner) {
+        appStore.dispatch(MessagingAction.Evaluate(surface))
     }
 
     override fun stop() = Unit

@@ -47,7 +47,7 @@ async function getFocusChain(browser) {
  * @param {string} message
  */
 async function waitForFocusChain(browser, predicate, message) {
-  return BrowserTestUtils.waitForCondition(async () => {
+  return TestUtils.waitForCondition(async () => {
     return predicate(await getFocusChain(browser));
   }, message);
 }

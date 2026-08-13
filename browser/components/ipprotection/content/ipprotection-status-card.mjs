@@ -11,6 +11,13 @@ import "chrome://global/content/elements/moz-toggle.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/ipprotection/bandwidth-usage.mjs";
 
+const lazy = {};
+
+ChromeUtils.defineESModuleGetters(lazy, {
+  IPProtectionServerlist:
+    "moz-src:///toolkit/components/ipprotection/IPProtectionServerlist.sys.mjs",
+});
+
 /**
  * Custom element that implements a status card for IP protection.
  */
@@ -69,18 +76,20 @@ export default class IPProtectionStatusCard extends MozLitElement {
 
   updated(changedProperties) {
     super.updated(changedProperties);
-    // a11y: For screen readers, returns focus to the title after the button state changes (Bug 2027928)
-    if (
-      this.#actionButtonFocused &&
-      (changedProperties.has("protectionEnabled") ||
-        changedProperties.has("isActivating") ||
-        changedProperties.has("hasExclusion"))
-    ) {
-      this.#actionButtonFocused = false;
-      this.statusBoxEl.updateComplete.then(() => {
-        this.statusBoxEl.titleEl.focus();
-      });
+
+    let stateChanged =
+      changedProperties.has("protectionEnabled") ||
+      changedProperties.has("isActivating") ||
+      changedProperties.has("hasExclusion");
+    if (!this.#actionButtonFocused || !stateChanged || this.isActivating) {
+      return;
     }
+
+    this.#actionButtonFocused = false;
+
+    this.actionButtonEl.updateComplete.then(() => {
+      this.focus();
+    });
   }
 
   focus() {
@@ -102,6 +111,15 @@ export default class IPProtectionStatusCard extends MozLitElement {
   }
 
   locationSelectionButtonTemplate() {
+    let countryObject;
+    if (this.location) {
+      countryObject = lazy.IPProtectionServerlist.getLocation(this.location);
+    }
+
+    if (!this.isPremium && countryObject?.country.locked) {
+      this.location = "REC";
+    }
+
     const country =
       this.location && this.location !== "REC"
         ? countryName(this.location)

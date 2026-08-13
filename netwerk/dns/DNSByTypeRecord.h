@@ -5,8 +5,8 @@
 #ifndef DNSByTypeRecord_h_
 #define DNSByTypeRecord_h_
 
-#include "mozilla/net/HTTPSSVC.h"
 #include "ipc/IPCMessageUtils.h"
+#include "mozilla/net/HTTPSSVC.h"
 #include "mozilla/net/NeckoMessageUtils.h"
 
 namespace mozilla {
@@ -39,137 +39,28 @@ struct IPCTypeRecord {
 
 namespace IPC {
 
-template <>
-struct ParamTraits<mozilla::net::IPCTypeRecord> {
-  typedef mozilla::net::IPCTypeRecord paramType;
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mData);
-    WriteParam(aWriter, aParam.mTTL);
-    WriteParam(aWriter, aParam.mIsTRR);
-  }
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::net::IPCTypeRecord, mData, mTTL,
+                                  mIsTRR);
 
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mData) &&
-           ReadParam(aReader, &aResult->mTTL) &&
-           ReadParam(aReader, &aResult->mIsTRR);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::net::SVCB, mSvcFieldPriority,
+                                  mSvcDomainName, mEchConfig, mODoHConfig,
+                                  mHasIPHints, mHasEchConfig, mSvcFieldValue);
 
-template <>
-struct ParamTraits<mozilla::net::SVCB> {
-  typedef mozilla::net::SVCB paramType;
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mSvcFieldPriority);
-    WriteParam(aWriter, aParam.mSvcDomainName);
-    WriteParam(aWriter, aParam.mEchConfig);
-    WriteParam(aWriter, aParam.mODoHConfig);
-    WriteParam(aWriter, aParam.mHasIPHints);
-    WriteParam(aWriter, aParam.mHasEchConfig);
-    WriteParam(aWriter, aParam.mSvcFieldValue);
-  }
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::net::SvcParamAlpn, mValue);
 
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mSvcFieldPriority) &&
-           ReadParam(aReader, &aResult->mSvcDomainName) &&
-           ReadParam(aReader, &aResult->mEchConfig) &&
-           ReadParam(aReader, &aResult->mODoHConfig) &&
-           ReadParam(aReader, &aResult->mHasIPHints) &&
-           ReadParam(aReader, &aResult->mHasEchConfig) &&
-           ReadParam(aReader, &aResult->mSvcFieldValue);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITHOUT_FIELDS(mozilla::net::SvcParamNoDefaultAlpn);
 
-template <>
-struct ParamTraits<mozilla::net::SvcParamAlpn> {
-  typedef mozilla::net::SvcParamAlpn paramType;
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mValue);
-  }
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::net::SvcParamPort, mValue);
 
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mValue);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::net::SvcParamIpv4Hint, mValue);
 
-template <>
-struct ParamTraits<mozilla::net::SvcParamNoDefaultAlpn> {
-  typedef mozilla::net::SvcParamNoDefaultAlpn paramType;
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {}
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::net::SvcParamEchConfig, mValue);
 
-  static bool Read(MessageReader* aReader, paramType* aResult) { return true; }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::net::SvcParamIpv6Hint, mValue);
 
-template <>
-struct ParamTraits<mozilla::net::SvcParamPort> {
-  typedef mozilla::net::SvcParamPort paramType;
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mValue);
-  }
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::net::SvcParamODoHConfig, mValue);
 
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mValue);
-  }
-};
-
-template <>
-struct ParamTraits<mozilla::net::SvcParamIpv4Hint> {
-  typedef mozilla::net::SvcParamIpv4Hint paramType;
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mValue);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mValue);
-  }
-};
-
-template <>
-struct ParamTraits<mozilla::net::SvcParamEchConfig> {
-  typedef mozilla::net::SvcParamEchConfig paramType;
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mValue);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mValue);
-  }
-};
-
-template <>
-struct ParamTraits<mozilla::net::SvcParamIpv6Hint> {
-  typedef mozilla::net::SvcParamIpv6Hint paramType;
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mValue);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mValue);
-  }
-};
-
-template <>
-struct ParamTraits<mozilla::net::SvcParamODoHConfig> {
-  typedef mozilla::net::SvcParamODoHConfig paramType;
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mValue);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mValue);
-  }
-};
-
-template <>
-struct ParamTraits<mozilla::net::SvcFieldValue> {
-  typedef mozilla::net::SvcFieldValue paramType;
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mValue);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mValue);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::net::SvcFieldValue, mValue);
 
 }  // namespace IPC
 

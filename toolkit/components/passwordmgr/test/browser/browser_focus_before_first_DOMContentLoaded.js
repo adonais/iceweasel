@@ -88,11 +88,13 @@ add_task(async function test_autocompleteFromUsername() {
     "The richlistbox should be the first anonymous node"
   );
   for (let i = 0; i < autocompletePopup.view.matchCount; i++) {
-    if (
-      richlistbox.selectedItem &&
-      richlistbox.selectedItem.textContent.includes("tempuser1")
-    ) {
-      break;
+    if (richlistbox.selectedItem) {
+      const itemText = richlistbox.selectedItem.querySelector(
+        "autocomplete-row-item"
+      )?.label;
+      if (itemText?.includes("tempuser1")) {
+        break;
+      }
     }
     await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, newTab.linkedBrowser);
   }

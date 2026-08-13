@@ -199,6 +199,7 @@ def _schema_1():
                         ),
                         "source-extensions": Unique([str]),
                         "blocking": Match(r"^[0-9]+$"),
+                        "options": [str],
                         "frequency": Match(
                             r"^(every|release|[1-9][0-9]* weeks?|[1-9][0-9]* commits?|"
                             + r"[1-9][0-9]* weeks?, ?[1-9][0-9]* commits?)$"

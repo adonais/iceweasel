@@ -42,7 +42,7 @@ async function getRestrictKeywordResult(window, restrictToken) {
 
   for (let index = 0; !restrictResult && index < resultCount; index++) {
     let details = await UrlbarTestUtils.getDetailsOfResultAt(window, index);
-    if (details.result.type != UrlbarUtils.RESULT_TYPE.RESTRICT) {
+    if (details.result.type != UrlbarShared.RESULT_TYPE.RESTRICT) {
       continue;
     }
     let l10nRestrictKeywords = details.result.payload.l10nRestrictKeywords;

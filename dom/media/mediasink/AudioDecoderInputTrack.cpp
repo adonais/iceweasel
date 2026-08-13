@@ -76,8 +76,14 @@ bool AudioDecoderInputTrack::ConvertAudioDataToSegment(
     mResamplerChannelCount = 0;
   }
   if (mInputSampleRate != Graph()->GraphRate()) {
-    aSegment.ResampleChunks(mResampler, &mResamplerChannelCount,
-                            mInputSampleRate, Graph()->GraphRate());
+    nsresult rv =
+        aSegment.ResampleChunks(mResampler, &mResamplerChannelCount,
+                                mInputSampleRate, Graph()->GraphRate());
+    if (NS_FAILED(rv)) {
+      LOG("Failed to resample audio ({} -> {}); dropping segment",
+          mInputSampleRate, Graph()->GraphRate());
+      return false;
+    }
   }
   return aSegment.GetDuration() > 0;
 }

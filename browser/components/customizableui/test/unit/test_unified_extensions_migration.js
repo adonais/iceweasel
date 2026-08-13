@@ -107,7 +107,6 @@ add_task(async function test_no_extensions() {
         "downloads-button",
       ],
       TabsToolbar: [
-        "firefox-view-button",
         "tabbrowser-tabs",
         "new-tab-button",
         "alltabs-button",
@@ -154,7 +153,6 @@ add_task(async function test_existing_browser_actions_no_movement() {
         "downloads-button",
       ],
       TabsToolbar: [
-        "firefox-view-button",
         "tabbrowser-tabs",
         "new-tab-button",
         "alltabs-button",
@@ -197,7 +195,6 @@ add_task(async function test_migrate_extension_buttons() {
         "downloads-button",
       ],
       TabsToolbar: [
-        "firefox-view-button",
         "tabbrowser-tabs",
         "new-tab-button",
         "alltabs-button",
@@ -256,7 +253,6 @@ add_task(async function test_migrate_extension_buttons_no_overwrite() {
         "downloads-button",
       ],
       TabsToolbar: [
-        "firefox-view-button",
         "tabbrowser-tabs",
         "new-tab-button",
         "alltabs-button",
@@ -326,7 +322,6 @@ add_task(async function test_migrate_extension_buttons_elsewhere() {
         "ext8-browser-action",
       ],
       TabsToolbar: [
-        "firefox-view-button",
         "ext9-browser-action",
         "tabbrowser-tabs",
         "ext10-browser-action",

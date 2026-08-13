@@ -30,6 +30,14 @@ XPCOM_MANIFESTS += [
     "components.conf",
 ]
 
+XPIDL_SOURCES += [
+    "nsIPushErrorReporter.idl",
+    "nsIPushNotifier.idl",
+    "nsIPushService.idl",
+]
+
+XPIDL_MODULE = "dom_push"
+
 MOCHITEST_MANIFESTS += [
     "test/mochitest.toml",
 ]

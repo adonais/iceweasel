@@ -6,9 +6,9 @@
 
 #include <stdint.h>  // for uint32_t
 
+#include "GLImages.h"            // for SurfaceTextureImage::Data, etc
 #include "ImageContainer.h"      // for Image, PlanarYCbCrImage, etc
 #include "ImageTypes.h"          // for ImageFormat::PLANAR_YCBCR, etc
-#include "GLImages.h"            // for SurfaceTextureImage::Data, etc
 #include "gfx2DGlue.h"           // for ImageFormatToSurfaceFormat
 #include "gfxPlatform.h"         // for gfxPlatform
 #include "mozilla/Assertions.h"  // for MOZ_ASSERT, etc
@@ -21,15 +21,19 @@
 #include "mozilla/layers/CompositableForwarder.h"
 #include "mozilla/layers/CompositorTypes.h"  // for CompositableType, etc
 #include "mozilla/layers/ISurfaceAllocator.h"
-#include "mozilla/layers/LayersSurfaces.h"  // for SurfaceDescriptor, etc
-#include "mozilla/layers/TextureForwarder.h"
+#include "mozilla/layers/LayersSurfaces.h"    // for SurfaceDescriptor, etc
 #include "mozilla/layers/TextureClient.h"     // for TextureClient, etc
 #include "mozilla/layers/TextureClientOGL.h"  // for SurfaceTextureClient
-#include "mozilla/mozalloc.h"                 // for operator delete, etc
-#include "nsCOMPtr.h"                         // for already_AddRefed
-#include "nsDebug.h"                          // for NS_WARNING, NS_ASSERTION
-#include "nsISupportsImpl.h"                  // for Image::Release, etc
-#include "nsRect.h"                           // for mozilla::gfx::IntRect
+#include "mozilla/layers/TextureForwarder.h"
+#include "mozilla/mozalloc.h"  // for operator delete, etc
+#include "nsCOMPtr.h"          // for already_AddRefed
+#include "nsDebug.h"           // for NS_WARNING, NS_ASSERTION
+#include "nsISupportsImpl.h"   // for Image::Release, etc
+#include "nsRect.h"            // for mozilla::gfx::IntRect
+
+#ifdef MOZ_WIDGET_ANDROID
+#  include "mozilla/layers/AndroidImageReader.h"
+#endif
 
 namespace mozilla {
 namespace layers {
@@ -117,6 +121,12 @@ already_AddRefed<TextureClient> ImageClient::CreateTextureClientForImage(
         typedImage->GetOriginPos(), typedImage->GetHasAlpha(),
         typedImage->GetForceBT709ColorSpace(),
         typedImage->GetTransformOverride(),
+        aKnowsCompositor->GetTextureForwarder().get(), TextureFlags::DEFAULT);
+  } else if (aImage->GetFormat() == ImageFormat::ANDROID_IMAGE_READER) {
+    AndroidImageReaderImage* typedImage = aImage->AsAndroidImageReaderImage();
+    texture = AndroidImageReaderImageTextureData::CreateTextureClient(
+        typedImage->mImageReaderId, typedImage->mFrameId, typedImage->mSize,
+        typedImage->GetOriginPos(), typedImage->mHasAlpha,
         aKnowsCompositor->GetTextureForwarder().get(), TextureFlags::DEFAULT);
 #endif
   } else {

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<meta charset=utf-8>
+<title>Test dynamic import from a preloaded static dependency</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<body>
+<script>
+  SimpleTest.waitForExplicitFinish();
+
+  const OK = "data:text/javascript,export default 1";
+  const DEP_BODY =
+    'import("' + OK + '").then(' +
+    '() => { window.postMessage("inner-ok", "*"); }, ' +
+    '(e) => { window.postMessage("inner-fail:" + e, "*"); });' +
+    'export default 2;';
+  const DEP = "data:text/javascript," + encodeURIComponent(DEP_BODY);
+  const ROOT_BODY = 'import "' + DEP + '";';
+  const ROOT = "data:text/javascript," + encodeURIComponent(ROOT_BODY);
+  const ROOT2_BODY = 'import "' + DEP + '"; window.__outer = 1;';
+  const ROOT2 = "data:text/javascript," + encodeURIComponent(ROOT2_BODY);
+
+  window.addEventListener("message", (e) => {
+    is(e.data, "inner-ok",
+       "Dynamic import from the preloaded dependency should succeed.");
+    ok(window.__outer == 1, "The second top-level module should have run.");
+    SimpleTest.finish();
+  });
+
+  const link = document.createElement("link");
+  link.rel = "modulepreload";
+  link.href = ROOT;
+
+  link.addEventListener("load", () => {
+    const s = document.createElement("script");
+    s.type = "module";
+    s.src = ROOT2;
+    document.body.appendChild(s);
+  });
+
+  document.head.appendChild(link);
+</script>
+</body>

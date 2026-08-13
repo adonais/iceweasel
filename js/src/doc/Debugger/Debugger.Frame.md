@@ -229,8 +229,9 @@ that require an on-stack frame.
 
 ### `terminated`
 True if the frame this `Debugger.Frame` instance refers to will never run
-again; false if it is on-stack or is a suspended generator/async call that
-may be resumed later. Note that this property may be accessed regardless of
+again; false if it is on-stack, is a suspended generator/async call, or is a
+suspended wasm continuation (e.g. a JSPI call waiting on a promise) that may be
+resumed later. Note that this property may be accessed regardless of
 what state the frame is in, so it can be used to verify whether it is safe to
 access other properties that require a non-terminated frame.
 

@@ -5,10 +5,10 @@
 #ifndef mozilla_widget_nsMacDockSupport_h
 #define mozilla_widget_nsMacDockSupport_h
 
+#include "nsCOMPtr.h"
 #include "nsIMacDockSupport.h"
 #include "nsIStandaloneNativeMenu.h"
 #include "nsITaskbarProgress.h"
-#include "nsCOMPtr.h"
 #include "nsString.h"
 
 @class MOZProgressDockOverlayView;

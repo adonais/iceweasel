@@ -56,10 +56,10 @@ auto AudioConfig::ChannelLayout::Map() const -> ChannelMap {
   }
   ChannelMap map = UNKNOWN_MAP;
   for (size_t i = 0; i < mChannels.Length(); i++) {
-    if (uint32_t(mChannels[i]) > sizeof(ChannelMap) * 8) {
+    if (uint32_t(mChannels[i]) >= sizeof(ChannelMap) * 8) {
       return UNKNOWN_MAP;
     }
-    ChannelMap mask = 1 << mChannels[i];
+    ChannelMap mask = 1u << mChannels[i];
     if (mChannels[i] == CHANNEL_INVALID || (mChannelMap & mask)) {
       // Invalid configuration.
       return UNKNOWN_MAP;

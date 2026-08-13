@@ -5,12 +5,11 @@
 #ifndef _nsAccessibleRelation_H_
 #define _nsAccessibleRelation_H_
 
-#include "nsIAccessibleRelation.h"
-
-#include "nsCOMPtr.h"
-#include "nsTArray.h"
-#include "nsIMutableArray.h"
 #include "mozilla/a11y/RemoteAccessible.h"
+#include "nsCOMPtr.h"
+#include "nsIAccessibleRelation.h"
+#include "nsIMutableArray.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 namespace a11y {

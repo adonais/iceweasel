@@ -41,7 +41,7 @@ async function waitUntilRowsMatch(openTabs, cardIndex, expectedURLs) {
   info(
     `waitUntilRowsMatch, wait for there to be at least ${cardIndex + 1} cards`
   );
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     if (!openTabs.initialWindowsReady) {
       info("openTabs.initialWindowsReady isn't true");
       return false;

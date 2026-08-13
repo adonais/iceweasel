@@ -5,11 +5,11 @@
 #ifndef nsDirectoryServiceUtils_h_
 #define nsDirectoryServiceUtils_h_
 
+#include "nsCOMPtr.h"
+#include "nsIFile.h"
 #include "nsIProperties.h"
 #include "nsServiceManagerUtils.h"
-#include "nsCOMPtr.h"
 #include "nsXPCOMCID.h"
-#include "nsIFile.h"
 
 inline nsresult NS_GetSpecialDirectory(const char* aSpecialDirName,
                                        nsIFile** aResult) {

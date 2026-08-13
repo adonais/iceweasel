@@ -4,6 +4,7 @@ subsuite = "devtools"
 support-files = [
   "array_json.json",
   "array_json.json^headers^",
+  "breadcrumb.json",
   "csp_json.json",
   "csp_json.json^headers^",
   "doc_with_json_in_iframe.html",
@@ -27,6 +28,8 @@ support-files = [
 ["browser_jsonview_access_data.js"]
 
 ["browser_jsonview_array_buckets.js"]
+
+["browser_jsonview_breadcrumb.js"]
 
 ["browser_jsonview_bug_1380828.js"]
 

@@ -3,9 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "js/Conversions.h"  // JS::ToString
-
 #include "jsapi-tests/tests.h"
-
 #include "vm/HelperThreads.h"
 
 BEGIN_TEST(testOOM) {

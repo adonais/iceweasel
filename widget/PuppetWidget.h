@@ -12,16 +12,16 @@
 #ifndef mozilla_widget_PuppetWidget_h_
 #define mozilla_widget_PuppetWidget_h_
 
-#include "mozilla/gfx/2D.h"
-#include "mozilla/RefPtr.h"
-#include "nsIWidget.h"
-#include "nsCOMArray.h"
-#include "nsThreadUtils.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/ContentCache.h"
 #include "mozilla/EventForwards.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/TextEventDispatcherListener.h"
+#include "mozilla/gfx/2D.h"
 #include "mozilla/layers/MemoryPressureObserver.h"
+#include "nsCOMArray.h"
+#include "nsIWidget.h"
+#include "nsThreadUtils.h"
 
 class nsRefreshDriver;
 

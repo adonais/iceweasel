@@ -5,10 +5,10 @@
 #ifndef mozilla_net_UrlClassifierCommon_h
 #define mozilla_net_UrlClassifierCommon_h
 
+#include <vector>
+
 #include "mozilla/net/ChannelClassifierLog.h"
 #include "nsString.h"
-
-#include <vector>
 
 class nsIChannel;
 class nsIURI;

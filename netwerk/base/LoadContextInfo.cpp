@@ -4,8 +4,8 @@
 
 #include "LoadContextInfo.h"
 
-#include "mozilla/dom/ToJSValue.h"
 #include "mozilla/StoragePrincipalHelper.h"
+#include "mozilla/dom/ToJSValue.h"
 #include "nsDocShell.h"
 #include "nsIChannel.h"
 #include "nsILoadContext.h"

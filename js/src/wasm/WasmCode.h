@@ -44,7 +44,6 @@
 #include "threading/ExclusiveData.h"
 #include "util/Memory.h"
 #include "vm/MutexIDs.h"
-#include "wasm/AsmJS.h"  // CodeMetadataForAsmJS::SeenSet
 #include "wasm/WasmBuiltinModule.h"
 #include "wasm/WasmBuiltins.h"
 #include "wasm/WasmCodegenConstants.h"
@@ -617,7 +616,6 @@ class CodeBlock {
   bool initialize(const Code& code, size_t codeBlockIndex);
   void sendToProfiler(const CodeMetadata& codeMeta,
                       const CodeTailMetadata& codeTailMeta,
-                      const CodeMetadataForAsmJS* codeMetaForAsmJS,
                       FuncIonPerfSpewerSpan ionSpewers,
                       FuncBaselinePerfSpewerSpan baselineSpewers) const;
 
@@ -992,8 +990,6 @@ class Code : public ShareableBase<Code> {
   // only available after the whole module has been decoded. This is always
   // non-null.
   SharedCodeTailMetadata codeTailMeta_;
-  // This is null for a wasm module, non-null for asm.js
-  SharedCodeMetadataForAsmJS codeMetaForAsmJS_;
 
   const CodeBlock* sharedStubs_;
   const CodeBlock* completeTier1_;
@@ -1085,8 +1081,7 @@ class Code : public ShareableBase<Code> {
 
  public:
   Code(CompileMode mode, const CodeMetadata& codeMeta,
-       const CodeTailMetadata& codeTailMeta,
-       const CodeMetadataForAsmJS* codeMetaForAsmJS);
+       const CodeTailMetadata& codeTailMeta);
   ~Code();
 
   [[nodiscard]] bool initialize(FuncImportVector&& funcImports,
@@ -1170,9 +1165,6 @@ class Code : public ShareableBase<Code> {
   bool hasSerializableCode() const { return hasCompleteTier(Tier::Serialized); }
 
   const CodeMetadata& codeMeta() const { return *codeMeta_; }
-  const CodeMetadataForAsmJS* codeMetaForAsmJS() const {
-    return codeMetaForAsmJS_;
-  }
   const CodeTailMetadata& codeTailMeta() const { return *codeTailMeta_; }
   bool debugEnabled() const { return codeTailMeta_->debugEnabled; }
 
@@ -1276,10 +1268,10 @@ class Code : public ShareableBase<Code> {
 
   // about:memory reporting:
 
-  void addSizeOfMiscIfNotSeen(
-      mozilla::MallocSizeOf mallocSizeOf, CodeMetadata::SeenSet* seenCodeMeta,
-      CodeMetadataForAsmJS::SeenSet* seenCodeMetaForAsmJS,
-      Code::SeenSet* seenCode, size_t* code, size_t* data) const;
+  void addSizeOfMiscIfNotSeen(mozilla::MallocSizeOf mallocSizeOf,
+                              CodeMetadata::SeenSet* seenCodeMeta,
+                              Code::SeenSet* seenCode, size_t* code,
+                              size_t* data) const;
 
   size_t tier1CodeMemoryUsed() const {
     return completeTier1_->segment->capacityBytes();

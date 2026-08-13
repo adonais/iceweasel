@@ -5,8 +5,8 @@
 #ifndef mozilla_net_NullHttpTransaction_h
 #define mozilla_net_NullHttpTransaction_h
 
-#include "nsAHttpTransaction.h"
 #include "TimingStruct.h"
+#include "nsAHttpTransaction.h"
 
 // This is the minimal nsAHttpTransaction implementation. A NullHttpTransaction
 // can be used to drive connection level semantics (such as SSL handshakes

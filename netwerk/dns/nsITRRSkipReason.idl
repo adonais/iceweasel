@@ -116,6 +116,23 @@ inline bool IsFailedConfirmationOrNoConnectivity(TRRSkippedReason aReason) {
           aReason == TRRSkippedReason::TRR_NO_CONNECTIVITY);
 }
 
+inline bool IsConnectionFailedTRRSkipReason(TRRSkippedReason aReason) {
+  // These indicate a problem reaching or talking to the DoH server rather than
+  // an authoritative DNS answer, so the lookup should be allowed to fall back
+  // to the native resolver.
+  return (aReason == TRRSkippedReason::TRR_FAILED ||
+          aReason == TRRSkippedReason::TRR_TIMEOUT ||
+          aReason == TRRSkippedReason::TRR_CHANNEL_DNS_FAIL ||
+          aReason == TRRSkippedReason::TRR_UNKNOWN_CHANNEL_FAILURE ||
+          aReason == TRRSkippedReason::TRR_SEND_FAILED ||
+          aReason == TRRSkippedReason::TRR_NET_RESET ||
+          aReason == TRRSkippedReason::TRR_NET_TIMEOUT ||
+          aReason == TRRSkippedReason::TRR_NET_REFUSED ||
+          aReason == TRRSkippedReason::TRR_NET_INTERRUPT ||
+          aReason == TRRSkippedReason::TRR_NET_INADEQ_SEQURITY ||
+          aReason == TRRSkippedReason::TRR_SERVER_RESPONSE_ERR);
+}
+
 extern nsresult GetTRRSkipReasonName(TRRSkippedReason aReason, nsACString& aName);
 
 } // net

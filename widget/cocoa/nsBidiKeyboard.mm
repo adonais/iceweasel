@@ -4,8 +4,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsBidiKeyboard.h"
-#include "nsCocoaUtils.h"
 #include "TextInputHandler.h"
+#include "nsCocoaUtils.h"
 #include "nsIWidget.h"
 
 // This must be the last include:

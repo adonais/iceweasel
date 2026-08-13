@@ -4,29 +4,28 @@
 
 #include "nsURLHelper.h"
 
+#include <algorithm>
+#include <iterator>
+
 #include "mozilla/AppShutdown.h"
 #include "mozilla/CompactPair.h"
 #include "mozilla/Encoding.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs_network.h"
 #include "mozilla/TextUtils.h"
-
-#include <algorithm>
-#include <iterator>
-
+#include "mozilla/Tokenizer.h"
+#include "mozilla/net/DNS.h"
+#include "mozilla/net/rust_helper.h"
 #include "nsASCIIMask.h"
-#include "nsIFile.h"
-#include "nsIURLParser.h"
 #include "nsCOMPtr.h"
 #include "nsCRT.h"
-#include "nsNetCID.h"
-#include "mozilla/Preferences.h"
-#include "prnetdb.h"
-#include "mozilla/StaticPrefs_network.h"
-#include "mozilla/Tokenizer.h"
-#include "nsEscape.h"
 #include "nsDOMString.h"
-#include "mozilla/net/rust_helper.h"
-#include "mozilla/net/DNS.h"
+#include "nsEscape.h"
+#include "nsIFile.h"
+#include "nsIURLParser.h"
+#include "nsNetCID.h"
+#include "prnetdb.h"
 
 using namespace mozilla;
 

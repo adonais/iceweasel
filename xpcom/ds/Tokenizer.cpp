@@ -4,8 +4,9 @@
 
 #include "Tokenizer.h"
 
-#include "nsUnicharUtils.h"
 #include <algorithm>
+
+#include "nsUnicharUtils.h"
 
 namespace mozilla {
 

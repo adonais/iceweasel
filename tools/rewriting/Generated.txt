@@ -197,6 +197,7 @@ mobile/android/android-components/components/support/test/lint-baseline.xml
 mobile/android/android-components/components/support/utils/lint-baseline.xml
 mobile/android/android-components/components/support/webextensions/lint-baseline.xml
 mobile/android/android-components/components/tooling/fetch-tests/lint-baseline.xml
+mobile/android/android-components/components/ui/animation/lint-baseline.xml
 mobile/android/android-components/components/ui/autocomplete/lint-baseline.xml
 mobile/android/android-components/components/ui/colors/lint-baseline.xml
 mobile/android/android-components/components/ui/fonts/lint-baseline.xml

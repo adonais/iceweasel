@@ -18,7 +18,6 @@ class MoveEmitterWasm32 {
   explicit MoveEmitterWasm32(MacroAssemblerWasm32&) { MOZ_CRASH(); }
   void emit(const MoveResolver&) { MOZ_CRASH(); }
   void finish() { MOZ_CRASH(); }
-  void setScratchRegister(Register) { MOZ_CRASH(); }
 };
 
 using MoveEmitter = MoveEmitterWasm32;

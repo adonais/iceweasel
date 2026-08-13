@@ -5,6 +5,8 @@ subsuite = "mozbase"
 
 ["test_errorsummary.py"]
 
+["test_testsummary.py"]
+
 ["test_formatters.py"]
 
 ["test_logger.py"]

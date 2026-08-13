@@ -3,15 +3,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ScaledFontFontconfig.h"
-#include "UnscaledFontFreeType.h"
-#include "Logging.h"
-#include "mozilla/StaticPrefs_gfx.h"
-#include "mozilla/webrender/WebRenderTypes.h"
-
-#include "skia/include/ports/SkTypeface_cairo.h"
-#include "HelpersSkia.h"
 
 #include <fontconfig/fcfreetype.h>
+
+#include "HelpersSkia.h"
+#include "Logging.h"
+#include "UnscaledFontFreeType.h"
+#include "mozilla/StaticPrefs_gfx.h"
+#include "mozilla/webrender/WebRenderTypes.h"
+#include "skia/include/ports/SkTypeface_cairo.h"
 
 #include FT_LCD_FILTER_H
 #include FT_MULTIPLE_MASTERS_H

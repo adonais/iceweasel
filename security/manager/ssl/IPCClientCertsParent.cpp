@@ -3,12 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "IPCClientCertsParent.h"
+
 #include "ScopedNSSTypes.h"
-#include "nsNetCID.h"
+#include "mozilla/SyncRunnable.h"
 #include "nsNSSComponent.h"
 #include "nsNSSIOLayer.h"
-
-#include "mozilla/SyncRunnable.h"
+#include "nsNetCID.h"
 
 namespace mozilla::psm {
 

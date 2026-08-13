@@ -5,11 +5,11 @@
 #include "RenderTextureHost.h"
 
 #include "GLContext.h"
+#include "RenderThread.h"
+#include "mozilla/ProfilerMarkers.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/TextureHost.h"
-#include "mozilla/ProfilerMarkers.h"
 #include "mozilla/webrender/RenderThread.h"
-#include "RenderThread.h"
 
 namespace mozilla {
 namespace wr {

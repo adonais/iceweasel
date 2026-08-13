@@ -2,15 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "InterfaceInitFuncs.h"
+#include <atk/atk.h>
 
-#include "LocalAccessible-inl.h"
 #include "AccessibleWrap.h"
-#include "nsMai.h"
+#include "InterfaceInitFuncs.h"
+#include "LocalAccessible-inl.h"
 #include "mozilla/Likely.h"
-
-#include <atk/atkobject.h>
-#include <atk/atkselection.h>
+#include "nsMai.h"
 
 using namespace mozilla::a11y;
 

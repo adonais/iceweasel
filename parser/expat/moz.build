@@ -29,5 +29,10 @@ LOCAL_INCLUDES += [
 
 FINAL_LIBRARY = 'xul'
 
+# Expat 2.8.2 added fallthrough annotations unreachable in our instantiation
+# (upstream PR 1224), tripping clang's -Wunreachable-code-fallthrough.
+if CONFIG['CC_TYPE'] in ('clang', 'clang-cl'):
+    CFLAGS += ['-Wno-unreachable-code-fallthrough']
+
 for k, v in expat_defines:
     DEFINES[k] = v

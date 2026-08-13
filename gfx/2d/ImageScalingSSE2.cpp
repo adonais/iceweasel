@@ -3,9 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ImageScaling.h"
-#include "mozilla/Attributes.h"
-
 #include "SSEHelpers.h"
+#include "mozilla/Attributes.h"
 
 /* The functions below use the following system for averaging 4 pixels:
  *

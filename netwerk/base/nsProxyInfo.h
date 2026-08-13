@@ -5,9 +5,9 @@
 #ifndef nsProxyInfo_h_
 #define nsProxyInfo_h_
 
+#include "mozilla/Atomics.h"
 #include "nsIProxyInfo.h"
 #include "nsString.h"
-#include "mozilla/Atomics.h"
 
 // Use to support QI nsIProxyInfo to nsProxyInfo
 #define NS_PROXYINFO_IID                      \

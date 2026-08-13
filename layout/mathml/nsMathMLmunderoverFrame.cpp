@@ -238,7 +238,7 @@ XXX The winner is the outermost setting in conflicting settings like these:
                    MathMLEmbellishFlag::AccentUnder)) {
       AutoTArray<nsString, 1> params;
       params.AppendElement(mContent->NodeInfo()->NodeName());
-      PresContext()->Document()->WarnOnceAbout(
+      PresContext()->Document()->WarnOnceAndReportAbout(
           dom::DeprecatedOperations::
               eMathML_DeprecatedMunderNonExplicitAccentunder,
           false, params);
@@ -266,7 +266,7 @@ XXX The winner is the outermost setting in conflicting settings like these:
     } else if (mEmbellishData.flags.contains(MathMLEmbellishFlag::AccentOver)) {
       AutoTArray<nsString, 1> params;
       params.AppendElement(mContent->NodeInfo()->NodeName());
-      PresContext()->Document()->WarnOnceAbout(
+      PresContext()->Document()->WarnOnceAndReportAbout(
           dom::DeprecatedOperations::eMathML_DeprecatedMoverNonExplicitAccent,
           false, params);
     }

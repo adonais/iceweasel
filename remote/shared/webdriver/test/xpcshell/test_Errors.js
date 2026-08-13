@@ -31,6 +31,7 @@ const errors = [
   error.NoSuchNetworkDataError,
   error.NoSuchNodeError,
   error.NoSuchRequestError,
+  error.NoSuchScreencastError,
   error.NoSuchScriptError,
   error.NoSuchShadowRootError,
   error.NoSuchWindowError,
@@ -482,6 +483,14 @@ add_task(function test_NoSuchRequestError() {
   equal("NoSuchRequestError", err.name);
   equal("foo", err.message);
   equal("no such request", err.status);
+  ok(err instanceof error.WebDriverError);
+});
+
+add_task(function test_NoSuchScreencastError() {
+  let err = new error.NoSuchScreencastError("foo");
+  equal("NoSuchScreencastError", err.name);
+  equal("foo", err.message);
+  equal("no such screencast", err.status);
   ok(err instanceof error.WebDriverError);
 });
 

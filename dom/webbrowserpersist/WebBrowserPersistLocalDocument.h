@@ -30,7 +30,7 @@ class WebBrowserPersistLocalDocument final
   uint32_t GetPersistFlags() const;
   nsIURI* GetBaseURI() const;
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_NSIWEBBROWSERPERSISTDOCUMENT
 
   NS_DECL_CYCLE_COLLECTION_CLASS(WebBrowserPersistLocalDocument)

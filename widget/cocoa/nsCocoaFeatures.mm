@@ -26,9 +26,9 @@
 #include "nsDebug.h"
 #include "nsObjCExceptions.h"
 
-#include <atomic>
 #import <Cocoa/Cocoa.h>
 #include <sys/sysctl.h>
+#include <atomic>
 
 // The lazily-initialized version. 0 before initialization, non-zero after.
 static std::atomic<int32_t> sOSVersion = 0;

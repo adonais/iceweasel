@@ -13,6 +13,25 @@ var testPage3 =
 
 var fm = Services.focus;
 
+const { PlacesTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/PlacesTestUtils.sys.mjs"
+);
+const { SidebarTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/SidebarTestUtils.sys.mjs"
+);
+
+SidebarTestUtils.init(this);
+SidebarTestUtils.restoreStateAtCleanup(window);
+
+add_setup(async function () {
+  // This test exercises the legacy bookmarks sidebar panel; opt out of the
+  // updated bookmarks panel so the expected document/element ids are present.
+  // TODO(Bug 2039395): adapt this test to the new bookmarks sidebar panel and remove this sidebar.updateBookmarks.enabled pushPrefEnv)
+  await SpecialPowers.pushPrefEnv({
+    set: [["sidebar.updatedBookmarks.enabled", false]],
+  });
+});
+
 async function expectFocusOnF6(
   backward,
   expectedDocument,
@@ -292,6 +311,56 @@ add_task(async function () {
   );
 
   SidebarController.toggle("viewBookmarksSidebar");
+});
+
+// Test that F6 from inside a panel moves focus to the content document.
+// It should not stop on a focusable shadow root within the panel.
+add_task(async function test_history_sidebar_document_navigation() {
+  if (Services.prefs.getBoolPref("sidebar.revamp", false)) {
+    const pagePromise = BrowserTestUtils.browserLoaded(
+      gBrowser.selectedBrowser,
+      false,
+      testPage1
+    );
+    BrowserTestUtils.startLoadingURIString(gBrowser.selectedBrowser, testPage1);
+    await pagePromise;
+
+    await PlacesTestUtils.addVisits("https://example.com/");
+    registerCleanupFunction(async () => {
+      await PlacesUtils.history.clear();
+    });
+
+    await SidebarTestUtils.showPanel(window, "viewHistorySidebar");
+
+    const component =
+      SidebarController.browser.contentDocument.querySelector(
+        "sidebar-history"
+      );
+    Assert.ok(component, "The revamp history panel is loaded");
+    await TestUtils.waitForCondition(
+      () => !component.controller.isHistoryPending,
+      "History finished loading"
+    );
+    await BrowserTestUtils.waitForMutationCondition(
+      component.shadowRoot,
+      { childList: true, subtree: true },
+      () => component.cards.length && component.lists.length
+    );
+
+    component.searchTextbox.focus();
+
+    // F6 must leave the panel entirely and focus the content document, rather
+    // than getting trapped on the first history row.
+    await expectFocusOnF6(
+      false,
+      "html1",
+      "html1",
+      true,
+      "F6 from the history search box moves to content, not a history row"
+    );
+
+    await SidebarTestUtils.closePanel(window);
+  }
 });
 
 // Navigate when the downloads panel is open

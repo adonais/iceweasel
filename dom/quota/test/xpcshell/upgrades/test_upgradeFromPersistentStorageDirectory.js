@@ -152,9 +152,6 @@ function* testSteps() {
 
     {
       oldPath: "storage/persistent/moz-safe-about+home",
-      newPath: "storage/permanent/moz-safe-about+home",
-      url: "moz-safe-about:home",
-      persistence: "persistent",
     },
 
     {

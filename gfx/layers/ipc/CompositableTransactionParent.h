@@ -5,11 +5,11 @@
 #ifndef MOZILLA_LAYERS_COMPOSITABLETRANSACTIONPARENT_H
 #define MOZILLA_LAYERS_COMPOSITABLETRANSACTIONPARENT_H
 
+#include "CompositableHost.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/layers/ISurfaceAllocator.h"  // for ISurfaceAllocator
 #include "mozilla/layers/LayersMessages.h"     // for EditReply, etc
 #include "mozilla/layers/TextureClient.h"
-#include "CompositableHost.h"
 
 namespace mozilla {
 namespace layers {

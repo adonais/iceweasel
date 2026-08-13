@@ -294,51 +294,63 @@ class BaseBrowserFragmentTest {
     }
 
     @Test
-    fun `WHEN isMicrosurveyEnabled and isExperimentationEnabled are true GIVEN a call to setupMicrosurvey THEN messagingFeature is initialized`() {
+    fun `WHEN isMicrosurveyEnabled and isExperimentationEnabled are true GIVEN a call to initializeMicrosurveyFeature THEN messagingFeature is initialized and observer is added`() {
         every { testContext.components.settings.isExperimentationEnabled } returns true
         every { testContext.components.settings.microsurveyFeatureEnabled } returns true
+        val lifecycle = fragment.viewLifecycleOwner.lifecycle
 
         assertNull(fragment.messagingFeatureMicrosurvey.get())
 
         fragment.initializeMicrosurveyFeature(testContext)
 
-        assertNotNull(fragment.messagingFeatureMicrosurvey.get())
+        val feature = fragment.messagingFeatureMicrosurvey.get()
+        assertNotNull(feature)
+        verify(exactly = 1) { lifecycle.addObserver(feature) }
     }
 
     @Test
-    fun `WHEN isMicrosurveyEnabled and isExperimentationEnabled are false GIVEN a call to setupMicrosurvey THEN messagingFeature is not initialized`() {
+    fun `WHEN isMicrosurveyEnabled and isExperimentationEnabled are false GIVEN a call to initializeMicrosurveyFeature THEN messagingFeature is not initialized and observer is not added`() {
         every { testContext.components.settings.isExperimentationEnabled } returns false
         every { testContext.components.settings.microsurveyFeatureEnabled } returns false
+        val lifecycle = fragment.viewLifecycleOwner.lifecycle
 
         assertNull(fragment.messagingFeatureMicrosurvey.get())
 
         fragment.initializeMicrosurveyFeature(testContext)
 
-        assertNull(fragment.messagingFeatureMicrosurvey.get())
+        val feature = fragment.messagingFeatureMicrosurvey.get()
+        assertNull(feature)
+        verify(exactly = 0) { lifecycle.addObserver(any()) }
     }
 
     @Test
-    fun `WHEN isMicrosurveyEnabled is true and isExperimentationEnabled false GIVEN a call to setupMicrosurvey THEN messagingFeature is not initialized`() {
+    fun `WHEN isMicrosurveyEnabled is true and isExperimentationEnabled false GIVEN a call to initializeMicrosurveyFeature THEN messagingFeature is not initialized and observer is not added`() {
         every { testContext.components.settings.isExperimentationEnabled } returns false
         every { testContext.components.settings.microsurveyFeatureEnabled } returns true
+        val lifecycle = fragment.viewLifecycleOwner.lifecycle
 
         assertNull(fragment.messagingFeatureMicrosurvey.get())
 
         fragment.initializeMicrosurveyFeature(testContext)
 
-        assertNull(fragment.messagingFeatureMicrosurvey.get())
+        val feature = fragment.messagingFeatureMicrosurvey.get()
+        assertNull(feature)
+        verify(exactly = 0) { lifecycle.addObserver(any()) }
     }
 
     @Test
-    fun `WHEN isMicrosurveyEnabled is false and isExperimentationEnabled true GIVEN a call to setupMicrosurvey THEN messagingFeature is not initialized`() {
+    fun `WHEN isMicrosurveyEnabled is false and isExperimentationEnabled true GIVEN a call to initializeMicrosurveyFeature THEN messagingFeature is not initialized and observer is not added`() {
         every { testContext.components.settings.isExperimentationEnabled } returns true
         every { testContext.components.settings.microsurveyFeatureEnabled } returns false
+        val lifecycle = fragment.viewLifecycleOwner.lifecycle
 
         assertNull(fragment.messagingFeatureMicrosurvey.get())
 
         fragment.initializeMicrosurveyFeature(testContext)
 
-        assertNull(fragment.messagingFeatureMicrosurvey.get())
+        val feature = fragment.messagingFeatureMicrosurvey.get()
+        assertNull(feature)
+        verify(exactly = 0) { lifecycle.addObserver(any()) }
     }
 
     @Test

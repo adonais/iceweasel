@@ -7,12 +7,12 @@
 
 #include "HttpBaseChannel.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
-#include "nsINetworkInterceptController.h"
-#include "nsIInputStream.h"
 #include "nsICacheInfoChannel.h"
-#include "nsInputStreamPump.h"
+#include "nsIInputStream.h"
+#include "nsINetworkInterceptController.h"
 #include "nsIThreadRetargetableRequest.h"
 #include "nsIThreadRetargetableStreamListener.h"
+#include "nsInputStreamPump.h"
 
 namespace mozilla::net {
 

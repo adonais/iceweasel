@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsIOUtil.h"
+
 #include "nsIInputStream.h"
 #include "nsIOutputStream.h"
 #include "nsStreamUtils.h"

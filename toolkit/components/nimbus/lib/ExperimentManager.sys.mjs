@@ -1174,6 +1174,7 @@ export class ExperimentManager {
         UnenrollReason.TARGETING_MISMATCH,
         UnenrollReason.ROLLOUTS_OPT_OUT,
         UnenrollReason.STUDIES_OPT_OUT,
+        UnenrollReason.RECIPE_NOT_SEEN,
       ].includes(enrollment.unenrollReason)
     ) {
       // We only re-enroll if we match targeting and bucketing and the unenroll

@@ -1,3 +1,10 @@
+add_setup(function () {
+  registerCleanupFunction(async () => {
+    UrlClassifierTestUtils.cleanupTestTrackers();
+    await clearSiteTestData();
+  });
+});
+
 add_task(async function () {
   info("Starting subResources test");
 
@@ -55,15 +62,4 @@ add_task(async function () {
 
   ok(true, "No crash, hopefully!");
   BrowserTestUtils.removeTab(tab);
-
-  UrlClassifierTestUtils.cleanupTestTrackers();
-});
-
-add_task(async function () {
-  info("Cleaning up.");
-  await new Promise(resolve => {
-    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-      resolve()
-    );
-  });
 });

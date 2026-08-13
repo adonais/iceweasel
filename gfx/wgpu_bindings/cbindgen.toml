@@ -123,9 +123,9 @@ include = ["BufferUsages"]
 
 [parse]
 parse_deps = true
-include = ["wgpu-core", "wgpu-types", "wgpu-hal"]
+include = ["naga-types", "wgpu-core", "wgpu-types", "wgpu-hal"]
 
-extra_bindings = ["wgpu-core", "wgpu-types", "wgpu-hal"]
+extra_bindings = ["naga-types", "wgpu-core", "wgpu-types", "wgpu-hal"]
 
 [fn]
 prefix = "WGPU_INLINE"

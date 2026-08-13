@@ -9,16 +9,16 @@
 
 #import <Carbon/Carbon.h>
 #import <Cocoa/Cocoa.h>
+#include "WritingModes.h"
 #include "mozView.h"
-#include "nsString.h"
-#include "nsCOMPtr.h"
-#include "nsITimer.h"
-#include "nsTArray.h"
 #include "mozilla/BasicEvents.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/TextEventDispatcherListener.h"
-#include "WritingModes.h"
+#include "nsCOMPtr.h"
+#include "nsITimer.h"
+#include "nsString.h"
+#include "nsTArray.h"
 
 class nsCocoaWindow;
 

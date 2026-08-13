@@ -4690,12 +4690,6 @@
 - name: WasmStore
   gen_boilerplate: false
 
-- name: AsmJSLoadHeap
-  gen_boilerplate: false
-
-- name: AsmJSStoreHeap
-  gen_boilerplate: false
-
 - name: WasmFence
   guard: true
   alias_set: none

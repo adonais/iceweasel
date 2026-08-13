@@ -5,8 +5,8 @@
 #ifndef js_wasm_WasmFeatures_h
 #define js_wasm_WasmFeatures_h
 
-#include "js/WasmFeatures.h"
 #include "js/TypeDecls.h"
+#include "js/WasmFeatures.h"
 
 namespace js {
 
@@ -48,11 +48,6 @@ bool IonAvailable(JSContext* cx);
 // Test all three.
 
 bool AnyCompilerAvailable(JSContext* cx);
-
-// Asm.JS is translated to wasm and then compiled using the wasm optimizing
-// compiler; test whether this compiler is available.
-
-bool WasmCompilerForAsmJSAvailable(JSContext* cx);
 
 // Predicates for white-box compiler disablement testing.
 //

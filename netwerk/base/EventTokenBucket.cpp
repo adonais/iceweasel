@@ -4,6 +4,7 @@
 
 #include "EventTokenBucket.h"
 
+#include "mozilla/Components.h"
 #include "nsICancelable.h"
 #include "nsIIOService.h"
 #include "nsNetCID.h"
@@ -11,15 +12,13 @@
 #include "nsServiceManagerUtils.h"
 #include "nsSocketTransportService2.h"
 
-#include "mozilla/Components.h"
-
 #ifdef DEBUG
 #  include "MainThreadUtils.h"
 #endif
 
 #ifdef XP_WIN
-#  include <windows.h>
 #  include <mmsystem.h>
+#  include <windows.h>
 #endif
 
 namespace mozilla {

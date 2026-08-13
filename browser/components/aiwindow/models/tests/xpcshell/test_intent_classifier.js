@@ -7,12 +7,18 @@ const {
   tokenizeTextForChatAllowlist,
   buildChatAllowlist,
   makeIsolatedPhraseChecker,
+  DEFAULT_INTENT_MODEL,
+  INTENT_MODEL_ENGLISH_FRENCH,
 } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/IntentClassifier.sys.mjs"
 );
 
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
+);
+
+const { Region } = ChromeUtils.importESModule(
+  "resource://gre/modules/Region.sys.mjs"
 );
 
 add_task(async function test_getPromptIntent_basic() {
@@ -73,6 +79,115 @@ add_task(async function test_getPromptIntent_basic() {
   }
 });
 
+add_task(function test_isForcedChat_is_model_aware() {
+  // English phrases are forced-chat for both models.
+  Assert.ok(
+    IntentClassifier._isForcedChat("hello there", DEFAULT_INTENT_MODEL),
+    "English phrase is forced-chat for the default model"
+  );
+  Assert.ok(
+    IntentClassifier._isForcedChat("hello there", INTENT_MODEL_ENGLISH_FRENCH),
+    "English phrase is still forced-chat for the French/English model"
+  );
+
+  // French phrases are only forced-chat for the French/English model.
+  Assert.ok(
+    IntentClassifier._isForcedChat("bonjour", INTENT_MODEL_ENGLISH_FRENCH),
+    "French phrase is forced-chat for the French/English model"
+  );
+  Assert.ok(
+    IntentClassifier._isForcedChat(
+      "raconte une blague maintenant",
+      INTENT_MODEL_ENGLISH_FRENCH
+    ),
+    "Multiword French phrase matches when embedded in a longer query"
+  );
+  Assert.ok(
+    !IntentClassifier._isForcedChat("bonjour", DEFAULT_INTENT_MODEL),
+    "French phrase is not forced-chat for the default (English) model"
+  );
+
+  // Hyphenated French spellings match their tokenized form.
+  Assert.ok(
+    IntentClassifier._isForcedChat("qui es-tu", INTENT_MODEL_ENGLISH_FRENCH),
+    "Hyphenated French phrase matches"
+  );
+
+  // Unaccented input matches an accented French phrase (diacritic folding).
+  Assert.ok(
+    IntentClassifier._isForcedChat(
+      "ecris un poeme",
+      INTENT_MODEL_ENGLISH_FRENCH
+    ),
+    "Unaccented French input matches the accented allowlist phrase"
+  );
+});
+
+add_task(async function test_getPromptIntent_selects_model_by_region() {
+  const sb = sinon.createSandbox();
+  const originalHome = Region.home;
+  try {
+    const fakeEngine = {
+      run() {
+        return [
+          { label: "search", score: 0.95 },
+          { label: "chat", score: 0.05 },
+        ];
+      },
+    };
+    const createEngineStub = sb
+      .stub(IntentClassifier, "_createEngine")
+      .resolves(fakeEngine);
+
+    const cases = [
+      {
+        region: "US",
+        modelId: DEFAULT_INTENT_MODEL,
+        featureId: "smart-intent",
+      },
+      {
+        region: "FR",
+        modelId: INTENT_MODEL_ENGLISH_FRENCH,
+        featureId: "smart-intent-en-fr",
+      },
+    ];
+
+    for (const { region, modelId, featureId } of cases) {
+      Region._setHomeRegion(region, false);
+      createEngineStub.resetHistory();
+
+      // A query not on the forced-chat allowlist so the engine is used.
+      await IntentClassifier.getPromptIntent("find me a restaurant");
+
+      Assert.ok(
+        createEngineStub.calledOnce,
+        `Engine created once for region ${region}`
+      );
+      const opts = createEngineStub.firstCall.args[0];
+      Assert.equal(
+        opts.modelId,
+        modelId,
+        `Region ${region} should use model ${modelId}`
+      );
+      Assert.equal(
+        opts.featureId,
+        featureId,
+        `Region ${region} should use feature ${featureId}`
+      );
+      Assert.equal(
+        opts.backend,
+        "best-onnx",
+        `Region ${region} should use the best-onnx backend`
+      );
+    }
+  } finally {
+    if (originalHome) {
+      Region._setHomeRegion(originalHome, false);
+    }
+    sb.restore();
+  }
+});
+
 add_task(async function test_preprocessQuery_removes_question_marks() {
   // Call the real helper on the classifier
   const cases = [
@@ -118,6 +233,18 @@ add_task(function test_normalizeTextForChatAllowlist_basic() {
     "a b c d",
     "Should collapse all whitespace kinds to single spaces"
   );
+
+  // Diacritics are folded so accented and unaccented spellings match
+  Assert.equal(
+    normalizeTextForChatAllowlist("\u00C9cris un po\u00E8me"),
+    "ecris un poeme",
+    "Should fold French accents"
+  );
+  Assert.equal(
+    normalizeTextForChatAllowlist("\u00E7a va"),
+    normalizeTextForChatAllowlist("ca va"),
+    "Accented and unaccented spellings should normalize identically"
+  );
 });
 
 add_task(function test_tokenizeTextForChatAllowlist_unicode_and_boundaries() {
@@ -128,11 +255,11 @@ add_task(function test_tokenizeTextForChatAllowlist_unicode_and_boundaries() {
     "Should split on punctuation and keep underscores"
   );
 
-  // Unicode letters should be treated as word chars (\p{L})
+  // Unicode letters are word chars (\p{L}); diacritics are folded away
   Assert.deepEqual(
     tokenizeTextForChatAllowlist("mañana—café!"),
-    ["mañana", "café"],
-    "Should keep Unicode letters and split on punctuation (em dash, bang)"
+    ["manana", "cafe"],
+    "Should split on punctuation (em dash, bang) and fold accents"
   );
 
   // Apostrophes split (non-word), as intended

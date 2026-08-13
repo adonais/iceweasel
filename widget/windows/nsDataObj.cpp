@@ -2,53 +2,53 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/TextUtils.h"
+#include "nsDataObj.h"
 
 #include <ole2.h>
 #include <shlobj.h>
 
-#include "nsComponentManagerUtils.h"
-#include "nsDataObj.h"
-#include "nsArrayUtils.h"
-#include "nsClipboard.h"
-#include "nsReadableUtils.h"
-#include "nsICookieJarSettings.h"
-#include "nsIHttpChannel.h"
-#include "nsISupportsPrimitives.h"
-#include "nsITransferable.h"
+#include <algorithm>
+
 #include "IEnumFE.h"
-#include "nsPrimitiveHelpers.h"
-#include "nsString.h"
-#include "nsCRT.h"
-#include "nsPrintfCString.h"
-#include "nsIStringBundle.h"
-#include "nsEscape.h"
-#include "nsIURL.h"
-#include "nsNetUtil.h"
-#include "mozilla/Components.h"
-#include "mozilla/SpinEventLoopUntil.h"
-#include "mozilla/StaticPrefs_clipboard.h"
-#include "nsProxyRelease.h"
-#include "nsIObserverService.h"
-#include "nsIOutputStream.h"
-#include "nscore.h"
-#include "nsDirectoryServiceDefs.h"
-#include "nsITimer.h"
-#include "nsThreadUtils.h"
-#include "mozilla/Preferences.h"
-#include "nsContentUtils.h"
-#include "nsIPrincipal.h"
-#include "nsNativeCharsetUtils.h"
-#include "nsMimeTypes.h"
-#include "nsIMIMEService.h"
-#include "imgIEncoder.h"
-#include "imgITools.h"
 #include "WinOLELock.h"
 #include "WinUtils.h"
-#include "nsLocalFile.h"
-
+#include "imgIEncoder.h"
+#include "imgITools.h"
+#include "mozilla/Components.h"
 #include "mozilla/LazyIdleThread.h"
-#include <algorithm>
+#include "mozilla/Preferences.h"
+#include "mozilla/SpinEventLoopUntil.h"
+#include "mozilla/StaticPrefs_clipboard.h"
+#include "mozilla/TextUtils.h"
+#include "nsArrayUtils.h"
+#include "nsCRT.h"
+#include "nsClipboard.h"
+#include "nsComponentManagerUtils.h"
+#include "nsContentUtils.h"
+#include "nsDirectoryServiceDefs.h"
+#include "nsEscape.h"
+#include "nsICookieJarSettings.h"
+#include "nsIHttpChannel.h"
+#include "nsIMIMEService.h"
+#include "nsIObserverService.h"
+#include "nsIOutputStream.h"
+#include "nsIPrincipal.h"
+#include "nsIStringBundle.h"
+#include "nsISupportsPrimitives.h"
+#include "nsITimer.h"
+#include "nsITransferable.h"
+#include "nsIURL.h"
+#include "nsLocalFile.h"
+#include "nsMimeTypes.h"
+#include "nsNativeCharsetUtils.h"
+#include "nsNetUtil.h"
+#include "nsPrimitiveHelpers.h"
+#include "nsPrintfCString.h"
+#include "nsProxyRelease.h"
+#include "nsReadableUtils.h"
+#include "nsString.h"
+#include "nsThreadUtils.h"
+#include "nscore.h"
 
 using namespace mozilla;
 using namespace mozilla::glue;
@@ -782,6 +782,8 @@ STDMETHODIMP nsDataObj::GetData(LPFORMATETC aFormat, LPSTGMEDIUM pSTM) {
       if (format == fileFlavor) return GetFileContents(*aFormat, *pSTM);
       if (format == PreferredDropEffect)
         return GetPreferredDropEffect(*aFormat, *pSTM);
+      if (format == nsClipboard::GetWebCustomFormatMapClipboardFormat())
+        return GetText(df, *aFormat, *pSTM);
       // MOZ_LOG(gWindowsLog, LogLevel::Info,
       //       ("***** nsDataObj::GetData - Unknown format %u\n", format));
       return GetText(df, *aFormat, *pSTM);
@@ -1175,9 +1177,9 @@ static bool CreateURLFilenameFromTextA(nsAutoString& aText, char* aFilename) {
   // an extra check to verify for the local code page that the converted text
   // doesn't go over MAX_PATH and just return false if it does.
   char defaultChar = '_';
-  int currLen = WideCharToMultiByte(CP_ACP, WC_COMPOSITECHECK | WC_DEFAULTCHAR,
-                                    aText.get(), -1, aFilename, MAX_PATH,
-                                    &defaultChar, nullptr);
+  int currLen = WideCharToMultiByte(
+      CP_ACP, WC_COMPOSITECHECK | WC_DEFAULTCHAR | WC_NO_BEST_FIT_CHARS,
+      aText.get(), -1, aFilename, MAX_PATH, &defaultChar, nullptr);
   return currLen != 0;
 }
 
@@ -1602,6 +1604,15 @@ HRESULT nsDataObj::GetText(const nsACString& aDataFlavor, FORMATETC& aFE,
     return S_OK;
   };
 
+  // kWebCustomFormatMapType is synthetic: the JSON is held on the data object
+  // (set by nsClipboard::SetupNativeDataObject) rather than in the
+  // transferable. Serve it without the trailing UTF-16 null pad.
+  if (aDataFlavor.EqualsLiteral(kWebCustomFormatMapType)) {
+    MOZ_ASSERT(!mWebCustomFormatMapJson.IsEmpty());
+    return assignDataToStg(const_cast<char*>(mWebCustomFormatMapJson.get()),
+                           mWebCustomFormatMapJson.Length());
+  }
+
   const nsPromiseFlatCString& flavorStr = PromiseFlatCString(aDataFlavor);
 
   nsCOMPtr<nsISupports> genericDataWrapper;
@@ -1677,9 +1688,12 @@ HRESULT nsDataObj::GetText(const nsACString& aDataFlavor, FORMATETC& aFE,
 
   // We assume that any data-format that isn't caught above can be satisfied by
   // Unicode text. (This may be an erroneous assumption, but seems to have been
-  // true so far.)
+  // true so far.) Web custom formats are byte payloads (nsISupportsCString), so
+  // they must skip the trailing UTF-16 null pad just like the legacy custom
+  // clipboard format does.
   bool const excludeNull =
-      aFE.cfFormat == nsClipboard::GetCustomClipboardFormat();
+      aFE.cfFormat == nsClipboard::GetCustomClipboardFormat() ||
+      StringBeginsWith(aDataFlavor, nsLiteralCString(kWebCustomFormatPrefix));
 
   return assignDataToStg(data, len + (excludeNull ? 0 : sizeof(char16_t)));
 }

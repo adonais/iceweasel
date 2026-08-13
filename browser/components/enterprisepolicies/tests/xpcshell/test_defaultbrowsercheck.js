@@ -50,3 +50,49 @@ add_task(async function test_default_browser_check() {
 
   equal(ShellService.shouldCheckDefaultBrowser, true, "Policy is enforced");
 });
+
+add_task(async function test_default_browser_setting_disabled() {
+  await setupPolicyEngineWithJson({
+    policies: {
+      DefaultBrowserSettingEnabled: false,
+    },
+  });
+
+  equal(
+    ShellService.shouldCheckDefaultBrowser,
+    false,
+    "Policy disabled the default browser check"
+  );
+
+  // Try to change it to true and check that it doesn't take effect
+  ShellService.shouldCheckDefaultBrowser = true;
+  equal(ShellService.shouldCheckDefaultBrowser, false, "Policy is enforced");
+
+  ok(
+    !Services.policies.isAllowed("setDefaultBrowser"),
+    "Setting the default browser is not allowed"
+  );
+});
+
+add_task(async function test_default_browser_setting_enabled() {
+  await setupPolicyEngineWithJson({
+    policies: {
+      DefaultBrowserSettingEnabled: true,
+    },
+  });
+
+  equal(
+    ShellService.shouldCheckDefaultBrowser,
+    true,
+    "Policy enabled the default browser check"
+  );
+
+  // Try to change it to false and check that it doesn't take effect
+  ShellService.shouldCheckDefaultBrowser = false;
+  equal(ShellService.shouldCheckDefaultBrowser, true, "Policy is enforced");
+
+  ok(
+    Services.policies.isAllowed("setDefaultBrowser"),
+    "Setting the default browser is allowed"
+  );
+});

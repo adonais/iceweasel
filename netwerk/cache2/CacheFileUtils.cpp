@@ -2,17 +2,19 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "CacheFileUtils.h"
+
+#include <algorithm>
+
 #include "CacheIndex.h"
 #include "CacheLog.h"
-#include "CacheFileUtils.h"
 #include "CacheObserver.h"
 #include "LoadContextInfo.h"
-#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
-#include "mozilla/Tokenizer.h"
 #include "mozilla/Telemetry.h"
+#include "mozilla/Tokenizer.h"
+#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "nsCOMPtr.h"
 #include "nsString.h"
-#include <algorithm>
 
 namespace mozilla::net::CacheFileUtils {
 

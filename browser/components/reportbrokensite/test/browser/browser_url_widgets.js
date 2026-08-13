@@ -16,7 +16,7 @@ async function checkURLWidget(rbs, blurringClick, expectedFavicon) {
       await isDisplayed(faviconImg),
       "have a favicon, so it should be visible"
     );
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => expectedFavicon == faviconImg.src,
       "got the correct favicon"
     );
@@ -224,7 +224,7 @@ add_task(async function testURLWidgets() {
 
   // Test on a page with a favicon
   await withNewTab(REPORTABLE_PAGE_URL3, async (win, tab) => {
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => tab.linkedBrowser.mIconURL,
       "Waiting for favicon"
     );

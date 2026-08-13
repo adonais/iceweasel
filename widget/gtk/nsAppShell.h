@@ -7,10 +7,12 @@
 
 #ifdef MOZ_ENABLE_DBUS
 #  include <gio/gio.h>
-#  include "mozilla/RefPtr.h"
+
 #  include "mozilla/GRefPtr.h"
+#  include "mozilla/RefPtr.h"
 #endif
 #include <glib.h>
+
 #include "nsBaseAppShell.h"
 
 typedef enum {
@@ -30,6 +32,8 @@ class nsAppShell : public nsBaseAppShell {
   NS_IMETHOD Run() override;
 
   static SessionRestoreState UpdateAndGetSessionState();
+  static bool IsSessionRestoreSupported();
+  static void InitSessionRestore();
 
   void ScheduleNativeEventCallback() override;
   bool ProcessNextNativeEvent(bool mayWait) override;

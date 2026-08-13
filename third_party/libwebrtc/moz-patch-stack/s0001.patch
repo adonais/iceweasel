@@ -399,10 +399,10 @@ index 6ba3292fca..5d3a731864 100644
    RTPHeader();
    RTPHeader(const RTPHeader& other);
 diff --git a/api/rtp_parameters.cc b/api/rtp_parameters.cc
-index b6b2f89168..9e5b15fbd0 100644
+index df4673b02a..fcf3d0e72f 100644
 --- a/api/rtp_parameters.cc
 +++ b/api/rtp_parameters.cc
-@@ -222,7 +222,8 @@ bool RtpExtension::IsSupportedForAudio(absl::string_view uri) {
+@@ -232,7 +232,8 @@ bool RtpExtension::IsSupportedForAudio(absl::string_view uri) {
           uri == RtpExtension::kTransportSequenceNumberUri ||
           uri == RtpExtension::kTransportSequenceNumberV2Uri ||
           uri == RtpExtension::kMidUri || uri == RtpExtension::kRidUri ||
@@ -413,7 +413,7 @@ index b6b2f89168..9e5b15fbd0 100644
  
  bool RtpExtension::IsSupportedForVideo(absl::string_view uri) {
 diff --git a/call/BUILD.gn b/call/BUILD.gn
-index 9795567e2d..9936c55a9c 100644
+index 69eff3f733..99530d85a3 100644
 --- a/call/BUILD.gn
 +++ b/call/BUILD.gn
 @@ -20,6 +20,7 @@ rtc_library("call_interfaces") {
@@ -596,10 +596,10 @@ index 28509654c4..1e2ae94c85 100644
        device_names->push_back(ToUtf8(device.DeviceName));
      }
 diff --git a/modules/rtp_rtcp/source/rtcp_sender.cc b/modules/rtp_rtcp/source/rtcp_sender.cc
-index 9b9bd22262..4f32926c2c 100644
+index 645d3490fe..d3cdeab12d 100644
 --- a/modules/rtp_rtcp/source/rtcp_sender.cc
 +++ b/modules/rtp_rtcp/source/rtcp_sender.cc
-@@ -186,7 +186,7 @@ void RTCPSender::SetRTCPStatus(RtcpMode new_method) {
+@@ -190,7 +190,7 @@ void RTCPSender::SetRTCPStatus(RtcpMode new_method) {
      next_time_to_send_rtcp_ = std::nullopt;
    } else if (method_ == RtcpMode::kOff) {
      // When switching on, reschedule the next packet
@@ -686,10 +686,10 @@ index 03f846a905..12405e1646 100644
  // Subclasses must defined kId and kUri static constexpr members.
  class BaseRtpStringExtension {
 diff --git a/modules/rtp_rtcp/source/rtp_packet.cc b/modules/rtp_rtcp/source/rtp_packet.cc
-index 2b6cd006df..fe2f51a58b 100644
+index 0c5d25a06e..234b8e9c59 100644
 --- a/modules/rtp_rtcp/source/rtp_packet.cc
 +++ b/modules/rtp_rtcp/source/rtp_packet.cc
-@@ -212,6 +212,10 @@ void RtpPacket::ZeroMutableExtensions() {
+@@ -213,6 +213,10 @@ void RtpPacket::ZeroMutableExtensions() {
          // Non-mutable extension. Don't change it.
          break;
        }
@@ -769,10 +769,10 @@ index 0b87d6d065..d69ae9420b 100644
  }  // namespace webrtc
  
 diff --git a/modules/rtp_rtcp/source/rtp_sender.cc b/modules/rtp_rtcp/source/rtp_sender.cc
-index 0e78f982a9..f70abcde93 100644
+index cdd47994ee..7293a99aee 100644
 --- a/modules/rtp_rtcp/source/rtp_sender.cc
 +++ b/modules/rtp_rtcp/source/rtp_sender.cc
-@@ -139,6 +139,10 @@ bool IsNonVolatile(RTPExtensionType type) {
+@@ -140,6 +140,10 @@ bool IsNonVolatile(RTPExtensionType type) {
      case kRtpExtensionNumberOfExtensions:
        RTC_DCHECK_NOTREACHED();
        return false;
@@ -1392,10 +1392,10 @@ index c3326509ce..293ccd7089 100644
    const bool enable_svc_for_simulcast_;
    std::optional<SimulcastToSvcConverter> simulcast_to_svc_converter_;
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index 15a55bdb3a..8a47c4b667 100644
+index 5a306a6bb5..ca1869da2a 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
-@@ -479,6 +479,12 @@ rtc_library("logging") {
+@@ -549,6 +549,12 @@ rtc_library("logging") {
      "//third_party/abseil-cpp/absl/strings:string_view",
    ]
  
@@ -1409,10 +1409,10 @@ index 15a55bdb3a..8a47c4b667 100644
      # Dependency on chromium's logging (in //base).
      deps += [ "//base" ]
 diff --git a/rtc_base/logging.cc b/rtc_base/logging.cc
-index 076167c9bf..8c9b8aae1d 100644
+index dea1035afc..22cca54623 100644
 --- a/rtc_base/logging.cc
 +++ b/rtc_base/logging.cc
-@@ -25,6 +25,7 @@
+@@ -26,6 +26,7 @@
  #include "absl/strings/string_view.h"
  #include "api/task_queue/task_queue_base.h"
  #include "api/units/timestamp.h"
@@ -1420,7 +1420,7 @@ index 076167c9bf..8c9b8aae1d 100644
  #include "rtc_base/checks.h"
  #include "rtc_base/platform_thread_types.h"
  #include "rtc_base/string_encode.h"
-@@ -53,6 +54,24 @@ static const int kMaxLogLineSize = 1024 - 60;
+@@ -54,6 +55,24 @@ static const int kMaxLogLineSize = 1024 - 60;
  #endif  // WEBRTC_MAC && !defined(WEBRTC_IOS) || WEBRTC_ANDROID
  
  namespace webrtc {
@@ -1445,7 +1445,7 @@ index 076167c9bf..8c9b8aae1d 100644
  namespace {
  
  // By default, release builds don't log, debug builds at info level
-@@ -167,7 +186,7 @@ std::string LogLineRef::DefaultLogLine() const {
+@@ -168,7 +187,7 @@ std::string LogLineRef::DefaultLogLine() const {
  // LogMessage
  /////////////////////////////////////////////////////////////////////////////
  
@@ -1455,10 +1455,10 @@ index 076167c9bf..8c9b8aae1d 100644
  // The list of logging streams currently configured.
  // Note: we explicitly do not clean this up, because of the uncertain ordering
 diff --git a/rtc_base/logging.h b/rtc_base/logging.h
-index d7521b307c..823c2a2b90 100644
+index 5721ba6054..bf58f612fa 100644
 --- a/rtc_base/logging.h
 +++ b/rtc_base/logging.h
-@@ -654,6 +654,12 @@ class LogMessage {
+@@ -651,6 +651,12 @@ class LogMessage {
    }
  #endif  // RTC_LOG_ENABLED()
  
@@ -1471,7 +1471,7 @@ index d7521b307c..823c2a2b90 100644
   private:
    friend class LogMessageForTesting;
  
-@@ -701,6 +707,9 @@ class LogMessage {
+@@ -698,6 +704,9 @@ class LogMessage {
  
    // The stringbuilder that buffers the formatted message before output
    StringBuilder print_stream_;
@@ -1510,7 +1510,7 @@ index b7933130bd..428fc9615d 100644
    vcm_ = nullptr;
  }
 diff --git a/webrtc.gni b/webrtc.gni
-index 8428c0d632..c10b3e2934 100644
+index 39d9346811..3f3b9314a3 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -106,7 +106,7 @@ declare_args() {

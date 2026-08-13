@@ -5,8 +5,8 @@
 #ifndef mozilla_net_AutoClose_h
 #define mozilla_net_AutoClose_h
 
-#include "nsCOMPtr.h"
 #include "mozilla/Mutex.h"
+#include "nsCOMPtr.h"
 
 namespace mozilla {
 namespace net {

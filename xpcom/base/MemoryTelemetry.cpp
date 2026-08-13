@@ -3,37 +3,37 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "MemoryTelemetry.h"
-#include "nsMemoryReporterManager.h"
 
 #include "mozilla/ClearOnShutdown.h"
+#include "nsMemoryReporterManager.h"
 #ifdef MOZ_PHC
 #  include "mozilla/PHCManager.h"
 #endif
+#include <cstdlib>
+
 #include "mozilla/Result.h"
 #include "mozilla/ResultExtensions.h"
-#include "mozilla/Services.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/Services.h"
 #include "mozilla/SimpleEnumerator.h"
-#include "mozilla/glean/XpcomMetrics.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/glean/XpcomMetrics.h"
 #include "nsContentUtils.h"
 #include "nsGlobalWindowOuter.h"
 #include "nsIBrowserDOMWindow.h"
 #include "nsIMemoryReporter.h"
+#include "nsITelemetry.h"
 #include "nsIWindowMediator.h"
 #include "nsImportModule.h"
-#include "nsITelemetry.h"
 #include "nsNetCID.h"
 #include "nsReadableUtils.h"
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
 #include "xpcpublic.h"
-
-#include <cstdlib>
 
 using namespace mozilla;
 

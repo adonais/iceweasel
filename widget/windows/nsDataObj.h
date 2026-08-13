@@ -8,15 +8,13 @@
 #include <oleidl.h>
 #include <shldisp.h>
 
-#include "mozilla/glue/WinUtils.h"
 #include "mozilla/LazyIdleThread.h"
-#include "nsCOMPtr.h"
-#include "nsString.h"
-#include "nsIFile.h"
-#include "nsIURI.h"
-#include "nsIStreamListener.h"
-#include "nsIChannel.h"
+#include "mozilla/glue/WinUtils.h"
 #include "nsCOMArray.h"
+#include "nsCOMPtr.h"
+#include "nsIChannel.h"
+#include "nsIFile.h"
+#include "nsIStreamListener.h"
 #include "nsITimer.h"
 #include "nsIURI.h"
 #include "nsString.h"
@@ -36,6 +34,14 @@ class CEnumFormatEtc;
  */
 class nsDataObj : public IDataObject, public IDataObjectAsyncCapability {
   RefPtr<mozilla::LazyIdleThread> mIOThread;
+
+ public:  // web custom format payload
+  void SetWebCustomFormatMapJson(const nsACString& aJson) {
+    mWebCustomFormatMapJson = aJson;
+  }
+  const nsCString& WebCustomFormatMapJson() const {
+    return mWebCustomFormatMapJson;
+  }
 
  public:  // construction, destruction
   explicit nsDataObj(nsIURI* uri = nullptr);
@@ -167,6 +173,12 @@ class nsDataObj : public IDataObject, public IDataObjectAsyncCapability {
 
  private:
   nsTArray<nsCString> mDataFlavors;
+
+  // JSON serialization of the WebCustomFormatMap published alongside the
+  // per-clipboard-format data on the clipboard. Set by
+  // nsClipboard::SetupNativeDataObject when the transferable contains any
+  // "web " prefixed flavors.
+  nsCString mWebCustomFormatMapJson;
 
   // the nsITransferable knows nothing about the nsDataObj
   RefPtr<nsITransferable> mTransferable;

@@ -17,7 +17,7 @@ object SettingsSiteSettingsSelectors {
     )
 
     val EXCEPTIONS_BUTTON = Selector(
-        strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+        strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
         value = "Exceptions",
         description = "Site settings Exceptions button",
         groups = listOf("exceptions"),

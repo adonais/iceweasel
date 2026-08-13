@@ -4,6 +4,7 @@
 
 #include "mozilla/dom/PromiseDebugging.h"
 
+#include "js/Promise.h"
 #include "js/Value.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/RefPtr.h"
@@ -43,7 +44,7 @@ class FlushRejections : public DiscardableRunnable {
     NS_DispatchToCurrentThread(new FlushRejections());
   }
 
-  static void FlushSync() {
+  static void FlushSync(bool aDeferToEventPath = true) {
     sDispatched.set(false);
 
     // Call the callbacks if necessary.
@@ -51,7 +52,7 @@ class FlushRejections : public DiscardableRunnable {
     // uncaught or consumed. Since `sDispatched` is `false`,
     // `FlushRejections` will be called once again, on an ulterior
     // tick.
-    PromiseDebugging::FlushUncaughtRejectionsInternal();
+    PromiseDebugging::FlushUncaughtRejectionsInternal(aDeferToEventPath);
   }
 
   NS_IMETHOD Run() override {
@@ -178,7 +179,9 @@ void PromiseDebugging::Shutdown() { sIDPrefix.SetIsVoid(true); }
 /* static */
 void PromiseDebugging::FlushUncaughtRejections() {
   MOZ_ASSERT(!NS_IsMainThread());
-  FlushRejections::FlushSync();
+  // Worker shutdown — NotifyUnhandledRejections may never run,
+  // so don't defer console reporting to the event path.
+  FlushRejections::FlushSync(/* aDeferToEventPath = */ false);
 }
 
 /* static */
@@ -237,7 +240,7 @@ void PromiseDebugging::AddConsumedRejection(JS::Handle<JSObject*> aPromise) {
 }
 
 /* static */
-void PromiseDebugging::FlushUncaughtRejectionsInternal() {
+void PromiseDebugging::FlushUncaughtRejectionsInternal(bool aDeferToEventPath) {
   CycleCollectedJSContext* storage = CycleCollectedJSContext::Get();
 
   auto& uncaught = storage->mUncaughtRejections;
@@ -256,6 +259,15 @@ void PromiseDebugging::FlushUncaughtRejectionsInternal() {
     // PromiseDebugging::AddConsumedRejection.
     if (!promise) {
       continue;
+    }
+
+    // If this promise will go through the NotifyUnhandledRejections event
+    // path, defer both observer notification and console reporting there.
+    if (aDeferToEventPath) {
+      const uint64_t promiseID = JS::GetPromiseID(promise);
+      if (storage->HasPendingUnhandledRejection(promiseID)) {
+        continue;
+      }
     }
 
     bool suppressReporting = false;

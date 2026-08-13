@@ -354,6 +354,70 @@ async function test_bug_1848013() {
   await proxy.stop();
 }
 
+async function test_bug_2037813() {
+  Services.prefs.setBoolPref("network.http.http2.websockets", true);
+  // Allow localhost to be proxied so the connection actually routes through
+  // the proxy, triggering an HTTP CONNECT request like the browser does.
+  Services.prefs.setBoolPref("network.proxy.allow_hijacking_localhost", true);
+
+  let proxy = new NodeHTTPProxyServer();
+  await proxy.start();
+
+  let wss = new NodeWebSocketHttp2Server();
+  await wss.start();
+
+  registerCleanupFunction(async () => {
+    Services.prefs.clearUserPref("network.http.http2.websockets");
+    Services.prefs.clearUserPref("network.proxy.allow_hijacking_localhost");
+    await wss.execute(`
+      const EventEmitter = require('events');
+      if (global.origEmit) {
+        EventEmitter.prototype.emit = global.origEmit;
+        delete global.origEmit;
+        delete global.receivedWebSocketHeaders;
+      }
+    `);
+    await wss.stop();
+    await proxy.stop();
+  });
+
+  Assert.notEqual(wss.port(), null);
+  await wss.registerMessageHandler((data, ws) => {
+    ws.send(data);
+  });
+
+  // Hook into the underlying WebSocket server to capture the headers from the
+  // HTTP/2 Extended CONNECT handshake.
+  await wss.execute(`
+    const EventEmitter = require('events');
+    global.origEmit = EventEmitter.prototype.emit;
+    EventEmitter.prototype.emit = function(event, ...args) {
+      if (event === 'stream' && args[1] && args[1][':method'] === 'CONNECT' && args[1][':protocol'] === 'websocket') {
+        global.receivedWebSocketHeaders = args[1];
+      }
+      return global.origEmit.apply(this, [event, ...args]);
+    };
+  `);
+
+  // To create a h2 connection before the websocket one.
+  let chan = makeChan(`https://localhost:${wss.port()}/`);
+  await httpChannelOpenPromise(chan, CL_ALLOW_UNKNOWN_CL);
+
+  let url = `wss://localhost:${wss.port()}`;
+  const msg = "test h2 websocket with h1 insecure proxy";
+  let [status, res] = await channelOpenPromise(url, msg);
+  Assert.equal(status, Cr.NS_OK);
+  Assert.deepEqual(res, [msg]);
+
+  let headers = await wss.execute(`global.receivedWebSocketHeaders;`);
+  Assert.ok(headers, "Received HTTP/2 CONNECT headers on the server");
+  Assert.ok("origin" in headers, "Origin header was sent");
+  Assert.ok(
+    "sec-websocket-version" in headers,
+    "Sec-WebSocket-Version header was sent"
+  );
+}
+
 function ActivityObserver() {}
 
 ActivityObserver.prototype = {
@@ -469,4 +533,5 @@ add_task(test_h2_ws_with_h1_insecure_proxy);
 add_task(test_h2_ws_with_h1_secure_proxy);
 add_task(test_h2_ws_with_h2_proxy);
 add_task(test_bug_1848013);
+add_task(test_bug_2037813);
 add_task(test_websocket_fallback);

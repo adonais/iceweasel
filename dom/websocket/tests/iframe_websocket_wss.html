@@ -14,7 +14,11 @@ try{
     socket = new WebSocket('wss://example.com/tests/dom/websocket/tests/file_websocket_hello');
   }
   socket.onerror = function() {
-    parent.postMessage('WS onerror', '*');
+    if (location.search == '?insecure') {
+      parent.postMessage('SecurityError', '*');
+    } else {
+      parent.postMessage('WS onerror', '*');
+    }
     close();
   };
   socket.onopen = function() {

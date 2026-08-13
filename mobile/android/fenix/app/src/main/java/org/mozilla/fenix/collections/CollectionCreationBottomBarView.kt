@@ -42,7 +42,7 @@ class CollectionCreationBottomBarView(
         iconButton.apply {
             val drawable = context.getDrawableWithTint(
                 iconsR.drawable.mozac_ic_cross_24,
-                ContextCompat.getColor(context, colorsR.color.photonWhite),
+                ContextCompat.getColor(context, colorsR.color.novaWhite),
             )
             setImageDrawable(drawable)
             contentDescription = context.getString(R.string.create_collection_close)
@@ -89,7 +89,7 @@ class CollectionCreationBottomBarView(
         iconButton.apply {
             val drawable = context.getDrawableWithTint(
                 iconsR.drawable.mozac_ic_plus_24,
-                ContextCompat.getColor(context, colorsR.color.photonWhite),
+                ContextCompat.getColor(context, colorsR.color.novaWhite),
             )
             setImageDrawable(drawable)
             contentDescription = null

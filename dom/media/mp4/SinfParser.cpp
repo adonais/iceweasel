@@ -77,9 +77,9 @@ Result<Ok, nsresult> SinfParser::ParseTenc(const Box& aBox) {
   uint8_t isEncrypted = MOZ_TRY(reader->ReadU8());
   uint8_t defaultIVSize = MOZ_TRY(reader->ReadU8());
   if (defaultIVSize != 0 && defaultIVSize != 8 && defaultIVSize != 16) {
-    MOZ_LOG(gMediaDemuxerLog, LogLevel::Warning,
-            ("SinfParser: unexpected default per-sample IV size %u",
-             static_cast<unsigned>(defaultIVSize)));
+    MOZ_LOG_FMT(gMediaDemuxerLog, LogLevel::Warning,
+                "SinfParser: unexpected default per-sample IV size {}",
+                static_cast<unsigned>(defaultIVSize));
     return Err(NS_ERROR_FAILURE);
   }
   mSinf.mDefaultIVSize = defaultIVSize;

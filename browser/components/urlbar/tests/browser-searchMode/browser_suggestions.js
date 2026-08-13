@@ -44,8 +44,8 @@ add_setup(async function () {
     ]);
     expectedFormHistoryResults.push({
       heuristic: false,
-      type: UrlbarUtils.RESULT_TYPE.SEARCH,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      type: UrlbarShared.RESULT_TYPE.SEARCH,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       searchParams: {
         suggestion: value,
         engine: suggestionsEngine.name,
@@ -97,8 +97,8 @@ add_task(async function emptySearch_behavior() {
     await checkResults([
       {
         heuristic: true,
-        type: UrlbarUtils.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        type: UrlbarShared.RESULT_TYPE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         searchParams: {
           query: " ",
           engine: DEFAULT_ENGINE_NAME,
@@ -106,8 +106,8 @@ add_task(async function emptySearch_behavior() {
       },
       {
         heuristic: false,
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         url: `http://mochi.test/`,
       },
     ]);
@@ -126,15 +126,15 @@ add_task(async function emptySearch_local() {
       value: "",
     });
     await UrlbarTestUtils.enterSearchMode(window, {
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
     });
     Assert.equal(gURLBar.value, "", "Urlbar value should be cleared.");
     // Show the user's most frecent history for an empty search.
     await checkResults([
       {
         heuristic: false,
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         url: `http://mochi.test/`,
       },
     ]);
@@ -158,8 +158,8 @@ add_task(async function nonEmptySearch() {
     await checkResults([
       {
         heuristic: true,
-        type: UrlbarUtils.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        type: UrlbarShared.RESULT_TYPE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         searchParams: {
           query,
           engine: suggestionsEngine.name,
@@ -168,8 +168,8 @@ add_task(async function nonEmptySearch() {
       ...expectedFormHistoryResults.slice(0, MAX_RESULT_COUNT - 3),
       {
         heuristic: false,
-        type: UrlbarUtils.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        type: UrlbarShared.RESULT_TYPE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         searchParams: {
           query,
           suggestion: `${query}foo`,
@@ -178,8 +178,8 @@ add_task(async function nonEmptySearch() {
       },
       {
         heuristic: false,
-        type: UrlbarUtils.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        type: UrlbarShared.RESULT_TYPE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         searchParams: {
           query,
           suggestion: `${query}bar`,
@@ -207,8 +207,8 @@ add_task(async function nonEmptySearch_nonMatching() {
     await checkResults([
       {
         heuristic: true,
-        type: UrlbarUtils.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        type: UrlbarShared.RESULT_TYPE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         searchParams: {
           query,
           engine: suggestionsEngine.name,
@@ -216,8 +216,8 @@ add_task(async function nonEmptySearch_nonMatching() {
       },
       {
         heuristic: false,
-        type: UrlbarUtils.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        type: UrlbarShared.RESULT_TYPE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         searchParams: {
           query,
           suggestion: `${query}foo`,
@@ -226,8 +226,8 @@ add_task(async function nonEmptySearch_nonMatching() {
       },
       {
         heuristic: false,
-        type: UrlbarUtils.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        type: UrlbarShared.RESULT_TYPE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         searchParams: {
           query,
           suggestion: `${query}bar`,
@@ -258,8 +258,8 @@ add_task(async function nonEmptySearch_withHistory() {
   function makeSuggestionResult(suffix) {
     return {
       heuristic: false,
-      type: UrlbarUtils.RESULT_TYPE.SEARCH,
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      type: UrlbarShared.RESULT_TYPE.SEARCH,
+      source: UrlbarShared.RESULT_SOURCE.SEARCH,
       searchParams: {
         query,
         suggestion: `${query}${suffix}`,
@@ -281,8 +281,8 @@ add_task(async function nonEmptySearch_withHistory() {
     await checkResults([
       {
         heuristic: true,
-        type: UrlbarUtils.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        type: UrlbarShared.RESULT_TYPE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         searchParams: {
           query,
           engine: manySuggestionsEngine.name,
@@ -297,14 +297,14 @@ add_task(async function nonEmptySearch_withHistory() {
       makeSuggestionResult("5"),
       {
         heuristic: false,
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         url: `http://mochi.test/${query}1`,
       },
       {
         heuristic: false,
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         url: `http://mochi.test/${query}`,
       },
     ]);
@@ -329,8 +329,8 @@ add_task(async function nonEmptySearch_withHistory() {
     await checkResults([
       {
         heuristic: true,
-        type: UrlbarUtils.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        type: UrlbarShared.RESULT_TYPE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         searchParams: {
           query,
           engine: manySuggestionsEngine.name,
@@ -345,14 +345,14 @@ add_task(async function nonEmptySearch_withHistory() {
       makeSuggestionResult("5"),
       {
         heuristic: false,
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         url: `http://mochi.test/${query}1`,
       },
       {
         heuristic: false,
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         url: `http://mochi.test/${query}`,
       },
     ]);
@@ -379,8 +379,8 @@ add_task(async function nonEmptySearch_url() {
     await checkResults([
       {
         heuristic: true,
-        type: UrlbarUtils.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        type: UrlbarShared.RESULT_TYPE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         searchParams: {
           query,
           engine: suggestionsEngine.name,

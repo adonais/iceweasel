@@ -81,7 +81,7 @@
 
 .debug-target-item__subname {
   grid-area: subname;
-  color: var(--secondary-text-color);
+  color: var(--text-color-deemphasized);
   font-size: var(--caption-20-font-size);
   font-weight: var(--caption-20-font-weight, normal);
   line-height: 1.5;

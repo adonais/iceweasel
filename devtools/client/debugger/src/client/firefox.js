@@ -89,6 +89,7 @@ export async function onConnect(_commands, _resourceCommand, _actions, store) {
   if (Services.prefs.getBoolPref(DEVTOOLS_STYLESHEETS_IN_DEBUGGER)) {
     await resourceCommand.watchResources([resourceCommand.TYPES.STYLESHEET], {
       onAvailable: onStyleSheetAvailable,
+      onUpdated: onStyleSheetUpdated,
     });
   }
   await resourceCommand.watchResources([resourceCommand.TYPES.THREAD_STATE], {
@@ -239,6 +240,21 @@ async function onSourceAvailable(sources) {
 
 async function onStyleSheetAvailable(sources) {
   await actions.newStyleSheetSources(sources);
+}
+
+async function onStyleSheetUpdated(updates) {
+  for (const { resource, update } of updates) {
+    switch (update.updateType) {
+      case "matches-change":
+      case "at-rules-changed":
+        await actions.setStyleSheetAtRules(
+          resource.resourceId,
+          resource.atRules
+        );
+        break;
+      default:
+    }
+  }
 }
 
 async function onThreadStateAvailable(resources) {

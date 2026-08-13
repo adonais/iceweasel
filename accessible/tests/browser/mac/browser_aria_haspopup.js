@@ -52,7 +52,7 @@ addAccessibleTask(
 
     is(
       falseID.getAttributeValue("AXPopupValue"),
-      "true",
+      "menu",
       "Correct AXPopupValue after change for false"
     );
     is(
@@ -99,7 +99,7 @@ addAccessibleTask(
 
     await untilCacheIs(
       () => menuID.getAttributeValue("AXPopupValue"),
-      "true",
+      "menu",
       "Correct AXPopupValue after change for menu"
     );
     is(
@@ -146,7 +146,7 @@ addAccessibleTask(
 
     await untilCacheIs(
       () => listboxID.getAttributeValue("AXPopupValue"),
-      "true",
+      "menu",
       "Correct AXPopupValue after change for listbox"
     );
     is(
@@ -195,7 +195,7 @@ addAccessibleTask(
 
     await untilCacheIs(
       () => treeID.getAttributeValue("AXPopupValue"),
-      "true",
+      "menu",
       "Correct AXPopupValue after change for tree"
     );
     is(
@@ -242,7 +242,7 @@ addAccessibleTask(
 
     await untilCacheIs(
       () => gridID.getAttributeValue("AXPopupValue"),
-      "true",
+      "menu",
       "Correct AXPopupValue after change for grid"
     );
     is(
@@ -289,7 +289,7 @@ addAccessibleTask(
 
     await untilCacheIs(
       () => dialogID.getAttributeValue("AXPopupValue"),
-      "true",
+      "menu",
       "Correct AXPopupValue after change for dialog"
     );
     is(

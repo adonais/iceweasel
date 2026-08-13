@@ -12,7 +12,7 @@ async def test_without_system_access(bidi_session):
         )
 
 
-@pytest.mark.allow_system_access
+@pytest.mark.geckodriver(allow_system_access=True)
 async def test_multiple_browser_windows(
     bidi_session, new_window, top_context, browser_chrome_url
 ):
@@ -51,7 +51,7 @@ async def test_multiple_browser_windows(
     assert parent_contexts[0]["context"] != parent_contexts[1]["context"]
 
 
-@pytest.mark.allow_system_access
+@pytest.mark.geckodriver(allow_system_access=True)
 async def test_custom_chrome_window_without_iframes(
     bidi_session, top_context, default_chrome_handler, new_chrome_window
 ):
@@ -92,7 +92,7 @@ async def test_custom_chrome_window_without_iframes(
     assert filtered_contexts[0]["moz:name"] == "null"
 
 
-@pytest.mark.allow_system_access
+@pytest.mark.geckodriver(allow_system_access=True)
 async def test_custom_chrome_window_with_iframes(
     bidi_session, top_context, default_chrome_handler, new_chrome_window
 ):
@@ -185,7 +185,7 @@ async def test_custom_chrome_window_with_iframes(
     assert nested_iframes[0]["moz:name"] == "iframe"
 
 
-@pytest.mark.allow_system_access
+@pytest.mark.geckodriver(allow_system_access=True)
 async def test_child_context_without_chrome_scope(
     bidi_session, default_chrome_handler, new_chrome_window
 ):

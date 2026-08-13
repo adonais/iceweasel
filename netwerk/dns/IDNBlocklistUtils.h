@@ -6,6 +6,7 @@
 #define IDNBlocklistUtils_h_
 
 #include <utility>
+
 #include "nsTArray.h"
 
 namespace mozilla {

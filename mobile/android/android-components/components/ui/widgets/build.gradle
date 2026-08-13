@@ -3,11 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 plugins {
+    id 'com.android.library'
     alias(libs.plugins.dependency.analysis)
 }
-
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
 
 android {
     namespace = 'mozilla.components.ui.widgets'
@@ -25,7 +23,7 @@ dependencies {
     implementation platform(libs.androidx.compose.bom)
     implementation libs.androidx.compose.ui.text.android
     implementation libs.androidx.constraintlayout
-    implementation libs.androidx.core.ktx
+    implementation libs.androidx.core
     implementation libs.androidx.swiperefreshlayout
     implementation libs.google.material
 

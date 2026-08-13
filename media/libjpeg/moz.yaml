@@ -108,6 +108,7 @@ vendoring:
     - jconfig.h
     - jconfigint.h
     - jversion.h
+    - libjpeg-config.mozbuild
     - simd/arm/neon-compat.h
     - MOZCHANGES
     - update.py

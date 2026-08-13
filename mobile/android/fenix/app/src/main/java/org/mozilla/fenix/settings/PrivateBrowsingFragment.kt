@@ -27,7 +27,7 @@ import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.settings.biometric.DefaultBiometricUtils
 import org.mozilla.fenix.settings.biometric.ext.isAuthenticatorAvailable
-import org.mozilla.fenix.settings.biometric.ext.isHardwareAvailable
+import org.mozilla.fenix.settings.biometric.ext.isDeviceLockCapable
 
 /**
  * Lets the user customize Private browsing options.
@@ -57,7 +57,7 @@ class PrivateBrowsingFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
     @Suppress("CognitiveComplexMethod")
     private fun updatePreferences() {
         val biometricManager = BiometricManager.from(requireContext())
-        val deviceCapable = biometricManager.isHardwareAvailable()
+        val deviceCapable = biometricManager.isDeviceLockCapable()
         val userHasEnabledCapability = biometricManager.isAuthenticatorAvailable()
 
         requirePreference<Preference>(R.string.pref_key_add_private_browsing_shortcut).apply {

@@ -151,7 +151,7 @@
   display: none;
 }
 
-.content-blocking-warning.reload-tabs:not([hidden]) {
+.content-blocking-warning.reload-tabs {
   display: flex;
   flex-wrap: wrap;
 }
@@ -330,6 +330,15 @@
   margin-block-start: 2em;
 }
 
-#statusPrimaryPassword {
-  --box-icon-fill: var(--icon-color-success);
+#statusPrimaryPassword .primary-pw-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+}
+
+#statusPrimaryPassword .primary-pw-status-icon {
+  width: var(--size-item-small);
+  height: var(--size-item-small);
+  -moz-context-properties: fill;
+  fill: var(--icon-color-success);
 }

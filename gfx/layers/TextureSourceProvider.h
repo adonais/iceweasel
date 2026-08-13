@@ -4,10 +4,10 @@
 #ifndef mozilla_gfx_layers_TextureSourceProvider_h
 #define mozilla_gfx_layers_TextureSourceProvider_h
 
-#include "nsISupportsImpl.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/layers/CompositorTypes.h"
+#include "nsISupportsImpl.h"
 #include "nsTArray.h"
 
 struct ID3D11Device;

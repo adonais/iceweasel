@@ -93,7 +93,7 @@ async function doSetURITest(initialURL, searchString, url, expectSearchMode) {
 
     // Enter search mode and close the view.
     await UrlbarTestUtils.enterSearchMode(window, {
-      source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     });
     await UrlbarTestUtils.promisePopupClose(window);
     Assert.strictEqual(
@@ -111,7 +111,7 @@ async function doSetURITest(initialURL, searchString, url, expectSearchMode) {
       !expectSearchMode
         ? null
         : {
-            source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+            source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
             entry: "oneoff",
           }
     );

@@ -4,12 +4,12 @@
 
 #include "mozilla/TaskQueue.h"
 
-#include "mozilla/ProfilerRunnable.h"
 #include "mozilla/FlowMarkers.h"
+#include "mozilla/ProfilerRunnable.h"
 #include "nsIEventTarget.h"
 #include "nsITargetShutdownTask.h"
-#include "nsThreadUtils.h"
 #include "nsQueryObject.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla {
 

@@ -1,5 +1,3 @@
-# META: timeout=long
-
 import uuid
 
 import pytest

@@ -5,13 +5,12 @@
 #ifndef RedirectChannelRegistrar_h_
 #define RedirectChannelRegistrar_h_
 
-#include "nsIRedirectChannelRegistrar.h"
-
+#include "mozilla/Mutex.h"
 #include "nsIChannel.h"
 #include "nsIParentChannel.h"
+#include "nsIRedirectChannelRegistrar.h"
 #include "nsInterfaceHashtable.h"
 #include "nsTHashMap.h"
-#include "mozilla/Mutex.h"
 
 namespace mozilla {
 namespace net {

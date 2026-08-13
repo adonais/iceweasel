@@ -17,6 +17,7 @@
 #include "mozilla/LinkedList.h"
 #include "mozilla/ScrollStyles.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/ChildIterator.h"
 #include "nsCOMPtr.h"
 #include "nsFrameManager.h"
 #include "nsIAnonymousContentCreator.h"
@@ -47,8 +48,6 @@ namespace dom {
 
 class CharacterData;
 class Text;
-class FlattenedChildIterator;
-
 }  // namespace dom
 }  // namespace mozilla
 
@@ -1515,12 +1514,12 @@ class nsCSSFrameConstructor final : public nsFrameManager {
    * ConstructOuterSVG and ConstructMarker, which both want an anonymous block
    * child for their children to go in to.
    */
-  nsContainerFrame* ConstructFrameWithAnonymousChild(
+  nsContainerFrame* ConstructSVGFrameWithAnonymousChild(
       nsFrameConstructorState& aState, FrameConstructionItem& aItem,
       nsContainerFrame* aParentFrame, nsFrameList& aFrameList,
       ContainerFrameCreationFunc aConstructor,
       ContainerFrameCreationFunc aInnerConstructor,
-      mozilla::PseudoStyleType aInnerPseudo, bool aCandidateRootFrame);
+      PseudoStyleType aInnerPseudo, bool aCandidateRootFrame);
 
   /**
    * Construct an SVGOuterSVGFrame.

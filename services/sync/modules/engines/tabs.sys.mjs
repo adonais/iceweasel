@@ -15,13 +15,13 @@ import {
 } from "resource://services-sync/constants.sys.mjs";
 import { CommonUtils } from "resource://services-common/utils.sys.mjs";
 import { Async } from "resource://services-common/async.sys.mjs";
+import { Observers } from "resource://services-common/observers.sys.mjs";
+import { Collection } from "resource://services-sync/record.sys.mjs";
 import {
   SyncRecord,
   SyncTelemetry,
 } from "resource://services-sync/telemetry.sys.mjs";
 import { BridgedEngine } from "resource://services-sync/bridged_engine.sys.mjs";
-
-const FAR_FUTURE = 4102405200000; // 2100/01/01
 
 const lazy = {};
 
@@ -71,7 +71,7 @@ TabEngine.prototype = {
   _trackerObj: TabTracker,
   syncPriority: 3,
 
-  async prepareTheBridge(isQuickWrite) {
+  async prepareTheBridge() {
     let clientsEngine = this.service.clientsEngine;
     // Tell the bridged engine about clients.
     // This is the same shape as ClientData in app-services.
@@ -109,16 +109,10 @@ TabEngine.prototype = {
       device_type: clientsEngine.localType,
     };
 
-    // Quick write needs to adjust the lastSync so we can POST to the server
-    // see quickWrite() for details
-    if (isQuickWrite) {
-      await this.setLastSync(FAR_FUTURE);
-      await this._bridge.prepareForSync(JSON.stringify(clientData));
-      return;
-    }
-
-    // Just incase we crashed while the lastSync timestamp was FAR_FUTURE, we
-    // reset it to zero
+    // Recover from an older pre-154-ish build that crashed with lastSync set to
+    // FAR_FUTURE: reset it so incoming tabs are downloaded again. Can be removed once
+    // ESRs don't cover that.
+    const FAR_FUTURE = 4102405200000; // 2100/01/01, used by old versions.
     if ((await this.getLastSync()) === FAR_FUTURE) {
       await this._bridge.setLastSync(0);
     }
@@ -244,18 +238,7 @@ TabEngine.prototype = {
     }
     try {
       return await this._engineLock("tabs.js: quickWrite", async () => {
-        // We want to restore the lastSync timestamp when complete so next sync
-        // takes tabs written by other devices since our last real sync.
-        // And for this POST we don't want the protections offered by
-        // X-If-Unmodified-Since - we want the POST to work even if the remote
-        // has moved on and we will catch back up next full sync.
-        const origLastSync = await this.getLastSync();
-        try {
-          return this._doQuickWrite();
-        } finally {
-          // set the lastSync to it's original value for regular sync
-          await this.setLastSync(origLastSync);
-        }
+        return this._doQuickWrite();
       })();
     } catch (ex) {
       if (!Utils.isLockException(ex)) {
@@ -281,15 +264,13 @@ TabEngine.prototype = {
     try {
       Async.checkAppReady();
       // We need to prep the bridge before we try to POST since it grabs
-      // the most recent local client id and properly sets a lastSync
-      // which is needed for a proper POST request
-      await this.prepareTheBridge(true);
+      // the most recent local client id.
+      await this.prepareTheBridge();
       this._tracker.clearChangedIDs();
       this._tracker.resetScore();
 
       Async.checkAppReady();
-      // now just the "upload" part of a sync,
-      // which for a rust engine is  not obvious.
+      // now just the "upload" part of a sync, which for a rust engine is not obvious.
       // We need to do is ask the rust engine for the changes. Although
       // this is kinda abusing the bridged-engine interface, we know the tabs
       // implementation of it works ok
@@ -299,12 +280,25 @@ TabEngine.prototype = {
       this._log.trace("outgoing bso", mine);
       // `this._recordObj` is a `BridgedRecord`, which isn't exported.
       let record = this._recordObj.fromOutgoingBso(this.name, JSON.parse(mine));
-      let changeset = {};
-      changeset[record.id] = { synced: false, record };
-      this._modified.replace(changeset);
 
       Async.checkAppReady();
-      await this._uploadOutgoing();
+      // This is a single, device-exclusive record we want to force onto the
+      // server, so we POST it directly and unconditionally: no
+      // X-If-Unmodified-Since precondition, no local state update.
+      await record.encrypt(
+        this.service.collectionKeys.keyForCollection(this.name)
+      );
+      let coll = new Collection(this.engineURL, this._recordObj, this.service);
+      let resp = await coll.postSingleRawRecord(record);
+      if (!resp.success) {
+        this._log.warn(`quick-write POST failed: ${resp.status}`);
+        throw resp;
+      }
+      Observers.notify(
+        "weave:engine:sync:uploaded",
+        { sent: 1, failed: 0, failedReasons: null },
+        this.name
+      );
       telemetryRecord.onEngineStop(name, null);
       return true;
     } catch (ex) {

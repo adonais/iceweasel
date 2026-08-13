@@ -5,10 +5,10 @@
 #ifndef mozilla_net_EarlyHintsService_h
 #define mozilla_net_EarlyHintsService_h
 
-#include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/dom/ipc/IdType.h"
 #include "nsStringFwd.h"
 #include "nsTArray.h"
 

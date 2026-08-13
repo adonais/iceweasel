@@ -71,79 +71,18 @@ nsresult StringToUsage(const nsString& aUsage, CryptoKey::KeyUsage& aUsageOut) {
   return NS_OK;
 }
 
-// To protect against key ID collisions, PrivateKeyFromPrivateKeyTemplate
-// generates a random ID for each key. The given template must contain an
-// attribute slot for a key ID, but it must consist of a null pointer and have a
-// length of 0.
+// PK11_CreatePrivateKeyFromTemplate (NSS bug 2047310) creates the session
+// object from the template and returns a SECKEYPrivateKey that owns it,
+// replacing the old PK11_CreateGenericObject + PK11_FindKeyByKeyID
+// ownership-transfer workaround that leaked a session object per key.
 UniqueSECKEYPrivateKey PrivateKeyFromPrivateKeyTemplate(
     CK_ATTRIBUTE* aTemplate, CK_ULONG aTemplateSize) {
-  // Create a generic object with the contents of the key
   UniquePK11SlotInfo slot(PK11_GetInternalSlot());
   if (!slot) {
     return nullptr;
   }
-
-  // Generate a random 160-bit object ID. This ID must be unique.
-  UniqueSECItem objID(::SECITEM_AllocItem(nullptr, nullptr, 20));
-  SECStatus rv = PK11_GenerateRandomOnSlot(slot.get(), objID->data, objID->len);
-  if (rv != SECSuccess) {
-    return nullptr;
-  }
-  // Check if something is already using this ID.
-  SECKEYPrivateKey* preexistingKey =
-      PK11_FindKeyByKeyID(slot.get(), objID.get(), nullptr);
-  if (preexistingKey) {
-    // PK11_FindKeyByKeyID returns a non-owning reference, so destroying it
-    // here does not touch the PKCS#11 object backing the preexisting key.
-    SECKEY_DestroyPrivateKey(preexistingKey);
-    // Try again with a new ID (but only once - collisions are very unlikely).
-    rv = PK11_GenerateRandomOnSlot(slot.get(), objID->data, objID->len);
-    if (rv != SECSuccess) {
-      return nullptr;
-    }
-    preexistingKey = PK11_FindKeyByKeyID(slot.get(), objID.get(), nullptr);
-    if (preexistingKey) {
-      SECKEY_DestroyPrivateKey(preexistingKey);
-      return nullptr;
-    }
-  }
-
-  CK_ATTRIBUTE* idAttributeSlot = nullptr;
-  for (CK_ULONG i = 0; i < aTemplateSize; i++) {
-    if (aTemplate[i].type == CKA_ID) {
-      if (aTemplate[i].pValue != nullptr || aTemplate[i].ulValueLen != 0) {
-        return nullptr;
-      }
-      idAttributeSlot = aTemplate + i;
-      break;
-    }
-  }
-  if (!idAttributeSlot) {
-    return nullptr;
-  }
-
-  idAttributeSlot->pValue = objID->data;
-  idAttributeSlot->ulValueLen = objID->len;
-  UniquePK11GenericObject obj(
-      PK11_CreateGenericObject(slot.get(), aTemplate, aTemplateSize, PR_FALSE));
-  // Unset the ID attribute slot's pointer and length so that data that only
-  // lives for the scope of this function doesn't escape.
-  idAttributeSlot->pValue = nullptr;
-  idAttributeSlot->ulValueLen = 0;
-  if (!obj) {
-    return nullptr;
-  }
-
-  // Have NSS translate the object to a private key. Since NSS 3.122 (bug
-  // 2017945) PK11_FindKeyByKeyID returns a wrapper that does not own the
-  // underlying PKCS#11 object. We created this session object above, so we own
-  // it and must mark it owned so it is destroyed along with the key.
-  UniqueSECKEYPrivateKey privKey(
-      PK11_FindKeyByKeyID(slot.get(), objID.get(), nullptr));
-  if (privKey) {
-    SECKEYPRIVATEKEY_SET_OWNED(privKey.get(), PR_TRUE);
-  }
-  return privKey;
+  return UniqueSECKEYPrivateKey(PK11_CreatePrivateKeyFromTemplate(
+      slot.get(), aTemplate, aTemplateSize, nullptr));
 }
 
 CryptoKey::CryptoKey(nsIGlobalObject* aGlobal)

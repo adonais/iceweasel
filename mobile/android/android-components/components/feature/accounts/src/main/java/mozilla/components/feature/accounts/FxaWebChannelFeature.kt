@@ -21,7 +21,9 @@ import mozilla.components.concept.engine.webextension.MessageHandler
 import mozilla.components.concept.engine.webextension.Port
 import mozilla.components.concept.engine.webextension.WebExtensionRuntime
 import mozilla.components.concept.sync.AuthType
+import mozilla.components.concept.sync.SyncEngine
 import mozilla.components.feature.accounts.FxaWebChannelFeature.Companion.COMMAND_CAN_LINK_ACCOUNT
+import mozilla.components.feature.accounts.FxaWebChannelFeature.Companion.COMMAND_CHANGE_PASSWORD
 import mozilla.components.feature.accounts.FxaWebChannelFeature.Companion.COMMAND_DELETE_ACCOUNT
 import mozilla.components.feature.accounts.FxaWebChannelFeature.Companion.COMMAND_LOGIN
 import mozilla.components.feature.accounts.FxaWebChannelFeature.Companion.COMMAND_LOGOUT
@@ -31,7 +33,6 @@ import mozilla.components.feature.accounts.FxaWebChannelFeature.Companion.COMMAN
 import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.service.fxa.FxaAuthData
 import mozilla.components.service.fxa.ServerConfig
-import mozilla.components.service.fxa.SyncEngine
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.service.fxa.sync.toSyncEngines
 import mozilla.components.service.fxa.toAuthType
@@ -171,6 +172,7 @@ class FxaWebChannelFeature(
                 WebChannelCommand.FXA_STATUS -> processFxaStatusCommand(accountManager, messageId, fxaCapabilities)
                 WebChannelCommand.OAUTH_LOGIN -> processOauthLoginCommand(accountManager, payload)
                 WebChannelCommand.LOGIN -> processLoginCommand(accountManager, payload)
+                WebChannelCommand.CHANGE_PASSWORD -> processChangePasswordCommand(accountManager, payload)
                 WebChannelCommand.SYNC_PREFERENCES -> processSyncPreferencesCommand(accountManager)
                 WebChannelCommand.LOGOUT, WebChannelCommand.DELETE_ACCOUNT -> processLogoutCommand(accountManager)
                 else -> processUnknownCommand(rawCommand)
@@ -232,6 +234,7 @@ class FxaWebChannelFeature(
             CAN_LINK_ACCOUNT,
             LOGIN,
             OAUTH_LOGIN,
+            CHANGE_PASSWORD,
             SYNC_PREFERENCES,
             FXA_STATUS,
             LOGOUT,
@@ -265,6 +268,12 @@ class FxaWebChannelFeature(
          * it passes in its payload the session token the web content is holding on to
          */
         private const val COMMAND_LOGIN = "fxaccounts:login"
+
+        /**
+         * Triggered when the web content has changed the password for the signed-in account.
+         * The payload carries the new session token.
+         */
+        private const val COMMAND_CHANGE_PASSWORD = "fxaccounts:change_password"
 
         /**
          * Gets triggered when the web content signals to open sync preferences,
@@ -409,6 +418,26 @@ class FxaWebChannelFeature(
         }
 
         /**
+         * Handles the [COMMAND_CHANGE_PASSWORD] event from the web-channel.
+         */
+        private fun processChangePasswordCommand(
+            accountManager: FxaAccountManager,
+            payload: JSONObject,
+        ): JSONObject? {
+            val dataJson: String
+            try {
+                dataJson = payload.getJSONObject("data").toString()
+            } catch (e: JSONException) {
+                logger.error("Error while processing WebChannel change_password command", e)
+                return null
+            }
+            CoroutineScope(Dispatchers.Main).launch {
+                accountManager.handleWebChannelPasswordChange(dataJson)
+            }
+            return null
+        }
+
+        /**
          * Handles the [COMMAND_OAUTH_LOGIN] event from the web-channel.
          */
         private fun processOauthLoginCommand(accountManager: FxaAccountManager, payload: JSONObject): JSONObject? {
@@ -503,6 +532,7 @@ class FxaWebChannelFeature(
                 COMMAND_OAUTH_LOGIN -> WebChannelCommand.OAUTH_LOGIN
                 COMMAND_STATUS -> WebChannelCommand.FXA_STATUS
                 COMMAND_LOGIN -> WebChannelCommand.LOGIN
+                COMMAND_CHANGE_PASSWORD -> WebChannelCommand.CHANGE_PASSWORD
                 COMMAND_SYNC_PREFERENCES -> WebChannelCommand.SYNC_PREFERENCES
                 COMMAND_LOGOUT -> WebChannelCommand.LOGOUT
                 COMMAND_DELETE_ACCOUNT -> WebChannelCommand.DELETE_ACCOUNT

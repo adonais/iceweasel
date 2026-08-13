@@ -18,6 +18,7 @@
 #define wasm_shareable_h
 
 #include "mozilla/RefPtr.h"
+
 #include "js/RefCounted.h"
 #include "wasm/WasmTypeDecls.h"
 

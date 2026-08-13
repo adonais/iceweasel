@@ -1654,6 +1654,7 @@ export const SearchService = new (class SearchService {
     Glean.searchService.startupTime.stopAndAccumulate(timerId);
 
     this.#recordDefaultEngineTelemetryData();
+    this.#setPreviousUpdateTelemetry();
 
     Services.obs.notifyObservers(
       null,
@@ -3212,28 +3213,19 @@ export const SearchService = new (class SearchService {
     let extensionEngines = this.#getEnginesByExtensionID(extension.id);
 
     for (let engine of extensionEngines) {
-      let isDefault = engine == this.defaultEngine;
-      let isDefaultPrivate = engine == this.defaultPrivateEngine;
-
       let originalName = engine.name;
 
       await engine.update({
         extension,
       });
 
-      if (engine.name != originalName) {
-        if (isDefault) {
-          this._settings.setVerifiedMetaDataAttribute(
-            "defaultEngineId",
-            engine.id
-          );
-        }
-        if (isDefaultPrivate) {
-          this._settings.setVerifiedMetaDataAttribute(
-            "privateDefaultEngineId",
-            engine.id
-          );
-        }
+      // If the name has changed, and we aren't using the pre-saved orders,
+      // clear the sorted engines cache so that we'll update the orders next
+      // time it is accessed.
+      if (
+        engine.name != originalName &&
+        !this._settings.getMetaDataAttribute("useSavedOrder")
+      ) {
         this._cachedSortedEngines = null;
       }
     }
@@ -3461,6 +3453,31 @@ export const SearchService = new (class SearchService {
   #onSeparateDefaultPrefChanged(prefName, previousValue, currentValue) {
     // Clear out the sorted engines settings, so that we re-sort it if necessary.
     this._cachedSortedEngines = null;
+
+    if (
+      prefName === "browser.search.separatePrivateDefault" &&
+      !previousValue &&
+      currentValue
+    ) {
+      if (this.#appDefaultEngine(true) != this.#appDefaultEngine(false)) {
+        // The app has a distinct private default, which allows it to specify a
+        // different engine (e.g., for active experiments, user choice, or partner
+        // routing). Prioritize that app default when enabling this option.
+        this._settings.setMetaDataAttribute(
+          "privateDefaultEngineId",
+          this.#appDefaultEngine(true).id
+        );
+      } else {
+        // If the app defaults don't differ but the user has customized their
+        // normal engine, we shouldn't force them back to a generic default.
+        // Start them off with the engine they are already comfortable using.
+        this._settings.setMetaDataAttribute(
+          "privateDefaultEngineId",
+          this.defaultEngine.id
+        );
+      }
+    }
+
     // We should notify if the normal default, and the currently saved private
     // default are different. Otherwise, save the energy.
     if (this.defaultEngine != this._getEngineDefault(true)) {
@@ -3489,6 +3506,8 @@ export const SearchService = new (class SearchService {
         null,
         eventReason
       );
+      this._settings.setMetaDataAttribute("privateDefaultEngineId", "");
+      this.#currentPrivateEngine = null;
     }
   }
 
@@ -3573,20 +3592,60 @@ export const SearchService = new (class SearchService {
   }
 
   /**
-   * Records the telemetry event when the default engine has changed, and
-   * also updates the related non-event probes.
+   * @type { Record<"private"|"normal", ?Parameters<typeof Glean.searchEngineDefault.changed.record>[0]>}
+   *   Records the previous changed event details that were sent on telemetry.
+   */
+  #previousEngineChangedEvent = { private: null, normal: null };
+
+  /**
+   * Intended to be called after init is complete, to save a copy of the current
+   * default search engine data, for comparison when an ENGINE_UPDATE is next
+   * received.
+   */
+  #setPreviousUpdateTelemetry() {
+    this.#previousEngineChangedEvent.normal = this.#getUpdateTelemetryExtraArgs(
+      null,
+      this.defaultEngine,
+      null
+    );
+    // If the private mode default search engine is not enabled, then this will
+    // get the details of the normal engine. That is not an issue, as when the
+    // private mode is turned on, a CHANGE_REASON.USER reason will be sent out
+    // that will update this ahead of any ENGINE_UPDATE reasons.
+    this.#previousEngineChangedEvent.private =
+      this.#getUpdateTelemetryExtraArgs(null, this.defaultPrivateEngine, null);
+  }
+
+  /**
+   * Determines if the current event record has the same details as the previous
+   * one or not. This only matches against the `new_` fields because the
+   * `previous_engine_id` may indeed have changed from an earlier event.
    *
-   * @param {boolean} isPrivate
-   *   True if this is a event about a private engine.
+   * @param {Parameters<typeof Glean.searchEngineDefault.changed.record>[0]} previous
+   * @param {Parameters<typeof Glean.searchEngineDefault.changed.record>[0]} current
+   */
+  #changedEventIsSame(previous, current) {
+    return (
+      previous.new_engine_id == current.new_engine_id &&
+      previous.new_display_name == current.new_display_name &&
+      previous.new_load_path == current.new_load_path &&
+      previous.new_submission_url == current.new_submission_url
+    );
+  }
+
+  /**
+   * Gets the relevant details for the Glean event probe for when the
+   * default engine is changed.
+   *
    * @param {SearchEngine} [previousEngine]
    *   The previously default search engine.
    * @param {SearchEngine} [newEngine]
    *   The new default search engine.
-   * @param {Values<typeof this.CHANGE_REASON>} changeReason
-   *   The reason for the default search engine change
+   * @param {Values<typeof this.CHANGE_REASON>} [changeReason]
+   *   The reason for the default search engine change.
+   * @returns {Parameters<typeof Glean.searchEngineDefault.changed.record>[0]}
    */
-  #updateTelemetryDueToDefaultEngineChange(
-    isPrivate,
+  #getUpdateTelemetryExtraArgs(
     previousEngine,
     newEngine,
     changeReason = this.CHANGE_REASON.UNKNOWN
@@ -3599,8 +3658,7 @@ export const SearchService = new (class SearchService {
     }
 
     let submissionURL = engineInfo?.submissionURL ?? "";
-    /** @type {Parameters<typeof Glean.searchEngineDefault.changed.record>[0]} */
-    let extraArgs = {
+    return {
       // In docshell tests, the previous engine does not exist, so we allow
       // for the previousEngine to be undefined.
       previous_engine_id: previousEngine?.telemetryId ?? "",
@@ -3611,11 +3669,51 @@ export const SearchService = new (class SearchService {
       new_submission_url: submissionURL.slice(0, 100),
       change_reason: changeReason,
     };
-    if (isPrivate) {
-      Glean.searchEnginePrivate.changed.record(extraArgs);
-    } else {
-      Glean.searchEngineDefault.changed.record(extraArgs);
+  }
+
+  /**
+   * Records the telemetry event when the default engine has changed, and
+   * also updates the related non-event probes.
+   *
+   * @param {boolean} isPrivate
+   *   True if this is an event about a private engine.
+   * @param {SearchEngine} [previousEngine]
+   *   The previously default search engine.
+   * @param {SearchEngine} [newEngine]
+   *   The new default search engine.
+   * @param {Values<typeof this.CHANGE_REASON>} [changeReason]
+   *   The reason for the default search engine change.
+   */
+  #updateTelemetryDueToDefaultEngineChange(
+    isPrivate,
+    previousEngine,
+    newEngine,
+    changeReason = this.CHANGE_REASON.UNKNOWN
+  ) {
+    let extraArgs = this.#getUpdateTelemetryExtraArgs(
+      previousEngine,
+      newEngine,
+      changeReason
+    );
+
+    let previousEventType = isPrivate ? "private" : "normal";
+    let previousEvent = this.#previousEngineChangedEvent[previousEventType];
+
+    if (
+      changeReason != this.CHANGE_REASON.ENGINE_UPDATE ||
+      !previousEvent ||
+      // For engine updates, we don't send the event unless the details are
+      // different.
+      !this.#changedEventIsSame(previousEvent, extraArgs)
+    ) {
+      if (isPrivate) {
+        Glean.searchEnginePrivate.changed.record(extraArgs);
+      } else {
+        Glean.searchEngineDefault.changed.record(extraArgs);
+      }
     }
+    this.#previousEngineChangedEvent[previousEventType] = extraArgs;
+
     this.#recordDefaultEngineTelemetryData();
   }
 

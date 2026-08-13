@@ -82,7 +82,7 @@ tasks:
         treeherder:
             symbol: hacl
         worker:
-            docker-image: {in-tree: builds}
+            docker-image: {in-tree: builds-legacy}
         run:
             command: "${VCS_PATH}/nss/automation/taskcluster/scripts/run_hacl.sh"
 

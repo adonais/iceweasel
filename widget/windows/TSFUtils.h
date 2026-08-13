@@ -5,10 +5,10 @@
 #ifndef TSFUtils_h
 #define TSFUtils_h
 
-#include <ostream>
-
 #include <msctf.h>
 #include <textstor.h>
+
+#include <ostream>
 
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
@@ -139,6 +139,11 @@ class TSFUtils final {
       0x4308,
       {0xbc, 0xbf, 0x2e, 0x73, 0x93, 0x98, 0xe2, 0x34}};
 
+  // To avoid the include hell of the SDK, we should use the following static
+  // referrers to refer some GUIDs defined in <tsattrs.h>.
+  static const GUID& TSATTRID_Text_VerticalWriting_Ref();
+  static const GUID& TSATTRID_Text_Orientation_Ref();
+
   constexpr static TsViewCookie sDefaultView = 1;
 
   /**
@@ -181,38 +186,6 @@ class TSFUtils final {
    * set input scope of URL bar to IS_DEFAULT rather than IS_URL.
    */
   [[nodiscard]] static bool ShouldSetInputScopeOfURLBarToDefault();
-
-  // Support retrieving attributes.
-  // TODO: We should support RightToLeft, perhaps.
-  enum AttrIndex {
-    // Used for result of GetRequestedAttrIndex()
-    NotSupported = -1,
-
-    // Supported attributes even in TSFEmptyTextStore.
-    InputScope = 0,
-    DocumentURL,
-
-    // Count of the supported attrs in empty text store
-    NUM_OF_SUPPORTED_ATTRS_IN_EMPTY_TEXT_STORE,
-
-    // Supported attributes in any TextStores.
-    TextVerticalWriting = NUM_OF_SUPPORTED_ATTRS_IN_EMPTY_TEXT_STORE,
-    TextOrientation,
-
-    // Count of the supported attributes
-    NUM_OF_SUPPORTED_ATTRS,
-  };
-
-  /**
-   * Return AttrIndex fo aAttrID.
-   */
-  [[nodiscard]] static AttrIndex GetRequestedAttrIndex(
-      const TS_ATTRID& aAttrID);
-
-  /**
-   * Return TS_ATTRID for aIndex.
-   */
-  [[nodiscard]] static TS_ATTRID GetAttrID(AttrIndex aIndex);
 
   /**
    * Get compartment instance.

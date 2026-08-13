@@ -22,6 +22,8 @@ types.addDictType("appliedstyle", {
   darkColorScheme: "nullable:boolean",
   matchedSelectorIndexes: "nullable:array:number",
   keyframes: "nullable:domstylerule",
+  siblingCount: "nullable:number",
+  siblingIndex: "nullable:number",
 });
 
 types.addDictType("matchedselector", {

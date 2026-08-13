@@ -105,7 +105,7 @@ internal class GeckoIPProtectionHandler(
         logger.debug("setAuthProvider")
         runtime.ipProtectionController.setAuthProvider(
             object : IPProtectionController.AuthProvider {
-                override fun getToken(): GeckoResult<String?> {
+                override fun onTokenRequest(): GeckoResult<String?> {
                     val result = GeckoResult<String?>()
                     provider?.getToken { token ->
                         logger.info("Retrieved access token.")
@@ -119,5 +119,37 @@ internal class GeckoIPProtectionHandler(
 
     override fun notifyAccountStatus(signedIn: Boolean) {
         runtime.ipProtectionController.notifySignInStateChanged(signedIn)
+    }
+
+    override fun setGpiProvider(provider: IPProtectionHandler.GpiProvider?) {
+        if (provider == null) {
+            runtime.ipProtectionController.setGpiProvider(null)
+            return
+        }
+        runtime.ipProtectionController.setGpiProvider(object : IPProtectionController.GpiProvider {
+            override fun warmUp(): GeckoResult<Void> {
+                val result = GeckoResult<Void>()
+                provider.warmUp { success ->
+                    if (success) {
+                        result.complete(null)
+                    } else {
+                        result.completeExceptionally(RuntimeException("gpi-warm-up-failed"))
+                    }
+                }
+                return result
+            }
+
+            override fun onTokenRequest(): GeckoResult<String> {
+                val result = GeckoResult<String>()
+                provider.getToken { token ->
+                    if (token != null) {
+                        result.complete(token)
+                    } else {
+                        result.completeExceptionally(RuntimeException("no-gpi-token"))
+                    }
+                }
+                return result
+            }
+        })
     }
 }

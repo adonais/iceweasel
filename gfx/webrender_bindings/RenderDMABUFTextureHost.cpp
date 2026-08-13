@@ -5,8 +5,8 @@
 #include "RenderDMABUFTextureHost.h"
 
 #include "GLContextEGL.h"
-#include "mozilla/gfx/Logging.h"
 #include "ScopedGLHelpers.h"
+#include "mozilla/gfx/Logging.h"
 
 namespace mozilla::wr {
 

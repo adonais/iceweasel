@@ -40,7 +40,7 @@
     <color name="fx_mobile_warning_container">@color/novaYellow70</color>
     <color name="fx_mobile_on_warning_container">@color/novaVioletDesaturated0</color>
     <color name="fx_mobile_outline">@color/novaGray45</color>
-    <color name="fx_mobile_outline_variant">@color/novaGray65</color>
+    <color name="fx_mobile_outline_variant">@color/novaGray60</color>
     <color name="fx_mobile_surface_bright">@color/novaGray65</color>
     <color name="fx_mobile_surface_dim">@color/novaGray85</color>
     <color name="fx_mobile_surface_container">@color/novaGray75</color>
@@ -62,10 +62,6 @@
     <color name="fx_mobile_layer_color_2">@color/photonDarkGrey30</color>
     <!-- Search -->
     <color name="fx_mobile_layer_color_3">@color/photonDarkGrey80</color>
-    <!-- Tooltip -->
-    <color name="fx_mobile_layer_color_gradient_start">@color/photonViolet70</color>
-    <!-- Tooltip -->
-    <color name="fx_mobile_layer_color_gradient_end">@color/photonViolet60</color>
     <!-- Warning background -->
     <color name="fx_mobile_layer_color_warning">@color/photonYellow70A77</color>
     <!-- Error background -->
@@ -84,8 +80,6 @@
     <color name="fx_mobile_text_color_action_primary_disabled">@color/photonLightGrey05A40</color>
 
     <!-- Icon -->
-    <!-- Disabled icon -->
-    <color name="fx_mobile_icon_color_disabled">@color/photonLightGrey05A40</color>
     <!-- Icon inverted (on color) -->
     <color name="fx_mobile_icon_color_oncolor">@color/photonLightGrey05</color>
     <color name="fx_mobile_icon_color_accent_violet">@color/photonViolet20</color>
@@ -132,16 +126,5 @@
     <color name="mozac_ui_tabcounter_default_tint" tools:ignore="UnusedResources">@color/fx_mobile_on_surface</color>
     <color name="mozac_ui_tabcounter_default_text" tools:ignore="UnusedResources">@color/fx_mobile_on_surface</color>
 
-    <!-- Account Sync Avatar fill colors -->
-    <color name="mozac_ui_avatar_warning_bg_fill_critical">@color/fx_mobile_on_surface_variant</color>
-    <color name="mozac_ui_avatar_warning_fill_critical">@color/fx_mobile_error</color>
-
-    <!-- Extensions disabled icon fill colors -->
-    <color name="mozac_ui_extensions_warning_bg_fill_critical">@color/fx_mobile_on_surface_variant</color>
-    <color name="mozac_ui_extensions_warning_fill_critical">@color/fx_mobile_error</color>
-
-    <!-- Lock slash critical fill colors for mozac_ic_lock_slash_critical_24 -->
-    <color name="mozac_ui_lock_slash_bg_fill_critical">@color/fx_mobile_on_surface_variant</color>
-    <color name="mozac_ui_lock_slash_fill_critical">@color/fx_mobile_error</color>
     <color name="preference_scroll_highlight">@color/fx_mobile_surface_container_highest</color>
 </resources>

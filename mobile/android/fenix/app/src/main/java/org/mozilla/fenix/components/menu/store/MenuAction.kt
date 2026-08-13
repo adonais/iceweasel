@@ -177,16 +177,6 @@ sealed class MenuAction : Action {
     data object RequestMobileSite : MenuAction()
 
     /**
-     * [MenuAction] dispatched to show the menu CFR.
-     */
-    data object OnCFRShown : MenuAction()
-
-    /**
-     * [MenuAction] dispatched when the menu CFR is dismissed.
-     */
-    data object OnCFRDismiss : MenuAction()
-
-    /**
      * [MenuAction] dispatched when the menu is clicked.
      */
     data object OnMoreMenuClicked : MenuAction()

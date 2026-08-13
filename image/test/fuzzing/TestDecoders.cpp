@@ -2,24 +2,22 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "gtest/gtest.h"
-
 #include "Common.h"
+#include "FuzzingInterfaceStream.h"
+#include "ImageOps.h"
+#include "gtest/gtest.h"
 #include "imgIContainer.h"
 #include "imgITools.h"
-#include "ImageOps.h"
-#include "mozilla/gfx/2D.h"
 #include "mozilla/Preferences.h"
-#include "nsComponentManagerUtils.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/gfx/2D.h"
 #include "nsCOMPtr.h"
+#include "nsComponentManagerUtils.h"
 #include "nsIInputStream.h"
 #include "nsIRunnable.h"
 #include "nsIThread.h"
-#include "mozilla/RefPtr.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
-
-#include "FuzzingInterfaceStream.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;

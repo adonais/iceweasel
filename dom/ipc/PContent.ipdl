@@ -13,6 +13,7 @@ include protocol PCycleCollectWithLogs;
 include protocol PDocumentChannel;
 include protocol PExtensions;
 include protocol PExternalHelperApp;
+include protocol PFOGTransport;
 include protocol PHandlerService;
 include protocol PHal;
 include protocol PHeapSnapshotTempFileHelper;
@@ -151,6 +152,7 @@ using mozilla::dom::WindowContextTransaction from "mozilla/dom/WindowContext.h";
 using gfxSparseBitSet from "gfxSparseBitSet.h";
 using FontVisibility from "gfxTypes.h";
 using mozilla::dom::MediaControlAction from "mozilla/dom/MediaControlKeySource.h";
+using mozilla::dom::AudioFocusInterruptAction from "mozilla/dom/ContentMediaController.h";
 using mozilla::dom::MediaPlaybackState from "mozilla/dom/MediaPlaybackStatus.h";
 using mozilla::dom::MediaAudibleState from "mozilla/dom/MediaPlaybackStatus.h";
 using mozilla::dom::ControlType from "mozilla/dom/MediaPlaybackStatus.h";
@@ -322,6 +324,7 @@ struct JSWindowActorInfo
 {
   nsCString name;
   bool allFrames;
+  bool safeForUntrustedWebProcess;
 
   // This is to align with JSProcessActorInfo.
   // This attribute isn't used for JSWindow Actors.
@@ -350,6 +353,8 @@ struct JSProcessActorInfo
 
     // True if the actor should be loaded in the distinct loader dedicated to DevTools.
     bool loadInDevToolsLoader;
+
+    bool safeForUntrustedWebProcess;
 
     // The module of the url.
     nsCString? url;
@@ -700,6 +705,12 @@ child:
 parent:
     async UpdateScriptCacheEverHitTelemetry(uint64_t aChildId, uint32_t aRate);
 
+    // Sent by the content process immediately before it does an operation which
+    // it believes makes it "untrusted", such as loading untrusted content in an
+    // content docshell, starting a worker, etc. Operations which rely on a
+    // trusted content process must only happen before this message is sent.
+    async BecomeUntrusted();
+
 child:
     async SetOffline(bool offline);
     async SetConnectivity(bool connectivity);
@@ -1004,6 +1015,15 @@ child:
      */
     async UpdateMediaControlAction(MaybeDiscardedBrowsingContext aContext,
                                    MediaControlAction aAction);
+
+    /**
+     * Dispatch an audio-focus interrupt (suspend or resume) to a browsing
+     * context tree so its audible sources react to a focus change. This is
+     * distinct from a media-control key: it is not user-initiated and reaches
+     * uncontrollable sources as well.
+     */
+    async UpdateMediaSessionInterrupt(MaybeDiscardedBrowsingContext aContext,
+                                      AudioFocusInterruptAction aAction);
 
     // Begin subscribing to a new BrowsingContextGroup, sending down the current
     // value for every individual BrowsingContext.
@@ -1937,6 +1957,8 @@ parent:
     async GeckoTraceExport(ByteBuf aBuf);
 
 child:
+    async CreateFOGTransport(Endpoint<PFOGTransportChild> aChildEndpoint);
+
     // Temporary (bug 1641989) conduit for Glean data in content processes.
     // Tells the child to flush any pending data. Used in tests and ping
     // assembly. Buffer contains bincoded Rust structs.

@@ -5,16 +5,15 @@
 #include <algorithm>
 #include <vector>
 
-#include "gtest/gtest.h"
-
-#include "mozilla/gfx/2D.h"
-#include "mozilla/Maybe.h"
 #include "Common.h"
 #include "Decoder.h"
 #include "DecoderFactory.h"
 #include "SourceBuffer.h"
 #include "SurfaceFilters.h"
 #include "SurfacePipe.h"
+#include "gtest/gtest.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/gfx/2D.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;

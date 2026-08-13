@@ -5,6 +5,90 @@
 
 /// <reference path="head.js" />
 
+// Shared options and helpers for the structural-smoke tasks below.
+// The greedy sampler chain must terminate in `dist`: top-k:1 alone is
+// just a filter, and without `dist` to pick the surviving token
+// llama.cpp crashes.
+const LLAMA_SMOKE_OPTIONS = {
+  backend: "llama.cpp",
+  engineId: "ml-smoke-test-llama-smoke",
+  taskName: "text-generation",
+  modelId: "Mozilla/test-llama",
+  modelFile: "TinyStories-656K.Q8_0.gguf",
+  modelRevision: "main",
+  kvCacheDtype: "q8_0",
+  numContext: 256,
+};
+
+const LLAMA_SMOKE_GREEDY = [{ type: "top-k", topK: 1 }, { type: "dist" }];
+
+const LLAMA_SMOKE_PROMPT_A = [
+  { role: "system", content: "You are a friendly storyteller." },
+  { role: "user", content: "Once upon a time there was a small mouse who" },
+];
+
+const LLAMA_SMOKE_PROMPT_B = [
+  { role: "system", content: "You are a friendly storyteller." },
+  { role: "user", content: "Deep in the forest, a tall green tree" },
+];
+
+async function runLlamaSmokeGen(
+  engine,
+  prompt,
+  samplers = LLAMA_SMOKE_GREEDY,
+  nPredict = 32
+) {
+  let text = "";
+  const generator = engine.runWithGenerator({ prompt, samplers, nPredict });
+  let result;
+  do {
+    result = await generator.next();
+    if (!result.done) {
+      text += result.value.text ?? "";
+    }
+  } while (!result.done);
+  return text;
+}
+
+async function sha256Hex(str) {
+  const bytes = new TextEncoder().encode(str);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return [...new Uint8Array(digest)]
+    .map(b => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+// Fraction of characters that are printable ASCII or common whitespace.
+// A working tokenizer + decoder should be ~1.0; a busted one drops fast.
+function printableRatio(text) {
+  if (!text.length) {
+    return 0;
+  }
+  let n = 0;
+  for (const ch of text) {
+    const code = ch.codePointAt(0);
+    if (
+      (code >= 0x20 && code <= 0x7e) ||
+      code === 0x09 ||
+      code === 0x0a ||
+      code === 0x0d
+    ) {
+      n++;
+    }
+  }
+  return n / [...text].length;
+}
+
+// Fraction of whitespace-split tokens that are distinct. Low values
+// mean the decoder is looping ("the the the the ...").
+function distinctTokenRatio(text) {
+  const tokens = text.trim().split(/\s+/).filter(Boolean);
+  if (!tokens.length) {
+    return 0;
+  }
+  return new Set(tokens).size / tokens.length;
+}
+
 /**
  * Runs a full end-to-end test on the native ONNX backend
  */
@@ -35,11 +119,14 @@ async function llama_crash() {
 
   try {
     const crashMan = Services.crashmanager;
+    // A content process can emit ipc:content-shutdown for a normal teardown,
+    // which carries no crash information. Wait for the abnormal one so that
+    // the dumpID set by ContentParent is present on the subject.
     const contentShutdown = TestUtils.topicObserved(
       "ipc:content-shutdown",
       (subject, data) => {
         info(`ipc:content-shutdown: data=${data} subject=${subject}`);
-        return true;
+        return subject instanceof Ci.nsIPropertyBag2 && subject.get("abnormal");
       }
     );
 
@@ -393,4 +480,132 @@ add_task(async function test_ml_smoke_test_llama_long_prompt_metrics() {
     ],
     expectMultiChunkPrefill: true,
   });
+});
+
+// Structural smoke for the native llama.cpp backend with greedy
+// decoding. The tests above cover engine-API correctness; the tasks
+// below cover output-content invariants: the generation is printable
+// and diverse, different prompts produce different outputs, and the
+// greedy output matches a pinned golden text + SHA-256 hash.
+
+add_task(async function test_ml_smoke_test_llama_output_looks_like_text() {
+  const { cleanup } = await setup();
+  try {
+    const engine = await createEngine(LLAMA_SMOKE_OPTIONS);
+    try {
+      const text = await runLlamaSmokeGen(engine, LLAMA_SMOKE_PROMPT_A);
+      info(`Output: ${text}`);
+
+      Assert.greater(text.length, 0, "Generation produced text");
+      Assert.notEqual(
+        text.trim(),
+        LLAMA_SMOKE_PROMPT_A[1].content.trim(),
+        "Output is not a verbatim echo of the user prompt"
+      );
+
+      const pr = printableRatio(text);
+      info(`Printable-ASCII ratio: ${pr.toFixed(3)}`);
+      Assert.greater(
+        pr,
+        0.9,
+        `Output should be mostly printable text (got ${pr.toFixed(3)})`
+      );
+
+      const dr = distinctTokenRatio(text);
+      info(`Distinct-token ratio: ${dr.toFixed(3)}`);
+      Assert.greater(
+        dr,
+        0.3,
+        `Output should not be a degenerate loop (got ${dr.toFixed(3)})`
+      );
+    } finally {
+      await engine.terminate?.();
+    }
+  } finally {
+    await EngineProcess.destroyMLEngine();
+    await cleanup();
+  }
+});
+
+add_task(async function test_ml_smoke_test_llama_prompt_sensitive() {
+  const { cleanup } = await setup();
+  try {
+    const engine = await createEngine(LLAMA_SMOKE_OPTIONS);
+    try {
+      const a = await runLlamaSmokeGen(engine, LLAMA_SMOKE_PROMPT_A);
+      const b = await runLlamaSmokeGen(engine, LLAMA_SMOKE_PROMPT_B);
+      info(`Prompt A output: ${a}`);
+      info(`Prompt B output: ${b}`);
+      Assert.notEqual(
+        a,
+        b,
+        "Different prompts should produce different greedy outputs"
+      );
+    } finally {
+      await engine.terminate?.();
+    }
+  } finally {
+    await EngineProcess.destroyMLEngine();
+    await cleanup();
+  }
+});
+
+// Golden-output check. Catches silent changes in token selection
+// (quantization drift, attention bug, upstream llama.cpp roll).
+//
+// Greedy outputs diverge by CPU architecture: different SIMD vector
+// widths in llama.cpp's matmul/attention kernels (NEON on aarch64 vs
+// AVX on x86_64) shift logits enough to flip argmax on a handful of
+// tokens, so the constants dispatch on AppConstants.platform. macOS
+// Intel 10.15 is a third bucket and exhibits within-engine
+// non-determinism for TinyStories, so the golden assertion
+// runtime-skips there. Re-pin both text and hash from a try push
+// when a llama.cpp roll legitimately changes outputs.
+const LLAMA_SMOKE_IS_AARCH64 = AppConstants.platform === "macosx";
+const LLAMA_SMOKE_EXPECTED_TEXT = LLAMA_SMOKE_IS_AARCH64
+  ? "Suddenly, the mouse stopped! \nThe little mouse was scared, but he was scared. He had been so brave. He was scared, but he was still wearing his "
+  : "Suddenly, the mouse stopped! \nThe old lady was surprised to see a beautiful song. The old lady was so surprised. She had never seen a little mouse and ";
+const LLAMA_SMOKE_EXPECTED_HASH = LLAMA_SMOKE_IS_AARCH64
+  ? "a59803f3d1c9d983f14c54fadbe9de3b73a1053780f01bc7768fa2bc498f6005"
+  : "67b4cf2e37139e20795938ab3dedbdd040ffc2143e2ded210b0838de37581fa9";
+
+add_task(async function test_ml_smoke_test_llama_golden_text() {
+  const isMacIntel =
+    AppConstants.platform === "macosx" &&
+    Services.sysinfo.getProperty("arch") !== "aarch64";
+  if (isMacIntel) {
+    ok(
+      true,
+      "Skipping golden-text on macOS Intel 10.15: TinyStories greedy " +
+        "output is in a third arch bucket and within-engine determinism " +
+        "is unreliable there (Bug 2047025)."
+    );
+    return;
+  }
+
+  const { cleanup } = await setup();
+  try {
+    const engine = await createEngine(LLAMA_SMOKE_OPTIONS);
+    try {
+      const text = await runLlamaSmokeGen(engine, LLAMA_SMOKE_PROMPT_A);
+      const hash = await sha256Hex(text);
+      info(`Greedy text: ${text}`);
+      info(`Greedy SHA-256: ${hash}`);
+      Assert.equal(
+        text,
+        LLAMA_SMOKE_EXPECTED_TEXT,
+        "Greedy output matches the pinned golden text"
+      );
+      Assert.equal(
+        hash,
+        LLAMA_SMOKE_EXPECTED_HASH,
+        "Greedy output hash matches the pinned golden hash"
+      );
+    } finally {
+      await engine.terminate?.();
+    }
+  } finally {
+    await EngineProcess.destroyMLEngine();
+    await cleanup();
+  }
 });

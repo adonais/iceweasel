@@ -100,7 +100,7 @@ add_task(async function test_startQuery() {
       expectedResults: [
         {
           heuristic: false,
-          type: UrlbarUtils.RESULT_TYPE.AI_CHAT,
+          type: UrlbarShared.RESULT_TYPE.AI_CHAT,
           suggestedIndex: 1,
           query: "tell me a joke",
           icon: lazy.UrlbarProviderAiChat.CHAT_ICON_URL,
@@ -127,7 +127,7 @@ add_task(async function test_startQuery() {
       expectedResults: [
         {
           heuristic: false,
-          type: UrlbarUtils.RESULT_TYPE.AI_CHAT,
+          type: UrlbarShared.RESULT_TYPE.AI_CHAT,
           suggestedIndex: 1,
           query: "search for cute cat pictures",
           icon: lazy.UrlbarProviderAiChat.CHAT_ICON_URL,
@@ -142,7 +142,7 @@ add_task(async function test_startQuery() {
       expectedResults: [
         {
           heuristic: true,
-          type: UrlbarUtils.RESULT_TYPE.AI_CHAT,
+          type: UrlbarShared.RESULT_TYPE.AI_CHAT,
           suggestedIndex: undefined,
           query: "tell me a joke",
           icon: lazy.UrlbarProviderAiChat.CHAT_ICON_URL,
@@ -150,7 +150,7 @@ add_task(async function test_startQuery() {
         },
         {
           heuristic: false,
-          type: UrlbarUtils.RESULT_TYPE.SEARCH,
+          type: UrlbarShared.RESULT_TYPE.SEARCH,
           suggestedIndex: 1,
           query: "tell me a joke",
           icon,
@@ -243,7 +243,7 @@ add_task(async function test_intentClassifierThrows() {
   );
   Assert.equal(
     result.type,
-    UrlbarUtils.RESULT_TYPE.AI_CHAT,
+    UrlbarShared.RESULT_TYPE.AI_CHAT,
     "The result is a chat result"
   );
   Assert.equal(

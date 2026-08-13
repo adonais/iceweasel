@@ -9,7 +9,6 @@
 #include "mozilla/AlertNotification.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/ServiceWorkerManager.h"
-#include "mozilla/glean/DomNotificationMetrics.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIServiceWorkerManager.h"
@@ -305,8 +304,6 @@ mozilla::ipc::IPCResult NotificationParent::RecvShow(Maybe<IPCImage>&& aIcon,
       rv = uriClassifier->Classify(mArgs.mPrincipal, callback, &willClassify);
 
       if (NS_SUCCEEDED(rv) && willClassify) {
-        glean::web_notification::show_safe_browsing_block.AddToDenominator(1);
-
         mShowPending = true;
         promise->Then(
             GetMainThreadSerialEventTarget(), __func__,
@@ -332,8 +329,6 @@ mozilla::ipc::IPCResult NotificationParent::RecvShow(Maybe<IPCImage>&& aIcon,
               self->mShowPending = false;
               self->mClosePending = false;
 
-              glean::web_notification::show_safe_browsing_block.AddToNumerator(
-                  1);
               RemovePermission(self->mArgs.mPrincipal);
 
               CopyableErrorResult rv;

@@ -2,21 +2,20 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "gtest/gtest.h"
-
 #include <cmath>
 
 #include "Common.h"
 #include "Decoder.h"
 #include "DecoderFactory.h"
 #include "IDecodingTask.h"
+#include "SourceBuffer.h"
+#include "gtest/gtest.h"
 #include "imgIEncoder.h"
 #include "mozilla/gfx/2D.h"
-#include "nsComponentManagerUtils.h"
 #include "nsCOMPtr.h"
+#include "nsComponentManagerUtils.h"
 #include "nsStreamUtils.h"
 #include "nsString.h"
-#include "SourceBuffer.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;

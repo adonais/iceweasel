@@ -7,8 +7,8 @@
 #include "base/command_line.h"
 #include "base/string_util.h"
 #include "mozilla/BackgroundHangMonitor.h"
-#include "mozilla/Preferences.h"
 #include "mozilla/GeckoArgs.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/ipc/ProcessUtils.h"
 
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)

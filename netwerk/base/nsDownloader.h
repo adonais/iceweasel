@@ -5,8 +5,8 @@
 #ifndef nsDownloader_h_
 #define nsDownloader_h_
 
-#include "nsIDownloader.h"
 #include "nsCOMPtr.h"
+#include "nsIDownloader.h"
 
 class nsIFile;
 class nsIOutputStream;

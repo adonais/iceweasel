@@ -24,8 +24,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mozilla.fenix.settings.biometric.ext.isBiometricHardwareAvailable
 import org.mozilla.fenix.settings.biometric.ext.isEnrolled
-import org.mozilla.fenix.settings.biometric.ext.isHardwareAvailable
 import org.robolectric.RobolectricTestRunner
 import kotlin.test.assertNotNull
 
@@ -52,7 +52,7 @@ class BiometricPromptFeatureTest {
         assertFalse(BiometricPromptFeature.canUseFeature(manager))
 
         verify { manager.isEnrolled() }
-        verify { manager.isHardwareAvailable() }
+        verify { manager.isBiometricHardwareAvailable() }
     }
 
     @Test

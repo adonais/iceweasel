@@ -25,7 +25,7 @@ add_task(async function see_hsts_header() {
   BrowserTestUtils.startLoadingURIString(gBrowser.selectedBrowser, setHstsUrl);
   await promiseLoaded;
 
-  await BrowserTestUtils.waitForCondition(() => readMessage);
+  await TestUtils.waitForCondition(() => readMessage);
   // Clean up
   Services.obs.removeObserver(observer, "http-on-examine-response");
 });
@@ -56,7 +56,7 @@ add_task(async function () {
   );
   await promiseLoaded;
 
-  await BrowserTestUtils.waitForCondition(() => testFinished);
+  await TestUtils.waitForCondition(() => testFinished);
 
   // Clean up
   Services.console.unregisterListener(onNewMessage);
@@ -141,7 +141,7 @@ add_task(async function () {
     clearHstsUrl
   );
   await promiseLoaded;
-  await BrowserTestUtils.waitForCondition(() => readMessage);
+  await TestUtils.waitForCondition(() => readMessage);
   // Clean up
   Services.obs.removeObserver(observer, "http-on-examine-response");
 });

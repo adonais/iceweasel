@@ -8,7 +8,6 @@
 #include <stdarg.h>
 
 #include "js/Printf.h"
-
 #include "jsapi-tests/tests.h"
 
 static bool MOZ_FORMAT_PRINTF(2, 3)

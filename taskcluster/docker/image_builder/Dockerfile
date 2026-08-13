@@ -2,14 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-FROM golang:1.24 as skopeo
+FROM golang:1.26 as skopeo
 ARG ARCH=amd64
 
 WORKDIR /go/src/
 COPY build-skopeo.sh /build-skopeo.sh
 RUN /build-skopeo.sh $ARCH
 
-FROM golang:1.24 as kaniko
+FROM golang:1.26 as kaniko
 ARG ARCH=amd64
 
 WORKDIR /go/src/
@@ -19,7 +19,7 @@ RUN /build-kaniko.sh $ARCH
 # Build the `build-image` command as a static binary using musl
 # The setup is loosely based on a stripped down version of
 # https://github.com/emk/rust-musl-builder/blob/master/Dockerfile
-FROM debian:12 as build-image
+FROM debian:13 as build-image
 ARG ARCH=amd64
 
 COPY apt.conf /etc/apt/apt.conf.d/99taskcluster
@@ -54,6 +54,7 @@ ADD https://mkcert.org/generate/ /kaniko-bootstrap/ssl/certs/ca-certificats.crt
 ENV SSL_CERT_DIR=/kaniko/ssl/certs
 
 ADD policy.json /kaniko-bootstrap/containers/policy.json
+ENV CONTAINERS_POLICY_JSON /kaniko/containers/policy.json
 
 ENV HOME /root
 ENV USER /root

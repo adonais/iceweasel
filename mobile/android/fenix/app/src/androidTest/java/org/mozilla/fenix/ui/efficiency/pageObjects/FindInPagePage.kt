@@ -36,12 +36,12 @@ class FindInPagePage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestR
     fun verifyFindInPageElement(query: String, count: Int): FindInPagePage {
         mozClearAndEnterText(query, FindInPageSelectors.FIND_IN_PAGE_QUERY)
         for (i in 1..count) {
-            mozVerify(FindInPageSelectors.resultCounterSelector("$i/$count"))
+            mozVerify(FindInPageSelectors.RESULT_COUNTER("$i/$count"))
             if (i < count) mozClick(FindInPageSelectors.FIND_IN_PAGE_NEXT_BUTTON)
         }
         for (i in count - 1 downTo 1) {
             mozClick(FindInPageSelectors.FIND_IN_PAGE_PREV_BUTTON)
-            mozVerify(FindInPageSelectors.resultCounterSelector("$i/$count"))
+            mozVerify(FindInPageSelectors.RESULT_COUNTER("$i/$count"))
         }
         mozClick(FindInPageSelectors.FIND_IN_PAGE_CLOSE_BUTTON)
         return this

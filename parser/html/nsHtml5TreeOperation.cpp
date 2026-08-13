@@ -31,6 +31,7 @@
 #include "nsHtml5SVGLoadDispatcher.h"
 #include "nsHtml5TreeBuilder.h"
 #include "nsIFormControl.h"
+#include "nsIContentInlines.h"
 #include "nsIMutationObserver.h"
 #include "nsINode.h"
 #include "nsIProtocolHandler.h"
@@ -222,6 +223,14 @@ nsHtml5TreeOperation::~nsHtml5TreeOperation() {
   mOperation.match(TreeOperationMatcher());
 }
 
+static void AbortNodeInsertion(nsINode* aNode) {
+  if (auto* formControl = nsGenericHTMLFormControlElement::FromNode(aNode)) {
+    // Clear form for this element, since it will not actually be
+    // inserted.
+    formControl->ClearForm(true, true);
+  }
+}
+
 nsresult nsHtml5TreeOperation::AppendTextToTextNode(
     const char16_t* aBuffer, uint32_t aLength, Text* aTextNode,
     nsHtml5DocumentBuilder* aBuilder) {
@@ -284,6 +293,7 @@ nsresult nsHtml5TreeOperation::Append(nsIContent* aNode, nsIContent* aParent,
     Detach(aNode, aBuilder);
     if (MOZ_UNLIKELY(aNode->GetParentNode())) {
       // Can this happen? If it can, give up.
+      AbortNodeInsertion(aNode);
       return NS_OK;
     }
   }
@@ -293,6 +303,7 @@ nsresult nsHtml5TreeOperation::Append(nsIContent* aNode, nsIContent* aParent,
     // "If it is not possible to insert element at the adjusted insertion
     // location, abort these steps."
     // But see https://github.com/whatwg/html/issues/12494
+    AbortNodeInsertion(aNode);
     return NS_OK;
   }
 
@@ -325,6 +336,7 @@ nsresult nsHtml5TreeOperation::AppendToDocument(
     Detach(aNode, aBuilder);
     if (MOZ_UNLIKELY(aNode->GetParentNode())) {
       // Can this happen? If it can, give up.
+      AbortNodeInsertion(aNode);
       return NS_OK;
     }
   }
@@ -334,9 +346,11 @@ nsresult nsHtml5TreeOperation::AppendToDocument(
   doc->AppendChildTo(aNode, false, rv);
   if (rv.ErrorCodeIs(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR)) {
     aNode->SetParserHasNotified();
+    AbortNodeInsertion(aNode);
     return NS_OK;
   }
   if (rv.Failed()) {
+    AbortNodeInsertion(aNode);
     return rv.StealNSResult();
   }
 
@@ -398,6 +412,7 @@ nsresult nsHtml5TreeOperation::AppendChildrenToNewParent(
     ErrorResult rv;
     aParent->AppendChildTo(child, false, rv);
     if (rv.Failed()) {
+      AbortNodeInsertion(aNode);
       return rv.StealNSResult();
     }
     didAppend = true;
@@ -420,6 +435,7 @@ nsresult nsHtml5TreeOperation::FosterParent(nsIContent* aNode,
     Detach(aNode, aBuilder);
     if (MOZ_UNLIKELY(aNode->GetParentNode())) {
       // Can this happen? If it can, give up.
+      AbortNodeInsertion(aNode);
       return NS_OK;
     }
   }
@@ -432,6 +448,7 @@ nsresult nsHtml5TreeOperation::FosterParent(nsIContent* aNode,
       // "If it is not possible to insert element at the adjusted insertion
       // location, abort these steps."
       // But see https://github.com/whatwg/html/issues/12494
+      AbortNodeInsertion(aNode);
       return NS_OK;
     }
 
@@ -440,6 +457,7 @@ nsresult nsHtml5TreeOperation::FosterParent(nsIContent* aNode,
     ErrorResult rv;
     foster->InsertChildBefore(aNode, aTable, false, rv);
     if (rv.Failed()) {
+      AbortNodeInsertion(aNode);
       return rv.StealNSResult();
     }
 
@@ -453,6 +471,7 @@ nsresult nsHtml5TreeOperation::FosterParent(nsIContent* aNode,
     // "If it is not possible to insert element at the adjusted insertion
     // location, abort these steps."
     // But see https://github.com/whatwg/html/issues/12494
+    AbortNodeInsertion(aNode);
     return NS_OK;
   }
 
@@ -561,12 +580,26 @@ void nsHtml5TreeOperation::SetHTMLElementAttributesFast(
 nsIContent* nsHtml5TreeOperation::CreateHTMLElement(
     nsAtom* aName, nsHtml5HtmlAttributes* aAttributes, FromParser aFromParser,
     nsNodeInfoManager* aNodeInfoManager, nsHtml5DocumentBuilder* aBuilder,
-    HTMLContentCreatorFunction aCreator) {
+    HTMLContentCreatorFunction aCreator, nsINode* aIntendedParent) {
+  // https://html.spec.whatwg.org/#create-an-element-for-the-token
+  // 1. If the active speculative HTML parser is not null, then return the
+  // result of creating a speculative mock element given namespace, token's tag
+  // name, and token's attributes.
+  // 2. Otherwise, optionally create a speculative mock element given namespace,
+  // token's tag name, and token's attributes.
+  // (Speculative mocks handled elsewhere).
   RefPtr<NodeInfo> nodeInfo = aNodeInfoManager->GetNodeInfo(
       aName, nullptr, kNameSpaceID_XHTML, nsINode::ELEMENT_NODE);
   NS_ASSERTION(nodeInfo, "Got null nodeinfo.");
 
+  // 3. Let document be intendedParent's node document.
   Document* document = nodeInfo->GetDocument();
+
+  // 4. Let localName be token's tag name.
+  // (this is `aName`).
+
+  // 5. Let is be the value of the "is" attribute in token, if such an attribute
+  // exists; otherwise null.
   RefPtr<nsAtom> isAtom;
   if (aAttributes) {
     nsHtml5String is = aAttributes->getValue(nsHtml5AttributeName::ATTR_IS);
@@ -577,30 +610,76 @@ nsIContent* nsHtml5TreeOperation::CreateHTMLElement(
     }
   }
 
+  // 6. Let registry be the result of looking up a custom element registry given
+  // intendedParent.
+  Maybe<RefPtr<CustomElementRegistry>> customElementRegistry = Nothing();
+  if (aIntendedParent && aIntendedParent->HasScopedRegistry()) {
+    if (auto* reg = nsContentUtils::GetCustomElementRegistry(aIntendedParent)) {
+      customElementRegistry = Some(reg);
+    }
+  }
+
+  // 7. Let definition be the result of looking up a custom element definition
+  // given registry, namespace, localName, and is.
   const bool isCustomElement = aCreator == NS_NewCustomElement || isAtom;
   CustomElementDefinition* customElementDefinition = nullptr;
+
+  /// customElementDefinition is only used if willExecuteScript is true,
+  /// which will only be the case if parser is not in fragment parsing.
+  /// Therefore we can skip looking up the definition here when in fragment
+  /// parsing, as it's wasted work.
   if (isCustomElement && aFromParser != FROM_PARSER_FRAGMENT) {
     RefPtr<nsAtom> tagAtom = nodeInfo->NameAtom();
     RefPtr<nsAtom> typeAtom =
         aCreator == NS_NewCustomElement ? tagAtom : isAtom;
 
     MOZ_ASSERT(nodeInfo->NameAtom()->Equals(nodeInfo->LocalName()));
-    customElementDefinition = nsContentUtils::LookupCustomElementDefinition(
-        document, nodeInfo->NameAtom(), nodeInfo->NamespaceID(), typeAtom);
+    // https://html.spec.whatwg.org/#create-an-element-for-the-token
+    // Step 7: "Let definition be the result of looking up a custom element
+    // definition given registry, namespace, localName, and is."
+    // https://html.spec.whatwg.org/#look-up-a-custom-element-definition
+    // Step 1: "If registry is null, then return null."
+    if (!(customElementRegistry.isSome() && !customElementRegistry.value())) {
+      customElementDefinition = nsContentUtils::LookupCustomElementDefinition(
+          document, nodeInfo->NameAtom(), nodeInfo->NamespaceID(), typeAtom);
+    }
   }
 
+  // 8. Let willExecuteScript be true if definition is non-null and the parser
+  // was not created as part of the HTML fragment parsing algorithm; otherwise
+  // false.
+  const bool willExecuteScript =
+      customElementDefinition && aFromParser != FROM_PARSER_FRAGMENT;
+
   auto DoCreateElement = [&](HTMLContentCreatorFunction aCreator) -> Element* {
+    // 10. Let element be the result of creating an element given document,
+    // localName, namespace, null, is, willExecuteScript, and registry.
     nsCOMPtr<Element> newElement;
     if (aCreator) {
       newElement = aCreator(nodeInfo.forget(), aFromParser);
     } else {
       NS_NewHTMLElement(getter_AddRefs(newElement), nodeInfo.forget(),
-                        aFromParser, isAtom, customElementDefinition);
+                        aFromParser, isAtom, customElementDefinition,
+                        customElementRegistry);
     }
 
     MOZ_ASSERT(newElement, "Element creation created null pointer.");
     Element* element = newElement.get();
     aBuilder->HoldElement(newElement.forget());
+
+    // When a custom element registry is provided (e.g. from fragment parsing
+    // with a scoped registry), assign it to the element. NS_NewHTMLElement
+    // handles this internally via NewXULOrHTMLElement, but elements created
+    // directly via aCreator (built-in elements like <span>, <div>) bypass
+    // that path and need the registry set explicitly.
+    if (aCreator && customElementRegistry.isSome()) {
+      if (RefPtr<CustomElementRegistry> registry =
+              customElementRegistry.value()) {
+        element->SetCustomElementRegistry(registry);
+      } else {
+        element->SetKeepCustomElementRegistryNull();
+      }
+    }
 
     if (auto* linkStyle = LinkStyle::FromNode(*element)) {
       linkStyle->DisableUpdates();
@@ -610,7 +689,9 @@ nsIContent* nsHtml5TreeOperation::CreateHTMLElement(
       return element;
     }
 
-    // aCreator is nullptr iff this is a custom element. We can use
+    // 11. Append each attribute in the given token to element.
+    //
+    // aCreator is nullptr if this is a custom element. We can use
     // the fast path when we have a non-custom (HTML) element.
     if (aCreator) {
       SetHTMLElementAttributesFast(element, aAttributes);
@@ -620,14 +701,25 @@ nsIContent* nsHtml5TreeOperation::CreateHTMLElement(
     return element;
   };
 
-  if (customElementDefinition) {
-    // This will cause custom element constructors to run.
+  // 9. If willExecuteScript is true:
+  // 12. If willExecuteScript is true:
+  if (willExecuteScript) {
+    // 9.1. Increment document's throw-on-dynamic-markup-insertion counter.
     AutoSetThrowOnDynamicMarkupInsertionCounter
         throwOnDynamicMarkupInsertionCounter(aBuilder->GetDocument());
     nsHtml5AutoPauseUpdate autoPauseContentUpdate(aBuilder);
+    // 9.2. If the JavaScript execution context stack is empty, then perform a
+    // microtask checkpoint.
     {
       nsAutoMicroTask mt;
     }
+    // 9.3. Push a new element queue onto document's relevant agent's custom
+    // element reactions stack.
+    // 12.1. Let queue be the result of popping from document's relevant agent's
+    // custom element reactions stack. (This will be the same element queue as
+    // was pushed above.)
+    // 12.2. Invoke custom element reactions in queue.
+    // 12.3. Decrement document's throw-on-dynamic-markup-insertion counter.
     AutoCEReaction autoCEReaction(
         document->GetDocGroup()->CustomElementReactionsStack(), nullptr);
     return DoCreateElement(nullptr);
@@ -1004,8 +1096,9 @@ nsresult nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
           intendedParent ? intendedParent->NodeInfoManager()
                          : mBuilder->GetNodeInfoManager();
 
-      *target = CreateHTMLElement(name, attributes, aOperation.mFromNetwork,
-                                  nodeInfoManager, mBuilder, creator);
+      *target =
+          CreateHTMLElement(name, attributes, aOperation.mFromNetwork,
+                            nodeInfoManager, mBuilder, creator, intendedParent);
       return NS_OK;
     }
 

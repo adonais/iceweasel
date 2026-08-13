@@ -35,7 +35,10 @@ struct StyleSheetInfo final {
   StyleSheetInfo* CloneFor(StyleSheet* aPrimarySheet);
 
   void AddSheet(StyleSheet* aSheet);
-  void RemoveSheet(StyleSheet* aSheet);
+  // Remove the specified sheet. If this returns true, then the last
+  // StyleSheet was removed and this object should be deleted.
+  // It is the caller's responsibility to perform this deletion.
+  [[nodiscard]] bool RemoveSheet(StyleSheet* aSheet);
 
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 

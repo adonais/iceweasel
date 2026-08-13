@@ -6,6 +6,7 @@ exports[`Message component renders the expected snapshot for ERROR level 1`] = `
 >
   <img
     className="message__icon"
+    data-l10n-id="about-debugging-message-error-icon"
     src="chrome://devtools/skin/images/aboutdebugging-error.svg"
   />
   <div
@@ -24,6 +25,7 @@ exports[`Message component renders the expected snapshot for INFO level 1`] = `
 >
   <img
     className="message__icon"
+    data-l10n-id="about-debugging-message-info-icon"
     src="chrome://devtools/skin/images/aboutdebugging-information.svg"
   />
   <div
@@ -42,6 +44,7 @@ exports[`Message component renders the expected snapshot for WARNING level 1`] =
 >
   <img
     className="message__icon"
+    data-l10n-id="about-debugging-message-warning-icon"
     src="chrome://devtools/skin/images/alert.svg"
   />
   <div
@@ -60,6 +63,7 @@ exports[`Message component renders with closing button renders the expected snap
 >
   <img
     className="message__icon"
+    data-l10n-id="about-debugging-message-info-icon"
     src="chrome://devtools/skin/images/aboutdebugging-information.svg"
   />
   <div
@@ -69,23 +73,12 @@ exports[`Message component renders with closing button renders the expected snap
       Message content
     </div>
   </div>
-  <button
-    className="ghost-button message__button message__button--info qa-message-button-close-button"
+  <moz-button
+    class="message__button message__button--info qa-message-button-close-button"
+    data-l10n-id="about-debugging-message-close-icon2"
+    iconsrc="chrome://devtools/skin/images/close.svg"
     onClick={[Function]}
-  >
-    <Localized
-      attrs={
-        Object {
-          "alt": true,
-        }
-      }
-      id="about-debugging-message-close-icon"
-    >
-      <img
-        className="qa-message-button-close-icon"
-        src="chrome://devtools/skin/images/close.svg"
-      />
-    </Localized>
-  </button>
+    type="icon ghost"
+  />
 </aside>
 `;

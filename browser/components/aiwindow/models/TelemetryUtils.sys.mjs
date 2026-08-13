@@ -9,13 +9,14 @@ import {
   renderPrompt,
   checkMajorVersion,
 } from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
-import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/openAIEngine.sys.mjs";
 
 const lazy = XPCOMUtils.declareLazy({
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
   ChatStore:
     "moz-src:///browser/components/aiwindow/ui/modules/ChatStore.sys.mjs",
+  openAIEngine:
+    "moz-src:///browser/components/aiwindow/models/openAIEngine.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "console", function () {
@@ -122,16 +123,17 @@ export class TelemetryPromptEngine {
       );
     }
 
-    engine.#engineInstance = await openAIEngine._createEngine({
+    engine.#engineInstance = await lazy.openAIEngine._createEngine({
       apiKey: "",
       backend: "openai",
-      baseURL: openAIEngine.endpoint,
+      baseURL: lazy.openAIEngine.endpoint,
       featureId: "llm-telemetry",
       flowId: null,
       modelId: promptRecord.model ?? null,
       modelRevision: "main",
       taskName: "text-generation",
       serviceType: promptRecord.service_type ?? "ai",
+      purpose: promptRecord.purpose ?? "chat",
       extraHeaders,
     });
 
@@ -167,7 +169,7 @@ export class TelemetryPromptEngine {
    * @returns {Promise<object>} Raw LLM response
    */
   async run(conversation) {
-    const fxAccountToken = await openAIEngine.getFxAccountToken();
+    const fxAccountToken = await lazy.openAIEngine.getFxAccountToken();
     // The LLM-as-judge model needs the raw URLs, not the chat URL tokens.
     const messages = conversation.getMessagesInChatCompletionsFormat({
       applyUrlTokens: false,
@@ -393,7 +395,7 @@ export class TelemetryEngine {
           lastError = null;
           break;
         } catch (error) {
-          if (openAIEngine.is429Error(error)) {
+          if (lazy.openAIEngine.is429Error(error)) {
             lastError = error;
           } else {
             lazy.console.error(

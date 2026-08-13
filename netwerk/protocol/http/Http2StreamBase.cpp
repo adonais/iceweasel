@@ -15,9 +15,8 @@
 
 #include "Http2Compression.h"
 #include "Http2Session.h"
-#include "Http2StreamBase.h"
 #include "Http2Stream.h"
-
+#include "Http2StreamBase.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Components.h"
 #include "mozilla/StaticPrefs_network.h"

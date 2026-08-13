@@ -464,7 +464,9 @@
   MACRO_(source, "source")                                                     \
   MACRO_(stack, "stack")                                                       \
   MACRO_(stackTraceLimit, "stackTraceLimit")                                   \
+  MACRO_(star_all_but_default_star_, "*all-but-default*")                      \
   MACRO_(star_namespace_star_, "*namespace*")                                  \
+  MACRO_(star_source_star_, "*source*")                                        \
   MACRO_(start, "start")                                                       \
   MACRO_(startRange, "startRange")                                             \
   MACRO_(startTimestamp, "startTimestamp")                                     \
@@ -528,7 +530,6 @@
   MACRO_(upper, "upper")                                                       \
   MACRO_(url, "url")                                                           \
   MACRO_(usage, "usage")                                                       \
-  MACRO_(use_asm_, "use asm")                                                  \
   MACRO_(use_strict_, "use strict")                                            \
   MACRO_(useGrouping, "useGrouping")                                           \
   IF_EXPLICIT_RESOURCE_MANAGEMENT(MACRO_(using_, "using"))                     \

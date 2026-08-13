@@ -113,11 +113,6 @@ class DeclarationBlock final {
 
   uint32_t Count() const { return Servo_DeclarationBlock_Count(mRaw); }
 
-  bool GetNthProperty(uint32_t aIndex, nsACString& aReturn) const {
-    aReturn.Truncate();
-    return Servo_DeclarationBlock_GetNthProperty(mRaw, aIndex, &aReturn);
-  }
-
   void GetPropertyValue(const nsACString& aProperty, nsACString& aValue) const {
     Servo_DeclarationBlock_GetPropertyValue(mRaw, &aProperty, &aValue);
   }

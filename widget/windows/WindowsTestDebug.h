@@ -5,8 +5,10 @@
 #ifndef mozilla_widget_WindowsTestDebug_h_
 #define mozilla_widget_WindowsTestDebug_h_
 
+// clang-format off
 #include <windows.h>
 #include <restartmanager.h>
+// clang-format on
 
 #include "nsIWindowsTestDebug.h"
 #include "nsString.h"

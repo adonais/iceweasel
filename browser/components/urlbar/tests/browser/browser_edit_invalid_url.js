@@ -71,7 +71,7 @@ add_task(async function test_edit_url() {
   // Modify the url.
   EventUtils.synthesizeKey("2");
   let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
-  Assert.equal(result.type, UrlbarUtils.RESULT_TYPE.URL, "Should visit a url");
+  Assert.equal(result.type, UrlbarShared.RESULT_TYPE.URL, "Should visit a url");
   Assert.equal(result.url, url + "2", "Should visit the modified url");
 
   // Confirm the result and check the loaded page.

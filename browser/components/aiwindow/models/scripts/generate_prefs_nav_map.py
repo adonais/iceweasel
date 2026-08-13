@@ -23,7 +23,7 @@ TOPSRCDIR = Path(__file__).resolve().parents[5]
 PREFS_JS = TOPSRCDIR / "browser/components/preferences/preferences.js"
 FTL_FILES = [
     TOPSRCDIR / "browser/locales/en-US/browser/preferences/preferences.ftl",
-    TOPSRCDIR / "browser/locales-preview/aiFeatures.ftl",
+    TOPSRCDIR / "browser/locales/en-US/browser/aiFeatures.ftl",
 ]
 OUTPUT = TOPSRCDIR / "browser/components/aiwindow/models/PreferencesNavMap.sys.mjs"
 

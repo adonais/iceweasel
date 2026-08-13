@@ -4,11 +4,11 @@
 
 #include "RenderEGLImageTextureHost.h"
 
-#include "mozilla/gfx/Logging.h"
 #include "GLContextEGL.h"
 #include "GLLibraryEGL.h"
 #include "GLReadTexImageHelper.h"
 #include "OGLShaderConfig.h"
+#include "mozilla/gfx/Logging.h"
 
 namespace mozilla {
 namespace wr {

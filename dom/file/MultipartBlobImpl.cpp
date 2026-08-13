@@ -82,7 +82,7 @@ void MultipartBlobImpl::CreateInputStream(nsIInputStream** aStream,
 
     // nsIMultiplexInputStream doesn't work well with empty sub streams. Let's
     // skip the empty blobs.
-    uint32_t size = blobImpl->GetSize(aRv);
+    auto size = blobImpl->GetSize(aRv);
     if (NS_WARN_IF(aRv.Failed())) {
       return;
     }

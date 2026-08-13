@@ -61,10 +61,10 @@ async function runTest() {
 async function checkResults() {
   Assert.equal(await UrlbarTestUtils.getResultCount(window), 2);
   let details = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
-  Assert.equal(details.type, UrlbarUtils.RESULT_TYPE.SEARCH);
+  Assert.equal(details.type, UrlbarShared.RESULT_TYPE.SEARCH);
   Assert.equal(details.searchParams.query, "x");
   details = await UrlbarTestUtils.getDetailsOfResultAt(window, 1);
-  Assert.equal(details.type, UrlbarUtils.RESULT_TYPE.URL);
+  Assert.equal(details.type, UrlbarShared.RESULT_TYPE.URL);
   Assert.equal(details.url, "http://example.com/");
 }
 

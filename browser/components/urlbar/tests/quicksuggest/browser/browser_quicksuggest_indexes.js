@@ -186,15 +186,15 @@ add_task(async function otherSuggestedIndex_noSuggestions() {
     // TestProvider result
     { suggestedIndex: 1, resultSpan: 2 },
     // history
-    { type: UrlbarUtils.RESULT_TYPE.URL },
-    { type: UrlbarUtils.RESULT_TYPE.URL },
-    { type: UrlbarUtils.RESULT_TYPE.URL },
-    { type: UrlbarUtils.RESULT_TYPE.URL },
-    { type: UrlbarUtils.RESULT_TYPE.URL },
-    { type: UrlbarUtils.RESULT_TYPE.URL },
+    { type: UrlbarShared.RESULT_TYPE.URL },
+    { type: UrlbarShared.RESULT_TYPE.URL },
+    { type: UrlbarShared.RESULT_TYPE.URL },
+    { type: UrlbarShared.RESULT_TYPE.URL },
+    { type: UrlbarShared.RESULT_TYPE.URL },
+    { type: UrlbarShared.RESULT_TYPE.URL },
     // quick suggest
     {
-      type: UrlbarUtils.RESULT_TYPE.URL,
+      type: UrlbarShared.RESULT_TYPE.URL,
       providerName: UrlbarProviderQuickSuggest.name,
     },
   ]);
@@ -214,23 +214,23 @@ add_task(async function otherSuggestedIndex_suggestionsFirst() {
       { suggestedIndex: 1, resultSpan: 2 },
       // search suggestions
       {
-        type: UrlbarUtils.RESULT_TYPE.SEARCH,
+        type: UrlbarShared.RESULT_TYPE.SEARCH,
         payload: { suggestion: SPONSORED_SEARCH_STRING + "foo" },
       },
       {
-        type: UrlbarUtils.RESULT_TYPE.SEARCH,
+        type: UrlbarShared.RESULT_TYPE.SEARCH,
         payload: { suggestion: SPONSORED_SEARCH_STRING + "bar" },
       },
       // quick suggest
       {
-        type: UrlbarUtils.RESULT_TYPE.URL,
+        type: UrlbarShared.RESULT_TYPE.URL,
         providerName: UrlbarProviderQuickSuggest.name,
       },
       // history
-      { type: UrlbarUtils.RESULT_TYPE.URL },
-      { type: UrlbarUtils.RESULT_TYPE.URL },
-      { type: UrlbarUtils.RESULT_TYPE.URL },
-      { type: UrlbarUtils.RESULT_TYPE.URL },
+      { type: UrlbarShared.RESULT_TYPE.URL },
+      { type: UrlbarShared.RESULT_TYPE.URL },
+      { type: UrlbarShared.RESULT_TYPE.URL },
+      { type: UrlbarShared.RESULT_TYPE.URL },
     ]);
   });
   await SpecialPowers.popPrefEnv();
@@ -249,22 +249,22 @@ add_task(async function otherSuggestedIndex_suggestionsLast() {
       // TestProvider result
       { suggestedIndex: 1, resultSpan: 2 },
       // history
-      { type: UrlbarUtils.RESULT_TYPE.URL },
-      { type: UrlbarUtils.RESULT_TYPE.URL },
-      { type: UrlbarUtils.RESULT_TYPE.URL },
-      { type: UrlbarUtils.RESULT_TYPE.URL },
+      { type: UrlbarShared.RESULT_TYPE.URL },
+      { type: UrlbarShared.RESULT_TYPE.URL },
+      { type: UrlbarShared.RESULT_TYPE.URL },
+      { type: UrlbarShared.RESULT_TYPE.URL },
       // quick suggest
       {
-        type: UrlbarUtils.RESULT_TYPE.URL,
+        type: UrlbarShared.RESULT_TYPE.URL,
         providerName: UrlbarProviderQuickSuggest.name,
       },
       // search suggestions
       {
-        type: UrlbarUtils.RESULT_TYPE.SEARCH,
+        type: UrlbarShared.RESULT_TYPE.SEARCH,
         payload: { suggestion: SPONSORED_SEARCH_STRING + "foo" },
       },
       {
-        type: UrlbarUtils.RESULT_TYPE.SEARCH,
+        type: UrlbarShared.RESULT_TYPE.SEARCH,
         payload: { suggestion: SPONSORED_SEARCH_STRING + "bar" },
       },
     ]);
@@ -280,8 +280,8 @@ class TestProvider extends UrlbarTestUtils.TestProvider {
     super({
       results: [
         new UrlbarResult({
-          type: UrlbarUtils.RESULT_TYPE.URL,
-          source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+          type: UrlbarShared.RESULT_TYPE.URL,
+          source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
           suggestedIndex: 1,
           resultSpan: 2,
           payload: { url: "http://example.com/test" },

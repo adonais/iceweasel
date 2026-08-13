@@ -180,7 +180,7 @@ add_task(async function testRememberedDecisionsUI() {
     "rememberedList has expected number of labels"
   );
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !!labels[10].textContent.length,
     "Localized label is populated"
   );

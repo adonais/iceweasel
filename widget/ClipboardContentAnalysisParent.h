@@ -5,8 +5,8 @@
 #ifndef MOZILLA_WIDGET_CLIPBOARDCONTENTANALYSISPARENT_H_
 #define MOZILLA_WIDGET_CLIPBOARDCONTENTANALYSISPARENT_H_
 
-#include "mozilla/dom/ContentParent.h"
 #include "mozilla/PClipboardContentAnalysisParent.h"
+#include "mozilla/dom/ContentParent.h"
 #include "nsIClipboard.h"
 
 namespace mozilla {

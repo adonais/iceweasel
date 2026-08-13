@@ -202,6 +202,7 @@ exports.ANIMATION_TYPE_FOR_LONGHANDS = [
       "-moz-window-dragging",
       "word-break",
       "writing-mode",
+      "-moz-image-decoding",
     ]),
   ],
   [
@@ -254,6 +255,7 @@ exports.ANIMATION_TYPE_FOR_LONGHANDS = [
       "margin-block-start",
       "margin-inline-end",
       "margin-inline-start",
+      "margin-trim",
       "max-block-size",
       "max-inline-size",
       "min-block-size",
@@ -358,6 +360,7 @@ exports.ANIMATION_TYPE_FOR_LONGHANDS = [
       "translate",
       "-moz-window-transform",
       "-webkit-line-clamp",
+      "line-clamp",
     ]),
   ],
   [

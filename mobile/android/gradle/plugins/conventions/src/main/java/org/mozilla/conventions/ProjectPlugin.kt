@@ -98,6 +98,8 @@ class ProjectPlugin : Plugin<Project> {
         project.pluginManager.withPlugin("com.android.application", action)
     }
 
+    // Querying whether :geckoview is part of the build composition; no project-isolation-safe alternative.
+    @Suppress("GradleProjectIsolation")
     private fun configureAppServicesSubstitution(
         project: Project,
         extraProperties: org.gradle.api.plugins.ExtraPropertiesExtension,
@@ -248,6 +250,8 @@ class ProjectPlugin : Plugin<Project> {
         }
     }
 
+    // Reads rootProject extra properties; IsolatedProject does not expose extensions/extraProperties.
+    @Suppress("GradleProjectIsolation")
     private fun configureKotlinJvmToolchain(project: Project) {
         // Wait for Android plugin first to ensure Java plugin extension exists
         project.pluginManager.withPlugin("com.android.base") {
@@ -314,7 +318,7 @@ class ProjectPlugin : Plugin<Project> {
     private fun configureKtlint(project: Project, mozilla: ProjectExtension) {
         val sourcePaths = mozilla.ktlintSourcePaths
 
-        val ktlintConfig = project.configurations.create("ktlint")
+        val ktlintConfig = project.configurations.register("ktlint")
 
         val ktlintDep = project.provider {
             val versionCatalogs = project.extensions.getByType(VersionCatalogsExtension::class.java)
@@ -327,7 +331,8 @@ class ProjectPlugin : Plugin<Project> {
             }
             dep
         }
-        ktlintConfig.dependencies.addLater(ktlintDep)
+        ktlintConfig.configure { dependencies.addLater(ktlintDep) }
+        val ktlintClasspath = project.files(ktlintConfig)
 
         // Resolve the include/exclude globs (with leading "!" meaning exclude)
         // into a FileTree rooted at projectDir, so Gradle can use the actual
@@ -345,7 +350,7 @@ class ProjectPlugin : Plugin<Project> {
         project.tasks.register("ktlint", JavaExec::class.java) {
             group = "verification"
             description = "Check Kotlin code style."
-            classpath = ktlintConfig
+            classpath = ktlintClasspath
             mainClass.set("com.pinterest.ktlint.Main")
             onlyIf { sourcePaths.get().isNotEmpty() }
             sourcePaths.get().forEach { args(it) }
@@ -363,7 +368,7 @@ class ProjectPlugin : Plugin<Project> {
         project.tasks.register("ktlintFormat", JavaExec::class.java) {
             group = "formatting"
             description = "Fix Kotlin code style deviations."
-            classpath = ktlintConfig
+            classpath = ktlintClasspath
             mainClass.set("com.pinterest.ktlint.Main")
             onlyIf { sourcePaths.get().isNotEmpty() }
             args("-F")

@@ -103,6 +103,7 @@ class FuzzyParser(BaseTryParser):
         "do-not-optimize",
         "env",
         "existing-tasks",
+        "extensions",
         "gecko-profile",
         "native-profiling",
         "new-test-config",

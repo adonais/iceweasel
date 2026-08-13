@@ -5,11 +5,15 @@
 "use strict";
 
 const {
+  createElement,
   createFactory,
   PureComponent,
 } = require("resource://devtools/client/shared/vendor/react.mjs");
 const dom = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
 const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.mjs");
+const {
+  withRouter,
+} = require("resource://devtools/client/shared/vendor/react-router-dom.js");
 
 const FluentReact = require("resource://devtools/client/shared/vendor/fluent-react.js");
 const Localized = createFactory(FluentReact.Localized);
@@ -33,9 +37,6 @@ const IconLabel = createFactory(
 const SidebarItem = createFactory(
   require("resource://devtools/client/aboutdebugging/src/components/sidebar/SidebarItem.js")
 );
-const SidebarFixedItem = createFactory(
-  require("resource://devtools/client/aboutdebugging/src/components/sidebar/SidebarFixedItem.js")
-);
 const SidebarRuntimeItem = createFactory(
   require("resource://devtools/client/aboutdebugging/src/components/sidebar/SidebarRuntimeItem.js")
 );
@@ -49,6 +50,7 @@ const GLOBE_ICON =
   "chrome://devtools/skin/images/aboutdebugging-globe-icon.svg";
 const USB_ICON =
   "chrome://devtools/skin/images/aboutdebugging-connect-icon.svg";
+const HELP_ICON = "chrome://global/skin/icons/help.svg";
 
 class Sidebar extends PureComponent {
   static get propTypes() {
@@ -56,6 +58,7 @@ class Sidebar extends PureComponent {
       adbAddonStatus: Types.adbAddonStatus,
       className: PropTypes.string,
       dispatch: PropTypes.func.isRequired,
+      history: PropTypes.object,
       isAdbReady: PropTypes.bool.isRequired,
       isScanningUsb: PropTypes.bool.isRequired,
       networkRuntimes: PropTypes.arrayOf(Types.runtime).isRequired,
@@ -64,6 +67,24 @@ class Sidebar extends PureComponent {
       usbRuntimes: PropTypes.arrayOf(Types.runtime).isRequired,
     };
   }
+
+  componentDidMount() {
+    // Capture the custom event emitted by `<moz-page-nav-button>` when clicked so we
+    // can navigate to the associated page
+    window.addEventListener("change-view", this.onChangeView);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener("change-view", this.onChangeView);
+  }
+
+  onChangeView = e => {
+    const to = e.target.getAttribute("to");
+    if (this.props.history.location.pathname !== to) {
+      // Underlying ReactRouter API
+      this.props.history.push(to);
+    }
+  };
 
   renderAdbStatus() {
     const isUsbEnabled =
@@ -155,105 +176,80 @@ class Sidebar extends PureComponent {
     });
   }
 
-  renderFooter() {
-    const HELP_ICON_SRC = "chrome://global/skin/icons/help.svg";
-    const SUPPORT_URL =
-      "https://firefox-source-docs.mozilla.org/devtools-user/about_colon_debugging/";
-
-    return dom.footer(
-      {
-        className: "sidebar__footer",
-      },
-      dom.ul(
-        {},
-        SidebarItem(
-          {
-            className: "sidebar-item--condensed",
-            to: SUPPORT_URL,
-          },
-          dom.span(
-            {
-              className: "sidebar__footer__support-help",
-            },
-            Localized(
-              {
-                id: "about-debugging-sidebar-support-icon",
-                attrs: {
-                  alt: true,
-                },
-              },
-              dom.img({
-                className: "sidebar__footer__icon",
-                src: HELP_ICON_SRC,
-              })
-            ),
-            Localized(
-              {
-                id: "about-debugging-sidebar-support",
-              },
-              dom.span({}, "about-debugging-sidebar-support")
-            )
-          )
-        )
-      )
-    );
-  }
-
   render() {
     const { dispatch, selectedPage, selectedRuntimeId, isScanningUsb } =
       this.props;
 
-    return dom.aside(
+    return createElement(
+      "moz-page-nav",
       {
-        className: `sidebar ${this.props.className || ""}`,
+        "data-l10n-id": "about-debugging-sidebar",
+        // Since we don't render the usb/remote runtimes with moz-page-nav-button yet,
+        // we need to handle the currentView ourselves.
+        // This could be removed as part of Bug 2050746
+        currentView: `${selectedPage}${selectedRuntimeId ? `/${selectedRuntimeId}` : ""}`,
+        // This is so if a usb/remote runtime is selected, none of the moz-page-nav-button
+        // will appear selected
+        allowNoSelection: true,
+        alwaysexpanded: true,
       },
-      dom.ul(
-        {},
-        Localized(
-          { id: "about-debugging-sidebar-setup", attrs: { name: true } },
-          SidebarFixedItem({
-            dispatch,
-            icon: CONNECT_ICON,
-            isSelected: PAGE_TYPES.CONNECT === selectedPage,
-            key: PAGE_TYPES.CONNECT,
-            name: "Setup",
-            to: "/setup",
-          })
-        ),
-        Localized(
-          { id: "about-debugging-sidebar-this-firefox", attrs: { name: true } },
-          SidebarFixedItem({
-            icon: FIREFOX_ICON,
-            isSelected:
-              PAGE_TYPES.RUNTIME === selectedPage &&
-              selectedRuntimeId === RUNTIMES.THIS_FIREFOX,
-            key: RUNTIMES.THIS_FIREFOX,
-            name: "This Firefox",
-            to: `/runtime/${RUNTIMES.THIS_FIREFOX}`,
-          })
-        ),
-        SidebarItem(
-          {
-            className: "sidebar__adb-status",
-          },
-          dom.hr({ className: "separator separator--breathe" }),
-          this.renderAdbStatus()
-        ),
-        this.renderDevices(),
-        SidebarItem(
-          {
-            className: "sidebar-item--breathe sidebar__refresh-usb",
-            key: "refresh-devices",
-          },
-          RefreshDevicesButton({
-            dispatch,
-            isScanning: isScanningUsb,
-          })
-        )
+      createElement(
+        "moz-page-nav-button",
+        {
+          "data-l10n-id": "about-debugging-sidebar-setup-title",
+          class: "qa-sidebar-item",
+          iconSrc: CONNECT_ICON,
+          key: PAGE_TYPES.CONNECT,
+          view: PAGE_TYPES.CONNECT,
+          to: "/setup",
+        },
+        createElement("span", {
+          "data-l10n-id": "about-debugging-sidebar-setup2",
+        })
       ),
-      this.renderFooter()
+      createElement(
+        "moz-page-nav-button",
+        {
+          "data-l10n-id": "about-debugging-sidebar-this-firefox-title",
+          class: "qa-sidebar-item",
+          iconSrc: FIREFOX_ICON,
+          key: RUNTIMES.THIS_FIREFOX,
+          view: `${PAGE_TYPES.RUNTIME}/${RUNTIMES.THIS_FIREFOX}`,
+          to: `/runtime/${RUNTIMES.THIS_FIREFOX}`,
+        },
+        createElement("span", {
+          "data-l10n-id": "about-debugging-sidebar-this-firefox2",
+        })
+      ),
+      SidebarItem(
+        {
+          className: "sidebar__adb-status",
+        },
+        this.renderAdbStatus()
+      ),
+      this.renderDevices(),
+      SidebarItem(
+        {
+          className: "sidebar-item--breathe sidebar__refresh-usb",
+          key: "refresh-devices",
+        },
+        RefreshDevicesButton({
+          dispatch,
+          isScanning: isScanningUsb,
+        })
+      ),
+      dom.hr({
+        className: "separator separator--breathe",
+        slot: "secondary-nav",
+      }),
+      createElement("moz-page-nav-button", {
+        "data-l10n-id": "about-debugging-sidebar-support",
+        slot: "secondary-nav",
+        iconSrc: HELP_ICON,
+        href: "https://firefox-source-docs.mozilla.org/devtools-user/about_colon_debugging/",
+      })
     );
   }
 }
 
-module.exports = Sidebar;
+module.exports = withRouter(Sidebar);

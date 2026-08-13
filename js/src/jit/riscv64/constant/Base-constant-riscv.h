@@ -454,6 +454,10 @@ inline int32_t ImmBranchMaxForwardOffset(ImmBranchRangeType type) {
   return ImmBranchMaxForwardOffset(ImmBranchRangeTypeToOffsetSize(type));
 }
 
+inline int32_t ImmBranchMinBackwardOffset(OffsetSize bits) {
+  return -(1 << (bits - 1));
+}
+
 }  // namespace jit
 }  // namespace js
 #endif  //  jit_riscv64_constant_Base_constant_riscv_h_

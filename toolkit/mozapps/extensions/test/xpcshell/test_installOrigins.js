@@ -143,27 +143,6 @@ async function getBrowserWithPrincipal(principal) {
 }
 
 function testInstallEvent(expectTelemetry) {
-  const snapshot = Services.telemetry.snapshotEvents(
-    Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS,
-    true
-  );
-
-  ok(
-    snapshot.parent && !!snapshot.parent.length,
-    "Got parent telemetry events in the snapshot"
-  );
-
-  let events = snapshot.parent
-    .filter(
-      ([, category, method, , , extra]) =>
-        category === "addonsManager" &&
-        method == "install" &&
-        extra.step == expectTelemetry.step
-    )
-    .map(event => event[5]);
-  equal(events.length, 1, "one event for install completion");
-  Assert.deepEqual(events[0], expectTelemetry, "telemetry matches");
-
   let gleanEvents = AddonTestUtils.getAMGleanEvents("install", {
     step: expectTelemetry.step,
   });

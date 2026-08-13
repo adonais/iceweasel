@@ -197,7 +197,7 @@ ptrdiff_t MozBaseAssembler::LinkAndGetPageOffsetTo(BufferOffset branch, Label* l
   return LinkAndGetOffsetTo(branch, UncondBranchRangeType, kPageSizeLog2, label);
 }
 
-BufferOffset Assembler::b(int imm26, const LabelDoc& doc) {
+BufferOffset Assembler::b(int imm26, LabelDoc doc) {
   return EmitBranch(B | ImmUncondBranch(imm26), doc);
 }
 
@@ -207,7 +207,7 @@ void Assembler::b(Instruction* at, int imm26) {
 }
 
 
-BufferOffset Assembler::b(int imm19, Condition cond, const LabelDoc& doc) {
+BufferOffset Assembler::b(int imm19, Condition cond, LabelDoc doc) {
   return EmitBranch(B_cond | ImmCondBranch(imm19) | cond, doc);
 }
 
@@ -256,7 +256,7 @@ void Assembler::blr(Instruction* at, const Register& xn) {
 }
 
 
-BufferOffset Assembler::bl(int imm26, const LabelDoc& doc) {
+BufferOffset Assembler::bl(int imm26, LabelDoc doc) {
   return EmitBranch(BL | ImmUncondBranch(imm26), doc);
 }
 
@@ -279,7 +279,7 @@ void Assembler::bl(Label* label) {
 }
 
 
-BufferOffset Assembler::cbz(const Register& rt, int imm19, const LabelDoc& doc) {
+BufferOffset Assembler::cbz(const Register& rt, int imm19, LabelDoc doc) {
   return EmitBranch(SF(rt) | CBZ | ImmCmpBranch(imm19) | Rt(rt), doc);
 }
 
@@ -302,7 +302,7 @@ void Assembler::cbz(const Register& rt, Label* label) {
 }
 
 
-BufferOffset Assembler::cbnz(const Register& rt, int imm19, const LabelDoc& doc) {
+BufferOffset Assembler::cbnz(const Register& rt, int imm19, LabelDoc doc) {
   return EmitBranch(SF(rt) | CBNZ | ImmCmpBranch(imm19) | Rt(rt), doc);
 }
 
@@ -325,7 +325,7 @@ void Assembler::cbnz(const Register& rt, Label* label) {
 }
 
 
-BufferOffset Assembler::tbz(const Register& rt, unsigned bit_pos, int imm14, const LabelDoc& doc) {
+BufferOffset Assembler::tbz(const Register& rt, unsigned bit_pos, int imm14, LabelDoc doc) {
   VIXL_ASSERT(rt.Is64Bits() || (rt.Is32Bits() && (bit_pos < kWRegSize)));
   return EmitBranch(TBZ | ImmTestBranchBit(bit_pos) | ImmTestBranch(imm14) | Rt(rt), doc);
 }
@@ -350,7 +350,7 @@ void Assembler::tbz(const Register& rt, unsigned bit_pos, Label* label) {
 }
 
 
-BufferOffset Assembler::tbnz(const Register& rt, unsigned bit_pos, int imm14, const LabelDoc& doc) {
+BufferOffset Assembler::tbnz(const Register& rt, unsigned bit_pos, int imm14, LabelDoc doc) {
   VIXL_ASSERT(rt.Is64Bits() || (rt.Is32Bits() && (bit_pos < kWRegSize)));
   return EmitBranch(TBNZ | ImmTestBranchBit(bit_pos) | ImmTestBranch(imm14) | Rt(rt), doc);
 }
@@ -375,7 +375,7 @@ void Assembler::tbnz(const Register& rt, unsigned bit_pos, Label* label) {
 }
 
 
-BufferOffset Assembler::adr(const Register& rd, int imm21, const LabelDoc& doc) {
+BufferOffset Assembler::adr(const Register& rd, int imm21, LabelDoc doc) {
   VIXL_ASSERT(rd.Is64Bits());
   return EmitBranch(ADR | ImmPCRelAddress(imm21) | Rd(rd), doc);
 }
@@ -400,7 +400,7 @@ void Assembler::adr(const Register& rd, Label* label) {
 }
 
 
-BufferOffset Assembler::adrp(const Register& rd, int imm21, const LabelDoc& doc) {
+BufferOffset Assembler::adrp(const Register& rd, int imm21, LabelDoc doc) {
   VIXL_ASSERT(rd.Is64Bits());
   return EmitBranch(ADRP | ImmPCRelAddress(imm21) | Rd(rd), doc);
 }

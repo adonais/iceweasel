@@ -106,7 +106,6 @@ extern bool enableDisassemblyDumps;
 extern bool offthreadBaselineCompilation;
 extern bool offthreadIonCompilation;
 extern JS::DelazificationOption defaultDelazificationMode;
-extern bool enableAsmJS;
 extern bool enableWasm;
 extern bool enableSharedMemory;
 extern bool enableWasmBaseline;
@@ -246,6 +245,9 @@ struct ShellContext {
   // Off-thread parse state.
   js::Monitor offThreadMonitor MOZ_UNANNOTATED;
   Vector<OffThreadJob*, 0, SystemAllocPolicy> offThreadJobs;
+
+  // Number of root module evaluation promises that have not yet settled.
+  uint32_t pendingRootModuleEvaluations = 0;
 
   // Queued task callbacks that run after the microtask queue.
 

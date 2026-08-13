@@ -57,37 +57,30 @@ void SVGImageContext::MaybeStoreContextPaint(SVGImageContext& aContext,
     return;
   }
 
-  bool haveContextPaint = false;
-
-  auto contextPaint = MakeRefPtr<SVGEmbeddingContextPaint>();
+  Maybe<nscolor> fill, stroke;
+  Maybe<float> fillOpacity, strokeOpacity;
 
   if ((style->mMozContextProperties.bits & StyleContextPropertyBits::FILL) &&
       style->mFill.kind.IsColor()) {
-    haveContextPaint = true;
-    contextPaint->SetFill(style->mFill.kind.AsColor().CalcColor(aStyle));
+    fill = Some(style->mFill.kind.AsColor().CalcColor(aStyle));
   }
   if ((style->mMozContextProperties.bits & StyleContextPropertyBits::STROKE) &&
       style->mStroke.kind.IsColor()) {
-    haveContextPaint = true;
-    contextPaint->SetStroke(style->mStroke.kind.AsColor().CalcColor(aStyle));
+    stroke = Some(style->mStroke.kind.AsColor().CalcColor(aStyle));
   }
-  if (style->mMozContextProperties.bits &
-      StyleContextPropertyBits::FILL_OPACITY) {
-    haveContextPaint = true;
-    contextPaint->SetFillOpacity(style->mFillOpacity.IsOpacity()
-                                     ? style->mFillOpacity.AsOpacity()
-                                     : 1.0f);
+  if ((style->mMozContextProperties.bits &
+       StyleContextPropertyBits::FILL_OPACITY) &&
+      style->mFillOpacity.IsOpacity()) {
+    fillOpacity = Some(style->mFillOpacity.AsOpacity());
   }
-  if (style->mMozContextProperties.bits &
-      StyleContextPropertyBits::STROKE_OPACITY) {
-    haveContextPaint = true;
-    contextPaint->SetStrokeOpacity(style->mStrokeOpacity.IsOpacity()
-                                       ? style->mStrokeOpacity.AsOpacity()
-                                       : 1.0f);
+  if ((style->mMozContextProperties.bits &
+       StyleContextPropertyBits::STROKE_OPACITY) &&
+      style->mStrokeOpacity.IsOpacity()) {
+    strokeOpacity = Some(style->mStrokeOpacity.AsOpacity());
   }
-
-  if (haveContextPaint) {
-    aContext.mContextPaint = std::move(contextPaint);
+  if (fill || stroke || fillOpacity || strokeOpacity) {
+    aContext.mContextPaint =
+        MakeRefPtr<SVGContextPaint>(fill, fillOpacity, stroke, strokeOpacity);
   }
 }
 
@@ -101,39 +94,32 @@ void SVGImageContext::MaybeStoreContextPaint(SVGImageContext& aContext,
     return;
   }
 
-  bool haveContextPaint = false;
-  auto contextPaint = MakeRefPtr<SVGEmbeddingContextPaint>();
   nsCString value;
   float opacity;
+  Maybe<nscolor> fill, stroke;
+  Maybe<float> fillOpacity, strokeOpacity;
 
   if (NS_SUCCEEDED(aPaintContext->GetStrokeColor(value)) && !value.IsEmpty()) {
     nscolor color;
     if (ServoCSSParser::ComputeColor(nullptr, NS_RGB(0, 0, 0), value, &color)) {
-      haveContextPaint = true;
-      contextPaint->SetStroke(color);
+      stroke = Some(color);
     }
   }
-
   if (NS_SUCCEEDED(aPaintContext->GetFillColor(value)) && !value.IsEmpty()) {
     nscolor color;
     if (ServoCSSParser::ComputeColor(nullptr, NS_RGB(0, 0, 0), value, &color)) {
-      haveContextPaint = true;
-      contextPaint->SetFill(color);
+      fill = Some(color);
     }
   }
-
   if (NS_SUCCEEDED(aPaintContext->GetStrokeOpacity(&opacity))) {
-    haveContextPaint = true;
-    contextPaint->SetStrokeOpacity(opacity);
+    strokeOpacity = Some(opacity);
   }
-
   if (NS_SUCCEEDED(aPaintContext->GetFillOpacity(&opacity))) {
-    haveContextPaint = true;
-    contextPaint->SetFillOpacity(opacity);
+    fillOpacity = Some(opacity);
   }
-
-  if (haveContextPaint) {
-    aContext.mContextPaint = std::move(contextPaint);
+  if (stroke || fill || strokeOpacity || fillOpacity) {
+    aContext.mContextPaint =
+        MakeRefPtr<SVGContextPaint>(fill, fillOpacity, stroke, strokeOpacity);
   }
 }
 

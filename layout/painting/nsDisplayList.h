@@ -180,14 +180,12 @@ LazyLogModule& GetLoggerByProcess();
  *    is on the stack.
  */
 struct ActiveScrolledRoot {
-  // TODO: Just have one function with an extra ASRKind parameter
+  enum class ASRKind { Scroll, Sticky };
+
   static already_AddRefed<ActiveScrolledRoot> GetOrCreateASRForFrame(
-      const ActiveScrolledRoot* aParent,
-      ScrollContainerFrame* aScrollContainerFrame,
-      nsTArray<RefPtr<ActiveScrolledRoot>>& aActiveScrolledRoots);
-  static already_AddRefed<ActiveScrolledRoot> GetOrCreateASRForStickyFrame(
-      const ActiveScrolledRoot* aParent, nsIFrame* aStickyFrame,
-      nsTArray<RefPtr<ActiveScrolledRoot>>& aActiveScrolledRoots);
+      const ActiveScrolledRoot* aParent, nsIFrame* aFrame,
+      nsTArray<RefPtr<ActiveScrolledRoot>>& aActiveScrolledRoots,
+      ASRKind asrKind = ASRKind::Scroll);
 
   static const ActiveScrolledRoot* PickAncestor(
       const ActiveScrolledRoot* aOne, const ActiveScrolledRoot* aTwo) {
@@ -246,8 +244,6 @@ struct ActiveScrolledRoot {
   // continuation.
   static const ActiveScrolledRoot* GetStickyASRFromFrame(
       nsIFrame* aStickyFrame);
-
-  enum class ASRKind { Scroll, Sticky };
 
   RefPtr<const ActiveScrolledRoot> mParent;
   nsIFrame* mFrame = nullptr;
@@ -982,10 +978,9 @@ class nsDisplayListBuilder {
    * cleaned up automatically when the arena goes away.
    */
   ActiveScrolledRoot* GetOrCreateActiveScrolledRoot(
-      const ActiveScrolledRoot* aParent,
-      ScrollContainerFrame* aScrollContainerFrame);
-  ActiveScrolledRoot* GetOrCreateActiveScrolledRootForSticky(
-      const ActiveScrolledRoot* aParent, nsIFrame* aStickyFrame);
+      const ActiveScrolledRoot* aParent, nsIFrame* aFrame,
+      ActiveScrolledRoot::ASRKind asrKind =
+          ActiveScrolledRoot::ASRKind::Scroll);
 
   /**
    * Allocate a new DisplayItemClipChain object in the arena. Will be cleaned
@@ -1234,13 +1229,7 @@ class nsDisplayListBuilder {
     void SetCurrentActiveScrolledRoot(
         const ActiveScrolledRoot* aActiveScrolledRoot);
 
-    void EnterScrollFrame(ScrollContainerFrame* aScrollContainerFrame) {
-      MOZ_ASSERT(!mUsed);
-      ActiveScrolledRoot* asr = mBuilder->GetOrCreateActiveScrolledRoot(
-          mBuilder->mCurrentActiveScrolledRoot, aScrollContainerFrame);
-      mBuilder->mCurrentActiveScrolledRoot = asr;
-      mUsed = true;
-    }
+    void EnterScrollFrame(ScrollContainerFrame* aScrollContainerFrame);
 
     void InsertScrollFrame(ScrollContainerFrame* aScrollContainerFrame);
 
@@ -2025,7 +2014,7 @@ class nsDisplayListBuilder {
 
 template <typename T>
 MOZ_ALWAYS_INLINE T* MakeClone(nsDisplayListBuilder* aBuilder, const T* aItem) {
-  static_assert(std::is_base_of<nsDisplayWrapList, T>::value,
+  static_assert(std::is_base_of_v<nsDisplayWrapList, T>,
                 "Display item type should be derived from nsDisplayWrapList");
   T* item = new (aBuilder) T(aBuilder, *aItem);
   item->SetType(T::ItemType());
@@ -2053,9 +2042,9 @@ template <typename T, typename F, typename... Args>
 MOZ_ALWAYS_INLINE T* MakeDisplayItemWithIndex(nsDisplayListBuilder* aBuilder,
                                               F* aFrame, const uint16_t aIndex,
                                               Args&&... aArgs) {
-  static_assert(std::is_base_of<nsDisplayItem, T>::value,
+  static_assert(std::is_base_of_v<nsDisplayItem, T>,
                 "Display item type should be derived from nsDisplayItem");
-  static_assert(std::is_base_of<nsIFrame, F>::value,
+  static_assert(std::is_base_of_v<nsIFrame, F>,
                 "Frame type should be derived from nsIFrame");
 
   const DisplayItemType type = T::ItemType();
@@ -6353,7 +6342,8 @@ class nsDisplayTransform final : public nsPaintedDisplayItem {
 
   bool ShouldSkipTransform(nsDisplayListBuilder* aBuilder) const;
   Matrix4x4 GetTransformForRendering(
-      LayoutDevicePoint* aOutOrigin = nullptr) const;
+      LayoutDevicePoint* aOutOrigin = nullptr,
+      const nsDisplayListBuilder* aBuilder = nullptr) const;
 
   /**
    * Return the transform that is aggregation of all transform on the

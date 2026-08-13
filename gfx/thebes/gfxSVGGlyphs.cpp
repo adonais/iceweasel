@@ -4,6 +4,9 @@
 
 #include "gfxSVGGlyphs.h"
 
+#include "gfxContext.h"
+#include "gfxFont.h"
+#include "harfbuzz/hb.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/LoadInfo.h"
 #include "mozilla/NullPrincipal.h"
@@ -14,22 +17,19 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/SVGDocument.h"
+#include "nsContentUtils.h"
 #include "nsError.h"
-#include "nsString.h"
 #include "nsICategoryManager.h"
 #include "nsIDocumentLoaderFactory.h"
 #include "nsIDocumentViewer.h"
-#include "nsIStreamListener.h"
-#include "nsServiceManagerUtils.h"
-#include "nsNetUtil.h"
 #include "nsIInputStream.h"
-#include "nsStringStream.h"
-#include "nsStreamUtils.h"
 #include "nsIPrincipal.h"
-#include "nsContentUtils.h"
-#include "gfxFont.h"
-#include "gfxContext.h"
-#include "harfbuzz/hb.h"
+#include "nsIStreamListener.h"
+#include "nsNetUtil.h"
+#include "nsServiceManagerUtils.h"
+#include "nsStreamUtils.h"
+#include "nsString.h"
+#include "nsStringStream.h"
 #include "zlib.h"
 
 #define SVG_CONTENT_TYPE "image/svg+xml"_ns
@@ -189,7 +189,8 @@ void gfxSVGGlyphsDocument::FindGlyphElements(Element* aElem) {
  * @return true iff rendering succeeded
  */
 void gfxSVGGlyphs::RenderGlyph(gfxContext* aContext, uint32_t aGlyphId,
-                               SVGContextPaint* aContextPaint) {
+                               SVGContextPaint* aContextPaint,
+                               image::imgDrawingParams& aImgParams) {
   gfxContextAutoSaveRestore aContextRestorer(aContext);
 
   Element* glyph = mGlyphIdMap.Get(aGlyphId);
@@ -198,7 +199,7 @@ void gfxSVGGlyphs::RenderGlyph(gfxContext* aContext, uint32_t aGlyphId,
   AutoSetRestoreSVGContextPaint autoSetRestore(aContextPaint,
                                                glyph->OwnerDoc());
 
-  SVGUtils::PaintSVGGlyph(glyph, aContext);
+  SVGUtils::PaintSVGGlyph(glyph, aContext, aImgParams);
 
 #if DEBUG
   // This will not have any effect, because we're about to restore the state

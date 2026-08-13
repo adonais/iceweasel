@@ -23,6 +23,21 @@ ChromeUtils.defineLazyGetter(lazy, "console", () =>
  */
 export class TabManagementService {
   /**
+   * Available colors for tab groups.
+   */
+  static TAB_GROUP_COLORS = [
+    "blue",
+    "purple",
+    "cyan",
+    "orange",
+    "yellow",
+    "pink",
+    "green",
+    "gray",
+    "red",
+  ];
+
+  /**
    * Constructor allows dependency injection for testing.
    *
    * @param {object} sessionStore - Optional SessionStore instance for testing
@@ -202,6 +217,260 @@ export class TabManagementService {
    */
   getStoredTabsForUndo(operationId) {
     return this.#recentCloseOperations.get(operationId) || null;
+  }
+
+  /**
+   * Creates a tab group from the provided tabs.
+   *
+   * @param {object} options
+   * @param {Array<Tab>} options.tabs - Array of tab objects to group
+   * @param {Window} options.window - Browser window containing the tabs
+   * @param {string} [options.label] - Label for the tab group
+   * @param {string} [options.color] - Color for the tab group
+   * @param {string} [options.id] - Optional ID for the tab group
+   * @returns {Promise<{
+   *   success: boolean,
+   *   group: {
+   *     id: string,
+   *     label: string,
+   *     color: string,
+   *     tabCount: number
+   *   } | null,
+   *   failedTabs: Array<{
+   *     tab: Tab,
+   *     reason: string
+   *   }>,
+   *   error?: string
+   * }>} Creation summary with group details, success status, and any failed tabs
+   */
+  async createTabGroup({
+    tabs,
+    window,
+    label = "Tab Group",
+    color = null,
+    id = null,
+  }) {
+    if (!tabs?.length) {
+      lazy.console.warn("No tabs to group");
+
+      return {
+        success: false,
+        group: null,
+        failedTabs: [],
+        error: "No tabs provided",
+      };
+    }
+
+    if (!window?.gBrowser) {
+      return {
+        success: false,
+        group: null,
+        failedTabs: [],
+        error: "Invalid browser window provided",
+      };
+    }
+
+    const { validTabs, failedTabs } = this.#validateTabsForGrouping(
+      tabs,
+      window
+    );
+
+    if (!validTabs.length) {
+      return {
+        success: false,
+        group: null,
+        failedTabs,
+        error: "No valid tabs to group",
+      };
+    }
+
+    const groupColor = color || this.#getNextUnusedColor(window);
+
+    try {
+      const group = window.gBrowser.addTabGroup(validTabs, {
+        id,
+        color: groupColor,
+        label,
+        telemetryUserCreateSource: "ai_window",
+      });
+
+      if (!group) {
+        return {
+          success: false,
+          group: null,
+          failedTabs,
+          error: "Failed to create tab group",
+        };
+      }
+
+      return {
+        success: true,
+        group: {
+          id: group.id,
+          label: group.label,
+          color: group.color,
+          tabCount: group.tabs.length,
+        },
+        failedTabs,
+      };
+    } catch (error) {
+      lazy.console.error("Failed to create tab group:", error);
+      return {
+        success: false,
+        group: null,
+        failedTabs,
+        error: error.message,
+      };
+    }
+  }
+
+  /**
+   * Ungroups tabs from a tab group, moving them back to regular tabs.
+   *
+   * @param {object} options
+   * @param {string} options.groupId - ID of the tab group to ungroup
+   * @param {Window} options.window - Browser window containing the tab group
+   * @returns {Promise<{
+   *   success: boolean,
+   *   ungroupedTabs: Array<{
+   *     linkedPanel: string,
+   *     url: string,
+   *     title: string
+   *   }>,
+   *   error?: string
+   * }>} Result with ungrouped tabs and success status
+   */
+  async ungroupTabs({ groupId, window }) {
+    if (!groupId || !window?.gBrowser) {
+      return {
+        success: false,
+        ungroupedTabs: [],
+        error: "Invalid parameters for ungrouping tabs",
+      };
+    }
+
+    try {
+      // Find the tab group by ID
+      const group = window.gBrowser.tabGroups.find(g => g.id === groupId);
+
+      if (!group) {
+        return {
+          success: false,
+          ungroupedTabs: [],
+          error: `Tab group with ID ${groupId} not found`,
+        };
+      }
+
+      // Get all tabs in the group before ungrouping
+      const tabsInGroup = [...group.tabs];
+      const ungroupedTabs = tabsInGroup.map(tab => ({
+        linkedPanel: tab.linkedPanel,
+        url: tab.linkedBrowser?.currentURI?.spec || "",
+        title: tab.label || "",
+      }));
+
+      // Ungroup each tab individually (removes them from the group but doesn't close them)
+      for (const tab of tabsInGroup) {
+        window.gBrowser.ungroupTab(tab);
+      }
+
+      return {
+        success: true,
+        ungroupedTabs,
+      };
+    } catch (error) {
+      lazy.console.error("Failed to ungroup tabs:", error);
+      return {
+        success: false,
+        ungroupedTabs: [],
+        error: error.message || "Failed to ungroup tabs",
+      };
+    }
+  }
+
+  /**
+   * Gets the next unused color for a new tab group.
+   *
+   * @param {Window} window - Browser window
+   * @returns {string} Color code for the new group
+   * @private
+   */
+  #getNextUnusedColor(window) {
+    const usedColors = new Set(
+      window.gBrowser.getAllTabGroups().map(group => group.color)
+    );
+
+    // Find the first unused color
+    const color = TabManagementService.TAB_GROUP_COLORS.find(
+      colorCode => !usedColors.has(colorCode)
+    );
+
+    if (color) {
+      return color;
+    }
+
+    // If all colors are used, pick one randomly
+    const randomIndex = Math.floor(
+      Math.random() * TabManagementService.TAB_GROUP_COLORS.length
+    );
+    return TabManagementService.TAB_GROUP_COLORS[randomIndex] || "blue";
+  }
+
+  /**
+   * Validates tabs for grouping and filters out invalid ones.
+   *
+   * @param {Array<Tab>} tabs - Tabs to validate
+   * @param {Window} window - Browser window
+   * @returns {{validTabs: Array<Tab>, failedTabs: Array}} Valid tabs and failed tabs with reasons
+   * @private
+   */
+  #validateTabsForGrouping(tabs, window) {
+    const validTabs = [];
+    const failedTabs = [];
+
+    tabs.forEach(tab => {
+      // Check if tab belongs to the window
+      const tabInWindow = tab?.linkedBrowser && tab.documentGlobal === window;
+
+      if (!tabInWindow) {
+        failedTabs.push({
+          tab,
+          reason: "invalid-tab",
+        });
+        return;
+      }
+
+      // Pinned tabs cannot be grouped
+      if (tab.pinned) {
+        failedTabs.push({
+          tab,
+          reason: "pinned-tab",
+        });
+        return;
+      }
+
+      // Tab already in a group
+      if (tab.group) {
+        failedTabs.push({
+          tab,
+          reason: "already-grouped",
+        });
+        return;
+      }
+
+      // Tab is closing
+      if (tab.closing) {
+        failedTabs.push({
+          tab,
+          reason: "tab-closing",
+        });
+        return;
+      }
+
+      validTabs.push(tab);
+    });
+
+    return { validTabs, failedTabs };
   }
 
   /**

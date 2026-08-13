@@ -6,14 +6,15 @@
 #include <string>
 #include <utility>
 
+#include "Helpers.h"
 #include "MainThreadUtils.h"
 #include "gtest/gtest.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/CondVar.h"
-#include "mozilla/gtest/MozAssertions.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ThrottledEventQueue.h"
+#include "mozilla/gtest/MozAssertions.h"
 #include "nsCOMPtr.h"
 #include "nsError.h"
 #include "nsIRunnable.h"
@@ -21,8 +22,6 @@
 #include "nsIThread.h"
 #include "nsThreadUtils.h"
 #include "prinrval.h"
-
-#include "Helpers.h"
 
 using mozilla::CondVar;
 using mozilla::MakeRefPtr;

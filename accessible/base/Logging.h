@@ -5,9 +5,9 @@
 #ifndef mozilla_a11y_logs_h_
 #define mozilla_a11y_logs_h_
 
-#include "nscore.h"
-#include "nsStringFwd.h"
 #include "mozilla/Attributes.h"
+#include "nsStringFwd.h"
+#include "nscore.h"
 
 class nsINode;
 class nsIRequest;

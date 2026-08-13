@@ -5,11 +5,12 @@
 #define NTDDI_VERSION NTDDI_WIN10_RS1
 
 #include "OSKInputPaneManager.h"
-#include "nsDebug.h"
 
 #include <inputpaneinterop.h>
 #include <windows.ui.viewmanagement.h>
 #include <wrl.h>
+
+#include "nsDebug.h"
 
 using namespace ABI::Windows::UI::ViewManagement;
 using namespace Microsoft::WRL;

@@ -44,7 +44,7 @@ class ProcessWithRetry(Process):
         Process.__init__(self, *args, **kw)
 
     def wait(self):
-        global _RETRY
+        global _RETRY  # noqa: PLW0603
         _RETRY += 1
         if _RETRY >= 2:
             _RETRY = 0
@@ -60,7 +60,7 @@ def kill(pid, signal):
 
 def get_status_code(url, playback):
     response = requests.get(
-        url=url, proxies={"http": "http://%s:%s/" % (playback.host, playback.port)}
+        url=url, proxies={"http": f"http://{playback.host}:{playback.port}/"}
     )
     return response.status_code
 
@@ -109,6 +109,10 @@ def test_mitm_check_proxy(*args):
 
 
 @mock.patch("mozproxy.backends.mitm.Mitmproxy.check_proxy")
+@mock.patch(
+    "mozproxy.backends.mitm.mitm.Mitmproxy._build_replay_paths",
+    return_value=["/tmp/fake.mp"],
+)
 @mock.patch("mozproxy.backends.mitm.mitm.ProcessHandler", new=Process)
 @mock.patch("mozproxy.utils.Popen", new=Process)
 @mock.patch("os.kill", new=kill)
@@ -138,6 +142,10 @@ def test_mitm(*args):
 
 
 @mock.patch("mozproxy.backends.mitm.Mitmproxy.check_proxy")
+@mock.patch(
+    "mozproxy.backends.mitm.mitm.Mitmproxy._build_replay_paths",
+    return_value=["/tmp/fake.mp"],
+)
 @mock.patch("mozproxy.backends.mitm.mitm.ProcessHandler", new=Process)
 @mock.patch("mozproxy.utils.Popen", new=Process)
 @mock.patch("os.kill", new=kill)
@@ -180,6 +188,10 @@ def test_playback_setup_failed(*args):
 
 
 @mock.patch("mozproxy.backends.mitm.Mitmproxy.check_proxy")
+@mock.patch(
+    "mozproxy.backends.mitm.mitm.Mitmproxy._build_replay_paths",
+    return_value=["/tmp/fake.mp"],
+)
 @mock.patch("mozproxy.backends.mitm.mitm.ProcessHandler", new=ProcessWithRetry)
 @mock.patch("mozproxy.utils.Popen", new=ProcessWithRetry)
 @mock.patch("os.kill", new=kill)

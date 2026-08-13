@@ -3,13 +3,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "GSettings.h"
-#include "nsString.h"
-#include "GRefPtr.h"
-#include "nsCOMPtr.h"
-#include "nsTArray.h"
-#include "mozilla/ScopeExit.h"
-#include "nsXULAppAPI.h"
+
 #include <gio/gio.h>
+
+#include "GRefPtr.h"
+#include "mozilla/ScopeExit.h"
+#include "nsCOMPtr.h"
+#include "nsString.h"
+#include "nsTArray.h"
+#include "nsXULAppAPI.h"
 
 namespace mozilla::widget::GSettings {
 

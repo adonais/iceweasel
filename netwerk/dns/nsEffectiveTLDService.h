@@ -5,16 +5,14 @@
 #ifndef EffectiveTLDService_h
 #define EffectiveTLDService_h
 
-#include "nsIEffectiveTLDService.h"
-
 #include "mozilla/AutoMemMap.h"
 #include "mozilla/Dafsa.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/MruCache.h"
 #include "mozilla/RWLock.h"
-
 #include "nsCOMPtr.h"
 #include "nsHashKeys.h"
+#include "nsIEffectiveTLDService.h"
 #include "nsIMemoryReporter.h"
 #include "nsString.h"
 

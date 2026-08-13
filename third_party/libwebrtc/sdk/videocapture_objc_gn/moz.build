@@ -44,6 +44,16 @@ LOCAL_INCLUDES += [
     "/tools/profiler/public"
 ]
 
+OS_LIBS += [
+    "-framework AVFoundation",
+    "-framework CoreGraphics",
+    "-framework CoreMedia",
+    "-framework CoreVideo",
+    "-framework Foundation",
+    "-framework QuartzCore",
+    "-framework VideoToolbox"
+]
+
 UNIFIED_SOURCES += [
     "/third_party/libwebrtc/sdk/objc/components/capturer/RTCCameraVideoCapturer.m",
     "/third_party/libwebrtc/sdk/objc/components/capturer/RTCFileVideoCapturer.m"

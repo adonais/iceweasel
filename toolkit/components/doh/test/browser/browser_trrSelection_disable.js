@@ -16,7 +16,7 @@ add_task(async function testTrrSelectionDisable() {
   setPassingHeuristics();
   let promise = waitForDoorhanger();
   Services.prefs.setBoolPref(prefs.ENABLED_PREF, true);
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return Services.prefs.getBoolPref(prefs.BREADCRUMB_PREF, false);
   });
   is(
@@ -47,7 +47,7 @@ add_task(async function testTrrSelectionDisable() {
   await ensureTRRMode(2);
   await checkHeuristicsTelemetry("enable_doh", "startup");
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return Services.prefs.getStringPref(prefs.DOORHANGER_USER_DECISION_PREF);
   });
   is(

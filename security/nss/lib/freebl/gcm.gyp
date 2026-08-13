@@ -73,6 +73,14 @@
             'HAVE_PLATFORM_GCM'
           ],
         }],
+        [ '(target_arch=="arm64" or target_arch=="aarch64") and OS!="win"', {
+          'dependencies': [
+            'aarch64-gcm-wrap.gyp:aarch64-gcm-wrap-nodepend_c_lib',
+          ],
+          'defines': [
+            'HAVE_PLATFORM_GCM'
+          ],
+        }],
       ],
     },
     {
@@ -89,6 +97,14 @@
         [ 'disable_altivec==0 and target_arch=="ppc64le"', {
           'dependencies': [
             'ppc-gcm-wrap.gyp:ppc-gcm-wrap_c_lib',
+          ],
+          'defines': [
+            'HAVE_PLATFORM_GCM'
+          ],
+        }],
+        [ '(target_arch=="arm64" or target_arch=="aarch64") and OS!="win"', {
+          'dependencies': [
+            'aarch64-gcm-wrap.gyp:aarch64-gcm-wrap_c_lib',
           ],
           'defines': [
             'HAVE_PLATFORM_GCM'

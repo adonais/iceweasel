@@ -11,9 +11,9 @@
 #include "OSKVRManager.h"
 #include "TSFTextStore.h"
 #include "TSFUtils.h"
-#include "WindowsUIUtils.h"
 #include "WinTextEventDispatcherListener.h"
 #include "WinUtils.h"
+#include "WindowsUIUtils.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_intl.h"
 #include "mozilla/StaticPrefs_ui.h"
@@ -22,19 +22,17 @@
 #ifdef ACCESSIBILITY
 #  include "nsAccessibilityService.h"
 #endif  // #ifdef ACCESSIBILITY
+#include "FxRWindowManager.h"
+#include "cfgmgr32.h"
+#include "moz_external_vr.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIWindowsRegKey.h"
 #include "nsWindow.h"
 #include "nsWindowDefs.h"
-
-#include "shellapi.h"
-#include "shlobj.h"
 #include "powrprof.h"
 #include "setupapi.h"
-#include "cfgmgr32.h"
-
-#include "FxRWindowManager.h"
-#include "moz_external_vr.h"
+#include "shellapi.h"
+#include "shlobj.h"
 
 const char* kOskEnabled = "ui.osk.enabled";
 const char* kOskDetectPhysicalKeyboard = "ui.osk.detect_physical_keyboard";

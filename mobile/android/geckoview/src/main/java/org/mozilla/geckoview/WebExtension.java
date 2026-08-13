@@ -135,7 +135,9 @@ public class WebExtension {
 
     /**
      * Set this flag if you want to enable content scripts messaging. To listen to such messages you
-     * can use {@link SessionController#setMessageDelegate}.
+     * can use {@link SessionController#setMessageDelegate}. This flag is set if the extension is
+     * built-in or a privileged extension, with its manifest.json containing the
+     * "nativeMessagingFromContent" permission.
      */
     public static final long ALLOW_CONTENT_MESSAGING = 1 << 0;
 
@@ -176,9 +178,16 @@ public class WebExtension {
    * <p>For messages from content scripts, set a session-specific message delegate using {@link
    * SessionController#setMessageDelegate}.
    *
-   * <p>See also <a
+   * <p>This functionality currently requires the "geckoViewAddons" permission, only available to
+   * built-in and privileged extensions.
+   *
+   * <p>For the extension API side, see <a
    * href="https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Native_messaging">
-   * WebExtensions/Native_messaging </a>
+   * WebExtensions/Native_messaging</a>.
+   *
+   * <p>For the GeckoView API side, see <a
+   * href="https://firefox-source-docs.mozilla.org/mobile/android/geckoview/consumer/web-extensions.html">
+   * Using GeckoView: Interacting with Web content and WebExtensions</a>.
    *
    * @param messageDelegate handles messaging between the WebExtension and the app. To send a
    *     message from the WebExtension use the <code>runtime.sendNativeMessage</code> WebExtension
@@ -901,17 +910,23 @@ public class WebExtension {
      * <p>If a delegate is already present, this delegate will replace the existing one.
      *
      * <p>This message delegate will be responsible for handling messaging between a WebExtension
-     * content script running on the {@link GeckoSession}.
+     * content script or extension page running on the {@link GeckoSession}.
      *
-     * <p>Note: To receive messages from content scripts, the WebExtension needs to explicitely
-     * allow it in {@link WebExtension#WebExtension} by setting {@link
-     * Flags#ALLOW_CONTENT_MESSAGING}.
+     * <p>Note: To receive messages from content scripts, the WebExtension needs to explicitly allow
+     * it in {@link WebExtension#WebExtension} by setting {@link Flags#ALLOW_CONTENT_MESSAGING}.
+     *
+     * <p>For more information, see <a
+     * href="https://firefox-source-docs.mozilla.org/mobile/android/geckoview/consumer/web-extensions.html">
+     * Using GeckoView: Interacting with Web content and WebExtensions</a>.
      *
      * @param webExtension {@link WebExtension} that this delegate receives messages from.
      * @param delegate {@link MessageDelegate} that will receive messages from this session.
      * @param nativeApp which native app id this message delegate will handle messaging for.
      * @see WebExtension#setMessageDelegate
      */
+    // ThreadConstraint false positive: delegate registration is thread-safe; delivery is dispatched
+    // to the UI thread.
+    @SuppressLint("ThreadConstraint")
     @AnyThread
     public void setMessageDelegate(
         final @NonNull WebExtension webExtension,

@@ -5,8 +5,8 @@
 #ifndef MOZILLA_LAYERS_REFCOUNTED_SHMEM_H
 #define MOZILLA_LAYERS_REFCOUNTED_SHMEM_H
 
-#include "mozilla/ipc/Shmem.h"
 #include "chrome/common/ipc_message_utils.h"
+#include "mozilla/ipc/Shmem.h"
 
 namespace mozilla {
 namespace ipc {

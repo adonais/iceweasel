@@ -3,27 +3,29 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "TaskController.h"
-#include "IdleTaskRunner.h"
-#include "nsIIdleRunnable.h"
-#include "nsIRunnable.h"
-#include "nsThreadUtils.h"
+
 #include <algorithm>
+
 #include "GeckoProfiler.h"
+#include "IdleTaskRunner.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/BackgroundHangMonitor.h"
 #include "mozilla/EventQueue.h"
+#include "mozilla/FlowMarkers.h"
 #include "mozilla/Hal.h"
-#include "mozilla/InputTaskManager.h"
-#include "mozilla/VsyncTaskManager.h"
 #include "mozilla/IOInterposer.h"
+#include "mozilla/InputTaskManager.h"
 #include "mozilla/Perfetto.h"
-#include "mozilla/StaticPtr.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/ScopeExit.h"
-#include "mozilla/FlowMarkers.h"
 #include "mozilla/StaticPrefs_memory.h"
+#include "mozilla/StaticPtr.h"
+#include "mozilla/VsyncTaskManager.h"
+#include "nsIIdleRunnable.h"
+#include "nsIRunnable.h"
 #include "nsIThreadInternal.h"
 #include "nsThread.h"
+#include "nsThreadUtils.h"
 #include "prenv.h"
 #include "prsystem.h"
 
@@ -949,7 +951,7 @@ void ScheduleIdleMemoryCleanup(uint32_t aWantsLaterDelay) {
         return RunIdleMemoryCleanup(aDeadline, aWantsLaterDelay);
       },
       "TaskController::IdlePurgeRunner"_ns, TimeDuration(), maxPurgeDelay,
-      minPurgeBudget, true, nullptr, nullptr);
+      minPurgeBudget, true, [] { return AppShutdown::IsShutdownImpending(); });
 }
 }  // namespace mozilla
 

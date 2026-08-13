@@ -24,10 +24,6 @@ async function waitForDialog() {
 }
 
 add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["signon.rustMirror.enabled", false]],
-  });
-
   let login = LoginTestUtils.testData.formLogin({
     origin: "https://example.com",
     formActionOrigin: "https://example.com",
@@ -35,10 +31,10 @@ add_setup(async function () {
     password: "password",
   });
   await Services.logins.addLoginAsync(login);
-  LoginTestUtils.primaryPassword.enable();
+  await LoginTestUtils.primaryPassword.enable();
 
   registerCleanupFunction(async function () {
-    LoginTestUtils.primaryPassword.disable();
+    await LoginTestUtils.primaryPassword.disable();
     await SpecialPowers.flushPrefEnv();
   });
 

@@ -43,6 +43,8 @@ ChromeUtils.defineESModuleGetters(modules.root, {
 ChromeUtils.defineESModuleGetters(modules.root.moz, {
   debugging:
     "chrome://remote/content/webdriver-bidi/modules/root/moz/debugging.sys.mjs",
+  profiler:
+    "chrome://remote/content/webdriver-bidi/modules/root/moz/profiler.sys.mjs",
 });
 
 // eslint-disable-next-line mozilla/lazy-getter-object-name

@@ -120,46 +120,33 @@ class SimpleContentList : public BaseContentList {
  */
 class HTMLCollection : public BaseContentList {
  public:
-  mozilla::dom::Element* Item(uint32_t aIndex) override = 0;
-  mozilla::dom::Element* IndexedGetter(uint32_t aIndex, bool& aFound) {
-    mozilla::dom::Element* item = Item(aIndex);
+  Element* Item(uint32_t aIndex) override = 0;
+  Element* IndexedGetter(uint32_t aIndex, bool& aFound) {
+    Element* item = Item(aIndex);
     aFound = !!item;
     return item;
   }
-  mozilla::dom::Element* NamedItem(const nsAString& aName) {
+  Element* NamedItem(const nsAString& aName) {
     bool dummy;
     return NamedGetter(aName, dummy);
   }
-  mozilla::dom::Element* NamedGetter(const nsAString& aName, bool& aFound) {
+  Element* NamedGetter(const nsAString& aName, bool& aFound) {
     return GetFirstNamedElement(aName, aFound);
   }
-  virtual mozilla::dom::Element* GetFirstNamedElement(const nsAString& aName,
-                                                      bool& aFound) = 0;
+  virtual Element* GetFirstNamedElement(const nsAString& aName,
+                                        bool& aFound) = 0;
   virtual void GetSupportedNames(nsTArray<nsString>& aNames) = 0;
-};
 
-class SimpleHTMLCollection final : public HTMLCollection {
- public:
-  explicit SimpleHTMLCollection(nsINode* aRoot) : mRoot(aRoot) {}
+ protected:
+  // A reasonable implementation of GetFirstNamedElement, if we know the
+  // collection is up-to-date.
+  Element* DefaultGetFirstNamedElement(const nsAString& aName, bool& aFound);
 
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(SimpleHTMLCollection, HTMLCollection)
-
-  nsINode* GetParentObject() override { return mRoot; }
-
-  Element* Item(uint32_t aIndex) override;
-
-  Element* GetFirstNamedElement(const nsAString& aName, bool& aFound) override;
-
-  void GetSupportedNames(nsTArray<nsString>& aNames) override;
-  JSObject* WrapObject(JSContext* aCx,
-                       JS::Handle<JSObject*> aGivenProto) override;
-
- private:
-  virtual ~SimpleHTMLCollection();
-
-  // This has to be a strong reference, the root might go away before the list.
-  nsCOMPtr<nsINode> mRoot;
+  // Used by HTMLAllCollection to limit the elements whose name attribute is
+  // considered. The filter MUST NOT cause any flushes.
+  using FilterElementWithName = bool (*)(nsIContent*);
+  void GetSupportedNames(nsTArray<nsString>& aNames,
+                         FilterElementWithName aFilter);
 };
 
 // Used for returning lists that will always be empty, such as the applets list
@@ -177,9 +164,12 @@ class EmptyContentList final : public HTMLCollection {
                        JS::Handle<JSObject*> aGivenProto) override;
 
   uint32_t Length() final { return 0; }
-  Element* Item(uint32_t aIndex) override;
-  Element* GetFirstNamedElement(const nsAString& aName, bool& aFound) override;
-  void GetSupportedNames(nsTArray<nsString>& aNames) override;
+  Element* Item(uint32_t aIndex) override { return nullptr; }
+  Element* GetFirstNamedElement(const nsAString& aName, bool& aFound) override {
+    aFound = false;
+    return nullptr;
+  }
+  void GetSupportedNames(nsTArray<nsString>& aNames) override {}
 
  protected:
   virtual ~EmptyContentList() = default;
@@ -317,18 +307,18 @@ class ContentList : public HTMLCollection, public nsStubMultiMutationObserver {
     GetSupportedNames(aNames, nullptr);
   }
 
+  void GetSupportedNames(nsTArray<nsString>& aNames,
+                         FilterElementWithName aFilter) {
+    BringSelfUpToDate(true);
+    HTMLCollection::GetSupportedNames(aNames, aFilter);
+  }
+
   using HTMLCollection::NamedItem;
 
   // ContentList public methods
   uint32_t Length(bool aDoFlush);
   Element* Item(uint32_t aIndex, bool aDoFlush);
   Element* NamedItem(const nsAString& aName, bool aDoFlush);
-
-  // Used by HTMLAllCollection to limit the elements whose name attribute is
-  // considered. The filter MUST NOT cause any flushes.
-  using FilterElementWithName = bool (*)(nsIContent*);
-  void GetSupportedNames(nsTArray<nsString>& aNames,
-                         FilterElementWithName aFilter);
 
   // nsIMutationObserver
   NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTECHANGED

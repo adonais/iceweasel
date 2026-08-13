@@ -11,14 +11,14 @@
 #undef LOG_ENABLED
 #define LOG_ENABLED() LOG5_ENABLED()
 
-#include "nsHttpHandler.h"
-#include "nsHttpConnectionMgr.h"
-#include "Http2StreamTunnel.h"
-#include "nsHttpConnectionInfo.h"
-#include "nsQueryObject.h"
-#include "nsProxyRelease.h"
-#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "Http2Session.h"
+#include "Http2StreamTunnel.h"
+#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
+#include "nsHttpConnectionInfo.h"
+#include "nsHttpConnectionMgr.h"
+#include "nsHttpHandler.h"
+#include "nsProxyRelease.h"
+#include "nsQueryObject.h"
 
 namespace mozilla::net {
 
@@ -659,7 +659,7 @@ Http2StreamWebSocket::~Http2StreamWebSocket() {
 
 nsresult Http2StreamWebSocket::GenerateHeaders(nsCString& aCompressedData,
                                                uint8_t& firstFrameFlags) {
-  nsHttpRequestHead* head = mTransaction->RequestHead();
+  const nsHttpRequestHead* head = mTransaction->RequestHead();
 
   nsAutoCString authorityHeader;
   nsresult rv = head->GetHeader(nsHttp::Host, authorityHeader);

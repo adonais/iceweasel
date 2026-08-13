@@ -21,6 +21,7 @@ ChromeUtils.registerWindowActor("Screenshot", {
   child: {
     esModuleURI: "moz-src:///browser/components/shell/ScreenshotChild.sys.mjs",
   },
+  safeForUntrustedWebProcess: true,
 });
 
 function loadContentWindow(browser, url) {

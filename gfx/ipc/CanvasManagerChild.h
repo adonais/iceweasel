@@ -5,9 +5,9 @@
 #define _include_gfx_ipc_CanvasManagerChild_h_
 
 #include "mozilla/Atomics.h"
+#include "mozilla/ThreadLocal.h"
 #include "mozilla/gfx/PCanvasManagerChild.h"
 #include "mozilla/gfx/Types.h"
-#include "mozilla/ThreadLocal.h"
 
 namespace mozilla {
 namespace dom {

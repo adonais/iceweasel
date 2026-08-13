@@ -124,6 +124,27 @@ extern int32_t wgpu_server_get_dma_buf_fd(WGPUWebGPUParentPtr aParent,
   // fd should be closed by the caller.
   return fd.release();
 }
+
+extern "C" bool wgpu_server_get_linux_dmabuf_modifiers(
+    const uint64_t** aModifiers, uint32_t* aModifierCount) {
+  if (!aModifiers || !aModifierCount) {
+    return false;
+  }
+
+  *aModifiers = nullptr;
+  *aModifierCount = 0;
+
+  // Vulkan B8G8R8A8_UNORM maps to the exported ARGB dmabuf format on
+  // little-endian Linux.
+  const auto& modifiers = mozilla::gfx::gfxVars::DMABufModifiersARGB();
+  if (modifiers.IsEmpty()) {
+    return false;
+  }
+
+  *aModifiers = modifiers.Elements();
+  *aModifierCount = static_cast<uint32_t>(modifiers.Length());
+  return true;
+}
 #endif
 
 #if defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
@@ -825,8 +846,12 @@ const ExternalTextureSourceHost& WebGPUParent::GetExternalTextureSource(
 void WebGPUParent::DestroyExternalTextureSource(RawId aSourceId) {
   auto it = mExternalTextureSources.find(aSourceId);
   if (it != mExternalTextureSources.end()) {
+    for (const auto viewId : it->second.ViewIds()) {
+      ffi::wgpu_server_texture_view_drop(mContext.get(), viewId);
+    }
     for (const auto textureId : it->second.TextureIds()) {
       ffi::wgpu_server_texture_destroy(mContext.get(), textureId);
+      ffi::wgpu_server_texture_drop(mContext.get(), textureId);
     }
   }
 }
@@ -834,12 +859,6 @@ void WebGPUParent::DestroyExternalTextureSource(RawId aSourceId) {
 void WebGPUParent::DropExternalTextureSource(RawId aSourceId) {
   auto it = mExternalTextureSources.find(aSourceId);
   if (it != mExternalTextureSources.end()) {
-    for (const auto viewId : it->second.ViewIds()) {
-      ffi::wgpu_server_texture_view_drop(mContext.get(), viewId);
-    }
-    for (const auto textureId : it->second.TextureIds()) {
-      ffi::wgpu_server_texture_drop(mContext.get(), textureId);
-    }
     mExternalTextureSources.erase(it);
   }
 }
@@ -1234,6 +1253,10 @@ ipc::IPCResult WebGPUParent::GetFrontBufferSnapshot(
   }
 
   if (data->mLastSubmittedTextureId.isNothing()) {
+    // No commands referencing the canvas have ever been submitted, so it's
+    // blank.
+    memset(shmem.get<uint8_t>(), 0, shmem.Size<uint8_t>());
+    setOutParams(std::move(shmem), size, stride);
     return IPC_OK();
   }
 
@@ -1257,6 +1280,17 @@ ipc::IPCResult WebGPUParent::GetFrontBufferSnapshot(
   RawId bufferId = 0;
   const auto bufferSize = data->mBufferSize;
 
+  // The swap chain owns exactly MAX_SWAPCHAIN_BUFFER_COUNT staging-buffer IDs.
+  // Each ID must always be in exactly one of mUnassignedBufferIds,
+  // mAvailableBufferIds, mQueuedBufferIds, or a pending
+  // ReadbackSnapshotCallback. In error cases, be sure to release the buffer ID
+  // back to the available pool.
+  const auto bufferIdGuard = mozilla::MakeScopeExit([&] {
+    if (bufferId) {
+      data->mAvailableBufferIds.push_back(bufferId);
+    }
+  });
+
   // step 1: find an available staging buffer, or create one
   {
     if (!data->mAvailableBufferIds.empty()) {
@@ -1274,6 +1308,9 @@ ipc::IPCResult WebGPUParent::GetFrontBufferSnapshot(
                                             bufferId, nullptr, bufferSize,
                                             usage, false, error.ToFFI());
       if (ForwardError(error)) {
+        ffi::wgpu_server_buffer_drop(mContext.get(), bufferId);
+        data->mUnassignedBufferIds.push_back(bufferId);
+        bufferId = 0;
         return IPC_OK();
       }
     } else {
@@ -1300,10 +1337,6 @@ ipc::IPCResult WebGPUParent::GetFrontBufferSnapshot(
     }
   }
 
-  if (data->mLastSubmittedTextureId.isNothing()) {
-    return IPC_OK();
-  }
-
   const ffi::WGPUTexelCopyTextureInfo texView = {
       data->mLastSubmittedTextureId.ref(),
   };
@@ -1324,6 +1357,7 @@ ipc::IPCResult WebGPUParent::GetFrontBufferSnapshot(
         mContext.get(), data->mDeviceId, aCommandEncoderId, &texView, bufferId,
         &bufLayout, &extent, error.ToFFI());
     if (ForwardError(error)) {
+      ffi::wgpu_server_command_encoder_drop(mContext.get(), aCommandEncoderId);
       return IPC_OK();
     }
   }
@@ -1360,6 +1394,8 @@ ipc::IPCResult WebGPUParent::GetFrontBufferSnapshot(
       ffi::WGPUHostMap_Read);
   ReadbackSnapshotCallback(
       reinterpret_cast<uint8_t*>(snapshotRequest.release()), status);
+  // bufferId was transferred to ReadbackSnapshotCallback.
+  bufferId = 0;
 
   // Check if ReadbackSnapshotCallback is called.
   MOZ_RELEASE_ASSERT(data->mReadbackSnapshotCallbackCalled == true);
@@ -1434,7 +1470,8 @@ void WebGPUParent::SwapChainPresent(
     mSharedTextures.erase(it);
 
     if (!sharedTexture->IsSubmitted()) {
-      gfxCriticalNoteOnce << "Texture is not submitted";
+      mRemoteTextureOwner->PushDummyTexture(aRemoteTextureId, aOwnerId);
+      gfxCriticalNoteOnce << "Dummy texture is submitted";
       return;
     }
 
@@ -1465,6 +1502,8 @@ void WebGPUParent::SwapChainPresent(
                                             bufferId, nullptr, bufferSize,
                                             usage, false, error.ToFFI());
       if (ForwardError(error)) {
+        ffi::wgpu_server_buffer_drop(mContext.get(), bufferId);
+        data->mUnassignedBufferIds.push_back(bufferId);
         return;
       }
     } else {

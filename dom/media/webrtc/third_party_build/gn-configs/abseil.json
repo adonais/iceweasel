@@ -10,7 +10,15 @@
     },
     "FINAL_LIBRARY": "abseil"
   },
-  "mozilla_flags": ["-fobjc-arc", "-mavx2", "-mfma", "-mfpu=neon", "-msse2"],
+  "mozilla_flags": [
+    "-fobjc-arc",
+    "-mavx2",
+    "-mfma",
+    "-mfpu=neon",
+    "-msse2",
+    "-Wno-comma",
+    "-Wno-tautological-type-limit-compare"
+  ],
   "write_mozbuild_variables": {
     "INCLUDE_TK_CFLAGS_DIRS": [],
     "INCLUDE_SYSTEM_LIBVPX_HANDLING": []

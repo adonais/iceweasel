@@ -12,7 +12,7 @@ import mozilla.components.concept.fetch.MutableHeaders
 import mozilla.components.concept.fetch.Request
 import mozilla.components.concept.fetch.Response
 import mozilla.components.concept.fetch.isDataUri
-import mozilla.components.lib.fetch.okhttp.OkHttpClient.Companion.CACHE_MAX_SIZE
+import mozilla.components.lib.fetch.okhttp.OkHttpClient.Companion.getOrCreateCache
 import mozilla.components.lib.fetch.okhttp.OkHttpClient.Companion.getOrCreateCookieManager
 import okhttp3.Cache
 import okhttp3.CacheControl
@@ -64,12 +64,20 @@ class OkHttpClient(
     companion object {
         internal const val CACHE_MAX_SIZE: Long = 10L * 1024L * 1024L
 
+        private var cache: Cache? = null
+
         fun getOrCreateCookieManager(): CookieManager {
             if (CookieHandler.getDefault() == null) {
                 CookieHandler.setDefault(CookieManager())
             }
             return CookieHandler.getDefault() as CookieManager
         }
+
+        // OkHttp permits only one Cache per directory, so this is process-global
+        // and bound to the first context's cacheDir.
+        @Synchronized
+        internal fun getOrCreateCache(context: Context): Cache =
+            cache ?: Cache(context.cacheDir, CACHE_MAX_SIZE).also { cache = it }
     }
 }
 
@@ -94,7 +102,7 @@ private fun OkHttpClient.rebuildFor(request: Request, context: Context?): OkHttp
         }
 
         context?.let {
-            clientBuilder.cache(Cache(context.cacheDir, CACHE_MAX_SIZE))
+            clientBuilder.cache(getOrCreateCache(it))
         }
 
         return clientBuilder.build()

@@ -7,7 +7,6 @@
 
 #include "mozilla/Maybe.h"
 #include "mozilla/net/NeckoChannelParams.h"
-
 #include "nsICookieJarSettings.h"
 #include "nsIPermission.h"
 #include "nsTArray.h"

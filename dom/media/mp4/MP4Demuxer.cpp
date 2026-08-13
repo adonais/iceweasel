@@ -23,9 +23,9 @@
 #include "mozilla/StaticPrefs_media.h"
 #include "nsPrintfCString.h"
 
-#define LOG(arg, ...)                                                 \
-  DDMOZ_LOG(gMediaDemuxerLog, mozilla::LogLevel::Debug, "::%s: " arg, \
-            __func__, ##__VA_ARGS__)
+#define LOG(arg, ...)                                                     \
+  DDMOZ_LOG_FMT(gMediaDemuxerLog, mozilla::LogLevel::Debug, "::{}: " arg, \
+                __func__, ##__VA_ARGS__)
 
 namespace mozilla {
 
@@ -184,7 +184,7 @@ RefPtr<MP4Demuxer::InitPromise> MP4Demuxer::Init() {
         }
         continue;
       }
-      LOG("Created audio track demuxer for info (%s)",
+      LOG("Created audio track demuxer for info ({})",
           info.Ref()->ToString().get());
       RefPtr<MP4TrackDemuxer> demuxer =
           new MP4TrackDemuxer(mResource, std::move(info.Ref()),
@@ -224,7 +224,7 @@ RefPtr<MP4Demuxer::InitPromise> MP4Demuxer::Init() {
         }
         continue;
       }
-      LOG("Created video track demuxer for info (%s)",
+      LOG("Created video track demuxer for info ({})",
           info.Ref()->ToString().get());
       RefPtr<MP4TrackDemuxer> demuxer =
           new MP4TrackDemuxer(mResource, std::move(info.Ref()),
@@ -385,17 +385,14 @@ RefPtr<MP4TrackDemuxer::SeekPromise> MP4TrackDemuxer::Seek(
     if (next.isErr()) {
       auto error = next.unwrapErr();
 #ifdef MOZ_APPLEMEDIA
-      // On macOS, only IDR frames are marked as key frames. This means some
-      // sync samples (e.g., Recovery SEI or I-slices) are not treated as key
-      // frames, as they may not be supported by Apple’s VideoToolbox H.264
-      // decoder. If we have seen samples but found no key frame, it indicates
-      // we need to look further back for an earlier sample where an IDR frame
-      // should exist per spec. In that case, we retry from the first sync
-      // sample in the GOP, which is typically an IDR frame. This situation
-      // suggests a poorly muxed file that wastes seek time, but unfortunately
-      // such cases do occur in real-world content.
-      if (mType == kH264 && error == NS_ERROR_DOM_MEDIA_END_OF_STREAM &&
-          hasSeenValidSamples && !seekingFromFirstSyncSample) {
+      // On macOS VideoToolbox can return a bad data error if a non-IDR I-frame
+      // (H.264) or a CRA frame (HEVC) is the first sample fed after seeking.
+      // GetNextSample() strips those from being keyframes, so if we reached EOS
+      // without finding one we retry from the first sync sample in the stss,
+      // which is always an IDR.
+      if ((mType == kH264 || mType == kHEVC) &&
+          error == NS_ERROR_DOM_MEDIA_END_OF_STREAM && hasSeenValidSamples &&
+          !seekingFromFirstSyncSample) {
         LOG("Can not find a key frame from the closet sync sample, try again "
             "from the first sync sample");
         seekingFromFirstSyncSample = true;
@@ -475,6 +472,23 @@ MP4TrackDemuxer::GetNextSample() {
           // TODO: make demuxer errors non-fatal.
           break;
       }
+    } else if (mType == kHEVC && !sample->mCrypto.IsEncrypted()) {
+#ifdef MOZ_APPLEMEDIA
+      // VideoToolbox can return a bad data error if a CRA frame is the first
+      // sample after a seek. Only IDR_W_RADL/IDR_N_LP are safe starting points.
+      auto isIDR = H265::IsKeyFrame(sample);
+      bool keyframe = isIDR.isOk() && isIDR.unwrap();
+      if (sample->mKeyframe != keyframe) {
+        NS_WARNING(nsPrintfCString(
+                       "HEVC frame incorrectly marked as %skeyframe "
+                       "@ pts:%" PRId64 " dur:%" PRId64 " dts:%" PRId64,
+                       keyframe ? "" : "non-", sample->mTime.ToMicroseconds(),
+                       sample->mDuration.ToMicroseconds(),
+                       sample->mTimecode.ToMicroseconds())
+                       .get());
+        sample->mKeyframe = keyframe;
+      }
+#endif
     } else if (mType == kVP9 && !sample->mCrypto.IsEncrypted()) {
       bool keyframe = VPXDecoder::IsKeyframe(
           Span<const uint8_t>(sample->Data(), sample->Size()),
@@ -539,8 +553,8 @@ MP4TrackDemuxer::GetNextSample() {
       originalStart = sample->mOriginalPresentationWindow->mStart;
       originalEnd = sample->mOriginalPresentationWindow->mEnd;
     }
-    LOG("%s packet demuxed (track id: %d): [%s,%s], duration: %s (original "
-        "time: [%s,%s])",
+    LOG("{} packet demuxed (track id: {}): [{},{}], duration: {} (original "
+        "time: [{},{}])",
         isAudio ? "Audio" : "Video", mInfo->mTrackId,
         sample->mTime.ToString().get(), sample->GetEndTime().ToString().get(),
         sample->mDuration.ToString().get(), originalStart.ToString().get(),

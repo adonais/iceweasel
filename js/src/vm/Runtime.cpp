@@ -739,6 +739,8 @@ void JSRuntime::commitPendingWrapperPreservations() {
 
 void JSRuntime::commitPendingWrapperPreservations(JS::Zone* zone) {
   for (JSObject* wrapper : zone->slurpPendingWrapperPreservations()) {
+    MOZ_RELEASE_ASSERT(!IsWrapper(wrapper));
+
     JS::Value objectWrapperSlot =
         JS::GetReservedSlot(wrapper, JS_OBJECT_WRAPPER_SLOT);
     // This mirrors logic in MaybePreserveDOMWrapper, and should be kept in
@@ -747,13 +749,8 @@ void JSRuntime::commitPendingWrapperPreservations(JS::Zone* zone) {
       continue;
     }
 
-    if (IsWrapper(wrapper)) {
-      wrapper = UncheckedUnwrap(wrapper);
-    }
-
     Rooted<JSObject*> rooted(mainContextFromOwnThread(), wrapper);
-    bool success = preserveWrapperCallback(mainContextFromOwnThread(), rooted);
-    MOZ_RELEASE_ASSERT(success);
+    preserveWrapperCallback(mainContextFromOwnThread(), rooted);
   }
 
   // The callback must not cause more wrappers to be preserved or they will

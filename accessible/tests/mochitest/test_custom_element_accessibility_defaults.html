@@ -119,7 +119,7 @@ async function runTest() {
   testStates("default-expanded", STATE_EXPANDED);
   testStates("custom-expanded", STATE_COLLAPSED);
 
-  testAttrs("default-haspopup", {"haspopup": "true"}, true);
+  testAttrs("default-haspopup", {"haspopup": "menu"}, true);
   testAbsentAttrs("custom-haspopup", {"haspopup": "false"});
 
   ok(!isAccessible("default-hidden"), "Accessible for aria-hidden default");

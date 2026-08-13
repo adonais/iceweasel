@@ -29,16 +29,18 @@ class JSObject;
 extern mozilla::LogModule* GetMediaSourceLog();
 extern mozilla::LogModule* GetMediaSourceAPILog();
 
-#define MSE_DEBUG(arg, ...)                                                  \
-  DDMOZ_LOG(GetMediaSourceLog(), mozilla::LogLevel::Debug, "(%s)::%s: " arg, \
-            mType.OriginalString().get(), __func__, ##__VA_ARGS__)
-#define MSE_DEBUGV(arg, ...)                                                   \
-  DDMOZ_LOG(GetMediaSourceLog(), mozilla::LogLevel::Verbose, "(%s)::%s: " arg, \
-            mType.OriginalString().get(), __func__, ##__VA_ARGS__)
-#define MSE_API(arg, ...)                                             \
-  DDMOZ_LOG(GetMediaSourceAPILog(), mozilla::LogLevel::Debug,         \
-            "(%s)::%s: " arg, mType.OriginalString().get(), __func__, \
-            ##__VA_ARGS__)
+#define MSE_DEBUG(arg, ...)                                               \
+  DDMOZ_LOG_FMT(GetMediaSourceLog(), mozilla::LogLevel::Debug,            \
+                "({})::{}: " arg, mType.OriginalString().get(), __func__, \
+                ##__VA_ARGS__)
+#define MSE_DEBUGV(arg, ...)                                              \
+  DDMOZ_LOG_FMT(GetMediaSourceLog(), mozilla::LogLevel::Verbose,          \
+                "({})::{}: " arg, mType.OriginalString().get(), __func__, \
+                ##__VA_ARGS__)
+#define MSE_API(arg, ...)                                                 \
+  DDMOZ_LOG_FMT(GetMediaSourceAPILog(), mozilla::LogLevel::Debug,         \
+                "({})::{}: " arg, mType.OriginalString().get(), __func__, \
+                ##__VA_ARGS__)
 
 namespace mozilla {
 
@@ -49,7 +51,7 @@ namespace dom {
 
 void SourceBuffer::SetMode(SourceBufferAppendMode aMode, ErrorResult& aRv) {
   MOZ_ASSERT(NS_IsMainThread());
-  MSE_API("SetMode(aMode=%" PRIu32 ")", static_cast<uint32_t>(aMode));
+  MSE_API("SetMode(aMode={})", static_cast<uint32_t>(aMode));
   if (!IsAttached() || mUpdating) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
@@ -82,7 +84,7 @@ void SourceBuffer::SetMode(SourceBufferAppendMode aMode, ErrorResult& aRv) {
 void SourceBuffer::SetTimestampOffset(double aTimestampOffset,
                                       ErrorResult& aRv) {
   MOZ_ASSERT(NS_IsMainThread());
-  MSE_API("SetTimestampOffset(aTimestampOffset=%f)", aTimestampOffset);
+  MSE_API("SetTimestampOffset(aTimestampOffset={:f})", aTimestampOffset);
   if (!IsAttached() || mUpdating) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
@@ -120,11 +122,11 @@ TimeRanges* SourceBuffer::GetBuffered(ErrorResult& aRv) {
   }
   bool rangeChanged = true;
   media::TimeIntervals intersection = mTrackBuffersManager->Buffered();
-  MSE_DEBUGV("intersection=%s", DumpTimeRanges(intersection).get());
+  MSE_DEBUGV("intersection={}", DumpTimeRanges(intersection).get());
   if (mBuffered) {
     media::TimeIntervals currentValue(mBuffered->ToTimeIntervals());
     rangeChanged = (intersection != currentValue);
-    MSE_DEBUGV("currentValue=%s", DumpTimeRanges(currentValue).get());
+    MSE_DEBUGV("currentValue={}", DumpTimeRanges(currentValue).get());
   }
   // 5. If intersection ranges does not contain the exact same range information
   // as the current value of this attribute, then update the current value of
@@ -145,7 +147,7 @@ media::TimeIntervals SourceBuffer::GetTimeIntervals() {
 void SourceBuffer::SetAppendWindowStart(double aAppendWindowStart,
                                         ErrorResult& aRv) {
   MOZ_ASSERT(NS_IsMainThread());
-  MSE_API("SetAppendWindowStart(aAppendWindowStart=%f)", aAppendWindowStart);
+  MSE_API("SetAppendWindowStart(aAppendWindowStart={:f})", aAppendWindowStart);
   DDLOG(DDLogCategory::API, "SetAppendWindowStart", aAppendWindowStart);
   if (!IsAttached() || mUpdating) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
@@ -162,7 +164,7 @@ void SourceBuffer::SetAppendWindowStart(double aAppendWindowStart,
 void SourceBuffer::SetAppendWindowEnd(double aAppendWindowEnd,
                                       ErrorResult& aRv) {
   MOZ_ASSERT(NS_IsMainThread());
-  MSE_API("SetAppendWindowEnd(aAppendWindowEnd=%f)", aAppendWindowEnd);
+  MSE_API("SetAppendWindowEnd(aAppendWindowEnd={:f})", aAppendWindowEnd);
   DDLOG(DDLogCategory::API, "SetAppendWindowEnd", aAppendWindowEnd);
   if (!IsAttached() || mUpdating) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
@@ -269,7 +271,7 @@ void SourceBuffer::ResetParserState() {
 
 void SourceBuffer::Remove(double aStart, double aEnd, ErrorResult& aRv) {
   MOZ_ASSERT(NS_IsMainThread());
-  MSE_API("Remove(aStart=%f, aEnd=%f)", aStart, aEnd);
+  MSE_API("Remove(aStart={:f}, aEnd={:f})", aStart, aEnd);
   DDLOG(DDLogCategory::API, "Remove-from", aStart);
   DDLOG(DDLogCategory::API, "Remove-until", aEnd);
 
@@ -283,7 +285,7 @@ void SourceBuffer::Remove(double aStart, double aEnd, ErrorResult& aRv) {
 already_AddRefed<Promise> SourceBuffer::RemoveAsync(double aStart, double aEnd,
                                                     ErrorResult& aRv) {
   MOZ_ASSERT(NS_IsMainThread());
-  MSE_API("RemoveAsync(aStart=%f, aEnd=%f)", aStart, aEnd);
+  MSE_API("RemoveAsync(aStart={:f}, aEnd={:f})", aStart, aEnd);
   DDLOG(DDLogCategory::API, "Remove-from", aStart);
   DDLOG(DDLogCategory::API, "Remove-until", aEnd);
 
@@ -395,7 +397,7 @@ void SourceBuffer::ChangeType(const nsAString& aType, ErrorResult& aRv) {
           : Nothing());
   bool supported = !aRv.Failed();
   diagnostics.StoreFormatDiagnostics(doc, aType, supported, __func__);
-  MSE_API("ChangeType(aType=%s)%s", NS_ConvertUTF16toUTF8(aType).get(),
+  MSE_API("ChangeType(aType={}){}", NS_ConvertUTF16toUTF8(aType).get(),
           supported ? "" : " [not supported]");
   if (!supported) {
     DDLOG(DDLogCategory::API, "ChangeType",
@@ -482,7 +484,8 @@ SourceBuffer::SourceBuffer(MediaSource* aMediaSource,
       new TrackBuffersManager(aMediaSource->GetDecoder(), aType);
   DDLINKCHILD("track buffers manager", mTrackBuffersManager.get());
 
-  MSE_DEBUG("Create mTrackBuffersManager=%p", mTrackBuffersManager.get());
+  MSE_DEBUG("Create mTrackBuffersManager={}",
+            fmt::ptr(mTrackBuffersManager.get()));
 
   ErrorResult dummy;
   if (mCurrentAttributes.mGenerateTimestamps) {
@@ -509,12 +512,12 @@ JSObject* SourceBuffer::WrapObject(JSContext* aCx,
 
 void SourceBuffer::DispatchSimpleEvent(const char* aName) {
   MOZ_ASSERT(NS_IsMainThread());
-  MSE_API("Dispatch event '%s'", aName);
+  MSE_API("Dispatch event '{}'", aName);
   DispatchTrustedEvent(NS_ConvertUTF8toUTF16(aName));
 }
 
 void SourceBuffer::QueueAsyncSimpleEvent(const char* aName) {
-  MSE_DEBUG("Queuing event '%s'", aName);
+  MSE_DEBUG("Queuing event '{}'", aName);
   nsCOMPtr<nsIRunnable> event = new AsyncEventRunner<SourceBuffer>(this, aName);
   mAbstractMainThread->Dispatch(event.forget());
 }
@@ -566,7 +569,7 @@ void SourceBuffer::CheckEndTime() {
 void SourceBuffer::AppendData(RefPtr<MediaByteBuffer>&& aData,
                               ErrorResult& aRv) {
   MOZ_ASSERT(NS_IsMainThread());
-  MSE_DEBUG("AppendData(aLength=%zu)", aData->Length());
+  MSE_DEBUG("AppendData(aLength={})", aData->Length());
 
   StartUpdating();
 

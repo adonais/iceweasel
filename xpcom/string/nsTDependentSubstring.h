@@ -6,9 +6,9 @@
 #ifndef nsTDependentSubstring_h
 #define nsTDependentSubstring_h
 
-#include "nsTSubstring.h"
-#include "nsTLiteralString.h"
 #include "mozilla/Span.h"
+#include "nsTLiteralString.h"
+#include "nsTSubstring.h"
 
 /**
  * nsTDependentSubstring_CharT

@@ -828,13 +828,21 @@ int nr_ice_set_target_for_default_local_address_lookup(nr_ice_ctx *ctx, const ch
       ABORT(R_NO_MEMORY);
 
     if ((r=nr_str_port_to_transport_addr(target_ip, target_port, IPPROTO_UDP, ctx->target_for_default_local_address_lookup))) {
-      free(ctx->target_for_default_local_address_lookup);
-      ctx->target_for_default_local_address_lookup=0;
       ABORT(r);
+    }
+
+    /* Default local address lookup uses a UDP connect() to the target. An
+     * FQDN target would need DNS resolution that this code does not do. */
+    if (ctx->target_for_default_local_address_lookup->fqdn[0] != '\0') {
+      ABORT(R_BAD_DATA);
     }
 
     _status=0;
   abort:
+    if (_status) {
+      free(ctx->target_for_default_local_address_lookup);
+      ctx->target_for_default_local_address_lookup=0;
+    }
     return(_status);
   }
 

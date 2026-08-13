@@ -6,7 +6,8 @@
 
 // For MOZ_CRASH_UNSAFE_PRINTF
 #  include "mozilla/Assertions.h"
-
+// For MOZ_RUNINIT
+#  include "mozilla/Attributes.h"
 #  include "mozilla/mozalloc_oom.h"
 
 // Load general firefox configuration of RLBox
@@ -14,9 +15,13 @@
 #  include "mozilla/rlbox/rlbox_wasm2c_tls.hpp"
 #  include "wasm-rt.h"
 
-#  ifndef WASM_RT_GROW_FAILED_CRASH
+#  ifdef WASM_RT_GROW_FAILED_CRASH_OR_REDIRECT
+#    include <mutex>
+#  else
 #    include "nsExceptionHandler.h"
 #  endif
+
+#  include "rlbox_wasm2c_thread_locals.h"
 
 // The MingW compiler does not correctly handle static thread_local inline
 // members. We instead TLS storage via functions. This can be removed if the
@@ -33,14 +38,41 @@ void moz_wasm2c_trap_handler(wasm_rt_trap_t code) {
 
 // The below function is called if a malloc in sandboxed code returns null
 // This indicates that the sandbox has run out of memory.
+#  ifdef WASM_RT_GROW_FAILED_CRASH_OR_REDIRECT
+
+static void (*gMemGrowFailedRedirect)() = nullptr;
+#    ifdef _WIN32
+MOZ_RUNINIT
+#    endif
+std::mutex gMemGrowFailedRedirectMutex;
+
+void moz_wasm2c_set_memgrow_redirect_target(void (*fn)()) {
+  const std::lock_guard<std::mutex> lock(gMemGrowFailedRedirectMutex);
+  gMemGrowFailedRedirect = fn;
+}
+
 void moz_wasm2c_memgrow_failed() {
-#  ifdef WASM_RT_GROW_FAILED_CRASH
-  MOZ_CRASH("wasm2c memory grow failed");
+  void (*redirect)() = nullptr;
+  {
+    const std::lock_guard<std::mutex> lock(gMemGrowFailedRedirectMutex);
+    redirect = gMemGrowFailedRedirect;
+  }
+
+  if (redirect != nullptr) {
+    redirect();
+  } else {
+    MOZ_CRASH("wasm2c memory grow failed");
+  }
+}
+
 #  else
+
+void moz_wasm2c_memgrow_failed() {
   CrashReporter::RecordAnnotationBool(
       CrashReporter::Annotation::WasmLibrarySandboxMallocFailed, true);
-#  endif
 }
+
+#  endif
 
 // This function is called when mozalloc_handle_oom is called from within
 // the sandbox. We redirect to that function, ignoring the ctx argument, which

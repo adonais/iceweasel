@@ -37,11 +37,22 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "insecureConnectionTextPBModeEnabled",
   "security.insecure_connection_text.pbmode.enabled"
 );
+// [pref-trie-audit] "dom.security.https_only_mode" is an ambiguous prefix of
+// "dom.security.https_only_mode_break_upgrade_downgrade_endless_loop",
+// "dom.security.https_only_mode_error_page_user_suggestions",
+// "dom.security.https_only_mode_ever_enabled", "dom.security.https_only_mode_ever_enabled_pbm",
+// "dom.security.https_only_mode_pbm", "dom.security.https_only_mode_send_http_background_request";
+// triggers only for the exact pref (all siblings have their own registrations).
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
   "httpsOnlyModeEnabled",
   "dom.security.https_only_mode"
 );
+// [pref-trie-audit] "dom.security.https_first" is an ambiguous prefix of
+// "dom.security.https_first_add_exception_on_failure", "dom.security.https_first_exception_lifetime",
+// "dom.security.https_first_for_custom_ports", "dom.security.https_first_for_local_addresses",
+// "dom.security.https_first_for_unknown_suffixes", "dom.security.https_first_schemeless";
+// triggers only for the exact pref (all siblings have their own registrations).
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
   "httpsFirstModeEnabled",
@@ -150,6 +161,10 @@ class TrustPanel {
   #pageExtensionPolicy = null;
 
   #lastEvent = null;
+
+  // Monotonic tag for #updateBlockerView runs so a stale (slower) run can't
+  // overwrite a fresher one's result. See the method for details.
+  #blockerViewUpdateId = 0;
 
   #popupToggleDelayTimer = null;
   #openingReason = null;
@@ -303,6 +318,7 @@ class TrustPanel {
         .addEventListener("command", () => this.#changeHttpsOnlyPermission());
 
       this.#popup.addEventListener("popupshown", this);
+      this.#popup.addEventListener("popuphidden", this);
     }
   }
 
@@ -332,6 +348,7 @@ class TrustPanel {
 
     PanelMultiView.openPopup(this.#popup, this.#anchor(), {
       position: "bottomleft topleft",
+      triggerEvent: opts.event,
     });
 
     const applicableBreaches = await this.#getApplicableBreaches(this.#host);
@@ -540,27 +557,31 @@ class TrustPanel {
     );
 
     this.#updateAttribute(
-      document.getElementById("trustpanel-blocker-section"),
-      "hidden",
-      !this.anyDetected
-    );
-
-    this.#updateAttribute(
       document.getElementById("trustpanel-toggle-section"),
       "disabled",
       !ContentBlockingAllowList.canHandle(window.gBrowser.selectedBrowser)
     );
 
-    try {
-      let baseDomain = SiteDataManager.getBaseDomainFromHost(this.#uri.host);
-      SiteDataManager.hasSiteData(baseDomain).then(hasSiteData => {
-        this.#updateAttribute(
-          document.getElementById("trustpanel-clear-cookies-button"),
-          "disabled",
-          !hasSiteData
-        );
-      });
-    } catch (e) {}
+    // TODO(Bug 1751045): Show the clear site data footer in private browsing
+    // when clearing data in private browsing is supported.
+    const isPrivate = PrivateBrowsingUtils.isWindowPrivate(window);
+    this.#updateAttribute(
+      document.getElementById("trustpanel-clear-cookies-footer"),
+      "hidden",
+      isPrivate
+    );
+    if (!isPrivate) {
+      try {
+        let baseDomain = SiteDataManager.getBaseDomainFromHost(this.#uri.host);
+        SiteDataManager.hasSiteData(baseDomain).then(hasSiteData => {
+          this.#updateAttribute(
+            document.getElementById("trustpanel-clear-cookies-button"),
+            "disabled",
+            !hasSiteData
+          );
+        });
+      } catch (e) {}
+    }
 
     this.#updateAttribute(
       document.getElementById("trustpanel-toggle"),
@@ -572,17 +593,32 @@ class TrustPanel {
   }
 
   async #updateBlockerView() {
+    // Snapshot the event so this run stays internally consistent across the
+    // awaits below, and tag the run so that if a newer run starts while we're
+    // awaiting, this (now stale) one bails out instead of writing its result.
+    // Without this guard, concurrent runs — a burst of content-blocking events
+    // on a tracker-heavy site (e.g. Meta) plus opening the subview — race on
+    // the final write, and a stale run can finish last and clobber a fresher
+    // count with 0, producing the intermittent "0 trackers blocked".
+    const event = this.#lastEvent;
+    const updateId = ++this.#blockerViewUpdateId;
+
     let count = this.#fetchSmartBlocked().length;
     let blocked = [];
     let detected = [];
 
     for (let blocker of Object.values(this.#blockers)) {
-      if (blocker.isBlocking(this.#lastEvent)) {
+      if (blocker.isBlocking(event)) {
         blocked.push(blocker);
         count += await blocker.getBlockerCount();
-      } else if (blocker.isDetected(this.#lastEvent)) {
+      } else if (blocker.isDetected(event)) {
         detected.push(blocker);
       }
+    }
+
+    // A newer run started while we were awaiting; let it own the DOM update.
+    if (updateId !== this.#blockerViewUpdateId) {
+      return;
     }
 
     this.#addButtons("trustpanel-blocked", blocked, true);
@@ -591,6 +627,15 @@ class TrustPanel {
     document
       .getElementById("trustpanel-smartblock-section")
       .toggleAttribute("hidden", !this.#addSmartblockEmbedToggles());
+
+    this.#updateAttribute(
+      document.getElementById("trustpanel-blocker-section"),
+      "hidden",
+      // avoids a misleading "0 trackers blocked" for trackers that are detected
+      // but not blocked, which happens transiently during page load, since
+      // detection events can arrive before the blocking ones.
+      count === 0
+    );
 
     // This element is in the main view but updated in case
     // any content blocking events were missed.
@@ -1585,13 +1630,35 @@ class TrustPanel {
   // We handle focus here when the panel is shown.
   handleEvent(event) {
     switch (event.type) {
+      case "focus": {
+        let elem = document.activeElement;
+        let position = elem.compareDocumentPosition(this.#popup);
+        if (
+          !(
+            position &
+            (Node.DOCUMENT_POSITION_CONTAINS |
+              Node.DOCUMENT_POSITION_CONTAINED_BY)
+          ) &&
+          !this.#popup.hasAttribute("noautohide")
+        ) {
+          // Hide the panel when focusing an element that is
+          // neither an ancestor nor descendant unless the panel has
+          // @noautohide (e.g. for a tour).
+          PanelMultiView.hidePopup(this.#popup);
+        }
+        break;
+      }
       case "popupshown":
         this.onPopupShown(event);
+        break;
+      case "popuphidden":
+        this.onPopupHidden(event);
         break;
     }
   }
 
   onPopupShown() {
+    window.addEventListener("focus", this, true);
     PopupNotifications.suppressWhileOpen(this.#popup);
     // Disable the toggles for a short time after opening via SmartBlock placeholder button
     // to prevent clickjacking.
@@ -1601,6 +1668,10 @@ class TrustPanel {
         this.#enablePopupToggles();
       }, popupClickjackDelay);
     }
+  }
+
+  onPopupHidden() {
+    window.removeEventListener("focus", this, true);
   }
 
   /**

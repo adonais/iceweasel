@@ -37,7 +37,7 @@ static bool ParseUUID(const nsACString& aUUID, uint8_t (&aOut)[16]) {
     return false;
   }
   nsID id;
-  if (!id.Parse(PromiseFlatCString(aUUID).get())) {
+  if (!id.Parse(aUUID)) {
     return false;
   }
   BigEndian::writeUint32(&aOut[0], id.m0);

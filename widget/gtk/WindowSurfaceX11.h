@@ -8,11 +8,11 @@
 
 #ifdef MOZ_X11
 
-#  include "mozilla/widget/WindowSurface.h"
-#  include "mozilla/gfx/Types.h"
-
 #  include <X11/Xlib.h>
+
 #  include "X11UndefineNone.h"
+#  include "mozilla/gfx/Types.h"
+#  include "mozilla/widget/WindowSurface.h"
 
 namespace mozilla::widget {
 

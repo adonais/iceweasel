@@ -5,10 +5,10 @@
 #import <Cocoa/Cocoa.h>
 
 #include "nsMacFinderProgress.h"
-#include "nsProxyRelease.h"
-#include "nsThreadUtils.h"
-#include "nsString.h"
 #include "nsObjCExceptions.h"
+#include "nsProxyRelease.h"
+#include "nsString.h"
+#include "nsThreadUtils.h"
 
 NS_IMPL_ISUPPORTS(nsMacFinderProgress, nsIMacFinderProgress)
 

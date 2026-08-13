@@ -22,6 +22,7 @@
 #include "mozilla/TextEvents.h"
 #include "mozilla/ViewportUtils.h"
 #include "mozilla/dom/CharacterDataBuffer.h"
+#include "mozilla/dom/EditContext.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLBRElement.h"
 #include "mozilla/dom/HTMLUnknownElement.h"
@@ -129,7 +130,8 @@ ContentEventHandler::SimpleRangeBase<nsINode*,
 template <typename NodeType, typename RangeBoundaryType>
 void ContentEventHandler::SimpleRangeBase<
     NodeType, RangeBoundaryType>::AssertStartIsBeforeOrEqualToEnd() {
-  MOZ_ASSERT(*nsContentUtils::ComparePoints(mStart, mEnd) <= 0);
+  MOZ_ASSERT(*nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+                 mStart, mEnd) <= 0);
 }
 
 template <typename NodeType, typename RangeBoundaryType>
@@ -1383,6 +1385,29 @@ nsresult ContentEventHandler::OnQuerySelectedText(
 
   MOZ_ASSERT(aEvent->mReply->mOffsetAndData.isNothing());
 
+  if (RefPtr<EditContext> editContext = GetEditContext()) {
+    // Get text directly from EditContext, instead of trying to get it from
+    // the DOM.
+    uint32_t selectionStart;
+    uint32_t selectionEnd;
+    if (aEvent->mInput.mSelectionType == SelectionType::eNormal) {
+      selectionStart = editContext->SelectionStartClamped();
+      selectionEnd = editContext->SelectionEndClamped();
+    } else {
+      selectionStart = mSelection->AnchorOffset();
+      selectionEnd = mSelection->FocusOffset();
+    }
+    uint32_t selectionMin = std::min(selectionStart, selectionEnd);
+    uint32_t selectionMax = std::max(selectionStart, selectionEnd);
+    nsAutoString selectedText;
+    editContext->GetTextSubstring(selectionMin, selectionMax, selectedText);
+    aEvent->mReply->mOffsetAndData.emplace(selectionMin, selectedText,
+                                           OffsetAndDataFor::SelectedString);
+    aEvent->mReply->mWritingMode = editContext->WritingMode();
+    aEvent->mReply->mReversed = selectionEnd < selectionStart;
+    return NS_OK;
+  }
+
   if (!mFirstSelectedSimpleRange.IsPositioned()) {
     MOZ_ASSERT(aEvent->mReply->mOffsetAndData.isNothing());
     // This is special case that `mReply` is emplaced, but mOffsetAndData is
@@ -1425,7 +1450,8 @@ nsresult ContentEventHandler::OnQuerySelectedText(
       // The selection's points should always be comparable, independent of the
       // selection (see nsISelectionController.idl).
       Maybe<int32_t> compare =
-          nsContentUtils::ComparePoints(anchorRef, focusRef);
+          nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(anchorRef,
+                                                                      focusRef);
       if (compare.isNothing()) {
         return NS_ERROR_FAILURE;
       }
@@ -1486,6 +1512,26 @@ nsresult ContentEventHandler::OnQueryTextContent(
   Result<UnsafeDOMRangeAndAdjustedOffsetInFlattenedText, nsresult>
       domRangeAndAdjustedOffsetOrError = ConvertFlatTextOffsetToUnsafeDOMRange(
           aEvent->mInput.mOffset, aEvent->mInput.mLength, false);
+
+  if (EditContext* editContext = GetEditContext()) {
+    // Get text directly from EditContext, instead of trying to get it
+    // from the DOM.
+    nsAutoString text;
+    uint32_t start = aEvent->mInput.mOffset;
+    uint32_t end = aEvent->mInput.EndOffset();
+    editContext->GetTextSubstring(start, end, text);
+    aEvent->mReply->mOffsetAndData.emplace(start, text);
+    // Get mFontRanges from the DOM. For canvas-based EditContext we don't know
+    // what the font is.
+    if (!mRootElement->IsHTMLElement(nsGkAtoms::canvas) &&
+        domRangeAndAdjustedOffsetOrError.isOk()) {
+      uint32_t fontRangeLength;
+      GenerateFlatFontRanges(domRangeAndAdjustedOffsetOrError.unwrap().mRange,
+                             aEvent->mReply->mFontRanges, fontRangeLength);
+    }
+    return NS_OK;
+  }
+
   if (MOZ_UNLIKELY(domRangeAndAdjustedOffsetOrError.isErr())) {
     NS_WARNING(
         "ContentEventHandler::ConvertFlatTextOffsetToDOMRangeBase() failed");
@@ -1961,6 +2007,49 @@ nsresult ContentEventHandler::OnQueryTextRectArray(
   uint32_t offset = aEvent->mInput.mOffset;
   const uint32_t kEndOffset = aEvent->mInput.EndOffset();
   bool wasLineBreaker = false;
+  if (RefPtr<EditContext> editContext = GetEditContext()) {
+    MOZ_ASSERT(offset <= kEndOffset);
+    // Let's not overflow if somehow offset > kEndOffset
+    const uint32_t endOffset = std::max(kEndOffset, offset);
+    // Get rectangles from EditContext character bounds
+    nsTArray<LayoutDeviceIntRect>& rects = aEvent->mReply->mRectArray;
+    Maybe<LayoutDeviceIntRect> selectionBounds =
+        editContext->GetSelectionBounds();
+    if (selectionBounds && offset == endOffset &&
+        offset == editContext->SelectionStartClamped() &&
+        editContext->SelectionIsCollapsed()) {
+      // Use selection bounds for caret rect
+      rects.AppendElement(*selectionBounds);
+      MOZ_ASSERT(aEvent->Succeeded());
+      return NS_OK;
+    }
+    rv = editContext->FireCharacterBoundsUpdateIfNeededAndGetRects(
+        offset, endOffset, rects);
+    if (NS_SUCCEEDED(rv) && !rects.IsEmpty()) {
+      LayoutDeviceIntRect lastRect = rects.LastElement();
+      // If a range that goes past the end of the text content was requested,
+      // just add more copies of the last rect to match the expected length.
+      while (rects.Length() < endOffset - offset) {
+        rects.AppendElement(lastRect);
+      }
+      MOZ_ASSERT(aEvent->Succeeded());
+      return NS_OK;
+    }
+    // If failed (e.g. web app does not call updateCharacterBounds()), try
+    // to get the text from the DOM instead. But for canvas, that certainly
+    // won't work, so just use the fallback bounds.
+    if (mRootElement->IsHTMLElement(nsGkAtoms::canvas)) {
+      nsTArray<LayoutDeviceIntRect>& rects = aEvent->mReply->mRectArray;
+      LayoutDeviceIntRect fallbackBounds = editContext->FallbackBounds();
+      const uint32_t rectCount = std::max(1u, endOffset - offset);
+      rects.SetCapacity(rectCount);
+      for ([[maybe_unused]] uint32_t i : IntegerRange(rectCount)) {
+        rects.AppendElement(fallbackBounds);
+      }
+      MOZ_ASSERT(aEvent->Succeeded());
+      return NS_OK;
+    }
+  }
   // lastCharRect stores the last charRect value (see below for the detail of
   // charRect).
   nsRect lastCharRect;
@@ -2369,6 +2458,48 @@ nsresult ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent) {
   }
 
   MOZ_ASSERT(aEvent->mReply->mOffsetAndData.isNothing());
+  RefPtr<EditContext> editContext = GetEditContext();
+  if (editContext) {
+    // Get rectangle using EditContext character bounds
+    const uint32_t start = aEvent->mInput.mOffset;
+    const uint32_t end = start + aEvent->mInput.mLength;
+    AutoTArray<LayoutDeviceIntRect, 8> rects;
+    aEvent->mReply->mWritingMode = editContext->WritingMode();
+    nsAutoString data;
+    editContext->GetTextSubstring(start, end, data);
+    aEvent->mReply->mOffsetAndData.emplace(start, data,
+                                           OffsetAndDataFor::EditorString);
+    Maybe<LayoutDeviceIntRect> selectionBounds =
+        editContext->GetSelectionBounds();
+    if (selectionBounds && start == editContext->SelectionMinClamped() &&
+        end == editContext->SelectionMaxClamped()) {
+      // Queried range is EditContext selection, so use selection bounds.
+      aEvent->mReply->mRect = *selectionBounds;
+      MOZ_ASSERT(aEvent->Succeeded());
+      return NS_OK;
+    }
+    rv = editContext->FireCharacterBoundsUpdateIfNeededAndGetRects(start, end,
+                                                                   rects);
+    // rects will be empty if start >= TextLength()
+    if (NS_SUCCEEDED(rv) && !rects.IsEmpty()) {
+      // Return union of the character rects.
+      LayoutDeviceIntRect boundingRect = rects[0];
+      for (size_t i : IntegerRange(1u, rects.Length())) {
+        boundingRect = boundingRect.Union(rects[i]);
+      }
+      aEvent->mReply->mRect = boundingRect;
+      MOZ_ASSERT(aEvent->Succeeded());
+      return NS_OK;
+    }
+    // If failed (e.g. web app does not call updateCharacterBounds()), try
+    // to get the text from the DOM instead. But for canvas, that certainly
+    // won't work, so just use the fallback bounds.
+    if (mRootElement->IsHTMLElement(nsGkAtoms::canvas)) {
+      aEvent->mReply->mRect = editContext->FallbackBounds();
+      MOZ_ASSERT(aEvent->Succeeded());
+      return NS_OK;
+    }
+  }
 
   Result<DOMRangeAndAdjustedOffsetInFlattenedText, nsresult>
       domRangeAndAdjustedOffsetOrError = ConvertFlatTextOffsetToDOMRange(
@@ -2384,9 +2515,14 @@ nsresult ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent) {
           GenerateFlatTextContent(domRangeAndAdjustedOffset.mRange, string)))) {
     return NS_ERROR_FAILURE;
   }
-  aEvent->mReply->mOffsetAndData.emplace(
-      domRangeAndAdjustedOffset.mAdjustedOffset, string,
-      OffsetAndDataFor::EditorString);
+  if (!editContext) {
+    aEvent->mReply->mOffsetAndData.emplace(
+        domRangeAndAdjustedOffset.mAdjustedOffset, string,
+        OffsetAndDataFor::EditorString);
+  } else {
+    MOZ_ASSERT(aEvent->mReply->mOffsetAndData.isSome(),
+               "Should have been initialized above.");
+  }
 
   // used to iterate over all contents and their frames
   PostContentIterator postOrderIter;
@@ -2698,6 +2834,15 @@ nsresult ContentEventHandler::OnQueryEditorRect(
     return rv;
   }
 
+  if (EditContext* editContext = GetEditContext()) {
+    if (Maybe<LayoutDeviceIntRect> controlBounds =
+            editContext->GetControlBounds()) {
+      aEvent->mReply->mRect = *controlBounds;
+      MOZ_ASSERT(aEvent->Succeeded());
+      return NS_OK;
+    }
+  }
+
   if (NS_WARN_IF(NS_FAILED(QueryContentRect(mRootElement, aEvent)))) {
     return NS_ERROR_FAILURE;
   }
@@ -2711,6 +2856,24 @@ nsresult ContentEventHandler::OnQueryCaretRect(
   nsresult rv = Init(aEvent);
   if (NS_FAILED(rv)) {
     return rv;
+  }
+
+  EditContext* editContext = GetEditContext();
+  if (editContext && mSelection->GetType() == SelectionType::eNormal &&
+      editContext->SelectionIsCollapsed() &&
+      editContext->SelectionStartClamped() == aEvent->mInput.mOffset) {
+    if (Maybe<LayoutDeviceIntRect> selectionBounds =
+            editContext->GetSelectionBounds()) {
+      // Query is for the "real" caret rect, so we can use
+      // the EditContext's selection bounds.
+      aEvent->mReply->mRect = *selectionBounds;
+      aEvent->mReply->mOffsetAndData.emplace(aEvent->mInput.mOffset,
+                                             EmptyString(),
+                                             OffsetAndDataFor::SelectedString);
+      aEvent->mReply->mWritingMode = editContext->WritingMode();
+      MOZ_ASSERT(aEvent->Succeeded());
+      return NS_OK;
+    }
   }
 
   // When the selection is collapsed and the queried offset is current caret
@@ -2813,6 +2976,35 @@ nsresult ContentEventHandler::OnQueryCharacterAtPoint(
 
   MOZ_ASSERT(aEvent->mReply->mOffsetAndData.isNothing());
   MOZ_ASSERT(aEvent->mReply->mTentativeCaretOffset.isNothing());
+
+  if (RefPtr<EditContext> editContext = GetEditContext()) {
+    AutoTArray<LayoutDeviceIntRect, 8> rects;
+    // XXX: Getting all the rects is not ideal. Maybe do some kind of binary
+    //      search and fallback to this if it fails? (bug 2054998)
+    rv = editContext->FireCharacterBoundsUpdateIfNeededAndGetRects(
+        0, editContext->TextLength(), rects);
+    if (NS_SUCCEEDED(rv)) {
+      for (size_t i : IntegerRange(0u, rects.Length())) {
+        if (rects[i].Contains(aEvent->mRefPoint)) {
+          nsAutoString string;
+          editContext->GetTextSubstring(i, i + 1, string);
+          aEvent->mReply->mOffsetAndData.emplace(i, string);
+          aEvent->mReply->mRect = rects[i];
+          // XXX: Should we adjust this based on where in the rect the point is
+          //      and the directionality of the text?
+          aEvent->mReply->mTentativeCaretOffset = Some(i);
+          return NS_OK;
+        }
+      }
+      return NS_OK;
+    }
+    // If failed (e.g. web app does not call updateCharacterBounds()), try
+    // to get the text from the DOM instead. But for canvas, that certainly
+    // won't work, so there's nothing we can do.
+    if (mRootElement->IsHTMLElement(nsGkAtoms::canvas)) {
+      return NS_ERROR_FAILURE;
+    }
+  }
 
   PresShell* presShell = mDocument->GetPresShell();
   NS_ENSURE_TRUE(presShell, NS_ERROR_FAILURE);

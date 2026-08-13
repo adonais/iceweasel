@@ -50,6 +50,7 @@ fn setup_glean(tempdir: Option<tempfile::TempDir>) -> tempfile::TempDir {
         app_display_version: "1.2.3".into(),
         channel: None,
         locale: None,
+        os_version: None,
     };
 
     glean::test_reset_glean(cfg, client_info, true);

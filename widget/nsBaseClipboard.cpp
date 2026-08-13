@@ -6,24 +6,27 @@
 
 #include "ContentAnalysis.h"
 #include "mozilla/Components.h"
-#include "mozilla/dom/BindingUtils.h"
-#include "mozilla/dom/CanonicalBrowsingContext.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/dom/Promise.h"
-#include "mozilla/dom/PromiseNativeHandler.h"
-#include "mozilla/dom/WindowGlobalParent.h"
-#include "mozilla/dom/WindowContext.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Services.h"
+#include "mozilla/StaticPrefs_clipboard.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_widget.h"
+#include "mozilla/dom/BindingUtils.h"
+#include "mozilla/dom/CanonicalBrowsingContext.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/MimeType.h"
+#include "mozilla/dom/Promise.h"
+#include "mozilla/dom/PromiseNativeHandler.h"
+#include "mozilla/dom/WindowContext.h"
+#include "mozilla/dom/WindowGlobalParent.h"
+#include "nsArrayUtils.h"
 #include "nsContentUtils.h"
+#include "nsError.h"
 #include "nsFocusManager.h"
 #include "nsIClipboardOwner.h"
 #include "nsIPromptService.h"
 #include "nsISupportsPrimitives.h"
-#include "nsError.h"
 #include "nsXPCOM.h"
 
 using mozilla::GenericPromise;
@@ -509,6 +512,9 @@ NS_IMETHODIMP nsBaseClipboard::GetDataIfSmallerThanNative(
   }
 
   for (const auto& flavor : flavors) {
+    if (!IsValidFlavor(flavor)) {
+      continue;
+    }
     auto dataOrError =
         GetNativeClipboardData(flavor, aWhichClipboard, aThreshold);
     if (dataOrError.isErr()) {
@@ -701,7 +707,27 @@ nsBaseClipboard::MaybeCreateGetRequestFromClipboardCache(
 
   nsTArray<nsCString> results;
   for (const auto& flavor : aFlavorList) {
+    bool addCustomFormats = flavor.EqualsLiteral(kWebCustomFormatMapType);
+
     for (const auto& transferableFlavor : transferableFlavors) {
+      // Don't expose invalid flavor.
+      // XXX: Currently we use the `nsITransferable` passed for clipboard write
+      //      as the clipboard cache directly, so it may contains types we don't
+      //      support, e.g. a web custom format with parameters.
+      //      Ideally, the invalid formats should not be stored in the clipboard
+      //      cache.
+      if (!IsValidFlavor(transferableFlavor)) {
+        continue;
+      }
+
+      // Add web custom formats
+      if (addCustomFormats &&
+          StringBeginsWith(transferableFlavor,
+                           nsLiteralCString(kWebCustomFormatPrefix))) {
+        MOZ_CLIPBOARD_LOG("    has custom flavor %s", transferableFlavor.get());
+        results.AppendElement(transferableFlavor);
+      }
+
       // XXX We need special check for image as we always put the
       // image as "native" on the clipboard.
       if (transferableFlavor.Equals(flavor) ||
@@ -775,6 +801,10 @@ NS_IMETHODIMP nsBaseClipboard::GetDataSnapshotSync(
 
   nsTArray<nsCString> results;
   for (const auto& flavor : aFlavorList) {
+    if (flavor.EqualsLiteral(kWebCustomFormatMapType)) {
+      results.AppendElements(GetWebCustomFormatsFromClipboard(aWhichClipboard));
+      continue;
+    }
     MOZ_CLIPBOARD_LOG("%s: Asking for MIME %s", __FUNCTION__, flavor.get());
     auto resultOrError = HasNativeClipboardDataMatchingFlavors(
         AutoTArray<nsCString, 1>{flavor}, aWhichClipboard);
@@ -876,6 +906,14 @@ nsBaseClipboard::HasDataMatchingFlavors(const nsTArray<nsCString>& aFlavorList,
     auto flavorsOrError = GetFlavorsFromClipboardCache(aWhichClipboard);
     if (flavorsOrError.isOk()) {
       for (const auto& transferableFlavor : flavorsOrError.unwrap()) {
+        // XXX: Currently we use the `nsITransferable` passed for clipboard
+        //      write as the clipboard cache directly, so it may contains types
+        //      we don't support, e.g. a web custom format with parameters.
+        //      Ideally, the invalid formats should not be stored in the
+        //      clipboard cache.
+        if (!IsValidFlavor(transferableFlavor)) {
+          continue;
+        }
         for (const auto& flavor : aFlavorList) {
           if (transferableFlavor.Equals(flavor)) {
             MOZ_CLIPBOARD_LOG("    has %s", flavor.get());
@@ -887,8 +925,15 @@ nsBaseClipboard::HasDataMatchingFlavors(const nsTArray<nsCString>& aFlavorList,
     }
   }
 
+  nsTArray<nsCString> validFlavors;
+  for (const auto& flavor : aFlavorList) {
+    if (IsValidFlavor(flavor)) {
+      validFlavors.AppendElement(flavor);
+    }
+  }
+
   auto resultOrError =
-      HasNativeClipboardDataMatchingFlavors(aFlavorList, aWhichClipboard);
+      HasNativeClipboardDataMatchingFlavors(validFlavors, aWhichClipboard);
   if (resultOrError.isErr()) {
     MOZ_CLIPBOARD_LOG(
         "%s: checking native clipboard data matching flavors falied.",
@@ -937,6 +982,16 @@ void nsBaseClipboard::AsyncHasNativeClipboardDataMatchingFlavors(
 
   nsTArray<nsCString> results;
   for (const auto& flavor : aFlavorList) {
+    if (!IsValidFlavor(flavor)) {
+      continue;
+    }
+    if (flavor.EqualsLiteral(kWebCustomFormatMapType)) {
+      // The map type is synthetic: expand it into the per-format flavors and
+      // don't also report the map type itself as present, otherwise consumers
+      // would see it duplicated in the snapshot's flavor list.
+      results.AppendElements(GetWebCustomFormatsFromClipboard(aWhichClipboard));
+      continue;
+    }
     auto resultOrError = HasNativeClipboardDataMatchingFlavors(
         AutoTArray<nsCString, 1>{flavor}, aWhichClipboard);
     if (resultOrError.isOk() && resultOrError.unwrap()) {
@@ -946,9 +1001,69 @@ void nsBaseClipboard::AsyncHasNativeClipboardDataMatchingFlavors(
   aCallback(std::move(results));
 }
 
+nsTArray<nsCString> nsBaseClipboard::GetWebCustomFormatsFromClipboard(
+    ClipboardType aWhichClipboard) {
+  MOZ_CLIPBOARD_LOG("%s: clipboard=%d", __FUNCTION__, aWhichClipboard);
+
+  nsTArray<nsCString> results;
+
+  // The clipboard.readCustomFormatsFromClipboard.enabled pref hides web
+  // custom flavors originating from other applications. We still want a page
+  // to read back its own writes regardless of the pref. To distinguish the
+  // two cases, consult the clipboard cache: SetData() populates the cache
+  // (and snapshots the native clipboard's sequence number) on every write,
+  // independent of widget.clipboard.use-cached-data.enabled, so a valid
+  // cache entry means this Firefox process owns the current clipboard data.
+  // When the cache is valid, allow the read; otherwise honour the pref.
+  // This makes the gate work consistently on Windows and Linux, where the
+  // read path doesn't otherwise consult the cache.
+  if (!GetClipboardCacheIfValid(aWhichClipboard) &&
+      !mozilla::StaticPrefs::
+          clipboard_readCustomFormatsFromClipboard_enabled()) {
+    return results;
+  }
+
+  auto customFormatsOrErr = GetNativeClipboardData(
+      nsLiteralCString(kWebCustomFormatMapType), aWhichClipboard);
+
+  if (customFormatsOrErr.isErr()) {
+    return results;
+  }
+
+  nsCOMPtr<nsIArray> customFormats =
+      do_QueryInterface(customFormatsOrErr.inspect());
+  if (!customFormats) {
+    return results;
+  }
+
+  nsCOMPtr<nsISimpleEnumerator> enumerator;
+  nsresult rv = customFormats->Enumerate(getter_AddRefs(enumerator));
+  if (NS_FAILED(rv)) {
+    return results;
+  }
+  bool hasMore = false;
+  while (NS_SUCCEEDED(enumerator->HasMoreElements(&hasMore)) && hasMore) {
+    nsCOMPtr<nsISupports> element;
+    rv = enumerator->GetNext(getter_AddRefs(element));
+    if (NS_FAILED(rv)) {
+      continue;
+    }
+    nsCOMPtr<nsISupportsCString> flavor = do_QueryInterface(element);
+    if (!flavor) {
+      continue;
+    }
+    nsAutoCString customFormat;
+    flavor->GetData(customFormat);
+    results.AppendElement(customFormat);
+  }
+
+  return results;
+}
+
 void nsBaseClipboard::AsyncGetNativeClipboardData(
     const nsACString& aFlavor, ClipboardType aWhichClipboard,
     GetNativeDataCallback&& aCallback) {
+  MOZ_ASSERT(IsValidFlavor(aFlavor));
   aCallback(GetNativeClipboardData(aFlavor, aWhichClipboard));
 }
 
@@ -957,6 +1072,19 @@ void nsBaseClipboard::ClearClipboardCache(ClipboardType aClipboardType) {
   const mozilla::UniquePtr<ClipboardCache>& cache = mCaches[aClipboardType];
   MOZ_ASSERT(cache);
   cache->Clear();
+}
+
+/*static*/
+bool nsBaseClipboard::IsValidFlavor(const nsACString& aFlavor) {
+  nsLiteralCString customPrefix(kWebCustomFormatPrefix);
+  if (!StringBeginsWith(aFlavor, customPrefix)) {
+    // return true for any other mime type, even if with parameters
+    return true;
+  }
+  nsDependentCSubstring mimeType(Substring(aFlavor, customPrefix.Length()));
+  RefPtr<CMimeType> parsedType = CMimeType::Parse(mimeType);
+
+  return parsedType && !parsedType->GetParameterCount();
 }
 
 void nsBaseClipboard::RequestUserConfirmation(
@@ -1483,6 +1611,50 @@ nsresult nsBaseClipboard::ClipboardCache::GetData(
   MOZ_ASSERT(mTransferable);
   for (const auto& flavor : flavors) {
     nsCOMPtr<nsISupports> dataSupports;
+    // Get web custom format map data from ClipboardCache::mTransferable.
+    // Actually, ClipboardCache::mTransferable does not have web custom format
+    // map flavor, kWebCustomFormatMapType, it is only saved in the clipboard.
+    // So, get all custom formats from ClipboardCache::mTransferable for web
+    // custom format map querying.
+    if (flavor.EqualsLiteral(kWebCustomFormatMapType)) {
+      nsTArray<nsCString> transferableFlavors;
+      if (NS_FAILED(mTransferable->FlavorsTransferableCanExport(
+              transferableFlavors))) {
+        return NS_ERROR_FAILURE;
+      }
+      nsCOMPtr<nsIMutableArray> customFormats =
+          do_CreateInstance(NS_ARRAY_CONTRACTID);
+      for (const auto& transferableFlavor : transferableFlavors) {
+        if (StringBeginsWith(transferableFlavor,
+                             nsLiteralCString(kWebCustomFormatPrefix))) {
+          // XXX: Currently we use the `nsITransferable` passed for clipboard
+          //      write as the clipboard cache directly, so it may contains
+          //      types we don't support, e.g. a web custom format with
+          //      parameters.
+          //      Ideally, the invalid formats should not be stored in the
+          //      clipboard cache.
+          if (!IsValidFlavor(transferableFlavor)) {
+            continue;
+          }
+          nsCOMPtr<nsISupportsCString> customFormat =
+              do_CreateInstance(NS_SUPPORTS_CSTRING_CONTRACTID);
+          customFormat->SetData(transferableFlavor);
+          customFormats->AppendElement(customFormat);
+        }
+      }
+      aTransferable->SetTransferData(flavor.get(), customFormats);
+      return NS_OK;
+    }
+
+    // XXX: Currently we use the `nsITransferable` passed for clipboard write
+    //      as the clipboard cache directly, so it may contains types we don't
+    //      support, e.g. a web custom format with parameters.
+    //      Ideally, the invalid formats should not be stored in the clipboard
+    //      cache.
+    if (!IsValidFlavor(flavor)) {
+      continue;
+    }
+
     // XXX Maybe we need special check for image as we always put the image as
     // "native" on the clipboard.
     if (NS_SUCCEEDED(mTransferable->GetTransferData(

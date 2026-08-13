@@ -389,8 +389,7 @@ class HTMLImageElement final : public nsGenericHTMLElement,
   void SetLazyLoading();
 
   bool IsInPicture() const {
-    return GetParentElement() &&
-           GetParentElement()->IsHTMLElement(nsGkAtoms::picture);
+    return mParent && mParent->IsHTMLElement(nsGkAtoms::picture);
   }
 
   void InvalidateAttributeMapping();

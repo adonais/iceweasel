@@ -56,7 +56,7 @@ add_task(async function test_detach_loading_page() {
   );
 
   info("Wait for content document to be created");
-  await BrowserTestUtils.waitForCondition(async function () {
+  await TestUtils.waitForCondition(async function () {
     return SpecialPowers.spawn(
       slowLoadingTab.linkedBrowser,
       [URL],

@@ -1,4 +1,5 @@
 ---
+name: mozlint
 description: You MUST use this skill when working with Firefox's linting infrastructure (mozlint), adding new linters, modifying existing linters, running linters, or dealing with linting issues.
 ---
 

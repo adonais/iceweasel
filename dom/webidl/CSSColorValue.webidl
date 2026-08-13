@@ -8,7 +8,7 @@
 
 // https://drafts.css-houdini.org/css-typed-om-1/#csscolorvalue
 // TODO: Expose to LayoutWorklet
-[Exposed=(Window, Worker, PaintWorklet), Pref="layout.css.typed-om.enabled"]
+[Exposed=(Window, Worker, PaintWorklet), Func="mozilla::dom::CSSColorValue::IsEnabled"]
 interface CSSColorValue : CSSStyleValue {
   [Exposed=Window, NewObject, Throws] static (CSSColorValue or CSSStyleValue) parse(UTF8String cssText);
 };

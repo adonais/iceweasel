@@ -3,8 +3,6 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SandboxInfo.h"
-#include "SandboxLogging.h"
-#include "LinuxSched.h"
 
 #include <errno.h>
 #include <stdlib.h>
@@ -14,6 +12,8 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "LinuxSched.h"
+#include "SandboxLogging.h"
 #include "base/posix/eintr_wrapper.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/SandboxSettings.h"

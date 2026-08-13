@@ -14,5 +14,19 @@ DIST_SUBDIR = ""
 # meant to be packaged in the add-on XPI file.
 
 FINAL_TARGET_FILES += [
-    "../extension/*",
+    "../extension/bg.js",
+    "../manifest.json",
+]
+
+FINAL_TARGET_FILES.breakages += [
+    "/browser/extensions/ipp-activator/extension/breakages/**"
+]
+FINAL_TARGET_FILES.conditions += [
+    "/browser/extensions/ipp-activator/extension/conditions/**"
+]
+FINAL_TARGET_FILES.api.parent += [
+    "/browser/extensions/ipp-activator/extension/api/parent/**"
+]
+FINAL_TARGET_FILES.api.schemas += [
+    "/browser/extensions/ipp-activator/extension/api/schemas/**"
 ]

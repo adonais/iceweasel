@@ -10,7 +10,6 @@
 #endif  // !NIGHTLY_BUILD || MOZ_NO_SMART_CARDS
 
 #include "mozilla/ProcInfo.h"
-
 #include "mozilla/ipc/UtilityProcessParent.h"
 #include "mozilla/psm/PPKCS11ModuleParent.h"
 

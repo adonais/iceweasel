@@ -1,0 +1,22 @@
+{
+  "label": "firesmoke.ca",
+  "bugs": {
+    "1977440": {
+      "issue": "broken-images",
+      "matches": ["*://firesmoke.ca/forecasts/*"]
+    }
+  },
+  "css": {
+    "fix_image_flickering": "img { -moz-image-decoding: sync }"
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "min_version": 154,
+      "css": {
+        "user_styles": true,
+        "which": ["fix_image_flickering"]
+      }
+    }
+  ]
+}

@@ -293,7 +293,7 @@ class RAPL {
     // Work out which RAPL MSRs this CPU model supports.
     int cpuModel;
     size_t size = sizeof(cpuModel);
-    if (sysctlbyname("machdep.cpu.model", &cpuModel, &size, NULL, 0) != 0) {
+    if (sysctlbyname("machdep.cpu.model", &cpuModel, &size, nullptr, 0) != 0) {
       Abort("sysctlbyname(\"machdep.cpu.model\") failed");
     }
 
@@ -362,7 +362,7 @@ class RAPL {
     // |mPkes|.
     int logicalcpu_max;
     size = sizeof(logicalcpu_max);
-    if (sysctlbyname("hw.logicalcpu_max", &logicalcpu_max, &size, NULL, 0) !=
+    if (sysctlbyname("hw.logicalcpu_max", &logicalcpu_max, &size, nullptr, 0) !=
         0) {
       Abort("sysctlbyname(\"hw.logicalcpu_max\") failed");
     }

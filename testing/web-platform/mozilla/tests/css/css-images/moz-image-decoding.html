@@ -1,0 +1,125 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="timeout" content="long">
+<title>-moz-image-decoding: sync forces synchronous decoding on paint</title>
+<link rel="help" href="https://bugzilla.mozilla.org/show_bug.cgi?id=2050819">
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<style>
+  /* Make the images decode by putting them in the viewport without affecting layout. */
+  .wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1px;
+    height: 1px;
+    overflow: clip;
+  }
+  .wrapper > img {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+</style>
+<body>
+<script>
+// Large enough (in size) that a default decode reliably does not finish within
+// the wait between revealing the images and measuring.
+const IMAGE_SIZE = 8000;
+
+// This makes the image large enough (in bytes) that FLAG_SYNC_DECODE_IF_FAST
+// sync-decoding doesn't trigger (image.mem.decode_bytes_at_a_time / 16KB).
+const NOISE_PATCH = 512;
+
+function makeNoiseData(ctx, size) {
+  const data = ctx.createImageData(size, size);
+  const CHUNK = 65536; // crypto.getRandomValues() per-call byte limit.
+  const tmp = new Uint8Array(CHUNK);
+  for (let i = 0; i < data.data.length; i += CHUNK) {
+    const n = Math.min(CHUNK, data.data.length - i);
+    crypto.getRandomValues(n === CHUNK ? tmp : tmp.subarray(0, n));
+    data.data.set(tmp.subarray(0, n), i);
+  }
+  return data;
+}
+
+async function makeImageURL() {
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = IMAGE_SIZE;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "blue";
+  ctx.fillRect(0, 0, IMAGE_SIZE, IMAGE_SIZE);
+  ctx.putImageData(makeNoiseData(ctx, NOISE_PATCH), 0, 0);
+  const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+  return URL.createObjectURL(blob);
+}
+
+function loadImage(parent, { className, decoding, src }) {
+  const img = new Image();
+  if (className) {
+    img.className = className;
+  }
+  if (decoding) {
+    img.decoding = decoding;
+  }
+  const loaded = new Promise((resolve, reject) => {
+    img.addEventListener("load", () => resolve(img), { once: true });
+    img.addEventListener("error", () => reject(new Error("image failed to load")), { once: true });
+  });
+  img.src = src;
+  parent.appendChild(img);
+  return loaded;
+}
+
+// Resolves to true if img.decode() settles within the current event-loop turn,
+// i.e. its decoded surface is already cached so the promise resolves during the
+// microtask checkpoint, before the setTimeout(0) macrotask gets to run.
+function decodesInSameTurn(img) {
+  let laterTurn = false;
+  setTimeout(() => { laterTurn = true; }, 0);
+  return img.decode().then(() => !laterTurn);
+}
+
+// Load an image (hidden), reveal it, wait for a paint (double rAF), then report
+// whether decode() resolved in the same turn. The image is loaded while
+// display:none so nothing is painted (and thus decoded) until we reveal it.
+async function decodesInSameTurnAfterPaint(t, spec) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "wrapper";
+  wrapper.style.display = "none";
+  document.body.appendChild(wrapper);
+  t.add_cleanup(() => wrapper.remove());
+
+  const src = await makeImageURL();
+  t.add_cleanup(() => URL.revokeObjectURL(src));
+
+  const img = await loadImage(wrapper, { ...spec, src });
+
+  wrapper.style.display = "block";
+  await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+  return decodesInSameTurn(img);
+}
+
+// -moz-image-decoding is chrome-only, so it is only parsed in UA/User/chrome
+// sheets. Inject it as a user sheet.
+const userCSS = "img.sync { -moz-image-decoding: sync; }";
+SpecialPowers.DOMWindowUtils.loadSheetUsingURIString(
+  "data:text/css," + encodeURIComponent(userCSS),
+  SpecialPowers.DOMWindowUtils.USER_SHEET);
+
+promise_test(async t => {
+  assert_true(await decodesInSameTurnAfterPaint(t, { className: "sync" }));
+}, "-moz-image-decoding:sync forces synchronous decoding while painting");
+
+promise_test(async t => {
+  assert_true(await decodesInSameTurnAfterPaint(t, { decoding: "sync" }));
+}, "decoding=sync forces synchronous decoding while painting");
+
+// Test that the same large image left to the default async decoding is not
+// available in the same turn after a paint.
+promise_test(async t => {
+  assert_false(await decodesInSameTurnAfterPaint(t, { decoding: "async" }));
+}, "decoding=async does not force synchronous decoding while painting");
+</script>
+</body>

@@ -3,8 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SocketProcessBackgroundChild.h"
-#include "SocketProcessLogging.h"
 
+#include "SocketProcessLogging.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "nsThreadUtils.h"
 

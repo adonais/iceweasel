@@ -6,13 +6,13 @@
 #define widget_windows_WinCompositorWidget_h
 
 #include "CompositorWidget.h"
+#include "FxROutputHandler.h"
 #include "mozilla/Atomics.h"
+#include "mozilla/Mutex.h"
 #include "mozilla/gfx/CriticalSection.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/layers/LayersTypes.h"
-#include "mozilla/Mutex.h"
 #include "mozilla/widget/WinCompositorWindowThread.h"
-#include "FxROutputHandler.h"
 #include "nsIWidget.h"
 
 class nsWindow;

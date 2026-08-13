@@ -29,10 +29,6 @@ const ALWAYS_INCLUDE_ELEMENTS = [
   "strong", "tt", "u", "var"
 ];
 
-const alwaysIncludeCommonAncestor = SpecialPowers.getBoolPref(
-  "dom.serializer.includeCommonAncestor.enabled"
-);
-
 const de = SpecialPowers.Ci.nsIDocumentEncoder;
 const encoder = SpecialPowers.Cu.createHTMLCopyEncoder();
 function testSelectAndCopy(aNode, aInclude) {
@@ -61,10 +57,10 @@ function testSelectAndCopy(aNode, aInclude) {
       let htmlContext = { value: '' };
       let htmlInfo = { value: '' };
       is(encoder.encodeToStringWithContext(htmlContext, htmlInfo),
-         alwaysIncludeCommonAncestor ? `<div id="container">${innerHTML}</div>` : innerHTML,
+         innerHTML,
          `Check serialized output`);
       is(htmlContext.value,
-         alwaysIncludeCommonAncestor ? `<html><body></body></html>` : `<html><body><div id="container"></div></body></html>`,
+         `<html><body><div id="container"></div></body></html>`,
          `Check serialized context`);
       is(htmlInfo.value, `0,0`, `Check serialized info`);
     });
@@ -84,9 +80,7 @@ function testSelectAndCopy(aNode, aInclude) {
       encoder.setSelection(selection);
 
       let expectedResult;
-      if (alwaysIncludeCommonAncestor) {
-        expectedResult = `<div id="container">${innerHTML}</div>`;
-      } else if (aInclude) {
+      if (aInclude) {
         expectedResult = innerHTML;
       } else {
         expectedResult = target.textContent;
@@ -97,8 +91,7 @@ function testSelectAndCopy(aNode, aInclude) {
       is(encoder.encodeToStringWithContext(htmlContext, htmlInfo), expectedResult,
          `Check serialized output`);
       is(htmlContext.value,
-         alwaysIncludeCommonAncestor ? `<html><body></body></html>`
-                                     : `<html><body><div id="container"><${aNode} id="target"></${aNode}></div></body></html>`,
+         `<html><body><div id="container"><${aNode} id="target"></${aNode}></div></body></html>`,
          `Check serialized context`);
       is(htmlInfo.value, `0,0`, `Check serialized info`);
     });

@@ -8,14 +8,13 @@
 #include <stdint.h>
 #include <windows.h>
 
-#include "mozilla/ipc/EnvironmentMap.h"
-#include "nsCOMPtr.h"
-#include "nsXULAppAPI.h"
-#include "nsISupportsImpl.h"
-
-#include "mozilla/ipc/UtilityProcessSandboxing.h"
-#include "mozilla/ipc/LaunchError.h"
 #include "mozilla/Result.h"
+#include "mozilla/ipc/EnvironmentMap.h"
+#include "mozilla/ipc/LaunchError.h"
+#include "mozilla/ipc/UtilityProcessSandboxing.h"
+#include "nsCOMPtr.h"
+#include "nsISupportsImpl.h"
+#include "nsXULAppAPI.h"
 
 namespace sandbox {
 class BrokerServices;

@@ -3,11 +3,13 @@
 # Mandatory fields for each entry are:
 # - description: A string describing the annotation
 # - type: the annotation type, currently `string`, `boolean`, `u32`, `u64`,
-#   `usize`, or `object`. `boolean` values are stringified to `1` for true and
-#   `0` for false. `object` types are a JSON object (not serialized), and may
-#   only be used for client-scoped annotations. They are only used internally
-#   by the crash reporting machinery; these values can't be accessed by the
-#   C++/JS APIs.
+#   `usize`, or `object`. `string` values that contain the empty string will
+#   not be stored in the crash report, no matter if the annotation was
+#   registered, only non-empty value will result in an entry. `boolean` values
+#   are stringified to `1` for true and `0` for false. `object` types are a
+#   JSON object (not serialized), and may only be used for client-scoped
+#   annotations. They are only used internally by the crash reporting
+#   machinery; these values can't be accessed by the C++/JS APIs.
 #
 # Additionally an entry can have the following optional fields:
 # - altname: A string that will be used when writing out the annotation to the
@@ -1465,6 +1467,12 @@ UnknownNetAddrSocketFamily:
   description: >
     An unknown network address family was requested to Necko. The value is the
     requested family number.
+  type: u32
+  scope: report
+
+UniFFILeakedCallbackId:
+  description: >
+    ID of the leaked callbacks when we force crash in `UniFFI.sys.mjs`
   type: u32
   scope: report
 

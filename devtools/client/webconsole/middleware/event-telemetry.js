@@ -5,6 +5,7 @@
 "use strict";
 
 const {
+  ORIGIN_FILTERS,
   FILTER_TEXT_SET,
   FILTER_TOGGLE,
   DEFAULT_FILTERS_RESET,
@@ -88,6 +89,12 @@ function filterChange({ action, state, oldState, telemetry }) {
   const activeFilters = [];
   const inactiveFilters = [];
   for (const [key, value] of Object.entries(filterState)) {
+    // The origin filters are only displayed in the browser console and the
+    // browser toolbox console, so they are not reported in the cross-console
+    // active/inactive lists.
+    if (ORIGIN_FILTERS.includes(key)) {
+      continue;
+    }
     if (value) {
       activeFilters.push(key);
     } else {

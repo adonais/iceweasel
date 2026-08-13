@@ -3,22 +3,22 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "LNAPermissionRequest.h"
-#include "mozilla/dom/ClientInfo.h"
-#include "nsGlobalWindowInner.h"
-#include "mozilla/dom/Document.h"
-#include "nsPIDOMWindow.h"
-#include "mozilla/Preferences.h"
-#include "nsContentUtils.h"
-#include "mozilla/glean/NetwerkMetrics.h"
 
+#include "mozilla/Components.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/dom/CanonicalBrowsingContext.h"
+#include "mozilla/dom/ClientInfo.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/FeaturePolicy.h"
 #include "mozilla/dom/WindowGlobalParent.h"
+#include "mozilla/glean/NetwerkMetrics.h"
+#include "nsContentUtils.h"
+#include "nsGlobalWindowInner.h"
+#include "nsIConsoleService.h"
 #include "nsIIOService.h"
 #include "nsIOService.h"
-#include "mozilla/dom/CanonicalBrowsingContext.h"
-#include "mozilla/dom/FeaturePolicy.h"
-#include "mozilla/Components.h"
-#include "nsIConsoleService.h"
 #include "nsIPermissionManager.h"
+#include "nsPIDOMWindow.h"
 #include "xpcpublic.h"
 
 namespace mozilla::net {

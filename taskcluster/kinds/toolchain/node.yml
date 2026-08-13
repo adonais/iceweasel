@@ -86,6 +86,16 @@ win64-node-22:
         fetch:
             - nodejs-22-win64
 
+win64-aarch64-node-22:
+    treeherder:
+        symbol: TWA64(node-22)
+    run:
+        toolchain-alias:
+            - win64-aarch64-node
+    fetches:
+        fetch:
+            - nodejs-22-win-arm64
+
 win32-node-22:
     treeherder:
         symbol: TW32(node-22)

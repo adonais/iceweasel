@@ -4,6 +4,10 @@
 
 "use strict";
 
+if (typeof window.netscape != "undefined") {
+  delete window.netscape;
+}
+
 if (typeof window.InstallTrigger != "undefined") {
   delete window.InstallTrigger;
 }

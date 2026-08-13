@@ -957,8 +957,6 @@ RefPtr<PrintPromise> CanonicalBrowsingContext::Print(
 #ifndef NS_PRINTING
   return PrintPromise::CreateAndReject(NS_ERROR_NOT_AVAILABLE, __func__);
 #else
-// Content analysis is not supported on non-Windows platforms.
-#  if defined(XP_WIN)
   bool needContentAnalysis = false;
   nsCOMPtr<nsIContentAnalysis> contentAnalysis =
       mozilla::components::nsIContentAnalysis::Service();
@@ -1001,7 +999,6 @@ RefPtr<PrintPromise> CanonicalBrowsingContext::Print(
             });
     return done;
   }
-#  endif
   return PrintWithNoContentAnalysis(aPrintSettings, false, nullptr);
 #endif
 }
@@ -1716,9 +1713,23 @@ void CanonicalBrowsingContext::DispatchWheelZoomChange(bool aIncrease) {
 }
 
 void CanonicalBrowsingContext::CanonicalDiscard() {
+  // Top (tab) BC case: mTabMediaController is only ever created on the
+  // top-level BC, so this tears down the tab's own controller.
   if (mTabMediaController) {
     mTabMediaController->Shutdown();
     mTabMediaController = nullptr;
+  }
+
+  // Child BC case: a child never owns mTabMediaController, but the tab's
+  // controller may still hold audibility state for this context. Clear it now
+  // so audiblechange fires correctly when an audible iframe is removed.
+  // GetMediaController() forwards to Top() for a child, so it returns the tab's
+  // controller (the one handled above for a top BC) rather than recreating a
+  // controller for this child.
+  if (!IsTop()) {
+    if (RefPtr<MediaController> mc = GetMediaController()) {
+      mc->NotifyBrowsingContextDiscarded(Id());
+    }
   }
 
   if (mCurrentLoad) {
@@ -1879,13 +1890,6 @@ void CanonicalBrowsingContext::NotifyStartDelayedAutoplayMedia() {
   });
 }
 
-void CanonicalBrowsingContext::NotifyMediaMutedChanged(bool aMuted,
-                                                       ErrorResult& aRv) {
-  MOZ_ASSERT(!GetParent(),
-             "Notify media mute change on non top-level context!");
-  SetMuted(aMuted, aRv);
-}
-
 uint32_t CanonicalBrowsingContext::CountSiteOrigins(
     GlobalObject& aGlobal,
     const Sequence<OwningNonNull<BrowsingContext>>& aRoots) {
@@ -1925,6 +1929,17 @@ void CanonicalBrowsingContext::UpdateMediaControlAction(
   ContentMediaControlKeyHandler::HandleMediaControlAction(this, aAction);
   Group()->EachParent([&](ContentParent* aParent) {
     (void)aParent->SendUpdateMediaControlAction(this, aAction);
+  });
+}
+
+void CanonicalBrowsingContext::UpdateMediaSessionInterrupt(
+    AudioFocusInterruptAction aAction) {
+  if (IsDiscarded()) {
+    return;
+  }
+  ContentMediaControlKeyHandler::HandleAudioFocusInterrupt(this, aAction);
+  Group()->EachParent([&](ContentParent* aParent) {
+    (void)aParent->SendUpdateMediaSessionInterrupt(this, aAction);
   });
 }
 

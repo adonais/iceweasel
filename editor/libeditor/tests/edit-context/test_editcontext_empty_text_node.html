@@ -1,0 +1,33 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test that empty text node is not deleted in EditContext editor</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="/tests/SimpleTest/EventUtils.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<div>a</div>
+<script>
+const host = document.querySelector('div');
+const textNode = host.firstChild;
+const editContext = new EditContext({text: host.textContent});
+host.editContext = editContext;
+editContext.addEventListener("textupdate", e => {
+  textNode.replaceData(e.updateRangeStart, e.updateRangeEnd - e.updateRangeStart, e.text);
+  getSelection().setBaseAndExtent(textNode, e.selectionStart, textNode, e.selectionEnd);
+});
+add_task(async () => {
+  await SimpleTest.promiseFocus();
+  host.focus();
+  getSelection().collapse(host, 1);
+  editContext.updateSelection(1, 1);
+  synthesizeKey('KEY_Backspace');
+  is(editContext.text, '', 'Text should be deleted from EditContext.text');
+  is(textNode.data, '', 'Text content in DOM should have been updated.');
+  is(host.firstChild, textNode, 'Empty text node should not be removed from host element');
+});
+</script>
+</body>
+</html>

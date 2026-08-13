@@ -3,17 +3,19 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "Cookie.h"
+
+#include <cstdlib>
+
 #include "CookieCommons.h"
-#include "mozilla/HashFunctions.h"
 #include "CookieStorage.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Encoding.h"
+#include "mozilla/HashFunctions.h"
+#include "mozilla/StaticPrefs_network.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/glean/NetwerkMetrics.h"
-#include "mozilla/StaticPrefs_network.h"
 #include "nsIURLParser.h"
 #include "nsURLHelper.h"
-#include <cstdlib>
 
 namespace mozilla {
 namespace net {

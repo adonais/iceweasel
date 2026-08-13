@@ -2,13 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <gio/gio.h>
 #include "DbusWifiScanner.h"
-#include "nsWifiAccessPoint.h"
+
+#include <gio/gio.h>
+
+#include "mozilla/GRefPtr.h"
 #include "mozilla/GUniquePtr.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/GRefPtr.h"
 #include "nsAppShell.h"
+#include "nsWifiAccessPoint.h"
 
 namespace mozilla {
 

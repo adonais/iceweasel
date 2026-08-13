@@ -4,10 +4,6 @@
 
 package org.mozilla.fenix.ui.efficiency.logging
 
-import org.mozilla.fenix.ui.efficiency.factory.logging.StepDescriptor
-import org.mozilla.fenix.ui.efficiency.factory.logging.StepLogger
-import org.mozilla.fenix.ui.efficiency.factory.steps.StepResult
-
 /**
  * TimedReporter
  *

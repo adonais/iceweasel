@@ -7,6 +7,7 @@ package org.mozilla.fenix.ui
 import androidx.core.net.toUri
 import org.junit.Rule
 import org.junit.Test
+import org.mozilla.fenix.customannotations.Converted
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
@@ -65,6 +66,11 @@ class CrashReportingTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1681928
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.CrashReportingTest#useAppWhileTabIsCrashedTest"],
+        bug = 2046392,
+        since = "2026-06",
+    )
     @SmokeTest
     @Test
     fun useAppWhileTabIsCrashedTest() {

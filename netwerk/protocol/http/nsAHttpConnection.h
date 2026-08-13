@@ -5,13 +5,13 @@
 #ifndef nsAHttpConnection_h_
 #define nsAHttpConnection_h_
 
-#include "mozilla/net/DNS.h"
-#include "nsHttp.h"
-#include "nsISupports.h"
-#include "nsAHttpTransaction.h"
-#include "WebTransportSessionBase.h"
 #include "HttpTrafficAnalyzer.h"
+#include "WebTransportSessionBase.h"
+#include "mozilla/net/DNS.h"
+#include "nsAHttpTransaction.h"
+#include "nsHttp.h"
 #include "nsIRequest.h"
+#include "nsISupports.h"
 
 class nsIAsyncInputStream;
 class nsIAsyncOutputStream;

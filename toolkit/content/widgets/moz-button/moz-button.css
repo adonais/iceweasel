@@ -7,10 +7,6 @@
 }
 
 :host {
-  --button-alignment: center;
-  --button-badge-background-color: var(--color-accent-attention);
-  --button-badge-size: 6px;
-
   display: inline-block;
   height: fit-content;
   width: fit-content;
@@ -83,23 +79,25 @@ button {
   /* Ensure font-size isn't overridden by widget styling (e.g. in forms.css) */
   font-size: var(--button-font-size);
   display: flex;
-  justify-content: var(--button-alignment);
+  justify-content: var(--button-content-alignment);
   align-items: center;
   position: relative;
 
   &[size="small"] {
     min-height: var(--button-min-height-small);
-    padding-block: var(--space-xxsmall);
+    padding: var(--button-padding-block-small) var(--button-padding-inline-small);
     font-size: var(--button-font-size-small);
+  }
+
+  &[size="large"] {
+    min-height: var(--button-min-height-large);
+    padding: var(--button-padding-block-large) var(--button-padding-inline-large);
   }
 
   &.badged::after {
     content: "";
     position: absolute;
-    /* The size of the dot is in between dimension token sizes. */
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     height: var(--button-badge-size);
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     width: var(--button-badge-size);
     inset-block-start: var(--space-xxsmall);
     inset-inline-end: var(--space-xxsmall);
@@ -270,7 +268,7 @@ button {
 
   &[type~="menuitem"] {
     --button-font-weight: normal;
-    --button-alignment: inline-start;
+    --button-content-alignment: inline-start;
     --button-padding: var(--panel-menuitem-padding);
     --button-border-radius: var(--panel-menuitem-border-radius);
     --focus-outline-offset: -2px;
@@ -308,6 +306,36 @@ button {
     }
   }
 
+  &[type~="muted"] {
+    background-color: var(--button-background-color-muted);
+    border-color: var(--button-border-color-muted);
+    color: var(--button-text-color-muted);
+
+    button:hover > & {
+      background-color: var(--button-background-color-muted-hover);
+      border-color: var(--button-border-color-muted-hover);
+      color: var(--button-text-color-muted-hover);
+    }
+
+    button:hover:active:not(:disabled) > & {
+      background-color: var(--button-background-color-muted-active);
+      border-color: var(--button-border-color-muted-active);
+      color: var(--button-text-color-muted-active);
+    }
+
+    button:is([aria-expanded="true"], [aria-pressed="true"]):not(:hover, :disabled) > & {
+      background-color: var(--button-background-color-muted-selected);
+      border-color: var(--button-border-color-muted-selected);
+      color: var(--button-text-color-muted-selected);
+    }
+
+    button:disabled > & {
+      background-color: var(--button-background-color-muted-disabled);
+      border-color: var(--button-border-color-muted-disabled);
+      color: var(--button-text-color-muted-disabled);
+    }
+  }
+
   &.labelled {
     gap: var(--space-small);
   }
@@ -327,6 +355,11 @@ button {
     &[size="small"] {
       width: var(--button-size-icon-small);
       height: var(--button-size-icon-small);
+    }
+
+    &[size="large"] {
+      width: var(--button-size-icon-large);
+      height: var(--button-size-icon-large);
     }
   }
 

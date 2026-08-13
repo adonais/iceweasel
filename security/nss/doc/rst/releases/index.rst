@@ -8,6 +8,7 @@ Release Notes
    :glob:
    :hidden:
 
+   nss_3_126.rst
    nss_3_125.rst
    nss_3_124.rst
    nss_3_123_1.rst
@@ -113,8 +114,8 @@ Release Notes
 
 .. note::
 
-   **NSS 3.125** is the latest version of NSS.
-   Complete release notes are available here: :ref:`mozilla_projects_nss_nss_3_125_release_notes`
+   **NSS 3.126** is the latest version of NSS.
+   Complete release notes are available here: :ref:`mozilla_projects_nss_nss_3_126_release_notes`
 
    **NSS 3.112.5 (ESR)** is the latest ESR version of NSS.
    Complete release notes are available here: :ref:`mozilla_projects_nss_nss_3_112_5_release_notes`

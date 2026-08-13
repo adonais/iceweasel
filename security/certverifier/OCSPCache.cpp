@@ -23,10 +23,10 @@
 #include "OCSPCache.h"
 
 #include "NSSCertDBTrustDomain.h"
-#include "pk11pub.h"
+#include "ScopedNSSTypes.h"
 #include "mozilla/Logging.h"
 #include "mozpkix/pkixnss.h"
-#include "ScopedNSSTypes.h"
+#include "pk11pub.h"
 #include "secerr.h"
 
 extern mozilla::LazyLogModule gCertVerifierLog;
@@ -56,25 +56,22 @@ static SECStatus DigestLength(UniquePK11Context& context, uint32_t length) {
 // Let derPublicKey be the DER encoding of the public key of certID.
 // Let serialNumber be the bytes of the serial number of certID.
 // Let serialNumberLen be the number of bytes of serialNumber.
-// Let firstPartyDomain be the first party domain of originAttributes.
-// It is only non-empty when "privacy.firstParty.isolate" is enabled, in order
-// to isolate OCSP cache by first party.
-// Let firstPartyDomainLen be the number of bytes of firstPartyDomain.
-// Let partitionKey be the partition key of originAttributes.
-// Let partitionKeyLen be the number of bytes of partitionKey.
-// The value calculated is SHA384(derIssuer || derPublicKey || serialNumberLen
-// || serialNumber || firstPartyDomainLen || firstPartyDomain || partitionKeyLen
-// || partitionKey).
+// Let originAttributesSuffix be the canonical serialization of originAttributes
+// Let originAttributesSuffixLen be the number of bytes of
+// originAttributesSuffix. The value calculated is SHA384(derIssuer ||
+// derPublicKey || serialNumberLen
+// || serialNumber || originAttributesSuffixLen || originAttributesSuffix).
 // Because the DER encodings include the length of the data encoded, and we also
-// include the length of serialNumber and originAttributes, there do not exist
-// A(derIssuerA, derPublicKeyA, serialNumberLenA, serialNumberA,
-// originAttributesLenA, originAttributesA) and B(derIssuerB, derPublicKeyB,
-// serialNumberLenB, serialNumberB, originAttributesLenB, originAttributesB)
-// such that the concatenation of each tuple results in the same string of
-// bytes but where each part in A is not equal to its counterpart in B. This is
-// important because as a result it is computationally infeasible to find
-// collisions that would subvert this cache (given that SHA384 is a
-// cryptographically-secure hash function).
+// include the length of serialNumber and originAttributesSuffix, there do not
+// exist A(derIssuerA, derPublicKeyA, serialNumberLenA, serialNumberA,
+// originAttributesSuffixLenA, originAttributesSuffixA) and
+// B(derIssuerB, derPublicKeyB, serialNumberLenB, serialNumberB,
+// originAttributesSuffixLenB, originAttributesSuffixB) such that the
+// concatenation of each tuple results in the same string of bytes but where
+// each part in A is not equal to its counterpart in B. This is important
+// because as a result it is computationally infeasible to find collisions that
+// would subvert this cache (given that SHA384 is a cryptographically-secure
+// hash function).
 static SECStatus CertIDHash(SHA384Buffer& buf, const CertID& certID,
                             const OriginAttributes& originAttributes) {
   UniquePK11Context context(PK11_CreateDigestContext(SEC_OID_SHA384));
@@ -108,34 +105,21 @@ static SECStatus CertIDHash(SHA384Buffer& buf, const CertID& certID,
     return rv;
   }
 
-  auto populateOriginAttributesKey = [&context](const nsString& aKey) {
-    NS_ConvertUTF16toUTF8 key(aKey);
-
-    if (key.IsEmpty()) {
-      return SECSuccess;
-    }
-
-    SECStatus rv = DigestLength(context, key.Length());
+  nsAutoCString suffix;
+  originAttributes.CreateSuffix(suffix);
+  rv = DigestLength(context, suffix.Length());
+  if (rv != SECSuccess) {
+    return rv;
+  }
+  if (!suffix.IsEmpty()) {
+    rv = PK11_DigestOp(context.get(),
+                       BitwiseCast<const unsigned char*>(suffix.get()),
+                       suffix.Length());
     if (rv != SECSuccess) {
       return rv;
     }
-
-    return PK11_DigestOp(context.get(),
-                         BitwiseCast<const unsigned char*>(key.get()),
-                         key.Length());
-  };
-
-  // OCSP should be isolated by firstPartyDomain and partitionKey, but not
-  // by containers.
-  rv = populateOriginAttributesKey(originAttributes.mFirstPartyDomain);
-  if (rv != SECSuccess) {
-    return rv;
   }
 
-  rv = populateOriginAttributesKey(originAttributes.mPartitionKey);
-  if (rv != SECSuccess) {
-    return rv;
-  }
   uint32_t outLen = 0;
   rv = PK11_DigestFinal(context.get(), buf, &outLen, SHA384_LENGTH);
   if (outLen != SHA384_LENGTH) {
@@ -146,6 +130,7 @@ static SECStatus CertIDHash(SHA384Buffer& buf, const CertID& certID,
 
 Result OCSPCache::Entry::Init(const CertID& aCertID,
                               const OriginAttributes& aOriginAttributes) {
+  mIsPrivateBrowsing = aOriginAttributes.IsPrivateBrowsing();
   SECStatus srv = CertIDHash(mIDHash, aCertID, aOriginAttributes);
   if (srv != SECSuccess) {
     return MapPRErrorCodeToResult(PR_GetError());
@@ -188,11 +173,10 @@ bool OCSPCache::FindInternal(const CertID& aCertID,
 
 static inline void LogWithCertID(const char* aMessage, const CertID& aCertID,
                                  const OriginAttributes& aOriginAttributes) {
-  nsAutoString info = u"firstPartyDomain: "_ns +
-                      aOriginAttributes.mFirstPartyDomain +
-                      u", partitionKey: "_ns + aOriginAttributes.mPartitionKey;
+  nsAutoCString originAttributesSuffix;
+  aOriginAttributes.CreateSuffix(originAttributesSuffix);
   MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-          (aMessage, &aCertID, NS_ConvertUTF16toUTF8(info).get()));
+          (aMessage, &aCertID, originAttributesSuffix.get()));
 }
 
 void OCSPCache::MakeMostRecentlyUsed(size_t aIndex,
@@ -335,6 +319,19 @@ void OCSPCache::Clear() {
   }
   // Then remove the pointers themselves.
   mEntries.clearAndFree();
+}
+
+void OCSPCache::ClearPrivateBrowsing() {
+  MutexAutoLock lock(mMutex);
+  MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
+          ("OCSPCache::ClearPrivateBrowsing: clearing private entries"));
+  mEntries.eraseIf([](Entry* aEntry) {
+    if (aEntry->mIsPrivateBrowsing) {
+      delete aEntry;
+      return true;
+    }
+    return false;
+  });
 }
 
 }  // namespace psm

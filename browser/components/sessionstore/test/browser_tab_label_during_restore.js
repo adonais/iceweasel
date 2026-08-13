@@ -31,7 +31,7 @@ add_task(async function () {
     }
     tab.addEventListener("TabAttrModified", TabAttrModifiedListener);
     return async () => {
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => seenLabels.length == expectedLabels.length,
         "saw " + seenLabels.length + " TabAttrModified events"
       );

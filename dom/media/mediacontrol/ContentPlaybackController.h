@@ -12,6 +12,7 @@
 namespace mozilla::dom {
 
 class MediaSession;
+enum class AudioFocusInterruptAction : uint8_t;
 
 /**
  * This interface is used to handle different playback control actions in the
@@ -70,6 +71,8 @@ class ContentMediaControlKeyHandler {
  public:
   static void HandleMediaControlAction(BrowsingContext* aContext,
                                        const MediaControlAction& aAction);
+  static void HandleAudioFocusInterrupt(BrowsingContext* aContext,
+                                        AudioFocusInterruptAction aAction);
 };
 
 }  // namespace mozilla::dom

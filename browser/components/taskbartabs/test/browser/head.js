@@ -26,7 +26,7 @@ async function openTaskbarTabWindow(aTab = null, aOptions = null) {
   const url = Services.io.newURI("https://example.com");
   const userContextId = aOptions?.userContextId ?? 0;
 
-  const registry = new TaskbarTabsRegistry();
+  const registry = createInMemoryRegistry();
   const taskbarTab = createTaskbarTab(registry, url, userContextId);
   const windowManager = new TaskbarTabsWindowManager();
 
@@ -62,4 +62,21 @@ function createTaskbarTab(aRegistry, ...args) {
   }
 
   return check(result);
+}
+
+/**
+ * Creates a TaskbarTabsRegistry that doesn't save anything on disk.
+ *
+ * (This function is also in xpcshell/head.js.)
+ *
+ * @returns {TaskbarTabsRegistry}
+ *   The newly-created registry, which will be empty.
+ */
+function createInMemoryRegistry() {
+  return new TaskbarTabsRegistry(
+    {
+      save: () => {},
+    },
+    []
+  );
 }

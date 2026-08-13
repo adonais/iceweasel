@@ -3,7 +3,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { setTimeout } from "resource://gre/modules/Timer.sys.mjs";
-import { BrowserTestUtils } from "resource://testing-common/BrowserTestUtils.sys.mjs";
+import { TestUtils } from "resource://testing-common/TestUtils.sys.mjs";
 
 export var WindowSize = {
   init() {
@@ -59,7 +59,7 @@ export var WindowSize = {
 
 function toggleFullScreen(browserWindow, wantsFS) {
   browserWindow.fullScreen = wantsFS;
-  return BrowserTestUtils.waitForCondition(() => {
+  return TestUtils.waitForCondition(() => {
     return (
       wantsFS ==
       browserWindow.document.documentElement.hasAttribute("inFullscreen")

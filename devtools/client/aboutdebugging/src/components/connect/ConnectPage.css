@@ -7,25 +7,21 @@
 }
 
 /*
- *   +--------+----------------------+
- *   | USB    |            |<button> |
- *   +--------+            |         |
- *   | status |            |         |
- *   +--------+----------------------+
+ *   +--------+------------+
+ *   | USB    |            |
+ *   +--------+            |
+ *   | status |            |
+ *   +--------+------------+
  */
 .connect-page__usb-section__heading {
   display: grid;
   align-items: center;
   grid-template-areas:
-    "title  . toggle"
-    "status . toggle";
-  grid-template-columns: auto 1fr auto;
+    "title  ."
+    "status .";
+  grid-template-columns: auto 1fr;
   grid-column-gap: calc(var(--base-unit) * 2);
   grid-row-gap: var(--base-unit);
-}
-
-.connect-page__usb-section__heading__toggle {
-  grid-area: toggle;
 }
 
 .connect-page__usb-section__heading__title {
@@ -37,7 +33,7 @@
   line-height: 1;
   font-size: var(--caption-20-font-size);
   font-weight: var(--caption-20-font-weight, normal);
-  color: var(--secondary-text-color);
+  color: var(--text-color-deemphasized);
 }
 
 .connect-page__troubleshoot {

@@ -8,6 +8,7 @@
 #  include <cstdint>
 
 class nsIPrincipal;
+class nsPIDOMWindowInner;
 
 namespace mozilla::dom {
 
@@ -39,6 +40,11 @@ class AutoplayPolicy {
 
   // Returns whether a given AudioContext is allowed to play.
   static bool IsAllowedToPlay(const dom::AudioContext& aContext);
+
+  // Returns true while the platform has interrupted the tab owning aWindow (an
+  // audio-focus loss) and no audible sound may start, so the page must not
+  // begin or resume playback on its own.
+  static bool IsAudioInterruptedByPlatform(nsPIDOMWindowInner* aWindow);
 
   // Return the value of the autoplay permission for given principal. The return
   // value can be 0=unknown, 1=allow, 2=block audio, 5=block audio and video.

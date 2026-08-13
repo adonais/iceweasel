@@ -100,13 +100,15 @@ mozInlineSpellStatus::mozInlineSpellStatus(
     mozInlineSpellChecker* aSpellChecker, const Operation aOp,
     RefPtr<nsRange>&& aRange, RefPtr<nsRange>&& aCreatedRange,
     RefPtr<nsRange>&& aAnchorRange, const bool aForceNavigationWordCheck,
-    const int32_t aNewNavigationPositionOffset)
+    const int32_t aNewNavigationPositionOffset,
+    SetAnchorToCaret aSetAnchorToCaret)
     : mSpellChecker(aSpellChecker),
       mRange(std::move(aRange)),
       mOp(aOp),
       mCreatedRange(std::move(aCreatedRange)),
       mAnchorRange(std::move(aAnchorRange)),
       mForceNavigationWordCheck(aForceNavigationWordCheck),
+      mSetAnchorToCaret(aSetAnchorToCaret),
       mNewNavigationPositionOffset(aNewNavigationPositionOffset) {}
 
 // mozInlineSpellStatus::CreateForEditorChange
@@ -296,14 +298,15 @@ UniquePtr<mozInlineSpellStatus> mozInlineSpellStatus::CreateForSelection(
 
 // static
 UniquePtr<mozInlineSpellStatus> mozInlineSpellStatus::CreateForRange(
-    mozInlineSpellChecker& aSpellChecker, nsRange* aRange) {
+    mozInlineSpellChecker& aSpellChecker, nsRange* aRange,
+    SetAnchorToCaret aSetAnchorToCaret) {
   MOZ_LOG(sInlineSpellCheckerLog, LogLevel::Debug,
           ("%s: range=%p", __FUNCTION__, aRange));
 
   UniquePtr<mozInlineSpellStatus> status{
       /* The constructor is `private`, hence the explicit allocation. */
       new mozInlineSpellStatus{&aSpellChecker, eOpChange, nullptr, nullptr,
-                               nullptr, false, 0}};
+                               nullptr, false, 0, aSetAnchorToCaret}};
 
   status->mRange = aRange;
   return status;
@@ -329,6 +332,20 @@ nsresult mozInlineSpellStatus::FinishInitOnEvent(
     rv = mSpellChecker->MakeSpellCheckRange(nullptr, 0, nullptr, 0,
                                             getter_AddRefs(mRange));
     NS_ENSURE_SUCCESS(rv, rv);
+  }
+  if (mSetAnchorToCaret == SetAnchorToCaret::Yes) {
+    // Set anchor range to caret position - we do this now instead of when
+    // creating the status in case the web app moved the selection in the
+    // meantime (especially likely for EditContext).
+    MOZ_ASSERT(!mAnchorRange);
+    if (Document* doc = GetDocument()) {
+      Selection* selection = doc->GetSelection(IgnoreErrors());
+      if (selection && selection->RangeCount() && selection->IsCollapsed()) {
+        mAnchorRange = selection->GetRangeAt(0);
+        mSpellChecker->mNeedsCheckAfterNavigation = true;
+        mSpellChecker->SaveCurrentSelectionPosition();
+      }
+    }
   }
 
   switch (mOp) {
@@ -898,6 +915,20 @@ nsresult mozInlineSpellChecker::SpellCheckRange(nsRange* aRange) {
 
   UniquePtr<mozInlineSpellStatus> status =
       mozInlineSpellStatus::CreateForRange(*this, aRange);
+  return ScheduleSpellCheck(std::move(status));
+}
+
+nsresult mozInlineSpellChecker::SpellCheckRangeIgnoringWordAtCaret(
+    nsRange* aRange) {
+  if (!mSpellCheck) {
+    NS_WARNING_ASSERTION(
+        mPendingSpellCheck,
+        "Trying to spellcheck, but checking seems to be disabled");
+    return NS_ERROR_NOT_INITIALIZED;
+  }
+
+  UniquePtr<mozInlineSpellStatus> status = mozInlineSpellStatus::CreateForRange(
+      *this, aRange, mozInlineSpellStatus::SetAnchorToCaret::Yes);
   return ScheduleSpellCheck(std::move(status));
 }
 

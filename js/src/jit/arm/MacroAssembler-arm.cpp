@@ -2087,14 +2087,16 @@ FaultingCodeOffset MacroAssemblerARMCompat::store32(Register src,
   return storePtr(src, address);
 }
 
-void MacroAssemblerARMCompat::store32(Imm32 src, const Address& address) {
+FaultingCodeOffset MacroAssemblerARMCompat::store32(Imm32 src,
+                                                    const Address& address) {
   ScratchRegisterScope scratch(asMasm());
   SecondScratchRegisterScope scratch2(asMasm());
   move32(src, scratch);
-  ma_str(scratch, address, scratch2);
+  return ma_str(scratch, address, scratch2);
 }
 
-void MacroAssemblerARMCompat::store32(Imm32 imm, const BaseIndex& dest) {
+FaultingCodeOffset MacroAssemblerARMCompat::store32(Imm32 imm,
+                                                    const BaseIndex& dest) {
   Register base = dest.base;
   uint32_t scale = Imm32::ShiftOf(dest.scale).value;
 
@@ -2104,10 +2106,12 @@ void MacroAssemblerARMCompat::store32(Imm32 imm, const BaseIndex& dest) {
   if (dest.offset != 0) {
     ma_add(base, Imm32(dest.offset), scratch, scratch2);
     ma_mov(imm, scratch2);
-    ma_str(scratch2, DTRAddr(scratch, DtrRegImmShift(dest.index, LSL, scale)));
+    return ma_str(scratch2,
+                  DTRAddr(scratch, DtrRegImmShift(dest.index, LSL, scale)));
   } else {
     ma_mov(imm, scratch);
-    ma_str(scratch, DTRAddr(base, DtrRegImmShift(dest.index, LSL, scale)));
+    return ma_str(scratch,
+                  DTRAddr(base, DtrRegImmShift(dest.index, LSL, scale)));
   }
 }
 
@@ -2129,12 +2133,14 @@ FaultingCodeOffset MacroAssemblerARMCompat::store32(Register src,
   return fco;
 }
 
-void MacroAssemblerARMCompat::storePtr(ImmWord imm, const Address& address) {
-  store32(Imm32(imm.value), address);
+FaultingCodeOffset MacroAssemblerARMCompat::storePtr(ImmWord imm,
+                                                     const Address& address) {
+  return store32(Imm32(imm.value), address);
 }
 
-void MacroAssemblerARMCompat::storePtr(ImmWord imm, const BaseIndex& address) {
-  store32(Imm32(imm.value), address);
+FaultingCodeOffset MacroAssemblerARMCompat::storePtr(ImmWord imm,
+                                                     const BaseIndex& address) {
+  return store32(Imm32(imm.value), address);
 }
 
 void MacroAssemblerARMCompat::storePtr(ImmPtr imm, const Address& address) {
@@ -6624,8 +6630,7 @@ void MacroAssemblerARM::wasmStoreImpl(const wasm::MemoryAccessDesc& access,
         }
       }
     } else {
-      bool isSigned = type == Scalar::Uint32 ||
-                      type == Scalar::Int32;  // see AsmJSStoreHeap;
+      bool isSigned = type == Scalar::Uint32 || type == Scalar::Int32;
       Register val = value.gpr();
 
       store = ma_dataTransferN(IsStore, 8 * byteSize /* bits */, isSigned,

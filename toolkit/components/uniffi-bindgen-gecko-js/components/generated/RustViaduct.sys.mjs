@@ -38,12 +38,69 @@ export var UnitTestObjs = {
 export function allowAndroidEmulatorLoopback() {
    
 const result = UniFFIScaffolding.callSync(
-    148, // uniffi_viaduct_fn_func_allow_android_emulator_loopback
+    205, // uniffi_viaduct_fn_func_allow_android_emulator_loopback
 )
 return handleRustResult(
     result,
     (result) => undefined,
     null,
+)
+}
+
+/**
+ * Clear all OHTTP channel configurations
+ */
+export function clearOhttpChannels() {
+   
+const result = UniFFIScaffolding.callSync(
+    206, // uniffi_viaduct_fn_func_clear_ohttp_channels
+)
+return handleRustResult(
+    result,
+    (result) => undefined,
+    null,
+)
+}
+
+/**
+ * Configure default OHTTP channels for common Mozilla services
+ * This sets up:
+ * - "relay1": For general telemetry and services through Mozilla's shared gateway
+ * - "merino": For Firefox Suggest recommendations through Merino's dedicated relay/gateway
+ */
+export function configureDefaultOhttpChannels() {
+   
+const result = UniFFIScaffolding.callSync(
+    207, // uniffi_viaduct_fn_func_configure_default_ohttp_channels
+)
+return handleRustResult(
+    result,
+    (result) => undefined,
+    FfiConverterTypeViaductError.lift.bind(FfiConverterTypeViaductError),
+)
+}
+
+/**
+ * Configure an OHTTP channel with the given configuration
+ * If an existing OHTTP config exists with the same name, it will be overwritten
+ * @param {string} channel
+ * @param {OhttpConfig} config
+ */
+export function configureOhttpChannel(
+    channel, 
+    config) {
+   
+FfiConverterString.checkType(channel);
+FfiConverterTypeOhttpConfig.checkType(config);
+const result = UniFFIScaffolding.callSync(
+    208, // uniffi_viaduct_fn_func_configure_ohttp_channel
+    FfiConverterString.lower(channel),
+    FfiConverterTypeOhttpConfig.lower(config),
+)
+return handleRustResult(
+    result,
+    (result) => undefined,
+    FfiConverterTypeViaductError.lift.bind(FfiConverterTypeViaductError),
 )
 }
 
@@ -56,12 +113,72 @@ export function initBackend(
    
 FfiConverterTypeBackend.checkType(backend);
 const result = UniFFIScaffolding.callSync(
-    149, // uniffi_viaduct_fn_func_init_backend
+    209, // uniffi_viaduct_fn_func_init_backend
     FfiConverterTypeBackend.lower(backend),
 )
 return handleRustResult(
     result,
     (result) => undefined,
+    null,
+)
+}
+
+/**
+ * List all configured OHTTP channels
+ * @returns {Array.<string>}
+ */
+export function listOhttpChannels() {
+   
+const result = UniFFIScaffolding.callSync(
+    210, // uniffi_viaduct_fn_func_list_ohttp_channels
+)
+return handleRustResult(
+    result,
+    FfiConverterSequenceString.lift.bind(FfiConverterSequenceString),
+    null,
+)
+}
+
+/**
+ * Send a request through an OHTTP channel.
+ * 
+ * This encrypts the request and routes it through the configured OHTTP
+ * relay/gateway for the specified channel.
+ * 
+ * # Arguments
+ * * `request` - The request to send
+ * * `channel` - The name of the OHTTP channel to use (e.g., "merino")
+ * 
+ * # Example (Kotlin)
+ * ```kotlin
+ * val response = sendOhttpRequest(
+ * Request(
+ * method = Method.GET,
+ * url = "https://example.com/api",
+ * headers = mapOf("Accept" to "application/json"),
+ * body = null
+ * ),
+ * "merino"
+ * )
+ * ```
+ * @param {Request} request
+ * @param {string} channel
+ * @returns {Promise<Response>}}
+ */
+export async function sendOhttpRequest(
+    request, 
+    channel) {
+   
+FfiConverterTypeRequest.checkType(request);
+FfiConverterString.checkType(channel);
+const result = await UniFFIScaffolding.callAsync(
+    211, // uniffi_viaduct_fn_func_send_ohttp_request
+    FfiConverterTypeRequest.lower(request),
+    FfiConverterString.lower(channel),
+)
+return handleRustResult(
+    result,
+    FfiConverterTypeResponse.lift.bind(FfiConverterTypeResponse),
     FfiConverterTypeViaductError.lift.bind(FfiConverterTypeViaductError),
 )
 }
@@ -78,7 +195,7 @@ export function setGlobalDefaultUserAgent(
    
 FfiConverterString.checkType(userAgent);
 const result = UniFFIScaffolding.callSync(
-    150, // uniffi_viaduct_fn_func_set_global_default_user_agent
+    212, // uniffi_viaduct_fn_func_set_global_default_user_agent
     FfiConverterString.lower(userAgent),
 )
 return handleRustResult(
@@ -135,12 +252,14 @@ export class FfiConverterOptionalString extends FfiConverterArrayBuffer {
 export class ClientSettings {
     constructor(
         {
-            timeout= 0, 
+            timeout= 60000, 
             redirectLimit= 10, 
+            ohttpChannel, 
             userAgent= null
         } = {
             timeout: undefined, 
             redirectLimit: undefined, 
+            ohttpChannel: undefined, 
             userAgent: undefined
         }
     ) {
@@ -157,6 +276,14 @@ export class ClientSettings {
         } catch (e) {
             if (e instanceof UniFFITypeError) {
                 e.addItemDescriptionPart("redirectLimit");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterOptionalString.checkType(ohttpChannel)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("ohttpChannel");
             }
             throw e;
         }
@@ -179,6 +306,11 @@ export class ClientSettings {
          */
         this.redirectLimit = redirectLimit;
         /**
+         * OHTTP channel to use for all requests (if any)
+         * @type {?string}
+         */
+        this.ohttpChannel = ohttpChannel;
+        /**
          * Client default user-agent.
          * 
          * This overrides the global default user-agent and is used when no `User-agent` header is set
@@ -192,6 +324,7 @@ export class ClientSettings {
         return (
             this.timeout == other.timeout
             && this.redirectLimit == other.redirectLimit
+            && this.ohttpChannel == other.ohttpChannel
             && this.userAgent == other.userAgent
         )
     }
@@ -203,12 +336,14 @@ export class FfiConverterTypeClientSettings extends FfiConverterArrayBuffer {
         return new ClientSettings({
             timeout: FfiConverterUInt32.read(dataStream),
             redirectLimit: FfiConverterUInt32.read(dataStream),
+            ohttpChannel: FfiConverterOptionalString.read(dataStream),
             userAgent: FfiConverterOptionalString.read(dataStream),
         });
     }
     static write(dataStream, value) {
         FfiConverterUInt32.write(dataStream, value.timeout);
         FfiConverterUInt32.write(dataStream, value.redirectLimit);
+        FfiConverterOptionalString.write(dataStream, value.ohttpChannel);
         FfiConverterOptionalString.write(dataStream, value.userAgent);
     }
 
@@ -216,6 +351,7 @@ export class FfiConverterTypeClientSettings extends FfiConverterArrayBuffer {
         let totalSize = 0;
         totalSize += FfiConverterUInt32.computeSize(value.timeout);
         totalSize += FfiConverterUInt32.computeSize(value.redirectLimit);
+        totalSize += FfiConverterOptionalString.computeSize(value.ohttpChannel);
         totalSize += FfiConverterOptionalString.computeSize(value.userAgent);
         return totalSize
     }
@@ -242,10 +378,110 @@ export class FfiConverterTypeClientSettings extends FfiConverterArrayBuffer {
             throw e;
         }
         try {
+            FfiConverterOptionalString.checkType(value.ohttpChannel);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".ohttpChannel");
+            }
+            throw e;
+        }
+        try {
             FfiConverterOptionalString.checkType(value.userAgent);
         } catch (e) {
             if (e instanceof UniFFITypeError) {
                 e.addItemDescriptionPart(".userAgent");
+            }
+            throw e;
+        }
+    }
+}
+/**
+ * Configuration for an OHTTP channel
+ */
+export class OhttpConfig {
+    constructor(
+        {
+            relayUrl, 
+            gatewayHost
+        } = {
+            relayUrl: undefined, 
+            gatewayHost: undefined
+        }
+    ) {
+        try {
+            FfiConverterString.checkType(relayUrl)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("relayUrl");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterString.checkType(gatewayHost)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("gatewayHost");
+            }
+            throw e;
+        }
+        /**
+         * The relay URL that will proxy requests
+         * @type {string}
+         */
+        this.relayUrl = relayUrl;
+        /**
+         * The gateway host that provides encryption keys and decrypts requests
+         * @type {string}
+         */
+        this.gatewayHost = gatewayHost;
+    }
+
+    equals(other) {
+        return (
+            this.relayUrl == other.relayUrl
+            && this.gatewayHost == other.gatewayHost
+        )
+    }
+}
+
+// Export the FFIConverter object to make external types work.
+export class FfiConverterTypeOhttpConfig extends FfiConverterArrayBuffer {
+    static read(dataStream) {
+        return new OhttpConfig({
+            relayUrl: FfiConverterString.read(dataStream),
+            gatewayHost: FfiConverterString.read(dataStream),
+        });
+    }
+    static write(dataStream, value) {
+        FfiConverterString.write(dataStream, value.relayUrl);
+        FfiConverterString.write(dataStream, value.gatewayHost);
+    }
+
+    static computeSize(value) {
+        let totalSize = 0;
+        totalSize += FfiConverterString.computeSize(value.relayUrl);
+        totalSize += FfiConverterString.computeSize(value.gatewayHost);
+        return totalSize
+    }
+
+    static checkType(value) {
+        super.checkType(value);
+        if (!(value instanceof OhttpConfig)) {
+            throw new UniFFITypeError(`Expected 'OhttpConfig', found '${typeof value}'`);
+        }
+        try {
+            FfiConverterString.checkType(value.relayUrl);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".relayUrl");
+            }
+            throw e;
+        }
+        try {
+            FfiConverterString.checkType(value.gatewayHost);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".gatewayHost");
             }
             throw e;
         }
@@ -1293,7 +1529,7 @@ export class BackendImpl extends Backend {
         FfiConverterTypeRequest.checkType(request);
         FfiConverterTypeClientSettings.checkType(settings);
         const result = await UniFFIScaffolding.callAsync(
-            151, // uniffi_viaduct_fn_method_backend_send_request
+            213, // uniffi_viaduct_fn_method_backend_send_request
             FfiConverterTypeBackend.lowerReceiver(this),
             FfiConverterTypeRequest.lower(request),
             FfiConverterTypeClientSettings.lower(settings),
@@ -1349,13 +1585,13 @@ export class FfiConverterTypeBackend extends FfiConverter {
     }
 
     static read(dataStream) {
-        return this.lift(dataStream.readHandleOrPointer(20))
+        return this.lift(dataStream.readHandleOrPointer(25))
     }
 
     static write(dataStream, value) {
         if (value[uniffiObjectPtr] instanceof UniFFIPointer) {
           // Rust-implemented interface, return the ptr.
-          dataStream.writePointer(20, this.lower(value));
+          dataStream.writePointer(25, this.lower(value));
         } else {
           dataStream.writeInt64(this.lower(value))
         }
@@ -1368,7 +1604,7 @@ export class FfiConverterTypeBackend extends FfiConverter {
 
 const uniffiCallbackHandlerViaductBackend = new UniFFICallbackHandler(
     "Backend",
-    6,
+    8,
     [
         new UniFFICallbackMethodHandler(
             "sendRequest",
@@ -1389,5 +1625,48 @@ const uniffiCallbackHandlerViaductBackend = new UniFFICallbackHandler(
 
 // Allow the shutdown-related functionality to be tested in the unit tests
 UnitTestObjs.uniffiCallbackHandlerViaductBackend = uniffiCallbackHandlerViaductBackend;
+// Export the FFIConverter object to make external types work.
+export class FfiConverterSequenceString extends FfiConverterArrayBuffer {
+    static read(dataStream) {
+        const len = dataStream.readInt32();
+        const arr = [];
+        for (let i = 0; i < len; i++) {
+            arr.push(FfiConverterString.read(dataStream));
+        }
+        return arr;
+    }
+
+    static write(dataStream, value) {
+        dataStream.writeInt32(value.length);
+        value.forEach((innerValue) => {
+            FfiConverterString.write(dataStream, innerValue);
+        })
+    }
+
+    static computeSize(value) {
+        // The size of the length
+        let size = 4;
+        for (const innerValue of value) {
+            size += FfiConverterString.computeSize(innerValue);
+        }
+        return size;
+    }
+
+    static checkType(value) {
+        if (!Array.isArray(value)) {
+            throw new UniFFITypeError(`${value} is not an array`);
+        }
+        value.forEach((innerValue, idx) => {
+            try {
+                FfiConverterString.checkType(innerValue);
+            } catch (e) {
+                if (e instanceof UniFFITypeError) {
+                    e.addItemDescriptionPart(`[${idx}]`);
+                }
+                throw e;
+            }
+        })
+    }
+}
 
 

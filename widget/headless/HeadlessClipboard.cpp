@@ -4,9 +4,9 @@
 
 #include "HeadlessClipboard.h"
 
-#include "nsISupportsPrimitives.h"
-#include "nsComponentManagerUtils.h"
 #include "nsCOMPtr.h"
+#include "nsComponentManagerUtils.h"
+#include "nsISupportsPrimitives.h"
 
 namespace mozilla::widget {
 

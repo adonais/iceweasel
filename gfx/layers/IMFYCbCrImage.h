@@ -5,10 +5,10 @@
 #ifndef GFX_IMFYCBCRIMAGE_H
 #define GFX_IMFYCBCRIMAGE_H
 
-#include "mozilla/layers/TextureD3D11.h"
-#include "mozilla/RefPtr.h"
 #include "ImageContainer.h"
 #include "mfidl.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/layers/TextureD3D11.h"
 
 namespace mozilla {
 namespace layers {

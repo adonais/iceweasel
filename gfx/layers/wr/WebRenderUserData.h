@@ -6,18 +6,19 @@
 #define GFX_WEBRENDERUSERDATA_H
 
 #include <vector>
+
+#include "DisplayItemClip.h"
+#include "ImageTypes.h"
+#include "ImgDrawResult.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/DrawEventRecorderTypes.h"
-#include "mozilla/webrender/WebRenderAPI.h"
 #include "mozilla/image/WebRenderImageProvider.h"
 #include "mozilla/layers/AnimationInfo.h"
 #include "mozilla/layers/LayersTypes.h"
-#include "mozilla/UniquePtr.h"
+#include "mozilla/webrender/WebRenderAPI.h"
 #include "nsIFrame.h"
 #include "nsRefPtrHashtable.h"
 #include "nsTHashSet.h"
-#include "ImageTypes.h"
-#include "ImgDrawResult.h"
-#include "DisplayItemClip.h"
 
 namespace mozilla {
 
@@ -128,8 +129,7 @@ struct WebRenderUserDataKey {
   }
   PLDHashNumber Hash() const {
     return HashGeneric(
-        mFrameKey,
-        static_cast<std::underlying_type<decltype(mType)>::type>(mType));
+        mFrameKey, static_cast<std::underlying_type_t<decltype(mType)>>(mType));
   }
 
   uint32_t mFrameKey;

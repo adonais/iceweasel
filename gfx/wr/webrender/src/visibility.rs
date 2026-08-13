@@ -15,17 +15,16 @@ use crate::composite::CompositeState;
 use crate::profiler::TransactionProfile;
 use crate::renderer::GpuBufferBuilder;
 use crate::spatial_tree::{SpatialTree, SpatialNodeIndex};
-use crate::clip::{ClipChainInstance, ClipTree};
+use crate::clip::{ClipChainInstance, ClipTree, ClipNodeId};
 use crate::composite::CompositorSurfaceKind;
 use crate::frame_builder::FrameBuilderConfig;
 use crate::picture::{PictureCompositeMode, ClusterFlags, SurfaceInfo};
 use crate::tile_cache::TileCacheInstance;
 use crate::picture::{PictureScratch, SurfaceIndex, RasterConfig};
 use crate::tile_cache::SubSliceIndex;
-use crate::prim_store::{ClipTaskIndex, PictureIndex, PrimitiveKind, SegmentInstanceIndex};
+use crate::prim_store::{ClipSnap, ClipTaskIndex, PictureIndex, PrimitiveKind, SegmentInstanceIndex};
 use crate::prim_store::{PrimitiveStore, PrimitiveInstance, PrimitiveInstanceIndex};
-use crate::prim_store::backdrop::BackdropRenderScratch;
-use crate::prim_store::borders::{ImageBorderScratch, NormalBorderScratch};
+use crate::prim_store::borders::ImageBorderScratch;
 use crate::prim_store::image::ImageScratch;
 use crate::prim_store::storage;
 use crate::prim_store::text_run::TextRunScratch;
@@ -50,7 +49,7 @@ pub struct FrameVisibilityState<'a> {
     pub clip_store: &'a mut ClipStore,
     pub resource_cache: &'a mut ResourceCache,
     pub frame_gpu_data: &'a mut GpuBufferBuilder,
-    pub data_stores: &'a mut DataStores,
+    pub data_stores: &'a DataStores,
     pub clip_tree: &'a mut ClipTree,
     pub composite_state: &'a mut CompositeState,
     pub rg_builder: &'a mut RenderTaskGraphBuilder,
@@ -123,24 +122,16 @@ pub enum DrawState {
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub enum KindScratchHandle {
     None,
-    NormalBorder(storage::Index<NormalBorderScratch>),
     ImageBorder(storage::Index<ImageBorderScratch>),
     Image(storage::Index<ImageScratch>),
     TextRun(storage::Index<TextRunScratch>),
     Picture(storage::Index<PictureScratch>),
-    BackdropRender(storage::Index<BackdropRenderScratch>),
 }
 
 impl KindScratchHandle {
     /// Extract the specific scratch index. Panics if the variant
     /// doesn't match — readers in the specific arm of the
     /// PrimitiveKind match know the variant by construction.
-   pub fn unwrap_normal_border(&self) -> storage::Index<NormalBorderScratch> {
-        match *self {
-            KindScratchHandle::NormalBorder(h) => h,
-            _ => panic!("kind_scratch mismatch: expected NormalBorder, got {:?}", self),
-        }
-    }
     pub fn unwrap_image_border(&self) -> storage::Index<ImageBorderScratch> {
         match *self {
             KindScratchHandle::ImageBorder(h) => h,
@@ -163,12 +154,6 @@ impl KindScratchHandle {
         match *self {
             KindScratchHandle::Picture(h) => h,
             _ => panic!("kind_scratch mismatch: expected Picture, got {:?}", self),
-        }
-    }
-    pub fn unwrap_backdrop_render(&self) -> storage::Index<BackdropRenderScratch> {
-        match *self {
-            KindScratchHandle::BackdropRender(h) => h,
-            _ => panic!("kind_scratch mismatch: expected BackdropRender, got {:?}", self),
         }
     }
 }
@@ -374,22 +359,41 @@ pub fn update_prim_visibility(
         snapper.set_target_spatial_node(cluster.spatial_node_index, frame_context.spatial_tree);
 
         for prim_instance_index in cluster.prim_range() {
-            let snapped_local_rect = snapper.snap_rect(
-                &frame_state.prim_instances[prim_instance_index].unsnapped_prim_rect,
-            );
+            // A prim's snap policy is folded into its clip leaf: device-space
+            // prims (text) carry the `INVALID` sentinel and snap nothing - their
+            // rect and clips stay at exact sub-pixel positions so a fractional
+            // clip edge is an AA boundary through the glyphs (bug 2050692).
+            // Everyone else snaps their rect and own clips to the device grid.
+            // How the rect itself is rounded (nearest / round-out for unsnapped
+            // text / thickness-preserving for decoration lines) is decided by
+            // `PrimitiveInstance::snap_rounding`.
+            let prim_instance = &frame_state.prim_instances[prim_instance_index];
+            let leaf_id = prim_instance.clip_leaf_id;
+            let snaps = frame_state.clip_tree.get_leaf(leaf_id).prim_clip_root
+                != ClipNodeId::INVALID;
+
+            let policy = prim_instance.snap_policy(snaps, frame_state.data_stores);
+            let snapped_local_rect =
+                snapper.snap_rect_rounded(&prim_instance.unsnapped_prim_rect, policy.rect);
             frame_state.scratch.primitive.frame.draws[prim_instance_index].snapped_local_rect =
                 snapped_local_rect;
 
-            // Picture / tile-cache leaves carry `max_rect`; snapping `max_rect`
-            // would overflow through the snap transform, so pass those through.
-            let leaf_id = frame_state.prim_instances[prim_instance_index].clip_leaf_id;
+            // Picture / tile-cache leaves carry `max_rect` (snapping it would
+            // overflow the snap transform); pass those through. Otherwise the
+            // leaf clip rounds per the prim's clip policy: nearest for snapping
+            // prims (crisp fill/border edges), exact for surfaces, and round-out
+            // on the non-sub-pixel axis for text runs (bug 2055145).
             let leaf = frame_state.clip_tree.get_leaf_mut(leaf_id);
-            if leaf.unsnapped_local_clip_rect == LayoutRect::max_rect() {
-                leaf.snapped_local_clip_rect = leaf.unsnapped_local_clip_rect;
+            let unsnapped = leaf.unsnapped_local_clip_rect;
+            leaf.snapped_local_clip_rect = if unsnapped == LayoutRect::max_rect() {
+                unsnapped
             } else {
-                let unsnapped = leaf.unsnapped_local_clip_rect;
-                leaf.snapped_local_clip_rect = snapper.snap_rect(&unsnapped);
-            }
+                match policy.clip {
+                    ClipSnap::Nearest => snapper.snap_rect(&unsnapped),
+                    ClipSnap::Exact => unsnapped,
+                    ClipSnap::Text(rounding) => snapper.snap_rect_rounded(&unsnapped, rounding),
+                }
+            };
 
             if let PrimitiveKind::Picture { pic_index, .. } = frame_state.prim_instances[prim_instance_index].kind {
                 if !store.pictures[pic_index.0].is_visible(frame_context.spatial_tree) {
@@ -451,6 +455,7 @@ pub fn update_prim_visibility(
                 map_local_to_picture.ref_spatial_node_index,
                 visibility_spatial_node_index,
                 &mut clip_snapper,
+                policy.clip,
                 prim_instance.clip_leaf_id,
                 &frame_context.spatial_tree,
                 &frame_state.data_stores.clip,
@@ -467,7 +472,7 @@ pub fn update_prim_visibility(
                     &mut frame_state.frame_gpu_data.f32,
                     frame_state.resource_cache,
                     &surface_culling_rect,
-                    &mut frame_state.data_stores.clip,
+                    &frame_state.data_stores.clip,
                     frame_state.rg_builder,
                     true,
                 );
@@ -478,6 +483,26 @@ pub fn update_prim_visibility(
                     continue;
                 }
             };
+
+            let is_mix_blend_picture = |prim_instance: &PrimitiveInstance| {
+                if let PrimitiveKind::Picture { pic_index, .. } = prim_instance.kind {
+                    let pic = &store.pictures[pic_index.0];
+
+                    matches!(
+                        pic.composite_mode,
+                        Some(PictureCompositeMode::MixBlend(_))
+                    )
+                } else {
+                    false
+                }
+            };
+
+            if is_root_tile_cache && is_mix_blend_picture(prim_instance) {
+                let prim_clip_chain = &frame_state.scratch.primitive.frame.draws[prim_instance_index].clip_chain;
+                if let Some(tile_cache) = tile_cache {
+                    tile_cache.mix_blend_pic_rects.push(prim_clip_chain.pic_coverage_rect);
+                }
+            }
 
             {
                 let prim_surface_index = frame_state.surface_stack.last().unwrap().1;

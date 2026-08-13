@@ -5,9 +5,9 @@
 #include "mozilla/net/IPCTransportProvider.h"
 
 #include "IPCTransportProvider.h"
-#include "nsISocketTransport.h"
 #include "nsIAsyncInputStream.h"
 #include "nsIAsyncOutputStream.h"
+#include "nsISocketTransport.h"
 
 namespace mozilla {
 namespace net {

@@ -3,6 +3,7 @@ head = "head.js"
 skip-if = [
   "os == 'android'",
 ]
+prefs = ["toolkit.download.loglevel='Debug'"]
 tags = "os_integration"
 
 # Note: The "tail.js" file is not defined in the "tail" key because it calls

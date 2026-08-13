@@ -2,22 +2,23 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "PuppetWidget.h"
+
 #include "gfxPlatform.h"
-#include "nsRefreshDriver.h"
-#include "mozilla/dom/BrowserChild.h"
+#include "imgIContainer.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/IMEStateManager.h"
-#include "mozilla/layers/CompositorBridgeChild.h"
-#include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/NativeKeyBindingsType.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/TextComposition.h"
 #include "mozilla/TextEventDispatcher.h"
 #include "mozilla/TextEvents.h"
-#include "PuppetWidget.h"
+#include "mozilla/dom/BrowserChild.h"
+#include "mozilla/layers/CompositorBridgeChild.h"
+#include "mozilla/layers/WebRenderLayerManager.h"
 #include "nsContentUtils.h"
-#include "imgIContainer.h"
+#include "nsRefreshDriver.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

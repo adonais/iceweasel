@@ -160,25 +160,28 @@ add_task(async function test_fetchIcon_with_invalid_favicon() {
 add_task(async function test_fetchIconFromRedirects_with_valid_favicon() {
   const feed = new FaviconProvider();
 
+  // The destination is a different path on the same host as TEST_PAGE_URL so
+  // that the same-site check inside fetchIconFromRedirects allows the copy.
+  const destination = Services.io.newURI(
+    `${TEST_PAGE_URL.spec.replace(/\/$/, "")}/other`
+  );
+  await PlacesTestUtils.addVisits(destination);
+
   info("Setup stub to use dummy site data from FaviconProvider.getSite()");
   const sandbox = sinon.createSandbox();
   sandbox
     .stub(NewTabUtils.activityStreamProvider, "executePlacesQuery")
     .resolves([
-      { visit_id: 1, url: TEST_DOMAIN },
+      { visit_id: 1, url: destination.spec },
       { visit_id: 2, url: TEST_PAGE_URL.spec },
     ]);
 
-  info("Setup valid favicon data in DB");
+  info("Setup valid favicon data on the redirect destination (TEST_PAGE_URL)");
   await PlacesUtils.favicons.setFaviconForPage(
     TEST_PAGE_URL,
     TEST_FAVICON_URL,
     TEST_SVG_DATA_URL
   );
-
-  info("Setup destination");
-  const destination = Services.io.newURI("http://destination.localhost/");
-  await PlacesTestUtils.addVisits(destination);
 
   info("Call FaviconProvider.fetchIconFromRedirects()");
   await feed.fetchIconFromRedirects(destination.spec);
@@ -198,6 +201,7 @@ add_task(async function test_fetchIconFromRedirects_with_valid_favicon() {
 
   info("Clean up");
   await PlacesTestUtils.clearFavicons();
+  await PlacesUtils.history.clear();
   sandbox.restore();
 });
 
@@ -287,6 +291,11 @@ add_task(async function test_fetchIcon_withNetworkFetch() {
     PlacesUtils.favicons.setFaviconForPage.firstCall.args[2].spec,
     FAKE_SMALLPNG_DATA_URI
   );
+  Assert.equal(
+    PlacesUtils.favicons.setFaviconForPage.firstCall.args[4],
+    true,
+    "isRich should be true"
+  );
 
   sandbox.restore();
 });
@@ -324,6 +333,11 @@ add_task(async function test_fetchIcon_withInvalidDataInDb() {
   Assert.equal(
     PlacesUtils.favicons.setFaviconForPage.firstCall.args[2].spec,
     FAKE_SMALLPNG_DATA_URI
+  );
+  Assert.equal(
+    PlacesUtils.favicons.setFaviconForPage.firstCall.args[4],
+    true,
+    "isRich should be true"
   );
 
   sandbox.restore();

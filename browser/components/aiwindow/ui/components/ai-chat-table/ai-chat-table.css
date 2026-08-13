@@ -42,3 +42,57 @@
   font-size: inherit;
   width: 100%;
 }
+
+.table-scroll-indicator {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  border-block-start: var(--smartwindow-table-border);
+  color: var(--text-color-deemphasized);
+  display: flex;
+  font-size: var(--font-size-small);
+  font-style: italic;
+  justify-content: center;
+  padding-block: var(--space-small);
+}
+
+.table-scroll-indicator-label::before {
+  content: "\2190";
+  display: inline-block;
+  margin-inline-end: var(--space-xsmall);
+  animation: table-scroll-nudge-left 1.5s ease-in-out infinite;
+}
+
+.table-scroll-indicator-label::after {
+  content: "\2192";
+  display: inline-block;
+  margin-inline-start: var(--space-xsmall);
+  animation: table-scroll-nudge-right 1.5s ease-in-out infinite;
+}
+
+.table-scroll-indicator-label:dir(rtl)::before {
+  content: "\2192";
+  animation-name: table-scroll-nudge-right;
+}
+
+.table-scroll-indicator-label:dir(rtl)::after {
+  content: "\2190";
+  animation-name: table-scroll-nudge-left;
+}
+
+@media (prefers-reduced-motion) {
+  .table-scroll-indicator-label::before,
+  .table-scroll-indicator-label::after {
+    animation: none;
+  }
+}
+
+@keyframes table-scroll-nudge-left {
+  50% {
+    transform: translateX(calc(-1 * var(--space-xsmall)));
+  }
+}
+
+@keyframes table-scroll-nudge-right {
+  50% {
+    transform: translateX(var(--space-xsmall));
+  }
+}

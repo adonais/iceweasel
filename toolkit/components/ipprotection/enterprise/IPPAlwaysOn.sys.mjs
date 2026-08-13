@@ -18,6 +18,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
   IPProtectionStates:
     "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
+  setTimeout: "resource://gre/modules/Timer.sys.mjs",
+  clearTimeout: "resource://gre/modules/Timer.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "logConsole", () =>
@@ -29,12 +31,16 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", () =>
   })
 );
 
+const RESTART_BASE_DELAY_MS = 1000;
+const RESTART_MAX_DELAY_MS = 30000;
+
 /**
  * Keeps the proxy connection alive on enterprise builds where the
  * AccessConnector policy is active. Unlike IPPAutoStart, this class:
  *
- *  - Recovers from ERROR states by stopping and restarting immediately.
- *  - Restarts immediately when the proxy stops unexpectedly.
+ *  - Recovers from ERROR states by stopping and requesting a restart.
+ *  - Restarts when the proxy stops unexpectedly.
+ *  - Restarts are deferred and backed off so that repeated failures don't spin the main thread.
  *  - Switches to a new server when the server list is updated.
  *
  * Because this is policy-driven there is no user-facing toggle; the proxy
@@ -43,7 +49,8 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", () =>
 class IPPAlwaysOnSingleton {
   #initialized = false;
   #shouldBeRunning = false;
-  #startPending = false;
+  #startController = null;
+  #restartDelayMs = 0;
 
   constructor() {
     this.handleServiceEvent = this.#handleServiceEvent.bind(this);
@@ -90,7 +97,7 @@ class IPPAlwaysOnSingleton {
     }
     this.#initialized = false;
     this.#shouldBeRunning = false;
-    this.#startPending = false;
+    this.#cancelStartRequest();
 
     lazy.IPProtectionService.removeEventListener(
       "IPProtectionService:StateChanged",
@@ -106,25 +113,120 @@ class IPPAlwaysOnSingleton {
     );
   }
 
-  #tryStart() {
-    if (this.#startPending) {
-      return;
-    }
+  /**
+   * Returns true if a start request would be blocked by the current state of
+   * the service, proxy, or server list.
+   */
+  #isStartBlocked() {
     if (
       lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVE &&
       lazy.IPPProxyManager.channelFilter()?.proxyInfo
     ) {
+      return true;
+    }
+    return !lazy.IPProtectionServerlist.hasList;
+  }
+
+  /**
+   * Requests a start of the proxy, with exponential backoff on repeated failures.
+   *
+   * @param {boolean} [resetBackoff]
+   *   Cancel any live request and reschedule immediately with the base delay.
+   */
+  async #requestStart(resetBackoff = false) {
+    if (resetBackoff) {
+      this.#cancelStartRequest();
+    }
+    if (this.#startController || this.#isStartBlocked()) {
       return;
     }
-    if (!lazy.IPProtectionServerlist.hasList) {
-      return;
-    }
-    lazy.logConsole.info("Starting proxy");
-    this.#startPending = true;
-    lazy.IPPProxyManager.start(
-      false,
-      PrivateBrowsingUtils.permanentPrivateBrowsing
+
+    const controller = new AbortController();
+    this.#startController = controller;
+    const { signal } = controller;
+
+    const delay = this.#restartDelayMs;
+    this.#restartDelayMs = Math.min(
+      this.#restartDelayMs ? this.#restartDelayMs * 2 : RESTART_BASE_DELAY_MS,
+      RESTART_MAX_DELAY_MS
     );
+
+    try {
+      await this.#wait(delay, signal);
+      if (signal.aborted || !this.#shouldBeRunning || !this.alwaysOnEnabled) {
+        return;
+      }
+      if (this.#isStartBlocked()) {
+        return;
+      }
+      lazy.logConsole.info("Starting proxy");
+      await lazy.IPPProxyManager.start(
+        false,
+        PrivateBrowsingUtils.permanentPrivateBrowsing
+      );
+    } catch (e) {
+      lazy.logConsole.error("Start request failed:", e);
+    } finally {
+      if (this.#startController === controller) {
+        this.#startController = null;
+      }
+    }
+  }
+
+  /**
+   * Releases any scheduled or in-flight start request.
+   */
+  #abortStartRequest() {
+    if (this.#startController) {
+      this.#startController.abort();
+      this.#startController = null;
+    }
+  }
+
+  /**
+   * Cancels any scheduled or in-flight start request and resets the backoff delay.
+   */
+  #cancelStartRequest() {
+    this.#abortStartRequest();
+    this.#restartDelayMs = 0;
+  }
+
+  /**
+   * Resolves after `ms` milliseconds, or immediately once `signal` aborts.
+   *
+   * @param {number} ms
+   * @param {AbortSignal} signal
+   * @returns {Promise<void>}
+   */
+  #wait(ms, signal) {
+    const { promise, resolve } = Promise.withResolvers();
+    const timer = lazy.setTimeout(resolve, ms);
+    signal.addEventListener(
+      "abort",
+      () => {
+        lazy.clearTimeout(timer);
+        resolve();
+      },
+      { once: true }
+    );
+    return promise;
+  }
+
+  /**
+   * Stops the proxy and, once it settles, requests a fresh start.
+   *
+   * @param {boolean} [resetBackoff] Reset the backoff delay to the base value.
+   */
+  async #stopThenRestart(resetBackoff = false) {
+    try {
+      await lazy.IPPProxyManager.stop(false);
+    } catch (e) {
+      lazy.logConsole.error("Failed to stop proxy:", e);
+      return;
+    }
+    if (this.#shouldBeRunning && this.alwaysOnEnabled) {
+      this.#requestStart(resetBackoff);
+    }
   }
 
   #handleServiceEvent() {
@@ -134,12 +236,12 @@ class IPPAlwaysOnSingleton {
       case lazy.IPProtectionStates.UNAVAILABLE:
       case lazy.IPProtectionStates.UNAUTHENTICATED:
         this.#shouldBeRunning = false;
-        this.#startPending = false;
+        this.#abortStartRequest();
         break;
 
       case lazy.IPProtectionStates.READY:
         this.#shouldBeRunning = true;
-        this.#tryStart();
+        this.#requestStart(true);
         break;
 
       default:
@@ -157,24 +259,18 @@ class IPPAlwaysOnSingleton {
 
     switch (lazy.IPPProxyManager.state) {
       case lazy.IPPProxyStates.ACTIVE:
-        this.#startPending = false;
+        this.#cancelStartRequest();
         break;
 
       case lazy.IPPProxyStates.READY:
-        this.#startPending = false;
-        this.#tryStart();
+        this.#abortStartRequest();
+        this.#requestStart();
         break;
 
       case lazy.IPPProxyStates.ERROR:
-        this.#startPending = false;
-        lazy.IPPProxyManager.stop(false).then(
-          () => {
-            if (this.#shouldBeRunning && this.alwaysOnEnabled) {
-              this.#tryStart();
-            }
-          },
-          e => lazy.logConsole.error("Failed to stop proxy:", e)
-        );
+        this.#abortStartRequest();
+        // Repeated failures back off; don't reset the delay.
+        this.#stopThenRestart();
         break;
 
       default:
@@ -204,35 +300,22 @@ class IPPAlwaysOnSingleton {
         lazy.logConsole.debug("Switching to updated server");
         const { error } = lazy.IPPProxyManager.switch();
         if (error) {
-          lazy.IPPProxyManager.stop(false).then(
-            () => {
-              if (this.#shouldBeRunning && this.alwaysOnEnabled) {
-                this.#tryStart();
-              }
-            },
-            e => lazy.logConsole.error("Failed to stop proxy:", e)
-          );
+          // Fresh server list, reset backoff so the reconnect isn't delayed.
+          this.#stopThenRestart(true);
         }
         break;
       }
 
       case lazy.IPPProxyStates.ERROR:
-        // A fresh server list may resolve the error; stop and restart immediately.
+        // A fresh server list may resolve the error; reset backoff to retry promptly.
         if (this.#shouldBeRunning) {
-          lazy.IPPProxyManager.stop(false).then(
-            () => {
-              if (this.#shouldBeRunning && this.alwaysOnEnabled) {
-                this.#tryStart();
-              }
-            },
-            e => lazy.logConsole.error("Failed to stop proxy:", e)
-          );
+          this.#stopThenRestart(true);
         }
         break;
 
       case lazy.IPPProxyStates.READY:
-        if (this.#shouldBeRunning && !this.#startPending) {
-          this.#tryStart();
+        if (this.#shouldBeRunning) {
+          this.#requestStart(true);
         }
         break;
 

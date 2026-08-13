@@ -1,0 +1,18 @@
+{
+  "label": "wowow.co.jp",
+  "bugs": {
+    "2038272": {
+      "issue": "broken-layout",
+      "matches": ["*://www.wowow.co.jp/*"]
+    }
+  },
+  "css": {
+    "fix_partly_offscreen_searchbar": "header .__localsearch { width: clamp(100px, 16vw, 220px); }"
+  },
+  "interventions": [
+    {
+      "platforms": ["desktop"],
+      "css": ["fix_partly_offscreen_searchbar"]
+    }
+  ]
+}

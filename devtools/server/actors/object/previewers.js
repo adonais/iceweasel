@@ -900,15 +900,14 @@ function GenericObject(objectActor, grip, depth) {
     return true;
   }
 
-  const privatePropertiesSymbols = ObjectUtils.getSafePrivatePropertiesSymbols(
-    obj
-  );
-  if (privatePropertiesSymbols.length) {
-    preview.privatePropertiesLength = privatePropertiesSymbols.length;
+  const privateProperties = ObjectUtils.getSafePrivateProperties(obj);
+  if (privateProperties.length) {
+    preview.privatePropertiesLength = privateProperties.length;
     preview.privateProperties = [];
 
-    // Retrieve private properties, which are represented as non-enumerable Symbols
-    for (const privateProperty of privatePropertiesSymbols) {
+    // Each private property is a Debugger.PrivateName wrapper exposing the
+    // field's `description` (e.g. "#x"); the underlying symbol is never exposed.
+    for (const privateProperty of privateProperties) {
       if (
         !privateProperty.description ||
         !privateProperty.description.startsWith("#")
@@ -920,14 +919,10 @@ function GenericObject(objectActor, grip, depth) {
         continue;
       }
 
-      preview.privateProperties.push(
-        Object.assign(
-          {
-            descriptor,
-          },
-          objectActor.createValueGrip(privateProperty, depth)
-        )
-      );
+      preview.privateProperties.push({
+        name: privateProperty.description,
+        descriptor,
+      });
 
       if (++i == OBJECT_PREVIEW_MAX_ITEMS) {
         break;
@@ -1236,11 +1231,9 @@ previewers.Object = [
       // Custom elements may have private properties. Ensure that we provide
       // enough information for ObjectInspector to know it should check for
       // them.
-      const privatePropertiesSymbols = ObjectUtils.getSafePrivatePropertiesSymbols(
-        obj
-      );
-      if (privatePropertiesSymbols.length) {
-        preview.privatePropertiesLength = privatePropertiesSymbols.length;
+      const privateProperties = ObjectUtils.getSafePrivateProperties(obj);
+      if (privateProperties.length) {
+        preview.privatePropertiesLength = privateProperties.length;
       }
     } else if (className == "Attr") {
       preview.value = objectActor.createValueGrip(safeRawObj.value, depth);

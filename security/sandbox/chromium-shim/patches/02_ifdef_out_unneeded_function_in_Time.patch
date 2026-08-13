@@ -1,29 +1,21 @@
-# User Bob Owen <bobowencode@gmail.com>
-Don't compile (or remove) the following from class Time: FromStringInternal,
-Midnight, UTCExplode, LocalExplode, UTCMidnight, LocalMidnight and operator<<.
-
-The first has a dependency on nspr, which causes issues. The others are not
-needed and bring in more dependencies.
-
-Also remove base::subtle::LiveTicksNowIgnoringOverride and calling functions as
-they create a dependency on mincore lib and are not used.
+ifdef out unused functions from base/time to prevent dependencies.
 
 diff --git a/base/time/time.cc b/base/time/time.cc
 --- a/base/time/time.cc
 +++ b/base/time/time.cc
-@@ -33,18 +33,20 @@ std::atomic<TimeNowFunction> g_time_now_
-     &subtle::TimeNowIgnoringOverride};
- 
- std::atomic<TimeNowFunction> g_time_now_from_system_time_function{
-     &subtle::TimeNowFromSystemTimeIgnoringOverride};
+@@ -37,18 +37,20 @@ std::atomic<TimeNowFunction> g_time_now_
  
  std::atomic<TimeTicksNowFunction> g_time_ticks_now_function{
      &subtle::TimeTicksNowIgnoringOverride};
  
+ std::atomic<TimeTicksLowResolutionNowFunction>
+     g_time_ticks_low_resolution_now_function{
+         &subtle::TimeTicksLowResolutionNowIgnoringOverride};
+ 
 +#if !defined(MOZ_SANDBOX)
  std::atomic<LiveTicksNowFunction> g_live_ticks_now_function{
      &subtle::LiveTicksNowIgnoringOverride};
-+#endif
++#endif  // !defined(MOZ_SANDBOX)
  
  std::atomic<ThreadTicksNowFunction> g_thread_ticks_now_function{
      &subtle::ThreadTicksNowIgnoringOverride};
@@ -32,7 +24,7 @@ diff --git a/base/time/time.cc b/base/time/time.cc
  
  // TimeDelta ------------------------------------------------------------------
  
-@@ -92,16 +94,17 @@ Time Time::Now() {
+@@ -101,16 +103,17 @@ Time Time::Now() {
  
  // static
  Time Time::NowFromSystemTime() {
@@ -50,16 +42,16 @@ diff --git a/base/time/time.cc b/base/time/time.cc
    exploded.second = 0;
    exploded.millisecond = 0;
    Time out_time;
-@@ -142,16 +145,17 @@ bool Time::FromStringInternal(const char
-                                        is_local ? PR_FALSE : PR_TRUE,
-                                        &result_time);
-   if (result != PR_SUCCESS)
+@@ -153,16 +156,17 @@ bool Time::FromStringInternal(const char
+       time_string, is_local ? PR_FALSE : PR_TRUE, &result_time);
+   if (result != PR_SUCCESS) {
      return false;
+   }
  
    *parsed_time = UnixEpoch() + Microseconds(result_time);
    return true;
  }
-+#endif
++#endif  // !defined(MOZ_SANDBOX)
  
  // static
  bool Time::ExplodedMostlyEquals(const Exploded& lhs, const Exploded& rhs) {
@@ -68,7 +60,7 @@ diff --git a/base/time/time.cc b/base/time/time.cc
           std::tie(rhs.year, rhs.month, rhs.day_of_month, rhs.hour, rhs.minute,
                    rhs.second, rhs.millisecond);
  }
-@@ -182,32 +186,34 @@ int64_t Time::ToRoundedDownMillisecondsS
+@@ -191,32 +195,34 @@ int64_t Time::ToRoundedDownMillisecondsS
    // If |us_| is negative and includes fractions of a millisecond, subtract one
    // more to effect the round towards -infinity. C-style integer truncation
    // takes care of all other cases.
@@ -94,7 +86,7 @@ diff --git a/base/time/time.cc b/base/time/time.cc
                              time.ToDeltaSinceWindowsEpoch().InMicroseconds() %
                                  Time::kMicrosecondsPerSecond);
  }
-+#endif
++#endif  // !defined(MOZ_SANDBOX)
  
  // TimeTicks ------------------------------------------------------------------
  
@@ -103,7 +95,7 @@ diff --git a/base/time/time.cc b/base/time/time.cc
    return internal::g_time_ticks_now_function.load(std::memory_order_relaxed)();
  }
  
-@@ -262,20 +268,22 @@ std::ostream& operator<<(std::ostream& o
+@@ -276,20 +282,22 @@ std::ostream& operator<<(std::ostream& o
    // real microseconds, the only real guarantee is that the number never goes
    // down during a single run.
    const TimeDelta as_time_delta = time_ticks - TimeTicks();
@@ -117,7 +109,7 @@ diff --git a/base/time/time.cc b/base/time/time.cc
  LiveTicks LiveTicks::Now() {
    return internal::g_live_ticks_now_function.load(std::memory_order_relaxed)();
  }
-+#endif
++#endif  // !defined(MOZ_SANDBOX)
  
  #if !BUILDFLAG(IS_WIN)
  namespace subtle {
@@ -126,49 +118,26 @@ diff --git a/base/time/time.cc b/base/time/time.cc
    // Subtract the empty `TimeTicks` from `TimeTicks::Now()` to get a `TimeDelta`
    // that can be added to the empty `LiveTicks`.
    return LiveTicks() + (TimeTicks::Now() - TimeTicks());
-diff --git a/base/time/time.h b/base/time/time.h
---- a/base/time/time.h
-+++ b/base/time/time.h
-@@ -804,16 +804,17 @@ class BASE_EXPORT Time : public time_int
-                                        Time* parsed_time) {
-     return FromStringInternal(time_string, true, parsed_time);
-   }
-   [[nodiscard]] static bool FromUTCString(const char* time_string,
-                                           Time* parsed_time) {
-     return FromStringInternal(time_string, false, parsed_time);
-   }
- 
-+#if !defined(MOZ_SANDBOX)
-   // Fills the given |exploded| structure with either the local time or UTC from
-   // this Time instance. If the conversion cannot be made, the output will be
-   // assigned invalid values. Use Exploded::HasValidValues() to confirm a
-   // successful conversion.
-   //
-   // Y10K compliance: This method will successfully convert all Times that
-   // represent dates on/after the start of the year 1601 and on/before the start
-   // of the year 30828. Some platforms might convert over a wider input range.
-@@ -822,16 +823,17 @@ class BASE_EXPORT Time : public time_int
-   // on Exploded for more information.
-   void UTCExplode(Exploded* exploded) const { Explode(false, exploded); }
-   void LocalExplode(Exploded* exploded) const { Explode(true, exploded); }
- 
-   // The following two functions round down the time to the nearest day in
-   // either UTC or local time. It will represent midnight on that day.
-   Time UTCMidnight() const { return Midnight(false); }
-   Time LocalMidnight() const { return Midnight(true); }
-+#endif
- 
-   // For legacy deserialization only. Converts an integer value representing
-   // Time to a class. This may be used when deserializing a |Time| structure,
-   // using a value known to be compatible. It is not provided as a constructor
-   // because the integer type may be unclear from the perspective of a caller.
-   //
-   // DEPRECATED - Do not use in new code. When deserializing from `base::Value`,
-   // prefer the helpers from //base/json/values_util.h instead.
 diff --git a/base/time/time_win.cc b/base/time/time_win.cc
 --- a/base/time/time_win.cc
 +++ b/base/time/time_win.cc
-@@ -639,25 +639,27 @@ bool TimeTicks::IsConsistentAcrossProces
+@@ -612,6 +612,7 @@ void InitializeNowFunctionPointer() {
+     // field trial, try enabling the high-res, QPC-based implementation of
+     // TimeTicks on 50% of such devices.
+     bool force_high_res_time_ticks = false;
++#if !defined(MOZ_SANDBOX)
+     // There is an explicit check for
+     // `base::CommandLine::InitializedForCurrentProcess()` not being null here,
+     // because some targets (like `generate_colors_info`) use `TimeTicks` during
+@@ -643,6 +644,7 @@ void InitializeNowFunctionPointer() {
+     } else {
+       opted_out_because_no_command_line = true;
+     }
++#endif  // !defined(MOZ_SANDBOX)
+ 
+     eligible_for_high_res_time_ticks =
+         cpu.has_non_stop_time_stamp_counter() || force_high_res_time_ticks;
+@@ -796,25 +798,27 @@ bool TimeTicks::IsConsistentAcrossProces
  // static
  TimeTicks::Clock TimeTicks::GetClock() {
    return IsHighResolution() ? Clock::WIN_QPC
@@ -187,7 +156,7 @@ diff --git a/base/time/time_win.cc b/base/time/time_win.cc
    return LiveTicks() + Nanoseconds(unbiased_interrupt_time * 100);
  }
  }  // namespace subtle
-+#endif
++#endif  // !defined(MOZ_SANDBOX)
  
  // ThreadTicks ----------------------------------------------------------------
  
@@ -196,3 +165,19 @@ diff --git a/base/time/time_win.cc b/base/time/time_win.cc
    return ThreadTicks::GetForThread(PlatformThread::CurrentHandle());
  }
  }  // namespace subtle
+@@ -910,6 +914,7 @@ bool TimeTicks::GetHighResolutionTimeTicksFieldTrial(std::string* trial_name,
+   return true;
+ }
+ 
++#if !defined(MOZ_SANDBOX)
+ // static
+ void TimeTicks::MaybeAddHighResolutionTimeTicksSwitch(
+     base::CommandLine* command_line) {
+@@ -938,6 +943,7 @@ void TimeTicks::MaybeAddHighResolutionTimeTicksSwitch(
+       break;
+   }
+ }
++#endif  // !defined(MOZ_SANDBOX)
+ 
+ // TimeDelta ------------------------------------------------------------------
+ 

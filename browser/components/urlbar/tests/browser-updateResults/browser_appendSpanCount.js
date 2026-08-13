@@ -43,8 +43,8 @@ add_task(async function viewUpdateAppendHidden() {
   provider.results = queryStrings.map(
     suggestion =>
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        type: UrlbarShared.RESULT_TYPE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         payload: {
           query: queries[0],
           suggestion,
@@ -63,7 +63,7 @@ add_task(async function viewUpdateAppendHidden() {
   let tipResult = await UrlbarTestUtils.getDetailsOfResultAt(window, 1);
   Assert.equal(
     tipResult.type,
-    UrlbarUtils.RESULT_TYPE.TIP,
+    UrlbarShared.RESULT_TYPE.TIP,
     "Result at index 1 is a tip"
   );
   let tipResultSpan = UrlbarUtils.getSpanForResult(
@@ -83,8 +83,8 @@ add_task(async function viewUpdateAppendHidden() {
   provider.results = queryStrings.map(title => {
     let url = "http://example.com/" + title;
     return new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      type: UrlbarShared.RESULT_TYPE.URL,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: {
         title,
         url,
@@ -144,7 +144,7 @@ add_task(async function viewUpdateAppendHidden() {
     let row = rows[i];
     Assert.equal(
       row.result.type,
-      UrlbarUtils.RESULT_TYPE.SEARCH,
+      UrlbarShared.RESULT_TYPE.SEARCH,
       `Result at index ${i} is a search result`
     );
     Assert.ok(
@@ -162,7 +162,7 @@ add_task(async function viewUpdateAppendHidden() {
     let row = rows[i];
     Assert.equal(
       row.result.type,
-      UrlbarUtils.RESULT_TYPE.URL,
+      UrlbarShared.RESULT_TYPE.URL,
       `Result at index ${i} is a URL result`
     );
     Assert.ok(

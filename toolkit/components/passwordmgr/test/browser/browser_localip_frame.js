@@ -32,17 +32,17 @@ add_task(async function test_warningForLocalIP() {
     {
       top: "http://192.168.0.0",
       iframe: "https://example.org",
-      expected: `[type="insecureWarning"]`,
+      expected: `[originaltype="insecureWarning"]`,
     },
     {
       top: "http://example.com",
       iframe: "http://10.0.0.0",
-      expected: `[type="insecureWarning"]`,
+      expected: `[originaltype="insecureWarning"]`,
     },
     {
       top: "http://example.com",
       iframe: "http://example.org",
-      expected: `[type="insecureWarning"]`,
+      expected: `[originaltype="insecureWarning"]`,
     },
   ];
 
@@ -80,7 +80,7 @@ add_task(async function test_warningForLocalIP() {
     let item = popup.querySelector(test.expected);
     Assert.ok(item, "Got expected richlistitem");
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => !item.collapsed,
       "Wait for autocomplete to show"
     );

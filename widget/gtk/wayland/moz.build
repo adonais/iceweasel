@@ -20,10 +20,10 @@ SOURCES += [
     "viewporter-protocol.c",
     "xdg-activation-v1-protocol.c",
     "xdg-output-unstable-v1-protocol.c",
+    "xdg-session-management-v1-protocol.c",
     "xdg-shell-protocol.c",
     "xx-fractional-scale-v2-protocol.c",
     "xx-pip-v1-protocol.c",
-    "xx-session-management-v1-protocol.c",
 ]
 
 EXPORTS.mozilla.widget += [
@@ -41,10 +41,10 @@ EXPORTS.mozilla.widget += [
     "viewporter-client-protocol.h",
     "xdg-activation-v1-client-protocol.h",
     "xdg-output-unstable-v1-client-protocol.h",
+    "xdg-session-management-v1-client-protocol.h",
     "xdg-shell-client-protocol.h",
     "xx-fractional-scale-v2-client-protocol.h",
     "xx-pip-v1-client-protocol.h",
-    "xx-session-management-v1-client-protocol.h",
 ]
 
 include("/ipc/chromium/chromium-config.mozbuild")

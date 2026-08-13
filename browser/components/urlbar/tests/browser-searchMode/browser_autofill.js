@@ -95,7 +95,7 @@ add_task(async function local() {
   );
   info("Enter local search mode and check autofill is preserved.");
   await UrlbarTestUtils.enterSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    source: UrlbarShared.RESULT_SOURCE.HISTORY,
   });
   Assert.equal(
     gURLBar.value,

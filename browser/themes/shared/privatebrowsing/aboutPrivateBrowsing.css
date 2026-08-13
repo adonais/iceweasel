@@ -458,7 +458,8 @@ content-search-handoff-ui {
   }
 }
 
-.nova-tagline {
+.nova-tagline,
+.nova-subheader {
   display: none;
 }
 
@@ -522,7 +523,14 @@ content-search-handoff-ui {
   .nova-tagline {
     display: block;
     text-align: center;
+    margin-block: 0 var(--space-small);
+  }
+
+  .nova-subheader {
+    display: block;
+    text-align: start;
     margin-block: 0 var(--space-xxlarge);
+    max-width: 31em;
   }
 
   content-search-handoff-ui {
@@ -580,7 +588,8 @@ content-search-handoff-ui {
   }
 
   /* `:link` to outweigh the base `a:link { color: inherit }` rule. */
-  #private-browsing-myths:link {
+  #private-browsing-myths:link,
+  #nova-promo-link:link {
     @media not (prefers-contrast) {
       color: var(--link-color);
 
@@ -592,5 +601,22 @@ content-search-handoff-ui {
         color: var(--link-color-active);
       }
     }
+  }
+
+  .nova-promo-wrapper {
+    position: relative;
+    display: flex;
+    width: 100%;
+    margin-block-start: var(--space-xxlarge);
+  }
+
+  #nova-promo {
+    flex: 1;
+  }
+
+  #nova-dismiss-btn {
+    position: absolute;
+    inset-block-start: var(--space-small);
+    inset-inline-end: var(--space-small);
   }
 }

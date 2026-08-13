@@ -11,9 +11,10 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::thread;
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use log::{error, info};
 
+use crate::errorhandling::panic_message;
 use crate::runner::CommandRunner;
 use crate::updater::{prepare_updater, CertOverride};
 
@@ -83,7 +84,7 @@ pub(crate) fn run_tests(
     target_platform: &str,
     to_installer: &Path,
     channel: &str,
-    appname: &str,
+    product: &str,
     cert_dir: Option<&Path>,
     cert_overrides: &Vec<CertOverride>,
     tests: Vec<Test>,
@@ -132,7 +133,7 @@ pub(crate) fn run_tests(
                             // Unpack it...
                             let result = prepare_updater(
                                 updater_package,
-                                appname,
+                                product,
                                 cert_dir,
                                 cert_overrides,
                                 unpack_dir,
@@ -150,10 +151,10 @@ pub(crate) fn run_tests(
 
         let mut results = Vec::with_capacity(updater_items.len());
         for h in handles {
-            let chunk_result = h
-                .join()
-                // Handle errors that come up when joining the thread
-                .map_err(|_| anyhow::anyhow!("prepare updater thread panicked"))?;
+            let chunk_result = h.join().map_err(|e| {
+                let msg = panic_message(e);
+                return anyhow::anyhow!("prepare updater thread panicked: {msg}");
+            })?;
             results.extend(chunk_result);
         }
         Ok(results)
@@ -191,7 +192,7 @@ pub(crate) fn run_tests(
                                 target_platform,
                                 to_installer,
                                 channel,
-                                appname,
+                                product,
                                 tmpdir,
                                 artifact_dir,
                                 runner,
@@ -218,9 +219,10 @@ pub(crate) fn run_tests(
 
         let mut outcomes = vec![];
         for h in handles {
-            let chunk_result = h
-                .join()
-                .map_err(|_| anyhow::anyhow!("test thread panicked"))?;
+            let chunk_result = h.join().map_err(|e| {
+                let msg = panic_message(e);
+                return anyhow::anyhow!("run test thread panicked: {msg}");
+            })?;
             outcomes.extend(chunk_result);
         }
         Ok(outcomes)
@@ -246,7 +248,7 @@ fn run_test(
     target_platform: &str,
     to_installer: &Path,
     channel: &str,
-    appname: &str,
+    product: &str,
     tmpdir: &Path,
     artifact_dir: &Path,
     runner: &dyn CommandRunner,
@@ -278,7 +280,7 @@ fn run_test(
                 .parent()
                 .ok_or_else(|| anyhow!("Couldn't determine update-settings.ini dir!"))?,
         )
-        .arg(appname)
+        .arg(product)
         .current_dir(test_dir);
     let command_result = runner.run(cmd)?;
     let result = match command_result.exit_code {
@@ -297,8 +299,15 @@ fn run_test(
     // save the output to an artifact
     let mut output_file = artifact_dir.to_path_buf();
     output_file.push(format!("{}.output.log", test.full_id()));
-    let mut f = File::create(output_file)?;
-    f.write_all(command_result.output.as_bytes())?;
+    let mut f = File::create(&output_file).context(format!(
+        "couldn't create output file: {}",
+        output_file.display()
+    ))?;
+    f.write_all(command_result.output.as_bytes())
+        .context(format!(
+            "couldn't write to output file: {}",
+            output_file.display()
+        ))?;
 
     return Ok(TestOutcome {
         label: test.full_id(),
@@ -319,10 +328,11 @@ fn setup_test_dir(mar: &Path, tmpdir: &Path) -> Result<PathBuf> {
         .keep();
     let mut update_dir = test_dir.clone();
     update_dir.push("update");
-    create_dir(update_dir.as_path())?;
+    create_dir(update_dir.as_path())
+        .context(format!("couldn't create dir {}", update_dir.display()))?;
     let mut mar_path = update_dir.clone();
     mar_path.push("update.mar");
-    symlink(mar, mar_path.as_path())?;
+    symlink(mar, mar_path.as_path()).context(format!("couldn't symlink {}", mar_path.display()))?;
     return Ok(test_dir);
 }
 
@@ -388,7 +398,8 @@ mod tests {
             1,
         );
         assert!(result.is_err());
-        let e = result.unwrap_err();
-        assert!(e.to_string().contains("No such file or directory"));
+        let e = format!("{:#}", result.unwrap_err());
+        assert!(e.contains("couldn't open package: /nonexistent/installer.tar.xz"));
+        assert!(e.contains("No such file or directory"));
     }
 }

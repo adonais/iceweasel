@@ -5,13 +5,14 @@
 #ifndef MOZILLA_GFX_COMPOSITORD3D11_H
 #define MOZILLA_GFX_COMPOSITORD3D11_H
 
-#include "mozilla/gfx/2D.h"
-#include "gfx2DGlue.h"
-#include "mozilla/layers/Compositor.h"
-#include "TextureD3D11.h"
 #include <d3d11.h>
 #include <dxgi1_2.h>
+
 #include "ShaderDefinitionsD3D11.h"
+#include "TextureD3D11.h"
+#include "gfx2DGlue.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/layers/Compositor.h"
 
 class nsWidget;
 

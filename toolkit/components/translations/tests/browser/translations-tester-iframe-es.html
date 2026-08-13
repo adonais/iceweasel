@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Translations Iframe Test</title>
+  <style>
+    main {
+      margin: 10px auto;
+      width: 300px;
+    }
+
+    iframe {
+      display: block;
+      width: 100%;
+      height: 320px;
+      margin: 47px 0;
+    }
+
+    p {
+      margin: 47px 0;
+      font-size: 21px;
+      line-height: 2;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header lang="en">
+      The following page contains translatable main-document content and two
+      translated iframes.
+    </header>
+    <h1 title="Este es el título del encabezado de la página principal">
+      Página con iframes desplazables
+    </h1>
+    <iframe
+      id="top-frame"
+      src="translations-tester-es.html?frame=top"
+      title="Top frame"
+    ></iframe>
+    <p>
+      Del buen suceso que el valeroso don Quijote tuvo en la espantable y jamás
+      imaginada aventura de los molinos de viento, con otros sucesos dignos de
+      felice recordación.
+    </p>
+    <p>
+      En esto, descubrieron treinta o cuarenta molinos de viento que hay en
+      aquel campo; y, así como don Quijote los vio, dijo a su escudero.
+    </p>
+    <p>
+      La ventura va guiando nuestras cosas mejor de lo que acertáramos a
+      desear, porque ves allí, amigo Sancho Panza, donde se descubren treinta,
+      o pocos más, desaforados gigantes.
+    </p>
+    <p title="Este es el título del párrafo anterior al último iframe">
+      Bien parece que no estás cursado en esto de las aventuras: ellos son
+      gigantes; y si tienes miedo, quítate de ahí, y ponte en oración.
+    </p>
+    <iframe
+      id="bottom-frame"
+      src="translations-tester-es.html?frame=bottom"
+      title="Bottom frame"
+    ></iframe>
+    <p title="Este es el título del último párrafo de la página principal">
+      Pues, aunque mováis más brazos que los del gigante Briareo, me lo habéis
+      de pagar.
+    </p>
+  </main>
+</body>
+</html>

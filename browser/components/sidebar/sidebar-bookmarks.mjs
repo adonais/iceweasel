@@ -114,6 +114,7 @@ export class SidebarBookmarks extends SidebarPage {
         copyLink,
       ],
       alwaysShownItems: [sepCutCopy, cut, copy],
+      disabledForRootItems: [editBookmark, cut, deleteBookmark],
       openAllBookmarks,
       sepOpenAll,
       sortByName,
@@ -364,6 +365,7 @@ export class SidebarBookmarks extends SidebarPage {
       folderItems,
       bookmarkItems,
       alwaysShownItems,
+      disabledForRootItems,
       openAllBookmarks,
       sortByName,
       openInContainerTab,
@@ -389,6 +391,9 @@ export class SidebarBookmarks extends SidebarPage {
     for (const el of alwaysShownItems) {
       el.hidden = false;
     }
+    for (const el of disabledForRootItems) {
+      el.disabled = isRootFolder;
+    }
 
     openInContainerTab.hidden =
       !isBookmark ||
@@ -397,7 +402,6 @@ export class SidebarBookmarks extends SidebarPage {
     openInPrivateWindow.hidden =
       !isBookmark || !lazy.PrivateBrowsingUtils.enabled;
     editBookmark.hidden = isSeparator;
-    editBookmark.disabled = isRootFolder;
     paste.hidden = !this.#hasClipboardData();
 
     const isSearchResult = isBookmark && !!this.searchQuery;
@@ -709,6 +713,9 @@ export class SidebarBookmarks extends SidebarPage {
   }
 
   async #editBookmarkOrFolder(bookmark) {
+    if (bookmark.isRootFolder) {
+      throw new Error("It's not possible to edit Places root folders.");
+    }
     const fetchInfo = await lazy.PlacesUtils.bookmarks.fetch({
       guid: bookmark.guid,
     });
@@ -731,6 +738,9 @@ export class SidebarBookmarks extends SidebarPage {
   }
 
   async #deleteBookmarks(bookmarks) {
+    if (bookmarks.some(({ isRootFolder }) => isRootFolder)) {
+      throw new Error("It's not possible to delete Places root folders.");
+    }
     await lazy.PlacesTransactions.Remove({
       guids: bookmarks.map(b => b.guid),
     }).transact();
@@ -909,46 +919,78 @@ export class SidebarBookmarks extends SidebarPage {
     await lazy.PlacesTransactions.SortByName(this.triggerNode.guid).transact();
   }
 
-  async #cutBookmarks(bookmarks) {
+  #cutBookmarks(bookmarks) {
     this.#copyBookmarksToClipboard(bookmarks, "cut");
-    await lazy.PlacesTransactions.Remove({
-      guids: bookmarks.map(b => b.guid),
-    }).transact();
   }
 
   #copyBookmarks(bookmarks) {
     this.#copyBookmarksToClipboard(bookmarks, "copy");
   }
 
+  /**
+   * Builds and passes text/x-moz-place, text/x-moz-url and text/plain flavors
+   * to the clipboard based on selected bookmark nodes and their data.
+   *
+   * Flavors:
+   * - text/x-moz-place: comma-separated JSON objects, one per bookmark
+   * - text/x-moz-url: bookmark URL + newline + title, one per bookmark
+   * - text/plain: bookmark URL as raw text, one per bookmark
+   *
+   * @param {Array} bookmarks array of sidebar-bookmark-row nodes
+   * @param {"copy"|"cut"} action type of action taken (cut or copy)
+   */
   #copyBookmarksToClipboard(bookmarks, action) {
-    const data = bookmarks
-      .map(item => {
-        if (item.isSeparator) {
-          return JSON.stringify({
-            type: lazy.PlacesUtils.TYPE_X_MOZ_PLACE_SEPARATOR,
-          });
-        }
-        if (item.isFolder) {
-          return JSON.stringify({
-            type: lazy.PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER,
-            itemGuid: item.guid,
-            instanceId: lazy.PlacesUtils.instanceId,
-            title: item.title,
-          });
+    const xMozPlaceEntries = bookmarks.map(item => {
+      if (item.isSeparator) {
+        return JSON.stringify({
+          type: lazy.PlacesUtils.TYPE_X_MOZ_PLACE_SEPARATOR,
+        });
+      }
+      if (item.isFolder) {
+        if (lazy.PlacesUtils.isRootItem(item.guid)) {
+          return JSON.stringify(
+            lazy.PlacesUtils.bookmarks.createVirtualLinkToRoot(item)
+          );
         }
         return JSON.stringify({
-          type: lazy.PlacesUtils.TYPE_X_MOZ_PLACE,
+          type: lazy.PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER,
           itemGuid: item.guid,
           instanceId: lazy.PlacesUtils.instanceId,
           title: item.title,
-          uri: item.url,
         });
-      })
+      }
+      return JSON.stringify({
+        type: lazy.PlacesUtils.TYPE_X_MOZ_PLACE,
+        itemGuid: item.guid,
+        instanceId: lazy.PlacesUtils.instanceId,
+        title: item.title,
+        uri: item.url,
+      });
+    });
+
+    const xMozPlaceFlavor = xMozPlaceEntries.join(",");
+
+    const uriItems = bookmarks.filter(item => item.url);
+    const xMozUrlFlavor = uriItems
+      .map(item => `${item.url}${lazy.PlacesUtils.endl}${item.title ?? ""}`)
       .join(lazy.PlacesUtils.endl);
-    this.#setClipboard(data, action);
+    const plainTextFlavor = uriItems
+      .map(item => item.url)
+      .join(lazy.PlacesUtils.endl);
+
+    const flavors = new Map([
+      [lazy.PlacesUtils.TYPE_X_MOZ_PLACE, xMozPlaceFlavor],
+    ]);
+
+    if (uriItems.length) {
+      flavors.set(lazy.PlacesUtils.TYPE_X_MOZ_URL, xMozUrlFlavor);
+      flavors.set(lazy.PlacesUtils.TYPE_PLAINTEXT, plainTextFlavor);
+    }
+
+    this.#setClipboard(flavors, action);
   }
 
-  #setClipboard(data, action) {
+  #setClipboard(flavors, action) {
     const xferable = Cc["@mozilla.org/widget/transferable;1"].createInstance(
       Ci.nsITransferable
     );
@@ -960,11 +1002,10 @@ export class SidebarBookmarks extends SidebarPage {
       s.data = str;
       return s;
     }
-    xferable.addDataFlavor(lazy.PlacesUtils.TYPE_X_MOZ_PLACE);
-    xferable.setTransferData(
-      lazy.PlacesUtils.TYPE_X_MOZ_PLACE,
-      toISupports(data)
-    );
+    for (const [type, data] of flavors) {
+      xferable.addDataFlavor(type);
+      xferable.setTransferData(type, toISupports(data));
+    }
     xferable.addDataFlavor(lazy.PlacesUtils.TYPE_X_MOZ_PLACE_ACTION);
     xferable.setTransferData(
       lazy.PlacesUtils.TYPE_X_MOZ_PLACE_ACTION,
@@ -1047,11 +1088,19 @@ export class SidebarBookmarks extends SidebarPage {
     if (!validNodes.length) {
       return;
     }
-    const insertionPoint = {
-      guid: fetchInfo.parentGuid,
-      isTag: false,
-      getIndex: async () => fetchInfo.index + 1,
-    };
+    // When the target is a folder, paste inside it and append at the end.
+    // Otherwise, paste as a sibling right after the target bookmark.
+    const insertionPoint = this.triggerNode.isFolder
+      ? {
+          guid: this.triggerNode.guid,
+          isTag: false,
+          getIndex: async () => lazy.PlacesUtils.bookmarks.DEFAULT_INDEX,
+        }
+      : {
+          guid: fetchInfo.parentGuid,
+          isTag: false,
+          getIndex: async () => fetchInfo.index + 1,
+        };
     await lazy.PlacesUIUtils.handleTransferItems(
       validNodes,
       insertionPoint,
@@ -1141,7 +1190,7 @@ export class SidebarBookmarks extends SidebarPage {
       [bookmarks.unfiledGuid]: "sidebar-bookmarks-folder-other",
       [bookmarks.mobileGuid]: "sidebar-bookmarks-folder-mobile",
     };
-    this.#normalizeBookmarkNode(tree, guidToL10nId);
+    await this.#normalizeBookmarkNode(tree, guidToL10nId);
     tree.children?.sort((a, b) => {
       if (a.guid === bookmarks.toolbarGuid) {
         return -1;
@@ -1154,7 +1203,7 @@ export class SidebarBookmarks extends SidebarPage {
     return tree;
   }
 
-  #normalizeBookmarkNode(node, guidToL10nId) {
+  async #normalizeBookmarkNode(node, guidToL10nId) {
     if (node.iconUri && !node.iconUri.startsWith("fake-favicon-uri:")) {
       node.icon = node.iconUri;
     } else if (node.uri) {
@@ -1169,7 +1218,7 @@ export class SidebarBookmarks extends SidebarPage {
       node.type === lazy.PlacesUtils.TYPE_X_MOZ_PLACE &&
       node.uri?.startsWith("place:")
     ) {
-      this.#expandPlaceQuery(node);
+      await this.#expandPlaceQuery(node);
     }
     const l10nId = guidToL10nId?.[node.guid];
     if (l10nId) {
@@ -1178,135 +1227,234 @@ export class SidebarBookmarks extends SidebarPage {
       ]);
       node.title = msg.value;
     }
-    for (const child of node.children ?? []) {
-      this.#normalizeBookmarkNode(child, guidToL10nId);
-    }
+    // allSettled so that a single child failing to normalize (e.g. an
+    // unexpected rejection while expanding a nested query) doesn't discard the
+    // whole tree; the worst case is an incomplete branch.
+    await Promise.allSettled(
+      (node.children ?? []).map(child =>
+        this.#normalizeBookmarkNode(child, guidToL10nId)
+      )
+    );
   }
 
   /**
-   * Execute a smart-bookmark (place:) query and attach its results as
-   * children, so it renders as a folder like the legacy bookmarks sidebar.
+   * Execute a smart-bookmark (place:) query off the main thread and attach its
+   * results as children, so it renders as a folder like the legacy bookmarks
+   * sidebar.
    *
-   * TODO (Bug 2043613): migrate to asyncExecuteLegacyQuery to avoid
-   * main-thread I/O. That requires the bookmarks tree pipeline to support
-   * async child expansion.
+   * Uses asyncExecuteLegacyQuery to avoid main-thread I/O. That API delivers
+   * flat result rows rather than a node tree, so the container/leaf structure
+   * is rebuilt here (see #runPlaceQueryAsync / #convertPlaceRow).
    *
    * @param {object} node
    *   The bookmark tree node whose `uri` is a `place:` query.
    */
-  #expandPlaceQuery(node) {
-    const placesHistory = lazy.PlacesUtils.history;
+  async #expandPlaceQuery(node) {
     const queryRef = {};
     const optionsRef = {};
-    placesHistory.queryStringToQuery(node.uri, queryRef, optionsRef);
-    let result;
     try {
-      result = placesHistory.executeQuery(queryRef.value, optionsRef.value);
+      lazy.PlacesUtils.history.queryStringToQuery(
+        node.uri,
+        queryRef,
+        optionsRef
+      );
     } catch (e) {
       return;
     }
-    const wasOpen = result.root.containerOpen;
-    result.root.containerOpen = true;
+    node.isPlaceContainer = true;
+    node.isTagsRoot =
+      optionsRef.value.resultType ===
+      Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAGS_ROOT;
+    // Seed the loop guard with the target folder of a simple folder query, so
+    // children that link back to it don't recurse infinitely.
+    const targetGuid = this.#simpleFolderTargetGuid(
+      queryRef.value,
+      optionsRef.value
+    );
+    const ancestorKeys = targetGuid ? new Set([targetGuid]) : new Set();
     try {
-      node.children = this.#collectPlaceChildren(result.root, new Set());
-      node.isPlaceContainer = true;
-      node.isTagsRoot =
-        optionsRef.value.resultType ===
-        Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAGS_ROOT;
-    } finally {
-      if (!wasOpen) {
-        result.root.containerOpen = false;
-      }
-    }
-  }
-
-  #collectPlaceChildren(container, ancestorGuids) {
-    const children = [];
-    for (let i = 0; i < container.childCount; i++) {
-      const child = this.#convertPlaceResultNode(
-        container.getChild(i),
-        ancestorGuids
+      node.children = await this.#runPlaceQueryAsync(
+        queryRef.value,
+        optionsRef.value,
+        ancestorKeys
       );
-      if (child) {
-        children.push(child);
-      }
+    } catch (e) {
+      node.children = [];
     }
-    return children;
   }
 
-  #convertPlaceResultNode(placeNode, ancestorGuids) {
-    const {
-      RESULT_TYPE_URI,
-      RESULT_TYPE_FOLDER_SHORTCUT,
-      RESULT_TYPE_QUERY,
-      RESULT_TYPE_FOLDER,
-    } = Ci.nsINavHistoryResultNode;
-    switch (placeNode.type) {
-      case RESULT_TYPE_URI:
-        return {
-          title: placeNode.title,
-          uri: placeNode.uri,
-          guid: placeNode.bookmarkGuid || placeNode.pageGuid,
-          type: lazy.PlacesUtils.TYPE_X_MOZ_PLACE,
-          isPlaceChild: true,
-        };
-      case RESULT_TYPE_FOLDER_SHORTCUT: {
-        // Folder shortcuts are symlinks (place:parentGuid=...) to a concrete
-        // folder. Render them as a leaf reference rather than recursing, so
-        // deletion targets the shortcut rather than the linked folder.
-        return {
-          title: placeNode.title,
-          uri: placeNode.uri,
-          guid: placeNode.bookmarkGuid || placeNode.uri,
-          type: lazy.PlacesUtils.TYPE_X_MOZ_PLACE,
-          isPlaceChild: true,
-        };
-      }
-      case RESULT_TYPE_QUERY:
-      case RESULT_TYPE_FOLDER: {
-        const isTagContainer =
-          placeNode.type === RESULT_TYPE_QUERY &&
-          lazy.PlacesUtils.nodeIsTagQuery(placeNode);
-        const guid =
-          placeNode.bookmarkGuid || placeNode.pageGuid || placeNode.uri;
-        const node = {
-          title: placeNode.title,
-          uri: placeNode.uri,
+  /**
+   * Run a place: query off the main thread and build child nodes from the flat
+   * result rows, recursing into nested query/folder containers.
+   *
+   * @param {nsINavHistoryQuery} query
+   * @param {nsINavHistoryQueryOptions} options
+   * @param {Set<string>} ancestorKeys
+   *   Guids (or uris, for keyless rows) of ancestor containers, used to break
+   *   query loops.
+   * @returns {Promise<object[]>}
+   */
+  #runPlaceQueryAsync(query, options, ancestorKeys) {
+    return new Promise((resolve, reject) => {
+      const entries = [];
+      lazy.PlacesUtils.history.asyncExecuteLegacyQuery(query, options, {
+        handleResult: resultSet => {
+          for (let row; (row = resultSet.getNextRow()); ) {
+            const entry = this.#convertPlaceRow(row, options, ancestorKeys);
+            if (entry) {
+              entries.push(entry);
+            }
+          }
+        },
+        handleError: error => {
+          reject(
+            new Error(
+              `Async place query error (${error.result}): ${error.message}`
+            )
+          );
+        },
+        handleCompletion: () => resolve(entries),
+      });
+    }).then(async entries => {
+      // Recurse only after each level's rows are drained, so the storage
+      // callbacks never block on a nested async query.
+      await Promise.all(
+        entries
+          .filter(entry => entry.recurse)
+          .map(async entry => {
+            entry.node.children = await this.#runPlaceQueryAsync(
+              entry.recurse.query,
+              entry.recurse.options,
+              entry.recurse.ancestorKeys
+            );
+          })
+      );
+      return entries.map(entry => entry.node);
+    });
+  }
+
+  /**
+   * Convert a flat asyncExecuteLegacyQuery result row into a bookmark tree
+   * node, classifying place: children as leaf URIs or as containers to recurse
+   * into (queries, folders, and folder shortcuts).
+   *
+   * @param {mozIStorageRow} row
+   * @param {nsINavHistoryQueryOptions} parentOptions
+   *   Options of the query that produced this row, used to detect tag
+   *   containers under a tags-root query.
+   * @param {Set<string>} ancestorKeys
+   * @returns {?{node: object, recurse: ?object}}
+   */
+  #convertPlaceRow(row, parentOptions, ancestorKeys) {
+    // Column indices match the SELECT in nsNavHistory::ConstructQueryString
+    // (the kGetInfoIndex_* constants in nsNavHistory.cpp): 1 = URL, 2 = title,
+    // 14 = page guid. Bookmark queries append further columns, with the
+    // bookmark guid (b.guid) at 18; it's null for history queries, so fall
+    // back to the page guid to mirror the old bookmarkGuid || pageGuid.
+    const url = row.getResultByIndex(1);
+    const title = row.getResultByIndex(2);
+    const guid = row.getResultByIndex(18) || row.getResultByIndex(14);
+
+    if (!url?.startsWith("place:")) {
+      return {
+        node: {
+          title,
+          uri: url,
           guid,
+          type: lazy.PlacesUtils.TYPE_X_MOZ_PLACE,
+          isPlaceChild: true,
+        },
+        recurse: null,
+      };
+    }
+
+    const queryRef = {};
+    const optionsRef = {};
+    try {
+      lazy.PlacesUtils.history.queryStringToQuery(url, queryRef, optionsRef);
+    } catch (e) {
+      // Unparseable nested query: surface it as an empty, read-only container
+      // rather than dropping it. Keeping it a container (with children already
+      // set) means normalizeBookmarkNode won't try to expand it again.
+      return {
+        node: {
+          title,
+          uri: url,
+          guid: guid || url,
           type: lazy.PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER,
           isPlaceContainer: true,
           isPlaceChild: true,
-          isTagContainer,
-        };
-        // Guard against query results that loop back into an ancestor.
-        if (ancestorGuids.has(guid)) {
-          node.children = [];
-          return node;
-        }
-        const container = lazy.PlacesUtils.asContainer(placeNode);
-        if (container) {
-          ancestorGuids.add(guid);
-          const wasOpen = container.containerOpen;
-          container.containerOpen = true;
-          try {
-            node.children = this.#collectPlaceChildren(
-              container,
-              ancestorGuids
-            );
-          } finally {
-            if (!wasOpen) {
-              container.containerOpen = false;
-            }
-            ancestorGuids.delete(guid);
-          }
-        } else {
-          node.children = [];
-        }
-        return node;
-      }
-      default:
-        return null;
+          children: [],
+        },
+        recurse: null,
+      };
     }
+
+    const isTagContainer =
+      parentOptions.resultType ===
+        Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAGS_ROOT ||
+      queryRef.value.tags?.length === 1;
+    const key = guid || url;
+    const node = {
+      title,
+      uri: url,
+      guid: key,
+      type: lazy.PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER,
+      isPlaceContainer: true,
+      isPlaceChild: true,
+      isTagContainer,
+    };
+    // Guard against query results or folder shortcuts that loop back into an
+    // ancestor.
+    const targetGuid = this.#simpleFolderTargetGuid(
+      queryRef.value,
+      optionsRef.value
+    );
+    if (ancestorKeys.has(key) || (targetGuid && ancestorKeys.has(targetGuid))) {
+      node.children = [];
+      return { node, recurse: null };
+    }
+    const nextKeys = new Set(ancestorKeys).add(key);
+    if (targetGuid) {
+      nextKeys.add(targetGuid);
+    }
+    return {
+      node,
+      recurse: {
+        query: queryRef.value,
+        options: optionsRef.value,
+        ancestorKeys: nextKeys,
+      },
+    };
+  }
+
+  /**
+   * Return the concrete target folder guid of a simple bookmarks folder query
+   * (or folder shortcut), or null if it isn't one. Mirrors
+   * GetSimpleBookmarksQueryParent in nsNavHistory.cpp; the flat result rows
+   * don't carry the node type, so this is derived from the query parameters.
+   *
+   * @param {nsINavHistoryQuery} query
+   * @param {nsINavHistoryQueryOptions} options
+   * @returns {?string}
+   */
+  #simpleFolderTargetGuid(query, options) {
+    if (query.parentCount !== 1) {
+      return null;
+    }
+    if (
+      query.hasBeginTime ||
+      query.hasEndTime ||
+      query.hasDomain ||
+      query.hasUri ||
+      query.hasSearchTerms ||
+      query.tags?.length > 0 ||
+      options.maxResults > 0
+    ) {
+      return null;
+    }
+    const parentGuid = query.getParents()[0];
+    return lazy.PlacesUtils.isValidGuid(parentGuid) ? parentGuid : null;
   }
 
   #searchResultsTemplate() {
@@ -1349,7 +1497,7 @@ export class SidebarBookmarks extends SidebarPage {
             ></moz-input-search>
           </div>
         </sidebar-panel-header>
-        <div class="sidebar-panel-scrollable-content">
+        <div class="sidebar-panel-scrollable-content" tabindex="-1">
           ${when(
             this.searchQuery,
             () => this.#searchResultsTemplate(),

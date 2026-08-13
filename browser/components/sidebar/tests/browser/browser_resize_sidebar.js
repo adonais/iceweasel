@@ -32,6 +32,7 @@ async function dragLauncher(deltaX, shouldExpand) {
   const { sidebarMain, _launcherSplitter: splitter } = SidebarController;
   EventUtils.synthesizeMouseAtCenter(splitter, { type: "mousedown" });
   await mouseMoveInChunksHorizontal(splitter, deltaX, 10);
+  await waitForRepaint();
   EventUtils.synthesizeMouse(splitter, 0, 0, { type: "mouseup" });
 
   info(`The sidebar should be ${shouldExpand ? "expanded" : "collapsed"}.`);
@@ -122,10 +123,13 @@ add_task(async function test_drag_show_and_hide() {
   await SpecialPowers.pushPrefEnv({
     set: [[SIDEBAR_VISIBILITY_PREF, "hide-sidebar"]],
   });
-  await SidebarController.updateUIState({
-    launcherExpanded: true,
-    launcherVisible: true,
-  });
+  // In "hide-sidebar" mode the launcher starts hidden with no panel open, so
+  // show it via the toolbar button (as a user would) to get a visible, expanded
+  // launcher before dragging it closed.
+  if (!SidebarController._state.launcherVisible) {
+    await SidebarController.handleToolbarButtonClick();
+  }
+  await SidebarController.waitUntilStable();
 
   await dragLauncher(-200, false);
   ok(SidebarController.sidebarContainer.hidden, "Sidebar is hidden.");

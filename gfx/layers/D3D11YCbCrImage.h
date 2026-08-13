@@ -5,9 +5,9 @@
 #ifndef GFX_D3D11_YCBCR_IMAGE_H
 #define GFX_D3D11_YCBCR_IMAGE_H
 
+#include "ImageContainer.h"
 #include "d3d11.h"
 #include "mozilla/layers/TextureClientRecycleAllocator.h"
-#include "ImageContainer.h"
 
 namespace mozilla {
 namespace gl {

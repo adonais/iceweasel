@@ -33,6 +33,15 @@ import java.lang.ref.WeakReference
 private const val POCKET_CATEGORIES_SELECTED_AT_A_TIME_COUNT = 8
 
 /**
+ * The surface where a Pocket stories impression was recorded. Used as the `source` extra on the
+ * `pocket.home_recs_shown` Glean event.
+ */
+enum class StoriesImpressionSource(val sourceName: String) {
+    HOMEPAGE("homepage"),
+    STORIES_SCREEN("stories_screen"),
+}
+
+/**
  * Contract for how all user interactions with the Pocket stories feature are to be handled.
  */
 interface PocketStoriesController {
@@ -49,8 +58,9 @@ interface PocketStoriesController {
      * Callback to decide what should happen as an effect of a new list of stories being shown.
      *
      * @param storiesShown the new list of [PocketStory]es shown to the user.
+     * @param source The surface where the stories were shown.
      */
-    fun handleStoriesShown(storiesShown: List<PocketStory>)
+    fun handleStoriesShown(storiesShown: List<PocketStory>, source: StoriesImpressionSource)
 
     /**
      * Callback allowing to handle a specific [PocketRecommendedStoriesCategory] being clicked by the user.
@@ -65,8 +75,13 @@ interface PocketStoriesController {
      * @param storyClicked The just clicked [PocketStory].
      * @param storyPosition `row x column x index` matrix representing the grid and index position
      * of the clicked story.
+     * @param source The surface where the clicked story was shown.
      */
-    fun handleStoryClicked(storyClicked: PocketStory, storyPosition: Triple<Int, Int, Int>)
+    fun handleStoryClicked(
+        storyClicked: PocketStory,
+        storyPosition: Triple<Int, Int, Int>,
+        source: StoriesImpressionSource,
+    )
 
     /**
      * Callback for when the user clicks on the "Discover more" button.
@@ -114,6 +129,7 @@ internal class DefaultPocketStoriesController(
                         position = storyPosition.third,
                     ),
                 ),
+                source = StoriesImpressionSource.HOMEPAGE,
             ),
         )
 
@@ -138,7 +154,10 @@ internal class DefaultPocketStoriesController(
         }
     }
 
-    override fun handleStoriesShown(storiesShown: List<PocketStory>) {
+    override fun handleStoriesShown(
+        storiesShown: List<PocketStory>,
+        source: StoriesImpressionSource,
+    ) {
         // Only report here the impressions for recommended stories.
         // Sponsored stories use a different API for more accurate tracking.
         appStore.dispatch(
@@ -146,10 +165,13 @@ internal class DefaultPocketStoriesController(
                 impressions = storiesShown
                     .filter { it is ContentRecommendation || it is PocketRecommendedStory }
                     .map { PocketImpression(story = it, position = storiesShown.indexOf(it)) },
+                source = source,
             ),
         )
 
-        Pocket.homeRecsShown.record(NoExtras())
+        Pocket.homeRecsShown.record(
+            Pocket.HomeRecsShownExtra(source = source.sourceName),
+        )
     }
 
     override fun handleCategoryClick(categoryClicked: PocketRecommendedStoriesCategory) {
@@ -196,6 +218,7 @@ internal class DefaultPocketStoriesController(
     override fun handleStoryClicked(
         storyClicked: PocketStory,
         storyPosition: Triple<Int, Int, Int>,
+        source: StoriesImpressionSource,
     ) {
         val storyUrl = when (navController.currentDestination?.id) {
             R.id.storiesFragment -> storyClicked.url.markAsOpenedFromStoriesScreen()
@@ -216,6 +239,7 @@ internal class DefaultPocketStoriesController(
                     Pocket.HomeRecsStoryClickedExtra(
                         position = "${storyPosition.first}x${storyPosition.second}",
                         timesShown = storyClicked.timesShown.inc().toString(),
+                        source = source.sourceName,
                     ),
                 )
             }
@@ -225,6 +249,7 @@ internal class DefaultPocketStoriesController(
                     ContentRecommendationsAction.ContentRecommendationClicked(
                         recommendation = storyClicked,
                         position = storyPosition.third,
+                        source = source,
                     ),
                 )
             }

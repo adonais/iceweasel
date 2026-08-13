@@ -578,6 +578,19 @@ class nsFocusManager final : public nsIFocusManager,
                             nsIContent** aStartContent,
                             nsIContent** aEndContent);
 
+  /*
+   * Determine place to start sequential focus navigation, for
+   * MOVEFOCUS_FORWARD/BACKWARD.
+   * *aConsiderStartContent is set to true if we should move
+   * focus directly to *aStartContent if it is focusable
+   * (rather than the next/previous content).
+   */
+  void GetSequentialFocusNavigationStartingPoint(Document* aDocument,
+                                                 nsIContent* aFocusedContent,
+                                                 bool aForward,
+                                                 nsIContent** aStartContent,
+                                                 bool* aConsiderStartContent);
+
   /**
    * Retrieve the next tabbable element in scope owned by aOwner, using
    * focusability and tabindex to determine the tab order.

@@ -788,6 +788,43 @@ describe("MultiStageAboutWelcomeProton module", () => {
       );
     });
 
+    it("Primary button should be disabled when pinnedSites is undefined", () => {
+      const SCREEN_PROPS = {
+        content: {
+          title: "test title",
+          primary_button: {
+            label: "test primary button",
+            disabled: "hasPinnedSite",
+          },
+        },
+      };
+      const wrapper = mount(<MultiStageProtonScreen {...SCREEN_PROPS} />);
+      assert.ok(wrapper.exists());
+      assert.isTrue(
+        wrapper.find("button.primary").prop("disabled"),
+        "Button is disabled when no site has been pinned"
+      );
+    });
+
+    it("Primary button should be enabled once a site has been pinned", () => {
+      const SCREEN_PROPS = {
+        content: {
+          title: "test title",
+          primary_button: {
+            label: "test primary button",
+            disabled: "hasPinnedSite",
+          },
+        },
+        pinnedSites: true,
+      };
+      const wrapper = mount(<MultiStageProtonScreen {...SCREEN_PROPS} />);
+      assert.ok(wrapper.exists());
+      assert.isFalse(
+        wrapper.find("button.primary").prop("disabled"),
+        "Button is enabled once a site is pinned"
+      );
+    });
+
     it("Additional button with disabled: hasTextInput property", () => {
       const SCREEN_PROPS = {
         content: {

@@ -9,10 +9,12 @@ import org.gradle.api.tasks.Exec
 
 abstract class MachExec : Exec() {
     companion object {
+        // `env` holds the environment-variable values captured at configuration time by the caller
+        // (see MachTasksPlugin), so this execution-time predicate stays configuration-cache safe.
         @JvmStatic
-        fun geckoBinariesOnlyIf(task: Task, mozconfig: Map<*, *>): Boolean {
+        fun geckoBinariesOnlyIf(task: Task, mozconfig: Map<*, *>, env: Map<String, String?>): Boolean {
             // Never when Gradle was invoked within `mach build`.
-            if (System.getenv("GRADLE_INVOKED_WITHIN_MACH_BUILD") == "1") {
+            if (env["GRADLE_INVOKED_WITHIN_MACH_BUILD"] == "1") {
                 task.logger.lifecycle("Skipping task ${task.path} because: within `mach build`")
                 return false
             }
@@ -33,14 +35,14 @@ abstract class MachExec : Exec() {
             // `MOZ_CHROME_MULTILOCALE`.  To avoid failures, if Gradle is invoked with
             // either, we don't invoke Make at all; this allows a multi-locale omnijar
             // to be consumed without modification.
-            if (System.getenv("AB_CD") == "multi" || System.getenv("MOZ_CHROME_MULTILOCALE").isTruthy()) {
+            if (env["AB_CD"] == "multi" || env["MOZ_CHROME_MULTILOCALE"].isTruthy()) {
                 task.logger.lifecycle("Skipping task ${task.path} because: AB_CD=multi")
                 return false
             }
 
             // Single-locale l10n repacks set `IS_LANGUAGE_REPACK=1` and handle resource
             // and code generation themselves.
-            if (System.getenv("IS_LANGUAGE_REPACK") == "1") {
+            if (env["IS_LANGUAGE_REPACK"] == "1") {
                 task.logger.lifecycle("Skipping task ${task.path} because: IS_LANGUAGE_REPACK")
                 return false
             }

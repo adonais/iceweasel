@@ -2,30 +2,27 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsIThread.h"
-#include "nsITimer.h"
-
-#include "nsCOMPtr.h"
-#include "nsComponentManagerUtils.h"
-#include "nsServiceManagerUtils.h"
-#include "nsIObserverService.h"
-#include "nsThreadUtils.h"
-#include "prinrval.h"
-#include "prmon.h"
-#include "prthread.h"
-#include "mozilla/Attributes.h"
-#include "mozilla/gtest/MozAssertions.h"
-#include "mozilla/Services.h"
-
-#include "mozilla/Monitor.h"
-#include "mozilla/ReentrantMonitor.h"
-#include "mozilla/SpinEventLoopUntil.h"
-#include "mozilla/StaticPrefs_timer.h"
-
 #include <list>
 #include <vector>
 
 #include "gtest/gtest.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/Monitor.h"
+#include "mozilla/ReentrantMonitor.h"
+#include "mozilla/Services.h"
+#include "mozilla/SpinEventLoopUntil.h"
+#include "mozilla/StaticPrefs_timer.h"
+#include "mozilla/gtest/MozAssertions.h"
+#include "nsCOMPtr.h"
+#include "nsComponentManagerUtils.h"
+#include "nsIObserverService.h"
+#include "nsIThread.h"
+#include "nsITimer.h"
+#include "nsServiceManagerUtils.h"
+#include "nsThreadUtils.h"
+#include "prinrval.h"
+#include "prmon.h"
+#include "prthread.h"
 
 using namespace mozilla;
 

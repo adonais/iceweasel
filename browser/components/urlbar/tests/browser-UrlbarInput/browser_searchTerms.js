@@ -269,7 +269,7 @@ add_task(async function focus_after_top_sites() {
   );
   Assert.equal(
     details.type,
-    UrlbarUtils.RESULT_TYPE.SEARCH,
+    UrlbarShared.RESULT_TYPE.SEARCH,
     "The first result be a search result."
   );
   Assert.equal(

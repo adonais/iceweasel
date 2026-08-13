@@ -144,12 +144,13 @@ function waitForFetchComplete(port) {
 
 let gServer;
 
-const kExpectedConnsBeforePromptResponse = Services.prefs.getBoolPref(
-  "network.http.happy_eyeballs_enabled",
-  false
-)
-  ? 0
-  : 1;
+// With HappyEyeballs, the pre-connect CheckLNAForAddr call was removed from
+// EstablishTCPConnection. The LNA check now fires post-TCP-connect via
+// SetLnaCheckCallback, so one TCP connection is always established before the
+// prompt appears regardless of whether HappyEyeballs is enabled or not.
+// If CheckLNAForAddr is re-added pre-connect for HappyEyeballs, this value
+// should revert to a conditional: HappyEyeballs ? 0 : 1.
+const kExpectedConnsBeforePromptResponse = 1;
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
@@ -276,7 +277,7 @@ add_task(async function test_lna_accept_receives_sni() {
 
   // The server is a raw TCP socket, so the TLS handshake will fail after the
   // ClientHello is sent. Wait for the SNI to be captured by the server.
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     async () => !!(await gServer.sniValues()).length,
     "Waiting for SNI value after accepting the LNA prompt"
   );

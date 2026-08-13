@@ -85,7 +85,7 @@ add_task(async function test_openTabs() {
     );
     Assert.equal(
       match.type,
-      UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+      UrlbarShared.RESULT_TYPE.TAB_SWITCH,
       "Got the expected result type"
     );
     Assert.equal(match.payload.url, url, "Got the expected url");

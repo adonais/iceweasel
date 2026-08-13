@@ -82,7 +82,7 @@ JSObject* DocumentL10n::WrapObject(JSContext* aCx,
 
 class L10nReadyHandler final : public PromiseNativeHandler {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS(L10nReadyHandler)
 
   explicit L10nReadyHandler(Promise* aPromise, DocumentL10n* aDocumentL10n)

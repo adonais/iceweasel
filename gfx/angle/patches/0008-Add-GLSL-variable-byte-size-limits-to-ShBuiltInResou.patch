@@ -1,0 +1,114 @@
+From a5f0aab16397f6e46f4b5c50e35347ce678cfbb0 Mon Sep 17 00:00:00 2001
+From: Kelsey Gilbert <kelsey.gilbert@mozilla.com>
+Date: Tue, 4 Jun 2024 15:37:29 -0700
+Subject: [PATCH] Add GLSL variable byte size limits to ShBuiltInResources.
+
+---
+ include/GLSLANG/ShaderLang.h             |  5 +++++
+ src/compiler/translator/Compiler.cpp     |  3 +++
+ src/compiler/translator/ParseContext.cpp | 20 +++++++-------------
+ src/compiler/translator/ShaderLang.cpp   |  6 ++++++
+ 4 files changed, 21 insertions(+), 13 deletions(-)
+
+diff --git a/include/GLSLANG/ShaderLang.h b/include/GLSLANG/ShaderLang.h
+index 200eaac2c5..135daac147 100644
+--- a/include/GLSLANG/ShaderLang.h
++++ b/include/GLSLANG/ShaderLang.h
+@@ -764,6 +764,11 @@ struct ShBuiltInResources
+     // ANGLE_shader_pixel_local_storage.
+     int MaxPixelLocalStoragePlanes;
+     int MaxCombinedDrawBuffersAndPixelLocalStoragePlanes;
++
++    // Variable size limits for webgl-mode validation.
++    size_t MaxVariableSizeInBytes;
++    size_t MaxPrivateVariableSizeInBytes;
++    size_t MaxTotalPrivateVariableSizeInBytes;
+ };
+ 
+ //
+diff --git a/src/compiler/translator/Compiler.cpp b/src/compiler/translator/Compiler.cpp
+index 9ba125a178..ebf0bd49c6 100644
+--- a/src/compiler/translator/Compiler.cpp
++++ b/src/compiler/translator/Compiler.cpp
+@@ -1511,6 +1511,9 @@ void TCompiler::setResourceString()
+         << ":MaxFragmentImageUniforms:" << mResources.MaxFragmentImageUniforms
+         << ":MaxComputeImageUniforms:" << mResources.MaxComputeImageUniforms
+         << ":MaxCombinedImageUniforms:" << mResources.MaxCombinedImageUniforms
++        << ":MaxVariableSizeInBytes:" << mResources.MaxVariableSizeInBytes
++        << ":MaxPrivateVariableSizeInBytes:" << mResources.MaxPrivateVariableSizeInBytes
++        << ":MaxTotalPrivateVariableSizeInBytes:" << mResources.MaxTotalPrivateVariableSizeInBytes
+         << ":MaxCombinedShaderOutputResources:" << mResources.MaxCombinedShaderOutputResources
+         << ":MaxComputeWorkGroupCountX:" << mResources.MaxComputeWorkGroupCount[0]
+         << ":MaxComputeWorkGroupCountY:" << mResources.MaxComputeWorkGroupCount[1]
+diff --git a/src/compiler/translator/ParseContext.cpp b/src/compiler/translator/ParseContext.cpp
+index 9852c0c9cd..efd6e436ac 100644
+--- a/src/compiler/translator/ParseContext.cpp
++++ b/src/compiler/translator/ParseContext.cpp
+@@ -45,15 +45,6 @@ namespace
+ {
+ const int kWebGLMaxStructNesting = 4;
+ 
+-// Arbitrarily enforce that all types declared with a size in bytes of over 2 GB will cause
+-// compilation failure.
+-//
+-// For local and global variables, the limit is much lower (64KB) as that much memory won't fit in
+-// the GPU registers anyway.
+-constexpr size_t kWebGLMaxVariableSizeInBytes        = static_cast<size_t>(2) * 1024 * 1024 * 1024;
+-constexpr size_t kWebGLMaxPrivateVariableSizeInBytes = static_cast<size_t>(64) * 1024;
+-constexpr size_t kWebGLMaxTotalPrivateVariableSizeInBytes = static_cast<size_t>(16) * 1024 * 1024;
+-
+ // The 1024 character identifier limit, `-2` for the `_u`
+ constexpr size_t kMaxAvailableIdentifierLength = 1022;
+ 
+@@ -1755,7 +1746,8 @@ bool TParseContext::checkVariableSize(const TSourceLoc &line,
+     const size_t variableSize =
+         CalculateVariableSize(type, type->isInterfaceBlock() || type->getQualifier() == EvqUniform)
+             .ValueOrDefault(std::numeric_limits<size_t>::max());
+-    if (variableSize > kWebGLMaxVariableSizeInBytes)
++    if (mResources.MaxVariableSizeInBytes &&
++        variableSize > mResources.MaxVariableSizeInBytes)
+     {
+         error(line, "Size of declared variable exceeds implementation-defined limit", identifier);
+         return false;
+@@ -1799,7 +1791,8 @@ bool TParseContext::checkVariableSize(const TSourceLoc &line,
+         case EvqPerVertexIn:
+         case EvqPerVertexOut:
+ 
+-            if (variableSize > kWebGLMaxPrivateVariableSizeInBytes)
++            if (mResources.MaxPrivateVariableSizeInBytes &&
++                variableSize > mResources.MaxPrivateVariableSizeInBytes)
+             {
+                 error(line,
+                       "Size of declared private variable exceeds implementation-defined limit",
+@@ -10401,8 +10394,9 @@ bool TParseContext::postParseChecks()
+ 
+     if (mCompileOptions.rejectWebglShadersWithLargeVariables)
+     {
+-        if (mTotalPrivateVariablesSize.ValueOrDefault(std::numeric_limits<size_t>::max()) >
+-            kWebGLMaxTotalPrivateVariableSizeInBytes)
++        if (mResources.MaxTotalPrivateVariableSizeInBytes &&
++            mTotalPrivateVariablesSize.ValueOrDefault(std::numeric_limits<size_t>::max()) >
++                mResources.MaxTotalPrivateVariableSizeInBytes)
+         {
+             error(TSourceLoc{},
+                   "Total size of declared private variables exceeds implementation-defined limit",
+diff --git a/src/compiler/translator/ShaderLang.cpp b/src/compiler/translator/ShaderLang.cpp
+index 6477eef68e..ebcb1c050e 100644
+--- a/src/compiler/translator/ShaderLang.cpp
++++ b/src/compiler/translator/ShaderLang.cpp
+@@ -363,6 +363,12 @@ void InitBuiltInResources(ShBuiltInResources *resources)
+     resources->MaxTessEvaluationUniformBlocks        = 12;
+ 
+     resources->MaxSamples = 4;
++
++    // Prevent unrealistically large WebGL variable sizes. These defaults match the current parser
++    // limits while allowing embedders to override them.
++    resources->MaxVariableSizeInBytes             = static_cast<size_t>(2) * 1024 * 1024 * 1024;
++    resources->MaxPrivateVariableSizeInBytes      = static_cast<size_t>(64) * 1024;
++    resources->MaxTotalPrivateVariableSizeInBytes = static_cast<size_t>(16) * 1024 * 1024;
+ }
+ 
+ //
+-- 
+2.54.0
+

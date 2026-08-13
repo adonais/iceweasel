@@ -152,7 +152,7 @@ async function expandAccordion(accordion) {
     return;
   }
 
-  const onExpanded = BrowserTestUtils.waitForCondition(
+  const onExpanded = TestUtils.waitForCondition(
     isExpanded,
     "Waiting for other fonts section"
   );

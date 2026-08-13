@@ -727,7 +727,7 @@ nsAppStartup::CreateChromeWindow(nsIWebBrowserChrome* aParent,
   NS_ENSURE_ARG_POINTER(aCancel);
   NS_ENSURE_ARG_POINTER(_retval);
   *aCancel = false;
-  *_retval = 0;
+  *_retval = nullptr;
 
   // Non-modal windows cannot be opened if we are attempting to quit
   if (mAttemptingQuit &&
@@ -770,7 +770,7 @@ nsAppStartup::CreateChromeWindow(nsIWebBrowserChrome* aParent,
     if (!appShell) return NS_ERROR_FAILURE;
 
     appShell->CreateTopLevelWindow(
-        0, 0, aChromeFlags, nsIAppShellService::SIZE_TO_CONTENT,
+        nullptr, nullptr, aChromeFlags, nsIAppShellService::SIZE_TO_CONTENT,
         nsIAppShellService::SIZE_TO_CONTENT, getter_AddRefs(newWindow));
   }
 

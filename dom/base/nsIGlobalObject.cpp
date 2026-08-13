@@ -68,6 +68,20 @@ bool nsIGlobalObject::IsScriptForbidden(JSObject* aCallback,
   return false;
 }
 
+bool nsIGlobalObject::CanRunJSMicroTask(JSObject* aCallbackGlobal) const {
+  auto* principal = PrincipalOrNull();
+  if (principal && principal->IsSystemPrincipal()) {
+    return !IsScriptForbidden(aCallbackGlobal, false);
+  }
+
+  if (NS_IsMainThread()) {
+    return xpc::Scriptability::AllowedIfExists(aCallbackGlobal);
+  }
+
+  // For Workers continue skipping tasks when the worker is dying.
+  return !mIsDying;
+}
+
 nsIGlobalObject::~nsIGlobalObject() {
   UnlinkObjectsInGlobal();
   DisconnectGlobalTeardownObservers();

@@ -6,6 +6,7 @@ package org.mozilla.fenix.ui
 
 import org.junit.Rule
 import org.junit.Test
+import org.mozilla.fenix.customannotations.Converted
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
@@ -71,6 +72,11 @@ class CollectionTest {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/343422
     @SmokeTest
     @Test
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.CollectionsTest#verifyExpandedCollectionItemsTest"],
+        bug = 2054023,
+        since = "2026-07",
+    )
     fun verifyExpandedCollectionItemsTest() {
         val webPage = mockWebServer.getGenericAsset(1)
         val webPage2 = mockWebServer.getGenericAsset(2)
@@ -123,6 +129,11 @@ class CollectionTest {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/343425
     @SmokeTest
     @Test
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.CollectionsTest#openAllTabsFromACollectionTest"],
+        bug = 2054023,
+        since = "2026-07",
+    )
     fun openAllTabsFromACollectionTest() {
         val firstTestPage = mockWebServer.getGenericAsset(1)
         val secondTestPage = mockWebServer.getGenericAsset(2)
@@ -148,6 +159,11 @@ class CollectionTest {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/343426
     @SmokeTest
     @Test
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.CollectionsTest#shareAllTabsFromACollectionTest"],
+        bug = 2054023,
+        since = "2026-07",
+    )
     fun shareAllTabsFromACollectionTest() {
         val firstWebsite = mockWebServer.getGenericAsset(1)
         val secondWebsite = mockWebServer.getGenericAsset(2)
@@ -175,6 +191,11 @@ class CollectionTest {
     // caution when making changes to it, so they don't block the builds
     @SmokeTest
     @Test
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.CollectionsTest#deleteCollectionTest"],
+        bug = 2054023,
+        since = "2026-07",
+    )
     fun deleteCollectionTest() {
         val webPage = mockWebServer.getGenericAsset(1)
 

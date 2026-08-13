@@ -91,8 +91,7 @@ for (const model of [qwen3ModelNative]) {
 const perfMetadata = {
   owner: "GenAI Team",
   name: "browser_ml_llama_summarizer_perf.js",
-  description:
-    "Template test for latency for Summarizer model using Llama.cpp WASM",
+  description: "Template test for latency for Summarizer model using llama.cpp",
   options: {
     default: {
       perfherder: true,
@@ -175,7 +174,7 @@ async function run_summarizer_with_perf({
     numContext,
     numBatch: Math.min(numContext, 64),
     numUbatch: Math.min(numContext, 64),
-    backend: "wllama",
+    backend: "llama.cpp",
     timeoutMS: -1,
     ...llamaOptions,
   });

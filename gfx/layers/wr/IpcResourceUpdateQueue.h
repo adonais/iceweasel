@@ -5,9 +5,9 @@
 #ifndef GFX_WR_IPCRESOURCEUPDATEQUEUE_H
 #define GFX_WR_IPCRESOURCEUPDATEQUEUE_H
 
-#include "mozilla/layers/WebRenderMessages.h"
 #include "mozilla/layers/RefCountedShmem.h"
 #include "mozilla/layers/TextureClient.h"
+#include "mozilla/layers/WebRenderMessages.h"
 #include "mozilla/webrender/WebRenderTypes.h"
 
 namespace mozilla {

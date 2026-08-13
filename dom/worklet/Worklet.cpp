@@ -5,6 +5,7 @@
 #include "Worklet.h"
 
 #include "WorkletThread.h"
+#include "js/loader/ResolveResult.h"
 #include "mozilla/dom/WorkletFetchHandler.h"
 #include "mozilla/dom/WorkletImpl.h"
 #include "xpcprivate.h"

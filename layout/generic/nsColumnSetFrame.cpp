@@ -668,9 +668,12 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowColumns(
           aConfig.mIsInMeasuringReflow;
       kidReflowInput.mBreakType = BreakType::Column;
 
-      // We need to reflow any float placeholders, even if our column block-size
-      // hasn't changed.
-      kidReflowInput.mFlags.mMustReflowPlaceholders = !changingBSize;
+      // We need to reflow any float placeholders even if our column block-size
+      // hasn't changed, or when reflowing the last column with an unconstrained
+      // available block-size, so floats pushed during an earlier reflow get
+      // reflowed again.
+      kidReflowInput.mFlags.mMustReflowPlaceholders =
+          !changingBSize || reflowLastColumnWithUnconstrainedAvailBSize;
 
       COLUMN_SET_LOG(
           "%s: Reflowing child #%d %p: availSize=(%d,%d), kidCBSize=(%d,%d), "
@@ -1396,6 +1399,15 @@ Maybe<nscoord> nsColumnSetFrame::GetNaturalBaselineBOffset(
     }
   }
   return result;
+}
+
+bool nsColumnSetFrame::IsEmpty() {
+  for (nsIFrame* child : mFrames) {
+    if (!child->PrincipalChildList().IsEmpty()) {
+      return false;
+    }
+  }
+  return true;
 }
 
 #ifdef DEBUG

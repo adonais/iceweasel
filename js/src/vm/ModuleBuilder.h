@@ -7,7 +7,8 @@
 
 #include "mozilla/Attributes.h"  // MOZ_STACK_CLASS
 
-#include "jstypes.h"                // JS_PUBLIC_API
+#include "jstypes.h"  // JS_PUBLIC_API
+
 #include "frontend/EitherParser.h"  // js::frontend::EitherParser
 #include "frontend/ParserAtom.h"    // js::frontend::TaggedParserAtomIndex
 #include "frontend/Stencil.h"       // js::frontend::StencilModuleEntry

@@ -433,6 +433,63 @@ security.ui.neterror:
           Whether this is a TRR-only (DoH strict mode) DNS failure.
         type: boolean
 
+  click_try_again_button:
+    type: event
+    description: >
+      User clicked the Try Again button on the network error page.
+    bugs: &security_ui_neterror_click_bugs
+      - https://bugzil.la/2048019
+    data_reviews: &security_ui_neterror_click_data_reviews
+      - https://bugzil.la/2048019
+    notification_emails: &security_ui_neterror_click_emails
+      - seceng-telemetry@mozilla.com
+    expires: never
+    data_sensitivity: &security_ui_neterror_click_sensitivity
+      - interaction
+    extra_keys: &security_ui_neterror_click_extra
+      value:
+        description: >
+          The error code string (e.g. dnsNotFound, connectionFailure,
+          netTimeout). Truncated to 40 characters.
+        type: string
+      is_frame:
+        description: >
+          If the error page is loaded in an iframe.
+        type: boolean
+
+  click_return_button_adv:
+    type: event
+    description: >
+      User clicked the Go Back button on the network error page.
+    bugs: *security_ui_neterror_click_bugs
+    data_reviews: *security_ui_neterror_click_data_reviews
+    notification_emails: *security_ui_neterror_click_emails
+    expires: never
+    data_sensitivity: *security_ui_neterror_click_sensitivity
+    extra_keys: *security_ui_neterror_click_extra
+
+  click_learn_more_link:
+    type: event
+    description: >
+      User clicked the Learn More link on the network error page.
+    bugs: *security_ui_neterror_click_bugs
+    data_reviews: *security_ui_neterror_click_data_reviews
+    notification_emails: *security_ui_neterror_click_emails
+    expires: never
+    data_sensitivity: *security_ui_neterror_click_sensitivity
+    extra_keys: *security_ui_neterror_click_extra
+
+  click_advanced_button:
+    type: event
+    description: >
+      User clicked the Advanced button on the network error page.
+    bugs: *security_ui_neterror_click_bugs
+    data_reviews: *security_ui_neterror_click_data_reviews
+    notification_emails: *security_ui_neterror_click_emails
+    expires: never
+    data_sensitivity: *security_ui_neterror_click_sensitivity
+    extra_keys: *security_ui_neterror_click_extra
+
 findbar:
   shown:
     type: counter

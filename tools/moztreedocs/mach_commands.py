@@ -15,6 +15,7 @@ import uuid
 from functools import partial
 from pprint import pprint
 
+import attr
 import mozpack.path as mozpath
 import sentry_sdk
 import yaml
@@ -22,6 +23,7 @@ from mach.decorators import Command, CommandArgument, SubCommand
 from mach.registrar import Registrar
 from mozbuild.util import cpu_count
 from mozfile import load_source
+from mozlint.result import Issue, IssueEncoder, ResultSummary
 
 here = os.path.abspath(os.path.dirname(__file__))
 topsrcdir = os.path.abspath(os.path.dirname(os.path.dirname(here)))
@@ -104,6 +106,12 @@ BASE_LINK = "http://gecko-docs.mozilla.org-l1.s3-website.us-west-2.amazonaws.com
     action="store_true",
     help="Disable generating Python/JS API documentation",
 )
+@CommandArgument(
+    "--errors-file",
+    dest="errors_file",
+    default=None,
+    help="File to store errors in, in JSON format. Typically used for code review bot.",
+)
 def build_docs(
     command_context,
     path=None,
@@ -121,6 +129,7 @@ def build_docs(
     disable_warnings_check=False,
     verbose=None,
     no_autodoc=False,
+    errors_file=None,
 ):
     # TODO: Bug 1704891 - move the ESLint setup tools to a shared place.
     import setup_helper
@@ -198,7 +207,7 @@ def build_docs(
 
         [fatal_errors, known_errors] = _check_sphinx_warnings(warnings, docs_config)
 
-        log_results(fatal_errors, known_errors)
+        log_results(fatal_errors, known_errors, command_context.topsrcdir, errors_file)
         if len(fatal_errors):
             return 1
 
@@ -548,7 +557,7 @@ def transform_error_regexp():
     )
 
 
-def transform_error(msg):
+def transform_error(msg, level):
     match = transform_error_regexp().match(msg)
     if match:
         filePath = match.group(1)
@@ -565,13 +574,17 @@ def transform_error(msg):
                 "relpath": filePath.replace(staging_path, original_path),
                 # Remove the first character, as it'll be the :
                 "lineno": (
-                    int(match.group(2)[1:]) if match.group(2) is not None else None
+                    int(match.group(2)[1:])
+                    if match.group(2) is not None and match.group(2)[1:].isdigit()
+                    else None
                 ),
+                "level": level,
                 "message": match.group(3),
             }
 
     return {
         "linter": "source-test-doc-upload",
+        "level": level,
         "message": msg,
     }
 
@@ -592,7 +605,36 @@ def print_result_to_stderr(known_or_unexpected, result_details):
     )
 
 
-def log_results(fatal_errors, known_errors):
+@attr.s(slots=True, kw_only=True)
+class AnalysisFormatIssue(Issue):
+    """
+    Adapter for the Issue class to produce results in a code review bot
+    compatible manner. Namely, use of line rather than lineno, and `path` as
+    the relative path rather than absolute.
+    """
+
+    line = attr.ib(default=None)
+
+    def __attrs_post_init__(self):
+        root = ResultSummary.root
+        assert root is not None, "Missing ResultSummary.root"
+        if os.path.isabs(self.path):
+            self.path = mozpath.relpath(self.path, root)
+        else:
+            self.path = mozpath.normpath(self.path)
+        self.line = self.lineno
+
+
+def create_issue(result):
+    """Creates an AnalysisFormatIssue from the given result"""
+    args = {}
+    for arg in attr.fields(AnalysisFormatIssue):
+        if arg.init:
+            args[arg.name] = result.get(arg.name)
+    return AnalysisFormatIssue(**args)
+
+
+def log_results(fatal_errors, known_errors, root, error_file=None):
     """
     This will always output to stdout, but optionally also dump messages
     to error_file in the JSON format needed for the review bot.
@@ -600,14 +642,31 @@ def log_results(fatal_errors, known_errors):
     Ideally we should reuse mozlint's logger here.
     """
 
+    result = ResultSummary(root)
+
     for m in known_errors:
-        result_details = transform_error(m)
+        # We log known errors as warnings for mozlint, so that they'll still
+        # be raised in the Code Review UI, and developers can see if they can
+        # fix them.
+        result_details = transform_error(m, "warning")
         print_result_to_stderr("KNOWN", result_details)
+        if "relpath" in result_details:
+            result.issues[result_details["relpath"]].append(
+                create_issue(result_details)
+            )
 
     print(f"Known Failures: {len(known_errors)}")
 
     for m in fatal_errors:
-        result_details = transform_error(m)
+        result_details = transform_error(m, "error")
         print_result_to_stderr("UNEXPECTED", result_details)
+        if "relpath" in result_details:
+            result.issues[result_details["relpath"]].append(
+                create_issue(result_details)
+            )
 
     print(f"Failures: {len(fatal_errors)}")
+
+    if error_file:
+        with open(error_file, "w") as fh:
+            json.dump(result.issues, fh, cls=IssueEncoder)

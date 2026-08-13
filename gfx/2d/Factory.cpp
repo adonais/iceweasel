@@ -15,38 +15,33 @@
 #include "PathSkia.h"
 #include "ScaledFontBase.h"
 
-#if defined(WIN32)
-#  include "ScaledFontWin.h"
-#  include "NativeFontResourceGDI.h"
-#  include "UnscaledFontGDI.h"
-#endif
-
 #ifdef XP_DARWIN
-#  include "ScaledFontMac.h"
 #  include "NativeFontResourceMac.h"
+#  include "ScaledFontMac.h"
 #  include "UnscaledFontMac.h"
 #endif
 
 #ifdef MOZ_WIDGET_GTK
-#  include "ScaledFontFontconfig.h"
 #  include "NativeFontResourceFreeType.h"
+#  include "ScaledFontFontconfig.h"
 #  include "UnscaledFontFreeType.h"
 #endif
 
 #ifdef MOZ_WIDGET_ANDROID
-#  include "ScaledFontFreeType.h"
 #  include "NativeFontResourceFreeType.h"
+#  include "ScaledFontFreeType.h"
 #  include "UnscaledFontFreeType.h"
 #endif
 
 #ifdef WIN32
-#  include "ScaledFontDWrite.h"
-#  include "NativeFontResourceDWrite.h"
-#  include "UnscaledFontDWrite.h"
 #  include <d3d10_1.h>
 #  include <stdlib.h>
+
 #  include "HelpersWin.h"
 #  include "ImageContainer.h"
+#  include "NativeFontResourceDWrite.h"
+#  include "ScaledFontDWrite.h"
+#  include "UnscaledFontDWrite.h"
 #  include "mozilla/layers/LayersSurfaces.h"
 #  include "mozilla/layers/TextureD3D11.h"
 #  include "mozilla/layers/VideoProcessorD3D11.h"
@@ -56,9 +51,7 @@
 #include "DrawTargetOffset.h"
 #include "DrawTargetRecording.h"
 #include "PathRecording.h"
-
 #include "SourceSurfaceRawData.h"
-
 #include "mozilla/CheckedInt.h"
 
 #ifdef MOZ_ENABLE_FREETYPE
@@ -412,8 +405,6 @@ already_AddRefed<NativeFontResource> Factory::CreateNativeFontResource(
 #ifdef WIN32
     case FontType::DWRITE:
       return NativeFontResourceDWrite::Create(aData, aSize);
-    case FontType::GDI:
-      return NativeFontResourceGDI::Create(aData, aSize);
 #elif defined(XP_DARWIN)
     case FontType::MAC:
       return NativeFontResourceMac::Create(aData, aSize);
@@ -441,9 +432,6 @@ already_AddRefed<UnscaledFont> Factory::CreateUnscaledFontFromFontDescriptor(
     case FontType::DWRITE:
       return UnscaledFontDWrite::CreateFromFontDescriptor(aData, aDataLength,
                                                           aIndex);
-    case FontType::GDI:
-      return UnscaledFontGDI::CreateFromFontDescriptor(aData, aDataLength,
-                                                       aIndex);
 #elif defined(XP_DARWIN)
     case FontType::MAC:
       return UnscaledFontMac::CreateFromFontDescriptor(aData, aDataLength,
@@ -711,13 +699,6 @@ already_AddRefed<ScaledFont> Factory::CreateScaledFontForDWriteFont(
   return MakeAndAddRef<ScaledFontDWrite>(
       aFontFace, aUnscaledFont, aSize, aUseEmbeddedBitmap, aUseMultistrikeBold,
       aGDIForced, aStyle);
-}
-
-already_AddRefed<ScaledFont> Factory::CreateScaledFontForGDIFont(
-    const void* aLogFont, const RefPtr<UnscaledFont>& aUnscaledFont,
-    Float aSize) {
-  return MakeAndAddRef<ScaledFontWin>(static_cast<const LOGFONT*>(aLogFont),
-                                      aUnscaledFont, aSize);
 }
 #endif  // WIN32
 

@@ -101,7 +101,7 @@ def clean_script_template(script, filename):
     return script
 
 
-SPECIAL_META_KEYS = ["all_frames", "match_origin_as_fallback"]
+SPECIAL_META_KEYS = ["all_frames", "match_origin_as_fallback", "user_styles"]
 
 
 class special_js_script_checker:
@@ -354,6 +354,7 @@ def determine_generated_css_content_scripts_for_intervention(
     #      "css": {
     #        "all_frames": true,
     #        "match_origin_as_fallback": true,
+    #        "user_styles": true, // cssOrigin = "user" (otherwise is default of "author")
     #        "which": ["fix_broken_slider", "remove_extra_scrollbars"]
     #      }
     #    }

@@ -1,0 +1,15 @@
+{
+  "label": "alta.avigilon.com",
+  "bugs": {
+    "2043670": {
+      "issue": "unsupported-warning",
+      "matches": ["*://mz-denmark.eu5.alta.avigilon.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "ua_string": ["Chrome_with_FxQuantum"]
+    }
+  ]
+}

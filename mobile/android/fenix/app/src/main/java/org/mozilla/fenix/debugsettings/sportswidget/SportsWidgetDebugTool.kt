@@ -14,7 +14,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -39,6 +38,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import mozilla.components.compose.base.SelectableChip
+import mozilla.components.compose.base.button.FilledButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction.SportsWidgetAction
@@ -185,9 +185,10 @@ private fun MockServerSection(appStore: AppStore) {
                 modifier = Modifier.weight(1f),
             )
 
-            Button(onClick = { applySession() }) {
-                Text(stringResource(R.string.debug_drawer_sports_widget_tool_apply_session))
-            }
+            FilledButton(
+                text = stringResource(R.string.debug_drawer_sports_widget_tool_apply_session),
+                onClick = { applySession() },
+            )
         }
     }
 }

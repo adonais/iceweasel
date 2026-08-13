@@ -5,8 +5,8 @@
 #ifndef MOZ_DMABUF_FORMATS_H_
 #define MOZ_DMABUF_FORMATS_H_
 
-#include "nsTArray.h"
 #include "mozilla/gfx/Types.h"
+#include "nsTArray.h"
 
 #ifdef MOZ_WAYLAND
 struct zwp_linux_dmabuf_v1;

@@ -6,7 +6,6 @@
   --button-border-radius: var(--border-radius-circle);
   --button-font-weight: var(--font-weight);
   --button-font-size: var(--font-size-small);
-  --model-item-icon-background-color: light-dark(var(--color-white), var(--color-violet-110));
 
   display: inline-flex;
 }
@@ -15,19 +14,31 @@
   padding-inline-end: var(--space-small);
 }
 
+@media (max-width: 340px) {
+  .input-model-select-button {
+    &::part(button) {
+      padding-inline: var(--space-small);
+    }
+    /* Visually hide the label (matches .sr-only) but keep it for a11y */
+    &::part(moz-button-label) {
+      clip: rect(0, 0, 0, 0);
+      clip-path: inset(50%);
+      height: 1px;
+      overflow: hidden;
+      position: absolute;
+      white-space: nowrap;
+      width: 1px;
+    }
+  }
+}
+
 panel-list {
+  --panel-max-width: none;
   padding-inline: var(--space-small);
 }
 
 panel-item:not(.panel-section-header)::part(button) {
   margin-inline: 0;
-}
-
-moz-badge {
-  --badge-background-color-filled: var(--smartwindow-text-color-accent-deemphasized);
-  --badge-text-color-filled: var(--color-white);
-
-  margin-inline-start: auto;
 }
 
 .model-item {
@@ -51,10 +62,16 @@ moz-badge {
   &:active {
     background-color: var(--button-background-color-active);
   }
+
+  /* TODO: Bug 2033070 -  Nova tokens were implemented as the default value for the custom properties, and the fallbacks (and lint exceptions) will need to be removed after launch */
+  @media -moz-pref("browser.nova.enabled") {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    border-radius: var(--smartwindow-panel-item-border-radius);
+  }
 }
 
-.model-item-icon {
-  background: var(--model-item-icon-background-color);
+.model-item-avatar {
+  background: var(--background-color-canvas);
   border-radius: var(--border-radius-circle);
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   border: var(--border-width) solid light-dark(var(--color-violet-desaturated-10), var(--color-violet-desaturated-50));
@@ -63,14 +80,43 @@ moz-badge {
   height: var(--size-item-large);
 }
 
+.model-item-icon {
+  width: 100%;
+  height: auto;
+}
+
+@media (prefers-color-scheme: dark) {
+  .model-item-icon--custom {
+    filter: brightness(0) invert(1);
+  }
+}
+
 .model-item-content {
   display: flex;
   flex-direction: column;
-  min-width: 0;
+  gap: var(--space-small);
+  align-items: flex-start;
+  margin-inline-end: var(--space-medium);
 }
 
-.model-item-label {
-  font-size: var(--font-size-root);
+.model-item-header {
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-small);
+  align-items: flex-start;
+
+  .model-item-label {
+    font-size: var(--font-size-root);
+  }
+
+  moz-badge {
+    --badge-background-color-filled: light-dark(
+      var(--color-violet-desaturated-0, var(--color-violet-0)),
+      var(--color-violet-desaturated-50, var(--color-violet-50))
+    );
+    --badge-text-color-filled: var(--text-color);
+    --badge-font-weight: var(--font-weight);
+  }
 }
 
 .model-item-details {
@@ -79,4 +125,22 @@ moz-badge {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.model-item-check {
+  flex-shrink: 0;
+  width: var(--icon-size);
+  height: var(--icon-size);
+  -moz-context-properties: fill;
+  fill: currentColor;
+  margin-inline-start: auto;
+}
+
+/* TODO Bug 2053495: update styles for mistral release */
+panel-list[mistral-release="true"] {
+  .model-item-avatar {
+    box-sizing: border-box;
+    padding: var(--space-small);
+    border: none;
+  }
 }

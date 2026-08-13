@@ -6,6 +6,7 @@
 #define DOMIntersectionObserver_h
 
 #include "mozilla/Attributes.h"
+#include "mozilla/LinkedList.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/Variant.h"
 #include "mozilla/dom/IntersectionObserverBinding.h"
@@ -108,8 +109,10 @@ struct IntersectionOutput {
   bool Intersects() const { return mIntersectionRect.isSome(); }
 };
 
-class DOMIntersectionObserver final : public nsISupports,
-                                      public nsWrapperCache {
+class DOMIntersectionObserver final
+    : public nsISupports,
+      public nsWrapperCache,
+      public LinkedListElement<DOMIntersectionObserver> {
   ~DOMIntersectionObserver() { Disconnect(); }
 
   using NativeCallback = void (*)(

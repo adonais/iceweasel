@@ -1,30 +1,30 @@
 From: Michael Froman <mfroman@mozilla.com>
-Date: Tue, 7 Jan 2025 15:39:00 -0600
-Subject: Bug 1935474 - disable ABSL_HAVE_THREAD_SANITIZER due to missing
- symbols (like __tsan_mutex_destroy). r?ng!
+Date: Thu, 10 Jul 2025 10:39:00 -0500
+Subject: Bug 1978462 - disable ABSL_HAVE_LEAK_SANITIZER due to missing symbols
+ (like __lsan_ignore_object)
 
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/a248ecb7e0fa939cc145e3ef62f57783411ec367
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/fdbec58643d95ef27963b070e162931c6354d1e8
 ---
  abseil-cpp/absl/base/config.h | 2 ++
  1 file changed, 2 insertions(+)
 
 diff --git a/abseil-cpp/absl/base/config.h b/abseil-cpp/absl/base/config.h
-index 7514b86e5e7..7ae83241314 100644
+index b416381075a..8962cf18992 100644
 --- a/abseil-cpp/absl/base/config.h
 +++ b/abseil-cpp/absl/base/config.h
-@@ -655,6 +655,7 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
- // ABSL_HAVE_THREAD_SANITIZER
- //
- // ThreadSanitizer (TSan) is a fast data race detector.
-+#if 0 // mozilla - builds fail missing tsan symbols like __tsan_mutex_destroy
- #ifdef ABSL_HAVE_THREAD_SANITIZER
- #error "ABSL_HAVE_THREAD_SANITIZER cannot be directly set."
- #elif defined(__SANITIZE_THREAD__)
-@@ -662,6 +663,7 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
- #elif ABSL_HAVE_FEATURE(thread_sanitizer)
- #define ABSL_HAVE_THREAD_SANITIZER 1
+@@ -696,6 +696,7 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
+ // LeakSanitizer is available does not mean it is active. Use the
+ // always-available run-time interface in //absl/debugging/leak_check.h for
+ // interacting with LeakSanitizer.
++#if 0 // mozilla - builds fail missing lsan symbols like __lsan_ignore_object
+ #ifdef ABSL_HAVE_LEAK_SANITIZER
+ #error "ABSL_HAVE_LEAK_SANITIZER cannot be directly set."
+ #elif defined(LEAK_SANITIZER)
+@@ -710,6 +711,7 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
+ // GCC or Clang using the LeakSanitizer integrated into AddressSanitizer.
+ #define ABSL_HAVE_LEAK_SANITIZER 1
  #endif
 +#endif
  
- // ABSL_HAVE_ADDRESS_SANITIZER
+ // ABSL_HAVE_CLASS_TEMPLATE_ARGUMENT_DEDUCTION
  //

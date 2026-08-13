@@ -2,7 +2,6 @@
 
 assertEq(wasmIsSupportedByHardware(), false);
 assertEq(wasmIsSupported(), false);
-assertEq(isAsmJSCompilationAvailable(), false);
 
 function test() {
     var sum = 0;

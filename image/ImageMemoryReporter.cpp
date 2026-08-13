@@ -3,11 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ImageMemoryReporter.h"
+
 #include "Image.h"
 #include "base/process_util.h"
+#include "mozilla/StaticPrefs_image.h"
 #include "mozilla/ipc/SharedMemoryMapping.h"
 #include "mozilla/layers/SharedSurfacesParent.h"
-#include "mozilla/StaticPrefs_image.h"
 #include "nsIMemoryReporter.h"
 #include "nsISupportsImpl.h"
 

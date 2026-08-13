@@ -51,8 +51,7 @@ function testHook(hookName) {
   var newestG1Frame = dbg1.getNewestFrame();
   if (hookName != 'onNewGlobalObject' &&
       hookName != 'onNewScript' &&
-      hookName != 'onNewPromise' &&
-      hookName != 'onPromiseSettled')
+      hookName != 'onNewPromise')
   {
     var newestG2Frame = dbg2.getNewestFrame();
   }

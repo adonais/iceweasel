@@ -7,6 +7,7 @@
 
 #if defined(XP_WIN)
 
+#  include "ipc/EnumSerializer.h"
 #  include "ipc/IPCMessageUtils.h"
 #  include "mozilla/CombinedStacks.h"
 #  include "mozilla/DebugOnly.h"
@@ -41,6 +42,7 @@ enum class ModuleTrustFlags : uint32_t {
   KeyboardLayout = 0x40,
   JitPI = 0x80,
   WinSxSDirectory = 0x100,
+  ALL_BITS = 0x1ff,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ModuleTrustFlags);
@@ -280,34 +282,18 @@ struct ParamTraits<mozilla::ModuleVersion> {
 };
 
 template <>
-struct ParamTraits<mozilla::VendorInfo> {
-  typedef mozilla::VendorInfo paramType;
+struct ParamTraits<mozilla::VendorInfo::Source>
+    : ContiguousEnumSerializerInclusive<
+          mozilla::VendorInfo::Source, mozilla::VendorInfo::Source::None,
+          mozilla::VendorInfo::Source::VersionInfo> {};
 
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    aWriter->WriteUInt32(static_cast<uint32_t>(aParam.mSource));
-    WriteParam(aWriter, aParam.mVendor);
-    WriteParam(aWriter, aParam.mHasNestedMicrosoftSignature);
-  }
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::VendorInfo, mSource, mVendor,
+                                  mHasNestedMicrosoftSignature);
 
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    uint32_t source;
-    if (!aReader->ReadUInt32(&source)) {
-      return false;
-    }
-
-    aResult->mSource = static_cast<mozilla::VendorInfo::Source>(source);
-
-    if (!ReadParam(aReader, &aResult->mVendor)) {
-      return false;
-    }
-
-    if (!ReadParam(aReader, &aResult->mHasNestedMicrosoftSignature)) {
-      return false;
-    }
-
-    return true;
-  }
-};
+template <>
+struct ParamTraits<mozilla::ModuleTrustFlags>
+    : BitFlagsEnumSerializer<mozilla::ModuleTrustFlags,
+                             mozilla::ModuleTrustFlags::ALL_BITS> {};
 
 template <>
 struct ParamTraits<mozilla::ModuleRecord> {
@@ -327,7 +313,7 @@ struct ParamTraits<mozilla::ModuleRecord> {
     WriteParam(aWriter, aParam.mSanitizedDllName);
     WriteParam(aWriter, aParam.mVersion);
     WriteParam(aWriter, aParam.mVendorInfo);
-    aWriter->WriteUInt32(static_cast<uint32_t>(aParam.mTrustFlags));
+    WriteParam(aWriter, aParam.mTrustFlags);
   }
 
   static bool Read(MessageReader* aReader, paramType* aResult) {
@@ -360,12 +346,10 @@ struct ParamTraits<mozilla::ModuleRecord> {
       return false;
     }
 
-    uint32_t trustFlags;
-    if (!aReader->ReadUInt32(&trustFlags)) {
+    if (!ReadParam(aReader, &aResult->mTrustFlags)) {
       return false;
     }
 
-    aResult->mTrustFlags = static_cast<mozilla::ModuleTrustFlags>(trustFlags);
     return true;
   }
 };

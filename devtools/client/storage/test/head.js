@@ -1128,7 +1128,7 @@ async function performRemoveAll(store) {
   menuDeleteAll.click();
 
   // Wait for the table to become empty
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => getCellLength() === 0,
     `All items removed from ${storeName}`,
     500,

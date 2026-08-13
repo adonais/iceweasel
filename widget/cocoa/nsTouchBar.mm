@@ -114,6 +114,16 @@ static const uint32_t kInputIconSize = 16;
         [TouchBarInput searchPopoverIdentifier]
       ];
       self.defaultItemIdentifiers = defaultItemIdentifiers;
+
+      // Pre-warm the Share scrubber icon. The customization palette captures a
+      // native item's image when the item is created and does not reflect a
+      // later asynchronous icon load, so if the Share button is only in the
+      // palette (e.g. it was removed from the bar) it would otherwise have no
+      // icon. Loading it now lets makeShareScrubberForIdentifier apply it
+      // synchronously (bug 1619333).
+      TouchBarInput* shareInput =
+          self.mappedLayoutItems[[TouchBarInput shareScrubberIdentifier]];
+      [self loadIconForInput:shareInput forItem:nil];
     } else {
       NSMutableArray* defaultItemIdentifiers =
           [NSMutableArray arrayWithCapacity:[aInputs count]];
@@ -542,7 +552,8 @@ static const uint32_t kInputIconSize = 16;
 }
 
 - (void)loadIconForInput:(TouchBarInput*)aInput forItem:(NSTouchBarItem*)aItem {
-  if (!aInput || ![aInput imageURI] || !aItem || !mTouchBarHelper) {
+  // A nil aItem is allowed: it loads the icon only to cache it for later use.
+  if (!aInput || ![aInput imageURI] || !mTouchBarHelper) {
     return;
   }
 
@@ -554,9 +565,10 @@ static const uint32_t kInputIconSize = 16;
     if (NS_FAILED(rv) || !document) {
       return;
     }
-    icon = new nsTouchBarInputIcon(document, aInput, aItem);
+    icon = new nsTouchBarInputIcon(document);
     [aInput setIcon:icon];
   }
+  icon->SetItem(aInput, aItem);
   icon->SetupIcon([aInput imageURI]);
 }
 

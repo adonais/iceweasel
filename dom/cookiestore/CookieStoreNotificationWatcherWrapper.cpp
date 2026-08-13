@@ -99,12 +99,12 @@ void CookieStoreNotificationWatcherWrapper::ResolvePromiseWhenNotified(
           mEventTarget(GetCurrentSerialEventTarget()) {}
 
     NS_IMETHOD Run() override {
-      mPromise->MaybeResolveWithUndefined();
-      mPromise = nullptr;
+      if (mPromise) {
+        mPromise->MaybeResolveWithUndefined();
+        mPromise = nullptr;
+      }
       return NS_OK;
     }
-
-    bool HasPromise() const { return !!mPromise; }
 
    private:
     ~PromiseResolver() {
@@ -140,10 +140,8 @@ void CookieStoreNotificationWatcherWrapper::ResolvePromiseWhenNotified(
   auto callback = [resolver = RefPtr(resolver),
                    eventTarget = RefPtr(GetCurrentSerialEventTarget()),
                    workerRef = RefPtr(workerRef)] {
-    if (resolver->HasPromise()) {
-      RefPtr<Runnable> runnable(resolver);
-      eventTarget->Dispatch(runnable.forget());
-    }
+    RefPtr<Runnable> runnable(resolver);
+    eventTarget->Dispatch(runnable.forget());
   };
 
   if (!NS_IsMainThread()) {

@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "vm/GeckoProfiler-inl.h"
-
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Sprintf.h"
 
@@ -22,6 +20,7 @@
 
 #include "gc/Marking-inl.h"
 #include "jit/JSJitFrameIter-inl.h"
+#include "vm/GeckoProfiler-inl.h"
 
 using namespace js;
 using mozilla::Utf8Unit;
@@ -332,7 +331,7 @@ UniqueChars GeckoProfilerRuntime::allocProfileString(JSContext* cx,
                                                      BaseScript* script) {
   // Note: this profiler string is regexp-matched by
   // profiler code. Most recently at
-  // https://github.com/firefox-devtools/profiler/blob/245b1a400c5c368ccc13641d0335398bafa0e870/src/profile-logic/process-profile.js#L520-L525
+  // https://github.com/firefox-devtools/profiler/blob/8f4935823ec06507c3125d4c6c1e78eef31361f3/src/profile-logic/process-profile.ts#L407-L415
 
   // If the script has a function, try calculating its name.
   JSAtom* name = nullptr;
@@ -455,10 +454,7 @@ js::ProfilerJSSources GeckoProfilerRuntime::getProfilerScriptSources(
     const RefPtr<ScriptSource>& scriptSource = iter.get();
     MOZ_ASSERT(scriptSource);
 
-    bool hasSourceText;
-    bool retrievableSource;
-    ScriptSource::getSourceProperties(scriptSource, &hasSourceText,
-                                      &retrievableSource);
+    ScriptSource::DataReader sourceReader(scriptSource);
 
     uint32_t sourceId = scriptSource->id();
 
@@ -504,21 +500,21 @@ js::ProfilerJSSources GeckoProfilerRuntime::getProfilerScriptSources(
       continue;
     }
 
-    if (retrievableSource) {
+    if (sourceReader.isRetrievable()) {
       (void)result.append(ProfilerJSSourceData::CreateRetrievableFile(
           sourceId, std::move(filenameCopy), filenameLen, startLine,
           startColumn, std::move(sourceMapURLCopy), sourceMapURLLen));
       continue;
     }
 
-    if (!hasSourceText) {
+    if (!sourceReader.hasSourceText()) {
       (void)result.append(ProfilerJSSourceData(
           sourceId, std::move(filenameCopy), filenameLen, startLine,
           startColumn, std::move(sourceMapURLCopy), sourceMapURLLen));
       continue;
     }
 
-    size_t sourceLength = scriptSource->length();
+    size_t sourceLength = sourceReader->length();
     if (sourceLength == 0) {
       (void)result.append(ProfilerJSSourceData(
           sourceId, JS::UniqueTwoByteChars(), 0, std::move(filenameCopy),
@@ -531,7 +527,8 @@ js::ProfilerJSSources GeckoProfilerRuntime::getProfilerScriptSources(
     size_t charsLength = 0;
 
     if (scriptSource->shouldUnwrapEventHandlerBody()) {
-      sourceResult = scriptSource->functionBodyStringChars(&charsLength);
+      sourceResult =
+          sourceReader->functionBodyStringChars(scriptSource, &charsLength);
 
       if (charsLength == 0) {
         (void)result.append(ProfilerJSSourceData(
@@ -541,7 +538,7 @@ js::ProfilerJSSources GeckoProfilerRuntime::getProfilerScriptSources(
         continue;
       }
     } else {
-      sourceResult = scriptSource->substringChars(0, sourceLength);
+      sourceResult = sourceReader->substringChars(0, sourceLength);
       charsLength = sourceLength;
     }
 

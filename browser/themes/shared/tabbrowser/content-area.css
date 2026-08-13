@@ -5,6 +5,7 @@
 @namespace html url("http://www.w3.org/1999/xhtml");
 
 :root {
+  --content-area-min-size: 25px;
   /* --tabpanel-background-color matches $in-content-page-background in newtab
      (browser/extensions/newtab/content-src/styles/_variables.scss) */
   --tabpanel-background-color: #f9f9fb;
@@ -13,6 +14,15 @@
   }
   &[privatebrowsingmode="temporary"] {
     --tabpanel-background-color: linear-gradient(45deg, #722291 0%, #45278d 50%, #393473 100%) !important;
+
+    @media -moz-pref("browser.nova.enabled") {
+      /* Override the legacy purple gradient so the content-area backdrop behind
+         the <browser> matches the nova start page instead of flashing purple
+         before content paints. This must mirror the --background-color-canvas
+         set on html.private in aboutPrivateBrowsing.css; keep the two in sync.
+         Bug 2049373 / Bug 2049985. */
+      --tabpanel-background-color: light-dark(var(--color-gray-0), var(--color-gray-90)) !important;
+    }
   }
 }
 
@@ -23,30 +33,36 @@
     margin-block-start: var(--chrome-window-gap);
     margin-block-end: var(--chrome-window-gap);
     margin-inline: var(--chrome-window-gap);
-    overflow: hidden;
+    overflow: clip;
+
+    /* Both the #browser and #navigator-toolbox (when it's showing) should sit flush
+       against the window edge in fullscreen. */
+    :root:is([inFullscreen], [inDOMFullscreen]) & {
+      margin: 0;
+    }
   }
 
   #browser {
     display: flex;
     box-sizing: border-box;
+    gap: var(--chrome-window-gap);
+  }
+
+  /* Removed padding around the content area in fullscreen. */
+  :root:not([inFullscreen], [inDOMFullscreen]) #browser {
     padding: var(--chrome-window-gap);
     padding-block-start: 0;
     gap: var(--chrome-window-gap);
+
+    :root[uidensity="compact"] & {
+      padding-block-start: 2px;
+      gap: 2px;
+    }
   }
 
   #tabbrowser-tabbox {
     flex: 1;
     box-sizing: border-box;
-  }
-
-  /* AI window splitter and box use visibility:collapse, not display:none, so
-   * they are separated by flexbox gaps even when invisible. Override in nova
-   * mode so the gaps disappear. This means that the AI window frame won't be
-   * properly preserved when hidden in nova mode; to be addressed in a future
-   * patch. See bug2033594. */
-  #ai-window-splitter[collapsed],
-  #ai-window-box[collapsed] {
-    display: none;
   }
 
   /* Match the .browserContainer of any tab panel that is not a split-view
@@ -62,6 +78,31 @@
     outline: none;
     box-shadow: none;
     border: 1px solid var(--chrome-content-separator-color);
+
+    /* Remove the border and rounded corners against the screen edge in
+     * DOM fullscreen. */
+    :root:is([inDOMFullscreen], [inFullscreen]) & {
+      border-radius: 0;
+      border: none;
+    }
+
+    :root[uidensity="compact"] & {
+      border-radius: 0;
+      border-start-start-radius: var(--chrome-block-radius);
+    }
+
+    /* When the sidebar is positioned at the inline-end the content area sits at
+     * the inline-start, so round its inline-end corner instead. */
+    :root[uidensity="compact"] #tabbrowser-tabbox[sidebar-positionend] & {
+      border-start-start-radius: 0;
+      border-start-end-radius: var(--chrome-block-radius);
+    }
+
+    @media not -moz-pref("sidebar.verticalTabs") {
+      :root[uidensity="compact"] #sidebar-container[hidden] ~ #tabbrowser-tabbox & {
+        border-radius: 0;
+      }
+    }
   }
 
   /* Splitter between split-view panels. The active panel's 2px focus outline
@@ -80,6 +121,10 @@
 
     &:hover {
       background-color: var(--focus-outline-color);
+    }
+
+    :root[uidensity="compact"] & {
+      width: 2px;
     }
   }
 
@@ -198,8 +243,8 @@
 .browserStack {
   flex: 10000 10000;
   /* Prevent shrinking the page content to 0 height and width */
-  min-height: 25px;
-  min-width: 25px;
+  min-height: var(--content-area-min-size);
+  min-width: var(--content-area-min-size);
 }
 
 #tabbrowser-tabpanels {
@@ -305,8 +350,28 @@
       }
 
       @media -moz-pref("browser.nova.enabled") {
+        /* Outer (inline-start) edge faces the window: the panel carries the
+         * full 2px gap, plus 2px for the selected panel's focus outline. */
+        :root[uidensity="compact"] & {
+          margin-inline-start: 2px;
+        }
+
+        :root[uidensity="compact"] &.deck-selected {
+          margin-inline-start: 4px;
+        }
+
         #tabbrowser-tabbox:is([sidebar-shown], [sidebar-panel-open]) & {
           margin-inline-start: 0;
+        }
+
+        /* With the sidebar shown the #browser gap supplies the 2px, so only
+         * the selected panel needs margin for its outline. */
+        :root[uidensity="compact"] #tabbrowser-tabbox:is([sidebar-shown], [sidebar-panel-open]) & {
+          margin-inline-start: 0;
+        }
+
+        :root[uidensity="compact"] #tabbrowser-tabbox:is([sidebar-shown], [sidebar-panel-open]) &.deck-selected {
+          margin-inline-start: 2px;
         }
       }
     }
@@ -325,6 +390,18 @@
     .split-view-panel[column="1"] {
       order: 2;
       margin-inline-start: 0;
+
+      @media -moz-pref("browser.nova.enabled") {
+        /* Outer (inline-end) edge faces the window: the panel carries the
+         * full 2px gap, plus 2px for the selected panel's focus outline. */
+        :root[uidensity="compact"] & {
+          margin-inline-end: 2px;
+        }
+
+        :root[uidensity="compact"] &.deck-selected {
+          margin-inline-end: 4px;
+        }
+      }
     }
 
     /* Panels with a custom width shouldn't grow. */
@@ -364,6 +441,17 @@
    * top/bottom, so the panel itself shouldn't add more. */
   #tabbrowser-tabpanels[splitview] .split-view-panel.split-view-panel-active {
     margin-block: 0;
+
+    /* Compact: 2px gap around panels. #browser already supplies the gap above
+     * the panels, so only the block-end needs a margin. */
+    :root[uidensity="compact"] & {
+      margin-block-end: 2px;
+    }
+
+    :root[uidensity="compact"] &.deck-selected {
+      margin-block-start: 2px;
+      margin-block-end: 4px;
+    }
   }
 }
 
@@ -487,19 +575,22 @@ split-view-footer {
 
 #statuspanel-label {
   margin: 0;
-  padding: 2px 4px;
+  padding-block-start: 2px;
+  /* Avoid clipping by a large window corner radius by adding proportional
+     bottom padding */
+  padding-block-end: max(2px, calc(var(--chrome-block-radius, 0px) / 5));
+
   border-width: 1px;
   border-style: none;
   border-top-style: solid;
-
-  @media (-moz-mac-tahoe-theme) {
-    /* Slightly increasing the padding to prevent the first letter from partially getting cut off by the large window corner radius. */
-    padding: 3px 5px;
-  }
-
   #statuspanel:not([mirror]) > &:-moz-locale-dir(ltr),
   #statuspanel[mirror] > &:-moz-locale-dir(rtl) {
     border-right-style: solid;
+    /* When the label is on the left, avoid clipping from a large window corner radius
+       by adding proportional left padding */
+    padding-left: max(4px, calc(var(--chrome-block-radius, 0px) / 2));
+    padding-right: 4px;
+
     /* disabled on Windows for triggering grayscale AA (bug 659213): */
     @media not (-moz-platform: windows) {
       border-top-right-radius: 0.3em;
@@ -510,6 +601,11 @@ split-view-footer {
   #statuspanel:not([mirror]) > &:-moz-locale-dir(rtl),
   #statuspanel[mirror] > &:-moz-locale-dir(ltr) {
     border-left-style: solid;
+    /* When the label is on the right, avoid clipping from a large window corner radius
+       by adding proportional right padding */
+    padding-left: 4px;
+    padding-right: max(4px, calc(var(--chrome-block-radius, 0px) / 2));
+
     /* disabled on Windows for triggering grayscale AA (bug 659213): */
     @media not (-moz-platform: windows) {
       border-top-left-radius: 0.3em;
@@ -518,9 +614,26 @@ split-view-footer {
   }
 }
 
-/**
- * Shortcuts
- */
+/* Content popups */
+
+#clipboardReadPasteMenuPopup,
+#contentAreaContextMenu,
+#DateTimePickerPanel,
+#PopupAutoComplete,
+#remoteBrowserTooltip,
+#aHTMLTooltip[contenttooltip] {
+  color-scheme: env(-moz-content-preferred-color-scheme);
+}
+
+#DateTimePickerPanel {
+  /* Override theme colors since the picker uses extra colors that
+     themes cannot set */
+  --panel-background-color: Field;
+  --panel-text-color: FieldText;
+}
+
+/* Shortcuts */
+
 #selection-shortcut-action-panel {
   --panel-subview-body-padding: 0;
 }
@@ -547,9 +660,7 @@ split-view-footer {
   margin-top: var(--space-small);
 }
 
-/**
- * Dialogs
- */
+/* Dialogs */
 
 .dialogStack {
   z-index: var(--browser-stack-z-index-dialog-stack);

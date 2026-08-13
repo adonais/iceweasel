@@ -47,11 +47,8 @@ assertEq(g.toSource(), '(' + funcBody2 + ')');
 f0 = new Function(bodyOnly);
 assertEq(f0.toSource(), "(function anonymous(\n) {\n" + bodyOnly + "\n})");
 
-if (isAsmJSCompilationAvailable()) {
-    var m = new Function(bodyOnly);
-    assertEq(isAsmJSModule(m), true);
-    assertEq(m.toSource(), "(function anonymous(\n) {\n" + bodyOnly + "\n})");
-}
+var m = new Function(bodyOnly);
+assertEq(m.toSource(), "(function anonymous(\n) {\n" + bodyOnly + "\n})");
 
 })();
 
@@ -101,11 +98,8 @@ assertEq(g.toSource(), '(' + funcBody2 + ')');
 f1 = new Function('glob', bodyOnly);
 assertEq(f1.toSource(), "(function anonymous(glob\n) {\n" + bodyOnly + "\n})");
 
-if (isAsmJSCompilationAvailable()) {
-    var m = new Function('glob', bodyOnly);
-    assertEq(isAsmJSModule(m), true);
-    assertEq(m.toSource(), "(function anonymous(glob\n) {\n" + bodyOnly + "\n})");
-}
+var m = new Function('glob', bodyOnly);
+assertEq(m.toSource(), "(function anonymous(glob\n) {\n" + bodyOnly + "\n})");
 
 })();
 
@@ -156,11 +150,8 @@ assertEq(g.toSource(), '(' + funcBody2 + ')');
 f2 = new Function('glob', 'ffi', bodyOnly);
 assertEq(f2.toSource(), "(function anonymous(glob,ffi\n) {\n" + bodyOnly + "\n})");
 
-if (isAsmJSCompilationAvailable()) {
-    var m = new Function('glob', 'ffi', bodyOnly);
-    assertEq(isAsmJSModule(m), true);
-    assertEq(m.toSource(), "(function anonymous(glob,ffi\n) {\n" + bodyOnly + "\n})");
-}
+var m = new Function('glob', 'ffi', bodyOnly);
+assertEq(m.toSource(), "(function anonymous(glob,ffi\n) {\n" + bodyOnly + "\n})");
 
 })();
 
@@ -211,11 +202,8 @@ assertEq(g.toSource(), '(' + funcBody2 + ')');
 f3 = new Function('glob', 'ffi', 'heap', bodyOnly);
 assertEq(f3.toSource(), "(function anonymous(glob,ffi,heap\n) {\n" + bodyOnly + "\n})");
 
-if (isAsmJSCompilationAvailable()) {
-    var m = new Function('glob', 'ffi', 'heap', bodyOnly);
-    assertEq(isAsmJSModule(m), true);
-    assertEq(m.toSource(), "(function anonymous(glob,ffi,heap\n) {\n" + bodyOnly + "\n})");
-}
+var m = new Function('glob', 'ffi', 'heap', bodyOnly);
+assertEq(m.toSource(), "(function anonymous(glob,ffi,heap\n) {\n" + bodyOnly + "\n})");
 
 })();
 
@@ -236,11 +224,8 @@ var expectedToSource = '(' + expectedToString + ')';
 
 assertEq(f4.toSource(), expectedToSource);
 
-if (isAsmJSCompilationAvailable()) {
-    var f5 = eval("\"use strict\";\n(" + funcSource + ")");
-    assertEq(isAsmJSModule(f5), true);
-    assertEq(f5.toSource(), expectedToSource);
-}
+var f5 = eval("\"use strict\";\n(" + funcSource + ")");
+assertEq(f5.toSource(), expectedToSource);
 })();
 
 /* Functions */
@@ -292,23 +277,18 @@ function checkFuncSrc(m) {
 }
 checkFuncSrc(moduleG);
 
-if (isAsmJSCompilationAvailable()) {
-    var g2 = new Function(funcBody);
-    assertEq(isAsmJSModule(g2), true);
-    m = g2();
-    checkFuncSrc(m);
+var g2 = new Function(funcBody);
+m = g2();
+checkFuncSrc(m);
 
-    var moduleDecl = 'function g3() {' + funcBody + '}';
-    eval(moduleDecl);
-    m = g3();
-    assertEq(isAsmJSModule(g3), true);
-    checkFuncSrc(m);
+var moduleDecl = 'function g3() {' + funcBody + '}';
+eval(moduleDecl);
+m = g3();
+checkFuncSrc(m);
 
-    eval('var x = 42;' + moduleDecl);
-    m = g3();
-    assertEq(isAsmJSModule(g3), true);
-    checkFuncSrc(m);
-}
+eval('var x = 42;' + moduleDecl);
+m = g3();
+checkFuncSrc(m);
 
 })();
 
@@ -331,12 +311,9 @@ var expectedToSource = expectedToString
 
 assertEq(f5.toSource(), expectedToSource);
 
-if (isAsmJSCompilationAvailable()) {
-    var mf5 = eval("\"use strict\";\n(" + moduleCode + ")");
-    assertEq(isAsmJSModule(mf5), true);
-    var f5 = mf5();
-    assertEq(f5.toSource(), expectedToSource);
-}
+var mf5 = eval("\"use strict\";\n(" + moduleCode + ")");
+var f5 = mf5();
+assertEq(f5.toSource(), expectedToSource);
 
 })();
 
@@ -358,11 +335,8 @@ var f6 = eval(useStrict + ";\n(" + moduleCode + "({Math:{}}))");
 
 assertEq(f6.toSource(), funcCode);
 
-if (isAsmJSCompilationAvailable()) {
-    var mf6 = eval("\"use strict\";\n(" + moduleCode + ")");
-    assertEq(isAsmJSModule(mf6), true);
-    var f6 = mf6({Math:{}});
-    assertEq(f6.toSource(), funcCode);
-}
+var mf6 = eval("\"use strict\";\n(" + moduleCode + ")");
+var f6 = mf6({Math:{}});
+assertEq(f6.toSource(), funcCode);
 
 })();

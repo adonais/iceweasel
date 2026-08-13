@@ -106,7 +106,13 @@ ChromeUtils.defineLazyGetter(
 const node = {};
 
 function closeSidebar() {
-  topChromeWindow.SidebarController.hide();
+  const controller = topChromeWindow.SidebarController;
+  // In "hide-launcher" mode there is no launcher to return to, so keep the
+  // panel remembered rather than revealing the launcher (matching the close
+  // button in other panels' headers).
+  controller.hide({
+    dismissPanel: !controller._state.launcherHiddenWithPanel,
+  });
 }
 
 function openLink(url) {

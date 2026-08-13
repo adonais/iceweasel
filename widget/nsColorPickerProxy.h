@@ -5,9 +5,8 @@
 #ifndef nsColorPickerProxy_h
 #define nsColorPickerProxy_h
 
-#include "nsIColorPicker.h"
-
 #include "mozilla/dom/PColorPickerChild.h"
+#include "nsIColorPicker.h"
 
 class nsColorPickerProxy final : public nsIColorPicker,
                                  public mozilla::dom::PColorPickerChild {

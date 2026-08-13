@@ -10,20 +10,20 @@
 #ifndef mozilla_image_SurfaceFilters_h
 #define mozilla_image_SurfaceFilters_h
 
-#include <algorithm>
 #include <stdint.h>
 #include <string.h>
 
+#include <algorithm>
+
+#include "DownscalingFilter.h"
+#include "SurfaceCache.h"
+#include "SurfacePipe.h"
 #include "mozilla/Likely.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Swizzle.h"
 #include "skia/src/core/SkBlitRow.h"
-
-#include "DownscalingFilter.h"
-#include "SurfaceCache.h"
-#include "SurfacePipe.h"
 
 namespace mozilla {
 namespace image {

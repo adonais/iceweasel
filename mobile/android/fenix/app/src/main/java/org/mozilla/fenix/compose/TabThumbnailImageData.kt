@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.compose
 
+import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import mozilla.components.browser.state.state.TabSessionState
@@ -17,6 +18,7 @@ import mozilla.components.browser.state.state.TabSessionState
  * @property tabUrl: The tab's URL
  * @property tabIcon: The tab's icon
  */
+@Immutable
 data class TabThumbnailImageData(
     val tabId: String,
     val isPrivate: Boolean,

@@ -6,7 +6,10 @@ import { act, render, fireEvent } from "@testing-library/react";
 import { INITIAL_STATE } from "common/Reducers.sys.mjs";
 import { actionTypes as at } from "common/Actions.mjs";
 import { WrapWithProvider } from "test/jest/test-utils";
-import { SportsWidget } from "content-src/components/Widgets/SportsWidget/SportsWidget";
+import {
+  SportsWidget,
+  shouldShowResultView,
+} from "content-src/components/Widgets/SportsWidget/SportsWidget";
 
 // Pin Date.now() to a post-kickoff timestamp for the entire suite so the
 // kickoff-date guard on /live data does not zero out the mock live matches
@@ -35,6 +38,22 @@ const mockTeams = [
 ];
 
 const emptyMatches = { previous: [], current: [], next: [] };
+
+// A loaded watch-live payload whose non-empty your_region marks the user's
+// region as supported, so the "Watch live" entry point renders.
+const supportedWatchLive = {
+  loaded: true,
+  data: {
+    your_region: [
+      {
+        product_name: "SBS On Demand",
+        entitlement: "Free",
+        url: "https://www.sbs.com.au/ondemand/",
+      },
+    ],
+    other_regions: [],
+  },
+};
 
 const mockMatch = {
   home_team: { key: "ENG", name: "England" },
@@ -1286,6 +1305,55 @@ describe("<SportsWidget> matches view", () => {
     expect(titles).not.toEqual(expect.arrayContaining(["Brazil"]));
   });
 
+  describe("Watch live button region gating", () => {
+    const liveNowOverrides = {
+      matchesTab: "now",
+      data: { teams: [], matches: emptyMatches, live: [mockMatch] },
+    };
+
+    it("hides the Watch live button when the user's region is unsupported (empty your_region)", () => {
+      const { container } = renderInMatchesState({
+        ...liveNowOverrides,
+        watchLive: {
+          loaded: true,
+          data: { your_region: [], other_regions: [] },
+        },
+      });
+      expect(
+        container.querySelector(".sports-watch-live-button")
+      ).not.toBeInTheDocument();
+    });
+
+    it("hides the Watch live button before watch-live data has loaded", () => {
+      const { container } = renderInMatchesState(liveNowOverrides);
+      expect(
+        container.querySelector(".sports-watch-live-button")
+      ).not.toBeInTheDocument();
+    });
+
+    it("shows the Watch live button when your_region has broadcasters", () => {
+      const { container } = renderInMatchesState({
+        ...liveNowOverrides,
+        watchLive: {
+          loaded: true,
+          data: {
+            your_region: [
+              {
+                product_name: "SBS On Demand",
+                entitlement: "Free",
+                url: "https://www.sbs.com.au/ondemand/",
+              },
+            ],
+            other_regions: [],
+          },
+        },
+      });
+      expect(
+        container.querySelector(".sports-watch-live-button")
+      ).toBeInTheDocument();
+    });
+  });
+
   it("marks the active tab based on matchesTab state", () => {
     const { container } = renderInMatchesState({ matchesTab: "results" });
     const activeTab = container.querySelector(".sports-matches-tab.is-active");
@@ -1297,6 +1365,64 @@ describe("<SportsWidget> matches view", () => {
   it("defaults to Now on load when there are live games", () => {
     const { container } = renderInMatchesState({
       matchesTab: "upcoming",
+      data: {
+        teams: [],
+        matches: emptyMatches,
+        live: [mockMatch],
+      },
+    });
+    expect(
+      container
+        .querySelector(".sports-matches-tab.is-active")
+        .getAttribute("data-l10n-id")
+    ).toBe("newtab-sports-widget-now");
+  });
+
+  it("falls back to Upcoming when the persisted tab is Now but live games have ended", () => {
+    // Reproduces the bug where matchesTab is cached as "now" (from a prior
+    // click or session) but live games have since ended: without the fallback,
+    // every tab panel is hidden and no tab shows as selected.
+    const { container } = renderInMatchesState({
+      matchesTab: "now",
+      data: {
+        teams: [],
+        matches: { current: [], previous: [], next: [mockMatch] },
+        live: [],
+      },
+    });
+    expect(
+      container
+        .querySelector(".sports-matches-tab.is-active")
+        .getAttribute("data-l10n-id")
+    ).toBe("newtab-sports-widget-upcoming");
+    const panel = getVisibleTabPanel(container);
+    expect(panel).toBeTruthy();
+    expect(panel.querySelector(".sports-match-row")).toBeTruthy();
+  });
+
+  it("keeps Results selected after live games end when the user had picked Results", () => {
+    // The Now-only fallback shouldn't override an explicit Results choice:
+    // when the user is on Results and a game ends, they should stay on Results.
+    const { container } = renderInMatchesState({
+      matchesTab: "results",
+      data: {
+        teams: [],
+        matches: { current: [], previous: [mockMatch], next: [] },
+        live: [],
+      },
+    });
+    expect(
+      container
+        .querySelector(".sports-matches-tab.is-active")
+        .getAttribute("data-l10n-id")
+    ).toBe("newtab-sports-widget-results");
+  });
+
+  it("keeps Now selected while live games are still in progress", () => {
+    // Guards against the fallback firing too eagerly: matchesTab="now" plus
+    // an active live game must continue to render the Now tab.
+    const { container } = renderInMatchesState({
+      matchesTab: "now",
       data: {
         teams: [],
         matches: emptyMatches,
@@ -1365,6 +1491,7 @@ describe("<SportsWidget> matches view", () => {
         }),
       })
     );
+    expect(handleUserInteraction).toHaveBeenCalledWith("sportsWidget");
   });
 
   it("dispatches change_tab telemetry when the results tab is clicked", () => {
@@ -1390,6 +1517,7 @@ describe("<SportsWidget> matches view", () => {
         }),
       })
     );
+    expect(handleUserInteraction).toHaveBeenCalledWith("sportsWidget");
   });
 
   it("does not dispatch change_tab telemetry when clicking the already-active tab", () => {
@@ -1459,6 +1587,68 @@ describe("<SportsWidget> matches view", () => {
         data: "sports-matches",
       })
     );
+  });
+
+  it("renders the localized team name in the flag title across the match list", () => {
+    // Mock the Fluent override for England as something other than "England"
+    // so the test proves the widget uses the localised name, not team.name.
+    document.l10n = {
+      formatMessages: jest.fn(async ids =>
+        ids.map(({ id }) => ({
+          value: null,
+          attributes: [
+            {
+              name: "label",
+              value:
+                id === "newtab-sports-widget-team-name-label-eng"
+                  ? "Inglaterra"
+                  : "fallback",
+            },
+          ],
+        }))
+      ),
+    };
+    const matchesData = {
+      teams: makeTeams(),
+      matches: {
+        previous: [],
+        current: [],
+        next: [
+          {
+            home_team: makeTeams().find(t => t.key === "ENG"),
+            away_team: makeTeams().find(t => t.key === "AUS"),
+            home_score: null,
+            away_score: null,
+            home_extra: null,
+            away_extra: null,
+            home_penalty: null,
+            away_penalty: null,
+            date: new Date().toISOString(),
+            status_type: "scheduled",
+            query: null,
+          },
+        ],
+      },
+      live: [],
+    };
+    const { container, findByTitle } = render(
+      <WrapWithProvider
+        state={makeState(
+          { [PREF_SPORTS_WIDGET_SIZE]: "medium" },
+          {
+            widgetState: "sports-matches",
+            matchesTab: "upcoming",
+            data: matchesData,
+          }
+        )}
+      >
+        <SportsWidget dispatch={jest.fn()} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+    return findByTitle("Inglaterra").then(flag => {
+      expect(flag).toBeTruthy();
+      expect(container.querySelector("[title='England']")).toBeNull();
+    });
   });
 });
 
@@ -1884,6 +2074,162 @@ describe("<SportsWidget> match list view expands widget to large", () => {
       container.querySelector(".sports.large-widget")
     ).not.toBeInTheDocument();
   });
+
+  it("resets the View All Results list when the widgets container is collapsed", () => {
+    const matchesData = {
+      teams: [],
+      matches: {
+        previous: [mockMatch],
+        current: [],
+        next: [],
+      },
+    };
+    const { container, rerender } = render(
+      <WrapWithProvider
+        state={makeState(
+          {
+            [PREF_SPORTS_WIDGET_SIZE]: "medium",
+            "widgets.maximized": true,
+          },
+          {
+            widgetState: "sports-matches",
+            matchesTab: "results",
+            data: matchesData,
+          }
+        )}
+      >
+        <SportsWidget dispatch={jest.fn()} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+
+    fireEvent.click(getVisibleViewAllButton(container));
+    expect(
+      getVisibleTabPanel(container).querySelector(".match-highlight-view")
+    ).toBeNull();
+
+    rerender(
+      <WrapWithProvider
+        state={makeState(
+          {
+            [PREF_SPORTS_WIDGET_SIZE]: "medium",
+            "widgets.maximized": false,
+          },
+          {
+            widgetState: "sports-matches",
+            matchesTab: "results",
+            data: matchesData,
+          }
+        )}
+      >
+        <SportsWidget dispatch={jest.fn()} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+
+    expect(
+      getVisibleTabPanel(container).querySelector(".match-highlight-view")
+    ).not.toBeNull();
+  });
+
+  it("resets the View All Upcoming list when the widgets container is collapsed", () => {
+    const matchesData = {
+      teams: [],
+      matches: {
+        previous: [],
+        current: [],
+        next: [{ ...mockMatch, status_type: "scheduled" }],
+      },
+    };
+    const { container, rerender } = render(
+      <WrapWithProvider
+        state={makeState(
+          {
+            [PREF_SPORTS_WIDGET_SIZE]: "medium",
+            "widgets.maximized": true,
+          },
+          {
+            widgetState: "sports-matches",
+            matchesTab: "upcoming",
+            data: matchesData,
+          }
+        )}
+      >
+        <SportsWidget dispatch={jest.fn()} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+
+    fireEvent.click(getVisibleViewAllButton(container));
+    expect(
+      getVisibleTabPanel(container).querySelector(".match-highlight-view")
+    ).toBeNull();
+
+    rerender(
+      <WrapWithProvider
+        state={makeState(
+          {
+            [PREF_SPORTS_WIDGET_SIZE]: "medium",
+            "widgets.maximized": false,
+          },
+          {
+            widgetState: "sports-matches",
+            matchesTab: "upcoming",
+            data: matchesData,
+          }
+        )}
+      >
+        <SportsWidget dispatch={jest.fn()} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+
+    expect(
+      getVisibleTabPanel(container).querySelector(".match-highlight-view")
+    ).not.toBeNull();
+  });
+
+  it("re-maximising after the reset shows the highlight view, not the previously-open list", () => {
+    const matchesData = {
+      teams: [],
+      matches: {
+        previous: [mockMatch],
+        current: [],
+        next: [],
+      },
+    };
+    function renderAt(maximized) {
+      return (
+        <WrapWithProvider
+          state={makeState(
+            {
+              [PREF_SPORTS_WIDGET_SIZE]: "medium",
+              "widgets.maximized": maximized,
+            },
+            {
+              widgetState: "sports-matches",
+              matchesTab: "results",
+              data: matchesData,
+            }
+          )}
+        >
+          <SportsWidget
+            dispatch={jest.fn()}
+            handleUserInteraction={jest.fn()}
+          />
+        </WrapWithProvider>
+      );
+    }
+
+    const { container, rerender } = render(renderAt(true));
+    fireEvent.click(getVisibleViewAllButton(container));
+    expect(
+      getVisibleTabPanel(container).querySelector(".match-highlight-view")
+    ).toBeNull();
+
+    rerender(renderAt(false));
+    rerender(renderAt(true));
+
+    expect(
+      getVisibleTabPanel(container).querySelector(".match-highlight-view")
+    ).not.toBeNull();
+  });
 });
 
 describe("<SportsWidget> Watch button (live tab)", () => {
@@ -1905,6 +2251,7 @@ describe("<SportsWidget> Watch button (live tab)", () => {
               matches: emptyMatches,
               live: [mockMatch],
             },
+            watchLive: supportedWatchLive,
           }
         )}
       >
@@ -1989,6 +2336,7 @@ describe("<SportsWidget> live refresh button", () => {
               matches: emptyMatches,
               live: [mockMatch],
             },
+            watchLive: supportedWatchLive,
           }
         )}
       >
@@ -2029,6 +2377,7 @@ describe("<SportsWidget> live refresh button", () => {
               matches: emptyMatches,
               live: [mockMatch],
             },
+            watchLive: supportedWatchLive,
           }
         )}
       >
@@ -2339,7 +2688,7 @@ describe("<SportsWidget> followed teams matches view", () => {
     },
   ];
 
-  function renderMatchesWith({
+  async function renderMatchesWith({
     selectedTeams = [],
     matchesTab = "upcoming",
     previous = [],
@@ -2348,22 +2697,32 @@ describe("<SportsWidget> followed teams matches view", () => {
     followedOnly,
     teams = teamsWithColors,
   } = {}) {
-    return render(
-      <WrapWithProvider
-        state={makeState(
-          { [PREF_SPORTS_WIDGET_SIZE]: "large" },
-          {
-            widgetState: "sports-matches",
-            matchesTab,
-            selectedTeams,
-            followedOnly,
-            data: { teams, matches: { previous, current, next } },
-          }
-        )}
-      >
-        <SportsWidget dispatch={jest.fn()} handleUserInteraction={jest.fn()} />
-      </WrapWithProvider>
-    );
+    let result;
+    // Flush useLocalizedTeamNames' async name resolution inside act so its
+    // setResolved doesn't fire after the test body.
+    await act(async () => {
+      result = render(
+        <WrapWithProvider
+          state={makeState(
+            { [PREF_SPORTS_WIDGET_SIZE]: "large" },
+            {
+              widgetState: "sports-matches",
+              matchesTab,
+              selectedTeams,
+              followedOnly,
+              data: { teams, matches: { previous, current, next } },
+            }
+          )}
+        >
+          <SportsWidget
+            dispatch={jest.fn()}
+            handleUserInteraction={jest.fn()}
+          />
+        </WrapWithProvider>
+      );
+      await Promise.resolve();
+    });
+    return result;
   }
 
   function visiblePanel(container) {
@@ -2383,10 +2742,10 @@ describe("<SportsWidget> followed teams matches view", () => {
     );
   }
 
-  it("bubbles a followed team's upcoming match to the highlight position", () => {
+  it("bubbles a followed team's upcoming match to the highlight position", async () => {
     // Without a followed team, the original chronological order would put
     // ENG vs USA first. Following CAN should bring CAN vs AUS to the front.
-    const { container } = renderMatchesWith({
+    const { container } = await renderMatchesWith({
       selectedTeams: ["CAN"],
       matchesTab: "upcoming",
       previous: [matchEngUsa],
@@ -2395,8 +2754,8 @@ describe("<SportsWidget> followed teams matches view", () => {
     expect(highlightMatchCodes(container)).toEqual(["CAN", "AUS"]);
   });
 
-  it("preserves chronological order when none of the matches involve a followed team", () => {
-    const { container } = renderMatchesWith({
+  it("preserves chronological order when none of the matches involve a followed team", async () => {
+    const { container } = await renderMatchesWith({
       selectedTeams: ["IRQ"],
       matchesTab: "upcoming",
       previous: [matchEngUsa],
@@ -2405,8 +2764,8 @@ describe("<SportsWidget> followed teams matches view", () => {
     expect(highlightMatchCodes(container)).toEqual(["ENG", "USA"]);
   });
 
-  it("does not show the followed-only toggle when no teams are followed", () => {
-    const { container } = renderMatchesWith({
+  it("does not show the followed-only toggle when no teams are followed", async () => {
+    const { container } = await renderMatchesWith({
       selectedTeams: [],
       matchesTab: "upcoming",
       previous: [matchEngUsa],
@@ -2422,8 +2781,8 @@ describe("<SportsWidget> followed teams matches view", () => {
     ).toBeNull();
   });
 
-  it("shows the followed-only toggle in the expanded list when teams are followed", () => {
-    const { container } = renderMatchesWith({
+  it("shows the followed-only toggle in the expanded list when teams are followed", async () => {
+    const { container } = await renderMatchesWith({
       selectedTeams: ["CAN"],
       matchesTab: "upcoming",
       previous: [matchEngUsa],
@@ -2442,8 +2801,8 @@ describe("<SportsWidget> followed teams matches view", () => {
     expect(toggle.getAttribute("pressed")).not.toBeNull();
   });
 
-  it("filters the expanded Upcoming list to followed teams when the toggle is on", () => {
-    const { container } = renderMatchesWith({
+  it("filters the expanded Upcoming list to followed teams when the toggle is on", async () => {
+    const { container } = await renderMatchesWith({
       selectedTeams: ["CAN"],
       matchesTab: "upcoming",
       previous: [matchEngUsa],
@@ -2462,8 +2821,8 @@ describe("<SportsWidget> followed teams matches view", () => {
     expect(codes).toEqual(["CAN", "AUS"]);
   });
 
-  it("shows every upcoming match when the persisted followedOnly toggle is off", () => {
-    const { container } = renderMatchesWith({
+  it("shows every upcoming match when the persisted followedOnly toggle is off", async () => {
+    const { container } = await renderMatchesWith({
       selectedTeams: ["CAN"],
       matchesTab: "upcoming",
       previous: [matchEngUsa],
@@ -2484,10 +2843,10 @@ describe("<SportsWidget> followed teams matches view", () => {
     expect(toggle.getAttribute("pressed")).toBeNull();
   });
 
-  it("keeps the chronological-first match in the Upcoming highlight when the toggle is off", () => {
+  it("keeps the chronological-first match in the Upcoming highlight when the toggle is off", async () => {
     // With the toggle on (default) CAN would bubble to the highlight; off, the
     // chronological-first match (ENG vs USA) should stay highlighted.
-    const { container } = renderMatchesWith({
+    const { container } = await renderMatchesWith({
       selectedTeams: ["CAN"],
       matchesTab: "upcoming",
       next: [matchEngUsa, matchCanAus, matchAlgGer],
@@ -2496,8 +2855,8 @@ describe("<SportsWidget> followed teams matches view", () => {
     expect(highlightMatchCodes(container)).toEqual(["ENG", "USA"]);
   });
 
-  it("renders the expanded Upcoming list in chronological order when the toggle is off", () => {
-    const { container } = renderMatchesWith({
+  it("renders the expanded Upcoming list in chronological order when the toggle is off", async () => {
+    const { container } = await renderMatchesWith({
       selectedTeams: ["CAN"],
       matchesTab: "upcoming",
       next: [matchEngUsa, matchCanAus, matchAlgGer],
@@ -2514,8 +2873,8 @@ describe("<SportsWidget> followed teams matches view", () => {
     expect(homeCodes).toEqual(["ENG", "CAN", "ALG"]);
   });
 
-  it("filters the expanded Results list to followed teams when the toggle is on", () => {
-    const { container } = renderMatchesWith({
+  it("filters the expanded Results list to followed teams when the toggle is on", async () => {
+    const { container } = await renderMatchesWith({
       selectedTeams: ["CAN"],
       matchesTab: "results",
       previous: [matchEngUsa, matchCanAus, matchAlgGer],
@@ -2530,7 +2889,7 @@ describe("<SportsWidget> followed teams matches view", () => {
     expect(rows[0].querySelector(".sports-match-code").textContent).toBe("CAN");
   });
 
-  it("dispatches CHANGE_FOLLOWED_ONLY for the upcoming tab when the toggle is flipped", () => {
+  it("dispatches CHANGE_FOLLOWED_ONLY for the upcoming tab when the toggle is flipped", async () => {
     const dispatch = jest.fn();
     const { container } = render(
       <WrapWithProvider
@@ -2554,6 +2913,10 @@ describe("<SportsWidget> followed teams matches view", () => {
         <SportsWidget dispatch={dispatch} handleUserInteraction={jest.fn()} />
       </WrapWithProvider>
     );
+    // Flush useLocalizedTeamNames' async name resolution inside act.
+    await act(async () => {
+      await Promise.resolve();
+    });
     fireEvent.click(
       visiblePanel(container).querySelector(
         "[data-l10n-id='newtab-sports-widget-view-all']"
@@ -2588,7 +2951,7 @@ describe("<SportsWidget> followed teams matches view", () => {
     );
   });
 
-  it("dispatches CHANGE_FOLLOWED_ONLY for the results tab when the toggle is flipped", () => {
+  it("dispatches CHANGE_FOLLOWED_ONLY for the results tab when the toggle is flipped", async () => {
     const dispatch = jest.fn();
     const { container } = render(
       <WrapWithProvider
@@ -2613,6 +2976,10 @@ describe("<SportsWidget> followed teams matches view", () => {
         <SportsWidget dispatch={dispatch} handleUserInteraction={jest.fn()} />
       </WrapWithProvider>
     );
+    // Flush useLocalizedTeamNames' async name resolution inside act.
+    await act(async () => {
+      await Promise.resolve();
+    });
     fireEvent.click(
       visiblePanel(container).querySelector(
         "[data-l10n-id='newtab-sports-widget-view-all']"
@@ -2646,8 +3013,8 @@ describe("<SportsWidget> followed teams matches view", () => {
     );
   });
 
-  it("applies the followed-team gradient to the widget when the highlight involves exactly one followed team", () => {
-    const { container } = renderMatchesWith({
+  it("applies the followed-team gradient to the widget when the highlight involves exactly one followed team", async () => {
+    const { container } = await renderMatchesWith({
       selectedTeams: ["ENG"],
       matchesTab: "upcoming",
       previous: [matchEngUsa],
@@ -2660,8 +3027,8 @@ describe("<SportsWidget> followed teams matches view", () => {
     );
   });
 
-  it("does not apply the gradient when both teams in the highlight are followed", () => {
-    const { container } = renderMatchesWith({
+  it("does not apply the gradient when both teams in the highlight are followed", async () => {
+    const { container } = await renderMatchesWith({
       selectedTeams: ["ENG", "USA"],
       matchesTab: "upcoming",
       previous: [matchEngUsa],
@@ -2674,9 +3041,9 @@ describe("<SportsWidget> followed teams matches view", () => {
     );
   });
 
-  it("does not apply the gradient when the followed team has fewer than two colors", () => {
+  it("does not apply the gradient when the followed team has fewer than two colors", async () => {
     // USA in teamsWithColors has only one color entry.
-    const { container } = renderMatchesWith({
+    const { container } = await renderMatchesWith({
       selectedTeams: ["USA"],
       matchesTab: "upcoming",
       previous: [matchEngUsa],
@@ -2689,9 +3056,9 @@ describe("<SportsWidget> followed teams matches view", () => {
     ).toBe(false);
   });
 
-  it("does not apply the gradient when the followed team has no colors entry at all", () => {
+  it("does not apply the gradient when the followed team has no colors entry at all", async () => {
     // AUS in teamsWithColors has no `colors` property.
-    const { container } = renderMatchesWith({
+    const { container } = await renderMatchesWith({
       selectedTeams: ["AUS"],
       matchesTab: "upcoming",
       previous: [matchEngUsa],
@@ -2704,8 +3071,8 @@ describe("<SportsWidget> followed teams matches view", () => {
     ).toBe(false);
   });
 
-  it("does not apply the gradient once the user expands the list view", () => {
-    const { container } = renderMatchesWith({
+  it("does not apply the gradient once the user expands the list view", async () => {
+    const { container } = await renderMatchesWith({
       selectedTeams: ["ENG"],
       matchesTab: "upcoming",
       previous: [matchEngUsa],
@@ -2723,8 +3090,8 @@ describe("<SportsWidget> followed teams matches view", () => {
     ).toBe(false);
   });
 
-  it("passes followedTeams down to highlight rows so they render the followed treatment", () => {
-    const { container } = renderMatchesWith({
+  it("passes followedTeams down to highlight rows so they render the followed treatment", async () => {
+    const { container } = await renderMatchesWith({
       selectedTeams: ["ENG"],
       matchesTab: "upcoming",
       previous: [matchEngUsa],
@@ -2754,8 +3121,8 @@ describe("<SportsWidget> followed teams matches view", () => {
       team.key === "ENG" ? { ...team, eliminated: true } : team
     );
 
-    it("does not bubble an eliminated followed team's matches to the front", () => {
-      const { container } = renderMatchesWith({
+    it("does not bubble an eliminated followed team's matches to the front", async () => {
+      const { container } = await renderMatchesWith({
         selectedTeams: ["ENG"],
         matchesTab: "upcoming",
         previous: [matchCanAus],
@@ -2766,8 +3133,8 @@ describe("<SportsWidget> followed teams matches view", () => {
       expect(highlightMatchCodes(container)).toEqual(["CAN", "AUS"]);
     });
 
-    it("does not apply the gradient border when the only followed team is eliminated", () => {
-      const { container } = renderMatchesWith({
+    it("does not apply the gradient border when the only followed team is eliminated", async () => {
+      const { container } = await renderMatchesWith({
         selectedTeams: ["ENG"],
         matchesTab: "upcoming",
         previous: [matchEngUsa],
@@ -2781,8 +3148,8 @@ describe("<SportsWidget> followed teams matches view", () => {
       ).toBe(false);
     });
 
-    it("does not render the check/bold treatment on rows for eliminated followed teams", () => {
-      const { container } = renderMatchesWith({
+    it("does not render the check/bold treatment on rows for eliminated followed teams", async () => {
+      const { container } = await renderMatchesWith({
         selectedTeams: ["ENG"],
         matchesTab: "upcoming",
         previous: [matchEngUsa],
@@ -2799,8 +3166,8 @@ describe("<SportsWidget> followed teams matches view", () => {
       expect(highlight.querySelector(".sports-match-code strong")).toBeNull();
     });
 
-    it("hides the followed-only toggle when every followed team is eliminated", () => {
-      const { container } = renderMatchesWith({
+    it("hides the followed-only toggle when every followed team is eliminated", async () => {
+      const { container } = await renderMatchesWith({
         selectedTeams: ["ENG"],
         matchesTab: "upcoming",
         previous: [matchEngUsa],
@@ -2817,10 +3184,10 @@ describe("<SportsWidget> followed teams matches view", () => {
       ).toBeNull();
     });
 
-    it("shows the unfiltered list when every followed team is eliminated", () => {
+    it("shows the unfiltered list when every followed team is eliminated", async () => {
       // followedOnly defaults to true, but with no active followed teams the
       // filter must be a no-op so the user still sees the schedule.
-      const { container } = renderMatchesWith({
+      const { container } = await renderMatchesWith({
         selectedTeams: ["ENG"],
         matchesTab: "upcoming",
         previous: [matchEngUsa],
@@ -2837,10 +3204,10 @@ describe("<SportsWidget> followed teams matches view", () => {
       ).toHaveLength(3);
     });
 
-    it("keeps the followed treatment for the still-active followed teams when only some are eliminated", () => {
+    it("keeps the followed treatment for the still-active followed teams when only some are eliminated", async () => {
       // Follow ENG (eliminated) and CAN (still active). CAN's match should
       // bubble and get the followed-team treatment; ENG should not.
-      const { container } = renderMatchesWith({
+      const { container } = await renderMatchesWith({
         selectedTeams: ["ENG", "CAN"],
         matchesTab: "upcoming",
         previous: [matchEngUsa],
@@ -2931,7 +3298,7 @@ describe("<SportsWidget> telemetry", () => {
     expect(handleUserInteraction).not.toHaveBeenCalled();
   });
 
-  it("opens the support link and records an interaction when the Learn more menu item is clicked", () => {
+  it("opens the support link in a new tab and records an interaction when the Learn more menu item is clicked", () => {
     const { container } = renderWidget();
     fireEvent.click(
       container.querySelector(
@@ -2943,10 +3310,17 @@ describe("<SportsWidget> telemetry", () => {
         type: at.OPEN_LINK,
         data: expect.objectContaining({
           url: "https://support.mozilla.org/kb/firefox-new-tab-widgets",
+          where: "tab",
         }),
       })
     );
     expect(handleUserInteraction).toHaveBeenCalledWith("sportsWidget");
+  });
+
+  it("renders a divider before the shared menu footer", () => {
+    const { container } = renderWidget();
+    const menu = container.querySelector("#sports-context-menu");
+    expect(menu.querySelector("hr")).toBeInTheDocument();
   });
 
   it("should dispatch view_key_dates telemetry with context_menu source when the View schedule menu item is clicked", () => {
@@ -3128,6 +3502,93 @@ describe("<SportsWidget> telemetry", () => {
     );
     expect(handleUserInteraction).toHaveBeenCalledWith("sportsWidget");
   });
+});
+
+describe("<SportsWidget> Key Dates panel", () => {
+  let dispatch;
+  let handleUserInteraction;
+
+  beforeEach(() => {
+    dispatch = jest.fn();
+    handleUserInteraction = jest.fn();
+  });
+
+  function renderPanel() {
+    return render(
+      <WrapWithProvider
+        state={makeState({}, { widgetState: "sports-key-dates" })}
+      >
+        <SportsWidget
+          dispatch={dispatch}
+          handleUserInteraction={handleUserInteraction}
+        />
+      </WrapWithProvider>
+    );
+  }
+
+  function findArgs(container, stageL10nId) {
+    const items = container.querySelectorAll(".sports-key-dates-item");
+    for (const item of items) {
+      if (item.querySelector(`[data-l10n-id='${stageL10nId}']`)) {
+        const [, argsEl] = item.querySelectorAll("span");
+        return JSON.parse(argsEl.getAttribute("data-l10n-args"));
+      }
+    }
+    return null;
+  }
+
+  // Each row must render as a full ISO instant (not UTC midnight from a
+  // date-only string) so Fluent's DATETIME projects onto the viewer's
+  // local calendar day. Values mirror FIFA's 2026 schedule in ET.
+  it.each([
+    [
+      "newtab-sports-widget-group-stage",
+      "2026-06-11T15:00:00-04:00",
+      "2026-06-27T22:00:00-04:00",
+    ],
+    [
+      "newtab-sports-widget-round-32",
+      "2026-06-28T15:00:00-04:00",
+      "2026-07-03T21:30:00-04:00",
+    ],
+    [
+      "newtab-sports-widget-round-16",
+      "2026-07-04T13:00:00-04:00",
+      "2026-07-07T16:00:00-04:00",
+    ],
+    [
+      "newtab-sports-widget-quarter-finals",
+      "2026-07-09T16:00:00-04:00",
+      "2026-07-11T21:00:00-04:00",
+    ],
+    [
+      "newtab-sports-widget-semi-finals",
+      "2026-07-14T15:00:00-04:00",
+      "2026-07-15T15:00:00-04:00",
+    ],
+  ])(
+    "renders %s as a range of ET-anchored ISO timestamps",
+    (stageL10nId, start, end) => {
+      const { container } = renderPanel();
+      expect(findArgs(container, stageL10nId)).toEqual({
+        start: new Date(start).getTime(),
+        end: new Date(end).getTime(),
+      });
+    }
+  );
+
+  it.each([
+    ["newtab-sports-widget-bronze-finals", "2026-07-18T17:00:00-04:00"],
+    ["newtab-sports-widget-final", "2026-07-19T15:00:00-04:00"],
+  ])(
+    "renders %s as a single ET-anchored ISO timestamp",
+    (stageL10nId, date) => {
+      const { container } = renderPanel();
+      expect(findArgs(container, stageL10nId)).toEqual({
+        date: new Date(date).getTime(),
+      });
+    }
+  );
 });
 
 describe("<SportsWidget> stage section labels in highlight views", () => {
@@ -4170,44 +4631,55 @@ describe("<SportsWidget> matches missing a team (bug 2044931)", () => {
     query: "ENG vs USA upcoming",
   };
 
-  function renderWithFollowedTeamAndTbd() {
-    return render(
-      <WrapWithProvider
-        state={makeState(
-          {},
-          {
-            widgetState: "sports-matches",
-            matchesTab: "upcoming",
-            selectedTeams: ["ENG"],
-            data: {
-              teams: makeTeams(),
-              // The team-less match sits ahead of the followed one in both the
-              // results and upcoming buckets, so sortFollowedFirst has to sort
-              // past it and filterFollowed has to test it.
-              matches: {
-                previous: [tbdMatch, followedMatch],
-                current: [],
-                next: [tbdMatch, followedMatch],
+  beforeEach(() => mockDocumentL10n());
+  afterEach(() => {
+    delete document.l10n;
+  });
+
+  async function renderWithFollowedTeamAndTbd() {
+    let result;
+    // Flush useLocalizedTeamNames' async name resolution inside act.
+    await act(async () => {
+      result = render(
+        <WrapWithProvider
+          state={makeState(
+            {},
+            {
+              widgetState: "sports-matches",
+              matchesTab: "upcoming",
+              selectedTeams: ["ENG"],
+              data: {
+                teams: makeTeams(),
+                // The team-less match sits ahead of the followed one in both
+                // the results and upcoming buckets, so sortFollowedFirst has to
+                // sort past it and filterFollowed has to test it.
+                matches: {
+                  previous: [tbdMatch, followedMatch],
+                  current: [],
+                  next: [tbdMatch, followedMatch],
+                },
               },
-            },
-          }
-        )}
-      >
-        <SportsWidget {...defaultProps} />
-      </WrapWithProvider>
-    );
+            }
+          )}
+        >
+          <SportsWidget {...defaultProps} />
+        </WrapWithProvider>
+      );
+      await Promise.resolve();
+    });
+    return result;
   }
 
-  it("renders without crashing when a team is followed and a match has no teams", () => {
-    const { container } = renderWithFollowedTeamAndTbd();
+  it("renders without crashing when a team is followed and a match has no teams", async () => {
+    const { container } = await renderWithFollowedTeamAndTbd();
     // The section renders rather than tripping the React error boundary.
     expect(
       container.querySelector(".sports.sports-matches")
     ).toBeInTheDocument();
   });
 
-  it("bubbles the followed match ahead of the team-less one in the highlight", () => {
-    const { container } = renderWithFollowedTeamAndTbd();
+  it("bubbles the followed match ahead of the team-less one in the highlight", async () => {
+    const { container } = await renderWithFollowedTeamAndTbd();
     const panel = getVisibleTabPanel(container);
     const titles = [...panel.querySelectorAll(".sports-match-flag")].map(f =>
       f.getAttribute("title")
@@ -4346,6 +4818,72 @@ describe("<SportsWidget> end-of-match celebration", () => {
           live: [],
         },
         celebrations: { endedAt: { [MATCH_ID]: endedAt }, celebrated },
+      }
+    );
+  }
+
+  const RESULT_TEAMS = [
+    {
+      key: "ARG",
+      name: "Argentina",
+      colors: ["#75aadb", "#ffffff"],
+      icon_url: "https://example.test/ARG.svg",
+    },
+    {
+      key: "FRA",
+      name: "France",
+      colors: ["#0055a4", "#ffffff", "#ef4135"],
+      icon_url: "https://example.test/FRA.svg",
+    },
+    {
+      key: "CRO",
+      name: "Croatia",
+      colors: ["#f00000", "#ffffff"],
+      icon_url: "https://example.test/CRO.svg",
+    },
+    {
+      key: "MAR",
+      name: "Morocco",
+      colors: ["#c1272d", "#006233"],
+      icon_url: "https://example.test/MAR.svg",
+    },
+  ];
+
+  const resultTeam = key => RESULT_TEAMS.find(team => team.key === key);
+
+  function resultMatch(stage, homeKey, awayKey, homeScore, awayScore) {
+    return {
+      global_event_id: `evt-${stage.toLowerCase().replaceAll(" ", "-")}`,
+      stage,
+      home_team: resultTeam(homeKey),
+      away_team: resultTeam(awayKey),
+      date: "2026-07-19T17:00:00+00:00",
+      status_type: "past",
+      home_score: homeScore,
+      away_score: awayScore,
+      home_extra: null,
+      away_extra: null,
+      home_penalty: null,
+      away_penalty: null,
+      query: `${homeKey} vs ${awayKey}`,
+    };
+  }
+
+  function resultState(matches, prefOverrides = {}, selectedTeams = []) {
+    return makeState(
+      {
+        "widgets.sportsWidget.celebrations.enabled": true,
+        ...prefOverrides,
+      },
+      {
+        widgetState: "sports-matches",
+        matchesTab: "results",
+        selectedTeams,
+        data: {
+          teams: RESULT_TEAMS,
+          matches: { previous: matches, current: [], next: [] },
+          live: [],
+        },
       }
     );
   }
@@ -4705,5 +5243,482 @@ describe("<SportsWidget> end-of-match celebration", () => {
     expect(
       container.querySelector(".sports-celebration")
     ).not.toBeInTheDocument();
+  });
+
+  it("shows the third-place result view from a real Bronze Final result", () => {
+    const bronzeMatch = resultMatch("Bronze Final", "CRO", "MAR", 2, 1);
+    const { container } = renderState(resultState([bronzeMatch]));
+
+    expect(
+      container.querySelector(".sports-result-card-third")
+    ).toBeInTheDocument();
+    expect(container.querySelector(".sports-result-name").textContent).toBe(
+      "Croatia"
+    );
+  });
+
+  it("suppresses the animated mascot under prefers-reduced-motion", () => {
+    mockMatchMedia(true);
+    const bronzeMatch = resultMatch("Bronze Final", "CRO", "MAR", 2, 1);
+    const { container } = renderState(resultState([bronzeMatch]));
+
+    // The static result card still renders; only the animated mascot is gone.
+    expect(
+      container.querySelector(".sports-result-card-third")
+    ).toBeInTheDocument();
+    expect(container.querySelector(".sports-result-mascot")).toBeNull();
+  });
+
+  it("shows third place when the 3rd Place match is still in current and the Final is upcoming", () => {
+    // Production shape: earlier rounds in `previous` (so the Results tab is
+    // enabled), the just-finished third-place match still in `current`, and the
+    // Final scheduled in `next`. The result view must trigger off `current`.
+    const quarterFinal = resultMatch("Quarter-finals", "BRA", "PRT", 3, 0);
+    const thirdMatch = resultMatch("3rd Place", "CRO", "MAR", 2, 1);
+    const finalUpcoming = {
+      ...resultMatch("Final", "ARG", "IRQ", 0, 0),
+      status_type: "scheduled",
+    };
+    const state = makeState(
+      { "widgets.sportsWidget.celebrations.enabled": true },
+      {
+        widgetState: "sports-matches",
+        matchesTab: "results",
+        data: {
+          teams: RESULT_TEAMS,
+          matches: {
+            previous: [quarterFinal],
+            current: [thirdMatch],
+            next: [finalUpcoming],
+          },
+          live: [],
+        },
+      }
+    );
+    const { container } = renderState(state);
+
+    expect(
+      container.querySelector(".sports-result-card-third")
+    ).toBeInTheDocument();
+    expect(container.querySelector(".sports-result-name").textContent).toBe(
+      "Croatia"
+    );
+  });
+
+  it("shows the podium to a follower of the runner-up team on the large widget", () => {
+    const bronzeMatch = resultMatch("Bronze Final", "CRO", "MAR", 2, 1);
+    const finalMatch = resultMatch("Final", "ARG", "FRA", 3, 2);
+    // FRA lost the Final, so they are the runner-up; following them earns the
+    // full podium (their team's moment).
+    const { container } = renderState(
+      resultState(
+        [bronzeMatch, finalMatch],
+        { [PREF_SPORTS_WIDGET_SIZE]: "large" },
+        ["FRA"]
+      )
+    );
+
+    expect(container.querySelector(".sports-podium")).toBeInTheDocument();
+    const names = [...container.querySelectorAll(".sports-result-name")].map(
+      el => el.textContent
+    );
+    expect(names).toEqual(["Argentina", "France", "Croatia"]);
+  });
+
+  it("shows the champion card (not the podium) when the runner-up is not followed", () => {
+    const bronzeMatch = resultMatch("Bronze Final", "CRO", "MAR", 2, 1);
+    const finalMatch = resultMatch("Final", "ARG", "FRA", 3, 2);
+    // Following the champion (or no one) gets the champion card, not the podium.
+    const { container } = renderState(
+      resultState(
+        [bronzeMatch, finalMatch],
+        { [PREF_SPORTS_WIDGET_SIZE]: "large" },
+        ["ARG"]
+      )
+    );
+
+    expect(container.querySelector(".sports-podium")).toBeNull();
+    expect(
+      container.querySelector(".sports-result-card-champion")
+    ).toBeInTheDocument();
+  });
+
+  it("downgrades the runner-up follower's podium to the champion card at medium", () => {
+    const bronzeMatch = resultMatch("Bronze Final", "CRO", "MAR", 2, 1);
+    const finalMatch = resultMatch("Final", "ARG", "FRA", 3, 2);
+    const { container } = renderState(
+      resultState(
+        [bronzeMatch, finalMatch],
+        { [PREF_SPORTS_WIDGET_SIZE]: "medium" },
+        ["FRA"]
+      )
+    );
+
+    expect(container.querySelector(".sports-podium")).toBeNull();
+    expect(
+      container.querySelector(".sports-result-card-champion")
+    ).toBeInTheDocument();
+  });
+
+  it("advances the result view from Bronze Final to Final as triggers arrive", () => {
+    const bronzeMatch = resultMatch("Bronze Final", "CRO", "MAR", 2, 1);
+    const finalMatch = resultMatch("Final", "ARG", "FRA", 3, 2);
+    const { container, rerender } = renderState(resultState([bronzeMatch]));
+
+    // Bronze decided, Final not yet: third-place view with its video mascot.
+    expect(
+      container.querySelector(".sports-result-card-third")
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector("video.sports-result-mascot")
+    ).not.toBeNull();
+
+    rerender(
+      <WrapWithProvider state={resultState([bronzeMatch, finalMatch])}>
+        <SportsWidget {...defaultProps} />
+      </WrapWithProvider>
+    );
+
+    // Final decided: the champion card replaces the third-place view (medium
+    // downgrades the podium to the champion card).
+    expect(
+      container.querySelector(".sports-result-card-champion")
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector("video.sports-result-mascot")
+    ).not.toBeNull();
+  });
+});
+
+describe("<SportsWidget> load more (Upcoming + Results)", () => {
+  let observerInstances;
+  let originalIntersectionObserver;
+
+  beforeEach(() => {
+    observerInstances = [];
+    originalIntersectionObserver = global.IntersectionObserver;
+    global.IntersectionObserver = class MockIntersectionObserver {
+      constructor(callback, options) {
+        this.callback = callback;
+        this.options = options;
+        this.observed = [];
+        this.disconnected = false;
+        observerInstances.push(this);
+      }
+      observe(el) {
+        this.observed.push(el);
+      }
+      unobserve(el) {
+        this.observed = this.observed.filter(e => e !== el);
+      }
+      disconnect() {
+        this.disconnected = true;
+      }
+    };
+  });
+
+  afterEach(() => {
+    global.IntersectionObserver = originalIntersectionObserver;
+  });
+
+  // Returns the observer instance attached to a sentinel matching the given
+  // CSS class (e.g. ".sports-upcoming-load-more-sentinel").
+  function findSentinelObserver(selector) {
+    const className = selector.replace(/^\./, "");
+    return observerInstances.find(o =>
+      o.observed.some(el => el?.classList?.contains(className))
+    );
+  }
+
+  function renderForDirection(
+    direction,
+    { dispatch = jest.fn(), loadMore = {} } = {}
+  ) {
+    return render(
+      <WrapWithProvider
+        state={makeState(
+          {},
+          {
+            widgetState: "sports-matches",
+            matchesTab: direction,
+            data: {
+              teams: [],
+              matches: {
+                previous: [
+                  mockMatch,
+                  {
+                    ...mockMatch,
+                    date: "2026-05-09T14:00:00+00:00",
+                    home_score: 2,
+                  },
+                ],
+                current: [],
+                next: [
+                  { ...mockMatch, status_type: "scheduled" },
+                  {
+                    ...mockMatch,
+                    date: "2026-05-10T14:00:00+00:00",
+                    status_type: "scheduled",
+                  },
+                ],
+              },
+            },
+            loadMore: {
+              upcoming: {
+                loading: false,
+                exhausted: false,
+                lastFetchedDate: null,
+              },
+              results: {
+                loading: false,
+                exhausted: false,
+                lastFetchedDate: null,
+              },
+              [direction]: {
+                loading: false,
+                exhausted: false,
+                lastFetchedDate: null,
+                ...loadMore,
+              },
+            },
+          }
+        )}
+      >
+        <SportsWidget dispatch={dispatch} handleUserInteraction={jest.fn()} />
+      </WrapWithProvider>
+    );
+  }
+
+  function expandVisibleList(container) {
+    // Both Results and Upcoming tab panels render a "View all" button when
+    // they have matches; only the visible-panel one is the active list.
+    const visiblePanel = getVisibleTabPanel(container);
+    fireEvent.click(
+      visiblePanel.querySelector(
+        "[data-l10n-id='newtab-sports-widget-view-all']"
+      )
+    );
+  }
+
+  // ---- Upcoming ----
+
+  it("does not render the upcoming sentinel in the collapsed highlight view", () => {
+    const { container } = renderForDirection("upcoming");
+    expect(
+      container.querySelector(".sports-upcoming-load-more-sentinel")
+    ).toBeNull();
+  });
+
+  it("renders the upcoming sentinel when the list is expanded", () => {
+    const { container } = renderForDirection("upcoming");
+    expandVisibleList(container);
+    expect(
+      container.querySelector(".sports-upcoming-load-more-sentinel")
+    ).toBeInTheDocument();
+  });
+
+  it("does not render the upcoming sentinel when exhausted", () => {
+    const { container } = renderForDirection("upcoming", {
+      loadMore: { exhausted: true },
+    });
+    expandVisibleList(container);
+    expect(
+      container.querySelector(".sports-upcoming-load-more-sentinel")
+    ).toBeNull();
+  });
+
+  it("renders the upcoming loading row while a fetch is in flight", () => {
+    const { container } = renderForDirection("upcoming", {
+      loadMore: { loading: true },
+    });
+    expandVisibleList(container);
+    expect(
+      container.querySelector(".sports-upcoming-loading-more")
+    ).toBeInTheDocument();
+  });
+
+  it("dispatches FETCH_MORE_MATCHES (upcoming) when the upcoming sentinel becomes visible", () => {
+    const dispatch = jest.fn();
+    const { container } = renderForDirection("upcoming", { dispatch });
+    expandVisibleList(container);
+    const observer = findSentinelObserver(
+      ".sports-upcoming-load-more-sentinel"
+    );
+    expect(observer).toBeDefined();
+
+    act(() => {
+      observer.callback([{ isIntersecting: true }]);
+    });
+
+    const fetchCalls = dispatch.mock.calls.filter(
+      ([action]) =>
+        action?.type === at.WIDGETS_SPORTS_FETCH_MORE_MATCHES &&
+        action?.data?.direction === "upcoming"
+    );
+    expect(fetchCalls).toHaveLength(1);
+  });
+
+  it("does not dispatch upcoming while already loading", () => {
+    const dispatch = jest.fn();
+    const { container } = renderForDirection("upcoming", {
+      dispatch,
+      loadMore: { loading: true },
+    });
+    expandVisibleList(container);
+    const observer = findSentinelObserver(
+      ".sports-upcoming-load-more-sentinel"
+    );
+
+    act(() => {
+      observer.callback([{ isIntersecting: true }]);
+    });
+
+    const fetchCalls = dispatch.mock.calls.filter(
+      ([action]) => action?.type === at.WIDGETS_SPORTS_FETCH_MORE_MATCHES
+    );
+    expect(fetchCalls).toHaveLength(0);
+  });
+
+  it("does not dispatch upcoming when the sentinel leaves the viewport", () => {
+    const dispatch = jest.fn();
+    const { container } = renderForDirection("upcoming", { dispatch });
+    expandVisibleList(container);
+    const observer = findSentinelObserver(
+      ".sports-upcoming-load-more-sentinel"
+    );
+
+    act(() => {
+      observer.callback([{ isIntersecting: false }]);
+    });
+
+    const fetchCalls = dispatch.mock.calls.filter(
+      ([action]) => action?.type === at.WIDGETS_SPORTS_FETCH_MORE_MATCHES
+    );
+    expect(fetchCalls).toHaveLength(0);
+  });
+
+  // ---- Results ----
+
+  it("does not render the results sentinel in the collapsed highlight view", () => {
+    const { container } = renderForDirection("results");
+    expect(
+      container.querySelector(".sports-results-load-more-sentinel")
+    ).toBeNull();
+  });
+
+  it("renders the results sentinel when the list is expanded", () => {
+    const { container } = renderForDirection("results");
+    expandVisibleList(container);
+    expect(
+      container.querySelector(".sports-results-load-more-sentinel")
+    ).toBeInTheDocument();
+  });
+
+  it("does not render the results sentinel when exhausted", () => {
+    const { container } = renderForDirection("results", {
+      loadMore: { exhausted: true },
+    });
+    expandVisibleList(container);
+    expect(
+      container.querySelector(".sports-results-load-more-sentinel")
+    ).toBeNull();
+  });
+
+  it("renders the results loading row while a fetch is in flight", () => {
+    const { container } = renderForDirection("results", {
+      loadMore: { loading: true },
+    });
+    expandVisibleList(container);
+    expect(
+      container.querySelector(".sports-results-loading-more")
+    ).toBeInTheDocument();
+  });
+
+  it("dispatches FETCH_MORE_MATCHES (results) when the results sentinel becomes visible", () => {
+    const dispatch = jest.fn();
+    const { container } = renderForDirection("results", { dispatch });
+    expandVisibleList(container);
+    const observer = findSentinelObserver(".sports-results-load-more-sentinel");
+    expect(observer).toBeDefined();
+
+    act(() => {
+      observer.callback([{ isIntersecting: true }]);
+    });
+
+    const fetchCalls = dispatch.mock.calls.filter(
+      ([action]) =>
+        action?.type === at.WIDGETS_SPORTS_FETCH_MORE_MATCHES &&
+        action?.data?.direction === "results"
+    );
+    expect(fetchCalls).toHaveLength(1);
+  });
+
+  it("does not dispatch results while already loading", () => {
+    const dispatch = jest.fn();
+    const { container } = renderForDirection("results", {
+      dispatch,
+      loadMore: { loading: true },
+    });
+    expandVisibleList(container);
+    const observer = findSentinelObserver(".sports-results-load-more-sentinel");
+
+    act(() => {
+      observer.callback([{ isIntersecting: true }]);
+    });
+
+    const fetchCalls = dispatch.mock.calls.filter(
+      ([action]) => action?.type === at.WIDGETS_SPORTS_FETCH_MORE_MATCHES
+    );
+    expect(fetchCalls).toHaveLength(0);
+  });
+});
+
+describe("shouldShowResultView", () => {
+  const allShowing = {
+    celebrationsEnabled: true,
+    resultViewReady: true,
+    hasLiveGames: false,
+    isMatchesState: true,
+    isResultsTab: true,
+    showResultsList: false,
+  };
+
+  it("shows the result view when every condition is met", () => {
+    expect(shouldShowResultView(allShowing)).toBe(true);
+  });
+
+  it("hides it while a match is live, even on the Results tab (live wins)", () => {
+    // The result views hide the tab bar; showing one during a live match would
+    // strand the user away from the live game.
+    expect(shouldShowResultView({ ...allShowing, hasLiveGames: true })).toBe(
+      false
+    );
+  });
+
+  it("hides it when no placement is decided yet", () => {
+    expect(
+      shouldShowResultView({ ...allShowing, resultViewReady: false })
+    ).toBe(false);
+  });
+
+  it("hides it when celebrations are disabled", () => {
+    expect(
+      shouldShowResultView({ ...allShowing, celebrationsEnabled: false })
+    ).toBe(false);
+  });
+
+  it("hides it off the Results tab and outside the matches state", () => {
+    expect(shouldShowResultView({ ...allShowing, isResultsTab: false })).toBe(
+      false
+    );
+    expect(shouldShowResultView({ ...allShowing, isMatchesState: false })).toBe(
+      false
+    );
+  });
+
+  it("hides it while the expanded results list is open", () => {
+    expect(shouldShowResultView({ ...allShowing, showResultsList: true })).toBe(
+      false
+    );
   });
 });

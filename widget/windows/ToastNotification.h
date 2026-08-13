@@ -5,6 +5,7 @@
 #ifndef ToastNotification_h_
 #define ToastNotification_h_
 
+#include "mozilla/AlertNotification.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
 #include "nsIAlertsService.h"
@@ -12,7 +13,6 @@
 #include "nsIThread.h"
 #include "nsIWindowsAlertsService.h"
 #include "nsRefPtrHashtable.h"
-#include "mozilla/AlertNotification.h"
 
 namespace mozilla {
 namespace widget {

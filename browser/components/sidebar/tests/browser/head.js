@@ -219,7 +219,7 @@ async function showHistorySidebar({ waitForPendingHistory = true } = {}) {
   const { contentDocument, contentWindow } = SidebarController.browser;
   const component = contentDocument.querySelector("sidebar-history");
   if (waitForPendingHistory) {
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => !component.controller.isHistoryPending
     );
   }

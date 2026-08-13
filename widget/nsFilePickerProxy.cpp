@@ -4,16 +4,17 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsFilePickerProxy.h"
+
+#include "mozilla/dom/BlobImpl.h"
+#include "mozilla/dom/BrowserChild.h"
+#include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/Directory.h"
+#include "mozilla/dom/File.h"
+#include "mozilla/dom/IPCBlobUtils.h"
+#include "mozilla/dom/UnionTypes.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIFile.h"
 #include "nsSimpleEnumerator.h"
-#include "mozilla/dom/BlobImpl.h"
-#include "mozilla/dom/Directory.h"
-#include "mozilla/dom/File.h"
-#include "mozilla/dom/BrowserChild.h"
-#include "mozilla/dom/BrowsingContext.h"
-#include "mozilla/dom/IPCBlobUtils.h"
-#include "mozilla/dom/UnionTypes.h"
 
 using namespace mozilla::dom;
 

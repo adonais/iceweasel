@@ -6,10 +6,10 @@
 
 #include "GLContext.h"
 #include "GLScreenBuffer.h"
-#include "mozilla/layers/CompositorBridgeChild.h"
-#include "mozilla/StaticPrefs_webgl.h"
 #include "SharedSurfaceGL.h"
 #include "WebRenderBridgeChild.h"
+#include "mozilla/StaticPrefs_webgl.h"
+#include "mozilla/layers/CompositorBridgeChild.h"
 
 namespace mozilla {
 namespace layers {

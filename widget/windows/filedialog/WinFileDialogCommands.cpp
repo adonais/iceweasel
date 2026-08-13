@@ -4,18 +4,24 @@
 
 #include "mozilla/widget/filedialog/WinFileDialogCommands.h"
 
-#include <type_traits>
 #include <shobjidl.h>
 #include <shtypes.h>
 #include <winerror.h>
+
+#include <atomic>
+#include <type_traits>
+
 #include "WinUtils.h"
 #include "mozilla/Logging.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/StaticPrefs_security.h"
+#include "mozilla/TimeStamp.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
 #include "mozilla/ipc/LaunchError.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/ipc/UtilityProcessManager.h"
 #include "mozilla/mscom/ApartmentRegion.h"
+#include "nsBaseFilePicker.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla::widget::filedialog {
@@ -257,6 +263,65 @@ mozilla::Result<nsString, Error> GetFolderResults(::IFileDialog* dialog) {
 #undef MOZ_ENSURE_HRESULT_OK
 
 namespace detail {
+
+// IFileDialogEvents implementation that ignores a confirmation that arrives
+// before the input-protection time range has passed, by returning S_FALSE from
+// OnFileOk, which keeps the dialog open. It uses the shared timing check in
+// nsBaseFilePicker::IsWithinInputProtectionTimeRange.
+class FileDialogInputProtector final : public IFileDialogEvents {
+ public:
+  FileDialogInputProtector() : mShowTime(mozilla::TimeStamp::Now()) {}
+
+  // IUnknown
+  IFACEMETHODIMP QueryInterface(REFIID aRefIID, void** aResult) override {
+    if (aRefIID == IID_IUnknown || aRefIID == IID_IFileDialogEvents) {
+      *aResult = static_cast<IFileDialogEvents*>(this);
+      AddRef();
+      return S_OK;
+    }
+    *aResult = nullptr;
+    return E_NOINTERFACE;
+  }
+  IFACEMETHODIMP_(ULONG) AddRef() override { return ++mRefCnt; }
+  IFACEMETHODIMP_(ULONG) Release() override {
+    ULONG count = --mRefCnt;
+    if (count == 0) {
+      delete this;
+    }
+    return count;
+  }
+
+  // IFileDialogEvents
+  IFACEMETHODIMP OnFileOk(IFileDialog*) override {
+    if (nsBaseFilePicker::IsWithinInputProtectionTimeRange(
+            mShowTime, mozilla::TimeStamp::Now(),
+            mozilla::StaticPrefs::security_notification_enable_delay())) {
+      // Keep the dialog open and ignore this confirmation.
+      return S_FALSE;
+    }
+    return S_OK;
+  }
+  IFACEMETHODIMP OnFolderChanging(IFileDialog*, IShellItem*) override {
+    return S_OK;
+  }
+  IFACEMETHODIMP OnFolderChange(IFileDialog*) override { return S_OK; }
+  IFACEMETHODIMP OnSelectionChange(IFileDialog*) override { return S_OK; }
+  IFACEMETHODIMP OnShareViolation(IFileDialog*, IShellItem*,
+                                  FDE_SHAREVIOLATION_RESPONSE*) override {
+    return S_OK;
+  }
+  IFACEMETHODIMP OnTypeChange(IFileDialog*) override { return S_OK; }
+  IFACEMETHODIMP OnOverwrite(IFileDialog*, IShellItem*,
+                             FDE_OVERWRITE_RESPONSE*) override {
+    return S_OK;
+  }
+
+ private:
+  ~FileDialogInputProtector() = default;
+  std::atomic<ULONG> mRefCnt{0};
+  mozilla::TimeStamp mShowTime;
+};
+
 void LogProcessingError(LogModule* aModule, ipc::IProtocol* aCaller,
                         ipc::HasResultCodes::Result aCode,
                         const char* aReason) {
@@ -460,7 +525,8 @@ using inner_result_of =
 template <typename ExtractorF,
           typename RetT = inner_result_of<ExtractorF, IFileDialog*>>
 auto SpawnPickerT(HWND parent, FileDialogType type, ExtractorF&& extractor,
-                  nsTArray<Command> commands) -> RefPtr<Promise<Maybe<RetT>>> {
+                  nsTArray<Command> commands, bool aNeedsInputProtection)
+    -> RefPtr<Promise<Maybe<RetT>>> {
   using ActionRetT = Result<Maybe<RetT>, Error>;
 
   return detail::SpawnFileDialogThread<Maybe<RetT>>(
@@ -473,7 +539,25 @@ auto SpawnPickerT(HWND parent, FileDialogType type, ExtractorF&& extractor,
 
         MOZ_TRY(ApplyCommands(dialog, commands));
 
-        if (HRESULT const rv = dialog->Show(parent); FAILED(rv)) {
+        // Ignore confirmations that arrive before the input-protection time
+        // range has passed. Advise is best effort: if it fails we just lose
+        // this check, which is harmless. The protector is created right before
+        // Show so its clock starts when the dialog becomes visible. We only do
+        // this for content-initiated pickers; aNeedsInputProtection carries
+        // that decision from the parent process.
+        RefPtr<FileDialogInputProtector> protector;
+        DWORD adviseCookie = 0;
+        bool advised = false;
+        if (aNeedsInputProtection) {
+          protector = MakeRefPtr<FileDialogInputProtector>();
+          advised = SUCCEEDED(dialog->Advise(protector.get(), &adviseCookie));
+        }
+
+        HRESULT const rv = dialog->Show(parent);
+        if (advised) {
+          dialog->Unadvise(adviseCookie);
+        }
+        if (FAILED(rv)) {
           if (rv == HRESULT_FROM_WIN32(ERROR_CANCELLED)) {
             return ActionRetT{Nothing()};
           }
@@ -490,15 +574,17 @@ auto SpawnPickerT(HWND parent, FileDialogType type, ExtractorF&& extractor,
 
 RefPtr<Promise<Maybe<Results>>> SpawnFilePicker(HWND parent,
                                                 FileDialogType type,
-                                                nsTArray<Command> commands) {
-  return detail::SpawnPickerT(parent, type, GetFileResults,
-                              std::move(commands));
+                                                nsTArray<Command> commands,
+                                                bool aNeedsInputProtection) {
+  return detail::SpawnPickerT(parent, type, GetFileResults, std::move(commands),
+                              aNeedsInputProtection);
 }
 
 RefPtr<Promise<Maybe<nsString>>> SpawnFolderPicker(HWND parent,
-                                                   nsTArray<Command> commands) {
+                                                   nsTArray<Command> commands,
+                                                   bool aNeedsInputProtection) {
   return detail::SpawnPickerT(parent, FileDialogType::Open, GetFolderResults,
-                              std::move(commands));
+                              std::move(commands), aNeedsInputProtection);
 }
 
 }  // namespace mozilla::widget::filedialog

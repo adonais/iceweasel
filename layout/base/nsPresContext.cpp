@@ -558,7 +558,7 @@ void nsPresContext::PreferenceChanged(const char* aPrefName) {
     mPresShell->MaybeReflowForInflationScreenSizeChange();
   }
 
-  auto changeHint = nsChangeHint{0};
+  auto changeHint = nsChangeHint_Empty;
   auto restyleHint = RestyleHint{0};
   if (prefName.EqualsLiteral(GFX_MISSING_FONTS_NOTIFY_PREF)) {
     if (StaticPrefs::gfx_missing_fonts_notify()) {

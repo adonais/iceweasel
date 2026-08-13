@@ -8,14 +8,14 @@
 #include <dlfcn.h>
 #include <unistd.h>
 
-#include <objc/objc.h>
 #include <objc/objc-runtime.h>
+#include <objc/objc.h>
 
-#include "nsObjCExceptions.h"
-#include "nsCOMArray.h"
-#include "nsWifiMonitor.h"
-#include "nsWifiAccessPoint.h"
 #include "MacWifiScanner.h"
+#include "nsCOMArray.h"
+#include "nsObjCExceptions.h"
+#include "nsWifiAccessPoint.h"
+#include "nsWifiMonitor.h"
 
 namespace mozilla {
 

@@ -6,8 +6,8 @@
 #define mozilla_OriginAttributes_h
 
 #include "mozilla/HashFunctions.h"
-#include "mozilla/dom/OriginAttributesBinding.h"
 #include "mozilla/StaticPrefs_privacy.h"
+#include "mozilla/dom/OriginAttributesBinding.h"
 #include "nsIScriptSecurityManager.h"
 
 namespace mozilla {

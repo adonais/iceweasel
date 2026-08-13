@@ -9,12 +9,14 @@
 #include <aclapi.h>
 #include <sddl.h>
 #include <shlobj.h>
+
 #include <string>
 
-#include "base/win/windows_version.h"
-#include "base/win/sid.h"
 #include "ConfigHelpers.h"
 #include "GfxDriverInfo.h"
+#include "WinUtils.h"
+#include "base/win/sid.h"
+#include "base/win/windows_version.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Components.h"
@@ -23,16 +25,16 @@
 #include "mozilla/NSPRLogModulesParser.h"
 #include "mozilla/Omnijar.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/SandboxSettings.h"
 #include "mozilla/SHA1.h"
+#include "mozilla/SandboxSettings.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/StaticPrefs_widget.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/glean/SecuritySandboxMetrics.h"
 #include "mozilla/WinDllServices.h"
 #include "mozilla/WindowsVersion.h"
+#include "mozilla/glean/SecuritySandboxMetrics.h"
 #include "mozilla/ipc/LaunchError.h"
 #include "mozilla/ipc/UtilityProcessSandboxing.h"
 #include "nsAppDirectoryServiceDefs.h"
@@ -49,7 +51,6 @@
 #include "sandbox/win/src/app_container.h"
 #include "sandbox/win/src/sandbox.h"
 #include "sandbox/win/src/security_level.h"
-#include "WinUtils.h"
 
 #define SANDBOX_SUCCEED_OR_CRASH(x)                                   \
   do {                                                                \
@@ -542,9 +543,8 @@ Result<Ok, mozilla::ipc::LaunchError> SandboxBroker::LaunchApp(
 
   // Create the sandboxed process
   PROCESS_INFORMATION targetInfo = {0};
-  sandbox::ResultCode result;
   DWORD last_error = ERROR_SUCCESS;
-  result =
+  sandbox::ResultCode result =
       sBrokerService->SpawnTarget(aPath, aArguments, aEnvironment,
                                   std::move(mPolicy), &last_error, &targetInfo);
   if (sandbox::SBOX_ALL_OK != result) {
@@ -667,7 +667,7 @@ static sandbox::ResultCode AllowProxyLoadFromBinDir(
   // mozglue.dll, nss3.dll, etc.
   nsAutoString rulePath(*sBinDir);
   rulePath.Append(u"\\*"_ns);
-  return aConfig->AllowExtraDlls(rulePath.get());
+  return aConfig->AllowExtraDll(rulePath.get());
 }
 
 static sandbox::ResultCode AddCigToConfig(
@@ -694,7 +694,7 @@ static sandbox::ResultCode AddCigToConfig(
       }
 
       for (const wchar_t* path : exceptionModules.ref()) {
-        result = aConfig->AllowExtraDlls(path);
+        result = aConfig->AllowExtraDll(path);
         if (result != sandbox::SBOX_ALL_OK) {
           return result;
         }
@@ -935,19 +935,16 @@ static sandbox::ResultCode AddAndConfigureAppContainerProfile(
     return sandbox::SBOX_ERROR_CREATE_APPCONTAINER;
   }
 
-  // The bool parameter is called create_profile, but in fact it tries to create
-  // and then opens if it already exists. So always passing true is fine.
-  bool createOrOpenProfile = true;
   nsAutoString packageName = aPackagePrefix + uniquePackageStr;
   sandbox::ResultCode result =
-      aConfig->AddAppContainerProfile(packageName.get(), createOrOpenProfile);
+      aConfig->AddAppContainerProfile(packageName.get());
   if (result != sandbox::SBOX_ALL_OK) {
     return result;
   }
 
   // This looks odd, but unfortunately holding a scoped_refptr and
   // dereferencing has DCHECKs that cause a linking problem.
-  sandbox::AppContainer* appContainer = aConfig->GetAppContainer().get();
+  sandbox::AppContainer* appContainer = aConfig->GetAppContainer();
   appContainer->SetEnableLowPrivilegeAppContainer(true);
 
   for (auto wkCap : aWellKnownCapabilites) {
@@ -1127,9 +1124,7 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
     isTrellixDllLoaded = !!::GetModuleHandleW(L"fcagff.dll");
 #endif
     if (!isTrellixDllLoaded) {
-      result = config->AddKernelObjectToClose(L"File", L"\\Device\\KsecDD");
-      MOZ_RELEASE_ASSERT(sandbox::SBOX_ALL_OK == result,
-                         "AddKernelObjectToClose should never fail.");
+      config->AddKernelObjectToClose(sandbox::HandleToClose::kKsecDD);
     }
   }
 
@@ -2062,9 +2057,6 @@ void SandboxBroker::ApplyLoggingConfig() {
 
   // Add dummy rules, so that we can log in the interception code.
   // We already have a file interception set up for the client side of pipes.
-  // Also, passing just "dummy" for file system policy causes win_utils.cc
-  // IsReparsePoint() to loop.
-  (void)config->AllowNamedPipes(L"dummy");
   (void)config->AllowRegistryRead(L"HKEY_CURRENT_USER\\dummy");
 }
 

@@ -44,7 +44,7 @@ export class ActionsProvider {
    * Pick an action.
    *
    * @param {UrlbarQueryContext} _queryContext The query context object.
-   * @param {UrlbarController} _controller The urlbar controller.
+   * @param {UrlbarParentController} _controller The urlbar controller.
    * @param {Element} _element The element that was selected.
    * @abstract
    */
@@ -63,60 +63,73 @@ export class ActionsResult {
    */
   providerName;
 
-  #key;
-  #l10nId;
-  #l10nArgs;
-  #icon;
-  #dataset;
-  #engine;
+  /**
+   * @type {string}
+   *   A string key used to distinguish between different actions.
+   */
+  key;
 
   /**
-   * @param {object} options
-   *    An option object.
-   * @param {string} options.key
-   *    A string key used to distinguish between different actions.
-   * @param {string} options.l10nId
-   *    The id of the l10n string displayed in the action button.
-   * @param {{[arg: string]: any}} [options.l10nArgs]
-   *    Arguments passed to construct the above string
-   * @param {string} options.icon
-   *    The icon displayed in the button.
-   * @param {{[key: string]: any}} [options.dataset]
-   *    An object of properties we set on the action button that
-   *    can be used to pass data when it is selected.
-   * @param {string} [options.engine]
-   *    The name of an installed engine if the action prompts search mode.
+   * @type {string|undefined}
+   *   The id of the l10n string displayed in the action button, if any.
    */
-  constructor({ key, l10nId, l10nArgs, icon, dataset, engine }) {
-    this.#key = key;
-    this.#l10nId = l10nId;
-    this.#l10nArgs = l10nArgs;
-    this.#icon = icon;
-    this.#dataset = dataset;
-    this.#engine = engine;
-  }
+  l10nId;
 
-  get key() {
-    return this.#key;
-  }
+  /**
+   * @type {{[arg: string]: any}|undefined}
+   *   Arguments passed to construct the above string.
+   */
+  l10nArgs;
 
-  get l10nId() {
-    return this.#l10nId;
-  }
+  /**
+   * @type {string|undefined}
+   *   The icon displayed in the button; the view falls back to a default when
+   *   it's absent.
+   */
+  icon;
 
-  get l10nArgs() {
-    return this.#l10nArgs;
-  }
+  /**
+   * @type {{[key: string]: any}|undefined}
+   *   An object of properties we set on the action button that can be used to
+   *   pass data when it is selected.
+   */
+  dataset;
 
-  get icon() {
-    return this.#icon;
-  }
+  /**
+   * @type {string|undefined}
+   *   The name of an installed engine if the action prompts search mode.
+   */
+  engine;
 
-  get dataset() {
-    return this.#dataset;
-  }
-
-  get engine() {
-    return this.#engine;
+  /**
+   * The data is held in plain, frozen public fields (rather than getters over
+   * private fields) so the result payload carrying these stays structured-
+   * cloneable across the urlbar actor boundary while remaining read-only.
+   *
+   * @param {object} options
+   *    An option object; see the field docs above. `providerName` and `key` are
+   *    required; the constructor throws without them.
+   * @param {string} options.providerName
+   * @param {string} options.key
+   * @param {string} [options.l10nId]
+   * @param {{[arg: string]: any}} [options.l10nArgs]
+   * @param {string} [options.icon]
+   * @param {{[key: string]: any}} [options.dataset]
+   * @param {string} [options.engine]
+   */
+  constructor({ providerName, key, l10nId, l10nArgs, icon, dataset, engine }) {
+    for (let param of [providerName, key]) {
+      if (!param) {
+        throw new Error("ActionsResult is missing a required option");
+      }
+    }
+    this.providerName = providerName;
+    this.key = key;
+    this.l10nId = l10nId;
+    this.l10nArgs = l10nArgs;
+    this.icon = icon;
+    this.dataset = dataset;
+    this.engine = engine;
+    Object.freeze(this);
   }
 }

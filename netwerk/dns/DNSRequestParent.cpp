@@ -3,16 +3,17 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/net/DNSRequestParent.h"
+
+#include "DNSAdditionalInfo.h"
+#include "mozilla/Components.h"
 #include "mozilla/net/DNSRequestChild.h"
-#include "nsIDNSService.h"
-#include "nsNetCID.h"
-#include "nsThreadUtils.h"
+#include "nsHostResolver.h"
 #include "nsICancelable.h"
 #include "nsIDNSRecord.h"
-#include "nsHostResolver.h"
-#include "mozilla/Components.h"
-#include "DNSAdditionalInfo.h"
+#include "nsIDNSService.h"
+#include "nsNetCID.h"
 #include "nsServiceManagerUtils.h"
+#include "nsThreadUtils.h"
 
 using namespace mozilla::ipc;
 

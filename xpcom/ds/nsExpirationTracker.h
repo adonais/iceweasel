@@ -6,26 +6,27 @@
 #define NSEXPIRATIONTRACKER_H_
 
 #include <cstring>
+
 #include "MainThreadUtils.h"
-#include "nsAlgorithm.h"
-#include "nsDebug.h"
-#include "nsTArray.h"
-#include "nsITimer.h"
-#include "nsCOMPtr.h"
-#include "nsIEventTarget.h"
-#include "nsIObserver.h"
-#include "nsIObserverService.h"
-#include "nsISupports.h"
-#include "nsIThread.h"
-#include "nsThreadUtils.h"
-#include "nscore.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/RefCountType.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticMutex.h"
+#include "nsAlgorithm.h"
+#include "nsCOMPtr.h"
+#include "nsDebug.h"
 #include "nsExpirationState.h"
+#include "nsIEventTarget.h"
+#include "nsIObserver.h"
+#include "nsIObserverService.h"
+#include "nsISupports.h"
+#include "nsIThread.h"
+#include "nsITimer.h"
+#include "nsTArray.h"
+#include "nsThreadUtils.h"
+#include "nscore.h"
 
 /**
  * ExpirationTracker classes:

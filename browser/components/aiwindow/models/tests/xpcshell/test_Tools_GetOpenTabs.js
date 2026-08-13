@@ -8,7 +8,7 @@ const { sanitizeUntrustedContent } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs"
 );
 
-const { getOpenTabs } = ChromeUtils.importESModule(
+const { getOpenTabs, MAX_TABS } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs"
 );
 
@@ -163,14 +163,18 @@ add_task(async function test_getOpenTabs_pagination() {
   ).BrowserWindowTracker;
 
   const sb = sinon.createSandbox();
+  const FAKE_TAB_URL = "http://www.myFakeTabUrl.com";
 
   try {
     const tabs = [];
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < MAX_TABS + 20; i++) {
       tabs.push(
         createFakeTab(`https://example${i}.com`, `Example ${i}`, i * 1000)
       );
     }
+    tabs.push(
+      createFakeTab(FAKE_TAB_URL, "This is so fake", (MAX_TABS + 20) * 1000)
+    );
     const fakeWindow = createFakeWindow(tabs);
 
     sb.stub(BrowserWindowTracker, "orderedWindows").get(() => [fakeWindow]);
@@ -178,10 +182,14 @@ add_task(async function test_getOpenTabs_pagination() {
 
     // Test default limit
     const defaultResult = await getOpenTabs(makeConversation());
-    Assert.equal(defaultResult.length, 15, "Should return at most 15 tabs");
+    Assert.equal(
+      defaultResult.length,
+      MAX_TABS,
+      `Should return at most ${MAX_TABS} tabs`
+    );
     Assert.equal(
       defaultResult[0].url,
-      "https://example19.com",
+      FAKE_TAB_URL,
       "First tab should be most recent"
     );
   } finally {

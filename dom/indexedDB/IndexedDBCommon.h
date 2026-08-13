@@ -17,6 +17,8 @@ static constexpr uint32_t kFileCopyBufferSize = 32768;
 
 EnumSet<ValidatePrincipalOptions> PrincipalValidationOptions();
 
+nsresult ClampResultCode(nsresult aResultCode);
+
 nsresult SnappyUncompressStructuredCloneData(
     nsIInputStream& aInputStream, JSStructuredCloneData& aStructuredCloneData);
 

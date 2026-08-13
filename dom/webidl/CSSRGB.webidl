@@ -8,7 +8,7 @@
 
 // https://drafts.css-houdini.org/css-typed-om-1/#cssrgb
 // TODO: Expose to LayoutWorklet
-[Exposed=(Window, Worker, PaintWorklet), Pref="layout.css.typed-om.enabled"]
+[Exposed=(Window, Worker, PaintWorklet), Func="mozilla::dom::CSSColorValue::IsEnabled"]
 interface CSSRGB : CSSColorValue {
   [Throws] constructor(CSSColorRGBComp r, CSSColorRGBComp g, CSSColorRGBComp b, optional CSSColorPercent alpha = 1);
   [SetterThrows] attribute CSSColorRGBComp r;

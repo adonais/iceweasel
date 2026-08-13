@@ -2,12 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/ModuleUtils.h"
+#include "MozSrcProtocolHandler.h"
+
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/ModuleUtils.h"
 #include "mozilla/Omnijar.h"
 #include "nsThreadUtils.h"
-
-#include "MozSrcProtocolHandler.h"
 
 #define MOZSRC_SCHEME "moz-src"
 

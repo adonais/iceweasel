@@ -5,11 +5,10 @@
 #ifndef nsHashPropertyBag_h_
 #define nsHashPropertyBag_h_
 
+#include "nsCycleCollectionParticipant.h"
 #include "nsIVariant.h"
 #include "nsIWritablePropertyBag.h"
 #include "nsIWritablePropertyBag2.h"
-
-#include "nsCycleCollectionParticipant.h"
 #include "nsInterfaceHashtable.h"
 
 class nsHashPropertyBagBase : public nsIWritablePropertyBag,

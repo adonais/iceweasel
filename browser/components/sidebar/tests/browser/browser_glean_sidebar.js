@@ -618,6 +618,7 @@ async function testIconClick(expanded) {
     ["viewGenaiChatSidebar", Glean.sidebar.chatbotIconClick],
     ["viewTabsSidebar", Glean.sidebar.syncedTabsIconClick],
     ["viewHistorySidebar", Glean.sidebar.historyIconClick],
+    ["viewOpenTabsSidebar", Glean.sidebar.openTabsIconClick],
     ["viewBookmarksSidebar", Glean.sidebar.bookmarksIconClick],
     ["viewCPMSidebar", Glean.sidebar.passwordsIconClick],
   ]);
@@ -1020,6 +1021,62 @@ add_task(async function test_bookmarks_link_glean_probe() {
   );
 
   await PlacesUtils.bookmarks.remove(bookmark.guid);
+  SidebarController.hide();
+  cleanUpExtraTabs();
+  await SpecialPowers.popPrefEnv();
+  await SidebarController.waitUntilStable();
+});
+
+add_task(async function test_open_tabs_link_glean_probe() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["sidebar.openTabsPanel.enabled", true]],
+  });
+  await SidebarController.waitUntilStable();
+  Services.fog.testResetFOG();
+
+  // Open a tab and select a different one so clicking the row in the panel
+  // actually changes the active tab.
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:blank"
+  );
+  gBrowser.selectedTab = gBrowser.tabs[0];
+
+  await SidebarController.show("viewOpenTabsSidebar");
+  const { contentDocument, contentWindow } = SidebarController.browser;
+
+  await BrowserTestUtils.waitForMutationCondition(
+    contentDocument,
+    { childList: true, subtree: true },
+    () => contentDocument.querySelector("sidebar-opentabs")
+  );
+  const component = contentDocument.querySelector("sidebar-opentabs");
+
+  await BrowserTestUtils.waitForMutationCondition(
+    component.shadowRoot,
+    { childList: true, subtree: true },
+    () => component.shadowRoot.querySelector("sidebar-tab-list")
+  );
+  const tabList = component.shadowRoot.querySelector("sidebar-tab-list");
+
+  await BrowserTestUtils.waitForMutationCondition(
+    tabList.shadowRoot,
+    { childList: true, subtree: true },
+    () => [...tabList.rowEls].find(rowEl => rowEl.tabElement === tab)
+  );
+  const row = [...tabList.rowEls].find(rowEl => rowEl.tabElement === tab);
+
+  AccessibilityUtils.setEnv({ focusableRule: false });
+  EventUtils.synthesizeMouseAtCenter(row.mainEl, {}, contentWindow);
+  AccessibilityUtils.resetEnv();
+
+  Assert.equal(
+    Glean.sidebar.link.open_tabs.testGetValue(),
+    1,
+    "One open tabs link click was recorded."
+  );
+
+  BrowserTestUtils.removeTab(tab);
   SidebarController.hide();
   cleanUpExtraTabs();
   await SpecialPowers.popPrefEnv();

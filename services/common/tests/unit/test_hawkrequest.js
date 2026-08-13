@@ -30,6 +30,7 @@ var SESSION_KEYS = {
 function do_register_cleanup() {
   Services.prefs.clearUserPref("intl.accept_languages");
   Services.prefs.clearUserPref("services.common.log.logger.rest.request");
+  Services.prefs.clearUserPref("identity.fxaccounts.auth.useBearer");
 
   // remove the pref change listener
   let hawk = new HAWKAuthenticatedRESTRequest("https://example.com");
@@ -220,6 +221,110 @@ add_task(async function test_deriveHawkCredentials() {
     CommonUtils.bytesAsHex(credentials.key),
     SESSION_KEYS.reqHMACkey
   );
+});
+
+add_task(async function test_deriveHawkCredentials_attaches_bearer_prefix() {
+  let session = await deriveHawkCredentials(
+    SESSION_KEYS.sessionToken,
+    "sessionToken"
+  );
+  Assert.equal(session.bearerPrefix, "fxs");
+
+  let keyFetch = await deriveHawkCredentials(
+    SESSION_KEYS.sessionToken,
+    "keyFetchToken"
+  );
+  Assert.equal(keyFetch.bearerPrefix, "fxk");
+
+  // An unknown context gets no prefix, so it keeps using Hawk.
+  let other = await deriveHawkCredentials(SESSION_KEYS.sessionToken, "other");
+  Assert.equal(other.bearerPrefix, undefined);
+});
+
+add_task(async function test_bearer_authenticated_request() {
+  Services.prefs.setBoolPref("identity.fxaccounts.auth.useBearer", true);
+
+  let credentials = {
+    id: SESSION_KEYS.tokenID,
+    bearerPrefix: "fxs",
+  };
+
+  let server = httpd_setup({
+    "/bearer": function (request, response) {
+      Assert.ok(request.hasHeader("Authorization"));
+      Assert.equal(
+        request.getHeader("Authorization"),
+        `Bearer fxs_${SESSION_KEYS.tokenID}`
+      );
+      response.setStatusLine(request.httpVersion, 200, "OK");
+    },
+  });
+
+  let url = server.baseURI + "/bearer";
+  let request = new HAWKAuthenticatedRESTRequest(url, credentials);
+  await Async.promiseYield();
+  let response = await request.get();
+  Assert.equal(200, response.status);
+
+  Services.prefs.clearUserPref("identity.fxaccounts.auth.useBearer");
+  await promiseStopServer(server);
+});
+
+add_task(async function test_bearer_pref_off_falls_back_to_hawk() {
+  Services.prefs.setBoolPref("identity.fxaccounts.auth.useBearer", false);
+
+  // Carries a bearerPrefix, but with the pref off it must still sign with Hawk.
+  let credentials = {
+    id: "eyJleHBpcmVzIjogMTM2NTAxMDg5OC4x",
+    key: "qTZf4ZFpAMpMoeSsX3zVRjiqmNs=",
+    algorithm: "sha256",
+    bearerPrefix: "fxs",
+  };
+
+  let server = httpd_setup({
+    "/hawk": function (request, response) {
+      let authorization = request.getHeader("Authorization");
+      Assert.ok(authorization.startsWith("Hawk "));
+      response.setStatusLine(request.httpVersion, 200, "OK");
+    },
+  });
+
+  let url = server.baseURI + "/hawk";
+  let request = new HAWKAuthenticatedRESTRequest(url, credentials);
+  await Async.promiseYield();
+  let response = await request.post({});
+  Assert.equal(200, response.status);
+
+  Services.prefs.clearUserPref("identity.fxaccounts.auth.useBearer");
+  await promiseStopServer(server);
+});
+
+add_task(async function test_no_bearer_prefix_uses_hawk() {
+  Services.prefs.setBoolPref("identity.fxaccounts.auth.useBearer", true);
+
+  // Pref is on, but credentials without a bearerPrefix must still sign with Hawk.
+  let credentials = {
+    id: "eyJleHBpcmVzIjogMTM2NTAxMDg5OC4x",
+    key: "qTZf4ZFpAMpMoeSsX3zVRjiqmNs=",
+    algorithm: "sha256",
+  };
+
+  let server = httpd_setup({
+    "/hawk": function (request, response) {
+      let authorization = request.getHeader("Authorization");
+      Assert.ok(authorization.startsWith("Hawk "));
+      response.setStatusLine(request.httpVersion, 200, "OK");
+    },
+  });
+
+  let url = server.baseURI + "/hawk";
+  let request = new HAWKAuthenticatedRESTRequest(url, credentials);
+  await Async.promiseYield();
+  let response = await request.post({});
+  Assert.equal(200, response.status);
+
+  Services.prefs.clearUserPref("identity.fxaccounts.auth.useBearer");
+  await promiseStopServer(server);
 });
 
 // turn formatted test vectors into normal hex strings

@@ -131,7 +131,9 @@ add_task(
   async function test_he_h1_0rtt_early_data_rejected_reuses_connection() {
     const url = `https://${kHost}:${kPort}/`;
 
-    let nss = Cc["@mozilla.org/psm;1"].getService(Ci.nsINSSComponent);
+    let nss = Cc["@mozilla.org/network/ssl-tokens-cache;1"].getService(
+      Ci.nsISSLTokensCache
+    );
     await nss.asyncClearSSLExternalAndInternalSessionCache();
 
     // ── Warm-up: full H1 handshake, PSK ticket written to SSLTokensCache ──

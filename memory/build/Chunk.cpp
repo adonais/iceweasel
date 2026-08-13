@@ -232,7 +232,7 @@ void pages_unmap(void* aAddr, size_t aSize) {
   if (munmap(aAddr, aSize) == -1) {
     char buf[64];
 
-    if (strerror_r(errno, buf, sizeof(buf)) == 0) {
+    if (!strerror_r(errno, buf, sizeof(buf))) {
       _malloc_message(_getprogname(), ": (malloc) Error in munmap(): ", buf,
                       "\n");
     }

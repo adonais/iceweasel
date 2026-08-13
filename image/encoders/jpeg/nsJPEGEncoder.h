@@ -6,10 +6,8 @@
 #define mozilla_image_encoders_jpeg_nsJPEGEncoder_h
 
 #include "imgIEncoder.h"
-
-#include "mozilla/ReentrantMonitor.h"
 #include "mozilla/Attributes.h"
-
+#include "mozilla/ReentrantMonitor.h"
 #include "nsCOMPtr.h"
 
 struct jpeg_compress_struct;

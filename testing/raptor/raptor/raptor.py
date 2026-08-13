@@ -45,13 +45,13 @@ def main(args=sys.argv[1:]):
     args.environment = dict(parse_key_value(args.environment or [], context="--setenv"))
 
     commandline.setup_logging("raptor", args, {"tbpl": sys.stdout})
-    LOG.info("Python version: %s" % sys.version)
+    LOG.info(f"Python version: {sys.version}")
     LOG.info("raptor-start")
 
     if args.debug_mode:
         LOG.info("debug-mode enabled")
 
-    LOG.info("received command line arguments: %s" % str(args))
+    LOG.info(f"received command line arguments: {args}")
 
     # if a test name specified on command line, and it exists, just run that one
     # otherwise run all available raptor tests that are found for this browser
@@ -96,6 +96,7 @@ def main(args=sys.argv[1:]):
             gecko_profile_threads=args.gecko_profile_threads,
             gecko_profile_features=args.gecko_profile_features,
             extra_profiler_run=args.extra_profiler_run,
+            etw_profile=args.etw_profile,
             symbols_path=args.symbols_path,
             host=args.host,
             live_sites=args.live_sites,
@@ -111,6 +112,7 @@ def main(args=sys.argv[1:]):
             device_name=args.device_name,
             disable_perf_tuning=args.disable_perf_tuning,
             conditioned_profile=args.conditioned_profile,
+            install_extensions=args.install_extensions,
             test_bytecode_cache=args.test_bytecode_cache,
             chimera=args.chimera,
             project=args.project,
@@ -144,7 +146,7 @@ def main(args=sys.argv[1:]):
         if pages_that_timed_out:
             for _page in pages_that_timed_out:
                 message = [
-                    ("TEST-UNEXPECTED-FAIL", "test '%s'" % _page["test_name"]),
+                    ("TEST-UNEXPECTED-FAIL", f"test '{_page['test_name']}'"),
                     ("timed out loading test page", "waiting for pending metrics"),
                 ]
                 if _page.get("pending_metrics") is not None:
@@ -154,15 +156,13 @@ def main(args=sys.argv[1:]):
                         )
                     )
 
-                LOG.critical(
-                    " ".join("%s: %s" % (subject, msg) for subject, msg in message)
-                )
+                LOG.critical(" ".join(f"{subject}: {msg}" for subject, msg in message))
         else:
             # we want the job to fail when we didn't get any test results
             # (due to test timeout/crash/etc.)
             LOG.critical(
-                "TEST-UNEXPECTED-FAIL: no raptor test results were found for %s"
-                % ", ".join(raptor_test_names)
+                "TEST-UNEXPECTED-FAIL: no raptor test results were found for "
+                f"{', '.join(raptor_test_names)}"
             )
         os.sys.exit(1)
 

@@ -131,5 +131,6 @@ class ExperimentsListNimbusApiTest {
         userFacingName = "Enrolled $slug",
         userFacingDescription = "Enrolled description for $slug",
         branchSlug = "control",
+        isRollout = false,
     )
 }

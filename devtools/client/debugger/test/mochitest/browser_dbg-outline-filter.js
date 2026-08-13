@@ -40,26 +40,26 @@ add_task(async function () {
   // filter all items starting with t
   type(dbg, "t");
   is(getItems(dbg).length, 4, "4 items in the list after 't' filter");
-  ok(getItems(dbg)[0].textContent.includes("TodoModel(key)"), "item TodoModel");
+  ok(getItems(dbg)[0].innerText.includes("TodoModel(key)"), "item TodoModel");
   ok(
-    getItems(dbg)[1].textContent.includes("toggleAll(checked)"),
+    getItems(dbg)[1].innerText.includes("toggleAll(checked)"),
     "item toggleAll"
   );
   ok(
-    getItems(dbg)[2].textContent.includes("toggle(todoToToggle)"),
+    getItems(dbg)[2].innerText.includes("toggle(todoToToggle)"),
     "item toggle"
   );
-  ok(getItems(dbg)[3].textContent.includes("testModel()"), "item testModel");
+  ok(getItems(dbg)[3].innerText.includes("testModel()"), "item testModel");
 
   // filter using term 'tog'
   type(dbg, "og");
   is(getItems(dbg).length, 2, "2 items in the list after 'tog' filter");
   ok(
-    getItems(dbg)[0].textContent.includes("toggleAll(checked)"),
+    getItems(dbg)[0].innerText.includes("toggleAll(checked)"),
     "item toggleAll"
   );
   ok(
-    getItems(dbg)[1].textContent.includes("toggle(todoToToggle)"),
+    getItems(dbg)[1].innerText.includes("toggle(todoToToggle)"),
     "item toggle"
   );
 
@@ -73,8 +73,8 @@ add_task(async function () {
   // check that the term 'todo' includes items with todo
   type(dbg, "todo");
   is(getItems(dbg).length, 2, "2 items in the list after 'todo' filter");
-  ok(getItems(dbg)[0].textContent.includes("TodoModel(key)"), "item TodoModel");
-  ok(getItems(dbg)[1].textContent.includes("addTodo(title)"), "item addTodo");
+  ok(getItems(dbg)[0].innerText.includes("TodoModel(key)"), "item TodoModel");
+  ok(getItems(dbg)[1].innerText.includes("addTodo(title)"), "item addTodo");
 });
 
 function getItems(dbg) {

@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "js/Warnings.h"
-#include "vm/Warnings.h"
 
 #include <stdarg.h>  // va_{list,start,end}
 
@@ -13,6 +12,7 @@
 #include "js/friend/ErrorMessages.h"  // js::GetErrorMessage
 #include "vm/ErrorReporting.h"        // IsWarning
 #include "vm/JSContext.h"  // js::ArgumentsAre{ASCII,Latin1,UTF8}, js::ReportError{Number}VA
+#include "vm/Warnings.h"
 
 using js::ArgumentsAreASCII;
 using js::ArgumentsAreLatin1;

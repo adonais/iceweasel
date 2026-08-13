@@ -680,8 +680,8 @@ add_task(async function dismissals_unmanaged_1() {
     MerinoTestUtils.server.response.body.suggestions = [suggestion];
 
     let expectedResult = {
-      type: UrlbarUtils.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      type: UrlbarShared.RESULT_TYPE.URL,
+      source: UrlbarShared.RESULT_SOURCE.SEARCH,
       heuristic: false,
       payload: {
         provider,
@@ -800,8 +800,8 @@ add_task(async function dismissals_unmanaged_2() {
   ];
 
   let expectedBaseResult = {
-    type: UrlbarUtils.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    type: UrlbarShared.RESULT_TYPE.URL,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     heuristic: false,
     payload: {
       provider,
@@ -974,8 +974,8 @@ add_task(async function topPicks() {
     matches: [
       {
         isBestMatch: true,
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         heuristic: false,
         payload: {
           telemetryType: provider,
@@ -1070,8 +1070,8 @@ async function doUnmanagedTest({ pref, suggestion, shouldBeAdded }) {
   MerinoTestUtils.server.response.body.suggestions = [suggestion];
 
   let expectedResult = {
-    type: UrlbarUtils.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    type: UrlbarShared.RESULT_TYPE.URL,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     heuristic: false,
     payload: {
       title: suggestion.title,

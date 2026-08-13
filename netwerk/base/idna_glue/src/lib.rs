@@ -15,10 +15,6 @@ use nserror::*;
 use nsstring::*;
 use percent_encoding::percent_decode;
 
-/// The URL deny list plus asterisk and double quote.
-/// Using AsciiDenyList::URL is https://bugzilla.mozilla.org/show_bug.cgi?id=1815926 .
-const GECKO: AsciiDenyList = AsciiDenyList::new(true, "%#/:<>?@[\\]^|*\"");
-
 /// Deny only glyphless ASCII to accommodate legacy callers.
 const GLYPHLESS: AsciiDenyList = AsciiDenyList::new(true, "");
 
@@ -123,7 +119,7 @@ pub unsafe extern "C" fn mozilla_net_domain_to_display_and_ascii_impl(
         let unpercent: Cow<'_, [u8]> = percent_decode(src).into();
         match Uts46::new().process(
             &unpercent,
-            GECKO,
+            AsciiDenyList::URL,
             Hyphens::Allow,
             ErrorPolicy::FailFast,
             |label, tld, _| unsafe {

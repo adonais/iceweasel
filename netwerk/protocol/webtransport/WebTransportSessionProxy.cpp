@@ -2,27 +2,28 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "WebTransportLog.h"
+#include "WebTransportSessionProxy.h"
+
 #include "Http3WebTransportSession.h"
 #include "Http3WebTransportStream.h"
 #include "ScopedNSSTypes.h"
-#include "WebTransportSessionProxy.h"
-#include "WebTransportStreamProxy.h"
 #include "WebTransportEventService.h"
+#include "WebTransportLog.h"
+#include "WebTransportStreamProxy.h"
+#include "mozilla/LoadInfo.h"
+#include "mozilla/Logging.h"
+#include "mozilla/ScopeExit.h"
+#include "mozilla/StaticPrefs_network.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
 #include "nsIHttpChannel.h"
 #include "nsIHttpChannelInternal.h"
+#include "nsILoadInfo.h"
 #include "nsIRequest.h"
 #include "nsITransportSecurityInfo.h"
 #include "nsIX509Cert.h"
 #include "nsNetUtil.h"
 #include "nsProxyRelease.h"
-#include "nsILoadInfo.h"
 #include "nsSocketTransportService2.h"
-#include "mozilla/Logging.h"
-#include "mozilla/ScopeExit.h"
-#include "mozilla/StaticPrefs_network.h"
-#include "mozilla/LoadInfo.h"
 
 namespace mozilla::net {
 
@@ -1249,39 +1250,71 @@ WebTransportSessionProxy::OnOutgoingDatagramOutCome(
   return NS_OK;
 }
 
-NS_IMETHODIMP WebTransportSessionProxy::OnStopSending(uint64_t aStreamId,
-                                                      nsresult aError) {
-  MOZ_ASSERT(OnSocketThread());
+void WebTransportSessionProxy::OnStopSendingInternal(uint64_t aStreamId,
+                                                     nsresult aError) {
   nsCOMPtr<WebTransportSessionEventListener> listener;
   {
     MutexAutoLock lock(mMutex);
     MOZ_ASSERT(mTarget->IsOnCurrentThread());
-
     if (mState != WebTransportSessionProxyState::ACTIVE || !mListener) {
-      return NS_OK;
+      return;
     }
     listener = mListener;
   }
 
   listener->OnStopSending(aStreamId, aError);
+}
+
+NS_IMETHODIMP WebTransportSessionProxy::OnStopSending(uint64_t aStreamId,
+                                                      nsresult aError) {
+  MOZ_ASSERT(OnSocketThread());
+
+  {
+    MutexAutoLock lock(mMutex);
+    if (!mTarget->IsOnCurrentThread()) {
+      return mTarget->Dispatch(NS_NewRunnableFunction(
+          "WebTransportSessionProxy::OnStopSending",
+          [self = RefPtr{this}, aStreamId, aError] {
+            self->OnStopSendingInternal(aStreamId, aError);
+          }));
+    }
+  }
+
+  OnStopSendingInternal(aStreamId, aError);
   return NS_OK;
 }
 
-NS_IMETHODIMP WebTransportSessionProxy::OnResetReceived(uint64_t aStreamId,
-                                                        nsresult aError) {
-  MOZ_ASSERT(OnSocketThread());
+void WebTransportSessionProxy::OnResetReceivedInternal(uint64_t aStreamId,
+                                                       nsresult aError) {
   nsCOMPtr<WebTransportSessionEventListener> listener;
   {
     MutexAutoLock lock(mMutex);
     MOZ_ASSERT(mTarget->IsOnCurrentThread());
-
     if (mState != WebTransportSessionProxyState::ACTIVE || !mListener) {
-      return NS_OK;
+      return;
     }
     listener = mListener;
   }
 
   listener->OnResetReceived(aStreamId, aError);
+}
+
+NS_IMETHODIMP WebTransportSessionProxy::OnResetReceived(uint64_t aStreamId,
+                                                        nsresult aError) {
+  MOZ_ASSERT(OnSocketThread());
+
+  {
+    MutexAutoLock lock(mMutex);
+    if (!mTarget->IsOnCurrentThread()) {
+      return mTarget->Dispatch(NS_NewRunnableFunction(
+          "WebTransportSessionProxy::OnResetReceived",
+          [self = RefPtr{this}, aStreamId, aError] {
+            self->OnResetReceivedInternal(aStreamId, aError);
+          }));
+    }
+  }
+
+  OnResetReceivedInternal(aStreamId, aError);
   return NS_OK;
 }
 

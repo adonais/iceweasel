@@ -90,7 +90,16 @@ void nsPageContentFrame::Reflow(nsPresContext* aPresContext,
     // scrollable overflow, since the purpose of shrink to fit is to
     // make the content that ought to be reachable (represented by the
     // scrollable overflow) fit in the page.
-    if (frame->HasOverflowAreas()) {
+    //
+    // For pdf.js documents, the shrink-to-fit ratio also takes y-axis overflow
+    // into account. During a measuring reflow under an unconstrained
+    // block-size, that overflow spans the entire unfragmented document with all
+    // pages stacked. Therefore the computation produces an incorrect ratio that
+    // tries to fit the entire document onto a single page. Since
+    // mShrinkToFitRatio is only lowered (via std::min) and never reset, we skip
+    // computing the shrink-to-fit ratio during a measuring reflow.
+    if (!aReflowInput.mFlags.mIsInFragmentainerMeasuringReflow &&
+        frame->HasOverflowAreas()) {
       // The background covers the content area and padding area, so check
       // for children sticking outside the child frame's padding edge
       nscoord xmost = kidReflowOutput.ScrollableOverflow().XMost();

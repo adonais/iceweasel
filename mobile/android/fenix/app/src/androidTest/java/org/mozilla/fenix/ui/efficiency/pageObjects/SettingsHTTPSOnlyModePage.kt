@@ -5,12 +5,6 @@
 package org.mozilla.fenix.ui.efficiency.pageObjects
 
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
-import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.matcher.ViewMatchers.isChecked
-import androidx.test.espresso.matcher.ViewMatchers.isNotChecked
-import androidx.test.espresso.matcher.ViewMatchers.withId
-import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestHelper.appContext
@@ -62,8 +56,8 @@ class SettingsHTTPSOnlyModePage(composeRule: AndroidComposeTestRule<HomeActivity
     }
 
     fun verifyHttpsOnlyAllTabsSelected(): SettingsHTTPSOnlyModePage {
-        onView(withId(R.id.https_only_all_tabs)).check(matches(isChecked()))
-        onView(withId(R.id.https_only_private_tabs)).check(matches(isNotChecked()))
+        mozVerifyElementIsChecked(SettingsHTTPSOnlyModeSelectors.HTTPS_ONLY_ALL_TABS_OPTION)
+        mozVerifyElementIsNotChecked(SettingsHTTPSOnlyModeSelectors.HTTPS_ONLY_PRIVATE_TABS_OPTION)
         return this
     }
 }

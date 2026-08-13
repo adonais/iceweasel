@@ -6,9 +6,9 @@
 
 #include "mozilla/embedding/PPrintingTypes.h"
 #include "nsCOMPtr.h"
-#include "nsQueryObject.h"
-#include "nsPrintSettingsX.h"
 #include "nsCocoaUtils.h"
+#include "nsPrintSettingsX.h"
+#include "nsQueryObject.h"
 
 using namespace mozilla::embedding;
 

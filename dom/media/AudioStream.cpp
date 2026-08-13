@@ -7,6 +7,7 @@
 #include <stdio.h>
 
 #include <algorithm>
+#include <mutex>
 
 #include "AudioConverter.h"
 #include "CubebUtils.h"
@@ -27,6 +28,7 @@
 #include "RLBoxSoundTouch.h"
 #include "Tracing.h"
 #include "mozilla/StaticPrefs_media.h"
+#include "rlbox_wasm2c_thread_locals.h"
 #include "webaudio/blink/DenormalDisabler.h"
 
 namespace mozilla {
@@ -119,8 +121,27 @@ class FrameHistory {
     }
   }
 
+  // Re-zero the reported playback position for a stream reused across a seek.
+  // The audio engine's frame counter keeps climbing across the seek, so without
+  // this the position would keep reporting the pre-seek time; rebasing lets the
+  // position resume from zero at the seek target while the same stream keeps
+  // running.
+  void Rebase(int64_t aBaseOffset) {
+    LOG("FrameHistory::Rebase to base offset {}", aBaseOffset);
+    mChunks.Clear();
+    mBaseOffset = aBaseOffset;
+    mBasePosition = 0;
+  }
+
  private:
   AutoTArray<Chunk, 7> mChunks;
+  // The engine frame count (mBaseOffset) and the media position in microseconds
+  // (mBasePosition) of the oldest chunk still tracked in mChunks. They diverge
+  // because playback-rate changes and underruns make engine frames and media
+  // time advance at different rates; GetPosition walks mChunks starting from
+  // mBaseOffset to turn a raw engine count into a media position, and Rebase
+  // moves mBaseOffset (resetting mBasePosition to 0) to re-zero a reused
+  // stream.
   int64_t mBaseOffset;
   double mBasePosition;
 };
@@ -158,9 +179,23 @@ size_t AudioStream::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
   return amount;
 }
 
+#ifdef MOZ_WASM_SANDBOXING_SOUNDTOUCH
+static std::once_flag gSetupSoundtouchReporting;
+#endif
+
 nsresult AudioStream::EnsureTimeStretcherInitialized() {
   AssertIsOnAudioThread();
   if (!mTimeStretcher) {
+#ifdef MOZ_WASM_SANDBOXING_SOUNDTOUCH
+    // Redirect all soundtouch Wasm OOM reporting to main process reporting.
+    // This only has to be done once for the Wasm runtime (although repeated
+    // calls are also ok).
+    std::call_once(gSetupSoundtouchReporting, []() {
+      auto current_handler = &moz_wasm2c_memgrow_failed;
+      RLBoxSoundTouch::redirectRLBoxSbxGrowFail(current_handler);
+    });
+#endif
+
     auto timestretcher = MakeUnique<RLBoxSoundTouch>();
     if (!timestretcher || !timestretcher->Init()) {
       return NS_ERROR_FAILURE;
@@ -337,6 +372,8 @@ RefPtr<MediaSink::EndedPromise> AudioStream::Start() {
     if (InvokeCubeb(cubeb_stream_start) != CUBEB_OK) {
       mState = ERRORED;
       mEndedPromise.RejectIfExists(NS_ERROR_FAILURE, __func__);
+    } else {
+      mCubebStarted = true;
     }
 
     LOG("started, state {}", mState == STARTED   ? "STARTED"
@@ -349,7 +386,6 @@ RefPtr<MediaSink::EndedPromise> AudioStream::Start() {
 void AudioStream::Pause() {
   TRACE("AudioStream::Pause");
   MOZ_ASSERT(mState != INITIALIZED, "Must be Start()ed.");
-  MOZ_ASSERT(mState != STOPPED, "Already Pause()ed.");
   MOZ_ASSERT(mState != SHUTDOWN, "Already ShutDown()ed.");
 
   // Do nothing if we are already drained or errored.
@@ -357,7 +393,22 @@ void AudioStream::Pause() {
     return;
   }
 
+  // In keep-running mode a pause is a seek pause: leave the cubeb stream
+  // running and only track the logical stop, so a following Resume() can
+  // restart playback without paying the stream restart cost. If cubeb is not
+  // currently running there is nothing to keep alive, so fall through to the
+  // normal stop.
+  if (mKeepRunning && mCubebStarted) {
+    LOG("Pause: keep-running mode, tracking logical STOPPED without stopping "
+        "cubeb");
+    mState = STOPPED;
+    return;
+  }
+
+  MOZ_ASSERT(mState != STOPPED, "Already Pause()ed.");
+
   MonitorAutoLock mon(mMonitor);
+  mCubebStarted = false;
   if (InvokeCubeb(cubeb_stream_stop) != CUBEB_OK) {
     mState = ERRORED;
   } else if (mState != DRAINED && mState != ERRORED) {
@@ -370,7 +421,6 @@ void AudioStream::Pause() {
 void AudioStream::Resume() {
   TRACE("AudioStream::Resume");
   MOZ_ASSERT(mState != INITIALIZED, "Must be Start()ed.");
-  MOZ_ASSERT(mState != STARTED, "Already Start()ed.");
   MOZ_ASSERT(mState != SHUTDOWN, "Already ShutDown()ed.");
 
   // Do nothing if we are already drained or errored.
@@ -378,14 +428,36 @@ void AudioStream::Resume() {
     return;
   }
 
+  // In keep-running mode, if cubeb was left running by a keep-running pause we
+  // only restore the logical playing state. Otherwise cubeb is stopped, because
+  // the stream was paused before the mode was entered, and must be started for
+  // real.
+  if (mKeepRunning && mCubebStarted) {
+    LOG("Resume: keep-running mode, tracking logical STARTED without starting "
+        "cubeb");
+    mState = STARTED;
+    return;
+  }
+
+  MOZ_ASSERT(mState != STARTED, "Already Start()ed.");
+
   MonitorAutoLock mon(mMonitor);
   if (InvokeCubeb(cubeb_stream_start) != CUBEB_OK) {
     mState = ERRORED;
   } else if (mState != DRAINED && mState != ERRORED) {
     // Don't transition to other states if we are already
     // drained or errored.
+    mCubebStarted = true;
     mState = STARTED;
   }
+}
+
+void AudioStream::SetKeepRunningMode(bool aKeepRunning) {
+  if (aKeepRunning == mKeepRunning) {
+    return;
+  }
+  LOG("SetKeepRunningMode: {}", aKeepRunning);
+  mKeepRunning = aKeepRunning;
 }
 
 void AudioStream::ShutDown() {
@@ -393,6 +465,7 @@ void AudioStream::ShutDown() {
   LOG("ShutDown, state {}", static_cast<int>(mState.load()));
 
   MonitorAutoLock mon(mMonitor);
+  mCubebStarted = false;
   if (mCubebStream) {
     // Force stop to put the cubeb stream in a stable state before deletion.
     InvokeCubeb(cubeb_stream_stop);
@@ -412,6 +485,36 @@ void AudioStream::ShutDown() {
 
   mState = SHUTDOWN;
   mEndedPromise.ResolveIfExists(true, __func__);
+}
+
+void AudioStream::RebaseLive() {
+  TRACE("AudioStream::RebaseLive");
+  // Rebase the clock to the current position of the still-running stream.
+  int64_t rawFrames;
+  {
+#ifndef XP_MACOSX
+    MonitorAutoLock mon(mMonitor);
+#endif
+    rawFrames = GetPositionInFramesUnlocked();
+  }
+  mAudioClock.Rebase(rawFrames >= 0 ? rawFrames : 0);
+}
+
+RefPtr<MediaSink::EndedPromise> AudioStream::ReinitEndedPromise() {
+  MonitorAutoLock mon(mMonitor);
+  // The outstanding promise here is the one from the original Start(), still
+  // unsettled because the stream kept running across the seek. Its consumer was
+  // already disconnected before the stream was set aside (the reuse caller
+  // asserts this), so settling it reaches no one; it only clears the holder so
+  // a fresh promise can be handed to the resumed sink. Reject rather than
+  // resolve: were a consumer ever still attached by mistake, an error surfaces
+  // the bug instead of silently ending playback, which a false "ended" would
+  // do.
+  mEndedPromise.RejectIfExists(NS_ERROR_ABORT, __func__);
+  if (mState == ERRORED) {
+    return MediaSink::EndedPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
+  }
+  return mEndedPromise.Ensure(__func__);
 }
 
 int64_t AudioStream::GetPosition() {
@@ -699,6 +802,8 @@ AudioClock::AudioClock(uint32_t aInRate)
       mPreservesPitch(true),
       mFrameHistory(new FrameHistory()) {}
 
+AudioClock::~AudioClock() = default;
+
 // Audio thread only
 void AudioClock::UpdateFrameHistory(uint32_t aServiced, uint32_t aUnderrun,
                                     bool aAudioThreadChanged) {
@@ -726,6 +831,24 @@ void AudioClock::UpdateFrameHistory(uint32_t aServiced, uint32_t aUnderrun,
 #else
   MutexAutoLock lock(mMutex);
   mFrameHistory->Append(aServiced, aUnderrun, mOutRate);
+#endif
+}
+
+void AudioClock::Rebase(int64_t aBaseOffset) {
+#ifdef XP_MACOSX
+  // The callback may still be running (the stream is reused, not stopped), so
+  // only touch owner/consumer-thread state. The queue is single-consumer and
+  // its Dequeue asserts this is that thread, which also guards the macOS
+  // owner-thread-only history. Discard the queued pre-seek callback info, then
+  // rebase. A stale item still held on the audio thread is applied later,
+  // adding at most a small bounded offset that the next rebase clears.
+  CallbackInfo info;
+  while (mCallbackInfoQueue.Dequeue(&info, 1)) {
+  }
+  mFrameHistory->Rebase(aBaseOffset);
+#else
+  MutexAutoLock lock(mMutex);
+  mFrameHistory->Rebase(aBaseOffset);
 #endif
 }
 

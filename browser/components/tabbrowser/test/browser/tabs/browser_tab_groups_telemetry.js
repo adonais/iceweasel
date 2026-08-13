@@ -11,6 +11,8 @@ const { UrlbarTestUtils } = ChromeUtils.importESModule(
 );
 
 let resetTelemetry = async () => {
+  // Ensure the tab movements deferred task has an idle moment to fire.
+  await new Promise(resolve => ChromeUtils.idleDispatch(resolve));
   await Services.fog.testFlushAllChildren();
   Services.fog.testResetFOG();
 };
@@ -47,13 +49,12 @@ add_task(async function test_tabGroupTelemetry() {
     "TabGroupCreateByUser"
   );
   let group1 = win.gBrowser.addTabGroup([group1tab], {
-    isUserTriggered: true,
-    telemetryUserCreateSource: "test-source",
+    metricsContext: gBrowser.TabMetrics.userTriggeredContext("test-source"),
   });
   win.gBrowser.tabGroupMenu.close();
   await tabGroupCreateByUser;
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     tabGroupCreateTelemetry = Glean.tabgroup.createGroup.testGetValue();
     return tabGroupCreateTelemetry?.length == 1;
   }, "Wait for createGroup event to be recorded");
@@ -69,7 +70,7 @@ add_task(async function test_tabGroupTelemetry() {
     "tabGroupCreate event extra_keys has correct values after tab group create"
   );
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return (
       Glean.tabgroup.tabCountInGroups.inside.testGetValue() == 1 &&
       Glean.tabgroup.tabCountInGroups.outside.testGetValue() == 2
@@ -87,7 +88,7 @@ add_task(async function test_tabGroupTelemetry() {
     "tabCountInGroups.outside has correct value"
   );
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return (
       Glean.tabgroup.tabsPerActiveGroup.median.testGetValue() == 1 &&
       Glean.tabgroup.tabsPerActiveGroup.average.testGetValue() == 1 &&
@@ -129,12 +130,11 @@ add_task(async function test_tabGroupTelemetry() {
   );
 
   let group2 = win.gBrowser.addTabGroup(group2Tabs, {
-    isUserTriggered: true,
-    telemetryUserCreateSource: "test-source",
+    metricsContext: gBrowser.TabMetrics.userTriggeredContext("test-source"),
   });
   win.gBrowser.tabGroupMenu.close();
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return (
       Glean.tabgroup.tabCountInGroups.inside.testGetValue() == 4 &&
       Glean.tabgroup.tabCountInGroups.outside.testGetValue() == 2
@@ -152,7 +152,7 @@ add_task(async function test_tabGroupTelemetry() {
     "tabCountInGroups.outside has correct value after adding a new tab group"
   );
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return (
       Glean.tabgroup.tabsPerActiveGroup.median.testGetValue() == 2 &&
       Glean.tabgroup.tabsPerActiveGroup.average.testGetValue() == 2 &&
@@ -192,7 +192,7 @@ add_task(async function test_tabGroupTelemetry() {
 
   group2.addTabs([newTabInGroup2]);
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return (
       Glean.tabgroup.tabCountInGroups.inside.testGetValue() == 5 &&
       Glean.tabgroup.tabCountInGroups.outside.testGetValue() == 2
@@ -210,7 +210,7 @@ add_task(async function test_tabGroupTelemetry() {
     "tabCountInGroups.outside has correct value after modifying a tab group"
   );
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return (
       Glean.tabgroup.tabsPerActiveGroup.median.testGetValue() == 2 &&
       Glean.tabgroup.tabsPerActiveGroup.average.testGetValue() == 2 &&
@@ -244,7 +244,7 @@ add_task(async function test_tabGroupTelemetry() {
 
   group2.collapsed = true;
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return (
       Glean.tabgroup.activeGroups.collapsed.testGetValue() == 1 &&
       Glean.tabgroup.activeGroups.expanded.testGetValue() == 1
@@ -270,6 +270,7 @@ add_task(async function test_tabGroupTelemetry() {
 
 add_task(async function test_tabGroupTelemetrySaveGroup() {
   let tabGroupSaveTelemetry;
+  let tabGroupDeleteTelemetry;
 
   await resetTelemetry();
 
@@ -278,7 +279,7 @@ add_task(async function test_tabGroupTelemetrySaveGroup() {
   let group1 = win.gBrowser.addTabGroup([group1tab]);
   group1.saveAndClose();
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     tabGroupSaveTelemetry = Glean.tabgroup.save.testGetValue();
     return tabGroupSaveTelemetry?.length == 1;
   }, "Wait for tabgroup.save event after tab group save");
@@ -292,17 +293,30 @@ add_task(async function test_tabGroupTelemetrySaveGroup() {
     "tabgroup.save event extra_keys has correct values after tab group save"
   );
 
+  Assert.equal(
+    Glean.tabgroup.delete.testGetValue(),
+    null,
+    "We don't record non user-triggered delete events"
+  );
+
   await resetTelemetry();
 
   let group2tab = BrowserTestUtils.addTab(win.gBrowser, "https://example.com");
   await BrowserTestUtils.browserLoaded(group2tab.linkedBrowser);
   let group2 = gBrowser.addTabGroup([group2tab]);
-  group2.saveAndClose({ isUserTriggered: true });
+  group2.saveAndClose(
+    gBrowser.TabMetrics.userTriggeredContext(
+      gBrowser.TabMetrics.METRIC_SOURCE.TAB_GROUP_MENU
+    )
+  );
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     tabGroupSaveTelemetry = Glean.tabgroup.save.testGetValue();
-    return tabGroupSaveTelemetry?.length == 1;
-  }, "Wait for tabgroup.save event after tab group save with explicit user event");
+    tabGroupDeleteTelemetry = Glean.tabgroup.delete.testGetValue();
+    return (
+      tabGroupSaveTelemetry?.length == 1 && tabGroupDeleteTelemetry?.length == 1
+    );
+  }, "Wait for tabgroup.save and tabgroup.close event after tab group save");
 
   Assert.deepEqual(
     tabGroupSaveTelemetry[0].extra,
@@ -310,7 +324,16 @@ add_task(async function test_tabGroupTelemetrySaveGroup() {
       user_triggered: "true",
       id: group2.id,
     },
-    "tabgroup.save event extra_keys has correct values after tab group save by explicit user event"
+    "tabgroup.save event extra_keys has correct values after tab group save"
+  );
+
+  Assert.deepEqual(
+    tabGroupDeleteTelemetry[0].extra,
+    {
+      id: group2.id,
+      source: gBrowser.TabMetrics.METRIC_SOURCE.TAB_GROUP_MENU,
+    },
+    "tabgroup.delete event extra_keys has correct values after tab group delete"
   );
 });
 
@@ -343,7 +366,7 @@ add_task(async function test_tabGroupTelemetry_savedGroupMetrics() {
   await saveAndCloseGroup(group1);
   await saveAndCloseGroup(group2);
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return [
       Glean.tabgroup.savedGroups,
       Glean.tabgroup.tabsPerSavedGroup.max,
@@ -552,7 +575,7 @@ add_task(async function test_tabOverflowContextMenu_deleteOpenTabGroup() {
 });
 
 async function waitForReopenRecord() {
-  return BrowserTestUtils.waitForCondition(() => {
+  return TestUtils.waitForCondition(() => {
     let tabGroupReopenTelemetry = Glean.tabgroup.reopen.testGetValue();
     return tabGroupReopenTelemetry?.length > 0;
   }, "Waiting for reopen telemetry to populate");
@@ -580,7 +603,7 @@ function assertReopenEvent({ id, source, layout, type }) {
 }
 
 async function waitForNoActiveGroups() {
-  return BrowserTestUtils.waitForCondition(
+  return TestUtils.waitForCondition(
     () => !win.gBrowser.getAllTabGroups().length,
     "waiting for an empty group list"
   );
@@ -721,7 +744,7 @@ add_task(async function test_tabContextMenu_addTabsToGroup() {
   win.gBrowser.selectedTab = moreTabs[0];
   moreTabs.slice(1, 4).forEach(tab => win.gBrowser.addToMultiSelectedTabs(tab));
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return win.gBrowser.multiSelectedTabsCount == 4;
   }, "Wait for Tabbrowser to update the multiselected tab state");
 
@@ -735,7 +758,7 @@ add_task(async function test_tabContextMenu_addTabsToGroup() {
   tabGroupButton.click();
   await closeContextMenu(menu);
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return Glean.tabgroup.addTab.testGetValue()?.length === 1;
   }, "Wait for a Glean event to be recorded");
 
@@ -754,7 +777,7 @@ add_task(async function test_tabContextMenu_addTabsToGroup() {
   tabGroupButton.click();
   await closeContextMenu(menu);
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return Glean.tabgroup.addTab.testGetValue()?.length === 2;
   }, "Wait for a Glean event to be recorded");
 
@@ -773,7 +796,7 @@ add_task(async function test_tabContextMenu_addTabsToGroup() {
   tabGroupButton.click();
   await closeContextMenu(menu);
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return Glean.tabgroup.addTab.testGetValue()?.length === 3;
   }, "Wait for a Glean event to be recorded");
 
@@ -1037,8 +1060,7 @@ add_task(async function test_cancelTabGroupCreation_ungroupTabsEvent() {
     "shown"
   );
   win.gBrowser.addTabGroup([tab], {
-    isUserTriggered: true,
-    telemetryUserCreateSource: "test-source",
+    metricsContext: win.gBrowser.TabMetrics.userTriggeredContext("test-source"),
   });
   await Promise.all([tabGroupCreateByUser, tabGroupContextOpen]);
 
@@ -1055,7 +1077,7 @@ add_task(async function test_cancelTabGroupCreation_ungroupTabsEvent() {
   EventUtils.synthesizeKey("KEY_Escape", {}, win);
   await tabGroupContextClosed;
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return Glean.tabgroup.ungroup.testGetValue() != null;
   }, "wait until an ungroup event is recorded");
 
@@ -1098,7 +1120,10 @@ add_task(async function test_noGroupEventWhenNotMovingToGroup() {
     "Sanity check: no add tab to group events recorded"
   );
 
-  win.gBrowser.moveTabTo(tab, { tabIndex: 0, isUserTriggered: true });
+  win.gBrowser.moveTabTo(tab, {
+    tabIndex: 0,
+    metricsContext: win.gBrowser.TabMetrics.userTriggeredContext(),
+  });
 
   /* eslint-disable mozilla/no-arbitrary-setTimeout */
   await new Promise(r => setTimeout(r, 300));

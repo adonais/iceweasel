@@ -3,12 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "gfxQuartzSurface.h"
+
+#include "cairo-quartz.h"
 #include "gfxContext.h"
 #include "gfxImageSurface.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/HelpersCairo.h"
-
-#include "cairo-quartz.h"
 
 void gfxQuartzSurface::MakeInvalid() { mSize = mozilla::gfx::IntSize(-1, -1); }
 

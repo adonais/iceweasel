@@ -54,9 +54,7 @@ add_task(async function test_no_default_folder() {
       "Button to turn on scheduled backups should be found"
     );
 
-    turnOnButton.click();
-
-    await settings.updateComplete;
+    await openTurnOnScheduledBackupsDialog(settings);
 
     let turnOnScheduledBackups = settings.turnOnScheduledBackupsEl;
 
@@ -68,9 +66,9 @@ add_task(async function test_no_default_folder() {
     let filePathInputDefault = turnOnScheduledBackups.filePathInputDefaultEl;
 
     Assert.equal(
-      filePathInputDefault.value,
-      "",
-      "Default input displays the expected text"
+      filePathInputDefault.getAttribute("data-l10n-id"),
+      "turn-on-scheduled-backups-location-choose-folder",
+      "Default input shows the choose-folder prompt"
     );
 
     let dialog = settings.turnOnScheduledBackupsDialogEl;
@@ -85,11 +83,12 @@ add_task(async function test_no_default_folder() {
   await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
     let settings = await waitForBackupSettings(browser);
 
+    await openTurnOnScheduledBackupsDialog(settings);
+
     Assert.ok(
       settings.turnOnScheduledBackupsEl,
       "turn-on-scheduled-backups should be found"
     );
-    settings.scheduledBackupsButtonEl.click();
 
     const documentsPath = BackupService.DEFAULT_PARENT_DIR_PATH;
 
@@ -188,7 +187,7 @@ add_task(async function test_create_new_backup_trigger() {
     // the file should show once it's created
     Assert.ok(fileName, "the archive was created");
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => !settings.backupInProgressMessageBarEl,
       "A backup is no longer in progress, the message bar should disappear"
     );

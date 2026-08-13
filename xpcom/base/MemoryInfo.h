@@ -7,6 +7,7 @@
 
 #include <cstddef>
 #include <cstdint>
+
 #include "mozilla/Attributes.h"
 #include "mozilla/EnumSet.h"
 /**

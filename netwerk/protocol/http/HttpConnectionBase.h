@@ -5,23 +5,22 @@
 #ifndef HttpConnectionBase_h_
 #define HttpConnectionBase_h_
 
-#include "nsHttpConnectionInfo.h"
+#include "ARefBase.h"
+#include "HttpTrafficAnalyzer.h"
+#include "TimingStruct.h"
+#include "mozilla/Mutex.h"
+#include "mozilla/WeakPtr.h"
+#include "mozilla/net/DNS.h"
 #include "nsAHttpTransaction.h"
 #include "nsCOMPtr.h"
-#include "nsProxyRelease.h"
-#include "prinrval.h"
-#include "mozilla/Mutex.h"
-#include "ARefBase.h"
-#include "TimingStruct.h"
-#include "HttpTrafficAnalyzer.h"
-
-#include "mozilla/net/DNS.h"
-#include "mozilla/WeakPtr.h"
+#include "nsHttpConnectionInfo.h"
 #include "nsHttpResponseHead.h"
 #include "nsIAsyncInputStream.h"
 #include "nsIAsyncOutputStream.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsITimer.h"
+#include "nsProxyRelease.h"
+#include "prinrval.h"
 
 class nsISocketTransport;
 class nsITLSSocketControl;

@@ -194,6 +194,11 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_universal_edge_to_edge_wallpapers).apply {
+            isChecked = settings.enableUniversalEdgeToEdgeWallpapers
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_firefox_labs).apply {
             isChecked = settings.enableFirefoxLabs
             onPreferenceChangeListener = SharedPreferenceUpdater()
@@ -214,18 +219,8 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_merino_manifest).apply {
-            isChecked = settings.enableMerinoManifest
-            onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
-
-        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_mozilla_ads_client).apply {
-            isChecked = settings.enableMozillaAdsClient
-            onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
-
-        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_unified_trust_panel).apply {
-            isChecked = settings.enableUnifiedTrustPanel
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_ads_client_for_stories).apply {
+            isChecked = settings.enableAdsClientForStories
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
@@ -304,16 +299,6 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
             }
         }
 
-        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_use_new_crash_reporter).apply {
-            isVisible = true
-            isChecked = settings.useNewCrashReporterFlow
-            onPreferenceChangeListener =
-                Preference.OnPreferenceChangeListener { _, newValue ->
-                    settings.useNewCrashReporterFlow = newValue as Boolean
-                    true
-                }
-        }
-
         // for performance reasons, this is only available in Nightly or Debug builds
         requirePreference<EditTextPreference>(R.string.pref_key_custom_glean_server_url).apply {
             isVisible = Config.channel.isNightlyOrDebug && BuildConfig.GLEAN_CUSTOM_URL.isNullOrEmpty()
@@ -366,6 +351,22 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_import_passwords).apply {
             isVisible = Config.channel.isDebug
             isChecked = settings.importPasswordsFeatureFlagEnabled
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_uninstall_survey).apply {
+            isVisible = true
+            isChecked = context.components.settings.uninstallSurveyFeatureFlagEnabled
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_homepage_customization).apply {
+            isChecked = settings.enableHomepageCustomization
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_homepage_trending_recent_search).apply {
+            isChecked = settings.enableHomepageTrendingRecentSearch
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
@@ -431,6 +432,12 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_tab_groups_drag_and_drop).apply {
             isVisible = Config.channel.isNightlyOrDebug
             isChecked = settings.tabGroupsDragAndDropEnabled
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_tab_groups_live_reorder).apply {
+            isVisible = Config.channel.isNightlyOrDebug
+            isChecked = settings.tabGroupsLiveReorderEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
@@ -506,6 +513,10 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
 
             resources.getString(R.string.pref_key_search_optimization) -> {
                 SecretSettingsFragmentDirections.actionSecretSettingsFragmentToSearchOptimizationFragment()
+            }
+
+            resources.getString(R.string.pref_key_show_debug_info) -> {
+                SecretSettingsFragmentDirections.actionSecretSettingsFragmentToDebugInfoBottomSheetFragment()
             }
 
             else -> return super.onPreferenceTreeClick(preference)

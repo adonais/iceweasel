@@ -6,8 +6,8 @@
 #ifndef WinTaskbar_h_
 #define WinTaskbar_h_
 
-#include <windows.h>
 #include <shobjidl.h>
+#include <windows.h>
 #undef LogSeverity  // SetupAPI.h #defines this as DWORD
 #include "nsIWinTaskbar.h"
 
@@ -30,6 +30,11 @@ class WinTaskbar final : public nsIWinTaskbar {
   static bool RegisterAppUserModelID();
   static bool GetAppUserModelID(nsAString& aDefaultGroupId,
                                 bool aPrivateBrowsing = false);
+
+  // Returns the current window-icon override resource ID for normal windows,
+  // or 0 when no override is set. Read at nsWindow creation time so that newly
+  // created windows pick up the override.
+  static uint16_t GetWindowIconOverride();
 
  private:
   bool Initialize();

@@ -30,6 +30,10 @@ if (
 
     XPCSHELL_TESTS_MANIFESTS += ["tests/xpcshell.toml"]
 
+DIRS += [
+    "aggregation",
+]
+
 XPIDL_SOURCES += [
     "nsIHangDetails.idl",
 ]

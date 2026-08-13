@@ -2083,6 +2083,7 @@ const CachedBAxisMeasurement& nsFlexContainerFrame::MeasureBSizeForFlexItem(
               aChildReflowInput, outerWM, dummyPosition, dummyContainerSize,
               flags, childStatus);
   aItem.SetHadMeasuringReflow();
+  MaybePropagateRelativeBSizeFlagFrom(aItem);
 
   // We always use unconstrained available block-size to measure flex items,
   // which means they should always complete.
@@ -4675,7 +4676,9 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
   // a percent-bsize, or if we're positioned and we have "block-start" and
   // "block-end" set and have block-size:auto.  (There are actually other cases,
   // too -- e.g. if our parent is itself a block-dir flex container and we're
-  // flexible -- but we'll let our ancestors handle those sorts of cases.)
+  // flexible -- but we'll let our ancestors handle those sorts of cases, by
+  // by propagating the bsize dependency through
+  // `MaybePropagateRelativeBSizeFlagFrom`)
   //
   // TODO(emilio): the !bsize.IsLengthPercentage() preserves behavior, but it's
   // too conservative. min/max-content don't really depend on the container.
@@ -6748,4 +6751,31 @@ nsFlexContainerFrame::FindFrameAt(int32_t aLineNumber, nsPoint aPos,
   }
   finder.Finish(aFrameFound, aPosIsBeforeFirstFrame, aPosIsAfterLastFrame);
   return NS_OK;
+}
+
+void nsFlexContainerFrame::MaybePropagateRelativeBSizeFlagFrom(
+    const FlexItem& aItem) {
+  const auto* itemFrame = aItem.Frame();
+  if (!itemFrame->HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE)) {
+    return;
+  }
+
+  if (HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE) || !IsFlexItem()) {
+    // No additional action required, `NeedsFinalReflow` should handle it
+    // correctly.
+    return;
+  }
+
+  if (!aItem.TreatBSizeAsIndefinite()) {
+    // The item's block-size is already definite, so its descendants with
+    // relative block-size won't depend on our block-size becoming definite
+    // from our parent's final reflow.
+    return;
+  }
+
+  // At this point, our block size may become definite from our parent flex
+  // container's final reflow. However, parent container will not examine our
+  // children for `NS_FRAME_CONTAINS_RELATIVE_BSIZE`, so we need propagate it
+  // up the chain.
+  AddStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE);
 }

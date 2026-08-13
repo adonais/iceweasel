@@ -63,7 +63,6 @@
       --message-bar-background-color-critical: var(--message-bar-background-color);
       --message-bar-background-color-success: var(--message-bar-background-color);
       --message-bar-background-color-warning: var(--message-bar-background-color);
-      --message-bar-border-radius: var(--border-radius-large);
       /* Using rem-based space tokens ends up causing subpixel rendering issues that cause the icon to look uncentered */
       --message-bar-container-padding-inline: 8px;
       --message-bar-icon-container-border: 1px solid var(--message-bar-icon-container-border-color);

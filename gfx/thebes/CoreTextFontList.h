@@ -9,12 +9,10 @@
 
 #include "gfxPlatformFontList.h"
 #include "gfxPlatformMac.h"
-
 #include "mozilla/FontPropertyTypes.h"
-#include "mozilla/gfx/UnscaledFontMac.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/MemoryReporting.h"
-
+#include "mozilla/gfx/UnscaledFontMac.h"
 #include "nsRefPtrHashtable.h"
 #include "nsTArray.h"
 #include "nsUnicharUtils.h"

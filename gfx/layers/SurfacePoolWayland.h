@@ -7,12 +7,12 @@
 
 #include <wayland-egl.h>
 
+#include <unordered_map>
+
 #include "GLContext.h"
 #include "MozFramebuffer.h"
 #include "mozilla/layers/SurfacePool.h"
 #include "mozilla/widget/WaylandBuffer.h"
-
-#include <unordered_map>
 
 namespace mozilla::layers {
 

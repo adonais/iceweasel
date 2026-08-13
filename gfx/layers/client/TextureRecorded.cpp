@@ -3,10 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "TextureRecorded.h"
-#include "mozilla/gfx/DrawTargetRecording.h"
-#include "mozilla/layers/CompositableForwarder.h"
 
 #include "RecordedCanvasEventImpl.h"
+#include "mozilla/gfx/DrawTargetRecording.h"
+#include "mozilla/layers/CompositableForwarder.h"
 
 namespace mozilla {
 namespace layers {

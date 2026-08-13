@@ -63,7 +63,6 @@
 
         "NoCommonSignatureAlgorithms-TLS12-Fallback":"Boring will consider RSA key exchange if a common signature algorithm cannot be found",
 
-        "CurveTest-Server-MLKEM1024-TLS13":"NSS doesn't support standalone MLKEM-1024 key exchange.",
         "Server-Sign*ML-DSA-*-TLS13":"NSS doesn't support ML-DSA for TLS 1.3.",
 
         "RejectEmptyCertificateAuthorities-Server-TLS-TLS13":"NSS doesn't reject an empty CertificateAuthorities extension.",
@@ -95,6 +94,30 @@
         "Resume-Server*TLS11-*":"",
         "RSAKeyUsage-Server-WantSignature-GotSignature-TLS1":"Only Server side of TLS 1 fails",
         "RSAKeyUsage-Server-WantSignature-GotSignature-TLS11":"Only Server side of TLS 11 fails",
+
+        "####################":"####################",
+        "### DTLS: known NSS limitations whose TLS variants are already disabled above":"",
+        "####################":"####################",
+
+        "ExtensionTrailingData-ServerName-Server-DTLS-TLS1":"NSS doesn't reject trailing data after the ServerName extension in DTLS 1.0/1.2.",
+        "ExtensionTrailingData-ServerName-Server-DTLS-TLS12":"NSS doesn't reject trailing data after the ServerName extension in DTLS 1.0/1.2.",
+        "CorruptTicket-DTLS-*":"NSS sends an alert on reception of a corrupted session ticket instead of falling back to full handshake. Bug 1783812 (DTLS variant of CorruptTicket-TLS-TLS12).",
+        "Resume-Server-TLS12-TLS13-DTLS":"NSS rejects TLS 1.3 resumption over TLS 1.2 with the wrong alert (DTLS variant of Resume-Server-TLS12-TLS13-TLS).",
+
+        "####################":"####################",
+        "### DTLS: DTLS-specific tests":"",
+        "####################":"####################",
+
+        "TLS13-HelloRetryRequest-Server-DTLS-Sync*":"BoGo requires tight DTLS 1.3 handshake-record packing; NSS uses one record per message (RFC 9147 permits this).",
+        "VersionNegotiation-Server*-TLS13-TLS13-DTLS":"BoGo requires tight DTLS 1.3 handshake-record packing; NSS uses one record per message (RFC 9147 permits this).",
+        "VersionNegotiationExtension-TLS13-DTLS":"BoGo requires tight DTLS 1.3 handshake-record packing; NSS uses one record per message (RFC 9147 permits this).",
+        "MinimumVersion-Server*-TLS13-DTLS":"BoGo requires tight DTLS 1.3 handshake-record packing; NSS uses one record per message (RFC 9147 permits this).",
+        "Resume-Server-TLS13-*-DTLS":"BoGo requires tight DTLS 1.3 handshake-record packing; NSS uses one record per message (RFC 9147 permits this).",
+        "KeyUpdate-ToServer-DTLS":"BoGo requires tight DTLS 1.3 handshake-record packing; NSS uses one record per message (RFC 9147 permits this).",
+        "DTLS13RecordHeader-NoLength-Server":"BoGo requires tight DTLS 1.3 handshake-record packing; NSS uses one record per message (RFC 9147 permits this).",
+        "DTLS13RecordHeader-ShortSeqNums-Server":"BoGo requires tight DTLS 1.3 handshake-record packing; NSS uses one record per message (RFC 9147 permits this).",
+        "SendEmptyFragments-Padded-DTLS":"BoGo requires tight DTLS 1.3 handshake-record packing; NSS uses one record per message (RFC 9147 permits this).",
+        "DTLS-ECH*":"NSS does not support ECH over DTLS.",
 
         "":""
     },

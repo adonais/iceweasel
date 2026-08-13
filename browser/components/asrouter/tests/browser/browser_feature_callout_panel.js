@@ -162,7 +162,7 @@ add_task(async function panel_feature_callout_follows_anchor() {
     calloutContainer.anchorNode.style.marginInlineEnd = "100px";
 
     // Wait for the callout to reposition itself.
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => calloutContainer.getBoundingClientRect().x !== startingX,
       "Callout should reposition itself"
     );
@@ -265,7 +265,7 @@ add_task(async function feature_callout_split_dismiss_button() {
   await testCalloutHiddenIf(
     async (win, calloutContainer) => {
       // Wait until the submenu markup exists, since SecondaryCTA targeting renders async
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () =>
           calloutContainer.querySelector(
             `#${calloutId} .fxms-multi-stage-submenu`
@@ -440,7 +440,7 @@ add_task(async function feature_callout_tab_order() {
       let primaryButton = calloutContainer.querySelector(
         `#${calloutId} .primary`
       );
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => win.document.activeElement === primaryButton,
         "Primary button should be focused"
       );
@@ -739,7 +739,7 @@ add_task(async function feature_callout_more_button_coexistence() {
         "More button should have correct class"
       );
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => submenuButton.querySelector(".fxms-multi-stage-submenu"),
         "Wait for submenu button popup to be attached"
       );

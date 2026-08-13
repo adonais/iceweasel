@@ -24,7 +24,7 @@ add_task(async function () {
 
   BrowserTestUtils.startLoadingURIString(gBrowser.selectedBrowser, kTestURI);
 
-  await BrowserTestUtils.waitForCondition(() => remainingMessages == 0);
+  await TestUtils.waitForCondition(() => remainingMessages == 0);
 
   Services.console.unregisterListener(on_auto_upgrade_message);
 });

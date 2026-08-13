@@ -5,16 +5,16 @@
 #ifndef GFX_VR_MANAGER_H
 #define GFX_VR_MANAGER_H
 
+#include "gfxVR.h"
+#include "mozilla/Atomics.h"
+#include "mozilla/Monitor.h"
+#include "mozilla/TimeStamp.h"
+#include "mozilla/dom/GamepadHandle.h"
+#include "mozilla/layers/LayersSurfaces.h"  // for SurfaceDescriptor
 #include "nsIObserver.h"
 #include "nsTArray.h"
 #include "nsTHashSet.h"
 #include "nsThreadUtils.h"
-#include "mozilla/Atomics.h"
-#include "mozilla/dom/GamepadHandle.h"
-#include "mozilla/layers/LayersSurfaces.h"  // for SurfaceDescriptor
-#include "mozilla/Monitor.h"
-#include "mozilla/TimeStamp.h"
-#include "gfxVR.h"
 
 class nsITimer;
 namespace mozilla {

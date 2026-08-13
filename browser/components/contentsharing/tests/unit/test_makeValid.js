@@ -25,6 +25,10 @@ const BASE_INVALID_LINKS = [
     title: "Will pass regex but fail URL constructor and be removed",
     uri: "https://",
   },
+  {
+    title: "Unencoded braces pass WHATWG URL but fail schema format: uri",
+    uri: "https://example.com/?clickId={ClickId}&img={key}&placement={placement}",
+  },
 ];
 
 const INVALID_TABS_SHARE = {
@@ -139,6 +143,10 @@ add_task(async function test_makeValid() {
   INVALID_BOOKMARKS_SHARE_2.children.push(makeManyNestedBookmarks(0));
   INVALID_BOOKMARKS_SHARE_3.children.push(makeManyNestedBookmarksWithLink(0));
 
+  // buildShare drops individual invalid links synchronously, so the per-link
+  // validator must be loaded first.
+  await ContentSharingUtils.getLinkValidator();
+
   for (let [invalidShare, shouldPass] of [
     [INVALID_TABS_SHARE, true],
     [INVALID_TABGROUP_SHARE, true],
@@ -163,4 +171,66 @@ add_task(async function test_makeValid() {
       );
     }
   }
+});
+
+add_task(async function test_dropsInvalidLinksKeepsValid() {
+  await ContentSharingUtils.getLinkValidator();
+
+  const MIXED_SHARE = {
+    title: "Mixed tabs",
+    type: "tabs",
+    children: [
+      { title: "Good", uri: "https://example.com/good" },
+      {
+        title: "Bad braces",
+        uri: "https://lps.plarium.com/?clickId={ClickId}&img={key}",
+      },
+      { title: "Also good", uri: "https://example.com/also-good" },
+    ],
+  };
+
+  let shareResult = ContentSharingUtils.buildShare(MIXED_SHARE);
+  Assert.equal(
+    shareResult.share.links.length,
+    2,
+    "The link with unencoded braces should be dropped, keeping the two valid links"
+  );
+  Assert.ok(
+    shareResult.share.links.every(link => !link.url.includes("{")),
+    "No surviving link should contain unencoded braces"
+  );
+
+  shareResult = await ContentSharingUtils.validateSchema(shareResult);
+  Assert.equal(
+    shareResult.error,
+    null,
+    "A share with at least one valid link should not error"
+  );
+});
+
+add_task(async function test_allInvalidLinksErrors() {
+  await ContentSharingUtils.getLinkValidator();
+
+  const ALL_INVALID_SHARE = {
+    title: "All invalid tabs",
+    type: "tabs",
+    children: [
+      { title: "Braces", uri: "https://example.com/?a={b}" },
+      { title: "About", uri: "about:robots" },
+    ],
+  };
+
+  let shareResult = ContentSharingUtils.buildShare(ALL_INVALID_SHARE);
+  Assert.equal(
+    shareResult.share.links.length,
+    0,
+    "All links should be dropped"
+  );
+
+  shareResult = await ContentSharingUtils.validateSchema(shareResult);
+  Assert.equal(
+    shareResult.error,
+    ERRORS.INVALID_SCHEMA,
+    "A share with no valid links should error with INVALID_SCHEMA"
+  );
 });

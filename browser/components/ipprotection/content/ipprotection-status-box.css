@@ -4,12 +4,10 @@
 
 @import "chrome://global/skin/global.css";
 
-:host {
-  --border-color: var(--card-border-color);
-}
-
 .disconnected,
-.generic-error {
+.generic-error,
+.paused,
+.connecting {
   background-color: var(--background-color-box-info);
 }
 
@@ -33,8 +31,6 @@
 }
 
 .paused {
-  background-color: var(--background-color-box-info);
-
   ::slotted([slot="image"]) {
     -moz-context-properties: fill;
     fill: var(--icon-color);
@@ -42,8 +38,6 @@
 }
 
 .connecting {
-  background-color: var(--background-color-box-info);
-
   ::slotted([slot="image"]) {
     -moz-context-properties: fill;
     fill: var(--icon-color);
@@ -71,31 +65,34 @@
 #content-container {
   display: flex;
   flex-direction: column;
-  border: var(--border-width) solid var(--border-color);
+  border: var(--border-width) solid var(--card-border-color);
   border-radius: var(--border-radius-medium);
   padding: var(--space-medium);
+
+  @media -moz-pref("browser.nova.enabled") {
+    /* Use one neutral panel background for every state with Nova enabled. */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/no-base-design-tokens, stylelint-plugin-mozilla/use-design-tokens */
+    background-color: light-dark(var(--color-gray-0), var(--color-black-alpha-50));
+    border: var(--border-width) solid var(--border-color-deemphasized);
+  }
 }
 
 #header {
   display: flex;
   justify-content: space-between;
   gap: var(--space-medium);
-  min-block-size: var(--size-image-small);
+  min-block-size: var(--size-image-xsmall);
 }
 
 #title {
   font-weight: var(--font-weight-semibold);
   padding-bottom: var(--space-xsmall);
   margin-block: 0;
-  /* Intentionally using a larger font size for clearer visual hierarchy */
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  font-size: 1.4lh;
 }
 
 #description {
-  /* Intentionally using a larger font size for clearer visual hierarchy */
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  font-size: 1.23em;
+  /* Increased font size used for bandwidth usage messaging to make usage state prominent when bandwidth is limited*/
+  font-size: var(--font-size-large);
   color: var(--text-color-deemphasized);
 }
 
@@ -125,12 +122,14 @@
 
 ::slotted([slot="image"]) {
   display: block;
-  height: var(--size-image-small);
-  width: var(--size-image-small);
+  height: var(--size-image-xsmall);
+  width: var(--size-image-xsmall);
 }
 
 ::slotted([slot="bandwidth"]) {
   color: var(--text-color-deemphasized);
+  /* Increased font size used for bandwidth usage messaging to make usage state prominent when bandwidth is limited*/
+  font-size: var(--font-size-large);
 }
 
 ::slotted([slot="action"]) {

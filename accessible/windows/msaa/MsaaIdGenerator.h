@@ -5,9 +5,8 @@
 #ifndef mozilla_a11y_MsaaIdGenerator_h
 #define mozilla_a11y_MsaaIdGenerator_h
 
-#include "mozilla/a11y/IDSet.h"
-
 #include "mozilla/NotNull.h"
+#include "mozilla/a11y/IDSet.h"
 #include "nsITimer.h"
 
 namespace mozilla {

@@ -5,6 +5,8 @@
 @import url("chrome://global/skin/design-system/text-and-typography.css");
 
 :host {
+  --fieldset-gap-row: var(--space-small);
+  --fieldset-gap-column: var(--space-medium);
   display: block;
 }
 
@@ -62,8 +64,8 @@ h6 {
   fieldset[aria-orientation="horizontal"] & {
     flex-direction: row;
     flex-wrap: wrap;
-    row-gap: var(--space-small);
-    column-gap: var(--space-medium);
+    row-gap: var(--fieldset-gap-row);
+    column-gap: var(--fieldset-gap-column);
   }
 
   :is(legend, .description) ~ & {

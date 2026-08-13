@@ -6,9 +6,8 @@
 #define GFX_VR_SERVICE_PUPPETSESSION_H
 
 #include "VRSession.h"
-
-#include "mozilla/TimeStamp.h"
 #include "moz_external_vr.h"
+#include "mozilla/TimeStamp.h"
 
 #if defined(XP_WIN)
 #  include <d3d11_1.h>

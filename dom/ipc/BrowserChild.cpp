@@ -2754,9 +2754,9 @@ mozilla::ipc::IPCResult BrowserChild::RecvPasteTransferable(
 
 #ifdef ACCESSIBILITY
 a11y::PDocAccessibleChild* BrowserChild::AllocPDocAccessibleChild(
-    PDocAccessibleChild*, const uint64_t&,
-    const MaybeDiscardedBrowsingContext&) {
-  MOZ_ASSERT(false, "should never call this!");
+    PDocAccessibleChild*, const uint64_t&, const MaybeDiscardedBrowsingContext&,
+    const bool&) {
+  MOZ_ASSERT_UNREACHABLE("should never call this!");
   return nullptr;
 }
 

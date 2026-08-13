@@ -188,7 +188,7 @@ add_task(async function testFallbackChangeShowsRestart() {
   // Live-reload to fr so preferred != default (fallback becomes visible)
   // without triggering a restart message.
   await changeLocale(doc, "fr");
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => Services.locale.requestedLocales[0] === "fr",
     "fr is live-applied"
   );

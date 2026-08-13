@@ -92,6 +92,15 @@ interface WebExtensionPolicy {
   readonly attribute DOMString extensionPageCSP;
 
   /**
+   * The content security policy string to apply to all sandboxed pages loaded from the
+   * extension. This is set in the extension manifest.
+   * If one is not provided by the extension it falls back to:
+   * "sandbox allow-scripts; script-src 'self';".
+   */
+  [Constant]
+  readonly attribute DOMString sandboxPageCSP;
+
+  /**
    * The list of currently-active permissions for the extension, as specified
    * in its manifest.json file. May be updated to reflect changes in the
    * extension's optional permissions.
@@ -376,6 +385,9 @@ dictionary WebExtensionInit {
   // The use of a content script csp is determined by the manifest version.
   unsigned long manifestVersion = 2;
   DOMString? extensionPageCSP = null;
+
+  DOMString? sandboxPageCSP = null;
+  sequence<MatchGlobOrString>? sandboxPages = null;
 
   sequence<DOMString>? backgroundScripts = null;
   DOMString? backgroundWorkerScript = null;

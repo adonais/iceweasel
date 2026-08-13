@@ -1,3 +1,5 @@
+// |jit-test| --canonicalize-nan-at-uses=off
+
 // Test NaN canonicalisation when reading from a DataView.
 
 load(libdir + "dataview.js");

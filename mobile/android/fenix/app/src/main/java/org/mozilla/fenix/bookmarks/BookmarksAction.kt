@@ -5,6 +5,7 @@
 package org.mozilla.fenix.bookmarks
 
 import mozilla.components.lib.state.Action
+import org.mozilla.fenix.bookmarks.importer.FenixBookmarkImporterError
 
 /**
  * Actions relating to the Bookmarks list screen and its various subscreens.
@@ -82,8 +83,7 @@ internal data class FolderClicked(val item: BookmarkItem.Folder) : BookmarksActi
 internal data class FolderLongClicked(val item: BookmarkItem.Folder) : BookmarksAction
 internal data class BookmarkClicked(val item: BookmarkItem.Bookmark) : BookmarksAction
 internal data class BookmarkLongClicked(val item: BookmarkItem.Bookmark) : BookmarksAction
-internal data object SearchClicked : BookmarksAction
-internal data object SearchDismissed : BookmarksAction
+
 internal data object AddFolderClicked : BookmarksAction
 internal data object CloseClicked : BookmarksAction
 internal data object BackClicked : BookmarksAction
@@ -140,6 +140,13 @@ internal sealed class SelectFolderAction : BookmarksAction {
     }
 }
 
+internal sealed interface SearchAction : BookmarksAction {
+    data object SearchClicked : SearchAction
+    data object SearchDismissed : SearchAction
+    data class SearchQueryChanged(val query: String) : SearchAction
+    data class ReceivedSearchResults(val results: List<BookmarkItem>) : SearchAction
+}
+
 internal sealed class OpenTabsConfirmationDialogAction : BookmarksAction {
     data class Present(
         val guid: String,
@@ -165,7 +172,9 @@ internal sealed class SnackbarAction : BookmarksAction {
 internal data object RootOverflowMenuClicked : BookmarksAction
 internal data object RootOverflowMenuDismissed : BookmarksAction
 internal sealed class ImportAction : BookmarksAction {
-    internal data object ImportFailed : ImportAction()
+    internal data object ImportStarted : ImportAction()
+    internal data object ImportCancelled : ImportAction()
+    internal data class ImportFailed(val error: FenixBookmarkImporterError) : ImportAction()
     internal data class ImportSucceeded(val count: Int) : ImportAction()
     internal sealed class ImportFileClicked : ImportAction() {
         internal data object FromMenu : ImportFileClicked()

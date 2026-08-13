@@ -289,7 +289,7 @@ add_task(async function test_search_mode_engine_web() {
 
   await doSearchModeTest(
     {
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      source: UrlbarShared.RESULT_SOURCE.SEARCH,
       engineName: "generalEngine",
     },
     {
@@ -311,21 +311,21 @@ add_task(async function test_search_mode_engine_other() {
 
 add_task(async function test_search_mode_bookmarks() {
   await doSearchModeTest(
-    { source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS },
+    { source: UrlbarShared.RESULT_SOURCE.BOOKMARKS },
     { id: "urlbar-placeholder-search-mode-other-bookmarks", args: null }
   );
 });
 
 add_task(async function test_search_mode_tabs() {
   await doSearchModeTest(
-    { source: UrlbarUtils.RESULT_SOURCE.TABS },
+    { source: UrlbarShared.RESULT_SOURCE.TABS },
     { id: "urlbar-placeholder-search-mode-other-tabs", args: null }
   );
 });
 
 add_task(async function test_search_mode_history() {
   await doSearchModeTest(
-    { source: UrlbarUtils.RESULT_SOURCE.HISTORY },
+    { source: UrlbarShared.RESULT_SOURCE.HISTORY },
     { id: "urlbar-placeholder-search-mode-other-history", args: null }
   );
 });

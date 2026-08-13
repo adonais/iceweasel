@@ -38,9 +38,6 @@ class WebrtcTCPSocketParent : public PWebrtcTCPSocketParent,
   void OnConnected(const nsACString& aProxyType) override;
   void OnRead(nsTArray<uint8_t>&& bytes) override;
 
-  void AddIPDLReference() { AddRef(); }
-  void ReleaseIPDLReference() { Release(); }
-
  protected:
   virtual ~WebrtcTCPSocketParent();
 

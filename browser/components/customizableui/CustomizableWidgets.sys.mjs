@@ -800,3 +800,12 @@ if (Services.prefs.getBoolPref("browser.tabs.groups.alternateMenu", false)) {
     l10nId: "toolbar-button-tab-groups",
   });
 }
+
+CustomizableWidgets.push({
+  id: "firefox-view-button",
+  l10nId: "toolbar-button-firefox-view-2",
+  onCreated(node) {
+    node.setAttribute("role", "button");
+    node.setAttribute("aria-pressed", "false");
+  },
+});

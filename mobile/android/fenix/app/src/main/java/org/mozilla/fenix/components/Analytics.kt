@@ -139,9 +139,7 @@ class Analytics(
             ),
             enabled = true,
             nonFatalCrashIntent = pendingIntent,
-            useLegacyReporting =
-                settings.crashReportOption() != CrashReportOption.Auto &&
-                !settings.useNewCrashReporterFlow,
+            useLegacyReporting = settings.crashReportOption() != CrashReportOption.Auto,
             runtimeTagProviders = listOf(
                 ReleaseRuntimeTagProvider(),
                 BuildRuntimeTagProvider(context.versionInfoProvider),

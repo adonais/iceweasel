@@ -2,9 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "Swizzle.h"
-
 #include <emmintrin.h>
+
+#include "Swizzle.h"
 
 namespace mozilla::gfx {
 
@@ -152,17 +152,18 @@ template void Premultiply_SSE2<true, false>(const uint8_t*, int32_t, uint8_t*,
 template void Premultiply_SSE2<true, true>(const uint8_t*, int32_t, uint8_t*,
                                            int32_t, IntSize);
 
-// This generates a table of fixed-point reciprocals representing 1/alpha
-// similar to the fallback implementation. However, the reciprocal must fit
-// in 16 bits to multiply cheaply. Observe that reciprocals of smaller alphas
-// require more bits than for larger alphas. We take advantage of this by
-// shifting the reciprocal down by either 3 or 8 bits depending on whether
-// the alpha value is less than 0x20. This is easy to then undo by multiplying
-// the color component to be unpremultiplying by either 8 or 0x100,
-// respectively. The 16 bit reciprocal is duplicated into both words of a
-// uint32_t here to reduce unpacking overhead.
-#define UNPREMULQ_SSE2(x) \
-  (0x10001U * (0xFF0220U / ((x) * ((x) < 0x20 ? 0x100 : 8))))
+// This generates a table of 8.16 fixed-point reciprocals representing 1/alpha,
+// identical to the scalar fallback's sUnpremultiplyTable (0xFF00FF / alpha).
+// The full reciprocal can need up to 24 bits, so it does not fit in a single
+// 16-bit lane; UnpremultiplyVector_SSE2 splits each entry into a high and low
+// 16-bit half at runtime and computes an exact (channel * reciprocal) >> 16
+// with two 16-bit multiplies. A previous implementation squeezed the reciprocal
+// into 16 bits by scaling it down (by 8 or 0x100), which lost precision and
+// rounded down by 1 LSB on a subset of anti-aliased / alpha pixels, making
+// getImageData() differ by CPU architecture (x86 SSE2 vs scalar/NEON). Using
+// the full reciprocal makes the SSE2 output bit-identical to the scalar/NEON
+// paths.
+#define UNPREMULQ_SSE2(x) (0xFF00FFU / (x))
 #define UNPREMULQ_SSE2_2(x) UNPREMULQ_SSE2(x), UNPREMULQ_SSE2((x) + 1)
 #define UNPREMULQ_SSE2_4(x) UNPREMULQ_SSE2_2(x), UNPREMULQ_SSE2_2((x) + 2)
 #define UNPREMULQ_SSE2_8(x) UNPREMULQ_SSE2_4(x), UNPREMULQ_SSE2_4((x) + 4)
@@ -202,10 +203,8 @@ static MOZ_ALWAYS_INLINE __m128i UnpremultiplyVector_SSE2(const __m128i& aSrc) {
   int a3 = _mm_extract_epi16(ga, 5);
   int a4 = _mm_extract_epi16(ga, 7);
 
-  // Load the 16 bit reciprocals from the table for each alpha.
-  // The reciprocals are doubled in each uint32_t entry.
-  // Unpack them to a final vector of duplicated reciprocals of
-  // the form Q1 Q1 Q2 Q2 Q3 Q3 Q4 Q4.
+  // Load the full 8.16 reciprocals from the table for each alpha and gather
+  // them into 32-bit lanes Q0 Q1 Q2 Q3.
   __m128i q12 =
       _mm_unpacklo_epi32(_mm_cvtsi32_si128(sUnpremultiplyTable_SSE2[a1]),
                          _mm_cvtsi32_si128(sUnpremultiplyTable_SSE2[a2]));
@@ -214,24 +213,31 @@ static MOZ_ALWAYS_INLINE __m128i UnpremultiplyVector_SSE2(const __m128i& aSrc) {
                          _mm_cvtsi32_si128(sUnpremultiplyTable_SSE2[a4]));
   __m128i q1234 = _mm_unpacklo_epi64(q12, q34);
 
-  // Check if the alphas are less than 0x20, so that we can undo
-  // scaling of the reciprocals as appropriate.
-  __m128i scale = _mm_cmplt_epi32(ga, _mm_set1_epi32(0x00200000));
-  // Produce scale factors by ((a < 0x20) ^ 8) & 0x108,
-  // such that scale is 0x100 if < 0x20, and 8 otherwise.
-  scale = _mm_xor_si128(scale, _mm_set1_epi16(8));
-  scale = _mm_and_si128(scale, _mm_set1_epi16(0x108));
+  // Split each reciprocal into low and high 16-bit halves, each duplicated into
+  // both 16-bit words of its lane to line up with the R/B and G/A word layout
+  // (Qn Qn per pixel): qLo = Q & 0xFFFF, qHi = Q >> 16.
+  __m128i qLo = _mm_and_si128(q1234, _mm_set1_epi32(0x0000FFFF));
+  qLo = _mm_or_si128(qLo, _mm_slli_epi32(qLo, 16));
+  __m128i qHi = _mm_srli_epi32(q1234, 16);
+  qHi = _mm_or_si128(qHi, _mm_slli_epi32(qHi, 16));
+
   // Isolate G now so that we don't accidentally unpremultiply A.
   ga = _mm_and_si128(ga, _mm_set1_epi32(0x000000FF));
 
-  // Scale R, B, and G as required depending on reciprocal precision.
-  rb = _mm_mullo_epi16(rb, scale);
-  ga = _mm_mullo_epi16(ga, scale);
-
-  // Multiply R, B, and G by the reciprocal, only taking the high word
-  // too effectively shift right by 16.
-  rb = _mm_mulhi_epu16(rb, q1234);
-  ga = _mm_mulhi_epu16(ga, q1234);
+  // Exact (channel * reciprocal) >> 16 in 16-bit lanes. Since
+  //   channel*Q = channel*qHi*0x10000 + channel*qLo,
+  //   (channel*Q) >> 16 = channel*qHi + ((channel*qLo) >> 16)
+  //                     = mullo(channel, qHi) + mulhi(channel, qLo).
+  // mullo gives the exact low 16 bits of channel*qHi; masking to a byte keeps
+  // the high byte clear for the recombine below and makes any out-of-range
+  // (channel > alpha) input wrap to the low byte exactly as the scalar path.
+  __m128i lowByte = _mm_set1_epi16(0x00FF);
+  rb = _mm_and_si128(
+      _mm_add_epi16(_mm_mullo_epi16(rb, qHi), _mm_mulhi_epu16(rb, qLo)),
+      lowByte);
+  ga = _mm_and_si128(
+      _mm_add_epi16(_mm_mullo_epi16(ga, qHi), _mm_mulhi_epu16(ga, qLo)),
+      lowByte);
 
   // Combine back to final pixel with rb | (ga << 8) | (aSrc & 0xFF000000),
   // which will add back on the original alpha value unchanged.

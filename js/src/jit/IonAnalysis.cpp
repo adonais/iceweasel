@@ -1375,6 +1375,378 @@ bool jit::MarkLoadsUsedAsPropertyKeys(MIRGraph& graph) {
   return true;
 }
 
+enum class CanonicalizeNaN {
+  // NaN values must always be first canonicalized for this instruction.
+  Yes,
+
+  // Non-canonical NaN values can be passed to this instruction. The instruction
+  // never returns a non-canonical NaN value even if some input is a
+  // non-canonical NaN value.
+  No,
+
+  // Non-canonical NaN values can be passed to this instruction. The instruction
+  // may return a non-canonical NaN value if some input is a non-canonical NaN
+  // value,
+  Propagate,
+};
+
+static auto NeedToCanonicalizeNaN(const MDefinition* def) {
+  switch (def->op()) {
+    case MDefinition::Opcode::Phi:
+    case MDefinition::Opcode::Add:
+    case MDefinition::Opcode::Sub:
+    case MDefinition::Opcode::Mul:
+    case MDefinition::Opcode::Div:
+    case MDefinition::Opcode::Mod:
+    case MDefinition::Opcode::Abs:
+    case MDefinition::Opcode::Atan2:
+    case MDefinition::Opcode::CopySign:
+    case MDefinition::Opcode::Hypot:
+    case MDefinition::Opcode::MathFunction:
+    case MDefinition::Opcode::MinMax:
+    case MDefinition::Opcode::Pow:
+    case MDefinition::Opcode::PowHalf:
+    case MDefinition::Opcode::Sqrt:
+    case MDefinition::Opcode::NearbyInt:
+    case MDefinition::Opcode::RoundToDouble:
+    case MDefinition::Opcode::ToDouble:
+    case MDefinition::Opcode::ToFloat32:
+    case MDefinition::Opcode::ToFloat16:
+      // These definitions propagate any non-canonical NaN values to their uses.
+      MOZ_ASSERT(IsFloatingPointType(def->type()));
+      return CanonicalizeNaN::Propagate;
+
+    case MDefinition::Opcode::StoreUnboxedScalar:
+    case MDefinition::Opcode::StoreDataViewElement:
+    case MDefinition::Opcode::StoreTypedArrayElementHole:
+    case MDefinition::Opcode::TypedArrayFill:
+      // These definitions accept and can store non-canonical NaN values. They
+      // don't return any value.
+      MOZ_ASSERT(def->type() == MIRType::None);
+      return CanonicalizeNaN::No;
+
+    case MDefinition::Opcode::PostWriteBarrier:
+    case MDefinition::Opcode::PostWriteElementBarrier:
+      // Post-write barriers on known floating point values are omitted, so
+      // non-canonical NaN values don't need to be handled.
+      MOZ_ASSERT(def->type() == MIRType::None);
+      return CanonicalizeNaN::No;
+
+    case MDefinition::Opcode::Ceil:
+    case MDefinition::Opcode::Floor:
+    case MDefinition::Opcode::Round:
+    case MDefinition::Opcode::Trunc:
+    case MDefinition::Opcode::ClampToUint8:
+    case MDefinition::Opcode::ToNumberInt32:
+    case MDefinition::Opcode::TruncateToInt32:
+    case MDefinition::Opcode::DoubleParseInt:
+      // These definitions handle any NaN value, including non-canonical NaNs.
+      // They always return an Int32 value.
+      MOZ_ASSERT(def->type() == MIRType::Int32);
+      return CanonicalizeNaN::No;
+
+    case MDefinition::Opcode::GuardNumberToIntPtrIndex:
+      // These definitions handle any NaN value, including non-canonical NaNs.
+      // They always return an IntPtr value.
+      MOZ_ASSERT(def->type() == MIRType::IntPtr);
+      return CanonicalizeNaN::No;
+
+    case MDefinition::Opcode::ToString:
+      // These definitions handle any NaN value, including non-canonical NaNs.
+      // They always return a String value.
+      MOZ_ASSERT(def->type() == MIRType::String);
+      return CanonicalizeNaN::No;
+
+    case MDefinition::Opcode::Not:
+    case MDefinition::Opcode::Compare:
+    case MDefinition::Opcode::SameValueDouble:
+      // These definitions handle any NaN value, including non-canonical NaNs.
+      // Comparing non-canonical NaN values is handled the same way as comparing
+      // any other NaN value. They always return a Boolean value.
+      MOZ_ASSERT(def->type() == MIRType::Boolean);
+      return CanonicalizeNaN::No;
+
+    case MDefinition::Opcode::Test:
+      // Similar to MCompare, MTest can handle non-canonical NaN values. MTest
+      // doesn't return any value.
+      MOZ_ASSERT(def->type() == MIRType::None);
+      return CanonicalizeNaN::No;
+
+    case MDefinition::Opcode::TableSwitch:
+      // MTableSwitch may convert Double to Int32 via `convertDoubleToInt32`,
+      // which accepts non-canonical NaN values.
+      MOZ_ASSERT(def->type() == MIRType::None);
+      return CanonicalizeNaN::No;
+
+    case MDefinition::Opcode::CanonicalizeNaN:
+    case MDefinition::Opcode::TimeClip:
+    case MDefinition::Opcode::NaNToZero:
+      // These definitions explicitly handle NaN values and never return
+      // non-canonical NaN values even if the input is a non-canonical NaN
+      // value.
+      MOZ_ASSERT(IsFloatingPointType(def->type()));
+      return CanonicalizeNaN::No;
+
+    case MDefinition::Opcode::Sign:
+      // MSign can return non-canonical iff it returns floating point values.
+      return IsFloatingPointType(def->type()) ? CanonicalizeNaN::Propagate
+                                              : CanonicalizeNaN::No;
+
+    default:
+      // Require NaN canonicalization for all other definitions.
+      return CanonicalizeNaN::Yes;
+  }
+}
+
+using PhiList = Vector<MPhi*, 8, SystemAllocPolicy>;
+
+static bool CanonicalizeNaNFor(MIRGraph& graph, PhiList& philist,
+                               MInstruction* load) {
+  Vector<MDefinition*, 16, SystemAllocPolicy> worklist;
+  Vector<MUse*, 8, SystemAllocPolicy> useslist;
+
+  // Append the load instruction to the worklist.
+  if (!worklist.append(load)) {
+    return false;
+  }
+  load->setInWorklist();
+
+  while (!worklist.empty()) {
+    // This definition can produce a non-canonical NaN value, so all uses have
+    // to be inspected to determine if canonicalization is needed.
+    auto* def = worklist.popCopy();
+
+    JitSpewDef(JitSpew_CanonicalizeNaN, "Check worklist item\n", def);
+    JitSpewIndent spewIndent(JitSpew_CanonicalizeNaN);
+
+    MOZ_ASSERT(useslist.empty());
+
+    for (MUseIterator uses(def->usesBegin()); uses != def->usesEnd();) {
+      MUse* use = *uses++;
+
+      // Recovering explicitly canonicalizes NaN values, so we can skip over
+      // resume points.
+      if (!use->consumer()->isDefinition()) {
+        continue;
+      }
+
+      MDefinition* consumer = use->consumer()->toDefinition();
+
+      // Recovering canonicalizes NaN values.
+      if (consumer->isRecoveredOnBailout()) {
+        continue;
+      }
+
+      switch (NeedToCanonicalizeNaN(consumer)) {
+        case CanonicalizeNaN::Propagate:
+          // Either already processed or still in the worklist.
+          if (consumer->isInWorklist()) {
+            continue;
+          }
+
+          JitSpewDef(JitSpew_CanonicalizeNaN, "Add consumer\n", consumer);
+          if (!worklist.append(consumer)) {
+            return false;
+          }
+          consumer->setInWorklist();
+          break;
+        case CanonicalizeNaN::No:
+          JitSpewDef(JitSpew_CanonicalizeNaN, "Skip canonicalize for\n",
+                     consumer);
+          break;
+        case CanonicalizeNaN::Yes: {
+          JitSpewDef(JitSpew_CanonicalizeNaN, "Canonicalize for\n", consumer);
+          MOZ_ASSERT(!consumer->isPhi(),
+                     "useslist is expected to contain no phis");
+
+          if (!useslist.append(use)) {
+            return false;
+          }
+          break;
+        }
+      }
+    }
+
+    // No further work necessary when no uses require canonicalization.
+    if (useslist.empty()) {
+      continue;
+    }
+
+    // Are all uses within the same block?
+    bool singleUseBlock = true;
+    auto* firstUseBlock = useslist[0]->consumer()->block();
+    for (size_t i = 1; i < useslist.length(); i++) {
+      auto* useBlock = useslist[i]->consumer()->block();
+      if (useBlock != firstUseBlock) {
+        singleUseBlock = false;
+        break;
+      }
+    }
+
+    // If all uses are within the same block, which is assumed to be the most
+    // common case, find a good position where to place the canonicalization
+    // instruction.
+    //
+    // As an extension, dominator tree information could be used to emit a
+    // single canonicalization instruction which is shared across multiple
+    // blocks. This is not yet implemented.
+    if (singleUseBlock) {
+      if (!graph.alloc().ensureBallast()) {
+        return false;
+      }
+      auto* canonical = MCanonicalizeNaN::New(graph.alloc(), def);
+
+      if (useslist.length() == 1) {
+        // There's only a single use, add the canonicalization directly before
+        // the consumer.
+        auto* consumer = useslist[0]->consumer()->toDefinition();
+        firstUseBlock->insertBefore(consumer->toInstruction(), canonical);
+      } else if (firstUseBlock == def->block() && def->isInstruction()) {
+        // Uses are within the same block as the definition, add the
+        // canonicalization after the definition.
+        firstUseBlock->insertAfter(def->toInstruction(), canonical);
+      } else {
+        // Otherwise add to the start of the block.
+        firstUseBlock->insertBefore(*firstUseBlock->begin(), canonical);
+      }
+
+      // Replace the producer with the canonicalized NaN.
+      while (!useslist.empty()) {
+        auto* use = useslist.popCopy();
+        use->replaceProducer(canonical);
+      }
+      continue;
+    }
+
+    // There are multiple uses across different blocks, add the canonicalization
+    // after the instruction which can produce non-canonical NaN values.
+    //
+    // This approach favors emitting a single canonicalization instruction,
+    // alteratively each use could get a separate canonicalization instruction.
+    if (def->isInstruction()) {
+      if (!graph.alloc().ensureBallast()) {
+        return false;
+      }
+      auto* canonical = MCanonicalizeNaN::New(graph.alloc(), def);
+      def->block()->insertAfter(def->toInstruction(), canonical);
+
+      // Replace the producer with the canonicalized NaN.
+      while (!useslist.empty()) {
+        auto* use = useslist.popCopy();
+        use->replaceProducer(canonical);
+      }
+      continue;
+    }
+
+    // Fix-up phi nodes at the end.
+    if (!philist.append(def->toPhi())) {
+      return false;
+    }
+    useslist.clear();
+  }
+  return true;
+}
+
+static bool CanonicalizeNaNPhis(MIRGraph& graph, PhiList& philist) {
+  while (!philist.empty()) {
+    auto* phi = philist.popCopy();
+
+    JitSpewDef(JitSpew_CanonicalizeNaN, "Process phi\n", phi);
+    JitSpewIndent spewIndent(JitSpew_CanonicalizeNaN);
+
+    for (size_t i = 0, e = phi->numOperands(); i < e; i++) {
+      MDefinition* def = phi->getOperand(i);
+
+      // Phi operands which weren't marked above can't produce non-canonical
+      // NaN values.
+      if (!def->isInWorklist()) {
+        JitSpewDef(JitSpew_CanonicalizeNaN, "Skip phi operand\n", def);
+        continue;
+      }
+
+      JitSpewDef(JitSpew_CanonicalizeNaN, "Handle phi operand\n", def);
+
+      if (!graph.alloc().ensureBallast()) {
+        return false;
+      }
+      auto* canonical = MCanonicalizeNaN::New(graph.alloc(), def);
+
+      auto* pred = phi->block()->getPredecessor(i);
+      if (def->block() == pred && def->isInstruction()) {
+        // Add canonicalization after the instruction which can produce
+        // non-canonical NaN values if possible.
+        pred->insertAfter(def->toInstruction(), canonical);
+      } else {
+        // Otherwise add canonicalization at the end of the block.
+        pred->insertAtEnd(canonical);
+      }
+      phi->replaceOperand(i, canonical);
+    }
+  }
+  return true;
+}
+
+bool jit::CanonicalizeNaNAtUses(const MIRGenerator* mir, MIRGraph& graph) {
+  // This pass adds MCanonicalizeNaN when possibly non-canonical NaN values flow
+  // into instructions which only expect canonical NaN values, like for example
+  // MBox or MStoreElement.
+
+  JitSpew(JitSpew_CanonicalizeNaN, "Begin");
+
+  PhiList philist;
+  bool hasSeenFloatingPointLoads = false;
+
+  for (MBasicBlock* block : graph) {
+    if (mir->shouldCancel("CanonicalizeNaN")) {
+      return false;
+    }
+
+    for (MInstruction* ins : *block) {
+      // Search for instructions which can produce non-canonical NaN values.
+      Scalar::Type storageType;
+      if (ins->isLoadUnboxedScalar()) {
+        storageType = ins->toLoadUnboxedScalar()->storageType();
+      } else if (ins->isLoadDataViewElement()) {
+        storageType = ins->toLoadDataViewElement()->storageType();
+      } else {
+        continue;
+      }
+      if (!Scalar::isFloatingType(storageType)) {
+        continue;
+      }
+
+      hasSeenFloatingPointLoads = true;
+
+      if (!CanonicalizeNaNFor(graph, philist, ins)) {
+        return false;
+      }
+    }
+  }
+
+  // Fix-up phi nodes when we know which phi operands can produce non-canonical
+  // NaN values.
+  if (!CanonicalizeNaNPhis(graph, philist)) {
+    return false;
+  }
+
+  if (hasSeenFloatingPointLoads) {
+    for (MBasicBlock* block : graph) {
+      if (mir->shouldCancel("CanonicalizeNaN (unmark)")) {
+        return false;
+      }
+      for (MPhiIterator phi(block->phisBegin()); phi != block->phisEnd();
+           phi++) {
+        phi->setNotInWorklistUnchecked();
+      }
+      for (MInstruction* ins : *block) {
+        ins->setNotInWorklistUnchecked();
+      }
+    }
+  }
+
+  return true;
+}
+
 static bool NeedsKeepAlive(MInstruction* slotsOrElements, MInstruction* use) {
   MOZ_ASSERT(slotsOrElements->type() == MIRType::Elements ||
              slotsOrElements->type() == MIRType::Slots);

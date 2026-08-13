@@ -4,7 +4,7 @@
 
 #include "nsIShellService.idl"
 
-[scriptable, uuid(387fdc80-0077-4b60-a0d9-d9e80a83ba64)]
+[scriptable, uuid(6732dbda-8f80-4221-8401-ac94328fa525)]
 interface nsIMacShellService : nsIShellService
 {
   /**
@@ -38,4 +38,48 @@ interface nsIMacShellService : nsIShellService
    */
 
   Array<Array<AString> > getAvailableApplicationsForProtocol(in ACString protocol);
+
+  /**
+   * Whether setting Firefox as the default handler for a file extension or
+   * protocol is supported on this system. The underlying NSWorkspace API
+   * requires macOS 12, so this is false on older versions, where the other
+   * default-handler members are no-ops.
+   */
+  readonly attribute boolean canSetAsDefaultHandler;
+
+  /**
+   * Set Firefox as the default handler for the given file extension (like
+   * ".pdf") or protocol (like "https") via NSWorkspace. A leading "." marks a
+   * file extension; anything else is treated as a URL scheme. macOS may ask the
+   * user to confirm the change; the returned promise resolves only once that
+   * interaction completes.
+   *
+   * @return {Promise<boolean>} Resolves true if the change was applied (i.e.
+   *         the user confirmed), false otherwise (the user declined, it failed,
+   *         or canSetAsDefaultHandler is false).
+   */
+  [implicit_jscontext]
+  Promise setAsDefaultHandlerFor(in AString aFileExtensionOrProtocol);
+
+  /**
+   * Whether Firefox is the current default handler for the given file
+   * extension (like ".pdf") or protocol (like "https"). A leading "." marks a
+   * file extension; anything else is treated as a URL scheme.
+   *
+   * @return true if Firefox is the default handler. Always false when
+   *         canSetAsDefaultHandler is false (macOS older than 12).
+   */
+  boolean isDefaultHandlerFor(in AString aFileExtensionOrProtocol);
+
+  /**
+   * @return true if the application currently registered as the default
+   *         handler for the given file extension (like ".pdf") or protocol
+   *         (like "https") is also a web browser, i.e. it is registered to open
+   *         "https" URLs. Used to restrict replacing the default handler to the
+   *         case where another browser currently owns it, so we don't displace
+   *         a dedicated app such as Preview or Acrobat. A leading "." marks a
+   *         file extension; anything else is treated as a URL scheme. Always
+   *         false on macOS older than 12.
+   */
+  boolean isDefaultHandlerAWebBrowserFor(in AString aFileExtensionOrProtocol);
 };

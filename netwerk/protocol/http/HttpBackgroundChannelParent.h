@@ -5,10 +5,10 @@
 #ifndef mozilla_net_HttpBackgroundChannelParent_h
 #define mozilla_net_HttpBackgroundChannelParent_h
 
-#include "mozilla/net/PHttpBackgroundChannelParent.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/dom/ipc/IdType.h"
+#include "mozilla/net/PHttpBackgroundChannelParent.h"
 #include "nsID.h"
 #include "nsISupportsImpl.h"
 

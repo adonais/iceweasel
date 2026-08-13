@@ -435,6 +435,45 @@ describe("MultiStageAboutWelcome module", () => {
       assert.ok(wrapper.find(WelcomeScreen).exists());
     });
 
+    it("should not render multi select container if all multiselect item targeting is false", async () => {
+      const screens = [
+        {
+          id: "TEST_SCREEN_FILTERED_TILES",
+          content: {
+            title: "test title",
+            tiles: {
+              type: "multiselect",
+              data: [
+                { id: "checkbox-1", targeting: "false" },
+                { id: "checkbox-2", targeting: "false" },
+              ],
+            },
+          },
+        },
+      ];
+
+      // Simulate the parent targeting pass filtering out every checkbox
+      //  which should removes the single multiselect tile entirely
+      globals.set("AWEvaluateScreenTargeting", () => {
+        const filtered = JSON.parse(JSON.stringify(screens));
+        delete filtered[0].content.tiles;
+        return Promise.resolve(filtered);
+      });
+
+      const wrapper = mount(
+        <MultiStageAboutWelcome
+          {...DEFAULT_PROPS}
+          gateInitialPaint={true}
+          defaultScreens={screens}
+        />
+      );
+      await spinEventLoop();
+      wrapper.update();
+
+      assert.ok(wrapper.find(WelcomeScreen).exists());
+      assert.isFalse(wrapper.find(".multi-select-container").exists());
+    });
+
     it("does not send telemetry before first paint is ready, but does afterwards", async () => {
       let resolveTargeting;
       const targetingPromise = new Promise(r => (resolveTargeting = r));
@@ -599,7 +638,7 @@ describe("MultiStageAboutWelcome module", () => {
   describe("WelcomeScreen component", () => {
     describe("easy setup screen", () => {
       const easySetupScreen = AboutWelcomeDefaults.getDefaults().screens.find(
-        s => s.id === "AW_EASY_SETUP_NEEDS_DEFAULT_AND_PIN"
+        s => s.id === "AW_EASY_SETUP"
       );
       let EASY_SETUP_SCREEN_PROPS;
 

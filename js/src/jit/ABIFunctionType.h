@@ -5,8 +5,9 @@
 #ifndef jit_ABIFunctionType_h
 #define jit_ABIFunctionType_h
 
+#include <cstddef>
+#include <cstdint>
 #include <initializer_list>
-#include <stdint.h>
 
 #include "jit/ABIFunctionTypeGenerated.h"
 

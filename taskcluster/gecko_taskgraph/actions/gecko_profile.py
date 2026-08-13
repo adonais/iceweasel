@@ -96,7 +96,7 @@ logger = logging.getLogger(__name__)
                 "default": "",
                 "title": "Features",
                 "description": "Comma-separated Gecko profiler features. "
-                "Example: js,stackwalk,cpu,screenshots,memory",
+                "Example: js,stackwalk,screenshots,memory",
             },
             "gecko_profile_threads": {
                 "type": "string",

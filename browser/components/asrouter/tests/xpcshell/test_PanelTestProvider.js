@@ -17,36 +17,6 @@ add_setup(async function setup() {
 
 add_task(async function test_PanelTestProvider() {
   const messages = await PanelTestProvider.getMessages();
-
-  const EXPECTED_MESSAGE_COUNTS = {
-    cfr_doorhanger: 1,
-    milestone_message: 0,
-    update_action: 1,
-    spotlight: 9,
-    feature_callout: 16,
-    pb_newtab: 2,
-    toast_notification: 6,
-    bookmarks_bar_button: 1,
-    menu_message: 1,
-    newtab_message: 6,
-    infobar: 1,
-  };
-
-  const EXPECTED_TOTAL_MESSAGE_COUNT = Object.values(
-    EXPECTED_MESSAGE_COUNTS
-  ).reduce((a, b) => a + b, 0);
-
-  Assert.strictEqual(
-    messages.length,
-    EXPECTED_TOTAL_MESSAGE_COUNT,
-    "PanelTestProvider should have the correct number of messages"
-  );
-
-  const messageCounts = Object.assign(
-    {},
-    ...Object.keys(EXPECTED_MESSAGE_COUNTS).map(key => ({ [key]: 0 }))
-  );
-
   for (const message of messages) {
     const validator = MESSAGE_VALIDATORS[message.template];
     Assert.notStrictEqual(
@@ -75,16 +45,6 @@ add_task(async function test_PanelTestProvider() {
       message.targeting,
       `providerCohorts.panel_local_testing == "SHOW_TEST"`,
       "Message targeting should prevent showing to users"
-    );
-
-    messageCounts[message.template]++;
-  }
-
-  for (const [template, count] of Object.entries(messageCounts)) {
-    Assert.equal(
-      count,
-      EXPECTED_MESSAGE_COUNTS[template],
-      `Expected ${EXPECTED_MESSAGE_COUNTS[template]} ${template} messages`
     );
   }
 });

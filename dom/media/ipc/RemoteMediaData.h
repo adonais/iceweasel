@@ -348,23 +348,9 @@ struct ParamTraits<mozilla::ArrayOfRemoteVideoData*> {
   }
 };
 
-template <>
-struct ParamTraits<mozilla::RemoteArrayOfByteBuffer> {
-  using paramType = mozilla::RemoteArrayOfByteBuffer;
-  // We do not want to move the RemoteArrayOfByteBuffer as we want to recycle
-  // the shmem it contains for another time.
-  static void Write(IPC::MessageWriter* aWriter, const paramType& aVar);
-
-  static bool Read(IPC::MessageReader* aReader, paramType* aVar);
-};
-
-template <>
-struct ParamTraits<mozilla::ArrayOfRemoteMediaRawData::RemoteMediaRawData> {
-  using paramType = mozilla::ArrayOfRemoteMediaRawData::RemoteMediaRawData;
-  static void Write(MessageWriter* aWriter, const paramType& aVar);
-
-  static bool Read(MessageReader* aReader, paramType* aVar);
-};
+DECLARE_IPC_SERIALIZER(mozilla::RemoteArrayOfByteBuffer);
+DECLARE_IPC_SERIALIZER(mozilla::ArrayOfRemoteMediaRawData::RemoteMediaRawData);
+DECLARE_IPC_SERIALIZER(mozilla::ArrayOfRemoteAudioData::RemoteAudioData);
 
 template <>
 struct ParamTraits<mozilla::ArrayOfRemoteMediaRawData*> {
@@ -372,14 +358,6 @@ struct ParamTraits<mozilla::ArrayOfRemoteMediaRawData*> {
   static void Write(MessageWriter* aWriter, paramType* aVar);
 
   static bool Read(MessageReader* aReader, RefPtr<paramType>* aVar);
-};
-
-template <>
-struct ParamTraits<mozilla::ArrayOfRemoteAudioData::RemoteAudioData> {
-  using paramType = mozilla::ArrayOfRemoteAudioData::RemoteAudioData;
-  static void Write(MessageWriter* aWriter, const paramType& aVar);
-
-  static bool Read(MessageReader* aReader, paramType* aVar);
 };
 
 template <>

@@ -9,6 +9,7 @@ const { XPCOMUtils } = ChromeUtils.importESModule(
 
 const lazy = XPCOMUtils.declareLazy({
   AboutReaderParent: "resource:///actors/AboutReaderParent.sys.mjs",
+  ASRouterTargeting: "resource:///modules/asrouter/ASRouterTargeting.sys.mjs",
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   EveryWindow: "resource:///modules/EveryWindow.sys.mjs",
@@ -571,7 +572,7 @@ export const ASRouterTriggerListeners = new Map([
             this._triggerHandler(aBrowser, {
               id: this.id,
               param: match,
-              context: { visitsCount },
+              context: { visitsCount, url: match.url, host: match.host },
             });
           }
         }
@@ -1650,7 +1651,7 @@ export const ASRouterTriggerListeners = new Map([
           id: "pdfJsFeatureCalloutCheck",
           context,
         });
-        if (result.message.trigger) {
+        if (lazy.ASRouterTargeting.getMessageTriggers(result.message).length) {
           const callout = lazy.FeatureCalloutBroker.showCustomFeatureCallout(
             {
               win,
@@ -1807,7 +1808,7 @@ export const ASRouterTriggerListeners = new Map([
           id: "newtabFeatureCalloutCheck",
           context,
         });
-        if (result.message.trigger) {
+        if (lazy.ASRouterTargeting.getMessageTriggers(result.message).length) {
           const callout = lazy.FeatureCalloutBroker.showCustomFeatureCallout(
             {
               win,
@@ -2108,6 +2109,26 @@ export const ASRouterTriggerListeners = new Map([
        * we don't want it to fire if there aren't any messages using it.
        */
       id: "messagesLoaded",
+      initialized: false,
+      init() {
+        this.initialized = true;
+      },
+      uninit() {
+        this.initialized = false;
+      },
+    },
+  ],
+  [
+    "nimbusUpdate",
+    {
+      /**
+       * This trigger does not actually listen for any events. It's triggered
+       * imperatively by ASRouter from _onExperimentEnrollmentsUpdated() after
+       * loading messages from the messaging-experiments provider. We track its
+       * state here, because we don't want it to fire if there aren't any
+       * messages using it.
+       */
+      id: "nimbusUpdate",
       initialized: false,
       init() {
         this.initialized = true;

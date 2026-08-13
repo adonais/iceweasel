@@ -1,52 +1,29 @@
-From: Michael Froman <mjfroman@mac.com>
-Date: Mon, 15 Sep 2025 14:53:58 -0500
-Subject: Bug 1973648 - move applicable libwebrtc changes to our new
- libwebrtc_overrides location. r=ng
+From: Michael Froman <mfroman@mozilla.com>
+Date: Thu, 7 Aug 2025 11:37:00 -0500
+Subject: Bug 1980479 - (fix-50544d8dc4) add missing stub implementations for
+ SSLStreamAdapter static methods.
 
-Differential Revision: https://phabricator.services.mozilla.com/D258499
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/19164e58323d59c1f66f7fcf671b8d0b6366f708
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/8fee7e6d9736f8d1dfe78e9bc2c4676ca86d0405
 ---
- call/call.h                      | 5 +++--
- modules/desktop_capture/BUILD.gn | 5 +++++
- 2 files changed, 8 insertions(+), 2 deletions(-)
+ rtc_base/ssl_stream_adapter.h | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/call/call.h b/call/call.h
-index 636c0f9737..e64b878e22 100644
---- a/call/call.h
-+++ b/call/call.h
-@@ -27,6 +27,7 @@
- #include "api/video/video_stream_encoder_settings.h"
- #include "call/audio_receive_stream.h"
- #include "call/audio_send_stream.h"
-+#include "call/call_basic_stats.h"
- #include "call/call_config.h"
- #include "call/flexfec_receive_stream.h"
- #include "call/packet_receiver.h"
-@@ -62,9 +63,9 @@ class Call {
-     int64_t rtt_ms = -1;
-     std::optional<int64_t> ccfb_messages_received = std::nullopt;
-     flat_map<uint32_t, SentCongestionControllerFeedbackStats>
--        sent_ccfb_stats_per_ssrc;
-+      sent_ccfb_stats_per_ssrc;
-     flat_map<uint32_t, ReceivedCongestionControlFeedbackStats>
--        received_ccfb_stats_per_ssrc;
-+      received_ccfb_stats_per_ssrc;
-   };
+diff --git a/rtc_base/ssl_stream_adapter.h b/rtc_base/ssl_stream_adapter.h
+index 0568bd0310..499c76e151 100644
+--- a/rtc_base/ssl_stream_adapter.h
++++ b/rtc_base/ssl_stream_adapter.h
+@@ -270,11 +270,12 @@ class SSLStreamAdapter : public StreamInterface {
+   static bool IsAcceptableCipher(int cipher, KeyType key_type);
+   static bool IsAcceptableCipher(absl::string_view cipher, KeyType key_type);
  
-   static std::unique_ptr<Call> Create(CallConfig config);
-diff --git a/modules/desktop_capture/BUILD.gn b/modules/desktop_capture/BUILD.gn
-index b58c65f337..8c05aabb15 100644
---- a/modules/desktop_capture/BUILD.gn
-+++ b/modules/desktop_capture/BUILD.gn
-@@ -407,6 +407,11 @@ rtc_library("desktop_capture") {
-     ]
-     if (build_with_mozilla) {
-       libs -= [ "Xtst" ]
-+      # Mozilla provides custom impl of x_error_trap.*
-+      sources -= [
-+        "linux/x11/x_error_trap.cc",
-+        "linux/x11/x_error_trap.h",
-+      ]
-     }
-   }
+-  static std::set<uint16_t> GetSupportedEphemeralKeyExchangeCipherGroups();
++  static std::set<uint16_t> GetSupportedEphemeralKeyExchangeCipherGroups()
++      { return {}; }
+   static std::optional<std::string> GetEphemeralKeyExchangeCipherGroupName(
+       uint16_t group_id);
+   static std::vector<uint16_t> GetDefaultEphemeralKeyExchangeCipherGroups(
+-      const FieldTrialsView* field_trials);
++      const FieldTrialsView* field_trials) { return {}; }
  
+   ////////////////////////////////////////////////////////////////////////////
+   // Testing only member functions

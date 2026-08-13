@@ -2,11 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import com.android.build.api.dsl.ManagedVirtualDevice
-
 plugins {
     id 'com.android.test'
-    id 'org.jetbrains.kotlin.android'
 }
 
 android {
@@ -36,8 +33,8 @@ android {
 
     testOptions {
         managedDevices {
-            devices {
-                pixel6Api34(ManagedVirtualDevice) {
+            localDevices {
+                pixel6Api34 {
                     device = "Pixel 6"
                     apiLevel = 34
                     systemImageSource = "google"
@@ -49,7 +46,7 @@ android {
 
 dependencies {
     implementation libs.androidx.benchmark.macro.junit4
-    implementation libs.androidx.core.ktx
+    implementation libs.androidx.core
     implementation libs.androidx.test.espresso.core
     implementation libs.androidx.test.junit
     implementation libs.androidx.test.uiautomator

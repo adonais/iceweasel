@@ -34,7 +34,7 @@ add_task(async () => {
         "Double-click caused us to enter fullscreen."
       );
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => {
           let close = pipWin.document.getElementById("close");
           let opacity = parseFloat(pipWin.getComputedStyle(close).opacity);

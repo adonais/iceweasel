@@ -5,6 +5,14 @@
 import { EnterprisePolicyTesting } from "resource://testing-common/EnterprisePolicyTesting.sys.mjs";
 
 export async function runBackgroundTask(commandLine) {
+  // This process runs with its own profile, so it doesn't inherit the xpcshell
+  // harness's automation prefs, which the policy engine requires to read
+  // `browser.policies.alternatePath`.
+  Services.prefs.setBoolPref(
+    "security.turn_off_all_security_so_that_viruses_can_take_over_this_computer",
+    true
+  );
+
   let filePath = commandLine.getArgument(0);
   await EnterprisePolicyTesting.setupPolicyEngineWithJson(filePath);
 

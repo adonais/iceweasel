@@ -20,6 +20,8 @@
 #ifndef wasm_wasm_baseline_object_inl_h
 #define wasm_wasm_baseline_object_inl_h
 
+#include "wasm/WasmBCClass.h"
+
 namespace js {
 namespace wasm {
 

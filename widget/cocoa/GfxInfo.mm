@@ -2,20 +2,20 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <OpenGL/OpenGL.h>
 #include <OpenGL/CGLRenderers.h>
+#include <OpenGL/OpenGL.h>
 
 #include "GfxInfo.h"
-#include "nsUnicharUtils.h"
-#include "nsExceptionHandler.h"
+#include "js/PropertyAndElement.h"  // JS_SetElement, JS_SetProperty
+#include "mozilla/Preferences.h"
 #include "nsCocoaFeatures.h"
 #include "nsCocoaUtils.h"
-#include "mozilla/Preferences.h"
-#include "js/PropertyAndElement.h"  // JS_SetElement, JS_SetProperty
+#include "nsExceptionHandler.h"
+#include "nsUnicharUtils.h"
 
+#import <Cocoa/Cocoa.h>
 #import <Foundation/Foundation.h>
 #import <IOKit/IOKitLib.h>
-#import <Cocoa/Cocoa.h>
 
 #include "jsapi.h"
 
@@ -532,6 +532,34 @@ nsresult GfxInfo::GetFeatureStatusImpl(
                nsCocoaFeatures::ProcessIsRosettaTranslated()) {
       *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
       aFailureId = "FEATURE_UNQUALIFIED_WEBRENDER_MAC_ROSETTA";
+      return NS_OK;
+    } else if (aFeature == nsIGfxInfo::FEATURE_WEBGL_ANGLE_METAL) {
+      if (mMacOSVersionEx.Compare(GfxVersionEx(12, 0, 0)) < 0) {
+        // ANGLE only supports macOS 12 onwards. Blocked until we restore
+        // support for earlier OS versions. See bug 2053051.
+        *aStatus = nsIGfxInfo::FEATURE_BLOCKED_OS_VERSION;
+        aFailureId = "FEATURE_FAILURE_METAL_ANGLE_MACOS_VERSION";
+      } else {
+        *aStatus = nsIGfxInfo::FEATURE_STATUS_OK;
+      }
+      return NS_OK;
+    } else if (aFeature == nsIGfxInfo::FEATURE_WEBRENDER_ANGLE_METAL) {
+      if (mMacOSVersionEx.Compare(GfxVersionEx(12, 0, 0)) < 0) {
+        // ANGLE only supports macOS 12 onwards. Blocked until we restore
+        // support for earlier OS versions. See bug 2053051.
+        *aStatus = nsIGfxInfo::FEATURE_BLOCKED_OS_VERSION;
+        aFailureId = "FEATURE_FAILURE_METAL_ANGLE_MACOS_VERSION";
+      } else if (mNumGPUsDetected > 1) {
+        // Blocked on devices with multiple GPUs until we implement support for
+        // GPU switching. See bug 1600178.
+        *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
+        aFailureId = "FEATURE_FAILURE_METAL_ANGLE_MULTIPLE_GPUS";
+      } else {
+        // We don't yet build or ship ANGLE libraries on macOS, so always block
+        // for now. See bug 2052515.
+        *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
+        aFailureId = "FEATURE_FAILURE_METAL_ANGLE_UNIMPLEMENTED";
+      }
       return NS_OK;
     }
   }

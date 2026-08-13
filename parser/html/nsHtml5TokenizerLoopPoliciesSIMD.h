@@ -7,6 +7,7 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/htmlaccel/htmlaccelNotInline.h"
+#include "mozilla/Utf16.h"
 
 /**
  * This policy does not report tokenizer transitions anywhere and does not
@@ -448,7 +449,7 @@ struct nsHtml5LineColPolicySIMD {
       aTokenizer->line++;
       aTokenizer->col = 1;
       aTokenizer->nextCharOnNewLine = false;
-    } else if (MOZ_LIKELY(!NS_IS_LOW_SURROGATE(c))) {
+    } else if (MOZ_LIKELY(!mozilla::IsLowSurrogate(c))) {
       // SpiderMonkey wants to count scalar values
       // instead of UTF-16 code units. We omit low
       // surrogates from the count so that only the

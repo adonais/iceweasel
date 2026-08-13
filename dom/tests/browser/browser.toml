@@ -36,6 +36,9 @@ skip-if = [
 ["browser_beforeunload_between_chrome_content.js"]
 https_first_disabled = true
 
+["browser_beforeunload_select_interaction.js"]
+support-files = ["file_beforeunload_select.html"]
+
 ["browser_bug396843.js"]
 
 ["browser_bug1004814.js"]

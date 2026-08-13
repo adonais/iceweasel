@@ -13,16 +13,6 @@ const { AboutAddonsTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/AboutAddonsTestUtils.sys.mjs"
 );
 
-add_setup(async function setup() {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.urlbar.quickactions.enabled", true],
-      ["browser.urlbar.secondaryActions.featureGate", true],
-      ["browser.urlbar.shortcuts.quickactions", true],
-    ],
-  });
-});
-
 add_task(async function test_about_pages() {
   const testData = [
     {
@@ -36,6 +26,14 @@ add_task(async function test_about_pages() {
     {
       firstInput: "settings",
       uri: "about:preferences",
+    },
+    {
+      firstInput: "edit pdf",
+      uri: "about:pdf",
+    },
+    {
+      firstInput: "disable ai",
+      uri: "about:preferences#ai",
     },
     {
       firstInput: "add-ons",
@@ -113,6 +111,12 @@ add_task(async function test_about_pages() {
       EventUtils.synthesizeKey("KEY_Tab", {}, window);
     }
     EventUtils.synthesizeKey("KEY_Enter", {}, window);
+    // The refocus action runs parent-side, so on the actor message path the tab
+    // switch happens asynchronously after the pick rather than synchronously.
+    await TestUtils.waitForCondition(
+      () => gBrowser.selectedTab == firstTab,
+      "Refocused the tab that opened the about page"
+    );
     Assert.equal(
       gBrowser.selectedTab,
       firstTab,
@@ -205,7 +209,7 @@ add_task(async function test_about_addons_pages() {
       await flakyWaitForManyIdles();
     }
     EventUtils.synthesizeKey("KEY_Enter", {}, window);
-    await BrowserTestUtils.waitForCondition(() => testFun());
+    await TestUtils.waitForCondition(() => testFun());
     Assert.ok(true, "The tab correspondent action is selected");
   }
   Assert.equal(

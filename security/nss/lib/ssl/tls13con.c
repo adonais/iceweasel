@@ -392,6 +392,7 @@ tls13_CreateKEMKeyPair(sslSocket *ss, const sslNamedGroupDef *groupDef,
             paramSet = CKP_ML_KEM_768;
             break;
         case ssl_grp_kem_secp384r1mlkem1024:
+        case ssl_grp_kem_mlkem1024:
             mechanism = CKM_ML_KEM_KEY_PAIR_GEN;
             paramSet = CKP_ML_KEM_1024;
             break;
@@ -586,15 +587,26 @@ tls13_CreateKeyShare(sslSocket *ss, const sslNamedGroupDef *groupDef,
                 return SECFailure;
             }
             break;
+        case ssl_kea_kem:
+            /* Allocate an sslEphemeralKeyPair with a NULL `keys` field; the
+             * client's KEM key pair is generated below. */
+            keyPair = ssl_NewEphemeralKeyPairWithKeys(groupDef, NULL);
+            if (!keyPair) {
+                return SECFailure;
+            }
+            break;
         default:
             PORT_Assert(0);
             PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
             return SECFailure;
     }
 
-    // If we're creating an ECDH + KEM hybrid share and we're the client, then
-    // we still need to generate the KEM key pair. Otherwise we're done.
-    if (groupDef->keaType == ssl_kea_ecdh_hybrid && !ss->sec.isServer) {
+    // If we're creating a share with a KEM component (an ECDH + KEM hybrid or a
+    // standalone KEM) and we're the client, then we still need to generate the
+    // KEM key pair. Otherwise we're done.
+    if ((groupDef->keaType == ssl_kea_ecdh_hybrid ||
+         groupDef->keaType == ssl_kea_kem) &&
+        !ss->sec.isServer) {
         rv = tls13_CreateKEMKeyPair(ss, groupDef, &keyPair->kemKeys);
         if (rv != SECSuccess) {
             ssl_FreeEphemeralKeyPair(keyPair);
@@ -795,13 +807,18 @@ tls13_ImportKEMKeyShare(SECKEYPublicKey *peerKey, TLS13KeyShareEntry *entry)
         case ssl_grp_kem_secp384r1mlkem1024:
             expected_len = SECP384_PUBLIC_KEY_BYTES + MLKEM1024_PUBLIC_KEY_BYTES;
             break;
+        case ssl_grp_kem_mlkem1024:
+            expected_len = MLKEM1024_PUBLIC_KEY_BYTES;
+            break;
         default:
             PORT_SetError(SEC_ERROR_UNSUPPORTED_KEYALG);
             return SECFailure;
     }
 
     if (entry->key_exchange.len != expected_len) {
-        PORT_SetError(SSL_ERROR_RX_MALFORMED_HYBRID_KEY_SHARE);
+        PORT_SetError(entry->group->keaType == ssl_kea_kem
+                          ? SSL_ERROR_RX_MALFORMED_KEY_SHARE
+                          : SSL_ERROR_RX_MALFORMED_HYBRID_KEY_SHARE);
         return SECFailure;
     }
 
@@ -832,6 +849,12 @@ tls13_ImportKEMKeyShare(SECKEYPublicKey *peerKey, TLS13KeyShareEntry *entry)
             peerKey->u.kyber.params = params_ml_kem1024;
             /* key_exchange.data is `secp384 || mlkem1024` */
             pk.data = entry->key_exchange.data + SECP384_PUBLIC_KEY_BYTES;
+            pk.len = MLKEM1024_PUBLIC_KEY_BYTES;
+            break;
+        case ssl_grp_kem_mlkem1024:
+            peerKey->keyType = kyberKey;
+            peerKey->u.kyber.params = params_ml_kem1024;
+            pk.data = entry->key_exchange.data;
             pk.len = MLKEM1024_PUBLIC_KEY_BYTES;
             break;
         default:
@@ -886,6 +909,14 @@ tls13_HandleKEMCiphertext(sslSocket *ss, TLS13KeyShareEntry *entry, sslKeyPair *
                 return SECFailure;
             }
             ct.data = entry->key_exchange.data + SECP384_PUBLIC_KEY_BYTES;
+            ct.len = MLKEM1024_CIPHERTEXT_BYTES;
+            break;
+        case ssl_grp_kem_mlkem1024:
+            if (entry->key_exchange.len != MLKEM1024_CIPHERTEXT_BYTES) {
+                ssl_MapLowLevelError(SSL_ERROR_RX_MALFORMED_KEY_SHARE);
+                return SECFailure;
+            }
+            ct.data = entry->key_exchange.data;
             ct.len = MLKEM1024_CIPHERTEXT_BYTES;
             break;
         default:
@@ -983,6 +1014,14 @@ tls13_HandleKeyShare(sslSocket *ss,
     const sslNamedGroupDef *ecGroup = NULL;
     int ec_len = 0;
 
+    /* Every group handled here has an ECDH/DH component and so requires our
+     * key pair; a standalone KEM group has no `keys` and never reaches here. */
+    if (!keyPair) {
+        PORT_Assert(0);
+        PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+        return SECFailure;
+    }
+
     PORT_InitCheapArena(&arena, DER_DEFAULT_CHUNKSIZE);
     peerKey = PORT_ArenaZNew(&arena.arena, SECKEYPublicKey);
     if (peerKey == NULL) {
@@ -1076,6 +1115,35 @@ tls13_HandleKeyShare(sslSocket *ss,
 loser:
     PORT_DestroyCheapArena(&arena);
     return SECFailure;
+}
+
+/* Combine the optional ECDH and KEM secrets into the value that feeds the
+ * TLS 1.3 key schedule in place of the (EC)DHE shared secret, according to the
+ * group's construction. Either input may be NULL (a standalone KEM group has
+ * no ECDH secret; a plain ECDH/DH group has no KEM secret). This does not
+ * consume its inputs: the caller retains ownership of both and must free them.
+ * The returned key holds its own reference. */
+static PK11SymKey *
+tls13_CombineKeyShareSecrets(const sslNamedGroupDef *group,
+                             PK11SymKey *dheSecret, PK11SymKey *kemSecret)
+{
+    switch (group->keaType) {
+        case ssl_kea_kem:
+            /* Standalone KEM: the secret is just the KEM shared secret. */
+            return PK11_ReferenceSymKey(kemSecret);
+        case ssl_kea_ecdh_hybrid:
+            /* ML-KEM-768 + X25519 places the KEM secret first; the other
+             * hybrids place the ECDH secret first. */
+            if (group->name == ssl_grp_kem_mlkem768x25519) {
+                return PK11_ConcatSymKeys(kemSecret, dheSecret, CKM_HKDF_DERIVE,
+                                          CKA_DERIVE);
+            }
+            return PK11_ConcatSymKeys(dheSecret, kemSecret, CKM_HKDF_DERIVE,
+                                      CKA_DERIVE);
+        default:
+            /* Plain ECDH or DH: the secret is just the (EC)DHE shared secret. */
+            return PK11_ReferenceSymKey(dheSecret);
+    }
 }
 
 static PRBool
@@ -2793,6 +2861,12 @@ tls13_SendHelloRetryRequest(sslSocket *ss,
         return SECFailure;
     }
 
+    /* The ECH HRR signal has been written to the message and preserved in the
+     * cookie, from which it is restored when reconstructing the transcript on
+     * the second ClientHello. Clear the transient buffer so that reconstruction
+     * starts from an empty state. */
+    sslBuffer_Clear(&ss->ssl3.hs.greaseEchBuf);
+
     /* And send it. */
     ssl_GetXmitBufLock(ss);
     rv = ssl3_AppendHandshakeHeader(ss, ssl_hs_server_hello,
@@ -2884,7 +2958,10 @@ tls13_HandleClientKeyShare(sslSocket *ss, TLS13KeyShareEntry *peerShare)
                 PR_NEXT_LINK(&ss->ephemeralKeyPairs));
 
     keyPair = ((sslEphemeralKeyPair *)PR_NEXT_LINK(&ss->ephemeralKeyPairs));
-    ss->sec.keaKeyBits = SECKEY_PublicKeyStrengthInBits(keyPair->keys->pubKey);
+    /* A standalone KEM share has no ECDH `keys`; report the group's strength. */
+    ss->sec.keaKeyBits =
+        keyPair->keys ? SECKEY_PublicKeyStrengthInBits(keyPair->keys->pubKey)
+                      : keyPair->group->bits;
 
     /* Register the sender */
     rv = ssl3_RegisterExtensionSender(ss, &ss->xtnData, ssl_tls13_key_share_xtn,
@@ -2893,43 +2970,37 @@ tls13_HandleClientKeyShare(sslSocket *ss, TLS13KeyShareEntry *peerShare)
         return SECFailure; /* Error code set already. */
     }
 
-    rv = tls13_HandleKeyShare(ss, peerShare, keyPair->keys,
-                              tls13_GetHash(ss),
-                              &dheSecret);
-    if (rv != SECSuccess) {
-        goto loser; /* Error code already set. */
+    SSLKEAType keaType = peerShare->group->keaType;
+
+    /* ECDH/DH component: present for everything except a standalone KEM. */
+    if (keaType != ssl_kea_kem) {
+        rv = tls13_HandleKeyShare(ss, peerShare, keyPair->keys,
+                                  tls13_GetHash(ss), &dheSecret);
+        if (rv != SECSuccess) {
+            goto loser; /* Error code already set. */
+        }
     }
 
-    if (peerShare->group->keaType == ssl_kea_ecdh_hybrid) {
+    /* KEM component: present for a standalone KEM and the ECDH + KEM hybrids.
+     * As the server we encapsulate to the peer's key, yielding the ciphertext
+     * to send back in our key share. */
+    if (keaType == ssl_kea_kem || keaType == ssl_kea_ecdh_hybrid) {
         rv = tls13_HandleKEMKey(ss, peerShare, &kemSecret, &ciphertext);
         if (rv != SECSuccess) {
             goto loser; /* Error set by tls13_HandleKEMKey */
         }
-        switch (peerShare->group->name) {
-            case ssl_grp_kem_secp384r1mlkem1024:
-            case ssl_grp_kem_secp256r1mlkem768:
-            case ssl_grp_kem_xyber768d00:
-                ss->ssl3.hs.dheSecret = PK11_ConcatSymKeys(dheSecret, kemSecret, CKM_HKDF_DERIVE, CKA_DERIVE);
-                break;
-            case ssl_grp_kem_mlkem768x25519:
-                ss->ssl3.hs.dheSecret = PK11_ConcatSymKeys(kemSecret, dheSecret, CKM_HKDF_DERIVE, CKA_DERIVE);
-                break;
-            default:
-                PORT_Assert(0);
-                PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
-                ss->ssl3.hs.dheSecret = NULL;
-                break;
-        }
-        if (!ss->ssl3.hs.dheSecret) {
-            goto loser; /* Error set by PK11_ConcatSymKeys */
-        }
         keyPair->kemCt = ciphertext;
-        PK11_FreeSymKey(dheSecret);
-        PK11_FreeSymKey(kemSecret);
-    } else {
-        ss->ssl3.hs.dheSecret = dheSecret;
+        ciphertext = NULL; /* ownership transferred to keyPair->kemCt */
     }
 
+    ss->ssl3.hs.dheSecret =
+        tls13_CombineKeyShareSecrets(peerShare->group, dheSecret, kemSecret);
+    if (!ss->ssl3.hs.dheSecret) {
+        goto loser; /* Error set by tls13_CombineKeyShareSecrets */
+    }
+
+    PK11_FreeSymKey(dheSecret);
+    PK11_FreeSymKey(kemSecret);
     return SECSuccess;
 
 loser:
@@ -3264,6 +3335,12 @@ tls13_HandleCertificateRequest(sslSocket *ss, PRUint8 *b, PRUint32 length)
 
     PORT_Assert(ss->opt.noLocks || ssl_HaveRecvBufLock(ss));
     PORT_Assert(ss->opt.noLocks || ssl_HaveSSL3HandshakeLock(ss));
+
+    /* CertificateRequest is sent by servers; a server must never receive one. */
+    if (ss->sec.isServer) {
+        FATAL_ERROR(ss, SSL_ERROR_RX_UNEXPECTED_CERT_REQUEST, unexpected_message);
+        return SECFailure;
+    }
 
     /* Client */
     if (ss->opt.enablePostHandshakeAuth) {
@@ -3710,6 +3787,11 @@ tls13_SetKeyExchangeType(sslSocket *ss, const sslNamedGroupDef *group)
                 ss->statelessResume ? ssl_kea_ecdh_hybrid_psk : ssl_kea_ecdh_hybrid;
             ss->sec.keaType = ssl_kea_ecdh_hybrid;
             break;
+        case ssl_kea_kem:
+            ss->ssl3.hs.kea_def_mutable.exchKeyType =
+                ss->statelessResume ? ssl_kea_kem_psk : ssl_kea_kem;
+            ss->sec.keaType = ssl_kea_kem;
+            break;
         case ssl_kea_dh:
             ss->ssl3.hs.kea_def_mutable.exchKeyType =
                 ss->statelessResume ? ssl_kea_dh_psk : ssl_kea_dh;
@@ -3757,44 +3839,39 @@ tls13_HandleServerKeyShare(sslSocket *ss)
 
     PORT_Assert(ssl_NamedGroupEnabled(ss, entry->group));
 
-    rv = tls13_HandleKeyShare(ss, entry, keyPair->keys,
-                              tls13_GetHash(ss),
-                              &dheSecret);
-    if (rv != SECSuccess) {
-        goto loser; /* Error code already set. */
+    SSLKEAType keaType = entry->group->keaType;
+
+    /* ECDH/DH component: present for everything except a standalone KEM. */
+    if (keaType != ssl_kea_kem) {
+        rv = tls13_HandleKeyShare(ss, entry, keyPair->keys,
+                                  tls13_GetHash(ss), &dheSecret);
+        if (rv != SECSuccess) {
+            goto loser; /* Error code already set. */
+        }
     }
 
-    if (entry->group->keaType == ssl_kea_ecdh_hybrid) {
+    /* KEM component: present for a standalone KEM and the ECDH + KEM hybrids.
+     * As the client we decapsulate the server's ciphertext. */
+    if (keaType == ssl_kea_kem || keaType == ssl_kea_ecdh_hybrid) {
         rv = tls13_HandleKEMCiphertext(ss, entry, keyPair->kemKeys, &kemSecret);
         if (rv != SECSuccess) {
             goto loser; /* Error set by tls13_HandleKEMCiphertext */
         }
-        switch (entry->group->name) {
-            case ssl_grp_kem_secp384r1mlkem1024:
-            case ssl_grp_kem_secp256r1mlkem768:
-            case ssl_grp_kem_xyber768d00:
-                ss->ssl3.hs.dheSecret = PK11_ConcatSymKeys(dheSecret, kemSecret, CKM_HKDF_DERIVE, CKA_DERIVE);
-                break;
-            case ssl_grp_kem_mlkem768x25519:
-                ss->ssl3.hs.dheSecret = PK11_ConcatSymKeys(kemSecret, dheSecret, CKM_HKDF_DERIVE, CKA_DERIVE);
-                break;
-            default:
-                PORT_Assert(0);
-                PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
-                ss->ssl3.hs.dheSecret = NULL;
-                break;
-        }
-        if (!ss->ssl3.hs.dheSecret) {
-            goto loser; /* Error set by PK11_ConcatSymKeys */
-        }
-        PK11_FreeSymKey(dheSecret);
-        PK11_FreeSymKey(kemSecret);
-    } else {
-        ss->ssl3.hs.dheSecret = dheSecret;
     }
 
+    ss->ssl3.hs.dheSecret =
+        tls13_CombineKeyShareSecrets(entry->group, dheSecret, kemSecret);
+    if (!ss->ssl3.hs.dheSecret) {
+        goto loser; /* Error set by tls13_CombineKeyShareSecrets */
+    }
+    PK11_FreeSymKey(dheSecret);
+    PK11_FreeSymKey(kemSecret);
+
     tls13_SetKeyExchangeType(ss, entry->group);
-    ss->sec.keaKeyBits = SECKEY_PublicKeyStrengthInBits(keyPair->keys->pubKey);
+    /* A standalone KEM share has no ECDH `keys`; report the group's strength. */
+    ss->sec.keaKeyBits =
+        keyPair->keys ? SECKEY_PublicKeyStrengthInBits(keyPair->keys->pubKey)
+                      : entry->group->bits;
 
     return SECSuccess;
 
@@ -5206,6 +5283,13 @@ tls13_HandleEncryptedExtensions(sslSocket *ss, PRUint8 *b, PRUint32 length)
 
     SSL_TRC(3, ("%d: TLS13[%d]: handle encrypted extensions",
                 SSL_GETPID(), ss->fd));
+
+    /* EncryptedExtensions is sent by servers; a server must never receive one. */
+    if (ss->sec.isServer) {
+        FATAL_ERROR(ss, SSL_ERROR_RX_UNEXPECTED_ENCRYPTED_EXTENSIONS,
+                    unexpected_message);
+        return SECFailure;
+    }
 
     rv = TLS13_CHECK_HS_STATE(ss, SSL_ERROR_RX_UNEXPECTED_ENCRYPTED_EXTENSIONS,
                               wait_encrypted_extensions);
@@ -7167,6 +7251,13 @@ tls13_HandleEndOfEarlyData(sslSocket *ss, const PRUint8 *b, PRUint32 length)
     SECStatus rv;
 
     PORT_Assert(ss->version >= SSL_LIBRARY_VERSION_TLS_1_3);
+
+    /* EndOfEarlyData is sent by clients; a client must never receive one. */
+    if (!ss->sec.isServer) {
+        FATAL_ERROR(ss, SSL_ERROR_RX_UNEXPECTED_END_OF_EARLY_DATA,
+                    unexpected_message);
+        return SECFailure;
+    }
 
     rv = TLS13_CHECK_HS_STATE(ss, SSL_ERROR_RX_UNEXPECTED_END_OF_EARLY_DATA,
                               wait_end_of_early_data);

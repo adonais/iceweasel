@@ -405,7 +405,7 @@ already_AddRefed<Promise> DOMLocalization::TranslateElements(
  */
 class L10nRootTranslationHandler final : public PromiseNativeHandler {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS(L10nRootTranslationHandler)
 
   explicit L10nRootTranslationHandler(Element* aRoot) : mRoot(aRoot) {}

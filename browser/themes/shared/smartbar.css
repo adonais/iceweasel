@@ -21,7 +21,7 @@
   --smartbar-outline: var(--focus-outline-width) solid var(--smartbar-outline-color);
   --smartbar-outline-color: light-dark(var(--color-violet-30), var(--color-violet-50));
   --smartbar-cta-icon-fill: var(--icon-color);
-  --smartbar-scroll-mask-height: calc(var(--urlbarView-row-min-height) * 1.5);
+  --smartbar-scroll-mask-height: calc(var(--urlbarview-row-min-height) * 1.5);
   --text-color-deemphasized: light-dark(color-mix(in srgb, var(--color-gray-100) 69%, transparent), color-mix(in srgb, var(--color-gray-0) 69%, transparent));
 
   --toolbar-field-border-color: transparent;
@@ -31,8 +31,9 @@
   --urlbarView-favicon-margin-start: 0;
   --urlbarView-favicon-margin-end: var(--space-small);
   --urlbarView-row-padding-inline: var(--space-small);
-  --urlbarView-row-padding-block: var(--space-small);
+  --urlbarview-row-padding-block: var(--space-small);
   --urlbarView-labeled-row-margin-top: 0;
+  --urlbar-background-border: var(--border-width) solid var(--border-color-transparent);
 
   --urlbarView-small-font-size: var(--font-size-small);
 
@@ -40,7 +41,7 @@
     --urlbarview-background-color-hover: light-dark(var(--color-violet-0), var(--button-background-color-hover));
     --urlbarview-background-color-selected: light-dark(var(--color-violet-10), var(--button-background-color-active));
     --urlbarview-text-color-selected: var(--toolbar-field-focus-color);
-    --urlbarView-secondary-text-color: light-dark(color-mix(in srgb, var(--color-gray-100) 69%, transparent), var(--color-violet-desaturated-20));
+    --urlbarview-text-color-secondary: light-dark(color-mix(in srgb, var(--color-gray-100) 69%, transparent), var(--color-violet-desaturated-20));
     --link-color: light-dark(var(--color-violet-70), var(--color-violet-30));
 
     &:is(:hover, :focus-within, [focused], [open]) > .urlbar-background {
@@ -90,7 +91,7 @@
     order: -1;
     z-index: 1;
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    border-bottom: var(--border-width) solid var(--urlbarView-separator-color);
+    border-bottom: var(--border-width) solid var(--urlbarview-separator-color);
     /* Match the frame's rounded corners so the scrollbar is clipped inside it. */
     border-start-start-radius: var(--border-radius-large);
     border-start-end-radius: var(--border-radius-large);
@@ -112,7 +113,7 @@
      */
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     max-height: calc(
-      (var(--urlbarView-row-inner-min-height) + var(--urlbarView-row-padding-block) * 2 + var(--urlbarView-row-gutter) * 2) * var(--smartbar-max-visible-rows) +
+      (var(--urlbarView-row-inner-min-height) + var(--urlbarview-row-padding-block) * 2 + var(--urlbarView-row-gutter) * 2) * var(--smartbar-max-visible-rows) +
         var(--space-medium) * 2 - var(--urlbarView-row-gutter) * 2
     );
     /*
@@ -154,7 +155,7 @@
 
   .urlbarView-row:not([type="tip"], [type="dynamic"]) {
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    min-height: var(--urlbarView-row-min-height);
+    min-height: var(--urlbarview-row-min-height);
   }
 
   .urlbarView-row-inner {
@@ -194,6 +195,12 @@
 /* Background: border, glow */
 .smartbar > .urlbar-background {
   border-radius: var(--border-radius-large);
+
+  /* TODO: Bug 2033070 -  Nova tokens were implemented as the default value for the custom properties, and the fallbacks (and lint exceptions) will need to be removed after launch */
+  @media -moz-pref("browser.nova.enabled") {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    border-radius: 24px;
+  }
 
   @media not (forced-colors) {
     background-color: var(--smartbar-inactive-background-color);

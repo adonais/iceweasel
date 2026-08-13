@@ -5,11 +5,11 @@
 #ifndef mozilla_net_TLSServerSocket_h
 #define mozilla_net_TLSServerSocket_h
 
+#include "mozilla/Mutex.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsITLSServerSocket.h"
 #include "nsServerSocket.h"
 #include "nsString.h"
-#include "mozilla/Mutex.h"
 #include "seccomon.h"
 
 namespace mozilla {

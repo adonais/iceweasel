@@ -5,7 +5,6 @@
 #include "mozilla/ScopeExit.h"
 
 #include "ds/SlimLinkedList.h"
-
 #include "jsapi-tests/tests.h"
 
 using namespace js;

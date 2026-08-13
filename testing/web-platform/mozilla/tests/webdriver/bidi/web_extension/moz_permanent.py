@@ -1,13 +1,12 @@
 import pytest
 from support.addons import is_addon_temporary_installed
-from support.helpers import clear_pref, set_pref
 from tests.bidi.web_extension import assert_extension_id
 from webdriver.bidi import error
 
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.mark.allow_system_access
+@pytest.mark.geckodriver(allow_system_access=True)
 @pytest.mark.parametrize(
     "permanent", [None, False, True], ids=["default", "temporary", "permanent"]
 )
@@ -18,13 +17,15 @@ async def test_install_with_permanent(
     current_session,
     extension_data,
     install_webextension,
+    use_pref,
     mode,
     permanent,
     signed,
 ):
     if mode == "path" and signed:
-        # Unpacked extensions are not signed
+        # Unpacked extensions are not signed and cannot be installed permanently
         return
+
     data = {"type": mode}
     unsigned_tag = "" if signed or mode == "path" else "Unsigned"
     extension_data_value = extension_data[f"{mode}{unsigned_tag}"]
@@ -35,28 +36,22 @@ async def test_install_with_permanent(
 
     extension_params = {"moz:permanent": permanent} if permanent is not None else {}
 
+    await use_pref("xpinstall.signatures.required", True)
+
     if permanent and not signed:
-        try:
-            with pytest.raises(error.InvalidWebExtensionException):
-                set_pref(current_session, "xpinstall.signatures.required", True)
-                await install_webextension(
-                    extension_data=data,
-                    _extension_params=extension_params,
-                )
-        finally:
-            clear_pref(current_session, "xpinstall.signatures.required")
+        with pytest.raises(error.InvalidWebExtensionException):
+            await install_webextension(
+                extension_data=data,
+                _extension_params=extension_params,
+            )
         return
 
-    try:
-        set_pref(current_session, "xpinstall.signatures.required", True)
-        web_extension = await install_webextension(
-            extension_data=data,
-            _extension_params=extension_params,
-        )
+    web_extension = await install_webextension(
+        extension_data=data,
+        _extension_params=extension_params,
+    )
 
-        assert_extension_id(web_extension, extension_data)
-        assert is_addon_temporary_installed(current_session, web_extension) is not bool(
-            permanent
-        )
-    finally:
-        clear_pref(current_session, "xpinstall.signatures.required")
+    assert_extension_id(web_extension, extension_data)
+    assert is_addon_temporary_installed(current_session, web_extension) is not bool(
+        permanent
+    )

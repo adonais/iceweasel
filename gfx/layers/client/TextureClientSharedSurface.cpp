@@ -5,11 +5,11 @@
 #include "TextureClientSharedSurface.h"
 
 #include "GLContext.h"
+#include "SharedSurface.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Logging.h"  // for gfxDebug
 #include "mozilla/layers/ISurfaceAllocator.h"
 #include "nsThreadUtils.h"
-#include "SharedSurface.h"
 
 #ifdef MOZ_WIDGET_ANDROID
 #  include "mozilla/layers/AndroidHardwareBuffer.h"

@@ -5,8 +5,8 @@
 #ifndef mozilla_net_CookieServiceParent_h
 #define mozilla_net_CookieServiceParent_h
 
-#include "mozilla/net/PCookieServiceParent.h"
 #include "mozilla/net/CookieKey.h"
+#include "mozilla/net/PCookieServiceParent.h"
 
 class nsIArray;
 class nsICookie;
@@ -82,7 +82,7 @@ class CookieServiceParent : public PCookieServiceParent {
   bool ProcessingCookie() { return mProcessingCookie; }
 
   bool ContentProcessHasCookie(const Cookie& cookie);
-  bool ContentProcessHasCookie(const nsACString& aHost,
+  bool ContentProcessHasCookie(const nsACString& aBaseDomain,
                                const OriginAttributes& aOriginAttributes);
   bool InsecureCookieOrSecureOrigin(const Cookie& cookie);
   void UpdateCookieInContentList(nsIURI* aHostURI,

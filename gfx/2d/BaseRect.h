@@ -10,10 +10,10 @@
 #include <ostream>
 #include <type_traits>
 
+#include "Types.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Saturate.h"
 #include "mozilla/gfx/ScaleFactors2D.h"
-#include "Types.h"
 
 namespace mozilla::gfx {
 

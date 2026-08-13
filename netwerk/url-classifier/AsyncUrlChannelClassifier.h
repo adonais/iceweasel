@@ -5,8 +5,9 @@
 #ifndef mozilla_net_AsyncUrlChannelClassifier_h
 #define mozilla_net_AsyncUrlChannelClassifier_h
 
-#include "nsISupports.h"
 #include <functional>
+
+#include "nsISupports.h"
 
 class nsIChannel;
 

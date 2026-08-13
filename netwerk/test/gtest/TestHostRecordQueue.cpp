@@ -1,8 +1,7 @@
-#include "gtest/gtest.h"
-
 #include "HostRecordQueue.h"
-#include "TRRQuery.h"
 #include "TRR.h"
+#include "TRRQuery.h"
+#include "gtest/gtest.h"
 
 using namespace mozilla;
 using namespace mozilla::net;

@@ -9,7 +9,6 @@
 #include "jit/MIR.h"
 #include "jit/MIRGenerator.h"
 #include "jit/MIRGraph.h"
-
 #include "js/Printer.h"
 
 using namespace js;

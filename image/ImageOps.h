@@ -6,9 +6,9 @@
 #ifndef mozilla_image_ImageOps_h
 #define mozilla_image_ImageOps_h
 
+#include "ImageMetadata.h"
 #include "nsCOMPtr.h"
 #include "nsRect.h"
-#include "ImageMetadata.h"
 
 class gfxDrawable;
 class imgIContainer;

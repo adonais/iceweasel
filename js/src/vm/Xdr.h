@@ -362,6 +362,27 @@ class XDRState : public XDRCoderBase {
     return mozilla::Ok();
   }
 
+  /*
+   * Same as codeEnum32, but for enums whose underlying type fits in a single
+   * byte. Uses SFINAE to refuse any specialization which is not an enum.
+   */
+  template <typename T>
+  XDRResult codeEnumU8(T* val, std::enable_if_t<std::is_enum_v<T>>* = nullptr) {
+    // Mix the enumeration value with a magic number, such that a corruption
+    // with a low-ranged value (like 0) is less likely to cause a
+    // miss-interpretation of the XDR content and instead cause a failure.
+    const uint8_t MAGIC = 0x8C;
+    uint8_t tmp;
+    if (mode == XDR_ENCODE) {
+      tmp = uint8_t(*val) ^ MAGIC;
+    }
+    MOZ_TRY(codeUint8(&tmp));
+    if (mode == XDR_DECODE) {
+      *val = T(tmp ^ MAGIC);
+    }
+    return mozilla::Ok();
+  }
+
   XDRResult codeDouble(double* dp) {
     union DoublePun {
       double d;

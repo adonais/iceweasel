@@ -9,13 +9,7 @@ support-files = [
 
 ["browser_passwords_create_login.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan", # Bug 1974508
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1974508
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && debug", # Bug 1974508
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && opt", # Bug 1974508
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1974508
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && ccov", # Bug 1974508
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && ccov", # Bug 1974508
+  "true", # Bug 1974508 - permafails under Rust storage backend (bug 2053724)
 ]
 
 ["browser_passwords_delete_login.js"]

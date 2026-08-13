@@ -3,9 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "js/Id.h"
+
 #include "js/Printer.h"  // js::GenericPrinter, js::Fprinter
 #include "js/RootingAPI.h"
-
 #include "vm/JSContext.h"
 #include "vm/JSONPrinter.h"  // js::JSONPrinter
 #include "vm/SymbolType.h"

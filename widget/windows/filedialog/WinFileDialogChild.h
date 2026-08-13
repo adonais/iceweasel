@@ -23,11 +23,12 @@ class WinFileDialogChild : public PWinFileDialogChild {
  public:
   using FileResolver = PWinFileDialogChild::ShowFileDialogResolver;
   IPCResult RecvShowFileDialog(uintptr_t parentHwnd, FileDialogType,
-                               nsTArray<Command>, FileResolver&&);
+                               nsTArray<Command>, bool needsInputProtection,
+                               FileResolver&&);
 
   using FolderResolver = PWinFileDialogChild::ShowFolderDialogResolver;
   IPCResult RecvShowFolderDialog(uintptr_t parentHwnd, nsTArray<Command>,
-                                 FolderResolver&&);
+                                 bool needsInputProtection, FolderResolver&&);
 
  private:
   ~WinFileDialogChild();

@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsViewSourceChannel.h"
+
 #include "mozilla/NullPrincipal.h"
 #include "nsContentSecurityManager.h"
 #include "nsContentUtils.h"

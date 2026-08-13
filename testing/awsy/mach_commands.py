@@ -107,9 +107,8 @@ def run_awsy(command_context, tests, binary=None, **kwargs):
             "artifact",
             "toolchain",
             "-v",
-            "--tooltool-manifest=%s" % manifest_file,
-            "--cache-dir=%s"
-            % os.path.join(command_context._mach_context.state_dir, "tooltool-cache"),
+            f"--tooltool-manifest={manifest_file}",
+            f"--cache-dir={os.path.join(command_context._mach_context.state_dir, 'tooltool-cache')}",
         ]
     }
     command_context.run_process(cwd=page_load_test_dir, **tooltool_args)
@@ -241,7 +240,7 @@ def run_awsy(command_context, tests, binary=None, **kwargs):
     action="store",
     type=int,
     dest="maxTabs",
-    help="Maximum number of tabs to open. Defaults to %s." % MAX_TABS,
+    help=f"Maximum number of tabs to open. Defaults to {MAX_TABS}.",
 )
 @CommandArgument(
     "--iterations",
@@ -249,7 +248,7 @@ def run_awsy(command_context, tests, binary=None, **kwargs):
     action="store",
     type=int,
     dest="iterations",
-    help="Number of times to run through the test suite. Defaults to %s." % ITERATIONS,
+    help=f"Number of times to run through the test suite. Defaults to {ITERATIONS}.",
 )
 @CommandArgument(
     "--per-tab-pause",
@@ -257,7 +256,7 @@ def run_awsy(command_context, tests, binary=None, **kwargs):
     action="store",
     type=int,
     dest="perTabPause",
-    help="Seconds to wait in between opening tabs. Defaults to %s." % PER_TAB_PAUSE,
+    help=f"Seconds to wait in between opening tabs. Defaults to {PER_TAB_PAUSE}.",
 )
 @CommandArgument(
     "--settle-wait-time",
@@ -265,8 +264,7 @@ def run_awsy(command_context, tests, binary=None, **kwargs):
     action="store",
     type=int,
     dest="settleWaitTime",
-    help="Seconds to wait for things to settled down. "
-    "Defaults to %s." % SETTLE_WAIT_TIME,
+    help=f"Seconds to wait for things to settled down. Defaults to {SETTLE_WAIT_TIME}.",
 )
 @CommandArgument(
     "--dmd",

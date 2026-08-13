@@ -1,0 +1,107 @@
+From 31bb7089d275e226d0f3878470c9fe6acfaf1736 Mon Sep 17 00:00:00 2001
+From: Geoff Lang <geofflang@chromium.org>
+Date: Wed, 15 Apr 2026 15:00:04 -0400
+Subject: [PATCH] D3D11: Avoid cache self-eviction for uniform buffers.
+
+D3D11 makes copies of buffers to handle different binding
+offsets since they are not natively supported. It limits the cache to
+the buffer's size * 2. glBindBufferRange allows giving sizes larger than
+the buffer, this can cause the D3D11 buffer storage to trim even with
+one element, evicting the newly allocated buffer.
+
+Avoid this by checking if the buffer to evict was the newly inserted
+one. It would always be the last element in the cache because it has the
+most recent LRU value.
+
+Fixed: chromium:498881735
+Change-Id: Ie235f1c3efa6b3a2395bbfdf6b165c4c42d95fdc
+Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/7765258
+Reviewed-by: Shahbaz Youssefi <syoussefi@chromium.org>
+Commit-Queue: Geoff Lang <geofflang@chromium.org>
+---
+ src/libANGLE/renderer/d3d/d3d11/Buffer11.cpp | 18 +++++++++--
+ src/tests/gl_tests/UniformBufferTest.cpp     | 32 ++++++++++++++++++++
+ 2 files changed, 48 insertions(+), 2 deletions(-)
+
+diff --git a/src/libANGLE/renderer/d3d/d3d11/Buffer11.cpp b/src/libANGLE/renderer/d3d/d3d11/Buffer11.cpp
+index c8e3ac47cd..6dff1d37e2 100644
+--- a/src/libANGLE/renderer/d3d/d3d11/Buffer11.cpp
++++ b/src/libANGLE/renderer/d3d/d3d11/Buffer11.cpp
+@@ -887,7 +887,14 @@ angle::Result Buffer11::getConstantBufferRangeStorage(const gl::Context *context
+                     return a.second.lruCount < b.second.lruCount;
+                 });
+ 
+-            ASSERT(iter->second.storage != newStorage);
++            // Don't remove the newly added storage. This can only happen if it is the last entry
++            // since it has the most recent LRU value.
++            if (iter->second.storage == newStorage)
++            {
++                ASSERT(mConstantBufferRangeStoragesCache.size() == 1);
++                break;
++            }
++
+             ASSERT(mConstantBufferStorageAdditionalSize >= iter->second.storage->getSize());
+ 
+             mConstantBufferStorageAdditionalSize -= iter->second.storage->getSize();
+@@ -954,7 +961,14 @@ angle::Result Buffer11::getStructuredBufferRangeSRV(const gl::Context *context,
+                                              return a.second.lruCount < b.second.lruCount;
+                                          });
+ 
+-            ASSERT(iter->second.storage != newStorage);
++            // Don't remove the newly added storage. This can only happen if it is the last entry
++            // since it has the most recent LRU value.
++            if (iter->second.storage == newStorage)
++            {
++                ASSERT(mStructuredBufferRangeStoragesCache.size() == 1);
++                break;
++            }
++
+             ASSERT(mStructuredBufferStorageAdditionalSize >= iter->second.storage->getSize());
+ 
+             mStructuredBufferStorageAdditionalSize -= iter->second.storage->getSize();
+diff --git a/src/tests/gl_tests/UniformBufferTest.cpp b/src/tests/gl_tests/UniformBufferTest.cpp
+index b23c8f622f..3e3a0317cd 100644
+--- a/src/tests/gl_tests/UniformBufferTest.cpp
++++ b/src/tests/gl_tests/UniformBufferTest.cpp
+@@ -82,6 +82,38 @@ TEST_P(UniformBufferTest, Simple)
+     EXPECT_PIXEL_NEAR(0, 0, 128, 191, 64, 255, 1);
+ }
+ 
++// Test that binding a range larger than the buffer size works when only valid ranges are accessed
++// in the shader.
++TEST_P(UniformBufferTest, BindLargerThanSize)
++{
++    constexpr size_t iterationCount = 10;
++
++    GLint alignment;
++    glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &alignment);
++
++    // Buffer filed with 0.5 floats enough for `iterationCount` different multiples of alignment. 4
++    // extra padding values are added since the shader always reads 4 floats.
++    const std::vector<float> floatData((iterationCount * alignment) + 4, 0.5f);
++    const size_t bufferSize = sizeof(float) * floatData.size();
++    glBindBuffer(GL_UNIFORM_BUFFER, mUniformBuffer);
++    glBufferData(GL_UNIFORM_BUFFER, bufferSize, floatData.data(), GL_STATIC_DRAW);
++
++    glClear(GL_COLOR_BUFFER_BIT);
++    for (size_t i = 0; i < iterationCount; i++)
++    {
++        // Each iteration, offset further into the buffer and use large (different) binding sizes.
++        size_t offset      = i * alignment * sizeof(float);
++        size_t bindingSize = (i + 1) * bufferSize;
++        glBindBufferRange(GL_UNIFORM_BUFFER, 0, mUniformBuffer, offset, bindingSize);
++
++        glUniformBlockBinding(mProgram, mUniformBufferIndex, 0);
++        drawQuad(mProgram, essl3_shaders::PositionAttrib(), 0.5f);
++
++        ASSERT_GL_NO_ERROR();
++        EXPECT_PIXEL_NEAR(0, 0, 128, 128, 128, 128, 1);
++    }
++}
++
+ // Test a scenario that draws then update UBO (using bufferData or bufferSubData or mapBuffer) then
+ // draws with updated data.
+ TEST_P(UniformBufferTest, DrawThenUpdateThenDraw)
+-- 
+2.54.0
+

@@ -24,7 +24,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
  */
 export class WindowGlobalMessageHandler extends MessageHandler {
   #innerWindowId;
-  #pausedDebuggerFrame;
+  #debuggerEnvironment;
   #realms;
 
   constructor() {
@@ -35,8 +35,8 @@ export class WindowGlobalMessageHandler extends MessageHandler {
     // Maps sandbox names to instances of window realms.
     this.#realms = new Map();
 
-    // The currently paused Debugger.Frame, if any.
-    this.#pausedDebuggerFrame = null;
+    // The currently paused DebuggerEnvironment.
+    this.#debuggerEnvironment = null;
   }
 
   initialize(sessionDataItems) {
@@ -63,6 +63,7 @@ export class WindowGlobalMessageHandler extends MessageHandler {
       innerWindowId: this.innerWindowId,
     });
     this.#realms = null;
+    this.#debuggerEnvironment = null;
 
     super.destroy();
   }
@@ -99,6 +100,39 @@ export class WindowGlobalMessageHandler extends MessageHandler {
     return context.id;
   }
 
+  /**
+   * An object describing the current paused debugger environment, including the
+   * current Debugger.Frame and global object reference.
+   *
+   * @typedef {object} DebuggerEnvironment
+   * @property {Debugger.Frame} frame
+   *     The paused frame.
+   * @property {Debugger.Object} global
+   *     The global object reference created by the debugger instance which
+   *     paused the execution.
+   */
+
+  /**
+   * Get the currently paused DebuggerEnvironment.
+   *
+   * @returns {DebuggerEnvironment|null}
+   *     The paused debugger environment, or null if not paused.
+   */
+  get debuggerEnvironment() {
+    return this.#debuggerEnvironment;
+  }
+
+  /**
+   * Set the debugger environment for the currently paused Debugger.Frame and
+   * global object.
+   *
+   * @param {object|null} debuggerEnvironment
+   *     An object describing the current debugger environment, null to clear.
+   */
+  set debuggerEnvironment(debuggerEnvironment) {
+    this.#debuggerEnvironment = debuggerEnvironment;
+  }
+
   get innerWindowId() {
     return this.#innerWindowId;
   }
@@ -109,26 +143,6 @@ export class WindowGlobalMessageHandler extends MessageHandler {
 
   get window() {
     return this.context.window;
-  }
-
-  /**
-   * Get the currently paused Debugger.Frame.
-   *
-   * @returns {Debugger.Frame|null}
-   *     The paused frame, or null if not paused.
-   */
-  getPausedDebuggerFrame() {
-    return this.#pausedDebuggerFrame;
-  }
-
-  /**
-   * Set the currently paused Debugger.Frame.
-   *
-   * @param {Debugger.Frame|null} frame
-   *     The paused frame, or null to clear.
-   */
-  setPausedDebuggerFrame(frame) {
-    this.#pausedDebuggerFrame = frame;
   }
 
   #createRealm(sandboxName = null) {

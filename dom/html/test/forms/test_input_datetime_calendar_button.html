@@ -78,14 +78,10 @@ function test_disabled_field_disabled() {
 
     input.disabled = false;
     ok(!input.disabled, `#${id} Should not be disabled anymore`);
-    if (type === "time") {
-      assert_calendar_hidden(id);
-    } else {
-      ok(
-        !is_calendar_button_hidden(id),
-        `enabled field's Calendar button is not hidden (${id})`
-      );
-    }
+    ok(
+      !is_calendar_button_hidden(id),
+      `enabled field's Calendar button is not hidden (${id})`
+    );
 
     input.disabled = true; // reset to the original state.
   }
@@ -101,14 +97,10 @@ function test_readonly_field_disabled() {
 
     input.readOnly = false;
     ok(!input.readOnly, `#${id} Should not be read-only anymore`);
-    if (type === "time") {
-      assert_calendar_hidden(id);
-    } else {
-      ok(
-        !is_calendar_button_hidden(id),
-        `non-readonly field's Calendar button is not hidden (${id})`
-      );
-    }
+    ok(
+      !is_calendar_button_hidden(id),
+      `non-readonly field's Calendar button is not hidden (${id})`
+    );
 
     input.readOnly = true; // reset to the original state.
   }
@@ -132,21 +124,13 @@ function test_make_editable(kind) {
     is(input.readOnly, true, `Precondition: input #${id} is read-only`);
 
     input.readOnly = false;
-    if (type === "time") {
-      assert_calendar_hidden(id);
-    } else {
-      assert_calendar_visible(id);
-    }
+    assert_calendar_visible(id);
   }
 }
 
 function assert_calendar_visible_all(kind) {
   for (let type of kTypes) {
-    if (type === "time") {
-      assert_calendar_hidden(id_for_type(type, kind));
-    } else {
-      assert_calendar_visible(id_for_type(type, kind));
-    }
+    assert_calendar_visible(id_for_type(type, kind));
   }
 }
 function assert_calendar_visible(id) {

@@ -9,15 +9,55 @@
   display: flex;
 }
 
+:host([labelposition="outside"]) {
+  flex-direction: column;
+  align-items: center;
+
+  .text-content {
+    text-align: center;
+    padding-top: var(--space-small);
+  }
+}
+
+:host([orientation="vertical"]) {
+  width: 100%;
+
+  .image-item {
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    gap: var(--space-medium);
+
+    img {
+      width: var(--visual-picker-item-image-size, var(--size-image-xlarge));
+      height: var(--visual-picker-item-image-size, var(--size-image-xlarge));
+      padding: var(--visual-picker-item-padding, 0);
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+  }
+}
+
+/**
+ * Unnested because :not() must live inside :host()
+ */
+:host([orientation="vertical"]:not([labelposition="outside"])) .text-content:has(.label, .description) {
+  text-align: start;
+  flex: 1;
+}
+
 .picker-item {
   --visual-picker-item-border-radius-inner: calc(var(--visual-picker-item-border-radius) - var(--visual-picker-item-border-width));
 
+  appearance: none;
   overflow: hidden;
   border: var(--visual-picker-item-border-width) solid var(--visual-picker-item-border-color);
   border-radius: var(--visual-picker-item-border-radius);
   /* The margin needs to account for the increased border-width on the checked item. */
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin: calc(var(--visual-picker-item-border-width-checked) - var(--visual-picker-item-border-width));
+  background-color: var(--button-background-color-ghost);
+  padding: 0;
   flex: 1;
 
   &:focus {
@@ -27,6 +67,14 @@
   &:focus-visible {
     outline: var(--focus-outline);
     outline-offset: var(--focus-outline-offset);
+  }
+
+  &:hover {
+    background-color: var(--button-background-color-ghost-hover);
+  }
+
+  &:hover:active:not(:disabled) {
+    background-color: var(--button-background-color-ghost-active);
   }
 
   &[checked] {
@@ -41,28 +89,28 @@
   }
 
   .text-content:has(.label, .description) {
-    padding: var(--space-small) var(--space-medium) var(--space-medium);
+    padding: var(--space-small) var(--space-medium);
     text-align: center;
-  }
-
-  .label {
-    margin: 0;
-  }
-
-  .description {
-    margin: 0;
-    font-size: var(--font-size-small);
-    color: var(--text-color-deemphasized);
-  }
-
-  .label + .description {
-    margin-block-start: var(--space-xsmall);
   }
 
   img {
     display: block;
     width: 100%;
   }
+}
+
+.label {
+  margin: 0;
+}
+
+.description {
+  margin: 0;
+  font-size: var(--font-size-small);
+  color: var(--text-color-deemphasized);
+}
+
+.label + .description {
+  margin-block-start: var(--space-xsmall);
 }
 
 .image-item {

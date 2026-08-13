@@ -3,14 +3,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "HTTPSSVC.h"
-#include "mozilla/net/DNS.h"
-#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
+
 #include "mozilla/StaticPrefs_network.h"
+#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
+#include "mozilla/net/DNS.h"
 #include "nsHttp.h"
 #include "nsHttpHandler.h"
+#include "nsIDNSService.h"
 #include "nsNetAddr.h"
 #include "nsNetUtil.h"
-#include "nsIDNSService.h"
 
 namespace mozilla {
 namespace net {

@@ -536,7 +536,7 @@ inline wasm::Instance* FrameIter::wasmInstance() const {
 inline unsigned FrameIter::wasmBytecodeOffset() const {
   MOZ_ASSERT(!done());
   MOZ_ASSERT(isWasm());
-  return wasmFrame().lineOrBytecode();
+  return wasmFrame().bytecodeOffset();
 }
 
 inline uint32_t FrameIter::wasmFuncIndex() const {

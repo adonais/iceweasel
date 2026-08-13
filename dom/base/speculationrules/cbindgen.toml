@@ -1,0 +1,33 @@
+header = """/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */"""
+autogen_warning = """/* DO NOT MODIFY THIS MANUALLY! This file was generated using cbindgen. See RunCbindgen.py */
+"""
+include_version = true
+braces = "SameLine"
+line_length = 100
+tab_width = 2
+language = "C++"
+include_guard = "speculationrules_ffi_generated_h"
+includes = ["nsString.h", "nsTArray.h"]
+namespaces = ["mozilla", "dom"]
+after_includes = """
+namespace mozilla::dom {
+class PrefetchCandidates;
+class SpeculationRuleSet;
+}
+"""
+
+[export]
+include = ["ReferrerPolicy", "FfiPrefetchCandidate"]
+item_types = ["functions", "enums", "structs"]
+
+[export.rename]
+"FfiPrefetchCandidate" = "PrefetchCandidate"
+"PrefetchCandidates" = "mozilla::dom::PrefetchCandidates"
+"ReferrerPolicy" = "SpeculationRulesReferrerPolicy"
+"SpeculationRuleSet" = "mozilla::dom::SpeculationRuleSet"
+"ThinVec" = "nsTArray"
+
+[fn]
+rename_args = "GeckoCase"

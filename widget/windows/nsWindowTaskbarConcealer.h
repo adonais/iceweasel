@@ -5,8 +5,8 @@
 #ifndef WIDGET_WINDOWS_NSWINDOWTASKBARCONCEALER_H_
 #define WIDGET_WINDOWS_NSWINDOWTASKBARCONCEALER_H_
 
-#include "nsWindow.h"
 #include "mozilla/Maybe.h"
+#include "nsWindow.h"
 
 /**
  * nsWindow::TaskbarConcealer
@@ -25,7 +25,7 @@ class nsWindow::TaskbarConcealer {
 
   // To be called when a window is maximized. Harmlessly redundant with
   // OnFullscreenChanged.
-  static void OnWindowMaximized(nsWindow* aWin);
+  static void OnWindowMaximized(nsWindow* aWin, bool aForce = false);
 
   // To be called when the Gecko-fullscreen state of a window changes.
   static void OnFullscreenChanged(nsWindow* aWin, bool enteredFullscreen);

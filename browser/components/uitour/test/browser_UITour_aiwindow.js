@@ -24,7 +24,7 @@ add_UITour_task(async function test_showFirefoxAccountsForAIWindow() {
 
   gContentAPI.showFirefoxAccountsForAIWindow();
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => launchStub.callCount > 0,
     "Waiting for launchWindow to be called"
   );

@@ -177,7 +177,7 @@ class nsPageSequenceFrame final : public nsContainerFrame {
   // This is an index into our PrincipalChildList, effectively.
   uint32_t mCurrentSheetIdx = 0;
 
-  nsTArray<RefPtr<mozilla::dom::HTMLCanvasElement> > mCurrentCanvasList;
+  nsTArray<RefPtr<mozilla::dom::HTMLCanvasElement>> mCurrentCanvasList;
 
   bool mCalledBeginPage;
 

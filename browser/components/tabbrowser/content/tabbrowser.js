@@ -56,6 +56,11 @@
 
     let userContextId = gBrowser.selectedBrowser.getAttribute("usercontextid");
     if (!userContextId) {
+      // The container-creation panel can temporarily reveal this indicator to
+      // use it as its anchor; don't hide it again while that's the case.
+      if (window.gContainerCreation?.isPillPinned) {
+        return;
+      }
       replaceContainerClass("color", hbox, "");
       hbox.hidden = true;
       return;
@@ -197,7 +202,8 @@
           "moz-src:///browser/components/tabbrowser/AsyncTabSwitcher.sys.mjs",
         OpenInTabsUtils:
           "moz-src:///browser/components/tabbrowser/OpenInTabsUtils.sys.mjs",
-        PictureInPicture: "resource://gre/modules/PictureInPicture.sys.mjs",
+        PictureInPicture:
+          "moz-src:///toolkit/components/pictureinpicture/PictureInPicture.sys.mjs",
         SmartTabGroupingManager:
           "moz-src:///browser/components/tabbrowser/SmartTabGrouping.sys.mjs",
         SponsorProtection:
@@ -426,8 +432,6 @@
       "audioPlaybackStarted",
       "audioPlaybackStopped",
       "resumeMedia",
-      "mute",
-      "unmute",
       "blockedPopups",
       "lastURI",
       "purgeSessionHistory",
@@ -557,6 +561,35 @@
     }
 
     /**
+     * Records a tab interaction metric.
+     *
+     * @param {string} action - The action from TabMetrics.METRIC_ACTION.
+     * @param {TabMetricsContext} [metricsContext] - Context for the metric.
+     * @param {object} [options]
+     * @param {number} [options.tabCount] - Number of tabs involved. Defaults to the number of selected tabs.
+     */
+    recordTabMetrics(
+      action,
+      metricsContext,
+      { tabCount = this.selectedTabs.length } = {}
+    ) {
+      // We only report user triggered events and not decomposed events.
+      if (!metricsContext?.isUserTriggered || metricsContext.isDecomposed) {
+        return;
+      }
+
+      Glean.tab.actions[action].add(1);
+      Glean.tab.tabCount[action].add(tabCount);
+
+      Glean.tab.interaction.record({
+        action,
+        source: metricsContext.telemetrySource,
+        tab_count: tabCount,
+        layout: this.tabContainer.verticalMode ? "vertical" : "horizontal",
+      });
+    }
+
+    /**
      * Returns all tabs in the current window, including hidden tabs and tabs
      * in collapsed groups, but excluding closing tabs and the Firefox View tab.
      */
@@ -587,7 +620,11 @@
       return i;
     }
 
-    set selectedTab(val) {
+    setSelectedTab(val, metricsContext = null) {
+      if (this.selectedTab === val) {
+        return;
+      }
+
       if (
         gSharedTabWarning.willShowSharedTabWarning(val) ||
         document.documentElement.hasAttribute("window-modal-open") ||
@@ -597,6 +634,15 @@
       }
       // Update the tab
       this.tabbox.selectedTab = val;
+
+      this.recordTabMetrics(
+        this.TabMetrics.METRIC_ACTION.ACTIVATE,
+        metricsContext
+      );
+    }
+
+    set selectedTab(val) {
+      this.setSelectedTab(val);
     }
 
     get selectedTab() {
@@ -1099,17 +1145,25 @@
 
     #notifyPinnedStatus(
       aTab,
-      { telemetrySource = this.TabMetrics.METRIC_SOURCE.UNKNOWN } = {}
+      { metricsContext = this.TabMetrics.UNKNOWN_CONTEXT } = {}
     ) {
       // browsingContext is expected to not be defined on discarded tabs.
       if (aTab.linkedBrowser.browsingContext) {
         aTab.linkedBrowser.browsingContext.isAppTab = aTab.pinned;
       }
 
+      this.recordTabMetrics(
+        aTab.pinned
+          ? this.TabMetrics.METRIC_ACTION.PIN
+          : this.TabMetrics.METRIC_ACTION.UNPIN,
+        metricsContext,
+        { tabCount: 1 }
+      );
+
       let event = new CustomEvent(aTab.pinned ? "TabPinned" : "TabUnpinned", {
         bubbles: true,
         cancelable: false,
-        detail: { telemetrySource },
+        detail: { metricsContext },
       });
       aTab.dispatchEvent(event);
     }
@@ -1120,15 +1174,10 @@
      * @param {MozTabbrowserTab} aTab
      *   The tab to pin.
      * @param {object} [options]
-     * @param {string} [options.telemetrySource="unknown"]
-     *   The means by which the tab was pinned.
-     *   @see TabMetrics.METRIC_SOURCE for possible values.
-     *   Defaults to "unknown".
+     * @param {TabMetricsContext} [options.metricsContext]
+     *   The context for the operation for telemetry purposes, defaults to an unknown context.
      */
-    pinTab(
-      aTab,
-      { telemetrySource = this.TabMetrics.METRIC_SOURCE.UNKNOWN } = {}
-    ) {
+    pinTab(aTab, { metricsContext = this.TabMetrics.UNKNOWN_CONTEXT } = {}) {
       if (aTab.pinned || aTab == FirefoxViewHandler.tab) {
         return;
       }
@@ -1144,10 +1193,19 @@
 
       aTab.setAttribute("pinned", "true");
       this._updateTabBarForPinnedTabs();
-      this.#notifyPinnedStatus(aTab, { telemetrySource });
+      this.#notifyPinnedStatus(aTab, { metricsContext });
     }
 
-    unpinTab(aTab) {
+    /**
+     * Unpin a tab.
+     *
+     * @param {MozTabbrowserTab} aTab
+     *   The tab to pin.
+     * @param {object} [options]
+     * @param {TabMetricsContext} [options.metricsContext]
+     *   The context for the operation for telemetry purposes, defaults to an unknown context.
+     */
+    unpinTab(aTab, { metricsContext = this.TabMetrics.UNKNOWN_CONTEXT } = {}) {
       if (!aTab.pinned) {
         return;
       }
@@ -1163,7 +1221,7 @@
       aTab.style.marginInlineStart = "";
       aTab._pinnedUnscrollable = false;
       this._updateTabBarForPinnedTabs();
-      this.#notifyPinnedStatus(aTab);
+      this.#notifyPinnedStatus(aTab, { metricsContext });
     }
 
     previewTab(aTab, aCallback) {
@@ -3764,16 +3822,8 @@
      * @param {boolean} [options.isAdoptingGroup]
      *   Whether the tab group was created because a tab group with the same
      *   properties is being adopted from a different window.
-     * @param {boolean} [options.isUserTriggered]
-     *   Should be true if this group is being created in response to an
-     *   explicit request from the user (as opposed to a group being created
-     *   for technical reasons, such as when an already existing group
-     *   switches windows).
-     *   Causes the group create UI to be displayed and telemetry events to be fired.
-     * @param {string} [options.telemetryUserCreateSource]
-     *   The means by which the tab group was created.
-     *   @see TabMetrics.METRIC_SOURCE for possible values.
-     *   Defaults to "unknown".
+     * @param {TabMetricsContext} [options.metricsContext]
+     *   The context for the operation for telemetry purposes. Defaults to an unknown context.
      */
     addTabGroup(
       tabsAndSplitViews,
@@ -3783,8 +3833,7 @@
         label = "",
         insertBefore = null,
         isAdoptingGroup = false,
-        isUserTriggered = false,
-        telemetryUserCreateSource = "unknown",
+        metricsContext = this.TabMetrics.UNKNOWN_CONTEXT,
       } = {}
     ) {
       if (
@@ -3822,7 +3871,7 @@
         group,
         insertBefore?.group ?? insertBefore
       );
-      group.addTabs(tabsAndSplitViews);
+      group.addTabs(tabsAndSplitViews, metricsContext);
 
       // Bail out if the group is empty at this point. This can happen if all
       // provided tabs are pinned and therefore cannot be grouped.
@@ -3831,13 +3880,11 @@
         return null;
       }
 
-      if (isUserTriggered) {
+      if (metricsContext.isUserTriggered) {
         group.dispatchEvent(
           new CustomEvent("TabGroupCreateByUser", {
             bubbles: true,
-            detail: {
-              telemetryUserCreateSource,
-            },
+            detail: { metricsContext },
           })
         );
       }
@@ -3863,23 +3910,8 @@
      *   The tab group to remove.
      * @param {object} [options]
      *   Options to use when removing tabs. @see removeTabs for more info.
-     * @param {boolean} [options.isUserTriggered=false]
-     *   Should be true if this group is being removed by an explicit
-     *   request from the user (as opposed to a group being removed
-     *   for technical reasons, such as when an already existing group
-     *   switches windows). This causes telemetry events to fire.
-     * @param {string} [options.telemetrySource="unknown"]
-     *   The means by which the tab group was removed.
-     *   @see TabMetrics.METRIC_SOURCE for possible values.
-     *   Defaults to "unknown".
      */
-    async removeTabGroup(
-      group,
-      options = {
-        isUserTriggered: false,
-        telemetrySource: this.TabMetrics.METRIC_SOURCE.UNKNOWN,
-      }
-    ) {
+    async removeTabGroup(group, options = {}) {
       if (this.tabGroupMenu.panel.state != "closed") {
         this.tabGroupMenu.panel.hidePopup(options.animate);
       }
@@ -3913,8 +3945,8 @@
           bubbles: true,
           detail: {
             skipSessionStore: options.skipSessionStore,
-            isUserTriggered: options.isUserTriggered,
-            telemetrySource: options.telemetrySource,
+            metricsContext:
+              options.metricsContext ?? this.TabMetrics.UNKNOWN_CONTEXT,
           },
         })
       );
@@ -4676,18 +4708,32 @@
       return tabs;
     }
 
-    moveTabsToStart(contextTab) {
+    moveTabsToStart(contextTab, { metricsContext } = {}) {
       let tabs = contextTab.multiselected ? this.selectedTabs : [contextTab];
+      this.recordTabMetrics(
+        this.TabMetrics.METRIC_ACTION.MOVE,
+        metricsContext,
+        { tabCount: tabs.length }
+      );
       // Walk the array in reverse order so the tabs are kept in order.
       for (let i = tabs.length - 1; i >= 0; i--) {
-        this.moveTabToStart(tabs[i]);
+        this.moveTabToStart(tabs[i], {
+          metricsContext: this.TabMetrics.decomposedContext(metricsContext),
+        });
       }
     }
 
-    moveTabsToEnd(contextTab) {
+    moveTabsToEnd(contextTab, { metricsContext } = {}) {
       let tabs = contextTab.multiselected ? this.selectedTabs : [contextTab];
+      this.recordTabMetrics(
+        this.TabMetrics.METRIC_ACTION.MOVE,
+        metricsContext,
+        { tabCount: tabs.length }
+      );
       for (let tab of tabs) {
-        this.moveTabToEnd(tab);
+        this.moveTabToEnd(tab, {
+          metricsContext: this.TabMetrics.decomposedContext(metricsContext),
+        });
       }
     }
 
@@ -5240,7 +5286,7 @@
       this.removeTabs(tabsToRemove, aParams);
     }
 
-    removeMultiSelectedTabs({ isUserTriggered, telemetrySource } = {}) {
+    removeMultiSelectedTabs({ metricsContext, excludePinnedTabs } = {}) {
       let selectedTabs = this.selectedTabs;
       if (
         !this.warnAboutClosingTabs(
@@ -5251,7 +5297,20 @@
         return;
       }
 
-      this.removeTabs(selectedTabs, { isUserTriggered, telemetrySource });
+      if (excludePinnedTabs) {
+        selectedTabs = this.selectedTabs.filter(tab => !tab.pinned);
+        this.removeTabs(selectedTabs, { metricsContext });
+        this.clearMultiSelectedTabs();
+        if (
+          this.selectedTab.pinned &&
+          gBrowser.visibleTabs.length > gBrowser.pinnedTabCount
+        ) {
+          // Select first unpinned tab if the selected tab is pinned.
+          gBrowser.tabContainer.selectedIndex = gBrowser.pinnedTabCount;
+        }
+      } else {
+        this.removeTabs(selectedTabs, { metricsContext });
+      }
     }
 
     /**
@@ -5283,6 +5342,8 @@
      *   Skips actually removing the tabs. The beforeunload handlers still run.
      * @param {boolean} options.skipSessionStore
      *   If true, don't record the closed tabs in SessionStore.
+     * @param {TabMetricsContext} options.metricsContext
+     *   The context for the operation for telemetry purposes.
      * @returns {_startRemoveTabsReturnValue}
      */
     _startRemoveTabs(
@@ -5295,8 +5356,7 @@
         skipPermitUnload,
         skipRemoves,
         skipSessionStore,
-        isUserTriggered,
-        telemetrySource,
+        metricsContext,
       }
     ) {
       // Note: if you change any of the unload algorithm, consider also
@@ -5379,8 +5439,7 @@
             prewarmed: true,
             skipPermitUnload,
             skipSessionStore,
-            isUserTriggered,
-            telemetrySource,
+            metricsContext,
           });
         }
       }
@@ -5495,12 +5554,8 @@
      * @param {boolean} [options.skipGroupCheck]
      *   Skip separate processing of whole tab groups from the set of tabs.
      *   Used by removeTabGroup.
-     * @param {boolean} [options.isUserTriggered]
-     *   Whether or not the removal is the direct result of a user action.
-     *   Used for telemetry.
-     * @param {string} [options.telemetrySource]
-     *   The system, surface, or control the user used to take this action.
-     *   @see TabMetrics.METRIC_SOURCE for possible values.
+     * @param {TabMetricsContext} [options.metricsContext]
+     *   The context for the operation for telemetry purposes
      */
     removeTabs(
       tabs,
@@ -5510,8 +5565,7 @@
         skipPermitUnload = false,
         skipSessionStore = false,
         skipGroupCheck = false,
-        isUserTriggered = false,
-        telemetrySource,
+        metricsContext,
       } = {}
     ) {
       // When 'closeWindowWithLastTab' pref is enabled, closing all tabs
@@ -5533,21 +5587,29 @@
       }
       this.#clearMultiSelectionLocked = true;
 
+      let closedTabCount = tabs.length;
+
+      // Tracks a snapshot of each whole-group's tabs so we can decrement
+      // closedTabCount for any whose beforeunload handler cancels the close.
+      let groupTabsToClose = [];
+      let groupRemovalPromises = [];
+
       // Guarantee that #clearMultiSelectionLocked lock gets released.
       try {
         // If selection includes entire groups, we might want to save them
         if (!skipGroupCheck) {
           let [groups, leftoverTabs] = this.#separateWholeGroups(tabs);
-          groups.forEach(group => {
+          groupRemovalPromises = groups.map(group => {
+            groupTabsToClose.push(...group.tabs);
             if (!skipSessionStore) {
               group.save();
             }
-            this.removeTabGroup(group, {
+
+            return this.removeTabGroup(group, {
               animate,
               skipSessionStore,
               skipPermitUnload,
-              isUserTriggered,
-              telemetrySource,
+              metricsContext: this.TabMetrics.decomposedContext(metricsContext),
             });
           });
           tabs = leftoverTabs;
@@ -5560,18 +5622,20 @@
             skipPermitUnload,
             skipRemoves: false,
             skipSessionStore,
-            isUserTriggered,
-            telemetrySource,
+            metricsContext: this.TabMetrics.decomposedContext(metricsContext),
           });
 
-        // Wait for all the beforeunload events to have been processed by content processes.
-        // The permitUnload() promise will, alas, not call its resolution
-        // callbacks after the browser window the promise lives in has closed,
-        // so we have to check for that case explicitly.
+        // Wait for all the beforeunload events to have been processed by content
+        // processes, including those run inside group removals. The permitUnload()
+        // promise will, alas, not call its resolution callbacks after the browser
+        // window the promise lives in has closed, so we have to check for that
+        // case explicitly.
         let done = false;
-        beforeUnloadComplete.then(() => {
-          done = true;
-        });
+        Promise.all([...groupRemovalPromises, beforeUnloadComplete]).then(
+          () => {
+            done = true;
+          }
+        );
         Services.tm.spinEventLoopUntilOrQuit(
           "tabbrowser.js:removeTabs",
           () => done || window.closed
@@ -5580,13 +5644,20 @@
           return;
         }
 
+        // Decrement for any group tabs whose beforeunload handler cancelled the
+        // close — those will still have tab.closing == false.
+        for (let tab of groupTabsToClose) {
+          if (!tab.closing) {
+            closedTabCount--;
+          }
+        }
+
         let aParams = {
           animate,
           prewarmed: true,
           skipPermitUnload,
           skipSessionStore,
-          isUserTriggered,
-          telemetrySource,
+          metricsContext: this.TabMetrics.decomposedContext(metricsContext),
         };
 
         // Now run again sequentially the beforeunload listeners that will result in a prompt.
@@ -5595,6 +5666,7 @@
           if (!tab.closing) {
             // If we abort the closing of the tab.
             tab._closedInMultiselection = false;
+            closedTabCount -= 1;
           }
         }
 
@@ -5602,6 +5674,17 @@
         // if appropriate, lastly.
         if (lastToClose) {
           this.removeTab(lastToClose, aParams);
+          if (!lastToClose.closing) {
+            closedTabCount -= 1;
+          }
+        }
+
+        if (closedTabCount > 0) {
+          this.recordTabMetrics(
+            this.TabMetrics.METRIC_ACTION.CLOSE,
+            metricsContext,
+            { tabCount: closedTabCount }
+          );
         }
       } catch (e) {
         console.error(e);
@@ -5624,8 +5707,7 @@
         closeWindowWithLastTab,
         prewarmed,
         skipSessionStore,
-        isUserTriggered,
-        telemetrySource,
+        metricsContext,
       } = {}
     ) {
       if (UserInteraction.running("browser.tabs.opening", window)) {
@@ -5662,8 +5744,7 @@
           closeWindowWithLastTab,
           prewarmed,
           skipSessionStore,
-          isUserTriggered,
-          telemetrySource,
+          metricsContext,
         })
       ) {
         Glean.browserTabclose.timeAnim.cancel(aTab._closeTimeAnimTimerId);
@@ -5770,8 +5851,7 @@
         skipPermitUnload,
         prewarmed,
         skipSessionStore = false,
-        isUserTriggered,
-        telemetrySource,
+        metricsContext = this.TabMetrics.UNKNOWN_CONTEXT,
       } = {}
     ) {
       if (aTab.closing || this.#windowIsClosing) {
@@ -5888,9 +5968,10 @@
 
       // Mute audio immediately to improve perceived speed of tab closure.
       if (!adoptedByTab && aTab.hasAttribute("soundplaying")) {
-        // Don't persist the muted state as this wasn't a user action.
-        // This lets undo-close-tab return it to an unmuted state.
-        aTab.linkedBrowser.mute(true);
+        // Deliberately leave tab.muted alone: that attribute is what records a
+        // real mute and what session restore persists, so undo-close-tab
+        // returns the tab to unmuted.
+        aTab.linkedBrowser.browsingContext?.mediaController?.mute();
       }
 
       aTab.closing = true;
@@ -5926,11 +6007,18 @@
         detail: {
           adoptedBy: adoptedByTab,
           skipSessionStore,
-          isUserTriggered,
-          telemetrySource,
+          metricsContext,
         },
       });
       aTab.dispatchEvent(evt);
+
+      this.recordTabMetrics(
+        this.TabMetrics.METRIC_ACTION.CLOSE,
+        metricsContext,
+        {
+          tabCount: 1,
+        }
+      );
 
       if (this.tabs.length == 2) {
         // We're closing one of our two open tabs, inform the other tab that its
@@ -6194,7 +6282,7 @@
           // is visible, so as to not do this in private browsing mode or if the user
           // has removed the button from their toolbar (bug 1946432, bug 1989429)
           let firefoxViewAvailable =
-            FirefoxViewHandler.tab &&
+            FirefoxViewHandler.tab ||
             FirefoxViewHandler.button?.checkVisibility({
               checkVisibilityCSS: true,
               visibilityProperty: true,
@@ -6290,6 +6378,19 @@
         this.visibleTabs,
         tab => !excludeTabs.has(tab)
       );
+
+      if (Services.prefs.getBoolPref("browser.tabs.selectMRUOnClose", false)) {
+        let mruTab = remainingTabs
+          .filter(t => t !== aTab)
+          .reduce(
+            (best, t) =>
+              !best || t.lastAccessed > best.lastAccessed ? t : best,
+            null
+          );
+        if (mruTab) {
+          return mruTab;
+        }
+      }
 
       let tab = this.tabContainer.findNextTab(aTab, {
         direction: 1,
@@ -6417,7 +6518,7 @@
         aOurTab.muteReason = aOtherTab.muteReason;
         // For non-lazy tabs, mute() must be called.
         if (aOurTab.linkedPanel) {
-          ourBrowser.mute();
+          ourBrowser.browsingContext?.mediaController?.mute();
         }
         modifiedAttrs.push("muted");
       }
@@ -6791,7 +6892,7 @@
       }
     }
 
-    selectTabAtIndex(aIndex, aEvent) {
+    selectTabAtIndex(aIndex, { event, metricsContext } = {}) {
       let tabs = this.visibleTabs;
 
       // count backwards for aIndex < 0
@@ -6806,11 +6907,11 @@
         aIndex = tabs.length - 1;
       }
 
-      this.selectedTab = tabs[aIndex];
+      this.setSelectedTab(tabs[aIndex], metricsContext);
 
-      if (aEvent) {
-        aEvent.preventDefault();
-        aEvent.stopPropagation();
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
       }
     }
 
@@ -6870,6 +6971,12 @@
       if (this.tabs.length == elements.length) {
         return null;
       }
+
+      this.recordTabMetrics(
+        this.TabMetrics.METRIC_ACTION.DETACH,
+        aOptions.metricsContext,
+        { tabCount: elements.length }
+      );
 
       if (elements.length == 1) {
         return this.replaceTabWithWindow(elements[0], aOptions);
@@ -6939,8 +7046,16 @@
      *
      * @param {MozTabbrowserTabGroup} group
      *   The tab group to move.
+     * @param {object} [options]
+     * @param {TabMetricsContext} [options.metricsContext]
+     *   The context for the operation for telemetry purposes.
      */
-    replaceGroupWithWindow(group) {
+    replaceGroupWithWindow(group, { metricsContext } = {}) {
+      this.recordTabMetrics(
+        this.TabMetrics.METRIC_ACTION.DETACH,
+        metricsContext,
+        { tabCount: group.tabs.length }
+      );
       return this.replaceTabWithWindow(group);
     }
 
@@ -7019,25 +7134,12 @@
      *   any possibility of entering a tab group. For example, setting `true`
      *   ensures that a pinned tab will not accidentally be placed inside of
      *   a tab group, since pinned tabs are presently not allowed in tab groups.
-     * @param {boolean} [options.isUserTriggered=false]
-     *   Should be true if there was an explicit action/request from the user
-     *   (as opposed to some action being taken internally or for technical
-     *   bookkeeping reasons alone) to move the tab. This causes telemetry
-     *   events to fire.
-     * @param {string} [options.telemetrySource="unknown"]
-     *   The system, surface, or control the user used to move the tab.
-     *   @see TabMetrics.METRIC_SOURCE for possible values.
-     *   Defaults to "unknown".
+     * @param {TabMetricsContext} [options.metricsContext]
+     *   The context for the operation for telemetry purposes.
      */
     moveTabTo(
       element,
-      {
-        elementIndex,
-        tabIndex,
-        forceUngrouped = false,
-        isUserTriggered = false,
-        telemetrySource = this.TabMetrics.METRIC_SOURCE.UNKNOWN,
-      } = {}
+      { elementIndex, tabIndex, forceUngrouped = false, metricsContext } = {}
     ) {
       if (typeof elementIndex == "number") {
         tabIndex = this.#elementIndexToTabIndex(elementIndex);
@@ -7110,44 +7212,52 @@
             this.tabContainer.insertBefore(element, neighbor);
           }
         },
-        { isUserTriggered, telemetrySource }
+        { metricsContext }
       );
     }
 
     /**
      * @param {MozTabbrowserTab|MozTabbrowserTabGroup} element
      * @param {MozTabbrowserTab|MozTabbrowserTabGroup} targetElement
-     * @param {TabMetricsContext} [metricsContext]
+     * @param {object} [options]
+     * @param {TabMetricsContext} [options.metricsContext]
+     *   The context for the operation for telemetry purposes.
      */
-    moveTabBefore(element, targetElement, metricsContext) {
-      this.#moveTabNextTo(element, targetElement, true, metricsContext);
+    moveTabBefore(element, targetElement, { metricsContext } = {}) {
+      this.#moveTabNextTo(element, targetElement, true, { metricsContext });
     }
 
     /**
      * @param {MozTabbrowserTab|MozTabbrowserTabGroup[]} elements
      * @param {MozTabbrowserTab|MozTabbrowserTabGroup} targetElement
-     * @param {TabMetricsContext} [metricsContext]
+     * @param {object} [options]
+     * @param {TabMetricsContext} [options.metricsContext]
+     *   The context for the operation for telemetry purposes.
      */
-    moveTabsBefore(elements, targetElement, metricsContext) {
-      this.#moveTabsNextTo(elements, targetElement, true, metricsContext);
+    moveTabsBefore(elements, targetElement, { metricsContext } = {}) {
+      this.#moveTabsNextTo(elements, targetElement, true, { metricsContext });
     }
 
     /**
      * @param {MozTabbrowserTab|MozTabbrowserTabGroup} element
      * @param {MozTabbrowserTab|MozTabbrowserTabGroup} targetElement
-     * @param {TabMetricsContext} [metricsContext]
+     * @param {object} [options]
+     * @param {TabMetricsContext} [options.metricsContext]
+     *   The context for the operation for telemetry purposes.
      */
-    moveTabAfter(element, targetElement, metricsContext) {
-      this.#moveTabNextTo(element, targetElement, false, metricsContext);
+    moveTabAfter(element, targetElement, { metricsContext } = {}) {
+      this.#moveTabNextTo(element, targetElement, false, { metricsContext });
     }
 
     /**
      * @param {MozTabbrowserTab|MozTabbrowserTabGroup[]} elements
      * @param {MozTabbrowserTab|MozTabbrowserTabGroup} targetElement
-     * @param {TabMetricsContext} [metricsContext]
+     * @param {object} [options]
+     * @param {TabMetricsContext} [options.metricsContext]
+     *   The context for the operation for telemetry purposes.
      */
-    moveTabsAfter(elements, targetElement, metricsContext) {
-      this.#moveTabsNextTo(elements, targetElement, false, metricsContext);
+    moveTabsAfter(elements, targetElement, { metricsContext } = {}) {
+      this.#moveTabsNextTo(elements, targetElement, false, { metricsContext });
     }
 
     /**
@@ -7156,9 +7266,16 @@
      *   stand-in for its group.
      * @param {MozTabbrowserTab|MozTabbrowserTabGroup} targetElement
      * @param {boolean} [moveBefore=false]
-     * @param {TabMetricsContext} [metricsContext]
+     * @param {object} [options]
+     * @param {TabMetricsContext} [options.metricsContext]
+     *   The context for the operation for telemetry purposes.
      */
-    #moveTabNextTo(element, targetElement, moveBefore = false, metricsContext) {
+    #moveTabNextTo(
+      element,
+      targetElement,
+      moveBefore = false,
+      { metricsContext } = {}
+    ) {
       if (this.isTabGroupLabel(targetElement)) {
         targetElement = targetElement.group;
         if (!moveBefore && !targetElement.collapsed) {
@@ -7219,7 +7336,7 @@
             getContainer().appendChild(element);
           }
         },
-        metricsContext
+        { metricsContext }
       );
     }
 
@@ -7227,27 +7344,29 @@
      * @param {MozTabbrowserTab[]} elements
      * @param {MozTabbrowserTab|MozTabbrowserTabGroup} targetElement
      * @param {boolean} [moveBefore=false]
-     * @param {TabMetricsContext} [metricsContext]
+     * @param {object} [options]
+     * @param {TabMetricsContext} [options.metricsContext]
+     *   The context for the operation for telemetry purposes.
      */
     #moveTabsNextTo(
       elements,
       targetElement,
       moveBefore = false,
-      metricsContext
+      { metricsContext } = {}
     ) {
-      this.#moveTabNextTo(
-        elements[0],
-        targetElement,
-        moveBefore,
-        metricsContext
+      this.recordTabMetrics(
+        this.TabMetrics.METRIC_ACTION.MOVE,
+        metricsContext,
+        { tabCount: elements.length }
       );
+
+      this.#moveTabNextTo(elements[0], targetElement, moveBefore, {
+        metricsContext: this.TabMetrics.decomposedContext(metricsContext),
+      });
       for (let i = 1; i < elements.length; i++) {
-        this.#moveTabNextTo(
-          elements[i],
-          elements[i - 1],
-          false,
-          metricsContext
-        );
+        this.#moveTabNextTo(elements[i], elements[i - 1], false, {
+          metricsContext: this.TabMetrics.decomposedContext(metricsContext),
+        });
       }
     }
 
@@ -7287,9 +7406,11 @@
      *
      * @param {MozTabbrowserTab} aTab
      * @param {MozTabbrowserTabGroup} aGroup
-     * @param {TabMetricsContext} [metricsContext]
+     * @param {object} [options]
+     * @param {TabMetricsContext} [options.metricsContext]
+     *   The context for the operation for telemetry purposes.
      */
-    moveTabToExistingGroup(aTab, aGroup, metricsContext) {
+    moveTabToExistingGroup(aTab, aGroup, { metricsContext } = {}) {
       if (!this.isTab(aTab)) {
         throw new Error("Can only move a tab into a tab group");
       }
@@ -7304,18 +7425,16 @@
         this.#handleTabMove(
           aTab.splitview,
           () => aGroup.appendChild(aTab.splitview),
-          metricsContext
+          { metricsContext }
         );
         for (const splitViewTab of splitViewTabs) {
           this.removeFromMultiSelectedTabs(splitViewTab);
           this.tabContainer._notifyBackgroundTab(splitViewTab);
         }
       } else {
-        this.#handleTabMove(
-          aTab,
-          () => aGroup.appendChild(aTab),
-          metricsContext
-        );
+        this.#handleTabMove(aTab, () => aGroup.appendChild(aTab), {
+          metricsContext,
+        });
         this.removeFromMultiSelectedTabs(aTab);
         this.tabContainer._notifyBackgroundTab(aTab);
       }
@@ -7325,9 +7444,15 @@
      *
      * @param {MozSplitViewWrapper} aSplitView
      * @param {MozTabbrowserTabGroup} aGroup
-     * @param {TabMetricsContext} [metricsContext]
+     * @param {object} [options]
+     * @param {TabMetricsContext} [options.metricsContext]
+     *   The context for the operation for telemetry purposes.
      */
-    moveSplitViewToExistingGroup(aSplitView, aGroup, metricsContext = null) {
+    moveSplitViewToExistingGroup(
+      aSplitView,
+      aGroup,
+      { metricsContext = null } = {}
+    ) {
       if (!this.isSplitViewWrapper(aSplitView)) {
         throw new Error("Can only move a split view into a tab group");
       }
@@ -7336,11 +7461,9 @@
       }
 
       let splitViewTabs = aSplitView.tabs;
-      this.#handleTabMove(
-        aSplitView,
-        () => aGroup.appendChild(aSplitView),
-        metricsContext
-      );
+      this.#handleTabMove(aSplitView, () => aGroup.appendChild(aSplitView), {
+        metricsContext,
+      });
       for (const splitViewTab of splitViewTabs) {
         this.removeFromMultiSelectedTabs(splitViewTab);
         this.tabContainer._notifyBackgroundTab(splitViewTab);
@@ -7383,9 +7506,16 @@
      * @param {MozTabbrowserTab} tab
      * @param {TabMoveState} [previousTabState]
      * @param {TabMoveState} [currentTabState]
-     * @param {TabMetricsContext} [metricsContext]
+     * @param {object} [options]
+     * @param {TabMetricsContext} [options.metricsContext]
+     *   The context for the operation for telemetry purposes.
      */
-    #notifyOnTabMove(tab, previousTabState, currentTabState, metricsContext) {
+    #notifyOnTabMove(
+      tab,
+      previousTabState,
+      currentTabState,
+      { metricsContext } = {}
+    ) {
       if (!this.isTab(tab) || !previousTabState || !currentTabState) {
         return;
       }
@@ -7404,27 +7534,32 @@
             detail: {
               previousTabState,
               currentTabState,
-              isUserTriggered: metricsContext?.isUserTriggered ?? false,
-              telemetrySource:
-                metricsContext?.telemetrySource ??
-                this.TabMetrics.METRIC_SOURCE.UNKNOWN,
+              metricsContext: metricsContext ?? this.TabMetrics.UNKNOWN_CONTEXT,
             },
           })
+        );
+
+        this.recordTabMetrics(
+          this.TabMetrics.METRIC_ACTION.MOVE,
+          metricsContext,
+          { tabCount: 1 }
         );
       }
     }
 
     /** public API to the below private method */
-    handleTabMove(element, moveActionCallback, metricsContext) {
-      this.#handleTabMove(element, moveActionCallback, metricsContext);
+    handleTabMove(element, moveActionCallback, { metricsContext } = {}) {
+      this.#handleTabMove(element, moveActionCallback, { metricsContext });
     }
 
     /**
      * @param {MozTabbrowserTab|MozTabbrowserTabGroup|MozTabSplitViewWrapper} element
      * @param {function():void} moveActionCallback
-     * @param {TabMetricsContext} [metricsContext]
+     * @param {object} [options]
+     * @param {TabMetricsContext} [options.metricsContext]
+     *   The context for the operation for telemetry purposes.
      */
-    #handleTabMove(element, moveActionCallback, metricsContext) {
+    #handleTabMove(element, moveActionCallback, { metricsContext } = {}) {
       let tabs;
       // TODO bug 2024173: consider removing element.splitview check.
       if (this.isTab(element) && element.splitview?.shouldMoveAllTabsAtOnce) {
@@ -7470,12 +7605,9 @@
         }
 
         let currentTabState = this.#getTabMoveState(tab);
-        this.#notifyOnTabMove(
-          tab,
-          previousTabStates[ii],
-          currentTabState,
-          metricsContext
-        );
+        this.#notifyOnTabMove(tab, previousTabStates[ii], currentTabState, {
+          metricsContext,
+        });
       }
 
       let currentFirst = this.#getTabMoveState(tabs[0]);
@@ -7557,7 +7689,7 @@
       return newTab;
     }
 
-    moveTabForward() {
+    moveTabForward({ metricsContext } = {}) {
       let { selectedTab } = this;
       let selectedTabOrSplitview = selectedTab.splitview || selectedTab;
       let nextTab = this.tabContainer.findNextTab(
@@ -7569,25 +7701,29 @@
       );
       let nextTabOrSplitview = nextTab?.splitview || nextTab;
       if (nextTab) {
-        this.#handleTabMove(selectedTab, () => {
-          if (!selectedTab.group && nextTab.group) {
-            if (nextTabOrSplitview.group.collapsed) {
-              // Skip over collapsed tab group.
-              nextTabOrSplitview.group.after(selectedTabOrSplitview);
+        this.#handleTabMove(
+          selectedTab,
+          () => {
+            if (!selectedTab.group && nextTab.group) {
+              if (nextTabOrSplitview.group.collapsed) {
+                // Skip over collapsed tab group.
+                nextTabOrSplitview.group.after(selectedTabOrSplitview);
+              } else {
+                // Enter first position of tab group.
+                nextTabOrSplitview.group.insertBefore(
+                  selectedTabOrSplitview,
+                  nextTabOrSplitview
+                );
+              }
+            } else if (selectedTab.group != nextTab.group) {
+              // Standalone tab after tab group.
+              selectedTab.group.after(selectedTabOrSplitview);
             } else {
-              // Enter first position of tab group.
-              nextTabOrSplitview.group.insertBefore(
-                selectedTabOrSplitview,
-                nextTabOrSplitview
-              );
+              nextTabOrSplitview.after(selectedTabOrSplitview);
             }
-          } else if (selectedTab.group != nextTab.group) {
-            // Standalone tab after tab group.
-            selectedTab.group.after(selectedTabOrSplitview);
-          } else {
-            nextTabOrSplitview.after(selectedTabOrSplitview);
-          }
-        });
+          },
+          { metricsContext }
+        );
       } else if (selectedTab.group) {
         // selectedTab is the last tab and is grouped.
         // remove it from its group.
@@ -7595,7 +7731,7 @@
       }
     }
 
-    moveTabBackward() {
+    moveTabBackward({ metricsContext } = {}) {
       let { selectedTab } = this;
       let selectedTabOrSplitview = selectedTab.splitview || selectedTab;
       let previousTab = this.tabContainer.findNextTab(
@@ -7607,22 +7743,26 @@
       );
       let previousTabOrSplitview = previousTab?.splitview || previousTab;
       if (previousTab) {
-        this.#handleTabMove(selectedTab, () => {
-          if (!selectedTab.group && previousTab.group) {
-            if (previousTab.group.collapsed) {
-              // Skip over collapsed tab group.
-              previousTab.group.before(selectedTabOrSplitview);
+        this.#handleTabMove(
+          selectedTab,
+          () => {
+            if (!selectedTab.group && previousTab.group) {
+              if (previousTab.group.collapsed) {
+                // Skip over collapsed tab group.
+                previousTab.group.before(selectedTabOrSplitview);
+              } else {
+                // Enter last position of tab group.
+                previousTab.group.append(selectedTabOrSplitview);
+              }
+            } else if (selectedTab.group != previousTab.group) {
+              // Standalone tab before tab group.
+              selectedTab.group.before(selectedTabOrSplitview);
             } else {
-              // Enter last position of tab group.
-              previousTab.group.append(selectedTabOrSplitview);
+              previousTabOrSplitview.before(selectedTabOrSplitview);
             }
-          } else if (selectedTab.group != previousTab.group) {
-            // Standalone tab before tab group.
-            selectedTab.group.before(selectedTabOrSplitview);
-          } else {
-            previousTabOrSplitview.before(selectedTabOrSplitview);
-          }
-        });
+          },
+          { metricsContext }
+        );
       } else if (selectedTab.group) {
         // selectedTab is the first tab and is grouped.
         // remove it from its group.
@@ -7630,14 +7770,19 @@
       }
     }
 
-    moveTabToStart(aTab = this.selectedTab) {
-      this.moveTabTo(aTab, { tabIndex: 0, forceUngrouped: true });
+    moveTabToStart(aTab = this.selectedTab, { metricsContext } = {}) {
+      this.moveTabTo(aTab, {
+        tabIndex: 0,
+        forceUngrouped: true,
+        metricsContext,
+      });
     }
 
-    moveTabToEnd(aTab = this.selectedTab) {
+    moveTabToEnd(aTab = this.selectedTab, { metricsContext } = {}) {
       this.moveTabTo(aTab, {
         tabIndex: this.tabs.length - 1,
         forceUngrouped: true,
+        metricsContext,
       });
     }
 
@@ -7992,20 +8137,32 @@
       }
     }
 
-    pinMultiSelectedTabs() {
-      for (let tab of this.selectedTabs) {
-        this.pinTab(tab);
+    pinMultiSelectedTabs({
+      metricsContext = this.TabMetrics.UNKNOWN_CONTEXT,
+    } = {}) {
+      let tabs = this.selectedTabs;
+      this.recordTabMetrics(this.TabMetrics.METRIC_ACTION.PIN, metricsContext, {
+        tabCount: tabs.length,
+      });
+      for (let tab of tabs) {
+        this.pinTab(tab, this.TabMetrics.decomposedContext(metricsContext));
       }
     }
 
-    unpinMultiSelectedTabs() {
+    unpinMultiSelectedTabs({ metricsContext } = {}) {
       // The selectedTabs getter returns the tabs
       // in visual order. We need to unpin in reverse
       // order to maintain visual order.
       let selectedTabs = this.selectedTabs;
+      this.recordTabMetrics(
+        this.TabMetrics.METRIC_ACTION.UNPIN,
+        metricsContext,
+        { tabCount: selectedTabs.length }
+      );
       for (let i = selectedTabs.length - 1; i >= 0; i--) {
-        let tab = selectedTabs[i];
-        this.unpinTab(tab);
+        this.unpinTab(selectedTabs[i], {
+          metricsContext: this.TabMetrics.decomposedContext(metricsContext),
+        });
       }
     }
 
@@ -8113,18 +8270,54 @@
           this._maybeRequestReplyFromRemoteContent(aEvent);
           return;
         case ShortcutUtils.MOVE_TAB_BACKWARD:
-          this.moveTabBackward();
+          this.moveTabBackward({
+            metricsContext: this.TabMetrics.userTriggeredContext(
+              this.TabMetrics.METRIC_SOURCE.KEYBOARD
+            ),
+          });
           aEvent.preventDefault();
           return;
         case ShortcutUtils.MOVE_TAB_FORWARD:
-          this.moveTabForward();
+          this.moveTabForward({
+            metricsContext: this.TabMetrics.userTriggeredContext(
+              this.TabMetrics.METRIC_SOURCE.KEYBOARD
+            ),
+          });
           aEvent.preventDefault();
           return;
+        case ShortcutUtils.MOVE_TAB_TO_START:
+        case ShortcutUtils.MOVE_TAB_TO_END: {
+          let userIsInputtingText =
+            window.windowUtils.IMEStatus !=
+            Ci.nsIDOMWindowUtils.IME_STATUS_DISABLED;
+          if (aEvent.defaultPrevented || userIsInputtingText) {
+            return;
+          }
+          if (
+            ShortcutUtils.getSystemActionForEvent(aEvent) ==
+            ShortcutUtils.MOVE_TAB_TO_START
+          ) {
+            this.moveTabToStart();
+          } else {
+            this.moveTabToEnd();
+          }
+          aEvent.preventDefault();
+          return;
+        }
         case ShortcutUtils.CLOSE_TAB:
           if (gBrowser.multiSelectedTabsCount) {
-            gBrowser.removeMultiSelectedTabs();
+            gBrowser.removeMultiSelectedTabs({
+              metricsContext: this.TabMetrics.userTriggeredContext(
+                this.TabMetrics.METRIC_SOURCE.KEYBOARD
+              ),
+            });
           } else if (!this.selectedTab.pinned) {
-            this.removeCurrentTab({ animate: true });
+            this.removeCurrentTab({
+              animate: true,
+              metricsContext: this.TabMetrics.userTriggeredContext(
+                this.TabMetrics.METRIC_SOURCE.KEYBOARD
+              ),
+            });
           }
           aEvent.preventDefault();
       }
@@ -8227,13 +8420,21 @@
 
         case ShortcutUtils.NEXT_TAB:
           if (AppConstants.platform == "macosx") {
-            this.tabContainer.advanceSelectedTab(DIRECTION_FORWARD, true);
+            this.tabContainer.advanceSelectedTab(
+              DIRECTION_FORWARD,
+              true,
+              aEvent
+            );
             aEvent.preventDefault();
           }
           break;
         case ShortcutUtils.PREVIOUS_TAB:
           if (AppConstants.platform == "macosx") {
-            this.tabContainer.advanceSelectedTab(DIRECTION_BACKWARD, true);
+            this.tabContainer.advanceSelectedTab(
+              DIRECTION_BACKWARD,
+              true,
+              aEvent
+            );
             aEvent.preventDefault();
           }
           break;
@@ -8870,63 +9071,43 @@
       this.addEventListener("oop-browser-crashed", onTabCrashed);
       this.addEventListener("oop-browser-buildid-mismatch", onTabCrashed);
 
-      this.addEventListener("DOMAudioPlaybackStarted", event => {
-        var tab = this.getTabFromAudioEvent(event);
-        if (!tab) {
-          return;
-        }
+      for (let tab of this.tabs) {
+        tab.registerAudibleChangeHandler();
+      }
 
-        clearTimeout(tab._soundPlayingAttrRemovalTimer);
-        tab._soundPlayingAttrRemovalTimer = 0;
-
-        let modifiedAttrs = [];
-        if (tab.hasAttribute("soundplaying-scheduledremoval")) {
-          tab.removeAttribute("soundplaying-scheduledremoval");
-          modifiedAttrs.push("soundplaying-scheduledremoval");
-        }
-
-        if (!tab.hasAttribute("soundplaying")) {
-          tab.toggleAttribute("soundplaying", true);
-          modifiedAttrs.push("soundplaying");
-        }
-
-        if (modifiedAttrs.length) {
-          // Flush style so that the opacity takes effect immediately, in
-          // case the media is stopped before the style flushes naturally.
-          getComputedStyle(tab).opacity;
-        }
-
-        this._tabAttrModified(tab, modifiedAttrs);
+      this.tabContainer.addEventListener("TabBrowserInserted", event => {
+        event.target.registerAudibleChangeHandler();
       });
 
-      this.addEventListener("DOMAudioPlaybackStopped", event => {
-        var tab = this.getTabFromAudioEvent(event);
-        if (!tab) {
-          return;
-        }
-
-        if (tab.hasAttribute("soundplaying")) {
-          let removalDelay = Services.prefs.getIntPref(
-            "browser.tabs.delayHidingAudioPlayingIconMS"
-          );
-
-          tab.style.setProperty(
-            "--soundplaying-removal-delay",
-            `${removalDelay - 300}ms`
-          );
-          tab.toggleAttribute("soundplaying-scheduledremoval", true);
-          this._tabAttrModified(tab, ["soundplaying-scheduledremoval"]);
-
-          tab._soundPlayingAttrRemovalTimer = setTimeout(() => {
-            tab.removeAttribute("soundplaying-scheduledremoval");
-            tab.removeAttribute("soundplaying");
-            this._tabAttrModified(tab, [
-              "soundplaying",
-              "soundplaying-scheduledremoval",
-            ]);
-          }, removalDelay);
-        }
+      // When a tab switches between remote and non-remote (e.g. about:blank →
+      // a real page, or a process-switch navigation), a new BrowsingContext is
+      // created and a new MediaController is attached to it. Re-register here
+      // so the onaudiblechange handler always points to the current controller.
+      this.tabContainer.addEventListener("TabRemotenessChange", event => {
+        event.target.registerAudibleChangeHandler();
       });
+
+      this.tabContainer.addEventListener("TabClose", event => {
+        event.target.unregisterAudibleChangeHandler();
+      });
+
+      this.tabContainer.addEventListener("TabBrowserDiscarded", event => {
+        event.target.unregisterAudibleChangeHandler();
+      });
+
+      // Closing a window tears its tabs down without firing TabClose, so the
+      // per-tab MediaController listeners would otherwise outlive the window
+      // (their closures keep the window alive until shutdown). Drop them all
+      // when the window unloads.
+      window.addEventListener(
+        "unload",
+        () => {
+          for (let tab of this.tabs) {
+            tab.unregisterAudibleChangeHandler();
+          }
+        },
+        { once: true }
+      );
 
       this.addEventListener("DOMAudioPlaybackBlockStarted", event => {
         var tab = this.getTabFromAudioEvent(event);
@@ -9619,7 +9800,7 @@
 
           // If the browser was previously muted, we should restore the muted state.
           if (this._tab.hasAttribute("muted")) {
-            this._tab.linkedBrowser.mute();
+            this._tab.linkedBrowser.browsingContext?.mediaController?.mute();
           }
 
           if (gBrowser.isFindBarInitialized(this._tab)) {
@@ -10172,912 +10353,3 @@ var TabBarVisibility = {
     );
   },
 };
-
-var TabContextMenu = {
-  contextTab: null,
-  _updateToggleMuteMenuItems(aTab, aConditionFn) {
-    ["muted", "soundplaying"].forEach(attr => {
-      if (!aConditionFn || aConditionFn(attr)) {
-        if (aTab.hasAttribute(attr)) {
-          aTab.toggleMuteMenuItem.setAttribute(attr, "true");
-          aTab.toggleMultiSelectMuteMenuItem.setAttribute(attr, "true");
-        } else {
-          aTab.toggleMuteMenuItem.removeAttribute(attr);
-          aTab.toggleMultiSelectMuteMenuItem.removeAttribute(attr);
-        }
-      }
-    });
-  },
-  // eslint-disable-next-line complexity
-  updateContextMenu(aPopupMenu) {
-    let triggerTab =
-      aPopupMenu.triggerNode &&
-      (aPopupMenu.triggerNode.tab || aPopupMenu.triggerNode.closest("tab"));
-    this.contextTab = triggerTab || gBrowser.selectedTab;
-    this.contextTab.addEventListener("TabAttrModified", this);
-    aPopupMenu.addEventListener("popuphidden", this);
-
-    this.multiselected = this.contextTab.multiselected;
-    this.contextTabs = this.multiselected
-      ? gBrowser.selectedTabs
-      : [this.contextTab];
-
-    let splitViews = new Set();
-    // bug1973996: This call is not guaranteed to complete
-    // before the saved groups menu is populated
-    for (let tab of this.contextTabs) {
-      gBrowser.TabStateFlusher.flush(tab.linkedBrowser);
-
-      // Add unique split views for count info below
-      if (tab.splitview) {
-        splitViews.add(tab.splitview);
-      }
-    }
-
-    let disabled = gBrowser.tabs.length == 1;
-    let tabCountInfo = JSON.stringify({
-      tabCount: this.contextTabs.length,
-    });
-    let splitViewCountInfo = JSON.stringify({
-      splitViewCount: splitViews.size,
-    });
-
-    var menuItems = aPopupMenu.getElementsByAttribute(
-      "tbattr",
-      "tabbrowser-multiple"
-    );
-    for (let menuItem of menuItems) {
-      menuItem.disabled = disabled;
-    }
-
-    disabled = gBrowser.visibleTabs.length == 1;
-    menuItems = aPopupMenu.getElementsByAttribute(
-      "tbattr",
-      "tabbrowser-multiple-visible"
-    );
-    for (let menuItem of menuItems) {
-      menuItem.disabled = disabled;
-    }
-
-    let contextNewTabButton = document.getElementById("context_openANewTab");
-    // update context menu item strings for vertical tabs
-    document.l10n.setAttributes(
-      contextNewTabButton,
-      gBrowser.tabContainer?.verticalMode
-        ? "tab-context-new-tab-open-vertical"
-        : "tab-context-new-tab-open"
-    );
-
-    // Session store
-    let closedCount = SessionStore.getLastClosedTabCount(window);
-    document
-      .getElementById("History:UndoCloseTab")
-      .toggleAttribute("disabled", closedCount == 0);
-    document.l10n.setArgs(document.getElementById("context_undoCloseTab"), {
-      tabCount: closedCount,
-    });
-
-    // Show/hide fullscreen context menu items and set the
-    // autohide item's checked state to mirror the autohide pref.
-    showFullScreenViewContextMenuItems(aPopupMenu);
-
-    // #context_moveTabToNewGroup is a simplified context menu item that only
-    // appears if there are no existing tab groups available to move the tab to.
-    let contextMoveTabToNewGroup = document.getElementById(
-      "context_moveTabToNewGroup"
-    );
-    let contextMoveTabToGroup = document.getElementById(
-      "context_moveTabToGroup"
-    );
-    let contextUngroupTab = document.getElementById("context_ungroupTab");
-    let contextMoveSplitViewToNewGroup = document.getElementById(
-      "context_moveSplitViewToNewGroup"
-    );
-    let contextUngroupSplitView = document.getElementById(
-      "context_ungroupSplitView"
-    );
-    let isAllSplitViewTabs = this.contextTabs.every(
-      contextTab => contextTab.splitview
-    );
-
-    if (gBrowser._tabGroupsEnabled) {
-      let selectedGroupCount = new Set(
-        // The filter removes the "null" group for ungrouped tabs.
-        this.contextTabs.map(t => t.group).filter(g => g)
-      ).size;
-
-      let openGroupsToMoveTo = gBrowser.getAllTabGroups({
-        sortByLastSeenActive: true,
-      });
-
-      // Determine whether or not the "current" tab group should appear in the
-      // "move tab to group" context menu.
-      if (selectedGroupCount == 1) {
-        let groupToFilter = this.contextTabs[0].group;
-        if (groupToFilter && this.contextTabs.every(t => t.group)) {
-          openGroupsToMoveTo = openGroupsToMoveTo.filter(
-            group => group !== groupToFilter
-          );
-        }
-      }
-
-      // Populate the saved groups context menu
-      // Only enable in non-private windows, or if at least one of the tabs is
-      // considered saveable
-      let savedGroupsToMoveTo = [];
-      if (
-        !PrivateBrowsingUtils.isWindowPrivate(window) &&
-        SessionStore.shouldSaveTabsToGroup(this.contextTabs)
-      ) {
-        savedGroupsToMoveTo = SessionStore.getSavedTabGroups();
-      }
-
-      if (!openGroupsToMoveTo.length && !savedGroupsToMoveTo.length) {
-        if (isAllSplitViewTabs) {
-          contextMoveTabToGroup.hidden = true;
-          contextMoveTabToNewGroup.hidden = true;
-          contextMoveSplitViewToNewGroup.hidden = false;
-          contextMoveSplitViewToNewGroup.setAttribute(
-            "data-l10n-args",
-            splitViewCountInfo
-          );
-        } else {
-          contextMoveTabToGroup.hidden = true;
-          contextMoveSplitViewToNewGroup.hidden = true;
-          contextMoveTabToNewGroup.hidden = false;
-          contextMoveTabToNewGroup.setAttribute("data-l10n-args", tabCountInfo);
-        }
-      } else {
-        if (isAllSplitViewTabs) {
-          contextMoveTabToNewGroup.hidden = true;
-          contextMoveSplitViewToNewGroup.hidden = true;
-          contextMoveTabToGroup.hidden = false;
-          contextMoveTabToGroup.setAttribute(
-            "data-l10n-id",
-            "tab-context-move-split-view-to-group"
-          );
-          contextMoveTabToGroup.setAttribute(
-            "data-l10n-args",
-            splitViewCountInfo
-          );
-        } else {
-          contextMoveTabToNewGroup.hidden = true;
-          contextMoveSplitViewToNewGroup.hidden = true;
-          contextMoveTabToGroup.hidden = false;
-          contextMoveTabToGroup.setAttribute(
-            "data-l10n-id",
-            "tab-context-move-tab-to-group"
-          );
-          contextMoveTabToGroup.setAttribute("data-l10n-args", tabCountInfo);
-        }
-
-        const openGroupsMenu = contextMoveTabToGroup.querySelector("menupopup");
-        openGroupsMenu
-          .querySelectorAll("[tab-group-id]")
-          .forEach(el => el.remove());
-        const upperSeparator = openGroupsMenu.querySelector(
-          `#open-tab-groups-separator-upper`
-        );
-        const lowerSeparator = openGroupsMenu.querySelector(
-          `#open-tab-groups-separator-lower`
-        );
-
-        lowerSeparator.hidden = !openGroupsToMoveTo.length;
-
-        openGroupsToMoveTo.toReversed().forEach(group => {
-          let item = this._createTabGroupMenuItem(group, false);
-          upperSeparator.after(item);
-        });
-
-        const savedGroupsMenu = contextMoveTabToGroup.querySelector(
-          "#context_moveTabToSavedGroup"
-        );
-        const savedGroupsMenuPopup = savedGroupsMenu.querySelector("menupopup");
-
-        savedGroupsMenuPopup
-          .querySelectorAll("[tab-group-id]")
-          .forEach(el => el.remove());
-        if (savedGroupsToMoveTo.length) {
-          savedGroupsMenu.disabled = false;
-
-          savedGroupsToMoveTo.forEach(group => {
-            let item = this._createTabGroupMenuItem(group, true);
-            savedGroupsMenuPopup.appendChild(item);
-          });
-        } else {
-          savedGroupsMenu.disabled = true;
-        }
-      }
-
-      let groupInfo = JSON.stringify({
-        groupCount: selectedGroupCount,
-      });
-      if (isAllSplitViewTabs) {
-        contextUngroupSplitView.hidden = !selectedGroupCount;
-        contextUngroupTab.hidden = true;
-        contextUngroupSplitView.setAttribute("data-l10n-args", groupInfo);
-      } else {
-        contextUngroupTab.hidden = !selectedGroupCount;
-        contextUngroupSplitView.hidden = true;
-        contextUngroupTab.setAttribute("data-l10n-args", groupInfo);
-      }
-    } else {
-      contextMoveTabToNewGroup.hidden = true;
-      contextMoveTabToGroup.hidden = true;
-      contextUngroupTab.hidden = true;
-      contextMoveSplitViewToNewGroup.hidden = true;
-      contextUngroupSplitView.hidden = true;
-    }
-
-    let contextAddNote = document.getElementById("context_addNote");
-    let contextEditNote = document.getElementById("context_editNote");
-    if (gBrowser._tabNotesEnabled) {
-      // Tab notes behaviour is disabled if a user has a selection of tabs that
-      // contains more than one canonical URL.
-      let multiselectingDiverseUrls =
-        this.multiselected &&
-        !this.contextTabs.every(
-          t => t.canonicalUrl === this.contextTabs[0].canonicalUrl
-        );
-
-      contextAddNote.disabled =
-        multiselectingDiverseUrls || !this.TabNotes.isEligible(this.contextTab);
-      contextEditNote.disabled = multiselectingDiverseUrls;
-
-      this.removeNewBadge(contextAddNote);
-      if (
-        Services.prefs.getBoolPref("browser.tabs.notes.newBadge.enabled", true)
-      ) {
-        this.addNewBadge(contextAddNote);
-      }
-
-      this.TabNotes.has(this.contextTab).then(hasNote => {
-        contextAddNote.hidden = hasNote;
-        contextEditNote.hidden = !hasNote;
-      });
-    } else {
-      contextAddNote.hidden = true;
-      contextEditNote.hidden = true;
-    }
-
-    // Split View
-    let splitViewEnabled = Services.prefs.getBoolPref(
-      "browser.tabs.splitView.enabled",
-      false
-    );
-    let contextMoveTabToNewSplitView = document.getElementById(
-      "context_moveTabToSplitView"
-    );
-    let contextSeparateSplitView = document.getElementById(
-      "context_separateSplitView"
-    );
-    let contextReverseSplitView = document.getElementById(
-      "context_reverseSplitView"
-    );
-    let hasSplitViewTab = this.contextTabs.some(tab => tab.splitview);
-    contextMoveTabToNewSplitView.hidden = !splitViewEnabled || hasSplitViewTab;
-    contextSeparateSplitView.hidden = !splitViewEnabled || !hasSplitViewTab;
-    contextReverseSplitView.hidden =
-      !splitViewEnabled || !hasSplitViewTab || this.multiselected;
-    if (splitViewEnabled) {
-      contextMoveTabToNewSplitView.removeAttribute("data-l10n-id");
-      contextMoveTabToNewSplitView.setAttribute(
-        "data-l10n-id",
-        this.contextTabs.length < 2
-          ? "tab-context-add-split-view"
-          : "tab-context-open-in-split-view"
-      );
-
-      let pinnedTabs = this.contextTabs.filter(t => t.pinned);
-      let customizeTabs = this.contextTabs.filter(t =>
-        t.hasAttribute("customizemode")
-      );
-      contextMoveTabToNewSplitView.disabled =
-        this.contextTabs.length > 2 ||
-        pinnedTabs.length ||
-        customizeTabs.length;
-
-      this.removeNewBadge(contextMoveTabToNewSplitView);
-      this.removeNewBadge(contextSeparateSplitView);
-      if (!Services.prefs.getBoolPref("browser.tabs.splitview.hasUsed", true)) {
-        this.addNewBadge(contextMoveTabToNewSplitView);
-        this.addNewBadge(contextSeparateSplitView);
-      }
-    }
-
-    // Only one of Reload_Tab/Reload_Selected_Tabs should be visible.
-    document.getElementById("context_reloadTab").hidden = this.multiselected;
-    document.getElementById("context_reloadSelectedTabs").hidden =
-      !this.multiselected;
-    let unloadTabItem = document.getElementById("context_unloadTab");
-    if (gBrowser._unloadTabInContextMenu) {
-      // linkedPanel is false if the tab is already unloaded
-      // Cannot unload about: pages, etc., so skip browsers that are not remote
-      let unloadableTabs = this.contextTabs.filter(
-        t => t.linkedPanel && t.linkedBrowser?.isRemoteBrowser
-      );
-      unloadTabItem.hidden = unloadableTabs.length === 0;
-      unloadTabItem.setAttribute(
-        "data-l10n-args",
-        JSON.stringify({ tabCount: unloadableTabs.length })
-      );
-    } else {
-      unloadTabItem.hidden = true;
-    }
-
-    // Show Play Tab menu item if the tab has attribute activemedia-blocked
-    document.getElementById("context_playTab").hidden = !(
-      this.contextTab.activeMediaBlocked && !this.multiselected
-    );
-    document.getElementById("context_playSelectedTabs").hidden = !(
-      this.contextTab.activeMediaBlocked && this.multiselected
-    );
-
-    // Only one of pin/unpin/multiselect-pin/multiselect-unpin should be visible
-    let hasAboutOpenTabsTab = this.contextTabs.some(
-      t => t.linkedBrowser.currentURI.spec === "about:opentabs"
-    );
-    let contextPinTab = document.getElementById("context_pinTab");
-    contextPinTab.hidden =
-      this.contextTab.pinned || this.multiselected || hasAboutOpenTabsTab;
-    let contextUnpinTab = document.getElementById("context_unpinTab");
-    contextUnpinTab.hidden = !this.contextTab.pinned || this.multiselected;
-    let contextPinSelectedTabs = document.getElementById(
-      "context_pinSelectedTabs"
-    );
-    contextPinSelectedTabs.hidden =
-      this.contextTab.pinned || !this.multiselected || hasAboutOpenTabsTab;
-    let contextUnpinSelectedTabs = document.getElementById(
-      "context_unpinSelectedTabs"
-    );
-    contextUnpinSelectedTabs.hidden =
-      !this.contextTab.pinned || !this.multiselected;
-
-    // Build Ask Chat items
-    TabContextMenu.GenAI.buildTabMenu(
-      document.getElementById("context_askChat"),
-      this
-    );
-
-    // Move Tab items
-    let contextMoveTabOptions = document.getElementById(
-      "context_moveTabOptions"
-    );
-    // gBrowser.visibleTabs excludes tabs in collapsed groups,
-    // which we want to include in calculations for Move Tab items
-    let visibleOrCollapsedTabs = gBrowser.tabs.filter(
-      t => t.isOpen && !t.hidden
-    );
-    let allTabsSelected =
-      visibleOrCollapsedTabs.length == 1 ||
-      visibleOrCollapsedTabs.every(t => t.multiselected);
-    contextMoveTabOptions.setAttribute("data-l10n-args", tabCountInfo);
-    contextMoveTabOptions.disabled = this.contextTab.hidden || allTabsSelected;
-    let selectedTabs = gBrowser.selectedTabs;
-    let contextMoveTabToEnd = document.getElementById("context_moveToEnd");
-    let allSelectedTabsAdjacent = selectedTabs.every(
-      (element, index, array) => {
-        return array.length > index + 1
-          ? element._tPos + 1 == array[index + 1]._tPos
-          : true;
-      }
-    );
-
-    let lastVisibleTab = visibleOrCollapsedTabs.at(-1);
-    let lastTabToMove = this.contextTabs.at(-1);
-
-    let isLastPinnedTab = false;
-    if (lastTabToMove.pinned) {
-      let sibling = gBrowser.tabContainer.findNextTab(lastTabToMove);
-      isLastPinnedTab = !sibling || !sibling.pinned;
-    }
-
-    let isSplit = !!this.contextTab.splitview;
-    let firstInSplit = isSplit ? this.contextTab.splitview.tabs[0] : null;
-    let lastInSplit = isSplit ? this.contextTab.splitview.tabs.at(-1) : null;
-    let splitAtEnd = isSplit && lastInSplit === lastVisibleTab;
-    contextMoveTabToEnd.disabled =
-      (lastTabToMove === lastVisibleTab || isLastPinnedTab || splitAtEnd) &&
-      !lastTabToMove.group &&
-      allSelectedTabsAdjacent;
-
-    let contextMoveTabToStart = document.getElementById("context_moveToStart");
-    let isFirstTab =
-      !this.contextTabs[0].group &&
-      (this.contextTabs[0] === visibleOrCollapsedTabs[0] ||
-        this.contextTabs[0] ===
-          visibleOrCollapsedTabs[gBrowser.pinnedTabCount]);
-    let splitAtStart =
-      isSplit &&
-      (firstInSplit === visibleOrCollapsedTabs[0] ||
-        firstInSplit === visibleOrCollapsedTabs[gBrowser.pinnedTabCount]);
-    contextMoveTabToStart.disabled =
-      (isFirstTab || splitAtStart) && allSelectedTabsAdjacent;
-
-    document.getElementById("context_openTabInWindow").disabled =
-      this.contextTab.hasAttribute("customizemode");
-
-    // Only one of "Duplicate Tab"/"Duplicate Tabs" should be visible.
-    document.getElementById("context_duplicateTab").hidden = this.multiselected;
-    document.getElementById("context_duplicateTabs").hidden =
-      !this.multiselected;
-
-    let closeTabsToTheStartItem = document.getElementById(
-      "context_closeTabsToTheStart"
-    );
-
-    // update context menu item strings for vertical tabs
-    document.l10n.setAttributes(
-      closeTabsToTheStartItem,
-      gBrowser.tabContainer?.verticalMode
-        ? "close-tabs-to-the-start-vertical"
-        : "close-tabs-to-the-start"
-    );
-
-    let closeTabsToTheEndItem = document.getElementById(
-      "context_closeTabsToTheEnd"
-    );
-
-    // update context menu item strings for vertical tabs
-    document.l10n.setAttributes(
-      closeTabsToTheEndItem,
-      gBrowser.tabContainer?.verticalMode
-        ? "close-tabs-to-the-end-vertical"
-        : "close-tabs-to-the-end"
-    );
-
-    // Disable "Close Tabs to the Left/Right" if there are no tabs
-    // preceding/following it.
-    let noTabsToStart = !gBrowser._getTabsToTheStartFrom(this.contextTab)
-      .length;
-    closeTabsToTheStartItem.disabled = noTabsToStart;
-
-    let noTabsToEnd = !gBrowser._getTabsToTheEndFrom(this.contextTab).length;
-    closeTabsToTheEndItem.disabled = noTabsToEnd;
-
-    // Disable "Close other Tabs" if there are no unpinned tabs.
-    let unpinnedTabsToClose = this.multiselected
-      ? gBrowser.openTabs.filter(
-          t => !t.multiselected && !t.pinned && !t.hidden
-        ).length
-      : gBrowser.openTabs.filter(
-          t => t != this.contextTab && !t.pinned && !t.hidden
-        ).length;
-    let closeOtherTabsItem = document.getElementById("context_closeOtherTabs");
-    closeOtherTabsItem.disabled = unpinnedTabsToClose < 1;
-
-    // Update the close item with how many tabs will close.
-    document
-      .getElementById("context_closeTab")
-      .setAttribute("data-l10n-args", tabCountInfo);
-
-    let closeDuplicateTabsItem = document.getElementById(
-      "context_closeDuplicateTabs"
-    );
-    closeDuplicateTabsItem.disabled = !gBrowser.getDuplicateTabsToClose(
-      this.contextTab
-    ).length;
-
-    // Disable "Close Multiple Tabs" if all sub menuitems are disabled
-    document.getElementById("context_closeTabOptions").disabled =
-      closeTabsToTheStartItem.disabled &&
-      closeTabsToTheEndItem.disabled &&
-      closeOtherTabsItem.disabled;
-
-    // Hide "Bookmark Tab…" for multiselection.
-    // Update its state if visible.
-    let bookmarkTab = document.getElementById("context_bookmarkTab");
-    bookmarkTab.hidden = this.multiselected;
-
-    // Show "Bookmark Selected Tabs" in a multiselect context and hide it otherwise.
-    let bookmarkMultiSelectedTabs = document.getElementById(
-      "context_bookmarkSelectedTabs"
-    );
-    bookmarkMultiSelectedTabs.hidden = !this.multiselected;
-
-    let contentSharingShareTabs = document.getElementById(
-      "context_shareSelectedTabs"
-    );
-
-    const hideContentSharing =
-      !this.multiselected || !ContentSharingUtils.isEnabled;
-    contentSharingShareTabs.hidden = hideContentSharing;
-    document.getElementById("context_shareSelectedTabsSeparator").hidden =
-      hideContentSharing;
-    if (!contentSharingShareTabs.hidden) {
-      this.addNewBadge(contentSharingShareTabs);
-    }
-
-    let toggleMute = document.getElementById("context_toggleMuteTab");
-    let toggleMultiSelectMute = document.getElementById(
-      "context_toggleMuteSelectedTabs"
-    );
-
-    // Only one of mute_unmute_tab/mute_unmute_selected_tabs should be visible
-    toggleMute.hidden = this.multiselected;
-    toggleMultiSelectMute.hidden = !this.multiselected;
-
-    const isMuted = this.contextTab.hasAttribute("muted");
-    document.l10n.setAttributes(
-      toggleMute,
-      isMuted ? "tabbrowser-context-unmute-tab" : "tabbrowser-context-mute-tab"
-    );
-    document.l10n.setAttributes(
-      toggleMultiSelectMute,
-      isMuted
-        ? "tabbrowser-context-unmute-selected-tabs"
-        : "tabbrowser-context-mute-selected-tabs"
-    );
-
-    this.contextTab.toggleMuteMenuItem = toggleMute;
-    this.contextTab.toggleMultiSelectMuteMenuItem = toggleMultiSelectMute;
-    this._updateToggleMuteMenuItems(this.contextTab);
-
-    let selectAllTabs = document.getElementById("context_selectAllTabs");
-    selectAllTabs.disabled = gBrowser.allTabsSelected();
-
-    gSync.updateTabContextMenu(aPopupMenu, this.contextTab);
-
-    let reopenInContainer = document.getElementById(
-      "context_reopenInContainer"
-    );
-    reopenInContainer.hidden =
-      !Services.prefs.getBoolPref("privacy.userContext.enabled", false) ||
-      PrivateBrowsingUtils.isWindowPrivate(window);
-    reopenInContainer.disabled = this.contextTab.hidden;
-
-    SharingUtils.ensureShareMenu(
-      this.contextTab.linkedBrowser,
-      this.multiselected ? this.contextTabs.map(t => t.linkedBrowser) : null,
-      document.getElementById("context_moveTabOptions")
-    );
-  },
-
-  _createTabGroupMenuItem(group, isSaved) {
-    let item = document.createXULElement("menuitem");
-    item.setAttribute("tab-group-id", group.id);
-
-    // Open groups have labels, and saved groups have names
-    let label = group.label ?? group.name;
-    if (label) {
-      item.setAttribute("label", label);
-    } else {
-      document.l10n.setAttributes(item, "tab-context-unnamed-group");
-    }
-
-    item.classList.add("menuitem-iconic", "tab-group-icon");
-    if (isSaved) {
-      item.classList.add("tab-group-icon-closed");
-    }
-
-    item.style.setProperty(
-      "--tab-group-color",
-      `var(--tab-group-color-${group.color})`
-    );
-    item.style.setProperty(
-      "--tab-group-color-invert",
-      `var(--tab-group-color-${group.color}-invert)`
-    );
-    item.style.setProperty(
-      "--tab-group-color-pale",
-      `var(--tab-group-color-${group.color}-pale)`
-    );
-    item.style.setProperty(
-      "--tab-group-background-color",
-      `var(--tab-group-${group.color})`
-    );
-
-    return item;
-  },
-
-  handleEvent(aEvent) {
-    switch (aEvent.type) {
-      case "popuphidden":
-        if (aEvent.target.id == "tabContextMenu") {
-          this.contextTab.removeEventListener("TabAttrModified", this);
-          this.contextTab = null;
-          this.contextTabs = null;
-        }
-        break;
-      case "TabAttrModified": {
-        let tab = aEvent.target;
-        this._updateToggleMuteMenuItems(tab, attr =>
-          aEvent.detail.changed.includes(attr)
-        );
-        break;
-      }
-    }
-  },
-
-  createReopenInContainerMenu(event) {
-    createUserContextMenu(event, {
-      isContextMenu: true,
-      excludeUserContextId: this.contextTab.getAttribute("usercontextid"),
-    });
-  },
-  duplicateSelectedTabs() {
-    let newIndex = this.contextTabs.at(-1)._tPos + 1;
-    for (let tab of this.contextTabs) {
-      let newTab = SessionStore.duplicateTab(window, tab);
-      if (tab.group) {
-        Glean.tabgroup.tabInteractions.duplicate.add();
-      }
-      gBrowser.moveTabTo(newTab, { tabIndex: newIndex++ });
-    }
-  },
-  reopenInContainer(event) {
-    let userContextId = parseInt(
-      event.target.getAttribute("data-usercontextid")
-    );
-
-    for (let tab of this.contextTabs) {
-      if (tab.getAttribute("usercontextid") == userContextId) {
-        continue;
-      }
-
-      /* Create a triggering principal that is able to load the new tab
-         For content principals that are about: chrome: or resource: we need system to load them.
-         Anything other than system principal needs to have the new userContextId.
-      */
-      let triggeringPrincipal;
-
-      if (tab.linkedPanel) {
-        triggeringPrincipal = tab.linkedBrowser.contentPrincipal;
-      } else {
-        // For lazy tab browsers, get the original principal
-        // from SessionStore
-        let tabState = JSON.parse(SessionStore.getTabState(tab));
-        try {
-          triggeringPrincipal = E10SUtils.deserializePrincipal(
-            tabState.triggeringPrincipal_base64
-          );
-        } catch (ex) {
-          continue;
-        }
-      }
-
-      if (!triggeringPrincipal || triggeringPrincipal.isNullPrincipal) {
-        // Ensure that we have a null principal if we couldn't
-        // deserialize it (for lazy tab browsers) ...
-        // This won't always work however is safe to use.
-        triggeringPrincipal =
-          Services.scriptSecurityManager.createNullPrincipal({ userContextId });
-      } else if (triggeringPrincipal.isContentPrincipal) {
-        triggeringPrincipal = Services.scriptSecurityManager.principalWithOA(
-          triggeringPrincipal,
-          {
-            userContextId,
-          }
-        );
-      }
-
-      let newTab = gBrowser.addTab(tab.linkedBrowser.currentURI.spec, {
-        userContextId,
-        pinned: tab.pinned,
-        tabIndex: tab._tPos + 1,
-        triggeringPrincipal,
-      });
-
-      Glean.containers.tabAssignedContainer.record({
-        from_container_id: tab.getAttribute("usercontextid"),
-        to_container_id: userContextId,
-      });
-
-      if (gBrowser.selectedTab == tab) {
-        gBrowser.selectedTab = newTab;
-      }
-      if (tab.muted && !newTab.muted) {
-        newTab.toggleMuteAudio(tab.muteReason);
-      }
-    }
-  },
-
-  closeContextTabs() {
-    if (this.contextTab.multiselected) {
-      gBrowser.removeMultiSelectedTabs(
-        gBrowser.TabMetrics.userTriggeredContext(
-          gBrowser.TabMetrics.METRIC_SOURCE.TAB_STRIP
-        )
-      );
-    } else {
-      gBrowser.removeTab(this.contextTab, {
-        animate: true,
-        ...gBrowser.TabMetrics.userTriggeredContext(
-          gBrowser.TabMetrics.METRIC_SOURCE.TAB_STRIP
-        ),
-      });
-    }
-  },
-
-  explicitUnloadTabs() {
-    gBrowser.explicitUnloadTabs(this.contextTabs);
-  },
-
-  moveTabsToNewGroup() {
-    let insertBefore = this.contextTab;
-    if (insertBefore._tPos < gBrowser.pinnedTabCount) {
-      let firstUnpinnedTab = gBrowser.tabs[gBrowser.pinnedTabCount];
-      if (firstUnpinnedTab.splitview) {
-        insertBefore = firstUnpinnedTab.splitview;
-      } else {
-        insertBefore = firstUnpinnedTab;
-      }
-    } else if (this.contextTab.group) {
-      insertBefore = this.contextTab.group;
-    } else if (this.contextTab.splitview) {
-      insertBefore = this.contextTab.splitview;
-    }
-    gBrowser.addTabGroup(this.contextTabs, {
-      insertBefore,
-      isUserTriggered: true,
-      telemetryUserCreateSource: "tab_menu",
-    });
-    gBrowser.selectedTab = this.contextTabs[0];
-
-    // When using the tab context menu to create a group from the all tabs
-    // panel, make sure we close that panel so that it doesn't obscure the tab
-    // group creation panel.
-    gTabsPanel.hideAllTabsPanel();
-  },
-
-  moveSplitViewToNewGroup() {
-    let insertBefore = this.contextTab;
-    if (insertBefore._tPos < gBrowser.pinnedTabCount) {
-      insertBefore = gBrowser.tabs[gBrowser.pinnedTabCount];
-    } else if (this.contextTab.group) {
-      insertBefore = this.contextTab.group;
-    } else if (this.contextTab.splitview) {
-      insertBefore = this.contextTab.splitview;
-    }
-    let tabsAndSplitViews = [];
-    for (const contextTab of this.contextTabs) {
-      if (contextTab.splitView) {
-        if (!tabsAndSplitViews.includes(contextTab.splitView)) {
-          tabsAndSplitViews.push(contextTab.splitView);
-        }
-      } else {
-        tabsAndSplitViews.push(contextTab);
-      }
-    }
-    gBrowser.addTabGroup(tabsAndSplitViews, {
-      insertBefore,
-      isUserTriggered: true,
-      telemetryUserCreateSource: "tab_menu",
-    });
-    gBrowser.selectedTab = this.contextTabs[0];
-
-    // When using the tab context menu to create a group from the all tabs
-    // panel, make sure we close that panel so that it doesn't obscure the tab
-    // group creation panel.
-    gTabsPanel.hideAllTabsPanel();
-  },
-
-  /**
-   * @param {MozTabbrowserTabGroup} group
-   */
-  moveTabsToGroup(group) {
-    let elementsToMove = new Set();
-    for (let tab of this.contextTabs) {
-      elementsToMove.add(tab.splitview ?? tab);
-    }
-    group.addTabs(
-      Array.from(elementsToMove.values()),
-      gBrowser.TabMetrics.userTriggeredContext(
-        gBrowser.TabMetrics.METRIC_SOURCE.TAB_MENU
-      )
-    );
-    group.documentGlobal.focus();
-  },
-
-  addTabsToSavedGroup(groupId) {
-    let seen = new Set();
-    let tabs = [];
-    for (let tab of this.contextTabs) {
-      if (tab.splitview) {
-        for (let splitTab of tab.splitview.tabs) {
-          if (!seen.has(splitTab)) {
-            seen.add(splitTab);
-            tabs.push(splitTab);
-          }
-        }
-      } else if (!seen.has(tab)) {
-        seen.add(tab);
-        tabs.push(tab);
-      }
-    }
-    SessionStore.addTabsToSavedGroup(
-      groupId,
-      tabs,
-      gBrowser.TabMetrics.userTriggeredContext(
-        gBrowser.TabMetrics.METRIC_SOURCE.TAB_MENU
-      )
-    );
-    gBrowser.removeTabs(tabs, {
-      animate: true,
-      ...gBrowser.TabMetrics.userTriggeredContext(
-        gBrowser.TabMetrics.METRIC_SOURCE.TAB_STRIP
-      ),
-    });
-  },
-
-  ungroupTabsAndSplitViews() {
-    let splitViews = new Set();
-    for (const tab of this.contextTabs) {
-      if (tab.splitview && !splitViews.has(tab.splitview)) {
-        splitViews.add(tab.splitview);
-        gBrowser.ungroupSplitView(tab.splitview);
-      } else if (!tab.splitview) {
-        gBrowser.ungroupTab(tab);
-      }
-    }
-  },
-
-  moveTabsToSplitView() {
-    let insertBefore = this.contextTabs.includes(gBrowser.selectedTab)
-      ? gBrowser.selectedTab
-      : this.contextTabs[0];
-    let tabsToAdd = this.contextTabs;
-
-    // Ensure selected tab is always first in split view
-    const selectedTabIndex = tabsToAdd.indexOf(gBrowser.selectedTab);
-    if (selectedTabIndex > -1 && selectedTabIndex != 0) {
-      const [removed] = tabsToAdd.splice(selectedTabIndex, 1);
-      tabsToAdd.unshift(removed);
-    }
-
-    let newTab = null;
-    let trigger;
-    if (this.contextTabs.length < 2) {
-      // Open new tab to split with context tab
-      newTab = gBrowser.addTrustedTab("about:opentabs");
-      tabsToAdd = [this.contextTabs[0], newTab];
-      trigger = "menu_add";
-    } else {
-      trigger = "menu_open";
-    }
-
-    gBrowser.addTabSplitView(tabsToAdd, {
-      insertBefore,
-      trigger,
-    });
-
-    if (newTab) {
-      gBrowser.selectedTab = newTab;
-    }
-  },
-
-  unsplitTabs() {
-    const splitviews = new Set(
-      this.contextTabs.map(tab => tab.splitview).filter(Boolean)
-    );
-    splitviews.forEach(splitview => splitview.unsplitTabs("menu_separate"));
-  },
-
-  reverseSplitView() {
-    this.contextTab.splitview?.reverseTabs("menu");
-  },
-
-  /**
-   * @param {MozMenuItem} menuItem
-   */
-  addNewBadge(menuItem) {
-    menuItem.setAttribute(
-      "badge",
-      gBrowser.tabLocalization.formatValueSync("tab-context-badge-new")
-    );
-    menuItem.classList.add("badge-new");
-  },
-
-  /**
-   * @param {MozMenuItem} menuItem
-   */
-  removeNewBadge(menuItem) {
-    menuItem.removeAttribute("badge");
-    menuItem.classList.remove("badge-new");
-  },
-};
-
-ChromeUtils.defineESModuleGetters(TabContextMenu, {
-  GenAI: "resource:///modules/GenAI.sys.mjs",
-  TabNotes: "moz-src:///browser/components/tabnotes/TabNotes.sys.mjs",
-});

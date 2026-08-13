@@ -326,3 +326,64 @@ add_task(function test_is429Error() {
     "401 auth errors must NOT match"
   );
 });
+
+add_task(function test_isRetryableError() {
+  const withStatus = status => Object.assign(new Error("boom"), { status });
+
+  Assert.equal(
+    openAIEngine.isRetryableError(null),
+    false,
+    "null is not retryable"
+  );
+
+  // 429 (and its sub-codes) are retryable.
+  Assert.equal(
+    openAIEngine.isRetryableError(withStatus(429)),
+    true,
+    "429 is retryable"
+  );
+
+  // Timeout (408), conflict (409), and transient server errors (>= 500).
+  for (const status of [408, 409, 500, 502, 503, 504, 529]) {
+    Assert.equal(
+      openAIEngine.isRetryableError(withStatus(status)),
+      true,
+      `${status} is retryable`
+    );
+  }
+
+  // Status encoded only in the message text.
+  Assert.equal(
+    openAIEngine.isRetryableError(new Error("HTTP 503 status code returned")),
+    true,
+    "'503 status code' substring is retryable"
+  );
+
+  // Network-layer failures with no HTTP status.
+  for (const message of [
+    "NS_ERROR_NET_RESET",
+    "NetworkError when attempting to fetch resource",
+    "connection refused",
+    "request timed out",
+  ]) {
+    Assert.equal(
+      openAIEngine.isRetryableError(new Error(message)),
+      true,
+      `network error "${message}" is retryable`
+    );
+  }
+
+  // Deterministic errors are NOT retryable.
+  for (const status of [400, 401, 403, 404, 422]) {
+    Assert.equal(
+      openAIEngine.isRetryableError(withStatus(status)),
+      false,
+      `${status} is not retryable`
+    );
+  }
+  Assert.equal(
+    openAIEngine.isRetryableError(new Error("malformed json")),
+    false,
+    "Plain non-network error is not retryable"
+  );
+});

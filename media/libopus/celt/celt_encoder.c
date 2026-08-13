@@ -2588,6 +2588,8 @@ int celt_encode_with_ec(CELTEncoder * OPUS_RESTRICT st, const opus_res * pcm, in
       } else {
          ec_enc_init(&ext_enc, NULL, 0);
          qext_bytes = 0;
+         nbCompressedBytes = IMIN(nbCompressedBytes, 1275);
+         ec_enc_shrink(enc, nbCompressedBytes);
       }
    } else {
       ec_enc_init(&ext_enc, NULL, 0);
@@ -2656,7 +2658,7 @@ int celt_encode_with_ec(CELTEncoder * OPUS_RESTRICT st, const opus_res * pcm, in
    ALLOC(extra_pulses, nbEBands+NB_QEXT_BANDS, int);
    ALLOC(error_bak, C*nbEBands, celt_glog);
 
-   qext_bits = ((opus_int32)qext_bytes*8<<BITRES) - (opus_int32)ec_tell_frac(enc) - 1;
+   qext_bits = ((opus_int32)qext_bytes*8<<BITRES) - (opus_int32)ec_tell_frac(&ext_enc) - 1;
    clt_compute_extra_allocation(mode, qext_mode, start, end, qext_end, bandLogE, qext_bandLogE,
          qext_bits, extra_pulses, extra_quant, C, LM, &ext_enc, 1, tone_freq, toneishness);
    OPUS_COPY(error_bak, error, C*nbEBands);
@@ -2685,7 +2687,7 @@ int celt_encode_with_ec(CELTEncoder * OPUS_RESTRICT st, const opus_res * pcm, in
       ec_enc_init(&dummy_enc, NULL, 0);
       OPUS_CLEAR(zeros, end);
       ext_balance = qext_bytes*(8<<BITRES) - ec_tell_frac(&ext_enc);
-      for (i=0;i<qext_end;i++) ext_balance -= extra_pulses[nbEBands+i] + C*(extra_quant[nbEBands+1]<<BITRES);
+      for (i=0;i<qext_end;i++) ext_balance -= extra_pulses[nbEBands+i] + C*(extra_quant[nbEBands+i]<<BITRES);
       quant_fine_energy(qext_mode, 0, qext_end, qext_oldBandE, qext_error, NULL, &extra_quant[nbEBands], &ext_enc, C);
       quant_all_bands(1, qext_mode, 0, qext_end, X, C==2 ? X+N : NULL, qext_collapse_masks,
             qext_bandE, &extra_pulses[nbEBands], shortBlocks, st->spread_decision,

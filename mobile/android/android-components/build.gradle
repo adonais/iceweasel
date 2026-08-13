@@ -10,13 +10,13 @@ buildscript {
 
     dependencies {
         classpath libs.android.gradle.plugin
+        classpath libs.kotlin.gradle.plugin
     }
 }
 
 plugins {
     alias(libs.plugins.dependency.analysis)
     alias(libs.plugins.detekt)
-    alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.ksp)
 }

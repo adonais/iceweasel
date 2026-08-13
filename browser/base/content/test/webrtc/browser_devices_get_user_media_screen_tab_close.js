@@ -50,7 +50,7 @@ add_task(async function testScreenSharingTabClose() {
     1,
     tab.linkedBrowser.browsingContext
   );
-  let tabClosedPromise = BrowserTestUtils.waitForCondition(
+  let tabClosedPromise = TestUtils.waitForCondition(
     () => gBrowser.selectedTab == initialTab,
     "Waiting for tab to close"
   );

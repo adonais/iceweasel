@@ -171,21 +171,29 @@ void LIRGeneratorRiscv64::lowerDivI(MDiv* div) {
   // rewritten to use other instructions.
   if (div->rhs()->isConstant()) {
     int32_t rhs = div->rhs()->toConstant()->toInt32();
-    // Check for division by a positive power of two, which is an easy and
-    // important case to optimize. Note that other optimizations are also
-    // possible; division by negative powers of two can be optimized in a
-    // similar manner as positive powers of two, and division by other
-    // constants can be optimized by a reciprocal multiplication technique.
-    if (rhs > 0 && std::has_single_bit(mozilla::Abs(rhs))) {
-      int32_t shift = mozilla::FloorLog2(uint32_t(rhs));
-      auto* lir =
-          new (alloc()) LDivPowTwoI(useRegisterAtStart(div->lhs()), shift);
+
+    // Check for division by a power of two, which is an easy and important case
+    // to optimize.
+    if (std::has_single_bit(mozilla::Abs(rhs))) {
+      int32_t shift = mozilla::FloorLog2(mozilla::Abs(rhs));
+      auto lhs = useRegisterAtStart(div->lhs());
+      auto* lir = new (alloc()) LDivPowTwoI(lhs, shift, rhs < 0);
       if (div->fallible()) {
         assignSnapshot(lir, div->bailoutKind());
       }
       define(lir, div);
       return;
     }
+
+    // Division by other constants can be optimized by a reciprocal
+    // multiplication technique.
+    auto lhs = useRegister(div->lhs());
+    auto* lir = new (alloc()) LDivConstantI(lhs, rhs);
+    if (div->fallible()) {
+      assignSnapshot(lir, div->bailoutKind());
+    }
+    define(lir, div);
+    return;
   }
 
   LAllocation lhs, rhs;
@@ -207,6 +215,23 @@ void LIRGeneratorRiscv64::lowerDivI(MDiv* div) {
 }
 
 void LIRGeneratorRiscv64::lowerDivI64(MDiv* div) {
+  if (div->rhs()->isConstant()) {
+    int64_t rhs = div->rhs()->toConstant()->toInt64();
+
+    if (std::has_single_bit(mozilla::Abs(rhs))) {
+      int32_t shift = mozilla::FloorLog2(mozilla::Abs(rhs));
+      auto lhs = useRegisterAtStart(div->lhs());
+      auto* lir = new (alloc()) LDivPowTwoI64(lhs, shift, rhs < 0);
+      define(lir, div);
+      return;
+    }
+
+    auto lhs = useRegister(div->lhs());
+    auto* lir = new (alloc()) LDivConstantI64(lhs, rhs);
+    define(lir, div);
+    return;
+  }
+
   auto* lir = new (alloc())
       LDivI64(useRegisterAtStart(div->lhs()), useRegisterAtStart(div->rhs()));
   defineInt64(lir, div);
@@ -215,25 +240,25 @@ void LIRGeneratorRiscv64::lowerDivI64(MDiv* div) {
 void LIRGeneratorRiscv64::lowerModI(MMod* mod) {
   if (mod->rhs()->isConstant()) {
     int32_t rhs = mod->rhs()->toConstant()->toInt32();
-    int32_t shift = mozilla::FloorLog2(uint32_t(rhs));
-    if (rhs > 0 && 1 << shift == rhs) {
-      LModPowTwoI* lir =
-          new (alloc()) LModPowTwoI(useRegisterAtStart(mod->lhs()), shift);
+
+    if (std::has_single_bit(mozilla::Abs(rhs))) {
+      int32_t shift = mozilla::FloorLog2(mozilla::Abs(rhs));
+      auto lhs = useRegisterAtStart(mod->lhs());
+      auto* lir = new (alloc()) LModPowTwoI(lhs, shift);
       if (mod->fallible()) {
         assignSnapshot(lir, mod->bailoutKind());
       }
       define(lir, mod);
       return;
     }
-    if (shift < 31 && (1 << (shift + 1)) - 1 == rhs) {
-      LModMaskI* lir = new (alloc())
-          LModMaskI(useRegister(mod->lhs()), temp(), temp(), shift + 1);
-      if (mod->fallible()) {
-        assignSnapshot(lir, mod->bailoutKind());
-      }
-      define(lir, mod);
-      return;
+
+    auto lhs = useRegister(mod->lhs());
+    auto* lir = new (alloc()) LModConstantI(lhs, rhs);
+    if (mod->fallible()) {
+      assignSnapshot(lir, mod->bailoutKind());
     }
+    define(lir, mod);
+    return;
   }
 
   LAllocation lhs, rhs;
@@ -253,12 +278,53 @@ void LIRGeneratorRiscv64::lowerModI(MMod* mod) {
 }
 
 void LIRGeneratorRiscv64::lowerModI64(MMod* mod) {
+  if (mod->rhs()->isConstant()) {
+    int64_t rhs = mod->rhs()->toConstant()->toInt64();
+
+    if (std::has_single_bit(mozilla::Abs(rhs))) {
+      int32_t shift = mozilla::FloorLog2(mozilla::Abs(rhs));
+      auto lhs = useRegisterAtStart(mod->lhs());
+      auto* lir = new (alloc()) LModPowTwoI64(lhs, shift);
+      define(lir, mod);
+      return;
+    }
+
+    auto lhs = useRegister(mod->lhs());
+    auto* lir = new (alloc()) LModConstantI64(lhs, rhs);
+    define(lir, mod);
+    return;
+  }
+
   auto* lir = new (alloc())
       LModI64(useRegisterAtStart(mod->lhs()), useRegisterAtStart(mod->rhs()));
   defineInt64(lir, mod);
 }
 
 void LIRGeneratorRiscv64::lowerUDiv(MDiv* div) {
+  if (div->rhs()->isConstant()) {
+    // NOTE: the result of toInt32 is coerced to uint32_t.
+    uint32_t rhs = div->rhs()->toConstant()->toInt32();
+
+    if (std::has_single_bit(rhs)) {
+      int32_t shift = mozilla::FloorLog2(rhs);
+      auto lhs = useRegisterAtStart(div->lhs());
+      auto* lir = new (alloc()) LDivPowTwoI(lhs, shift, false);
+      if (div->fallible()) {
+        assignSnapshot(lir, div->bailoutKind());
+      }
+      define(lir, div);
+      return;
+    }
+
+    auto lhs = useRegister(div->lhs());
+    auto* lir = new (alloc()) LUDivConstant(lhs, rhs);
+    if (div->fallible()) {
+      assignSnapshot(lir, div->bailoutKind());
+    }
+    define(lir, div);
+    return;
+  }
+
   LAllocation lhs, rhs;
   if (!div->canTruncateRemainder()) {
     lhs = useRegister(div->lhs());
@@ -276,12 +342,54 @@ void LIRGeneratorRiscv64::lowerUDiv(MDiv* div) {
 }
 
 void LIRGeneratorRiscv64::lowerUDivI64(MDiv* div) {
+  if (div->rhs()->isConstant()) {
+    // NOTE: the result of toInt64 is coerced to uint64_t.
+    uint64_t rhs = div->rhs()->toConstant()->toInt64();
+
+    if (std::has_single_bit(rhs)) {
+      int32_t shift = mozilla::FloorLog2(rhs);
+      auto lhs = useRegisterAtStart(div->lhs());
+      auto* lir = new (alloc()) LDivPowTwoI64(lhs, shift, false);
+      define(lir, div);
+      return;
+    }
+
+    auto lhs = useRegister(div->lhs());
+    auto* lir = new (alloc()) LUDivConstantI64(lhs, rhs);
+    define(lir, div);
+    return;
+  }
+
   auto* lir = new (alloc())
       LUDivI64(useRegisterAtStart(div->lhs()), useRegisterAtStart(div->rhs()));
   defineInt64(lir, div);
 }
 
 void LIRGeneratorRiscv64::lowerUMod(MMod* mod) {
+  if (mod->rhs()->isConstant()) {
+    // NOTE: the result of toInt32 is coerced to uint32_t.
+    uint32_t rhs = mod->rhs()->toConstant()->toInt32();
+
+    if (std::has_single_bit(rhs)) {
+      int32_t shift = mozilla::FloorLog2(rhs);
+      auto lhs = useRegisterAtStart(mod->lhs());
+      auto* lir = new (alloc()) LModPowTwoI(lhs, shift);
+      if (mod->fallible()) {
+        assignSnapshot(lir, mod->bailoutKind());
+      }
+      define(lir, mod);
+      return;
+    }
+
+    auto lhs = useRegister(mod->lhs());
+    auto* lir = new (alloc()) LUModConstant(lhs, rhs);
+    if (mod->fallible()) {
+      assignSnapshot(lir, mod->bailoutKind());
+    }
+    define(lir, mod);
+    return;
+  }
+
   auto* lir = new (alloc())
       LUMod(useRegisterAtStart(mod->lhs()), useRegisterAtStart(mod->rhs()));
   if (mod->fallible()) {
@@ -291,6 +399,24 @@ void LIRGeneratorRiscv64::lowerUMod(MMod* mod) {
 }
 
 void LIRGeneratorRiscv64::lowerUModI64(MMod* mod) {
+  if (mod->rhs()->isConstant()) {
+    // NOTE: the result of toInt64 is coerced to uint64_t.
+    uint64_t rhs = mod->rhs()->toConstant()->toInt64();
+
+    if (std::has_single_bit(rhs)) {
+      int32_t shift = mozilla::FloorLog2(rhs);
+      auto lhs = useRegisterAtStart(mod->lhs());
+      auto* lir = new (alloc()) LModPowTwoI64(lhs, shift);
+      define(lir, mod);
+      return;
+    }
+
+    auto lhs = useRegister(mod->lhs());
+    auto* lir = new (alloc()) LUModConstantI64(lhs, rhs);
+    define(lir, mod);
+    return;
+  }
+
   auto* lir = new (alloc())
       LUModI64(useRegisterAtStart(mod->lhs()), useRegisterAtStart(mod->rhs()));
   defineInt64(lir, mod);
@@ -337,25 +463,43 @@ void LIRGeneratorRiscv64::lowerBuiltinInt64ToFloatingPoint(
 }
 
 void LIRGeneratorRiscv64::lowerWasmSelectI(MWasmSelect* select) {
-  auto* lir = new (alloc())
-      LWasmSelect(useRegisterAtStart(select->trueExpr()),
-                  useAny(select->falseExpr()), useRegister(select->condExpr()));
-  defineReuseInput(lir, select, LWasmSelect::TrueExprIndex);
+  MIRType type = select->type();
+
+  if (type == MIRType::Int32 || type == MIRType::WasmAnyRef) {
+    auto* lir =
+        new (alloc()) LWasmSelect(useRegisterAtStart(select->trueExpr()),
+                                  useRegisterAtStart(select->falseExpr()),
+                                  useRegisterAtStart(select->condExpr()));
+    define(lir, select);
+  } else {
+    MOZ_ASSERT(type == MIRType::Float32 || type == MIRType::Double);
+
+    auto* lir = new (alloc()) LWasmSelect(
+        useRegisterAtStart(select->trueExpr()), useAny(select->falseExpr()),
+        useRegister(select->condExpr()));
+    defineReuseInput(lir, select, LWasmSelect::TrueExprIndex);
+  }
 }
 
 void LIRGeneratorRiscv64::lowerWasmSelectI64(MWasmSelect* select) {
-  auto* lir = new (alloc()) LWasmSelectI64(
-      useInt64RegisterAtStart(select->trueExpr()),
-      useInt64(select->falseExpr()), useRegister(select->condExpr()));
-  defineInt64ReuseInput(lir, select, LWasmSelectI64::TrueExprIndex);
+  auto* lir =
+      new (alloc()) LWasmSelectI64(useInt64RegisterAtStart(select->trueExpr()),
+                                   useInt64RegisterAtStart(select->falseExpr()),
+                                   useRegisterAtStart(select->condExpr()));
+  defineInt64(lir, select);
 }
 
-// On riscv we specialize the only cases where compare is {U,}Int32 and select
-// is {U,}Int32.
+// On riscv64 we specialize the cases: compare is {{U,}Int32, {U,}Int64},
+// Float32, Double}, and select is {{U,}Int32, {U,}Int64}}.
 bool LIRGeneratorShared::canSpecializeWasmCompareAndSelect(
     MCompare::CompareType compTy, MIRType insTy) {
-  return insTy == MIRType::Int32 && (compTy == MCompare::Compare_Int32 ||
-                                     compTy == MCompare::Compare_UInt32);
+  return (insTy == MIRType::Int32 || insTy == MIRType::Int64) &&
+         (compTy == MCompare::Compare_Int32 ||
+          compTy == MCompare::Compare_UInt32 ||
+          compTy == MCompare::Compare_Int64 ||
+          compTy == MCompare::Compare_UInt64 ||
+          compTy == MCompare::Compare_Float32 ||
+          compTy == MCompare::Compare_Double);
 }
 
 void LIRGeneratorShared::lowerWasmCompareAndSelect(MWasmSelect* ins,
@@ -364,10 +508,12 @@ void LIRGeneratorShared::lowerWasmCompareAndSelect(MWasmSelect* ins,
                                                    MCompare::CompareType compTy,
                                                    JSOp jsop) {
   MOZ_ASSERT(canSpecializeWasmCompareAndSelect(compTy, ins->type()));
-  auto* lir = new (alloc()) LWasmCompareAndSelect(
-      useRegister(lhs), useRegister(rhs), useRegisterAtStart(ins->trueExpr()),
-      useRegister(ins->falseExpr()), compTy, jsop);
-  defineReuseInput(lir, ins, LWasmCompareAndSelect::IfTrueExprIndex);
+
+  auto* lir = new (alloc())
+      LWasmCompareAndSelect(useRegisterAtStart(lhs), useRegisterAtStart(rhs),
+                            useRegisterAtStart(ins->trueExpr()),
+                            useRegisterAtStart(ins->falseExpr()), compTy, jsop);
+  define(lir, ins);
 }
 
 void LIRGeneratorRiscv64::lowerWasmBuiltinTruncateToInt32(
@@ -709,50 +855,6 @@ void LIRGenerator::visitReturnImpl(MDefinition* def, bool isGenerator) {
   add(ins);
 }
 
-void LIRGenerator::visitAsmJSLoadHeap(MAsmJSLoadHeap* ins) {
-  MDefinition* base = ins->base();
-  MOZ_ASSERT(base->type() == MIRType::Int32);
-
-  MDefinition* boundsCheckLimit = ins->boundsCheckLimit();
-  MOZ_ASSERT_IF(ins->needsBoundsCheck(),
-                boundsCheckLimit->type() == MIRType::Int32);
-
-  LAllocation baseAlloc = useRegisterAtStart(base);
-
-  LAllocation limitAlloc = ins->needsBoundsCheck()
-                               ? useRegisterAtStart(boundsCheckLimit)
-                               : LAllocation();
-
-  // We have no memory-base value, meaning that HeapReg is to be used as the
-  // memory base.  This follows from the definition of
-  // FunctionCompiler::maybeLoadMemoryBase() in WasmIonCompile.cpp.
-  MOZ_ASSERT(!ins->hasMemoryBase());
-  auto* lir =
-      new (alloc()) LAsmJSLoadHeap(baseAlloc, limitAlloc, LAllocation());
-  define(lir, ins);
-}
-
-void LIRGenerator::visitAsmJSStoreHeap(MAsmJSStoreHeap* ins) {
-  MDefinition* base = ins->base();
-  MOZ_ASSERT(base->type() == MIRType::Int32);
-
-  MDefinition* boundsCheckLimit = ins->boundsCheckLimit();
-  MOZ_ASSERT_IF(ins->needsBoundsCheck(),
-                boundsCheckLimit->type() == MIRType::Int32);
-
-  LAllocation baseAlloc = useRegisterAtStart(base);
-
-  LAllocation limitAlloc = ins->needsBoundsCheck()
-                               ? useRegisterAtStart(boundsCheckLimit)
-                               : LAllocation();
-
-  // See comment in LIRGenerator::visitAsmJSStoreHeap just above.
-  MOZ_ASSERT(!ins->hasMemoryBase());
-  add(new (alloc()) LAsmJSStoreHeap(baseAlloc, useRegisterAtStart(ins->value()),
-                                    limitAlloc, LAllocation()),
-      ins);
-}
-
 void LIRGenerator::visitWasmLoad(MWasmLoad* ins) {
   MDefinition* base = ins->base();
   // 'base' is a GPR but may be of either type. If it is 32-bit, it is
@@ -765,7 +867,7 @@ void LIRGenerator::visitWasmLoad(MWasmLoad* ins) {
       ins->hasMemoryBase() ? LAllocation(useRegisterAtStart(ins->memoryBase()))
                            : LGeneralReg(HeapReg);
 
-  LAllocation ptr = useRegisterAtStart(base);
+  LAllocation ptr = useRegisterOrConstantAtStart(base);
 
   if (ins->type() == MIRType::Int64) {
     auto* lir = new (alloc()) LWasmLoadI64(ptr, memoryBase);
@@ -788,17 +890,16 @@ void LIRGenerator::visitWasmStore(MWasmStore* ins) {
       ins->hasMemoryBase() ? LAllocation(useRegisterAtStart(ins->memoryBase()))
                            : LGeneralReg(HeapReg);
 
-  LAllocation baseAlloc = useRegisterAtStart(base);
+  LAllocation baseAlloc = useRegisterOrConstantAtStart(base);
 
   if (ins->access().type() == Scalar::Int64) {
-    LInt64Allocation valueAlloc = useInt64RegisterAtStart(value);
+    LInt64Allocation valueAlloc = useInt64RegisterOrZeroAtStart(value);
     auto* lir = new (alloc()) LWasmStoreI64(baseAlloc, valueAlloc, memoryBase);
     add(lir, ins);
     return;
   }
 
-  // TODO: improve zero stores like ARM64.
-  LAllocation valueAlloc = useRegisterAtStart(value);
+  LAllocation valueAlloc = useRegisterOrZeroAtStart(value);
   auto* lir = new (alloc()) LWasmStore(baseAlloc, valueAlloc, memoryBase);
   add(lir, ins);
 }

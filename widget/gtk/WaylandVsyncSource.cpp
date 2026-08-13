@@ -5,21 +5,22 @@
 #ifdef MOZ_WAYLAND
 
 #  include "WaylandVsyncSource.h"
-#  include "nsThreadUtils.h"
-#  include "nsISupportsImpl.h"
-#  include "MainThreadUtils.h"
-#  include "nsGtkUtils.h"
-#  include "mozilla/StaticPrefs_layout.h"
-#  include "mozilla/StaticPrefs_widget.h"
-#  include "mozilla/widget/WindowOcclusionState.h"
-#  include "nsWindow.h"
 
 #  include <gdk/gdkwayland.h>
 
+#  include "MainThreadUtils.h"
+#  include "mozilla/StaticPrefs_layout.h"
+#  include "mozilla/StaticPrefs_widget.h"
+#  include "mozilla/widget/WindowOcclusionState.h"
+#  include "nsGtkUtils.h"
+#  include "nsISupportsImpl.h"
+#  include "nsThreadUtils.h"
+#  include "nsWindow.h"
+
 #  ifdef MOZ_LOGGING
+#    include "Units.h"
 #    include "mozilla/Logging.h"
 #    include "nsTArray.h"
-#    include "Units.h"
 extern mozilla::LazyLogModule gWidgetVsync;
 #    undef LOG
 #    define LOG(str, ...)                             \

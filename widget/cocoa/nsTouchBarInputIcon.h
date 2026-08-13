@@ -26,8 +26,7 @@ class Document;
 
 class nsTouchBarInputIcon : public mozilla::widget::IconLoader::Listener {
  public:
-  explicit nsTouchBarInputIcon(RefPtr<Document> aDocument,
-                               TouchBarInput* aInput, NSTouchBarItem* aItem);
+  explicit nsTouchBarInputIcon(RefPtr<Document> aDocument);
 
   NS_INLINE_DECL_REFCOUNTING(nsTouchBarInputIcon)
 
@@ -51,7 +50,15 @@ class nsTouchBarInputIcon : public mozilla::widget::IconLoader::Listener {
 
   void ReleaseJSObjects();
 
+  // (Re)sets the native item this icon draws into. A nil aItem loads the icon
+  // only to cache its image, used to pre-warm an icon before its native item
+  // exists (bug 1619333).
+  void SetItem(TouchBarInput* aInput, NSTouchBarItem* aItem);
+
  protected:
+  // Applies aImage to whichever native item this icon currently targets.
+  void ApplyIcon(NSImage* aImage);
+
   RefPtr<Document> mDocument;
   bool mSetIcon;
   NSButton* mButton;
@@ -64,6 +71,13 @@ class nsTouchBarInputIcon : public mozilla::widget::IconLoader::Listener {
   // The icon loader object should never outlive its creating
   // nsTouchBarInputIcon object.
   RefPtr<mozilla::widget::IconLoader> mIconLoader;
+  // The most recently decoded icon, cached so it can be applied synchronously
+  // on a later SetupIcon. The Share scrubber's customization-palette
+  // representation does not reflect an asynchronous image update, so it relies
+  // on this.
+  NSImage* mIconImage;
+  // The URI mIconImage was decoded from, used to detect when the icon changes.
+  nsCOMPtr<nsIURI> mIconURI;
 };
 
 #endif  // nsTouchBarInputIcon_h_

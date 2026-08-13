@@ -74,7 +74,7 @@ class App extends PureComponent {
     const pageTitle =
       selectedPage === PAGE_TYPES.RUNTIME
         ? getString("about-debugging-page-title-runtime-page", {
-            selectedRuntimeId,
+            selectedRuntimeId: selectedRuntimeId || "",
           })
         : getString("about-debugging-page-title-setup-page");
 

@@ -94,4 +94,14 @@ enum class Action {
      * The user selected something from a list of options.
      */
     SELECT,
+
+    /**
+     * The user has skipped to the next item (e.g. the next media track).
+     */
+    NEXT,
+
+    /**
+     * The user has skipped to the previous item (e.g. the previous media track).
+     */
+    PREVIOUS,
 }

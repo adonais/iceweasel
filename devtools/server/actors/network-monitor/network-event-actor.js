@@ -710,7 +710,7 @@ class NetworkEventActor extends Actor {
    *
    * @param object
    */
-  addResponseContentComplete({ blockedReason, extension, channel }) {
+  addResponseContentComplete({ blockedReason, extension, channel, truncated }) {
     // Ignore calls when this actor is already destroyed
     if (this.isDestroyed()) {
       return;
@@ -719,6 +719,7 @@ class NetworkEventActor extends Actor {
     const changed = {
       blockedReason,
       extension,
+      truncated,
     };
 
     if (channel) {

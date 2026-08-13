@@ -415,6 +415,10 @@ already_AddRefed<gfx::SourceSurface> CanvasContext::GetSurfaceSnapshot(
       ffi::wgpu_client_make_command_encoder_id(mChild->GetClient());
   RawId commandBufferId =
       ffi::wgpu_client_make_command_buffer_id(mChild->GetClient());
+  // `GetSnapshot` is a synchronous API, but WebGPU requires that reading the
+  // canvas reflect all submitted operations, so we need to flush any messages
+  // that we have buffered above the IPC layer.
+  mChild->FlushQueuedMessages();
   RefPtr<gfx::DataSourceSurface> snapshot = cm->GetSnapshot(
       cm->Id(), mChild->Id(), mRemoteTextureOwnerId, Some(commandEncoderId),
       Some(commandBufferId), snapshotFormat, /* aPremultiply */ false,

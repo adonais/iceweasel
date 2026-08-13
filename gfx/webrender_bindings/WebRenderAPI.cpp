@@ -4,25 +4,24 @@
 
 #include "WebRenderAPI.h"
 
+#include "GLContext.h"
+#include "TextDrawTarget.h"
+#include "malloc_decls.h"
 #include "mozilla/Logging.h"
-#include "mozilla/ipc/ByteBuf.h"
-#include "mozilla/webrender/RendererOGL.h"
-#include "mozilla/gfx/gfxVars.h"
-#include "mozilla/layers/CompositorThread.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_webgl.h"
 #include "mozilla/ToString.h"
-#include "mozilla/webrender/RenderCompositor.h"
-#include "mozilla/widget/CompositorWidget.h"
-#include "mozilla/layers/CompositorBridgeParent.h"
-#include "mozilla/layers/SynchronousTask.h"
 #include "mozilla/XREAppData.h"
+#include "mozilla/gfx/gfxVars.h"
+#include "mozilla/ipc/ByteBuf.h"
+#include "mozilla/layers/CompositorBridgeParent.h"
+#include "mozilla/layers/CompositorThread.h"
+#include "mozilla/layers/SynchronousTask.h"
+#include "mozilla/webrender/RenderCompositor.h"
+#include "mozilla/webrender/RendererOGL.h"
+#include "mozilla/widget/CompositorWidget.h"
 #include "nsDisplayList.h"
 #include "nsThreadUtils.h"
-#include "TextDrawTarget.h"
-#include "malloc_decls.h"
-#include "GLContext.h"
-
 #include "source-repo.h"
 
 #ifdef MOZ_WIDGET_ANDROID
@@ -70,7 +69,7 @@ TransactionBuilder::TransactionBuilder(
     : mRemoteTextureTxnScheduler(aRemoteTextureTxnScheduler),
       mRemoteTextureTxnId(aRemoteTextureTxnId),
       mUseSceneBuilderThread(aUseSceneBuilderThread),
-      mApiBackend(aApi->GetBackendType()),
+      mCapabilities(aApi->GetCapabilities()),
       mOwnsData(true) {
   mTxn = wr_transaction_new(mUseSceneBuilderThread);
 }
@@ -84,7 +83,7 @@ TransactionBuilder::TransactionBuilder(
       mRemoteTextureTxnId(aRemoteTextureTxnId),
       mTxn(aTxn),
       mUseSceneBuilderThread(aUseSceneBuilderThread),
-      mApiBackend(aApi->GetBackendType()),
+      mCapabilities(aApi->GetCapabilities()),
       mOwnsData(aOwnsData) {}
 
 TransactionBuilder::~TransactionBuilder() {
@@ -343,10 +342,29 @@ RefPtr<WebRenderAPI::CreatePromise> WebRenderAPI::Create(
         // which block on the WebRenderAPI work can proceed immediately.
         renderThread->BeginShaderWarmupIfNeeded();
 
-        RefPtr<WebRenderAPI> api = new WebRenderAPI(
-            docHandle, aWindowId, backend, compositorType, maxTextureSize,
-            useANGLE, useDComp, useLayerCompositor, useTripleBuffering,
-            supportsExternalBufferTextures, syncHandle);
+#ifdef XP_DARWIN
+        wr::ImageBufferKind ioSurfaceImageKind = wr::ImageBufferKind::Texture2D;
+        if (gl && gl->GetPreferredMacIOSurfaceTextureTarget() ==
+                      LOCAL_GL_TEXTURE_RECTANGLE) {
+          ioSurfaceImageKind = wr::ImageBufferKind::TextureRect;
+        }
+#endif
+
+        const WebRenderCapabilities capabilities{
+            .mBackendType = backend,
+            .mCompositorType = compositorType,
+            .mMaxTextureSize = maxTextureSize,
+            .mUseANGLE = useANGLE,
+            .mUseDComp = useDComp,
+            .mUseLayerCompositor = useLayerCompositor,
+            .mUseTripleBuffering = useTripleBuffering,
+            .mSupportsExternalBufferTextures = supportsExternalBufferTextures,
+#ifdef XP_DARWIN
+            .mIOSurfaceImageKind = ioSurfaceImageKind,
+#endif
+        };
+        RefPtr<WebRenderAPI> api =
+            new WebRenderAPI(docHandle, aWindowId, capabilities, syncHandle);
         return CreatePromise::CreateAndResolve(std::move(api), __func__);
       });
 }
@@ -355,10 +373,8 @@ already_AddRefed<WebRenderAPI> WebRenderAPI::Clone() {
   wr::DocumentHandle* docHandle = nullptr;
   wr_api_clone(mDocHandle, &docHandle);
 
-  RefPtr<WebRenderAPI> renderApi = new WebRenderAPI(
-      docHandle, mId, mBackend, mCompositor, mMaxTextureSize, mUseANGLE,
-      mUseDComp, mUseLayerCompositor, mUseTripleBuffering,
-      mSupportsExternalBufferTextures, mSyncHandle, this, this);
+  RefPtr<WebRenderAPI> renderApi =
+      new WebRenderAPI(docHandle, mId, mCapabilities, mSyncHandle, this, this);
 
   return renderApi.forget();
 }
@@ -367,22 +383,14 @@ wr::WrIdNamespace WebRenderAPI::GetNamespace() {
   return wr_api_get_namespace(mDocHandle);
 }
 
-WebRenderAPI::WebRenderAPI(
-    wr::DocumentHandle* aHandle, wr::WindowId aId, WebRenderBackend aBackend,
-    WebRenderCompositor aCompositor, uint32_t aMaxTextureSize, bool aUseANGLE,
-    bool aUseDComp, bool aUseLayerCompositor, bool aUseTripleBuffering,
-    bool aSupportsExternalBufferTextures, layers::SyncHandle aSyncHandle,
-    wr::WebRenderAPI* aRootApi, wr::WebRenderAPI* aRootDocumentApi)
+WebRenderAPI::WebRenderAPI(wr::DocumentHandle* aHandle, wr::WindowId aId,
+                           WebRenderCapabilities aCapabilities,
+                           layers::SyncHandle aSyncHandle,
+                           wr::WebRenderAPI* aRootApi,
+                           wr::WebRenderAPI* aRootDocumentApi)
     : mDocHandle(aHandle),
       mId(aId),
-      mBackend(aBackend),
-      mCompositor(aCompositor),
-      mMaxTextureSize(aMaxTextureSize),
-      mUseANGLE(aUseANGLE),
-      mUseDComp(aUseDComp),
-      mUseLayerCompositor(aUseLayerCompositor),
-      mUseTripleBuffering(aUseTripleBuffering),
-      mSupportsExternalBufferTextures(aSupportsExternalBufferTextures),
+      mCapabilities(std::move(aCapabilities)),
       mCaptureSequence(false),
       mSyncHandle(aSyncHandle),
       mRendererDestroyed(false),
@@ -962,12 +970,17 @@ RefPtr<WebRenderAPI::EndRecordingPromise> WebRenderAPI::EndRecording() {
 
 #ifdef MOZ_WIDGET_ANDROID
 RefPtr<WebRenderAPI::ScreenPixelsPromise> WebRenderAPI::RequestScreenPixels(
-    gfx::IntRect aSourceRect, gfx::IntSize aDestSize) {
+    gfx::IntRect aSourceRect,
+    RefPtr<layers::AndroidHardwareBuffer> aHardwareBuffer) {
   class ScreenshotEvent final : public RendererEvent {
    public:
-    explicit ScreenshotEvent(gfx::IntRect aSourceRect, gfx::IntSize aDestSize,
-                             RefPtr<ScreenPixelsPromise::Private> aPromise)
-        : mSourceRect(aSourceRect), mDestSize(aDestSize), mPromise(aPromise) {
+    explicit ScreenshotEvent(
+        gfx::IntRect aSourceRect,
+        RefPtr<layers::AndroidHardwareBuffer> aHardwareBuffer,
+        RefPtr<ScreenPixelsPromise::Private> aPromise)
+        : mSourceRect(aSourceRect),
+          mHardwareBuffer(std::move(aHardwareBuffer)),
+          mPromise(aPromise) {
       MOZ_COUNT_CTOR(ScreenshotEvent);
     }
 
@@ -977,8 +990,9 @@ RefPtr<WebRenderAPI::ScreenPixelsPromise> WebRenderAPI::RequestScreenPixels(
       RendererOGL* const renderer = aRenderThread.GetRenderer(aWindowId);
       if (!renderer) {
         mPromise->Reject(NS_ERROR_FAILURE, __func__);
+        return;
       }
-      renderer->RequestScreenPixels(mSourceRect, mDestSize)
+      renderer->RequestScreenPixels(mSourceRect, std::move(mHardwareBuffer))
           ->ChainTo(mPromise.forget(), __func__);
     }
 
@@ -986,12 +1000,13 @@ RefPtr<WebRenderAPI::ScreenPixelsPromise> WebRenderAPI::RequestScreenPixels(
 
    private:
     const gfx::IntRect mSourceRect;
-    const gfx::IntSize mDestSize;
+    RefPtr<layers::AndroidHardwareBuffer> mHardwareBuffer;
     RefPtr<ScreenPixelsPromise::Private> mPromise;
   };
 
   auto promise = MakeRefPtr<ScreenPixelsPromise::Private>(__func__);
-  auto event = MakeUnique<ScreenshotEvent>(aSourceRect, aDestSize, promise);
+  auto event = MakeUnique<ScreenshotEvent>(aSourceRect,
+                                           std::move(aHardwareBuffer), promise);
 
   RenderThread::Get()->PostEvent(mId, std::move(event));
   return promise;
@@ -1601,6 +1616,19 @@ void DisplayListBuilder::PushNV16Image(
     wr::ImageRendering aRendering, bool aPreferCompositorSurface,
     bool aSupportsExternalCompositing) {
   wr_dp_push_yuv_NV16_image(
+      mWrState, aBounds, aClip, aIsBackfaceVisible, &mCurrentSpaceAndClipChain,
+      aImageChannel0, aImageChannel1, aColorDepth, aColorSpace, aColorRange,
+      aRendering, aPreferCompositorSurface, aSupportsExternalCompositing);
+}
+
+void DisplayListBuilder::PushP210Image(
+    const wr::LayoutRect& aBounds, const wr::LayoutRect& aClip,
+    bool aIsBackfaceVisible, wr::ImageKey aImageChannel0,
+    wr::ImageKey aImageChannel1, wr::WrColorDepth aColorDepth,
+    wr::WrYuvColorSpace aColorSpace, wr::WrColorRange aColorRange,
+    wr::ImageRendering aRendering, bool aPreferCompositorSurface,
+    bool aSupportsExternalCompositing) {
+  wr_dp_push_yuv_P210_image(
       mWrState, aBounds, aClip, aIsBackfaceVisible, &mCurrentSpaceAndClipChain,
       aImageChannel0, aImageChannel1, aColorDepth, aColorSpace, aColorRange,
       aRendering, aPreferCompositorSurface, aSupportsExternalCompositing);

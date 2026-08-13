@@ -187,7 +187,7 @@ add_task(async function portNoMatch1() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: `http://${origin}:89/`,
         title: `${origin}:89/`,
         iconUri: "",
@@ -212,7 +212,7 @@ add_task(async function portNoMatch2() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: `http://${origin}:9/`,
         title: `${origin}:9/`,
         iconUri: "",
@@ -237,7 +237,7 @@ add_task(async function trailingSlash_2() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: "http://example/",
         title: "example/",
         iconUri: "page-icon:http://example/",
@@ -555,7 +555,7 @@ add_task(async function suggestHistoryFalse_bookmark_prefix_multiple() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: `${search}/`,
         title: `${search}/`,
         iconUri: "",
@@ -576,7 +576,7 @@ add_task(async function suggestHistoryFalse_bookmark_prefix_multiple() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: `${search}/`,
         title: `${search}/`,
         iconUri: "",
@@ -597,7 +597,7 @@ add_task(async function suggestHistoryFalse_bookmark_prefix_multiple() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: `${search}/`,
         title: `${search}/`,
         iconUri: "",
@@ -829,7 +829,7 @@ add_task(async function about() {
           makeVisitResult(context, {
             uri: "about:blan",
             title: "about:blan",
-            source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+            source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
             heuristic: true,
           }),
         context =>

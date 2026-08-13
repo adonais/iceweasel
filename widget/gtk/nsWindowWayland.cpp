@@ -2,32 +2,33 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <gdk/gdkwayland.h>
-#include <gdk/gdkkeysyms-compat.h>
-#include <dlfcn.h>
-
-#include "nsWindow.h"
 #include "nsWindowWayland.h"
 
+#include <dlfcn.h>
+#include <gdk/gdkkeysyms-compat.h>
+#include <gdk/gdkwayland.h>
+
+#include "WaylandVsyncSource.h"
+#include "WidgetUtilsGtk.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/PresShell.h"
+#include "mozilla/StaticPrefs_widget.h"
+#include "mozilla/VsyncDispatcher.h"
+#include "mozilla/gfx/Logging.h"
+#include "mozilla/layers/WebRenderLayerManager.h"
+#include "nsAppShell.h"
 #include "nsDragService.h"
+#include "nsGtkKeyUtils.h"
 #include "nsGtkUtils.h"
 #include "nsIAppWindow.h"
-#include "nsAppShell.h"
 #include "nsIClipboard.h"
 #include "nsIDocShell.h"
 #include "nsISessionStoreFunctions.h"
-#include "nsPIDOMWindow.h"
+#include "nsIUUIDGenerator.h"
 #include "nsMenuPopupFrame.h"
-#include "WaylandVsyncSource.h"
-#include "WidgetUtilsGtk.h"
-#include "mozilla/gfx/Logging.h"
-#include "mozilla/layers/WebRenderLayerManager.h"
-#include "mozilla/PresShell.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/StaticPrefs_widget.h"
-#include "mozilla/VsyncDispatcher.h"
-#include "nsGtkKeyUtils.h"
+#include "nsPIDOMWindow.h"
 #include "nsWaylandDisplay.h"
+#include "nsWindow.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;
@@ -58,8 +59,27 @@ using namespace mozilla::widget;
   for later restore.
 */
 
-// Start count from 1 since zero is 'uninitialized'
-static int sLastSessionID = 1;
+bool GenerateWorkspaceID(nsAString& aName) {
+  nsresult rv;
+  nsCOMPtr<nsIUUIDGenerator> uuidGenerator =
+      do_GetService("@mozilla.org/uuid-generator;1", &rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return false;
+  }
+
+  nsID id;
+  rv = uuidGenerator->GenerateUUIDInPlace(&id);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return false;
+  }
+
+  char chars[NSID_LENGTH];
+  id.ToProvidedString(chars);
+
+  // NSID_LENGTH counts the null terminator.
+  aName.AssignASCII(chars, NSID_LENGTH - 1);
+  return true;
+}
 
 static struct xdg_toplevel* GetXdgToplevelFromGdkWindow(GdkWindow* aWindow) {
   static auto sGdkWaylandWindowGetXdgToplevel =
@@ -78,77 +98,88 @@ bool nsWindowWayland::CreateRestoreSession(bool aRestoreWindow) {
   MOZ_DIAGNOSTIC_ASSERT(!mSessionRestoreToken);
   GdkWindow* window = GetToplevelGdkWindow();
   if (!window) {
-    LOG("  failed to get xdg_toplevel, quit.");
+    LOG("nsWindowWayland::CreateRestoreSession(): failed to get GdkWindow, "
+        "quit.");
     return false;
   }
   struct xdg_toplevel* toplevel = GetXdgToplevelFromGdkWindow(window);
   if (!toplevel) {
-    LOG(" failed to get xdg_toplevel, quit.");
+    LOG("nsWindowWayland::CreateRestoreSession(): failed to get xdg-toplevel, "
+        "quit.");
     return false;
   }
   auto* session = WaylandDisplayGet()->GetSession();
   if (!session) {
-    LOG(" failed to get restore session, quit.");
+    LOG("nsWindowWayland::CreateRestoreSession(): failed to get restore "
+        "session, quit.");
     return false;
   }
-  nsAutoCString id;
-  id.AppendInt(mSessionID);
+
+  NS_ConvertUTF16toUTF8 id(mSessionID);
   if (aRestoreWindow) {
     mSessionRestoreToken =
-        xx_session_v1_restore_toplevel(session, toplevel, id.get());
+        xdg_session_v1_restore_toplevel(session, toplevel, id.get());
   } else {
     mSessionRestoreToken =
-        xx_session_v1_add_toplevel(session, toplevel, id.get());
+        xdg_session_v1_add_toplevel(session, toplevel, id.get());
   }
+
+  LOG("nsWindowWayland::CreateRestoreSession() ID %s restore %d token %p",
+      id.get(), aRestoreWindow, mSessionRestoreToken);
   return !!mSessionRestoreToken;
 }
 
 void nsWindowWayland::GetWorkspaceID(nsAString& workspaceID) {
-  workspaceID.Truncate();
-  if (!mSessionID) {
-    mSessionID = ++sLastSessionID;
+  if (mSessionID.IsEmpty() && !GenerateWorkspaceID(mSessionID)) {
+    return;
   }
-  workspaceID.AppendInt(mSessionID);
+  workspaceID.Assign(mSessionID);
 
-  LOG("nsWindowWayland::GetWorkspaceID() ID %d", mSessionID);
+  LOG("nsWindowWayland::GetWorkspaceID() ID %s token %p",
+      NS_ConvertUTF16toUTF8(mSessionID).get(), mSessionRestoreToken);
 
   if (mSessionRestoreToken) {
     return;
   }
+
   CreateRestoreSession(/* aRestoreWindow */ false);
 }
 
 #ifdef MOZ_LOGGING
 static void SessionRestoredHandler(void* aData,
-                                   xx_toplevel_session_v1* aToplevelSession,
-                                   struct xdg_toplevel* aSurface) {
+                                   xdg_toplevel_session_v1* aToplevelSession) {
   LOGW("nsWindowWayland restored [%p]", aData);
 }
 
-static const xx_toplevel_session_v1_listener sSessionListener = {
+static const xdg_toplevel_session_v1_listener sSessionListener = {
     SessionRestoredHandler,
 };
 #endif
 
 void nsWindowWayland::RestoreXdgToplevel() {
-  LOG("nsWindowWayland::RestoreXdgToplevel() ID %d GdkWindow [%p]", mSessionID,
-      GetToplevelGdkWindow());
+  LOG("nsWindowWayland::RestoreXdgToplevel() ID %s GdkWindow [%p]",
+      NS_ConvertUTF16toUTF8(mSessionID).get(), GetToplevelGdkWindow());
   if (CreateRestoreSession(/* aRestoreWindow */ true)) {
 #ifdef MOZ_LOGGING
     if (LOG_ENABLED()) {
-      xx_toplevel_session_v1_add_listener(mSessionRestoreToken,
-                                          &sSessionListener, this);
+      xdg_toplevel_session_v1_add_listener(mSessionRestoreToken,
+                                           &sSessionListener, this);
     }
 #endif
   }
 }
 
 void nsWindowWayland::MoveToWorkspace(const nsAString& workspaceIDStr) {
-  nsresult rv = NS_OK;
-  mSessionID = workspaceIDStr.ToInteger(&rv);
-  LOG("nsWindowWayland::MoveToWorkspace() session ID %d", mSessionID);
-  if (mWaitingToSessionRestore && mNeedsShow) {
-    mWaitingToSessionRestore = false;
+  mSessionID.Assign(workspaceIDStr);
+  LOG("nsWindowWayland::MoveToWorkspace() session ID %s "
+      "mWaitingToSessionRestore %d mNeedsShow %d",
+      NS_ConvertUTF16toUTF8(mSessionID).get(), mWaitingToSessionRestore,
+      mNeedsShow);
+  if (!mWaitingToSessionRestore) {
+    return;
+  }
+  mWaitingToSessionRestore = false;
+  if (mNeedsShow) {
     NativeShow(/* show */ true);
   }
 }
@@ -2098,6 +2129,8 @@ void nsWindowWayland::CreateNative() {
   mWaitingToSessionRestore =
       IsTopLevelWidget() &&
       nsAppShell::UpdateAndGetSessionState() == eSessionRestoring;
+
+  LOGVERBOSE("  mWaitingToSessionRestore %d", mWaitingToSessionRestore);
 }
 
 void nsWindowWayland::ConfigureToplevelWindowNative() {
@@ -2112,10 +2145,8 @@ void nsWindowWayland::ConfigureToplevelWindowNative() {
     LOG("  quit, missing toplevel GdkWindow!");
     return;
   }
-  if (!g_signal_lookup("xdg-toplevel-realized", G_OBJECT_TYPE(window))) {
-    LOG("  quit, missing gtk3 support!");
-    return;
-  }
+  MOZ_ASSERT(g_signal_lookup("xdg-toplevel-realized", G_OBJECT_TYPE(window)),
+             "Session restore support shouldbe disabled!");
   if (g_signal_handler_is_connected(window, mXdgToplevelRealizedID)) {
     return;
   }
@@ -2140,11 +2171,12 @@ void nsWindowWayland::ConfigureToplevelWindowNative() {
 }
 
 void nsWindowWayland::DestroyNative() {
+  LOG("nsWindowWayland::DestroyNative()");
   if (mXdgToplevelRealizedID) {
     g_signal_handler_disconnect(GetToplevelGdkWindow(), mXdgToplevelRealizedID);
     mXdgToplevelRealizedID = 0;
   }
-  MozClearPointer(mSessionRestoreToken, xx_toplevel_session_v1_destroy);
+  MozClearPointer(mSessionRestoreToken, xdg_toplevel_session_v1_destroy);
   ClearPipResources();
 
   // Shut down our local vsync source

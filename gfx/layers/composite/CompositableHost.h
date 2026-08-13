@@ -5,8 +5,9 @@
 #ifndef MOZILLA_GFX_BUFFERHOST_H
 #define MOZILLA_GFX_BUFFERHOST_H
 
-#include <stdint.h>              // for uint64_t
-#include <stdio.h>               // for FILE
+#include <stdint.h>  // for uint64_t
+#include <stdio.h>   // for FILE
+
 #include "gfxRect.h"             // for gfxRect
 #include "mozilla/Assertions.h"  // for MOZ_ASSERT, etc
 #include "mozilla/RefPtr.h"      // for RefPtr, RefCounted, etc
@@ -16,11 +17,11 @@
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/layers/CompositorTypes.h"  // for TextureInfo, etc
 // #include "mozilla/layers/LayersTypes.h"      // for LayerRenderState, etc
+#include "Units.h"  // for CSSToScreenScale
 #include "mozilla/layers/LayersMessages.h"
 #include "mozilla/layers/TextureHost.h"  // for TextureHost
 #include "nsCOMPtr.h"                    // for already_AddRefed
 #include "nscore.h"                      // for nsACString
-#include "Units.h"                       // for CSSToScreenScale
 
 namespace mozilla {
 

@@ -3,13 +3,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 // HttpLog.h should generally be included first
-#include "HttpLog.h"
-
 #include "nsHttpBasicAuth.h"
-#include "nsCRT.h"
-#include "nsString.h"
+
+#include "HttpLog.h"
 #include "mozilla/Base64.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "nsCRT.h"
+#include "nsString.h"
 
 namespace mozilla {
 namespace net {

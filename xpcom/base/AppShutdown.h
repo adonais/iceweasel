@@ -5,9 +5,9 @@
 #ifndef AppShutdown_h
 #define AppShutdown_h
 
+#include "ShutdownPhase.h"
 #include "nsCOMPtr.h"
 #include "nsISupports.h"
-#include "ShutdownPhase.h"
 
 namespace mozilla {
 

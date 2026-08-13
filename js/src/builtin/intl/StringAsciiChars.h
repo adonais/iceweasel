@@ -15,7 +15,6 @@
 #include "js/GCAPI.h"
 #include "js/TypeDecls.h"
 #include "js/Vector.h"
-
 #include "vm/StringType.h"
 
 namespace js::intl {

@@ -38,7 +38,7 @@ add_task(async function () {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: `http://${query}/`,
         title: `${query}/`,
         heuristic: true,
@@ -56,7 +56,7 @@ add_task(async function () {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: `http://${query}/`,
         title: `${query}/`,
         heuristic: true,
@@ -74,7 +74,7 @@ add_task(async function () {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: `http://${query}/`,
         title: `${query}/`,
         heuristic: true,
@@ -92,7 +92,7 @@ add_task(async function () {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: `${query}/`,
         title: `${query}/`,
         heuristic: true,
@@ -107,7 +107,7 @@ add_task(async function () {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: `${query}/`,
         title: `${query}/`,
         heuristic: true,
@@ -122,7 +122,7 @@ add_task(async function () {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: `${query}/`,
         title: `${query}/`,
         heuristic: true,
@@ -154,7 +154,7 @@ add_task(async function () {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: query,
         title: query,
         heuristic: true,
@@ -169,7 +169,7 @@ add_task(async function () {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: `${query}/`,
         title: `${query}/`,
         heuristic: true,
@@ -193,7 +193,7 @@ add_task(async function () {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: `http://${query}`,
         title: `${query}`,
         iconUri: "page-icon:http://mozilla.org/",
@@ -242,7 +242,7 @@ add_task(async function () {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: `http://${query}/`,
         title: `${query}/`,
         heuristic: true,
@@ -260,7 +260,7 @@ add_task(async function () {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: `http://${query}`,
         title: `${query}`,
         iconUri: "page-icon:http://firefox/",
@@ -280,7 +280,7 @@ add_task(async function () {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: `http://${query}`,
         title: `${query}`,
         iconUri: "page-icon:http://mozilla/",
@@ -297,7 +297,7 @@ add_task(async function () {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: `http://${query}/`,
         title: `${query}/`,
         heuristic: true,
@@ -312,7 +312,7 @@ add_task(async function () {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: `http://${query}/`,
         title: `${query}/`,
         heuristic: true,
@@ -333,7 +333,7 @@ add_task(async function () {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: `http://${query}/`,
         title: `${query}/`,
         heuristic: true,
@@ -348,7 +348,7 @@ add_task(async function () {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: query,
         title: query,
         heuristic: true,
@@ -438,7 +438,7 @@ add_task(async function () {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: `${query}/`,
         title: `${query}/`,
         heuristic: true,
@@ -453,7 +453,7 @@ add_task(async function () {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: `${query}/`,
         title: `${query}/`,
         heuristic: true,
@@ -468,7 +468,7 @@ add_task(async function () {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: `http://${query}/`,
         title: `${query}/`,
         heuristic: true,
@@ -514,7 +514,7 @@ add_task(async function () {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: query,
         title: query,
         heuristic: true,
@@ -529,7 +529,7 @@ add_task(async function () {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: query,
         title: query,
         heuristic: true,
@@ -592,13 +592,13 @@ add_task(async function () {
       context = createContext(query, { isPrivate: false });
       info(`Searching for "${query}", expecting "${expectedQuery}"`);
       let payload = {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         heuristic: true,
         query: expectedQuery,
         alias: token,
       };
       if (token == UrlbarShared.RESTRICT_TOKENS.SEARCH) {
-        payload.source = UrlbarUtils.RESULT_SOURCE.SEARCH;
+        payload.source = UrlbarShared.RESULT_SOURCE.SEARCH;
         payload.engineName = SUGGESTIONS_ENGINE_NAME;
       }
       await check_results({
@@ -620,13 +620,13 @@ add_task(async function () {
       context = createContext(query, { isPrivate: false });
       info(`Searching for "${query}", expecting "${expectedQuery}"`);
       let payload = {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         heuristic: true,
         query: expectedQuery,
         alias: token,
       };
       if (token == UrlbarShared.RESTRICT_TOKENS.SEARCH) {
-        payload.source = UrlbarUtils.RESULT_SOURCE.SEARCH;
+        payload.source = UrlbarShared.RESULT_SOURCE.SEARCH;
         payload.engineName = SUGGESTIONS_ENGINE_NAME;
       }
       await check_results({
@@ -677,7 +677,7 @@ add_task(async function () {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: `http://${query}/`,
         title: `${query}/`,
         heuristic: true,
@@ -713,7 +713,7 @@ add_task(async function () {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: "http://user:pass@not-host/",
         title: "user:pass@not-host/",
         heuristic: true,
@@ -728,7 +728,7 @@ add_task(async function () {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: "http://user@192.168.0.1/",
         title: "user@192.168.0.1/",
         heuristic: true,
@@ -756,7 +756,7 @@ add_task(async function () {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         uri: `http://test.xn--e1afmkfd.com/`,
         title: "test.пример.com",
         heuristic: true,
@@ -787,7 +787,7 @@ add_task(async function dont_fixup_urls_with_at_symbol() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: `http://Lorem%20Ipsum%20@mozilla.org/`,
         title: `${query}/`,
         heuristic: true,
@@ -800,7 +800,7 @@ add_task(async function dont_fixup_urls_with_at_symbol() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: `https://Lorem%20Ipsum%20@mozilla.org/`,
         title: `${query}/`,
         heuristic: true,
@@ -814,7 +814,7 @@ add_task(async function dont_fixup_urls_with_at_symbol() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: `http://${query}/`,
         title: `${query}/`,
         heuristic: true,

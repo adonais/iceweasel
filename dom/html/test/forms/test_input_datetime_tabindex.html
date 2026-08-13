@@ -58,14 +58,11 @@ function testTabindex(type) {
   is(document.activeElement, input1,
      "input element with tabindex=0 is focusable");
 
-  // Time input does not include a Calendar button
   let fieldCount;
   if (type == "datetime-local") {
     fieldCount = 7;
-  } else if (type == "date") {
-    fieldCount = 4;
   } else {
-    fieldCount = 3;
+    fieldCount = 4;
   };
 
   // Advance through inner fields.

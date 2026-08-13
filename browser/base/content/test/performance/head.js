@@ -299,7 +299,7 @@ async function ensureSearchIconVisible() {
   ) {
     let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
     BrowserTestUtils.removeTab(tab);
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () =>
         UrlbarTestUtils.getSearchModeSwitcherIcon(window) !=
         UrlbarUtils.ICON.SEARCH_GLASS

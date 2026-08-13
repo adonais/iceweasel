@@ -122,6 +122,7 @@ bool WebGL2Context::GetBufferSubData(GLenum target, uint64_t srcByteOffset,
     ErrorOutOfMemory("Offset or size too large for platform.");
     return false;
   }
+
   const GLsizeiptr glByteLen(srcLen);
 
   ////
@@ -146,19 +147,25 @@ bool WebGL2Context::GetBufferSubData(GLenum target, uint64_t srcByteOffset,
 
   ////
 
+  if (!srcLen) {
+    return true;
+  }
+
   const ScopedLazyBind readBind(gl, target, buffer);
 
-  if (srcLen) {
-    const bool isTF = (target == LOCAL_GL_TRANSFORM_FEEDBACK_BUFFER);
-    GLenum mapTarget = target;
-    if (isTF) {
-      gl->fBindTransformFeedback(LOCAL_GL_TRANSFORM_FEEDBACK, mEmptyTFO);
-      gl->fBindBuffer(LOCAL_GL_ARRAY_BUFFER, buffer->mGLName);
-      mapTarget = LOCAL_GL_ARRAY_BUFFER;
-    }
+  const bool isTF = (target == LOCAL_GL_TRANSFORM_FEEDBACK_BUFFER);
+  GLenum mapTarget = target;
+  if (isTF) {
+    gl->fBindTransformFeedback(LOCAL_GL_TRANSFORM_FEEDBACK, mEmptyTFO);
+    gl->fBindBuffer(LOCAL_GL_ARRAY_BUFFER, buffer->mGLName);
+    mapTarget = LOCAL_GL_ARRAY_BUFFER;
+  }
 
-    const void* mappedBytes = gl->fMapBufferRange(
-        mapTarget, srcByteOffset, glByteLen, LOCAL_GL_MAP_READ_BIT);
+  const void* mappedBytes = gl->fMapBufferRange(
+      mapTarget, srcByteOffset, glByteLen, LOCAL_GL_MAP_READ_BIT);
+  bool success = false;
+  if (mappedBytes != nullptr) {
+    success = true;
     if (numRows > 0 && (destStride != srcStride || rowDataWidth != srcStride)) {
       const uint8_t* srcRow = (const uint8_t*)mappedBytes;
       uint8_t* destRow = dest.begin().get();
@@ -172,16 +179,16 @@ bool WebGL2Context::GetBufferSubData(GLenum target, uint64_t srcByteOffset,
       memcpy(dest.begin().get(), mappedBytes, srcLen);
     }
     gl->fUnmapBuffer(mapTarget);
-
-    if (isTF) {
-      const GLuint vbo = (mBoundArrayBuffer ? mBoundArrayBuffer->mGLName : 0);
-      gl->fBindBuffer(LOCAL_GL_ARRAY_BUFFER, vbo);
-      const GLuint tfo =
-          (mBoundTransformFeedback ? mBoundTransformFeedback->mGLName : 0);
-      gl->fBindTransformFeedback(LOCAL_GL_TRANSFORM_FEEDBACK, tfo);
-    }
   }
-  return true;
+
+  if (isTF) {
+    const GLuint vbo = (mBoundArrayBuffer ? mBoundArrayBuffer->mGLName : 0);
+    gl->fBindBuffer(LOCAL_GL_ARRAY_BUFFER, vbo);
+    const GLuint tfo =
+        (mBoundTransformFeedback ? mBoundTransformFeedback->mGLName : 0);
+    gl->fBindTransformFeedback(LOCAL_GL_TRANSFORM_FEEDBACK, tfo);
+  }
+  return success;
 }
 
 }  // namespace mozilla

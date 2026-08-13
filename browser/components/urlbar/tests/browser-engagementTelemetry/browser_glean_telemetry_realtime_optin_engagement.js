@@ -61,7 +61,7 @@ add_task(async function opt_in() {
     let target = element.row.querySelector(".urlbarView-button-0");
     EventUtils.synthesizeMouseAtCenter(target, {});
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         engagement_type: "opt_in",
         selected_result: "rust_market_opt_in",
@@ -84,7 +84,7 @@ add_task(async function not_now_and_dismiss() {
     let target = element.row.querySelector(".urlbarView-button-1");
     EventUtils.synthesizeMouseAtCenter(target, {});
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         engagement_type: "not_now",
         selected_result: "rust_market_opt_in",
@@ -114,7 +114,7 @@ add_task(async function not_now_and_dismiss() {
     target = element.row.querySelector(".urlbarView-button-1");
     EventUtils.synthesizeMouseAtCenter(target, {});
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         engagement_type: "dismiss",
         selected_result: "rust_market_opt_in",
@@ -137,7 +137,7 @@ add_task(async function not_interested() {
     info("Open result menu");
     let { element } = await UrlbarTestUtils.getDetailsOfResultAt(window, 1);
     let popup = gURLBar.view.resultMenu;
-    let onPopupShown = BrowserTestUtils.waitForEvent(popup, "popupshown");
+    let onPopupShown = BrowserTestUtils.waitForEvent(popup, "shown");
     let dropmarker = element.row.querySelector(
       ".urlbarView-splitbutton-dropmarker"
     );
@@ -145,18 +145,12 @@ add_task(async function not_interested() {
     await onPopupShown;
 
     info("Activate the dismiss all item");
-    let onPopupHidden = BrowserTestUtils.waitForEvent(popup, "popuphidden");
-    let targetMenuItem = popup.querySelector("menuitem");
-    if (AppConstants.platform == "macosx") {
-      // Synthesized clicks don't work in the native Mac menu.
-      targetMenuItem.doCommand();
-      popup.hidePopup(true);
-    } else {
-      EventUtils.synthesizeMouseAtCenter(targetMenuItem, {});
-    }
+    let onPopupHidden = BrowserTestUtils.waitForEvent(popup, "hidden");
+    let targetMenuItem = popup.querySelector("panel-item");
+    EventUtils.synthesizeMouseAtCenter(targetMenuItem, {});
     await onPopupHidden;
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         engagement_type: "not_interested",
         selected_result: "rust_market_opt_in",

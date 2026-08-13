@@ -358,7 +358,9 @@ void nsDOMNavigationTiming::TTITimeout(nsITimer* aTimer) {
     TimeDuration elapsed = mTTFI - mNavigationStart;
     MOZ_ASSERT(elapsed.ToMilliseconds() > 0);
     TimeDuration elapsedLongTask =
-        lastLongTaskEnded.IsNull() ? 0 : lastLongTaskEnded - mNavigationStart;
+        lastLongTaskEnded.IsNull()
+            ? TimeDuration()
+            : TimeDuration(lastLongTaskEnded - mNavigationStart);
     nsPrintfCString marker(
         "TTFI after %dms (LongTask was at %dms) for URL %s",
         int(elapsed.ToMilliseconds()), int(elapsedLongTask.ToMilliseconds()),

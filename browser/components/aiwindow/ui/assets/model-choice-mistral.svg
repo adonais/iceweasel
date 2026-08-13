@@ -1,0 +1,15 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at https://mozilla.org/MPL/2.0/. -->
+<svg width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M5.09495 2.83984H2.82617V5.10379H5.09495V2.83984Z" fill="#FFD800"/>
+<path d="M14.1711 2.83984H11.9023V5.10379H14.1711V2.83984Z" fill="#FFD800"/>
+<path d="M7.36374 5.10352H2.82617V7.36746H7.36374V5.10352Z" fill="#FFAF00"/>
+<path d="M14.1714 5.10352H9.63379V7.36746H14.1714V5.10352Z" fill="#FFAF00"/>
+<path d="M14.1714 7.36719H2.82617V9.63101H14.1714V7.36719Z" fill="#FF8205"/>
+<path d="M5.09495 9.63086H2.82617V11.8948H5.09495V9.63086Z" fill="#FA500F"/>
+<path d="M9.63304 9.63086H7.36426V11.8948H9.63304V9.63086Z" fill="#FA500F"/>
+<path d="M14.1711 9.63086H11.9023V11.8948H14.1711V9.63086Z" fill="#FA500F"/>
+<path d="M7.36533 11.8965H0.557617V14.1604H7.36533V11.8965Z" fill="#E10500"/>
+<path d="M16.4415 11.8965H9.63379V14.1604H16.4415V11.8965Z" fill="#E10500"/>
+</svg>

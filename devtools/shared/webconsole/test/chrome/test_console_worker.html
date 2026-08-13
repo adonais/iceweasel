@@ -32,6 +32,17 @@ const expectedConsoleAPICalls = [{
 }];
 
 window.onload = async function () {
+  // This test discovers the worker through the legacy content-process
+  // target.listWorkers() path (see attachConsoleToWorker in common.js), which
+  // only lists workers whose debugger lives in the content process. Force the
+  // local WorkerDebugger instead of the parent-process RemoteWorkerDebugger
+  // (bug 1944240). Remove this pin (or the test) once the local WorkerDebugger
+  // mechanism is removed; this legacy worker-introspection path still needs to
+  // be modernized to the RemoteWorkerDebugger model.
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.worker.remoteDebugger.enabled", false]],
+  });
+
   const {state} = await attachConsoleToWorker(["ConsoleAPI"]);
 
   await testCachedMessages(state);

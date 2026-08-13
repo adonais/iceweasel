@@ -4,12 +4,14 @@
 
 /* An xpcom implementation of the JavaScript nsIID and nsCID objects. */
 
-#include "xpcprivate.h"
 #include "mozilla/dom/BindingUtils.h"
+
+#include "nsContentUtils.h"
+#include "xpcprivate.h"
+
 #include "js/Object.h"              // JS::GetClass, JS::GetReservedSlot
 #include "js/PropertyAndElement.h"  // JS_DefineFunction, JS_DefineFunctionById, JS_DefineProperty, JS_DefinePropertyById
 #include "js/Symbol.h"
-#include "nsContentUtils.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

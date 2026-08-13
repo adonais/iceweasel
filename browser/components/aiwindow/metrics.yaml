@@ -581,6 +581,7 @@ smart_window:
     labels:
       - history
       - conversation
+      - session
 
   memories_last_updated:
     type: datetime
@@ -1524,3 +1525,211 @@ smart_window:
           The position (0-index) of the Top Sites tile.
           For example: 2 means the third tile in the row.
       visible_topsites: *visible_topsites
+
+  # TODO: Follow up Bug https://bugzilla.mozilla.org/show_bug.cgi?id=2046610 for testing telemetry
+  # Will land after FE is landed
+  monitor_create:
+    type: event
+    description: |
+      Recorded when a Smart Window monitor is created.
+    bugs: &monitor_bugs
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2046610
+    data_reviews: &monitor_data_reviews
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2046610
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys: &monitor_extra_keys
+      monitors:
+        type: quantity
+        unit: count
+        description: >
+          Number of monitors currently stored.
+      urls:
+        type: quantity
+        unit: count
+        description: >
+          Number of URLs watched by the monitor.
+      length:
+        type: quantity
+        unit: characters
+        description: >
+          Number of characters in the monitor prompt.
+      age:
+        type: quantity
+        unit: ms
+        description: >
+          Age of the monitor in milliseconds since it was created.
+      schedule_type:
+        type: string
+        description: >
+          Type of schedule used by the monitor: interval, daily, or weekly.
+      prompt_version:
+        type: string
+        description: >
+          Version of the monitor prompt used for the monitor.
+      enabled:
+        type: boolean
+        description: >
+          Whether the monitor is enabled.
+
+  monitor_delete:
+    type: event
+    description: |
+      Recorded when a Smart Window monitor is deleted.
+    bugs: *monitor_bugs
+    data_reviews: *monitor_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys: *monitor_extra_keys
+
+  monitor_edit:
+    type: event
+    description: |
+      Recorded when a Smart Window monitor is edited.
+    bugs: *monitor_bugs
+    data_reviews: *monitor_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys: *monitor_extra_keys
+
+  monitor_enable:
+    type: event
+    description: |
+      Recorded when a Smart Window monitor is enabled.
+    bugs: *monitor_bugs
+    data_reviews: *monitor_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys: *monitor_extra_keys
+
+  monitor_disable:
+    type: event
+    description: |
+      Recorded when a Smart Window monitor is disabled.
+    bugs: *monitor_bugs
+    data_reviews: *monitor_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys: *monitor_extra_keys
+
+  monitor_failure:
+    type: event
+    description: |
+      Recorded when a Smart Window monitor run fails.
+    bugs: *monitor_bugs
+    data_reviews: *monitor_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys: *monitor_extra_keys
+
+  monitor_run_manual:
+    type: event
+    description: |
+      Recorded when a Smart Window monitor runs after a manual request.
+    bugs: *monitor_bugs
+    data_reviews: *monitor_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys: *monitor_extra_keys
+
+  monitor_run_scheduled:
+    type: event
+    description: |
+      Recorded when a Smart Window monitor runs from its schedule.
+    bugs: *monitor_bugs
+    data_reviews: *monitor_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys: *monitor_extra_keys
+
+  auto_tab_group_offered:
+    type: event
+    description: |
+      Recorded when the "Group my tabs" panel finishes clustering and offers one
+      or more suggested tab groups. No URLs or tab titles are included.
+    bugs: &auto_tab_group_bugs
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2054506
+    data_reviews: &auto_tab_group_data_reviews
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2054506
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      count:
+        type: quantity
+        unit: groups
+        description: >
+          Number of suggested groups offered.
+      median_tabs: &auto_tab_group_median_tabs
+        type: quantity
+        unit: tabs
+        description: >
+          Median number of tabs across the groups in this event, rounded.
+      mean_tabs: &auto_tab_group_mean_tabs
+        type: quantity
+        unit: tabs
+        description: >
+          Mean number of tabs across the groups in this event, rounded.
+      recomputed:
+        type: boolean
+        description: >
+          False for the first set of suggestions offered for a window, true when
+          reopening the panel regenerated the suggestions and replaced a set
+          previously offered for that window.
+
+  auto_tab_group_created:
+    type: event
+    description: |
+      Recorded when the user creates one or more suggested tab groups from the
+      "Group my tabs" panel. No URLs or tab titles are included.
+    bugs: *auto_tab_group_bugs
+    data_reviews: *auto_tab_group_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      type: &auto_tab_group_type
+        type: string
+        description: >
+          "individual" when a single suggested group was created, "all" when the
+          user created every suggested group at once.
+      count: &auto_tab_group_count
+        type: quantity
+        unit: groups
+        description: >
+          Number of groups affected by this action.
+      median_tabs: *auto_tab_group_median_tabs
+      mean_tabs: *auto_tab_group_mean_tabs
+
+  auto_tab_group_undone:
+    type: event
+    description: |
+      Recorded when the user ungroups the previously created group(s) from the
+      "Group my tabs" panel, reversing everything in the "Just created" list.
+      Ungrouping keeps the tabs open. No URLs or tab titles are included.
+    bugs: *auto_tab_group_bugs
+    data_reviews: *auto_tab_group_data_reviews
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      count: *auto_tab_group_count

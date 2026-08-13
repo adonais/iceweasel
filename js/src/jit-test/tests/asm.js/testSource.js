@@ -45,11 +45,8 @@ assertEq(g.toString(), funcBody2);
 f0 = new Function(bodyOnly);
 assertEq(f0.toString(), "function anonymous(\n) {\n" + bodyOnly + "\n}");
 
-if (isAsmJSCompilationAvailable()) {
-    var m = new Function(bodyOnly);
-    assertEq(isAsmJSModule(m), true);
-    assertEq(m.toString(), "function anonymous(\n) {\n" + bodyOnly + "\n}");
-}
+var m = new Function(bodyOnly);
+assertEq(m.toString(), "function anonymous(\n) {\n" + bodyOnly + "\n}");
 
 })();
 
@@ -99,11 +96,8 @@ assertEq(g.toString(), funcBody2);
 f1 = new Function('glob', bodyOnly);
 assertEq(f1.toString(), "function anonymous(glob\n) {\n" + bodyOnly + "\n}");
 
-if (isAsmJSCompilationAvailable()) {
-    var m = new Function('glob', bodyOnly);
-    assertEq(isAsmJSModule(m), true);
-    assertEq(m.toString(), "function anonymous(glob\n) {\n" + bodyOnly + "\n}");
-}
+var m = new Function('glob', bodyOnly);
+assertEq(m.toString(), "function anonymous(glob\n) {\n" + bodyOnly + "\n}");
 
 })();
 
@@ -154,11 +148,8 @@ assertEq(g.toString(), funcBody2);
 f2 = new Function('glob', 'ffi', bodyOnly);
 assertEq(f2.toString(), "function anonymous(glob,ffi\n) {\n" + bodyOnly + "\n}");
 
-if (isAsmJSCompilationAvailable()) {
-    var m = new Function('glob', 'ffi', bodyOnly);
-    assertEq(isAsmJSModule(m), true);
-    assertEq(m.toString(), "function anonymous(glob,ffi\n) {\n" + bodyOnly + "\n}");
-}
+var m = new Function('glob', 'ffi', bodyOnly);
+assertEq(m.toString(), "function anonymous(glob,ffi\n) {\n" + bodyOnly + "\n}");
 
 })();
 
@@ -209,11 +200,8 @@ assertEq(g.toString(), funcBody2);
 f3 = new Function('glob', 'ffi', 'heap', bodyOnly);
 assertEq(f3.toString(), "function anonymous(glob,ffi,heap\n) {\n" + bodyOnly + "\n}");
 
-if (isAsmJSCompilationAvailable()) {
-    var m = new Function('glob', 'ffi', 'heap', bodyOnly);
-    assertEq(isAsmJSModule(m), true);
-    assertEq(m.toString(), "function anonymous(glob,ffi,heap\n) {\n" + bodyOnly + "\n}");
-}
+var m = new Function('glob', 'ffi', 'heap', bodyOnly);
+assertEq(m.toString(), "function anonymous(glob,ffi,heap\n) {\n" + bodyOnly + "\n}");
 
 })();
 
@@ -233,11 +221,8 @@ var expectedToString = funcSource;
 
 assertEq(f4.toString(), expectedToString);
 
-if (isAsmJSCompilationAvailable()) {
-    var f5 = eval("\"use strict\";\n(" + funcSource + ")");
-    assertEq(isAsmJSModule(f5), true);
-    assertEq(f5.toString(), expectedToString);
-}
+var f5 = eval("\"use strict\";\n(" + funcSource + ")");
+assertEq(f5.toString(), expectedToString);
 })();
 
 /* Functions */
@@ -289,23 +274,18 @@ function checkFuncSrc(m) {
 }
 checkFuncSrc(moduleG);
 
-if (isAsmJSCompilationAvailable()) {
-    var g2 = new Function(funcBody);
-    assertEq(isAsmJSModule(g2), true);
-    m = g2();
-    checkFuncSrc(m);
+var g2 = new Function(funcBody);
+m = g2();
+checkFuncSrc(m);
 
-    var moduleDecl = 'function g3() {' + funcBody + '}';
-    eval(moduleDecl);
-    m = g3();
-    assertEq(isAsmJSModule(g3), true);
-    checkFuncSrc(m);
+var moduleDecl = 'function g3() {' + funcBody + '}';
+eval(moduleDecl);
+m = g3();
+checkFuncSrc(m);
 
-    eval('var x = 42;' + moduleDecl);
-    m = g3();
-    assertEq(isAsmJSModule(g3), true);
-    checkFuncSrc(m);
-}
+eval('var x = 42;' + moduleDecl);
+m = g3();
+checkFuncSrc(m);
 
 })();
 
@@ -327,12 +307,9 @@ var expectedToString = funcCode;
 
 assertEq(f5.toString(), expectedToString);
 
-if (isAsmJSCompilationAvailable()) {
-    var mf5 = eval("\"use strict\";\n(" + moduleCode + ")");
-    assertEq(isAsmJSModule(mf5), true);
-    var f5 = mf5();
-    assertEq(f5.toString(), expectedToString);
-}
+var mf5 = eval("\"use strict\";\n(" + moduleCode + ")");
+var f5 = mf5();
+assertEq(f5.toString(), expectedToString);
 
 })();
 
@@ -354,12 +331,9 @@ var f6 = eval(useStrict + ";\n(" + moduleCode + "({Math:{}}))");
 
 assertEq(f6.toString(), funcCode);
 
-if (isAsmJSCompilationAvailable()) {
-    var mf6 = eval("\"use strict\";\n(" + moduleCode + ")");
-    assertEq(isAsmJSModule(mf6), true);
-    var f6 = mf6({Math:{}});
-    assertEq(f6.toString(), funcCode);
-}
+var mf6 = eval("\"use strict\";\n(" + moduleCode + ")");
+var f6 = mf6({Math:{}});
+assertEq(f6.toString(), funcCode);
 
 })();
 

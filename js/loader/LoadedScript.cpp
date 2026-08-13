@@ -4,18 +4,19 @@
 
 #include "LoadedScript.h"
 
+#include "mozilla/dom/ScriptLoadContext.h"  // ScriptLoadContext
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/RefPtr.h"     // RefPtr, mozilla::MakeRefPtr
 #include "mozilla/Sprintf.h"    // SprintfLiteral
 #include "mozilla/UniquePtr.h"  // mozilla::UniquePtr, mozilla::MakeUnique
-#include "nsIURI.h"             // nsIURI::GetSpecOrDefault
 
-#include "mozilla/dom/ScriptLoadContext.h"  // ScriptLoadContext
 #include "jsfriendapi.h"
-#include "js/Modules.h"                 // JS::{Get,Set}ModulePrivate
+#include "LoadContextBase.h"  // LoadContextBase
+#include "nsIChannel.h"       // nsIChannel
+#include "nsIURI.h"           // nsIURI::GetSpecOrDefault
+
 #include "js/experimental/JSStencil.h"  // JS::SizeOfStencil
-#include "LoadContextBase.h"            // LoadContextBase
-#include "nsIChannel.h"                 // nsIChannel
+#include "js/Modules.h"                 // JS::{Get,Set}ModulePrivate
 
 namespace JS::loader {
 

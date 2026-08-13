@@ -10,7 +10,7 @@ let created = false;
 add_task(async function test_data_channel_observer() {
   setupObserver();
   let tab = await BrowserTestUtils.addTab(gBrowser, TEST_URI);
-  await BrowserTestUtils.waitForCondition(() => created);
+  await TestUtils.waitForCondition(() => created);
   ok(created, "We received observer notification");
   await BrowserTestUtils.removeTab(tab);
 });

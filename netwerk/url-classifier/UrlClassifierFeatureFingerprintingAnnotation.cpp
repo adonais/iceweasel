@@ -4,14 +4,14 @@
 
 #include "UrlClassifierFeatureFingerprintingAnnotation.h"
 
+#include "mozilla/StaticPtr.h"
 #include "mozilla/net/ChannelClassifierUtils.h"
 #include "mozilla/net/UrlClassifierCommon.h"
-#include "nsIClassifiedChannel.h"
 #include "nsContentUtils.h"
-#include "nsNetUtil.h"
-#include "mozilla/StaticPtr.h"
-#include "nsIWebProgressListener.h"
 #include "nsIChannel.h"
+#include "nsIClassifiedChannel.h"
+#include "nsIWebProgressListener.h"
+#include "nsNetUtil.h"
 
 namespace mozilla {
 namespace net {

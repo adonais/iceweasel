@@ -54,6 +54,8 @@ add_setup(async function () {
       return origAddExperiment(enrollment, recipe);
     });
 
+  registerCleanupFunction(NimbusTestUtils.disableSignatureVerification());
+
   // Ensure the inner callback runs after all other registered cleanup
   // functions. This lets tests use registerCleanupFunction to clean up any
   // stray enrollments.

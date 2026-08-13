@@ -8,17 +8,17 @@
 
 #include "GLContextEGL.h"
 #include "GLLibraryEGL.h"
-#include "RenderThread.h"
 #include "RenderCompositor.h"
 #include "RenderCompositorD3D11SWGL.h"
+#include "RenderThread.h"
 #include "ScopedGLHelpers.h"
 #include "mozilla/gfx/CanvasManagerParent.h"
 #include "mozilla/gfx/DeviceManagerDx.h"
-#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/gfx/gfxVars.h"
+#include "mozilla/layers/CompositeProcessD3D11FencesHolderMap.h"
 #include "mozilla/layers/FenceD3D11.h"
 #include "mozilla/layers/GpuProcessD3D11TextureMap.h"
-#include "mozilla/layers/CompositeProcessD3D11FencesHolderMap.h"
 #include "mozilla/layers/TextureD3D11.h"
 
 namespace mozilla {
@@ -183,7 +183,9 @@ size_t RenderDXGITextureHost::GetPlaneCount() const {
   switch (mFormat) {
     case gfx::SurfaceFormat::NV12:
     case gfx::SurfaceFormat::P010:
-    case gfx::SurfaceFormat::P016: {
+    case gfx::SurfaceFormat::P016:
+    case gfx::SurfaceFormat::NV16:
+    case gfx::SurfaceFormat::P210: {
       return 2;
     }
     case gfx::SurfaceFormat::B8G8R8A8:
@@ -205,7 +207,6 @@ size_t RenderDXGITextureHost::GetPlaneCount() const {
     case gfx::SurfaceFormat::YUV420:
     case gfx::SurfaceFormat::YUV420P10:
     case gfx::SurfaceFormat::YUV422P10:
-    case gfx::SurfaceFormat::NV16:
     case gfx::SurfaceFormat::YUY2:
     case gfx::SurfaceFormat::HSV:
     case gfx::SurfaceFormat::Lab:

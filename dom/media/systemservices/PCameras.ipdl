@@ -76,6 +76,7 @@ child:
   async __delete__();
 
 parent:
+  async InvalidateDesktopCaptureDeviceCache(CaptureEngine engine);
   async NumberOfCaptureDevices(CaptureEngine engine);
   async NumberOfCapabilities(CaptureEngine engine, nsCString deviceUniqueIdUTF8);
 

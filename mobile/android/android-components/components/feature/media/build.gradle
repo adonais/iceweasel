@@ -2,14 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
+    id 'com.android.library'
     alias(libs.plugins.dependency.analysis)
+    alias(libs.plugins.python.envs.plugin)
+    id 'org.mozilla.nimbus-gradle-plugin'
 }
-
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
 
 android {
     namespace = 'mozilla.components.feature.media'
@@ -18,12 +16,13 @@ android {
 dependencies {
     implementation project(':components:browser-state')
     implementation project(':components:concept-engine')
+    implementation project(':components:service-nimbus')
     implementation project(':components:support-base')
     implementation project(':components:support-ktx')
     implementation project(':components:support-utils')
     implementation project(':components:ui-icons')
 
-    implementation libs.androidx.core.ktx
+    implementation libs.androidx.core
     implementation libs.androidx.media
     implementation libs.kotlinx.coroutines
 
@@ -44,4 +43,15 @@ dependencies {
 
 apply from: '../../../common-config.gradle'
 apply from: '../../../publish.gradle'
+nimbus {
+    // The path to the Nimbus feature manifest file
+    manifestFile = "media.fml.yaml"
+
+    channels = [
+        default: "default",
+    ]
+
+    applicationServicesDir = gradle.hasProperty('localProperties.autoPublish.application-services.dir')
+        ? gradle.getProperty('localProperties.autoPublish.application-services.dir') : null
+}
 ext.configurePublish(config.componentsGroupId, project.name, project.ext.description)

@@ -2,10 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <cstdio>
-#include <cstdlib>
 #include <errno.h>
 #include <fcntl.h>
+
+#include <cstdio>
+#include <cstdlib>
 #if defined(__NetBSD__) || defined(__OpenBSD__)
 #  include <sys/videoio.h>
 #elif defined(__sun)
@@ -13,11 +14,11 @@
 #else
 #  include <linux/videodev2.h>
 #endif
-#include <sys/ioctl.h>
-#include <unistd.h>
-#include <string.h>
 #include <getopt.h>
 #include <stdint.h>
+#include <string.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
 
 #if defined(MOZ_ASAN) || defined(FUZZING)
 #  include <signal.h>

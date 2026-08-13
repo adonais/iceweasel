@@ -4,7 +4,7 @@
 
 sidebar-tab-row {
   border-radius: var(--border-radius-circle);
-  height: var(--size-item-large);
+  height: var(--sidebar-panel-list-item-height, var(--size-item-large));
   align-items: center;
 
   &:hover:not([selected]) {

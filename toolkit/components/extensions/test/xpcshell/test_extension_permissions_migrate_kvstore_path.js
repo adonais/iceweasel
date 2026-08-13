@@ -16,7 +16,7 @@ const { FileUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/FileUtils.sys.mjs"
 );
 const { KeyValueService } = ChromeUtils.importESModule(
-  "resource://gre/modules/kvstore.sys.mjs"
+  "moz-src:///toolkit/components/kvstore/kvstore.sys.mjs"
 );
 
 add_setup(async () => {

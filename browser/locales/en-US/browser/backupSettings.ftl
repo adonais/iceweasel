@@ -80,6 +80,8 @@ turn-on-scheduled-backups-location-label = Location
 #   $recommendedFolder (String) - Name of the recommended folder for saving backups
 turn-on-scheduled-backups-location-default-folder =
     .value = { $recommendedFolder } (recommended)
+turn-on-scheduled-backups-location-choose-folder =
+    .value = Choose a location
 turn-on-scheduled-backups-location-choose-button =
     { PLATFORM() ->
         [macos] Choose…
@@ -97,6 +99,7 @@ turn-on-scheduled-backups-confirm-button = Turn on backup
 # Tell the user there was an error accessing the user's selected backup
 # folder. The folder may be invalid or inaccessible.
 turn-on-scheduled-backups-error-file-system = There was a problem with your selected backup folder. Choose a different folder and try again.
+turn-on-scheduled-backups-error-default-dir-denied = We couldn’t access your backup folder. Try picking a new location.
 backup-error-file-system = There was a problem with your selected backup folder while backing up { -brand-short-name }.
 
 ## These strings are displayed in a modal when users want to turn off scheduled backups.

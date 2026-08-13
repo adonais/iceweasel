@@ -5,8 +5,8 @@
 #ifndef mozilla_net_SocketProcessImpl_h
 #define mozilla_net_SocketProcessImpl_h
 
-#include "mozilla/ipc/ProcessChild.h"
 #include "SocketProcessChild.h"
+#include "mozilla/ipc/ProcessChild.h"
 
 namespace mozilla {
 namespace net {

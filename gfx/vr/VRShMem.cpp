@@ -12,9 +12,9 @@
 #include "gfxVRMutex.h"
 
 #if defined(XP_MACOSX)
+#  include <fcntl.h> /* For O_* constants */
 #  include <sys/mman.h>
 #  include <sys/stat.h> /* For mode constants */
-#  include <fcntl.h>    /* For O_* constants */
 #elif defined(MOZ_WIDGET_ANDROID)
 #  include "GeckoVRManager.h"
 #endif

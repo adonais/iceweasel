@@ -4,7 +4,8 @@
 
 toolkit.jar:
 % content gfxsanity %content/gfxsanity/
-  content/gfxsanity/gfxFrameScript.js (content/gfxFrameScript.js)
+% resource gfxsanity %res/gfxsanity/
   content/gfxsanity/sanityparent.html (content/sanityparent.html)
-  content/gfxsanity/sanitytest.html   (content/sanitytest.html)
-  content/gfxsanity/videotest.mp4     (content/videotest.mp4)
+  res/gfxsanity/gfxFrameScript.js     (content/gfxFrameScript.js)
+  res/gfxsanity/sanitytest.html       (content/sanitytest.html)
+  res/gfxsanity/videotest.mp4         (content/videotest.mp4)

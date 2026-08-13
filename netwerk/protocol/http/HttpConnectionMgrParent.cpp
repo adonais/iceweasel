@@ -3,18 +3,18 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 // HttpLog.h should generally be included first
-#include "HttpLog.h"
-
 #include "HttpConnectionMgrParent.h"
+
 #include "AltSvcTransactionParent.h"
+#include "HttpLog.h"
 #include "mozilla/net/HttpTransactionParent.h"
 #include "mozilla/net/WebSocketConnectionParent.h"
 #include "nsHttpConnectionInfo.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsIInterfaceRequestorUtils.h"
-#include "nsISpeculativeConnect.h"
 #include "nsIOService.h"
+#include "nsISpeculativeConnect.h"
 #include "nsQueryObject.h"
 
 namespace mozilla::net {

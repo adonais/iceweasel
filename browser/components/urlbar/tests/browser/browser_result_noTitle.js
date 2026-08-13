@@ -34,7 +34,7 @@ add_task(async function places_history() {
 
   await checkTitleElement({
     target: {
-      type: UrlbarUtils.RESULT_TYPE.URL,
+      type: UrlbarShared.RESULT_TYPE.URL,
       url: NO_TITLE_URL,
       providerName: UrlbarProviderPlaces.name,
     },
@@ -78,7 +78,7 @@ add_task(async function places_bookmark() {
 
   await checkTitleElement({
     target: {
-      type: UrlbarUtils.RESULT_TYPE.URL,
+      type: UrlbarShared.RESULT_TYPE.URL,
       url: NO_TITLE_URL,
       providerName: UrlbarProviderPlaces.name,
     },
@@ -106,7 +106,7 @@ add_task(async function inputHistory() {
 
   await checkTitleElement({
     target: {
-      type: UrlbarUtils.RESULT_TYPE.URL,
+      type: UrlbarShared.RESULT_TYPE.URL,
       url: NO_TITLE_URL,
       providerName: UrlbarProviderInputHistory.name,
     },
@@ -233,7 +233,7 @@ async function doSwitchToTabTest({ target, searchString, expected }) {
         expected,
         target: {
           ...target,
-          type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+          type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
         },
       });
 
@@ -247,8 +247,8 @@ async function doGenericUrlResultTest({ payload, searchString, expected }) {
     priority: Infinity,
     results: [
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_NETWORK,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_NETWORK,
         payload,
       }),
     ],
@@ -265,7 +265,7 @@ async function doGenericUrlResultTest({ payload, searchString, expected }) {
   await checkTitleElement({
     expected,
     target: {
-      type: UrlbarUtils.RESULT_TYPE.URL,
+      type: UrlbarShared.RESULT_TYPE.URL,
       url: payload.url,
       providerName: provider.name,
     },

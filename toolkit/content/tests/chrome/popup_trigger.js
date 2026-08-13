@@ -8,6 +8,10 @@ var gScreenX = -1,
 var gCachedEvent = null;
 var gCachedEvent2 = null;
 
+// Synthesize a few pixels in from the corner: (0, 0) can be clipped by the
+// window's rounded border (e.g. with Nova), dispatching no mousedown.
+const CACHE_EVENT_OFFSET = 10;
+
 function cacheEvent(modifiers) {
   var cachedEvent = null;
 
@@ -16,7 +20,12 @@ function cacheEvent(modifiers) {
   };
 
   window.addEventListener("mousedown", mouseFn);
-  synthesizeMouse(document.documentElement, 0, 0, modifiers);
+  synthesizeMouse(
+    document.documentElement,
+    CACHE_EVENT_OFFSET,
+    CACHE_EVENT_OFFSET,
+    modifiers
+  );
   window.removeEventListener("mousedown", mouseFn);
 
   return cachedEvent;
@@ -38,8 +47,8 @@ function runTests() {
   // a hacky way to get the screen position of the document. Cache the event
   // so that we can use it in calls to openPopup.
   gCachedEvent = cacheEvent({ shiftKey: true });
-  gScreenX = gCachedEvent.screenX;
-  gScreenY = gCachedEvent.screenY;
+  gScreenX = gCachedEvent.screenX - CACHE_EVENT_OFFSET;
+  gScreenY = gCachedEvent.screenY - CACHE_EVENT_OFFSET;
   gCachedEvent2 = cacheEvent({
     altKey: true,
     ctrlKey: true,
@@ -48,6 +57,40 @@ function runTests() {
   });
 
   startPopupTests(popupTests);
+}
+
+// A large margin flips and clamps the popup flush against a window edge. Which
+// edge depends on the room around the anchor, which varies by platform/theme
+// so only assert the popup stays on-screen, clamped to an edge.
+function checkLargeMarginResult(testname, step) {
+  var popuprect = gMenuPopup.getBoundingClientRect();
+  var maxleft = Math.round(window.innerWidth - gPopupWidth);
+  var maxtop = Math.round(window.innerHeight - gPopupHeight);
+  var left = Math.round(popuprect.left);
+  var top = Math.round(popuprect.top);
+  ok(
+    left == 0 || left == maxleft,
+    testname +
+      " x position " +
+      step +
+      " (got " +
+      left +
+      ", expected 0 or " +
+      maxleft +
+      ")"
+  );
+  ok(
+    top == 0 || top == maxtop,
+    testname +
+      " y position " +
+      step +
+      " (got " +
+      top +
+      ", expected 0 or " +
+      maxtop +
+      ")"
+  );
+  gMenuPopup.removeAttribute("style");
 }
 
 var popupTests = [
@@ -405,29 +448,7 @@ var popupTests = [
       gMenuPopup.openPopup(gTrigger, step, 0, 0, false, false);
     },
     result(testname, step) {
-      var popuprect = gMenuPopup.getBoundingClientRect();
-      // as there is more room on the 'end' or 'after' side, popups will always
-      // appear on the right or bottom corners, depending on which side they are
-      // allowed to be flipped by.
-      var expectedleft =
-        step == "before_end" || step == "after_end"
-          ? 0
-          : Math.round(window.innerWidth - gPopupWidth);
-      var expectedtop =
-        step == "start_after" || step == "end_after"
-          ? 0
-          : Math.round(window.innerHeight - gPopupHeight);
-      is(
-        Math.round(popuprect.left),
-        expectedleft,
-        testname + " x position " + step
-      );
-      is(
-        Math.round(popuprect.top),
-        expectedtop,
-        testname + " y position " + step
-      );
-      gMenuPopup.removeAttribute("style");
+      checkLargeMarginResult(testname, step);
     },
   },
   {
@@ -450,28 +471,7 @@ var popupTests = [
       gMenuPopup.openPopup(gTrigger, step, 0, 0, false, false);
     },
     result(testname, step) {
-      var popuprect = gMenuPopup.getBoundingClientRect();
-      // using negative margins causes the reverse of positive margins, and
-      // popups will appear on the left or top corners.
-      var expectedleft =
-        step == "before_end" || step == "after_end"
-          ? Math.round(window.innerWidth - gPopupWidth)
-          : 0;
-      var expectedtop =
-        step == "start_after" || step == "end_after"
-          ? Math.round(window.innerHeight - gPopupHeight)
-          : 0;
-      is(
-        Math.round(popuprect.left),
-        expectedleft,
-        testname + " x position " + step
-      );
-      is(
-        Math.round(popuprect.top),
-        expectedtop,
-        testname + " y position " + step
-      );
-      gMenuPopup.removeAttribute("style");
+      checkLargeMarginResult(testname, step);
     },
   },
   {

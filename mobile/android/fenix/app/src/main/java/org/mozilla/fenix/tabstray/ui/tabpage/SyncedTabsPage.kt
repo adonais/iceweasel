@@ -26,11 +26,10 @@ import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.button.TextButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
+import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.SyncState
 import org.mozilla.fenix.tabstray.syncedtabs.OnSectionExpansionToggled
-import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListItem
 import org.mozilla.fenix.tabstray.ui.syncedtabs.SyncedTabsList
 import org.mozilla.fenix.theme.FirefoxTheme
-import kotlin.Boolean
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.tabstray.ui.syncedtabs.OnTabClick as OnSyncedTabClick
 import org.mozilla.fenix.tabstray.ui.syncedtabs.OnTabCloseClick as OnSyncedTabClose
@@ -40,30 +39,26 @@ private val EmptyPageWidth = 200.dp
 /**
  * UI for displaying the Synced Tabs Page in the Tab Manager.
  *
- * @param isSignedIn Whether the user is signed into their Firefox account.
- * @param syncedTabs The list of [SyncedTabsListItem] to display.
+ * @param state The current snapshot of [SyncState].
  * @param onTabClick Invoked when the user clicks on a tab.
  * @param onTabClose Invoked when the user clicks to close a tab.
  * @param onSignInClick Invoked when an unauthenticated user clicks to sign-in.
- * @param expandedState The list of [SyncedTabsListItem] expansion states.
  * @param onSectionExpansionToggled Invoked when a user toggles the section expansion.
  */
 @Composable
 internal fun SyncedTabsPage(
-    isSignedIn: Boolean,
-    syncedTabs: List<SyncedTabsListItem>,
+    state: SyncState,
     onTabClick: OnSyncedTabClick,
     onTabClose: OnSyncedTabClose,
     onSignInClick: () -> Unit,
-    expandedState: List<Boolean>,
     onSectionExpansionToggled: OnSectionExpansionToggled,
 ) {
-    if (isSignedIn) {
+    if (state.isSignedIn) {
         SyncedTabsList(
-            syncedTabs = syncedTabs,
+            syncedTabs = state.syncedTabs,
             onTabClick = onTabClick,
             onTabCloseClick = onTabClose,
-            expandedState = expandedState,
+            expandedState = state.expandedSyncedTabs,
             onSectionExpansionToggled = onSectionExpansionToggled,
         )
     } else {

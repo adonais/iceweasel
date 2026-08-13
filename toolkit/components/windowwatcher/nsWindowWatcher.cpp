@@ -72,6 +72,7 @@
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/dom/SessionStorageManager.h"
+#include "mozilla/widget/ScreenManager.h"
 #include "nsIAppWindow.h"
 #include "nsIXULBrowserWindow.h"
 #include "ReferrerInfo.h"
@@ -536,7 +537,10 @@ nsWindowWatcher::OpenWindowWithRemoteTab(
     return NS_ERROR_UNEXPECTED;
   }
 
-  // get various interfaces for aDocShellItem, used throughout this method
+  // We fall back to calculating in desktop pixels instead of CSS pixels
+  // if we can somehow not query a nsIBaseWindow. That does not happen in
+  // practice because parentTreeOwner is a nsIDocShellTreeOwner, and every
+  // implementation of nsIDocShellTreeOwner also implements nsIBaseWindow.
   CSSToDesktopScale cssToDesktopScale(1.0f);
   if (nsCOMPtr<nsIBaseWindow> win = do_QueryInterface(parentTreeOwner)) {
     cssToDesktopScale = win->GetUnscaledCSSToDesktopScale();
@@ -792,6 +796,10 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   CSSToDesktopScale cssToDesktopScale(1.0);
   if (nsCOMPtr<nsIBaseWindow> win = do_QueryInterface(parentDocShell)) {
     cssToDesktopScale = win->GetUnscaledCSSToDesktopScale();
+  } else {
+    RefPtr<widget::Screen> screen =
+        widget::ScreenManager::GetSingleton().GetPrimaryScreen();
+    cssToDesktopScale = screen->GetCSSToDesktopScale();
   }
   SizeSpec sizeSpec =
       CalcSizeSpec(features, hasChromeParent, cssToDesktopScale);
@@ -904,10 +912,23 @@ nsresult nsWindowWatcher::OpenWindowInternal(
       openWindowInfo->mPrincipalToInheritForAboutBlank = subjectPrincipal;
     } else if (nsContentUtils::IsSystemOrExpandedPrincipal(subjectPrincipal)) {
       // Don't allow initial about:blank documents to inherit a system or
-      // expanded principal, instead replace it with a null principal. We can't
-      // inherit origin attributes from the system principal, so use the parent
-      // BC if it's available.
-      if (parentBC) {
+      // expanded principal. We can't inherit origin attributes from the
+      // system principal, so use the parent BC if it's available.
+      // XXX This is wrong for popups from extensions, see bug 2053365.
+
+      const bool isDocumentPiP =
+          (chromeFlags & nsIWebBrowserChrome::CHROME_DOCUMENT_PIP);
+      MOZ_ASSERT_IF(
+          isDocumentPiP,
+          parentDoc && parentDoc->NodePrincipal()->GetIsContentPrincipal());
+
+      if (isDocumentPiP &&
+          parentDoc->NodePrincipal()->GetIsContentPrincipal()) {
+        // Document PiP should use this's relevant global object, which isn't
+        // the same as subject principal if the request comes from an extension.
+        openWindowInfo->mPrincipalToInheritForAboutBlank =
+            parentDoc->NodePrincipal();
+      } else if (parentBC) {
         openWindowInfo->mPrincipalToInheritForAboutBlank =
             NullPrincipal::Create(parentBC->OriginAttributesRef());
       } else {

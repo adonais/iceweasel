@@ -28,7 +28,9 @@ class LastPrivateContextExitWatcher {
     if (topic === "last-pb-context-exited") {
       this.#onAvailable([
         // This resource doesn't transfer any data to the client, it is like a one shot event.
-        {},
+        // It isn't related to any BrowsingContext, so pass an explicit -1
+        // browsingContextID to map it to the top level target front.
+        { browsingContextID: -1 },
       ]);
     }
   }

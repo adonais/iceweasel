@@ -26,9 +26,9 @@
  * }
  */
 
-// Time after which insecure downloads that have not been dealt with on shutdown
-// get removed (5 minutes).
-const MAX_INSECURE_DOWNLOAD_AGE_MS = 5 * 60 * 1000;
+// Time after which blocked downloads that have not been dealt with on shutdown
+// get removed (10 minutes).
+const MAX_BLOCKED_DOWNLOAD_AGE = 10 * 60 * 1000;
 
 const lazy = {};
 
@@ -106,13 +106,18 @@ DownloadStore.prototype = {
         try {
           let download = await lazy.Downloads.createDownload(downloadData);
 
-          // Insecure downloads that have not been dealt with on shutdown should
+          // Blocked downloads that have not been dealt with on shutdown should
           // get cleaned up and removed from the download list on restart unless
-          // they are very new
+          // they are very new.
+          // Note that becauseBlockedByParentalControls happens before
+          // a download is started, and thus can't have blocked data. It comes
+          // back as failed. becauseBlockedByContentAnalysis is not serialized
+          // to disk (only `becauseBlockedByReputationCheck` is), because the
+          // DLP verdict may change and no longer has context, so unblocking
+          // later wouldn't work - that comes back as failed, too.
           if (
             download.error?.becauseBlockedByReputationCheck &&
-            download.error.reputationCheckVerdict == "Insecure" &&
-            Date.now() - download.startTime > MAX_INSECURE_DOWNLOAD_AGE_MS
+            Date.now() - download.startTime > MAX_BLOCKED_DOWNLOAD_AGE
           ) {
             removePromises.push(download.removePartialData());
             storeChanges = true;

@@ -7,40 +7,40 @@
 #include <cmath>
 
 #include "AppleUtils.h"
+#include "ImageRegion.h"
 #include "gfx2DGlue.h"
 #include "gfxContext.h"
 #include "gfxPlatform.h"
 #include "gfxUtils.h"
-#include "ImageRegion.h"
+#include "mozilla/ClearOnShutdown.h"
+#include "mozilla/Logging.h"
+#include "mozilla/MiscEvents.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/SVGImageContext.h"
+#include "mozilla/StaticMutex.h"
+#include "mozilla/StaticPrefs_media.h"
+#include "mozilla/TextEvents.h"
+#include "mozilla/dom/Promise.h"
+#include "mozilla/gfx/2D.h"
+#include "nsCOMPtr.h"
+#include "nsCRT.h"
+#include "nsChildView.h"
 #include "nsClipboard.h"
 #include "nsCocoaUtils.h"
-#include "nsChildView.h"
-#include "nsMenuBarX.h"
 #include "nsCocoaWindow.h"
-#include "nsCOMPtr.h"
-#include "nsIInterfaceRequestorUtils.h"
 #include "nsIAppShellService.h"
-#include "nsIOSPermissionRequest.h"
-#include "nsIRunnable.h"
 #include "nsIAppWindow.h"
 #include "nsIBaseWindow.h"
+#include "nsIInterfaceRequestorUtils.h"
+#include "nsIOSPermissionRequest.h"
+#include "nsIRunnable.h"
 #include "nsITransferable.h"
+#include "nsMenuBarX.h"
 #include "nsMenuPopupFrame.h"
 #include "nsMenuUtilsX.h"
 #include "nsNetUtil.h"
 #include "nsPrimitiveHelpers.h"
 #include "nsToolkit.h"
-#include "nsCRT.h"
-#include "mozilla/ClearOnShutdown.h"
-#include "mozilla/Logging.h"
-#include "mozilla/MiscEvents.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/TextEvents.h"
-#include "mozilla/StaticMutex.h"
-#include "mozilla/StaticPrefs_media.h"
-#include "mozilla/SVGImageContext.h"
-#include "mozilla/dom/Promise.h"
-#include "mozilla/gfx/2D.h"
 
 using namespace mozilla;
 using namespace mozilla::widget;
@@ -81,6 +81,9 @@ NSString* const kUrlsWithTitlesPboardType = @"WebURLsWithTitlesPboardType";
 NSString* const kMozWildcardPboardType = @"org.mozilla.MozillaWildcard";
 NSString* const kMozCustomTypesPboardType = @"org.mozilla.custom-clipdata";
 NSString* const kMozFileUrlsPboardType = @"org.mozilla.file-urls";
+NSString* const kWebCustomFormatPboardTypePrefix =
+    @"org.w3.web-custom-format.type-";
+NSString* const kWebCustomFormatMapPboardType = @"org.w3.web-custom-format.map";
 
 @implementation UTIHelper
 
@@ -91,6 +94,8 @@ NSString* const kMozFileUrlsPboardType = @"org.mozilla.file-urls";
       [aType isEqualToString:kPublicUrlPboardType] ||
       [aType isEqualToString:kPublicUrlNamePboardType] ||
       [aType isEqualToString:kMozFileUrlsPboardType] ||
+      [aType isEqualToString:kWebCustomFormatPboardTypePrefix] ||
+      [aType isEqualToString:kWebCustomFormatMapPboardType] ||
       [aType isEqualToString:(NSString*)kPasteboardTypeFileURLPromise] ||
       [aType isEqualToString:(NSString*)kPasteboardTypeFilePromiseContent] ||
       [aType isEqualToString:(NSString*)kUTTypeFileURL] ||

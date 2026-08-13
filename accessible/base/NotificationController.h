@@ -5,15 +5,14 @@
 #ifndef mozilla_a11y_NotificationController_h_
 #define mozilla_a11y_NotificationController_h_
 
-#include "EventQueue.h"
+#include <utility>
 
+#include "EventQueue.h"
 #include "nsClassHashtable.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIFrame.h"
 #include "nsRefreshObservers.h"
 #include "nsTHashSet.h"
-
-#include <utility>
 
 #ifdef A11Y_LOG
 #  include "Logging.h"

@@ -14,7 +14,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(
   lazy,
   {
-    ManifestObtainer: "resource://gre/modules/ManifestObtainer.sys.mjs",
+    ManifestObtainer: "moz-src:///dom/manifest/ManifestObtainer.sys.mjs",
   },
   { global: "contextual" }
 );

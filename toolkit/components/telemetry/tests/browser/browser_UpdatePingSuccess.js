@@ -71,7 +71,7 @@ add_task(async function test_updatePing() {
 
       // We cannot control when the ping will be generated/archived after we trigger
       // an update, so let's make sure to have one before moving on with validation.
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         async function () {
           // Check that the ping made it into the Telemetry archive.
           // The test data is defined in ../data/sharedUpdateXML.js

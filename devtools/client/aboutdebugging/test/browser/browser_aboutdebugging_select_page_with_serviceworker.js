@@ -47,16 +47,15 @@ add_task(async function () {
   await waitUntil(() => findDebugTargetByText(WORKER_NAME, document));
 
   info("Go to This Firefox again");
-  const thisFirefoxString = getThisFirefoxString(window);
-  const thisFirefoxSidebarItem = findSidebarItemByText(
-    thisFirefoxString,
-    document
-  );
-  const thisFirefoxLink =
-    thisFirefoxSidebarItem.querySelector(".qa-sidebar-link");
-  info("Click on the ThisFirefox item in the sidebar");
   const requestsSuccess = waitForRequestsSuccess(window.AboutDebugging.store);
-  thisFirefoxLink.click();
+  AccessibilityUtils.setEnv({
+    // Due to our use of non <moz-page-nav-button> items for runtimes, this puts
+    // the "This Firefox" button in a state which is seen as not focusable.
+    // This should be fixed as part of Bug 2050746
+    nonNegativeTabIndexRule: false,
+  });
+  selectSidebarItemPage(getThisFirefoxString(window), document);
+  AccessibilityUtils.resetEnv();
 
   info("Wait for all target requests to complete");
   await requestsSuccess;

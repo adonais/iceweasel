@@ -2,12 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "jit/JitHints-inl.h"
-
 #include "gc/Pretenuring.h"
 #include "jit/BaselineIC.h"
 #include "jit/JitScript.h"
 
+#include "jit/JitHints-inl.h"
 #include "vm/BytecodeLocation-inl.h"
 #include "vm/JSScript-inl.h"
 

@@ -6,20 +6,22 @@
 #include <ole2.h>
 #include <shlobj.h>
 
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+
+#include "gtest/gtest.h"
 #include "nsArray.h"
 #include "nsArrayUtils.h"
+#include "nsClipboard.h"
 #include "nsComponentManagerUtils.h"
+#include "nsDataObjCollection.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
 #include "nsIFile.h"
-#include "nsNetUtil.h"
 #include "nsISupportsPrimitives.h"
 #include "nsITransferable.h"
-
-#include "nsClipboard.h"
-#include "nsDataObjCollection.h"
-
-#include "gtest/gtest.h"
+#include "nsNetUtil.h"
 
 // shims for conversion from cppunittest to gtest
 template <size_t N>
@@ -723,4 +725,170 @@ TEST(TestWinDND, All)
 
   // if (NS_SUCCEEDED(Do_Test3()))
   //  passed("Advanced Drag and Drop data type tests succeeded!");
+}
+
+// A drag source that claims more descriptor entries (cItems) than its
+// allocation holds.
+class TruncatedFileGroupDescriptorDataObject final : public IDataObject {
+ public:
+  explicit TruncatedFileGroupDescriptorDataObject(HGLOBAL aDescriptor)
+      : mRefCnt(1), mDescriptor(aDescriptor) {}
+
+  HRESULT STDMETHODCALLTYPE QueryInterface(REFIID aIid, void** aOut) override {
+    if (!aOut) {
+      return E_POINTER;
+    }
+    if (aIid == IID_IUnknown || aIid == IID_IDataObject) {
+      *aOut = static_cast<IDataObject*>(this);
+      AddRef();
+      return S_OK;
+    }
+    *aOut = nullptr;
+    return E_NOINTERFACE;
+  }
+
+  ULONG STDMETHODCALLTYPE AddRef() override {
+    return InterlockedIncrement(&mRefCnt);
+  }
+
+  ULONG STDMETHODCALLTYPE Release() override {
+    ULONG count = InterlockedDecrement(&mRefCnt);
+    if (!count) {
+      delete this;
+    }
+    return count;
+  }
+
+  HRESULT STDMETHODCALLTYPE GetData(FORMATETC* aFormat,
+                                    STGMEDIUM* aMedium) override {
+    if (!aFormat || !aMedium || !MatchesDescriptorW(*aFormat)) {
+      return DV_E_FORMATETC;
+    }
+    // Hand back a fresh copy; the caller owns it via ReleaseStgMedium.
+    const SIZE_T size = ::GlobalSize(mDescriptor);
+    HGLOBAL copy = ::GlobalAlloc(GMEM_MOVEABLE, size);
+    if (!copy) {
+      return E_OUTOFMEMORY;
+    }
+    void* dst = ::GlobalLock(copy);
+    void* src = ::GlobalLock(mDescriptor);
+    memcpy(dst, src, size);
+    ::GlobalUnlock(mDescriptor);
+    ::GlobalUnlock(copy);
+
+    memset(aMedium, 0, sizeof(*aMedium));
+    aMedium->tymed = TYMED_HGLOBAL;
+    aMedium->hGlobal = copy;
+    return S_OK;
+  }
+
+  HRESULT STDMETHODCALLTYPE QueryGetData(FORMATETC* aFormat) override {
+    if (!aFormat) {
+      return E_INVALIDARG;
+    }
+    return MatchesDescriptorW(*aFormat) ? S_OK : DV_E_FORMATETC;
+  }
+
+  HRESULT STDMETHODCALLTYPE GetDataHere(FORMATETC*, STGMEDIUM*) override {
+    return E_NOTIMPL;
+  }
+  HRESULT STDMETHODCALLTYPE GetCanonicalFormatEtc(FORMATETC*,
+                                                  FORMATETC* aOut) override {
+    if (aOut) {
+      aOut->ptd = nullptr;
+    }
+    return E_NOTIMPL;
+  }
+  HRESULT STDMETHODCALLTYPE SetData(FORMATETC*, STGMEDIUM*, BOOL) override {
+    return E_NOTIMPL;
+  }
+  HRESULT STDMETHODCALLTYPE EnumFormatEtc(DWORD, IEnumFORMATETC**) override {
+    return E_NOTIMPL;
+  }
+  HRESULT STDMETHODCALLTYPE DAdvise(FORMATETC*, DWORD, IAdviseSink*,
+                                    DWORD*) override {
+    return OLE_E_ADVISENOTSUPPORTED;
+  }
+  HRESULT STDMETHODCALLTYPE DUnadvise(DWORD) override {
+    return OLE_E_ADVISENOTSUPPORTED;
+  }
+  HRESULT STDMETHODCALLTYPE EnumDAdvise(IEnumSTATDATA**) override {
+    return OLE_E_ADVISENOTSUPPORTED;
+  }
+
+ private:
+  ~TruncatedFileGroupDescriptorDataObject() {
+    if (mDescriptor) {
+      ::GlobalFree(mDescriptor);
+    }
+  }
+
+  static bool MatchesDescriptorW(const FORMATETC& aFormat) {
+    static CLIPFORMAT sFileDescriptorW =
+        ::RegisterClipboardFormatW(CFSTR_FILEDESCRIPTORW);
+    return aFormat.cfFormat == sFileDescriptorW &&
+           (aFormat.tymed & TYMED_HGLOBAL) &&
+           aFormat.dwAspect == DVASPECT_CONTENT;
+  }
+
+  volatile LONG mRefCnt;
+  HGLOBAL mDescriptor;
+};
+
+// Reject a group descriptor whose backing HGLOBAL is too small to hold the
+// requested number of entries.
+TEST(TestWinDND, FileGroupDescriptorHasItems)
+{
+  EXPECT_FALSE(nsClipboard::FileGroupDescriptorHasItems<FILEGROUPDESCRIPTORW>(
+      nullptr, 1));
+
+  // Header only, room for zero descriptor entries.
+  HGLOBAL headerOnly = ::GlobalAlloc(GMEM_MOVEABLE, sizeof(UINT));
+  ASSERT_NE(headerOnly, nullptr);
+  EXPECT_TRUE(nsClipboard::FileGroupDescriptorHasItems<FILEGROUPDESCRIPTORW>(
+      headerOnly, 0));
+  EXPECT_FALSE(nsClipboard::FileGroupDescriptorHasItems<FILEGROUPDESCRIPTORW>(
+      headerOnly, 1));
+  EXPECT_FALSE(nsClipboard::FileGroupDescriptorHasItems<FILEGROUPDESCRIPTORA>(
+      headerOnly, 1));
+  // Overflowing the size computation must fail.
+  EXPECT_FALSE(nsClipboard::FileGroupDescriptorHasItems<FILEGROUPDESCRIPTORW>(
+      headerOnly, UINT64_MAX));
+  ::GlobalFree(headerOnly);
+
+  // Room for exactly two wide descriptor entries, but not 3.
+  HGLOBAL twoEntries =
+      ::GlobalAlloc(GMEM_MOVEABLE, offsetof(FILEGROUPDESCRIPTORW, fgd) +
+                                       2 * sizeof(FILEDESCRIPTORW));
+  ASSERT_NE(twoEntries, nullptr);
+  EXPECT_TRUE(nsClipboard::FileGroupDescriptorHasItems<FILEGROUPDESCRIPTORW>(
+      twoEntries, 2));
+  EXPECT_FALSE(nsClipboard::FileGroupDescriptorHasItems<FILEGROUPDESCRIPTORW>(
+      twoEntries, 3));
+  ::GlobalFree(twoEntries);
+}
+
+TEST(TestWinDND, TruncatedFileGroupDescriptorIsRejected)
+{
+  // Allocate room for the cItems header only, but claim two entries.
+  HGLOBAL descriptor = ::GlobalAlloc(GMEM_MOVEABLE, sizeof(UINT));
+  ASSERT_NE(descriptor, nullptr);
+  auto* group = static_cast<FILEGROUPDESCRIPTORW*>(::GlobalLock(descriptor));
+  ASSERT_NE(group, nullptr);
+  group->cItems = 2;
+  ::GlobalUnlock(descriptor);
+
+  // mRefCnt is initialized to 1.
+  RefPtr<IDataObject> dataObj = dont_AddRef(static_cast<IDataObject*>(
+      new TruncatedFileGroupDescriptorDataObject(descriptor)));
+
+  void* data = nullptr;
+  uint32_t len = 0;
+  nsresult rv = nsClipboard::GetNativeDataOffClipboard(
+      dataObj, /* aIndex */ 1, CF_HDROP, /* aMIMEImageFormat */ nullptr, &data,
+      &len);
+
+  EXPECT_EQ(rv, NS_ERROR_INVALID_ARG);
+  EXPECT_EQ(data, nullptr);
+  EXPECT_EQ(len, 0u);
 }

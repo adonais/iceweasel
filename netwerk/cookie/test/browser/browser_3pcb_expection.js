@@ -61,7 +61,7 @@ const strArrayMatches = (arr1, arr2) =>
  */
 async function waitForAllowListState(expected) {
   // Ensure the site host exception list has been imported correctly.
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return strArrayMatches(Services.cookies.testGet3PCBExceptions(), expected);
   }, "Waiting for exceptions to be imported.");
   Assert.deepEqual(

@@ -935,16 +935,24 @@ function shouldVerifySignedState(aAddonType, aLocation) {
  *        or undefined if the file wasn't signed.
  */
 export var verifyBundleSignedState = async function (aBundle, aAddon) {
-  let pkg = Package.get(aBundle);
   try {
-    let { signedState, signedTypes } = await pkg.verifySignedState(
-      aAddon.id,
-      aAddon.type,
-      aAddon.location
-    );
-    return { signedState, signedTypes };
-  } finally {
-    pkg.close();
+    let pkg = Package.get(aBundle);
+    try {
+      let { signedState, signedTypes } = await pkg.verifySignedState(
+        aAddon.id,
+        aAddon.type,
+        aAddon.location
+      );
+      return { signedState, signedTypes };
+    } finally {
+      pkg.close();
+    }
+  } catch (e) {
+    logger.warn(`verifyBundleSignedState failed for ${aAddon.id}`, e);
+    if (!shouldVerifySignedState(aAddon.type, aAddon.location)) {
+      return { signedState: AddonManager.SIGNEDSTATE_NOT_REQUIRED };
+    }
+    return { signedState: AddonManager.SIGNEDSTATE_BROKEN };
   }
 };
 
@@ -4365,6 +4373,16 @@ export var XPIInstall = {
       XPIExports.XPIInternal.PREF_BRANCH_INSTALLED_ADDON + id,
       true
     );
+
+    // Distribution installs don't go through AddonInstall, so the metadata
+    // fetch in AddonInstall.loadManifest() never runs for them. Fetch it here
+    // (if not already cached) so themes get their preview image. This is
+    // fire-and-forget: a failure shouldn't block the install.
+    if (!(await lazy.AddonRepository.getCachedAddonByID(id))) {
+      lazy.AddonRepository.cacheAddons([id]).catch(err => {
+        logger.debug(`Error getting metadata for ${id}: ${err.message}`);
+      });
+    }
 
     return addon;
   },

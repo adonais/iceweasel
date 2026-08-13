@@ -3,11 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mozilla.fenix.tabstray.ui.fab
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
@@ -17,7 +12,6 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.text.TextLayoutResult
-import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.compose.base.theme.acornDarkColorScheme
@@ -33,6 +27,7 @@ import org.mozilla.fenix.tabstray.TabsTrayTestTag.CLOSE_ALL_TABS
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
+import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.Mode
 import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
 import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListItem
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -51,24 +46,11 @@ class TabManagerFloatingToolbarTest {
     @Test
     fun `Close all tabs menu item in light theme uses Error color`() {
         val initialState = TabsTrayState(normalTabsState = TabsTrayState.NormalTabsState(items = testTabs))
-        composeTestRule.setContent {
-            FirefoxTheme(theme = Theme.Light) {
-                TabManagerFloatingToolbar(
-                    tabsTrayStore = remember { TabsTrayStore(initialState = initialState) },
-                    isSignedIn = true,
-                    modifier = Modifier
-                        .background(color = MaterialTheme.colorScheme.surface)
-                        .padding(all = 16.dp),
-                    onOpenNewNormalTabClicked = {},
-                    onOpenNewPrivateTabClicked = {},
-                    onSyncedTabsFabClicked = {},
-                    onTabSettingsClick = {},
-                    onAccountSettingsClick = {},
-                    onDeleteAllTabsClick = {},
-                    onRecentlyClosedClick = {},
-                )
-            }
-        }
+
+        setTestContent(
+            initialState = initialState,
+        )
+
         composeTestRule.onNodeWithTag(TabsTrayTestTag.THREE_DOT_BUTTON).performClick()
         composeTestRule.onNodeWithTag(CLOSE_ALL_TABS)
             .assertExists()
@@ -78,24 +60,12 @@ class TabManagerFloatingToolbarTest {
     @Test
     fun `Close all tabs menu item in private theme uses Error color`() {
         val initialState = TabsTrayState(normalTabsState = TabsTrayState.NormalTabsState(items = testTabs))
-        composeTestRule.setContent {
-            FirefoxTheme(theme = Theme.Private) {
-                TabManagerFloatingToolbar(
-                    tabsTrayStore = remember { TabsTrayStore(initialState = initialState) },
-                    isSignedIn = true,
-                    modifier = Modifier
-                        .background(color = MaterialTheme.colorScheme.surface)
-                        .padding(all = 16.dp),
-                    onOpenNewNormalTabClicked = {},
-                    onOpenNewPrivateTabClicked = {},
-                    onSyncedTabsFabClicked = {},
-                    onTabSettingsClick = {},
-                    onAccountSettingsClick = {},
-                    onDeleteAllTabsClick = {},
-                    onRecentlyClosedClick = {},
-                )
-            }
-        }
+
+        setTestContent(
+            initialState = initialState,
+            theme = Theme.Private,
+        )
+
         composeTestRule.onNodeWithTag(TabsTrayTestTag.THREE_DOT_BUTTON).performClick()
         composeTestRule.onNodeWithTag(CLOSE_ALL_TABS)
             .assertExists()
@@ -105,61 +75,16 @@ class TabManagerFloatingToolbarTest {
     @Test
     fun `Close all tabs menu item in dark theme uses Error color`() {
         val initialState = TabsTrayState(normalTabsState = TabsTrayState.NormalTabsState(items = testTabs))
-        composeTestRule.setContent {
-            FirefoxTheme(theme = Theme.Dark) {
-                TabManagerFloatingToolbar(
-                    tabsTrayStore = remember { TabsTrayStore(initialState = initialState) },
-                    isSignedIn = true,
-                    modifier = Modifier
-                        .background(color = MaterialTheme.colorScheme.surface)
-                        .padding(all = 16.dp),
-                    onOpenNewNormalTabClicked = {},
-                    onOpenNewPrivateTabClicked = {},
-                    onSyncedTabsFabClicked = {},
-                    onTabSettingsClick = {},
-                    onAccountSettingsClick = {},
-                    onDeleteAllTabsClick = {},
-                    onRecentlyClosedClick = {},
-                )
-            }
-        }
+
+        setTestContent(
+            initialState = initialState,
+            theme = Theme.Dark,
+        )
+
         composeTestRule.onNodeWithTag(TabsTrayTestTag.THREE_DOT_BUTTON).performClick()
         composeTestRule.onNodeWithTag(CLOSE_ALL_TABS)
             .assertExists()
             .assert(hasTextColor(acornDarkColorScheme().error))
-    }
-
-    @Test
-    fun `Clicking Select all tabs menu item selects all normal tabs`() {
-        val initialState = TabsTrayState(
-            normalTabsState = TabsTrayState.NormalTabsState(items = testTabs),
-        )
-        val tabsTrayStore = TabsTrayStore(initialState = initialState)
-
-        composeTestRule.setContent {
-            FirefoxTheme(theme = Theme.Light) {
-                TabManagerFloatingToolbar(
-                    tabsTrayStore = tabsTrayStore,
-                    isSignedIn = true,
-                    onOpenNewNormalTabClicked = {},
-                    onOpenNewPrivateTabClicked = {},
-                    onSyncedTabsFabClicked = {},
-                    onTabSettingsClick = {},
-                    onAccountSettingsClick = {},
-                    onDeleteAllTabsClick = {},
-                    onRecentlyClosedClick = {},
-                )
-            }
-        }
-
-        composeTestRule.onNodeWithTag(TabsTrayTestTag.THREE_DOT_BUTTON).performClick()
-        composeTestRule.onNodeWithTag(TabsTrayTestTag.SELECT_ALL_TABS)
-            .assertExists()
-            .performClick()
-
-        val state = tabsTrayStore.state
-        assert(state.mode is TabsTrayState.Mode.Select)
-        assert(state.mode.selectedTabs == testTabs.toSet())
     }
 
     @Test
@@ -168,23 +93,10 @@ class TabManagerFloatingToolbarTest {
             selectedPage = Page.PrivateTabs,
             privateBrowsing = TabsTrayState.PrivateBrowsingState(tabs = testTabs),
         )
-        val tabsTrayStore = TabsTrayStore(initialState = initialState)
 
-        composeTestRule.setContent {
-            FirefoxTheme(theme = Theme.Light) {
-                TabManagerFloatingToolbar(
-                    tabsTrayStore = tabsTrayStore,
-                    isSignedIn = true,
-                    onOpenNewNormalTabClicked = {},
-                    onOpenNewPrivateTabClicked = {},
-                    onSyncedTabsFabClicked = {},
-                    onTabSettingsClick = {},
-                    onAccountSettingsClick = {},
-                    onDeleteAllTabsClick = {},
-                    onRecentlyClosedClick = {},
-                )
-            }
-        }
+        setTestContent(
+            initialState = initialState,
+        )
 
         composeTestRule.onNodeWithTag(TabsTrayTestTag.THREE_DOT_BUTTON).performClick()
         composeTestRule.onNodeWithTag(TabsTrayTestTag.SELECT_ALL_TABS).assertDoesNotExist()
@@ -196,23 +108,10 @@ class TabManagerFloatingToolbarTest {
             selectedPage = Page.SyncedTabs,
             privateBrowsing = TabsTrayState.PrivateBrowsingState(tabs = testTabs),
         )
-        val tabsTrayStore = TabsTrayStore(initialState = initialState)
 
-        composeTestRule.setContent {
-            FirefoxTheme(theme = Theme.Light) {
-                TabManagerFloatingToolbar(
-                    tabsTrayStore = tabsTrayStore,
-                    isSignedIn = true,
-                    onOpenNewNormalTabClicked = {},
-                    onOpenNewPrivateTabClicked = {},
-                    onSyncedTabsFabClicked = {},
-                    onTabSettingsClick = {},
-                    onAccountSettingsClick = {},
-                    onDeleteAllTabsClick = {},
-                    onRecentlyClosedClick = {},
-                )
-            }
-        }
+        setTestContent(
+            initialState = initialState,
+        )
 
         composeTestRule.onNodeWithTag(TabsTrayTestTag.THREE_DOT_BUTTON).performClick()
         composeTestRule.onNodeWithTag(TabsTrayTestTag.SELECT_ALL_TABS).assertDoesNotExist()
@@ -221,19 +120,15 @@ class TabManagerFloatingToolbarTest {
     @Test
     fun `GIVEN user is not signed in WHEN on synced tabs page THEN clicking FAB does not trigger sync`() {
         var clicked = false
-        val state = TabsTrayState(
+        val initialState = TabsTrayState(
             selectedPage = Page.SyncedTabs,
+            sync = TabsTrayState.SyncState(isSignedIn = false),
         )
 
-        composeTestRule.setContent {
-            FloatingToolbarFAB(
-                state = state,
-                isSignedIn = false,
-                onOpenNewNormalTabClicked = {},
-                onOpenNewPrivateTabClicked = {},
-                onSyncedTabsFabClicked = { clicked = true },
-            )
-        }
+        setTestContent(
+            initialState = initialState,
+            onSyncedTabsFabClicked = { clicked = true },
+        )
 
         composeTestRule.onNodeWithTag(TabsTrayTestTag.FAB).performClick()
 
@@ -243,26 +138,21 @@ class TabManagerFloatingToolbarTest {
     @Test
     fun `GIVEN reauth error exists WHEN on synced tabs page THEN clicking FAB does not trigger sync`() {
         val reauthErrorString = testContext.getString(R.string.synced_tabs_reauth)
-
         var clicked = false
-        val state = TabsTrayState(
+        val initialState = TabsTrayState(
             selectedPage = Page.SyncedTabs,
             sync = TabsTrayState.SyncState(
                 syncedTabs = listOf(
                     SyncedTabsListItem.Error(errorText = reauthErrorString),
                 ),
+                isSignedIn = false,
             ),
         )
 
-        composeTestRule.setContent {
-            FloatingToolbarFAB(
-                state = state,
-                isSignedIn = true,
-                onOpenNewNormalTabClicked = {},
-                onOpenNewPrivateTabClicked = {},
-                onSyncedTabsFabClicked = { clicked = true },
-            )
-        }
+        setTestContent(
+            initialState = initialState,
+            onSyncedTabsFabClicked = { clicked = true },
+        )
 
         composeTestRule.onNodeWithTag(TabsTrayTestTag.FAB).performClick()
 
@@ -272,18 +162,71 @@ class TabManagerFloatingToolbarTest {
     @Test
     fun `GIVEN user is signed in and no errors WHEN on synced tabs page THEN clicking FAB triggers sync`() {
         var clicked = false
-        val state = TabsTrayState(
+        val initialState = TabsTrayState(
             selectedPage = Page.SyncedTabs,
-            sync = TabsTrayState.SyncState(syncedTabs = emptyList()),
+            sync = TabsTrayState.SyncState(syncedTabs = emptyList(), isSignedIn = true),
         )
+
+        setTestContent(
+            initialState = initialState,
+            onSyncedTabsFabClicked = { clicked = true },
+        )
+
+        composeTestRule.onNodeWithTag(TabsTrayTestTag.FAB)
+            .assertIsDisplayed()
+            .performClick()
+
+        assert(clicked)
+    }
+
+    @Test
+    fun `GIVEN mode is Select WHEN toolbar is rendered THEN it is hidden`() {
+        setTestContent(
+            initialState = TabsTrayState(
+                mode = Mode.Select(),
+                selectedPage = Page.NormalTabs,
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TabsTrayTestTag.FAB).assertDoesNotExist()
+    }
+
+    private fun setTestContent(
+        initialState: TabsTrayState,
+        theme: Theme = Theme.Light,
+        onSyncedTabsFabClicked: () -> Unit = {},
+    ) {
+        val tabsTrayStore = TabsTrayStore(initialState = initialState)
+
+        composeTestRule.setContent {
+            FirefoxTheme(theme = theme) {
+                TabManagerFloatingToolbar(
+                    state = tabsTrayStore.state,
+                    onAction = tabsTrayStore::dispatch,
+                    onOpenNewNormalTabClicked = {},
+                    onOpenNewPrivateTabClicked = {},
+                    onSyncedTabsFabClicked = onSyncedTabsFabClicked,
+                    onTabSettingsClick = {},
+                    onAccountSettingsClick = {},
+                    onDeleteAllTabsClick = {},
+                    onRecentlyClosedClick = {},
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `GIVEN on tab groups page WHEN clicking the FAB THEN the tab groups fab callback is invoked`() {
+        var clicked = false
+        val state = TabsTrayState(selectedPage = Page.TabGroups)
 
         composeTestRule.setContent {
             FloatingToolbarFAB(
                 state = state,
-                isSignedIn = true,
                 onOpenNewNormalTabClicked = {},
                 onOpenNewPrivateTabClicked = {},
-                onSyncedTabsFabClicked = { clicked = true },
+                onSyncedTabsFabClicked = {},
+                onTabGroupsFabClicked = { clicked = true },
             )
         }
 

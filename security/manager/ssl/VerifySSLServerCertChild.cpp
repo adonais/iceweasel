@@ -8,11 +8,10 @@
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/net/SocketProcessBackgroundChild.h"
 #include "mozilla/psm/EnabledSignatureSchemes.h"
-#include "mozilla/psm/PVerifySSLServerCertParent.h"
 #include "mozilla/psm/PVerifySSLServerCertChild.h"
+#include "mozilla/psm/PVerifySSLServerCertParent.h"
 #include "nsNSSIOLayer.h"
 #include "nsSerializationHelper.h"
-
 #include "secerr.h"
 
 extern mozilla::LazyLogModule gPIPNSSLog;

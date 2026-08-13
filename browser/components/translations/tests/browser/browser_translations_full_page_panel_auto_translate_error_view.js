@@ -62,6 +62,9 @@ add_task(
     await navigate("Navigate to a page in an unsupported language", {
       url: FRENCH_PAGE_URL,
     });
+    await waitForDocumentLanguageMetadata(gBrowser.selectedBrowser, {
+      htmlLangAttribute: "fr",
+    });
 
     await FullPageTranslationsTestUtils.assertTranslationsButton(
       { button: false },

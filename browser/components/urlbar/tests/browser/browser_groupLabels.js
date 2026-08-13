@@ -281,26 +281,26 @@ add_task(async function repeatLabels() {
   let engineName = SearchService.defaultEngine.name;
   let results = [
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+      type: UrlbarShared.RESULT_TYPE.URL,
+      source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
       suggestedIndex: 0,
       payload: { url: "http://example.com/1" },
     }),
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.SEARCH,
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      type: UrlbarShared.RESULT_TYPE.SEARCH,
+      source: UrlbarShared.RESULT_SOURCE.SEARCH,
       suggestedIndex: 1,
       payload: { suggestion: "test1", engine: engineName },
     }),
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+      type: UrlbarShared.RESULT_TYPE.URL,
+      source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
       suggestedIndex: 2,
       payload: { url: "http://example.com/2" },
     }),
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.SEARCH,
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      type: UrlbarShared.RESULT_TYPE.SEARCH,
+      source: UrlbarShared.RESULT_SOURCE.SEARCH,
       suggestedIndex: 3,
       payload: { suggestion: "test2", engine: engineName },
     }),
@@ -419,20 +419,20 @@ add_task(async function ariaLabel() {
   const helpUrl = "http://example.com/help";
   const results = [
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+      type: UrlbarShared.RESULT_TYPE.URL,
+      source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
       suggestedIndex: 0,
       payload: { url: "http://example.com/1", helpUrl },
     }),
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+      type: UrlbarShared.RESULT_TYPE.URL,
+      source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
       suggestedIndex: 1,
       payload: { url: "http://example.com/2", helpUrl },
     }),
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+      type: UrlbarShared.RESULT_TYPE.URL,
+      source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
       suggestedIndex: 2,
       payload: { url: "http://example.com/3" },
     }),
@@ -469,31 +469,31 @@ add_task(async function hideRowLabel() {
   let engineName = SearchService.defaultEngine.name;
   const results = [
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+      type: UrlbarShared.RESULT_TYPE.URL,
+      source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
       hideRowLabel: true,
       isBestMatch: true,
       payload: { url: "http://example.com/1" },
     }),
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+      type: UrlbarShared.RESULT_TYPE.URL,
+      source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
       payload: { url: "http://example.com/2" },
     }),
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+      type: UrlbarShared.RESULT_TYPE.URL,
+      source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
       payload: { url: "http://example.com/3" },
     }),
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.RESTRICT,
-      source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+      type: UrlbarShared.RESULT_TYPE.RESTRICT,
+      source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
       hideRowLabel: true,
       payload: { keyword: "*" },
     }),
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.SEARCH,
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      type: UrlbarShared.RESULT_TYPE.SEARCH,
+      source: UrlbarShared.RESULT_SOURCE.SEARCH,
       hideRowLabel: true,
       payload: {
         engine: engineName,
@@ -531,28 +531,28 @@ add_task(async function previousRowLabelIsHidden_then_searchResults() {
   let engineName = SearchService.defaultEngine.name;
   const results = [
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+      type: UrlbarShared.RESULT_TYPE.URL,
+      source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
       hideRowLabel: true,
       suggestedIndex: 1,
       payload: { url: "http://example.com/1" },
     }),
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.SEARCH,
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      type: UrlbarShared.RESULT_TYPE.SEARCH,
+      source: UrlbarShared.RESULT_SOURCE.SEARCH,
       suggestedIndex: 2,
       payload: { suggestion: "test1", engine: engineName },
     }),
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.SEARCH,
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      type: UrlbarShared.RESULT_TYPE.SEARCH,
+      source: UrlbarShared.RESULT_SOURCE.SEARCH,
       hideRowLabel: true,
       suggestedIndex: 3,
       payload: { suggestion: "test2", engine: engineName },
     }),
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.SEARCH,
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      type: UrlbarShared.RESULT_TYPE.SEARCH,
+      source: UrlbarShared.RESULT_SOURCE.SEARCH,
       suggestedIndex: 4,
       payload: { suggestion: "test3", engine: engineName },
     }),
@@ -586,8 +586,8 @@ class SuggestedIndexProvider extends UrlbarTestUtils.TestProvider {
     super({
       results: [
         new UrlbarResult({
-          type: UrlbarUtils.RESULT_TYPE.URL,
-          source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+          type: UrlbarShared.RESULT_TYPE.URL,
+          source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
           suggestedIndex,
           payload: { url: "http://example.com/" },
         }),

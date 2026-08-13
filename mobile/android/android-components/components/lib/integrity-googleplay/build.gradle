@@ -13,11 +13,9 @@ buildscript {
 }
 
 plugins {
+    id 'com.android.library'
     alias(libs.plugins.dependency.analysis)
 }
-
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
 
 android {
     defaultConfig {

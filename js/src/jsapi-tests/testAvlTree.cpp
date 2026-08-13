@@ -6,7 +6,6 @@
 #include <stdio.h>
 
 #include "ds/AvlTree.h"
-
 #include "jsapi-tests/tests.h"
 
 using namespace js;

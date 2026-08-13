@@ -4,21 +4,7 @@
 
 #include "Sandbox.h"
 
-#include "LinuxSched.h"
-#include "SandboxBrokerClient.h"
-#include "SandboxChrootProto.h"
-#include "SandboxFilter.h"
-#include "SandboxInternal.h"
-#include "SandboxOpenedFiles.h"
-#include "SandboxReporterClient.h"
-
-#include "SandboxProfilerChild.h"
-#include "SandboxLogging.h"
-
 #include <dirent.h>
-#ifdef NIGHTLY_BUILD
-#  include "dlfcn.h"
-#endif
 #include <errno.h>
 #include <fcntl.h>
 #include <linux/futex.h>
@@ -32,7 +18,20 @@
 #include <sys/syscall.h>
 #include <sys/time.h>
 #include <unistd.h>
+#ifdef NIGHTLY_BUILD
+#  include <dlfcn.h>
+#endif
 
+#include "LinuxSched.h"
+#include "SandboxBrokerClient.h"
+#include "SandboxChrootProto.h"
+#include "SandboxFilter.h"
+#include "SandboxInternal.h"
+#include "SandboxLogging.h"
+#include "SandboxOpenedFiles.h"
+#include "SandboxProfilerChild.h"
+#include "SandboxReporterClient.h"
+#include "base/posix/eintr_wrapper.h"
 #include "mozilla/Array.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
@@ -41,7 +40,6 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/ipc/UtilityProcessSandboxing.h"
 #include "prenv.h"
-#include "base/posix/eintr_wrapper.h"
 #include "sandbox/linux/bpf_dsl/bpf_dsl.h"
 #include "sandbox/linux/bpf_dsl/codegen.h"
 #include "sandbox/linux/bpf_dsl/dump_bpf.h"

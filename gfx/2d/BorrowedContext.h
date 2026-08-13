@@ -9,6 +9,7 @@
 
 #ifdef MOZ_X11
 #  include <X11/Xlib.h>
+
 #  include "X11UndefineNone.h"
 #endif
 

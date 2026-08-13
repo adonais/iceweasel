@@ -5,10 +5,10 @@
 #ifndef mozilla_layers_ChromeProcessController_h
 #define mozilla_layers_ChromeProcessController_h
 
-#include "mozilla/layers/GeckoContentController.h"
-#include "nsCOMPtr.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/layers/GeckoContentController.h"
 #include "mozilla/layers/MatrixMessage.h"
+#include "nsCOMPtr.h"
 
 class nsIDOMWindowUtils;
 class nsISerialEventTarget;

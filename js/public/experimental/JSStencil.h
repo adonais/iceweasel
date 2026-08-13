@@ -194,7 +194,6 @@ extern JS_PUBLIC_API JSObject* InstantiateModuleStencil(
 namespace JS {
 
 // Serialize the Stencil into the transcode buffer.
-// This fails if the stencil contains asm.js.
 //
 // If the `buffer` isn't empty, the start of the `buffer` should meet
 // JS::IsTranscodingBytecodeAligned, and the length should meet
@@ -268,7 +267,6 @@ extern JS_PUBLIC_API void AbortCollectingDelazifications(JSObject* module);
 // ************************************************************************
 
 // Returns true if the stencil is compatible with caching.
-// This returns false if the stencil contains asm.js.
 extern JS_PUBLIC_API bool IsStencilCacheable(JS::Stencil* stencil);
 
 // ************************************************************************

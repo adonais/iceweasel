@@ -105,3 +105,37 @@ TEST(ReportingEndpointsParser, Basic)
 
   ASSERT_EQ(count, 0u);
 }
+
+// https://w3c.github.io/reporting/#header requires endpoints to be parsed when
+// the document URL is potentially trustworthy, which includes http://localhost.
+TEST(ReportingEndpointsParser, LoopbackDocumentIsTrustworthy)
+{
+  EndpointsList endpoints;
+
+  auto endpointConstructor = [&endpoints](const nsAString& aKey,
+                                          nsCOMPtr<nsIURI> aEndpointURL) {
+    endpoints.mData.EmplaceBack(
+        ReportingHeader::Endpoint::Create(aEndpointURL.forget(), aKey));
+  };
+
+  nsCOMPtr<nsIURI> localhostURI;
+  nsresult rv =
+      NS_NewURI(getter_AddRefs(localhostURI), "http://localhost/document");
+  ASSERT_EQ(NS_OK, rv);
+
+  size_t count = ReportingHeader::ParseReportingEndpointsHeader(
+      "csp-endpoint=\"https://example.com/csp-reports\""_ns, localhostURI,
+      endpointConstructor);
+  ASSERT_EQ(count, 1u);
+  ASSERT_EQ(1u, endpoints.mData.Length());
+
+  endpoints.mData.Clear();
+  nsCOMPtr<nsIURI> insecureURI;
+  rv = NS_NewURI(getter_AddRefs(insecureURI), "http://example.com/document");
+  ASSERT_EQ(NS_OK, rv);
+
+  count = ReportingHeader::ParseReportingEndpointsHeader(
+      "csp-endpoint=\"https://example.com/csp-reports\""_ns, insecureURI,
+      endpointConstructor);
+  ASSERT_EQ(count, 0u);
+}

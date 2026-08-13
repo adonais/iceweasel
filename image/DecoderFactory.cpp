@@ -4,23 +4,22 @@
 
 #include "DecoderFactory.h"
 
-#include "ImageUtils.h"
-#include "nsMimeTypes.h"
-#include "mozilla/RefPtr.h"
-
 #include "AnimationSurfaceProvider.h"
-#include "Decoder.h"
 #include "DecodedSurfaceProvider.h"
+#include "Decoder.h"
 #include "IDecodingTask.h"
 #include "ImageOps.h"
-#include "nsPNGDecoder.h"
-#include "nsGIFDecoder2.h"
-#include "nsJPEGDecoder.h"
+#include "ImageUtils.h"
+#include "mozilla/RefPtr.h"
+#include "nsAVIFDecoder.h"
 #include "nsBMPDecoder.h"
+#include "nsGIFDecoder2.h"
 #include "nsICODecoder.h"
 #include "nsIconDecoder.h"
+#include "nsJPEGDecoder.h"
+#include "nsMimeTypes.h"
+#include "nsPNGDecoder.h"
 #include "nsWebPDecoder.h"
-#include "nsAVIFDecoder.h"
 
 #ifdef MOZ_JXL
 #  include "nsJXLDecoder.h"

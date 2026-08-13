@@ -2,17 +2,20 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "nsWindowLoggedMessages.h"
+
 #include <windef.h>
 #include <winuser.h>
+
+#include <algorithm>
+#include <map>
+
+#include "WinUtils.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Likely.h"
 #include "mozilla/StaticPrefs_storage.h"
 #include "mozilla/StaticPrefs_widget.h"
-#include "nsWindowLoggedMessages.h"
 #include "nsWindow.h"
-#include "WinUtils.h"
-#include <map>
-#include <algorithm>
 
 namespace mozilla::widget {
 

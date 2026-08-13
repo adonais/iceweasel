@@ -218,7 +218,7 @@ async function test_change_keyword(engineList) {
   inputElem.dispatchEvent(new Event("input", { bubbles: true }));
   acceptBtn.scrollIntoView();
   EventUtils.synthesizeMouseAtCenter(acceptBtn, {}, dialogDoc.defaultView);
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       inputElem.parentElement.querySelector(".error-label").textContent !=
       "valid",

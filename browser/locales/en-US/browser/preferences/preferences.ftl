@@ -416,8 +416,8 @@ preferences-contrast-control-custom =
     .label = Custom
     .accesskey = C
 
-preferences-colors-manage-button =
-    .label = Manage Colors…
+preferences-colors-manage-button2 =
+    .label = Manage colors
     .accesskey = C
 
 preferences-fonts-header2 =
@@ -800,7 +800,7 @@ update-setting-write-failure-title2 = Error saving Update settings
 # The newlines between the main text and the line containing the path is
 # intentional so the path is easier to identify.
 update-setting-write-failure-message2 =
-    { -brand-short-name } encountered an error and didn’t save this change. Note that changing this update setting requires permission to write to the file below. You or a system administrator may be able resolve the error by granting the Users group full control to this file.
+    { -brand-short-name } encountered an error and didn’t save this change. Note that changing this update setting requires permission to write to the file below. You or a system administrator may be able to resolve the error by granting the Users group full control to this file.
 
     Could not write to file: { $path }
 
@@ -884,6 +884,12 @@ browsing-use-full-keyboard-navigation =
 browsing-search-on-start-typing =
     .label = Search for text when you start typing
     .accesskey = x
+
+settings-keyboard-shortcuts-group =
+    .label = Keyboard shortcuts
+    .description = Control how you move around and interact with { -brand-short-name }.
+settings-keyboard-shortcuts-customkeys-link =
+    .label = Customize keyboard shortcuts
 
 settings-media-group =
     .label = Media
@@ -1241,15 +1247,14 @@ containers-add-button2 =
     .label = Add new container
     .accesskey = A
 
-containers-new-tab-check2 =
+containers-new-tab-check3 =
     .label = Select a container for each new tab
     .accesskey = S
-    .description = This will open the containers menu every time you press the open new tab button.
 
 containers-settings-button2 =
     .title = Settings
-containers-remove-button2 =
-    .title = Remove
+containers-remove-button3 =
+    .title = Delete
 
 ## Account and sync
 
@@ -1590,8 +1595,7 @@ forms-primary-pw-use-2 =
     .accesskey = U
 forms-primary-pw-set =
     .label = Set primary password
-forms-primary-pw-on =
-    .label = Primary password is ON
+forms-primary-pw-on-2 = Primary password is <strong>ON</strong>
 forms-primary-pw-change-2 =
     .label = Change primary password
 # Label for button to disable primary password.
@@ -1763,6 +1767,10 @@ history-clear-on-close-option =
 history-clear-on-close-settings =
     .label = Settings…
     .accesskey = t
+
+history-shutdown-exceptions =
+    .label = Manage Exceptions
+    .accesskey = x
 
 history-clear-button =
     .label = Clear History…
@@ -2378,6 +2386,36 @@ browser-theme-group =
 browser-theme-manage-link =
     .label = Manage { -brand-short-name } themes
 
+appearance-window-density-group =
+    .label = Window density
+    .description = Adjust the spacing around window elements like toolbar, tabs, and sidebar.
+
+appearance-window-density-radio-group =
+    .aria-label = Window density
+
+appearance-window-density-automatic =
+    .label = Automatic (default)
+    .description = Standard, compact, or touch spacing is applied automatically
+
+appearance-window-density-automatic-no-touch =
+    .label = Automatic (default)
+    .description = Standard or compact spacing is applied automatically
+
+appearance-window-density-standard =
+    .label = Standard
+    .description = Balanced spacing for most screens
+
+appearance-window-density-auto-touch-mode =
+    .label = Use touch spacing for tablet mode
+
+appearance-window-density-compact =
+    .label = Compact
+    .description = Reduced spacing for smaller screens
+
+appearance-window-density-touch =
+    .label = Touch
+    .description = Larger window elements and click targets, optimized for touch screens
+
 related-settings-group =
     .label = Related settings
 
@@ -2668,13 +2706,13 @@ security-privacy-issue-warning-safe-browsing =
   .label = Dangerous and deceptive content is not blocked
   .description = Your exposure to scams and malware from websites is increased.
 
-security-privacy-issue-warning-doh =
+security-privacy-issue-warning-doh2 =
   .label = DNS over HTTPS is disabled
-  .description = DNS over HTTPS hides what sites you visit from your network provider.
+  .description = DNS over HTTPS helps hide what sites you’re about to visit from your network provider.
 
-security-privacy-issue-warning-ech =
+security-privacy-issue-warning-ech2 =
   .label = Encrypted Client Hello is disabled
-  .description = Encrypted Client Hello hides what sites you visit from your network provider.
+  .description = Encrypted Client Hello helps hide what sites you’re about to visit from your network provider.
 
 security-privacy-issue-warning-proxy-autodetection =
   .label = Proxy auto-configuration is enabled

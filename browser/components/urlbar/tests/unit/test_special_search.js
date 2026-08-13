@@ -193,7 +193,7 @@ add_task(async function test_special_searches() {
       makeSearchResult(context, {
         query: "foo bar",
         alias: UrlbarShared.RESTRICT_TOKENS.HISTORY,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         heuristic: true,
       }),
       makeVisitResult(context, { uri: uri4.spec, title: "foo.bar" }),

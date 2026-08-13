@@ -1,17 +1,16 @@
-#include "gtest/gtest.h"
 #include "gtest/MozGTestBench.h"  // For MOZ_GTEST_BENCH
-
+#include "gtest/gtest.h"
 #include "json/json.h"
 #include "json/reader.h"
-#include "nsString.h"
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/net/MozURL.h"
 #include "nsCOMPtr.h"
 #include "nsDirectoryServiceDefs.h"
-#include "nsNetUtil.h"
 #include "nsIFile.h"
 #include "nsIURI.h"
+#include "nsNetUtil.h"
 #include "nsStreamUtils.h"
-#include "mozilla/BasePrincipal.h"
+#include "nsString.h"
 
 using namespace mozilla;
 using namespace mozilla::net;

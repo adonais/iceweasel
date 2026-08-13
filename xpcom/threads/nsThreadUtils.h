@@ -5,19 +5,18 @@
 #ifndef nsThreadUtils_h_
 #define nsThreadUtils_h_
 
-#include <type_traits>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 
 #include "MainThreadUtils.h"
-#include "mozilla/EventQueue.h"
 #include "mozilla/AbstractThread.h"
 #include "mozilla/Atomics.h"
+#include "mozilla/EventQueue.h"
 #include "mozilla/Likely.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/ThreadLocal.h"
 #include "mozilla/TimeStamp.h"
-
 #include "nsCOMPtr.h"
 #include "nsICancelableRunnable.h"
 #include "nsIDiscardableRunnable.h"
@@ -755,7 +754,7 @@ template <typename PtrType, class C, typename R, bool Owning,
           mozilla::RunnableKind Kind, typename... As>
 struct nsRunnableMethodTraits<PtrType, R (C::*)(As...), Owning, Kind> {
   using class_type = mozilla::RemoveRawOrSmartPointer<PtrType>;
-  static_assert(std::is_base_of<C, class_type>::value,
+  static_assert(std::is_base_of_v<C, class_type>,
                 "Stored class must inherit from method's class");
   using return_type = R;
   using base_type = nsRunnableMethod<C, R, Owning, Kind>;
@@ -766,7 +765,7 @@ template <typename PtrType, class C, typename R, bool Owning,
           mozilla::RunnableKind Kind, typename... As>
 struct nsRunnableMethodTraits<PtrType, R (C::*)(As...) const, Owning, Kind> {
   using class_type = const mozilla::RemoveRawOrSmartPointer<PtrType>;
-  static_assert(std::is_base_of<C, class_type>::value,
+  static_assert(std::is_base_of_v<C, class_type>,
                 "Stored class must inherit from method's class");
   using return_type = R;
   using base_type = nsRunnableMethod<C, R, Owning, Kind>;
@@ -839,7 +838,9 @@ struct StoreCopyPassByConstLRef {
   using stored_type = std::decay_t<T>;
   typedef const stored_type& passed_type;
   stored_type m;
+
   template <typename A>
+    requires(!std::is_same_v<std::decay_t<A>, StoreCopyPassByConstLRef>)
   MOZ_IMPLICIT StoreCopyPassByConstLRef(A&& a) : m(std::forward<A>(a)) {}
   passed_type PassAsParameter() { return m; }
 };
@@ -852,7 +853,9 @@ struct StoreCopyPassByRRef {
   using stored_type = std::decay_t<T>;
   typedef stored_type&& passed_type;
   stored_type m;
+
   template <typename A>
+    requires(!std::is_same_v<std::decay_t<A>, StoreCopyPassByRRef>)
   MOZ_IMPLICIT StoreCopyPassByRRef(A&& a) : m(std::forward<A>(a)) {}
   passed_type PassAsParameter() { return std::move(m); }
 };
@@ -891,7 +894,9 @@ struct StoreRefPtrPassByPtr {
   typedef RefPtr<T> stored_type;
   typedef T* passed_type;
   stored_type m;
+
   template <typename A>
+    requires(!std::is_same_v<std::decay_t<A>, StoreRefPtrPassByPtr>)
   MOZ_IMPLICIT StoreRefPtrPassByPtr(A&& a) : m(std::forward<A>(a)) {}
   passed_type PassAsParameter() { return m.get(); }
 };

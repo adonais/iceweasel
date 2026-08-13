@@ -5,8 +5,8 @@
 #ifndef _nsXPLookAndFeel
 #define _nsXPLookAndFeel
 
-#include "mozilla/Maybe.h"
 #include "mozilla/LookAndFeel.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/widget/LookAndFeelTypes.h"
 #include "nsTArray.h"
 

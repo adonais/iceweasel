@@ -65,7 +65,7 @@ class StylePropertyMapReadOnly : public nsISupports, public nsWrapperCache {
 
   uint32_t GetIterableLength() const;
 
-  const nsACString& GetKeyAtIndex(uint32_t aIndex) const;
+  nsCString GetKeyAtIndex(uint32_t aIndex) const;
 
   nsTArray<RefPtr<CSSStyleValue>> GetValueAtIndex(uint32_t aIndex) const;
 
@@ -76,6 +76,10 @@ class StylePropertyMapReadOnly : public nsISupports, public nsWrapperCache {
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
  protected:
+  // Factored out code for various functions above.
+  void GetAll(const CSSPropertyId&, nsTArray<RefPtr<CSSStyleValue>>& aRetVal,
+              ErrorResult& aRv) const;
+
   virtual ~StylePropertyMapReadOnly() = default;
 
   class Declarations {
@@ -97,12 +101,16 @@ class StylePropertyMapReadOnly : public nsISupports, public nsWrapperCache {
     StylePropertyTypedValueList GetAll(const CSSPropertyId& aPropertyId,
                                        ErrorResult& aRv) const;
 
+    bool Has(const CSSPropertyId& aPropertyId) const;
+    uint32_t Size() const;
+    bool GetKeyAt(uint32_t aIndex, CSSPropertyId& aId) const;
+
     // Defined in StylePropertyMap.cpp
     void Set(const CSSPropertyId& aPropertyId, const nsACString& aValue,
              ErrorResult& aRv);
+    void Clear(ErrorResult& aRv);
 
     URLExtraData* GetURLExtraData() const;
-
     void Unlink();
 
    private:

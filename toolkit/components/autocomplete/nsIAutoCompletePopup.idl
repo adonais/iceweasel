@@ -96,4 +96,23 @@ interface nsIAutoCompletePopup : nsISupports
    * Notify the autocomplete popup that an autocomplete entry is selected.
    */
   void selectEntry();
+
+  /**
+   * Move the keyboard sub-selection between the currently selected row and its
+   * secondary-action button (e.g. the edit button on a saved-login row), in
+   * response to Tab / Shift+Tab.
+   *
+   * @param reverse - true for Shift+Tab, false for Tab
+   * @return Whether the key was consumed (and should not perform its default
+   *         autocomplete behavior).
+   */
+  boolean navigateSecondaryAction(in boolean reverse);
+
+  /**
+   * Activate the secondary-action button if it currently holds the keyboard
+   * sub-selection, in response to Enter / Space.
+   *
+   * @return Whether a secondary action was activated.
+   */
+  boolean maybeActivateSecondaryAction();
 };

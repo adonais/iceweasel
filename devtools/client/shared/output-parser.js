@@ -57,6 +57,8 @@ const COLOR_TAKING_FUNCTIONS = new Set([
   "oklab",
   "oklch",
   "rgb",
+  // alpha() takes a relative color after `from`
+  "alpha",
   // image(<color>) is equivalent to linear-gradient(<color>)
   "image",
 ]);
@@ -529,6 +531,16 @@ class OutputParser {
       parts = this.#onCloseParenthesisForLightDark(stackEntry, options);
     } else if (lowerCaseFunctionName === "linear") {
       parts = this.#onCloseParenthesisForLinear(stackEntry, options);
+    } else if (
+      lowerCaseFunctionName === "sibling-count" &&
+      Number.isInteger(options.siblingCount)
+    ) {
+      stackEntry.substitutedText = options.siblingCount;
+    } else if (
+      lowerCaseFunctionName === "sibling-index" &&
+      Number.isInteger(options.siblingIndex)
+    ) {
+      stackEntry.substitutedText = options.siblingIndex;
     } else if (lowerCaseFunctionName === "url") {
       parts = this.#onCloseParenthesisForUrl(stackEntry, options);
     } else if (lowerCaseFunctionName === "var") {
@@ -2581,6 +2593,12 @@ class OutputParser {
    * @param {boolean} overrides.isDarkColorScheme: Is the currently applied color scheme dark.
    * @param {boolean} overrides.isValid: Is the name+value valid.
    * @param {boolean} overrides.cssExplainersEnabled: Are CSS explainers enabled
+   * @param {number} overrides.siblingCount: Optional number that should match the result
+   *        of `sibling-count()` (https://developer.mozilla.org/docs/Web/CSS/Reference/Values/sibling-count)
+   *        for the selected element.
+   * @param {number} overrides.siblingIndex: Optional number that should match the result
+   *        of `sibling-index()` (https://developer.mozilla.org/docs/Web/CSS/Reference/Values/sibling-index)
+   *        for the selected element.
    * @return {object} Overridden options object
    */
   #mergeOptions(overrides) {
@@ -2610,6 +2628,8 @@ class OutputParser {
       unmatchedClass: null,
       inStartingStyleRule: false,
       isDarkColorScheme: null,
+      siblingCount: null,
+      siblingIndex: null,
     };
 
     for (const item in overrides) {

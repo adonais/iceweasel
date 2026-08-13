@@ -5,7 +5,6 @@
 #include "xpcAccessibleTextRange.h"
 
 #include "TextRange-inl.h"
-
 #include "nsQueryObject.h"
 #include "xpcAccessibleDocument.h"
 

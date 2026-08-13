@@ -516,6 +516,7 @@ StructuredCloneReadInfoChild DeserializeStructuredCloneReadInfo(
 void DispatchErrorEvent(
     MovingNotNull<RefPtr<IDBRequest>> aRequest, nsresult aErrorCode,
     const SafeRefPtr<IDBTransaction>& aTransaction = nullptr,
+    const nsACString& aMessage = EmptyCString(),
     RefPtr<Event> aEvent = nullptr) {
   const RefPtr<IDBRequest> request = std::move(aRequest);
 
@@ -525,7 +526,7 @@ void DispatchErrorEvent(
 
   AUTO_PROFILER_LABEL("IndexedDB:DispatchErrorEvent", DOM);
 
-  request->SetError(aErrorCode);
+  request->SetError(aErrorCode, aMessage);
 
   if (!aEvent) {
     // Make an error event and fire it at the target.
@@ -1801,15 +1802,16 @@ UniquePtr<JSStructuredCloneData> BackgroundRequestChild::GetNextCloneData() {
 }
 
 nsCOMPtr<nsIRunnable> BackgroundRequestChild::HandleResponse(
-    nsresult aResponse) {
+    const TransactionOpResult& aResponse) {
   SafeRefPtr<IDBTransaction> transaction = AcquireTransaction();
   nsCOMPtr<IDBDatabase> database = nsCOMPtr{mTransaction->Database()};
   return NS_NewRunnableFunction(
       "IDB::DeferredRecvDelete",
       [request = mRequest, transaction = std::move(transaction),
-       database = std::move(database), response = aResponse]() {
-        MOZ_ASSERT(NS_FAILED(response));
-        MOZ_ASSERT(NS_ERROR_GET_MODULE(response) ==
+       database = std::move(database), errorCode = aResponse.mCode,
+       errorMessage = aResponse.mErrorMessage]() {
+        MOZ_ASSERT(NS_FAILED(errorCode));
+        MOZ_ASSERT(NS_ERROR_GET_MODULE(errorCode) ==
                    NS_ERROR_MODULE_DOM_INDEXEDDB);
         MOZ_ASSERT(transaction);
 
@@ -1823,7 +1825,8 @@ nsCOMPtr<nsIRunnable> BackgroundRequestChild::HandleResponse(
           return;
         }
 
-        DispatchErrorEvent(request, response, std::move(transaction));
+        DispatchErrorEvent(request, errorCode, std::move(transaction),
+                           errorMessage);
       });
 }
 
@@ -2111,11 +2114,12 @@ mozilla::ipc::IPCResult BackgroundRequestChild::Recv__delete__(
   if (mTransaction->IsAborted()) {
     // Always fire an "error" event with ABORT_ERR if the transaction was
     // aborted, even if the request succeeded or failed with another error.
-    runnable = HandleResponse(NS_ERROR_DOM_INDEXEDDB_ABORT_ERR);
+    runnable =
+        HandleResponse(TransactionOpResult(NS_ERROR_DOM_INDEXEDDB_ABORT_ERR));
   } else {
     switch (aResponse.type()) {
-      case RequestResponse::Tnsresult:
-        runnable = HandleResponse(aResponse.get_nsresult());
+      case RequestResponse::TTransactionOpResult:
+        runnable = HandleResponse(aResponse.get_TransactionOpResult());
         break;
       case RequestResponse::TObjectStoreAddResponse:
         runnable = HandleResponse(

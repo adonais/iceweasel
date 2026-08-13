@@ -18,9 +18,21 @@ webidl Node;
 #include "nsISupports.idl"
 #include "nsIContentPolicy.idl"
 
+%{C++
+#include "mozilla/Maybe.h"
 
+namespace mozilla {
+class OriginAttributes;
+namespace dom {
+class ClientInfo;
+}
+}
+
+using mozilla::Maybe;
+%}
 
 [ref] native OriginAttributes(const mozilla::OriginAttributes);
+[ref] native MaybeClientInfo(const Maybe<mozilla::dom::ClientInfo>);
 
 /**
  * Low-level websocket API: handles network protocol.
@@ -90,6 +102,7 @@ interface nsIWebSocketChannel : nsISupports
      * @param aCookieJarSettings
      * @param aSecurityFlags
      * @param aContentPolicyType
+     * @param aClientInfo
      *        These will be used as values for the nsILoadInfo object on the
      *        created channel. For details, see nsILoadInfo in nsILoadInfo.idl
      * @return reference to the new nsIChannel object
@@ -107,6 +120,7 @@ interface nsIWebSocketChannel : nsISupports
                                             in nsICookieJarSettings aCookieJarSettings,
                                             in unsigned long aSecurityFlags,
                                             in nsContentPolicyType aContentPolicyType,
+                                            in MaybeClientInfo aClientInfo,
                                             in unsigned long aSandboxFlags);
 
      /**

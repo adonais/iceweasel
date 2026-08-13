@@ -5,6 +5,7 @@
 #include "nsMathMLChar.h"
 
 #include <algorithm>
+#include <numbers>
 #include <numeric>
 
 #include "gfxContext.h"
@@ -45,7 +46,7 @@ using namespace mozilla::image;
 // are installed. "kMaxScaleFactor" is required to limit the scale for the
 // vertical and horizontal stretchy operators.
 static const float kMaxScaleFactor = 20.0;
-static const float kLargeOpFactor = float(M_SQRT2);
+static const float kLargeOpFactor = std::numbers::sqrt2_v<float>;
 static const float kIntegralFactor = 2.0;
 
 static void NormalizeDefaultFont(nsFont& aFont, float aFontSizeInflation) {
@@ -348,7 +349,7 @@ void nsOpenTypeTable::UpdateCache(DrawTarget* aDrawTarget,
     if (data.IsSimpleGlyph()) {
       mGlyphID = data.GetSimpleGlyph();
     } else if (data.GetGlyphCount() == 1) {
-      mGlyphID = textRun->GetDetailedGlyphs(0)->mGlyphID;
+      mGlyphID = textRun->GetDetailedGlyphs(0, 1)->mGlyphID;
     } else {
       mGlyphID = 0;
     }
@@ -1573,7 +1574,9 @@ class nsDisplayMathMLCharForeground final : public nsPaintedDisplayItem {
 
   virtual void Paint(nsDisplayListBuilder* aBuilder,
                      gfxContext* aCtx) override {
-    mChar->PaintForeground(mFrame, *aCtx, ToReferenceFrame(), mIsSelected);
+    imgDrawingParams imgParams(aBuilder->GetImageDecodeFlags());
+    mChar->PaintForeground(mFrame, *aCtx, imgParams, ToReferenceFrame(),
+                           mIsSelected);
   }
 
   NS_DISPLAY_DECL_NAME("MathMLCharForeground", TYPE_MATHML_CHAR_FOREGROUND)
@@ -1673,7 +1676,8 @@ void nsMathMLChar::ApplyTransforms(gfxContext* aThebesContext,
 }
 
 void nsMathMLChar::PaintForeground(nsIFrame* aForFrame,
-                                   gfxContext& aRenderingContext, nsPoint aPt,
+                                   gfxContext& aRenderingContext,
+                                   imgDrawingParams& aImgParams, nsPoint aPt,
                                    bool aIsSelected) {
   ComputedStyle* computedStyle = mComputedStyle;
   nsPresContext* presContext = aForFrame->PresContext();
@@ -1708,15 +1712,18 @@ void nsMathMLChar::PaintForeground(nsIFrame* aForFrame,
                          gfx::Point(0.0, mUnscaledAscent),
                          gfxTextRun::DrawParams(
                              &aRenderingContext,
-                             aForFrame->PresContext()->FontPaletteCache()));
+                             aForFrame->PresContext()->FontPaletteCache()),
+                         aImgParams);
       }
       break;
     case DrawingMethod::Parts: {
       // paint by parts
       if (StretchDirection::Vertical == mDirection) {
-        PaintVertically(presContext, &aRenderingContext, r, fgColor);
+        PaintVertically(presContext, &aRenderingContext, aImgParams, r,
+                        fgColor);
       } else if (StretchDirection::Horizontal == mDirection) {
-        PaintHorizontally(presContext, &aRenderingContext, r, fgColor);
+        PaintHorizontally(presContext, &aRenderingContext, aImgParams, r,
+                          fgColor);
       }
       break;
     }
@@ -1768,6 +1775,7 @@ static void PaintRule(DrawTarget& aDrawTarget, int32_t aAppUnitsPerGfxUnit,
 // paint a stretchy char by assembling glyphs vertically
 nsresult nsMathMLChar::PaintVertically(nsPresContext* aPresContext,
                                        gfxContext* aThebesContext,
+                                       imgDrawingParams& aImgParams,
                                        nsRect& aRect, nscolor aColor) {
   DrawTarget& aDrawTarget = *aThebesContext->GetDrawTarget();
 
@@ -1858,7 +1866,8 @@ nsresult nsMathMLChar::PaintVertically(nsPresContext* aPresContext,
       }
       if (!clipRect.IsEmpty()) {
         AutoPushClipRect clip(aThebesContext, oneDevPixel, clipRect);
-        mGlyphs[i]->Draw(Range(mGlyphs[i].get()), gfx::Point(dx, dy), params);
+        mGlyphs[i]->Draw(Range(mGlyphs[i].get()), gfx::Point(dx, dy), params,
+                         aImgParams);
       }
     }
   }
@@ -1923,7 +1932,8 @@ nsresult nsMathMLChar::PaintVertically(nsPresContext* aPresContext,
         clipRect.height = std::min(bm.ascent + bm.descent, fillEnd - dy);
         AutoPushClipRect clip(aThebesContext, oneDevPixel, clipRect);
         dy += bm.ascent;
-        mGlyphs[3]->Draw(Range(mGlyphs[3].get()), gfx::Point(dx, dy), params);
+        mGlyphs[3]->Draw(Range(mGlyphs[3].get()), gfx::Point(dx, dy), params,
+                         aImgParams);
         dy += bm.descent;
       }
     }
@@ -1942,6 +1952,7 @@ nsresult nsMathMLChar::PaintVertically(nsPresContext* aPresContext,
 // paint a stretchy char by assembling glyphs horizontally
 nsresult nsMathMLChar::PaintHorizontally(nsPresContext* aPresContext,
                                          gfxContext* aThebesContext,
+                                         imgDrawingParams& aImgParams,
                                          nsRect& aRect, nscolor aColor) {
   DrawTarget& aDrawTarget = *aThebesContext->GetDrawTarget();
 
@@ -2021,7 +2032,8 @@ nsresult nsMathMLChar::PaintHorizontally(nsPresContext* aPresContext,
       }
       if (!clipRect.IsEmpty()) {
         AutoPushClipRect clip(aThebesContext, oneDevPixel, clipRect);
-        mGlyphs[i]->Draw(Range(mGlyphs[i].get()), gfx::Point(dx, dy), params);
+        mGlyphs[i]->Draw(Range(mGlyphs[i].get()), gfx::Point(dx, dy), params,
+                         aImgParams);
       }
     }
   }
@@ -2085,7 +2097,8 @@ nsresult nsMathMLChar::PaintHorizontally(nsPresContext* aPresContext,
             std::min(bm.rightBearing - bm.leftBearing, fillEnd - dx);
         AutoPushClipRect clip(aThebesContext, oneDevPixel, clipRect);
         dx -= bm.leftBearing;
-        mGlyphs[3]->Draw(Range(mGlyphs[3].get()), gfx::Point(dx, dy), params);
+        mGlyphs[3]->Draw(Range(mGlyphs[3].get()), gfx::Point(dx, dy), params,
+                         aImgParams);
         dx += bm.rightBearing;
       }
     }

@@ -47,6 +47,8 @@ const NODES = [
 ];
 
 add_task(async function () {
+  await pushPref("dom.select.customizable_select.enabled", true);
+
   const { inspector } = await openInspectorForURL(TEST_URI);
   const breadcrumbs = inspector.panelDoc.getElementById(
     "inspector-breadcrumbs"
@@ -156,10 +158,24 @@ async function testPseudoElements(inspector, container) {
   await checkBreadcrumbContent(
     backdropElement,
     ["html", "body", "dialog", "::backdrop"],
-    ":backdrop shows up in breadcrumb"
+    "::backdrop shows up in breadcrumb"
   );
 
-  info("Check rules on ::view-transition");
+  const selectNodeFront = await getNodeFront("select", inspector);
+  const selectChildren = await inspector.walker.children(selectNodeFront);
+  is(
+    selectChildren.nodes.length,
+    4,
+    "Expected number of children for the <select> element"
+  );
+  const pickerIconElement = selectChildren.nodes[3];
+  await checkBreadcrumbContent(
+    pickerIconElement,
+    ["html", "body", "select", "::picker-icon"],
+    "::picker-icon shows up in breadcrumb"
+  );
+
+  info("Check breadcrum items for ::view-transition");
   const htmlNodeFront = await getNodeFront("html", inspector);
   const onMarkupMutation = inspector.once("markupmutation");
   await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {

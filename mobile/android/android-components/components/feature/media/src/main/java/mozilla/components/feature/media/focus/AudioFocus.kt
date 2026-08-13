@@ -39,9 +39,18 @@ internal class AudioFocus(
     private val audioFocusController = AudioFocusControllerV26(audioManager, this)
 
     @Synchronized
-    fun request(tabId: String?) {
+    fun request(
+        tabId: String?,
+        type: MediaSession.AudioSessionType = MediaSession.AudioSessionType.PLAYBACK,
+    ) {
         sessionId = tabId
-        val result = audioFocusController.request()
+        if (type == MediaSession.AudioSessionType.AMBIENT) {
+            // Ambient audio mixes freely with everything else, so do not take
+            // audio focus for it.
+            logger.debug("request: ambient type, not taking audio focus")
+            return
+        }
+        val result = audioFocusController.request(type)
         processAudioFocusResult(result)
     }
 

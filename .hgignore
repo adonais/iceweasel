@@ -381,7 +381,7 @@ toolkit/themes/shared/design-system/node_modules/
 ^extensions/spellcheck/locales/en-US/hunspell/dictionary-sources/.*en_US-mozilla.*
 
 # Ignore automatically generated mots documentation
-^docs/mots/index\.rst
+^docs/mots/index\.md
 
 # Ignore generated directory with .class files for GeckoView annotation processor
 ^mobile/android/annotations/bin/

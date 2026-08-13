@@ -2,17 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/Bootstrap.h"
-
-#include "nsXPCOMPrivate.h"
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
+#include "mozilla/Bootstrap.h"
 #include "mozilla/FileUtils.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Try.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/UniquePtrExtensions.h"
+#include "nsXPCOMPrivate.h"
 
 #if defined(XP_WIN) && defined(_M_X64) && defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
 #  include "mozilla/WindowsDiagnostics.h"
@@ -41,6 +40,7 @@ using LibHandleResult = ::mozilla::Result<LibHandleType, DLErrorType>;
 
 #if defined(XP_WIN)
 #  include <mbstring.h>
+
 #  include "mozilla/PreXULSkeletonUI.h"
 
 static LibHandleResult GetLibHandle(pathstr_t aDependentLib) {

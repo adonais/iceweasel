@@ -5,13 +5,14 @@
 #ifndef mozilla_gfx_layers_d3d11_DeviceAttachmentsD3D11_h
 #define mozilla_gfx_layers_d3d11_DeviceAttachmentsD3D11_h
 
+#include <d3d11.h>
+#include <dxgi1_2.h>
+
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/gfx/DeviceManagerDx.h"
 #include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/layers/SyncObject.h"
-#include <d3d11.h>
-#include <dxgi1_2.h>
 
 namespace mozilla {
 namespace layers {

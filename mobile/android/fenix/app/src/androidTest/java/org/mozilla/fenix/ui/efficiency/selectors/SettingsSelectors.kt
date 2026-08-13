@@ -11,6 +11,15 @@ import org.mozilla.fenix.ui.efficiency.helpers.Selector
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
 object SettingsSelectors {
+    // Present on Settings and its sub-screens; absent once back on Home/Browser. Used as the
+    // anchor for backing out of nested Settings via PressBackUntilGone.
+    val NAVIGATION_TOOLBAR = Selector(
+        strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
+        value = "navigationToolbar",
+        description = "the settings navigation toolbar",
+        groups = listOf(),
+    )
+
     val GO_BACK_BUTTON = Selector(
         strategy = SelectorStrategy.ESPRESSO_BY_CONTENT_DESC,
         value = "Navigate up",
@@ -257,6 +266,7 @@ object SettingsSelectors {
     )
 
     val all = listOf(
+        NAVIGATION_TOOLBAR,
         GO_BACK_BUTTON,
         GENERAL_HEADING,
         SETTINGS_TITLE,

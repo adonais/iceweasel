@@ -3,27 +3,28 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "AnimationHelper.h"
+
 #include "CompositorAnimationStorage.h"
+#include "NonCustomCSSPropertyId.h"  // for eCSSProperty_offset_path, etc
 #include "base/process_util.h"
-#include "gfx2DGlue.h"                 // for ThebesRect
-#include "gfxLineSegment.h"            // for gfxLineSegment
-#include "gfxPoint.h"                  // for gfxPoint
-#include "gfxQuad.h"                   // for gfxQuad
-#include "gfxRect.h"                   // for gfxRect
-#include "gfxUtils.h"                  // for gfxUtils::TransformToQuad
-#include "mozilla/ServoStyleConsts.h"  // for StyleComputedTimingFunction
-#include "mozilla/dom/AnimationEffectBinding.h"  // for dom::FillMode
-#include "mozilla/dom/KeyframeEffectBinding.h"   // for dom::IterationComposite
-#include "mozilla/dom/KeyframeEffect.h"  // for dom::KeyFrameEffectReadOnly
-#include "mozilla/dom/Nullable.h"        // for dom::Nullable
-#include "mozilla/layers/APZSampler.h"   // for APZSampler
+#include "gfx2DGlue.h"       // for ThebesRect
+#include "gfxLineSegment.h"  // for gfxLineSegment
+#include "gfxPoint.h"        // for gfxPoint
+#include "gfxQuad.h"         // for gfxQuad
+#include "gfxRect.h"         // for gfxRect
+#include "gfxUtils.h"        // for gfxUtils::TransformToQuad
 #include "mozilla/CSSPropertyId.h"
 #include "mozilla/LayerAnimationInfo.h"   // for GetCSSPropertiesFor()
 #include "mozilla/Maybe.h"                // for Maybe<>
 #include "mozilla/MotionPathUtils.h"      // for ResolveMotionPath()
+#include "mozilla/ServoStyleConsts.h"     // for StyleComputedTimingFunction
 #include "mozilla/StyleAnimationValue.h"  // for StyleAnimationValue, etc
-#include "NonCustomCSSPropertyId.h"       // for eCSSProperty_offset_path, etc
-#include "nsDisplayList.h"                // for nsDisplayTransform, etc
+#include "mozilla/dom/AnimationEffectBinding.h"  // for dom::FillMode
+#include "mozilla/dom/KeyframeEffect.h"  // for dom::KeyFrameEffectReadOnly
+#include "mozilla/dom/KeyframeEffectBinding.h"  // for dom::IterationComposite
+#include "mozilla/dom/Nullable.h"               // for dom::Nullable
+#include "mozilla/layers/APZSampler.h"          // for APZSampler
+#include "nsDisplayList.h"                      // for nsDisplayTransform, etc
 #include "nsStyleTransformMatrix.h"
 
 namespace mozilla::layers {

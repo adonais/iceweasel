@@ -8,14 +8,14 @@
 
 add_task(async function suggestedIndex() {
   let result1 = new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    type: UrlbarShared.RESULT_TYPE.URL,
+    source: UrlbarShared.RESULT_SOURCE.HISTORY,
     suggestedIndex: 2,
     payload: { url: "http://mozilla.org/1" },
   });
   let result2 = new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    type: UrlbarShared.RESULT_TYPE.URL,
+    source: UrlbarShared.RESULT_SOURCE.HISTORY,
     suggestedIndex: 6,
     payload: { url: "http://mozilla.org/2" },
   });
@@ -75,8 +75,8 @@ add_task(async function suggestedIndex_append() {
   // When suggestedIndex is greater than the number of results the result is
   // appended.
   let result = new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    type: UrlbarShared.RESULT_TYPE.URL,
+    source: UrlbarShared.RESULT_SOURCE.HISTORY,
     suggestedIndex: 4,
     payload: { url: "http://mozilla.org/append/" },
   });

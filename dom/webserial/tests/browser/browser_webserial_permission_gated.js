@@ -41,7 +41,6 @@ add_setup(async function () {
   });
 
   AddonTestUtils.initMochitest(this);
-  AddonTestUtils.hookAMTelemetryEvents();
 
   alwaysAcceptAddonPostInstallDialogs();
 
@@ -66,6 +65,12 @@ add_task(async function testRequestPort() {
   await BrowserTestUtils.openNewForegroundTab(gBrowser, EXAMPLE_COM_URL);
   const testPageHost = gBrowser.selectedTab.linkedBrowser.documentURI.host;
   Services.fog.testResetFOG();
+
+  // Track the site_permission values observed across this test task
+  // and assert the unique values collected at the end.
+  const sitePermissionsSeen = new Set();
+  const trackSitePermission = evt =>
+    sitePermissionsSeen.add(evt.site_permission);
 
   ok(
     await SpecialPowers.testPermission(
@@ -122,10 +127,11 @@ add_task(async function testRequestPort() {
   );
   is(rejectionMessage, "NotFoundError: No port selected");
 
-  AddonTestUtils.assertInstallTelemetryEvents(
-    ["site_warning", "cancelled"],
-    "sitepermission"
-  );
+  AddonTestUtils.assertSitePermissionInstallSteps({
+    expectedSteps: ["site_warning", "cancelled"],
+    resetFOG: true,
+    onEvent: trackSitePermission,
+  });
 
   info("Deny site permission addon install in second popup");
   onAddonInstallBlockedNotification = waitForNotification(
@@ -177,10 +183,11 @@ add_task(async function testRequestPort() {
     "got expected error when rejecting add-on"
   );
 
-  AddonTestUtils.assertInstallTelemetryEvents(
-    ["site_warning", "permissions_prompt", "cancelled"],
-    "sitepermission"
-  );
+  AddonTestUtils.assertSitePermissionInstallSteps({
+    expectedSteps: ["site_warning", "permissions_prompt", "cancelled"],
+    resetFOG: true,
+    onEvent: trackSitePermission,
+  });
 
   info("Request serial port access again");
   onAddonInstallBlockedNotification = waitForNotification(
@@ -248,10 +255,11 @@ add_task(async function testRequestPort() {
     "requestPort resolved without user prompt"
   );
 
-  AddonTestUtils.assertInstallTelemetryEvents(
-    ["site_warning", "permissions_prompt", "completed"],
-    "sitepermission"
-  );
+  AddonTestUtils.assertSitePermissionInstallSteps({
+    expectedSteps: ["site_warning", "permissions_prompt", "completed"],
+    resetFOG: true,
+    onEvent: trackSitePermission,
+  });
 
   info("Check that we don't prompt user again when they perm denied");
   await SpecialPowers.removePermission("serial", {
@@ -324,19 +332,14 @@ add_task(async function testRequestPort() {
     "Expected Glean event recorded."
   );
 
-  AddonTestUtils.assertInstallTelemetryEvents(
-    ["site_warning", "cancelled"],
-    "sitepermission"
-  );
+  AddonTestUtils.assertSitePermissionInstallSteps({
+    expectedSteps: ["site_warning", "cancelled"],
+    resetFOG: true,
+    onEvent: trackSitePermission,
+  });
 
   Assert.deepEqual(
-    Array.from(
-      new Set(
-        AddonTestUtils.getAMGleanEvents("install").map(
-          evt => evt.site_permission
-        )
-      )
-    ),
+    Array.from(sitePermissionsSeen),
     ["serial"],
     "Each install telemetry event records the serial site permission"
   );
@@ -425,10 +428,10 @@ add_task(async function testIframeRequestPort() {
     "requestPort resolved without user prompt"
   );
 
-  AddonTestUtils.assertInstallTelemetryEvents(
-    ["site_warning", "permissions_prompt", "completed"],
-    "sitepermission"
-  );
+  AddonTestUtils.assertSitePermissionInstallSteps({
+    expectedSteps: ["site_warning", "permissions_prompt", "completed"],
+    resetFOG: true,
+  });
 
   info("Check that request is rejected when done from a cross-origin iframe");
   const crossOriginIframeBrowsingContext = await SpecialPowers.spawn(
@@ -479,7 +482,10 @@ add_task(async function testIframeRequestPort() {
     ),
     "an error message is sent to the console"
   );
-  AddonTestUtils.assertInstallTelemetryEvents([], "sitepermission");
+  AddonTestUtils.assertSitePermissionInstallSteps({
+    expectedSteps: [],
+    resetFOG: true,
+  });
 });
 
 add_task(async function testRequestPortLocalhost() {
@@ -630,7 +636,10 @@ add_task(async function testRequestPortLocalhost() {
   is(errorInfo.name, "NotFoundError", "Rejection is NotFoundError");
   is(errorInfo.message, "No port selected", "Error message is correct");
 
-  AddonTestUtils.assertInstallTelemetryEvents([], "sitepermission");
+  AddonTestUtils.assertSitePermissionInstallSteps({
+    expectedSteps: [],
+    resetFOG: true,
+  });
 });
 
 add_task(async function testRequestPortFile() {
@@ -769,11 +778,10 @@ add_task(async function testRequestPortFile() {
   is(errorInfo.name, "NotFoundError", "Rejection is NotFoundError");
   is(errorInfo.message, "No port selected", "Error message is correct");
 
-  AddonTestUtils.assertInstallTelemetryEvents([], "sitepermission");
-});
-
-add_task(function teardown_telemetry_events() {
-  AddonTestUtils.getAMTelemetryEvents();
+  AddonTestUtils.assertSitePermissionInstallSteps({
+    expectedSteps: [],
+    resetFOG: true,
+  });
 });
 
 // See helpers_addons_install_dialogs.js for shared helpers. If needed, update the shared

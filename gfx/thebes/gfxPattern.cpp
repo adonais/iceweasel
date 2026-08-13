@@ -4,14 +4,13 @@
 
 #include "gfxPattern.h"
 
-#include "gfxUtils.h"
-#include "gfxTypes.h"
-#include "gfxPlatform.h"
+#include "cairo.h"
 #include "gfx2DGlue.h"
 #include "gfxGradientCache.h"
+#include "gfxPlatform.h"
+#include "gfxTypes.h"
+#include "gfxUtils.h"
 #include "mozilla/gfx/2D.h"
-
-#include "cairo.h"
 
 using namespace mozilla::gfx;
 

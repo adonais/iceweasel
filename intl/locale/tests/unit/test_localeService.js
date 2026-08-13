@@ -361,6 +361,58 @@ add_test(function test_url_fixup_suffix() {
   run_next_test();
 });
 
+add_test(function test_isLocalizedEnough() {
+  const OVERRIDE_PREF = "intl.l10n.coverage.test-override";
+
+  Assert.strictEqual(
+    localeService.isLocalizedEnough("browser/browser/foo.ftl", "", 1.0),
+    true,
+    "Missing coverage data counts as fully covered"
+  );
+
+  Services.prefs.setBoolPref(OVERRIDE_PREF, true);
+  Assert.strictEqual(
+    localeService.isLocalizedEnough(
+      "browser/browser/foo.ftl",
+      OVERRIDE_PREF,
+      1.5
+    ),
+    true,
+    "A true override pref forces enablement"
+  );
+  Services.prefs.clearUserPref(OVERRIDE_PREF);
+
+  run_next_test();
+});
+
+add_test(function test_areMessagesLocalized() {
+  const OVERRIDE_PREF = "intl.l10n.coverage.test-override";
+
+  Assert.strictEqual(
+    localeService.areMessagesLocalized(
+      "browser/browser/foo.ftl",
+      ["msg-a"],
+      ""
+    ),
+    true,
+    "Missing coverage data counts as fully localized"
+  );
+
+  Services.prefs.setBoolPref(OVERRIDE_PREF, true);
+  Assert.strictEqual(
+    localeService.areMessagesLocalized(
+      "browser/browser/foo.ftl",
+      ["msg-a", "msg-b"],
+      OVERRIDE_PREF
+    ),
+    true,
+    "A true override pref forces localization"
+  );
+  Services.prefs.clearUserPref(OVERRIDE_PREF);
+
+  run_next_test();
+});
+
 registerCleanupFunction(() => {
   Services.prefs.clearUserPref(PREF_REQUESTED_LOCALES);
 });

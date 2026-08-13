@@ -73,6 +73,18 @@ pub struct SceneSpatialNode {
     pub is_root_coord_system: bool,
 }
 
+/// Grid that reference-frame origins are quantized to (see
+/// `SceneSpatialNode::new_reference_frame`). The display-list builder
+/// reconstitutes an origin as a scrolled-space value plus a re-added (fractional)
+/// external scroll offset; at large scroll magnitudes that f32 round-trip can
+/// leave the origin slightly off its intended sub-pixel position (a few of the
+/// smallest representable float increments, e.g. 201.49994 vs 201.5). That tiny
+/// error sits on the device-pixel snap tie and flips snapped content +/-1px
+/// frame-to-frame while scrolling. 1/128 px is far above that float noise yet far
+/// below a device pixel (about half Gecko's app-unit granularity), so quantizing
+/// removes the noise without disturbing genuine sub-pixel placement.
+const REFERENCE_FRAME_ORIGIN_QUANTUM: f32 = 1.0 / 128.0;
+
 impl SceneSpatialNode {
     pub fn new_reference_frame(
         parent_index: Option<SpatialNodeIndex>,
@@ -84,6 +96,17 @@ impl SceneSpatialNode {
         is_root_coord_system: bool,
         is_pipeline_root: bool,
     ) -> Self {
+        // Quantize the reference-frame origin to REFERENCE_FRAME_ORIGIN_QUANTUM to
+        // strip the tiny float noise the builder's scrolled-space ESO round-trip
+        // can introduce (e.g. 201.49994 vs 201.5), which otherwise straddles the
+        // device-pixel snap tie and jitters snapped content +/-1px while scrolling.
+        let origin_in_parent_reference_frame = {
+            let q = REFERENCE_FRAME_ORIGIN_QUANTUM;
+            LayoutVector2D::new(
+                (origin_in_parent_reference_frame.x / q).round() * q,
+                (origin_in_parent_reference_frame.y / q).round() * q,
+            )
+        };
         let info = ReferenceFrameInfo {
             transform_style,
             source_transform,
@@ -207,6 +230,14 @@ pub struct SpatialNode {
     /// This is calculated in update(). This will be used to decide whether
     /// to override corresponding picture's raster space as an optimisation.
     pub is_ancestor_or_self_zooming: bool,
+
+    /// Whether this node or any of its ancestors has an animated (property-bound)
+    /// transform. Calculated in update(). Used to render text under an animated
+    /// transform in local raster space instead of device-snapping it, so its
+    /// glyphs don't jitter as the transform is re-sampled each frame - matching
+    /// the tree's existing policy of not snapping animated transforms (bug
+    /// 637852), which the device text-snap path (bug 2044211) otherwise misses.
+    pub is_ancestor_or_self_animating: bool,
 }
 
 /// Snap an offset to be incorporated into a transform, where the local space
@@ -287,6 +318,38 @@ impl SpatialNode {
         let state = state_stack.last().unwrap();
 
         self.is_ancestor_or_self_zooming = self.is_async_zooming | state.is_ancestor_or_self_zooming;
+
+        // A reference frame whose transform is bound to a property is re-sampled
+        // every frame while the display list stays fixed. That covers a
+        // compositor-driven CSS transform animation (which we do want to treat as
+        // animating), but also APZ's async pinch-zoom container and fixed-position
+        // reference frames, whose transforms are bound so the compositor can
+        // update them without a new display list. Those APZ frames are marked
+        // `is_2d_scale_translation` (see nsDisplayOwnLayer), which a CSS transform
+        // reference frame never is, so exclude them - otherwise the async-zoom
+        // container (present on essentially every page) would flag all content as
+        // animating and push all text to local raster. Active pinch-zoom itself is
+        // already handled by `is_ancestor_or_self_zooming`.
+        let self_has_animated_transform = match self.node_type {
+            SpatialNodeType::ReferenceFrame(ref info) => match info.source_transform {
+                // A bound transform counts as animating only once it has been
+                // observed to actually move (bug 2051166): a bound-but-static
+                // value - e.g. a CSS animation holding a constant transform -
+                // stays on the crisp device text path instead of local raster.
+                // When the animation ends the binding is removed (the transform
+                // becomes a static Value), so this returns false again.
+                PropertyBinding::Binding(ref key, _) => {
+                    !matches!(
+                        info.kind,
+                        ReferenceFrameKind::Transform { is_2d_scale_translation: true, .. }
+                    ) && scene_properties.transform_binding_has_moved(key.id)
+                }
+                PropertyBinding::Value(..) => false,
+            },
+            _ => false,
+        };
+        self.is_ancestor_or_self_animating =
+            self_has_animated_transform | state.is_ancestor_or_self_animating;
 
         // If any of our parents was not rendered, we are not rendered either and can just
         // quit here.
@@ -606,6 +669,7 @@ impl SpatialNode {
     pub fn prepare_state_for_children(&self, state: &mut TransformUpdateState) {
         state.current_coordinate_system_id = self.coordinate_system_id;
         state.is_ancestor_or_self_zooming = self.is_ancestor_or_self_zooming;
+        state.is_ancestor_or_self_animating = self.is_ancestor_or_self_animating;
         state.invertible &= self.invertible;
 
         // The transformation we are passing is the transformation of the parent
@@ -623,7 +687,12 @@ impl SpatialNode {
                 state.nearest_scrolling_ancestor_offset += info.current_offset;
                 state.preserves_3d = false;
                 state.external_id = None;
-                state.scroll_offset = info.current_offset;
+                // A sticky offset translates the entire subtree uniformly (its
+                // perspective origin moves with the element), so it must not
+                // contribute to the perspective change-of-basis. Only genuine
+                // scroll offsets do. `scroll_offset` is read solely by that
+                // perspective path (see ReferenceFrameKind::Perspective).
+                state.scroll_offset = LayoutVector2D::zero();
             }
             SpatialNodeType::ScrollFrame(ref scrolling) => {
                 state.parent_accumulated_scroll_offset += scrolling.offset();
@@ -920,4 +989,86 @@ fn test_cst_perspective_relative_scroll() {
     let world_transform = st.get_world_transform(ref_frame).into_transform().cast_unit();
     let ref_transform = transform.then_translate(LayoutVector3D::new(0.0, -50.0, 0.0));
     assert!(world_transform.approx_eq(&ref_transform));
+}
+
+#[test]
+fn test_cst_perspective_relative_sticky() {
+    // Verify that a sticky offset applied to a node between a perspective
+    // reference frame and its relative scroll node does NOT get folded into
+    // the perspective change-of-basis. A sticky offset translates the whole
+    // subtree uniformly (the perspective origin moves with the element), so it
+    // must not conjugate the perspective matrix - otherwise the perspective
+    // content tips/distorts as the sticky offset grows with scrolling
+    // (bug 2053507).
+
+    use crate::spatial_tree::{SceneSpatialTree, SpatialTree};
+
+    let mut cst = SceneSpatialTree::new();
+    let pipeline_id = PipelineId::dummy();
+    let ext_scroll_id = ExternalScrollId(1, pipeline_id);
+    let transform = LayoutTransform::perspective(1000.0);
+
+    let root = cst.add_reference_frame(
+        cst.root_reference_frame_index(),
+        TransformStyle::Flat,
+        PropertyBinding::Value(LayoutTransform::identity()),
+        ReferenceFrameKind::Transform {
+            is_2d_scale_translation: false,
+            should_snap: false,
+            paired_with_perspective: false,
+        },
+        LayoutVector2D::zero(),
+        pipeline_id,
+        false,
+    );
+
+    // Pre-scroll the scroll frame by 100px. The child sticky frame then sticks
+    // to the top, producing a +100px sticky offset that exactly cancels the
+    // scroll offset in the accumulated transform (a stuck element stays put).
+    let scroll_frame = cst.add_scroll_frame(
+        root,
+        ext_scroll_id,
+        pipeline_id,
+        &LayoutRect::from_size(LayoutSize::new(100.0, 100.0)),
+        &LayoutSize::new(100.0, 500.0),
+        ScrollFrameKind::Explicit,
+        LayoutVector2D::new(0.0, 100.0),
+        APZScrollGeneration::default(),
+        HasScrollLinkedEffect::No,
+    );
+
+    let sticky_frame = cst.add_sticky_frame(
+        scroll_frame,
+        StickyFrameInfo::new(
+            LayoutRect::from_size(LayoutSize::new(100.0, 50.0)),
+            SideOffsets2D::new(Some(0.0), None, None, None),
+            StickyOffsetBounds::new(0.0, 1000.0),
+            StickyOffsetBounds::new(0.0, 0.0),
+            None,
+        ),
+        pipeline_id,
+    );
+
+    let ref_frame = cst.add_reference_frame(
+        sticky_frame,
+        TransformStyle::Preserve3D,
+        PropertyBinding::Value(transform),
+        ReferenceFrameKind::Perspective {
+            scrolling_relative_to: Some(ext_scroll_id),
+        },
+        LayoutVector2D::zero(),
+        pipeline_id,
+        false,
+    );
+
+    let mut st = SpatialTree::new();
+    st.apply_updates(cst.end_frame_and_get_pending_updates());
+    st.update_tree(&SceneProperties::new());
+
+    // The scroll (-100) and sticky (+100) offsets cancel, so the perspective
+    // frame's world transform must be exactly the untouched perspective matrix.
+    // If the sticky offset leaked into the change-of-basis it would be
+    // conjugated and this would fail.
+    let world_transform = st.get_world_transform(ref_frame).into_transform().cast_unit();
+    assert!(world_transform.approx_eq(&transform));
 }

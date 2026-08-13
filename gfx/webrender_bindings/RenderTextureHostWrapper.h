@@ -42,6 +42,8 @@ class RenderTextureHostWrapper final : public RenderTextureHostSWGL {
   RenderDcompSurfaceTextureHost* AsRenderDcompSurfaceTextureHost() override;
   RenderAndroidHardwareBufferTextureHost*
   AsRenderAndroidHardwareBufferTextureHost() override;
+  RenderAndroidImageReaderImageTextureHost*
+  AsRenderAndroidImageReaderImageTextureHost() override;
   RenderAndroidSurfaceTextureHost* AsRenderAndroidSurfaceTextureHost() override;
   RenderEGLImageTextureHost* AsRenderEGLImageTextureHost() override;
   RenderTextureHostSWGL* AsRenderTextureHostSWGL() override;

@@ -1719,6 +1719,11 @@ add_task(async function testGraduateFirefoxLabsAutoPip() {
       success: "true",
       is_first_startup: "false",
     },
+    {
+      migration_id: "bug-2054546-mitigation",
+      is_first_startup: "false",
+      success: "true",
+    },
   ]);
 
   Assert.deepEqual(
@@ -1775,6 +1780,11 @@ add_task(async function testSeparateRolloutOptOut() {
           migration_id: "graduate-firefox-labs-jpeg-xl",
           success: "true",
           is_first_startup: "false",
+        },
+        {
+          migration_id: "bug-2054546-mitigation",
+          is_first_startup: "false",
+          success: "true",
         },
       ]);
 
@@ -1896,6 +1906,11 @@ add_task(async function testGraduateFirefoxLabsJPEGXL() {
       migration_id: "graduate-firefox-labs-jpeg-xl",
       success: "true",
       is_first_startup: "false",
+    },
+    {
+      migration_id: "bug-2054546-mitigation",
+      is_first_startup: "false",
+      success: "true",
     },
   ]);
   Assert.deepEqual(

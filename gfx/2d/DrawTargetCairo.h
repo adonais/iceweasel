@@ -5,11 +5,11 @@
 #ifndef MOZILLA_GFX_DRAWTARGET_CAIRO_H_
 #define MOZILLA_GFX_DRAWTARGET_CAIRO_H_
 
-#include "2D.h"
-#include "cairo.h"
-#include "PathCairo.h"
-
 #include <vector>
+
+#include "2D.h"
+#include "PathCairo.h"
+#include "cairo.h"
 
 namespace mozilla {
 namespace gfx {

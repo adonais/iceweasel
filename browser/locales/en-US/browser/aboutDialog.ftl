@@ -12,7 +12,7 @@ update-checkForUpdatesButton =
     .accesskey = C
 
 update-updateButton =
-    .label = Restart to Update { -brand-shorter-name }
+    .label = Restart to update { -brand-shorter-name }
     .accesskey = R
 
 update-checkingForUpdates = Checking for updates…
@@ -81,6 +81,8 @@ community-exp = <label data-l10n-name="community-exp-mozillaLink">{ -vendor-shor
 community-2 = { -brand-short-name } is designed by <label data-l10n-name="community-mozillaLink">{ -vendor-short-name }</label>, a <label data-l10n-name="community-creditsLink">global community</label> working together to keep the Web open, public and accessible to all.
 
 helpus = Want to help? <label data-l10n-name="helpus-donateLink">Make a donation</label> or <label data-l10n-name="helpus-getInvolvedLink">get involved!</label>
+
+helpus-referrals = Want to help? <label data-l10n-name="helpus-donateLink">Make a donation</label>, <label data-l10n-name="helpus-shareFirefoxLink">Share { -brand-short-name }</label>, or <label data-l10n-name="helpus-getInvolvedLink">get involved!</label>
 
 bottomLinks-license = Licensing Information
 bottom-links-terms = Terms of Use

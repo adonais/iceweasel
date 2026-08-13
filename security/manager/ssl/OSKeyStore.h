@@ -9,14 +9,14 @@
 #ifndef OSKeyStore_h
 #define OSKeyStore_h
 
+#include <memory>
+#include <vector>
+
+#include "ScopedNSSTypes.h"
 #include "nsCOMPtr.h"
 #include "nsIOSKeyStore.h"
 #include "nsISerialEventTarget.h"
 #include "nsString.h"
-#include "ScopedNSSTypes.h"
-
-#include <memory>
-#include <vector>
 
 class AbstractOSKeyStore {
  public:

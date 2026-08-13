@@ -63,6 +63,7 @@ import mozilla.components.feature.prompts.dialog.PromptDialogFragment
 import mozilla.components.feature.prompts.dialog.SaveLoginDialogFragment
 import mozilla.components.feature.prompts.dialog.WebAuthnRelatedOriginDialogFragment
 import mozilla.components.feature.prompts.emailmask.EmailMaskDelegate
+import mozilla.components.feature.prompts.facts.AddressAutofillDialogFacts
 import mozilla.components.feature.prompts.facts.CreditCardAutofillDialogFacts
 import mozilla.components.feature.prompts.file.FilePicker.Companion.FILE_PICKER_ACTIVITY_REQUEST_CODE
 import mozilla.components.feature.prompts.login.LoginDelegate
@@ -115,6 +116,20 @@ class PromptFeatureTest {
     private fun tab(): TabSessionState? {
         return store.state.tabs.find { it.id == tabId }
     }
+
+    private val address = Address(
+        guid = "1",
+        name = "John Doe",
+        organization = "Mozilla",
+        streetAddress = "999 Test Street",
+        addressLevel3 = "",
+        addressLevel2 = "Mountain View",
+        addressLevel1 = "CA",
+        postalCode = "94016",
+        country = "US",
+        tel = "+15551234567",
+        email = "john@example.com",
+    )
 
     @Before
     fun setUp() {
@@ -3363,6 +3378,73 @@ class PromptFeatureTest {
             assertEquals(Action.DISPLAY, fact.action)
             assertEquals(
                 CreditCardAutofillDialogFacts.Items.AUTOFILL_CREDIT_CARD_SAVE_PROMPT_SHOWN,
+                fact.item,
+            )
+        }
+    }
+
+    @Test
+    fun `GIVEN isAddressAutofillEnabled is false WHEN SaveAddress request is handled THEN dismiss SaveAddress`() = runTest(testDispatcher) {
+        val promptRequest = spy(
+            PromptRequest.SaveAddress(
+                address = address,
+                onConfirm = {},
+                onDismiss = {},
+            ),
+        )
+        val feature = spy(
+            PromptFeature(
+                activity = mock(),
+                store = store,
+                fragmentManager = fragmentManager,
+                tabsUseCases = mock(),
+                isAddressAutofillEnabled = { false },
+                fileUploadsDirCleaner = mock(),
+                isEmailMaskFeatureEnabled = { false },
+                isSuggestEmailMaskEnabled = { false },
+                onNeedToRequestPermissions = {},
+            ),
+        )
+        val session = tab()!!
+
+        feature.handleDialogsRequest(promptRequest, session)
+
+        verify(feature).dismissDialogRequest(promptRequest, session)
+    }
+
+    @Test
+    fun `WHEN SaveAddress is handled THEN the address save prompt shown fact is emitted`() = runTest(testDispatcher) {
+        val feature = PromptFeature(
+            activity = mock(),
+            store = store,
+            fragmentManager = fragmentManager,
+            tabsUseCases = mock(),
+            isAddressAutofillEnabled = { true },
+            fileUploadsDirCleaner = mock(),
+            isEmailMaskFeatureEnabled = { false },
+            isSuggestEmailMaskEnabled = { false },
+            onNeedToRequestPermissions = { },
+        )
+        val request = PromptRequest.SaveAddress(
+            address = address,
+            onConfirm = {},
+            onDismiss = {},
+        )
+        val session: TabSessionState = mock()
+        val sessionId = "sessionId"
+        `when`(session.id).thenReturn(sessionId)
+
+        CollectionProcessor.withFactCollection { facts ->
+            feature.handleDialogsRequest(
+                promptRequest = request,
+                session = session,
+            )
+
+            val fact = facts.find { it.item == AddressAutofillDialogFacts.Items.AUTOFILL_ADDRESS_SAVE_PROMPT_SHOWN }!!
+            assertEquals(Component.FEATURE_PROMPTS, fact.component)
+            assertEquals(Action.INTERACTION, fact.action)
+            assertEquals(
+                AddressAutofillDialogFacts.Items.AUTOFILL_ADDRESS_SAVE_PROMPT_SHOWN,
                 fact.item,
             )
         }

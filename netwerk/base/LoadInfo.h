@@ -5,8 +5,12 @@
 #ifndef mozilla_LoadInfo_h
 #define mozilla_LoadInfo_h
 
+#include "mozilla/BasePrincipal.h"
+#include "mozilla/Result.h"
+#include "mozilla/dom/ClientInfo.h"
 #include "mozilla/dom/FeaturePolicy.h"
 #include "mozilla/dom/ReferrerPolicyBinding.h"
+#include "mozilla/dom/ServiceWorkerDescriptor.h"
 #include "mozilla/dom/UserNavigationInvolvement.h"
 #include "nsContentUtils.h"
 #include "nsIInterceptionInfo.h"
@@ -16,11 +20,6 @@
 #include "nsIWeakReferenceUtils.h"  // for nsWeakPtr
 #include "nsString.h"
 #include "nsTArray.h"
-
-#include "mozilla/BasePrincipal.h"
-#include "mozilla/Result.h"
-#include "mozilla/dom/ClientInfo.h"
-#include "mozilla/dom/ServiceWorkerDescriptor.h"
 
 class nsDocShell;
 class nsICookieJarSettings;
@@ -201,9 +200,6 @@ nsresult LoadInfoArgsToLoadInfo(const mozilla::net::LoadInfoArgs& aLoadInfoArgs,
                                                                                \
   GETTER(bool, IsMediaRequest, isMediaRequest, false)                          \
   SETTER(bool, IsMediaRequest)                                                 \
-                                                                               \
-  GETTER(bool, IsMediaInitialRequest, isMediaInitialRequest, false)            \
-  SETTER(bool, IsMediaInitialRequest)                                          \
                                                                                \
   GETTER(bool, IsFromObjectOrEmbed, isFromObjectOrEmbed, false)                \
   SETTER(bool, IsFromObjectOrEmbed)                                            \

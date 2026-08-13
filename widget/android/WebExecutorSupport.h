@@ -5,8 +5,8 @@
 #ifndef WebExecutorSupport_h_
 #define WebExecutorSupport_h_
 
-#include "mozilla/java/GeckoWebExecutorNatives.h"
 #include "mozilla/java/GeckoResultWrappers.h"
+#include "mozilla/java/GeckoWebExecutorNatives.h"
 #include "mozilla/java/WebRequestWrappers.h"
 
 #if defined(ENABLE_TESTS)

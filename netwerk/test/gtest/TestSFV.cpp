@@ -1,6 +1,5 @@
-#include "gtest/gtest.h"
-
 #include "SFV.h"
+#include "gtest/gtest.h"
 #include "nsString.h"
 
 using mozilla::net::SFV::ByteSeq;

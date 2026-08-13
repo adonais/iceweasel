@@ -55,9 +55,9 @@ async function runTestInNormalAndPrivateMode(initialUrl, testCallback) {
   for (let i = 0; i < 2; i++) {
     let isPrivateBrowsing = !!i;
     info("Running test. Private browsing: " + !!i);
-    let win = await BrowserTestUtils.openNewBrowserWindow({
-      private: isPrivateBrowsing,
-    });
+    let win = isPrivateBrowsing
+      ? await BrowserTestUtils.openNewBrowserWindow({ private: true })
+      : window;
     let tab = BrowserTestUtils.addTab(win.gBrowser, initialUrl);
     let browser = tab.linkedBrowser;
 
@@ -65,7 +65,10 @@ async function runTestInNormalAndPrivateMode(initialUrl, testCallback) {
 
     await testCallback(browser, isPrivateBrowsing);
 
-    await BrowserTestUtils.closeWindow(win);
+    BrowserTestUtils.removeTab(tab);
+    if (isPrivateBrowsing) {
+      await BrowserTestUtils.closeWindow(win);
+    }
   }
 }
 

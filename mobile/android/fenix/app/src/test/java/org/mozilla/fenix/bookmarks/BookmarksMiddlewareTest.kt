@@ -12,6 +12,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.runTest
 import mozilla.appservices.places.BookmarkRoot
@@ -21,8 +22,8 @@ import mozilla.components.concept.storage.BookmarkNode
 import mozilla.components.concept.storage.BookmarkNodeType
 import mozilla.components.concept.storage.BookmarksStorage
 import mozilla.components.feature.tabs.TabsUseCases
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -31,7 +32,8 @@ import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.bookmarks.BookmarksUseCase
 import org.mozilla.fenix.components.bookmarks.LastSavedFolderCache
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
-import kotlin.test.assertNotNull
+import kotlin.test.assertEquals
+import kotlin.time.Instant
 
 class BookmarksMiddlewareTest {
 
@@ -537,7 +539,7 @@ class BookmarksMiddlewareTest {
         val store = middleware.makeStore()
         testScheduler.advanceUntilIdle()
 
-        store.dispatch(SearchClicked)
+        store.dispatch(SearchAction.SearchClicked)
 
         assertFalse(navigated)
     }
@@ -3349,6 +3351,152 @@ class BookmarksMiddlewareTest {
         assertFalse(store.state.rootMenuShown)
     }
 
+    @Test
+    fun `WHEN the search query changes to empty string THEN update the bookmark items with no items`() = runTest {
+        val store = buildMiddleware(this).makeStore()
+
+        store.dispatch(SearchAction.SearchQueryChanged(""))
+
+        assertEquals(listOf<BookmarkItem>(), store.state.bookmarkItems)
+    }
+
+    @Test
+    fun `WHEN the search query changes to a relevant string THEN update the bookmark items with relevant items`() = runTest {
+        val store = buildMiddleware(this).makeStore()
+
+        coEvery { bookmarksStorage.searchBookmarks("mozilla", any()) } returns
+            Result.success(
+                listOf(
+                    BookmarkNode(
+                        type = BookmarkNodeType.ITEM,
+                        guid = "1",
+                        parentGuid = "0",
+                        position = 0.toUInt(),
+                        title = "Test",
+                        url = "mozilla.org/test1",
+                        dateAdded = Instant.parse("2026-06-05T14:14:16.504392Z").epochSeconds,
+                        lastModified = Instant.parse("2026-06-05T14:14:16.504392Z").epochSeconds,
+                        children = null,
+                    ),
+                    BookmarkNode(
+                        type = BookmarkNodeType.ITEM,
+                        guid = "2",
+                        parentGuid = null,
+                        position = 1.toUInt(),
+                        title = "Test 2",
+                        url = "mozilla.org/test2",
+                        dateAdded = Instant.parse("2026-06-05T14:14:16.504392Z").epochSeconds,
+                        lastModified = Instant.parse("2026-06-05T14:14:16.504392Z").epochSeconds,
+                        children = null,
+                    ),
+                ),
+            )
+
+        store.dispatch(SearchAction.SearchQueryChanged("mozilla"))
+
+        testScheduler.advanceUntilIdle()
+
+        assertEquals(
+            expected = listOf(
+                BookmarkItem.Bookmark(
+                    url = "mozilla.org/test1",
+                    title = "Test",
+                    previewImageUrl = "mozilla.org/test1",
+                    guid = "1",
+                    position = 0.toUInt(),
+                    dateAdded = Instant.parse("2026-06-05T14:14:16.504392Z").epochSeconds,
+                ),
+                BookmarkItem.Bookmark(
+                    url = "mozilla.org/test2",
+                    title = "Test 2",
+                    previewImageUrl = "mozilla.org/test2",
+                    guid = "2",
+                    position = 1.toUInt(),
+                    dateAdded = Instant.parse("2026-06-05T14:14:16.504392Z").epochSeconds,
+                ),
+            ),
+            actual = store.state.bookmarkItems,
+        )
+    }
+
+    @Test
+    fun `WHEN the search query changes to an irrelevant string THEN update the bookmark items with no items`() = runTest {
+        val store = buildMiddleware(this).makeStore()
+
+        coEvery { bookmarksStorage.searchBookmarks("mozilla", any()) } returns Result.success(emptyList())
+
+        store.dispatch(SearchAction.SearchQueryChanged("mozilla"))
+
+        testScheduler.advanceUntilIdle()
+
+        assertEquals(emptyList<BookmarkItem>(), store.state.bookmarkItems)
+    }
+
+    @Test
+    fun `WHEN the search query changes within 250 milliseconds THEN cancel previous search`() = runTest {
+        val store = buildMiddleware(this).makeStore(
+            initialState = BookmarksState.default.copy(searchState = SearchState("")),
+        )
+
+        coEvery { bookmarksStorage.searchBookmarks(any(), any()) } returns Result.success(emptyList())
+
+        store.dispatch(SearchAction.SearchQueryChanged("m"))
+        store.dispatch(SearchAction.SearchQueryChanged("moz"))
+
+        testScheduler.advanceUntilIdle()
+
+        coVerify(exactly = 0) { bookmarksStorage.searchBookmarks("m", any()) }
+        coVerify(exactly = 1) { bookmarksStorage.searchBookmarks("moz", any()) }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `WHEN the search query changes after 250 milliseconds THEN the previous search is not cancelled`() = runTest {
+        val store = buildMiddleware(this).makeStore(
+            initialState = BookmarksState.default.copy(searchState = SearchState("")),
+        )
+
+        coEvery { bookmarksStorage.searchBookmarks(any(), any()) } returns Result.success(emptyList())
+
+        store.dispatch(SearchAction.SearchQueryChanged("m"))
+        testScheduler.advanceTimeBy(300)
+        store.dispatch(SearchAction.SearchQueryChanged("moz"))
+
+        testScheduler.advanceUntilIdle()
+
+        coVerify(exactly = 1) { bookmarksStorage.searchBookmarks("m", any()) }
+        coVerify(exactly = 1) { bookmarksStorage.searchBookmarks("moz", any()) }
+    }
+
+    @Test
+    fun `WHEN search is dismissed THEN the search is cancelled and the previous bookmark items are loaded`() = runTest {
+        val store = buildMiddleware(this).makeStore()
+
+        val tree = generateBookmarkTree()
+        coEvery {
+            bookmarksStorage.countBookmarksInTrees(
+                listOf(
+                    BookmarkRoot.Menu.id,
+                    BookmarkRoot.Toolbar.id,
+                    BookmarkRoot.Unfiled.id,
+                ),
+            )
+        } returns 0u
+        coEvery { bookmarksStorage.getTree(BookmarkRoot.Mobile.id) } returns Result.success(tree)
+        coEvery { bookmarksStorage.countBookmarksInTrees(any()) } returns 0u
+        coEvery { bookmarksStorage.searchBookmarks(any(), any()) } returns Result.success(emptyList())
+        testScheduler.advanceUntilIdle()
+
+        store.dispatch(SearchAction.SearchQueryChanged("m"))
+        store.dispatch(SearchAction.SearchDismissed)
+        testScheduler.advanceUntilIdle()
+
+        coVerify(exactly = 0) { bookmarksStorage.searchBookmarks("m", any()) }
+
+        assertEquals(BookmarkRoot.Mobile.id, store.state.currentFolder.guid)
+        assertEquals(tree.children!!.size, store.state.bookmarkItems.size)
+    }
+
     private fun buildMiddleware(
         scope: CoroutineScope,
         openBookmarksInNewTab: Boolean = false,
@@ -3370,7 +3518,7 @@ class BookmarksMiddlewareTest {
         saveBookmarkSortOrder = saveSortOrder,
         editBookmarkUseCase = BookmarksUseCase.EditBookmarkUseCase(bookmarksStorage, lastSavedFolderCache),
         reportResultGlobally = reportResultGlobally,
-        importResults = { emptyFlow() },
+        importEvents = { emptyFlow() },
         lifecycleScope = scope,
     )
 

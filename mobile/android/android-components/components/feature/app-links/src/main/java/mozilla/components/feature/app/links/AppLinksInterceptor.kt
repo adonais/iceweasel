@@ -121,6 +121,12 @@ class AppLinksInterceptor(
         val packageName = redirect.appIntent?.component?.packageName
         val isAuthenticationFlow = isAuthentication(tabSessionState, packageName)
 
+        // On the initial load, a link that resolves back to the app that launched us would just
+        // bounce in place (or no-op), leaving a blank tab. Load it in the browser instead.
+        if (lastUri == null && isRedirectToCaller(tabSessionState, packageName)) {
+            return null
+        }
+
         // Now that we have the package name,  check again if this is not authentication.
         if (!launchInApp() && !isAuthenticationFlow && engineSupportsScheme) {
             return null
@@ -298,16 +304,28 @@ class AppLinksInterceptor(
          */
         @VisibleForTesting
         fun isAuthentication(sessionState: SessionState?, packageName: String?): Boolean {
-            if (packageName != null && isPossibleAuthentication(sessionState)) {
-                val callerPackageId =
-                    (sessionState?.source as? SessionState.Source.External)?.caller?.packageId
+            return isPossibleAuthentication(sessionState) && isRedirectToCaller(sessionState, packageName)
+        }
 
-                if (callerPackageId == packageName) {
-                    return true
-                }
+        /**
+         * Determines whether the redirect target is the same app that launched the current
+         * external session.
+         *
+         * @param sessionState The current [SessionState], representing the tab session to inspect.
+         * @param packageName The target package name used to match with the caller's package name.
+         *
+         * @return `true` if the target package matches the caller's package, `false` otherwise.
+         */
+        @VisibleForTesting
+        internal fun isRedirectToCaller(sessionState: SessionState?, packageName: String?): Boolean {
+            if (packageName == null) {
+                return false
             }
 
-            return false
+            val callerPackageId =
+                (sessionState?.source as? SessionState.Source.External)?.caller?.packageId
+
+            return callerPackageId == packageName
         }
     }
 }

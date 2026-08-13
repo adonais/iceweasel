@@ -129,12 +129,12 @@ add_task(async function primary_default() {
     "Primary button sets as default"
   );
   Assert.equal(
-    mock.pinCurrentAppToTaskbarAsync.callCount,
+    mock.pinCurrentAppToTaskbar.callCount,
     0,
     "Primary button doesn't pin if already pinned"
   );
   Assert.equal(
-    mock.pinCurrentAppToStartMenuAsync.callCount,
+    mock.pinCurrentAppToStartMenu.callCount,
     0,
     "Primary button doesn't pin if already pinned"
   );
@@ -156,13 +156,13 @@ add_task(async function primary_pin() {
   );
   if (AppConstants.platform == "win") {
     Assert.equal(
-      mock.pinCurrentAppToTaskbarAsync.callCount,
+      mock.pinCurrentAppToTaskbar.callCount,
       1,
       "Primary button also pins"
     );
     if (Services.sysinfo.getProperty("hasWinPackageId")) {
       Assert.equal(
-        mock.pinCurrentAppToStartMenuAsync.callCount,
+        mock.pinCurrentAppToStartMenu.callCount,
         1,
         "Primary button also pins to Windows start menu on MSIX"
       );

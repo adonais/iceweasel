@@ -95,4 +95,6 @@
   <string name="mozac_ai_controls_page_summary_description">หน้าและสรุปเนื้อหาไม่เคยถูกเก็บไว้</string>
   <!-- Button text for the Error dismiss button on Shake to Summarize -->
   <string name="mozac_summarize_error_dissmiss">ยกเลิก</string>
+  <!-- Label for the button that starts the sign-in flow -->
+  <string name="mozac_summarize_fxa_sign_in_button_positive">ลงชื่อเข้า</string>
 </resources>

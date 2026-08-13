@@ -5,7 +5,8 @@
 #ifndef dbg_Source_h
 #define dbg_Source_h
 
-#include "NamespaceImports.h"   // for Value, HandleObject, CallArgs
+#include "NamespaceImports.h"  // for Value, HandleObject, CallArgs
+
 #include "debugger/Debugger.h"  // for DebuggerSourceReferent
 #include "vm/NativeObject.h"    // for NativeObject
 

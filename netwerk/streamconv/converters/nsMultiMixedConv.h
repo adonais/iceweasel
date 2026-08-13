@@ -4,15 +4,15 @@
 #ifndef _nsmultimixedconv_h_
 #define _nsmultimixedconv_h_
 
-#include "nsIStreamConverter.h"
-#include "nsIChannel.h"
-#include "nsString.h"
-#include "nsCOMPtr.h"
-#include "nsIByteRangeRequest.h"
-#include "nsIMultiPartChannel.h"
 #include "mozilla/IncrementalTokenizer.h"
-#include "nsHttpResponseHead.h"
 #include "mozilla/UniquePtr.h"
+#include "nsCOMPtr.h"
+#include "nsHttpResponseHead.h"
+#include "nsIByteRangeRequest.h"
+#include "nsIChannel.h"
+#include "nsIMultiPartChannel.h"
+#include "nsIStreamConverter.h"
+#include "nsString.h"
 
 #define NS_MULTIMIXEDCONVERTER_CID            \
   {/* 7584CE90-5B25-11d3-A175-0050041CAF44 */ \

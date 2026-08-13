@@ -597,3 +597,66 @@ add_task(async function fetch_with_bookmark_path() {
 
   await PlacesUtils.bookmarks.remove(folder1);
 });
+
+add_task(async function fetch_with_bookmark_path_multiple_bookmarks() {
+  const TEST_URL = "http://bookmarkpath.example.com/multi";
+
+  let folder1 = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+    type: PlacesUtils.bookmarks.TYPE_FOLDER,
+    title: "Parent",
+  });
+  let folder2 = await PlacesUtils.bookmarks.insert({
+    parentGuid: folder1.guid,
+    type: PlacesUtils.bookmarks.TYPE_FOLDER,
+    title: "Nested Parent",
+  });
+
+  // Two bookmarks sharing the same url but living at different depths and
+  // under different parents, to verify that paths are not mixed up when
+  // multiple starting guids are resolved by the same query.
+  let bm1 = await PlacesUtils.bookmarks.insert({
+    parentGuid: folder1.guid,
+    url: TEST_URL,
+    title: "Shallow Bookmark",
+  });
+  let bm2 = await PlacesUtils.bookmarks.insert({
+    parentGuid: folder2.guid,
+    url: TEST_URL,
+    title: "Deep Bookmark",
+  });
+
+  await PlacesUtils.bookmarks.fetch({ url: TEST_URL }, gAccumulator.callback, {
+    includePath: true,
+  });
+
+  Assert.equal(gAccumulator.results.length, 2);
+
+  let resultsByGuid = new Map(gAccumulator.results.map(r => [r.guid, r]));
+  let result1 = resultsByGuid.get(bm1.guid);
+  let result2 = resultsByGuid.get(bm2.guid);
+
+  Assert.equal(result1.path.length, 2);
+  Assert.equal(result1.path[0].guid, PlacesUtils.bookmarks.unfiledGuid);
+  Assert.equal(result1.path[1].guid, folder1.guid);
+  Assert.equal(result1.path[1].title, folder1.title);
+
+  Assert.equal(result2.path.length, 3);
+  Assert.equal(result2.path[0].guid, PlacesUtils.bookmarks.unfiledGuid);
+  Assert.equal(result2.path[1].guid, folder1.guid);
+  Assert.equal(result2.path[1].title, folder1.title);
+  Assert.equal(result2.path[2].guid, folder2.guid);
+  Assert.equal(result2.path[2].title, folder2.title);
+
+  await PlacesUtils.bookmarks.remove(folder1);
+});
+
+add_task(async function fetch_with_bookmark_path_of_root() {
+  let root = await PlacesUtils.bookmarks.fetch(
+    { guid: PlacesUtils.bookmarks.unfiledGuid },
+    gAccumulator.callback,
+    { includePath: true }
+  );
+
+  Assert.deepEqual(root.path, []);
+});

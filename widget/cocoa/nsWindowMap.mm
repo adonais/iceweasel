@@ -3,9 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsWindowMap.h"
-#include "nsObjCExceptions.h"
 #include "nsChildView.h"
 #include "nsCocoaWindow.h"
+#include "nsObjCExceptions.h"
 
 @interface WindowDataMap (Private)
 

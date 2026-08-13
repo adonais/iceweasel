@@ -23,6 +23,7 @@ def build_url(
     tracker=None,
     keywords="good-first-bug",
     lang=None,
+    mentor=None,
 ):
     params = {
         "product": product,
@@ -39,6 +40,8 @@ def build_url(
         params["blocked"] = tracker
     if lang:
         params["status_whiteboard"] = f"[lang={lang}]"
+    if mentor:
+        params["bug_mentors"] = mentor
     return "https://bugzilla.mozilla.org/enter_bug.cgi?" + urlencode(params)
 
 
@@ -51,6 +54,10 @@ def main(argv=None):
     parser.add_argument("--tracker")
     parser.add_argument("--keywords", default="good-first-bug")
     parser.add_argument("--lang")
+    parser.add_argument(
+        "--mentor",
+        help="Email of the mentor (typically the bug filer) to prefill the bug_mentor field.",
+    )
     args = parser.parse_args(argv)
     print(
         build_url(
@@ -61,6 +68,7 @@ def main(argv=None):
             tracker=args.tracker,
             keywords=args.keywords,
             lang=args.lang,
+            mentor=args.mentor,
         )
     )
 

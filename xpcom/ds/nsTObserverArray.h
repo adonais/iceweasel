@@ -7,8 +7,8 @@
 
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/ReverseIterator.h"
-#include "nsTArray.h"
 #include "nsCycleCollectionNoteChild.h"
+#include "nsTArray.h"
 
 /**
  * An array of observers. Like a normal array, but supports iterators that are

@@ -30,6 +30,10 @@
   -moz-context-properties: fill;
   fill: var(--select-icon-fill);
 
+  :host([invalid]) & {
+    border-color: var(--border-color-error);
+  }
+
   &:hover,
   &:has(select:open),
   &:has(+ [open]) {
@@ -74,10 +78,31 @@ panel-item[selected] {
   color: var(--button-text-color-selected);
 }
 
+:host([size="small"]) {
+  select,
+  .panel-trigger {
+    padding-inline: var(--select-space-inline-small) calc(var(--select-space-inline-small) + var(--select-padding-icon) + var(--space-small));
+    min-height: var(--select-min-height-small);
+    font-size: var(--select-font-size-small);
+  }
+
+  .select-chevron-icon {
+    inset-inline-end: var(--select-space-inline-small);
+  }
+
+  .with-icon .panel-trigger {
+    padding-inline-start: calc(var(--select-space-inline-small) + var(--icon-size) + var(--space-small));
+  }
+
+  .with-icon:has(.panel-trigger) .select-option-icon {
+    inset-inline-start: var(--select-space-inline-small);
+  }
+}
+
 select,
 .panel-trigger {
   border-radius: var(--select-border-radius);
-  padding-inline: var(--space-large) var(--space-xxlarge);
+  padding-inline: var(--select-space-inline) calc(var(--select-space-inline) + var(--select-padding-icon) + var(--space-small));
   min-height: var(--select-min-height);
   width: 100%;
   font-size: var(--select-font-size);
@@ -90,7 +115,7 @@ select,
 
 select {
   border: none;
-  padding-block: var(--space-xsmall);
+  padding-block: var(--select-padding-block);
   margin: 0;
 
   &:focus-visible {
@@ -117,7 +142,7 @@ select {
 }
 
 .select-option-icon {
-  inset-inline-start: var(--space-large);
+  inset-inline-start: var(--select-space-inline);
   opacity: 0;
   transform: scale(0);
   transition:
@@ -130,11 +155,11 @@ select {
 }
 
 .select-chevron-icon {
-  inset-inline-end: var(--space-medium);
+  inset-inline-end: var(--select-space-inline);
 }
 
 .with-icon .panel-trigger {
-  padding-inline-start: calc(var(--space-large) + var(--icon-size) + var(--space-small));
+  padding-inline-start: calc(var(--select-space-inline) + var(--icon-size) + var(--space-small));
 }
 
 .with-icon:has(.panel-trigger) .select-option-icon {

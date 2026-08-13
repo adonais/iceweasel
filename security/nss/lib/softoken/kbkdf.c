@@ -371,10 +371,28 @@ kbkdf_FindParameter(const CK_SP800_108_KDF_PARAMS *params, CK_PRF_DATA_TYPE type
     return NULL;
 }
 
-size_t
-kbkdf_IncrementBuffer(size_t cur_offset, size_t consumed, size_t prf_length)
+/* Compute *cur_offset += PR_ROUNDUP(consumed, prf_length) with overflow
+ * detection. Returns CKR_KEY_SIZE_RANGE if the result would not fit in
+ * size_t -- otherwise kbkdf_CalculateLength would allocate an undersized
+ * buffer and kbkdf_SaveKeys would memcpy past its end. */
+static CK_RV
+kbkdf_IncrementBuffer(size_t *cur_offset, size_t consumed, size_t prf_length)
 {
-    return cur_offset + PR_ROUNDUP(consumed, prf_length);
+    size_t rounded;
+
+    if (prf_length == 0) {
+        return CKR_KEY_SIZE_RANGE;
+    }
+    /* PR_ROUNDUP(x, m) = ((x + m - 1) / m) * m; reject if x + m - 1 overflows. */
+    if (consumed > SIZE_MAX - (prf_length - 1)) {
+        return CKR_KEY_SIZE_RANGE;
+    }
+    rounded = PR_ROUNDUP(consumed, prf_length);
+    if (*cur_offset > SIZE_MAX - rounded) {
+        return CKR_KEY_SIZE_RANGE;
+    }
+    *cur_offset += rounded;
+    return CKR_OK;
 }
 
 CK_ULONG
@@ -423,6 +441,8 @@ kbkdf_CalculateLength(const CK_SP800_108_KDF_PARAMS *params, sftk_MACCtx *ctx, C
      * bits. However, *buffer_length is in bytes.
      */
 
+    *buffer_length = 0;
+
     if (params->ulAdditionalDerivedKeys == 0) {
         /* When we have no additional derived keys, we get the keySize from
          * the value passed to one of our KBKDF_* methods. */
@@ -444,21 +464,30 @@ kbkdf_CalculateLength(const CK_SP800_108_KDF_PARAMS *params, sftk_MACCtx *ctx, C
 
         /* Count the initial derived key. */
         *output_bitlen = ret_key_size;
-        *buffer_length = kbkdf_IncrementBuffer(0, ret_key_size, ctx->mac_size);
+        if (kbkdf_IncrementBuffer(buffer_length, ret_key_size,
+                                  ctx->mac_size) != CKR_OK) {
+            return CKR_KEY_SIZE_RANGE;
+        }
 
         /* Handle n - 1 keys. The last key is special. */
         for (; offset < params->ulAdditionalDerivedKeys - 1; offset++) {
             derived_size = kbkdf_GetDerivedKeySize(params->pAdditionalDerivedKeys + offset);
 
             *output_bitlen += derived_size;
-            *buffer_length = kbkdf_IncrementBuffer(*buffer_length, derived_size, ctx->mac_size);
+            if (kbkdf_IncrementBuffer(buffer_length, derived_size,
+                                      ctx->mac_size) != CKR_OK) {
+                return CKR_KEY_SIZE_RANGE;
+            }
         }
 
         /* Handle the last key. */
         derived_size = kbkdf_GetDerivedKeySize(params->pAdditionalDerivedKeys + offset);
 
         *output_bitlen += derived_size;
-        *buffer_length = kbkdf_IncrementBuffer(*buffer_length, derived_size, ctx->mac_size);
+        if (kbkdf_IncrementBuffer(buffer_length, derived_size,
+                                  ctx->mac_size) != CKR_OK) {
+            return CKR_KEY_SIZE_RANGE;
+        }
 
         /* Pointer to the DKM method parameter. Note that this implicit cast
          * is safe since we've assumed we've been validated by
@@ -721,8 +750,12 @@ kbkdf_SaveKeys(CK_MECHANISM_TYPE mech, CK_SESSION_HANDLE hSession, CK_SP800_108_
     }
 
     /* Then increment the offset based on PKCS#11 additional key guidelines:
-     * no two keys may share the key stream from the same PRF invocation. */
-    buffer_offset = kbkdf_IncrementBuffer(buffer_offset, ret_key_size, prf_length);
+     * no two keys may share the key stream from the same PRF invocation.
+     * Overflow here would be a bug in kbkdf_CalculateLength: the increments
+     * mirror those it performs on the same inputs. */
+    if (kbkdf_IncrementBuffer(&buffer_offset, ret_key_size, prf_length) != CKR_OK) {
+        return CKR_KEY_SIZE_RANGE;
+    }
 
     if (params->ulAdditionalDerivedKeys > 0) {
         /* Note that the following code is technically incorrect: PKCS#11 v3.0
@@ -754,7 +787,9 @@ kbkdf_SaveKeys(CK_MECHANISM_TYPE mech, CK_SESSION_HANDLE hSession, CK_SP800_108_
             }
 
             /* Handle the increment. */
-            buffer_offset = kbkdf_IncrementBuffer(buffer_offset, key_size, prf_length);
+            if (kbkdf_IncrementBuffer(&buffer_offset, key_size, prf_length) != CKR_OK) {
+                return CKR_KEY_SIZE_RANGE;
+            }
 
             /* Finalize this key. */
             ret = kbkdf_FinalizeKey(hSession, derived_key, key_obj);

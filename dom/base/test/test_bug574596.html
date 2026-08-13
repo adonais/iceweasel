@@ -29,9 +29,6 @@ function ignoreFunc(actualData, expectedData) {
   return true;
 }
 
-const includeCommonAncestor = SpecialPowers.getBoolPref(
-  "dom.serializer.includeCommonAncestor.enabled"
-);
 var dragLinkText = [[
   { type:"text/x-moz-url",          data:"", eqTest:ignoreFunc },
   { type:"text/x-moz-url-data",     data:"http://www.mozilla.org/" },
@@ -39,9 +36,7 @@ var dragLinkText = [[
   { type:"text/uri-list",           data:"http://www.mozilla.org/" },
   { type:"text/_moz_htmlcontext",   data:"", eqTest:ignoreFunc },
   { type:"text/_moz_htmlinfo",      data:"", eqTest:ignoreFunc },
-  { type:"text/html",               data:`${includeCommonAncestor ? '<div id="link1">' : ''}` +
-                                         `<a href="http://www.mozilla.org/">link1</a>` +
-                                         `${includeCommonAncestor ? '</div>' : ''}` },
+  { type:"text/html",               data:`<a href="http://www.mozilla.org/">link1</a>` },
   { type:"text/plain",              data:"http://www.mozilla.org/" }
 ]];
 
@@ -76,9 +71,7 @@ async function runTest() {
   // if (result) dumpTransfer(result,dragLinkText);
 
   dragLinkText[0][2].data = "link2";
-  dragLinkText[0][6].data = `${includeCommonAncestor ? '<div id="link2">' : ''}` +
-                            `<a href="http://www.mozilla.org/">link2</a>` +
-                            `${includeCommonAncestor ? '</div>' : ''}`;
+  dragLinkText[0][6].data = `<a href="http://www.mozilla.org/">link2</a>`;
   var result = await synthesizePlainDragAndCancel(
     {
       srcElement: $('link2').firstChild,

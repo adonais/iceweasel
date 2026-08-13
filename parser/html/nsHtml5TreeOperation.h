@@ -622,7 +622,8 @@ class nsHtml5TreeOperation final {
       nsAtom* aName, nsHtml5HtmlAttributes* aAttributes,
       mozilla::dom::FromParser aFromParser, nsNodeInfoManager* aNodeInfoManager,
       nsHtml5DocumentBuilder* aBuilder,
-      mozilla::dom::HTMLContentCreatorFunction aCreator);
+      mozilla::dom::HTMLContentCreatorFunction aCreator,
+      nsINode* aIntendedParent);
 
   static nsIContent* CreateSVGElement(
       nsAtom* aName, nsHtml5HtmlAttributes* aAttributes,

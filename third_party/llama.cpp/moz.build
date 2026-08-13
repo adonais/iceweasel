@@ -59,6 +59,7 @@ LOCAL_INCLUDES += [
   'ggml/src/',
   'ggml/src/ggml-cpu/',
   'include/',
+  'src/',
 ]
 
 EXPORTS += [
@@ -67,6 +68,7 @@ EXPORTS += [
   "ggml/include/ggml-cpu.h",
   "ggml/include/ggml-opt.h",
   "ggml/include/ggml.h",
+  "ggml/include/gguf.h",
 ]
 
 DEFINES["_GNU_SOURCE"] = 1

@@ -53,8 +53,10 @@ pub struct Args {
     /// Channel of the updates under test. Needed to fully unpack `from` and `to` builds.
     pub channel: String,
     /// Product of the updates under test. Needed to accurately assess acceptable differences
-    /// found.
-    pub appname: String,
+    /// found, and construct various filenames and paths. Note: this must be the name used
+    /// internally, eg: in the installer name. For DevEdition, this means "firefox"
+    /// is the correct string.
+    pub product: String,
     /// Directory to put artifacts, eg: diffs
     pub artifact_dir: PathBuf,
     /// Information about a `from` build to test, separated by a `|`:

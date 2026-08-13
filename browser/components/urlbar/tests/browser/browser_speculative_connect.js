@@ -68,7 +68,7 @@ add_task(async function search_test() {
     let details = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
     Assert.equal(
       details.type,
-      UrlbarUtils.RESULT_TYPE.SEARCH,
+      UrlbarShared.RESULT_TYPE.SEARCH,
       "The first result is a search"
     );
     await UrlbarTestUtils.promiseSpeculativeConnections(

@@ -5,14 +5,14 @@
 #ifndef nsMenuItemX_h_
 #define nsMenuItemX_h_
 
+#import <Cocoa/Cocoa.h>
+
 #include "mozilla/RefPtr.h"
+#include "nsChangeObserver.h"
 #include "nsISupports.h"
 #include "nsMenuGroupOwnerX.h"
 #include "nsMenuItemIconX.h"
-#include "nsChangeObserver.h"
 #include "nsStringFwd.h"
-
-#import <Cocoa/Cocoa.h>
 
 class nsMenuItemIconX;
 class nsMenuX;

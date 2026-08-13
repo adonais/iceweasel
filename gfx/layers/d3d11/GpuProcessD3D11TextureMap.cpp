@@ -5,12 +5,12 @@
 #include "GpuProcessD3D11TextureMap.h"
 
 #include "libyuv.h"
+#include "mozilla/ProfilerMarkers.h"
+#include "mozilla/SharedThreadPool.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/D3D11ZeroCopyTextureImage.h"
 #include "mozilla/layers/HelpersD3D11.h"
 #include "mozilla/layers/TextureHostWrapperD3D11.h"
-#include "mozilla/ProfilerMarkers.h"
-#include "mozilla/SharedThreadPool.h"
 #include "mozilla/webrender/RenderThread.h"
 
 namespace mozilla {
@@ -90,7 +90,7 @@ RefPtr<ID3D11Texture2D> GpuProcessD3D11TextureMap::GetTexture(
   return it->second.mTexture;
 }
 
-Maybe<HANDLE> GpuProcessD3D11TextureMap::GetSharedHandle(
+RefPtr<gfx::FileHandleWrapper> GpuProcessD3D11TextureMap::GetSharedHandle(
     GpuProcessTextureId aTextureId) {
   TextureHolder holder;
   {
@@ -98,15 +98,15 @@ Maybe<HANDLE> GpuProcessD3D11TextureMap::GetSharedHandle(
 
     auto it = mD3D11TexturesById.find(aTextureId);
     if (it == mD3D11TexturesById.end()) {
-      return Nothing();
+      return nullptr;
     }
 
     if (it->second.mSharedHandle) {
-      return Some(it->second.mSharedHandle->GetHandle());
+      return it->second.mSharedHandle;
     }
 
     if (it->second.mCopiedTextureSharedHandle) {
-      return Some(it->second.mCopiedTextureSharedHandle->GetHandle());
+      return it->second.mCopiedTextureSharedHandle;
     }
 
     holder = it->second;
@@ -115,13 +115,13 @@ Maybe<HANDLE> GpuProcessD3D11TextureMap::GetSharedHandle(
   RefPtr<ID3D11Device> device;
   holder.mTexture->GetDevice(getter_AddRefs(device));
   if (!device) {
-    return Nothing();
+    return nullptr;
   }
 
   RefPtr<ID3D11DeviceContext> context;
   device->GetImmediateContext(getter_AddRefs(context));
   if (!context) {
-    return Nothing();
+    return nullptr;
   }
 
   D3D11_TEXTURE2D_DESC existingDesc;
@@ -137,7 +137,7 @@ Maybe<HANDLE> GpuProcessD3D11TextureMap::GetSharedHandle(
   HRESULT hr =
       device->CreateTexture2D(&newDesc, nullptr, getter_AddRefs(copiedTexture));
   if (FAILED(hr)) {
-    return Nothing();
+    return nullptr;
   }
 
   D3D11_TEXTURE2D_DESC inDesc;
@@ -156,7 +156,7 @@ Maybe<HANDLE> GpuProcessD3D11TextureMap::GetSharedHandle(
   RefPtr<IDXGIResource1> resource;
   copiedTexture->QueryInterface((IDXGIResource1**)getter_AddRefs(resource));
   if (!resource) {
-    return Nothing();
+    return nullptr;
   }
 
   HANDLE sharedHandle;
@@ -164,7 +164,7 @@ Maybe<HANDLE> GpuProcessD3D11TextureMap::GetSharedHandle(
       nullptr, DXGI_SHARED_RESOURCE_READ | DXGI_SHARED_RESOURCE_WRITE, nullptr,
       &sharedHandle);
   if (FAILED(hr)) {
-    return Nothing();
+    return nullptr;
   }
 
   RefPtr handle =
@@ -175,7 +175,7 @@ Maybe<HANDLE> GpuProcessD3D11TextureMap::GetSharedHandle(
   hr = device->CreateQuery(&desc, getter_AddRefs(query));
   if (FAILED(hr) || !query) {
     gfxWarning() << "Could not create D3D11_QUERY_EVENT: " << gfx::hexa(hr);
-    return Nothing();
+    return nullptr;
   }
 
   context->End(query);
@@ -192,7 +192,7 @@ Maybe<HANDLE> GpuProcessD3D11TextureMap::GetSharedHandle(
     auto it = mD3D11TexturesById.find(aTextureId);
     if (it == mD3D11TexturesById.end()) {
       MOZ_ASSERT_UNREACHABLE("unexpected to be called");
-      return Nothing();
+      return nullptr;
     }
 
     // Disable no video copy for future decoded video frames. Since
@@ -205,7 +205,7 @@ Maybe<HANDLE> GpuProcessD3D11TextureMap::GetSharedHandle(
     it->second.mCopiedTextureSharedHandle = handle;
   }
 
-  return Some(handle->GetHandle());
+  return handle;
 }
 
 void GpuProcessD3D11TextureMap::DisableZeroCopyNV12Texture(

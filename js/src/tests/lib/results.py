@@ -29,10 +29,8 @@ class TestOutput:
         if self.timed_out:
             return "Timeout"
         lines = self.err.splitlines()
-        for line in lines:
-            # Skip the asm.js compilation success message.
-            if "Successfully compiled asm.js code" not in line:
-                return line
+        if lines:
+            return lines[0]
         return "Unknown"
 
 

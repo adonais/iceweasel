@@ -3,16 +3,16 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <stdlib.h>
-#include "mozilla/Logging.h"
 
+#include "mozilla/IntegerPrintfMacros.h"
+#include "mozilla/Logging.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
-#include "mozilla/IntegerPrintfMacros.h"
-#include "nsIInputStreamTee.h"
-#include "nsIInputStream.h"
-#include "nsIOutputStream.h"
 #include "nsCOMPtr.h"
 #include "nsIEventTarget.h"
+#include "nsIInputStream.h"
+#include "nsIInputStreamTee.h"
+#include "nsIOutputStream.h"
 #include "nsThreadUtils.h"
 
 using namespace mozilla;

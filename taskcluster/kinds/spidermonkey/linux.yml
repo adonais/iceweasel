@@ -587,6 +587,32 @@ sm-fuzzing-linux32/opt:
             - sysroot-i686-linux-gnu
             - sysroot-x86_64-linux-gnu
 
+sm-fuzzing-asan-linux32/opt:
+    description: "Spidermonkey Fuzzing"
+    index:
+        job-name: sm-linux32-fuzzing-asan
+    treeherder:
+        platform: linux32/opt
+        symbol: SM(fa)
+    worker:
+        env:
+            MOZ_JS_UPLOAD_BINARIES_DEFAULT: "1"
+    run:
+        spidermonkey-variant: fuzzing-asan
+        spidermonkey-platform: linux
+    fetches:
+        toolchain:
+            - linux64-clang
+            - linux64-rust
+            - linux64-cbindgen
+            - linux64-dump_syms
+            - linux64-breakpad-injector
+            - linux64-minidump-stackwalk
+            - linux32-llvm-symbolizer
+            - linux64-pkgconf
+            - sysroot-i686-linux-gnu
+            - sysroot-x86_64-linux-gnu
+
 sm-fuzzing-linux32/debug:
     description: "Spidermonkey Fuzzing"
     index:

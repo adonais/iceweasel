@@ -38,7 +38,6 @@ Table::Table(JSContext* cx, const TableDesc& desc,
       functions_(std::move(functions)),
       addressType_(desc.addressType()),
       elemType_(desc.elemType()),
-      isAsmJS_(desc.isAsmJS),
       length_(desc.initialLength()),
       maximum_(desc.maximumLength()) {
   // Acquire a strong reference to the type definition this table may be
@@ -55,7 +54,6 @@ Table::Table(JSContext* cx, const TableDesc& desc,
       objects_(std::move(objects)),
       addressType_(desc.addressType()),
       elemType_(desc.elemType()),
-      isAsmJS_(desc.isAsmJS),
       length_(desc.initialLength()),
       maximum_(desc.maximumLength()) {
   // Acquire a strong reference to the type definition this table may be
@@ -108,15 +106,6 @@ void Table::tracePrivate(JSTracer* trc) {
 
   switch (repr()) {
     case TableRepr::Func: {
-      if (isAsmJS_) {
-#ifdef DEBUG
-        for (uint32_t i = 0; i < length_; i++) {
-          MOZ_ASSERT(!functions_[i].instance);
-        }
-#endif
-        break;
-      }
-
       for (uint32_t i = 0; i < length_; i++) {
         if (functions_[i].instance) {
           wasm::TraceInstanceEdge(trc, functions_[i].instance,
@@ -195,15 +184,10 @@ void Table::setFuncRef(uint32_t address, void* code, Instance* instance) {
     gc::PreWriteBarrier(elem.instance->objectUnbarriered());
   }
 
-  if (!isAsmJS_) {
-    elem.code = code;
-    elem.instance = instance;
-    MOZ_ASSERT(elem.instance->objectUnbarriered()->isTenured(),
-               "no postWriteBarrier (Table::set)");
-  } else {
-    elem.code = code;
-    elem.instance = nullptr;
-  }
+  elem.code = code;
+  elem.instance = instance;
+  MOZ_ASSERT(elem.instance->objectUnbarriered()->isTenured(),
+             "no postWriteBarrier (Table::set)");
 }
 
 void Table::fillFuncRef(uint32_t address, uint32_t fillCount, FuncRef ref,
@@ -257,7 +241,6 @@ bool Table::getValue(JSContext* cx, uint32_t address,
                      MutableHandleValue result) const {
   switch (repr()) {
     case TableRepr::Func: {
-      MOZ_RELEASE_ASSERT(!isAsmJS());
       RootedFunction fun(cx);
       if (!getFuncRef(cx, address, &fun)) {
         return false;
@@ -281,7 +264,6 @@ bool Table::getValue(JSContext* cx, uint32_t address,
 void Table::setNull(uint32_t address) {
   switch (repr()) {
     case TableRepr::Func: {
-      MOZ_RELEASE_ASSERT(!isAsmJS_);
       FunctionTableElem& elem = functions_[address];
       if (elem.instance) {
         gc::PreWriteBarrier(elem.instance->objectUnbarriered());
@@ -299,8 +281,6 @@ void Table::setNull(uint32_t address) {
 }
 
 void Table::copy(const Table& srcTable, uint32_t dstIndex, uint32_t srcIndex) {
-  MOZ_RELEASE_ASSERT(!srcTable.isAsmJS_);
-
   // Validation for table.copy rejects copying between TableRepr::Func and
   // TableRepr::Ref.
   MOZ_RELEASE_ASSERT(srcTable.repr() == repr());
@@ -354,7 +334,6 @@ uint32_t Table::grow(uint32_t delta) {
 
   switch (repr()) {
     case TableRepr::Func: {
-      MOZ_RELEASE_ASSERT(!isAsmJS_);
       if (!functions_.resize(newLength.value())) {
         return -1;
       }
@@ -410,7 +389,6 @@ void Table::fillUninitialized(uint32_t address, uint32_t fillCount,
 #endif  // DEBUG
   switch (repr()) {
     case TableRepr::Func: {
-      MOZ_RELEASE_ASSERT(!isAsmJS_);
       fillFuncRef(address, fillCount, FuncRef::fromAnyRefUnchecked(ref), cx);
       break;
     }
@@ -442,7 +420,7 @@ void Table::assertRangeNotNull(uint32_t address, uint32_t length) const {
   switch (repr()) {
     case TableRepr::Func:
       for (uint32_t i = address; i < address + length; i++) {
-        MOZ_ASSERT_IF(!isAsmJS_, getFuncRef(i).instance != nullptr);
+        MOZ_ASSERT(getFuncRef(i).instance != nullptr);
         MOZ_ASSERT(getFuncRef(i).code != nullptr);
       }
       break;

@@ -55,7 +55,7 @@ description {
   translate: 0 calc(1px + max(60% - 0.6em, 0px));
 }
 
-#rememberContainer:not([hidden]) {
+#rememberContainer {
   /* Ensure we don't get sized to the smallest child when the checkbox text wraps. */
   display: block;
 }

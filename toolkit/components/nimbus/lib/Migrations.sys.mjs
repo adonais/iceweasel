@@ -328,6 +328,73 @@ function migrateGraduateFirefoxLabsJPEGXL(migration) {
   graduateLabs(migration, "firefox-labs-jpeg-xl");
 }
 
+function migrateRestorePrefFlipsBug2054546(migration) {
+  const experimentManager = lazy.ExperimentAPI.manager;
+
+  function unenrollForMigration(enrollment) {
+    // UnenrollmentCause.Migration was added in Firefox 147.
+    experimentManager._unenroll(enrollment, { reason: "migration", migration });
+  }
+
+  {
+    const enrollment = experimentManager.store.get(
+      "detectportal-fastly-testing"
+    );
+    if (enrollment) {
+      const pref = "captivedetect.canonicalURL";
+      if (enrollment.active) {
+        // The prefFlips feature is not fully initialized at this point and
+        // won't reset the pref when we unenroll, so we have to do it ourselves.
+        unenrollForMigration(enrollment);
+        Services.prefs.clearUserPref(pref);
+      } else if (
+        Services.prefs.getStringPref(pref) ===
+        "http://detectportal.firefox.com/canonical.html"
+      ) {
+        Services.prefs.clearUserPref(pref);
+      }
+    }
+  }
+
+  {
+    const originalEnrollment = experimentManager.store.get(
+      "hnt-nova-pref-flip-rollout-content-market-widget-exp-cohort"
+    );
+    if (originalEnrollment) {
+      if (originalEnrollment.active) {
+        unenrollForMigration(originalEnrollment);
+      }
+
+      const fixupEnrollment = lazy.ExperimentAPI.manager.store.get(
+        "hnt-nova-pref-flip-restore"
+      );
+      if (fixupEnrollment?.active) {
+        unenrollForMigration(fixupEnrollment);
+      }
+
+      Services.prefs.clearUserPref(
+        "browser.newtabpage.activity-stream.nova.enabled"
+      );
+    }
+  }
+
+  {
+    // disabling-chips-for-v131 ended 2024-12-17 and thus will no longer be
+    // stored in the enrollment history.
+    const enrollment = experimentManager.store.get("restore-chips-133");
+    if (enrollment) {
+      if (enrollment?.active) {
+        // The prefFlips feature is not fully initialized at this point and
+        // won't reset the pref when we unenroll, so we have to do it ourselves.
+        unenrollForMigration(enrollment);
+      }
+    }
+    // Unfortunately we can't determine if the user was affected, so we must
+    // reset this pref for all users.
+    Services.prefs.clearUserPref("network.cookie.CHIPS.enabled");
+  }
+}
+
 /**
  * Migrate the pre-Nimbus Firefox Labs experiences into Nimbus enrollments.
  *
@@ -543,6 +610,7 @@ export const NimbusMigrations = {
         "graduate-firefox-labs-jpeg-xl",
         migrateGraduateFirefoxLabsJPEGXL
       ),
+      migration("bug-2054546-mitigation", migrateRestorePrefFlipsBug2054546),
     ],
 
     [Phase.AFTER_REMOTE_SETTINGS_UPDATE]: [

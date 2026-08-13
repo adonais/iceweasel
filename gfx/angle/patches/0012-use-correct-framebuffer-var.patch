@@ -1,0 +1,25 @@
+From 005a5e22a30bb5a7cb4b0e0032fd0873427e2b9a Mon Sep 17 00:00:00 2001
+From: teoxoy <28601907+teoxoy@users.noreply.github.com>
+Date: Mon, 11 May 2026 11:09:56 +0200
+Subject: [PATCH] use correct framebuffer var
+
+---
+ src/libANGLE/State.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/libANGLE/State.cpp b/src/libANGLE/State.cpp
+index ad864ea9b8..3a6d269ec1 100644
+--- a/src/libANGLE/State.cpp
++++ b/src/libANGLE/State.cpp
+@@ -3018,7 +3018,7 @@ bool State::removeReadFramebufferBinding(FramebufferID framebuffer)
+ 
+ bool State::removeDrawFramebufferBinding(FramebufferID framebuffer)
+ {
+-    if (mReadFramebuffer != nullptr && mDrawFramebuffer->id() == framebuffer)
++    if (mDrawFramebuffer != nullptr && mDrawFramebuffer->id() == framebuffer)
+     {
+         setDrawFramebufferBinding(nullptr);
+         return true;
+-- 
+2.54.0
+

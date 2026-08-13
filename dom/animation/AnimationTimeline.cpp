@@ -103,8 +103,8 @@ void AnimationTimeline::GetDuration(
   // bound. In this case, the timeline is a progress-based timeline, and its
   // timeline duration is 100%.
   OwningDoubleOrCSSNumericValue value;
-  value.SetAsCSSNumericValue() =
-      MakeRefPtr<CSSUnitValue>(GetParentObject(), 100.0, "percent"_ns);
+  value.SetAsCSSNumericValue() = MakeCSSUnitValue(
+      GetParentObject(), StyleNumericType::Percent(), 100.0, "percent"_ns);
   aRetVal.SetValue(std::move(value));
 }
 

@@ -18,7 +18,7 @@ add_task(async function test_show_search_term_tooltip_in_subdialog() {
   info("Clicking saved addresses button to open subdialog");
   savedAddressesButton.click();
   info("Waiting for addresses subdialog to appear");
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     let dialogBox = gBrowser.contentDocument.querySelector(".dialogBox");
     return !!dialogBox;
   });

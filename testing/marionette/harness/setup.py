@@ -25,7 +25,7 @@ setup(
     name="marionette-harness",
     version=get_version(),
     description="Marionette test automation harness",
-    long_description=open("README.rst").read(),
+    long_description=open("README.md").read(),
     # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
         "Development Status :: 5 - Production/Stable",

@@ -2,14 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
+    id 'com.android.library'
     alias(libs.plugins.dependency.analysis)
 }
-
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
 
 android {
     namespace = 'mozilla.components.feature.customtabs'
@@ -33,7 +29,7 @@ dependencies {
     implementation project(':components:support-utils')
     implementation project(':components:ui-icons')
 
-    implementation libs.androidx.core.ktx
+    implementation libs.androidx.core
     implementation libs.kotlinx.coroutines
 
     testImplementation project(':components:support-test')

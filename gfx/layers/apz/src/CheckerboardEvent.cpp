@@ -3,9 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "CheckerboardEvent.h"
-#include "mozilla/Logging.h"
 
 #include <algorithm>  // for std::sort
+
+#include "mozilla/Logging.h"
 
 static mozilla::LazyLogModule sApzCheckLog("apz.checkerboard");
 

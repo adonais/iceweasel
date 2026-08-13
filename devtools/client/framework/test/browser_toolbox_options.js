@@ -15,7 +15,7 @@ const L10N = new LocalizationHelper(
 );
 const { PrefObserver } = require("resource://devtools/client/shared/prefs.js");
 const {
-  BOOLEAN_CONFIGURATION_PREFS,
+  CONFIGURATION_PREFS,
 } = require("resource://devtools/client/framework/toolbox.js");
 
 add_task(async function () {
@@ -228,9 +228,9 @@ async function testMouseClick(node, prefValue) {
     ? await watchForDevToolsReload(gBrowser.selectedBrowser)
     : null;
 
-  const onNewConfigurationApplied = Object.keys(
-    BOOLEAN_CONFIGURATION_PREFS
-  ).includes(pref)
+  const onNewConfigurationApplied = Object.keys(CONFIGURATION_PREFS).includes(
+    pref
+  )
     ? toolbox.once("new-configuration-applied")
     : null;
 

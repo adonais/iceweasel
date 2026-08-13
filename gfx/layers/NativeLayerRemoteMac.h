@@ -7,10 +7,10 @@
 
 #include <IOSurface/IOSurfaceRef.h>
 
+#include "NativeLayerCA.h"
 #include "mozilla/layers/NativeLayer.h"
 #include "mozilla/layers/NativeLayerCommandQueue.h"
 #include "mozilla/layers/NativeLayerMacSurfaceHandler.h"
-#include "NativeLayerCA.h"
 #include "nsRegion.h"
 
 namespace mozilla {

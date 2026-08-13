@@ -125,7 +125,7 @@ bool TenuringTracer::onObjectEdge(JSObject** objp, const char* name) {
 JSObject* TenuringTracer::promoteOrForward(JSObject* obj) {
   MOZ_ASSERT(nursery_.inCollectedRegion(obj));
 
-  if (obj->isForwarded()) {
+  if (obj->isForwardedNonAtomic()) {
     const gc::RelocationOverlay* overlay = gc::RelocationOverlay::fromCell(obj);
     obj = static_cast<JSObject*>(overlay->forwardingAddress());
     if (IsInsideNursery(obj)) {
@@ -173,7 +173,7 @@ bool TenuringTracer::onStringEdge(JSString** strp, const char* name) {
 JSString* TenuringTracer::promoteOrForward(JSString* str) {
   MOZ_ASSERT(nursery_.inCollectedRegion(str));
 
-  if (str->isForwarded()) {
+  if (str->isForwardedNonAtomic()) {
     const gc::RelocationOverlay* overlay = gc::RelocationOverlay::fromCell(str);
     str = static_cast<JSString*>(overlay->forwardingAddress());
     if (IsInsideNursery(str)) {
@@ -198,7 +198,7 @@ bool TenuringTracer::onBigIntEdge(JS::BigInt** bip, const char* name) {
 JS::BigInt* TenuringTracer::promoteOrForward(JS::BigInt* bi) {
   MOZ_ASSERT(nursery_.inCollectedRegion(bi));
 
-  if (bi->isForwarded()) {
+  if (bi->isForwardedNonAtomic()) {
     const gc::RelocationOverlay* overlay = gc::RelocationOverlay::fromCell(bi);
     bi = static_cast<JS::BigInt*>(overlay->forwardingAddress());
     if (IsInsideNursery(bi)) {
@@ -223,7 +223,7 @@ bool TenuringTracer::onGetterSetterEdge(GetterSetter** gsp, const char* name) {
 GetterSetter* TenuringTracer::promoteOrForward(GetterSetter* gs) {
   MOZ_ASSERT(nursery_.inCollectedRegion(gs));
 
-  if (gs->isForwarded()) {
+  if (gs->isForwardedNonAtomic()) {
     const gc::RelocationOverlay* overlay = gc::RelocationOverlay::fromCell(gs);
     gs = static_cast<GetterSetter*>(overlay->forwardingAddress());
     if (IsInsideNursery(gs)) {
@@ -277,7 +277,7 @@ void TenuringTracer::traverse(JS::Value* thingp) {
     return;
   }
 
-  if (cell->isForwarded()) {
+  if (cell->isForwardedNonAtomic()) {
     const gc::RelocationOverlay* overlay =
         gc::RelocationOverlay::fromCell(cell);
     Cell* target = overlay->forwardingAddress();
@@ -447,14 +447,9 @@ static inline void TraceWholeCell(TenuringTracer& mover, JSObject* object) {
 }
 
 void JSDependentString::setBase(JSLinearString* newBase) {
-  // This compiles down to a single assignment, with no type test.
-  if (isAtomRef()) {
-    MOZ_ASSERT(newBase->isAtom());
-    d.s.u3.atom = &newBase->asAtom();
-  } else {
-    MOZ_ASSERT(newBase->canOwnDependentChars());
-    d.s.u3.base = newBase;
-  }
+  MOZ_ASSERT_IF(isAtomRef(), newBase->isAtom());
+  MOZ_ASSERT_IF(!isAtomRef(), newBase->canOwnDependentChars());
+  d.s.u3.base = newBase;
 
   if (isTenured() && !newBase->isTenured()) {
     MOZ_ASSERT(!InCollectedNurseryRegion(newBase));
@@ -677,7 +672,7 @@ StringRelocationOverlay* StringRelocationOverlay::forwardDependentString(
 JSLinearString* JSDependentString::rootBaseDuringMinorGC() {
   JSLinearString* root = this;
   while (MaybeForwarded(root)->hasBase()) {
-    if (root->isForwarded()) {
+    if (root->isForwardedNonAtomic()) {
       root = js::gc::StringRelocationOverlay::fromCell(root)
                  ->savedNurseryBaseOrRelocOverlay();
     } else {
@@ -829,9 +824,10 @@ void js::gc::StoreBuffer::CellPtrEdge<T>::trace(TenuringTracer& mover) const {
   MOZ_ASSERT(thing->getTraceKind() == JS::MapTypeToTraceKind<T>::kind);
 
   if (std::is_same_v<JSString, T>) {
-    // Nursery string deduplication requires all tenured string -> nursery
-    // string edges to be registered with the whole cell buffer in order to
-    // correctly set the non-deduplicatable bit.
+    // If a tenured dependent string's base moves its chars, the dependent
+    // string must update its own chars pointer. This requires processing the
+    // tenured dependent string via the whole cell buffer, since just an edge
+    // pointer is not enough to find the pointing-from JSString to update.
     MOZ_ASSERT(!mover.runtime()->gc.isPointerWithinTenuredCell(
         edge, JS::TraceKind::String));
   }

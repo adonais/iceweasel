@@ -77,11 +77,11 @@ struct ImportValues;
                         HandleObject importObj,
                         MutableHandle<WasmInstanceObject*> instanceObj);
 
+struct ImportValues;
+
 // Extracts the various imports from the given import object into the given
 // ImportValues structure while checking the imports against the given module.
 // The resulting structure can be passed to WasmModule::instantiate.
-
-struct ImportValues;
 [[nodiscard]] bool GetImports(JSContext* cx, const Module& module,
                               HandleObject importObj, ImportValues* imports);
 
@@ -108,8 +108,7 @@ bool IsSharedWasmMemoryObject(JSObject* obj);
 }  // namespace wasm
 
 // The class of WebAssembly.Module. Each WasmModuleObject owns a
-// wasm::Module. These objects are used both as content-facing JS objects and as
-// internal implementation details of asm.js.
+// wasm::Module. These objects are used as content-facing JS objects.
 
 class WasmModuleObject : public NativeObject {
   static const unsigned MODULE_SLOT = 0;
@@ -208,8 +207,7 @@ class WasmGlobalObject : public NativeObject {
 };
 
 // The class of WebAssembly.Instance. Each WasmInstanceObject owns a
-// wasm::Instance. These objects are used both as content-facing JS objects and
-// as internal implementation details of asm.js.
+// wasm::Instance. These objects are used as content-facing JS objects.
 
 class WasmInstanceObject : public NativeObject {
   static const unsigned INSTANCE_SLOT = 0;
@@ -564,6 +562,36 @@ class WasmSuspendingObject : public NativeObject {
 
 JSObject* MaybeUnwrapSuspendingObject(JSObject* wrapper);
 #endif
+
+#ifdef ENABLE_WASM_COMPONENTS
+// The class of WebAssembly.ComponentInstance. Each WasmComponentInstanceObject
+// owns a wasm::ComponentInstance. These objects are used as content-facing JS
+// objects.
+class WasmComponentInstanceObject : public NativeObject {
+  static const unsigned INSTANCE_SLOT = 0;
+
+  static const JSClassOps classOps_;
+  static const ClassSpec classSpec_;
+  bool isNewborn() const;
+  static void finalize(JS::GCContext* gcx, JSObject* obj);
+  static void trace(JSTracer* trc, JSObject* obj);
+
+ public:
+  static const unsigned RESERVED_SLOTS = 1;
+  static const JSClass class_;
+  static const JSClass& protoClass_;
+  static const JSPropertySpec properties[];
+  static const JSFunctionSpec methods[];
+  static const JSFunctionSpec static_methods[];
+  static bool construct(JSContext*, unsigned, Value*);
+
+  static WasmComponentInstanceObject* create(
+      JSContext* cx, HandleObject proto,
+      const RefPtr<const wasm::Component> component);
+
+  wasm::ComponentInstance& instance() const;
+};
+#endif  // ENABLE_WASM_COMPONENTS
 
 }  // namespace js
 

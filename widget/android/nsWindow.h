@@ -6,19 +6,19 @@
 #define NSWINDOW_H_
 
 #include "AndroidGraphics.h"
-#include "mozilla/layers/CompositorScrollUpdate.h"
-#include "nsIWidget.h"
-#include "gfxPoint.h"
-#include "nsIUserIdleServiceInternal.h"
-#include "nsTArray.h"
 #include "EventDispatcher.h"
+#include "gfxPoint.h"
 #include "mozilla/EventForwards.h"
-#include "mozilla/java/GeckoSessionNatives.h"
-#include "mozilla/java/WebResponseWrappers.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TextRange.h"
+#include "mozilla/java/GeckoSessionNatives.h"
+#include "mozilla/java/WebResponseWrappers.h"
+#include "mozilla/layers/CompositorScrollUpdate.h"
+#include "nsIUserIdleServiceInternal.h"
+#include "nsIWidget.h"
+#include "nsTArray.h"
 
 struct ANPEvent;
 

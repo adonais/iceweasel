@@ -157,7 +157,7 @@ add_task(async function test_userpass() {
   await visitUriPromise;
 
   // Check the title.
-  await BrowserTestUtils.waitForCondition(async () => {
+  await TestUtils.waitForCondition(async () => {
     let titleForExposable = await lazy.PlacesTestUtils.getDatabaseValue(
       "moz_places",
       "title",

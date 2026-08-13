@@ -5,7 +5,7 @@
 /*
 * Global styles
 */
-@import "chrome://global/skin/design-system/tokens-brand.css";
+@import "chrome://global/skin/in-content/common.css";
 @import "chrome://devtools/skin/variables.css";
 @import "chrome://devtools/content/aboutdebugging/src/base.css";
 
@@ -31,6 +31,5 @@
 @import "chrome://devtools/content/aboutdebugging/src/components/shared/IconLabel.css";
 @import "chrome://devtools/content/aboutdebugging/src/components/shared/Message.css";
 @import "chrome://devtools/content/aboutdebugging/src/components/sidebar/Sidebar.css";
-@import "chrome://devtools/content/aboutdebugging/src/components/sidebar/SidebarFixedItem.css";
 @import "chrome://devtools/content/aboutdebugging/src/components/sidebar/SidebarItem.css";
 @import "chrome://devtools/content/aboutdebugging/src/components/sidebar/SidebarRuntimeItem.css";

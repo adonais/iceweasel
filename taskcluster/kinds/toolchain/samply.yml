@@ -66,8 +66,20 @@ macosx64-aarch64-samply:
             - linux64-rust-macos
             - macosx64-sdk-toolchain
 
+win32-samply:
+    description: "samply toolchain build for 32-bit Windows"
+    treeherder:
+        symbol: TW32(samply)
+    run:
+        arguments: ['i686-pc-windows-msvc']
+    fetches:
+        toolchain:
+            - linux64-clang-toolchain
+            - linux64-rust-windows
+            - vs-toolchain
+
 win64-samply:
-    description: "samply toolchain build for Windows"
+    description: "samply toolchain build for 64-bit Windows"
     treeherder:
         symbol: TW64(samply)
     run:

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<meta name="viewport" content="width=device-width; initial-scale=1.0">
+<title>Test that preventDefault() in a dynamically-added touchmove listener inside an in-process iframe prevents scrolling</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<script src="/tests/SimpleTest/paint_listener.js"></script>
+<script src="apz_test_utils.js"></script>
+<script src="apz_test_native_event_utils.js"></script>
+<style>
+  #frame {
+    display: block;
+    border: 0;
+    width: 100%;
+    height: 400px;
+  }
+</style>
+<iframe id="frame" srcdoc="
+  <!DOCTYPE html>
+  <html>
+  <body style='margin: 0'>
+  <div id='content' style='height: 80vh;'></div>
+  </body>
+  </html>
+"></iframe>
+<div style="height: 500vh;"></div>
+<script>
+async function test() {
+  const iframe = document.getElementById("frame");
+  const iframeWin = iframe.contentWindow;
+  const iframeDoc = iframe.contentDocument;
+
+  const touchstartPromise = new Promise(resolve => {
+    iframeWin.addEventListener("touchstart", () => {
+      iframeDoc.addEventListener("touchmove", e => {
+        e.preventDefault();
+      }, { passive: false, once: true });
+      resolve();
+    }, { passive: true, once: true });
+  });
+
+  await promiseApzFlushedRepaints();
+
+  const target = iframeDoc.getElementById("content");
+
+  await synthesizeNativeTouch(target, 100, 200,
+                              SpecialPowers.DOMWindowUtils.TOUCH_CONTACT);
+  await touchstartPromise;
+
+  // Though as of now fast-path notifiction explicitly schedules a paint,
+  // it will not in future, so wait two requestAnimationFrames rather than
+  // waiting for a paint.
+  await promiseFrame();
+  await promiseFrame();
+
+  await synthesizeNativeTouch(target, 100, 150,
+                              SpecialPowers.DOMWindowUtils.TOUCH_CONTACT);
+  await synthesizeNativeTouch(target, 100, 100,
+                              SpecialPowers.DOMWindowUtils.TOUCH_CONTACT);
+  await synthesizeNativeTouch(target, 100, 100,
+                              SpecialPowers.DOMWindowUtils.TOUCH_REMOVE);
+
+  await promiseApzFlushedRepaints();
+
+  is(window.scrollY, 0, "Should not have scrolled the parent");
+}
+
+waitUntilApzStable()
+.then(test)
+.then(subtestDone, subtestFailed);
+</script>
+</html>

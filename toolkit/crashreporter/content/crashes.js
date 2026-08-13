@@ -5,11 +5,11 @@
 let reportURL;
 
 const { CrashReports } = ChromeUtils.importESModule(
-  "resource://gre/modules/CrashReports.sys.mjs"
+  "moz-src:///toolkit/crashreporter/CrashReports.sys.mjs"
 );
 
 ChromeUtils.defineESModuleGetters(this, {
-  CrashSubmit: "resource://gre/modules/CrashSubmit.sys.mjs",
+  CrashSubmit: "moz-src:///toolkit/crashreporter/CrashSubmit.sys.mjs",
 });
 
 document.addEventListener("DOMContentLoaded", () => {

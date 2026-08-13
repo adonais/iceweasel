@@ -5,7 +5,6 @@
 #define mozilla_jni_NativesInlines_h_
 
 #include "Natives.h"
-
 #include "mozilla/MozPromise.h"
 
 namespace mozilla::jni {

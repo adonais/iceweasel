@@ -5,21 +5,21 @@
 #ifndef mozilla_layers_CompositorBridgeChild_h
 #define mozilla_layers_CompositorBridgeChild_h
 
+#include <unordered_map>
+
 #include "base/basictypes.h"  // for DISALLOW_EVIL_CONSTRUCTORS
 #include "mozilla/Monitor.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/layers/PCompositorBridgeChild.h"
 #include "mozilla/layers/TextureForwarder.h"  // for TextureForwarder
 #include "mozilla/webrender/WebRenderTypes.h"
-#include "mozilla/RefPtr.h"
-#include "nsClassHashtable.h"  // for nsClassHashtable
 #include "nsCOMPtr.h"          // for nsCOMPtr
+#include "nsClassHashtable.h"  // for nsClassHashtable
 #include "nsHashKeys.h"        // for nsUint64HashKey
 #include "nsISupportsImpl.h"   // for NS_INLINE_DECL_REFCOUNTING
 #include "nsIWeakReferenceUtils.h"
 #include "nsStringFwd.h"
-
-#include <unordered_map>
 
 class nsIWidget;
 

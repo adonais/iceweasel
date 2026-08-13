@@ -1,0 +1,4 @@
+[
+  ["warning", "use c++14 style type templates", "modernize-type-traits"],
+  { "reliability": "high" }
+]

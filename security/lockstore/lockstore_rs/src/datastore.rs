@@ -7,61 +7,61 @@ use crate::utils;
 use crate::{datastore_filename, Keystore, LockstoreError, StoredValue};
 
 use kvstore::{Database, DatabaseError, GetOptions, Key, Store, StorePath};
-use std::path::PathBuf;
+use std::path::Path;
 use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct LockstoreDatastore {
     store: Arc<Store>,
     keystore: Arc<Keystore>,
-    collection_name: String,
+    dek_name: String,
     kek_ref: String,
 }
 
 impl LockstoreDatastore {
     pub fn new(
-        dir: PathBuf,
-        collection_name: String,
+        dir: &Path,
+        dek_name: String,
         keystore: Arc<Keystore>,
         kek_ref: &str,
     ) -> Result<Self, LockstoreError> {
-        keystore.get_dek_internal(&collection_name, kek_ref)?;
-        let data_path = dir.join(datastore_filename(&collection_name));
-        Self::init(
+        keystore.get_dek_internal(&dek_name, kek_ref)?;
+        let data_path = dir.join(datastore_filename(&dek_name));
+        Ok(Self::init(
             StorePath::OnDisk(data_path),
-            collection_name,
+            dek_name,
             keystore,
             kek_ref,
-        )
+        ))
     }
 
     pub fn new_in_memory(
-        collection_name: String,
+        dek_name: String,
         keystore: Arc<Keystore>,
         kek_ref: &str,
     ) -> Result<Self, LockstoreError> {
-        keystore.get_dek_internal(&collection_name, kek_ref)?;
-        Self::init(
+        keystore.get_dek_internal(&dek_name, kek_ref)?;
+        Ok(Self::init(
             StorePath::for_in_memory(),
-            collection_name,
+            dek_name,
             keystore,
             kek_ref,
-        )
+        ))
     }
 
     fn init(
         store_path: StorePath,
-        collection_name: String,
+        dek_name: String,
         keystore: Arc<Keystore>,
         kek_ref: &str,
-    ) -> Result<Self, LockstoreError> {
+    ) -> Self {
         let store = Arc::new(Store::new(store_path));
-        Ok(Self {
+        Self {
             store,
             keystore,
-            collection_name,
+            dek_name,
             kek_ref: kek_ref.to_string(),
-        })
+        }
     }
 
     pub fn put(&self, entry_name: &str, data: &[u8]) -> Result<(), LockstoreError> {
@@ -79,14 +79,14 @@ impl LockstoreDatastore {
 
         let (dek, cipher_suite, _) = self
             .keystore
-            .get_dek_internal(&self.collection_name, &self.kek_ref)?;
+            .get_dek_internal(&self.dek_name, &self.kek_ref)?;
 
         let data_to_store = crypto::encrypt_with_key(&plaintext, &dek, cipher_suite)?;
 
-        let full_key = format!("{}::{}", self.collection_name, entry_name);
+        let full_key = format!("{}::{}", self.dek_name, entry_name);
         let value = utils::bytes_to_value(&data_to_store)?;
 
-        let db = Database::new(&self.store, &self.collection_name);
+        let db = Database::new(&self.store, &self.dek_name);
         let key_obj = Key::from(full_key.as_str());
         db.put(&[(key_obj, Some(value))])?;
 
@@ -94,8 +94,8 @@ impl LockstoreDatastore {
     }
 
     pub fn get(&self, entry_name: &str) -> Result<Vec<u8>, LockstoreError> {
-        let full_key = format!("{}::{}", self.collection_name, entry_name);
-        let db = Database::new(&self.store, &self.collection_name);
+        let full_key = format!("{}::{}", self.dek_name, entry_name);
+        let db = Database::new(&self.store, &self.dek_name);
         let key_obj = Key::from(full_key.as_str());
 
         let value = db
@@ -106,7 +106,7 @@ impl LockstoreDatastore {
 
         let (dek, _cipher_suite, _) = self
             .keystore
-            .get_dek_internal(&self.collection_name, &self.kek_ref)?;
+            .get_dek_internal(&self.dek_name, &self.kek_ref)?;
 
         let plaintext = crypto::decrypt_with_key(&stored_bytes, &dek)?;
 
@@ -115,8 +115,8 @@ impl LockstoreDatastore {
     }
 
     pub fn delete(&self, entry_name: &str) -> Result<(), LockstoreError> {
-        let full_key = format!("{}::{}", self.collection_name, entry_name);
-        let db = Database::new(&self.store, &self.collection_name);
+        let full_key = format!("{}::{}", self.dek_name, entry_name);
+        let db = Database::new(&self.store, &self.dek_name);
         let key_obj = Key::from(full_key.as_str());
 
         if !db.has(&key_obj, &GetOptions::default())? {
@@ -129,7 +129,7 @@ impl LockstoreDatastore {
 
     pub fn keys(&self) -> Result<Vec<String>, LockstoreError> {
         let reader = self.store.reader()?;
-        let prefix = format!("{}::", self.collection_name);
+        let prefix = format!("{}::", self.dek_name);
 
         let entries = reader
             .read(|conn| {
@@ -143,9 +143,9 @@ impl LockstoreDatastore {
                     )
                     .map_err(DatabaseError::from)?;
 
-                let pattern = format!("{}%", prefix);
+                let pattern = format!("{prefix}%");
                 let entry_strings: Result<Vec<String>, _> = stmt
-                    .query_map([&self.collection_name, &pattern], |row| {
+                    .query_map([&self.dek_name, &pattern], |row| {
                         let key: String = row.get(0)?;
                         Ok(key.strip_prefix(&prefix).unwrap_or(&key).to_string())
                     })

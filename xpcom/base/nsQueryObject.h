@@ -6,9 +6,8 @@
 #define nsQueryObject_h
 
 #include "mozilla/Attributes.h"
-
-#include "nsCOMPtr.h"
 #include "mozilla/RefPtr.h"
+#include "nsCOMPtr.h"
 
 /*****************************************************************************/
 

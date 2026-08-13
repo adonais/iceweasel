@@ -78,7 +78,7 @@ void StatementRow::NamedGetter(JSContext* aCx, const nsAString& aName,
       if (aRv.Failed()) {
         return;
       }
-      aResult.set(::JS_NumberValue(dval));
+      aResult.setNumber(dval);
       break;
     }
     case mozIStorageValueArray::VALUE_TYPE_TEXT: {

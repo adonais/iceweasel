@@ -1,0 +1,386 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+  ### This moz.build was AUTOMATICALLY GENERATED from a GN config,  ###
+  ### DO NOT edit it by hand.                                       ###
+
+COMPILE_FLAGS["OS_INCLUDES"] = []
+AllowCompilerWarnings()
+
+DEFINES["ANGLE_DISABLE_POOL_ALLOC"] = True
+DEFINES["ANGLE_ENABLE_CONTEXT_MUTEX"] = "1"
+DEFINES["ANGLE_ENABLE_DEBUG_ANNOTATIONS"] = False
+DEFINES["ANGLE_ENABLE_ESSL"] = True
+DEFINES["ANGLE_ENABLE_GLSL"] = True
+DEFINES["ANGLE_ENABLE_KEYEDMUTEX"] = True
+DEFINES["ANGLE_ENABLE_SHARE_CONTEXT_LOCK"] = "1"
+DEFINES["ANGLE_PLATFORM_EXPORT"] = ""
+DEFINES["ANGLE_SKIP_DXGI_1_2_CHECK"] = True
+
+LOCAL_INCLUDES += [
+    "!/ipc/ipdl/_ipdlheaders",
+    "/ipc/chromium/src",
+    "/third_party/angle/include/",
+    "/third_party/angle/src/",
+    "/third_party/angle/src/common/base/",
+    "/third_party/angle/src/common/third_party/xxhash/",
+    "/tools/profiler/public"
+]
+
+NO_EXPAND_LIBS = True
+
+
+SOURCES += [
+    "/third_party/angle/src/compiler/translator/glslang_lex_autogen.cpp",
+    "/third_party/angle/src/compiler/translator/glslang_tab_autogen.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/RewriteStructSamplers.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/RewriteTexelFetchOffset.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/SeparateStructFromUniformDeclarations.cpp",
+    "/third_party/angle/src/compiler/translator/VariablePacker.cpp"
+]
+
+UNIFIED_SOURCES += [
+    "/third_party/angle/src/compiler/translator/BaseTypes.cpp",
+    "/third_party/angle/src/compiler/translator/blocklayout.cpp",
+    "/third_party/angle/src/compiler/translator/BuiltInFunctionEmulator.cpp",
+    "/third_party/angle/src/compiler/translator/CallDAG.cpp",
+    "/third_party/angle/src/compiler/translator/CodeGen.cpp",
+    "/third_party/angle/src/compiler/translator/CollectVariables.cpp",
+    "/third_party/angle/src/compiler/translator/Compiler.cpp",
+    "/third_party/angle/src/compiler/translator/ConstantUnion.cpp",
+    "/third_party/angle/src/compiler/translator/Declarator.cpp",
+    "/third_party/angle/src/compiler/translator/Diagnostics.cpp",
+    "/third_party/angle/src/compiler/translator/DirectiveHandler.cpp",
+    "/third_party/angle/src/compiler/translator/ExtensionBehavior.cpp",
+    "/third_party/angle/src/compiler/translator/FlagStd140Structs.cpp",
+    "/third_party/angle/src/compiler/translator/FunctionLookup.cpp",
+    "/third_party/angle/src/compiler/translator/glsl/BuiltInFunctionEmulatorGLSL.cpp",
+    "/third_party/angle/src/compiler/translator/glsl/ExtensionGLSL.cpp",
+    "/third_party/angle/src/compiler/translator/glsl/OutputESSL.cpp",
+    "/third_party/angle/src/compiler/translator/glsl/OutputGLSL.cpp",
+    "/third_party/angle/src/compiler/translator/glsl/OutputGLSLBase.cpp",
+    "/third_party/angle/src/compiler/translator/glsl/TranslatorESSL.cpp",
+    "/third_party/angle/src/compiler/translator/glsl/TranslatorGLSL.cpp",
+    "/third_party/angle/src/compiler/translator/glsl/VersionGLSL.cpp",
+    "/third_party/angle/src/compiler/translator/HashNames.cpp",
+    "/third_party/angle/src/compiler/translator/ImmutableString_autogen.cpp",
+    "/third_party/angle/src/compiler/translator/ImmutableStringBuilder.cpp",
+    "/third_party/angle/src/compiler/translator/InfoSink.cpp",
+    "/third_party/angle/src/compiler/translator/Initialize.cpp",
+    "/third_party/angle/src/compiler/translator/IntermNode.cpp",
+    "/third_party/angle/src/compiler/translator/IntermRebuild.cpp",
+    "/third_party/angle/src/compiler/translator/IsASTDepthBelowLimit.cpp",
+    "/third_party/angle/src/compiler/translator/Name.cpp",
+    "/third_party/angle/src/compiler/translator/Operator.cpp",
+    "/third_party/angle/src/compiler/translator/OutputTree.cpp",
+    "/third_party/angle/src/compiler/translator/ParseContext.cpp",
+    "/third_party/angle/src/compiler/translator/PoolAlloc.cpp",
+    "/third_party/angle/src/compiler/translator/QualifierTypes.cpp",
+    "/third_party/angle/src/compiler/translator/ShaderLang.cpp",
+    "/third_party/angle/src/compiler/translator/ShaderVars.cpp",
+    "/third_party/angle/src/compiler/translator/SizeClipCullDistance.cpp",
+    "/third_party/angle/src/compiler/translator/Symbol.cpp",
+    "/third_party/angle/src/compiler/translator/SymbolTable.cpp",
+    "/third_party/angle/src/compiler/translator/SymbolTable_autogen.cpp",
+    "/third_party/angle/src/compiler/translator/SymbolUniqueId.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/AddDefaultReturnStatements.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/ClampFragDepth.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/ClampIndirectIndices.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/ClampPointSize.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/DeclareAndInitBuiltinsForInstancedMultiview.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/DeclarePerVertexBlocks.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/DeferGlobalInitializers.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/EmulateGLFragColorBroadcast.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/EmulateMultiDrawShaderBuiltins.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/FoldExpressions.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/GatherDefaultUniforms.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/glsl/RegenerateStructNames.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/glsl/RewriteRepeatedAssignToSwizzled.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/glsl/UseInterfaceBlockFields.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/InitializeVariables.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/MonomorphizeUnsupportedFunctions.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/PreTransformTextureCubeGradDerivatives.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/PruneEmptyCases.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/PruneNoOps.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/RecordConstantPrecision.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/ReduceInterfaceBlocks.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/RemoveArrayLengthMethod.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/RemoveAtomicCounterBuiltins.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/RemoveDynamicIndexing.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/RemoveInactiveInterfaceVariables.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/RemoveInvariantDeclaration.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/RemoveUnreferencedVariables.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/RemoveUnusedFramebufferFetch.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/RewriteArrayOfArrayOfOpaqueUniforms.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/RewriteAtomicCounters.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/RewriteDfdy.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/RewritePixelLocalStorage.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/ScalarizeVecAndMatConstructorArgs.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/SeparateDeclarations.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/SimplifyLoopConditions.cpp",
+    "/third_party/angle/src/compiler/translator/tree_ops/SplitSequenceOperator.cpp",
+    "/third_party/angle/src/compiler/translator/tree_util/DriverUniform.cpp",
+    "/third_party/angle/src/compiler/translator/tree_util/FindFunction.cpp",
+    "/third_party/angle/src/compiler/translator/tree_util/FindMain.cpp",
+    "/third_party/angle/src/compiler/translator/tree_util/FindPreciseNodes.cpp",
+    "/third_party/angle/src/compiler/translator/tree_util/FindSymbolNode.cpp",
+    "/third_party/angle/src/compiler/translator/tree_util/IntermNode_util.cpp",
+    "/third_party/angle/src/compiler/translator/tree_util/IntermNodePatternMatcher.cpp",
+    "/third_party/angle/src/compiler/translator/tree_util/IntermTraverse.cpp",
+    "/third_party/angle/src/compiler/translator/tree_util/ReplaceArrayOfMatrixVarying.cpp",
+    "/third_party/angle/src/compiler/translator/tree_util/ReplaceClipCullDistanceVariable.cpp",
+    "/third_party/angle/src/compiler/translator/tree_util/ReplaceShadowingVariables.cpp",
+    "/third_party/angle/src/compiler/translator/tree_util/ReplaceVariable.cpp",
+    "/third_party/angle/src/compiler/translator/tree_util/RewriteSampleMaskVariable.cpp",
+    "/third_party/angle/src/compiler/translator/tree_util/RunAtTheBeginningOfShader.cpp",
+    "/third_party/angle/src/compiler/translator/tree_util/RunAtTheEndOfShader.cpp",
+    "/third_party/angle/src/compiler/translator/tree_util/SpecializationConstant.cpp",
+    "/third_party/angle/src/compiler/translator/Types.cpp",
+    "/third_party/angle/src/compiler/translator/util.cpp",
+    "/third_party/angle/src/compiler/translator/ValidateAST.cpp",
+    "/third_party/angle/src/compiler/translator/ValidateGlobalInitializer.cpp",
+    "/third_party/angle/src/compiler/translator/ValidateVaryingLocations.cpp"
+]
+
+USE_LIBS += [
+    "angle_common_gn",
+    "angle_common_shader_state_gn",
+    "angle_spirv_headers_gn",
+    "angle_translator_headers_gn",
+    "angle_version_info_gn",
+    "includes_gn",
+    "preprocessor_gn"
+]
+
+if not CONFIG["MOZ_DEBUG"]:
+
+    DEFINES["DYNAMIC_ANNOTATIONS_ENABLED"] = "0"
+    DEFINES["NDEBUG"] = True
+    DEFINES["NVALGRIND"] = True
+
+if CONFIG["MOZ_DEBUG"] == "1":
+
+    DEFINES["ANGLE_DEBUG_LAYERS_ENABLED"] = True
+    DEFINES["DYNAMIC_ANNOTATIONS_ENABLED"] = "1"
+
+if CONFIG["OS_TARGET"] == "Android":
+
+    DEFINES["ANDROID"] = True
+    DEFINES["ANDROID_NDK_VERSION_ROLL"] = "r27_1"
+    DEFINES["ANGLE_ENABLE_GLOBAL_MUTEX_LOAD_TIME_ALLOCATE"] = "1"
+    DEFINES["ANGLE_USE_ANDROID_TLS_SLOT"] = "1"
+    DEFINES["HAVE_SYS_UIO_H"] = True
+    DEFINES["_GNU_SOURCE"] = True
+    DEFINES["__ANDROID_UNAVAILABLE_SYMBOLS_ARE_WEAK__"] = True
+    DEFINES["__STDC_CONSTANT_MACROS"] = True
+    DEFINES["__STDC_FORMAT_MACROS"] = True
+
+    OS_LIBS += [
+        "log"
+    ]
+
+if CONFIG["OS_TARGET"] == "Darwin":
+
+    DEFINES["ANGLE_ENABLE_METAL"] = True
+    DEFINES["__STDC_CONSTANT_MACROS"] = True
+    DEFINES["__STDC_FORMAT_MACROS"] = True
+
+    OS_LIBS += [
+        "-framework Metal"
+    ]
+
+    SOURCES += [
+        "/third_party/angle/src/compiler/translator/msl/AstHelpers.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/msl/AddExplicitTypeCasts.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/msl/GuardFragDepthWrite.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/msl/HoistConstants.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/msl/IntroduceVertexIndexID.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/msl/RewriteCaseDeclarations.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/msl/RewriteOutArgs.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/msl/TransposeRowMajorMatrices.cpp"
+    ]
+
+    UNIFIED_SOURCES += [
+        "/third_party/angle/src/compiler/translator/msl/ConstantNames.cpp",
+        "/third_party/angle/src/compiler/translator/msl/DiscoverDependentFunctions.cpp",
+        "/third_party/angle/src/compiler/translator/msl/DiscoverEnclosingFunctionTraverser.cpp",
+        "/third_party/angle/src/compiler/translator/msl/DriverUniformMetal.cpp",
+        "/third_party/angle/src/compiler/translator/msl/EmitMetal.cpp",
+        "/third_party/angle/src/compiler/translator/msl/IdGen.cpp",
+        "/third_party/angle/src/compiler/translator/msl/Layout.cpp",
+        "/third_party/angle/src/compiler/translator/msl/MapFunctionsToDefinitions.cpp",
+        "/third_party/angle/src/compiler/translator/msl/MapSymbols.cpp",
+        "/third_party/angle/src/compiler/translator/msl/ModifyStruct.cpp",
+        "/third_party/angle/src/compiler/translator/msl/Pipeline.cpp",
+        "/third_party/angle/src/compiler/translator/msl/ProgramPrelude.cpp",
+        "/third_party/angle/src/compiler/translator/msl/RewritePipelines.cpp",
+        "/third_party/angle/src/compiler/translator/msl/SymbolEnv.cpp",
+        "/third_party/angle/src/compiler/translator/msl/ToposortStructs.cpp",
+        "/third_party/angle/src/compiler/translator/msl/TranslatorMSL.cpp",
+        "/third_party/angle/src/compiler/translator/msl/UtilsMSL.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/glsl/apple/AddAndTrueToLoopCondition.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/glsl/apple/RewriteRowMajorMatrices.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/glsl/apple/UnfoldShortCircuitAST.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/msl/ConvertUnsupportedConstructorsToFunctionCalls.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/msl/EnsureLoopForwardProgress.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/msl/FixTypeConstructors.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/msl/RescopeGlobalVariables.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/msl/RewriteInterpolants.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/msl/RewriteUnaddressableReferences.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/msl/SeparateCompoundExpressions.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/msl/WrapMain.cpp"
+    ]
+
+if CONFIG["OS_TARGET"] == "Linux":
+
+    DEFINES["ANGLE_IS_LINUX"] = True
+    DEFINES["ANGLE_USE_VULKAN_DISPLAY"] = True
+    DEFINES["ANGLE_VULKAN_DISPLAY_MODE_HEADLESS"] = True
+    DEFINES["USE_AURA"] = "1"
+    DEFINES["USE_GLIB"] = "1"
+    DEFINES["USE_OZONE"] = "1"
+    DEFINES["USE_UDEV"] = True
+    DEFINES["_FILE_OFFSET_BITS"] = "64"
+    DEFINES["_LARGEFILE64_SOURCE"] = True
+    DEFINES["_LARGEFILE_SOURCE"] = True
+    DEFINES["__STDC_CONSTANT_MACROS"] = True
+    DEFINES["__STDC_FORMAT_MACROS"] = True
+
+    OS_LIBS += [
+        "dl"
+    ]
+
+if CONFIG["OS_TARGET"] == "OpenBSD":
+
+    DEFINES["USE_GLIB"] = "1"
+    DEFINES["USE_OZONE"] = "1"
+    DEFINES["_FILE_OFFSET_BITS"] = "64"
+    DEFINES["_LARGEFILE64_SOURCE"] = True
+    DEFINES["_LARGEFILE_SOURCE"] = True
+    DEFINES["__STDC_CONSTANT_MACROS"] = True
+    DEFINES["__STDC_FORMAT_MACROS"] = True
+
+if CONFIG["OS_TARGET"] == "WINNT":
+
+    DEFINES["ANGLE_ENABLE_HLSL"] = True
+    DEFINES["ANGLE_IS_WIN"] = True
+    DEFINES["CERT_CHAIN_PARA_HAS_EXTRA_FIELDS"] = True
+    DEFINES["NOMINMAX"] = True
+    DEFINES["NTDDI_VERSION"] = "0x0A000000"
+    DEFINES["PSAPI_VERSION"] = "2"
+    DEFINES["UNICODE"] = True
+    DEFINES["USE_AURA"] = "1"
+    DEFINES["WIN32"] = True
+    DEFINES["WIN32_LEAN_AND_MEAN"] = True
+    DEFINES["WINAPI_FAMILY"] = "WINAPI_FAMILY_DESKTOP_APP"
+    DEFINES["WINVER"] = "0x0A00"
+    DEFINES["_ATL_NO_OPENGL"] = True
+    DEFINES["_CRT_NONSTDC_NO_WARNINGS"] = True
+    DEFINES["_CRT_RAND_S"] = True
+    DEFINES["_CRT_SECURE_NO_DEPRECATE"] = True
+    DEFINES["_HAS_EXCEPTIONS"] = "0"
+    DEFINES["_HAS_NODISCARD"] = True
+    DEFINES["_SCL_SECURE_NO_DEPRECATE"] = True
+    DEFINES["_SECURE_ATL"] = True
+    DEFINES["_UNICODE"] = True
+    DEFINES["_WIN32_WINNT"] = "0x0A00"
+    DEFINES["_WINDOWS"] = True
+    DEFINES["_WINSOCK_DEPRECATED_NO_WARNINGS"] = True
+    DEFINES["__STD_C"] = True
+
+    OS_LIBS += [
+        "synchronization"
+    ]
+
+    SOURCES += [
+        "/third_party/angle/src/compiler/translator/tree_ops/hlsl/ExpandIntegerPowExpressions.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/hlsl/RewriteUnaryMinusOperatorInt.cpp"
+    ]
+
+    UNIFIED_SOURCES += [
+        "/third_party/angle/src/compiler/translator/hlsl/ASTMetadataHLSL.cpp",
+        "/third_party/angle/src/compiler/translator/hlsl/blocklayoutHLSL.cpp",
+        "/third_party/angle/src/compiler/translator/hlsl/BuiltInFunctionEmulatorHLSL.cpp",
+        "/third_party/angle/src/compiler/translator/hlsl/emulated_builtin_functions_hlsl_autogen.cpp",
+        "/third_party/angle/src/compiler/translator/hlsl/ImageFunctionHLSL.cpp",
+        "/third_party/angle/src/compiler/translator/hlsl/OutputHLSL.cpp",
+        "/third_party/angle/src/compiler/translator/hlsl/ResourcesHLSL.cpp",
+        "/third_party/angle/src/compiler/translator/hlsl/StructureHLSL.cpp",
+        "/third_party/angle/src/compiler/translator/hlsl/TextureFunctionHLSL.cpp",
+        "/third_party/angle/src/compiler/translator/hlsl/TranslatorHLSL.cpp",
+        "/third_party/angle/src/compiler/translator/hlsl/UtilsHLSL.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/hlsl/ArrayReturnValueToOutParameter.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/hlsl/BreakVariableAliasingInInnerLoops.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/hlsl/RecordUniformBlocksWithLargeArrayMember.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/hlsl/RemoveSwitchFallThrough.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/hlsl/RewriteElseBlocks.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/hlsl/SeparateArrayConstructorStatements.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/hlsl/SeparateArrayInitialization.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/hlsl/SeparateExpressionsReturningArrays.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/hlsl/UnfoldShortCircuitToIf.cpp",
+        "/third_party/angle/src/compiler/translator/tree_ops/hlsl/WrapSwitchStatementsInBlocks.cpp"
+    ]
+
+if CONFIG["TARGET_CPU"] == "aarch64":
+
+    DEFINES["__ARM_NEON__"] = "1"
+
+if CONFIG["TARGET_CPU"] == "loongarch64":
+
+    DEFINES["_GNU_SOURCE"] = True
+
+if CONFIG["TARGET_CPU"] == "mips32":
+
+    DEFINES["_GNU_SOURCE"] = True
+
+if CONFIG["TARGET_CPU"] == "mips64":
+
+    DEFINES["_GNU_SOURCE"] = True
+
+if CONFIG["MOZ_DEBUG"] == "1" and CONFIG["OS_TARGET"] == "Android":
+
+    DEFINES["_DEBUG"] = True
+
+if CONFIG["MOZ_DEBUG"] == "1" and CONFIG["OS_TARGET"] == "Darwin":
+
+    DEFINES["_DEBUG"] = True
+
+if CONFIG["MOZ_DEBUG"] == "1" and CONFIG["OS_TARGET"] == "Linux":
+
+    DEFINES["_DEBUG"] = True
+
+if CONFIG["MOZ_DEBUG"] == "1" and CONFIG["OS_TARGET"] == "OpenBSD":
+
+    DEFINES["_DEBUG"] = True
+
+if CONFIG["MOZ_DEBUG"] == "1" and CONFIG["OS_TARGET"] == "WINNT":
+
+    DEFINES["_HAS_ITERATOR_DEBUGGING"] = "0"
+
+if not CONFIG["MOZ_X11"] and CONFIG["OS_TARGET"] == "Linux":
+
+    DEFINES["EGL_NO_X11"] = True
+
+if CONFIG["MOZ_X11"] == "1" and CONFIG["OS_TARGET"] == "Linux":
+
+    DEFINES["ANGLE_USE_X11"] = True
+
+if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "aarch64":
+
+    DEFINES["_GNU_SOURCE"] = True
+
+if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "arm":
+
+    DEFINES["_GNU_SOURCE"] = True
+
+if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "x86":
+
+    DEFINES["_GNU_SOURCE"] = True
+
+if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "x86_64":
+
+    DEFINES["_GNU_SOURCE"] = True
+
+Library("translator_gn")

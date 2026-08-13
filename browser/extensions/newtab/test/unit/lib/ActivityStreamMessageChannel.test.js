@@ -304,8 +304,7 @@ describe("ActivityStreamMessageChannel", () => {
           data: action.data.data,
           _target: {
             browser: msg.data.browser,
-            window:
-              msg.data.browser.documentGlobal || msg.data.browser.ownerGlobal,
+            window: msg.data.browser.documentGlobal,
           },
         };
         mm.onMessage(action, msg.data);

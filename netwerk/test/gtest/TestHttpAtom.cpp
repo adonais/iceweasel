@@ -1,5 +1,4 @@
 #include "gtest/gtest.h"
-
 #include "nsHttp.h"
 
 TEST(TestHttpAtom, AtomComparison)

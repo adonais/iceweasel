@@ -8,10 +8,16 @@ const {
   Pocket,
   DiscoveryStream,
   Search,
+  WebNotifications,
   ExternalComponents,
   SportsWidget,
+  PictureOfTheDay,
 } = reducers;
 import { actionTypes as at } from "common/Actions.mjs";
+
+// Bug 2050900: Add new reducer tests to the Jest suite at
+// test/jest/common/Reducers.test.jsx, not here. This Karma/Enzyme file is being
+// migrated to Jest incrementally; the PrivacyWidget reducer lives there now.
 
 describe("Reducers", () => {
   describe("App", () => {
@@ -23,6 +29,36 @@ describe("Reducers", () => {
       const nextState = App(undefined, { type: "INIT" });
 
       assert.propertyVal(nextState, "initialized", true);
+    });
+    it("should show the customize panel on SHOW_PERSONALIZE", () => {
+      const nextState = App(undefined, { type: at.SHOW_PERSONALIZE });
+
+      assert.propertyVal(nextState, "customizeMenuVisible", true);
+      assert.propertyVal(nextState, "customizePanelWallpaperCategory", null);
+    });
+    it("should store the deep-linked wallpaper category on SHOW_PERSONALIZE", () => {
+      const nextState = App(undefined, {
+        type: at.SHOW_PERSONALIZE,
+        data: { wallpaperCategory: "firefox" },
+      });
+
+      assert.propertyVal(
+        nextState,
+        "customizePanelWallpaperCategory",
+        "firefox"
+      );
+    });
+    it("should clear customize panel state on HIDE_PERSONALIZE", () => {
+      const nextState = App(
+        {
+          customizeMenuVisible: true,
+          customizePanelWallpaperCategory: "firefox",
+        },
+        { type: at.HIDE_PERSONALIZE }
+      );
+
+      assert.propertyVal(nextState, "customizeMenuVisible", false);
+      assert.propertyVal(nextState, "customizePanelWallpaperCategory", null);
     });
   });
   describe("TopSites", () => {
@@ -329,6 +365,26 @@ describe("Reducers", () => {
         const state = Prefs(oldState, {
           type: at.PREF_CHANGED,
           data: { name: "foo", value: 2 },
+        });
+        assert.notEqual(oldState.values, state.values);
+      });
+    });
+    describe("MULTIPLE_PREFS_CHANGED", () => {
+      it("should merge multiple values in one pass and keep untouched keys", () => {
+        const oldState = { ...INITIAL_STATE.Prefs, values: { foo: 1, bar: 2 } };
+        const state = Prefs(oldState, {
+          type: at.MULTIPLE_PREFS_CHANGED,
+          data: { values: { foo: 3, baz: 4 } },
+        });
+        assert.equal(state.values.foo, 3);
+        assert.equal(state.values.bar, 2);
+        assert.equal(state.values.baz, 4);
+      });
+      it("should return a new .values object instead of mutating", () => {
+        const oldState = { ...INITIAL_STATE.Prefs, values: { foo: 1 } };
+        const state = Prefs(oldState, {
+          type: at.MULTIPLE_PREFS_CHANGED,
+          data: { values: { foo: 2 } },
         });
         assert.notEqual(oldState.values, state.values);
       });
@@ -1224,6 +1280,38 @@ describe("Reducers", () => {
       assert.notDeepEqual(nextState.components, oldComponents);
     });
   });
+  describe("PictureOfTheDay", () => {
+    it("PICTURE_OF_THE_DAY_UPDATE stores the picture fields", () => {
+      const next = PictureOfTheDay(INITIAL_STATE.PictureOfTheDay, {
+        type: at.PICTURE_OF_THE_DAY_UPDATE,
+        data: {
+          imageUrl: "https://example.com/x.jpg",
+          thumbnailUrl: "https://example.com/thumb.jpg",
+          title: "T",
+          description: "D",
+          publishedDate: "2026-06-30",
+          lastUpdated: 123,
+        },
+      });
+      assert.propertyVal(next, "imageUrl", "https://example.com/x.jpg");
+      assert.propertyVal(next, "description", "D");
+      assert.propertyVal(next, "publishedDate", "2026-06-30");
+      assert.propertyVal(next, "initialized", true);
+    });
+
+    it("defaults missing fields and returns prevState for other actions", () => {
+      const updated = PictureOfTheDay(INITIAL_STATE.PictureOfTheDay, {
+        type: at.PICTURE_OF_THE_DAY_UPDATE,
+        data: {},
+      });
+      assert.propertyVal(updated, "imageUrl", "");
+      assert.propertyVal(updated, "description", "");
+
+      const prev = INITIAL_STATE.PictureOfTheDay;
+      assert.equal(PictureOfTheDay(prev, { type: "SOME_OTHER_ACTION" }), prev);
+    });
+  });
+
   describe("SportsWidget", () => {
     const baseMatches = {
       previous: [],
@@ -1342,6 +1430,301 @@ describe("Reducers", () => {
       assert.equal(next.widgetState, "sports-matches");
       assert.deepEqual(next.selectedTeams, ["ENG"]);
       assert.deepEqual(next.data.matches, baseMatches);
+    });
+
+    describe("WIDGETS_SPORTS_WATCH_LIVE", () => {
+      const watchLiveData = {
+        your_region: [{ product_name: "SBS", entitlement: "Free", url: "u" }],
+        other_regions: [],
+      };
+
+      it("WIDGETS_SPORTS_WATCH_LIVE_SET stores the payload and marks it loaded", () => {
+        const next = SportsWidget(INITIAL_STATE.SportsWidget, {
+          type: at.WIDGETS_SPORTS_WATCH_LIVE_SET,
+          data: watchLiveData,
+        });
+        assert.deepEqual(next.watchLive, {
+          loaded: true,
+          data: watchLiveData,
+        });
+      });
+
+      it("WIDGETS_SPORTS_WATCH_LIVE_REQUEST shows the loading state when nothing is cached", () => {
+        const next = SportsWidget(INITIAL_STATE.SportsWidget, {
+          type: at.WIDGETS_SPORTS_WATCH_LIVE_REQUEST,
+        });
+        assert.deepEqual(next.watchLive, { loaded: false, data: null });
+      });
+
+      it("WIDGETS_SPORTS_WATCH_LIVE_REQUEST preserves a previously-fetched payload", () => {
+        // The button is gated on this data; a re-request (modal refresh) must
+        // not drop it and hide the entry point mid-session.
+        const loaded = SportsWidget(INITIAL_STATE.SportsWidget, {
+          type: at.WIDGETS_SPORTS_WATCH_LIVE_SET,
+          data: watchLiveData,
+        });
+        const next = SportsWidget(loaded, {
+          type: at.WIDGETS_SPORTS_WATCH_LIVE_REQUEST,
+        });
+        assert.deepEqual(next.watchLive, {
+          loaded: true,
+          data: watchLiveData,
+        });
+      });
+    });
+
+    describe("WIDGETS_SPORTS_SET_LOAD_MORE", () => {
+      const matchA = {
+        global_event_id: 101,
+        home_team: { key: "ENG" },
+        away_team: { key: "FRA" },
+        date: "2026-06-22T18:00:00Z",
+      };
+      const matchB = {
+        global_event_id: 102,
+        home_team: { key: "ESP" },
+        away_team: { key: "POR" },
+        date: "2026-06-23T18:00:00Z",
+      };
+
+      it("merges partial load-more flags into the upcoming slot", () => {
+        const next = SportsWidget(stateWithMatches(), {
+          type: at.WIDGETS_SPORTS_SET_LOAD_MORE,
+          data: { direction: "upcoming", loading: true },
+        });
+        assert.deepEqual(next.loadMore.upcoming, {
+          loading: true,
+          exhausted: false,
+          lastFetchedDate: null,
+        });
+        // Results slot is unchanged.
+        assert.deepEqual(
+          next.loadMore.results,
+          INITIAL_STATE.SportsWidget.loadMore.results
+        );
+      });
+
+      it("merges partial load-more flags into the results slot", () => {
+        const next = SportsWidget(stateWithMatches(), {
+          type: at.WIDGETS_SPORTS_SET_LOAD_MORE,
+          data: { direction: "results", exhausted: true },
+        });
+        assert.deepEqual(next.loadMore.results, {
+          loading: false,
+          exhausted: true,
+          lastFetchedDate: null,
+        });
+        // Upcoming slot is unchanged.
+        assert.deepEqual(
+          next.loadMore.upcoming,
+          INITIAL_STATE.SportsWidget.loadMore.upcoming
+        );
+      });
+
+      it("appends upcoming matches to data.matches.next", () => {
+        const next = SportsWidget(stateWithMatches(), {
+          type: at.WIDGETS_SPORTS_SET_LOAD_MORE,
+          data: {
+            direction: "upcoming",
+            matches: [matchA, matchB],
+            loading: false,
+            lastFetchedDate: "2026-06-21",
+            exhausted: false,
+          },
+        });
+        assert.deepEqual(next.data.matches.next, [matchA, matchB]);
+        assert.equal(next.loadMore.upcoming.lastFetchedDate, "2026-06-21");
+        assert.equal(next.loadMore.upcoming.loading, false);
+      });
+
+      it("appends results matches to data.matches.previous", () => {
+        const next = SportsWidget(stateWithMatches(), {
+          type: at.WIDGETS_SPORTS_SET_LOAD_MORE,
+          data: {
+            direction: "results",
+            matches: [matchA, matchB],
+            loading: false,
+            lastFetchedDate: "2026-05-26",
+            exhausted: false,
+          },
+        });
+        assert.deepEqual(next.data.matches.previous, [matchA, matchB]);
+        assert.equal(next.loadMore.results.lastFetchedDate, "2026-05-26");
+      });
+
+      it("dedupes upcoming appends against existing next[]", () => {
+        const prev = {
+          ...stateWithMatches(),
+          data: {
+            teams: [],
+            matches: { previous: [], current: [], next: [matchA] },
+          },
+        };
+        const next = SportsWidget(prev, {
+          type: at.WIDGETS_SPORTS_SET_LOAD_MORE,
+          data: { direction: "upcoming", matches: [matchA, matchB] },
+        });
+        assert.deepEqual(next.data.matches.next, [matchA, matchB]);
+      });
+
+      it("dedupes results appends against existing previous[]", () => {
+        const prev = {
+          ...stateWithMatches(),
+          data: {
+            teams: [],
+            matches: { previous: [matchA], current: [], next: [] },
+          },
+        };
+        const next = SportsWidget(prev, {
+          type: at.WIDGETS_SPORTS_SET_LOAD_MORE,
+          data: { direction: "results", matches: [matchA, matchB] },
+        });
+        assert.deepEqual(next.data.matches.previous, [matchA, matchB]);
+      });
+
+      it("dedupes by composite key when global_event_id is missing", () => {
+        const tbdMatch = {
+          home_team: { key: "TBD-1" },
+          away_team: { key: "TBD-2" },
+          date: "2026-07-04T18:00:00Z",
+        };
+        const prev = {
+          ...stateWithMatches(),
+          data: {
+            teams: [],
+            matches: { previous: [], current: [], next: [tbdMatch] },
+          },
+        };
+        const next = SportsWidget(prev, {
+          type: at.WIDGETS_SPORTS_SET_LOAD_MORE,
+          data: { direction: "upcoming", matches: [tbdMatch, matchA] },
+        });
+        assert.deepEqual(next.data.matches.next, [tbdMatch, matchA]);
+      });
+
+      it("leaves existing matches alone when no new matches are provided", () => {
+        const next = SportsWidget(stateWithMatches(), {
+          type: at.WIDGETS_SPORTS_SET_LOAD_MORE,
+          data: { direction: "upcoming", loading: false, exhausted: true },
+        });
+        assert.deepEqual(next.data.matches, baseMatches);
+        assert.equal(next.loadMore.upcoming.exhausted, true);
+      });
+
+      it("ignores actions with an unknown direction", () => {
+        const prev = stateWithMatches();
+        const next = SportsWidget(prev, {
+          type: at.WIDGETS_SPORTS_SET_LOAD_MORE,
+          data: { direction: "sideways", loading: true },
+        });
+        // Unknown directions are a no-op — return the prior state untouched.
+        assert.strictEqual(next, prev);
+      });
+    });
+
+    it("WIDGETS_SPORTS_WIDGET_SET resets both load-more slots", () => {
+      const prev = {
+        ...stateWithMatches(),
+        loadMore: {
+          upcoming: {
+            loading: false,
+            exhausted: true,
+            lastFetchedDate: "2026-06-21",
+          },
+          results: {
+            loading: true,
+            exhausted: false,
+            lastFetchedDate: "2026-05-26",
+          },
+        },
+      };
+      const next = SportsWidget(prev, {
+        type: at.WIDGETS_SPORTS_WIDGET_SET,
+        data: { teams: [], matches: { previous: [], current: [], next: [] } },
+      });
+      assert.deepEqual(next.loadMore, INITIAL_STATE.SportsWidget.loadMore);
+    });
+  });
+
+  describe("Stocks", () => {
+    it("WIDGETS_STOCKS_UPDATE replaces tickers and sets lastUpdated", () => {
+      const action = {
+        type: at.WIDGETS_STOCKS_UPDATE,
+        data: {
+          tickers: [{ ticker: "SPY", name: "SPDR S&P 500 ETF Trust" }],
+          lastUpdated: 1700000000000,
+        },
+      };
+      const nextState = reducers.Stocks(undefined, action);
+      assert.deepEqual(nextState.tickers, action.data.tickers);
+      assert.equal(nextState.lastUpdated, 1700000000000);
+    });
+
+    it("returns previous state for unrelated actions", () => {
+      const prev = { tickers: [{ ticker: "DIA" }], lastUpdated: 1 };
+      assert.equal(reducers.Stocks(prev, { type: "SOME_OTHER_ACTION" }), prev);
+    });
+
+    it("WIDGETS_STOCKS_UPDATE stores the error flag", () => {
+      const action = {
+        type: at.WIDGETS_STOCKS_UPDATE,
+        data: { tickers: [], lastUpdated: 1700000000000, error: true },
+      };
+      const nextState = reducers.Stocks(undefined, action);
+      assert.isTrue(nextState.error);
+    });
+
+    it("WIDGETS_STOCKS_UPDATE defaults error to false when omitted", () => {
+      const action = {
+        type: at.WIDGETS_STOCKS_UPDATE,
+        data: { tickers: [], lastUpdated: 1 },
+      };
+      const nextState = reducers.Stocks(undefined, action);
+      assert.isFalse(nextState.error);
+    });
+  });
+
+  describe("WebNotifications", () => {
+    it("should return INITIAL_STATE by default", () => {
+      const nextState = WebNotifications(undefined, {
+        type: "some_action",
+      });
+      assert.equal(nextState, INITIAL_STATE.WebNotifications);
+    });
+    it("should set initialized and clear error on WEB_NOTIFICATIONS_UPDATED", () => {
+      const prevState = {
+        ...INITIAL_STATE.WebNotifications,
+        error: { step: "snapshot", message: "boom" },
+      };
+      const data = {
+        lastUpdated: 12345,
+        notifications: { abc: { id: "abc", origin: "https://example.com" } },
+        byOrigin: { "https://example.com": ["abc"] },
+      };
+      const nextState = WebNotifications(prevState, {
+        type: at.WEB_NOTIFICATIONS_UPDATED,
+        data,
+      });
+      assert.propertyVal(nextState, "initialized", true);
+      assert.propertyVal(nextState, "lastUpdated", 12345);
+      assert.deepEqual(nextState.notifications, data.notifications);
+      assert.deepEqual(nextState.byOrigin, data.byOrigin);
+      assert.isNull(nextState.error);
+    });
+    it("should set error and preserve other fields on WEB_NOTIFICATIONS_ERROR", () => {
+      const prevState = {
+        ...INITIAL_STATE.WebNotifications,
+        initialized: true,
+        notifications: { abc: { id: "abc" } },
+      };
+      const errorData = { step: "snapshot", message: "boom" };
+      const nextState = WebNotifications(prevState, {
+        type: at.WEB_NOTIFICATIONS_ERROR,
+        data: errorData,
+      });
+      assert.deepEqual(nextState.error, errorData);
+      assert.propertyVal(nextState, "initialized", true);
+      assert.deepEqual(nextState.notifications, prevState.notifications);
     });
   });
 });

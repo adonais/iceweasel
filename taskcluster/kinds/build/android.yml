@@ -256,6 +256,7 @@ android-aarch64-non-unified/opt:
         platform: android-5-0-aarch64/opt
         symbol: B-nu
     run-on-projects: ['integration']
+    worker-type: b-linux-docker-large-amd
     worker:
         env:
             MOZ_AUTOMATION_BUILD_SYMBOLS: '0'
@@ -440,6 +441,7 @@ android-x86_64-non-unified/opt:
         platform: android-5-0-x86_64/opt
         symbol: B-nu
     run-on-projects: ['integration']
+    worker-type: b-linux-docker-large-amd
     worker:
         env:
             MOZ_AUTOMATION_BUILD_SYMBOLS: '0'

@@ -3,11 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "NonBlockingAsyncInputStream.h"
+
 #include "mozilla/ipc/InputStreamUtils.h"
 #include "nsIAsyncInputStream.h"
 #include "nsICloneableInputStream.h"
-#include "nsIInputStream.h"
 #include "nsIIPCSerializableInputStream.h"
+#include "nsIInputStream.h"
 #include "nsISeekableStream.h"
 #include "nsStreamUtils.h"
 

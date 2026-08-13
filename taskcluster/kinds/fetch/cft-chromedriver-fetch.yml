@@ -25,15 +25,6 @@ win64-cft-cd-canary:
         artifact-name: cft-cd-win64-canary.tar.bz2
         channel: Canary
 
-mac-cft-cd-canary:
-    description: 'MacOSX Chrome-for-Testing Chromedriver Fetch (canary channel)'
-    attributes:
-        cached_task: false
-    fetch:
-        platform: mac
-        artifact-name: cft-cd-mac-canary.tar.bz2
-        channel: Canary
-
 mac-cft-cd-arm-canary:
     description: 'MacOS (arm) Chrome-for-Testing Chromedriver fetch (canary channel)'
     attributes:

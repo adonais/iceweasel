@@ -920,6 +920,59 @@ void CrashGenerationServer::set_include_context_heap(bool enabled) {
   include_context_heap_ = enabled;
 }
 
+namespace {
+
+// Suspends every thread of a process for this object's lifetime, so its
+// minidump can be written from a consistent snapshot. MiniDumpWriteDump
+// already suspends the target's threads, but one at a time as it enumerates
+// them, so a thread that is still running can race the enumeration and
+// intermittently produce a truncated dump with no thread list. Freezing the
+// whole process up front doesn't fully close that race, but it narrows it to
+// the window between when the crash generator is notified and when it starts
+// dumping, rather than spanning the whole dump. The Linux and macOS dumpers
+// already freeze the target's threads before dumping; this brings Windows in
+// line.
+//
+// Only threads that already exist at suspend time are frozen; a thread created
+// afterwards can still race the dump, but a process stalled in its crash
+// handler is very unlikely to spawn one.
+class AutoSuspendProcess {
+ public:
+  explicit AutoSuspendProcess(HANDLE process)
+      : process_(process), resume_(GetNtProcessProc("NtResumeProcess")) {
+    // Resolve resume up front so a successful suspend can never be left without
+    // its matching resume: if NtResumeProcess is unavailable we don't suspend.
+    NtProcessProc suspend = GetNtProcessProc("NtSuspendProcess");
+    if (process_ && resume_ && suspend) {
+      suspended_ = suspend(process_) >= 0;
+    }
+  }
+
+  ~AutoSuspendProcess() {
+    if (suspended_) {
+      resume_(process_);
+    }
+  }
+
+  AutoSuspendProcess(const AutoSuspendProcess&) = delete;
+  AutoSuspendProcess& operator=(const AutoSuspendProcess&) = delete;
+
+ private:
+  typedef LONG(NTAPI* NtProcessProc)(HANDLE);
+
+  static NtProcessProc GetNtProcessProc(const char* name) {
+    HMODULE ntdll = GetModuleHandleW(L"ntdll.dll");
+    return ntdll ? reinterpret_cast<NtProcessProc>(GetProcAddress(ntdll, name))
+                 : nullptr;
+  }
+
+  HANDLE process_;
+  NtProcessProc resume_;
+  bool suspended_ = false;
+};
+
+}  // namespace
+
 bool CrashGenerationServer::GenerateDump(const ClientInfo& client,
                                          std::wstring* dump_path) {
   assert(client.pid() != 0);
@@ -938,6 +991,9 @@ bool CrashGenerationServer::GenerateDump(const ClientInfo& client,
   if (!client.GetClientExceptionInfo(&client_ex_info)) {
     return false;
   }
+
+  // Freeze the child so its threads can't race the dump; see AutoSuspendProcess.
+  AutoSuspendProcess suspend_client(client.process_handle());
 
   if (include_context_heap_) {
     CONTEXT context_content;

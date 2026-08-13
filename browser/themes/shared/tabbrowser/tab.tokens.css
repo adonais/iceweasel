@@ -13,9 +13,8 @@
     --tab-attention-dot-color: var(--color-accent-attention);
     --tab-background-color-hover: color-mix(in srgb, currentColor 11%, transparent);
     --tab-background-color-selected: var(--toolbar-background-color);
-    --tab-block-margin: var(--dimension-4);
     --tab-border-radius: var(--toolbarbutton-border-radius);
-    --tab-box-shadow: var(--box-shadow-level-1);
+    --tab-box-shadow-selected: var(--box-shadow-level-1);
     --tab-close-button-padding: 6px;
     --tab-group-blue: light-dark(var(--color-blue-50), var(--color-blue-10));
     --tab-group-blue-hover: light-dark(var(--color-blue-60), var(--color-blue-20));
@@ -68,6 +67,7 @@
     --tab-inner-inline-margin: var(--space-medium);
     --tab-label-line-height: 1.7;
     --tab-loading-fill: var(--color-blue-50);
+    --tab-margin-block: var(--dimension-4);
     --tab-outline: var(--border-width) solid var(--tab-outline-color);
     --tab-outline-color: transparent;
     --tab-outline-offset: calc(-1 * var(--border-width));
@@ -98,7 +98,7 @@
    until Bug 1879349 lands */
 @layer tokens-browser-theme {
   @media not ((forced-colors) or (-moz-native-theme)) {
-    :root:not([lwtheme]),
+    :root:is([theme-in-app], :not([lwtheme])),
     :host(.anonymous-content-host) {
       --tab-background-color-selected: light-dark(var(--color-white), rgba(106, 106, 120, 0.7));
       --tab-selected-textcolor: light-dark(rgb(21, 20, 26), var(--color-white));
@@ -110,13 +110,40 @@
   @layer tokens-foundation-nova {
     :root,
     :host {
-      --tab-background-color-hover: color-mix(in srgb, currentColor 11%, transparent);
-      --tab-block-margin: 6px;
+      --tab-background-color-hover: color-mix(in srgb, currentColor 17%, transparent);
+      --tab-background-color-selected: var(--toolbar-background-color);
       --tab-border-color-accent: linear-gradient(96deg, var(--tab-border-color-selected-leading) 20.68%, var(--tab-border-color-selected-trailing) 79.34%);
       --tab-border-color-selected-leading: var(--color-violet-30);
       --tab-border-color-selected-trailing: light-dark(var(--color-orange-30), var(--color-violet-50));
-      --tab-border-radius: var(--border-radius-circle);
-      --tab-selected-shadow: none;
+      --tab-border-radius: var(--toolbarbutton-border-radius);
+      --tab-box-shadow-selected: none;
+      --tab-group-blue: light-dark(var(--color-blue-50), var(--color-blue-30));
+      --tab-group-blue-hover: light-dark(var(--color-blue-60), var(--color-blue-40));
+      --tab-group-blue-text: light-dark(var(--color-white), var(--color-blue-90));
+      --tab-group-cyan: light-dark(var(--color-cyan-50), var(--color-cyan-30));
+      --tab-group-cyan-hover: light-dark(var(--color-cyan-60), var(--color-cyan-40));
+      --tab-group-cyan-text: light-dark(var(--color-white), var(--color-cyan-90));
+      --tab-group-green: light-dark(var(--color-green-50), var(--color-green-30));
+      --tab-group-green-hover: light-dark(var(--color-green-60), var(--color-green-40));
+      --tab-group-green-text: light-dark(var(--color-white), var(--color-green-90));
+      --tab-group-orange: light-dark(var(--color-orange-50), var(--color-orange-30));
+      --tab-group-orange-hover: light-dark(var(--color-orange-60), var(--color-orange-40));
+      --tab-group-orange-text: light-dark(var(--color-white), var(--color-orange-90));
+      --tab-group-pink: light-dark(var(--color-pink-50), var(--color-pink-30));
+      --tab-group-pink-hover: light-dark(var(--color-pink-60), var(--color-pink-40));
+      --tab-group-pink-text: light-dark(var(--color-white), var(--color-pink-90));
+      --tab-group-purple: light-dark(var(--color-purple-50), var(--color-purple-30));
+      --tab-group-purple-hover: light-dark(var(--color-purple-60), var(--color-purple-40));
+      --tab-group-purple-text: light-dark(var(--color-white), var(--color-purple-90));
+      --tab-group-red: light-dark(var(--color-red-50), var(--color-red-30));
+      --tab-group-red-hover: light-dark(var(--color-red-60), var(--color-red-40));
+      --tab-group-red-text: light-dark(var(--color-white), var(--color-red-90));
+      --tab-group-yellow: light-dark(var(--color-yellow-50), var(--color-yellow-30));
+      --tab-group-yellow-hover: light-dark(var(--color-yellow-60), var(--color-yellow-40));
+      --tab-group-yellow-text: light-dark(var(--color-white), var(--color-yellow-90));
+      --tab-loading-fill: var(--color-accent-primary);
+      --tab-margin-block: 6px;
+      --tab-outline-offset: -1px;
     }
   }
 
@@ -124,12 +151,10 @@
    until Bug 1879349 lands */
   @layer tokens-browser-theme-nova {
     @media not ((forced-colors) or (-moz-native-theme)) {
-      :root:not([lwtheme]),
+      :root:is([theme-in-app], :not([lwtheme])),
       :host(.anonymous-content-host) {
-        --tab-background-color-hover: light-dark(
-          color-mix(in lch, var(--color-violet-desaturated-50) 25%, transparent),
-          color-mix(in lch, var(--color-violet-desaturated-30) 40%, transparent)
-        );
+        --tab-background-color-hover: var(--toolbarbutton-background-color-hover);
+        --tab-background-color-selected: var(--background-color-box);
       }
     }
   }

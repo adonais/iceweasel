@@ -29,13 +29,8 @@ PartitionedStorageHelper.runTest(
     );
   },
 
-  async _ => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  },
+  // Cleanup callback
+  clearSiteTestData,
 
   [
     ["dom.serviceWorkers.exemptFromPerDomainMax", true],
@@ -75,13 +70,8 @@ PartitionedStorageHelper.runTest(
     );
   },
 
-  async _ => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  },
+  // Cleanup callback
+  clearSiteTestData,
 
   [
     ["dom.serviceWorkers.exemptFromPerDomainMax", true],
@@ -117,13 +107,8 @@ PartitionedStorageHelper.runTestInNormalAndPrivateMode(
     );
   },
 
-  async _ => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  },
+  // Cleanup callback
+  clearSiteTestData,
 
   [
     ["dom.serviceWorkers.privateBrowsing.enabled", true],
@@ -203,13 +188,8 @@ PartitionedStorageHelper.runTestInNormalAndPrivateMode(
     );
   },
 
-  async _ => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  },
+  // Cleanup callback
+  clearSiteTestData,
 
   [
     ["dom.serviceWorkers.privateBrowsing.enabled", true],
@@ -307,13 +287,8 @@ PartitionedStorageHelper.runTestInNormalAndPrivateMode(
     );
   },
 
-  async _ => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  },
+  // Cleanup callback
+  clearSiteTestData,
 
   [
     ["dom.serviceWorkers.privateBrowsing.enabled", true],
@@ -393,13 +368,8 @@ PartitionedStorageHelper.runTestInNormalAndPrivateMode(
     );
   },
 
-  async _ => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  },
+  // Cleanup callback
+  clearSiteTestData,
 
   [
     ["dom.serviceWorkers.privateBrowsing.enabled", true],
@@ -482,13 +452,8 @@ PartitionedStorageHelper.runTestInNormalAndPrivateMode(
     );
   },
 
-  async _ => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  },
+  // Cleanup callback
+  clearSiteTestData,
 
   [
     ["dom.serviceWorkers.privateBrowsing.enabled", true],
@@ -561,13 +526,8 @@ PartitionedStorageHelper.runTestInNormalAndPrivateMode(
     thirdPartyWorker.terminate();
   },
 
-  async _ => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  },
+  // Cleanup callback
+  clearSiteTestData,
 
   [
     ["dom.serviceWorkers.privateBrowsing.enabled", true],
@@ -625,13 +585,8 @@ PartitionedStorageHelper.runTestInNormalAndPrivateMode(
     thirdPartyWorker.port.postMessage("close");
   },
 
-  async _ => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  },
+  // Cleanup callback
+  clearSiteTestData,
 
   [
     ["dom.serviceWorkers.privateBrowsing.enabled", true],
@@ -657,13 +612,8 @@ PartitionedStorageHelper.runTest(
     );
   },
 
-  async _ => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  },
+  // Cleanup callback
+  clearSiteTestData,
 
   [
     ["dom.serviceWorkers.privateBrowsing.enabled", false],
@@ -708,13 +658,8 @@ PartitionedStorageHelper.runTest(
     );
   },
 
-  async _ => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  },
+  // Cleanup callback
+  clearSiteTestData,
 
   [
     ["dom.serviceWorkers.privateBrowsing.enabled", true],
@@ -744,13 +689,8 @@ PartitionedStorageHelper.runTest(
     );
   },
 
-  async _ => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  },
+  // Cleanup callback
+  clearSiteTestData,
 
   [
     ["dom.serviceWorkers.privateBrowsing.enabled", false],
@@ -795,13 +735,8 @@ PartitionedStorageHelper.runTest(
     );
   },
 
-  async _ => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  },
+  // Cleanup callback
+  clearSiteTestData,
 
   [
     ["dom.serviceWorkers.privateBrowsing.enabled", true],

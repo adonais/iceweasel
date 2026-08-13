@@ -4,9 +4,9 @@
 #ifndef _include_gfx_ipc_CanvasManagerParent_h_
 #define _include_gfx_ipc_CanvasManagerParent_h_
 
-#include "mozilla/gfx/PCanvasManagerParent.h"
-#include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/StaticMonitor.h"
+#include "mozilla/dom/ipc/IdType.h"
+#include "mozilla/gfx/PCanvasManagerParent.h"
 #include "nsHashtablesFwd.h"
 #include "nsTArray.h"
 

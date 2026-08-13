@@ -573,7 +573,8 @@ function getBindingElementAndPseudo(node) {
       implementedPseudoElement === "::marker" ||
       implementedPseudoElement === "::before" ||
       implementedPseudoElement === "::after" ||
-      implementedPseudoElement === "::backdrop"
+      implementedPseudoElement === "::backdrop" ||
+      implementedPseudoElement === "::picker-icon"
     ) {
       pseudo = getNodeDisplayName(node);
       bindingElement = node.parentNode;

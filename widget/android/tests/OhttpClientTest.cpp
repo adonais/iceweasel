@@ -4,8 +4,9 @@
 
 #if defined(ENABLE_TESTS)
 
-#  include "mozilla/widget/WebExecutorSupport.h"
 #  include "mozilla/widget/OhttpClientTest.h"
+
+#  include "mozilla/widget/WebExecutorSupport.h"
 
 namespace mozilla::widget {
 

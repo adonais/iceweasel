@@ -4,6 +4,8 @@ tags = "os_integration"
 
 ["include:xdg_config/manifest.toml"]
 
+["test_cli_window_size.py"]
+
 ["test_exitcode.py"]
 
 ["test_external_a11y_after_launch.py"]

@@ -38,7 +38,8 @@ def test_returns_zero_exit_code(run_mach):
 
 def test_returns_zero_with_job_id(run_mach, mock_push_to_lando_try):
     """Test that mach try auto returns 0 even when push_to_lando_try returns job data."""
-    assert run_mach(["try", "auto"]) == 0
+    with mock_push_to_lando_try:
+        assert run_mach(["try", "auto"]) == 0
 
 
 def test_returns_error_exit_code(run_mach):

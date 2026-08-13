@@ -15,23 +15,22 @@
 #  include <windns.h>
 #endif  // DNSQUERY_AVAILABLE
 
-#include "mozilla/ClearOnShutdown.h"
-#include "mozilla/net/DNS.h"
-#include "NativeDNSResolverOverrideParent.h"
-#include "prnetdb.h"
-#include "nsIOService.h"
-#include "nsHostResolver.h"
-#include "nsError.h"
-#include "mozilla/net/DNS.h"
 #include <algorithm>
-#include "prerror.h"
 
+#include "NativeDNSResolverOverrideParent.h"
+#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Logging.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPrefs_network.h"
+#include "mozilla/net/DNS.h"
 #include "mozilla/net/DNSPacket.h"
+#include "nsError.h"
+#include "nsHostResolver.h"
 #include "nsIDNSService.h"
 #include "nsINetworkLinkService.h"
+#include "nsIOService.h"
+#include "prerror.h"
+#include "prnetdb.h"
 
 namespace mozilla::net {
 

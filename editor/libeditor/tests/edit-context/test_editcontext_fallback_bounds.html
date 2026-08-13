@@ -1,0 +1,182 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test that EditContext falls back to reasonable bounds when the desired ones aren't available.</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="/tests/SimpleTest/EventUtils.js"></script>
+  <script src="common.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<div style="width:100px;height:50px;"></div>
+<canvas></canvas>
+<script>
+'use strict';
+
+let currentTest;
+
+// Add information about active EditContext to assertion message
+function formatMessage(message) {
+  const editContextType = document.activeElement.tagName === 'CANVAS'
+         ? '<canvas>-based EditContext'
+         : 'DOM-based EditContext';
+  return `${currentTest} (${editContextType}): ${message}`;
+}
+
+function queryTextRectArray(start, count) {
+  const result = synthesizeQueryTextRectArray(start, count);
+  ok(result.succeeded, formatMessage('QueryTextRectArray should succeed.'));
+  const rects = [];
+  for (let i = start; i < start + count; i++) {
+    const left = {}, top = {}, width = {}, height = {};
+    result.getCharacterRect(i - start, left, top, width, height);
+    rects.push({left: left.value, top: top.value, width: width.value, height: height.value});
+  }
+  return rects;
+}
+
+let host;
+let editContext;
+
+const tests = [
+  function editorRectFallsBackToClientRect() {
+    const editorRect = synthesizeQueryEditorRect();
+    ok(editorRect.succeeded,
+       formatMessage('QueryEditorRect should succeed'));
+    checkRect(editorRect, host.getBoundingClientRect(),
+              formatMessage('Editor rect should fall back to element rect if control bounds are not set.'));
+  },
+  function emptyTextFallsBackToSelectionBounds() {
+    editContext.updateText(0, editContext.text.length, '');
+    editContext.updateControlBounds(new DOMRect(1, 2, 3, 4));
+    const selectionBounds = new DOMRect(10, 20, 30, 40);
+    editContext.updateSelectionBounds(selectionBounds);
+    const result = synthesizeQueryTextRect(0, 1);
+    ok(result.succeeded,
+       formatMessage('QueryTextRect should succeed.'));
+    checkRect(result, selectionBounds,
+              formatMessage('Text rect should fall back to selection bounds if text is empty.'));
+  },
+  function emptyTextFallsBackToControlBounds() {
+    editContext.updateText(0, editContext.text.length, '');
+    const controlBounds = new DOMRect(1, 2, 3, 4);
+    editContext.updateControlBounds(controlBounds);
+    const result = synthesizeQueryTextRect(0, 1);
+    ok(result.succeeded, formatMessage('QueryTextRect should succeed.'));
+    checkRect(result, controlBounds,
+              formatMessage('Text rect should fall back to control bounds if text is empty and there are no selection bounds.'));
+  },
+];
+
+// DOM-based EditContext only:
+// Tests for falling back to DOM contents
+const domTests = [
+  function textRectFallsBackToDOMContents() {
+    const editContextResult = synthesizeQueryTextRect(5, 3);
+    ok(editContextResult.succeeded, formatMessage('QueryTextRect should succeed.'));
+    // contenteditable will always use the DOM contents, so let's compare against that
+    domHost.editContext = null;
+    domHost.contentEditable = true;
+    const contentEditableResult = synthesizeQueryTextRect(5, 3);
+    domHost.contentEditable = false;
+    is(stringifyRect(contentEditableResult),
+       stringifyRect(editContextResult),
+       formatMessage('QueryTextRect should fall back to rectangle of DOM contents.'));
+  },
+  function textRectArrayFallsBackToDOMContents() {
+    let editContextRects = queryTextRectArray(6, 4);
+    // contenteditable will always use the DOM contents, so let's compare against that
+    domHost.editContext = null;
+    domHost.contentEditable = true;
+    let contentEditableRects = queryTextRectArray(6, 4);
+    domHost.contentEditable = false;
+    for (let i = 0; i < 4; i++) {
+      is(stringifyRect(editContextRects[i]),
+         stringifyRect(contentEditableRects[i]),
+         formatMessage('QueryTextRectArray should fall back to rectangle of DOM contents.'));
+    }
+  },
+];
+
+// Canvas-based EditContext only:
+// Tests for falling back to selection/control bounds
+// (We use the DOM contents instead for DOM-based EditContext)
+const canvasTests = [
+  function textRectFallsBackToSelectionBounds() {
+    editContext.updateControlBounds(new DOMRect(1, 2, 3, 4));
+    const selectionBounds = new DOMRect(10, 20, 30, 40);
+    editContext.updateSelectionBounds(selectionBounds);
+    const result = synthesizeQueryTextRect(1, 5);
+    ok(result.succeeded, formatMessage('QueryTextRect should succeed.'));
+    checkRect(result, selectionBounds,
+              formatMessage('Text rect should fall back to selection bounds if character bounds are not given.'));
+  },
+  function textRectFallsBackToControlBounds() {
+    const controlBounds = new DOMRect(1, 2, 3, 4);
+    editContext.updateControlBounds(controlBounds);
+    const result = synthesizeQueryTextRect(1, 5);
+    ok(result.succeeded, formatMessage('QueryTextRect should succeed.'));
+    checkRect(result, controlBounds,
+              formatMessage('Text rect should fall back to control bounds if character and selection bounds are not given.'));
+  },
+  function textRectArrayFallsBackToSelectionBounds() {
+    editContext.updateControlBounds(new DOMRect(1, 2, 3, 4));
+    const selectionBounds = new DOMRect(10, 20, 30, 40);
+    editContext.updateSelectionBounds(selectionBounds);
+    const result = synthesizeQueryTextRectArray(1, 5);
+    ok(result.succeeded,
+       formatMessage('QueryTextRectArray should succeed.'));
+    for (let i = 0; i < 5; i++) {
+      const left = {}, top = {}, width = {}, height = {};
+      result.getCharacterRect(i, left, top, width, height);
+      checkRect({left: left.value, top: top.value, width: width.value, height: height.value},
+                selectionBounds,
+                formatMessage('Text rect array should fall back to selection bounds if character bounds are not given.'));
+    }
+  },
+  function textRectArrayFallsBackToControlBounds() {
+    const controlBounds = new DOMRect(1, 2, 3, 4);
+    editContext.updateControlBounds(controlBounds);
+    const rects = queryTextRectArray(1, 5);
+    for (let i = 0; i < 5; i++) {
+      checkRect(rects[i],
+                controlBounds,
+                formatMessage('Text rect array should fall back to control bounds if character and selection bounds are not given.'));
+    }
+  }
+];
+
+const domHost = document.querySelector('div');
+const canvasHost = document.querySelector('canvas');
+const testString = 'hello world';
+domHost.textContent = testString;
+
+function addTest(test, whichHost) {
+  add_task(async () => {
+    info(`Running test ${test.name} for ${whichHost === domHost ? "DOM" : "canvas"}-based EditContext.`);
+    currentTest = test.name;
+    host = whichHost;
+    await SimpleTest.promiseFocus();
+    editContext = new EditContext({text: testString});
+    host.editContext = editContext;
+    host.focus();
+    test();
+  });
+}
+
+for (let test of tests) {
+  for (let whichHost of [domHost, canvasHost]) {
+    addTest(test, whichHost);
+  }
+}
+for (let test of domTests) {
+  addTest(test, domHost);
+}
+for (let test of canvasTests) {
+  addTest(test, canvasHost);
+}
+
+</script>
+</body>
+</html>

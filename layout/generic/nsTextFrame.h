@@ -103,6 +103,7 @@ class nsTextFrame : public nsIFrame {
   using SelectionTypeMask = mozilla::SelectionTypeMask;
   using Size = mozilla::gfx::Size;
   using TextRangeStyle = mozilla::TextRangeStyle;
+  using imgDrawingParams = mozilla::image::imgDrawingParams;
 
  public:
   enum TextRunType : uint8_t;
@@ -228,6 +229,8 @@ class nsTextFrame : public nsIFrame {
     bool HasSpacing() const {
       return mLetterSpacing || mWordSpacing || mTextAutospace;
     }
+
+    nscoord LetterSpacing() const { return mLetterSpacing; }
 
    protected:
     void SetupJustificationSpacing(bool aPostReflow);
@@ -683,13 +686,15 @@ class nsTextFrame : public nsIFrame {
   // context.
   void PaintText(const PaintTextParams& aParams, const nscoord aVisIStartEdge,
                  const nscoord aVisIEndEdge, const nsPoint& aToReferenceFrame,
-                 const bool aIsSelected, float aOpacity = 1.0f);
+                 const bool aIsSelected, imgDrawingParams& aImgParams,
+                 float aOpacity = 1.0f);
   // helper: paint text frame when we're impacted by at least one selection.
   // Return false if the text was not painted and we should continue with
   // the fast path.
   bool PaintTextWithSelection(const PaintTextSelectionParams& aParams,
                               const ClipEdges& aClipEdges,
-                              const SelectionDetails& aDetails);
+                              const SelectionDetails& aDetails,
+                              imgDrawingParams& aImgParams);
   // helper: paint text with foreground and background colors determined
   // by selection(s). Also computes a mask of all selection types applying to
   // our text, returned in aAllSelectionTypeMask.
@@ -698,7 +703,8 @@ class nsTextFrame : public nsIFrame {
   bool PaintTextWithSelectionColors(const PaintTextSelectionParams& aParams,
                                     const SelectionDetails& aDetails,
                                     SelectionTypeMask* aAllSelectionTypeMask,
-                                    const ClipEdges& aClipEdges);
+                                    const ClipEdges& aClipEdges,
+                                    imgDrawingParams& aImgParams);
   // helper: paint text decorations for text selected by aSelectionType
   void PaintTextSelectionDecorations(const PaintTextSelectionParams& aParams,
                                      const SelectionDetails& aDetails,
@@ -713,7 +719,8 @@ class nsTextFrame : public nsIFrame {
                          const mozilla::gfx::Point& aTextBaselinePt,
                          const mozilla::gfx::Point& aFramePt, Range aRange,
                          const nscolor* aDecorationOverrideColor,
-                         PropertyProvider* aProvider);
+                         PropertyProvider* aProvider,
+                         imgDrawingParams& aImgParams);
 
   nscolor GetCaretColorAt(int32_t aOffset) final;
 
@@ -940,10 +947,12 @@ class nsTextFrame : public nsIFrame {
 
   void PaintOneShadow(const PaintShadowParams& aParams,
                       const mozilla::StyleSimpleShadow& aShadowDetails,
-                      gfxRect& aBoundingBox, uint32_t aBlurFlags);
+                      gfxRect& aBoundingBox, uint32_t aBlurFlags,
+                      imgDrawingParams& aImgParams);
 
   void PaintShadows(mozilla::Span<const mozilla::StyleSimpleShadow>,
-                    const PaintShadowParams& aParams);
+                    const PaintShadowParams& aParams,
+                    imgDrawingParams& aImgParams);
 
   struct LineDecoration {
     nsIFrame* const mFrame;
@@ -1008,15 +1017,17 @@ class nsTextFrame : public nsIFrame {
                           TextDecorations& aDecorations);
 
   void DrawTextRun(Range aRange, const mozilla::gfx::Point& aTextBaselinePt,
-                   const DrawTextRunParams& aParams);
+                   const DrawTextRunParams& aParams,
+                   imgDrawingParams& aImgParams);
 
   void DrawTextRunAndDecorations(Range aRange,
                                  const mozilla::gfx::Point& aTextBaselinePt,
                                  const DrawTextParams& aParams,
-                                 const TextDecorations& aDecorations);
+                                 const TextDecorations& aDecorations,
+                                 imgDrawingParams& aImgParams);
 
   void DrawText(Range aRange, const mozilla::gfx::Point& aTextBaselinePt,
-                const DrawTextParams& aParams);
+                const DrawTextParams& aParams, imgDrawingParams& aImgParams);
 
   // Set non empty rect to aRect, it should be overflow rect or frame rect.
   // If the result rect is larger than the given rect, this returns true.

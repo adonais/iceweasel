@@ -125,7 +125,7 @@ add_task(async function notePreviewOpenAndExpand() {
   info("Click the expand button to expand the note");
   expandButton.click();
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return notePreviewPanel.hasAttribute("note-expanded");
   }, "Waiting for note-expanded attribute to be set");
   Assert.ok(
@@ -134,7 +134,7 @@ add_task(async function notePreviewOpenAndExpand() {
   );
 
   info("Validate the expanded metric was recorded");
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => Glean.tabNotes.expanded.testGetValue()?.length,
     "wait for event to be recorded"
   );
@@ -534,7 +534,7 @@ add_task(async function tabNotePreviewTelemetrySource() {
   tabNotePanel.querySelector("#tab-note-editor-button-save").click();
   await Promise.all([tabNoteEdited, menuHidden]);
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => Glean.tabNotes.edited.testGetValue()?.length,
     "wait for edited telemetry event"
   );

@@ -119,7 +119,8 @@ ConsoleLogLevel PrefToValue(const nsACString& aPref,
     return aLevel;
   }
 
-  Maybe<ConsoleLogLevel> level = StringToEnum<ConsoleLogLevel>(value);
+  Maybe<ConsoleLogLevel> level =
+      CaseInsensitiveStringToEnum<ConsoleLogLevel>(value);
   if (NS_WARN_IF(level.isNothing())) {
     nsString message;
     message.AssignLiteral("Invalid Console.maxLogLevelPref value: ");

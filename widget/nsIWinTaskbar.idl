@@ -177,4 +177,32 @@ interface nsIWinTaskbar : nsISupports
    * @throw NS_ERROR_NOT_AVAILABLE if the taskbar cannot be obtained.
    */
   [noscript] void prepareFullScreen(in voidPtr aHWND, in boolean aFullScreen);
+
+  /**
+   * Override the runtime icon used by every top-level window in this process
+   * (with the exception of private browsing and web application windows)
+   * and remember the override so that windows created after this call also
+   * pick it up.
+   *
+   * Pass 0 to clear the override and have all windows revert to the icon
+   * resource baked into the executable (IDI_APPICON / IDI_PBMODE).
+   *
+   * This only affects the in-process window's WM_SETICON state. To make the
+   * change visible on the taskbar pin / desktop / Start Menu when the
+   * application is not running, use nsIWindowsShellService::setShortcutsIcon
+   * on the relevant .lnk files.
+   *
+   * @param aIconResourceId
+   *        Win32 resource ID of an icon embedded in the executable (e.g.
+   *        IDI_CUSTOM_RETRO), or 0 to clear the override.
+   */
+  void setAllWindowIcons(in unsigned short aIconResourceId);
+
+  /**
+   * Force this install's taskbar buttons to redo their shortcut binding.
+   *
+   * Removing and re-adding each button (DeleteTab/AddTab) causes the shell to
+   * repeat the lookup using whatever shortcuts are visible at that moment.
+   */
+  void refreshTaskbarButtons();
 };

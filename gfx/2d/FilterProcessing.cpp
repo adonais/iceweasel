@@ -3,9 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "FilterProcessing.h"
+
 #include "Logging.h"
 #include "Swizzle.h"
-
 #include "mozilla/SSE.h"
 
 namespace mozilla {

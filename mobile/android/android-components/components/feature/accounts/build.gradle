@@ -4,14 +4,10 @@
 
 import static org.mozilla.conventions.BuildConfigKt.updateExtensionVersion
 
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
+    id 'com.android.library'
     alias(libs.plugins.dependency.analysis)
 }
-
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
 
 android {
     namespace = 'mozilla.components.feature.accounts'

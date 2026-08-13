@@ -329,6 +329,9 @@ public final class GeckoRuntime implements Parcelable {
   @OptIn(markerClass = ExperimentalGeckoViewApi.class)
   private final BundleEventListener mEventListener =
       new BundleEventListener() {
+        // ThreadConstraint false positive: runs in a GeckoResult continuation on the UI thread,
+        // which lint cannot model.
+        @SuppressLint("ThreadConstraint")
         @Override
         public void handleMessage(
             final String event, final GeckoBundle message, final EventCallback callback) {
@@ -431,7 +434,7 @@ public final class GeckoRuntime implements Parcelable {
     }
 
     final Context context = GeckoAppShell.getApplicationContext();
-    final CrashHelper.Pipes pipes = CrashHelper.createCrashHelperPipes(context);
+    final CrashHelper.Pipes pipes = CrashHelper.createCrashHelperPipes();
 
     if (pipes == null) {
       Log.e(LOGTAG, "Could not create the crash reporter IPC pipes");
@@ -896,6 +899,8 @@ public final class GeckoRuntime implements Parcelable {
     return mNotificationDelegate;
   }
 
+  // ThreadConstraint false positive: the @UiThread work runs inside ThreadUtils.runOnUiThread.
+  @SuppressLint("ThreadConstraint")
   @WrapForJNI
   @AnyThread
   private void notifyOnShow(final WebNotification notification) {
@@ -909,6 +914,8 @@ public final class GeckoRuntime implements Parcelable {
         });
   }
 
+  // ThreadConstraint false positive: the @UiThread work runs inside ThreadUtils.runOnUiThread.
+  @SuppressLint("ThreadConstraint")
   @WrapForJNI
   @AnyThread
   private void notifyOnClose(final WebNotification notification) {

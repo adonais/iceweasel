@@ -9,7 +9,7 @@
       "command": "./mach",
       "args": [
         "--quiet",
-        "devtools-mcp",
+        "firefox-devtools-mcp",
         "--pref",
         "remote.prefs.recommended=false",
         "--pref",

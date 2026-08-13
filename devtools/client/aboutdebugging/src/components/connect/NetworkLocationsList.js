@@ -46,7 +46,7 @@ class NetworkLocationsList extends PureComponent {
             },
             dom.button(
               {
-                className: "default-button qa-network-location-remove-button",
+                className: "qa-network-location-remove-button",
                 onClick: () => {
                   this.props.dispatch(Actions.removeNetworkLocation(location));
                 },

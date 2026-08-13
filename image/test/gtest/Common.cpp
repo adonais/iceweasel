@@ -6,18 +6,17 @@
 
 #include <cstdlib>
 
-#include "gfxPlatform.h"
-
 #include "ImageFactory.h"
+#include "gfxPlatform.h"
 #include "imgITools.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/RefPtr.h"
 #include "nsComponentManagerUtils.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsIFile.h"
 #include "nsIInputStream.h"
 #include "nsIProperties.h"
 #include "nsNetUtil.h"
-#include "mozilla/RefPtr.h"
 #include "nsStreamUtils.h"
 #include "nsString.h"
 

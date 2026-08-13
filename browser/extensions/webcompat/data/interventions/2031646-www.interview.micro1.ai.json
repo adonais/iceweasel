@@ -1,0 +1,18 @@
+{
+  "label": "www.interview.micro1.ai",
+  "bugs": {
+    "2031646": {
+      "issue": "unsupported-warning",
+      "matches": ["https://www.interview.micro1.ai/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["desktop"],
+      "hide_messages": {
+        "message": "Google Chrome",
+        "container": ".fixed"
+      }
+    }
+  ]
+}

@@ -59,8 +59,9 @@ class Watchtower {
 
  public:
   static bool watchesPropertyAdd(NativeObject* obj) {
-    return obj->hasAnyFlag(
-        {ObjectFlag::IsUsedAsPrototype, ObjectFlag::UseWatchtowerTestingLog});
+    return obj->hasAnyFlag({ObjectFlag::IsUsedAsPrototype,
+                            ObjectFlag::UseWatchtowerTestingLog,
+                            ObjectFlag::HasRealmFuseProperty});
   }
   static bool watchesPropertyRemove(NativeObject* obj) {
     return obj->hasAnyFlag(
@@ -83,8 +84,9 @@ class Watchtower {
         {ObjectFlag::IsUsedAsPrototype, ObjectFlag::UseWatchtowerTestingLog});
   }
   static bool watchesProtoChange(JSObject* obj) {
-    return obj->hasAnyFlag(
-        {ObjectFlag::IsUsedAsPrototype, ObjectFlag::UseWatchtowerTestingLog});
+    return obj->hasAnyFlag({ObjectFlag::IsUsedAsPrototype,
+                            ObjectFlag::UseWatchtowerTestingLog,
+                            ObjectFlag::HasRealmFuseProperty});
   }
   static SetSlotOptimizable canOptimizeSetSlot(JSContext* cx, NativeObject* obj,
                                                PropertyKey key,

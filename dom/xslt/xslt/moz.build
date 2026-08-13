@@ -45,7 +45,7 @@ UNIFIED_SOURCES += [
     "txXSLTProcessor.cpp",
 ]
 
-EXTRA_JS_MODULES += [
+MOZ_SRC_FILES += [
     "txEXSLTRegExFunctions.sys.mjs",
 ]
 

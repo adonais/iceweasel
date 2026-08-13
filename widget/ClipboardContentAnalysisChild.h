@@ -5,8 +5,8 @@
 #ifndef MOZILLA_WIDGET_CLIPBOARDCONTENTANALYSISCHILD_H_
 #define MOZILLA_WIDGET_CLIPBOARDCONTENTANALYSISCHILD_H_
 
-#include "mozilla/ipc/Endpoint.h"
 #include "mozilla/PClipboardContentAnalysisChild.h"
+#include "mozilla/ipc/Endpoint.h"
 
 namespace mozilla {
 class ClipboardContentAnalysisChild final

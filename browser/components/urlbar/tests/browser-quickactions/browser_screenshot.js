@@ -29,13 +29,13 @@ async function clickQuickActionOneoffButton() {
 
   EventUtils.synthesizeMouseAtCenter(oneOffButton, {}, window);
   await UrlbarTestUtils.assertSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.ACTIONS,
+    source: UrlbarShared.RESULT_SOURCE.ACTIONS,
     entry: "oneoff",
   });
 }
 
 const assertAction = async name => {
-  await BrowserTestUtils.waitForCondition(() =>
+  await TestUtils.waitForCondition(() =>
     window.document.querySelector(`.urlbarView-action-btn[data-action=${name}]`)
   );
   Assert.ok(true, `We found action "${name}`);

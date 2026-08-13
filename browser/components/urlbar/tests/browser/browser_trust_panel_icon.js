@@ -57,7 +57,7 @@ function trustIconContainer() {
 }
 
 async function waitForTrustIconClass(className, message) {
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => trustIconContainer()?.classList.contains(className),
     message,
     100,
@@ -66,7 +66,7 @@ async function waitForTrustIconClass(className, message) {
 }
 
 async function waitForTrustIconWithoutClass(className, message) {
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !trustIconContainer()?.classList.contains(className),
     message,
     100,

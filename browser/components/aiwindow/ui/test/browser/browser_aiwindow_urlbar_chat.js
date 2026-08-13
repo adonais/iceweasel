@@ -79,6 +79,7 @@ add_task(async function test_chat_intent_in_aiwindow() {
 
   // Close the sidebar so it doesn't interfere with urlbar focus.
   AIWindowUI.closeSidebar(win);
+  await waitForSidebarClosed(win);
 
   // Make a search in the urlbar.
   await lazy.UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -94,19 +95,19 @@ add_task(async function test_chat_intent_in_aiwindow() {
   let firstResult = await lazy.UrlbarTestUtils.getDetailsOfResultAt(win, 0);
   Assert.equal(
     firstResult.type,
-    UrlbarUtils.RESULT_TYPE.SEARCH,
+    UrlbarShared.RESULT_TYPE.SEARCH,
     "The first result should be a search."
   );
   let secondResult = await lazy.UrlbarTestUtils.getDetailsOfResultAt(win, 1);
   Assert.equal(
     secondResult.type,
-    UrlbarUtils.RESULT_TYPE.AI_CHAT,
+    UrlbarShared.RESULT_TYPE.AI_CHAT,
     "The second result should be AI chat."
   );
   let thirdResult = await lazy.UrlbarTestUtils.getDetailsOfResultAt(win, 2);
   Assert.equal(
     thirdResult.type,
-    UrlbarUtils.RESULT_TYPE.URL,
+    UrlbarShared.RESULT_TYPE.URL,
     "The third result should be a URL result."
   );
 

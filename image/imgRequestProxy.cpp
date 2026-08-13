@@ -13,8 +13,8 @@
 #include "ImageTypes.h"
 #include "imgINotificationObserver.h"
 #include "imgLoader.h"
-#include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocGroup.h"  // for DocGroup
+#include "mozilla/dom/Document.h"
 #include "nsCRTGlue.h"
 #include "nsError.h"
 

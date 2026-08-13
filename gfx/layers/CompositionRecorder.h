@@ -9,8 +9,8 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/layers/PCompositorBridgeTypes.h"
 #include "nsISupportsImpl.h"
-#include "nsTArray.h"
 #include "nsString.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 

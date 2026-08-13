@@ -5,13 +5,13 @@
 #ifndef nsStreamListenerTee_h_
 #define nsStreamListenerTee_h_
 
-#include "nsIStreamListenerTee.h"
-#include "nsIThreadRetargetableStreamListener.h"
-#include "nsIInputStreamTee.h"
-#include "nsIOutputStream.h"
 #include "nsCOMPtr.h"
 #include "nsIEventTarget.h"
+#include "nsIInputStreamTee.h"
 #include "nsIMultiPartChannel.h"
+#include "nsIOutputStream.h"
+#include "nsIStreamListenerTee.h"
+#include "nsIThreadRetargetableStreamListener.h"
 
 namespace mozilla {
 namespace net {

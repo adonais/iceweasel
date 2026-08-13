@@ -4135,16 +4135,66 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
               aVisitor.mEvent->IsTrusted() &&
               aVisitor.mEvent->AsMouseEvent()->mButton ==
                   MouseButton::ePrimary) {
+            const auto IsClickedOn = [&](const Element* aButton) {
+              if (!aButton) {
+                return false;
+              }
+              if (aButton == aVisitor.mEvent->mOriginalTarget) {
+                return true;
+              }
+              // During the button click, the button may have been recreated.
+              // First, check whether the mouseup occurred on the new button.
+              nsIContent* mouseUpContent =
+                  aVisitor.mPresContext->EventStateManager()
+                      ->GetMouseUpTargetContent(MouseButton::ePrimary);
+              if (!mouseUpContent) [[unlikely]] {
+                return false;
+              }
+              if (!mouseUpContent->IsElement()) {
+                // FYI: We don't use shadow DOM in the native anonymous subtree.
+                // Therefore, it should be fine not to use
+                // GetFlattenedTreeParentElement() here.
+                mouseUpContent = mouseUpContent->GetAsElementOrParentElement();
+              }
+              if (aButton != mouseUpContent) {
+                return false;
+              }
+              // Then, check whether the mousedown target is disconnected and
+              // the same button as the new button.
+              nsIContent* mouseDownContent =
+                  aVisitor.mPresContext->EventStateManager()
+                      ->GetMouseDownTargetContent(MouseButton::ePrimary);
+              if (!mouseDownContent || mouseDownContent->IsInComposedDoc()) {
+                return false;
+              }
+              if (!mouseDownContent->IsElement()) {
+                // FYI: We don't use shadow DOM in the native anonymous subtree.
+                // Therefore, it should be fine not to use
+                // GetFlattenedTreeParentElement() here.
+                mouseDownContent =
+                    mouseDownContent->GetAsElementOrParentElement();
+                if (!mouseDownContent) [[unlikely]] {
+                  return false;
+                }
+              }
+              MOZ_ASSERT_IF(
+                  mouseDownContent->AsElement()->GetPseudoElementType() ==
+                      mouseUpContent->AsElement()->GetPseudoElementType(),
+                  mouseDownContent->NodeInfo()->NameAtom() ==
+                      mouseUpContent->NodeInfo()->NameAtom());
+              return mouseDownContent->AsElement()->GetPseudoElementType() ==
+                     mouseUpContent->AsElement()->GetPseudoElementType();
+            };
             // TODO(emilio): Handling this should ideally not move focus.
             if (mType == FormControlType::InputSearch) {
               Element* button = GetTextEditorButton();
-              if (button && aVisitor.mEvent->mOriginalTarget == button) {
+              if (IsClickedOn(button)) {
                 SetUserInput(EmptyString(),
                              *nsContentUtils::GetSystemPrincipal());
               }
             } else if (mType == FormControlType::InputPassword) {
               Element* button = GetTextEditorButton();
-              if (button && aVisitor.mEvent->mOriginalTarget == button) {
+              if (IsClickedOn(button)) {
                 SetRevealPassword(!RevealPassword());
               }
             }

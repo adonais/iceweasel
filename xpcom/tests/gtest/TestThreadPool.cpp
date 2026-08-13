@@ -4,16 +4,17 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "nsXPCOM.h"
-#include "nsXPCOMCIDInternal.h"
-#include "nsThreadPool.h"
-#include "nsComponentManagerUtils.h"
-#include "nsCOMPtr.h"
-#include "nsIRunnable.h"
-#include "nsThreadUtils.h"
+
+#include "gtest/gtest.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Monitor.h"
-#include "gtest/gtest.h"
+#include "nsCOMPtr.h"
+#include "nsComponentManagerUtils.h"
+#include "nsIRunnable.h"
+#include "nsThreadPool.h"
+#include "nsThreadUtils.h"
+#include "nsXPCOM.h"
+#include "nsXPCOMCIDInternal.h"
 
 using namespace mozilla;
 

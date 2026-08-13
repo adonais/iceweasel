@@ -31,19 +31,15 @@ forbid-mscom-init:
         # These files are existing legacy uses of CoInitialize (and so forth)
         # that must eventually be fixed -- probably by converting them to use
         # ApartmentRegion and moving them to _that_ lint's exception-list.
-        - browser/components/shell/nsWindowsShellService.cpp
-        - gfx/thebes/gfxWindowsPlatform.cpp
         - image/DecodePool.cpp
         - ipc/glue/IOThread.cpp
         - netwerk/system/win32/nsNotifyAddrListener.cpp
         - toolkit/components/bitsdownload/bits_client/bits/src/lib.rs
-        - toolkit/components/parentalcontrols/nsParentalControlsServiceWin.cpp
         - toolkit/crashreporter/google-breakpad/src/common/windows/pdb_source_line_writer.cc
         - toolkit/mozapps/defaultagent/proxy/main.cpp
         - uriloader/exthandler/win/nsOSHelperAppService.cpp
         - widget/windows/TaskbarPreview.cpp
         - widget/windows/WinTaskbar.cpp
-        - widget/windows/nsAppShell.cpp
         - widget/windows/nsWindow.cpp
         - widget/windows/nsWindow.h
         - widget/windows/tests/TestUriValidation.cpp

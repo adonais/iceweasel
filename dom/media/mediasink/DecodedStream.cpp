@@ -526,7 +526,7 @@ RefPtr<DecodedStream::EndedPromise> DecodedStream::OnEnded(TrackType aType) {
 }
 
 nsresult DecodedStream::Start(const TimeUnit& aStartTime,
-                              const MediaInfo& aInfo) {
+                              const MediaInfo& aInfo, StartType) {
   AssertOwnerThread();
   MOZ_ASSERT(mStartTime.isNothing(), "playback already started.");
 
@@ -670,7 +670,7 @@ nsresult DecodedStream::Start(const TimeUnit& aStartTime,
   return NS_OK;
 }
 
-void DecodedStream::Stop() {
+void DecodedStream::Stop(StopReason aReason) {
   AssertOwnerThread();
   MOZ_ASSERT(mStartTime.isSome(), "playback not started.");
 
@@ -742,7 +742,7 @@ void DecodedStream::DestroyData(UniquePtr<DecodedStreamData>&& aData) {
       }));
 }
 
-void DecodedStream::SetPlaying(bool aPlaying) {
+void DecodedStream::SetPlaying(bool aPlaying, StopReason aReason) {
   AssertOwnerThread();
 
   // Resume/pause matters only when playback started.

@@ -273,6 +273,9 @@ def rust_analyzer_config(command_context):
 
     config = {
         "cargo": {
+            # Ensure that cargo uses our vendored sources, even when ran from outside
+            # the objdir.
+            "configPath": f"{command_context.topobjdir}/.cargo/config.toml",
             "extraEnv": {
                 # Point rust-analyzer at the real target directory used by our
                 # build, so it can discover the files created when we run `./mach

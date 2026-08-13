@@ -11,7 +11,7 @@ ChromeUtils.defineESModuleGetters(this, {
  */
 async function waitForPageInfo(url) {
   let pageInfo;
-  await BrowserTestUtils.waitForCondition(async () => {
+  await TestUtils.waitForCondition(async () => {
     pageInfo = await PlacesUtils.history.fetch(url, { includeMeta: true });
     return pageInfo && pageInfo.description && pageInfo.previewImageURL;
   });

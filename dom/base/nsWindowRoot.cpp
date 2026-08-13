@@ -266,13 +266,11 @@ nsresult nsWindowRoot::GetControllerForCommand(const char* aCommand,
       // focused, just check the controllers directly below.
       RefPtr<nsFrameLoader> frameLoader = loaderOwner->GetFrameLoader();
       if (frameLoader && frameLoader->IsRemoteFrame()) {
-        // GetActiveBrowsingContextInChrome actually returns the top-level
-        // browsing context if the focus is in a child process tab, or null if
-        // the focus is in chrome.
-        BrowsingContext* focusedBC =
-            fm->GetActiveBrowsingContextInChrome()
-                ? fm->GetFocusedBrowsingContextInChrome()
-                : nullptr;
+        // The focused browsing context points at the tab that last held content
+        // focus, even if the window in question isn't frontmost or the app
+        // isn't the active app at all. Use it so context-menu commands work on
+        // a background window.
+        BrowsingContext* focusedBC = fm->GetFocusedBrowsingContextInChrome();
         if (focusedBC) {
           // At this point, it is known that a child process is focused, so ask
           // its Controllers actor if the command is supported.

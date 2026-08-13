@@ -125,9 +125,9 @@ class FDWrapper {
 //
 class MmapWrapper {
  public:
-  MmapWrapper() : is_set_(false), base_(NULL), size_(0) {}
+  MmapWrapper() : is_set_(false), base_(nullptr), size_(0) {}
   ~MmapWrapper() {
-    if (is_set_ && base_ != NULL) {
+    if (is_set_ && base_ != nullptr) {
       MOZ_ASSERT(size_ > 0);
       munmap(base_, size_);
     }
@@ -140,7 +140,7 @@ class MmapWrapper {
   void release() {
     MOZ_ASSERT(is_set_);
     is_set_ = false;
-    base_ = NULL;
+    base_ = nullptr;
     size_ = 0;
   }
 
@@ -387,9 +387,9 @@ bool LoadSymbols(const string& obj_file, const bool big_endian,
     // information, the other debugging information could be perfectly
     // useful.
     info->LoadedSection(".debug_frame");
-    bool result = LoadDwarfCFI<ElfClass>(obj_file, elf_header, ".debug_frame",
-                                         dwarf_cfi_section, false, 0, 0,
-                                         big_endian, smap, text_bias, usu, log);
+    bool result = LoadDwarfCFI<ElfClass>(
+        obj_file, elf_header, ".debug_frame", dwarf_cfi_section, false, nullptr,
+        nullptr, big_endian, smap, text_bias, usu, log);
     found_usable_info = found_usable_info || result;
     if (result) log("LoadSymbols:   read CFI from .debug_frame");
   }
@@ -459,7 +459,7 @@ const char* ElfArchitecture(const typename ElfClass::Ehdr* elf_header) {
     case EM_X86_64:
       return "x86_64";
     default:
-      return NULL;
+      return nullptr;
   }
 }
 
@@ -530,7 +530,7 @@ bool ReadSymbolDataElfClass(const typename ElfClass::Ehdr* elf_header,
     // Load debuglink ELF file.
     fprintf(stderr, "Found debugging info in %s\n", debuglink_file.c_str());
     MmapWrapper debug_map_wrapper;
-    Ehdr* debug_elf_header = NULL;
+    Ehdr* debug_elf_header = nullptr;
     if (!LoadELF(debuglink_file, &debug_map_wrapper,
                  reinterpret_cast<void**>(&debug_elf_header)))
       return false;
@@ -603,7 +603,7 @@ bool ReadSymbolData(const string& obj_file, const vector<string>& debug_dirs,
                     SecMap* smap, void* rx_avma, size_t rx_size,
                     UniqueStringUniverse* usu, void (*log)(const char*)) {
   MmapWrapper map_wrapper;
-  void* elf_header = NULL;
+  void* elf_header = nullptr;
   if (!LoadELF(obj_file, &map_wrapper, &elf_header)) return false;
 
   return ReadSymbolDataInternal(reinterpret_cast<uint8_t*>(elf_header),
@@ -640,7 +640,7 @@ void FindElfClassSection(const char* elf_base, const char* section_name,
       FindElfSectionByName<ElfClass>(section_name, section_type, sections,
                                      names, names_end, elf_header->e_shnum);
 
-  if (section != NULL && section->sh_size > 0) {
+  if (section != nullptr && section->sh_size > 0) {
     *section_start = elf_base + section->sh_offset;
     *section_size = section->sh_size;
   }
@@ -693,7 +693,7 @@ bool FindElfSection(const void* elf_mapped_base, const char* section_name,
   MOZ_ASSERT(section_start);
   MOZ_ASSERT(section_size);
 
-  *section_start = NULL;
+  *section_start = nullptr;
   *section_size = 0;
 
   if (!IsValidElf(elf_mapped_base)) return false;
@@ -708,11 +708,11 @@ bool FindElfSection(const void* elf_mapped_base, const char* section_name,
   if (cls == ELFCLASS32) {
     FindElfClassSection<ElfClass32>(elf_base, section_name, section_type,
                                     section_start, section_size);
-    return *section_start != NULL;
+    return *section_start != nullptr;
   } else if (cls == ELFCLASS64) {
     FindElfClassSection<ElfClass64>(elf_base, section_name, section_type,
                                     section_start, section_size);
-    return *section_start != NULL;
+    return *section_start != nullptr;
   }
 
   return false;
@@ -725,7 +725,7 @@ bool FindElfSegment(const void* elf_mapped_base, uint32_t segment_type,
   MOZ_ASSERT(segment_start);
   MOZ_ASSERT(segment_size);
 
-  *segment_start = NULL;
+  *segment_start = nullptr;
   *segment_size = 0;
 
   if (!IsValidElf(elf_mapped_base)) return false;
@@ -740,11 +740,11 @@ bool FindElfSegment(const void* elf_mapped_base, uint32_t segment_type,
   if (cls == ELFCLASS32) {
     FindElfClassSegment<ElfClass32>(elf_base, segment_type, segment_start,
                                     segment_size);
-    return *segment_start != NULL;
+    return *segment_start != nullptr;
   } else if (cls == ELFCLASS64) {
     FindElfClassSegment<ElfClass64>(elf_base, segment_type, segment_start,
                                     segment_size);
-    return *segment_start != NULL;
+    return *segment_start != nullptr;
   }
 
   return false;
@@ -825,7 +825,7 @@ static bool HashElfTextSection(const void* elf_mapped_base,
   void* text_section;
   int text_size;
   if (!FindElfSection(elf_mapped_base, ".text", SHT_PROGBITS,
-                      (const void**)&text_section, &text_size, NULL) ||
+                      (const void**)&text_section, &text_size, nullptr) ||
       text_size == 0) {
     return false;
   }

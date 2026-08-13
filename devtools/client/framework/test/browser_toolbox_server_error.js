@@ -92,6 +92,10 @@ add_task(async function () {
     "watchResources",
     "toolboxServerError packet type is correct"
   );
+  ok(
+    /\d+/.test(events[0].extra.session_duration),
+    "toolboxServerError session_duration is a number"
+  );
   is(
     events[0].extra.session_id,
     toolbox.sessionId,

@@ -1,5 +1,6 @@
-#include "FuzzingInterface.h"
 #include "FuzzingStreamListener.h"
+
+#include "FuzzingInterface.h"
 
 namespace mozilla {
 namespace net {

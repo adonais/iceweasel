@@ -8,9 +8,7 @@ import logging
 import sys
 import textwrap
 
-from taskgraph.util.taskcluster import get_task_definition, rerun_task
-
-from gecko_taskgraph.util.taskcluster import state_task
+from taskgraph.util.taskcluster import get_task_definition, rerun_task, state_task
 
 from .registry import register_callback_action
 from .util import (

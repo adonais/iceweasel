@@ -34,7 +34,7 @@ add_task(async function test_update_login_success() {
   assertCPMGleanEvent(events[0], {
     interaction_type: "edit",
   });
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => megalist.querySelector("login-form"),
     "Login form failed to render"
   );
@@ -63,12 +63,12 @@ add_task(async function test_update_login_success() {
   await checkAllLoginsRendered(megalist);
   const updatedPasswordCard = megalist.querySelector("password-card");
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => updatedPasswordCard.usernameLine.value === newUsername,
     "Username not updated."
   );
   await waitForPasswordReveal(updatedPasswordCard.passwordLine);
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => updatedPasswordCard.passwordLine.value === newPassword,
     "Password not updated."
   );
@@ -102,7 +102,7 @@ add_task(async function test_update_login_duplicate() {
 
   const passwordCard = megalist.querySelector("password-card");
   await waitForReauth(() => passwordCard.editBtn.click());
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => megalist.querySelector("login-form"),
     "Login form failed to render"
   );
@@ -146,7 +146,7 @@ add_task(async function test_update_login_discard_changes() {
 
   const passwordCard = megalist.querySelector("password-card");
   await waitForReauth(() => passwordCard.editBtn.click());
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => megalist.querySelector("login-form"),
     "Login form failed to render"
   );
@@ -171,7 +171,7 @@ add_task(async function test_update_login_discard_changes() {
     action_type: "dismiss",
   });
   info("Pressing Go Back action on notification");
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     const notificationMsgBar = megalist.querySelector(
       "notification-message-bar"
     );
@@ -203,7 +203,7 @@ add_task(async function test_update_login_discard_changes() {
 
   info("Try closing sidebar while editing a login");
   await waitForReauth(() => passwordCard.editBtn.click());
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => megalist.querySelector("login-form"),
     "Login form failed to render"
   );
@@ -230,7 +230,7 @@ add_task(async function test_update_login_discard_changes() {
     1
   );
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return !SidebarController.isOpen;
   }, "Sidebar did not close.");
   ok(!SidebarController.isOpen, "Sidebar closed");
@@ -255,7 +255,7 @@ add_task(async function test_update_login_without_changes() {
 
   const passwordCard = megalist.querySelector("password-card");
   await waitForReauth(() => passwordCard.editBtn.click());
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => megalist.querySelector("login-form"),
     "Login form failed to render"
   );
@@ -273,13 +273,13 @@ add_task(async function test_update_login_without_changes() {
 
   info("Try closing sidebar while editing a login");
   await waitForReauth(() => passwordCard.editBtn.click());
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => megalist.querySelector("login-form"),
     "Login form failed to render"
   );
   SidebarController.hide();
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return !SidebarController.isOpen;
   }, "Sidebar did not close.");
   ok(!SidebarController.isOpen, "Sidebar closed");
@@ -309,7 +309,7 @@ add_task(async function test_update_login_username_notification() {
   const passwordCard = megalist.querySelector("password-card");
   await waitForReauth(() => passwordCard.editBtn.click());
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => megalist.querySelector("login-form"),
     "Login form failed to render"
   );

@@ -69,60 +69,6 @@ class WebCompatReporterStorageMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN the URL text field is empty WHEN the user leaves the form THEN the tab's URL is saved instead`() {
-        val expectedUrl = "www.mozilla.org"
-        val appStore = AppStore()
-        val webCompatReporterStore = createWebCompatReporterStore(
-            initialState = WebCompatReporterState(
-                tabUrl = expectedUrl,
-                enteredUrl = "",
-            ),
-            appStore = appStore,
-        )
-
-        webCompatReporterStore.dispatch(WebCompatReporterAction.BackPressed)
-
-        assertEquals(expectedUrl, appStore.state.webCompatState!!.tabUrl)
-        assertTrue(appStore.state.webCompatState!!.tabUrl.isNotEmpty())
-    }
-
-    @Test
-    fun `WHEN the back button is pressed THEN the state is saved`() {
-        val savedState = WebCompatReporterState(
-            enteredUrl = "www.mozilla.org",
-            reason = null,
-            problemDescription = "problem description",
-        )
-        val appStore = AppStore()
-        val webCompatReporterStore = createWebCompatReporterStore(
-            initialState = savedState,
-            appStore = appStore,
-        )
-
-        webCompatReporterStore.dispatch(WebCompatReporterAction.BackPressed)
-
-        assertEquals(savedState.toPersistedState(), appStore.state.webCompatState)
-    }
-
-    @Test
-    fun `WHEN the send more info button is pressed THEN the state is saved`() {
-        val savedState = WebCompatReporterState(
-            enteredUrl = "www.mozilla.org",
-            reason = null,
-            problemDescription = "problem description",
-        )
-        val appStore = AppStore()
-        val webCompatReporterStore = createWebCompatReporterStore(
-            initialState = savedState,
-            appStore = appStore,
-        )
-
-        webCompatReporterStore.dispatch(WebCompatReporterAction.BackPressed)
-
-        assertEquals(savedState.toPersistedState(), appStore.state.webCompatState)
-    }
-
-    @Test
     fun `WHEN the learn more button is pressed THEN the state is saved`() {
         val savedState = WebCompatReporterState(
             enteredUrl = "www.mozilla.org",

@@ -54,6 +54,20 @@ const CROSS_ORIGIN =
 function handleRequest(request, response) {
   const queryMap = new URLSearchParams(request.queryString);
 
+  // Report how many times the resource identified by "cachedCors" was fetched,
+  // so a test can assert a prefetch was served from cache rather than refetched.
+  if (queryMap.has("getCount")) {
+    let count = getSharedState("bug1268962-count-" + queryMap.get("getCount"));
+    response.setHeader("Access-Control-Allow-Origin", "*");
+    response.setHeader("Content-Type", "text/plain");
+    response.write(count || "0");
+    return;
+  }
+  if (queryMap.has("cachedCors")) {
+    let key = "bug1268962-count-" + queryMap.get("cachedCors");
+    setSharedState(key, "" + (parseInt(getSharedState(key) || "0") + 1));
+  }
+
   // Check redirection before everything else.
   if (queryMap.has("redirect")) {
     let redirect = queryMap.get("redirect");

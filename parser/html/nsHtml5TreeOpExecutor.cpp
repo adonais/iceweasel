@@ -991,6 +991,7 @@ void nsHtml5TreeOpExecutor::RunScript(nsIContent* aScriptElement,
   if (!aMayDocumentWriteOrBlock) {
     MOZ_ASSERT(sele->GetScriptDeferred() || sele->GetScriptAsync() ||
                sele->GetScriptIsModule() || sele->GetScriptIsImportMap() ||
+               sele->GetScriptIsSpeculationRules() ||
                aScriptElement->AsElement()->HasAttr(nsGkAtoms::nomodule));
     sele->AttemptToExecute(nullptr /* aParser */);
     return;

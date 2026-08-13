@@ -243,8 +243,7 @@ class NoStaticOrObjectMockingDetectorTest : LintDetectorTest() {
 
     @Test
     fun `mockkStatic usage reports NoStaticMocking`() {
-        lint()
-            .allowMissingSdk() // For Log, but logStub is safer
+        lint() // For Log, but logStub is safer
             .files(mockkStubs, logStub, mockkStaticUsage)
             .run()
             .expectErrorCount(1)
@@ -254,7 +253,6 @@ class NoStaticOrObjectMockingDetectorTest : LintDetectorTest() {
     @Test
     fun `unmockkStatic usage reports NoStaticMocking`() {
         lint()
-            .allowMissingSdk()
             .files(mockkStubs, logStub, unmockkStaticUsage)
             .run()
             .expectErrorCount(1)
@@ -264,7 +262,6 @@ class NoStaticOrObjectMockingDetectorTest : LintDetectorTest() {
     @Test
     fun `clearStaticMock usage reports NoStaticMocking`() {
         lint()
-            .allowMissingSdk()
             .files(mockkStubs, logStub, clearStaticMockUsage)
             .run()
             .expectErrorCount(1)
@@ -274,7 +271,6 @@ class NoStaticOrObjectMockingDetectorTest : LintDetectorTest() {
     @Test
     fun `mockkObject usage reports NoObjectMocking`() {
         lint()
-            .allowMissingSdk()
             .files(mockkStubs, singletonObjectStub, mockkObjectUsage)
             .run()
             .expectErrorCount(1)
@@ -284,7 +280,6 @@ class NoStaticOrObjectMockingDetectorTest : LintDetectorTest() {
     @Test
     fun `unmockkObject usage reports NoObjectMocking`() {
         lint()
-            .allowMissingSdk()
             .files(mockkStubs, singletonObjectStub, unmockkObjectUsage)
             .run()
             .expectErrorCount(1)
@@ -294,7 +289,6 @@ class NoStaticOrObjectMockingDetectorTest : LintDetectorTest() {
     @Test
     fun `clearObjectMock usage reports NoObjectMocking`() {
         lint()
-            .allowMissingSdk()
             .files(mockkStubs, singletonObjectStub, clearObjectMockUsage)
             .run()
             .expectErrorCount(1)
@@ -304,7 +298,6 @@ class NoStaticOrObjectMockingDetectorTest : LintDetectorTest() {
     @Test
     fun `Mockito mockStatic usage reports NoStaticMocking`() {
         lint()
-            .allowMissingSdk()
             .files(mockitoStubs, logStub, mockitoMockStaticUsage)
             .run()
             .expectErrorCount(1)
@@ -314,7 +307,6 @@ class NoStaticOrObjectMockingDetectorTest : LintDetectorTest() {
     @Test
     fun `Mockito mockConstruction usage reports NoStaticMocking`() {
         lint()
-            .allowMissingSdk()
             .files(mockitoStubs, mockitoMockConstructionUsage)
             .run()
             .expectErrorCount(1)
@@ -324,7 +316,6 @@ class NoStaticOrObjectMockingDetectorTest : LintDetectorTest() {
     @Test
     fun `acceptable instance mocking does not report any issues`() {
         lint()
-            .allowMissingSdk()
             .files(
                 mockkStubs,
                 acceptableMockingUsage,

@@ -37,7 +37,7 @@
     }
 
     > .urlbarView-button {
-      margin-bottom: var(--urlbarView-row-padding-block);
+      margin-bottom: var(--urlbarview-row-padding-block);
     }
   }
 }
@@ -54,7 +54,7 @@
 
 .urlbarView-dynamic-quickSuggestContextualOptIn-description {
   margin-block-start: 2px;
-  color: var(--urlbarView-secondary-text-color);
+  color: var(--urlbarview-text-color-secondary);
   font-size: var(--urlbarView-small-font-size);
 }
 
@@ -99,7 +99,7 @@
     }
 
     > .urlbarView-dynamic-onboardTabToSearch-text-container > .urlbarView-dynamic-onboardTabToSearch-description {
-      color: var(--urlbarView-secondary-text-color);
+      color: var(--urlbarview-text-color-secondary);
     }
   }
 }
@@ -193,7 +193,7 @@
 .urlbarView-press-tab-label {
   margin-inline-end: var(--space-medium);
   font-size: var(--urlbarView-small-font-size);
-  color: var(--urlbarView-secondary-text-color);
+  color: var(--urlbarview-text-color-secondary);
   align-self: center;
 }
 

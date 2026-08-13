@@ -5,18 +5,18 @@
 #include "mozilla/net/ChannelClassifierUtils.h"
 
 #include "ChannelClassifierService.h"
+#include "mozIThirdPartyUtil.h"
 #include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Components.h"
 #include "mozilla/ContentBlockingAllowList.h"
 #include "mozilla/ContentBlockingNotifier.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/net/ChannelClassifierLog.h"
-#include "mozilla/net/HttpBaseChannel.h"
 #include "mozilla/StaticPrefs_channelclassifier.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPrefs_privacy.h"
-#include "mozIThirdPartyUtil.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/net/ChannelClassifierLog.h"
+#include "mozilla/net/HttpBaseChannel.h"
 #include "nsContentUtils.h"
 #include "nsIChannel.h"
 #include "nsIClassifiedChannel.h"
@@ -375,7 +375,8 @@ void ChannelClassifierUtils::AnnotateChannelWithoutNotifying(
 nsresult ChannelClassifierUtils::MaybeBlockChannel(
     nsIChannel* aChannel, const nsACString& aFeatureName,
     const nsACString& aList, nsresult aErrorCode, uint32_t aReplacedEvent,
-    uint32_t aAllowedEvent, ChannelBlockDecision* aOutDecision) {
+    uint32_t aAllowedEvent, void (*aCancelCallback)(nsIChannel*),
+    ChannelBlockDecision* aOutDecision) {
   MOZ_ASSERT(aChannel);
   MOZ_ASSERT(aOutDecision);
 
@@ -403,8 +404,12 @@ nsresult ChannelClassifierUtils::MaybeBlockChannel(
        "cancelling channel %p",
        PromiseFlatCString(aFeatureName).get(), aChannel));
 
+  if (aCancelCallback) {
+    aCancelCallback(aChannel);
+  }
+
   nsCOMPtr<nsIHttpChannelInternal> httpChannel = do_QueryInterface(aChannel);
-  if (httpChannel) {
+  if (httpChannel && IsClassifierBlockingErrorCode(aErrorCode)) {
     (void)httpChannel->CancelByURLClassifier(aErrorCode);
   } else {
     (void)aChannel->Cancel(aErrorCode);

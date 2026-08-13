@@ -5,10 +5,9 @@
 #ifndef GeckoBatteryManager_h
 #define GeckoBatteryManager_h
 
-#include "nsAppShell.h"
-
 #include "mozilla/Hal.h"
 #include "mozilla/java/GeckoBatteryManagerNatives.h"
+#include "nsAppShell.h"
 
 namespace mozilla {
 

@@ -24,7 +24,7 @@ OSPreferences::OSPreferences() {
   ::CFNotificationCenterAddObserver(
       ::CFNotificationCenterGetLocalCenter(), this,
       LocaleChangedNotificationCallback,
-      kCFLocaleCurrentLocaleDidChangeNotification, 0,
+      kCFLocaleCurrentLocaleDidChangeNotification, nullptr,
       CFNotificationSuspensionBehaviorDeliverImmediately);
 }
 
@@ -154,5 +154,5 @@ bool OSPreferences::ReadDateTimePattern(DateTimeFormatStyle aDateStyle,
 void OSPreferences::RemoveObservers() {
   ::CFNotificationCenterRemoveObserver(
       ::CFNotificationCenterGetLocalCenter(), this,
-      kCTFontManagerRegisteredFontsChangedNotification, 0);
+      kCTFontManagerRegisteredFontsChangedNotification, nullptr);
 }

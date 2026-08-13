@@ -2,15 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "nsURLParsers.h"
+
 #include <string.h>
 
 #include "mozilla/RangedPtr.h"
 #include "mozilla/TextUtils.h"
-
 #include "nsCRTGlue.h"
-#include "nsURLParsers.h"
-#include "nsURLHelper.h"
 #include "nsString.h"
+#include "nsURLHelper.h"
 
 using namespace mozilla;
 

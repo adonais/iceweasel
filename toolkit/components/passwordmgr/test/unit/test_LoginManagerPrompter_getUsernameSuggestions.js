@@ -165,7 +165,7 @@ async function _test(testCase) {
 
   if (!testCase.isLoggedIn) {
     // Primary Password should be enabled and locked
-    LoginTestUtils.primaryPassword.enable();
+    await LoginTestUtils.primaryPassword.enable();
   }
 
   info("Computing results");
@@ -178,9 +178,9 @@ async function _test(testCase) {
 
   info("Cleaning up state");
   if (!testCase.isLoggedIn) {
-    LoginTestUtils.primaryPassword.disable();
+    await LoginTestUtils.primaryPassword.disable();
   }
-  LoginTestUtils.clearData();
+  await LoginTestUtils.clearData();
 }
 
 add_task(async function test_LoginManagerPrompter_getUsernameSuggestions() {

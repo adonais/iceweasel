@@ -20,9 +20,9 @@ use crash_helper_common::{
     crash_annotations::{
         should_include_annotation, type_of_annotation, CrashAnnotation, CrashAnnotationType,
     },
-    BreakpadChar, BreakpadString, ExtraCrashData, GeckoChildId, Pid,
+    AsProcessReaderHandle, ApplicationInfo, BreakpadChar, BreakpadString, ExtraCrashData, GeckoChildId, Pid, ProcessHandle,
 };
-use mozannotation_server::{AnnotationData, CAnnotation};
+use mozannotation_server::{AnnotationData, errors::AnnotationsRetrievalError, CAnnotation};
 use num_traits::FromPrimitive;
 use std::{
     collections::HashMap,
@@ -66,6 +66,8 @@ where
     // generation thread, so it needs to be `Send`.
     Self: Send,
 {
+    app_info: ApplicationInfo,
+    main_process_handle: ProcessHandle,
     #[allow(unused)]
     minidump_path: OsString,
     reports_by_pid: HashMap<Pid, Vec<CrashReport>>,
@@ -73,8 +75,14 @@ where
 }
 
 impl CrashGenerator {
-    pub(crate) fn new(minidump_path: OsString) -> CrashGenerator {
+    pub(crate) fn new(
+        main_process_handle: ProcessHandle,
+        minidump_path: OsString,
+        build_id: String
+    ) -> CrashGenerator {
         CrashGenerator {
+            app_info: ApplicationInfo::new(build_id),
+            main_process_handle,
             minidump_path,
             reports_by_pid: HashMap::<Pid, Vec<CrashReport>>::new(),
             reports_by_id: HashMap::<GeckoChildId, CrashReport>::new(),
@@ -122,8 +130,11 @@ impl CrashGenerator {
         let (error, extra_annotations) = extra_data
             .map(|d| (d.error.clone(), d.annotations.clone()))
             .unwrap_or_default();
+        let global_annotations = self.retrieve_main_process_annotations();
         let annotations = retrieve_annotations(&process_id, origin);
         let annotations = [
+            (Some(required_annotations(&self.app_info)), c"ShouldNotFail"),
+            (global_annotations.ok(), c"MissingMainProcessAnnotations"),
             (annotations.ok(), c"MissingChildProcessAnnotations"),
             (Some(extra_annotations), c"ShouldNotFail"),
         ]
@@ -143,11 +154,48 @@ impl CrashGenerator {
             .and_modify(|entry| entry.push(CrashReport::new(path, &error)))
             .or_insert_with(|| vec![CrashReport::new(path, &error)]);
     }
+
+    fn retrieve_main_process_annotations(
+        &self,
+    ) -> Result<Vec<CAnnotation>, AnnotationsRetrievalError> {
+        mozannotation_server::retrieve_annotations(
+            self.main_process_handle.as_handle(),
+            CrashAnnotation::Count as usize,
+        )
+    }
 }
 
 /******************************************************************************
  * Crash annotations                                                          *
  ******************************************************************************/
+
+fn make_annotation(id: CrashAnnotation, data: &str) -> CAnnotation {
+    CAnnotation {
+        id: id as u32,
+        data: AnnotationData::String(CString::new(data).expect("Should be a valid C string")),
+    }
+}
+
+fn required_annotations(app_info: &ApplicationInfo) -> Vec<CAnnotation> {
+    let install_time = app_info.get_install_time().to_string();
+
+    vec![
+        make_annotation(CrashAnnotation::BuildID, app_info.get_buildid()),
+        make_annotation(CrashAnnotation::InstallTime, &install_time),
+        make_annotation(CrashAnnotation::ProductID, app_info.get_app_id()),
+        make_annotation(CrashAnnotation::ProductName, app_info.get_app_name()),
+        make_annotation(
+            CrashAnnotation::ReleaseChannel,
+            app_info.get_release_channel(),
+        ),
+        make_annotation(
+            CrashAnnotation::ServerURL,
+            app_info.get_server_url().as_ref(),
+        ),
+        make_annotation(CrashAnnotation::Vendor, app_info.get_vendor()),
+        make_annotation(CrashAnnotation::Version, app_info.get_version()),
+    ]
+}
 
 macro_rules! read_numeric_annotation {
     ($t:ty,$d:expr) => {
@@ -336,7 +384,9 @@ fn write_extra_file(annotations: HashMap<u32, AnnotationData>, path: &Path) -> R
     write!(&mut file, "{{")?;
 
     for (id, value) in annotations {
-        let Some(annotation_id) = CrashAnnotation::from_u32(id) else { continue };
+        let Some(annotation_id) = CrashAnnotation::from_u32(id) else {
+            continue;
+        };
         if annotation_id == CrashAnnotation::PHCBaseAddress {
             if let AnnotationData::ByteBuffer(buff) = &value {
                 write_phc_annotations(&mut file, buff)?;
@@ -344,7 +394,9 @@ fn write_extra_file(annotations: HashMap<u32, AnnotationData>, path: &Path) -> R
 
             continue;
         }
-        let Some(value) = prepare_annotation_data(annotation_id, &value) else { continue };
+        let Some(value) = prepare_annotation_data(annotation_id, &value) else {
+            continue;
+        };
         if !value.is_empty() && should_include_annotation(annotation_id, &value) {
             write!(&mut file, "\"{annotation_id:}\":\"")?;
             file.write_all(&value)?;

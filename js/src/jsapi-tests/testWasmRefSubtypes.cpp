@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "jsapi-tests/tests.h"
-
 #include "wasm/WasmValType.h"
 
 BEGIN_TEST(testWasmRefType_LUB) {

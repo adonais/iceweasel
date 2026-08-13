@@ -14,6 +14,9 @@
 # limitations under the License.
 #
 
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load(
     "//absl:copts/configure_copts.bzl",
     "ABSL_DEFAULT_COPTS",
@@ -40,6 +43,7 @@ cc_library(
     copts = ABSL_DEFAULT_COPTS,
     linkopts = ABSL_DEFAULT_LINKOPTS,
     visibility = [
+        "//absl:friends",
         "//absl/flags:__pkg__",
     ],
     deps = [
@@ -59,6 +63,7 @@ cc_library(
     copts = ABSL_DEFAULT_COPTS,
     linkopts = ABSL_DEFAULT_LINKOPTS,
     visibility = [
+        "//absl:friends",
         "//absl/flags:__pkg__",
         "//absl/log:__pkg__",
     ],
@@ -126,7 +131,7 @@ cc_library(
     copts = ABSL_DEFAULT_COPTS,
     linkopts = ABSL_DEFAULT_LINKOPTS,
     visibility = [
-        "//visibility:private",
+        "//absl:friends",
     ],
     deps = [
         "//absl/base:config",
@@ -148,6 +153,7 @@ cc_library(
         ":commandlineflag_internal",
         "//absl/base:config",
         "//absl/base:fast_type_id",
+        "//absl/base:nullability",
         "//absl/strings",
         "//absl/types:optional",
     ],
@@ -164,7 +170,9 @@ cc_library(
     copts = ABSL_DEFAULT_COPTS,
     linkopts = ABSL_DEFAULT_LINKOPTS,
     visibility = [
+        "//absl:friends",
         "//absl/flags:__pkg__",
+        "//absl/flags/rust:__pkg__",
     ],
     deps = [
         ":commandlineflag",
@@ -192,6 +200,7 @@ cc_library(
         ":private_handle_accessor",
         "//absl/base:config",
         "//absl/base:core_headers",
+        "//absl/base:fast_type_id",
         "//absl/base:no_destructor",
         "//absl/container:flat_hash_map",
         "//absl/strings",
@@ -221,6 +230,7 @@ cc_library(
         "//absl/base:config",
         "//absl/base:core_headers",
         "//absl/base:dynamic_annotations",
+        "//absl/base:fast_type_id",
         "//absl/base:no_destructor",
         "//absl/memory",
         "//absl/meta:type_traits",
@@ -261,6 +271,7 @@ cc_library(
     copts = ABSL_DEFAULT_COPTS,
     linkopts = ABSL_DEFAULT_LINKOPTS,
     visibility = [
+        "//absl:friends",
         "//absl/flags:__pkg__",
     ],
     deps = [
@@ -404,7 +415,6 @@ cc_test(
         "//absl/numeric:int128",
         "//absl/strings",
         "//absl/time",
-        "//absl/types:optional",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -430,7 +440,6 @@ cc_binary(
         ":reflection",
         "//absl/strings",
         "//absl/time",
-        "//absl/types:optional",
         "@google_benchmark//:benchmark_main",
     ],
 )

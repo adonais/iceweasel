@@ -30,21 +30,11 @@ interface nsIUploadChannel2 : nsISupports
      *        determined by calling the stream's |available| method.
      * @param aMethod
      *        The HTTP request method to set on the stream.
-     * @param aStreamHasHeaders
-     *        True if the stream already contains headers for the HTTP request.
      */
     void explicitSetUploadStream(in nsIInputStream aStream,
                                  in ACString aContentType,
                                  in long long aContentLength,
-                                 in ACString aMethod,
-                                 in boolean aStreamHasHeaders);
-
-    /**
-     * Value of aStreamHasHeaders from the last successful call to
-     * explicitSetUploadStream.  TRUE indicates the attached upload stream
-     * contains request headers.
-     */
-    readonly attribute boolean uploadStreamHasHeaders;
+                                 in ACString aMethod);
 
     /**
      * Clones the upload stream.  May only be called in the parent process.

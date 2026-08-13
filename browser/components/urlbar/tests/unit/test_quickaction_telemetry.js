@@ -13,7 +13,7 @@ ChromeUtils.defineESModuleGetters(this, {
 
 add_task(async function test_inputLength_not_nan_in_search_mode() {
   let context = createContext("", {
-    searchMode: { source: UrlbarUtils.RESULT_SOURCE.ACTIONS },
+    searchMode: { source: UrlbarShared.RESULT_SOURCE.ACTIONS },
   });
 
   let provider = new UrlbarProviderActionsSearchMode();
@@ -38,7 +38,7 @@ add_task(async function test_inputLength_not_nan_in_search_mode() {
 
 add_task(async function test_inputLength_with_search_string_in_search_mode() {
   let context = createContext("pri", {
-    searchMode: { source: UrlbarUtils.RESULT_SOURCE.ACTIONS },
+    searchMode: { source: UrlbarShared.RESULT_SOURCE.ACTIONS },
   });
 
   let provider = new UrlbarProviderActionsSearchMode();

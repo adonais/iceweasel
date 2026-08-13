@@ -8,30 +8,30 @@
 // formal protocols
 #include "mozView.h"
 #ifdef ACCESSIBILITY
-#  include "mozilla/a11y/LocalAccessible.h"
 #  include "mozAccessibleProtocol.h"
+#  include "mozilla/a11y/LocalAccessible.h"
 #endif
 
+#include "GLContextTypes.h"
+#include "TextInputHandler.h"
+#include "gfxQuartzSurface.h"
+#include "mozilla/DataMutex.h"
+#include "mozilla/MouseEvents.h"
+#include "mozilla/Mutex.h"
+#include "mozilla/webrender/WebRenderTypes.h"
+#include "nsCocoaUtils.h"
 #include "nsISupports.h"
 #include "nsIWeakReferenceUtils.h"
-#include "TextInputHandler.h"
-#include "nsCocoaUtils.h"
-#include "gfxQuartzSurface.h"
-#include "GLContextTypes.h"
-#include "mozilla/DataMutex.h"
-#include "mozilla/Mutex.h"
 #include "nsRegion.h"
-#include "mozilla/MouseEvents.h"
-#include "mozilla/webrender/WebRenderTypes.h"
 
-#include "nsString.h"
-#include "nsIDragService.h"
-#include "ViewRegion.h"
 #include "CFTypeRefPtr.h"
+#include "ViewRegion.h"
+#include "nsIDragService.h"
+#include "nsString.h"
 
+#import <AppKit/NSOpenGL.h>
 #import <Carbon/Carbon.h>
 #import <Cocoa/Cocoa.h>
-#import <AppKit/NSOpenGL.h>
 
 class nsChildView;
 class nsCocoaWindow;

@@ -155,10 +155,10 @@ function stubFxAccountsToSimulateSignedIn() {
 
 function getRelayItemFromACPopup(popup) {
   const relayItem = Array.from(popup.querySelectorAll("richlistitem")).find(
-    item =>
-      gRelayACOptionsTitles.some(
-        title => title.value === item.getAttribute("ac-value")
-      )
+    item => {
+      const value = item.querySelector("autocomplete-row-item").value;
+      return gRelayACOptionsTitles.some(title => title.value === value);
+    }
   );
   return relayItem;
 }

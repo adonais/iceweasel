@@ -6,8 +6,9 @@
 #define ProxyAutoConfig_h_
 
 #include <functional>
-#include "nsString.h"
+
 #include "nsCOMPtr.h"
+#include "nsString.h"
 #include "nsTArray.h"
 
 class nsIEventTarget;

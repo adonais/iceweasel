@@ -256,7 +256,9 @@ class PartialConfigDict:
 
     def __getitem__(self, key):
         if self._environ_override:
-            if (key not in ("CPP", "CXXCPP", "SHELL")) and (key in os.environ):
+            if (key not in ("CC", "CPP", "CXX", "CXXCPP", "SHELL")) and (
+                key in os.environ
+            ):
                 return os.environ[key]
 
         if key not in self._dict:

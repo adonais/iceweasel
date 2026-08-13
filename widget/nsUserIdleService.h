@@ -5,15 +5,15 @@
 #ifndef nsUserIdleService_h_
 #define nsUserIdleService_h_
 
-#include "nsIUserIdleServiceInternal.h"
-#include "nsCOMPtr.h"
-#include "nsITimer.h"
-#include "nsTArray.h"
-#include "nsIObserver.h"
-#include "nsIUserIdleService.h"
-#include "nsCategoryCache.h"
-#include "nsWeakReference.h"
 #include "mozilla/TimeStamp.h"
+#include "nsCOMPtr.h"
+#include "nsCategoryCache.h"
+#include "nsIObserver.h"
+#include "nsITimer.h"
+#include "nsIUserIdleService.h"
+#include "nsIUserIdleServiceInternal.h"
+#include "nsTArray.h"
+#include "nsWeakReference.h"
 
 /**
  * Class we can use to store an observer with its associated idle time

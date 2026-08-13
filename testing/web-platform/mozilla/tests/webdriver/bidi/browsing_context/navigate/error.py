@@ -13,16 +13,11 @@ async def test_insecure_certificate(
     # loading a HTTPS page will cause an insecure certificate error
     custom_profile = create_custom_profile(clone=False)
 
-    config = deepcopy(configuration)
-    config["capabilities"]["moz:firefoxOptions"]["args"] = [
-        "--profile",
-        custom_profile.profile,
-    ]
     # Capability matching not implemented yet for WebDriver BiDi (bug 1713784)
+    config = deepcopy(configuration)
     config["capabilities"]["acceptInsecureCerts"] = False
-    config["capabilities"]["webSocketUrl"] = True
 
-    driver = geckodriver(config=config)
+    driver = geckodriver(config=config, profile=custom_profile)
     driver.new_session()
 
     bidi_session = driver.session.bidi_session

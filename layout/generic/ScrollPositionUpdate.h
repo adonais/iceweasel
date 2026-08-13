@@ -37,7 +37,12 @@ MOZ_DEFINE_ENUM_CLASS_WITH_BASE_AND_TOSTRING(
         // A scroll update by a specific amount, where only the delta is
         // provided. The delta should be applied to whatever the current scroll
         // position is on the receiver side.
-        PureRelative));
+        PureRelative,
+        // A zero-delta update: the layout scroll offset is already at the
+        // scroll destination, so there is nothing to move. It is sent only so
+        // that APZ can cancel an in-progress script-triggered scroll animation
+        // without disturbing a user-triggered one.
+        ZeroDeltaLayoutScroll));
 
 enum class ScrollTriggeredByScript : bool { No, Yes };
 
@@ -86,6 +91,10 @@ class ScrollPositionUpdate {
   static ScrollPositionUpdate NewPureRelativeScroll(ScrollOrigin aOrigin,
                                                     ScrollMode aMode,
                                                     const nsPoint& aDelta);
+
+  static ScrollPositionUpdate NewZeroDeltaLayoutScroll(
+      ScrollOrigin aOrigin, ScrollMode aMode,
+      UniquePtr<ScrollSnapTargetIds> aSnapTargetIds);
 
   bool operator==(const ScrollPositionUpdate& aOther) const;
 

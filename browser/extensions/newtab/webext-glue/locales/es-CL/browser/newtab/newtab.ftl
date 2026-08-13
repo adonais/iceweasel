@@ -93,6 +93,15 @@ home-prefs-sports-widget-header =
 # Clock is a widget on New Tab that displays time zones around the world.
 home-prefs-clocks-header =
     .label = Reloj
+# Privacy is a widget on New Tab that shows tracking protection activity.
+home-prefs-privacy-header =
+    .label = Privacidad
+# Stocks is a widget on New Tab that shows stock ticker prices.
+home-prefs-stocks-header =
+    .label = Acciones
+# Picture of the day is a widget on New Tab that shows a daily Wikimedia Commons image.
+home-prefs-picture-header =
+    .label = Imagen del día
 home-prefs-mission-message2 =
     .message = Nuestros patrocinadores apoyan nuestra misión de construir una mejor web.
 home-prefs-manage-topics-link2 =
@@ -152,6 +161,48 @@ home-prefs-support-firefox-header-srd =
     .label = Apoyar a { -brand-product-name }
 home-prefs-mission-message-learn-more-link-srd = Descubre cómo
 
+## Strings for the Privacy widget
+
+# Context menu item linking to more information about the Privacy widget.
+newtab-privacy-menu-learn-more = Aprender más
+
+## Strings for the Stocks widget
+
+# Context menu item for searching stock ticker symbols.
+newtab-stocks-menu-search = Buscar símbolos bursátiles
+# Context menu item linking to more information about the Stocks widget.
+newtab-stocks-menu-learn-more = Aprender más
+
+## Strings for the Picture of the Day widget
+
+# Title shown at the top of the widget, with the source name appended.
+# "Wikimedia Commons" is a brand name and should not be translated.
+newtab-picture-header = Imagen del día · Wikimedia Commons
+# Button that sets the current picture as the New Tab background wallpaper. The
+# button collapses to an icon when not hovered/focused, so .title is its tooltip.
+newtab-picture-set-wallpaper =
+    .label = Establecer fondo de pantalla
+    .title = Establecer fondo de pantalla
+    .aria-label = Establecer imagen del día como fondo de pantalla
+# Context menu item that opens the New Tab customization panel.
+newtab-picture-menu-manage-wallpaper = Gestionar el fondo de pantalla
+# Context menu item that hides today’s picture, replacing it with an existing
+# wallpaper.
+newtab-picture-menu-hide-photo = Ocultar la foto de hoy
+# Context menu item that restores today’s picture after it has been hidden.
+newtab-picture-menu-show-photo = Mostrar la foto de hoy
+# Context menu item linking to more information about the widget.
+newtab-picture-menu-learn-more = Más información
+# Icon button shown on the widget once the picture is hidden; restores it.
+newtab-picture-show-button =
+    .title = Mostrar la foto de hoy
+    .aria-label = Mostrar la foto de hoy
+# Shown when there is no new picture to display yet.
+newtab-picture-check-back = Vuelva mañana para ver una nueva foto
+# Screen-reader text alternative for the picture; fallback used when the source
+# provides no localized description.
+newtab-picture-image-alt = Imagen del día de Wikimedia Commons
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -187,6 +238,7 @@ newtab-topsites-add-shortcut-label = Añadir acceso directo
 newtab-topsites-add-shortcut-title =
     .title = Añadir acceso directo
     .aria-label = Añadir acceso directo
+newtab-shortcuts-pinned-area = Área fijada
 newtab-topsites-title-label = Título
 newtab-topsites-title-input =
     .placeholder = Ingresar un título
@@ -472,6 +524,8 @@ newtab-recommended-stories-toggle =
     .label = Historias recomendadas
 newtab-custom-stories-personalized-toggle =
     .label = Historias
+newtab-custom-stories-personalized-checkbox =
+    .label = Historias personalizadas basadas en tu actividad
 newtab-custom-stories-personalized-checkbox-label = Historias personalizadas basadas en tu actividad
 newtab-custom-pocket-sponsored = Historias patrocinadas
 newtab-custom-pocket-show-recent-saves = Mostrar guardados recientes
@@ -492,6 +546,12 @@ newtab-custom-widget-clock-toggle =
     .label = Reloj
 newtab-custom-widget-sports-toggle2 =
     .label = Deportes
+newtab-custom-widget-privacy-toggle =
+    .label = Privacidad
+newtab-custom-widget-stocks-toggle =
+    .label = Acciones
+newtab-custom-widget-picture-toggle =
+    .label = Imagen del día
 newtab-custom-widget-section-title = Widgets
 newtab-custom-widget-section-toggle =
     .label = Widgets
@@ -968,6 +1028,8 @@ newtab-widget-timer-reset =
 newtab-widget-timer-menu-notifications = Desactivar notificaciones
 newtab-widget-timer-menu-notifications-on = Activar notificaciones
 newtab-widget-timer-menu-learn-more = Más información
+newtab-widget-timer-menu-button =
+    .aria-label = Opciones de temporizador
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = Titulares principales
 newtab-daily-briefing-card-menu-dismiss = Ocultar
@@ -1082,6 +1144,8 @@ newtab-sports-widget-show-less =
 # Toggle that filters the list of teams the user follows
 newtab-sports-widget-followed-only-toggle =
     .label = Solo equipos seguidos
+# Status shown when more matches are being fetched.
+newtab-sports-widget-loading-more = Cargando más partidos…
 # Watch is a verb (as in watch matches online).
 newtab-sports-widget-watch =
     .label = Ver
@@ -1161,6 +1225,9 @@ newtab-sports-widget-third-place = Tercer lugar
 newtab-sports-widget-runner-up = Subcampeón
 newtab-sports-widget-champions = Campeones
 newtab-sports-widget-world-cup-champions = Campeones de la Copa Mundial 2026
+# Compact champions label for the medium-size widget result card; the larger
+# card uses newtab-sports-widget-world-cup-champions.
+newtab-sports-widget-world-cup-champions-short = Campeones del 2026
 # Variables:
 #   $date (Date) - The match start time
 newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
@@ -1259,12 +1326,23 @@ newtab-sports-widget-team-tbd = Por determinar
 newtab-sports-widget-message-wallpapers-title = Da el puntapié inicial a la Copa del Mundo con nuevos fondos de pantalla
 newtab-sports-widget-message-wallpapers-body = Recibe la energía de los partidos en tu navegador.
 newtab-sports-widget-message-wallpapers-cta = Elegir fondo de pantalla
+newtab-sports-widget-message-wallpapers-semifinals-title = Consigue un nuevo fondo de pantalla para las semifinales
+newtab-sports-widget-message-wallpapers-semifinals-body = Prepara el escenario para los partidos más importantes del Mundial.
 newtab-sports-widget-message-add-widgets-cta =
     .label = Añadir widgets
 newtab-sports-widget-message-day-in-play-title = Llena tu día con los partidos usando los widgets de { -brand-product-name }
 newtab-sports-widget-message-day-in-play-body = Sigue el Mundial, mantente al día con tus tareas, controla el tiempo en todo el mundo y mucho más.
 newtab-sports-widget-message-explore-widgets-cta =
     .label = Explorar widgets
+
+## Survey prompts shown after the World Cup to gather feedback on the widgets experience.
+
+newtab-sports-widget-message-survey-title = Ayúdanos a mejorar los widgets
+newtab-sports-widget-message-survey-body = ¡Se acabó el Mundial! Comparte tu opinión sobre la experiencia.
+newtab-sports-widget-message-survey-widget-title = ¿Qué tal estuvo el widget del Mundial?
+newtab-sports-widget-message-survey-widget-body = Comparte tus comentarios para ayudarnos a mejorar los widgets futuros. Luego, prueba el nuevo en tu colección.
+newtab-sports-widget-message-survey-cta =
+    .label = Responder encuesta
 
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input

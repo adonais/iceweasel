@@ -25,6 +25,25 @@ function finish() {
   }
 }
 
+// Register an async test body to run once per dom.worker.remoteDebugger.enabled
+// value, so worker-debugger introspection is exercised against both the local
+// WorkerDebugger and the parent-process RemoteWorkerDebugger -- keeping both
+// covered on CI regardless of the channel default (bug 1944240).
+function addTaskWithBothWorkerDebuggers(testBody) {
+  for (const remoteDebuggerEnabled of [false, true]) {
+    add_task(async function () {
+      await SpecialPowers.pushPrefEnv({
+        set: [["dom.worker.remoteDebugger.enabled", remoteDebuggerEnabled]],
+      });
+      info(
+        "Running with dom.worker.remoteDebugger.enabled=" +
+          remoteDebuggerEnabled
+      );
+      await testBody();
+    });
+  }
+}
+
 function assertThrows(fun, message) {
   let throws = false;
   try {
@@ -39,9 +58,17 @@ function generateDebuggers() {
   return wdm.getWorkerDebuggerEnumerator();
 }
 
+// A worker debugger's URL is the worker's absolute script URL when it is exposed
+// through the parent-process RemoteWorkerDebugger, but the (possibly relative)
+// URL passed to the Worker constructor for the local WorkerDebugger. Match
+// either form so these helpers work regardless of the debugger mechanism.
+function workerDebuggerURLMatches(dbgUrl, url) {
+  return dbgUrl === url || dbgUrl.endsWith("/" + url);
+}
+
 function findDebugger(url) {
   for (let dbg of generateDebuggers()) {
-    if (dbg.url === url) {
+    if (workerDebuggerURLMatches(dbg.url, url)) {
       return dbg;
     }
   }
@@ -52,7 +79,7 @@ function waitForRegister(url, dbgUrl) {
   return new Promise(function (resolve) {
     wdm.addListener({
       onRegister(dbg) {
-        if (dbg.url !== url) {
+        if (!workerDebuggerURLMatches(dbg.url, url)) {
           return;
         }
         ok(true, "Debugger with url " + url + " should be registered.");
@@ -71,7 +98,7 @@ function waitForUnregister(url) {
   return new Promise(function (resolve) {
     wdm.addListener({
       onUnregister(dbg) {
-        if (dbg.url !== url) {
+        if (!workerDebuggerURLMatches(dbg.url, url)) {
           return;
         }
         ok(true, "Debugger with url " + url + " should be unregistered.");

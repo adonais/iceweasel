@@ -26,10 +26,7 @@ class IPProtectionPromptPreferencesMiddlewareTest {
     @Before
     fun setup() {
         settings = Settings(testContext)
-        repository = DefaultIPProtectionPromptRepository(
-            settings = settings,
-            installedTimeMillis = { 0L },
-        )
+        repository = DefaultIPProtectionPromptRepository(settings)
         middleware = IPProtectionPromptPreferencesMiddleware(repository)
     }
 

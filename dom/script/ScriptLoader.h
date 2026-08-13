@@ -5,16 +5,15 @@
 #ifndef mozilla_dom_ScriptLoader_h
 #define mozilla_dom_ScriptLoader_h
 
-#include "ModuleLoader.h"
 #include "SharedScriptCache.h"
 #include "js/TypeDecls.h"
 #include "js/Utility.h"                     // JS::FreePolicy
 #include "js/experimental/CompileScript.h"  // JS::FrontendContext
 #include "js/loader/LoadedScript.h"
-#include "js/loader/ModuleLoaderBase.h"
 #include "js/loader/ScriptKind.h"
 #include "js/loader/ScriptLoadRequest.h"
 #include "js/loader/ScriptLoadRequestList.h"
+#include "js/loader/ScriptLoaderInterface.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/MozPromise.h"

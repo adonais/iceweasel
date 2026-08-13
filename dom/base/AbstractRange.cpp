@@ -348,9 +348,11 @@ nsresult AbstractRange::SetStartAndEndInternal(
       if (aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes &&
           !IsRootUAWidget(newStartRoot) && !IsRootUAWidget(newEndRoot)) {
         const auto startInFlat =
-            aStartBoundary.AsRangeBoundaryInFlatTree(RangeBoundaryFor::Start);
+            aStartBoundary.AsRangeBoundaryInFlatTreeOrNonFlattenedNode(
+                RangeBoundaryFor::Start);
         const auto endInFlat =
-            aEndBoundary.AsRangeBoundaryInFlatTree(RangeBoundaryFor::End);
+            aEndBoundary.AsRangeBoundaryInFlatTreeOrNonFlattenedNode(
+                RangeBoundaryFor::End);
         if (MOZ_UNLIKELY(!startInFlat.IsSet() || !endInFlat.IsSet())) {
           NS_WARNING_ASSERTION(
               !startInFlat.IsSet(),
@@ -378,7 +380,7 @@ nsresult AbstractRange::SetStartAndEndInternal(
   const bool useFlatTree =
       aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes;
   const Maybe<int32_t> pointOrder =
-      useFlatTree ? nsContentUtils::ComparePoints<TreeKind::Flat>(
+      useFlatTree ? nsContentUtils::ComparePoints<TreeKind::FlatForSelection>(
                         aStartBoundary, aEndBoundary)
                   : nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
                         aStartBoundary, aEndBoundary);
@@ -420,15 +422,16 @@ nsresult AbstractRange::SetStartAndEndInternal(
       aRange->IsDynamicRange()) {
     const bool isCollapsing = aStartBoundary == aEndBoundary;
     const auto startInFlat = aStartBoundary
-                                 .AsRangeBoundaryInFlatTree(
+                                 .AsRangeBoundaryInFlatTreeOrNonFlattenedNode(
                                      isCollapsing ? RangeBoundaryFor::Collapsed
                                                   : RangeBoundaryFor::Start)
                                  .AsRaw();
     const auto endInFlat =
-        isCollapsing
-            ? startInFlat
-            : aEndBoundary.AsRangeBoundaryInFlatTree(RangeBoundaryFor::End)
-                  .AsRaw();
+        isCollapsing ? startInFlat
+                     : aEndBoundary
+                           .AsRangeBoundaryInFlatTreeOrNonFlattenedNode(
+                               RangeBoundaryFor::End)
+                           .AsRaw();
     if (MOZ_UNLIKELY(!startInFlat.IsSet() || !endInFlat.IsSet())) {
       NS_WARNING_ASSERTION(
           !startInFlat.IsSet(),
@@ -456,20 +459,33 @@ bool AbstractRange::IsInSelection(const Selection& aSelection) const {
   return mSelections.Contains(&aSelection);
 }
 
-void AbstractRange::RegisterSelection(Selection& aSelection) {
+nsresult AbstractRange::RegisterSelection(Selection& aSelection) {
   if (IsInSelection(aSelection)) {
-    return;
+    return NS_OK;
   }
-  bool isFirstSelection = mSelections.IsEmpty();
+  const Maybe<nsINode*> commonAncestor = [&]() -> Maybe<nsINode*> {
+    const bool isFirstSelection = mSelections.IsEmpty();
+    const bool isValidRange = !IsStaticRange() || AsStaticRange()->IsValid();
+    if (isFirstSelection && !mRegisteredClosestCommonInclusiveAncestor &&
+        isValidRange) {
+      return Some(GetClosestCommonInclusiveAncestor(
+          AllowRangeCrossShadowBoundary::Yes));
+    }
+    return Nothing{};
+  }();
+  if (commonAncestor.isSome() && NS_WARN_IF(!commonAncestor.value()))
+      [[unlikely]] {
+    NS_WARNING(
+        fmt::format("start:{}", MayCrossShadowBoundaryStartRef()).c_str());
+    NS_WARNING(fmt::format("end:  {}", MayCrossShadowBoundaryEndRef()).c_str());
+    MOZ_ASSERT_UNREACHABLE("The boundaries must be connected");
+    return NS_ERROR_FAILURE;
+  }
   mSelections.AppendElement(&aSelection);
-  const bool isValidRange = !IsStaticRange() || AsStaticRange()->IsValid();
-  if (isFirstSelection && !mRegisteredClosestCommonInclusiveAncestor &&
-      isValidRange) {
-    nsINode* commonAncestor =
-        GetClosestCommonInclusiveAncestor(AllowRangeCrossShadowBoundary::Yes);
-    MOZ_ASSERT(commonAncestor, "unexpected disconnected nodes");
-    RegisterClosestCommonInclusiveAncestor(commonAncestor);
+  if (commonAncestor.isSome()) {
+    RegisterClosestCommonInclusiveAncestor(commonAncestor.value());
   }
+  return NS_OK;
 }
 
 const nsTArray<WeakPtr<Selection>>& AbstractRange::GetSelections() const {
@@ -861,7 +877,7 @@ static void CollectClientRectsForSubtree(
     return;
   }
 
-  FlattenedChildIterator childIter(content);
+  FlattenedChildIteratorForSelection childIter(content);
   for (nsIContent* child = childIter.GetNextChild(); child;
        child = childIter.GetNextChild()) {
     CollectClientRectsForSubtree(child, aCollector, aTextList, aStartContainer,

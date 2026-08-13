@@ -5,11 +5,11 @@
 #ifndef mozilla_layers_MockHitTester_h
 #define mozilla_layers_MockHitTester_h
 
+#include <queue>
+
 #include "apz/src/IAPZHitTester.h"
 #include "mozilla/gfx/CompositorHitTestInfo.h"
 #include "mozilla/layers/LayersTypes.h"
-
-#include <queue>
 
 namespace mozilla::layers {
 

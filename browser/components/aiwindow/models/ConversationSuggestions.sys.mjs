@@ -110,18 +110,34 @@ const formatJson = obj => {
 
 export const NewTabStarterGenerator = {
   writingPrompts: [
-    "Write a first draft",
-    "Improve writing",
-    "Proofread a message",
+    "aiwindow-starter-writing-first-draft",
+    "aiwindow-starter-writing-improve",
+    "aiwindow-starter-writing-proofread",
   ],
 
-  planningPrompts: ["Simplify a topic", "Brainstorm ideas", "Help make a plan"],
+  planningPrompts: [
+    "aiwindow-starter-planning-simplify",
+    "aiwindow-starter-planning-brainstorm",
+    "aiwindow-starter-planning-plan",
+  ],
 
   // TODO: discuss with design about updating phrasing to "pages" instead of "tabs"
   browsingPrompts: [
-    { text: "Find tabs in history", minTabs: 0, needsHistory: true },
-    { text: "Summarize tabs", minTabs: 1, needsHistory: false },
-    { text: "Compare tabs", minTabs: 2, needsHistory: false },
+    {
+      id: "aiwindow-starter-browsing-history",
+      minTabs: 0,
+      needsHistory: true,
+    },
+    {
+      id: "aiwindow-starter-browsing-summarize",
+      minTabs: 1,
+      needsHistory: false,
+    },
+    {
+      id: "aiwindow-starter-browsing-compare",
+      minTabs: 2,
+      needsHistory: false,
+    },
   ],
 
   getRandom(arr) {
@@ -129,13 +145,13 @@ export const NewTabStarterGenerator = {
   },
 
   /**
-   * Generate conversation starter prompts based on number of open tabs and browsing history prefs.
+   * Generate conversation starter prompt l10n ids based on number of open tabs and browsing history prefs.
    * "places.history.enabled" covers "Remember browsing and download history" while
    * "browser.privatebrowsing.autostart" covers "Always use private mode" and "Never remember history".
    * We need to check both prefs to cover all cases where history can be disabled.
    *
    * @param {number} tabCount - number of open tabs
-   * @returns {Promise<Array>} Array of {text, type} suggestion objects
+   * @returns {Array<{l10nId: string, type: string}>} suggestion objects with l10nId and type
    */
   async getPrompts(tabCount) {
     const historyEnabled = Services.prefs.getBoolPref("places.history.enabled");
@@ -154,16 +170,12 @@ export const NewTabStarterGenerator = {
       ? this.getRandom(validBrowsingPrompts)
       : null;
 
-    const prompts = [
-      { text: writingPrompt, type: "chat" },
-      { text: planningPrompt, type: "chat" },
-    ];
-
+    const ids = [writingPrompt, planningPrompt];
     if (browsingPrompt) {
-      prompts.push({ text: browsingPrompt.text, type: "chat" });
+      ids.push(browsingPrompt.id);
     }
 
-    return prompts;
+    return ids.map(l10nId => ({ l10nId, type: "chat" }));
   },
 };
 
@@ -237,6 +249,7 @@ export async function generateConversationStartersSidebar(
       open_tabs: openedTabs,
       n: String(n),
       date: today,
+      locale: Services.locale.appLocaleAsBCP47,
       assistant_limitations: assistantLimitations,
     });
 

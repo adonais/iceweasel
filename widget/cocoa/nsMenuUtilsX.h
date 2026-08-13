@@ -5,8 +5,8 @@
 #ifndef nsMenuUtilsX_h_
 #define nsMenuUtilsX_h_
 
-#include "nscore.h"
 #include "nsStringFwd.h"
+#include "nscore.h"
 
 #import <Cocoa/Cocoa.h>
 

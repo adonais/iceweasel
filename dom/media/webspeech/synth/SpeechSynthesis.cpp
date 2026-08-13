@@ -4,6 +4,7 @@
 
 #include "SpeechSynthesis.h"
 
+#include "AutoplayPolicy.h"
 #include "mozilla/Logging.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
@@ -115,6 +116,19 @@ bool SpeechSynthesis::HasVoices() const {
 
 void SpeechSynthesis::Speak(SpeechSynthesisUtterance& aUtterance) {
   if (!mInnerID) {
+    return;
+  }
+
+  // While the platform has interrupted the tab's audio the page cannot start
+  // speech. Notify the page with an error event rather than dropping the
+  // utterance silently, so it can retry once the interruption ends.
+  // TODO(bug 2050310): this should be a SpeechSynthesisErrorEvent carrying the
+  // "not-allowed" error code; Firefox currently dispatches speech errors as a
+  // plain SpeechSynthesisEvent without a code.
+  if (media::AutoplayPolicy::IsAudioInterruptedByPlatform(GetOwnerWindow())) {
+    LOG(LogLevel::Debug,
+        ("SpeechSynthesis::Speak blocked, audio interrupted by platform"));
+    aUtterance.DispatchSpeechSynthesisEvent(u"error"_ns, 0, nullptr, 0, u""_ns);
     return;
   }
 

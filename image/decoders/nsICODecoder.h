@@ -5,14 +5,14 @@
 #ifndef mozilla_image_decoders_nsICODecoder_h
 #define mozilla_image_decoders_nsICODecoder_h
 
-#include "StreamingLexer.h"
 #include "Decoder.h"
 #include "Downscaler.h"
+#include "ICOFileHeaders.h"
+#include "StreamingLexer.h"
 #include "imgFrame.h"
 #include "mozilla/gfx/2D.h"
 #include "nsBMPDecoder.h"
 #include "nsPNGDecoder.h"
-#include "ICOFileHeaders.h"
 
 namespace mozilla {
 namespace image {

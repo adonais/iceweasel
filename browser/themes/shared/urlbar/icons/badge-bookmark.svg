@@ -1,0 +1,21 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at https://mozilla.org/MPL/2.0/. -->
+<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<view id="ltr-icon" viewBox="0 0 24 24"/>
+<view id="ltr-mask" viewBox="24 0 24 24"/>
+<view id="rtl-icon" viewBox="48 0 24 24"/>
+<view id="rtl-mask" viewBox="72 0 24 24"/>
+<path id="icon" transform="translate(10 10)" fill="context-fill" d="M10.63 13.866a1 1 0 0 1-.483-.128 15 15 0 0 1-2.369-1.654.42.42 0 0 0-.555 0c-.39.334-.805.651-1.233.947-.358.246-.74.484-1.136.707a.96.96 0 0 1-1.07-.074.94.94 0 0 1-.342-.994l.811-3.186a13 13 0 0 1-2.71-1.972.93.93 0 0 1-.234-1.004.96.96 0 0 1 .848-.639l3.34-.216 1.111-2.792a.945.945 0 0 1 .892-.605c.401 0 .744.232.892.605l1.111 2.792 3.34.216c.39.026.715.271.848.639a.93.93 0 0 1-.234 1.004q-.286.272-.574.512a13 13 0 0 1-2.136 1.46l.811 3.187a.94.94 0 0 1-.342.993.96.96 0 0 1-.587.202z"/>
+<g id="mask" transform="translate(24 0)">
+  <clipPath id="mask-clip">
+    <rect x="0" y="0" width="24" height="24"/>
+  </clipPath>
+  <g clip-path="url(#mask-clip)">
+    <rect fill="#fff" x="0" y="0" width="24" height="24"/>
+    <path transform="translate(10 10)" fill="#000" d="M7.5 1.002a2.2 2.2 0 0 0-2.054 1.392l-.819 2.059-2.553.165A2.22 2.22 0 0 0 .131 6.08 2.19 2.19 0 0 0 .68 8.415q.317.302.636.567.706.595 1.494 1.098l-.581 2.28a2.2 2.2 0 0 0 .794 2.296c.388.3.855.46 1.346.46a2.26 2.26 0 0 0 1.091-.285 16 16 0 0 0 2.04-1.359q.387.302.801.588c.385.264.799.522 1.231.766.341.19.72.289 1.098.289.491 0 .958-.16 1.35-.462a2.2 2.2 0 0 0 .79-2.295l-.58-2.279a14.3 14.3 0 0 0 2.131-1.666 2.19 2.19 0 0 0 .547-2.334 2.22 2.22 0 0 0-1.942-1.462l-2.553-.165-.819-2.059A2.2 2.2 0 0 0 7.5 1z"/>
+  </g>
+</g>
+<use href="#icon" transform="translate(72 0) scale(-1 1)"/>
+<use href="#mask" transform="translate(120 0) scale(-1 1)"/>
+</svg>

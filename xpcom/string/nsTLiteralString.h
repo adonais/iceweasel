@@ -5,8 +5,8 @@
 #ifndef nsTLiteralString_h
 #define nsTLiteralString_h
 
-#include "nsTStringRepr.h"
 #include "mozilla/StaticString.h"
+#include "nsTStringRepr.h"
 
 /**
  * nsTLiteralString_CharT

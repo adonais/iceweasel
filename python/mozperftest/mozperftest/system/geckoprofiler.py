@@ -38,7 +38,7 @@ GECKOVIEW_CONFIG_PATH_PREFIX = "/data/local/tmp"
 
 DEFAULT_GECKOPROFILER_OPTS = {
     "interval": 5,
-    "features": "js,stackwalk,screenshots,ipcmessages,java,cpu,memory",
+    "features": "js,stackwalk,screenshots,ipcmessages,java,memory",
     "filters": "GeckoMain,Compositor,Renderer,IPDL Background,socket",
 }
 

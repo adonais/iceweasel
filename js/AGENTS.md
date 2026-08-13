@@ -57,9 +57,9 @@ malloc.
 ## Documentation
 
 In-tree docs are under `src/doc/`:
-- `gc.rst` — GC architecture
-- `build.rst` — build system details
-- `test.rst` — test infrastructure
+- `gc.md` — GC architecture
+- `build.md` — build system details
+- `test.md` — test infrastructure
 - `hacking_tips.md` — practical engine-hacking notes
 - `MIR-optimizations/` — Ion MIR optimization reference
 - `bytecode_checklist.md`, `feature_checklist.md` — checklists when adding

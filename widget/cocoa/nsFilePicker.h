@@ -7,8 +7,8 @@
 #define nsFilePicker_h_
 
 #include "nsBaseFilePicker.h"
-#include "nsString.h"
 #include "nsCOMArray.h"
+#include "nsString.h"
 #include "nsTArray.h"
 
 class nsIFile;
@@ -43,6 +43,11 @@ class nsFilePicker final : public nsBaseFilePicker {
    * Returns nil if no filter currently apply.
    */
   NSArray* GetFilterList();
+
+  // Exposed for the panel delegate (MOZFilePickerInputProtector), which lives
+  // outside the class, so it can veto confirmations that arrive before the
+  // input-protection window elapses.
+  using nsBaseFilePicker::IsPickerInputProtected;
 
  protected:
   virtual ~nsFilePicker();

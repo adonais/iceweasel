@@ -425,6 +425,22 @@ TEST_F(TestNrSocketTest, SafePortAcceptedTCP) {
   ASSERT_FALSE(NrSocketBase::IsForbiddenAddress(&address));
 }
 
+TEST_F(TestNrSocketTest, WebrtcGoodPortAcceptedUDP) {
+  nr_transport_addr address;
+  // Port 53 is on Necko's generic block list but is explicitly allowed for
+  // webrtc to allow punching through overzealous NATs.
+  ASSERT_FALSE(
+      nr_str_port_to_transport_addr("127.0.0.1", 53, IPPROTO_UDP, &address));
+  ASSERT_FALSE(NrSocketBase::IsForbiddenAddress(&address));
+}
+
+TEST_F(TestNrSocketTest, WebrtcGoodPortAcceptedTCP) {
+  nr_transport_addr address;
+  ASSERT_FALSE(
+      nr_str_port_to_transport_addr("127.0.0.1", 53, IPPROTO_TCP, &address));
+  ASSERT_FALSE(NrSocketBase::IsForbiddenAddress(&address));
+}
+
 TEST_F(TestNrSocketTest, PublicConnectivity) {
   CreatePublicAddrs(2);
 

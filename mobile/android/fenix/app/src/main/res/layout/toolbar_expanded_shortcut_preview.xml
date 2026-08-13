@@ -23,7 +23,7 @@
         android:layout_width="24dp"
         android:layout_height="24dp"
         android:contentDescription="@null"
-        app:tint="@color/fx_mobile_icon_color_accent_violet"
+        app:tint="?attr/colorPrimary"
         app:layout_constraintStart_toStartOf="@id/toolbar_expanded_preview"
         app:layout_constraintEnd_toEndOf="@id/toolbar_expanded_preview"
         app:layout_constraintTop_toTopOf="@id/toolbar_expanded_preview"

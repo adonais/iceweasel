@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -55,6 +54,7 @@ import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE_SPONSORED_STORY
 import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE_STORY
 import org.mozilla.fenix.home.ui.HomepageTestTag.POCKET_STORIES
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.wallpapers.WallpaperTheme
 import kotlin.math.roundToInt
 
 private const val DEFAULT_MAX_LINES = 2
@@ -169,7 +169,7 @@ fun ContentRecommendationStory(
 fun Stories(
     @PreviewParameter(StoryProvider::class) stories: List<PocketStory>,
     contentPadding: Dp,
-    backgroundColor: Color = MaterialTheme.colorScheme.surfaceBright,
+    backgroundColor: Color = WallpaperTheme.cardBackgroundColor,
     onStoryShown: (PocketStory, Triple<Int, Int, Int>) -> Unit,
     onStoryClicked: (PocketStory, Triple<Int, Int, Int>) -> Unit,
 ) {

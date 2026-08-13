@@ -1,7 +1,4 @@
-add_task(async function () {
-  info("Starting subResources test");
-
-  await SpecialPowers.flushPrefEnv();
+add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       [
@@ -17,9 +14,15 @@ add_task(async function () {
       ["privacy.trackingprotection.annotate_channels", true],
     ],
   });
-
   await UrlClassifierTestUtils.addTestTrackers();
+  registerCleanupFunction(async () => {
+    await UrlClassifierTestUtils.cleanupTestTrackers();
+    await clearSiteTestData();
+  });
+});
 
+add_task(async function () {
+  info("Starting subResources test");
   info("Creating a new tab");
   let tab = BrowserTestUtils.addTab(gBrowser, TEST_TOP_PAGE);
   gBrowser.selectedTab = tab;
@@ -123,15 +126,4 @@ add_task(async function () {
 
   info("Removing the tab");
   BrowserTestUtils.removeTab(tab);
-
-  UrlClassifierTestUtils.cleanupTestTrackers();
-});
-
-add_task(async function () {
-  info("Cleaning up.");
-  await new Promise(resolve => {
-    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-      resolve()
-    );
-  });
 });

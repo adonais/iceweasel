@@ -8,8 +8,8 @@
 #include "mozilla/BasicEvents.h"
 #include "mozilla/JSEventHandler.h"
 #include "mozilla/LookAndFeel.h"
-#include "mozilla/Preferences.h"
 #include "mozilla/TextEvents.h"
+#include "mozilla/Utf16.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Event.h"
@@ -24,7 +24,6 @@
 #include "nsCOMPtr.h"
 #include "nsCRT.h"
 #include "nsContentUtils.h"
-#include "nsDOMCID.h"
 #include "nsFocusManager.h"
 #include "nsGkAtoms.h"
 #include "nsGlobalWindowCommands.h"
@@ -35,15 +34,12 @@
 #include "nsIScriptError.h"
 #include "nsIWeakReferenceUtils.h"
 #include "nsJSUtils.h"
-#include "nsNameSpaceManager.h"
 #include "nsPIDOMWindow.h"
 #include "nsPIWindowRoot.h"
-#include "nsQueryObject.h"
 #include "nsReadableUtils.h"
 #include "nsString.h"
 #include "nsUnicharUtils.h"
 #include "nsXULElement.h"
-#include "xpcpublic.h"
 
 namespace mozilla {
 
@@ -428,7 +424,7 @@ bool KeyEventHandler::KeyEventMatched(
       } else {
         code = aDomKeyboardEvent->CharCode();
       }
-      if (IS_IN_BMP(code)) {
+      if (IsInBMP(code)) {
         code = ToLowerCase(char16_t(code));
       }
     } else {

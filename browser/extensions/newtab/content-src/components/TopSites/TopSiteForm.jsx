@@ -207,15 +207,6 @@ export class TopSiteForm extends React.PureComponent {
       customScreenshotUrl &&
       this.props.previewUrl === this.cleanUrl(customScreenshotUrl);
 
-    if (!this.state.showCustomScreenshotForm) {
-      return (
-        <A11yLinkButton
-          onClick={this.onEnableScreenshotUrlForm}
-          className="enable-custom-image-input"
-          data-l10n-id="newtab-topsites-use-image-link"
-        />
-      );
-    }
     return (
       <div className="custom-image-input-container">
         <TopSiteFormInput
@@ -298,7 +289,8 @@ export class TopSiteForm extends React.PureComponent {
                 placeholderId="newtab-topsites-url-input"
                 errorMessageId="newtab-topsites-url-validation"
               />
-              {this._renderCustomScreenshotInput()}
+              {this.state.showCustomScreenshotForm &&
+                this._renderCustomScreenshotInput()}
             </div>
             <TopSiteLink
               link={previewLink}
@@ -307,35 +299,44 @@ export class TopSiteForm extends React.PureComponent {
             />
           </div>
         </div>
-        <section className="actions">
-          <moz-button-group className="button-group">
-            <moz-button
-              id="topsites-form-cancel-button"
-              type="default"
-              data-l10n-id="newtab-topsites-cancel-button"
-              onClick={this.onCancelButtonClick}
+        <footer className="topsite-form-footer">
+          {!this.state.showCustomScreenshotForm && (
+            <A11yLinkButton
+              onClick={this.onEnableScreenshotUrlForm}
+              className="enable-custom-image-input"
+              data-l10n-id="newtab-topsites-use-custom-image-link"
             />
-            {previewMode ? (
+          )}
+          <section className="actions">
+            <moz-button-group className="button-group">
               <moz-button
-                id="topsites-form-preview-button"
-                type="primary"
-                data-l10n-id="newtab-topsites-preview-button"
-                onClick={this.onPreviewButtonClick}
+                id="topsites-form-cancel-button"
+                type="default"
+                data-l10n-id="newtab-topsites-cancel-button"
+                onClick={this.onCancelButtonClick}
               />
-            ) : (
-              <moz-button
-                id="topsites-form-save-button"
-                type="primary"
-                data-l10n-id={
-                  showAsAdd
-                    ? "newtab-topsites-add-button"
-                    : "newtab-topsites-save-button"
-                }
-                onClick={this.onDoneButtonClick}
-              />
-            )}
-          </moz-button-group>
-        </section>
+              {previewMode ? (
+                <moz-button
+                  id="topsites-form-preview-button"
+                  type="primary"
+                  data-l10n-id="newtab-topsites-preview-button"
+                  onClick={this.onPreviewButtonClick}
+                />
+              ) : (
+                <moz-button
+                  id="topsites-form-save-button"
+                  type="primary"
+                  data-l10n-id={
+                    showAsAdd
+                      ? "newtab-topsites-add-button"
+                      : "newtab-topsites-save-button"
+                  }
+                  onClick={this.onDoneButtonClick}
+                />
+              )}
+            </moz-button-group>
+          </section>
+        </footer>
       </form>
     );
   }

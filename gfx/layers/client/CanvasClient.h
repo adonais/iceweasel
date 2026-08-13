@@ -7,16 +7,14 @@
 
 #include "mozilla/Assertions.h"                 // for MOZ_ASSERT, etc
 #include "mozilla/RefPtr.h"                     // for RefPtr, already_AddRefed
+#include "mozilla/gfx/Point.h"                  // for IntSize
+#include "mozilla/gfx/Types.h"                  // for SurfaceFormat
 #include "mozilla/layers/CompositableClient.h"  // for CompositableClient
 #include "mozilla/layers/CompositorTypes.h"     // for TextureInfo, etc
 #include "mozilla/layers/LayersSurfaces.h"      // for SurfaceDescriptor
-#include "mozilla/layers/TextureClient.h"       // for TextureClient, etc
 #include "mozilla/layers/PersistentBufferProvider.h"
-
-#include "mozilla/mozalloc.h"  // for operator delete
-
-#include "mozilla/gfx/Point.h"  // for IntSize
-#include "mozilla/gfx/Types.h"  // for SurfaceFormat
+#include "mozilla/layers/TextureClient.h"  // for TextureClient, etc
+#include "mozilla/mozalloc.h"              // for operator delete
 
 namespace mozilla {
 namespace layers {

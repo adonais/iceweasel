@@ -5,10 +5,9 @@
 #include <windows.h>
 #include <winnetwk.h>
 
+#include "gtest/gtest.h"
 #include "mozilla/FileUtilsWin.h"
 #include "nsCRTGlue.h"
-
-#include "gtest/gtest.h"
 
 class DriveMapping {
  public:

@@ -456,7 +456,6 @@ add_task(async function test_fetch_weather_with_geolocation() {
         locationName: undefined,
         ...expected,
         timeoutMs: 7000,
-        endpointUrl: undefined,
       });
     } else {
       sinon.assert.notCalled(stub);

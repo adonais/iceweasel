@@ -15,6 +15,7 @@
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoStyleRuleMap.h"
 #include "mozilla/ServoStyleSet.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/css/Rule.h"
 #include "mozilla/dom/BindContext.h"
@@ -64,7 +65,7 @@ ShadowRoot::ShadowRoot(Element* aElement, ShadowRootMode aMode,
                        IsClonable aIsClonable, IsSerializable aIsSerializable,
                        Declarative aDeclarative,
                        CustomSlotDispatch aCustomSlotDispatch,
-                       const Maybe<CustomElementRegistry*> aRegistry,
+                       const Maybe<RefPtr<CustomElementRegistry>> aRegistry,
                        already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : DocumentFragment(std::move(aNodeInfo)), DocumentOrShadowRoot(this) {
   if (StaticPrefs::dom_scoped_custom_element_registries_enabled() &&
@@ -782,19 +783,6 @@ void ShadowRoot::MaybeReassignContent(nsIContent& aElementOrText) {
   }
 }
 
-bool ShadowRoot::IsUAShadowRootSlow() const {
-  if (IsUAWidget()) {
-    return true;  // E.g., <details>, <video>, etc.
-  }
-  Element* const host = GetHost();
-  if (!host) {
-    return false;
-  }
-  // SVG <use>, etc cannot attach shadow root from JS so that the shadow root
-  // for them is always a UA ShadowRoot.
-  return !host->CanAttachShadowDOM();
-}
-
 Element* ShadowRoot::GetActiveElement() {
   return GetRetargetedFocusedElement();
 }
@@ -1072,7 +1060,6 @@ CustomElementRegistry* ShadowRoot::GetCustomElementRegistry() {
     case CustomElementRegistryState::Scoped: {
       RefPtr<CustomElementRegistry> registry =
           CustomElementRegistry::GetScopedRegistry(*this);
-      MOZ_ASSERT(registry);
       return registry;
     }
   }

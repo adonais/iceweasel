@@ -79,7 +79,8 @@ inline bool TreeIterator<ChildIterator>::Seek(nsIContent& aContent) {
   IteratorArray parentIterators;
   nsIContent* current = &aContent;
   while (current != &mRoot) {
-    nsIContent* parent = ChildIterator::GetParent(*current);
+    nsIContent* const parent =
+        nsIContent::FromNodeOrNull(ChildIterator::GetParentNodeOf(*current));
     if (!parent) {
       return false;
     }

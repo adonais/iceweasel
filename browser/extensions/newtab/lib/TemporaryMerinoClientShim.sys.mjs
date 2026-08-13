@@ -15,6 +15,7 @@ const lazy = XPCOMUtils.declareLazy({
   ObliviousHTTP: "resource://gre/modules/ObliviousHTTP.sys.mjs",
   SkippableTimer: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
 
@@ -52,8 +53,20 @@ const SESSION_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
  */
 export class TemporaryMerinoClientShim {
   #lazy = XPCOMUtils.declareLazy({
-    logger: () =>
-      lazy.UrlbarUtils.getLogger({ prefix: `MerinoClient [${this.#name}]` }),
+    /**
+     * @backward-compat { version 154 }
+     * getLogger moved from UrlbarUtils to UrlbarShared in Fx154. UrlbarUtils
+     * exists on every supported version, so feature-detect on it: while it
+     * still has getLogger (<=153) use it; once removed (154+) fall forward to
+     * UrlbarShared. This avoids importing UrlbarShared on 152, where it doesn't
+     * exist yet. Drop this and the UrlbarUtils import once 154 ships to Release.
+     */
+    logger: () => {
+      let mod = lazy.UrlbarUtils.getLogger
+        ? lazy.UrlbarUtils
+        : lazy.UrlbarShared;
+      return mod.getLogger({ prefix: `MerinoClient [${this.#name}]` });
+    },
   });
 
   /**
@@ -704,11 +717,17 @@ export class TemporaryMerinoClientShim {
    *   The source that is requesting this fetch.
    * @param {string} options.endpointUrl
    *   The matches endpoint URL.
+   * @param {string} [options.date]
+   *   Optional YYYY-MM-DD date around which the backend should return its
+   *   ±21 day window of matches. Used by the load-more scroll on both the
+   *   Upcoming and Results lists (stepping the date forward to load future
+   *   matches or backward to load older ones); omit for the initial fetch
+   *   (which defaults to "today" backend-side).
    * @returns {Promise<{data: object|null, error: null | "invalid_url" | "load_error"}>}
    *   `error: null` with `data: null` means the endpoint is not configured
    *   (deliberate skip).
    */
-  async fetchSportsMatches({ source, endpointUrl }) {
+  async fetchSportsMatches({ source, endpointUrl, date }) {
     if (!endpointUrl) {
       return { data: null, error: null };
     }
@@ -722,6 +741,9 @@ export class TemporaryMerinoClientShim {
     }
     if (source) {
       url.searchParams.set("source", source);
+    }
+    if (date) {
+      url.searchParams.set("date", date);
     }
     try {
       const response = await fetch(url);
@@ -832,6 +854,57 @@ export class TemporaryMerinoClientShim {
     } catch (e) {
       this.#lazy.logger.error("Sports watch-live fetch error", e);
       return null;
+    }
+  }
+
+  /**
+   * Fetch the daily "Picture of the day" from the Merino endpoint.
+   *
+   * @param {object} options
+   *   Options object
+   * @param {string} options.source
+   *   The source that is requesting this fetch.
+   * @param {string} options.endpointUrl
+   *   The picture-of-the-day endpoint URL.
+   * @param {string} [options.acceptLanguage]
+   *   Optional BCP-47 locale string sent as the Accept-Language header so the
+   *   backend can return a localized description.
+   * @returns {Promise<{data: object|null, error: null | "invalid_url" | "load_error"}>}
+   *   `error: null` with `data: null` means the endpoint is not configured
+   *   (deliberate skip).
+   */
+  async fetchPictureOfTheDay({ source, endpointUrl, acceptLanguage }) {
+    if (!endpointUrl) {
+      return { data: null, error: null };
+    }
+    let url = URL.parse(endpointUrl);
+    if (!url) {
+      this.#lazy.logger.error(
+        "Invalid picture-of-the-day endpoint URL",
+        endpointUrl
+      );
+      return { data: null, error: "invalid_url" };
+    }
+    if (source) {
+      url.searchParams.set("source", source);
+    }
+    const fetchOptions = acceptLanguage
+      ? { headers: { "Accept-Language": acceptLanguage } }
+      : undefined;
+    try {
+      const response = await fetch(url, fetchOptions);
+      if (!response.ok) {
+        this.#lazy.logger.error(
+          `Picture of the day fetch failed with status ${response.status}`
+        );
+        return { data: null, error: "load_error" };
+      }
+      const data = /** @type {any} */ (await response.json());
+      this.#lazy.logger.debug("fetchPictureOfTheDay response", data);
+      return { data, error: null };
+    } catch (e) {
+      this.#lazy.logger.error("Picture of the day fetch error", e);
+      return { data: null, error: "load_error" };
     }
   }
 

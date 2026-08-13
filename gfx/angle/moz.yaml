@@ -11,12 +11,8 @@ origin:
 
   url: https://chromium.googlesource.com/angle/angle
 
-  # Note that while the vendoring information here, including revision,
-  # release, and upstream repo locations refer to the third party upstream,
-  # Angle is vendored from a mozilla git repository that pulls from
-  # upstream and mainntains local patches there.
-  release: commit ceec659ac60b0c8ee9d9c602ca1a878ec1d3a88f Fri Nov 04 13:35:51 2022 +0000
-  revision: ceec659ac60b0c8ee9d9c602ca1a878ec1d3a88f
+  release: 9fa37b5e144119f3dd266e6e066a528a1bfac22c (Fri Jun 05 00:03:24 2026).
+  revision: 9fa37b5e144119f3dd266e6e066a528a1bfac22c
 
   license: BSD-3-Clause
 
@@ -26,21 +22,43 @@ updatebot:
   tasks:
     - type: commit-alert
       enabled: True
-      branch: chromium/5359
+      branch: chromium/7778
       needinfo: ["ahale@mozilla.com"]
 
 vendoring:
   url: https://chromium.googlesource.com/angle/angle
-  # Technically we aren't tracking 'tags', we're tracking branches but Angle has a
-  # special setup and tag is the most analogous without needing to create a whole
-  # new thing just for it.
-  tracking: tag
   source-hosting: angle
-  vendor-directory: gfx/angle/checkout
-  skip-vendoring-steps: ["fetch", "update-moz-build"]
+  vendor-directory: third_party/angle
+  skip-vendoring-steps:
+    - move-contents
+    - update-moz-build
 
   update-actions:
-    - action: run-script
-      script: '{yaml_dir}/auto-update-angle.sh'
-      args: ['{revision}']
-      cwd: '{cwd}'
+    - action: run-command
+      command: ./mach
+      args:
+        - python
+        - --
+        - '{yaml_dir}/update-angle.py'
+        - '{tmpextractdir}'
+        - '{vendor_dir}'
+      cwd: '{topsrcdir}'
+
+    # Ensure the libEGL and libGLESv2 targets get built for macOS but *not* for
+    # iOS. This is required because gn_processor.py does not distinguish between
+    # macOS and iOS configurations, so will attempt to build the same targets
+    # for both.
+    #
+    # This is a kludge that relies on the fact that the top-level moz.build file
+    # simply adds the required targets for each platform to DIRS, which in our
+    # case means translator-specific targets universally and libEGL and
+    # libGLESv2-specific targets within conditional blocks.
+    #
+    # We therefore replace the iOS-inclusive conditions in the top-level
+    # generated moz.build file with macOS-specific ones. A better solution would
+    # be for gn_processor.py to generate separate configurations for iOS and
+    # macOS. See bug 2047963.
+    - action: replace-in-file
+      file: '{vendor_dir}/moz.build'
+      pattern: 'CONFIG["OS_TARGET"] == "Darwin"'
+      with: 'CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa"'

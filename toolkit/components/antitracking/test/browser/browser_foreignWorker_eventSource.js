@@ -40,13 +40,7 @@ add_setup(async function setup() {
     set: [["network.cookie.cookieBehavior", BEHAVIOR_PARTITION_FOREIGN]],
   });
 
-  registerCleanupFunction(async () => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  });
+  registerCleanupFunction(clearSiteTestData);
 });
 
 add_task(async function test_eventSource_firstParty() {

@@ -55,9 +55,14 @@ class SelectionChangeEventDispatcher final {
     bool Equals(const nsRange* aRange);
   };
 
+  void SelectionRangeObservedMutation() {
+    mSelectionRangeObservedMutation = true;
+  }
+
  private:
   nsTArray<RawRangeData> mOldRanges;
   nsDirection mOldDirection;
+  bool mSelectionRangeObservedMutation = false;
 
   ~SelectionChangeEventDispatcher() = default;
 };

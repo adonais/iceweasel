@@ -6,14 +6,15 @@
 #define mozilla_netwerk_socket_nsNamedPipeService_h
 
 #include <windows.h>
+
 #include "mozilla/Atomics.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/StaticPtr.h"
 #include "nsINamedPipeService.h"
 #include "nsIObserver.h"
 #include "nsIRunnable.h"
 #include "nsIThread.h"
 #include "nsTArray.h"
-#include "mozilla/StaticPtr.h"
 
 namespace mozilla {
 namespace net {

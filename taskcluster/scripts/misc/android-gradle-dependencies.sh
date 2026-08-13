@@ -19,6 +19,6 @@ export GRADLE_FLAGS="--no-configuration-cache --write-verification-metadata sha2
 ./mach android gradle-dependencies
 ./mach gradle -p mobile/android/fenix lint :benchmark:assembleBenchmark
 ./mach gradle -p mobile/android/focus-android lint
-./mach gradle -p mobile/android/android-components -Pcoverage detekt lint :components:tooling-lint:test :components:lib-auth:assemble :components:lib-auth:assembleAndroidTest :components:lib-auth:testRelease :components:lib-auth:lintRelease :components:lib-auth:publish
+./mach gradle -p mobile/android/android-components -Pcoverage detekt lint :components:tooling-lint:test :components:lib-auth:assemble :components:lib-auth:assembleAndroidTest :components:lib-auth:test :components:lib-auth:lintRelease :components:lib-auth:publish
 
 . taskcluster/scripts/misc/android-gradle-dependencies/after.sh

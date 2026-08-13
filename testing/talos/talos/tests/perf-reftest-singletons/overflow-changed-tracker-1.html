@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+
+<style>
+#sandbox {
+    position: absolute;
+    left: -99999px;
+    top: -99999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+.fuzz-target {
+    transform: translateX(0px);
+    transition: transform 1ms linear;
+}
+
+#sandbox.active .fuzz-target {
+    transform: translateX(1000px);
+}
+</style>
+
+<div id="sandbox"></div>
+
+<script src="util.js"></script>
+
+<script>
+// Based on testcase in https://bugzilla.mozilla.org/show_bug.cgi?id=2045545
+function create_elements() {
+  const params = new URLSearchParams(window.location.search);
+  const count = parseInt(params.get("n"), 10) || 10000;
+
+  const frag = document.createDocumentFragment();
+
+  for (let i = 0; i < count; i++) {
+    const wrapper = document.createElement('div');
+    const target = document.createElement('span');
+    target.className = 'fuzz-target';
+    wrapper.appendChild(target);
+    frag.appendChild(wrapper);
+  }
+
+  sandbox.appendChild(frag);
+  flush_layout();
+}
+
+onload = function() {
+  create_elements();
+
+  perf_start();
+  sandbox.classList.add('active');
+  flush_layout();
+  perf_finish();
+};
+</script>
+<body></body>

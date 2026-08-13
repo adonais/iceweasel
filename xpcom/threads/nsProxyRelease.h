@@ -141,9 +141,9 @@ inline NS_HIDDEN_(nsresult)
     NS_ProxyRelease(const char* aName, nsIEventTarget* aTarget,
                     already_AddRefed<T> aDoomed, bool aAlwaysProxy = false) {
   return ::detail::ProxyReleaseChooser<
-      std::is_base_of<nsISupports, T>::value>::ProxyRelease(aName, aTarget,
-                                                            std::move(aDoomed),
-                                                            aAlwaysProxy);
+      std::is_base_of_v<nsISupports, T>>::ProxyRelease(aName, aTarget,
+                                                       std::move(aDoomed),
+                                                       aAlwaysProxy);
 }
 
 /**

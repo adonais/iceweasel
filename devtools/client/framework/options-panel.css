@@ -312,3 +312,60 @@ label:has(.option-secondary-label) {
   border-radius: 4px;
   padding: 10px;
 }
+
+label.netmonitor-body-limit {
+  display: block;
+
+  #netmonitor-body-limit-value {
+    line-height: 3em;
+    vertical-align: middle;
+  }
+
+  & > * {
+    margin-inline-start: 5px;
+  }
+
+  button {
+    aspect-ratio: 1 / 1;
+  }
+
+  .netmonitor-body-limit-button::before {
+    background-image: url("chrome://global/skin/icons/edit.svg");
+  }
+  .netmonitor-body-limit-restore-default::before {
+    background-image: url("chrome://global/skin/icons/undo.svg");
+  }
+}
+
+#netmonitor-body-limit-edit {
+  display: none;
+
+  &.active {
+    display: block;
+  }
+
+  #netmonitor-body-limit {
+    line-height: 1.5em;
+    vertical-align: middle;
+    &:focus {
+      /* Hide the border as we outline the input on focus */
+      border-color: transparent;
+    }
+    &:invalid {
+      color: var(--theme-error-color);
+      background-color: var(--theme-error-background);
+      outline-color: light-dark(var(--red-60), var(--red-50));
+    }
+    &[disabled] {
+      display: none;
+    }
+  }
+
+  .netmonitor-body-limit-set::before {
+    background-image: url("chrome://global/skin/icons/check.svg");
+  }
+}
+
+.hidden {
+  display: none;
+}

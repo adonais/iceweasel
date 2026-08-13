@@ -179,6 +179,32 @@ static inline void av1_merge_rd_stats(RD_STATS *rd_stats_dst,
 #endif
 }
 
+static inline void av1_merge_rd_stats_weighted(RD_STATS *rd_stats_dst,
+                                               const RD_STATS *rd_stats_src) {
+  if (rd_stats_dst->rate == INT_MAX || rd_stats_src->rate == INT_MAX) {
+    // If rd_stats_dst or rd_stats_src has invalid rate, we will make
+    // rd_stats_dst invalid.
+    av1_invalid_rd_stats(rd_stats_dst);
+    return;
+  }
+  rd_stats_dst->rate = (int)AOMMIN(
+      ((int64_t)rd_stats_dst->rate + (int64_t)rd_stats_src->rate), INT_MAX);
+  if (!rd_stats_dst->zero_rate)
+    rd_stats_dst->zero_rate = rd_stats_src->zero_rate;
+  rd_stats_dst->dist += rd_stats_src->dist * 15 / 16;
+  if (rd_stats_dst->sse < INT64_MAX && rd_stats_src->sse < INT64_MAX) {
+    rd_stats_dst->sse += rd_stats_src->sse * 15 / 16;
+  }
+  rd_stats_dst->skip_txfm &= rd_stats_src->skip_txfm;
+#if CONFIG_RD_DEBUG
+  // This may run into problems when monochrome video is
+  // encoded, as there will only be 1 plane
+  for (int plane = 0; plane < MAX_MB_PLANE; ++plane) {
+    rd_stats_dst->txb_coeff_cost[plane] += rd_stats_src->txb_coeff_cost[plane];
+  }
+#endif
+}
+
 static inline void av1_accumulate_rd_stats(RD_STATS *rd_stats, int64_t dist,
                                            int rate, int skip_txfm, int64_t sse,
                                            int zero_rate) {
@@ -258,8 +284,23 @@ void av1_set_sad_per_bit(const struct AV1_COMP *cpi, int *sadperbit,
 void av1_model_rd_from_var_lapndz(int64_t var, unsigned int n,
                                   unsigned int qstep, int *rate, int64_t *dist);
 
+/*!\brief Estimate rate and distortion for a block.
+ *
+ * \param[in]    bsize           Block size
+ * \param[in]    sse_norm        Normalized SSE
+ * \param[in]    xqr             The log2 ratio of normalized SSE to the
+ *                               squared quantization step size, computed
+ *                               as: log2(sse_norm / qstep^2)
+ * \param[out]   rate_dist_f     Pointer to store the results
+ *                               rate_dist_f[0] stores the estimated rate
+ *                               rate_dist_f[1] stores the estimated
+ *                               distortion by normalized SSE
+ *
+ * \remark Nothing is returned. Results are saved in rate_dist_f[0]
+ * and rate_dist_f[1].
+ */
 void av1_model_rd_curvfit(BLOCK_SIZE bsize, double sse_norm, double xqr,
-                          double *rate_f, double *distbysse_f);
+                          double rate_dist_f[2]);
 
 int av1_get_switchable_rate(const MACROBLOCK *x, const MACROBLOCKD *xd,
                             InterpFilter interp_filter, int dual_filter);

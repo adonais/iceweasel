@@ -4,16 +4,16 @@
 
 #include "NativeKeyBindings.h"
 
-#include "nsTArray.h"
-#include "nsCocoaUtils.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/NativeKeyBindingsType.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/WritingModes.h"
+#include "nsCocoaUtils.h"
+#include "nsTArray.h"
 
-#import <Cocoa/Cocoa.h>
 #import <Carbon/Carbon.h>
+#import <Cocoa/Cocoa.h>
 
 namespace mozilla {
 namespace widget {

@@ -6,14 +6,11 @@
 #define mozilla_a11y_HyperTextAccessible_inl_h_
 
 #include "HyperTextAccessible.h"
-
-#include "nsAccUtils.h"
-
-#include "nsIClipboard.h"
-#include "nsFrameSelection.h"
-
 #include "mozilla/CaretAssociationHint.h"
 #include "mozilla/EditorBase.h"
+#include "nsAccUtils.h"
+#include "nsFrameSelection.h"
+#include "nsIClipboard.h"
 
 namespace mozilla::a11y {
 

@@ -71,16 +71,10 @@ class TestMemoryUsage(AwsyTestCase):
             self._extra_opts = None
 
         self.logger.info(
-            "areweslimyet run by %d pages, "
-            "%d iterations, %d perTabPause, %d settleWaitTime, "
-            "%d content processes"
-            % (
-                self._pages_to_load,
-                self._iterations,
-                self._perTabPause,
-                self._settleWaitTime,
-                process_count,
-            )
+            f"areweslimyet run by {self._pages_to_load} pages, "
+            f"{self._iterations} iterations, {self._perTabPause} perTabPause, "
+            f"{self._settleWaitTime} settleWaitTime, "
+            f"{process_count} content processes"
         )
         self.logger.info("done setting up!")
 

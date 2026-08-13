@@ -2,15 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <arpa/inet.h>
+#include <dns_sd.h>
+#include <poll.h>
+
 #include "GetAddrInfo.h"
+#include "mozilla/StaticPrefs_network.h"
 #include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/net/DNSPacket.h"
 #include "nsIDNSService.h"
-#include "mozilla/StaticPrefs_network.h"
-
-#include <dns_sd.h>
-#include <poll.h>
-#include <arpa/inet.h>
 
 namespace mozilla::net {
 

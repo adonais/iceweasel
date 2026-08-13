@@ -6,6 +6,7 @@
 #define mozilla_netwerk_protocol_http_HttpTrafficAnalyzer_h
 
 #include <stdint.h>
+
 #include "nsTArrayForwardDeclare.h"
 
 // Type A) Parser blocking script loads will have an mContentPolicyType

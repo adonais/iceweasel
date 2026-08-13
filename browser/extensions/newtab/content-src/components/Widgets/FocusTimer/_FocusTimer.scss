@@ -2,6 +2,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+// Visually hide an element while keeping it in the accessibility tree.
+@mixin timer-visually-hidden {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
 .focus-timer {
   @include newtab-card-style;
 
@@ -41,6 +52,11 @@
     --timer-celebration-trailing: #FF9565;
     // Diverges from --border-color for dark-mode contrast on translucent surfaces.
     --timer-ring-idle-color: light-dark(var(--color-gray-20), var(--color-gray-30));
+    // Newtab-scoped tokens for the small timer (no design-system equivalents).
+    --timer-small-ring-size: 60px;
+    --timer-small-ring-thickness: 10.75px;
+    --timer-small-gap: 6px;
+    --timer-small-time-size: 16px;
     --widget-celebration-accent-color: var(--timer-celebration-leading);
     --widget-celebration-copy-color: var(--text-color-deemphasized);
     --widget-celebration-surface-color: var(--newtab-background-card);
@@ -99,13 +115,7 @@
       width: auto;
 
       h2 {
-        clip: rect(0 0 0 0);
-        clip-path: inset(50%);
-        height: 1px;
-        overflow: hidden;
-        position: absolute;
-        white-space: nowrap;
-        width: 1px;
+        @include timer-visually-hidden;
       }
     }
 
@@ -161,7 +171,7 @@
 
     .focus-timer-time-mode {
       color: var(--text-color-deemphasized);
-      font-size: var(--font-size-xsmall);
+      font-size: var(--newtab-font-size-xsmall);
       font-weight: var(--font-weight);
       // No matching letter-spacing design-system token.
       /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
@@ -170,16 +180,75 @@
       white-space: nowrap;
     }
 
+    &.small-widget {
+      flex-direction: column;
+      gap: var(--timer-small-gap);
+
+      .progress-circle-wrapper {
+        block-size: var(--timer-small-ring-size);
+        margin-block-end: 0;
+        width: var(--timer-small-ring-size);
+      }
+
+      .focus-timer-body {
+        gap: var(--timer-small-gap);
+      }
+
+      .focus-timer-time-text {
+        font-size: var(--timer-small-time-size);
+      }
+
+      .focus-timer-spinbutton {
+        font-size: var(--font-size-root);
+        min-width: auto;
+      }
+
+      // Mode label is visually hidden in small but kept for screen readers.
+      .focus-timer-time-mode {
+        @include timer-visually-hidden;
+      }
+
+      // Slot is empty in small (no mode group, no reset). Use :empty to match
+      // the medium convention so any future slot content isn't silently hidden.
+      .focus-timer-bottom-slot:empty {
+        display: none;
+      }
+
+      // Center the headline in the space below the ring, nudged just above
+      // that region's midpoint to match the Figma celebration frame.
+      .focus-timer-celebration-copy {
+        align-items: center;
+        display: flex;
+        flex-direction: column;
+        inset-block-end: auto;
+        inset-block-start: 76%;
+        inset-inline: var(--space-small);
+        justify-content: center;
+        padding: 0;
+        transform: translateY(-50%);
+      }
+
+      // Small shows the headline only; drop the empty subhead so its reserved
+      // margin doesn't push the headline off-center.
+      .focus-timer-celebration-subhead {
+        display: none;
+      }
+    }
+
+    &.small-widget :is(.progress-circle-background, .progress-circle-background-break, .progress-circle, .progress-circle-complete, .progress-circle-cap) {
+      --thickness: var(--timer-small-ring-thickness);
+    }
+
     &.medium-widget {
       flex-direction: row;
       gap: var(--space-medium);
       justify-content: center;
 
       .progress-circle-wrapper {
+        --progress-circle-size: 70px;
+
         flex-shrink: 0;
         margin-block-end: 0;
-        min-height: 70px;
-        width: 70px;
       }
 
       .focus-timer-body {
@@ -224,9 +293,11 @@
       gap: calc(var(--space-medium) + var(--space-small));
 
       .progress-circle-wrapper {
+        --progress-circle-size: 120px;
+
         block-size: calc(var(--space-medium) * 2 + var(--space-xxlarge) * 4);
         margin-block-end: 0;
-        width: 120px;
+        inline-size: var(--progress-circle-size);
       }
 
       .focus-timer-body {
@@ -250,7 +321,7 @@
       inset-block-end: auto;
       inset-block-start: var(--space-medium);
       /* stylelint-disable-next-line declaration-property-value-disallowed-list */
-      block-size: 120px;
+      block-size: var(--progress-circle-size);
     }
 
     &.large-widget :is(.progress-circle-background, .progress-circle-background-break, .progress-circle, .progress-circle-complete, .progress-circle-cap) {
@@ -530,6 +601,8 @@
 }
 
 .progress-circle-wrapper {
+  --progress-circle-size: 138px;
+
   /* Colours for the main timer */
   --timer-red: var(--color-red-50);
   --timer-orange: var(--color-orange-30);
@@ -542,17 +615,16 @@
   --timer-green: var(--color-green-20);
 
   &.is-small {
-    min-height: 114px;
-    width: 114px;
+    --progress-circle-size: 114px;
 
     .progress-circle-label {
       font-size: var(--font-size-xxlarge);
     }
   }
 
-  min-height: 138px;
+  block-size: var(--progress-circle-size);
+  inline-size: var(--progress-circle-size);
   position: relative;
-  width: 138px;
   overflow: hidden;
   margin-block-end: var(--space-small);
 

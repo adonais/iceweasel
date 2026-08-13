@@ -152,23 +152,11 @@ class FaviconLoad {
         Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_INHERITS_SEC_CONTEXT;
     }
 
-    let loadingNode = iconInfo.node;
-    let loadingPrincipal = loadingNode.nodePrincipal;
-
-    if (loadingPrincipal.originNoSuffix === "resource://pdf.js") {
-      // PDF.js uses a resource:// principal.
-      loadingPrincipal = Services.scriptSecurityManager.createContentPrincipal(
-        iconInfo.pageUri,
-        loadingPrincipal.originAttributes
-      );
-      loadingNode = null;
-    }
-
     this.channel = Services.io.newChannelFromURI(
       iconInfo.iconUri,
-      loadingNode,
-      loadingPrincipal,
-      loadingPrincipal,
+      iconInfo.node,
+      iconInfo.node.nodePrincipal,
+      iconInfo.node.nodePrincipal,
       securityFlags |
         Ci.nsILoadInfo.SEC_ALLOW_CHROME |
         Ci.nsILoadInfo.SEC_DISALLOW_SCRIPT,
@@ -189,10 +177,15 @@ class FaviconLoad {
       }
       this.channel.referrerInfo = referrerInfo;
     }
-    this.channel.loadFlags |=
-      Ci.nsIRequest.LOAD_BACKGROUND |
-      Ci.nsIRequest.VALIDATE_NEVER |
-      Ci.nsIRequest.LOAD_FROM_CACHE;
+    if (iconInfo.isForceReload) {
+      this.channel.loadFlags |=
+        Ci.nsIRequest.LOAD_BACKGROUND | Ci.nsIRequest.LOAD_BYPASS_CACHE;
+    } else {
+      this.channel.loadFlags |=
+        Ci.nsIRequest.LOAD_BACKGROUND |
+        Ci.nsIRequest.VALIDATE_NEVER |
+        Ci.nsIRequest.LOAD_FROM_CACHE;
+    }
     // Sometimes node is a document and sometimes it is an element. This is
     // the easiest single way to get to the load group in both those cases.
     this.channel.loadGroup =
@@ -589,7 +582,6 @@ class IconLoader {
         return;
       }
       this.actor.sendAsyncMessage("Link:SetIcon", {
-        pageURL: iconInfo.pageUri.spec,
         originalURL: iconInfo.iconUri.spec,
         expiration: undefined,
         iconURL: iconInfo.iconUri.spec,
@@ -613,7 +605,6 @@ class IconLoader {
         await this._loader.load();
 
       this.actor.sendAsyncMessage("Link:SetIcon", {
-        pageURL: iconInfo.pageUri.spec,
         originalURL: iconInfo.iconUri.spec,
         expiration,
         iconURL: dataURL,
@@ -685,11 +676,19 @@ export class FaviconLoader {
     let { richIcon, tabIcon } = selectIcons(this.iconInfos, preferredWidth);
     this.iconInfos = [];
 
+    let isForceReload =
+      this.beforePageShow && (this.actor.docShell?.isForceReloading ?? false);
+    if (isForceReload && (richIcon || tabIcon)) {
+      this.actor.sendAsyncMessage("Link:ExpireFavicons");
+    }
+
     if (richIcon) {
+      richIcon.isForceReload = isForceReload;
       this.richIconLoader.load(richIcon).catch(console.error);
     }
 
     if (tabIcon) {
+      tabIcon.isForceReload = isForceReload;
       this.tabIconLoader.load(tabIcon).catch(console.error);
     }
   }
@@ -709,7 +708,6 @@ export class FaviconLoader {
     // Currently ImageDocuments will just load the default favicon, see bug
     // 403651 for discussion.
     this.iconInfos.push({
-      pageUri,
       iconUri: pageUri.mutate().setPathQueryRef("/favicon.ico").finalize(),
       width: -1,
       isRichIcon: false,
@@ -748,7 +746,6 @@ function makeFaviconFromLink(aLink, aIsRichIcon) {
   let width = extractIconSize(aLink.sizes);
 
   return {
-    pageUri: aLink.ownerDocument.documentURIObject,
     iconUri,
     width,
     isRichIcon: aIsRichIcon,

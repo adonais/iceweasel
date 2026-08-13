@@ -38,9 +38,6 @@ XPIDL_SOURCES += [
     "nsIX509CertValidity.idl",
 ]
 
-if CONFIG["ENABLE_TESTS"]:
-    XPIDL_SOURCES += ["nsISSLTokensCacheTest.idl"]
-
 XPIDL_MODULE = "pipnss"
 
 XPCOM_MANIFESTS += [
@@ -63,7 +60,6 @@ EXPORTS += [
     "nsNSSCallbacks.h",
     "nsNSSCertificate.h",
     "nsNSSComponent.h",
-    "nsNSSHelper.h",
     "nsRandomGenerator.h",
     "nsSecureBrowserUI.h",
     "nsSecurityHeaderParser.h",

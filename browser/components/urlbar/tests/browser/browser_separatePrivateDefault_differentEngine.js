@@ -66,7 +66,7 @@ async function AssertNoPrivateResult(win) {
   for (let i = 0; i < count; ++i) {
     let result = await UrlbarTestUtils.getDetailsOfResultAt(win, i);
     Assert.ok(
-      result.type != UrlbarUtils.RESULT_TYPE.SEARCH ||
+      result.type != UrlbarShared.RESULT_TYPE.SEARCH ||
         !result.searchParams.inPrivateWindow,
       "Check this result is not a 'Search in a Private Window' one"
     );
@@ -79,7 +79,7 @@ async function AssertPrivateResult(win, engine, isPrivateEngine) {
   let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 1);
   Assert.equal(
     result.type,
-    UrlbarUtils.RESULT_TYPE.SEARCH,
+    UrlbarShared.RESULT_TYPE.SEARCH,
     "Check result type"
   );
   Assert.ok(result.searchParams.inPrivateWindow, "Check inPrivateWindow");

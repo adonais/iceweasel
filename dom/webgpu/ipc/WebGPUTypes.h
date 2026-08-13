@@ -7,6 +7,7 @@
 
 #include <cstdint>
 
+#include "ipc/IPCMessageUtils.h"
 #include "mozilla/GfxMessageUtils.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/dom/BindingDeclarations.h"
@@ -92,28 +93,10 @@ struct ExternalTextureSourceDescriptor {
 }  // namespace mozilla::webgpu
 
 namespace IPC {
-template <>
-struct ParamTraits<mozilla::webgpu::ExternalTextureSourceDescriptor> {
-  using ParamType = mozilla::webgpu::ExternalTextureSourceDescriptor;
 
-  static void Write(MessageWriter* aWriter, const ParamType& aParam) {
-    WriteParam(aWriter, aParam.mTextureIds);
-    WriteParam(aWriter, aParam.mViewIds);
-    WriteParam(aWriter, aParam.mSurfaceDescriptor);
-    WriteParam(aWriter, aParam.mSize);
-    WriteParam(aWriter, aParam.mSampleTransform);
-    WriteParam(aWriter, aParam.mLoadTransform);
-  }
-
-  static bool Read(MessageReader* aReader, ParamType* aResult) {
-    return ReadParam(aReader, &aResult->mTextureIds) &&
-           ReadParam(aReader, &aResult->mViewIds) &&
-           ReadParam(aReader, &aResult->mSurfaceDescriptor) &&
-           ReadParam(aReader, &aResult->mSize) &&
-           ReadParam(aReader, &aResult->mSampleTransform) &&
-           ReadParam(aReader, &aResult->mLoadTransform);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(
+    mozilla::webgpu::ExternalTextureSourceDescriptor, mTextureIds, mViewIds,
+    mSurfaceDescriptor, mSize, mSampleTransform, mLoadTransform);
 
 }  // namespace IPC
 

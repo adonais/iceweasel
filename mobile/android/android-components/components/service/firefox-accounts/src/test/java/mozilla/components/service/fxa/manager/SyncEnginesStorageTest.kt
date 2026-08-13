@@ -5,7 +5,7 @@
 package mozilla.components.service.fxa.manager
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import mozilla.components.service.fxa.SyncEngine
+import mozilla.components.concept.sync.SyncEngine
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

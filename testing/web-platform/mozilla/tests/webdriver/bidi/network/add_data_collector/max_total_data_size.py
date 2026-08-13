@@ -66,6 +66,7 @@ async def send_request(wait_for_event, inline, fetch, wait_for_future_safe):
         "request or response",
     ],
 )
+@pytest.mark.geckodriver(allow_system_access=True)
 async def test_max_total_data_size(
     bidi_session,
     setup_network_test,

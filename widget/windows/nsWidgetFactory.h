@@ -5,8 +5,8 @@
 #ifndef widget_windows_nsWidgetFactory_h
 #define widget_windows_nsWidgetFactory_h
 
-#include "nscore.h"
 #include "nsID.h"
+#include "nscore.h"
 
 class nsISupports;
 

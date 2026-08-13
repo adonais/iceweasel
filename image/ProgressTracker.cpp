@@ -3,19 +3,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "ImageLogging.h"
 #include "ProgressTracker.h"
 
+#include "Image.h"
+#include "ImageLogging.h"
 #include "imgINotificationObserver.h"
 #include "imgIRequest.h"
-#include "Image.h"
-#include "nsNetUtil.h"
-#include "nsIObserverService.h"
-
 #include "mozilla/AppShutdown.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/Services.h"
+#include "nsIObserverService.h"
+#include "nsNetUtil.h"
 
 using mozilla::WeakPtr;
 
@@ -152,7 +151,7 @@ class AsyncNotifyRunnable : public Runnable {
 };
 
 ProgressTracker::RenderBlockingRunnable::RenderBlockingRunnable(
-    already_AddRefed<AsyncNotifyRunnable>&& aEvent)
+    already_AddRefed<AsyncNotifyRunnable> aEvent)
     : PrioritizableRunnable(std::move(aEvent),
                             nsIRunnablePriority::PRIORITY_RENDER_BLOCKING) {}
 
@@ -169,7 +168,7 @@ void ProgressTracker::RenderBlockingRunnable::RemoveObserver(
 /* static */
 already_AddRefed<ProgressTracker::RenderBlockingRunnable>
 ProgressTracker::RenderBlockingRunnable::Create(
-    already_AddRefed<AsyncNotifyRunnable>&& aEvent) {
+    already_AddRefed<AsyncNotifyRunnable> aEvent) {
   MOZ_ASSERT(NS_IsMainThread());
   RefPtr<ProgressTracker::RenderBlockingRunnable> event(
       new ProgressTracker::RenderBlockingRunnable(std::move(aEvent)));

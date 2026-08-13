@@ -10,7 +10,6 @@
 #include <process.h>
 
 #include "threading/Thread.h"
-
 #include "util/WindowsWrapper.h"
 
 namespace js {

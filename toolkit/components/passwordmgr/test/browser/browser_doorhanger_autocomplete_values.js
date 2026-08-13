@@ -207,15 +207,20 @@ add_task(async function test_edit_password() {
             await changeContentFormValues(browser, change);
           }
         }
+        // Wait for the doorhanger to exist before inspecting it
+        await waitForDoorhanger(browser, "any");
         let notif = getCaptureDoorhanger("any");
 
         let { panel } = PopupNotifications;
 
-        let promiseShown = BrowserTestUtils.waitForEvent(panel, "popupshown");
-
-        EventUtils.synthesizeMouseAtCenter(notif.anchorElement, {});
-
-        await promiseShown;
+        // Only wait for popupshown if the panel isn't already opening/open
+        if (panel.state !== "open") {
+          let promiseShown = BrowserTestUtils.waitForEvent(panel, "popupshown");
+          if (panel.state !== "showing") {
+            EventUtils.synthesizeMouseAtCenter(notif.anchorElement, {});
+          }
+          await promiseShown;
+        }
 
         let notificationElement = panel.childNodes[0];
 

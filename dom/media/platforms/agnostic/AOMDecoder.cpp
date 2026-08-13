@@ -27,16 +27,17 @@
 #include "prsystem.h"
 
 #undef LOG
-#define LOG(arg, ...)                                                  \
-  DDMOZ_LOG(sPDMLog, mozilla::LogLevel::Debug, "::%s: " arg, __func__, \
-            ##__VA_ARGS__)
-#define LOG_RESULT(code, message, ...)                                        \
-  DDMOZ_LOG(sPDMLog, mozilla::LogLevel::Debug, "::%s: %s (code %d) " message, \
-            __func__, aom_codec_err_to_string(code), (int)code, ##__VA_ARGS__)
-#define LOGEX_RESULT(_this, code, message, ...)         \
-  DDMOZ_LOGEX(_this, sPDMLog, mozilla::LogLevel::Debug, \
-              "::%s: %s (code %d) " message, __func__,  \
-              aom_codec_err_to_string(code), (int)code, ##__VA_ARGS__)
+#define LOG(arg, ...)                                                      \
+  DDMOZ_LOG_FMT(sPDMLog, mozilla::LogLevel::Debug, "::{}: " arg, __func__, \
+                ##__VA_ARGS__)
+#define LOG_RESULT(code, message, ...)                   \
+  DDMOZ_LOG_FMT(sPDMLog, mozilla::LogLevel::Debug,       \
+                "::{}: {} (code {}) " message, __func__, \
+                aom_codec_err_to_string(code), (int)code, ##__VA_ARGS__)
+#define LOGEX_RESULT(_this, code, message, ...)             \
+  DDMOZ_LOGEX_FMT(_this, sPDMLog, mozilla::LogLevel::Debug, \
+                  "::{}: {} (code {}) " message, __func__,  \
+                  aom_codec_err_to_string(code), (int)code, ##__VA_ARGS__)
 #define LOG_STATIC_RESULT(code, message, ...)                    \
   MOZ_LOG_FMT(sPDMLog, mozilla::LogLevel::Debug,                 \
               "AOMDecoder::{}: {} (code {}) " message, __func__, \
@@ -78,7 +79,7 @@ static MediaResult InitContext(AOMDecoder& aAOMDecoder, aom_codec_ctx_t* aCtx,
 
   auto res = aom_codec_dec_init(aCtx, dx, &config, flags);
   if (res != AOM_CODEC_OK) {
-    LOGEX_RESULT(&aAOMDecoder, res, "Codec initialization failed, res=%d",
+    LOGEX_RESULT(&aAOMDecoder, res, "Codec initialization failed, res={}",
                  int(res));
     return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                        RESULT_DETAIL("AOM error initializing AV1 decoder: %s",
@@ -258,8 +259,8 @@ RefPtr<MediaDataDecoder::DecodePromise> AOMDecoder::ProcessDecode(
 
     if (r.isErr()) {
       MediaResult rs = r.unwrapErr();
-      LOG("VideoData::CreateAndCopyData error (source %ux%u display %ux%u "
-          "picture %ux%u)  - %s: %s",
+      LOG("VideoData::CreateAndCopyData error (source {}x{} display {}x{} "
+          "picture {}x{})  - {}: {}",
           img->d_w, img->d_h, mInfo.mDisplay.width, mInfo.mDisplay.height,
           mInfo.mImage.width, mInfo.mImage.height, rs.ErrorName().get(),
           rs.Message().get());

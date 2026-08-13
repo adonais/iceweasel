@@ -5,8 +5,9 @@
 #ifndef mozilla_nsMemoryInfoDumper_h
 #define mozilla_nsMemoryInfoDumper_h
 
-#include "nsIMemoryInfoDumper.h"
 #include <stdio.h>
+
+#include "nsIMemoryInfoDumper.h"
 
 /**
  * This class facilitates dumping information about our memory usage to disk.

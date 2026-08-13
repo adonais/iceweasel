@@ -588,6 +588,14 @@ SafariPermissions.args = {
   },
 };
 
+export const SafariPreSequoiaPasswordPermissions = Template.bind({});
+SafariPreSequoiaPasswordPermissions.args = {
+  dialogMode: true,
+  state: {
+    page: MigrationWizardConstants.PAGES.SAFARI_PASSWORD_PERMISSION_PRE_SEQUOIA,
+  },
+};
+
 export const SafariPasswordPermissions = Template.bind({});
 SafariPasswordPermissions.args = {
   dialogMode: true,

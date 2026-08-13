@@ -3,23 +3,37 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SocketProcessChild.h"
-#include "SocketProcessLogging.h"
 
-#include "base/task.h"
-#include "SSLTokensCache.h"
-#include "InputChannelThrottleQueueChild.h"
+#include "HttpConnectionMgrChild.h"
 #include "HttpInfo.h"
 #include "HttpTransactionChild.h"
-#include "HttpConnectionMgrChild.h"
+#include "InputChannelThrottleQueueChild.h"
+#include "MockNetworkLayerController.h"
+#include "NetworkConnectivityService.h"
+#include "SSLTokensCache.h"
+#include "SocketProcessBridgeParent.h"
+#include "SocketProcessLogging.h"
+#include "XPCSelfHostedShmem.h"
+#include "base/task.h"
+#include "js/Initialization.h"
+#include "js/Prefs.h"
+#include "jsapi.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Components.h"
-#include "mozilla/dom/MemoryReportRequest.h"
 #include "mozilla/FOGIPC.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/RemoteLazyInputStreamChild.h"
+#include "mozilla/StaticPrefs_javascript.h"
+#include "mozilla/StaticPrefs_network.h"
+#include "mozilla/Telemetry.h"
+#include "mozilla/dom/MemoryReportRequest.h"
 #include "mozilla/glean/GleanTestsTestMetrics.h"
 #include "mozilla/ipc/CrashReporterClient.h"
 #include "mozilla/ipc/ProcessChild.h"
+#include "mozilla/ipc/ProcessUtils.h"
 #include "mozilla/net/AltSvcTransactionChild.h"
+#include "mozilla/net/AppleFastDatapathProbe.h"
 #include "mozilla/net/BackgroundDataBridgeParent.h"
 #include "mozilla/net/DNSRequestChild.h"
 #include "mozilla/net/DNSRequestParent.h"
@@ -27,31 +41,17 @@
 #include "mozilla/net/ProxyAutoConfigChild.h"
 #include "mozilla/net/SocketProcessBackgroundChild.h"
 #include "mozilla/net/TRRServiceChild.h"
-#include "mozilla/net/AppleFastDatapathProbe.h"
-#include "mozilla/ipc/ProcessUtils.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/RemoteLazyInputStreamChild.h"
-#include "mozilla/StaticPrefs_javascript.h"
-#include "mozilla/StaticPrefs_network.h"
-#include "mozilla/Telemetry.h"
-#include "MockNetworkLayerController.h"
-#include "NetworkConnectivityService.h"
 #include "nsDebugImpl.h"
 #include "nsHttpConnectionInfo.h"
 #include "nsHttpHandler.h"
 #include "nsIDNSService.h"
 #include "nsIHttpActivityObserver.h"
 #include "nsIXULRuntime.h"
+#include "nsNSSComponent.h"
 #include "nsNetAddr.h"
 #include "nsNetUtil.h"
-#include "nsNSSComponent.h"
 #include "nsSocketTransportService2.h"
 #include "nsThreadManager.h"
-#include "SocketProcessBridgeParent.h"
-#include "jsapi.h"
-#include "js/Initialization.h"
-#include "js/Prefs.h"
-#include "XPCSelfHostedShmem.h"
 
 #if defined(XP_WIN)
 #  include <process.h>
@@ -532,7 +532,15 @@ SocketProcessChild::GetAndRemoveDataBridge(uint64_t aChannelId) {
 
 mozilla::ipc::IPCResult SocketProcessChild::RecvClearSessionCache(
     ClearSessionCacheResolver&& aResolve) {
-  nsNSSComponent::DoClearSSLExternalAndInternalSessionCache();
+  SSLTokensCache::ClearSessionCacheAndTokens();
+  aResolve(void_t{});
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
+SocketProcessChild::RecvClearPrivateBrowsingSessionCache(
+    ClearPrivateBrowsingSessionCacheResolver&& aResolve) {
+  SSLTokensCache::ClearSessionCacheAndPBMTokens();
   aResolve(void_t{});
   return IPC_OK();
 }

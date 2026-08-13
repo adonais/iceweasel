@@ -1,0 +1,4 @@
+[DEFAULT]
+
+["test_MochitestB.html"]
+subsuite = "browser"

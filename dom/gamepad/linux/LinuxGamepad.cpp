@@ -61,10 +61,17 @@ struct Gamepad {
   guint source_id = UINT_MAX;
   char idstring[256] = {0};
   char devpath[PATH_MAX] = {0};
-  uint8_t key_map[KEY_MAX] = {0};
-  uint8_t abs_map[ABS_MAX] = {0};
+  uint8_t key_map[KEY_CNT] = {0};
+  uint8_t abs_map[ABS_CNT] = {0};
   std::unordered_map<uint16_t, input_absinfo> abs_info;
 };
+
+// evdev admits key/abs codes up to KEY_MAX/ABS_MAX inclusive, so the maps must
+// have KEY_CNT/ABS_CNT (== *_MAX + 1) entries to index every valid code.
+static_assert(sizeof(Gamepad::key_map) > KEY_MAX,
+              "key_map must hold every valid EV_KEY code (0..KEY_MAX)");
+static_assert(sizeof(Gamepad::abs_map) > ABS_MAX,
+              "abs_map must hold every valid EV_ABS code (0..ABS_MAX)");
 
 static inline bool LoadAbsInfo(int fd, Gamepad* gamepad, uint16_t code) {
   input_absinfo info{0};
@@ -224,7 +231,7 @@ void LinuxGamepadService::AddDevice(struct udev_device* dev) {
   }
 
   // Now, go through the non-semantic buttons and handle them as extras
-  for (uint16_t key = 0; key < KEY_MAX; key++) {
+  for (uint16_t key = 0; key < KEY_CNT; key++) {
     // Skip standard buttons
     if (gamepad->isStandardGamepad &&
         std::find(kStandardButtons.begin(), kStandardButtons.end(), key) !=
@@ -250,7 +257,7 @@ void LinuxGamepadService::AddDevice(struct udev_device* dev) {
     LoadAbsInfo(fd, gamepad.get(), ABS_HAT0Y);
   }
 
-  for (uint16_t i = 0; i < ABS_MAX; ++i) {
+  for (uint16_t i = 0; i < ABS_CNT; ++i) {
     if (gamepad->isStandardGamepad &&
         (std::find(kStandardAxes.begin(), kStandardAxes.end(), i) !=
              kStandardAxes.end() ||
@@ -427,7 +434,7 @@ bool LinuxGamepadService::IsDeviceGamepad(struct udev_device* aDev) {
 }
 
 bool LinuxGamepadService::IsXboxDevice(struct udev_device* aDev) {
-  const char* driver = NULL;
+  const char* driver = nullptr;
   struct udev_device* p = mUdev.udev_device_get_parent(aDev);
   while (p && !driver) {
     driver = mUdev.udev_device_get_driver(p);
@@ -488,6 +495,11 @@ gboolean LinuxGamepadService::OnGamepadData(GIOChannel* source,
 
     switch (event.type) {
       case EV_KEY:
+        // event.code comes from the device and is untrusted; bound it before
+        // indexing key_map.
+        if (event.code >= KEY_CNT) {
+          continue;
+        }
         if (gamepad->isStandardGamepad) {
           if (gamepad->key_map[event.code] == 255) {
             continue;

@@ -26,7 +26,7 @@ add_task(async function selected_result_autofill_about() {
     await openPopup("about:about");
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "autofill_about",
         selected_position: 1,
@@ -51,7 +51,7 @@ add_task(async function selected_result_autofill_adaptive() {
     await openPopup("exa");
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "autofill_adaptive_url",
         selected_position: 1,
@@ -90,7 +90,7 @@ add_task(async function selected_result_dismiss_autofill_adaptive_origin() {
     );
     await UrlbarTestUtils.promiseSearchComplete(window);
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "autofill_adaptive_origin",
         selected_position: 1,
@@ -129,7 +129,7 @@ add_task(async function selected_result_dismiss_autofill_adaptive_url() {
     );
     await UrlbarTestUtils.promiseSearchComplete(window);
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "autofill_adaptive_url",
         selected_position: 1,
@@ -164,7 +164,7 @@ add_task(
       });
       await UrlbarTestUtils.promiseSearchComplete(window);
 
-      assertEngagementTelemetry([
+      await assertEngagementTelemetry([
         {
           selected_result: "autofill_adaptive_url",
           selected_position: 1,
@@ -203,7 +203,7 @@ add_task(async function selected_result_dismiss_autofill_origin() {
     );
     await UrlbarTestUtils.promiseSearchComplete(window);
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "autofill_origin",
         selected_position: 1,
@@ -225,7 +225,7 @@ add_task(async function selected_result_autofill_origin() {
     await openPopup("exa");
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "autofill_origin",
         selected_position: 1,
@@ -246,7 +246,7 @@ add_task(async function selected_result_autofill_url() {
     await openPopup("https://example.com/test");
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "autofill_url",
         selected_position: 1,
@@ -272,7 +272,7 @@ add_task(async function selected_result_bookmark() {
     await selectRowByURL("https://example.com/bookmark");
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "bookmark",
         selected_position: 2,
@@ -299,7 +299,7 @@ add_task(async function selected_result_bookmark_adaptive() {
     await selectRowByProvider("UrlbarProviderInputHistory");
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "bookmark_adaptive",
         selected_position: 2,
@@ -334,7 +334,7 @@ add_task(async function selected_result_bookmark_serp() {
     await selectRowByURL(serpUrl);
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "bookmark_serp",
         selected_position: 2,
@@ -367,7 +367,7 @@ add_task(async function selected_result_bookmark_adaptive_serp() {
     await selectRowByProvider("UrlbarProviderInputHistory");
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "bookmark_adaptive_serp",
         selected_position: 2,
@@ -390,7 +390,7 @@ add_task(async function selected_result_history() {
     await selectRowByURL("https://example.com/test");
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "history",
         selected_position: 2,
@@ -412,7 +412,7 @@ add_task(async function selected_result_history_adaptive() {
     await selectRowByProvider("UrlbarProviderInputHistory");
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "history_adaptive",
         selected_position: 2,
@@ -435,7 +435,7 @@ add_task(async function selected_result_history_adaptive_serp() {
     await selectRowByProvider("UrlbarProviderInputHistory");
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "history_adaptive_serp",
         selected_position: 2,
@@ -456,7 +456,7 @@ add_task(async function selected_result_keyword() {
     await openPopup("keyword test");
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "keyword",
         selected_position: 1,
@@ -474,7 +474,7 @@ add_task(async function selected_result_search_engine() {
     await openPopup("x");
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "search_engine",
         selected_position: 1,
@@ -498,7 +498,7 @@ add_task(async function selected_result_search_suggest() {
     await selectRowByURL("http://mochi.test:8888/?terms=foofoo");
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "search_suggest",
         selected_position: 2,
@@ -526,7 +526,7 @@ add_task(async function selected_result_search_history() {
     await selectRowByURL("http://mochi.test:8888/?terms=foofoo");
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "search_history",
         selected_position: 3,
@@ -544,7 +544,7 @@ add_task(async function selected_result_url() {
     await openPopup("https://example.com/");
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "url",
         selected_position: 1,
@@ -562,9 +562,9 @@ add_task(async function selected_result_tab() {
     await openPopup("example");
     await selectRowByProvider("UrlbarProviderPlaces");
     EventUtils.synthesizeKey("KEY_Enter");
-    await BrowserTestUtils.waitForCondition(() => gBrowser.selectedTab === tab);
+    await TestUtils.waitForCondition(() => gBrowser.selectedTab === tab);
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "tab",
         selected_position: 4,
@@ -598,12 +598,12 @@ add_task(async function selected_result_tab_adaptive() {
     await openPopup("exa");
     await selectRowByProvider("UrlbarProviderInputHistory");
     EventUtils.synthesizeKey("KEY_Enter");
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => gBrowser.selectedTab === tab,
       "Waiting for selected tab to be the tab we opened."
     );
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "tab_adaptive",
         selected_position: 2,
@@ -640,12 +640,12 @@ add_task(async function selected_result_tab_adaptive_serp() {
     await selectRowByProvider("UrlbarProviderInputHistory");
 
     EventUtils.synthesizeKey("KEY_Enter");
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => gBrowser.selectedTab === tab,
       "Waiting for selected tab to be the tab we opened."
     );
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "tab_adaptive_serp",
         selected_position: 2,
@@ -674,9 +674,9 @@ add_task(async function selected_result_tab_serp() {
     await openPopup("test sea");
     await selectRowByProvider("UrlbarProviderPlaces");
     EventUtils.synthesizeKey("KEY_Enter");
-    await BrowserTestUtils.waitForCondition(() => gBrowser.selectedTab === tab);
+    await TestUtils.waitForCondition(() => gBrowser.selectedTab === tab);
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "tab_serp",
         selected_position: 2,
@@ -698,7 +698,7 @@ add_task(async function selected_result_remote_tab() {
     await selectRowByProvider("UrlbarProviderRemoteTabs");
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "remote_tab",
         selected_position: 2,
@@ -719,7 +719,7 @@ add_task(async function selected_result_addon() {
     await openPopup("omni test");
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "addon",
         selected_position: 1,
@@ -753,7 +753,7 @@ add_task(async function selected_result_tab_to_search() {
     EventUtils.synthesizeKey("KEY_Enter");
     await onComplete;
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "tab_to_search",
         selected_position: 2,
@@ -773,7 +773,7 @@ add_task(async function selected_result_top_site() {
     await selectRowByURL("https://example.com/");
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "top_site",
         selected_position: 1,
@@ -796,7 +796,7 @@ add_task(async function selected_result_calc() {
       EventUtils.synthesizeKey("KEY_Enter");
     });
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "calc",
         selected_position: 2,
@@ -825,7 +825,7 @@ add_task(async function selected_result_clipboard() {
     await selectRowByProvider("UrlbarProviderClipboard");
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "clipboard",
         selected_position: 1,
@@ -855,7 +855,7 @@ add_task(async function selected_result_unit() {
       EventUtils.synthesizeKey("KEY_Enter");
     });
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "unit",
         selected_position: 2,
@@ -881,7 +881,7 @@ add_task(async function selected_result_input_field() {
   await doTest(async () => {
     await doDropAndGo("example.com");
 
-    assertEngagementTelemetry(expected);
+    await assertEngagementTelemetry(expected);
   });
 
   await doTest(async () => {
@@ -909,7 +909,7 @@ add_task(async function selected_result_weather() {
     await selectRowByProvider(provider);
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "weather",
         selected_position: 2,
@@ -944,7 +944,7 @@ add_task(async function selected_result_navigational() {
     await selectRowByProvider("UrlbarProviderQuickSuggest");
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "merino_top_picks",
         selected_position: 2,
@@ -978,7 +978,7 @@ add_task(async function selected_result_dynamic_wikipedia() {
     await selectRowByProvider("UrlbarProviderQuickSuggest");
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "merino_wikipedia",
         selected_position: 2,
@@ -1004,7 +1004,7 @@ add_task(async function selected_result_important_dates() {
     await selectRowByProvider(provider);
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "rust_important_dates",
         selected_position: 2,
@@ -1043,7 +1043,7 @@ add_task(async function selected_result_search_shortcut_button() {
     // Search immediately.
     await doEnter({ shiftKey: true });
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "search_shortcut_button",
         selected_position: 0,
@@ -1109,7 +1109,7 @@ add_task(async function selected_result_trending() {
     await selectRowByProvider("UrlbarProviderSearchSuggestions");
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "trending_search",
         selected_position: 1,
@@ -1196,7 +1196,7 @@ add_task(async function selected_result_trending_rich() {
     await selectRowByProvider("UrlbarProviderSearchSuggestions");
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "trending_search_rich",
         selected_position: 1,
@@ -1254,7 +1254,7 @@ add_task(async function selected_result_addons() {
     await selectRowByProvider("UrlbarProviderQuickSuggest");
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "merino_amo",
         selected_position: 2,
@@ -1276,7 +1276,7 @@ add_task(async function selected_result_rust_adm_sponsored() {
     await selectRowByURL("https://example.com/amp");
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "rust_adm_sponsored",
         selected_position: 2,
@@ -1297,7 +1297,7 @@ add_task(async function selected_result_rust_adm_nonsponsored() {
     await selectRowByURL("https://example.com/wikipedia");
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "rust_adm_nonsponsored",
         selected_position: 2,
@@ -1318,13 +1318,13 @@ add_task(async function selected_result_action() {
     await openPopup("settings");
     EventUtils.synthesizeKey("KEY_Tab");
     EventUtils.synthesizeKey("KEY_Enter");
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () =>
         gBrowser.selectedTab.linkedBrowser.currentURI.spec ==
         "about:preferences"
     );
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "action_settings",
         selected_position: 2,
@@ -1362,7 +1362,7 @@ add_task(async function selected_result_semantic() {
       await selectRowByURL(historyUrl);
       await doEnter();
 
-      assertEngagementTelemetry([
+      await assertEngagementTelemetry([
         {
           selected_result: "history_semantic",
           selected_position: 2,

@@ -5,9 +5,9 @@
 #ifndef ArrayBufferInputStream_h
 #define ArrayBufferInputStream_h
 
-#include "nsIArrayBufferInputStream.h"
 #include "js/Value.h"
 #include "mozilla/UniquePtr.h"
+#include "nsIArrayBufferInputStream.h"
 #include "nsISupportsImpl.h"
 
 #define NS_ARRAYBUFFERINPUTSTREAM_CONTRACTID \

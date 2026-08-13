@@ -103,6 +103,8 @@ The tool is built to be conservative about the number of tests to run, so if you
       --env ENV             Set an environment variable, of the form FOO=BAR. Can be passed in multiple times.
       --record              Get a screen recording of the tests where possible.
       --profiler            Enable the profiler by setting MOZ_PROFILER_STARTUP=1.
+      --extension ADDON_ID  Install an AMO webextension (by addon GUID/slug) into the test profile of raptor/browsertime
+                            and mozperftest tasks. May be specified multiple times. Has no effect on other tasks.
       --gecko-profile       Create and upload a gecko profile during talos/raptor tasks. Copy paste the parameters used in this
                             profiling run directly from about:profiling in Nightly.
       --gecko-profile-interval GECKO_PROFILE_INTERVAL
@@ -217,6 +219,16 @@ Use extra-args option
 ^^^^^^^^^^^^^^^^^^^^^
 
 An alternative method is to utilize the ``--extra-args`` argument to try perf command (e.g. --extra-args verbose post-startup-delay=1).
+
+
+Run with web extensions installed
+---------------------------------
+
+To run the selected tests with one or more web extensions installed in the test profile, use the ``--extension`` option with an addon's AMO GUID/slug. The option can be repeated to install multiple extensions::
+
+    ./mach try perf -q "'tp6" --extension uBlock0@raymondhill.net --extension {addon-guid}
+
+Each addon is resolved to its current ``.xpi`` on `addons.mozilla.org <https://addons.mozilla.org>`_ at submit time (so the exact version is pinned for the push), and downloaded into the test profile when the task runs. This works for any browsertime/raptor test (tp6, Speedometer 3, etc.) as well as mozperftest tests. The same option is available on local runs via ``./mach raptor --install-extension`` and ``./mach perftest --install-extension``, which additionally accept a direct ``.xpi`` URL or local path.
 
 
 .. _Running Alert Tests:

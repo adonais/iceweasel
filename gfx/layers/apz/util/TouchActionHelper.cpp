@@ -4,10 +4,10 @@
 
 #include "TouchActionHelper.h"
 
-#include "mozilla/layers/IAPZCTreeManager.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/TouchEvents.h"
+#include "mozilla/layers/IAPZCTreeManager.h"
 #include "nsContainerFrame.h"
 #include "nsIFrameInlines.h"
 #include "nsLayoutUtils.h"

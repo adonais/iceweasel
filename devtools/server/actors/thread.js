@@ -817,9 +817,6 @@ class ThreadActor extends Actor {
     }
     this._options = { ...this._options, ...options };
 
-    if ("observeAsmJS" in options) {
-      this.dbg.allowUnobservedAsmJS = !options.observeAsmJS;
-    }
     if ("observeWasm" in options) {
       this.dbg.allowUnobservedWasm = !options.observeWasm;
     }
@@ -1526,24 +1523,15 @@ class ThreadActor extends Actor {
     // only resurrect the GC-ed inline <script> and not the one which are still
     // active.
     //
-    // # asm.js / wasm
+    // # wasm
     //
-    // DevTools toggles Debugger API `allowUnobservedAsmJS` and
-    // `allowUnobservedWasm` to false on opening. This changes how asm.js and
-    // Wasm sources are compiled. But only to sources created after DevTools
-    // are opened. This typically requires to reload the page.
+    // DevTools toggles Debugger API `allowUnobservedWasm` to false on opening.
+    // This changes how Wasm sources are compiled. But only to sources created
+    // after DevTools are opened. This typically requires to reload the page.
     //
-    // Before DevTools are opened, the asm.js functions are compiled into wasm
-    // instances, and they are visible as "wasm" sources in `findSources()`.
     // The wasm instance doesn't keep the top-level normal JS script and the
     // corresponding JS source alive. If only the "wasm" source is found for
     // certain URL, the source needs to be re-compiled.
-    //
-    // Here, we should be careful to re-compile these sources the way they were
-    // compiled before DevTools opening. Otherwise the re-compilation will
-    // create Debugger.Script instances backed by normal JS functions for those
-    // asm.js functions, which results in an inconsistency between what's
-    // running in the debuggee and what's shown in DevTools.
     //
     // We are using `urlMap`'s `hasWasm` to flag them and instruct
     // `resurrectSource()` to re-compile the sources as if DevTools was off and
@@ -1587,7 +1575,7 @@ class ThreadActor extends Actor {
     // Resurrect any URLs for which not all sources are accounted for.
     for (const [url, data] of Object.entries(urlMap)) {
       if (data.count > 0) {
-        this._resurrectSource(url, data.sources, data.hasWasm);
+        this._resurrectSource(url, data.sources);
       }
     }
   }
@@ -2215,11 +2203,8 @@ class ThreadActor extends Actor {
    * @param existingInlineSources The inline sources for the URL the debugger knows about
    *                              already, and that we shouldn't re-create (only used when
    *                              url content type is text/html).
-   * @param forceEnableAsmJS A boolean to force enable the asm.js feature.
-   *                         See the comment inside addAllSources for more
-   *                         details.
    */
-  async _resurrectSource(url, existingInlineSources, forceEnableAsmJS) {
+  async _resurrectSource(url, existingInlineSources) {
     let { content, contentType, sourceMapURL } =
       await this.sourcesManager.urlContents(
         url,
@@ -2309,7 +2294,6 @@ class ThreadActor extends Actor {
               startLine,
               startColumn,
               isScriptElement: true,
-              forceEnableAsmJS,
             })
           );
         } catch (e) {
@@ -2335,7 +2319,6 @@ class ThreadActor extends Actor {
           url,
           startLine: 1,
           sourceMapURL,
-          forceEnableAsmJS,
         })
       );
     } catch (e) {

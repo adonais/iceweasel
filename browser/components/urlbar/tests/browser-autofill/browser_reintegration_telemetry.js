@@ -64,7 +64,7 @@ async function pickHistoryResult(url) {
     if (
       !d.autofill &&
       d.result.payload.url === url &&
-      d.result.type === UrlbarUtils.RESULT_TYPE.URL
+      d.result.type === UrlbarShared.RESULT_TYPE.URL
     ) {
       historyIndex = i;
       break;

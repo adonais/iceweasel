@@ -8,17 +8,17 @@
 #ifndef NSNATIVETHEME_H_
 #define NSNATIVETHEME_H_
 
+#include "mozilla/dom/RustTypes.h"
 #include "nsAtom.h"
-#include "nsColor.h"
 #include "nsCOMPtr.h"
-#include "nsString.h"
-#include "nsMargin.h"
+#include "nsColor.h"
 #include "nsGkAtoms.h"
-#include "nsTArray.h"
+#include "nsIContent.h"
 #include "nsINamed.h"
 #include "nsITimer.h"
-#include "nsIContent.h"
-#include "mozilla/dom/RustTypes.h"
+#include "nsMargin.h"
+#include "nsString.h"
+#include "nsTArray.h"
 
 class nsIFrame;
 class nsPresContext;

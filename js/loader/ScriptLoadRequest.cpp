@@ -3,22 +3,22 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ScriptLoadRequest.h"
-#include "GeckoProfiler.h"
 
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/ScriptLoadContext.h"
-#include "mozilla/dom/WorkerLoadContext.h"
 #include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/dom/WorkerLoadContext.h"
+#include "mozilla/FlowMarkers.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/Utf8.h"  // mozilla::Utf8Unit
-#include "mozilla/FlowMarkers.h"
 
-#include "js/SourceText.h"
-
+#include "GeckoProfiler.h"
 #include "ModuleLoadRequest.h"
 #include "nsContentUtils.h"
 #include "nsIClassOfService.h"
 #include "nsISupportsPriority.h"
+
+#include "js/SourceText.h"
 
 using JS::SourceText;
 
@@ -207,6 +207,13 @@ void ScriptLoadRequest::SetCacheEntry(LoadedScript* aLoadedScript,
       mLoadedScript = aLoadedScript;
 
       mState = State::DelayingReady;
+      break;
+    case ScriptKind::eSpeculationRules:
+      MOZ_ASSERT(aLoadedScript->IsSpeculationRulesScript());
+
+      mLoadedScript = aLoadedScript;
+
+      mState = State::Ready;
       break;
     case ScriptKind::eModule:
       MOZ_ASSERT(aLoadedScript->IsModuleScript());

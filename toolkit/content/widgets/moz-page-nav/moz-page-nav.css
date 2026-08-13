@@ -23,12 +23,15 @@
     --page-nav-border-color: var(--border-color);
   }
 
-  @media (max-width: 950px) {
-    grid-template-rows: 1fr auto;
-  }
-
   @media print {
     display: none;
+  }
+}
+
+:host(:not([alwaysexpanded])) {
+  @media (max-width: 950px) {
+    --page-nav-collapsed: collapsed;
+    grid-template-rows: 1fr auto;
   }
 }
 
@@ -39,6 +42,10 @@ nav {
   overflow-y: auto;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
+  /* overflow can cut off focus outlines when they're not inset, so this makes space for them */
+  padding: var(--page-nav-focus-padding);
+  margin-inline-start: calc(var(--page-nav-focus-padding) * -1);
+  margin-block-start: calc(var(--page-nav-focus-padding) * -1);
 }
 
 .page-nav-heading-wrapper {
@@ -57,7 +64,7 @@ nav {
     /* heading logo should be centered above button icons */
     margin-inline-start: calc(var(--space-medium) - ((var(--page-nav-heading-logo-size) - var(--icon-size)) / 2));
 
-    @media (max-width: 950px) {
+    @container style(--page-nav-collapsed: collapsed) {
       margin-inline-start: var(--space-xsmall);
     }
   }
@@ -67,7 +74,7 @@ nav {
     font-weight: var(--font-weight-heading);
     margin-block: 0;
 
-    @media (max-width: 950px) {
+    @container style(--page-nav-collapsed: collapsed) {
       display: none;
     }
   }
@@ -80,7 +87,7 @@ nav {
   grid-auto-rows: min-content;
   gap: var(--page-nav-button-gap);
 
-  @media (max-width: 950px) {
+  @container style(--page-nav-collapsed: collapsed) {
     justify-content: center;
   }
 
@@ -97,7 +104,7 @@ hr {
   background-color: var(--page-nav-hr-background-color);
   flex-shrink: 0;
 
-  @media (max-width: 52rem) {
+  @container style(--page-nav-collapsed: collapsed) {
     width: var(--button-size-icon);
   }
 }

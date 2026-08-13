@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 
+#include <optional>
 #include "sandbox/win/src/crosscall_client.h"
 #include "sandbox/win/src/ipc_tags.h"
 #include "sandbox/win/src/policy_params.h"
@@ -14,8 +15,7 @@
 #include "sandbox/win/src/sandbox_nt_util.h"
 #include "sandbox/win/src/sharedmem_ipc_client.h"
 #include "sandbox/win/src/target_services.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
-#include "mozilla/sandboxing/sandboxLogging.h"
+#include "sandbox/win/TargetGeckoClient.h"
 
 namespace sandbox {
 
@@ -34,21 +34,21 @@ NTSTATUS DuplicateObject(HANDLE handle,
 }
 
 template <typename T>
-absl::optional<T> CaptureParameter(const T* parameter) {
+std::optional<T> CaptureParameter(const T* parameter) {
   if (parameter) {
     __try {
       return *parameter;
     } __except (EXCEPTION_EXECUTE_HANDLER) {
     }
   }
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 bool ValidObjectAttributes(const OBJECT_ATTRIBUTES* object_attributes) {
   if (!object_attributes) {
     return true;
   }
-  absl::optional<OBJECT_ATTRIBUTES> valid_obj_attr =
+  std::optional<OBJECT_ATTRIBUTES> valid_obj_attr =
       CaptureParameter(object_attributes);
   return valid_obj_attr.has_value() && !valid_obj_attr->Attributes &&
          !valid_obj_attr->ObjectName && !valid_obj_attr->RootDirectory &&
@@ -65,7 +65,6 @@ NTSTATUS CallNtOpenProcessTokenEx(NTSTATUS status,
     return status;
   }
 
-  mozilla::sandboxing::LogBlocked("NtOpenProcessToken(Ex)");
   if (!SandboxFactory::GetTargetServices()->GetState()->InitCalled()) {
     return status;
   }
@@ -99,7 +98,6 @@ NTSTATUS CallNtOpenProcessTokenEx(NTSTATUS status,
     return status;
   }
 
-    mozilla::sandboxing::LogAllowed("NtOpenProcessTokenEx");
   return answer.nt_status;
 }
 
@@ -118,7 +116,8 @@ NTSTATUS WINAPI TargetNtOpenThread(NtOpenThreadFunction orig_OpenThread,
     return status;
   }
 
-  mozilla::sandboxing::LogBlocked("NtOpenThread");
+  SYSCALL_BROKERING();
+
   if (!SandboxFactory::GetTargetServices()->GetState()->InitCalled()) {
     return status;
   }
@@ -128,7 +127,7 @@ NTSTATUS WINAPI TargetNtOpenThread(NtOpenThreadFunction orig_OpenThread,
     return status;
   }
 
-  absl::optional<CLIENT_ID> valid_client_id = CaptureParameter(client_id);
+  std::optional<CLIENT_ID> valid_client_id = CaptureParameter(client_id);
   if (!valid_client_id.has_value() || valid_client_id->UniqueProcess) {
     return status;
   }
@@ -167,11 +166,11 @@ NTSTATUS WINAPI TargetNtOpenThread(NtOpenThreadFunction orig_OpenThread,
   __try {
     // Write the output parameters.
     *thread = answer.handle;
+    SYSCALL_BROKERED();
   } __except (EXCEPTION_EXECUTE_HANDLER) {
     return status;
   }
 
-  mozilla::sandboxing::LogAllowed("NtOpenThread");
   return answer.nt_status;
 }
 
@@ -192,7 +191,7 @@ NTSTATUS WINAPI TargetNtOpenProcess(NtOpenProcessFunction orig_OpenProcess,
     return status;
   }
 
-  absl::optional<CLIENT_ID> valid_client_id = CaptureParameter(client_id);
+  std::optional<CLIENT_ID> valid_client_id = CaptureParameter(client_id);
   if (!valid_client_id.has_value() ||
       valid_client_id->UniqueProcess != GetCurrentClientId().UniqueProcess) {
     return status;
@@ -244,6 +243,8 @@ HANDLE WINAPI TargetCreateThread(CreateThreadFunction orig_CreateThread,
 
   DWORD original_error = ::GetLastError();
   do {
+    SYSCALL_BROKERING();
+
     if (!target_services)
       break;
 
@@ -287,6 +288,7 @@ HANDLE WINAPI TargetCreateThread(CreateThreadFunction orig_CreateThread,
     __try {
       if (thread_id)
         *thread_id = ::GetThreadId(answer.handle);
+      SYSCALL_BROKERED();
       return answer.handle;
     } __except (EXCEPTION_EXECUTE_HANDLER) {
       break;

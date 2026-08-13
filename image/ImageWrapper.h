@@ -5,8 +5,8 @@
 #ifndef mozilla_image_ImageWrapper_h
 #define mozilla_image_ImageWrapper_h
 
-#include "mozilla/MemoryReporting.h"
 #include "Image.h"
+#include "mozilla/MemoryReporting.h"
 
 namespace mozilla {
 namespace image {

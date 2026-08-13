@@ -396,7 +396,7 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   // Remove a document or shadow root from the list of adopters.
   void RemoveAdopter(dom::DocumentOrShadowRoot& aAdopter) {
     // Cannot assert IsConstructed() because this can run after unlink.
-    mAdopters.RemoveElement(&aAdopter);
+    mAdopters.UnorderedRemoveElement(&aAdopter);
   }
 
   const nsTArray<dom::DocumentOrShadowRoot*>& SelfOrAncestorAdopters() const {

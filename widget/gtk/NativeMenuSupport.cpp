@@ -4,10 +4,10 @@
 
 #include "mozilla/widget/NativeMenuSupport.h"
 
-#include "mozilla/StaticPrefs_widget.h"
+#include "DBusMenu.h"
 #include "MainThreadUtils.h"
 #include "NativeMenuGtk.h"
-#include "DBusMenu.h"
+#include "mozilla/StaticPrefs_widget.h"
 #include "nsWindow.h"
 
 namespace mozilla::widget {

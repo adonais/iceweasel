@@ -139,7 +139,7 @@ add_task(async function test_switch_to_classic_window() {
 
   let iconListImage = window.getComputedStyle(button)["list-style-image"];
   Assert.ok(
-    iconListImage.includes("icon32.png"),
+    iconListImage.includes("about-logo.svg"),
     "Button icon should change to Classic Window icon"
   );
 
@@ -362,106 +362,86 @@ add_task(async function test_switcher_button_appears_in_classic_mode() {
   await SpecialPowers.flushPrefEnv();
 });
 
-add_task(
-  async function test_hamburger_menu_position_depends_on_smartwindow_pref() {
-    await SpecialPowers.pushPrefEnv({
-      set: [
-        ["sidebar.verticalTabs", false],
-        ["browser.smartwindow.enabled", false],
-      ],
-    });
+add_task(async function test_hamburger_menu_position_depends_on_window_mode() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["sidebar.verticalTabs", false]],
+  });
 
-    const restoreSignIn = skipSignIn();
-    const hamburgerMenu = document.getElementById("PanelUI-button");
-    const modeSwitcherButton = document.getElementById("ai-window-toggle");
-    const navBar = document.getElementById("nav-bar");
+  const restoreSignIn = skipSignIn();
+  const hamburgerMenu = document.getElementById("PanelUI-button");
+  const navBar = document.getElementById("nav-bar");
+  const tabsToolbar = document.getElementById("TabsToolbar");
+  const tabsWindowControls = tabsToolbar.querySelector(
+    ".titlebar-buttonbox-container"
+  );
+  const navBarWindowControls = navBar.querySelector(
+    ".titlebar-buttonbox-container"
+  );
 
-    // smartwindow.enabled is false, and is classic window
-    Assert.ok(
-      hamburgerMenu.closest("#nav-bar"),
-      "Hamburger menu should remain in nav-bar when smartwindow.enabled pref is false with horizontal tabs"
-    );
-    Assert.notEqual(
-      hamburgerMenu,
-      modeSwitcherButton.nextElementSibling,
-      "Hamburger menu should NOT be adjacent to Window Switcher when smartwindow.enabled pref is false with horizontal tabs"
-    );
-
-    // Smartwindow.enabled is true
-    await SpecialPowers.pushPrefEnv({
-      set: [["browser.smartwindow.enabled", true]],
-    });
-
-    // smartwindow.enabled is true, and is classic window
-    Assert.equal(
-      hamburgerMenu,
-      modeSwitcherButton.nextElementSibling,
-      "Hamburger menu should be positioned after Window Switcher when smartwindow.enabled pref is true with horizontal tabs in classic mode"
-    );
-
-    AIWindow.toggleAIWindow(window, true);
-
-    // smartwindow.enabled is true, and is smart window
-    Assert.equal(
-      hamburgerMenu,
-      modeSwitcherButton.nextElementSibling,
-      "Hamburger menu should be positioned after Window Switcher when smartwindow.enabled pref is true with horizontal tabs in smart/ai mode"
-    );
-
-    // Switch to vertical tabs - hamburger should stay beside switcher
-    await SpecialPowers.pushPrefEnv({
-      set: [["sidebar.verticalTabs", true]],
-    });
-
-    await BrowserTestUtils.waitForMutationCondition(
-      navBar,
-      { childList: true, subtree: true },
-      () => hamburgerMenu === modeSwitcherButton.nextElementSibling
-    );
-
-    // smartwindow.enabled is true, and is smart window, vertical tabs
-    Assert.equal(
-      hamburgerMenu,
-      modeSwitcherButton.nextElementSibling,
-      "Hamburger menu should be positioned after Window Switcher with vertical tabs"
-    );
-
-    await SpecialPowers.pushPrefEnv({
-      set: [["sidebar.verticalTabs", false]],
-    });
-
+  // In classic mode with horizontal tabs, hamburger should stay in nav-bar
+  if (document.documentElement.hasAttribute("ai-window")) {
     AIWindow.toggleAIWindow(window, false);
-
-    // smartwindow.enabled is true, and switched back to classic window
-    Assert.equal(
-      hamburgerMenu,
-      modeSwitcherButton.nextElementSibling,
-      "Hamburger menu should be positioned after Window Switcher when smartwindow.enabled pref is true with horizontal tabs in classic mode"
-    );
-
-    await SpecialPowers.pushPrefEnv({
-      set: [["browser.smartwindow.enabled", false]],
-    });
-
-    // smartwindow.enabled is false, and is classic window
-    Assert.ok(
-      hamburgerMenu.closest("#nav-bar"),
-      "Hamburger menu should return to nav-bar when smartwindow.enabled flips back to false"
-    );
-
-    /* cleanup to avoid window leaks */
-    if (document.documentElement.hasAttribute("ai-window")) {
-      AIWindow.toggleAIWindow(window, false);
-      await TestUtils.waitForCondition(
-        () => !document.documentElement.hasAttribute("ai-window"),
-        "Window should return to classic mode"
-      );
-    }
-
-    restoreSignIn();
-    await SpecialPowers.flushPrefEnv();
   }
-);
+
+  Assert.ok(
+    hamburgerMenu.closest("#nav-bar"),
+    "Hamburger menu should remain in nav-bar in classic mode with horizontal tabs"
+  );
+
+  // Switch to AI mode - hamburger should move beside the window controls
+  AIWindow.toggleAIWindow(window, true);
+
+  Assert.equal(
+    tabsWindowControls.nextElementSibling,
+    hamburgerMenu,
+    "Hamburger menu should be positioned after the window controls in AI mode with horizontal tabs"
+  );
+
+  // Switch to vertical tabs - hamburger should sit beside the nav-bar window controls
+  await SpecialPowers.pushPrefEnv({
+    set: [["sidebar.verticalTabs", true]],
+  });
+
+  await BrowserTestUtils.waitForMutationCondition(
+    navBar,
+    { childList: true, subtree: true },
+    () => navBarWindowControls.nextElementSibling === hamburgerMenu
+  );
+
+  Assert.equal(
+    navBarWindowControls.nextElementSibling,
+    hamburgerMenu,
+    "Hamburger menu should be positioned after the window controls with vertical tabs"
+  );
+
+  // Switch back to classic mode with vertical tabs - hamburger should stay beside the window controls
+  AIWindow.toggleAIWindow(window, false);
+
+  Assert.equal(
+    navBarWindowControls.nextElementSibling,
+    hamburgerMenu,
+    "Hamburger menu should remain beside the window controls with vertical tabs even in classic mode"
+  );
+
+  // Switch back to horizontal tabs in classic mode - hamburger should return to nav-bar
+  await SpecialPowers.pushPrefEnv({
+    set: [["sidebar.verticalTabs", false]],
+  });
+
+  await BrowserTestUtils.waitForMutationCondition(
+    navBar,
+    { childList: true, subtree: true },
+    () => hamburgerMenu.closest("#nav-bar")
+  );
+
+  Assert.ok(
+    hamburgerMenu.closest("#nav-bar"),
+    "Hamburger menu should return to nav-bar after switching back to horizontal tabs in classic mode"
+  );
+
+  restoreSignIn();
+  await SpecialPowers.flushPrefEnv();
+});
 
 // Test that _onAccountLogout switches AI windows to classic mode
 add_task(async function test_onAccountLogout_switches_windows() {
@@ -489,7 +469,7 @@ add_task(async function test_onAccountLogout_switches_windows() {
   await SpecialPowers.popPrefEnv();
 });
 
-// Blocking via AI control pref should hide switcher button
+// Blocking via AI control pref makes the switcher button not exist
 add_task(async function test_ai_control_block_hides_switcher() {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -502,15 +482,15 @@ add_task(async function test_ai_control_block_hides_switcher() {
   let win = await openAIWindow();
   let button = win.document.getElementById("ai-window-toggle");
 
-  Assert.ok(!button?.hidden, "Switcher button should be visible");
+  Assert.ok(!button?.hidden, "Switcher button should exist and be visible");
 
   await SpecialPowers.pushPrefEnv({
     set: [["browser.ai.control.smartWindow", "blocked"]],
   });
 
   await TestUtils.waitForCondition(
-    () => button?.hidden,
-    "Switcher button should be hidden when AI control is blocked"
+    () => !win.document.getElementById("ai-window-toggle"),
+    "Switcher button should not exist when AI control is blocked"
   );
 
   await BrowserTestUtils.closeWindow(win);
@@ -539,8 +519,42 @@ add_task(async function test_ai_control_default_block_hides_switcher() {
   });
 
   await TestUtils.waitForCondition(
-    () => button?.hidden,
-    "Switcher button should be hidden when global AI control default is blocked"
+    () => !win.document.getElementById("ai-window-toggle"),
+    "Switcher button should not exist when global AI control default is blocked"
+  );
+
+  await BrowserTestUtils.closeWindow(win);
+  await SpecialPowers.popPrefEnv();
+  await SpecialPowers.popPrefEnv();
+});
+
+// window switcher should be visible again after we unblock global AI controls
+add_task(async function test_ai_control_default_after_unblock_shows_switcher() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.ai.control.smartWindow", "default"],
+      ["browser.ai.control.default", "blocked"],
+    ],
+  });
+
+  const win = await BrowserTestUtils.openNewBrowserWindow();
+
+  await TestUtils.waitForCondition(
+    () => !win.document.getElementById("ai-window-toggle"),
+    "Switcher button should not exist while blocked"
+  );
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ai.control.default", "available"]],
+  });
+
+  await TestUtils.waitForCondition(
+    () => win.document.getElementById("ai-window-toggle"),
+    "Switcher button should be recreated after unblocking"
+  );
+  Assert.ok(
+    win.CustomizableUI.getPlacementOfWidget("ai-window-toggle"),
+    "Switcher button should be placed back in a toolbar area"
   );
 
   await BrowserTestUtils.closeWindow(win);

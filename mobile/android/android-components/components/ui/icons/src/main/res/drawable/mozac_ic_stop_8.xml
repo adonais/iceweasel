@@ -6,7 +6,10 @@
     android:height="8dp"
     android:viewportWidth="8"
     android:viewportHeight="8">
-    <path
-        android:fillColor="@color/mozac_ui_icons_fill"
-        android:pathData="M1.5,0L6.5,0A1.5,1.5 0,0 1,8 1.5L8,6.5A1.5,1.5 0,0 1,6.5 8L1.5,8A1.5,1.5 0,0 1,0 6.5L0,1.5A1.5,1.5 0,0 1,1.5 0z" />
+    <group>
+        <clip-path android:pathData="M0,0h8v8h-8z" />
+        <path
+            android:fillColor="@color/mozac_ui_icons_fill"
+            android:pathData="M8,6.51C8,7.18 7.505,7.754 6.839,7.833C5.983,7.934 5.032,8 4,8C3.165,8 2.215,7.957 1.176,7.834C0.506,7.755 0,7.182 0,6.507V1.49C0,0.82 0.495,0.246 1.161,0.167C2.017,0.066 2.968,0 4,0C4.835,0 5.785,0.043 6.824,0.166C7.494,0.245 8,0.818 8,1.493V6.51Z" />
+    </group>
 </vector>

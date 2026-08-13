@@ -207,14 +207,14 @@ class MenuController {
 }
 
 /**
- * A button with multiple types and two sizes.
+ * A button with multiple types and three sizes.
  *
  * @tagname moz-button
  * @property {string} label - The button's label, will be overridden by slotted content.
  * @property {string} type - The button type.
  *   Options: default, primary, destructive, icon, icon ghost, ghost.
  * @property {string} size - The button size.
- *   Options: default, small.
+ *   Options: default, small, large.
  * @property {boolean} disabled - The disabled state.
  * @property {string} title - The button's title attribute, used in shadow DOM and therefore not as an attribute on moz-button.
  * @property {string} titleAttribute - Internal, map title attribute to the title JS property.

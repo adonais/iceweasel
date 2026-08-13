@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "CustomAttributes.h"
+#include "CustomAttributesAction.h"
 #include "plugin.h"
 #include "clang/Frontend/FrontendPluginRegistry.h"
 
@@ -67,29 +68,23 @@ public:
   }
 };
 
-class CustomAttributesAction : public PluginASTAction {
-public:
-  ASTConsumerPtr CreateASTConsumer(CompilerInstance &CI,
-                                   StringRef FileName) override {
-    auto &Context = CI.getASTContext();
-    auto AstMatcher = new (Context.Allocate<MatchFinder>()) MatchFinder();
-    auto Matcher = new (Context.Allocate<CustomAttributesMatcher>())
-        CustomAttributesMatcher();
-    AstMatcher->addMatcher(decl().bind("decl"), Matcher);
-    AstMatcher->addMatcher(lambdaExpr().bind("lambda"), Matcher);
-    return AstMatcher->newASTConsumer();
-  }
+ASTConsumerPtr CustomAttributesAction::CreateASTConsumer(CompilerInstance &CI,
+                                  StringRef FileName) {
+  auto &Context = CI.getASTContext();
+  auto AstMatcher = new (Context.Allocate<MatchFinder>()) MatchFinder();
+  auto Matcher = new (Context.Allocate<CustomAttributesMatcher>())
+      CustomAttributesMatcher();
+  AstMatcher->addMatcher(decl().bind("decl"), Matcher);
+  AstMatcher->addMatcher(lambdaExpr().bind("lambda"), Matcher);
+  return AstMatcher->newASTConsumer();
+}
 
-  bool ParseArgs(const CompilerInstance &CI,
-                 const std::vector<std::string> &Args) override {
-    return true;
-  }
+bool CustomAttributesAction::ParseArgs(const CompilerInstance &CI,
+                const std::vector<std::string> &Args) {
+  return true;
+}
 
-  ActionType getActionType() override { return AddBeforeMainAction; }
-};
-
-static FrontendPluginRegistry::Add<CustomAttributesAction>
-    X("moz-custom-attributes", "prepare custom attributes for moz-check");
+PluginASTAction::ActionType CustomAttributesAction::getActionType() { return AddBeforeMainAction; }
 #endif
 
 CustomAttributesSet GetAttributes(const Decl *D) {

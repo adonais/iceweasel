@@ -46,7 +46,7 @@ if (cb instanceof UniffiSkipJsTypeCheck) {
     FfiConverterTypeTestCallbackInterface.checkType(cb);
 }
 const result = UniFFIScaffolding.callSync(
-    263, // uniffi_uniffi_bindings_tests_collision_fn_func_invoke_collision_callback
+    325, // uniffi_uniffi_bindings_tests_collision_fn_func_invoke_collision_callback
     FfiConverterTypeTestCallbackInterface.lower(cb),
 )
 return handleRustResult(
@@ -101,7 +101,7 @@ export class FfiConverterTypeTestCallbackInterface extends FfiConverter {
 }
 const uniffiCallbackHandlerUniffiBindingsTestsCollisionTestCallbackInterface = new UniFFICallbackHandler(
     "TestCallbackInterface",
-    11,
+    13,
     [
         new UniFFICallbackMethodHandler(
             "getValue",

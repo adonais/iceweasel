@@ -1018,6 +1018,14 @@ Maybe<Ssrc> WebrtcVideoConduit::GetAssociatedLocalRtxSSRC(Ssrc aSsrc) const {
   return Nothing();
 }
 
+Maybe<Ssrc> WebrtcVideoConduit::GetAssociatedRemoteRtxSSRC() const {
+  MOZ_ASSERT(mCallThread->IsOnCurrentThread());
+  if (mRecvStreamConfig.rtp.rtx_ssrc) {
+    return Some(mRecvStreamConfig.rtp.rtx_ssrc);
+  }
+  return Nothing();
+}
+
 Maybe<gfx::IntSize> WebrtcVideoConduit::GetLastResolution() const {
   MOZ_ASSERT(mCallThread->IsOnCurrentThread());
   return mLastSize;
@@ -1288,7 +1296,31 @@ Maybe<webrtc::VideoSendStream::Stats> WebrtcVideoConduit::GetSenderStats()
     const {
   MOZ_ASSERT(mCallThread->IsOnCurrentThread());
   if (!mSendStream) {
-    return Nothing();
+    // Prefer transitional stats left over from a recently destroyed stream
+    // (e.g. during a codec change). These carry real cumulative counters and
+    // should take priority over the synthesised fallback below.
+    if (mTransitionalSendStreamStats) {
+      return mTransitionalSendStreamStats;
+    }
+    // The send stream is only created when mTransmitting is true, which
+    // requires a track to be bound (see RTCRtpSender::UpdateBaseConfig). For
+    // a trackless sender the stream never starts, yet the WebRTC stats spec
+    // requires RTCOutboundRtpStreamStats to exist as soon as the sender is
+    // configured by a completed offer/answer exchange. Synthesise minimal
+    // stats keyed by the SSRCs that were negotiated in SDP so that
+    // outbound-rtp entries appear in getStats() even before a track arrives.
+    const auto& ssrcs = mSendStreamConfig.rtp.ssrcs;
+    if (ssrcs.empty()) {
+      return Nothing();
+    }
+    webrtc::VideoSendStream::Stats synthStats;
+    for (uint32_t ssrc : ssrcs) {
+      webrtc::VideoSendStream::StreamStats streamStats;
+      streamStats.type =
+          webrtc::VideoSendStream::StreamStats::StreamType::kMedia;
+      synthStats.substreams[ssrc] = streamStats;
+    }
+    return Some(std::move(synthStats));
   }
   auto stats = mSendStream->GetStats();
   if (stats.substreams.empty()) {

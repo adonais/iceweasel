@@ -4,22 +4,23 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "nsASCIIMask.h"
-#include "nsCharSeparatedTokenizer.h"
-#include "nsPrintfCString.h"
-#include "nsString.h"
-#include "mozilla/StringBuffer.h"
-#include "nsReadableUtils.h"
-#include "nsCRTGlue.h"
+
+#include "gtest/BlackBox.h"
+#include "gtest/MozGTestBench.h"  // For MOZ_GTEST_BENCH
+#include "gtest/gtest.h"
+#include "js/String.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/StringBuffer.h"
 #include "mozilla/TextUtils.h"
 #include "mozilla/Utf8.h"
-#include "nsTArray.h"
-#include "gtest/gtest.h"
-#include "gtest/MozGTestBench.h"  // For MOZ_GTEST_BENCH
-#include "gtest/BlackBox.h"
+#include "nsASCIIMask.h"
 #include "nsBidiUtils.h"
-#include "js/String.h"
+#include "nsCRTGlue.h"
+#include "nsCharSeparatedTokenizer.h"
+#include "nsPrintfCString.h"
+#include "nsReadableUtils.h"
+#include "nsString.h"
+#include "nsTArray.h"
 
 #define CONVERSION_ITERATIONS 50000
 

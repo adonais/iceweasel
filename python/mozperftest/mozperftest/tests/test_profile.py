@@ -48,5 +48,31 @@ def test_conditionedprofile():
     assert not os.path.exists(profile_dir)
 
 
+@mock.patch("mozperftest.system.profile.download_file")
+@mock.patch("mozperftest.system.profile.create_profile")
+def test_profile_install_extension(create_profile_mock, download_file_mock):
+    profile_dir = tempfile.mkdtemp()
+    profile_mock = mock.MagicMock()
+    profile_mock.profile = profile_dir
+    profile_mock.addons.addon_details.return_value = {"id": "ext@id", "version": "1.0"}
+    create_profile_mock.return_value = profile_mock
+    download_file_mock.side_effect = lambda url, **kw: (
+        f"/downloaded/{url.split('/')[-1]}"
+    )
+
+    # A single comma-separated value is how PERF_FLAGS forwards multiple addons.
+    mach_cmd, metadata, env = get_running_env(
+        install_extension=["https://amo/a.xpi,https://amo/b.xpi"]
+    )
+
+    with Profile(env, mach_cmd) as profile:
+        profile(metadata)
+
+    profile_mock.addons.install.assert_called_once_with([
+        "/downloaded/a.xpi",
+        "/downloaded/b.xpi",
+    ])
+
+
 if __name__ == "__main__":
     mozunit.main()

@@ -7,8 +7,8 @@
 
 #import <Cocoa/Cocoa.h>
 
-#include "nsITouchBarInput.h"
 #include "nsCOMPtr.h"
+#include "nsITouchBarInput.h"
 
 using namespace mozilla::dom;
 

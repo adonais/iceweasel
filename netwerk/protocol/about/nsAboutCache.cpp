@@ -3,24 +3,22 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsAboutCache.h"
-#include "nsIInputStream.h"
-#include "nsIURI.h"
-#include "nsCOMPtr.h"
-#include "nsNetUtil.h"
-#include "nsIPipe.h"
-#include "nsContentUtils.h"
-#include "nsEscape.h"
-#include "nsAboutProtocolUtils.h"
-#include "nsPrintfCString.h"
 
-#include "nsICacheStorageService.h"
-#include "nsICacheStorage.h"
 #include "CacheFileUtils.h"
 #include "CacheObserver.h"
-
-#include "nsThreadUtils.h"
-
 #include "mozilla/Components.h"
+#include "nsAboutProtocolUtils.h"
+#include "nsCOMPtr.h"
+#include "nsContentUtils.h"
+#include "nsEscape.h"
+#include "nsICacheStorage.h"
+#include "nsICacheStorageService.h"
+#include "nsIInputStream.h"
+#include "nsIPipe.h"
+#include "nsIURI.h"
+#include "nsNetUtil.h"
+#include "nsPrintfCString.h"
+#include "nsThreadUtils.h"
 
 using namespace mozilla::net;
 

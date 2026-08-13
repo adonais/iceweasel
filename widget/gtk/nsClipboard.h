@@ -5,14 +5,16 @@
 #ifndef _nsClipboard_h_
 #define _nsClipboard_h_
 
+#include <gtk/gtk.h>
+
+#include "GUniquePtr.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Span.h"
+#include "mozilla/widget/WebCustomFormatUtils.h"
 #include "nsBaseClipboard.h"
+#include "nsCOMPtr.h"
 #include "nsIClipboard.h"
 #include "nsIObserver.h"
-#include "nsCOMPtr.h"
-#include "GUniquePtr.h"
-#include <gtk/gtk.h>
 
 namespace mozilla {
 
@@ -122,8 +124,25 @@ class nsClipboard final : public nsBaseClipboard, public nsIObserver {
       const nsTArray<nsCString>& aFlavorList, ClipboardType aWhichClipboard,
       HasMatchingFlavorsCallback&& aCallback) override;
 
+ public:
+  // Same shape as HasMatchingFlavorsCallback, but the second argument carries
+  // a WebCustomFormatMap that the async flavor query may have fetched while
+  // resolving "web foo/bar" entries. A chained AsyncGet call can reuse the
+  // map instead of re-fetching the JSON. The cross-platform
+  // HasMatchingFlavorsCallback is unchanged; this richer variant is used
+  // only internally on Linux. The alias is public so a file-scope helper
+  // (TargetCallbackHandler) can hold instances of it; the method taking it
+  // is private.
+  using HasMatchingFlavorsCallbackWithMap = mozilla::MoveOnlyFunction<void(
+      mozilla::Result<nsTArray<nsCString>, nsresult>,
+      mozilla::Maybe<mozilla::widget::WebCustomFormatMap>)>;
+
  private:
   virtual ~nsClipboard();
+
+  void AsyncHasNativeClipboardDataMatchingFlavorsWithMap(
+      const nsTArray<nsCString>& aFlavorList, ClipboardType aWhichClipboard,
+      HasMatchingFlavorsCallbackWithMap&& aCallback);
 
   // Get our hands on the correct transferable, given a specific
   // clipboard
@@ -132,12 +151,34 @@ class nsClipboard final : public nsBaseClipboard, public nsIObserver {
   void ClearTransferable(int32_t aWhichClipboard);
   void ClearCachedTargets(int32_t aWhichClipboard);
 
+  // X11 TARGETS-based filter for sync reads. Compares aFlavor literally
+  // against the published target atoms; callers are responsible for
+  // resolving virtual flavors (e.g. "web foo/bar") to their real target
+  // atom name before passing them in.
   bool HasSuitableData(int32_t aWhichClipboard, const nsACString& aFlavor);
+
+  // Sync-fetch the web custom format map target's JSON payload from the
+  // system clipboard and parse it. Returns an empty map if the target isn't
+  // published, the fetch failed, or the JSON is malformed.
+  mozilla::widget::WebCustomFormatMap GetWebCustomFormatMapFromClipboard(
+      int32_t aWhichClipboard);
 
   // Hang on to our transferables so we can transfer data when asked.
   nsCOMPtr<nsITransferable> mSelectionTransferable;
   nsCOMPtr<nsITransferable> mGlobalTransferable;
   RefPtr<RetrievalContext> mContext;
+
+  // Map "web foo/bar" essence -> slot name ("Web Custom FormatN") for each
+  // clipboard type. Built when the transferable is published with custom
+  // format flavors; consulted in SelectionGetEvent to serve the map JSON
+  // and the per-slot payloads.
+  mozilla::widget::WebCustomFormatMap mSelectionWebCustomFormatMap;
+  mozilla::widget::WebCustomFormatMap mGlobalWebCustomFormatMap;
+  mozilla::widget::WebCustomFormatMap& WebCustomFormatMapFor(
+      int32_t aWhichClipboard) {
+    return aWhichClipboard == kSelectionClipboard ? mSelectionWebCustomFormatMap
+                                                  : mGlobalWebCustomFormatMap;
+  }
 
   void IncrementSequenceNumber(int32_t aWhichClipboard) {
     if (aWhichClipboard == kSelectionClipboard) {

@@ -162,7 +162,7 @@ async function doTest({
       fireInputEvent: true,
     });
     await UrlbarTestUtils.enterSearchMode(win, {
-      source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     });
 
     if (exitSearchMode) {
@@ -211,7 +211,7 @@ async function doTest({
       "Waiting for search mode to be restored"
     );
     await UrlbarTestUtils.assertSearchMode(win, {
-      source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
       entry: "oneoff",
     });
     Assert.equal(
@@ -253,7 +253,7 @@ add_task(async function duplicateTabs() {
     fireInputEvent: true,
   });
   await UrlbarTestUtils.enterSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
   });
 
   // Now duplicate the current tab using the context menu item.
@@ -276,7 +276,7 @@ add_task(async function duplicateTabs() {
     "Waiting for search mode to be duplicated/restored"
   );
   await UrlbarTestUtils.assertSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     entry: "oneoff",
   });
   Assert.equal(

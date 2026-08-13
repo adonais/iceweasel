@@ -6,16 +6,16 @@
 #define nsHttp_h_
 
 #include <stdint.h>
-#include "prtime.h"
-#include "nsString.h"
-#include "nsError.h"
-#include "nsTArray.h"
+
+#include "NSSErrorsService.h"
 #include "mozilla/OriginAttributes.h"
 #include "mozilla/TimeStamp.h"
-
 #include "mozilla/UniquePtr.h"
-#include "NSSErrorsService.h"
+#include "nsError.h"
 #include "nsIHttpChannelInternal.h"
+#include "nsString.h"
+#include "nsTArray.h"
+#include "prtime.h"
 
 class nsICacheEntry;
 

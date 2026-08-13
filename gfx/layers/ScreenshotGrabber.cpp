@@ -8,11 +8,10 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
-
+#include "mozilla/gfx/Point.h"
 #include "mozilla/layers/Compositor.h"
 #include "mozilla/layers/ProfilerScreenshots.h"
 #include "mozilla/layers/TextureHost.h"
-#include "mozilla/gfx/Point.h"
 #include "nsTArray.h"
 
 namespace mozilla {

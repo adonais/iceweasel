@@ -5,8 +5,8 @@
 #ifndef nsStringIterator_h_
 #define nsStringIterator_h_
 
-#include "nsCharTraits.h"
 #include "nsAlgorithm.h"
+#include "nsCharTraits.h"
 #include "nsDebug.h"
 
 /**

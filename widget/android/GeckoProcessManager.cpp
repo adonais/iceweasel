@@ -4,17 +4,30 @@
 
 #include "GeckoProcessManager.h"
 
+#include "mozilla/Services.h"
+#include "mozilla/java/GeckoAppShellWrappers.h"
 #include "nsINetworkLinkService.h"
 #include "nsISupportsImpl.h"
-#include "mozilla/Services.h"
-
-#include "mozilla/java/GeckoAppShellWrappers.h"
 
 namespace mozilla {
 
 /* static */ void GeckoProcessManager::Init() {
   BaseNatives::Init();
   ConnectionManager::Init();
+}
+
+// static
+void GeckoProcessManager::GetEditableParent(jni::Object::Param aEditableChild,
+                                            int64_t aContentId,
+                                            int64_t aTabId) {
+  nsCOMPtr<nsIWidget> widget = GetWidget(aContentId, aTabId);
+  if (RefPtr<nsWindow> window = nsWindow::From(widget)) {
+    java::GeckoProcessManager::SetEditableChildParent(
+        aEditableChild, window->GetEditableParent());
+    return;
+  }
+
+  NS_WARNING("GeckoProcessManager::GetEditableParent FAILED");
 }
 
 NS_IMPL_ISUPPORTS(GeckoProcessManager::ConnectionManager, nsIObserver)

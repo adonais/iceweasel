@@ -2,16 +2,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <cmath>
-#include "DataSurfaceHelpers.h"
 #include "FilterNodeSoftware.h"
-#include "2D.h"
-#include "Tools.h"
-#include "Blur.h"
+
+#include <cmath>
 #include <map>
 #include <numeric>
+
+#include "2D.h"
+#include "Blur.h"
+#include "DataSurfaceHelpers.h"
 #include "FilterProcessing.h"
 #include "Logging.h"
+#include "Tools.h"
 #include "mozilla/PodOperations.h"
 
 // #define DEBUG_DUMP_SURFACES
@@ -2436,8 +2438,7 @@ already_AddRefed<DataSourceSurface> FilterNodeConvolveMatrixSoftware::DoRender(
     CoordType aKernelUnitLengthY) {
   // Ensure multiply fits in an int32_t so convolve math won't overflow.
   auto kernelArea = CheckedInt32(mKernelSize.width) * mKernelSize.height;
-  if (mKernelSize.width <= 0 || mKernelSize.height <= 0 ||
-      !kernelArea.isValid() ||
+  if (mKernelSize.IsEmpty() || !kernelArea.isValid() ||
       mKernelMatrix.size() != size_t(kernelArea.value()) ||
       !IntRect(IntPoint(0, 0), mKernelSize).Contains(mTarget) ||
       mDivisor == 0) {
@@ -2595,6 +2596,9 @@ int32_t FilterNodeDisplacementMapSoftware::InputIndex(
 void FilterNodeDisplacementMapSoftware::SetAttribute(uint32_t aIndex,
                                                      Float aScale) {
   MOZ_ASSERT(aIndex == ATT_DISPLACEMENT_MAP_SCALE);
+  if (!std::isfinite(aScale)) {
+    aScale = 0.0f;
+  }
   mScale = aScale;
   Invalidate();
 }
@@ -2701,9 +2705,17 @@ IntRect FilterNodeDisplacementMapSoftware::MapRectToSource(
 
 IntRect FilterNodeDisplacementMapSoftware::InflatedSourceOrDestRect(
     const IntRect& aDestOrSourceRect) {
-  IntRect sourceOrDestRect = aDestOrSourceRect;
-  sourceOrDestRect.Inflate(ceil(fabs(mScale) / 2));
-  return sourceOrDestRect;
+  if (aDestOrSourceRect.IsEmpty()) {
+    return IntRect();
+  }
+
+  RectDouble destOrSourceRect(aDestOrSourceRect);
+  destOrSourceRect.Inflate(ceil(fabs(mScale) / 2));
+  if (!RectIsInt32Safe(destOrSourceRect)) {
+    return IntRect();
+  }
+
+  return TruncatedToInt(destOrSourceRect);
 }
 
 IntRect FilterNodeDisplacementMapSoftware::GetOutputRectInRect(
@@ -3209,7 +3221,7 @@ IntRect FilterNodeUnpremultiplySoftware::GetOutputRectInRect(
 
 void FilterNodeOpacitySoftware::SetAttribute(uint32_t aIndex, Float aValue) {
   MOZ_ASSERT(aIndex == ATT_OPACITY_VALUE);
-  mValue = aValue;
+  mValue = std::clamp(aValue, 0.0f, 1.0f);
   Invalidate();
 }
 
@@ -3274,10 +3286,10 @@ bool SpotLightSoftware::SetAttribute(uint32_t aIndex, const Point3D& aPoint) {
 bool SpotLightSoftware::SetAttribute(uint32_t aIndex, Float aValue) {
   switch (aIndex) {
     case ATT_SPOT_LIGHT_LIMITING_CONE_ANGLE:
-      mLimitingConeAngle = aValue;
+      mLimitingConeAngle = std::clamp(aValue, -90.0f, 90.0f);
       break;
     case ATT_SPOT_LIGHT_FOCUS:
-      mSpecularFocus = aValue;
+      mSpecularFocus = std::clamp(aValue, 0.0f, 200.0f);
       break;
     default:
       return false;
@@ -3287,13 +3299,22 @@ bool SpotLightSoftware::SetAttribute(uint32_t aIndex, Float aValue) {
 
 DistantLightSoftware::DistantLightSoftware() : mAzimuth(0), mElevation(0) {}
 
+static Float NormalizeAngle(Float aValue) {
+  if (aValue < 0.0f) {
+    return std::fmod(aValue, 360.f) + 360.f;
+  } else if (aValue > 360.f) {
+    return std::fmod(aValue, 360.f);
+  }
+  return aValue;
+}
+
 bool DistantLightSoftware::SetAttribute(uint32_t aIndex, Float aValue) {
   switch (aIndex) {
     case ATT_DISTANT_LIGHT_AZIMUTH:
-      mAzimuth = aValue;
+      mAzimuth = NormalizeAngle(aValue);
       break;
     case ATT_DISTANT_LIGHT_ELEVATION:
-      mElevation = aValue;
+      mElevation = NormalizeAngle(aValue);
       break;
     default:
       return false;
@@ -3663,7 +3684,7 @@ DiffuseLightingSoftware::DiffuseLightingSoftware() : mDiffuseConstant(0) {}
 bool DiffuseLightingSoftware::SetAttribute(uint32_t aIndex, Float aValue) {
   switch (aIndex) {
     case ATT_DIFFUSE_LIGHTING_DIFFUSE_CONSTANT:
-      mDiffuseConstant = aValue;
+      mDiffuseConstant = std::clamp(aValue, 0.0f, 10000.0f);
       break;
     default:
       return false;

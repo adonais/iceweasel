@@ -140,3 +140,62 @@ function calculate() {
     assert result["type"] == "number"
 
     assert result["value"] == 42
+
+
+async def test_call_function_in_paused_frame(
+    bidi_session,
+    new_tab,
+    enable_debugging,
+    inline,
+    subscribe_events,
+    wait_for_event,
+    set_breakpoint,
+):
+    await subscribe_events([PAUSED_EVENT, RESUMED_EVENT])
+    await enable_debugging(contexts=[new_tab["context"]])
+
+    url = inline(
+        """<script>
+function add(x, y) {
+    const result = x + y;
+    return result;
+}
+</script>"""
+    )
+
+    await bidi_session.browsing_context.navigate(
+        context=new_tab["context"], url=url, wait="complete"
+    )
+
+    await set_breakpoint(location={"url": url, "line": 5})
+
+    on_paused = wait_for_event(PAUSED_EVENT)
+
+    eval_task = asyncio.create_task(
+        bidi_session.script.evaluate(
+            expression="add(3, 4)",
+            target=ContextTarget(new_tab["context"]),
+            await_promise=False,
+        )
+    )
+
+    paused_event = await on_paused
+    assert paused_event["context"] == new_tab["context"]
+    assert paused_event["line"] == 5
+
+    # Call a function with an argument while paused. The function also reads
+    # `x` from the paused frame's scope (x == 3), so the result is 3 * 5 == 15.
+    result = await bidi_session.script.call_function(
+        function_declaration="(multiplier) => x * multiplier",
+        arguments=[{"type": "number", "value": 5}],
+        target=ContextTarget(new_tab["context"]),
+        await_promise=False,
+    )
+    assert result["type"] == "number"
+    assert result["value"] == 15
+
+    await bidi_session.moz.debugging.resume(context=new_tab["context"])
+
+    result = await eval_task
+    assert result["type"] == "number"
+    assert result["value"] == 7

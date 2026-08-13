@@ -4,10 +4,10 @@
 
 #include "ImageDecoderSupport.h"
 
-#include "imgITools.h"
-#include "gfxUtils.h"
 #include "AndroidGraphics.h"
 #include "JavaExceptions.h"
+#include "gfxUtils.h"
+#include "imgITools.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/gfx/Swizzle.h"
 #include "mozilla/java/ImageWrappers.h"

@@ -5,19 +5,20 @@
 #include "CTTestUtils.h"
 
 #include <stdint.h>
+
 #include <iomanip>
 
 #include "BTTypes.h"
 #include "CTSerialization.h"
+#include "SignedCertificateTimestamp.h"
 #include "gtest/gtest.h"
 #include "mozpkix/Input.h"
+#include "mozpkix/Result.h"
 #include "mozpkix/pkix.h"
+#include "mozpkix/pkixcheck.h"
 #include "mozpkix/pkixnss.h"
 #include "mozpkix/pkixtypes.h"
-#include "mozpkix/Result.h"
-#include "mozpkix/pkixcheck.h"
 #include "mozpkix/pkixutil.h"
-#include "SignedCertificateTimestamp.h"
 
 namespace mozilla {
 namespace ct {

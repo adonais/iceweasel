@@ -115,7 +115,7 @@ async function assertNoOmniboxResult(win) {
     let result = await UrlbarTestUtils.getDetailsOfResultAt(win, i);
     Assert.notEqual(
       result.type,
-      UrlbarUtils.RESULT_TYPE.OMNIBOX,
+      UrlbarShared.RESULT_TYPE.OMNIBOX,
       "Result is not Omnibox"
     );
   }

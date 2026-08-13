@@ -35,7 +35,7 @@ internal class BookmarksTelemetryMiddleware : Middleware<BookmarksState, Bookmar
             is BookmarkClicked -> { recordBookmarkClickedMetrics(state) }
             is BookmarksListMenuAction -> { handleBookmarksListMenuAction(action, state) }
             is SelectFolderAction -> { handleSelectFolderActions(action) }
-            SearchClicked -> { BookmarksManagement.searchIconTapped.record(NoExtras()) }
+            SearchAction.SearchClicked -> { BookmarksManagement.searchIconTapped.record(NoExtras()) }
             BackClicked -> state.handleBackClick()
             is ImportAction -> handleImportAction(action)
             EditBookmarkAction.DeleteClicked -> { recordEditDeleteMetrics() }
@@ -52,7 +52,12 @@ internal class BookmarksTelemetryMiddleware : Middleware<BookmarksState, Bookmar
             EditFolderAction.ParentFolderClicked,
             is SnackbarAction,
             is BookmarkLongClicked,
-            is BookmarksLoaded, is SearchDismissed, is EditBookmarkClicked, is FolderClicked,
+            is BookmarksLoaded,
+            is SearchAction.SearchDismissed,
+            is SearchAction.ReceivedSearchResults,
+            is SearchAction.SearchQueryChanged,
+            is EditBookmarkClicked,
+            is FolderClicked,
             is FolderLongClicked,
             is RecursiveSelectionCountLoaded,
             is OpenTabsConfirmationDialogAction.Present,
@@ -276,13 +281,21 @@ internal class BookmarksTelemetryMiddleware : Middleware<BookmarksState, Bookmar
     }
 
     private fun handleImportAction(action: ImportAction) = when (action) {
-        is ImportAction.ImportFailed -> BookmarksManagement.importFailed.record(NoExtras())
+        is ImportAction.ImportFailed -> BookmarksManagement.importFailed.record(
+            extra = BookmarksManagement.ImportFailedExtra(
+                errorCode = action.error.code.toString(),
+            ),
+        )
+        is ImportAction.ImportCancelled -> BookmarksManagement.importCancelled.record(NoExtras())
         is ImportAction.ImportFileClicked.FromMenu ->
             BookmarksManagement.importFromFileMenuClick.record(NoExtras())
         is ImportAction.ImportSucceeded -> {
             BookmarksManagement.importSuccessful.record(
                 extra = BookmarksManagement.ImportSuccessfulExtra(bookmarksCount = action.count),
             )
+        }
+        is ImportAction.ImportStarted -> {
+            BookmarksManagement.importStarted.record(NoExtras())
         }
     }
 }

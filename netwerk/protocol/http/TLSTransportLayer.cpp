@@ -3,9 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 // HttpLog.h should generally be included first
-#include "HttpLog.h"
-
 #include "TLSTransportLayer.h"
+
+#include "HttpLog.h"
 #include "nsISocketProvider.h"
 #include "nsITLSSocketControl.h"
 #include "nsQueryObject.h"

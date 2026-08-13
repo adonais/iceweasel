@@ -8,6 +8,9 @@ const { TabStateFlusher } = ChromeUtils.importESModule(
 const { CustomizableUITestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/CustomizableUITestUtils.sys.mjs"
 );
+const { sinon } = ChromeUtils.importESModule(
+  "resource://testing-common/Sinon.sys.mjs"
+);
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
@@ -336,7 +339,28 @@ add_task(async function test_contextMenus() {
     "open",
     "open-tab-group-context-menu opened"
   );
+  Assert.ok(
+    openContextMenu.querySelector("#open-tab-group-context-menu_share").hidden,
+    "Share Group item is hidden when content sharing is disabled"
+  );
   await closeContextMenu(openContextMenu);
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.contentsharing.enabled", true]],
+  });
+  menuShown = BrowserTestUtils.waitForPopupEvent(openContextMenu, "shown");
+  EventUtils.synthesizeMouseAtCenter(
+    openRow,
+    { type: "contextmenu", button: 2 },
+    window
+  );
+  await menuShown;
+  Assert.ok(
+    !openContextMenu.querySelector("#open-tab-group-context-menu_share").hidden,
+    "Share Group item is shown when content sharing is enabled"
+  );
+  await closeContextMenu(openContextMenu);
+  await SpecialPowers.popPrefEnv();
 
   let savedRow = subView.querySelector(".tab-group-row[data-saved]");
   let savedContextMenu = document.getElementById(
@@ -359,4 +383,48 @@ add_task(async function test_contextMenus() {
   await closeAppMenu();
   await removeTabGroup(openGroup);
   TabGroupTestUtils.forgetSavedTabGroups();
+});
+
+add_task(async function test_shareGroupClosesPanel() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.contentsharing.enabled", true]],
+  });
+  let openGroup = await createTestGroup({ label: "Context Share" });
+
+  let subView = await openTabGroupsSubView();
+  let openRow = subView.querySelector(".tab-group-row:not([data-saved])");
+  let openContextMenu = document.getElementById("open-tab-group-context-menu");
+  let menuShown = BrowserTestUtils.waitForPopupEvent(openContextMenu, "shown");
+  EventUtils.synthesizeMouseAtCenter(
+    openRow,
+    { type: "contextmenu", button: 2 },
+    window
+  );
+  await menuShown;
+
+  // Stub out the actual share flow; we only want to verify the panel closes.
+  let shareStub = sinon
+    .stub(ContentSharingUtils, "handleShareTabGroup")
+    .resolves();
+  let widgetPanel = openRow.closest("panel");
+  let panelHidden = BrowserTestUtils.waitForPopupEvent(widgetPanel, "hidden");
+  openContextMenu.activateItem(
+    openContextMenu.querySelector("#open-tab-group-context-menu_share")
+  );
+  await panelHidden;
+
+  Assert.equal(
+    widgetPanel.state,
+    "closed",
+    "List all tabs panel is closed when the share dialog opens"
+  );
+  Assert.ok(
+    shareStub.calledOnce,
+    "handleShareTabGroup was called for the shared tab group"
+  );
+
+  shareStub.restore();
+  await removeTabGroup(openGroup);
+  TabGroupTestUtils.forgetSavedTabGroups();
+  await SpecialPowers.popPrefEnv();
 });

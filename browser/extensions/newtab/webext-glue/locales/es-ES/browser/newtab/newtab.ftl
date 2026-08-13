@@ -472,6 +472,8 @@ newtab-recommended-stories-toggle =
     .label = Historias recomendadas
 newtab-custom-stories-personalized-toggle =
     .label = Historias
+newtab-custom-stories-personalized-checkbox =
+    .label = Historias personalizadas basadas en su actividad
 newtab-custom-stories-personalized-checkbox-label = Historias personalizadas basadas en su actividad
 newtab-custom-pocket-sponsored = Historias patrocinadas
 newtab-custom-pocket-show-recent-saves = Mostrar guardados recientemente
@@ -490,6 +492,8 @@ newtab-custom-widget-sports-toggle =
     .label = Copa del Mundo
 newtab-custom-widget-clock-toggle =
     .label = Reloj
+newtab-custom-widget-sports-toggle2 =
+    .label = Deportes
 newtab-custom-widget-section-title = Widgets
 newtab-custom-widget-section-toggle =
     .label = Widgets
@@ -937,6 +941,14 @@ newtab-widget-section-menu-manage = Administrar widgets
 newtab-widget-section-menu-hide-all = Ocultar widgets
 newtab-widget-section-menu-learn-more = Saber más
 newtab-widget-section-feedback = Cuéntenos su opinión
+# Button shown when additional widgets are hidden beyond the
+# first row, allowing users to show them.
+newtab-widget-section-show-more =
+    .label = Mostrar más widgets
+# Button shown when the widgets row is expanded to multiple rows,
+# allowing users to collapse it back to one row.
+newtab-widget-section-show-less =
+    .label = Mostrar menos widgets
 newtab-widget-lists-name-default = Lista de verificación
 
 ## Strings introduced by the Nova redesign of the Timer widget
@@ -1155,7 +1167,31 @@ newtab-sports-widget-world-cup-champions = Campeones de la Copa del Mundo 2026
 #   $date (Date) - The match start time
 newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
 newtab-sports-widget-match-full-time = Finalizado
+newtab-sports-widget-match-halftime = Descanso
+newtab-sports-widget-match-extra-time = Prórroga
 newtab-sports-widget-match-penalties = Penalties
+# Separator shown between two teams in a placeholder match row when no upcoming
+# match details are available yet.
+newtab-sports-widget-match-vs = vs
+# Note shown in the Upcoming tab when no match details are available yet.
+newtab-sports-widget-no-upcoming-matches = Siga atento para conocer los detalles del próximo partido.
+
+## Sports widget live-games pagination. Shown when 2+ matches are live at the same time
+
+# arrow button that goes to the previous page of live matches.
+newtab-sports-widget-pagination-previous =
+    .aria-label = Anterior
+    .title = Anterior
+# arrow button that goes to the next page of live matches.
+newtab-sports-widget-pagination-next =
+    .aria-label = Siguiente
+    .title = Siguiente
+# Dot indicator that jumps directly to a given live match.
+# $index (number) - 1-based position of this dot in the list.
+# $total (number) - Total number of live matches.
+newtab-sports-widget-pagination-dot =
+    .aria-label = Partido en directo { $index } de { $total }
+    .title = Partido en directo { $index } de { $total }
 
 ## Accessible labels for match rows in the sports widget. These are read by
 ## screen readers to announce the match details and status.
@@ -1216,6 +1252,8 @@ newtab-sports-widget-team-name-label-eng =
     .label = Inglaterra
 newtab-sports-widget-team-name-label-sco =
     .label = Escocia
+# Placeholder used in a match row's aria-label for an undecided team (shown visually as "--").
+newtab-sports-widget-team-tbd = Por determinar
 
 ## Sports widget OMC messages
 ## Shown as on-screen messages promoting the Sports widget and World Cup wallpapers.

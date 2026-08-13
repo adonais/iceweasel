@@ -57,7 +57,7 @@ class RemoteMediaManagerParent final : public PRemoteMediaManagerParent,
 
   static void ShutdownVideoBridge();
 
-  bool OnManagerThread();
+  static bool OnManagerThread();
   static void Dispatch(already_AddRefed<nsIRunnable> aRunnable);
 
   // Can be called from manager thread only

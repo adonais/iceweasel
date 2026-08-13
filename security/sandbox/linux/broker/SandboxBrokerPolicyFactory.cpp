@@ -3,54 +3,10 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SandboxBrokerPolicyFactory.h"
-#include "SandboxInfo.h"
-#include "SandboxLogging.h"
 
-#include "mozilla/Array.h"
-#include "mozilla/ClearOnShutdown.h"
-#include "mozilla/Omnijar.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/SandboxLaunch.h"
-#include "mozilla/SandboxSettings.h"
-#include "mozilla/StaticPrefs_security.h"
-#include "mozilla/StaticMutex.h"
-#include "mozilla/UniquePtr.h"
-#include "mozilla/UniquePtrExtensions.h"
-#include "mozilla/ipc/SharedMemoryHandle.h"
-#include "nsComponentManagerUtils.h"
-#include "nsPrintfCString.h"
-#include "nsString.h"
-#include "nsThreadUtils.h"
-#include "nsXULAppAPI.h"
-#include "nsDirectoryServiceDefs.h"
-#include "nsAppDirectoryServiceDefs.h"
-#include "SpecialSystemDirectory.h"
-#include "nsReadableUtils.h"
-#include "nsIFileStreams.h"
-#include "nsILineInputStream.h"
-#include "nsIFile.h"
-
-#include "nsNetCID.h"
-#include "prenv.h"
-
-#if defined(MOZ_PROFILE_GENERATE)
+#ifdef MOZ_PROFILE_GENERATE
 #  include <string>
 #endif
-
-#ifdef ANDROID
-#  include "cutils/properties.h"
-#endif
-
-#ifdef MOZ_WIDGET_GTK
-#  include "mozilla/WidgetUtilsGtk.h"
-#  include <glib.h>
-#endif
-
-#ifdef MOZ_ENABLE_V4L2
-#  include <linux/videodev2.h>
-#  include <sys/ioctl.h>
-#  include <fcntl.h>
-#endif  // MOZ_ENABLE_V4L2
 
 #include <dirent.h>
 #include <sys/stat.h>
@@ -58,6 +14,48 @@
 #include <sys/types.h>
 #ifndef ANDROID
 #  include <glob.h>
+#endif
+#ifdef MOZ_ENABLE_V4L2
+#  include <fcntl.h>
+#  include <linux/videodev2.h>
+#  include <sys/ioctl.h>
+#endif  // MOZ_ENABLE_V4L2
+#ifdef MOZ_WIDGET_GTK
+#  include <glib.h>
+#endif
+
+#include "SandboxInfo.h"
+#include "SandboxLogging.h"
+#include "SpecialSystemDirectory.h"
+#include "mozilla/Array.h"
+#include "mozilla/ClearOnShutdown.h"
+#include "mozilla/Omnijar.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/SandboxLaunch.h"
+#include "mozilla/SandboxSettings.h"
+#include "mozilla/StaticMutex.h"
+#include "mozilla/StaticPrefs_security.h"
+#include "mozilla/UniquePtr.h"
+#include "mozilla/UniquePtrExtensions.h"
+#include "mozilla/ipc/SharedMemoryHandle.h"
+#include "nsAppDirectoryServiceDefs.h"
+#include "nsComponentManagerUtils.h"
+#include "nsDirectoryServiceDefs.h"
+#include "nsIFile.h"
+#include "nsIFileStreams.h"
+#include "nsILineInputStream.h"
+#include "nsNetCID.h"
+#include "nsPrintfCString.h"
+#include "nsReadableUtils.h"
+#include "nsString.h"
+#include "nsThreadUtils.h"
+#include "nsXULAppAPI.h"
+#include "prenv.h"
+#ifdef MOZ_WIDGET_GTK
+#  include "mozilla/WidgetUtilsGtk.h"
+#endif
+#ifdef ANDROID
+#  include "cutils/properties.h"
 #endif
 
 namespace mozilla {

@@ -553,21 +553,16 @@ prefs = [
         # timeout, especially on ccov builds where flushing gcda files adds ~20s.
         kwargs["timeoutFactor"] = 2.0 if mozinfo.info.get("ccov") else 1.5
 
-        startup_profiling = os.environ.pop("MOZ_PROFILER_STARTUP", None)
-        try:
-            self.assertEqual(
-                expected,
-                self.x.runTests(kwargs),
-                msg="""Tests should have %s, log:
+        self.assertEqual(
+            expected,
+            self.x.runTests(kwargs),
+            msg="""Tests should have %s, log:
 ========
 %s
 ========
 """
-                % ("passed" if expected else "failed", self.log.getvalue()),
-            )
-        finally:
-            if startup_profiling:
-                os.environ["MOZ_PROFILER_STARTUP"] = startup_profiling
+            % ("passed" if expected else "failed", self.log.getvalue()),
+        )
 
     def _assertLog(self, s, expected):
         l = self.log.getvalue()

@@ -18,6 +18,10 @@ export default {
       ],
       control: { type: "select" },
     },
+    size: {
+      options: ["default", "small"],
+      control: { type: "radio" },
+    },
     label: { table: { disable: true } },
     description: { table: { disable: true } },
   },
@@ -103,6 +107,7 @@ const Template = ({
   value,
   iconSrc,
   disabled,
+  size,
   l10nId,
   description,
   supportPage,
@@ -127,6 +132,7 @@ const Template = ({
     value=${ifDefined(value || null)}
     iconsrc=${ifDefined(iconSrc || null)}
     ?disabled=${disabled}
+    size=${size}
     data-l10n-id=${l10nId}
     support-page=${ifDefined(supportPage || null)}
     accesskey=${ifDefined(accessKey || null)}
@@ -159,6 +165,7 @@ Default.args = {
   value: "",
   iconSrc: "",
   disabled: false,
+  size: "default",
   l10nId: "moz-select-label",
   description: "",
   supportPage: "",
@@ -171,6 +178,12 @@ Default.args = {
   hiddenOption: false,
   withSeparator: false,
   inputLayout: null,
+};
+
+export const DefaultSmall = Template.bind({});
+DefaultSmall.args = {
+  ...Default.args,
+  size: "small",
 };
 
 export const WithIcon = Template.bind({});

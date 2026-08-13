@@ -326,19 +326,19 @@ async function assertState({
     );
     Assert.equal(
       result.type,
-      UrlbarUtils.RESULT_TYPE.SEARCH,
+      UrlbarShared.RESULT_TYPE.SEARCH,
       "Result type should be SEARCH"
     );
     if (suggestion.isFormHistory) {
       Assert.equal(
         result.source,
-        UrlbarUtils.RESULT_SOURCE.HISTORY,
+        UrlbarShared.RESULT_SOURCE.HISTORY,
         "Result source should be HISTORY"
       );
     } else {
       Assert.equal(
         result.source,
-        UrlbarUtils.RESULT_SOURCE.SEARCH,
+        UrlbarShared.RESULT_SOURCE.SEARCH,
         "Result source should be SEARCH"
       );
     }

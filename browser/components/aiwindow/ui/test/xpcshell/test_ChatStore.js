@@ -1,6 +1,8 @@
 /* Any copyright is dedicated to the Public Domain.
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
+// TODO Bug 2050717 - break up this test file it's gotten too long
+
 do_get_profile();
 
 const lazy = {};
@@ -593,42 +595,52 @@ add_atomic_task(async function test_ChatStorage_deleteConversationById() {
   Assert.equal(conversations.length, 0, "Test conversation was not deleted");
 });
 
-// TODO: Disabled this test. pruneDatabase() needs some work to switch
-// db file size to be checked via dbstat. Additionally, after switching
-// the last line to `PRAGMA incremental_vacuum;` the disk storage is
-// not immediately freed, so this test is now failing. Will need to
-// revisit this test when pruneDatabase() is updated.
-//
-// add_atomic_task(async function test_ChatStorage_pruneDatabase() {
-//   const initialDbSize = await gChatStore.getDatabaseSize();
-//
-//   // NOTE: Add enough conversations to increase the SQLite file
-//   // by a measurable size
-//   for (let i = 0; i < 1000; i++) {
-//     await addBasicConvoTestData("1/1/2025", "a conversation");
-//   }
-//
-//   const dbSizeWithTestData = await gChatStore.getDatabaseSize();
-//
-//   Assert.greater(
-//     dbSizeWithTestData,
-//     initialDbSize,
-//     "Test conversations not saved for pruneDatabase() test"
-//   );
-//
-//   await gChatStore.pruneDatabase(0.5, 100000);
-//
-//   const dbSizeAfterPrune = await gChatStore.getDatabaseSize();
-//
-//   const proximityToInitialSize = dbSizeAfterPrune - initialDbSize;
-//   const proximityToTestDataSize = dbSizeWithTestData - initialDbSize;
-//
-//   Assert.less(
-//     proximityToInitialSize,
-//     proximityToTestDataSize,
-//     "The pruned size is not closer to the initial db size than it is to the size with test data in it"
-//   );
-// });
+add_atomic_task(async function test_ChatStorage_pruneDatabase() {
+  const CONVERSATION_COUNT = 100;
+  const MESSAGE_CONTENT_BYTES = 50_000;
+  const DELETE_BATCH_SIZE = 2;
+  const REDUCE_BY_PERCENTAGE = 0.5;
+
+  // Give each conversation one large message so it occupies its own, roughly
+  // equal chunk of storage so it's deleted predictably during testing.
+  const largeContent = "a".repeat(MESSAGE_CONTENT_BYTES);
+  const link = "https://www.firefox.com";
+
+  for (let i = 0; i < CONVERSATION_COUNT; i++) {
+    await addConvoWithSpecificTestData(
+      new Date("1/1/2025"),
+      link,
+      link,
+      "a conversation",
+      largeContent
+    );
+  }
+
+  const sizeBefore = await gChatStore.getDbBytesInUse();
+
+  await gChatStore.pruneDatabase(
+    REDUCE_BY_PERCENTAGE,
+    1_000_000,
+    DELETE_BATCH_SIZE
+  );
+
+  const sizeAfter = await gChatStore.getDbBytesInUse();
+
+  // Assert on the in-use byte size, which is what pruneDatabase() targets:
+  // the loop stops once size drops below REDUCE_BY_PERCENTAGE of the start, so
+  // this lands around ~50% every run.
+  const reduction = 1 - sizeAfter / sizeBefore;
+  Assert.greater(
+    reduction,
+    0.45,
+    "pruneDatabase() should free ~50% of in-use bytes"
+  );
+  Assert.less(
+    reduction,
+    0.55,
+    "pruneDatabase() should not over-free past ~50%"
+  );
+});
 
 add_atomic_task(async function test_applyMigrations_notCalledOnInitialSetup() {
   gSandbox.stub(gChatStore, "CURRENT_SCHEMA_VERSION").returns(0);
@@ -1419,6 +1431,113 @@ add_atomic_task(async function test_toolUIData_undoDismissed_roundTrip() {
     "undoDismissed:true survives the ChatStore roundTrip"
   );
 });
+
+function makeHistoryResults() {
+  return [
+    {
+      url: "https://example.com/1",
+      title: "Page 1",
+      visitDate: 1700000000000000,
+      visitCount: 3,
+      timestamp: "Yesterday",
+    },
+    {
+      url: "https://example.com/2",
+      title: "Page 2",
+      visitDate: 1700000100000000,
+      visitCount: 1,
+      timestamp: "Yesterday",
+    },
+  ];
+}
+
+add_atomic_task(async function test_historyResults_insert_round_trip() {
+  const conversation = new ChatConversation({});
+  conversation.title = "historyResults INSERT";
+  conversation.addUserMessage("Show my history", "https://example.com/", 0);
+  conversation.addAssistantMessage("text", "Here is what I found:");
+
+  const assistant = conversation.messages.at(-1);
+  const original = makeHistoryResults();
+  assistant.historyResults = original;
+
+  await gChatStore.updateConversation(conversation);
+  const reloaded = await gChatStore.findConversationById(conversation.id);
+  const reloadedAssistant = reloaded.messages.find(m => m.id === assistant.id);
+
+  Assert.ok(
+    reloadedAssistant,
+    "Reloaded conversation contains the assistant message"
+  );
+  Assert.deepEqual(
+    reloadedAssistant.historyResults,
+    original,
+    "historyResults roundTrips through the INSERT path"
+  );
+});
+
+add_atomic_task(async function test_historyResults_update_roundTrip() {
+  const conversation = new ChatConversation({});
+  conversation.addUserMessage("Show my history", "https://example.com/", 0);
+  conversation.addAssistantMessage("text", "Searching...");
+
+  // The message row first persists while still streaming, with no snapshot yet.
+  const assistant = conversation.messages.at(-1);
+  await gChatStore.updateConversation(conversation);
+
+  // When that same message completes, receiveResponse writes its snapshot,
+  // re-persisting the existing row through the ON CONFLICT UPDATE branch.
+  const snapshot = makeHistoryResults();
+  assistant.historyResults = snapshot;
+  await gChatStore.updateConversation(conversation);
+
+  const reloaded = await gChatStore.findConversationById(conversation.id);
+  const reloadedAssistant = reloaded.messages.find(m => m.id === assistant.id);
+
+  Assert.deepEqual(
+    reloadedAssistant.historyResults,
+    snapshot,
+    "historyResults snapshot persisted through the ON CONFLICT UPDATE branch"
+  );
+});
+
+add_atomic_task(async function test_historyResults_empty_roundTrip() {
+  const conversation = new ChatConversation({});
+  conversation.addUserMessage("Just a message", "https://example.com/", 0);
+  conversation.addAssistantMessage("text", "Just a reply");
+
+  const assistant = conversation.messages.at(-1);
+  // historyResults intentionally left at its default empty array
+  await gChatStore.updateConversation(conversation);
+  const reloaded = await gChatStore.findConversationById(conversation.id);
+  const reloadedAssistant = reloaded.messages.find(m => m.id === assistant.id);
+
+  Assert.deepEqual(
+    reloadedAssistant.historyResults,
+    [],
+    "Messages without historyResults reload as an empty array"
+  );
+});
+
+add_atomic_task(async function test_historyResults_rehydrates_pool() {
+  const conversation = new ChatConversation({});
+  conversation.addUserMessage("Show my history", "https://example.com/", 0);
+  conversation.addAssistantMessage("text", "Here is what I found:");
+
+  const assistant = conversation.messages.at(-1);
+  const original = makeHistoryResults();
+  assistant.historyResults = original;
+  await gChatStore.updateConversation(conversation);
+
+  const reloaded = await gChatStore.findConversationById(conversation.id);
+
+  Assert.deepEqual(
+    reloaded.getHistoryResultsSnapshot(),
+    original,
+    "Reloaded conversation rehydrates its history results pool from messages"
+  );
+});
+
 add_atomic_task(
   async function test_updateLLMTelemetryRecord_creates_unprocessed_row() {
     const conversation = new ChatConversation({});

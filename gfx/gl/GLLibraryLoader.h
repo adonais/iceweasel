@@ -8,9 +8,9 @@
 #include <array>
 
 #include "GLDefs.h"
+#include "mozilla/Assertions.h"
 #include "nscore.h"
 #include "prlink.h"
-#include "mozilla/Assertions.h"
 
 namespace mozilla {
 namespace gl {

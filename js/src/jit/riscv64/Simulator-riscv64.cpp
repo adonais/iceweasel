@@ -309,11 +309,11 @@ bool RiscvDebugger::GetValue(const char* desc, int64_t* value) {
   int regnum = Registers::FromName(desc);
   int fpuregnum = FloatRegisters::FromName(desc);
 
-  if (regnum != Registers::invalid_reg) {
+  if (regnum != Registers::Invalid) {
     *value = GetRegisterValue(regnum);
     return true;
   }
-  if (fpuregnum != FloatRegisters::invalid_reg) {
+  if (fpuregnum != FloatRegisters::Invalid) {
     *value = GetFPURegisterValue(fpuregnum);
     return true;
   }
@@ -465,11 +465,11 @@ void RiscvDebugger::Debug() {
 #ifdef CAN_USE_RVV_INSTRUCTIONS
           int vregnum = VRegisters::FromName(arg1);
 #endif
-          if (regnum != Registers::invalid_reg) {
+          if (regnum != Registers::Invalid) {
             value = GetRegisterValue(regnum);
             printf("%s: 0x%08" REGIx_FORMAT "  %" REGId_FORMAT "  \n", arg1,
                    value, value);
-          } else if (fpuregnum != FloatRegisters::invalid_reg) {
+          } else if (fpuregnum != FloatRegisters::Invalid) {
             fvalue = GetFPURegisterValue(fpuregnum);
             dvalue = GetFPURegisterValueDouble(fpuregnum);
             printf("%3s: 0x%016" PRIx64 "  %16.4e\n",
@@ -492,7 +492,7 @@ void RiscvDebugger::Debug() {
             float fvalue;
             int fpuregnum = FloatRegisters::FromName(arg1);
 
-            if (fpuregnum != FloatRegisters::invalid_reg) {
+            if (fpuregnum != FloatRegisters::Invalid) {
               value = GetFPURegisterValue(fpuregnum);
               value &= 0xFFFFFFFFUL;
               fvalue = GetFPURegisterValueFloat(fpuregnum);
@@ -570,7 +570,7 @@ void RiscvDebugger::Debug() {
         end = cur + (10 * kInstrSize);
       } else if (argc == 2) {
         auto regnum = Registers::FromName(arg1);
-        if (regnum != Registers::invalid_reg || strncmp(arg1, "0x", 2) == 0) {
+        if (regnum != Registers::Invalid || strncmp(arg1, "0x", 2) == 0) {
           // The argument is an address or a register name.
           sreg_t value;
           if (GetValue(arg1, &value)) {
@@ -2159,9 +2159,9 @@ void Simulator::DecodeRVRType() {
       reg_t lhs = zext32(rs1());
       reg_t rhs = zext32(rs2());
       if (rhs == 0) {
-        set_rd(UINT32_MAX);
+        set_rd(UINTPTR_MAX);
       } else {
-        set_rd(zext32(lhs / rhs));
+        set_rd(sext32(lhs / rhs));
       }
       break;
     }
@@ -2181,9 +2181,9 @@ void Simulator::DecodeRVRType() {
       reg_t lhs = zext32(rs1());
       reg_t rhs = zext32(rs2());
       if (rhs == 0) {
-        set_rd(zext32(lhs));
+        set_rd(sext32(lhs));
       } else {
-        set_rd(zext32(lhs % rhs));
+        set_rd(sext32(lhs % rhs));
       }
       break;
     }
@@ -4003,7 +4003,7 @@ void Simulator::DecodeRVIType() {
           set_rd(zext32(rs1()) << shamt6());
           break;
         case OP_COUNTW: {
-          switch (instr_.Shamt()) {
+          switch (instr_.Shamt32()) {
             case 0: {  // clzw
               sreg_t x = rs1();
               int highest_setbit = -1;

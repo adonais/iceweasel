@@ -6,23 +6,23 @@
 
 #include <algorithm>  // for std::min, std::max
 
+#include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/EventListenerManager.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ScrollContainerFrame.h"
-#include "mozilla/AlreadyAddRefed.h"
-#include "mozilla/dom/Element.h"
-#include "mozilla/dom/EffectsInfo.h"
+#include "mozilla/ViewportUtils.h"
 #include "mozilla/dom/BrowserChild.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/EffectsInfo.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/layers/APZUtils.h"
 #include "nsCOMPtr.h"
 #include "nsIContent.h"
-#include "mozilla/dom/Document.h"
 #include "nsIFrame.h"
 #include "nsIFrameInlines.h"
-#include "nsTableCellFrame.h"
 #include "nsLayoutUtils.h"
 #include "nsStyleConsts.h"
-#include "mozilla/ViewportUtils.h"
-#include "mozilla/EventListenerManager.h"
-#include "mozilla/layers/APZUtils.h"
+#include "nsTableCellFrame.h"
 
 namespace mozilla {
 namespace layers {

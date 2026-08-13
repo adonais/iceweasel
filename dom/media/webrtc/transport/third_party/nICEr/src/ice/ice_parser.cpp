@@ -43,15 +43,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <assert.h>
 #include <ctype.h>
+#include <charconv>
 #include "nr_api.h"
 #include "ice_ctx.h"
 #include "ice_candidate.h"
 #include "ice_reg.h"
 
 static void
-skip_whitespace(char **str)
+skip_whitespace(const char **str)
 {
-    char *c = *str;
+    const char *c = *str;
     while (*c == ' ')
         ++c;
 
@@ -59,9 +60,9 @@ skip_whitespace(char **str)
 }
 
 static void
-fast_forward(char **str, int skip)
+fast_forward(const char **str, int skip)
 {
-    char *c = *str;
+    const char *c = *str;
     while (*c != '\0' && skip-- > 0)
         ++c;
 
@@ -69,9 +70,9 @@ fast_forward(char **str, int skip)
 }
 
 static void
-skip_to_past_space(char **str)
+skip_to_past_space(const char **str)
 {
-    char *c = *str;
+    const char *c = *str;
     while (*c != ' ' && *c != '\0')
         ++c;
 
@@ -81,10 +82,10 @@ skip_to_past_space(char **str)
 }
 
 static int
-grab_token(char **str, char **out)
+grab_token(const char **str, char **out)
 {
     int _status;
-    char *c = *str;
+    const char *c = *str;
     int len;
     char *tmp;
 
@@ -110,18 +111,61 @@ abort:
     return _status;
 }
 
+/* RFC 8839 section 5.1: ice-char = ALPHA / DIGIT / "+" / "/". */
+static int
+is_ice_char(unsigned char c)
+{
+    return ((c >= 'A' && c <= 'Z') ||
+            (c >= 'a' && c <= 'z') ||
+            (c >= '0' && c <= '9') ||
+            c == '+' || c == '/');
+}
+
+/* RFC 8839 section 5.1: foundation = 1*32ice-char. */
+static int
+validate_foundation(const char *foundation)
+{
+    size_t len = strlen(foundation);
+    size_t i;
+    if (len < 1 || len > 32)
+        return R_BAD_DATA;
+    for (i = 0; i < len; ++i) {
+        if (!is_ice_char(foundation[i]))
+            return R_BAD_DATA;
+    }
+    return 0;
+}
+
+/* Parse a decimal unsigned int from |*str|, range-check it to
+ * [min, max], and require that the next character be a space or end of
+ * string. On success, advances |*str| to that terminator. */
+static int
+parse_uint(const char **str, unsigned int min, unsigned int max,
+           unsigned int *out)
+{
+    const char *end = *str + strlen(*str);
+    unsigned int result;
+    auto [ptr, ec] = std::from_chars(*str, end, result);
+    if (ec != std::errc{} || result < min || result > max) {
+        return R_BAD_DATA;
+    }
+
+    /* Reject trailing non-space cruft like "100abc"; the next character
+     * must terminate the token. */
+    if (*ptr != ' ' && *ptr != '\0') {
+        return R_BAD_DATA;
+    }
+
+    *str = ptr;
+    *out = result;
+    return 0;
+}
+
 int
-nr_ice_peer_candidate_from_attribute(nr_ice_ctx *ctx,char *orig,nr_ice_media_stream *stream,nr_ice_candidate **candp)
+nr_ice_peer_candidate_from_attribute(nr_ice_ctx *ctx,const char *orig,nr_ice_media_stream *stream,nr_ice_candidate **candp)
 {
     int r,_status;
-    char* str = orig;
-    nr_ice_candidate *cand;
-    char *connection_address=0;
-    unsigned int port;
-    int i;
-    unsigned int component_id;
-    char *rel_addr=0;
-    unsigned char transport;
+    nr_ice_candidate *cand=0;
 
     if(!(cand=R_NEW(nr_ice_candidate)))
         ABORT(R_NO_MEMORY);
@@ -133,7 +177,35 @@ nr_ice_peer_candidate_from_attribute(nr_ice_ctx *ctx,char *orig,nr_ice_media_str
     cand->isock=0;
     cand->state=NR_ICE_CAND_PEER_CANDIDATE_UNPAIRED;
     cand->stream=stream;
-    skip_whitespace(&str);
+
+    if ((r=nr_ice_parse_candidate_attribute(orig, cand)))
+        ABORT(r);
+
+    nr_ice_candidate_compute_codeword(cand);
+
+    *candp=cand;
+
+    _status=0;
+  abort:
+    if (_status){
+        r_log(LOG_ICE,LOG_WARNING,"ICE(%s): Error parsing attribute: %s",ctx->label,orig);
+        nr_ice_candidate_destroy(&cand);
+    }
+
+    return(_status);
+}
+
+int
+nr_ice_parse_candidate_attribute(const char* orig, struct nr_ice_candidate_parsedbits *bits)
+{
+    int r,_status;
+    const char* str = orig;
+    char *connection_address=0;
+    unsigned int port;
+    int i;
+    unsigned int component_id;
+    char *rel_addr=0;
+    unsigned char transport;
 
     /* Skip a= if present */
     if (!strncmp(str, "a=", 2))
@@ -147,12 +219,11 @@ nr_ice_peer_candidate_from_attribute(nr_ice_ctx *ctx,char *orig,nr_ice_media_str
     if (*str == '\0')
         ABORT(R_BAD_DATA);
 
-    skip_whitespace(&str);
-    if (*str == '\0')
-        ABORT(R_BAD_DATA);
-
     /* Foundation */
-    if ((r=grab_token(&str, &cand->foundation)))
+    if ((r=grab_token(&str, &bits->foundation)))
+        ABORT(r);
+
+    if ((r=validate_foundation(bits->foundation)))
         ABORT(r);
 
     if (*str == '\0')
@@ -163,15 +234,12 @@ nr_ice_peer_candidate_from_attribute(nr_ice_ctx *ctx,char *orig,nr_ice_media_str
         ABORT(R_BAD_DATA);
 
     /* component */
-    if (sscanf(str, "%u", &component_id) != 1)
-        ABORT(R_BAD_DATA);
+    if ((r=parse_uint(&str, 1, 256, &component_id)))
+        ABORT(r);
 
-    if (component_id < 1 || component_id > 256)
-        ABORT(R_BAD_DATA);
+    bits->component_id = (UCHAR)component_id;
 
-    cand->component_id = (UCHAR)component_id;
-
-    skip_to_past_space(&str);
+    skip_whitespace(&str);
     if (*str == '\0')
         ABORT(R_BAD_DATA);
 
@@ -191,14 +259,12 @@ nr_ice_peer_candidate_from_attribute(nr_ice_ctx *ctx,char *orig,nr_ice_media_str
     if (*str == '\0')
         ABORT(R_BAD_DATA);
 
-    /* priority */
-    if (sscanf(str, "%u", &cand->priority) != 1)
-        ABORT(R_BAD_DATA);
+    /* priority. RFC 8839 says this is a positive integer between 1 and
+     * 2^31 - 1 inclusive. */
+    if ((r=parse_uint(&str, 1, 0x7FFFFFFFu, &bits->priority)))
+        ABORT(r);
 
-    if (cand->priority < 1)
-        ABORT(R_BAD_DATA);
-
-    skip_to_past_space(&str);
+    skip_whitespace(&str);
     if (*str == '\0')
         ABORT(R_BAD_DATA);
 
@@ -213,16 +279,19 @@ nr_ice_peer_candidate_from_attribute(nr_ice_ctx *ctx,char *orig,nr_ice_media_str
     if (*str == '\0')
         ABORT(R_BAD_DATA);
 
-    if (sscanf(str, "%u", &port) != 1)
-        ABORT(R_BAD_DATA);
+    if ((r=parse_uint(&str, 0, 65535, &port)))
+        ABORT(r);
 
-    if (port < 1 || port > 0x0FFFF)
-        ABORT(R_BAD_DATA);
+    skip_whitespace(&str);
 
-    if ((r=nr_str_port_to_transport_addr(connection_address,port,transport,&cand->addr)))
+    if ((r=nr_str_port_to_transport_addr(connection_address,port,transport,&bits->addr)))
       ABORT(r);
 
-    skip_to_past_space(&str);
+    /* Transfer the raw connection_address text to bits so callers can
+     * surface the original (non-normalized) form. */
+    bits->raw_addr = connection_address;
+    connection_address = 0;
+
     if (*str == '\0')
         ABORT(R_BAD_DATA);
 
@@ -242,7 +311,7 @@ nr_ice_peer_candidate_from_attribute(nr_ice_ctx *ctx,char *orig,nr_ice_media_str
 
     for (i = 1; nr_ice_candidate_type_names[i]; ++i) {
         if(!strncasecmp(nr_ice_candidate_type_names[i], str, strlen(nr_ice_candidate_type_names[i]))) {
-            cand->type=(nr_ice_candidate_type)i;
+            bits->type=(nr_ice_candidate_type)i;
             break;
         }
     }
@@ -253,7 +322,7 @@ nr_ice_peer_candidate_from_attribute(nr_ice_ctx *ctx,char *orig,nr_ice_media_str
 
     /* Look for the other side's raddr, rport */
     /* raddr, rport */
-    switch (cand->type) {
+    switch (bits->type) {
     case HOST:
         break;
     case SERVER_REFLEXIVE:
@@ -296,16 +365,19 @@ nr_ice_peer_candidate_from_attribute(nr_ice_ctx *ctx,char *orig,nr_ice_media_str
         if (*str == '\0')
             ABORT(R_BAD_DATA);
 
-        if (sscanf(str, "%u", &port) != 1)
-            ABORT(R_BAD_DATA);
+        if ((r=parse_uint(&str, 0, 65535, &port)))
+            ABORT(r);
 
-        if (port > 0x0FFFF)
-            ABORT(R_BAD_DATA);
+        skip_whitespace(&str);
 
-        if ((r=nr_str_port_to_transport_addr(rel_addr,port,transport,&cand->base)))
+        if ((r=nr_str_port_to_transport_addr(rel_addr,port,transport,&bits->base)))
           ABORT(r);
 
-        skip_to_past_space(&str);
+        /* Transfer the raw rel-addr text to bits so callers can surface
+         * the original (non-normalized) form. */
+        bits->raw_raddr = rel_addr;
+        rel_addr = 0;
+
         /* it's expected to be at EOD at this point */
 
         break;
@@ -316,7 +388,7 @@ nr_ice_peer_candidate_from_attribute(nr_ice_ctx *ctx,char *orig,nr_ice_media_str
 
     skip_whitespace(&str);
 
-    if (transport == IPPROTO_TCP && cand->type != RELAYED) {
+    if (transport == IPPROTO_TCP && bits->type != RELAYED) {
       /* Parse tcptype extension per RFC 6544 S 4.5 */
       if (strncasecmp("tcptype ", str, 8))
         ABORT(R_BAD_DATA);
@@ -326,13 +398,13 @@ nr_ice_peer_candidate_from_attribute(nr_ice_ctx *ctx,char *orig,nr_ice_media_str
 
       for (i = 1; nr_ice_candidate_tcp_type_names[i]; ++i) {
         if(!strncasecmp(nr_ice_candidate_tcp_type_names[i], str, strlen(nr_ice_candidate_tcp_type_names[i]))) {
-          cand->tcp_type=(nr_socket_tcp_type)i;
+          bits->tcp_type=(nr_socket_tcp_type)i;
           fast_forward(&str, strlen(nr_ice_candidate_tcp_type_names[i]));
           break;
         }
       }
 
-      if (cand->tcp_type == 0)
+      if (bits->tcp_type == 0)
         ABORT(R_BAD_DATA);
 
       if (*str && *str != ' ')
@@ -340,29 +412,19 @@ nr_ice_peer_candidate_from_attribute(nr_ice_ctx *ctx,char *orig,nr_ice_media_str
     }
     /* Ignore extensions per RFC 5245 S 15.1 */
 
-    nr_ice_candidate_compute_codeword(cand);
-
-    *candp=cand;
-
     _status=0;
   abort:
-    if (_status){
-        r_log(LOG_ICE,LOG_WARNING,"ICE(%s): Error parsing attribute: %s",ctx->label,orig);
-        nr_ice_candidate_destroy(&cand);
-    }
-
     free(connection_address);
     free(rel_addr);
     return(_status);
 }
 
-
 int
 nr_ice_peer_ctx_parse_media_stream_attribute(nr_ice_peer_ctx *pctx, nr_ice_media_stream *stream, char *attr)
 {
     int r,_status;
-    char *orig = 0;
-    char *str;
+    const char *orig = 0;
+    const char *str;
 
     orig = str = attr;
 
@@ -419,8 +481,8 @@ nr_ice_peer_ctx_parse_global_attributes(nr_ice_peer_ctx *pctx, char **attrs, int
 {
     int r,_status;
     int i;
-    char *orig = 0;
-    char *str;
+    const char *orig = 0;
+    const char *str;
     char *component_id = 0;
     char *connection_address = 0;
     unsigned int port;

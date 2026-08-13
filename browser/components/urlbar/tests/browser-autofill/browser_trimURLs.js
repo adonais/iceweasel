@@ -104,7 +104,7 @@ const tests = [
     autofilledValue: "http://",
     resultListDisplayTitle: "http://",
     resultListActionText: "Search with Google",
-    resultListType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    resultListType: UrlbarShared.RESULT_TYPE.SEARCH,
     searchParams: {
       engine: "Google",
       query: "http://",
@@ -115,7 +115,7 @@ const tests = [
     autofilledValue: "https://",
     resultListDisplayTitle: "https://",
     resultListActionText: "Search with Google",
-    resultListType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    resultListType: UrlbarShared.RESULT_TYPE.SEARCH,
     searchParams: {
       engine: "Google",
       query: "https://",
@@ -126,7 +126,7 @@ const tests = [
     autofilledValue: "autofilltrimurl.com/",
     resultListDisplayTitle: "http://www.autofilltrimurl.com",
     resultListActionText: "Visit",
-    resultListType: UrlbarUtils.RESULT_TYPE.URL,
+    resultListType: UrlbarShared.RESULT_TYPE.URL,
     finalCompleteValue: "http://www.autofilltrimurl.com/",
   },
   {
@@ -134,7 +134,7 @@ const tests = [
     autofilledValue: "http://autofilltrimurl.com/",
     resultListDisplayTitle: "http://www.autofilltrimurl.com",
     resultListActionText: "Visit",
-    resultListType: UrlbarUtils.RESULT_TYPE.URL,
+    resultListType: UrlbarShared.RESULT_TYPE.URL,
     finalCompleteValue: "http://www.autofilltrimurl.com/",
   },
   {
@@ -142,7 +142,7 @@ const tests = [
     autofilledValue: "secureautofillurl.com/",
     resultListDisplayTitle: "https://www.secureautofillurl.com",
     resultListActionText: "Visit",
-    resultListType: UrlbarUtils.RESULT_TYPE.URL,
+    resultListType: UrlbarShared.RESULT_TYPE.URL,
     finalCompleteValue: "https://www.secureautofillurl.com/",
   },
   {
@@ -150,7 +150,7 @@ const tests = [
     autofilledValue: "https://secureautofillurl.com/",
     resultListDisplayTitle: "https://www.secureautofillurl.com",
     resultListActionText: "Visit",
-    resultListType: UrlbarUtils.RESULT_TYPE.URL,
+    resultListType: UrlbarShared.RESULT_TYPE.URL,
     finalCompleteValue: "https://www.secureautofillurl.com/",
   },
 ];

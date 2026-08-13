@@ -79,6 +79,15 @@ export class MLEngineWorker {
   }
 
   /**
+   * Returns true if the native ONNX runtime is available, otherwise false.
+   *
+   * @returns {boolean}
+   */
+  isNativeOnnxRuntimeAvailable() {
+    return globalThis.InferenceSession?.isAvailable() ?? false;
+  }
+
+  /**
    * @param {ArrayBuffer} wasm
    * @param {object} options received as an object, converted to a PipelineOptions instance
    */

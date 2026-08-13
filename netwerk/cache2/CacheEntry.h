@@ -5,25 +5,23 @@
 #ifndef CacheEntry_h_
 #define CacheEntry_h_
 
-#include "mozilla/LinkedList.h"
-#include "nsICacheEntry.h"
 #include "CacheFile.h"
-
-#include "nsIRunnable.h"
-#include "nsIOutputStream.h"
-#include "nsICacheEntryOpenCallback.h"
-#include "nsICacheEntryDoomCallback.h"
-#include "nsITransportSecurityInfo.h"
-
-#include "nsCOMPtr.h"
-#include "nsRefPtrHashtable.h"
-#include "nsHashKeys.h"
-#include "nsString.h"
-#include "nsCOMArray.h"
-#include "nsThreadUtils.h"
+#include "Dictionary.h"
+#include "mozilla/LinkedList.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/TimeStamp.h"
-#include "Dictionary.h"
+#include "nsCOMArray.h"
+#include "nsCOMPtr.h"
+#include "nsHashKeys.h"
+#include "nsICacheEntry.h"
+#include "nsICacheEntryDoomCallback.h"
+#include "nsICacheEntryOpenCallback.h"
+#include "nsIOutputStream.h"
+#include "nsIRunnable.h"
+#include "nsITransportSecurityInfo.h"
+#include "nsRefPtrHashtable.h"
+#include "nsString.h"
+#include "nsThreadUtils.h"
 
 static inline uint32_t PRTimeToSeconds(PRTime t_usec) {
   return uint32_t(t_usec / PR_USEC_PER_SEC);

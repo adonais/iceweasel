@@ -263,6 +263,7 @@ class CertVerifier {
   ~CertVerifier();
 
   void ClearOCSPCache() { mOCSPCache.Clear(); }
+  void ClearPrivateBrowsingOCSPCache() { mOCSPCache.ClearPrivateBrowsing(); }
   void ClearTrustCache() { trust_cache_clear(mTrustCache.get()); }
 
   const OcspDownloadConfig mOCSPDownloadConfig;

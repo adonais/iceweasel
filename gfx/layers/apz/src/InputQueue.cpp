@@ -7,20 +7,19 @@
 #include <inttypes.h>
 
 #include "AsyncPanZoomController.h"
-
 #include "GestureEventListener.h"
 #include "InputBlockState.h"
-#include "mozilla/Assertions.h"
-#include "mozilla/EventForwards.h"
-#include "mozilla/layers/APZInputBridge.h"
-#include "mozilla/layers/APZThreadUtils.h"
-#include "mozilla/RefPtr.h"
-#include "mozilla/ToString.h"
 #include "OverscrollHandoffState.h"
 #include "QueuedInput.h"
+#include "mozilla/Assertions.h"
+#include "mozilla/EventForwards.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/StaticPrefs_ui.h"
+#include "mozilla/ToString.h"
+#include "mozilla/layers/APZInputBridge.h"
+#include "mozilla/layers/APZThreadUtils.h"
 
 static mozilla::LazyLogModule sApzInpLog("apz.inputqueue");
 #define INPQ_LOG(...) MOZ_LOG(sApzInpLog, LogLevel::Debug, (__VA_ARGS__))
@@ -476,6 +475,7 @@ APZEventResult InputQueue::ReceivePanGestureInput(
   // scroll container, we don't need to anything for swipe-navigation.
   result.SetStatusAsConsumeDoDefault();
 
+  bool terminateSynthesizedBlock = false;
   if (!block || block->WasInterrupted()) {
     if (event.mType == PanGestureInput::PANGESTURE_MOMENTUMSTART ||
         event.mType == PanGestureInput::PANGESTURE_MOMENTUMPAN ||
@@ -491,8 +491,17 @@ APZEventResult InputQueue::ReceivePanGestureInput(
       // start a new pan gesture block, but we really want to start a new block
       // here, so we magically turn this input into a PANGESTURE_START.
       INPQ_LOG(
-          "transmogrifying pan input %d to PANGESTURE_START for new block\n",
-          event.mType);
+          "transmogrifying pan input %d to PANGESTURE_START for new block %p\n",
+          event.mType, block.get());
+      // If the event is a pan-end, there will be no additional pan-end coming
+      // to end the synthesized block we are starting. Turning it into a bare
+      // pan-start would leave the synthesized block active in a panning state
+      // and, via OnPanBegin's CancelAnimations(ExcludeOverscroll), cancel any
+      // running overscroll snap-back animation without ever snapping back --
+      // leaving the overscroll gutter stuck. Emit an explicit pan-end below so
+      // the block ends (OnPanEnd) and snaps back.
+      terminateSynthesizedBlock =
+          event.mType == PanGestureInput::PANGESTURE_END;
       event.mType = PanGestureInput::PANGESTURE_START;
     }
     block = new PanGestureBlockState(aTarget, aFlags, event);
@@ -543,6 +552,15 @@ APZEventResult InputQueue::ReceivePanGestureInput(
   // target (confirmed or not) from the block, which is what
   // ProcessQueue() does.
   mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(event, *block));
+  if (terminateSynthesizedBlock) {
+    // Immediately end the block we just synthesized from a pan-end so OnPanEnd
+    // runs and snaps back any overscroll, rather than leaving the block active.
+    PanGestureInput terminator = event;
+    terminator.mType = PanGestureInput::PANGESTURE_END;
+    terminator.mPanDisplacement = ScreenPoint{};
+    terminator.mLocalPanDisplacement = ParentLayerPoint{};
+    mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(terminator, *block));
+  }
   ProcessQueue();
 
   return result;

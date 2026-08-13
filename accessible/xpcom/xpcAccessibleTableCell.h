@@ -6,7 +6,6 @@
 #define mozilla_a11y_xpcom_xpcAccessibletableCell_h_
 
 #include "nsIAccessibleTable.h"
-
 #include "xpcAccessibleHyperText.h"
 
 namespace mozilla {

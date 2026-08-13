@@ -538,7 +538,7 @@ void js::RemapWrapper(JSContext* cx, JSObject* wobjArg,
 
   // When we remove origv from the wrapper map, its wrapper, wobj, must
   // immediately cease to be a cross-compartment wrapper. Nuke it.
-  NukeCrossCompartmentWrapper(cx, wobj);
+  NukeRemovedCrossCompartmentWrapper(cx, wobj);
 
   // If the target is a dead wrapper, and we're just fixing wrappers for
   // it, then we're done now that the CCW is a dead wrapper.

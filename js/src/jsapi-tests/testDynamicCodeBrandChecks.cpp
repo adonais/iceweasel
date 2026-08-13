@@ -130,19 +130,22 @@ BEGIN_TEST(testDynamicCodeBrandChecks_CustomHostEnsureCanCompileStrings) {
       &v);
   CHECK(v.isNumber() && v.toNumber() == 42);
 
-  // new Function fails if one of the stringified argument does not match the
-  // trustedCode property.
+  // new Function uses the host's trustedCode value before any custom
+  // toString() result, so this succeeds even though the fake wrapper lies.
+  EVAL(
+      "(new Function(CreateFakeTrustedType('a', 'c'), 'b', 'return a * b'))(6, "
+      "7);",
+      &v);
+  CHECK(v.isNumber() && v.toNumber() == 42);
+
+  // If the trustedCode property is missing or invalid, the host still fails.
   CHECK(!execDontReport(
-      "new Function(CreateFakeTrustedType('a', 'c'), 'b', 'return b');",
-      __FILE__, __LINE__));
-  cx->clearPendingException();
-  CHECK(!execDontReport(
-      "new Function('a', CreateFakeTrustedType('b', 'c'), 'return a');",
+      "new Function('a', CreateFakeTrustedType(undefined, 'c'), 'return a');",
       __FILE__, __LINE__));
   cx->clearPendingException();
   CHECK(
-      !execDontReport("new Function('a', 'b', CreateFakeTrustedType('return a "
-                      "* b', 'return a + b'));",
+      !execDontReport("new Function('a', 'b', CreateFakeTrustedType(undefined, "
+                      "'return a + b'));",
                       __FILE__, __LINE__));
   cx->clearPendingException();
 
@@ -232,6 +235,34 @@ static bool StringifiedObjectsMatchTrustedCodeProperties(
 }
 
 END_TEST(testDynamicCodeBrandChecks_CustomHostEnsureCanCompileStrings)
+
+BEGIN_TEST(
+    testDynamicCodeBrandChecks_CreateDynamicFunction_PrefersHostCodeOverToString) {
+  JSSecurityCallbacks securityCallbacksWithCustomHostEnsureCanCompileStrings = {
+      cls_testDynamicCodeBrandChecks_CustomHostEnsureCanCompileStrings::
+          StringifiedObjectsMatchTrustedCodeProperties,  // contentSecurityPolicyAllows
+      ExtractTrustedCodeStringProperty,                  // codeForEvalGets
+      nullptr                                            // subsumes
+  };
+  JS_SetSecurityCallbacks(
+      cx, &securityCallbacksWithCustomHostEnsureCanCompileStrings);
+  JS::Rooted<JS::Value> v(cx);
+
+  EXEC(customTypesSnippet);
+
+  // The host sees the original object first, so it uses trustedCode rather than
+  // the object's custom toString() result.
+  EVAL(
+      "(new Function(CreateFakeTrustedType('a', 'c'), "
+      "CreateFakeTrustedType('b', 'd'), "
+      "CreateFakeTrustedType('return a * b', 'return a + b')))(6, 7);",
+      &v);
+  CHECK(v.isNumber() && v.toNumber() == 42);
+
+  return true;
+}
+END_TEST(
+    testDynamicCodeBrandChecks_CreateDynamicFunction_PrefersHostCodeOverToString)
 
 BEGIN_TEST(testDynamicCodeBrandChecks_RejectObjectForEval) {
   JSSecurityCallbacks securityCallbacksRejectObjectBody = {

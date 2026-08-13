@@ -22,7 +22,7 @@ python3 -m venv venv
 python3 -m pip install -r "${GECKO_PATH}/build/wheel_requirements.txt"
 
 cd "$WHEEL_DIR"
-python3 setup.py bdist_wheel
+python3 -m build --no-isolation --wheel $@
 whl=$(ls dist/*.whl)
 
 cp "$whl" "$UPLOAD_DIR/"

@@ -5,19 +5,19 @@
 
 #include "nsIconURI.h"
 
-#include "mozilla/ipc/URIUtils.h"
-#include "mozilla/Sprintf.h"
+#include <stdlib.h>
 
+#include "mozilla/Sprintf.h"
+#include "mozilla/ipc/URIUtils.h"
+#include "nsCRT.h"
 #include "nsIClassInfoImpl.h"
 #include "nsIIOService.h"
-#include "nsISerializable.h"
 #include "nsIObjectInputStream.h"
 #include "nsIObjectOutputStream.h"
+#include "nsISerializable.h"
 #include "nsIURL.h"
 #include "nsNetUtil.h"
 #include "plstr.h"
-#include "nsCRT.h"
-#include <stdlib.h>
 
 using namespace mozilla;
 using namespace mozilla::ipc;
@@ -109,6 +109,12 @@ nsMozIconURI::GetSpec(nsACString& aSpec) {
   }
 
   return NS_OK;
+}
+
+uint32_t nsMozIconURI::SpecHash() {
+  nsAutoCString spec;
+  (void)GetSpec(spec);
+  return CachedSpecHash(spec);
 }
 
 NS_IMETHODIMP

@@ -5,14 +5,20 @@
 #ifndef mozilla_layers_AsyncPanZoomController_h
 #define mozilla_layers_AsyncPanZoomController_h
 
+#include <iosfwd>
+
+#include "APZUtils.h"
+#include "Axis.h"  // for Axis, Side, etc.
+#include "ExpectedGeckoMetrics.h"
+#include "FlingAccelerator.h"
+#include "InputData.h"
+#include "InputQueue.h"
+#include "LayersTypes.h"
+#include "PotentialCheckerboardDurationTracker.h"
+#include "RecentEventsBuffer.h"  // for RecentEventsBuffer
+#include "SampledAPZCState.h"
 #include "Units.h"
 #include "apz/public/APZPublicUtils.h"
-#include "mozilla/layers/CompositorScrollUpdate.h"
-#include "mozilla/layers/GeckoContentController.h"
-#include "mozilla/layers/RepaintRequest.h"
-#include "mozilla/layers/SampleTime.h"
-#include "mozilla/layers/ScrollbarData.h"
-#include "mozilla/layers/ZoomConstraints.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
@@ -22,21 +28,15 @@
 #include "mozilla/ScrollTypes.h"
 #include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/UniquePtr.h"
-#include "InputData.h"
-#include "Axis.h"  // for Axis, Side, etc.
-#include "ExpectedGeckoMetrics.h"
-#include "FlingAccelerator.h"
-#include "InputQueue.h"
-#include "APZUtils.h"
-#include "LayersTypes.h"
 #include "mozilla/gfx/Matrix.h"
+#include "mozilla/layers/CompositorScrollUpdate.h"
+#include "mozilla/layers/GeckoContentController.h"
+#include "mozilla/layers/RepaintRequest.h"
+#include "mozilla/layers/SampleTime.h"
+#include "mozilla/layers/ScrollbarData.h"
+#include "mozilla/layers/ZoomConstraints.h"
 #include "nsRegion.h"
 #include "nsTArray.h"
-#include "PotentialCheckerboardDurationTracker.h"
-#include "RecentEventsBuffer.h"  // for RecentEventsBuffer
-#include "SampledAPZCState.h"
-
-#include <iosfwd>
 
 namespace mozilla {
 

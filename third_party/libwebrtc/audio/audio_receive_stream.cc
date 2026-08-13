@@ -20,6 +20,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/base/nullability.h"
 #include "absl/strings/string_view.h"
 #include "api/audio/audio_frame.h"
 #include "api/audio/audio_mixer.h"
@@ -82,7 +83,8 @@ std::unique_ptr<voe::ChannelReceiveInterface> CreateChannelReceive(
     const Environment& env,
     AudioState* audio_state,
     NetEqFactory* neteq_factory,
-    const AudioReceiveStreamInterface::Config& config) {
+    const AudioReceiveStreamInterface::Config& config,
+    PacketRouter* packet_router) {
   RTC_DCHECK(audio_state);
   internal::AudioState* internal_audio_state =
       static_cast<internal::AudioState*>(audio_state);
@@ -93,30 +95,30 @@ std::unique_ptr<voe::ChannelReceiveInterface> CreateChannelReceive(
       config.jitter_buffer_min_delay_ms, config.enable_non_sender_rtt,
       config.decoder_factory, std::move(config.frame_decryptor),
       config.crypto_options, std::move(config.frame_transformer),
-      config.rtp.rtcp_event_observer, config.rtp.local_ssrc);
+      config.rtp.rtcp_event_observer, packet_router, config.rtp.local_ssrc);
 }
 }  // namespace
 
 AudioReceiveStreamImpl::AudioReceiveStreamImpl(
     const Environment& env,
-    PacketRouter* packet_router,
-    NetEqFactory* neteq_factory,
+    PacketRouter* absl_nonnull packet_router,
+    NetEqFactory* absl_nullable neteq_factory,
     const AudioReceiveStreamInterface::Config& config,
     const scoped_refptr<AudioState>& audio_state)
-    : AudioReceiveStreamImpl(
-          env,
-          packet_router,
-          config,
-          audio_state,
-          CreateChannelReceive(env, audio_state.get(), neteq_factory, config)) {
-}
+    : AudioReceiveStreamImpl(env,
+                             config,
+                             audio_state,
+                             CreateChannelReceive(env,
+                                                  audio_state.get(),
+                                                  neteq_factory,
+                                                  config,
+                                                  packet_router)) {}
 
 AudioReceiveStreamImpl::AudioReceiveStreamImpl(
     const Environment& env,
-    PacketRouter* packet_router,
     const AudioReceiveStreamInterface::Config& config,
     const scoped_refptr<AudioState>& audio_state,
-    std::unique_ptr<voe::ChannelReceiveInterface> channel_receive)
+    absl_nonnull std::unique_ptr<voe::ChannelReceiveInterface> channel_receive)
     : env_(env),
       config_(config),
       audio_state_(audio_state),
@@ -126,10 +128,7 @@ AudioReceiveStreamImpl::AudioReceiveStreamImpl(
   RTC_DCHECK(config.rtcp_send_transport);
   RTC_DCHECK(audio_state_);
   RTC_DCHECK(channel_receive_);
-
-  RTC_DCHECK(packet_router);
-  // Configure bandwidth estimation.
-  channel_receive_->RegisterReceiverCongestionControlObjects(packet_router);
+  RTC_DCHECK_EQ(config_.rtp.remote_ssrc, channel_receive_->remote_ssrc());
 
   // Complete configuration.
   // TODO(solenberg): Config NACK history window (which is a packet count),
@@ -146,7 +145,6 @@ AudioReceiveStreamImpl::~AudioReceiveStreamImpl() {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   RTC_LOG(LS_INFO) << "~AudioReceiveStreamImpl: " << remote_ssrc();
   Stop();
-  channel_receive_->ResetReceiverCongestionControlObjects();
 }
 
 void AudioReceiveStreamImpl::RegisterWithTransport(
@@ -162,30 +160,7 @@ void AudioReceiveStreamImpl::UnregisterFromTransport() {
   rtp_stream_receiver_.reset();
 }
 
-void AudioReceiveStreamImpl::ReconfigureForTesting(
-    const AudioReceiveStreamInterface::Config& config) {
-  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
 
-  // SSRC can't be changed mid-stream.
-  RTC_DCHECK_EQ(remote_ssrc(), config.rtp.remote_ssrc);
-
-  // Configuration parameters which cannot be changed.
-  RTC_DCHECK_EQ(config_.rtcp_send_transport, config.rtcp_send_transport);
-  // Decoder factory cannot be changed because it is configured at
-  // voe::Channel construction time.
-  RTC_DCHECK_EQ(config_.decoder_factory, config.decoder_factory);
-
-  // TODO(solenberg): Config NACK history window (which is a packet count),
-  // using the actual packet size for the configured codec.
-  RTC_DCHECK_EQ(config_.rtp.nack.rtp_history_ms, config.rtp.nack.rtp_history_ms)
-      << "Use SetUseTransportCcAndNackHistory";
-
-  RTC_DCHECK(config_.decoder_map == config.decoder_map) << "Use SetDecoderMap";
-  RTC_DCHECK_EQ(config_.frame_transformer, config.frame_transformer)
-      << "Use SetDepacketizerToDecoderFrameTransformer";
-
-  config_ = config;
-}
 
 void AudioReceiveStreamImpl::Start() {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
@@ -459,6 +434,10 @@ void AudioReceiveStreamImpl::SetSyncGroup(absl::string_view sync_group) {
 const std::string& AudioReceiveStreamImpl::sync_group() const {
   RTC_DCHECK_RUN_ON(&packet_sequence_checker_);
   return config_.sync_group;
+}
+
+uint32_t AudioReceiveStreamImpl::remote_ssrc() const {
+  return channel_receive_->remote_ssrc();
 }
 
 internal::AudioState* AudioReceiveStreamImpl::audio_state() const {

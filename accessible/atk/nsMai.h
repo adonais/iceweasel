@@ -6,8 +6,8 @@
 #define NS_MAI_H_
 
 #include <atk/atk.h>
-#include <glib.h>
 #include <glib-object.h>
+#include <glib.h>
 
 #include "AccessibleWrap.h"
 

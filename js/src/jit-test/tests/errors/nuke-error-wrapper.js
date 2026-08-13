@@ -1,4 +1,7 @@
 // |jit-test| error:finished
+
+gczeal(0);
+
 var g = newGlobal({newCompartment: true});
 g.evaluate(`
   // Override Error.prototype.name with a getter that nukes CCWs

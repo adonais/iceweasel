@@ -504,6 +504,13 @@ typedef struct HIGH_LEVEL_SPEED_FEATURES {
    *  1: Fast detection
    */
   int screen_detection_mode2_fast_detection;
+
+  /*!
+   *  Decide whether to enable weighted chroma distortion.
+   *  0: Disable
+   *  1: Enable
+   */
+  int weighted_chroma_distortion;
 } HIGH_LEVEL_SPEED_FEATURES;
 
 /*!
@@ -616,7 +623,8 @@ typedef struct GLOBAL_MOTION_SPEED_FEATURES {
   int num_refinement_steps;
 
   // Error advantage threshold level used to determine whether global motion
-  // compensation should be enabled
+  // compensation should be enabled. It Can take values 0 - 2 increasing
+  // aggressiveness of skipping GM in order.
   int gm_erroradv_tr_level;
 } GLOBAL_MOTION_SPEED_FEATURES;
 
@@ -1240,7 +1248,7 @@ typedef struct INTER_MODE_SPEED_FEATURES {
   // Percentage of scaling used to increase the rd cost of warp mode so that
   // encoder decisions are biased against local warp, favoring low complexity
   // modes.
-  int bias_warp_mode_rd_scale_pct;
+  float bias_warp_mode_rd_scale_pct;
 
   // Percentage of scaling used to increase the rd cost of obmc motion mode so
   // that encoder decisions are biased against local obmc, favoring low
@@ -1255,6 +1263,9 @@ typedef struct INTER_MODE_SPEED_FEATURES {
 
   // Skip interinter wedge search based on MSE between the two predictors.
   int skip_interinter_wedge_search_based_on_mse;
+
+  // Enable/disable model RD based fast compound wedge mask search.
+  int enable_comp_wedge_search_using_model_rd;
 } INTER_MODE_SPEED_FEATURES;
 
 typedef struct INTERP_FILTER_SPEED_FEATURES {
@@ -1841,6 +1852,8 @@ typedef struct REAL_TIME_SPEED_FEATURES {
 
   // Force selective cdf update.
   int selective_cdf_update;
+  // Use IntraBC for realtime mode.
+  int rt_use_intrabc;
 
   // Force only single reference (LAST) for prediction.
   int force_only_last_ref;

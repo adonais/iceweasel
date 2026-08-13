@@ -733,6 +733,23 @@ browser_ml_engine_perf.js
 
 **Template test for latency for ml models**
 
+browser_ml_llama_smollm2_smoke.js
+=================================
+
+:owner: GenAI Team
+:name: browser_ml_llama_smollm2_smoke.js
+:Default options:
+
+::
+
+ --perfherder
+ --verbose
+ --manifest perftest.toml
+ --manifest-flavor browser-chrome
+ --try-platform linux, mac, win
+
+**Structural smoke for the native llama.cpp backend with SmolLM2 360M Instruct.**
+
 browser_ml_llama_summarizer_perf.js
 ===================================
 
@@ -749,7 +766,7 @@ browser_ml_llama_summarizer_perf.js
  --manifest-flavor browser-chrome
  --try-platform linux, mac, win
 
-**Template test for latency for Summarizer model using Llama.cpp WASM**
+**Template test for latency for Summarizer model using llama.cpp**
 
 browser_ml_smart_tab_perf.js
 ============================

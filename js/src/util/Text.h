@@ -9,6 +9,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Casting.h"
+#include "mozilla/HashFunctions.h"
 #include "mozilla/Latin1.h"
 #include "mozilla/Likely.h"
 #include "mozilla/TextUtils.h"
@@ -223,12 +224,13 @@ class InflatedChar16Sequence {
   }
 
   HashNumber computeHash() const {
-    auto copy = *this;
-    HashNumber hash = 0;
-    while (copy.hasMore()) {
-      hash = mozilla::AddToHash(hash, copy.next());
+    size_t length = limit_ - units_;
+    if constexpr (std::is_same_v<CharT, char16_t>) {
+      return mozilla::HashString(units_, length);
+    } else {
+      static_assert(std::is_same_v<CharT, JS::Latin1Char>);
+      return mozilla::HashLatin1AsUTF16(units_, length);
     }
-    return hash;
   }
 };
 
@@ -283,12 +285,10 @@ class InflatedChar16Sequence<mozilla::Utf8Unit> {
   }
 
   HashNumber computeHash() const {
-    auto copy = *this;
-    HashNumber hash = 0;
-    while (copy.hasMore()) {
-      hash = mozilla::AddToHash(hash, copy.next());
-    }
-    return hash;
+    MOZ_ASSERT(!pendingTrailingSurrogate_,
+               "computeHash() assumes a freshly-constructed sequence");
+    return mozilla::HashUTF8AsUTF16(reinterpret_cast<const char*>(units_),
+                                    limit_ - units_);
   }
 };
 

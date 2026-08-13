@@ -57,6 +57,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   TaskbarTabs: "resource:///modules/taskbartabs/TaskbarTabs.sys.mjs",
   UIState: "resource://services-sync/UIState.sys.mjs",
   UITour: "moz-src:///browser/components/uitour/UITour.sys.mjs",
+  WindowsLaunchOnLogin: "resource://gre/modules/WindowsLaunchOnLogin.sys.mjs",
 });
 
 export const SpecialMessageActions = {
@@ -123,11 +124,19 @@ export const SpecialMessageActions = {
   /**
    * Pin Firefox to taskbar.
    *
-   * @param {Window} window Reference to a window object
-   * @param {boolean} pin Private Browsing Mode if true
+   * @param {Window} window
+   * @param {object} options
+   * @param {boolean} options.privatePin Whether the pinned launcher should open
+   *   a private window. Defaults to false.
+   * @param {boolean} options.fireAndForget User confirmation is often necessary
+   *   due to OS restrictions. This means an OS notification appears asking for
+   *   confirmation. By default, this API will only resolve when the user has
+   *   confirmed the action, so it will hang until the prompt is dismissed. This
+   *   parameter makes the API resolve after the prompt is shown, but before the
+   *   user has confirmed or rejected the action. Defaults to false.
    */
-  pinFirefoxToTaskbar(window, privateBrowsing = false) {
-    return window.getShellService().pinToTaskbar(privateBrowsing);
+  pinFirefoxToTaskbar(window, { privatePin, fireAndForget } = {}) {
+    return window.getShellService().pinToTaskbar(privatePin, fireAndForget);
   },
 
   /**
@@ -176,13 +185,11 @@ export const SpecialMessageActions = {
     };
 
     try {
-      const result = await lazy.TaskbarTabs.findOrCreateTaskbarTab(uri, 0, {
+      await lazy.TaskbarTabs.findOrCreateTaskbarTab(uri, 0, {
         manifest,
+        ensurePinned: true,
       });
-      if (result.created) {
-        return true;
-      }
-      return null;
+      return true;
     } catch (e) {
       console.error("Failed to pin Taskbar Tab:", e);
       return false;
@@ -211,6 +218,26 @@ export const SpecialMessageActions = {
     await window
       .getShellService()
       .setAsDefaultPDFHandler(onlyIfKnownBrowser, openInFirefox);
+  },
+
+  /**
+   * Set browser as the default handler for a protocol (scheme).
+   *
+   * @param {Window} window Reference to a window object
+   * @param {string} protocol The protocol to claim, e.g. "mailto"
+   * @param {string} [url] URL passed to the OS default-app picker
+   * @param {boolean} [openInFirefox] Whether to open the protocol's default URL
+   *   in Firefox after the user picks it
+   */
+  async setDefaultProtocolHandler(
+    window,
+    protocol,
+    url,
+    openInFirefox = false
+  ) {
+    await window
+      .getShellService()
+      .setAsDefaultProtocolHandler(protocol, url, openInFirefox);
   },
 
   /**
@@ -429,6 +456,21 @@ export const SpecialMessageActions = {
           `Special message action with type SET_PREF, pref of "${pref.name}" is an unsupported type.`
         );
     }
+  },
+
+  /**
+   * Destroy UI widgets with special message actions
+   *
+   * @param {string} widgetId - The ID of the widget to be destroyed.
+   */
+  destroyUIWidget(widgetId) {
+    const allowedWidgetIds = ["fxms-bmb-button"];
+
+    if (!allowedWidgetIds.includes(widgetId)) {
+      return;
+    }
+
+    lazy.CustomizableUI.destroyWidget(widgetId);
   },
 
   /**
@@ -822,7 +864,7 @@ export const SpecialMessageActions = {
         );
         break;
       case "PIN_FIREFOX_TO_TASKBAR":
-        await this.pinFirefoxToTaskbar(window, action.data?.privatePin);
+        await this.pinFirefoxToTaskbar(window, action.data);
         break;
       case "PIN_TASKBAR_TAB":
         return this.pinTaskbarTab(action.data);
@@ -830,12 +872,15 @@ export const SpecialMessageActions = {
         await this.pinToStartMenu(window);
         break;
       case "PIN_AND_DEFAULT":
-        // We must explicitly await pinning to the taskbar before
-        // trying to set as default. If we fall back to setting
-        // as default through the Windows Settings menu that interferes
-        // with showing the pinning notification as we no longer have
-        // window focus.
-        await this.pinFirefoxToTaskbar(window, action.data?.privatePin);
+        // If setDefaultBrowser is called before the pinning action, the OS will
+        // focus the Settings window, preventing the pinning confirmation toast
+        // from appearing. So we must pin first and await the action. There are
+        // two ways of doing this, however. By default, the set default prompt
+        // and Settings window will not appear until the user has accepted or
+        // rejected the pinning toast. The `fireAndForget` param will wait only
+        // for the pinning toast to be shown, so both toasts will appear at
+        // approximately the same time, but timed to avoid the race.
+        await this.pinFirefoxToTaskbar(window, action.data);
         await this.setDefaultBrowser(window);
         break;
       case "SET_DEFAULT_BROWSER":
@@ -854,20 +899,20 @@ export const SpecialMessageActions = {
           true
         );
         break;
-      case "CONFIRM_LAUNCH_ON_LOGIN": {
-        const { WindowsLaunchOnLogin } = ChromeUtils.importESModule(
-          "resource://gre/modules/WindowsLaunchOnLogin.sys.mjs"
+      case "SET_DEFAULT_PROTOCOL_HANDLER":
+        await this.setDefaultProtocolHandler(
+          window,
+          action.data?.protocol,
+          action.data?.url,
+          action.data?.openInFirefox ?? false
         );
-        await WindowsLaunchOnLogin.createLaunchOnLogin();
         break;
-      }
-      case "REMOVE_LAUNCH_ON_LOGIN": {
-        const { WindowsLaunchOnLogin } = ChromeUtils.importESModule(
-          "resource://gre/modules/WindowsLaunchOnLogin.sys.mjs"
-        );
-        await WindowsLaunchOnLogin.removeLaunchOnLogin();
+      case "CONFIRM_LAUNCH_ON_LOGIN":
+        await lazy.WindowsLaunchOnLogin.createLaunchOnLogin();
         break;
-      }
+      case "REMOVE_LAUNCH_ON_LOGIN":
+        await lazy.WindowsLaunchOnLogin.removeLaunchOnLogin();
+        break;
       case "CREATE_GROUP_FROM_CURRENT_TAB": {
         let tab =
           window.gBrowser.getTabForBrowser(browser) ??
@@ -883,8 +928,9 @@ export const SpecialMessageActions = {
             let newTab = window.gBrowser.getTabForBrowser(newBrowser);
             window.gBrowser.addTabGroup([newTab], {
               insertBefore: tab.group.nextElementSibling,
-              isUserTriggered: true,
-              telemetryUserCreateSource: "messaging",
+              metricsContext: window.gBrowser.TabMetrics.userTriggeredContext(
+                window.gBrowser.TabMetrics.METRIC_SOURCE.MESSAGING
+              ),
             });
           }
           Services.obs.addObserver(observer, "browser-open-newtab-start");
@@ -893,8 +939,9 @@ export const SpecialMessageActions = {
           // Add the current tab to a new tab group in place.
           window.gBrowser.addTabGroup([tab], {
             insertBefore: tab,
-            isUserTriggered: true,
-            telemetryUserCreateSource: "messaging",
+            metricsContext: window.gBrowser.TabMetrics.userTriggeredContext(
+              window.gBrowser.TabMetrics.METRIC_SOURCE.MESSAGING
+            ),
           });
         }
         break;
@@ -970,6 +1017,9 @@ export const SpecialMessageActions = {
         break;
       case "BLOCK_MESSAGE":
         await this.blockMessageById(action.data.id);
+        break;
+      case "DESTROY_UIWIDGET":
+        this.destroyUIWidget(action.data.widget_id);
         break;
       case "SET_PREF":
         this.setPref(action.data.pref, action.data.onImpression);

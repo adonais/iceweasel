@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+
 #include "mozilla/AllocPolicy.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/HashFunctions.h"

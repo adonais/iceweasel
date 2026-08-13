@@ -5,9 +5,9 @@
 #ifndef mozilla_net_BackgroundChannelRegistrar_h_
 #define mozilla_net_BackgroundChannelRegistrar_h_
 
+#include "mozilla/AlreadyAddRefed.h"
 #include "nsIBackgroundChannelRegistrar.h"
 #include "nsRefPtrHashtable.h"
-#include "mozilla/AlreadyAddRefed.h"
 
 namespace mozilla {
 namespace net {

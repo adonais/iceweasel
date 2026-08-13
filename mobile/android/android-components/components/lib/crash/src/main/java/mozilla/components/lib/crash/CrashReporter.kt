@@ -65,9 +65,9 @@ private class BreadcrumbList(val maxBreadCrumbs: Int) {
  * in on nightly was unexpectedly high. In order to avoid an unmanageable volume when we turned the
  * feature on in the Release channel, we decided to only send crashes that were as new as the feature
  * itself.
- * This timestamp is equivalent to Mon Aug 18 2025 00:00:00 GMT+0000
+ * This timestamp is equivalent to Mon Aug 18 2026 00:00:00 GMT+0000
  */
-private const val START_OF_144_NIGHTLY_TIMESTAMP = 1755475200000L
+private const val START_OF_154_NIGHTLY_TIMESTAMP = 1787070240000L
 
 /**
  *
@@ -186,7 +186,7 @@ class CrashReporter internal constructor(
      * @param timestampMillis Timestamp in milliseconds to retrieve reports after. Defaults to the start
      * of the Fenix 134 cycle when this feature went live.
      */
-    suspend fun hasUnsentCrashReportsSince(timestampMillis: Long = START_OF_144_NIGHTLY_TIMESTAMP): Boolean {
+    suspend fun hasUnsentCrashReportsSince(timestampMillis: Long = START_OF_154_NIGHTLY_TIMESTAMP): Boolean {
         return database.crashDao().numberOfUnsentCrashesSince(timestampMillis) > 0
     }
 
@@ -197,7 +197,7 @@ class CrashReporter internal constructor(
      * @param timestampMillis Timestamp in milliseconds to retrieve reports after. Defaults to the start
      * of the Fenix 134 cycle when this feature went live.
      */
-    suspend fun unsentCrashReportsSince(timestampMillis: Long = START_OF_144_NIGHTLY_TIMESTAMP): List<Crash> {
+    suspend fun unsentCrashReportsSince(timestampMillis: Long = START_OF_154_NIGHTLY_TIMESTAMP): List<Crash> {
         return database.crashDao().getCrashesWithoutReportsSince(timestampMillis)
             .map { it.toCrash() }
     }

@@ -6,7 +6,6 @@
 #include "jit/Linker.h"
 #include "jit/MacroAssembler.h"
 #include "js/GCAPI.h"
-
 #include "jsapi-tests/tests.h"
 #include "jsapi-tests/testsJit.h"
 

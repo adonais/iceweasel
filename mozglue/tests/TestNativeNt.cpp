@@ -400,6 +400,169 @@ bool TestCheckStack() {
 }
 #endif  // _M_X64
 
+// A synthetic PE image, used to feed PEHeaders::GetPdbInfo() malformed debug
+// directories. The page following the image is reserved but never committed,
+// so that a read past the end of the image faults rather than silently
+// succeeding.
+class FakePEImage final {
+ public:
+  FakePEImage() {
+    SYSTEM_INFO sysInfo;
+    ::GetSystemInfo(&sysInfo);
+    mImageSize = sysInfo.dwPageSize * 2;
+    mBase = reinterpret_cast<uint8_t*>(::VirtualAlloc(
+        nullptr, mImageSize + sysInfo.dwPageSize, MEM_RESERVE, PAGE_NOACCESS));
+    if (mBase &&
+        !::VirtualAlloc(mBase, mImageSize, MEM_COMMIT, PAGE_READWRITE)) {
+      ::VirtualFree(mBase, 0, MEM_RELEASE);
+      mBase = nullptr;
+    }
+  }
+
+  ~FakePEImage() {
+    if (mBase) {
+      ::VirtualFree(mBase, 0, MEM_RELEASE);
+    }
+  }
+
+  FakePEImage(const FakePEImage&) = delete;
+  FakePEImage& operator=(const FakePEImage&) = delete;
+
+  explicit operator bool() const { return !!mBase; }
+  DWORD ImageSize() const { return mImageSize; }
+  uint8_t* At(DWORD aRva) const { return mBase + aRva; }
+  PIMAGE_DOS_HEADER DosHeader() const {
+    return reinterpret_cast<PIMAGE_DOS_HEADER>(mBase);
+  }
+
+  // Zeroes the image and writes headers whose debug data directory points at
+  // aDebugDirRva with the given size.
+  void Reset(DWORD aDebugDirRva, DWORD aDebugDirSize) {
+    constexpr DWORD kNtHeadersRva = 0x40;
+    memset(mBase, 0, mImageSize);
+
+    DosHeader()->e_magic = IMAGE_DOS_SIGNATURE;
+    DosHeader()->e_lfanew = kNtHeadersRva;
+
+    auto ntHeaders = reinterpret_cast<PIMAGE_NT_HEADERS>(At(kNtHeadersRva));
+    ntHeaders->Signature = IMAGE_NT_SIGNATURE;
+    ntHeaders->FileHeader.SizeOfOptionalHeader = sizeof(IMAGE_OPTIONAL_HEADER);
+    ntHeaders->OptionalHeader.Magic = IMAGE_NT_OPTIONAL_HDR_MAGIC;
+    ntHeaders->OptionalHeader.SizeOfImage = mImageSize;
+    ntHeaders->OptionalHeader.NumberOfRvaAndSizes =
+        IMAGE_NUMBEROF_DIRECTORY_ENTRIES;
+
+    auto& dataDir =
+        ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_DEBUG];
+    dataDir.VirtualAddress = aDebugDirRva;
+    dataDir.Size = aDebugDirSize;
+  }
+
+ private:
+  uint8_t* mBase = nullptr;
+  DWORD mImageSize = 0;
+};
+
+bool TestPdbInfoBounds() {
+  FakePEImage image;
+  if (!image) {
+    printf("TEST-FAIL | NativeNt | Failed to create a fake PE image\n");
+    return false;
+  }
+
+  const DWORD imageSize = image.ImageSize();
+  constexpr DWORD kDebugDirRva = 0x400;
+  constexpr DWORD kRecordRva = 0x500;
+  constexpr DWORD kNameOffset = offsetof(CodeViewRecord70, pdbFileName);
+  const char kPdbName[] = "test.pdb";
+
+  struct TestCase {
+    const char* mDescription;
+    DWORD mDebugDirRva;
+    DWORD mDebugDirSize;
+    DWORD mRawDataRva;
+    DWORD mRawDataSize;
+    bool mTerminateName;
+    bool mExpectSuccess;
+  };
+
+  const TestCase kTestCases[] = {
+      {"well-formed record", kDebugDirRva, sizeof(IMAGE_DEBUG_DIRECTORY),
+       kRecordRva, kNameOffset + sizeof(kPdbName), true, true},
+      {"record extending past the end of the image", kDebugDirRva,
+       sizeof(IMAGE_DEBUG_DIRECTORY), imageSize - 8, 64, true, false},
+      {"record too small to hold a file name", kDebugDirRva,
+       sizeof(IMAGE_DEBUG_DIRECTORY), kRecordRva, kNameOffset, true, false},
+      // A size below the fixed-size fields would underflow the remaining
+      // capacity of pdbFileName if it were not rejected up front.
+      {"record smaller than the fixed-size fields", kDebugDirRva,
+       sizeof(IMAGE_DEBUG_DIRECTORY), kRecordRva, kNameOffset / 2, true, false},
+      {"unterminated file name", kDebugDirRva, sizeof(IMAGE_DEBUG_DIRECTORY),
+       kRecordRva, kNameOffset + 8, false, false},
+      {"debug directory extending past the end of the image", imageSize - 4,
+       sizeof(IMAGE_DEBUG_DIRECTORY), kRecordRva,
+       kNameOffset + sizeof(kPdbName), true, false},
+      {"debug directory smaller than one entry", kDebugDirRva,
+       sizeof(IMAGE_DEBUG_DIRECTORY) - 1, kRecordRva,
+       kNameOffset + sizeof(kPdbName), true, false},
+  };
+
+  for (const auto& testCase : kTestCases) {
+    image.Reset(testCase.mDebugDirRva, testCase.mDebugDirSize);
+
+    if (testCase.mDebugDirRva + sizeof(IMAGE_DEBUG_DIRECTORY) <= imageSize) {
+      auto debugDir = reinterpret_cast<PIMAGE_DEBUG_DIRECTORY>(
+          image.At(testCase.mDebugDirRva));
+      debugDir->Type = IMAGE_DEBUG_TYPE_CODEVIEW;
+      debugDir->AddressOfRawData = testCase.mRawDataRva;
+      debugDir->SizeOfData = testCase.mRawDataSize;
+    }
+
+    // Write as much of the record as fits in the image, so that a bounds check
+    // that only looks at the record's first bytes would still be fooled.
+    if (testCase.mRawDataRva < imageSize) {
+      DWORD writable =
+          std::min(testCase.mRawDataSize, imageSize - testCase.mRawDataRva);
+      uint8_t* record = image.At(testCase.mRawDataRva);
+      memset(record, 'A', writable);
+      if (writable >= sizeof(uint32_t)) {
+        const uint32_t signature = 'SDSR';
+        memcpy(record, &signature, sizeof(signature));
+      }
+      if (testCase.mTerminateName && writable > kNameOffset) {
+        DWORD nameSize =
+            std::min(DWORD(sizeof(kPdbName)), DWORD(writable - kNameOffset));
+        memcpy(record + kNameOffset, kPdbName, nameSize);
+        record[kNameOffset + nameSize - 1] = '\0';
+      }
+    }
+
+    PEHeaders headers(image.DosHeader());
+    if (!headers) {
+      printf("TEST-FAIL | NativeNt | Failed to parse the fake PE image (%s)\n",
+             testCase.mDescription);
+      return false;
+    }
+
+    const CodeViewRecord70* pdbInfo = headers.GetPdbInfo();
+    if (!pdbInfo != !testCase.mExpectSuccess) {
+      printf("TEST-FAIL | NativeNt | GetPdbInfo() unexpectedly %s for %s\n",
+             pdbInfo ? "succeeded" : "failed", testCase.mDescription);
+      return false;
+    }
+
+    if (pdbInfo && strcmp(pdbInfo->pdbFileName, kPdbName)) {
+      printf(
+          "TEST-FAIL | NativeNt | GetPdbInfo() returned the wrong name for "
+          "%s: %s\n",
+          testCase.mDescription, pdbInfo->pdbFileName);
+      return false;
+    }
+  }
+
+  return true;
+}
+
 int wmain(int argc, wchar_t* argv[]) {
   UNICODE_STRING normal;
   ::RtlInitUnicodeString(&normal, kNormal);
@@ -633,6 +796,10 @@ int wmain(int argc, wchar_t* argv[]) {
   }
 
   if (!TestModuleLoadedAsData()) {
+    return 1;
+  }
+
+  if (!TestPdbInfoBounds()) {
     return 1;
   }
 

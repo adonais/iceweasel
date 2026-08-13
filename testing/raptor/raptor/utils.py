@@ -153,19 +153,19 @@ def view_gecko_profile_from_raptor():
         )
         return
 
-    LOG_GECKO.info("Profile saved locally to: %s" % profile_zip_path)
+    LOG_GECKO.info(f"Profile saved locally to: {profile_zip_path}")
     view_gecko_profile(profile_zip_path)
 
 
 def write_yml_file(yml_file, yml_data):
     # write provided data to specified local yaml file
-    LOG.info("writing %s to %s" % (yml_data, yml_file))
+    LOG.info(f"writing {yml_data} to {yml_file}")
 
     try:
         with open(yml_file, "w") as outfile:
             yaml.dump(yml_data, outfile, default_flow_style=False)
     except Exception as e:
-        LOG.critical("failed to write yaml file, exeption: %s" % e)
+        LOG.critical(f"failed to write yaml file, exeption: {e}")
 
 
 def bool_from_str(boolean_string):

@@ -18,8 +18,8 @@ function makeHistoryResults(count) {
   for (let i = 0; i < count; i++) {
     results.push(
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         payload: { url: "http://example.com/history/" + i },
       })
     );
@@ -32,8 +32,8 @@ function makeRemoteSuggestionResults(count) {
   for (let i = 0; i < count; i++) {
     results.push(
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        type: UrlbarShared.RESULT_TYPE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         payload: {
           engine: "test",
           query: "foo",
@@ -101,10 +101,10 @@ add_task(async function test_group_order() {
       ...makeHistoryResults(10),
     ]);
     let firstSuggestionIndex = results.findIndex(
-      result => result.type === UrlbarUtils.RESULT_TYPE.SEARCH
+      result => result.type === UrlbarShared.RESULT_TYPE.SEARCH
     );
     let firstHistoryIndex = results.findIndex(
-      result => result.type === UrlbarUtils.RESULT_TYPE.URL
+      result => result.type === UrlbarShared.RESULT_TYPE.URL
     );
     if (showSearchSuggestionsFirst) {
       Assert.equal(
@@ -145,10 +145,10 @@ add_task(async function test_search_group_ratio() {
       ...makeHistoryResults(10),
     ]);
     let suggestionCount = results.filter(
-      result => result.type === UrlbarUtils.RESULT_TYPE.SEARCH
+      result => result.type === UrlbarShared.RESULT_TYPE.SEARCH
     ).length;
     let historyCount = results.filter(
-      result => result.type === UrlbarUtils.RESULT_TYPE.URL
+      result => result.type === UrlbarShared.RESULT_TYPE.URL
     ).length;
     // Search suggestions always get the larger share of results regardless of
     // their group position: The ratio is 2:1 in favor of the search branch.

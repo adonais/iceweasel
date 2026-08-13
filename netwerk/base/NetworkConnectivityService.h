@@ -5,13 +5,13 @@
 #ifndef NetworkConnectivityService_h_
 #define NetworkConnectivityService_h_
 
-#include "nsINetworkConnectivityService.h"
-#include "nsCOMPtr.h"
-#include "nsIObserver.h"
-#include "nsIDNSListener.h"
-#include "nsIStreamListener.h"
-#include "mozilla/net/DNS.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/net/DNS.h"
+#include "nsCOMPtr.h"
+#include "nsIDNSListener.h"
+#include "nsINetworkConnectivityService.h"
+#include "nsIObserver.h"
+#include "nsIStreamListener.h"
 
 namespace mozilla {
 namespace net {
@@ -21,7 +21,7 @@ class NetworkConnectivityService : public nsINetworkConnectivityService,
                                    public nsIDNSListener,
                                    public nsIStreamListener {
  public:
-  NS_DECL_ISUPPORTS
+  NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSINETWORKCONNECTIVITYSERVICE
   NS_DECL_NSIOBSERVER
   NS_DECL_NSIDNSLISTENER

@@ -892,13 +892,6 @@ void ReflowInput::InitResizeFlags(nsPresContext* aPresContext,
     dependsOnCBBSize |= (flexBasis.IsSize() && flexBasis.AsSize().HasPercent());
   }
 
-  if (mFrame->StyleFont()->mLineHeight.IsMozBlockHeight()) {
-    // line-height depends on block bsize
-    mFrame->AddStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE);
-    // but only on containing blocks if this frame is not a suitable block
-    dependsOnCBBSize |= !nsLayoutUtils::IsNonWrapperBlock(mFrame);
-  }
-
   // If we're the descendant of a table cell that performs special bsize
   // reflows and we could be the child that requires them, always set
   // the block-axis resize in case this is the first pass before the
@@ -980,10 +973,31 @@ bool ReflowInput::ShouldApplyAutomaticMinimumOnBlockAxis() const {
 }
 
 bool ReflowInput::IsInFragmentedContext() const {
-  // We consider mFrame with a prev-in-flow being in a fragmented context
-  // because nsColumnSetFrame can reflow its last column with an unconstrained
-  // available block-size.
-  return AvailableBSize() != NS_UNCONSTRAINEDSIZE || mFrame->GetPrevInFlow();
+  if (AvailableBSize() != NS_UNCONSTRAINEDSIZE) {
+    return true;
+  }
+
+  // nsColumnSet may reflow the last column in an unconstrained block-size at
+  // the very last reflow during column balancing.
+  if (mFlags.mIsInLastColumnBalancingReflow) {
+    return true;
+  }
+
+  // nsColumnSet may also reflow the last column in an unconstrained block-size
+  // when getting an estimation of total column block-size, so we check
+  // NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR as a fail-safe fallback.
+  if (mFrame->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR)) {
+    return true;
+  }
+
+  // NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR does not carry to a new formatting
+  // context, so flex items do not have this bit set. Check if mFrame is in a
+  // continuation chain.
+  if (mFrame->GetPrevInFlow() || mFrame->GetNextInFlow()) {
+    return true;
+  }
+
+  return false;
 }
 
 /* static */
@@ -2718,7 +2732,7 @@ static inline nscoord ComputeLineHeight(const StyleLineHeight& aLh,
                                         const nsFont& aFont, nsAtom* aLanguage,
                                         bool aExplicitLanguage,
                                         nsPresContext* aPresContext,
-                                        bool aIsVertical, nscoord aBlockBSize,
+                                        bool aIsVertical,
                                         float aFontSizeInflation) {
   if (aLh.IsLength()) {
     nscoord result = aLh.AsLength().ToAppUnits();
@@ -2736,10 +2750,7 @@ static inline nscoord ComputeLineHeight(const StyleLineHeight& aLh,
         .ToAppUnits();
   }
 
-  MOZ_ASSERT(aLh.IsNormal() || aLh.IsMozBlockHeight());
-  if (aLh.IsMozBlockHeight() && aBlockBSize != NS_UNCONSTRAINEDSIZE) {
-    return aBlockBSize;
-  }
+  MOZ_ASSERT(aLh.IsNormal());
 
   auto size = aFont.size;
   size.ScaleBy(aFontSizeInflation);
@@ -2767,13 +2778,8 @@ nscoord ReflowInput::GetLineHeight() const {
   if (mLineHeight != NS_UNCONSTRAINEDSIZE) {
     return mLineHeight;
   }
-
-  nscoord blockBSize = nsLayoutUtils::IsNonWrapperBlock(mFrame)
-                           ? ComputedBSize()
-                           : (mCBReflowInput ? mCBReflowInput->ComputedBSize()
-                                             : NS_UNCONSTRAINEDSIZE);
   mLineHeight = CalcLineHeight(*mFrame->Style(), mFrame->PresContext(),
-                               mFrame->GetContent(), blockBSize,
+                               mFrame->GetContent(),
                                nsLayoutUtils::FontSizeInflationFor(mFrame));
   return mLineHeight;
 }
@@ -2793,23 +2799,24 @@ void ReflowInput::SetLineHeight(nscoord aLineHeight) {
 nscoord ReflowInput::CalcLineHeight(const ComputedStyle& aStyle,
                                     nsPresContext* aPresContext,
                                     const nsIContent* aContent,
-                                    nscoord aBlockBSize,
                                     float aFontSizeInflation) {
   const StyleLineHeight& lh = aStyle.StyleFont()->mLineHeight;
   WritingMode wm(&aStyle);
   const bool vertical = wm.IsVertical() && !wm.IsSideways();
   return CalcLineHeight(lh, *aStyle.StyleFont(), aPresContext, vertical,
-                        aContent, aBlockBSize, aFontSizeInflation);
+                        aContent, aFontSizeInflation);
 }
 
-nscoord ReflowInput::CalcLineHeight(
-    const StyleLineHeight& aLh, const nsStyleFont& aRelativeToFont,
-    nsPresContext* aPresContext, bool aIsVertical, const nsIContent* aContent,
-    nscoord aBlockBSize, float aFontSizeInflation) {
+nscoord ReflowInput::CalcLineHeight(const StyleLineHeight& aLh,
+                                    const nsStyleFont& aRelativeToFont,
+                                    nsPresContext* aPresContext,
+                                    bool aIsVertical,
+                                    const nsIContent* aContent,
+                                    float aFontSizeInflation) {
   nscoord lineHeight =
       ComputeLineHeight(aLh, aRelativeToFont.mFont, aRelativeToFont.mLanguage,
                         aRelativeToFont.mExplicitLanguage, aPresContext,
-                        aIsVertical, aBlockBSize, aFontSizeInflation);
+                        aIsVertical, aFontSizeInflation);
 
   NS_ASSERTION(lineHeight >= 0, "ComputeLineHeight screwed up");
 
@@ -2821,7 +2828,7 @@ nscoord ReflowInput::CalcLineHeight(
       nscoord normal = ComputeLineHeight(
           StyleLineHeight::Normal(), aRelativeToFont.mFont,
           aRelativeToFont.mLanguage, aRelativeToFont.mExplicitLanguage,
-          aPresContext, aIsVertical, aBlockBSize, aFontSizeInflation);
+          aPresContext, aIsVertical, aFontSizeInflation);
       if (lineHeight < normal) {
         lineHeight = normal;
       }
@@ -2839,7 +2846,7 @@ nscoord ReflowInput::CalcLineHeightForCanvas(const StyleLineHeight& aLh,
                                              WritingMode aWM) {
   return ComputeLineHeight(aLh, aRelativeToFont, aLanguage, aExplicitLanguage,
                            aPresContext, aWM.IsVertical() && !aWM.IsSideways(),
-                           NS_UNCONSTRAINEDSIZE, 1.0f);
+                           1.0f);
 }
 
 bool SizeComputationInput::ComputeMargin(WritingMode aCBWM,

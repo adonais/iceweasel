@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "MockHitTester.h"
+
 #include "TreeTraversal.h"
 #include "apz/src/APZCTreeManager.h"
 #include "apz/src/AsyncPanZoomController.h"

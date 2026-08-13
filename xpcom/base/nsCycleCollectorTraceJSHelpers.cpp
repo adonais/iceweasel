@@ -2,11 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "jsapi.h"
+#include "jsfriendapi.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsString.h"
 #include "nsWrapperCacheInlines.h"
-#include "jsapi.h"
-#include "jsfriendapi.h"
 
 void CycleCollectionNoteEdgeNameImpl(
     nsCycleCollectionTraversalCallback& aCallback, const char* aName,

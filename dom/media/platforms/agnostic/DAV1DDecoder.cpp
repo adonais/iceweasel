@@ -13,9 +13,9 @@
 #include "nsThreadUtils.h"
 
 #undef LOG
-#define LOG(arg, ...)                                                  \
-  DDMOZ_LOG(sPDMLog, mozilla::LogLevel::Debug, "::%s: " arg, __func__, \
-            ##__VA_ARGS__)
+#define LOG(arg, ...)                                                      \
+  DDMOZ_LOG_FMT(sPDMLog, mozilla::LogLevel::Debug, "::{}: " arg, __func__, \
+                ##__VA_ARGS__)
 
 namespace mozilla {
 using layers::BufferRecycleBin;
@@ -186,7 +186,7 @@ RefPtr<MediaDataDecoder::DecodePromise> DAV1DDecoder::InvokeDecode(
   do {
     res = dav1d_send_data(mContext, &data);
     if (res < 0 && res != DAV1D_ERR(EAGAIN)) {
-      LOG("Decode error: %d", res);
+      LOG("Decode error: {}", res);
       return DecodePromise::CreateAndReject(
           MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR, __func__), __func__);
     }
@@ -234,7 +234,7 @@ Result<already_AddRefed<VideoData>, MediaResult> DAV1DDecoder::GetPicture() {
                              ? NS_ERROR_DOM_MEDIA_WAITING_FOR_DATA
                              : NS_ERROR_DOM_MEDIA_DECODE_ERR,
                          RESULT_DETAIL("dav1d_get_picture: %d", res));
-    LOG("%s", r.Message().get());
+    LOG("{}", r.Message().get());
     return Err(r);
   }
 
@@ -243,13 +243,13 @@ Result<already_AddRefed<VideoData>, MediaResult> DAV1DDecoder::GetPicture() {
     auto r = MediaResult(
         NS_OK,
         RESULT_DETAIL("I400 picture: No chroma data to construct an image"));
-    LOG("%s", r.Message().get());
+    LOG("{}", r.Message().get());
     return Err(r);
   }
 
   Result<already_AddRefed<VideoData>, MediaResult> r = ConstructImage(*picture);
   return r.mapErr([&](const MediaResult& aResult) {
-    LOG("ConstructImage (%ux%u display %ux%u picture %ux%u ) error - %s: %s",
+    LOG("ConstructImage ({}x{} display {}x{} picture {}x{} ) error - {}: {}",
         (*picture).p.w, (*picture).p.h, mInfo.mDisplay.width,
         mInfo.mDisplay.height, mInfo.mImage.width, mInfo.mImage.height,
         aResult.ErrorName().get(), aResult.Message().get());

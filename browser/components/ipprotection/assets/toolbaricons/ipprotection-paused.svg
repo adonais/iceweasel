@@ -1,0 +1,14 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at https://mozilla.org/MPL/2.0/. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="16" fill="none" viewBox="0 0 48 16">
+  <g clip-path="url(#a)">
+    <path fill="context-fill" fill-rule="evenodd" d="M6.993 2a6 6 0 1 1 0 12 6 6 0 0 1 0-12m-2.375 9h1.5V5h-1.5zm3.25-6v6h1.5V5z" clip-rule="evenodd"/>
+  </g>
+  <path fill="context-fill" d="M38.24 13.284V2.714h1.64l5.67 7.948-1.304-.667h.945v-7.28h1.816v10.569h-1.633L39.705 5.33l1.304.666h-.945v7.288zM29.283 9.79V8.267h2.812q1.018 0 1.582-.52.564-.528.564-1.48v-.015q0-.96-.564-1.479t-1.582-.52h-2.812V2.715h3.274q1.076 0 1.882.44.806.438 1.26 1.237.454.79.454 1.853v.015q0 1.054-.454 1.853-.454.79-1.26 1.238-.806.44-1.882.439zm-.945 3.494V2.714h1.89v10.57zM20.648 13.284l-3.655-10.57h2.08l2.614 8.387h.125l2.622-8.386h2.08l-3.662 10.569z"/>
+  <defs>
+    <clipPath id="a">
+      <path fill="#fff" d="M.993 2h12v12h-12z"/>
+    </clipPath>
+  </defs>
+</svg>

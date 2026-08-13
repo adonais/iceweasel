@@ -11,17 +11,20 @@ import {
 
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/ai-website-chip.mjs";
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://browser/content/aiwindow/components/ai-grouped-chip-container.mjs";
 
 /** @typedef {import("chrome://browser/content/urlbar/SmartbarInput.mjs").ContextWebsite} ContextWebsite */
 
 /**
- * Container for rendering a horizontally scrollable row of website chips
+ * Container for rendering website chips
  */
 export class WebsiteChipContainer extends MozLitElement {
   static properties = {
     websites: { type: Array },
     chipType: { type: String },
     removable: { type: Boolean },
+    shouldGroupChips: { type: Boolean }, // true if we want 3 or more chips to display as ai-grouped-chip-container
   };
 
   constructor() {
@@ -30,6 +33,7 @@ export class WebsiteChipContainer extends MozLitElement {
     this.websites = [];
     this.chipType = "context-chip";
     this.removable = false;
+    this.shouldGroupChips = false;
   }
 
   #onRemoveWebsite(website, event) {
@@ -43,6 +47,23 @@ export class WebsiteChipContainer extends MozLitElement {
     );
   }
 
+  #renderStackedChips(website) {
+    return html`<ai-website-chip
+      .type=${this.chipType}
+      .label=${website.label}
+      .href=${website.url}
+      .iconSrc=${website.iconSrc ?? ""}
+      .removable=${this.removable}
+      @ai-website-chip:remove=${e => this.#onRemoveWebsite(website, e)}
+    ></ai-website-chip>`;
+  }
+
+  #renderGroupedChips(chips) {
+    return html`<ai-grouped-chip-container
+      .chips=${chips}
+    ></ai-grouped-chip-container>`;
+  }
+
   render() {
     if (!this.websites.length) {
       return nothing;
@@ -54,32 +75,26 @@ export class WebsiteChipContainer extends MozLitElement {
         href="chrome://browser/content/aiwindow/components/website-chip-container.css"
       />
       <div class="chip-container">
-        <div class="scroller" role="list">
-          ${repeat(
-            this.websites,
-            website => website.url,
-            website =>
-              website.historyDeleted
-                ? html`<div class="chip-history-deleted" role="listitem">
-                    <img
-                      class="chip-history-deleted-icon"
-                      src="chrome://global/skin/icons/defaultFavicon.svg"
-                    />
-                    <span
-                      data-l10n-id="aiwindow-website-chip-history-deleted"
-                    ></span>
-                  </div>`
-                : html`<ai-website-chip
-                    .type=${this.chipType}
-                    .label=${website.label}
-                    .href=${website.url}
-                    .iconSrc=${website.iconSrc ?? ""}
-                    .removable=${this.removable}
-                    @ai-website-chip:remove=${e =>
-                      this.#onRemoveWebsite(website, e)}
-                  ></ai-website-chip>`
-          )}
-        </div>
+        ${this.websites.length > 2 && this.shouldGroupChips
+          ? this.#renderGroupedChips(this.websites)
+          : html`<div class="chip-container-scroller" role="list">
+              ${repeat(
+                this.websites,
+                website => website.url,
+                website =>
+                  website.historyDeleted
+                    ? html`<div class="chip-history-deleted" role="listitem">
+                        <img
+                          class="chip-history-deleted-icon"
+                          src="chrome://global/skin/icons/defaultFavicon.svg"
+                        />
+                        <span
+                          data-l10n-id="aiwindow-website-chip-history-deleted"
+                        ></span>
+                      </div>`
+                    : this.#renderStackedChips(website)
+              )}
+            </div>`}
       </div>
     `;
   }

@@ -5,8 +5,8 @@
 #ifndef KeyedUUIDMapper_h
 #define KeyedUUIDMapper_h
 
-#include "nsIKeyedUUIDMapper.h"
 #include "ScopedNSSTypes.h"
+#include "nsIKeyedUUIDMapper.h"
 
 namespace mozilla {
 

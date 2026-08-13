@@ -67,7 +67,8 @@ class IDBDatabase final : public DOMEventTargetHelper {
 
   nsTHashSet<IDBTransaction*> mTransactions;
 
-  nsTHashMap<nsISupportsHashKey, indexedDB::PBackgroundIDBDatabaseFileChild*>
+  nsTHashMap<ThreadSafeWeakPtrHashKey<BlobImpl>,
+             indexedDB::PBackgroundIDBDatabaseFileChild*>
       mFileActors;
 
   RefPtr<Observer> mObserver;

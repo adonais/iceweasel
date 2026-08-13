@@ -45,6 +45,10 @@ add_task(async function test_field_highlight_on_pw_field_autocomplete_insecureWa
   is(document.defaultView.getComputedStyle(form.uname).getPropertyValue("filter"), "none",
      "Highlight is not applied to the username field if enter key is pressed on the insecure warning item");
 
+  // Activating the insecure warning now opens the support page in a new tab;
+  // close it so it doesn't steal focus from the form for the next popup.
+  closeCurrentTab();
+
   // Press tab on insecure warning and check.
   await openPopupOn(form.pword);
   synthesizeKey("KEY_ArrowDown"); // insecure warning
@@ -54,6 +58,9 @@ add_task(async function test_field_highlight_on_pw_field_autocomplete_insecureWa
      "Highlight is not applied to the password field if tab key is pressed on the insecure warning item");
   is(document.defaultView.getComputedStyle(form.uname).getPropertyValue("filter"), "none",
      "Highlight is not applied to the username field if tab key is pressed on the insecure warning item");
+
+  // The tab key also activates the insecure warning, opening another tab.
+  closeCurrentTab();
 });
 
 add_task(async function test_field_highlight_on_pw_field_autocomplete_footer() {

@@ -614,6 +614,221 @@ add_task(async function remove_bookmark_tag_notification() {
   ]);
 });
 
+add_task(async function remove_multiple_bookmark_tags_notification() {
+  let bm1 = await PlacesUtils.bookmarks.insert({
+    type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+    parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+    url: new URL("http://untag1.example.com/"),
+  });
+  let itemId1 = await PlacesTestUtils.promiseItemId(bm1.guid);
+
+  let bm2 = await PlacesUtils.bookmarks.insert({
+    type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+    parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+    url: new URL("http://untag2.example.com/"),
+  });
+  let itemId2 = await PlacesTestUtils.promiseItemId(bm2.guid);
+
+  let tagFolder1 = await PlacesUtils.bookmarks.insert({
+    type: PlacesUtils.bookmarks.TYPE_FOLDER,
+    parentGuid: PlacesUtils.bookmarks.tagsGuid,
+    title: "tag1",
+  });
+  let tag1 = await PlacesUtils.bookmarks.insert({
+    type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+    parentGuid: tagFolder1.guid,
+    url: new URL("http://untag1.example.com/"),
+  });
+  let tagId1 = await PlacesTestUtils.promiseItemId(tag1.guid);
+  let tagParentId1 = await PlacesTestUtils.promiseItemId(tag1.parentGuid);
+
+  let tagFolder2 = await PlacesUtils.bookmarks.insert({
+    type: PlacesUtils.bookmarks.TYPE_FOLDER,
+    parentGuid: PlacesUtils.bookmarks.tagsGuid,
+    title: "tag2",
+  });
+  let tag2 = await PlacesUtils.bookmarks.insert({
+    type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+    parentGuid: tagFolder2.guid,
+    url: new URL("http://untag2.example.com/"),
+  });
+  let tagId2 = await PlacesTestUtils.promiseItemId(tag2.guid);
+  let tagParentId2 = await PlacesTestUtils.promiseItemId(tag2.parentGuid);
+
+  const observer = expectPlacesObserverNotifications([
+    "bookmark-removed",
+    "bookmark-tags-changed",
+  ]);
+
+  // Removing tags for two different URLs in a single call exercises the
+  // batched fetchBookmarksByURLs lookup used to build untagging
+  // notifications, rather than one fetchBookmarksByURL call per item.
+  await PlacesUtils.bookmarks.remove([tag1, tag2]);
+
+  observer.check([
+    {
+      type: "bookmark-removed",
+      id: tagId1,
+      parentId: tagParentId1,
+      index: tag1.index,
+      url: tag1.url,
+      guid: tag1.guid,
+      parentGuid: tag1.parentGuid,
+      source: Ci.nsINavBookmarksService.SOURCE_DEFAULT,
+      itemType: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+      isTagging: true,
+    },
+    {
+      type: "bookmark-tags-changed",
+      id: itemId1,
+      itemType: bm1.type,
+      url: bm1.url,
+      guid: bm1.guid,
+      parentGuid: bm1.parentGuid,
+      tags: [],
+      lastModified: bm1.lastModified,
+      source: Ci.nsINavBookmarksService.SOURCE_DEFAULT,
+      isTagging: false,
+    },
+    {
+      type: "bookmark-removed",
+      id: tagId2,
+      parentId: tagParentId2,
+      index: tag2.index,
+      url: tag2.url,
+      guid: tag2.guid,
+      parentGuid: tag2.parentGuid,
+      source: Ci.nsINavBookmarksService.SOURCE_DEFAULT,
+      itemType: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+      isTagging: true,
+    },
+    {
+      type: "bookmark-tags-changed",
+      id: itemId2,
+      itemType: bm2.type,
+      url: bm2.url,
+      guid: bm2.guid,
+      parentGuid: bm2.parentGuid,
+      tags: [],
+      lastModified: bm2.lastModified,
+      source: Ci.nsINavBookmarksService.SOURCE_DEFAULT,
+      isTagging: false,
+    },
+  ]);
+});
+
+add_task(async function remove_tag_folder_notification() {
+  let bm1 = await PlacesUtils.bookmarks.insert({
+    type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+    parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+    url: new URL("http://untagfolder1.example.com/"),
+  });
+  let bm1ItemId = await PlacesTestUtils.promiseItemId(bm1.guid);
+
+  let bm2 = await PlacesUtils.bookmarks.insert({
+    type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+    parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+    url: new URL("http://untagfolder2.example.com/"),
+  });
+  let bm2ItemId = await PlacesTestUtils.promiseItemId(bm2.guid);
+
+  let tagFolder = await PlacesUtils.bookmarks.insert({
+    type: PlacesUtils.bookmarks.TYPE_FOLDER,
+    parentGuid: PlacesUtils.bookmarks.tagsGuid,
+    title: "tag",
+  });
+  let tagFolderId = await PlacesTestUtils.promiseItemId(tagFolder.guid);
+  let tagsRootId = await PlacesTestUtils.promiseItemId(tagFolder.parentGuid);
+
+  let tag1 = await PlacesUtils.bookmarks.insert({
+    type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+    parentGuid: tagFolder.guid,
+    url: new URL("http://untagfolder1.example.com/"),
+  });
+  let tag1Id = await PlacesTestUtils.promiseItemId(tag1.guid);
+
+  let tag2 = await PlacesUtils.bookmarks.insert({
+    type: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+    parentGuid: tagFolder.guid,
+    url: new URL("http://untagfolder2.example.com/"),
+  });
+  let tag2Id = await PlacesTestUtils.promiseItemId(tag2.guid);
+
+  const observer = expectPlacesObserverNotifications([
+    "bookmark-removed",
+    "bookmark-tags-changed",
+  ]);
+
+  // Removing the tag folder removes its contents (both tags) in one go,
+  // exercising the batched fetchBookmarksByURLs lookup for multiple URLs.
+  await PlacesUtils.bookmarks.remove(tagFolder.guid);
+
+  // Notifications are sent in reverse order, so the most recently inserted
+  // tag (tag2) is reported before tag1.
+  observer.check([
+    {
+      type: "bookmark-removed",
+      id: tag2Id,
+      parentId: tagFolderId,
+      index: tag2.index,
+      url: tag2.url,
+      guid: tag2.guid,
+      parentGuid: tag2.parentGuid,
+      source: Ci.nsINavBookmarksService.SOURCE_DEFAULT,
+      itemType: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+      isTagging: true,
+    },
+    {
+      type: "bookmark-tags-changed",
+      id: bm2ItemId,
+      itemType: bm2.type,
+      url: bm2.url,
+      guid: bm2.guid,
+      parentGuid: bm2.parentGuid,
+      tags: [],
+      lastModified: bm2.lastModified,
+      source: Ci.nsINavBookmarksService.SOURCE_DEFAULT,
+      isTagging: false,
+    },
+    {
+      type: "bookmark-removed",
+      id: tag1Id,
+      parentId: tagFolderId,
+      index: tag1.index,
+      url: tag1.url,
+      guid: tag1.guid,
+      parentGuid: tag1.parentGuid,
+      source: Ci.nsINavBookmarksService.SOURCE_DEFAULT,
+      itemType: PlacesUtils.bookmarks.TYPE_BOOKMARK,
+      isTagging: true,
+    },
+    {
+      type: "bookmark-tags-changed",
+      id: bm1ItemId,
+      itemType: bm1.type,
+      url: bm1.url,
+      guid: bm1.guid,
+      parentGuid: bm1.parentGuid,
+      tags: [],
+      lastModified: bm1.lastModified,
+      source: Ci.nsINavBookmarksService.SOURCE_DEFAULT,
+      isTagging: false,
+    },
+    {
+      type: "bookmark-removed",
+      id: tagFolderId,
+      parentId: tagsRootId,
+      index: tagFolder.index,
+      url: null,
+      guid: tagFolder.guid,
+      parentGuid: tagFolder.parentGuid,
+      source: Ci.nsINavBookmarksService.SOURCE_DEFAULT,
+      itemType: PlacesUtils.bookmarks.TYPE_FOLDER,
+      isTagging: false,
+    },
+  ]);
+});
+
 add_task(async function rename_bookmark_tag_notification() {
   let bm = await PlacesUtils.bookmarks.insert({
     type: PlacesUtils.bookmarks.TYPE_BOOKMARK,

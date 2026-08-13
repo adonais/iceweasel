@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "IPv4Parser.h"
+
 #include "mozilla/EndianUtils.h"
 #include "nsPrintfCString.h"
 #include "nsTArray.h"

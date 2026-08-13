@@ -45,8 +45,13 @@ sealed class IPProtectionAction : Action {
 
     /**
      * Reports that the most recent activate or deactivate request failed.
+     *
+     * @property error The [Throwable] the engine rejected the request with, or null when the engine
+     * gave no reason.
      */
-    object ToggleFailed : IPProtectionAction()
+    data class ToggleFailed(
+        val error: Throwable? = null,
+    ) : IPProtectionAction()
 
     /**
      * Checks if an account has already been entitled. If so, this will lead to a token exchange that gives us a new

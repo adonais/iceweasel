@@ -6,8 +6,8 @@
 #ifndef nsReadLine_h_
 #define nsReadLine_h_
 
-#include "nsIInputStream.h"
 #include "mozilla/Likely.h"
+#include "nsIInputStream.h"
 
 /**
  * @file

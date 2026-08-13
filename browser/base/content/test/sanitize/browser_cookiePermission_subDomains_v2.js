@@ -39,6 +39,15 @@ add_task(async function subDomains1() {
   let originB = "https://mozilla.org";
   PermissionTestUtils.add(
     originB,
+    "persist-data-on-shutdown",
+    Services.perms.ALLOW_ACTION
+  );
+  // Also set a cookie ALLOW. After Bug 1767271 the cookie permission has
+  // no role in the sanitizer's preserve/clear decision, so this is a
+  // regression check: a stray cookie ALLOW must not accidentally affect
+  // shutdown clearing again.
+  PermissionTestUtils.add(
+    originB,
     "cookie",
     Ci.nsICookiePermission.ACCESS_ALLOW
   );
@@ -79,10 +88,11 @@ add_task(async function subDomains1() {
   // Cleaning up permissions
   PermissionTestUtils.remove(originA, "cookie");
   PermissionTestUtils.remove(originB, "cookie");
+  PermissionTestUtils.remove(originB, "persist-data-on-shutdown");
 });
 
 // session only cookie life-time, 2 domains (sub.mozilla.org, www.mozilla.org),
-// only the former has a cookie permission.
+// only the former has a persist-data-on-shutdown permission.
 add_task(async function subDomains2() {
   info("Test subdomains and custom setting with cookieBehavior == 2");
 
@@ -95,8 +105,8 @@ add_task(async function subDomains2() {
   let originA = "https://sub.mozilla.org";
   PermissionTestUtils.add(
     originA,
-    "cookie",
-    Ci.nsICookiePermission.ACCESS_ALLOW
+    "persist-data-on-shutdown",
+    Services.perms.ALLOW_ACTION
   );
 
   SiteDataTestUtils.addToCookies({ origin: originA });
@@ -138,11 +148,11 @@ add_task(async function subDomains2() {
   );
 
   // Cleaning up permissions
-  PermissionTestUtils.remove(originA, "cookie");
+  PermissionTestUtils.remove(originA, "persist-data-on-shutdown");
 });
 
 // session only cookie life-time, 3 domains (sub.mozilla.org, www.mozilla.org, mozilla.org),
-// only the former has a cookie permission. Both sub.mozilla.org and mozilla.org should
+// only the former has a persist-data-on-shutdown permission. Both sub.mozilla.org and mozilla.org should
 // be sustained.
 add_task(async function subDomains3() {
   info(
@@ -158,8 +168,8 @@ add_task(async function subDomains3() {
   let originA = "https://sub.mozilla.org";
   PermissionTestUtils.add(
     originA,
-    "cookie",
-    Ci.nsICookiePermission.ACCESS_ALLOW
+    "persist-data-on-shutdown",
+    Services.perms.ALLOW_ACTION
   );
   SiteDataTestUtils.addToCookies({ origin: originA });
   await SiteDataTestUtils.addToIndexedDB(originA);
@@ -213,14 +223,16 @@ add_task(async function subDomains3() {
   );
 
   // Cleaning up permissions
-  PermissionTestUtils.remove(originA, "cookie");
+  PermissionTestUtils.remove(originA, "persist-data-on-shutdown");
 });
 
 // clear on shutdown, 3 domains (sub.sub.mozilla.org, sub.mozilla.org, mozilla.org),
-// only the former has a cookie permission. Both sub.mozilla.org and mozilla.org should
+// only the former has a persist-data-on-shutdown permission. Both sub.mozilla.org and mozilla.org should
 // be sustained due to Permission of sub.sub.mozilla.org
 add_task(async function subDomains4() {
-  info("Test subdomain cookie permission inheritance with two subdomains");
+  info(
+    "Test subdomain persist-data-on-shutdown permission inheritance with two subdomains"
+  );
 
   // Let's clean up all the data.
   await new Promise(resolve => {
@@ -231,8 +243,8 @@ add_task(async function subDomains4() {
   let originA = "https://sub.sub.mozilla.org";
   PermissionTestUtils.add(
     originA,
-    "cookie",
-    Ci.nsICookiePermission.ACCESS_ALLOW
+    "persist-data-on-shutdown",
+    Services.perms.ALLOW_ACTION
   );
   SiteDataTestUtils.addToCookies({ origin: originA });
   await SiteDataTestUtils.addToIndexedDB(originA);
@@ -283,5 +295,5 @@ add_task(async function subDomains4() {
   );
 
   // Cleaning up permissions
-  PermissionTestUtils.remove(originA, "cookie");
+  PermissionTestUtils.remove(originA, "persist-data-on-shutdown");
 });

@@ -6,7 +6,6 @@
 #define mozilla_a11y_xpcAccessibleImage_h_
 
 #include "nsIAccessibleImage.h"
-
 #include "xpcAccessibleGeneric.h"
 
 namespace mozilla {

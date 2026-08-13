@@ -98,6 +98,22 @@ ScrollPositionUpdate ScrollPositionUpdate::NewPureRelativeScroll(
   return ret;
 }
 
+/* static */
+ScrollPositionUpdate ScrollPositionUpdate::NewZeroDeltaLayoutScroll(
+    ScrollOrigin aOrigin, ScrollMode aMode,
+    UniquePtr<ScrollSnapTargetIds> aSnapTargetIds) {
+  ScrollPositionUpdate ret;
+  ret.mScrollGeneration = sGenerationCounter.NewMainThreadGeneration();
+  ret.mType = ScrollUpdateType::ZeroDeltaLayoutScroll;
+  ret.mScrollMode = aMode;
+  ret.mScrollOrigin = aOrigin;
+  ret.mTriggeredByScript = ScrollTriggeredByScript::Yes;
+  if (aSnapTargetIds) {
+    ret.mSnapTargetIds = *aSnapTargetIds;
+  }
+  return ret;
+}
+
 bool ScrollPositionUpdate::operator==(
     const ScrollPositionUpdate& aOther) const {
   // instances are immutable, and all the fields are set when the generation

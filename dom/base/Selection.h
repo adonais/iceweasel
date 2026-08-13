@@ -909,7 +909,14 @@ class Selection final : public nsSupportsWeakReference,
 
   SelectionCustomColors* GetCustomColors() const { return mCustomColors.get(); }
 
-  MOZ_CAN_RUN_SCRIPT void NotifySelectionListeners(bool aCalledByJS);
+  enum class IsFromRangeMutationObserver { Yes, No };
+  /**
+   * IsFromRangeMutationObserver::Yes should only be passed if the selection
+   * change is due to a nsRange observing a DOM mutation.
+   */
+  MOZ_CAN_RUN_SCRIPT void NotifySelectionListeners(
+      bool aCalledByJS, IsFromRangeMutationObserver aIsFromRange =
+                            IsFromRangeMutationObserver::No);
   MOZ_CAN_RUN_SCRIPT void NotifySelectionListeners();
 
   bool ChangesDuringBatching() const { return mChangesDuringBatching; }
@@ -1038,9 +1045,9 @@ class Selection final : public nsSupportsWeakReference,
     template <typename PT, typename RT, typename ArrayType>
     static size_t FindInsertionPoint(
         const ArrayType& aElementArray,
-        const RangeBoundaryBase<PT, RT>& aBoundary,
+        const RangeBoundaryBase<PT, RT>& aBoundary, RangeBoundaryFor aFor,
         int32_t (*aComparator)(const RangeBoundaryBase<PT, RT>&,
-                               const AbstractRange&));
+                               RangeBoundaryFor aFor, const AbstractRange&));
 
     /**
      * Works on the same principle as GetRangesForIntervalArray, however
@@ -1128,7 +1135,7 @@ class Selection final : public nsSupportsWeakReference,
     // order. This method will also move invalid `StaticRange`s into
     // `mInvalidStaticRanges` (and previously-invalid-now-valid-again
     // `StaticRange`s back into `mRanges`).
-    void ReorderRangesIfNecessary();
+    [[nodiscard]] nsresult ReorderRangesIfNecessary();
 
     // These are the ranges inside this selection. They are kept sorted in order
     // of DOM start position.

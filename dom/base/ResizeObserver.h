@@ -119,7 +119,9 @@ class ResizeObservation final : public LinkedListElement<ResizeObservation> {
  * ResizeObserver interfaces and algorithms are based on
  * https://drafts.csswg.org/resize-observer/#api
  */
-class ResizeObserver final : public nsISupports, public nsWrapperCache {
+class ResizeObserver final : public nsISupports,
+                             public nsWrapperCache,
+                             public LinkedListElement<ResizeObserver> {
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(ResizeObserver)

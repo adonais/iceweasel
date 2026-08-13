@@ -858,6 +858,19 @@
  *   Suppresses the EnumSerializer checker warning about the min template
  *   argument not matching the first (lowest-valued) enumerator. Use when
  *   deliberately excluding lower enumerators from being serialized.
+ * MOZ_BINDING(direction, language, kind, symbol): Applies to items which are a
+ *   binding to or bound from the item described by symbol in the target
+ *   language. This is used by the Mozsearch Clang plugin for cross-language
+ *   analysis.
+ *
+ *   Arguments are:
+ *   - direction: binding_to or bound_as
+ *   - language: cpp, java or idl
+ *   - kind: class, method, getter, setter or const
+ *   - symbol: the expected Mozsearch symbol
+ *
+ *   See build/clang-plugin/mozsearch-plugin/BindingOperations.cpp for more
+ *   details.
  */
 
 // gcc emits a nuisance warning -Wignored-attributes because attributes do not
@@ -955,11 +968,14 @@
 #      define MOZ_RUNINIT __attribute__((annotate("moz_global_var")))
 #      define MOZ_GLOBINIT \
         MOZ_RUNINIT __attribute__((annotate("moz_generated")))
+#      define MOZ_BINDING(direction, language, kind, symbol) \
+        __attribute__((annotate(#direction, #language, #kind, #symbol)))
 #    else
-#      define MOZ_UNANNOTATED /* nothing */
-#      define MOZ_ANNOTATED   /* nothing */
-#      define MOZ_RUNINIT     /* nothing */
-#      define MOZ_GLOBINIT    /* nothing */
+#      define MOZ_UNANNOTATED  /* nothing */
+#      define MOZ_ANNOTATED    /* nothing */
+#      define MOZ_RUNINIT      /* nothing */
+#      define MOZ_GLOBINIT     /* nothing */
+#      define MOZ_BINDING(...) /* nothing */
 #    endif
 
 /*
@@ -993,6 +1009,7 @@
 #    define MOZ_STATIC_CLASS                                /* nothing */
 #    define MOZ_RUNINIT                                     /* nothing */
 #    define MOZ_GLOBINIT                                    /* nothing */
+#    define MOZ_BINDING(...)                                /* nothing */
 #    define MOZ_GLIBCXX_CONSTINIT                           /* nothing */
 #    define MOZ_RELEASE_CONSTINIT                           /* nothing */
 #    define MOZ_STATIC_LOCAL_CLASS                          /* nothing */

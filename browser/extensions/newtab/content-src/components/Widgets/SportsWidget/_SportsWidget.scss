@@ -463,6 +463,26 @@
   margin-block-end: var(--space-small);
 }
 
+// Shared styles for the load-more rows shown in both the Upcoming and
+// Results expanded lists. The .upcoming and .results variants below
+// distinguish the two only for selection in tests; they share the same
+// visual rules.
+.sports-upcoming-loading-more,
+.sports-results-loading-more {
+  text-align: center;
+  color: var(--text-color-deemphasized);
+  font-size: var(--font-size-small);
+  padding-block: var(--space-medium);
+}
+
+// 1px-tall element placed at the end of the upcoming / results matches
+// list. The IntersectionObserver in SportsWidget.jsx watches this element
+// and fires a fetch when it scrolls into view.
+.sports-upcoming-load-more-sentinel,
+.sports-results-load-more-sentinel {
+  height: 1px;
+}
+
 // This rule applies to the "Show less" button only when the full list of upcoming games or previous results is shown
 .sports-matches-tab-panel:not(:has(.match-highlight-view)) > moz-button {
   margin-block-start: var(--space-medium);

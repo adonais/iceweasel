@@ -47,7 +47,7 @@ add_task(async function () {
       this.isShown = false;
       return Promise.resolve();
     },
-    finalize() {},
+    destroy() {},
   };
 
   // Inject the mock highlighter in the rule-view

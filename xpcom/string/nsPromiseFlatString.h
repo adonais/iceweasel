@@ -6,7 +6,6 @@
 #define nsPromiseFlatString_h_
 
 #include "nsString.h"
-
 #include "nsTPromiseFlatString.h"
 
 #endif /* !defined(nsPromiseFlatString_h_) */

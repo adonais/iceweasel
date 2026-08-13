@@ -159,7 +159,7 @@ class SplashScreenOperationTest {
             observers.forEach { it.onExperimentsFetched() }
         }
 
-        override fun applyPendingExperiments(): Job {
+        override fun applyPendingExperiments(initial: Boolean): Job {
             return scope.launch {
                 delay(applyDelay)
                 observers.forEach { it.onUpdatesApplied(listOf()) }

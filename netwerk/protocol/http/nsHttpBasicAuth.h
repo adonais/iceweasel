@@ -5,8 +5,8 @@
 #ifndef nsBasicAuth_h_
 #define nsBasicAuth_h_
 
-#include "nsIHttpAuthenticator.h"
 #include "mozilla/StaticPtr.h"
+#include "nsIHttpAuthenticator.h"
 
 namespace mozilla {
 namespace net {

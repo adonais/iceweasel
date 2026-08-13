@@ -268,7 +268,7 @@ add_task(async function test_tabGroupPreventScrollOnUncollapse() {
   // create some more tabs after the group
   createManyTabs(4, win);
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return Array.from(win.gBrowser.tabs).every(tab => tab._fullyOpen);
   });
 
@@ -279,7 +279,7 @@ add_task(async function test_tabGroupPreventScrollOnUncollapse() {
 
   info("scrolling to beginning of tabstrip");
   let arrowScrollbox = win.gBrowser.tabContainer.arrowScrollbox;
-  let scrolledToStart = BrowserTestUtils.waitForCondition(() => {
+  let scrolledToStart = TestUtils.waitForCondition(() => {
     return arrowScrollbox.hasAttribute("scrolledtostart");
   }, "Waiting for tabstrip to be scrolled to start");
 

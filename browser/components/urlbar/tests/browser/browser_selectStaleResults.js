@@ -229,7 +229,7 @@ add_task(async function staleReplacedWithFresh() {
   Assert.equal(result.searchParams.suggestion, "tesbar");
   for (let i = 3; i < maxResults; i++) {
     result = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
-    Assert.equal(result.type, UrlbarUtils.RESULT_TYPE.URL);
+    Assert.equal(result.type, UrlbarShared.RESULT_TYPE.URL);
     Assert.equal(result.title, "test" + (maxResults - i + 2));
   }
 
@@ -287,7 +287,7 @@ add_task(async function staleReplacedWithFresh() {
   Assert.equal(result.element.row.result.rowIndex, 0);
   for (let i = 1; i < maxResults; i++) {
     result = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
-    Assert.equal(result.type, UrlbarUtils.RESULT_TYPE.URL);
+    Assert.equal(result.type, UrlbarShared.RESULT_TYPE.URL);
     Assert.equal(result.title, "test" + (maxResults - i));
     Assert.equal(result.element.row.result.rowIndex, i);
   }

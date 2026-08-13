@@ -345,9 +345,17 @@ def add_try_task_duplicates(taskgraph, label_to_taskid, parameters, graph_config
                 chunk_index = -2
             label_parts = task.label.split("-")
             label_no_chunk = "-".join(label_parts[:chunk_index])
+            label_no_cf = (
+                "-".join(label_parts[:-1]) if chunk_index == -2 else task.label
+            )
 
             if label_parts[chunk_index].isnumeric() and label_no_chunk in glob_tasks:
                 task.attributes["task_duplicates"] = count
             elif task.label in tasks:
+                task.attributes["task_duplicates"] = count
+            elif label_no_cf in glob_tasks:
+                # When dynamic chunking produces 1 chunk, the label has no
+                # numeric suffix to match the chunked-glob branch above, so
+                # match the unchunked name against the selected glob too.
                 task.attributes["task_duplicates"] = count
     return taskgraph, label_to_taskid

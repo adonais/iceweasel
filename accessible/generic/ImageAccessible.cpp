@@ -4,23 +4,22 @@
 
 #include "ImageAccessible.h"
 
-#include "DocAccessible-inl.h"
-#include "LocalAccessible-inl.h"
-#include "nsAccUtils.h"
-#include "mozilla/a11y/Role.h"
 #include "AccAttributes.h"
 #include "AccIterator.h"
 #include "CacheConstants.h"
+#include "DocAccessible-inl.h"
+#include "LocalAccessible-inl.h"
 #include "States.h"
-
 #include "imgIRequest.h"
-#include "nsGenericHTMLElement.h"
+#include "mozilla/a11y/Role.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/Document.h"
+#include "nsAccUtils.h"
 #include "nsContentUtils.h"
+#include "nsGenericHTMLElement.h"
 #include "nsIImageLoadingContent.h"
-#include "nsPIDOMWindow.h"
 #include "nsIURI.h"
+#include "nsPIDOMWindow.h"
 
 namespace mozilla::a11y {
 

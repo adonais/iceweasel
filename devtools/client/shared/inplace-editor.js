@@ -395,9 +395,6 @@ class InplaceEditor extends EventEmitter {
     this.elt.style.display = "none";
     this.elt.parentNode.insertBefore(this.input, this.elt);
 
-    // After inserting the input to have all CSS styles applied, start autosizing.
-    this.#autosize();
-
     this.inputCharDimensions = this.#getInputCharDimensions();
     // Pull out character codes for advanceChars, listing the
     // characters that should trigger a blur.
@@ -458,8 +455,6 @@ class InplaceEditor extends EventEmitter {
       this.input.addEventListener("keyup", this.#onKeyup, eventListenerConfig);
     }
 
-    this.#updateSize();
-
     if (options.start) {
       options.start(this, event);
     }
@@ -471,7 +466,6 @@ class InplaceEditor extends EventEmitter {
   #abortController;
   #advanceChars;
   #applied;
-  #measurement;
   #openPopupTimeout;
   #pressedKey;
   #preventSuggestions;
@@ -510,6 +504,11 @@ class InplaceEditor extends EventEmitter {
       this.input.style.padding = "0";
     }
 
+    this.input.style.setProperty("field-sizing", "content");
+    if (this.maxWidth) {
+      this.input.style.setProperty("max-width", `${this.maxWidth}px`);
+    }
+
     this.input.classList.add("styleinspector-propertyeditor");
     if (options.inputClass) {
       this.input.classList.add(options.inputClass);
@@ -540,7 +539,6 @@ class InplaceEditor extends EventEmitter {
     }
 
     this.#abortController.abort();
-    this.#stopAutosize();
 
     this.elt.style.display = this.originalDisplay;
 
@@ -560,105 +558,33 @@ class InplaceEditor extends EventEmitter {
   }
 
   /**
-   * Keeps the editor close to the size of its input string.  This is pretty
-   * crappy, suggestions for improvement welcome.
-   */
-  #autosize() {
-    // Create a hidden, absolutely-positioned span to measure the text
-    // in the input.  Boo.
-
-    // We can't just measure the original element because a) we don't
-    // change the underlying element's text ourselves (we leave that
-    // up to the client), and b) without tweaking the style of the
-    // original element, it might wrap differently or something.
-    this.#measurement = this.doc.createElementNS(
-      HTML_NS,
-      this.multiline ? "pre" : "span"
-    );
-    this.#measurement.className = "autosizer";
-    this.elt.parentNode.appendChild(this.#measurement);
-    const style = this.#measurement.style;
-    style.visibility = "hidden";
-    style.position = "absolute";
-    style.top = "0";
-    style.left = "0";
-
-    if (this.multiline) {
-      style.whiteSpace = "pre-wrap";
-      style.wordWrap = "break-word";
-      if (this.maxWidth) {
-        style.maxWidth = this.maxWidth + "px";
-        // Use position fixed to measure dimensions without any influence from
-        // the container of the editor.
-        style.position = "fixed";
-      }
-    }
-
-    copyAllStyles(this.input, this.#measurement);
-    this.#updateSize();
-  }
-
-  /**
-   * Clean up the mess created by _autosize().
-   */
-  #stopAutosize() {
-    if (!this.#measurement) {
-      return;
-    }
-    this.#measurement.remove();
-    this.#measurement = null;
-  }
-
-  /**
-   * Size the editor to fit its current contents.
-   */
-  #updateSize() {
-    // Replace spaces with non-breaking spaces.  Otherwise setting
-    // the span's textContent will collapse spaces and the measurement
-    // will be wrong.
-    let content = this.input.value;
-    const unbreakableSpace = "\u00a0";
-
-    // Make sure the content is not empty.
-    if (content === "") {
-      content = unbreakableSpace;
-    }
-
-    // If content ends with a new line, add a blank space to force the autosize
-    // element to adapt its height.
-    if (content.lastIndexOf("\n") === content.length - 1) {
-      content = content + unbreakableSpace;
-    }
-
-    if (!this.multiline) {
-      content = content.replace(/ /g, unbreakableSpace);
-    }
-
-    this.#measurement.textContent = content;
-
-    // Do not use offsetWidth: it will round floating width values.
-    let width = this.#measurement.getBoundingClientRect().width;
-    if (this.multiline) {
-      if (this.maxWidth) {
-        width = Math.min(this.maxWidth, width);
-      }
-      const height = this.#measurement.getBoundingClientRect().height;
-      this.input.style.height = height + "px";
-    }
-    this.input.style.width = width + "px";
-  }
-
-  /**
    * Get the width and height of a single character in the input to properly
    * position the autocompletion popup.
    */
   #getInputCharDimensions() {
-    // Just make the text content to be 'x' to get the width and height of any
-    // character in a monospace font.
-    this.#measurement.textContent = "x";
-    const width = this.#measurement.clientWidth;
-    const height = this.#measurement.clientHeight;
-    return { width, height };
+    // Set the value for the custom registered properties so we can get their value
+    // in px. We can use 1ch to get the width of a character, and 1lh to get the line
+    // height, which approximates to the character height.
+    this.input.style.setProperty("--inplace-editor-char-width", "1ch");
+    this.input.style.setProperty("--inplace-editor-char-height", "1lh");
+
+    const inputComputedStyle = this.doc.defaultView.getComputedStyle(
+      this.input
+    );
+    const inplaceEditorCharWidthVariableValue =
+      inputComputedStyle.getPropertyValue("--inplace-editor-char-width");
+    const inplaceEditorCharHeightVariableValue =
+      inputComputedStyle.getPropertyValue("--inplace-editor-char-height");
+
+    const cssLengthStringToNumber = cssStr => {
+      const num = Number(cssStr.replace("px", ""));
+      return Number.isNaN(num) ? 0 : num;
+    };
+
+    return {
+      width: cssLengthStringToNumber(inplaceEditorCharWidthVariableValue),
+      height: cssLengthStringToNumber(inplaceEditorCharHeightVariableValue),
+    };
   }
 
   /**
@@ -1165,7 +1091,6 @@ class InplaceEditor extends EventEmitter {
       );
     }
 
-    this.#updateSize();
     // This emit is mainly for the purpose of making the test flow simpler.
     this.emit("after-suggest");
   }
@@ -1303,7 +1228,7 @@ class InplaceEditor extends EventEmitter {
       pre.length + toComplete.length,
       pre.length + toComplete.length
     );
-    this.#updateSize();
+
     // Wait for the popup to hide and then focus input async otherwise it does
     // not work.
     const onPopupHidden = () => {
@@ -1347,7 +1272,6 @@ class InplaceEditor extends EventEmitter {
 
     let cycling = false;
     if (increment && this.#incrementValue(increment)) {
-      this.#updateSize();
       prevent = true;
       cycling = true;
     }
@@ -1586,11 +1510,6 @@ class InplaceEditor extends EventEmitter {
     // Validate the entered value.
     this.#doValidation();
 
-    // Update size if we're autosizing.
-    if (this.#measurement) {
-      this.#updateSize();
-    }
-
     // Call the user's change handler if available.
     if (this.change) {
       this.change(this.currentInputValue);
@@ -1615,7 +1534,6 @@ class InplaceEditor extends EventEmitter {
     }
 
     if (increment && this.#incrementValue(increment)) {
-      this.#updateSize();
       event.preventDefault();
     }
   };
@@ -1923,7 +1841,6 @@ class InplaceEditor extends EventEmitter {
           query.length,
           query.length + item.length - startCheckQuery.length
         );
-        this.#updateSize();
       }
 
       // Display the list of suggestions if there are more than one.
@@ -2105,7 +2022,6 @@ class InplaceEditor extends EventEmitter {
     const start = this.input.selectionStart;
     this.input.value = str;
     this.input.setSelectionRange(start, start);
-    this.#updateSize();
   }
 
   /**
@@ -2224,60 +2140,6 @@ function copyTextStyles(from, to) {
   to.style.fontSize = style.fontSize;
   to.style.fontWeight = style.fontWeight;
   to.style.fontStyle = style.fontStyle;
-}
-
-/**
- * Copy all styles which could have an impact on the element size.
- */
-function copyAllStyles(from, to) {
-  const win = from.ownerDocument.defaultView;
-  const style = win.getComputedStyle(from);
-
-  copyTextStyles(from, to);
-  to.style.lineHeight = style.lineHeight;
-
-  // If box-sizing is set to border-box, box model styles also need to be
-  // copied.
-  const boxSizing = style.boxSizing;
-  if (boxSizing === "border-box") {
-    to.style.boxSizing = boxSizing;
-    copyBoxModelStyles(from, to);
-  }
-}
-
-/**
- * Copy box model styles that can impact width and height measurements when box-
- * sizing is set to "border-box" instead of "content-box".
- *
- * @param {DOMNode} from
- *        the element from which styles are copied
- * @param {DOMNode} to
- *        the element on which copied styles are applied
- */
-function copyBoxModelStyles(from, to) {
-  const properties = [
-    // Copy all paddings.
-    "paddingTop",
-    "paddingRight",
-    "paddingBottom",
-    "paddingLeft",
-    // Copy border styles.
-    "borderTopStyle",
-    "borderRightStyle",
-    "borderBottomStyle",
-    "borderLeftStyle",
-    // Copy border widths.
-    "borderTopWidth",
-    "borderRightWidth",
-    "borderBottomWidth",
-    "borderLeftWidth",
-  ];
-
-  const win = from.ownerDocument.defaultView;
-  const style = win.getComputedStyle(from);
-  for (const property of properties) {
-    to.style[property] = style[property];
-  }
 }
 
 /**

@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
@@ -26,11 +26,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.PromoCard
+import mozilla.components.ui.animation.AnimatedIllustration
 import org.mozilla.fenix.R
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.theme.FirefoxTheme
+import kotlin.time.Duration.Companion.seconds
 
-private val OnboardingGridItemHeight = 104.dp
+private val OnboardingGridItemMinHeight = 104.dp
 
 /**
  * Onboarding for tab groups in the tab manager when in grid view.
@@ -47,16 +49,18 @@ fun TabGroupOnboardingGridItem(
         description = stringResource(R.string.tab_group_onboarding_grid_item_description),
         modifier = modifier
             .fillMaxWidth()
-            .height(OnboardingGridItemHeight)
+            .heightIn(min = OnboardingGridItemMinHeight)
             .testTag(TabsTrayTestTag.TAB_GROUP_ONBOARDING_GRID_ITEM),
         title = stringResource(R.string.tab_group_onboarding_item_title),
         illustration = {
-            Image(
-                painter = painterResource(R.drawable.mozac_ic_kit_tab_groups),
-                contentDescription = null,
+            AnimatedIllustration(
+                animationResource = R.raw.mozac_ic_kit_tab_groups_animation,
+                staticDrawableResource = R.drawable.mozac_ic_kit_tab_groups,
                 modifier = Modifier
                     .padding(vertical = FirefoxTheme.layout.space.static150)
                     .testTag(TabsTrayTestTag.TAB_GROUP_ONBOARDING_ILLUSTRATION),
+                contentDescription = null,
+                iterationDelay = 8.seconds,
             )
         },
         contentSpacing = 0.dp,
@@ -79,7 +83,7 @@ fun TabGroupOnboardingListItem(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(TabListItemHeight)
+            .heightIn(min = TabListItemHeight)
             .background(MaterialTheme.colorScheme.primaryContainer)
             .padding(
                 start = FirefoxTheme.layout.space.dynamic200,

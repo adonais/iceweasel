@@ -69,6 +69,17 @@ dictionary JSActorOptions {
    * If not passed, all processes are allowed to instantiate the actor.
    */
   sequence<UTF8String> remoteTypes;
+
+  /**
+   * If this is set to false, this actor cannot be instantiated if the remote
+   * type of the child process is prefixed by either web or file. The goal is
+   * to prevent actors with powerful browser capabilities from being accidentally
+   * available to an attacker that takes over a web content process.
+   *
+   * Enforcement of this is controlled by the preference
+   * dom.jsipc.check_safeForUntrustedWebProcess.
+   */
+  boolean safeForUntrustedWebProcess = false;
 };
 
 dictionary JSActorSidedOptions {

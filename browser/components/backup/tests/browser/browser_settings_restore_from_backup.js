@@ -32,47 +32,6 @@ add_setup(async () => {
 });
 
 /**
- * Gets most of the widgets that are used during tests.
- *
- * In addition to avoiding some boilerplate, this ensures that the first state
- * update has been delivered. If we didn't wait, there'd be a timing problem;
- * see bug 2001583 for more information.
- *
- * @param {Browser} browser
- *   The XUL browser containing the preferences page.
- * @returns {{restoreFromBackup:HTMLElement, settings:HTMLElement}}
- *   Relevant widgets on the backup settings page.
- */
-async function initializedBackupWidgets(browser) {
-  // We have to end up using waitForCondition because of the racy nature
-  // of the state updates sent from the backupService. At some point, we should
-  // add a way to verifiably know when the backup settings items are available.
-  await TestUtils.waitForCondition(
-    () => browser.contentDocument.querySelector("backup-settings"),
-    "Waiting for backup-settings element to be in the DOM"
-  );
-  let settings = browser.contentDocument.querySelector("backup-settings");
-
-  await TestUtils.waitForCondition(
-    () => settings.restoreFromBackupButtonEl,
-    "Waiting for restore from backup button to show up"
-  );
-
-  settings.restoreFromBackupButtonEl.click();
-
-  await TestUtils.waitForCondition(
-    () => settings.restoreFromBackupEl,
-    "Waiting for restore-from-backup element to show up"
-  );
-  let restoreFromBackup = settings.restoreFromBackupEl;
-  await restoreFromBackup.initializedPromise;
-  return {
-    restoreFromBackup,
-    settings,
-  };
-}
-
-/**
  * Tests for when the user specifies an invalid backup file to restore.
  */
 add_task(async function test_backup_failure() {
@@ -324,6 +283,8 @@ add_task(async function test_restore_in_progress() {
     let bs = getAndMaybeInitBackupService();
     bs.resetLastBackupInternalState();
 
+    sandbox.stub(bs, "findBackupsInWellKnownLocations").resolves(null);
+
     let { promise: recoverPromise, resolve: recoverResolve } =
       Promise.withResolvers();
     let recoverFromBackupArchiveStub = sandbox
@@ -543,6 +504,10 @@ add_task(async function test_restore_from_backup_displays_invalid_backup() {
   const path = await IOUtils.createUniqueFile(TEST_PROFILE_PATH, "backup.html");
   await IOUtils.writeUTF8(path, "");
 
+  let sandbox = sinon.createSandbox();
+  let bs = getAndMaybeInitBackupService();
+  sandbox.stub(bs, "findBackupsInWellKnownLocations").resolves(null);
+
   await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
     let { restoreFromBackup } = await initializedBackupWidgets(browser);
 
@@ -582,33 +547,20 @@ add_task(async function test_restore_from_backup_displays_invalid_backup() {
       "The path selected before should be used."
     );
   });
+
+  sandbox.restore();
 });
 
 /**
- * Tests that the restore component uses a textarea and that the textarea
- * automatically resizes as needed.
+ * Tests that the restore component uses a textarea.
  */
 add_task(async function test_restore_from_backup_embedded_textarea() {
   await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
-    let { settings, restoreFromBackup } =
-      await initializedBackupWidgets(browser);
-    let sandbox = sinon.createSandbox();
-
-    // We want to close it and reopen to see whether resizeTextarea is called.
-    settings.dispatchEvent(new CustomEvent("dialogCancel"));
-    let resizeTextareaSpy = sandbox.spy(restoreFromBackup, "resizeTextarea");
-    settings.restoreFromBackupButtonEl.click();
-    await settings.updateComplete;
-    Assert.equal(
-      resizeTextareaSpy.callCount,
-      1,
-      "resizeTextarea was called when the dialog opened"
-    );
+    let { restoreFromBackup } = await initializedBackupWidgets(browser);
 
     const textarea = restoreFromBackup.shadowRoot.querySelector(
       "#backup-filepicker-input"
     );
-
     Assert.ok(textarea, "textarea should be present");
     Assert.equal(
       textarea.tagName.toLowerCase(),
@@ -620,47 +572,6 @@ add_task(async function test_restore_from_backup_embedded_textarea() {
       "1",
       "Textarea should have rows=1"
     );
-
-    // Test resize functionality when content changes
-    const initialHeight = textarea.style.height;
-    Assert.ok(initialHeight, "Textarea should have an initial height set");
-
-    const longPath =
-      "/a/very/long/path/to/a/backup/file/that/would/wrap/multiple/lines.html";
-    restoreFromBackup.backupServiceState.backupFileToRestore = longPath;
-    restoreFromBackup.requestUpdate();
-    await restoreFromBackup.updateComplete;
-    Assert.equal(
-      resizeTextareaSpy.callCount,
-      2,
-      "resizeTextarea was called when the content changed"
-    );
-
-    let heightRule = textarea.style.height;
-    textarea.style.height = "auto";
-    Assert.equal(
-      heightRule,
-      textarea.scrollHeight + "px",
-      "Textarea height should contain all content once content is added"
-    );
-    textarea.style.height = heightRule;
-
-    // The text area resize function should also be called
-    // when the resize event occurs on the window
-    let promise = BrowserTestUtils.waitForEvent(
-      browser.contentWindow,
-      "resize"
-    );
-    browser.contentWindow.dispatchEvent(new Event("resize"));
-    await promise;
-
-    Assert.equal(
-      resizeTextareaSpy.callCount,
-      3,
-      "resizeTextarea should be called when window resize event is fired"
-    );
-
-    sandbox.restore();
   });
 });
 

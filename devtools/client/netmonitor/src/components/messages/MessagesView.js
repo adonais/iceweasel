@@ -88,7 +88,9 @@ class MessagesView extends Component {
   componentWillUnmount() {
     const { openMessageDetailsTab } = this.props;
     openMessageDetailsTab(false);
+  }
 
+  persistMessagesPanelSize() {
     const { clientHeight } = findDOMNode(this.refs.endPanel) || {};
 
     if (clientHeight) {
@@ -137,6 +139,7 @@ class MessagesView extends Component {
         initialHeight,
         minSize: "50px",
         maxSize: "80%",
+        onResizeEnd: () => this.persistMessagesPanelSize(),
         splitterSize: messageDetailsOpen ? 1 : 0,
         onSelectContainerElement: this.handleContainerElement,
         startPanel: MessageListContent({

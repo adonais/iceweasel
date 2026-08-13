@@ -11,11 +11,6 @@ add_setup(async function () {
     password: "password",
   });
   await Services.logins.addLogins([login1]);
-
-  registerCleanupFunction(async function () {
-    SpecialPowers.clearUserPref("signon.rustMirror.migrationNeeded");
-    SpecialPowers.clearUserPref("signon.rustMirror.poisoned");
-  });
 });
 
 add_task(async function test_autofill_after_paint() {

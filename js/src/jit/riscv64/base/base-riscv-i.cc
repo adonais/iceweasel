@@ -20,61 +20,46 @@ void AssemblerRISCVI::auipc(Register rd, int32_t imm20) {
 
 // Jumps
 
-CodeOffset AssemblerRISCVI::jal(Register rd, int32_t imm21) {
-  GenInstrJ(JAL, rd, imm21);
-  CodeOffset retAddr = CodeOffset(currentOffset());
-  // FIXME: Pad short branches so that we don't need to care about decompression
-  // when inserting veneers
-  nop();
-  return retAddr;
+CodeOffset AssemblerRISCVI::jal(Register rd, int32_t imm21, LabelDoc doc) {
+  GenInstrJ(JAL, rd, imm21, doc);
+  return CodeOffset(currentOffset());
 }
 
-BufferOffset AssemblerRISCVI::jalr(Register rd, Register rs1, int16_t imm12) {
-  return GenInstrI(0b000, JALR, rd, rs1, imm12);
+BufferOffset AssemblerRISCVI::jalr(Register rd, Register rs1, int16_t imm12,
+                                   LabelDoc doc) {
+  return GenInstrI(0b000, JALR, rd, rs1, imm12, doc);
 }
 
 // Branches
 
-void AssemblerRISCVI::beq(Register rs1, Register rs2, int16_t imm13) {
-  GenInstrBranchCC_rri(0b000, rs1, rs2, imm13);
-  // FIXME: Pad short branches so that we don't need to care about decompression
-  // when inserting veneers
-  nop();
+void AssemblerRISCVI::beq(Register rs1, Register rs2, int16_t imm13,
+                          LabelDoc doc) {
+  GenInstrBranchCC_rri(0b000, rs1, rs2, imm13, doc);
 }
 
-void AssemblerRISCVI::bne(Register rs1, Register rs2, int16_t imm13) {
-  GenInstrBranchCC_rri(0b001, rs1, rs2, imm13);
-  // FIXME: Pad short branches so that we don't need to care about decompression
-  // when inserting veneers
-  nop();
+void AssemblerRISCVI::bne(Register rs1, Register rs2, int16_t imm13,
+                          LabelDoc doc) {
+  GenInstrBranchCC_rri(0b001, rs1, rs2, imm13, doc);
 }
 
-void AssemblerRISCVI::blt(Register rs1, Register rs2, int16_t imm13) {
-  GenInstrBranchCC_rri(0b100, rs1, rs2, imm13);
-  // FIXME: Pad short branches so that we don't need to care about decompression
-  // when inserting veneers
-  nop();
+void AssemblerRISCVI::blt(Register rs1, Register rs2, int16_t imm13,
+                          LabelDoc doc) {
+  GenInstrBranchCC_rri(0b100, rs1, rs2, imm13, doc);
 }
 
-void AssemblerRISCVI::bge(Register rs1, Register rs2, int16_t imm13) {
-  GenInstrBranchCC_rri(0b101, rs1, rs2, imm13);
-  // FIXME: Pad short branches so that we don't need to care about decompression
-  // when inserting veneers
-  nop();
+void AssemblerRISCVI::bge(Register rs1, Register rs2, int16_t imm13,
+                          LabelDoc doc) {
+  GenInstrBranchCC_rri(0b101, rs1, rs2, imm13, doc);
 }
 
-void AssemblerRISCVI::bltu(Register rs1, Register rs2, int16_t imm13) {
-  GenInstrBranchCC_rri(0b110, rs1, rs2, imm13);
-  // FIXME: Pad short branches so that we don't need to care about decompression
-  // when inserting veneers
-  nop();
+void AssemblerRISCVI::bltu(Register rs1, Register rs2, int16_t imm13,
+                           LabelDoc doc) {
+  GenInstrBranchCC_rri(0b110, rs1, rs2, imm13, doc);
 }
 
-void AssemblerRISCVI::bgeu(Register rs1, Register rs2, int16_t imm13) {
-  GenInstrBranchCC_rri(0b111, rs1, rs2, imm13);
-  // FIXME: Pad short branches so that we don't need to care about decompression
-  // when inserting veneers
-  nop();
+void AssemblerRISCVI::bgeu(Register rs1, Register rs2, int16_t imm13,
+                           LabelDoc doc) {
+  GenInstrBranchCC_rri(0b111, rs1, rs2, imm13, doc);
 }
 
 // Loads

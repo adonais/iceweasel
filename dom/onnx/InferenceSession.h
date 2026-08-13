@@ -35,6 +35,7 @@ class InferenceSession final : public nsISupports, public nsWrapperCache {
   }
 
   static bool InInferenceProcess(JSContext*, JSObject*);
+  static bool IsAvailable(const GlobalObject&);
 
  protected:
   virtual ~InferenceSession() { Destroy(); }

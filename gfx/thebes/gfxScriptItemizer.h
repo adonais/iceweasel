@@ -50,6 +50,7 @@
 #define GFX_SCRIPTITEMIZER_H
 
 #include <stdint.h>
+
 #include "mozilla/Assertions.h"
 #include "mozilla/intl/UnicodeScriptCodes.h"
 

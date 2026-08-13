@@ -6,6 +6,7 @@
 import json
 import os
 
+from mozilla_taskgraph.util.attributes import release_level
 from taskcluster.exceptions import TaskclusterRestFailure
 from taskgraph.parameters import Parameters
 from taskgraph.taskgraph import TaskGraph
@@ -13,7 +14,7 @@ from taskgraph.util.taskcluster import get_artifact, list_task_group_incomplete_
 
 from gecko_taskgraph.actions.registry import register_callback_action
 from gecko_taskgraph.decision import taskgraph_decision
-from gecko_taskgraph.util.attributes import RELEASE_PROMOTION_PROJECTS, release_level
+from gecko_taskgraph.util.attributes import RELEASE_PROMOTION_PROJECTS
 from gecko_taskgraph.util.partials import populate_release_history
 from gecko_taskgraph.util.partners import (
     fix_partner_config,
@@ -249,7 +250,11 @@ def release_promotion_action(
 
     if promotion_config.get("partial-updates", False):
         partial_updates = input.get("partial_updates", {})
-        if not partial_updates and release_level(push_parameters) == "production":
+        if (
+            not partial_updates
+            and release_level(graph_config["release-branches"], push_parameters)
+            == "production"
+        ):
             raise Exception(
                 f"`partial_updates` property needs to be provided for `{release_promotion_flavor}`"
                 "target."

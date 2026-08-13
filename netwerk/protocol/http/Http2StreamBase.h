@@ -8,12 +8,12 @@
 // HTTP/2 - RFC7540
 // https://www.rfc-editor.org/rfc/rfc7540.txt
 
+#include "SimpleBuffer.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
 #include "nsAHttpTransaction.h"
-#include "nsISupportsPriority.h"
-#include "SimpleBuffer.h"
 #include "nsISupportsImpl.h"
+#include "nsISupportsPriority.h"
 #include "nsIURI.h"
 
 class nsISocketTransport;

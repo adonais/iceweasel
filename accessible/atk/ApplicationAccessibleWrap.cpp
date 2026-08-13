@@ -4,11 +4,11 @@
 
 #include "ApplicationAccessibleWrap.h"
 
-#include "nsMai.h"
-#include "nsAccessibilityService.h"
-
 #include <gtk/gtk.h>
+
 #include "atk/atkobject.h"
+#include "nsAccessibilityService.h"
+#include "nsMai.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;

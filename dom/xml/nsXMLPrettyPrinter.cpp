@@ -15,6 +15,7 @@
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/dom/txMozillaXSLTProcessor.h"
 #include "nsContentUtils.h"
+#include "nsGkAtoms.h"
 #include "nsICSSDeclaration.h"
 #include "nsNetUtil.h"
 #include "nsPIDOMWindow.h"
@@ -34,6 +35,7 @@ nsXMLPrettyPrinter::~nsXMLPrettyPrinter() {
 }
 
 nsresult nsXMLPrettyPrinter::PrettyPrint(Document* aDocument,
+                                         bool aShowXSLTDisabledMessage,
                                          bool* aDidPrettyPrint) {
   *aDidPrettyPrint = false;
 
@@ -96,6 +98,13 @@ nsresult nsXMLPrettyPrinter::PrettyPrint(Document* aDocument,
   shadowRoot->AppendChild(*resultFragment, err);
   if (NS_WARN_IF(err.Failed())) {
     return err.StealNSResult();
+  }
+
+  if (aShowXSLTDisabledMessage) {
+    if (Element* message = shadowRoot->GetElementById(u"nostylesheet"_ns)) {
+      message->SetAttr(nsGkAtoms::datal10nid,
+                       u"xml-nostylesheet-xslt-disabled"_ns, IgnoreErrors());
+    }
   }
 
   // Create a DocumentL10n, as the XML document is not allowed to have one.

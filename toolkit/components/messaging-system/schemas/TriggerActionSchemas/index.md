@@ -1,38 +1,39 @@
-# Trigger Listeners
+# Triggers
 
-A set of action listeners that can be used to trigger CFR messages.
+Triggers can be used to decide when messages are shown.
 
 ## Usage
 
-[As part of the CFR definition](https://searchfox.org/mozilla-central/rev/2bfe3415fb3a2fba9b1c694bc0b376365e086927/browser/components/newtab/lib/CFRMessageProvider.jsm#194) the message can register at most one trigger used to decide when the message is shown.
+Messages can define a single `trigger` object used to determine when the message should be shown.
+The `trigger` object must include an `id` string identifying the trigger action and may include optional trigger-specific properties such as `params`, `patterns`, or `regexPatterns`.
 
-Most triggers (unless otherwise specified) take the same arguments of `hosts` and/or `patterns`
-used to target the message to specific websites.
+## Multiple triggers
 
-```javascript
-// Optional set of hosts to filter out triggers only to certain websites
-let params: string[];
-// Optional set of [match patterns](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Match_patterns) to filter out triggers only to certain websites
-let patterns: string[];
-```
+A message may declare multiple triggers via the `triggers` array instead of the
+singular `trigger`. The message becomes eligible when **any** one of the listed
+triggers matches, which avoids duplicating a message once per trigger:
 
 ```javascript
 {
   ...
-  // Show the message when opening mozilla.org
-  "trigger": { "id": "openURL", "params": ["mozilla.org", "www.mozilla.org"] }
+  triggers: [
+    { id: "openURL", params: ["example.com"] },
+    { id: "frequentVisits", params: ["example.com"] }
+  ]
   ...
 }
 ```
 
-```javascript
-{
-  ...
-  // Show the message when opening any HTTP, HTTPS URL.
-  trigger: { id: "openURL", patterns: ["*://*/*"] }
-  ...
-}
-```
+When `trigger` and `triggers` are both present, `triggers` takes precedence.
+
+**Targeting is evaluated using the context of whichever trigger fired.** Because
+each trigger contributes its own context, a context value provided by one
+trigger is only available when *that* trigger fires. A targeting expression that
+depends on a specific trigger's context (such as `tabsClosedCount` from
+`nthTabClosed`) evaluates to `false` when a different trigger fires and does not
+supply that value. When using `triggers`, make sure the `targeting` expression
+is valid for every trigger listed. If the triggers need genuinely different
+targeting, use separate messages instead.
 
 ## Available trigger actions
 
@@ -69,10 +70,50 @@ let patterns: string[];
 - [`ipProtectionBandwidthReset`](#ipprotectionbandwidthreset)
 - [`selectableProfilesUpdated`](#selectableprofilesupdated)
 - [`smartWindowNewTab`](#smartwindownewtab)
+- [`nimbusUpdate`](#nimbusupdate)
+- [`lastWindowClose`](#lastwindowclose)
 
 ### `openArticleURL`
 
 Happens when the user loads a Reader Mode compatible webpage.
+
+Supports filtering with `params`, [`patterns`](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Match_patterns), and `regexPatterns`.
+
+```javascript
+// Optional set of hosts to filter out triggers only to certain websites
+let params: string[];
+// Optional set of Match patterns to filter out triggers only to certain websites
+let patterns: string[];
+// Optional regular expression patterns to filter out triggers only to certain websites
+let regexPatterns: string[];
+```
+
+```javascript
+{
+  ...
+  // Show the message when opening mozilla.org
+  "trigger": { "id": "openArticleURL", "params": ["mozilla.org", "www.mozilla.org"] }
+  ...
+}
+```
+
+```javascript
+{
+  ...
+  // Show the message when opening any HTTP, HTTPS URL.
+  trigger: { id: "openArticleURL", patterns: ["*://*/*"] }
+  ...
+}
+```
+
+```javascript
+{
+  ...
+  // Show the message when opening a URL that matches the regular expression.
+  trigger: { id: "openArticleURL", regexPatterns: ["^https://.*\\.mozilla\\.org/.*"] }
+  ...
+}
+```
 
 ### `openBookmarkedURL`
 
@@ -109,6 +150,44 @@ interface visit {
 let recentVisits: visit[];
 ```
 
+Supports filtering with `params`, [`patterns`](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Match_patterns), and `regexPatterns`.
+
+```javascript
+// Optional set of hosts to filter out triggers only to certain websites
+let params: string[];
+// Optional set of Match patterns to filter out triggers only to certain websites
+let patterns: string[];
+// Optional regular expression patterns to filter out triggers only to certain websites
+let regexPatterns: string[];
+```
+
+```javascript
+{
+  ...
+  // Show the message when visiting mozilla.org
+  "trigger": { "id": "frequentVisits", "params": ["mozilla.org", "www.mozilla.org"] }
+  ...
+}
+```
+
+```javascript
+{
+  ...
+  // Show the message when visiting any HTTP, HTTPS URL.
+  trigger: { id: "frequentVisits", patterns: ["*://*/*"] }
+  ...
+}
+```
+
+```javascript
+{
+  ...
+  // Show the message when visiting a URL that matches the regular expression.
+  trigger: { id: "frequentVisits", regexPatterns: ["^https://.*\\.mozilla\\.org/.*"] }
+  ...
+}
+```
+
 ### `openURL`
 
 Happens every time the user loads a new URL that matches the provided `hosts` or `patterns`.
@@ -117,6 +196,44 @@ During a browsing session it keeps track of visits to unique urls that can be us
 ```javascript
 // True on the third visit for the URL which the trigger matched on
 visitsCount >= 3
+```
+
+Supports filtering with `params`, [`patterns`](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Match_patterns), and `regexPatterns`.
+
+```javascript
+// Optional set of hosts to filter out triggers only to certain websites
+let params: string[];
+// Optional set of Match patterns to filter out triggers only to certain websites
+let patterns: string[];
+// Optional regular expression patterns to filter out triggers only to certain websites
+let regexPatterns: string[];
+```
+
+```javascript
+{
+  ...
+  // Show the message when opening mozilla.org
+  "trigger": { "id": "openURL", "params": ["mozilla.org", "www.mozilla.org"] }
+  ...
+}
+```
+
+```javascript
+{
+  ...
+  // Show the message when opening any HTTP, HTTPS URL.
+  trigger: { id: "openURL", patterns: ["*://*/*"] }
+  ...
+}
+```
+
+```javascript
+{
+  ...
+  // Show the message when opening a URL that matches the regular expression.
+  trigger: { id: "openURL", regexPatterns: ["^https://.*\\.mozilla\\.org/.*"] }
+  ...
+}
 ```
 
 ### `newSavedLogin`
@@ -519,6 +636,64 @@ Occurs every time a user opens a new Smart Window tab.
 {
   trigger: { id: "smartWindowNewTab" },
   targeting: "isAIWindow && 'browser.smartwindow.firstrun.hasCompleted' | preferenceValue",
+}
+```
+
+### `nimbusUpdate`
+
+Fired after ASRouter's Nimbus experiment enrollment listener finishes reloading
+messages from the `messaging-experiments` provider. Because messages are already
+in `ASRouter.state.messages` by the time this trigger fires, any message using it
+will be routed synchronously on the same tick as enrollment, without waiting for
+a timer or restart.
+
+This is the correct trigger for moments page (`update_action`) messages delivered
+via Nimbus experiments. It replaces the deprecated `momentsUpdate` pseudo-trigger.
+
+```js
+{
+  trigger: { id: "nimbusUpdate" },
+  template: "update_action",
+  content: {
+    action: {
+      id: "moments-wnp",
+      data: { url: "https://www.mozilla.org/firefox/welcome/12", expireDelta: 172800000 }
+    }
+  }
+}
+```
+
+Does not filter by host, patterns, or params.
+
+### `lastWindowClose`
+
+Fires when the user closes the last open browser window. Popup windows (opened
+with `toolbar=no`) do not trigger it, and it's skipped if closing the window
+would show (or just showed) the "closing multiple tabs" warning, so the two
+don't stack.
+
+Closing the window is delayed until the matched message resolves. Closing the window is
+cancelled, the message shows, and the close is re-requested once it's done.
+Only the `spotlight` template currently supports this trigger. If a button's action needs to finish
+before the window actually closes, set`needsAwait: true` on that action.
+
+```js
+{
+  trigger: { id: "lastWindowClose" },
+  template: "spotlight",
+  content: {
+    template: "multistage",
+    modal: "window",
+    screens: [
+      {
+        content: {
+          primary_button: {
+            action: { type: "SOME_ACTION", needsAwait: true, dismiss: true }
+          }
+        }
+      }
+    ]
+  }
 }
 ```
 

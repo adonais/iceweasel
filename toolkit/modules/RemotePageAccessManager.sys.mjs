@@ -50,6 +50,7 @@ export let RemotePageAccessManager = {
         "security.certerror.hideAddException",
         "security.certerrors.felt-privacy-v1",
         "browser.ipProtection.userEnabled",
+        "network.sslkeylog_warning",
       ],
       RPMGetIntPref: [
         "security.dialog_enable_delay",
@@ -60,6 +61,7 @@ export let RemotePageAccessManager = {
       RPMGetHostForDisplay: ["*"],
       RPMGetInnermostAsciiHost: ["*"],
       RPMIsWindowPrivate: ["*"],
+      RPMIsSSLKeyLoggingEnabled: ["*"],
     },
     "about:home": {
       RPMSendAsyncMessage: ["ActivityStream:ContentToMain"],
@@ -86,10 +88,12 @@ export let RemotePageAccessManager = {
     },
     "about:keyboard": {
       RPMAddMessageListener: ["CustomKeys:CapturedKey"],
+      RPMGetFormatURLPref: ["app.support.baseURL"],
       RPMSendAsyncMessage: ["CustomKeys:CaptureKey"],
       RPMSendQuery: [
         "CustomKeys:ChangeKey",
         "CustomKeys:ClearKey",
+        "CustomKeys:Confirm",
         "CustomKeys:GetDefaultKey",
         "CustomKeys:GetKeys",
         "CustomKeys:ResetAll",
@@ -128,6 +132,7 @@ export let RemotePageAccessManager = {
         "security.certerror.hideAddException",
         "security.certerrors.felt-privacy-v1",
         "browser.ipProtection.userEnabled",
+        "network.sslkeylog_warning",
       ],
       RPMGetHostForDisplay: ["*"],
       RPMGetInnermostAsciiHost: ["*"],
@@ -140,6 +145,7 @@ export let RemotePageAccessManager = {
       RPMIsSiteSpecificTRRError: ["*"],
       RPMSetTRRDisabledLoadFlags: ["*"],
       RPMShowOSXLocalNetworkPermissionWarning: ["*"],
+      RPMIsSSLKeyLoggingEnabled: ["*"],
       RPMSendQuery: ["Browser:AddTRRExcludedDomain"],
       RPMGetIntPref: ["network.trr.mode", "security.dialog_enable_delay"],
     },

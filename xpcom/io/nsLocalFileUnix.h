@@ -11,8 +11,8 @@
 
 #include <sys/stat.h>
 
-#include "nscore.h"
 #include "nsString.h"
+#include "nscore.h"
 #ifdef MOZ_WIDGET_COCOA
 #  include "nsILocalFileMac.h"
 #endif

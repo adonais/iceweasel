@@ -119,13 +119,31 @@ add_task(async function toolbar_icon_status() {
     button.classList.contains("ipprotection-on"),
     "Toolbar icon should now show connected status"
   );
-  // Regression guard for bug 2034698: the on/off icons must come from a
-  // single shared sprite so swapping states doesn't trigger a fresh image
-  // decode (which used to cause a one-frame blank toolbar button).
-  let onImage = getComputedStyle(button).listStyleImage;
+  // Regression guard for bug 2034698: state changes must not swap the toolbar
+  // icon's image (which triggered a one-frame blank). Instead every state's
+  // artwork is an always-painted overlay layer toggled via opacity, so the
+  // "on" layer is revealed while the base (off) icon is hidden.
+  let onLayer = button.querySelector(
+    ".ipprotection-icon-layer[data-state='on']"
+  );
+  let baseIcon = button.querySelector(
+    ".ipprotection-icon-stack > .toolbarbutton-icon"
+  );
+  let iconStack = button.querySelector(".ipprotection-icon-stack");
   Assert.ok(
-    onImage.includes("ipprotection-states.svg#on"),
-    `On state should reference the sprite fragment, got: ${onImage}`
+    iconStack.classList.contains("toolbarbutton-badge-stack"),
+    "Icon stack should have the toolbarbutton-badge-stack class for positioning and hover state"
+  );
+  Assert.ok(onLayer, "On-state overlay layer should exist");
+  Assert.equal(
+    getComputedStyle(onLayer).opacity,
+    "1",
+    "On layer should be revealed when connected"
+  );
+  Assert.equal(
+    getComputedStyle(baseIcon).opacity,
+    "0",
+    "Base (off) icon should be hidden when connected"
   );
   let vpnOffPromise = BrowserTestUtils.waitForEvent(
     lazy.IPPProxyManager,
@@ -141,10 +159,15 @@ add_task(async function toolbar_icon_status() {
     !button.classList.contains("ipprotection-on"),
     "Toolbar icon should now show disconnected status"
   );
-  let offImage = getComputedStyle(button).listStyleImage;
-  Assert.ok(
-    offImage.includes("ipprotection-states.svg#off"),
-    `Off state should reference the sprite fragment, got: ${offImage}`
+  Assert.equal(
+    getComputedStyle(onLayer).opacity,
+    "0",
+    "On layer should be hidden when disconnected"
+  );
+  Assert.equal(
+    getComputedStyle(baseIcon).opacity,
+    "1",
+    "Base (off) icon should be shown when disconnected"
   );
 
   cleanupService();

@@ -92,6 +92,80 @@ function createMockPassInputEventPromise(inputEl, mockPassword) {
 }
 
 /**
+ * Clicks the turn-on-scheduled-backups button and waits for the dialog to
+ * open.
+ *
+ * @param {Element} settings
+ *  the backup-settings element
+ */
+async function openTurnOnScheduledBackupsDialog(settings) {
+  let turnOnButton = settings.scheduledBackupsButtonEl;
+  turnOnButton.click();
+
+  await TestUtils.waitForCondition(
+    () => settings.turnOnScheduledBackupsDialogEl?.open,
+    "Waiting for turn-on-scheduled-backups dialog to open"
+  );
+  await settings.updateComplete;
+}
+
+/**
+ * Opens the restore-from-backup dialog and returns the relevant widgets.
+ *
+ * Stubs findIfABackupFileExists so the disk scan inside
+ * findBackupsInWellKnownLocations is skipped. The outer function still
+ * runs its state-clearing code (resetting backupFileToRestore to null).
+ * Tests that already stubbed findBackupsInWellKnownLocations keep their
+ * own stub.
+ *
+ * @param {Browser} browser
+ *   The XUL browser containing the preferences page.
+ * @returns {Promise<{restoreFromBackup:HTMLElement, settings:HTMLElement}>}
+ */
+async function initializedBackupWidgets(browser) {
+  await TestUtils.waitForCondition(
+    () => browser.contentDocument.querySelector("backup-settings"),
+    "Waiting for backup-settings element to be in the DOM"
+  );
+  let settings = browser.contentDocument.querySelector("backup-settings");
+
+  await TestUtils.waitForCondition(
+    () => settings.restoreFromBackupButtonEl,
+    "Waiting for restore from backup button to show up"
+  );
+
+  let bs = getAndMaybeInitBackupService();
+  // Only stub if the caller hasn't already
+  let findStub = !bs.findIfABackupFileExists.isSinonProxy
+    ? sinon
+        .stub(bs, "findIfABackupFileExists")
+        .resolves({ multipleBackupsFound: false, count: 0 })
+    : null;
+
+  settings.restoreFromBackupButtonEl.click();
+
+  await TestUtils.waitForCondition(
+    () => settings.restoreFromBackupDialogEl?.open,
+    "Waiting for restore-from-backup dialog to open"
+  );
+
+  if (findStub) {
+    findStub.restore();
+  }
+
+  await TestUtils.waitForCondition(
+    () => settings.restoreFromBackupEl,
+    "Waiting for restore-from-backup element to show up"
+  );
+  let restoreFromBackup = settings.restoreFromBackupEl;
+  await restoreFromBackup.initializedPromise;
+  return {
+    restoreFromBackup,
+    settings,
+  };
+}
+
+/**
  * Waits for the backup-settings element to be rendered in the DOM and returns it.
  *
  * @param {Browser} browser

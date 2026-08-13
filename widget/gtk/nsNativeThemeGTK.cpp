@@ -3,19 +3,19 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsNativeThemeGTK.h"
-#include "cairo.h"
-#include "nsDeviceContext.h"
-#include "gtk/gtk.h"
-#include "nsPresContext.h"
-#include "GtkWidgets.h"
-#include "nsIFrame.h"
-
-#include "gfxContext.h"
-#include "mozilla/gfx/HelpersCairo.h"
-#include "mozilla/WidgetUtilsGtk.h"
-#include "mozilla/StaticPrefs_widget.h"
 
 #include <dlfcn.h>
+
+#include "GtkWidgets.h"
+#include "cairo.h"
+#include "gfxContext.h"
+#include "gtk/gtk.h"
+#include "mozilla/StaticPrefs_widget.h"
+#include "mozilla/WidgetUtilsGtk.h"
+#include "mozilla/gfx/HelpersCairo.h"
+#include "nsDeviceContext.h"
+#include "nsIFrame.h"
+#include "nsPresContext.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;

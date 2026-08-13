@@ -7,6 +7,7 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/NotNull.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSMathClampBinding.h"
@@ -16,11 +17,13 @@
 
 namespace mozilla::dom {
 
-CSSMathClamp::CSSMathClamp(nsCOMPtr<nsISupports> aParent,
-                           RefPtr<CSSNumericValue> aLower,
-                           RefPtr<CSSNumericValue> aValue,
-                           RefPtr<CSSNumericValue> aUpper)
-    : CSSMathValue(std::move(aParent), MathValueType::MathClamp),
+CSSMathClamp::CSSMathClamp(
+    nsCOMPtr<nsISupports> aParent,
+    MovingNotNull<UniquePtr<StyleNumericType>> aNumericType,
+    RefPtr<CSSNumericValue> aLower, RefPtr<CSSNumericValue> aValue,
+    RefPtr<CSSNumericValue> aUpper)
+    : CSSMathValue(std::move(aParent), std::move(aNumericType),
+                   MathValueType::MathClamp),
       mLower(std::move(aLower)),
       mValue(std::move(aValue)),
       mUpper(std::move(aUpper)) {}
@@ -28,15 +31,17 @@ CSSMathClamp::CSSMathClamp(nsCOMPtr<nsISupports> aParent,
 // static
 RefPtr<CSSMathClamp> CSSMathClamp::Create(nsCOMPtr<nsISupports> aParent,
                                           const StyleMathClamp& aMathClamp) {
-  const auto values = aMathClamp.AsSpan();
-  static_assert(StyleMathClamp::Length() == 3);
+  const auto values = aMathClamp.values.AsSpan();
+  static_assert(decltype(StyleMathClamp::values)::Length() == 3);
 
   RefPtr<CSSNumericValue> lower = CSSNumericValue::Create(aParent, values[0]);
   RefPtr<CSSNumericValue> value = CSSNumericValue::Create(aParent, values[1]);
   RefPtr<CSSNumericValue> upper = CSSNumericValue::Create(aParent, values[2]);
 
-  return MakeAndAddRef<CSSMathClamp>(std::move(aParent), std::move(lower),
-                                     std::move(value), std::move(upper));
+  return MakeAndAddRef<CSSMathClamp>(
+      std::move(aParent),
+      WrapMovingNotNull(MakeUnique<StyleNumericType>(aMathClamp.numeric_type)),
+      std::move(lower), std::move(value), std::move(upper));
 }
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(CSSMathClamp, CSSMathValue)
@@ -63,12 +68,25 @@ already_AddRefed<CSSMathClamp> CSSMathClamp::Constructor(
   RefPtr<CSSNumericValue> value = CSSNumericValue::Create(global, aValue);
   RefPtr<CSSNumericValue> upper = CSSNumericValue::Create(global, aUpper);
 
-  // XXX Step 2 is not yet implemented!
+  // Step 2.
+
+  AutoTArray<const StyleNumericType*, 3> numericTypes;
+
+  numericTypes.AppendElement(&lower->GetNumericType());
+  numericTypes.AppendElement(&value->GetNumericType());
+  numericTypes.AppendElement(&upper->GetNumericType());
+
+  auto numericType = MakeUnique<StyleNumericType>();
+  if (!Servo_NumericType_AddTypes(&numericTypes, numericType.get())) {
+    aRv.ThrowTypeError("Incompatible types");
+    return nullptr;
+  }
 
   // Step 3.
 
-  return MakeAndAddRef<CSSMathClamp>(std::move(global), std::move(lower),
-                                     std::move(value), std::move(upper));
+  return MakeAndAddRef<CSSMathClamp>(
+      std::move(global), WrapMovingNotNull(std::move(numericType)),
+      std::move(lower), std::move(value), std::move(upper));
 }
 
 CSSNumericValue* CSSMathClamp::Lower() const { return mLower; }
@@ -101,9 +119,10 @@ void CSSMathClamp::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
 }
 
 StyleMathClamp CSSMathClamp::ToStyleMathClamp() const {
-  return StyleMathClamp(mLower->ToStyleNumericValue(),
-                        mValue->ToStyleNumericValue(),
-                        mUpper->ToStyleNumericValue());
+  return StyleMathClamp{GetNumericType(), StyleOwnedArray<StyleNumericValue, 3>(
+                                              mLower->ToStyleNumericValue(),
+                                              mValue->ToStyleNumericValue(),
+                                              mUpper->ToStyleNumericValue())};
 }
 
 const CSSMathClamp& CSSMathValue::GetAsCSSMathClamp() const {

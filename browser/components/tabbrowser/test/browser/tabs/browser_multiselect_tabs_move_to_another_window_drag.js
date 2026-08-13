@@ -60,10 +60,10 @@ add_task(async function test() {
   tab3 = gBrowser2.visibleTabs[1];
   tab5 = gBrowser2.visibleTabs[2];
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => getUrl(tab3) == "http://mochi.test:8888/3"
   );
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => getUrl(tab5) == "http://mochi.test:8888/5"
   );
 

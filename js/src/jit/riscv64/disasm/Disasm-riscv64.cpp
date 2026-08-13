@@ -1933,7 +1933,7 @@ void Decoder::DecodeIType(Instruction* instr) {
           Format(instr, "slli.uw   'rd, 'rs1, 's32");
           break;
         case OP_COUNTW: {
-          switch (instr->Shamt()) {
+          switch (instr->Shamt32()) {
             case 0:
               Format(instr, "clzw      'rd, 'rs1");
               break;

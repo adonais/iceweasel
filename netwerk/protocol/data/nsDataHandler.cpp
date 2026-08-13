@@ -2,18 +2,19 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsDataChannel.h"
 #include "nsDataHandler.h"
-#include "nsNetCID.h"
+
+#include "DefaultURI.h"
+#include "mozilla/StaticPrefs_network.h"
+#include "mozilla/Try.h"
+#include "mozilla/dom/MimeType.h"
+#include "nsDataChannel.h"
 #include "nsError.h"
 #include "nsIOService.h"
+#include "nsNetCID.h"
 #include "nsNetUtil.h"
 #include "nsSimpleURI.h"
 #include "nsUnicharUtils.h"
-#include "mozilla/dom/MimeType.h"
-#include "mozilla/StaticPrefs_network.h"
-#include "mozilla/Try.h"
-#include "DefaultURI.h"
 
 using namespace mozilla;
 

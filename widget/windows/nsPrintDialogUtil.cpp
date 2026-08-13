@@ -19,29 +19,27 @@ WIN_LIBS=                                       \
 
 ---------------------------------------------------------------------- */
 
+// clang-format off
 #include <windows.h>
 #include <tchar.h>
-
+// unknwn.h defines STDMETHOD, which commdlg.h needs for PrintDlgEx.
 #include <unknwn.h>
 #include <commdlg.h>
+#include <winspool.h>
+// clang-format on
 
 #include "mozilla/BackgroundHangMonitor.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Span.h"
-#include "nsString.h"
-#include "nsReadableUtils.h"
+#include "nsCRT.h"
 #include "nsIPrintSettings.h"
 #include "nsIPrintSettingsWin.h"
 #include "nsIPrinterList.h"
-#include "nsServiceManagerUtils.h"
-
+#include "nsReadableUtils.h"
 #include "nsRect.h"
-
-#include "nsCRT.h"
+#include "nsServiceManagerUtils.h"
+#include "nsString.h"
 #include "prenv.h" /* for PR_GetEnv */
-
-#include <windows.h>
-#include <winspool.h>
 
 // winspool.h pollutes the global namespace, failing unified builds in e.g.
 // nsIFormControl::SetForm. Undo the damage.
@@ -59,8 +57,8 @@ WIN_LIBS=                                       \
 // This is for extending the dialog
 #include <dlgs.h>
 
-#include "nsWindowsHelpers.h"
 #include "WinUtils.h"
+#include "nsWindowsHelpers.h"
 
 //-----------------------------------------------
 // Global Data

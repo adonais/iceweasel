@@ -5,9 +5,9 @@
 #ifndef GFXQUARTZNATIVEDRAWING_H_
 #define GFXQUARTZNATIVEDRAWING_H_
 
+#include "mozilla/RefPtr.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/BorrowedContext.h"
-#include "mozilla/RefPtr.h"
 
 class gfxQuartzNativeDrawing {
   typedef mozilla::gfx::DrawTarget DrawTarget;

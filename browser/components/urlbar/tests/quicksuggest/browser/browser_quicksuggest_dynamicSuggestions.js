@@ -95,7 +95,7 @@ add_setup(async function () {
   });
 
   // Wait until dynamic suggestion is available.
-  await BrowserTestUtils.waitForCondition(async () => {
+  await TestUtils.waitForCondition(async () => {
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,
       value: "basic",

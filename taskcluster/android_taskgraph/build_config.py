@@ -25,6 +25,13 @@ def get_components():
     ]
 
 
+def get_component_name(component):
+    prefix, _, name = component["name"].partition(":")
+    if prefix == "components":
+        return name
+    return component["name"]
+
+
 def get_path(component):
     return _read_build_config(ANDROID_COMPONENTS_DIR)["projects"][
         f"components:{component}"

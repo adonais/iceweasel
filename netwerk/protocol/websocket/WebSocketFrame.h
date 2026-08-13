@@ -6,6 +6,7 @@
 #define mozilla_net_WebSocketFrame_h
 
 #include <cstdint>
+
 #include "nsISupports.h"
 #include "nsIWebSocketEventService.h"
 #include "nsString.h"

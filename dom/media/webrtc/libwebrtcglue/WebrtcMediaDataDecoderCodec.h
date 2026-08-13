@@ -5,6 +5,8 @@
 #ifndef WebrtcMediaDataDecoderCodec_h_
 #define WebrtcMediaDataDecoderCodec_h_
 
+#include <optional>
+
 #include "MediaConduitInterface.h"
 #include "MediaInfo.h"
 #include "MediaResult.h"
@@ -51,6 +53,8 @@ class WebrtcMediaDataDecoder : public WebrtcVideoDecoder {
   void QueueFrame(MediaRawData* aFrame);
   bool OnTaskQueue() const;
   int32_t CreateDecoder();
+  // Parse the QP from an encoded frame for the qpSum stat.
+  std::optional<uint8_t> ExtractQp(const webrtc::EncodedImage& aImage);
   static CreateDecoderParams::OptionSet WebrtcDecoderOptions();
 
   const RefPtr<SharedThreadPool> mThreadPool;

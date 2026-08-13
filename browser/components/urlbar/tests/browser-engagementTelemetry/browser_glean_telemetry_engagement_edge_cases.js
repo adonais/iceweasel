@@ -64,8 +64,8 @@ class AnotherHeuristicProvider extends UrlbarTestUtils.TestProvider {
 const anotherHeuristicProvider = new AnotherHeuristicProvider({
   results: [
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+      type: UrlbarShared.RESULT_TYPE.URL,
+      source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
       heuristic: true,
       payload: { url: "https://example.com/immediate" },
     }),
@@ -104,7 +104,7 @@ add_task(async function engagement_before_showing_results() {
     // Wait until starting the query and filling expected results.
     const context = await anotherHeuristicProvider.onQueryStarted();
     const query = providersManager.queries.get(context);
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () =>
         query.unsortedResults.some(
           r => r.providerName === "UrlbarProviderHeuristicFallback"
@@ -117,7 +117,7 @@ add_task(async function engagement_before_showing_results() {
     // Type Enter key before showing any results.
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "input_field",
         provider: undefined,
@@ -165,12 +165,12 @@ add_task(async function engagement_after_closing_results() {
         "The inputted text remains even if closing the results"
       );
       // The tested trigger should not record abandonment event.
-      assertAbandonmentTelemetry([]);
+      await assertAbandonmentTelemetry([]);
 
       // Endgagement.
       await doEnter();
 
-      assertEngagementTelemetry([
+      await assertEngagementTelemetry([
         {
           selected_result: "search_engine",
           provider: "UrlbarProviderHeuristicFallback",
@@ -190,14 +190,14 @@ add_task(async function enter_to_reload_current_url() {
 
     // Focus the urlbar.
     EventUtils.synthesizeMouseAtCenter(gURLBar.inputField, {});
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => window.document.activeElement === gURLBar.inputField
     );
 
     // Press Enter key to reload the page without selecting any suggestions.
     await doEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "url",
         provider: "UrlbarProviderHeuristicFallback",

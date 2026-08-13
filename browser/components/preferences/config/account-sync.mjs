@@ -171,13 +171,12 @@ export var SyncHelpers = new (class SyncHelpers {
               });
             }
           }
-          // When the modal closes we want to remove any query params
-          // so it doesn't open on subsequent visits (and will reload)
-          const browser = window.docShell.chromeEventHandler;
-          browser.loadURI(Services.io.newURI("about:preferences#sync"), {
-            triggeringPrincipal:
-              Services.scriptSecurityManager.getSystemPrincipal(),
-          });
+          // Drop any query params (e.g. action=choose-what-to-sync) so the
+          // dialog doesn't reopen on reloads. replaceState avoids the
+          // visible page reload loadURI would cause.
+          const url = new URL(location.href);
+          url.search = "";
+          window.history.replaceState(history.state, document.title, url.href);
         },
       },
       params /* aParams */
@@ -273,7 +272,10 @@ export var SyncHelpers = new (class SyncHelpers {
           { features: "resizable=no" }
         );
       } else if (location.href.includes("action=choose-what-to-sync")) {
-        this._chooseWhatToSync(false, "callToAction");
+        // Pass the real configured state: an already-syncing user who merely
+        // toggled an engine off should take the configured path (queue a sync,
+        // offer disconnect), not be re-run through first-time setup.
+        this._chooseWhatToSync(this.isSyncEnabled, "callToAction");
       }
     }
   }

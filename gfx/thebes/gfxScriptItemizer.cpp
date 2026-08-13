@@ -47,10 +47,12 @@
  */
 
 #include "gfxScriptItemizer.h"
+
+#include "harfbuzz/hb.h"
+#include "mozilla/Utf16.h"
 #include "mozilla/intl/UnicodeProperties.h"
 #include "nsCharTraits.h"
 #include "nsUnicodeProperties.h"
-#include "harfbuzz/hb.h"
 
 using namespace mozilla::intl;
 using namespace mozilla::unicode;
@@ -141,8 +143,8 @@ gfxScriptItemizer::Run gfxScriptItemizer::Next() {
     } else {
       // decode UTF-16 (may be surrogate pair)
       if (scriptLimit < textLength - 1 &&
-          NS_IS_SURROGATE_PAIR(ch, textPtr[scriptLimit + 1])) {
-        ch = SURROGATE_TO_UCS4(ch, textPtr[++scriptLimit]);
+          mozilla::IsSurrogatePair(ch, textPtr[scriptLimit + 1])) {
+        ch = mozilla::SurrogateToUCS4(ch, textPtr[++scriptLimit]);
       }
       sc = UnicodeProperties::GetScriptCode(ch);
     }

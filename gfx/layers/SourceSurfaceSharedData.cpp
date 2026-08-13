@@ -4,15 +4,14 @@
 
 #include "SourceSurfaceSharedData.h"
 
+#include "base/process_util.h"
 #include "mozilla/Likely.h"
 #include "mozilla/StaticPrefs_image.h"
+#include "mozilla/image/SurfaceCache.h"
 #include "mozilla/ipc/SharedMemoryMapping.h"
 #include "mozilla/layers/SharedSurfacesChild.h"
 #include "mozilla/layers/SharedSurfacesParent.h"
 #include "nsDebug.h"  // for NS_ABORT_OOM
-#include "mozilla/image/SurfaceCache.h"
-
-#include "base/process_util.h"
 
 #ifdef DEBUG
 /**

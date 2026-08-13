@@ -6,8 +6,8 @@
 #define nsIURIWithSizeOf_h
 
 #include "mozilla/MemoryReporting.h"
-#include "nsISupports.h"
 #include "nsCOMPtr.h"
+#include "nsISupports.h"
 
 #define NS_IURIWITHSIZEOF_IID \
   {0x4245123a, 0x9c04, 0x4e5c, {0xa7, 0x48, 0x32, 0x8b, 0xa5, 0x88, 0x3b, 0x00}}

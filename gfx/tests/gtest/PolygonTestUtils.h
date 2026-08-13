@@ -5,12 +5,11 @@
 #ifndef GFX_TEST_POLYGONUTILS_H
 #define GFX_TEST_POLYGONUTILS_H
 
-#include "gtest/gtest.h"
-
-#include "nsTArray.h"
 #include "Point.h"
 #include "Polygon.h"
 #include "Triangle.h"
+#include "gtest/gtest.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 namespace gfx {

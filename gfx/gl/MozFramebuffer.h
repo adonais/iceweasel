@@ -5,9 +5,9 @@
 #ifndef MOZ_FRAMEBUFFER_H_
 #define MOZ_FRAMEBUFFER_H_
 
-#include "gfx2DGlue.h"
 #include "GLConsts.h"
 #include "GLContextTypes.h"
+#include "gfx2DGlue.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
 

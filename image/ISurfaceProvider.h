@@ -10,6 +10,8 @@
 #ifndef mozilla_image_ISurfaceProvider_h
 #define mozilla_image_ISurfaceProvider_h
 
+#include "SurfaceCache.h"
+#include "imgFrame.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
@@ -17,9 +19,6 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/image/WebRenderImageProvider.h"
-
-#include "imgFrame.h"
-#include "SurfaceCache.h"
 
 namespace mozilla {
 namespace image {

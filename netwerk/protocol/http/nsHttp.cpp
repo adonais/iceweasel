@@ -3,10 +3,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 // HttpLog.h should generally be included first
-#include "HttpLog.h"
-
 #include "nsHttp.h"
+
+#include <errno.h>
+#include <string.h>
+
+#include <functional>
+
 #include "CacheControlParser.h"
+#include "HttpLog.h"
 #include "PLDHashTable.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/OriginAttributes.h"
@@ -14,19 +19,16 @@
 #include "mozilla/StaticPrefs_network.h"
 #include "nsCRT.h"
 #include "nsContentUtils.h"
+#include "nsHttpHandler.h"
 #include "nsHttpRequestHead.h"
 #include "nsHttpResponseHead.h"
-#include "nsHttpHandler.h"
 #include "nsICacheEntry.h"
 #include "nsIRequest.h"
 #include "nsIStandardURL.h"
 #include "nsJSUtils.h"
+#include "nsLiteralString.h"
 #include "nsStandardURL.h"
 #include "sslerr.h"
-#include <errno.h>
-#include <functional>
-#include "nsLiteralString.h"
-#include <string.h>
 
 namespace mozilla {
 namespace net {

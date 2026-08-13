@@ -10,7 +10,8 @@ features: [iterator-includes]
 
 let nextGets = 0;
 
-class TestIterator extends Iterator {
+let iterator = {
+  __proto__: Iterator.prototype,
   get next() {
     ++nextGets;
     let counter = 5;
@@ -21,9 +22,7 @@ class TestIterator extends Iterator {
       return { done: false, value: --counter };
     };
   }
-}
-
-let iterator = new TestIterator();
+};
 
 assert.sameValue(nextGets, 0);
 assert.sameValue(iterator.includes(3), true);

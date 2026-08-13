@@ -548,6 +548,7 @@ Damp.prototype = {
       // Only listen to top level content frame load.
       allFrames: false,
       includeChrome: false,
+      safeForUntrustedWebProcess: true,
     });
   },
 

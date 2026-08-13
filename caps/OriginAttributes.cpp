@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/OriginAttributes.h"
+
 #include "mozilla/Assertions.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
@@ -263,6 +264,14 @@ void OriginAttributes::CreateSuffix(nsACString& aStr) const {
   aStr.Truncate();
 
   params.Serialize(value, true);
+  // URLParams percent-encodes every character that isn't in its unreserved set.
+  // The asterisk is in the unreserved set and is serialized verbatim.
+  // Since a hostname may now contain an asterisk (bug 1815926) and the
+  // asterisk is illegal in file names on
+  // Windows, percent-encode it explicitly. URLParams::Parse decodes it back in
+  // PopulateFromSuffix.
+  value.ReplaceSubstring("*"_ns, "%2A"_ns);
+
   if (!value.IsEmpty()) {
     aStr.AppendLiteral("^");
     aStr.Append(value);

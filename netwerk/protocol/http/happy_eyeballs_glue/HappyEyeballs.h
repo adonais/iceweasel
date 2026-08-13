@@ -6,9 +6,10 @@
 #define HappyEyeballs_h_
 
 #include <cstdint>
+
+#include "mozilla/net/happy_eyeballs_glue.h"
 #include "nsError.h"
 #include "nsTArray.h"
-#include "mozilla/net/happy_eyeballs_glue.h"
 
 namespace mozilla {
 namespace net {
@@ -22,9 +23,7 @@ class HappyEyeballs final {
                        const nsACString& aOrigin, uint16_t aPort,
                        const nsTArray<happy_eyeballs::AltSvc>* aAltSvc,
                        happy_eyeballs::IpPreference aPref,
-                       happy_eyeballs::HttpVersions aHttpVersions,
-                       uint32_t aResolutionDelayMs,
-                       uint32_t aConnectionAttemptDelayMs);
+                       happy_eyeballs::HttpVersions aHttpVersions);
 
   void AddRef() { happy_eyeballs::happy_eyeballs_addref(this); }
   void Release() { happy_eyeballs::happy_eyeballs_release(this); }

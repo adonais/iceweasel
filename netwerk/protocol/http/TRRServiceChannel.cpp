@@ -4,29 +4,29 @@
 
 #include "TRRServiceChannel.h"
 
-#include "HttpLog.h"
 #include "AltServiceChild.h"
-#include "mozilla/glean/NetwerkMetrics.h"
-#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
+#include "HttpLog.h"
+#include "ProxyConfigLookup.h"
+#include "ReferrerInfo.h"
+#include "TRR.h"
+#include "TRRLoadInfo.h"
+#include "TRRService.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_network.h"
+#include "mozilla/glean/NetwerkMetrics.h"
+#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "nsDNSPrefetch.h"
 #include "nsEscape.h"
 #include "nsHttpConnectionMgr.h"
 #include "nsHttpHeaderArray.h"
 #include "nsHttpTransaction.h"
-#include "nsThreadUtils.h"
-#include "nsICancelable.h"
 #include "nsICachingChannel.h"
-#include "nsIProtocolProxyService2.h"
+#include "nsICancelable.h"
 #include "nsIOService.h"
+#include "nsIProtocolProxyService2.h"
 #include "nsISeekableStream.h"
+#include "nsThreadUtils.h"
 #include "nsURLHelper.h"
-#include "ProxyConfigLookup.h"
-#include "TRRLoadInfo.h"
-#include "ReferrerInfo.h"
-#include "TRR.h"
-#include "TRRService.h"
 
 namespace mozilla::net {
 
@@ -694,12 +694,12 @@ nsresult TRRServiceChannel::SetupTransaction() {
 
   struct LNAPerms perms{};
 
-  rv = mTransaction->Init(
-      mCaps, mConnectionInfo, &mRequestHead, mUploadStream, mReqContentLength,
-      LoadUploadStreamHasHeaders(), mCurrentEventTarget, callbacks, this,
-      mBrowserId, HttpTrafficCategory::eInvalid, mRequestContext,
-      mClassOfService, mInitialRwin, LoadResponseTimeoutEnabled(), mChannelId,
-      nullptr, nsILoadInfo::IPAddressSpace::Unknown, perms);
+  rv = mTransaction->Init(mCaps, mConnectionInfo, &mRequestHead, mUploadStream,
+                          mReqContentLength, mCurrentEventTarget, callbacks,
+                          this, mBrowserId, HttpTrafficCategory::eInvalid,
+                          mRequestContext, mClassOfService, mInitialRwin,
+                          LoadResponseTimeoutEnabled(), mChannelId, nullptr,
+                          nsILoadInfo::IPAddressSpace::Unknown, perms);
 
   if (NS_FAILED(rv)) {
     mTransaction = nullptr;
@@ -731,6 +731,12 @@ void TRRServiceChannel::MaybeStartDNSPrefetch() {
   nsIDNSService::DNSFlags dnsFlags = nsIDNSService::RESOLVE_DEFAULT_FLAGS;
   if (mCaps & NS_HTTP_REFRESH_DNS) {
     dnsFlags |= nsIDNSService::RESOLVE_BYPASS_CACHE;
+  }
+  // When negative addr entries are no longer refreshed on use, refuse a cached
+  // negative for the DoH server so TRR can't get stuck on a transient negative
+  // for the negative-record TTL.
+  if (!StaticPrefs::network_dns_refresh_negative_addr_on_use()) {
+    dnsFlags |= nsIDNSService::RESOLVE_REFRESH_NEGATIVE_CACHE;
   }
   nsresult rv = mDNSPrefetch->PrefetchHigh(dnsFlags);
   NS_ENSURE_SUCCESS_VOID(rv);

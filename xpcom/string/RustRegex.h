@@ -5,11 +5,11 @@
 #ifndef mozilla_RustRegex_h
 #define mozilla_RustRegex_h
 
+#include "mozilla/Maybe.h"
+#include "mozilla/UniquePtr.h"
 #include "nsPrintfCString.h"
 #include "nsTArray.h"
 #include "rure.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/UniquePtr.h"
 
 namespace mozilla {
 

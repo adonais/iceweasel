@@ -86,7 +86,7 @@ class _SphinxManager:
     def __init__(self, topsrcdir, main_path):
         self.topsrcdir = Path(topsrcdir)
         self.conf_py_path = os.path.join(main_path, "conf.py")
-        self.index_path = os.path.join(main_path, "index.rst")
+        self.index_path = os.path.join(main_path, "index.md")
 
         # Instance variables that get set in self.generate_docs()
         self.staging_dir = None
@@ -183,7 +183,7 @@ class _SphinxManager:
 
         def format_paths(paths):
             source_doc = [f"{p}/index" for p in paths]
-            return "\n   ".join(source_doc)
+            return "\n".join(source_doc)
 
         toplevel_trees = {k: v for k, v in self.trees.items() if is_toplevel(k)}
 
@@ -214,7 +214,7 @@ class _SphinxManager:
 
         data = data.format(**CATEGORIES)
 
-        with open(os.path.join(self.staging_dir, "index.rst"), "w") as fh:
+        with open(os.path.join(self.staging_dir, "index.md"), "w") as fh:
             fh.write(data)
 
 

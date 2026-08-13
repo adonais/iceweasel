@@ -266,7 +266,7 @@ add_task(async function alt_enter_search_local() {
       "The current foreground tab is new."
     );
     await UrlbarTestUtils.assertSearchMode(window, {
-      source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
       entry: "oneoff",
     });
     Assert.equal(
@@ -378,7 +378,7 @@ add_task(async function accel_click_search_local() {
   BrowserTestUtils.switchTab(gBrowser, newTab);
   // Check the new background tab is already in search mode.
   await UrlbarTestUtils.assertSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     entry: "oneoff",
   });
   // Check the search string is already populated.

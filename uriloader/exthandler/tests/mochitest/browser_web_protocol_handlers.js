@@ -23,7 +23,7 @@ add_task(async function () {
   let notificationValue = "Protocol Registration: web+testprotocol";
   let getNotification = () =>
     gBrowser.getNotificationBox().getNotificationWithValue(notificationValue);
-  await BrowserTestUtils.waitForCondition(getNotification);
+  await TestUtils.waitForCondition(getNotification);
   let notification = getNotification();
   let button = notification.buttonContainer.querySelector("button");
   ok(button, "got registration button");
@@ -110,7 +110,7 @@ add_task(async function () {
     browser
   );
   let win = await newWindowPromise;
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => win.gBrowser.currentURI.spec == expectedURL
   );
   is(
@@ -124,7 +124,7 @@ add_task(async function () {
   let loadPromise = BrowserTestUtils.browserLoaded(browser);
   await BrowserTestUtils.synthesizeMouseAtCenter(link, {}, browser);
   await loadPromise;
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => gURLBar.value != UrlbarTestUtils.trimURL(testURL)
   );
   is(

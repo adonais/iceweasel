@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Clicking the clear button of search should clear the value even when it does not have focus</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<script src="/tests/SimpleTest/EventUtils.js"></script>
+<link rel="stylesheet" href="/tests/SimpleTest/test.css">
+<script>
+"use strict";
+
+SimpleTest.waitForExplicitFinish();
+SimpleTest.waitForFocus(async () => {
+  await SpecialPowers.pushPrefEnv({
+    set: [["layout.forms.input-type-search.enabled", true]],
+  });
+  document.body.innerHTML = `<input type="search">`;
+  const searchInput = document.querySelector("input[type=search]");
+  searchInput.addEventListener("mousedown", async event => {
+    event.target.style.display = "flex";
+    await new Promise(resolve => SimpleTest.executeSoon(resolve));
+    event.target.style.display = "";
+  });
+  searchInput.focus();
+  sendString("abc");
+  is(searchInput.value, "abc", `Typed characters should be set to the value`);
+  searchInput.blur();
+  await new Promise(resolve => SimpleTest.executeSoon(resolve));
+  const clearButton = SpecialPowers.getInputButton(searchInput);
+  synthesizeMouseAtCenter(clearButton, {});
+  await new Promise(resolve => SimpleTest.executeSoon(resolve));
+  is(searchInput.value, "", `Clicking the clear button should clear the value`);
+
+  SimpleTest.finish();
+});
+</script>
+</head>
+<body></body>
+</html>

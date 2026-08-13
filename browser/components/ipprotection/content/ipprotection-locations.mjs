@@ -71,6 +71,7 @@ export default class IPProtectionLocationsElement extends MozLitElement {
       <locations-list
         .selectedLocation=${this.state.location}
         .locations=${this.state.locationsList}
+        .premium=${this.state.isPremium}
       ></locations-list
       >${this.promoTemplate()}`;
   }

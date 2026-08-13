@@ -19,6 +19,12 @@ WebTransportListener.prototype = {
       this.closed();
     }
   },
+  onStopSending(streamId, error) {
+    info("got stop sending for stream " + streamId + " error: " + error);
+    if (this.stopSending) {
+      this.stopSending(streamId, error);
+    }
+  },
   onIncomingBidirectionalStreamAvailable(stream) {
     info("got incoming bidirectional stream");
     this.streamAvailable(stream);

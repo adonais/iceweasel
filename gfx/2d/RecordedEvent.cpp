@@ -2,16 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "RecordedEventImpl.h"
-
-#include "PathRecording.h"
-#include "RecordingTypes.h"
-#include "Tools.h"
 #include "Filters.h"
-#include "Logging.h"
-#include "ScaledFontBase.h"
-#include "SFNTData.h"
 #include "InlineTranslator.h"
+#include "Logging.h"
+#include "PathRecording.h"
+#include "RecordedEventImpl.h"
+#include "RecordingTypes.h"
+#include "SFNTData.h"
+#include "ScaledFontBase.h"
+#include "Tools.h"
 
 namespace mozilla {
 namespace gfx {

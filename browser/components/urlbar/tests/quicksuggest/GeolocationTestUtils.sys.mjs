@@ -5,19 +5,8 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   sinon: "resource://testing-common/Sinon.sys.mjs",
-});
-
-ChromeUtils.defineLazyGetter(lazy, "GeolocationUtils", () => {
-  try {
-    return ChromeUtils.importESModule(
-      "moz-src:///browser/components/urlbar/private/GeolocationUtils.sys.mjs"
-    ).GeolocationUtils;
-  } catch {
-    // Fallback to URI format prior to FF 144.
-    return ChromeUtils.importESModule(
-      "resource:///modules/urlbar/private/GeolocationUtils.sys.mjs"
-    ).GeolocationUtils;
-  }
+  GeolocationUtils:
+    "moz-src:///browser/components/urlbar/private/GeolocationUtils.sys.mjs",
 });
 
 /**

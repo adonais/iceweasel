@@ -71,7 +71,7 @@ private val MARKETING_CONTENT_IMAGE_HEIGHT_TREATMENT_C = 130.dp
  * @param onMarketingDataContinueClick callback for when the user clicks the continue button.
  * @param onMarketingDataSkipClick callback for when the user clicks the skip button.
  */
-@Suppress("LongMethod", "CognitiveComplexMethod", "ForbiddenSuppress")
+@Suppress("LongMethod")
 @Composable
 fun MarketingDataOnboardingPage(
     state: OnboardingPageState,
@@ -162,33 +162,6 @@ fun MarketingDataOnboardingPage(
                 )
             }
 
-            val shouldShowBottomLinkText = state.marketingData?.marketingCardVariant?.let {
-                it == MarketingCardVariant.TREATMENT_A || it == MarketingCardVariant.TREATMENT_B
-            } ?: false
-
-            if (shouldShowBottomLinkText) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    state.marketingData.let {
-                        LinkText(
-                            text = it.bodyOneLinkText,
-                            linkTextStates = listOf(
-                                LinkTextState(
-                                    text = it.bodyOneLinkText,
-                                    url = "",
-                                    onClick = { onMarketingDataLearnMoreClick() },
-                                ),
-                            ),
-                            linkTextDecoration = TextDecoration.Underline,
-                            style = FirefoxTheme.typography.body2,
-                            textAlign = TextAlign.Start,
-                        )
-                    }
-                }
-            }
-
             Spacer(Modifier.height(32.dp))
 
             if (state.secondaryButton != null) {
@@ -249,10 +222,6 @@ private fun SecondaryButton(
         MarketingCardVariant.DEFAULT,
         null,
             -> Unit
-
-        MarketingCardVariant.TREATMENT_A,
-        MarketingCardVariant.TREATMENT_B,
-            -> SecondaryButtonFilled(action, state, onMarketingDataSkipClick)
 
         else -> SecondaryButtonOutline(action, state, onMarketingDataSkipClick, modifier)
     }
@@ -317,30 +286,6 @@ private fun PrimaryButton(
 }
 
 @Composable
-private fun SecondaryButtonFilled(
-    action: Action,
-    state: OnboardingPageState,
-    onMarketingDataSkipClick: () -> Unit,
-) {
-    val buttonText = state.marketingData?.let {
-        secondaryButtonCopyForVariant(
-            defaultString = action.text,
-            marketingCardVariant = it.marketingCardVariant,
-        )
-    } ?: action.text
-
-    FilledButton(
-        text = buttonText,
-        modifier = Modifier
-            .width(width = FirefoxTheme.layout.size.maxWidth.small)
-            .semantics {
-                testTag = state.title + "onboarding_card.negative_button"
-            },
-        onClick = { onMarketingDataSkipClick() },
-    )
-}
-
-@Composable
 private fun SecondaryButtonOutline(
     action: Action,
     state: OnboardingPageState,
@@ -378,18 +323,6 @@ private fun MarketingDataView(
                     onMarketingOptInToggle = onMarketingOptInToggle,
                     marketingData = marketingData,
                     onMarketingDataLearnMoreClick = onMarketingDataLearnMoreClick,
-                )
-            }
-
-            MarketingCardVariant.TREATMENT_A,
-            MarketingCardVariant.TREATMENT_B,
-                -> {
-                val bodyCopyRes = bodyCopyForVariant(marketingData.marketingCardVariant)
-
-                Text(
-                    text = stringResource(bodyCopyRes),
-                    style = FirefoxTheme.typography.body2,
-                    textAlign = TextAlign.Start,
                 )
             }
 
@@ -491,10 +424,6 @@ private fun primaryButtonCopyForVariant(
 ) = when (marketingCardVariant) {
     MarketingCardVariant.DEFAULT -> defaultString
 
-    MarketingCardVariant.TREATMENT_A,
-    MarketingCardVariant.TREATMENT_B,
-        -> stringResource(R.string.nova_onboarding_marketing_primary_button_text)
-
     MarketingCardVariant.TREATMENT_C ->
         stringResource(R.string.nova_onboarding_marketing_primary_button_text_3)
 }
@@ -505,8 +434,6 @@ private fun secondaryButtonCopyForVariant(
     marketingCardVariant: MarketingCardVariant,
 ) = when (marketingCardVariant) {
     MarketingCardVariant.DEFAULT -> defaultString
-    MarketingCardVariant.TREATMENT_A,
-    MarketingCardVariant.TREATMENT_B,
     MarketingCardVariant.TREATMENT_C,
         -> stringResource(R.string.nova_onboarding_marketing_secondary_button_text_2)
 }
@@ -516,8 +443,6 @@ private fun imageResourceForVariant(
     marketingCardVariant: MarketingCardVariant,
 ) = when (marketingCardVariant) {
     MarketingCardVariant.DEFAULT -> defaultImageResource
-    MarketingCardVariant.TREATMENT_A,
-    MarketingCardVariant.TREATMENT_B,
     MarketingCardVariant.TREATMENT_C,
         -> R.drawable.ic_kit_heart
 }
@@ -528,8 +453,6 @@ private fun titleCopyForVariant(
     marketingCardVariant: MarketingCardVariant,
 ) = when (marketingCardVariant) {
     MarketingCardVariant.DEFAULT -> defaultString
-    MarketingCardVariant.TREATMENT_A,
-    MarketingCardVariant.TREATMENT_B,
     MarketingCardVariant.TREATMENT_C,
         -> stringResource(R.string.onboarding_marketing_redesign_title)
 }
@@ -537,16 +460,12 @@ private fun titleCopyForVariant(
 private fun bodyCopyForVariant(marketingCardVariant: MarketingCardVariant) =
     when (marketingCardVariant) {
         MarketingCardVariant.DEFAULT -> R.string.nova_onboarding_marketing_body_2
-        MarketingCardVariant.TREATMENT_A -> R.string.nova_onboarding_marketing_body_3
-        MarketingCardVariant.TREATMENT_B -> R.string.nova_onboarding_marketing_body_4
         MarketingCardVariant.TREATMENT_C -> R.string.nova_onboarding_marketing_body_7
     }
 
 private class BodyResourcePreviewProvider : PreviewParameterProvider<MarketingCardVariant> {
     override val values = sequenceOf(
         MarketingCardVariant.DEFAULT,
-        MarketingCardVariant.TREATMENT_A,
-        MarketingCardVariant.TREATMENT_B,
         MarketingCardVariant.TREATMENT_C,
     )
 

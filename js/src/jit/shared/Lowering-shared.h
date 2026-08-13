@@ -150,6 +150,7 @@ class LIRGeneratorShared {
   // the value fits in an int32.
   inline LAllocation useRegisterOrInt32Constant(MDefinition* mir);
   inline LAllocation useAnyOrInt32Constant(MDefinition* mir);
+  inline LAllocation useAnyOrInt32ConstantAtStart(MDefinition* mir);
 
   // Like useRegisterOrInt32Constant, but uses a constant only if
   // |int32val * Scalar::byteSize(type)| doesn't overflow int32.
@@ -272,6 +273,7 @@ class LIRGeneratorShared {
 
   inline LInt64Allocation useInt64RegisterAtStart(MDefinition* mir);
   inline LInt64Allocation useInt64RegisterOrConstantAtStart(MDefinition* mir);
+  inline LInt64Allocation useInt64RegisterOrZeroAtStart(MDefinition* mir);
   inline LInt64Allocation useInt64OrConstantAtStart(MDefinition* mir);
 
 #ifdef JS_NUNBOX32

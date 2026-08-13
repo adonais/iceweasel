@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "jit/JitFrames-inl.h"
-
 #include "mozilla/ScopeExit.h"
 
 #include <algorithm>
@@ -36,6 +34,7 @@
 
 #include "builtin/Sorting-inl.h"
 #include "debugger/DebugAPI-inl.h"
+#include "jit/JitFrames-inl.h"
 #include "jit/JSJitFrameIter-inl.h"
 #include "vm/GeckoProfiler-inl.h"
 #include "vm/JSScript-inl.h"
@@ -1510,7 +1509,9 @@ void TraceWasmSuspendedContStacks(JSContext* cx, JSTracer* trc) {
 
   cx->wasm().contStacks().forEachAllocatedStack([trc](wasm::ContStack* stack) {
     if (stack->canResume()) {
-      stack->traceSuspended(trc);
+      // The tenuring tracer has no owning ContObject as a source; inferred
+      // ContObject to Debugger.Frame edges are only traced while marking.
+      stack->traceSuspended(trc, nullptr);
     }
   });
 }
@@ -1814,10 +1815,10 @@ Value SnapshotIterator::allocationValue(const RValueAllocation& alloc,
       return DoubleValue(fromRegister<double>(alloc.fpuReg()));
 
     case RValueAllocation::FLOAT32_REG:
-      return Float32Value(fromRegister<float>(alloc.fpuReg()));
+      return DoubleValue(fromRegister<float>(alloc.fpuReg()));
 
     case RValueAllocation::FLOAT32_STACK:
-      return Float32Value(ReadFrameFloat32Slot(fp_, alloc.stackOffset()));
+      return DoubleValue(ReadFrameFloat32Slot(fp_, alloc.stackOffset()));
 
     case RValueAllocation::TYPED_REG:
       return FromTypedPayload(alloc.knownType(), fromRegister(alloc.reg2()));

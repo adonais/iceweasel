@@ -17,9 +17,6 @@ transforms:
 # (to use subdirectory clones of the proper directory), at which point we can
 # generate tasks for every docker image in the directory, secure in the
 # knowledge that unnecessary images will be omitted from the target task graph
-task-defaults:
-    run-on-repo-type: [hg]
-
 tasks:
     image_builder:
         symbol: I(ib)
@@ -321,6 +318,80 @@ tasks:
         symbol: I(deb13-rpm-rpk)
         parent: debian13-base
         definition: rpm-repackage
+    debian12-arm64-raw:
+        symbol: I(deb12-a64-raw)
+        definition: debian-raw
+        args:
+            BASE_IMAGE: debian:bookworm-20230612
+            DIST: bookworm
+            SNAPSHOT: '20230611T210420Z'
+        arch: arm64
+    debian12-arm64-base:
+        symbol: I(deb12-a64-base)
+        definition: debian-base
+        parent: debian12-arm64-raw
+        packages:
+            - deb12-mercurial
+            - deb12-python-zstandard
+        arch: arm64
+    debian12-arm64-flatpak:
+        symbol: I(deb12-a64-flatpak)
+        parent: debian12-arm64-base
+        definition: debian-flatpak
+        arch: arm64
+    debian13-arm64-raw:
+        symbol: I(deb13-a64-raw)
+        definition: debian-raw
+        args:
+            BASE_IMAGE: debian:trixie-20251117
+            DIST: trixie
+            SNAPSHOT: '20251124T083047Z'
+        arch: arm64
+    debian13-arm64-base:
+        symbol: I(deb13-a64-base)
+        definition: debian-base
+        parent: debian13-arm64-raw
+        arch: arm64
+    fedora41-raw:
+        symbol: I(f41-raw)
+        definition: fedora-raw
+        args:
+            BASE_IMAGE: fedora:41
+    fedora41-base:
+        symbol: I(f41-base)
+        definition: fedora41-base
+        parent: fedora41-raw
+    fedora41-arm64-raw:
+        symbol: I(f41-a64-raw)
+        definition: fedora-raw
+        args:
+            BASE_IMAGE: fedora:41
+        arch: arm64
+    fedora41-arm64-base:
+        symbol: I(f41-a64-base)
+        definition: fedora41-base
+        parent: fedora41-arm64-raw
+        arch: arm64
+    opensuse-leap-raw:
+        symbol: I(leap-raw)
+        definition: opensuse-leap-raw
+        args:
+            BASE_IMAGE: opensuse/leap:15.6
+    opensuse-leap-base:
+        symbol: I(leap-base)
+        definition: opensuse-leap-base
+        parent: opensuse-leap-raw
+    opensuse-leap-arm64-raw:
+        symbol: I(leap-a64-raw)
+        definition: opensuse-leap-raw
+        args:
+            BASE_IMAGE: opensuse/leap:15.6
+        arch: arm64
+    opensuse-leap-arm64-base:
+        symbol: I(leap-a64-base)
+        definition: opensuse-leap-base
+        parent: opensuse-leap-arm64-raw
+        arch: arm64
     android-build:
         symbol: I(agb)
         parent: debian12-base

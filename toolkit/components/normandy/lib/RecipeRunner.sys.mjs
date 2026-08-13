@@ -319,41 +319,20 @@ export var RecipeRunner = {
         }
       }
 
-      // Fetch recipes before execution in case we fail and exit early.
-      let recipesAndSignatures;
-      try {
-        recipesAndSignatures = await lazy.gRemoteSettingsClient.get({
-          // Do not return an empty list if an error occurs.
-          emptyListFallback: false,
-        });
-      } catch (e) {
-        return;
-      }
-
       const actionsManager = new lazy.ActionsManager();
-
       const legacyHeartbeat = lazy.LegacyHeartbeat.getHeartbeatRecipe();
-      const noRecipes =
-        !recipesAndSignatures.length && legacyHeartbeat === null;
 
       // Execute recipes, if we have any.
-      if (noRecipes) {
+      if (legacyHeartbeat === null) {
         log.debug("No recipes to execute");
       } else {
-        for (const { recipe, signature } of recipesAndSignatures) {
-          let suitability = await this.getRecipeSuitability(recipe, signature);
-          await actionsManager.processRecipe(recipe, suitability);
-        }
-
-        if (legacyHeartbeat !== null) {
-          await actionsManager.processRecipe(
-            legacyHeartbeat,
-            lazy.BaseAction.suitability.FILTER_MATCH
-          );
-        }
+        await actionsManager.processRecipe(
+          legacyHeartbeat,
+          lazy.BaseAction.suitability.FILTER_MATCH
+        );
       }
 
-      await actionsManager.finalize({ noRecipes });
+      await actionsManager.finalize({ noRecipes: legacyHeartbeat === null });
 
       Services.obs.notifyObservers(null, "recipe-runner:end");
     } finally {

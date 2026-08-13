@@ -17,7 +17,7 @@ add_task(async function test_search_mode_app_provided_engines() {
   let cleanup = await installPersistTestEngines();
 
   let switcher = gURLBar.querySelector(".searchmode-switcher");
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => BrowserTestUtils.isVisible(switcher),
     `Wait until unified search button is visible`
   );

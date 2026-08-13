@@ -7,8 +7,8 @@
 #  include "PrintTargetSkPDF.h"
 #endif
 
-#include "cairo.h"
 #include "cairo-pdf.h"
+#include "cairo.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/StaticPrefs_print.h"
 #include "nsContentUtils.h"

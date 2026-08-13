@@ -4,10 +4,11 @@
 #ifndef GFXALPHARECOVERY_GENERIC_H_
 #define GFXALPHARECOVERY_GENERIC_H_
 
+#include <xsimd/xsimd.hpp>
+
 #include "gfxAlphaRecovery.h"
 #include "gfxImageSurface.h"
 #include "nsDebug.h"
-#include <xsimd/xsimd.hpp>
 
 template <typename Arch>
 bool gfxAlphaRecovery::RecoverAlphaGeneric(gfxImageSurface* blackSurf,

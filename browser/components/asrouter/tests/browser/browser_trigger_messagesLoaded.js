@@ -8,7 +8,7 @@ const { ASRouter, MessageLoaderUtils } = ChromeUtils.importESModule(
 const { RemoteSettings } = ChromeUtils.importESModule(
   "resource://services-settings/remote-settings.sys.mjs"
 );
-const { EnrollmentType, ExperimentAPI } = ChromeUtils.importESModule(
+const { EnrollmentType } = ChromeUtils.importESModule(
   "resource://nimbus/ExperimentAPI.sys.mjs"
 );
 const { NimbusTestUtils } = ChromeUtils.importESModule(
@@ -122,7 +122,7 @@ add_task(async function test_messagesLoaded_reach_experiment() {
   });
   await ExperimentAPI._rsLoader.updateRecipes("test");
 
-  let metadata = await BrowserTestUtils.waitForCondition(
+  let metadata = await TestUtils.waitForCondition(
     () =>
       NimbusFeatures[featureId].getEnrollmentMetadata(
         EnrollmentType.EXPERIMENT
@@ -132,7 +132,7 @@ add_task(async function test_messagesLoaded_reach_experiment() {
 
   const filterFn = m =>
     ["messages-loaded-test-1", "messages-loaded-test-2"].includes(m?.id);
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => ASRouter.state.messages.filter(filterFn).length > 1,
     "Should load the test messages"
   );
@@ -168,7 +168,7 @@ add_task(async function test_messagesLoaded_reach_experiment() {
   MessageLoaderUtils._recordedReachIds.clear();
   await ASRouter._updateMessageProviders();
   sandbox.restore();
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       !NimbusFeatures[featureId].getEnrollmentMetadata(
         EnrollmentType.EXPERIMENT

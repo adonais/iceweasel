@@ -5,8 +5,6 @@
 #ifndef vm_Shape_h
 #define vm_Shape_h
 
-#include "js/shadow/Shape.h"  // JS::shadow::Shape, JS::shadow::BaseShape
-
 #include "mozilla/Attributes.h"
 #include "mozilla/MemoryReporting.h"
 
@@ -20,6 +18,7 @@
 #include "js/MemoryMetrics.h"
 #include "js/Printer.h"  // js::GenericPrinter
 #include "js/RootingAPI.h"
+#include "js/shadow/Shape.h"  // JS::shadow::Shape, JS::shadow::BaseShape
 #include "js/UbiNode.h"
 #include "util/EnumFlags.h"
 #include "vm/ObjectFlags.h"
@@ -130,6 +129,8 @@ class PropertyIteratorObject;
 
 namespace gc {
 class TenuringTracer;
+template <uint32_t opts>
+class MarkingTracerT;
 }  // namespace gc
 
 namespace wasm {
@@ -244,6 +245,8 @@ class BaseShape : public gc::TenuredCellWithNonGCPointer<const JSClass> {
  private:
   JS::Realm* const realm_;
   const GCPtr<TaggedProto> proto_;
+  template <uint32_t opts>
+  friend class gc::MarkingTracerT;
 
  public:
   BaseShape(JSContext* cx, const JSClass* clasp, JS::Realm* realm,
@@ -312,7 +315,6 @@ class BaseShape : public gc::TenuredCellWithNonGCPointer<const JSClass> {
 class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
   friend class ::JSObject;
   friend class ::JSFunction;
-  friend class GCMarker;
   friend class NativeObject;
   friend class SharedShape;
   friend class PropertyTree;
@@ -328,7 +330,6 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
 
   using Kind = JS::shadow::Shape::Kind;
 
- protected:
   // Flags that are not modified after the Shape is created. Off-thread Ion
   // compilation can access the immutableFlags word, so we don't want any
   // mutable state here to avoid (TSan) races.
@@ -361,6 +362,7 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
     SMALL_SLOTSPAN_MASK = uint32_t(SMALL_SLOTSPAN_MAX << SMALL_SLOTSPAN_SHIFT),
   };
 
+ protected:
   GCData<uint32_t> immutableFlags;  // Immutable flags, see above.
   ObjectFlags objectFlags_;         // Immutable object flags, see ObjectFlags.
 
@@ -413,7 +415,10 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
   }
 
  public:
-  Kind kind() const { return Kind((immutableFlags >> KIND_SHIFT) & KIND_MASK); }
+  Kind kind() const { return kindFromImmutableFlags(immutableFlags); }
+  static Kind kindFromImmutableFlags(uint32_t immutableFlags) {
+    return Kind((immutableFlags >> KIND_SHIFT) & KIND_MASK);
+  }
 
   bool isNative() const {
     // Note: this is equivalent to `isShared() || isDictionary()`.
@@ -451,6 +456,10 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
 
   void traceChildren(JSTracer* trc);
 
+  ImmutableFlags immutableFlagsForTracing() const {
+    return ImmutableFlags(immutableFlags.getForTracing());
+  }
+
   // For JIT usage.
   static constexpr size_t offsetOfBaseShape() { return offsetOfHeaderPtr(); }
 
@@ -487,6 +496,8 @@ class NativeShape : public Shape {
   // initial SharedShape with no properties), a SharedPropMap (for
   // SharedShape) or a DictionaryPropMap (for DictionaryShape).
   GCPtr<PropMap*> propMap_;
+  template <uint32_t opts>
+  friend class gc::MarkingTracerT;
 
   NativeShape(Kind kind, BaseShape* base, ObjectFlags objectFlags,
               uint32_t nfixed, PropMap* map, uint32_t mapLength)
@@ -513,6 +524,9 @@ class NativeShape : public Shape {
   MOZ_ALWAYS_INLINE PropMap* lookupPure(PropertyKey key, uint32_t* index);
 
   uint32_t numFixedSlots() const {
+    return numFixedSlotsFromImmutableFlags(immutableFlags);
+  }
+  static uint32_t numFixedSlotsFromImmutableFlags(uint32_t immutableFlags) {
     return (immutableFlags & FIXED_SLOTS_MASK) >> FIXED_SLOTS_SHIFT;
   }
 
@@ -575,13 +589,15 @@ class SharedShape : public NativeShape {
   }
   uint32_t slotSpan() const {
     MOZ_ASSERT(isShared());
-    uint32_t span =
-        (immutableFlags & SMALL_SLOTSPAN_MASK) >> SMALL_SLOTSPAN_SHIFT;
+    uint32_t span = smallSlotSpanFromImmutableFlags(immutableFlags);
     if (MOZ_LIKELY(span < SMALL_SLOTSPAN_MAX)) {
       MOZ_ASSERT(slotSpanSlow() == span);
       return span;
     }
     return slotSpanSlow();
+  }
+  static uint32_t smallSlotSpanFromImmutableFlags(uint32_t immutableFlags) {
+    return (immutableFlags & SMALL_SLOTSPAN_MASK) >> SMALL_SLOTSPAN_SHIFT;
   }
 
   /*

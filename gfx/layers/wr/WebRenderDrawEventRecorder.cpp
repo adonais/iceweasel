@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "WebRenderDrawEventRecorder.h"
+
 #include "mozilla/layers/SharedSurfacesChild.h"
 #include "mozilla/layers/SharedSurfacesParent.h"
 

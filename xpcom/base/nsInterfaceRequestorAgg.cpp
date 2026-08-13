@@ -3,10 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsInterfaceRequestorAgg.h"
-#include "nsIInterfaceRequestor.h"
+
 #include "nsCOMPtr.h"
-#include "nsThreadUtils.h"
+#include "nsIInterfaceRequestor.h"
 #include "nsProxyRelease.h"
+#include "nsThreadUtils.h"
 
 class nsInterfaceRequestorAgg final : public nsIInterfaceRequestor {
  public:

@@ -64,7 +64,7 @@ async function pickActionByClick() {
 add_task(async function selected_result_action_via_enter() {
   await doTest(async () => {
     await openPopup("testaction");
-    await BrowserTestUtils.waitForCondition(() =>
+    await TestUtils.waitForCondition(() =>
       window.document.querySelector(
         `.urlbarView-action-btn[data-action=testaction]`
       )
@@ -72,7 +72,7 @@ add_task(async function selected_result_action_via_enter() {
 
     await pickActionByEnter();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "action_testaction",
         engagement_type: "enter",
@@ -86,7 +86,7 @@ add_task(async function selected_result_action_via_enter() {
 add_task(async function selected_result_action_via_click() {
   await doTest(async () => {
     await openPopup("testaction");
-    await BrowserTestUtils.waitForCondition(() =>
+    await TestUtils.waitForCondition(() =>
       window.document.querySelector(
         `.urlbarView-action-btn[data-action=testaction]`
       )
@@ -94,7 +94,7 @@ add_task(async function selected_result_action_via_click() {
 
     await pickActionByClick();
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "action_testaction",
         engagement_type: "click",
@@ -110,7 +110,7 @@ add_task(async function selected_result_action_via_click() {
 add_task(async function selected_result_multi_action_via_click() {
   await doTest(async () => {
     await openPopup("multiaction");
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () =>
         window.document.querySelector(
           `.urlbarView-action-btn[data-action=multiaction1]`
@@ -128,7 +128,7 @@ add_task(async function selected_result_multi_action_via_click() {
       EventUtils.synthesizeMouseAtCenter(button, {}, window);
     });
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "action_multiaction2",
         engagement_type: "click",

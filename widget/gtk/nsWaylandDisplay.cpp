@@ -3,35 +3,35 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsWaylandDisplay.h"
-#include "DMABufFormats.h"
-
-#include "base/message_loop.h"    // for MessageLoop
-#include "base/task.h"            // for NewRunnableMethod, etc
-#include "mozilla/gfx/Logging.h"  // for gfxCriticalNote
-#include "mozilla/StaticMutex.h"
-#include "mozilla/StaticPtr.h"
-#include "mozilla/StaticPrefs_widget.h"
-#include "mozilla/StaticPrefs_general.h"
-#include "mozilla/Sprintf.h"
-#include "WidgetUtilsGtk.h"
-#include "nsGtkKeyUtils.h"
-#include "nsGtkUtils.h"
-#include "nsLayoutUtils.h"
-#include "nsWindow.h"
-#include "wayland-proxy.h"
-#include "ScreenHelperGTK.h"
-#include "nsIAppStartup.h"
-#include "nsServiceManagerUtils.h"
-#include "nsThreadUtils.h"
 
 #include <dlfcn.h>
+
+#include "DMABufFormats.h"
+#include "ScreenHelperGTK.h"
+#include "WidgetUtilsGtk.h"
+#include "base/message_loop.h"  // for MessageLoop
+#include "base/task.h"          // for NewRunnableMethod, etc
+#include "mozilla/Sprintf.h"
+#include "mozilla/StaticMutex.h"
+#include "mozilla/StaticPrefs_general.h"
+#include "mozilla/StaticPrefs_widget.h"
+#include "mozilla/StaticPtr.h"
+#include "mozilla/gfx/Logging.h"  // for gfxCriticalNote
+#include "nsGtkKeyUtils.h"
+#include "nsGtkUtils.h"
+#include "nsIAppStartup.h"
+#include "nsLayoutUtils.h"
+#include "nsServiceManagerUtils.h"
+#include "nsThreadUtils.h"
+#include "nsWindow.h"
+#include "wayland-proxy.h"
 
 #undef LOG
 #undef LOG_VERBOSE
 #ifdef MOZ_LOGGING
+#  include "Units.h"
 #  include "mozilla/Logging.h"
 #  include "nsTArray.h"
-#  include "Units.h"
 extern mozilla::LazyLogModule gWidgetWaylandLog;
 #  define LOG(...) \
     MOZ_LOG(gWidgetWaylandLog, mozilla::LogLevel::Debug, (__VA_ARGS__))
@@ -843,9 +843,9 @@ static void global_registry_handler(void* data, wl_registry* registry,
     auto* dmabuf = WaylandRegistryBind<zwp_linux_dmabuf_v1>(
         registry, id, &zwp_linux_dmabuf_v1_interface, vers);
     display->SetDmabuf(dmabuf, vers);
-  } else if (iface.EqualsLiteral("xx_session_manager_v1")) {
-    auto* sessionManager = WaylandRegistryBind<xx_session_manager_v1>(
-        registry, id, &xx_session_manager_v1_interface, 1);
+  } else if (iface.EqualsLiteral("xdg_session_manager_v1")) {
+    auto* sessionManager = WaylandRegistryBind<xdg_session_manager_v1>(
+        registry, id, &xdg_session_manager_v1_interface, 1);
     display->SetSessionManager(sessionManager);
   } else if (iface.EqualsLiteral("xdg_activation_v1")) {
     auto* activation = WaylandRegistryBind<xdg_activation_v1>(
@@ -902,12 +902,15 @@ static void global_registry_handler(void* data, wl_registry* registry,
   } else if (iface.EqualsLiteral("wl_fixes")) {
     // wl_fixes_interface was introduced in libwayland-client 1.24, but
     // Ubuntu 22.04 still ships 1.20.
-    // We force wl_fixes v.1 interface.
     static auto* sWlFixesInterface =
         (wl_interface*)dlsym(RTLD_DEFAULT, "wl_fixes_interface");
     if (sWlFixesInterface) {
-      auto* fixes =
-          WaylandRegistryBind<wl_fixes>(registry, id, sWlFixesInterface, 1);
+      // Note that we cannot simply do MIN(version, 2) because the dynamically
+      // loaded wl_fixes_interface can be v1, which can then lead to out of
+      // bounds reads when sending v2 requests.
+      const uint32_t libraryVersion = MIN(sWlFixesInterface->version, 2);
+      auto* fixes = WaylandRegistryBind<wl_fixes>(
+          registry, id, sWlFixesInterface, MIN(version, libraryVersion));
       display->SetFixes(fixes);
     } else {
       LOG("wl_fixes_interface is missing!");
@@ -942,8 +945,8 @@ nsWaylandDisplay::~nsWaylandDisplay() {
   MozClearPointer(mColorManager, wp_color_manager_v1_destroy);
   MozClearPointer(mColorRepresentationManager,
                   wp_color_representation_manager_v1_destroy);
-  MozClearPointer(mWaylandSession, xx_session_v1_destroy);
-  MozClearPointer(mSessionManager, xx_session_manager_v1_destroy);
+  MozClearPointer(mWaylandSession, xdg_session_v1_destroy);
+  MozClearPointer(mSessionManager, xdg_session_manager_v1_destroy);
 }
 
 void nsWaylandDisplay::AsyncRoundtripCallback(void* aData,
@@ -981,7 +984,7 @@ void nsWaylandDisplay::RequestRoundtrip() {
   wl_display_roundtrip(mDisplay);
 }
 
-void nsWaylandDisplay::SessionCreate(void* aData, xx_session_v1* aSession,
+void nsWaylandDisplay::SessionCreate(void* aData, xdg_session_v1* aSession,
                                      const char* aSessionId) {
   LOG("nsWaylandDisplay::SessionCreate() %s", aSessionId);
 
@@ -990,7 +993,7 @@ void nsWaylandDisplay::SessionCreate(void* aData, xx_session_v1* aSession,
   Preferences::SetCString("widget.wayland.session-id", aSessionId);
 }
 
-void nsWaylandDisplay::SessionRestore(void* aData, xx_session_v1* aSession) {
+void nsWaylandDisplay::SessionRestore(void* aData, xdg_session_v1* aSession) {
 #ifdef MOZ_LOGGING
   auto* display = static_cast<nsWaylandDisplay*>(aData);
   LOG("nsWaylandDisplay::SessionRestore() %s",
@@ -998,13 +1001,13 @@ void nsWaylandDisplay::SessionRestore(void* aData, xx_session_v1* aSession) {
 #endif
 }
 
-void nsWaylandDisplay::SessionReplace(void* aData, xx_session_v1* aSession) {
+void nsWaylandDisplay::SessionReplace(void* aData, xdg_session_v1* aSession) {
   LOG("nsWaylandDisplay::SessionReplace()");
   auto* display = static_cast<nsWaylandDisplay*>(aData);
   display->CreateSession();
 }
 
-static const xx_session_v1_listener sSessionListener = {
+static const xdg_session_v1_listener sSessionListener = {
     nsWaylandDisplay::SessionCreate,
     nsWaylandDisplay::SessionRestore,
     nsWaylandDisplay::SessionReplace,
@@ -1014,12 +1017,12 @@ void nsWaylandDisplay::CreateSession(const char* aSessionId) {
   LOG("nsWaylandDisplay::CreateSession() ID %s", aSessionId);
 
   // TODO: WUniquePtr
-  MozClearPointer(mWaylandSession, xx_session_v1_destroy);
+  MozClearPointer(mWaylandSession, xdg_session_v1_destroy);
 
-  mWaylandSession = xx_session_manager_v1_get_session(
+  mWaylandSession = xdg_session_manager_v1_get_session(
       mSessionManager,
-      aSessionId ? XX_SESSION_MANAGER_V1_REASON_SESSION_RESTORE
-                 : XX_SESSION_MANAGER_V1_REASON_LAUNCH,
+      aSessionId ? XDG_SESSION_MANAGER_V1_REASON_SESSION_RESTORE
+                 : XDG_SESSION_MANAGER_V1_REASON_LAUNCH,
       aSessionId);
 
   if (!mWaylandSession) {
@@ -1027,17 +1030,26 @@ void nsWaylandDisplay::CreateSession(const char* aSessionId) {
     return;
   }
 
-  xx_session_v1_add_listener(mWaylandSession, &sSessionListener, this);
+  xdg_session_v1_add_listener(mWaylandSession, &sSessionListener, this);
 }
 
 void nsWaylandDisplay::SetSessionManager(
-    xx_session_manager_v1* aSessionManager) {
-  mSessionManager = aSessionManager;
+    xdg_session_manager_v1* aSessionManager) {
   LOG("nsWaylandDisplay::SetSessionManager()");
+  mSessionManager = aSessionManager;
+}
+
+void nsWaylandDisplay::SessionManagerInit() {
+  if (!mSessionManager ||
+      !StaticPrefs::widget_wayland_session_management_enabled_AtStartup()) {
+    return;
+  }
 
   nsAutoCString prevSessionId;
   Preferences::GetCString("widget.wayland.session-id", prevSessionId);
 
+  LOG("nsWaylandDisplay::SessionManagerInit() session ID '%s'",
+      prevSessionId.get());
   CreateSession(prevSessionId.IsEmpty() ? nullptr : prevSessionId.get());
 }
 
@@ -1141,6 +1153,15 @@ MOZ_NEVER_INLINE static void WlLogHandler_XdgSurfaceBufferMismatch(
                           WaylandProxy::GetState());
 }
 
+// Compositor connection lost - Example: "Error reading events from display:
+// Broken pipe". The Wayland compositor terminated our connection (e.g. session
+// end, monitor hot-unplug); this is outside Firefox's control. See Bug 1984696.
+MOZ_NEVER_INLINE static void WlLogHandler_DisplayReadError(const char* error) {
+  MOZ_CRASH_UNSAFE_PRINTF("(%s) %s Proxy: %s",
+                          GetDesktopEnvironmentIdentifier().get(), error,
+                          WaylandProxy::GetState());
+}
+
 // Timestamp of the last "still attached" message ignored by WlLogHandler.
 // Written on the main thread (libwayland event dispatch) with release ordering
 // after writing sStillAttachedMessage, so any thread that observes the
@@ -1233,6 +1254,11 @@ static void WlLogHandler(const char* format, va_list args) {
   if (strstr(error, "xdg_surface") && strstr(error, "buffer") &&
       strstr(error, "fullscreen state")) {
     WlLogHandler_XdgSurfaceBufferMismatch(error);
+  }
+
+  // Pattern 12: compositor connection lost (Bug 1984696)
+  if (strstr(error, "Error reading events from display")) {
+    WlLogHandler_DisplayReadError(error);
   }
 
   // Fallback for unmatched patterns - use original inline code

@@ -6,6 +6,7 @@
 #define vm_DisposableRecord_h
 
 #include "NamespaceImports.h"
+
 #include "js/Value.h"
 #include "vm/NativeObject.h"
 #include "vm/UsingHint.h"

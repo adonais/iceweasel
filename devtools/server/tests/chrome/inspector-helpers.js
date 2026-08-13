@@ -7,6 +7,7 @@
 const { require } = ChromeUtils.importESModule(
   "resource://devtools/shared/loader/Loader.sys.mjs"
 );
+
 const {
   CommandsFactory,
 } = require("resource://devtools/shared/commands/commands-factory.js");
@@ -60,7 +61,12 @@ async function attachURL(url) {
   // event to its opener (the test page). This window reference is used within
   // the test tab, to reference the webpage being tested against, which is in another
   // tab.
-  const windowOpened = BrowserTestUtils.waitForNewTab(gBrowser, url);
+  const windowOpened = BrowserTestUtils.waitForNewTab(
+    gBrowser,
+    url,
+    // waitForLoad = true
+    true
+  );
   const win = window.open(url, "_blank");
   await windowOpened;
 

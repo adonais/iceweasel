@@ -72,7 +72,7 @@ add_task(async function test_uniqueDomainsVisitedInPast24Hours() {
   let countBefore = URICountListener.uniqueDomainsVisitedInPast24Hours;
 
   // If expiration does not work correctly, the following will time out.
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return (
       URICountListener.uniqueDomainsVisitedInPast24Hours == countBefore - 1
     );

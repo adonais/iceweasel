@@ -26,7 +26,6 @@ module.exports = {
   },
   Element: {
     prototype: [
-      "getAttributeNames",
       "getAttribute",
       "getAttributeNS",
       "hasAttribute",
@@ -39,10 +38,6 @@ module.exports = {
       "getElementsByTagNameNS",
       "getElementsByClassName",
       "mozMatchesSelector",
-      "getAsFlexContainer",
-      "getGridFragments",
-      "hasGridFragments",
-      "getElementsWithGrid",
       "querySelector",
       "querySelectorAll",
     ],

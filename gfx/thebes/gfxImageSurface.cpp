@@ -6,13 +6,13 @@
 #if defined(HAVE_POSIX_MEMALIGN)
 #  include "gfxAlphaRecovery.h"
 #endif
-#include "gfxImageSurface.h"
+#include <algorithm>
 
 #include "cairo.h"
+#include "gfx2DGlue.h"
+#include "gfxImageSurface.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/HelpersCairo.h"
-#include "gfx2DGlue.h"
-#include <algorithm>
 
 using namespace mozilla;
 using namespace mozilla::gfx;

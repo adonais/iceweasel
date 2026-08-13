@@ -932,6 +932,138 @@
           "The picker value changes when a new item is selected."
         );
       });
+
+      add_task(async function testVisualPickerOrientation() {
+        let { picker, items } = await renderVisualPicker();
+
+        is(
+          picker.orientation,
+          "horizontal",
+          "Visual picker defaults to a horizontal orientation."
+        );
+        is(
+          picker.fieldset.shadowRoot
+            .querySelector("fieldset")
+            .getAttribute("aria-orientation"),
+          "horizontal",
+          "Default aria-orientation is propagated to the inner fieldset."
+        );
+        items.forEach(item => {
+          is(
+            item.getAttribute("orientation"),
+            "horizontal",
+            "Horizontal orientation is reflected on each picker item."
+          );
+        });
+
+        picker.orientation = "vertical";
+        await picker.updateComplete;
+
+        is(
+          picker.fieldset.shadowRoot
+            .querySelector("fieldset")
+            .getAttribute("aria-orientation"),
+          "vertical",
+          "aria-orientation updates when picker orientation changes."
+        );
+        items.forEach(item => {
+          is(
+            item.getAttribute("orientation"),
+            "vertical",
+            "Updated orientation is propagated to each picker item."
+          );
+        });
+
+        const navigate = direction => keyboardNavigate(picker, direction);
+        let [firstItem, secondItem, thirdItem] = items;
+
+        picker.focus();
+        await picker.updateComplete;
+        is(
+          document.activeElement,
+          firstItem,
+          "First (checked) item is focused on focus()."
+        );
+
+        await navigate("down");
+        is(
+          document.activeElement,
+          secondItem,
+          "Down arrow moves focus to the next item in vertical orientation."
+        );
+        ok(
+          secondItem.checked,
+          "Selection follows focus in vertical radio orientation."
+        );
+
+        await navigate("down");
+        is(
+          document.activeElement,
+          thirdItem,
+          "Down arrow continues moving focus forward."
+        );
+
+        await navigate("up");
+        is(
+          document.activeElement,
+          secondItem,
+          "Up arrow moves focus backward in vertical orientation."
+        );
+      });
+
+      add_task(async function testLabelPositionOutside() {
+        let template = html`
+          <moz-visual-picker>
+            <moz-visual-picker-item
+              value="first"
+              label="First Item"
+              labelposition="outside"
+            >
+              <div class="slotted"></div>
+            </moz-visual-picker-item>
+            <moz-visual-picker-item
+              value="second"
+              label="Second Item"
+              labelposition="outside"
+            >
+              <div class="slotted"></div>
+            </moz-visual-picker-item>
+          </moz-visual-picker>
+        `;
+
+        let { picker, firstItem } = await renderVisualPicker("radio", template);
+
+        // Verify label is rendered outside the button
+        let firstButton = firstItem.shadowRoot.querySelector(".picker-item");
+        let firstLabel = firstItem.shadowRoot.querySelector(
+          ".text-content label"
+        );
+        ok(firstLabel, "Label element exists");
+        ok(
+          !firstButton.contains(firstLabel),
+          "Label is not inside the button when labelposition='outside'"
+        );
+
+        // Click the label and verify it selects and focuses the item
+        ok(!firstItem.checked, "First item is not initially selected");
+        synthesizeMouseAtCenter(firstLabel, {});
+        await picker.updateComplete;
+        await firstItem.updateComplete;
+
+        ok(firstItem.checked, "First item is selected after clicking label");
+        is(
+          picker.value,
+          "first",
+          "Picker value is updated after clicking label"
+        );
+
+        // Verify the button is focused, not the label
+        is(
+          firstItem.shadowRoot.activeElement,
+          firstButton,
+          "Button element is focused after clicking label, not the label"
+        );
+      });
     </script>
   </head>
   <body>

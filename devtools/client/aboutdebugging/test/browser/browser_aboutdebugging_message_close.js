@@ -28,9 +28,10 @@ add_task(async function () {
 });
 
 async function testCloseMessageWithIcon(warningMessage, doc) {
-  const closeIcon = warningMessage.querySelector(
-    ".qa-message-button-close-icon"
+  const closeButton = warningMessage.querySelector(
+    ".qa-message-button-close-button"
   );
+  const closeIcon = closeButton.shadowRoot.querySelector("img");
   ok(!!closeIcon, "The warning message has a close icon");
 
   info("Closing the message and waiting for it to disappear");

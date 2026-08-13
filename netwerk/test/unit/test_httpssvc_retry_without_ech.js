@@ -24,7 +24,9 @@ add_setup(async function setup() {
     "../../../security/manager/ssl/tests/unit/test_delegated_credentials"
   );
 
-  let nssComponent = Cc["@mozilla.org/psm;1"].getService(Ci.nsINSSComponent);
+  let nssComponent = Cc["@mozilla.org/network/ssl-tokens-cache;1"].getService(
+    Ci.nsISSLTokensCache
+  );
   await nssComponent.asyncClearSSLExternalAndInternalSessionCache();
 });
 

@@ -24,6 +24,7 @@
 #include "mozilla/ServoUtils.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/Utf16.h"
 #include "mozilla/css/Loader.h"
 #include "mozilla/dom/CSSFontFaceRule.h"
 #include "mozilla/dom/DocumentInlines.h"
@@ -54,7 +55,6 @@
 #include "nsNetUtil.h"
 #include "nsPresContext.h"
 #include "nsPrintfCString.h"
-#include "nsUTF8Utils.h"
 
 using namespace mozilla;
 using namespace mozilla::css;
@@ -164,7 +164,7 @@ static bool HasAnyCharacterInUnicodeRange(gfxUserFontEntry* aEntry,
   const char16_t* end = p + aInput.Length();
 
   while (p < end) {
-    uint32_t c = UTF16CharEnumerator::NextChar(&p, end);
+    uint32_t c = DecodeOneUtf16CodePoint(&p, end);
     if (aEntry->CharacterInUnicodeRange(c)) {
       return true;
     }

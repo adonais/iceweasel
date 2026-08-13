@@ -5,13 +5,12 @@
 #ifndef GeckoNetworkManager_h
 #define GeckoNetworkManager_h
 
+#include "mozilla/Services.h"
+#include "mozilla/java/GeckoNetworkManagerNatives.h"
 #include "nsAppShell.h"
 #include "nsCOMPtr.h"
 #include "nsINetworkLinkService.h"
 #include "nsISystemProxySettings.h"
-
-#include "mozilla/java/GeckoNetworkManagerNatives.h"
-#include "mozilla/Services.h"
 
 namespace mozilla {
 

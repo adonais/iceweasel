@@ -5,10 +5,15 @@
 #ifndef mozilla_gfx_thebes_DisplayConfigWindows_h
 #define mozilla_gfx_thebes_DisplayConfigWindows_h
 
+// clang-format off
+#include <windows.h>
+#include <wingdi.h>
+// clang-format on
+
 #include <optional>  // for std::optional
 #include <utility>   // for std::pair
 #include <vector>    // for std::vector
-#include <wingdi.h>
+
 #include "mozilla/gfx/Point.h"  // for IntSize
 #include "nsTArray.h"
 

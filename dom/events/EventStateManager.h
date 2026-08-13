@@ -276,6 +276,25 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   nsIContent* GetExplicitEventTargetContent(const WidgetEvent* = nullptr);
   nsIContent* GetEventTargetContent(const WidgetEvent* = nullptr);
 
+  /**
+   * Return the preceding eMouseDown target content which may have already been
+   * disconnected from the document. This is designed for ePointerClick handlers
+   * to get eMouseDown target. Therefore, this should return non-null only while
+   * we're dispatching a button press events and click events.
+   */
+  nsIContent* GetMouseDownTargetContent(MouseButton aMouseButton) const {
+    return GetLastMouseButtonPressInfo(aMouseButton).mDownContent;
+  }
+  /**
+   * Return the preceding eMouseUp target content which may have already been
+   * disconnected from the document. This is designed for ePointerClick handlers
+   * to get eMouseUp target. Therefore, this should return non-null only while
+   * we're dispatching a button press events and click events.
+   */
+  nsIContent* GetMouseUpTargetContent(MouseButton aMouseButton) const {
+    return GetLastMouseButtonPressInfo(aMouseButton).mUpContent;
+  }
+
   // We manage 4 states here: ACTIVE, HOVER, DRAGOVER, URLTARGET
   static bool ManagesState(ElementState aState) {
     return aState == ElementState::ACTIVE || aState == ElementState::HOVER ||
@@ -1362,13 +1381,35 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   already_AddRefed<EventStateManager> ESMFromContentOrThis(
       nsIContent* aContent);
 
-  struct LastMouseDownInfo {
-    nsCOMPtr<nsIContent> mLastMouseDownContent;
-    Maybe<FormControlType> mLastMouseDownInputControlType;
+  struct LastMouseButtonPressInfo {
+    void Clear() {
+      mConnectedDownContent = nullptr;
+      mDownContent = nullptr;
+      mUpContent = nullptr;
+      mDownInputControlType.reset();
+      mClickCount = 0;
+    }
+
+    // The closest and connected inclusive ancestor of last mouse down target.
+    nsCOMPtr<nsIContent> mConnectedDownContent;
+    // The last mouse down target which may have already been disconnected from
+    // the DOM or moved to different place.
+    nsCOMPtr<nsIContent> mDownContent;
+    // The last mouse up target which may have already been disconnected from
+    // the DOM or moved to different place.
+    nsCOMPtr<nsIContent> mUpContent;
+
+    Maybe<FormControlType> mDownInputControlType;
     uint32_t mClickCount = 0;
   };
 
-  LastMouseDownInfo& GetLastMouseDownInfo(int16_t aButton);
+  const LastMouseButtonPressInfo& GetLastMouseButtonPressInfo(
+      int16_t aButton) const;
+  LastMouseButtonPressInfo& GetLastMouseButtonPressInfo(int16_t aButton) {
+    return const_cast<LastMouseButtonPressInfo&>(
+        const_cast<const EventStateManager*>(this)->GetLastMouseButtonPressInfo(
+            aButton));
+  }
 
   // These variables are only relevant if we're the cursor-setting manager.
   StyleCursorKind mLockCursor;
@@ -1412,9 +1453,9 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   uint16_t mGestureDownButtons;
   int16_t mGestureDownButton;
 
-  LastMouseDownInfo mLastLeftMouseDownInfo;
-  LastMouseDownInfo mLastMiddleMouseDownInfo;
-  LastMouseDownInfo mLastRightMouseDownInfo;
+  LastMouseButtonPressInfo mLastPrimaryButtonPressInfo;
+  LastMouseButtonPressInfo mLastMiddleButtonPressInfo;
+  LastMouseButtonPressInfo mLastSecondaryButtonPressInfo;
 
   nsCOMPtr<nsIContent> mActiveContent;
   nsCOMPtr<nsIContent> mHoverContent;

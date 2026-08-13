@@ -10,6 +10,7 @@ mod profiler;
 use nserror::{nsresult, NS_ERROR_INVALID_ARG, NS_ERROR_UNEXPECTED, NS_OK};
 use nsstring::{nsACString, nsCString};
 use std::net::{Ipv4Addr, Ipv6Addr};
+use std::num::NonZeroU32;
 use std::ptr;
 use std::time::{Duration, Instant};
 use thin_vec::ThinVec;
@@ -68,8 +69,6 @@ pub unsafe extern "C" fn happy_eyeballs_create(
     alt_svc: *const ThinVec<AltSvc>,
     ip_preference: IpPreference,
     http_versions: HttpVersions,
-    resolution_delay_ms: u32,
-    connection_attempt_delay_ms: u32,
 ) -> nsresult {
     *result = ptr::null_mut();
 
@@ -88,7 +87,11 @@ pub unsafe extern "C" fn happy_eyeballs_create(
     let alt_svc_vec: Vec<_> = alt_svc
         .iter()
         .map(|a| happy_eyeballs::AltSvc {
-            host: None,
+            host: if a.host.is_empty() {
+                None
+            } else {
+                Some(a.host.to_utf8().to_string())
+            },
             port: if a.port != 0 { Some(a.port) } else { None },
             http_version: a.http_version.into(),
         })
@@ -96,12 +99,28 @@ pub unsafe extern "C" fn happy_eyeballs_create(
 
     let metrics = metrics::Metrics::new(&alt_svc_vec);
 
+    // Clamp the delays to at least 10ms to avoid excessive connection attempts,
+    // and the multiplier to at least 1 (it is a non-zero factor).
+    let resolution_delay_ms = std::cmp::max(
+        10,
+        static_prefs::pref!("network.http.happy_eyeballs_resolution_delay"),
+    );
+    let connection_attempt_delay_ms = std::cmp::max(
+        10,
+        static_prefs::pref!("network.http.happy_eyeballs_connection_attempt_delay"),
+    );
+    let connection_attempt_delay_multiplier = NonZeroU32::new(static_prefs::pref!(
+        "network.http.happy_eyeballs_connection_attempt_delay_multiplier"
+    ) as u32)
+    .unwrap_or(NonZeroU32::MIN);
+
     let network_config = happy_eyeballs::NetworkConfig {
         alt_svc: alt_svc_vec,
         ip: ip_preference.into(),
         http_versions: http_versions.into(),
         resolution_delay: Duration::from_millis(resolution_delay_ms as u64),
         connection_attempt_delay: Duration::from_millis(connection_attempt_delay_ms as u64),
+        connection_attempt_delay_multiplier,
         ..Default::default()
     };
 
@@ -175,6 +194,7 @@ pub unsafe extern "C" fn happy_eyeballs_process_dns_response_https(
     he: *mut HappyEyeballs,
     id: u64,
     service_infos: *const ThinVec<ServiceInfo>,
+    is_trr: bool,
 ) -> nsresult {
     let Some(he) = (unsafe { he.as_mut() }) else {
         debug_assert!(false, "unexpected null he pointer");
@@ -186,7 +206,7 @@ pub unsafe extern "C" fn happy_eyeballs_process_dns_response_https(
         return NS_ERROR_INVALID_ARG;
     };
 
-    he.process_dns_response_https(id, service_infos)
+    he.process_dns_response_https(id, service_infos, is_trr)
 }
 
 #[no_mangle]
@@ -316,6 +336,7 @@ impl HappyEyeballs {
         &mut self,
         id: u64,
         service_infos: &ThinVec<ServiceInfo>,
+        is_trr: bool,
     ) -> nsresult {
         let id: happy_eyeballs::Id = id.into();
         let mut infos = Vec::new();
@@ -386,7 +407,7 @@ impl HappyEyeballs {
         }
 
         self.profiler.dns_response_https(id, &infos);
-        self.metrics.dns_response_https(id, &infos);
+        self.metrics.dns_response_https(id, &infos, is_trr);
 
         let result = happy_eyeballs::DnsResult::Https(Ok(infos));
         let input = happy_eyeballs::Input::DnsResult { id, result };
@@ -506,11 +527,13 @@ impl HappyEyeballs {
     }
 }
 
-// TODO: Expose host.
 #[repr(C)]
 pub struct AltSvc {
     pub http_version: HttpVersion,
     pub port: u16,
+    /// The alt-svc alternate's host. Empty means the alternate uses the origin
+    /// host (a port/protocol-only alt-svc).
+    pub host: nsCString,
 }
 
 #[repr(C)]

@@ -6,11 +6,6 @@
 #ifndef _nsNSSComponent_h_
 #define _nsNSSComponent_h_
 
-#include "nsINSSComponent.h"
-#ifdef ENABLE_TESTS
-#  include "nsISSLTokensCacheTest.h"
-#endif
-
 #include "EnterpriseRoots.h"
 #include "ScopedNSSTypes.h"
 #include "SharedCertVerifier.h"
@@ -18,6 +13,7 @@
 #include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
 #include "nsCOMPtr.h"
+#include "nsINSSComponent.h"
 #include "nsIObserver.h"
 #include "nsISerialEventTarget.h"
 #include "nsNSSCallbacks.h"
@@ -26,9 +22,12 @@
 #include "sslt.h"
 
 #ifdef XP_WIN
-#  include <windows.h>  // this needs to be before the following includes
+// clang-format off
+// wincrypt.h depends on windows.h, so needs to go before
+#  include <windows.h>
 #  include <wincrypt.h>
-#endif  // XP_WIN
+// clang-format on
+#endif
 
 class nsIDOMWindow;
 class nsIPrompt;
@@ -74,13 +73,7 @@ class AutoSearchingForClientAuthCertificates {
 };
 
 // Implementation of the PSM component interface.
-class nsNSSComponent final : public nsINSSComponent,
-                             public nsIObserver
-#ifdef ENABLE_TESTS
-    ,
-                             public nsISSLTokensCacheTest
-#endif
-{
+class nsNSSComponent final : public nsINSSComponent, public nsIObserver {
  public:
   // LoadLoadableCertsTask updates mLoadableCertsLoaded and
   // mLoadableCertsLoadedResult and then signals mLoadableCertsLoadedMonitor.
@@ -94,9 +87,6 @@ class nsNSSComponent final : public nsINSSComponent,
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSINSSCOMPONENT
   NS_DECL_NSIOBSERVER
-#ifdef ENABLE_TESTS
-  NS_DECL_NSISSLTOKENSCACHETEST
-#endif
 
   nsresult Init();
 
@@ -107,12 +97,6 @@ class nsNSSComponent final : public nsINSSComponent,
                                   SSLVersionRange defaults);
 
   static nsresult SetEnabledTLSVersions();
-
-  // This function does the actual work of clearing the session cache. It is to
-  // be used by the socket process (where there is no nsINSSComponent) and
-  // internally by nsNSSComponent.
-  // NB: NSS must have already been initialized before this is called.
-  static void DoClearSSLExternalAndInternalSessionCache();
 
  protected:
   ~nsNSSComponent();

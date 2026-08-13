@@ -3,8 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsUserIdleServiceX.h"
-#include "nsObjCExceptions.h"
 #import <Foundation/Foundation.h>
+#include "nsObjCExceptions.h"
 
 bool nsUserIdleServiceX::PollIdleTime(uint32_t* aIdleTime) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;

@@ -59,6 +59,29 @@ Offers a checklist of actions a user can opt-in to.
 
 ![About Welcome Multiselect](./aboutwelcome-multiselect.png)
 
+Individual checkboxes can opt in to conditional rendering with a `targeting`
+property containing a JEXL expression, the same way screen-level `targeting`
+works. A checkbox is rendered only when its expression evaluates to a truthy
+value; checkboxes without a `targeting` property are always shown.
+```js
+tiles: {
+  type: "multiselect",
+  data: [
+    {
+      id: "checkbox-1",
+      targeting: "doesAppNeedPin",
+      label: "Pin Firefox to Taskbar",
+      action: { type: "PIN_FIREFOX_TO_TASKBAR" },
+    },
+    {
+      id: "checkbox-2",
+      label: "Import from Previous Browser",
+      action: { type: "SHOW_MIGRATION_WIZARD" },
+    },
+  ],
+}
+```
+
 #### Single Select Picker
 Provides users with set of mutually exclusive options.
 

@@ -14,6 +14,7 @@
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/StaticPrefs_mathml.h"
 #include "mozilla/TextEditor.h"
+#include "mozilla/Utf16.h"
 #include "mozilla/gfx/2D.h"
 #include "nsLineBreaker.h"
 #include "nsSpecialCasingData.h"
@@ -146,7 +147,7 @@ void MergeCharactersInTextRun(gfxTextRun* aDest, gfxTextRun* aSrc,
                               const bool* aDeletedChars) {
   MOZ_ASSERT(!aDest->TrailingGlyphRun(), "unexpected glyphRuns in aDest!");
   uint32_t offset = 0;
-  AutoTArray<gfxTextRun::DetailedGlyph, 2> glyphs;
+  AutoTArray<gfxTextRun::DetailedGlyph, 4> glyphs;
   const gfxTextRun::CompressedGlyph continuationGlyph =
       gfxTextRun::CompressedGlyph::MakeComplex(false, false);
   const gfxTextRun::CompressedGlyph* srcGlyphs = aSrc->GetCharacterGlyphs();
@@ -176,8 +177,8 @@ void MergeCharactersInTextRun(gfxTextRun* aDest, gfxTextRun* aSrc,
           anyMissing = true;
           glyphs.Clear();
         }
-        if (g.GetGlyphCount() > 0) {
-          glyphs.AppendElements(aSrc->GetDetailedGlyphs(k), g.GetGlyphCount());
+        if (uint32_t count = g.GetGlyphCount()) {
+          glyphs.AppendElements(aSrc->GetDetailedGlyphs(k, count), count);
         }
       }
 
@@ -204,6 +205,21 @@ void MergeCharactersInTextRun(gfxTextRun* aDest, gfxTextRun* aSrc,
           // Otherwise set up complex glyph record and store detailed glyphs.
           mergedGlyph.SetComplex(mergedGlyph.IsClusterStart(),
                                  mergedGlyph.IsLigatureGroupStart());
+          // If the original character decomposed to multiple base glyphs,
+          // like German es-zet being uppercased to "SS", or presentation-form
+          // ligatures like U+FB01 being uppercased to "FI", then any letter-
+          // spacing needs to be applied between these components. But most
+          // multi-character mappings generate a base glyph and diacritic(s),
+          // in which case internal letter-spacing should NOT be applied.
+          // We distinguish the cases here by checking if all the component
+          // glyphs have non-zero advance; if so, set the letter-spacing flag.
+          if (glyphs.Length() > 1 &&
+              std::all_of(glyphs.cbegin(), glyphs.cend(),
+                          [](const gfxTextRun::DetailedGlyph& g) -> bool {
+                            return g.mAdvance > 0;
+                          })) {
+            mergedGlyph.SetApplyLetterSpacingBetweenDetailedGlyphs();
+          }
           destGlyphs[offset] = mergedGlyph;
           aDest->SetDetailedGlyphs(offset, glyphs.Length(), glyphs.Elements());
           if (anyMissing) {
@@ -363,8 +379,8 @@ bool nsCaseTransformTextRunFactory::TransformString(
     const unicode::MultiCharMapping* mcm;
     bool inhibitBreakBefore = false;  // have we just deleted preceding hyphen?
 
-    if (i < length - 1 && NS_IS_SURROGATE_PAIR(ch, str[i + 1])) {
-      ch = SURROGATE_TO_UCS4(ch, str[i + 1]);
+    if (i < length - 1 && mozilla::IsSurrogatePair(ch, str[i + 1])) {
+      ch = mozilla::SurrogateToUCS4(ch, str[i + 1]);
     }
     const uint32_t originalCh = ch;
 
@@ -839,7 +855,7 @@ bool nsCaseTransformTextRunFactory::TransformString(
                 : aTextRun->CanBreakBefore(aOffsetInTextRun));
       }
 
-      if (IS_IN_BMP(ch)) {
+      if (mozilla::IsInBMP(ch)) {
         aConvertedString.Append(maskPassword ? mask : ch);
       } else {
         if (maskPassword) {
@@ -847,12 +863,12 @@ bool nsCaseTransformTextRunFactory::TransformString(
           // TODO: We should show a password mask for a surrogate pair later.
           aConvertedString.Append(mask);
         } else {
-          aConvertedString.Append(H_SURROGATE(ch));
-          aConvertedString.Append(L_SURROGATE(ch));
+          aConvertedString.Append(mozilla::HighSurrogate(ch));
+          aConvertedString.Append(mozilla::LowSurrogate(ch));
         }
         ++extraChars;
       }
-      if (!IS_IN_BMP(originalCh)) {
+      if (!mozilla::IsInBMP(originalCh)) {
         // Skip the trailing surrogate.
         ++aOffsetInTextRun;
         ++i;

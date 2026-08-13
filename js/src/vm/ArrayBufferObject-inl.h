@@ -50,13 +50,6 @@ inline size_t ArrayBufferObjectMaybeShared::byteLength() const {
   return this->as<SharedArrayBufferObject>().byteLength();
 }
 
-inline bool ArrayBufferObjectMaybeShared::isPreparedForAsmJS() const {
-  if (this->is<ArrayBufferObject>()) {
-    return this->as<ArrayBufferObject>().isPreparedForAsmJS();
-  }
-  return false;
-}
-
 inline bool ArrayBufferObjectMaybeShared::isWasm() const {
   if (this->is<ArrayBufferObject>()) {
     return this->as<ArrayBufferObject>().isWasm();

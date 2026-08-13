@@ -17,54 +17,66 @@ add_setup(async function setup() {
 });
 
 add_task(async function test_user_namespaces() {
+  const isNova = Services.prefs.getBoolPref("browser.nova.enabled", false);
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:support" },
     async function (browser) {
-      const result = await SpecialPowers.spawn(browser, [], async function () {
-        try {
-          await ContentTaskUtils.waitForCondition(() => {
-            const tbody = content.document.getElementById("sandbox-tbody");
-            if (!tbody) {
-              return false;
-            }
-            const tr = tbody.getElementsByTagName("tr");
+      const result = await SpecialPowers.spawn(
+        browser,
+        [isNova],
+        async function (novaEnabled) {
+          try {
+            await ContentTaskUtils.waitForCondition(() => {
+              const tbody = content.document.getElementById("sandbox-tbody");
+              if (!tbody) {
+                return false;
+              }
+              const tr = tbody.getElementsByTagName("tr");
 
-            const expectedBackgroundColor = content.window.matchMedia(
-              "(prefers-color-scheme: dark)"
-            ).matches
-              ? "oklch(0.34 0.14 15)"
-              : "oklch(0.97 0.05 15)";
+              const isDark = content.window.matchMedia(
+                "(prefers-color-scheme: dark)"
+              ).matches;
+              let expectedBackgroundColor = isDark
+                ? "oklch(0.34 0.14 15)"
+                : "oklch(0.97 0.05 15)";
+              if (novaEnabled) {
+                expectedBackgroundColor = isDark
+                  ? "rgb(105, 23, 45)"
+                  : "rgb(255, 217, 223)";
+              }
 
-            return !![...tr]
-              .filter(
-                x =>
-                  x.querySelector("th").dataset.l10nId === "has-user-namespaces"
-              )
-              .map(x => x.querySelector("td"))
-              .filter(
-                x =>
-                  content
-                    .getComputedStyle(x)
-                    .getPropertyValue("background-color") ===
-                  expectedBackgroundColor
-              )
-              .filter(
-                x =>
-                  x.querySelector("span").dataset.l10nId ===
-                  "support-user-namespaces-unavailable"
-              )
-              .map(x => x.querySelector("a"))
-              .filter(
-                x =>
-                  x.getAttribute("support-page") ===
-                  "install-firefox-linux#w_install-firefox-from-mozilla-builds"
-              ).length;
-          }, "User Namespaces loaded and has correct properties");
-        } catch (exception) {
-          return false;
+              return !![...tr]
+                .filter(
+                  x =>
+                    x.querySelector("th").dataset.l10nId ===
+                    "has-user-namespaces"
+                )
+                .map(x => x.querySelector("td"))
+                .filter(
+                  x =>
+                    content
+                      .getComputedStyle(x)
+                      .getPropertyValue("background-color") ===
+                    expectedBackgroundColor
+                )
+                .filter(
+                  x =>
+                    x.querySelector("span").dataset.l10nId ===
+                    "support-user-namespaces-unavailable"
+                )
+                .map(x => x.querySelector("a"))
+                .filter(
+                  x =>
+                    x.getAttribute("support-page") ===
+                    "install-firefox-linux#w_install-firefox-from-mozilla-builds"
+                ).length;
+            }, "User Namespaces loaded and has correct properties");
+          } catch (exception) {
+            return false;
+          }
+          return true;
         }
-        return true;
-      });
+      );
 
       ok(
         result,

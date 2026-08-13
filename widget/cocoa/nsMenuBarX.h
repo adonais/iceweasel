@@ -9,11 +9,11 @@
 
 #include "mozilla/WeakPtr.h"
 
+#include "nsChangeObserver.h"
 #include "nsISupports.h"
 #include "nsMenuParentX.h"
-#include "nsChangeObserver.h"
-#include "nsTArray.h"
 #include "nsString.h"
+#include "nsTArray.h"
 
 class nsMenuBarX;
 class nsMenuGroupOwnerX;

@@ -5,8 +5,6 @@
 #ifndef js_public_Object_h
 #define js_public_Object_h
 
-#include "js/shadow/Object.h"  // JS::shadow::Object
-
 #include "mozilla/Assertions.h"  // MOZ_ASSERT
 
 #include <stddef.h>  // size_t
@@ -16,9 +14,10 @@
 
 #include "js/Class.h"  // js::ESClass, JSCLASS_RESERVED_SLOTS
 #include "js/Proxy.h"  // js::IsProxy, js::GetProxyReservedSlot, js::SetProxyReservedSlot
-#include "js/Realm.h"       // JS::GetCompartmentForRealm
-#include "js/RootingAPI.h"  // JS::{,Mutable}Handle
-#include "js/Value.h"       // JS::Value
+#include "js/Realm.h"          // JS::GetCompartmentForRealm
+#include "js/RootingAPI.h"     // JS::{,Mutable}Handle
+#include "js/shadow/Object.h"  // JS::shadow::Object
+#include "js/Value.h"          // JS::Value
 
 struct JS_PUBLIC_API JSContext;
 class JS_PUBLIC_API JSObject;
@@ -96,7 +95,11 @@ inline void SetNativeObjectReservedSlot(JSObject* obj, size_t slot,
   if (nobj->reservedSlotRef(slot).isGCThing() || value.isGCThing()) {
     detail::SetNativeObjectReservedSlotWithBarrier(obj, slot, value);
   } else {
+#ifdef JS_GC_CONCURRENT_MARKING
+    nobj->reservedSlotRef(slot).atomicSet(value);
+#else
     nobj->reservedSlotRef(slot) = value;
+#endif
   }
 }
 

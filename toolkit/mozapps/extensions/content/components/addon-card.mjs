@@ -11,7 +11,6 @@ import {
   detachUpdateHandler,
   getAddonMessageInfo,
   getOptionsType,
-  getScreenshotUrlForAddon,
   getUpdateInstall,
   hasPermission,
   isAllowedInPrivateBrowsing,
@@ -109,7 +108,7 @@ export class AddonCard extends AboutAddonsHTMLElement {
     return `
       <template>
         <div class="card addon">
-          <img class="card-heading-image" role="presentation" />
+          <theme-preview></theme-preview>
           <div class="addon-card-collapsed">
             <img class="card-heading-icon addon-icon" alt="" />
             <div class="card-contents">
@@ -525,18 +524,13 @@ export class AddonCard extends AboutAddonsHTMLElement {
 
     card.setAttribute("active", addon.isActive);
 
-    // Set the icon or theme preview.
+    card.querySelector("theme-preview").addon = addon;
+
+    // Set the icon.
     let iconEl = card.querySelector(".addon-icon");
-    let preview = card.querySelector(".card-heading-image");
     if (addon.type == "theme") {
       iconEl.hidden = true;
-      let screenshotUrl = getScreenshotUrlForAddon(addon);
-      if (screenshotUrl) {
-        preview.src = screenshotUrl;
-      }
-      preview.hidden = !screenshotUrl;
     } else {
-      preview.hidden = true;
       iconEl.hidden = false;
       if (addon.type == "plugin") {
         iconEl.src = PLUGIN_ICON_URL;

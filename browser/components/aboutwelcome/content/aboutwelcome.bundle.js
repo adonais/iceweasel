@@ -223,7 +223,7 @@ const MultiStageAboutWelcome = props => {
 
       // Use existing screen for the filtered screen to carry over any modification
       // e.g. if AW_LANGUAGE_MISMATCH exists, use it from existing screens
-      setScreens(filteredScreens.map(filtered => screens.find(s => s.id === filtered.id) ?? filtered));
+      setScreens(filteredScreens.map(filtered => filtered.id === LANGUAGE_MISMATCH_SCREEN_ID ? screens.find(s => s.id === filtered.id) ?? filtered : filtered));
       // Mark the initial filter pass complete and allow the first paint.
       if (!didFilter.current) {
         didFilter.current = true;
@@ -380,6 +380,11 @@ const MultiStageAboutWelcome = props => {
   // structured like this: { screenId: { textareaId: { value, isValid } } }
   const [textInputs, setTextInputs] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)({});
 
+  // Track whether each screen has had at least one successful pin, keyed by
+  // screen id. This is a boolean (there is no "unpin"), used to gate a
+  // primary button with `disabled: "hasPinnedSite"`.
+  const [pinnedSites, setPinnedSites] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)({});
+
   // Whether animated backgrounds/illustrations are paused for this session.
   // Defaults to paused when the user has prefers-reduced-motion: reduce set,
   // so we never autoplay motion for those users. The toggle stays consistent
@@ -465,6 +470,12 @@ const MultiStageAboutWelcome = props => {
         };
       });
     };
+    const setPinnedSite = () => {
+      setPinnedSites(prevState => ({
+        ...prevState,
+        [currentScreen.id]: true
+      }));
+    };
     const setTextInput = (value, inputId) => {
       setTextInputs(prevState => {
         const currentScreenInputs = prevState[currentScreen.id] || {};
@@ -505,6 +516,8 @@ const MultiStageAboutWelcome = props => {
       setActiveSingleSelectSelection: setActiveSingleSelectSelection,
       textInputs: textInputs[currentScreen.id],
       setTextInput: setTextInput,
+      pinnedSites: pinnedSites[currentScreen.id],
+      setPinnedSite: setPinnedSite,
       contentToggleChecked: contentToggleChecked,
       setContentToggleChecked: setContentToggleChecked,
       negotiatedLanguage: negotiatedLanguage,
@@ -814,7 +827,7 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
       context.contentToggleState = props.contentToggleChecked;
     }
     _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.sendActionTelemetry(props.messageId, source, event.name, context);
-    if (value === "dismiss_button" && !event.name) {
+    if (value === "dismiss_button" && !event.name || action.sendDismissTelemetry) {
       _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.sendDismissTelemetry(props.messageId, source);
     }
     if (action.collectSelect) {
@@ -919,7 +932,7 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
         return;
       }
       const multiSelectId = `tile-${tileIndex}`;
-      const activeSelections = props.activeMultiSelect[multiSelectId] || [];
+      const activeSelections = props.activeMultiSelect?.[multiSelectId] || [];
       for (const checkbox of tile.data) {
         let checkboxAction;
         if (activeSelections.includes(checkbox.id)) {
@@ -946,7 +959,7 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
 
     // Prepend the collected multi-select actions to the CTA's actions array
     action.data.actions.unshift(...multiSelectActions);
-    for (const value of Object.values(props.activeMultiSelect)) {
+    for (const value of Object.values(props.activeMultiSelect || {})) {
       // Send telemetry with selected checkbox ids
       _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.sendActionTelemetry(props.messageId, value.flat(), "SELECT_CHECKBOX");
     }
@@ -1024,6 +1037,8 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
       setActiveSingleSelectSelection: this.props.setActiveSingleSelectSelection,
       textInputs: this.props.textInputs,
       setTextInput: this.props.setTextInput,
+      pinnedSites: this.props.pinnedSites,
+      setPinnedSite: this.props.setPinnedSite,
       contentToggleChecked: this.props.contentToggleChecked,
       setContentToggleChecked: this.props.setContentToggleChecked,
       totalNumberOfScreens: this.props.totalNumberOfScreens,
@@ -1345,6 +1360,8 @@ const MultiStageProtonScreen = props => {
     setActiveSingleSelectSelection: props.setActiveSingleSelectSelection,
     textInputs: props.textInputs,
     setTextInput: props.setTextInput,
+    pinnedSites: props.pinnedSites,
+    setPinnedSite: props.setPinnedSite,
     contentToggleChecked: props.contentToggleChecked,
     setContentToggleChecked: props.setContentToggleChecked,
     totalNumberOfScreens: props.totalNumberOfScreens,
@@ -1385,6 +1402,7 @@ const ProtonScreenActionButtons = props => {
     activeMultiSelect,
     activeSingleSelectSelections,
     textInputs,
+    pinnedSites,
     installedAddons
   } = props;
   const defaultValue = content.checkbox?.defaultValue;
@@ -1434,6 +1452,10 @@ const ProtonScreenActionButtons = props => {
         return true;
       }
       return Object.values(textInputs).every(input => !input.isValid || input.value.trim().length === 0);
+    }
+    // Disables the primary button until the user has pinned at least one site.
+    if (disabledValue === "hasPinnedSite") {
+      return !pinnedSites;
     }
     return disabledValue;
   };
@@ -1509,7 +1531,7 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       this.mainContentHeader.focus();
     }
   }
-  getScreenClassName(includeNoodles, isVideoOnboarding, isAddonsPicker) {
+  getScreenClassName(includeNoodles, hasZapBorder, hasZapShadow, isVideoOnboarding, isAddonsPicker) {
     if (isVideoOnboarding) {
       return "with-video";
     }
@@ -1519,7 +1541,9 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
     const screenClass = `screen-${this.props.order % 2 !== 0 ? 1 : 2}`;
     const dialogInitial = this.props.isFirstScreen && this.props.previousOrder < 0 ? `dialog-initial` : ``;
     const dialogLast = this.props.isLastScreen ? `dialog-last` : ``;
-    return `${screenClass} ${dialogInitial} ${dialogLast} ${includeNoodles ? `with-noodles` : ``}`;
+    const zapBorder = hasZapBorder ? `zap-border` : ``;
+    const zapShadow = hasZapShadow ? `zap-shadow` : ``;
+    return `${screenClass} ${dialogInitial} ${dialogLast} ${zapBorder} ${zapShadow} ${includeNoodles ? `with-noodles` : ``}`;
   }
   renderTitle({
     title,
@@ -1845,7 +1869,8 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       handleAction: this.props.handleAction,
       activeMultiSelect: this.props.activeMultiSelect,
       activeSingleSelectSelections: this.props.activeSingleSelectSelections,
-      textInputs: this.props.textInputs
+      textInputs: this.props.textInputs,
+      pinnedSites: this.props.pinnedSites
     }) : null;
   }
 
@@ -1863,13 +1888,15 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       isWideScreen
     } = this.props;
     const includeNoodles = content.has_noodles;
+    const hasZapBorder = content.zap_border;
+    const hasZapShadow = content.zap_shadow;
     // The default screen position is "center"
     const isCenterPosition = content.position === "center" || !content.position;
     const hideStepsIndicator = autoAdvance || content?.video_container || isSingleScreen || forceHideStepsIndicator;
     const textColorClass = content.text_color ? `${content.text_color}-text` : "";
     // Assign proton screen style 'screen-1' or 'screen-2' to centered screens
     // by checking if screen order is even or odd.
-    const screenClassName = isCenterPosition ? this.getScreenClassName(includeNoodles, content?.video_container, content.tiles?.type === "addons-picker") : "";
+    const screenClassName = isCenterPosition ? this.getScreenClassName(includeNoodles, hasZapBorder, hasZapShadow, content?.video_container, content.tiles?.type === "addons-picker") : `${hasZapBorder ? "zap-border" : ""} ${hasZapShadow ? " zap-shadow" : ""}`;
     const isEmbeddedMigration = content.tiles?.type === "migration-wizard";
     const isSystemPromptStyleSpotlight = content.isSystemPromptStyleSpotlight === true;
     const combinedStyles = this.getCombinedInnerStyles(content, isWideScreen);
@@ -3001,7 +3028,8 @@ const ContentTiles = props => {
       }
     }), tile.type === "action_checklist" && tile.data && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_ActionChecklist__WEBPACK_IMPORTED_MODULE_9__.ActionChecklist, {
       content: content,
-      message_id: props.messageId
+      message_id: props.messageId,
+      handleAction: props.handleAction
     }), tile.type === "embedded_browser" && tile.data?.url && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_EmbeddedBrowser__WEBPACK_IMPORTED_MODULE_10__.EmbeddedBrowser, {
       url: tile.data.url,
       style: tile.data.style
@@ -3027,7 +3055,8 @@ const ContentTiles = props => {
     }), tile.type === "pinnable_sites" && tile.data && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_PinnableSitesList__WEBPACK_IMPORTED_MODULE_14__.PinnableSitesList, {
       tile: tile,
       messageId: props.messageId,
-      handleAction: props.handleAction
+      handleAction: props.handleAction,
+      setPinnedSite: props.setPinnedSite
     }), tile.type === "content-toggle" && tile.data && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_ContentToggle__WEBPACK_IMPORTED_MODULE_15__.ContentToggle, {
       content: {
         tiles: tile
@@ -4114,8 +4143,7 @@ async function evaluateTargeting(targeting) {
 const ActionChecklistItem = ({
   item,
   index,
-  handleAction,
-  showExternalLinkIcon
+  handleAction
 }) => {
   const [actionTargeting, setActionTargeting] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(true);
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
@@ -4144,25 +4172,23 @@ const ActionChecklistItem = ({
       onClick: onButtonClick
     }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: "action-checklist-label-container"
-    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+      text: item.label
+    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", null)), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: "check-icon-container"
     }, actionTargeting ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: "check-filled"
     }) : /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-      className: "check-empty"
-    })), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
-      text: item.label
-    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", null))), !actionTargeting && showExternalLinkIcon && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-      className: "external-link-icon-container"
-    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-      className: "external-link-icon"
-    })))
+      className: "action-arrow"
+    }))))
   );
 };
 const ActionChecklistProgressBar = ({
   progress
 }) => {
   return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    className: "action-checklist-progress-bar-container"
+  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
     className: "action-checklist-progress-bar"
   }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("progress", {
     className: "sr-only",
@@ -4174,15 +4200,19 @@ const ActionChecklistProgressBar = ({
     style: {
       "--action-checklist-progress-bar-progress": `${progress || 0}%`
     }
-  }));
+  })), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", {
+    className: "action-checklist-progress-text"
+  }, Math.round(progress || 0), "%"));
 };
 const ActionChecklist = ({
   content,
-  message_id
+  message_id,
+  handleAction
 }) => {
   const tiles = content.tiles.data;
   const [progressValue, setProgressValue] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(0);
   const [numberOfCompletedActions, setNumberOfCompletedActions] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(0);
+  const allComplete = !!tiles.length && numberOfCompletedActions === tiles.length;
   function determineProgressValue() {
     let newValue = numberOfCompletedActions / tiles.length * 100;
     setProgressValue(newValue);
@@ -4208,7 +4238,7 @@ const ActionChecklist = ({
     determineProgressValue();
   }, [numberOfCompletedActions]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function handleAction(event) {
+  function handleTileClick(event) {
     let {
       action,
       source_id
@@ -4223,6 +4253,16 @@ const ActionChecklist = ({
       data
     });
     _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.sendActionTelemetry(message_id, source_id, "CLICK_BUTTON");
+  }
+  function handleRemoveChecklistClick(event) {
+    let {
+      action,
+      source_id
+    } = content[event.currentTarget.value];
+    handleAction({
+      currentTarget: event.currentTarget,
+      source: source_id
+    }, action);
   }
   return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
     className: "action-checklist"
@@ -4240,9 +4280,15 @@ const ActionChecklist = ({
     key: item.id,
     index: index,
     item: item,
-    handleAction: handleAction,
+    handleAction: handleTileClick,
     showExternalLinkIcon: item.showExternalLinkIcon
-  }))));
+  }))), allComplete && content.remove_checklist_button && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("button", {
+    className: "action-checklist-complete-button",
+    value: "remove_checklist_button",
+    onClick: handleRemoveChecklistClick
+  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+    text: content.remove_checklist_button.label
+  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", null))));
 };
 
 /***/ }),
@@ -4401,10 +4447,7 @@ const EmbeddedBackupRestore = ({
   const ref = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
     const loadRestore = async () => {
-      await window.AWFindBackupsInWellKnownLocations?.({
-        validateFile: true,
-        multipleFiles: true
-      });
+      await window.AWFindBackupsInWellKnownLocations?.();
     };
     loadRestore();
     // Clear the pref used to target the restore screen so that users will not
@@ -4481,10 +4524,12 @@ const PINNED = "pinned";
 const PinnableSitesList = ({
   tile,
   messageId,
-  handleAction
+  handleAction,
+  setPinnedSite
 }) => {
   const items = tile?.data;
   const pinButtonLabel = tile?.pinButtonLabel;
+  const alwaysShow = tile?.alwaysShowPinButton;
   const [itemStates, setItemStates] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(() => Object.fromEntries((items ?? []).map(item => [item.id, IDLE])));
   if (!items?.length) {
     return null;
@@ -4519,9 +4564,15 @@ const PinnableSitesList = ({
 
     // Re-enable the button only on explicit failure so the user can retry.
     setItemState(item.id, result === false ? IDLE : PINNED);
+
+    // Latch the screen as having at least one pinned site so a gated primary
+    // button can enable. A failure leaves the latch untouched.
+    if (result !== false) {
+      setPinnedSite?.();
+    }
   };
   return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("ul", {
-    className: "pinnable-sites-list"
+    className: `pinnable-sites-list${alwaysShow ? " always-visible" : ""}`
   }, items.map(item => {
     const nameId = `pinnable-site-name-${item.id}`;
     const state = itemStates[item.id] ?? IDLE;

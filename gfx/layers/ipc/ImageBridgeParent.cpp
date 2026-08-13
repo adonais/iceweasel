@@ -3,35 +3,37 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ImageBridgeParent.h"
-#include <stdint.h>            // for uint64_t, uint32_t
+
+#include <stdint.h>  // for uint64_t, uint32_t
+
 #include "CompositableHost.h"  // for CompositableParent, Create
 #include "base/process.h"      // for ProcessId
 #include "base/task.h"         // for CancelableTask, DeleteTask, etc
 #include "mozilla/ClearOnShutdown.h"
-#include "mozilla/gfx/Point.h"  // for IntSize
-#include "mozilla/Hal.h"        // for hal::SetCurrentThreadPriority()
-#include "mozilla/HalTypes.h"   // for hal::THREAD_PRIORITY_COMPOSITOR
-#include "mozilla/ipc/Endpoint.h"
-#include "mozilla/ipc/MessageChannel.h"  // for MessageChannel, etc
-#include "mozilla/media/MediaSystemResourceManagerParent.h"  // for MediaSystemResourceManagerParent
-#include "mozilla/layers/BufferTexture.h"
-#include "mozilla/layers/CompositableTransactionParent.h"
-#include "mozilla/layers/LayersMessages.h"  // for EditReply
-#include "mozilla/layers/PImageBridgeParent.h"
-#include "mozilla/layers/TextureHostOGL.h"  // for TextureHostOGL
-#include "mozilla/layers/Compositor.h"
-#include "mozilla/layers/RemoteTextureMap.h"
+#include "mozilla/Hal.h"       // for hal::SetCurrentThreadPriority()
+#include "mozilla/HalTypes.h"  // for hal::THREAD_PRIORITY_COMPOSITOR
 #include "mozilla/Monitor.h"
-#include "mozilla/mozalloc.h"  // for operator new, etc
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/ProfilerMarkers.h"
+#include "mozilla/gfx/Point.h"  // for IntSize
+#include "mozilla/ipc/Endpoint.h"
+#include "mozilla/ipc/MessageChannel.h"  // for MessageChannel, etc
+#include "mozilla/layers/BufferTexture.h"
+#include "mozilla/layers/CompositableTransactionParent.h"
+#include "mozilla/layers/Compositor.h"
+#include "mozilla/layers/LayersMessages.h"  // for EditReply
+#include "mozilla/layers/PImageBridgeParent.h"
+#include "mozilla/layers/RemoteTextureMap.h"
+#include "mozilla/layers/TextureHost.h"
+#include "mozilla/layers/TextureHostOGL.h"  // for TextureHostOGL
+#include "mozilla/media/MediaSystemResourceManagerParent.h"  // for MediaSystemResourceManagerParent
+#include "mozilla/mozalloc.h"        // for operator new, etc
 #include "nsDebug.h"                 // for NS_ASSERTION, etc
 #include "nsISupportsImpl.h"         // for ImageBridgeParent::Release, etc
 #include "nsTArray.h"                // for nsTArray, nsTArray_Impl
 #include "nsTArrayForwardDeclare.h"  // for nsTArray
-#include "nsXULAppAPI.h"             // for XRE_GetAsyncIOEventTarget
-#include "mozilla/layers/TextureHost.h"
 #include "nsThreadUtils.h"
+#include "nsXULAppAPI.h"  // for XRE_GetAsyncIOEventTarget
 
 #if defined(XP_WIN)
 #  include "mozilla/layers/TextureD3D11.h"

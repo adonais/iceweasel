@@ -28,6 +28,8 @@ add_task(async function test_quit_while_background_starts() {
 
   info("Waiting for extension to start up");
   let browserCount = 0;
+  // Verifies that background startup does not get stuck at
+  // https://searchfox.org/firefox-main/rev/d83a08d81de20f3b72db70f531fad19090e1db4b/toolkit/components/extensions/parent/ext-backgroundPage.js#133,135,140
   Management.once("extension-browser-inserted", (eventName, browser) => {
     ++browserCount;
     equal(
@@ -48,10 +50,23 @@ add_task(async function test_quit_while_background_starts() {
     Services.startup.enterLastWindowClosingSurvivalArea();
     Services.startup.quit(Ci.nsIAppStartup.eForceQuit);
   });
-  await extension.startup();
+  const { messages } = await promiseConsoleOutput(async () => {
+    await extension.startup();
+  });
   equal(browserCount, 1, "Seen background browser");
 
   equal(extension.extension.backgroundState, "stopped", "backgroundState");
+
+  // Verify that we check a scenario for bug 1959339, different from:
+  // test_ext_background_early_quit2.js (HiddenXULWindow first init) and
+  // test_ext_background_early_quit3.js (HiddenXULWindow second browser).
+  equal(
+    messages.filter(m =>
+      m.message.includes("Cannot create hidden browser past shutdown")
+    ).length,
+    0,
+    "No message from HiddenXULWindow when quit happens after createBrowserElement()"
+  );
 
   await extension.unload();
 });

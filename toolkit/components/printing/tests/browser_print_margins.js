@@ -283,7 +283,7 @@ add_task(async function testInvalidMarginsReset() {
 
     await changeCustomToDefault(helper);
     assertNoPendingMarginsUpdate(helper);
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => marginError.hidden,
       "Wait for margin error to be hidden"
     );
@@ -320,7 +320,7 @@ add_task(async function testInvalidMarginsReset() {
       "0.50",
       "Left margin placeholder is correct"
     );
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => marginError.hidden,
       "Wait for margin error to be hidden"
     );
@@ -736,7 +736,7 @@ add_task(async function testInvalidMarginResetAfterDestinationChange() {
     is(destinationPicker.disabled, false, "Destination picker is enabled");
 
     helper.dispatchSettingsChange({ printerName: mockPrinterName });
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => marginError.hidden,
       "Wait for margin error to be hidden"
     );

@@ -8,6 +8,7 @@ include "mozilla/dom/DocShellMessageUtils.h";
 include "mozilla/dom/IdentityCredentialSerializationHelpers.h";
 include "mozilla/dom/PermissionMessageUtils.h";
 include "mozilla/dom/SessionStoreMessageUtils.h";
+include "mozilla/dom/WindowGlobalMessageUtils.h";
 include "mozilla/ipc/URIUtils.h";
 
 include protocol PBrowser;
@@ -44,6 +45,7 @@ using mozilla::dom::CredentialMediationRequirement from "mozilla/dom/CredentialM
 using mozilla::dom::IdentityCredentialDisconnectOptions from "mozilla/dom/IdentityCredentialBinding.h";
 using mozilla::dom::IdentityCredentialRequestOptions from "mozilla/dom/IdentityCredentialBinding.h";
 using mozilla::dom::LoginStatus from "mozilla/dom/LoginStatusBinding.h";
+using mozilla::dom::DocumentLanguageMetadata from "mozilla/dom/WindowGlobalActorsBinding.h";
 using mozilla::CopyableErrorResult from "mozilla/ErrorResult.h";
 [RefCounted] using mozilla::dom::ParentProcessChannelHandle from "mozilla/dom/ParentProcessChannelHandle.h";
 
@@ -90,6 +92,10 @@ child:
   async DrawSnapshot(IntRect? aRect, float aScale, nscolor aBackgroundColor,
                      CrossProcessPaintFlags aFlags) returns (PaintFragment retval);
 
+  async RequestDocumentLanguageMetadata(uint32_t aTextSampleMinCodeUnits,
+                                        uint32_t aTextSampleTargetCodeUnits)
+    returns (DocumentLanguageMetadata? metadata);
+
   async DispatchSecurityPolicyViolation(nsString aViolationEventJSON,
                                         nsString aReportGroupName);
 
@@ -127,8 +133,11 @@ parent:
   // principals collected. In order to be compatible with that API, we need to
   // update the document's principal. This is only allowed if the principals are
   // `equals` to each other.
-  [LazySend] async UpdateDocumentPrincipal(nullable nsIPrincipal aPrincipal,
-                                           nullable nsIPrincipal aStoragePrincipal);
+  [LazySend] async UpdateDocumentPrincipal(nsIPrincipal aPrincipal,
+                                           nsIPrincipal aPartitionedPrincipal);
+
+  // Update partitioning of the storage principal in this WindowGlobal.
+  [LazySend] async UpdatePrincipalPartitioning(bool aPartitionStoragePrincipal);
 
   // Update document's `documentHasLoaded` bit in this WindowGlobal.
   [LazySend] async UpdateDocumentHasLoaded(bool aDocumentHasLoaded);

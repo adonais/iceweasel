@@ -1,0 +1,18 @@
+{
+  "label": "tiktok.com",
+  "bugs": {
+    "2015406": {
+      "issue": "broken-comments",
+      "matches": ["https://www.tiktok.com/*"]
+    }
+  },
+  "css": {
+    "fix_reply_button": "[contenteditable='plaintext-only'] { white-space-collapse: preserve; }"
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "css": ["fix_reply_button"]
+    }
+  ]
+}

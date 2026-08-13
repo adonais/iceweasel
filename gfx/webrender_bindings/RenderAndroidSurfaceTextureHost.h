@@ -5,9 +5,9 @@
 #ifndef MOZILLA_GFX_RENDERANDROIDSURFACETEXTUREHOST_H
 #define MOZILLA_GFX_RENDERANDROIDSURFACETEXTUREHOST_H
 
+#include "RenderTextureHostSWGL.h"
 #include "mozilla/java/GeckoSurfaceTextureWrappers.h"
 #include "mozilla/layers/TextureHostOGL.h"
-#include "RenderTextureHostSWGL.h"
 
 namespace mozilla {
 

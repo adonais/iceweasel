@@ -272,10 +272,10 @@ export class ReportBrokenSiteChild extends JSWindowActorChild {
       // Copy the full report data into additionalData, reformatting it nicely.
       const additionalData = {};
       for (const category of Object.values(webcompatInfo)) {
-        for (const [name, { do_not_preview, glean, value }] of Object.entries(
+        for (const [name, { doNotPreview, glean, value }] of Object.entries(
           category
         )) {
-          if (do_not_preview) {
+          if (doNotPreview) {
             continue;
           }
           let target = additionalData;

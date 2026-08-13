@@ -6,13 +6,13 @@
 #include "mozilla/PoisonIOInterposer.h"
 #include "mozilla/ProcessedStack.h"
 #include "mozilla/SHA1.h"
+#include "mozilla/StackWalk.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/Telemetry.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
 #include "nsLocalFile.h"
 #include "nsPrintfCString.h"
-#include "mozilla/StackWalk.h"
 #include "prio.h"
 
 #ifdef XP_WIN

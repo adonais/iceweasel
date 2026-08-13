@@ -17,9 +17,15 @@
 #include "PlatformDecoderModule.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/PMFMediaEngineParent.h"
+#include "mozilla/TimeStamp.h"
+
+#ifdef MOZ_WMF_CDM
+#  include "MFProtectedPathReadinessMonitor.h"
+#endif
 
 namespace mozilla {
 
+class MFCDMParent;
 class MFCDMProxy;
 class MFContentProtectionManager;
 class MFMediaEngineExtension;
@@ -94,6 +100,26 @@ class MFMediaEngineParent final : public PMFMediaEngineParent {
 #ifdef MOZ_WMF_CDM
   // We will disable HWDRM when receiving error MSPR_E_NO_DECRYPTOR_AVAILABLE.
   void NotifyDisableHWDRM();
+
+  // Resets the CDM and recreates the engine through the hardware-context-reset
+  // recovery path, forwarding aResult as the platform error. Used both for
+  // genuine hardware-context resets and for the bounded last-resort retry of
+  // protected activation errors.
+  void RecoverProtectedPlayback(HRESULT aResult);
+
+  // The point at which a protected_readiness Glean probe is recorded: GateHeld
+  // (the gate is holding activation until readiness settles), Succeeded (a
+  // protected frame was produced), or Failed (a protected-activation error).
+  MOZ_DEFINE_ENUM_CLASS_WITH_BASE_AND_TOSTRING_AT_CLASS_SCOPE(
+      ProtectedActivationPhase, uint8_t, (GateHeld, Succeeded, Failed));
+
+  // Records the mfcdm.protected_readiness Glean probe for a hardware-DRM
+  // session. aReaction is the bounded-recovery decision on a failed phase, and
+  // Nothing on the other phases (and when the gate is disabled).
+  void RecordProtectedReadiness(
+      MFCDMParent* aCdmParent, ProtectedActivationPhase aPhase,
+      HRESULT aPlatformError,
+      const Maybe<MFProtectedPathReadinessMonitor::Reaction>& aReaction);
 #endif
 
   // This generates unique id for each MFMediaEngineParent instance, and it
@@ -118,6 +144,8 @@ class MFMediaEngineParent final : public PMFMediaEngineParent {
   MediaEventListener mMediaEngineEventListener;
   MediaEventListener mRequestSampleListener;
   bool mIsCreatedMediaEngine = false;
+  // True once InitMediaEngine has run; initialization happens once per actor.
+  bool mIsMediaEngineInitialized = false;
   // Set to true when EnableWindowlessSwapchainMode succeeds during media source
   // setup. Guards DComp surface handle creation in EnsureDcompSurfaceHandle:
   // if false (e.g. when a CDM incompatible with windowless swap chain is
@@ -134,17 +162,18 @@ class MFMediaEngineParent final : public PMFMediaEngineParent {
   float mPlaybackRate = 1.0;
 
 #ifdef MOZ_WMF_CDM
-  // Set while recovering from a GPU/DRM hardware context reset. During
-  // recovery the whole MFMediaEngineParent actor is torn down and a new one
-  // is created; this flag suppresses spurious errors that arrive in the
-  // interim and would otherwise interrupt the reinit sequence. Only
-  // access/modify on the manager thread.
-  bool mHardwareResetInProgress = false;
   // Pending HDCP readiness check started at hardware reset time. Shared
   // across engine instances so the new engine created after recovery can
   // chain SetMediaSourceOnEngine() on the already-running check.
   static inline RefPtr<GenericPromise> sPendingHDCPCheck;
   MozPromiseRequestHolder<GenericPromise> mHDCPRequestHolder;
+
+  // When the protected activation gate holds the topology build,
+  // mProtectedGateHoldStart marks when the hold started; mProtectedGateWait is
+  // the elapsed time once the gate releases (zero if it was never held).
+  // Recorded as gate_wait_ms on the protected_readiness event.
+  TimeStamp mProtectedGateHoldStart;
+  TimeDuration mProtectedGateWait;
 #endif
 
   // When flush happens inside the media engine, it will reset the statistic

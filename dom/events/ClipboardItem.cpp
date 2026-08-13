@@ -4,7 +4,9 @@
 
 #include "mozilla/dom/ClipboardItem.h"
 
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/Clipboard.h"
+#include "mozilla/dom/MimeType.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/Record.h"
 #include "nsComponentManagerUtils.h"
@@ -12,6 +14,7 @@
 #include "nsIInputStream.h"
 #include "nsISupportsPrimitives.h"
 #include "nsNetUtil.h"
+#include "nsReadableUtils.h"
 #include "nsServiceManagerUtils.h"
 
 namespace mozilla::dom {
@@ -259,10 +262,12 @@ NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(ClipboardItem, mOwner, mItems)
 
 ClipboardItem::ClipboardItem(nsISupports* aOwner,
                              const dom::PresentationStyle aPresentationStyle,
-                             nsTArray<RefPtr<ItemEntry>>&& aItems)
+                             nsTArray<RefPtr<ItemEntry>>&& aItems,
+                             const uint32_t& aCustomFormatCount)
     : mOwner(aOwner),
       mPresentationStyle(aPresentationStyle),
-      mItems(std::move(aItems)) {}
+      mItems(std::move(aItems)),
+      mCustomFormatCount(aCustomFormatCount) {}
 
 // static
 already_AddRefed<ClipboardItem> ClipboardItem::Constructor(
@@ -278,26 +283,104 @@ already_AddRefed<ClipboardItem> ClipboardItem::Constructor(
   MOZ_ASSERT(global);
 
   nsTArray<RefPtr<ItemEntry>> items;
+  uint32_t customFormatCount = 0;
   for (const auto& entry : aItems.Entries()) {
-    RefPtr<ItemEntry> item = MakeRefPtr<ItemEntry>(global, entry.mKey);
+    nsAutoString type;
+    bool isCustom = false;
+    bool isUnsupported = false;
+    // step 6.6
+    if (!ParseMimeType(entry.mKey, type, &isCustom, &isUnsupported)) {
+      aRv.ThrowTypeError("Type '"_ns + NS_ConvertUTF16toUTF8(entry.mKey) +
+                         "' is not a valid type"_ns);
+      return nullptr;
+    }
+
+    // Creating ClipboardItem with an unsupported but valid mime type.
+    // Spec https://www.w3.org/TR/clipboard-apis/#clipboard-item-interface does
+    // not mention the creation should throw, but clipboard.write() with this
+    // kind of ClipboardItem should fail with NotAllowedError.
+    (void)NS_WARN_IF(isUnsupported);
+
+    // step 6.7
+    for (const auto& item : items) {
+      if (item->Type() == type) {
+        aRv.ThrowTypeError("Re-define the item of the type '"_ns +
+                           NS_ConvertUTF16toUTF8(entry.mKey) + "'"_ns);
+        return nullptr;
+      }
+    }
+
+    RefPtr<ItemEntry> item = MakeRefPtr<ItemEntry>(global, type, isUnsupported);
     item->LoadDataFromDataPromise(*entry.mValue);
     items.AppendElement(std::move(item));
+
+    if (isCustom) {
+      customFormatCount++;
+    }
   }
 
   RefPtr<ClipboardItem> item = MakeRefPtr<ClipboardItem>(
-      global, aOptions.mPresentationStyle, std::move(items));
+      global, aOptions.mPresentationStyle, std::move(items), customFormatCount);
   return item.forget();
 }
 
 // static
 bool ClipboardItem::Supports(const GlobalObject& aGlobal,
                              const nsAString& aType) {
+  // https://www.w3.org/TR/clipboard-apis/#dom-clipboarditem-supports
+  // return ture for
+  // 1. mandatory data types
+  // 2. optional data types
+  //    https://www.w3.org/TR/clipboard-apis/#optional-data-types
+  //    text/uri-list
+  //    image/svg+xml
+  //    Custom format
+  // for optional data types, we currently support custom format only.
+  nsAutoString type;
+  bool isCustom = false;
+  bool isUnsupported = false;
+  bool result = ParseMimeType(aType, type, &isCustom, &isUnsupported);
+
+  return !isUnsupported && result;
+}
+
+// static
+bool ClipboardItem::ParseMimeType(const nsAString& aInput, nsString& aMimeType,
+                                  bool* aIsCustom, bool* aIsUnsupported) {
+  *aIsCustom = false;
+  *aIsUnsupported = false;
   for (const auto& mandatoryType : Clipboard::MandatoryDataTypes()) {
-    if (CompareUTF8toUTF16(mandatoryType, aType) == 0) {
+    if (CompareUTF8toUTF16(mandatoryType, aInput) == 0) {
+      aMimeType = aInput;
       return true;
     }
   }
-  return false;
+
+  nsString customPrefix(NS_LITERAL_STRING_FROM_CSTRING(kWebCustomFormatPrefix));
+  nsString mimeType;
+  bool maybeCustom = false;
+  if (StringBeginsWith(aInput, customPrefix)) {
+    if (!StaticPrefs::dom_clipboard_customFormatSupport_enabled()) {
+      return false;
+    }
+    mimeType = Substring(aInput, customPrefix.Length());
+    maybeCustom = true;
+  } else {
+    mimeType = aInput;
+  }
+
+  RefPtr<MimeType> parsedType = MimeType::Parse(mimeType);
+  if (!parsedType) {
+    return false;
+  }
+
+  *aIsCustom = maybeCustom;
+  *aIsUnsupported = !maybeCustom || parsedType->GetParameterCount();
+  parsedType->Serialize(aMimeType);
+  if (maybeCustom) {
+    aMimeType = customPrefix + aMimeType;
+  }
+  return true;
 }
 
 void ClipboardItem::GetTypes(nsTArray<nsString>& aTypes) const {
@@ -308,6 +391,17 @@ void ClipboardItem::GetTypes(nsTArray<nsString>& aTypes) const {
 
 already_AddRefed<Promise> ClipboardItem::GetType(const nsAString& aType,
                                                  ErrorResult& aRv) {
+  nsAutoString type;
+  bool isCustom;
+  bool isUnsupported;
+  // step 3 - 5.
+  if (!ParseMimeType(aType, type, &isCustom, &isUnsupported)) {
+    aRv.ThrowTypeError("Type '"_ns + NS_ConvertUTF16toUTF8(aType) +
+                       "' is not a valid type"_ns);
+    return nullptr;
+  }
+
+  // step 7.
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(GetParentObject());
   RefPtr<Promise> p = Promise::Create(global, aRv);
   if (aRv.Failed()) {
@@ -317,8 +411,8 @@ already_AddRefed<Promise> ClipboardItem::GetType(const nsAString& aType,
   for (auto& item : mItems) {
     MOZ_ASSERT(item);
 
-    const nsAString& type = item->Type();
-    if (type == aType) {
+    // step 8.1
+    if (item->Type() == type) {
       nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(GetParentObject());
       if (NS_WARN_IF(!global)) {
         p->MaybeReject(NS_ERROR_UNEXPECTED);

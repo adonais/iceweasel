@@ -2,12 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <windows.h>
 #include <unknwn.h>
-#include "nsISupports.h"
-#include "nsCOMPtr.h"
-#include "mozilla/gtest/MozAssertions.h"
+#include <windows.h>
+
 #include "mozilla/RefPtr.h"
+#include "mozilla/gtest/MozAssertions.h"
+#include "nsCOMPtr.h"
+#include "nsISupports.h"
 
 // unknwn.h is needed to build with WIN32_LEAN_AND_MEAN
 #include <unknwn.h>

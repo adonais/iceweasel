@@ -193,53 +193,51 @@ class MOZ_RAII AutoProfilerStats {
   MACRO(13, "audiocallbacktracing", AudioCallbackTracing,                  \
         "Audio callback tracing")                                          \
                                                                            \
-  MACRO(14, "cpu", CPUUtilization, "CPU utilization")                      \
-                                                                           \
-  MACRO(15, "notimerresolutionchange", NoTimerResolutionChange,            \
+  MACRO(14, "notimerresolutionchange", NoTimerResolutionChange,            \
         "Do not adjust the timer resolution for fast sampling, so that "   \
         "other Firefox timers do not get affected")                        \
                                                                            \
-  MACRO(16, "cpuallthreads", CPUAllThreads,                                \
+  MACRO(15, "cpuallthreads", CPUAllThreads,                                \
         "Sample the CPU utilization of all registered threads")            \
                                                                            \
-  MACRO(17, "samplingallthreads", SamplingAllThreads,                      \
+  MACRO(16, "samplingallthreads", SamplingAllThreads,                      \
         "Sample the stacks of all registered threads")                     \
                                                                            \
-  MACRO(18, "markersallthreads", MarkersAllThreads,                        \
+  MACRO(17, "markersallthreads", MarkersAllThreads,                        \
         "Record markers from all registered threads")                      \
                                                                            \
-  MACRO(19, "unregisteredthreads", UnregisteredThreads,                    \
+  MACRO(18, "unregisteredthreads", UnregisteredThreads,                    \
         "Discover and profile unregistered threads -- beware: expensive!") \
                                                                            \
-  MACRO(20, "processcpu", ProcessCPU,                                      \
+  MACRO(19, "processcpu", ProcessCPU,                                      \
         "Sample the CPU utilization of each process")                      \
                                                                            \
-  MACRO(21, "power", Power, POWER_HELP)                                    \
+  MACRO(20, "power", Power, POWER_HELP)                                    \
                                                                            \
-  MACRO(22, "cpufreq", CPUFrequency,                                       \
+  MACRO(21, "cpufreq", CPUFrequency,                                       \
         "Record the clock frequency of "                                   \
         "every CPU core for every profiler sample.")                       \
                                                                            \
-  MACRO(23, "bandwidth", Bandwidth,                                        \
+  MACRO(22, "bandwidth", Bandwidth,                                        \
         "Record the network bandwidth used for every profiler sample.")    \
                                                                            \
-  MACRO(24, "memory", Memory,                                              \
+  MACRO(23, "memory", Memory,                                              \
         "Track the memory allocations and deallocations per process over " \
         "time.")                                                           \
                                                                            \
-  MACRO(25, "tracing", Tracing,                                            \
+  MACRO(24, "tracing", Tracing,                                            \
         "Instead of sampling periodically, captures information about "    \
         "every function executed for the duration (JS only)")              \
                                                                            \
-  MACRO(26, "sandbox", Sandbox,                                            \
+  MACRO(25, "sandbox", Sandbox,                                            \
         "Report sandbox syscalls and logs in the "                         \
         "profiler.")                                                       \
                                                                            \
-  MACRO(27, "flows", Flows,                                                \
+  MACRO(26, "flows", Flows,                                                \
         "Include all flow-related markers. These markers show the program" \
         "better but can cause more overhead in some places than normal.")  \
                                                                            \
-  MACRO(28, "jssources", JSSources,                                        \
+  MACRO(27, "jssources", JSSources,                                        \
         "Collect JavaScript source code information for profiled scripts.")
 
 // *** Synchronize with lists in ProfilerState.h and geckoProfiler.json ***

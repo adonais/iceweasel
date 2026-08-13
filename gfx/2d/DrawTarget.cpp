@@ -4,19 +4,17 @@
 
 #include "2D.h"
 #include "Blur.h"
+#include "BufferEdgePad.h"
+#include "BufferUnrotate.h"
+#include "FilterSupport.h"
 #include "Logging.h"
 #include "PathHelpers.h"
 #include "SourceSurfaceRawData.h"
 #include "Tools.h"
 
-#include "BufferEdgePad.h"
-#include "BufferUnrotate.h"
-
-#include "FilterSupport.h"
-
 #ifdef USE_NEON
-#  include "mozilla/arm.h"
 #  include "LuminanceNEON.h"
+#  include "mozilla/arm.h"
 #endif
 
 namespace mozilla {

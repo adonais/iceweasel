@@ -4,6 +4,7 @@
 
 #include "CanonicalQuotaObject.h"
 
+#include "DirtyTrackingAutoLock.h"
 #include "GroupInfo.h"
 #include "GroupInfoPair.h"
 #include "OriginInfo.h"
@@ -67,7 +68,7 @@ NS_IMETHODIMP_(MozExternalRefCountType) CanonicalQuotaObject::Release() {
       return mRefCnt;
     }
 
-    if (RefPtr<OriginInfo> originInfo = RefPtr<OriginInfo>(mOriginInfo)) {
+    if (auto originInfo = RefPtr<OriginInfo>{mOriginInfo}) {
       originInfo->mCanonicalQuotaObjects.Remove(mPath);
     }
   }
@@ -80,9 +81,14 @@ bool CanonicalQuotaObject::MaybeUpdateSize(int64_t aSize, bool aTruncate) {
   QuotaManager* quotaManager = QuotaManager::Get();
   MOZ_ASSERT(quotaManager);
 
-  MutexAutoLock lock(quotaManager->mQuotaMutex);
+  auto originInfo = RefPtr<OriginInfo>{mOriginInfo};
 
-  return LockedMaybeUpdateSize(aSize, aTruncate);
+  DirtyTrackingAutoLock lock(quotaManager->mQuotaMutex, std::move(originInfo));
+  if (!lock.IsValid()) {
+    return false;
+  }
+
+  return LockedMaybeUpdateSize(aSize, aTruncate, lock);
 }
 
 bool CanonicalQuotaObject::IncreaseSize(int64_t aDelta) {
@@ -91,12 +97,17 @@ bool CanonicalQuotaObject::IncreaseSize(int64_t aDelta) {
   QuotaManager* quotaManager = QuotaManager::Get();
   MOZ_ASSERT(quotaManager);
 
-  MutexAutoLock lock(quotaManager->mQuotaMutex);
+  auto originInfo = RefPtr<OriginInfo>{mOriginInfo};
+
+  DirtyTrackingAutoLock lock(quotaManager->mQuotaMutex, std::move(originInfo));
+  if (!lock.IsValid()) {
+    return false;
+  }
 
   AssertNoOverflow(mSize, aDelta);
   int64_t size = mSize + aDelta;
 
-  return LockedMaybeUpdateSize(size, /* aTruncate */ false);
+  return LockedMaybeUpdateSize(size, /* aTruncate */ false, lock);
 }
 
 void CanonicalQuotaObject::DisableQuotaCheck() {
@@ -117,14 +128,14 @@ void CanonicalQuotaObject::EnableQuotaCheck() {
   mQuotaCheckDisabled = false;
 }
 
-bool CanonicalQuotaObject::LockedMaybeUpdateSize(int64_t aSize, bool aTruncate)
-    MOZ_NO_THREAD_SAFETY_ANALYSIS {
+bool CanonicalQuotaObject::LockedMaybeUpdateSize(
+    int64_t aSize, bool aTruncate, DirtyTrackingAutoLock& aProofOfLock) {
   QuotaManager* quotaManager = QuotaManager::Get();
   MOZ_ASSERT(quotaManager);
 
   quotaManager->mQuotaMutex.AssertCurrentThreadOwns();
 
-  RefPtr<OriginInfo> originInfo = RefPtr<OriginInfo>(mOriginInfo);
+  auto originInfo = RefPtr<OriginInfo>{mOriginInfo};
 
   if (mWritingDone == false && originInfo) {
     mWritingDone = true;
@@ -150,7 +161,7 @@ bool CanonicalQuotaObject::LockedMaybeUpdateSize(int64_t aSize, bool aTruncate)
   if (mSize > aSize) {
     if (aTruncate) {
       const int64_t delta = mSize - aSize;
-      originInfo->LockedTruncateUsages(mClientType, delta);
+      originInfo->LockedTruncateUsages(mClientType, delta, aProofOfLock);
       mSize = aSize;
     }
     return true;
@@ -164,7 +175,7 @@ bool CanonicalQuotaObject::LockedMaybeUpdateSize(int64_t aSize, bool aTruncate)
   // global limit though).
 
   if (const auto& maybeReturnValue =
-          originInfo->LockedUpdateUsages(mClientType, delta)) {
+          originInfo->LockedUpdateUsages(mClientType, delta, aProofOfLock)) {
     if (maybeReturnValue.value()) {
       mSize = aSize;  // No limit was breached and we are done.
     }
@@ -178,7 +189,7 @@ bool CanonicalQuotaObject::LockedMaybeUpdateSize(int64_t aSize, bool aTruncate)
   uint64_t sizeToBeFreed;
 
   if (::mozilla::ipc::IsOnBackgroundThread()) {
-    MutexAutoUnlock autoUnlock(quotaManager->mQuotaMutex);
+    DirtyTrackingAutoLock::PauseLock pauseLock(aProofOfLock);
 
     sizeToBeFreed = quotaManager->CollectOriginsForEviction(delta, locks);
   } else {
@@ -188,7 +199,7 @@ bool CanonicalQuotaObject::LockedMaybeUpdateSize(int64_t aSize, bool aTruncate)
   if (!sizeToBeFreed) {
     uint64_t usage = quotaManager->mTemporaryStorageUsage;
 
-    MutexAutoUnlock autoUnlock(quotaManager->mQuotaMutex);
+    DirtyTrackingAutoLock::PauseLock pauseLock(aProofOfLock);
 
     NotifyStoragePressure(*quotaManager, usage);
 
@@ -198,7 +209,7 @@ bool CanonicalQuotaObject::LockedMaybeUpdateSize(int64_t aSize, bool aTruncate)
   NS_ASSERTION(sizeToBeFreed >= delta, "Huh?");
 
   {
-    MutexAutoUnlock autoUnlock(quotaManager->mQuotaMutex);
+    DirtyTrackingAutoLock::PauseLock pauseLock(aProofOfLock);
 
     for (const auto& lock : locks) {
       quotaManager->DeleteOriginDirectory(lock->OriginMetadata());
@@ -218,15 +229,16 @@ bool CanonicalQuotaObject::LockedMaybeUpdateSize(int64_t aSize, bool aTruncate)
   // We unlocked and relocked several times so we need to recompute all the
   // essential variables and recheck the group limit.
 
-  AssertNoUnderflow(aSize, mSize);
+  QM_ASSERT_NO_UNDERFLOW(aSize, mSize);
   const uint64_t increase = aSize - mSize;
 
-  if (!originInfo->LockedUpdateUsagesForEviction(mClientType, increase)) {
+  if (!originInfo->LockedUpdateUsagesForEviction(mClientType, increase,
+                                                 aProofOfLock)) {
     // Unfortunately some other thread increased the group usage in the
     // meantime and we are not below the group limit anymore.
 
     // However, the origin eviction must be finalized in this case too.
-    MutexAutoUnlock autoUnlock(quotaManager->mQuotaMutex);
+    DirtyTrackingAutoLock::PauseLock pauseLock(aProofOfLock);
 
     quotaManager->FinalizeOriginEviction(std::move(locks));
     return false;
@@ -239,7 +251,7 @@ bool CanonicalQuotaObject::LockedMaybeUpdateSize(int64_t aSize, bool aTruncate)
 
   // Finally, release IO thread only objects and allow next synchronized
   // ops for the evicted origins.
-  MutexAutoUnlock autoUnlock(quotaManager->mQuotaMutex);
+  DirtyTrackingAutoLock::PauseLock pauseLock(aProofOfLock);
 
   quotaManager->FinalizeOriginEviction(std::move(locks));
 

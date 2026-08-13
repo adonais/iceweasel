@@ -7,34 +7,34 @@
 // -
 
 #include <d3d11.h>
-#include <dcomp.h>
 #include <d3d11_1.h>
 #include <d3d11_4.h>
-#include <dxgi1_2.h>
 #include <d3dcompiler.h>
+#include <dcomp.h>
+#include <dxgi1_2.h>
 
 // -
 
-#include "gfxWindowsPlatform.h"
 #include "GLContext.h"
 #include "GLContextEGL.h"
-#include "mozilla/gfx/DeviceManagerDx.h"
-#include "mozilla/gfx/Logging.h"
-#include "mozilla/gfx/gfxVars.h"
-#include "mozilla/gfx/GPUParent.h"
-#include "mozilla/gfx/Matrix.h"
-#include "mozilla/gfx/StackArray.h"
-#include "mozilla/layers/CompositeProcessD3D11FencesHolderMap.h"
+#include "WinUtils.h"
+#include "gfxWindowsPlatform.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/WindowsVersion.h"
+#include "mozilla/gfx/DeviceManagerDx.h"
+#include "mozilla/gfx/GPUParent.h"
+#include "mozilla/gfx/Logging.h"
+#include "mozilla/gfx/Matrix.h"
+#include "mozilla/gfx/StackArray.h"
+#include "mozilla/gfx/gfxVars.h"
+#include "mozilla/glean/GfxMetrics.h"
+#include "mozilla/layers/CompositeProcessD3D11FencesHolderMap.h"
 #include "mozilla/webrender/RenderD3D11TextureHost.h"
 #include "mozilla/webrender/RenderDcompSurfaceTextureHost.h"
 #include "mozilla/webrender/RenderTextureHost.h"
 #include "mozilla/webrender/RenderThread.h"
-#include "mozilla/WindowsVersion.h"
-#include "mozilla/glean/GfxMetrics.h"
 #include "nsPrintfCString.h"
-#include "WinUtils.h"
 
 // -
 

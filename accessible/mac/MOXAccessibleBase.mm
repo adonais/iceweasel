@@ -395,6 +395,10 @@ mozilla::LogModule* GetMacAccessibilityLog() {
 
 - (id)accessibilityCustomActions {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
+  if ([self isExpired]) {
+    return nil;
+  }
+
   return [self moxCustomActions];
   NS_OBJC_END_TRY_BLOCK_RETURN(nil);
 }
@@ -513,6 +517,12 @@ mozilla::LogModule* GetMacAccessibilityLog() {
   }
 
   return unignoredChildren;
+}
+
+- (NSArray*)moxChildrenInNavigationOrder {
+  // Match WebKit's behaviour and expose this attribute
+  // on every acc as a mirror of AXChildren
+  return [self moxUnignoredChildren];
 }
 
 - (id<mozAccessible>)moxParent {

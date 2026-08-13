@@ -13,6 +13,51 @@
 
 export const ContentAnalysisUtils = {
   /**
+   * Builds an nsIContentAnalysisRequest from the given parameters.
+   *
+   * @param {object} data The core properties of the request.
+   * @param {nsIContentAnalysisRequest.AnalysisType} data.analysisType The type of analysis being requested.
+   * @param {nsIContentAnalysisRequest.OperationType} data.operationTypeForDisplay The operation to display to the user.
+   * @param {nsIContentAnalysisRequest.Reason} data.reason The reason the request was created.
+   * @param {nsIURI} data.url An nsIURI that indicates where the content would be sent to.
+   * @param {WindowGlobalParent} data.windowGlobalParent The WindowGlobalParent associated with the request.
+   * @param {object} [extraProps] Additional properties to set on the returned request.
+   * @returns {nsIContentAnalysisRequest}
+   */
+  createContentAnalysisRequest(
+    { analysisType, operationTypeForDisplay, reason, url, windowGlobalParent },
+    extraProps
+  ) {
+    return /** @type {nsIContentAnalysisRequest} */ ({
+      QueryInterface: ChromeUtils.generateQI(["nsIContentAnalysisRequest"]),
+      analysisType,
+      dataTransfer: undefined,
+      email: undefined,
+      fileNameForDisplay: undefined,
+      filePath: undefined,
+      operationTypeForDisplay,
+      printerName: undefined,
+      reason,
+      requestToken: undefined,
+      sha256Digest: undefined,
+      sourceWindowGlobal: undefined,
+      testOnlyIgnoreCanceledAndAlwaysSubmitToAgent: false,
+      textContent: undefined,
+      timeoutMultiplier: 1,
+      transferable: undefined,
+      url,
+      userActionId: "",
+      userActionRequestsCount: 0,
+      windowGlobalParent,
+      getPrintData: () => {
+        return [];
+      },
+      resources: [],
+      ...extraProps,
+    });
+  },
+
+  /**
    * Sets up Content Analysis to monitor clipboard pastes and drag-and-drop
    * and send the text on to Content Analysis for approval. This method
    * will check if Content Analysis is active and if not it will return early.
@@ -55,26 +100,24 @@ export const ContentAnalysisUtils = {
       try {
         const response = await contentAnalysis.analyzeContentRequests(
           [
-            // Specify an explicit type here to suppress type errors about the missing
-            // properties, because there are a ton of them that make this hard to read.
-            /** @type {nsIContentAnalysisRequest} */
-            ({
-              analysisType: Ci.nsIContentAnalysisRequest.eBulkDataEntry,
-              reason: isPaste
-                ? Ci.nsIContentAnalysisRequest.eClipboardPaste
-                : Ci.nsIContentAnalysisRequest.eDragAndDrop,
-              resources: [],
-              operationTypeForDisplay: isPaste
-                ? Ci.nsIContentAnalysisRequest.eClipboard
-                : Ci.nsIContentAnalysisRequest.eDroppedText,
-              url:
-                url ??
-                contentAnalysis.getURIForBrowsingContext(browsingContext),
-              textContent: data,
-              /* browsingContext can sometimes be undefined in tests where content
-                 is being pasted into chrome (specifically the GenAI custom chat shortcut) */
-              windowGlobalParent: browsingContext?.currentWindowContext,
-            }),
+            this.createContentAnalysisRequest(
+              {
+                analysisType: Ci.nsIContentAnalysisRequest.eBulkDataEntry,
+                operationTypeForDisplay: isPaste
+                  ? Ci.nsIContentAnalysisRequest.eClipboard
+                  : Ci.nsIContentAnalysisRequest.eDroppedText,
+                reason: isPaste
+                  ? Ci.nsIContentAnalysisRequest.eClipboardPaste
+                  : Ci.nsIContentAnalysisRequest.eDragAndDrop,
+                url:
+                  url ??
+                  contentAnalysis.getURIForBrowsingContext(browsingContext),
+                /* browsingContext can sometimes be undefined in tests where content
+                   is being pasted into chrome (specifically the GenAI custom chat shortcut) */
+                windowGlobalParent: browsingContext?.currentWindowContext,
+              },
+              { textContent: data }
+            ),
           ],
           true
         );

@@ -261,7 +261,7 @@ jobs:
       run-on-projects:
           - mozilla-central
           - mozilla-beta
-          - mozilla-esr140
+          - mozilla-esr153
       when:
           - {weekday: 'Friday', hour: 17, minute: 0}
 
@@ -274,7 +274,7 @@ jobs:
           - mozilla-central
           - mozilla-beta
           - mozilla-release
-          - mozilla-esr140
+          - mozilla-esr153
       when:
           by-project:
               mozilla-central:
@@ -287,7 +287,7 @@ jobs:
                   - {weekday: 'Thursday', hour: 20, minute: 0}
               mozilla-release:
                   - {weekday: 'Monday', hour: 5, minute: 0}
-              mozilla-esr140:
+              mozilla-esr153:
                   - {weekday: 'Monday', hour: 5, minute: 0}
 
     - name: daily-beta-perf

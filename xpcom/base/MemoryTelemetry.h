@@ -5,13 +5,13 @@
 #ifndef mozilla_MemoryTelemetry_h
 #define mozilla_MemoryTelemetry_h
 
-#include "mozilla/TimeStamp.h"
+#include <functional>
+
 #include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
+#include "mozilla/TimeStamp.h"
 #include "nsITimer.h"
 #include "nsTArray.h"
-
-#include <functional>
 
 class nsIEventTarget;
 

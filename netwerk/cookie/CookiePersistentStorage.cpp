@@ -2,25 +2,26 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "CookiePersistentStorage.h"
+
 #include "Cookie.h"
 #include "CookieCommons.h"
 #include "CookieLogging.h"
-#include "CookiePersistentStorage.h"
 #include "CookieService.h"
 #include "CookieValidation.h"
-
-#include "mozilla/Components.h"
-#include "mozilla/ErrorNames.h"
-#include "mozilla/FileUtils.h"
-#include "mozilla/ProfilerMarkers.h"
-#include "mozilla/StaticPrefs_network.h"
-#include "mozilla/glean/NetwerkMetrics.h"
-#include "mozilla/ScopeExit.h"
 #include "mozIStorageAsyncStatement.h"
 #include "mozIStorageError.h"
 #include "mozIStorageFunction.h"
 #include "mozIStorageService.h"
 #include "mozStorageHelper.h"
+#include "mozilla/AppShutdown.h"
+#include "mozilla/Components.h"
+#include "mozilla/ErrorNames.h"
+#include "mozilla/FileUtils.h"
+#include "mozilla/ProfilerMarkers.h"
+#include "mozilla/ScopeExit.h"
+#include "mozilla/StaticPrefs_network.h"
+#include "mozilla/glean/NetwerkMetrics.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsICookieNotification.h"
 #include "nsIEffectiveTLDService.h"
@@ -2499,7 +2500,7 @@ void CookiePersistentStorage::RecordValidationTelemetry() {
   MOZ_ASSERT(NS_IsMainThread());
 
   RefPtr<CookieService> cs = CookieService::GetSingleton();
-  if (!cs) {
+  if (!cs || AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
     // We are shutting down, or something bad is happening.
     return;
   }

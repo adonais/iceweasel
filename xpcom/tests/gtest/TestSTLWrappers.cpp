@@ -24,7 +24,6 @@
 #endif
 
 #include "gtest/gtest.h"
-
 #include "mozilla/gtest/MozHelpers.h"
 
 // Just to check that <algorithm> symbol are indeed included.

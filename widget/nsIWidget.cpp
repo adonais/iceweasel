@@ -39,11 +39,10 @@
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/APZCCallbackHelper.h"
-#include "mozilla/layers/AsyncDragMetrics.h"
-#include "mozilla/layers/TouchActionHelper.h"
 #include "mozilla/layers/APZEventState.h"
 #include "mozilla/layers/APZInputBridge.h"
 #include "mozilla/layers/APZThreadUtils.h"
+#include "mozilla/layers/AsyncDragMetrics.h"
 #include "mozilla/layers/ChromeProcessController.h"
 #include "mozilla/layers/Compositor.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
@@ -52,6 +51,7 @@
 #include "mozilla/layers/IAPZCTreeManager.h"
 #include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/InputAPZContext.h"
+#include "mozilla/layers/TouchActionHelper.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/webrender/WebRenderTypes.h"
 #include "mozilla/widget/ScreenManager.h"
@@ -78,11 +78,10 @@
 #ifdef ACCESSIBILITY
 #  include "nsAccessibilityService.h"
 #endif
+#include "VRManagerChild.h"
 #include "gfxConfig.h"
 #include "gfxUtils.h"  // for ToDeviceColor
 #include "mozilla/layers/CompositorSession.h"
-#include "VRManagerChild.h"
-#include "gfxConfig.h"
 
 static mozilla::LazyLogModule sBaseWidgetLog("BaseWidget");
 
@@ -236,7 +235,8 @@ void LocalesChangedObserver::Register() {
 
   nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
   if (obs) {
-    obs->AddObserver(this, INTL_APP_LOCALES_CHANGED, true);
+    MOZ_ALWAYS_SUCCEEDS(
+        obs->AddObserver(this, INTL_APP_LOCALES_CHANGED, false));
   }
 
   // Locale might be update before registering
@@ -327,6 +327,12 @@ void nsIWidget::Shutdown() {
 void nsIWidget::QuitIME() {
   IMEStateManager::WidgetOnQuit(this);
   this->mIMEHasQuit = true;
+}
+
+void nsIWidget::SetIsTiled(bool aIsTiled) {
+  // TODO: Do we want to report an event here or something when stuff changes?
+  // For now this is propagated in a somewhat out-of-band way via AppWindow.
+  mIsTiled = aIsTiled;
 }
 
 void nsIWidget::DestroyCompositor() {

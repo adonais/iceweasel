@@ -49,7 +49,7 @@ function checkBasicAttributes(token) {
   );
 }
 
-function run_test() {
+add_task(async function run_test() {
   let token = Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(
     Ci.nsIPKCS11Token
   );
@@ -64,7 +64,7 @@ function run_test() {
   ok(!token.isLoggedIn, "Token should not be logged into yet");
   // Test that attempting to log out even when the token was not logged into
   // does not result in an error.
-  token.logout();
+  await token.logout();
   ok(!token.isLoggedIn, "Token should still not be logged into");
   ok(
     !token.hasPassword,
@@ -72,15 +72,15 @@ function run_test() {
   );
 
   let initialPW = "foo 1234567890`~!@#$%^&*()-_=+{[}]|\\:;'\",<.>/? 一二三";
-  token.changePassword("", initialPW);
-  token.login();
+  await token.changePassword("", initialPW);
+  await token.login();
   ok(token.isLoggedIn, "Token should now be logged into");
 
-  token.logout();
+  await token.logout();
   ok(!token.isLoggedIn, "Token should be logged out after calling logout()");
 
   ok(
     token.canHavePassword,
     "The internal token should always be able to have a password"
   );
-}
+});

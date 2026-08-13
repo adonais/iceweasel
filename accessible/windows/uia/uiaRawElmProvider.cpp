@@ -7,27 +7,27 @@
 #include <comdef.h>
 #include <uiautomationcoreapi.h>
 
+#include "ARIAMap.h"
 #include "AccAttributes.h"
 #include "AccessibleWrap.h"
 #include "ApplicationAccessible.h"
-#include "ARIAMap.h"
 #include "LocalAccessible-inl.h"
-#include "mozilla/a11y/Compatibility.h"
-#include "mozilla/a11y/RemoteAccessible.h"
-#include "mozilla/DynamicallyLinkedFunctionPtr.h"
 #include "MsaaAccessible.h"
 #include "MsaaRootAccessible.h"
-#include "nsAccessibilityService.h"
-#include "nsAccUtils.h"
-#include "nsIAccessibleAnnouncementEvent.h"
-#include "nsIAccessiblePivot.h"
-#include "nsTextEquivUtils.h"
 #include "Pivot.h"
 #include "Relation.h"
 #include "RootAccessible.h"
 #include "TextLeafRange.h"
 #include "UiaText.h"
 #include "UiaTextRange.h"
+#include "mozilla/DynamicallyLinkedFunctionPtr.h"
+#include "mozilla/a11y/Compatibility.h"
+#include "mozilla/a11y/RemoteAccessible.h"
+#include "nsAccUtils.h"
+#include "nsAccessibilityService.h"
+#include "nsIAccessibleAnnouncementEvent.h"
+#include "nsIAccessiblePivot.h"
+#include "nsTextEquivUtils.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;

@@ -89,7 +89,7 @@ add_task(async function test_notifications() {
 
     expectedNotification = "addLogin";
     expectedData = testuser1;
-    await Services.logins.addLoginAsync(testuser1);
+    testuser1 = await Services.logins.addLoginAsync(testuser1);
     await LoginTestUtils.checkLogins([testuser1]);
     Assert.equal(expectedNotification, null); // check that observer got a notification
 
@@ -101,6 +101,7 @@ add_task(async function test_notifications() {
     expectedData = [testuser1, testuser2];
     await Services.logins.modifyLoginAsync(testuser1, testuser2);
     Assert.equal(expectedNotification, null);
+    testuser2 = (await Services.logins.getAllLogins())[0];
     await LoginTestUtils.checkLogins([testuser2]);
 
     /* ========== 4 ========== */

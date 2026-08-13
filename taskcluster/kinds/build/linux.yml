@@ -138,6 +138,7 @@ linux64-non-unified/plain:
         platform: linux64/plain
         symbol: Bp-nu
         tier: 1
+    worker-type: b-linux-docker-large-amd
     worker:
         max-run-time: 7200
         env:
@@ -404,6 +405,7 @@ linux64-non-unified/debug:
         platform: linux64/debug
         symbol: B-nu
         tier: 1
+    worker-type: b-linux-docker-large-amd
     worker:
         max-run-time: 7200
         env:
@@ -1223,7 +1225,7 @@ linux64-shippable/opt:
 
 linux64-nightlyasrelease/opt:
     description: "Linux64 Nightly-As-Release"
-    use-pgo: linux64-shippable/opt
+    use-pgo: linux64-nightlyasrelease/opt
     attributes:
         enable-full-crashsymbols: true
     index:

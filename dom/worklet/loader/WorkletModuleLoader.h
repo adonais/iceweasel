@@ -8,6 +8,7 @@
 #include "js/loader/LoadContextBase.h"
 #include "js/loader/ModuleLoaderBase.h"
 #include "js/loader/ResolveResult.h"  // For ResolveError
+#include "js/loader/ScriptLoaderInterface.h"
 #include "mozilla/dom/WorkletFetchHandler.h"
 
 namespace mozilla::dom {

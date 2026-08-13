@@ -43,7 +43,7 @@ add_task(async function tabs() {
     trigger: async () => {
       const currentTab = gBrowser.selectedTab;
       EventUtils.synthesizeKey("KEY_Enter");
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => gBrowser.selectedTab !== currentTab
       );
     },

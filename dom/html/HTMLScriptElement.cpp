@@ -8,6 +8,7 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/FetchPriority.h"
 #include "mozilla/dom/HTMLScriptElementBinding.h"
+#include "mozilla/dom/SpeculationRules.h"
 #include "mozilla/dom/TrustedTypeUtils.h"
 #include "mozilla/dom/TrustedTypesConstants.h"
 #include "nsAttrValue.h"
@@ -66,6 +67,17 @@ nsresult HTMLScriptElement::BindToTree(BindContext& aContext,
   }
 
   return NS_OK;
+}
+
+void HTMLScriptElement::UnbindFromTree(UnbindContext& aContext) {
+  // https://html.spec.whatwg.org/#script-processing-model:html-element-removing-steps
+  if (mFrozen && GetScriptIsSpeculationRules()) {
+    if (auto* doc = GetComposedDoc()) {
+      doc->SpeculationRules().Unregister(this);
+    }
+  }
+
+  nsGenericHTMLElement::UnbindFromTree(aContext);
 }
 
 bool HTMLScriptElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
@@ -339,7 +351,9 @@ bool HTMLScriptElement::Supports(const GlobalObject& aGlobal,
   nsAutoString type(aType);
   return aType.EqualsLiteral("classic") || aType.EqualsLiteral("module") ||
 
-         aType.EqualsLiteral("importmap");
+         aType.EqualsLiteral("importmap") ||
+         (StaticPrefs::dom_speculation_rules_enabled() &&
+          aType.EqualsLiteral("speculationrules"));
 }
 
 nsDOMTokenList* HTMLScriptElement::Blocking() {

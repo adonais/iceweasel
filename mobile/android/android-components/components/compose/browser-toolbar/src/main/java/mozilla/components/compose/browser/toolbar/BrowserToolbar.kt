@@ -14,7 +14,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -35,6 +35,7 @@ import mozilla.components.compose.cfr.CFR
 import mozilla.components.compose.cfr.CFRBox
 import mozilla.components.compose.cfr.CFRPopup
 import mozilla.components.compose.cfr.CFRPopup.IndicatorDirection
+import mozilla.components.compose.cfr.CFRPopupBackground
 import mozilla.components.compose.cfr.CFRPopupProperties
 import mozilla.components.compose.cfr.rememberCFRPositionProvider
 import mozilla.components.compose.cfr.rememberCFRState
@@ -72,12 +73,15 @@ data class BrowserToolbarCFR(
  * @param cfr The [BrowserToolbarCFR] to hold properties of Toolbar's CFR.
  * @property useMinimalBottomToolbarWhenEnteringText Whether to show a smaller height addressbar
  * with just the URL when using a bottom toolbar and the user is entering text in a website.
+ * @param browserActionsColor Optional `onSurface` color override applied only to the display
+ * toolbar's browser actions (outside the URL bounding box), leaving page actions unchanged.
  */
 @Composable
 fun BrowserToolbar(
     store: BrowserToolbarStore,
     cfr: BrowserToolbarCFR? = null,
     useMinimalBottomToolbarWhenEnteringText: Boolean = false,
+    browserActionsColor: Color? = null,
 ) {
     val uiState by store.observeAsComposableState { it }
     val cfrProperties = browserToolbarCFRProperties(uiState.gravity)
@@ -117,6 +121,7 @@ fun BrowserToolbar(
                 pageActionsStart = uiState.displayState.pageActionsStart,
                 pageActionsEnd = uiState.displayState.pageActionsEnd,
                 browserActionsEnd = uiState.displayState.browserActionsEnd,
+                browserActionsColor = browserActionsColor,
                 onInteraction = { store.dispatch(it) },
                 useMinimalBottomToolbarWhenEnteringText = useMinimalBottomToolbarWhenEnteringText,
             )
@@ -151,13 +156,7 @@ private fun DisplayToolbarWithCFR(
     displayToolbar: @Composable () -> Unit,
 ) {
     val title: @Composable (() -> Unit)? = cfr.title?.run {
-        {
-            Text(
-                text = stringResource(cfr.title),
-                color = AcornTheme.colors.textOnColorPrimary,
-                style = AcornTheme.typography.subtitle2,
-            )
-        }
+        { Text(text = stringResource(cfr.title)) }
     }
 
     val state = rememberCFRState()
@@ -203,16 +202,13 @@ private fun browserToolbarCFRProperties(
     val indicatorDir =
         if (isBottom) IndicatorDirection.DOWN else IndicatorDirection.UP
 
-    val colors = AcornTheme.colors
+    val cfrBrush = AcornTheme.gradients.cfr.brush
 
     return remember(isBottom) {
         CFRPopupProperties(
             popupAlignment = CFRPopup.PopupAlignment.INDICATOR_CENTERED_IN_ANCHOR,
-            popupBodyColors = listOf(
-                colors.layerGradientEnd.toArgb(),
-                colors.layerGradientStart.toArgb(),
-            ),
-            dismissButtonColor = colors.iconOnColor.toArgb(),
+            popupBodyColors = CFRPopupBackground.Gradient(brush = cfrBrush),
+            dismissButtonColor = android.graphics.Color.WHITE,
             indicatorDirection = indicatorDir,
             popupVerticalOffset = CFR_VERTICAL_OFFSET.dp,
             indicatorArrowStartOffset = CFR_HORIZONTAL_OFFSET.dp,

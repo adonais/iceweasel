@@ -55,6 +55,7 @@ xpcshell:
         - no-fission
         - msix
         - inc-origin-init
+        - privatebrowsing
     instance-size:
         by-variant:
             conditioned_profile:
@@ -84,6 +85,7 @@ xpcshell:
                     windows11-64-24h2/debug: built-projects
                     default: []
             inc-origin-init: []
+            privatebrowsing: []
             default:
                 by-test-platform:
                     android.*: built-projects

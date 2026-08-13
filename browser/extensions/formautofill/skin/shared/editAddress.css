@@ -7,37 +7,37 @@
   flex-wrap: wrap;
   /* Use space-between so --grid-column-row-gap is in between the elements on a row */
   justify-content: space-between;
-}
 
-.editAddressForm .container {
-  /* !important is needed to override preferences.css's generic label rule. */
-  margin-top: var(--grid-column-row-gap) !important;
-  margin-inline: calc(var(--grid-column-row-gap) / 2);
-  flex-grow: 1;
+  .container {
+    /* !important is needed to override preferences.css's generic label rule. */
+    margin-top: var(--grid-column-row-gap) !important;
+    margin-inline: calc(var(--grid-column-row-gap) / 2);
+    flex-grow: 1;
 
-  &.new-line {
+    &.new-line {
+      flex: 0 1 100%;
+    }
+
+    moz-input-text,
+    moz-textarea,
+    moz-select {
+      width: 100%;
+    }
+  }
+
+  #address-level2-container,
+  #email-container {
     flex: 0 1 100%;
   }
 
-  input,
-  textarea,
-  select {
-    width: 100%;
-    margin: 0;
+  #country-container {
+    /* The country dropdown has a different intrinsic (content) width than the
+       other fields which are moz-input-text. */
+    flex-basis: calc(50% - var(--grid-column-row-gap));
+    flex-grow: 0;
+    /* Country names can be longer than 50% which ruins the symmetry in the grid. */
+    max-width: calc(50% - var(--grid-column-row-gap));
   }
-}
-
-#country-container {
-  /* The country dropdown has a different intrinsic (content) width than the
-     other fields which are <input>. */
-  flex-basis: calc(50% - var(--grid-column-row-gap));
-  flex-grow: 0;
-  /* Country names can be longer than 50% which ruins the symmetry in the grid. */
-  max-width: calc(50% - var(--grid-column-row-gap));
-}
-
-#street-address {
-  resize: vertical;
 }
 
 #country-warning-message {
@@ -49,9 +49,4 @@
   opacity: 0.5;
   padding-inline-start: 1em;
   flex: 1;
-}
-
-moz-button-group {
-  margin-inline: 4px;
-  margin-block-end: 4px;
 }

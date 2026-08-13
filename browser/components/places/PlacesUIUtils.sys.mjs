@@ -13,7 +13,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   ContentSharingUtils:
-    "resource:///modules/contentsharing/ContentSharingUtils.sys.mjs",
+    "moz-src:///browser/components/contentsharing/ContentSharingUtils.sys.mjs",
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   MigrationUtils: "resource:///modules/MigrationUtils.sys.mjs",

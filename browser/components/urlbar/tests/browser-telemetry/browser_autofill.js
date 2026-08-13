@@ -119,8 +119,8 @@ function createOtherAutofillProvider(searchString, autofilledValue) {
     type: UrlbarUtils.PROVIDER_TYPE.HEURISTIC,
     results: [
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         heuristic: true,
         autofill: {
           value: autofilledValue,

@@ -9,8 +9,8 @@ const { HttpServer, HTTP_404 } = ChromeUtils.importESModule(
 const { GuardianClient } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/ipprotection/fxa/GuardianClient.sys.mjs"
 );
-const { IPPFxaAuthProvider } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/ipprotection/fxa/IPPFxaAuthProvider.sys.mjs"
+const { IPPFxaActivateAuthProvider } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/ipprotection/fxa/IPPFxaActivateAuthProvider.sys.mjs"
 );
 const { JsonSchemaValidator } = ChromeUtils.importESModule(
   "resource://gre/modules/components-utils/JsonSchemaValidator.sys.mjs"
@@ -1095,7 +1095,7 @@ add_task(async function test_getToken_abort() {
     sandbox.stub(fxAccounts, "getOAuthToken").returns(new Promise(() => {}));
 
     const controller = new AbortController();
-    const promise = IPPFxaAuthProvider.getToken(controller.signal);
+    const promise = IPPFxaActivateAuthProvider.getToken(controller.signal);
 
     do_timeout(10, () => controller.abort());
 

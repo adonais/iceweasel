@@ -9,14 +9,10 @@ import mozilla.components.service.pocket.mars.api.MarsSpocsRequestConfig
 import mozilla.components.support.base.worker.Frequency
 import java.util.concurrent.TimeUnit
 
-internal const val DEFAULT_REFRESH_INTERVAL = 4L
 internal const val DEFAULT_SPONSORED_STORIES_REFRESH_INTERVAL = 4L
 internal const val DEFAULT_CONTENT_RECOMMENDATIONS_REFRESH_INTERNAL = 4L
 
 internal const val DEFAULT_CONTENT_RECOMMENDATIONS_COUNT = 100
-
-@Suppress("TopLevelPropertyNaming")
-internal val DEFAULT_REFRESH_TIMEUNIT = TimeUnit.HOURS
 
 @Suppress("TopLevelPropertyNaming")
 internal val DEFAULT_SPONSORED_STORIES_REFRESH_TIMEUNIT = TimeUnit.HOURS
@@ -28,7 +24,6 @@ internal val DEFAULT_CONTENT_RECOMMENDATIONS_REFRESH_TIMEUNIT = TimeUnit.HOURS
  * Indicating all details for how the pocket stories should be refreshed.
  *
  * @param client [Client] implementation used for downloading the Pocket stories.
- * @param frequency Optional - The interval at which to try and refresh items. Defaults to 4 hours.
  * @param sponsoredStoriesRefreshFrequency Optional - The interval at which to try and refresh sponsored stories.
  * Defaults to 4 hours.
  * @param contentRecommendationsRefreshFrequency Optional - The interval at which to try and refresh
@@ -40,10 +35,6 @@ internal val DEFAULT_CONTENT_RECOMMENDATIONS_REFRESH_TIMEUNIT = TimeUnit.HOURS
  */
 class PocketStoriesConfig(
     val client: Client,
-    val frequency: Frequency = Frequency(
-        DEFAULT_REFRESH_INTERVAL,
-        DEFAULT_REFRESH_TIMEUNIT,
-    ),
     val sponsoredStoriesRefreshFrequency: Frequency = Frequency(
         DEFAULT_SPONSORED_STORIES_REFRESH_INTERVAL,
         DEFAULT_SPONSORED_STORIES_REFRESH_TIMEUNIT,

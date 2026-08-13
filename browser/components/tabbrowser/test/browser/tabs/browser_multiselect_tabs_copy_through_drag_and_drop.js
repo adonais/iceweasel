@@ -40,8 +40,8 @@ add_task(async function test() {
     ok(!tabs[i].multiselected, "Tab" + i + " is not multiselected");
   }
 
-  await BrowserTestUtils.waitForCondition(() => getUrl(tab4) == getUrl(tab1));
-  await BrowserTestUtils.waitForCondition(() => getUrl(tab5) == getUrl(tab2));
+  await TestUtils.waitForCondition(() => getUrl(tab4) == getUrl(tab1));
+  await TestUtils.waitForCondition(() => getUrl(tab5) == getUrl(tab2));
 
   ok(true, "Tab1 and tab2 are duplicated succesfully");
 

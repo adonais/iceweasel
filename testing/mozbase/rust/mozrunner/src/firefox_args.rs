@@ -72,9 +72,10 @@ where
     let value_end = arg_str.len();
     let value = if value_start < value_end {
         if let Some(c) = arg_str[value_start..value_end].chars().next()
-            && name_end_char(c) {
-                value_start += 1;
-            }
+            && name_end_char(c)
+        {
+            value_start += 1;
+        }
         Some(arg_str[value_start..value_end].into())
     } else {
         None
@@ -121,6 +122,10 @@ pub enum Arg {
     /// to allow for incoming WebSocket requests of the Remote Agent.
     RemoteAllowOrigins,
 
+    /// --remote-allow-system-access allows the remote agent to access privileged
+    /// contexts.
+    RemoteAllowSystemAccess,
+
     /// --remote-debugging-port enables the Remote Agent in the application
     /// which is used for the WebDriver BiDi and CDP remote debugging protocols.
     RemoteDebuggingPort,
@@ -140,6 +145,7 @@ impl Arg {
             "ProfileManager" => Arg::ProfileManager,
             "remote-allow-hosts" => Arg::RemoteAllowHosts,
             "remote-allow-origins" => Arg::RemoteAllowOrigins,
+            "remote-allow-system-access" => Arg::RemoteAllowSystemAccess,
             "remote-debugging-port" => Arg::RemoteDebuggingPort,
             _ => Arg::Other(name.into()),
         }
@@ -169,6 +175,7 @@ impl fmt::Display for Arg {
             Arg::ProfileManager => "--ProfileManager".to_string(),
             Arg::RemoteAllowHosts => "--remote-allow-hosts".to_string(),
             Arg::RemoteAllowOrigins => "--remote-allow-origins".to_string(),
+            Arg::RemoteAllowSystemAccess => "--remote-allow-system-access".to_string(),
             Arg::RemoteDebuggingPort => "--remote-debugging-port".to_string(),
         })
     }
@@ -209,10 +216,11 @@ pub fn get_arg_value<'a>(
     let mut found_value = None;
     for (arg_name, arg_value) in &mut parsed_args {
         if let (Some(name), value) = (arg_name, arg_value)
-            && *name == arg {
-                found_value = value.clone();
-                break;
-            }
+            && *name == arg
+        {
+            found_value = value.clone();
+            break;
+        }
     }
     if found_value.is_none() {
         // If there wasn't a value, check if the following argument is a value
@@ -225,7 +233,7 @@ pub fn get_arg_value<'a>(
 
 #[cfg(test)]
 mod tests {
-    use super::{get_arg_value, parse_arg_name_value, parse_args, Arg};
+    use super::{Arg, get_arg_value, parse_arg_name_value, parse_args};
     use std::ffi::OsString;
 
     fn parse(arg: &str, name: Option<&str>) {
@@ -345,6 +353,15 @@ mod tests {
         assert_eq!(
             Arg::from(&OsString::from("--remote-allow-origins http://foo")),
             Arg::RemoteAllowOrigins
+        );
+
+        assert_eq!(
+            Arg::from(&OsString::from("--remote-allow-system-access")),
+            Arg::RemoteAllowSystemAccess
+        );
+        assert_eq!(
+            Arg::from(&OsString::from("-remote-allow-system-access")),
+            Arg::RemoteAllowSystemAccess
         );
     }
 

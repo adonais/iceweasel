@@ -126,7 +126,7 @@ class TrackersBlockedFeature(
                 ),
                 CategoryConfig(
                     nameRes = R.plurals.trackers_blocked_panel_num_social_media_trackers,
-                    iconRes = iconsR.drawable.mozac_ic_social_tracker_24,
+                    iconRes = iconsR.drawable.mozac_ic_thumbs_down_24,
                     types = setOf(SOCIAL),
                     category = TrackerCategory.SOCIAL_MEDIA_TRACKERS,
                 ),

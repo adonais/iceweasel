@@ -52,7 +52,8 @@ fn unlock_then_get_dek_succeeds() {
         .expect("unlock");
     assert!(ks.is_kek_unlocked(&kek_ref).unwrap());
 
-    ks.create_dek("col", &kek_ref, true).expect("create_dek");
+    ks.create_dek("col", &kek_ref, true, 32)
+        .expect("create_dek");
     let (dek, _cs) = ks.get_dek("col", &kek_ref).expect("get_dek");
     assert_eq!(dek.len(), 32);
 }
@@ -65,7 +66,8 @@ fn get_dek_when_locked_fails() {
         .expect("create password");
     ks.unlock_kek(&kek_ref, PW, Duration::from_secs(60))
         .expect("unlock");
-    ks.create_dek("col", &kek_ref, true).expect("create_dek");
+    ks.create_dek("col", &kek_ref, true, 32)
+        .expect("create_dek");
 
     ks.lock_kek(&kek_ref).unwrap();
     assert!(!ks.is_kek_unlocked(&kek_ref).unwrap());
@@ -80,7 +82,7 @@ fn unlock_expires_after_timeout() {
     let pw = ks
         .create_password_kek_test_only(PW)
         .expect("create password");
-    ks.create_dek("col", &local, true).expect("create_dek");
+    ks.create_dek("col", &local, true, 32).expect("create_dek");
     ks.unlock_kek(&pw, PW, Duration::from_millis(100))
         .expect("unlock");
     ks.add_kek("col", &local, &pw).expect("add Password level");
@@ -160,7 +162,7 @@ fn add_then_remove_local_level_leaves_password_only() {
     ks.unlock_kek(&pw, PW, Duration::from_secs(60))
         .expect("unlock");
 
-    ks.create_dek("c", &local, true).expect("create");
+    ks.create_dek("c", &local, true, 32).expect("create");
     ks.add_kek("c", &local, &pw).expect("add");
     ks.remove_kek("c", &local).expect("remove");
 
@@ -187,7 +189,8 @@ fn reopen_on_disk_keystore_requires_unlock() {
             .expect("create password");
         ks.unlock_kek(&kek_ref, PW, Duration::from_secs(60))
             .expect("unlock");
-        ks.create_dek("persisted", &kek_ref, true).expect("create");
+        ks.create_dek("persisted", &kek_ref, true, 32)
+            .expect("create");
         ks.close();
     }
 
@@ -220,13 +223,13 @@ fn close_locks_password() {
 fn encrypt_decrypt_roundtrip_local() {
     let ks = Keystore::new_in_memory().expect("new");
     let local = mint_local(&ks);
-    ks.create_dek("c", &local, false).expect("create");
+    ks.create_dek("c", &local, false, 32).expect("create");
 
     let plaintext = b"hello, lockstore";
     let blob = ks.encrypt("c", &local, plaintext).expect("encrypt");
     assert_ne!(blob, plaintext);
     let round = ks.decrypt("c", &local, &blob).expect("decrypt");
-    assert_eq!(round, plaintext);
+    assert_eq!(&round[..], &plaintext[..]);
 }
 
 #[test]
@@ -237,12 +240,12 @@ fn encrypt_decrypt_roundtrip_password() {
         .expect("create password");
     ks.unlock_kek(&kek_ref, PW, Duration::from_secs(60))
         .expect("unlock");
-    ks.create_dek("c", &kek_ref, false).expect("create");
+    ks.create_dek("c", &kek_ref, false, 32).expect("create");
 
     let plaintext = b"secret";
     let blob = ks.encrypt("c", &kek_ref, plaintext).expect("encrypt");
     let round = ks.decrypt("c", &kek_ref, &blob).expect("decrypt");
-    assert_eq!(round, plaintext);
+    assert_eq!(&round[..], &plaintext[..]);
 
     ks.lock_kek(&kek_ref).unwrap();
     let err = ks.encrypt("c", &kek_ref, plaintext).unwrap_err();
@@ -255,14 +258,14 @@ fn encrypt_decrypt_roundtrip_password() {
 fn encrypt_non_extractable_dek_still_works() {
     let ks = Keystore::new_in_memory().expect("new");
     let local = mint_local(&ks);
-    ks.create_dek("c", &local, false).expect("create");
+    ks.create_dek("c", &local, false, 32).expect("create");
     // get_dek rejects because not extractable...
     let err = ks.get_dek("c", &local).unwrap_err();
     assert!(matches!(err, LockstoreError::NotExtractable(_)));
     // ...but encrypt/decrypt bypass the extractability gate.
     let blob = ks.encrypt("c", &local, b"abc").expect("encrypt");
     let round = ks.decrypt("c", &local, &blob).expect("decrypt");
-    assert_eq!(round, b"abc");
+    assert_eq!(&round[..], b"abc");
 }
 
 #[test]
@@ -274,7 +277,7 @@ fn password_dek_supports_non_extractable() {
     ks.unlock_kek(&kek_ref, PW, Duration::from_secs(60))
         .expect("unlock");
 
-    ks.create_dek("nonex", &kek_ref, false)
+    ks.create_dek("nonex", &kek_ref, false, 32)
         .expect("create_dek non-extractable");
 
     let err = ks.get_dek("nonex", &kek_ref).unwrap_err();
@@ -291,7 +294,7 @@ fn password_dek_supports_non_extractable() {
     let pt2 = ks
         .decrypt("nonex", &kek_ref, &ct)
         .expect("decrypt under non-extractable Password DEK");
-    assert_eq!(pt2, pt);
+    assert_eq!(&pt2[..], &pt[..]);
 }
 
 #[test]
@@ -350,7 +353,7 @@ fn remove_kek_leaves_password_record_intact() {
     ks.unlock_kek(&pw, PW, Duration::from_secs(60))
         .expect("unlock");
 
-    ks.create_dek("col", &pw, false).expect("create_dek");
+    ks.create_dek("col", &pw, false, 32).expect("create_dek");
     ks.add_kek("col", &pw, &local).expect("add local");
 
     ks.remove_kek("col", &pw).expect("remove password kek");
@@ -370,7 +373,7 @@ fn delete_dek_leaves_password_record_intact() {
         .expect("create password");
     ks.unlock_kek(&pw, PW, Duration::from_secs(60))
         .expect("unlock");
-    ks.create_dek("only", &pw, false).expect("create_dek");
+    ks.create_dek("only", &pw, false, 32).expect("create_dek");
 
     ks.delete_dek("only").expect("delete_dek");
 
@@ -413,7 +416,7 @@ fn delete_kek_rejects_when_in_use() {
         .expect("create password");
     ks.unlock_kek(&pw, PW, Duration::from_secs(60))
         .expect("unlock");
-    ks.create_dek("col", &pw, false).expect("create_dek");
+    ks.create_dek("col", &pw, false, 32).expect("create_dek");
 
     let err = ks.delete_kek(&pw).unwrap_err();
     assert!(
@@ -466,6 +469,7 @@ fn delete_kek_drops_unreferenced_local_kek() {
         // resolves.
         &mint_local(&ks),
         false,
+        32,
     )
     .expect("create_dek under a fresh local");
     let err = ks.encrypt("col", &local, b"x").unwrap_err();
@@ -484,9 +488,9 @@ fn delete_kek_after_switch_kek_succeeds() {
         .expect("create password");
     ks.unlock_kek(&pw, PW, Duration::from_secs(60))
         .expect("unlock");
-    ks.create_dek("col", &pw, false).expect("create_dek");
+    ks.create_dek("col", &pw, false, 32).expect("create_dek");
 
-    // Switch the collection's wrapping to a new password kek.
+    // Switch the dek_name's wrapping to a new password kek.
     let pw2 = ks
         .create_password_kek_test_only(PW_NEW)
         .expect("create password 2");
@@ -494,9 +498,9 @@ fn delete_kek_after_switch_kek_succeeds() {
         .expect("unlock pw2");
     ks.switch_kek("col", &pw, &pw2).expect("switch_kek");
 
-    // After switch_kek, `pw` no longer wraps any collection but its
+    // After switch_kek, `pw` no longer wraps any dek_name but its
     // record is still on disk. delete_kek can drop it cleanly because
-    // no collection references it any more.
+    // no dek_name references it any more.
     ks.delete_kek(&pw).expect("delete unreferenced pw");
 
     // Subsequent unlock surfaces InvalidKekRef: the kek_ref parses,

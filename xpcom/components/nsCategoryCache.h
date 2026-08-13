@@ -5,15 +5,12 @@
 #ifndef nsCategoryCache_h_
 #define nsCategoryCache_h_
 
-#include "nsIObserver.h"
-
-#include "nsServiceManagerUtils.h"
-
-#include "nsCOMArray.h"
-#include "nsInterfaceHashtable.h"
-
-#include "nsXPCOM.h"
 #include "MainThreadUtils.h"
+#include "nsCOMArray.h"
+#include "nsIObserver.h"
+#include "nsInterfaceHashtable.h"
+#include "nsServiceManagerUtils.h"
+#include "nsXPCOM.h"
 
 class nsCategoryObserver final : public nsIObserver {
   ~nsCategoryObserver();

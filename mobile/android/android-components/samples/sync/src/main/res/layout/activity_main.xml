@@ -22,6 +22,7 @@
             android:layout_height="wrap_content">
 
             <Button
+                style="@style/Mozac.Widgets.NeutralButton"
                 android:id="@+id/buttonSignIn"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -29,6 +30,7 @@
                 android:textAlignment="center" />
 
             <Button
+                style="@style/Mozac.Widgets.NeutralButton"
                 android:id="@+id/buttonSync"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -37,6 +39,7 @@
                 android:textAlignment="center" />
 
             <Button
+                style="@style/Mozac.Widgets.NeutralButton"
                 android:id="@+id/refreshDevice"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -45,6 +48,7 @@
                 android:textAlignment="center" />
 
             <Button
+                style="@style/Mozac.Widgets.NeutralButton"
                 android:id="@+id/sendTab"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -53,6 +57,7 @@
                 android:textAlignment="center" />
 
             <Button
+                style="@style/Mozac.Widgets.NeutralButton"
                 android:id="@+id/buttonLogout"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

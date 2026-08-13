@@ -3,6 +3,10 @@
     "0": {
       "value": "#fbfbfe"
     },
+    "05": {
+      "override": true,
+      "value": "unset"
+    },
     "10": {
       "override": true,
       "value": "unset"

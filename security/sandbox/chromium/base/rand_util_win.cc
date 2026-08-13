@@ -16,7 +16,6 @@
 #include "base/check.h"
 #include "base/feature_list.h"
 #if !defined(MOZ_SANDBOX)
-#include "third_party/boringssl/src/include/openssl/crypto.h"
 #include "third_party/boringssl/src/include/openssl/rand.h"
 #endif
 
@@ -37,9 +36,7 @@ namespace {
 // rand_util_posix.cc.
 std::atomic<bool> g_use_boringssl;
 
-BASE_FEATURE(kUseBoringSSLForRandBytes,
-             "UseBoringSSLForRandBytes",
-             FEATURE_DISABLED_BY_DEFAULT);
+BASE_FEATURE(kUseBoringSSLForRandBytes, FEATURE_DISABLED_BY_DEFAULT);
 
 }  // namespace
 
@@ -69,34 +66,34 @@ decltype(&ProcessPrng) GetProcessPrng() {
   return process_prng_fn;
 }
 
-void RandBytes(void* output, size_t output_length, bool avoid_allocation) {
+void RandBytesInternal(span<uint8_t> output, bool avoid_allocation) {
 #if !defined(MOZ_SANDBOX)
   if (!avoid_allocation && internal::UseBoringSSLForRandBytes()) {
-    // Ensure BoringSSL is initialized so it can use things like RDRAND.
-    CRYPTO_library_init();
     // BoringSSL's RAND_bytes always returns 1. Any error aborts the program.
-    (void)RAND_bytes(static_cast<uint8_t*>(output), output_length);
+    (void)RAND_bytes(output.data(), output.size());
     return;
   }
 #endif
 
   static decltype(&ProcessPrng) process_prng_fn = GetProcessPrng();
-  BOOL success = process_prng_fn(static_cast<BYTE*>(output), output_length);
+  BOOL success =
+      process_prng_fn(static_cast<BYTE*>(output.data()), output.size());
   // ProcessPrng is documented to always return TRUE.
   CHECK(success);
 }
 
 }  // namespace
 
-void RandBytes(void* output, size_t output_length) {
-  RandBytes(output, output_length, /*avoid_allocation=*/false);
+void RandBytes(span<uint8_t> output) {
+  RandBytesInternal(output, /*avoid_allocation=*/false);
 }
 
 namespace internal {
 
 double RandDoubleAvoidAllocation() {
   uint64_t number;
-  RandBytes(&number, sizeof(number), /*avoid_allocation=*/true);
+  RandBytesInternal(byte_span_from_ref(number),
+                    /*avoid_allocation=*/true);
   // This transformation is explained in rand_util.cc.
   return (number >> 11) * 0x1.0p-53;
 }

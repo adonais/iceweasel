@@ -93,6 +93,15 @@ home-prefs-sports-widget-header =
 # Clock is a widget on New Tab that displays time zones around the world.
 home-prefs-clocks-header =
     .label = Đồng hồ
+# Privacy is a widget on New Tab that shows tracking protection activity.
+home-prefs-privacy-header =
+    .label = Riêng tư
+# Stocks is a widget on New Tab that shows stock ticker prices.
+home-prefs-stocks-header =
+    .label = Cổ phiếu
+# Picture of the day is a widget on New Tab that shows a daily Wikimedia Commons image.
+home-prefs-picture-header =
+    .label = Hình ảnh của ngày
 home-prefs-mission-message2 =
     .message = Các nhà tài trợ của chúng tôi hỗ trợ sứ mệnh của chúng tôi là xây dựng một trang web tốt hơn.
 home-prefs-manage-topics-link2 =
@@ -148,6 +157,203 @@ home-prefs-support-firefox-header-srd =
     .label = Hỗ trợ cho { -brand-product-name }
 home-prefs-mission-message-learn-more-link-srd = Tìm hiểu cách thức
 
+## Strings for the Privacy widget
+
+# Context menu item linking to more information about the Privacy widget.
+newtab-privacy-menu-learn-more = Tìm hiểu thêm
+
+## Privacy widget — count readout
+
+# Label shown under the large tracker-count number, appearing like:
+# Line 1: 86
+# Line 2: Trackers blocked today
+# Translations can be adjusted to "Today's blocked trackers" or something
+# similar if this fixed order causes issues.
+# Variables:
+#   $count (number) - Number of trackers blocked today
+newtab-privacy-trackers-blocked-today = Trình theo dõi đã chặn hôm nay
+# Second line of the readout, under the large number and "Trackers blocked
+# today". Counts the sites those trackers were blocked on. The English is
+# shortened from "Blocked across { $count } sites" — translate it that fuller way
+# if the short fragment doesn't work in your language.
+# Variables:
+#   $count (number) - Number of sites where trackers were blocked
+newtab-privacy-across-sites = Trên { $count } trang web
+
+## Privacy widget — empty state
+
+# Shown when no trackers have been blocked yet today.
+newtab-privacy-empty = { -brand-short-name } chặn các trình theo dõi khi bạn duyệt web. Bạn sẽ thấy chúng ở đây.
+
+## Privacy widget — informational messages
+##
+## Rotating "info" secondary messages. Each message has a body plus a matched
+## "-cta" button label sharing the same id stem (the CTA button isn't rendered
+## yet; the labels are authored so the pairing is ready).
+
+newtab-privacy-message-info-1 = { -brand-short-name } chặn các trình theo dõi tự động khi bạn duyệt web.
+newtab-privacy-message-info-1-cta = Xem báo cáo bảo vệ
+newtab-privacy-message-info-2 = Chặn trình theo dõi giúp ngăn các công ty theo dõi bạn trực tuyến.
+newtab-privacy-message-info-2-cta = Xem báo cáo bảo vệ
+newtab-privacy-message-info-3 = Nhiều trang web có trình theo dõi, vì vậy các công ty mà bạn chưa từng truy cập có thể theo dõi bạn trực tuyến.
+newtab-privacy-message-info-3-cta = Xem báo cáo bảo vệ
+newtab-privacy-message-info-4 = Chọn { -brand-short-name } có nghĩa bạn đã chọn chế độ bảo vệ mặc định.
+newtab-privacy-message-info-4-cta = Xem báo cáo bảo vệ
+newtab-privacy-message-info-5 = Việc chặn trình theo dõi có nghĩa là sẽ có ít công ty hơn có thể theo dõi bạn trên các trang web khác nhau.
+newtab-privacy-message-info-5-cta = Xem báo cáo bảo vệ
+newtab-privacy-message-info-6 = Hãy bảo vệ dữ liệu của bạn với { -brand-short-name }. Chúng tôi không bao giờ bán dữ liệu của bạn, nhưng các trình duyệt khác thì chưa chắc.
+newtab-privacy-message-info-6-cta = Tìm hiểu thêm
+newtab-privacy-message-info-7 = Xem những trình theo dõi nào đã bị { -brand-short-name } chặn.
+newtab-privacy-message-info-7-cta = Xem báo cáo bảo vệ
+newtab-privacy-message-info-8 = Việc duyệt web với { -brand-short-name } sẽ hỗ trợ sứ mệnh của { -vendor-short-name } trong việc xây dựng một trang web tốt hơn.
+newtab-privacy-message-info-8-cta = Tìm hiểu thêm
+newtab-privacy-message-info-9 = Chọn { -brand-short-name } làm trình duyệt ưa thích của bạn để tận hưởng tính năng bảo mật tích hợp sẵn.
+newtab-privacy-message-info-9-cta = Đặt làm mặc định
+newtab-privacy-message-info-10 = Lưu mật khẩu trong { -brand-short-name } để sử dụng thông tin đăng nhập mạnh mẽ và duy nhất ở mọi nơi.
+newtab-privacy-message-info-10-cta = Đi đến mật khẩu
+newtab-privacy-message-info-11 = Tìm hiểu cách { -brand-short-name } giúp bảo vệ quyền riêng tư khi duyệt web của bạn.
+newtab-privacy-message-info-11-cta = Tìm hiểu thêm
+newtab-privacy-message-info-12 = Chặn các trình theo dõi có thể giúp tiết kiệm băng thông trên các gói dữ liệu hạn chế.
+newtab-privacy-message-info-12-cta = Xem báo cáo bảo vệ
+newtab-privacy-message-info-13 = { -brand-short-name } chặn các trình theo dõi, giải phóng băng thông để phát trực tuyến mượt mà hơn.
+newtab-privacy-message-info-13-cta = Xem báo cáo bảo vệ
+
+## Privacy widget — promotional messages
+##
+## Rotating "promo" secondary messages suggesting another Firefox feature. Each
+## has a body plus a matched "-cta" button label.
+
+newtab-privacy-message-promo-monitor-1 = Tìm hiểu xem thông tin cá nhân của bạn có bị lộ trong vụ rò rỉ dữ liệu nào không.
+newtab-privacy-message-promo-monitor-1-cta = Tìm hiểu thêm
+newtab-privacy-message-promo-monitor-2 = Bảo vệ thông tin của bạn với dịch vụ giám sát rò rỉ dữ liệu miễn phí, cho tối đa 20 email.
+newtab-privacy-message-promo-monitor-2-cta = Tìm hiểu thêm
+newtab-privacy-message-promo-signin-1 = Giữ cho dấu trang, mật khẩu và thẻ được mã hóa trên nhiều thiết bị với tài khoản { -vendor-short-name } của bạn.
+newtab-privacy-message-promo-signin-1-cta = Đăng nhập
+newtab-privacy-message-promo-vpn-1 = Mua sắm trực tuyến trên mạng Wi-Fi công cộng? Bật VPN được tích hợp sẵn để được bảo vệ tốt hơn.
+newtab-privacy-message-promo-vpn-1-cta = Mở VPN
+newtab-privacy-message-promo-vpn-2 = Sử dụng Wi-Fi tại sân bay? Hãy bảo vệ hoạt động duyệt web của mình bằng cách bật VPN được tích hợp sẵn.
+newtab-privacy-message-promo-vpn-2-cta = Mở VPN
+newtab-privacy-message-promo-vpn-3 = Bật VPN được tích hợp sẵn để giúp bảo mật vị trí của bạn hơn.
+newtab-privacy-message-promo-vpn-3-cta = Mở VPN
+newtab-privacy-message-promo-private-window-1 = Thử sử dụng cửa sổ riêng tư để duyệt web riêng tư hơn khi dùng chung máy tính.
+newtab-privacy-message-promo-private-window-1-cta = Mở cửa sổ riêng tư
+newtab-privacy-message-promo-relay-1 = Giữ email thật của bạn cho những người bạn tin tưởng; sử dụng email ẩn danh cho việc đăng ký.
+newtab-privacy-message-promo-relay-1-cta = Nhận email ẩn danh
+newtab-privacy-message-promo-relay-2 = Bảo vệ hộp thư đến của bạn khỏi thư rác bằng tính năng email ẩn danh miễn phí.
+newtab-privacy-message-promo-relay-2-cta = Nhận email ẩn danh
+newtab-privacy-message-promo-relay-3 = Nhận ngay 50 email ẩn danh miễn phí giúp bảo mật email thật của bạn.
+newtab-privacy-message-promo-relay-3-cta = Nhận email ẩn danh
+
+## Privacy widget — celebration messages
+##
+## Earned "celebration" moments (milestones, daily cap, streak, first
+## protection). Count-bearing ones interpolate { $count }.
+
+# Variables:
+#   $count (number) - Trackers blocked this week
+newtab-privacy-message-milestone-week = { $count } trình theo dõi đã bị chặn trong tuần này. Xem { -brand-short-name } đang chặn những gì gây xao nhãng bạn
+newtab-privacy-message-milestone-week-cta = Xem báo cáo bảo vệ
+# Variables:
+#   $count (number) - Trackers blocked this month
+newtab-privacy-message-milestone-month = { $count } trình theo dõi đã bị chặn trong tháng này. Một bước nhỏ vì sự riêng tư. Một bước lớn vì sự an tâm.
+newtab-privacy-message-milestone-month-cta = Xem báo cáo bảo vệ
+# Variables:
+#   $count (number) - Trackers blocked this year
+newtab-privacy-message-milestone-year = { $count } trình theo dõi đã bị chặn trong năm nay. Đó là một năm mạnh mẽ trong việc bảo vệ quyền riêng tư của bạn.
+newtab-privacy-message-milestone-year-cta = Xem báo cáo bảo vệ
+# Variables:
+#   $count (number) - Trackers blocked all-time
+newtab-privacy-message-milestone-total = { $count } trình theo dõi đã bị chặn. Đó là một bước tiến lớn hướng tới quyền riêng tư theo ý muốn của bạn.
+newtab-privacy-message-milestone-total-cta = Xem báo cáo bảo vệ
+# Shown when today's blocked-tracker count reaches the display cap ("100+").
+newtab-privacy-message-daily-cap = (100 trình theo dõi đã bị chặn hôm nay.) Ít trình theo dõi hơn đồng nghĩa với quyền riêng tư cao hơn.
+newtab-privacy-message-daily-cap-cta = Xem báo cáo bảo vệ
+# Variables:
+#   $count (number) - Consecutive days the user has had trackers blocked
+newtab-privacy-message-streak = Bạn đã được bảo vệ { $count } ngày liên tiếp.
+newtab-privacy-message-streak-cta = Xem báo cáo bảo vệ
+# Shown the first time the tracker count goes above zero.
+newtab-privacy-message-first-protection = Tiếp tục duyệt web đi, việc chặn trình theo dõi hãy để { -brand-short-name } lo.
+newtab-privacy-message-first-protection-cta = Xem báo cáo bảo vệ
+
+## Strings for the Stocks widget
+
+# Context menu item for searching stock ticker symbols.
+newtab-stocks-menu-search = Tìm kiếm mã chứng khoán
+# Context menu item linking to more information about the Stocks widget.
+newtab-stocks-menu-learn-more = Tìm hiểu thêm
+# "Stocks widget options" is an icon-only button in the widget toolbar — the
+# attributes are consumed as tooltip/screen-reader label only. The button
+# never renders visible text.
+newtab-stocks-widget-menu-button =
+    .title = Tuỳ chọn widget Cổ phiếu
+    .aria-label = Tuỳ chọn widget Cổ phiếu
+# Heading for the Stocks widget.
+newtab-stocks-widget-title = Cổ phiếu
+
+## Screen-reader summary of a stock ticker.
+## Variables:
+##   $name (String) - the full fund/ETF name, e.g. "SPDR S&P 500 ETF Trust".
+##   $change (String) - the day's percentage change, e.g. "+2.1%".
+##   $price (String) - the last price, e.g. "$559.44".
+
+# Stock increased (went up) during the day
+newtab-stocks-ticker-status-up = { $name }, tăng { $change }, { $price }
+# Stock decreased (went down) during the day
+newtab-stocks-ticker-status-down = { $name }, giảm { $change }, { $price }
+# Stock didn't change during the day
+newtab-stocks-ticker-status-flat = { $name }, không thay đổi, { $change }, { $price }
+
+## Strings for the Picture of the Day widget
+
+# Title shown at the top of the widget, with the source name appended.
+# "Wikimedia Commons" is a brand name and should not be translated.
+newtab-picture-header = Hình ảnh của ngày · Wikimedia Commons
+# Shorter title shown at the top of the widget, without the source name.
+newtab-picture-header-main = Hình ảnh của ngày
+# Attribution line shown under the title once a picture loads: an author
+# credit, a link to the picture's source page, and a link to its license.
+# "©" is the copyright symbol.
+# $author (string) - the name of the image's author.
+newtab-picture-attribution-author = © { $author }
+# Link to the picture's source page (its Wikimedia Commons file page).
+# "Wikimedia Commons" is a brand name and should not be translated.
+newtab-picture-attribution-source-link = Wikimedia Commons
+# Screen-reader label for the license link; the visible text is the license
+# name (for example "CC BY-SA 4.0") provided with the picture.
+# $license (string) - the name of the license.
+newtab-picture-attribution-license =
+    .aria-label = Xem giấy phép { $license }
+# Tooltip and screen-reader label for the icon-only button that opens the
+# widget's context menu. The button never renders visible text.
+newtab-picture-widget-menu-button =
+    .title = Tuỳ chọn Hình ảnh của ngày
+    .aria-label = Tuỳ chọn Hình ảnh của ngày
+# Button that sets the current picture as the New Tab background wallpaper. The
+# button collapses to an icon when not hovered/focused, so .title is its tooltip.
+newtab-picture-set-wallpaper =
+    .label = Đặt hình nền
+    .title = Đặt hình nền
+    .aria-label = Đặt ảnh của ngày làm hình nền thẻ mới của bạn
+# Context menu item that opens the New Tab customization panel.
+newtab-picture-menu-manage-wallpaper = Quản lý hình nền
+# Context menu item that hides today’s picture, replacing it with an existing
+# wallpaper.
+newtab-picture-menu-hide-photo = Ẩn hình ảnh của ngày
+# Context menu item that restores today’s picture after it has been hidden.
+newtab-picture-menu-show-photo = Hiện hình ảnh của ngày
+# Context menu item linking to more information about the widget.
+newtab-picture-menu-learn-more = Tìm hiểu thêm
+# Icon button shown on the widget once the picture is hidden; restores it.
+newtab-picture-show-button =
+    .title = Hiện hình ảnh của ngày
+    .aria-label = Hiện hình ảnh của ngày
+# Shown when there is no new picture to display yet.
+newtab-picture-check-back = Hãy quay lại vào ngày mai để xem hình ảnh mới
+# Screen-reader text alternative for the picture; fallback used when the source
+# provides no localized description.
+newtab-picture-image-alt = Hình ảnh của ngày trên Wikimedia Commons
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -183,6 +389,7 @@ newtab-topsites-add-shortcut-label = Thêm lối tắt
 newtab-topsites-add-shortcut-title =
     .title = Thêm lối tắt
     .aria-label = Thêm lối tắt
+newtab-shortcuts-pinned-area = Khu vực được ghim
 newtab-topsites-title-label = Tiêu đề
 newtab-topsites-title-input =
     .placeholder = Nhập tiêu đề
@@ -470,6 +677,8 @@ newtab-recommended-stories-toggle =
     .label = Câu chuyện được đề xuất
 newtab-custom-stories-personalized-toggle =
     .label = Câu chuyện
+newtab-custom-stories-personalized-checkbox =
+    .label = Câu chuyện được cá nhân hóa dựa trên hoạt động của bạn
 newtab-custom-stories-personalized-checkbox-label = Câu chuyện được cá nhân hóa dựa trên hoạt động của bạn
 newtab-custom-pocket-sponsored = Câu chuyện được tài trợ
 newtab-custom-pocket-show-recent-saves = Hiển thị các lần lưu gần đây
@@ -490,6 +699,12 @@ newtab-custom-widget-clock-toggle =
     .label = Đồng hồ
 newtab-custom-widget-sports-toggle2 =
     .label = Thể thao
+newtab-custom-widget-privacy-toggle =
+    .label = Riêng tư
+newtab-custom-widget-stocks-toggle =
+    .label = Cổ phiếu
+newtab-custom-widget-picture-toggle =
+    .label = Hình ảnh của ngày
 newtab-custom-widget-section-title = Widget
 newtab-custom-widget-section-toggle =
     .label = Widget
@@ -966,6 +1181,8 @@ newtab-widget-timer-reset =
 newtab-widget-timer-menu-notifications = Tắt thông báo
 newtab-widget-timer-menu-notifications-on = Bật thông báo
 newtab-widget-timer-menu-learn-more = Tìm hiểu thêm
+newtab-widget-timer-menu-button =
+    .aria-label = Tùy chọn bộ đếm giờ
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = Tin tức nổi bật
 newtab-daily-briefing-card-menu-dismiss = Bỏ qua
@@ -1071,6 +1288,8 @@ newtab-sports-widget-show-less =
 # Toggle that filters the list of teams the user follows
 newtab-sports-widget-followed-only-toggle =
     .label = Chỉ các đội đã theo dõi
+# Status shown when more matches are being fetched.
+newtab-sports-widget-loading-more = Đang tải thêm kết quả phù hợp…
 # Watch is a verb (as in watch matches online).
 newtab-sports-widget-watch =
     .label = Xem
@@ -1150,6 +1369,9 @@ newtab-sports-widget-third-place = Hạng ba
 newtab-sports-widget-runner-up = Á quân
 newtab-sports-widget-champions = Nhà vô địch
 newtab-sports-widget-world-cup-champions = Nhà vô địch World Cup 2026
+# Compact champions label for the medium-size widget result card; the larger
+# card uses newtab-sports-widget-world-cup-champions.
+newtab-sports-widget-world-cup-champions-short = Nhà vô địch năm 2026
 # Variables:
 #   $date (Date) - The match start time
 newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
@@ -1248,12 +1470,23 @@ newtab-sports-widget-team-tbd = Sẽ được xác định sau
 newtab-sports-widget-message-wallpapers-title = Khởi động World Cup với những hình nền mới
 newtab-sports-widget-message-wallpapers-body = Hãy mang chút năng lượng của ngày thi đấu đến trình duyệt của bạn trong suốt giải đấu.
 newtab-sports-widget-message-wallpapers-cta = Chọn hình nền
+newtab-sports-widget-message-wallpapers-semifinals-title = Tải hình nền mới cho vòng bán kết
+newtab-sports-widget-message-wallpapers-semifinals-body = Chuẩn bị cho những trận đấu hấp dẫn nhất của World Cup.
 newtab-sports-widget-message-add-widgets-cta =
     .label = Add widgets
 newtab-sports-widget-message-day-in-play-title = Hãy giữ cho ngày của bạn luôn thú vị với các widget của { -brand-product-name }
 newtab-sports-widget-message-day-in-play-body = Theo dõi World Cup, hoàn thành công việc, theo dõi thời gian trên toàn cầu và hơn thế nữa.
 newtab-sports-widget-message-explore-widgets-cta =
     .label = Khám phá widget
+
+## Survey prompts shown after the World Cup to gather feedback on the widgets experience.
+
+newtab-sports-widget-message-survey-title = Giúp chúng tôi cải thiện các tiện ích
+newtab-sports-widget-message-survey-body = Giải vô địch bóng đá thế giới đã khép lại. Hãy chia sẻ cảm nhận của bạn về trải nghiệm này.
+newtab-sports-widget-message-survey-widget-title = Tiện ích World Cup hoạt động như thế nào?
+newtab-sports-widget-message-survey-widget-body = Hãy chia sẻ phản hồi của bạn để giúp chúng tôi cải thiện các tiện ích trong tương lai. Sau đó, hãy thử tiện ích mới trong danh sách các tiện ích của bạn.
+newtab-sports-widget-message-survey-cta =
+    .label = Tham gia khảo sát
 
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input

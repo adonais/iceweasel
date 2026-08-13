@@ -2,18 +2,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "HttpLog.h"
-
 #include "AlternateServices.h"
+
 #include <algorithm>
+
+#include "HttpLog.h"
 #include "mozilla/Atomics.h"
-#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/dom/PContent.h"
+#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "mozilla/net/AltSvcTransactionChild.h"
 #include "mozilla/net/AltSvcTransactionParent.h"
-#include "mozilla/SyncRunnable.h"
 #include "nsEscape.h"
 #include "nsHttpConnectionInfo.h"
 #include "nsHttpHandler.h"
@@ -227,9 +227,27 @@ void AltSvcMapping::ProcessHeader(
         RefPtr<nsHttpConnectionInfo> ci;
         aMapping->GetConnectionInfo(getter_AddRefs(ci), proxyInfo,
                                     originAttributes);
-        if (ci->HashKey().Equals(aTransConnInfo->HashKey())) {
-          LOG(("The transaction's conninfo is the same, no need to validate"));
+        // Skip only when the transaction already reached the alternate (e.g.
+        // via HTTPS RR). Under Happy Eyeballs BuildHashKey drops the routed
+        // host/NPN token, so hash keys collide and this would skip every
+        // ordinary Alt-Svc header (bug 2051272). For h3 we want real validation
+        // (to warm the h3 connection), so additionally require the routed
+        // endpoint to match; under non-HE those fields are in the hash key, so
+        // this is a no-op. For h2, AltSvcTransaction validation can't complete
+        // under HE (bug 2051272 #2), so keep skipping on a hash-key match.
+        bool sameHashKey = ci->HashKey().Equals(aTransConnInfo->HashKey());
+        if (ci->IsHttp3()) {
+          if (sameHashKey &&
+              ci->GetRoutedHost().Equals(aTransConnInfo->GetRoutedHost()) &&
+              ci->RoutedPort() == aTransConnInfo->RoutedPort() &&
+              ci->GetNPNToken().Equals(aTransConnInfo->GetNPNToken())) {
+            aDontValidate = true;
+          }
+        } else if (sameHashKey) {
           aDontValidate = true;
+        }
+        if (aDontValidate) {
+          LOG(("The transaction's conninfo is the same, no need to validate"));
         }
       }
     }
@@ -907,6 +925,11 @@ void AltSvcCache::UpdateAltServiceMapping(
 
   if (StaticPrefs::network_http_happy_eyeballs_enabled()) {
     ci->SetHappyEyeballsEnabled(true);
+    // Validating an h3 alternate must establish an h3 connection; don't let
+    // Happy Eyeballs race h1/h2 and settle on a non-h3 connection.
+    if (map->IsHttp3()) {
+      ci->SetHttp3Only(true);
+    }
   }
 
   MOZ_ASSERT(map->HTTPS());

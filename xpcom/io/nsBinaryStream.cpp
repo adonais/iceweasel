@@ -16,31 +16,30 @@
  * @See nsIBinaryInputStream
  * @See nsIBinaryOutputStream
  */
-#include <algorithm>
-#include <string.h>
-
 #include "nsBinaryStream.h"
 
-#include "mozilla/CheckedInt.h"
-#include "mozilla/EndianUtils.h"
-#include "mozilla/PodOperations.h"
-#include "mozilla/RefPtr.h"
-#include "mozilla/Span.h"
-#include "mozilla/UniquePtr.h"
+#include <string.h>
 
-#include "nsCRT.h"
-#include "nsString.h"
-#include "nsISerializable.h"
-#include "nsIClassInfo.h"
-#include "nsComponentManagerUtils.h"
-#include "nsIURI.h"       // for NS_IURI_IID
-#include "nsIX509Cert.h"  // for NS_IX509CERT_IID
+#include <algorithm>
 
 #include "js/ArrayBuffer.h"  // JS::{GetArrayBuffer{,ByteLength},IsArrayBufferObject}
 #include "js/ArrayBufferMaybeShared.h"  // JS::IsImmutableArrayBufferMaybeShared
 #include "js/GCAPI.h"                   // JS::AutoCheckCannotGC
 #include "js/RootingAPI.h"              // JS::{Handle,Rooted}
 #include "js/Value.h"                   // JS::Value
+#include "mozilla/CheckedInt.h"
+#include "mozilla/EndianUtils.h"
+#include "mozilla/PodOperations.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/Span.h"
+#include "mozilla/UniquePtr.h"
+#include "nsCRT.h"
+#include "nsComponentManagerUtils.h"
+#include "nsIClassInfo.h"
+#include "nsISerializable.h"
+#include "nsIURI.h"       // for NS_IURI_IID
+#include "nsIX509Cert.h"  // for NS_IX509CERT_IID
+#include "nsString.h"
 
 using mozilla::AsBytes;
 using mozilla::MakeUnique;

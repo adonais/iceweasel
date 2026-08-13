@@ -6,6 +6,7 @@
 @template
 def RLBoxLibrary(name, use_segue=True):
     WASM_SOURCES += [
+        "/memory/mozalloc/cxxalloc.cpp",
         "/memory/mozalloc/mozalloc.cpp",
         "/third_party/rlbox_wasm2c_sandbox/c_src/wasm2c_sandbox_wrapper.c",
     ]

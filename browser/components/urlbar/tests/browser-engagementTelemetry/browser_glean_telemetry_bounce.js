@@ -81,7 +81,7 @@ add_task(async function test_bounce_tab_close() {
     await BrowserTestUtils.removeTab(tab);
     await Interactions.interactionUpdatePromise;
 
-    assertBounceTelemetry([
+    await assertBounceTelemetry([
       {
         view_time: "1.2",
         selected_result: expected.selected_result,
@@ -129,7 +129,7 @@ add_task(async function test_no_bounce() {
     await BrowserTestUtils.removeTab(tab);
     await Interactions.interactionUpdatePromise;
 
-    assertBounceTelemetry([]);
+    await assertBounceTelemetry([]);
 
     await PlacesUtils.history.clear();
     stub.restore();
@@ -166,7 +166,7 @@ add_task(async function test_bounce_back_button() {
 
     await Interactions.interactionUpdatePromise;
 
-    assertBounceTelemetry([
+    await assertBounceTelemetry([
       {
         view_time: "1.2",
         selected_result: expected.selected_result,
@@ -219,7 +219,7 @@ add_task(async function test_other_engagement() {
 
     await Interactions.interactionUpdatePromise;
 
-    assertBounceTelemetry([
+    await assertBounceTelemetry([
       {
         view_time: "1.2",
         selected_result: expected.selected_result,

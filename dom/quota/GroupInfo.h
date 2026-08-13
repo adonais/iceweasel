@@ -16,9 +16,11 @@ namespace mozilla::dom::quota {
 
 class GroupInfoPair;
 class OriginInfo;
+class DirtyTrackingAutoLock;
 
 class GroupInfo final {
   friend class CanonicalQuotaObject;
+  friend class DirtyTrackingAutoLock;
   friend class GroupInfoPair;
   friend class OriginInfo;
   friend class QuotaManager;

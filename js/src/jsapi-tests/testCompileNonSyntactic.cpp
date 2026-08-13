@@ -10,8 +10,7 @@
 #include "js/CompilationAndEvaluation.h"  // JS::Compile
 #include "js/CompileOptions.h"  // JS::CompileOptions, JS::InstantiateOptions
 #include "js/experimental/JSStencil.h"  // JS::Stencil, JS::InstantiateGlobalStencil
-
-#include "js/SourceText.h"  // JS::Source{Ownership,Text}
+#include "js/SourceText.h"              // JS::Source{Ownership,Text}
 #include "jsapi-tests/tests.h"
 #include "vm/HelperThreads.h"
 #include "vm/Monitor.h"

@@ -121,7 +121,7 @@ class NetworkLocationsForm extends PureComponent {
       ),
       dom.input({
         id: "about-debugging-network-locations-host-input",
-        className: "default-input qa-network-form-input",
+        className: "qa-network-form-input",
         placeholder: "localhost:6080",
         type: "text",
         value: this.state.value,
@@ -136,7 +136,7 @@ class NetworkLocationsForm extends PureComponent {
         },
         dom.button(
           {
-            className: "primary-button qa-network-form-submit-button",
+            className: "primary qa-network-form-submit-button",
           },
           "Add"
         )

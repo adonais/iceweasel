@@ -2,17 +2,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "ImageLogging.h"
-#include "nsCRT.h"
 #include "nsPNGEncoder.h"
-#include "nsStreamUtils.h"
-#include "nsString.h"
-#include "prprf.h"
-#include "mozilla/CheckedInt.h"
-#include "mozilla/UniquePtrExtensions.h"
 
 #include <bit>
 #include <cstring>
+
+#include "ImageLogging.h"
+#include "mozilla/CheckedInt.h"
+#include "mozilla/UniquePtrExtensions.h"
+#include "nsCRT.h"
+#include "nsStreamUtils.h"
+#include "nsString.h"
+#include "prprf.h"
 
 using namespace mozilla;
 

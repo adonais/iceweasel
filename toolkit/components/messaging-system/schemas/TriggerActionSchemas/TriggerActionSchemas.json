@@ -31,6 +31,24 @@
                 "type": "string"
               },
               "description": "List of regular expression patterns to match against URLs"
+            },
+            "context": {
+              "type": "object",
+              "properties": {
+                "visitsCount": {
+                  "type": "number",
+                  "description": "Number of times the matched URL has been visited this session"
+                },
+                "url": {
+                  "type": "string",
+                  "description": "The full spec of the URL that was navigated to"
+                },
+                "host": {
+                  "type": "string",
+                  "description": "The host (nsIURI.host) of the URL that was navigated to"
+                }
+              },
+              "additionalProperties": false
             }
           },
           "required": ["id"],
@@ -634,6 +652,18 @@
           "additionalProperties": false,
           "required": ["id"],
           "description": "Occurs every time a user opens a new Smart Window tab."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "enum": ["nimbusUpdate"]
+            }
+          },
+          "additionalProperties": false,
+          "required": ["id"],
+          "description": "Fired after the Nimbus experiment enrollment listener finishes loading messages from the messaging-experiments provider. Used for messages that should be processed immediately upon experiment enrollment, such as moments page messages."
         }
       ]
     }

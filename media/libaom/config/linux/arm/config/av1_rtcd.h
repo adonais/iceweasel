@@ -492,7 +492,7 @@ void av1_highbd_wiener_convolve_add_src_c(const uint8_t *src, ptrdiff_t src_stri
 void av1_highbd_wiener_convolve_add_src_neon(const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const int16_t *filter_x, int x_step_q4, const int16_t *filter_y, int y_step_q4, int w, int h, const WienerConvolveParams *conv_params, int bd);
 RTCD_EXTERN void (*av1_highbd_wiener_convolve_add_src)(const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const int16_t *filter_x, int x_step_q4, const int16_t *filter_y, int y_step_q4, int w, int h, const WienerConvolveParams *conv_params, int bd);
 
-void av1_interp_cubic_rate_dist_c(const double *p1, const double *p2, double x, double * const rate_f, double * const distbysse_f);
+void av1_interp_cubic_rate_dist_c(const double *p1, const double *p2, double x, double rate_dist_f[2]);
 #define av1_interp_cubic_rate_dist av1_interp_cubic_rate_dist_c
 
 void av1_inv_txfm2d_add_16x16_c(const int32_t *input, uint16_t *output, int stride, TX_TYPE tx_type, int bd);

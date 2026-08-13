@@ -4,12 +4,13 @@
 #ifndef _include_gfx_ipc_CanvasShutdownManager_h_
 #define _include_gfx_ipc_CanvasShutdownManager_h_
 
+#include <set>
+#include <vector>
+
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/ThreadLocal.h"
 #include "mozilla/layers/LayersTypes.h"
-#include <set>
-#include <vector>
 
 namespace mozilla {
 namespace dom {

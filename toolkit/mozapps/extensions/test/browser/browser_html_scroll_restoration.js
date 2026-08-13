@@ -94,11 +94,12 @@ function isLayoutStable(win) {
   // <moz-message-bar> elements may affect the layout of a page, and therefore
   // we should check whether its embedded style sheet has finished loading.
   for (let bar of win.document.querySelectorAll("moz-message-bar")) {
-    // Check for the existence of a CSS property from moz-message-bar.css.
+    // Check for a property from moz-message-bar.css (defined directly on
+    // :host, not via @import or @layer) to detect stylesheet load.
     if (
       !win
         .getComputedStyle(bar)
-        .getPropertyValue("--message-bar-background-color")
+        .getPropertyValue("--message-bar-icon-close-url")
     ) {
       return false;
     }

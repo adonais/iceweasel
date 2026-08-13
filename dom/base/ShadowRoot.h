@@ -117,7 +117,7 @@ class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
              SlotAssignmentMode aSlotAssignment, IsClonable aClonable,
              IsSerializable aIsSerializable, Declarative aDeclarative,
              CustomSlotDispatch aCustomSlotDispatch,
-             const Maybe<CustomElementRegistry*> aRegistry,
+             const Maybe<RefPtr<CustomElementRegistry>> aRegistry,
              already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   void AddSizeOfExcludingThis(nsWindowSizes&, size_t* aNodeSize) const final;
@@ -292,12 +292,6 @@ class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
     SetIsNativeAnonymousRoot();
     SetFlags(NODE_HAS_BEEN_IN_UA_WIDGET);
   }
-
-  /**
-   * Return true if this is a UA shadow tree root, e.g., for <details>,
-   * <video> or SVG <use>, etc, i.e., if it's not created by JS.
-   */
-  [[nodiscard]] bool IsUAShadowRootSlow() const;
 
   bool IsAvailableToElementInternals() const {
     return HasFlag(SHADOW_ROOT_IS_AVAILABLE_TO_ELEMENT_INTERNALS);

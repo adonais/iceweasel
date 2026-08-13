@@ -8,13 +8,13 @@
  * a group of functions BUILD correctly.
  */
 
-#include "nsISupportsUtils.h"
-#include "nsIWeakReference.h"
-#include "nsWeakReference.h"
+#include "nsComponentManagerUtils.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsIInterfaceRequestorUtils.h"
-#include "nsComponentManagerUtils.h"
+#include "nsISupportsUtils.h"
+#include "nsIWeakReference.h"
 #include "nsServiceManagerUtils.h"
+#include "nsWeakReference.h"
 
 #define NS_ITESTSERVICE_IID \
   {0x127b5253, 0x37b1, 0x43c7, {0x96, 0x2b, 0xab, 0xf1, 0x2d, 0x22, 0x56, 0xae}}

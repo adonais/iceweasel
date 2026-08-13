@@ -38,6 +38,9 @@ def test_push_to_try(repo, monkeypatch):
             return "version 6.7"
         return ""
 
+    def fake_subprocess_run(*args, **kwargs):
+        return subprocess.CompletedProcess(args[0], 0, stdout=fake_run(*args, **kwargs))
+
     def normalize_fake_run(*args, **kwargs):
         if (
             kwargs.get("text")
@@ -52,6 +55,7 @@ def test_push_to_try(repo, monkeypatch):
     def fake_uuid():
         return "974284fd-f395-4a15-a9d7-814a71241242"
 
+    monkeypatch.setattr(subprocess, "run", fake_subprocess_run)
     monkeypatch.setattr(subprocess, "check_output", normalize_fake_run)
     monkeypatch.setattr(subprocess, "check_call", normalize_fake_run)
     monkeypatch.setattr(uuid, "uuid4", fake_uuid)
@@ -236,7 +240,6 @@ def test_push_to_try(repo, monkeypatch):
                 "mach_tryserver",
                 "--change",
                 None,
-                "--allow-new",
                 "--allow-empty-description",
             ),
             (str(tool), "--quiet", "operation", "restore", ""),

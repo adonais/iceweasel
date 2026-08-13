@@ -12,6 +12,8 @@ interface ToggleablePrompt {
      * Listener for when this prompt is shown or hidden.
      */
     var toggleablePromptListener: Listener?
+        get() = null
+        set(_) {}
 
     /**
      * Whether the prompt is currently visible.

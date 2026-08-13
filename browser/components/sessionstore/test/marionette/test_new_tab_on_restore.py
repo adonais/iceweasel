@@ -261,3 +261,110 @@ class TestNewTabOnRestoreNotSettingBased(SessionStoreTestCase):
             events,
             "No telemetry when restore is not setting-based",
         )
+
+
+class TestNewTabOnRestoreAfterCrash(SessionStoreTestCase):
+    """
+    A crash-triggered restore is not a user-configured restore, so the
+    new-tab-on-restore feature must not engage even when the setting is on.
+    Guards the `!ss.previousSessionCrashed` check in SessionStore's initSession.
+    """
+
+    def setUp(self):
+        super().setUp(
+            startup_page=3,
+            include_private=False,
+            restore_on_demand=False,
+            test_windows=set([
+                (
+                    inline("Page 1"),
+                    inline("Page 2"),
+                ),
+            ]),
+        )
+        self.marionette.set_prefs({
+            "browser.sessionstore.newTabOnRestore": True,
+            "browser.sessionstore.newTabOnRestore.showSetting": True,
+        })
+
+    def test_no_new_tab_after_crash(self):
+        # Persist prefs and the session to disk before the crash.
+        self.marionette.execute_async_script(
+            """
+            let [resolve] = arguments;
+            Services.prefs.savePrefFile(Services.dirsvc.get("PrefF", Ci.nsIFile));
+            const { TabStateFlusher } = ChromeUtils.importESModule(
+                "resource:///modules/sessionstore/TabStateFlusher.sys.mjs"
+            );
+            const { SessionSaver } = ChromeUtils.importESModule(
+                "resource:///modules/sessionstore/SessionSaver.sys.mjs"
+            );
+            (async () => {
+                for (let win of Services.wm.getEnumerator("navigator:browser")) {
+                    await TabStateFlusher.flushWindow(win);
+                }
+                await SessionSaver.run();
+            })().then(resolve);
+            """
+        )
+
+        # Simulate a crash: kill the process without a clean shutdown so the
+        # "final-state-write-complete" checkpoint is never recorded.
+        self.marionette.quit(in_app=False)
+        self.marionette.start_session()
+        self.marionette.set_context("chrome")
+
+        self.marionette.execute_async_script(
+            """
+            let [resolve] = arguments;
+            const { SessionStore } = ChromeUtils.importESModule(
+                "resource:///modules/sessionstore/SessionStore.sys.mjs"
+            );
+            SessionStore.promiseAllWindowsRestored.then(resolve);
+            """
+        )
+
+        # Validity check: the prefs must have actually persisted across the
+        # crash.
+        prefs = self.marionette.execute_script(
+            """
+            return {
+                enabled: Services.prefs.getBoolPref(
+                    "browser.sessionstore.newTabOnRestore", false
+                ),
+                showSetting: Services.prefs.getBoolPref(
+                    "browser.sessionstore.newTabOnRestore.showSetting", false
+                ),
+            };
+            """
+        )
+        self.assertTrue(
+            prefs["enabled"] and prefs["showSetting"],
+            "newTabOnRestore prefs should persist across the crash so the "
+            "feature is enabled; otherwise this test is not exercising the "
+            "previousSessionCrashed path",
+        )
+
+        # No new tab should be added: only the restored tabs are present.
+        tab_count = self.marionette.execute_script(
+            """
+            let win = BrowserWindowTracker.getTopWindow();
+            return win.gBrowser.tabs.length;
+            """
+        )
+        self.assertEqual(
+            tab_count,
+            RESTORED_TAB_COUNT,
+            "No new tab should be added after a crash restore",
+        )
+
+        events = self.marionette.execute_script(
+            """
+            return Glean.sessionRestore.startupSessionAutoRestored.testGetValue();
+            """
+        )
+        self.assertIsNone(
+            events,
+            "The new-tab-on-restore feature must not engage after a crash "
+            "restore (previousSessionCrashed)",
+        )

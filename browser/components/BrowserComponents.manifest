@@ -21,6 +21,9 @@ category browser-before-ui-startup moz-src:///browser/components/privatebrowsing
 category browser-before-ui-startup resource:///modules/AboutHomeStartupCache.sys.mjs AboutHomeStartupCache.init
 category browser-before-ui-startup resource:///modules/AccountsGlue.sys.mjs AccountsGlue.init
 category browser-before-ui-startup moz-src:///browser/modules/ObserverForwarder.sys.mjs ObserverForwarder.init
+#ifdef XP_WIN
+category browser-before-ui-startup moz-src:///browser/components/shell/StartupOSIntegration.sys.mjs StartupOSIntegration.applyCustomIconOnStartup
+#endif
 
 # Browser window lifecycle consumers
 category browser-window-before-initial-xul-layout-document-preparation chrome://browser/content/browser-customization.js AutoHideMenubar.init
@@ -63,6 +66,36 @@ category browser-window-delayed-startup moz-src:///browser/components/genai/Link
 category browser-window-delayed-startup moz-src:///browser/components/reportbrokensite/ReportBrokenSite.sys.mjs ReportBrokenSite.init
 category browser-window-delayed-startup moz-src:///browser/components/search/SearchUIUtils.sys.mjs SearchUIUtils.init
 category browser-window-delayed-startup resource:///modules/taskbartabs/TaskbarTabsPageAction.sys.mjs TaskbarTabsPageAction.init
+#ifdef XP_MACOSX
+category browser-window-delayed-startup resource://gre/modules/RosettaUtils.sys.mjs RosettaUtils.maybeWarnAboutRosetta
+#endif
+category browser-window-delayed-startup resource:///modules/ReducedProtectionNotification.sys.mjs ReducedProtectionNotification.observePref
+category browser-window-delayed-startup chrome://browser/content/browser.js#BrowserOffline BrowserOffline.init
+category browser-window-delayed-startup chrome://browser/content/tabbrowser/browser-fullZoom.js FullZoom.init
+category browser-window-delayed-startup chrome://browser/content/customizableui/panelUI.js PanelUI.init
+category browser-window-delayed-startup chrome://browser/content/browser-places.js#BookmarkingUI BookmarkingUI.init
+category browser-window-delayed-startup chrome://browser/content/browser.js#gURLBar gURLBar.delayedStartupInit
+category browser-window-delayed-startup chrome://browser/content/browser-siteProtections.js gProtectionsHandler.init
+category browser-window-delayed-startup chrome://browser/content/browser-trustPanel.js gTrustPanelHandler.init
+category browser-window-delayed-startup chrome://browser/content/browser-places.js#PlacesToolbarHelper PlacesToolbarHelper.init
+category browser-window-delayed-startup chrome://browser/content/tabbrowser/browser-ctrlTab.js ctrlTab.observePref
+# The object handling the downloads indicator is initialized here in the delayed startup function,
+# but the actual indicator element is not loaded unless there are downloads to be displayed.
+category browser-window-delayed-startup chrome://browser/content/downloads/indicator.js DownloadsButton.initializeIndicator
+category browser-window-delayed-startup chrome://browser/content/browser-fullScreenAndPointerLock.js FullScreen.init
+#ifdef MOZ_DATA_REPORTING
+category browser-window-delayed-startup chrome://browser/content/browser-data-submission-info-bar.js gDataNotificationInfoBar.init
+#endif
+#ifndef MOZILLA_OFFICIAL
+category browser-window-delayed-startup chrome://browser/content/browser-development-helpers.js DevelopmentHelpers.init
+#endif
+category browser-window-delayed-startup chrome://browser/content/browser-addons.js gExtensionsNotifications.init
+category browser-window-delayed-startup chrome://browser/content/browser-captivePortal.js CaptivePortalWatcher.delayedStartup
+
+# browser-window-sessionstore-initialized is fired from the window's delayed startup once SessionStore is initialized.
+category browser-window-sessionstore-initialized chrome://browser/content/browser.js#gRestoreLastSessionObserver gRestoreLastSessionObserver.init
+category browser-window-sessionstore-initialized chrome://browser/content/sidebar/browser-sidebar.js SidebarController.startDelayedLoad
+category browser-window-sessionstore-initialized chrome://browser/content/browser.js#PanicButtonNotifier PanicButtonNotifier.init
 
 category browser-window-location-change chrome://browser/content/browser-places.js BookmarkingUI.onLocationChange
 category browser-window-location-change chrome://browser/content/browser-sitePermissionPanel.js gPermissionPanel.onLocationChange
@@ -73,7 +106,7 @@ category browser-window-location-change moz-src:///browser/components/urlbar/Act
 category browser-window-location-change resource:///modules/asrouter/CFRPageActions.sys.mjs CFRPageActions.onLocationChange
 category browser-window-location-change resource:///actors/AboutReaderParent.sys.mjs AboutReaderParent.onLocationChange
 category browser-window-location-change resource://gre/actors/TranslationsParent.sys.mjs TranslationsParent.onLocationChange
-category browser-window-location-change resource://gre/modules/PictureInPicture.sys.mjs PictureInPicture.onLocationChange
+category browser-window-location-change moz-src:///toolkit/components/pictureinpicture/PictureInPicture.sys.mjs PictureInPicture.onLocationChange
 
 category browser-window-unload-begin chrome://browser/content/browser-customtitlebar.js CustomTitlebar.uninit
 category browser-window-unload-begin moz-src:///browser/themes/ToolbarIconColor.sys.mjs ToolbarIconColor.uninit
@@ -89,9 +122,22 @@ category browser-window-unload chrome://browser/content/browser-toolbarKeyNav.js
 # the comment in `browser-window-load` above.
 category browser-window-unload chrome://browser/content/browser.js#Win10TabletModeUpdater Win10TabletModeUpdater.uninit
 category browser-window-unload chrome://browser/content/browser.js#CombinedStopReload CombinedStopReload.uninit
-category browser-window-unload chrome://browser/content/browser-addons.js gUnifiedExtensions.uninit
+category browser-window-unload chrome://browser/content/browser-addons.js#gUnifiedExtensions gUnifiedExtensions.uninit
 category browser-window-unload chrome://browser/content/browser.js#FirefoxViewHandler FirefoxViewHandler.uninit
 category browser-window-unload moz-src:///browser/components/tabbrowser/NewTabPagePreloading.sys.mjs NewTabPagePreloading.removePreloadedBrowser
+category browser-window-unload chrome://browser/content/browser-fullScreenAndPointerLock.js FullScreen.uninit
+category browser-window-unload chrome://browser/content/browser-addons.js#gExtensionsNotifications gExtensionsNotifications.uninit
+category browser-window-unload chrome://browser/content/browser-places.js#PlacesToolbarHelper PlacesToolbarHelper.uninit
+category browser-window-unload chrome://browser/content/browser-places.js#BookmarkingUI BookmarkingUI.uninit
+
+# Teardown for `browser-window-delayed-startup` consumers. Fired only when the
+# window's delayed startup actually ran.
+category browser-window-unload-delayed-startup chrome://browser/content/tabbrowser/browser-ctrlTab.js ctrlTab.stopObservingPref
+category browser-window-unload-delayed-startup chrome://browser/content/browser-siteProtections.js gProtectionsHandler.uninit
+category browser-window-unload-delayed-startup chrome://browser/content/browser-trustPanel.js gTrustPanelHandler.uninit
+category browser-window-unload-delayed-startup chrome://browser/content/tabbrowser/browser-fullZoom.js FullZoom.destroy
+category browser-window-unload-delayed-startup chrome://browser/content/browser.js BrowserOffline.uninit
+category browser-window-unload-delayed-startup chrome://browser/content/customizableui/panelUI.js PanelUI.uninit
 
 # The category below is specific to Tabbrowser destruction. For consumers that need to uninitialize during
 # window unload, use 'browser-window-unload' instead.
@@ -111,7 +157,7 @@ category browser-first-window-ready moz-src:///toolkit/components/doh/DoHControl
 category browser-first-window-ready moz-src:///toolkit/profile/ProfilesDatastoreService.sys.mjs ProfilesDatastoreService.init
 category browser-first-window-ready resource:///modules/profiles/SelectableProfileService.sys.mjs SelectableProfileService.init
 category browser-first-window-ready moz-src:///browser/components/protections/ContentBlockingPrefs.sys.mjs ContentBlockingPrefs.init
-category browser-first-window-ready resource://gre/modules/CaptchaDetectionPingUtils.sys.mjs CaptchaDetectionPingUtils.init
+category browser-first-window-ready moz-src:///toolkit/components/captchadetection/CaptchaDetectionPingUtils.sys.mjs CaptchaDetectionPingUtils.init
 category browser-first-window-ready moz-src:///browser/components/ipprotection/IPProtectionHelpers.sys.mjs IPProtectionActivator.init
 category browser-first-window-ready moz-src:///browser/components/customizableui/SearchWidgetTracker.sys.mjs SearchWidgetTracker.init
 #ifdef MOZ_SANDBOX

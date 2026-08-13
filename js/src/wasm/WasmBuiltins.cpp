@@ -94,24 +94,6 @@ static const unsigned BUILTIN_THUNK_LIFO_SIZE = 64 * 1024;
 namespace js {
 namespace wasm {
 
-constexpr SymbolicAddressSignature SASigSinNativeD = {
-    SymbolicAddress::SinNativeD, _F64, _Infallible, _NoTrap, 1, {_F64, _END}};
-constexpr SymbolicAddressSignature SASigSinFdlibmD = {
-    SymbolicAddress::SinFdlibmD, _F64, _Infallible, _NoTrap, 1, {_F64, _END}};
-constexpr SymbolicAddressSignature SASigCosNativeD = {
-    SymbolicAddress::CosNativeD, _F64, _Infallible, _NoTrap, 1, {_F64, _END}};
-constexpr SymbolicAddressSignature SASigCosFdlibmD = {
-    SymbolicAddress::CosFdlibmD, _F64, _Infallible, _NoTrap, 1, {_F64, _END}};
-constexpr SymbolicAddressSignature SASigTanNativeD = {
-    SymbolicAddress::TanNativeD, _F64, _Infallible, _NoTrap, 1, {_F64, _END}};
-constexpr SymbolicAddressSignature SASigTanFdlibmD = {
-    SymbolicAddress::TanFdlibmD, _F64, _Infallible, _NoTrap, 1, {_F64, _END}};
-constexpr SymbolicAddressSignature SASigASinD = {
-    SymbolicAddress::ASinD, _F64, _Infallible, _NoTrap, 1, {_F64, _END}};
-constexpr SymbolicAddressSignature SASigACosD = {
-    SymbolicAddress::ACosD, _F64, _Infallible, _NoTrap, 1, {_F64, _END}};
-constexpr SymbolicAddressSignature SASigATanD = {
-    SymbolicAddress::ATanD, _F64, _Infallible, _NoTrap, 1, {_F64, _END}};
 constexpr SymbolicAddressSignature SASigCeilD = {
     SymbolicAddress::CeilD, _F64, _Infallible, _NoTrap, 1, {_F64, _END}};
 constexpr SymbolicAddressSignature SASigCeilF = {
@@ -128,15 +110,6 @@ constexpr SymbolicAddressSignature SASigNearbyIntD = {
     SymbolicAddress::NearbyIntD, _F64, _Infallible, _NoTrap, 1, {_F64, _END}};
 constexpr SymbolicAddressSignature SASigNearbyIntF = {
     SymbolicAddress::NearbyIntF, _F32, _Infallible, _NoTrap, 1, {_F32, _END}};
-constexpr SymbolicAddressSignature SASigExpD = {
-    SymbolicAddress::ExpD, _F64, _Infallible, _NoTrap, 1, {_F64, _END}};
-constexpr SymbolicAddressSignature SASigLogD = {
-    SymbolicAddress::LogD, _F64, _Infallible, _NoTrap, 1, {_F64, _END}};
-constexpr SymbolicAddressSignature SASigPowD = {
-    SymbolicAddress::PowD, _F64, _Infallible, _NoTrap, 2, {_F64, _F64, _END}};
-constexpr SymbolicAddressSignature SASigATan2D = {
-    SymbolicAddress::ATan2D, _F64, _Infallible, _NoTrap, 2, {_F64, _F64, _END}};
-
 constexpr SymbolicAddressSignature SASigAddSubI128 = {
     SymbolicAddress::AddSubI128, _VOID, _Infallible, _NoTrap, 2,
     {_PTR, _I32, _END}};
@@ -599,7 +572,7 @@ static bool WasmHandleDebugTrap() {
   }
 
   DebugState& debug = instance->debug();
-  MOZ_ASSERT(debug.hasBreakpointTrapAtOffset(site.lineOrBytecode()));
+  MOZ_ASSERT(debug.hasBreakpointTrapAtOffset(site.bytecodeOffset()));
   if (debug.stepModeEnabled(debugFrame->funcIndex())) {
     if (!DebugAPI::onSingleStep(cx)) {
       if (cx->isPropagatingForcedReturn()) {
@@ -611,7 +584,7 @@ static bool WasmHandleDebugTrap() {
       return false;
     }
   }
-  if (debug.hasBreakpointSite(site.lineOrBytecode())) {
+  if (debug.hasBreakpointSite(site.bytecodeOffset())) {
     if (!DebugAPI::onTrap(cx)) {
       if (cx->isPropagatingForcedReturn()) {
         cx->clearPropagatingForcedReturn();
@@ -638,8 +611,7 @@ static WasmExceptionObject* GetOrWrapWasmException(JitActivation* activation,
   bool isTrapThrowReported =
       activation->isWasmTrapping() &&
       activation->wasmTrapData().trap == Trap::ThrowReported;
-  if (activation->isWasmTrapping() &&
-      !isTrapThrowReported
+  if (activation->isWasmTrapping() && !isTrapThrowReported
 #ifdef ENABLE_WASM_JSPI
       && activation->wasmTrapData().trap != Trap::ThrowSuspendError
 #endif
@@ -843,7 +815,11 @@ void wasm::HandleExceptionWasm(JSContext* cx, JitFrameIter& iter,
 #ifdef ENABLE_WASM_JSPI
   // Track the previous stack we were on so that we can free it once we've
   // unwound past it.
-  wasm::ContStack* wasmPreviousStack = nullptr;
+  // Initialize it with any continuation stack the trap unwound out
+  // of without leaving a frame to visit (a return_call signature mismatch
+  // in a continuation's entry function): it has no iterated frame, so it must
+  // be freed when we cross the first stack switch.
+  wasm::ContStack* wasmPreviousStack = iter.asWasm().unwoundContStack();
 #endif
 
   for (; !iter.done() && iter.isWasm(); ++iter) {
@@ -1544,33 +1520,6 @@ void* wasm::AddressOf(SymbolicAddress imm, ABIFunctionType* abiType) {
     case SymbolicAddress::ModD:
       *abiType = Args_Double_DoubleDouble;
       return FuncCast(NumberMod, *abiType);
-    case SymbolicAddress::SinNativeD:
-      *abiType = Args_Double_Double;
-      return FuncCast<double(double)>(sin, *abiType);
-    case SymbolicAddress::SinFdlibmD:
-      *abiType = Args_Double_Double;
-      return FuncCast<double(double)>(fdlibm_sin, *abiType);
-    case SymbolicAddress::CosNativeD:
-      *abiType = Args_Double_Double;
-      return FuncCast<double(double)>(cos, *abiType);
-    case SymbolicAddress::CosFdlibmD:
-      *abiType = Args_Double_Double;
-      return FuncCast<double(double)>(fdlibm_cos, *abiType);
-    case SymbolicAddress::TanNativeD:
-      *abiType = Args_Double_Double;
-      return FuncCast<double(double)>(tan, *abiType);
-    case SymbolicAddress::TanFdlibmD:
-      *abiType = Args_Double_Double;
-      return FuncCast<double(double)>(fdlibm_tan, *abiType);
-    case SymbolicAddress::ASinD:
-      *abiType = Args_Double_Double;
-      return FuncCast<double(double)>(fdlibm_asin, *abiType);
-    case SymbolicAddress::ACosD:
-      *abiType = Args_Double_Double;
-      return FuncCast<double(double)>(fdlibm_acos, *abiType);
-    case SymbolicAddress::ATanD:
-      *abiType = Args_Double_Double;
-      return FuncCast<double(double)>(fdlibm_atan, *abiType);
     case SymbolicAddress::CeilD:
       *abiType = Args_Double_Double;
       return FuncCast<double(double)>(Ceil, *abiType);
@@ -1595,18 +1544,6 @@ void* wasm::AddressOf(SymbolicAddress imm, ABIFunctionType* abiType) {
     case SymbolicAddress::NearbyIntF:
       *abiType = Args_Float32_Float32;
       return FuncCast<float(float)>(NearbyInt, *abiType);
-    case SymbolicAddress::ExpD:
-      *abiType = Args_Double_Double;
-      return FuncCast<double(double)>(fdlibm_exp, *abiType);
-    case SymbolicAddress::LogD:
-      *abiType = Args_Double_Double;
-      return FuncCast<double(double)>(fdlibm_log, *abiType);
-    case SymbolicAddress::PowD:
-      *abiType = Args_Double_DoubleDouble;
-      return FuncCast(ecmaPow, *abiType);
-    case SymbolicAddress::ATan2D:
-      *abiType = Args_Double_DoubleDouble;
-      return FuncCast(ecmaAtan2, *abiType);
     case SymbolicAddress::AddSubI128:
       *abiType = Args_Void_GeneralInt32;
       return FuncCast(Instance::addSubI128, *abiType);
@@ -1962,15 +1899,6 @@ bool wasm::NeedsBuiltinThunk(SymbolicAddress sym) {
 #endif
     case SymbolicAddress::AllocateBigInt:
     case SymbolicAddress::ModD:
-    case SymbolicAddress::SinNativeD:
-    case SymbolicAddress::SinFdlibmD:
-    case SymbolicAddress::CosNativeD:
-    case SymbolicAddress::CosFdlibmD:
-    case SymbolicAddress::TanNativeD:
-    case SymbolicAddress::TanFdlibmD:
-    case SymbolicAddress::ASinD:
-    case SymbolicAddress::ACosD:
-    case SymbolicAddress::ATanD:
     case SymbolicAddress::CeilD:
     case SymbolicAddress::CeilF:
     case SymbolicAddress::FloorD:
@@ -1979,10 +1907,6 @@ bool wasm::NeedsBuiltinThunk(SymbolicAddress sym) {
     case SymbolicAddress::TruncF:
     case SymbolicAddress::NearbyIntD:
     case SymbolicAddress::NearbyIntF:
-    case SymbolicAddress::ExpD:
-    case SymbolicAddress::LogD:
-    case SymbolicAddress::PowD:
-    case SymbolicAddress::ATan2D:
     case SymbolicAddress::AddSubI128:
     case SymbolicAddress::MulI64Wide:
     case SymbolicAddress::ArrayMemMove:

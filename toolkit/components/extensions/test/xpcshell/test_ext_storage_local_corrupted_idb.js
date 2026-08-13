@@ -63,12 +63,10 @@ add_setup(async () => {
 });
 
 add_task(async function test_idb_autoreset_default() {
-  // TODO(Bug 1992973): change the expected default behavior as part of enabling auto-reset
-  // corrupted storage.local IndexedDB databases on all channels.
   Assert.equal(
     ExtensionStorageLocalIDB.disabledAutoResetOnCorrupted,
-    true,
-    "Expect auto-reset on corrupted IDB storage to be disabled by default"
+    false,
+    "Expect auto-reset on corrupted IDB storage to be enabled by default"
   );
 });
 

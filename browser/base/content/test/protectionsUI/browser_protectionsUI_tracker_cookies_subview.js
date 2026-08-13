@@ -137,7 +137,7 @@ add_task(async function testPartitionedTrackerCookiesInTrackingDB() {
     gBrowser,
   });
 
-  let promise = BrowserTestUtils.waitForCondition(async () => {
+  let promise = TestUtils.waitForCondition(async () => {
     let foundTrackerCookieEvent = false;
     let events = await TrackingDBService.getEventsByDateRange(0, Date.now());
 

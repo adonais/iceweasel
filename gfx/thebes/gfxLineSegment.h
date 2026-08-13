@@ -5,8 +5,8 @@
 #ifndef GFX_LINESEGMENT_H
 #define GFX_LINESEGMENT_H
 
-#include "gfxTypes.h"
 #include "gfxPoint.h"
+#include "gfxTypes.h"
 
 struct gfxLineSegment {
   gfxLineSegment() {}

@@ -345,7 +345,7 @@ impl BakedCommands {
 
         for mut resolve in self.deferred_query_set_resolves.drain(..).rev() {
             let raw_dst = resolve.dst_buffer.try_raw(snatch_guard).unwrap();
-            let raw_query_set = resolve.query_set.raw();
+            let raw_query_set = resolve.query_set.try_raw(snatch_guard).unwrap();
 
             let raw_encoder = self.encoder.open_pass(crate::hal_label(
                 Some("(wgpu internal) Deferred query set resolve"),
@@ -396,7 +396,7 @@ impl BakedCommands {
         }
 
         // Update query set initialization state.
-        for query_set in &self.trackers.query_sets {
+        for query_set in self.trackers.query_sets.used_resources() {
             if let Some(slots) = self.query_set_writes.get(&query_set.tracker_index()) {
                 let mut initialized = query_set.initialized_slots.lock();
                 initialized.or(slots);

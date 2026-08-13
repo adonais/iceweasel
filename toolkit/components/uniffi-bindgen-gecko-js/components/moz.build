@@ -3,6 +3,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 MOZ_SRC_FILES += [
+    "generated/RustAdsClient.sys.mjs",
+    "generated/RustAutofill.sys.mjs",
     "generated/RustBreachAlerts.sys.mjs",
     "generated/RustContextId.sys.mjs",
     "generated/RustFilterAdult.sys.mjs",
@@ -15,6 +17,7 @@ MOZ_SRC_FILES += [
     "generated/RustSync15.sys.mjs",
     "generated/RustTabs.sys.mjs",
     "generated/RustTracing.sys.mjs",
+    "generated/RustViaduct.sys.mjs",
     "generated/RustWebextstorage.sys.mjs",
 ]
 

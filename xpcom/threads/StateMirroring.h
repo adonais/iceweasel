@@ -6,6 +6,7 @@
 #define XPCOM_THREADS_STATEMIRRORING_H_
 
 #include <cstddef>
+
 #include "mozilla/AbstractThread.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"

@@ -162,7 +162,7 @@ uniffi_pipeline = "0.31"
 # Shared across multiple application-services consumers.
 rusqlite = "0.37"
 # Shared across multiple glean consumers.
-glean = "=67.3.2"
+glean = "=68.0.1"
 
 # Explicitly specify what our profiles use.  The opt-level setting here is
 # a total fiction; see the setup of MOZ_RUST_DEFAULT_FLAGS for what the
@@ -272,8 +272,9 @@ itertools = { path = "build/rust/itertools" }
 # else we do use requires backtrace, so dummy it out for now.
 backtrace = { path = "build/rust/backtrace" }
 
-# Locally patch bindgen to a yet-unreleased version.
-bindgen_0_72 = { package = "bindgen", git = "https://github.com/rust-lang/rust-bindgen", rev = "9366e0af8da529c958b4cd4fcbe492d951c86f5c" }
+# Locally patch bindgen to a yet-unreleased version + a patch that was recently
+# merged upstream.
+bindgen_0_72 = { package = "bindgen", git = "https://github.com/glandium/rust-bindgen", rev = "5274da5a06411accb266c10819b989ac25a81b7d" }
 
 # Patch bindgen 0.69 to 0.72
 bindgen = { path = "build/rust/bindgen" }
@@ -392,6 +393,7 @@ objc = { git = "https://github.com/glandium/rust-objc", rev = "4de89f5aa9851ceca
 allocator-api2 = { git = "https://github.com/glandium/allocator-api2", rev = "ad5f3d56a5a4519eff52af4ff85293431466ef5c" }
 
 # application-services overrides to make updating them all simpler.
+ads-client = { path = "third_party/application-services/components/ads-client" }
 context_id = { path = "third_party/application-services/components/context_id" }
 error-support = { path = "third_party/application-services/components/support/error" }
 filter_adult = { path = "third_party/application-services/components/filter_adult" }
@@ -406,13 +408,20 @@ tracing-support = { path = "third_party/application-services/components/support/
 viaduct = { path = "third_party/application-services/components/viaduct" }
 webext-storage = { path = "third_party/application-services/components/webext-storage" }
 logins = { path = "third_party/application-services/components/logins" }
+autofill = { path = "third_party/application-services/components/autofill" }
 init_rust_components = { path = "third_party/application-services/components/init_rust_components" }
 breach-alerts = { path = "third_party/application-services/components/breach-alerts" }
 # temporary ohttp override enabling app-services build-related hacks while we wait for a new version.
-ohttp = { git = "https://github.com/martinthomson/ohttp", revision = "324f876e79394c9b815dcacda3fd4f48f105fdf2" }
+ohttp = { git = "https://github.com/martinthomson/ohttp", rev = "600931b5a1e947776cbaad931ed78f1e89005352" }
 
 # Patched version of zip 2.4.2 to allow for reading omnijars.
 zip = { path = "third_party/rust/zip" }
 
 # Patch libcrux-traits to avoid unnecessary unused dependencies and conflicts.
 libcrux-traits = { path = "build/rust/libcrux-traits" }
+
+# Redirect jxl_simd to the in-tree vendored copy so we can carry a patch that
+# works around a rust/LLVM issue on macOS/x86_64 that makes jxl-rs decode ~3x
+# slower on PGO builds. See bug 2043090.
+[patch."https://github.com/libjxl/jxl-rs"]
+jxl_simd = { path = "third_party/rust/jxl_simd" }

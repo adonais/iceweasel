@@ -2,11 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "libyuv.h"
 #include "MacIOSurfaceHelpers.h"
-#include "mozilla/gfx/MacIOSurface.h"
-#include "mozilla/ScopeExit.h"
+
 #include "YCbCrUtils.h"
+#include "libyuv.h"
+#include "mozilla/ScopeExit.h"
+#include "mozilla/gfx/MacIOSurface.h"
 
 namespace mozilla {
 
@@ -25,14 +26,15 @@ static nsresult CopyFromLockedMacIOSurface(MacIOSurface* aSurface,
   size_t bytesPerRow = aSurface->GetBytesPerRow();
   SurfaceFormat ioFormat = aSurface->GetFormat();
 
-  if ((ioFormat == SurfaceFormat::NV12 || ioFormat == SurfaceFormat::YUY2 ||
-       ioFormat == SurfaceFormat::P010 || ioFormat == SurfaceFormat::NV16) &&
+  if ((ioFormat == SurfaceFormat::NV12 || ioFormat == SurfaceFormat::NV16 ||
+       ioFormat == SurfaceFormat::YUY2 || ioFormat == SurfaceFormat::P010 ||
+       ioFormat == SurfaceFormat::P210) &&
       (aSize.width > PlanarYCbCrImage::MAX_DIMENSION ||
        aSize.height > PlanarYCbCrImage::MAX_DIMENSION)) {
     return NS_ERROR_FAILURE;
   }
 
-  if (ioFormat == SurfaceFormat::NV12) {
+  if (ioFormat == SurfaceFormat::NV12 || ioFormat == SurfaceFormat::NV16) {
     /* Extract and separate the CbCr planes */
     size_t cbCrStride = aSurface->GetBytesPerRow(1);
     size_t cbCrWidth = aSurface->GetDevicePixelWidth(1);
@@ -69,7 +71,9 @@ static nsresult CopyFromLockedMacIOSurface(MacIOSurface* aSurface,
     data.mColorPrimaries = aSurface->mColorPrimaries;
     data.mColorRange = aSurface->IsFullRange() ? gfx::ColorRange::FULL
                                                : gfx::ColorRange::LIMITED;
-    data.mChromaSubsampling = ChromaSubsampling::HALF_WIDTH_AND_HEIGHT;
+    data.mChromaSubsampling = ioFormat == SurfaceFormat::NV12
+                                  ? ChromaSubsampling::HALF_WIDTH_AND_HEIGHT
+                                  : ChromaSubsampling::HALF_WIDTH;
 
     nsresult result =
         ConvertYCbCrToRGB(data, SurfaceFormat::B8G8R8X8, aSize, aData, aStride);
@@ -77,8 +81,8 @@ static nsresult CopyFromLockedMacIOSurface(MacIOSurface* aSurface,
     return result;
   }
 
-  if (ioFormat == SurfaceFormat::P010 || ioFormat == SurfaceFormat::NV16) {
-    // P010 (4:2:0) and NV16 (4:2:2) store 10-bit values in the high bits of
+  if (ioFormat == SurfaceFormat::P010 || ioFormat == SurfaceFormat::P210) {
+    // P010 (4:2:0) and P210 (4:2:2) store 10-bit values in the high bits of
     // each uint16_t (shifted left by 6 via safeShift10BitBy6 on write).
     // We de-interleave the CbCr plane and pass ColorDepth::COLOR_16 so that
     // ConvertYCbCrToRGB uses scale=256, which correctly maps the high-bit
@@ -216,8 +220,9 @@ already_AddRefed<SourceSurface> CreateSourceSurfaceFromMacIOSurface(
   SurfaceFormat ioFormat = aSurface->GetFormat();
 
   SurfaceFormat format =
-      (ioFormat == SurfaceFormat::NV12 || ioFormat == SurfaceFormat::YUY2 ||
-       ioFormat == SurfaceFormat::P010 || ioFormat == SurfaceFormat::NV16)
+      (ioFormat == SurfaceFormat::NV12 || ioFormat == SurfaceFormat::NV16 ||
+       ioFormat == SurfaceFormat::YUY2 || ioFormat == SurfaceFormat::P010 ||
+       ioFormat == SurfaceFormat::P210)
           ? SurfaceFormat::B8G8R8X8
           : SurfaceFormat::B8G8R8A8;
 
@@ -268,8 +273,9 @@ nsresult CreateSurfaceDescriptorBufferFromMacIOSurface(
   SurfaceFormat ioFormat = aSurface->GetFormat();
 
   SurfaceFormat format =
-      (ioFormat == SurfaceFormat::NV12 || ioFormat == SurfaceFormat::YUY2 ||
-       ioFormat == SurfaceFormat::P010 || ioFormat == SurfaceFormat::NV16)
+      (ioFormat == SurfaceFormat::NV12 || ioFormat == SurfaceFormat::NV16 ||
+       ioFormat == SurfaceFormat::YUY2 || ioFormat == SurfaceFormat::P010 ||
+       ioFormat == SurfaceFormat::P210)
           ? SurfaceFormat::B8G8R8X8
           : SurfaceFormat::B8G8R8A8;
 

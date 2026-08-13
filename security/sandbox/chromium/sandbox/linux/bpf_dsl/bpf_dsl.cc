@@ -12,6 +12,7 @@
 
 #include "base/check.h"
 #include "base/memory/raw_ptr.h"
+#include "base/notreached.h"
 #include "sandbox/linux/bpf_dsl/bpf_dsl_impl.h"
 #include "sandbox/linux/bpf_dsl/errorcode.h"
 #include "sandbox/linux/bpf_dsl/policy_compiler.h"
@@ -233,8 +234,10 @@ uint64_t DefaultMask(size_t size) {
     case 8:
       return std::numeric_limits<uint64_t>::max();
     default:
-      CHECK(false) << "Unimplemented DefaultMask case";
+      NOTREACHED() << "Unimplemented DefaultMask case";
+#if !defined(__clang__)
       return 0;
+#endif
   }
 }
 

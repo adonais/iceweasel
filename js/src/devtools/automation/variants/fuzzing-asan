@@ -1,0 +1,10 @@
+{
+    "configure-args": "--enable-debug-symbols='-gline-tables-only' --enable-fuzzing --enable-gczeal --disable-jemalloc --enable-address-sanitizer --enable-rust-simd --enable-ctypes --enable-nspr-build",
+    "optimize": true,
+    "use_minidump": false,
+    "compiler": "clang",
+    "env": {
+        "LLVM_SYMBOLIZER": "{MOZ_FETCHES_DIR}/llvm-symbolizer/bin/llvm-symbolizer",
+        "ASAN_SYMBOLIZER_PATH": "{MOZ_FETCHES_DIR}/llvm-symbolizer/bin/llvm-symbolizer"
+    }
+}

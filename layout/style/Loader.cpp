@@ -1561,7 +1561,8 @@ void Loader::AddPerformanceEntryForCachedSheet(SheetLoadData& aLoadData) {
       start, end, mDocument);
 }
 
-void Loader::NotifyObservers(SheetLoadData& aData, nsresult aStatus) {
+void Loader::NotifyObservers(SheetLoadData& aData, nsresult aStatus,
+                             bool aCanFireEvents) {
   aData.mSheet->PropagateUseCountersTo(mDocument);
   if (MaybePutIntoLoadsPerformed(aData) &&
       aData.mShouldEmulateNotificationsForCachedLoad) {
@@ -1572,19 +1573,24 @@ void Loader::NotifyObservers(SheetLoadData& aData, nsresult aStatus) {
   RefPtr loadDispatcher = aData.PrepareLoadEventIfNeeded();
   if (aData.mURI) {
     aData.NotifyStop(aStatus);
-    // NOTE(emilio): This needs to happen before notifying observers, as
-    // FontFaceSet for example checks for pending sheet loads from the
-    // StyleSheetLoaded callback.
+    // NOTE(emilio): DecrementOngoingLoadCountAndMaybeUnblockOnload() needs to
+    // happen before notifying observers, as FontFaceSet for example checks for
+    // pending sheet loads from the StyleSheetLoaded callback.
     if (aData.BlocksLoadEvent()) {
       DecrementOngoingLoadCountAndMaybeUnblockOnload();
       if (mPendingLoadCount && mPendingLoadCount == mOngoingLoadCount) {
         LOG(("  No more loading sheets; starting deferred loads"));
-        StartDeferredLoads();
+        if (aCanFireEvents) {
+          StartDeferredLoads();
+        } else {
+          NS_DispatchToMainThread(NewRunnableMethod(
+              "Loader::StartDeferredLoads", this, &Loader::StartDeferredLoads));
+        }
       }
     }
   }
   if (!aData.mTitle.IsEmpty() && NS_SUCCEEDED(aStatus)) {
-    nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
+    NS_DispatchToMainThread(NS_NewRunnableFunction(
         "Loader::NotifyObservers - Create PageStyle actor",
         [doc = RefPtr{mDocument}] {
           // Force creating the page style actor, if available.
@@ -1608,12 +1614,13 @@ void Loader::NotifyObservers(SheetLoadData& aData, nsresult aStatus) {
            obs.get(), &aData, aData.ShouldDefer()));
       obs->StyleSheetLoaded(aData.mSheet, aData.ShouldDefer(), aStatus);
     }
-
-    if (loadDispatcher) {
+  }
+  if (loadDispatcher) {
+    if (aCanFireEvents) {
       loadDispatcher->RunDOMEventWhenSafe();
+    } else {
+      loadDispatcher->PostDOMEvent();
     }
-  } else if (loadDispatcher) {
-    loadDispatcher->PostDOMEvent();
   }
 }
 
@@ -1723,33 +1730,6 @@ static bool CanReuseInlineSheet(SharedStyleSheetCache::InlineSheetEntry& aEntry,
   return true;
 }
 
-RefPtr<StyleSheet> Loader::LookupInlineSheetInCache(
-    const nsAString& aBuffer, nsIPrincipal* aSheetPrincipal, nsIURI* aBaseURI) {
-  MOZ_ASSERT(mDocument);
-  MOZ_ASSERT(mSheets, "Document associated loader should have sheet cache");
-  auto result = mSheets->LookupInline(LoaderPrincipal(), aBuffer);
-  if (!result) {
-    return nullptr;
-  }
-  MOZ_ASSERT(!result.Data().IsEmpty());
-  const bool asImage = mDocument->IsBeingUsedAsImage();
-  for (auto& candidate : result.Data()) {
-    auto* sheet = candidate.mSheet.get();
-    MOZ_ASSERT(!sheet->HasModifiedRules(),
-               "How did we end up with a dirty sheet?");
-    if (NS_WARN_IF(!sheet->Principal()->Equals(aSheetPrincipal))) {
-      // If the sheet is going to have different access rights, don't return it
-      // from the cache. XXX can this happen now that we eagerly clone?
-      continue;
-    }
-    if (!CanReuseInlineSheet(candidate, aBaseURI, asImage)) {
-      continue;
-    }
-    return sheet->Clone(nullptr, nullptr);
-  }
-  return nullptr;
-}
-
 void Loader::MaybeNotifyPreloadUsed(SheetLoadData& aData) {
   if (!mDocument) {
     return;
@@ -1811,65 +1791,82 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadInlineStyle(
     return LoaderPrincipal();
   }();
 
-  RefPtr<StyleSheet> sheet =
-      LookupInlineSheetInCache(aBuffer, sheetPrincipal, baseURI);
-  const bool isSheetFromCache = !!sheet;
-  if (!isSheetFromCache) {
-    sheet = MakeRefPtr<StyleSheet>(StyleOrigin::Author, aInfo.mCORSMode,
-                                   SRIMetadata{});
-    // If an extension creates an inline stylesheet, we don't want to consider
-    // it same-origin with the page.
-    // FIXME(emilio): That's rather odd.
-    sheet->SetOriginClean(LoaderPrincipal()->Subsumes(sheetPrincipal));
-  }
-  // We allow sharing inline sheets with e.g. different base URIs, iff there's
-  // no dependency on that base URI. However, we still need to keep track of the
-  // right URIs in case the sheet is then mutated. EnsureUniqueInner will make
-  // sure the StylesheetContents get fixed up.
-  nsIReferrerInfo* referrerInfo =
-      aInfo.mContent->OwnerDoc()->ReferrerInfoForInternalCSSAndSVGResources();
-  sheet->SetURIs(nullptr, baseURI, referrerInfo, sheetPrincipal);
-
-  auto matched = PrepareSheet(*sheet, aInfo.mTitle, aInfo.mMedia, nullptr,
-                              isAlternate, aInfo.mIsExplicitlyEnabled);
-  if (auto* linkStyle = LinkStyle::FromNode(*aInfo.mContent)) {
-    linkStyle->SetStyleSheet(sheet);
-  }
-  MOZ_ASSERT(sheet->IsComplete() == isSheetFromCache);
-
+  RefPtr<StyleSheet> sheet;
   Completed completed;
-  auto data = MakeRefPtr<SheetLoadData>(
-      this, aInfo.mTitle, /* aURI = */ nullptr, sheet, SyncLoad::No,
-      aInfo.mContent, isAlternate, matched, StylePreloadKind::None, aObserver,
-      principal, aInfo.mReferrerInfo, aInfo.mNonce, aInfo.mFetchPriority,
-      nullptr);
-  MOZ_ASSERT(data->GetRequestingNode() == aInfo.mContent);
-  if (isSheetFromCache) {
-    MOZ_ASSERT(sheet->IsComplete());
-    MOZ_ASSERT(sheet->GetOwnerNode() == aInfo.mContent);
-    completed = Completed::Yes;
-    InsertSheetInTree(*sheet);
-    NotifyOfCachedLoad(std::move(data));
-  } else {
-    // Parse completion releases the load data.
-    //
-    // Note that we need to parse synchronously, since the web expects that the
-    // effects of inline stylesheets are visible immediately (aside from
-    // @imports).
-    NS_ConvertUTF16toUTF8 utf8(aBuffer);
-    RefPtr<SheetLoadDataHolder> holder(
-        new nsMainThreadPtrHolder<css::SheetLoadData>(__func__, data.get(),
-                                                      true));
-    completed = ParseSheet(utf8, holder, AllowAsyncParse::No);
-    if (completed == Completed::Yes) {
-      mSheets->InsertInline(
-          LoaderPrincipal(), aBuffer,
-          {data->ValueForCache(), mDocument->IsBeingUsedAsImage()});
-    } else {
-      data->mMustNotify = true;
+  MediaMatched matched;
+  mSheets->WithInlineEntryHandle(loadingPrincipal, aBuffer, [&](auto aHandle) {
+    const bool asImage = mDocument->IsBeingUsedAsImage();
+    if (aHandle) {
+      for (auto& candidate : aHandle.Data()) {
+        auto* cachedSheet = candidate.mSheet.get();
+        MOZ_ASSERT(!cachedSheet->HasModifiedRules(),
+                   "How did we end up with a dirty sheet?");
+        if (NS_WARN_IF(!cachedSheet->Principal()->Equals(sheetPrincipal))) {
+          // If the sheet is going to have different access rights, don't return
+          // it from the cache. XXX can this happen now that we eagerly clone?
+          continue;
+        }
+        if (!CanReuseInlineSheet(candidate, baseURI, asImage)) {
+          continue;
+        }
+        sheet = cachedSheet->Clone(nullptr, nullptr);
+        break;
+      }
     }
-  }
-
+    const bool isSheetFromCache = !!sheet;
+    if (!isSheetFromCache) {
+      sheet = MakeRefPtr<StyleSheet>(StyleOrigin::Author, aInfo.mCORSMode,
+                                     SRIMetadata{});
+      // If an extension creates an inline stylesheet, we don't want to consider
+      // it same-origin with the page.
+      // FIXME(emilio): That's rather odd.
+      sheet->SetOriginClean(LoaderPrincipal()->Subsumes(sheetPrincipal));
+    }
+    // We allow sharing inline sheets with e.g. different base URIs, iff there's
+    // no dependency on that base URI. However, we still need to keep track of
+    // the right URIs in case the sheet is then mutated. EnsureUniqueInner will
+    // make sure the StylesheetContents get fixed up.
+    nsIReferrerInfo* referrerInfo =
+        aInfo.mContent->OwnerDoc()->ReferrerInfoForInternalCSSAndSVGResources();
+    sheet->SetURIs(nullptr, baseURI, referrerInfo, sheetPrincipal);
+    matched = PrepareSheet(*sheet, aInfo.mTitle, aInfo.mMedia, nullptr,
+                           isAlternate, aInfo.mIsExplicitlyEnabled);
+    if (auto* linkStyle = LinkStyle::FromNode(*aInfo.mContent)) {
+      linkStyle->SetStyleSheet(sheet);
+    }
+    MOZ_ASSERT(sheet->IsComplete() == isSheetFromCache);
+    auto data = MakeRefPtr<SheetLoadData>(
+        this, aInfo.mTitle, /* aURI = */ nullptr, sheet, SyncLoad::No,
+        aInfo.mContent, isAlternate, matched, StylePreloadKind::None, aObserver,
+        principal, aInfo.mReferrerInfo, aInfo.mNonce, aInfo.mFetchPriority,
+        nullptr);
+    MOZ_ASSERT(data->GetRequestingNode() == aInfo.mContent);
+    if (isSheetFromCache) {
+      MOZ_ASSERT(sheet->IsComplete());
+      MOZ_ASSERT(sheet->GetOwnerNode() == aInfo.mContent);
+      completed = Completed::Yes;
+      InsertSheetInTree(*sheet);
+      NotifyOfCachedLoad(std::move(data));
+    } else {
+      // Parse completion releases the load data.
+      //
+      // Note that we need to parse synchronously, since the web expects that
+      // the effects of inline stylesheets are visible immediately (aside from
+      // @imports).
+      NS_ConvertUTF16toUTF8 utf8(aBuffer);
+      RefPtr<SheetLoadDataHolder> holder(
+          new nsMainThreadPtrHolder<css::SheetLoadData>(__func__, data.get(),
+                                                        true));
+      completed = ParseSheet(utf8, holder, AllowAsyncParse::No);
+      if (completed == Completed::Yes) {
+        aHandle.OrInsert().AppendElement(
+            SharedStyleSheetCache::InlineSheetEntry{data->ValueForCache(),
+                                                    asImage});
+      } else {
+        data->mMustNotify = true;
+      }
+    }
+  });
   return LoadSheetResult{completed, isAlternate, matched};
 }
 

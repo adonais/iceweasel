@@ -6,15 +6,14 @@
 #define GeckoProcessManager_h
 
 #include "WidgetUtils.h"
-#include "nsAppShell.h"
-#include "nsContentUtils.h"
-#include "nsIObserver.h"
-#include "nsWindow.h"
-
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/ContentProcessManager.h"
 #include "mozilla/java/GeckoProcessManagerNatives.h"
+#include "nsAppShell.h"
+#include "nsContentUtils.h"
+#include "nsIObserver.h"
+#include "nsWindow.h"
 
 namespace mozilla {
 
@@ -69,13 +68,7 @@ class GeckoProcessManager final
   static void Init();
 
   static void GetEditableParent(jni::Object::Param aEditableChild,
-                                int64_t aContentId, int64_t aTabId) {
-    nsCOMPtr<nsIWidget> widget = GetWidget(aContentId, aTabId);
-    if (RefPtr<nsWindow> window = nsWindow::From(widget)) {
-      java::GeckoProcessManager::SetEditableChildParent(
-          aEditableChild, window->GetEditableParent());
-    }
-  }
+                                int64_t aContentId, int64_t aTabId);
 };
 
 }  // namespace mozilla

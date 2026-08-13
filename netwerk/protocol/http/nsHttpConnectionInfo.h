@@ -5,16 +5,16 @@
 #ifndef nsHttpConnectionInfo_h_
 #define nsHttpConnectionInfo_h_
 
-#include "nsHttp.h"
-#include "nsProxyInfo.h"
-#include "nsCOMPtr.h"
-#include "nsStringFwd.h"
-#include "mozilla/Logging.h"
-#include "mozilla/BasePrincipal.h"
-#include "mozilla/AlreadyAddRefed.h"
 #include "ARefBase.h"
-#include "nsIRequest.h"
+#include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/BasePrincipal.h"
+#include "mozilla/Logging.h"
 #include "mozilla/net/happy_eyeballs_glue.h"
+#include "nsCOMPtr.h"
+#include "nsHttp.h"
+#include "nsIRequest.h"
+#include "nsProxyInfo.h"
+#include "nsStringFwd.h"
 
 //-----------------------------------------------------------------------------
 // nsHttpConnectionInfo - holds the properties of a connection
@@ -254,6 +254,13 @@ class nsHttpConnectionInfo final : public ARefBase {
   void SetIPv6Disabled(bool aNoIPv6);
   bool GetIPv6Disabled() const { return mIPv6Disabled; }
 
+  // When set, this connection info uses a separate connection entry that never
+  // holds an HTTP/3 connection. Used for transactions that can't use HTTP/3
+  // (e.g. WebSocket upgrades) so they aren't blocked by, or coalesced onto, an
+  // HTTP/3 connection established for regular requests to the same host.
+  void SetHttp3Disabled(bool aHttp3Disabled);
+  bool GetHttp3Disabled() const { return mHttp3Disabled; }
+
   void SetWebTransport(bool aWebTransport);
   bool GetWebTransport() const { return mWebTransport; }
 
@@ -305,6 +312,13 @@ class nsHttpConnectionInfo final : public ARefBase {
   void SetHasIPHintAddress(bool aHasIPHint) { mHasIPHintAddress = aHasIPHint; }
   bool HasIPHintAddress() const { return mHasIPHintAddress; }
 
+  // When set, Happy Eyeballs may only establish an HTTP/3 connection for this
+  // conn info -- h1/h2 are not raced. Used by eager Alt-Svc h3 validation so
+  // the connection it warms is guaranteed to be h3 (bug 2051272). Not part of
+  // the hash key, so the resulting connection still shares the origin's entry.
+  void SetHttp3Only(bool aHttp3Only) { mHttp3Only = aHttp3Only; }
+  bool GetHttp3Only() const { return mHttp3Only; }
+
   void SetEchConfig(const nsACString& aEchConfig) { mEchConfig = aEchConfig; }
   const nsCString& GetEchConfig() const { return mEchConfig; }
 
@@ -345,6 +359,7 @@ class nsHttpConnectionInfo final : public ARefBase {
   uint16_t mIsTrrServiceChannel : 1;
   uint16_t mIPv4Disabled : 1;
   uint16_t mIPv6Disabled : 1;
+  uint16_t mHttp3Disabled : 1;
 
   bool mLessThanTls13;  // This will be set to true if we negotiate less than
                         // tls1.3. If the tls version is till not know or it
@@ -354,6 +369,7 @@ class nsHttpConnectionInfo final : public ARefBase {
   bool mWebTransport = false;
 
   bool mHasIPHintAddress = false;
+  bool mHttp3Only = false;
   nsCString mEchConfig;
 
   uint64_t mWebTransportId = 0;  // current dedicated Id only used for

@@ -3,16 +3,25 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "XrayWrapper.h"
-#include "AccessCheck.h"
-#include "WrapperFactory.h"
 
+#include "mozilla/dom/BindingUtils.h"
+#include "mozilla/dom/ObservableArrayProxyHandler.h"
+#include "mozilla/dom/ProxyHandlerUtils.h"
+#include "mozilla/dom/WindowProxyHolder.h"
+#include "mozilla/dom/XrayExpandoClass.h"
+#include "mozilla/FloatingPoint.h"
+
+#include "AccessCheck.h"
+#include "jsapi.h"
 #include "nsDependentString.h"
+#include "nsGlobalWindowInner.h"
 #include "nsIConsoleService.h"
 #include "nsIScriptError.h"
-
+#include "nsJSUtils.h"
+#include "nsPrintfCString.h"
+#include "WrapperFactory.h"
 #include "xpcprivate.h"
 
-#include "jsapi.h"
 #include "js/CallAndConstruct.h"  // JS::Call, JS::Construct, JS::IsCallable
 #include "js/ColumnNumber.h"      // JS::ColumnNumberOneOrigin
 #include "js/experimental/TypedData.h"  // JS_GetTypedArrayLength
@@ -22,16 +31,6 @@
 #include "js/PropertyAndElement.h"  // JS_AlreadyHasOwnPropertyById, JS_DefineProperty, JS_DefinePropertyById, JS_DeleteProperty, JS_DeletePropertyById, JS_HasProperty, JS_HasPropertyById
 #include "js/PropertyDescriptor.h"  // JS::PropertyDescriptor, JS_GetOwnPropertyDescriptorById, JS_GetPropertyDescriptorById
 #include "js/PropertySpec.h"
-#include "nsGlobalWindowInner.h"
-#include "nsJSUtils.h"
-#include "nsPrintfCString.h"
-
-#include "mozilla/FloatingPoint.h"
-#include "mozilla/dom/BindingUtils.h"
-#include "mozilla/dom/ObservableArrayProxyHandler.h"
-#include "mozilla/dom/ProxyHandlerUtils.h"
-#include "mozilla/dom/WindowProxyHolder.h"
-#include "mozilla/dom/XrayExpandoClass.h"
 
 using namespace mozilla::dom;
 using namespace JS;

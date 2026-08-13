@@ -14,6 +14,8 @@ import { ERRORS } from "chrome://browser/content/backup/backup-constants.mjs";
 
 const ENABLE_ERROR_L10N_IDS = Object.freeze({
   [ERRORS.FILE_SYSTEM_ERROR]: "turn-on-scheduled-backups-error-file-system",
+  [ERRORS.DEFAULT_DIR_ACCESS_DENIED]:
+    "turn-on-scheduled-backups-error-default-dir-denied",
   [ERRORS.INVALID_PASSWORD]: "backup-error-password-requirements",
   [ERRORS.UNKNOWN]: "backup-error-retry",
 });
@@ -134,6 +136,7 @@ export default class TurnOnScheduledBackups extends MozLitElement {
     this._passwordsMatch = false;
     this.enableBackupErrorCode = 0;
     this.disableSubmit = false;
+    this._pendingConfirmDetail = null;
   }
 
   /**
@@ -157,6 +160,7 @@ export default class TurnOnScheduledBackups extends MozLitElement {
 
     // listen to events from BackupUIChild
     this.addEventListener("BackupUI:SelectNewFilepickerPath", this);
+    this.addEventListener("BackupUI:DefaultDirProbeResult", this);
 
     // listen to events from <password-validation-inputs>
     this.addEventListener("ValidPasswordsDetected", this);
@@ -173,6 +177,10 @@ export default class TurnOnScheduledBackups extends MozLitElement {
       this._newLabel = filename;
       this._newIconURL = iconURL;
 
+      if (this.enableBackupErrorCode == ERRORS.DEFAULT_DIR_ACCESS_DENIED) {
+        this.enableBackupErrorCode = ERRORS.NONE;
+      }
+
       if (this.embeddedFxBackupOptIn) {
         // Let's set a persistent path
         this.dispatchEvent(
@@ -186,6 +194,23 @@ export default class TurnOnScheduledBackups extends MozLitElement {
           })
         );
       }
+    } else if (event.type == "BackupUI:DefaultDirProbeResult") {
+      let { readAccessGranted } = event.detail;
+      if (readAccessGranted) {
+        // We have access! Let's go ahead and create backups.
+        this.dispatchEvent(
+          new CustomEvent("BackupUI:EnableScheduledBackups", {
+            bubbles: true,
+            detail: this._pendingConfirmDetail,
+          })
+        );
+      } else {
+        this.defaultLabel = "";
+        this.defaultPath = "";
+        this.defaultIconURL = "";
+        this.enableBackupErrorCode = ERRORS.DEFAULT_DIR_ACCESS_DENIED;
+      }
+      this._pendingConfirmDetail = null;
     } else if (event.type == "ValidPasswordsDetected") {
       let { password } = event.detail;
       this._passwordsMatch = true;
@@ -236,8 +261,6 @@ export default class TurnOnScheduledBackups extends MozLitElement {
 
     if (this.embeddedFxBackupOptIn && this.backupIsEncrypted) {
       if (!detail.password) {
-        // We're in the embedded component and we haven't set a password yet
-        // when one is expected, let's not do a confirm action yet!
         this.dispatchEvent(
           new CustomEvent("SpotlightOnboardingAdvanceScreens", {
             bubbles: true,
@@ -245,12 +268,18 @@ export default class TurnOnScheduledBackups extends MozLitElement {
         );
         return;
       }
+
+      detail.parentDirPath =
+        this.backupServiceState?.embeddedComponentPersistentData?.path ||
+        detail.parentDirPath;
     }
 
+    this._pendingConfirmDetail = detail;
     this.dispatchEvent(
-      new CustomEvent("BackupUI:EnableScheduledBackups", {
+      new CustomEvent("BackupUI:ProbeDefaultBackupDir", {
         bubbles: true,
-        detail,
+        composed: true,
+        detail: { parentDirPath: detail.parentDirPath },
       })
     );
   }
@@ -281,6 +310,7 @@ export default class TurnOnScheduledBackups extends MozLitElement {
     this._inputPassValue = "";
     this.enableBackupErrorCode = 0;
     this.disableSubmit = false;
+    this._pendingConfirmDetail = null;
     // we don't want to reset the path when embedded in the spotlight
     if (!this.embeddedFxBackupOptIn) {
       this._newPath = "";
@@ -323,9 +353,9 @@ export default class TurnOnScheduledBackups extends MozLitElement {
         readonly
         data-l10n-id=${hasFilename
           ? "turn-on-scheduled-backups-location-default-folder"
-          : nothing}
+          : "turn-on-scheduled-backups-location-choose-folder"}
         data-l10n-args=${hasFilename ? l10nArgs : nothing}
-        data-l10n-attrs=${hasFilename ? "value" : nothing}
+        data-l10n-attrs="value"
         style=${`background-image: url(${iconURL})`}
       />
     `;

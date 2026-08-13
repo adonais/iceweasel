@@ -19,7 +19,7 @@
 #include "Mutex.h"
 
 static malloc_table_t sFuncs;
-static platform_handle_t sFd = 0;
+static platform_handle_t sFd;
 static bool sStdoutOrStderr = false;
 
 static Mutex sMutex MOZ_UNANNOTATED;
@@ -182,7 +182,7 @@ void replace_init(malloc_table_t* aTable, ReplaceMallocBridge** aBridge) {
   }
 
   // Don't initialize if we weren't passed a valid MALLOC_LOG.
-  if (sFd == 0) {
+  if (!sFd) {
     return;
   }
 

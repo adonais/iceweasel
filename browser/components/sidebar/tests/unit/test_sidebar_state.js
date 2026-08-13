@@ -40,6 +40,7 @@ const mockController = {
   sidebars: new Set(["viewBookmarksSidebar"]),
   updateToolbarButton: sinon.stub(),
   SidebarManager: { hasSidebarLauncherBeenVisible: false },
+  requestMaxWidthUpdate: sinon.stub(),
 };
 
 add_task(async function test_load_legacy_session_restore_data() {

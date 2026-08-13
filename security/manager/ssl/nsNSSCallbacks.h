@@ -9,12 +9,12 @@
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Vector.h"
-#include "nspr.h"
-#include "nsString.h"
-#include "pk11func.h"
 #include "mozpkix/pkix.h"
 #include "mozpkix/pkixtypes.h"
 #include "nsIX509Cert.h"
+#include "nsString.h"
+#include "nspr.h"
+#include "pk11func.h"
 #include "ssl.h"
 
 using mozilla::OriginAttributes;

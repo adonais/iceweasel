@@ -22,6 +22,7 @@ import android.view.accessibility.AccessibilityNodeInfo.CollectionInfo;
 import android.view.accessibility.AccessibilityNodeInfo.CollectionItemInfo;
 import android.view.accessibility.AccessibilityNodeInfo.RangeInfo;
 import android.view.accessibility.AccessibilityNodeProvider;
+import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
@@ -393,6 +394,7 @@ public class SessionAccessibility {
     Settings.updateAccessibilitySettings();
   }
 
+  @AnyThread
   /* package */ static void setForceEnabled(final boolean forceEnabled) {
     Settings.setForceEnabled(forceEnabled);
   }

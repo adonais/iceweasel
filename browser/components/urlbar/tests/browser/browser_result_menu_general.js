@@ -35,7 +35,7 @@ add_task(async function help_resultHelpUrl() {
       resultHelpUrl: RESULT_HELP_URL,
     }),
     expectedHelpUrl: RESULT_HELP_URL,
-    expectedHelpL10n: { id: "urlbar-result-menu-tip-get-help", args: null },
+    expectedHelpL10n: { id: "urlbar-result-menu-tip-get-help2", args: null },
   });
 });
 
@@ -47,7 +47,7 @@ add_task(async function help_getResultCommands() {
   let provider = registerTestProvider({
     resultHelpUrl: null,
   });
-  let l10n = { id: "urlbar-result-menu-learn-more", args: null };
+  let l10n = { id: "urlbar-result-menu-learn-more2", args: null };
   provider.getResultCommands = () => [{ l10n, name: "help" }];
 
   await doHelpTest({
@@ -95,7 +95,7 @@ async function doHelpTest({
   // The result menu needs to be closed before calling
   // `openResultMenuAndClickItem()` below; otherwise it will wait on a
   // `popupshown` event that will never come.
-  gURLBar.view.resultMenu.hidePopup(true);
+  gURLBar.view.resultMenu.removeAttribute("open");
 
   // We assume clicking "help" will load a page in a new tab.
   let loadPromise = BrowserTestUtils.waitForNewTab(gBrowser);
@@ -343,7 +343,7 @@ function registerTestProvider({
       ...payload,
       helpUrl: resultHelpUrl,
       helpL10n: {
-        id: "urlbar-result-menu-tip-get-help",
+        id: "urlbar-result-menu-tip-get-help2",
       },
     };
   }
@@ -351,8 +351,8 @@ function registerTestProvider({
   let provider = new UrlbarTestUtils.TestProvider({
     results: [
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         suggestedIndex,
         payload,
       }),
@@ -373,7 +373,7 @@ async function assertIsTestResult(index) {
   let result = await UrlbarTestUtils.getDetailsOfResultAt(window, index);
   Assert.equal(
     result.type,
-    UrlbarUtils.RESULT_TYPE.URL,
+    UrlbarShared.RESULT_TYPE.URL,
     "The second result should be a URL"
   );
   Assert.equal(

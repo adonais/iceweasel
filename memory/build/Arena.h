@@ -98,11 +98,11 @@ namespace mozilla {
 #ifdef MALLOC_DOUBLE_PURGE
 struct MadvisedChunkListTrait {
   static DoublyLinkedListElement<arena_chunk_t>& Get(arena_chunk_t* aThis) {
-    return aThis->mChunksMavisedElim;
+    return aThis->mChunksMadvisedElement;
   }
   static const DoublyLinkedListElement<arena_chunk_t>& Get(
       const arena_chunk_t* aThis) {
-    return aThis->mChunksMavisedElim;
+    return aThis->mChunksMadvisedElement;
   }
 };
 #endif

@@ -1,0 +1,6 @@
+android_ndk_api_level = 26
+angle_has_build = true
+angle_root = "//angle"
+angle_spirv_headers_dir = "//angle/third_party/spirv-headers/src"
+angle_spirv_tools_dir = "//angle/third_party/spirv-tools/src"
+angle_zlib_compression_utils_dir = "//angle/third_party/zlib/google"

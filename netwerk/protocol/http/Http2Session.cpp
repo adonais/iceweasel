@@ -24,15 +24,15 @@
 #include "Http2WebTransportSession.h"
 #include "LoadContextInfo.h"
 #include "mozilla/EndianUtils.h"
-#include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/StaticPrefs_network.h"
+#include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "nsHttp.h"
 #include "nsHttpConnection.h"
-#include "nsHttpHandler.h"
 #include "nsHttpConnectionMgr.h"
+#include "nsHttpHandler.h"
 #include "nsIRequestContext.h"
 #include "nsISupportsPriority.h"
 #include "nsITLSSocketControl.h"
@@ -4127,7 +4127,7 @@ uint32_t Http2Session::Caps() {
   return 0;
 }
 
-nsHttpRequestHead* Http2Session::RequestHead() {
+const nsHttpRequestHead* Http2Session::RequestHead() {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   MOZ_ASSERT(false,
              "Http2Session::RequestHead() "

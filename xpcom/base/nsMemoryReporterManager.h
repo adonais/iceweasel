@@ -6,11 +6,11 @@
 #define nsMemoryReporterManager_h_
 
 #include "mozilla/Mutex.h"
-#include "nsTHashMap.h"
 #include "nsHashKeys.h"
 #include "nsIMemoryReporter.h"
 #include "nsISupports.h"
 #include "nsServiceManagerUtils.h"
+#include "nsTHashMap.h"
 
 #ifdef XP_WIN
 #  include <windows.h>

@@ -5,6 +5,8 @@
 #ifndef nsContentCreatorFunctions_h_
 #define nsContentCreatorFunctions_h_
 
+#include "mozilla/Maybe.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/dom/FromParser.h"
 #include "nsCOMPtr.h"
 #include "nsError.h"
@@ -23,6 +25,7 @@ class nsGenericHTMLElement;
 namespace mozilla::dom {
 class Element;
 class NodeInfo;
+class CustomElementRegistry;
 struct CustomElementDefinition;
 }  // namespace mozilla::dom
 
@@ -34,8 +37,23 @@ nsresult NS_NewElement(mozilla::dom::Element** aResult,
 nsresult NS_NewElement(
     mozilla::dom::Element** aResult,
     already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
+    mozilla::dom::FromParser aFromParser, const nsAString* aIs,
+    mozilla::Maybe<RefPtr<mozilla::dom::CustomElementRegistry>>
+        aCustomElementRegistry);
+
+nsresult NS_NewElement(
+    mozilla::dom::Element** aResult,
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
     mozilla::dom::FromParser aFromParser, nsAtom* aIsAtom = nullptr,
     mozilla::dom::CustomElementDefinition* aDefinition = nullptr);
+
+nsresult NS_NewElement(
+    mozilla::dom::Element** aResult,
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
+    mozilla::dom::FromParser aFromParser, nsAtom* aIsAtom,
+    mozilla::dom::CustomElementDefinition* aDefinition,
+    mozilla::Maybe<RefPtr<mozilla::dom::CustomElementRegistry>>
+        aCustomElementRegistry);
 
 nsresult NS_NewXMLElement(mozilla::dom::Element** aResult,
                           already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
@@ -45,6 +63,14 @@ nsresult NS_NewHTMLElement(
     already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
     mozilla::dom::FromParser aFromParser, nsAtom* aIsAtom = nullptr,
     mozilla::dom::CustomElementDefinition* aDefinition = nullptr);
+
+nsresult NS_NewHTMLElement(
+    mozilla::dom::Element** aResult,
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
+    mozilla::dom::FromParser aFromParser, nsAtom* aIsAtom,
+    mozilla::dom::CustomElementDefinition* aDefinition,
+    mozilla::Maybe<RefPtr<mozilla::dom::CustomElementRegistry>>
+        aCustomElementRegistry);
 
 // First argument should be nsHTMLTag, but that adds dependency to parser
 // for a bunch of files.
@@ -61,6 +87,14 @@ nsresult NS_NewXULElement(
     already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
     mozilla::dom::FromParser aFromParser, nsAtom* aIsAtom = nullptr,
     mozilla::dom::CustomElementDefinition* aDefinition = nullptr);
+
+nsresult NS_NewXULElement(
+    mozilla::dom::Element** aResult,
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
+    mozilla::dom::FromParser aFromParser, nsAtom* aIsAtom,
+    mozilla::dom::CustomElementDefinition* aDefinition,
+    mozilla::Maybe<RefPtr<mozilla::dom::CustomElementRegistry>>
+        aCustomElementRegistry);
 
 void NS_TrustedNewXULElement(
     mozilla::dom::Element** aResult,

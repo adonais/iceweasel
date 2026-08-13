@@ -3006,7 +3006,8 @@ static bool GenerateLcovInfo(JSContext* cx, JS::Realm* realm,
       }
       fun = &obj->as<JSFunction>();
 
-      // Ignore asm.js functions
+      // getOrCreateScript requires an interpreted function. Skip native or
+      // partially-initialized functions seen while walking gcthings directly.
       if (!fun->isInterpreted()) {
         continue;
       }

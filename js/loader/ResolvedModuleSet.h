@@ -7,8 +7,9 @@
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/HashTable.h"
-#include "nsIURI.h"
+
 #include "nsCOMPtr.h"
+#include "nsIURI.h"
 
 namespace JS::loader {
 
@@ -36,8 +37,11 @@ struct SpecifierResolutionRecord {
   bool IsSpecialScheme() const { return mIsSpecialScheme; }
 
   mozilla::HashNumber Hash() const {
-    return mozilla::AddToHash(mozilla::HashString(mSerializedBaseURL.get()),
-                              mozilla::HashString(mNormalizedSpecifier.get()));
+    return mozilla::AddToHash(
+        mozilla::HashString(mSerializedBaseURL.get(),
+                            mSerializedBaseURL.Length()),
+        mozilla::HashString(mNormalizedSpecifier.get(),
+                            mNormalizedSpecifier.Length()));
   }
 
   bool Match(const mozilla::UniquePtr<SpecifierResolutionRecord>& aLookup) {

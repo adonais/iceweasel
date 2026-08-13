@@ -28,7 +28,7 @@ add_task(async function () {
 
   let tabsToggle = browser.contentDocument.getElementById("tabsToggle");
   tabsToggle.click();
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => browser.contentWindow.gTreeInitialized
   );
   let tree = browser.contentDocument.getElementById("tabList");

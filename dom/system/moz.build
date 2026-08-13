@@ -63,7 +63,7 @@ UNIFIED_SOURCES += [
     "nsOSPermissionRequestBase.cpp",
 ]
 
-EXTRA_JS_MODULES += [
+MOZ_SRC_FILES += [
     "NetworkGeolocationProvider.sys.mjs",
 ]
 

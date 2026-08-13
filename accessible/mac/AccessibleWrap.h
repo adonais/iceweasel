@@ -16,9 +16,7 @@
 #include "LocalAccessible.h"
 #include "PlatformExtTypes.h"
 #include "States.h"
-
 #include "nsCOMPtr.h"
-
 #include "nsTArray.h"
 
 #if defined(__OBJC__)

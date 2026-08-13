@@ -2,8 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsIInterfaceRequestor.h"
 #include "nsIInterfaceRequestorUtils.h"
+
+#include "nsIInterfaceRequestor.h"
 
 nsresult nsGetInterface::operator()(const nsIID& aIID,
                                     void** aInstancePtr) const {

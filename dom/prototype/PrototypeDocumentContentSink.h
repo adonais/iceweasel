@@ -56,7 +56,7 @@ class PrototypeDocumentContentSink final : public nsIStreamLoaderObserver,
                 nsIChannel* aChannel);
 
   // nsISupports
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_NSISTREAMLOADEROBSERVER
 
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(PrototypeDocumentContentSink,

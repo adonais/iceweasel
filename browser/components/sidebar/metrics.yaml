@@ -133,10 +133,12 @@ sidebar:
     telemetry_mirror: SIDEBAR_SEARCH
   link:
     type: labeled_counter
-    description: >
-      The number of history items opened from the History sidebar.
-      This metric was generated to correspond to the Legacy Telemetry
-      scalar sidebar.link.
+    description: |
+      The number of links opened from the sidebar, labeled by which sidebar
+      panel the click originated from:
+        - bookmarks: a bookmark opened from the Bookmarks sidebar panel
+        - history: a history link opened from the History sidebar panel
+        - synced_tabs: a synced tab opened from the Synced Tabs sidebar
     bugs:
       - https://bugzil.la/1815706
     data_reviews:
@@ -210,6 +212,25 @@ sidebar:
       - https://bugzil.la/1923972
     data_reviews:
       - https://phabricator.services.mozilla.com/D226681
+    data_sensitivity:
+      - interaction
+    expires: never
+    notification_emails:
+      - vsabino@mozilla.com
+    send_in_pings:
+      - events
+    extra_keys:
+      sidebar_open:
+        type: boolean
+        description: Whether the sidebar is expanded or collapsed.
+  open_tabs_icon_click:
+    type: event
+    description: >
+      The open tabs icon was clicked.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2039574
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2039574
     data_sensitivity:
       - interaction
     expires: never

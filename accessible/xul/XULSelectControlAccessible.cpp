@@ -4,14 +4,12 @@
 
 #include "XULSelectControlAccessible.h"
 
-#include "nsAccessibilityService.h"
 #include "DocAccessible.h"
-
-#include "nsIDOMXULSelectCntrlItemEl.h"
-#include "nsIDOMXULMultSelectCntrlEl.h"
-
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/KeyboardEventBinding.h"
+#include "nsAccessibilityService.h"
+#include "nsIDOMXULMultSelectCntrlEl.h"
+#include "nsIDOMXULSelectCntrlItemEl.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;

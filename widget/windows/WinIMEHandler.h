@@ -5,11 +5,12 @@
 #ifndef WinIMEHandler_h_
 #define WinIMEHandler_h_
 
-#include "nscore.h"
-#include "nsWindow.h"
-#include "npapi.h"
-#include <windows.h>
 #include <inputscope.h>
+#include <windows.h>
+
+#include "npapi.h"
+#include "nsWindow.h"
+#include "nscore.h"
 
 #define NS_WM_IMEFIRST WM_IME_SETCONTEXT
 #define NS_WM_IMELAST WM_IME_KEYUP

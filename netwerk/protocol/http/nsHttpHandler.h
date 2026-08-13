@@ -7,29 +7,27 @@
 
 #include <functional>
 
-#include "nsHttp.h"
-#include "nsHttpAuthCache.h"
-#include "nsHttpConnectionInfo.h"
-#include "AlternateServices.h"
 #include "ASpdySession.h"
-#include "HttpTrafficAnalyzer.h"
+#include "AlternateServices.h"
 #include "EventTokenBucket.h"
-
+#include "HttpTrafficAnalyzer.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TimeStamp.h"
-#include "nsString.h"
-#include "nsCOMPtr.h"
-#include "nsWeakReference.h"
 #include "mozilla/net/Dictionary.h"
 #include "mozilla/net/HttpConnectionMgrShell.h"
-
+#include "nsCOMPtr.h"
+#include "nsHttp.h"
+#include "nsHttpAuthCache.h"
+#include "nsHttpConnectionInfo.h"
 #include "nsIHttpProtocolHandler.h"
 #include "nsIObserver.h"
 #include "nsISpeculativeConnect.h"
+#include "nsString.h"
 #include "nsTHashMap.h"
 #include "nsTHashSet.h"
+#include "nsWeakReference.h"
 
 #ifdef DEBUG
 #  include "nsIOService.h"

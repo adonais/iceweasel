@@ -37,7 +37,7 @@ class ScalarIDHashKey : public PLDHashEntryHdr {
 
   static KeyTypePointer KeyToPointer(KeyType aKey) { return &aKey; }
   static PLDHashNumber HashKey(KeyTypePointer aKey) {
-    return static_cast<std::underlying_type<ScalarID>::type>(*aKey);
+    return static_cast<std::underlying_type_t<ScalarID>>(*aKey);
   }
   enum { ALLOW_MEMMOVE = true };
   static_assert(std::is_trivially_copyable_v<ScalarID>);

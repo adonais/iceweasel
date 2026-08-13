@@ -219,6 +219,10 @@ XPCOMUtils.defineLazyServiceGetters(lazy, {
     Ci.nsIApplicationUpdateService,
   ],
   BrowserHandler: ["@mozilla.org/browser/clh;1", Ci.nsIBrowserHandler],
+  ExternalProtocolService: [
+    "@mozilla.org/uriloader/external-protocol-service;1",
+    Ci.nsIExternalProtocolService,
+  ],
   ScreenManager: ["@mozilla.org/gfx/screenmanager;1", Ci.nsIScreenManager],
   TrackingDBService: [
     "@mozilla.org/tracking-db-service;1",
@@ -246,6 +250,18 @@ const FRECENT_SITES_MIN_FRECENCY = PlacesUtils.history.pageFrecencyThreshold(
 
 const CACHE_EXPIRATION = 5 * 60 * 1000;
 const jexlEvaluationCache = new Map();
+
+function _extractMailDomainFromURI(uriTemplate) {
+  if (!uriTemplate) {
+    return null;
+  }
+  try {
+    return Services.io.newURI(uriTemplate).host;
+  } catch (e) {
+    // Ignore parse errors
+  }
+  return null;
+}
 
 /**
  * CachedTargetingGetter
@@ -428,11 +444,49 @@ export const QueryCache = {
       FRECENT_SITES_UPDATE_INTERVAL,
       ShellService
     ),
+    isDefaultMailtoHandler: new CachedTargetingGetter(
+      "isDefaultHandlerFor",
+      ["mailto"],
+      FRECENT_SITES_UPDATE_INTERVAL,
+      ShellService
+    ),
     defaultPDFHandler: new CachedTargetingGetter(
       "getDefaultPDFHandler",
       null,
       FRECENT_SITES_UPDATE_INTERVAL,
       ShellService
+    ),
+    mailtoHandlerHost: new CachedTargetingGetter(
+      "getMailtoHandlerHost",
+      null,
+      FRECENT_SITES_UPDATE_INTERVAL,
+      {
+        getMailtoHandlerHost() {
+          if (AppConstants.platform !== "win") {
+            return null;
+          }
+          try {
+            const handlerInfo =
+              lazy.ExternalProtocolService.getProtocolHandlerInfo("mailto");
+            if (
+              handlerInfo.alwaysAskBeforeHandling ||
+              handlerInfo.preferredAction !== Ci.nsIHandlerInfo.useHelperApp ||
+              !(
+                handlerInfo.preferredApplicationHandler instanceof
+                Ci.nsIWebHandlerApp
+              )
+            ) {
+              return null;
+            }
+            return _extractMailDomainFromURI(
+              handlerInfo.preferredApplicationHandler.uriTemplate
+            );
+          } catch (e) {
+            // No configured handler, or a non-web (local app) handler.
+            return null;
+          }
+        },
+      }
     ),
     profileGroupId: new CachedTargetingGetter(
       "getCachedProfileGroupID",
@@ -470,7 +524,6 @@ export const QueryCache = {
             bs = lazy.BackupService.init();
           }
           return bs.findBackupsInWellKnownLocations({
-            validateFile: true,
             source: "onboarding",
           });
         },
@@ -1132,6 +1185,16 @@ const TargetingGetters = {
     return lazy.WindowsLaunchOnLogin.getLaunchOnLoginEnabled();
   },
 
+  // Whether launch on login could be enabled, i.e. it isn't overridden by
+  // Windows Settings or enterprise policy. Used to avoid offering launch on
+  // login to users for whom enabling it would silently no-op.
+  get launchOnLoginAllowedByPolicy() {
+    if (AppConstants.platform !== "win") {
+      return false;
+    }
+    return lazy.WindowsLaunchOnLogin.getLaunchOnLoginApproved();
+  },
+
   get isMSIX() {
     if (AppConstants.platform !== "win") {
       return false;
@@ -1225,10 +1288,17 @@ const TargetingGetters = {
     get pdf() {
       return QueryCache.getters.isDefaultPDFHandler.get();
     },
+    get mailto() {
+      return QueryCache.getters.isDefaultMailtoHandler.get();
+    },
   },
 
   get defaultPDFHandler() {
     return QueryCache.getters.defaultPDFHandler.get();
+  },
+
+  get mailtoHandlerHost() {
+    return QueryCache.getters.mailtoHandlerHost.get();
   },
 
   get creditCardsSaved() {
@@ -1436,6 +1506,14 @@ const TargetingGetters = {
   },
 
   get backupsInfo() {
+    // We're going to skip searching for backups on MacOS and as such not show the
+    // restore screen in about:welcome - Bug 2033325
+    if (AppConstants.platform === "macosx") {
+      return Promise.resolve({
+        found: false,
+      });
+    }
+
     return QueryCache.getters.backupsInfo.get().catch(() => null);
   },
 
@@ -1719,6 +1797,21 @@ export const ASRouterTargeting = {
     }
   },
 
+  /**
+   * Return the list of trigger objects for a message, normalizing the singular
+   * `trigger` and plural `triggers` forms. When both are present, `triggers`
+   * takes precedence.
+   *
+   * @param {object} message An AS router message
+   * @returns {Array<object>} The message's triggers, or an empty array.
+   */
+  getMessageTriggers(message) {
+    if (Array.isArray(message?.triggers)) {
+      return message.triggers;
+    }
+    return message?.trigger ? [message.trigger] : [];
+  },
+
   isTriggerMatch(trigger = {}, candidateMessageTrigger = {}) {
     if (trigger.id !== candidateMessageTrigger.id) {
       return false;
@@ -1825,13 +1918,14 @@ export const ASRouterTargeting = {
     onError,
     shouldCache = false
   ) {
+    const messageTriggers = this.getMessageTriggers(message);
     return (
       message &&
-      (trigger
-        ? this.isTriggerMatch(trigger, message.trigger)
-        : !message.trigger) &&
-      // If a trigger expression was passed to this function, the message should match it.
-      // Otherwise, we should choose a message with no trigger property (i.e. a message that can show up at any time)
+      // If a trigger with an id was passed, the message must have a matching
+      // trigger. Otherwise, only untriggered messages are eligible.
+      (trigger?.id
+        ? messageTriggers.some(mt => this.isTriggerMatch(trigger, mt))
+        : !messageTriggers.length) &&
       this.checkMessageTargeting(
         message,
         targetingContext,

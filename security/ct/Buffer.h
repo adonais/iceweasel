@@ -5,8 +5,8 @@
 #ifndef Buffer_h
 #define Buffer_h
 
-#include <vector>
 #include <cstdint>
+#include <vector>
 
 namespace mozilla {
 namespace ct {

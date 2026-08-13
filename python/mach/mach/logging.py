@@ -87,7 +87,7 @@ def format_seconds(total):
 
     minutes, seconds = divmod(total, 60)
 
-    return "%2d:%05.2f" % (minutes, seconds)
+    return f"{int(minutes):2d}:{seconds:05.2f}"
 
 
 def format_level(level, terminal=None):

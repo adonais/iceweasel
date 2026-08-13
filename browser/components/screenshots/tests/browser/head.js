@@ -173,7 +173,7 @@ class ScreenshotsHelper {
 
   async waitForPanel() {
     let panel = this.panel;
-    await BrowserTestUtils.waitForCondition(async () => {
+    await TestUtils.waitForCondition(async () => {
       if (!panel) {
         panel = this.panel;
       }
@@ -186,7 +186,7 @@ class ScreenshotsHelper {
     const panel = await this.waitForPanel();
     ok(BrowserTestUtils.isVisible(panel), "Panel buttons are visible");
 
-    await BrowserTestUtils.waitForCondition(async () => {
+    await TestUtils.waitForCondition(async () => {
       let init = await this.isOverlayInitialized();
       return init;
     });
@@ -219,7 +219,7 @@ class ScreenshotsHelper {
 
   async waitForOverlayClosed() {
     await this.waitForPanelClosed();
-    await BrowserTestUtils.waitForCondition(async () => {
+    await TestUtils.waitForCondition(async () => {
       let init = !(await this.isOverlayInitialized());
       info("Is overlay initialized: " + !init);
       return init;

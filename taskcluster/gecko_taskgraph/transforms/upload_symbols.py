@@ -8,14 +8,12 @@ taskcluster/kinds/upload-symbols/job-template.yml into an actual task descriptio
 
 import logging
 
+from mozilla_taskgraph.util.attributes import copy_attributes_from_dependent_job
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.dependencies import get_primary_dependency
 from taskgraph.util.treeherder import inherit_treeherder_from_dep, join_symbol
 
-from gecko_taskgraph.util.attributes import (
-    RELEASE_PROJECTS,
-    copy_attributes_from_dependent_job,
-)
+from gecko_taskgraph.util.attributes import RELEASE_PROJECTS
 
 logger = logging.getLogger(__name__)
 

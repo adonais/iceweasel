@@ -1,0 +1,719 @@
+ifdef out unused functions from base_paths* and base/files to prevent dependencies.
+
+diff --git a/base/base_paths.cc b/base/base_paths.cc
+--- a/base/base_paths.cc
++++ b/base/base_paths.cc
+@@ -71,8 +71,10 @@ bool PathProvider(int key, FilePath* result) {
+       }
+       *result = result->DirName();
+       return true;
++#if !defined(MOZ_SANDBOX)
+     case DIR_ASSETS:
+       return PathService::Get(DIR_MODULE, result);
++#endif  // !defined(MOZ_SANDBOX)
+ #endif  // !BUILDFLAG(IS_FUCHSIA) && !BUILDFLAG(IS_IOS)
+     case DIR_TEMP:
+       return GetTempDir(result);
+diff --git a/base/base_paths.h b/base/base_paths.h
+--- a/base/base_paths.h
++++ b/base/base_paths.h
+@@ -49,7 +49,9 @@ enum BasePathKey {
+   // details.
+   DIR_MODULE,  // Directory containing FILE_MODULE.
+ #endif
++#if !defined(MOZ_SANDBOX)
+   DIR_ASSETS,  // Directory that contains application assets.
++#endif  // !defined(MOZ_SANDBOX)
+ 
+   // The following refer to system and system user directories.
+   DIR_TEMP,  // Temporary directory for the system and/or user.
+@@ -57,7 +59,9 @@ enum BasePathKey {
+              // like "C:\Users\<user>"  which isn't necessarily a great
+              // place to put files.
+ #if !BUILDFLAG(IS_IOS)
++#if !defined(MOZ_SANDBOX)
+   DIR_USER_DESKTOP,  // The current user's Desktop.
++#endif  // !defined(MOZ_SANDBOX)
+ #endif
+ 
+   // The following refer to the applications current environment.
+diff --git a/base/base_paths_win.cc b/base/base_paths_win.cc
+--- a/base/base_paths_win.cc
++++ b/base/base_paths_win.cc
+@@ -9,14 +9,18 @@
+ #include <knownfolders.h>
+ #include <shlobj.h>
+ 
++#if !defined(MOZ_SANDBOX)
+ #include "base/environment.h"
++#endif  // !defined(MOZ_SANDBOX)
+ #include "base/files/file_path.h"
+ #include "base/files/file_util.h"
+ #include "base/path_service.h"
+ #include "base/strings/string_util.h"
+ #include "base/strings/utf_string_conversions.h"
+ #include "base/win/current_module.h"
++#if !defined(MOZ_SANDBOX)
+ #include "base/win/scoped_co_mem.h"
++#endif  // !defined(MOZ_SANDBOX)
+ #include "base/win/windows_version.h"
+ 
+ using base::FilePath;
+@@ -57,6 +61,7 @@ bool PathProviderWin(int key, FilePath* result) {
+       GetSystemDirectory(system_buffer, MAX_PATH);
+       cur = FilePath(system_buffer);
+       break;
++#if !defined(MOZ_SANDBOX)
+     case base::DIR_PROGRAM_FILESX86:
+       if (win::OSInfo::GetArchitecture() != win::OSInfo::X86_ARCHITECTURE) {
+         if (FAILED(SHGetFolderPath(NULL, CSIDL_PROGRAM_FILESX86, NULL,
+@@ -68,6 +73,7 @@ bool PathProviderWin(int key, FilePath* result) {
+       }
+       // Fall through to base::DIR_PROGRAM_FILES if we're on an X86 machine.
+       [[fallthrough]];
++#endif  // !defined(MOZ_SANDBOX)
+     case base::DIR_PROGRAM_FILES:
+       if (FAILED(SHGetFolderPath(NULL, CSIDL_PROGRAM_FILES, NULL,
+                                  SHGFP_TYPE_CURRENT, system_buffer))) {
+@@ -75,6 +81,7 @@ bool PathProviderWin(int key, FilePath* result) {
+       }
+       cur = FilePath(system_buffer);
+       break;
++#if !defined(MOZ_SANDBOX)
+     case base::DIR_PROGRAM_FILES6432:
+ #if !defined(_WIN64)
+       if (base::win::OSInfo::GetInstance()->IsWowX86OnAMD64() ||
+@@ -99,6 +106,7 @@ bool PathProviderWin(int key, FilePath* result) {
+       }
+       cur = FilePath(system_buffer);
+       break;
++#endif  // !defined(MOZ_SANDBOX)
+     case base::DIR_IE_INTERNET_CACHE:
+       if (FAILED(SHGetFolderPath(NULL, CSIDL_INTERNET_CACHE, NULL,
+                                  SHGFP_TYPE_CURRENT, system_buffer))) {
+@@ -160,10 +168,13 @@ bool PathProviderWin(int key, FilePath* result) {
+       // On Windows, unit tests execute two levels deep from the source root.
+       // For example:  chrome/{Debug|Release}/ui_tests.exe
+       PathService::Get(base::DIR_EXE, &executableDir);
++#if !defined(MOZ_SANDBOX)
+       cur = executableDir.DirName().DirName();
++#endif  // !defined(MOZ_SANDBOX)
+       break;
+     }
+     case base::DIR_APP_SHORTCUTS: {
++#if !defined(MOZ_SANDBOX)
+       base::win::ScopedCoMem<wchar_t> path_buf;
+       if (FAILED(SHGetKnownFolderPath(FOLDERID_ApplicationShortcuts, 0, NULL,
+                                       &path_buf))) {
+@@ -172,7 +183,11 @@ bool PathProviderWin(int key, FilePath* result) {
+ 
+       cur = FilePath(path_buf.get());
+       break;
++#else
++      NOTREACHED();
++#endif  // !defined(MOZ_SANDBOX)
+     }
++#if !defined(MOZ_SANDBOX)
+     case base::DIR_USER_DESKTOP:
+       if (FAILED(SHGetFolderPath(NULL, CSIDL_DESKTOPDIRECTORY, NULL,
+                                  SHGFP_TYPE_CURRENT, system_buffer))) {
+@@ -180,6 +195,7 @@ bool PathProviderWin(int key, FilePath* result) {
+       }
+       cur = FilePath(system_buffer);
+       break;
++#endif  // !defined(MOZ_SANDBOX)
+     case base::DIR_COMMON_DESKTOP:
+       if (FAILED(SHGetFolderPath(NULL, CSIDL_COMMON_DESKTOPDIRECTORY, NULL,
+                                  SHGFP_TYPE_CURRENT, system_buffer))) {
+@@ -239,6 +255,7 @@ bool PathProviderWin(int key, FilePath* result) {
+         return false;
+       }
+       break;
++#if !defined(MOZ_SANDBOX)
+     case base::DIR_ONE_DRIVE: {
+       base::win::ScopedCoMem<wchar_t> path_buf;
+       // FOLDERID_OneDrive points on the user OneDrive folder. The default path
+@@ -250,6 +267,7 @@ bool PathProviderWin(int key, FilePath* result) {
+       cur = FilePath(path_buf.get());
+       break;
+     }
++#endif  // !defined(MOZ_SANDBOX)
+     default:
+       return false;
+   }
+diff --git a/base/base_paths_win.h b/base/base_paths_win.h
+--- a/base/base_paths_win.h
++++ b/base/base_paths_win.h
+@@ -22,8 +22,10 @@ enum {
+   // DIR_PROGRAM_FILES6432     1               1                  1
+   // 1 - C:\Program Files   2 - C:\Program Files (x86)
+   DIR_PROGRAM_FILES,      // See table above.
++#if !defined(MOZ_SANDBOX)
+   DIR_PROGRAM_FILESX86,   // See table above.
+   DIR_PROGRAM_FILES6432,  // See table above.
++#endif  // !defined(MOZ_SANDBOX)
+ 
+   DIR_IE_INTERNET_CACHE,       // Temporary Internet Files directory.
+   DIR_COMMON_START_MENU,       // Usually "C:\ProgramData\Microsoft\Windows\
+@@ -57,7 +59,9 @@ enum {
+   DIR_WINDOWS_FONTS,           // Usually C:\Windows\Fonts.
+   DIR_SYSTEM_TEMP,             // %SystemRoot%\SystemTemp or %ProgramFiles%;
+                                // only for admin processes.
++#if !defined(MOZ_SANDBOX)
+   DIR_ONE_DRIVE,               // The synced personal OneDrive directory.
++#endif  // !defined(MOZ_SANDBOX)
+   PATH_WIN_END
+ };
+ 
+diff --git a/base/files/file.cc b/base/files/file.cc
+--- a/base/files/file.cc
++++ b/base/files/file.cc
+@@ -9,10 +9,14 @@
+ #include "base/check_op.h"
+ #include "base/files/file_path.h"
+ #include "base/files/file_tracing.h"
++#if !defined(MOZ_SANDBOX)
+ #include "base/metrics/histogram.h"
++#endif  // !defined(MOZ_SANDBOX)
+ #include "base/notreached.h"
+ #include "base/numerics/safe_conversions.h"
++#if !defined(MOZ_SANDBOX)
+ #include "base/timer/elapsed_timer.h"
++#endif  // !defined(MOZ_SANDBOX)
+ #include "base/trace_event/trace_event.h"
+ #include "build/build_config.h"
+ 
+diff --git a/base/files/file.h b/base/files/file.h
+--- a/base/files/file.h
++++ b/base/files/file.h
+@@ -78,10 +78,12 @@ class BASE_EXPORT File {
+     FLAG_CAN_DELETE_ON_CLOSE = 1 << 20,  // Requests permission to delete a file
+                                          // via DeleteOnClose() (Windows only).
+                                          // See DeleteOnClose() for details.
++#if !defined(MOZ_SANDBOX)
+     FLAG_WIN_NO_EXECUTE =
+         1 << 21,  // Windows only. Marks the file with a deny ACE that prevents
+                   // opening the file with EXECUTE access. Cannot be used with
+                   // FILE_WIN_EXECUTE flag. See also PreventExecuteMapping.
++#endif  // !defined(MOZ_SANDBOX)
+   };
+ 
+   // This enum has been recorded in multiple histograms using PlatformFileError
+@@ -417,6 +419,7 @@ class BASE_EXPORT File {
+   static int Mkdir(const FilePath& path, mode_t mode);
+ #endif
+ 
++#if !defined(MOZ_SANDBOX)
+   // This function can be used to augment `flags` with the correct flags
+   // required to create a File that can be safely passed to an untrusted
+   // process. It must be called if the File is intended to be transferred to an
+@@ -430,6 +433,7 @@ class BASE_EXPORT File {
+     }
+     return flags;
+   }
++#endif  // !defined(MOZ_SANDBOX)
+ 
+  private:
+   friend class FileTracing::ScopedTrace;
+diff --git a/base/files/file_path.cc b/base/files/file_path.cc
+--- a/base/files/file_path.cc
++++ b/base/files/file_path.cc
+@@ -13,13 +13,19 @@
+ #include "base/check_op.h"
+ #include "base/containers/contains.h"
+ #include "base/containers/span.h"
++#if !defined(MOZ_SANDBOX)
+ #include "base/features.h"
+ #include "base/files/safe_base_name.h"
++#endif  // !defined(MOZ_SANDBOX)
+ #include "base/numerics/safe_conversions.h"
++#if !defined(MOZ_SANDBOX)
+ #include "base/pickle.h"
++#endif  // !defined(MOZ_SANDBOX)
+ #include "base/strings/strcat.h"
+ #include "base/strings/string_util.h"
++#if !defined(MOZ_SANDBOX)
+ #include "base/strings/sys_string_conversions.h"
++#endif  // !defined(MOZ_SANDBOX)
+ #include "base/strings/utf_ostream_operators.h"
+ #include "base/strings/utf_string_conversions.h"
+ #include "base/trace_event/trace_event.h"
+@@ -95,6 +101,7 @@ bool EqualDriveLetterCaseInsensitive(StringViewType a, StringViewType b) {
+   return a_rest == b_rest;
+ }
+ 
++#  if !defined(MOZ_SANDBOX)
+ // Returns true if `left` and `right` are equivalent drive letter components.
+ // Will return false if `left` or `right` is not a drive letter component.
+ bool AreDriveLetterComponentsEqual(FilePath::StringViewType left,
+@@ -107,6 +114,7 @@ bool AreDriveLetterComponentsEqual(FilePath::StringViewType left,
+          right[1] == ':' && IsAsciiAlpha(left[0]) &&
+          ToLowerASCII(left[0]) == ToLowerASCII(right[0]);
+ }
++#  endif  // !defined(MOZ_SANDBOX)
+ #endif  // defined(FILE_PATH_USES_DRIVE_LETTERS)
+ 
+ bool IsPathAbsolute(StringViewType path) {
+@@ -203,6 +211,7 @@ bool IsEmptyOrSpecialCase(const StringType& path) {
+   return false;
+ }
+ 
++#if !defined(MOZ_SANDBOX)
+ // Splits `path` in 2 parts: the first component and the remainder of the path.
+ // Leading separators are removed from the remainder of the path, unless
+ // `can_be_drive_letter` is true. `can_be_drive_letter` indicates that a leading
+@@ -276,9 +285,11 @@ ExtractFirstComponent(FilePath::StringViewType path, bool can_be_drive_letter) {
+ // State of the `FastFilePathIsParent` feature, to be updated after the feature
+ // list is available.
+ std::atomic_bool g_fast_file_path_is_parent{false};
++#endif  // !defined(MOZ_SANDBOX)
+ 
+ }  // namespace
+ 
++#if !defined(MOZ_SANDBOX)
+ void FilePath::InitializeFeatures() {
+   // `std::memory_order_relaxed` because there are no dependencies with other
+   // memory operations.
+@@ -286,6 +297,7 @@ void FilePath::InitializeFeatures() {
+       FeatureList::IsEnabled(features::kFastFilePathIsParent),
+       std::memory_order_relaxed);
+ }
++#endif  // !defined(MOZ_SANDBOX)
+
+ FilePath::FilePath() = default;
+
+@@ -358,6 +370,7 @@ std::vector<FilePath::StringType> FilePath::GetComponents() const {
+   return ret_val;
+ }
+
++#if !defined(MOZ_SANDBOX)
+ bool FilePath::IsParent(const FilePath& child) const {
+   // `std::memory_order_relaxed` because there are no dependencies with other
+   // memory operations.
+@@ -444,6 +457,7 @@ bool FilePath::IsParentFast(const FilePath& child) const {
+ bool FilePath::IsParentSlow(const FilePath& child) const {
+   return AppendRelativePath(child, nullptr);
+ }
++#endif  // !defined(MOZ_SANDBOX)
+
+ bool FilePath::AppendRelativePath(const FilePath& child, FilePath* path) const {
+   std::vector<StringType> parent_components = GetComponents();
+@@ -752,9 +766,11 @@ FilePath FilePath::Append(const FilePath& component) const {
+   return Append(component.value());
+ }
+ 
++#if !defined(MOZ_SANDBOX)
+ FilePath FilePath::Append(const SafeBaseName& component) const {
+   return Append(component.path().value());
+ }
++#endif  // !defined(MOZ_SANDBOX)
+ 
+ FilePath FilePath::AppendASCII(std::string_view component) const {
+   DCHECK(base::IsStringASCII(component));
+@@ -934,6 +950,7 @@ FilePath FilePath::FromUTF16Unsafe(std::u16string_view utf16) {
+ 
+ #endif  // BUILDFLAG(IS_WIN)
+ 
++#if !defined(MOZ_SANDBOX)
+ void FilePath::WriteToPickle(Pickle* pickle) const {
+ #if BUILDFLAG(IS_WIN)
+   pickle->WriteString16(AsStringPiece16(path_));
+@@ -965,6 +982,7 @@ bool FilePath::ReadFromPickle(PickleIterator* iter) {
+ 
+   return true;
+ }
++#endif  // !defined(MOZ_SANDBOX)
+ 
+ #if BUILDFLAG(IS_WIN)
+ // Windows specific implementation of file string comparisons.
+diff --git a/base/files/file_path.h b/base/files/file_path.h
+--- a/base/files/file_path.h
++++ b/base/files/file_path.h
+@@ -247,7 +247,12 @@ class BASE_EXPORT FilePath {
+   // is a parent to both /a/b and /a/b/c.  Does not convert paths to absolute,
+   // follow symlinks or directory navigation (e.g. ".."). A path is *NOT* its
+   // own parent.
++#if !defined(MOZ_SANDBOX)
++  // Note: If re-enabling for MOZ_SANDBOX, consider defaulting
++  // g_fast_file_path_is_parent to true, since InitializeFeatures() is
++  // ifdef-ed out and the fast path will never be enabled otherwise.
+   bool IsParent(const FilePath& child) const;
++#endif  // !defined(MOZ_SANDBOX)
+
+   // If IsParent(child) holds, appends to path (if non-NULL) the
+   // relative path to child and returns true.  For example, if parent
+@@ -544,8 +549,10 @@ class BASE_EXPORT FilePath {
+   // Returns `kSeparators` as a `span` (without the terminating NUL character).
+   static span<const CharType> SeparatorsAsSpan();
+
++#if !defined(MOZ_SANDBOX)
+   bool IsParentFast(const FilePath& child) const;
+   bool IsParentSlow(const FilePath& child) const;
++#endif  // !defined(MOZ_SANDBOX)
+
+   StringType path_;
+ };
+diff --git a/base/files/file_util.cc b/base/files/file_util.cc
+--- a/base/files/file_util.cc
++++ b/base/files/file_util.cc
+@@ -7,7 +7,9 @@
+ #include <algorithm>
+ #include <string_view>
+ 
++#if !defined(MOZ_SANDBOX)
+ #include "base/task/sequenced_task_runner.h"
++#endif  // !defined(MOZ_SANDBOX)
+ #include "build/build_config.h"
+ 
+ #if BUILDFLAG(IS_WIN)
+@@ -22,6 +24,7 @@
+ #include <utility>
+ #include <vector>
+ 
++#if !defined(MOZ_SANDBOX)
+ #include "base/bit_cast.h"
+ #include "base/check_op.h"
+ #include "base/containers/contains.h"
+@@ -31,11 +34,14 @@
+ #include "base/functional/function_ref.h"
+ #include "base/notreached.h"
+ #include "base/numerics/checked_math.h"
++#endif  // !defined(MOZ_SANDBOX)
+ #include "base/posix/eintr_wrapper.h"
++#if !defined(MOZ_SANDBOX)
+ #include "base/strings/string_number_conversions.h"
+ #include "base/strings/string_util.h"
+ #include "base/strings/utf_string_conversions.h"
+ #include "base/task/bind_post_task.h"
++#endif  // !defined(MOZ_SANDBOX)
+ #include "base/threading/scoped_blocking_call.h"
+ 
+ #if BUILDFLAG(IS_WIN)
+@@ -46,6 +52,7 @@ namespace base {
+ 
+ namespace {
+ 
++#if !defined(MOZ_SANDBOX)
+ #if !BUILDFLAG(IS_WIN)
+ 
+ void RunAndReply(OnceCallback<bool()> action_callback,
+@@ -57,6 +64,7 @@ void RunAndReply(OnceCallback<bool()> action_callback,
+ }
+ 
+ #endif  // !BUILDFLAG(IS_WIN)
++#endif  // !defined(MOZ_SANDBOX)
+ 
+ bool ReadStreamToSpanWithMaxSize(
+     FILE* stream,
+@@ -148,6 +156,7 @@ bool ReadStreamToSpanWithMaxSize(
+ 
+ }  // namespace
+ 
++#if !defined(MOZ_SANDBOX)
+ #if !BUILDFLAG(IS_WIN)
+ 
+ OnceClosure GetDeleteFileCallback(const FilePath& path,
+@@ -320,6 +329,7 @@ bool ReadStreamToString(FILE* stream, std::string* contents) {
+   return ReadStreamToStringWithMaxSize(
+       stream, std::numeric_limits<size_t>::max(), contents);
+ }
++#endif  // !defined(MOZ_SANDBOX)
+ 
+ bool ReadStreamToStringWithMaxSize(FILE* stream,
+                                    size_t max_size,
+@@ -341,6 +351,7 @@ bool ReadStreamToStringWithMaxSize(FILE* stream,
+   return read_successs;
+ }
+ 
++#if !defined(MOZ_SANDBOX)
+ std::optional<std::vector<uint8_t>> ReadFileToBytes(const FilePath& path) {
+   if (path.ReferencesParent()) {
+     return std::nullopt;
+@@ -362,6 +373,7 @@ std::optional<std::vector<uint8_t>> ReadFileToBytes(const FilePath& path) {
+   }
+   return bytes;
+ }
++#endif  // !defined(MOZ_SANDBOX)
+ 
+ bool ReadFileToString(const FilePath& path, std::string* contents) {
+   return ReadFileToStringWithMaxSize(path, contents,
+@@ -384,6 +396,7 @@ bool ReadFileToStringWithMaxSize(const FilePath& path,
+   return ReadStreamToStringWithMaxSize(file_stream.get(), max_size, contents);
+ }
+ 
++#if !defined(MOZ_SANDBOX)
+ bool IsDirectoryEmpty(const FilePath& dir_path) {
+   FileEnumerator files(dir_path, false,
+                        FileEnumerator::FILES | FileEnumerator::DIRECTORIES);
+@@ -406,11 +419,13 @@ ScopedFILE CreateAndOpenTemporaryStream(FilePath* path) {
+ 
+   return CreateAndOpenTemporaryStreamInDir(directory, path);
+ }
++#endif  // !defined(MOZ_SANDBOX)
+ 
+ bool CreateDirectory(const FilePath& full_path) {
+   return CreateDirectoryAndGetError(full_path, nullptr);
+ }
+ 
++#if !defined(MOZ_SANDBOX)
+ std::optional<int64_t> GetFileSize(const FilePath& file_path) {
+   File::Info info;
+   if (!GetFileInfo(file_path, &info)) {
+@@ -531,5 +546,6 @@ FilePath GetUniquePathWithSuffixFormat(const FilePath& path,
+   }
+   return FilePath();
+ }
++#endif  // !defined(MOZ_SANDBOX)
+ 
+ }  // namespace base
+diff --git a/base/files/file_util_win.cc b/base/files/file_util_win.cc
+--- a/base/files/file_util_win.cc
++++ b/base/files/file_util_win.cc
+@@ -27,51 +27,67 @@
+ #include <utility>
+ #include <vector>
+ 
++#if !defined(MOZ_SANDBOX)
+ #include "base/check.h"
+ #include "base/clang_profiling_buildflags.h"
+ #include "base/compiler_specific.h"
+ #include "base/feature_list.h"
+ #include "base/features.h"
++#endif  // !defined(MOZ_SANDBOX)
+ #include "base/files/file_enumerator.h"
+ #include "base/files/file_path.h"
++#if !defined(MOZ_SANDBOX)
+ #include "base/files/memory_mapped_file.h"
+ #include "base/functional/bind.h"
+ #include "base/functional/callback.h"
+ #include "base/location.h"
++#endif  // !defined(MOZ_SANDBOX)
+ #include "base/logging.h"
+ #include "base/numerics/safe_conversions.h"
+ #include "base/path_service.h"
+ #include "base/process/process_handle.h"
+ #include "base/rand_util.h"
++#if !defined(MOZ_SANDBOX)
+ #include "base/strings/strcat.h"
++#endif  // !defined(MOZ_SANDBOX)
+ #include "base/strings/string_number_conversions.h"
+ #include "base/strings/string_split_win.h"
+ #include "base/strings/string_util.h"
+ #include "base/strings/string_util_win.h"
+ #include "base/strings/string_view_util.h"
+ #include "base/strings/utf_string_conversions.h"
++#if !defined(MOZ_SANDBOX)
+ #include "base/task/bind_post_task.h"
+ #include "base/task/sequenced_task_runner.h"
+ #include "base/task/thread_pool.h"
++#endif  // !defined(MOZ_SANDBOX)
+ #include "base/threading/scoped_blocking_call.h"
++#if !defined(MOZ_SANDBOX)
+ #include "base/threading/scoped_thread_priority.h"
+ #include "base/time/time.h"
+ #include "base/uuid.h"
++#endif  // !defined(MOZ_SANDBOX)
+ #include "base/win/scoped_handle.h"
++#if !defined(MOZ_SANDBOX)
+ #include "base/win/security_util.h"
+ #include "base/win/sid.h"
+ #include "base/win/windows_types.h"
+ #include "base/win/windows_version.h"
++#endif  // !defined(MOZ_SANDBOX)
+ 
+ namespace base {
+ 
+ namespace {
+ 
++#if !defined(MOZ_SANDBOX)
+ int g_extra_allowed_path_for_no_execute = 0;
++#endif  // !defined(MOZ_SANDBOX)
+ 
+ constexpr DWORD kFileShareAll =
+     FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
++#if !defined(MOZ_SANDBOX)
+ constexpr std::wstring_view kDefaultTempDirPrefix = L"ChromiumTemp";
++#endif  // !defined(MOZ_SANDBOX)
+ 
+ // Returns the Win32 last error code or ERROR_SUCCESS if the last error code is
+ // ERROR_FILE_NOT_FOUND or ERROR_PATH_NOT_FOUND. This is useful in cases where
+@@ -136,6 +152,7 @@ void AppendModeCharacter(wchar_t mode_char, std::wstring* mode) {
+                mode_char);
+ }
+ 
++#if !defined(MOZ_SANDBOX)
+ bool DoCopyFile(const FilePath& from_path,
+                 const FilePath& to_path,
+                 bool fail_if_exists) {
+@@ -269,6 +286,7 @@ bool DoCopyDirectory(const FilePath& from_path,
+ 
+   return success;
+ }
++#endif  // !defined(MOZ_SANDBOX)
+ 
+ // Returns ERROR_SUCCESS on success, or a Windows error code on failure.
+ DWORD DoDeleteFile(const FilePath& path, bool recursive) {
+@@ -340,6 +358,7 @@ bool DeleteFileOrSetLastError(const FilePath& path, bool recursive) {
+   return false;
+ }
+ 
++#if !defined(MOZ_SANDBOX)
+ constexpr int kMaxDeleteAttempts = 9;
+ 
+ void DeleteFileWithRetry(const FilePath& path,
+@@ -472,9 +491,11 @@ bool IsPathSafeToSetAclOn(const FilePath& path) {
+ 
+   return false;
+ }
++#endif  // !defined(MOZ_SANDBOX)
+ 
+ }  // namespace
+ 
++#if !defined(MOZ_SANDBOX)
+ OnceClosure GetDeleteFileCallback(const FilePath& path,
+                                   OnceCallback<void(bool)> reply_callback) {
+   return GetDeleteFileCallbackInternal(path, /*recursive=*/false,
+@@ -487,6 +508,7 @@ OnceClosure GetDeletePathRecursivelyCallback(
+   return GetDeleteFileCallbackInternal(path, /*recursive=*/true,
+                                        std::move(reply_callback));
+ }
++#endif  // !defined(MOZ_SANDBOX)
+ 
+ FilePath MakeAbsoluteFilePath(const FilePath& input) {
+   ScopedBlockingCall scoped_blocking_call(FROM_HERE, BlockingType::MAY_BLOCK);
+@@ -505,6 +527,7 @@ bool DeletePathRecursively(const FilePath& path) {
+   return DeleteFileOrSetLastError(path, /*recursive=*/true);
+ }
+ 
++#if !defined(MOZ_SANDBOX)
+ bool DeleteFileAfterReboot(const FilePath& path) {
+   ScopedBlockingCall scoped_blocking_call(FROM_HERE, BlockingType::MAY_BLOCK);
+ 
+@@ -560,6 +583,7 @@ bool CopyDirectoryExcl(const FilePath& from_path,
+                        bool recursive) {
+   return DoCopyDirectory(from_path, to_path, recursive, true);
+ }
++#endif  // !defined(MOZ_SANDBOX)
+ 
+ bool PathExists(const FilePath& path) {
+   ScopedBlockingCall scoped_blocking_call(FROM_HERE, BlockingType::MAY_BLOCK);
+@@ -642,6 +666,7 @@ FilePath GetHomeDir() {
+   return FilePath(FILE_PATH_LITERAL("C:\\"));
+ }
+ 
++#if !defined(MOZ_SANDBOX)
+ File CreateAndOpenTemporaryFileInDir(const FilePath& dir, FilePath* temp_file) {
+   ScopedBlockingCall scoped_blocking_call(FROM_HERE, BlockingType::MAY_BLOCK);
+ 
+@@ -754,6 +779,7 @@ bool CreateNewTempDirectory(FilePath::StringViewType prefix,
+       parent_dir, prefix.empty() ? kDefaultTempDirPrefix : prefix,
+       new_temp_path);
+ }
++#endif  // !defined(MOZ_SANDBOX)
+ 
+ bool CreateDirectoryAndGetError(const FilePath& full_path, File::Error* error) {
+   ScopedBlockingCall scoped_blocking_call(FROM_HERE, BlockingType::MAY_BLOCK);
+@@ -813,6 +839,7 @@ bool CreateDirectoryAndGetError(const FilePath& full_path, File::Error* error) {
+   return false;
+ }
+ 
++#if !defined(MOZ_SANDBOX)
+ bool NormalizeFilePath(const FilePath& path, FilePath* real_path) {
+   ScopedBlockingCall scoped_blocking_call(FROM_HERE, BlockingType::MAY_BLOCK);
+ 
+@@ -975,6 +1002,7 @@ bool GetFileInfo(const FilePath& file_path, File::Info* results) {
+ 
+   return true;
+ }
++#endif  // !defined(MOZ_SANDBOX)
+ 
+ FILE* OpenFile(const FilePath& filename, const char* mode) {
+   // 'N' is unconditionally added below, so be sure there is not one already
+@@ -988,6 +1016,7 @@ FILE* OpenFile(const FilePath& filename, const char* mode) {
+   return _wfsopen(filename.value().c_str(), w_mode.c_str(), _SH_DENYNO);
+ }
+ 
++#if !defined(MOZ_SANDBOX)
+ FILE* FileToFILE(File file, const char* mode) {
+   DCHECK(!file.async());
+   if (!file.IsValid()) {
+@@ -1110,6 +1139,7 @@ bool AppendToFile(const FilePath& filename, span<const uint8_t> data) {
+ bool AppendToFile(const FilePath& filename, std::string_view data) {
+   return AppendToFile(filename, as_byte_span(data));
+ }
++#endif  // !defined(MOZ_SANDBOX)
+ 
+ bool GetCurrentDirectory(FilePath* dir) {
+   ScopedBlockingCall scoped_blocking_call(FROM_HERE, BlockingType::MAY_BLOCK);
+@@ -1128,6 +1158,7 @@ bool GetCurrentDirectory(FilePath* dir) {
+   return true;
+ }
+ 
++#if !defined(MOZ_SANDBOX)
+ bool SetCurrentDirectory(const FilePath& directory) {
+   ScopedBlockingCall scoped_blocking_call(FROM_HERE, BlockingType::MAY_BLOCK);
+   return ::SetCurrentDirectory(directory.value().c_str()) != 0;
+@@ -1351,4 +1382,5 @@ bool IsUserDefaultAdmin() {
+ }
+ 
+ }  // namespace internal
++#endif  // !defined(MOZ_SANDBOX)
+ }  // namespace base
+diff --git a/base/files/file_win.cc b/base/files/file_win.cc
+--- a/base/files/file_win.cc
++++ b/base/files/file_win.cc
+@@ -14,8 +14,10 @@
+ #include "base/check.h"
+ #include "base/check_op.h"
+ #include "base/files/file_util.h"
++#if !defined(MOZ_SANDBOX)
+ #include "base/immediate_crash.h"
+ #include "base/metrics/histogram_functions.h"
++#endif  // !defined(MOZ_SANDBOX)
+ #include "base/notreached.h"
+ #include "base/strings/string_util.h"
+ #include "base/threading/scoped_blocking_call.h"
+@@ -229,6 +231,7 @@ bool File::SetLength(int64_t length) {
+            FALSE));
+ }
+ 
++#if !defined(MOZ_SANDBOX)
+ bool File::SetTimes(Time last_access_time, Time last_modified_time) {
+   ScopedBlockingCall scoped_blocking_call(FROM_HERE, BlockingType::MAY_BLOCK);
+   DCHECK(IsValid());
+@@ -266,6 +269,7 @@ bool File::GetInfo(Info* info) const {
+   info->creation_time = Time::FromFileTime(file_info.ftCreationTime);
+   return true;
+ }
++#endif  // !defined(MOZ_SANDBOX)
+ 
+ namespace {
+ 
+@@ -435,9 +439,11 @@ void File::DoInitialize(const FilePath& path, uint32_t flags) {
+     access |= FILE_WRITE_ATTRIBUTES;
+   }
+   if (flags & FLAG_WIN_EXECUTE) {
++#if !defined(MOZ_SANDBOX)
+     // Specifying both FLAG_WIN_EXECUTE and FLAG_WIN_NO_EXECUTE would
+     // constitute a security risk, so deny the access here.
+     CHECK_EQ(flags & FLAG_WIN_NO_EXECUTE, 0U);
++#endif  // !defined(MOZ_SANDBOX)
+     access |= GENERIC_EXECUTE;
+   }
+   if (flags & FLAG_CAN_DELETE_ON_CLOSE) {
+@@ -484,6 +490,7 @@ void File::DoInitialize(const FilePath& path, uint32_t flags) {
+     } else if (flags & (FLAG_CREATE_ALWAYS | FLAG_CREATE)) {
+       created_ = true;
+     }
++#if !defined(MOZ_SANDBOX)
+     if (flags & FLAG_WIN_NO_EXECUTE) {
+       // These two DCHECKs make sure that no callers are trying to remove
+       // execute permission from a file that might need to be mapped executable
+@@ -502,6 +509,7 @@ void File::DoInitialize(const FilePath& path, uint32_t flags) {
+       // occurring or about to occur.
+       std::ignore = PreventExecuteMapping(path);
+     }
++#endif  // !defined(MOZ_SANDBOX)
+   } else {
+     error_details_ = GetLastFileError();
+   }

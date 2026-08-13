@@ -17,8 +17,8 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "nsCharSeparatedTokenizer.h"
-#include "nsIMemoryReporter.h"
 #include "nsHttpHandler.h"
+#include "nsIMemoryReporter.h"
 
 namespace mozilla {
 namespace net {

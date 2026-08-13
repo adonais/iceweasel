@@ -5,10 +5,10 @@
 #ifndef nsObserverList_h_
 #define nsObserverList_h_
 
-#include "nsISupports.h"
 #include "nsCOMArray.h"
-#include "nsIObserver.h"
 #include "nsHashKeys.h"
+#include "nsIObserver.h"
+#include "nsISupports.h"
 #include "nsMaybeWeakPtr.h"
 #include "nsSimpleEnumerator.h"
 

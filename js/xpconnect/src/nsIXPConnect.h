@@ -7,13 +7,13 @@
 
 /* The core XPConnect public interfaces. */
 
-#include "nsISupports.h"
-
 #include "jspubtd.h"
+#include "nsCOMPtr.h"
+#include "nsISupports.h"
+#include "xptinfo.h"
+
 #include "js/CompileOptions.h"
 #include "js/TypeDecls.h"
-#include "xptinfo.h"
-#include "nsCOMPtr.h"
 
 class XPCWrappedNative;
 class nsXPCWrappedJS;

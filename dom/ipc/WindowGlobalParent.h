@@ -23,6 +23,8 @@
 #include "nsISupports.h"
 #include "nsRefPtrHashtable.h"
 #include "nsTHashMap.h"
+#include "nsTHashtable.h"
+#include "nsURIHashKey.h"
 #include "nsWrapperCache.h"
 
 class nsIPrincipal;
@@ -46,6 +48,16 @@ class WindowSessionStoreState;
 struct WindowSessionStoreUpdate;
 class SSCacheQueryResult;
 enum class FullscreenKeyboardLock : uint8_t;
+
+// No-cors media request state used by Opaque Response Blocking, derived in the
+// parent from state recorded on the owning window so a content process cannot
+// spoof a subsequent request.
+// See: https://whatpr.org/fetch/1442.html#request-no-cors-media-request-state
+enum class NoCorsMediaRequestState : uint8_t {
+  NotAvailable,
+  Initial,
+  Subsequent,
+};
 
 /**
  * A handle in the parent process to a specific nsGlobalWindowInner object.
@@ -110,7 +122,14 @@ class WindowGlobalParent final : public WindowContext,
   // |document.domain|.
   nsIPrincipal* DocumentPrincipal() { return mDocumentPrincipal; }
 
-  nsIPrincipal* DocumentStoragePrincipal() { return mDocumentStoragePrincipal; }
+  nsIPrincipal* DocumentPartitionedPrincipal() {
+    return mDocumentPartitionedPrincipal;
+  }
+
+  nsIPrincipal* DocumentStoragePrincipal() {
+    return mPartitionStoragePrincipal ? DocumentPartitionedPrincipal()
+                                      : DocumentPrincipal();
+  }
 
   // The BrowsingContext which this WindowGlobal has been loaded into.
   // FIXME: It's quite awkward that this method has a slightly different name
@@ -176,6 +195,10 @@ class WindowGlobalParent final : public WindowContext,
   already_AddRefed<mozilla::dom::Promise> DrawSnapshot(
       const DOMRect* aRect, double aScale, const nsACString& aBackgroundColor,
       bool aResetScrollPosition, mozilla::ErrorResult& aRv);
+
+  already_AddRefed<mozilla::dom::Promise> RequestDocumentLanguageMetadata(
+      const DocumentLanguageMetadataRequestOptions& aOptions,
+      mozilla::ErrorResult& aRv);
 
   static already_AddRefed<WindowGlobalParent> CreateDisconnected(
       const WindowGlobalInit& aInit, ContentParent* aForProcess);
@@ -265,6 +288,10 @@ class WindowGlobalParent final : public WindowContext,
   // loaded, if known.
   already_AddRefed<nsIChannel> GetFailedChannel();
 
+  dom::NoCorsMediaRequestState NoCorsMediaRequestState(nsIURI* aURI) const;
+
+  void RecordSubsequentNoCorsRequestState(nsIURI* aURI);
+
  protected:
   already_AddRefed<JSActor> InitJSActor(JS::Handle<JSObject*> aMaybeActor,
                                         const nsACString& aName,
@@ -279,7 +306,9 @@ class WindowGlobalParent final : public WindowContext,
   mozilla::ipc::IPCResult RecvUpdateDocumentURI(NotNull<nsIURI*> aURI);
   mozilla::ipc::IPCResult RecvUpdateDocumentPrincipal(
       nsIPrincipal* aNewDocumentPrincipal,
-      nsIPrincipal* aNewDocumentStoragePrincipal);
+      nsIPrincipal* aNewDocumentPartitionedPrincipal);
+  mozilla::ipc::IPCResult RecvUpdatePrincipalPartitioning(
+      bool aPartitionStoragePrincipal);
   mozilla::ipc::IPCResult RecvUpdateDocumentHasLoaded(bool aDocumentHasLoaded);
   mozilla::ipc::IPCResult RecvUpdateDocumentHasUserInteracted(
       bool aDocumentHasUserInteracted);
@@ -410,16 +439,11 @@ class WindowGlobalParent final : public WindowContext,
   using PageUseCounterResult = EnumSet<PageUseCounterResultBits>;
   PageUseCounterResult FinishAccumulatingPageUseCounters();
 
-  // Returns failure if the new storage principal cannot be validated
-  // against the current document principle.
-  nsresult SetDocumentStoragePrincipal(
-      nsIPrincipal* aNewDocumentStoragePrincipal);
-
-  // NOTE: Neither this document principal nor the document storage
-  // principal doesn't reflect possible |document.domain| mutations
-  // which may have been made in the actual document.
+  // NOTE: Neither this document principal nor the partitioned principal reflect
+  // possible |document.domain| mutations which may have been made in the actual
+  // document.
   nsCOMPtr<nsIPrincipal> mDocumentPrincipal;
-  nsCOMPtr<nsIPrincipal> mDocumentStoragePrincipal;
+  nsCOMPtr<nsIPrincipal> mDocumentPartitionedPrincipal;
 
   // The principal to use for the content blocking allow list.
   nsCOMPtr<nsIPrincipal> mDocContentBlockingAllowListPrincipal;
@@ -475,6 +499,7 @@ class WindowGlobalParent final : public WindowContext,
   bool mDocumentTreeWouldPreloadResources = false;
   bool mBlockAllMixedContent;
   bool mUpgradeInsecureRequests;
+  bool mPartitionStoragePrincipal;
 
   // HTTPS-Only Mode flags
   uint32_t mHttpsOnlyStatus;
@@ -513,6 +538,11 @@ class WindowGlobalParent final : public WindowContext,
   bool mFullscreen = false;
 
   bool mShouldReportHasBlockedOpaqueResponse = false;
+
+  // URIs of media resources for which an initial no-cors media request has
+  // passed the Opaque Response Blocking media checks in this window. Used to
+  // recognise subsequent (range) requests for the same resource.
+  nsTHashtable<nsCStringHashKey> mNoCorsMediaRequestURIs;
 };
 
 nsCString BFCacheStatusToString(uint32_t aFlags);

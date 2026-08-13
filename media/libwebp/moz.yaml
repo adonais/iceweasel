@@ -59,6 +59,7 @@ vendoring:
     - src/utils/*.c
 
   keep:
+    - libwebp-config.mozbuild
     - MOZCHANGES
     - src/moz
 

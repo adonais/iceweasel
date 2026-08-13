@@ -4,20 +4,11 @@
 
 #include "Logging.h"
 
-#include "LocalAccessible-inl.h"
 #include "AccEvent.h"
-#include "DocAccessible.h"
 #include "DocAccessible-inl.h"
-#include "nsAccessibilityService.h"
-#include "nsCoreUtils.h"
+#include "DocAccessible.h"
+#include "LocalAccessible-inl.h"
 #include "OuterDocAccessible.h"
-
-#include "nsDocShellLoadTypes.h"
-#include "nsIChannel.h"
-#include "nsIWebProgress.h"
-#include "prenv.h"
-#include "nsIDocShellTreeItem.h"
-#include "nsPIDOMWindowInlines.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ScrollContainerFrame.h"
@@ -28,6 +19,14 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLBodyElement.h"
 #include "mozilla/dom/Selection.h"
+#include "nsAccessibilityService.h"
+#include "nsCoreUtils.h"
+#include "nsDocShellLoadTypes.h"
+#include "nsIChannel.h"
+#include "nsIDocShellTreeItem.h"
+#include "nsIWebProgress.h"
+#include "nsPIDOMWindowInlines.h"
+#include "prenv.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;
@@ -620,7 +619,7 @@ void logging::SelChange(dom::Selection* aSelection, DocAccessible* aDocument,
                         int16_t aReason) {
   SelectionType type = aSelection->GetType();
 
-  const char* strType = 0;
+  const char* strType = nullptr;
   if (type == SelectionType::eNormal) {
     strType = "normal";
   } else if (type == SelectionType::eSpellCheck) {

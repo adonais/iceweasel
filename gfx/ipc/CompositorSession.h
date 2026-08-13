@@ -5,8 +5,8 @@
 #define _include_mozilla_gfx_ipc_CompositorSession_h_
 
 #include "base/basictypes.h"
-#include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/CompositorTypes.h"
+#include "mozilla/layers/LayersTypes.h"
 #include "nsISupportsImpl.h"
 #if defined(MOZ_WIDGET_ANDROID)
 #  include "mozilla/layers/UiCompositorControllerChild.h"

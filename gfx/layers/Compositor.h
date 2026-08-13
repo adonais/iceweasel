@@ -5,15 +5,16 @@
 #ifndef MOZILLA_GFX_COMPOSITOR_H
 #define MOZILLA_GFX_COMPOSITOR_H
 
-#include "Units.h"                           // for ScreenPoint
-#include "mozilla/Assertions.h"              // for MOZ_ASSERT, etc
+#include "Units.h"               // for ScreenPoint
+#include "mozilla/Assertions.h"  // for MOZ_ASSERT, etc
+#include "mozilla/WidgetUtils.h"
 #include "mozilla/gfx/2D.h"                  // for DrawTarget
 #include "mozilla/gfx/MatrixFwd.h"           // for Matrix, Matrix4x4
 #include "mozilla/gfx/Point.h"               // for IntSize, Point
 #include "mozilla/gfx/Polygon.h"             // for Polygon
 #include "mozilla/gfx/Rect.h"                // for Rect, IntRect
-#include "mozilla/gfx/Types.h"               // for Float
 #include "mozilla/gfx/Triangle.h"            // for Triangle, TexturedTriangle
+#include "mozilla/gfx/Types.h"               // for Float
 #include "mozilla/layers/CompositorTypes.h"  // for DiagnosticTypes, etc
 #include "mozilla/layers/LayersTypes.h"      // for LayersBackend
 #include "mozilla/layers/SurfacePool.h"      // for SurfacePoolHandle
@@ -21,7 +22,6 @@
 #include "mozilla/widget/CompositorWidget.h"
 #include "nsISupportsImpl.h"  // for MOZ_COUNT_CTOR, etc
 #include "nsRegion.h"
-#include "mozilla/WidgetUtils.h"
 
 /**
  * Different elements of a web pages are rendered into separate "layers" before

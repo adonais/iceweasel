@@ -83,22 +83,19 @@ HashNumber TaggedParserAtomIndex::staticOrWellKnownHash() const {
     return info.hash;
   }
 
-  if (isLength1StaticParserString()) {
-    Latin1Char content[1];
-    ParserAtomsTable::getLength1Content(toLength1StaticParserString(), content);
-    return mozilla::HashString(content, 1);
-  }
-
-  if (isLength2StaticParserString()) {
-    char content[2];
-    ParserAtomsTable::getLength2Content(toLength2StaticParserString(), content);
-    return mozilla::HashString(reinterpret_cast<const Latin1Char*>(content), 2);
-  }
-
-  MOZ_ASSERT(isLength3StaticParserString());
   char content[3];
-  ParserAtomsTable::getLength3Content(toLength3StaticParserString(), content);
-  return mozilla::HashString(reinterpret_cast<const Latin1Char*>(content), 3);
+  size_t len = 3;
+  if (isLength1StaticParserString()) {
+    len = 1;
+    ParserAtomsTable::getLength1Content(toLength1StaticParserString(), content);
+  } else if (isLength2StaticParserString()) {
+    len = 2;
+    ParserAtomsTable::getLength2Content(toLength2StaticParserString(), content);
+  } else {
+    ParserAtomsTable::getLength3Content(toLength3StaticParserString(), content);
+  }
+  return mozilla::HashLatin1AsUTF16(
+      reinterpret_cast<const Latin1Char*>(content), len);
 }
 
 template <typename CharT, typename SeqCharT>
@@ -303,7 +300,7 @@ void ParserAtomsTable::dumpCharsNoQuote(js::GenericPrinter& out,
 /* static */
 void ParserAtomsTable::dumpCharsNoQuote(js::GenericPrinter& out,
                                         Length1StaticParserString index) {
-  Latin1Char content[1];
+  char content[1];
   getLength1Content(index, content);
   out.putChar(content[0]);
 }
@@ -689,12 +686,12 @@ bool ParserAtomsTable::isIdentifier(TaggedParserAtomIndex index) const {
   }
 
   if (index.isLength1StaticParserString()) {
-    Latin1Char content[1];
+    char content[1];
     getLength1Content(index.toLength1StaticParserString(), content);
-    if (MOZ_UNLIKELY(content[0] > 127)) {
-      return IsIdentifier(content, 1);
+    if (uint8_t(content[0]) > 127) [[unlikely]] {
+      return IsIdentifier(reinterpret_cast<const Latin1Char*>(content), 1);
     }
-    return IsIdentifierASCII(char(content[0]));
+    return IsIdentifierASCII(content[0]);
   }
 
   if (index.isLength2StaticParserString()) {
@@ -765,7 +762,7 @@ bool ParserAtomsTable::isExtendedUnclonedSelfHostedFunctionName(
   // function name, and this query shouldn't be used for them.
 #ifdef DEBUG
   if (index.isLength1StaticParserString()) {
-    Latin1Char content[1];
+    char content[1];
     getLength1Content(index.toLength1StaticParserString(), content);
     MOZ_ASSERT(content[0] != ExtendedUnclonedSelfHostedFunctionNamePrefix);
   } else if (index.isLength2StaticParserString()) {
@@ -834,7 +831,7 @@ bool ParserAtomsTable::isIndex(TaggedParserAtomIndex index,
   }
 
   if (index.isLength1StaticParserString()) {
-    Latin1Char content[1];
+    char content[1];
     getLength1Content(index.toLength1StaticParserString(), content);
     if (mozilla::IsAsciiDigit(content[0])) {
       *indexp = AsciiDigitToNumber(content[0]);
@@ -927,9 +924,9 @@ double ParserAtomsTable::toNumber(TaggedParserAtomIndex index) const {
   }
 
   if (index.isLength1StaticParserString()) {
-    Latin1Char content[1];
+    char content[1];
     getLength1Content(index.toLength1StaticParserString(), content);
-    return CharsToNumber(content, 1);
+    return CharsToNumber(reinterpret_cast<const Latin1Char*>(content), 1);
   }
 
   if (index.isLength2StaticParserString()) {
@@ -972,10 +969,13 @@ UniqueChars ParserAtomsTable::toNewUTF8CharsZ(
   }
 
   if (index.isLength1StaticParserString()) {
-    Latin1Char content[1];
+    char content[1];
     getLength1Content(index.toLength1StaticParserString(), content);
     return UniqueChars(
-        JS::CharsToNewUTF8CharsZ(alloc, mozilla::Range(content, 1)).c_str());
+        JS::CharsToNewUTF8CharsZ(
+            alloc,
+            mozilla::Range(reinterpret_cast<const Latin1Char*>(content), 1))
+            .c_str());
   }
 
   if (index.isLength2StaticParserString()) {
@@ -1026,9 +1026,10 @@ UniqueChars ParserAtomsTable::toPrintableString(
   }
 
   if (index.isLength1StaticParserString()) {
-    Latin1Char content[1];
+    char content[1];
     getLength1Content(index.toLength1StaticParserString(), content);
-    return ToPrintableStringImpl(mozilla::Range<const Latin1Char>(content, 1));
+    return ToPrintableStringImpl(
+        mozilla::Range(reinterpret_cast<const Latin1Char*>(content), 1));
   }
 
   if (index.isLength2StaticParserString()) {
@@ -1063,10 +1064,10 @@ UniqueChars ParserAtomsTable::toQuotedString(
   }
 
   if (index.isLength1StaticParserString()) {
-    Latin1Char content[1];
+    char content[1];
     getLength1Content(index.toLength1StaticParserString(), content);
-    return ToPrintableStringImpl(mozilla::Range<const Latin1Char>(content, 1),
-                                 '\"');
+    return ToPrintableStringImpl(
+        mozilla::Range(reinterpret_cast<const Latin1Char*>(content), 1), '\"');
   }
 
   if (index.isLength2StaticParserString()) {
@@ -1139,7 +1140,7 @@ bool ParserAtomsTable::appendTo(StringBuilder& sb,
   }
 
   if (index.isLength1StaticParserString()) {
-    Latin1Char content[1];
+    char content[1];
     getLength1Content(index.toLength1StaticParserString(), content);
     return sb.append(content[0]);
   }

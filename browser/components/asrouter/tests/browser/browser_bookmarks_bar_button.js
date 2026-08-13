@@ -208,6 +208,36 @@ add_task(async function customizableIconLogo() {
   sandbox.restore();
 });
 
+add_task(async function test_expiry_destroys_button() {
+  const SHOWN_AT_PREF = "messaging-system-action.easyChecklist.buttonShownAt";
+  const browser = gBrowser.selectedBrowser;
+  const doc = document;
+
+  const messageCreate = getTestMessage();
+  messageCreate.id = "TEST_BMB_BAR_BUTTON_EXPIRY_CREATE";
+  await BookmarksBarButton.showBookmarksBarButton(browser, messageCreate);
+  ok(
+    doc.querySelector("#fxms-bmb-button"),
+    "Button exists before expiry check"
+  );
+
+  const message = getTestMessage();
+  message.id = "TEST_BMB_BAR_BUTTON_EXPIRY_ELAPSED";
+  message.content.expiry_ms = 2592000000;
+  const expiredTimestamp = Date.now() - message.content.expiry_ms - 1;
+  Services.prefs.setStringPref(SHOWN_AT_PREF, String(expiredTimestamp));
+
+  await BookmarksBarButton.showBookmarksBarButton(browser, message);
+
+  ok(
+    !doc.querySelector("#fxms-bmb-button"),
+    "Button should be destroyed after expiry elapses"
+  );
+
+  await CustomizableUI.reset();
+  Services.prefs.clearUserPref(SHOWN_AT_PREF);
+});
+
 add_task(async function test_bookmarks_bar_button_experiment_update() {
   const featureId = "fxms_bmb_button";
   const sandbox = sinon.createSandbox();

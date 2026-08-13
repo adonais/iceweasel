@@ -3,14 +3,16 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsToolkit.h"
+
+#include <objbase.h>
+
+#include "WinUtils.h"
 #include "nsAppShell.h"
-#include "nsWindow.h"
+#include "nsComponentManagerUtils.h"
 #include "nsWidgetsCID.h"
+#include "nsWindow.h"
 #include "prmon.h"
 #include "prtime.h"
-#include "nsComponentManagerUtils.h"
-#include <objbase.h>
-#include "WinUtils.h"
 
 // unknwn.h is needed to build with WIN32_LEAN_AND_MEAN
 #include <unknwn.h>

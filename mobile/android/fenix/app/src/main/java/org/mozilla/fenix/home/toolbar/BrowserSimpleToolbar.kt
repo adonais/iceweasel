@@ -12,15 +12,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.utils.inComposePreview
 import mozilla.components.compose.browser.toolbar.ActionContainer
 import mozilla.components.compose.browser.toolbar.concept.Action
 import mozilla.components.compose.browser.toolbar.concept.Action.ActionButtonRes
@@ -36,9 +34,11 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.browser.toolbar.store.DisplayState
 import mozilla.components.lib.state.ext.observeAsComposableState
 import org.mozilla.fenix.components.AppStore
+import org.mozilla.fenix.components.components
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.wallpapers.WallpaperTheme
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -58,23 +58,23 @@ fun BrowserSimpleToolbar(
     val browserActionsEnd = uiState.displayState.browserActionsEnd
     val onInteraction: (BrowserToolbarEvent) -> Unit = { store.dispatch(it) }
 
-    val currentWallpaperTextColor = appStore.observeAsComposableState { state ->
-        state.wallpaperState.currentWallpaper.textColor
-    }
-    val defaultWallpaperTextColor = MaterialTheme.colorScheme.onSurface
-    val buttonsColor by remember(currentWallpaperTextColor.value) {
-        derivedStateOf {
-            currentWallpaperTextColor.value?.let { Color(it) } ?: defaultWallpaperTextColor
-        }
-    }
-    val materialColors = MaterialTheme.colorScheme
-    val colorScheme = remember(buttonsColor, materialColors) {
-        materialColors.copy(
-            onSurface = buttonsColor,
-        )
+    val isPrivateMode = appStore.observeAsComposableState { it.mode.isPrivate }.value
+    // Tint the browser action icons with the wallpaper text color only under the universal
+    // treatment. WallpaperTheme.onWallpaper falls back to onSurface for the default wallpaper, in
+    // previews, and anywhere LocalWallpaperState is not provided (e.g. tab previews).
+    val browserActionsColor = if (
+        !inComposePreview &&
+        components.settings.enableUniversalEdgeToEdgeWallpapers &&
+        !isPrivateMode
+    ) {
+        WallpaperTheme.onWallpaper
+    } else {
+        MaterialTheme.colorScheme.onSurface
     }
 
-    MaterialTheme(colorScheme = colorScheme) {
+    MaterialTheme(
+        colorScheme = MaterialTheme.colorScheme.copy(onSurface = browserActionsColor),
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth(),

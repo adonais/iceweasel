@@ -53,17 +53,6 @@ class AssemblerRISCVC : public AssemblerRiscvBase {
   void c_addiw(Register rd, int8_t imm6);
   void c_ldsp(Register rd, uint16_t uimm9);
   void c_sdsp(Register rs2, uint16_t uimm9);
-
-  inline int16_t cjumpOffset(Label* L) {
-    return (int16_t)branchOffsetHelper(L, OffsetSize::kOffset11);
-  }
-  inline int32_t cbranchOffset(Label* L) {
-    return branchOffsetHelper(L, OffsetSize::kOffset9);
-  }
-
-  void c_j(Label* L) { c_j(cjumpOffset(L)); }
-  void c_bnez(Register rs1, Label* L) { c_bnez(rs1, cbranchOffset(L)); }
-  void c_beqz(Register rs1, Label* L) { c_beqz(rs1, cbranchOffset(L)); }
 };
 }  // namespace jit
 }  // namespace js

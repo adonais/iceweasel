@@ -12,10 +12,11 @@ import React, {
 } from "react";
 import { useSelector, batch } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
-import { useIntersectionObserver, useSizeSubmenu } from "../../../lib/utils";
+import { useIntersectionObserver } from "../../../lib/utils";
 import { SportsMatchRow, UpcomingMatchPlaceholder } from "./SportsMatchRow";
 import { LivePagination } from "./LivePagination";
-import { MoveSubmenu } from "../MoveSubmenu";
+import { SizeSubmenu } from "../SizeSubmenu";
+import { WidgetMenuFooter } from "../WidgetMenuFooter";
 import { WatchLiveModal } from "./WatchLiveModal";
 import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
 import {
@@ -28,7 +29,18 @@ import {
 } from "./stageLabels.mjs";
 import { WidgetCelebration } from "../WidgetCelebration";
 import { useWidgetCelebration } from "../useWidgetCelebration";
-import { getMatchWinnerKey } from "./matchResult.mjs";
+import {
+  getMatchWinnerKey,
+  getTournamentPlacements,
+  getFinishedTournamentMatches,
+  isFinalStage,
+  isBronzeFinalStage,
+} from "./matchResult.mjs";
+import {
+  SportsResultCard,
+  SportsPodium,
+  SportsResultMascot,
+} from "./SportsResultCelebration.jsx";
 
 const WIDGET_STATES = {
   INTRO: "sports-intro",
@@ -45,6 +57,15 @@ const MATCHES_TABS = {
 
 const SPORTS_CELEBRATION_ILLUSTRATION =
   "chrome://newtab/content/data/content/assets/firefox-motion-head-pop-up-no-bg.svg";
+
+const SPORTS_RESULT_CONFETTI_COLORS = [
+  "var(--color-orange-30)",
+  "var(--color-pink-30)",
+  "var(--color-purple-30)",
+  "var(--color-yellow-30)",
+  "var(--color-green-30)",
+  "var(--color-cyan-30)",
+];
 
 function getVisibleMatchesTabs(hasLiveGames, hasPreviousResults) {
   return (
@@ -151,6 +172,25 @@ function findCelebrationMatch(matches, celebrations, windowMs) {
   return best;
 }
 
+// Live matches keep priority because the result view hides the tab bar.
+export function shouldShowResultView({
+  celebrationsEnabled,
+  resultViewReady,
+  hasLiveGames,
+  isMatchesState,
+  isResultsTab,
+  showResultsList,
+}) {
+  return (
+    celebrationsEnabled &&
+    resultViewReady &&
+    !hasLiveGames &&
+    isMatchesState &&
+    isResultsTab &&
+    !showResultsList
+  );
+}
+
 // Moves the match with `id` to the front of `matches` (used to surface the
 // just-ended match as the Results highlight). No-op when it isn't present.
 function bubbleMatchToFront(matches, id) {
@@ -244,6 +284,7 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
     prefs.trainhopConfig?.widgets?.sportsWidgetLiveEnabled ||
     prefs.trainhopConfig?.sports?.liveEnabled;
   const widgetsMayBeMaximized = prefs["widgets.system.maximized"];
+  const widgetsMaximized = prefs["widgets.maximized"];
   // /live currently serves mock data pre-kickoff, so ignore its contents
   // until the kickoff timestamp. Drop this guard once the backend returns
   // empty pre-kickoff.
@@ -251,6 +292,13 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
     Date.now() >= WORLD_CUP_KICKOFF_MS || prefs[PREF_FORCE_LIVE_DATA_TRUSTABLE];
   const hasLiveGames =
     liveDataTrustable && sportsWidgetData?.data?.live?.length > 0;
+  // The watch-links endpoint only lists broadcasters for supported countries.
+  // The backend hoists the user's own country into `your_region`, so a
+  // non-empty `your_region` means the user's region is supported and the
+  // "Watch live" entry point should be shown; an empty one (e.g. Turkey) hides
+  // it.
+  const canWatchLive =
+    sportsWidgetData?.watchLive?.data?.your_region?.length > 0;
   const hasPreviousResults =
     sportsWidgetData?.data?.matches?.previous?.length > 0;
   // Upcoming matches alone don't mean the tournament has started — the backend
@@ -274,10 +322,21 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
     [rawSelectedTeams]
   );
   const teams = useMemo(() => rawTeams ?? [], [rawTeams]);
+  const localizedNames = useLocalizedTeamNames(teams);
   const { matchesTab } = sportsWidgetData;
   const hasUserSelectedTab = useRef(false);
+  // When the Now tab disappears (live games ended), the persisted `matchesTab`
+  // may still be "now". That would hide every panel and leave the widget
+  // blank with no tab visibly selected. Fall back to "Upcoming" so the next
+  // matches show by default.
+  const resolvedMatchesTab =
+    matchesTab === MATCHES_TABS.NOW && !hasLiveGames
+      ? MATCHES_TABS.UPCOMING
+      : matchesTab;
   const activeTab =
-    hasLiveGames && !hasUserSelectedTab.current ? MATCHES_TABS.NOW : matchesTab;
+    hasLiveGames && !hasUserSelectedTab.current
+      ? MATCHES_TABS.NOW
+      : resolvedMatchesTab;
 
   // Defensive clamp on the persisted live-pager index. The feed re-clamps
   // after every fetch, but the restored cached index may briefly exceed the
@@ -338,6 +397,21 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
     [rawMatches, celebrations, celebrationWindowMs]
   );
 
+  const placements = useMemo(
+    () => getTournamentPlacements(getFinishedTournamentMatches(rawMatches)),
+    [rawMatches]
+  );
+  const tournamentDecided = !!placements.champion;
+
+  const finalMatch = useMemo(() => {
+    const all = [
+      ...(rawMatches?.next ?? []),
+      ...(rawMatches?.current ?? []),
+      ...(rawMatches?.previous ?? []),
+    ];
+    return all.find(match => isFinalStage(match?.stage)) ?? null;
+  }, [rawMatches]);
+
   // Bubble followed teams to the front for the highlight view and list view
   // when the followed-only toggle is on; with it off, matches stay chronological.
   // The just-ended celebration match always bubbles to the very front so the
@@ -374,6 +448,16 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
   // can force the widget into the large size while the list view is open.
   const [showResultsList, setShowResultsList] = useState(false);
   const [showUpcomingList, setShowUpcomingList] = useState(false);
+
+  // Close any open "View All" when the user minimizes the widgets section,
+  // so the Sports widget size also changes from Large to Medium. The Follow
+  // teams flow stays open — closing it would discard in-progress selections.
+  useEffect(() => {
+    if (!widgetsMaximized) {
+      setShowResultsList(false);
+      setShowUpcomingList(false);
+    }
+  }, [widgetsMaximized]);
 
   // Expand the widget to the large size when the user opens the match list
   // view ("View all") on either the Results or Upcoming tab, and restore the
@@ -471,6 +555,13 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
     triggerCelebration,
   } = useWidgetCelebration(celebrationRef);
   const [celebrationColors, setCelebrationColors] = useState(null);
+  const {
+    celebrationFrame: resultFrame,
+    celebrationId: resultCelebrationId,
+    completeCelebration: completeResultCelebration,
+    isCelebrating: isResultCelebrating,
+    triggerCelebration: triggerResultCelebration,
+  } = useWidgetCelebration(celebrationRef);
   // Seam consumed by the detection layer (Patch 2): a followed-team win passes
   // that team's colors; any other ended match passes none (generic). Celebrations
   // are off by default and opt-in via the pref OR trainhopConfig, so they ship
@@ -525,8 +616,6 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
   // the element as intersecting.)
   const [isWidgetVisible, setIsWidgetVisible] = useState(false);
   useEffect(() => {
-    // Only observe when celebrations are enabled — there's nothing to gate
-    // otherwise, and it avoids an idle observer on every sports widget.
     if (!celebrationsEnabled || !liveEl) {
       return undefined;
     }
@@ -550,6 +639,10 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
     }
     const match = celebrationMatch;
     if (!match || celebratedRef.current.has(match.global_event_id)) {
+      return;
+    }
+    // The result view handles Final and Bronze Final celebrations.
+    if (isFinalStage(match.stage) || isBronzeFinalStage(match.stage)) {
       return;
     }
     const id = match.global_event_id;
@@ -598,6 +691,51 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
     teamColorsByKey,
     celebrate,
     dispatch,
+  ]);
+
+  const resultViewReady = tournamentDecided || !!placements.third;
+  let resultTriggerId = null;
+  if (tournamentDecided) {
+    const { match, team } = placements.champion;
+    resultTriggerId = `final:${match.global_event_id}:${team.key}`;
+  } else if (placements.third) {
+    const { match, team } = placements.third;
+    resultTriggerId = `third:${match.global_event_id}:${team.key}`;
+  }
+  const showResultView = shouldShowResultView({
+    celebrationsEnabled,
+    resultViewReady,
+    hasLiveGames,
+    isMatchesState: widgetState === WIDGET_STATES.MATCHES,
+    isResultsTab: activeTab === MATCHES_TABS.RESULTS,
+    showResultsList,
+  });
+  // The result mascot is an animated WebP that can't be paused, so don't render
+  // it for reduced-motion users (the confetti/fireworks overlay is suppressed
+  // the same way in useWidgetCelebration). The static result card still shows.
+  const prefersReducedMotion =
+    globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches ??
+    false;
+  // Visibility-gated so an off-screen widget can't spend the one-shot animation.
+  const resultCelebratedRef = useRef(null);
+  useEffect(() => {
+    if (
+      !showResultView ||
+      !resultTriggerId ||
+      !isPageVisible ||
+      !isWidgetVisible ||
+      resultCelebratedRef.current === resultTriggerId
+    ) {
+      return;
+    }
+    resultCelebratedRef.current = resultTriggerId;
+    triggerResultCelebration();
+  }, [
+    showResultView,
+    resultTriggerId,
+    isPageVisible,
+    isWidgetVisible,
+    triggerResultCelebration,
   ]);
 
   // Live polling visibility gate. Separate from the one-shot impression
@@ -774,28 +912,6 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
     handleInteraction();
   }
 
-  function handleSportsWidgetHide() {
-    batch(() => {
-      dispatch(
-        ac.OnlyToMain({
-          type: at.SET_PREF,
-          data: { name: "widgets.sportsWidget.enabled", value: false },
-        })
-      );
-      dispatch(
-        ac.OnlyToMain({
-          type: at.WIDGETS_ENABLED,
-          data: {
-            widget_name: "sports",
-            widget_source: "context_menu",
-            enabled: false,
-            widget_size: widgetSize,
-          },
-        })
-      );
-    });
-  }
-
   const handleChangeSize = useCallback(
     size => {
       batch(() => {
@@ -822,8 +938,6 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
     [dispatch]
   );
 
-  const sizeSubmenuRef = useSizeSubmenu(handleChangeSize);
-
   function handleViewMatches(widgetSource) {
     batch(() => {
       dispatch(
@@ -848,28 +962,17 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
   }
 
   function handleLearnMore() {
-    batch(() => {
-      dispatch(
-        ac.OnlyToMain({
-          type: at.OPEN_LINK,
-          data: {
-            url: "https://support.mozilla.org/kb/firefox-new-tab-widgets",
-          },
-        })
-      );
-      const telemetryData = {
-        widget_name: "sports",
-        widget_source: "context_menu",
-        user_action: USER_ACTION_TYPES.LEARN_MORE,
-        widget_size: widgetSize,
-      };
-      dispatch(
-        ac.OnlyToMain({
-          type: at.WIDGETS_USER_EVENT,
-          data: telemetryData,
-        })
-      );
-    });
+    dispatch(
+      ac.OnlyToMain({
+        type: at.WIDGETS_USER_EVENT,
+        data: {
+          widget_name: "sports",
+          widget_source: "context_menu",
+          user_action: USER_ACTION_TYPES.LEARN_MORE,
+          widget_size: widgetSize,
+        },
+      })
+    );
     handleInteraction();
   }
 
@@ -949,8 +1052,9 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
           })
         );
       });
+      handleInteraction();
     },
-    [dispatch, widgetSize, activeTab]
+    [dispatch, widgetSize, activeTab, handleInteraction]
   );
 
   // @nova-cleanup(remove-gate): Remove this guard and PREF_NOVA_ENABLED after Nova ships
@@ -974,13 +1078,73 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
     }),
   };
 
+  // Result-view selection:
+  //  - Interim (3rd Place decided, Final not yet played): the third-place card,
+  //    shown to everyone.
+  //  - Final decided: a follower of the runner-up team gets the full podium
+  //    (their team's moment); everyone else gets the champion card. The podium
+  //    only fits the large widget, so it falls back to the champion card at
+  //    medium. `selectedTeams` (not the eliminated-filtered set) is used so the
+  //    runner-up — eliminated by losing the Final — still counts as followed.
+  const pickResultView = () => {
+    if (!placements.champion) {
+      return placements.third ? "third" : null;
+    }
+    const followsRunnerUp =
+      !!placements.runnerUp &&
+      selectedTeams.includes(placements.runnerUp.team.key);
+    if (followsRunnerUp && placements.third && displaySize === "large") {
+      return "podium";
+    }
+    return "champion";
+  };
+  const resultView = showResultView ? pickResultView() : null;
+  // Confetti/fireworks take the celebrated team's colors: the third-place team
+  // (interim), the runner-up (their podium), otherwise the champion.
+  let resultHeroTeam = placements.champion?.team;
+  if (resultView === "third") {
+    resultHeroTeam = placements.third?.team;
+  } else if (resultView === "podium") {
+    resultHeroTeam = placements.runnerUp?.team;
+  }
+  const resultConfettiColors =
+    (resultHeroTeam && teamColorsByKey.get(resultHeroTeam.key)) ||
+    SPORTS_RESULT_CONFETTI_COLORS;
+  let resultBody = null;
+  if (resultView === "podium") {
+    resultBody = (
+      <SportsPodium placements={placements} localizedNames={localizedNames} />
+    );
+  } else if (resultView === "champion" && placements.champion) {
+    resultBody = (
+      <SportsResultCard
+        team={placements.champion.team}
+        type="champion"
+        size={displaySize}
+        localizedNames={localizedNames}
+      />
+    );
+  } else if (resultView === "third" && placements.third) {
+    resultBody = (
+      <SportsResultCard
+        team={placements.third.team}
+        type="third"
+        size={displaySize}
+        finalMatch={displaySize === "large" ? finalMatch : null}
+        finalMatchVariant="upcoming"
+        tbdTeamName={tbdTeamName}
+        localizedNames={localizedNames}
+      />
+    );
+  }
+
   return (
     <article
       className={`sports widget col-4 ${displaySize}-widget ${widgetState}${
         followedGradient ? " is-followed-highlight" : ""
       }${isCelebrating ? " is-celebrating" : ""}${
         isFollowedCelebration ? " is-followed-celebration" : ""
-      }`}
+      }${resultBody ? " is-result-view" : ""}`}
       style={widgetStyle}
       ref={el => {
         widgetRef.current = [el];
@@ -1010,6 +1174,24 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
           confettiShape="soccer"
           illustrationSrc={SPORTS_CELEBRATION_ILLUSTRATION}
           onComplete={completeCelebration}
+        />
+      ) : null}
+      {isResultCelebrating && resultFrame ? (
+        <WidgetCelebration
+          classNamePrefix="sports-celebration"
+          celebrationFrame={resultFrame}
+          celebrationId={resultCelebrationId}
+          confettiColors={resultConfettiColors}
+          confettiShape="soccer"
+          confettiCount={84}
+          fireworkBursts={10}
+          onComplete={completeResultCelebration}
+        />
+      ) : null}
+      {resultBody && resultView && !prefersReducedMotion ? (
+        <SportsResultMascot
+          view={resultView}
+          animationId={resultCelebrationId}
         />
       ) : null}
       {widgetState === WIDGET_STATES.INTRO && (
@@ -1047,7 +1229,7 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
             aria-hidden={tournamentStarted}
           />
         )}
-        {widgetState === WIDGET_STATES.MATCHES && (
+        {widgetState === WIDGET_STATES.MATCHES && !resultBody && (
           <div className="sports-matches-tabs" role="tablist">
             {getVisibleMatchesTabs(hasLiveGames, hasPreviousResults).map(
               ({ id, disabled }) => (
@@ -1123,37 +1305,25 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
                 onClick={handleViewResults}
                 disabled={!hasPreviousResults}
               />
-              {widgetsMayBeMaximized && (
-                <panel-item submenu="sports-size-submenu">
-                  <span data-l10n-id="newtab-widget-menu-change-size"></span>
-                  <panel-list
-                    ref={sizeSubmenuRef}
-                    slot="submenu"
-                    id="sports-size-submenu"
-                  >
-                    {["medium", "large"].map(size => (
-                      <panel-item
-                        key={size}
-                        type="checkbox"
-                        checked={widgetSize === size || undefined}
-                        data-size={size}
-                        data-l10n-id={`newtab-widget-size-${size}`}
-                      />
-                    ))}
-                  </panel-list>
-                </panel-item>
-              )}
-              <MoveSubmenu
+              <WidgetMenuFooter
+                dispatch={dispatch}
                 widgetId="sportsWidget"
                 widgetEnabledMap={widgetEnabledMap}
-              />
-              <panel-item
-                data-l10n-id="newtab-widget-menu-hide"
-                onClick={handleSportsWidgetHide}
-              />
-              <panel-item
-                data-l10n-id="newtab-sports-widget-menu-learn-more"
-                onClick={handleLearnMore}
+                widgetName="sports"
+                enabledPref="widgets.sportsWidget.enabled"
+                widgetSize={widgetSize}
+                learnMoreL10nId="newtab-sports-widget-menu-learn-more"
+                onLearnMore={handleLearnMore}
+                sizeSubmenu={
+                  widgetsMayBeMaximized ? (
+                    <SizeSubmenu
+                      submenuId="sports-size-submenu"
+                      sizes={["medium", "large"]}
+                      checkedSize={widgetSize}
+                      onChangeSize={handleChangeSize}
+                    />
+                  ) : null
+                }
               />
             </panel-list>
           </div>
@@ -1166,9 +1336,11 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
             teams={teams}
             initialSelectedTeams={selectedTeams}
             onSave={handleSaveSelection}
+            localizedNames={localizedNames}
           />
         )}
-        {widgetState === WIDGET_STATES.MATCHES && (
+        {widgetState === WIDGET_STATES.MATCHES && resultBody}
+        {widgetState === WIDGET_STATES.MATCHES && !resultBody && (
           <SportsMatchesView
             dispatch={dispatch}
             matchesTab={activeTab}
@@ -1186,11 +1358,14 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
             handleInteraction={handleInteraction}
             selectedTeamsSet={selectedTeamsSet}
             tbdTeamName={tbdTeamName}
+            localizedNames={localizedNames}
             followedOnly={sportsWidgetData.followedOnly}
             showResultsList={showResultsList}
             setShowResultsList={setShowResultsList}
             showUpcomingList={showUpcomingList}
             setShowUpcomingList={setShowUpcomingList}
+            loadMore={sportsWidgetData.loadMore}
+            canWatchLive={canWatchLive}
             onWatchClick={() => setWatchLiveOpen(true)}
           />
         )}
@@ -1234,10 +1409,14 @@ function SportsWidget({ dispatch, handleUserInteraction, widgetEnabledMap }) {
   );
 }
 
-function SportsWidgetFollowTeams({ teams, initialSelectedTeams, onSave }) {
+function SportsWidgetFollowTeams({
+  teams,
+  initialSelectedTeams,
+  onSave,
+  localizedNames,
+}) {
   const [selectedTeams, setSelectedTeams] = useState(initialSelectedTeams);
   const [searchQuery, setSearchQuery] = useState("");
-  const localizedNames = useLocalizedTeamNames(teams);
   // Eliminated teams stay in the list (shown disabled with an "(eliminated)"
   // badge) but don't count toward the 3-team cap and aren't persisted on save
   // — otherwise the user could be stuck following a team they can no longer
@@ -1378,6 +1557,52 @@ function SportsSectionLabel({ match, withLiveBadge = false }) {
   );
 }
 
+// Mounts an IntersectionObserver on a bottom-of-list sentinel element.
+// When the sentinel scrolls into the scrollable `.sports-body` ancestor
+// (or within 200px of doing so), the hook dispatches
+// WIDGETS_SPORTS_FETCH_MORE_MATCHES with the given `direction`. The
+// observer is torn down when the list collapses, when load-more is
+// exhausted, or when the sentinel element unmounts.
+//
+// - `active`: whether the list this sentinel belongs to is expanded
+// - `loading`: current in-flight flag for this direction
+// - `exhausted`: end-of-data flag for this direction
+function useLoadMoreSentinel({
+  direction,
+  sentinelRef,
+  active,
+  loading,
+  exhausted,
+  dispatch,
+}) {
+  useEffect(() => {
+    if (!active || exhausted || !sentinelRef.current) {
+      return undefined;
+    }
+    const sentinel = sentinelRef.current;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !loading && !exhausted) {
+          dispatch(
+            ac.OnlyToMain({
+              type: at.WIDGETS_SPORTS_FETCH_MORE_MATCHES,
+              data: { direction },
+            })
+          );
+        }
+      },
+      {
+        root: sentinel.closest(".sports-body"),
+        // Fire the fetch when the sentinel is within 200px of being
+        // visible, not only once it's actually on screen.
+        rootMargin: "200px 0px",
+      }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [dispatch, direction, sentinelRef, active, loading, exhausted]);
+}
+
 function SportsMatchesView({
   dispatch,
   matchesTab,
@@ -1399,15 +1624,30 @@ function SportsMatchesView({
   handleInteraction,
   selectedTeamsSet,
   tbdTeamName,
+  localizedNames,
   followedOnly,
   showResultsList,
   setShowResultsList,
   showUpcomingList,
   setShowUpcomingList,
+  loadMore,
+  canWatchLive,
   onWatchClick,
 }) {
   const resultsPanelRef = useRef(null);
   const upcomingPanelRef = useRef(null);
+  // Refs to 1px-tall invisible divs rendered at the end of the upcoming /
+  // results lists. IntersectionObserver can only watch real DOM elements,
+  // so we need a concrete element at the bottom of each list to detect
+  // "user scrolled to the end". When a sentinel scrolls into view, the
+  // observer below dispatches WIDGETS_SPORTS_FETCH_MORE_MATCHES for the
+  // corresponding direction.
+  const upcomingSentinelRef = useRef(null);
+  const resultsSentinelRef = useRef(null);
+  const upcomingLoadMoreLoading = !!loadMore?.upcoming?.loading;
+  const upcomingLoadMoreExhausted = !!loadMore?.upcoming?.exhausted;
+  const resultsLoadMoreLoading = !!loadMore?.results?.loading;
+  const resultsLoadMoreExhausted = !!loadMore?.results?.exhausted;
   const hasFollowedTeams = selectedTeamsSet.size > 0;
   // Read the persisted per-tab toggle state from redux. Defaults to true so
   // users with followed teams see the filtered list right away.
@@ -1472,6 +1712,27 @@ function SportsMatchesView({
       upcomingPanelRef.current?.querySelector(".sports-match-row")?.focus();
     }
   }, [showUpcomingList]);
+
+  // Hook up the IntersectionObserver-driven load-more for each list. The
+  // hook dispatches WIDGETS_SPORTS_FETCH_MORE_MATCHES with the matching
+  // direction when its sentinel scrolls into view; it only runs while the
+  // list is expanded and not yet exhausted.
+  useLoadMoreSentinel({
+    direction: "upcoming",
+    sentinelRef: upcomingSentinelRef,
+    active: showUpcomingList,
+    loading: upcomingLoadMoreLoading,
+    exhausted: upcomingLoadMoreExhausted,
+    dispatch,
+  });
+  useLoadMoreSentinel({
+    direction: "results",
+    sentinelRef: resultsSentinelRef,
+    active: showResultsList,
+    loading: resultsLoadMoreLoading,
+    exhausted: resultsLoadMoreExhausted,
+    dispatch,
+  });
 
   // Tracks whether the live-refresh button is in its post-click cooldown
   // window.
@@ -1602,12 +1863,28 @@ function SportsMatchesView({
                           handleInteraction={handleInteraction}
                           followedTeams={selectedTeamsSet}
                           tbdTeamName={tbdTeamName}
+                          localizedNames={localizedNames}
                         />
                       </li>
                     ))}
                   </ul>
                 </div>
               ))}
+              {resultsLoadMoreLoading && (
+                <div
+                  className="sports-results-loading-more"
+                  role="status"
+                  aria-live="polite"
+                  data-l10n-id="newtab-sports-widget-loading-more"
+                />
+              )}
+              {!resultsLoadMoreExhausted && (
+                <div
+                  ref={resultsSentinelRef}
+                  className="sports-results-load-more-sentinel"
+                  aria-hidden="true"
+                />
+              )}
             </div>
           </>
         ) : (
@@ -1622,6 +1899,7 @@ function SportsMatchesView({
                   handleInteraction={handleInteraction}
                   followedTeams={selectedTeamsSet}
                   tbdTeamName={tbdTeamName}
+                  localizedNames={localizedNames}
                 />
               </div>
             </>
@@ -1675,21 +1953,24 @@ function SportsMatchesView({
                   handleInteraction={handleInteraction}
                   followedTeams={selectedTeamsSet}
                   tbdTeamName={tbdTeamName}
+                  localizedNames={localizedNames}
                 />
               </div>
               {/* TODO: Replace play icon when finalized */}
-              <moz-button
-                className="sports-watch-live-button"
-                type={size === "medium" ? "icon" : "default"}
-                size={size === "medium" ? "small" : undefined}
-                iconSrc="chrome://browser/skin/device-tv.svg"
-                data-l10n-id={
-                  size === "medium"
-                    ? "newtab-sports-widget-watch-icon"
-                    : "newtab-sports-widget-watch"
-                }
-                onClick={onWatchClick}
-              ></moz-button>
+              {canWatchLive && (
+                <moz-button
+                  className="sports-watch-live-button"
+                  type={size === "medium" ? "icon" : "default"}
+                  size={size === "medium" ? "small" : undefined}
+                  iconSrc="chrome://browser/skin/device-tv.svg"
+                  data-l10n-id={
+                    size === "medium"
+                      ? "newtab-sports-widget-watch-icon"
+                      : "newtab-sports-widget-watch"
+                  }
+                  onClick={onWatchClick}
+                ></moz-button>
+              )}
               {size === "medium" && (
                 <LiveRefreshButton
                   isCoolingDown={liveRefreshCoolingDown}
@@ -1749,12 +2030,28 @@ function SportsMatchesView({
                           handleInteraction={handleInteraction}
                           followedTeams={selectedTeamsSet}
                           tbdTeamName={tbdTeamName}
+                          localizedNames={localizedNames}
                         />
                       </li>
                     ))}
                   </ul>
                 </div>
               ))}
+              {upcomingLoadMoreLoading && (
+                <div
+                  className="sports-upcoming-loading-more"
+                  role="status"
+                  aria-live="polite"
+                  data-l10n-id="newtab-sports-widget-loading-more"
+                />
+              )}
+              {!upcomingLoadMoreExhausted && (
+                <div
+                  ref={upcomingSentinelRef}
+                  className="sports-upcoming-load-more-sentinel"
+                  aria-hidden="true"
+                />
+              )}
             </div>
           </>
         ) : (
@@ -1770,6 +2067,7 @@ function SportsMatchesView({
                     handleInteraction={handleInteraction}
                     followedTeams={selectedTeamsSet}
                     tbdTeamName={tbdTeamName}
+                    localizedNames={localizedNames}
                   />
                 </div>
               </>
@@ -1800,39 +2098,42 @@ function SportsMatchesView({
   );
 }
 
+// Full ISO timestamps with the host (ET) offset so DATETIME projects each
+// kickoff onto the viewer's local calendar day. Bounds are the first and
+// last match kickoffs of each stage, sourced from FIFA's 2026 fixtures.
 const keyDatesList = [
   {
     stageL10nId: "newtab-sports-widget-group-stage",
-    start: "2026-06-11",
-    end: "2026-06-27",
+    start: "2026-06-11T15:00:00-04:00",
+    end: "2026-06-27T22:00:00-04:00",
   },
   {
     stageL10nId: "newtab-sports-widget-round-32",
-    start: "2026-06-28",
-    end: "2026-07-03",
+    start: "2026-06-28T15:00:00-04:00",
+    end: "2026-07-03T21:30:00-04:00",
   },
   {
     stageL10nId: "newtab-sports-widget-round-16",
-    start: "2026-07-04",
-    end: "2026-07-07",
+    start: "2026-07-04T13:00:00-04:00",
+    end: "2026-07-07T16:00:00-04:00",
   },
   {
     stageL10nId: "newtab-sports-widget-quarter-finals",
-    start: "2026-07-09",
-    end: "2026-07-11",
+    start: "2026-07-09T16:00:00-04:00",
+    end: "2026-07-11T21:00:00-04:00",
   },
   {
     stageL10nId: "newtab-sports-widget-semi-finals",
-    start: "2026-07-14",
-    end: "2026-07-15",
+    start: "2026-07-14T15:00:00-04:00",
+    end: "2026-07-15T15:00:00-04:00",
   },
   {
     stageL10nId: "newtab-sports-widget-bronze-finals",
-    date: "2026-07-18",
+    date: "2026-07-18T17:00:00-04:00",
   },
   {
     stageL10nId: "newtab-sports-widget-final",
-    date: "2026-07-19",
+    date: "2026-07-19T15:00:00-04:00",
   },
 ];
 

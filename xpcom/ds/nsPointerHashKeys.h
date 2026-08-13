@@ -7,12 +7,10 @@
 #ifndef nsPointerHashKeys_h
 #define nsPointerHashKeys_h
 
-#include "nscore.h"
-
+#include "PLDHashTable.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/HashFunctions.h"
-
-#include "PLDHashTable.h"
+#include "nscore.h"
 
 /**
  * hashkey wrapper using T* KeyType

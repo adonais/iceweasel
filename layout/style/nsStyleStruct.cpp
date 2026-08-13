@@ -379,13 +379,12 @@ AnchorResolvedMargin AnchorResolvedMarginHelper::ResolveAnchor(
   }
 
   const auto& lp = aValue.AsAnchorContainingCalcFunction();
-  const auto& c = lp.AsCalc();
   auto result = StyleCalcAnchorPositioningFunctionResolution::Invalid();
   AnchorPosOffsetResolutionParams params =
       AnchorPosOffsetResolutionParams::UseCBFrameSize(aParams);
   const auto allowed =
       StyleAllowAnchorPosResolutionInCalcPercentage::AnchorSizeOnly(aAxis);
-  Servo_ResolveAnchorFunctionsInCalcPercentage(&c, &allowed, &params, &result);
+  Servo_ResolveAnchorFunctionsInCalcPercentage(&lp, &allowed, &params, &result);
   if (result.IsInvalid()) {
     return Zero();
   }
@@ -397,14 +396,16 @@ nsStyleMargin::nsStyleMargin()
           StyleMargin::LengthPercentage(LengthPercentage::Zero()))),
       mScrollMargin(StyleRectWithAllSides(StyleLength{0.})),
       mOverflowClipMargin(
-          {StyleLength::Zero(), StyleOverflowClipMarginBox::PaddingBox}) {
+          {StyleLength::Zero(), StyleOverflowClipMarginBox::PaddingBox}),
+      mMarginTrim(StyleMarginTrim::NONE) {
   MOZ_COUNT_CTOR(nsStyleMargin);
 }
 
 nsStyleMargin::nsStyleMargin(const nsStyleMargin& aSrc)
     : mMargin(aSrc.mMargin),
       mScrollMargin(aSrc.mScrollMargin),
-      mOverflowClipMargin(aSrc.mOverflowClipMargin) {
+      mOverflowClipMargin(aSrc.mOverflowClipMargin),
+      mMarginTrim(aSrc.mMarginTrim) {
   MOZ_COUNT_CTOR(nsStyleMargin);
 }
 
@@ -1417,11 +1418,10 @@ AnchorResolvedInset AnchorResolvedInsetHelper::ResolveAnchor(
   switch (aValue.tag) {
     case StyleInset::Tag::AnchorContainingCalcFunction: {
       const auto& lp = aValue.AsAnchorContainingCalcFunction();
-      const auto& c = lp.AsCalc();
       auto result = StyleCalcAnchorPositioningFunctionResolution::Invalid();
       const auto allowed =
           StyleAllowAnchorPosResolutionInCalcPercentage::Both(aSide);
-      Servo_ResolveAnchorFunctionsInCalcPercentage(&c, &allowed, &aParams,
+      Servo_ResolveAnchorFunctionsInCalcPercentage(&lp, &allowed, &aParams,
                                                    &result);
       if (result.IsInvalid()) {
         return Auto();
@@ -1486,13 +1486,12 @@ AnchorResolvedSize AnchorResolvedSizeHelper::ResolveAnchor(
 
   const auto& lp = aValue.AsAnchorContainingCalcFunction();
   // Follows the same reasoning as anchor resolved insets.
-  const auto& c = lp.AsCalc();
   auto result = StyleCalcAnchorPositioningFunctionResolution::Invalid();
   AnchorPosOffsetResolutionParams params =
       AnchorPosOffsetResolutionParams::UseCBFrameSize(aParams);
   const auto allowed =
       StyleAllowAnchorPosResolutionInCalcPercentage::AnchorSizeOnly(aAxis);
-  Servo_ResolveAnchorFunctionsInCalcPercentage(&c, &allowed, &params, &result);
+  Servo_ResolveAnchorFunctionsInCalcPercentage(&lp, &allowed, &params, &result);
   if (result.IsInvalid()) {
     return Auto();
   }
@@ -1521,13 +1520,12 @@ AnchorResolvedMaxSize AnchorResolvedMaxSizeHelper::ResolveAnchor(
 
   const auto& lp = aValue.AsAnchorContainingCalcFunction();
   // Follows the same reasoning as anchor resolved insets.
-  const auto& c = lp.AsCalc();
   auto result = StyleCalcAnchorPositioningFunctionResolution::Invalid();
   AnchorPosOffsetResolutionParams params =
       AnchorPosOffsetResolutionParams::UseCBFrameSize(aParams);
   const auto allowed =
       StyleAllowAnchorPosResolutionInCalcPercentage::AnchorSizeOnly(aAxis);
-  Servo_ResolveAnchorFunctionsInCalcPercentage(&c, &allowed, &params, &result);
+  Servo_ResolveAnchorFunctionsInCalcPercentage(&lp, &allowed, &params, &result);
   if (result.IsInvalid()) {
     return None();
   }
@@ -2311,7 +2309,11 @@ nsStyleDisplay::nsStyleDisplay()
       mAlignmentBaseline(StyleAlignmentBaseline::Baseline),
       mBaselineShift(StyleBaselineShift::Length(LengthPercentage::Zero())),
       mBaselineSource(StyleBaselineSource::Auto),
-      mWebkitLineClamp(0),
+      mWebkitLineClamp{
+          {StyleOptional<StyleInteger>::None(), StyleMaxLinesKeyword::None},
+          StyleBlockEllipsis::Ellipsis(),
+          false,
+          false},
       mShapeMargin(LengthPercentage::Zero()),
       mShapeOutside(StyleShapeOutside::None()) {
   MOZ_COUNT_CTOR(nsStyleDisplay);
@@ -2812,12 +2814,13 @@ nsStyleVisibility::nsStyleVisibility(const Document& aDocument)
                      : StyleDirection::Ltr),
       mVisible(StyleVisibility::Visible),
       mImageRendering(StyleImageRendering::Auto),
+      mImageOrientation(StyleImageOrientation::FromImage),
+      mImageDecoding(StyleImageDecoding::Auto),
       mWritingMode(StyleWritingModeProperty::HorizontalTb),
       mTextOrientation(StyleTextOrientation::Mixed),
       mMozBoxCollapse(StyleBoxCollapse::Flex),
       mPrintColorAdjust(StylePrintColorAdjust::Economy),
-      mDominantBaseline(StyleDominantBaseline::Auto),
-      mImageOrientation(StyleImageOrientation::FromImage) {
+      mDominantBaseline(StyleDominantBaseline::Auto) {
   MOZ_COUNT_CTOR(nsStyleVisibility);
 }
 
@@ -2825,12 +2828,13 @@ nsStyleVisibility::nsStyleVisibility(const nsStyleVisibility& aSource)
     : mDirection(aSource.mDirection),
       mVisible(aSource.mVisible),
       mImageRendering(aSource.mImageRendering),
+      mImageOrientation(aSource.mImageOrientation),
+      mImageDecoding(aSource.mImageDecoding),
       mWritingMode(aSource.mWritingMode),
       mTextOrientation(aSource.mTextOrientation),
       mMozBoxCollapse(aSource.mMozBoxCollapse),
       mPrintColorAdjust(aSource.mPrintColorAdjust),
-      mDominantBaseline(aSource.mDominantBaseline),
-      mImageOrientation(aSource.mImageOrientation) {
+      mDominantBaseline(aSource.mDominantBaseline) {
   MOZ_COUNT_CTOR(nsStyleVisibility);
 }
 
@@ -2868,7 +2872,8 @@ nsChangeHint nsStyleVisibility::CalcDifference(
       mDominantBaseline != aNewData.mDominantBaseline) {
     hint |= NS_STYLE_HINT_REFLOW;
   }
-  if (mImageRendering != aNewData.mImageRendering) {
+  if (mImageRendering != aNewData.mImageRendering ||
+      mImageDecoding != aNewData.mImageDecoding) {
     hint |= nsChangeHint_RepaintFrame;
   }
   if (mPrintColorAdjust != aNewData.mPrintColorAdjust) {
@@ -2976,8 +2981,8 @@ nsStyleTextReset::nsStyleTextReset()
       mInitialLetter{0, 0},
       mTextDecorationColor(StyleColor::CurrentColor()),
       mTextDecorationThickness(StyleTextDecorationLength::Auto()),
-      mTextDecorationInset(StyleTextDecorationInset::Length(
-          StyleLength::Zero(), StyleLength::Zero())),
+      mTextDecorationInset(StyleTextDecorationInset::LengthPercentage(
+          StyleLengthPercentage::Zero(), StyleLengthPercentage::Zero())),
       mTextBoxTrim(StyleTextBoxTrim::NONE) {
   MOZ_COUNT_CTOR(nsStyleTextReset);
 }

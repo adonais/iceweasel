@@ -11,7 +11,7 @@
 
 #define QM_LOG_ERROR_TO_BROWSER_CONSOLE_ENABLED
 
-#if defined(EARLY_BETA_OR_EARLIER) || defined(DEBUG)
+#if defined(NIGHTLY_BUILD) || defined(DEBUG)
 #  define QM_LOG_ERROR_TO_TELEMETRY_ENABLED
 #endif
 
@@ -21,7 +21,7 @@
 #  define QM_LOG_ERROR_ENABLED
 #endif
 
-#if defined(EARLY_BETA_OR_EARLIER) || defined(DEBUG)
+#if defined(NIGHTLY_BUILD) || defined(DEBUG)
 #  define QM_ERROR_STACKS_ENABLED
 #endif
 

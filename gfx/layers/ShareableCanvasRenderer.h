@@ -5,8 +5,8 @@
 #ifndef GFX_SHAREABLECANVASRENDERER_H
 #define GFX_SHAREABLECANVASRENDERER_H
 
-#include "CompositorTypes.h"
 #include "CanvasRenderer.h"
+#include "CompositorTypes.h"
 #include "mozilla/layers/CanvasClient.h"
 
 namespace mozilla {

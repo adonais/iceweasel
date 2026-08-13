@@ -21,7 +21,7 @@ async function openLoginForm(megalist, isFromMenuDropdown = true) {
 
   let button = null;
   if (isFromMenuDropdown) {
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => megalist.querySelector("#more-options-menubutton"),
       "menu button failed to render"
     );
@@ -36,7 +36,7 @@ async function openLoginForm(megalist, isFromMenuDropdown = true) {
     button = megalist.querySelector(".empty-state-add-password");
   }
 
-  const loginFormPromise = BrowserTestUtils.waitForCondition(
+  const loginFormPromise = TestUtils.waitForCondition(
     () => megalist.querySelector("login-form"),
     "Login form failed to load."
   );
@@ -59,7 +59,7 @@ function addLogin(megalist, { origin, username, password }) {
 function waitForPopup(megalist, element) {
   info(`Wait for ${element} popup`);
   const loginForm = megalist.querySelector("login-form");
-  const popupPromise = BrowserTestUtils.waitForCondition(
+  const popupPromise = TestUtils.waitForCondition(
     () =>
       loginForm.shadowRoot
         .querySelector(`${element}`)
@@ -74,7 +74,7 @@ function waitForRecords(count) {
   const sidebar = document.getElementById("sidebar");
   const megalistComponent =
     sidebar.contentDocument.querySelector("megalist-alpha");
-  return BrowserTestUtils.waitForCondition(
+  return TestUtils.waitForCondition(
     () => megalistComponent.records.length == count,
     `records did not he ${count} elements`
   );
@@ -82,7 +82,7 @@ function waitForRecords(count) {
 
 function getScrollPromise(megalist) {
   const scrollingElement = megalist.ownerDocument.scrollingElement;
-  const scrollPromise = BrowserTestUtils.waitForCondition(
+  const scrollPromise = TestUtils.waitForCondition(
     () => scrollingElement.scrollTopMax == scrollingElement.scrollTop,
     "Did not scroll to new login."
   );
@@ -205,7 +205,7 @@ add_task(async function test_add_login_empty_password_and_resubmit() {
 
   info("Entering a valid password clears the warning.");
   setInputValue(loginForm, "login-password-field", TEST_LOGIN_1.password);
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       !loginForm.shadowRoot
         .querySelector("password-warning")
@@ -227,7 +227,7 @@ add_task(async function test_edit_login_empty_password_requires_new_value() {
 
   const passwordCard = megalist.querySelector("password-card");
   await waitForReauth(() => passwordCard.editBtn.click());
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => megalist.querySelector("login-form"),
     "Login form failed to render in edit mode."
   );
@@ -245,7 +245,7 @@ add_task(async function test_edit_login_empty_password_requires_new_value() {
   const passwordField = loginForm.shadowRoot.querySelector(
     "login-password-field"
   );
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => passwordField.input.value === "",
     "Password input should remain empty after an invalid submission."
   );
@@ -253,7 +253,7 @@ add_task(async function test_edit_login_empty_password_requires_new_value() {
 
   info("Trying to save again after the first error.");
   saveButton.buttonEl.click();
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     const form = megalist.querySelector("login-form");
     return (
       form &&
@@ -277,7 +277,7 @@ add_task(async function test_edit_login_empty_password_requires_new_value() {
   LoginTestUtils.clearData();
   info("Closing the sidebar");
   SidebarController.hide();
-  const closeWithoutSavingButton = await BrowserTestUtils.waitForCondition(() =>
+  const closeWithoutSavingButton = await TestUtils.waitForCondition(() =>
     megalist
       .querySelector("notification-message-bar")
       ?.shadowRoot.querySelector("moz-message-bar")

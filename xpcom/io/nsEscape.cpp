@@ -6,9 +6,9 @@
 
 #include "mozilla/CheckedInt.h"
 #include "mozilla/TextUtils.h"
-#include "nsTArray.h"
-#include "nsCRT.h"
 #include "nsASCIIMask.h"
+#include "nsCRT.h"
+#include "nsTArray.h"
 
 static const char hexCharsUpper[] = "0123456789ABCDEF";
 static const char hexCharsUpperLower[] = "0123456789ABCDEFabcdef";
@@ -295,94 +295,119 @@ static bool dontNeedEscape(uint16_t aChar, uint32_t aFlags) {
                                     : false;
 }
 
+// The action the escaping loop takes for a single input character.
+enum class EscapeAction : uint8_t {
+  Keep,    // copy the character through unchanged
+  Filter,  // drop the character (it matched the filter mask)
+  Escape,  // replace the character with its percent-encoding
+};
+
+// Whether a character is copied through verbatim rather than percent-escaped,
+// ignoring the filter mask (handled separately by ClassifyEscapeChar).
+//
+// The '%' is not escaped unless escaping is forced (see bug 61269). Non-ascii
+// characters are kept when esc_OnlyASCII is set; ascii 0x20..0x7e are kept when
+// esc_OnlyNonASCII is set, but C0 controls and DEL are still escaped. esc_Colon
+// and esc_Spaces force escaping of ':' and ' ' respectively.
+template <typename CharT>
+static MOZ_ALWAYS_INLINE bool EscapeCharIsKept(CharT aChar, uint32_t aFlags) {
+  const bool forced = !!(aFlags & esc_Forced);
+  const bool ignoreNonAscii = !!(aFlags & esc_OnlyASCII);
+  const bool ignoreAscii = !!(aFlags & esc_OnlyNonASCII);
+  const bool colon = !!(aFlags & esc_Colon);
+  const bool spaces = !!(aFlags & esc_Spaces);
+  return (dontNeedEscape(aChar, aFlags) || (aChar == HEX_ESCAPE && !forced) ||
+          (aChar > 0x7f && ignoreNonAscii) ||
+          (aChar >= 0x20 && aChar < 0x7f && ignoreAscii)) &&
+         !(aChar == ':' && colon) && !(aChar == ' ' && spaces);
+}
+
+// The per-character decision made by the escaping loop, factored out so the
+// inline and table-driven code paths share one definition and cannot disagree.
+template <typename CharT>
+static MOZ_ALWAYS_INLINE EscapeAction ClassifyEscapeChar(
+    CharT aChar, uint32_t aFlags, const ASCIIMaskArray* aFilterMask) {
+  if (aFilterMask && mozilla::ASCIIMask::IsMasked(*aFilterMask, aChar)) {
+    return EscapeAction::Filter;
+  }
+  return EscapeCharIsKept(aChar, aFlags) ? EscapeAction::Keep
+                                         : EscapeAction::Escape;
+}
+
+// Precomputes the action for every 8-bit character value so the escaping loop
+// can classify a character with a single table lookup. Worthwhile only for
+// inputs long enough to amortize the build.
+static void BuildEscapeActionTable(uint32_t aFlags,
+                                   const ASCIIMaskArray* aFilterMask,
+                                   EscapeAction (&aTable)[256]) {
+  for (size_t i = 0; i < 256; ++i) {
+    aTable[i] =
+        ClassifyEscapeChar(static_cast<unsigned char>(i), aFlags, aFilterMask);
+  }
+}
+
 //----------------------------------------------------------------------------------------
 
 /**
- * Templated helper for URL escaping a portion of a string.
+ * Escapes a portion of a string, classifying each character with |aClassify|.
  *
  * @param aPart The pointer to the beginning of the portion of the string to
  *  escape.
  * @param aPartLen The length of the string to escape.
- * @param aFlags Flags used to configure escaping. @see EscapeMask
  * @param aResult String that has the URL escaped portion appended to. Only
- *  altered if the string is URL escaped or |esc_AlwaysCopy| is specified.
+ *  altered if the string is URL escaped or |aWriting| is true.
+ * @param aWriting Whether to copy every character through even when nothing is
+ *  escaped (corresponds to esc_AlwaysCopy).
  * @param aDidAppend Indicates whether or not data was appended to |aResult|.
- * @return NS_ERROR_INVALID_ARG, NS_ERROR_OUT_OF_MEMORY on failure.
+ * @param aClassify A callable mapping a character to its EscapeAction.
+ * @return NS_ERROR_OUT_OF_MEMORY on failure.
  */
-template <class T>
-static nsresult T_EscapeURL(const typename T::char_type* aPart, size_t aPartLen,
-                            uint32_t aFlags, const ASCIIMaskArray* aFilterMask,
-                            T& aResult, bool& aDidAppend) {
-  typedef nsCharTraits<typename T::char_type> traits;
-  typedef typename traits::unsigned_char_type unsigned_char_type;
-  static_assert(sizeof(*aPart) == 1 || sizeof(*aPart) == 2,
-                "unexpected char type");
-
-  if (!aPart) {
-    MOZ_ASSERT_UNREACHABLE("null pointer");
-    return NS_ERROR_INVALID_ARG;
-  }
-
-  bool forced = !!(aFlags & esc_Forced);
-  bool ignoreNonAscii = !!(aFlags & esc_OnlyASCII);
-  bool ignoreAscii = !!(aFlags & esc_OnlyNonASCII);
-  bool writing = !!(aFlags & esc_AlwaysCopy);
-  bool colon = !!(aFlags & esc_Colon);
-  bool spaces = !!(aFlags & esc_Spaces);
+template <class T, class Classify>
+static nsresult EscapeURLLoop(const typename T::char_type* aPart,
+                              size_t aPartLen, T& aResult, bool aWriting,
+                              bool& aDidAppend, Classify&& aClassify) {
+  using char_type = typename T::char_type;
+  using unsigned_char_type =
+      typename nsCharTraits<char_type>::unsigned_char_type;
 
   auto src = reinterpret_cast<const unsigned_char_type*>(aPart);
 
-  typename T::char_type tempBuffer[100];
+  bool writing = aWriting;
+  char_type tempBuffer[100];
   unsigned int tempBufferPos = 0;
 
   for (size_t i = 0; i < aPartLen; ++i) {
-    unsigned_char_type c = *src++;
-
-    // If there is a filter, we wish to skip any characters which match it.
-    // This is needed so we don't perform an extra pass just to extract the
-    // filtered characters.
-    if (aFilterMask && mozilla::ASCIIMask::IsMasked(*aFilterMask, c)) {
-      if (!writing) {
-        if (!aResult.Append(aPart, i, mozilla::fallible)) {
-          return NS_ERROR_OUT_OF_MEMORY;
+    const unsigned_char_type c = src[i];
+    switch (aClassify(c)) {
+      case EscapeAction::Keep:
+        if (writing) {
+          tempBuffer[tempBufferPos++] = c;
         }
-        writing = true;
+        break;
+      case EscapeAction::Filter:
+        // Skip the character: once writing, simply don't copy it.
+        if (!writing) {
+          if (!aResult.Append(aPart, i, mozilla::fallible)) {
+            return NS_ERROR_OUT_OF_MEMORY;
+          }
+          writing = true;
+        }
+        break;
+      case EscapeAction::Escape: {
+        if (!writing) {
+          if (!aResult.Append(aPart, i, mozilla::fallible)) {
+            return NS_ERROR_OUT_OF_MEMORY;
+          }
+          writing = true;
+        }
+        const uint32_t len = ::AppendPercentHex(tempBuffer + tempBufferPos, c);
+        tempBufferPos += len;
+        MOZ_ASSERT(len <= ENCODE_MAX_LEN, "potential buffer overflow");
+        break;
       }
-      continue;
     }
 
-    // if the char has not to be escaped or whatever follows % is
-    // a valid escaped string, just copy the char.
-    //
-    // Also the % will not be escaped until forced
-    // See bugzilla bug 61269 for details why we changed this
-    //
-    // And, we will not escape non-ascii characters if requested.
-    // On special request we will also escape the colon even when
-    // not covered by the matrix.
-    // ignoreAscii is not honored for control characters (C0 and DEL)
-    //
-    // 0x20..0x7e are the valid ASCII characters.
-    if ((dontNeedEscape(c, aFlags) || (c == HEX_ESCAPE && !forced) ||
-         (c > 0x7f && ignoreNonAscii) ||
-         (c >= 0x20 && c < 0x7f && ignoreAscii)) &&
-        !(c == ':' && colon) && !(c == ' ' && spaces)) {
-      if (writing) {
-        tempBuffer[tempBufferPos++] = c;
-      }
-    } else { /* do the escape magic */
-      if (!writing) {
-        if (!aResult.Append(aPart, i, mozilla::fallible)) {
-          return NS_ERROR_OUT_OF_MEMORY;
-        }
-        writing = true;
-      }
-      uint32_t len = ::AppendPercentHex(tempBuffer + tempBufferPos, c);
-      tempBufferPos += len;
-      MOZ_ASSERT(len <= ENCODE_MAX_LEN, "potential buffer overflow");
-    }
-
-    // Flush the temp buffer if it doesnt't have room for another encoded char.
+    // Flush the temp buffer if it doesn't have room for another encoded char.
     if (tempBufferPos >= std::size(tempBuffer) - ENCODE_MAX_LEN) {
       NS_ASSERTION(writing, "should be writing");
       if (!aResult.Append(tempBuffer, tempBufferPos, mozilla::fallible)) {
@@ -398,6 +423,41 @@ static nsresult T_EscapeURL(const typename T::char_type* aPart, size_t aPartLen,
   }
   aDidAppend = writing;
   return NS_OK;
+}
+
+template <class T>
+static nsresult T_EscapeURL(const typename T::char_type* aPart, size_t aPartLen,
+                            uint32_t aFlags, const ASCIIMaskArray* aFilterMask,
+                            T& aResult, bool& aDidAppend) {
+  static_assert(
+      sizeof(typename T::char_type) == 1 || sizeof(typename T::char_type) == 2,
+      "unexpected char type");
+
+  if (!aPart) {
+    MOZ_ASSERT_UNREACHABLE("null pointer");
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  const bool writing = !!(aFlags & esc_AlwaysCopy);
+
+  // For long 8-bit strings, precompute each character's action once so the loop
+  // classifies with a single table lookup instead of re-deriving the filter and
+  // escape decision every iteration (two table lookups plus a chain of
+  // comparisons). Short strings classify inline to avoid the table-build cost.
+  if constexpr (sizeof(typename T::char_type) == 1) {
+    constexpr size_t kFastPathMinLength = 256;
+    if (aPartLen >= kFastPathMinLength) {
+      EscapeAction actions[256];
+      BuildEscapeActionTable(aFlags, aFilterMask, actions);
+      return EscapeURLLoop(aPart, aPartLen, aResult, writing, aDidAppend,
+                           [&actions](unsigned char c) { return actions[c]; });
+    }
+  }
+
+  return EscapeURLLoop(aPart, aPartLen, aResult, writing, aDidAppend,
+                       [aFlags, aFilterMask](auto c) {
+                         return ClassifyEscapeChar(c, aFlags, aFilterMask);
+                       });
 }
 
 bool NS_EscapeURL(const char* aPart, int32_t aPartLen, uint32_t aFlags,

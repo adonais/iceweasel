@@ -1,0 +1,130 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test spell checking for DOM-based EditContext</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="/tests/SimpleTest/EventUtils.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<div spellcheck>abz abx abc</div>
+<script>
+'use strict';
+
+const host = document.querySelector('div');
+const text = host.textContent;
+const textNode = host.firstChild;
+const editContext = new EditContext({text});
+
+const { maybeOnSpellCheck } = SpecialPowers.ChromeUtils.importESModule(
+  "resource://testing-common/AsyncSpellCheckTestHelper.sys.mjs"
+);
+
+host.editContext = editContext;
+
+let eventsFired = [];
+let textUpdateType;
+let onHandledTextUpdate;
+editContext.addEventListener('textupdate', () => {
+  eventsFired.push('textupdate');
+  if (textUpdateType === 'sync') {
+    textNode.data = '';
+    textNode.data = text;
+    getSelection().collapse(textNode, 5);
+    if (onHandledTextUpdate) {
+      onHandledTextUpdate();
+    }
+  } else if (textUpdateType === 'async') {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      textNode.data = '';
+      textNode.data = text;
+      getSelection().collapse(textNode, 5);
+      if (onHandledTextUpdate) {
+        onHandledTextUpdate();
+      }
+    }));
+  }
+});
+let beforeInputEvent;
+host.addEventListener('beforeinput', e => {
+  eventsFired.push('beforeinput');
+  beforeInputEvent = e;
+});
+
+function getInlineSpellChecker() {
+  return SpecialPowers.wrap(window).docShell.editingSession.getEditorForWindow(window).getInlineSpellChecker(true);
+}
+
+
+function waitForSpellCheck() {
+  let {promise, resolve} = Promise.withResolvers();
+  maybeOnSpellCheck(host, resolve);
+  return promise;
+}
+
+// Test that spell check is running and misspelled words can be replaced
+add_task(async () => {
+  eventsFired = [];
+  await SimpleTest.promiseFocus();
+  host.focus();
+  await waitForSpellCheck();
+  const inlineSpellChecker = getInlineSpellChecker();
+  let misspelledWord = inlineSpellChecker.getMisspelledWord(textNode, 5);
+  ok(misspelledWord, 'Should find misspelled word');
+  is(`${misspelledWord?.startOffset}-${misspelledWord?.endOffset}`, '4-7',
+     'Misspelled word should be "abx"');
+
+  inlineSpellChecker.replaceWord(host.firstChild, 5, 'replacement');
+
+  is(host.textContent, text, 'Text in DOM should not have changed.');
+  is(eventsFired.join(), 'beforeinput', 'Should fire beforeinput and no textupdate.');
+  is(beforeInputEvent.inputType, 'insertReplacementText', 'beforeinput event inputType should be insertReplacementText');
+  // See https://w3c.github.io/input-events/#overview - we should probably follow
+  // contenteditable and set data = null and dataTransfer = replacement.
+  is(beforeInputEvent.data, null, 'beforeinput event data should be null');
+  is(beforeInputEvent.dataTransfer.getData('text'), 'replacement', 'beforeinput event dataTransfer should be the new word');
+  const targetRanges = beforeInputEvent.getTargetRanges();
+  is(targetRanges.length, 1, 'Should have exactly one target range.');
+  const targetRange = targetRanges[0];
+  is(targetRange.startContainer, textNode, 'Target range should start in text node.');
+  is(targetRange.endContainer, textNode, 'Target range should end in text node.');
+  is(`${targetRange.startOffset}-${targetRange.endOffset}`, '4-7',
+     'Target range should match the range of the misspelled word.');
+});
+
+// textupdate handler may update the text synchronously or asynchronously, we should ensure
+// that spellcheck works for both.
+for (let type of ['sync', 'async']) {
+  // Test that the word at the caret is not highlighted as misspelled if it is being edited.
+  add_task(async () => {
+    await SimpleTest.promiseFocus();
+    textUpdateType = type;
+    eventsFired = [];
+    const inlineSpellChecker = getInlineSpellChecker();
+    const {promise: spellCheckAfterTextUpdate, resolve: onSpellCheckAfterTextUpdate} = Promise.withResolvers();
+    onHandledTextUpdate = () => {
+      waitForSpellCheck().then(onSpellCheckAfterTextUpdate);
+    };
+    sendChar('a');
+    await spellCheckAfterTextUpdate;
+    is(eventsFired.join(), 'beforeinput,textupdate', 'Text input should fire beforeinput and textupdate.');
+    let misspelledWord = inlineSpellChecker.getMisspelledWord(textNode, 5);
+    is(misspelledWord, null, `Should not mark misspelled word at caret position (textUpdateType = ${textUpdateType}).`);
+    misspelledWord = inlineSpellChecker.getMisspelledWord(textNode, 1);
+    ok(misspelledWord, `Should mark misspelled word at non-caret position (textUpdateType = ${textUpdateType}).`);
+    is(`${misspelledWord?.startOffset}-${misspelledWord?.endOffset}`, '0-3',
+     'Misspelled word should be "abz"');
+    synthesizeKey('KEY_ArrowLeft');
+    synthesizeKey('KEY_ArrowLeft');
+    synthesizeKey('KEY_ArrowLeft');
+    await waitForSpellCheck();
+    misspelledWord = inlineSpellChecker.getMisspelledWord(textNode, 5);
+    ok(misspelledWord, `Should mark misspelled word at caret position after caret moves (textUpdateType = ${textUpdateType}).`);
+    is(`${misspelledWord?.startOffset}-${misspelledWord?.endOffset}`, '4-7',
+     'Misspelled word should be "abx"');
+  });
+}
+</script>
+</body>
+</html>

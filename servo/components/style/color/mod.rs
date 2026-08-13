@@ -27,8 +27,7 @@ pub const PRE_ALLOCATED_COLOR_MIX_ITEMS: usize = 3;
 pub type ColorMixItemList<T> = smallvec::SmallVec<[T; PRE_ALLOCATED_COLOR_MIX_ITEMS]>;
 
 /// The 3 components that make up a color.  (Does not include the alpha component)
-#[derive(Copy, Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
+#[derive(Copy, Clone, Debug, Deserialize, MallocSizeOf, PartialEq, Serialize, ToShmem)]
 #[repr(C)]
 pub struct ColorComponents(pub f32, pub f32, pub f32);
 
@@ -85,17 +84,18 @@ impl std::ops::Div for ColorComponents {
     Clone,
     Copy,
     Debug,
+    Deserialize,
     Eq,
     MallocSizeOf,
     Parse,
     PartialEq,
+    Serialize,
     ToAnimatedValue,
     ToComputedValue,
     ToCss,
     ToResolvedValue,
     ToShmem,
 )]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[repr(u8)]
 pub enum ColorSpace {
     /// A color specified in the sRGB color space with either the rgb/rgba(..)
@@ -243,8 +243,7 @@ bitflags! {
 
 /// An absolutely specified color, using either rgb(), rgba(), lab(), lch(),
 /// oklab(), oklch() or color().
-#[derive(Copy, Clone, Debug, MallocSizeOf, ToShmem, ToTyped)]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
+#[derive(Copy, Clone, Debug, Deserialize, MallocSizeOf, Serialize, ToShmem, ToTyped)]
 #[repr(C)]
 #[typed(todo_derive_fields)]
 pub struct AbsoluteColor {
@@ -449,6 +448,18 @@ impl AbsoluteColor {
         }
     }
 
+    /// Returns a copy of this color with a modified alpha value.
+    pub fn with_alpha(&self, alpha: impl Into<ComponentDetails>) -> Self {
+        let mut result = *self;
+        let alpha_details = alpha.into();
+        result.alpha = alpha_details.value;
+        result
+            .flags
+            .set(ColorFlags::ALPHA_IS_NONE, alpha_details.is_none);
+        result.flags.remove(ColorFlags::IS_LEGACY_SRGB);
+        result
+    }
+
     /// Convert this color into the sRGB color space and set it to the legacy
     /// syntax.
     #[inline]
@@ -616,23 +627,19 @@ impl AbsoluteColor {
             return self.clone();
         }
 
-        // Conversion functions doesn't handle NAN component values, so they are
-        // converted to 0.0. They do however need to know if a component is
-        // missing, so we use NAN as the marker for that.
-        macro_rules! missing_to_nan {
+        // Missing components are treated as 0 for the conversion math.
+        // Carry-forward of `none` to analogous channels is handled at call
+        // sites where needed.
+        macro_rules! missing_to_zero {
             ($c:expr) => {{
-                if let Some(v) = $c {
-                    crate::values::normalize(v)
-                } else {
-                    f32::NAN
-                }
+                crate::values::normalize($c.unwrap_or(0.0))
             }};
         }
 
         let components = ColorComponents(
-            missing_to_nan!(self.c0()),
-            missing_to_nan!(self.c1()),
-            missing_to_nan!(self.c2()),
+            missing_to_zero!(self.c0()),
+            missing_to_zero!(self.c1()),
+            missing_to_zero!(self.c2()),
         );
 
         let result = match (self.color_space, color_space) {

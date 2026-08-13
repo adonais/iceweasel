@@ -1,8 +1,6 @@
 plugins {
-    alias(libs.plugins.kotlin.android)
+    id 'com.android.application'
 }
-
-apply plugin: 'com.android.application'
 
 android {
     buildToolsVersion = project.ext.buildToolsVersion

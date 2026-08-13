@@ -1,5 +1,3 @@
-#include "gtest/gtest.h"
-
 #include <array>
 #include <cmath>
 #include <tuple>
@@ -7,6 +5,7 @@
 
 #include "ImageContainer.h"
 #include "YCbCrUtils.h"
+#include "gtest/gtest.h"
 #include "nsTArray.h"
 
 using Color = std::tuple<uint8_t, uint8_t, uint8_t>;

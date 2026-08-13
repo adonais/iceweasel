@@ -212,6 +212,10 @@ add_task(
       searchItem.click();
     });
 
+    // Picking the action only locks the button; submit it to run the search.
+    await waitForSmartbarAction(browser, "search");
+    await submitSmartbar(browser, { useButton: true });
+
     const previewEvents = Glean.smartWindow.intentChangePreview.testGetValue();
     Assert.equal(
       previewEvents.length,
@@ -334,6 +338,50 @@ add_task(async function test_smartbar_telemetry_chat_submit_keyboard() {
   await BrowserTestUtils.closeWindow(win);
 });
 
+add_task(
+  async function test_smartbar_telemetry_chat_submit_locked_over_guess() {
+    await resetTelemetry();
+
+    const win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+
+    await stubLoadURL(browser, { captureURL: true });
+
+    // The live guess is "navigate" for URL-shaped input, but locking "chat"
+    // overrides it. The submit must still record chat_submit telemetry and must
+    // not navigate.
+    await typeInSmartbar(browser, "https://example.com");
+    await waitForSmartbarAction(browser, "navigate");
+    await selectExplicitSmartbarAction(browser, "chat");
+    await waitForSmartbarAction(browser, "chat");
+    await submitSmartbar(browser);
+
+    const events = Glean.smartWindow.chatSubmit.testGetValue();
+    Assert.equal(
+      events.length,
+      1,
+      "Locking chat over a navigate guess should still record chat_submit"
+    );
+
+    const extra = events[0].extra;
+    Assert.equal(
+      extra.detected_intent,
+      "navigate",
+      "chat_submit preserves the live detected_intent even when chat is locked"
+    );
+    Assert.equal(
+      extra.submit_type,
+      "enter",
+      "chat_submit has correct submit_type for enter key"
+    );
+
+    const { called } = await getStubLoadURLResult(browser);
+    Assert.ok(!called, "A locked chat submit should not navigate");
+
+    await BrowserTestUtils.closeWindow(win);
+  }
+);
+
 add_task(async function test_smartbar_telemetry_engagement_extra_keys() {
   await resetTelemetry();
   const sb = this.sinon.createSandbox();
@@ -391,7 +439,7 @@ add_task(
     // Pick the AiChat search fallback row
     await SpecialPowers.spawn(
       browser,
-      [UrlbarUtils.RESULT_TYPE.SEARCH],
+      [UrlbarShared.RESULT_TYPE.SEARCH],
       async searchResultType => {
         const smartbar = content.document
           .querySelector("ai-window")
@@ -433,6 +481,7 @@ add_task(async function test_smartbar_telemetry_abandonment_extra_keys() {
   const { win, sidebarBrowser } = await openAIWindowWithSidebar();
 
   await typeInSmartbar(sidebarBrowser, "test");
+  await waitForSmartbarAction(sidebarBrowser, "chat");
   await SpecialPowers.spawn(sidebarBrowser, [], async () => {
     const aiWindow = content.document.querySelector("ai-window");
     const smartbar = aiWindow.shadowRoot.querySelector("#ai-window-smartbar");
@@ -509,6 +558,11 @@ add_task(async function test_smartbar_telemetry_mention_start_inline() {
   await resetTelemetry();
 
   const win = await openAIWindow();
+  await BrowserTestUtils.openNewForegroundTab(
+    win.gBrowser,
+    "https://example.com/"
+  );
+  await BrowserTestUtils.switchTab(win.gBrowser, win.gBrowser.tabs[0]);
   const browser = win.gBrowser.selectedBrowser;
 
   await typeInSmartbar(browser, "@");
@@ -538,6 +592,11 @@ add_task(async function test_smartbar_telemetry_add_tabs_click() {
   await resetTelemetry();
 
   const win = await openAIWindow();
+  await BrowserTestUtils.openNewForegroundTab(
+    win.gBrowser,
+    "https://example.com/"
+  );
+  await BrowserTestUtils.switchTab(win.gBrowser, win.gBrowser.tabs[0]);
   const browser = win.gBrowser.selectedBrowser;
 
   await SpecialPowers.spawn(browser, [], async () => {
@@ -581,6 +640,11 @@ add_task(async function test_smartbar_telemetry_mention_select_inline() {
   await resetTelemetry();
 
   const win = await openAIWindow();
+  await BrowserTestUtils.openNewForegroundTab(
+    win.gBrowser,
+    "https://example.com/"
+  );
+  await BrowserTestUtils.switchTab(win.gBrowser, win.gBrowser.tabs[0]);
   const browser = win.gBrowser.selectedBrowser;
 
   await typeInSmartbar(browser, "@");
@@ -635,6 +699,11 @@ add_task(async function test_smartbar_telemetry_add_tabs_selection() {
   await resetTelemetry();
 
   const win = await openAIWindow();
+  await BrowserTestUtils.openNewForegroundTab(
+    win.gBrowser,
+    "https://example.com/"
+  );
+  await BrowserTestUtils.switchTab(win.gBrowser, win.gBrowser.tabs[0]);
   const browser = win.gBrowser.selectedBrowser;
 
   await SpecialPowers.spawn(browser, [], async () => {
@@ -695,6 +764,11 @@ add_task(async function test_smartbar_telemetry_mention_remove_inline() {
   await resetTelemetry();
 
   const win = await openAIWindow();
+  await BrowserTestUtils.openNewForegroundTab(
+    win.gBrowser,
+    "https://example.com/"
+  );
+  await BrowserTestUtils.switchTab(win.gBrowser, win.gBrowser.tabs[0]);
   const browser = win.gBrowser.selectedBrowser;
 
   await typeInSmartbar(browser, "@");
@@ -750,6 +824,11 @@ add_task(async function test_smartbar_telemetry_remove_tab() {
   await resetTelemetry();
 
   const win = await openAIWindow();
+  await BrowserTestUtils.openNewForegroundTab(
+    win.gBrowser,
+    "https://example.com/"
+  );
+  await BrowserTestUtils.switchTab(win.gBrowser, win.gBrowser.tabs[0]);
   const browser = win.gBrowser.selectedBrowser;
 
   await SpecialPowers.spawn(browser, [], async () => {
@@ -804,6 +883,15 @@ add_task(
     await resetTelemetry();
 
     const win = await openAIWindow();
+    await BrowserTestUtils.openNewForegroundTab(
+      win.gBrowser,
+      "https://example.com/"
+    );
+    await BrowserTestUtils.openNewForegroundTab(
+      win.gBrowser,
+      "https://example.org/"
+    );
+    await BrowserTestUtils.switchTab(win.gBrowser, win.gBrowser.tabs[0]);
     const browser = win.gBrowser.selectedBrowser;
 
     await typeInSmartbar(browser, "@");
@@ -876,7 +964,9 @@ add_task(
 );
 
 add_task(async function test_smartbar_telemetry_mention_start_sidebar() {
-  const { win, sidebarBrowser } = await openAIWindowWithSidebar();
+  const { win, sidebarBrowser } = await openAIWindowWithSidebar(
+    "https://example.com/"
+  );
   await resetTelemetry();
 
   await typeInSmartbar(sidebarBrowser, "@");

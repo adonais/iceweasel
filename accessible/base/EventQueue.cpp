@@ -4,12 +4,11 @@
 
 #include "EventQueue.h"
 
+#include "DocAccessibleChild.h"
+#include "LocalAccessible-inl.h"
 #include "mozilla/PerfStats.h"
 #include "mozilla/ProfilerMarkers.h"
-
-#include "LocalAccessible-inl.h"
 #include "nsEventShell.h"
-#include "DocAccessibleChild.h"
 #include "nsTextEquivUtils.h"
 #ifdef A11Y_LOG
 #  include "Logging.h"

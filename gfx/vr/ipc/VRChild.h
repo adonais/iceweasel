@@ -5,11 +5,11 @@
 #ifndef GFX_VR_CHILD_H
 #define GFX_VR_CHILD_H
 
+#include "moz_external_vr.h"
+#include "mozilla/VsyncDispatcher.h"
 #include "mozilla/gfx/PVRChild.h"
 #include "mozilla/gfx/gfxVarReceiver.h"
 #include "mozilla/ipc/CrashReporterHelper.h"
-#include "mozilla/VsyncDispatcher.h"
-#include "moz_external_vr.h"
 
 namespace mozilla {
 namespace dom {

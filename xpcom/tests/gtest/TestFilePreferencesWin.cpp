@@ -1,5 +1,4 @@
 #include "gtest/gtest.h"
-
 #include "mozilla/FilePreferences.h"
 #include "nsComponentManagerUtils.h"
 #include "nsDirectoryServiceDefs.h"

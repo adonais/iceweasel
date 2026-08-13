@@ -436,8 +436,8 @@ async function doTest({
 }) {
   // Assume all callers are testing with history and/or bookmarks.
   let resultSourceByType = {
-    history: UrlbarUtils.RESULT_SOURCE.HISTORY,
-    bookmark: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    history: UrlbarShared.RESULT_SOURCE.HISTORY,
+    bookmark: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
   };
 
   // Map the keywords array to objects: `{ keyword, resultType }`
@@ -470,7 +470,7 @@ async function doTest({
       addCallback(
         provider,
         new UrlbarResult({
-          type: UrlbarUtils.RESULT_TYPE.URL,
+          type: UrlbarShared.RESULT_TYPE.URL,
           source,
           payload: { url: "https://example.com/" },
         })

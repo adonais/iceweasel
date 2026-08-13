@@ -17,9 +17,8 @@
 #include <stddef.h>  // size_t
 #include <stdint.h>  // uint8_t, uint16_t, uint32_t
 
-#include "frontend/SourceNotes.h"  // js::SrcNote
-#include "frontend/TypedIndex.h"   // js::frontend::TypedIndex
-
+#include "frontend/SourceNotes.h"      // js::SrcNote
+#include "frontend/TypedIndex.h"       // js::frontend::TypedIndex
 #include "js/AllocPolicy.h"            // js::SystemAllocPolicy
 #include "js/ColumnNumber.h"           // JS::LimitedColumnNumberOneOrigin
 #include "js/TypeDecls.h"              // JSContext,jsbytecode

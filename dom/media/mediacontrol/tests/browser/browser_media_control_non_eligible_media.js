@@ -68,6 +68,57 @@ add_task(
 );
 
 /**
+ * A non-controllable but audible source (e.g. a short-duration looping video)
+ * must report its audibility to the controller so the tab sound indicator can
+ * reflect it, while still NOT activating the controller and NOT responding to
+ * transport keys.
+ */
+add_task(async function testShortAudioReportsAudibilityOnly() {
+  info(`open new tab with non eligible media elements`);
+  const tab = await createLoadedTabWrapper(PAGE_NON_ELIGIBLE_MEDIA, {
+    needCheck: false,
+  });
+
+  const elementId = "short-duration";
+  const controller = tab.controller;
+  info(`start audible but non-controllable media '${elementId}'`);
+  const audible = new Promise(resolve => {
+    if (controller.isAudible) {
+      resolve();
+      return;
+    }
+    controller.addEventListener("audiblechange", function handler() {
+      if (controller.isAudible) {
+        controller.removeEventListener("audiblechange", handler);
+        resolve();
+      }
+    });
+  });
+  await Promise.all([
+    startNonEligibleMedia(tab, elementId),
+    checkIfMediaIsStillPlaying(tab, elementId),
+  ]);
+
+  info(`controller fires audiblechange but stays inactive`);
+  await audible;
+  ok(
+    !tab.controller.isActive,
+    "controller stays inactive for a non-controllable source"
+  );
+
+  info(`transport keys must not affect a non-controllable source`);
+  MediaControlService.generateMediaControlKey("pause");
+  await checkIfMediaIsStillPlaying(tab, elementId);
+  ok(
+    !tab.controller.isActive,
+    "controller still inactive after a transport key"
+  );
+
+  info(`remove tab`);
+  await tab.close();
+});
+
+/**
  * Normally those media are not able to being controlled, however, once they
  * enter fullsceen or Picture-in-Picture mode, then they can be controlled.
  */

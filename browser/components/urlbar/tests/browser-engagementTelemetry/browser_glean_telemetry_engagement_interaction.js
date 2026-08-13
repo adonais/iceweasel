@@ -38,7 +38,7 @@ add_task(async function dropped() {
   await doTest(async () => {
     await doDropAndGo("example.com");
 
-    assertEngagementTelemetry([{ interaction: "dropped" }]);
+    await assertEngagementTelemetry([{ interaction: "dropped" }]);
   });
 
   await doTest(async () => {
@@ -46,7 +46,7 @@ add_task(async function dropped() {
     await showResultByArrowDown();
     await doDropAndGo("example.com");
 
-    assertEngagementTelemetry([{ interaction: "dropped" }]);
+    await assertEngagementTelemetry([{ interaction: "dropped" }]);
   });
 });
 
@@ -64,7 +64,7 @@ add_task(async function pasted() {
   await doTest(async () => {
     await doPasteAndGo("www.example.com");
 
-    assertEngagementTelemetry([{ interaction: "pasted" }]);
+    await assertEngagementTelemetry([{ interaction: "pasted" }]);
   });
 
   await doTest(async () => {
@@ -72,7 +72,7 @@ add_task(async function pasted() {
     await showResultByArrowDown();
     await doPasteAndGo("www.example.com");
 
-    assertEngagementTelemetry([{ interaction: "pasted" }]);
+    await assertEngagementTelemetry([{ interaction: "pasted" }]);
   });
 
   await doTest(async () => {
@@ -81,7 +81,7 @@ add_task(async function pasted() {
     await doPaste("a\nb");
     await doEnter();
 
-    assertEngagementTelemetry([{ interaction: "pasted" }]);
+    await assertEngagementTelemetry([{ interaction: "pasted" }]);
   });
 });
 

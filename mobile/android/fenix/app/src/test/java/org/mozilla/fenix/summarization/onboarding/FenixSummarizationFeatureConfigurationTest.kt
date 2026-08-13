@@ -7,6 +7,7 @@ package org.mozilla.fenix.summarization.onboarding
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import mozilla.components.lib.shake.ShakeSensitivity
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -26,9 +27,11 @@ class FenixSummarizationFeatureConfigurationTest {
     private class FakeSummarizationSettingsBinding() : SummarizationSettingsBinding {
         val _isFeatureEnabled = MutableStateFlow(false)
         val _isGestureEnabled = MutableStateFlow(false)
+        val _shakeSensitivity = MutableStateFlow(ShakeSensitivity.Medium)
 
         override val isFeatureEnabled: StateFlow<Boolean> = _isFeatureEnabled
         override val isGestureEnabled: StateFlow<Boolean> = _isGestureEnabled
+        override val shakeSensitivity: StateFlow<ShakeSensitivity> = _shakeSensitivity
     }
 
     @Before

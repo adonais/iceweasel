@@ -7,13 +7,14 @@
 //! [calc]: https://drafts.csswg.org/css-values/#calc-notation
 
 use crate::color::parsing::ChannelKeyword;
+use crate::color::AbsoluteColor;
 use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::typed_om::{ToTyped, TypedValue};
 use crate::values::computed::{self, ToComputedValue};
 use crate::values::generics::calc::{
     self as generic, CalcNodeLeaf, CalcUnits, GenericAnchorFunctionFallback, MinMaxOp, ModRemOp,
-    PositivePercentageBasis, RoundingStrategy, SimplificationResult, SortKey,
+    PositivePercentageBasis, ProgressClampingMode, RoundingStrategy, SimplificationResult, SortKey,
 };
 use crate::values::generics::length::GenericAnchorSizeFunction;
 use crate::values::generics::position::{
@@ -29,8 +30,8 @@ use debug_unreachable::debug_unreachable;
 use smallvec::SmallVec;
 use std::cmp;
 use std::convert::AsRef;
-use strum::{EnumIter, IntoEnumIterator};
-use strum_macros::AsRefStr;
+use strum::IntoEnumIterator;
+use strum_macros::{AsRefStr, EnumIter};
 use style_traits::values::specified::AllowedNumericType;
 use style_traits::{ParseError, SpecifiedValueInfo, StyleParseErrorKind};
 use thin_vec::ThinVec;
@@ -81,9 +82,13 @@ pub enum MathFunction {
     Abs,
     /// `sign()`: https://drafts.csswg.org/css-values-4/#funcdef-sign
     Sign,
+    /// `progress()`: https://drafts.csswg.org/css-values-5/#funcdef-progress
+    Progress,
     /// `sibling-count()`: https://drafts.csswg.org/css-values-5/#funcdef-sibling-count
+    #[strum(serialize = "sibling-count")]
     SiblingCount,
     /// `sibling-index()`: https://drafts.csswg.org/css-values-5/#funcdef-sibling-index
+    #[strum(serialize = "sibling-index")]
     SiblingIndex,
 }
 
@@ -118,8 +123,7 @@ pub enum Leaf {
 
 impl ToTyped for Leaf {
     fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
-        // XXX Only supporting Length, Number, Percentage, Angle and Time for
-        // now
+        // XXX Only supporting Length, Number, Percentage, Angle and Time for now
         match *self {
             Self::Length(ref l) => l.to_typed(dest),
             Self::Number(n) => n.to_typed(dest),
@@ -127,6 +131,55 @@ impl ToTyped for Leaf {
             Self::Angle(ref a) => a.to_typed(dest),
             Self::Time(t) => t.to_typed(dest),
             _ => Err(()),
+        }
+    }
+}
+
+impl Leaf {
+    /// Computes this leaf against the given context (if any), substituting color
+    /// channel references with the matching channel of `origin_color` when it is
+    /// provided. If no origin color is available, channel references are kept
+    /// symbolic so they can be resolved later.
+    pub fn to_computed_value(
+        &self,
+        context: Option<&computed::Context>,
+        origin_color: Option<&AbsoluteColor>,
+    ) -> Self {
+        match self {
+            Self::Length(l) => {
+                let px = match context {
+                    Some(context) => Ok(l.to_computed_value(context).px()),
+                    None => l.to_computed_pixel_length_without_context(),
+                };
+                match px {
+                    Ok(px) => Self::Length(NoCalcLength::from_px(px)),
+                    Err(()) => self.clone(),
+                }
+            },
+            Self::TreeCountingFunction(f) => match context {
+                Some(context) => {
+                    Self::Number(NoCalcNumber::new(f.to_computed_value(context) as f32))
+                },
+                None => self.clone(),
+            },
+            Self::ColorComponent(channel_keyword) => match origin_color {
+                Some(origin_color) => {
+                    match origin_color.get_component_by_channel_keyword(*channel_keyword) {
+                        Ok(value) => Self::Number(NoCalcNumber::new(value.unwrap_or(0.0))),
+                        // The channel is not valid for this color; keep it
+                        // symbolic, which makes resolution fail later.
+                        Err(()) => self.clone(),
+                    }
+                },
+                None => self.clone(),
+            },
+            // The remaining leaves are already absolute (and thus
+            // context-independent).
+            Self::Angle(..)
+            | Self::Time(..)
+            | Self::Resolution(..)
+            | Self::Percentage(..)
+            | Self::Number(..) => self.clone(),
         }
     }
 }
@@ -168,10 +221,8 @@ impl CalcNumeric {
         context: &computed::Context,
         leaf_to_f32: impl FnOnce(Result<Leaf, ()>) -> f32,
     ) -> f32 {
-        let result = self
-            .node
-            .resolve_computed(Some(context), |leaf| Ok(leaf.clone()));
-        self.clamping_mode.clamp(leaf_to_f32(result))
+        let result = self.node.to_computed_value(Some(context), None);
+        self.clamping_mode.clamp(leaf_to_f32(result.resolve()))
     }
 
     /// Gets this calc expression as a number
@@ -1070,6 +1121,34 @@ impl CalcNode {
                     )?;
                     Ok(Self::Sign(Box::new(node)))
                 },
+                MathFunction::Progress => {
+                    if !static_prefs::pref!("layout.css.progress-function.enabled") {
+                        return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
+                    }
+
+                    let clamping_mode = input
+                        .try_parse(|i| ProgressClampingMode::parse(i))
+                        .unwrap_or(ProgressClampingMode::Clamp);
+
+                    let allow_all = flags.new_including(CalcUnits::ALL);
+                    let value = Self::parse_argument(context, input, allow_all)?;
+                    input.expect_comma()?;
+                    let start = Self::parse_argument(context, input, allow_all)?;
+                    input.expect_comma()?;
+                    let end = Self::parse_argument(context, input, allow_all)?;
+
+                    // TODO(Bug 2042060) - Allow combining length and percentage arguments (if it can be resolved).
+                    if value.unit() != start.unit() || value.unit() != end.unit() {
+                        return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
+                    }
+
+                    Ok(Self::Progress {
+                        clamping_mode,
+                        value: Box::new(value),
+                        start: Box::new(start),
+                        end: Box::new(end),
+                    })
+                },
                 MathFunction::SiblingCount | MathFunction::SiblingIndex => {
                     if !static_prefs::pref!("layout.css.tree-counting-functions.enabled") {
                         return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
@@ -1255,31 +1334,15 @@ impl CalcNode {
         })
     }
 
-    /// Resolves this calc tree into a leaf node, using the computed context
-    /// if provided for any nodes that require it. Additional node mapping can
-    /// be provided using `leaf_to_output_fn`. Returns Err(()) if the calc tree
-    /// could not be resolved for any reason.
-    pub fn resolve_computed<F>(
+    /// Computes this calc tree against the given context (if any), resolving
+    /// context-dependent leaves (e.g. lengths) and substituting color channel
+    /// references against `origin_color` when provided.
+    pub fn to_computed_value(
         &self,
         context: Option<&computed::Context>,
-        leaf_to_output_fn: F,
-    ) -> Result<Leaf, ()>
-    where
-        F: Fn(&Leaf) -> Result<Leaf, ()>,
-    {
-        // TODO(Bug 2040558) - Consider handling all leaf types here via `to_computed_value`.
-        self.resolve_map(|leaf| {
-            Ok(match leaf {
-                Leaf::Length(length) => Leaf::Length(NoCalcLength::from_px(match context {
-                    Some(ctx) => length.to_computed_value(ctx).px(),
-                    None => length.to_computed_pixel_length_without_context()?,
-                })),
-                Leaf::TreeCountingFunction(f) => Leaf::Number(NoCalcNumber::new(
-                    f.to_computed_value(context.ok_or(())?) as f32,
-                )),
-                _ => leaf_to_output_fn(leaf)?,
-            })
-        })
+        origin_color: Option<&AbsoluteColor>,
+    ) -> Self {
+        self.map_leaves(|leaf| leaf.to_computed_value(context, origin_color))
     }
 
     /// Tries to simplify this expression into a `<length>` or `<percentage>`

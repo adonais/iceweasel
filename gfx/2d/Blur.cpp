@@ -4,17 +4,16 @@
 
 #include "Blur.h"
 
-#include <algorithm>
 #include <math.h>
 #include <string.h>
 
-#include "NumericTools.h"
+#include <algorithm>
 
 #include "2D.h"
 #include "DataSurfaceHelpers.h"
 #include "HelpersSkia.h"
+#include "NumericTools.h"
 #include "Tools.h"
-
 #include "skia/include/core/SkCanvas.h"
 #include "skia/include/core/SkSurface.h"
 #include "skia/include/effects/SkImageFilters.h"

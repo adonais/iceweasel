@@ -374,6 +374,7 @@ EXTRA_JS_MODULES.media += [
 LOCAL_INCLUDES += [
     "!/media/libsoundtouch/src",
     "/caps",
+    "/config/external/rlbox_wasm2c_sandbox/",
     "/docshell/base",
     "/dom/base",
     "/dom/media/webrtc",

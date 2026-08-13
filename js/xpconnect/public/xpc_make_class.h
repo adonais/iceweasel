@@ -8,8 +8,9 @@
 // This file should be used to create JSClass instances for nsIXPCScriptable
 // instances. This includes any file that uses xpc_map_end.h.
 
-#include "xpcpublic.h"
 #include "mozilla/dom/DOMJSClass.h"
+
+#include "xpcpublic.h"
 
 bool XPC_WN_MaybeResolvingPropertyStub(JSContext* cx, JS::HandleObject obj,
                                        JS::HandleId id, JS::HandleValue v);

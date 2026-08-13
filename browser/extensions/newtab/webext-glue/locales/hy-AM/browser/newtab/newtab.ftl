@@ -245,7 +245,7 @@ newtab-menu-topsites-placeholder-tooltip =
 ## Context Menu: These strings are displayed in a context menu and are meant as a call to action for a given page.
 
 newtab-menu-edit-topsites = Խմբագրել
-newtab-menu-open-new-window = Բացել Նոր Պատուհանով
+newtab-menu-open-new-window = Բացել նոր պատուհանում
 newtab-menu-open-new-private-window = Բացել նոր գաղտնի պատուհանում
 newtab-menu-dismiss = Բաց թողնել
 newtab-menu-pin = Ամրացնել
@@ -456,6 +456,8 @@ newtab-recommended-stories-toggle =
     .label = Առաջարկվող պատմություններ
 newtab-custom-stories-personalized-toggle =
     .label = Պատմություններ
+newtab-custom-stories-personalized-checkbox =
+    .label = Անհատականացված պատմություններ՝ հիմնված ձեր գործունեության վրա
 newtab-custom-stories-personalized-checkbox-label = Անհատականացված պատմություններ՝ հիմնված ձեր գործունեության վրա
 newtab-custom-pocket-sponsored = Հովանավորված պատմություններ
 newtab-custom-pocket-show-recent-saves = Ցուցադրել վերջին պահումները
@@ -1008,6 +1010,9 @@ newtab-sports-widget-group-f = Խումբ F
 newtab-sports-widget-group-g = Խումբ G
 newtab-sports-widget-group-h = Խումբ H
 newtab-sports-widget-group-i = Խումբ I
+newtab-sports-widget-group-j = Խումբ J
+newtab-sports-widget-group-k = Խումբ K
+newtab-sports-widget-group-l = Խումբ L
 newtab-sports-widget-round-32 = 32-ի փուլ
 newtab-sports-widget-round-16 = 16-ի փուլ
 newtab-sports-widget-quarter-finals = Քառորդ եզրափակիչներ
@@ -1045,12 +1050,78 @@ newtab-sports-widget-third-place = Երրորդ տեղը
 newtab-sports-widget-runner-up = Երկրորդ տեղը գրավածները
 newtab-sports-widget-champions = Չեմպիոններ
 newtab-sports-widget-world-cup-champions = 2026 թվականի աշխարհի առաջնության չեմպիոններ
+# Variables:
+#   $date (Date) - The match start time
+newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
+newtab-sports-widget-match-full-time = Հիմնական ժամանակը
+newtab-sports-widget-match-penalties = 11 մետրանոցներ
+# Separator shown between two teams in a placeholder match row when no upcoming
+# match details are available yet.
+newtab-sports-widget-match-vs = ընդդեմ
+# Note shown in the Upcoming tab when no match details are available yet.
+newtab-sports-widget-no-upcoming-matches = Հետևեք մեզ՝ առաջիկա խաղերի մանրամասներին ծանոթանալու համար
+
+## Sports widget live-games pagination. Shown when 2+ matches are live at the same time
+
+# arrow button that goes to the previous page of live matches.
+newtab-sports-widget-pagination-previous =
+    .aria-label = Նախորդը
+    .title = Նախորդը
+# arrow button that goes to the next page of live matches.
+newtab-sports-widget-pagination-next =
+    .aria-label = Հաջորդը
+    .title = Հաջորդը
+
+## Accessible labels for match rows in the sports widget. These are read by
+## screen readers to announce the match details and status.
+## Variables shared by all messages in this group:
+##   $homeTeam (String) - The full name of the home team (e.g. "Mexico")
+##   $awayTeam (String) - The full name of the away team (e.g. "Russia")
+
+# A finished match row (regular full-time result).
+# Variables:
+#   $homeScore (number) - The home team's regular-time score
+#   $awayScore (number) - The away team's regular-time score
+newtab-sports-widget-match-aria-label-results =
+    .aria-label = { $homeTeam }, { $homeScore } ընդդեմ { $awayTeam }, { $awayScore }
+# A finished match row that went to a penalty shootout.
+# Parenthesized values are the shootout score.
+# Variables:
+#   $homeScore (number) - The home team's regular-time score
+#   $awayScore (number) - The away team's regular-time score
+#   $homePenalty (number) - The home team's penalty shootout score
+#   $awayPenalty (number) - The away team's penalty shootout score
+newtab-sports-widget-match-aria-label-results-penalties =
+    .aria-label = { $homeTeam }, { $homeScore } ({ $homePenalty }) ընդդեմ { $awayTeam }, { $awayScore } ({ $awayPenalty })
+# An upcoming match row whose status is "cancelled".
+newtab-sports-widget-match-aria-label-upcoming-cancelled =
+    .aria-label = { $homeTeam } ընդդեմ { $awayTeam }, չեղարկված
+
+## Sports widget — team names (FIFA country codes)
+## Only includes names not adequately covered by standard country-code
+## internationalization tooling.
+
+newtab-sports-widget-team-name-label-bih =
+    .label = Բոսնիա և Հերցեգովինա
+newtab-sports-widget-team-name-label-civ =
+    .label = Կոտ դ'Իվուար
+newtab-sports-widget-team-name-label-cod =
+    .label = Կոնգոյի Դեմոկրատական Հանրապետություն
+newtab-sports-widget-team-name-label-eng =
+    .label = Անգլիա
+newtab-sports-widget-team-name-label-sco =
+    .label = Շոտլանդիա
+# Placeholder used in a match row's aria-label for an undecided team (shown visually as "--").
+newtab-sports-widget-team-tbd = Թիմը կորոշվի
 
 ## Sports widget OMC messages
 ## Shown as on-screen messages promoting the Sports widget and World Cup wallpapers.
 
+newtab-sports-widget-message-wallpapers-title = Սկսե՛ք Աշխարհի առաջնությունը նոր պաստառներով
 newtab-sports-widget-message-add-widgets-cta =
     .label = Ավելացնել վիջեթներ
+newtab-sports-widget-message-explore-widgets-cta =
+    .label = Ուսումնասիրեք վիջեթները
 
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input
@@ -1073,11 +1144,29 @@ newtab-activation-window-message-values-focus-header = Այս տարածքը խ�
 # Context menu item: toggle the clock card off.
 newtab-clock-widget-menu-hide = Թաքցնել ժամացույցը
 newtab-clock-widget-menu-learn-more = Իմանալ ավելին
+newtab-clock-widget-menu-edit = Ժամացույցների խմբագրում
+newtab-clock-widget-menu-switch-to-12h = Անցնել 12-ժամյա ձևաչափի
+newtab-clock-widget-menu-switch-to-24h = Անցնել 24-ժամյա ձևաչափի
+newtab-clock-widget-label-your-clocks = Ձեր ժամացույցները
 newtab-clock-widget-button-add-clock = Ավելացնել
+newtab-clock-widget-button-cancel = Չեղարկել
+newtab-clock-widget-button-back =
+    .title = Վերադառնալ
+    .aria-label = Վերադառնալ
+newtab-clock-widget-button-edit-clock =
+    .title = Խմբագրել ժամացույցը
+    .aria-label = Խմբագրել ժամացույցը
 newtab-clock-widget-button-save = Պահել
 newtab-clock-widget-button-remove-clock =
     .title = Հեռացնել ժամացույցը
     .aria-label = Հեռացնել ժամացույցը
+# Accessible name for a clock row in the "Your clocks" management panel
+# when the row has no user-provided nickname. Read aloud by screen
+# readers when focus lands on the row.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+newtab-clock-widget-edit-item =
+    .aria-label = { $city }
 newtab-clock-widget-add-clock-form =
     .aria-label = Ավելացնել ժամացույց
 newtab-clock-widget-edit-clock-form =
@@ -1087,5 +1176,15 @@ newtab-clock-widget-edit-clock-form =
 # It means "results of the search", not "search within the results".
 newtab-clock-widget-search-results =
     .aria-label = Որոնման արդյունքներ
+# Shown in place of the search results when the user's query does not match any
+# supported city — e.g. typing a misspelled name or a place not in the IANA
+# time zone list.
+newtab-clock-widget-search-no-results = Ոչ մի համընկնում
+# "Open menu for clock" is an icon-only button in the widget toolbar — the
+# attributes are consumed as tooltip/screen-reader label only. The button
+# never renders visible text.
+newtab-clock-widget-menu-button =
+    .title = Բացել ժամացույցի ընտրացանկը
+    .aria-label = Բացել ժամացույցի ընտրացանկը
 # $nickname (String) - The user-defined nickname for a saved clock location (e.g., "Home", "Office").
 newtab-clock-widget-label-nickname-with-value = Մականուն՝ { $nickname }

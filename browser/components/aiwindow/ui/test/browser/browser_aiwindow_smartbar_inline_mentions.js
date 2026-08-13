@@ -10,10 +10,6 @@
 
 "use strict";
 
-const { SmartbarMentionsPanelSearch, MENTION_TYPE } =
-  ChromeUtils.importESModule(
-    "moz-src:///browser/components/urlbar/SmartbarMentionsPanelSearch.sys.mjs"
-  );
 const { MockEngineManager } = ChromeUtils.importESModule(
   "resource://testing-common/AIWindowTestUtils.sys.mjs"
 );

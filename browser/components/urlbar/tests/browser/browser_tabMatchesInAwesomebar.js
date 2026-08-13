@@ -204,7 +204,7 @@ async function checkAutocompleteResults(expected) {
 
     Assert.equal(
       result.type,
-      UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+      UrlbarShared.RESULT_TYPE.TAB_SWITCH,
       "Should have a tab switch result"
     );
 

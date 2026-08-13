@@ -9,6 +9,10 @@ import { FocusTimer } from "./FocusTimer/FocusTimer";
 import { Weather as WeatherWidget } from "./Weather/Weather";
 import { SportsWidget } from "./SportsWidget/SportsWidget";
 import { Clocks } from "./Clocks/Clocks";
+import { Privacy } from "./Privacy/Privacy";
+import { Crossword } from "./Crossword/Crossword";
+import { Stocks } from "./Stocks/Stocks";
+import { PictureOfTheDay } from "./PictureOfTheDay/PictureOfTheDay";
 import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
 
 const weatherEntry = WIDGET_REGISTRY.find(w => w.id === "weather");
@@ -52,6 +56,10 @@ export const WIDGET_ROW_COMPONENTS = {
   weather: WeatherRowWidget,
   sportsWidget: SportsWidget,
   clocks: ClocksRowWidget,
+  privacy: Privacy,
+  crossword: Crossword,
+  stocks: Stocks,
+  pictureOfTheDay: PictureOfTheDay,
 };
 
 export const WIDGET_SIDEBAR_COMPONENTS = {

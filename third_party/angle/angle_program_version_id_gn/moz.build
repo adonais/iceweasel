@@ -1,0 +1,84 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+  ### This moz.build was AUTOMATICALLY GENERATED from a GN config,  ###
+  ### DO NOT edit it by hand.                                       ###
+
+COMPILE_FLAGS["OS_INCLUDES"] = []
+AllowCompilerWarnings()
+
+DEFINES["ANGLE_ENABLE_DEBUG_ANNOTATIONS"] = False
+DEFINES["ANGLE_ENABLE_KEYEDMUTEX"] = True
+DEFINES["ANGLE_PLATFORM_EXPORT"] = ""
+DEFINES["ANGLE_SKIP_DXGI_1_2_CHECK"] = True
+
+GeneratedFile(
+    "/third_party/angle/gen/ANGLEShaderProgramVersion.h",
+    entry_point="action",
+    extra_deps=['!/third_party/angle/gen/ANGLEShaderProgramVersion.h.rsp'],
+    flags=[
+        "/third_party/angle/src/program_serialize_data_version.py",
+        "/third_party/angle/",
+        "gen/ANGLEShaderProgramVersion.h",
+        "gen/ANGLEShaderProgramVersion.h.rsp"
+    ],
+    script="/python/mozbuild/mozbuild/action/file_generate_wrapper.py",
+)
+
+LOCAL_INCLUDES += [
+    "!/ipc/ipdl/_ipdlheaders",
+    "/ipc/chromium/src",
+    "/tools/profiler/public"
+]
+
+if CONFIG["OS_TARGET"] == "Android":
+
+    GeneratedFile(
+        "/third_party/angle/gen/ANGLEShaderProgramVersion.h.rsp",
+        entry_point="write_paths",
+        inputs=['ANGLEShaderProgramVersion.h-f55f152d23101920.rsp.in'],
+        script="/python/mozbuild/mozbuild/action/write_path_list.py",
+    )
+
+if CONFIG["OS_TARGET"] == "Darwin":
+
+    GeneratedFile(
+        "/third_party/angle/gen/ANGLEShaderProgramVersion.h.rsp",
+        entry_point="write_paths",
+        inputs=['ANGLEShaderProgramVersion.h-6486ad7f5fa1aa9f.rsp.in'],
+        script="/python/mozbuild/mozbuild/action/write_path_list.py",
+    )
+
+if CONFIG["OS_TARGET"] == "Linux":
+
+    GeneratedFile(
+        "/third_party/angle/gen/ANGLEShaderProgramVersion.h.rsp",
+        entry_point="write_paths",
+        inputs=['ANGLEShaderProgramVersion.h-f55f152d23101920.rsp.in'],
+        script="/python/mozbuild/mozbuild/action/write_path_list.py",
+    )
+
+if CONFIG["OS_TARGET"] == "OpenBSD":
+
+    GeneratedFile(
+        "/third_party/angle/gen/ANGLEShaderProgramVersion.h.rsp",
+        entry_point="write_paths",
+        inputs=['ANGLEShaderProgramVersion.h-c98ac207d8118669.rsp.in'],
+        script="/python/mozbuild/mozbuild/action/write_path_list.py",
+    )
+
+if CONFIG["OS_TARGET"] == "WINNT":
+
+    DEFINES["UNICODE"] = True
+    DEFINES["_UNICODE"] = True
+
+    GeneratedFile(
+        "/third_party/angle/gen/ANGLEShaderProgramVersion.h.rsp",
+        entry_point="write_paths",
+        inputs=['ANGLEShaderProgramVersion.h-1a5cdd7820aae880.rsp.in'],
+        script="/python/mozbuild/mozbuild/action/write_path_list.py",
+    )
+
+Library("angle_program_version_id_gn")

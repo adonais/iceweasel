@@ -81,7 +81,10 @@ class nsPlaceholderFrame final : public nsIFrame {
   }
 
   // Get/Set the associated out of flow frame
-  nsIFrame* GetOutOfFlowFrame() const { return mOutOfFlowFrame; }
+  nsIFrame* GetOutOfFlowFrame() const {
+    MOZ_ASSERT(mOutOfFlowFrame);
+    return mOutOfFlowFrame;
+  }
   void SetOutOfFlowFrame(nsIFrame* aFrame) {
     NS_ASSERTION(!aFrame || !aFrame->GetPrevContinuation(),
                  "OOF must be first continuation");

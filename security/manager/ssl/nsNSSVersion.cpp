@@ -3,12 +3,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsNSSVersion.h"
+
 #include "nsString.h"
-#include "prinit.h"
 #include "nss.h"
 #include "nssutil.h"
-#include "ssl.h"
+#include "prinit.h"
 #include "smime.h"
+#include "ssl.h"
 
 NS_IMPL_ISUPPORTS(nsNSSVersion, nsINSSVersion)
 

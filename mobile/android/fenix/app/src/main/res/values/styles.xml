@@ -4,7 +4,7 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 <resources xmlns:tools="http://schemas.android.com/tools">
     <style name="SplashScreenThemeBase" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo</item>
         <item name="windowSplashScreenBackground">@color/fx_mobile_splashscreen_background</item>
         <item name="postSplashScreenTheme">@style/NormalTheme</item>
         <item name="windowSplashScreenAnimationDuration">12000</item>
@@ -16,6 +16,8 @@
         <item name="materialTimePickerTheme">@style/Normal.MaterialTimePicker</item>
         <item name="materialCalendarTheme">@style/MaterialCalendar</item>
         <item name="materialSwitchStyle">@style/MaterialSwitchStyle</item>
+        <item name="checkboxStyle">@style/CheckBoxStyle</item>
+        <item name="radioButtonStyle">@style/RadioButtonStyle</item>
         <!-- Android system styling -->
         <item name="searchViewStyle">@style/SearchViewStyle</item>
         <item name="autoCompleteTextViewStyle">@style/AutoCompleteTextViewStyle</item>
@@ -124,12 +126,14 @@
 
         <!-- Tint for activated controls (selected radio button, checked checkbox, switch thumb, seek bar, progress bar) -->
         <item name="colorControlActivated">@color/fx_mobile_primary</item>
+        <item name="android:colorControlActivated">@color/fx_mobile_primary</item>
         <!-- Inactive thumb color -->
         <item name="colorSwitchThumbNormal">@color/toggle_off_knob_normal_theme</item>
         <!-- Inactive track color(30% transparency) -->
         <item name="android:colorForeground">@color/toggle_off_track_normal_theme</item>
         <!-- sets the toolbar back button color, radio buttons / unselected checkboxes -->
         <item name="colorControlNormal">@color/fx_mobile_on_surface</item>
+        <item name="android:colorControlNormal">@color/fx_mobile_on_surface</item>
 
         <!-- Updated color attributes -->
         <item name="accent">@color/accent_normal_theme</item>
@@ -165,6 +169,12 @@
         <item name="mozac_ic_private_mode_circle_fill_icon_color">@color/fx_mobile_on_surface</item>
         <item name="mozac_ic_shield_slash_bg_fill_critical">?attr/colorOnSurface</item>
         <item name="mozac_ic_shield_slash_fill_critical">?attr/colorError</item>
+        <item name="mozac_ic_extensions_warning_bg_fill_critical">?attr/colorOnSurfaceVariant</item>
+        <item name="mozac_ic_extensions_warning_fill_critical">?attr/colorError</item>
+        <item name="mozac_ic_avatar_warning_bg_fill_critical">?attr/colorOnSurfaceVariant</item>
+        <item name="mozac_ic_avatar_warning_fill_critical">?attr/colorError</item>
+        <item name="mozac_ic_lock_slash_bg_fill_critical">?attr/colorOnSurfaceVariant</item>
+        <item name="mozac_ic_lock_slash_fill_critical">?attr/colorError</item>
 
         <item name="tabCounterTintColor">?attr/colorOnSurface</item>
     </style>
@@ -297,6 +307,8 @@
         <item name="materialTimePickerTheme">@style/Private.MaterialTimePicker</item>
         <item name="materialCalendarTheme">@style/MaterialCalendar</item>
         <item name="materialSwitchStyle">@style/MaterialSwitchStyle</item>
+        <item name="checkboxStyle">@style/CheckBoxStyle</item>
+        <item name="radioButtonStyle">@style/RadioButtonStyle</item>
         <item name="searchViewStyle">@style/SearchViewStyle</item>
         <item name="android:textColorLink">@color/fx_mobile_private_tertiary</item>
         <item name="preferenceTheme">@style/PreferenceTheme</item>
@@ -309,6 +321,7 @@
         <item name="android:colorEdgeEffect">@color/accent_private_theme</item>
         <item name="android:colorAccent">@color/fx_mobile_private_on_surface</item>
         <item name="colorControlActivated">@color/fx_mobile_private_primary</item>
+        <item name="android:colorControlActivated">@color/fx_mobile_private_primary</item>
         <item name="android:textColorPrimary">@color/state_list_text_color</item>
         <item name="android:textColorSecondary">@color/secondary_state_list_text_color</item>
         <item name="materialAlertDialogTheme">@style/BaseDialogStyle.Private</item>
@@ -408,6 +421,7 @@
         <item name="android:colorForeground">@color/toggle_off_track_dark_theme</item>
         <!-- sets the toolbar back button color, radio buttons/ unselected checkboxes -->
         <item name="colorControlNormal">@color/fx_mobile_private_on_surface</item>
+        <item name="android:colorControlNormal">@color/fx_mobile_private_on_surface</item>
 
         <!-- Updated color attributes -->
         <item name="accent">@color/accent_private_theme</item>
@@ -439,10 +453,16 @@
         <item name="fenixWordmarkSportLogo">@drawable/ic_wordmark_sport_logo</item>
         <item name="bottomBarBackground">@drawable/private_home_bottom_bar_background_gradient</item>
         <item name="bottomBarBackgroundTop">@drawable/private_home_bottom_bar_background_gradient_top</item>
-        <item name="mozac_ic_private_mode_circle_fill_background_color">@color/photonWhite</item>
+        <item name="mozac_ic_private_mode_circle_fill_background_color">@color/novaWhite</item>
         <item name="mozac_ic_private_mode_circle_fill_icon_color">@color/fx_mobile_private_layer_color_2</item>
         <item name="mozac_ic_shield_slash_bg_fill_critical">?attr/colorOnSurface</item>
         <item name="mozac_ic_shield_slash_fill_critical">?attr/colorError</item>
+        <item name="mozac_ic_extensions_warning_bg_fill_critical">?attr/colorOnSurfaceVariant</item>
+        <item name="mozac_ic_extensions_warning_fill_critical">?attr/colorError</item>
+        <item name="mozac_ic_avatar_warning_bg_fill_critical">?attr/colorOnSurfaceVariant</item>
+        <item name="mozac_ic_avatar_warning_fill_critical">?attr/colorError</item>
+        <item name="mozac_ic_lock_slash_bg_fill_critical">?attr/colorOnSurfaceVariant</item>
+        <item name="mozac_ic_lock_slash_fill_critical">?attr/colorError</item>
 
         <item name="tabCounterTintColor">?attr/colorOnSurface</item>
     </style>
@@ -614,38 +634,8 @@
         <item name="android:layout_alignParentStart">true</item>
     </style>
 
-    <style name="QuickSettingsSmallText">
-        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
-        <item name="android:textSize">12sp</item>
-        <item name="android:paddingEnd">16dp</item>
-        <item name="android:gravity">top</item>
-        <item name="android:layout_alignParentStart">true</item>
-    </style>
-
-    <style name="QuickSettingsLargeText">
-        <item name="android:textColor">@color/state_list_text_color</item>
-        <item name="android:textSize">16sp</item>
-        <item name="android:paddingStart">16dp</item>
-        <item name="android:paddingEnd">16dp</item>
-        <item name="android:gravity">center_vertical</item>
-        <item name="android:layout_alignParentStart">true</item>
-    </style>
-
-    <style name="QuickSettingsLargeText.Icon">
-        <item name="android:drawablePadding">8dp</item>
-        <item name="drawableEndCompat">@drawable/mozac_ic_chevron_right_24</item>
-    </style>
-
     <style name="QuickSettingsText.Icon">
         <item name="android:drawablePadding">8dp</item>
-    </style>
-
-    <style name="QuickSettingsText.PermissionItemEnd">
-        <item name="android:layout_alignParentEnd">true</item>
-        <item name="android:paddingEnd">24dp</item>
-        <item name="android:gravity">end|center_vertical</item>
-        <item name="android:background">?android:attr/selectableItemBackground</item>
-        <item name="android:textColor">?accentUsedOnDarkBackground</item>
     </style>
 
     <style name="CreateCollectionDialogStyle" parent="DialogStyleBase"/>
@@ -716,11 +706,14 @@
         <item name="android:textSize">14sp</item>
     </style>
 
-    <style name="Theme.LensCamera" parent="Theme.AppCompat.NoActionBar">
+    <!-- Material DayNight parent so bottom sheets hosted here resolve the same day/night dialog
+       - theme as the rest of the app; the camera surface itself stays black via the items below. -->
+    <style name="Theme.LensCamera" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="android:windowFullscreen">true</item>
         <item name="android:windowBackground">@android:color/black</item>
         <item name="android:navigationBarColor">@android:color/black</item>
         <item name="android:statusBarColor">@android:color/black</item>
+        <item name="bottomSheetDialogTheme">@style/BottomSheet</item>
     </style>
 
     <style name="Theme.Transparent" parent="android:Theme">
@@ -778,4 +771,11 @@
         <item name="trackTint">@color/material_switch_track_tint</item>
     </style>
 
+    <style name="CheckBoxStyle" parent="Widget.Material3.CompoundButton.CheckBox">
+        <item name="buttonTint">@color/compound_button_tint</item>
+    </style>
+
+    <style name="RadioButtonStyle" parent="Widget.Material3.CompoundButton.RadioButton">
+        <item name="buttonTint">@color/compound_button_tint</item>
+    </style>
 </resources>

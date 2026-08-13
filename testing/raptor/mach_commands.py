@@ -234,7 +234,8 @@ class RaptorRunner(MozbuildObject):
                 )
                 self.config["clean"] = True
 
-            print("Using browsertime version %s from %s" % _get_browsertime_version())
+            version, src = _get_browsertime_version()
+            print(f"Using browsertime version {version} from {src}")
 
         finally:
             sys.path = sys.path[1:]
@@ -351,7 +352,7 @@ def setup_node(command_context):
 
         print("Finished downloading Node v22 from Taskcluster")
 
-    print("Node v22+ found at: %s" % node_exe)
+    print(f"Node v22+ found at: {node_exe}")
     return node_exe
 
 

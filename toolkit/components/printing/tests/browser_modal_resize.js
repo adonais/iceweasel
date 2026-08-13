@@ -111,7 +111,7 @@ add_task(async function testResizing() {
     // On Linux we would have to wait for the resize event here, but the
     // restored and maximized size can also be equal. Brute forcing a resize
     // to a specific size works around that.
-    await BrowserTestUtils.waitForCondition(async () => {
+    await TestUtils.waitForCondition(async () => {
       let width = window.screen.availWidth * 0.75;
       let height = window.screen.availHeight * 0.75;
       window.resizeTo(width, height);

@@ -8,25 +8,25 @@
 #  include "mach_override.h"
 #endif
 
+#include <aio.h>
+#include <dlfcn.h>
+#include <fcntl.h>
+#include <sys/param.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/uio.h>
+#include <unistd.h>
+
 #include "mozilla/Assertions.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/IOInterposer.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/ProcessedStack.h"
+#include "mozilla/StackWalk.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "nsPrintfCString.h"
-#include "mozilla/StackWalk.h"
 #include "nsTraceRefcnt.h"
 #include "prio.h"
-
-#include <sys/param.h>
-#include <sys/stat.h>
-#include <sys/socket.h>
-#include <sys/uio.h>
-#include <aio.h>
-#include <dlfcn.h>
-#include <fcntl.h>
-#include <unistd.h>
 
 #ifdef MOZ_REPLACE_MALLOC
 #  include "replace_malloc_bridge.h"

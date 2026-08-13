@@ -7,6 +7,7 @@ loader: taskgraph.loader.transform:loader
 transforms:
     - taskgraph.transforms.from_deps
     - gecko_taskgraph.transforms.name_sanity
+    - gecko_taskgraph.transforms.zucchini_partial_rollout:partials_transforms
     - gecko_taskgraph.transforms.partials
     - gecko_taskgraph.transforms.task
 

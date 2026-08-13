@@ -16,10 +16,23 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 export const BookmarksBarButton = {
   async showBookmarksBarButton(browser, message) {
-    const { label, action, logo } = message.content;
+    const { label, action, logo, expiry_ms } = message.content;
     let { gBrowser } = browser.documentGlobal;
     const featureId = "fxms_bmb_button";
     const widgetId = "fxms-bmb-button";
+    const shownAtPref = "messaging-system-action.easyChecklist.buttonShownAt";
+
+    if (expiry_ms) {
+      const shownAt = parseInt(
+        Services.prefs.getStringPref(shownAtPref, "0"),
+        10
+      );
+      if (shownAt && Date.now() - shownAt > expiry_ms) {
+        lazy.CustomizableUI.destroyWidget(widgetId);
+        return;
+      }
+    }
+
     const supportedActions = ["OPEN_URL", "SET_PREF", "MULTI_ACTION"];
 
     const fxmsBookmarksBarBtn = {
@@ -53,6 +66,14 @@ export const BookmarksBarButton = {
           "create"
         );
         lazy.ASRouter.addImpression(message);
+
+        let shownAt = parseInt(
+          Services.prefs.getStringPref(shownAtPref, "0"),
+          10
+        );
+        if (!shownAt) {
+          Services.prefs.setStringPref(shownAtPref, String(Date.now()));
+        }
       },
 
       onCommand() {

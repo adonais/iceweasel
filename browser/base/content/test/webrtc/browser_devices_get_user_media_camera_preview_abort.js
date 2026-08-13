@@ -60,7 +60,7 @@ add_task(async function test_stop_preview_during_pending_gum() {
     showPreviewButton.click();
 
     info("Wait for gUM to be called (loading indicator visible)");
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => BrowserTestUtils.isVisible(loadingIndicator),
       "loading indicator should be visible"
     );
@@ -131,7 +131,7 @@ add_task(async function test_close_popup_during_pending_gum() {
     showPreviewButton.click();
 
     info("Wait for gUM to be called (loading indicator visible)");
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => BrowserTestUtils.isVisible(loadingIndicator),
       "loading indicator should be visible"
     );

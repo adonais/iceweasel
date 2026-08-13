@@ -4,37 +4,29 @@
 
 #include "nsAppShell.h"
 
+#include <android/log.h>
+#include <pthread.h>
+
+#include "AndroidBridge.h"
+#include "AndroidBridgeUtilities.h"
+#include "AndroidSurfaceTexture.h"
 #include "base/basictypes.h"
 #include "base/message_loop.h"
 #include "base/task.h"
-#include "mozilla/Hal.h"
 #include "gfxConfig.h"
-#include "nsDragService.h"
-#include "nsExceptionHandler.h"
-#include "nsIScreen.h"
-#include "nsWindow.h"
-#include "nsThreadUtils.h"
-#include "nsIObserverService.h"
-#include "nsIAppStartup.h"
-#include "nsIGeolocationProvider.h"
-#include "nsIDOMWakeLockListener.h"
-#include "nsIPowerManagerService.h"
-#include "nsISpeculativeConnect.h"
-#include "nsIURIFixup.h"
-#include "nsCategoryManagerUtils.h"
-#include "mozilla/dom/GeolocationPosition.h"
-
 #include "mozilla/AppShutdown.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Components.h"
-#include "mozilla/Services.h"
+#include "mozilla/Hal.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ProfilerLabels.h"
-#include "mozilla/Hal.h"
+#include "mozilla/Services.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/Document.h"
-#include "mozilla/gfx/gfxVars.h"
+#include "mozilla/dom/GeolocationPosition.h"
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/intl/OSPreferences.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
 #include "mozilla/java/GeckoAppShellNatives.h"
@@ -43,20 +35,26 @@
 #include "mozilla/java/GeckoThreadNatives.h"
 #include "mozilla/java/XPCOMEventTargetNatives.h"
 #include "mozilla/widget/ScreenManager.h"
-#include "mozilla/StaticPrefs_dom.h"
+#include "nsCategoryManagerUtils.h"
+#include "nsDragService.h"
+#include "nsExceptionHandler.h"
+#include "nsIAppStartup.h"
+#include "nsIDOMWakeLockListener.h"
+#include "nsIGeolocationProvider.h"
+#include "nsIObserverService.h"
+#include "nsIPowerManagerService.h"
+#include "nsIScreen.h"
+#include "nsISpeculativeConnect.h"
+#include "nsIURIFixup.h"
+#include "nsThreadUtils.h"
+#include "nsWindow.h"
 #include "prenv.h"
 #include "prtime.h"
 
-#include "AndroidBridge.h"
-#include "AndroidBridgeUtilities.h"
-#include "AndroidSurfaceTexture.h"
-#include <android/log.h>
-#include <pthread.h>
-
 #ifdef MOZ_GECKOVIEW_HISTORY
-#  include "nsNetUtil.h"
-#  include "nsIURI.h"
 #  include "IHistory.h"
+#  include "nsIURI.h"
+#  include "nsNetUtil.h"
 #endif
 
 #ifdef MOZ_LOGGING
@@ -65,18 +63,19 @@
 
 #include "AndroidAlerts.h"
 #include "AndroidUiThread.h"
+#include "Base64UtilsSupport.h"
 #include "GeckoBatteryManager.h"
 #include "GeckoEditableSupport.h"
 #include "GeckoNetworkManager.h"
 #include "GeckoProcessManager.h"
+#include "GeckoSensorSupport.h"
 #include "GeckoSystemStateListener.h"
 #include "GeckoVRManager.h"
 #include "ImageDecoderSupport.h"
 #include "JavaBuiltins.h"
+#include "MozLogSupport.h"
 #include "ScreenHelperAndroid.h"
 #include "WebExecutorSupport.h"
-#include "Base64UtilsSupport.h"
-#include "MozLogSupport.h"
 
 #ifdef DEBUG_ANDROID_EVENTS
 #  define EVLOG(args...) ALOG(args)
@@ -256,49 +255,6 @@ class GeckoAppShellSupport final
     CrashReporter::AppendAppNotesToCrashReport(aNotes->ToCString());
   }
 
-  static void OnSensorChanged(int32_t aType, float aX, float aY, float aZ,
-                              float aW, int64_t aTime) {
-    AutoTArray<float, 4> values;
-
-    switch (aType) {
-      // Bug 938035, transfer HAL data for orientation sensor to meet w3c
-      // spec, ex: HAL report alpha=90 means East but alpha=90 means West
-      // in w3c spec
-      case hal::SENSOR_ORIENTATION:
-        values.AppendElement(360.0f - aX);
-        values.AppendElement(-aY);
-        values.AppendElement(-aZ);
-        break;
-
-      case hal::SENSOR_LINEAR_ACCELERATION:
-      case hal::SENSOR_ACCELERATION:
-      case hal::SENSOR_GYROSCOPE:
-        values.AppendElement(aX);
-        values.AppendElement(aY);
-        values.AppendElement(aZ);
-        break;
-
-      case hal::SENSOR_LIGHT:
-        values.AppendElement(aX);
-        break;
-
-      case hal::SENSOR_ROTATION_VECTOR:
-      case hal::SENSOR_GAME_ROTATION_VECTOR:
-        values.AppendElement(aX);
-        values.AppendElement(aY);
-        values.AppendElement(aZ);
-        values.AppendElement(aW);
-        break;
-
-      default:
-        __android_log_print(ANDROID_LOG_ERROR, "Gecko",
-                            "Unknown sensor type %d", aType);
-    }
-
-    hal::SensorData sdata(hal::SensorType(aType), aTime, values);
-    hal::NotifySensorChange(sdata);
-  }
-
   static void OnLocationChanged(double aLatitude, double aLongitude,
                                 double aAltitude, float aAccuracy,
                                 float aAltitudeAccuracy, float aHeading,
@@ -434,10 +390,6 @@ nsAppShell::nsAppShell()
       XPCOMEventTargetWrapper::Init();
       mozilla::widget::MozLogSupport::Init();
 
-      if (XRE_IsGPUProcess()) {
-        mozilla::gl::AndroidSurfaceTexture::Init();
-      }
-
       // Set the corresponding state in GeckoThread.
       java::GeckoThread::SetState(java::GeckoThread::State::RUNNING());
     }
@@ -461,8 +413,8 @@ nsAppShell::nsAppShell()
     mozilla::widget::WebExecutorSupport::Init();
     mozilla::widget::Base64UtilsSupport::Init();
     nsWindow::InitNatives();
-    mozilla::gl::AndroidSurfaceTexture::Init();
     mozilla::widget::MozLogSupport::Init();
+    mozilla::widget::GeckoSensorSupport::Init();
 
     java::GeckoThread::SetState(java::GeckoThread::State::JNI_READY());
 

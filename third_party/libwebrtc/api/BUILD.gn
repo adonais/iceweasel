@@ -856,6 +856,16 @@ rtc_library("priority") {
   ]
 }
 
+rtc_source_set("rtp_header_extension_id") {
+  visibility = [ "*" ]
+  sources = [ "rtp_header_extension_id.h" ]
+  deps = [
+    "../rtc_base:checks",
+    "../rtc_base:strong_alias",
+    "//third_party/abseil-cpp/absl/strings:str_format",
+  ]
+}
+
 rtc_library("rtp_parameters") {
   visibility = [ "*" ]
   sources = [
@@ -867,11 +877,13 @@ rtc_library("rtp_parameters") {
   deps = [
     ":priority",
     ":rtc_error",
+    ":rtp_header_extension_id",
     ":rtp_transceiver_direction",
     "../media:media_constants",
     "../rtc_base:checks",
     "../rtc_base:logging",
     "../rtc_base:stringutils",
+    "../rtc_base:strong_alias",
     "../rtc_base/system:rtc_export",
     "video:resolution",
     "video_codecs:scalability_mode",
@@ -1227,6 +1239,7 @@ rtc_source_set("network_state_predictor_api") {
 rtc_source_set("array_view") {
   visibility = [ "*" ]
   sources = [ "array_view.h" ]
+  deps = [ "//third_party/abseil-cpp/absl/base:core_headers" ]
 }
 
 rtc_source_set("refcountedbase") {
@@ -1861,7 +1874,6 @@ if (rtc_include_tests) {
     testonly = true
 
     sources = [
-      "array_view_unittest.cc",
       "candidate_unittest.cc",
       "field_trials_unittest.cc",
       "function_view_unittest.cc",
@@ -1880,7 +1892,6 @@ if (rtc_include_tests) {
     ]
 
     deps = [
-      ":array_view",
       ":candidate",
       ":field_trials",
       ":field_trials_view",
@@ -1889,6 +1900,7 @@ if (rtc_include_tests) {
       ":peer_connection_interface",
       ":rtc_error",
       ":rtc_event_log_output_file",
+      ":rtp_header_extension_id",
       ":rtp_headers",
       ":rtp_packet_info",
       ":rtp_parameters",

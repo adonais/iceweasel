@@ -13,10 +13,19 @@ const { NodeHTTP2Server } = ChromeUtils.importESModule(
 registerCleanupFunction(async () => {
   http3_clear_prefs();
   Services.prefs.clearUserPref("network.http.http3.0rtt_timeout");
+  Services.prefs.clearUserPref(
+    "network.http.happy_eyeballs_connection_attempt_delay"
+  );
 });
 
 add_task(async function setup() {
   await http3_setup_tests("h3");
+  // Give the H3 attempt a long head start so the TCP fallback does not win the
+  // race before H3 connects (the default delay is intentionally short).
+  Services.prefs.setIntPref(
+    "network.http.happy_eyeballs_connection_attempt_delay",
+    3000
+  );
 });
 
 function makeChan(uri) {

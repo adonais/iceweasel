@@ -10,12 +10,11 @@ from urllib.parse import quote, urlencode
 
 import requests
 import yaml
+from mozilla_taskgraph.util.attributes import release_level
 from redo import retry
 from taskgraph.util import json
 from taskgraph.util.copy import deepcopy
 from taskgraph.util.schema import resolve_keyed_by
-
-from gecko_taskgraph.util.attributes import release_level
 
 # Suppress chatty requests logging
 logging.getLogger("requests").setLevel(logging.WARNING)
@@ -465,7 +464,7 @@ def get_partner_url_config(parameters, graph_config):
     partner_url_config = deepcopy(graph_config["partner-urls"])
     substitutions = {
         "release-product": parameters["release_product"],
-        "release-level": release_level(parameters),
+        "release-level": release_level(graph_config["release-branches"], parameters),
         "release-type": parameters["release_type"],
     }
     resolve_keyed_by(
@@ -546,7 +545,8 @@ def apply_partner_priority(config, jobs):
             "release-partner-repack",
             "release-partner-attribution",
         ))
-        and release_level(config.params) == "production"
+        and release_level(config.graph_config["release-branches"], config.params)
+        == "production"
     ):
         priority = "medium"
     for job in jobs:

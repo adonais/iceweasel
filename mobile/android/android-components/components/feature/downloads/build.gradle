@@ -2,17 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
+    id 'com.android.library'
     alias(libs.plugins.dependency.analysis)
+    alias(libs.plugins.kotlin.parcelize)
+    alias(libs.plugins.ksp)
 }
-
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-parcelize'
-
-apply plugin: 'com.google.devtools.ksp'
 
 android {
     defaultConfig {
@@ -47,7 +42,7 @@ dependencies {
     implementation project(':components:ui-widgets')
 
     implementation libs.androidx.constraintlayout
-    implementation libs.androidx.core.ktx
+    implementation libs.androidx.core
     implementation libs.androidx.lifecycle.livedata
     implementation libs.androidx.paging
     implementation libs.androidx.recyclerview

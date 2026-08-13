@@ -1,0 +1,73 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test that most recent range given in selectionchange event is up-to-date after composition.</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="/tests/SimpleTest/EventUtils.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<div contenteditable></div>
+<script>
+let lastRange;
+document.onselectionchange = () => {
+  if (getSelection().rangeCount) {
+    lastRange = getSelection().getRangeAt(0);
+  }
+};
+
+function compositionUpdate(newString) {
+  synthesizeCompositionChange({
+    composition: {
+      string: newString,
+      clauses: [
+        {length: newString.length, attr: COMPOSITION_ATTR_RAW_CLAUSE },
+      ]
+    },
+    caret: {
+      start: newString.length,
+      length: 0,
+    },
+    key: {
+      key: 'a',
+    }
+  });
+}
+
+function compositionEnd() {
+  synthesizeComposition({
+    type: 'compositioncommitasis',
+    key: {
+      key: 'b'
+    }
+  });
+}
+
+
+add_task(async () => {
+  await SimpleTest.promiseFocus();
+  const editor = document.querySelector('div');
+  editor.focus();
+  lastRange = null;
+  compositionUpdate('foo');
+  await new Promise(r => SimpleTest.executeSoon(r));
+  ok(lastRange, 'selectionchange should be fired when composition is started');
+  is(`${lastRange.startOffset}-${lastRange.endOffset}`, '3-3',
+     'Selection range should be up-to-date after starting composition.');
+  lastRange = null;
+  compositionUpdate('bar');
+  await new Promise(r => SimpleTest.executeSoon(r));
+  ok(lastRange, 'selectionchange should be fired when composition is changed');
+  is(`${lastRange.startOffset}-${lastRange.endOffset}`, '3-3',
+     'Selection range should be up-to-date after changing composition.');
+  compositionEnd();
+  ok(lastRange, 'selectionchange should be fired when composition is ended');
+  await new Promise(r => SimpleTest.executeSoon(r));
+  is(`${lastRange.startOffset}-${lastRange.endOffset}`, '3-3',
+     'Selection range should be up-to-date after ending composition.');
+});
+
+</script>
+</body>
+</html>

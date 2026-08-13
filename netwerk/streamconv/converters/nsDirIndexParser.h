@@ -5,10 +5,10 @@
 #ifndef NSDIRINDEX_H_
 #define NSDIRINDEX_H_
 
-#include "nsString.h"
+#include "mozilla/RefPtr.h"
 #include "nsCOMPtr.h"
 #include "nsIDirIndexListener.h"
-#include "mozilla/RefPtr.h"
+#include "nsString.h"
 
 class nsIDirIndex;
 class nsITextToSubURI;

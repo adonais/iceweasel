@@ -27,7 +27,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import mozilla.components.concept.sync.AccountObserver
-import mozilla.components.service.fxa.SyncEngine
+import mozilla.components.concept.sync.SyncEngine
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.service.fxa.manager.SyncEnginesStorage
 import org.junit.After

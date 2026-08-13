@@ -187,6 +187,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   void MarkEarlyDataSent() {
     if (mEarlyDataDisposition == EARLY_NONE) {
       mEarlyDataDisposition = EARLY_SENT;
+      mEarlyDataSentTime = TimeStamp::Now();
     }
   }
 
@@ -266,6 +267,9 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   virtual ~nsHttpTransaction();
 
   [[nodiscard]] nsresult Restart();
+  // For an accepted 0-RTT request, report connectEnd and requestStart at the
+  // early-data send point. Caller must hold mLock.
+  void Apply0RTTTimingOverride();
   char* LocateHttpStart(char* buf, uint32_t len, bool aAllowPartialMatch);
   [[nodiscard]] nsresult ParseLine(nsACString& line);
   [[nodiscard]] nsresult ParseLineSegment(char* seg, uint32_t len);
@@ -644,6 +648,12 @@ class nsHttpTransaction final : public nsAHttpTransaction,
     EARLY_ACCEPTED,
     EARLY_425
   } mEarlyDataDisposition{EARLY_NONE};
+  // The moment the request bytes were first sent as TLS 1.3 early data
+  // (0-RTT). For an accepted 0-RTT request this is the point the connection
+  // could send the request, i.e. the W3C Resource Timing connectEnd (which,
+  // per spec, must exclude the round trip spent receiving the server's
+  // ServerHello). See Apply0RTTTimingOverride.
+  TimeStamp mEarlyDataSentTime;
 
   HttpTrafficCategory mTrafficCategory{HttpTrafficCategory::eInvalid};
   // Shared pointer to the full CONNECT response head, owned by the connection.

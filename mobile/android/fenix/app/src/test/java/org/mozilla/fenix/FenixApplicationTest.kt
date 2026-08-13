@@ -162,6 +162,7 @@ class FenixApplicationTest {
         every { settings.shouldUseExpandedToolbar } returns true
         every { settings.toolbarSimpleShortcutKey } returns ShortcutType.SHARE.value
         every { settings.toolbarExpandedShortcutKey } returns ShortcutType.HOMEPAGE.value
+        every { settings.toolbarTabStripShortcutKey } returns ShortcutType.BOOKMARK.value
         every { settings.getTabViewPingString() } returns "test"
         every { settings.getTabTimeoutPingString() } returns "test"
         every { settings.shouldShowSearchSuggestions } returns true
@@ -245,6 +246,7 @@ class FenixApplicationTest {
         assertEquals("expanded", Preferences.toolbarModeSetting.testGetValue())
         assertEquals(ShortcutType.SHARE.value, Preferences.toolbarSimpleShortcut.testGetValue())
         assertEquals(ShortcutType.HOMEPAGE.value, Preferences.toolbarExpandedShortcut.testGetValue())
+        assertEquals(ShortcutType.BOOKMARK.value, Preferences.toolbarTabStripShortcut.testGetValue())
         assertEquals("standard", Preferences.enhancedTrackingProtection.testGetValue())
         assertEquals(listOf("switch", "touch exploration"), Preferences.accessibilityServices.testGetValue())
         assertEquals(true, Preferences.inactiveTabsEnabled.testGetValue())

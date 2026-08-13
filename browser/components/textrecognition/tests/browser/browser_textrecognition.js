@@ -55,13 +55,13 @@ add_task(async function () {
     await popupHiddenPromise;
 
     info("Waiting for the dialog browser to be shown.");
-    const { contentDocument } = await BrowserTestUtils.waitForCondition(() =>
+    const { contentDocument } = await TestUtils.waitForCondition(() =>
       document.querySelector(".textRecognitionDialogFrame")
     );
 
     {
       info("Check the scalar telemetry.");
-      const scalars = await BrowserTestUtils.waitForCondition(() =>
+      const scalars = await TestUtils.waitForCondition(() =>
         getTelemetryScalars()
       );
       const contentContext = scalars["browser.ui.interaction.content_context"];
@@ -74,7 +74,7 @@ add_task(async function () {
     const resultsHeader = contentDocument.querySelector(
       "#text-recognition-header-results"
     );
-    await BrowserTestUtils.waitForCondition(() => {
+    await TestUtils.waitForCondition(() => {
       return resultsHeader.style.display !== "none";
     });
 
@@ -121,12 +121,12 @@ add_task(async function () {
     );
 
     info("Waiting for the dialog frame to close.");
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => !document.querySelector(".textRecognitionDialogFrame")
     );
 
     info("Check for interaction telemetry.");
-    const timing = await BrowserTestUtils.waitForCondition(() => {
+    const timing = await TestUtils.waitForCondition(() => {
       const { sum } = Services.telemetry
         .getHistogramById("TEXT_RECOGNITION_INTERACTION_TIMING")
         .snapshot();

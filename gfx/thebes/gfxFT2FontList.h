@@ -5,9 +5,9 @@
 #ifndef GFX_FT2FONTLIST_H
 #define GFX_FT2FONTLIST_H
 
-#include "mozilla/MemoryReporting.h"
 #include "gfxFT2FontBase.h"
 #include "gfxPlatformFontList.h"
+#include "mozilla/MemoryReporting.h"
 #include "nsTHashSet.h"
 
 namespace mozilla {

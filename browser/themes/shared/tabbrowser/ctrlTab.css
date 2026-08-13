@@ -103,6 +103,6 @@
 
 .ctrlTab-label {
   flex: 1;
-  justify-content: center;
+  text-align: center;
   contain: inline-size;
 }

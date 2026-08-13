@@ -5,8 +5,8 @@
 #ifndef mozilla_layers_FlingAccelerator_h
 #define mozilla_layers_FlingAccelerator_h
 
-#include "mozilla/layers/SampleTime.h"
 #include "Units.h"
+#include "mozilla/layers/SampleTime.h"
 
 namespace mozilla {
 namespace layers {

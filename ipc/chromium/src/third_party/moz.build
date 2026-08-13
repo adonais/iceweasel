@@ -17,33 +17,20 @@ OS_LIBS += CONFIG["C_R_LIBS"]
 # for socket
 OS_LIBS += CONFIG["SOCKET_LIBS"]
 
+# Only libevent's core event loop is used; the evbuffer, bufferevent, evdns,
+# evhttp and evtag/evrpc modules are deliberately not built.
 UNIFIED_SOURCES += [
-    'libevent/buffer.c',
-    'libevent/bufferevent.c',
-    'libevent/bufferevent_filter.c',
-    'libevent/bufferevent_ratelim.c',
-    'libevent/bufferevent_sock.c',
-    'libevent/evdns.c',
     'libevent/event.c',
-    'libevent/event_tagging.c',
     'libevent/evmap.c',
     'libevent/evthread.c',
-    # 'libevent/evthread_pthread.c', # Unused file.
     'libevent/evutil.c',
     'libevent/evutil_rand.c',
     'libevent/evutil_time.c',
-    'libevent/http.c',
-    'libevent/listener.c',
     'libevent/log.c',
     'libevent/poll.c',
     'libevent/select.c',
     'libevent/signal.c',
     'libevent/strlcpy.c',
-]
-
-SOURCES += [
-    'libevent/bufferevent_pair.c',       # conflicting types errors
-    # 'libevent/evrpc.c', # Unused file. # conflicting TAILQ_ENTRY definition
 ]
 
 if CONFIG["TARGET_KERNEL"] in ("Darwin", "DragonFly", "FreeBSD", "NetBSD", "OpenBSD"):

@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.ui.efficiency.pageObjects
 
-import android.util.Log
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ComposeTimeoutException
@@ -15,7 +14,6 @@ import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Until
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_URL
 import org.junit.Assert.assertTrue
-import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
@@ -25,11 +23,11 @@ import org.mozilla.fenix.helpers.TestHelper.packageName
 import org.mozilla.fenix.helpers.ext.waitNotNull
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
-import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.BrowserPageSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.HomeSelectors
+import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.SearchBarSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.ToolbarSelectors
 
@@ -84,6 +82,16 @@ class BrowserPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule
             ),
         )
 
+        NavigationRegistry.register(
+            from = pageName,
+            to = "AddToHomeScreenComponent",
+            steps = listOf(
+                NavigationStep.Click(BrowserPageSelectors.MAIN_MENU_BUTTON),
+                NavigationStep.Click(MainMenuSelectors.MORE_BUTTON),
+                NavigationStep.Click(MainMenuSelectors.ADD_TO_HOMESCREEN_BUTTON),
+            ),
+        )
+
         // Use UIAutomator selector to avoid Compose sync hanging when GeckoView is active.
         NavigationRegistry.register(
             from = pageName,
@@ -125,26 +133,12 @@ class BrowserPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule
     }
 
     fun clickPageContent(text: String): BrowserPage {
-        mozClick(
-            Selector(
-                strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
-                value = text,
-                description = "Page content '$text'",
-                groups = listOf(),
-            ),
-        )
+        mozClick(BrowserPageSelectors.PAGE_CONTENT(text))
         return this
     }
 
     fun clickPageContentIfPresent(text: String): BrowserPage {
-        mozClickIfPresent(
-            Selector(
-                strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
-                value = text,
-                description = "Page content '$text'",
-                groups = listOf(),
-            ),
-        )
+        mozClickIfPresent(BrowserPageSelectors.PAGE_CONTENT(text))
         return this
     }
 
@@ -153,23 +147,25 @@ class BrowserPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule
     }
 
     fun verifyUrl(url: String): BrowserPage {
-        Log.i(TAG, "verifyUrl: Trying to verify $url")
-
         val expectedText = url.replace("http://", "")
         val textMatcher = hasText(expectedText, substring = true, ignoreCase = true)
         try {
             composeRule.waitUntil(waitingTimeShort) {
-                composeRule.onAllNodesWithTag(ADDRESSBAR_URL, useUnmergedTree = true).fetchSemanticsNodes()
+                composeRule.onAllNodesWithTag(ADDRESSBAR_URL, useUnmergedTree = true)
+                    .fetchSemanticsNodes()
                     .any { textMatcher.matches(it) }
             }
         } catch (_: ComposeTimeoutException) {
-            Log.i(TAG, "verifyUrl [$url] failed because: ")
-            composeRule.onAllNodesWithTag(ADDRESSBAR_URL, useUnmergedTree = true).fetchSemanticsNodes()
-                .forEachIndexed { index, node ->
-                    val text = node.config.getOrNull(SemanticsProperties.Text)?.joinToString("")
-                    Log.i(TAG, "verifyUrl: Node[$index] with tag '$ADDRESSBAR_URL' has text: '$text'")
-                }
+            val actual = composeRule.onAllNodesWithTag(ADDRESSBAR_URL, useUnmergedTree = true)
+                .fetchSemanticsNodes()
+                .mapNotNull { it.config.getOrNull(SemanticsProperties.Text)?.joinToString("") }
+            throw AssertionError("Expected URL to contain '$expectedText' but found: $actual")
         }
+        return this
+    }
+
+    fun openMainMenu(): BrowserPage {
+        mozClick(BrowserPageSelectors.MAIN_MENU_BUTTON)
 
         return this
     }

@@ -19,12 +19,19 @@ export default class MenuMessage extends MozLitElement {
   };
   static properties = {
     imageURL: { type: String },
+    rtlImageURL: { type: String },
     logoURL: { type: String },
     buttonText: { type: String },
     primaryButtonSize: { type: String, reflect: true },
     primaryText: { type: String },
     secondaryText: { type: String },
     layout: { type: String, reflect: true },
+    imagePosition: { type: String, reflect: true, attribute: "image-position" },
+    directionalImage: {
+      type: Boolean,
+      reflect: true,
+      attribute: "directional-image",
+    },
   };
   static queries = {
     primaryButton: "#primary-button",
@@ -35,6 +42,7 @@ export default class MenuMessage extends MozLitElement {
     super();
     this.layout = "column"; // Default layout
     this.primaryButtonSize = "default"; // Default button size
+    this.imagePosition = "end"; // Default position for split layout
     this.addEventListener(
       "keydown",
       event => {
@@ -79,6 +87,142 @@ export default class MenuMessage extends MozLitElement {
     return this.layout === "row";
   }
 
+  get isSplitLayout() {
+    return this.layout === "split";
+  }
+
+  renderIllustration() {
+    const useRtl =
+      this.rtlImageURL &&
+      this.documentGlobal.getComputedStyle(this).direction === "rtl";
+
+    return html`
+      <img
+        id="illustration"
+        class=${useRtl ? "illustration-rtl" : ""}
+        role="presentation"
+        src=${useRtl ? this.rtlImageURL : this.imageURL}
+      />
+    `;
+  }
+
+  renderSplitLayout() {
+    return html`
+      <div id="top-row">
+        <div id="primary">${this.primaryText}</div>
+        <moz-button
+          id="close-button"
+          @click=${this.handleClose}
+          type="ghost"
+          iconsrc="resource://content-accessible/close-12.svg"
+          tabindex="2"
+          data-l10n-id="fxa-menu-message-close-button"
+        >
+        </moz-button>
+      </div>
+      <div id="columns">
+        <div id="content-column">
+          <div id="secondary">${this.secondaryText}</div>
+          <moz-button
+            id="primary-button"
+            @click=${this.handlePrimaryButton}
+            type="primary"
+            size=${this.primaryButtonSize}
+            tabindex="1"
+            autofocus
+            title=${this.buttonText}
+            aria-label=${this.buttonText}
+          >
+            ${this.buttonText}
+          </moz-button>
+        </div>
+        <div id="illustration-container">${this.renderIllustration()}</div>
+      </div>
+    `;
+  }
+
+  renderRowLayout() {
+    return html`
+      <div id="top-row">
+        <div id="logo-container">
+          <img id="logo" role="presentation" src=${this.logoURL} />
+        </div>
+        <moz-button
+          id="close-button"
+          @click=${this.handleClose}
+          type="ghost"
+          iconsrc="resource://content-accessible/close-12.svg"
+          tabindex="2"
+          data-l10n-id="fxa-menu-message-close-button"
+        >
+        </moz-button>
+      </div>
+      <div id="bottom-row">
+        <div id="primary">${this.primaryText}</div>
+        <div id="secondary">${this.secondaryText}</div>
+        <div id="illustration-button-container">
+          <moz-button
+            id="primary-button"
+            @click=${this.handlePrimaryButton}
+            type="primary"
+            size=${this.primaryButtonSize}
+            tabindex="1"
+            autofocus
+            title=${this.buttonText}
+            aria-label=${this.buttonText}
+          >
+            ${this.buttonText}
+          </moz-button>
+          <div id="illustration-container">${this.renderIllustration()}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  renderColumnLayout() {
+    return html`
+      <div id="top-row">
+        <div id="logo-container">
+          <img id="logo" role="presentation" src=${this.logoURL} />
+        </div>
+        <moz-button
+          id="close-button"
+          @click=${this.handleClose}
+          type="ghost"
+          iconsrc="resource://content-accessible/close-12.svg"
+          tabindex="2"
+          data-l10n-id="fxa-menu-message-close-button"
+        >
+        </moz-button>
+      </div>
+      <div id="illustration-container">${this.renderIllustration()}</div>
+      <div id="primary">${this.primaryText}</div>
+      <div id="secondary">${this.secondaryText}</div>
+      <moz-button
+        id="primary-button"
+        @click=${this.handlePrimaryButton}
+        type="primary"
+        size=${this.primaryButtonSize}
+        tabindex="1"
+        autofocus
+        title=${this.buttonText}
+        aria-label=${this.buttonText}
+      >
+        ${this.buttonText}
+      </moz-button>
+    `;
+  }
+
+  renderBody() {
+    if (this.isSplitLayout) {
+      return this.renderSplitLayout();
+    }
+    if (this.isRowLayout) {
+      return this.renderRowLayout();
+    }
+    return this.renderColumnLayout();
+  }
+
   render() {
     return html`<link
         rel="stylesheet"
@@ -87,88 +231,11 @@ export default class MenuMessage extends MozLitElement {
       <div
         id="container"
         layout=${this.layout}
+        image-position=${this.imagePosition}
         ?has-image=${this.imageURL}
         ?has-logo=${this.logoURL}
       >
-        ${this.isRowLayout
-          ? html`
-              <div id="top-row">
-                <div id="logo-container">
-                  <img id="logo" role="presentation" src=${this.logoURL} />
-                </div>
-                <moz-button
-                  id="close-button"
-                  @click=${this.handleClose}
-                  type="ghost"
-                  iconsrc="resource://content-accessible/close-12.svg"
-                  tabindex="2"
-                  data-l10n-id="fxa-menu-message-close-button"
-                >
-                </moz-button>
-              </div>
-              <div id="bottom-row">
-                <div id="primary">${this.primaryText}</div>
-                <div id="secondary">${this.secondaryText}</div>
-                <div id="illustration-button-container">
-                  <moz-button
-                    id="primary-button"
-                    @click=${this.handlePrimaryButton}
-                    type="primary"
-                    size=${this.primaryButtonSize}
-                    tabindex="1"
-                    autofocus
-                    title=${this.buttonText}
-                    aria-label=${this.buttonText}
-                  >
-                    ${this.buttonText}
-                  </moz-button>
-                  <div id="illustration-container">
-                    <img
-                      id="illustration"
-                      role="presentation"
-                      src=${this.imageURL}
-                    />
-                  </div>
-                </div>
-              </div>
-            `
-          : html`
-              <div id="top-row">
-                <div id="logo-container">
-                  <img id="logo" role="presentation" src=${this.logoURL} />
-                </div>
-                <moz-button
-                  id="close-button"
-                  @click=${this.handleClose}
-                  type="ghost"
-                  iconsrc="resource://content-accessible/close-12.svg"
-                  tabindex="2"
-                  data-l10n-id="fxa-menu-message-close-button"
-                >
-                </moz-button>
-              </div>
-              <div id="illustration-container">
-                <img
-                  id="illustration"
-                  role="presentation"
-                  src=${this.imageURL}
-                />
-              </div>
-              <div id="primary">${this.primaryText}</div>
-              <div id="secondary">${this.secondaryText}</div>
-              <moz-button
-                id="primary-button"
-                @click=${this.handlePrimaryButton}
-                type="primary"
-                size=${this.primaryButtonSize}
-                tabindex="1"
-                autofocus
-                title=${this.buttonText}
-                aria-label=${this.buttonText}
-              >
-                ${this.buttonText}
-              </moz-button>
-            `}
+        ${this.renderBody()}
       </div>`;
   }
 }

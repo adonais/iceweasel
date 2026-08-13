@@ -2,14 +2,14 @@
    http://creativecommons.org/publicdomain/zero/1.0/ */
 
 Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/browser/components/preferences/tests/head.js",
+  "chrome://mochitests/content/browser/browser/components/preferences/tests/head-common.js",
   this
 );
 
 async function openEtpPage() {
   await openPreferencesViaOpenPreferencesAPI("etp", { leaveOpen: true });
   let doc = gBrowser.contentDocument;
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => doc.getElementById("contentBlockingCategoryRadioGroup"),
     "Wait for the ETP advanced radio group to render"
   );
@@ -25,7 +25,7 @@ async function openEtpCustomizePage() {
     leaveOpen: true,
   });
   let doc = gBrowser.contentDocument;
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => doc.getElementById("etpAllowListBaselineEnabledCustom"),
     "Wait for the ETP customize controls to render"
   );

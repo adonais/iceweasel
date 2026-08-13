@@ -444,6 +444,24 @@ captcha_detection:
     data_sensitivity:
       - interaction
 
+  datadome_oc_pbm:
+    type: counter
+    description: >
+      Number of times the Datadome was loaded since last ping submission.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1913421
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2054037
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D226021#7994299
+      - https://phabricator.services.mozilla.com/D311506#10808388
+    notification_emails:
+      - tritter@mozilla.com
+    send_in_pings:
+      - captcha-detection
+    expires: never
+    data_sensitivity:
+      - interaction
+
   datadome_ps_pbm:
     type: counter
     description: >

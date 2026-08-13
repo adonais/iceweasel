@@ -6,6 +6,7 @@
 #define XPCOM_BASE_CYCLECOLLECTORSTATS_H_
 
 #include <cstdint>
+
 #include "mozilla/TimeStamp.h"
 
 namespace mozilla {

@@ -81,10 +81,13 @@
 // const Employee* absl_nonnull e;
 //
 // // A non-null pointer to a const nullable pointer to an `Employee`.
-// Employee* absl_nullable const* absl_nonnull e = nullptr;
+// Employee* absl_nullable const* absl_nonnull e;
 //
 // // A non-null function pointer.
 // void (*absl_nonnull func)(int, double);
+//
+// // A non-null array of `Employee`s as a parameter.
+// void func(Employee employees[absl_nonnull]);
 //
 // // A non-null std::unique_ptr to an `Employee`.
 // // As with `const`, it is possible to place the annotation on either side of
@@ -92,7 +95,7 @@
 // // describes is preferred, unless inconsistent with surrounding code.
 // absl_nonnull std::unique_ptr<Employee> employee;
 //
-// // Invalid annotation usage – this attempts to declare a pointer to a
+// // Invalid annotation usage - this attempts to declare a pointer to a
 // // nullable `Employee`, which is meaningless.
 // absl_nullable Employee* e;
 //
@@ -127,7 +130,7 @@
 //
 // // CompleteTransaction() guarantees the returned pointer to an `Account` to
 // // be non-null.
-// Account* absl_nonnull balance CompleteTransaction(double fee) {
+// Account* absl_nonnull CompleteTransaction(double fee) {
 // ...
 // }
 //
@@ -177,11 +180,11 @@
 // `absl_nonnull` is *not guaranteed* to be non-null, and the compiler won't
 // alert or prevent assignment of a `T* absl_nullable` to a `T* absl_nonnull`.
 // ===========================================================================
+// SKIP_ABSL_INLINE_NAMESPACE_CHECK
 #ifndef ABSL_BASE_NULLABILITY_H_
 #define ABSL_BASE_NULLABILITY_H_
 
 #include "absl/base/config.h"
-#include "absl/base/internal/nullability_impl.h"
 
 // ABSL_POINTERS_DEFAULT_NONNULL
 //
@@ -201,7 +204,7 @@
 //     T* absl_nullable GetNullablePtr();           // explicitly nullable
 //     T* absl_nullability_unknown GetUnknownPtr();  // explicitly unknown
 //
-// The macro can be safely used in header files – it will not affect any files
+// The macro can be safely used in header files - it will not affect any files
 // that include it.
 //
 // In files with the macro, plain `T*` syntax means `T* absl_nonnull`, and the
@@ -312,47 +315,5 @@
 #else
 #define ABSL_NULLABILITY_COMPATIBLE
 #endif
-
-namespace absl {
-ABSL_NAMESPACE_BEGIN
-
-// The following template aliases are alternate forms of the macro annotations
-// above. They have some limitations, for example, an incompatibility with
-// `auto*` pointers, as `auto` cannot be used in a template argument.
-//
-// It is important to note that these annotations are not distinct strong
-// *types*. They are alias templates defined to be equal to the underlying
-// pointer type. A pointer annotated `Nonnull<T*>`, for example, is simply a
-// pointer of type `T*`.
-
-// absl::Nonnull, analogous to absl_nonnull
-//
-// Example:
-// absl::Nonnull<int*> foo;
-// Is equivalent to:
-// int* absl_nonnull foo;
-template <typename T>
-using Nonnull = nullability_internal::NonnullImpl<T>;
-
-// absl::Nullable, analogous to absl_nullable
-//
-// Example:
-// absl::Nullable<int*> foo;
-// Is equivalent to:
-// int* absl_nullable foo;
-template <typename T>
-using Nullable = nullability_internal::NullableImpl<T>;
-
-// absl::NullabilityUnknown, analogous to absl_nullability_unknown
-//
-// Example:
-// absl::NullabilityUnknown<int*> foo;
-// Is equivalent to:
-// int* absl_nullability_unknown foo;
-template <typename T>
-using NullabilityUnknown = nullability_internal::NullabilityUnknownImpl<T>;
-
-ABSL_NAMESPACE_END
-}  // namespace absl
 
 #endif  // ABSL_BASE_NULLABILITY_H_

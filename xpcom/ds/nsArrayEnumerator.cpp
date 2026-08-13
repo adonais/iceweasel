@@ -4,13 +4,12 @@
 
 #include "nsArrayEnumerator.h"
 
-#include "nsIArray.h"
-#include "nsSimpleEnumerator.h"
-
-#include "nsCOMArray.h"
-#include "nsCOMPtr.h"
 #include "mozilla/OperatorNewExtensions.h"
 #include "mozilla/RefPtr.h"
+#include "nsCOMArray.h"
+#include "nsCOMPtr.h"
+#include "nsIArray.h"
+#include "nsSimpleEnumerator.h"
 
 class nsSimpleArrayEnumerator final : public nsSimpleEnumerator {
  public:

@@ -133,7 +133,7 @@ add_task(async function () {
 
     Assert.equal(
       result.type,
-      UrlbarUtils.RESULT_TYPE.URL,
+      UrlbarShared.RESULT_TYPE.URL,
       "Should have a URL result type"
     );
     // The Quantum Bar differs from the legacy urlbar in the fact that, if
@@ -150,13 +150,17 @@ add_task(async function () {
     if (testcase.expected.typeImageVisible) {
       Assert.equal(
         result.displayed.typeIcon,
-        'url("chrome://browser/skin/bookmark-12.svg")',
+        Services.prefs.getBoolPref("browser.nova.enabled", false)
+          ? 'url("chrome://browser/skin/urlbar/badge-bookmark.svg#ltr-icon")'
+          : 'url("chrome://browser/skin/bookmark-12.svg")',
         "Should have the star image displayed or not as expected"
       );
     } else {
       Assert.equal(
         result.displayed.typeIcon,
-        "none",
+        Services.prefs.getBoolPref("browser.nova.enabled", false)
+          ? 'url("chrome://browser/skin/urlbar/badge-history.svg#ltr-icon")'
+          : "none",
         "Should have the star image displayed or not as expected"
       );
     }

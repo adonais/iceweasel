@@ -2,13 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const lazy = {};
-ChromeUtils.defineLazyGetter(lazy, "logger", () => {
-  const { UrlbarUtils } = ChromeUtils.importESModule(
-    "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs"
-  );
-  return UrlbarUtils.getLogger({ prefix: "EventBufferer" });
-});
+import { UrlbarShared } from "chrome://browser/content/urlbar/UrlbarShared.mjs";
 
 /**
  * Array of keyCodes to defer.
@@ -46,6 +40,15 @@ const QUERY_STATUS = Object.freeze({
  * until more results arrive, at which time they're replayed.
  */
 export class UrlbarEventBufferer {
+  /** @type {Console|undefined} */
+  #logger;
+  get logger() {
+    this.#logger ??= UrlbarShared.getLogger({
+      prefix: "EventBufferer",
+    });
+    return this.#logger;
+  }
+
   // Maximum time events can be deferred for. In automation providers can be
   // quite slow, thus we need a longer timeout to avoid intermittent failures.
   // Note: to avoid handling events too early, this timer should be larger than
@@ -77,7 +80,7 @@ export class UrlbarEventBufferer {
     this.input.controller.addListener(this);
   }
 
-  // UrlbarController listener methods.
+  // UrlbarChildController listener methods.
 
   /**
    * Handles when a query is started.
@@ -128,7 +131,7 @@ export class UrlbarEventBufferer {
    */
   handleEvent(event) {
     if (event.type == "blur") {
-      lazy.logger.debug("Clearing queue on blur");
+      this.logger.debug("Clearing queue on blur");
       // The input field was blurred, pending events don't matter anymore.
       // Clear the timeout and the queue.
       this.#eventsQueue.length = 0;
@@ -171,7 +174,7 @@ export class UrlbarEventBufferer {
     if (this.#eventsQueue.find(item => item.event == event)) {
       throw new Error(`Event ${event.type}:${event.keyCode} already deferred!`);
     }
-    lazy.logger.debug(`Deferring ${event.type}:${event.keyCode} event`);
+    this.logger.debug(`Deferring ${event.type}:${event.keyCode} event`);
     this.#eventsQueue.push({
       event,
       callback,

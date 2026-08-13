@@ -94,60 +94,26 @@ export var Screenshot = {
     });
   },
 
-  async _screenshotOSX(filename) {
-    let screencapture = () => {
-      return new Promise((resolve, reject) => {
-        // Get the screencapture executable
-        let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
-        file.initWithPath("/usr/sbin/screencapture");
+  _screenshotOSX(filename) {
+    return new Promise((resolve, reject) => {
+      let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+      file.initWithPath("/usr/sbin/screencapture");
 
-        let process = Cc["@mozilla.org/process/util;1"].createInstance(
-          Ci.nsIProcess
-        );
-        process.init(file);
+      let process = Cc["@mozilla.org/process/util;1"].createInstance(
+        Ci.nsIProcess
+      );
+      process.init(file);
 
-        // Run the process.
-        let args = ["-x", "-t", "png"];
-        args.push(filename);
-        process.runAsync(
-          args,
-          args.length,
-          this._processObserver(resolve, reject)
-        );
-      });
-    };
-
-    function readWindowID() {
-      return IOUtils.readUTF8("/tmp/mozscreenshots-windowid");
-    }
-
-    let promiseWindowID = () => {
-      return new Promise((resolve, reject) => {
-        // Get the window ID of the application (assuming its front-most)
-        let osascript = Cc["@mozilla.org/file/local;1"].createInstance(
-          Ci.nsIFile
-        );
-        osascript.initWithPath("/bin/bash");
-
-        let osascriptP = Cc["@mozilla.org/process/util;1"].createInstance(
-          Ci.nsIProcess
-        );
-        osascriptP.init(osascript);
-        let osaArgs = [
-          "-c",
-          "/usr/bin/osascript -e 'tell application (path to frontmost application as text) to set winID to id of window 1' > /tmp/mozscreenshots-windowid",
-        ];
-        osascriptP.runAsync(
-          osaArgs,
-          osaArgs.length,
-          this._processObserver(resolve, reject)
-        );
-      });
-    };
-
-    await promiseWindowID();
-    let windowID = await readWindowID();
-    await screencapture(windowID);
+      // -x captures the whole screen without the capture sound. Capturing a
+      // specific window would require an Apple Event to look up its id, which
+      // times out in CI without the Automation permission.
+      let args = ["-x", "-t", "png", filename];
+      process.runAsync(
+        args,
+        args.length,
+        this._processObserver(resolve, reject)
+      );
+    });
   },
 
   _screenshotLinux(filename) {

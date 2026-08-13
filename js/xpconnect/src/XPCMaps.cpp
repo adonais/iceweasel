@@ -4,9 +4,11 @@
 
 /* Private maps (hashtables). */
 
-#include "mozilla/MemoryReporting.h"
-#include "xpcprivate.h"
 #include "XPCMaps.h"
+
+#include "mozilla/MemoryReporting.h"
+
+#include "xpcprivate.h"
 
 #include "js/HashTable.h"
 

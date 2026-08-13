@@ -263,6 +263,57 @@ size_t FuncType::sizeOfExcludingThis(MallocSizeOf mallocSizeOf) const {
   return args_.sizeOfExcludingThis(mallocSizeOf);
 }
 
+UniqueChars wasm::ToString(const FuncType& type, const TypeContext* types) {
+  UniqueChars str = JS_smprintf("(func");
+  if (!str) {
+    return nullptr;
+  }
+
+  if (!type.args().empty()) {
+    str = JS_sprintf_append(std::move(str), " (param");
+    if (!str) {
+      return nullptr;
+    }
+    for (ValType arg : type.args()) {
+      UniqueChars argStr = ToString(arg, types);
+      if (!argStr) {
+        return nullptr;
+      }
+      str = JS_sprintf_append(std::move(str), " %s", argStr.get());
+      if (!str) {
+        return nullptr;
+      }
+    }
+    str = JS_sprintf_append(std::move(str), ")");
+    if (!str) {
+      return nullptr;
+    }
+  }
+
+  if (!type.results().empty()) {
+    str = JS_sprintf_append(std::move(str), " (result");
+    if (!str) {
+      return nullptr;
+    }
+    for (ValType result : type.results()) {
+      UniqueChars resultStr = ToString(result, types);
+      if (!resultStr) {
+        return nullptr;
+      }
+      str = JS_sprintf_append(std::move(str), " %s", resultStr.get());
+      if (!str) {
+        return nullptr;
+      }
+    }
+    str = JS_sprintf_append(std::move(str), ")");
+    if (!str) {
+      return nullptr;
+    }
+  }
+
+  return JS_sprintf_append(std::move(str), ")");
+}
+
 //=========================================================================
 // StructType
 

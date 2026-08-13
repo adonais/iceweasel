@@ -256,6 +256,8 @@ partial interface HTMLInputElement {
 dictionary DateTimeValue {
   long hour;
   long minute;
+  long second;
+  long millisecond;
   long year;
   long month;
   long day;

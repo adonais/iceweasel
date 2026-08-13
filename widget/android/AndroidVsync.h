@@ -6,9 +6,9 @@
 #define mozilla_widget_AndroidVsync_h
 
 #include "mozilla/DataMutex.h"
-#include "mozilla/java/AndroidVsyncNatives.h"
 #include "mozilla/ThreadSafeWeakPtr.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/java/AndroidVsyncNatives.h"
 
 namespace mozilla {
 namespace widget {

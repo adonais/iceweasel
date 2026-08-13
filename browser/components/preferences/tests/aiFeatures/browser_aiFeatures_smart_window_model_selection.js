@@ -10,6 +10,10 @@ Services.scriptloader.loadSubScript(
 
 requestLongerTimeout(3);
 
+// TODO: Bug 2053495 - Add coverage for the mistral release
+// (browser.smartwindow.mistralRelease = true): the "-v2" radio labels, the
+// rendered model descriptions, and the Mistral-first display order from
+// getModelDisplayOrder(). These tests currently only exercise the pref-off path.
 describe("Smart Window model selection", () => {
   let doc, win;
 

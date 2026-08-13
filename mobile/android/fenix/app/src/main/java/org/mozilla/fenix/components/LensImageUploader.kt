@@ -35,12 +35,22 @@ class LensImageUploader(
 ) {
 
     /**
-     * Decodes, scales, compresses, and uploads the image at [imageUri] to Google Lens.
+     * The outcome of an image upload to Google Lens.
      *
-     * @return The Lens results URL on success, or null on failure.
+     * @property resultUrl The Lens results URL on success, or null on failure.
+     * @property httpStatusCode The HTTP status code of the Lens upload request, or null when the
+     * request was never made (for example, the image could not be decoded or downloaded).
      */
-    suspend fun upload(imageUri: Uri): String? = withContext(Dispatchers.IO) {
-        val bitmap = decodeBitmap(imageUri) ?: return@withContext null
+    data class UploadResult(
+        val resultUrl: String?,
+        val httpStatusCode: Int? = null,
+    )
+
+    /**
+     * Decodes, scales, compresses, and uploads the image at [imageUri] to Google Lens.
+     */
+    suspend fun upload(imageUri: Uri): UploadResult = withContext(Dispatchers.IO) {
+        val bitmap = decodeBitmap(imageUri) ?: return@withContext UploadResult(resultUrl = null)
         uploadBitmap(bitmap)
     }
 
@@ -48,15 +58,13 @@ class LensImageUploader(
      * Fetches the image at [imageUrl], then scales, compresses, and uploads it to Google Lens.
      * The browser's User-Agent and cookies are used to fetch the image, which succeeds for hosts
      * that block Lens's own server-side fetcher.
-     *
-     * @return The Lens results URL on success, or null on failure.
      */
-    suspend fun uploadFromUrl(imageUrl: String): String? = withContext(Dispatchers.IO) {
-        val bitmap = fetchBitmap(imageUrl) ?: return@withContext null
+    suspend fun uploadFromUrl(imageUrl: String): UploadResult = withContext(Dispatchers.IO) {
+        val bitmap = fetchBitmap(imageUrl) ?: return@withContext UploadResult(resultUrl = null)
         uploadBitmap(bitmap)
     }
 
-    private fun uploadBitmap(bitmap: Bitmap): String? {
+    private fun uploadBitmap(bitmap: Bitmap): UploadResult {
         val scaled = scaleBitmap(bitmap)
         val scaledWidth = scaled.width
         val scaledHeight = scaled.height
@@ -103,11 +111,12 @@ class LensImageUploader(
         )
 
         return client.fetch(request).use { response ->
-            if (response.status in SUCCESS_RANGE && response.url != uploadUrl) {
+            val resultUrl = if (response.status in SUCCESS_RANGE && response.url != uploadUrl) {
                 response.url
             } else {
                 null
             }
+            UploadResult(resultUrl = resultUrl, httpStatusCode = response.status)
         }
     }
 
@@ -261,7 +270,7 @@ class LensImageUploader(
         internal const val EP_BY_BYTES = "fntpubb"
 
         private const val MAX_IMAGE_DIMENSION = 1000
-        private const val JPEG_QUALITY = 85
+        private const val JPEG_QUALITY = 40
         private const val CONNECT_TIMEOUT_MS = 15_000
         private const val READ_TIMEOUT_MS = 30_000
         private const val ROTATE_90 = 90f

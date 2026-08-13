@@ -2631,9 +2631,16 @@ pk11_HandUnwrap(PK11SlotInfo *slot, CK_OBJECT_HANDLE wrappingKey,
         templateCount--;
     }
 
+    if (key_size != 0 && (CK_ULONG)key_size > inKey->len) {
+        PORT_SetError(PK11_MapError(CKR_UNWRAPPING_KEY_SIZE_RANGE));
+        if (crvp)
+            *crvp = CKR_UNWRAPPING_KEY_SIZE_RANGE;
+        return NULL;
+    }
+
     /* keys are almost always aligned, but if we get this far,
      * we've gone above and beyond anyway... */
-    outKey.data = (unsigned char *)PORT_Alloc(inKey->len);
+    outKey.data = (unsigned char *)PORT_ZAlloc(inKey->len);
     if (outKey.data == NULL) {
         PORT_SetError(SEC_ERROR_NO_MEMORY);
         if (crvp)

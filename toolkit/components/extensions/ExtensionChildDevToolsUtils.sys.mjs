@@ -81,7 +81,7 @@ export var ExtensionChildDevToolsUtils = {
    * destroyed when all of the contexts added to it are closed.
    *
    * @param {string} themeName The name of the current devtools theme.
-   * @param {import("ExtensionPageChild.sys.mjs").DevToolsContextChild} context
+   * @param {import("./ExtensionPageChild.sys.mjs").DevToolsContextChild} context
    *        The newly created devtools page context.
    */
   initThemeChangeObserver(themeName, context) {

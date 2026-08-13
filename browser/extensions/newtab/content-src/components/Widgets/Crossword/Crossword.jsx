@@ -1,0 +1,522 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+// eslint-disable-next-line no-unused-vars
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { useSelector, batch } from "react-redux";
+import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
+import { useIntersectionObserver, useSizeSubmenu } from "../../../lib/utils";
+import {
+  WIDGET_REGISTRY,
+  resolveWidgetSize,
+  resolveCrosswordEndpoint,
+} from "common/WidgetsRegistry.mjs";
+import { MoveSubmenu } from "../MoveSubmenu";
+
+const USER_ACTION_TYPES = {
+  CHANGE_SIZE: "change_size",
+};
+
+// postMessage contract with the Particle crossword bundle (per the widget's
+// postMessage API doc). Every message travels on a single channel; the widget
+// discards anything without it, and so do we.
+const CROSSWORD_CHANNEL = "crossword_widget";
+
+// Outbound: newtab -> widget host commands. Sent with an explicit targetOrigin
+// (never "*"). A menu_action carries a unique requestId so the widget can reply
+// with a matching command_ack.
+const COMMAND_TYPES = {
+  MENU_ACTION: "menu_action",
+  FORCE_REFRESH: "force_refresh",
+};
+
+// Inbound: widget -> newtab events. Only accepted from the Merino bundle origin.
+const EVENT_TYPES = {
+  COMMAND_ACK: "command_ack",
+  WIDGET_READY: "widget_ready",
+  WIDGET_ERROR: "widget_error",
+  PUZZLE_STATE: "puzzle_state",
+  PUZZLE_COMPLETED: "puzzle_completed",
+  INTERACTION: "interaction",
+};
+
+// The puzzle lifecycle states the widget reports via puzzle_state. Only
+// "in_progress" drives the widget to the large layout; "intro" and "completed"
+// (the compact returning-completion card) use the user's configured size.
+const PUZZLE_STATES = ["intro", "in_progress", "completed"];
+
+// Actions that force the widget size to be large when the puzzle is
+// completed if "show clues", "view completed crossword", or "solve puzzle"
+// are clicked.
+const LARGE_LAYOUT_INTERACTIONS = new Set([
+  "admire_crossword_clicked",
+  "all_clues_opened",
+  "reveal_grid_requested",
+]);
+
+const isNonNegativeNumber = value =>
+  typeof value === "number" && Number.isFinite(value) && value >= 0;
+
+const isWholeCount = value =>
+  isNonNegativeNumber(value) && Number.isInteger(value);
+
+// Structural validators for each inbound event payload. An event whose type is
+// unknown, or whose payload fails its validator, is discarded without side
+// effects so a malformed/unexpected message can't drive Redux or telemetry.
+const EVENT_PAYLOAD_VALIDATORS = {
+  [EVENT_TYPES.COMMAND_ACK]: payload =>
+    typeof payload?.requestId === "string" &&
+    typeof payload?.status === "string",
+  [EVENT_TYPES.WIDGET_READY]: () => true,
+  [EVENT_TYPES.WIDGET_ERROR]: payload =>
+    typeof payload?.reason === "string" &&
+    typeof payload?.terminal === "boolean",
+  [EVENT_TYPES.PUZZLE_STATE]: payload => PUZZLE_STATES.includes(payload?.state),
+  [EVENT_TYPES.PUZZLE_COMPLETED]: payload =>
+    isNonNegativeNumber(payload?.elapsedTimeSeconds) &&
+    isWholeCount(payload?.hintsTaken),
+  [EVENT_TYPES.INTERACTION]: payload => typeof payload?.action === "string",
+};
+
+const MENU_ACTION_ITEMS = [
+  {
+    key: "show-all-clues",
+    label: "Show clues",
+    action: "show_all_clues",
+  },
+  {
+    // "Solve puzzle" only shows when the crossword is in the intro state or
+    // in-progress, so it is hidden once the puzzle is completed.
+    key: "solve-puzzle",
+    label: "Solve puzzle",
+    action: "reveal_grid",
+    hideWhenCompleted: true,
+  },
+];
+
+const CROSSWORD_ENTRY = WIDGET_REGISTRY.find(w => w.id === "crossword");
+
+// Flipped to true the first time the user interacts with the crossword. Used to
+// hide the "New" badge once the widget has been used.
+const PREF_CROSSWORD_INTERACTION = "widgets.crossword.interaction";
+
+function Crossword({
+  dispatch,
+  handleUserInteraction,
+  widgetsMayBeMaximized,
+  widgetEnabledMap,
+}) {
+  const prefs = useSelector(state => state.Prefs.values);
+  const widgetSize = resolveWidgetSize(CROSSWORD_ENTRY, prefs);
+  const hasInteracted = prefs[PREF_CROSSWORD_INTERACTION];
+  const crosswordEndpoint = resolveCrosswordEndpoint(prefs);
+  const impressionFired = useRef(false);
+  const iframeRef = useRef(null);
+
+  // Set once the widget reports the puzzle is finished, so menu actions that
+  // only apply to an in-progress game (Solve puzzle) can be hidden.
+  const [puzzleCompleted, setPuzzleCompleted] = useState(false);
+
+  // Grow to large once a puzzle is in progress and stay large through the
+  // completed screen; only the intro state (or loading directly into completed,
+  // i.e. the returning-completion card) stays medium. Driven by puzzle_state,
+  // plus the interactions in LARGE_LAYOUT_INTERACTIONS that open a large screen
+  const [showLarge, setShowLarge] = useState(false);
+
+  // Gated on widgetsMayBeMaximized so we never render a large-widget on a layout
+  // that can't host it.
+  const displaySize = widgetsMayBeMaximized && showLarge ? "large" : widgetSize;
+
+  // Any real interaction flips the interaction pref, which hides the "New"
+  // badge. The helper is a no-op once the pref is already true.
+  const handleInteraction = useCallback(
+    () => handleUserInteraction("crossword"),
+    [handleUserInteraction]
+  );
+
+  // The single origin we accept inbound messages from and target for outbound
+  // ones.
+  const merinoOrigin = useMemo(() => {
+    try {
+      return new URL(crosswordEndpoint).origin;
+    } catch {
+      return null;
+    }
+  }, [crosswordEndpoint]);
+
+  // requestId -> action for menu_action commands awaiting a command_ack, so an
+  // incoming ack can be matched back to the action the user selected. A
+  // command_ack is the widget's reply confirming it received and processed a
+  // command we sent.
+  const pendingCommandsRef = useRef(new Map());
+
+  // Post a menu_action host command to the widget, always with the Merino
+  // origin as targetOrigin so a replaced/compromised iframe src can never
+  // receive it. Each command gets a unique requestId; without one the widget
+  // replies with widget_error (host-missing-request-id) instead of a
+  // command_ack.
+  const postMenuAction = useCallback(
+    action => {
+      const frameWindow = iframeRef.current?.contentWindow;
+      const requestId = `firefox-menu-${crypto.randomUUID()}`;
+      if (!frameWindow || !merinoOrigin) {
+        return;
+      }
+      pendingCommandsRef.current.set(requestId, action);
+      frameWindow.postMessage(
+        {
+          channel: CROSSWORD_CHANNEL,
+          type: COMMAND_TYPES.MENU_ACTION,
+          requestId,
+          action,
+        },
+        merinoOrigin
+      );
+    },
+    [merinoOrigin]
+  );
+
+  const handleWidgetEvent = useCallback(
+    (type, payload) => {
+      switch (type) {
+        case EVENT_TYPES.COMMAND_ACK:
+          pendingCommandsRef.current.delete(payload.requestId);
+          break;
+        case EVENT_TYPES.WIDGET_READY:
+          break;
+        case EVENT_TYPES.WIDGET_ERROR:
+          break;
+        case EVENT_TYPES.PUZZLE_STATE:
+          // Grow when a puzzle is in progress and stay large through the
+          // completed screen; shrink only when returning to the intro state.
+          if (payload.state === "in_progress") {
+            setShowLarge(true);
+          } else if (payload.state === "intro") {
+            setShowLarge(false);
+          }
+          //  This keeps "Solve puzzle" hidden when the puzzle's been completed.
+          if (payload.state === "completed") {
+            setPuzzleCompleted(true);
+          } else if (payload.state === "intro") {
+            setPuzzleCompleted(false);
+          }
+          break;
+        case EVENT_TYPES.PUZZLE_COMPLETED:
+          setPuzzleCompleted(true);
+          dispatch(
+            ac.AlsoToMain({
+              type: at.WIDGETS_USER_EVENT,
+              data: {
+                widget_name: "crossword",
+                widget_source: "iframe",
+                user_action: "puzzle_completed",
+                action_value: payload.hintsTaken,
+                widget_size: widgetSize,
+              },
+            })
+          );
+          break;
+        case EVENT_TYPES.INTERACTION:
+          // Viewing the completed grid or opening the all-clues panel both need
+          // the large layout, even from the medium completed/returning card.
+          if (LARGE_LAYOUT_INTERACTIONS.has(payload.action)) {
+            setShowLarge(true);
+          }
+          handleInteraction();
+          dispatch(
+            ac.AlsoToMain({
+              type: at.WIDGETS_USER_EVENT,
+              data: {
+                widget_name: "crossword",
+                widget_source: "iframe",
+                user_action: "interaction",
+                action_value: payload.action,
+                widget_size: widgetSize,
+              },
+            })
+          );
+          break;
+        default:
+          break;
+      }
+    },
+    [dispatch, handleInteraction, widgetSize]
+  );
+
+  // Listen for events from the widget, discarding anything that fails origin,
+  // source, channel, or payload validation before it can touch Redux/telemetry.
+  useEffect(() => {
+    if (!merinoOrigin) {
+      return undefined;
+    }
+    function handleMessage(event) {
+      if (event.origin !== merinoOrigin) {
+        return;
+      }
+      if (event.source !== iframeRef.current?.contentWindow) {
+        return;
+      }
+      const message = event.data;
+      if (
+        !message ||
+        message.channel !== CROSSWORD_CHANNEL ||
+        typeof message.type !== "string"
+      ) {
+        return;
+      }
+      const validatePayload = EVENT_PAYLOAD_VALIDATORS[message.type];
+      const payload = message.payload ?? {};
+      if (!validatePayload || !validatePayload(payload)) {
+        return;
+      }
+      handleWidgetEvent(message.type, payload);
+    }
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [merinoOrigin, handleWidgetEvent]);
+
+  const handleMenuAction = useCallback(
+    action => {
+      handleInteraction();
+      postMenuAction(action);
+      dispatch(
+        ac.OnlyToMain({
+          type: at.WIDGETS_USER_EVENT,
+          data: {
+            widget_name: "crossword",
+            widget_source: "context_menu",
+            user_action: "menu_action",
+            action_value: action,
+            widget_size: widgetSize,
+          },
+        })
+      );
+    },
+    [handleInteraction, postMenuAction, dispatch, widgetSize]
+  );
+
+  const handleIntersection = useCallback(() => {
+    if (impressionFired.current) {
+      return;
+    }
+    impressionFired.current = true;
+    dispatch(
+      ac.AlsoToMain({
+        type: at.WIDGETS_IMPRESSION,
+        data: {
+          widget_name: "crossword",
+          widget_size: widgetSize,
+        },
+      })
+    );
+  }, [dispatch, widgetSize]);
+
+  const widgetRef = useIntersectionObserver(handleIntersection);
+
+  function handleCrosswordHide() {
+    batch(() => {
+      dispatch(
+        ac.OnlyToMain({
+          type: at.SET_PREF,
+          data: { name: CROSSWORD_ENTRY.enabledPref, value: false },
+        })
+      );
+      dispatch(
+        ac.OnlyToMain({
+          type: at.WIDGETS_ENABLED,
+          data: {
+            widget_name: "crossword",
+            widget_source: "context_menu",
+            enabled: false,
+            widget_size: widgetSize,
+          },
+        })
+      );
+    });
+  }
+
+  const handleChangeSize = useCallback(
+    size => {
+      handleInteraction();
+      batch(() => {
+        dispatch(
+          ac.OnlyToMain({
+            type: at.SET_PREF,
+            data: { name: CROSSWORD_ENTRY.sizePref, value: size },
+          })
+        );
+        dispatch(
+          ac.OnlyToMain({
+            type: at.WIDGETS_USER_EVENT,
+            data: {
+              widget_name: "crossword",
+              widget_source: "context_menu",
+              user_action: USER_ACTION_TYPES.CHANGE_SIZE,
+              action_value: size,
+              widget_size: size,
+            },
+          })
+        );
+      });
+    },
+    [dispatch, handleInteraction]
+  );
+
+  const sizeSubmenuRef = useSizeSubmenu(handleChangeSize);
+
+  function handleLearnMore() {
+    handleInteraction();
+    batch(() => {
+      dispatch(
+        ac.OnlyToMain({
+          type: at.OPEN_LINK,
+          data: {
+            url: "https://support.mozilla.org/kb/firefox-new-tab-widgets",
+          },
+        })
+      );
+      dispatch(
+        ac.OnlyToMain({
+          type: at.WIDGETS_USER_EVENT,
+          data: {
+            widget_name: "crossword",
+            widget_source: "context_menu",
+            user_action: "learn_more",
+            widget_size: widgetSize,
+          },
+        })
+      );
+    });
+  }
+
+  function handlePoweredByParticle() {
+    handleInteraction();
+    batch(() => {
+      dispatch(
+        ac.OnlyToMain({
+          type: at.OPEN_LINK,
+          data: {
+            url: "https://particle.news",
+          },
+        })
+      );
+      dispatch(
+        ac.OnlyToMain({
+          type: at.WIDGETS_USER_EVENT,
+          data: {
+            widget_name: "crossword",
+            widget_source: "context_menu",
+            user_action: "powered_by_particle",
+            widget_size: widgetSize,
+          },
+        })
+      );
+    });
+  }
+
+  return (
+    <article
+      className={`crossword widget col-4 ${displaySize}-widget`}
+      ref={el => {
+        widgetRef.current = [el];
+      }}
+    >
+      <div className="crossword-title-wrapper">
+        <div className="crossword-badge-title-wrapper">
+          {!hasInteracted && (
+            <moz-badge
+              className="crossword-new-badge"
+              data-l10n-id="newtab-widget-lists-label-new"
+            ></moz-badge>
+          )}
+          <h3 className="newtab-crossword-title">Daily crossword</h3>
+        </div>
+        <div className="crossword-context-menu-wrapper">
+          <moz-button
+            className="crossword-context-menu-button"
+            iconSrc="chrome://global/skin/icons/more.svg"
+            menuId="crossword-context-menu"
+            type="ghost"
+          />
+          <panel-list id="crossword-context-menu">
+            {MENU_ACTION_ITEMS.filter(
+              item => !(puzzleCompleted && item.hideWhenCompleted)
+            ).map(item => (
+              <panel-item
+                key={item.key}
+                className={item.key}
+                onClick={() => handleMenuAction(item.action)}
+              >
+                {item.label}
+              </panel-item>
+            ))}
+
+            <panel-item
+              className="powered-by-particle"
+              onClick={handlePoweredByParticle}
+            >
+              Powered by Particle
+            </panel-item>
+
+            <hr />
+
+            {widgetsMayBeMaximized && (
+              <panel-item submenu="crossword-size-submenu">
+                <span data-l10n-id="newtab-widget-menu-change-size"></span>
+                <panel-list
+                  ref={sizeSubmenuRef}
+                  slot="submenu"
+                  id="crossword-size-submenu"
+                >
+                  {["medium", "large"].map(size => (
+                    <panel-item
+                      key={size}
+                      type="checkbox"
+                      checked={widgetSize === size || undefined}
+                      data-size={size}
+                      data-l10n-id={`newtab-widget-size-${size}`}
+                    />
+                  ))}
+                </panel-list>
+              </panel-item>
+            )}
+
+            <MoveSubmenu
+              widgetId="crossword"
+              widgetEnabledMap={widgetEnabledMap}
+            />
+
+            <panel-item
+              data-l10n-id="newtab-widget-menu-hide"
+              onClick={handleCrosswordHide}
+            />
+            <panel-item className="learn-more" onClick={handleLearnMore}>
+              Learn more
+            </panel-item>
+          </panel-list>
+        </div>
+      </div>
+
+      <div className="crossword-body">
+        <iframe
+          ref={iframeRef}
+          className="crossword-frame"
+          title="Crossword"
+          src={crosswordEndpoint}
+          // allow-same-origin is required for the crossword to work, but is
+          // currently under security review to see if it's safe to keep in our codebase right now.
+          sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+        />
+      </div>
+    </article>
+  );
+}
+
+export { Crossword };

@@ -35,6 +35,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <algorithm>
 #include "RateTransposer.h"
 #include "InterpolateLinear.h"
 #include "InterpolateCubic.h"
@@ -247,6 +248,7 @@ int TransposerBase::transpose(FIFOSampleBuffer &dest, FIFOSampleBuffer &src)
         sizeDemand = ((double)numSrcSamples / rate) + 8;
     }
     int numOutput;
+
     SAMPLETYPE *psrc = src.ptrBegin();
     SAMPLETYPE *pdest = dest.ptrEnd(sizeDemand);
 
@@ -292,7 +294,12 @@ void TransposerBase::setChannels(int channels)
 
 void TransposerBase::setRate(double newRate)
 {
-    rate = newRate;
+    const double MIN_RATE = 1e-3;
+    const double MAX_RATE = 1e3;
+
+    // clamp the rate to sanity check limits to avoid rates that would demand excessively large working buffers
+    newRate = std::max(newRate, MIN_RATE);
+    rate = std::min(newRate, MAX_RATE);
 }
 
 

@@ -169,6 +169,10 @@ const BTN_MONTH_YEAR = "#month-year-label",
   BTN_PREV_HOUR = "#spinner-hour-previous",
   BTN_NEXT_MIN = "#spinner-minute-next",
   BTN_PREV_MIN = "#spinner-minute-previous",
+  BTN_NEXT_SEC = "#spinner-second-next",
+  BTN_PREV_SEC = "#spinner-second-previous",
+  BTN_NEXT_MSEC = "#spinner-millisecond-next",
+  BTN_PREV_MSEC = "#spinner-millisecond-previous",
   BTN_NEXT_TIME = "#spinner-time-next",
   BTN_PREV_TIME = "#spinner-time-previous",
   BTN_CLEAR = "#clear-button",
@@ -184,6 +188,8 @@ const BTN_MONTH_YEAR = "#month-year-label",
   SPINNER_YEAR = "#spinner-year",
   SPINNER_HOUR = "#spinner-hour",
   SPINNER_MIN = "#spinner-minute",
+  SPINNER_SEC = "#spinner-second",
+  SPINNER_MSEC = "#spinner-millisecond",
   SPINNER_TIME = "#spinner-time",
   TIMEPICKER = "#time-picker",
   WEEK_HEADER = ".week-header";
@@ -312,11 +318,12 @@ async function testPickerBtnAttribute(attr, val, presenceOnly = false) {
  * @param {number} tabs: How many times "Tab" key should be pressed
  *                 to move a keyboard focus to a needed spinner
  *                 (1 for month/default and 2 for year)
+ * @param {bool} hasTime: Whether time picker spinners are present
  *
  * @description Starts with the month-year toggle button being focused
  *              on the date/datetime-local input's datepicker panel
  */
-async function testKeyOnSpinners(key, document, tabs = 1) {
+async function testKeyOnSpinners(key, document, tabs = 1, hasTime = false) {
   info(`Testing "${key}" key behavior`);
 
   Assert.equal(
@@ -367,7 +374,7 @@ async function testKeyOnSpinners(key, document, tabs = 1) {
 
   // Return the focus to the month-year toggle button for future tests
   // (passing a Previous button along the way):
-  await EventUtils.synthesizeKey("KEY_Tab", { repeat: 3 });
+  await EventUtils.synthesizeKey("KEY_Tab", { repeat: hasTime ? 6 : 3 });
 }
 
 /**

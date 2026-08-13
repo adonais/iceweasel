@@ -7,9 +7,9 @@
 
 #include <windows.h>
 
-#include "nsIWidget.h"
 #include "Units.h"
 #include "mozilla/widget/WindowOcclusionState.h"
+#include "nsIWidget.h"
 
 class MockWinWidget : public nsIWidget {
  public:

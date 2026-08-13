@@ -60,6 +60,9 @@ MACH_COMMANDS = {
         "python/mozbuild/mozbuild/artifact_commands.py",
     ),
     "awsy-test": MachCommandReference("testing/awsy/mach_commands.py"),
+    "bhr-aggregate": MachCommandReference(
+        "toolkit/components/backgroundhangmonitor/mach_commands.py"
+    ),
     "bootstrap": MachCommandReference(
         "python/mozboot/mozboot/mach_commands.py",
     ),
@@ -95,7 +98,6 @@ MACH_COMMANDS = {
     "data-review": MachCommandReference(
         "toolkit/components/glean/build_scripts/mach_commands.py"
     ),
-    "devtools-mcp": MachCommandReference("tools/mach_commands.py"),
     "devtools-node-test": MachCommandReference("devtools/mach_commands.py"),
     "doc": MachCommandReference("tools/moztreedocs/mach_commands.py"),
     "doctor": MachCommandReference("python/mozbuild/mozbuild/mach_commands.py"),
@@ -110,6 +112,7 @@ MACH_COMMANDS = {
     "file-info": MachCommandReference(
         "python/mozbuild/mozbuild/frontend/mach_commands.py"
     ),
+    "firefox-devtools-mcp": MachCommandReference("tools/mach_commands.py"),
     "firefox-ui-functional": MachCommandReference(
         "testing/firefox-ui/mach_commands.py"
     ),
@@ -216,6 +219,7 @@ MACH_COMMANDS = {
     "run-condprofile": MachCommandReference("testing/condprofile/mach_commands.py"),
     "rusttests": MachCommandReference("testing/mach_commands.py"),
     "settings": MachCommandReference("python/mach/mach/commands/settings.py"),
+    "shell-test": MachCommandReference("browser/installer/linux/mach_commands.py"),
     "show-log": MachCommandReference("python/mozbuild/mozbuild/mach_commands.py"),
     "source-package": MachCommandReference("python/mozbuild/mozbuild/mach_commands.py"),
     "static-analysis": MachCommandReference(

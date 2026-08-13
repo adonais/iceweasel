@@ -45,25 +45,24 @@
  *  wl_subsurface of MozContainer.
  */
 
-#include "MozContainer.h"
-
 #include <dlfcn.h>
 #include <glib.h>
 #include <stdio.h>
 #include <wayland-egl.h>
 
-#include "mozilla/gfx/gfxVars.h"
+#include "MozContainer.h"
+#include "base/task.h"
 #include "mozilla/StaticPrefs_widget.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "nsGtkUtils.h"
 #include "nsWaylandDisplay.h"
-#include "base/task.h"
 
 #undef LOGWAYLAND
 #undef LOGCONTAINER
 #ifdef MOZ_LOGGING
+#  include "Units.h"
 #  include "mozilla/Logging.h"
 #  include "nsTArray.h"
-#  include "Units.h"
 #  include "nsWindow.h"
 extern mozilla::LazyLogModule gWidgetWaylandLog;
 extern mozilla::LazyLogModule gWidgetLog;

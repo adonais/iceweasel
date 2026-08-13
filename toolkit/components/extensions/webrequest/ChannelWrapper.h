@@ -19,7 +19,6 @@
 #include "mozilla/WeakPtr.h"
 
 #include "mozilla/DOMEventTargetHelper.h"
-#include "nsAtomHashKeys.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIChannel.h"
@@ -28,8 +27,8 @@
 #include "nsIStreamListener.h"
 #include "nsIRemoteTab.h"
 #include "nsIThreadRetargetableStreamListener.h"
-#include "nsInterfaceHashtable.h"
 #include "nsIWeakReferenceUtils.h"
+#include "nsTArray.h"
 #include "nsWrapperCache.h"
 
 #define NS_CHANNELWRAPPER_IID \
@@ -145,8 +144,7 @@ class ChannelWrapper final : public DOMEventTargetHelper,
   void GetContentType(nsCString& aContentType) const;
   void SetContentType(const nsACString& aContentType);
 
-  void RegisterTraceableChannel(const WebExtensionPolicy& aAddon,
-                                nsIRemoteTab* aBrowserParent);
+  void RegisterTraceableChannel(const WebExtensionPolicy& aAddon);
 
   already_AddRefed<nsITraceableChannel> GetTraceableChannel(
       const WebExtensionPolicy& aAddon,
@@ -327,7 +325,10 @@ class ChannelWrapper final : public DOMEventTargetHelper,
 
   nsString mActivityError;
 
-  nsInterfaceHashtable<nsAtomHashKey, nsIRemoteTab> mAddonEntries;
+  // 10 is chosen based on a telemetry query that found the number of
+  // concurrently installed webRequestBlocking extensions:
+  // https://phabricator.services.mozilla.com/D304595#inline-1659237
+  AutoTArray<RefPtr<nsAtom>, 10> mAddonEntries;
 
   // The text for the "Extension Suspend" marker, set from the Suspend method
   // when called for the first time and then cleared on the Resume method.

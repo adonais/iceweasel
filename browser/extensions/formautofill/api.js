@@ -9,9 +9,12 @@
 const CACHED_STYLESHEETS = new WeakMap();
 
 ChromeUtils.defineESModuleGetters(this, {
+  AutofillDataTypes: "resource://gre/modules/shared/AutofillDataTypes.sys.mjs",
+  EngineProcess: "chrome://global/content/ml/EngineProcess.sys.mjs",
   FormAutofill: "resource://autofill/FormAutofill.sys.mjs",
   FormAutofillParent: "resource://autofill/FormAutofillParent.sys.mjs",
   FormAutofillStatus: "resource://autofill/FormAutofillParent.sys.mjs",
+  FormAutofillUtils: "resource://gre/modules/shared/FormAutofillUtils.sys.mjs",
   AutoCompleteParent: "resource://gre/actors/AutoCompleteParent.sys.mjs",
 });
 
@@ -41,6 +44,29 @@ function insertStyleSheet(domWindow, url) {
   }
 }
 
+/**
+ * Ask the inference process whether the native ONNX runtime is available and
+ * record the answer in a pref. The pref persists across sessions, so it can
+ * be stale after an update or when a profile moves to another machine.
+ * Refreshing it on idle at startup corrects a stale value before the user
+ * reaches their first form.
+ */
+function refreshNativeOnnxRuntimeAvailability() {
+  if (!FormAutofillUtils.isMLAutofillEnabled) {
+    return;
+  }
+
+  // Assume the runtime is unavailable until the probe answers, so that a value
+  // recorded by an earlier session can never be read back as a false positive.
+  FormAutofillUtils.setNativeOnnxRuntimeAvailable(false);
+
+  ChromeUtils.idleDispatch(async () => {
+    FormAutofillUtils.setNativeOnnxRuntimeAvailable(
+      await EngineProcess.requestIsNativeOnnxRuntimeAvailable()
+    );
+  });
+}
+
 function ensureCssLoaded(domWindow) {
   if (CACHED_STYLESHEETS.has(domWindow)) {
     // This window already has autofill stylesheets.
@@ -53,14 +79,15 @@ function ensureCssLoaded(domWindow) {
 this.formautofill = class extends ExtensionAPI {
   /**
    * Adjusts and checks form autofill preferences during startup.
-   *
-   * @param {boolean} addressAutofillAvailable
-   * @param {boolean} creditCardAutofillAvailable
    */
-  adjustAndCheckFormAutofillPrefs(
-    addressAutofillAvailable,
-    creditCardAutofillAvailable
-  ) {
+  adjustAndCheckFormAutofillPrefs() {
+    const addressAutofillAvailable = FormAutofill.isAutofillTypeAvailable(
+      AutofillDataTypes.ADDRESS
+    );
+    const creditCardAutofillAvailable = FormAutofill.isAutofillTypeAvailable(
+      AutofillDataTypes.CREDIT_CARD
+    );
+
     // Reset the sync prefs in case the features were previously available
     // but aren't now.
     if (!creditCardAutofillAvailable) {
@@ -87,7 +114,7 @@ this.formautofill = class extends ExtensionAPI {
     // These "*.available" prefs determines whether the "addresses"/"creditcards" sync engine is
     // available (ie, whether it is shown in any UI etc) - it *does not* determine
     // whether the engine is actually enabled or not.
-    if (FormAutofill.isAutofillAddressesAvailable) {
+    if (addressAutofillAvailable) {
       Services.prefs.setBoolPref(
         "services.sync.engine.addresses.available",
         true
@@ -95,7 +122,7 @@ this.formautofill = class extends ExtensionAPI {
     } else {
       Services.prefs.clearUserPref("services.sync.engine.addresses.available");
     }
-    if (FormAutofill.isAutofillCreditCardsAvailable) {
+    if (creditCardAutofillAvailable) {
       Services.prefs.setBoolPref(
         "services.sync.engine.creditcards.available",
         true
@@ -125,10 +152,7 @@ this.formautofill = class extends ExtensionAPI {
       ["content", "formautofill", "content/"],
     ]);
 
-    this.adjustAndCheckFormAutofillPrefs(
-      FormAutofill.isAutofillAddressesAvailable,
-      FormAutofill.isAutofillCreditCardsAvailable
-    );
+    this.adjustAndCheckFormAutofillPrefs();
 
     // Listen for the autocomplete popup message
     // or the form submitted message (which may trigger a
@@ -153,7 +177,10 @@ this.formautofill = class extends ExtensionAPI {
         },
       },
       allFrames: true,
+      safeForUntrustedWebProcess: true,
     });
+
+    refreshNativeOnnxRuntimeAvailability();
   }
 
   onShutdown(isAppShutdown) {

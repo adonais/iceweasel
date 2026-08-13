@@ -118,7 +118,7 @@ add_task(async function test_javascript_match() {
       makeVisitResult(context, {
         uri: "javascript: a",
         title: "javascript: a",
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         heuristic: true,
       }),
       makeBookmarkResult(context, {
@@ -141,7 +141,7 @@ add_task(async function test_javascript_match() {
       makeVisitResult(context, {
         uri: "javascript: 5",
         title: "javascript: 5",
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         heuristic: true,
       }),
       makeBookmarkResult(context, {

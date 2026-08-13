@@ -84,7 +84,7 @@ add_task(async function () {
 
   Assert.equal(
     result.type,
-    UrlbarUtils.RESULT_TYPE.KEYWORD,
+    UrlbarShared.RESULT_TYPE.KEYWORD,
     "Should have a result of type keyword"
   );
   Assert.equal(

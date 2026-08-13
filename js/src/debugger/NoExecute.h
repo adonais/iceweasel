@@ -9,7 +9,8 @@
 #include "mozilla/Attributes.h"  // for MOZ_RAII
 
 #include "NamespaceImports.h"  // for HandleScript
-#include "js/Promise.h"        // for JS::AutoDebuggerJobQueueInterruption
+
+#include "js/Promise.h"  // for JS::AutoDebuggerJobQueueInterruption
 
 namespace js {
 

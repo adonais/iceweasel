@@ -102,7 +102,15 @@ exports.WatcherActor = class WatcherActor extends Actor {
             sessionContext.browserId
         );
       }
-      this._browserElement = browsingContext.embedderElement;
+      // Save a reference to the WebProgress interface as we keep the same instance when:
+      //  * navigating between two distinct BrowsingContext groups.
+      //    For example when navigating from parent process [about:addons] to content process [any https page].
+      //    We are navigating to a new BrowsingContext instance,
+      //    while keeping the same <browser> element.
+      //  * moving the tab between top level windows
+      //    `swapFrameLoaders` doesn't create a new WebProgress,
+      //    whereas `browsingContext.embedderElement` changes to the new <browser> element.
+      this._webProgress = browsingContext.webProgress;
     }
 
     this.watcherConnectionPrefix = conn.allocID("watcher");
@@ -155,15 +163,16 @@ exports.WatcherActor = class WatcherActor extends Actor {
   }
 
   /**
-   * If we are debugging only one Tab or Document, returns its BrowserElement.
-   * For Tabs, it will be the <browser> element used to load the web page.
+   * If we are debugging only one Tab or Document, returns its BrowsingContext.
    *
    * This is typicaly used to fetch:
-   * - its `browserId` attribute, which uniquely defines it,
-   * - its `browsingContextID` or `browsingContext`, which helps inspecting its content.
+   * - its `browserId` attribute, which uniquely defines the tab, which could navigate to many documents,
+   * - its `id` attribute, which helps identify the precise document instance currently loaded.
    */
-  get browserElement() {
-    return this._browserElement;
+  get browsingContext() {
+    // webProgress will be null when we are debugging anything but a <browser> element (i.e. a tab)
+    // for example, the browser toolbox codepath
+    return this._webProgress?.browsingContext;
   }
 
   getAllBrowsingContexts() {
@@ -175,7 +184,7 @@ exports.WatcherActor = class WatcherActor extends Actor {
    */
   isContextDestroyed() {
     if (this.sessionContext.type == "browser-element") {
-      return !this.browserElement.browsingContext;
+      return !this.browsingContext;
     } else if (this.sessionContext.type == "webextension") {
       // This is no obvious browsing context to target for extensions, so always consider it running
       return false;
@@ -210,7 +219,7 @@ exports.WatcherActor = class WatcherActor extends Actor {
     ParentProcessWatcherRegistry.unregisterWatcher(this.actorID);
 
     // In case the watcher actor is leaked, prevent leaking the browser window
-    this._browserElement = null;
+    this._webProgress = null;
 
     // Destroy the actor in order to ensure destroying all its children actors.
     // As this actor is a pool with children actors, when the transport/connection closes
@@ -262,7 +271,7 @@ exports.WatcherActor = class WatcherActor extends Actor {
     let topLevelTargetProcess;
     if (this.sessionContext.type == SESSION_TYPES.BROWSER_ELEMENT) {
       topLevelTargetProcess =
-        this.browserElement.browsingContext.currentWindowGlobal?.domProcess;
+        this.browsingContext.currentWindowGlobal?.domProcess;
       if (topLevelTargetProcess) {
         await topLevelTargetProcess.getActor(this._jsActorName).watchTargets({
           watcherActorID: this.actorID,
@@ -765,6 +774,10 @@ exports.WatcherActor = class WatcherActor extends Actor {
       this._networkParentActor = new NetworkParentActor(this);
     }
 
+    return this._networkParentActor;
+  }
+
+  getExistingNetworkParentActor() {
     return this._networkParentActor;
   }
 

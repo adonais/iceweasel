@@ -7,6 +7,8 @@
 #include <cstdint>
 
 #include "ErrorList.h"
+#include "PathUtils.h"
+#include "ScopedNSSTypes.h"
 #include "js/ArrayBuffer.h"
 #include "js/ColumnNumber.h"  // JS::ColumnNumberOneOrigin
 #include "js/JSON.h"
@@ -35,7 +37,6 @@
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/dom/WorkerRef.h"
 #include "mozilla/ipc/LaunchError.h"
-#include "PathUtils.h"
 #include "nsCOMPtr.h"
 #include "nsError.h"
 #include "nsFileStreams.h"
@@ -45,8 +46,8 @@
 #include "nsIInputStream.h"
 #include "nsISupports.h"
 #include "nsLocalFile.h"
-#include "nsNetUtil.h"
 #include "nsNSSComponent.h"
+#include "nsNetUtil.h"
 #include "nsPrintfCString.h"
 #include "nsReadableUtils.h"
 #include "nsString.h"
@@ -58,7 +59,6 @@
 #include "prio.h"
 #include "prtime.h"
 #include "prtypes.h"
-#include "ScopedNSSTypes.h"
 #include "secoidt.h"
 
 #if defined(XP_UNIX) && !defined(ANDROID)
@@ -1206,6 +1206,11 @@ already_AddRefed<Promise> IOUtils::GetFile(
                                            "Could not get nsIFile for `%s': "
                                            "could not get parent directory",
                                            file->HumanReadablePath().get()));
+          return;
+        }
+
+        if (!parent) {
+          promise->MaybeResolve(file);
           return;
         }
 

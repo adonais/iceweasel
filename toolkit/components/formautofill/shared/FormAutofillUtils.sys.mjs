@@ -8,6 +8,7 @@ import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
+  AutofillDataTypes: "resource://gre/modules/shared/AutofillDataTypes.sys.mjs",
   ContentDOMReference: "resource://gre/modules/ContentDOMReference.sys.mjs",
   CreditCard: "resource://gre/modules/CreditCard.sys.mjs",
   FormAutofillNameUtils:
@@ -33,6 +34,9 @@ const ADDRESSES_COLLECTION_NAME = "addresses";
 const CREDITCARDS_COLLECTION_NAME = "creditCards";
 const AUTOFILL_CREDITCARDS_OS_AUTH_LOCKED_PREF =
   FormAutofill.AUTOFILL_CREDITCARDS_OS_AUTH_LOCKED_PREF;
+const AUTOFILL_ML_SUCCESS_PREF = "extensions.formautofill.useml.successful";
+const AUTOFILL_ML_NATIVE_ONNX_PREF =
+  "extensions.formautofill.useml.nativeOnnxAvailable";
 const MANAGE_ADDRESSES_L10N_IDS = [
   "autofill-add-address-title",
   "autofill-manage-addresses-title",
@@ -76,10 +80,10 @@ const MANAGE_CREDITCARDS_L10N_IDS = [
   "autofill-manage-payment-methods-title",
 ];
 const EDIT_CREDITCARD_L10N_IDS = [
-  "autofill-card-number",
-  "autofill-card-name-on-card",
-  "autofill-card-expires-month",
-  "autofill-card-expires-year",
+  "autofill-card-number-2",
+  "autofill-card-name-on-card-2",
+  "autofill-card-expires-month-2",
+  "autofill-card-expires-year-2",
   "autofill-card-network",
 
   // This string isn't ever displayed, but is used to make the payment methods
@@ -130,50 +134,6 @@ FormAutofillUtils = {
   ELIGIBLE_ELEMENT_TYPES,
   ELIGIBLE_INPUT_TYPES,
 
-  _fieldNameInfo: {
-    name: "name",
-    "given-name": "name",
-    "additional-name": "name",
-    "family-name": "name",
-    organization: "organization",
-    "street-address": "address",
-    "address-line1": "address",
-    "address-line2": "address",
-    "address-line3": "address",
-    "address-level1": "address",
-    "address-level2": "address",
-    "address-level3": "address",
-    // DE addresses are often split into street name and house number;
-    // combined they form address-line1
-    "address-streetname": "address",
-    "address-housenumber": "address",
-    // NL forms often split the suffix from the house number;
-    // for example 35B becomes '35' as the number and 'B' as the suffix.
-    "address-extra-housesuffix": "address",
-    "postal-code": "address",
-    country: "address",
-    "country-name": "address",
-    tel: "tel",
-    "tel-country-code": "tel",
-    "tel-national": "tel",
-    "tel-area-code": "tel",
-    "tel-local": "tel",
-    "tel-local-prefix": "tel",
-    "tel-local-suffix": "tel",
-    "tel-extension": "tel",
-    email: "email",
-    "cc-name": "creditCard",
-    "cc-given-name": "creditCard",
-    "cc-additional-name": "creditCard",
-    "cc-family-name": "creditCard",
-    "cc-number": "creditCard",
-    "cc-exp-month": "creditCard",
-    "cc-exp-year": "creditCard",
-    "cc-exp": "creditCard",
-    "cc-type": "creditCard",
-    "cc-csc": "creditCard",
-  },
-
   // This list includes autocomplete attributes that indicate that the field
   // is an address or credit-card field, but the field name is not one we
   // currently support for autofill. In these cases, we ignore the field
@@ -186,12 +146,23 @@ FormAutofillUtils = {
 
   isAddressField(fieldName) {
     return (
-      !!this._fieldNameInfo[fieldName] && !this.isCreditCardField(fieldName)
+      lazy.AutofillDataTypes.typeIdForFieldName(fieldName) ==
+      lazy.AutofillDataTypes.ADDRESS
     );
   },
 
   isCreditCardField(fieldName) {
-    return this._fieldNameInfo?.[fieldName] == "creditCard";
+    return (
+      lazy.AutofillDataTypes.typeIdForFieldName(fieldName) ==
+      lazy.AutofillDataTypes.CREDIT_CARD
+    );
+  },
+
+  isPassportField(fieldName) {
+    return (
+      lazy.AutofillDataTypes.typeIdForFieldName(fieldName) ==
+      lazy.AutofillDataTypes.PASSPORT
+    );
   },
 
   // Returns true if the field is one we don't fill handle via the autocomplete
@@ -229,10 +200,35 @@ FormAutofillUtils = {
     return Array.from(element.querySelectorAll(types.join(",")));
   },
 
-  get useMLInference() {
+  /**
+   * Whether the ML autofill feature is turned on. This says nothing about
+   * whether inference can actually run; use `useMLInference` to decide whether
+   * to rely on ML results.
+   */
+  get isMLAutofillEnabled() {
     return (
       AppConstants.platform !== "android" && FormAutofillUtils.enableMLAutofill
     );
+  },
+
+  /**
+   * Whether ML inference should be used to classify fields. On top of the
+   * feature being enabled, this requires that we have confirmed the native ONNX
+   * runtime is available.
+   */
+  get useMLInference() {
+    return (
+      FormAutofillUtils.isMLAutofillEnabled &&
+      FormAutofillUtils.isNativeOnnxRuntimeAvailable
+    );
+  },
+
+  setMLUsedAlready() {
+    Services.prefs.setBoolPref(AUTOFILL_ML_SUCCESS_PREF, true);
+  },
+
+  setNativeOnnxRuntimeAvailable(available) {
+    Services.prefs.setBoolPref(AUTOFILL_ML_NATIVE_ONNX_PREF, available);
   },
 
   /**
@@ -304,14 +300,12 @@ FormAutofillUtils = {
     return lazy.CreditCard.getSupportedNetworks();
   },
 
-  getCategoryFromFieldName(fieldName) {
-    return this._fieldNameInfo[fieldName];
-  },
-
   getCollectionNameFromFieldName(fieldName) {
-    return this.isCreditCardField(fieldName)
-      ? CREDITCARDS_COLLECTION_NAME
-      : ADDRESSES_COLLECTION_NAME;
+    const typeId = lazy.AutofillDataTypes.typeIdForFieldName(fieldName);
+    return (
+      lazy.AutofillDataTypes.get(typeId)?.collectionName ??
+      ADDRESSES_COLLECTION_NAME
+    );
   },
 
   getAddressSeparator() {
@@ -432,7 +426,10 @@ FormAutofillUtils = {
     }
 
     for (let field in address) {
-      if (field != "tel" && this.getCategoryFromFieldName(field) == "tel") {
+      if (
+        field != "tel" &&
+        lazy.AutofillDataTypes.fieldToSubCategory[field] == "tel"
+      ) {
         delete address[field];
       }
     }
@@ -1563,5 +1560,19 @@ XPCOMUtils.defineLazyPreferenceGetter(
   FormAutofillUtils,
   "enableMLAutofill",
   "extensions.formautofill.useml",
+  false
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  FormAutofillUtils,
+  "isMLUsedAlready",
+  AUTOFILL_ML_SUCCESS_PREF,
+  false
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  FormAutofillUtils,
+  "isNativeOnnxRuntimeAvailable",
+  AUTOFILL_ML_NATIVE_ONNX_PREF,
   false
 );

@@ -46,8 +46,6 @@ class ExternalTexture;
 class RenderPassEncoder;
 class WebGPUChild;
 
-enum class CommandEncoderState { Open, Locked, Ended };
-
 class CommandEncoder final : public nsWrapperCache,
                              public ObjectBase,
                              public ChildOf<Device> {
@@ -67,8 +65,6 @@ class CommandEncoder final : public nsWrapperCache,
  private:
   virtual ~CommandEncoder();
 
-  CommandEncoderState mState;
-
   CanvasContextArray mPresentationContexts;
   nsTArray<RefPtr<ExternalTexture>> mExternalTextures;
 
@@ -77,12 +73,10 @@ class CommandEncoder final : public nsWrapperCache,
  public:
   const auto& GetDevice() const { return mParent; };
 
-  CommandEncoderState GetState() const { return mState; };
-
-  void EndComputePass(ffi::WGPURecordedComputePass& aPass,
+  void EndComputePass(RawId aComputePassEncoderId,
                       CanvasContextArray& aCanvasContexts,
                       Span<RefPtr<ExternalTexture>> aExternalTextures);
-  void EndRenderPass(ffi::WGPURecordedRenderPass& aPass,
+  void EndRenderPass(RawId aRenderPassEncoderId,
                      CanvasContextArray& aCanvasContexts,
                      Span<RefPtr<ExternalTexture>> aExternalTextures);
 

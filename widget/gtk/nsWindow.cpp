@@ -14,42 +14,26 @@
 #include <cstdint>
 #ifdef MOZ_X11
 #  include <X11/Xlib.h>
+#  include <X11/extensions/XInput2.h>
 #endif
 #include <dlfcn.h>
 #include <gdk/gdkkeysyms.h>
 
+#include "GLContext.h"
+#include "GLContextProvider.h"
+#include "GSettings.h"
+#include "GtkCompositorWidget.h"
+#include "InputData.h"
 #include "VsyncSource.h"
 #include "gfx2DGlue.h"
 #include "gfxContext.h"
 #include "gfxImageSurface.h"
 #include "gfxPlatformGtk.h"
 #include "gfxUtils.h"
-#include "GLContextProvider.h"
-#include "GLContext.h"
-#include "GSettings.h"
-#include "GtkCompositorWidget.h"
 #include "imgIContainer.h"
-#include "InputData.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Components.h"
 #include "mozilla/GRefPtr.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/dom/WheelEventBinding.h"
-#include "mozilla/gfx/2D.h"
-#include "mozilla/gfx/gfxVars.h"
-#include "mozilla/gfx/GPUProcessManager.h"
-#include "mozilla/gfx/HelpersCairo.h"
-#include "mozilla/layers/APZThreadUtils.h"
-#include "mozilla/layers/LayersTypes.h"
-#include "mozilla/layers/CompositorBridgeChild.h"
-#include "mozilla/layers/CompositorBridgeParent.h"
-#include "mozilla/layers/CompositorThread.h"
-#include "mozilla/layers/KnowsCompositor.h"
-#include "mozilla/layers/WebRenderBridgeChild.h"
-#include "mozilla/layers/WebRenderLayerManager.h"
-#include "mozilla/layers/APZInputBridge.h"
-#include "mozilla/layers/IAPZCTreeManager.h"
-#include "mozilla/widget/WindowOcclusionState.h"
 #include "mozilla/Likely.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MiscEvents.h"
@@ -71,28 +55,50 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/WidgetUtils.h"
 #include "mozilla/WritingModes.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/WheelEventBinding.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/GPUProcessManager.h"
+#include "mozilla/gfx/HelpersCairo.h"
+#include "mozilla/gfx/gfxVars.h"
+#include "mozilla/layers/APZInputBridge.h"
+#include "mozilla/layers/APZThreadUtils.h"
+#include "mozilla/layers/CompositorBridgeChild.h"
+#include "mozilla/layers/CompositorBridgeParent.h"
+#include "mozilla/layers/CompositorThread.h"
+#include "mozilla/layers/IAPZCTreeManager.h"
+#include "mozilla/layers/KnowsCompositor.h"
+#include "mozilla/layers/LayersTypes.h"
+#include "mozilla/layers/WebRenderBridgeChild.h"
+#include "mozilla/layers/WebRenderLayerManager.h"
+#include "mozilla/widget/WindowOcclusionState.h"
 #ifdef MOZ_X11
 #  include "mozilla/X11Util.h"
 #endif
-#include "mozilla/XREAppData.h"
 #include "NativeKeyBindings.h"
+#include "NativeMenuGtk.h"
+#include "Screen.h"
+#include "ScreenHelperGTK.h"
+#include "SystemTimeConverter.h"
+#include "WidgetUtilsGtk.h"
+#include "mozilla/XREAppData.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsAppRunner.h"
 #include "nsDragService.h"
 #include "nsDragServiceGtk.h"
 #include "nsGTKToolkit.h"
-#include "nsGtkKeyUtils.h"
-#include "nsGtkCursors.h"
 #include "nsGfxCIID.h"
+#include "nsGtkCursors.h"
+#include "nsGtkKeyUtils.h"
 #include "nsGtkUtils.h"
 #include "nsIFile.h"
 #include "nsIInterfaceRequestorUtils.h"
-#include "nsImageToPixbuf.h"
 #include "nsINode.h"
 #include "nsIRollupListener.h"
 #include "nsIScreenManager.h"
 #include "nsIUserIdleServiceInternal.h"
 #include "nsIWidgetListener.h"
+#include "nsImageToPixbuf.h"
 #include "nsLayoutUtils.h"
 #include "nsMenuPopupFrame.h"
 #include "nsPIDOMWindowInlines.h"
@@ -102,11 +108,6 @@
 #include "nsWidgetsCID.h"
 #include "nsXPLookAndFeel.h"
 #include "prlink.h"
-#include "Screen.h"
-#include "ScreenHelperGTK.h"
-#include "SystemTimeConverter.h"
-#include "WidgetUtilsGtk.h"
-#include "NativeMenuGtk.h"
 
 #ifdef ACCESSIBILITY
 #  include "mozilla/a11y/LocalAccessible.h"
@@ -3684,7 +3685,7 @@ void nsWindow::OnWindowStateEvent(GtkWidget* aWidget,
 #endif  // ACCESSIBILITY
   }
 
-  mIsTiled = aEvent->new_window_state & GDK_WINDOW_STATE_TILED;
+  SetIsTiled(aEvent->new_window_state & GDK_WINDOW_STATE_TILED);
   LOG("\tTiled: %d\n", int(mIsTiled));
   mResizableEdges = [&] {
     Sides result;
@@ -4511,9 +4512,9 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
 
   if (GdkIsX11Display()
 #ifdef MOZ_WAYLAND
-    || !StaticPrefs::widget_wayland_native_data_session_AtStartup()
+      || !StaticPrefs::widget_wayland_native_data_session_AtStartup()
 #endif
-      ) {
+  ) {
     gtk_drag_dest_set((GtkWidget*)mShell, (GtkDestDefaults)0, nullptr, 0,
                       (GdkDragAction)0);
     g_signal_connect(mShell, "drag_motion", G_CALLBACK(drag_motion_event_cb),
@@ -6222,21 +6223,23 @@ static gboolean key_press_event_cb(GtkWidget* widget, GdkEventKey* event) {
 #  ifndef KeyPress
 #    define KeyPress 2
 #  endif
-  GdkDisplay* gdkDisplay = gtk_widget_get_display(widget);
-  if (GdkIsX11Display(gdkDisplay)) {
-    Display* dpy = GDK_DISPLAY_XDISPLAY(gdkDisplay);
-    while (XPending(dpy)) {
-      XEvent next_event;
-      XPeekEvent(dpy, &next_event);
-      GdkWindow* nextGdkWindow =
-          gdk_x11_window_lookup_for_display(gdkDisplay, next_event.xany.window);
-      if (nextGdkWindow != event->window || next_event.type != KeyPress ||
-          next_event.xkey.keycode != event->hardware_keycode ||
-          next_event.xkey.state != (event->state & NS_GDKEVENT_MATCH_MASK)) {
-        break;
+  if (StaticPrefs::widget_gtk_x11_key_repeat_throttle_enabled()) {
+    GdkDisplay* gdkDisplay = gtk_widget_get_display(widget);
+    if (GdkIsX11Display(gdkDisplay)) {
+      Display* dpy = GDK_DISPLAY_XDISPLAY(gdkDisplay);
+      while (XPending(dpy)) {
+        XEvent next_event;
+        XPeekEvent(dpy, &next_event);
+        GdkWindow* nextGdkWindow = gdk_x11_window_lookup_for_display(
+            gdkDisplay, next_event.xany.window);
+        if (nextGdkWindow != event->window || next_event.type != KeyPress ||
+            next_event.xkey.keycode != event->hardware_keycode ||
+            next_event.xkey.state != (event->state & NS_GDKEVENT_MATCH_MASK)) {
+          break;
+        }
+        XNextEvent(dpy, &next_event);
+        event->time = next_event.xkey.time;
       }
-      XNextEvent(dpy, &next_event);
-      event->time = next_event.xkey.time;
     }
   }
 #endif
@@ -7674,6 +7677,50 @@ uint32_t nsWindow::GetMaxTouchPoints() const {
   if (GdkIsWaylandDisplay()) {
     static constexpr uint32_t sMaxTouchPoints = 5;
     return WaylandDisplayGet()->GetTouch() ? sMaxTouchPoints : 0;
+  }
+#endif
+#ifdef MOZ_X11
+  if (GdkIsX11Display()) {
+    static const uint32_t sMaxTouchPoints = [] {
+      Display* xDisplay = mozilla::DefaultXDisplay();
+      if (!xDisplay) {
+        return 0u;
+      }
+
+      using XIQueryDeviceFunc = XIDeviceInfo* (*)(Display*, int, int*);
+      using XIFreeDeviceInfoFunc = void (*)(XIDeviceInfo*);
+      auto queryDevice =
+          (XIQueryDeviceFunc)dlsym(RTLD_DEFAULT, "XIQueryDevice");
+      auto freeDeviceInfo =
+          (XIFreeDeviceInfoFunc)dlsym(RTLD_DEFAULT, "XIFreeDeviceInfo");
+      if (!queryDevice || !freeDeviceInfo) {
+        return 0u;
+      }
+
+      int nDevices = 0;
+      XIDeviceInfo* devices = queryDevice(xDisplay, XIAllDevices, &nDevices);
+      if (!devices) {
+        return 0u;
+      }
+
+      uint32_t maxTouchPoints = 0;
+      for (int i = 0; i < nDevices; i++) {
+        for (int j = 0; j < devices[i].num_classes; j++) {
+          if (devices[i].classes[j]->type == XITouchClass) {
+            auto* touchClass =
+                reinterpret_cast<XITouchClassInfo*>(devices[i].classes[j]);
+            if (touchClass->mode == XIDirectTouch &&
+                static_cast<uint32_t>(touchClass->num_touches) >
+                    maxTouchPoints) {
+              maxTouchPoints = touchClass->num_touches;
+            }
+          }
+        }
+      }
+      freeDeviceInfo(devices);
+      return maxTouchPoints;
+    }();
+    return sMaxTouchPoints;
   }
 #endif
   return 0;

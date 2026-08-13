@@ -5,13 +5,13 @@
 #ifndef CacheIOThread_h_
 #define CacheIOThread_h_
 
-#include "nsIThreadInternal.h"
-#include "nsISupportsImpl.h"
-#include "prthread.h"
-#include "nsTArray.h"
-#include "mozilla/Monitor.h"
 #include "mozilla/Atomics.h"
+#include "mozilla/Monitor.h"
 #include "mozilla/UniquePtr.h"
+#include "nsISupportsImpl.h"
+#include "nsIThreadInternal.h"
+#include "nsTArray.h"
+#include "prthread.h"
 
 class nsIRunnable;
 

@@ -39,6 +39,7 @@ class IconLabel extends PureComponent {
       dom.img({
         className: "icon-label__icon",
         src: ICONS[level],
+        alt: "",
       }),
       children
     );

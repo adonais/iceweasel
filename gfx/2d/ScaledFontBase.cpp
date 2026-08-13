@@ -8,9 +8,9 @@
 #include "skia/include/core/SkFont.h"
 
 #ifdef USE_CAIRO
-#  include "PathCairo.h"
 #  include "DrawTargetCairo.h"
 #  include "HelpersCairo.h"
+#  include "PathCairo.h"
 #endif
 
 #include <vector>

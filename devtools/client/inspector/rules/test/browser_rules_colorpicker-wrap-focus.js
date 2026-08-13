@@ -44,7 +44,7 @@ add_task(async function () {
   testFocusOnTab(doc, "devtools-button");
   testFocusOnTab(doc, "spectrum-hue-input");
   testFocusOnTab(doc, "spectrum-alpha-input");
-  testFocusOnTab(doc, "learn-more");
+  testFocusOnTab(doc, "learn-more-link");
 
   info(
     "Test that tabbing on the last element wraps focus to the first element."
@@ -54,7 +54,7 @@ add_task(async function () {
   info(
     "Test that shift tabbing on the first element wraps focus to the last element."
   );
-  testFocusOnTab(doc, "learn-more", true);
+  testFocusOnTab(doc, "learn-more-link", true);
 
   info(
     "Test that shift tabbing should move focus to the previous focusable elements."

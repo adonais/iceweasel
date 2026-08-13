@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ContentRange.h"
+
 #include "nsContentUtils.h"
 
 mozilla::net::ContentRange::ContentRange(

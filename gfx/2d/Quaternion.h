@@ -5,9 +5,11 @@
 #ifndef MOZILLA_GFX_QUATERNION_H_
 #define MOZILLA_GFX_QUATERNION_H_
 
-#include "Types.h"
 #include <math.h>
+
 #include <ostream>
+
+#include "Types.h"
 #include "mozilla/gfx/MatrixFwd.h"
 #include "mozilla/gfx/Point.h"
 

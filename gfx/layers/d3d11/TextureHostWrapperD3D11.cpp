@@ -6,14 +6,14 @@
 
 #include <d3d11.h>
 
+#include "mozilla/ProfilerMarkers.h"
+#include "mozilla/SharedThreadPool.h"
 #include "mozilla/gfx/DeviceManagerDx.h"
 #include "mozilla/layers/AsyncImagePipelineManager.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/GpuProcessD3D11TextureMap.h"
 #include "mozilla/layers/TextureD3D11.h"
 #include "mozilla/layers/WebRenderTextureHost.h"
-#include "mozilla/ProfilerMarkers.h"
-#include "mozilla/SharedThreadPool.h"
 
 namespace mozilla {
 namespace layers {

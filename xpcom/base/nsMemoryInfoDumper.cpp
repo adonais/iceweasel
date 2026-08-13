@@ -2,23 +2,23 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "mozilla/nsMemoryInfoDumper.h"
+
 #include "mozilla/JSONWriter.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/nsMemoryInfoDumper.h"
-#include "nsDumpUtils.h"
-
-#include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/ContentChild.h"
-#include "nsIConsoleService.h"
+#include "mozilla/dom/ContentParent.h"
 #include "nsCycleCollector.h"
-#include "nsICycleCollectorListener.h"
-#include "nsIMemoryReporter.h"
 #include "nsDirectoryServiceDefs.h"
+#include "nsDumpUtils.h"
 #include "nsGZFileWriter.h"
+#include "nsIConsoleService.h"
+#include "nsICycleCollectorListener.h"
+#include "nsIFile.h"
+#include "nsIMemoryReporter.h"
 #include "nsJSEnvironment.h"
 #include "nsPrintfCString.h"
 #include "nsServiceManagerUtils.h"
-#include "nsIFile.h"
 
 #ifdef XP_WIN
 #  include <process.h>
@@ -41,8 +41,8 @@
 
 #if defined(MOZ_SUPPORTS_RT_SIGNALS)
 #  include <fcntl.h>
-#  include <sys/types.h>
 #  include <sys/stat.h>
+#  include <sys/types.h>
 #endif
 
 #if defined(MOZ_SUPPORTS_FIFO)

@@ -358,8 +358,8 @@ add_task(async function title_genericUrlResult() {
 
   for (let { url, title, expected } of TEST_DATA) {
     let result = new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.OTHER_NETWORK,
+      type: UrlbarShared.RESULT_TYPE.URL,
+      source: UrlbarShared.RESULT_SOURCE.OTHER_NETWORK,
       payload: {
         url,
         title,
@@ -377,8 +377,8 @@ add_task(async function title_genericUrlResult() {
 add_task(function highlight_typed() {
   let queryContext = createContext("test");
   let result = new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    type: UrlbarShared.RESULT_TYPE.URL,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     payload: {
       url: "https://test.example.com/",
     },
@@ -401,8 +401,8 @@ add_task(function highlight_typed() {
 add_task(function highlight_suggested() {
   let queryContext = createContext("test");
   let result = new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.SEARCH,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    type: UrlbarShared.RESULT_TYPE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     payload: {
       suggestion: "test search test",
     },
@@ -425,8 +425,8 @@ add_task(function highlight_suggested() {
 add_task(function highlight_all() {
   let queryContext = createContext("test");
   let result = new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    type: UrlbarShared.RESULT_TYPE.URL,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     payload: {
       url: "https://test.example.com/",
     },
@@ -449,8 +449,8 @@ add_task(function highlight_all() {
 add_task(function option_isURL() {
   let queryContext = createContext("test");
   let result = new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    type: UrlbarShared.RESULT_TYPE.URL,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     payload: {
       url: "https://test.example.com/",
     },
@@ -473,8 +473,8 @@ add_task(function option_isURL() {
 add_task(function option_no_tokens() {
   let queryContext = createContext("");
   let result = new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    type: UrlbarShared.RESULT_TYPE.URL,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     payload: {
       url: "https://test.example.com/",
     },
@@ -496,8 +496,8 @@ add_task(function option_no_tokens() {
 
 add_task(function option_nothing() {
   let result = new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    type: UrlbarShared.RESULT_TYPE.URL,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     payload: {
       url: "https://test.example.com/",
     },
@@ -519,8 +519,8 @@ add_task(function option_nothing() {
 add_task(function invalid_target() {
   let queryContext = createContext("test");
   let result = new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    type: UrlbarShared.RESULT_TYPE.URL,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     payload: {
       url: "https://test.example.com/",
     },
@@ -543,8 +543,8 @@ add_task(function invalid_target() {
 add_task(function cache() {
   let queryContext = createContext("test");
   let result = new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    type: UrlbarShared.RESULT_TYPE.URL,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     payload: {
       url: "https://test.example.com/",
     },

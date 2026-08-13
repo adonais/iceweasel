@@ -5,8 +5,8 @@
 #ifndef widget_windows_WinCompositorWindowThread_h
 #define widget_windows_WinCompositorWindowThread_h
 
-#include "base/thread.h"
 #include "base/message_loop.h"
+#include "base/thread.h"
 
 namespace mozilla {
 namespace widget {

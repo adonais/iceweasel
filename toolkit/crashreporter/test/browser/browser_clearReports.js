@@ -81,7 +81,7 @@ add_task(async function test() {
       let existing = [file1.path, file2.path, submitdir.path, pendingdir.path];
 
       SpecialPowers.spawn(browser, [], clickClearReports);
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () =>
           content.document
             .getElementById("reportListUnsubmitted")

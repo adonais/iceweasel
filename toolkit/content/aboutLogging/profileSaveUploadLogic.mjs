@@ -167,7 +167,7 @@ export class ProfileSaveOrUploadDialog {
    */
   #doUploadProfileData({ onProgress }) {
     // The content of this function is heavily inspired by the code in
-    // https://github.com/firefox-devtools/profiler/blob/5e9182064f18954cfd04b9da276d322a57f93406/src/profile-logic/profile-store.js
+    // https://github.com/firefox-devtools/profiler/blob/8f4935823ec06507c3125d4c6c1e78eef31361f3/src/profile-logic/profile-store.ts
     const xhr = new XMLHttpRequest();
     return new Promise((resolve, reject) => {
       xhr.onload = () => {

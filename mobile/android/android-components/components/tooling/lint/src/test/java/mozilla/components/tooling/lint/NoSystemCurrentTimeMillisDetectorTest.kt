@@ -35,7 +35,6 @@ class NoSystemCurrentTimeMillisDetectorTest : LintDetectorTest() {
         ).indented()
 
         lint()
-            .allowMissingSdk()
             .files(code)
             .run()
             .expectWarningCount(1)
@@ -55,7 +54,6 @@ class NoSystemCurrentTimeMillisDetectorTest : LintDetectorTest() {
         ).indented()
 
         lint()
-            .allowMissingSdk()
             .files(code)
             .run()
             .expectWarningCount(1)
@@ -75,7 +73,6 @@ class NoSystemCurrentTimeMillisDetectorTest : LintDetectorTest() {
         ).indented()
 
         lint()
-            .allowMissingSdk()
             .files(code)
             .run()
             .expectWarningCount(1)
@@ -93,7 +90,6 @@ class NoSystemCurrentTimeMillisDetectorTest : LintDetectorTest() {
         ).indented()
 
         lint()
-            .allowMissingSdk()
             .files(code)
             .run()
             .expectClean()
@@ -110,7 +106,6 @@ class NoSystemCurrentTimeMillisDetectorTest : LintDetectorTest() {
         ).indented()
 
         lint()
-            .allowMissingSdk()
             .files(code)
             .run()
             .expectClean()
@@ -132,7 +127,6 @@ class NoSystemCurrentTimeMillisDetectorTest : LintDetectorTest() {
         ).indented()
 
         lint()
-            .allowMissingSdk()
             .files(code)
             .run()
             .expectClean()
@@ -151,7 +145,6 @@ class NoSystemCurrentTimeMillisDetectorTest : LintDetectorTest() {
         ).indented()
 
         lint()
-            .allowMissingSdk()
             .files(code)
             .run()
             .expectClean()
@@ -170,7 +163,6 @@ class NoSystemCurrentTimeMillisDetectorTest : LintDetectorTest() {
         ).indented()
 
         lint()
-            .allowMissingSdk()
             .files(code)
             .run()
             .expectClean()
@@ -187,7 +179,6 @@ class NoSystemCurrentTimeMillisDetectorTest : LintDetectorTest() {
         ).indented()
 
         lint()
-            .allowMissingSdk()
             .files(code)
             .run()
             .expectClean()
@@ -204,7 +195,6 @@ class NoSystemCurrentTimeMillisDetectorTest : LintDetectorTest() {
         ).indented()
 
         lint()
-            .allowMissingSdk()
             .files(code)
             .run()
             .expectClean()
@@ -223,7 +213,6 @@ class NoSystemCurrentTimeMillisDetectorTest : LintDetectorTest() {
         ).indented()
 
         lint()
-            .allowMissingSdk()
             .files(code)
             .run()
             .expectWarningCount(1)
@@ -244,7 +233,6 @@ class NoSystemCurrentTimeMillisDetectorTest : LintDetectorTest() {
         ).indented()
 
         lint()
-            .allowMissingSdk()
             .files(code)
             .run()
             .expectWarningCount(1)
@@ -266,7 +254,6 @@ class NoSystemCurrentTimeMillisDetectorTest : LintDetectorTest() {
         ).indented()
 
         lint()
-            .allowMissingSdk()
             .files(code)
             .run()
             .expectWarningCount(1)
@@ -286,7 +273,6 @@ class NoSystemCurrentTimeMillisDetectorTest : LintDetectorTest() {
         ).indented()
 
         lint()
-            .allowMissingSdk()
             .files(code)
             .run()
             .expectWarningCount(1)
@@ -306,7 +292,6 @@ class NoSystemCurrentTimeMillisDetectorTest : LintDetectorTest() {
         ).indented()
 
         lint()
-            .allowMissingSdk()
             .files(code)
             .run()
             .expectWarningCount(1)
@@ -340,7 +325,6 @@ class NoSystemCurrentTimeMillisDetectorTest : LintDetectorTest() {
         ).indented()
 
         lint()
-            .allowMissingSdk()
             .files(provider, code)
             .run()
             .expectClean()
@@ -361,7 +345,6 @@ class NoSystemCurrentTimeMillisDetectorTest : LintDetectorTest() {
         ).indented()
 
         lint()
-            .allowMissingSdk()
             .files(code)
             .run()
             .expectClean()

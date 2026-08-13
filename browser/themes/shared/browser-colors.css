@@ -26,13 +26,26 @@
   --content-area-shadow: var(--card-box-shadow);
   --chrome-content-separator-color: var(--card-border-color);
 
-  @media not -moz-pref("sidebar.revamp"), -moz-pref("browser.nova.enabled") {
+  @media not -moz-pref("sidebar.revamp") {
     &:not([lwtheme]) {
       --chrome-content-separator-color: ThreeDShadow;
     }
   }
 
-  &[lwtheme] {
+  @media -moz-pref("browser.nova.enabled") and (not (forced-colors)) {
+    &:is([theme-in-app], :not([lwtheme])) {
+      --chrome-content-separator-color: light-dark(rgb(201, 192, 227), rgb(63, 62, 66));
+    }
+  }
+
+  /**
+   * These colors are for when an AMO LWT is installed, we force blue/cyan for
+   * the link/focus colors. We probably don't want to change this to purple for
+   * Nova but there could be a case for using --color-accent-primary instead.
+   * Any change will affect contrasts for LWTs but using --color-accent-primary
+   * would allow the user to change the color at least.
+   */
+  &[lwtheme]:not([theme-in-app]) {
     --link-color: light-dark(var(--color-blue-60), var(--color-cyan-30));
     --link-color-hover: light-dark(var(--color-blue-70), var(--color-cyan-20));
     --link-color-active: light-dark(var(--color-blue-80), var(--color-cyan-10));
@@ -58,10 +71,6 @@
 
     @media not -moz-pref("sidebar.revamp") {
       --chrome-content-separator-color: light-dark(rgb(204, 204, 204), hsl(240, 5%, 5%));
-    }
-
-    @media -moz-pref("browser.nova.enabled") {
-      --chrome-content-separator-color: light-dark(rgb(201, 192, 227), rgb(16, 17, 24));
     }
   }
 }

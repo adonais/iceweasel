@@ -4,8 +4,10 @@
 #ifndef mozilla_gfx_config_gfxFeature_h
 #define mozilla_gfx_config_gfxFeature_h
 
-#include <functional>
 #include <stdint.h>
+
+#include <functional>
+
 #include "gfxTelemetry.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Maybe.h"
@@ -64,6 +66,7 @@ namespace gfx {
   _(MESA_THREADING, Feature, "Mesa glthread enabled")                        \
   _(WEBGL, Feature, "WebGL")                                                 \
   _(VIDEO_HDR, Feature, "HDR video supported")                               \
+  _(WEBRENDER_ANGLE_METAL, Feature, "WebRender ANGLE Metal")                 \
   /* Add new entries above this comment */
 
 enum class Feature : uint32_t {

@@ -2,39 +2,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "LocalAccessible-inl.h"
-#include "AccIterator.h"
-#include "AccAttributes.h"
 #include "ARIAMap.h"
+#include "AccAttributes.h"
+#include "AccIterator.h"
+#include "AnchorPositioningUtils.h"
 #include "CachedTableAccessible.h"
 #include "DocAccessible-inl.h"
 #include "EventTree.h"
 #include "HTMLImageMapAccessible.h"
+#include "LocalAccessible-inl.h"
 #include "Relation.h"
-#include "mozilla/ProfilerMarkers.h"
-#include "nsAccUtils.h"
-#include "nsEventShell.h"
-#include "nsIIOService.h"
-#include "nsLayoutUtils.h"
-#include "nsTextEquivUtils.h"
-#include "mozilla/a11y/Role.h"
 #include "TreeWalker.h"
-#include "xpcAccessibleDocument.h"
-
-#include "AnchorPositioningUtils.h"
-#include "nsIDocShell.h"
-#include "mozilla/dom/BrowsingContext.h"
-#include "mozilla/dom/Document.h"
-#include "nsPIDOMWindow.h"
-#include "nsIContentInlines.h"
-#include "nsIEditingSession.h"
-#include "nsIFrame.h"
-#include "nsIInterfaceRequestorUtils.h"
-#include "nsImageFrame.h"
-#include "nsIMutationObserver.h"
-#include "nsIURI.h"
-#include "nsIWebNavigation.h"
-#include "nsFocusManager.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Components.h"  // for mozilla::components
@@ -42,16 +20,37 @@
 #include "mozilla/HTMLEditor.h"
 #include "mozilla/PerfStats.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/ProfilerMarkers.h"
 #include "mozilla/ScrollContainerFrame.h"
-#include "nsAccessibilityService.h"
 #include "mozilla/a11y/DocAccessibleChild.h"
+#include "mozilla/a11y/Role.h"
 #include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/BrowserChild.h"
+#include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentType.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ElementInlines.h"
 #include "mozilla/dom/HTMLSelectElement.h"
 #include "mozilla/dom/UserActivation.h"
+#include "nsAccUtils.h"
+#include "nsAccessibilityService.h"
+#include "nsEventShell.h"
+#include "nsFocusManager.h"
+#include "nsIContentInlines.h"
+#include "nsIDocShell.h"
+#include "nsIEditingSession.h"
+#include "nsIFrame.h"
+#include "nsIIOService.h"
+#include "nsIInterfaceRequestorUtils.h"
+#include "nsIMutationObserver.h"
+#include "nsIURI.h"
+#include "nsIWebNavigation.h"
+#include "nsImageFrame.h"
+#include "nsLayoutUtils.h"
+#include "nsPIDOMWindow.h"
+#include "nsTextEquivUtils.h"
+#include "xpcAccessibleDocument.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;
@@ -1813,7 +1812,8 @@ void DocAccessible::DoInitialUpdate() {
         if (!ipcDoc) {
           ipcDoc = new DocAccessibleChild(this, browserChild);
           MOZ_RELEASE_ASSERT(browserChild->SendPDocAccessibleConstructor(
-              ipcDoc, nullptr, 0, mDocumentNode->GetBrowsingContext()));
+              ipcDoc, nullptr, 0, mDocumentNode->GetBrowsingContext(),
+              IsPrintDoc()));
           // trying to recover from this failing is problematic
           SetIPCDoc(ipcDoc);
         }
@@ -2316,12 +2316,6 @@ bool InsertIterator::Next() {
     // what means there's no container. Ignore the insertion too.
     if (container != Context()) {
       continue;
-    }
-
-    // HTML comboboxes have no-content list accessible as an intermediate
-    // containing all options.
-    if (container->IsHTMLCombobox()) {
-      container = container->LocalFirstChild();
     }
 
     if (!container->IsAcceptableChild(node)) {
@@ -3003,18 +2997,16 @@ void DocAccessible::CacheChildrenInSubtree(LocalAccessible* aRoot,
     *aFocusedAcc = aRoot;
   }
 
-  LocalAccessible* root =
-      aRoot->IsHTMLCombobox() ? aRoot->LocalFirstChild() : aRoot;
-  if (root->KidsFromDOM()) {
-    TreeMutation mt(root, TreeMutation::kNoEvents);
-    TreeWalker walker(root);
+  if (aRoot->KidsFromDOM()) {
+    TreeMutation mt(aRoot, TreeMutation::kNoEvents);
+    TreeWalker walker(aRoot);
     while (LocalAccessible* child = walker.Next()) {
       if (child->IsBoundToParent()) {
-        MoveChild(child, root, root->mChildren.Length());
+        MoveChild(child, aRoot, aRoot->mChildren.Length());
         continue;
       }
 
-      root->AppendChild(child);
+      aRoot->AppendChild(child);
       mt.AfterInsertion(child);
 
       CacheChildrenInSubtree(child, aFocusedAcc);
@@ -3385,7 +3377,8 @@ void DocAccessible::BindChildDocument(DocAccessible* aDocument) {
           MOZ_ASSERT(bc);
           bc->SendPDocAccessibleConstructor(
               ipcDoc, mIPCDoc, embedderAcc->ID(),
-              aDocument->DocumentNode()->GetBrowsingContext());
+              aDocument->DocumentNode()->GetBrowsingContext(),
+              aDocument->IsPrintDoc());
         }
       }
     }

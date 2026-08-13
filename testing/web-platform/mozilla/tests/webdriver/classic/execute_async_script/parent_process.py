@@ -19,22 +19,16 @@ async def test_execute_async_script_parent_process_context(configuration, geckod
     ]
 
     driver = geckodriver(config=config)
-    try:
-        driver.new_session()
+    driver.new_session()
 
-        assert driver.session.url == "about:about"
+    assert driver.session.url == "about:about"
 
-        response = execute_async_script(driver.session, "arguments[0](1 + 1)")
-        assert_error(response, "unsupported operation")
-
-    finally:
-        await driver.stop()
+    response = execute_async_script(driver.session, "arguments[0](1 + 1)")
+    assert_error(response, "unsupported operation")
 
 
-@pytest.mark.allow_system_access
-def test_execute_async_script_parent_process_context_with_system_access(
-    session, new_tab_classic
-):
+@pytest.mark.geckodriver(allow_system_access=True)
+def test_execute_async_script_parent_process_context_with_system_access(session):
     session.url = "about:about"
 
     response = execute_async_script(session, "arguments[0](1 + 1)")

@@ -3,13 +3,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <thread>
-#include "gtest/gtest.h"
 
+#include "gtest/gtest.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/SpinEventLoopUntil.h"
-#include "nsMemoryPressure.h"
 #include "nsIObserver.h"
 #include "nsIObserverService.h"
+#include "nsMemoryPressure.h"
 #include "nsServiceManagerUtils.h"
 #include "nsThreadUtils.h"
 

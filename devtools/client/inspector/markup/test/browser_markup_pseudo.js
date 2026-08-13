@@ -5,25 +5,9 @@
 
 const TEST_URL = URL_ROOT + "doc_markup_pseudo.html";
 
-// Test that reloading the page when an element with sibling pseudo elements is selected
-// does not result in missing elements in the markup-view after reload.
-// Non-regression test for bug 1506792.
-add_task(async function testReload() {
-  const { inspector } = await openInspectorForURL(TEST_URL);
+add_task(async function testPseudo() {
+  await pushPref("dom.select.customizable_select.enabled", true);
 
-  await selectNode("div", inspector);
-
-  info("Check that the markup-view shows the expected nodes before reload");
-  await checkMarkupView(inspector);
-
-  await reloadSelectedTab();
-
-  info("Check that the markup-view shows the expected nodes after reload");
-  await checkMarkupView(inspector);
-});
-
-// Test ::before::marker
-add_task(async function testMarkerOnPseudo() {
   const { inspector } = await openInspectorForURL(TEST_URL);
 
   await selectNode("ul", inspector);
@@ -94,6 +78,7 @@ add_task(async function testMarkerOnPseudo() {
     "Expander button is not visible for ul::after"
   );
 
+  info("Test ::backdrop pseudo element");
   await selectNode("dialog", inspector);
 
   const dialogNodeFront = await getNodeFront("dialog", inspector);
@@ -118,6 +103,7 @@ add_task(async function testMarkerOnPseudo() {
         ul!ignore-children
         dialog
           p
+        select!ignore-children
       `.trim();
   await assertMarkupViewAsTree(tree, "html", inspector);
 
@@ -141,6 +127,7 @@ add_task(async function testMarkerOnPseudo() {
           ::backdrop
           ::before
           p
+        select!ignore-children
       `.trim();
   await assertMarkupViewAsTree(tree, "html", inspector);
 
@@ -162,8 +149,58 @@ add_task(async function testMarkerOnPseudo() {
         ul!ignore-children
         dialog
           p
+        select!ignore-children
       `.trim();
   await assertMarkupViewAsTree(tree, "html", inspector);
+
+  info("Test ::picker-icon pseudo element");
+  await selectNode("select", inspector);
+
+  const selectNodeFront = await getNodeFront("select", inspector);
+  const selectContainer = await getContainerForNodeFront(
+    selectNodeFront,
+    inspector
+  );
+  is(
+    ulContainer.expander.style.visibility,
+    "visible",
+    "Expander button is visible for <select>"
+  );
+
+  info("Click on the <select> parent expander and wait for children");
+  await toggleContainerByClick(inspector, selectContainer);
+
+  tree = `
+    html
+      head!ignore-children
+      body
+        article!ignore-children
+        ul!ignore-children
+        dialog!ignore-children
+        select
+          option
+          option
+          option
+          ::picker-icon
+      `.trim();
+  await assertMarkupViewAsTree(tree, "html", inspector);
+});
+
+// Test that reloading the page when an element with sibling pseudo elements is selected
+// does not result in missing elements in the markup-view after reload.
+// Non-regression test for bug 1506792.
+add_task(async function testReload() {
+  const { inspector } = await openInspectorForURL(TEST_URL);
+
+  await selectNode("div", inspector);
+
+  info("Check that the markup-view shows the expected nodes before reload");
+  await checkMarkupView(inspector);
+
+  await reloadSelectedTab();
+
+  info("Check that the markup-view shows the expected nodes after reload");
+  await checkMarkupView(inspector);
 });
 
 async function checkMarkupView(inspector) {

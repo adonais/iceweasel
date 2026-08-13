@@ -41,11 +41,12 @@ class PrivatePropertiesIteratorActor extends Actor {
       this.iterator = {
         size: privateProperties.length,
         propertyDescription(index) {
-          // private properties are represented as Symbols on platform
-          const symbol = privateProperties[index];
+          // Each entry is a Debugger.PrivateName wrapper exposing the field's
+          // `description` (e.g. "#x"); the underlying symbol is never exposed.
+          const privateName = privateProperties[index];
           return {
-            name: symbol.description,
-            descriptor: propertyDescriptor(objectActor, symbol, 0),
+            name: privateName.description,
+            descriptor: propertyDescriptor(objectActor, privateName, 0),
           };
         },
       };

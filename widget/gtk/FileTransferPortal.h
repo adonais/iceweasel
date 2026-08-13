@@ -8,8 +8,8 @@
 #include "mozilla/GRefPtr.h"
 #include "mozilla/GUniquePtr.h"
 #include "mozilla/MozPromise.h"
-#include "nsTArray.h"
 #include "nsString.h"
+#include "nsTArray.h"
 
 namespace mozilla::widget {
 

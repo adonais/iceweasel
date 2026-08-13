@@ -5,12 +5,12 @@
 #ifndef mozilla_net_PrivateBrowsingChannel_h_
 #define mozilla_net_PrivateBrowsingChannel_h_
 
-#include "nsIPrivateBrowsingChannel.h"
 #include "nsCOMPtr.h"
-#include "nsILoadGroup.h"
-#include "nsILoadContext.h"
-#include "nsIInterfaceRequestorUtils.h"
 #include "nsIInterfaceRequestor.h"
+#include "nsIInterfaceRequestorUtils.h"
+#include "nsILoadContext.h"
+#include "nsILoadGroup.h"
+#include "nsIPrivateBrowsingChannel.h"
 #include "nsNetUtil.h"
 
 namespace mozilla {

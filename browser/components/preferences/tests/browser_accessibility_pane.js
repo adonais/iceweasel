@@ -39,6 +39,22 @@ add_task(async function test_accessibility_pane_loads_setting_groups() {
     is_element_visible(group, `${groupId} setting-group is visible`);
   }
 
+  info("Check keyboardCustomkeysLink is rendered as expected");
+  const keyboardGroup = doc.querySelector(
+    `setting-group[groupid="keyboardAndScrolling"]`
+  );
+  const customkeysLink = keyboardGroup.querySelector("#keyboardCustomkeysLink");
+  ok(BrowserTestUtils.isVisible(customkeysLink), "Customkeys link is visible");
+  ok(
+    customkeysLink,
+    "Customkeys link is included in the Keyboard and Scrolling group"
+  );
+  is(
+    customkeysLink.href,
+    "about:keyboard",
+    "Customkeys moz-box-link's href attribute is set to about:keyboard"
+  );
+
   await BrowserTestUtils.removeTab(tab);
 });
 
@@ -47,7 +63,7 @@ add_task(async function test_accessibility_pane_click_sidebar() {
   let doc = tab.linkedBrowser.contentDocument;
 
   let navButton = doc.getElementById("category-accessibility");
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => navButton?.buttonEl,
     "Wait for accessibility nav button to render"
   );

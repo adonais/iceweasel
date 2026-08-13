@@ -2,19 +2,18 @@
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-#include "gfxPlatform.h"
-
 #include "MainThreadUtils.h"
-#include "nsIThread.h"
-#include "mozilla/RefPtr.h"
 #include "SoftwareVsyncSource.h"
 #include "VsyncSource.h"
-#include "mozilla/gtest/MozAssertions.h"
+#include "gfxPlatform.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "mozilla/Monitor.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/VsyncDispatcher.h"
+#include "mozilla/gtest/MozAssertions.h"
+#include "nsIThread.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;

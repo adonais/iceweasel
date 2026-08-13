@@ -3,12 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsMemoryPressure.h"
+
 #include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Services.h"
-
-#include "nsThreadUtils.h"
 #include "nsIObserverService.h"
+#include "nsThreadUtils.h"
 
 using namespace mozilla;
 

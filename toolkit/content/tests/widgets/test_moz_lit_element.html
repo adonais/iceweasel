@@ -174,6 +174,99 @@ has-custom-attr =
         is(el.ariaLabel, "Label!", "ariaLabel property is set");
         ok(!el.hasAttribute("aria-label"), "aria-label was removed");
       });
+
+      function defineSiblingElements() {
+        class SiblingBase extends MozLitElement {
+          static properties = {
+            label: { type: String, fluent: true },
+            description: { type: String, fluent: true },
+            ariaLabel: { type: String, mapped: true },
+          };
+
+          render() {
+            return this.label;
+          }
+        }
+        customElements.define("sibling-base", SiblingBase);
+
+        class SiblingA extends SiblingBase {
+          static properties = {
+            propA: { type: String, fluent: true },
+            mappedA: { type: String, mapped: true, attribute: "mapped-a" },
+          };
+        }
+        customElements.define("sibling-a", SiblingA);
+
+        class SiblingB extends SiblingBase {
+          static properties = {
+            propB: { type: String, fluent: true },
+            mappedB: { type: String, mapped: true, attribute: "mapped-b" },
+          };
+        }
+        customElements.define("sibling-b", SiblingB);
+      }
+
+      // Regression test: fluentProperties and mappedAttributes are stored on the
+      // class, so a subclass adding its own must not mutate the array it inherits
+      // from an ancestor, which would leak that subclass's attributes into its
+      // parent and every sibling (and, since classes finalize lazily on first
+      // use, do so in an order-dependent, flaky way).
+      add_task(async function testFluentPropertiesNotSharedAcrossSubclasses() {
+        defineSiblingElements();
+
+        // Rendering upgrades the elements, which sets data-l10n-attrs from each
+        // class's fluentProperties.
+        render(
+          html`<sibling-base></sibling-base>
+            <sibling-a></sibling-a>
+            <sibling-b></sibling-b>`,
+          renderTarget
+        );
+        let [baseEl, aEl, bEl] = renderTarget.children;
+        await Promise.all([
+          baseEl.updateComplete,
+          aEl.updateComplete,
+          bEl.updateComplete,
+        ]);
+
+        is(
+          baseEl.dataset.l10nAttrs,
+          "label,description",
+          "Base element only exposes its own fluent attributes"
+        );
+        is(
+          aEl.dataset.l10nAttrs,
+          "label,description,propa",
+          "Sibling A inherits the base attributes plus its own, not sibling B's"
+        );
+        is(
+          bEl.dataset.l10nAttrs,
+          "label,description,propb",
+          "Sibling B inherits the base attributes plus its own, not sibling A's"
+        );
+
+        isDeeply(
+          baseEl.constructor.mappedAttributes,
+          [["ariaLabel", "ariaLabelAttribute"]],
+          "Base element only has its own mapped attribute"
+        );
+        isDeeply(
+          aEl.constructor.mappedAttributes,
+          [
+            ["ariaLabel", "ariaLabelAttribute"],
+            ["mappedA", "mappedAAttribute"],
+          ],
+          "Sibling A has the base mapped attribute plus its own, not sibling B's"
+        );
+        isDeeply(
+          bEl.constructor.mappedAttributes,
+          [
+            ["ariaLabel", "ariaLabelAttribute"],
+            ["mappedB", "mappedBAttribute"],
+          ],
+          "Sibling B has the base mapped attribute plus its own, not sibling A's"
+        );
+      });
     </script>
   </head>
   <body>

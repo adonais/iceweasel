@@ -30,8 +30,6 @@
     --panel-box-shadow-margin: 0px;
   }
 
-  --panel-separator-color: color-mix(in srgb, currentColor 25%, transparent);
-
   --popup-notification-body-width: calc(31em - calc(2 * var(--panel-padding)));
 
   &[lwtheme] {
@@ -54,10 +52,6 @@
     --toolbar-color-scheme: dark;
   }
 
-  @media (prefers-contrast) {
-    --panel-separator-color: currentColor;
-  }
-
   background-color: -moz-Dialog;
   color: -moz-DialogText;
   font: message-box;
@@ -66,6 +60,13 @@
   &[dialogroot] {
     font: menu;
   }
+}
+
+/* Reset default heading font-sizes in the chrome. */
+h1,
+h2,
+h3 {
+  font-size: unset;
 }
 
 :is(menupopup, panel):where([type="arrow"]) {
@@ -106,6 +107,16 @@
 
 :root[lwtheme-image][lwtheme-brighttext] {
   text-shadow: 1px 1px 1.5px black;
+}
+
+/* `[hidden]` is implemented as a presentation attribute (see html.css), so any
+ * author rule setting `display` overrides it. This `!important` rule lets the
+ * attribute win regardless, so callers can set a `display` type unconditionally
+ * rather than guarding it with `:not([hidden])`. The `:where()` keeps the
+ * selector at zero specificity, so the rare element that must stay shown can
+ * override it with a plain `!important`. */
+:where([hidden]) {
+  display: none !important;
 }
 
 /* Rules for 'hiding' portions of the chrome for special

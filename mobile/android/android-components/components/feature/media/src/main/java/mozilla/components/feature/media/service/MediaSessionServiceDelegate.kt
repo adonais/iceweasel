@@ -29,8 +29,10 @@ import mozilla.components.feature.media.ext.getArtistOrUrl
 import mozilla.components.feature.media.ext.getNonPrivateIcon
 import mozilla.components.feature.media.ext.getTitleOrUrl
 import mozilla.components.feature.media.ext.toPlaybackState
+import mozilla.components.feature.media.facts.emitNotificationNextFact
 import mozilla.components.feature.media.facts.emitNotificationPauseFact
 import mozilla.components.feature.media.facts.emitNotificationPlayFact
+import mozilla.components.feature.media.facts.emitNotificationPreviousFact
 import mozilla.components.feature.media.facts.emitStatePauseFact
 import mozilla.components.feature.media.facts.emitStatePlayFact
 import mozilla.components.feature.media.facts.emitStateStopFact
@@ -136,6 +138,14 @@ internal class MediaSessionServiceDelegate(
                 controller?.pause()
                 emitNotificationPauseFact()
             }
+            AbstractMediaSessionService.ACTION_NEXT_TRACK -> {
+                controller?.nextTrack()
+                emitNotificationNextFact()
+            }
+            AbstractMediaSessionService.ACTION_PREV_TRACK -> {
+                controller?.previousTrack()
+                emitNotificationPreviousFact()
+            }
             else -> logger.debug("Can't process action: ${intent?.action}")
         }
     }
@@ -160,7 +170,11 @@ internal class MediaSessionServiceDelegate(
             // Audio focus must be requested only while a foreground service is running.
             // On Android 15+, requesting audio focus from the background without one
             // silently returns AUDIOFOCUS_REQUEST_FAILED.
-            audioFocus.request(sessionState.id)
+            audioFocus.request(
+                sessionState.id,
+                sessionState.mediaSessionState?.audioSessionType
+                    ?: MediaSession.AudioSessionType.AUTO,
+            )
             updateNotification(sessionState)
         } else {
             // startForeground() requests audio focus once the service is started, ensuring

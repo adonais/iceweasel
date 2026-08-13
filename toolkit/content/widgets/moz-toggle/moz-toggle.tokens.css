@@ -51,3 +51,15 @@
     }
   }
 }
+
+@media -moz-pref("browser.nova.enabled") {
+  @layer tokens-foundation-nova {
+    :root,
+    :host {
+      --toggle-background-color-pressed: var(--button-background-color-primary);
+      --toggle-background-color-pressed-hover: var(--button-background-color-primary-hover);
+      --toggle-background-color-pressed-active: var(--button-background-color-primary-active);
+      --toggle-dot-background-color-on-pressed: var(--background-color-box);
+    }
+  }
+}

@@ -4,6 +4,7 @@ declare_args() {
   # webrtc.json or abseil.json).
   build_mozilla_webrtc = false
   build_mozilla_absl = false
+  build_mozilla_angle = false
 }
 
 group("default") {
@@ -12,5 +13,8 @@ group("default") {
   }
   if (build_mozilla_absl) {
     deps = [ "abseil-cpp:absl" ]
+  }
+  if (build_mozilla_angle) {
+    deps = [ "angle:libEGL" ]
   }
 }

@@ -36,6 +36,7 @@
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/gfx/GPUProcessListener.h"
 #include "mozilla/gfx/gfxVarReceiver.h"
+#include "mozilla/glean/FOGTransportParent.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
 #include "mozilla/ipc/InputStreamUtils.h"
@@ -441,6 +442,12 @@ class ContentParent final : public PContentParent,
     return IsDead() || IsSignaledImpendingShutdown();
   }
   bool IsDead() const { return mLifecycleState == LifecycleState::DEAD; }
+
+  /**
+   * Whether or not the content process has reported that it has become
+   * untrusted. See the documentation in ContentChild for more details.
+   */
+  bool IsUntrusted() const { return mIsUntrusted; }
 
   bool IsForBrowser() const { return mIsForBrowser; }
 
@@ -1386,6 +1393,8 @@ class ContentParent final : public PContentParent,
 
   mozilla::ipc::IPCResult RecvFOGData(ByteBuf&& buf);
 
+  RefPtr<FlushFOGDataPromise> DoFlushFOGData();
+
   mozilla::ipc::IPCResult RecvGeckoTraceExport(ByteBuf&& aBuf);
 
   mozilla::ipc::IPCResult RecvSetContainerFeaturePolicy(
@@ -1422,6 +1431,11 @@ class ContentParent final : public PContentParent,
 #endif
 
   mozilla::ipc::IPCResult RecvDropParentProcessChannelHandle(const nsID& aUuid);
+
+  mozilla::ipc::IPCResult RecvBecomeUntrusted() {
+    mIsUntrusted = true;
+    return IPC_OK();
+  }
 
  public:
   void SendGetFilesResponseAndForget(const nsID& aID,
@@ -1548,6 +1562,9 @@ class ContentParent final : public PContentParent,
   uint8_t mLaunchResolved : 1;
   uint8_t mLaunchResolvedOk : 1;
 
+  // True if this process has marked itself as untrusted.
+  uint8_t mIsUntrusted : 1;
+
   // True if the input event queue on the main thread of the content process is
   // enabled.
   uint8_t mIsRemoteInputEventQueueEnabled : 1;
@@ -1584,6 +1601,8 @@ class ContentParent final : public PContentParent,
 
   UniquePtr<gfx::DriverCrashGuard> mDriverCrashGuard;
   UniquePtr<MemoryReportRequestHost> mMemoryReportRequest;
+
+  RefPtr<glean::FOGTransportParent> mFOGTransportParentActor;
 
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
   RefPtr<SandboxBroker> mSandboxBroker;

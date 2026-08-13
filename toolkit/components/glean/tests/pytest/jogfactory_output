@@ -200,6 +200,7 @@ pub fn create_and_register_metric(
     send_in_pings: Vec<String>,
     lifetime: Lifetime,
     disabled: bool,
+    in_session: bool,
     time_unit: Option<TimeUnit>,
     memory_unit: Option<MemoryUnit>,
     allowed_extra_keys: Option<Vec<String>>,
@@ -222,6 +223,7 @@ pub fn create_and_register_metric(
                 send_in_pings,
                 lifetime,
                 disabled,
+                in_session,
                 ..Default::default()
             };
             let metric = if permit_non_commutative_operations_over_ipc.unwrap_or(false) {
@@ -243,6 +245,7 @@ pub fn create_and_register_metric(
                 send_in_pings,
                 lifetime,
                 disabled,
+                in_session,
                 ..Default::default()
             };
             let metric = CounterMetric::new(BaseMetricId(metric_id), meta);
@@ -260,6 +263,7 @@ pub fn create_and_register_metric(
                 send_in_pings,
                 lifetime,
                 disabled,
+                in_session,
                 ..Default::default()
             };
             let metric = CustomDistributionMetric::new(BaseMetricId(metric_id), meta, range_min.unwrap(), range_max.unwrap(), bucket_count.unwrap(), histogram_type.unwrap());
@@ -277,6 +281,7 @@ pub fn create_and_register_metric(
                 send_in_pings,
                 lifetime,
                 disabled,
+                in_session,
                 ..Default::default()
             };
             let metric = DatetimeMetric::new(BaseMetricId(metric_id), meta, time_unit.unwrap());
@@ -294,6 +299,7 @@ pub fn create_and_register_metric(
                 send_in_pings,
                 lifetime,
                 disabled,
+                in_session,
                 ..Default::default()
             };
             let metric = DenominatorMetric::new(BaseMetricId(metric_id), meta, numerators.unwrap());
@@ -311,6 +317,7 @@ pub fn create_and_register_metric(
                 send_in_pings,
                 lifetime,
                 disabled,
+                in_session,
                 ..Default::default()
             };
             let metric = DualLabeledCounterMetric::new(BaseMetricId(metric_id), meta, keys, categories);
@@ -328,6 +335,7 @@ pub fn create_and_register_metric(
                 send_in_pings,
                 lifetime,
                 disabled,
+                in_session,
                 ..Default::default()
             };
             let metric = EventMetric::with_runtime_extra_keys(BaseMetricId(metric_id), meta, allowed_extra_keys.unwrap());
@@ -346,6 +354,7 @@ pub fn create_and_register_metric(
                     send_in_pings,
                     lifetime,
                     disabled,
+                    in_session,
                     ..Default::default()
                 }
                 };            let metric = if permit_non_commutative_operations_over_ipc.unwrap_or(false) {
@@ -368,6 +377,7 @@ pub fn create_and_register_metric(
                     send_in_pings,
                     lifetime,
                     disabled,
+                    in_session,
                     ..Default::default()
                 }
                 };            let metric = LabeledMetric::new(BaseMetricId(metric_id), meta, labels);
@@ -386,6 +396,7 @@ pub fn create_and_register_metric(
                     send_in_pings,
                     lifetime,
                     disabled,
+                    in_session,
                     ..Default::default()
                 }
                 };            let metric = LabeledMetric::new(BaseMetricId(metric_id), meta, labels);
@@ -403,6 +414,7 @@ pub fn create_and_register_metric(
                 send_in_pings,
                 lifetime,
                 disabled,
+                in_session,
                 ..Default::default()
             };
             let metric = MemoryDistributionMetric::new(BaseMetricId(metric_id), meta, memory_unit.unwrap());
@@ -420,6 +432,7 @@ pub fn create_and_register_metric(
                 send_in_pings,
                 lifetime,
                 disabled,
+                in_session,
                 ..Default::default()
             };
             let metric = NumeratorMetric::new(BaseMetricId(metric_id), meta);
@@ -437,6 +450,7 @@ pub fn create_and_register_metric(
                 send_in_pings,
                 lifetime,
                 disabled,
+                in_session,
                 ..Default::default()
             };
             let metric = ObjectMetric::new(BaseMetricId(metric_id), meta);
@@ -454,6 +468,7 @@ pub fn create_and_register_metric(
                 send_in_pings,
                 lifetime,
                 disabled,
+                in_session,
                 ..Default::default()
             };
             let metric = if permit_non_commutative_operations_over_ipc.unwrap_or(false) {
@@ -475,6 +490,7 @@ pub fn create_and_register_metric(
                 send_in_pings,
                 lifetime,
                 disabled,
+                in_session,
                 ..Default::default()
             };
             let metric = RateMetric::new(BaseMetricId(metric_id), meta);
@@ -492,6 +508,7 @@ pub fn create_and_register_metric(
                 send_in_pings,
                 lifetime,
                 disabled,
+                in_session,
                 ..Default::default()
             };
             let metric = StringMetric::new(BaseMetricId(metric_id), meta);
@@ -509,6 +526,7 @@ pub fn create_and_register_metric(
                 send_in_pings,
                 lifetime,
                 disabled,
+                in_session,
                 ..Default::default()
             };
             let metric = StringListMetric::new(BaseMetricId(metric_id), meta);
@@ -526,6 +544,7 @@ pub fn create_and_register_metric(
                 send_in_pings,
                 lifetime,
                 disabled,
+                in_session,
                 ..Default::default()
             };
             let metric = TextMetric::new(BaseMetricId(metric_id), meta);
@@ -543,6 +562,7 @@ pub fn create_and_register_metric(
                 send_in_pings,
                 lifetime,
                 disabled,
+                in_session,
                 ..Default::default()
             };
             let metric = TimespanMetric::new(BaseMetricId(metric_id), meta, time_unit.unwrap());
@@ -560,6 +580,7 @@ pub fn create_and_register_metric(
                 send_in_pings,
                 lifetime,
                 disabled,
+                in_session,
                 ..Default::default()
             };
             let metric = TimingDistributionMetric::new(BaseMetricId(metric_id), meta, time_unit.unwrap());
@@ -577,6 +598,7 @@ pub fn create_and_register_metric(
                 send_in_pings,
                 lifetime,
                 disabled,
+                in_session,
                 ..Default::default()
             };
             let metric = UuidMetric::new(BaseMetricId(metric_id), meta);

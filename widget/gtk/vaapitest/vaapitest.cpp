@@ -2,14 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <cstdio>
-#include <cstdlib>
 #include <dlfcn.h>
 #include <fcntl.h>
-#include <unistd.h>
+#include <getopt.h>
 #include <string.h>
 #include <unistd.h>
-#include <getopt.h>
+
+#include <cstdio>
+#include <cstdlib>
 
 #if defined(MOZ_ASAN) || defined(FUZZING)
 #  include <signal.h>
@@ -21,10 +21,9 @@
 #  include <stdio.h>
 #endif
 
+#include "mozilla/GfxInfoUtils.h"
 #include "prlink.h"
 #include "va/va.h"
-
-#include "mozilla/GfxInfoUtils.h"
 
 // Print VA-API test results to stdout and logging to stderr
 #define OUTPUT_PIPE 1

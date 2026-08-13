@@ -3,8 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "IpcResourceUpdateQueue.h"
+
 #include <string.h>
+
 #include <algorithm>
+
 #include "mozilla/CheckedInt.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/layers/PTextureChild.h"

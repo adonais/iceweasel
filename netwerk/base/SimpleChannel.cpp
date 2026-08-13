@@ -4,18 +4,17 @@
 
 #include "SimpleChannel.h"
 
+#include "mozilla/Try.h"
+#include "mozilla/dom/ContentChild.h"
+#include "mozilla/net/NeckoChild.h"
 #include "nsBaseChannel.h"
+#include "nsICancelable.h"
 #include "nsIChannel.h"
 #include "nsIChildChannel.h"
-#include "nsICancelable.h"
 #include "nsIInputStream.h"
 #include "nsIRequest.h"
 #include "nsISupportsImpl.h"
 #include "nsNetUtil.h"
-
-#include "mozilla/Try.h"
-#include "mozilla/dom/ContentChild.h"
-#include "mozilla/net/NeckoChild.h"
 
 namespace mozilla {
 namespace net {

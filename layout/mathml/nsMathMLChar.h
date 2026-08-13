@@ -68,6 +68,7 @@ class nsMathMLChar {
  public:
   typedef gfxTextRun::Range Range;
   typedef mozilla::gfx::DrawTarget DrawTarget;
+  using imgDrawingParams = mozilla::image::imgDrawingParams;
 
   // constructor and destructor
   nsMathMLChar() : mDirection(StretchDirection::Default) {
@@ -87,7 +88,8 @@ class nsMathMLChar {
                const nsRect* aSelectedRect = nullptr);
 
   void PaintForeground(nsIFrame* aForFrame, gfxContext& aRenderingContext,
-                       nsPoint aPt, bool aIsSelected);
+                       imgDrawingParams& aImgParams, nsPoint aPt,
+                       bool aIsSelected);
 
   // This is the method called to ask the char to stretch itself.
   // @param aContainerSize - IN - suggested size for the stretched char
@@ -205,11 +207,13 @@ class nsMathMLChar {
                            bool aMaxSizeIsAbsolute = false);
 
   nsresult PaintVertically(nsPresContext* aPresContext,
-                           gfxContext* aThebesContext, nsRect& aRect,
+                           gfxContext* aThebesContext,
+                           imgDrawingParams& aImgParams, nsRect& aRect,
                            nscolor aColor);
 
   nsresult PaintHorizontally(nsPresContext* aPresContext,
-                             gfxContext* aThebesContext, nsRect& aRect,
+                             gfxContext* aThebesContext,
+                             imgDrawingParams& aImgParams, nsRect& aRect,
                              nscolor aColor);
 
   void ApplyTransforms(gfxContext* aThebesContext, int32_t aAppUnitsPerGfxUnit,

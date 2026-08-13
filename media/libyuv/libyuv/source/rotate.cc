@@ -8,9 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <assert.h>
-
 #include "libyuv/rotate.h"
+
+#include <assert.h>
+#include <limits.h>
 
 #include "libyuv/convert.h"
 #include "libyuv/cpu_id.h"
@@ -128,7 +129,7 @@ void RotatePlane90(const uint8_t* src,
   // Rotate by 90 is a transpose with the source read
   // from bottom to top. So set the source pointer to the end
   // of the buffer and flip the sign of the source stride.
-  src += src_stride * (height - 1);
+  src += (ptrdiff_t)src_stride * (height - 1);
   src_stride = -src_stride;
   TransposePlane(src, src_stride, dst, dst_stride, width, height);
 }
@@ -143,7 +144,7 @@ void RotatePlane270(const uint8_t* src,
   // Rotate by 270 is a transpose with the destination written
   // from bottom to top. So set the destination pointer to the end
   // of the buffer and flip the sign of the destination stride.
-  dst += dst_stride * (width - 1);
+  dst += (ptrdiff_t)dst_stride * (width - 1);
   dst_stride = -dst_stride;
   TransposePlane(src, src_stride, dst, dst_stride, width, height);
 }
@@ -160,8 +161,8 @@ void RotatePlane180(const uint8_t* src,
   assert(row);
   if (!row)
     return;
-  const uint8_t* src_bot = src + src_stride * (height - 1);
-  uint8_t* dst_bot = dst + dst_stride * (height - 1);
+  const uint8_t* src_bot = src + (ptrdiff_t)src_stride * (height - 1);
+  uint8_t* dst_bot = dst + (ptrdiff_t)dst_stride * (height - 1);
   int half_height = (height + 1) >> 1;
   int y;
   void (*MirrorRow)(const uint8_t* src, uint8_t* dst, int width) = MirrorRow_C;
@@ -354,7 +355,7 @@ void SplitRotateUV90(const uint8_t* src,
                      int dst_stride_b,
                      int width,
                      int height) {
-  src += src_stride * (height - 1);
+  src += (ptrdiff_t)src_stride * (height - 1);
   src_stride = -src_stride;
 
   SplitTransposeUV(src, src_stride, dst_a, dst_stride_a, dst_b, dst_stride_b,
@@ -397,9 +398,14 @@ void SplitRotateUV180(const uint8_t* src,
     MirrorSplitUVRow = MirrorSplitUVRow_NEON;
   }
 #endif
-#if defined(HAS_MIRRORSPLITUVROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 16)) {
-    MirrorSplitUVRow = MirrorSplitUVRow_SSSE3;
+#if defined(HAS_MIRRORSPLITUVROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2) && IS_ALIGNED(width, 32)) {
+    MirrorSplitUVRow = MirrorSplitUVRow_AVX2;
+  }
+#endif
+#if defined(HAS_MIRRORSPLITUVROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW) && IS_ALIGNED(width, 32)) {
+    MirrorSplitUVRow = MirrorSplitUVRow_AVX512BW;
   }
 #endif
 #if defined(HAS_MIRRORSPLITUVROW_LSX)
@@ -431,14 +437,15 @@ int SplitRotateUV(const uint8_t* src_uv,
                   int width,
                   int height,
                   enum RotationMode mode) {
-  if (!src_uv || width <= 0 || height == 0 || !dst_u || !dst_v) {
+  if (!src_uv || width <= 0 || height == 0 || height == INT_MIN || !dst_u ||
+      !dst_v) {
     return -1;
   }
 
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src_uv = src_uv + (height - 1) * src_stride_uv;
+    src_uv = src_uv + (ptrdiff_t)(height - 1) * src_stride_uv;
     src_stride_uv = -src_stride_uv;
   }
 
@@ -473,14 +480,14 @@ int RotatePlane(const uint8_t* src,
                 int width,
                 int height,
                 enum RotationMode mode) {
-  if (!src || width <= 0 || height == 0 || !dst) {
+  if (!src || width <= 0 || height == 0 || height == INT_MIN || !dst) {
     return -1;
   }
 
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src = src + (height - 1) * src_stride;
+    src = src + (ptrdiff_t)(height - 1) * src_stride;
     src_stride = -src_stride;
   }
 
@@ -533,7 +540,7 @@ static void RotatePlane90_16(const uint16_t* src,
   // Rotate by 90 is a transpose with the source read
   // from bottom to top. So set the source pointer to the end
   // of the buffer and flip the sign of the source stride.
-  src += src_stride * (height - 1);
+  src += (ptrdiff_t)src_stride * (height - 1);
   src_stride = -src_stride;
   TransposePlane_16(src, src_stride, dst, dst_stride, width, height);
 }
@@ -547,7 +554,7 @@ static void RotatePlane270_16(const uint16_t* src,
   // Rotate by 270 is a transpose with the destination written
   // from bottom to top. So set the destination pointer to the end
   // of the buffer and flip the sign of the destination stride.
-  dst += dst_stride * (width - 1);
+  dst += (ptrdiff_t)dst_stride * (width - 1);
   dst_stride = -dst_stride;
   TransposePlane_16(src, src_stride, dst, dst_stride, width, height);
 }
@@ -558,8 +565,8 @@ static void RotatePlane180_16(const uint16_t* src,
                               int dst_stride,
                               int width,
                               int height) {
-  const uint16_t* src_bot = src + src_stride * (height - 1);
-  uint16_t* dst_bot = dst + dst_stride * (height - 1);
+  const uint16_t* src_bot = src + (ptrdiff_t)src_stride * (height - 1);
+  uint16_t* dst_bot = dst + (ptrdiff_t)dst_stride * (height - 1);
   int half_height = (height + 1) >> 1;
   int y;
 
@@ -591,14 +598,14 @@ int RotatePlane_16(const uint16_t* src,
                    int width,
                    int height,
                    enum RotationMode mode) {
-  if (!src || width <= 0 || height == 0 || !dst) {
+  if (!src || width <= 0 || height == 0 || height == INT_MIN || !dst) {
     return -1;
   }
 
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src = src + (height - 1) * src_stride;
+    src = src + (ptrdiff_t)(height - 1) * src_stride;
     src_stride = -src_stride;
   }
 
@@ -641,7 +648,7 @@ int I420Rotate(const uint8_t* src_y,
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
   if ((!src_y && dst_y) || !src_u || !src_v || width <= 0 || height == 0 ||
-      !dst_y || !dst_u || !dst_v) {
+      height == INT_MIN || !dst_y || !dst_u || !dst_v) {
     return -1;
   }
 
@@ -649,9 +656,9 @@ int I420Rotate(const uint8_t* src_y,
   if (height < 0) {
     height = -height;
     halfheight = (height + 1) >> 1;
-    src_y = src_y + (height - 1) * src_stride_y;
-    src_u = src_u + (halfheight - 1) * src_stride_u;
-    src_v = src_v + (halfheight - 1) * src_stride_v;
+    src_y = src_y + (ptrdiff_t)(height - 1) * src_stride_y;
+    src_u = src_u + (ptrdiff_t)(halfheight - 1) * src_stride_u;
+    src_v = src_v + (ptrdiff_t)(halfheight - 1) * src_stride_v;
     src_stride_y = -src_stride_y;
     src_stride_u = -src_stride_u;
     src_stride_v = -src_stride_v;
@@ -711,16 +718,16 @@ int I422Rotate(const uint8_t* src_y,
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
   int r;
-  if (!src_y || !src_u || !src_v || width <= 0 || height == 0 || !dst_y ||
-      !dst_u || !dst_v) {
+  if (!src_y || !src_u || !src_v || width <= 0 || height == 0 ||
+      height == INT_MIN || !dst_y || !dst_u || !dst_v) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src_y = src_y + (height - 1) * src_stride_y;
-    src_u = src_u + (height - 1) * src_stride_u;
-    src_v = src_v + (height - 1) * src_stride_v;
+    src_y = src_y + (ptrdiff_t)(height - 1) * src_stride_y;
+    src_u = src_u + (ptrdiff_t)(height - 1) * src_stride_u;
+    src_v = src_v + (ptrdiff_t)(height - 1) * src_stride_v;
     src_stride_y = -src_stride_y;
     src_stride_u = -src_stride_u;
     src_stride_v = -src_stride_v;
@@ -806,17 +813,17 @@ int I444Rotate(const uint8_t* src_y,
                int width,
                int height,
                enum RotationMode mode) {
-  if (!src_y || !src_u || !src_v || width <= 0 || height == 0 || !dst_y ||
-      !dst_u || !dst_v) {
+  if (!src_y || !src_u || !src_v || width <= 0 || height == 0 ||
+      height == INT_MIN || !dst_y || !dst_u || !dst_v) {
     return -1;
   }
 
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src_y = src_y + (height - 1) * src_stride_y;
-    src_u = src_u + (height - 1) * src_stride_u;
-    src_v = src_v + (height - 1) * src_stride_v;
+    src_y = src_y + (ptrdiff_t)(height - 1) * src_stride_y;
+    src_u = src_u + (ptrdiff_t)(height - 1) * src_stride_u;
+    src_v = src_v + (ptrdiff_t)(height - 1) * src_stride_v;
     src_stride_y = -src_stride_y;
     src_stride_u = -src_stride_u;
     src_stride_v = -src_stride_v;
@@ -866,8 +873,8 @@ int NV12ToI420Rotate(const uint8_t* src_y,
                      enum RotationMode mode) {
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
-  if (!src_y || !src_uv || width <= 0 || height == 0 || !dst_y || !dst_u ||
-      !dst_v) {
+  if (!src_y || !src_uv || width <= 0 || height == 0 || height == INT_MIN ||
+      !dst_y || !dst_u || !dst_v) {
     return -1;
   }
 
@@ -875,8 +882,8 @@ int NV12ToI420Rotate(const uint8_t* src_y,
   if (height < 0) {
     height = -height;
     halfheight = (height + 1) >> 1;
-    src_y = src_y + (height - 1) * src_stride_y;
-    src_uv = src_uv + (halfheight - 1) * src_stride_uv;
+    src_y = src_y + (ptrdiff_t)(height - 1) * src_stride_y;
+    src_uv = src_uv + (ptrdiff_t)(halfheight - 1) * src_stride_uv;
     src_stride_y = -src_stride_y;
     src_stride_uv = -src_stride_uv;
   }
@@ -943,16 +950,16 @@ int Android420ToI420Rotate(const uint8_t* src_y,
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
   if ((!src_y && dst_y) || !src_u || !src_v || !dst_u || !dst_v || width <= 0 ||
-      height == 0) {
+      height == 0 || height == INT_MIN) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
     halfheight = (height + 1) >> 1;
-    src_y = src_y + (height - 1) * src_stride_y;
-    src_u = src_u + (halfheight - 1) * src_stride_u;
-    src_v = src_v + (halfheight - 1) * src_stride_v;
+    src_y = src_y + (ptrdiff_t)(height - 1) * src_stride_y;
+    src_u = src_u + (ptrdiff_t)(halfheight - 1) * src_stride_u;
+    src_v = src_v + (ptrdiff_t)(halfheight - 1) * src_stride_v;
     src_stride_y = -src_stride_y;
     src_stride_u = -src_stride_u;
     src_stride_v = -src_stride_v;
@@ -1018,16 +1025,16 @@ int I010Rotate(const uint16_t* src_y,
                enum RotationMode mode) {
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
-  if (!src_y || !src_u || !src_v || width <= 0 || height == 0 || !dst_y ||
-      !dst_u || !dst_v || dst_stride_y < 0) {
+  if (!src_y || !src_u || !src_v || width <= 0 || height == 0 ||
+      height == INT_MIN || !dst_y || !dst_u || !dst_v || dst_stride_y < 0) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src_y = src_y + (height - 1) * src_stride_y;
-    src_u = src_u + (height - 1) * src_stride_u;
-    src_v = src_v + (height - 1) * src_stride_v;
+    src_y = src_y + (ptrdiff_t)(height - 1) * src_stride_y;
+    src_u = src_u + (ptrdiff_t)(height - 1) * src_stride_u;
+    src_v = src_v + (ptrdiff_t)(height - 1) * src_stride_v;
     src_stride_y = -src_stride_y;
     src_stride_u = -src_stride_u;
     src_stride_v = -src_stride_v;
@@ -1089,16 +1096,16 @@ int I210Rotate(const uint16_t* src_y,
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
   int r;
-  if (!src_y || !src_u || !src_v || width <= 0 || height == 0 || !dst_y ||
-      !dst_u || !dst_v) {
+  if (!src_y || !src_u || !src_v || width <= 0 || height == 0 ||
+      height == INT_MIN || !dst_y || !dst_u || !dst_v) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src_y = src_y + (height - 1) * src_stride_y;
-    src_u = src_u + (height - 1) * src_stride_u;
-    src_v = src_v + (height - 1) * src_stride_v;
+    src_y = src_y + (ptrdiff_t)(height - 1) * src_stride_y;
+    src_u = src_u + (ptrdiff_t)(height - 1) * src_stride_u;
+    src_v = src_v + (ptrdiff_t)(height - 1) * src_stride_v;
     src_stride_y = -src_stride_y;
     src_stride_u = -src_stride_u;
     src_stride_v = -src_stride_v;
@@ -1186,16 +1193,16 @@ int I410Rotate(const uint16_t* src_y,
                int width,
                int height,
                enum RotationMode mode) {
-  if (!src_y || !src_u || !src_v || width <= 0 || height == 0 || !dst_y ||
-      !dst_u || !dst_v || dst_stride_y < 0) {
+  if (!src_y || !src_u || !src_v || width <= 0 || height == 0 ||
+      height == INT_MIN || !dst_y || !dst_u || !dst_v || dst_stride_y < 0) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src_y = src_y + (height - 1) * src_stride_y;
-    src_u = src_u + (height - 1) * src_stride_u;
-    src_v = src_v + (height - 1) * src_stride_v;
+    src_y = src_y + (ptrdiff_t)(height - 1) * src_stride_y;
+    src_u = src_u + (ptrdiff_t)(height - 1) * src_stride_u;
+    src_v = src_v + (ptrdiff_t)(height - 1) * src_stride_v;
     src_stride_y = -src_stride_y;
     src_stride_u = -src_stride_u;
     src_stride_v = -src_stride_v;

@@ -9,10 +9,6 @@
  */
 
 import { sanitizeUntrustedContent } from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
-import {
-  FEATURE_MAJOR_VERSIONS,
-  MODEL_FEATURES,
-} from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -22,7 +18,17 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ToolUI: "moz-src:///browser/components/aiwindow/ui/modules/ToolUI.sys.mjs",
   ToolUITelemetry:
     "moz-src:///browser/components/aiwindow/ui/modules/ToolUITelemetry.sys.mjs",
+  SmartTabGroupingManager:
+    "moz-src:///browser/components/tabbrowser/SmartTabGrouping.sys.mjs",
 });
+
+export const CLOSE_TABS = "close_tabs";
+export const GROUP_TABS = "group_tabs";
+export const TAB_ACTIONS = [CLOSE_TABS, GROUP_TABS];
+const UI_TYPE_BY_ACTION = {
+  [CLOSE_TABS]: "website-confirmation",
+  [GROUP_TABS]: "tab-group-confirmation",
+};
 
 /**
  * Finds tabs in active AI windows whose URLs are in validUrls.
@@ -87,26 +93,97 @@ function shouldRequireUserConfirmation(tabs, topAIWin, securityProperties) {
 }
 
 /**
- * Handles the close_tabs action of manage_tabs: resolves URL tokens to
- * open tabs, then either prompts for confirmation or closes them.
- *
- * @param {{ validUrls: Set<string>, ask_confirmation: boolean, mode?: string, model?: string }} params
- * @param {ChatConversation} conversation
- * @returns {Promise<object>}
+ * @param {{ validUrls: Set<string>, askConfirmation: boolean, baseTelemetryInfo: object, conversation: ChatConversation, toolCallId?: string }} state
+ * @param {{ action: string, verb: string, failureError: string, failureMessage: string,
+ *           takeUIAction: (gathered: object) => Promise<object>,
+ *           getToolResults: (result: object, gathered: object) => object }} toolHandler
  */
-export async function closeTabsAction(
-  { validUrls, ask_confirmation, mode = "", model = "", toolCallId = "" },
-  conversation
-) {
-  const baseTelemetryInfo = {
-    location: mode,
-    chat_id: conversation?.id || "",
-    message_seq: conversation?.messageCount ?? 0,
-    model,
-    prompt_version: String(FEATURE_MAJOR_VERSIONS[MODEL_FEATURES.CHAT]),
-    action_type: conversation?.lastBrowserActionType || "description",
-  };
+async function runManageTabsFlow(state, toolHandler) {
+  const gatheredResult = await gatherTabs(
+    state.validUrls,
+    state.baseTelemetryInfo
+  );
 
+  if (gatheredResult.earlyResult) {
+    return gatheredResult.earlyResult;
+  }
+
+  if (
+    state.askConfirmation ||
+    shouldRequireUserConfirmation(
+      gatheredResult.matchedTabs,
+      gatheredResult.topAIWin,
+      state.conversation.securityProperties
+    )
+  ) {
+    const uiType = UI_TYPE_BY_ACTION[toolHandler.action];
+    if (!uiType) {
+      throw new Error(`No UI mapping for action: ${toolHandler.action}`);
+    }
+    // Keep token -> permanentKey on the chrome side until the user confirms;
+    // the map can't ride through the confirmation actor round-trip.
+    lazy.ToolUI.registerTabKeys(state.toolCallId, gatheredResult.tabKeyByToken);
+    return {
+      toolResult: {
+        description: `The following tabs were found. User confirmation is required to ${toolHandler.verb} them.`,
+        pending: true,
+        action: toolHandler.action,
+        selectedTabs: gatheredResult.summarizedTabInfo,
+      },
+      uiData: {
+        uiType,
+        properties: await toolHandler.getConfirmationProperties(gatheredResult),
+      },
+    };
+  }
+
+  const result = await toolHandler.takeUIAction(gatheredResult);
+
+  if (!result || !result.operationId) {
+    lazy.ToolUITelemetry.recordBrowserActionComplete({
+      ...state.baseTelemetryInfo,
+      result: "error",
+      tabs_affected: 0,
+      undo_available: false,
+      error: toolHandler.failureError,
+    });
+    return {
+      toolResult: `Error: ${toolHandler.action} action failed`,
+      uiData: null,
+    };
+  }
+
+  const { description, selectedTabs, telemetryValues } =
+    toolHandler.getToolResults(result, gatheredResult);
+
+  lazy.ToolUITelemetry.recordBrowserActionComplete({
+    ...state.baseTelemetryInfo,
+    result: telemetryValues.telemetryResult,
+    tabs_affected: telemetryValues.affectedCount,
+    undo_available: telemetryValues.affectedCount > 0,
+    error: telemetryValues.failedCount ? toolHandler.failureMessage : "",
+  });
+
+  return {
+    toolResult: {
+      description,
+      selectedTabs,
+    },
+    uiData: {
+      uiType: "ai-action-result",
+      properties: {
+        confirmedData: {
+          selectedTabs: gatheredResult.tabs,
+          operationId: result.operationId,
+          actionTimestamp: Date.now(),
+          actionType: toolHandler.action,
+        },
+      },
+    },
+  };
+}
+
+async function gatherTabs(validUrls, baseTelemetryInfo) {
   const { matchedTabs, topAIWin } = findMatchingAIWindowTabs(validUrls);
 
   if (!matchedTabs.length) {
@@ -118,8 +195,10 @@ export async function closeTabsAction(
       error: "no_open_tab_match",
     });
     return {
-      toolResult: "Error: None of the provided URL tokens match an open tab.",
-      uiData: null,
+      earlyResult: {
+        toolResult: "Error: None of the provided URL tokens match an open tab.",
+        uiData: null,
+      },
     };
   }
 
@@ -146,94 +225,196 @@ export async function closeTabsAction(
     checked,
   }));
 
-  if (
-    ask_confirmation ||
-    shouldRequireUserConfirmation(
-      matchedTabs,
-      topAIWin,
-      conversation.securityProperties
-    )
-  ) {
-    // Keep token -> permanentKey on the chrome side until the user confirms;
-    // the map can't ride through the confirmation actor round-trip.
-    lazy.ToolUI.registerTabKeys(toolCallId, tabKeyByToken);
+  return {
+    earlyResult: null,
+    summarizedTabInfo,
+    tabs,
+    matchedTabs,
+    topAIWin,
+    tabKeyByToken,
+  };
+}
+
+/**
+ * Closes the tabs identified by `validUrls` in the active AI windows.
+ */
+const closeTabsToolHandler = {
+  action: CLOSE_TABS,
+  verb: "close",
+  failureError: "close_failed",
+  failureMessage: "some_tabs_failed_to_close",
+
+  async takeUIAction(gatheredResult) {
+    return await lazy.ToolUI.closeSelectedTabs(
+      gatheredResult.tabs,
+      gatheredResult.tabKeyByToken,
+      gatheredResult.topAIWin
+    );
+  },
+
+  getConfirmationProperties(gatheredResult) {
+    return { tabs: gatheredResult.tabs };
+  },
+
+  getToolResults(result, gatheredResult) {
+    const failedKeys = new Set(
+      (result.failedTabs ?? [])
+        .map(failedTab => failedTab.tab?.permanentKey)
+        .filter(Boolean)
+    );
+    const closedTabs = gatheredResult.tabs.map(({ url, title, token }) => ({
+      url,
+      title,
+      closed: !failedKeys.has(gatheredResult.tabKeyByToken.get(token)),
+    }));
+
+    const closedCount = closedTabs.filter(tab => tab.closed).length;
+    const failedCount = closedTabs.length - closedCount;
+    let telemetryResult = "success";
+    if (failedCount && closedCount === 0) {
+      telemetryResult = "error";
+    } else if (failedCount) {
+      telemetryResult = "partial_success";
+    }
 
     return {
-      toolResult: {
-        description:
-          "The following tabs were found. User confirmation is required to close them.",
-        pending: true,
-        action: "close_tabs",
-        selectedTabs: summarizedTabInfo,
-      },
-      uiData: {
-        uiType: "website-confirmation",
-        properties: { tabs },
-      },
-    };
-  }
-
-  const result = await lazy.ToolUI.closeSelectedTabs(
-    tabs,
-    tabKeyByToken,
-    topAIWin
-  );
-  if (!result || !result.operationId) {
-    lazy.ToolUITelemetry.recordBrowserActionComplete({
-      ...baseTelemetryInfo,
-      result: "error",
-      tabs_affected: 0,
-      undo_available: false,
-      error: "close_failed",
-    });
-    return { toolResult: "Error: Failed to close tabs.", uiData: null };
-  }
-
-  const failedKeys = new Set(
-    (result.failedTabs ?? [])
-      .map(failedTab => failedTab.tab?.permanentKey)
-      .filter(Boolean)
-  );
-  const closedTabs = tabs.map(({ url, title, token }) => ({
-    url,
-    title,
-    closed: !failedKeys.has(tabKeyByToken.get(token)),
-  }));
-
-  const closedCount = closedTabs.filter(tab => tab.closed).length;
-  const failedCount = closedTabs.length - closedCount;
-  let telemetryResult = "success";
-  if (failedCount && closedCount === 0) {
-    telemetryResult = "error";
-  } else if (failedCount) {
-    telemetryResult = "partial_success";
-  }
-
-  lazy.ToolUITelemetry.recordBrowserActionComplete({
-    ...baseTelemetryInfo,
-    result: telemetryResult,
-    tabs_affected: closedCount,
-    undo_available: closedCount > 0,
-    error: failedCount ? "some_tabs_failed_to_close" : "",
-  });
-
-  return {
-    toolResult: {
       description: failedCount
-        ? `Some tabs failed to close (${failedCount} of ${tabs.length}).`
+        ? `Some tabs failed to close (${failedCount} of ${closedTabs.length}).`
         : "Tabs were successfully closed.",
       selectedTabs: closedTabs,
-    },
-    uiData: {
-      uiType: "ai-action-result",
-      properties: {
-        confirmedData: {
-          selectedTabs: tabs,
-          operationId: result.operationId,
-          actionTimestamp: Date.now(),
-          actionType: "close_tabs",
-        },
+      telemetryValues: {
+        telemetryResult,
+        affectedCount: closedCount,
+        failedCount,
       },
+    };
+  },
+};
+
+/**
+ * Builds a tool handler that groups the tabs identified by `validUrls` into a new
+ * tab group in the top active AI window. Uses the optional caller-supplied
+ * `rawLabel` when present (sanitized, capped at 40 chars); otherwise predicts
+ * one via `SmartTabGroupingManager`, defaulting to "Tabs" when prediction fails.
+ *
+ * @param {string} rawLabel
+ */
+function makeGroupTabsToolHandler(rawLabel) {
+  const getLabel = async gatheredResult => {
+    if (rawLabel) {
+      return sanitizeUntrustedContent(rawLabel, true).slice(0, 40).trim();
+    }
+    const rawTabs = gatheredResult.matchedTabs
+      .filter(m => m.win === gatheredResult.topAIWin)
+      .map(m => m.tab);
+
+    const allVisible = gatheredResult.topAIWin.gBrowser.visibleTabs;
+    const otherTabs = allVisible.filter(t => !rawTabs.includes(t) && !t.pinned);
+
+    const manager = new lazy.SmartTabGroupingManager();
+    return (
+      (await manager.getPredictedLabelForGroup(rawTabs, otherTabs)) || "Tabs"
+    );
+  };
+
+  return {
+    action: GROUP_TABS,
+    verb: "group",
+    failureError: "group_failed",
+    failureMessage: "some_tabs_could_not_be_grouped",
+
+    async getConfirmationProperties(gatheredResult) {
+      return {
+        tabs: gatheredResult.tabs,
+        tabGroupLabel: await getLabel(gatheredResult),
+      };
+    },
+
+    async takeUIAction(gathered) {
+      const label = await getLabel(gathered);
+      const result = await lazy.ToolUI.createTabGroup({
+        tabs: gathered.tabs,
+        window: gathered.topAIWin,
+        label,
+      });
+      return { ...result, label };
+    },
+
+    getToolResults(result, gatheredResult) {
+      const failedPanels = new Set(
+        (result.failedTabs ?? [])
+          .map(failedTab => failedTab.tab?.linkedPanel)
+          .filter(Boolean)
+      );
+      const groupedTabs = gatheredResult.tabs.map(
+        ({ url, title, linkedPanel }) => ({
+          url,
+          title,
+          grouped: !failedPanels.has(linkedPanel),
+        })
+      );
+
+      const groupedCount = groupedTabs.filter(tab => tab.grouped).length;
+      const failedCount = groupedTabs.length - groupedCount;
+      let telemetryResult = "success";
+      if (failedCount && groupedCount === 0) {
+        telemetryResult = "error";
+      } else if (failedCount) {
+        telemetryResult = "partial_success";
+      }
+
+      return {
+        description: failedCount
+          ? `Some tabs could not be grouped (${failedCount} of ${groupedTabs.length}).`
+          : `Successfully grouped ${groupedTabs.length} tabs in group ${result.label}.`,
+        selectedTabs: groupedTabs,
+        telemetryValues: {
+          telemetryResult,
+          affectedCount: groupedCount,
+          failedCount,
+        },
+      };
     },
   };
+}
+
+/**
+ * Tab management orchestrator to handle all tab-related actions.
+ *
+ * @param {{ action: string, validUrls: Set<string>, ask_confirmation: boolean, label: string, baseTelemetryInfo: object, toolCallId?: string }} params
+ * @param {ChatConversation} conversation
+ * @returns {Promise<object>}
+ */
+export async function manageTabsAction(
+  {
+    action,
+    validUrls,
+    ask_confirmation,
+    label = "",
+    baseTelemetryInfo,
+    toolCallId,
+  },
+  conversation
+) {
+  const HANDLERS = {
+    [CLOSE_TABS]: () => closeTabsToolHandler,
+    [GROUP_TABS]: () => makeGroupTabsToolHandler(label),
+  };
+
+  const makeHandler = HANDLERS[action];
+  if (!makeHandler) {
+    throw new Error(`Invalid action: ${action}`);
+  }
+  const toolHandler = makeHandler();
+
+  return runManageTabsFlow(
+    {
+      validUrls,
+      askConfirmation: ask_confirmation,
+      baseTelemetryInfo,
+      conversation,
+      toolCallId,
+    },
+    toolHandler
+  );
 }

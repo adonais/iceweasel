@@ -148,7 +148,6 @@
 #endif
 
 #include "base/process_util.h"
-
 #include "mozilla/AutoRestore.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/CycleCollectedJSRuntime.h"
@@ -163,8 +162,8 @@
 
 #include <utility>
 
-#include "js/friend/CycleCollector.h"
 #include "js/SliceBudget.h"
+#include "js/friend/CycleCollector.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Likely.h"
 #include "mozilla/LinkedList.h"
@@ -174,9 +173,9 @@
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/SegmentedVector.h"
-#include "mozilla/glean/XpcomMetrics.h"
 #include "mozilla/ThreadLocal.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/glean/XpcomMetrics.h"
 #include "nsContentUtils.h"
 #include "nsCycleCollectionNoteRootCallback.h"
 #include "nsCycleCollectionParticipant.h"

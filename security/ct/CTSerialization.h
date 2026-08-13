@@ -7,9 +7,9 @@
 
 #include <vector>
 
+#include "SignedCertificateTimestamp.h"
 #include "mozpkix/Input.h"
 #include "mozpkix/Result.h"
-#include "SignedCertificateTimestamp.h"
 
 // Utility functions for encoding/decoding structures used by Certificate
 // Transparency to/from the TLS wire format encoding.

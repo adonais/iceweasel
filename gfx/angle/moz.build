@@ -3,10 +3,5 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 DIRS += [
-    "targets/angle_common",
-    "targets/translator",
+    "/third_party/angle",
 ]
-
-# Only build libEGL/libGLESv2 on Windows
-if CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
-    DIRS += ["targets/libEGL", "targets/libGLESv2"]

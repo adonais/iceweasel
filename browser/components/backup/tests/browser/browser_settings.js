@@ -222,6 +222,10 @@ add_task(async function test_restore_from_backup() {
 
     settings.restoreFromBackupButtonEl.click();
 
+    await TestUtils.waitForCondition(
+      () => settings.restoreFromBackupDialogEl?.open,
+      "Waiting for restore-from-backup dialog to open"
+    );
     await settings.updateComplete;
 
     let restoreFromBackup = settings.restoreFromBackupEl;

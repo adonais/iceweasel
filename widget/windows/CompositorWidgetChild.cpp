@@ -3,13 +3,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "CompositorWidgetChild.h"
+
+#include "RemoteBackbuffer.h"
+#include "VsyncDispatcher.h"
+#include "gfxPlatform.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/widget/CompositorWidgetVsyncObserver.h"
 #include "mozilla/widget/PlatformWidgetTypes.h"
 #include "nsIWidget.h"
-#include "VsyncDispatcher.h"
-#include "gfxPlatform.h"
-#include "RemoteBackbuffer.h"
 
 namespace mozilla {
 namespace widget {

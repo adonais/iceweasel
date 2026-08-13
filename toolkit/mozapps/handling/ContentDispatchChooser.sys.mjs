@@ -8,10 +8,20 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 import { E10SUtils } from "resource://gre/modules/E10SUtils.sys.mjs";
 
+const lazy = {};
+
+ChromeUtils.defineESModuleGetters(lazy, {
+  NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
+});
+
 const DIALOG_URL_APP_CHOOSER =
   "chrome://mozapps/content/handling/appChooser.xhtml";
 const DIALOG_URL_PERMISSION =
   "chrome://mozapps/content/handling/permissionDialog.xhtml";
+
+// Sentinel returned by _promiseMailtoChoice when the user picks the OS default
+// mail app, which has no web handler object to key it by.
+const MAILTO_SYSTEM_DEFAULT_ID = "system-default";
 
 const gPrefs = {};
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -74,6 +84,69 @@ export class nsContentDispatchChooser {
       Glean.protocolhandlerMailto.visit.record({
         triggered_externally: aTriggeredExternally,
       });
+
+      const browser = aBrowsingContext?.topFrameElement;
+      // Only show the picker when "always ask" is configured for mailto; a
+      // configured default handler is launched directly by the flow below.
+      // Also gated behind the "dialog" variable of the "mailto" Nimbus feature
+      // so the picker can be turned off remotely. When skipped, fall through to
+      // the default protocol handling below.
+      if (
+        browser &&
+        aHandler.alwaysAskBeforeHandling &&
+        lazy.NimbusFeatures.mailto.getVariable("dialog") &&
+        this._hasMailtoHandlerOptions(aHandler)
+      ) {
+        lazy.NimbusFeatures.mailto.recordExposureEvent();
+        let choice = null;
+        let dialogFailed = false;
+        try {
+          choice = await this._promiseMailtoChoice(aBrowsingContext, aHandler);
+        } catch {
+          // The picker failed to open; fall through to the default protocol
+          // handling below so the click still launches the mail client.
+          dialogFailed = true;
+        }
+        if (choice) {
+          const { handler, alwaysAsk } = choice;
+          if (handler === MAILTO_SYSTEM_DEFAULT_ID) {
+            // Hand the link to the OS default mail application.
+            aHandler.preferredAction = Ci.nsIHandlerInfo.useSystemDefault;
+          } else {
+            aHandler.preferredApplicationHandler = handler;
+            aHandler.preferredAction = Ci.nsIHandlerInfo.useHelperApp;
+          }
+          // Bind the stored "always ask" flag to the checkbox: unchecking it
+          // persists this selection as the silent default (the picker is
+          // skipped next time), while leaving it checked keeps prompting with
+          // this choice preselected.
+          aHandler.alwaysAskBeforeHandling = alwaysAsk;
+          // Pass no browsing context so a web handler opens the mailer in a new
+          // foreground tab (via nsIBrowserDOMWindow.openURI / OPEN_NEW) instead
+          // of replacing the page the mailto link was clicked from.
+          try {
+            aHandler.launchWithURI(aURI, null);
+            // Persist the choice only once the launch has succeeded.
+            Cc["@mozilla.org/uriloader/handler-service;1"]
+              .getService(Ci.nsIHandlerService)
+              .store(aHandler);
+          } catch (error) {
+            Glean.protocolhandlerMailto.error.record({
+              reason:
+                handler === MAILTO_SYSTEM_DEFAULT_ID
+                  ? "launch_system_default"
+                  : "launch_webmail",
+            });
+            console.error(error);
+          }
+        }
+        // We handled the load, or the user dismissed the dialog; skip the
+        // legacy application chooser below. If the picker failed to open, fall
+        // through instead so the click still launches the default mail client.
+        if (!dialogFailed) {
+          return;
+        }
+      }
     }
 
     // Skip the dialog if a preferred application is set and the caller has
@@ -120,6 +193,95 @@ export class nsContentDispatchChooser {
     // Site was granted permission and user chose to open application.
     // Launch the external handler.
     aHandler.launchWithURI(aURI, aBrowsingContext);
+  }
+
+  /**
+   * Whether the mailto picker has anything to offer: at least one configured
+   * web mailer, or an OS default mail application. Used to skip the picker
+   * rather than present an empty dialog when nothing can handle the link.
+   *
+   * @param {nsIHandlerInfo} aHandler - Info about protocol and handlers.
+   * @returns {boolean}
+   */
+  _hasMailtoHandlerOptions(aHandler) {
+    if (aHandler.hasDefaultHandler) {
+      return true;
+    }
+    for (const app of aHandler.possibleApplicationHandlers.enumerate()) {
+      if (app instanceof Ci.nsIWebHandlerApp) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Show the application chooser in "mailto" mode (configured web mailers plus
+   * the OS default) and resolve to the handler the user selected.
+   *
+   * The dialog returns the user's choice through the `outArgs` property bag,
+   * read back here once it closes.
+   *
+   * @param {BrowsingContext} aBrowsingContext - Context used to anchor the
+   * tab-modal dialog.
+   * @param {nsIHandlerInfo} aHandler - Info about protocol and handlers.
+   * @returns {Promise<?{handler: (nsIWebHandlerApp|string), alwaysAsk: boolean}>}
+   * - An object with the chosen handler (a web handler or the
+   * MAILTO_SYSTEM_DEFAULT_ID sentinel) and the "always ask" checkbox state, or
+   * null if the user dismissed the dialog.
+   */
+  async _promiseMailtoChoice(aBrowsingContext, aHandler) {
+    const outArgs = Cc["@mozilla.org/hash-property-bag;1"].createInstance(
+      Ci.nsIWritablePropertyBag
+    );
+    outArgs.setProperty("openHandler", false);
+    outArgs.setProperty("preferredAction", aHandler.preferredAction);
+    outArgs.setProperty(
+      "preferredApplicationHandler",
+      aHandler.preferredApplicationHandler
+    );
+    outArgs.setProperty(
+      "alwaysAskBeforeHandling",
+      aHandler.alwaysAskBeforeHandling
+    );
+
+    try {
+      await this._openDialog(
+        DIALOG_URL_APP_CHOOSER,
+        { handler: aHandler, outArgs, kind: "mailto" },
+        aBrowsingContext
+      );
+    } catch (error) {
+      // Rethrow so the caller can fall back to the default protocol handling
+      // rather than dropping the click.
+      Glean.protocolhandlerMailto.error.record({ reason: "dialog_failed" });
+      console.error(error);
+      throw error;
+    }
+
+    // "Not now" / dismissal leaves the seed values in outArgs untouched, so the
+    // selected handler and checkbox state are only meaningful once confirmed.
+    if (!outArgs.getProperty("openHandler")) {
+      Glean.protocolhandlerMailto.promptClick.record({ button: "not_now" });
+      return null;
+    }
+
+    const useSystemDefault =
+      outArgs.getProperty("preferredAction") ==
+      Ci.nsIHandlerInfo.useSystemDefault;
+    const alwaysAsk = outArgs.getProperty("alwaysAskBeforeHandling");
+    Glean.protocolhandlerMailto.promptClick.record({
+      button: "set_default",
+      handler: useSystemDefault ? "system_default" : "webmail",
+      always_ask: alwaysAsk,
+    });
+
+    return {
+      handler: useSystemDefault
+        ? MAILTO_SYSTEM_DEFAULT_ID
+        : outArgs.getProperty("preferredApplicationHandler"),
+      alwaysAsk,
+    };
   }
 
   /**

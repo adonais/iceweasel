@@ -8,8 +8,10 @@
 #define xpcmaps_h_
 
 #include "mozilla/AllocPolicy.h"
-#include "mozilla/MemoryReporting.h"
 #include "mozilla/HashTable.h"
+#include "mozilla/MemoryReporting.h"
+
+#include "xpcprivate.h"
 
 #include "js/GCHashTable.h"
 

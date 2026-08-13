@@ -66,7 +66,6 @@ class VisibleForTestingDetectorTest : LintDetectorTest() {
         """.trimIndent()
 
         lint()
-            .allowMissingSdk()
             .files(
                 kotlin(validCode),
                 androidXAnnotationStub,
@@ -89,7 +88,6 @@ class VisibleForTestingDetectorTest : LintDetectorTest() {
         """.trimIndent()
 
         lint()
-            .allowMissingSdk()
             .skipTestModes(TestMode.IMPORT_ALIAS)
             .files(
                 kotlin(invalidCode),
@@ -120,7 +118,6 @@ import org.jetbrains.annotations.VisibleForTesting
         """.trimIndent()
 
         lint()
-            .allowMissingSdk()
             .skipTestModes(TestMode.IMPORT_ALIAS)
             .files(
                 kotlin(invalidCode),

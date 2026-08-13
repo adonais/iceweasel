@@ -14,7 +14,6 @@
 #include "vm/GlobalObject.h"
 #include "vm/Interpreter.h"
 #include "vm/TypedArrayObject.h"
-
 #include "wasm/WasmCompile.h"
 #include "wasm/WasmFeatures.h"
 #include "wasm/WasmIonCompile.h"

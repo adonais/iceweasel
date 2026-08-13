@@ -2,11 +2,11 @@
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
-
-#include "mozilla/gfx/IterableArena.h"
 #include <string>
+
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "mozilla/gfx/IterableArena.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;

@@ -466,6 +466,7 @@ class CustomElementRegistry final : public nsISupports, public nsWrapperCache {
   static already_AddRefed<CustomElementRegistry> GetScopedRegistry(nsINode&);
   static void SetScopedRegistry(nsINode&, CustomElementRegistry&);
   static void RemoveScopedRegistry(nsINode&);
+  static bool IsInScopedRegistryMap(nsINode&);
 
   void TraceDefinitions(JSTracer* aTrc);
 

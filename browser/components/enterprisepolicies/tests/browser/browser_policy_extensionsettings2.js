@@ -24,7 +24,7 @@ function isExtensionLocked(addonCard) {
 }
 
 async function isExtensionLockedAndUpdateDisabled(win, addonID) {
-  let addonCard = await BrowserTestUtils.waitForCondition(() => {
+  let addonCard = await TestUtils.waitForCondition(() => {
     return win.document.querySelector(`addon-card[addon-id="${addonID}"]`);
   }, `Get addon-card for "${addonID}"`);
   isExtensionLocked(addonCard);
@@ -64,7 +64,7 @@ async function isExtensionLockedAndUpdateDisabled(win, addonID) {
 }
 
 async function isExtensionLockedAndUpdateEnabled(win, addonID) {
-  let addonCard = await BrowserTestUtils.waitForCondition(() => {
+  let addonCard = await TestUtils.waitForCondition(() => {
     return win.document.querySelector(`addon-card[addon-id="${addonID}"]`);
   }, `Get addon-card for "${addonID}"`);
   isExtensionLocked(addonCard);

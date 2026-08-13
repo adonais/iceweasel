@@ -18,7 +18,7 @@ add_task(async function test_click_return_to_opener_button() {
   // Focus a different window
   const otherWin = await BrowserTestUtils.openNewBrowserWindow();
   otherWin.focus();
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => Services.focus.activeWindow === otherWin,
     "Wait for other window to be focused"
   );
@@ -34,7 +34,7 @@ add_task(async function test_click_return_to_opener_button() {
 
   // PiP should be closed, tab switched, window focused
   await closedPromise;
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => gBrowser.selectedTab === tab && Services.focus.activeWindow === win,
     "Waiting for opener to be switched to and focused"
   );

@@ -42,7 +42,7 @@ pub use self::border::{
 pub use self::box_::{
     AlignmentBaseline, Appearance, BaselineShift, BaselineSource, BreakBetween, BreakWithin, Clear,
     Contain, ContainIntrinsicSize, ContainerName, ContainerType, ContentVisibility, Display,
-    DominantBaseline, Float, LineClamp, Overflow, OverflowAnchor, OverflowClipMargin,
+    DominantBaseline, Float, LineClamp, MarginTrim, Overflow, OverflowAnchor, OverflowClipMargin,
     OverscrollBehavior, Perspective, PositionProperty, Resize, ScrollSnapAlign, ScrollSnapAxis,
     ScrollSnapStop, ScrollSnapStrictness, ScrollSnapType, ScrollbarGutter, TouchAction, WillChange,
     WillChangeBits, WritingModeProperty, Zoom,
@@ -66,7 +66,9 @@ pub use self::font::{
 pub use self::font::{FontVariantAlternates, FontWeight};
 pub use self::font::{FontVariantEastAsian, FontVariationSettings, LineHeight};
 pub use self::font::{MathDepth, MozScriptMinSize, MozScriptSizeMultiplier, XLang, XTextScale};
-pub use self::image::{EndingShape as GradientEndingShape, Gradient, Image, ImageRendering};
+pub use self::image::{
+    EndingShape as GradientEndingShape, Gradient, Image, ImageDecoding, ImageRendering,
+};
 pub use self::length::{Length, LengthOrNumber, LengthUnit, NonNegativeLengthOrNumber};
 pub use self::length::{LengthOrAuto, LengthPercentage, LengthPercentageOrAuto};
 pub use self::length::{Margin, MaxSize, Size};

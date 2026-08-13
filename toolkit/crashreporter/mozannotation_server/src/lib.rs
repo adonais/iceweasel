@@ -131,11 +131,15 @@ fn read_annotation(
         ANNOTATION_CONTENTS_EMPTY => {}
         ANNOTATION_CONTENTS_NSCSTRINGPOINTER => {
             let string = copy_nscstring(reader, raw_annotation.address)?;
-            annotation.data = AnnotationData::String(string);
+            if !string.is_empty() {
+                annotation.data = AnnotationData::String(string);
+            }
         }
         ANNOTATION_CONTENTS_CSTRINGPOINTER => {
             let string = copy_null_terminated_string_pointer(reader, raw_annotation.address)?;
-            annotation.data = AnnotationData::String(string);
+            if !string.is_empty() {
+                annotation.data = AnnotationData::String(string);
+            }
         }
         ANNOTATION_CONTENTS_CSTRING => {
             let string = reader.copy_null_terminated_string(raw_annotation.address)?;

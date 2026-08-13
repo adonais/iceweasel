@@ -24,17 +24,12 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.fragment.navArgs
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import kotlinx.coroutines.suspendCancellableCoroutine
 import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.TabSessionState
-import mozilla.components.concept.engine.EngineSession
-import mozilla.components.concept.engine.pageextraction.ContentParams
+import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.summarize.SummarizationState
 import mozilla.components.feature.summarize.SummarizationUi
 import mozilla.components.feature.summarize.ViewDismissed
-import mozilla.components.feature.summarize.content.PageContentExtractor
-import mozilla.components.feature.summarize.content.PageMetadata
-import mozilla.components.feature.summarize.content.PageMetadataExtractor
 import mozilla.components.feature.summarize.settings.SummarizeSettingsMiddleware
 import mozilla.components.feature.summarize.settings.SummarizeSettingsState
 import mozilla.components.feature.summarize.settings.SummarizeSettingsStore
@@ -47,53 +42,9 @@ import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.tabstray.ext.toDisplayTitle
 import org.mozilla.fenix.theme.FirefoxTheme
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 import com.google.android.material.R as materialR
 
 private const val HIDING_FRICTION = 0.9f
-
-/**
- * Gets the content for a given engine session.
- */
-private fun EngineSession?.asPageContentExtractor(): PageContentExtractor = { options ->
-    runCatching {
-        val options = ContentParams(removeBoilerplate = options.shouldUseReaderModeContent)
-        suspendCancellableCoroutine { continuation ->
-            this!!.getPageContent(
-                options = options,
-                onResult = { content ->
-                    continuation.resume(content)
-                },
-                onException = { error ->
-                    continuation.resumeWithException(error)
-                },
-            )
-        }
-    }
-}
-
-private fun EngineSession?.asPageMetadataExtractor(): PageMetadataExtractor = {
-    runCatching {
-        suspendCancellableCoroutine { continuation ->
-            this!!.getPageMetadata(
-                onResult = { metadata ->
-                    continuation.resume(
-                        PageMetadata(
-                            structuredDataTypes = metadata.structuredDataTypes,
-                            wordCount = metadata.wordCount,
-                            language = metadata.language,
-                            isReaderable = metadata.isReaderable,
-                        ),
-                    )
-                },
-                onException = { error ->
-                    continuation.resumeWithException(error)
-                },
-            )
-        }
-    }
-}
 
 private fun Context.getConnectionType(): ConnectionType {
     val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -111,20 +62,19 @@ private fun Context.getConnectionType(): ConnectionType {
  */
 class SummarizationFragment : BottomSheetDialogFragment() {
     private val args by navArgs<SummarizationFragmentArgs>()
-    private val currentTab: TabSessionState? get() = requireComponents.core.store.state.selectedTab
+    private val browserStore: BrowserStore get() = requireComponents.core.store
+    private val currentTab: TabSessionState? get() = browserStore.state.selectedTab
     private val isEngineAvailable: Boolean get() = currentTab?.engineState?.engineSession != null
     private val storeViewModel: SummarizationStoreViewModel by viewModels {
-        val engineSession = currentTab?.engineState?.engineSession
         val provider = requireComponents.llm.mlpaProvider
         val title = currentTab?.toDisplayTitle() ?: ""
         SummarizationStoreViewModel.factory(
+            currentTab = currentTab,
             initializedFromShake = args.fromShake,
             pageTitle = title,
             connectionType = requireContext().getConnectionType(),
             llmProvider = provider,
             settings = requireComponents.summarizationSettings,
-            pageContentExtractor = engineSession.asPageContentExtractor(),
-            pageMetadataExtractor = engineSession.asPageMetadataExtractor(),
             errorReporter = { tag, exception ->
                 requireComponents.analytics.crashReporter.submitCaughtException(exception)
                 Logger(tag).error(exception.message ?: "", exception)

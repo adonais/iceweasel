@@ -4,9 +4,10 @@
 
 #include "GLContext.h"
 
-#include <algorithm>
-#include <string.h>
 #include <ctype.h>
+#include <string.h>
+
+#include <algorithm>
 #include <regex>
 #include <string>
 #include <vector>
@@ -20,33 +21,30 @@
 #endif
 
 #include "GLBlitHelper.h"
+#include "GLContextProvider.h"
+#include "GLLibraryLoader.h"
 #include "GLReadTexImageHelper.h"
 #include "GLScreenBuffer.h"
-
+#include "GLTextureImage.h"
+#include "GfxTexturesReporter.h"
+#include "OGLShaderProgram.h"  // for ShaderProgramType
+#include "ScopedGLHelpers.h"
+#include "SharedSurfaceGL.h"
+#include "gfx2DGlue.h"
 #include "gfxCrashReporterUtils.h"
 #include "gfxEnv.h"
 #include "gfxUtils.h"
-#include "GLContextProvider.h"
-#include "GLLibraryLoader.h"
-#include "GLTextureImage.h"
+#include "mozilla/IntegerPrintfMacros.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/StaticPrefs_gfx.h"
+#include "mozilla/StaticPrefs_gl.h"
+#include "mozilla/gfx/Logging.h"
+#include "mozilla/layers/BuildConstants.h"
+#include "mozilla/layers/TextureForwarder.h"  // for LayersIPCChannel
 #include "nsPrintfCString.h"
 #include "nsThreadUtils.h"
 #include "prenv.h"
 #include "prlink.h"
-#include "ScopedGLHelpers.h"
-#include "SharedSurfaceGL.h"
-#include "GfxTexturesReporter.h"
-#include "gfx2DGlue.h"
-#include "mozilla/StaticPrefs_gfx.h"
-#include "mozilla/StaticPrefs_gl.h"
-#include "mozilla/IntegerPrintfMacros.h"
-#include "mozilla/gfx/Logging.h"
-#include "mozilla/layers/BuildConstants.h"
-#include "mozilla/layers/TextureForwarder.h"  // for LayersIPCChannel
-
-#include "OGLShaderProgram.h"  // for ShaderProgramType
-
-#include "mozilla/Maybe.h"
 
 #ifdef XP_MACOSX
 #  include <CoreServices/CoreServices.h>

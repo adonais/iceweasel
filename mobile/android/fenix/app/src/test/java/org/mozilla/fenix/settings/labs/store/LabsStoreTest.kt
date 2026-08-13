@@ -12,12 +12,17 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mozilla.fenix.R
 import org.mozilla.fenix.settings.labs.LabsItem
-import org.mozilla.fenix.settings.labs.LabsItemSlugs
 
 @RunWith(AndroidJUnit4::class)
 class LabsStoreTest {
+    private fun testItem(enrolled: Boolean = false) = LabsItem(
+        slug = "test-lab",
+        title = "Test lab",
+        description = "Test description",
+        enrolled = enrolled,
+        requiresRestart = true,
+    )
 
     @Test
     fun `WHEN store is created THEN init action is dispatched`() {
@@ -44,15 +49,7 @@ class LabsStoreTest {
 
         assertTrue(store.state.labsItems.isEmpty())
 
-        val items = listOf(
-            LabsItem(
-                slug = LabsItemSlugs.HOMEPAGE_AS_NEW_TAB,
-                title = R.string.firefox_labs_homepage_as_a_new_tab,
-                description = R.string.firefox_labs_homepage_as_a_new_tab_description,
-                enrolled = false,
-                requiresRestart = true,
-            ),
-        )
+        val items = listOf(testItem())
         store.dispatch(LabsAction.UpdateLabsItems(items))
 
         assertEquals(items, store.state.labsItems)
@@ -60,15 +57,7 @@ class LabsStoreTest {
 
     @Test
     fun `WHEN RestoreDefaults action is dispatched THEN all labs items are unenrolled`() = runTest {
-        val items = listOf(
-            LabsItem(
-                slug = LabsItemSlugs.HOMEPAGE_AS_NEW_TAB,
-                title = R.string.firefox_labs_homepage_as_a_new_tab,
-                description = R.string.firefox_labs_homepage_as_a_new_tab_description,
-                enrolled = true,
-                requiresRestart = true,
-            ),
-        )
+        val items = listOf(testItem(enrolled = true))
         val store = LabsStore(
             initialState = LabsState(
                 labsItems = items,
@@ -86,13 +75,7 @@ class LabsStoreTest {
 
     @Test
     fun `WHEN ToggleLabsItem action is dispatched THEN labs item is toggled`() = runTest {
-        val item = LabsItem(
-            slug = LabsItemSlugs.HOMEPAGE_AS_NEW_TAB,
-            title = R.string.firefox_labs_homepage_as_a_new_tab,
-            description = R.string.firefox_labs_homepage_as_a_new_tab_description,
-            enrolled = false,
-            requiresRestart = true,
-        )
+        val item = testItem()
         val store = LabsStore(
             initialState = LabsState(
                 labsItems = listOf(item),
@@ -116,13 +99,7 @@ class LabsStoreTest {
     @Test
     fun `WHEN ShowToggleLabsItemDialog action is dispatched THEN dialogState is updated`() = runTest {
         val store = LabsStore(initialState = LabsState.INITIAL)
-        val item = LabsItem(
-            slug = LabsItemSlugs.HOMEPAGE_AS_NEW_TAB,
-            title = R.string.firefox_labs_homepage_as_a_new_tab,
-            description = R.string.firefox_labs_homepage_as_a_new_tab_description,
-            enrolled = false,
-            requiresRestart = true,
-        )
+        val item = testItem()
 
         assertEquals(DialogState.Closed, store.state.dialogState)
 
@@ -143,13 +120,7 @@ class LabsStoreTest {
 
     @Test
     fun `WHEN CloseDialog action is dispatched THEN dialogState is updated to Closed`() = runTest {
-        val item = LabsItem(
-            slug = LabsItemSlugs.HOMEPAGE_AS_NEW_TAB,
-            title = R.string.firefox_labs_homepage_as_a_new_tab,
-            description = R.string.firefox_labs_homepage_as_a_new_tab_description,
-            enrolled = false,
-            requiresRestart = true,
-        )
+        val item = testItem()
         val store = LabsStore(
             initialState = LabsState(
                 labsItems = listOf(item),
@@ -161,5 +132,19 @@ class LabsStoreTest {
         store.dispatch(LabsAction.CloseDialog)
 
         assertEquals(DialogState.Closed, store.state.dialogState)
+    }
+
+    @Test
+    fun `WHEN RemoveLabsItem action is dispatched THEN the matching item is removed`() = runTest {
+        val store = LabsStore(
+            initialState = LabsState(
+                labsItems = listOf(testItem()),
+                dialogState = DialogState.Closed,
+            ),
+        )
+
+        store.dispatch(LabsAction.RemoveLabsItem(slug = "test-lab"))
+
+        assertTrue(store.state.labsItems.isEmpty())
     }
 }

@@ -51,6 +51,12 @@ ServiceWorkerRegistration::ServiceWorkerRegistration(
       mShutdown(false),
       mScheduledUpdateFoundId(kInvalidUpdateFoundId),
       mDispatchedUpdateFoundId(kInvalidUpdateFoundId) {
+  if (NS_WARN_IF(!::mozilla::ipc::BackgroundChild::ValidatePrincipalInfo(
+          aDescriptor.PrincipalInfo(), {}))) {
+    Shutdown();
+    return;
+  }
+
   ::mozilla::ipc::PBackgroundChild* parentActor =
       ::mozilla::ipc::BackgroundChild::GetOrCreateForCurrentThread();
   if (NS_WARN_IF(!parentActor)) {

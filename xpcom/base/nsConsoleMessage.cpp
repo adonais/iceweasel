@@ -7,6 +7,7 @@
  */
 
 #include "nsConsoleMessage.h"
+
 #include "jsapi.h"
 
 NS_IMPL_ISUPPORTS(nsConsoleMessage, nsIConsoleMessage)

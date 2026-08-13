@@ -5,7 +5,8 @@
       "issue": "broken-login",
       "matches": [
         "https://riverside.fm/dashboard*",
-        "https://riverside.com/dashboard*"
+        "https://riverside.com/dashboard*",
+        "https://test-connectivity.riverside.fm/*"
       ]
     }
   },

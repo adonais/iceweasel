@@ -228,6 +228,14 @@ devtools.jar:
     content/responsive/images/rotate-viewport.svg (responsive/images/rotate-viewport.svg)
     content/responsive/images/touch-events.svg (responsive/images/touch-events.svg)
 
+    # Jsonview
+    content/jsonview/images/array.svg (jsonview/assets/icons/array.svg)
+    content/jsonview/images/boolean.svg (jsonview/assets/icons/boolean.svg)
+    content/jsonview/images/null.svg (jsonview/assets/icons/null.svg)
+    content/jsonview/images/number.svg (jsonview/assets/icons/number.svg)
+    content/jsonview/images/object.svg (jsonview/assets/icons/object.svg)
+    content/jsonview/images/string.svg (jsonview/assets/icons/string.svg)
+
     # Storage
     content/storage/index.xhtml (storage/index.xhtml)
 
@@ -401,7 +409,6 @@ devtools.jar:
     content/aboutdebugging/src/components/shared/IconLabel.css (aboutdebugging/src/components/shared/IconLabel.css)
     content/aboutdebugging/src/components/shared/Message.css (aboutdebugging/src/components/shared/Message.css)
     content/aboutdebugging/src/components/sidebar/Sidebar.css (aboutdebugging/src/components/sidebar/Sidebar.css)
-    content/aboutdebugging/src/components/sidebar/SidebarFixedItem.css (aboutdebugging/src/components/sidebar/SidebarFixedItem.css)
     content/aboutdebugging/src/components/sidebar/SidebarItem.css (aboutdebugging/src/components/sidebar/SidebarItem.css)
     content/aboutdebugging/src/components/sidebar/SidebarRuntimeItem.css (aboutdebugging/src/components/sidebar/SidebarRuntimeItem.css)
 

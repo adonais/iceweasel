@@ -12,7 +12,7 @@
 namespace mozilla {
 
 static LazyLogModule gDriftCompensatorLog("DriftCompensator");
-#define LOG(type, ...) MOZ_LOG(gDriftCompensatorLog, type, (__VA_ARGS__))
+#define LOG(type, ...) MOZ_LOG_FMT(gDriftCompensatorLog, type, __VA_ARGS__)
 
 /**
  * DriftCompensator can be used to handle drift between audio and video tracks
@@ -63,8 +63,8 @@ class DriftCompensator {
 
   void NotifyAudioStart(TimeStamp aStart) {
     MOZ_ASSERT(mAudioSamples == 0);
-    LOG(LogLevel::Info, "DriftCompensator %p at rate %d started", this,
-        mAudioRate);
+    LOG(LogLevel::Info, "DriftCompensator {} at rate {} started",
+        fmt::ptr(this), mAudioRate);
     nsresult rv = mVideoThread->Dispatch(NewRunnableMethod<TimeStamp>(
         "DriftCompensator::SetAudioStartTime", this,
         &DriftCompensator::SetAudioStartTime, aStart));
@@ -80,9 +80,9 @@ class DriftCompensator {
     mAudioSamples += aSamples;
 
     LOG(LogLevel::Verbose,
-        "DriftCompensator %p Processed another %" PRId64
-        " samples; now %.3fs audio",
-        this, aSamples, static_cast<double>(mAudioSamples) / mAudioRate);
+        "DriftCompensator {} Processed another {} samples; now {:.3f}s audio",
+        fmt::ptr(this), aSamples,
+        static_cast<double>(mAudioSamples) / mAudioRate);
   }
 
   /**
@@ -95,14 +95,15 @@ class DriftCompensator {
     if (samples / mAudioRate < 10) {
       // We don't apply compensation for the first 10 seconds because of the
       // higher inaccuracy during this time.
-      LOG(LogLevel::Debug, "DriftCompensator %p %" PRId64 "ms so far; ignoring",
-          this, samples * 1000 / mAudioRate);
+      LOG(LogLevel::Debug, "DriftCompensator {} {}ms so far; ignoring",
+          fmt::ptr(this), samples * 1000 / mAudioRate);
       return aTime;
     }
 
     if (aNow == mAudioStartTime) {
       LOG(LogLevel::Warning,
-          "DriftCompensator %p video scale 0, assuming no drift", this);
+          "DriftCompensator {} video scale 0, assuming no drift",
+          fmt::ptr(this));
       return aTime;
     }
 
@@ -115,9 +116,9 @@ class DriftCompensator {
                               videoDurationUs * audioScaleUs / videoScaleUs);
 
     LOG(LogLevel::Debug,
-        "DriftCompensator %p GetVideoTime, v-now: %.3fs, a-now: %.3fs; %.3fs "
-        "-> %.3fs (d %.3fms)",
-        this, (aNow - mAudioStartTime).ToSeconds(),
+        "DriftCompensator {} GetVideoTime, v-now: {:.3f}s, a-now: {:.3f}s; "
+        "{:.3f}s -> {:.3f}s (d {:.3f}ms)",
+        fmt::ptr(this), (aNow - mAudioStartTime).ToSeconds(),
         TimeDuration::FromMicroseconds(audioScaleUs).ToSeconds(),
         (aTime - mAudioStartTime).ToSeconds(),
         (reclocked - mAudioStartTime).ToSeconds(),

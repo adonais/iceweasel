@@ -6,11 +6,10 @@
 #ifndef _mozilla_WindowHook_h_
 #define _mozilla_WindowHook_h_
 
-#include <windows.h>
-
-#include <nsHashKeys.h>
 #include <nsClassHashtable.h>
+#include <nsHashKeys.h>
 #include <nsTArray.h>
+#include <windows.h>
 
 #include "nsAppShell.h"
 

@@ -41,6 +41,8 @@ import {
 
 const VISIBLE = "visible";
 const VISIBILITY_CHANGE_EVENT = "visibilitychange";
+// Minimum scroll distance in pixels to record a scroll telemetry event.
+const SCROLL_TELEMETRY_THRESHOLD = 50;
 const PREF_INFERRED_PERSONALIZATION_SYSTEM =
   "discoverystream.sections.personalization.inferred.enabled";
 const PREF_INFERRED_PERSONALIZATION_USER =
@@ -135,6 +137,7 @@ export class BaseContent extends React.PureComponent {
     this.attachSearchSentinel = this.attachSearchSentinel.bind(this);
     this.onSearchSentinelIntersect = this.onSearchSentinelIntersect.bind(this);
     this.searchStickyObserver = null;
+    this._hasScrolledForSession = false;
     this.state = {
       fixedSearch: false,
       colorMode: "",
@@ -458,6 +461,14 @@ export class BaseContent extends React.PureComponent {
   }
 
   onWindowScroll() {
+    if (
+      !this._hasScrolledForSession &&
+      global.scrollY > SCROLL_TELEMETRY_THRESHOLD
+    ) {
+      this._hasScrolledForSession = true;
+      this.props.dispatch(ac.OnlyToMain({ type: at.NEW_TAB_SCROLL }));
+    }
+
     if (this.props.Prefs.values[PREF_NOVA_ENABLED]) {
       // Nova restores sticky search via IntersectionObserver
       // (attachSearchSentinel); the scroll-based fixed-search math below
@@ -882,6 +893,10 @@ export class BaseContent extends React.PureComponent {
     const mayHaveTimerWidget = widgetVisibleById("focusTimer");
     const mayHaveClocksWidget = widgetVisibleById("clocks");
     const mayHaveSportsWidget = widgetVisibleById("sportsWidget");
+    const mayHavePrivacyWidget = widgetVisibleById("privacy");
+    const mayHaveCrosswordWidget = widgetVisibleById("crossword");
+    const mayHaveStocksWidget = widgetVisibleById("stocks");
+    const mayHavePictureOfTheDayWidget = widgetVisibleById("pictureOfTheDay");
 
     // These prefs set the initial values on the Customize panel toggle switches
     const enabledWidgets = {
@@ -892,6 +907,10 @@ export class BaseContent extends React.PureComponent {
         ? prefs["widgets.weather.enabled"]
         : prefs.showWeather,
       sportsWidgetEnabled: prefs["widgets.sportsWidget.enabled"],
+      privacyEnabled: prefs["widgets.privacy.enabled"],
+      crosswordEnabled: prefs["widgets.crossword.enabled"],
+      stocksEnabled: prefs["widgets.stocks.enabled"],
+      pictureOfTheDayEnabled: prefs["widgets.pictureOfTheDay.enabled"],
       widgetsMaximized: prefs["widgets.maximized"],
       widgetsMayBeMaximized: prefs["widgets.system.maximized"],
     };
@@ -1173,6 +1192,10 @@ export class BaseContent extends React.PureComponent {
                 mayHaveListsWidget={mayHaveListsWidget}
                 mayHaveSportsWidget={mayHaveSportsWidget}
                 mayHaveClocksWidget={mayHaveClocksWidget}
+                mayHavePrivacyWidget={mayHavePrivacyWidget}
+                mayHaveCrosswordWidget={mayHaveCrosswordWidget}
+                mayHaveStocksWidget={mayHaveStocksWidget}
+                mayHavePictureOfTheDayWidget={mayHavePictureOfTheDayWidget}
                 mayHaveWeatherForecast={
                   prefs["widgets.system.weatherForecast.enabled"]
                 }
@@ -1194,6 +1217,10 @@ export class BaseContent extends React.PureComponent {
                 shouldShowOMCHighlight(
                   this.props.Messages,
                   "WorldCupWallpaperHighlight"
+                ) ||
+                shouldShowOMCHighlight(
+                  this.props.Messages,
+                  "WorldCupSemiFinalWallpaperHighlight"
                 )) && (
                 <MessageWrapper dispatch={this.props.dispatch}>
                   <WallpaperFeatureHighlight
@@ -1341,6 +1368,10 @@ export class BaseContent extends React.PureComponent {
               mayHaveListsWidget={mayHaveListsWidget}
               mayHaveSportsWidget={mayHaveSportsWidget}
               mayHaveClocksWidget={mayHaveClocksWidget}
+              mayHavePrivacyWidget={mayHavePrivacyWidget}
+              mayHaveCrosswordWidget={mayHaveCrosswordWidget}
+              mayHaveStocksWidget={mayHaveStocksWidget}
+              mayHavePictureOfTheDayWidget={mayHavePictureOfTheDayWidget}
               mayHaveWeatherForecast={
                 prefs["widgets.system.weatherForecast.enabled"]
               }

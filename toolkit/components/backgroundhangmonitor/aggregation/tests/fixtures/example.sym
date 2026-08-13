@@ -1,0 +1,15 @@
+MODULE windows x86_64 ABCDEF0123456789ABCDEF0123456789A testlib.pdb
+INFO CODE_ID 1234567890ABCDEF testlib.dll
+FILE 0 c:\src\test.cpp
+FUNC 1000 50 0 FooFunction()
+1000 20 10 0
+1020 30 11 0
+FUNC 2000 30 0 BarFunction(int)
+2000 15 20 0
+2015 1b 21 0
+PUBLIC 3000 0 PublicSymbol
+PUBLIC 4000 0 SymbolPreferredOverFunc
+FUNC 4000 10 0 ShouldBeOverriddenByPublicAt4000
+PUBLIC m 5000 0 MultilineSymbol
+FUNC notanaddress 10 0 SkippedBecauseHexParseFails
+PUBLIC notanaddress 0 AlsoSkipped

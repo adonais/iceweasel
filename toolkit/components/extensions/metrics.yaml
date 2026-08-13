@@ -184,7 +184,7 @@ extensions.apis.dnr:
   startup_cache_read_size:
     type: memory_distribution
     memory_unit: byte
-    expires: 155
+    expires: 165
     description: |
       Amount of data read from the DNR startup cache file.
     notification_emails:
@@ -199,16 +199,18 @@ extensions.apis.dnr:
       - https://bugzilla.mozilla.org/1984252/
       - https://bugzilla.mozilla.org/1984461/
       - https://bugzilla.mozilla.org/2018311/
+      - https://bugzilla.mozilla.org/2048453/
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1803363#c11
       - https://bugzilla.mozilla.org/2018311/
+      - https://bugzilla.mozilla.org/2048453/
     data_sensitivity:
       - technical
 
   startup_cache_read_time:
     type: timing_distribution
     time_unit: millisecond
-    expires: 155
+    expires: 165
     description: |
       Amount of time it takes to read data into the DNR startup cache file.
     notification_emails:
@@ -223,16 +225,18 @@ extensions.apis.dnr:
       - https://bugzilla.mozilla.org/1984252/
       - https://bugzilla.mozilla.org/1984461/
       - https://bugzilla.mozilla.org/2018311/
+      - https://bugzilla.mozilla.org/2048453/
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1803363#c11
       - https://bugzilla.mozilla.org/2018311/
+      - https://bugzilla.mozilla.org/2048453/
     data_sensitivity:
       - technical
 
   startup_cache_write_size:
     type: memory_distribution
     memory_unit: byte
-    expires: 155
+    expires: 165
     description: |
       Amount of data written to the DNR startup cache file.
     notification_emails:
@@ -247,16 +251,18 @@ extensions.apis.dnr:
       - https://bugzilla.mozilla.org/1984252/
       - https://bugzilla.mozilla.org/1984461/
       - https://bugzilla.mozilla.org/2018311/
+      - https://bugzilla.mozilla.org/2048453/
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1803363#c11
       - https://bugzilla.mozilla.org/2018311/
+      - https://bugzilla.mozilla.org/2048453/
     data_sensitivity:
       - technical
 
   startup_cache_write_time:
     type: timing_distribution
     time_unit: millisecond
-    expires: 155
+    expires: 165
     description: |
       Amount of time it takes to write data into the DNR startup cache file.
     notification_emails:
@@ -271,15 +277,17 @@ extensions.apis.dnr:
       - https://bugzilla.mozilla.org/1984252/
       - https://bugzilla.mozilla.org/1984461/
       - https://bugzilla.mozilla.org/2018311/
+      - https://bugzilla.mozilla.org/2048453/
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1803363#c11
       - https://bugzilla.mozilla.org/2018311/
+      - https://bugzilla.mozilla.org/2048453/
     data_sensitivity:
       - technical
 
   startup_cache_entries:
     type: labeled_counter
-    expires: 155
+    expires: 165
     description: |
       Counters for startup cache data hits or misses on initializating
       DNR rules for extensions loaded on application startup.
@@ -296,9 +304,11 @@ extensions.apis.dnr:
       - https://bugzilla.mozilla.org/1984252/
       - https://bugzilla.mozilla.org/1984461/
       - https://bugzilla.mozilla.org/2018311/
+      - https://bugzilla.mozilla.org/2048453/
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1803363#c11
       - https://bugzilla.mozilla.org/2018311/
+      - https://bugzilla.mozilla.org/2048453/
     data_sensitivity:
       - technical
     labels:
@@ -308,7 +318,7 @@ extensions.apis.dnr:
   validate_rules_time:
     type: timing_distribution
     time_unit: millisecond
-    expires: 155
+    expires: 165
     description: |
       Amount of time it takes to validate DNR rules of individual ruleset
       when dynamic or static rulesets have been loaded from disk.
@@ -324,16 +334,18 @@ extensions.apis.dnr:
       - https://bugzilla.mozilla.org/1984252/
       - https://bugzilla.mozilla.org/1984461/
       - https://bugzilla.mozilla.org/2018311/
+      - https://bugzilla.mozilla.org/2048453/
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1803363#c11
       - https://bugzilla.mozilla.org/2018311/
+      - https://bugzilla.mozilla.org/2048453/
     data_sensitivity:
       - technical
 
   evaluate_rules_time:
     type: timing_distribution
     time_unit: millisecond
-    expires: 155
+    expires: 165
     description: |
       Amount of time it takes to evaluate DNR rules for one network request.
     notification_emails:
@@ -348,16 +360,18 @@ extensions.apis.dnr:
       - https://bugzilla.mozilla.org/1984252/
       - https://bugzilla.mozilla.org/1984461/
       - https://bugzilla.mozilla.org/2018311/
+      - https://bugzilla.mozilla.org/2048453/
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1803363#c11
       - https://bugzilla.mozilla.org/2018311/
+      - https://bugzilla.mozilla.org/2048453/
     data_sensitivity:
       - technical
 
   evaluate_rules_count_max:
     type: quantity
     unit: rules
-    expires: 155
+    expires: 165
     description: |
       Max amount of DNR rules being evaluated.
     lifetime: ping
@@ -373,9 +387,11 @@ extensions.apis.dnr:
       - https://bugzilla.mozilla.org/1984252/
       - https://bugzilla.mozilla.org/1984461/
       - https://bugzilla.mozilla.org/2018311/
+      - https://bugzilla.mozilla.org/2048453/
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1803363#c11
       - https://bugzilla.mozilla.org/2018311/
+      - https://bugzilla.mozilla.org/2048453/
     data_sensitivity:
       - technical
 

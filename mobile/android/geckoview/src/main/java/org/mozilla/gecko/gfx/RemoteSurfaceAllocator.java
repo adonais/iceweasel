@@ -85,26 +85,6 @@ public final class RemoteSurfaceAllocator extends ISurfaceAllocator.Stub
   }
 
   @Override
-  public synchronized void configureSync(final SyncConfig config) {
-    ensureOwned(config.sourceTextureHandle);
-
-    final GeckoSurfaceTexture gst = GeckoSurfaceTexture.lookup(config.sourceTextureHandle);
-    if (gst != null) {
-      gst.configureSnapshot(config.targetSurface, config.width, config.height);
-    }
-  }
-
-  @Override
-  public synchronized void sync(final long handle) {
-    ensureOwned(handle);
-
-    final GeckoSurfaceTexture gst = GeckoSurfaceTexture.lookup(handle);
-    if (gst != null) {
-      gst.takeSnapshot();
-    }
-  }
-
-  @Override
   public synchronized void binderDied() {
     mClientConnected = false;
     for (int i = 0; i < mOwnedHandles.size(); i++) {

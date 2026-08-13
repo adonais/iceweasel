@@ -22,6 +22,11 @@ from . import version_codes
 
 _TEST_ROOT = None
 
+# Caches the user's response to the clear-app-data confirmation prompt so they
+# are asked at most once per process. None until the user has been prompted,
+# then True (confirmed) or False (declined).
+_CLEAR_APP_DATA_CONFIRMED = None
+
 
 class ADBProcess:
     """ADBProcess encapsulates the data related to executing the adb process."""
@@ -4496,6 +4501,45 @@ class ADBDevice(ADBCommand):
                 # (this is not 100% guaranteed to work since it is inherently
                 # racey, but it's the best we can do)
                 time.sleep(1)
+
+    def confirm_clear_app_data(self, app_name):
+        """Confirm with the user that the app's data may be cleared.
+
+        On non-rooted devices the app's data (i.e. profile) must be wiped with
+        `pm clear` since the shell can't remove app-owned files. This prompts
+        the user to confirm that destruction once and caches the response in a
+        module-level global so subsequent callers in the same process reuse it
+        instead of prompting again. The prompt is skipped (returning True) when
+        the device is rooted or when running in CI (MOZ_AUTOMATION is set). The
+        MOZ_ADB_PM_CLEAR_CHECK environment variable, when defined, overrides the
+        prompt: "1" allows clearing the app data and "0" forbids it.
+
+        :param str app_name: The name of the app whose data will be cleared.
+        :return: True if clearing the app data is confirmed, False otherwise.
+        """
+        global _CLEAR_APP_DATA_CONFIRMED  # noqa
+
+        if self.is_rooted or "MOZ_AUTOMATION" in os.environ:
+            return True
+
+        env_check = os.environ.get("MOZ_ADB_PM_CLEAR_CHECK")
+        if env_check is not None:
+            return env_check.strip() == "1"
+
+        if _CLEAR_APP_DATA_CONFIRMED is not None:
+            return _CLEAR_APP_DATA_CONFIRMED
+
+        self._logger.info(
+            f"WARNING: Device is not rooted, and the app data (i.e. profile) for "
+            f"{app_name} will be cleared."
+        )
+        self._logger.info(
+            "Confirm that you understand the full app data for the app will be "
+            "removed. The entire profile of the app will be deleted (Yes/No): "
+        )
+        answer = input().strip().lower()
+        _CLEAR_APP_DATA_CONFIRMED = answer in ("yes", "y")
+        return _CLEAR_APP_DATA_CONFIRMED
 
     def uninstall_app(self, app_name, reboot=False, timeout=None):
         """Uninstalls an app on the device.

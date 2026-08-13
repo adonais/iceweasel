@@ -3,10 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "CompositorWidget.h"
+
 #include "GLConsts.h"
-#include "nsIWidget.h"
 #include "VsyncDispatcher.h"
 #include "mozilla/gfx/2D.h"
+#include "nsIWidget.h"
 
 namespace mozilla {
 namespace widget {

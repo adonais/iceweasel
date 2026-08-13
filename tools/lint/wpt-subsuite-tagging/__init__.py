@@ -2,9 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import os
 import re
 
+import mozpack.path as mozpath
 from mozlint import result
 from mozlint.pathutils import expand_exclusions
 
@@ -45,33 +45,35 @@ def _get_ini_tags(ini_path):
 def _effective_tags(rel_path, meta_root):
     tags = set()
 
-    tags |= _get_ini_tags(os.path.join(meta_root, rel_path + ".ini"))
+    tags |= _get_ini_tags(mozpath.join(meta_root, rel_path + ".ini"))
 
-    parts = rel_path.replace(os.sep, "/").split("/")
+    parts = rel_path.split("/")
     for depth in range(len(parts)):
-        tags |= _get_ini_tags(os.path.join(meta_root, *parts[:depth], "__dir__.ini"))
+        tags |= _get_ini_tags(mozpath.join(meta_root, *parts[:depth], "__dir__.ini"))
 
     return tags
 
 
 def lint(paths, config, fix=None, **lintargs):
     results = []
-    root = lintargs["root"]
+    # expand_exclusions yields forward-slash-normalized paths (via mozpath.normsep),
+    # so all path matching below is done in forward-slash form to work on Windows too.
+    root = mozpath.normsep(lintargs["root"])
 
-    for path in expand_exclusions(paths, config, root):
+    for path in expand_exclusions(paths, config, lintargs["root"]):
         for tests_root, meta_root in _TESTS_META_PAIRS:
-            abs_tests_root = os.path.join(root, tests_root)
-            if not path.startswith(abs_tests_root + os.sep):
+            abs_tests_root = mozpath.join(root, tests_root)
+            if not path.startswith(abs_tests_root + "/"):
                 continue
 
-            rel_path = os.path.relpath(path, abs_tests_root)
-            url_dir = "/".join(rel_path.replace(os.sep, "/").split("/")[:-1]) + "/"
+            rel_path = path[len(abs_tests_root) + 1 :]
+            url_dir = "/".join(rel_path.split("/")[:-1]) + "/"
 
             for subsuite, subsuite_paths in WPT_SUBSUITE_PATHS.items():
                 if not any(p in url_dir for p in subsuite_paths):
                     continue
 
-                tags = _effective_tags(rel_path, os.path.join(root, meta_root))
+                tags = _effective_tags(rel_path, mozpath.join(root, meta_root))
                 if not any(t == subsuite or t.startswith(subsuite + "-") for t in tags):
                     results.append(
                         result.from_config(

@@ -8,7 +8,6 @@
 #include <stdint.h>
 
 #include "mozilla/EventForwards.h"
-
 #include "nsColor.h"
 #include "nsISelectionController.h"
 #include "nsITextInputProcessor.h"

@@ -7,8 +7,8 @@
 
 #include <type_traits>
 
-#include "mozilla/Vector.h"
 #include "Logging.h"
+#include "mozilla/Vector.h"
 
 namespace mozilla {
 namespace gfx {

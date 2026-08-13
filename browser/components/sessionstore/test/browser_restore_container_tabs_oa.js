@@ -174,7 +174,7 @@ async function testRestoreCommon(isolateEverything) {
     let regular_browser = regular_tab.linkedBrowser;
 
     // I would have used browserLoaded but for about:config it doesn't work
-    let ready = BrowserTestUtils.waitForCondition(async () => {
+    let ready = TestUtils.waitForCondition(async () => {
       // Catch an error because the browser might change remoteness in between
       // calls, so we will just wait for the document to finish loadig.
       return SpecialPowers.spawn(regular_browser, [], () => {

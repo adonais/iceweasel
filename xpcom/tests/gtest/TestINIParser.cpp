@@ -4,7 +4,6 @@
 
 #include "gtest/gtest.h"
 #include "mozilla/gtest/MozAssertions.h"
-
 #include "nsINIParser.h"
 
 TEST(INIParser, DeleteString)

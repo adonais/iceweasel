@@ -8,33 +8,33 @@
 #include "gfxCrashReporterUtils.h"
 #include "gfxEnv.h"
 #include "gfxUtils.h"
-#include "mozilla/Preferences.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/gfx/gfxVars.h"
-#include "mozilla/gfx/Logging.h"
-#include "mozilla/glean/DomCanvasMetrics.h"
-#include "mozilla/Tokenizer.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_webgl.h"
+#include "mozilla/Tokenizer.h"
+#include "mozilla/gfx/Logging.h"
+#include "mozilla/gfx/gfxVars.h"
+#include "mozilla/glean/DomCanvasMetrics.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
 #include "nsPrintfCString.h"
 #ifdef XP_WIN
+#  include <d3d11.h>
+
 #  include "mozilla/gfx/DeviceManagerDx.h"
 #  include "nsWindowsHelpers.h"
 #  include "prerror.h"
-
-#  include <d3d11.h>
 #endif
-#include "OGLShaderProgram.h"
-#include "prenv.h"
-#include "prsystem.h"
 #include "GLContext.h"
 #include "GLContextProvider.h"
 #include "GLLibraryLoader.h"
 #include "GLReadTexImageHelper.h"
+#include "OGLShaderProgram.h"
 #include "ScopedGLHelpers.h"
+#include "prenv.h"
+#include "prsystem.h"
 #ifdef MOZ_WIDGET_GTK
 #  include "mozilla/WidgetUtilsGtk.h"
 #  include "mozilla/widget/DMABufDevice.h"
@@ -57,6 +57,7 @@ static const char* sEGLLibraryExtensionNames[] = {
     "EGL_ANDROID_get_native_client_buffer",
     "EGL_ANGLE_device_creation",
     "EGL_ANGLE_device_creation_d3d11",
+    "EGL_ANGLE_display_power_preference",
     "EGL_ANGLE_platform_angle",
     "EGL_ANGLE_platform_angle_d3d",
     "EGL_EXT_device_enumeration",
@@ -94,6 +95,7 @@ static const char* sEGLExtensionNames[] = {
     "EGL_EXT_image_dma_buf_import_modifiers",
     "EGL_MESA_image_dma_buf_export",
     "EGL_KHR_no_config_context",
+    "EGL_ANGLE_iosurface_client_buffer",
 };
 
 PRLibrary* LoadApitraceLibrary() {
@@ -903,28 +905,32 @@ std::shared_ptr<EglDisplay> GLLibraryEGL::DefaultDisplay(
   auto ret = mDefaultDisplay.lock();
   if (ret) return ret;
 
-  ret = CreateDisplayLocked(false, false, out_failureId, lock);
+  ret = CreateDisplayLocked({}, out_failureId, lock);
   mDefaultDisplay = ret;
   return ret;
 }
 
 std::shared_ptr<EglDisplay> GLLibraryEGL::CreateDisplay(
-    const bool forceAccel, const bool forceSoftware,
-    nsACString* const out_failureId) {
+    const EGLCreateDisplayFlags& aFlags, nsACString* const out_failureId) {
   StaticMutexAutoLock lock(sMutex);
-  return CreateDisplayLocked(forceAccel, forceSoftware, out_failureId, lock);
+  return CreateDisplayLocked(aFlags, out_failureId, lock);
 }
 
 std::shared_ptr<EglDisplay> GLLibraryEGL::CreateDisplayLocked(
-    const bool forceAccel, const bool forceSoftware,
-    nsACString* const out_failureId, const StaticMutexAutoLock& aProofOfLock) {
+    const EGLCreateDisplayFlags& aFlags, nsACString* const out_failureId,
+    const StaticMutexAutoLock& aProofOfLock) {
   std::shared_ptr<EglDisplay> ret;
+
+  MOZ_ASSERT(!(aFlags.mForceAccel && aFlags.mForceSoftware),
+             "Cannot force accelerated and software display");
 
   if (IsExtensionSupported(EGLLibExtension::ANGLE_platform_angle_d3d)) {
     nsCString accelAngleFailureId;
     bool accelAngleSupport = IsAccelAngleSupported(&accelAngleFailureId);
-    bool shouldTryAccel = (forceAccel || accelAngleSupport) && !forceSoftware;
-    bool shouldTryWARP = !forceAccel;  // Only if ANGLE not supported or fails
+    bool shouldTryAccel =
+        (aFlags.mForceAccel || accelAngleSupport) && !aFlags.mForceSoftware;
+    bool shouldTryWARP =
+        !aFlags.mForceAccel;  // Only if ANGLE not supported or fails
 
     // If WARP preferred, will override ANGLE support
     if (StaticPrefs::webgl_angle_force_warp()) {
@@ -967,19 +973,19 @@ std::shared_ptr<EglDisplay> GLLibraryEGL::CreateDisplayLocked(
   } else {
     void* nativeDisplay = EGL_DEFAULT_DISPLAY;
 #ifdef MOZ_WIDGET_GTK
-    if (!ret && (!gfx::gfxVars::WebglUseHardware() || forceSoftware)) {
+    if (!ret && (!gfx::gfxVars::WebglUseHardware() || aFlags.mForceSoftware)) {
       // Initialize a swrast egl device such as llvmpipe
       ret = GetAndInitSoftwareDisplay(*this, aProofOfLock);
     }
     // Initialize the display the normal way
-    if (!ret && !gdk_display_get_default() && !forceSoftware) {
+    if (!ret && !gdk_display_get_default() && !aFlags.mForceSoftware) {
       ret = GetAndInitDeviceDisplay(*this, aProofOfLock);
       if (!ret) {
         ret = GetAndInitSurfacelessDisplay(*this, aProofOfLock);
       }
     }
 #  ifdef MOZ_WAYLAND
-    else if (!ret && widget::GdkIsWaylandDisplay() && !forceSoftware) {
+    else if (!ret && widget::GdkIsWaylandDisplay() && !aFlags.mForceSoftware) {
       // Wayland does not support EGL_DEFAULT_DISPLAY
       nativeDisplay = widget::WaylandDisplayGetWLDisplay();
       if (!nativeDisplay) {
@@ -988,8 +994,32 @@ std::shared_ptr<EglDisplay> GLLibraryEGL::CreateDisplayLocked(
       }
     }
 #  endif
+#elif defined(XP_MACOSX)
+    MOZ_ASSERT(!aFlags.mForceSoftware,
+               "Software rendering not supported by EGL on macOS");
 #endif
-    if (!ret && !forceSoftware) {
+
+    // Initialize a display selecting a power preference, if supported.
+    if (!ret && !aFlags.mForceSoftware &&
+        IsExtensionSupported(EGLLibExtension::ANGLE_display_power_preference)) {
+      // The docs state "if this extension is advertised and this display
+      // creation attribute is not specified, the default value is
+      // EGL_LOW_POWER_ANGLE."
+      // In testing, however, it was found that EGL_LOW_POWER_ANGLE had to be
+      // specifically requested in order to obtain a low power display.
+      const EGLAttrib attrib_list[] = {LOCAL_EGL_POWER_PREFERENCE_ANGLE,
+                                       aFlags.mPreferHighPower
+                                           ? LOCAL_EGL_HIGH_POWER_ANGLE
+                                           : LOCAL_EGL_LOW_POWER_ANGLE,
+                                       LOCAL_EGL_NONE};
+      const EGLDisplay display = fGetPlatformDisplay(
+          LOCAL_EGL_PLATFORM_ANGLE_ANGLE, EGL_DEFAULT_DISPLAY, attrib_list);
+      if (display) {
+        ret = EglDisplay::Create(*this, display, false, aProofOfLock);
+      }
+    }
+
+    if (!ret && !aFlags.mForceSoftware) {
       ret = GetAndInitDisplay(*this, nativeDisplay, aProofOfLock);
     }
   }

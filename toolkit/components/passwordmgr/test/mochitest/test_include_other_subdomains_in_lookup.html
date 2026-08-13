@@ -35,9 +35,9 @@
 
   const domainname = location.hostname;
   const loginInfos = [
-    [`https://${domainname}/`, `https://${domainname}/`, null, "example-user", "example-password", "uname", "pword"],
-    [`https://old.${domainname}/`, `https://old.${domainname}/`, null, "example-user", "example-password", "uname", "pword"],
-    [`https://new.${domainname}/`, `https://new.${domainname}/`, null, "example-user", "new-example-password", "uname", "pword"],
+    [`https://${domainname}`, `https://${domainname}`, null, "example-user", "example-password", "uname", "pword"],
+    [`https://old.${domainname}`, `https://old.${domainname}`, null, "example-user", "example-password", "uname", "pword"],
+    [`https://new.${domainname}`, `https://new.${domainname}`, null, "example-user", "new-example-password", "uname", "pword"],
   ];
 
   // calculates a date representation as used in the autocomplete menu to
@@ -51,22 +51,24 @@
     listenForUnexpectedPopupShown();
   });
 
-  add_named_task("not including https login when includeOtherSubdomainsInLookup is false", async () => {
+  add_named_task("including https login when includeOtherSubdomainsInLookup is false", async () => {
     await setPreferencesForTask(["signon.includeOtherSubdomainsInLookup", false]);
     await setStoredLoginsDuringTask(
-      [`https://${domainname}/`, `https://${domainname}/`, null, "example-user-https", "example-password", "uname", "pword"],
+      [`https://${domainname}`, `https://${domainname}`, null, "example-user-https", "example-password", "uname", "pword"],
     );
     const form = setContentForTask(formTemplate);
     form.uname.focus();
 
-    await noPopupByArrowDown();
-    ok(true, "no popup has been opened")
+    // A login whose origin exactly matches the form's origin and scheme is
+    // always offered, regardless of the includeOtherSubdomainsInLookup setting.
+    const autocompleteItems = await popupByArrowDown();
+    checkAutoCompleteResults(autocompleteItems, ["example-user-https"], window.location.host, "https login showed");
   });
 
   add_named_task("including https login when includeOtherSubdomainsInLookup is true", async () => {
     await setPreferencesForTask(["signon.includeOtherSubdomainsInLookup", true]);
     await setStoredLoginsDuringTask(
-      [`https://${domainname}/`, `https://${domainname}/`, null, "example-user-https", "example-password", "uname", "pword"],
+      [`https://${domainname}`, `https://${domainname}`, null, "example-user-https", "example-password", "uname", "pword"],
     );
     const form = setContentForTask(formTemplate);
     form.uname.focus();
@@ -79,7 +81,7 @@
     await setPreferencesForTask(["signon.includeOtherSubdomainsInLookup", false]);
     await setStoredLoginsDuringTask(
       // eslint-disable-next-line @microsoft/sdl/no-insecure-url
-      [`http://${domainname}/`, `https://${domainname}/`, null, "example-user-http", "example-password", "uname", "pword"],
+      [`http://${domainname}`, `https://${domainname}`, null, "example-user-http", "example-password", "uname", "pword"],
     );
     const form = setContentForTask(formTemplate);
     form.uname.focus();
@@ -92,7 +94,7 @@
     await setPreferencesForTask(["signon.includeOtherSubdomainsInLookup", true]);
     await setStoredLoginsDuringTask(
       // eslint-disable-next-line @microsoft/sdl/no-insecure-url
-      [`http://${domainname}/`, `https://${domainname}/`, null, "example-user-http", "example-password", "uname", "pword"],
+      [`http://${domainname}`, `https://${domainname}`, null, "example-user-http", "example-password", "uname", "pword"],
     );
     const form = setContentForTask(formTemplate);
     form.uname.focus();
@@ -104,30 +106,28 @@
   add_named_task("including https and http login when includeOtherSubdomainsInLookup is false", async () => {
     await setPreferencesForTask(["signon.includeOtherSubdomainsInLookup", false]);
     await setStoredLoginsDuringTask(
-      [`https://${domainname}/`, `https://${domainname}/`, null, "example-user-https", "example-password", "uname", "pword"],
+      [`https://${domainname}`, `https://${domainname}`, null, "example-user-https", "example-password", "uname", "pword"],
       // eslint-disable-next-line @microsoft/sdl/no-insecure-url
-      [`http://${domainname}/`, `https://${domainname}/`, null, "example-user-http", "example-password", "uname", "pword"],
+      [`http://${domainname}`, `https://${domainname}`, null, "example-user-http", "example-password", "uname", "pword"],
     );
     const form = setContentForTask(formTemplate);
     form.uname.focus();
 
     const autocompleteItems = await popupByArrowDown();
-    // checkAutoCompleteResults(autocompleteItems, ["example-user-https"], window.location.host, "https login showed");
-    checkAutoCompleteResults(autocompleteItems, ["example-user-http"], window.location.host, "https login showed");
+    checkAutoCompleteResults(autocompleteItems, ["example-user-http", "example-user-https"], window.location.host, "http and https logins showed");
   });
 
   add_named_task("including https and http login when includeOtherSubdomainsInLookup is true", async () => {
     await setPreferencesForTask(["signon.includeOtherSubdomainsInLookup", true]);
     await setStoredLoginsDuringTask(
-      [`https://${domainname}/`, `https://${domainname}/`, null, "example-user-https", "example-password", "uname", "pword"],
+      [`https://${domainname}`, `https://${domainname}`, null, "example-user-https", "example-password", "uname", "pword"],
       // eslint-disable-next-line @microsoft/sdl/no-insecure-url
-      [`http://${domainname}/`, `https://${domainname}/`, null, "example-user-http", "example-password", "uname", "pword"],
+      [`http://${domainname}`, `https://${domainname}`, null, "example-user-http", "example-password", "uname", "pword"],
     );
     const form = setContentForTask(formTemplate);
     form.uname.focus();
 
     const autocompleteItems = await popupByArrowDown();
-    // checkAutoCompleteResults(autocompleteItems, ["example-user-https"], window.location.host, "https login showed");
     checkAutoCompleteResults(autocompleteItems, ["example-user-http", "example-user-https"], window.location.host, "http and https logins showed");
   });
 
@@ -139,9 +139,9 @@
         // *.example.com since the login is for http: and an https: login exists
         // for this username.
         // eslint-disable-next-line @microsoft/sdl/no-insecure-url
-        [`http://${domainname}/`, `https://${domainname}/`, null, "example-user", "example-password", "uname", "pword"],
+        [`http://${domainname}`, `https://${domainname}`, null, "example-user", "example-password", "uname", "pword"],
         // eslint-disable-next-line @microsoft/sdl/no-insecure-url
-        [`http://old.${domainname}/`, `https://old.${domainname}/`, null, "example-user", "old-example-password", "uname", "pword"],
+        [`http://old.${domainname}`, `https://old.${domainname}`, null, "example-user", "old-example-password", "uname", "pword"],
         ...loginInfos,
       ]
     );

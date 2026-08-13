@@ -12,8 +12,8 @@
 #include "mozilla/gfx/Point.h"          // for IntSize, IntSizeTyped
 #include "mozilla/gfx/Types.h"          // for SurfaceFormat, etc
 #include "mozilla/layers/Compositor.h"  // for SurfaceInitMode, etc
-#include "mozilla/layers/TextureHost.h"    // for CompositingRenderTarget
 #include "mozilla/layers/CompositorOGL.h"  // for CompositorOGL
+#include "mozilla/layers/TextureHost.h"    // for CompositingRenderTarget
 #include "mozilla/mozalloc.h"              // for operator new
 #include "nsAString.h"
 #include "nsCOMPtr.h"  // for already_AddRefed

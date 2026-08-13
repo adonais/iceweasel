@@ -216,6 +216,8 @@ linux64-toolchain-sysroot:
             - libicu-dev
             # For libdmg-hfsplus
             - liblzma-dev
+            # For socorro-cli
+            - libdbus-1-dev
 
 linux64-toolchain-sysroot-gcc10:
     description: "Sysroot for linux64 toolchain builds"
@@ -254,3 +256,5 @@ linux64-aarch64-toolchain-sysroot:
             # For clang
             - binutils-dev
             - libxml2-dev
+            # For socorro-cli
+            - libdbus-1-dev

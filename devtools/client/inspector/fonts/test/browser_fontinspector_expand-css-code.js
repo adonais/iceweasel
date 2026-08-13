@@ -19,7 +19,7 @@ add_task(async function () {
   is(codeEl.textContent, "@font-face {}", "The font-face rule is collapsed");
 
   info("Expanding the rule by clicking on the expander icon");
-  const onExpanded = BrowserTestUtils.waitForCondition(() => {
+  const onExpanded = TestUtils.waitForCondition(() => {
     return (
       codeEl.textContent ===
       `@font-face {\n  font-family: bar;\n  src: url("bad/font/name.ttf"), url("ostrich-regular.ttf") format("truetype");\n}`

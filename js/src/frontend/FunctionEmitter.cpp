@@ -159,27 +159,6 @@ bool FunctionEmitter::emitAgain() {
   return true;
 }
 
-bool FunctionEmitter::emitAsmJSModule() {
-  MOZ_ASSERT(state_ == State::Start);
-
-  MOZ_ASSERT(!funbox_->wasEmittedByEnclosingScript());
-  MOZ_ASSERT(funbox_->isAsmJSModule());
-
-  //                [stack]
-
-  funbox_->setWasEmittedByEnclosingScript(true);
-
-  if (!emitFunction()) {
-    //              [stack]
-    return false;
-  }
-
-#ifdef DEBUG
-  state_ = State::End;
-#endif
-  return true;
-}
-
 bool FunctionEmitter::emitFunction() {
   // Make the function object a literal in the outer script's pool.
   GCThingIndex index;

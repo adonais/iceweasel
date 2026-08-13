@@ -81,6 +81,7 @@ impl IPCServer {
         connector: IPCConnector,
         breakpad_data: BreakpadData,
         minidump_path: OsString,
+        build_id: String,
     ) -> Result<IPCServer> {
         // If the client process handle was not provided at launch then it will
         // be sent by the client using a regular `ProcessRendezVous` message.
@@ -92,7 +93,11 @@ impl IPCServer {
                 .get_process_handle(),
         };
 
-        let crash_generator = Box::new(Mutex::new(CrashGenerator::new(minidump_path.clone())));
+        let crash_generator = Box::new(Mutex::new(CrashGenerator::new(
+            client_handle.clone(),
+            minidump_path.clone(),
+            build_id,
+        )));
 
         // SAFETY: We widen the lifetime of this crash generator reference
         // as we guarantee that the underlying object will outlive the Breakpad

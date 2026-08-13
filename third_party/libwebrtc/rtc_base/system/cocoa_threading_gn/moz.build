@@ -42,6 +42,10 @@ LOCAL_INCLUDES += [
     "/tools/profiler/public"
 ]
 
+OS_LIBS += [
+    "-framework Foundation"
+]
+
 UNIFIED_SOURCES += [
     "/third_party/libwebrtc/rtc_base/system/cocoa_threading.mm"
 ]

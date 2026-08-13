@@ -2,23 +2,28 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <xf86drm.h>
+#include "DMABufFormats.h"
+
+#include <gbm.h>
 #include <sys/mman.h>
 #include <sys/types.h>
-#include <gbm.h>
+#include <xf86drm.h>
+
 #include <mutex>
 
 #include "DMABufDevice.h"
-#include "DMABufFormats.h"
 #include "WidgetUtilsGtk.h"
-#ifdef MOZ_WAYLAND
-#  include "nsWaylandDisplay.h"
-#  include "mozilla/widget/mozwayland.h"
-#  include "mozilla/widget/linux-dmabuf-unstable-v1-client-protocol.h"
-#endif
-#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/gfx/Logging.h"  // for gfxCriticalNote
+#include "mozilla/gfx/gfxVars.h"
+
+// clang-format off
+#ifdef MOZ_WAYLAND
+#  include "mozilla/widget/mozwayland.h"
+#  include "mozilla/widget/linux-dmabuf-unstable-v1-client-protocol.h"
+#  include "nsWaylandDisplay.h"
+#endif
+// clang-format on
 
 // drm_fourcc.h defines DRM_FORMAT_MOD_INVALID without a guard; undef the
 // fallback from DMABufFormats.h first so the unified build doesn't see a
@@ -27,6 +32,7 @@
 #  undef DRM_FORMAT_MOD_INVALID
 #endif
 #include <libdrm/drm_fourcc.h>
+
 #include "GfxInfo.h"
 #include "mozilla/Components.h"
 

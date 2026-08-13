@@ -4,8 +4,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "GfxInfoCollector.h"
-#include "jsapi.h"
+
 #include "js/PropertyAndElement.h"  // JS_DefineProperty
+#include "jsapi.h"
 #include "nsString.h"
 
 using namespace mozilla;

@@ -342,7 +342,17 @@ nscoord Gecko_CalcLineHeight(const StyleLineHeight* aLh,
   MutexAutoLock guard(*sServoFFILock);
   return ReflowInput::CalcLineHeight(*aLh, *aAgainstFont,
                                      const_cast<nsPresContext*>(aPc), aVertical,
-                                     aElement, NS_UNCONSTRAINEDSIZE, 1.0f);
+                                     aElement, 1.0f);
+}
+
+float Gecko_CalcAutoDecorationInset(float aFontSize) {
+  // Use an inset factor of 1/12.5, so we get 2px of inset (resulting in 4px
+  // gap between adjacent lines) at font-size 25px.
+  constexpr float kAutoInsetFactor = 1.0 / 12.5;
+
+  // Use the em size multiplied by kAutoInsetFactor, with a minimum of one
+  // CSS pixel to ensure that at least some separation occurs.
+  return std::max(1.0f, aFontSize * kAutoInsetFactor);
 }
 
 const ServoElementSnapshot* Gecko_GetElementSnapshot(

@@ -5,12 +5,12 @@
 #ifndef nsDirectoryService_h_
 #define nsDirectoryService_h_
 
-#include "nsIDirectoryService.h"
-#include "nsInterfaceHashtable.h"
-#include "nsIFile.h"
-#include "nsDirectoryServiceDefs.h"
-#include "nsTArray.h"
 #include "mozilla/StaticPtr.h"
+#include "nsDirectoryServiceDefs.h"
+#include "nsIDirectoryService.h"
+#include "nsIFile.h"
+#include "nsInterfaceHashtable.h"
+#include "nsTArray.h"
 
 #define NS_DIRECTORY_SERVICE_CID \
   {0xf00152d0, 0xb40b, 0x11d3, {0x8c, 0x9c, 0x00, 0x00, 0x64, 0x65, 0x73, 0x74}}

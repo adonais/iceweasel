@@ -11,12 +11,11 @@
 #ifndef mozilla_NullPrincipal_h
 #define mozilla_NullPrincipal_h
 
+#include "gtest/MozGtestFriend.h"
+#include "mozilla/BasePrincipal.h"
+#include "nsCOMPtr.h"
 #include "nsIPrincipal.h"
 #include "nsJSPrincipals.h"
-#include "nsCOMPtr.h"
-
-#include "mozilla/BasePrincipal.h"
-#include "gtest/MozGtestFriend.h"
 
 class nsIDocShell;
 class nsIURI;

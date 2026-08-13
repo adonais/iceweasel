@@ -70,7 +70,7 @@ add_task(async function test_newtab_last_LinkMenu() {
   await waitForPreloaded(browser);
 
   // Wait for React to render something
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       SpecialPowers.spawn(
         browser,

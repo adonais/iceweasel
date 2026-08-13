@@ -5,28 +5,26 @@
 #ifndef GFXPLATFORMFONTLIST_H_
 #define GFXPLATFORMFONTLIST_H_
 
-#include "nsClassHashtable.h"
-#include "nsTHashMap.h"
-#include "nsTHashSet.h"
-#include "nsRefPtrHashtable.h"
-#include "nsTHashtable.h"
-
-#include "gfxFontUtils.h"
-#include "gfxFontInfoLoader.h"
+#include "SharedFontList.h"
+#include "base/process.h"
 #include "gfxFont.h"
 #include "gfxFontConstants.h"
+#include "gfxFontInfoLoader.h"
+#include "gfxFontUtils.h"
 #include "gfxPlatform.h"
-#include "SharedFontList.h"
-
-#include "base/process.h"
-#include "nsIMemoryReporter.h"
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/FontPropertyTypes.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/RangedArray.h"
 #include "mozilla/RecursiveMutex.h"
 #include "mozilla/ipc/SharedMemoryHandle.h"
+#include "nsClassHashtable.h"
+#include "nsIMemoryReporter.h"
 #include "nsLanguageAtomService.h"
+#include "nsRefPtrHashtable.h"
+#include "nsTHashMap.h"
+#include "nsTHashSet.h"
+#include "nsTHashtable.h"
 
 namespace mozilla {
 namespace fontlist {

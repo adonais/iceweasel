@@ -10,19 +10,12 @@
   --panel-background-color: Menu;
   --panel-text-color: MenuText;
   --panel-padding: var(--panel-padding-block) 0;
-  --panel-border-color: ThreeDShadow;
 
   /* Nova's design tokens already provide a larger --panel-border-radius, so
      only apply the platform default when Nova is disabled. */
   @media not -moz-pref("browser.nova.enabled") {
     /* This should match GetMenuCornerRadius() on macOS, or be overridden below */
     --panel-border-radius: 6px;
-  }
-
-  @media (-moz-platform: linux) {
-    @media (prefers-contrast) {
-      --panel-border-color: color-mix(in srgb, currentColor 60%, transparent);
-    }
   }
 
   @media (-moz-platform: macos) {
@@ -99,6 +92,13 @@
 
   &[orient="vertical"]::part(content) {
     flex-direction: column;
+  }
+
+  /* A submenu is part of the same menu as its parent popup, so it must not
+   * widen a color scheme that the parent narrowed. */
+  menupopup,
+  panel {
+    color-scheme: inherit;
   }
 }
 

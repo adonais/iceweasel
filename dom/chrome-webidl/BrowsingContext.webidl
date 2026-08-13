@@ -346,7 +346,6 @@ interface CanonicalBrowsingContext : BrowsingContext {
   readonly attribute WindowGlobalParent? embedderWindowGlobal;
 
   undefined notifyStartDelayedAutoplayMedia();
-  [Throws] undefined notifyMediaMutedChanged(boolean muted);
 
   readonly attribute nsISecureBrowserUI? secureBrowserUI;
 

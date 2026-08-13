@@ -11,25 +11,25 @@
 #include <memory>
 #include <unordered_map>
 #include <variant>
+
 #include "Colorspaces.h"
 #include "GLConsts.h"
 #include "GLContextTypes.h"
 #include "GLTypes.h"
-#include "nsSize.h"
-#include "nsString.h"
-#include "nsTString.h"
-#include "mozilla/ipc/IPCTypes.h"
+#include "gfxTypes.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/gfx/MatrixFwd.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/gfx/Rect.h"
 #include "mozilla/gfx/Types.h"
-#include "gfxTypes.h"
-
-#include <map>
+#include "mozilla/ipc/IPCTypes.h"
+#include "nsSize.h"
+#include "nsString.h"
+#include "nsTString.h"
 
 #ifdef XP_WIN
 #  include <windows.h>
+
 #  include "mozilla/RefPtr.h"
 #  include "mozilla/ipc/IPCTypes.h"
 struct ID3D11Device;

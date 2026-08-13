@@ -3,20 +3,18 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "FilterSupport.h"
+
 #include "FilterDescription.h"
-
-#include "mozilla/gfx/2D.h"
-#include "mozilla/gfx/Filters.h"
-#include "mozilla/gfx/Logging.h"
-#include "mozilla/ArrayUtils.h"
-#include "mozilla/PodOperations.h"
-
+#include "gfx2DGlue.h"
 #include "gfxContext.h"
 #include "gfxPattern.h"
 #include "gfxPlatform.h"
 #include "gfxUtils.h"
-#include "gfx2DGlue.h"
-
+#include "mozilla/ArrayUtils.h"
+#include "mozilla/PodOperations.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/Filters.h"
+#include "mozilla/gfx/Logging.h"
 #include "nsMargin.h"
 
 // c = n / 255

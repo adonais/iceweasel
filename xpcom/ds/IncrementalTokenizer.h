@@ -5,10 +5,10 @@
 #ifndef INCREMENTAL_TOKENIZER_H_
 #define INCREMENTAL_TOKENIZER_H_
 
-#include "mozilla/Tokenizer.h"
-
-#include "nsError.h"
 #include <functional>
+
+#include "mozilla/Tokenizer.h"
+#include "nsError.h"
 
 class nsIInputStream;
 

@@ -15,6 +15,9 @@ class TextFormatUpdateEvent final : public Event {
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(TextFormatUpdateEvent, Event)
 
+  TextFormatUpdateEvent(EventTarget* aOwner, const nsAString& aType,
+                        const TextFormatUpdateEventInit& aOptions);
+
   static already_AddRefed<TextFormatUpdateEvent> Constructor(
       const GlobalObject& aGlobal, const nsAString& aType,
       const TextFormatUpdateEventInit& aOptions);
@@ -25,8 +28,6 @@ class TextFormatUpdateEvent final : public Event {
   void GetTextFormats(nsTArray<RefPtr<TextFormat>>& aRetVal);
 
  private:
-  TextFormatUpdateEvent(EventTarget* aOwner,
-                        const TextFormatUpdateEventInit& aOptions);
   ~TextFormatUpdateEvent() = default;
   nsTArray<RefPtr<TextFormat>> mTextFormats;
 };

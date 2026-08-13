@@ -51,7 +51,7 @@ void RtpLogger::LogPacket(const MediaPacket& packet, bool input,
     ss << "." << (tb.millitm) << " ";
 #else
     struct timeval tv;
-    gettimeofday(&tv, NULL);
+    gettimeofday(&tv, nullptr);
     ss << "." << (tv.tv_usec) << " ";
 #endif
     ss << " 000000";

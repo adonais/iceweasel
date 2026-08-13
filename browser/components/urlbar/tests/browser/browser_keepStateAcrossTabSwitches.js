@@ -255,6 +255,6 @@ function getSelectedText() {
 async function switchTab(tab) {
   if (gBrowser.selectedTab !== tab) {
     EventUtils.synthesizeMouseAtCenter(tab, {});
-    await BrowserTestUtils.waitForCondition(() => gBrowser.selectedTab === tab);
+    await TestUtils.waitForCondition(() => gBrowser.selectedTab === tab);
   }
 }

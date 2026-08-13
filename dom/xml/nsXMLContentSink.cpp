@@ -183,7 +183,7 @@ nsresult nsXMLContentSink::MaybePrettyPrint() {
   NS_ENSURE_SUCCESS(rv, rv);
 
   bool isPrettyPrinting;
-  rv = printer->PrettyPrint(mDocument, &isPrettyPrinting);
+  rv = printer->PrettyPrint(mDocument, mXSLTIsDisabled, &isPrettyPrinting);
   NS_ENSURE_SUCCESS(rv, rv);
 
   mPrettyPrinting = isPrettyPrinting;
@@ -270,6 +270,7 @@ nsXMLContentSink::DidBuildModel(bool aTerminated) {
       }
     }
 
+    mDocumentChildren.Clear();
     mXSLTProcessor->SetSourceContentModel(source);
     // Since the processor now holds a reference to us we drop our reference
     // to it to avoid owning cycles
@@ -684,7 +685,7 @@ nsresult nsXMLContentSink::AddContentAsLeaf(nsIContent* aContent) {
 nsresult nsXMLContentSink::LoadXSLStyleSheet(nsIURI* aUrl) {
   nsCOMPtr<nsIDocumentTransformer> processor = new txMozillaXSLTProcessor();
   mDocument->SetUseCounter(eUseCounter_custom_XSLStylesheet);
-  mDocument->WarnOnceAbout(DeprecatedOperations::eXSLTDeprecated);
+  mDocument->WarnOnceAndReportAbout(DeprecatedOperations::eXSLTDeprecated);
 
   processor->SetTransformObserver(this);
 
@@ -730,18 +731,14 @@ nsresult nsXMLContentSink::MaybeProcessXSLTLink(
     ProcessingInstruction* aProcessingInstruction, const nsAString& aHref,
     bool aAlternate, const nsAString& aTitle, const nsAString& aType,
     const nsAString& aMedia, const nsAString& aReferrerPolicy, bool* aWasXSLT) {
-  bool wasXSLT = StaticPrefs::dom_xslt_enabled() &&
-                 (aType.LowerCaseEqualsLiteral(TEXT_XSL) ||
-                  aType.LowerCaseEqualsLiteral(APPLICATION_XSLT_XML) ||
-                  aType.LowerCaseEqualsLiteral(TEXT_XML) ||
-                  aType.LowerCaseEqualsLiteral(APPLICATION_XML));
+  bool wasXSLTType = aType.LowerCaseEqualsLiteral(TEXT_XSL) ||
+                     aType.LowerCaseEqualsLiteral(APPLICATION_XSLT_XML) ||
+                     aType.LowerCaseEqualsLiteral(TEXT_XML) ||
+                     aType.LowerCaseEqualsLiteral(APPLICATION_XML);
+  bool wasXSLT = StaticPrefs::dom_xslt_enabled() && wasXSLTType;
 
   if (aWasXSLT) {
     *aWasXSLT = wasXSLT;
-  }
-
-  if (!wasXSLT) {
-    return NS_OK;
   }
 
   if (aAlternate) {
@@ -750,6 +747,13 @@ nsresult nsXMLContentSink::MaybeProcessXSLTLink(
   }
   // LoadXSLStyleSheet needs a mDocShell.
   if (!mDocShell) {
+    return NS_OK;
+  }
+
+  if (!wasXSLT) {
+    mPrettyPrintXML =
+        mPrettyPrintXML || (wasXSLTType && !StaticPrefs::dom_xslt_enabled());
+    mXSLTIsDisabled = wasXSLTType;
     return NS_OK;
   }
 
@@ -914,6 +918,9 @@ bool nsXMLContentSink::SetDocElement(int32_t aNameSpaceID, nsAtom* aTagName,
     if (linkStyle) {
       linkStyle->DisableUpdates();
     }
+    if (MOZ_UNLIKELY(child->GetParentNode())) {
+      child->Remove();
+    }
     mDocument->AppendChildTo(child, false, IgnoreErrors());
     if (linkStyle) {
       auto updateOrError = linkStyle->EnableUpdatesAndUpdateStyleSheet(
@@ -951,7 +958,7 @@ bool nsXMLContentSink::SetDocElement(int32_t aNameSpaceID, nsAtom* aTagName,
   }
 
   IgnoredErrorResult rv;
-  mDocument->AppendChildTo(mDocElement, NotifyForDocElement(), rv);
+  mDocument->AppendChild(*mDocElement, rv);
   if (rv.Failed()) {
     // If we return false here, the caller will bail out because it won't
     // find a parent content node to append to, which is fine.
@@ -1027,6 +1034,9 @@ nsresult nsXMLContentSink::HandleStartElement(
     if (!SetDocElement(nameSpaceID, localName, content) && appendContent) {
       NS_ENSURE_TRUE(parent, NS_ERROR_UNEXPECTED);
 
+      if (MOZ_UNLIKELY(content->GetParentNode())) {
+        content->Remove();
+      }
       parent->AppendChildTo(content, false, IgnoreErrors());
     }
   }
@@ -1378,7 +1388,7 @@ nsXMLContentSink::ReportError(const char16_t* aErrorText,
   parsererror.Append((char16_t)0xFFFF);
   parsererror.AppendLiteral("parsererror");
 
-  const char16_t* dirAttr[] = {u"dir", u"ltr", 0, 0};
+  const char16_t* dirAttr[] = {u"dir", u"ltr", nullptr, nullptr};
   if (intl::LocaleService::GetInstance()->IsAppLocaleRTL() &&
       !mDocument->ShouldResistFingerprinting(RFPTarget::JSLocale)) {
     dirAttr[1] = u"rtl";
@@ -1393,7 +1403,7 @@ nsXMLContentSink::ReportError(const char16_t* aErrorText,
   sourcetext.Append((char16_t)0xFFFF);
   sourcetext.AppendLiteral("sourcetext");
 
-  const char16_t* noAtts[] = {0, 0};
+  const char16_t* noAtts[] = {nullptr, nullptr};
   rv = HandleStartElement(sourcetext.get(), noAtts, 0, (uint32_t)-1, 0);
   NS_ENSURE_SUCCESS(rv, rv);
 

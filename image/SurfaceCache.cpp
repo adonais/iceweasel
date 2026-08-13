@@ -14,6 +14,7 @@
 #include "ISurfaceProvider.h"
 #include "Image.h"
 #include "LookupResult.h"
+#include "Orientation.h"
 #include "ShutdownTracker.h"
 #include "gfx2DGlue.h"
 #include "gfxPlatform.h"
@@ -28,14 +29,12 @@
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPrefs_image.h"
 #include "mozilla/StaticPtr.h"
-
 #include "nsExpirationTracker.h"
 #include "nsHashKeys.h"
 #include "nsIMemoryReporter.h"
 #include "nsRefPtrHashtable.h"
 #include "nsSize.h"
 #include "nsTArray.h"
-#include "Orientation.h"
 #include "prsystem.h"
 
 using std::max;
@@ -1398,7 +1397,7 @@ class SurfaceCacheImpl final : public nsIMemoryReporter {
     MaybeRemoveEmptyCache(aImageKey, cache);
   }
 
-  void ReleaseImageOnMainThread(already_AddRefed<image::Image>&& aImage,
+  void ReleaseImageOnMainThread(already_AddRefed<image::Image> aImage,
                                 const StaticMutexAutoLock& aAutoLock) {
     RefPtr<image::Image> image = aImage;
     if (!image) {

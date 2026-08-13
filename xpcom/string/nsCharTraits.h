@@ -7,6 +7,7 @@
 
 #include <stdint.h>  // for |uint32_t|
 #include <string.h>  // for |memcpy|, et al
+
 #include "mozilla/MemoryChecking.h"
 
 // This file may be used (through nsUTF8Utils.h) from non-XPCOM code, in
@@ -20,67 +21,6 @@
 #else
 #  include "nsDebug.h"  // for NS_ASSERTION
 #endif
-
-/*
- * Some macros for converting char16_t (UTF-16) to and from Unicode scalar
- * values.
- *
- * Note that UTF-16 represents all Unicode scalar values up to U+10FFFF by
- * using "surrogate pairs". These consist of a high surrogate, i.e. a code
- * point in the range U+D800 - U+DBFF, and a low surrogate, i.e. a code point
- * in the range U+DC00 - U+DFFF, like this:
- *
- *  U+D800 U+DC00 =  U+10000
- *  U+D800 U+DC01 =  U+10001
- *  ...
- *  U+DBFF U+DFFE = U+10FFFE
- *  U+DBFF U+DFFF = U+10FFFF
- *
- * These surrogate code points U+D800 - U+DFFF are not themselves valid Unicode
- * scalar values and are not well-formed UTF-16 except as high-surrogate /
- * low-surrogate pairs.
- */
-
-#define PLANE1_BASE uint32_t(0x00010000)
-// High surrogates are in the range 0xD800 -- OxDBFF
-#define NS_IS_HIGH_SURROGATE(u) ((uint32_t(u) & 0xFFFFFC00) == 0xD800)
-// Low surrogates are in the range 0xDC00 -- 0xDFFF
-#define NS_IS_LOW_SURROGATE(u) ((uint32_t(u) & 0xFFFFFC00) == 0xDC00)
-// Easier to type than NS_IS_HIGH_SURROGATE && NS_IS_LOW_SURROGATE
-#define NS_IS_SURROGATE_PAIR(h, l) \
-  (NS_IS_HIGH_SURROGATE(h) && NS_IS_LOW_SURROGATE(l))
-// Faster than testing NS_IS_HIGH_SURROGATE || NS_IS_LOW_SURROGATE
-#define IS_SURROGATE(u) ((uint32_t(u) & 0xFFFFF800) == 0xD800)
-
-// Everything else is not a surrogate: 0x000 -- 0xD7FF, 0xE000 -- 0xFFFF
-
-// N = (H - 0xD800) * 0x400 + 0x10000 + (L - 0xDC00)
-// I wonder whether we could somehow assert that H is a high surrogate
-// and L is a low surrogate
-#define SURROGATE_TO_UCS4(h, l) \
-  (((uint32_t(h) & 0x03FF) << 10) + (uint32_t(l) & 0x03FF) + PLANE1_BASE)
-
-// Extract surrogates from a UCS4 char
-// Reference: the Unicode standard 4.0, section 3.9
-// Since (c - 0x10000) >> 10 == (c >> 10) - 0x0080 and
-// 0xD7C0 == 0xD800 - 0x0080,
-// ((c - 0x10000) >> 10) + 0xD800 can be simplified to
-#define H_SURROGATE(c) char16_t(char16_t(uint32_t(c) >> 10) + char16_t(0xD7C0))
-// where it's to be noted that 0xD7C0 is not bitwise-OR'd
-// but added.
-
-// Since 0x10000 & 0x03FF == 0,
-// (c - 0x10000) & 0x03FF == c & 0x03FF so that
-// ((c - 0x10000) & 0x03FF) | 0xDC00 is equivalent to
-#define L_SURROGATE(c) \
-  char16_t(char16_t(uint32_t(c) & uint32_t(0x03FF)) | char16_t(0xDC00))
-
-#define IS_IN_BMP(ucs) (uint32_t(ucs) < PLANE1_BASE)
-#define UCS2_REPLACEMENT_CHAR char16_t(0xFFFD)
-
-#define UCS_END uint32_t(0x00110000)
-#define IS_VALID_CHAR(c) ((uint32_t(c) < UCS_END) && !IS_SURROGATE(c))
-#define ENSURE_VALID_CHAR(c) (IS_VALID_CHAR(c) ? (c) : UCS2_REPLACEMENT_CHAR)
 
 template <class CharT>
 struct nsCharTraits {};

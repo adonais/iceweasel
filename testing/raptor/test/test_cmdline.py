@@ -252,6 +252,75 @@ def test_perftest_setup_with_args(ConcretePerftest, args, settings_to_check):
 
 
 @pytest.mark.parametrize(
+    "args, expected",
+    [
+        [[], []],
+        [
+            ["--install-extension", "uBlock0@raymondhill.net"],
+            ["uBlock0@raymondhill.net"],
+        ],
+        [
+            [
+                "--install-extension",
+                "uBlock0@raymondhill.net",
+                "--install-extension",
+                "https://example.com/a.xpi",
+            ],
+            ["uBlock0@raymondhill.net", "https://example.com/a.xpi"],
+        ],
+    ],
+)
+def test_install_extension_arg(args, expected):
+    parser = create_parser()
+    parsed = parser.parse_args(
+        ["--test", "test-page-1", "--binary", "invalid/path"] + args
+    )
+    assert parsed.install_extensions == expected
+
+
+@mock.patch("perftest.Perftest.build_browser_profile", new=mock.MagicMock())
+def test_install_extension_reaches_config(ConcretePerftest):
+    parser = create_parser()
+    args = parser.parse_args([
+        "--test",
+        "test-page-1",
+        "--binary",
+        "invalid/path",
+        "--install-extension",
+        "uBlock0@raymondhill.net",
+    ])
+    perftest = ConcretePerftest(**vars(args))
+    assert perftest.config["install_extensions"] == ["uBlock0@raymondhill.net"]
+
+
+@mock.patch("perftest.Perftest.build_browser_profile", new=mock.MagicMock())
+def test_install_extra_extensions_flattens_csv(ConcretePerftest):
+    parser = create_parser()
+    args = parser.parse_args([
+        "--test",
+        "test-page-1",
+        "--binary",
+        "invalid/path",
+        # mach try perf forwards multiple extensions as one comma-separated value
+        "--install-extension",
+        "https://amo/a.xpi,https://amo/b.xpi",
+        "--install-extension",
+        "https://amo/c.xpi",
+    ])
+    perftest = ConcretePerftest(**vars(args))
+    perftest.profile = mock.MagicMock()
+    with mock.patch("perftest.download_file", side_effect=lambda url, **kw: url):
+        perftest.install_extra_extensions()
+    perftest.profile.addons.install.assert_called_once_with([
+        "https://amo/a.xpi",
+        "https://amo/b.xpi",
+        "https://amo/c.xpi",
+    ])
+    # Each installed addon's details are looked up so its id/version is logged.
+    assert perftest.profile.addons.addon_details.call_count == 3
+
+
+@pytest.mark.parametrize(
     "args, expected_failure",
     [
         # Test that post_startup_delay is 30s as expected

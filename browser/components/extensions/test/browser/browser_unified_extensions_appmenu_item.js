@@ -154,7 +154,7 @@ add_task(async function test_appmenu_extensions_opens_when_no_extensions() {
   ok(BrowserTestUtils.isVisible(emptyStateBox), "Empty state is visible");
   is(
     emptyStateBox.querySelector("h2").getAttribute("data-l10n-id"),
-    "unified-extensions-empty-reason-zero-extensions-onboarding",
+    "unified-extensions-empty-reason-zero-extensions-onboarding2",
     "Has header when the user does not have any extensions installed"
   );
 

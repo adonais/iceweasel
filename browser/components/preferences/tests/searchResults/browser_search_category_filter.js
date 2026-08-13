@@ -128,12 +128,8 @@ function captureSearchVisibility(doc) {
   return result;
 }
 
-/**
- * Regression test for bug 2043582: with a prior search active, selecting all
- * the text in the search field and typing a different term one character at a
- * time used to leave `visually-hidden` setting-groups from earlier keystrokes
- * stuck hidden.
- */
+// Bug 2043582: extending the previous query used to leave the setting-groups it
+// hid stuck with `visually-hidden`.
 add_task(async function progressive_typing_matches_fresh_search() {
   let doc = await openSearchWithQuery("accessibility");
   let fresh = captureSearchVisibility(doc);

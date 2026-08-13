@@ -97,7 +97,7 @@ if CONFIG["MOZ_CRASHREPORTER"]:
             "mac_utils.mm",
         ]
 
-    EXTRA_JS_MODULES += [
+    MOZ_SRC_FILES += [
         "CrashReports.sys.mjs",
         "CrashSubmit.sys.mjs",
     ]

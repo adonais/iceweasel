@@ -5,9 +5,8 @@
 #ifndef mozilla_a11y_xpcAccessibleHyperLink_h_
 #define mozilla_a11y_xpcAccessibleHyperLink_h_
 
-#include "nsIAccessibleHyperLink.h"
-
 #include "mozilla/a11y/Accessible.h"
+#include "nsIAccessibleHyperLink.h"
 
 class nsIAccessible;
 

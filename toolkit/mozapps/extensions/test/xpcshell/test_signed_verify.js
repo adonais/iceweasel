@@ -23,6 +23,13 @@ function verifySignatures() {
   });
 }
 
+async function writeCorruptedXPIFile(extensionId) {
+  let file = AddonTestUtils.getFileForAddon(profileDir, extensionId);
+  // Clear any handles to the file before replacing it; Windows is very picky.
+  Services.obs.notifyObservers(file, "flush-cache-entry");
+  await IOUtils.writeUTF8(file.path, "not a XPI file anymore");
+}
+
 createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "4", "48");
 
 add_setup(async () => {
@@ -642,5 +649,107 @@ add_task(
 
     await addon1.uninstall();
     await addon2.uninstall();
+  }
+);
+
+add_task(useAMOStageCert(), async function test_broken_file() {
+  await promiseInstallFile(do_get_file(`${DATA}/signed1.xpi`));
+
+  let addon = await promiseAddonByID(ID);
+  Assert.notEqual(addon, null);
+  Assert.equal(addon.appDisabled, false);
+  Assert.equal(addon.isActive, true);
+  Assert.equal(addon.signedState, AddonManager.SIGNEDSTATE_SIGNED);
+
+  await writeCorruptedXPIFile(ID);
+
+  let changedProperties = [];
+  let listener = {
+    onPropertyChanged(addon, properties) {
+      changedProperties.push(...properties);
+    },
+  };
+
+  AddonManager.addAddonListener(listener);
+
+  const disablePromise = promiseAddonEvent("onDisabling");
+  let changes;
+  const { messages } = await AddonTestUtils.promiseConsoleOutput(async () => {
+    changes = await verifySignatures();
+  });
+  await disablePromise;
+
+  Assert.equal(changes.enabled.length, 0);
+  Assert.equal(changes.disabled.length, 1);
+  Assert.equal(changes.disabled[0], ID);
+
+  Assert.deepEqual(
+    changedProperties,
+    ["signedState", "signedTypes", "appDisabled"],
+    "Got onPropertyChanged events for signedState and appDisabled"
+  );
+
+  Assert.ok(addon.appDisabled);
+  Assert.ok(!addon.isActive);
+  Assert.equal(addon.signedState, AddonManager.SIGNEDSTATE_BROKEN);
+
+  await addon.uninstall();
+  AddonManager.removeAddonListener(listener);
+
+  AddonTestUtils.checkMessages(messages, {
+    expected: [
+      { message: /verifyBundleSignedState failed for test@somewhere.com/ },
+    ],
+  });
+});
+
+// Verify that verifySignatures() does not change signedState for addons that
+// do not require signatures, even if the underlying file got corrupted.
+add_task(
+  {
+    ...useAMOStageCert(),
+    // # Non-extension add-ons are not supported on Android.
+    skip_if: () => AppConstants.platform == "android",
+  },
+  async function test_broken_file_not_requiring_signatures() {
+    // Note: If dictionaries ever require signatures (bug 1753276), change this
+    // test to another test case where shouldVerifySignedState returns false.
+    let addon = await promiseInstallWebExtension({
+      useAddonManager: true,
+      manifest: {
+        browser_specific_settings: { gecko: { id: "broken@dict" } },
+        dictionaries: { "en-US": "en-US.dic" },
+      },
+      files: { "en-US.dic": "", "en-US.aff": "" },
+    });
+    Assert.equal(addon.signedState, AddonManager.SIGNEDSTATE_NOT_REQUIRED);
+
+    await writeCorruptedXPIFile(addon.id);
+
+    let listener = {
+      onPropertyChanged(_addon) {
+        Assert.ok(false, `Got unexpected onPropertyChanged for ${_addon.id}`);
+      },
+    };
+
+    AddonManager.addAddonListener(listener);
+
+    let changes;
+    const { messages } = await AddonTestUtils.promiseConsoleOutput(async () => {
+      changes = await verifySignatures();
+    });
+    Assert.equal(changes.enabled.length, 0);
+    Assert.equal(changes.disabled.length, 0);
+
+    Assert.equal(addon.appDisabled, false);
+    Assert.equal(addon.isActive, true);
+    Assert.equal(addon.signedState, AddonManager.SIGNEDSTATE_NOT_REQUIRED);
+
+    await addon.uninstall();
+    AddonManager.removeAddonListener(listener);
+
+    AddonTestUtils.checkMessages(messages, {
+      expected: [{ message: /verifyBundleSignedState failed for broken@dict/ }],
+    });
   }
 );

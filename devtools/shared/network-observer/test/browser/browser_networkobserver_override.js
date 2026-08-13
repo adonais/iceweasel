@@ -99,7 +99,7 @@ add_task(async function testLocalOverride() {
     }
   );
 
-  await BrowserTestUtils.waitForCondition(() => eventsCount >= 1);
+  await TestUtils.waitForCondition(() => eventsCount >= 1);
 
   info(
     `Assert that requests which would require a CORS preflight can be overridden`
@@ -124,7 +124,7 @@ add_task(async function testLocalOverride() {
     }
   );
 
-  await BrowserTestUtils.waitForCondition(() => eventsCount >= 2);
+  await TestUtils.waitForCondition(() => eventsCount >= 2);
   networkObserver.destroy();
 });
 
@@ -161,7 +161,7 @@ add_task(async function testHtmlFileOverride() {
       );
     }
   );
-  await BrowserTestUtils.waitForCondition(() => eventsCount >= 1);
+  await TestUtils.waitForCondition(() => eventsCount >= 1);
   networkObserver.destroy();
 });
 
@@ -224,7 +224,7 @@ add_task(async function testLocalOverrideGzipped() {
     }
   );
 
-  await BrowserTestUtils.waitForCondition(() => eventsCount >= 1);
+  await TestUtils.waitForCondition(() => eventsCount >= 1);
 
   networkObserver.destroy();
 });
@@ -285,7 +285,7 @@ add_task(async function testLocalOverrideCSP() {
     );
   });
 
-  await BrowserTestUtils.waitForCondition(() => eventsCount >= 1);
+  await TestUtils.waitForCondition(() => eventsCount >= 1);
 
   info("Remove the override for " + url);
   networkObserver.removeOverride(url);

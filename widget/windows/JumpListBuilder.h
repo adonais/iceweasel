@@ -5,11 +5,15 @@
 #ifndef JumpListBuilder_h_
 #define JumpListBuilder_h_
 
-#include "nsIJumpListBuilder.h"
+// clang-format off
+#include <windows.h>
+#include <shobjidl.h>
+// clang-format on
 
+#include "mozilla/LazyIdleThread.h"
+#include "nsIJumpListBuilder.h"
 #include "nsIObserver.h"
 #include "nsProxyRelease.h"
-#include "mozilla/LazyIdleThread.h"
 
 namespace mozilla {
 

@@ -517,16 +517,6 @@ function generateString(length) {
   return new Array(length + 1).join("a");
 }
 
-// Short-hand for retrieving the histogram with that id.
-function getHistogram(histogramId) {
-  return Telemetry.getHistogramById(histogramId);
-}
-
-// Short-hand for retrieving the snapshot of the Histogram with that id.
-function getSnapshot(histogramId) {
-  return Telemetry.getHistogramById(histogramId).snapshot();
-}
-
 // Helper for setting an empty list of Environment preferences to watch.
 function setEmptyPrefWatchlist() {
   const { TelemetryEnvironment } = ChromeUtils.importESModule(

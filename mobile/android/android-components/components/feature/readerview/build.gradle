@@ -5,11 +5,9 @@
 import static org.mozilla.conventions.BuildConfigKt.updateExtensionVersion
 
 plugins {
+    id 'com.android.library'
     alias(libs.plugins.dependency.analysis)
 }
-
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
 
 android {
     namespace = 'mozilla.components.feature.readerview'
@@ -35,7 +33,7 @@ dependencies {
     implementation project(':components:ui-icons')
 
     implementation libs.androidx.constraintlayout
-    implementation libs.androidx.core.ktx
+    implementation libs.androidx.core
     implementation libs.kotlinx.coroutines
 
     testImplementation project(':components:support-test')

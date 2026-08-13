@@ -5,13 +5,12 @@
 #ifndef NSWINDOW_H_
 #define NSWINDOW_H_
 
-#include <objc/objc.h>
 #include <CoreFoundation/CoreFoundation.h>
+#include <objc/objc.h>
 
+#include "gfxPoint.h"
 #include "mozilla/widget/IOSView.h"
 #include "nsIWidget.h"
-#include "gfxPoint.h"
-
 #include "nsTArray.h"
 
 #ifdef __OBJC__

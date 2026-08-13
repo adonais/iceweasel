@@ -25,6 +25,7 @@
 #include "nsIURI.h"
 #include "nsCOMPtr.h"
 #include "nsString.h"
+#include "nsTArray.h"
 #include "nsNetCID.h"
 #include "nsProxyRelease.h"
 #include "plbase64.h"
@@ -40,6 +41,12 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/net/DNS.h"
 #include "mozilla/StaticPrefs_browser.h"
+#include "mozilla/StaticPrefs_network.h"
+
+#ifdef XP_WIN
+#  include "nsITransportSecurityInfo.h"
+#  include "nsIX509Cert.h"
+#endif
 
 using mozilla::Base64Decode;
 
@@ -97,6 +104,40 @@ static bool TestNotInPBMode(nsIHttpAuthenticableChannel* authChannel,
 
   return false;
 }
+
+#ifdef XP_WIN
+// Retrieves the DER encoded server certificate, from which the SSPI module
+// builds the tls-server-end-point channel binding token that servers with
+// Extended Protection enabled require. Must run on the main thread.
+//
+// Not having a security info object is a valid case rather than an error: it
+// happens for plain http, and for an https site reached through a proxy before
+// the tunnel has been created.
+static void GetServerCertDER(nsIHttpAuthenticableChannel* authChannel,
+                             nsTArray<uint8_t>& certDER) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  nsCOMPtr<nsIChannel> channel = do_QueryInterface(authChannel);
+  if (!channel) {
+    return;
+  }
+
+  nsCOMPtr<nsITransportSecurityInfo> securityInfo;
+  if (NS_FAILED(channel->GetSecurityInfo(getter_AddRefs(securityInfo))) ||
+      !securityInfo) {
+    return;
+  }
+
+  nsCOMPtr<nsIX509Cert> cert;
+  if (NS_FAILED(securityInfo->GetServerCert(getter_AddRefs(cert))) || !cert) {
+    return;
+  }
+
+  if (NS_FAILED(cert->GetRawDER(certDER))) {
+    certDER.Clear();
+  }
+}
+#endif
 
 already_AddRefed<nsIHttpAuthenticator> nsHttpNegotiateAuth::GetOrCreate() {
   nsCOMPtr<nsIHttpAuthenticator> authenticator;
@@ -225,6 +266,17 @@ nsHttpNegotiateAuth::ChallengeReceived(nsIHttpAuthenticableChannel* authChannel,
 
 NS_IMPL_ISUPPORTS(nsHttpNegotiateAuth, nsIHttpAuthenticator)
 
+// Shared by GenerateCredentials and the background runnable used by
+// GenerateCredentialsAsync. aCertDER is the DER encoded server certificate
+// used to build the channel binding token, and may be empty, in which case no
+// channel binding is sent.
+static nsresult GenerateCredentialsInternal(
+    nsIHttpAuthenticableChannel* authChannel, const nsACString& aChallenge,
+    bool isProxyAuth, const nsAString& domain, const nsAString& username,
+    const nsAString& password, nsISupports** sessionState,
+    nsISupports** continuationState, const nsTArray<uint8_t>& aCertDER,
+    uint32_t* flags, nsACString& creds);
+
 namespace {
 
 //
@@ -326,7 +378,8 @@ class GetNextTokenRunnable final : public mozilla::Runnable {
       nsMainThreadPtrHandle<nsIHttpAuthenticableChannel>& authChannel,
       const nsACString& challenge, bool isProxyAuth, const nsAString& domain,
       const nsAString& username, const nsAString& password,
-      nsISupports* sessionState, nsISupports* continuationState,
+      nsTArray<uint8_t>&& certDER, nsISupports* sessionState,
+      nsISupports* continuationState,
       nsMainThreadPtrHandle<GetNextTokenCompleteEvent>& aCompleteEvent)
       : mozilla::Runnable("GetNextTokenRunnable"),
         mAuthChannel(authChannel),
@@ -335,6 +388,7 @@ class GetNextTokenRunnable final : public mozilla::Runnable {
         mDomain(domain),
         mUsername(username),
         mPassword(password),
+        mCertDER(std::move(certDER)),
         mSessionState(sessionState),
         mContinuationState(continuationState),
         mCompleteEvent(aCompleteEvent) {}
@@ -365,9 +419,6 @@ class GetNextTokenRunnable final : public mozilla::Runnable {
   NS_IMETHODIMP ObtainCredentialsAndFlags(nsCString& aCreds, uint32_t* aFlags) {
     nsresult rv;
 
-    // Use negotiate service to call GenerateCredentials outside of main thread
-    nsCOMPtr<nsIHttpAuthenticator> authenticator = new nsHttpNegotiateAuth();
-
     nsISupports* sessionState = mSessionState;
     nsISupports* continuationState = mContinuationState;
     // The continuationState is for the sake of completeness propagated
@@ -383,9 +434,9 @@ class GetNextTokenRunnable final : public mozilla::Runnable {
     //
     // Should any of the session or continuation states change inside
     // this method, they must be threadsafe.
-    rv = authenticator->GenerateCredentials(
+    rv = GenerateCredentialsInternal(
         mAuthChannel, mChallenge, mIsProxyAuth, mDomain, mUsername, mPassword,
-        &sessionState, &continuationState, aFlags, aCreds);
+        &sessionState, &continuationState, mCertDER, aFlags, aCreds);
     if (mSessionState != sessionState) {
       mSessionState = sessionState;
     }
@@ -402,6 +453,7 @@ class GetNextTokenRunnable final : public mozilla::Runnable {
   nsString mDomain;
   nsString mUsername;
   nsString mPassword;
+  nsTArray<uint8_t> mCertDER;
   nsCOMPtr<nsISupports> mSessionState;
   nsCOMPtr<nsISupports> mContinuationState;
   nsMainThreadPtrHandle<GetNextTokenCompleteEvent> mCompleteEvent;
@@ -419,6 +471,20 @@ nsHttpNegotiateAuth::GenerateCredentialsAsync(
   NS_ENSURE_ARG(aCallback);
   NS_ENSURE_ARG_POINTER(aCancelable);
 
+  nsTArray<uint8_t> certDER;
+#ifdef XP_WIN
+  // The certificate has to be collected here because GenerateCredentials runs
+  // on a background thread. Only a challenge with no token of its own starts a
+  // sequence, and that is the only call nsAuthSSPI accepts a certificate on.
+  // Proxy auth is excluded because the channel's security info describes the
+  // origin server rather than the proxy.
+  if (!isProxyAuth && challenge.Length() <= kNegotiateLen &&
+      mozilla::StaticPrefs::network_auth_negotiate_channel_binding() &&
+      TestBoolPref(kNegotiateAuthSSPI)) {
+    GetServerCertDER(authChannel, certDER);
+  }
+#endif
+
   nsMainThreadPtrHandle<nsIHttpAuthenticableChannel> handle(
       new nsMainThreadPtrHolder<nsIHttpAuthenticableChannel>(
           "nsIHttpAuthenticableChannel", authChannel, false));
@@ -427,8 +493,8 @@ nsHttpNegotiateAuth::GenerateCredentialsAsync(
           "GetNextTokenCompleteEvent", new GetNextTokenCompleteEvent(aCallback),
           false));
   nsCOMPtr<nsIRunnable> getNextTokenRunnable = new GetNextTokenRunnable(
-      handle, challenge, isProxyAuth, domain, username, password, sessionState,
-      continuationState, cancelEvent);
+      handle, challenge, isProxyAuth, domain, username, password,
+      std::move(certDER), sessionState, continuationState, cancelEvent);
 
   nsresult rv = NS_DispatchBackgroundTask(
       getNextTokenRunnable, nsIEventTarget::DISPATCH_EVENT_MAY_BLOCK);
@@ -451,11 +517,25 @@ nsHttpNegotiateAuth::GenerateCredentials(
     bool isProxyAuth, const nsAString& domain, const nsAString& username,
     const nsAString& password, nsISupports** sessionState,
     nsISupports** continuationState, uint32_t* flags, nsACString& creds) {
+  // Only reachable when GenerateCredentialsAsync fails to dispatch, which in
+  // practice means shutdown. No certificate is passed, so this path sends no
+  // channel binding; the sequence is not going to complete anyway.
+  return GenerateCredentialsInternal(
+      authChannel, aChallenge, isProxyAuth, domain, username, password,
+      sessionState, continuationState, nsTArray<uint8_t>(), flags, creds);
+}
+
+static nsresult GenerateCredentialsInternal(
+    nsIHttpAuthenticableChannel* authChannel, const nsACString& aChallenge,
+    bool isProxyAuth, const nsAString& domain, const nsAString& username,
+    const nsAString& password, nsISupports** sessionState,
+    nsISupports** continuationState, const nsTArray<uint8_t>& aCertDER,
+    uint32_t* flags, nsACString& creds) {
   // ChallengeReceived must have been called previously.
   nsIAuthModule* module = (nsIAuthModule*)*continuationState;
   NS_ENSURE_TRUE(module, NS_ERROR_NOT_INITIALIZED);
 
-  *flags = USING_INTERNAL_IDENTITY;
+  *flags = nsIHttpAuthenticator::USING_INTERNAL_IDENTITY;
 
   LOG(("nsHttpNegotiateAuth::GenerateCredentials() [challenge=%s]\n",
        PromiseFlatCString(aChallenge).get()));
@@ -502,8 +582,17 @@ nsHttpNegotiateAuth::GenerateCredentials(
 
   void* outToken = nullptr;
   uint32_t outTokenLen = 0;
-  nsresult rv = module->GetNextToken(inToken.get(), inToken.Length(), &outToken,
-                                     &outTokenLen);
+  nsresult rv;
+  if (inToken.IsEmpty() && !aCertDER.IsEmpty()) {
+    // On the first call of a sequence the SSPI module expects the server
+    // certificate in place of the input token, so that it can compute the
+    // channel binding token. See nsAuthSSPI::GetNextToken.
+    rv = module->GetNextToken(aCertDER.Elements(), aCertDER.Length(), &outToken,
+                              &outTokenLen);
+  } else {
+    rv = module->GetNextToken(inToken.get(), inToken.Length(), &outToken,
+                              &outTokenLen);
+  }
   if (NS_FAILED(rv)) {
     if (outToken) {
       // Technically if the call fails we shouln't have allocated, but

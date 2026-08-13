@@ -6,6 +6,7 @@
 #define js_loader_ScriptLoadRequestList_h
 
 #include "mozilla/LinkedList.h"
+
 #include "nsCOMPtr.h"
 
 namespace JS {

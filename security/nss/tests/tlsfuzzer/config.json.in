@@ -111,8 +111,10 @@
             },
             {
                 "name" : "test-tls13-session-resumption.py",
+                "comment": "NSS only supports psk_dhe_ke resumption, not psk_ke (PSK_ONLY)",
                 "arguments": [
-                    "-p", "@PORT@"
+                    "-p", "@PORT@",
+                    "-e", "session resumption - PSK_ONLY"
                 ]
             },
             {

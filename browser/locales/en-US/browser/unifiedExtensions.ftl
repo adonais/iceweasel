@@ -13,11 +13,11 @@ unified-extensions-discover-extensions =
     .label = Discover extensions
 unified-extensions-empty-reason-private-browsing-not-allowed = You have extensions installed, but not enabled in private windows
 unified-extensions-empty-reason-extension-not-enabled = You have extensions installed, but not enabled
-# In this headline, “Level up” means to enhance your browsing experience.
-unified-extensions-empty-reason-zero-extensions-onboarding = Level up your browsing with extensions
+# In this headline, "go a long way", means that even a small number of extensions can have a big impact.
+unified-extensions-empty-reason-zero-extensions-onboarding2 = A few extensions go a long way
 unified-extensions-empty-content-explain-enable2 = Select “{ unified-extensions-manage-extensions.label }” to enable them in settings.
 unified-extensions-empty-content-explain-manage2 = Select “{ unified-extensions-manage-extensions.label }” to manage them in settings.
-unified-extensions-empty-content-explain-extensions-onboarding = Personalize { -brand-short-name } by changing how it looks and performs or boosting privacy and safety.
+unified-extensions-empty-content-explain-extensions-onboarding2 = We’ve got recommendations to help you improve focus, privacy, and more.
 
 ## An extension in the main list
 

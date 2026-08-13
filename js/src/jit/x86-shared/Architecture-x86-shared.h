@@ -14,7 +14,6 @@
 #include <string.h>
 
 #include "jit/shared/Architecture-shared.h"
-
 #include "jit/x86-shared/Constants-x86-shared.h"
 
 namespace js {
@@ -165,7 +164,7 @@ class FloatRegisters {
   // high lanes of the SIMD registers.  See the DumpAllRegs() implementations,
   // for example.
 
-  enum ContentType {
+  enum ContentType : uint8_t {
     Single,   // 32-bit float.
     Double,   // 64-bit double.
     Simd128,  // 128-bit Wasm SIMD type.
@@ -291,7 +290,7 @@ struct FloatRegister {
   // Note: These fields are using one extra bit to make the invalid enumerated
   // values fit, and thus prevent a warning.
   Codes::Encoding reg_ : 5;
-  Codes::ContentType type_ : 3;
+  Codes::ContentType type_ : 2;
   bool isInvalid_ : 1;
 
   // Constants used for exporting/importing the float register code.
@@ -437,10 +436,6 @@ inline FloatRegister::SetType
 FloatRegister::LiveAsIndexableSet<RegTypeName::Any>(SetType set) {
   return set;
 }
-
-// Arm/D32 has double registers that can NOT be treated as float32
-// and this requires some dances in lowering.
-inline bool hasUnaliasedDouble() { return false; }
 
 // On ARM, Dn aliases both S2n and S2n+1, so if you need to convert a float32
 // to a double as a temporary, you need a temporary double register.

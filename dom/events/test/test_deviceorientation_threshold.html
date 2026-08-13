@@ -1,0 +1,73 @@
+<!DOCTYPE HTML>
+<html>
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=2052410
+-->
+<head>
+  <title>Test for deviceorientation event with threshold</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=2052410">Mozilla Bug 2052410</a>
+<p id="display"></p>
+<div id="content" style="display: none">
+</div>
+<pre id="test">
+<script type="application/javascript">
+const Cc = SpecialPowers.Cc;
+const Ci = SpecialPowers.Ci;
+const dss = Cc["@mozilla.org/devicesensors;1"].getService(Ci.nsIDeviceSensors);
+const TYPE_ORIENTATION = Ci.nsIDeviceSensorData.TYPE_ORIENTATION;
+const TYPE_ROTATION_VECTOR = Ci.nsIDeviceSensorData.TYPE_ROTATION_VECTOR;
+const TYPE_GAME_ROTATION_VECTOR = Ci.nsIDeviceSensorData.TYPE_GAME_ROTATION_VECTOR;
+
+function getSensorType() {
+  const isOrientation = dss.hasWindowListener(TYPE_ORIENTATION, window);
+  const isRotationVector = dss.hasWindowListener(TYPE_ROTATION_VECTOR, window);
+  const isGameRotationVector = dss.hasWindowListener(TYPE_GAME_ROTATION_VECTOR, window);
+
+  ok(isOrientation || isRotationVector || isGameRotationVector,
+     "Window listener for TYPE_ORIENTATION, TYPE_ROTATION_VECTOR or TYPE_GAME_ROTATION_VECTOR is registered");
+
+  return isOrientation ? TYPE_ORIENTATION :
+             isRotationVector ? TYPE_ROTATION_VECTOR : TYPE_GAME_ROTATION_VECTOR;
+}
+
+add_task(async function() {
+  await SpecialPowers.pushPrefEnv({"set": [
+    ["device.sensors.enabled", true],
+    ["device.sensors.orientation.enabled", true]
+  ]});
+
+  let count = 0;
+
+  function handler(event) {
+      count++;
+  }
+
+  for (eventType of ["deviceorientationabsolute", "deviceorientation"]) {
+    window.addEventListener(eventType, handler);
+
+    const type = getSensorType();
+    dss.notifySensorEvent(type, 1.0, 2.5, 3.667, 0);
+
+    // Dispatch another event within threshold, should be ignored
+    dss.notifySensorEvent(type, 1.0, 2.55, 3.667, 0);
+
+    const promise = new Promise(resolve => window.addEventListener(eventType, resolve, {once: true}));
+    dss.notifySensorEvent(type, 2, 3, 4, 5);
+
+    await promise;
+    await new Promise(resolve => window.requestAnimationFrame(() => window.requestAnimationFrame(resolve)));
+
+    is(count, 2, "Ignore events with small delta values");
+
+    window.removeEventListener(eventType, handler);
+    count = 0;
+  }
+});
+</script>
+</pre>
+</body>
+</html>

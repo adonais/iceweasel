@@ -9,8 +9,8 @@ origin:
   description: "Cross platform audio library"
   url: https://github.com/mozilla/cubeb
   license: ISC
-  release: a37dadd1ed5949ab0accd7087b7c5c57800eab43 (2026-04-21T20:38:49Z).
-  revision: a37dadd1ed5949ab0accd7087b7c5c57800eab43
+  release: 6d5e5e6470aa0836139a1feb79793a33db227d3e (2026-07-06T21:31:47Z).
+  revision: 6d5e5e6470aa0836139a1feb79793a33db227d3e
 
 vendoring:
   url: https://github.com/mozilla/cubeb
@@ -22,9 +22,7 @@ vendoring:
     - 0003-audiounit-ios-compile-fixes.patch
     - 0004-disable-cubeb_one_duplex_one_input-macos10.15.patch
     - 0005-fix-loopback-separate-streams-flakiness-windows.patch
-    - frame-sample.patch
-    - delay-line-bounds.patch
-    - alsa-drain-contract.patch
+    - wasapi-async-reconfigure-on-start.patch
   skip-vendoring-steps:
     - update-moz-build
   exclude:

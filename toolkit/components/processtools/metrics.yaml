@@ -24,7 +24,6 @@ power:
     notification_emails:
       - florian@mozilla.com
     expires: never
-    telemetry_mirror: POWER_CPU_TIME_BOGUS_VALUES
 
   cpu_time_per_process_type_ms:
     type: labeled_counter
@@ -58,7 +57,6 @@ power:
       - gmplugin
       - utility
       - inference
-    telemetry_mirror: POWER_CPU_TIME_PER_PROCESS_TYPE_MS
 
   cpu_time_per_tracker_type_ms:
     type: labeled_counter
@@ -96,7 +94,6 @@ power:
       - florian@mozilla.com
     expires: never
     labels: *per_process_type_labels
-    telemetry_mirror: POWER_GPU_TIME_PER_PROCESS_TYPE_MS
 
   gpu_time_bogus_values:
     type: counter
@@ -111,7 +108,6 @@ power:
     notification_emails:
       - florian@mozilla.com
     expires: never
-    telemetry_mirror: POWER_GPU_TIME_BOGUS_VALUES
 
   energy_per_process_type:
     type: labeled_counter
@@ -144,7 +140,6 @@ power:
       - florian@mozilla.com
     expires: never
     labels: *per_process_type_labels
-    telemetry_mirror: POWER_WAKEUPS_PER_PROCESS_TYPE
 
   total_cpu_time_ms:
     type: counter
@@ -159,7 +154,6 @@ power:
     notification_emails:
       - florian@mozilla.com
     expires: never
-    telemetry_mirror: POWER_TOTAL_CPU_TIME_MS
 
   total_gpu_time_ms:
     type: counter
@@ -174,7 +168,6 @@ power:
     notification_emails:
       - florian@mozilla.com
     expires: never
-    telemetry_mirror: POWER_TOTAL_GPU_TIME_MS
 
   total_thread_wakeups:
     type: counter
@@ -189,7 +182,6 @@ power:
     notification_emails:
       - florian@mozilla.com
     expires: never
-    telemetry_mirror: POWER_TOTAL_THREAD_WAKEUPS
 
 power.wakeups_per_thread:
   parent_active: &per_thread_wakeups

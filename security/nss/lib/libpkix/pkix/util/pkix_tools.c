@@ -479,7 +479,7 @@ pkix_hex2i(char c)
 char
 pkix_i2hex(char digit)
 {
-        if ((digit >= 0)&&(digit <= 9))
+        if ((unsigned char)digit <= 9)
                 return (digit+'0');
         else if ((digit >= 0xa)&&(digit <= 0xf))
                 return (digit - 10 + 'a');

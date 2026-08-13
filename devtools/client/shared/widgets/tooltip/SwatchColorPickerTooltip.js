@@ -112,6 +112,8 @@ class SwatchColorPickerTooltip extends SwatchBasedEditorTooltip {
     "oklab",
     "oklch",
     "rgb",
+    // alpha() takes a relative color after `from`
+    "alpha",
   ]);
 
   /**
@@ -194,11 +196,12 @@ class SwatchColorPickerTooltip extends SwatchBasedEditorTooltip {
       eyeButton.title = L10N.getStr("eyedropper.disabled.title");
     }
 
-    const learnMoreButton =
-      this.tooltip.container.querySelector("#learn-more-button");
-    if (learnMoreButton) {
-      learnMoreButton.addEventListener("click", this._openDocLink);
-      learnMoreButton.addEventListener("keydown", e => e.stopPropagation());
+    const learnMoreLinks =
+      this.tooltip.container.querySelectorAll(".learn-more-link");
+    for (const learnMoreLink of learnMoreLinks) {
+      learnMoreLink.href = A11Y_CONTRAST_LEARN_MORE_LINK;
+      learnMoreLink.addEventListener("click", this._openDocLink);
+      learnMoreLink.addEventListener("keydown", e => e.stopPropagation());
     }
 
     this.tooltip.container.addEventListener(
@@ -312,7 +315,8 @@ class SwatchColorPickerTooltip extends SwatchBasedEditorTooltip {
     });
   }
 
-  _openDocLink() {
+  _openDocLink(event) {
+    event.preventDefault();
     openDocLink(A11Y_CONTRAST_LEARN_MORE_LINK);
     this.hide();
   }

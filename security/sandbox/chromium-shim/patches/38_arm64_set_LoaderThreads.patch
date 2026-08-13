@@ -9,7 +9,7 @@ Bug 1515088 Part 2: Set LoaderThreads to 1 in the RTL_USER_PROCESS_PARAMETERS st
 diff --git a/sandbox/win/src/win_utils.cc b/sandbox/win/src/win_utils.cc
 --- a/sandbox/win/src/win_utils.cc
 +++ b/sandbox/win/src/win_utils.cc
-@@ -170,16 +170,50 @@ void* GetProcessBaseAddress(HANDLE proce
+@@ -188,16 +188,50 @@ void* GetProcessBaseAddress(HANDLE proce
                             &bytes_read) ||
        (sizeof(magic) != bytes_read)) {
      return nullptr;
@@ -38,25 +38,25 @@ diff --git a/sandbox/win/src/win_utils.cc b/sandbox/win/src/win_utils.cc
 +    maxLoaderThreads = 1;
 +    auto address = processParameters + loaderThreadsOffset;
 +    auto length = sizeof(maxLoaderThreads);
-+
++ 
 +    // First, remove the protection.
 +    DWORD old_protection;
 +    if (::VirtualProtectEx(process, address, length, PAGE_READWRITE,
 +                           &old_protection)) {
 +      ::WriteProcessMemory(process, address, &maxLoaderThreads, length, NULL);
-+
++ 
 +      // Attempt to restore the original protection.
 +      ::VirtualProtectEx(process, address, length, old_protection,
 +                         &old_protection);
 +    }
 +  }
 +#endif
-+
++ 
    return base_address;
  }
  
- absl::optional<ProcessHandleMap> GetCurrentProcessHandles() {
-   DWORD handle_count;
-   if (!::GetProcessHandleCount(::GetCurrentProcess(), &handle_count))
-     return absl::nullopt;
+ bool ContainsNulCharacter(std::wstring_view str) {
+   wchar_t nul = '\0';
+   return str.find_first_of(nul) != std::wstring::npos;
+ }
  

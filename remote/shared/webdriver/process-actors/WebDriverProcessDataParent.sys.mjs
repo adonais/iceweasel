@@ -21,6 +21,7 @@ export function registerProcessDataActor() {
           "chrome://remote/content/shared/webdriver/process-actors/WebDriverProcessDataChild.sys.mjs",
       },
       includeParent: true,
+      safeForUntrustedWebProcess: true,
     });
   } catch (e) {
     if (e.name === "NotSupportedError") {

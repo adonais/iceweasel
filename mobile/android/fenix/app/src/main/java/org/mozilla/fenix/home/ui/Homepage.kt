@@ -27,11 +27,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
@@ -41,9 +39,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import mozilla.components.feature.top.sites.TopSite
+import mozilla.components.support.ktx.android.net.hostWithoutCommonPrefixes
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.History
 import org.mozilla.fenix.GleanMetrics.HomeBookmarks
@@ -51,6 +50,7 @@ import org.mozilla.fenix.GleanMetrics.RecentlyVisitedHomepage
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.appstate.AppAction
+import org.mozilla.fenix.components.appstate.AppAction.ShortcutAction
 import org.mozilla.fenix.components.appstate.setup.checklist.SetupChecklistState
 import org.mozilla.fenix.components.appstate.sports.SportsWidgetState
 import org.mozilla.fenix.components.components
@@ -86,11 +86,15 @@ import org.mozilla.fenix.home.sports.ui.SportsCountrySelectorBottomSheet
 import org.mozilla.fenix.home.sports.ui.SportsWidget
 import org.mozilla.fenix.home.store.HeaderState
 import org.mozilla.fenix.home.store.HomepageState
+import org.mozilla.fenix.home.store.MiddleSearchState
 import org.mozilla.fenix.home.store.NimbusMessageState
+import org.mozilla.fenix.home.store.RecentSyncedTabSectionState
 import org.mozilla.fenix.home.termsofuse.PrivacyNoticeBanner
 import org.mozilla.fenix.home.termsofuse.PrivacyNoticeBannerInteractor
-import org.mozilla.fenix.home.topsites.TOP_SITES_TO_SHOW
+import org.mozilla.fenix.home.topsites.AddShortcutEntryPoint
+import org.mozilla.fenix.home.topsites.AddShortcutSource
 import org.mozilla.fenix.home.topsites.TopSiteColors
+import org.mozilla.fenix.home.topsites.TopSiteState
 import org.mozilla.fenix.home.topsites.TopSites
 import org.mozilla.fenix.home.topsites.interactor.TopSiteInteractor
 import org.mozilla.fenix.home.topsites.store.DialogState
@@ -102,8 +106,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
 import org.mozilla.fenix.trackingprotection.TrackersBlockedCard
 import org.mozilla.fenix.utils.isLargeScreenSize
-import org.mozilla.fenix.wallpapers.WallpaperState
-import mozilla.components.ui.icons.R as iconsR
+import org.mozilla.fenix.wallpapers.WallpaperTheme
 
 private const val POPULAR_SITES_TO_SHOW = 8
 
@@ -167,7 +170,6 @@ internal fun Homepage(
                             !hasWorldCupEnded()
 
                     ExperimentalHomepageHeader(
-                        wordmarkTextColor = headerState.wordmarkTextColor,
                         showStoriesButton = headerState.showStoriesButton,
                         showButtonAnimation = headerState.showButtonAnimation,
                         isSportsWidgetEnabled = shouldDisplaySportsLogo,
@@ -196,8 +198,6 @@ internal fun Homepage(
                             !hasWorldCupEnded()
 
                     HomepageHeader(
-                        wordmarkTextColor = headerState.wordmarkTextColor,
-                        privateBrowsingButtonColor = headerState.privateBrowsingButtonColor,
                         browsingMode = state.browsingMode,
                         browsingModeChanged = browsingModeChanged,
                         isSportsWidgetEnabled = shouldDisplaySportsLogo,
@@ -239,16 +239,18 @@ internal fun Homepage(
                                 }
                             }
 
-                            if (showTopSites) {
+                            if (topSiteState != null) {
                                 TopSitesSection(
-                                    topSites = topSites,
-                                    topSiteColors = topSiteColors,
+                                    state = topSiteState,
                                     showHeader = showTopSitesHeader,
                                     interactor = interactor,
                                     onTopSitesItemBound = onTopSitesItemBound,
-                                    showAddShortcut = components.settings.enableAddShortcutsImprovement &&
-                                        topSites.size < TOP_SITES_TO_SHOW,
                                     onAddShortcutClicked = {
+                                        appStore.dispatch(
+                                            ShortcutAction.AddShortcutSheetShown(
+                                                entryPoint = AddShortcutEntryPoint.HOMEPAGE,
+                                            ),
+                                        )
                                         shortcutsDialogState = DialogState.AddShortcutBottomSheet
                                     },
                                 )
@@ -290,63 +292,64 @@ internal fun Homepage(
 
                             MaybeAddSetupChecklist(setupChecklistState, interactor)
 
-                            if (showRecentTabs) {
+                            if (recentTabs != null) {
                                 RecentTabsSection(
                                     interactor = interactor,
-                                    cardBackgroundColor = cardBackgroundColor,
                                     recentTabs = recentTabs,
                                     reducedTopSpacing = showPrivacyReport && showLongfoxAnimation,
                                 )
 
-                                if (showRecentSyncedTab) {
-                                    Box(
-                                        modifier = Modifier.padding(
-                                            start = horizontalMargin,
-                                            end = horizontalMargin,
-                                            top = verticalMargin,
-                                        ),
-                                    ) {
-                                        RecentSyncedTab(
-                                            tab = syncedTab,
-                                            backgroundColor = cardBackgroundColor,
-                                            buttonBackgroundColor = if (syncedTab != null) {
-                                                buttonBackgroundColor
-                                            } else {
-                                                MaterialTheme.colorScheme.surfaceContainerHighest
-                                            },
-                                            buttonTextColor = buttonTextColor,
-                                            onRecentSyncedTabClick = interactor::onRecentSyncedTabClicked,
-                                            onSeeAllSyncedTabsButtonClick = interactor::onSyncedTabShowAllClicked,
-                                            onRemoveSyncedTab = interactor::onRemovedRecentSyncedTab,
-                                        )
+                                when (val syncedTabState = recentSyncedTabSectionState) {
+                                    RecentSyncedTabSectionState.Gone -> Unit
+                                    RecentSyncedTabSectionState.Loading,
+                                    is RecentSyncedTabSectionState.Visible,
+                                        -> {
+                                        val syncedTab =
+                                            (syncedTabState as? RecentSyncedTabSectionState.Visible)?.tab
+                                        Box(
+                                            modifier = Modifier.padding(
+                                                start = horizontalMargin,
+                                                end = horizontalMargin,
+                                                top = verticalMargin,
+                                            ),
+                                        ) {
+                                            RecentSyncedTab(
+                                                tab = syncedTab,
+                                                buttonBackgroundColor = if (syncedTab != null) {
+                                                    WallpaperTheme.buttonBackgroundColor
+                                                } else {
+                                                    MaterialTheme.colorScheme.surfaceContainerHighest
+                                                },
+                                                buttonTextColor = WallpaperTheme.buttonTextColor,
+                                                onRecentSyncedTabClick = interactor::onRecentSyncedTabClicked,
+                                                onSeeAllSyncedTabsButtonClick = interactor::onSyncedTabShowAllClicked,
+                                                onRemoveSyncedTab = interactor::onRemovedRecentSyncedTab,
+                                            )
+                                        }
                                     }
                                 }
                             }
 
-                            if (showBookmarks) {
+                            if (bookmarks != null) {
                                 BookmarksSection(
                                     bookmarks = bookmarks,
-                                    cardBackgroundColor = cardBackgroundColor,
                                     interactor = interactor,
                                 )
                             }
 
-                            if (showRecentlyVisited) {
+                            if (recentlyVisited != null) {
                                 RecentlyVisitedSection(
                                     recentVisits = recentlyVisited,
-                                    cardBackgroundColor = cardBackgroundColor,
                                     interactor = interactor,
                                 )
                             }
 
-                            if (showCollections) {
-                                CollectionsSection(
-                                    collectionsState = collectionsState,
-                                    interactor = interactor,
-                                )
-                            }
+                            CollectionsSection(
+                                collectionsState = collectionsState,
+                                interactor = interactor,
+                            )
 
-                            if (showPocketStoriesCarousel) {
+                            if (pocketState != null) {
                                 Spacer(
                                     modifier = if (isMinimalLayout()) {
                                         Modifier.weight(1f)
@@ -357,7 +360,6 @@ internal fun Homepage(
 
                                 PocketSection(
                                     state = pocketState,
-                                    cardBackgroundColor = cardBackgroundColor,
                                     interactor = interactor,
                                 )
                             }
@@ -388,10 +390,16 @@ internal fun Homepage(
                                     val popularSites by produceState(
                                         initialValue = emptyList(),
                                         key1 = merinoManifestProvider,
+                                        key2 = topSiteState?.topSites,
                                     ) {
                                         value = withContext(Dispatchers.IO) {
-                                            merinoManifestProvider.getTopDomains(limit = POPULAR_SITES_TO_SHOW)
-                                                .map { it.toPopularSite() }
+                                            merinoManifestProvider.getTopDomains(
+                                                limit = POPULAR_SITES_TO_SHOW,
+                                                excludedDomains = topSiteState?.topSites.orEmpty()
+                                                    .mapNotNullTo(mutableSetOf()) {
+                                                    it.url.toUri().hostWithoutCommonPrefixes
+                                                },
+                                            ).map { it.toPopularSite() }
                                         }
                                     }
 
@@ -399,10 +407,18 @@ internal fun Homepage(
                                         popularSites = popularSites,
                                         onDismiss = { shortcutsDialogState = DialogState.Closed },
                                         onAddWebsiteClicked = {
+                                            appStore.dispatch(
+                                                ShortcutAction.AddWebsiteDialogShown,
+                                            )
                                             shortcutsDialogState = DialogState.AddShortcut
                                         },
                                         onAddPopularSiteClick = { site ->
-                                            interactor.onSaveShortcut(title = site.title, url = site.url)
+                                            interactor.onSaveShortcut(
+                                                title = site.title,
+                                                url = site.url,
+                                                source = AddShortcutSource.POPULAR,
+                                                entryPoint = AddShortcutEntryPoint.HOMEPAGE,
+                                            )
                                             shortcutsDialogState = DialogState.Closed
                                         },
                                     )
@@ -412,7 +428,12 @@ internal fun Homepage(
                                     AddShortcutDialog(
                                         onDismiss = { shortcutsDialogState = DialogState.Closed },
                                         onConfirm = { title, url ->
-                                            interactor.onSaveShortcut(title = title, url = url)
+                                            interactor.onSaveShortcut(
+                                                title = title,
+                                                url = url,
+                                                source = AddShortcutSource.MANUAL,
+                                                entryPoint = AddShortcutEntryPoint.HOMEPAGE,
+                                            )
                                             shortcutsDialogState = DialogState.Closed
                                         },
                                     )
@@ -478,10 +499,8 @@ private fun BannerCardSection(
 
 @Composable
 internal fun TopSitesSection(
-    topSites: List<TopSite>,
-    topSiteColors: TopSiteColors = TopSiteColors.colors(),
+    state: TopSiteState,
     showHeader: Boolean = true,
-    showAddShortcut: Boolean = false,
     interactor: TopSiteInteractor,
     onTopSitesItemBound: () -> Unit,
     onAddShortcutClicked: () -> Unit,
@@ -498,20 +517,17 @@ internal fun TopSitesSection(
     }
 
     TopSites(
-        topSites = topSites,
+        state = state,
         interactor = interactor,
         onTopSitesItemBound = onTopSitesItemBound,
         onAddShortcutClicked = onAddShortcutClicked,
-        topSiteColors = topSiteColors,
         isPager = components.settings.topSitesPager,
-        showAddShortcut = showAddShortcut,
     )
 }
 
 @Composable
 private fun RecentTabsSection(
     interactor: RecentTabInteractor,
-    cardBackgroundColor: Color,
     recentTabs: List<RecentTab>,
     reducedTopSpacing: Boolean = false,
 ) {
@@ -529,7 +545,6 @@ private fun RecentTabsSection(
 
         RecentTabs(
             recentTabs = recentTabs,
-            backgroundColor = cardBackgroundColor,
             onRecentTabClick = { interactor.onRecentTabClicked(it) },
             menuItems = listOf(
                 RecentTabMenuItem(
@@ -544,7 +559,6 @@ private fun RecentTabsSection(
 @Composable
 private fun BookmarksSection(
     bookmarks: List<Bookmark>,
-    cardBackgroundColor: Color,
     interactor: BookmarksInteractor,
 ) {
     LaunchedEffect(Unit) {
@@ -570,7 +584,6 @@ private fun BookmarksSection(
                 onClick = interactor::onBookmarkRemoved,
             ),
         ),
-        backgroundColor = cardBackgroundColor,
         onBookmarkClick = interactor::onBookmarkClicked,
     )
 }
@@ -578,7 +591,6 @@ private fun BookmarksSection(
 @Composable
 private fun RecentlyVisitedSection(
     recentVisits: List<RecentlyVisitedItem>,
-    cardBackgroundColor: Color,
     interactor: RecentVisitsInteractor,
 ) {
     Spacer(modifier = Modifier.height(40.dp))
@@ -608,7 +620,6 @@ private fun RecentlyVisitedSection(
                 },
             ),
         ),
-        backgroundColor = cardBackgroundColor,
         onRecentVisitClick = { recentlyVisitedItem, pageNumber ->
             when (recentlyVisitedItem) {
                 is RecentHistoryHighlight -> {
@@ -668,41 +679,27 @@ private fun HomepagePreview() {
                 state = HomepageState.Normal(
                     shouldShowPrivacyNoticeBanner = false,
                     nimbusMessage = null,
-                    topSites = FakeHomepagePreview.topSites(),
+                    topSiteState = TopSiteState(
+                        topSites = FakeHomepagePreview.topSites(),
+                        colors = TopSiteColors.colors(),
+                    ),
                     recentTabs = FakeHomepagePreview.recentTabs(),
-                    syncedTab = FakeHomepagePreview.recentSyncedTab(),
+                    recentSyncedTabSectionState = RecentSyncedTabSectionState.Visible(
+                        FakeHomepagePreview.recentSyncedTab(),
+                    ),
                     bookmarks = FakeHomepagePreview.bookmarks(),
                     recentlyVisited = FakeHomepagePreview.recentHistory(),
                     collectionsState = CollectionsState.Gone,
                     pocketState = FakeHomepagePreview.pocketState(),
-                    showTopSites = true,
-                    showRecentTabs = true,
-                    showRecentSyncedTab = true,
-                    showBookmarks = true,
-                    showRecentlyVisited = true,
-                    showPocketStoriesCarousel = true,
-                    showCollections = true,
                     showPrivacyReport = true,
                     longfoxEnabled = false,
                     showLongfoxAnimation = false,
                     trackersBlockedCount = 754,
                     sportsWidgetState = SportsWidgetState(),
-                    headerState = HeaderState.Normal(
-                        wordmarkTextColor = null,
-                        privateBrowsingButtonColor = colorResource(
-                            getAttr(
-                                iconsR.attr.mozac_ic_private_mode_circle_fill_icon_color,
-                            ),
-                        ),
-                    ),
-                    searchBarVisible = true,
-                    searchBarEnabled = false,
+                    headerState = HeaderState.Normal,
+                    middleSearchState = MiddleSearchState(searchBarVisible = true, searchBarEnabled = false),
                     firstFrameDrawn = true,
                     setupChecklistState = null,
-                    topSiteColors = TopSiteColors.colors(),
-                    cardBackgroundColor = WallpaperState.default.cardBackgroundColor,
-                    buttonTextColor = WallpaperState.default.buttonTextColor,
-                    buttonBackgroundColor = WallpaperState.default.buttonBackgroundColor,
                     isSearchInProgress = false,
                     bottomPadding = 68,
                     showTopSitesHeader = true,
@@ -724,41 +721,27 @@ private fun HomepageBannerPreview() {
                 state = HomepageState.Normal(
                     shouldShowPrivacyNoticeBanner = true,
                     nimbusMessage = null,
-                    topSites = FakeHomepagePreview.topSites(),
+                    topSiteState = TopSiteState(
+                        topSites = FakeHomepagePreview.topSites(),
+                        colors = TopSiteColors.colors(),
+                    ),
                     recentTabs = FakeHomepagePreview.recentTabs(),
-                    syncedTab = FakeHomepagePreview.recentSyncedTab(),
+                    recentSyncedTabSectionState = RecentSyncedTabSectionState.Visible(
+                        FakeHomepagePreview.recentSyncedTab(),
+                    ),
                     bookmarks = FakeHomepagePreview.bookmarks(),
                     recentlyVisited = FakeHomepagePreview.recentHistory(),
                     collectionsState = CollectionsState.Gone,
                     pocketState = FakeHomepagePreview.pocketState(),
-                    showTopSites = true,
-                    showRecentTabs = true,
-                    showRecentSyncedTab = true,
-                    showBookmarks = true,
-                    showRecentlyVisited = true,
-                    showPocketStoriesCarousel = true,
-                    showCollections = true,
                     showPrivacyReport = true,
                     longfoxEnabled = false,
                     showLongfoxAnimation = false,
                     trackersBlockedCount = 754,
                     sportsWidgetState = SportsWidgetState(),
-                    headerState = HeaderState.Normal(
-                        wordmarkTextColor = null,
-                        privateBrowsingButtonColor = colorResource(
-                            getAttr(
-                                iconsR.attr.mozac_ic_private_mode_circle_fill_icon_color,
-                            ),
-                        ),
-                    ),
-                    searchBarVisible = true,
-                    searchBarEnabled = false,
+                    headerState = HeaderState.Normal,
+                    middleSearchState = MiddleSearchState(searchBarVisible = true, searchBarEnabled = false),
                     firstFrameDrawn = true,
                     setupChecklistState = null,
-                    topSiteColors = TopSiteColors.colors(),
-                    cardBackgroundColor = WallpaperState.default.cardBackgroundColor,
-                    buttonTextColor = WallpaperState.default.buttonTextColor,
-                    buttonBackgroundColor = WallpaperState.default.buttonBackgroundColor,
                     isSearchInProgress = false,
                     bottomPadding = 68,
                     showTopSitesHeader = true,
@@ -780,41 +763,18 @@ private fun HomepagePreviewCollections() {
                 state = HomepageState.Normal(
                     shouldShowPrivacyNoticeBanner = false,
                     nimbusMessage = null,
-                    topSites = FakeHomepagePreview.topSites(),
-                    recentTabs = FakeHomepagePreview.recentTabs(),
-                    syncedTab = FakeHomepagePreview.recentSyncedTab(),
-                    bookmarks = FakeHomepagePreview.bookmarks(),
                     recentlyVisited = FakeHomepagePreview.recentHistory(),
                     collectionsState = FakeHomepagePreview.collectionState(),
                     pocketState = FakeHomepagePreview.pocketState(),
-                    showTopSites = false,
-                    showRecentTabs = false,
-                    showRecentSyncedTab = false,
-                    showBookmarks = false,
-                    showRecentlyVisited = true,
-                    showPocketStoriesCarousel = true,
-                    showCollections = true,
                     showPrivacyReport = true,
                     longfoxEnabled = false,
                     showLongfoxAnimation = false,
                     trackersBlockedCount = 754,
                     sportsWidgetState = SportsWidgetState(),
-                    headerState = HeaderState.Normal(
-                        wordmarkTextColor = null,
-                        privateBrowsingButtonColor = colorResource(
-                            getAttr(
-                                iconsR.attr.mozac_ic_private_mode_circle_fill_icon_color,
-                            ),
-                        ),
-                    ),
-                    searchBarVisible = true,
-                    searchBarEnabled = false,
+                    headerState = HeaderState.Normal,
+                    middleSearchState = MiddleSearchState(searchBarVisible = true, searchBarEnabled = false),
                     firstFrameDrawn = true,
                     setupChecklistState = null,
-                    topSiteColors = TopSiteColors.colors(),
-                    cardBackgroundColor = WallpaperState.default.cardBackgroundColor,
-                    buttonTextColor = WallpaperState.default.buttonTextColor,
-                    buttonBackgroundColor = WallpaperState.default.buttonBackgroundColor,
                     isSearchInProgress = false,
                     bottomPadding = 68,
                     showTopSitesHeader = true,
@@ -836,41 +796,20 @@ private fun MinimalHomepagePreview() {
                 state = HomepageState.Normal(
                     shouldShowPrivacyNoticeBanner = false,
                     nimbusMessage = null,
-                    topSites = FakeHomepagePreview.topSites(),
-                    recentTabs = FakeHomepagePreview.recentTabs(),
-                    syncedTab = FakeHomepagePreview.recentSyncedTab(),
-                    bookmarks = FakeHomepagePreview.bookmarks(),
-                    recentlyVisited = FakeHomepagePreview.recentHistory(),
-                    collectionsState = FakeHomepagePreview.collectionState(),
+                    topSiteState = TopSiteState(
+                        topSites = FakeHomepagePreview.topSites(),
+                        colors = TopSiteColors.colors(),
+                    ),
+                    collectionsState = CollectionsState.Gone,
                     pocketState = FakeHomepagePreview.pocketState(),
-                    showTopSites = true,
-                    showRecentTabs = false,
-                    showRecentSyncedTab = false,
-                    showBookmarks = false,
-                    showRecentlyVisited = false,
-                    showPocketStoriesCarousel = true,
-                    showCollections = false,
                     showPrivacyReport = true,
                     longfoxEnabled = false,
                     showLongfoxAnimation = false,
                     trackersBlockedCount = 754,
                     sportsWidgetState = SportsWidgetState(),
-                    headerState = HeaderState.Normal(
-                        wordmarkTextColor = null,
-                        privateBrowsingButtonColor = colorResource(
-                            getAttr(
-                                iconsR.attr.mozac_ic_private_mode_circle_fill_icon_color,
-                            ),
-                        ),
-                    ),
-                    searchBarVisible = false,
-                    searchBarEnabled = false,
+                    headerState = HeaderState.Normal,
                     firstFrameDrawn = true,
                     setupChecklistState = null,
-                    topSiteColors = TopSiteColors.colors(),
-                    cardBackgroundColor = WallpaperState.default.cardBackgroundColor,
-                    buttonTextColor = WallpaperState.default.buttonTextColor,
-                    buttonBackgroundColor = WallpaperState.default.buttonBackgroundColor,
                     isSearchInProgress = false,
                     bottomPadding = 68,
                     showTopSitesHeader = true,
@@ -889,14 +828,7 @@ private fun PrivateHomepagePreview() {
     FirefoxTheme(theme = Theme.Private) {
         Homepage(
             state = HomepageState.Private(
-                headerState = HeaderState.Normal(
-                    wordmarkTextColor = null,
-                    privateBrowsingButtonColor = colorResource(
-                        getAttr(
-                            iconsR.attr.mozac_ic_private_mode_circle_fill_icon_color,
-                        ),
-                    ),
-                ),
+                headerState = HeaderState.Normal,
                 firstFrameDrawn = true,
                 isSearchInProgress = false,
             ),

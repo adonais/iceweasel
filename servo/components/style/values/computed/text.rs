@@ -5,8 +5,12 @@
 //! Computed types for text properties.
 
 use crate::derives::*;
+#[cfg(feature = "gecko")]
+use crate::gecko_bindings::bindings;
 use crate::typed_om::{KeywordValue, ToTyped, TypedValue};
-use crate::values::computed::length::{Length, LengthPercentage};
+use crate::values::animated::text::TextDecorationInset as AnimatedTextDecorationInset;
+use crate::values::animated::{Context as AnimatedContext, ToAnimatedValue};
+use crate::values::computed::length::{CSSPixelLength, LengthPercentage};
 use crate::values::generics::text::{
     GenericHyphenateLimitChars, GenericInitialLetter, GenericTextDecorationInset,
     GenericTextDecorationLength, GenericTextIndent,
@@ -14,7 +18,7 @@ use crate::values::generics::text::{
 use crate::values::generics::NumberOrAuto;
 use crate::values::specified::text as specified;
 use crate::values::specified::text::{TextEmphasisFillMode, TextEmphasisShapeKeyword};
-use crate::values::{CSSFloat, CSSInteger};
+use crate::values::{CSSFloat, CSSInteger, ComputeSquaredDistance};
 use crate::Zero;
 use std::fmt::{self, Write};
 use style_traits::{CssString, CssWriter, ToCss};
@@ -34,7 +38,59 @@ pub type InitialLetter = GenericInitialLetter<CSSFloat, CSSInteger>;
 pub type TextDecorationLength = GenericTextDecorationLength<LengthPercentage>;
 
 /// Implements type for `text-decoration-inset` property.
-pub type TextDecorationInset = GenericTextDecorationInset<Length>;
+pub type TextDecorationInset = GenericTextDecorationInset<LengthPercentage>;
+
+impl ToAnimatedValue for TextDecorationInset {
+    type AnimatedValue = AnimatedTextDecorationInset;
+
+    fn to_animated_value(self, context: &AnimatedContext) -> Self::AnimatedValue {
+        match self {
+            Self::Auto => {
+                let font_size_px = context
+                    .style
+                    .get_font()
+                    .clone_font_size()
+                    .computed_size()
+                    .px();
+                #[cfg(feature = "gecko")]
+                let auto_length = unsafe { bindings::Gecko_CalcAutoDecorationInset(font_size_px) };
+                #[cfg(feature = "servo")]
+                let auto_length = {
+                    // Use an inset factor of 1/12.5, so we get 2px of inset (resulting in 4px
+                    // gap between adjacent lines) at font-size 25px.
+                    let auto_inset_factor = 1.0 / 12.5;
+
+                    // Use the em size multiplied by auto_inset_factor, with a minimum of one
+                    // CSS pixel to ensure that at least some separation occurs.
+                    (font_size_px * auto_inset_factor).max(1.0)
+                };
+                let auto_length = CSSPixelLength::new(auto_length);
+                Self::AnimatedValue {
+                    start: LengthPercentage::new_length(auto_length),
+                    end: LengthPercentage::new_length(auto_length),
+                    is_auto: true,
+                }
+            },
+            Self::LengthPercentage { start, end } => Self::AnimatedValue {
+                start: start.to_animated_value(context),
+                end: end.to_animated_value(context),
+                is_auto: false,
+            },
+        }
+    }
+
+    #[inline]
+    fn from_animated_value(value: Self::AnimatedValue) -> Self {
+        if value.is_auto {
+            Self::Auto
+        } else {
+            Self::LengthPercentage {
+                start: value.start,
+                end: value.end,
+            }
+        }
+    }
+}
 
 /// The computed value of `text-align`.
 pub type TextAlign = specified::TextAlignKeyword;

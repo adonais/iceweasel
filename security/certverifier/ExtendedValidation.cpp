@@ -15,7 +15,6 @@
 #include "mozpkix/pkixder.h"
 #include "mozpkix/pkixtypes.h"
 #include "mozpkix/pkixutil.h"
-
 #include "nsDependentString.h"
 #include "nsString.h"
 #include "pk11pub.h"
@@ -46,18 +45,15 @@ struct EVInfo {
 // use plain text representation, we rather use the original encoding
 // as it can be found in the root certificate (in base64 format).
 //
-// We can use the NSS utility named "pp" to extract the encoding.
-//
-// Build standalone NSS including the NSS tools, then run
-//   pp -t certificate-identity -i the-cert-filename
-//
-// You will need the output from sections "Issuer", "Fingerprint (SHA-256)",
-// "Issuer DER Base64" and "Serial DER Base64".
+// The script security/manager/tools/ev_cert_info.py extracts this data from a
+// certificate file and prints an entry ready to paste below. Run
+//   ./ev_cert_info.py [--oid POLICY_OID] the-cert-filename
+// The OID defaults to the CA/Browser Forum EV OID (2.23.140.1.1), and the
+// oidName description is filled in automatically for OIDs already used here.
 //
 // The new section consists of the following components:
 //
-// - a comment that should contain the human readable issuer name
-//   of the certificate, as printed by the pp tool
+// - a comment that contains the human readable issuer name of the certificate
 // - the EV policy OID that is associated to the EV grant
 // - a text description of the EV policy OID. The array can contain
 //   multiple entries with the same OID.
@@ -69,15 +65,26 @@ struct EVInfo {
 //   all the other descriptions (again use the text search feature
 //   to be sure).
 // - the SHA-256 fingerprint
-// - the "Issuer DER Base64" as printed by the pp tool.
-//   Remove all whitespaces. If you use multiple lines, make sure that
-//   only the final line will be followed by a comma.
-// - the "Serial DER Base64" (as printed by pp)
+// - the issuer name in DER, encoded in base64.
+//   If you use multiple lines, make sure that only the final line will be
+//   followed by a comma.
+// - the serial number in DER, encoded in base64
 //
 // After adding an entry, test it locally against the test site that
 // has been provided by the CA. Note that you must use a version of NSS
 // where the root certificate has already been added and marked as trusted
 // for issuing SSL server certificates (at least).
+//
+// Navigate to the CA's test site and check the site identity information
+// (click the padlock, then "Connection secure") to see if the certificate is
+// recognized as EV. Alternatively, evaluate the following in the Browser
+// Console (Ctrl+Shift+J, or Cmd+Shift+J on macOS) to read the EV status of the
+// current tab:
+//   (() => {
+//     let s = gBrowser.securityUI;
+//     return { ev: s.secInfo?.isExtendedValidation,
+//              issuer: s.secInfo?.serverCert?.issuerName };
+//   })()
 //
 // If you are able to connect to the site without certificate errors,
 // but you don't see the EV status indicator, then most likely the CA
@@ -1019,6 +1026,28 @@ static const struct EVInfo kEVInfos[] = {
     "MEsxCzAJBgNVBAYTAkNIMRkwFwYDVQQKDBBPSVNURSBGb3VuZGF0aW9uMSEwHwYD"
     "VQQDDBhPSVNURSBTZXJ2ZXIgUm9vdCBSU0EgRzE=",
     "VaXZZ5Qoxu0M+ifdWwFNGA==",
+  },
+  {
+    // CN=SECOM TLS RSA Root CA 2024,O="SECOM Trust Systems Co., Ltd.",C=JP
+    "2.23.140.1.1",
+    "CA/Browser Forum EV OID",
+    { 0x14, 0x35, 0xF2, 0x25, 0xC5, 0xD2, 0x52, 0xD7, 0xA2, 0x19, 0x48, 0xCC,
+      0x3C, 0xE6, 0x2A, 0xEC, 0xFA, 0x88, 0x00, 0x1E, 0x3D, 0xD7, 0x2D, 0x1C,
+      0xC3, 0x55, 0x51, 0x00, 0xEB, 0x37, 0x2F, 0x93 },
+    "MFoxCzAJBgNVBAYTAkpQMSYwJAYDVQQKEx1TRUNPTSBUcnVzdCBTeXN0ZW1zIENv"
+    "LiwgTHRkLjEjMCEGA1UEAxMaU0VDT00gVExTIFJTQSBSb290IENBIDIwMjQ=",
+    "AO6JNNDLgOCy",
+  },
+  {
+    // CN=SECOM TLS ECC Root CA 2024,O="SECOM Trust Systems Co., Ltd.",C=JP
+    "2.23.140.1.1",
+    "CA/Browser Forum EV OID",
+    { 0x6A, 0xB2, 0xAB, 0x75, 0xF5, 0x1C, 0xB4, 0xF4, 0xF0, 0x15, 0x62, 0x03,
+      0xFB, 0xF6, 0xF6, 0x46, 0x23, 0x2F, 0x51, 0x4B, 0xE0, 0x59, 0xF6, 0x28,
+      0x33, 0x30, 0x8B, 0x82, 0xB4, 0xD7, 0x2D, 0xB1 },
+    "MFoxCzAJBgNVBAYTAkpQMSYwJAYDVQQKEx1TRUNPTSBUcnVzdCBTeXN0ZW1zIENv"
+    "LiwgTHRkLjEjMCEGA1UEAxMaU0VDT00gVExTIEVDQyBSb290IENBIDIwMjQ=",
+    "AIF6LO+PI3pE",
   }
     // clang-format on
 };

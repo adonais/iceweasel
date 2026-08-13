@@ -2,63 +2,61 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "gfxPlatform.h"
+
+#include "GfxDriverInfo.h"
+#include "VRProcessManager.h"
+#include "VRThread.h"
+#include "gfxBlur.h"
+#include "gfxConfig.h"
+#include "gfxCrashReporterUtils.h"
+#include "gfxEnv.h"
+#include "gfxPlatformWorker.h"
+#include "gfxTextRun.h"
+#include "gfxUserFontSet.h"
+#include "mozilla/Base64.h"
+#include "mozilla/ClearOnShutdown.h"
+#include "mozilla/Components.h"
+#include "mozilla/EnumTypeTraits.h"
 #include "mozilla/FontPropertyTypes.h"
+#include "mozilla/IntegerPrintfMacros.h"
+#include "mozilla/Logging.h"
 #include "mozilla/RDDProcessManager.h"
+#include "mozilla/StaticPrefs_accessibility.h"
+#include "mozilla/StaticPrefs_apz.h"
+#include "mozilla/StaticPrefs_bidi.h"
+#include "mozilla/StaticPrefs_gfx.h"
+#include "mozilla/StaticPrefs_layers.h"
+#include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/StaticPrefs_media.h"
+#include "mozilla/StaticPrefs_privacy.h"
+#include "mozilla/StaticPrefs_webgl.h"
+#include "mozilla/StaticPrefs_widget.h"
+#include "mozilla/TimeStamp.h"
+#include "mozilla/VsyncDispatcher.h"
+#include "mozilla/gfx/BuildConstants.h"
+#include "mozilla/gfx/CanvasRenderThread.h"
+#include "mozilla/gfx/CanvasShutdownManager.h"
+#include "mozilla/gfx/GPUProcessManager.h"
+#include "mozilla/gfx/GraphicsMessages.h"
+#include "mozilla/gfx/gfxConfigManager.h"
+#include "mozilla/gfx/gfxVars.h"
+#include "mozilla/glean/GfxMetrics.h"
 #include "mozilla/image/ImageMemoryReporter.h"
+#include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/CompositorManagerChild.h"
 #include "mozilla/layers/CompositorThread.h"
-#include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/ISurfaceAllocator.h"  // for GfxMemoryImageReporter
-#include "mozilla/layers/CompositorBridgeChild.h"
+#include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/RemoteTextureMap.h"
 #include "mozilla/layers/VideoBridgeParent.h"
 #include "mozilla/webrender/RenderThread.h"
 #include "mozilla/webrender/WebRenderAPI.h"
 #include "mozilla/webrender/webrender_ffi.h"
-#include "mozilla/gfx/BuildConstants.h"
-#include "mozilla/gfx/gfxConfigManager.h"
-#include "mozilla/gfx/gfxVars.h"
-#include "mozilla/gfx/GPUProcessManager.h"
-#include "mozilla/gfx/GraphicsMessages.h"
-#include "mozilla/gfx/CanvasRenderThread.h"
-#include "mozilla/gfx/CanvasShutdownManager.h"
-#include "mozilla/ClearOnShutdown.h"
-#include "mozilla/EnumTypeTraits.h"
-#include "mozilla/StaticPrefs_accessibility.h"
-#include "mozilla/StaticPrefs_apz.h"
-#include "mozilla/StaticPrefs_bidi.h"
-#include "mozilla/StaticPrefs_gfx.h"
-#include "mozilla/StaticPrefs_layout.h"
-#include "mozilla/StaticPrefs_layers.h"
-#include "mozilla/StaticPrefs_media.h"
-#include "mozilla/StaticPrefs_privacy.h"
-#include "mozilla/StaticPrefs_webgl.h"
-#include "mozilla/StaticPrefs_widget.h"
-#include "mozilla/glean/GfxMetrics.h"
-#include "mozilla/TimeStamp.h"
-#include "mozilla/IntegerPrintfMacros.h"
-#include "mozilla/Base64.h"
-#include "mozilla/VsyncDispatcher.h"
-
-#include "mozilla/Logging.h"
-#include "mozilla/Components.h"
-#include "nsAppRunner.h"
 #include "nsAppDirectoryServiceDefs.h"
+#include "nsAppRunner.h"
 #include "nsCSSProps.h"
 #include "nsContentUtils.h"
-
-#include "gfxCrashReporterUtils.h"
-#include "gfxPlatform.h"
-#include "gfxPlatformWorker.h"
-
-#include "gfxBlur.h"
-#include "gfxEnv.h"
-#include "gfxTextRun.h"
-#include "gfxUserFontSet.h"
-#include "gfxConfig.h"
-#include "GfxDriverInfo.h"
-#include "VRProcessManager.h"
-#include "VRThread.h"
 
 #ifdef XP_WIN
 #  include <process.h>
@@ -67,10 +65,10 @@
 #  include <unistd.h>
 #endif
 
-#include "nsXULAppAPI.h"
-#include "nsIXULAppInfo.h"
-#include "nsDirectoryServiceUtils.h"
 #include "nsDirectoryServiceDefs.h"
+#include "nsDirectoryServiceUtils.h"
+#include "nsIXULAppInfo.h"
+#include "nsXULAppAPI.h"
 
 #if defined(XP_WIN)
 #  include "gfxWindowsPlatform.h"
@@ -80,8 +78,8 @@
 #  include "gfxPlatformMac.h"
 #  include "gfxQuartzSurface.h"
 #elif defined(MOZ_WIDGET_GTK)
-#  include "gfxPlatformGtk.h"
 #  include "DMABufFormats.h"
+#  include "gfxPlatformGtk.h"
 #elif defined(ANDROID)
 #  include "gfxAndroidPlatform.h"
 #endif
@@ -90,40 +88,35 @@
 #endif
 
 #ifdef XP_WIN
-#  include "mozilla/WindowsVersion.h"
 #  include "WinUtils.h"
+#  include "mozilla/WindowsVersion.h"
 #endif
 
-#include "gfxPlatformFontList.h"
-#include "gfxContext.h"
-#include "gfxImageSurface.h"
-#include "nsUnicodeProperties.h"
-#include "harfbuzz/hb.h"
-#include "gfxGraphiteShaper.h"
-#include "gfx2DGlue.h"
-#include "gfxGradientCache.h"
-#include "gfxUtils.h"  // for NextPowerOfTwo
-#include "gfxFontMissingGlyphs.h"
-
-#include "nsExceptionHandler.h"
-#include "nsServiceManagerUtils.h"
-#include "nsTArray.h"
-#include "nsIObserverService.h"
-#include "mozilla/widget/Screen.h"
-#include "mozilla/widget/ScreenManager.h"
-#include "MainThreadUtils.h"
-
-#include "nsWeakReference.h"
-
-#include "cairo.h"
-#include "qcms.h"
-
-#include "imgITools.h"
-
-#include "nsCRT.h"
 #include "GLContext.h"
 #include "GLContextProvider.h"
+#include "MainThreadUtils.h"
+#include "cairo.h"
+#include "gfx2DGlue.h"
+#include "gfxContext.h"
+#include "gfxFontMissingGlyphs.h"
+#include "gfxGradientCache.h"
+#include "gfxGraphiteShaper.h"
+#include "gfxImageSurface.h"
+#include "gfxPlatformFontList.h"
+#include "gfxUtils.h"  // for NextPowerOfTwo
+#include "harfbuzz/hb.h"
+#include "imgITools.h"
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/widget/Screen.h"
+#include "mozilla/widget/ScreenManager.h"
+#include "nsCRT.h"
+#include "nsExceptionHandler.h"
+#include "nsIObserverService.h"
+#include "nsServiceManagerUtils.h"
+#include "nsTArray.h"
+#include "nsUnicodeProperties.h"
+#include "nsWeakReference.h"
+#include "qcms.h"
 
 #ifdef __GNUC__
 #  pragma GCC diagnostic push
@@ -139,28 +132,26 @@
 #endif
 static const uint32_t kDefaultGlyphCacheSize = -1;
 
-#include "mozilla/Preferences.h"
+#include "SoftwareVsyncSource.h"
+#include "VRManager.h"
+#include "VRManagerChild.h"
+#include "VsyncSource.h"
+#include "gfxVR.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Mutex.h"
-
-#include "nsIGfxInfo.h"
-#include "nsIXULRuntime.h"
-#include "VsyncSource.h"
-#include "SoftwareVsyncSource.h"
-#include "nscore.h"  // for NS_FREE_PERMANENT_DATA
+#include "mozilla/Preferences.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/TouchEvent.h"
-#include "gfxVR.h"
-#include "VRManager.h"
-#include "VRManagerChild.h"
-#include "mozilla/gfx/GPUParent.h"
-#include "prsystem.h"
-
 #include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/GPUParent.h"
 #include "mozilla/gfx/SourceSurfaceCairo.h"
+#include "nsIGfxInfo.h"
+#include "nsIXULRuntime.h"
+#include "nscore.h"  // for NS_FREE_PERMANENT_DATA
+#include "prsystem.h"
 
 using namespace mozilla;
 using namespace mozilla::layers;
@@ -908,6 +899,20 @@ void gfxPlatform::Init() {
     gfxVars::SetDXNV12Blocked(IsDXNV12Blocked());
     gfxVars::SetDXP010Blocked(IsDXP010Blocked());
     gfxVars::SetDXP016Blocked(IsDXP016Blocked());
+
+    // The primary adapter identifiers are only available from GfxInfo in the
+    // parent process; propagate them so other processes can attach them to
+    // telemetry.
+    if (gfxInfo) {
+      nsString adapterVendorID, adapterDeviceID, adapterDriverVersion;
+      gfxInfo->GetAdapterVendorID(adapterVendorID);
+      gfxInfo->GetAdapterDeviceID(adapterDeviceID);
+      gfxInfo->GetAdapterDriverVersion(adapterDriverVersion);
+      gfxVars::SetAdapterVendorID(NS_ConvertUTF16toUTF8(adapterVendorID));
+      gfxVars::SetAdapterDeviceID(NS_ConvertUTF16toUTF8(adapterDeviceID));
+      gfxVars::SetAdapterDriverVersion(
+          NS_ConvertUTF16toUTF8(adapterDriverVersion));
+    }
   }
 
 #if defined(XP_WIN)
@@ -946,9 +951,7 @@ void gfxPlatform::Init() {
   // the (rare) cases where they're used. Note that the GPU process where
   // WebRender runs doesn't initialize gfxPlatform and performs explicit
   // initialization of the bits it needs.
-  if (XRE_IsParentProcess() && !gfxConfig::IsEnabled(Feature::GPU_PROCESS) &&
-      StaticPrefs::
-          gfx_webrender_enabled_no_gpu_process_with_angle_win_AtStartup()) {
+  if (XRE_IsParentProcess() && !gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {
     gPlatform->EnsureDevicesInitialized();
   }
 #endif
@@ -1318,13 +1321,10 @@ void gfxPlatform::Shutdown() {
   // Shut down the default GL context provider.
   GLContextProvider::Shutdown();
 
-#if defined(XP_WIN)
-  // The above shutdown calls operate on the available context providers on
-  // most platforms.  Windows is a "special snowflake", though, and has three
-  // context providers available, so we have to shut all of them down.
-  // We should only support the default GL provider on Windows; then, this
-  // could go away. Unfortunately, we currently support WGL (the default) for
-  // WebGL on Optimus.
+#if defined(XP_WIN) || defined(XP_MACOSX)
+  // The above shutdown call shuts down the default context provider, which is
+  // the only context provider on most platforms. Windows and Mac, however, may
+  // initialize EGL for ANGLE in addition to their respective defaults.
   GLContextProviderEGL::Shutdown();
 #endif
 
@@ -2640,11 +2640,9 @@ void gfxPlatform::InitWebRenderConfig() {
   }
 #endif
 
-#ifdef XP_WIN
   if (gfxConfig::IsEnabled(Feature::WEBRENDER_ANGLE)) {
     gfxVars::SetUseWebRenderANGLE(true);
   }
-#endif
 
   if (gfxConfig::IsEnabled(Feature::WEBRENDER_SHADER_CACHE)) {
     gfxVars::SetUseWebRenderProgramBinaryDisk(true);
@@ -2716,6 +2714,11 @@ void gfxPlatform::InitWebRenderConfig() {
   if (StaticPrefs::gfx_webrender_software_opengl_AtStartup()) {
     gfxVars::SetAllowSoftwareWebRenderOGL(true);
   }
+#endif
+
+#ifdef MOZ_WIDGET_ANDROID
+  gfxVars::SetUseAImageReaderVideoGpuProcessAndroid(
+      StaticPrefs::gfx_video_aimage_reader_gpu_process_android_AtStartup());
 #endif
 
 #ifdef XP_WIN
@@ -3246,6 +3249,8 @@ void gfxPlatform::InitWebGLConfig() {
       IsFeatureOk(nsIGfxInfo::FEATURE_WEBGL_ANGLE));
   gfxVars::SetWebglUseHardware(
       IsFeatureOk(nsIGfxInfo::FEATURE_WEBGL_USE_HARDWARE));
+  gfxVars::SetAllowMetalAngleWebGL(
+      IsFeatureOk(nsIGfxInfo::FEATURE_WEBGL_ANGLE_METAL));
 
   if (kIsMacOS) {
     // Avoid crash for Intel HD Graphics 3000 on OSX. (Bug 1413269)

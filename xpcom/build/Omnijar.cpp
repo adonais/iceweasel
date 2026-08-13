@@ -4,14 +4,14 @@
 
 #include "Omnijar.h"
 
-#include "nsDirectoryService.h"
-#include "nsDirectoryServiceDefs.h"
 #include "mozilla/GeckoArgs.h"
 #include "mozilla/HelperMacros.h"
 #include "mozilla/ipc/ProcessChild.h"
+#include "nsDirectoryService.h"
+#include "nsDirectoryServiceDefs.h"
 #include "nsIFile.h"
-#include "nsZipArchive.h"
 #include "nsNetUtil.h"
+#include "nsZipArchive.h"
 
 namespace mozilla {
 

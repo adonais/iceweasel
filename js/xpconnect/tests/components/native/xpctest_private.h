@@ -8,13 +8,14 @@
 #ifndef xpctest_private_h_
 #define xpctest_private_h_
 
+#include "mozilla/ModuleUtils.h"
+
 #include "nsISupports.h"
 #include "nsString.h"
 #include "xpctest_attributes.h"
+#include "xpctest_cenums.h"
 #include "xpctest_params.h"
 #include "xpctest_returncode.h"
-#include "xpctest_cenums.h"
-#include "mozilla/ModuleUtils.h"
 
 nsresult xpcTestRegisterComponents();
 

@@ -68,7 +68,8 @@ static uint8_t SerializeTransports(
     } else if (str.EqualsLiteral(
                    MOZ_WEBAUTHN_AUTHENTICATOR_TRANSPORT_INTERNAL)) {
       transports |= MOZ_WEBAUTHN_AUTHENTICATOR_TRANSPORT_ID_INTERNAL;
-    } else if (str.EqualsLiteral(MOZ_WEBAUTHN_AUTHENTICATOR_TRANSPORT_HYBRID)) {
+    } else if (str.EqualsLiteral(MOZ_WEBAUTHN_AUTHENTICATOR_TRANSPORT_HYBRID) ||
+               str.EqualsLiteral(MOZ_WEBAUTHN_AUTHENTICATOR_TRANSPORT_CABLE)) {
       transports |= MOZ_WEBAUTHN_AUTHENTICATOR_TRANSPORT_ID_HYBRID;
     }
   }

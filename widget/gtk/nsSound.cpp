@@ -2,24 +2,22 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nscore.h"
-#include "prlink.h"
-
 #include "nsSound.h"
+
+#include <gtk/gtk.h>
+#include <unistd.h>
 
 #include "CubebUtils.h"
 #include "HeadlessSound.h"
-#include "nsCOMPtr.h"
-#include "nsServiceManagerUtils.h"
-#include "nsString.h"
-#include "mozilla/WidgetUtils.h"
-#include "nsIXULAppInfo.h"
 #include "gfxPlatform.h"
 #include "mozilla/ClearOnShutdown.h"
-
-#include <unistd.h>
-
-#include <gtk/gtk.h>
+#include "mozilla/WidgetUtils.h"
+#include "nsCOMPtr.h"
+#include "nsIXULAppInfo.h"
+#include "nsServiceManagerUtils.h"
+#include "nsString.h"
+#include "nscore.h"
+#include "prlink.h"
 static PRLibrary* libcanberra = nullptr;
 
 /* used to play sounds with libcanberra. */

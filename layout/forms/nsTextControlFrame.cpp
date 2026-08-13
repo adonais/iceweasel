@@ -127,7 +127,7 @@ LogicalSize nsTextControlFrame::CalcFixedSize(gfxContext* aRenderingContext,
   RefPtr<nsFontMetrics> fontMet =
       nsLayoutUtils::GetFontMetricsForFrame(this, inflation);
   const nscoord lineHeight = ReflowInput::CalcLineHeight(
-      *Style(), PresContext(), GetContent(), NS_UNCONSTRAINEDSIZE, inflation);
+      *Style(), PresContext(), GetContent(), inflation);
   // Use the larger of the font's "average" char width or the width of the
   // zero glyph (if present) as the basis for resolving the size attribute.
   const nscoord charWidth =

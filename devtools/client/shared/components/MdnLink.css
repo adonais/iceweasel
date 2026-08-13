@@ -2,12 +2,23 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-.network-monitor .learn-more-link {
+:is(.network-monitor, .app, .accessibility-check-annotation, .spectrum-color-contrast) .learn-more-link {
   display: inline-flex;
-  padding: 2px;
+  align-items: center;
+  gap: 4px;
   --icon-color: var(--theme-icon-color);
 
-  &::before {
+  &.devtools-button {
+    padding: 2px;
+
+    /* hide .devtools-button's ::before icon as we put ours in ::after */
+    &::before {
+      content: none;
+    }
+  }
+
+  &::after {
+    content: "";
     background-image: url(chrome://devtools/skin/images/help.svg);
     background-size: contain;
     -moz-context-properties: fill;
@@ -17,7 +28,7 @@
     margin: 0;
   }
 
-  &.mdn-link::before {
+  &.mdn-link::after {
     background-image: url(chrome://devtools/skin/images/mdn.svg);
     height: 12px;
     width: 12px;
@@ -30,7 +41,7 @@
     --icon-color: var(--theme-icon-dimmed-color);
   }
 
-  &.selected .learn-more-link:not(:hover)::before {
+  &.selected .learn-more-link:not(:hover)::after {
     --icon-color: var(--theme-selection-color);
   }
 }

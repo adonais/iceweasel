@@ -202,12 +202,14 @@ static bool ContentIsInTraversalRange(nsIContent* aContent, bool aIsPreMode,
       parentContent, aIsPreMode ? aContent->GetPreviousSibling() : aContent);
 
   const Maybe<int32_t> startRes =
-      nsContentUtils::ComparePoints(aStartBoundary, compPoint);
+      nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+          aStartBoundary, compPoint);
   if (NS_WARN_IF(!startRes)) {
     return false;
   }
   const Maybe<int32_t> endRes =
-      nsContentUtils::ComparePoints(aEndBoundary, compPoint);
+      nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(aEndBoundary,
+                                                                  compPoint);
   if (NS_WARN_IF(!endRes)) {
     return false;
   }

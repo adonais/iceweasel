@@ -14,7 +14,7 @@ add_setup(async function () {
 });
 
 async function checkEmptyState(selector, megalist) {
-  return await BrowserTestUtils.waitForCondition(() => {
+  return await TestUtils.waitForCondition(() => {
     const emptyStateCard = megalist.querySelector(".empty-state-card");
     return !!emptyStateCard?.querySelector(selector);
   }, "Empty state card failed to render");
@@ -25,7 +25,7 @@ async function clickRemoveAllPasswords(megalist) {
     el.querySelector(selector).shadowRoot.querySelector("button");
   const menu = megalist.querySelector("panel-list");
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => megalist.querySelector("#more-options-menubutton"),
     "menu button failed to render"
   );
@@ -44,7 +44,7 @@ add_task(async function test_passwords_remove_all_notification() {
   const megalist = await openPasswordsSidebar();
   await addMockPasswords();
   await checkAllLoginsRendered(megalist);
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => megalist.querySelector(".second-row"),
     "Second row failed to render"
   );
@@ -77,7 +77,7 @@ add_task(async function test_remove_all_passwords_checkbox() {
   const megalist = await openPasswordsSidebar();
   await addMockPasswords();
   await checkAllLoginsRendered(megalist);
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => megalist.querySelector(".second-row"),
     "Second row failed to render"
   );

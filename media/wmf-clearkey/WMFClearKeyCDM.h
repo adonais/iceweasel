@@ -6,12 +6,13 @@
 #define DOM_MEDIA_PLATFORM_WMF_CLEARKEY_WMFCLEARKEYCDM_H
 
 #include <mfidl.h>
-#include <unordered_map>
-#include <variant>
 #include <windows.h>
 #include <windows.media.protection.h>
 #include <wrl.h>
 #include <wrl/client.h>
+
+#include <unordered_map>
+#include <variant>
 
 #include "ClearKeySessionManager.h"
 #include "MFCDMExtra.h"

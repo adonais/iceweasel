@@ -22,7 +22,7 @@
  * Which is injected into every browser instance via browser.js.
  */
 
-import { ManifestProcessor } from "resource://gre/modules/ManifestProcessor.sys.mjs";
+import { ManifestProcessor } from "moz-src:///dom/manifest/ManifestProcessor.sys.mjs";
 
 export var ManifestObtainer = {
   /**

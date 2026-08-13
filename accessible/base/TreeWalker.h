@@ -6,6 +6,7 @@
 #define mozilla_a11y_TreeWalker_h_
 
 #include <stdint.h>
+
 #include "mozilla/dom/ChildIterator.h"
 #include "nsCOMPtr.h"
 

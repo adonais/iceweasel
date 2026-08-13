@@ -4,10 +4,10 @@
 
 #include "HyperTextAccessibleBase.h"
 
-#include "mozilla/a11y/Accessible.h"
-#include "nsAccUtils.h"
 #include "TextLeafRange.h"
 #include "TextRange.h"
+#include "mozilla/a11y/Accessible.h"
+#include "nsAccUtils.h"
 
 namespace mozilla::a11y {
 

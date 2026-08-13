@@ -9,7 +9,9 @@ import io.mockk.mockk
 import mozilla.components.concept.llm.Llm
 import mozilla.components.concept.llm.LlmProvider
 import mozilla.components.feature.summarize.ContentExtracted
+import mozilla.components.feature.summarize.LlmProviderAction
 import mozilla.components.feature.summarize.OffDeviceSummarizationShakeConsentAction
+import mozilla.components.feature.summarize.ReceivedParsedDocument
 import mozilla.components.feature.summarize.SummarizationAction
 import mozilla.components.feature.summarize.SummarizationCompleted
 import mozilla.components.feature.summarize.SummarizationFailed
@@ -23,6 +25,7 @@ import mozilla.components.lib.llm.mlpa.service.RateLimited
 import mozilla.components.lib.state.Store
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Rule
@@ -272,6 +275,71 @@ class SummarizationTelemetryMiddlewareTest {
 
         val extras = AiSummarize.completed.testGetValue()!!.first().extra!!
         assertEquals("CELLULAR", extras["connection_type"])
+    }
+
+    @Test
+    fun `WHEN events are recorded across a session THEN they share the same session_id`() {
+        setupFullSession()
+        invokeMiddleware(SummarizationCompleted)
+        invokeMiddleware(ViewDismissed(true))
+
+        val requestedSessionId = AiSummarize.requested.testGetValue()!!.first().extra!!["session_id"]
+        val startedSessionId = AiSummarize.started.testGetValue()!!.first().extra!!["session_id"]
+        val completedSessionId = AiSummarize.completed.testGetValue()!!.first().extra!!["session_id"]
+        val closedSessionId = AiSummarize.closed.testGetValue()!!.first().extra!!["session_id"]
+
+        assertNotNull(requestedSessionId)
+        assertEquals(requestedSessionId, startedSessionId)
+        assertEquals(requestedSessionId, completedSessionId)
+        assertEquals(requestedSessionId, closedSessionId)
+    }
+
+    @Test
+    fun `GIVEN separate middleware instances WHEN each records an event THEN session_ids differ`() {
+        invokeMiddleware(ViewAppeared)
+        val firstSessionId = AiSummarize.requested.testGetValue()!!.first().extra!!["session_id"]
+
+        middleware = SummarizationTelemetryMiddleware(ConnectionType.WIFI)
+        invokeMiddleware(ViewAppeared)
+        val secondSessionId = AiSummarize.requested.testGetValue()!!.last().extra!!["session_id"]
+
+        assertNotNull(firstSessionId)
+        assertNotNull(secondSessionId)
+        assertNotEquals(firstSessionId, secondSessionId)
+    }
+
+    @Test
+    fun `WHEN ProviderInitialized is dispatched THEN provider_initialized is recorded with model and session_id`() {
+        assertNull(AiSummarize.providerInitialized.testGetValue())
+
+        invokeMiddleware(ViewAppeared)
+        invokeMiddleware(
+            SummarizationRequested(LlmProvider.Info(nameRes = 42, modelId = LlmProvider.ModelID(TEST_MODEL))),
+        )
+        invokeMiddleware(LlmProviderAction.ProviderInitialized(mockk()))
+
+        val snapshot = AiSummarize.providerInitialized.testGetValue()!!
+        assertEquals(1, snapshot.size)
+
+        val extras = snapshot.first().extra!!
+        assertEquals(TEST_MODEL, extras["model"])
+        assertNotNull(extras["session_id"])
+    }
+
+    @Test
+    fun `WHEN the first ReceivedParsedDocument is dispatched THEN first_response is recorded once`() {
+        assertNull(AiSummarize.firstResponse.testGetValue())
+
+        setupFullSession()
+        invokeMiddleware(ReceivedParsedDocument(mockk()))
+        invokeMiddleware(ReceivedParsedDocument(mockk()))
+
+        val snapshot = AiSummarize.firstResponse.testGetValue()!!
+        assertEquals(1, snapshot.size)
+
+        val extras = snapshot.first().extra!!
+        assertEquals(TEST_MODEL, extras["model"])
+        assertNotNull(extras["session_id"])
     }
 
     private fun setupFullSession() {

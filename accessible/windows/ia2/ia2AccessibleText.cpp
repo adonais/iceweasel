@@ -2,15 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "ia2Accessible.h"
-#include "ia2AccessibleHypertext.h"
 #include "ia2AccessibleText.h"
 
 #include "AccessibleText_i.c"
-
+#include "ia2Accessible.h"
+#include "ia2AccessibleHypertext.h"
+#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/a11y/Compatibility.h"
 #include "mozilla/a11y/HyperTextAccessibleBase.h"
-#include "mozilla/ClearOnShutdown.h"
 
 using namespace mozilla::a11y;
 

@@ -5,9 +5,9 @@
 #ifndef mozilla_layers_ElementStateManager_h
 #define mozilla_layers_ElementStateManager_h
 
+#include "mozilla/EnumSet.h"
 #include "nsCOMPtr.h"
 #include "nsISupportsImpl.h"
-#include "mozilla/EnumSet.h"
 
 namespace mozilla {
 

@@ -2,17 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "gtest/gtest.h"
-
 #include "Common.h"
-#include "imgIContainer.h"
 #include "ImageFactory.h"
-#include "mozilla/gfx/2D.h"
+#include "ProgressTracker.h"
+#include "gtest/gtest.h"
+#include "imgIContainer.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPrefs_image.h"
+#include "mozilla/gfx/2D.h"
 #include "nsIInputStream.h"
 #include "nsString.h"
-#include "ProgressTracker.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;

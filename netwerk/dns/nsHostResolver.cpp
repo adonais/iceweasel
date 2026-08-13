@@ -4,46 +4,47 @@
 
 #include "nsIThreadPool.h"
 #if defined(HAVE_RES_NINIT)
-#  include <sys/types.h>
-#  include <netinet/in.h>
 #  include <arpa/inet.h>
 #  include <arpa/nameser.h>
+#  include <netinet/in.h>
 #  include <resolv.h>
+#  include <sys/types.h>
 #endif
 
 #include <stdlib.h>
+
 #include <ctime>
-#include "nsHostResolver.h"
+
+#include "GetAddrInfo.h"
+#include "PLDHashTable.h"
+#include "TRR.h"
+#include "TRRQuery.h"
+#include "TRRService.h"
+#include "mozilla/Atomics.h"
+#include "mozilla/DebugOnly.h"
+#include "mozilla/Logging.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs_network.h"
+#include "mozilla/TimeStamp.h"
+#include "mozilla/glean/NetwerkDnsMetrics.h"
+#include "mozilla/glean/NetwerkMetrics.h"
+#include "nsComponentManagerUtils.h"
 #include "nsError.h"
+#include "nsHostResolver.h"
 #include "nsIOService.h"
 #include "nsISupports.h"
 #include "nsISupportsUtils.h"
 #include "nsIThreadManager.h"
-#include "nsComponentManagerUtils.h"
 #include "nsNetUtil.h"
 #include "nsPrintfCString.h"
-#include "nsXPCOMCIDInternal.h"
-#include "prthread.h"
-#include "prerror.h"
-#include "prtime.h"
-#include "mozilla/Logging.h"
-#include "PLDHashTable.h"
 #include "nsQueryObject.h"
-#include "nsURLHelper.h"
-#include "nsThreadUtils.h"
 #include "nsThreadPool.h"
-#include "GetAddrInfo.h"
-#include "TRR.h"
-#include "TRRQuery.h"
-#include "TRRService.h"
-
-#include "mozilla/Atomics.h"
-#include "mozilla/glean/NetwerkMetrics.h"
-#include "mozilla/TimeStamp.h"
-#include "mozilla/glean/NetwerkDnsMetrics.h"
-#include "mozilla/DebugOnly.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/StaticPrefs_network.h"
+#include "nsThreadUtils.h"
+#include "nsURLHelper.h"
+#include "nsXPCOMCIDInternal.h"
+#include "prerror.h"
+#include "prthread.h"
+#include "prtime.h"
 // Put DNSLogging.h at the end to avoid LOG being overwritten by other headers.
 #include "DNSLogging.h"
 
@@ -559,8 +560,24 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
         rec->RecordReason(TRRSkippedReason::TRR_EXCLUDED);
       }
 
+      TimeStamp now = TimeStamp::NowLoRes();
+
+      // Happy Eyeballs issues per-family (A/AAAA) high-priority lookups and
+      // reuses cached negatives (see AddrHostRecord::HasUsableResultInternal).
+      // When both families are negative the failure is likely transient, so
+      // force a refresh rather than let it stick across reloads. This only
+      // applies to per-family lookups; an AF_UNSPEC lookup (e.g. the ordinary
+      // DnsAndConnectSocket connect path) is not part of Happy Eyeballs and
+      // must keep reusing its cached negative.
+      if (IS_ADDR_TYPE(type) && addrRec && addrRec->negative &&
+          (af == PR_AF_INET || af == PR_AF_INET6) && IsHighPriority(flags) &&
+          StaticPrefs::network_http_happy_eyeballs_enabled() &&
+          !OtherFamilyHasUsablePositiveResult(key, af, now, flags)) {
+        flags |= nsIDNSService::RESOLVE_REFRESH_NEGATIVE_CACHE;
+      }
+
       if (!(flags & nsIDNSService::RESOLVE_BYPASS_CACHE) &&
-          rec->HasUsableResult(TimeStamp::NowLoRes(), flags)) {
+          rec->HasUsableResult(now, flags)) {
         result = FromCache(rec, host, type, status);
       } else if (addrRec && addrRec->addr) {
         // if the host name is an IP address literal and has been
@@ -711,6 +728,30 @@ already_AddRefed<nsHostRecord> nsHostResolver::FromIPLiteral(
   // put reference to host record on stack...
   RefPtr<nsHostRecord> result = aAddrRec;
   return result.forget();
+}
+
+bool nsHostResolver::OtherFamilyHasUsablePositiveResult(
+    const nsHostKey& aKey, uint16_t aAf, const mozilla::TimeStamp& aNow,
+    nsIDNSService::DNSFlags aFlags) {
+  uint16_t otherAf;
+  if (aAf == PR_AF_INET) {
+    otherAf = PR_AF_INET6;
+  } else if (aAf == PR_AF_INET6) {
+    otherAf = PR_AF_INET;
+  } else {
+    MOZ_ASSERT_UNREACHABLE("only called for per-family lookups");
+    return false;
+  }
+
+  const nsHostKey key(aKey.host, aKey.mTrrServer,
+                      nsIDNSService::RESOLVE_TYPE_DEFAULT, aFlags, otherAf,
+                      aKey.pb, aKey.originSuffix);
+  RefPtr<nsHostRecord> rec = mRecordDB.Get(key);
+  if (!rec) {
+    return false;
+  }
+  RefPtr<AddrHostRecord> addrRec = do_QueryObject(rec);
+  return addrRec && !addrRec->negative && rec->HasUsableResult(aNow, aFlags);
 }
 
 already_AddRefed<nsHostRecord> nsHostResolver::FromUnspecEntry(
@@ -1221,8 +1262,10 @@ nsresult nsHostResolver::NameLookup(nsHostRecord* rec) {
 
 nsresult nsHostResolver::ConditionallyRefreshRecord(nsHostRecord* rec,
                                                     const nsACString& host) {
+  const bool refreshNegative =
+      rec->negative && StaticPrefs::network_dns_refresh_negative_addr_on_use();
   if ((rec->CheckExpiration(TimeStamp::NowLoRes()) == nsHostRecord::EXP_GRACE ||
-       rec->negative) &&
+       refreshNegative) &&
       !rec->mResolving && rec->RefreshForNegativeResponse()) {
     LOG(("  Using %s cache entry for host [%s] but starting async renewal.",
          rec->negative ? "negative" : "positive",

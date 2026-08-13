@@ -29,7 +29,7 @@ input[type="url"]:not(:placeholder-shown) {
   text-align: match-parent;
 }
 
-.dialogRow:not([hidden]) {
+.dialogRow {
   display: flex;
   flex-direction: column;
 }

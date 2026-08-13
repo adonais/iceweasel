@@ -5,6 +5,7 @@
 package org.mozilla.fenix.ui.efficiency.selectors
 
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.menu.MenuDialogTestTag
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.helpers.TestHelper.appName
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
@@ -125,6 +126,20 @@ object MainMenuSelectors {
         groups = listOf("browserViewMainMenuItems"),
     )
 
+    val DESKTOP_SITE_ON = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_TAG,
+        value = MenuDialogTestTag.DESKTOP_SITE_ON,
+        description = "Main menu Desktop site ON state",
+        groups = listOf(),
+    )
+
+    val DESKTOP_SITE_OFF = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_TAG,
+        value = MenuDialogTestTag.DESKTOP_SITE_OFF,
+        description = "Main menu Desktop site OFF state",
+        groups = listOf(),
+    )
+
     val MORE_BUTTON = Selector(
         strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
         value = "More Collapsed",
@@ -182,6 +197,34 @@ object MainMenuSelectors {
         groups = listOf("browserViewMainMenuMoreItems"),
     )
 
+    val TRANSLATE_BUTTON = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+        value = getStringResource(R.string.browser_menu_translations),
+        description = "Translate page button",
+        groups = listOf("moreMenuItems"),
+    )
+
+    val TRANSLATED_BUTTON = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+        value = getStringResource(R.string.browser_menu_translated),
+        description = "Translate page button",
+        groups = listOf("moreMenuItems"),
+    )
+
+    val REMOVE_FROM_SHORTCUTS_BUTTON = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+        value = getStringResource(R.string.browser_menu_remove_from_shortcuts),
+        description = "Main menu remove from shortcuts button",
+        groups = listOf("browserViewMainMenuMoreItems"),
+    )
+
+    val ADD_TO_HOMESCREEN_BUTTON = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+        value = getStringResource(R.string.browser_menu_add_to_homescreen),
+        description = "Main menu add to homescreen button",
+        groups = listOf("browserViewMainMenuMoreItems"),
+    )
+
     val all = listOf(
         NEW_PRIVATE_TAB_BUTTON,
         EXTENSIONS_BUTTON,
@@ -197,14 +240,21 @@ object MainMenuSelectors {
         DEFAULT_BROWSER_BANNER_TITLE,
         DEFAULT_BROWSER_BANNER_SUBTITLE,
         DEFAULT_BROWSER_BANNER_DISMISS,
+        QUIT_FIREFOX_BUTTON,
         BACK_BUTTON,
         FORWARD_BUTTON,
         REFRESH_BUTTON,
         SHARE_BUTTON,
         DESKTOP_SITE_BUTTON,
+        DESKTOP_SITE_ON,
+        DESKTOP_SITE_OFF,
         MORE_BUTTON,
         CHANGE_WALLPAPER_BUTTON,
         SAVE_TO_COLLECTIONS_BUTTON,
         ADD_TO_SHORTCUTS_BUTTON,
+        TRANSLATE_BUTTON,
+        TRANSLATED_BUTTON,
+        REMOVE_FROM_SHORTCUTS_BUTTON,
+        ADD_TO_HOMESCREEN_BUTTON,
     )
 }

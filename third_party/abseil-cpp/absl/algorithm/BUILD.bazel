@@ -14,6 +14,8 @@
 # limitations under the License.
 #
 
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load(
     "//absl:copts/configure_copts.bzl",
     "ABSL_DEFAULT_COPTS",
@@ -39,6 +41,7 @@ cc_library(
     linkopts = ABSL_DEFAULT_LINKOPTS,
     deps = [
         "//absl/base:config",
+        "//absl/base:core_headers",
     ],
 )
 
@@ -67,7 +70,8 @@ cc_library(
         ":algorithm",
         "//absl/base:config",
         "//absl/base:core_headers",
-        "//absl/base:nullability",
+        "//absl/base:hardening",
+        "//absl/base:iterator_traits_internal",
         "//absl/meta:type_traits",
     ],
 )
@@ -82,7 +86,10 @@ cc_test(
         "//absl/base",
         "//absl/base:config",
         "//absl/base:core_headers",
+        "//absl/base:hardening",
         "//absl/memory",
+        "//absl/meta:type_traits",
+        "//absl/random",
         "//absl/types:span",
         "@googletest//:gtest",
         "@googletest//:gtest_main",

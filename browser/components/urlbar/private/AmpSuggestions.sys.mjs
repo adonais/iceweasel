@@ -18,7 +18,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   Region: "resource://gre/modules/Region.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
-  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
 });
 
 const TIMESTAMP_TEMPLATE = "%YYYYMMDDHH%";
@@ -117,17 +117,33 @@ export class AmpSuggestions extends SuggestProvider {
       normalized.iabCategory = suggestion.iab_category;
       normalized.requestId = suggestion.request_id;
 
+      if (suggestion.custom_details?.amp) {
+        let { amp } = suggestion.custom_details;
+        normalized.suggestionId = amp.suggestion_id;
+        if (typeof amp.header_text == "string") {
+          normalized.fullKeyword = amp.header_text;
+        }
+      }
+
       // Replace URL timestamp templates inline. This isn't necessary for Rust
       // AMP suggestions because the Rust component handles it.
       this.#replaceSuggestionTemplates(normalized);
     }
 
-    let isTopPick =
-      (suggestion.source == "merino" && suggestion.is_top_pick) ||
-      (lazy.UrlbarPrefs.get("quickSuggestAmpTopPickCharThreshold") &&
-        lazy.UrlbarPrefs.get("quickSuggestAmpTopPickCharThreshold") <=
-          queryContext.trimmedLowerCaseSearchString.length) ||
-      lazy.UrlbarPrefs.get("quickSuggestSponsoredPriority");
+    let isTopPick;
+    if (
+      suggestion.source == "merino" &&
+      typeof suggestion.is_top_pick == "boolean"
+    ) {
+      // Defer entirely to Merino.
+      isTopPick = suggestion.is_top_pick;
+    } else {
+      isTopPick =
+        (lazy.UrlbarPrefs.get("quickSuggestAmpTopPickCharThreshold") &&
+          lazy.UrlbarPrefs.get("quickSuggestAmpTopPickCharThreshold") <=
+            queryContext.trimmedLowerCaseSearchString.length) ||
+        lazy.UrlbarPrefs.get("quickSuggestSponsoredPriority");
+    }
 
     let richSuggestionIconSize;
     if (!isTopPick) {
@@ -142,8 +158,8 @@ export class AmpSuggestions extends SuggestProvider {
     // `UrlbarProviderQuickSuggest` uses the standard Nova size.
 
     return new lazy.UrlbarResult({
-      type: lazy.UrlbarUtils.RESULT_TYPE.URL,
-      source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
+      type: lazy.UrlbarShared.RESULT_TYPE.URL,
+      source: lazy.UrlbarShared.RESULT_SOURCE.SEARCH,
       isBottomUrlSuggestion: true,
       isBestMatch: isTopPick,
       richSuggestionIconSize,
@@ -156,6 +172,7 @@ export class AmpSuggestions extends SuggestProvider {
           id: "urlbar-result-action-sponsored",
         },
         requestId: normalized.requestId,
+        suggestionId: normalized.suggestionId,
         urlTimestampIndex: normalized.urlTimestampIndex,
         sponsoredImpressionUrl: normalized.impressionUrl,
         sponsoredClickUrl: normalized.clickUrl,
@@ -174,7 +191,7 @@ export class AmpSuggestions extends SuggestProvider {
       commands.push({
         name: "show_less_frequently",
         l10n: {
-          id: "urlbar-result-menu-show-less-frequently",
+          id: "urlbar-result-menu-show-less-frequently2",
         },
       });
     }
@@ -183,20 +200,20 @@ export class AmpSuggestions extends SuggestProvider {
       {
         name: "dismiss",
         l10n: {
-          id: "urlbar-result-menu-dismiss-suggestion",
+          id: "urlbar-result-menu-dismiss-suggestion2",
         },
       },
       { name: "separator" },
       {
         name: "manage",
         l10n: {
-          id: "urlbar-result-menu-manage-firefox-suggest",
+          id: "urlbar-result-menu-manage-firefox-suggest2",
         },
       },
       {
         name: "help",
         l10n: {
-          id: "urlbar-result-menu-learn-more",
+          id: "urlbar-result-menu-learn-more2",
         },
       }
     );
@@ -236,11 +253,7 @@ export class AmpSuggestions extends SuggestProvider {
         break;
       }
       case "show_less_frequently": {
-        controller.view.acknowledgeFeedback(result);
-        this.incrementShowLessFrequentlyCount();
-        if (!this.canShowLessFrequently) {
-          controller.view.invalidateResultMenuCommands();
-        }
+        this.handleShowLessFrequently(controller, result);
         lazy.UrlbarPrefs.set("amp.minKeywordLength", searchString.length + 1);
         break;
       }
@@ -368,6 +381,7 @@ export class AmpSuggestions extends SuggestProvider {
         suggestedIndex: result.suggestedIndex.toString(),
         suggestedIndexRelativeToGroup: !!result.isSuggestedIndexRelativeToGroup,
         requestId: result.payload.requestId,
+        suggestionId: result.payload.suggestionId,
         source: result.payload.source,
         contextId: await lazy.ContextId.request(),
       };

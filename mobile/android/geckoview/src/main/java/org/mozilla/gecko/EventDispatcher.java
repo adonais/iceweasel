@@ -15,7 +15,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import org.mozilla.gecko.annotation.ReflectionTarget;
-import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.mozglue.JNIObject;
 import org.mozilla.gecko.util.BundleEventListener;
@@ -25,7 +24,6 @@ import org.mozilla.gecko.util.ThreadUtils;
 import org.mozilla.geckoview.BuildConfig;
 import org.mozilla.geckoview.GeckoResult;
 
-@RobocopTarget
 public final class EventDispatcher extends JNIObject {
   private static final String LOGTAG = "GeckoEventDispatcher";
 

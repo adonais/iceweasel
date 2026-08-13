@@ -5,11 +5,11 @@
 #include "nsRandomGenerator.h"
 
 #include "ScopedNSSTypes.h"
+#include "mozilla/UniquePtrExtensions.h"
 #include "nsNSSComponent.h"
 #include "pk11pub.h"
 #include "prerror.h"
 #include "secerr.h"
-#include "mozilla/UniquePtrExtensions.h"
 
 NS_IMPL_ISUPPORTS(nsRandomGenerator, nsIRandomGenerator)
 

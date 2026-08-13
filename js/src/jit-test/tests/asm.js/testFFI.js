@@ -97,7 +97,7 @@ assertThrowsValue(function() { f(8,2.4) }, 2.4+36);
 
 assertEq(asmLink(asmCompile('glob', 'imp', USE_ASM + 'var identity=imp.identity; function g(x) { x=+x; return +identity(x) } return g'), null, imp)(13.37), 13.37);
 
-// Test asm.js => ion paths
+// Test ion paths
 setJitCompilerOption("ion.warmup.trigger", 10);
 setJitCompilerOption("baseline.warmup.trigger", 0);
 setJitCompilerOption("offthread-compilation.enable", 0);

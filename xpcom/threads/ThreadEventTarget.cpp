@@ -3,18 +3,18 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ThreadEventTarget.h"
-#include "mozilla/ThreadEventQueue.h"
 
 #include "MaybeLeakRefPtr.h"
+#include "ThreadDelay.h"
 #include "mozilla/DelayedRunnable.h"
 #include "mozilla/SpinEventLoopUntil.h"
+#include "mozilla/ThreadEventQueue.h"
 #include "mozilla/TimeStamp.h"
 #include "nsComponentManagerUtils.h"
 #include "nsITimer.h"
 #include "nsThreadManager.h"
 #include "nsThreadSyncDispatch.h"
 #include "nsThreadUtils.h"
-#include "ThreadDelay.h"
 
 using namespace mozilla;
 

@@ -44,18 +44,8 @@ using ContentParentId = IdType<ContentParent>;
 
 namespace IPC {
 
-template <typename T>
-struct ParamTraits<mozilla::dom::IdType<T>> {
-  using paramType = mozilla::dom::IdType<T>;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mId);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mId);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::TabId, mId);
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::ContentParentId, mId);
 
 }  // namespace IPC
 

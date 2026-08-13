@@ -5,8 +5,8 @@
 #ifndef nsInterfaceHashtable_h_
 #define nsInterfaceHashtable_h_
 
-#include "nsRefCountedHashtable.h"
-#include "nsHashKeys.h"
 #include "nsCOMPtr.h"
+#include "nsHashKeys.h"
+#include "nsRefCountedHashtable.h"
 
 #endif  // nsInterfaceHashtable_h_

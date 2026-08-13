@@ -12,6 +12,7 @@ import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination.ExpandedTa
 import org.mozilla.fenix.tabstray.redux.action.TabGroupAction
 import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
+import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.DragProcessingState
 import org.mozilla.fenix.tabstray.redux.state.initializeTabGroupForm
 
 /**
@@ -32,13 +33,20 @@ object TabGroupActionReducer {
         return when (action) {
             is TabGroupAction.AddToTabGroup -> reduceAddToTabGroup(state)
             is TabGroupAction.AddToNewTabGroup -> state.navigateToCreateTabGroup()
+            is TabGroupAction.NewTabGroupFabClicked -> state.navigateToCreateTabGroup(isStarterTabGroup = true)
+            is TabGroupAction.OpenCreatedTabGroup -> state.navigateToExpandedTabGroup(action.group)
             is TabGroupAction.DragAndDropTwoTabs -> reduceDragAndDropTwoTabs(state, action)
             is TabGroupAction.NameChanged -> handleNameChange(state, action)
             is TabGroupAction.ThemeChanged -> handleThemeChange(state, action)
-            is TabGroupAction.SaveClicked -> state.copy(
-                mode = TabsTrayState.Mode.Normal,
-                backStack = state.backStack.popTabGroupFlow(),
-            )
+            is TabGroupAction.SaveClicked -> {
+                state.copy(
+                    mode = TabsTrayState.Mode.Normal,
+                    backStack = state.backStack.popTabGroupFlow(),
+                    tabGroupState = state.tabGroupState.copy(
+                        dragProcessingState = DragProcessingState.COMPLETED,
+                    ),
+                )
+            }
             is TabGroupAction.TabGroupClicked -> processTabGroupClick(state, action.group)
             is TabGroupAction.TabAddedToGroup -> state
             is TabGroupAction.SelectedTabsAddedToGroup -> state.copy(
@@ -52,11 +60,15 @@ object TabGroupActionReducer {
                 backStack = state.backStack.popDeleteTabGroupFlow(),
             )
             is TabGroupAction.EditTabGroupClicked -> reduceEditTabGroupClicked(state, action)
-            is TabGroupAction.OpenTabGroupClicked -> reduceOpenTabGroupClicked(state, action)
+            is TabGroupAction.NewGroupCreated ->
+                state.copy(tabGroupState = state.tabGroupState.copy(enteringGroupId = action.id))
+            is TabGroupAction.NewGroupAnimationFinished ->
+                state.copy(tabGroupState = state.tabGroupState.copy(enteringGroupId = null))
+            is TabGroupAction.OpenTabGroupClicked -> state.navigateToExpandedTabGroup(action.group)
             is TabGroupAction.CloseTabGroupClicked -> state.copy(
                 backStack = listOf(TabManagerNavDestination.Root),
             )
-            is TabGroupAction.DragAndDropCompleted -> state.copy(
+            is TabGroupAction.DragAndDropInitiated -> state.copy(
                 normalTabsState = state.normalTabsState.copy(
                     itemFocusIndicatorEnabled = true,
                 ),
@@ -67,6 +79,14 @@ object TabGroupActionReducer {
             )
             is TabGroupAction.OnboardingDismissed -> state.copy(
                 config = state.config.copy(tabGroupsOnboardingEnabled = false),
+            )
+            is TabGroupAction.OnboardingShown -> state.copy(
+                tabGroupState = state.tabGroupState.copy(hasRecordedOnboardingImpression = true),
+            )
+            is TabGroupAction.DragAndDropProcessed -> state.copy(
+                tabGroupState = state.tabGroupState.copy(
+                    dragProcessingState = DragProcessingState.COMPLETED,
+                ),
             )
         }
     }
@@ -100,16 +120,6 @@ object TabGroupActionReducer {
                 formState = action.group.initializeTabGroupForm(),
             ),
             backStack = state.navigateToEditTabGroup(),
-        )
-    }
-
-    private fun reduceOpenTabGroupClicked(
-        state: TabsTrayState,
-        action: TabGroupAction.OpenTabGroupClicked,
-    ): TabsTrayState {
-        return state.copy(
-            selectedPage = Page.NormalTabs,
-            backStack = state.backStack + ExpandedTabGroup(group = action.group.copy(closed = false)),
         )
     }
 
@@ -151,11 +161,17 @@ object TabGroupActionReducer {
         )
     }
 
-    private fun TabsTrayState.navigateToCreateTabGroup() = copy(
+    private fun TabsTrayState.navigateToCreateTabGroup(isStarterTabGroup: Boolean = false) = copy(
         tabGroupState = tabGroupState.copy(
-            formState = initializeTabGroupForm(),
+            formState = initializeTabGroupForm(isStarterTabGroup = isStarterTabGroup),
+            dragProcessingState = DragProcessingState.EDIT_IN_PROGRESS,
         ),
         backStack = navigateToEditTabGroup(),
+    )
+
+    private fun TabsTrayState.navigateToExpandedTabGroup(group: TabsTrayItem.TabGroup): TabsTrayState = copy(
+        selectedPage = Page.NormalTabs,
+        backStack = backStack + ExpandedTabGroup(group = group.copy(closed = false)),
     )
 
     private fun List<TabManagerNavDestination>.popTabGroupFlow(): List<TabManagerNavDestination> = filterNot {

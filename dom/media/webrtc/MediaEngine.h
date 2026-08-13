@@ -44,6 +44,8 @@ class MediaEngine {
   virtual void EnumerateDevices(dom::MediaSourceEnum, MediaSinkEnum,
                                 nsTArray<RefPtr<MediaDevice>>*) = 0;
 
+  virtual void InvalidateDesktopCaptureDeviceCache(dom::MediaSourceEnum) = 0;
+
   virtual void Shutdown() = 0;
 
   virtual RefPtr<MediaEngineSource> CreateSource(

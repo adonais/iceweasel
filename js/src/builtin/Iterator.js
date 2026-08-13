@@ -1923,6 +1923,8 @@ function IteratorRange(start, end, optionOrStep) {
 
 }
 
+#endif
+
 /**
  *  Iterator.prototype.chunks ( chunkSize )
  *
@@ -1940,31 +1942,41 @@ function IteratorChunks(chunkSize) {
   // Step 3. Let iterated be the Iterator Record
   //  { [[Iterator]]: O, [[NextMethod]]: undefined, [[Done]]: false }.
 
-  // Step 4. If chunkSize is not an integral Number in the inclusive interval
-  // from 1𝔽 to 𝔽(2**32 - 1), then
-  if (!Number_isInteger(chunkSize) || (chunkSize < 1 || chunkSize > (2 ** 32) - 1)) {
-    // Step 4.a. Let error be ThrowCompletion(a newly created RangeError object).
+  // Step 4. If chunkSize is not an integral Number, then
+  if (!Number_isInteger(chunkSize)) {
+    // Step 4.a. Let error be ThrowCompletion(a newly created TypeError object).
     // Step 4.b. Return ? IteratorClose(iterated, error).
+    try {
+      IteratorClose(iterator);
+    } catch {}
+    ThrowTypeError(JSMSG_CHUNK_SIZE_NOT_INTEGER);
+  }
+
+  // Step 5. If chunkSize is not in the inclusive interval from 1𝔽 to
+  // 𝔽(2**32 - 1), then
+  if (chunkSize < 1 || chunkSize > (2 ** 32) - 1) {
+    // Step 5.a. Let error be ThrowCompletion(a newly created RangeError object).
+    // Step 5.b. Return ? IteratorClose(iterated, error).
     try {
       IteratorClose(iterator);
     } catch {}
     ThrowRangeError(JSMSG_INVALID_CHUNKSIZE);
   }
 
-  // Step 5. Set iterated to ? GetIteratorDirect(O).
+  // Step 6. Set iterated to ? GetIteratorDirect(O).
   var nextMethod = iterator.next;
 
-  // Step 6. Let closure be a new Abstract Closure with ...
+  // Step 7. Let closure be a new Abstract Closure with ...
   // (Handled in IteratorChunksGenerator.)
 
-  // Step 7. Let result be CreateIteratorFromClosure(
+  // Step 8. Let result be CreateIteratorFromClosure(
   //   closure, "Iterator Helper", %IteratorHelperPrototype%,
   //   « [[UnderlyingIterators]] »
   // ).
   var result = NewIteratorHelper();
   var generator = IteratorChunksGenerator(iterator, nextMethod, chunkSize);
 
-  // Step 8. Set result.[[UnderlyingIterators]] to « iterated ».
+  // Step 9. Set result.[[UnderlyingIterators]] to « iterated ».
   UnsafeSetReservedSlot(
     result,
     ITERATOR_HELPER_GENERATOR_SLOT,
@@ -1976,7 +1988,7 @@ function IteratorChunks(chunkSize) {
     iterator
   );
 
-  // Step 9. Return result.
+  // Step 10. Return result.
   return result;
 }
 
@@ -2041,7 +2053,7 @@ function* IteratorChunksGenerator(iterator, nextMethod, chunkSize) {
  *
  *  https://tc39.es/proposal-iterator-chunking/#sec-iterator.prototype.windows
  */
-function IteratorWindows(windowSize, undersized) {
+function IteratorWindows(windowSize, undersized = undefined) {
   // Step 1. Let O be the this value.
   var iterator = this;
 
@@ -2053,26 +2065,36 @@ function IteratorWindows(windowSize, undersized) {
   // Step 3. Let iterated be the Iterator Record
   //         { [[Iterator]]: O, [[NextMethod]]: undefined, [[Done]]: false }.
 
-  // Step 4. If windowSize is not an integral Number
-  //         in the inclusive interval from 1𝔽 to 𝔽(2**32 - 1), then
-  if (!Number_isInteger(windowSize) || (windowSize < 1 || windowSize > (2 ** 32) - 1)) {
-    // Step 4.a. Let error be ThrowCompletion(a newly created RangeError object).
+  // Step 4. If windowSize is not an integral Number, then
+  if (!Number_isInteger(windowSize)) {
+    // Step 4.a. Let error be ThrowCompletion(a newly created TypeError object).
     // Step 4.b. Return ? IteratorClose(iterated, error).
+    try {
+      IteratorClose(iterator);
+    } catch {}
+    ThrowTypeError(JSMSG_WINDOW_SIZE_NOT_INTEGER);
+  }
+
+  // Step 5. If windowSize is not in the inclusive interval from 1𝔽 to
+  //         𝔽(2**32 - 1), then
+  if (windowSize < 1 || windowSize > (2 ** 32) - 1) {
+    // Step 5.a. Let error be ThrowCompletion(a newly created RangeError object).
+    // Step 5.b. Return ? IteratorClose(iterated, error).
     try {
       IteratorClose(iterator);
     } catch {}
     ThrowRangeError(JSMSG_INVALID_WINDOWSIZE);
   }
 
-  // Step 5. If undersized is undefined, set undersized to "only-full".
+  // Step 6. If undersized is undefined, set undersized to "only-full".
   if (undersized === undefined) {
     undersized = "only-full";
   }
 
-  // Step 6. If undersized is not "only-full" or "allow-partial", then
+  // Step 7. If undersized is not "only-full" or "allow-partial", then
   if (undersized !== "only-full" && undersized !== "allow-partial") {
-    // Step 6.a. Let error be ThrowCompletion(a newly created TypeError object).
-    // Step 6.b. Return ? IteratorClose(iterated, error).
+    // Step 7.a. Let error be ThrowCompletion(a newly created TypeError object).
+    // Step 7.b. Return ? IteratorClose(iterated, error).
     try {
       IteratorClose(iterator);
     } catch {}
@@ -2081,19 +2103,19 @@ function IteratorWindows(windowSize, undersized) {
     );
   }
 
-  // Step 7. Set iterated to ? GetIteratorDirect(O).
+  // Step 8. Set iterated to ? GetIteratorDirect(O).
   var nextMethod = iterator.next;
 
-  // Step 8. Let closure be a new Abstract Closure with ...
+  // Step 9. Let closure be a new Abstract Closure with ...
   // (Handled in IteratorWindowsGenerator.)
 
-  // Step 9. Let result be CreateIteratorFromClosure(
+  // Step 10. Let result be CreateIteratorFromClosure(
   //         closure, "Iterator Helper", %IteratorHelperPrototype%,
   //         « [[UnderlyingIterators]] »).
   var result = NewIteratorHelper();
   var generator = IteratorWindowsGenerator(iterator, nextMethod, windowSize, undersized);
 
-  // Step 10. Set result.[[UnderlyingIterators]] to « iterated ».
+  // Step 11. Set result.[[UnderlyingIterators]] to « iterated ».
   UnsafeSetReservedSlot(
     result,
     ITERATOR_HELPER_GENERATOR_SLOT,
@@ -2105,7 +2127,7 @@ function IteratorWindows(windowSize, undersized) {
     iterator
   );
 
-  // Step 11. Return result.
+  // Step 12. Return result.
   return result;
 }
 
@@ -2279,29 +2301,37 @@ function IteratorIncludes(searchElement, skippedElements = undefined) {
     ThrowRangeError(JSMSG_NEGATIVE_LIMIT);
   }
 
-  // Step 7. Let skipped be 0.
+  // Step 7. If toSkip is finite and toSkip > 𝔽(2**53 - 1), then
+  // Step 7.a. Let error be ThrowCompletion(a newly created RangeError object).
+  // Step 7.b. Return ? IteratorClose(iterated, error).
+  if (Number_isFinite(toSkip) && toSkip > (2 ** 53) - 1) {
+    try {
+      IteratorClose(O);
+    } catch {}
+    ThrowRangeError(JSMSG_SKIP_COUNT_TOO_LARGE);
+  }
+
+  // Step 8. Let skipped be 0.
   var skipped = 0;
 
-  // Step 8. Set iterated to ? GetIteratorDirect(O).
+  // Step 9. Set iterated to ? GetIteratorDirect(O).
   // (Inlined call to GetIteratorDirect.)
   var nextMethod = O.next;
 
-  // Step 9. Repeat,
-  // Step 9.a. Let value be ? IteratorStepValue(iterated).
+  // Step 10. Repeat,
+  // Step 10.a. Let value be ? IteratorStepValue(iterated).
   for (var value of allowContentIterWithNext(O, nextMethod)) {
-    // Step 9.c. If skipped < toSkip, then
+    // Step 10.c. If skipped < toSkip, then
     if (skipped < toSkip) {
-      // Step 9.c.i. Set skipped to skipped + 1.
+      // Step 10.c.i. Set skipped to skipped + 1.
       skipped++;
-    // Step 9.d. Else if SameValueZero(value, searchElement) is true, then
+    // Step 10.d. Else if SameValueZero(value, searchElement) is true, then
     } else if (value === searchElement || (Number_isNaN(value) && Number_isNaN(searchElement))) {
-      // Step 9.d.i. Return ? IteratorClose(iterated, NormalCompletion(true)).
+      // Step 10.d.i. Return ? IteratorClose(iterated, NormalCompletion(true)).
       return true;
     }
   }
 
-  // Step 9.b. If value is done, return false.
+  // Step 10.b. If value is done, return false.
   return false;
 }
-
-#endif

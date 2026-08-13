@@ -6,8 +6,8 @@
 #define nsHttpChunkedDecoder_h_
 
 #include "nsError.h"
-#include "nsString.h"
 #include "nsHttpHeaderArray.h"
+#include "nsString.h"
 
 namespace mozilla {
 namespace net {

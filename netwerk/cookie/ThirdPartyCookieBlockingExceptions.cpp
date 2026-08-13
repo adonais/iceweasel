@@ -5,16 +5,15 @@
 #include "ThirdPartyCookieBlockingExceptions.h"
 
 #include "mozilla/Components.h"
-#include "mozilla/dom/BrowsingContext.h"
-#include "mozilla/dom/CanonicalBrowsingContext.h"
-#include "mozilla/dom/Promise.h"
-#include "mozilla/dom/Promise-inl.h"
-#include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/ErrorNames.h"
 #include "mozilla/Logging.h"
-
-#include "nsIEffectiveTLDService.h"
+#include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/CanonicalBrowsingContext.h"
+#include "mozilla/dom/Promise-inl.h"
+#include "mozilla/dom/Promise.h"
+#include "mozilla/dom/WindowGlobalParent.h"
 #include "nsIChannel.h"
+#include "nsIEffectiveTLDService.h"
 
 namespace mozilla {
 namespace net {

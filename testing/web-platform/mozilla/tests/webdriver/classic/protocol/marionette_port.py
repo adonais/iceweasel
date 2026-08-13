@@ -28,12 +28,7 @@ async def test_marionette_port_outdated_active_port_file(
     with open(active_port_file, "wb") as f:
         f.write(b"53")
 
-    config["capabilities"]["moz:firefoxOptions"]["args"] = [
-        "--profile",
-        custom_profile.profile,
-    ]
-
-    driver = geckodriver(config=config, extra_args=extra_args)
+    driver = geckodriver(config=config, extra_args=extra_args, profile=custom_profile)
 
     driver.new_session()
     with open(active_port_file, "rb") as f:

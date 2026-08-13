@@ -5,26 +5,22 @@
 #ifndef GFX_PLATFORM_H
 #define GFX_PLATFORM_H
 
-#include "mozilla/gfx/Types.h"
-#include "mozilla/intl/UnicodeScriptCodes.h"
-#include "nsTArray.h"
-#include "nsString.h"
-#include "nsCOMPtr.h"
-
+#include "GfxInfoCollector.h"
+#include "gfxSkipChars.h"
 #include "gfxTelemetry.h"
 #include "gfxTypes.h"
-#include "gfxSkipChars.h"
-
-#include "qcms.h"
-
-#include "mozilla/RefPtr.h"
-#include "GfxInfoCollector.h"
-
 #include "mozilla/Maybe.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/gfx/Types.h"
+#include "mozilla/intl/UnicodeScriptCodes.h"
 #include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/MemoryPressureObserver.h"
 #include "mozilla/layers/OverlayInfo.h"
+#include "nsCOMPtr.h"
+#include "nsString.h"
+#include "nsTArray.h"
+#include "qcms.h"
 
 class FontVisibilityProvider;
 class gfxASurface;

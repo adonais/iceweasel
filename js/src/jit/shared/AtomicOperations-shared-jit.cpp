@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "jit/AtomicOperations.h"
+
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 
@@ -13,7 +15,6 @@
 #include <tuple>
 #include <utility>
 
-#include "jit/AtomicOperations.h"
 #include "js/GCAPI.h"
 
 #if defined(__arm__)

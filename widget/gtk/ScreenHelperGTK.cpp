@@ -5,8 +5,9 @@
 #include "ScreenHelperGTK.h"
 
 #ifdef MOZ_X11
-#  include <gdk/gdkx.h>
 #  include <X11/Xlib.h>
+#  include <gdk/gdkx.h>
+
 #  include "X11UndefineNone.h"
 #endif /* MOZ_X11 */
 #ifdef MOZ_WAYLAND
@@ -16,16 +17,16 @@
 #include <gtk/gtk.h>
 
 #include "gfxPlatformGtk.h"
-#include "mozilla/dom/DOMTypes.h"
 #include "mozilla/Logging.h"
+#include "mozilla/ScopeExit.h"
+#include "mozilla/StaticPrefs_widget.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/ToString.h"
 #include "mozilla/WidgetUtilsGtk.h"
+#include "mozilla/dom/DOMTypes.h"
 #include "nsGtkUtils.h"
 #include "nsTArray.h"
 #include "nsWindow.h"
-#include "mozilla/ScopeExit.h"
-#include "mozilla/StaticPrefs_widget.h"
 
 struct wl_registry;
 

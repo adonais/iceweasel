@@ -12,6 +12,7 @@
 #include "jsapi-tests/tests.h"
 #include "util/Text.h"
 #include "vm/EnvironmentObject.h"
+
 #include "vm/EnvironmentObject-inl.h"
 
 BEGIN_TEST(testExecuteInJSMEnvironment_Basic) {

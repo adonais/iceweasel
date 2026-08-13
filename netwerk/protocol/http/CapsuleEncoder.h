@@ -6,13 +6,14 @@
 #define mozilla_net_capsule_encoder_h
 
 #include "mozilla/Maybe.h"
-#include "mozilla/net/NeqoHttp3Conn.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Span.h"
 #include "mozilla/net/NeqoHttp3Conn.h"
 #include "nsTArray.h"
 
 namespace mozilla::net {
+
+class Capsule;
 
 struct StreamMetadata {
   uint64_t mID{0};

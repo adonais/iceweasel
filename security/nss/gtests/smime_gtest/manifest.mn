@@ -18,5 +18,9 @@ REQUIRES = nspr gtest
 
 PROGRAM = smime_gtest
 
+# Link the static smime archive directly. This allows the use of
+# internal symbols like NSS_SMIMEUtil_CreateSMIMECapabilities,
+# which are intentionally not exported from the shared smime library.
 EXTRA_LIBS = $(DIST)/lib/$(LIB_PREFIX)gtest.$(LIB_SUFFIX) $(EXTRA_OBJS) \
-             $(DIST)/lib/$(LIB_PREFIX)gtestutil.$(LIB_SUFFIX)
+             $(DIST)/lib/$(LIB_PREFIX)gtestutil.$(LIB_SUFFIX) \
+             $(DIST)/lib/$(LIB_PREFIX)smime.$(LIB_SUFFIX)

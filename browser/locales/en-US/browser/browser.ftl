@@ -21,6 +21,9 @@ browser-main-private-suffix-for-content = Private Browsing
 # "PRIVATE_BROWSING_SHORTCUT_TITLE" in custom.properties
 private-browsing-shortcut-text-2 = { -brand-shortcut-name } Private Browsing
 
+# This MUST match the translation of "BRIEF_APP_DESC" in custom.properties
+browser-shortcut-description = Fast and private web browsing
+
 ##
 
 urlbar-identity-button =
@@ -81,32 +84,35 @@ urlbar-result-menu-button =
     .title = Open menu
 urlbar-result-menu-button-feedback = Feedback
     .title = Open menu
-urlbar-result-menu-learn-more =
-    .label = Learn more
+urlbar-result-menu-learn-more2 = Learn more
     .accesskey = L
-urlbar-result-menu-remove-from-history =
-    .label = Remove from history
+urlbar-result-menu-remove-from-history2 = Remove from history
     .accesskey = R
-urlbar-result-menu-tip-get-help =
-    .label = Get help
+urlbar-result-menu-tip-get-help2 = Get help
     .accesskey = h
-urlbar-result-menu-dismiss-suggestion =
-    .label = Dismiss this suggestion
+urlbar-result-menu-dismiss-suggestion2 = Dismiss this suggestion
     .accesskey = D
-urlbar-result-menu-manage-firefox-suggest =
-    .label = Manage { -firefox-suggest-brand-name }
+urlbar-result-menu-manage-firefox-suggest2 = Manage { -firefox-suggest-brand-name }
     .accesskey = M
 # Some urlbar suggestions show the user's approximate location as automatically
 # detected by Firefox (e.g., weather suggestions), and this menu item lets the
 # user tell Firefox that the location is not accurate. Typically the location
 # will be a city name, or a city name combined with the name of its parent
 # administrative division (e.g., a province, prefecture, or state).
-urlbar-result-menu-report-inaccurate-location =
-    .label = Report inaccurate location
-urlbar-result-menu-show-less-frequently =
-    .label = Show less frequently
-urlbar-result-menu-dont-show-weather-suggestions =
-    .label = Don’t show weather suggestions
+urlbar-result-menu-report-inaccurate-location2 = Report inaccurate location
+urlbar-result-menu-show-less-frequently2 = Show less frequently
+urlbar-result-menu-dont-show-weather-suggestions2 = Don’t show weather suggestions
+
+# Shown in the urlbar input field context menu to dismiss an adaptive autofill
+# suggestion.
+urlbar-input-dismiss-autofill =
+    .label = Dismiss this suggestion
+    .accesskey = i
+# Shown in the urlbar input field context menu to remove an adaptive autofill
+# URL from history.
+urlbar-input-remove-from-history =
+    .label = Remove from history
+    .accesskey = e
 
 # Used for Split Button.
 urlbar-splitbutton-dropmarker =
@@ -276,6 +282,10 @@ quickactions-addons = View add-ons
 # same word).
 quickactions-cmd-addons3 = extensions, themes, addons, add-ons
 
+# Opens preferences page at AI controls
+quickactions-manageai = Manage AI controls
+quickactions-cmd-manageai = disable ai, off ai, manage ai
+
 # Opens the bookmarks library window
 quickactions-bookmarks2 = Manage bookmarks
 quickactions-cmd-bookmarks = bookmarks
@@ -333,6 +343,10 @@ quickactions-cmd-print = print
 # Opens the print dialog at the save to PDF option
 quickactions-savepdf = Save page as PDF
 quickactions-cmd-savepdf2 = pdf, save page
+
+# Opens about:pdf, the PDF editor landing page
+quickactions-editpdf = Open PDF editor
+quickactions-cmd-editpdf = pdf
 
 # Opens a new private browsing window
 quickactions-private2 = Open private window
@@ -458,8 +472,8 @@ identity-clear-site-data =
     .label = Clear cookies and site data…
 identity-connection-not-secure-security-view = You are not securely connected to this site.
 identity-connection-verified = You are securely connected to this site.
-identity-ev-owner-label = Certificate issued to:
-identity-verifier-label = Verified by:
+identity-ev-owner-label2 = Certificate issued to
+identity-verifier-label2 = Verified by
 # "qualified" here refers to the qualified website authentication certificate presented by the site.
 identity-etsi = Qualified as specified in Regulation (EU) 2024/1183.
 identity-description-custom-root2 = Mozilla does not recognize this certificate issuer. It may have been added from your operating system or by an administrator.
@@ -678,43 +692,43 @@ urlbar-result-action-undefined-calculator-result = undefined
 # following relative dates: "yesterday", "today"
 # Variables:
 #   $date (string) - A localized relative date string
-urlbar-result-explanation-last-visited-relative = You last visited { $date }
+urlbar-result-explanation-last-visited-relative-2 = Last visited { $date }
 
 # This explanation is used when the last-visited date is a small number of days
 # in the past.
 # Variables:
 #   $daysAgo (number) - The number of days ago
-urlbar-result-explanation-last-visited-days =
+urlbar-result-explanation-last-visited-days-2 =
     { $daysAgo ->
-        [one] You last visited { $daysAgo } day ago
-        *[other] You last visited { $daysAgo } days ago
+        [one] Last visited { $daysAgo } day ago
+        *[other] Last visited { $daysAgo } days ago
     }
 
 # This explanation is used when the last-visited date is a small number of weeks
 # in the past.
 # Variables:
 #   $weeksAgo (number) - The number of weeks ago
-urlbar-result-explanation-last-visited-weeks =
+urlbar-result-explanation-last-visited-weeks-2 =
     { $weeksAgo ->
-        [one] You last visited { $weeksAgo } week ago
-        *[other] You last visited { $weeksAgo } weeks ago
+        [one] Last visited { $weeksAgo } week ago
+        *[other] Last visited { $weeksAgo } weeks ago
     }
 
 # This explanation is used when the last-visited date is a small number of
 # months in the past.
 # Variables:
 #   $monthsAgo (number) - The number of months ago
-urlbar-result-explanation-last-visited-months =
+urlbar-result-explanation-last-visited-months-2 =
     { $monthsAgo ->
-        [one] You last visited { $monthsAgo } month ago
-        *[other] You last visited { $monthsAgo } months ago
+        [one] Last visited { $monthsAgo } month ago
+        *[other] Last visited { $monthsAgo } months ago
     }
 
 # This explanation is used when the last-visited date is further in the past.
 # The date will be formatted as an absolute date like: "11 May", "11 May 2026"
 # Variables:
 #   $date (string) - A localized absolute date string
-urlbar-result-explanation-last-visited-absolute = You last visited on { $date }
+urlbar-result-explanation-last-visited-absolute-2 = Last visited { $date }
 
 # This explanation is used when the result is bookmarked. The date will be
 # formatted as an absolute date like: "11 May", "11 May 2026"
@@ -793,12 +807,10 @@ urlbar-result-realtime-opt-in-allow = Show suggestions
 # This string is shown in split button to dismiss activation the Realtime suggestion.
 urlbar-result-realtime-opt-in-not-now = Not now
 urlbar-result-realtime-opt-in-dismiss = Dismiss
-urlbar-result-realtime-opt-in-dismiss-all =
-    .label = Don’t show these suggestions
+urlbar-result-realtime-opt-in-dismiss-all2 = Don’t show these suggestions
 
 # This string is shown in the result menu.
-urlbar-result-menu-dont-show-market =
-  .label = Don’t show market suggestions
+urlbar-result-menu-dont-show-market2 = Don’t show market suggestions
 
 # A message that replaces a result when the user dismisses Market suggestions.
 urlbar-result-dismissal-acknowledgment-market = Thanks for your feedback. You won’t see market suggestions anymore.
@@ -874,10 +886,14 @@ urlbar-searchmode-no-keyword2 =
 
 urlbar-searchmode-dropmarker2 =
     .title = Pick a Search Engine
-urlbar-searchmode-bookmarks2 = Bookmarks
-urlbar-searchmode-tabs2 = Tabs
-urlbar-searchmode-history2 = History
-urlbar-searchmode-actions2 = Actions
+urlbar-searchmode-bookmarks3 = Bookmarks
+    .accesskey = B
+urlbar-searchmode-tabs3 = Tabs
+    .accesskey = T
+urlbar-searchmode-history3 = History
+    .accesskey = H
+urlbar-searchmode-actions3 = Actions
+    .accesskey = A
 urlbar-searchmode-exit-button2 =
     .title = Close
 urlbar-searchmode-default2 =
@@ -895,8 +911,10 @@ urlbar-searchmode-popup-one-off-header = This time search with:
 # Label shown on the top of Searchmode Switcher popup when the search engine won't automatically
 # reset after submitting.
 urlbar-searchmode-popup-header = Search with:
-urlbar-searchmode-popup-search-settings-panelitem = Search Settings
-urlbar-searchmode-popup-settings-panelitem = Settings
+urlbar-searchmode-popup-search-settings = Search Settings
+    .accesskey = S
+urlbar-searchmode-popup-settings = Settings
+    .accesskey = S
 
 # Label prompting user to search with a particular search engine.
 #  $engine (String): the name of a search engine that searches a specific site
@@ -975,9 +993,8 @@ urlbar-group-trending =
   .label = Trending on { $engine }
 
 # The result menu labels shown next to trending results.
-urlbar-result-menu-trending-dont-show =
-    .label = Don’t show trending searches
-    .accesskey = D
+urlbar-result-menu-trending-dont-show2 = Don’t show trending searches
+  .accesskey = D
 
 # A message that replaces a result when the user dismisses all suggestions of a
 # particular type.

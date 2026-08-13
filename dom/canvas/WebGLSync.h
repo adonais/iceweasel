@@ -39,7 +39,7 @@ class WebGLSync final : public WebGLContextBoundObject, public SupportsWeakPtr {
 
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(WebGLSync, override)
 
-  GLsync mGLName = 0;
+  GLsync mGLName = nullptr;
   const uint64_t mFenceId;
   bool mCanBeAvailable = false;
 

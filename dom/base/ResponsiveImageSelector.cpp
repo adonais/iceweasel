@@ -19,7 +19,8 @@ using namespace mozilla::dom;
 
 namespace mozilla::dom {
 
-NS_IMPL_CYCLE_COLLECTION(ResponsiveImageSelector, mOwnerNode)
+NS_IMPL_CYCLE_COLLECTION(ResponsiveImageSelector, mOwnerNode,
+                         mSelectedCandidateURL)
 
 static bool ParseInteger(const nsAString& aString, int32_t& aInt) {
   nsContentUtils::ParseHTMLIntegerResultFlags parseResult;

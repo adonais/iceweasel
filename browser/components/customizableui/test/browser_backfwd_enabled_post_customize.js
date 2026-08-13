@@ -29,12 +29,12 @@ add_task(async function test_back_forward_buttons() {
   );
   await loaded;
   gBrowser.goBack();
-  await BrowserTestUtils.waitForCondition(() => gBrowser.canGoForward);
+  await TestUtils.waitForCondition(() => gBrowser.canGoForward);
 
   let backButton = document.getElementById("back-button");
   let forwardButton = document.getElementById("forward-button");
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       !backButton.hasAttribute("disabled") &&
       !forwardButton.hasAttribute("disabled")
@@ -60,7 +60,7 @@ add_task(async function test_back_forward_buttons() {
 
   await endCustomizing();
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       !backButton.hasAttribute("disabled") &&
       !forwardButton.hasAttribute("disabled")

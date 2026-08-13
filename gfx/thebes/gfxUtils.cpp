@@ -4,22 +4,34 @@
 
 #include "gfxUtils.h"
 
+#include <numbers>
+
+#include "ImageContainer.h"
+#include "ImageRegion.h"
 #include "cairo.h"
+#include "gfx2DGlue.h"
 #include "gfxContext.h"
+#include "gfxDrawable.h"
 #include "gfxEnv.h"
 #include "gfxImageSurface.h"
 #include "gfxPlatform.h"
-#include "gfxDrawable.h"
 #include "gfxQuad.h"
 #include "imgIEncoder.h"
 #include "mozilla/Base64.h"
-#include "mozilla/StyleColorInlines.h"
 #include "mozilla/Components.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/ProfilerLabels.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/ServoStyleConsts.h"
+#include "mozilla/StaticPrefs_gfx.h"
+#include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/StyleColorInlines.h"
+#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/ImageEncoder.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRunnable.h"
-#include "mozilla/ipc/CrossProcessSemaphore.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/DataSurfaceHelpers.h"
 #include "mozilla/gfx/Logging.h"
@@ -30,15 +42,8 @@
 #include "mozilla/image/nsICOEncoder.h"
 #include "mozilla/image/nsJPEGEncoder.h"
 #include "mozilla/image/nsPNGEncoder.h"
+#include "mozilla/ipc/CrossProcessSemaphore.h"
 #include "mozilla/layers/SynchronousTask.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/ProfilerLabels.h"
-#include "mozilla/RefPtr.h"
-#include "mozilla/ServoStyleConsts.h"
-#include "mozilla/StaticPrefs_gfx.h"
-#include "mozilla/StaticPrefs_layout.h"
-#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/webrender/webrender_ffi.h"
 #include "nsAppRunner.h"
 #include "nsComponentManagerUtils.h"
@@ -47,12 +52,9 @@
 #include "nsIGfxInfo.h"
 #include "nsMimeTypes.h"
 #include "nsPresContext.h"
+#include "nsRFPService.h"
 #include "nsRegion.h"
 #include "nsServiceManagerUtils.h"
-#include "nsRFPService.h"
-#include "ImageContainer.h"
-#include "ImageRegion.h"
-#include "gfx2DGlue.h"
 
 #ifdef XP_WIN
 #  include "gfxWindowsPlatform.h"
@@ -563,7 +565,7 @@ float gfxUtils::ClampToScaleFactor(float aVal, bool aRoundDown) {
     aVal = 1 / aVal;
   }
 
-  float power = logf(aVal) / logf(kScaleResolution);
+  float power = logf(aVal) / std::numbers::ln2_v<float>;
 
   // If power is within 1e-5 of an integer, round to nearest to
   // prevent floating point errors, otherwise round up to the

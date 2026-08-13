@@ -52,34 +52,6 @@ Major versions maintain binary compatibility. Critical security fixes are accept
 > [!NOTE]
 > Package manager ports (vcpkg, Conan, etc.) are community-maintained. Please report outdated versions or missing generators to their respective repositories.
 
-### vcpkg
-Add `jsoncpp` to your `vcpkg.json` manifest:
-
-```json
-{
-  "dependencies": ["jsoncpp"]
-}
-```
-
-Or install via classic mode: `vcpkg install jsoncpp`.
-
-### Conan
-
-```sh
-conan install --requires="jsoncpp/[*]" --build=missing
-```
-
-If you are using a `conanfile.txt` in a Conan 2 project, ensure you use the appropriate generators:
-
-```ini
-[requires]
-jsoncpp/[*]
-
-[generators]
-CMakeToolchain
-CMakeDeps
-```
-
 ### Meson
 
 ```sh
@@ -88,10 +60,15 @@ meson wrap install jsoncpp
 
 ### Amalgamated source
 
-> [!NOTE]
-> This approach may be outdated.
+For projects requiring a single-header approach, JsonCpp provides a script to generate an amalgamated source and header file.
 
-For projects requiring a single-header approach, see the [Wiki entry](https://github.com/open-source-parsers/jsoncpp/wiki/Amalgamated-(Possibly-outdated)).
+You can generate the amalgamated files by running the following Python script from the top-level directory:
+
+```sh
+python3 amalgamate.py
+```
+
+This will generate a `dist` directory containing `jsoncpp.cpp`, `json/json.h`, and `json/json-forwards.h`. You can then drop these files directly into your project's source tree and compile `jsoncpp.cpp` alongside your other source files.
 
 ## Documentation
 

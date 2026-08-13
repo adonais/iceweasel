@@ -9,6 +9,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
@@ -28,6 +29,7 @@ const val TAG = "SummarizationMiddleware"
 
 /** The initial middleware for the summarization feature */
 class SummarizationMiddleware(
+    private val isPageLoadingFlow: Flow<Boolean>,
     private val settings: SummarizationSettings,
     private val llmProvider: CloudLlmProvider,
     private val contentProvider: ContentProvider,
@@ -45,6 +47,16 @@ class SummarizationMiddleware(
             is ViewAppeared -> scope.launch {
                 if (needsShakeConsent(store.state)) {
                     store.dispatch(ShakeConsentRequested)
+                } else if (isPageLoadingFlow.first()) {
+                    store.dispatch(PageLoadStarted)
+                    try {
+                        withTimeout(PAGE_LOADING_TIMEOUT) {
+                            isPageLoadingFlow.first { !it }
+                            store.dispatch(PageLoadCompleted)
+                        }
+                    } catch (e: TimeoutCancellationException) {
+                        store.dispatch(SummarizationFailed(e))
+                    }
                 } else {
                     observeCloudLlmProvider(store, llmProvider)
                 }
@@ -65,6 +77,33 @@ class SummarizationMiddleware(
             is SummarizationFailed -> scope.launch {
                 errorReporter.report(TAG, action.exception)
             }
+            is PageLoadCompleted -> scope.launch {
+                observeCloudLlmProvider(store, llmProvider)
+            }
+
+            is ContentExtracted,
+            DownloadConsentAction.AllowClicked,
+            DownloadConsentAction.CancelClicked,
+            DownloadConsentAction.LearnMoreClicked,
+            DownloadErrorAction.CancelClicked,
+            DownloadErrorAction.LearnMoreClicked,
+            DownloadErrorAction.TryAgainClicked,
+            DownloadInProgressAction.CancelClicked,
+            ErrorAction.ErrorDismissed,
+            ErrorAction.LearnMoreClicked,
+            OffDeviceSummarizationShakeConsentAction.LearnMoreClicked,
+            OnDeviceSummarizationShakeConsentAction.AllowClicked,
+            OnDeviceSummarizationShakeConsentAction.CancelClicked,
+            OnDeviceSummarizationShakeConsentAction.LearnMoreClicked,
+            PageLoadStarted,
+            is ReceivedParsedDocument,
+            SettingsBackClicked,
+            SettingsClicked,
+            ShakeConsentRequested,
+            SummarizationCompleted,
+            is SummarizationRequested,
+            is ViewDismissed,
+            -> Unit
         }
 
         next(action)
@@ -107,5 +146,6 @@ class SummarizationMiddleware(
 
     private companion object {
         val SUMMARIZE_TIMEOUT = 60.seconds
+        val PAGE_LOADING_TIMEOUT = 60.seconds
     }
 }

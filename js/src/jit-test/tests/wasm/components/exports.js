@@ -71,7 +71,7 @@ wasmFailValidateText(`
   (func (type 0) (canon lift (core func 0)))
   (export "add" (func 1))
 )
-`, /invalid function index 1 for export/);
+`, /invalid function index 1/);
 
 // Invalid type index.
 wasmFailValidateText(`
@@ -79,7 +79,7 @@ wasmFailValidateText(`
   (type u32)
   (export "bad" (type 5))
 )
-`, /invalid type index 5 for export/);
+`, /invalid type index 5/);
 
 // Invalid core module index.
 wasmFailValidateText(`
@@ -87,7 +87,7 @@ wasmFailValidateText(`
   (core module)
   (export "bad" (core module 1))
 )
-`, /invalid core module index 1 for export/);
+`, /invalid core module index 1/);
 
 // ----------------------------------------------------------------------------
 // Export name well-formedness

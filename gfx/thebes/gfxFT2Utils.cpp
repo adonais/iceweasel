@@ -2,8 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "gfxFT2FontBase.h"
 #include "gfxFT2Utils.h"
+
+#include "gfxFT2FontBase.h"
 #include "mozilla/Likely.h"
 
 #ifdef USE_FC_FREETYPE

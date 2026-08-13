@@ -17,8 +17,19 @@ $calculated-max-width-widest: $break-point-widest + $card-width;
 $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
 
 .top-sites-list {
+  // Positioned ancestor for the drag-time drop overlay. Scoped to when the
+  // overlay is actually present (a grouped-pins drag) via :has(), so the classic
+  // layout stays identical to main rather than gaining a positioned context it
+  // never needs.
+  &:has(.pinned-drag-overlay) {
+    position: relative;
+  }
+
   &:not(.dnd-active) {
-    .top-site-outer:is(.active, :focus, :hover) {
+    .top-site-outer:is(
+    .active,
+    :has(.top-site-inner:is(:hover, :focus-within))
+  ) {
       @include wallpaper-contrast-fix;
 
       // Ideally this would just match button --button-background-color-hover.
@@ -167,6 +178,51 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
   }
 }
 
+// Drag wrapper around all shortcuts.
+.pinned-drag-overlay {
+  position: absolute;
+  inset: 0;
+  // Behind the tiles, so the drop highlight reads under them rather than
+  // tinting the tile faces.
+  z-index: -1;
+
+  // A visual area around each row to signal a droppable area.
+  .pinned-drop-box {
+    position: absolute;
+
+    // Extend the highlight a bit past the element so the drop area reads larger.
+    &::before {
+      content: '';
+      position: absolute;
+      inset-block-start: 0;
+      inset-block-end: calc(-1 * var(--space-small));
+      inset-inline: calc(-1 * var(--space-small));
+      border-radius: var(--border-radius-large);
+      background: color-mix(
+        in srgb,
+        var(--border-color-selected) 15%,
+        transparent
+      );
+      outline: 1px dashed var(--border-color-selected);
+    }
+
+    @include wallpaper-contrast-fix;
+
+    .pinned-area-label {
+      position: absolute;
+      inset-block-end: 100%;
+      inset-inline-start: 0;
+      margin-block-end: var(--space-small);
+      display: flex;
+      align-items: center;
+      gap: var(--space-small);
+      white-space: nowrap;
+      font-size: var(--font-size-small);
+      color: var(--newtab-text-primary-color);
+    }
+  }
+}
+
 // container for drop zone
 .top-site-outer {
   width: 120px;
@@ -174,6 +230,7 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
   margin-block-end: var(--space-medium);
   border-radius: var(--border-radius-large);
   display: inline-block;
+  position: relative;
 
   .top-site-inner {
     position: relative;
@@ -186,12 +243,13 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
     }
   }
 
-  &:hover, &:focus {
+  // Gated to :not(.dnd-active) so a drag never shows hover chrome — macOS
+  // freezes :hover on the dragged tile and we can't use pointer-events (the
+  // placeholder is the drop target). Keep new tile-hover styling behind this.
+  .top-sites-list:not(.dnd-active) &:has(.top-site-inner:is(:hover, :focus-within)) {
     .context-menu-button {
       opacity: 1;
       transition: opacity 200ms;
-
-      @include wallpaper-contrast-fix;
     }
 
     .tile {
@@ -214,6 +272,11 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
   &.active .context-menu-button {
     opacity: 1;
     background-color: var(--newtab-button-active-background);
+  }
+
+  // Hide the hover state pin icon and menu button on the drag ghost.
+  &.drag-ghost :is(.context-menu-button, .icon-pin-small) {
+    display: none;
   }
 
   .tile {
@@ -345,7 +408,7 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
 
     .sponsored-label {
       color: var(--newtab-contextual-text-secondary-color);
-      font-size: var(--font-size-xsmall);
+      font-size: var(--newtab-font-size-xsmall);
     }
 
     &:not(.sponsored) .sponsored-label {
@@ -419,31 +482,6 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
     }
   }
 
-  &.add-button {
-    .tile {
-      background-color: var(--button-background-color);
-
-      @include wallpaper-contrast-fix;
-
-      .icon-wrapper {
-        background-image: url('chrome://global/skin/icons/plus-20.svg');
-        background-size: cover;
-        background-repeat: no-repeat;
-        height: 20px;
-        width: 20px;
-        fill: var(--icon-color);
-        -moz-context-properties: fill;
-      }
-    }
-
-    &:hover {
-      .tile {
-        background-color: var(--newtab-background-color-secondary);
-        color-scheme: initial;
-      }
-    }
-  }
-
   &.search-shortcut {
     .rich-icon {
       background-color: $white;
@@ -452,6 +490,27 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
 
   .edit-button {
     background-image: url('chrome://global/skin/icons/edit.svg');
+  }
+
+  // Source tile during a zero-pin drag: taken out of grid flow (so adding the
+  // pin-area placeholder nets zero cells) while staying rendered, so the native
+  // drag isn't aborted and dragend still fires. Not display:none, which can do
+  // both.
+  &.collapsed {
+    position: absolute;
+    visibility: hidden;
+  }
+
+  // Zero-pin drop placeholder keeps its slot but stays invisible until the drag
+  // is over the drop zone. opacity (not visibility) so it stays hit-testable:
+  // when it's the only cell on a new row, visibility:hidden drops it from
+  // hit-testing and dragover never lands on it, so it never reveals.
+  &.zero-pin-placeholder {
+    opacity: 0;
+
+    &.over {
+      opacity: 1;
+    }
   }
 
   &.dragged {
@@ -465,6 +524,77 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
     .title {
       visibility: hidden;
     }
+  }
+}
+
+.add-button {
+  @include wallpaper-contrast-fix;
+}
+
+// For a full row, the button is hidden until the last tile is hovered.
+.add-button-hidden {
+  position: absolute;
+  inset-block-start: calc(var(--space-large) + var(--size-item-large));
+  inset-inline-start: 100%;
+  width: var(--col-width);
+  display: flex;
+  justify-content: center;
+  // Transparent block padding enlarges the button's hover hit-area.
+  padding-block: var(--space-xxlarge);
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: opacity 100ms;
+  }
+
+  .top-site-outer:hover & {
+    opacity: 1;
+    transition-delay: 200ms;
+  }
+
+  // Reveal on keyboard focus anywhere within the shortcuts row.
+  .top-sites-list:focus-within & {
+    opacity: 1;
+  }
+
+  // Keep it hidden while a context menu is open (the open tile gets .active):
+  // the menu taking focus would otherwise trigger the reveal.
+  .top-sites-list:has(.top-site-outer.active) & {
+    opacity: 0;
+  }
+}
+
+// In-grid variant: center the button on its own tile. Horizontal centering uses
+// auto inline margins so it stays centered in RTL.
+.add-button-tile .add-button {
+  position: absolute;
+  inset-block-start: calc(var(--space-large) + var(--size-item-large));
+  inset-inline: 0;
+  margin-inline: auto;
+  transform: translateY(-50%);
+}
+
+// Sole item (no shortcuts): span the full row so the button stays centered
+// despite the column gaps, and reserve tile height so the row doesn't collapse
+// around the absolutely-positioned button.
+.add-button-tile:only-child {
+  grid-column: 1 / -1;
+  // Reserves the height of a shortcut tile + label
+  min-height: calc(96px + var(--space-small) * 7);
+}
+
+// @nova-cleanup(remove-conditional): Make default behavior, remove .nova-enabled selector
+.nova-enabled {
+  .add-button-hidden,
+  .add-button-tile .add-button {
+    inset-block-start: calc(var(--col-width) - var(--size-item-large));
+  }
+
+  .add-button-tile:only-child {
+    // Reserves the height of a shortcut tile (75px) + label (32px) + padding
+    min-height: calc(107px + var(--space-small));
   }
 }
 
@@ -572,13 +702,6 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
       }
     }
 
-    .enable-custom-image-input {
-      display: inline-block;
-      font-size: var(--font-size-small);
-      margin-block-start: var(--space-xsmall);
-      cursor: pointer;
-    }
-
     .custom-image-input-container {
       margin-block-start: var(--space-xsmall);
 
@@ -675,6 +798,19 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
   .actions {
     justify-content: flex-end;
     padding: var(--space-large) var(--space-xlarge);
+  }
+
+  // "Use a custom image" and the action buttons share one padded row.
+  .topsite-form-footer {
+    display: flex;
+    align-items: center;
+    padding: var(--space-large) var(--space-xlarge);
+
+    .actions {
+      margin-inline-start: auto;
+      padding: 0;
+      border-block-start: none;
+    }
   }
 
   @media (max-width: $break-point-medium) {

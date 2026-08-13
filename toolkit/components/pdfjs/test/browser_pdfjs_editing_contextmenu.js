@@ -185,7 +185,7 @@ add_task(async function test_copy_paste_undo_redo() {
       await escape(browser);
 
       info("Wait for the editor to be unselected");
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         async () => (await countElements(browser, ".selectedEditor")) !== 1
       );
       Assert.equal(await countElements(browser, ".selectedEditor"), 0);
@@ -198,7 +198,7 @@ add_task(async function test_copy_paste_undo_redo() {
       // Undo.
       await clickOnItem(browser, menuitems, "context-pdfjs-undo");
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         async () => (await countElements(browser, ".freeTextEditor")) !== 2
       );
 
@@ -217,7 +217,7 @@ add_task(async function test_copy_paste_undo_redo() {
       ]);
       await clickOnItem(browser, menuitems, "context-pdfjs-redo");
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         async () => (await countElements(browser, ".freeTextEditor")) !== 1
       );
 
@@ -243,7 +243,7 @@ add_task(async function test_copy_paste_undo_redo() {
 
       await clickOnItem(browser, menuitems, "context-pdfjs-cut");
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         async () => (await countElements(browser, ".freeTextEditor")) !== 2
       );
 
@@ -262,7 +262,7 @@ add_task(async function test_copy_paste_undo_redo() {
 
       await clickOnItem(browser, menuitems, "context-pdfjs-paste");
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         async () => (await countElements(browser, ".freeTextEditor")) !== 1
       );
 
@@ -289,7 +289,7 @@ add_task(async function test_copy_paste_undo_redo() {
 
       await clickOnItem(browser, menuitems, "context-pdfjs-delete");
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         async () => (await countElements(browser, ".freeTextEditor")) !== 2
       );
 
@@ -302,7 +302,7 @@ add_task(async function test_copy_paste_undo_redo() {
       menuitems = await getContextMenuItems(browser, spanBox);
       await clickOnItem(browser, menuitems, "context-pdfjs-paste");
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         async () => (await countElements(browser, ".freeTextEditor")) !== 1
       );
 
@@ -326,7 +326,7 @@ add_task(async function test_copy_paste_undo_redo() {
       );
       await clickOnItem(browser, menuitems, "context-pdfjs-paste");
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         async () => (await countElements(browser, ".freeTextEditor")) !== 2
       );
 
@@ -341,7 +341,7 @@ add_task(async function test_copy_paste_undo_redo() {
       menuitems = await getContextMenuItems(browser, spanBox);
       await clickOnItem(browser, menuitems, "context-pdfjs-delete");
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         async () => (await countElements(browser, ".freeTextEditor")) !== 3
       );
 

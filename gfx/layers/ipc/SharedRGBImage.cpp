@@ -3,21 +3,22 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SharedRGBImage.h"
+
 #include "ImageTypes.h"         // for ImageFormat::SHARED_RGB, etc
-#include "mozilla/ipc/Shmem.h"  // for Shmem
 #include "gfx2DGlue.h"          // for ImageFormatToSurfaceFormat, etc
 #include "gfxPlatform.h"        // for gfxPlatform, gfxImageFormat
 #include "mozilla/gfx/Point.h"  // for IntSIze
+#include "mozilla/ipc/Shmem.h"  // for Shmem
 #include "mozilla/layers/BufferTexture.h"
 #include "mozilla/layers/ISurfaceAllocator.h"  // for ISurfaceAllocator, etc
+#include "mozilla/layers/ImageBridgeChild.h"   // for ImageBridgeChild
 #include "mozilla/layers/ImageClient.h"        // for ImageClient
 #include "mozilla/layers/LayersSurfaces.h"     // for SurfaceDescriptor, etc
 #include "mozilla/layers/TextureClient.h"      // for BufferTextureClient, etc
 #include "mozilla/layers/TextureClientRecycleAllocator.h"  // for ITextureClientAllocationHelper
-#include "mozilla/layers/ImageBridgeChild.h"  // for ImageBridgeChild
-#include "mozilla/mozalloc.h"                 // for operator delete, etc
-#include "nsDebug.h"                          // for NS_WARNING, NS_ASSERTION
-#include "nsISupportsImpl.h"                  // for Image::AddRef, etc
+#include "mozilla/mozalloc.h"  // for operator delete, etc
+#include "nsDebug.h"           // for NS_WARNING, NS_ASSERTION
+#include "nsISupportsImpl.h"   // for Image::AddRef, etc
 #include "nsProxyRelease.h"
 #include "nsRect.h"  // for mozilla::gfx::IntRect
 
@@ -50,20 +51,27 @@ class TextureClientForRawBufferAccessAllocationHelper
 };
 
 SharedRGBImage::SharedRGBImage(ImageClient* aCompositable)
-    : Image(nullptr, ImageFormat::SHARED_RGB), mCompositable(aCompositable) {
+    : Image(nullptr, ImageFormat::SHARED_RGB),
+      mCompositable(aCompositable),
+      mSourceSurface("SharedRGBImage::mSourceSurface") {
   MOZ_COUNT_CTOR(SharedRGBImage);
 }
 
 SharedRGBImage::SharedRGBImage(TextureClientRecycleAllocator* aRecycleAllocator)
     : Image(nullptr, ImageFormat::SHARED_RGB),
-      mRecycleAllocator(aRecycleAllocator) {
+      mRecycleAllocator(aRecycleAllocator),
+      mSourceSurface("SharedRGBImage::mSourceSurface") {
   MOZ_COUNT_CTOR(SharedRGBImage);
 }
 
 SharedRGBImage::~SharedRGBImage() {
   MOZ_COUNT_DTOR(SharedRGBImage);
-  NS_ReleaseOnMainThread("SharedRGBImage::mSourceSurface",
-                         mSourceSurface.forget());
+  RefPtr<gfx::SourceSurface> surface;
+  {
+    auto guard = mSourceSurface.Lock();
+    surface = guard->forget();
+  }
+  NS_ReleaseOnMainThread("SharedRGBImage::mSourceSurface", surface.forget());
 }
 
 TextureClientRecycleAllocator* SharedRGBImage::RecycleAllocator() {
@@ -109,10 +117,10 @@ static void ReleaseTextureClient(void* aData) {
 static gfx::UserDataKey sTextureClientKey;
 
 already_AddRefed<gfx::SourceSurface> SharedRGBImage::GetAsSourceSurface() {
-  NS_ASSERTION(NS_IsMainThread(), "Must be main thread");
+  auto guard = mSourceSurface.Lock();
 
-  if (mSourceSurface) {
-    RefPtr<gfx::SourceSurface> surface(mSourceSurface);
+  if (*guard) {
+    RefPtr<gfx::SourceSurface> surface(*guard);
     return surface.forget();
   }
 
@@ -147,7 +155,7 @@ already_AddRefed<gfx::SourceSurface> SharedRGBImage::GetAsSourceSurface() {
     }
   }
 
-  mSourceSurface = surface;
+  *guard = surface;
   return surface.forget();
 }
 

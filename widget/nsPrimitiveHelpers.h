@@ -7,8 +7,8 @@
 #define nsPrimitiveHelpers_h_
 
 #include "nsError.h"
-#include "nscore.h"
 #include "nsString.h"
+#include "nscore.h"
 
 class nsISupports;
 

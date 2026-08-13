@@ -11,6 +11,8 @@ support-files = [
 
 ["test_3rdparty.js"]
 
+["test_PolicySchemaValidator.js"]
+
 ["test_addon_update.js"]
 
 ["test_appupdatepin.js"]
@@ -42,6 +44,8 @@ support-files = [
 ["test_import_enterprise_roots.js"]
 
 ["test_local_network_access.js"]
+
+["test_macos_policy_validation.js"]
 
 ["test_macosparser_unflatten.js"]
 run-if = [

@@ -61,7 +61,7 @@ class TimelineManager {
 
  private:
   template <typename TimelineType>
-  using Timelines = nsTArray<RefPtr<TimelineType>>;
+  using Timelines = nsTArray<TimelineEntry<TimelineType>>;
   // Mapping from timeline names to timelines of that name. Depending on
   // the use of `timeline-scope`, may or may not be visible from the
   // element specifying `animation-timeline`.

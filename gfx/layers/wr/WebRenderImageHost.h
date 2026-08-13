@@ -49,7 +49,7 @@ class WebRenderImageHost : public CompositableHost, public ImageComposite {
                                 const base::ProcessId aForPid,
                                 const gfx::IntSize aSize,
                                 const TextureFlags aFlags);
-  void UseRemoteTexture();
+  void UseRemoteTexture(bool aCalledInCallback);
 
   TextureHost* GetAsTextureHostForComposite(
       AsyncImagePipelineManager* aAsyncImageManager);

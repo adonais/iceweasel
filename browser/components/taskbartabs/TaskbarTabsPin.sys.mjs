@@ -26,24 +26,19 @@ export const TaskbarTabsPin = {
    * Pins the provided Taskbar Tab to the taskbar.
    *
    * @param {TaskbarTab} aTaskbarTab - A Taskbar Tab to pin to the taskbar.
-   * @param {TaskbarTabsRegistry} aRegistry - The registry to track pin resources with.
    * @param {imgIContainer} aIcon - The icon to show with this Taskbar Tab.
    * @param {object} [aDetails] - Additional options for this pin.
    * @param {DOMWindow} [aDetails.window] - The window to associate any UI with.
    * @returns {Promise} Resolves once finished.
    */
-  async pinTaskbarTab(aTaskbarTab, aRegistry, aIcon, { window = null } = {}) {
+  async pinTaskbarTab(aTaskbarTab, aIcon, { window = null } = {}) {
     lazy.logConsole.info("Pinning Taskbar Tab to the taskbar.");
 
+    let shortcut = null;
     try {
       let iconPath = await createTaskbarIcon(aTaskbarTab, aIcon);
 
-      let shortcut = await createShortcut(
-        aTaskbarTab,
-        iconPath,
-        aRegistry,
-        window
-      );
+      shortcut = await createShortcut(aTaskbarTab, iconPath, window);
 
       if (AppConstants.platform === "win" && !lazy.TaskbarTabsUtils.isMSIX()) {
         await lazy.ShellService.pinShortcutToTaskbar(
@@ -57,16 +52,17 @@ export const TaskbarTabsPin = {
       lazy.logConsole.error(`An error occurred while pinning: ${e.message}`);
       Glean.webApp.pin.record({ result: e.name ?? "Unknown exception" });
     }
+
+    return shortcut;
   },
 
   /**
    * Unpins the provided Taskbar Tab from the taskbar.
    *
    * @param {TaskbarTab} aTaskbarTab - The Taskbar Tab to unpin from the taskbar.
-   * @param {TaskbarTabsRegistry} aRegistry - remove pinned resource tracking from.
    * @returns {Promise} Resolves once finished.
    */
-  async unpinTaskbarTab(aTaskbarTab, aRegistry) {
+  async unpinTaskbarTab(aTaskbarTab) {
     let unpinError = null;
     let removalError = null;
 
@@ -105,15 +101,7 @@ export const TaskbarTabsPin = {
         );
       }
 
-      await Promise.all([
-        deleteShortcut.then(() => {
-          // Only update if that didn't throw an error.
-          aRegistry.patchTaskbarTab(aTaskbarTab, {
-            shortcutRelativePath: null,
-          });
-        }),
-        IOUtils.remove(iconFile.path),
-      ]);
+      await Promise.all([deleteShortcut, IOUtils.remove(iconFile.path)]);
     } catch (e) {
       lazy.logConsole.error(
         `An error occurred while uninstalling: ${e.message}`
@@ -196,10 +184,6 @@ async function createShortcut(aTaskbarTab, aFileIcon, aRegistry, aWindow) {
       args
     );
 
-    aRegistry.patchTaskbarTab(aTaskbarTab, {
-      shortcutRelativePath: secondaryTileId,
-    });
-
     return secondaryTileId;
   }
 
@@ -221,11 +205,6 @@ async function createShortcut(aTaskbarTab, aFileIcon, aRegistry, aWindow) {
       relativePath
     );
 
-    // Only update if that didn't throw an error.
-    aRegistry.patchTaskbarTab(aTaskbarTab, {
-      shortcutRelativePath: relativePath,
-    });
-
     return relativePath;
   }
 
@@ -242,10 +221,6 @@ async function createShortcut(aTaskbarTab, aFileIcon, aRegistry, aWindow) {
     );
 
     let relativePath = appId + ".desktop";
-    aRegistry.patchTaskbarTab(aTaskbarTab, {
-      shortcutRelativePath: relativePath,
-    });
-
     return relativePath;
   }
 

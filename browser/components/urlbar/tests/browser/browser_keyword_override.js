@@ -32,7 +32,7 @@ add_task(async function () {
   info("Before override");
   Assert.equal(
     result.type,
-    UrlbarUtils.RESULT_TYPE.KEYWORD,
+    UrlbarShared.RESULT_TYPE.KEYWORD,
     "Should have a keyword result"
   );
   Assert.equal(
@@ -47,7 +47,7 @@ add_task(async function () {
 
   Assert.equal(
     result.type,
-    UrlbarUtils.RESULT_TYPE.KEYWORD,
+    UrlbarShared.RESULT_TYPE.KEYWORD,
     "Should have a keyword result"
   );
   Assert.equal(

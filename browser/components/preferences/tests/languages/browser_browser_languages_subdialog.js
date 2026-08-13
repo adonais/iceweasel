@@ -256,7 +256,7 @@ add_task(async function testDisabledBrowserLanguages() {
   assertLocaleOrder(selected, "en-US,he", "en-US");
 
   // Wait for the children menu to be populated.
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !!available.children.length,
     "Children list populated"
   );
@@ -656,7 +656,7 @@ add_task(async function testInstallFromAMO() {
     "Polish is now installed"
   );
 
-  await BrowserTestUtils.waitForCondition(async () => {
+  await TestUtils.waitForCondition(async () => {
     let newDicts = await AddonManager.getAddonsByTypes(["dictionary"]);
     let done = !!newDicts.length;
 
@@ -835,7 +835,7 @@ add_task(async function testReorderMainPane() {
   hebrew.click();
   available.menupopup.hidePopup();
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !messageBar.hidden,
     "Wait for message bar to show"
   );
@@ -974,7 +974,7 @@ add_task(async function testLiveLanguageReloadingBidiOff() {
   hebrew.click();
   available.menupopup.hidePopup();
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !messageBar.hidden,
     "Wait for message bar to show"
   );

@@ -528,7 +528,7 @@ nsresult Key::DecodeJSValInternal(const EncodedDataType*& aPos,
 
     aVal.setObject(*date);
   } else if (*aPos - aTypeOffset == eFloat) {
-    aVal.set(JS_NumberValue(DecodeNumber(aPos, aEnd)));
+    aVal.setNumber(DecodeNumber(aPos, aEnd));
   } else if (*aPos - aTypeOffset == eBinary) {
     JSObject* arrayBufferObject = DecodeBinary(aPos, aEnd, aCx);
     if (!arrayBufferObject) {

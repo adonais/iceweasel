@@ -8,6 +8,7 @@ import android.view.View
 import androidx.annotation.VisibleForTesting
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Dp
@@ -17,13 +18,28 @@ import mozilla.components.compose.cfr.CFRPopup.PopupAlignment
 import java.lang.ref.WeakReference
 
 /**
+ * The background painted in the [CFRPopup].
+ */
+sealed interface CFRPopupBackground {
+
+    /**
+     * One or more [colors] painted as a linear gradient. A single color renders as a solid fill.
+     */
+    data class Colors(val colors: List<Int>) : CFRPopupBackground
+
+    /**
+     * A [brush] painted directly as the background.
+     */
+    data class Gradient(val brush: Brush) : CFRPopupBackground
+}
+
+/**
  * Properties used to customize the behavior of a [CFRPopup].
  *
  * @property popupWidth Width of the popup. Defaults to [CFRPopup.DEFAULT_WIDTH]. To be used as maximum
  * width when alignment is set to [PopupAlignment.BODY_CENTERED_IN_SCREEN].
  * @property popupAlignment Where in relation to it's anchor should the popup be placed.
- * @property popupBodyColors One or more colors serving as the popup background.
- * If more colors are provided they will be used in a gradient.
+ * @property popupBodyColors The [CFRPopupBackground] painted in the popup.
  * @property popupVerticalOffset Vertical distance between the indicator arrow and the anchor.
  * This only applies if [overlapAnchor] is `false`.
  * @property dismissButtonColor The tint color that should be applied to the dismiss button.
@@ -43,7 +59,7 @@ import java.lang.ref.WeakReference
 class CFRPopupProperties(
     val popupWidth: Dp = CFRPopup.DEFAULT_WIDTH.dp,
     val popupAlignment: PopupAlignment = PopupAlignment.BODY_TO_ANCHOR_CENTER,
-    val popupBodyColors: List<Int> = listOf(Color.Blue.toArgb()),
+    val popupBodyColors: CFRPopupBackground = CFRPopupBackground.Colors(listOf(Color.Blue.toArgb())),
     val popupVerticalOffset: Dp = CFRPopup.DEFAULT_VERTICAL_OFFSET.dp,
     val showDismissButton: Boolean = true,
     val dismissButtonColor: Int = Color.Black.toArgb(),

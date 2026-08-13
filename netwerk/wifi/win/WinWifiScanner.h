@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "mozilla/UniquePtr.h"
-#include "WlanLibrary.h"
 #include "WifiScanner.h"
+#include "WlanLibrary.h"
+#include "mozilla/UniquePtr.h"
 
 class nsIWifiAccessPoint;
 

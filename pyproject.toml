@@ -87,7 +87,7 @@ exclude = [
   "intl/icu/",
   "ipc/chromium/src/third_party/",
   "js/*.configure",
-  "gfx/angle/",
+  "gfx/angle/vendor_from_git.py",
   "gfx/harfbuzz",
   "gfx/skia/",
   "memory/moz.configure",
@@ -127,7 +127,6 @@ exclude = [
 "config/MozZipFile.py" = ["F821"]
 "config/check_source_count.py" = ["F821"]
 "config/tests/unitMozZipFile.py" = ["F821"]
-"ipc/pull-chromium.py" = ["F633"]
 "js/src/**" = ["F633", "F821"]
 "python/mozbuild/mozbuild/dotproperties.py" = ["F821"]
 "python/mozbuild/mozbuild/testing.py" = ["F821"]

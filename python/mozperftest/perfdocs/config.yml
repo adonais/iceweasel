@@ -69,6 +69,7 @@ suites:
             "browser_ml_summarizer_perf.js": ""
             "ML Smart Tab Clustering": ""
             "browser_ml_smart_tab_perf.js": ""
+            "browser_ml_llama_smollm2_smoke.js": ""
             "browser_ml_llama_summarizer_perf.js": ""
             "ML Security Orchestrator Performance Tests": ""
             "ML Speech T5 TTS": ""

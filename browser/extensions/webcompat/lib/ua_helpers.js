@@ -8,6 +8,39 @@
 
 var UAHelpers = {
   _deviceAppropriateChromeUAs: {},
+  changeBrowserVersion(ua, config = {}) {
+    const which = config.browser;
+    let new_ver = config.version;
+    if (
+      !which ||
+      !ua?.includes(`${which}/`) ||
+      new_ver == undefined ||
+      new_ver == null
+    ) {
+      return ua;
+    }
+    const cur_ver = ua.match(`${which}/(\\d.*?)( |$)`)?.[1];
+    if (!cur_ver) {
+      return ua;
+    }
+    if (typeof new_ver != "string") {
+      new_ver = String(new_ver);
+    }
+    if (new_ver.startsWith("+") || new_ver.startsWith("-")) {
+      const factor = new_ver.startsWith("-") ? -1 : 1;
+      const ver_segs = cur_ver.split(".").map(seg => parseInt(seg));
+      const new_ver_segs = new_ver
+        .substr(1)
+        .split(".")
+        .map(seg => parseInt(seg));
+      for (const [index, seg] of ver_segs.entries()) {
+        const new_val = seg + factor * (new_ver_segs[index] || 0);
+        ver_segs[index] = new_val < 0 ? 0 : new_val;
+      }
+      new_ver = ver_segs.join(".");
+    }
+    return ua.replaceAll(cur_ver, new_ver);
+  },
   getRunningFirefoxVersion() {
     return (navigator.userAgent.match(/Firefox\/([0-9.]+)/) || ["", "58.0"])[1];
   },

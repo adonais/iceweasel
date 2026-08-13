@@ -1,0 +1,15 @@
+{
+  "label": "gdm.or.jp",
+  "bugs": {
+    "2019545": {
+      "issue": "desktop-layout-not-mobile",
+      "matches": ["*://www.gdm.or.jp/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["android"],
+      "ua_string": ["Chrome_with_FxQuantum"]
+    }
+  ]
+}

@@ -33,7 +33,7 @@ class RefreshDevicesButton extends PureComponent {
       { id: "about-debugging-refresh-usb-devices-button" },
       dom.button(
         {
-          className: "default-button qa-refresh-devices-button",
+          className: "qa-refresh-devices-button",
           disabled: this.props.isScanning,
           onClick: () => this.refreshDevices(),
         },

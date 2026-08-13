@@ -49,17 +49,17 @@ fun IPProtectionUnavailableDialog(
         },
         confirmButton = {
             TextButton(
-                text = stringResource(R.string.mozac_feature_ipprotection_unavaliable_dialog_confirm_button),
+                text = stringResource(R.string.mozac_feature_ipprotection_unavaliable_dialog_dismiss_button),
                 onClick = {
-                    onOpenTabsTrayClicked()
+                    onTurnOffProxyClicked()
                 },
             )
         },
         dismissButton = {
             TextButton(
-                text = stringResource(R.string.mozac_feature_ipprotection_unavaliable_dialog_dismiss_button),
+                text = stringResource(R.string.mozac_feature_ipprotection_unavaliable_dialog_confirm_button),
                 onClick = {
-                    onTurnOffProxyClicked()
+                    onOpenTabsTrayClicked()
                 },
             )
         },

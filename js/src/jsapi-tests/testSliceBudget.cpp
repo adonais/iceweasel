@@ -2,8 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "js/SliceBudget.h"
 #include "jsapi-tests/tests.h"
+
+#include "js/SliceBudget.h"
 
 using namespace js;
 using JS::SliceBudget;

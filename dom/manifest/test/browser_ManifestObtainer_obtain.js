@@ -10,7 +10,7 @@ add_setup(async function () {
 });
 
 const { ManifestObtainer } = ChromeUtils.importESModule(
-  "resource://gre/modules/ManifestObtainer.sys.mjs"
+  "moz-src:///dom/manifest/ManifestObtainer.sys.mjs"
 );
 const remoteURL =
   "http://mochi.test:8888/browser/dom/manifest/test/resource.sjs";

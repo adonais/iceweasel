@@ -203,7 +203,8 @@ impl<Component: ToCss> ToCss for ComponentList<Component> {
 
 /// A struct for a single specified registered custom property value that includes its original URL
 /// data so the value can be uncomputed later.
-#[derive(Clone, Debug, MallocSizeOf, ToCss, ToComputedValue, ToResolvedValue, ToShmem)]
+#[derive(Clone, Debug, MallocSizeOf, ToCss, ToComputedValue, ToResolvedValue, ToShmem, ToTyped)]
+#[typed(todo_derive_fields)]
 pub struct Value<Component> {
     /// The registered custom property value.
     pub(crate) v: ValueInner<Component>,
@@ -218,8 +219,10 @@ pub struct Value<Component> {
 
 impl<Component: PartialEq> PartialEq for Value<Component> {
     // Ignore the url_data field when comparing values for equality.
+    // attr_tainted is compared so the cascade doesn't treat a tainted
+    // value as equal to an untainted one, which could lose the taint.
     fn eq(&self, other: &Self) -> bool {
-        self.v == other.v
+        self.v == other.v && self.attr_tainted == other.attr_tainted
     }
 }
 
@@ -381,7 +384,8 @@ impl SpecifiedValue {
 }
 
 impl ComputedValue {
-    fn to_declared_value(&self) -> properties::CustomDeclarationValue {
+    /// Uncomputes the value so that it can go back into the cascade.
+    pub fn to_declared_value(&self) -> properties::CustomDeclarationValue {
         if let ValueInner::Universal(ref var) = self.v {
             return properties::CustomDeclarationValue::Unparsed(Arc::clone(var));
         }

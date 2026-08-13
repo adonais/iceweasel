@@ -59,13 +59,9 @@
 
     <!-- Layers -->
     <!-- Card background, Menu background, Dialog, Banner -->
-    <color name="fx_mobile_layer_color_2">@color/photonWhite</color>
+    <color name="fx_mobile_layer_color_2">@color/novaWhite</color>
     <!-- Search -->
     <color name="fx_mobile_layer_color_3">@color/photonLightGrey20</color>
-    <!-- Tooltip -->
-    <color name="fx_mobile_layer_color_gradient_start">@color/photonViolet70</color>
-    <!-- Tooltip -->
-    <color name="fx_mobile_layer_color_gradient_end">@color/photonViolet60</color>
     <!-- Warning background -->
     <color name="fx_mobile_layer_color_warning">@color/photonYellow20</color>
     <!-- Error background -->
@@ -84,8 +80,6 @@
     <color name="fx_mobile_text_color_action_primary_disabled">@color/photonDarkGrey90A50</color>
 
     <!-- Icon -->
-    <!-- Disabled icon -->
-    <color name="fx_mobile_icon_color_disabled">@color/photonDarkGrey90A40</color>
     <!-- Icon inverted (on color) -->
     <color name="fx_mobile_icon_color_oncolor">@color/photonLightGrey05</color>
     <color name="fx_mobile_icon_color_accent_violet">@color/photonViolet70</color>
@@ -133,7 +127,7 @@
     <color name="fx_mobile_private_warning_container">@color/novaYellow70</color>
     <color name="fx_mobile_private_on_warning_container">@color/novaVioletDesaturated0</color>
     <color name="fx_mobile_private_outline">@color/novaGray45</color>
-    <color name="fx_mobile_private_outline_variant">@color/novaVioletDesaturated80</color>
+    <color name="fx_mobile_private_outline_variant">#FF332752</color>
     <color name="fx_mobile_private_surface_bright">@color/novaVioletDesaturated80</color>
     <color name="fx_mobile_private_surface_dim">#FF0D0321</color>
     <color name="fx_mobile_private_surface_container">@color/novaVioletDesaturated90</color>
@@ -266,19 +260,11 @@
     <color name="mozac_feature_addons_messagebar_warning_background_color" tools:ignore="UnusedResources">@color/fx_mobile_layer_color_warning</color>
 
     <!-- Private Mode mask icon circle fill colors for mozac_ic_private_mode_circle_fill_stroke_20 -->
-    <color name="mozac_ui_private_mode_circle_fill" tools:ignore="UnusedResources">@color/fx_mobile_icon_private</color>
-    <color name="mozac_ui_private_mode_circle_stroke_fill" tools:ignore="UnusedResources">@color/fx_mobile_private_surface</color>
-    <color name="mozac_ui_private_mode_mask_fill" tools:ignore="UnusedResources">@color/fx_mobile_private_on_surface</color>
+    <color name="mozac_ic_private_mode_circle_fill" tools:ignore="UnusedResources">@color/fx_mobile_icon_private</color>
+    <color name="mozac_ic_private_mode_circle_stroke_fill" tools:ignore="UnusedResources">@color/fx_mobile_private_surface</color>
+    <color name="mozac_ic_private_mode_mask_fill" tools:ignore="UnusedResources">@color/fx_mobile_private_on_surface</color>
 
-    <!-- Account Sync Avatar fill colors -->
-    <color name="mozac_ui_avatar_warning_bg_fill_critical" tools:ignore="UnusedResources">@color/fx_mobile_on_surface_variant</color>
-    <color name="mozac_ui_avatar_warning_fill_critical" tools:ignore="UnusedResources">@color/fx_mobile_error</color>
-
-    <!-- Extensions disabled icon fill colors -->
-    <color name="mozac_ui_extensions_warning_bg_fill_critical" tools:ignore="UnusedResources">@color/fx_mobile_on_surface_variant</color>
-    <color name="mozac_ui_extensions_warning_fill_critical" tools:ignore="UnusedResources">@color/fx_mobile_error</color>
-
-    <!-- Lock slash critical fill colors for mozac_ic_lock_slash_critical_24 -->
-    <color name="mozac_ui_lock_slash_bg_fill_critical" tools:ignore="UnusedResources">@color/fx_mobile_on_surface_variant</color>
-    <color name="mozac_ui_lock_slash_fill_critical" tools:ignore="UnusedResources">@color/fx_mobile_error</color>
+    <!-- Private mode circle fill colors for mozac_ic_private_mode_circle_fill_72 -->
+    <color name="mozac_ic_private_mode_circle_fill_72_background_color" tools:ignore="UnusedResources">@color/fx_mobile_icon_private</color>
+    <color name="mozac_ic_private_mode_circle_fill_72_icon_color" tools:ignore="UnusedResources">@color/private_mode_mask_gradient</color>
 </resources>

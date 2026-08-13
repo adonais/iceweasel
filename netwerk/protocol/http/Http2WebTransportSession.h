@@ -7,14 +7,14 @@
 
 #include "CapsuleParser.h"
 #include "Http2StreamTunnel.h"
-#include "mozilla/UniquePtr.h"
-#include "mozilla/Queue.h"
-#include "nsRefPtrHashtable.h"
-#include "nsTHashMap.h"
-#include "nsHashKeys.h"
 #include "WebTransportFlowControl.h"
 #include "WebTransportSessionBase.h"
 #include "WebTransportStreamBase.h"
+#include "mozilla/Queue.h"
+#include "mozilla/UniquePtr.h"
+#include "nsHashKeys.h"
+#include "nsRefPtrHashtable.h"
+#include "nsTHashMap.h"
 
 namespace mozilla::net {
 

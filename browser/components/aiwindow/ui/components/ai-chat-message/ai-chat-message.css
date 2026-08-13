@@ -29,8 +29,9 @@
   }
 
   a:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
     accent-color: var(--smartwindow-assistant-accent-color-focus);
-    outline-style: inset;
   }
 
   /* making sure links keep the same color while being printed */
@@ -97,31 +98,6 @@ ai-chat-grid::part(row) {
 
 [part~="row"]:first-child {
   padding-top: 0;
-}
-
-ai-chat-grid::part(scrollarea-grid) {
-  background-color: transparent;
-  margin-top: var(--space-medium);
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.5) transparent;
-}
-
-ai-chat-grid::part(scrollarea-list) {
-  --background-color: light-dark(var(--color-violet-10), var(--color-violet-80));
-  --card-border: var(--card-border-radius) solid light-dark(var(--color-violet-10), var(--color-violet-80));
-
-  box-sizing: border-box;
-  background-color: var(--background-color);
-  border-radius: var(--card-border-radius);
-  padding: 0 var(--space-xlarge);
-  margin-top: var(--space-medium);
-  /* stylelint-disable-next-line -- Figma design */
-  height: 255px;
-  overflow: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.5) transparent;
-  border-inline-end: var(--card-border);
-  border-block: var(--card-border);
 }
 
 ai-chat-grid::part(favicon) {

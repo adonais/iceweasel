@@ -42,6 +42,14 @@ add_setup(async function () {
 add_task(async function test_mozillaonline_distribution_ignored() {
   Services.prefs.setBoolPref("distribution.mozillaonline.ignore", true);
 
+  // Simulate a distribution that was set in a previous session.
+  Services.fog.updateDistribution("MozillaOnline");
+  Assert.deepEqual(
+    Services.fog.testGetDistribution(),
+    { name: "MozillaOnline" },
+    "distribution should be set before customizations are applied"
+  );
+
   let { DistributionManagement } = ChromeUtils.importESModule(
     "resource:///modules/distribution.sys.mjs"
   );
@@ -64,5 +72,11 @@ add_task(async function test_mozillaonline_distribution_ignored() {
   Assert.ok(
     Glean.distribution.mozillaonlineIgnored.testGetValue(),
     "mozillaonline_ignored should be set to true"
+  );
+
+  Assert.deepEqual(
+    Services.fog.testGetDistribution(),
+    { name: null },
+    "distribution should be cleared when mozillaonline is ignored"
   );
 });

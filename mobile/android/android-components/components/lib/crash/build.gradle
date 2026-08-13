@@ -8,20 +8,17 @@ buildscript {
     }
 
     dependencies {
-        classpath libs.kotlin.serialization
         classpath libs.mozilla.glean.gradle.plugin
     }
 }
 
 plugins {
+    id 'com.android.library'
     alias(libs.plugins.dependency.analysis)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
     alias(libs.plugins.python.envs.plugin)
 }
-
-apply plugin: 'com.android.library'
-apply plugin: 'com.google.devtools.ksp'
-apply plugin: 'kotlin-android'
-apply plugin: 'kotlinx-serialization'
 
 android {
     defaultConfig {
@@ -75,7 +72,7 @@ dependencies {
 
     implementation libs.androidx.appcompat
     implementation libs.androidx.constraintlayout
-    implementation libs.androidx.core.ktx
+    implementation libs.androidx.core
     implementation libs.androidx.recyclerview
     implementation libs.androidx.room.runtime
     ksp libs.androidx.room.compiler

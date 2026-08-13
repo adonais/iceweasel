@@ -78,7 +78,7 @@ uint FIRFilter::evaluateFilterStereo(SAMPLETYPE *dest, const SAMPLETYPE *src, ui
     uint ilength = length & -8;
 
     assert((length != 0) && (length == ilength) && (src != nullptr) && (dest != nullptr) && (filterCoeffs != nullptr));
-    assert(numSamples > ilength);
+    assert(numSamples >= ilength);
 
     end = 2 * (numSamples - ilength);
 

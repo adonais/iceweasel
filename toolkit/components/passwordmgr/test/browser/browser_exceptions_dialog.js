@@ -126,6 +126,7 @@ add_task(async function test_block_button_with_enter_key() {
     0,
     "No blocked hosts should be present before hitting the Enter/Return key"
   );
+  await btnBlock.updateComplete;
   EventUtils.sendKey("return", dialog);
 
   Assert.equal(

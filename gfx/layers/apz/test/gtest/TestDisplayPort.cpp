@@ -3,8 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "apz/src/AsyncPanZoomController.h"
-#include "mozilla/StaticPrefs_apz.h"
 #include "gtest/gtest.h"
+#include "mozilla/StaticPrefs_apz.h"
 
 using namespace mozilla;
 

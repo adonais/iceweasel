@@ -913,7 +913,7 @@ async function promiseRDMZoom(ui, browser, zoom) {
   //
   // This also has the side effect of updating layout which ensures that any
   // remote frame dimension update message gets there in time.
-  await BrowserTestUtils.waitForCondition(function () {
+  await TestUtils.waitForCondition(function () {
     return browser.getBoundingClientRect().width != width;
   });
 }

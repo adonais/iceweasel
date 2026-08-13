@@ -5,16 +5,16 @@
 #ifndef NSNETWORKLINKSERVICEMAC_H_
 #define NSNETWORKLINKSERVICEMAC_H_
 
+#include <SystemConfiguration/SCNetworkReachability.h>
+#include <SystemConfiguration/SystemConfiguration.h>
+#include <netinet/in.h>
+
+#include "mozilla/Mutex.h"
+#include "mozilla/SHA1.h"
 #include "nsINetworkLinkService.h"
 #include "nsIObserver.h"
 #include "nsITimer.h"
 #include "nsString.h"
-#include "mozilla/Mutex.h"
-#include "mozilla/SHA1.h"
-
-#include <netinet/in.h>
-#include <SystemConfiguration/SCNetworkReachability.h>
-#include <SystemConfiguration/SystemConfiguration.h>
 
 using prefix_and_netmask = std::pair<in6_addr, in6_addr>;
 

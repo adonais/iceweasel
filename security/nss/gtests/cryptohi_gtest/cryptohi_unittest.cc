@@ -19,7 +19,7 @@
 
 #include "nss_scoped_ptrs.h"
 #include "cryptohi.h"
-#include "keyt.h"
+#include "keythi.h"
 #include "keyhi.h"
 #include "secitem.h"
 #include "secerr.h"

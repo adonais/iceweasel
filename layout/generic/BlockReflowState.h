@@ -35,7 +35,10 @@ class BlockReflowState {
           mHasLineAdjacentToTop(false),
           mBlockNeedsFloatManager(false),
           mIsLineLayoutEmpty(false),
-          mCanHaveOverflowMarkers(false) {}
+          mCanHaveOverflowMarkers(false),
+          mShouldApplyTextBoxTrimStart(false),
+          mShouldApplyTextBoxTrimAtBlockEnd(false),
+          mShouldApplyTextBoxTrimAtFragmentEnd(false) {}
 
     // Set in the BlockReflowState constructor when reflowing a "block margin
     // root" frame (i.e. a frame with any of the NS_BLOCK_BFC flag set, for
@@ -85,6 +88,14 @@ class BlockReflowState {
 
     // Set when we need text-overflow or -webkit-line-clamp processing.
     bool mCanHaveOverflowMarkers : 1;
+
+    // Set when the block or one of its ancestors requests text-box-trim
+    // on the trim-start/trim-end side and should be applied to the
+    // first/last formatted line of this block/fragment. See the corresponding
+    // ReflowInput::Flags for additional details about the two trim-end flags.
+    bool mShouldApplyTextBoxTrimStart : 1;
+    bool mShouldApplyTextBoxTrimAtBlockEnd : 1;
+    bool mShouldApplyTextBoxTrimAtFragmentEnd : 1;
   };
 
  public:
@@ -396,6 +407,12 @@ class BlockReflowState {
   const nscoord mMinLineHeight;
 
   int32_t mLineNumber;
+
+  // Signals that this block should be reflowed again in order to apply
+  // text-box-trim on the trim-end side of a specific line. Used by
+  // fragmented boxes when a line overflows into another fragment, and
+  // text-box-trim may affect which lines fit in the current fragment.
+  bool mNeedsTextBoxTrimAtFragmentEndRetry = false;
 
   Flags mFlags;
 

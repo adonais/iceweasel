@@ -5,19 +5,18 @@
 #include "mozilla/a11y/SelectionManager.h"
 
 #include "DocAccessible-inl.h"
-#include "HyperTextAccessible.h"
 #include "HyperTextAccessible-inl.h"
-#include "nsAccessibilityService.h"
+#include "HyperTextAccessible.h"
+#include "TextLeafRange.h"
+#include "mozilla/PresShell.h"
+#include "mozilla/a11y/DocAccessibleChild.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/dom/Selection.h"
 #include "nsAccUtils.h"
+#include "nsAccessibilityService.h"
 #include "nsCoreUtils.h"
 #include "nsEventShell.h"
 #include "nsFrameSelection.h"
-#include "TextLeafRange.h"
-
-#include "mozilla/a11y/DocAccessibleChild.h"
-#include "mozilla/PresShell.h"
-#include "mozilla/dom/Selection.h"
-#include "mozilla/dom/Element.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;

@@ -544,6 +544,14 @@ class MOZ_NON_MEMMOVABLE BarrieredBase {
  public:
   using ElementType = T;
 
+  // Getter used for tracing: no barriers and atomic when concurrent marking is
+  // used.
+#ifdef JS_GC_CONCURRENT_MARKING
+  T getForTracing() const { return unbarrieredAtomicGet(); }
+#else
+  T getForTracing() const { return unbarrieredGet(); }
+#endif
+
   // Note: this is public because C++ cannot friend to a specific template
   // instantiation. Friending to the generic template leads to a number of
   // unintended consequences, including template resolution ambiguity and a
@@ -899,9 +907,27 @@ class GCStructPtr : public BarrieredBase<T> {
     this->unbarrieredSet(v);
   }
 
+#ifdef JS_GC_CONCURRENT_MARKING
+  void unbarrieredSet(T ptr) { this->unbarrieredAtomicSet(ptr); }
+#else
+  using BarrieredBase<T>::unbarrieredSet;
+#endif
+
   T get() const { return this->unbarrieredGet(); }
   operator T() const { return get(); }
   T operator->() const { return get(); }
+
+#if JS_BITS_PER_WORD == 64
+  T atomicGet() const { return this->unbarrieredAtomicGet(); }
+#endif
+
+  // Getter used for tracing: no barriers and atomic when concurrent marking is
+  // used.
+#ifdef JS_GC_CONCURRENT_MARKING
+  T getForTracing() const { return atomicGet(); }
+#else
+  T getForTracing() const { return get(); }
+#endif
 
  protected:
   bool isTraceable() const { return uintptr_t(get()) > MaxTaggedPointer; }
@@ -953,6 +979,10 @@ class GCBuffer : public BarrieredBase<T> {
   T get() const { return this->unbarrieredGet(); }
   operator T() const { return get(); }
   T operator->() const { return get(); }
+
+#if JS_BITS_PER_WORD == 64
+  T atomicGet() const { return this->unbarrieredAtomicGet(); }
+#endif
 
  protected:
   bool isTraceable() const { return uintptr_t(get()) > MaxTaggedPointer; }
@@ -1015,6 +1045,14 @@ class HeapSlot : public BarrieredBase<Value>,
 
 #if JS_BITS_PER_WORD == 64
   using Base::unbarrieredAtomicGet;
+#endif
+
+  // Getter used for tracing: no barriers and atomic when concurrent marking is
+  // used.
+#ifdef JS_GC_CONCURRENT_MARKING
+  Value getForTracing() const { return unbarrieredAtomicGet(); }
+#else
+  Value getForTracing() const { return unbarrieredGet(); }
 #endif
 
   // Use this if you want to change the value without invoking barriers.

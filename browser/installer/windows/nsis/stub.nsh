@@ -102,6 +102,9 @@ Var ArchToInstall
 ; installer has exited unsuccessfully, but no reason has been specified
 !define ERR_UNKNOWN 1
 
+; The user cancelled the installer before the download phase started
+!define ERR_USER_CANCELLED_BEFORE_DOWNLOAD 2
+
 /**
  * The following errors prefixed with ERR_DOWNLOAD apply to the download phase.
  */

@@ -6,6 +6,7 @@
 #define xpcom_base_MemoryReportingProcess_h
 
 #include <stdint.h>
+
 #include "nscore.h"
 
 namespace mozilla {

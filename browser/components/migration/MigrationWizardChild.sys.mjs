@@ -23,6 +23,22 @@ export class MigrationWizardChild extends JSWindowActorChild {
   #wizardEl = null;
 
   /**
+   * Returns true if the current OS is macOS Sequoia (macOS 15) or later.
+   * Safari's password export UI changed in Sequoia, so we show a different
+   * set of import instructions before and after this version. macOS 15 maps
+   * to Darwin kernel version 24, which is what Services.sysinfo reports as
+   * the platform "version" on macOS.
+   *
+   * This is a static method (rather than an inline check) so that tests can
+   * stub it to exercise both instruction variants.
+   *
+   * @returns {boolean}
+   */
+  static isMacOSSequoiaOrLater() {
+    return AppConstants.isPlatformAndVersionAtLeast("macosx", "24.0.0");
+  }
+
+  /**
    * Retrieves the list of browsers and profiles from the parent process, and then
    * puts the migration wizard onto the selection page showing the list that they
    * can import from.
@@ -169,6 +185,11 @@ export class MigrationWizardChild extends JSWindowActorChild {
           url: event.detail.url,
           where: event.detail.where,
         });
+        break;
+      }
+
+      case "MigrationWizard:LaunchMacOSPasswordsApp": {
+        this.sendAsyncMessage("LaunchMacOSPasswordsApp");
         break;
       }
     }
@@ -327,7 +348,10 @@ export class MigrationWizardChild extends JSWindowActorChild {
       if (migrationDetails.key == "safari") {
         this.#sendTelemetryEvent("safariPasswordFile");
         this.setComponentState({
-          page: MigrationWizardConstants.PAGES.SAFARI_PASSWORD_PERMISSION,
+          page: MigrationWizardChild.isMacOSSequoiaOrLater()
+            ? MigrationWizardConstants.PAGES.SAFARI_PASSWORD_PERMISSION
+            : MigrationWizardConstants.PAGES
+                .SAFARI_PASSWORD_PERMISSION_PRE_SEQUOIA,
         });
         return;
       } else if (

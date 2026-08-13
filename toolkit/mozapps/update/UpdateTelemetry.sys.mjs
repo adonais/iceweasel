@@ -7,7 +7,7 @@ import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 import {
   BitsError,
   BitsUnknownError,
-} from "resource://gre/modules/Bits.sys.mjs";
+} from "moz-src:///toolkit/components/bitsdownload/Bits.sys.mjs";
 
 export var AUSTLMY = {
   // Telemetry for the application update background update check occurs when

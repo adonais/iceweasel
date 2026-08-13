@@ -245,7 +245,7 @@ add_task(async function test_downloads_panel_close_panel_early() {
   );
 
   DownloadsPanel.hidePanel();
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !downloadsListBox.getAttribute("disabled")
   );
   info("downloadsListBox 'disabled' attribute should not exist");

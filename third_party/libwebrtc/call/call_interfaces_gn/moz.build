@@ -68,7 +68,6 @@ if CONFIG["OS_TARGET"] == "Android":
     DEFINES["__STDC_FORMAT_MACROS"] = True
 
     OS_LIBS += [
-        "GLESv2",
         "log"
     ]
 
@@ -78,6 +77,10 @@ if CONFIG["OS_TARGET"] == "Darwin":
     DEFINES["WEBRTC_POSIX"] = True
     DEFINES["__STDC_CONSTANT_MACROS"] = True
     DEFINES["__STDC_FORMAT_MACROS"] = True
+
+    OS_LIBS += [
+        "-framework Foundation"
+    ]
 
 if CONFIG["OS_TARGET"] == "Linux":
 

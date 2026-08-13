@@ -12,12 +12,14 @@ var prefs = [
   ["apz.overscroll.enabled", true],
   ["apz.overscroll.test_async_scroll_offset.enabled", true],
   ["apz.test.logging_enabled", true],
+  ["apz.overscroll.damping", 10.0], /* Make overscroll animations slower */
 ];
 
 var subtests = [
   {"file": "helper_overscroll_in_subscroller.html",
-   "prefs": [ ...prefs,
-              ["apz.overscroll.damping", 10.0] /* Make overscroll animations slower */ ] },
+    prefs },
+  {"file": "helper_overscroll_stuck_pan_end.html",
+    prefs },
 ];
 
 if (isApzEnabled()) {

@@ -6,8 +6,8 @@
 #define HttpConnectionMgrParent_h_
 
 #include "HttpConnectionMgrShell.h"
-#include "mozilla/net/PHttpConnectionMgrParent.h"
 #include "mozilla/StaticMutex.h"
+#include "mozilla/net/PHttpConnectionMgrParent.h"
 
 namespace mozilla::net {
 

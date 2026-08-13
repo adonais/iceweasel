@@ -1469,7 +1469,8 @@ void SVGElement::DidChangeValue(nsAtom* aName, nsAttrValue& aNewValue,
   const nsAttrValue emptyValue;
   SetAttrAndNotify(kNameSpaceID_None, aName, nullptr, &emptyValue, aNewValue,
                    nullptr, modType, kNotifyDocumentObservers,
-                   kCallAfterSetAttr, GetComposedDoc(), aProofOfUpdate);
+                   kCallAfterSetAttr, GetComposedDoc(), aProofOfUpdate,
+                   mozilla::dom::IsKnownNewAttr::No);
 }
 
 nsAtom* SVGElement::GetEventNameForAttr(nsAtom* aAttr) {
@@ -1763,7 +1764,7 @@ void SVGElement::DidChangeNumber(uint8_t aAttrEnum) {
   attrValue.SetTo(info.mValues[aAttrEnum].GetBaseValue(), nullptr);
 
   SetParsedAttr(kNameSpaceID_None, info.mInfos[aAttrEnum].mName, nullptr,
-                attrValue, true);
+                attrValue, true, mozilla::dom::IsKnownNewAttr::No);
 }
 
 void SVGElement::GetAnimatedNumberValues(float* aFirst, ...) {
@@ -1822,7 +1823,7 @@ void SVGElement::DidChangeInteger(uint8_t aAttrEnum) {
   attrValue.SetTo(info.mValues[aAttrEnum].GetBaseValue(), nullptr);
 
   SetParsedAttr(kNameSpaceID_None, info.mInfos[aAttrEnum].mName, nullptr,
-                attrValue, true);
+                attrValue, true, mozilla::dom::IsKnownNewAttr::No);
 }
 
 void SVGElement::GetAnimatedIntegerValues(int32_t* aFirst, ...) {
@@ -1880,7 +1881,7 @@ void SVGElement::DidChangeBoolean(uint8_t aAttrEnum) {
 
   nsAttrValue attrValue(info.mValues[aAttrEnum].GetBaseValueAtom());
   SetParsedAttr(kNameSpaceID_None, info.mInfos[aAttrEnum].mName, nullptr,
-                attrValue, true);
+                attrValue, true, mozilla::dom::IsKnownNewAttr::No);
 }
 
 SVGElement::EnumAttributesInfo SVGElement::GetEnumInfo() {
@@ -1896,7 +1897,7 @@ void SVGElement::DidChangeEnum(uint8_t aAttrEnum) {
 
   nsAttrValue attrValue(info.mValues[aAttrEnum].GetBaseValueAtom(this));
   SetParsedAttr(kNameSpaceID_None, info.mInfos[aAttrEnum].mName, nullptr,
-                attrValue, true);
+                attrValue, true, mozilla::dom::IsKnownNewAttr::No);
 }
 
 SVGAnimatedOrient* SVGElement::GetAnimatedOrient() { return nullptr; }

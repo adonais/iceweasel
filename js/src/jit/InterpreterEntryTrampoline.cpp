@@ -2,12 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "vm/Interpreter.h"
+
 #include "gc/PublicIterators.h"
 #include "gc/Zone.h"
 #include "jit/JitRuntime.h"
 #include "jit/JitZone.h"
 #include "jit/Linker.h"
-#include "vm/Interpreter.h"
 
 #include "gc/Marking-inl.h"
 #include "gc/WeakMap-inl.h"

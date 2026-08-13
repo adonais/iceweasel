@@ -11,8 +11,8 @@
 class nsGlobalWindowInner;
 
 namespace mozilla::dom {
-inline constexpr const char kGVAutoplayAllowedTopic[] =
-    "geckoview-autoplay-allowed";
+inline constexpr const char kGVAutoplayRequestStatusChangedTopic[] =
+    "geckoview-autoplay-request-status-changed";
 
 /**
  * This class is used to provide an ability for GeckoView (GV) to allow its

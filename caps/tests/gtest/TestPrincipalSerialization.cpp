@@ -5,9 +5,9 @@
 #include "mozilla/Base64.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ContentPrincipal.h"
+#include "mozilla/ExpandedPrincipal.h"
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/SystemPrincipal.h"
-#include "mozilla/ExpandedPrincipal.h"
 
 using mozilla::BasePrincipal;
 using mozilla::ContentPrincipal;

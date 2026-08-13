@@ -3,14 +3,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "Platform.h"
+
 #include "DocAccessibleWrap.h"
 #include "SessionAccessibility.h"
-#include "mozilla/a11y/RemoteAccessible.h"
+#include "TextLeafRange.h"
 #include "mozilla/Components.h"
+#include "mozilla/a11y/RemoteAccessible.h"
 #include "nsIAccessibleEvent.h"
 #include "nsIAccessiblePivot.h"
 #include "nsIStringBundle.h"
-#include "TextLeafRange.h"
 
 #define ROLE_STRINGS_URL "chrome://global/locale/AccessFu.properties"
 

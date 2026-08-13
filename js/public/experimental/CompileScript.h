@@ -9,6 +9,7 @@
 #define js_experimental_CompileScript_h
 
 #include "jspubtd.h"
+
 #include "js/ErrorReport.h"  // JSErrorReport
 #include "js/experimental/JSStencil.h"
 #include "js/GCAnnotations.h"

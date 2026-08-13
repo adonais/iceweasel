@@ -6,10 +6,10 @@
 #define nsStreamListenerWrapper_h_
 
 #include "nsCOMPtr.h"
+#include "nsIMultiPartChannel.h"
 #include "nsIRequest.h"
 #include "nsIStreamListener.h"
 #include "nsIThreadRetargetableStreamListener.h"
-#include "nsIMultiPartChannel.h"
 
 namespace mozilla {
 namespace net {

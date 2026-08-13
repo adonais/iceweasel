@@ -20,6 +20,7 @@ transforms:
 
 task-defaults:
     run-on-repo-type: [hg]
+    run-on-projects: []
     treeherder:
         symbol: Bpgo(run)
         kind: build
@@ -55,7 +56,36 @@ tasks:
             cwd: '{checkout}'
             command: >
                 ./taskcluster/scripts/misc/run-profileserver.sh
-        run-on-projects: ['release']
+        fetches:
+            toolchain:
+                - linux64-clang
+                - linux64-minidump-stackwalk
+
+    linux64-nightlyasrelease/opt:
+        description: "Linux64 Nightly-as-release Profile Generation"
+        shipping-phase: build
+        shipping-product: firefox
+        index:
+            product: firefox
+            job-name: linux64-nightlyasrelease-profile
+        treeherder:
+            platform: linux64-nightlyasrelease/opt
+        worker-type: b-linux
+        worker:
+            chain-of-trust: true
+            env:
+                NEED_XVFB: "true"
+            max-run-time: 1200
+            docker-image: {in-tree: ubuntu2404-test}
+            artifacts:
+                - type: directory
+                  name: public/build
+                  path: /builds/worker/artifacts/
+        run:
+            using: run-task
+            cwd: '{checkout}'
+            command: >
+                ./taskcluster/scripts/misc/run-profileserver.sh
         fetches:
             toolchain:
                 - linux64-clang
@@ -94,7 +124,6 @@ tasks:
                 - android/android_common.py
                 - android/android-x86_64-profile-generation.py
                 - android/android_pgo.py
-        run-on-projects: ['release']
         fetches:
             toolchain:
                 - linux64-clang
@@ -136,7 +165,6 @@ tasks:
                 --config=android/android_common.py
                 --config=android/android-aarch64-profile-generation-macos.py
                 --config=android/android_pgo.py
-        run-on-projects: ['release']
         dependencies:
             instrumented-build-android-aarch64-shippable/opt: instrumented-build-android-aarch64-shippable/opt
         fetches:
@@ -184,7 +212,6 @@ tasks:
                 - android/android_common.py
                 - android/android-arm-profile-generation.py
                 - android/android_pgo.py
-        run-on-projects: ['release']
         fetches:
             toolchain:
                 - linux64-clang
@@ -220,7 +247,6 @@ tasks:
             sparse-profile: profile-generate
             cwd: '{checkout}'
             command: ./taskcluster/scripts/misc/run-profileserver.sh
-        run-on-projects: ['release']
         fetches:
             toolchain:
                 - win64-clang-toolchain
@@ -250,7 +276,6 @@ tasks:
             sparse-profile: profile-generate
             cwd: '{checkout}'
             command: ./taskcluster/scripts/misc/run-profileserver.sh
-        run-on-projects: ['release']
         fetches:
             toolchain:
                 - win64-clang-toolchain
@@ -280,7 +305,6 @@ tasks:
             sparse-profile: profile-generate
             cwd: '{checkout}'
             command: ./taskcluster/scripts/misc/run-profileserver.sh
-        run-on-projects: ['release']
         fetches:
             toolchain:
                 - win64-clang-toolchain
@@ -310,7 +334,6 @@ tasks:
             sparse-profile: profile-generate
             cwd: '{checkout}'
             command: ./taskcluster/scripts/misc/run-profileserver.sh
-        run-on-projects: [trunk-only]
         fetches:
             toolchain:
                 - win64-clang-toolchain
@@ -340,7 +363,6 @@ tasks:
             sparse-profile: profile-generate
             cwd: '{checkout}'
             command: ./taskcluster/scripts/misc/run-profileserver-macos.sh
-        run-on-projects: ['release']
         fetches:
             toolchain:
                 - macosx64-clang
@@ -370,7 +392,35 @@ tasks:
             sparse-profile: profile-generate
             cwd: '{checkout}'
             command: ./taskcluster/scripts/misc/run-profileserver-macos.sh
-        run-on-projects: ['release']
+        fetches:
+            toolchain:
+                - macosx64-aarch64-clang
+                - macosx64-aarch64-minidump-stackwalk
+
+    macosx64-aarch64-nightlyasrelease/opt:
+        description: "macosx64 aarch64 Profile Generation (Nightly-As-Release)"
+        shipping-phase: build
+        shipping-product: firefox
+        index:
+            product: firefox
+            job-name: macosx64-aarch64-nightlyasrelease-profile
+        treeherder:
+            platform: osx-aarch64-nightlyasrelease/opt
+        worker-type: b-osx-arm64
+        worker:
+            chain-of-trust: true
+            max-run-time: 7200
+            env:
+                SHELL: "/bin/bash"
+            artifacts:
+                - type: directory
+                  name: public/build
+                  path: artifacts/
+        run:
+            using: run-task
+            sparse-profile: profile-generate
+            cwd: '{checkout}'
+            command: ./taskcluster/scripts/misc/run-profileserver-macos.sh
         fetches:
             toolchain:
                 - macosx64-aarch64-clang

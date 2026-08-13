@@ -11,9 +11,9 @@
 #  define nsINIParser nsINIParser_internal
 #endif
 
-#include "nscore.h"
-#include "nsClassHashtable.h"
 #include "mozilla/UniquePtr.h"
+#include "nsClassHashtable.h"
+#include "nscore.h"
 
 class nsIFile;
 

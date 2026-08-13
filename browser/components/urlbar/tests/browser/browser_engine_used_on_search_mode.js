@@ -60,7 +60,7 @@ add_task(async function test_engine_used_on_search_mode_entry() {
 
   await UrlbarTestUtils.assertSearchMode(window, {
     engineName: engine.name,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     entry: "keywordoffer",
   });
 
@@ -98,7 +98,7 @@ add_task(async function test_engine_already_used_on_search_mode_entry() {
 
   await UrlbarTestUtils.assertSearchMode(window, {
     engineName: engine.name,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     entry: "keywordoffer",
   });
 

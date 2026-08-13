@@ -19,12 +19,12 @@
 #include "GLContext.h"  // Bug 1635644
 #include "GLContextTypes.h"
 #include "GLDefs.h"
+#include "SurfaceTypes.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/gfx/Point.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
-#include "SurfaceTypes.h"
+#include "mozilla/gfx/Point.h"
 
 class nsIThread;
 

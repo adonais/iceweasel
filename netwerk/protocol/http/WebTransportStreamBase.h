@@ -5,13 +5,13 @@
 #ifndef mozilla_net_WebTransportStreamBase_h
 #define mozilla_net_WebTransportStreamBase_h
 
-#include "nsISupportsImpl.h"
-#include "mozilla/net/neqo_glue_ffi_generated.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/net/neqo_glue_ffi_generated.h"
 #include "nsCOMPtr.h"
 #include "nsIAsyncInputStream.h"
 #include "nsIAsyncOutputStream.h"
+#include "nsISupportsImpl.h"
 
 class nsIWebTransportSendStreamStats;
 class nsIWebTransportReceiveStreamStats;

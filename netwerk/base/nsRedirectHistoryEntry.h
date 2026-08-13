@@ -6,8 +6,8 @@
 #define nsRedirectHistoryEntry_h_
 
 #include "nsCOMPtr.h"
-#include "nsString.h"
 #include "nsIRedirectHistoryEntry.h"
+#include "nsString.h"
 
 class nsIURI;
 class nsIPrincipal;

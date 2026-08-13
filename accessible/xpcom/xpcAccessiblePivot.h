@@ -5,10 +5,9 @@
 #ifndef _xpcAccessiblePivot_H_
 #define _xpcAccessiblePivot_H_
 
-#include "nsIAccessiblePivot.h"
-
 #include "Accessible.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsIAccessiblePivot.h"
 #include "xpcAccessible.h"
 
 namespace mozilla::a11y {

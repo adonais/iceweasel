@@ -10,9 +10,9 @@
 #ifdef MOZ_LOGGING
 #  undef LOG
 #  undef LOGVERBOSE
+#  include "Units.h"
 #  include "mozilla/Logging.h"
 #  include "nsTArray.h"
-#  include "Units.h"
 extern mozilla::LazyLogModule gWidgetCompositorLog;
 #  define LOG(str, ...)                                     \
     MOZ_LOG(gWidgetCompositorLog, mozilla::LogLevel::Debug, \

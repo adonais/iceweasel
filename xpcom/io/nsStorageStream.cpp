@@ -10,20 +10,21 @@
  * with the attendant performance loss and heap fragmentation.
  */
 
-#include "mozilla/Mutex.h"
-#include "nsAlgorithm.h"
 #include "nsStorageStream.h"
-#include "nsSegmentedBuffer.h"
-#include "nsStreamUtils.h"
+
+#include "mozilla/Likely.h"
+#include "mozilla/Logging.h"
+#include "mozilla/MathAlgorithms.h"
+#include "mozilla/Mutex.h"
+#include "mozilla/ipc/InputStreamUtils.h"
+#include "nsAlgorithm.h"
 #include "nsCOMPtr.h"
 #include "nsICloneableInputStream.h"
-#include "nsIInputStream.h"
 #include "nsIIPCSerializableInputStream.h"
+#include "nsIInputStream.h"
 #include "nsISeekableStream.h"
-#include "mozilla/Logging.h"
-#include "mozilla/Likely.h"
-#include "mozilla/MathAlgorithms.h"
-#include "mozilla/ipc/InputStreamUtils.h"
+#include "nsSegmentedBuffer.h"
+#include "nsStreamUtils.h"
 
 using mozilla::MutexAutoLock;
 using mozilla::ipc::InputStreamParams;

@@ -3,9 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "gfxFontFeatures.h"
+
 #include "nsAtom.h"
-#include "nsUnicharUtils.h"
 #include "nsHashKeys.h"
+#include "nsUnicharUtils.h"
 
 using namespace mozilla;
 

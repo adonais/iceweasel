@@ -8,9 +8,10 @@
 // Allows to use RefPtr<T> with various kinds of GObjects
 
 #include <gdk/gdk.h>
+#include <gio/gdesktopappinfo.h>
 #include <gio/gio.h>
 #include <gtk/gtk.h>
-#include <gio/gdesktopappinfo.h>
+
 #include "mozilla/RefPtr.h"
 
 typedef struct _DbusmenuMenuitem DbusmenuMenuitem;

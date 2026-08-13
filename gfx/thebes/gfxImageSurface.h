@@ -5,9 +5,9 @@
 #ifndef GFX_IMAGESURFACE_H
 #define GFX_IMAGESURFACE_H
 
+#include "gfxASurface.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/RefPtr.h"
-#include "gfxASurface.h"
 #include "nsSize.h"
 
 // ARGB -- raw buffer.. wont be changed.. good for storing data.

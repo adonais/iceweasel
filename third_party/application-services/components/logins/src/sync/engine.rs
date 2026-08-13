@@ -8,7 +8,7 @@ use super::SyncStatus;
 use crate::db::CLONE_ENTIRE_MIRROR_SQL;
 use crate::encryption::EncryptorDecryptor;
 use crate::error::*;
-use crate::login::EncryptedLogin;
+use crate::login::{EncryptedLogin, FXA_CREDENTIALS_ORIGIN};
 use crate::schema;
 use crate::util;
 use crate::LoginDb;
@@ -16,9 +16,8 @@ use crate::LoginStore;
 use interrupt_support::SqlInterruptScope;
 use rusqlite::named_params;
 use sql_support::ConnExt;
-use std::cell::RefCell;
 use std::collections::HashSet;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, UNIX_EPOCH};
 use sync15::bso::{IncomingBso, OutgoingBso, OutgoingEnvelope};
 use sync15::engine::{CollSyncIds, CollectionRequest, EngineSyncAssociation, SyncEngine};
@@ -29,22 +28,27 @@ use sync_guid::Guid;
 pub struct LoginsSyncEngine {
     pub store: Arc<LoginStore>,
     pub scope: SqlInterruptScope,
-    pub encdec: Arc<dyn EncryptorDecryptor>,
-    pub staged: RefCell<Vec<IncomingBso>>,
+    // `Mutex` (rather than `RefCell`) so the engine is `Sync`, which the
+    // Desktop `BridgedEngineAdaptor` requires. Only ever locked briefly.
+    pub staged: Mutex<Vec<IncomingBso>>,
 }
 
 impl LoginsSyncEngine {
     pub fn new(store: Arc<LoginStore>) -> Result<Self> {
-        let db = store.lock_db()?;
-        let scope = db.begin_interrupt_scope()?;
-        let encdec = db.encdec.clone();
-        drop(db);
+        let scope = store.lock_db()?.begin_interrupt_scope()?;
         Ok(Self {
             store,
-            encdec,
             scope,
-            staged: RefCell::new(vec![]),
+            staged: Mutex::new(vec![]),
         })
+    }
+
+    // on Desktop the `EncryptorDecryptor` owns a foreign
+    // `PrimaryPasswordAuthenticator` callback, and a long-lived `Arc` clone
+    // held by the engine would keep that callback alive past
+    // `LoginDb::shutdown` (which drops the db's own reference).
+    fn encdec(&self) -> Result<Arc<dyn EncryptorDecryptor>> {
+        Ok(self.store.lock_db()?.encdec.clone())
     }
 
     fn reconcile(
@@ -54,6 +58,7 @@ impl LoginsSyncEngine {
         telem: &mut telemetry::EngineIncoming,
     ) -> Result<UpdatePlan> {
         let mut plan = UpdatePlan::default();
+        let encdec = self.encdec()?;
 
         for mut record in records {
             self.scope.err_if_interrupted()?;
@@ -75,7 +80,7 @@ impl LoginsSyncEngine {
                         upstream,
                         upstream_time,
                         server_now,
-                        self.encdec.as_ref(),
+                        encdec.as_ref(),
                     )?;
                     telem.reconciled(1);
                 }
@@ -135,10 +140,11 @@ impl LoginsSyncEngine {
     ) -> Result<Vec<SyncLoginData>> {
         let mut sync_data = Vec::with_capacity(records.len());
         {
+            let encdec = self.encdec()?;
             let mut seen_ids: HashSet<Guid> = HashSet::with_capacity(records.len());
             for incoming in records.into_iter() {
                 let id = incoming.envelope.id.clone();
-                match SyncLoginData::from_bso(incoming, self.encdec.as_ref()) {
+                match SyncLoginData::from_bso(incoming, encdec.as_ref()) {
                     Ok(v) => sync_data.push(v),
                     Err(e) => {
                         match e {
@@ -245,26 +251,31 @@ impl LoginsSyncEngine {
         let mut stmt = db.prepare_cached(&format!(
             "SELECT L.*, M.enc_unknown_fields
              FROM loginsL L LEFT JOIN loginsM M ON L.guid = M.guid
-             WHERE sync_status IS NOT {synced}",
+             WHERE sync_status IS NOT {synced}
+               -- Never sync Desktop's FxA session-credentials pseudo-login.
+               AND L.origin IS NOT :fxa_origin",
             synced = SyncStatus::Synced as u8
         ))?;
-        let bsos = stmt.query_and_then([], |row| {
-            self.scope.err_if_interrupted()?;
-            Ok(if row.get::<_, bool>("is_deleted")? {
-                let envelope = OutgoingEnvelope {
-                    id: row.get::<_, String>("guid")?.into(),
-                    sortindex: Some(TOMBSTONE_SORTINDEX),
-                    ..Default::default()
-                };
-                OutgoingBso::new_tombstone(envelope)
-            } else {
-                let unknown = row.get::<_, Option<String>>("enc_unknown_fields")?;
-                let mut bso =
-                    EncryptedLogin::from_row(row)?.into_bso(self.encdec.as_ref(), unknown)?;
-                bso.envelope.sortindex = Some(DEFAULT_SORTINDEX);
-                bso
-            })
-        })?;
+        let bsos = stmt.query_and_then(
+            named_params! { ":fxa_origin": FXA_CREDENTIALS_ORIGIN },
+            |row| {
+                self.scope.err_if_interrupted()?;
+                Ok(if row.get::<_, bool>("is_deleted")? {
+                    let envelope = OutgoingEnvelope {
+                        id: row.get::<_, String>("guid")?.into(),
+                        sortindex: Some(TOMBSTONE_SORTINDEX),
+                        ..Default::default()
+                    };
+                    OutgoingBso::new_tombstone(envelope)
+                } else {
+                    let unknown = row.get::<_, Option<String>>("enc_unknown_fields")?;
+                    let mut bso =
+                        EncryptedLogin::from_row(row)?.into_bso(db.encdec.as_ref(), unknown)?;
+                    bso.envelope.sortindex = Some(DEFAULT_SORTINDEX);
+                    bso
+                })
+            },
+        )?;
         bsos.collect::<Result<_>>()
     }
 
@@ -292,9 +303,13 @@ impl LoginsSyncEngine {
         db.put_meta(schema::LAST_SYNC_META_KEY, &last_sync_millis)
     }
 
-    fn get_last_sync(&self, db: &LoginDb) -> Result<Option<ServerTimestamp>> {
-        let millis = db.get_meta::<i64>(schema::LAST_SYNC_META_KEY)?.unwrap();
-        Ok(Some(ServerTimestamp(millis)))
+    // Public so the bridged engine (`sync::bridge`) can read the last-sync
+    // timestamp without needing access to the private internals here. Returns
+    // `None` when we've never synced, rather than panicking on a fresh DB.
+    pub fn get_last_sync(&self, db: &LoginDb) -> Result<Option<ServerTimestamp>> {
+        Ok(db
+            .get_meta::<i64>(schema::LAST_SYNC_META_KEY)?
+            .map(ServerTimestamp))
     }
 
     fn mark_as_synchronized(&self, guids: &[&str], ts: ServerTimestamp) -> Result<()> {
@@ -378,7 +393,8 @@ impl LoginsSyncEngine {
             .form_action_origin
             .as_ref()
             .and_then(|s| util::url_host_port(s));
-        let enc_fields = l.decrypt_fields(self.encdec.as_ref())?;
+        let encdec = self.encdec()?;
+        let enc_fields = l.decrypt_fields(encdec.as_ref())?;
         let args = named_params! {
             ":origin": l.fields.origin,
             ":http_realm": l.fields.http_realm,
@@ -403,7 +419,7 @@ impl LoginsSyncEngine {
             .query_and_then(args, EncryptedLogin::from_row)?
             .collect::<Result<Vec<EncryptedLogin>>>()?
         {
-            let this_enc_fields = login.decrypt_fields(self.encdec.as_ref())?;
+            let this_enc_fields = login.decrypt_fields(encdec.as_ref())?;
             if enc_fields.username == this_enc_fields.username {
                 return Ok(Some(login));
             }
@@ -424,7 +440,7 @@ impl SyncEngine for LoginsSyncEngine {
     ) -> anyhow::Result<()> {
         // We don't have cross-item dependencies like bookmarks does, so we can
         // just apply now instead of "staging"
-        self.staged.borrow_mut().append(&mut inbound);
+        self.staged.lock().unwrap().append(&mut inbound);
         Ok(())
     }
 
@@ -433,7 +449,7 @@ impl SyncEngine for LoginsSyncEngine {
         timestamp: ServerTimestamp,
         telem: &mut telemetry::Engine,
     ) -> anyhow::Result<Vec<OutgoingBso>> {
-        let inbound = (*self.staged.borrow_mut()).drain(..).collect();
+        let inbound = self.staged.lock().unwrap().drain(..).collect();
         Ok(self.do_apply_incoming(inbound, timestamp, telem)?)
     }
 
@@ -475,6 +491,10 @@ impl SyncEngine for LoginsSyncEngine {
     fn reset(&self, assoc: &EngineSyncAssociation) -> anyhow::Result<()> {
         self.do_reset(assoc)?;
         Ok(())
+    }
+
+    fn wipe(&self) -> anyhow::Result<()> {
+        self.store.wipe_local().map_err(Into::into)
     }
 }
 
@@ -801,6 +821,44 @@ mod tests {
         assert!(changes["deleted"].get("deleted").is_some());
         assert!(changes["added"].get("deleted").is_none());
         assert!(changes["changed"].get("deleted").is_none());
+    }
+
+    #[test]
+    fn test_fetch_outgoing_excludes_fxa_credentials() {
+        ensure_initialized();
+        let store = LoginStore::new_in_memory();
+
+        // A normal local login that should be uploaded.
+        insert_login(&store.lock_db().unwrap(), "normal", Some("password"), None);
+
+        // Desktop's FxA session-credentials pseudo-login must never be synced.
+        store
+            .add(LoginEntry {
+                origin: FXA_CREDENTIALS_ORIGIN.to_string(),
+                http_realm: Some("Firefox Accounts credentials".to_string()),
+                username: "uid".to_string(),
+                password: "sync-token".to_string(),
+                ..Default::default()
+            })
+            .unwrap();
+
+        let changeset = run_fetch_outgoing(store);
+        let changes: HashMap<String, serde_json::Value> = changeset
+            .into_iter()
+            .map(|b| {
+                (
+                    b.envelope.id.to_string(),
+                    serde_json::from_str(&b.payload).unwrap(),
+                )
+            })
+            .collect();
+
+        // The normal login still uploads; nothing pointing at the FxA origin
+        // is outgoing.
+        assert!(changes.contains_key("normal"));
+        assert!(changes
+            .values()
+            .all(|payload| payload["hostname"] != FXA_CREDENTIALS_ORIGIN));
     }
 
     #[test]

@@ -8,8 +8,8 @@
 #ifdef MOZ_EXECUTION_TRACING
 
 #  include <stdint.h>
-#  include "jsapi.h"
 
+#  include "jsapi.h"
 #  include "nsINode.h"
 
 namespace mozilla {

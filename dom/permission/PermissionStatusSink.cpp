@@ -12,6 +12,7 @@
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRef.h"
 #include "nsGlobalWindowInner.h"

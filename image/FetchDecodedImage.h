@@ -8,8 +8,8 @@
 
 #include "mozilla/MozPromise.h"
 #include "mozilla/gfx/Point.h"
-#include "nsILoadInfo.h"
 #include "nsIContentPolicy.h"
+#include "nsILoadInfo.h"
 
 class imgIContainer;
 class nsIChannel;

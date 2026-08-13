@@ -1438,7 +1438,7 @@ class SchemaAPIManager extends EventEmitter {
    *     "addon" - An addon process.
    *     "content" - A content process.
    *     "devtools" - A devtools process.
-   * @param {import("Schemas.sys.mjs").SchemaInject} [schema]
+   * @param {import("./Schemas.sys.mjs").SchemaInject} [schema]
    */
   constructor(processType, schema) {
     super();
@@ -2259,20 +2259,23 @@ class EventManager {
    *        Parameters that control this EventManager.
    * @param {BaseContext} params.context
    *        An object representing the extension instance using this event.
-   * @param {string} params.module
+   * @param {string} [params.module]
    *        The API module name, required for persistent events.
-   * @param {string} params.event
+   * @param {string} [params.event]
    *        The API event name, required for persistent events.
-   * @param {ExtensionAPI} params.extensionApi
+   * @param {ExtensionAPI} [params.extensionApi]
    *        The API intance.  If the API uses the ExtensionAPIPersistent class, some simplification is
    *        possible by passing the api (self or this) and the internal register function will be used.
    * @param {string} [params.name]
    *        A name used only for debugging.  If not provided, name is built from module and event.
-   * @param {functon} params.register
+   * @param {Function} params.register
    *        A function called whenever a new listener is added.
    * @param {boolean} [params.inputHandling=false]
    *        If true, the "handling user input" flag is set while handlers
    *        for this event are executing.
+   * @param {boolean} [params.resetIdleOnEvent=true]
+   *        If false, firing the event won't reset the event page's idle timer.
+   *        Ignored for non background contexts (except bug 1905504).
    */
   constructor(params) {
     let {
@@ -2297,7 +2300,7 @@ class EventManager {
       this.context.envType === "addon_parent" &&
       this.context.isBackgroundContext;
 
-    // TODO(Bug 1844041): ideally we should restrict resetIdleOnEvent to
+    // TODO(Bug 1905504): ideally we should restrict resetIdleOnEvent to
     // EventManager instances that belongs to the event page, but along
     // with that we should consider if calling sendMessage from an event
     // page should also reset idle timer, and so in the shorter term
@@ -2841,6 +2844,7 @@ class EventManager {
     if (this.canPersistEvents) {
       // Once a background is started, listenerPromises is set to null. At
       // that point, we stop recording startup data.
+      // @ts-ignore this.context is a ProxyContextParent when canPersistEvents is true
       recordStartupData = !!this.context.listenerPromises;
 
       let key = uneval(args);

@@ -255,7 +255,9 @@ bool ScriptElement::MaybeProcessScript(const nsAString& aSourceText) {
   if (!type.IsEmpty()) {
     if (!nsContentUtils::IsJavascriptMIMEType(type) &&
         !type.LowerCaseEqualsASCII("module") &&
-        !type.LowerCaseEqualsASCII("importmap")) {
+        !type.LowerCaseEqualsASCII("importmap") &&
+        !(StaticPrefs::dom_speculation_rules_enabled() &&
+          type.LowerCaseEqualsASCII("speculationrules"))) {
 #ifdef DEBUG
       // There is a WebGL convention to store strings they need inside script
       // tags with these specific unknown script types, so don't warn for them.

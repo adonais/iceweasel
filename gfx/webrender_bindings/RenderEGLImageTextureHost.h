@@ -5,8 +5,8 @@
 #ifndef MOZILLA_GFX_RENDEREGLIMAGETEXTUREHOST_H
 #define MOZILLA_GFX_RENDEREGLIMAGETEXTUREHOST_H
 
-#include "mozilla/layers/TextureHostOGL.h"
 #include "RenderTextureHostSWGL.h"
+#include "mozilla/layers/TextureHostOGL.h"
 
 namespace mozilla {
 

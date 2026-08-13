@@ -41,6 +41,9 @@ support-files = [
 
 ["browser_input_file_picker_opening_notification.js"]
 
+["browser_input_file_untrusted_drop.js"]
+support-files = ["file_input_file_untrusted_drop.html"]
+
 ["browser_refresh_after_document_write.js"]
 support-files = ["file_refresh_after_document_write.html"]
 

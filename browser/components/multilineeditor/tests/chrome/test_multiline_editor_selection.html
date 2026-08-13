@@ -93,15 +93,86 @@
         const result = await testHelpers.renderTemplate();
         const editor = result.querySelector("moz-multiline-editor");
 
-        let selectionChangeEventFired = false;
-        editor.addEventListener("selectionchange", () => {
-          selectionChangeEventFired = true;
-        });
-
         editor.value = "Hello World";
+
+        let selectionChangeEventCount = 0;
+        editor.addEventListener("selectionchange", () => {
+          selectionChangeEventCount++;
+        });
         editor.setSelectionRange(0, 5);
 
-        ok(selectionChangeEventFired, "Selectionchange event was fired");
+        is(
+          selectionChangeEventCount,
+          1,
+          "Selectionchange event fired once"
+        );
+      });
+
+      add_task(async function testSetRangeText() {
+        const result = await testHelpers.renderTemplate();
+        const editor = result.querySelector("moz-multiline-editor");
+
+        // select
+        editor.value = "exam";
+        editor.setRangeText("ple.com/", 4, 4, "select");
+        is(editor.value, "example.com/", "Range text is inserted");
+        is(editor.selectionStart, 4, "selectionMode 'select' selects from start");
+        is(editor.selectionEnd, 12, "selectionMode 'select' selects to end");
+
+        // start
+        editor.value = "abcdef";
+        editor.setRangeText("XYZ", 1, 4, "start");
+        is(editor.value, "aXYZef", "Range replaced");
+        is(editor.selectionStart, 1, "selectionMode 'start' collapses before");
+        is(editor.selectionEnd, 1, "selectionMode 'start' collapses before");
+
+        // end
+        editor.value = "abcdef";
+        editor.setRangeText("XYZ", 1, 4, "end");
+        is(editor.value, "aXYZef", "Range replaced");
+        is(editor.selectionStart, 4, "selectionMode 'end' collapses after");
+        is(editor.selectionEnd, 4, "selectionMode 'end' collapses after");
+
+        // preserve
+        editor.value = "abcdef";
+        editor.setSelectionRange(5, 6);
+        editor.setRangeText("XY", 1, 4, "preserve");
+        is(editor.value, "aXYef", "Range replaced");
+        is(editor.selectionStart, 4, "selectionMode 'preserve' maps the start");
+        is(editor.selectionEnd, 5, "selectionMode 'preserve' maps the end");
+
+        // preserve inside
+        editor.value = "abcdef";
+        editor.setSelectionRange(2, 3);
+        editor.setRangeText("XY", 1, 4, "preserve");
+        is(editor.value, "aXYef", "Range replaced");
+        is(editor.selectionStart, 3, "selectionMode 'preserve' maps start to end");
+        is(editor.selectionEnd, 3, "selectionMode 'preserve' maps end to end");
+      });
+
+      add_task(async function testSetRangeTextSingleTransaction() {
+        const result = await testHelpers.renderTemplate();
+        const editor = result.querySelector("moz-multiline-editor");
+
+        editor.value = "exam";
+
+        let dispatchCount = 0;
+        const originalDispatch = editor.view.dispatch.bind(editor.view);
+        editor.view.dispatch = (...args) => {
+          dispatchCount++;
+          originalDispatch(...args);
+        };
+
+        try {
+          editor.setRangeText("ple.com/", 4, 4, "select");
+        } finally {
+          editor.view.dispatch = originalDispatch;
+        }
+
+        is(dispatchCount, 1, "Text and selection set in a single transaction");
+        is(editor.value, "example.com/", "Value is set correctly");
+        is(editor.selectionStart, 4, "Selection start is updated");
+        is(editor.selectionEnd, 12, "Selection end is updated");
       });
     </script>
   </head>

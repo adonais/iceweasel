@@ -9,3 +9,6 @@ support-files = [
 ["test_innerhtml_sanitizer.html"]
 
 ["test_innerhtml_sanitizer.xhtml"]
+
+["test_image_protocol_document_context.html"]
+skip-if = ["debug"] # Intentional crash in DEBUG builds

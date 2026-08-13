@@ -7,12 +7,16 @@ package org.mozilla.fenix.ui.efficiency.tests
 import org.junit.Ignore
 import org.junit.Test
 import org.mozilla.fenix.customannotations.SmokeTest
+import org.mozilla.fenix.helpers.MockBrowserDataHelper.createBookmarkItem
+import org.mozilla.fenix.helpers.MockBrowserDataHelper.generateBookmarkFolder
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
+import org.mozilla.fenix.helpers.TestAssetHelper.htmlControlsFormAsset
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 import org.mozilla.fenix.ui.efficiency.selectors.BookmarksSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.BrowserPageSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.HomeSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors
+import org.mozilla.fenix.ui.efficiency.selectors.TabDrawerSelectors
 
 class BookmarksTest : BaseTest() {
 
@@ -23,6 +27,137 @@ class BookmarksTest : BaseTest() {
     @Test
     fun verifyBookmarksSectionTest() {
         on.bookmarks.navigateToPage()
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2833690
+    @SmokeTest
+    @Test
+    fun deleteBookmarkFoldersTest() {
+        val website = mockWebServer.getGenericAsset(1)
+        val bookmarkFolderName = "My Folder"
+
+        createBookmarkItem(website.url.toString(), website.title, null)
+
+        on.bookmarks.navigateToPage()
+            .mozVerify(BookmarksSelectors.BOOKMARK_ITEM(website.title))
+        on.bookmarks.createFolder(bookmarkFolderName)
+            .mozVerify(BookmarksSelectors.BOOKMARK_ITEM(bookmarkFolderName))
+        on.bookmarks.openItemMenu(website.title)
+            .mozClick(BookmarksSelectors.EDIT_BUTTON)
+        on.bookmarks.setParentFolder(bookmarkFolderName)
+            .saveEditBookmark()
+            .createFolder("My Folder 2")
+            .mozVerify(BookmarksSelectors.BOOKMARK_ITEM("My Folder 2"))
+        on.bookmarks.openItemMenu("My Folder 2")
+            .mozClick(BookmarksSelectors.EDIT_BUTTON)
+        on.bookmarks.setParentFolder(bookmarkFolderName)
+            .saveEditBookmark()
+            .openItemMenu(bookmarkFolderName)
+            .mozClick(BookmarksSelectors.DELETE_BUTTON)
+            .mozClick(BookmarksSelectors.CANCEL_FOLDER_DELETION_BUTTON)
+            .mozVerify(BookmarksSelectors.BOOKMARK_ITEM(bookmarkFolderName))
+        on.bookmarks.openItemMenu(bookmarkFolderName)
+            .mozClick(BookmarksSelectors.DELETE_BUTTON)
+            .mozClick(BookmarksSelectors.DELETE_BUTTON)
+            .mozVerifyElementAbsent(BookmarksSelectors.BOOKMARK_ITEM(bookmarkFolderName))
+            .mozVerifyElementAbsent(BookmarksSelectors.BOOKMARK_ITEM("My Folder 2"))
+            .mozVerifyElementAbsent(BookmarksSelectors.BOOKMARK_ITEM(website.title))
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2833693
+    @SmokeTest
+    @Test
+    fun shareBookmarkTest() {
+        val defaultWebPage = mockWebServer.getGenericAsset(1)
+
+        createBookmarkItem(defaultWebPage.url.toString(), defaultWebPage.title, null)
+
+        on.bookmarks.navigateToPage()
+            .mozVerify(BookmarksSelectors.BOOKMARK_ITEM(defaultWebPage.title))
+        on.bookmarks.openItemMenu(defaultWebPage.title)
+            .mozClick(BookmarksSelectors.SHARE_BUTTON)
+        on.shareOverlay.mozVerifyElementsByGroup("shareTabLayout")
+        on.shareOverlay.verifySharingWithSelectedApp(
+            appName = "Gmail",
+            content = defaultWebPage.url.toString(),
+            subject = defaultWebPage.title,
+        )
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2833702
+    @SmokeTest
+    @Test
+    fun openMultipleSelectedBookmarksInANewTabTest() {
+        val webPages = listOf(
+            mockWebServer.getGenericAsset(1),
+            mockWebServer.getGenericAsset(2),
+        )
+
+        createBookmarkItem(webPages[0].url.toString(), webPages[0].title, null)
+        createBookmarkItem(webPages[1].url.toString(), webPages[1].title, null)
+
+        on.bookmarks.navigateToPage()
+            .longClickBookmarkedItem(webPages[0].title)
+            .selectBookmarkedItem(webPages[1].title)
+            .verifyMultiSelectionCounter(2)
+            .clickMultiSelectThreeDotButton()
+            .mozClick(BookmarksSelectors.OPEN_IN_NEW_TAB_BUTTON)
+        on.tabDrawer.mozVerify(TabDrawerSelectors.TABS_TRAY)
+            .mozVerifyElementIsSelected(TabDrawerSelectors.NORMAL_BROWSING_OPEN_TABS_BUTTON)
+        on.tabDrawer.verifyNormalTabsList()
+            .verifyExistingOpenTabs(webPages[0].title, webPages[1].title)
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2833704
+    @SmokeTest
+    @Test
+    fun deleteMultipleSelectedBookmarksTest() {
+        val webPages = listOf(
+            mockWebServer.getGenericAsset(1),
+            mockWebServer.getGenericAsset(2),
+        )
+
+        createBookmarkItem(webPages[0].url.toString(), webPages[0].title, null)
+        createBookmarkItem(webPages[1].url.toString(), webPages[1].title, null)
+
+        on.bookmarks.navigateToPage()
+            .longClickBookmarkedItem(webPages[0].title)
+            .selectBookmarkedItem(webPages[1].title)
+            .verifyMultiSelectionCounter(2)
+            .clickMultiSelectThreeDotButton()
+            .mozClick(BookmarksSelectors.DELETE_BUTTON)
+            .mozClick(BookmarksSelectors.CANCEL_FOLDER_DELETION_BUTTON)
+        on.bookmarks.verifyBookmarkTitle(webPages[0].title)
+            .verifyBookmarkTitle(webPages[1].title)
+        on.bookmarks.longClickBookmarkedItem(webPages[0].title)
+            .selectBookmarkedItem(webPages[1].title)
+            .verifyMultiSelectionCounter(2)
+            .clickMultiSelectThreeDotButton()
+            .mozClick(BookmarksSelectors.DELETE_BUTTON)
+            .mozClick(BookmarksSelectors.DELETE_BUTTON)
+        on.bookmarks.mozVerifyElementAbsent(BookmarksSelectors.BOOKMARK_ITEM(webPages[0].title))
+            .mozVerifyElementAbsent(BookmarksSelectors.BOOKMARK_ITEM(webPages[1].title))
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2833712
+    @SmokeTest
+    @Test
+    fun verifySearchForBookmarkedItemsTest() {
+        val firstWebPage = mockWebServer.getGenericAsset(1)
+        val secondWebPage = mockWebServer.htmlControlsFormAsset
+        val bookmarkFolderName = "My Folder"
+
+        val newFolder = generateBookmarkFolder(title = bookmarkFolderName, position = null)
+        createBookmarkItem(firstWebPage.url.toString(), firstWebPage.title, null, newFolder)
+        createBookmarkItem(secondWebPage.url.toString(), secondWebPage.title, null)
+
+        on.bookmarkSearch.navigateToPage()
+        on.bookmarkSearch.typeSearch(firstWebPage.title)
+            .verifySearchSuggestionsAreDisplayed(firstWebPage.url.toString())
+            .verifySuggestionsAreNotDisplayed(secondWebPage.url.toString())
+            .typeSearch("Android")
+            .verifySuggestionsAreNotDisplayed(firstWebPage.url.toString())
+            .verifySuggestionsAreNotDisplayed(secondWebPage.url.toString())
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2833691

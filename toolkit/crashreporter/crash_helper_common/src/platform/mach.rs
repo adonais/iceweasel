@@ -29,13 +29,19 @@ use std::{
 };
 use thiserror::Error;
 
-use crate::IO_TIMEOUT;
+use crate::{AsProcessReaderHandle, IO_TIMEOUT};
 
 pub(crate) const PROCESS_RENDEZVOUS_ANCILLARY_DATA_LEN: usize = 1;
 
 pub type Result<T> = result::Result<T, PlatformError>;
 
 pub type ProcessHandle = SendRight;
+
+impl AsProcessReaderHandle for ProcessHandle {
+    fn as_handle(&self) -> process_reader::ProcessHandle {
+        self.as_raw_port()
+    }
+}
 
 #[derive(Error, Debug)]
 pub enum PlatformError {

@@ -30,7 +30,7 @@
 "use strict";
 
 const { KeyValueService } = ChromeUtils.importESModule(
-  "resource://gre/modules/kvstore.sys.mjs"
+  "moz-src:///toolkit/components/kvstore/kvstore.sys.mjs"
 );
 
 (async function () {

@@ -22,14 +22,14 @@ void MoveEmitterMIPSShared::emit(const MoveResolver& moves) {
   }
 }
 
-Address MoveEmitterMIPSShared::cycleSlot(uint32_t slot,
-                                         uint32_t subslot) const {
+Address MoveEmitterMIPSShared::cycleSlot(uint32_t slot) const {
   int32_t offset = masm.framePushed() - pushedAtCycle_;
   MOZ_ASSERT(Imm16::IsInSignedRange(offset));
-  return Address(StackPointer, offset + slot * sizeof(double) + subslot);
+  return Address(StackPointer, offset + slot * sizeof(double));
 }
 
-int32_t MoveEmitterMIPSShared::getAdjustedOffset(const MoveOperand& operand) {
+int32_t MoveEmitterMIPSShared::getAdjustedOffset(
+    const MoveOperand& operand) const {
   MOZ_ASSERT(operand.isMemoryOrEffectiveAddress());
   if (operand.base() != StackPointer) {
     return operand.disp();
@@ -39,12 +39,13 @@ int32_t MoveEmitterMIPSShared::getAdjustedOffset(const MoveOperand& operand) {
   return operand.disp() + masm.framePushed() - pushedAtStart_;
 }
 
-Address MoveEmitterMIPSShared::getAdjustedAddress(const MoveOperand& operand) {
+Address MoveEmitterMIPSShared::getAdjustedAddress(
+    const MoveOperand& operand) const {
   return Address(operand.base(), getAdjustedOffset(operand));
 }
 
 Register MoveEmitterMIPSShared::tempReg() {
-  spilledReg_ = ScratchRegister;
+  tempReg_ = ScratchRegister;
   return ScratchRegister;
 }
 
@@ -52,7 +53,7 @@ void MoveEmitterMIPSShared::emitMove(const MoveOperand& from,
                                      const MoveOperand& to) {
   if (from.isGeneralReg()) {
     // Second scratch register should not be moved by MoveEmitter.
-    MOZ_ASSERT(from.reg() != spilledReg_);
+    MOZ_ASSERT(from.reg() != tempReg_);
 
     if (to.isGeneralReg()) {
       masm.movePtr(from.reg(), to.reg());
@@ -88,7 +89,7 @@ void MoveEmitterMIPSShared::emitInt32Move(const MoveOperand& from,
                                           const MoveOperand& to) {
   if (from.isGeneralReg()) {
     // Second scratch register should not be moved by MoveEmitter.
-    MOZ_ASSERT(from.reg() != spilledReg_);
+    MOZ_ASSERT(from.reg() != tempReg_);
 
     if (to.isGeneralReg()) {
       masm.move32(from.reg(), to.reg());
@@ -156,7 +157,7 @@ void MoveEmitterMIPSShared::emit(const MoveOp& move) {
   if (move.isCycleEnd() && move.isCycleBegin()) {
     // A fun consequence of aliased registers is you can have multiple
     // cycles at once, and one can end exactly where another begins.
-    breakCycle(from, to, move.endCycleType(), move.cycleBeginSlot());
+    breakCycle(to, move.endCycleType(), move.cycleBeginSlot());
     completeCycle(from, to, move.type(), move.cycleEndSlot());
     return;
   }
@@ -170,7 +171,7 @@ void MoveEmitterMIPSShared::emit(const MoveOp& move) {
   }
 
   if (move.isCycleBegin()) {
-    breakCycle(from, to, move.endCycleType(), move.cycleBeginSlot());
+    breakCycle(to, move.endCycleType(), move.cycleBeginSlot());
     inCycle_++;
   }
 
@@ -191,8 +192,6 @@ void MoveEmitterMIPSShared::emit(const MoveOp& move) {
       MOZ_CRASH("Unexpected move type");
   }
 }
-
-void MoveEmitterMIPSShared::assertDone() { MOZ_ASSERT(inCycle_ == 0); }
 
 void MoveEmitterMIPSShared::finish() {
   assertDone();

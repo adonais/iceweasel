@@ -5,10 +5,9 @@
 #ifndef js_Realm_h
 #define js_Realm_h
 
-#include "js/shadow/Realm.h"  // JS::shadow::Realm
-
 #include "js/GCPolicyAPI.h"
-#include "js/TypeDecls.h"  // forward-declaration of JS::Realm
+#include "js/shadow/Realm.h"  // JS::shadow::Realm
+#include "js/TypeDecls.h"     // forward-declaration of JS::Realm
 
 /************************************************************************/
 

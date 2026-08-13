@@ -21,19 +21,19 @@ typedef OpaqueSecKeyRef* SecKeyRef;
 typedef SecTransformRef (*SecTransformCreateReadTransformWithReadStreamFunc)(
     CFReadStreamRef inputStream);
 SecTransformCreateReadTransformWithReadStreamFunc
-    SecTransformCreateReadTransformWithReadStreamPtr = NULL;
+    SecTransformCreateReadTransformWithReadStreamPtr = nullptr;
 typedef CFTypeRef (*SecTransformExecuteFunc)(SecTransformRef transform,
                                              CFErrorRef* error);
-SecTransformExecuteFunc SecTransformExecutePtr = NULL;
+SecTransformExecuteFunc SecTransformExecutePtr = nullptr;
 typedef SecTransformRef (*SecVerifyTransformCreateFunc)(SecKeyRef key,
                                                         CFDataRef signature,
                                                         CFErrorRef* error);
-SecVerifyTransformCreateFunc SecVerifyTransformCreatePtr = NULL;
+SecVerifyTransformCreateFunc SecVerifyTransformCreatePtr = nullptr;
 typedef Boolean (*SecTransformSetAttributeFunc)(SecTransformRef transform,
                                                 CFStringRef key,
                                                 CFTypeRef value,
                                                 CFErrorRef* error);
-SecTransformSetAttributeFunc SecTransformSetAttributePtr = NULL;
+SecTransformSetAttributeFunc SecTransformSetAttributePtr = nullptr;
 #if defined(__cplusplus)
 }
 #endif
@@ -99,7 +99,7 @@ CryptoX_Result CryptoMac_LoadPublicKey(const unsigned char* aCertData,
   if (!aCertData || aDataSize == 0 || !aPublicKey) {
     return CryptoX_Error;
   }
-  *aPublicKey = NULL;
+  *aPublicKey = nullptr;
   CFDataRef certData = CFDataCreate(kCFAllocatorDefault, aCertData, aDataSize);
   if (!certData) {
     return CryptoX_Error;
@@ -203,7 +203,7 @@ void CryptoMac_FreeSignatureHandle(CryptoX_SignatureHandle* aInputData) {
     return;
   }
 
-  CFMutableDataRef inputData = NULL;
+  CFMutableDataRef inputData = nullptr;
   inputData = (CFMutableDataRef)*aInputData;
 
   CFRelease(inputData);

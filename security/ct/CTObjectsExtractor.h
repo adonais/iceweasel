@@ -5,9 +5,9 @@
 #ifndef CTObjectsExtractor_h
 #define CTObjectsExtractor_h
 
+#include "SignedCertificateTimestamp.h"
 #include "mozpkix/Input.h"
 #include "mozpkix/Result.h"
-#include "SignedCertificateTimestamp.h"
 
 namespace mozilla {
 namespace ct {

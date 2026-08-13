@@ -42,7 +42,11 @@ else {
     }
     socket.onerror = function() {
       cleanup();
-      window.opener.postMessage("WS onerror", "*");
+      if (location.search == '?insecure') {
+        window.opener.postMessage("SecurityError", "*");
+      } else {
+        window.opener.postMessage("WS onerror", "*");
+      }
     };
     socket.onopen = function() {
       socket.close();

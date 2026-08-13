@@ -29,6 +29,20 @@
 </div>
 <script>
 SimpleTest.waitForExplicitFinish();
+
+// getBoundingClientRect() returns coordinates that are stored internally as
+// 32-bit floats (CSSPoint), whereas scrollTop is reported as a double. At the
+// multi-million-pixel scroll offsets exercised here, one float ULP exceeds a
+// CSS pixel, so the two unavoidably diverge by an amount that grows with the
+// magnitude. Returns one float ULP at the given magnitude (23-bit mantissa).
+function floatEpsilon(value) {
+  const magnitude = Math.abs(value);
+  if (magnitude === 0) {
+    return 0;
+  }
+  return Math.pow(2, Math.floor(Math.log2(magnitude)) - 23);
+}
+
 addLoadEvent(() => {
   const interval = 20;
   const increment = outer.scrollHeight / interval;
@@ -38,8 +52,11 @@ addLoadEvent(() => {
     console.log(outer.scrollTop);
     // Shift to account for viewport coordinate shift.
     const bcrTop = -inner.getBoundingClientRect().top + offset;
-    // Floating point value diverges from scrollTop.
-    isfuzzy(bcrTop, outer.scrollTop, 1, "scrollTop and BCR top match");
+    // Tolerate device-pixel snapping plus the float quantization of the BCR
+    // (a few ULPs across the negate/offset arithmetic), which scales with the
+    // scroll offset.
+    const epsilon = devicePixelRatio + 2 * floatEpsilon(outer.scrollTop);
+    isfuzzy(bcrTop, outer.scrollTop, epsilon, "scrollTop and BCR top match");
   }
   SimpleTest.finish();
 });

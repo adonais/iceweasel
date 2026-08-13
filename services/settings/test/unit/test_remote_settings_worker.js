@@ -1,5 +1,3 @@
-const IS_ANDROID = AppConstants.platform == "android";
-
 add_task(async function test_canonicaljson() {
   const records = [
     { id: "1", title: "title 1" },

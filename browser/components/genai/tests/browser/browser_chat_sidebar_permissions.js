@@ -16,7 +16,7 @@ async function openSidebar(win) {
 
   if (sidebar.isOpen) {
     await sidebar.hide();
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => !sidebar.isOpen,
       "Waiting for sidebar to fully close"
     );
@@ -163,7 +163,7 @@ add_task(async function test_sidebar_shows_popup_and_blocked_permission_ui() {
   blockButton.click();
   await popupHidden;
 
-  await BrowserTestUtils.waitForCondition(async () => {
+  await TestUtils.waitForCondition(async () => {
     return SpecialPowers.spawn(
       SidebarController.browser,
       [],
@@ -199,7 +199,7 @@ add_task(async function test_tab_open_sidebar_requests() {
 
   info("Tab PopupNotification is hidden");
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => panel.state === "open",
     "SidebarPopupNotification should open"
   );

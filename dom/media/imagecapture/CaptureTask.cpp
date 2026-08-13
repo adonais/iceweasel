@@ -139,8 +139,7 @@ void CaptureTask::NotifyRealtimeTrackData(MediaTrackGraph* aGraph,
 
     RefPtr<layers::Image> image;
     if (chunk.mFrame.GetForceBlack()) {
-      // Create a black image.
-      image = VideoFrame::CreateBlackImage(chunk.mFrame.GetIntrinsicSize());
+      image = chunk.mFrame.CloneAsBlackImage();
     } else {
       image = chunk.mFrame.GetImage();
     }

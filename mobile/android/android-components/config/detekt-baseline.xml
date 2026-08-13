@@ -2,6 +2,37 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
+    <ID>ClassAcronymCasing:AMOAddonsProvider.kt$AMOAddonsProvider : AddonsProvider</ID>
+    <ID>ClassAcronymCasing:BrowserToolbar.kt$BrowserToolbarCFR</ID>
+    <ID>ClassAcronymCasing:BrowserToolbarAction.kt$BrowserDisplayToolbarAction$ToolbarCFRDismissed : BrowserDisplayToolbarAction</ID>
+    <ID>ClassAcronymCasing:BrowserToolbarAction.kt$BrowserDisplayToolbarAction$ToolbarCFRShown : BrowserDisplayToolbarAction</ID>
+    <ID>ClassAcronymCasing:CFRBox.kt$CFRBackground</ID>
+    <ID>ClassAcronymCasing:CFRBox.kt$CFRColors</ID>
+    <ID>ClassAcronymCasing:CFRBox.kt$CFRDefaults</ID>
+    <ID>ClassAcronymCasing:CFRBox.kt$CFRPositionProvider : PopupPositionProvider</ID>
+    <ID>ClassAcronymCasing:CFRBox.kt$CFRPositionProviderImpl : CFRPositionProvider</ID>
+    <ID>ClassAcronymCasing:CFRBox.kt$CFRShape : Shape</ID>
+    <ID>ClassAcronymCasing:CFRPopup.kt$CFRPopup</ID>
+    <ID>ClassAcronymCasing:CFRPopup.kt$CFRPopupBackground</ID>
+    <ID>ClassAcronymCasing:CFRPopup.kt$CFRPopupProperties</ID>
+    <ID>ClassAcronymCasing:CFRPopupFullscreenLayout.kt$CFRPopupFullscreenLayout : AbstractComposeViewViewRootForInspector</ID>
+    <ID>ClassAcronymCasing:CFRPopupShape.kt$CFRPopupShape : Shape</ID>
+    <ID>ClassAcronymCasing:Choice.kt$Choice$CREATOR : Creator</ID>
+    <ID>ClassAcronymCasing:CreditCardUtils.kt$CreditCardIIN</ID>
+    <ID>ClassAcronymCasing:HitResult.kt$HitResult$AUDIO : HitResult</ID>
+    <ID>ClassAcronymCasing:HitResult.kt$HitResult$EMAIL : HitResult</ID>
+    <ID>ClassAcronymCasing:HitResult.kt$HitResult$GEO : HitResult</ID>
+    <ID>ClassAcronymCasing:HitResult.kt$HitResult$IMAGE : HitResult</ID>
+    <ID>ClassAcronymCasing:HitResult.kt$HitResult$PHONE : HitResult</ID>
+    <ID>ClassAcronymCasing:HitResult.kt$HitResult$UNKNOWN : HitResult</ID>
+    <ID>ClassAcronymCasing:HitResult.kt$HitResult$VIDEO : HitResult</ID>
+    <ID>ClassAcronymCasing:HttpURLConnectionClient.kt$HttpURLConnectionClient : Client</ID>
+    <ID>ClassAcronymCasing:ICOIconDecoder.kt$ICOIconDecoder : ImageDecoder</ID>
+    <ID>ClassAcronymCasing:ParsedStructure.kt$ParsedStructure$CREATOR : Creator</ID>
+    <ID>ClassAcronymCasing:PocketJSONParser.kt$PocketJSONParser</ID>
+    <ID>ClassAcronymCasing:URLRenderer.kt$URLRenderer</ID>
+    <ID>ClassAcronymCasing:URLStringUtils.kt$URLStringUtils</ID>
+    <ID>ClassAcronymCasing:WebURLFinder.kt$WebURLFinder</ID>
     <ID>ForbiddenSuppress:AMOAddonsProvider.kt$AMOAddonsProvider$@Suppress("CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:AMOAddonsProvider.kt$AMOAddonsProvider$@Suppress("NestedBlockDepth", "CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:AbstractFetchDownloadService.kt$AbstractFetchDownloadService.&lt;no name provided&gt;$@Suppress("LongMethod")</ID>
@@ -12,6 +43,7 @@
     <ID>ForbiddenSuppress:ActionButton.kt$@Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:Addon.kt$Addon.Companion$@Suppress("MagicNumber", "CognitiveComplexMethod", "CyclomaticComplexMethod")</ID>
     <ID>ForbiddenSuppress:AndroidAssetFinder.kt$AndroidAssetFinder$@Suppress("MagicNumber")</ID>
+    <ID>ForbiddenSuppress:AnimatedPillButton.kt$@Suppress("CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:AnimatedProgressBar.kt$@Suppress("LongMethod", "CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:AnimatedProgressBar.kt$@Suppress("MagicNumber")</ID>
     <ID>ForbiddenSuppress:AppLinksInterceptor.kt$AppLinksInterceptor$@Suppress("CognitiveComplexMethod", "ReturnCount", "CyclomaticComplexMethod")</ID>
@@ -100,7 +132,6 @@
     <ID>ForbiddenSuppress:SuggestionFetcher.kt$@Suppress("MagicNumber")</ID>
     <ID>ForbiddenSuppress:SystemEngineView.kt$SystemEngineView$@Suppress("NestedBlockDepth", "CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:SystemEngineView.kt$SystemEngineView.&lt;no name provided&gt;$@Suppress("ReturnCount", "NestedBlockDepth", "LongMethod")</ID>
-    <ID>ForbiddenSuppress:TabCounter.kt$@Suppress("CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:TabListReducer.kt$TabListReducer$@Suppress("LongMethod", "CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:ToolbarActivity.kt$ToolbarActivity$@Suppress("MagicNumber")</ID>
     <ID>ForbiddenSuppress:ToolbarActivity.kt$ToolbarActivity$@Suppress("TooGenericExceptionCaught", "CognitiveComplexMethod")</ID>
@@ -223,7 +254,6 @@
     <ID>MaterialTypographyUsage:PasswordGeneratorPrompt.kt$MaterialTheme.typography</ID>
     <ID>MaterialTypographyUsage:SummarizeSettingsScreen.kt$MaterialTheme.typography</ID>
     <ID>MaterialTypographyUsage:Tab.kt$MaterialTheme.typography</ID>
-    <ID>MaterialTypographyUsage:TrackerProtectionDashboard.kt$MaterialTheme.typography</ID>
     <ID>MaxLineLength:ContextCompatDetector.kt$ContextCompatDetector.Companion$explanation = "Using this method can lead to crashes in older Android versions as newer features might not be available"</ID>
     <ID>MaxLineLength:IconDirectoryEntry.kt$@Suppress("MagicNumber", "ReturnCount", "CognitiveComplexMethod", "NestedBlockDepth", "ComplexCondition", "CyclomaticComplexMethod")</ID>
     <ID>MaxLineLength:StringLintXmlDetectorTest.kt$StringLintXmlDetectorTest$fun</ID>

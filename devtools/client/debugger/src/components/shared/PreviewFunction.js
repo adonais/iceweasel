@@ -89,14 +89,15 @@ export default class PreviewFunction extends Component {
         {
           className: "paren",
         },
-        "("
+        // This is needed to keep braces behaviour consistent for RTL
+        "\u200F("
       ),
       this.renderParams(func),
       span(
         {
           className: "paren",
         },
-        ")"
+        "\u200E)"
       ),
       this.jumpToDefinitionButton(func)
     );

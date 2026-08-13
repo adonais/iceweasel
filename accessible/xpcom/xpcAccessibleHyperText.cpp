@@ -4,14 +4,13 @@
 
 #include "xpcAccessibleHyperText.h"
 
-#include "TextRange.h"
 #include "AccAttributes.h"
+#include "TextRange.h"
 #include "nsComponentManagerUtils.h"
+#include "nsIMutableArray.h"
 #include "nsPersistentProperties.h"
 #include "xpcAccessibleDocument.h"
 #include "xpcAccessibleTextRange.h"
-
-#include "nsIMutableArray.h"
 
 using namespace mozilla::a11y;
 

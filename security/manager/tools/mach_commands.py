@@ -121,6 +121,7 @@ def find_all_specifications(command_context):
     specifications = []
     inclusions = [
         "browser/base/content/test/siteIdentity/",
+        "netwerk/test/marionette",
         "netwerk/test/unit",
         "security/manager/ssl",
         "services/settings/test/unit/test_remote_settings_signatures",

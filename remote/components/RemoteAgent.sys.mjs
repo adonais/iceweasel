@@ -43,7 +43,8 @@ class RemoteAgentParentProcess {
   constructor() {
     this.#allowHosts = null;
     this.#allowOrigins = null;
-    this.#allowSystemAccess = Services.env.exists(ENV_ALLOW_SYSTEM_ACCESS);
+    this.#allowSystemAccess = Services.env.get(ENV_ALLOW_SYSTEM_ACCESS) == "1";
+
     this.#browserStartupFinished = lazy.Deferred();
     this.#enabled = false;
 

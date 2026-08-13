@@ -5,7 +5,7 @@
 loader: taskgraph.loader.transform:loader
 
 transforms:
-    - gecko_taskgraph.transforms.test_apk
+    - taskgraph.transforms.task_context
     - gecko_taskgraph.transforms.job:transforms
     - gecko_taskgraph.transforms.task:transforms
 
@@ -15,6 +15,12 @@ kind-dependencies:
 task-defaults:
     run-on-repo-type: [hg]
     description: Sends Slack message to release testers that Testrail Milestone was created.
+    task-context:
+        from-parameters:
+            level: level
+        substitution-fields:
+            - routes
+            - scopes
     treeherder:
         kind: other
         tier: 2

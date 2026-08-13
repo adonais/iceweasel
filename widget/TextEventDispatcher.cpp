@@ -7,8 +7,8 @@
 #include "IMEData.h"
 #include "PuppetWidget.h"
 #include "TextEvents.h"
-
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/Utf16.h"
 #include "nsCharTraits.h"
 #include "nsIFrame.h"
 #include "nsIWidget.h"
@@ -623,17 +623,17 @@ bool TextEventDispatcher::DispatchKeyboardEventInternal(
       // eKeyPress events are dispatched for every character.
       // So, each key value of eKeyPress events should be a character.
       if (ch) {
-        if (!IS_SURROGATE(ch)) {
+        if (!IsSurrogate(ch)) {
           keyEvent.mKeyValue.Assign(ch);
         } else {
           const bool isHighSurrogateFollowedByLowSurrogate =
               aIndexOfKeypress + 1 < keyEvent.mKeyValue.Length() &&
-              NS_IS_HIGH_SURROGATE(ch) &&
-              NS_IS_LOW_SURROGATE(keyEvent.mKeyValue[aIndexOfKeypress + 1]);
+              IsHighSurrogate(ch) &&
+              IsLowSurrogate(keyEvent.mKeyValue[aIndexOfKeypress + 1]);
           const bool isLowSurrogateFollowingHighSurrogate =
               !isHighSurrogateFollowedByLowSurrogate && aIndexOfKeypress > 0 &&
-              NS_IS_LOW_SURROGATE(ch) &&
-              NS_IS_HIGH_SURROGATE(keyEvent.mKeyValue[aIndexOfKeypress - 1]);
+              IsLowSurrogate(ch) &&
+              IsHighSurrogate(keyEvent.mKeyValue[aIndexOfKeypress - 1]);
           NS_WARNING_ASSERTION(isHighSurrogateFollowedByLowSurrogate ||
                                    isLowSurrogateFollowingHighSurrogate,
                                "Lone surrogate input should not happen");
@@ -642,8 +642,7 @@ bool TextEventDispatcher::DispatchKeyboardEventInternal(
             if (isHighSurrogateFollowedByLowSurrogate) {
               keyEvent.mKeyValue.Assign(
                   keyEvent.mKeyValue.BeginReading() + aIndexOfKeypress, 2);
-              keyEvent.SetCharCode(
-                  SURROGATE_TO_UCS4(ch, keyEvent.mKeyValue[1]));
+              keyEvent.SetCharCode(SurrogateToUCS4(ch, keyEvent.mKeyValue[1]));
             } else if (isLowSurrogateFollowingHighSurrogate) {
               // Although not dispatching eKeyPress event (because it's already
               // dispatched for the low surrogate above), the caller should

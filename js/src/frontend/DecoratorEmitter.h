@@ -8,7 +8,6 @@
 #include "mozilla/Attributes.h"
 
 #include "frontend/ParseNode.h"
-
 #include "js/AllocPolicy.h"
 #include "js/Vector.h"
 

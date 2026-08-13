@@ -75,13 +75,13 @@ def verify_docs(filename, identifiers, appearing_as):
 
     if appearing_as == "inline-literal":
         expression_list = [
-            "``" + identifier + "``"
+            "`" + identifier + "`"
             for identifier in identifiers
             if not identifier.startswith("_")
         ]
     elif appearing_as == "heading":
         expression_list = [
-            "\n" + identifier + "\n(?:(?:(?:-+\n)+)|(?:(?:.+\n)+))"
+            "\n#+ " + identifier + "\n"
             for identifier in identifiers
             if not identifier.startswith("_")
         ]
@@ -101,7 +101,7 @@ def verify_run_using():
     from gecko_taskgraph.transforms.job import registry
 
     verify_docs(
-        filename="transforms/job.rst",
+        filename="transforms/job.md",
         identifiers=registry.keys(),
         appearing_as="inline-literal",
     )
@@ -114,7 +114,7 @@ def verify_parameters_docs(parameters):
 
     parameters_dict = dict(**parameters)
     verify_docs(
-        filename="parameters.rst",
+        filename="parameters.md",
         identifiers=list(parameters_dict),
         appearing_as="inline-literal",
     )
@@ -122,14 +122,14 @@ def verify_parameters_docs(parameters):
 
 @verifications.add("kinds")
 def verify_kinds_docs(kinds):
-    verify_docs(filename="kinds.rst", identifiers=kinds.keys(), appearing_as="heading")
+    verify_docs(filename="kinds.md", identifiers=kinds.keys(), appearing_as="heading")
 
 
 @verifications.add("full_task_set")
 def verify_attributes(task, taskgraph, scratch_pad, graph_config, parameters):
     if task is None:
         verify_docs(
-            filename="attributes.rst",
+            filename="attributes.md",
             identifiers=list(scratch_pad["attribute_set"]),
             appearing_as="heading",
         )

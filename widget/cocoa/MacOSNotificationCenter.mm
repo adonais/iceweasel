@@ -4,18 +4,18 @@
 
 #include "MacOSNotificationCenter.h"
 #import <AppKit/AppKit.h>
-#include "imgIRequest.h"
 #include "imgIContainer.h"
-#include "nsICancelable.h"
-#include "nsIStringBundle.h"
-#include "nsNetUtil.h"
+#include "imgIRequest.h"
+#include "nsCOMPtr.h"
 #import "nsCocoaUtils.h"
 #include "nsComponentManagerUtils.h"
 #include "nsContentUtils.h"
+#include "nsICancelable.h"
+#include "nsIObserver.h"
+#include "nsIStringBundle.h"
+#include "nsNetUtil.h"
 #include "nsObjCExceptions.h"
 #include "nsString.h"
-#include "nsCOMPtr.h"
-#include "nsIObserver.h"
 
 using namespace mozilla;
 

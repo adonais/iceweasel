@@ -48,6 +48,7 @@ def init(command_context):
     lando.LAUNCH_BROWSER = not mach_context.settings["try"]["nobrowser"]
     push.MAX_HISTORY = mach_context.settings["try"]["maxhistory"]
     push.MACH_TRY_REMOTE = mach_context.settings["try"]["pushremote"]
+    push.GIT_BACKING_ENABLED = mach_context.settings["try"]["gitbacking"]
     task_config.SKIP_ARTIFACT_BUILD_CHECK = mach_context.settings["try"]["noartifact"]
 
 
@@ -111,9 +112,7 @@ def handle_presets(
 
     if preset:
         if preset not in presets(command_context):
-            command_context._mach_context.parser.error(
-                f"preset '{preset}' does not exist"
-            )
+            parser.error(f"preset '{preset}' does not exist")
 
         name = preset
         preset = presets(command_context)[name]

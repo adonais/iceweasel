@@ -7,5 +7,5 @@ sys.path[0:0] = [os.path.join('@topsrcdir@', 'gdb')]
 import mozilla.autoload
 mozilla.autoload.register(gdb.current_objfile())
 
-import mozilla.asmjs
-mozilla.asmjs.install()
+import mozilla.wasm_trap
+mozilla.wasm_trap.install()

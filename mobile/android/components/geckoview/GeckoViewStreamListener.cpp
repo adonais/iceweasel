@@ -209,6 +209,14 @@ nsresult GeckoViewStreamListener::HandleWebResponse(nsIRequest* aRequest) {
     builder->Body(mStream);
   }
 
+  // Suggested download filename
+  nsString filename;
+  if (NS_SUCCEEDED(channel->GetContentDispositionFilename(filename))) {
+    builder->Header(jni::StringParam(u"content-disposition"_ns),
+                    nsPrintfCString("attachment; filename=\"%s\"",
+                                    NS_ConvertUTF16toUTF8(filename).get()));
+  }
+
   // Redirected
   nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
   builder->Redirected(!loadInfo->RedirectChain().IsEmpty());
@@ -237,12 +245,6 @@ nsresult GeckoViewStreamListener::HandleWebResponse(nsIRequest* aRequest) {
   } else {
     // Headers for other responses
     // try to provide some basic metadata about the response
-    nsString filename;
-    if (NS_SUCCEEDED(channel->GetContentDispositionFilename(filename))) {
-      builder->Header(jni::StringParam(u"content-disposition"_ns),
-                      nsPrintfCString("attachment; filename=\"%s\"",
-                                      NS_ConvertUTF16toUTF8(filename).get()));
-    }
 
     nsCString contentType;
     if (NS_SUCCEEDED(channel->GetContentType(contentType))) {

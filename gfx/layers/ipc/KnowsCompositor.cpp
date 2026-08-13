@@ -3,8 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "KnowsCompositor.h"
-#include "mozilla/layers/ImageBridgeChild.h"
+
 #include "mozilla/ipc/ProtocolUtils.h"
+#include "mozilla/layers/ImageBridgeChild.h"
 
 namespace mozilla::layers {
 

@@ -432,6 +432,10 @@
                 "privatePin": {
                   "type": "boolean",
                   "description": "Whether or not to pin private browsing mode"
+                },
+                "fireAndForget": {
+                  "type": "boolean",
+                  "description": "Whether or not to wait for user confirmation before resolving the action"
                 }
               },
               "additionalProperties": false
@@ -452,6 +456,32 @@
           "required": ["type"],
           "additionalProperties": false,
           "description": "Pin the app to Windows Start Menu"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["PIN_AND_DEFAULT"]
+            },
+            "data": {
+              "type": "object",
+              "properties": {
+                "privatePin": {
+                  "type": "boolean",
+                  "description": "Whether or not to pin private browsing mode"
+                },
+                "fireAndForget": {
+                  "type": "boolean",
+                  "description": "Whether or not to wait for user confirmation before resolving the action"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": ["type"],
+          "additionalProperties": false,
+          "description": "Pin the app to taskbar and set as default browser"
         },
         {
           "type": "object",
@@ -526,6 +556,37 @@
           "required": ["type"],
           "additionalProperties": false,
           "description": "Message action to decline setting Firefox as the default PDF handler"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["SET_DEFAULT_PROTOCOL_HANDLER"]
+            },
+            "data": {
+              "type": "object",
+              "properties": {
+                "protocol": {
+                  "type": "string",
+                  "description": "The protocol to claim, e.g. \"mailto\"."
+                },
+                "url": {
+                  "type": "string",
+                  "description": "URL passed to the OS default-app picker."
+                },
+                "openInFirefox": {
+                  "type": "boolean",
+                  "description": "If the OS hands the URL back to Firefox after the user picks Firefox in the open-with dialog, open the protocol's default URL in a new tab instead of suppressing the launch."
+                }
+              },
+              "required": ["protocol"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["type", "data"],
+          "additionalProperties": false,
+          "description": "Message action to set Firefox as the default protocol handler"
         },
         {
           "type": "object",
@@ -660,6 +721,29 @@
           "required": ["data", "type"],
           "additionalProperties": false,
           "description": "Sets prefs from special message actions"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "data": {
+              "type": "object",
+              "properties": {
+                "widget_id": {
+                  "type": "string",
+                  "description": "The id of the widget to destroy"
+                }
+              },
+              "required": ["widget_id"],
+              "additionalProperties": false
+            },
+            "type": {
+              "type": "string",
+              "enum": ["DESTROY_UIWIDGET"]
+            }
+          },
+          "required": ["data", "type"],
+          "additionalProperties": false,
+          "description": "Destroys a customizable UI widget"
         },
         {
           "type": "object",
@@ -807,7 +891,7 @@
                 },
                 "source": {
                   "type": "integer",
-                  "description": "A result source to restrict to. One of the values in UrlbarUtils.RESULT_SOURCE.",
+                  "description": "A result source to restrict to. One of the values in UrlbarShared.RESULT_SOURCE.",
                   "default": 3
                 },
                 "entry": {

@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "vm/Compartment-inl.h"
-
 #include "mozilla/MemoryReporting.h"
 
 #include <stddef.h>
@@ -29,6 +27,7 @@
 
 #include "gc/Marking-inl.h"
 #include "gc/WeakMap-inl.h"
+#include "vm/Compartment-inl.h"
 #include "vm/JSObject-inl.h"
 #include "vm/Realm-inl.h"
 #include "vm/StringType-inl.h"
@@ -339,7 +338,7 @@ bool Compartment::getOrCreateWrapper(JSContext* cx, HandleObject existing,
     // took this path, for example if the object metadata callback stashes a
     // reference to it.
     if (wrapper->is<CrossCompartmentWrapperObject>()) {
-      NukeCrossCompartmentWrapper(cx, wrapper);
+      NukeRemovedCrossCompartmentWrapper(cx, wrapper);
     }
     return false;
   }

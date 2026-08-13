@@ -36,7 +36,7 @@ add_task(async function switchTabs() {
     fireInputEvent: true,
   });
   await UrlbarTestUtils.enterSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
   });
 
   // Switch to tab 1.  Search mode should be exited.
@@ -49,7 +49,7 @@ add_task(async function switchTabs() {
   await BrowserTestUtils.switchTab(gBrowser, tabs[0]);
   await searchPromise;
   await UrlbarTestUtils.assertSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     entry: "oneoff",
   });
   Assert.equal(
@@ -70,7 +70,7 @@ add_task(async function switchTabs() {
     fireInputEvent: true,
   });
   await UrlbarTestUtils.enterSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.TABS,
+    source: UrlbarShared.RESULT_SOURCE.TABS,
   });
 
   // Switch back to tab 0.  We should do a search and still be in search mode.
@@ -78,7 +78,7 @@ add_task(async function switchTabs() {
   await BrowserTestUtils.switchTab(gBrowser, tabs[0]);
   await searchPromise;
   await UrlbarTestUtils.assertSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     entry: "oneoff",
   });
   Assert.equal(
@@ -96,7 +96,7 @@ add_task(async function switchTabs() {
   await BrowserTestUtils.switchTab(gBrowser, tabs[2]);
   await searchPromise;
   await UrlbarTestUtils.assertSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.TABS,
+    source: UrlbarShared.RESULT_SOURCE.TABS,
     entry: "oneoff",
   });
   Assert.equal(
@@ -113,7 +113,7 @@ add_task(async function switchTabs() {
   await BrowserTestUtils.switchTab(gBrowser, tabs[0]);
   await searchPromise;
   await UrlbarTestUtils.assertSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     entry: "oneoff",
   });
   Assert.equal(
@@ -139,7 +139,7 @@ add_task(async function switchTabs() {
   await BrowserTestUtils.switchTab(gBrowser, tabs[0]);
   await searchPromise;
   await UrlbarTestUtils.assertSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     entry: "oneoff",
   });
   Assert.equal(
@@ -291,7 +291,7 @@ async function doUserTypedValueTest(searchString) {
     fireInputEvent: true,
   });
   await UrlbarTestUtils.assertSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     entry: "typed",
     restrictType: "symbol",
   });
@@ -305,7 +305,7 @@ async function doUserTypedValueTest(searchString) {
   BrowserTestUtils.removeTab(tab);
 
   await UrlbarTestUtils.assertSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     entry: "typed",
     restrictType: "symbol",
   });

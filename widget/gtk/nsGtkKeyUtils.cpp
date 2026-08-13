@@ -2,39 +2,40 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/Logging.h"
-
 #include "nsGtkKeyUtils.h"
 
-#include <gdk/gdkkeysyms.h>
-#include <algorithm>
-#include <gdk/gdk.h>
 #include <dlfcn.h>
+#include <gdk/gdk.h>
 #include <gdk/gdkkeysyms-compat.h>
+#include <gdk/gdkkeysyms.h>
+
+#include <algorithm>
+
+#include "mozilla/Logging.h"
 #ifdef MOZ_X11
-#  include <gdk/gdkx.h>
 #  include <X11/XKBlib.h>
+#  include <gdk/gdkx.h>
+
 #  include "X11UndefineNone.h"
 #endif
 #include "IMContextWrapper.h"
 #include "WidgetUtils.h"
 #include "WidgetUtilsGtk.h"
-#include "x11/keysym2ucs.h"
+#include "mozilla/MouseEvents.h"
+#include "mozilla/TextEventDispatcher.h"
+#include "mozilla/TextEvents.h"
+#include "mozilla/Utf16.h"
+#include "nsCRT.h"
 #include "nsContentUtils.h"
-#include "nsGtkUtils.h"
 #include "nsIBidiKeyboard.h"
 #include "nsPrintfCString.h"
 #include "nsReadableUtils.h"
-#include "nsServiceManagerUtils.h"
 #include "nsWindow.h"
-
-#include "mozilla/MouseEvents.h"
-#include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/TextEventDispatcher.h"
-#include "mozilla/TextEvents.h"
+#include "x11/keysym2ucs.h"
 
 #ifdef MOZ_WAYLAND
 #  include <sys/mman.h>
+
 #  include "nsWaylandDisplay.h"
 #endif
 
@@ -44,8 +45,7 @@
 // Therefore you shouldn't use `LogLevel::Verbose` for logging usual behavior.
 mozilla::LazyLogModule gKeyLog("KeyboardHandler");
 
-namespace mozilla {
-namespace widget {
+namespace mozilla::widget {
 
 #define IS_ASCII_ALPHABETICAL(key) \
   ((('a' <= key) && (key <= 'z')) || (('A' <= key) && (key <= 'Z')))
@@ -182,10 +182,10 @@ static const nsCString GetCharacterCodeName(char16_t aChar) {
       if (aChar < ' ' || (aChar >= 0x80 && aChar < 0xA0)) {
         return nsPrintfCString("control (0x%04X)", aChar);
       }
-      if (NS_IS_HIGH_SURROGATE(aChar)) {
+      if (IsHighSurrogate(aChar)) {
         return nsPrintfCString("high surrogate (0x%04X)", aChar);
       }
-      if (NS_IS_LOW_SURROGATE(aChar)) {
+      if (IsLowSurrogate(aChar)) {
         return nsPrintfCString("low surrogate (0x%04X)", aChar);
       }
       return nsPrintfCString("'%s' (0x%04X)",
@@ -2252,6 +2252,7 @@ struct KeyCodeData {
 static struct KeyCodeData gKeyCodes[] = {
 #define NS_DEFINE_VK(aDOMKeyName, aDOMKeyCode) \
   {#aDOMKeyName, sizeof(#aDOMKeyName) - 1, aDOMKeyCode},
+#include "mozilla/Utf16.h"
 #include "mozilla/VirtualKeyCodeList.inc"
 #undef NS_DEFINE_VK
     {nullptr, 0, 0}};
@@ -2815,5 +2816,4 @@ void KeymapWrapper::ClearKeymap() {
 }
 #endif
 
-}  // namespace widget
-}  // namespace mozilla
+}  // namespace mozilla::widget

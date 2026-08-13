@@ -5,9 +5,9 @@
 #ifndef MOZILLA_GFX_DRAWEVENTRECORDERTYPES_H_
 #define MOZILLA_GFX_DRAWEVENTRECORDERTYPES_H_
 
-#include "mozilla/RefPtr.h"
-
 #include <deque>
+
+#include "mozilla/RefPtr.h"
 
 namespace mozilla {
 namespace gfx {

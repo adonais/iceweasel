@@ -19,7 +19,6 @@
 
 #include "js/ColumnNumber.h"  // JS::LimitedColumnNumberOneOrigin
 #include "js/HashTable.h"
-#include "wasm/AsmJS.h"  // CodeMetadataForAsmJS::SeenSet
 #include "wasm/WasmCode.h"
 #include "wasm/WasmCodegenTypes.h"
 #include "wasm/WasmConstants.h"
@@ -169,9 +168,6 @@ class DebugState {
   }
   const CodeMetadata& codeMeta() const { return code_->codeMeta(); }
   const CodeTailMetadata& codeTailMeta() const { return code_->codeTailMeta(); }
-  const CodeMetadataForAsmJS* codeMetaForAsmJS() const {
-    return code_->codeMetaForAsmJS();
-  }
 
   uint32_t funcToCodeRangeIndex(uint32_t funcIndex) const {
     return debugCode().funcToCodeRange[funcIndex];
@@ -181,7 +177,6 @@ class DebugState {
 
   void addSizeOfMisc(mozilla::MallocSizeOf mallocSizeOf,
                      CodeMetadata::SeenSet* seenCodeMeta,
-                     CodeMetadataForAsmJS::SeenSet* seenCodeMetaForAsmJS,
                      Code::SeenSet* seenCode, size_t* code, size_t* data) const;
 };
 

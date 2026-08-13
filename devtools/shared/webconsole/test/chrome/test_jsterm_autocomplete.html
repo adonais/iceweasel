@@ -25,6 +25,17 @@
   addEventListener("load", startTest);
 
   async function startTest() {
+    // The worker section below discovers its worker through the legacy
+    // content-process attachConsoleToWorker / target.listWorkers() path, which
+    // only lists workers whose debugger lives in the content process. Force the
+    // local WorkerDebugger instead of the parent-process RemoteWorkerDebugger
+    // (bug 1944240). Remove this pin (or the test) once the local WorkerDebugger
+    // mechanism is removed; this legacy worker-introspection path still needs to
+    // be modernized to the RemoteWorkerDebugger model.
+    await SpecialPowers.pushPrefEnv({
+      set: [["dom.worker.remoteDebugger.enabled", false]],
+    });
+
     // First run the tests with a tab as a target.
     let {state} = await attachConsoleToTab(["PageError"]);
     await performTests({state, isWorker: false});

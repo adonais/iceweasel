@@ -5,8 +5,8 @@
 #ifndef nsStandaloneNativeMenu_h_
 #define nsStandaloneNativeMenu_h_
 
-#include "nsIStandaloneNativeMenu.h"
 #include "NativeMenuMac.h"
+#include "nsIStandaloneNativeMenu.h"
 
 class nsStandaloneNativeMenu : public nsIStandaloneNativeMenu {
  public:

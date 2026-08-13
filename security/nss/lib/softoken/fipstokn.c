@@ -2253,7 +2253,7 @@ FC_AsyncJoin(CK_SESSION_HANDLE hSession, CK_UTF8CHAR_PTR pFunctionName,
     SFTK_FIPSCHECK();
     CHECK_FORK();
 
-    return FC_AsyncJoin(hSession, pFunctionName, ulID, pData, ulData);
+    return NSC_AsyncJoin(hSession, pFunctionName, ulID, pData, ulData);
 }
 
 CK_RV

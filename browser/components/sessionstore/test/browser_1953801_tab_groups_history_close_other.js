@@ -29,7 +29,7 @@ add_task(
       label: "group-to-save",
     });
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => SessionStore.getWindowState(win).windows[0].groups.length == 1,
       "Waiting for group to appear in session store"
     );

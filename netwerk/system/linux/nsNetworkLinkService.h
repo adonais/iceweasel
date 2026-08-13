@@ -4,11 +4,11 @@
 #ifndef NSNETWORKLINKSERVICE_LINUX_H_
 #define NSNETWORKLINKSERVICE_LINUX_H_
 
+#include "../netlink/NetlinkService.h"
+#include "mozilla/Atomics.h"
+#include "mozilla/RefPtr.h"
 #include "nsINetworkLinkService.h"
 #include "nsIObserver.h"
-#include "../netlink/NetlinkService.h"
-#include "mozilla/RefPtr.h"
-#include "mozilla/Atomics.h"
 
 class nsNetworkLinkService : public nsINetworkLinkService,
                              public nsIObserver,

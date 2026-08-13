@@ -97,8 +97,6 @@ class MonitorPanel extends Component {
   componentDidMount() {
     MediaQuerySingleRow.addListener(this.onLayoutChange);
     MediaQueryVert.addListener(this.onLayoutChange);
-    this.persistDetailsPanelSize();
-    this.persistActionBarSize();
   }
 
   // FIXME: https://bugzilla.mozilla.org/show_bug.cgi?id=1774507
@@ -118,8 +116,6 @@ class MonitorPanel extends Component {
   componentWillUnmount() {
     MediaQuerySingleRow.removeListener(this.onLayoutChange);
     MediaQueryVert.removeListener(this.onLayoutChange);
-    this.persistDetailsPanelSize();
-    this.persistActionBarSize();
   }
 
   persistDetailsPanelSize() {
@@ -139,7 +135,7 @@ class MonitorPanel extends Component {
     }
   }
 
-  persistActionBarSize() {
+  persistActionBarSize = () => {
     const { clientWidth, clientHeight } =
       findDOMNode(this.refs.actionBar) || {};
     if (clientWidth) {
@@ -154,7 +150,7 @@ class MonitorPanel extends Component {
         clientHeight
       );
     }
-  }
+  };
 
   onLayoutChange() {
     this.setState({
@@ -189,6 +185,7 @@ class MonitorPanel extends Component {
       initialHeight,
       minSize: "250px",
       maxSize: "80%",
+      onResizeEnd: this.persistActionBarSize,
       splitterSize: networkActionOpen ? 1 : 0,
       startPanel:
         networkActionOpen &&
@@ -236,6 +233,7 @@ class MonitorPanel extends Component {
         initialHeight,
         minSize: "50px",
         maxSize: "80%",
+        onResizeEnd: () => this.persistDetailsPanelSize(),
         splitterSize: networkDetailsOpen ? 1 : 0,
         startPanel: this.renderActionBar(),
         endPanel:

@@ -8,7 +8,6 @@
 #include <inputscope.h>
 
 #include "WinUtils.h"
-
 #include "nsTArray.h"
 
 namespace mozilla::widget {

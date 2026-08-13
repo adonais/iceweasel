@@ -26,16 +26,22 @@ toolbar[overflowable][customizing] > .customization-target {
 }
 
 #customization-container {
+  display: flex;
   flex-direction: column;
   min-height: 0;
   background-color: var(--toolbar-background-color);
   color: var(--toolbar-text-color);
   color-scheme: var(--toolbar-color-scheme);
 
-  &:not([hidden]) {
-    /* In a separate rule to avoid 'display:flex' causing the node to be
-     * displayed while the container is still hidden. */
-    display: flex;
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media -moz-pref("browser.nova.enabled") {
+    /* Float as a rounded card matching the nova content area. The top gap is
+     * provided by the toolbox's own nova margin-block-end. */
+    margin-inline: var(--chrome-window-gap);
+    margin-block-end: var(--chrome-window-gap);
+    border-radius: var(--chrome-block-radius);
+    border: 1px solid var(--chrome-content-separator-color);
+    overflow: clip;
   }
 }
 
@@ -53,6 +59,9 @@ toolbar[overflowable][customizing] > .customization-target {
 
 #customization-panel-container {
   --customization-panel-padding: 20px;
+  /* Minimum inline-end gap so the arrow never escapes its box when the overflow
+     button sits flush against the window edge. */
+  --panel-arrow-min-inline-end: calc(var(--panel-border-radius) / 2);
 
   overflow-y: auto;
   display: flex;
@@ -88,17 +97,14 @@ toolbar[overflowable][customizing] > .customization-target {
 }
 
 #customization-palette {
+  display: block;
+  flex: 1 1 auto;
+  overflow: auto;
+  min-height: 3em;
+  margin-bottom: 20px;
   padding: 5px 20px 20px;
   transition: opacity 0.3s ease-in-out;
   opacity: 0;
-
-  &:not([hidden]) {
-    display: block;
-    flex: 1 1 auto;
-    overflow: auto;
-    min-height: 3em;
-    margin-bottom: 20px;
-  }
 
   &[showing="true"] {
     opacity: 1;
@@ -317,6 +323,11 @@ toolbarpaletteitem {
   flex: none;
 }
 
+#wrapper-ai-window-toggle[place="palette"] > #ai-window-toggle > .toolbarbutton-icon {
+  padding: 0;
+  box-shadow: none;
+}
+
 #customization-uidensity-touch-spacer {
   border-top: 1px solid var(--panel-separator-color);
   margin: 6px calc(-1 * var(--panel-padding)) 9px;
@@ -384,6 +395,10 @@ toolbarpaletteitem {
   transform: scaleX(-1);
 }
 
+#customization-uidensity-link {
+  margin-inline: var(--space-medium);
+}
+
 #customization-panelWrapper,
 #customization-panelWrapper > .panel-arrowcontent,
 #customization-panelHolder {
@@ -401,6 +416,7 @@ toolbarpaletteitem {
     color: var(--panel-text-color);
     background: var(--panel-background-color);
     background-clip: padding-box;
+    border-radius: var(--panel-border-radius);
     max-width: 29em;
 
     @media (-moz-platform: macos) {
@@ -410,7 +426,6 @@ toolbarpaletteitem {
         0 0 1px hsla(0, 0%, 0%, 0.3),
         0 4px 10px hsla(0, 0%, 0%, 0.3);
       appearance: none;
-      border-radius: var(--panel-border-radius);
     }
 
     @media not (-moz-platform: macos) {
@@ -434,9 +449,11 @@ toolbarpaletteitem {
     stroke: var(--panel-border-color);
     /* JS code sets --panel-arrow-offset to the distance between the middle of the
      * overflow button and the end of the window. We subtract the padding of our
-     * container (#customization-panel-container) and half our own width:
+     * container (#customization-panel-container) and half our own width, and floor
+     * the result at --panel-arrow-min-inline-end so the arrow stays inside its box
+     * when the overflow button sits close to the window edge:
      */
-    margin-inline-end: calc(var(--panel-arrow-offset) - var(--customization-panel-padding) - 10px);
+    margin-inline-end: max(var(--panel-arrow-min-inline-end), calc(var(--panel-arrow-offset) - var(--customization-panel-padding) - 10px));
     vertical-align: top;
 
     @media (-moz-platform: macos) {

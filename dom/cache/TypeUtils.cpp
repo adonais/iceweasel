@@ -208,6 +208,9 @@ void TypeUtils::ToCacheResponseWithoutBody(CacheResponse& aOut,
 
   aOut.paddingInfo() = aIn.GetPaddingInfo();
   aOut.paddingSize() = aIn.GetPaddingSize();
+
+  // Record the credentials mode of the fetch that produced this response.
+  aOut.credentials() = aIn.GetCredentialsMode();
 }
 
 void TypeUtils::ToCacheResponse(JSContext* aCx, CacheResponse& aOut,

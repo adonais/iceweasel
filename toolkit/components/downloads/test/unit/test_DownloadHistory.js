@@ -271,3 +271,51 @@ add_task(async function test_DownloadHistory() {
   allView2.expected = allView.expected;
   await allView2.waitForExpected();
 });
+
+/**
+ * Tests that a DownloadHistoryList slot is correctly cleaned up when a
+ * download's URL is stripped before the download is removed from the list,
+ * as happens with large data URI downloads.
+ */
+add_task(async function test_DownloadHistoryList_cleared_data_uri() {
+  let publicList = await promiseNewList();
+  DownloadHistory._listPromises = {};
+  let historyList = await DownloadHistory.getList();
+
+  let { promise: added, resolve: addedResolve } = Promise.withResolvers();
+  let { promise: removed, resolve: removedResolve } = Promise.withResolvers();
+  let view = {
+    onDownloadAdded: addedResolve,
+    onDownloadChanged() {},
+    onDownloadRemoved: removedResolve,
+  };
+  historyList.addView(view);
+
+  let download = await Downloads.createDownload({
+    source: { url: "data:text/plain,hello" },
+    target: { path: getTempFile(TEST_TARGET_FILE_NAME).path },
+  });
+  await publicList.add(download);
+  await added;
+
+  // Simulate URL body being stripped after a large data URI download completes.
+  download.source.url = "data:text/plain,";
+  download.source.isDataURICleared = true;
+
+  // Removing should correctly clean up the slot via its stored URL key,
+  // even though source.url has since been truncated.
+  await publicList.remove(download);
+  await removed;
+
+  Assert.ok(
+    !historyList._slotForDownload.has(download),
+    "The slot should be removed from the download map after removal"
+  );
+  Assert.equal(
+    historyList._slotsForUrl.size,
+    0,
+    "The URL slots map should be empty after removal"
+  );
+
+  historyList.removeView(view);
+});

@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "prio.h"
-#include "nscore.h"
 #include "nsIFile.h"
+#include "nscore.h"
+#include "prio.h"
 
 /**
  * OpenAnonymousTemporaryFile

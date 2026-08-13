@@ -5,9 +5,9 @@
 #ifndef XPCOM_BASE_NSPRLOGMODULESPARSER_H_
 #define XPCOM_BASE_NSPRLOGMODULESPARSER_H_
 
-#include "mozilla/Logging.h"
-
 #include <functional>
+
+#include "mozilla/Logging.h"
 
 namespace mozilla {
 

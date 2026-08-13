@@ -5,13 +5,12 @@
 #ifndef mozilla_Omnijar_h
 #define mozilla_Omnijar_h
 
-#include "nscore.h"
-#include "nsCOMPtr.h"
-#include "nsString.h"
-#include "nsIFile.h"
-#include "nsZipArchive.h"
-
 #include "mozilla/StaticPtr.h"
+#include "nsCOMPtr.h"
+#include "nsIFile.h"
+#include "nsString.h"
+#include "nsZipArchive.h"
+#include "nscore.h"
 
 namespace mozilla {
 

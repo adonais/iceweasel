@@ -51,6 +51,13 @@ nsAutoOwningEventTarget::nsAutoOwningEventTarget()
   NS_ADDREF(mTarget);
 }
 
+nsAutoOwningEventTarget::nsAutoOwningEventTarget(nsISerialEventTarget* aTarget)
+    : mTarget(aTarget) {
+  MOZ_ASSERT(mTarget);
+  NS_ADDREF(mTarget);
+  AssertCurrentThreadOwnsMe("not created on owning event target");
+}
+
 nsAutoOwningEventTarget::nsAutoOwningEventTarget(
     const nsAutoOwningEventTarget& aOther)
     : mTarget(aOther.mTarget) {

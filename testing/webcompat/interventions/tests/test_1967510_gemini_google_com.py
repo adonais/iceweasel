@@ -27,13 +27,15 @@ async def check_paste_works(client):
     client.await_css(CANCEL_CSS, is_displayed=True).click()
     prompt = client.await_css(ADD_PROMPT_CSS, is_displayed=True)
     await client.apz_click(element=prompt, offset=[40, 20])
+    old_value = client.execute_script("return arguments[0].innerText", prompt)
     client.do_paste()
     await client.stall(1)
     return client.execute_script(
         """
-        return arguments[0].innerText.trim() === "hello"
+        return arguments[0].innerText.trim() === arguments[1] + "hello"
       """,
         prompt,
+        old_value,
     )
 
 

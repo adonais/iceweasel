@@ -15,22 +15,22 @@
 #include "nsMenuX.h"
 
 #include "nsCOMPtr.h"
-#include "nsString.h"
 #include "nsGkAtoms.h"
 #include "nsObjCExceptions.h"
+#include "nsString.h"
 #include "nsThreadUtils.h"
 
-#include "nsIContent.h"
-#include "nsIShellService.h"
 #include "mozilla/dom/Document.h"
 #include "nsIAppStartup.h"
+#include "nsIContent.h"
+#include "nsIShellService.h"
 #include "nsIStringBundle.h"
 #include "nsToolkitCompsCID.h"
 
 #include "mozilla/Components.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/glean/WidgetCocoaMetrics.h"
-#include "mozilla/Preferences.h"
 
 using namespace mozilla;
 using mozilla::dom::Element;

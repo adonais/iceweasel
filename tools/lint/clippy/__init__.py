@@ -16,10 +16,15 @@ CLIPPY_FIX_ARGS = ("--fix", "--allow-no-vcs")
 
 
 def get_clippy_driver_flags(config):
-    """Build clippy driver flags (-W/-D) from the warn/deny lists in clippy.yml."""
+    """Build clippy driver flags (-W/-A/-D) from the warn/allow/deny lists in
+    clippy.yml. Order matters: warns (often lint groups) come first, then the
+    allows that opt back out of individual lints from those groups, then the
+    denys. For a given lint the rightmost flag wins."""
     flags = []
     for lint in config.get("warn", []):
         flags.extend(["-W", f"clippy::{lint}"])
+    for lint in config.get("allow", []):
+        flags.extend(["-A", f"clippy::{lint}"])
     for lint in config.get("deny", []):
         flags.extend(["-D", f"clippy::{lint}"])
     return flags

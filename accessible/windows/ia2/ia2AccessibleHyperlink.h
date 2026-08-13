@@ -5,10 +5,9 @@
 #ifndef ACCESSIBLE_HYPERLINK_H
 #define ACCESSIBLE_HYPERLINK_H
 
-#include "nsISupports.h"
-
-#include "ia2AccessibleAction.h"
 #include "AccessibleHyperlink.h"
+#include "ia2AccessibleAction.h"
+#include "nsISupports.h"
 
 namespace mozilla {
 namespace a11y {

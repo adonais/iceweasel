@@ -5,12 +5,11 @@
 #ifndef nsPrintDialog_h_
 #define nsPrintDialog_h_
 
-#include "nsIPrintDialogService.h"
+#include <windef.h>
 
 #include "nsCOMPtr.h"
+#include "nsIPrintDialogService.h"
 #include "nsIWindowWatcher.h"
-
-#include <windef.h>
 
 class nsIPrintSettings;
 class nsIDialogParamBlock;

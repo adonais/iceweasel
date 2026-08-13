@@ -3,13 +3,21 @@
 
 requestLongerTimeout(3);
 
+async function clickPermissionButton(button, urlField) {
+  if (urlField) {
+    urlField.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+  await button.updateComplete;
+  button.click();
+}
+
 add_task(async function testAllow() {
   await runTest(
     async (params, observeAllPromise, apply) => {
       assertListContents(params, []);
 
       params.url.value = "test.com";
-      params.btnAllow.doCommand();
+      await clickPermissionButton(params.btnAllow, params.url);
 
       assertListContents(params, [
         ["http://test.com", params.allowL10nId],
@@ -42,7 +50,7 @@ add_task(async function testBlock() {
   await runTest(
     async (params, observeAllPromise, apply) => {
       params.url.value = "test.com";
-      params.btnBlock.doCommand();
+      await clickPermissionButton(params.btnBlock, params.url);
 
       assertListContents(params, [
         ["http://test.com", params.denyL10nId],
@@ -75,7 +83,7 @@ add_task(async function testAllowAgain() {
   await runTest(
     async (params, observeAllPromise, apply) => {
       params.url.value = "test.com";
-      params.btnAllow.doCommand();
+      await clickPermissionButton(params.btnAllow, params.url);
 
       assertListContents(params, [
         ["http://test.com", params.allowL10nId],
@@ -109,7 +117,7 @@ add_task(async function testRemove() {
     async (params, observeAllPromise, apply) => {
       while (params.richlistbox.itemCount) {
         params.richlistbox.selectedIndex = 0;
-        params.btnRemove.doCommand();
+        await clickPermissionButton(params.btnRemove);
       }
       assertListContents(params, []);
 
@@ -169,7 +177,7 @@ add_task(async function testAllowHTTPSWithPort() {
   await runTest(
     async (params, observeAllPromise, apply) => {
       params.url.value = "https://test.com:12345";
-      params.btnAllow.doCommand();
+      await clickPermissionButton(params.btnAllow, params.url);
 
       assertListContents(params, [
         ["https://test.com:12345", params.allowL10nId],
@@ -195,7 +203,7 @@ add_task(async function testBlockHTTPSWithPort() {
   await runTest(
     async (params, observeAllPromise, apply) => {
       params.url.value = "https://test.com:12345";
-      params.btnBlock.doCommand();
+      await clickPermissionButton(params.btnBlock, params.url);
 
       assertListContents(params, [
         ["https://test.com:12345", params.denyL10nId],
@@ -221,7 +229,7 @@ add_task(async function testAllowAgainHTTPSWithPort() {
   await runTest(
     async (params, observeAllPromise, apply) => {
       params.url.value = "https://test.com:12345";
-      params.btnAllow.doCommand();
+      await clickPermissionButton(params.btnAllow, params.url);
 
       assertListContents(params, [
         ["https://test.com:12345", params.allowL10nId],
@@ -248,7 +256,7 @@ add_task(async function testRemoveHTTPSWithPort() {
     async (params, observeAllPromise, apply) => {
       while (params.richlistbox.itemCount) {
         params.richlistbox.selectedIndex = 0;
-        params.btnRemove.doCommand();
+        await clickPermissionButton(params.btnRemove);
       }
 
       assertListContents(params, []);
@@ -278,7 +286,7 @@ add_task(async function testAllowPort() {
   await runTest(
     async (params, observeAllPromise, apply) => {
       params.url.value = "localhost:12345";
-      params.btnAllow.doCommand();
+      await clickPermissionButton(params.btnAllow, params.url);
 
       assertListContents(params, [
         ["http://localhost:12345", params.allowL10nId],
@@ -311,7 +319,7 @@ add_task(async function testBlockPort() {
   await runTest(
     async (params, observeAllPromise, apply) => {
       params.url.value = "localhost:12345";
-      params.btnBlock.doCommand();
+      await clickPermissionButton(params.btnBlock, params.url);
 
       assertListContents(params, [
         ["http://localhost:12345", params.denyL10nId],
@@ -344,7 +352,7 @@ add_task(async function testAllowAgainPort() {
   await runTest(
     async (params, observeAllPromise, apply) => {
       params.url.value = "localhost:12345";
-      params.btnAllow.doCommand();
+      await clickPermissionButton(params.btnAllow, params.url);
 
       assertListContents(params, [
         ["http://localhost:12345", params.allowL10nId],
@@ -378,7 +386,7 @@ add_task(async function testRemovePort() {
     async (params, observeAllPromise, apply) => {
       while (params.richlistbox.itemCount) {
         params.richlistbox.selectedIndex = 0;
-        params.btnRemove.doCommand();
+        await clickPermissionButton(params.btnRemove);
       }
 
       assertListContents(params, []);

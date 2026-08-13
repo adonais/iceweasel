@@ -14,10 +14,12 @@
 #include "jit/JitRuntime.h"
 #include "jit/JitSpewer.h"
 #include "js/JitCodeAPI.h"
+#include "js/Prefs.h"  // JS::Prefs
 #include "js/ProfilingFrameIterator.h"
 #include "js/Vector.h"
 #include "vm/BytecodeLocation.h"  // for BytecodeLocation
 #include "vm/GeckoProfiler.h"
+#include "vm/Realm.h"  // Realm::creationOptions
 
 #include "vm/GeckoProfiler-inl.h"
 #include "vm/JSScript-inl.h"
@@ -26,6 +28,41 @@ using mozilla::Maybe;
 
 namespace js {
 namespace jit {
+
+bool IsRealmIndependentBaselineCode(JSScript* script) {
+  return JS::Prefs::experimental_self_hosted_cache() && script->selfHosted();
+}
+
+bool AddBaselineJitcodeGlobalEntry(JSContext* cx, JSScript* script,
+                                   JitCode* code) {
+  UniqueChars str = GeckoProfilerRuntime::allocProfileString(cx, script);
+  if (!str) {
+    return false;
+  }
+
+  UniqueJitcodeGlobalEntry entry;
+  if (IsRealmIndependentBaselineCode(script)) {
+    entry = MakeJitcodeGlobalEntry<RealmIndependentSharedEntry>(
+        cx, code, code->raw(), code->rawEnd(), std::move(str));
+  } else {
+    uint64_t realmId = script->realm()->creationOptions().profilerRealmID();
+    entry = MakeJitcodeGlobalEntry<BaselineEntry>(
+        cx, code, code->raw(), code->rawEnd(), script, std::move(str), realmId);
+  }
+  if (!entry) {
+    return false;
+  }
+
+  JitcodeGlobalTable* table =
+      cx->runtime()->jitRuntime()->getJitcodeGlobalTable();
+  if (!table->addEntry(std::move(entry))) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  code->setHasBytecodeMap();
+  return true;
+}
 
 JitcodeGlobalEntry::JitcodeGlobalEntry(Kind kind, JitCode* code,
                                        void* nativeStartAddr,

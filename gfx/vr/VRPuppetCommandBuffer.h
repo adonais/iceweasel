@@ -5,10 +5,10 @@
 #ifndef GFX_VR_SERVICE_VRPUPPETCOMMANDBUFFER_H
 #define GFX_VR_SERVICE_VRPUPPETCOMMANDBUFFER_H
 
-#include "mozilla/Mutex.h"
-#include "nsTArray.h"
 #include "moz_external_vr.h"
+#include "mozilla/Mutex.h"
 #include "mozilla/TimeStamp.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 namespace gfx {

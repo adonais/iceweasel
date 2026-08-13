@@ -13,6 +13,7 @@ support-files = [
 ["test_data.html"]
 skip-if = [
   "os == 'android'",
+  "xorigin",  # We block cross origin worker subscriptions
 ]
 scheme = "https"
 
@@ -52,11 +53,13 @@ skip-if = [
 ["test_register.html"]
 skip-if = [
   "os == 'android'",
+  "xorigin",  # We block cross origin worker subscriptions
 ]
 
 ["test_register_key.html"]
 skip-if = [
   "os == 'android'",
+  "xorigin",  # We block cross origin worker subscriptions
 ]
 scheme = "https"
 

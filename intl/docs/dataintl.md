@@ -136,15 +136,15 @@ The API will return the following calendar information for a given locale code:
 
 - firstDayOfWeek
   : an integer in the range 1=Monday to 7=Sunday indicating the day
-    considered the first day of the week in calendars, e.g. 7 for en-US,
-    1 for en-GB, 7 for bn-IN
+  considered the first day of the week in calendars, e.g. 7 for en-US,
+  1 for en-GB, 7 for bn-IN
 - minDays
   : an integer in the range of 1 to 7 indicating the minimum number
-    of days required in the first week of the year, e.g. 1 for en-US, 4 for de
+  of days required in the first week of the year, e.g. 1 for en-US, 4 for de
 - weekend
   : an array with values in the range 1=Monday to 7=Sunday indicating the days
-    of the week considered as part of the weekend, e.g. [6, 7] for en-US and en-GB,
-    [7] for bn-IN (note that "weekend" is *not* necessarily two days)
+  of the week considered as part of the weekend, e.g. [6, 7] for en-US and en-GB,
+  [7] for bn-IN (note that "weekend" is *not* necessarily two days)
 
 Those bits of information should be especially useful for any UI that works
 with calendar data.

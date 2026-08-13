@@ -12,6 +12,13 @@
   box-sizing: border-box;
 }
 
+:host([spacing="compact"]) {
+  --card-border-radius: var(--card-border-radius-compact);
+  --card-padding: var(--card-padding-compact);
+  --card-gap: var(--card-gap-compact);
+  --card-font-size: var(--card-font-size-compact);
+}
+
 :host([type="accordion"]) {
   summary {
     padding-block: var(--card-padding-block, var(--card-padding));
@@ -89,7 +96,7 @@ summary {
 }
 
 #heading {
-  font-size: var(--font-size-root);
+  font-size: var(--card-font-size);
   font-weight: var(--font-weight-heading);
 }
 
@@ -97,6 +104,7 @@ summary {
   align-self: stretch;
   display: flex;
   flex-direction: column;
+  font-size: var(--card-font-size);
   padding-inline: var(--card-padding-inline, var(--card-padding));
   border-end-start-radius: var(--card-border-radius);
   border-end-end-radius: var(--card-border-radius);
@@ -111,35 +119,27 @@ summary {
 
 details {
   > summary {
+    background-color: var(--card-header-background-color);
+    border-color: var(--card-header-border-color);
+    color: var(--card-header-text-color);
     list-style: none;
     border-radius: var(--card-border-radius);
     cursor: pointer;
 
     &:hover {
-      background-color: var(--button-background-color-hover);
+      background-color: var(--card-header-background-color-hover);
+      border-color: var(--card-header-border-color-hover);
+      color: var(--card-header-text-color-hover);
+    }
+
+    &:active {
+      background-color: var(--card-header-background-color-active);
+      border-color: var(--card-header-border-color-active);
+      color: var(--card-header-text-color-active);
     }
 
     &:focus-visible {
       outline: var(--card-focus-outline);
-    }
-
-    @media (prefers-contrast) {
-      outline: var(--button-border-color) solid var(--border-width);
-    }
-
-    @media (forced-colors) {
-      color: var(--button-text-color);
-      background-color: var(--button-background-color);
-
-      &:hover {
-        background-color: var(--button-background-color-hover);
-        color: var(--button-text-color-hover);
-      }
-
-      &:active {
-        background-color: var(--button-background-color-active);
-        color: var(--button-text-color-active);
-      }
     }
   }
 

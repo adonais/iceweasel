@@ -4,14 +4,13 @@
 
 #include "ContentProcessController.h"
 
+#include "InputData.h"  // for InputData
 #include "mozilla/PresShell.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/layers/APZCCallbackHelper.h"
 #include "mozilla/layers/APZChild.h"
 #include "mozilla/layers/DoubleTapToZoom.h"
 #include "nsIContentInlines.h"
-
-#include "InputData.h"  // for InputData
 
 namespace mozilla {
 namespace layers {

@@ -13,6 +13,10 @@
 // limitations under the License.
 
 #include "absl/debugging/symbolize.h"
+#include <cstddef>
+
+#include "absl/debugging/internal/symbolize.h"
+#include "absl/strings/str_format.h"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -32,8 +36,10 @@
 #include "absl/base/attributes.h"
 #include "absl/base/casts.h"
 #include "absl/base/config.h"
+#include "absl/base/internal/low_level_alloc.h"
 #include "absl/base/internal/per_thread_tls.h"
 #include "absl/base/optimization.h"
+#include "absl/cleanup/cleanup.h"
 #include "absl/debugging/internal/stack_consumption.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
@@ -107,8 +113,6 @@ static ABSL_PER_THREAD_TLS_KEYWORD char
 #endif
 
 #if !defined(__EMSCRIPTEN__)
-static void *GetPCFromFnPtr(void *ptr) { return ptr; }
-
 // Used below to hopefully inhibit some compiler/linker optimizations
 // that may remove kHpageTextPadding, kPadding0, and kPadding1 from
 // the binary.
@@ -118,12 +122,6 @@ static volatile bool volatile_bool = false;
 static constexpr size_t kHpageSize = 1 << 21;
 const char kHpageTextPadding[kHpageSize * 4] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         .text) = "";
-
-#else
-static void *GetPCFromFnPtr(void *ptr) {
-  return EM_ASM_PTR(
-      { return wasmOffsetConverter.convert(wasmTable.get($0).name, 0); }, ptr);
-}
 
 #endif  // !defined(__EMSCRIPTEN__)
 
@@ -138,7 +136,7 @@ static const char *TrySymbolizeWithLimit(void *pc, int limit) {
       << "try_symbolize_buffer is too small";
 
   // Use the heap to facilitate heap and buffer sanitizer tools.
-  auto heap_buffer = absl::make_unique<char[]>(sizeof(try_symbolize_buffer));
+  auto heap_buffer = std::make_unique<char[]>(sizeof(try_symbolize_buffer));
   bool found = absl::Symbolize(pc, heap_buffer.get(), limit);
   if (found) {
     CHECK_LT(static_cast<int>(
@@ -174,12 +172,10 @@ void ABSL_ATTRIBUTE_NOINLINE TestWithReturnAddress() {
 
 TEST(Symbolize, Cached) {
   // Compilers should give us pointers to them.
-  EXPECT_STREQ("nonstatic_func",
-               TrySymbolize(GetPCFromFnPtr((void *)(&nonstatic_func))));
+  EXPECT_STREQ("nonstatic_func", TrySymbolize((void*)(&nonstatic_func)));
   // The name of an internal linkage symbol is not specified; allow either a
   // mangled or an unmangled name here.
-  const char *static_func_symbol =
-      TrySymbolize(GetPCFromFnPtr((void *)(&static_func)));
+  const char* static_func_symbol = TrySymbolize((void*)(&static_func));
   EXPECT_TRUE(strcmp("static_func", static_func_symbol) == 0 ||
               strcmp("static_func()", static_func_symbol) == 0);
 
@@ -189,50 +185,38 @@ TEST(Symbolize, Cached) {
 TEST(Symbolize, Truncation) {
   constexpr char kNonStaticFunc[] = "nonstatic_func";
   EXPECT_STREQ("nonstatic_func",
-               TrySymbolizeWithLimit(GetPCFromFnPtr((void *)(&nonstatic_func)),
+               TrySymbolizeWithLimit((void*)(&nonstatic_func),
                                      strlen(kNonStaticFunc) + 1));
   EXPECT_STREQ("nonstatic_...",
-               TrySymbolizeWithLimit(GetPCFromFnPtr((void *)(&nonstatic_func)),
+               TrySymbolizeWithLimit((void*)(&nonstatic_func),
                                      strlen(kNonStaticFunc) + 0));
   EXPECT_STREQ("nonstatic...",
-               TrySymbolizeWithLimit(GetPCFromFnPtr((void *)(&nonstatic_func)),
+               TrySymbolizeWithLimit((void*)(&nonstatic_func),
                                      strlen(kNonStaticFunc) - 1));
-  EXPECT_STREQ("n...", TrySymbolizeWithLimit(
-                           GetPCFromFnPtr((void *)(&nonstatic_func)), 5));
-  EXPECT_STREQ("...", TrySymbolizeWithLimit(
-                          GetPCFromFnPtr((void *)(&nonstatic_func)), 4));
-  EXPECT_STREQ("..", TrySymbolizeWithLimit(
-                         GetPCFromFnPtr((void *)(&nonstatic_func)), 3));
-  EXPECT_STREQ(
-      ".", TrySymbolizeWithLimit(GetPCFromFnPtr((void *)(&nonstatic_func)), 2));
-  EXPECT_STREQ(
-      "", TrySymbolizeWithLimit(GetPCFromFnPtr((void *)(&nonstatic_func)), 1));
-  EXPECT_EQ(nullptr, TrySymbolizeWithLimit(
-                         GetPCFromFnPtr((void *)(&nonstatic_func)), 0));
+  EXPECT_STREQ("n...", TrySymbolizeWithLimit((void*)(&nonstatic_func), 5));
+  EXPECT_STREQ("...", TrySymbolizeWithLimit((void*)(&nonstatic_func), 4));
+  EXPECT_STREQ("..", TrySymbolizeWithLimit((void*)(&nonstatic_func), 3));
+  EXPECT_STREQ(".", TrySymbolizeWithLimit((void*)(&nonstatic_func), 2));
+  EXPECT_STREQ("", TrySymbolizeWithLimit((void*)(&nonstatic_func), 1));
+  EXPECT_EQ(nullptr, TrySymbolizeWithLimit((void*)(&nonstatic_func), 0));
 }
 
 TEST(Symbolize, SymbolizeWithDemangling) {
   Foo::func(100);
 #ifdef __EMSCRIPTEN__
   // Emscripten's online symbolizer is more precise with arguments.
-  EXPECT_STREQ("Foo::func(int)",
-               TrySymbolize(GetPCFromFnPtr((void *)(&Foo::func))));
+  EXPECT_STREQ("Foo::func(int)", TrySymbolize((void*)(&Foo::func)));
 #else
-  EXPECT_STREQ("Foo::func()",
-               TrySymbolize(GetPCFromFnPtr((void *)(&Foo::func))));
+  EXPECT_STREQ("Foo::func()", TrySymbolize((void*)(&Foo::func)));
 #endif
 }
 
 TEST(Symbolize, SymbolizeSplitTextSections) {
-  EXPECT_STREQ("unlikely_func()",
-               TrySymbolize(GetPCFromFnPtr((void *)(&unlikely_func))));
-  EXPECT_STREQ("hot_func()", TrySymbolize(GetPCFromFnPtr((void *)(&hot_func))));
-  EXPECT_STREQ("startup_func()",
-               TrySymbolize(GetPCFromFnPtr((void *)(&startup_func))));
-  EXPECT_STREQ("exit_func()",
-               TrySymbolize(GetPCFromFnPtr((void *)(&exit_func))));
-  EXPECT_STREQ("regular_func()",
-               TrySymbolize(GetPCFromFnPtr((void *)(&regular_func))));
+  EXPECT_STREQ("unlikely_func()", TrySymbolize((void*)(&unlikely_func)));
+  EXPECT_STREQ("hot_func()", TrySymbolize((void*)(&hot_func)));
+  EXPECT_STREQ("startup_func()", TrySymbolize((void*)(&startup_func)));
+  EXPECT_STREQ("exit_func()", TrySymbolize((void*)(&exit_func)));
+  EXPECT_STREQ("regular_func()", TrySymbolize((void*)(&regular_func)));
 }
 
 // Tests that verify that Symbolize stack footprint is within some limit.
@@ -391,46 +375,41 @@ TEST(Symbolize, SymbolizeWithMultipleMaps) {
   }
 }
 
-// Appends string(*args->arg) to args->symbol_buf.
-static void DummySymbolDecorator(
-    const absl::debugging_internal::SymbolDecoratorArgs *args) {
-  std::string *message = static_cast<std::string *>(args->arg);
-  strncat(args->symbol_buf, message->c_str(),
-          args->symbol_buf_size - strlen(args->symbol_buf) - 1);
-}
+template <char C>
+class TestSymbolDecorator final
+    : public absl::debugging_internal::SymbolDecorator {
+ public:
+  static absl::debugging_internal::SymbolDecoratorPtr Factory(int /*fd*/) {
+    void* ptr = absl::base_internal::LowLevelAlloc::AllocWithArena(
+        sizeof(TestSymbolDecorator), absl::base_internal::SigSafeArena());
+    return absl::debugging_internal::SymbolDecoratorPtr(
+        new (ptr) TestSymbolDecorator());
+  }
 
-TEST(Symbolize, InstallAndRemoveSymbolDecorators) {
-  int ticket_a;
-  std::string a_message("a");
-  EXPECT_GE(ticket_a = absl::debugging_internal::InstallSymbolDecorator(
-                DummySymbolDecorator, &a_message),
-            0);
+  void Decorate(const void* /*pc*/, ptrdiff_t /*relocation*/, char* symbol_buf,
+                size_t symbol_buf_size, char* /*tmp_buf*/,
+                size_t /*tmp_buf_size*/) const override {
+    const size_t len = strlen(symbol_buf);
+    absl::SNPrintF(symbol_buf + len, symbol_buf_size - len, " hello %c", C);
+  }
+};
 
-  int ticket_b;
-  std::string b_message("b");
-  EXPECT_GE(ticket_b = absl::debugging_internal::InstallSymbolDecorator(
-                DummySymbolDecorator, &b_message),
-            0);
+TEST(Symbolize, SetSymbolDecorator) {
+  absl::Cleanup cleanup =
+      [old_decorator = absl::debugging_internal::SetSymbolDecoratorFactory(
+           &TestSymbolDecorator<'a'>::Factory)] {
+        absl::debugging_internal::SetSymbolDecoratorFactory(old_decorator);
+      };
 
-  int ticket_c;
-  std::string c_message("c");
-  EXPECT_GE(ticket_c = absl::debugging_internal::InstallSymbolDecorator(
-                DummySymbolDecorator, &c_message),
-            0);
+  EXPECT_STREQ("nonstatic_func hello a",
+               TrySymbolize(reinterpret_cast<void*>(&nonstatic_func)));
 
-  // Use addresses 4 and 8 here to ensure that we always use valid addresses
-  // even on systems that require instructions to be 32-bit aligned.
-  char *address = reinterpret_cast<char *>(4);
-  EXPECT_STREQ("abc", TrySymbolize(address));
+  EXPECT_EQ(absl::debugging_internal::SetSymbolDecoratorFactory(
+                &TestSymbolDecorator<'b'>::Factory),
+            &TestSymbolDecorator<'a'>::Factory);
 
-  EXPECT_TRUE(absl::debugging_internal::RemoveSymbolDecorator(ticket_b));
-
-  EXPECT_STREQ("ac", TrySymbolize(address + 4));
-
-  // Cleanup: remove all remaining decorators so other stack traces don't
-  // get mystery "ac" decoration.
-  EXPECT_TRUE(absl::debugging_internal::RemoveSymbolDecorator(ticket_a));
-  EXPECT_TRUE(absl::debugging_internal::RemoveSymbolDecorator(ticket_c));
+  EXPECT_STREQ("nonstatic_func hello b",
+               TrySymbolize(reinterpret_cast<void*>(&nonstatic_func)));
 }
 
 // Some versions of Clang with optimizations enabled seem to be able
@@ -630,5 +609,12 @@ int main(int argc, char **argv) {
 #endif
 #endif
 
+#if !defined(__EMSCRIPTEN__)
+  // All of these test cases rely on symbolizing function pointers.
+  // On most platforms, function pointers directly map to PC.
+  // In WebAssembly, function pointers are indices into the function table
+  // and there is no longer a mapping from function index back into the
+  // file offset for symbolization.
   return RUN_ALL_TESTS();
+#endif  // !defined(__EMSCRIPTEN__)
 }

@@ -321,15 +321,15 @@ export var RecentlyClosedTabsAndWindowsMenuUtils = {
 function setTabGroupColorProperties(element, tabGroup) {
   element.style.setProperty(
     "--tab-group-color",
-    `var(--tab-group-color-${tabGroup.color})`
+    `var(--tab-group-${tabGroup.color})`
   );
   element.style.setProperty(
     "--tab-group-color-invert",
-    `var(--tab-group-color-${tabGroup.color}-invert)`
+    `var(--tab-group-${tabGroup.color}-invert)`
   );
   element.style.setProperty(
     "--tab-group-color-pale",
-    `var(--tab-group-color-${tabGroup.color}-pale)`
+    `var(--tab-group-${tabGroup.color}-pale)`
   );
   element.style.setProperty(
     "--tab-group-background-color",

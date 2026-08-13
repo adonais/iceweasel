@@ -5,8 +5,8 @@
 #ifndef SimpleURIUnknownSchemes_h_
 #define SimpleURIUnknownSchemes_h_
 
-#include "nsString.h"
 #include "mozilla/RWLock.h"
+#include "nsString.h"
 #include "nsTArray.h"
 #include "nsTHashSet.h"
 

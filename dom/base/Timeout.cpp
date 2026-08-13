@@ -65,7 +65,7 @@ void Timeout::SetWhenOrTimeRemaining(const TimeStamp& aBaseTime,
   // time.  Even if we are suspended we want to use this target time so
   // that it appears time passes while suspended.
   mWhen = aBaseTime + aDelay;
-  mTimeRemaining = TimeDuration(0);
+  mTimeRemaining = TimeDuration();
 }
 
 const TimeStamp& Timeout::When() const {

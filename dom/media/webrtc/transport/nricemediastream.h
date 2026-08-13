@@ -119,6 +119,8 @@ struct NrIceCandidatePair {
   // for RTCIceCandidatePairStats
   uint64_t bytes_sent;
   uint64_t bytes_recvd;
+  uint64_t packets_sent;
+  uint64_t packets_recvd;
   uint64_t ms_since_last_send;
   uint64_t ms_since_last_recv;
   uint64_t responses_recvd;
@@ -171,6 +173,12 @@ class NrIceMediaStream {
   // caller's responsibility to free these.
   nsresult GetActivePair(int component, UniquePtr<NrIceCandidate>* local,
                          UniquePtr<NrIceCandidate>* remote);
+
+  // Like GetActivePair, but returns the local and remote candidates as
+  // candidate-attribute strings (eg; "candidate:...") suitable for re-parse on
+  // the DOM side.
+  nsresult GetActivePairAsAttributes(int aComponent, std::string* aLocal,
+                                     std::string* aRemote) const;
 
   // Get the current ICE consent send status plus the timeval of the last
   // consent update time.

@@ -21,6 +21,12 @@ ChromeUtils.defineESModuleGetters(lazy, {
 let URLs, dates, today;
 
 add_setup(async () => {
+  // test_history_context_menu opens the legacy bookmarks sidebar panel and
+  // inspects its tree view, so opt out of the updated bookmarks panel here.
+  // TODO(Bug 2039395): adapt this test to the new bookmarks sidebar panel and remove this sidebar.updateBookmarks.enabled pushPrefEnv)
+  await SpecialPowers.pushPrefEnv({
+    set: [["sidebar.updatedBookmarks.enabled", false]],
+  });
   const historyInfo = await populateHistory();
   URLs = historyInfo.URLs;
   dates = historyInfo.dates;
@@ -250,7 +256,7 @@ async function test_history_search({ component, contentWindow }) {
       ) &&
       component.lists[0]
   );
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     const { rowEls } = component.lists[0];
     return rowEls.length === 1 && rowEls[0].mainEl.href === URLs[1];
   }, "There is one matching search result.");

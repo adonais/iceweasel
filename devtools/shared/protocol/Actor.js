@@ -233,6 +233,13 @@ var generateRequestTypes = function (actorSpec) {
 
         const sendReturn = retToSend => {
           if (spec.oneway) {
+            if (spec.release) {
+              try {
+                this.destroy();
+              } catch (e) {
+                this.writeError(e, actorSpec.typeName, spec.name);
+              }
+            }
             // No need to send a response.
             return;
           }

@@ -44,4 +44,13 @@ add_task(async function test_createConnection_and_proxy() {
   Assert.equal(detail.httpStatus, 500);
   Assert.equal(detail.isolationKey, filter.isolationKey);
   Assert.equal(detail.level, "error");
+
+  // Tear down the channel filter and error observer even on failure so the
+  // channel filter doesn't continue intercepting navigation in subsequent
+  // test files (it would otherwise route example.com through the now-dead
+  // test proxy server and hang any later tab load).
+  registerCleanupFunction(() => {
+    filter.stop();
+    observer.stop();
+  });
 });

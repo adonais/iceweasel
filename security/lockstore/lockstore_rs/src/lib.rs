@@ -18,16 +18,14 @@ use kvstore::{DatabaseError, StoreError};
 use nss_rs::Error as NssError;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use zeroize::ZeroizeOnDrop;
 
 pub const KEYSTORE_FILENAME: &str = "lockstore.keys.sqlite";
 pub const DATASTORE_FILENAME_PREFIX: &str = "lockstore.data.";
 pub const DATASTORE_FILENAME_SUFFIX: &str = ".sqlite";
 
-pub fn datastore_filename(collection_name: &str) -> String {
-    format!(
-        "{}{}{}",
-        DATASTORE_FILENAME_PREFIX, collection_name, DATASTORE_FILENAME_SUFFIX
-    )
+pub fn datastore_filename(dek_name: &str) -> String {
+    format!("{DATASTORE_FILENAME_PREFIX}{dek_name}{DATASTORE_FILENAME_SUFFIX}")
 }
 
 #[derive(Error, Debug)]
@@ -70,13 +68,13 @@ pub enum LockstoreError {
 
 impl From<serde_json::Error> for LockstoreError {
     fn from(err: serde_json::Error) -> Self {
-        LockstoreError::Serialization(err.to_string())
+        Self::Serialization(err.to_string())
     }
 }
 
 impl From<NssError> for LockstoreError {
     fn from(err: NssError) -> Self {
-        LockstoreError::Encryption(err.to_string())
+        Self::Encryption(err.to_string())
     }
 }
 
@@ -112,28 +110,28 @@ pub enum KekType {
 impl KekType {
     pub fn as_str(&self) -> &str {
         match self {
-            KekType::LocalKey => "local",
-            KekType::Pkcs11Token => "pkcs11",
-            KekType::Password => "password",
+            Self::LocalKey => "local",
+            Self::Pkcs11Token => "pkcs11",
+            Self::Password => "password",
         }
     }
 
     pub fn parse(s: &str) -> Option<Self> {
         match s {
-            "local" => Some(KekType::LocalKey),
-            "pkcs11" => Some(KekType::Pkcs11Token),
-            "password" => Some(KekType::Password),
+            "local" => Some(Self::LocalKey),
+            "pkcs11" => Some(Self::Pkcs11Token),
+            "password" => Some(Self::Password),
             _ => None,
         }
     }
 
     pub fn from_kek_ref(kek_ref: &str) -> Result<Self, LockstoreError> {
         if kek_ref.starts_with(KEK_REF_LOCAL_PREFIX) {
-            Ok(KekType::LocalKey)
+            Ok(Self::LocalKey)
         } else if kek_ref.starts_with(KEK_REF_PASSWORD_PREFIX) {
-            Ok(KekType::Password)
+            Ok(Self::Password)
         } else if kek_ref.starts_with(KEK_REF_PKCS11_PREFIX) {
-            Ok(KekType::Pkcs11Token)
+            Ok(Self::Pkcs11Token)
         } else {
             Err(LockstoreError::InvalidKekRef(kek_ref.to_string()))
         }
@@ -149,9 +147,11 @@ impl KekType {
 /// at rest is provided by the underlying SQLite encryption layer; if
 /// the keystore file is exfiltrated without that layer's key, the
 /// bytes here are still recoverable only with the SQLite key.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ZeroizeOnDrop)]
 pub struct LocalKekRecord {
     /// Raw AES-256 KEK bytes (32 bytes for the default cipher suite).
+    /// This is the only at-rest record holding a plaintext key, so the
+    /// in-memory copy is wiped on drop via `ZeroizeOnDrop`.
     pub kek_bytes: Vec<u8>,
 }
 

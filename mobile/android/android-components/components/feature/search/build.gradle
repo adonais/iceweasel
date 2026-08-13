@@ -4,14 +4,10 @@
 
 import static org.mozilla.conventions.BuildConfigKt.updateExtensionVersion
 
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
+    id 'com.android.library'
     alias(libs.plugins.dependency.analysis)
 }
-
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
 
 android {
     sourceSets {
@@ -43,7 +39,7 @@ dependencies {
     implementation ComponentsDependencies.mozilla_appservices_search
     implementation ComponentsDependencies.mozilla_remote_settings
     implementation libs.androidx.activity
-    implementation libs.androidx.core.ktx
+    implementation libs.androidx.core
 
     testImplementation project(':components:support-test')
     testImplementation project(':components:support-test-fakes')

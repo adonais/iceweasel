@@ -11,9 +11,15 @@ const IDLE = "idle";
 const PENDING = "pending";
 const PINNED = "pinned";
 
-export const PinnableSitesList = ({ tile, messageId, handleAction }) => {
+export const PinnableSitesList = ({
+  tile,
+  messageId,
+  handleAction,
+  setPinnedSite,
+}) => {
   const items = tile?.data;
   const pinButtonLabel = tile?.pinButtonLabel;
+  const alwaysShow = tile?.alwaysShowPinButton;
   const [itemStates, setItemStates] = useState(() =>
     Object.fromEntries((items ?? []).map(item => [item.id, IDLE]))
   );
@@ -50,10 +56,16 @@ export const PinnableSitesList = ({ tile, messageId, handleAction }) => {
 
     // Re-enable the button only on explicit failure so the user can retry.
     setItemState(item.id, result === false ? IDLE : PINNED);
+
+    // Latch the screen as having at least one pinned site so a gated primary
+    // button can enable. A failure leaves the latch untouched.
+    if (result !== false) {
+      setPinnedSite?.();
+    }
   };
 
   return (
-    <ul className="pinnable-sites-list">
+    <ul className={`pinnable-sites-list${alwaysShow ? " always-visible" : ""}`}>
       {items.map(item => {
         const nameId = `pinnable-site-name-${item.id}`;
         const state = itemStates[item.id] ?? IDLE;

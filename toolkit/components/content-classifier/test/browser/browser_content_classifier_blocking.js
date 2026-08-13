@@ -1,5 +1,8 @@
 "use strict";
 
+const TEST_SCOPED_PREF_FLAG =
+  Ci.nsIScopedPrefs.PRIVACY_TRACKINGPROTECTION_CONTENT_TEST_ENABLED;
+
 add_task(async function test_blocking() {
   let listsLoaded = TestUtils.topicObserved(LISTS_LOADED_TOPIC);
   await SpecialPowers.pushPrefEnv({
@@ -62,6 +65,9 @@ add_task(async function test_replace() {
         "privacy.trackingprotection.content.protection.test_list_urls",
         BLOCK_LIST_URL,
       ],
+      // Enable the test_block engine so we don't fall back to the off state
+      // by the scoped pref fallback logic.
+      ["privacy.trackingprotection.content.protection.engines", "test_block"],
       ["privacy.trackingprotection.content.annotation.enabled", false],
       ["privacy.trackingprotection.content.annotation.test_list_urls", ""],
     ],
@@ -121,6 +127,9 @@ add_task(async function test_allow() {
         "privacy.trackingprotection.content.protection.test_list_urls",
         BLOCK_LIST_URL,
       ],
+      // Enable the test_block engine so we don't fall back to the off state
+      // by the scoped pref fallback logic.
+      ["privacy.trackingprotection.content.protection.engines", "test_block"],
       ["privacy.trackingprotection.content.annotation.enabled", false],
       ["privacy.trackingprotection.content.annotation.test_list_urls", ""],
     ],
@@ -180,6 +189,9 @@ add_task(async function test_allowlist_skips_blocking() {
         "privacy.trackingprotection.content.protection.test_list_urls",
         BLOCK_LIST_URL,
       ],
+      // Enable the test_block engine so we don't fall back to the off state
+      // by the scoped pref fallback logic.
+      ["privacy.trackingprotection.content.protection.engines", "test_block"],
       ["privacy.trackingprotection.content.annotation.enabled", false],
       ["privacy.trackingprotection.content.annotation.test_list_urls", ""],
     ],
@@ -239,6 +251,60 @@ add_task(async function test_allowlist_skips_blocking() {
   await SpecialPowers.removePermission("trackingprotection", {
     url: topLevelOrigin,
   });
+});
+
+// A per-site scoped override that disables content tracking protection must
+// suppress the block for that site.
+add_task(async function test_scoped_pref_disables_blocking_for_site() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["privacy.trackingprotection.content.testing", true],
+      ["privacy.trackingprotection.content.protection.enabled", true],
+      [
+        "privacy.trackingprotection.content.protection.test_list_urls",
+        BLOCK_LIST_URL,
+      ],
+      ["privacy.trackingprotection.content.protection.engines", "test_block"],
+      ["privacy.trackingprotection.content.annotation.enabled", false],
+      ["privacy.trackingprotection.content.annotation.test_list_urls", ""],
+    ],
+  });
+
+  // Control tab with no scoped override: the tracker is blocked.
+  let controlTab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    TEST_TOP_PAGE
+  );
+  await assertImageBlocked(
+    controlTab.linkedBrowser,
+    TEST_BLOCKED_3RD_PARTY_DOMAIN,
+    "Tracker is blocked without a scoped override"
+  );
+  BrowserTestUtils.removeTab(controlTab);
+
+  // Override tab: disable content tracking protection for the site before
+  // loading.
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    TEST_TOP_PAGE
+  );
+  let browser = tab.linkedBrowser;
+  let bc = browser.browsingContext;
+  bc.scopedPrefs.setBoolPrefScoped(TEST_SCOPED_PREF_FLAG, bc, false);
+
+  await assertImageLoaded(
+    browser,
+    TEST_BLOCKED_3RD_PARTY_DOMAIN,
+    "Tracker loads when the scoped pref disables content tracking protection"
+  );
+  await assertLacksBlockingState(
+    browser,
+    TEST_BLOCKED_3RD_PARTY_DOMAIN,
+    Ci.nsIWebProgressListener.STATE_BLOCKED_TRACKING_CONTENT,
+    "No blocked entry is logged when the scoped pref suppresses the block"
+  );
+
+  BrowserTestUtils.removeTab(tab);
 });
 
 add_task(async function test_annotation() {

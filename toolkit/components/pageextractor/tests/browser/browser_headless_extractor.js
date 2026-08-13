@@ -75,6 +75,38 @@ add_task(async function test_headless_extraction_404() {
 });
 
 /**
+ * Pages that never load, a stalled server and a redirect to another host, must
+ * not leave the extractor waiting forever.
+ */
+add_task(async function test_headless_extraction_never_loads() {
+  const { PageExtractorParent } = ChromeUtils.importESModule(
+    "resource://gre/actors/PageExtractorParent.sys.mjs"
+  );
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ml.pageExtractor.headlessTimeoutMs", 500]],
+  });
+
+  for (const { url, cleanup } of [
+    MLTestUtils.serveStalledPage(),
+    MLTestUtils.serveRedirect({ to: "https://example.com/" }),
+  ]) {
+    await Assert.rejects(
+      PageExtractorParent.getHeadlessExtractor({
+        urlString: url,
+        callback: () =>
+          ok(false, "The callback must not run for a page that never loaded."),
+      }),
+      /did not load in a headless browser within 500ms/,
+      `The extractor gives up on ${url}`
+    );
+    await cleanup();
+  }
+
+  await SpecialPowers.popPrefEnv();
+});
+
+/**
  * Test page extraction on a restricted page.
  */
 add_task(async function test_headless_extraction_about_blank() {

@@ -85,6 +85,8 @@ function configureStore(webConsoleUI, options = {}) {
       css: getBoolPref(PREFS.FILTER.CSS),
       net: getBoolPref(PREFS.FILTER.NET),
       netxhr: getBoolPref(PREFS.FILTER.NETXHR),
+      chrome: getBoolPref(PREFS.FILTER.CHROME),
+      content: getBoolPref(PREFS.FILTER.CONTENT),
     }),
     ui: UiState({
       networkMessageActiveTabId: "headers",

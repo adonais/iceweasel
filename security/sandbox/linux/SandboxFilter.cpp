@@ -31,7 +31,6 @@
 #include <algorithm>
 #include <utility>
 
-#include "mozilla/ProfilerPlatformMacros.h"
 #include "Sandbox.h"  // for ContentProcessSandboxParams
 #include "SandboxBrokerClient.h"
 #include "SandboxFilterUtil.h"
@@ -41,6 +40,7 @@
 #include "SandboxOpenedFiles.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/ProcInfo_linux.h"
+#include "mozilla/ProfilerPlatformMacros.h"
 #include "mozilla/UniquePtr.h"
 #include "prenv.h"
 #include "sandbox/linux/bpf_dsl/bpf_dsl.h"
@@ -322,7 +322,11 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
   static intptr_t UnlinkTrap(ArgsRef aArgs, void* aux) {
     auto broker = static_cast<SandboxBrokerClient*>(aux);
     auto path = reinterpret_cast<const char*>(aArgs.args[0]);
-    if (path && path[0] == '\0') {
+    if (!path) {
+      // A null path is a bad pointer as far as the kernel is concerned.
+      return -EFAULT;
+    }
+    if (path[0] == '\0') {
       // If the path is empty, then just fail the call here
       return -ENOENT;
     }
@@ -498,7 +502,11 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
     auto fd = static_cast<int>(aArgs.args[0]);
     auto path = reinterpret_cast<const char*>(aArgs.args[1]);
     auto flags = static_cast<int>(aArgs.args[2]);
-    if (path && path[0] == '\0') {
+    if (!path) {
+      // A null path is a bad pointer as far as the kernel is concerned.
+      return -EFAULT;
+    }
+    if (path[0] == '\0') {
       // If the path is empty, then just fail the call here
       return -ENOENT;
     }

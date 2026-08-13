@@ -4,22 +4,24 @@
 
 #include "MacIOSurface.h"
 #ifdef XP_MACOSX
-#  include <OpenGL/gl.h>
 #  include <OpenGL/CGLIOSurface.h>
+#  include <OpenGL/gl.h>
 #endif
 #include <QuartzCore/QuartzCore.h>
+
 #include "GLConsts.h"
 #ifdef XP_MACOSX
 #  include "GLContextCGL.h"
+#  include "GLContextEGL.h"
 #else
 #  include "GLContextEAGL.h"
 #endif
 #include "gfxMacUtils.h"
-#include "nsPrintfCString.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/gfx/Logging.h"
 #include "mozilla/StaticPrefs_gfx.h"
+#include "mozilla/gfx/Logging.h"
+#include "nsPrintfCString.h"
 
 using namespace mozilla;
 
@@ -229,17 +231,27 @@ already_AddRefed<MacIOSurface> MacIOSurface::CreateBiPlanarSurface(
       }
     }
   } else {
-    // 4:2:2 subsampling. We can only handle 10-bit color.
-    MOZ_ASSERT(aColorDepth == ColorDepth::COLOR_10,
-               "macOS bi-planar 4:2:2 formats must be 10-bit color.");
-    if (aColorRange == ColorRange::LIMITED) {
-      AddDictionaryInt(
-          props, kIOSurfacePixelFormat,
-          (uint32_t)kCVPixelFormatType_422YpCbCr10BiPlanarVideoRange);
+    // 4:2:2 subsampling.
+    if (aColorDepth == ColorDepth::COLOR_8) {
+      if (aColorRange == ColorRange::LIMITED) {
+        AddDictionaryInt(
+            props, kIOSurfacePixelFormat,
+            (uint32_t)kCVPixelFormatType_422YpCbCr8BiPlanarVideoRange);
+      } else {
+        AddDictionaryInt(
+            props, kIOSurfacePixelFormat,
+            (uint32_t)kCVPixelFormatType_422YpCbCr8BiPlanarFullRange);
+      }
     } else {
-      AddDictionaryInt(
-          props, kIOSurfacePixelFormat,
-          (uint32_t)kCVPixelFormatType_422YpCbCr10BiPlanarFullRange);
+      if (aColorRange == ColorRange::LIMITED) {
+        AddDictionaryInt(
+            props, kIOSurfacePixelFormat,
+            (uint32_t)kCVPixelFormatType_422YpCbCr10BiPlanarVideoRange);
+      } else {
+        AddDictionaryInt(
+            props, kIOSurfacePixelFormat,
+            (uint32_t)kCVPixelFormatType_422YpCbCr10BiPlanarFullRange);
+      }
     }
   }
 
@@ -261,51 +273,6 @@ already_AddRefed<MacIOSurface> MacIOSurface::CreateBiPlanarSurface(
       CFArrayCreate(kCFAllocatorDefault, (const void**)planeProps, 2,
                     &kCFTypeArrayCallBacks));
   ::CFDictionaryAddValue(props.get(), kIOSurfacePlaneInfo, array.get());
-
-  CFTypeRefPtr<IOSurfaceRef> surfaceRef =
-      CFTypeRefPtr<IOSurfaceRef>::WrapUnderCreateRule(
-          ::IOSurfaceCreate(props.get()));
-
-  if (!surfaceRef) {
-    return nullptr;
-  }
-
-  SetIOSurfaceCommonProperties(surfaceRef, aColorSpace, aTransferFunction);
-
-  RefPtr<MacIOSurface> ioSurface = new MacIOSurface(
-      std::move(surfaceRef), aColorSpace, aTransferFunction, aAllowAlpha);
-
-  return ioSurface.forget();
-}
-
-/* static */
-already_AddRefed<MacIOSurface> MacIOSurface::CreateSinglePlanarSurface(
-    const IntSize& aSize, YUVColorSpace aColorSpace,
-    TransferFunction aTransferFunction, ColorRange aColorRange,
-    AllowAlpha aAllowAlpha) {
-  MOZ_ASSERT(aColorSpace == YUVColorSpace::BT601 ||
-             aColorSpace == YUVColorSpace::BT709);
-  MOZ_ASSERT(aColorRange == ColorRange::LIMITED ||
-             aColorRange == ColorRange::FULL);
-
-  auto props = CFTypeRefPtr<CFMutableDictionaryRef>::WrapUnderCreateRule(
-      ::CFDictionaryCreateMutable(kCFAllocatorDefault, 4,
-                                  &kCFTypeDictionaryKeyCallBacks,
-                                  &kCFTypeDictionaryValueCallBacks));
-  if (!props) return nullptr;
-
-  MOZ_ASSERT((size_t)aSize.width <= GetMaxWidth());
-  MOZ_ASSERT((size_t)aSize.height <= GetMaxHeight());
-
-  SetSizeProperties(props, aSize.width, aSize.height, 2);
-
-  if (aColorRange == ColorRange::LIMITED) {
-    AddDictionaryInt(props, kIOSurfacePixelFormat,
-                     (uint32_t)kCVPixelFormatType_422YpCbCr8_yuvs);
-  } else {
-    AddDictionaryInt(props, kIOSurfacePixelFormat,
-                     (uint32_t)kCVPixelFormatType_422YpCbCr8FullRange);
-  }
 
   CFTypeRefPtr<IOSurfaceRef> surfaceRef =
       CFTypeRefPtr<IOSurfaceRef>::WrapUnderCreateRule(
@@ -351,9 +318,12 @@ mozilla::gfx::SurfaceFormat MacIOSurface::SurfaceFormatForPixelFormat(
     case kCVPixelFormatType_422YpCbCr8_yuvs:
     case kCVPixelFormatType_422YpCbCr8FullRange:
       return mozilla::gfx::SurfaceFormat::YUY2;
+    case kCVPixelFormatType_422YpCbCr8BiPlanarVideoRange:
+    case kCVPixelFormatType_422YpCbCr8BiPlanarFullRange:
+      return mozilla::gfx::SurfaceFormat::NV16;
     case kCVPixelFormatType_422YpCbCr10BiPlanarVideoRange:
     case kCVPixelFormatType_422YpCbCr10BiPlanarFullRange:
-      return mozilla::gfx::SurfaceFormat::NV16;
+      return mozilla::gfx::SurfaceFormat::P210;
     case kCVPixelFormatType_32BGRA:
       return (aAllowAlpha == AllowAlpha::Yes)
                  ? mozilla::gfx::SurfaceFormat::B8G8R8A8
@@ -576,9 +546,9 @@ ColorDepth MacIOSurface::GetColorDepth() const {
         case ColorDepth::COLOR_8:
           switch (aColorRange) {
             case ColorRange::LIMITED:
-              return Some(kCVPixelFormatType_422YpCbCr8_yuvs);
+              return Some(kCVPixelFormatType_422YpCbCr8BiPlanarVideoRange);
             case ColorRange::FULL:
-              return Some(kCVPixelFormatType_422YpCbCr8FullRange);
+              return Some(kCVPixelFormatType_422YpCbCr8BiPlanarFullRange);
           }
           break;
         case ColorDepth::COLOR_10:
@@ -626,124 +596,171 @@ bool MacIOSurface::BindTexImage(mozilla::gl::GLContext* aGL, size_t aPlane,
   MOZ_ASSERT(aPlane >= 0);
   bool isCompatibilityProfile = aGL->IsCompatibilityProfile();
   OSType pixelFormat = GetPixelFormat();
+  const auto formatChars = (const char*)&pixelFormat;
+  const char formatStr[] = {formatChars[3], formatChars[2], formatChars[1],
+                            formatChars[0], 0};
 
   GLenum internalFormat;
   GLenum format;
   GLenum type;
-  if (pixelFormat == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange ||
-      pixelFormat == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange) {
-    MOZ_ASSERT(GetPlaneCount() == 2);
-    MOZ_ASSERT(aPlane < 2);
+  switch (pixelFormat) {
+    case kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange:
+    case kCVPixelFormatType_420YpCbCr8BiPlanarFullRange:
+    case kCVPixelFormatType_422YpCbCr8BiPlanarVideoRange:
+    case kCVPixelFormatType_422YpCbCr8BiPlanarFullRange:
+      MOZ_ASSERT(GetPlaneCount() == 2);
+      MOZ_ASSERT(aPlane < 2);
 
-    // The LOCAL_GL_LUMINANCE and LOCAL_GL_LUMINANCE_ALPHA are the deprecated
-    // format. So, use LOCAL_GL_RED and LOCAL_GL_RB if we use core profile.
-    // https://www.khronos.org/opengl/wiki/Image_Format#Legacy_Image_Formats
-    if (aPlane == 0) {
-      internalFormat = format =
-          (isCompatibilityProfile) ? (LOCAL_GL_LUMINANCE) : (LOCAL_GL_RED);
-    } else {
-      internalFormat = format =
-          (isCompatibilityProfile) ? (LOCAL_GL_LUMINANCE_ALPHA) : (LOCAL_GL_RG);
-    }
-    type = LOCAL_GL_UNSIGNED_BYTE;
-    if (aOutReadFormat) {
-      *aOutReadFormat = mozilla::gfx::SurfaceFormat::NV12;
-    }
-  } else if (pixelFormat == kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange ||
-             pixelFormat == kCVPixelFormatType_420YpCbCr10BiPlanarFullRange) {
-    MOZ_ASSERT(GetPlaneCount() == 2);
-    MOZ_ASSERT(aPlane < 2);
-
-    // The LOCAL_GL_LUMINANCE and LOCAL_GL_LUMINANCE_ALPHA are the deprecated
-    // format. So, use LOCAL_GL_RED and LOCAL_GL_RB if we use core profile.
-    // https://www.khronos.org/opengl/wiki/Image_Format#Legacy_Image_Formats
-    if (aPlane == 0) {
-      internalFormat = format =
-          (isCompatibilityProfile) ? (LOCAL_GL_LUMINANCE) : (LOCAL_GL_RED);
-    } else {
-      internalFormat = format =
-          (isCompatibilityProfile) ? (LOCAL_GL_LUMINANCE_ALPHA) : (LOCAL_GL_RG);
-    }
-    type = LOCAL_GL_UNSIGNED_SHORT;
-    if (aOutReadFormat) {
-      *aOutReadFormat = mozilla::gfx::SurfaceFormat::P010;
-    }
-  } else if (pixelFormat == kCVPixelFormatType_422YpCbCr10BiPlanarVideoRange ||
-             pixelFormat == kCVPixelFormatType_422YpCbCr10BiPlanarFullRange) {
-    MOZ_ASSERT(GetPlaneCount() == 2);
-    MOZ_ASSERT(aPlane < 2);
-
-    // The LOCAL_GL_LUMINANCE and LOCAL_GL_LUMINANCE_ALPHA are the deprecated
-    // format. So, use LOCAL_GL_RED and LOCAL_GL_RB if we use core profile.
-    // https://www.khronos.org/opengl/wiki/Image_Format#Legacy_Image_Formats
-    if (aPlane == 0) {
-      internalFormat = format =
-          (isCompatibilityProfile) ? (LOCAL_GL_LUMINANCE) : (LOCAL_GL_RED);
-    } else {
-      internalFormat = format =
-          (isCompatibilityProfile) ? (LOCAL_GL_LUMINANCE_ALPHA) : (LOCAL_GL_RG);
-    }
-    type = LOCAL_GL_UNSIGNED_SHORT;
-    if (aOutReadFormat) {
-      *aOutReadFormat = mozilla::gfx::SurfaceFormat::NV16;
-    }
-  } else if (pixelFormat == kCVPixelFormatType_422YpCbCr8_yuvs ||
-             pixelFormat == kCVPixelFormatType_422YpCbCr8FullRange) {
-    MOZ_ASSERT(aPlane == 0);
-    // The YCBCR_422_APPLE ext is only available in compatibility profile. So,
-    // we should use RGB_422_APPLE for core profile. The difference between
-    // YCBCR_422_APPLE and RGB_422_APPLE is that the YCBCR_422_APPLE converts
-    // the YCbCr value to RGB with REC 601 conversion. But the RGB_422_APPLE
-    // doesn't contain color conversion. You should do the color conversion by
-    // yourself for RGB_422_APPLE.
-    //
-    // https://www.khronos.org/registry/OpenGL/extensions/APPLE/APPLE_ycbcr_422.txt
-    // https://www.khronos.org/registry/OpenGL/extensions/APPLE/APPLE_rgb_422.txt
-    if (isCompatibilityProfile) {
-      format = LOCAL_GL_YCBCR_422_APPLE;
-      if (aOutReadFormat) {
-        *aOutReadFormat = mozilla::gfx::SurfaceFormat::R8G8B8X8;
+      // The LOCAL_GL_LUMINANCE and LOCAL_GL_LUMINANCE_ALPHA are the deprecated
+      // format. So, use LOCAL_GL_RED and LOCAL_GL_RG if we use core profile.
+      // https://www.khronos.org/opengl/wiki/Image_Format#Legacy_Image_Formats
+      if (aPlane == 0) {
+        internalFormat = format =
+            (isCompatibilityProfile) ? (LOCAL_GL_LUMINANCE) : (LOCAL_GL_RED);
+      } else {
+        internalFormat = format = (isCompatibilityProfile)
+                                      ? (LOCAL_GL_LUMINANCE_ALPHA)
+                                      : (LOCAL_GL_RG);
       }
-    } else {
-      format = LOCAL_GL_RGB_422_APPLE;
+      type = LOCAL_GL_UNSIGNED_BYTE;
       if (aOutReadFormat) {
-        *aOutReadFormat = mozilla::gfx::SurfaceFormat::YUY2;
+        *aOutReadFormat = GetFormat();
       }
-    }
-    internalFormat = LOCAL_GL_RGB;
-    type = LOCAL_GL_UNSIGNED_SHORT_8_8_REV_APPLE;
-  } else {
-    MOZ_ASSERT(aPlane == 0);
+      break;
 
-    internalFormat = HasAlpha() ? LOCAL_GL_RGBA : LOCAL_GL_RGB;
-    format = LOCAL_GL_BGRA;
-    type = LOCAL_GL_UNSIGNED_INT_8_8_8_8_REV;
-    if (aOutReadFormat) {
-      *aOutReadFormat = HasAlpha() ? mozilla::gfx::SurfaceFormat::R8G8B8A8
-                                   : mozilla::gfx::SurfaceFormat::R8G8B8X8;
-    }
+    case kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange:
+    case kCVPixelFormatType_420YpCbCr10BiPlanarFullRange:
+    case kCVPixelFormatType_422YpCbCr10BiPlanarVideoRange:
+    case kCVPixelFormatType_422YpCbCr10BiPlanarFullRange:
+      MOZ_ASSERT(GetPlaneCount() == 2);
+      MOZ_ASSERT(aPlane < 2);
+
+      // The LOCAL_GL_LUMINANCE and LOCAL_GL_LUMINANCE_ALPHA are the deprecated
+      // format. So, use LOCAL_GL_RED and LOCAL_GL_RG if we use core profile.
+      // https://www.khronos.org/opengl/wiki/Image_Format#Legacy_Image_Formats
+      if (aPlane == 0) {
+        internalFormat = format =
+            (isCompatibilityProfile) ? (LOCAL_GL_LUMINANCE) : (LOCAL_GL_RED);
+      } else {
+        internalFormat = format = (isCompatibilityProfile)
+                                      ? (LOCAL_GL_LUMINANCE_ALPHA)
+                                      : (LOCAL_GL_RG);
+      }
+      type = LOCAL_GL_UNSIGNED_SHORT;
+      if (aOutReadFormat) {
+        *aOutReadFormat = GetFormat();
+      }
+      break;
+
+    case kCVPixelFormatType_32BGRA:
+      MOZ_ASSERT(aPlane == 0);
+
+      if (aGL->GetContextType() == gl::GLContextType::EGL) {
+        // ANGLE_iosurface_client_buffer doesn't support GL_BGR as an
+        // internal format value, but if we pass GL_RGB ANGLE will lookup the
+        // actual IOSurface format and do the right thing.
+        internalFormat = HasAlpha() ? LOCAL_GL_BGRA_EXT : LOCAL_GL_RGB;
+        format = LOCAL_GL_RGBA;
+        type = LOCAL_GL_UNSIGNED_BYTE;
+      } else {
+        internalFormat = HasAlpha() ? LOCAL_GL_RGBA : LOCAL_GL_RGB;
+        format = LOCAL_GL_BGRA;
+        type = LOCAL_GL_UNSIGNED_INT_8_8_8_8_REV;
+      }
+      if (aOutReadFormat) {
+        *aOutReadFormat = HasAlpha() ? mozilla::gfx::SurfaceFormat::R8G8B8A8
+                                     : mozilla::gfx::SurfaceFormat::R8G8B8X8;
+      }
+      break;
+
+    default:
+      gfxCriticalError() << "Unsupported IOSurface pixel format: " << formatStr;
+      return false;
   }
 
-  size_t width = GetDevicePixelWidth(aPlane);
-  size_t height = GetDevicePixelHeight(aPlane);
+  const size_t width = GetDevicePixelWidth(aPlane);
+  const size_t height = GetDevicePixelHeight(aPlane);
 
-  auto err = ::CGLTexImageIOSurface2D(
-      gl::GLContextCGL::Cast(aGL)->GetCGLContext(),
-      LOCAL_GL_TEXTURE_RECTANGLE_ARB, internalFormat, width, height, format,
-      type, mIOSurfaceRef.get(), aPlane);
-  if (err) {
-    const auto formatChars = (const char*)&pixelFormat;
-    const char formatStr[] = {formatChars[3], formatChars[2], formatChars[1],
-                              formatChars[0], 0};
-    const nsPrintfCString errStr(
-        "CGLTexImageIOSurface2D(context, target, 0x%04x,"
-        " %u, %u, 0x%04x, 0x%04x, iosurfPtr, %u) -> %i",
-        internalFormat, uint32_t(width), uint32_t(height), format, type,
-        (unsigned int)aPlane, err);
-    gfxCriticalError() << errStr.get() << " (iosurf format: " << formatStr
-                       << ")";
+  switch (aGL->GetContextType()) {
+    case mozilla::gl::GLContextType::CGL: {
+      auto err = ::CGLTexImageIOSurface2D(
+          gl::GLContextCGL::Cast(aGL)->GetCGLContext(),
+          LOCAL_GL_TEXTURE_RECTANGLE_ARB, internalFormat, width, height, format,
+          type, mIOSurfaceRef.get(), aPlane);
+      if (err) {
+        const nsPrintfCString errStr(
+            "CGLTexImageIOSurface2D(context, target, 0x%04x,"
+            " %u, %u, 0x%04x, 0x%04x, iosurfPtr, %u) -> %i",
+            internalFormat, uint32_t(width), uint32_t(height), format, type,
+            (unsigned int)aPlane, err);
+        gfxCriticalError() << errStr.get() << " (iosurf format: " << formatStr
+                           << ")";
+      }
+      return !err;
+    }
+
+    case mozilla::gl::GLContextType::EGL: {
+      auto* gle = gl::GLContextEGL::Cast(aGL);
+      const auto egl = gle->mEgl;
+
+      if (!egl->IsExtensionSupported(
+              mozilla::gl::EGLExtension::ANGLE_iosurface_client_buffer)) {
+        gfxCriticalError()
+            << "Extension EGL_ANGLE_iosurface_client_buffer not supported";
+        return false;
+      }
+
+      const EGLint target = gle->GetBindToTextureTargetANGLE();
+      const EGLint attrs[] = {
+          LOCAL_EGL_TEXTURE_INTERNAL_FORMAT_ANGLE,
+          static_cast<EGLint>(internalFormat),
+          LOCAL_EGL_TEXTURE_TYPE_ANGLE,
+          static_cast<EGLint>(type),
+          LOCAL_EGL_TEXTURE_FORMAT,
+          // ANGLE_iosurface_client_buffer requires we always use RGBA for
+          // EGL_TEXTURE_FORMAT.
+          LOCAL_EGL_TEXTURE_RGBA,
+          LOCAL_EGL_WIDTH,
+          static_cast<EGLint>(width),
+          LOCAL_EGL_HEIGHT,
+          static_cast<EGLint>(height),
+          LOCAL_EGL_TEXTURE_TARGET,
+          target,
+          LOCAL_EGL_IOSURFACE_PLANE_ANGLE,
+          static_cast<EGLint>(aPlane),
+          LOCAL_EGL_NONE,
+
+      };
+
+      const EGLSurface surface = egl->fCreatePbufferFromClientBuffer(
+          LOCAL_EGL_IOSURFACE_ANGLE,
+          reinterpret_cast<EGLClientBuffer>(mIOSurfaceRef.get()),
+          gle->mSurfaceConfig, attrs);
+
+      if (surface == EGL_NO_SURFACE) {
+        EGLint err = egl->mLib->fGetError();
+        gfxCriticalError() << "eglCreatePBufferFromClientBuffer failed: "
+                           << gfx::hexa(err) << " (iosurf format: " << formatStr
+                           << ")";
+        return false;
+      }
+
+      if (!egl->fBindTexImage(surface, LOCAL_EGL_BACK_BUFFER)) {
+        const EGLint err = egl->mLib->fGetError();
+        gfxCriticalError() << "eglBindTexImage failed: " << gfx::hexa(err);
+        egl->fDestroySurface(surface);
+        return false;
+      }
+
+      // Destroy the surface immediately, causing its lifetime to be bound to
+      // that of the texture we just bound to.
+      egl->fDestroySurface(surface);
+      return true;
+    }
+
+    default:
+      MOZ_CRASH("unimplemented");
   }
-  return !err;
 #else
   MOZ_CRASH("unimplemented");
 #endif

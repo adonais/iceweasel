@@ -5,6 +5,7 @@ from webdriver.bidi.modules.input import Actions
 pytestmark = pytest.mark.asyncio
 
 
+@pytest.mark.geckodriver(allow_system_access=True)
 @pytest.mark.parametrize("full_zoom", [0.5, 1.0, 2.0])
 @pytest.mark.parametrize("devPixelsPerPx", [1.0, 2.0])
 async def test_position_with_different_scaling(

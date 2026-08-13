@@ -1,0 +1,28 @@
+From 77001e3c6a4c6f217afb5fc6c5485f26efa8c124 Mon Sep 17 00:00:00 2001
+From: teoxoy <28601907+teoxoy@users.noreply.github.com>
+Date: Mon, 11 May 2026 10:45:36 +0200
+Subject: [PATCH] call `SafeDelete` only if `onDestroy` has not errored
+
+---
+ src/libANGLE/renderer/d3d/TextureD3D.cpp | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/src/libANGLE/renderer/d3d/TextureD3D.cpp b/src/libANGLE/renderer/d3d/TextureD3D.cpp
+index bbfc65f85c..a31193e589 100644
+--- a/src/libANGLE/renderer/d3d/TextureD3D.cpp
++++ b/src/libANGLE/renderer/d3d/TextureD3D.cpp
+@@ -878,7 +878,10 @@ angle::Result TextureD3D::releaseTexStorage(const gl::Context *context,
+     onStateChange(angle::SubjectMessage::StorageReleased);
+ 
+     auto err = mTexStorage->onDestroy(context);
+-    SafeDelete(mTexStorage);
++    if (!IsError(err))
++    {
++        SafeDelete(mTexStorage);
++    }
+     return err;
+ }
+ 
+-- 
+2.54.0
+

@@ -753,6 +753,12 @@ if mozinfo.isWin:
 
         log.info(f"Writing a dump to {file_name} for [{pid}]")
 
+        # MINIDUMP_FULL_MEMORY opts into a full-memory dump so heap objects
+        # (e.g. lock owners) can be inspected; these dumps are large.
+        dump_type = 0  # MiniDumpNormal
+        if os.environ.get("MINIDUMP_FULL_MEMORY"):
+            dump_type = 0x00000002  # MiniDumpWithFullMemory
+
         proc_handle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, 0, pid)
         if not proc_handle:
             err = kernel32.GetLastError()
@@ -778,8 +784,7 @@ if mozinfo.isWin:
                 proc_handle,
                 pid,
                 file_handle,
-                # Dump type - MiniDumpNormal
-                0,
+                dump_type,
                 # Exception parameter
                 None,
                 # User stream parameter

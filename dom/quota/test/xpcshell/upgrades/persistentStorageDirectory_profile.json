@@ -340,14 +340,6 @@
             "dir": true,
             "entries": [
               {
-                "name": "moz-safe-about+home",
-                "dir": true,
-                "entries": [
-                  { "name": ".metadata", "dir": false },
-                  { "name": ".metadata-v2", "dir": false }
-                ]
-              },
-              {
                 "name": "chrome",
                 "dir": true,
                 "entries": [

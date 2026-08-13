@@ -54,7 +54,9 @@ add_setup(async function () {
 
 async function resetConnections() {
   Services.obs.notifyObservers(null, "net:cancel-all-connections");
-  let nssComponent = Cc["@mozilla.org/psm;1"].getService(Ci.nsINSSComponent);
+  let nssComponent = Cc["@mozilla.org/network/ssl-tokens-cache;1"].getService(
+    Ci.nsISSLTokensCache
+  );
   await nssComponent.asyncClearSSLExternalAndInternalSessionCache();
   Services.dns.clearCache(true);
   // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
@@ -165,6 +167,14 @@ function assertTimingsOrder(timedChannel) {
     timedChannel.domainLookupStartTime,
     timedChannel.domainLookupEndTime,
     "domainLookupStart <= domainLookupEnd"
+  );
+  // domainLookupEnd must never fall after the connection started: HE reports it
+  // as min(connectStart, dnsEnd), matching Chrome and the web spec (bug
+  // 2047648) rather than always reporting connectStart.
+  Assert.lessOrEqual(
+    timedChannel.domainLookupEndTime,
+    timedChannel.connectStartTime,
+    "domainLookupEnd <= connectStart"
   );
   Assert.lessOrEqual(
     timedChannel.connectStartTime,

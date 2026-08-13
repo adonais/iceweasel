@@ -222,3 +222,80 @@ add_task(async function test_preview_form_fields() {
     await removeAllRecords();
   }
 });
+
+// Hovering an entry with the pointer must preview the form fields,
+// just like keyboard navigation does (regression test for bug 2052146).
+add_task(async function test_preview_form_fields_on_hover() {
+  for (const TEST of TESTCASES) {
+    info("TEST case: " + TEST.description);
+    await setStorage(TEST.profileData);
+
+    const TEST_URL =
+      "https://example.org/document-builder.sjs?html=" + TEST.document;
+    await BrowserTestUtils.withNewTab(TEST_URL, async browser => {
+      // If prefillId is set, then set the field with that id to a
+      // value and assign the autofill state.
+      if (TEST.prefillId) {
+        await SpecialPowers.spawn(
+          browser,
+          [TEST.prefillId],
+          async prefillId => {
+            const element = content.document.getElementById(prefillId);
+            element.value = "Mozilla";
+            element.autofillState = "autofill";
+          }
+        );
+      }
+
+      const previewCompeletePromise = TestUtils.topicObserved(
+        "formautofill-preview-complete"
+      );
+      await openPopupOn(browser, `#${TEST.focusedInputId}`);
+
+      const [firstItem] = getDisplayedPopupItems(browser);
+      await TestUtils.waitForCondition(() => {
+        browser.autoCompletePopup.mLastMoveTime = 0;
+        EventUtils.synthesizeMouseAtCenter(firstItem, { type: "mousemove" });
+        return browser.autoCompletePopup.selectedIndex == 0;
+      }, "Pointer should select the first autocomplete row");
+      await previewCompeletePromise;
+
+      // Check preview state & value
+      await SpecialPowers.spawn(browser, [TEST], async obj => {
+        for (const [id, expected] of Object.entries(obj.expectedResultState)) {
+          info(`Checking element ${id} state`);
+
+          const element = content.document.getElementById(id);
+          let [expectedState, expectedValue] = expected;
+          Assert.equal(
+            element.autofillState,
+            expectedState,
+            "Check if preview state is set correctly"
+          );
+
+          if (expectedState == "preview") {
+            expectedValue ||= obj.profileData[id];
+          } else {
+            expectedValue = "";
+          }
+
+          Assert.equal(
+            element.previewValue,
+            expectedValue,
+            "Check if preview value is set correctly"
+          );
+        }
+
+        if (obj.prefillId) {
+          Assert.equal(
+            content.document.getElementById(obj.prefillId).autofillState,
+            "autofill",
+            "Previously filled field should remain autofilled"
+          );
+        }
+      });
+    });
+
+    await removeAllRecords();
+  }
+});

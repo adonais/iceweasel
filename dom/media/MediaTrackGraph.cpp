@@ -1200,17 +1200,21 @@ void MediaTrackGraphImpl::PrepareUpdatesToMainThreadState(bool aFinalUpdate) {
   }
 }
 
-GraphTime MediaTrackGraphImpl::RoundUpToEndOfAudioBlock(GraphTime aTime) {
+MediaTime MediaTrackGraphImpl::RoundUpToEndOfAudioBlock(MediaTime aTime) {
   if (aTime % WEBAUDIO_BLOCK_SIZE == 0) {
     return aTime;
   }
   return RoundUpToNextAudioBlock(aTime);
 }
 
-GraphTime MediaTrackGraphImpl::RoundUpToNextAudioBlock(GraphTime aTime) {
+MediaTime MediaTrackGraphImpl::RoundUpToNextAudioBlock(MediaTime aTime) {
+  // >> on negative signed integers is implementation-defined behavior, where
+  // implementations perform an arithmetic right shift, which rounds toward
+  // negative infinity.
   uint64_t block = aTime >> WEBAUDIO_BLOCK_SIZE_BITS;
   uint64_t nextBlock = block + 1;
   GraphTime nextTime = nextBlock << WEBAUDIO_BLOCK_SIZE_BITS;
+  MOZ_ASSERT(nextTime > aTime);
   return nextTime;
 }
 
@@ -2958,9 +2962,11 @@ void SourceMediaTrack::ResampleAudioToGraphSampleRate(MediaSegment* aSegment) {
     return;
   }
   AudioSegment* segment = static_cast<AudioSegment*>(aSegment);
-  segment->ResampleChunks(mUpdateTrack->mResampler,
-                          &mUpdateTrack->mResamplerChannelCount,
-                          mUpdateTrack->mInputRate, GraphImpl()->GraphRate());
+  // 10 ms of 48 kHz audio always yields a representable size at GraphRate().
+  DebugOnly<nsresult> rv = segment->ResampleChunks(
+      mUpdateTrack->mResampler, &mUpdateTrack->mResamplerChannelCount,
+      mUpdateTrack->mInputRate, GraphImpl()->GraphRate());
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
 }
 
 void SourceMediaTrack::AdvanceTimeVaryingValuesToCurrentTime(
@@ -3396,7 +3402,7 @@ MediaTrackGraphImpl::MediaTrackGraphImpl(uint64_t aWindowID,
       ,
       mMainThreadGraphTime(0, "MediaTrackGraphImpl::mMainThreadGraphTime"),
       mAudioOutputLatency(0.0),
-      mMaxOutputChannelCount(CubebUtils::MaxNumberOfChannels()) {
+      mMaxOutputChannelCount(0) {
 }
 
 void MediaTrackGraphImpl::Init(GraphDriverType aDriverRequested,
@@ -3405,6 +3411,10 @@ void MediaTrackGraphImpl::Init(GraphDriverType aDriverRequested,
   mSelfRef = this;
   mEndTime = aDriverRequested == OFFLINE_THREAD_DRIVER ? 0 : GRAPH_TIME_MAX;
   mRealtime = aDriverRequested != OFFLINE_THREAD_DRIVER;
+  // The caller queries the default output device's channel count off the graph
+  // thread and passes it in. Offline graphs have no audio output device, so
+  // they pass 0 here and avoid the (potentially expensive) query entirely.
+  mMaxOutputChannelCount = aChannelCount;
   // The primary output device always exists because an AudioCallbackDriver
   // may exist, and want to be fed data, even when no tracks have audio
   // outputs.

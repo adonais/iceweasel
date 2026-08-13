@@ -4,10 +4,9 @@
 
 #include "nsEventShell.h"
 
-#include "nsAccessibilityService.h"
 #include "Logging.h"
-
 #include "mozilla/dom/DOMStringList.h"
+#include "nsAccessibilityService.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;

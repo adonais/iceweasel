@@ -18,8 +18,8 @@ The script `intl/update-icu4x.sh` can generate and update this binary data. If y
 When using ICU4X 1.4.0 data with the latest data that is hard-coded, you have to run the following. The baked data of `icu_segmenter` is generated into `intl/icu_segmenter_data/data`.
 
 ```bash
-$ cd $(TOPSRCDIR)/intl
-$ ./update-icu4x.sh https://github.com/unicode-org/icu4x.git icu@1.4.0 44.0.0 release-74-1 1.4.0
+cd $(TOPSRCDIR)/intl
+./update-icu4x.sh https://github.com/unicode-org/icu4x.git icu@1.4.0 44.0.0 release-74-1 1.4.0
 ```
 
 ## Updating ICU4X

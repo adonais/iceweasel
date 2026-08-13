@@ -536,6 +536,10 @@
         }
       }
 
+      .col-1-hidden {
+        display: none;
+      }
+
       .col-1-small {
         @include section-card-small;
       }
@@ -570,6 +574,10 @@
         .col-2-position-#{$i} {
           order: $i;
         }
+      }
+
+      .col-2-hidden {
+        display: none;
       }
 
       .col-2-small {
@@ -636,6 +644,10 @@
         }
       }
 
+      .col-3-hidden {
+        display: none;
+      }
+
       .col-3-small {
         @include section-card-small;
       }
@@ -698,6 +710,10 @@
         .col-4-position-#{$i} {
           order: $i;
         }
+      }
+
+      .col-4-hidden {
+        display: none;
       }
 
       .col-4-small {
@@ -770,6 +786,8 @@
         .col-1-position-#{$i} { order: $i; }
       }
 
+      .col-1-hidden { display: none; }
+
       .col-1-small {
         @include section-card-small;
       }
@@ -795,6 +813,8 @@
       @for $i from 0 through 16 {
         .col-2-position-#{$i} { order: $i; }
       }
+
+      .col-2-hidden { display: none; }
 
       .col-2-small {
         @include section-card-small;
@@ -828,6 +848,8 @@
         .col-3-position-#{$i} { order: $i; }
       }
 
+      .col-3-hidden { display: none; }
+
       .col-3-small {
         @include section-card-small;
       }
@@ -859,6 +881,8 @@
       @for $i from 0 through 16 {
         .col-4-position-#{$i} { order: $i; }
       }
+
+      .col-4-hidden { display: none; }
 
       .col-4-small {
         @include section-card-small;

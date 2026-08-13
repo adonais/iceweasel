@@ -2,8 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "irregexp/imported/regexp-ast.h"
 #include "irregexp/util/ZoneShim.h"
+
+#include "irregexp/imported/regexp-ast.h"
 
 using CharacterRange = v8::internal::regexp::CharacterRange;
 

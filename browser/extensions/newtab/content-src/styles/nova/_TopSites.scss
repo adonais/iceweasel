@@ -40,9 +40,34 @@
   }
 }
 
+// Hover/focus expands the tile and reveals its pin + menu chrome (and Nova drops
+// the outer hover background). Gated to :not(.dnd-active) so a drag never
+// triggers it: macOS freezes :hover on the dragged tile, and we can't block it
+// with pointer-events because the placeholder is the drop target.
 // @nova-cleanup(remove-conditional): Nova gets rid of outer hover background
-.nova-enabled .top-sites-list:not(.dnd-active) .top-site-outer:is(.active, :focus-within, :hover) {
+.nova-enabled .top-sites-list:not(.dnd-active) .top-site-outer:is(.active, :has(.top-site-inner:is(:hover, :focus-within))) {
   background: none;
+
+  .tile {
+    // Only expand the tile on hover for users without a reduced-motion preference
+    @media (prefers-reduced-motion: no-preference) {
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      width: var(--col-width);
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      height: var(--col-width);
+    }
+
+    border-color: var(--button-border-color-ghost-hover);
+  }
+
+  .icon-pin-small,
+  .context-menu-button {
+    opacity: 1;
+
+    @media (prefers-reduced-motion: no-preference) {
+      transition: opacity 100ms ease-out 50ms;
+    }
+  }
 }
 
 .nova-enabled .top-site-outer {
@@ -60,41 +85,21 @@
     align-self: end;
     box-shadow: var(--card-box-shadow);
     border: var(--border-width) solid var(--button-border-color-ghost);
+    // Bug 2044205 grew the radius scale so "large" is now 16px. The tile was
+    // designed against the old 12px "large", so use "medium" (12px) to keep it.
+    border-radius: var(--border-radius-medium);
 
     @media (prefers-reduced-motion: no-preference) {
       transition: width 100ms ease-out, height 100ms ease-out;
     }
-  }
 
-  &:is(:hover, :focus-within, .active) {
-    .tile {
-      // Only expand the tile on hover for users without a reduced-motion preference
-      @media (prefers-reduced-motion: no-preference) {
-        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-        width: var(--col-width);
-        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-        height: var(--col-width);
-      }
-
-      border-color: var(--button-border-color-ghost-hover);
-    }
-
-    .icon-pin-small,
-    .context-menu-button {
-      opacity: 1;
-
-      @media (prefers-reduced-motion: no-preference) {
-        transition: opacity 100ms ease-out 50ms;
-      }
+    .top-site-icon {
+      border-radius: var(--border-radius-small);
     }
   }
 
   &:active .tile {
     border-color: var(--button-border-color-ghost-active);
-  }
-
-  &.add-button .tile {
-    color-scheme: initial;
   }
 
   .top-site-inner > a:focus .tile {
@@ -152,10 +157,6 @@
     }
   }
 
-  &.add-button .tile {
-    background: var(--newtab-background-card);
-  }
-
   .title {
     .title-label {
       padding: 0;
@@ -185,6 +186,79 @@
   }
 }
 
+.nova-enabled .edit-topsites {
+  .modalOverlayOuter {
+    background: var(--panel-background-color);
+    border: 1px solid var(--panel-border-color);
+  }
+
+  .modal {
+    width: 100%;
+  }
+
+  .topsite-form {
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-xlarge);
+    gap: var(--space-xlarge);
+
+    label {
+      font-size: var(--font-size-root);
+    }
+
+    .form-input-container {
+      max-width: none;
+      padding: 0;
+    }
+
+    .form-wrapper input[type='text'] {
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      width: 368px;
+      background-color: var(--panel-background-color);
+      border-radius: var(--border-radius-medium);
+
+      &:focus-visible {
+        outline: var(--focus-outline);
+      }
+    }
+
+    .top-site-outer {
+      margin-block-start: var(--space-large);
+
+      .title {
+        // Override wallpaper-contrast-fix for in-dialog tile preview
+        color-scheme: initial;
+      }
+    }
+
+    .topsite-form-footer {
+      padding: 0;
+    }
+
+    // "Use a custom image" is styled as an underlined text link, mirroring
+    // .manage-settings-footer's .external-link.
+    .enable-custom-image-input {
+      color: var(--link-color);
+      text-decoration: underline;
+
+      &:hover {
+        color: var(--link-color-hover);
+        text-decoration: none;
+      }
+
+      &:active {
+        color: var(--link-color-active);
+      }
+
+      &:focus-visible {
+        outline: var(--focus-outline);
+        outline-offset: var(--focus-outline-offset);
+        border-radius: var(--border-radius-small);
+      }
+    }
+  }
+}
+
 @media (forced-colors: active) {
   .nova-enabled .top-site-outer .tile {
     background-color: var(--button-background-color);
@@ -194,20 +268,11 @@
     background-color: var(--button-background-color);
   }
 
-  .nova-enabled .top-site-outer:is(:hover, :focus-within, .active) .tile {
+  .nova-enabled .top-site-outer:is(.active, :has(.top-site-inner:is(:hover, :focus-within))) .tile {
     background-color: var(--button-background-color-hover);
   }
 
   .nova-enabled .top-site-outer .sponsored-label {
     color: var(--text-color);
-  }
-
-  .nova-enabled .top-site-outer.add-button .tile .icon-wrapper {
-    color: var(--button-text-color-ghost);
-    fill: var(--button-icon-fill);
-  }
-
-  .nova-enabled .top-site-outer.add-button:hover .tile .icon-wrapper {
-    color: var(--button-text-color-ghost-hover);
   }
 }

@@ -1045,7 +1045,7 @@ var Impl = {
         lazy.TelemetryReportingPolicy.isFirstRun();
 
       if (sendFirstShutdownPing) {
-        options = {
+        let options = {
           addClientId: true,
           addEnvironment: true,
           usePingSender: true,

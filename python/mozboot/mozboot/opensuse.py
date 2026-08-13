@@ -16,8 +16,6 @@ class OpenSUSEBootstrapper(LinuxBootstrapper, BaseBootstrapper):
     def install_packages(self, packages):
         # watchman is not available
         packages = [p for p in packages if p != "watchman"]
-        # awk might be missing
-        packages += ["awk"]
         self.zypper_install(*packages)
 
     def _update_package_manager(self):

@@ -5,8 +5,8 @@
 #ifndef nsContentProcessWidgetFactory_h
 #define nsContentProcessWidgetFactory_h
 
-#include "nsISupports.h"
 #include "nsComponentManagerUtils.h"
+#include "nsISupports.h"
 #include "nsServiceManagerUtils.h"
 #include "nsXULAppAPI.h"
 

@@ -82,15 +82,16 @@ export class InteractionsChild extends JSWindowActorChild {
       return;
     }
 
-    let docInfo = this.#getDocumentInfo();
+    let doc = this.document;
+    let url = doc.documentURIObject.specIgnoringRef;
 
     // This may happen when the page calls replaceState or pushState with the
     // same URL. We'll just consider this to not be a new page.
-    if (docInfo.url == this.#currentURL) {
+    if (url == this.#currentURL) {
       return;
     }
 
-    this.#currentURL = docInfo.url;
+    this.#currentURL = url;
 
     if (
       this.docShell.currentDocumentChannel instanceof Ci.nsIHttpChannel &&
@@ -99,7 +100,10 @@ export class InteractionsChild extends JSWindowActorChild {
       return;
     }
 
-    this.sendAsyncMessage("Interactions:PageLoaded", docInfo);
+    let referrer = doc.referrer
+      ? Services.io.newURI(doc.referrer).specIgnoringRef
+      : undefined;
+    this.sendAsyncMessage("Interactions:PageLoaded", { referrer });
   }
 
   async handleEvent(event) {
@@ -130,24 +134,5 @@ export class InteractionsChild extends JSWindowActorChild {
         break;
       }
     }
-  }
-
-  /**
-   * Returns the current document information for sending to the parent process.
-   *
-   * @returns {{ isActive: boolean, url: string, referrer: * }?}
-   */
-  #getDocumentInfo() {
-    let doc = this.document;
-
-    let referrer;
-    if (doc.referrer) {
-      referrer = Services.io.newURI(doc.referrer);
-    }
-    return {
-      isActive: this.manager.browsingContext.isActive,
-      url: doc.documentURIObject.specIgnoringRef,
-      referrer: referrer?.specIgnoringRef,
-    };
   }
 }

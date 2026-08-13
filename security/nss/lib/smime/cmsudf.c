@@ -183,6 +183,7 @@ NSS_CMSType_IsWrapper(SECOidTag type)
     switch (type) {
         case SEC_OID_PKCS7_SIGNED_DATA:
         case SEC_OID_PKCS7_ENVELOPED_DATA:
+        case SEC_OID_CMS_AUTH_ENVELOPED_DATA:
         case SEC_OID_PKCS7_DIGESTED_DATA:
         case SEC_OID_PKCS7_ENCRYPTED_DATA:
             return PR_TRUE;

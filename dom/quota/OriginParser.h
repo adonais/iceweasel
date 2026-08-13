@@ -67,7 +67,6 @@ class MOZ_STACK_CLASS OriginParser final {
   bool mUniversalFileOrigin;
   bool mMaybeDriveLetter;
   bool mError;
-  bool mMaybeObsolete;
 
   // Number of group which a IPv6 address has. Should be less than 9.
   uint8_t mIPGroup;
@@ -81,7 +80,6 @@ class MOZ_STACK_CLASS OriginParser final {
         mUniversalFileOrigin(false),
         mMaybeDriveLetter(false),
         mError(false),
-        mMaybeObsolete(false),
         mIPGroup(0) {}
 
   static ResultType ParseOrigin(const nsACString& aOrigin, nsCString& aSpec,

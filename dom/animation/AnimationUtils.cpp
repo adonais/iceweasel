@@ -7,7 +7,10 @@
 #include "mozilla/EffectSet.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/dom/AnimatableBinding.h"
 #include "mozilla/dom/Animation.h"
+#include "mozilla/dom/CSSKeywordValue.h"
+#include "mozilla/dom/CSSNumericValue.h"
 #include "mozilla/dom/CSSNumericValueBinding.h"
 #include "mozilla/dom/CSSUnitValue.h"
 #include "mozilla/dom/Document.h"
@@ -125,6 +128,16 @@ AnimationUtils::GetElementPseudoPair(const Element* aElementOrPseudo) {
             PseudoStyleRequest::Backdrop()};
   }
 
+  if (aElementOrPseudo->IsGeneratedContentContainerForCheckmark()) {
+    return {aElementOrPseudo->GetParent()->AsElement(),
+            PseudoStyleRequest(PseudoStyleType::Checkmark)};
+  }
+
+  if (aElementOrPseudo->IsGeneratedContentContainerForPickerIcon()) {
+    return {aElementOrPseudo->GetParent()->AsElement(),
+            PseudoStyleRequest(PseudoStyleType::PickerIcon)};
+  }
+
   const PseudoStyleType type = aElementOrPseudo->GetPseudoElementType();
   if (PseudoStyle::IsViewTransitionPseudoElement(type)) {
     // Note: ::view-transition doesn't have a name, so we check if it has a name
@@ -140,8 +153,20 @@ AnimationUtils::GetElementPseudoPair(const Element* aElementOrPseudo) {
   return {aElementOrPseudo, PseudoStyleRequest::NotPseudo()};
 }
 
+static bool IsPercentUnit(const CSSNumericValue& aValue) {
+  // TODO: this can use a bit more efficient check once it's available, see:
+  // https://drafts.css-houdini.org/css-typed-om-1/#cssnumericvalue-match
+  if (RefPtr<CSSUnitValue> asPercent =
+          aValue.To("percent"_ns, IgnoreErrors())) {
+    return true;
+  }
+  return false;
+}
+
 // https://www.w3.org/TR/css-values-4/#time-value
-static bool IsDurationUnits(const CSSNumericValue& aValue) {
+static bool IsDurationUnit(const CSSNumericValue& aValue) {
+  // TODO: this can use a bit more efficient check once it's available, see:
+  // https://drafts.css-houdini.org/css-typed-om-1/#cssnumericvalue-match
   if (RefPtr<CSSUnitValue> asMs = aValue.To("ms"_ns, IgnoreErrors())) {
     return true;
   }
@@ -165,16 +190,26 @@ bool AnimationUtils::ValidateCSSNumberishTime(const CSSNumberish& aValue,
     return false;
   }
 
-  if (aProgressBased && !isCSSNumericValue) {
-    aRv.ThrowTypeError(
-        "Setting time using absolute time values is not supported for "
-        "progress-based animations.");
-    return false;
+  if (aProgressBased) {
+    if (!isCSSNumericValue) {
+      aRv.ThrowTypeError(
+          "Setting time using absolute time values is not supported for "
+          "progress-based animations.");
+      return false;
+    }
+
+    CSSNumericValue& numeric = aValue.GetAsCSSNumericValue();
+    if (!IsPercentUnit(numeric)) {
+      aRv.ThrowTypeError(
+          "CSSNumericValue must be a percentage for progress-based "
+          "animations.");
+      return false;
+    }
   }
 
   if (!aProgressBased && isCSSNumericValue) {
     CSSNumericValue& numeric = aValue.GetAsCSSNumericValue();
-    if (!IsDurationUnits(numeric)) {
+    if (!IsDurationUnit(numeric)) {
       aRv.ThrowTypeError(
           "CSSNumericValue must be a <time> for non-progress-based "
           "animations.");
@@ -185,6 +220,107 @@ bool AnimationUtils::ValidateCSSNumberishTime(const CSSNumberish& aValue,
   return true;
 }
 
+namespace {
+
+using TimelineRangeValue =
+    OwningTimelineRangeOffsetOrCSSNumericValueOrCSSKeywordValueOrUTF8String;
+
+// True if |aValue| is the default "normal" range boundary, in which case no
+// animation range needs to be applied. "normal" may be a string or a
+// CSSKeywordValue.
+bool IsNormalTimelineRange(const TimelineRangeValue& aValue) {
+  // The "normal" keyword is matched ASCII case-insensitively, like any CSS
+  // keyword.
+  if (aValue.IsUTF8String()) {
+    return aValue.GetAsUTF8String().LowerCaseEqualsLiteral("normal");
+  }
+  if (aValue.IsCSSKeywordValue()) {
+    nsAutoCString value;
+    aValue.GetAsCSSKeywordValue()->GetValue(value);
+    return value.LowerCaseEqualsLiteral("normal");
+  }
+  return false;
+}
+
+// Serializes a KeyframeAnimationOptions rangeStart/rangeEnd value. Returns
+// false (the caller throws a TypeError) for a CSSKeywordValue other than
+// "normal", which the spec disallows.
+bool TimelineRangeValueToCss(const TimelineRangeValue& aValue,
+                             nsACString& aOut) {
+  if (aValue.IsCSSKeywordValue()) {
+    // Only "normal" is a valid keyword, and it is handled by
+    // IsNormalTimelineRange, so any keyword reaching here is invalid.
+    return false;
+  }
+
+  if (aValue.IsUTF8String()) {
+    aOut = aValue.GetAsUTF8String();
+    return true;
+  }
+
+  if (aValue.IsCSSNumericValue()) {
+    // A bare CSSNumericValue is interpreted as an offset with no range name.
+    aValue.GetAsCSSNumericValue()->Stringify(aOut);
+    return true;
+  }
+
+  const TimelineRangeOffset& offset = aValue.GetAsTimelineRangeOffset();
+  nsAutoCString result;
+  if (offset.mRangeName.WasPassed() && !offset.mRangeName.Value().IsVoid()) {
+    result.Append(offset.mRangeName.Value());
+  }
+  if (offset.mOffset.WasPassed()) {
+    nsAutoCString offsetStr;
+    offset.mOffset.Value().Stringify(offsetStr);
+    if (!result.IsEmpty()) {
+      result.Append(' ');
+    }
+    result.Append(offsetStr);
+  }
+  // An empty TimelineRangeOffset (neither member present) is treated as
+  // "normal".
+  if (result.IsEmpty()) {
+    aOut.AssignLiteral("normal");
+  } else {
+    aOut = result;
+  }
+  return true;
+}
+
+}  // namespace
+
+/* static */
+bool AnimationUtils::ApplyKeyframeAnimationRange(
+    const KeyframeAnimationOptions& aOptions, Animation* aAnimation,
+    ErrorResult& aRv) {
+  const bool startIsNormal = IsNormalTimelineRange(aOptions.mRangeStart);
+  const bool endIsNormal = IsNormalTimelineRange(aOptions.mRangeEnd);
+  if (startIsNormal && endIsNormal) {
+    return true;
+  }
+
+  // Values that would require an element context (e.g. em) are a parse error.
+  AnimationRange range;
+  nsAutoCString css;
+  if (!startIsNormal) {
+    if (!TimelineRangeValueToCss(aOptions.mRangeStart, css) ||
+        !Servo_ParseAnimationRangeStart(&css, &range.mStart)) {
+      aRv.ThrowTypeError("Invalid animation range start");
+      return false;
+    }
+  }
+  if (!endIsNormal) {
+    if (!TimelineRangeValueToCss(aOptions.mRangeEnd, css) ||
+        !Servo_ParseAnimationRangeEnd(&css, &range.mEnd)) {
+      aRv.ThrowTypeError("Invalid animation range end");
+      return false;
+    }
+  }
+
+  aAnimation->SetTimelineRange(std::move(range));
+  return true;
+}
+
 /* static */
 void AnimationUtils::DoubleToCSSNumberish(double aMs, bool aProgressBased,
                                           nsIGlobalObject* aGlobal,
@@ -192,8 +328,8 @@ void AnimationUtils::DoubleToCSSNumberish(double aMs, bool aProgressBased,
   if (aProgressBased) {
     const double progress =
         aMs / static_cast<double>(PROGRESS_TIMELINE_DURATION_MILLISEC) * 100.0;
-    aRetVal.SetAsCSSNumericValue() =
-        MakeRefPtr<CSSUnitValue>(aGlobal, progress, "percent"_ns);
+    aRetVal.SetAsCSSNumericValue() = MakeCSSUnitValue(
+        aGlobal, StyleNumericType::Percent(), progress, "percent"_ns);
     return;
   }
   aRetVal.SetAsDouble() = aMs;

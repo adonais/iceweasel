@@ -1,5 +1,7 @@
 != inset-simple.yaml inset-simple-ref.yaml
 != inset-spread.yaml inset-spread-ref.yaml
+!= inset-fake-border-snap.yaml inset-fake-border-snap-notref.yaml
+== inset-fake-border-anchor.yaml inset-fake-border-anchor-ref.yaml
 fuzzy-if(platform(swgl),3,2) == inset-no-blur-radius.yaml inset-no-blur-radius-ref.png
 == inset-spread-large.yaml inset-spread-large-ref.yaml
 platform(linux,mac) == inset-alpha.yaml inset-alpha.png
@@ -15,6 +17,7 @@ platform(linux,mac) fuzzy(1,84) == box-shadow-suite-blur.yaml box-shadow-suite-b
 fuzzy(1,8) == box-shadow-large-blur-radius.yaml box-shadow-large-blur-radius-ref.yaml
 fuzzy(1,6388) == rounding.yaml rounding-ref.yaml
 platform(linux,mac) == box-shadow-border-radii.yaml box-shadow-border-radii.png
+platform(linux,mac) == box-shadow-corner-shape.yaml box-shadow-corner-shape.png
 skip_on(android) fuzzy-if(platform(swgl),9,34) == box-shadow-spread.yaml box-shadow-spread.png  # Too wide for Android
 == box-shadow-spread-radii.yaml box-shadow-spread-radii-ref.yaml
 == invalid.yaml invalid-ref.yaml

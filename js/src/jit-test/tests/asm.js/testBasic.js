@@ -112,12 +112,7 @@ assertEq(Object.keys(exp).join(), 'f,g1,h1');
 // can't test destructuring args with Function constructor
 function assertTypeFailInEval(str)
 {
-    if (!isAsmJSCompilationAvailable())
-        return;
-
-    assertWarning(() => {
-        eval(str);
-    }, /asm.js type error:/)
+    // asm.js has been removed; no type-error warning to assert.
 }
 assertTypeFailInEval('function f({}) { "use asm"; function g() {} return g }');
 assertTypeFailInEval('function f({global}) { "use asm"; function g() {} return g }');
@@ -148,6 +143,7 @@ assertThrowsInstanceOf(function() { new Function(USE_ASM + 'function f() {} var'
 assertThrowsInstanceOf(function() { new Function(USE_ASM + 'function f() {} var TBL=-2w; return f') }, SyntaxError);
 assertThrowsInstanceOf(function() { new Function(USE_ASM + 'function f() {} var TBL=-2w return f') }, SyntaxError);
 assertThrowsInstanceOf(function() { new Function(USE_ASM + 'function () {}') }, SyntaxError);
+// asm.js has been removed, "use asm" silently runs as normal JavaScript
 assertNoWarning(function() { parse("function f() { 'use asm'; function g() {} return g }") });
 
 // Test asm.js->asm.js, wasm->asm.js, asm.js->wasm imports:

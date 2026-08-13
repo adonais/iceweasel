@@ -36,6 +36,7 @@ nimbus_targeting_environment:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1995896
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2011286
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2017267
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2057060
     data_reviews: &targeting_context_data_reviews
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1928107
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1937207
@@ -50,6 +51,7 @@ nimbus_targeting_environment:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1995896
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2011286
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2017267
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2057060
     notification_emails: &targeting_context_notification_emails
       - beth@mozilla.com
       - project-nimbus@mozilla.com
@@ -144,6 +146,8 @@ nimbus_targeting_environment:
       - "isFxAEnabled"
       - "isFxASignedIn"
       - "isMSIX"
+      - "launchOnLoginAllowedByPolicy"
+      - "launchOnLoginEnabled"
       - "locale"
       - "memoryMB"
       - "os"
@@ -591,6 +595,30 @@ nimbus_targeting_context:
     description: Is this copy of Firefox installed from an MSIX installer?
     data_sensitivity:
       - technical
+    type: boolean
+
+  launch_on_login_allowed_by_policy:
+    bugs: *targeting_context_bugs
+    data_reviews: *targeting_context_data_reviews
+    expires: *targeting_context_expiry
+    notification_emails: *targeting_context_notification_emails
+    send_in_pings: *targeting_context_pings
+    description: >
+      Whether launch on login has not been overridden by enterprise policy, Task
+      Manager, or OS Settings for this Firefox installation.
+    data_sensitivity:
+      - interaction
+    type: boolean
+
+  launch_on_login_enabled:
+    bugs: *targeting_context_bugs
+    data_reviews: *targeting_context_data_reviews
+    expires: *targeting_context_expiry
+    notification_emails: *targeting_context_notification_emails
+    send_in_pings: *targeting_context_pings
+    description: Is launch on login enabled for this Firefox installation?
+    data_sensitivity:
+      - interaction
     type: boolean
 
   locale:
@@ -1235,17 +1263,19 @@ nimbus_events:
             triggered an exception.
           - `null-last-modified`: The collection was empty but lastModified was
             null (i.e., not synced).
+          - `missing-signature`: Signature verification failed.
 
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1985079
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2053781
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1985079
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2053781
 
     data_sensitivity:
       - technical
     notification_emails:
       - beth@mozilla.com
-      - relud@mozilla.com
       - project-nimbus@mozilla.com
     expires: never
 

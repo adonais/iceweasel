@@ -128,6 +128,13 @@ class DOMSVGTransform final : public nsWrapperCache {
  protected:
   ~DOMSVGTransform();
 
+  /**
+   * Clears soon-to-be-invalid weak references in external objects that were
+   * set up during the creation of this object. This should be called during
+   * destruction and during cycle collection.
+   */
+  void CleanupWeakRefs();
+
   // Interface for SVGMatrix's use
   friend class dom::SVGMatrix;
   bool IsAnimVal() const { return mIsAnimValItem; }

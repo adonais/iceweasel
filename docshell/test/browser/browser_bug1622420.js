@@ -7,6 +7,7 @@ add_task(async function test() {
     child: {
       esModuleURI: `${base}/Bug1622420Child.sys.mjs`,
     },
+    safeForUntrustedWebProcess: true,
   });
 
   registerCleanupFunction(async () => {

@@ -159,7 +159,7 @@ function openContextMenu(menuId, targetId) {
 function waitForElementShown(element) {
   let win = element.documentGlobal;
   let dwu = win.windowUtils;
-  return BrowserTestUtils.waitForCondition(() => {
+  return TestUtils.waitForCondition(() => {
     info("Waiting for overflow button to have non-0 size");
     let bounds = dwu.getBoundsWithoutFlushing(element);
     return bounds.width > 0 && bounds.height > 0;

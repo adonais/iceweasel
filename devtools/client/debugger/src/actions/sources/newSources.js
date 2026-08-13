@@ -8,6 +8,7 @@
  * @module actions/sources
  */
 import { insertSourceActors } from "../../actions/source-actors";
+import { setStyleSheetAtRules } from "./stylesheets";
 import {
   makeScriptSourceId,
   createGeneratedSource,
@@ -252,7 +253,6 @@ export function newOriginalSources(originalSourcesInfo) {
         actors.push(sourceActor);
         actorsSources[sourceActor.actor] = [];
       }
-
       actorsSources[sourceActor.actor].push(
         createSourceMapOriginalSource(id, url, sourceActor.sourceObject)
       );
@@ -402,12 +402,19 @@ export function newStyleSheetSources(styleSheetResources) {
       styleSheetActors.push(
         createStyleSheetActor(styleSheetResource, stylesheet)
       );
+      dispatch(
+        setStyleSheetAtRules(
+          styleSheetResource.resourceId,
+          styleSheetResource.atRules
+        )
+      );
     }
     if (!styleSheets.length) {
       return;
     }
     dispatch({ type: "ADD_SOURCES", sources: styleSheets });
     dispatch(insertSourceActors(styleSheetActors));
+    await dispatch(loadSourceMapsForSourceActors(styleSheetActors));
   };
 }
 

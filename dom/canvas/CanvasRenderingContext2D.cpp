@@ -5,6 +5,7 @@
 #include "CanvasRenderingContext2D.h"
 
 #include <algorithm>
+#include <numbers>
 
 #include "CanvasImageCache.h"
 #include "CanvasUtils.h"
@@ -2594,7 +2595,7 @@ already_AddRefed<CanvasGradient> CanvasRenderingContext2D::CreateRadialGradient(
 
 already_AddRefed<CanvasGradient> CanvasRenderingContext2D::CreateConicGradient(
     double aAngle, double aCx, double aCy) {
-  double adjustedStartAngle = aAngle + M_PI / 2.0;
+  double adjustedStartAngle = aAngle + std::numbers::pi / 2.0;
   return MakeAndAddRef<CanvasConicGradient>(this, adjustedStartAngle,
                                             Point(aCx, aCy));
 }
@@ -4686,7 +4687,7 @@ struct MOZ_STACK_CLASS CanvasBidiProcessor final
     }
   }
 
-  class PropertyProvider : public gfxTextRun::PropertyProvider {
+  class PropertyProvider final : public gfxTextRun::PropertyProvider {
    public:
     explicit PropertyProvider(const CanvasBidiProcessor& aProcessor)
         : mProcessor(aProcessor) {}
@@ -4726,6 +4727,10 @@ struct MOZ_STACK_CLASS CanvasBidiProcessor final
 
     mozilla::StyleHyphens GetHyphensOption() const {
       return mozilla::StyleHyphens::None;
+    }
+
+    nscoord LetterSpacing() const {
+      return NSToCoordRound(mProcessor.mLetterSpacing);
     }
 
     // Methods only used when hyphenation is active, not relevant to canvas2d:
@@ -4964,14 +4969,15 @@ struct MOZ_STACK_CLASS CanvasBidiProcessor final
       strokeOpts.mMiterLimit = state.miterLimit;
       strokeOpts.mDashLength = state.dash.Length();
       strokeOpts.mDashPattern =
-          (strokeOpts.mDashLength > 0) ? state.dash.Elements() : 0;
+          (strokeOpts.mDashLength > 0) ? state.dash.Elements() : nullptr;
       strokeOpts.mDashOffset = state.dashOffset;
 
       params.drawMode = DrawMode::GLYPH_STROKE;
       params.strokeOpts = &strokeOpts;
     }
 
-    mTextRun->Draw(gfxTextRun::Range(mTextRun.get()), point, params);
+    imgDrawingParams dummy;
+    mTextRun->Draw(gfxTextRun::Range(mTextRun.get()), point, params, dummy);
   }
 
   // current text run
@@ -5761,7 +5767,7 @@ static Matrix ComputeRotationMatrix(gfxFloat aRotatedWidth,
       aDegrees == VideoRotation::kDegree_270) {
     std::swap(shiftVideoCenterToOrigin.x, shiftVideoCenterToOrigin.y);
   }
-  auto angle = static_cast<double>(aDegrees) / 180.0 * M_PI;
+  auto angle = static_cast<double>(aDegrees) / 180.0 * std::numbers::pi;
   Matrix rotation = Matrix::Rotation(static_cast<gfx::Float>(angle));
   Point shiftLeftTopToOrigin(aRotatedWidth / 2.0, aRotatedHeight / 2.0);
   return rotation.PreTranslate(shiftVideoCenterToOrigin)
@@ -6257,19 +6263,18 @@ void CanvasRenderingContext2D::DrawDirectlyToCanvas(
 
   if (mContextProperties != CanvasContextProperties::None &&
       aImage.mImgContainer->GetType() == imgIContainer::TYPE_VECTOR) {
-    SVGEmbeddingContextPaint* contextPaint =
-        svgContext.GetOrCreateContextPaint();
+    Maybe<nscolor> fill, stroke;
     const ContextState& state = CurrentState();
 
     if (mContextProperties != CanvasContextProperties::Fill &&
         state.StyleIsColor(Style::STROKE)) {
-      contextPaint->SetStroke(state.colorStyles[Style::STROKE]);
+      stroke = Some(state.colorStyles[Style::STROKE]);
     }
-
     if (mContextProperties != CanvasContextProperties::Stroke &&
         state.StyleIsColor(Style::FILL)) {
-      contextPaint->SetFill(state.colorStyles[Style::FILL]);
+      fill = Some(state.colorStyles[Style::FILL]);
     }
+    svgContext.SetContextPaint(fill, stroke);
   }
 
   auto result = aImage.mImgContainer->Draw(

@@ -10,7 +10,6 @@ import android.util.LongSparseArray;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.mozilla.gecko.annotation.WrapForJNI;
-import org.mozilla.gecko.mozglue.JNIObject;
 
 /* package */ final class GeckoSurfaceTexture extends SurfaceTexture {
   private static final String LOGTAG = "GeckoSurfaceTexture";
@@ -30,9 +29,6 @@ import org.mozilla.gecko.mozglue.JNIObject;
   private GeckoSurfaceTexture.Callbacks mListener;
   private AtomicInteger mUseCount;
   private boolean mFinalized;
-
-  private long mUpstream;
-  private NativeGLBlitHelper mBlitter;
 
   private GeckoSurfaceTexture(final long handle) {
     super(0);
@@ -108,9 +104,6 @@ import org.mozilla.gecko.mozglue.JNIObject;
   @WrapForJNI
   public synchronized void updateTexImage() {
     try {
-      if (mUpstream != 0) {
-        SurfaceAllocator.sync(mUpstream);
-      }
       super.updateTexImage();
       if (mListener != null) {
         mListener.onUpdateTexImage();
@@ -122,10 +115,6 @@ import org.mozilla.gecko.mozglue.JNIObject;
 
   @Override
   public synchronized void release() {
-    mUpstream = 0;
-    if (mBlitter != null) {
-      mBlitter.close();
-    }
     try {
       super.release();
       synchronized (sSurfaceTextures) {
@@ -250,56 +239,9 @@ import org.mozilla.gecko.mozglue.JNIObject;
     }
   }
 
-  /* package */ synchronized void track(final long upstream) {
-    mUpstream = upstream;
-  }
-
-  /* package */ synchronized void configureSnapshot(
-      final GeckoSurface target, final int width, final int height) {
-    mBlitter = NativeGLBlitHelper.create(mHandle, target, width, height);
-  }
-
-  /* package */ synchronized void takeSnapshot() {
-    mBlitter.blit();
-  }
-
   public interface Callbacks {
     void onUpdateTexImage();
 
     void onReleaseTexImage();
-  }
-
-  @WrapForJNI
-  public static final class NativeGLBlitHelper extends JNIObject {
-    public static NativeGLBlitHelper create(
-        final long textureHandle,
-        final GeckoSurface targetSurface,
-        final int width,
-        final int height) {
-      final NativeGLBlitHelper helper = nativeCreate(textureHandle, targetSurface, width, height);
-      helper.mTargetSurface = targetSurface; // Take ownership of surface.
-      return helper;
-    }
-
-    public static native NativeGLBlitHelper nativeCreate(
-        final long textureHandle,
-        final GeckoSurface targetSurface,
-        final int width,
-        final int height);
-
-    public native void blit();
-
-    public void close() {
-      disposeNative();
-      if (mTargetSurface != null) {
-        mTargetSurface.release();
-        mTargetSurface = null;
-      }
-    }
-
-    @Override
-    protected native void disposeNative();
-
-    private GeckoSurface mTargetSurface;
   }
 }

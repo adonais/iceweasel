@@ -173,7 +173,7 @@ class RTCStatsReport final : public nsWrapperCache {
   // conversion function that ToJSValue uses is non-virtual.
   template <typename T>
   nsresult SetRTCStats(T& aValue) {
-    static_assert(std::is_base_of<RTCStats, T>::value,
+    static_assert(std::is_base_of_v<RTCStats, T>,
                   "SetRTCStats is for setting RTCStats only");
 
     if (!aValue.mId.WasPassed()) {

@@ -6,11 +6,11 @@
 #define nsAboutProtocolUtils_h
 
 #include "mozilla/Try.h"
-#include "nsIURI.h"
-#include "nsString.h"
-#include "nsReadableUtils.h"
 #include "nsIAboutModule.h"
+#include "nsIURI.h"
+#include "nsReadableUtils.h"
 #include "nsServiceManagerUtils.h"
+#include "nsString.h"
 #include "prtime.h"
 
 [[nodiscard]] inline nsresult NS_GetAboutModuleName(nsIURI* aAboutURI,

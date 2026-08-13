@@ -52,11 +52,7 @@ function hideShowBlock(browser, hide) {
 async function clearAutofill(browser, desc) {
   await openPopupOn(browser, "#fname");
   let items = getDisplayedPopupItems(browser);
-  is(
-    items[0].getAttribute("ac-label"),
-    "Clear Autofill Form",
-    "clear form " + desc
-  );
+  is(getACItemLabel(items[0]), "Clear Autofill Form", "clear form " + desc);
   await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, browser);
   await BrowserTestUtils.synthesizeKey("VK_RETURN", {}, browser);
   await closePopup(browser);

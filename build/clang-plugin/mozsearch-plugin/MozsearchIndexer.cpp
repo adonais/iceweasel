@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "clang/AST/AST.h"
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/AST/Expr.h"
@@ -10,7 +9,6 @@
 #include "clang/AST/Mangle.h"
 #include "clang/AST/RecordLayout.h"
 #include "clang/AST/RecursiveASTVisitor.h"
-#include "clang/Basic/FileManager.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/Basic/Version.h"
 #include "clang/Format/Format.h"
@@ -20,7 +18,6 @@
 #include "clang/Lex/PPCallbacks.h"
 #include "clang/Lex/Preprocessor.h"
 #include "clang/Lex/TokenConcatenation.h"
-#include "llvm/ADT/SmallString.h"
 #include "llvm/Support/JSON.h"
 #include "llvm/Support/raw_ostream.h"
 
@@ -38,27 +35,16 @@
 #include "BindingOperations.h"
 #include "FileOperations.h"
 #include "StringOperations.h"
-#include "from-clangd/HeuristicResolver.h"
-
-#if CLANG_VERSION_MAJOR < 8
-// Starting with Clang 8.0 some basic functions have been renamed
-#define getBeginLoc getLocStart
-#define getEndLoc getLocEnd
-#endif
-// We want std::make_unique, but that's only available in c++14.  In versions
-// prior to that, we need to fall back to llvm's make_unique.  It's also the
-// case that we expect clang 10 to build with c++14 and clang 9 and earlier to
-// build with c++11, at least as suggested by the llvm-config --cxxflags on
-// non-windows platforms.  firefox-main seems to build with -std=c++17 on
-// windows so we need to make this decision based on __cplusplus instead of
-// the CLANG_VERSION_MAJOR.
-#if __cplusplus < 201402L
-using llvm::make_unique;
-#else
-using std::make_unique;
-#endif
+#include "MozsearchAction.h"
 
 using namespace clang;
+
+#if CLANG_VERSION_MAJOR >= 20
+#include "clang/Sema/HeuristicResolver.h"
+#else
+#include "from-clangd/HeuristicResolver.h"
+using HeuristicResolver = clangd::HeuristicResolver;
+#endif
 
 const std::string GENERATED("__GENERATED__" PATHSEP_STRING);
 
@@ -255,13 +241,7 @@ public:
   virtual void InclusionDirective(SourceLocation HashLoc,
                                   const Token &IncludeTok, StringRef FileName,
                                   bool IsAngled, CharSourceRange FileNameRange,
-#if CLANG_VERSION_MAJOR >= 16
                                   OptionalFileEntryRef File,
-#elif CLANG_VERSION_MAJOR >= 15
-                                  Optional<FileEntryRef> File,
-#else
-                                  const FileEntry *File,
-#endif
                                   StringRef SearchPath, StringRef RelativePath,
 #if CLANG_VERSION_MAJOR >= 19
                                   const Module *SuggestedModule,
@@ -296,7 +276,7 @@ private:
   std::map<FileID, std::unique_ptr<FileInfo>> FileMap;
   MangleContext *CurMangleContext;
   ASTContext *AstContext;
-  std::unique_ptr<clangd::HeuristicResolver> Resolver;
+  std::unique_ptr<HeuristicResolver> Resolver;
 
   // Used during a macro expansion to build the expanded string
   TokenConcatenation ConcatInfo;
@@ -347,7 +327,7 @@ private:
           Absolute = Filename;
         }
       }
-      std::unique_ptr<FileInfo> Info = make_unique<FileInfo>(Absolute, CI.getHeaderSearchOpts());
+      std::unique_ptr<FileInfo> Info = std::make_unique<FileInfo>(Absolute, CI.getHeaderSearchOpts());
       It = FileMap.insert(std::make_pair(Id, std::move(Info))).first;
     }
     return It->second.get();
@@ -703,7 +683,6 @@ private:
           isa<TagDecl>(DC)) {
         llvm::SmallVector<char, 512> Output;
         llvm::raw_svector_ostream Out(Output);
-#if CLANG_VERSION_MAJOR >= 11
         // This code changed upstream in version 11:
         // https://github.com/llvm/llvm-project/commit/29e1a16be8216066d1ed733a763a749aed13ff47
         GlobalDecl GD;
@@ -716,16 +695,6 @@ private:
           GD = GlobalDecl(Decl);
         }
         Ctx->mangleName(GD, Out);
-#else
-        if (const CXXConstructorDecl *D = dyn_cast<CXXConstructorDecl>(Decl)) {
-          Ctx->mangleCXXCtor(D, CXXCtorType::Ctor_Complete, Out);
-        } else if (const CXXDestructorDecl *D =
-                       dyn_cast<CXXDestructorDecl>(Decl)) {
-          Ctx->mangleCXXDtor(D, CXXDtorType::Dtor_Complete, Out);
-        } else {
-          Ctx->mangleName(Decl, Out);
-        }
-#endif
         return Out.str().str();
       } else {
         return std::string("V_") + mangleLocation(Decl->getLocation()) +
@@ -790,7 +759,7 @@ public:
         CurMangleContext(nullptr), AstContext(nullptr),
         ConcatInfo(CI.getPreprocessor()), CurDeclContext(nullptr),
         TemplateStack(nullptr) {
-    CI.getPreprocessor().addPPCallbacks(make_unique<PreprocessorHook>(this));
+    CI.getPreprocessor().addPPCallbacks(std::make_unique<PreprocessorHook>(this));
     CI.getPreprocessor().setTokenWatcher(
         [this](const auto &token) { onTokenLexed(token); });
   }
@@ -822,7 +791,7 @@ public:
         clang::ItaniumMangleContext::create(Ctx, CI.getDiagnostics());
 
     AstContext = &Ctx;
-    Resolver = std::make_unique<clangd::HeuristicResolver>(Ctx);
+    Resolver = std::make_unique<HeuristicResolver>(Ctx);
     TraverseDecl(Ctx.getTranslationUnitDecl());
 
     // Emit the JSON data for all files now.
@@ -2501,6 +2470,9 @@ public:
         if (const auto *DeclRef = dyn_cast<DeclRefExpr>(CalleeExpr)) {
           return DeclRef->getLocation();
         }
+        if (const auto *UnresolvedLookup = dyn_cast<UnresolvedLookupExpr>(CalleeExpr)) {
+          return UnresolvedLookup->getNameLoc();
+        }
 
         // Does the right thing for MemberExpr and UnresolvedMemberExpr at
         // least.
@@ -2514,7 +2486,7 @@ public:
       //   ForwardedTemplateLocations, convert the location to an actual Stmt*
       //   in ForwardingTemplates
       if (TemplateStack->inGatherMode()) {
-        if (CalleeExpr->isTypeDependent()) {
+        if (CalleeExpr->isTypeDependent() || isa<UnresolvedLookupExpr>(CalleeExpr)) {
           TemplateStack->visitDependent(CalleeLocation);
           ForwardedTemplateLocations.insert(CalleeLocation.getRawEncoding());
         }
@@ -3276,13 +3248,7 @@ void PreprocessorHook::FileChanged(SourceLocation Loc, FileChangeReason Reason,
 void PreprocessorHook::InclusionDirective(
     SourceLocation HashLoc, const Token &IncludeTok, StringRef FileName,
     bool IsAngled, CharSourceRange FileNameRange,
-#if CLANG_VERSION_MAJOR >= 16
     OptionalFileEntryRef File,
-#elif CLANG_VERSION_MAJOR >= 15
-    Optional<FileEntryRef> File,
-#else
-    const FileEntry *File,
-#endif
     StringRef SearchPath, StringRef RelativePath,
 #if CLANG_VERSION_MAJOR >= 19
     const Module *SuggestedModule, bool ModuleImported,
@@ -3290,15 +3256,11 @@ void PreprocessorHook::InclusionDirective(
     const Module *Imported,
 #endif
     SrcMgr::CharacteristicKind FileType) {
-#if CLANG_VERSION_MAJOR >= 15
   if (!File) {
     return;
   }
   Indexer->inclusionDirective(HashLoc, FileNameRange.getAsRange(),
                               &File->getFileEntry());
-#else
-  Indexer->inclusionDirective(HashLoc, FileNameRange.getAsRange(), File);
-#endif
 }
 
 void PreprocessorHook::MacroDefined(const Token &Tok,
@@ -3332,58 +3294,50 @@ void PreprocessorHook::Ifndef(SourceLocation Loc, const Token &Tok,
   Indexer->macroUsed(Tok, Md.getMacroInfo());
 }
 
-class IndexAction : public PluginASTAction {
-protected:
-  std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI,
-                                                 llvm::StringRef F) {
-    return make_unique<IndexConsumer>(CI);
+std::unique_ptr<ASTConsumer> MozsearchAction::CreateASTConsumer(CompilerInstance &CI,
+                                                llvm::StringRef F) {
+  return std::make_unique<IndexConsumer>(CI);
+}
+
+bool MozsearchAction::ParseArgs(const CompilerInstance &CI,
+                const std::vector<std::string> &Args) {
+  if (Args.size() != 3) {
+    DiagnosticsEngine &D = CI.getDiagnostics();
+    unsigned DiagID = D.getCustomDiagID(
+        DiagnosticsEngine::Error,
+        "Need arguments for the source, output, and object directories");
+    D.Report(DiagID);
+    return false;
   }
 
-  bool ParseArgs(const CompilerInstance &CI,
-                 const std::vector<std::string> &Args) {
-    if (Args.size() != 3) {
-      DiagnosticsEngine &D = CI.getDiagnostics();
-      unsigned DiagID = D.getCustomDiagID(
-          DiagnosticsEngine::Error,
-          "Need arguments for the source, output, and object directories");
-      D.Report(DiagID);
-      return false;
-    }
-
-    // Load our directories
-    Srcdir = getAbsolutePath(Args[0]);
-    if (Srcdir.empty()) {
-      DiagnosticsEngine &D = CI.getDiagnostics();
-      unsigned DiagID = D.getCustomDiagID(
-          DiagnosticsEngine::Error, "Source directory '%0' does not exist");
-      D.Report(DiagID) << Args[0];
-      return false;
-    }
-
-    ensurePath(Args[1] + PATHSEP_STRING);
-    Outdir = getAbsolutePath(Args[1]);
-    Outdir += PATHSEP_STRING;
-
-    Objdir = getAbsolutePath(Args[2]);
-    if (Objdir.empty()) {
-      DiagnosticsEngine &D = CI.getDiagnostics();
-      unsigned DiagID = D.getCustomDiagID(DiagnosticsEngine::Error,
-                                          "Objdir '%0' does not exist");
-      D.Report(DiagID) << Args[2];
-      return false;
-    }
-    Objdir += PATHSEP_STRING;
-
-    printf("MOZSEARCH: %s %s %s\n", Srcdir.c_str(), Outdir.c_str(),
-           Objdir.c_str());
-
-    return true;
+  // Load our directories
+  Srcdir = getAbsolutePath(Args[0]);
+  if (Srcdir.empty()) {
+    DiagnosticsEngine &D = CI.getDiagnostics();
+    unsigned DiagID = D.getCustomDiagID(
+        DiagnosticsEngine::Error, "Source directory '%0' does not exist");
+    D.Report(DiagID) << Args[0];
+    return false;
   }
 
-  void printHelp(llvm::raw_ostream &Ros) {
-    Ros << "Help for mozsearch plugin goes here\n";
-  }
-};
+  ensurePath(Args[1] + PATHSEP_STRING);
+  Outdir = getAbsolutePath(Args[1]);
+  Outdir += PATHSEP_STRING;
 
-static FrontendPluginRegistry::Add<IndexAction>
-    Y("mozsearch-index", "create the mozsearch index database");
+  Objdir = getAbsolutePath(Args[2]);
+  if (Objdir.empty()) {
+    DiagnosticsEngine &D = CI.getDiagnostics();
+    unsigned DiagID = D.getCustomDiagID(DiagnosticsEngine::Error,
+                                        "Objdir '%0' does not exist");
+    D.Report(DiagID) << Args[2];
+    return false;
+  }
+  Objdir += PATHSEP_STRING;
+
+  printf("MOZSEARCH: %s %s %s\n", Srcdir.c_str(), Outdir.c_str(),
+          Objdir.c_str());
+
+  return true;
+}
+
+PluginASTAction::ActionType MozsearchAction::getActionType() { return CmdlineBeforeMainAction; }

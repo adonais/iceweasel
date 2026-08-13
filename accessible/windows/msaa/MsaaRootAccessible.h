@@ -5,9 +5,9 @@
 #ifndef mozilla_a11y_MsaaRootAccessible_h_
 #define mozilla_a11y_MsaaRootAccessible_h_
 
-#include "mozilla/mscom/Aggregation.h"
 #include "MsaaDocAccessible.h"
 #include "UiaRoot.h"
+#include "mozilla/mscom/Aggregation.h"
 
 namespace mozilla {
 

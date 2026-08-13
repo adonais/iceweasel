@@ -765,7 +765,10 @@ already_AddRefed<AudioWorkletNode> AudioWorkletNode::Constructor(
   // can share memory.
   JS::CloneDataPolicy cloneDataPolicy;
   cloneDataPolicy.allowIntraClusterClonableSharedObjects();
-  cloneDataPolicy.allowSharedMemoryObjects();
+  nsIGlobalObject* currentGlobal = xpc::CurrentNativeGlobal(cx);
+  if (currentGlobal->IsSharedMemoryAllowed()) {
+    cloneDataPolicy.allowSharedMemoryObjects();
+  }
 
   // StructuredCloneHolder does not have a move constructor.  Instead allocate
   // memory so that the pointer can be passed to the rendering thread.

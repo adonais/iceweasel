@@ -34,6 +34,11 @@ import:
               I_AM_DEFAULT_BROWSER: "is_default_browser"
               I_AM_NOT_DEFAULT_BROWSER: "is_default_browser == false"
 
+              NOTIFICATIONS_ARE_ENABLED: "are_notifications_enabled == true"
+              NOTIFICATIONS_ARE_DISABLED: "are_notifications_enabled == false"
+              MARKETING_NOTIFICATIONS_ARE_ENABLED: "are_marketing_notifications_enabled == true"
+              MARKETING_NOTIFICATIONS_ARE_DISABLED: "are_marketing_notifications_enabled == false"
+
               FUNNEL_PAID: "adjust_campaign != ''"
               FUNNEL_ORGANIC: "adjust_campaign == ''"
 
@@ -78,6 +83,7 @@ import:
               OPEN_SETTINGS_DELETE_BROWSING_DATA: ://settings_delete_browsing_data
               OPEN_SETTINGS_LOGINS: ://settings_logins
               OPEN_SETTINGS_NOTIFICATIONS: ://settings_notifications
+              OPEN_SETTINGS_MARKETING_NOTIFICATIONS: ://settings_marketing_notifications
               OPEN_SETTINGS_PRIVACY: ://settings_privacy
               OPEN_SETTINGS_SEARCH_ENGINE: ://settings_search_engine
               OPEN_SETTINGS_TRACKING_PROTECTION: ://settings_tracking_protection
@@ -85,6 +91,7 @@ import:
               OPEN_SETTINGS_APP_ICON: ://settings_app_icon
               OPEN_SETTINGS: ://settings
               OPEN_SHARE_SHEET: ://share_sheet
+              OPEN_PROTECTIONS_DASHBOARD: ://protections_dashboard
               TURN_ON_SYNC: ://turn_on_sync
             styles:
               DEFAULT:

@@ -5,9 +5,9 @@
 #ifndef mozilla_net_Http3Stream_h
 #define mozilla_net_Http3Stream_h
 
-#include "nsAHttpTransaction.h"
 #include "ARefBase.h"
 #include "Http3StreamBase.h"
+#include "nsAHttpTransaction.h"
 #include "nsIClassOfService.h"
 
 namespace mozilla {

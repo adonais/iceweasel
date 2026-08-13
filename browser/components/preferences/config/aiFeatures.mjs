@@ -30,6 +30,8 @@ const lazy = XPCOMUtils.declareLazy({
     "moz-src:///browser/components/aiwindow/services/MemoryStore.sys.mjs",
   getCachedModelsData:
     "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
+  getModelDisplayOrder:
+    "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
 });
 
 let previousAssistantModel = "No model";
@@ -304,10 +306,72 @@ const AI_CONTROL_OPTIONS = [
   },
 ];
 
+/**
+ * @param {string} key - Model choice ID (e.g., "1", "2", "3")
+ */
 const modelL10nArgs = key => ({
+  shortName: lazy.getCachedModelsData()[key].shortName,
   model: lazy.getCachedModelsData()[key].model,
   ownerName: lazy.getCachedModelsData()[key].ownerName,
 });
+
+// TODO Bug 2053495: remove with mistral release pref
+const MISTRAL_RELEASE_PREF = "browser.smartwindow.mistralRelease";
+
+const isMistralRelease = () =>
+  Services.prefs.getBoolPref(MISTRAL_RELEASE_PREF, false);
+
+/**
+ * Keyed by choice ID; entry order here does not matter. Radio display order is
+ * controlled by getModelDisplayOrder().
+ *
+ * TODO Bug 2053495
+ * When the mistral release pref is removed, delete MODEL_CHOICE_STRINGS and
+ * make MODEL_CHOICE_STRINGS_V2 the only set.
+ */
+/** @type {Record<string, {l10nId: string, descriptionL10nId?: string}>} */
+const MODEL_CHOICE_STRINGS = {
+  1: { l10nId: "smart-window-model-fast" },
+  2: { l10nId: "smart-window-model-flexible" },
+  3: { l10nId: "smart-window-model-personal" },
+};
+
+/** @type {Record<string, {l10nId: string, descriptionL10nId?: string}>} */
+const MODEL_CHOICE_STRINGS_V2 = {
+  1: {
+    l10nId: "smart-window-model-fast-v2",
+  },
+  2: {
+    l10nId: "smart-window-model-flexible-v2",
+  },
+  3: {
+    l10nId: "smart-window-model-personal-v2",
+  },
+};
+
+/**
+ * Builds the preset (non-custom) model radio options. Ordering comes from
+ * getModelDisplayOrder(); label and description string IDs come from the static
+ * maps above; l10n args (display values) come from the cached model data.
+ *
+ * @returns {object[]}
+ */
+const buildPresetModelOptions = () => {
+  const strings = isMistralRelease()
+    ? MODEL_CHOICE_STRINGS_V2
+    : MODEL_CHOICE_STRINGS;
+  return lazy.getModelDisplayOrder().map(choiceId => {
+    const { l10nId } = strings[choiceId];
+    const option = /** @type {Record<string, any>} */ ({
+      value: choiceId,
+      l10nId,
+      get l10nArgs() {
+        return modelL10nArgs(choiceId);
+      },
+    });
+    return option;
+  });
+};
 
 /**
  * Validates that a URL is trustworthy (HTTPS or localhost).
@@ -751,6 +815,20 @@ Preferences.addSetting({
       "smartWindowFirstRunModelChoice",
       "smartWindowCustomEndpoint",
     ],
+    // TODO Bug 2053495: remove with mistral release pref.
+    setup(emitChange) {
+      const observer = () => emitChange();
+      Services.prefs.addObserver(MISTRAL_RELEASE_PREF, observer);
+      return () =>
+        Services.prefs.removeObserver(MISTRAL_RELEASE_PREF, observer);
+    },
+    getControlConfig(config) {
+      const customOption = config.options.find(option => option.value === "0");
+      return {
+        ...config,
+        options: [...buildPresetModelOptions(), customOption],
+      };
+    },
     get(_, deps) {
       if (customRadioSelected) {
         return "0";
@@ -1496,27 +1574,7 @@ SettingGroupManager.registerGroups({
         id: "modelSelection",
         control: "moz-radio-group",
         options: [
-          {
-            value: "1",
-            l10nId: "smart-window-model-fast",
-            get l10nArgs() {
-              return modelL10nArgs("1");
-            },
-          },
-          {
-            value: "2",
-            l10nId: "smart-window-model-flexible",
-            get l10nArgs() {
-              return modelL10nArgs("2");
-            },
-          },
-          {
-            value: "3",
-            l10nId: "smart-window-model-personal",
-            get l10nArgs() {
-              return modelL10nArgs("3");
-            },
-          },
+          ...buildPresetModelOptions(),
           {
             value: "0",
             l10nId: "smart-window-model-custom",

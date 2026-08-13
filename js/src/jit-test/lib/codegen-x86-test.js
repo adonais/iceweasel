@@ -9,25 +9,32 @@ load(libdir + "codegen-test-common.js");
 // Absolute address (disp32) following the instruction mnemonic.
 var ABS = `0x${HEXES}`;
 
-// End of prologue. The move from esi to rbp is writing the callee's wasm
-// instance into the frame for debug checks -- see WasmFrame.h. The mov to eax
-// is debug code, inserted by the register allocator to clobber eax before a
-// move group. But it is only present if there is a move group there.
-//
-// -0x21524111 is 0xDEADBEEF.
-var x86_prefix = `
-mov %esp, %ebp(
-movl %esi, 0x08\\(%rbp\\))?(
-mov \\$-0x21524111, %eax)?
-`
-
 // `.bp` because zydis chooses 'rbp' even on 32-bit systems
 var x86_loadarg0 = `
 movdqux 0x${HEXES}\\(%.bp\\), %xmm0
 `;
 
-// Start of epilogue.  `.bp` for the same reason as above.
-var x86_suffix = `pop %.bp`;
+const x86_arch = {
+    name: "x86",
+
+    // End of prologue. The move from esi to rbp is writing the callee's wasm
+    // instance into the frame for debug checks -- see WasmFrame.h. The mov to eax
+    // is debug code, inserted by the register allocator to clobber eax before a
+    // move group. But it is only present if there is a move group there.
+    //
+    // -0x21524111 is 0xDEADBEEF.
+    prefix: `
+mov %esp, %ebp(
+movl %esi, 0x08\\(%rbp\\))?(
+mov \\$-0x21524111, %eax)?
+`,
+
+    // Start of epilogue.  `.bp` for the same reason as above.
+    suffix: `pop %.bp`,
+
+    // Instruction encoding
+    encoding: `(?:${HEX}{2} )*`,
+};
 
 // v128 OP literal -> v128
 // inputs: [[complete-opname, rhs-literal, expected-pattern], ...]
@@ -45,40 +52,7 @@ function codegenTestX86_v128xLITERAL_v128(inputs, options = {}) {
 // For when nothing else applies: `module_text` is the complete source text of
 // the module, `export_name` is the name of the function to be tested,
 // `expected` is the non-preprocessed pattern, and options is an options bag,
-// described above.
+// described in codegen-x64-test.js.
 function codegenTestX86_adhoc(module_text, export_name, expected, options = {}) {
-    assertEq(hasDisassembler(), true);
-
-    let ins = wasmEvalText(module_text);
-    let output = wasmDis(ins.exports[export_name], {tier:"ion", asString:true});
-
-    const expected_initial = expected;
-    if (!options.no_prefix)
-        expected = x86_prefix + '\n' + expected;
-    if (!options.no_suffix)
-        expected = expected + '\n' + x86_suffix;
-    expected = fixlines(expected);
-
-    const output_simple = stripencoding(output, `(?:${HEX}{2} )*`);
-    const output_matches_expected = output_simple.match(new RegExp(expected)) != null;
-    if (!output_matches_expected) {
-        print("---- codegen-x86-test.js: TEST FAILED ----");
-    }
-    if (options.log && output_matches_expected) {
-        print("---- codegen-x86-test.js: TEST PASSED ----");
-    }
-    if (options.log || !output_matches_expected) {
-        print("---- module text");
-        print(module_text);
-        print("---- actual");
-        print(output);
-        print("---- expected (initial)");
-        print(expected_initial);
-        print("---- expected (as used)");
-        print(expected);
-        print("----");
-    }
-
-    assertEq(output_matches_expected, true);
+    codegenTestShared_adhoc(x86_arch, module_text, export_name, expected, options);
 }
-

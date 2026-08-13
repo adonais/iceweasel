@@ -4,8 +4,8 @@
 
 /* An implementaion of nsIException. */
 
-#include "xpcprivate.h"
 #include "nsError.h"
+#include "xpcprivate.h"
 
 /***************************************************************************/
 /* Quick and dirty mapping of well known result codes to strings. We only
@@ -22,8 +22,9 @@ static const struct ResultMap {
   const char* format;
 } map[] = {
 #define XPC_MSG_DEF(val, format) {(val), #val, format},
-#include "xpc.msg"
 #include "extra_xpc_msg.h"
+
+#include "xpc.msg"
 #undef XPC_MSG_DEF
     {NS_OK, nullptr, nullptr}  // sentinel to mark end of array
 };

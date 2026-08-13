@@ -1,0 +1,7 @@
+# Any copyright is dedicated to the Public Domain.
+# http://creativecommons.org/publicdomain/zero/1.0/
+
+GENERATED_FILES += ["bar", "baz"]
+
+OBJDIR_FILES._tests.foo += [("!bar", "renamed")]
+OBJDIR_FILES._tests.foo += ["!baz"]

@@ -6,6 +6,7 @@
 
 #include <mfapi.h>
 #include <mferror.h>
+
 #include <vector>
 
 #include "WMFClearKeyCDM.h"

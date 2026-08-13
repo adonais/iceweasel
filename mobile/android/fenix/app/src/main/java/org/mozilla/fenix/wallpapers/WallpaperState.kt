@@ -10,9 +10,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.colorResource
-import mozilla.components.ui.icons.R
-import org.mozilla.fenix.home.ui.getAttr
 
 /**
  * Represents all state related to the Wallpapers feature.
@@ -79,16 +76,6 @@ data class WallpaperState(
         @Composable
         get() = currentWallpaper.textColor?.let { Color(it) }
             ?: MaterialTheme.colorScheme.onSurface
-
-    /**
-     * [Color] to use for icons on the current wallpaper.
-     */
-    val iconColor: Color
-        @Composable
-        get() = currentWallpaper.textColor?.let { Color(it) }
-            ?: colorResource(
-                getAttr(R.attr.mozac_ic_private_mode_circle_fill_icon_color),
-            )
 
     private fun isCurrentWallpaperDefault(): Boolean = Wallpaper.nameIsDefault(currentWallpaper.name)
 

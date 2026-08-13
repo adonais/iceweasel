@@ -93,6 +93,15 @@ home-prefs-sports-widget-header =
 # Clock is a widget on New Tab that displays time zones around the world.
 home-prefs-clocks-header =
     .label = שעון
+# Privacy is a widget on New Tab that shows tracking protection activity.
+home-prefs-privacy-header =
+    .label = פרטיות
+# Stocks is a widget on New Tab that shows stock ticker prices.
+home-prefs-stocks-header =
+    .label = מניות
+# Picture of the day is a widget on New Tab that shows a daily Wikimedia Commons image.
+home-prefs-picture-header =
+    .label = התמונה של היום
 home-prefs-mission-message2 =
     .message = נותני החסות שלנו תומכים במשימה שלנו לבנות אינטרנט טוב יותר.
 home-prefs-manage-topics-link2 =
@@ -152,6 +161,224 @@ home-prefs-support-firefox-header-srd =
     .label = תמיכה ב־{ -brand-product-name }
 home-prefs-mission-message-learn-more-link-srd = כיצד?
 
+## Strings for the Privacy widget
+
+# Context menu item linking to more information about the Privacy widget.
+newtab-privacy-menu-learn-more = מידע נוסף
+
+## Privacy widget — count readout
+
+# Label shown under the large tracker-count number, appearing like:
+# Line 1: 86
+# Line 2: Trackers blocked today
+# Translations can be adjusted to "Today's blocked trackers" or something
+# similar if this fixed order causes issues.
+# Variables:
+#   $count (number) - Number of trackers blocked today
+newtab-privacy-trackers-blocked-today =
+    { $count ->
+        [one] רכיב מעקב אחד נחסם השבוע
+       *[other] רכיבי מעקב נחסמו השבוע
+    }
+# Second line of the readout, under the large number and "Trackers blocked
+# today". Counts the sites those trackers were blocked on. The English is
+# shortened from "Blocked across { $count } sites" — translate it that fuller way
+# if the short fragment doesn't work in your language.
+# Variables:
+#   $count (number) - Number of sites where trackers were blocked
+newtab-privacy-across-sites =
+    { $count ->
+        [one] באתר אחד
+       *[other] ב־{ $count } אתרים
+    }
+
+## Privacy widget — empty state
+
+# Shown when no trackers have been blocked yet today.
+newtab-privacy-empty = ‏{ -brand-short-name } חוסם רכיבי מעקב בזמן הגלישה. הם יהיו מוצגים כאן.
+
+## Privacy widget — informational messages
+##
+## Rotating "info" secondary messages. Each message has a body plus a matched
+## "-cta" button label sharing the same id stem (the CTA button isn't rendered
+## yet; the labels are authored so the pairing is ready).
+
+newtab-privacy-message-info-1 = ‏{ -brand-short-name } חוסם רכיבי מעקב באופן אוטומטי בזמן הגלישה.
+newtab-privacy-message-info-1-cta = הצגת הגנות
+newtab-privacy-message-info-2 = חסימת רכיבי מעקב מסייעת למנוע מחברות לעקוב אחריך ברשת.
+newtab-privacy-message-info-2-cta = הצגת הגנות
+newtab-privacy-message-info-3 = אתרים רבים כוללים רכיבי מעקב, כך שחברות שמעולם לא ביקרת בהן עשויות לעקוב אחריך באינטרנט.
+newtab-privacy-message-info-3-cta = הצגת הגנות
+newtab-privacy-message-info-4 = הבחירה ב־{ -brand-short-name } פירושה בחירה בהגנה כברירת מחדל.
+newtab-privacy-message-info-4-cta = הצגת הגנות
+newtab-privacy-message-info-5 = רכיבי מעקב חסומים פירושם שפחות חברות יכולות לעקוב אחריך באתרים שונים.
+newtab-privacy-message-info-5-cta = הצגת הגנות
+newtab-privacy-message-info-6 = הנתונים שלך נשמרים אצלך ב־{ -brand-short-name }. אנחנו לעולם לא נמכור אותם, אבל דפדפנים אחרים אולי כן.
+newtab-privacy-message-info-6-cta = מידע נוסף
+newtab-privacy-message-info-7 = הצגת רכיבי המעקב ש־{ -brand-short-name } חסמה.
+newtab-privacy-message-info-7-cta = הצגת הגנות
+newtab-privacy-message-info-8 = הגלישה עם { -brand-short-name } תומכת במשימתה של { -vendor-short-name } לבנות אינטרנט טוב יותר.
+newtab-privacy-message-info-8-cta = מידע נוסף
+newtab-privacy-message-info-9 = כדאי להפוך את { -brand-short-name } לדפדפן המועדף עליך לקבלת פרטיות מובנית.
+newtab-privacy-message-info-9-cta = הגדרה כדפדפן ברירת המחדל
+newtab-privacy-message-info-10 = שמירת ססמאות ב־{ -brand-short-name } מאפשרת להשתמש בפרטי התחברות חזקים וייחודיים בכל מקום.
+newtab-privacy-message-info-10-cta = מעבר לססמאות
+newtab-privacy-message-info-11 = אפשר לגלות איך { -brand-short-name } עוזר לשמור על פרטיות רבה יותר בזמן הגלישה.
+newtab-privacy-message-info-11-cta = מידע נוסף
+newtab-privacy-message-info-12 = חסימת רכיבי מעקב יכולה לסייע לחסוך רוחב פס בתוכניות גלישה מוגבלות.
+newtab-privacy-message-info-12-cta = הצגת הגנות
+newtab-privacy-message-info-13 = ‏{ -brand-short-name } חוסם רכיבי מעקב, ומפנה רוחב פס להזרמת תכנים חלקה יותר.
+newtab-privacy-message-info-13-cta = הצגת הגנות
+
+## Privacy widget — promotional messages
+##
+## Rotating "promo" secondary messages suggesting another Firefox feature. Each
+## has a body plus a matched "-cta" button label.
+
+newtab-privacy-message-promo-monitor-1 = אפשר לגלות האם המידע האישי שלך מופיע בדליפת נתונים.
+newtab-privacy-message-promo-monitor-1-cta = מידע נוסף
+newtab-privacy-message-promo-monitor-2 = ניתן להגן על המידע שלך בעזרת ניטור חינמי אחר דליפות נתונים, עבור עד 20 כתובות דוא״ל.
+newtab-privacy-message-promo-monitor-2-cta = מידע נוסף
+newtab-privacy-message-promo-signin-1 = ניתן לשמור על הסימניות, הססמאות והלשוניות שלך מוצפנות בכל המכשירים שלך באמצעות חשבון { -vendor-short-name }.
+newtab-privacy-message-promo-signin-1-cta = כניסה
+newtab-privacy-message-promo-vpn-1 = עושה רכישות ברשתות Wi-Fi ציבוריות? כדאי להפעיל את ה־VPN המובנה לקבלת הגנה נוספת.
+newtab-privacy-message-promo-vpn-1-cta = פתיחת VPN
+newtab-privacy-message-promo-vpn-2 = גולשים ב־Wi-Fi של שדה התעופה? כדאי להגן על הגלישה שלך על־ידי הפעלת ה־VPN המובנה.
+newtab-privacy-message-promo-vpn-2-cta = פתיחת VPN
+newtab-privacy-message-promo-vpn-3 = ניתן להפעיל את ה־VPN המובנה כדי לשמור על המיקום שלך פרטי יותר.
+newtab-privacy-message-promo-vpn-3-cta = פתיחת VPN
+newtab-privacy-message-promo-private-window-1 = כדאי לנסות חלון פרטי כדי לגלוש בפרטיות רבה יותר בעת שימוש במחשב ציבורי.
+newtab-privacy-message-promo-private-window-1-cta = פתיחת חלון פרטי
+newtab-privacy-message-promo-relay-1 = משתמשים בכתובת הדוא״ל האמיתית רק מול גורמים מהימנים; להרשמות משתמשים במסכת דוא״ל.
+newtab-privacy-message-promo-relay-1-cta = קבלת מסכות
+newtab-privacy-message-promo-relay-2 = ניתן להגן על תיבת הדואר הנכנס שלך באמצעות מיסוך דוא״ל בחינם.
+newtab-privacy-message-promo-relay-2-cta = קבלת מסכות
+newtab-privacy-message-promo-relay-3 = ניתן לקבל 50 מסכות דוא״ל בחינם שיעזרו לך לשמור על פרטיות כתובת הדוא״ל האמיתית שלך.
+newtab-privacy-message-promo-relay-3-cta = קבלת מסכות
+
+## Privacy widget — celebration messages
+##
+## Earned "celebration" moments (milestones, daily cap, streak, first
+## protection). Count-bearing ones interpolate { $count }.
+
+# Variables:
+#   $count (number) - Trackers blocked this week
+newtab-privacy-message-milestone-week =
+    { $count ->
+        [one] רכיב מעקב אחד נחסם השבוע. ניתן לראות מה { -brand-short-name } משאיר מחוץ לגלישה שלך
+       *[other] { $count } רכיבי מעקב נחסמו השבוע. ניתן לראות מה { -brand-short-name } משאיר מחוץ לגלישה שלך
+    }
+newtab-privacy-message-milestone-week-cta = הצגת הגנות
+# Variables:
+#   $count (number) - Trackers blocked this month
+newtab-privacy-message-milestone-month =
+    { $count ->
+        [one] רכיב מעקב אחד נחסם החודש. צעד קטן לפרטיות. צעד גדול לשקט הנפשי.
+       *[other] { $count } רכיבי מעקב נחסמו החודש. צעד קטן לפרטיות. צעד גדול לשקט הנפשי.
+    }
+newtab-privacy-message-milestone-month-cta = הצגת הגנות
+# Variables:
+#   $count (number) - Trackers blocked this year
+newtab-privacy-message-milestone-year =
+    { $count ->
+        [one] רכיב מעקב אחד נחסם השנה. זו הייתה שנה משמעותית בהגנה על הפרטיות שלך.
+       *[other] { $count } רכיבי מעקב נחסמו השנה. זו הייתה שנה משמעותית בהגנה על הפרטיות שלך.
+    }
+newtab-privacy-message-milestone-year-cta = הצגת הגנות
+# Variables:
+#   $count (number) - Trackers blocked all-time
+newtab-privacy-message-milestone-total =
+    { $count ->
+        [one] רכיב מעקב אחד נחסם. עוד צעד משמעותי לשמירה על הפרטיות שלך.
+       *[other] { $count } רכיבי מעקב נחסמו. עוד צעד משמעותי לשמירה על הפרטיות שלך.
+    }
+newtab-privacy-message-milestone-total-cta = הצגת הגנות
+# Shown when today's blocked-tracker count reaches the display cap ("100+").
+newtab-privacy-message-daily-cap = (למעלה מ־100 רכיבי מעקב שנחסמו היום.) פחות רכיבי מעקב פירושם יותר פרטיות.
+newtab-privacy-message-daily-cap-cta = הצגת הגנות
+newtab-privacy-message-streak-cta = הצגת הגנות
+# Shown the first time the tracker count goes above zero.
+newtab-privacy-message-first-protection = אפשר להמשיך לגלוש, { -brand-short-name } ימשיך לחסום.
+newtab-privacy-message-first-protection-cta = הצגת הגנות
+
+## Strings for the Stocks widget
+
+# Context menu item for searching stock ticker symbols.
+newtab-stocks-menu-search = חיפוש סימולי מניות
+# Context menu item linking to more information about the Stocks widget.
+newtab-stocks-menu-learn-more = מידע נוסף
+# "Stocks widget options" is an icon-only button in the widget toolbar — the
+# attributes are consumed as tooltip/screen-reader label only. The button
+# never renders visible text.
+newtab-stocks-widget-menu-button =
+    .title = אפשרויות ווידג’ט מניות
+    .aria-label = אפשרויות ווידג’ט מניות
+# Heading for the Stocks widget.
+newtab-stocks-widget-title = מניות
+
+## Screen-reader summary of a stock ticker.
+## Variables:
+##   $name (String) - the full fund/ETF name, e.g. "SPDR S&P 500 ETF Trust".
+##   $change (String) - the day's percentage change, e.g. "+2.1%".
+##   $price (String) - the last price, e.g. "$559.44".
+
+# Stock increased (went up) during the day
+newtab-stocks-ticker-status-up = ‏{ $name }, עלייה של { $change }, ‏{ $price }
+# Stock decreased (went down) during the day
+newtab-stocks-ticker-status-down = ‏{ $name }, ירידה של { $change }, ‏{ $price }
+# Stock didn't change during the day
+newtab-stocks-ticker-status-flat = ‏{ $name }, ללא שינוי, { $change }, ‏{ $price }
+
+## Strings for the Picture of the Day widget
+
+# Title shown at the top of the widget, with the source name appended.
+# "Wikimedia Commons" is a brand name and should not be translated.
+newtab-picture-header = התמונה של היום · Wikimedia Commons
+# Shorter title shown at the top of the widget, without the source name.
+newtab-picture-header-main = התמונה של היום
+# Attribution line shown under the title once a picture loads: an author
+# credit, a link to the picture's source page, and a link to its license.
+# "©" is the copyright symbol.
+# $author (string) - the name of the image's author.
+newtab-picture-attribution-author = © { $author }
+# Link to the picture's source page (its Wikimedia Commons file page).
+# "Wikimedia Commons" is a brand name and should not be translated.
+newtab-picture-attribution-source-link = Wikimedia Commons
+# Screen-reader label for the license link; the visible text is the license
+# name (for example "CC BY-SA 4.0") provided with the picture.
+# $license (string) - the name of the license.
+newtab-picture-attribution-license =
+    .aria-label = הצגת רישיון { $license }
+# Tooltip and screen-reader label for the icon-only button that opens the
+# widget's context menu. The button never renders visible text.
+newtab-picture-widget-menu-button =
+    .title = אפשרויות של התמונה של היום
+    .aria-label = אפשרויות של התמונה של היום
+# Button that sets the current picture as the New Tab background wallpaper. The
+# button collapses to an icon when not hovered/focused, so .title is its tooltip.
+newtab-picture-set-wallpaper =
+    .label = הגדרת תמונת רקע
+    .title = הגדרת תמונת רקע
+    .aria-label = הגדרת התמונה של היום כתמונת הרקע שלך
+# Context menu item that opens the New Tab customization panel.
+newtab-picture-menu-manage-wallpaper = ניהול תמונת רקע
+# Context menu item that hides today’s picture, replacing it with an existing
+# wallpaper.
+newtab-picture-menu-hide-photo = הסתרת התמונה של היום
+# Context menu item that restores today’s picture after it has been hidden.
+newtab-picture-menu-show-photo = הצגת התמונה של היום
+# Context menu item linking to more information about the widget.
+newtab-picture-menu-learn-more = מידע נוסף
+# Icon button shown on the widget once the picture is hidden; restores it.
+newtab-picture-show-button =
+    .title = הצגת התמונה של היום
+    .aria-label = הצגת התמונה של היום
+# Shown when there is no new picture to display yet.
+newtab-picture-check-back = כדאי לחזור מחר לתמונה חדשה
+# Screen-reader text alternative for the picture; fallback used when the source
+# provides no localized description.
+newtab-picture-image-alt = תמונה של היום של Wikimedia Commons
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -187,6 +414,7 @@ newtab-topsites-add-shortcut-label = הוספת קיצור דרך
 newtab-topsites-add-shortcut-title =
     .title = הוספת קיצור דרך
     .aria-label = הוספת קיצור דרך
+newtab-shortcuts-pinned-area = אזור מוצמד
 newtab-topsites-title-label = כותרת
 newtab-topsites-title-input =
     .placeholder = נא להזין כותרת
@@ -470,6 +698,8 @@ newtab-recommended-stories-toggle =
     .label = סיפורים מומלצים
 newtab-custom-stories-personalized-toggle =
     .label = סיפורים
+newtab-custom-stories-personalized-checkbox =
+    .label = סיפורים מותאמים אישית המבוססים על הפעילות שלך
 newtab-custom-stories-personalized-checkbox-label = סיפורים מותאמים אישית המבוססים על הפעילות שלך
 newtab-custom-pocket-sponsored = סיפורים ממומנים
 newtab-custom-pocket-show-recent-saves = הצגת שמירות אחרונות
@@ -490,6 +720,12 @@ newtab-custom-widget-clock-toggle =
     .label = שעון
 newtab-custom-widget-sports-toggle2 =
     .label = ספורט
+newtab-custom-widget-privacy-toggle =
+    .label = פרטיות
+newtab-custom-widget-stocks-toggle =
+    .label = מניות
+newtab-custom-widget-picture-toggle =
+    .label = התמונה של היום
 newtab-custom-widget-section-title = ווידג’טים
 newtab-custom-widget-section-toggle =
     .label = ווידג’טים
@@ -966,6 +1202,8 @@ newtab-widget-timer-reset =
 newtab-widget-timer-menu-notifications = כיבוי התרעות
 newtab-widget-timer-menu-notifications-on = הפעלת התרעות
 newtab-widget-timer-menu-learn-more = מידע נוסף
+newtab-widget-timer-menu-button =
+    .aria-label = אפשרויות שעון עצר
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = כותרות מובילות
 newtab-daily-briefing-card-menu-dismiss = סגירה
@@ -1084,6 +1322,8 @@ newtab-sports-widget-show-less =
 # Toggle that filters the list of teams the user follows
 newtab-sports-widget-followed-only-toggle =
     .label = רק נבחרות במעקב
+# Status shown when more matches are being fetched.
+newtab-sports-widget-loading-more = בטעינת התאמות נוספות…
 # Watch is a verb (as in watch matches online).
 newtab-sports-widget-watch =
     .label = צפייה
@@ -1163,6 +1403,9 @@ newtab-sports-widget-third-place = מקום שלישי
 newtab-sports-widget-runner-up = סגנית האלופה
 newtab-sports-widget-champions = אלופים
 newtab-sports-widget-world-cup-champions = אלופי המונדיאל 2026
+# Compact champions label for the medium-size widget result card; the larger
+# card uses newtab-sports-widget-world-cup-champions.
+newtab-sports-widget-world-cup-champions-short = אלופי 2026
 # Variables:
 #   $date (Date) - The match start time
 newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
@@ -1261,12 +1504,23 @@ newtab-sports-widget-team-tbd = טרם נקבע
 newtab-sports-widget-message-wallpapers-title = חגגו את פתיחת המונדיאל עם תמונות רקע חדשות
 newtab-sports-widget-message-wallpapers-body = הכניסו לדפדפן שלכם אווירת יום משחק לטורניר.
 newtab-sports-widget-message-wallpapers-cta = בחירת תמונת רקע
+newtab-sports-widget-message-wallpapers-semifinals-title = קבלת תמונת רקע חדשה לחצי הגמר
+newtab-sports-widget-message-wallpapers-semifinals-body = הכינו את המסך למשחקים הגדולים ביותר של המונדיאל.
 newtab-sports-widget-message-add-widgets-cta =
     .label = הוספת ווידג'טים
 newtab-sports-widget-message-day-in-play-title = להישאר במשחק עם הווידג’טים של { -brand-product-name }
 newtab-sports-widget-message-day-in-play-body = מעקב אחרי המונדיאל, להישאר ממוקד במשימות, מעקב אחרי השעה ברחבי העולם ועוד.
 newtab-sports-widget-message-explore-widgets-cta =
     .label = צפייה בווידג’טים
+
+## Survey prompts shown after the World Cup to gather feedback on the widgets experience.
+
+newtab-sports-widget-message-survey-title = עזרו לנו לשפר את הווידג’טים
+newtab-sports-widget-message-survey-body = זהו, המונדיאל הסתיים. נשמח לשמוע מה חשבת על חווית השימוש בווידג’ט.
+newtab-sports-widget-message-survey-widget-title = איך היה הווידג’ט של המונדיאל?
+newtab-sports-widget-message-survey-widget-body = באפשרותך לשתף את המשוב שלך כדי לסייע לנו לשפר ווידג’טים עתידיים. אחרי זה ניתן לנסות את הווידג’ט החדש שברשימה.
+newtab-sports-widget-message-survey-cta =
+    .label = לקיחת סקר
 
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input

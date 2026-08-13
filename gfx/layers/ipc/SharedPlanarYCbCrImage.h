@@ -5,7 +5,8 @@
 #ifndef GFX_LAYERS_IPC_SHAREDPLANARYCBCRIMAGE_H_
 #define GFX_LAYERS_IPC_SHAREDPLANARYCBCRIMAGE_H_
 
-#include <stdint.h>             // for uint8_t, uint32_t
+#include <stdint.h>  // for uint8_t, uint32_t
+
 #include "ImageContainer.h"     // for PlanarYCbCrImage, etc
 #include "mozilla/RefPtr.h"     // for RefPtr
 #include "mozilla/ipc/Shmem.h"  // for Shmem

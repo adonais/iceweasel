@@ -2,14 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "xpcprivate.h"
-#include "StaticComponents.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/ProfilerLabels.h"
+
+#include "nsJSUtils.h"
+#include "StaticComponents.h"
+#include "xpcprivate.h"
+
 #include "js/Debug.h"               // JS::dbg::ShouldAvoidSideEffects
 #include "js/PropertyAndElement.h"  // JS_DefineProperty, JS_DefinePropertyById
 #include "js/String.h"              // JS::LinearStringHasLatin1Chars
-#include "nsJSUtils.h"
 
 using namespace mozilla;
 using namespace JS;

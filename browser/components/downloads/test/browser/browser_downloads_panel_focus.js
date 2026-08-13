@@ -28,7 +28,7 @@ add_task(async function test_focus() {
 
   info("waiting for the panel to open");
   await task_openPanel();
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !DownloadsView.richListBox.getAttribute("disabled")
   );
 
@@ -60,7 +60,7 @@ add_task(async function test_focus() {
 
   info("waiting for the panel to open after starting the second download");
   await task_openPanel();
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !DownloadsView.richListBox.getAttribute("disabled")
   );
 
@@ -86,7 +86,7 @@ add_task(async function test_focus() {
 
   info("waiting for the panel to open after starting the third download");
   await task_openPanel();
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !DownloadsView.richListBox.getAttribute("disabled")
   );
 

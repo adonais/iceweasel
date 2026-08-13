@@ -89,8 +89,8 @@ already_AddRefed<CrossShadowBoundaryRange> CrossShadowBoundaryRange::Create(
 }
 
 void CrossShadowBoundaryRange::ResetToReuse() {
-  DoSetRange(RawRangeBoundary(TreeKind::Flat), RawRangeBoundary(TreeKind::Flat),
-             nullptr);
+  DoSetRange(RawRangeBoundary(TreeKind::FlatForSelection),
+             RawRangeBoundary(TreeKind::FlatForSelection), nullptr);
   mOwner = nullptr;
 }
 
@@ -171,9 +171,10 @@ void CrossShadowBoundaryRange::ContentWillBeRemoved(nsIContent* aChild,
       // We're only interested if our boundary reference was removed, otherwise
       // we can just invalidate the offset.
       if (aChild == aBoundary.Ref()) {
-        return Some(RawRangeBoundary::FromChild(*aChild, TreeKind::Flat));
+        return Some(
+            RawRangeBoundary::FromChild(*aChild, TreeKind::FlatForSelection));
       }
-      RawRangeBoundary newBoundary(TreeKind::Flat);
+      RawRangeBoundary newBoundary(TreeKind::FlatForSelection);
       newBoundary.CopyFrom(aBoundary, RangeBoundarySetBy::Ref);
       newBoundary.InvalidateOffset();
       return Some(newBoundary);
@@ -226,7 +227,7 @@ void CrossShadowBoundaryRange::CharacterDataChanged(
       RawRangeBoundary newStart =
           nsRange::ComputeNewBoundaryWhenBoundaryInsideChangedText(
               aInfo, aBoundary.AsRaw());
-      return Some(newStart.AsRangeBoundaryInFlatTree(aFor));
+      return Some(newStart.AsRangeBoundaryInFlatTreeOrNonFlattenedNode(aFor));
     }
     return Nothing();
   };

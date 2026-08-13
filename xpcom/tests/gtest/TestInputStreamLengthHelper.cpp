@@ -1,5 +1,5 @@
+#include "Helpers.h"
 #include "gtest/gtest.h"
-
 #include "mozilla/InputStreamLengthHelper.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "nsCOMPtr.h"
@@ -9,7 +9,6 @@
 #include "nsStringStream.h"
 #include "nsThreadUtils.h"
 #include "nsXPCOM.h"
-#include "Helpers.h"
 
 using namespace mozilla;
 

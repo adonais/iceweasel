@@ -13,6 +13,7 @@ internal object Keys {
     const val SELECTED_SESSION_INDEX_KEY = "selectedSessionIndex"
     const val SELECTED_TAB_ID_KEY = "selectedTabId"
     const val SESSION_STATE_TUPLES_KEY = "sessionStateTuples"
+    const val TRANSLATIONS_ENGINE_IS_SUPPORTED_KEY = "translationsEngineIsSupported"
 
     const val SESSION_URL_KEY = "url"
     const val SESSION_UUID_KEY = "uuid"

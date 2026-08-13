@@ -111,6 +111,8 @@ class MediaPlaybackStatus final {
   const nsTArray<AudibleSource>* GetAudibleSourcesForTesting(
       uint64_t aBcId) const;
 
+  void ClearBrowsingContext(uint64_t aContextId);
+
  private:
   /**
    * This internal class stores per-browsing-context state used to decide the

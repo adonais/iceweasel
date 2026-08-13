@@ -6,9 +6,9 @@
 #define mozilla_UrlClassifierExceptionListEntry_h
 
 #include "mozilla/extensions/MatchPattern.h"
+#include "nsISupports.h"
 #include "nsIUrlClassifierExceptionListEntry.h"
 #include "nsString.h"
-#include "nsISupports.h"
 
 namespace mozilla::net {
 

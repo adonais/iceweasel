@@ -4,6 +4,9 @@
 
 #include "nsTraceRefcnt.h"
 
+#include <math.h>
+
+#include "CodeAddressService.h"
 #include "base/process_util.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/AutoRestore.h"
@@ -11,26 +14,22 @@
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Path.h"
 #include "mozilla/Sprintf.h"
+#include "mozilla/StackWalk.h"
 #include "mozilla/StaticPtr.h"
-#include "nsXPCOMPrivate.h"
-#include "nscore.h"
+#include "nsCRT.h"
 #include "nsClassHashtable.h"
 #include "nsContentUtils.h"
-#include "nsISupports.h"
 #include "nsHashKeys.h"
+#include "nsISupports.h"
 #include "nsPrintfCString.h"
 #include "nsTArray.h"
 #include "nsTHashtable.h"
+#include "nsThreadUtils.h"
+#include "nsXPCOMPrivate.h"
+#include "nsXULAppAPI.h"
+#include "nscore.h"
 #include "prenv.h"
 #include "prlink.h"
-#include "nsCRT.h"
-#include <math.h>
-#include "nsHashKeys.h"
-#include "mozilla/StackWalk.h"
-#include "nsThreadUtils.h"
-#include "CodeAddressService.h"
-
-#include "nsXULAppAPI.h"
 #ifdef XP_WIN
 #  include <io.h>
 #  include <process.h>
@@ -39,12 +38,12 @@
 #  include <unistd.h>
 #endif
 
+#include <vector>
+
 #include "mozilla/AutoRestore.h"
 #include "mozilla/BlockingResourceBase.h"
 #include "mozilla/PoisonIOInterposer.h"
 #include "mozilla/UniquePtr.h"
-
-#include <vector>
 
 #ifdef HAVE_DLFCN_H
 #  include <dlfcn.h>

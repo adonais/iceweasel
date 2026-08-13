@@ -15,59 +15,68 @@ const {
   "chrome://remote/content/shared/js-process-actors/WebDriverWorkerListenerActor.sys.mjs"
 );
 
-describe("WorkerListener for chrome worker", function () {
-  let registeredWorkers;
-  let unregisteredWorkers;
-  let onWorkerRegistered;
-  let onWorkerUnregistered;
+// Run once per dom.worker.remoteDebugger.enabled value so the worker listener
+// is exercised against both the local WorkerDebugger and the parent-process
+// RemoteWorkerDebugger (bug 1944240).
+for (const remoteDebuggerEnabled of [false, true]) {
+  describe(`WorkerListener for chrome worker (remoteDebugger=${remoteDebuggerEnabled})`, function () {
+    let registeredWorkers;
+    let unregisteredWorkers;
+    let onWorkerRegistered;
+    let onWorkerUnregistered;
 
-  beforeEach(async () => {
-    registeredWorkers = [];
-    onWorkerRegistered = (name, worker) => registeredWorkers.push(worker);
-    workerListenerRegistry.on("worker-registered", onWorkerRegistered);
+    beforeEach(async () => {
+      await SpecialPowers.pushPrefEnv({
+        set: [["dom.worker.remoteDebugger.enabled", remoteDebuggerEnabled]],
+      });
 
-    unregisteredWorkers = [];
-    onWorkerUnregistered = (name, worker) => unregisteredWorkers.push(worker);
-    workerListenerRegistry.on("worker-unregistered", onWorkerUnregistered);
-  });
+      registeredWorkers = [];
+      onWorkerRegistered = (name, worker) => registeredWorkers.push(worker);
+      workerListenerRegistry.on("worker-registered", onWorkerRegistered);
 
-  afterEach(() => {
-    workerListenerRegistry.off("worker-registered", onWorkerRegistered);
-    workerListenerRegistry.off("worker-unregistered", onWorkerUnregistered);
-    unregisterWebDriverWorkerListenerActor();
-  });
-
-  it("Emits expected events for a chrome worker", async function test_chromeWorker() {
-    info("Register the worker listener actors");
-    registerWebDriverWorkerListenerActor();
-
-    info("Create a chrome worker from chrome context");
-    const chromeWorker = new ChromeWorker(CHROME_WORKER_URL);
-
-    info("Wait for the chrome worker to load");
-    await new Promise(resolve => {
-      chromeWorker.onmessage = e => {
-        if (e.data === "chrome worker loaded") {
-          resolve();
-        }
-      };
+      unregisteredWorkers = [];
+      onWorkerUnregistered = (name, worker) => unregisteredWorkers.push(worker);
+      workerListenerRegistry.on("worker-unregistered", onWorkerUnregistered);
     });
 
-    const [worker] = await waitForWorkersByURL(
-      registeredWorkers,
-      CHROME_WORKER_URL,
-      1
-    );
-
-    assertWorkerData(worker, {
-      type: Ci.nsIWorkerDebugger.TYPE_DEDICATED,
-      url: CHROME_WORKER_URL,
-      isChrome: true,
+    afterEach(() => {
+      workerListenerRegistry.off("worker-registered", onWorkerRegistered);
+      workerListenerRegistry.off("worker-unregistered", onWorkerUnregistered);
+      unregisterWebDriverWorkerListenerActor();
     });
 
-    info("Terminate the chrome worker");
-    chromeWorker.terminate();
+    it("Emits expected events for a chrome worker", async function test_chromeWorker() {
+      info("Register the worker listener actors");
+      registerWebDriverWorkerListenerActor();
 
-    await waitForWorkersByIds(unregisteredWorkers, [worker.id], 1);
+      info("Create a chrome worker from chrome context");
+      const chromeWorker = new ChromeWorker(CHROME_WORKER_URL);
+
+      info("Wait for the chrome worker to load");
+      await new Promise(resolve => {
+        chromeWorker.onmessage = e => {
+          if (e.data === "chrome worker loaded") {
+            resolve();
+          }
+        };
+      });
+
+      const [worker] = await waitForWorkersByURL(
+        registeredWorkers,
+        CHROME_WORKER_URL,
+        1
+      );
+
+      assertWorkerData(worker, {
+        type: Ci.nsIWorkerDebugger.TYPE_DEDICATED,
+        url: CHROME_WORKER_URL,
+        isChrome: true,
+      });
+
+      info("Terminate the chrome worker");
+      chromeWorker.terminate();
+
+      await waitForWorkersByIds(unregisteredWorkers, [worker.id], 1);
+    });
   });
-});
+}

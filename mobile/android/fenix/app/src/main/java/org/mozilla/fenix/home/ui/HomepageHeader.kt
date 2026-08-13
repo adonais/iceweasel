@@ -37,6 +37,7 @@ import org.mozilla.fenix.home.ui.HomepageTestTag.PRIVATE_BROWSING_HOMEPAGE_BUTTO
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.wallpapers.WallpaperTheme
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -44,13 +45,25 @@ import mozilla.components.ui.icons.R as iconsR
  */
 @Composable
 fun HomepageHeader(
-    wordmarkTextColor: Color?,
-    privateBrowsingButtonColor: Color,
     browsingMode: BrowsingMode,
     isSportsWidgetEnabled: Boolean,
     browsingModeChanged: (BrowsingMode) -> Unit,
     onLogoClicked: () -> Unit,
 ) {
+    // In normal mode the wordmark and private-browsing button follow the wallpaper text color; in
+    // private mode there is no wallpaper, so the wordmark is untinted and the button uses its
+    // dedicated private-mode icon color.
+    val wordmarkTextColor = if (browsingMode.isPrivate) {
+        null
+    } else {
+        WallpaperTheme.onWallpaper
+    }
+    val privateBrowsingButtonColor = if (browsingMode.isPrivate) {
+        colorResource(getAttr(iconsR.attr.mozac_ic_private_mode_circle_fill_icon_color))
+    } else {
+        WallpaperTheme.onWallpaper
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -123,12 +136,6 @@ private fun HomepageHeaderPreview(
     FirefoxTheme(theme) {
         Surface {
             HomepageHeader(
-                wordmarkTextColor = null,
-                privateBrowsingButtonColor = colorResource(
-                    getAttr(
-                        iconsR.attr.mozac_ic_private_mode_circle_fill_icon_color,
-                    ),
-                ),
                 browsingMode = BrowsingMode.Normal,
                 isSportsWidgetEnabled = true,
                 browsingModeChanged = {},

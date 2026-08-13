@@ -8,6 +8,9 @@ import android.Manifest
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Until
+import mozilla.components.support.ktx.util.PromptAbuserDetector
+import org.junit.After
+import org.junit.Before
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -26,6 +29,16 @@ import org.mozilla.fenix.ui.efficiency.selectors.SitePermissionsSelectors
 class SettingsDeleteBrowsingDataOnQuitTest : BaseTest() {
     @get:Rule
     val grantPermissionRule: GrantPermissionRule = GrantPermissionRule.grant(Manifest.permission.RECORD_AUDIO)
+
+    @Before
+    fun disablePromptAbuserDetector() {
+        PromptAbuserDetector.validationsEnabled = false
+    }
+
+    @After
+    fun restorePromptAbuserDetector() {
+        PromptAbuserDetector.validationsEnabled = true
+    }
 
     @Ignore("Covered by verifyNavigationReachability[1: SettingsDeleteBrowsingDataOnQuitPage (TBD) — Navigation Reachability]")
     @Test
@@ -64,13 +77,14 @@ class SettingsDeleteBrowsingDataOnQuitTest : BaseTest() {
 
         on.settingsDeleteBrowsingDataOnQuit.navigateToPage()
             .mozClick(SettingsDeleteBrowsingDataOnQuitSelectors.DELETE_BROWSING_DATA_ON_QUIT_TOGGLE)
+        on.home.navigateToPage()
         on.browserPage.navigateToPage(testPage)
             .verifyPageContent("Open microphone")
             .clickPageContent("Open microphone")
         on.browserPage
             .mozVerify(SitePermissionsSelectors.MICROPHONE_PERMISSION_PROMPT)
-            .mozClick(SitePermissionsSelectors.PAGE_PERMISSION_REMEMBER_DECISION_CHECKBOX)
-            .mozClick(SitePermissionsSelectors.PAGE_PERMISSION_DIALOG_DENY_BUTTON)
+            .mozClickIfPresent(SitePermissionsSelectors.PAGE_PERMISSION_REMEMBER_DECISION_CHECKBOX)
+            .mozClickIfPresent(SitePermissionsSelectors.PAGE_PERMISSION_DIALOG_DENY_BUTTON)
         on.browserPage.verifyPageContent("Microphone not allowed")
         on.home.navigateToPage()
         on.mainMenu.navigateToPage()

@@ -43,7 +43,7 @@ namespace {
 
 // Const variable for generate padding size.
 // XXX This will be tweaked to something more meaningful in Bug 1383656.
-const int64_t kRoundUpNumber = 20480;
+const int64_t kRoundUpNumber = 131072;
 
 // At the moment, the encrypted stream block size is assumed to be unchangeable
 // between encrypting and decrypting blobs. This assumptions holds as long as we
@@ -412,7 +412,7 @@ nsresult BodyDeleteOrphanedFiles(
               });
 
               nsID id;
-              QM_TRY(OkIf(id.Parse(PromiseFlatCString(leafName).get())), true);
+              QM_TRY(OkIf(id.Parse(leafName)), true);
 
               if (!aKnownBodyIds.Contains(id)) {
                 return true;

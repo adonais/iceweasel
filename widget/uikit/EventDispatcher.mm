@@ -5,11 +5,11 @@
 #include "EventDispatcher.h"
 
 #include "CFTypeRefPtr.h"
+#include "jsapi.h"
 #include "mozilla/MacStringHelpers.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/TypedArray.h"
 #include "mozilla/widget/GeckoViewSupport.h"
-#include "jsapi.h"
 
 using namespace mozilla;
 using namespace mozilla::widget;
@@ -291,7 +291,7 @@ nsresult UnboxValue(JSContext* aCx, CFTypeRef aData,
   } else if (typeID == CFNumberGetTypeID()) {
     double numberValue = 0;
     CFNumberGetValue((CFNumberRef)aData, kCFNumberDoubleType, &numberValue);
-    aOut.set(JS_NumberValue(numberValue));
+    aOut.setNumber(numberValue);
   } else if (typeID == CFStringGetTypeID()) {
     return UnboxString(aCx, (CFStringRef)aData, aOut);
   } else if (typeID == CFDataGetTypeID()) {

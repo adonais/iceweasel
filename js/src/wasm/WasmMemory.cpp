@@ -242,9 +242,6 @@ bool wasm::ToPageSize(JSContext* cx, HandleValue value, PageSize* pageSize) {
  * boundsCheckLimit can be treated as a 32-bit quantity; otherwise it must be
  * treated as a 64-bit quantity.
  *
- * Asm.js memories are limited to 2GB even on 64-bit platforms, and we can
- * therefore always assume a 32-bit bounds check limit for asm.js.
- *
  *
  * ## Constant pointers
  *
@@ -297,8 +294,6 @@ static_assert(HugeOffsetGuardLimit < UINT32_MAX,
 #endif
 
 // On !WASM_SUPPORTS_HUGE_MEMORY platforms:
-//  - To avoid OOM in ArrayBuffer::prepareForAsmJS, asm.js continues to use the
-//    original ArrayBuffer allocation which has no guard region at all.
 //  - For WebAssembly memories, an additional GuardSize is mapped after the
 //    accessible region of the memory to catch folded (base+offset) accesses
 //    where `offset < OffsetGuardLimit` as well as the overflow from unaligned

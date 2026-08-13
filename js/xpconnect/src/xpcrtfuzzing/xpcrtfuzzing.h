@@ -8,6 +8,7 @@
 #define shell_xpcrtfuzzing_h
 
 #include "mozilla/dom/ScriptSettings.h"  // mozilla::dom::AutoJSAPI
+
 #include "XREShellData.h"
 
 // This is the entry point of the XPC runtime fuzzing code from the XPC shell

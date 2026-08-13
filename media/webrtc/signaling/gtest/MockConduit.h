@@ -5,8 +5,8 @@
 #ifndef MEDIA_WEBRTC_SIGNALING_GTEST_MOCKCONDUIT_H_
 #define MEDIA_WEBRTC_SIGNALING_GTEST_MOCKCONDUIT_H_
 
-#include "gmock/gmock.h"
 #include "MediaConduitInterface.h"
+#include "gmock/gmock.h"
 #include "libwebrtcglue/FrameTransformer.h"
 
 namespace webrtc {

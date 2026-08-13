@@ -93,6 +93,15 @@ home-prefs-sports-widget-header =
 # Clock is a widget on New Tab that displays time zones around the world.
 home-prefs-clocks-header =
     .label = Часовник
+# Privacy is a widget on New Tab that shows tracking protection activity.
+home-prefs-privacy-header =
+    .label = Приватност
+# Stocks is a widget on New Tab that shows stock ticker prices.
+home-prefs-stocks-header =
+    .label = Деонице
+# Picture of the day is a widget on New Tab that shows a daily Wikimedia Commons image.
+home-prefs-picture-header =
+    .label = Слика дана
 home-prefs-mission-message2 =
     .message = Наши спонзори подржавају нашу мисију изградње бољег веба.
 home-prefs-manage-topics-link2 =
@@ -153,6 +162,238 @@ home-prefs-support-firefox-header-srd =
     .label = Подржите { -brand-product-name }
 home-prefs-mission-message-learn-more-link-srd = Сазнајте како
 
+## Strings for the Privacy widget
+
+# Context menu item linking to more information about the Privacy widget.
+newtab-privacy-menu-learn-more = Сазнајте више
+
+## Privacy widget — count readout
+
+# Label shown under the large tracker-count number, appearing like:
+# Line 1: 86
+# Line 2: Trackers blocked today
+# Translations can be adjusted to "Today's blocked trackers" or something
+# similar if this fixed order causes issues.
+# Variables:
+#   $count (number) - Number of trackers blocked today
+newtab-privacy-trackers-blocked-today =
+    { $count ->
+        [one] Блокиран пратилац данас
+        [few] Блокирана пратилаца данас
+       *[other] Блокираних пратиоца данас
+    }
+# Second line of the readout, under the large number and "Trackers blocked
+# today". Counts the sites those trackers were blocked on. The English is
+# shortened from "Blocked across { $count } sites" — translate it that fuller way
+# if the short fragment doesn't work in your language.
+# Variables:
+#   $count (number) - Number of sites where trackers were blocked
+newtab-privacy-across-sites =
+    { $count ->
+        [one] На { $count } страници
+        [few] На { $count } странице
+       *[other] На { $count } страница
+    }
+
+## Privacy widget — empty state
+
+# Shown when no trackers have been blocked yet today.
+newtab-privacy-empty = { -brand-short-name } блокира пратиоце док прегледате веб-странице. Овде ћете их видети.
+
+## Privacy widget — informational messages
+##
+## Rotating "info" secondary messages. Each message has a body plus a matched
+## "-cta" button label sharing the same id stem (the CTA button isn't rendered
+## yet; the labels are authored so the pairing is ready).
+
+newtab-privacy-message-info-1 = { -brand-short-name } самостално блокира пратиоце док прегледате веб-странице.
+newtab-privacy-message-info-1-cta = Прикажи заштите
+newtab-privacy-message-info-2 = Блокирање пратилаца отежава ваше праћење од стране компанија, на мрежи.
+newtab-privacy-message-info-2-cta = Прикажи заштите
+newtab-privacy-message-info-3 = Много страница има пратиоце, па вас компаније које никада нисте посетили могу пратити на мрежи.
+newtab-privacy-message-info-3-cta = Прикажи заштите
+newtab-privacy-message-info-4 = Бирање { -brand-short-name }-а значи подразумевано бирање заштите.
+newtab-privacy-message-info-4-cta = Прикажите заштите
+newtab-privacy-message-info-5 = Блокирани пратиоци значе да мање компанија може да вас прати на различитим страницама.
+newtab-privacy-message-info-5-cta = Прикажите заштите
+newtab-privacy-message-info-6 = Чувајте своје податке уз { -brand-short-name }. Никада их нећемо продати, али други прегледачи би могли.
+newtab-privacy-message-info-6-cta = Сазнајте више
+newtab-privacy-message-info-7 = Видите које пратиоце је { -brand-short-name } блокирао.
+newtab-privacy-message-info-7-cta = Прикажите заштите
+newtab-privacy-message-info-8 = Прегледање веба уз { -brand-short-name } подржава мисију { -vendor-short-name }-е да изгради бољи веб.
+newtab-privacy-message-info-8-cta = Сазнајте више
+newtab-privacy-message-info-9 = Учините { -brand-short-name } својим подразумеваним прегледачем за уграђену приватност.
+newtab-privacy-message-info-9-cta = Поставите као подразумевани
+newtab-privacy-message-info-10 = Сачувајте лозинке у { -brand-short-name }-у да бисте свуда користили јаке, јединствене податке за пријаву.
+newtab-privacy-message-info-10-cta = Идите на лозинке
+newtab-privacy-message-info-11 = Сазнајте како { -brand-short-name } помаже да ваше прегледање веба буде приватније.
+newtab-privacy-message-info-11-cta = Сазнајте више
+newtab-privacy-message-info-12 = Блокирање пратиоца може помоћи у уштеди протока код ограничених интернет планова.
+newtab-privacy-message-info-12-cta = Прикажите заштите
+newtab-privacy-message-info-13 = { -brand-short-name } блокира пратиоце, ослобађајући проток за глатко стримовање.
+newtab-privacy-message-info-13-cta = Прикажите заштите
+
+## Privacy widget — promotional messages
+##
+## Rotating "promo" secondary messages suggesting another Firefox feature. Each
+## has a body plus a matched "-cta" button label.
+
+newtab-privacy-message-promo-monitor-1 = Сазнајте да ли се ваши лични подаци појављују у цурењима података.
+newtab-privacy-message-promo-monitor-1-cta = Сазнајте више
+newtab-privacy-message-promo-monitor-2 = Заштитите своје податке бесплатним надгледањем цурења података, за до 20 е-пошта.
+newtab-privacy-message-promo-monitor-2-cta = Сазнајте више
+newtab-privacy-message-promo-signin-1 = Задржите обележиваче, лозинке и језичке шифрованим на свим уређајима помоћу свог { -vendor-short-name } налога.
+newtab-privacy-message-promo-signin-1-cta = Пријавите се
+newtab-privacy-message-promo-vpn-1 = Купујете на јавној бежичној мрежи? Укључите уграђени ВПН за додатну заштиту.
+newtab-privacy-message-promo-vpn-1-cta = Отвори ВПН
+newtab-privacy-message-promo-vpn-2 = Користите бежичну мрежу на аеродрому? Заштитите своје прегледање укључивањем уграђеног ВПН-а.
+newtab-privacy-message-promo-vpn-2-cta = Отвори ВПН
+newtab-privacy-message-promo-vpn-3 = Укључите уграђени ВПН како би ваша локација била приватнија.
+newtab-privacy-message-promo-vpn-3-cta = Отвори ВПН
+newtab-privacy-message-promo-private-window-1 = Пробајте приватни прозор како бисте приватније прегледали веб-странице када користите дељени рачунар.
+newtab-privacy-message-promo-private-window-1-cta = Отвори приватни прозор
+newtab-privacy-message-promo-relay-1 = Сачувајте своју стварну е-пошту за људе којима верујете, користите маску е-поште за пријавивање.
+newtab-privacy-message-promo-relay-1-cta = Набавите маске
+newtab-privacy-message-promo-relay-2 = Заштитите своје пријемно сандуче од непожељних порука бесплатним маскирањем е-поште.
+newtab-privacy-message-promo-relay-2-cta = Набавите маске
+newtab-privacy-message-promo-relay-3 = Набавите 50 бесплатних маски е-поште како би ваша стварна е-пошта остала приватна.
+newtab-privacy-message-promo-relay-3-cta = Набавите маске
+
+## Privacy widget — celebration messages
+##
+## Earned "celebration" moments (milestones, daily cap, streak, first
+## protection). Count-bearing ones interpolate { $count }.
+
+# Variables:
+#   $count (number) - Trackers blocked this week
+newtab-privacy-message-milestone-week =
+    { $count ->
+        [one] { $count } пратилац је блокиран ове недеље. Видите шта { -brand-short-name } спречава да вам смета
+        [few] { $count } пратилаца је блокирано ове недеље. Видите шта { -brand-short-name } спречава да вам смета
+       *[other] { $count } пратилаца је блокирано ове недеље. Видите шта { -brand-short-name } спречава да вам смета
+    }
+newtab-privacy-message-milestone-week-cta = Прикажи заштите
+# Variables:
+#   $count (number) - Trackers blocked this month
+newtab-privacy-message-milestone-month =
+    { $count ->
+        [one] { $count } пратилац је блокиран овог месеца. Један мали корак за приватност. Један велики корак за мир.
+        [few] { $count } пратилаца је блокирано овог месеца. Један мали корак за приватност. Један велики корак за мир.
+       *[other] { $count } пратилаца је блокирано овог месеца. Један мали корак за приватност. Један велики корак за мир.
+    }
+newtab-privacy-message-milestone-month-cta = Прикажи заштите
+# Variables:
+#   $count (number) - Trackers blocked this year
+newtab-privacy-message-milestone-year =
+    { $count ->
+        [one] { $count } пратилац је блокиран ове године. То је била моћна година заштите ваше приватности.
+        [few] { $count } пратилаца је блокирано ове године. То је била моћна година заштите ваше приватности.
+       *[other] { $count } пратилаца је блокирано ове године. То је била моћна година заштите ваше приватности.
+    }
+newtab-privacy-message-milestone-year-cta = Прикажи заштите
+# Variables:
+#   $count (number) - Trackers blocked all-time
+newtab-privacy-message-milestone-total =
+    { $count ->
+        [one] { $count } пратилац је блокиран. То је велики напредак ка приватности по вашим условима.
+        [few] { $count } пратилаца је блокирано. То је велики напредак ка приватности по вашим условима.
+       *[other] { $count } пратилаца је блокирано. То је велики напредак ка приватности по вашим условима.
+    }
+newtab-privacy-message-milestone-total-cta = Прикажи заштите
+# Shown when today's blocked-tracker count reaches the display cap ("100+").
+newtab-privacy-message-daily-cap = (100+ пратиоца је блокирано данас.) Мање пратилаца значи више приватности.
+newtab-privacy-message-daily-cap-cta = Прикажи заштите
+# Variables:
+#   $count (number) - Consecutive days the user has had trackers blocked
+newtab-privacy-message-streak =
+    { $count ->
+        [one] Заштићени сте { $count } дан заредом.
+        [few] Заштићени сте { $count } дана заредом.
+       *[other] Заштићени сте { $count } дана заредом.
+    }
+newtab-privacy-message-streak-cta = Прикажи заштите
+# Shown the first time the tracker count goes above zero.
+newtab-privacy-message-first-protection = Наставите са прегледањем, { -brand-short-name } ће наставити да блокира.
+newtab-privacy-message-first-protection-cta = Прикажи заштите
+
+## Strings for the Stocks widget
+
+# Context menu item for searching stock ticker symbols.
+newtab-stocks-menu-search = Претражи симболе тикера
+# Context menu item linking to more information about the Stocks widget.
+newtab-stocks-menu-learn-more = Сазнајте више
+# "Stocks widget options" is an icon-only button in the widget toolbar — the
+# attributes are consumed as tooltip/screen-reader label only. The button
+# never renders visible text.
+newtab-stocks-widget-menu-button =
+    .title = Могућности елемента за деонице
+    .aria-label = Могућности елемента за деонице
+# Heading for the Stocks widget.
+newtab-stocks-widget-title = Деонице
+
+## Screen-reader summary of a stock ticker.
+## Variables:
+##   $name (String) - the full fund/ETF name, e.g. "SPDR S&P 500 ETF Trust".
+##   $change (String) - the day's percentage change, e.g. "+2.1%".
+##   $price (String) - the last price, e.g. "$559.44".
+
+# Stock increased (went up) during the day
+newtab-stocks-ticker-status-up = { $name }, горе { $change }, { $price }
+# Stock decreased (went down) during the day
+newtab-stocks-ticker-status-down = { $name }, доле { $change }, { $price }
+# Stock didn't change during the day
+newtab-stocks-ticker-status-flat = { $name }, без промене, { $change }, { $price }
+
+## Strings for the Picture of the Day widget
+
+# Title shown at the top of the widget, with the source name appended.
+# "Wikimedia Commons" is a brand name and should not be translated.
+newtab-picture-header = Слика дана · Wikimedia Commons
+# Shorter title shown at the top of the widget, without the source name.
+newtab-picture-header-main = Слика дана
+# Attribution line shown under the title once a picture loads: an author
+# credit, a link to the picture's source page, and a link to its license.
+# "©" is the copyright symbol.
+# $author (string) - the name of the image's author.
+newtab-picture-attribution-author = © { $author }
+# Link to the picture's source page (its Wikimedia Commons file page).
+# "Wikimedia Commons" is a brand name and should not be translated.
+newtab-picture-attribution-source-link = Wikimedia Commons
+# Screen-reader label for the license link; the visible text is the license
+# name (for example "CC BY-SA 4.0") provided with the picture.
+# $license (string) - the name of the license.
+newtab-picture-attribution-license =
+    .aria-label = Прикажи дозволу { $license }
+# Tooltip and screen-reader label for the icon-only button that opens the
+# widget's context menu. The button never renders visible text.
+newtab-picture-widget-menu-button =
+    .title = Могућности за слику дана
+    .aria-label = Могућности за слику дана
+# Button that sets the current picture as the New Tab background wallpaper. The
+# button collapses to an icon when not hovered/focused, so .title is its tooltip.
+newtab-picture-set-wallpaper =
+    .label = Постави позадину
+    .title = Постави позадину
+    .aria-label = Постави данашњу слику за вашу позадину
+# Context menu item that opens the New Tab customization panel.
+newtab-picture-menu-manage-wallpaper = Управљај позадином
+# Context menu item that hides today’s picture, replacing it with an existing
+# wallpaper.
+newtab-picture-menu-hide-photo = Сакриј данашњу слику
+# Context menu item that restores today’s picture after it has been hidden.
+newtab-picture-menu-show-photo = Прикажи данашњу слику
+# Context menu item linking to more information about the widget.
+newtab-picture-menu-learn-more = Сазнајте више
+# Icon button shown on the widget once the picture is hidden; restores it.
+newtab-picture-show-button =
+    .title = Прикажи данашњу слику
+    .aria-label = Прикажи данашњу слику
+# Shown when there is no new picture to display yet.
+newtab-picture-check-back = Поново проверите сутра за нову слику
+# Screen-reader text alternative for the picture; fallback used when the source
+# provides no localized description.
+newtab-picture-image-alt = Слика дана са Wikimedia Commons
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -188,6 +429,7 @@ newtab-topsites-add-shortcut-label = Додај пречицу
 newtab-topsites-add-shortcut-title =
     .title = Додај пречицу
     .aria-label = Додај пречицу
+newtab-shortcuts-pinned-area = Закачена област
 newtab-topsites-title-label = Наслов
 newtab-topsites-title-input =
     .placeholder = Унесите наслов
@@ -475,6 +717,8 @@ newtab-recommended-stories-toggle =
     .label = Препоручене приче
 newtab-custom-stories-personalized-toggle =
     .label = Приче
+newtab-custom-stories-personalized-checkbox =
+    .label = Персонализоване приче засноване на вашој активности
 newtab-custom-stories-personalized-checkbox-label = Персонализоване приче засноване на вашој активности
 newtab-custom-pocket-sponsored = Спонзорисане приче
 newtab-custom-pocket-show-recent-saves = Прикажи недавно сачувано
@@ -495,6 +739,12 @@ newtab-custom-widget-clock-toggle =
     .label = Часовник
 newtab-custom-widget-sports-toggle2 =
     .label = Спорт
+newtab-custom-widget-privacy-toggle =
+    .label = Приватност
+newtab-custom-widget-stocks-toggle =
+    .label = Деонице
+newtab-custom-widget-picture-toggle =
+    .label = Слика дана
 newtab-custom-widget-section-title = Елементи
 newtab-custom-widget-section-toggle =
     .label = Елементи
@@ -976,6 +1226,8 @@ newtab-widget-timer-reset =
 newtab-widget-timer-menu-notifications = Искључи обавештења
 newtab-widget-timer-menu-notifications-on = Укључи обавештења
 newtab-widget-timer-menu-learn-more = Сазнајте више
+newtab-widget-timer-menu-button =
+    .aria-label = Могућности одбројавача
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = Најважније вести
 newtab-daily-briefing-card-menu-dismiss = Одбаци
@@ -1096,6 +1348,8 @@ newtab-sports-widget-show-less =
 # Toggle that filters the list of teams the user follows
 newtab-sports-widget-followed-only-toggle =
     .label = Само праћени тимови
+# Status shown when more matches are being fetched.
+newtab-sports-widget-loading-more = Учитавам више мечева…
 # Watch is a verb (as in watch matches online).
 newtab-sports-widget-watch =
     .label = Гледај
@@ -1175,6 +1429,9 @@ newtab-sports-widget-third-place = Треће место
 newtab-sports-widget-runner-up = Други
 newtab-sports-widget-champions = Шампиони
 newtab-sports-widget-world-cup-champions = Шампиони Светског првенства 2026.
+# Compact champions label for the medium-size widget result card; the larger
+# card uses newtab-sports-widget-world-cup-champions.
+newtab-sports-widget-world-cup-champions-short = Шампиони 2026
 # Variables:
 #   $date (Date) - The match start time
 newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
@@ -1273,12 +1530,23 @@ newtab-sports-widget-team-tbd = Биће познато касније
 newtab-sports-widget-message-wallpapers-title = Започните Светско првенство новим позадинама
 newtab-sports-widget-message-wallpapers-body = Донесите енергију дана утакмице у свој прегледач за овај турнир.
 newtab-sports-widget-message-wallpapers-cta = Изаберите позадину
+newtab-sports-widget-message-wallpapers-semifinals-title = Преузмите нову позадину за полуфинале
+newtab-sports-widget-message-wallpapers-semifinals-body = Припремите се за највеће утакмице Светског првенства.
 newtab-sports-widget-message-add-widgets-cta =
     .label = Додај елементе
 newtab-sports-widget-message-day-in-play-title = Останите у игри током дана уз елементе за { -brand-product-name }
 newtab-sports-widget-message-day-in-play-body = Пратите Светско првенство, останите фокусирани на своје задатке, пратите време широм света и још много тога.
 newtab-sports-widget-message-explore-widgets-cta =
     .label = Истражите елементе
+
+## Survey prompts shown after the World Cup to gather feedback on the widgets experience.
+
+newtab-sports-widget-message-survey-title = Помозите нам да учинимо елементе бољим
+newtab-sports-widget-message-survey-body = Светско првенство је завршено. Поделите ваше утиске о овом искуству.
+newtab-sports-widget-message-survey-widget-title = Како вам се свидео елемент Светског првенства?
+newtab-sports-widget-message-survey-widget-body = Поделите ваше утиске да нам поможете да побољшамо будуће елементе. Затим, испробајте нови у вашем распореду.
+newtab-sports-widget-message-survey-cta =
+    .label = Попуни анкету
 
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input

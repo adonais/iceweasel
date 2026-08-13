@@ -8,13 +8,16 @@
 #ifndef nsWindowsHelpers_h
 #define nsWindowsHelpers_h
 
+// clang-format off
 #include <windows.h>
 #include <msi.h>
 #include <winternl.h>
-#include "nsAutoRef.h"
+// clang-format on
+
 #include "mozilla/Assertions.h"
 #include "mozilla/Span.h"
 #include "mozilla/UniquePtr.h"
+#include "nsAutoRef.h"
 
 // ----------------------------------------------------------------------------
 // Critical Section helper class

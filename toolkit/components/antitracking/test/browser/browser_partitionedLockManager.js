@@ -18,13 +18,8 @@ PartitionedStorageHelper.runTest(
 
     is(locks.length, 2, "We should have granted 2 lock requests at this point");
   },
-  async _ => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  },
+  // Cleanup callback
+  clearSiteTestData,
   /* extraPrefs */ undefined,
   { runInSecureContext: true }
 );

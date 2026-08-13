@@ -451,26 +451,96 @@ let ShellServiceInternal = {
   },
 
   /**
-   * Set Firefox as the Windows default PDF handler.
+   * Set Firefox as the default PDF handler. Supported on Windows and macOS
+   * (macOS 12+). The OS may prompt the user to confirm, so the returned
+   * promise can take a while to settle.
    *
    * @param {boolean} [onlyIfKnownBrowser] - When true, only proceed if the
-   * current default PDF handler is a known browser.
-   * @param {boolean} [openInFirefox] - Only meaningful on the "Open with"
-   * picker code path. After the user picks Firefox, the OS relaunches Firefox
-   * with the bundled stub PDF; this flag decides whether we then open a PDF in
-   * a new tab (true), to land the user in Firefox, or silently absorb that
-   * relaunch (false).
+   * current default PDF handler is another browser, so we don't displace a
+   * dedicated PDF app such as Preview or Acrobat.
+   * @param {boolean} [openInFirefox] - Windows-only; ignored on macOS. Only
+   * meaningful on the "Open with" picker code path. After the user picks
+   * Firefox, the OS relaunches Firefox with the bundled stub PDF; this flag
+   * decides whether we then open a PDF in a new tab (true), to land the user in
+   * Firefox, or silently absorb that relaunch (false).
+   * @returns {Promise<boolean>} Whether the attempt was carried out: on macOS
+   * the OS reported the change applied; on Windows the chosen mechanism was
+   * invoked without throwing. This is NOT a guarantee that Firefox is now the
+   * default handler — the user may decline an OS prompt, or an out-of-process
+   * picker may still be open. Callers that need the actual state should query
+   * {@link ShellService.isDefaultHandlerFor} instead.
    */
   async setAsDefaultPDFHandler(
     onlyIfKnownBrowser = false,
     openInFirefox = false
   ) {
-    if (AppConstants.platform != "win") {
-      throw new Error("Windows-only");
+    if (AppConstants.platform == "macosx") {
+      return this._setAsDefaultPDFHandlerMac(onlyIfKnownBrowser);
+    }
+    if (AppConstants.platform == "win") {
+      return this._setAsDefaultPDFHandlerWin(onlyIfKnownBrowser, openInFirefox);
+    }
+    throw new Error(
+      "Setting the default PDF handler is only supported on Windows and macOS"
+    );
+  },
+
+  /**
+   * macOS implementation of {@link ShellService.setAsDefaultPDFHandler}. Goes
+   * through NSWorkspace, which may prompt the user for consent and resolves
+   * once that interaction completes with whether the change was applied. The
+   * Windows picker/settings fallback machinery doesn't apply.
+   *
+   * @param {boolean} onlyIfKnownBrowser - When true, only proceed if the
+   * current default PDF handler is another browser.
+   * @returns {Promise<boolean>} Whether NSWorkspace reported the change was
+   * applied (i.e. it completed without error). Not a guarantee Firefox is the
+   * default — see {@link ShellService.setAsDefaultPDFHandler}.
+   */
+  async _setAsDefaultPDFHandlerMac(onlyIfKnownBrowser) {
+    // Unsupported on macOS older than 12; don't attempt or record an attempt.
+    if (!this.shellService.canSetAsDefaultHandler) {
+      return false;
     }
 
+    if (
+      onlyIfKnownBrowser &&
+      !this.shellService.isDefaultHandlerAWebBrowserFor(".pdf")
+    ) {
+      return false;
+    }
+
+    let success = false;
+    try {
+      success = await this.shellService.setAsDefaultHandlerFor(".pdf");
+    } catch (e) {
+      lazy.log.debug("Setting default PDF handler failed", e);
+    }
+    // The promise resolved after the OS consent completed, so the default
+    // handler state is current; sample it directly.
+    Glean.browser.setDefaultPdfHandlerAttempt.record({
+      method: "launch_services",
+      success,
+      result_is_default: this.isDefaultHandlerFor(".pdf"),
+    });
+    return success;
+  },
+
+  /**
+   * Windows implementation of {@link ShellService.setAsDefaultPDFHandler}.
+   *
+   * @param {boolean} onlyIfKnownBrowser - When true, only proceed if the
+   * current default PDF handler is a known browser.
+   * @param {boolean} openInFirefox - See
+   * {@link ShellService.setAsDefaultPDFHandler}.
+   * @returns {Promise<boolean>} Whether a method was invoked without throwing.
+   * Not a guarantee Firefox is the default — the user may not have picked
+   * Firefox in an out-of-process picker. See
+   * {@link ShellService.setAsDefaultPDFHandler}.
+   */
+  async _setAsDefaultPDFHandlerWin(onlyIfKnownBrowser, openInFirefox) {
     if (onlyIfKnownBrowser && !this.getDefaultPDFHandler().knownBrowser) {
-      return;
+      return false;
     }
 
     // Tracks the last method attempted and whether its API call succeeded.
@@ -569,6 +639,8 @@ let ShellServiceInternal = {
         result_is_default: this.isDefaultHandlerFor(".pdf"),
       });
     }, Date.now() + waitTimeMs).arm();
+
+    return success;
   },
 
   /**
@@ -668,13 +740,34 @@ let ShellServiceInternal = {
 
   /**
    * Determine if we're the default handler for the given file extension (like
-   * ".pdf") or protocol (like "https").  Windows-only for now.
+   * ".pdf") or protocol (like "https"). A leading "." marks a file extension;
+   * anything else is treated as a protocol.
+   *
+   * Supported on Windows and macOS; always false on other platforms. On macOS
+   * the query requires macOS 12, so it is false on older versions.
    *
    * @returns {boolean} true if we are the default handler, false otherwise.
    */
   isDefaultHandlerFor(aFileExtensionOrProtocol) {
-    if (AppConstants.platform == "win") {
+    if (AppConstants.platform == "win" || AppConstants.platform == "macosx") {
       return this.shellService.isDefaultHandlerFor(aFileExtensionOrProtocol);
+    }
+    return false;
+  },
+
+  /**
+   * Whether the platform supports offering to set Firefox as the default PDF
+   * handler. Always true on Windows; on macOS requires macOS 12 (the
+   * underlying NSWorkspace API); false on other platforms.
+   *
+   * @returns {boolean}
+   */
+  get canSetAsDefaultPDFHandler() {
+    if (AppConstants.platform == "win") {
+      return true;
+    }
+    if (AppConstants.platform == "macosx") {
+      return this.shellService.canSetAsDefaultHandler;
     }
     return false;
   },
@@ -712,15 +805,14 @@ let ShellServiceInternal = {
     // Currently this only works on certain Windows versions.
     try {
       // First check if we can even pin the app where an exception means no.
-      await this.shellService
-        .QueryInterface(Ci.nsIWindowsShellService)
-        .checkPinCurrentAppToTaskbarAsync(privateBrowsing);
+      this.shellService.canPinToTaskbar();
+
       let winTaskbar = Cc["@mozilla.org/windows-taskbar;1"].getService(
         Ci.nsIWinTaskbar
       );
 
       // Then check if we're already pinned.
-      return !(await this.shellService.isCurrentAppPinnedToTaskbarAsync(
+      return !(await this.shellService.isCurrentAppPinnedToTaskbar(
         privateBrowsing
           ? winTaskbar.defaultPrivateGroupId
           : winTaskbar.defaultGroupId
@@ -740,21 +832,30 @@ let ShellServiceInternal = {
 
   /**
    * Pin Firefox app to the OS "taskbar."
+   *
+   * @param {bool} privateBrowsing - Pin a private browser window.
+   * @param {bool} fireAndForget - Return after pin attempt is tried, but before
+   * result is known if user input is necessary.
+   * @returns {Promise} - Resolves either when pin attempt resolves, or when pin
+   * request has been sent if fireAndForget is true.
    */
   async pinToTaskbar(privateBrowsing = false, fireAndForget = false) {
-    if (await this.doesAppNeedPin(privateBrowsing)) {
-      try {
-        if (AppConstants.platform == "win") {
-          await this.shellService.pinCurrentAppToTaskbarAsync(
-            privateBrowsing,
-            fireAndForget
-          );
-        } else if (AppConstants.platform == "macosx") {
-          this.macDockSupport.ensureAppIsPinnedToDock();
-        }
-      } catch (ex) {
-        console.error(ex);
+    let needsPin = await this.doesAppNeedPin(privateBrowsing);
+    if (!needsPin) {
+      return;
+    }
+
+    try {
+      if (AppConstants.platform == "win") {
+        await this.shellService.pinCurrentAppToTaskbar(
+          privateBrowsing,
+          fireAndForget
+        );
+      } else if (AppConstants.platform == "macosx") {
+        this.macDockSupport.ensureAppIsPinnedToDock();
       }
+    } catch (ex) {
+      console.error(ex);
     }
   },
 
@@ -768,12 +869,11 @@ let ShellServiceInternal = {
   async pinToStartMenu() {
     if (await this.doesAppNeedStartMenuPin()) {
       try {
-        let pinSuccess =
-          await this.shellService.pinCurrentAppToStartMenuAsync(false);
+        let pinSuccess = await this.shellService.pinCurrentAppToStartMenu();
         Services.prefs.setBoolPref(MSIX_PREVIOUSLY_PINNED_PREF, pinSuccess);
         return pinSuccess;
       } catch (err) {
-        lazy.log.warn("Error thrown during pinCurrentAppToStartMenuAsync", err);
+        lazy.log.warn("Error thrown during pinCurrentAppToStartMenu", err);
         Services.prefs.setBoolPref(MSIX_PREVIOUSLY_PINNED_PREF, false);
       }
     }
@@ -809,7 +909,7 @@ let ShellServiceInternal = {
       return (
         AppConstants.platform === "win" &&
         Services.sysinfo.getProperty("hasWinPackageId") &&
-        !(await this.shellService.isCurrentAppPinnedToStartMenuAsync())
+        !(await this.shellService.isCurrentAppPinnedToStartMenu())
       );
     } catch (ex) {}
     return false;
@@ -826,7 +926,7 @@ let ShellServiceInternal = {
     if (!Services.sysinfo.getProperty("hasWinPackageId")) {
       return;
     }
-    let isPinned = await this.shellService.isCurrentAppPinnedToStartMenuAsync();
+    let isPinned = await this.shellService.isCurrentAppPinnedToStartMenu();
     if (
       !isPinned &&
       Services.prefs.getBoolPref(MSIX_PREVIOUSLY_PINNED_PREF, false)

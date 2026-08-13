@@ -12,6 +12,10 @@ const { NodeHTTPSServer } = ChromeUtils.importESModule(
   "resource://testing-common/NodeServer.sys.mjs"
 );
 
+const mockController = Cc[
+  "@mozilla.org/network/mock-network-controller;1"
+].getService(Ci.nsIMockNetworkLayerController);
+
 let h2Port;
 let h3Port;
 
@@ -26,6 +30,8 @@ add_setup(async function setup() {
 
   Services.prefs.setBoolPref("network.http.http3.enable", true);
   Services.prefs.setIntPref("network.http.speculative-parallel-limit", 6);
+  // Lets the test block the origin's TCP connect (see below).
+  Services.prefs.setBoolPref("network.socket.attach_mock_network_layer", true);
 
   // Set to allow the cert presented by our H2 server
   do_get_profile();
@@ -40,6 +46,8 @@ registerCleanupFunction(async () => {
   Services.prefs.clearUserPref("network.http.http3.enable");
   Services.prefs.clearUserPref("network.dns.localDomains");
   Services.prefs.clearUserPref("network.http.speculative-parallel-limit");
+  Services.prefs.clearUserPref("network.socket.attach_mock_network_layer");
+  mockController.clearBlockedTCPConnect();
 });
 
 function makeChan(url) {
@@ -97,6 +105,17 @@ add_task(async function testNotCoaleasingH2Connection() {
     "network.http.http3.alt-svc-mapping-for-testing",
     `${host};h2=:${h2Port}`
   );
+
+  // Happy Eyeballs races the origin (HTTP/1.1, at server.port()) alongside the
+  // h2 alt-svc route (at h2Port). Block the origin's connect so the h2 route
+  // wins the race, letting us verify the request used h2 (and was not coalesced
+  // onto the pre-existing HTTP/3 connection). The origin is dual-stack, so
+  // block both loopback families.
+  for (let ip of ["::1", "127.0.0.1"]) {
+    mockController.blockTCPConnect(
+      mockController.createScriptableNetAddr(ip, server.port())
+    );
+  }
 
   let start = new Date().getTime();
   chan = makeChan(`https://${host}:${server.port()}/server-timing`);

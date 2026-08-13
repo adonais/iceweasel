@@ -3,15 +3,15 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #include "FuzzingInterface.h"
-#include "nsComponentManagerUtils.h"
 #include "nsCOMPtr.h"
-#include "nsIZipReader.h"
-#include "nsNetUtil.h"
-#include "nsNetCID.h"
-#include "nsPrintfCString.h"
-#include "nsString.h"
+#include "nsComponentManagerUtils.h"
 #include "nsIInputStream.h"
 #include "nsIStringEnumerator.h"
+#include "nsIZipReader.h"
+#include "nsNetCID.h"
+#include "nsNetUtil.h"
+#include "nsPrintfCString.h"
+#include "nsString.h"
 
 enum FuzzMethodType {
   eTest = 0,

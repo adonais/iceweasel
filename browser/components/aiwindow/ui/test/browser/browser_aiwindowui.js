@@ -59,6 +59,7 @@ add_task(async function test_aiwindowui_sidebar_operations() {
 
     // Test closing
     AIWindowUI.closeSidebar(window);
+    await waitForSidebarClosed(window);
     is(box.collapsed, true, "Box should be hidden after closing");
     is(splitter.collapsed, true, "Splitter should be hidden after closing");
     is(
@@ -70,6 +71,7 @@ add_task(async function test_aiwindowui_sidebar_operations() {
     // Test toggling from closed to open
     const toggleResult1 = AIWindowUI.toggleSidebar(window);
     is(toggleResult1, true, "Toggle should return true when opening");
+    await waitForSidebarOpen(window);
     is(box.collapsed, false, "Box should be visible after toggling open");
     is(
       splitter.collapsed,
@@ -85,6 +87,7 @@ add_task(async function test_aiwindowui_sidebar_operations() {
     // Test toggling from open to closed
     const toggleResult2 = AIWindowUI.toggleSidebar(window);
     is(toggleResult2, false, "Toggle should return false when closing");
+    await waitForSidebarClosed(window);
     is(box.collapsed, true, "Box should be hidden after toggling closed");
     is(
       splitter.collapsed,

@@ -47,6 +47,113 @@ declTest("getActor with remoteType mismatch", {
   },
 });
 
+declTest("safeForUntrustedWebProcess true, web", {
+  safeForUntrustedWebProcess: true,
+  safeForUntrustedWebProcessPref: true,
+  url: TEST_URL,
+
+  async test(browser) {
+    let parent = browser.browsingContext.currentWindowGlobal.domProcess;
+    ok(
+      parent.getActor("TestProcessActor"),
+      "JSProcessActorParent should have value."
+    );
+
+    await SpecialPowers.spawn(browser, [], async function () {
+      let child = ChromeUtils.domProcessChild;
+      ok(child, "DOMProcessChild should have value.");
+      ok(
+        child.getActor("TestProcessActor"),
+        "JSProcessActorChild should have value."
+      );
+    });
+  },
+});
+
+declTest("safeForUntrustedWebProcess false, web", {
+  safeForUntrustedWebProcess: false,
+  safeForUntrustedWebProcessPref: true,
+  url: TEST_URL,
+
+  async test(browser) {
+    let parent = browser.browsingContext.currentWindowGlobal.domProcess;
+    Assert.throws(
+      () => parent.getActor("TestProcessActor"),
+      /NotSupportedError/,
+      "Should throw in web process if safeForUntrustedWebProcess is false."
+    );
+
+    await SpecialPowers.spawn(browser, [], async function () {
+      let child = ChromeUtils.domProcessChild;
+      ok(child, "DOMProcessChild should have value.");
+      Assert.throws(
+        () => child.getActor("TestProcessActor"),
+        /NotSupportedError/,
+        "Should throw in web process if safeForUntrustedWebProcess is false."
+      );
+    });
+  },
+});
+
+declTest("safeForUntrustedWebProcess false, web, pref false", {
+  safeForUntrustedWebProcess: false,
+  safeForUntrustedWebProcessPref: false,
+  url: TEST_URL,
+
+  async test(browser) {
+    let parent = browser.browsingContext.currentWindowGlobal.domProcess;
+    ok(
+      parent.getActor("TestProcessActor"),
+      "JSProcessActorParent should have value."
+    );
+
+    await SpecialPowers.spawn(browser, [], async function () {
+      let child = ChromeUtils.domProcessChild;
+      ok(child, "DOMProcessChild should have value.");
+      ok(
+        child.getActor("TestProcessActor"),
+        "JSProcessActorChild should have value."
+      );
+    });
+  },
+});
+
+// A page that is loaded in the privilegedabout process should get an actor no
+// matter what the safeForUntrustedWebProcess value is.
+function safeForUntrustedWebProcessPriv(safeVal) {
+  return {
+    safeForUntrustedWebProcess: safeVal,
+    safeForUntrustedWebProcessPref: true,
+    // Arbitrary about: page that gets loaded in the privilegedabout process.
+    url: "about:logins",
+
+    async test(browser) {
+      let parent = browser.browsingContext.currentWindowGlobal.domProcess;
+      ok(
+        parent.getActor("TestProcessActor"),
+        "JSProcessActorParent should have value."
+      );
+
+      await SpecialPowers.spawn(browser, [], async function () {
+        let child = ChromeUtils.domProcessChild;
+        ok(child, "DOMProcessChild should have value.");
+        ok(
+          child.getActor("TestProcessActor"),
+          "JSProcessActorChild should have value."
+        );
+      });
+    },
+  };
+}
+declTest(
+  "safeForUntrustedWebProcess false priv okay",
+  safeForUntrustedWebProcessPriv(true)
+);
+declTest(
+  "safeForUntrustedWebProcess true priv okay",
+  safeForUntrustedWebProcessPriv(false)
+);
+
 declTest("getActor without includeParent", {
   includeParent: false,
 

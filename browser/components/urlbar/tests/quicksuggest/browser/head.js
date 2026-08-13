@@ -295,7 +295,7 @@ async function doImpressionOnlyTest({
       if (
         !otherRow &&
         (r.result.payload.url ||
-          (r.result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
+          (r.result.type == UrlbarShared.RESULT_TYPE.SEARCH &&
             (r.result.payload.query || r.result.payload.suggestion))) &&
         r.hasAttribute("row-selectable")
       ) {
@@ -604,6 +604,7 @@ function assertQuickSuggestPing(expectedPing) {
     "requestId",
     "source",
     "contextId",
+    "suggestionId",
   ];
 
   Assert.ok(

@@ -4,20 +4,21 @@
 
 #include "RetrievalContextWayland.h"
 
+#include <errno.h>
+#include <fcntl.h>
+#include <gtk/gtk.h>
+#include <poll.h>
+
 #include "AsyncClipboardRequest.h"
+#include "mozilla/StaticPrefs_widget.h"
 #include "mozilla/TimeStamp.h"
+#include "mozwayland/mozwayland.h"
 #include "nsDragService.h"
 #include "nsDragServiceWayland.h"
-#include "nsWindow.h"
-#include "mozwayland/mozwayland.h"
-#include "nsWaylandDisplay.h"
-#include "mozilla/StaticPrefs_widget.h"
 #include "nsThreadUtils.h"
+#include "nsWaylandDisplay.h"
+#include "nsWindow.h"
 #include "prtime.h"
-#include <poll.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <gtk/gtk.h>
 
 using namespace mozilla;
 using namespace mozilla::widget;

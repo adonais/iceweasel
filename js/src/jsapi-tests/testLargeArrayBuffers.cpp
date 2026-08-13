@@ -6,7 +6,6 @@
 #include "js/ArrayBufferMaybeShared.h"
 #include "js/experimental/TypedData.h"
 #include "js/SharedArrayBuffer.h"
-
 #include "jsapi-tests/tests.h"
 
 using namespace js;

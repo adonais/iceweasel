@@ -45,3 +45,52 @@ add_task(async function test() {
     }
   );
 });
+
+add_task(async function test_unparseable_url() {
+  info(
+    "Test that an unparseable page URL doesn't abort the whole favicon request"
+  );
+
+  await PlacesTestUtils.addVisits(PAGE_URL);
+  await PlacesUtils.favicons.setFaviconForPage(
+    Services.io.newURI(PAGE_URL),
+    Services.io.newURI(FAVICON_URL),
+    Services.io.newURI(TEST_FAVICON)
+  );
+
+  // Include an empty string, which throws synchronously when passed to
+  // Services.io.newURI. This mimics tabs with non-standard or empty document
+  // URIs (e.g. in Thunderbird), which previously made the entire profile
+  // retrieval fail with an NS_ERROR_FAILURE from PlacesUtils.toURI. See
+  // bug 1992357.
+  const pageUrls = encodeURIComponent(JSON.stringify([PAGE_URL, ""]));
+
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: `${FRONTEND_URL}#${pageUrls}`,
+    },
+    async browser => {
+      await waitForTabTitle("Favicons received");
+
+      const favicons = await SpecialPowers.spawn(
+        browser,
+        [],
+        () => content.wrappedJSObject.faviconsResult
+      );
+
+      is(favicons.length, 2, "Both page URLs produced an entry in the result.");
+      is(
+        favicons[0].mimeType,
+        "image/png",
+        "The parseable URL resolved to a valid favicon."
+      );
+      ok(favicons[0].data.byteLength, "The valid favicon has data.");
+      is(
+        favicons[1],
+        null,
+        "The unparseable URL resolved to null, in position."
+      );
+    }
+  );
+});

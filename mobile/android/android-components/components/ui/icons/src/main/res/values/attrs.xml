@@ -8,7 +8,23 @@
     <!-- Icon color for mozac_ic_private_mode_circle_fill_48 -->
     <attr name="mozac_ic_private_mode_circle_fill_icon_color" format="reference" />
 
-    <!-- Shield slash critical fill colors for mozac_ic_shield_slash_critical_24 -->
+    <!-- Shield slash critical fill colors for mozac_ic_shield_slash_multicolor_24 -->
     <attr name="mozac_ic_shield_slash_bg_fill_critical" format="reference"/>
     <attr name="mozac_ic_shield_slash_fill_critical" format="reference"/>
+
+    <!-- Extensions warning icon fill colors for mozac_ic_extension_warning_multicolor_24 -->
+    <attr name="mozac_ic_extensions_warning_bg_fill_critical" format="reference"/>
+    <attr name="mozac_ic_extensions_warning_fill_critical" format="reference"/>
+
+    <!-- Account Sync Avatar fill colors for mozac_ic_avatar_warning_circle_fill_multicolor_24 -->
+    <attr name="mozac_ic_avatar_warning_bg_fill_critical" format="reference"/>
+    <attr name="mozac_ic_avatar_warning_fill_critical" format="reference"/>
+
+    <!-- Lock slash critical fill colors for mozac_ic_lock_slash_multicolor_24 -->
+    <attr name="mozac_ic_lock_slash_bg_fill_critical" format="reference"/>
+    <attr name="mozac_ic_lock_slash_fill_critical" format="reference"/>
+
+    <!-- Star icon fill colors for mozac_ic_star_one_half_fill_multicolor_20 -->
+    <attr name="mozac_ic_star_filled" format="reference"/>
+    <attr name="mozac_ic_star_unfilled" format="reference"/>
 </resources>

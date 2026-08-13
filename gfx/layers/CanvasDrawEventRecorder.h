@@ -8,12 +8,12 @@
 #include <queue>
 
 #include "mozilla/Atomics.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/DrawEventRecorder.h"
 #include "mozilla/ipc/CrossProcessSemaphore.h"
 #include "mozilla/ipc/SharedMemoryMapping.h"
 #include "mozilla/layers/LayersTypes.h"
-#include "mozilla/RefPtr.h"
-#include "mozilla/UniquePtr.h"
 
 namespace mozilla {
 

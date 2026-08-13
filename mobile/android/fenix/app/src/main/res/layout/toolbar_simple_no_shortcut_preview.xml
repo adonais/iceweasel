@@ -12,7 +12,7 @@
   tools:ignore="MergeRootFrame">
 
   <ImageView
-    android:id="@+id/toolbar_simple_preview"
+    android:id="@+id/toolbar_simple_no_shortcut_preview_image"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:contentDescription="@null"

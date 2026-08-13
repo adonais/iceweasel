@@ -8,7 +8,7 @@ from webdriver.bidi.modules.script import ContextTarget
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.mark.allow_system_access
+@pytest.mark.geckodriver(allow_system_access=True)
 async def test_install_temporary_web_extension_with_content_script(
     bidi_session,
     current_session,

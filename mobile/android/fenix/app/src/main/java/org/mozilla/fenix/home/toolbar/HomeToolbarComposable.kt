@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.testTagsAsResourceId
@@ -42,7 +43,6 @@ import mozilla.components.compose.browser.toolbar.store.ToolbarGravity.Top
 import mozilla.components.compose.browser.toolbar.ui.BrowserToolbarQuery
 import mozilla.components.lib.state.ext.observeAsComposableState
 import org.mozilla.fenix.R
-import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchEnded
@@ -53,6 +53,7 @@ import org.mozilla.fenix.components.toolbar.ToolbarPosition.BOTTOM
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.wallpapers.Wallpaper
+import org.mozilla.fenix.wallpapers.WallpaperTheme
 
 // Speculative delay for putting the toolbar in edit mode after an initial voice search request.
 @VisibleForTesting
@@ -110,10 +111,26 @@ internal class HomeToolbarComposable(
             it.editState.queryWasPrefilled
         }.value
         val currentQuery = toolbarStore.observeAsComposableState { it.editState.query.current }.value
-        val currentWallpaperName = appStore.observeAsComposableState { it.wallpaperState.currentWallpaper.name }
-        val isEdgeToEdgeBackgroundEnabled =
-            settings.enableHomepageEdgeToEdgeBackgroundFeature &&
-                currentWallpaperName.value == Wallpaper.EDGE_TO_EDGE
+        val currentWallpaperName =
+            appStore.observeAsComposableState { it.wallpaperState.currentWallpaper.name }.value
+        val isPrivateMode = browsingModeManager.mode.isPrivate
+        val isUniversalEdgeToEdge = settings.enableUniversalEdgeToEdgeWallpapers
+        // With the universal edge-to-edge treatment on, the wallpaper is drawn edge-to-edge behind
+        // the toolbar for any non-default wallpaper, so keep the toolbar background transparent to
+        // let it show through. When off, only the dedicated edge-to-edge wallpaper is treated this
+        // way (gated by its own feature flag).
+        val hasWallpaperBackground = if (isUniversalEdgeToEdge) {
+            !isPrivateMode
+        } else {
+            !isPrivateMode &&
+                settings.enableHomepageEdgeToEdgeBackgroundFeature &&
+                currentWallpaperName == Wallpaper.EDGE_TO_EDGE
+        }
+        // Tint the browser action icons outside the address bar (tab counter, menu) with the
+        // wallpaper's text color. The page actions inside the address bar (e.g. voice search) keep
+        // the default color so they stay legible on the address bar background. Universal only.
+        val wallpaperTextColor = WallpaperTheme.onWallpaper
+            .takeIf { isUniversalEdgeToEdge && hasWallpaperBackground }
 
         BackInvokedHandler(isSearching) {
             val sourceTabId = appStore.state.searchState.sourceTabId
@@ -127,18 +144,18 @@ internal class HomeToolbarComposable(
         FirefoxTheme {
             MaterialTheme(
                 colorScheme = homepageToolbarColors(
-                    isPrivateMode = browsingModeManager.mode == BrowsingMode.Private,
-                    shouldUseEdgeToEdgeColors = isEdgeToEdgeBackgroundEnabled &&
+                    isPrivateMode = isPrivateMode,
+                    shouldUseEdgeToEdgeColors = hasWallpaperBackground &&
                         (!isSearching || (currentQuery.isEmpty() && !queryWasPrefilled)),
                 ),
             ) {
-                ToolbarContent()
+                ToolbarContent(wallpaperTextColor = wallpaperTextColor)
             }
         }
     }
 
     @Composable
-    private fun ToolbarContent() {
+    private fun ToolbarContent(wallpaperTextColor: Color?) {
         val shouldShowTabStrip: Boolean = remember { settings.isTabStripEnabled }
         val isAddressBarVisible = remember { addressBarVisibility }
 
@@ -176,7 +193,10 @@ internal class HomeToolbarComposable(
                         ),
                     ),
                 ) {
-                    BrowserToolbar(store = toolbarStore)
+                    BrowserToolbar(
+                        store = toolbarStore,
+                        browserActionsColor = wallpaperTextColor,
+                    )
                 }
             }
 

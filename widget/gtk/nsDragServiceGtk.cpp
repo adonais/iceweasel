@@ -2,13 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsDragService.h"
 #include "nsDragServiceGtk.h"
-#include "nsWindow.h"
+
 #include "WidgetUtilsGtk.h"
-#include "mozilla/gfx/2D.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/StaticPrefs_widget.h"
+#include "mozilla/gfx/2D.h"
+#include "nsDragService.h"
+#include "nsWindow.h"
 
 using namespace mozilla;
 using namespace mozilla::widget;

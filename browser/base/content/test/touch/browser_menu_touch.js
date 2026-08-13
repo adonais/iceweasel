@@ -71,7 +71,7 @@ async function openAndCheckLazyMenu(id, target) {
 async function openAndCheckCustomizationUIMenu(target) {
   EventUtils.synthesizeNativeTapAtCenter(target);
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => document.getElementById("customizationui-widget-panel") != null
   );
   let menu = document.getElementById("customizationui-widget-panel");
@@ -87,7 +87,7 @@ async function openAndCheckCustomizationUIMenu(target) {
 
   EventUtils.synthesizeMouseAtCenter(target, {});
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => document.getElementById("customizationui-widget-panel") != null
   );
   menu = document.getElementById("customizationui-widget-panel");
@@ -144,7 +144,7 @@ add_task(async function test_customizationui_panel_touch() {
     CustomizableUI.AREA_NAVBAR
   );
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       CustomizableUI.getPlacementOfWidget("library-button").area == "nav-bar"
   );
@@ -165,7 +165,7 @@ add_task(async function test_overflow_panel_touch() {
     "library-button",
     CustomizableUI.AREA_FIXED_OVERFLOW_PANEL
   );
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       CustomizableUI.getPlacementOfWidget("library-button").area ==
       CustomizableUI.AREA_FIXED_OVERFLOW_PANEL

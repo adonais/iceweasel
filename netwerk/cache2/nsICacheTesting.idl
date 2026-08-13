@@ -17,6 +17,20 @@ interface nsICacheTesting : nsISupports
   void suspendCacheIOThread(in uint32_t aLevel);
   void resumeCacheIOThread();
   void flush(in nsIObserver aObserver);
+
+  /**
+   * Shut down and restart the disk cache IO subsystem in-process, to simulate a
+   * browser restart without firing the (guarded) shutdown observer topics.
+   * shutdownCacheForTesting() closes all handles and writes a clean index;
+   * startupCacheForTesting() re-initializes and re-reads the index from disk. A
+   * test can corrupt the on-disk index between the two calls to exercise the
+   * startup integrity-check / rebuild path. Callers should flush() before
+   * shutting down, and wait for the index to become ready after startup (e.g.
+   * via asyncGetDiskConsumption).
+   */
+  void shutdownCacheForTesting();
+  void startupCacheForTesting();
+
   /**
    * Clear the in-memory DictionaryCache but keep disk data intact.
    * This forces dictionary entries to be reloaded from disk on next access.

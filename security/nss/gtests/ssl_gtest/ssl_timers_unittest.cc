@@ -288,7 +288,25 @@ class TLSIthMessageSeqNumDropper : public TlsRecordFilter {
   uint8_t currentMessageSeqNum_;
 };
 
-TEST_F(TlsConnectDatagram13, HandshakeDropIthMessageServer) {
+class TlsConnectDatagram13Drop : public TlsConnectDatagram13 {
+ public:
+  // Drive the handshake to completion without waiting for timers.
+  // Important here because these tests rely on the retransmission timer.
+  void ConnectShiftingTimers() {
+    StartConnect();
+    client_->Handshake();
+    server_->Handshake();
+    while (client_->state() == TlsAgent::STATE_CONNECTING ||
+           server_->state() == TlsAgent::STATE_CONNECTING) {
+      ShiftDtlsTimers();
+      client_->Handshake();
+      server_->Handshake();
+    }
+    CheckConnected();
+  }
+};
+
+TEST_F(TlsConnectDatagram13Drop, HandshakeDropIthMessageServer) {
   uint8_t maxServerMessageSeq = 10;
 
   for (uint8_t currMesSeqNum = 0; currMesSeqNum < maxServerMessageSeq;
@@ -298,13 +316,13 @@ TEST_F(TlsConnectDatagram13, HandshakeDropIthMessageServer) {
         MakeTlsFilter<TLSIthMessageSeqNumDropper>(server_, currMesSeqNum);
     filter->EnableDecryption();
 
-    Connect();
+    ConnectShiftingTimers();
     SendReceive();
     Reset();
   }
 }
 
-TEST_F(TlsConnectDatagram13, HandshakeDropIthMessageClient) {
+TEST_F(TlsConnectDatagram13Drop, HandshakeDropIthMessageClient) {
   uint8_t maxClientMessageSeq = 10;
 
   for (uint8_t currMesSeqNum = 0; currMesSeqNum < maxClientMessageSeq;
@@ -314,7 +332,7 @@ TEST_F(TlsConnectDatagram13, HandshakeDropIthMessageClient) {
         MakeTlsFilter<TLSIthMessageSeqNumDropper>(client_, currMesSeqNum);
     filter->EnableDecryption();
 
-    Connect();
+    ConnectShiftingTimers();
     SendReceive();
     Reset();
   }

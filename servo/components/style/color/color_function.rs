@@ -88,301 +88,45 @@ pub enum ColorFunction<OriginColor> {
         ColorComponent<NumberOrPercentageComponent>, // alpha
         ColorSpace,
     ),
-}
-
-impl ColorFunction<AbsoluteColor> {
-    /// Try to resolve into a valid absolute color.
-    pub fn resolve_to_absolute(
-        &self,
-        context: Option<&computed::Context>,
-    ) -> Result<AbsoluteColor, ()> {
-        macro_rules! alpha {
-            ($alpha:expr, $origin_color:expr) => {{
-                $alpha
-                    .resolve($origin_color, context)?
-                    .map(|value| normalize(value.to_number(1.0)).clamp(0.0, OPAQUE))
-            }};
-        }
-
-        Ok(match self {
-            ColorFunction::Rgb(origin_color, r, g, b, alpha) => {
-                // Use `color(srgb ...)` to serialize `rgb(...)` if an origin color is available;
-                // this is the only reason for now.
-                let use_color_syntax = origin_color.is_some();
-
-                if use_color_syntax {
-                    let origin_color = origin_color.as_ref().map(|origin| {
-                        let origin = origin.to_color_space(ColorSpace::Srgb);
-                        // Because rgb(..) syntax have components in range [0..255), we have to
-                        // map them.
-                        // NOTE: The IS_LEGACY_SRGB flag is not added back to the color, because
-                        //       we're going to return the modern color(srgb ..) syntax.
-                        AbsoluteColor::new(
-                            ColorSpace::Srgb,
-                            origin.c0().map(|v| v * 255.0),
-                            origin.c1().map(|v| v * 255.0),
-                            origin.c2().map(|v| v * 255.0),
-                            origin.alpha(),
-                        )
-                    });
-
-                    // We have to map all the components back to [0..1) range after all the
-                    // calculations.
-                    AbsoluteColor::new(
-                        ColorSpace::Srgb,
-                        r.resolve(origin_color.as_ref(), context)?
-                            .map(|c| c.to_number(255.0) / 255.0),
-                        g.resolve(origin_color.as_ref(), context)?
-                            .map(|c| c.to_number(255.0) / 255.0),
-                        b.resolve(origin_color.as_ref(), context)?
-                            .map(|c| c.to_number(255.0) / 255.0),
-                        alpha!(alpha, origin_color.as_ref()),
-                    )
-                } else {
-                    #[inline]
-                    fn resolve(
-                        component: &ColorComponent<NumberOrPercentageComponent>,
-                        origin_color: Option<&AbsoluteColor>,
-                        context: Option<&computed::Context>,
-                    ) -> Result<u8, ()> {
-                        Ok(clamp_floor_256_f32(
-                            component
-                                .resolve(origin_color, context)?
-                                .map_or(0.0, |value| value.to_number(u8::MAX as f32)),
-                        ))
-                    }
-
-                    let origin_color = origin_color.as_ref().map(|o| o.into_srgb_legacy());
-
-                    AbsoluteColor::srgb_legacy(
-                        resolve(r, origin_color.as_ref(), context)?,
-                        resolve(g, origin_color.as_ref(), context)?,
-                        resolve(b, origin_color.as_ref(), context)?,
-                        alpha!(alpha, origin_color.as_ref()).unwrap_or(0.0),
-                    )
-                }
-            },
-            ColorFunction::Hsl(origin_color, h, s, l, alpha) => {
-                // Percent reference range for S and L: 0% = 0.0, 100% = 100.0
-                const LIGHTNESS_RANGE: f32 = 100.0;
-                const SATURATION_RANGE: f32 = 100.0;
-
-                // If the origin color:
-                // - was *NOT* specified, then we stick with the old way of serializing the
-                //   value to rgb(..).
-                // - was specified, we don't use the rgb(..) syntax, because we should allow the
-                //   color to be out of gamut and not clamp.
-                let use_rgb_sytax = origin_color.is_none();
-
-                let origin_color = origin_color
-                    .as_ref()
-                    .map(|o| o.to_color_space(ColorSpace::Hsl));
-
-                let mut result = AbsoluteColor::new(
-                    ColorSpace::Hsl,
-                    h.resolve(origin_color.as_ref(), context)?
-                        .map(|angle| normalize_hue(angle.degrees())),
-                    s.resolve(origin_color.as_ref(), context)?.map(|s| {
-                        if use_rgb_sytax {
-                            s.to_number(SATURATION_RANGE).clamp(0.0, SATURATION_RANGE)
-                        } else {
-                            s.to_number(SATURATION_RANGE)
-                        }
-                    }),
-                    l.resolve(origin_color.as_ref(), context)?.map(|l| {
-                        if use_rgb_sytax {
-                            l.to_number(LIGHTNESS_RANGE).clamp(0.0, LIGHTNESS_RANGE)
-                        } else {
-                            l.to_number(LIGHTNESS_RANGE)
-                        }
-                    }),
-                    alpha!(alpha, origin_color.as_ref()),
-                );
-
-                if use_rgb_sytax {
-                    result.flags.insert(ColorFlags::IS_LEGACY_SRGB);
-                }
-
-                result
-            },
-            ColorFunction::Hwb(origin_color, h, w, b, alpha) => {
-                // If the origin color:
-                // - was *NOT* specified, then we stick with the old way of serializing the
-                //   value to rgb(..).
-                // - was specified, we don't use the rgb(..) syntax, because we should allow the
-                //   color to be out of gamut and not clamp.
-                let use_rgb_sytax = origin_color.is_none();
-
-                // Percent reference range for W and B: 0% = 0.0, 100% = 100.0
-                const WHITENESS_RANGE: f32 = 100.0;
-                const BLACKNESS_RANGE: f32 = 100.0;
-
-                let origin_color = origin_color
-                    .as_ref()
-                    .map(|o| o.to_color_space(ColorSpace::Hwb));
-
-                let mut result = AbsoluteColor::new(
-                    ColorSpace::Hwb,
-                    h.resolve(origin_color.as_ref(), context)?
-                        .map(|angle| normalize_hue(angle.degrees())),
-                    w.resolve(origin_color.as_ref(), context)?.map(|w| {
-                        if use_rgb_sytax {
-                            w.to_number(WHITENESS_RANGE).clamp(0.0, WHITENESS_RANGE)
-                        } else {
-                            w.to_number(WHITENESS_RANGE)
-                        }
-                    }),
-                    b.resolve(origin_color.as_ref(), context)?.map(|b| {
-                        if use_rgb_sytax {
-                            b.to_number(BLACKNESS_RANGE).clamp(0.0, BLACKNESS_RANGE)
-                        } else {
-                            b.to_number(BLACKNESS_RANGE)
-                        }
-                    }),
-                    alpha!(alpha, origin_color.as_ref()),
-                );
-
-                if use_rgb_sytax {
-                    result.flags.insert(ColorFlags::IS_LEGACY_SRGB);
-                }
-
-                result
-            },
-            ColorFunction::Lab(origin_color, l, a, b, alpha) => {
-                // for L: 0% = 0.0, 100% = 100.0
-                // for a and b: -100% = -125, 100% = 125
-                const LIGHTNESS_RANGE: f32 = 100.0;
-                const A_B_RANGE: f32 = 125.0;
-
-                let origin_color = origin_color
-                    .as_ref()
-                    .map(|o| o.to_color_space(ColorSpace::Lab));
-
-                AbsoluteColor::new(
-                    ColorSpace::Lab,
-                    l.resolve(origin_color.as_ref(), context)?
-                        .map(|l| l.to_number(LIGHTNESS_RANGE)),
-                    a.resolve(origin_color.as_ref(), context)?
-                        .map(|a| a.to_number(A_B_RANGE)),
-                    b.resolve(origin_color.as_ref(), context)?
-                        .map(|b| b.to_number(A_B_RANGE)),
-                    alpha!(alpha, origin_color.as_ref()),
-                )
-            },
-            ColorFunction::Lch(origin_color, l, c, h, alpha) => {
-                // for L: 0% = 0.0, 100% = 100.0
-                // for C: 0% = 0, 100% = 150
-                const LIGHTNESS_RANGE: f32 = 100.0;
-                const CHROMA_RANGE: f32 = 150.0;
-
-                let origin_color = origin_color
-                    .as_ref()
-                    .map(|o| o.to_color_space(ColorSpace::Lch));
-
-                AbsoluteColor::new(
-                    ColorSpace::Lch,
-                    l.resolve(origin_color.as_ref(), context)?
-                        .map(|l| l.to_number(LIGHTNESS_RANGE)),
-                    c.resolve(origin_color.as_ref(), context)?
-                        .map(|c| c.to_number(CHROMA_RANGE)),
-                    h.resolve(origin_color.as_ref(), context)?
-                        .map(|angle| normalize_hue(angle.degrees())),
-                    alpha!(alpha, origin_color.as_ref()),
-                )
-            },
-            ColorFunction::Oklab(origin_color, l, a, b, alpha) => {
-                // for L: 0% = 0.0, 100% = 1.0
-                // for a and b: -100% = -0.4, 100% = 0.4
-                const LIGHTNESS_RANGE: f32 = 1.0;
-                const A_B_RANGE: f32 = 0.4;
-
-                let origin_color = origin_color
-                    .as_ref()
-                    .map(|o| o.to_color_space(ColorSpace::Oklab));
-
-                AbsoluteColor::new(
-                    ColorSpace::Oklab,
-                    l.resolve(origin_color.as_ref(), context)?
-                        .map(|l| l.to_number(LIGHTNESS_RANGE)),
-                    a.resolve(origin_color.as_ref(), context)?
-                        .map(|a| a.to_number(A_B_RANGE)),
-                    b.resolve(origin_color.as_ref(), context)?
-                        .map(|b| b.to_number(A_B_RANGE)),
-                    alpha!(alpha, origin_color.as_ref()),
-                )
-            },
-            ColorFunction::Oklch(origin_color, l, c, h, alpha) => {
-                // for L: 0% = 0.0, 100% = 1.0
-                // for C: 0% = 0.0 100% = 0.4
-                const LIGHTNESS_RANGE: f32 = 1.0;
-                const CHROMA_RANGE: f32 = 0.4;
-
-                let origin_color = origin_color
-                    .as_ref()
-                    .map(|o| o.to_color_space(ColorSpace::Oklch));
-
-                AbsoluteColor::new(
-                    ColorSpace::Oklch,
-                    l.resolve(origin_color.as_ref(), context)?
-                        .map(|l| l.to_number(LIGHTNESS_RANGE)),
-                    c.resolve(origin_color.as_ref(), context)?
-                        .map(|c| c.to_number(CHROMA_RANGE)),
-                    h.resolve(origin_color.as_ref(), context)?
-                        .map(|angle| normalize_hue(angle.degrees())),
-                    alpha!(alpha, origin_color.as_ref()),
-                )
-            },
-            ColorFunction::Color(origin_color, r, g, b, alpha, color_space) => {
-                let origin_color = origin_color.as_ref().map(|o| {
-                    let mut result = o.to_color_space(*color_space);
-
-                    // If the origin color was a `rgb(..)` function, we should
-                    // make sure it doesn't have the legacy flag any more so
-                    // that it is recognized as a `color(srgb ..)` function.
-                    result.flags.set(ColorFlags::IS_LEGACY_SRGB, false);
-
-                    result
-                });
-
-                AbsoluteColor::new(
-                    *color_space,
-                    r.resolve(origin_color.as_ref(), context)?
-                        .map(|c| c.to_number(1.0)),
-                    g.resolve(origin_color.as_ref(), context)?
-                        .map(|c| c.to_number(1.0)),
-                    b.resolve(origin_color.as_ref(), context)?
-                        .map(|c| c.to_number(1.0)),
-                    alpha!(alpha, origin_color.as_ref()),
-                )
-            },
-        })
-    }
+    /// <https://drafts.csswg.org/css-color-5/#relative-alpha>
+    Alpha(
+        OriginColor,                                 // origin
+        ColorComponent<NumberOrPercentageComponent>, // alpha
+    ),
 }
 
 impl ColorFunction<SpecifiedColor> {
-    /// Return true if the color funciton has an origin color specified.
+    /// Return true if the color function has an origin color specified.
     pub fn has_origin_color(&self) -> bool {
-        match self {
-            Self::Rgb(origin_color, ..)
-            | Self::Hsl(origin_color, ..)
-            | Self::Hwb(origin_color, ..)
-            | Self::Lab(origin_color, ..)
-            | Self::Lch(origin_color, ..)
-            | Self::Oklab(origin_color, ..)
-            | Self::Oklch(origin_color, ..)
-            | Self::Color(origin_color, ..) => origin_color.is_some(),
-        }
+        self.origin_color().is_some()
     }
 
-    /// Try to resolve the color function to an [`AbsoluteColor`] that does not
-    /// contain any variables (currentcolor, color components, etc.).
-    pub fn resolve_to_absolute(
+    /// Try to compute the color function to a computed color.
+    ///
+    /// If the origin color (if any) is absolute, the function is resolved to an
+    /// absolute color in a single pass over the components; otherwise it is
+    /// computed and preserved so it can be resolved at use-value time.
+    pub fn to_computed_color(
         &self,
         context: Option<&computed::Context>,
-    ) -> Result<AbsoluteColor, ()> {
-        // Map the color function to one with an absolute origin color.
-        self.map_origin_color(|o| o.resolve_to_absolute(context))?
-            .resolve_to_absolute(context)
+    ) -> Result<ComputedColor, ()> {
+        // Compute the origin color (if any) once.
+        let origin = match self.origin_color() {
+            Some(o) => Some(o.to_computed_color(context)?),
+            None => None,
+        };
+        // We can only resolve to an absolute color if there is no origin color or
+        // it is already absolute.
+        let resolvable = origin.as_ref().map_or(true, |o| o.is_absolute());
+
+        let computed = self.to_computed_value(context, origin);
+        if resolvable {
+            if let Ok(absolute) = computed.to_absolute_color() {
+                return Ok(ComputedColor::Absolute(absolute));
+            }
+        }
+
+        Ok(ComputedColor::ColorFunction(Box::new(computed)))
     }
 }
 
@@ -427,28 +171,319 @@ impl<Color> ColorFunction<Color> {
                 alpha.clone(),
                 color_space.clone(),
             ),
+            ColorFunction::Alpha(o, alpha) => ColorFunction::Alpha(f(o)?.into(), alpha.clone()),
         })
+    }
+
+    /// Returns the origin color of this color function, if it has one.
+    pub fn origin_color(&self) -> Option<&Color> {
+        match self {
+            Self::Rgb(o, ..)
+            | Self::Hsl(o, ..)
+            | Self::Hwb(o, ..)
+            | Self::Lab(o, ..)
+            | Self::Lch(o, ..)
+            | Self::Oklab(o, ..)
+            | Self::Oklch(o, ..)
+            | Self::Color(o, ..) => o.as_ref(),
+            Self::Alpha(o, ..) => Some(o),
+        }
+    }
+
+    /// `origin` is the (already computed) origin color, if any.
+    fn to_computed_value(
+        &self,
+        context: Option<&computed::Context>,
+        origin: Option<ComputedColor>,
+    ) -> ColorFunction<ComputedColor> {
+        // The absolute origin color, if available, used to substitute channels.
+        let abs_origin = origin.as_ref().and_then(|o| o.as_absolute());
+        // Builds a variant where the origin is converted to `$space` (the
+        // function's color space) before its channels are read.
+        macro_rules! convert {
+            ($variant:ident, $space:expr, $c0:expr, $c1:expr, $c2:expr, $alpha:expr) => {{
+                let converted = abs_origin.map(|o| o.to_color_space($space));
+                ColorFunction::$variant(
+                    Optional::from(origin),
+                    $c0.to_computed_value(context, converted.as_ref()),
+                    $c1.to_computed_value(context, converted.as_ref()),
+                    $c2.to_computed_value(context, converted.as_ref()),
+                    $alpha.to_computed_value(context, converted.as_ref()),
+                )
+            }};
+        }
+
+        match self {
+            ColorFunction::Rgb(_, r, g, b, alpha) => {
+                // rgb(..) channels are in the [0..255] range, so map the origin's
+                // components accordingly.
+                let converted = abs_origin.map(|o| {
+                    let o = o.to_color_space(ColorSpace::Srgb);
+                    AbsoluteColor::new(
+                        ColorSpace::Srgb,
+                        o.c0().map(|v| v * 255.0),
+                        o.c1().map(|v| v * 255.0),
+                        o.c2().map(|v| v * 255.0),
+                        o.alpha(),
+                    )
+                });
+                ColorFunction::Rgb(
+                    Optional::from(origin),
+                    r.to_computed_value(context, converted.as_ref()),
+                    g.to_computed_value(context, converted.as_ref()),
+                    b.to_computed_value(context, converted.as_ref()),
+                    alpha.to_computed_value(context, converted.as_ref()),
+                )
+            },
+            ColorFunction::Hsl(_, c0, c1, c2, alpha) => {
+                convert!(Hsl, ColorSpace::Hsl, c0, c1, c2, alpha)
+            },
+            ColorFunction::Hwb(_, c0, c1, c2, alpha) => {
+                convert!(Hwb, ColorSpace::Hwb, c0, c1, c2, alpha)
+            },
+            ColorFunction::Lab(_, c0, c1, c2, alpha) => {
+                convert!(Lab, ColorSpace::Lab, c0, c1, c2, alpha)
+            },
+            ColorFunction::Lch(_, c0, c1, c2, alpha) => {
+                convert!(Lch, ColorSpace::Lch, c0, c1, c2, alpha)
+            },
+            ColorFunction::Oklab(_, c0, c1, c2, alpha) => {
+                convert!(Oklab, ColorSpace::Oklab, c0, c1, c2, alpha)
+            },
+            ColorFunction::Oklch(_, c0, c1, c2, alpha) => {
+                convert!(Oklch, ColorSpace::Oklch, c0, c1, c2, alpha)
+            },
+            ColorFunction::Color(_, c0, c1, c2, alpha, color_space) => {
+                let converted = abs_origin.map(|o| {
+                    let mut result = o.to_color_space(*color_space);
+                    // Drop the legacy flag so the origin is read as a `color()`.
+                    result.flags.set(ColorFlags::IS_LEGACY_SRGB, false);
+                    result
+                });
+                ColorFunction::Color(
+                    Optional::from(origin),
+                    c0.to_computed_value(context, converted.as_ref()),
+                    c1.to_computed_value(context, converted.as_ref()),
+                    c2.to_computed_value(context, converted.as_ref()),
+                    alpha.to_computed_value(context, converted.as_ref()),
+                    *color_space,
+                )
+            },
+            ColorFunction::Alpha(_, alpha) => {
+                let alpha = alpha.to_computed_value(context, abs_origin);
+                let stored = origin.expect("alpha() is always relative");
+                ColorFunction::Alpha(stored, alpha)
+            },
+        }
     }
 }
 
 impl ColorFunction<ComputedColor> {
+    fn to_absolute_color(&self) -> Result<AbsoluteColor, ()> {
+        macro_rules! alpha {
+            ($alpha:expr) => {{
+                $alpha
+                    .resolve()?
+                    .map(|value| normalize(value.to_number(1.0)).clamp(0.0, OPAQUE))
+            }};
+        }
+
+        Ok(match self {
+            ColorFunction::Rgb(origin_color, r, g, b, alpha) => {
+                // Use `color(srgb ...)` to serialize `rgb(...)` if an origin color is available;
+                // this is the only reason for now.
+                let use_color_syntax = origin_color.is_some();
+
+                if use_color_syntax {
+                    // The components have already been mapped into the [0..255]
+                    // range against the origin, so map them back to [0..1).
+                    AbsoluteColor::new(
+                        ColorSpace::Srgb,
+                        r.resolve()?.map(|c| c.to_number(255.0) / 255.0),
+                        g.resolve()?.map(|c| c.to_number(255.0) / 255.0),
+                        b.resolve()?.map(|c| c.to_number(255.0) / 255.0),
+                        alpha!(alpha),
+                    )
+                } else {
+                    // Resolve a component to its legacy sRGB value in [0..1], preserving
+                    // `none` as `None` so the `*_IS_NONE` flags are kept on the color. Legacy
+                    // syntax cannot serialize `none`, but the flags are still needed to carry
+                    // missing components forward through interpolation (e.g. `color-mix`).
+                    #[inline]
+                    fn resolve(
+                        component: &ColorComponent<NumberOrPercentageComponent>,
+                    ) -> Result<Option<f32>, ()> {
+                        Ok(component.resolve()?.map(|value| {
+                            clamp_floor_256_f32(value.to_number(u8::MAX as f32)) as f32 / 255.0
+                        }))
+                    }
+
+                    let mut result = AbsoluteColor::new(
+                        ColorSpace::Srgb,
+                        resolve(r)?,
+                        resolve(g)?,
+                        resolve(b)?,
+                        alpha!(alpha),
+                    );
+                    result.flags.insert(ColorFlags::IS_LEGACY_SRGB);
+                    result
+                }
+            },
+            ColorFunction::Hsl(origin_color, h, s, l, alpha) => {
+                // Percent reference range for S and L: 0% = 0.0, 100% = 100.0
+                const LIGHTNESS_RANGE: f32 = 100.0;
+                const SATURATION_RANGE: f32 = 100.0;
+
+                // If the origin color was *NOT* specified, then we stick with the
+                // old way of serializing the value to rgb(..). Otherwise we don't
+                // use the rgb(..) syntax, because we should allow the color to be
+                // out of gamut and not clamp.
+                let use_rgb_sytax = origin_color.is_none();
+
+                let mut result = AbsoluteColor::new(
+                    ColorSpace::Hsl,
+                    h.resolve()?.map(|angle| normalize_hue(angle.degrees())),
+                    s.resolve()?.map(|s| {
+                        if use_rgb_sytax {
+                            s.to_number(SATURATION_RANGE).clamp(0.0, SATURATION_RANGE)
+                        } else {
+                            s.to_number(SATURATION_RANGE)
+                        }
+                    }),
+                    l.resolve()?.map(|l| {
+                        if use_rgb_sytax {
+                            l.to_number(LIGHTNESS_RANGE).clamp(0.0, LIGHTNESS_RANGE)
+                        } else {
+                            l.to_number(LIGHTNESS_RANGE)
+                        }
+                    }),
+                    alpha!(alpha),
+                );
+
+                if use_rgb_sytax {
+                    result.flags.insert(ColorFlags::IS_LEGACY_SRGB);
+                }
+
+                result
+            },
+            ColorFunction::Hwb(origin_color, h, w, b, alpha) => {
+                let use_rgb_sytax = origin_color.is_none();
+
+                // Percent reference range for W and B: 0% = 0.0, 100% = 100.0
+                const WHITENESS_RANGE: f32 = 100.0;
+                const BLACKNESS_RANGE: f32 = 100.0;
+
+                let mut result = AbsoluteColor::new(
+                    ColorSpace::Hwb,
+                    h.resolve()?.map(|angle| normalize_hue(angle.degrees())),
+                    w.resolve()?.map(|w| {
+                        if use_rgb_sytax {
+                            w.to_number(WHITENESS_RANGE).clamp(0.0, WHITENESS_RANGE)
+                        } else {
+                            w.to_number(WHITENESS_RANGE)
+                        }
+                    }),
+                    b.resolve()?.map(|b| {
+                        if use_rgb_sytax {
+                            b.to_number(BLACKNESS_RANGE).clamp(0.0, BLACKNESS_RANGE)
+                        } else {
+                            b.to_number(BLACKNESS_RANGE)
+                        }
+                    }),
+                    alpha!(alpha),
+                );
+
+                if use_rgb_sytax {
+                    result.flags.insert(ColorFlags::IS_LEGACY_SRGB);
+                }
+
+                result
+            },
+            ColorFunction::Lab(_, l, a, b, alpha) => {
+                // for L: 0% = 0.0, 100% = 100.0
+                // for a and b: -100% = -125, 100% = 125
+                const LIGHTNESS_RANGE: f32 = 100.0;
+                const A_B_RANGE: f32 = 125.0;
+
+                AbsoluteColor::new(
+                    ColorSpace::Lab,
+                    l.resolve()?.map(|l| l.to_number(LIGHTNESS_RANGE)),
+                    a.resolve()?.map(|a| a.to_number(A_B_RANGE)),
+                    b.resolve()?.map(|b| b.to_number(A_B_RANGE)),
+                    alpha!(alpha),
+                )
+            },
+            ColorFunction::Lch(_, l, c, h, alpha) => {
+                // for L: 0% = 0.0, 100% = 100.0
+                // for C: 0% = 0, 100% = 150
+                const LIGHTNESS_RANGE: f32 = 100.0;
+                const CHROMA_RANGE: f32 = 150.0;
+
+                AbsoluteColor::new(
+                    ColorSpace::Lch,
+                    l.resolve()?.map(|l| l.to_number(LIGHTNESS_RANGE)),
+                    c.resolve()?.map(|c| c.to_number(CHROMA_RANGE)),
+                    h.resolve()?.map(|angle| normalize_hue(angle.degrees())),
+                    alpha!(alpha),
+                )
+            },
+            ColorFunction::Oklab(_, l, a, b, alpha) => {
+                // for L: 0% = 0.0, 100% = 1.0
+                // for a and b: -100% = -0.4, 100% = 0.4
+                const LIGHTNESS_RANGE: f32 = 1.0;
+                const A_B_RANGE: f32 = 0.4;
+
+                AbsoluteColor::new(
+                    ColorSpace::Oklab,
+                    l.resolve()?.map(|l| l.to_number(LIGHTNESS_RANGE)),
+                    a.resolve()?.map(|a| a.to_number(A_B_RANGE)),
+                    b.resolve()?.map(|b| b.to_number(A_B_RANGE)),
+                    alpha!(alpha),
+                )
+            },
+            ColorFunction::Oklch(_, l, c, h, alpha) => {
+                // for L: 0% = 0.0, 100% = 1.0
+                // for C: 0% = 0.0 100% = 0.4
+                const LIGHTNESS_RANGE: f32 = 1.0;
+                const CHROMA_RANGE: f32 = 0.4;
+
+                AbsoluteColor::new(
+                    ColorSpace::Oklch,
+                    l.resolve()?.map(|l| l.to_number(LIGHTNESS_RANGE)),
+                    c.resolve()?.map(|c| c.to_number(CHROMA_RANGE)),
+                    h.resolve()?.map(|angle| normalize_hue(angle.degrees())),
+                    alpha!(alpha),
+                )
+            },
+            ColorFunction::Color(_, r, g, b, alpha, color_space) => AbsoluteColor::new(
+                *color_space,
+                r.resolve()?.map(|c| c.to_number(1.0)),
+                g.resolve()?.map(|c| c.to_number(1.0)),
+                b.resolve()?.map(|c| c.to_number(1.0)),
+                alpha!(alpha),
+            ),
+            ColorFunction::Alpha(origin_color, alpha) => {
+                let origin_color = origin_color.as_absolute().ok_or(())?;
+                origin_color.with_alpha(alpha!(alpha))
+            },
+        })
+    }
+
     /// Resolve a computed color function to an absolute computed color.
     pub fn resolve_to_absolute(&self, current_color: &AbsoluteColor) -> AbsoluteColor {
-        // Map the color function to one with an absolute origin color.
-        let resolvable = self
-            .map_origin_color(|o| Ok(o.resolve_to_absolute(current_color)))
-            .unwrap();
-        // Computed value context is not required as it was already applied to this color.
-        match resolvable.resolve_to_absolute(None) {
-            Ok(color) => color,
-            Err(..) => {
-                debug_assert!(
-                    false,
-                    "the color could not be resolved even with a currentcolor specified?"
-                );
-                AbsoluteColor::TRANSPARENT_BLACK
-            },
-        }
+        // Resolve the origin color (e.g. currentcolor) to an absolute color, then
+        // substitute and assemble.
+        let origin = self
+            .origin_color()
+            .map(|o| ComputedColor::Absolute(o.resolve_to_absolute(current_color)));
+        let resolved = self.to_computed_value(None, origin);
+        resolved.to_absolute_color().unwrap_or_else(|_| {
+            debug_assert!(
+                false,
+                "the color could not be resolved even with a currentcolor specified?"
+            );
+            AbsoluteColor::TRANSPARENT_BLACK
+        })
     }
 }
 
@@ -457,60 +492,51 @@ impl<C: style_traits::ToCss> style_traits::ToCss for ColorFunction<C> {
     where
         W: std::fmt::Write,
     {
-        let (origin_color, alpha) = match self {
+        let (origin_color, alpha, trailing_space) = match self {
             Self::Rgb(origin_color, _, _, _, alpha) => {
                 dest.write_str("rgb(")?;
-                (origin_color, alpha)
+                (origin_color.as_ref(), alpha, true)
             },
             Self::Hsl(origin_color, _, _, _, alpha) => {
                 dest.write_str("hsl(")?;
-                (origin_color, alpha)
+                (origin_color.as_ref(), alpha, true)
             },
             Self::Hwb(origin_color, _, _, _, alpha) => {
                 dest.write_str("hwb(")?;
-                (origin_color, alpha)
+                (origin_color.as_ref(), alpha, true)
             },
             Self::Lab(origin_color, _, _, _, alpha) => {
                 dest.write_str("lab(")?;
-                (origin_color, alpha)
+                (origin_color.as_ref(), alpha, true)
             },
             Self::Lch(origin_color, _, _, _, alpha) => {
                 dest.write_str("lch(")?;
-                (origin_color, alpha)
+                (origin_color.as_ref(), alpha, true)
             },
             Self::Oklab(origin_color, _, _, _, alpha) => {
                 dest.write_str("oklab(")?;
-                (origin_color, alpha)
+                (origin_color.as_ref(), alpha, true)
             },
             Self::Oklch(origin_color, _, _, _, alpha) => {
                 dest.write_str("oklch(")?;
-                (origin_color, alpha)
+                (origin_color.as_ref(), alpha, true)
             },
             Self::Color(origin_color, _, _, _, alpha, _) => {
                 dest.write_str("color(")?;
-                (origin_color, alpha)
+                (origin_color.as_ref(), alpha, true)
+            },
+            Self::Alpha(origin_color, alpha) => {
+                dest.write_str("alpha(")?;
+                (Some(origin_color), alpha, false)
             },
         };
 
-        if let Optional::Some(origin_color) = origin_color {
+        if let Some(origin_color) = origin_color {
             dest.write_str("from ")?;
             origin_color.to_css(dest)?;
-            dest.write_str(" ")?;
-        }
-
-        let is_opaque = if let ColorComponent::Value(value) = *alpha {
-            value.to_number(OPAQUE) == OPAQUE
-        } else {
-            false
-        };
-
-        macro_rules! serialize_alpha {
-            ($alpha_component:expr) => {{
-                if !is_opaque && !matches!($alpha_component, ColorComponent::AlphaOmitted) {
-                    dest.write_str(" / ")?;
-                    $alpha_component.to_css(dest)?;
-                }
-            }};
+            if trailing_space {
+                dest.write_str(" ")?;
+            }
         }
 
         macro_rules! serialize_components {
@@ -528,40 +554,46 @@ impl<C: style_traits::ToCss> style_traits::ToCss for ColorFunction<C> {
         }
 
         match self {
-            Self::Rgb(_, c0, c1, c2, alpha) => {
+            Self::Rgb(_, c0, c1, c2, _) => {
                 serialize_components!(c0, c1, c2);
-                serialize_alpha!(alpha);
             },
-            Self::Hsl(_, c0, c1, c2, alpha) => {
+            Self::Hsl(_, c0, c1, c2, _) => {
                 serialize_components!(c0, c1, c2);
-                serialize_alpha!(alpha);
             },
-            Self::Hwb(_, c0, c1, c2, alpha) => {
+            Self::Hwb(_, c0, c1, c2, _) => {
                 serialize_components!(c0, c1, c2);
-                serialize_alpha!(alpha);
             },
-            Self::Lab(_, c0, c1, c2, alpha) => {
+            Self::Lab(_, c0, c1, c2, _) => {
                 serialize_components!(c0, c1, c2);
-                serialize_alpha!(alpha);
             },
-            Self::Lch(_, c0, c1, c2, alpha) => {
+            Self::Lch(_, c0, c1, c2, _) => {
                 serialize_components!(c0, c1, c2);
-                serialize_alpha!(alpha);
             },
-            Self::Oklab(_, c0, c1, c2, alpha) => {
+            Self::Oklab(_, c0, c1, c2, _) => {
                 serialize_components!(c0, c1, c2);
-                serialize_alpha!(alpha);
             },
-            Self::Oklch(_, c0, c1, c2, alpha) => {
+            Self::Oklch(_, c0, c1, c2, _) => {
                 serialize_components!(c0, c1, c2);
-                serialize_alpha!(alpha);
             },
-            Self::Color(_, c0, c1, c2, alpha, color_space) => {
+            Self::Color(_, c0, c1, c2, _, color_space) => {
                 color_space.to_css(dest)?;
                 dest.write_str(" ")?;
                 serialize_components!(c0, c1, c2);
-                serialize_alpha!(alpha);
             },
+            Self::Alpha(_, _) => {},
+        }
+
+        // We can avoid serializing the alpha if it's 1, but only if the color is not relative
+        // (since otherwise it's different from the omitted alpha).
+        let omit_alpha = match *alpha {
+            ColorComponent::AlphaOmitted => true,
+            ColorComponent::Value(ref v) => origin_color.is_none() && v.to_number(OPAQUE) == OPAQUE,
+            _ => false,
+        };
+
+        if !omit_alpha {
+            dest.write_str(" / ")?;
+            alpha.to_css(dest)?;
         }
 
         dest.write_str(")")

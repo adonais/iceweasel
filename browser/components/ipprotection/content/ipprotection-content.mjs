@@ -284,6 +284,8 @@ export default class IPProtectionContentElement extends MozLitElement {
         .hasExclusion=${hasExclusion}
         .isActivating=${this.state.isActivating}
         .showLocationButtonBadge=${this.state.showLocationButtonBadge}
+        .isPremium=${ifDefined(this.state.isPremium)}
+        .hasUpgraded=${this.state.hasUpgraded}
       ></ipprotection-status-card>
     `;
   }
@@ -445,10 +447,7 @@ export default class IPProtectionContentElement extends MozLitElement {
             <div class="skeleton skeleton-title"></div>
             <div class="skeleton skeleton-line"></div>
           </span>
-          <img
-            role="presentation"
-            src="chrome://browser/content/ipprotection/assets/states/ipprotection-loading.svg"
-          />
+          <div class="skeleton skeleton-image"></div>
         </span>
         <div class="skeleton skeleton-line-thick"></div>
         <div class="skeleton skeleton-line-thick"></div>

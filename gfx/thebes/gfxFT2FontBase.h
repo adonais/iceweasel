@@ -10,8 +10,8 @@
 #include "gfxFontEntry.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/UnscaledFontFreeType.h"
-#include "nsTHashMap.h"
 #include "nsHashKeys.h"
+#include "nsTHashMap.h"
 
 class gfxFT2FontBase;
 

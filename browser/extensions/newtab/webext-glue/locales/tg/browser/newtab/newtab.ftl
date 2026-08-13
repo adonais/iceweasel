@@ -466,6 +466,8 @@ newtab-recommended-stories-toggle =
     .label = Ҳикояҳои тавсияшуда
 newtab-custom-stories-personalized-toggle =
     .label = Ҳикояҳо
+newtab-custom-stories-personalized-checkbox =
+    .label = Ҳикояҳои фардӣ дар асоси фаъолияти шумо
 newtab-custom-stories-personalized-checkbox-label = Ҳикояҳои фардӣ дар асоси фаъолияти шумо
 newtab-custom-pocket-sponsored = Мақолаҳои сарпарастӣ
 newtab-custom-pocket-show-recent-saves = Намоиш додани маводҳои охирин
@@ -941,6 +943,17 @@ newtab-sports-widget-back-button =
     .aria-label = Ба қафо
 newtab-sports-widget-done-button =
     .label = Тайёр
+newtab-sports-widget-view-all =
+    .label = Ҳамаро дидан
+newtab-sports-widget-show-less =
+    .label = Камтар нишон додан
+newtab-sports-widget-watch-dialog-close =
+    .aria-label = Пӯшидан
+    .title = Пӯшидан
+# Tag: user can watch without paying (sign-in may still be required).
+newtab-sports-widget-watch-stream-free = Ройгон
+# Heading for the list of streaming services available outside the user’s country/region.
+newtab-sports-widget-watch-available-other-regions = Минтақаҳои дигар
 newtab-sports-widget-group-stage = Марҳилаи гурӯҳӣ
 newtab-sports-widget-group-a = Гурӯҳи «A»
 newtab-sports-widget-group-b = Гурӯҳи «B»
@@ -954,6 +967,9 @@ newtab-sports-widget-group-i = Гурӯҳи «I»
 newtab-sports-widget-group-j = Гурӯҳи «J»
 newtab-sports-widget-group-k = Гурӯҳи «K»
 newtab-sports-widget-group-l = Гурӯҳи «L»
+newtab-sports-widget-round-32 = Даври 32-юм
+newtab-sports-widget-round-16 = Даври 16-ум
+newtab-sports-widget-quarter-finals = Чорякниҳоӣ
 # The "LIVE" string is meant to be uppercase in English, but other languages and locales may vary in how they handle this.
 newtab-sports-widget-live = ПАХШИ МУСТАҚИМ
 # Used for a match currently ongoing
@@ -965,6 +981,37 @@ newtab-sports-widget-key-date = { DATETIME($date, month: "short", day: "numeric"
 newtab-sports-widget-view-results-link = Намоиш додани натиҷаҳо
 newtab-sports-widget-third-place = Ҷойи сеюм
 newtab-sports-widget-match-full-time = Вақти пурра
+newtab-sports-widget-match-halftime = Танаффус байни ду қисми бозӣ
+newtab-sports-widget-match-extra-time = Вақти иловагӣ
+
+## Sports widget live-games pagination. Shown when 2+ matches are live at the same time
+
+# arrow button that goes to the previous page of live matches.
+newtab-sports-widget-pagination-previous =
+    .aria-label = Қаблӣ
+    .title = Қаблӣ
+# arrow button that goes to the next page of live matches.
+newtab-sports-widget-pagination-next =
+    .aria-label = Навбатӣ
+    .title = Навбатӣ
+
+## Sports widget — team names (FIFA country codes)
+## Only includes names not adequately covered by standard country-code
+## internationalization tooling.
+
+newtab-sports-widget-team-name-label-bih =
+    .label = Босния ва Ҳерсеговина
+newtab-sports-widget-team-name-label-eng =
+    .label = Англия
+newtab-sports-widget-team-name-label-sco =
+    .label = Шотландия
+
+## Sports widget OMC messages
+## Shown as on-screen messages promoting the Sports widget and World Cup wallpapers.
+
+newtab-sports-widget-message-wallpapers-cta = Тасвири заминаиеро интихоб намоед
+newtab-sports-widget-message-add-widgets-cta =
+    .label = Илова кардани виҷетҳо
 
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input
@@ -1006,6 +1053,13 @@ newtab-clock-widget-button-save = Нигоҳ доштан
 newtab-clock-widget-button-remove-clock =
     .title = Тоза кардани соат
     .aria-label = Тоза кардани соат
+# Accessible name for a clock row in the "Your clocks" management panel
+# when the row has no user-provided nickname. Read aloud by screen
+# readers when focus lands on the row.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+newtab-clock-widget-edit-item =
+    .aria-label = { $city }
 newtab-clock-widget-add-clock-form =
     .aria-label = Илова кардани соат
 newtab-clock-widget-edit-clock-form =

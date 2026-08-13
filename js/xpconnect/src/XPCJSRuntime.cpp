@@ -4,48 +4,70 @@
 
 /* Per JSRuntime object */
 
-#include "mozilla/ArrayUtils.h"
-#include "mozilla/AutoRestore.h"
 #include "mozilla/AppShutdown.h"
+#include "mozilla/ArrayUtils.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/AutoRestore.h"
+#include "mozilla/BasePrincipal.h"
+#include "mozilla/dom/AbortSignalBinding.h"
+#include "mozilla/dom/BindingUtils.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/dom/FetchUtil.h"
+#include "mozilla/dom/GeneratedAtomList.h"
+#include "mozilla/dom/NodeBinding.h"
+#include "mozilla/dom/ScriptLoader.h"
+#include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/dom/WindowBinding.h"
+#include "mozilla/glean/JsXpconnectMetrics.h"
+#include "mozilla/glean/XpcomMetrics.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/ProcessHangMonitor.h"
+#include "mozilla/ProfilerLabels.h"
+#include "mozilla/Services.h"
+#include "mozilla/Sprintf.h"
 #include "mozilla/UniquePtr.h"
 
-#include "xpcprivate.h"
-#include "xpcpublic.h"
-#include "XPCMaps.h"
-#include "XPCJSMemoryReporter.h"
-#include "XrayWrapper.h"
-#include "WrapperFactory.h"
+#include "AccessCheck.h"
+#include "ExpandedPrincipal.h"
+#include "jsapi.h"
 #include "mozJSModuleLoader.h"
-#include "nsNetUtil.h"
+#include "NodeUbiReporting.h"
+#include "nsAboutProtocolUtils.h"
+#include "nsCCUncollectableMarker.h"
 #include "nsContentSecurityUtils.h"
-
+#include "nsContentUtils.h"
+#include "nsCycleCollectionNoteRootCallback.h"
+#include "nsCycleCollector.h"
 #include "nsExceptionHandler.h"
+#include "nsGlobalWindowInner.h"
+#include "nsIInputStream.h"
 #include "nsIMemoryInfoDumper.h"
 #include "nsIMemoryReporter.h"
 #include "nsIObserverService.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/dom/NodeBinding.h"
 #include "nsIRunnable.h"
+#include "nsJSEnvironment.h"
+#include "nsJSPrincipals.h"
+#include "nsNetUtil.h"
 #include "nsPIDOMWindow.h"
 #include "nsPrintfCString.h"
 #include "nsScriptSecurityManager.h"
 #include "nsWindowSizes.h"
-#include "mozilla/BasePrincipal.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/Services.h"
-#include "mozilla/dom/ScriptLoader.h"
-#include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/glean/JsXpconnectMetrics.h"
-#include "mozilla/glean/XpcomMetrics.h"
+#include "WrapperFactory.h"
+#include "XPCInlines.h"
+#include "XPCJSMemoryReporter.h"
+#include "XPCMaps.h"
+#include "xpcprivate.h"
+#include "xpcpublic.h"
+#include "XrayWrapper.h"
 
-#include "nsContentUtils.h"
-#include "nsCCUncollectableMarker.h"
-#include "nsCycleCollectionNoteRootCallback.h"
-#include "nsCycleCollector.h"
-#include "jsapi.h"
 #include "js/BuildId.h"  // JS::BuildIdCharVector, JS::SetProcessBuildIdOp
 #include "js/experimental/SourceHook.h"  // js::{,Set}SourceHook
+#include "js/friend/UsageStatistics.h"  // JSMetric, JS_SetAccumulateTelemetryCallback
+#include "js/friend/WindowProxy.h"  // js::SetWindowProxyClass
+#include "js/friend/Wrapper.h"      // js::NukeCrossCompartmentWrappers
+#include "js/friend/XrayJitInfo.h"  // JS::SetXrayJitInfo
 #include "js/GCAPI.h"
 #include "js/MemoryFunctions.h"
 #include "js/MemoryMetrics.h"
@@ -54,31 +76,7 @@
 #include "js/SliceBudget.h"
 #include "js/UbiNode.h"
 #include "js/UbiNodeUtils.h"
-#include "js/friend/UsageStatistics.h"  // JSMetric, JS_SetAccumulateTelemetryCallback
-#include "js/friend/WindowProxy.h"  // js::SetWindowProxyClass
-#include "js/friend/Wrapper.h"      // js::NukeCrossCompartmentWrappers
-#include "js/friend/XrayJitInfo.h"  // JS::SetXrayJitInfo
-#include "js/Utility.h"             // JS::UniqueTwoByteChars
-#include "mozilla/dom/AbortSignalBinding.h"
-#include "mozilla/dom/GeneratedAtomList.h"
-#include "mozilla/dom/BindingUtils.h"
-#include "mozilla/dom/Element.h"
-#include "mozilla/dom/FetchUtil.h"
-#include "mozilla/dom/WindowBinding.h"
-#include "mozilla/Attributes.h"
-#include "mozilla/ProcessHangMonitor.h"
-#include "mozilla/ProfilerLabels.h"
-#include "mozilla/Sprintf.h"
-#include "AccessCheck.h"
-#include "nsGlobalWindowInner.h"
-#include "nsAboutProtocolUtils.h"
-
-#include "NodeUbiReporting.h"
-#include "ExpandedPrincipal.h"
-#include "nsIInputStream.h"
-#include "nsJSPrincipals.h"
-#include "nsJSEnvironment.h"
-#include "XPCInlines.h"
+#include "js/Utility.h"  // JS::UniqueTwoByteChars
 
 #ifdef XP_WIN
 #  include <windows.h>
@@ -1706,12 +1704,6 @@ static void ReportClassStats(const ClassInfo& classInfo, const nsACString& path,
                  "JS array buffer elements allocated in the malloc heap.");
   }
 
-  if (classInfo.objectsMallocHeapElementsAsmJS > 0) {
-    REPORT_BYTES(path + "objects/malloc-heap/elements/asm.js"_ns, KIND_HEAP,
-                 classInfo.objectsMallocHeapElementsAsmJS,
-                 "asm.js array buffer elements allocated in the malloc heap.");
-  }
-
   if (classInfo.objectsMallocHeapGlobalData > 0) {
     REPORT_BYTES(path + "objects/malloc-heap/global-data"_ns, KIND_HEAP,
                  classInfo.objectsMallocHeapGlobalData,
@@ -1745,14 +1737,14 @@ static void ReportClassStats(const ClassInfo& classInfo, const nsACString& path,
   if (classInfo.objectsNonHeapElementsWasm > 0) {
     REPORT_BYTES(path + "objects/non-heap/elements/wasm"_ns, KIND_NONHEAP,
                  classInfo.objectsNonHeapElementsWasm,
-                 "wasm/asm.js array buffer elements allocated outside both the "
+                 "wasm array buffer elements allocated outside both the "
                  "malloc heap and the GC heap.");
   }
   if (classInfo.objectsNonHeapElementsWasmShared > 0) {
     REPORT_BYTES(
         path + "objects/non-heap/elements/wasm-shared"_ns, KIND_NONHEAP,
         classInfo.objectsNonHeapElementsWasmShared,
-        "wasm/asm.js array buffer elements allocated outside both the "
+        "wasm array buffer elements allocated outside both the "
         "malloc heap and the GC heap. These elements are shared between "
         "one or more runtimes; the reported size is divided by the "
         "buffer's refcount.");
@@ -1760,8 +1752,7 @@ static void ReportClassStats(const ClassInfo& classInfo, const nsACString& path,
 
   if (classInfo.objectsNonHeapCodeWasm > 0) {
     REPORT_BYTES(path + "objects/non-heap/code/wasm"_ns, KIND_NONHEAP,
-                 classInfo.objectsNonHeapCodeWasm,
-                 "AOT-compiled wasm/asm.js code.");
+                 classInfo.objectsNonHeapCodeWasm, "AOT-compiled wasm code.");
   }
 
   if (classInfo.objectsGCBufferMisc > 0) {
@@ -2891,14 +2882,8 @@ static void AccumulateTelemetryCallback(JSMetric id,
 
 static void SetUseCounterCallback(JSObject* obj, JSUseCounter counter) {
   switch (counter) {
-    case JSUseCounter::ASMJS:
-      SetUseCounter(obj, eUseCounter_custom_JS_asmjs);
-      return;
     case JSUseCounter::WASM:
       SetUseCounter(obj, eUseCounter_custom_JS_wasm);
-      return;
-    case JSUseCounter::USE_ASM:
-      SetUseCounter(obj, eUseCounter_custom_JS_use_asm);
       return;
     case JSUseCounter::WASM_LEGACY_EXCEPTIONS:
       SetUseCounter(obj, eUseCounter_custom_JS_wasm_legacy_exceptions);
@@ -2970,19 +2955,15 @@ static void DestroyRealm(JS::GCContext* gcx, JS::Realm* realm) {
   JS::SetRealmPrivate(realm, nullptr);
 }
 
-static bool PreserveWrapper(JSContext* cx, JS::Handle<JSObject*> obj) {
+static void PreserveWrapper(JSContext* cx, JS::Handle<JSObject*> obj) {
   MOZ_ASSERT(cx);
   MOZ_ASSERT(obj);
   MOZ_ASSERT(mozilla::dom::IsDOMObject(obj));
 
-  if (!mozilla::dom::TryPreserveWrapper(obj)) {
-    return false;
-  }
+  mozilla::dom::TryPreserveWrapper(obj);
 
   MOZ_ASSERT(!mozilla::dom::HasReleasedWrapper(obj),
              "There should be no released wrapper since we just preserved it");
-
-  return true;
 }
 
 static nsresult ReadSourceFromFilename(JSContext* cx, const char* filename,

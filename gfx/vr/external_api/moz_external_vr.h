@@ -20,13 +20,14 @@
 static_assert(__STDC_WANT_LIB_EXT1__ == 1,
               "__STDC_WANT_LIB_EXT1__ must be set");
 
+#  include <stddef.h>
+#  include <stdint.h>
 #  include <stdlib.h>
 #  include <string.h>
+
 #  include "mozilla/TiedFields.h"
 #  include "mozilla/TypedEnumBits.h"
 #  include "mozilla/gfx/2D.h"
-#  include <stddef.h>
-#  include <stdint.h>
 #endif  // MOZILLA_INTERNAL_API
 
 #if defined(__ANDROID__)

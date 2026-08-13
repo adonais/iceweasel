@@ -146,7 +146,7 @@ async function downloadFile(type, includePlaceData) {
       );
 
       download = await finishedAllDownloads;
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => download.succeeded,
         "Download succeeded."
       );

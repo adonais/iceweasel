@@ -11,7 +11,7 @@ import kotlinx.coroutines.launch
 import mozilla.components.concept.sync.AccountObserver
 import mozilla.components.concept.sync.AuthType
 import mozilla.components.concept.sync.OAuthAccount
-import mozilla.components.service.fxa.SyncEngine
+import mozilla.components.concept.sync.SyncEngine
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.service.fxa.manager.SyncEnginesStorage
 

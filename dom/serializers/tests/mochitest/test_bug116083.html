@@ -98,10 +98,6 @@ function nextTest() {
   var expected = div.hasAttribute("data-result") ?
                  div.getAttribute("data-result") :
                  div.textContent;
-  if (!div.nextElementSibling &&
-      SpecialPowers.getBoolPref("dom.serializer.includeCommonAncestor.enabled")) {
-    expected = `\n${expected}\n`;
-  }
 
   SimpleTest.waitForClipboard(expected, function() {
     synthesizeKey("C", {accelKey: true});

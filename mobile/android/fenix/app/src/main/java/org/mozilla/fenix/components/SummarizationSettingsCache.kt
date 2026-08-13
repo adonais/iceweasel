@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import mozilla.components.feature.summarize.settings.SummarizationSettings
+import mozilla.components.lib.shake.ShakeSensitivity
 
 /**
  * Eagerly mirrors the user's [SummarizationSettings] preferences into hot [StateFlow]s so the UI
@@ -30,4 +31,8 @@ class SummarizationSettingsCache(
     val gestureEnabled: StateFlow<Boolean> =
         flow { emitAll(settings.getGestureEnabledUserStatus()) }
             .stateIn(scope, SharingStarted.Eagerly, true)
+
+    val shakeSensitivity: StateFlow<ShakeSensitivity> =
+        flow { emitAll(settings.getShakeSensitivity()) }
+            .stateIn(scope, SharingStarted.Eagerly, ShakeSensitivity.Medium)
 }

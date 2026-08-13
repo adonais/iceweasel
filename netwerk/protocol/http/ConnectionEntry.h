@@ -5,9 +5,9 @@
 #ifndef ConnectionEntry_h_
 #define ConnectionEntry_h_
 
+#include "ConnectionAttemptPool.h"
 #include "PendingTransactionInfo.h"
 #include "PendingTransactionQueue.h"
-#include "ConnectionAttemptPool.h"
 #include "mozilla/WeakPtr.h"
 #include "nsTHashSet.h"
 
@@ -86,6 +86,11 @@ class ConnectionEntry : public SupportsWeakPtr {
 
   uint32_t PruneDeadConnections();
   void MakeConnectionPendingAndDontReuse(HttpConnectionBase* conn);
+  // Move any active HTTP/3 connection that can no longer take new transactions
+  // (e.g. DontReuse'd) out of mActiveConns and into mPendingConns, so it stops
+  // holding the single-H3-per-entry slot and is closed once its current
+  // transaction (if any) finishes.
+  void MoveUnusableH3ConnsToPending();
   void VerifyTraffic();
   void PruneNoTraffic();
   uint32_t TimeoutTick();
@@ -106,17 +111,25 @@ class ConnectionEntry : public SupportsWeakPtr {
   Http3ConnectionStatsParams GetHttp3ConnectionStatsData();
   void LogConnections();
 
+  // Fixed at construction; describes the origin, not necessarily the entry's
+  // current connections. Under Happy Eyeballs an Alt-Svc alternate shares the
+  // origin's entry, so an h2-origin entry can hold an h3 connection while this
+  // still reports IsHttp3()==false. Don't infer protocol/route from it; query
+  // the live connections (HasActiveH3Connection(), GetH2orH3ActiveConn()).
   const RefPtr<nsHttpConnectionInfo> mConnInfo;
 
   bool AvailableForDispatchNow();
 
   bool MaybeProcessCoalescingKeys(nsIDNSAddrRecord* dnsRecord,
                                   bool aIsHttp3 = false);
+  bool MaybeProcessCoalescingKeys(const nsTArray<NetAddr>& aAddresses,
+                                  bool aIsHttp3 = false);
 
   nsresult CreateDnsAndConnectSocket(nsAHttpTransaction* trans, uint32_t caps,
                                      bool speculative, bool urgentStart,
                                      bool allow1918,
-                                     PendingTransactionInfo* pendingTransInfo);
+                                     PendingTransactionInfo* pendingTransInfo,
+                                     bool retryWithoutTRR = false);
 
   // Spdy sometimes resolves the address in the socket manager in order
   // to re-coalesce sharded HTTP hosts. The dotted decimal address is

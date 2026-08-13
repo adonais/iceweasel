@@ -27,3 +27,11 @@ containers-color-label2 =
 containers-dialog =
     .buttonlabelaccept = Done
     .buttonaccesskeyaccept = D
+
+## Container creation panel, anchored to the URL bar.
+
+containers-panel-title = Add New Container
+containers-panel-create-button =
+    .label = Done
+containers-panel-cancel-button =
+    .label = Cancel

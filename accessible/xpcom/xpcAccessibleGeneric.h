@@ -5,14 +5,13 @@
 #ifndef mozilla_a11y_xpcAccessibleGeneric_h_
 #define mozilla_a11y_xpcAccessibleGeneric_h_
 
+#include "LocalAccessible.h"
+#include "mozilla/a11y/Accessible.h"
+#include "mozilla/a11y/RemoteAccessible.h"
 #include "xpcAccessible.h"
 #include "xpcAccessibleHyperLink.h"
 #include "xpcAccessibleSelectable.h"
 #include "xpcAccessibleValue.h"
-
-#include "LocalAccessible.h"
-#include "mozilla/a11y/Accessible.h"
-#include "mozilla/a11y/RemoteAccessible.h"
 
 namespace mozilla {
 namespace a11y {

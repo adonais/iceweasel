@@ -3,12 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 // HttpLog.h should generally be included first
-#include "HttpLog.h"
-
 #include "nsHttpHeaderArray.h"
-#include "nsURLHelper.h"
-#include "nsIHttpHeaderVisitor.h"
+
+#include "HttpLog.h"
 #include "nsHttpHandler.h"
+#include "nsIHttpHeaderVisitor.h"
+#include "nsURLHelper.h"
 
 namespace mozilla {
 namespace net {
@@ -404,7 +404,7 @@ nsresult nsHttpHeaderArray::ParseHeaderLine(const nsACString& line,
 }
 
 void nsHttpHeaderArray::Flatten(nsACString& buf, bool pruneProxyHeaders,
-                                bool pruneTransients) {
+                                bool pruneTransients) const {
   auto shouldInclude = [&](const nsEntry& entry) {
     if (entry.variety == eVarietyResponseNetOriginal) return false;
     if (pruneProxyHeaders && (entry.header == nsHttp::Proxy_Authorization ||

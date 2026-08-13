@@ -2,9 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use api::{ColorF, ColorU, GradientStop};
-use api::units::{LayoutRect, LayoutSize, LayoutVector2D};
-use std::hash;
+use api::{ColorF, GradientStop};
 
 mod linear;
 mod radial;
@@ -14,32 +12,9 @@ pub use linear::*;
 pub use radial::*;
 pub use conic::*;
 
-/// A hashable gradient stop that can be used in primitive keys.
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Copy, Clone, MallocSizeOf, PartialEq)]
-pub struct GradientStopKey {
-    pub offset: f32,
-    pub color: ColorU,
-}
-
-impl GradientStopKey {
-    pub fn empty() -> Self {
-        GradientStopKey {
-            offset: 0.0,
-            color: ColorU::new(0, 0, 0, 0),
-        }
-    }
-}
-
-impl Into<GradientStopKey> for GradientStop {
-    fn into(self) -> GradientStopKey {
-        GradientStopKey {
-            offset: self.offset,
-            color: self.color.into(),
-        }
-    }
-}
+// `GradientStopKey` now lives in `webrender_api` so builder-side interning keys
+// can reference it. Re-exported here to keep existing references working.
+pub use api::key_types::GradientStopKey;
 
 // Convert `stop_keys` into a vector of `GradientStop`s, which is a more
 // convenient representation for the current gradient builder. Compute the
@@ -59,61 +34,15 @@ fn stops_and_min_alpha(stop_keys: &[GradientStopKey]) -> (Vec<GradientStop>, f32
     (stops, min_alpha)
 }
 
-impl Eq for GradientStopKey {}
-
-impl hash::Hash for GradientStopKey {
-    fn hash<H: hash::Hasher>(&self, state: &mut H) {
-        self.offset.to_bits().hash(state);
-        self.color.hash(state);
-    }
-}
-
 // If the gradient is not tiled we know that any content outside of the clip will not
 // be shown. Applying the clip early reduces how much of the gradient we
 // render and cache. We do this optimization separately on each axis.
 // Returns the offset between the new and old primitive rect origin, to apply to the
 // gradient parameters that are relative to the primitive origin.
-pub fn apply_gradient_local_clip(
-    prim_rect: &mut LayoutRect,
-    stretch_size: &LayoutSize,
-    tile_spacing: &LayoutSize,
-    clip_rect: &LayoutRect,
-) -> LayoutVector2D {
-    let w = prim_rect.max.x.min(clip_rect.max.x) - prim_rect.min.x;
-    let h = prim_rect.max.y.min(clip_rect.max.y) - prim_rect.min.y;
-    let is_tiled_x = w > stretch_size.width + tile_spacing.width;
-    let is_tiled_y = h > stretch_size.height + tile_spacing.height;
-
-    let mut offset = LayoutVector2D::new(0.0, 0.0);
-
-    if !is_tiled_x {
-        let diff = (clip_rect.min.x - prim_rect.min.x).min(prim_rect.width());
-        if diff > 0.0 {
-            prim_rect.min.x += diff;
-            offset.x = -diff;
-        }
-
-        let diff = prim_rect.max.x - clip_rect.max.x;
-        if diff > 0.0 {
-            prim_rect.max.x -= diff;
-        }
-    }
-
-    if !is_tiled_y {
-        let diff = (clip_rect.min.y - prim_rect.min.y).min(prim_rect.height());
-        if diff > 0.0 {
-            prim_rect.min.y += diff;
-            offset.y = -diff;
-        }
-
-        let diff = prim_rect.max.y - clip_rect.max.y;
-        if diff > 0.0 {
-            prim_rect.max.y -= diff;
-        }
-    }
-
-    offset
-}
+// `apply_gradient_local_clip` now lives in `webrender_api::prim_geometry` so
+// content-process interning can share it. Re-exported here to keep existing
+// references working.
+pub use api::prim_geometry::apply_gradient_local_clip;
 
 #[test]
 #[cfg(target_pointer_width = "64")]
@@ -126,7 +55,7 @@ fn test_struct_sizes() {
     // (b) You made a structure larger. This is not necessarily a problem, but should only
     //     be done with care, and after checking if talos performance regresses badly.
     assert_eq!(mem::size_of::<LinearGradient>(), 72, "LinearGradient size changed");
-    assert_eq!(mem::size_of::<LinearGradientTemplate>(), 80, "LinearGradientTemplate size changed");
+    assert_eq!(mem::size_of::<LinearGradientTemplate>(), 72, "LinearGradientTemplate size changed");
     assert_eq!(mem::size_of::<LinearGradientKey>(), 72, "LinearGradientKey size changed");
 
     assert_eq!(mem::size_of::<RadialGradient>(), 72, "RadialGradient size changed");

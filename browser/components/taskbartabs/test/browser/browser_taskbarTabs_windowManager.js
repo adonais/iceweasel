@@ -15,7 +15,7 @@ XPCOMUtils.defineLazyServiceGetters(this, {
   WinTaskbar: ["@mozilla.org/windows-taskbar;1", Ci.nsIWinTaskbar],
 });
 
-const registry = new TaskbarTabsRegistry();
+const registry = createInMemoryRegistry();
 
 const url1 = Services.io.newURI("https://example.com");
 const userContextId1 = 0;
@@ -376,7 +376,7 @@ add_task(async function test_taskbarTab_persistence() {
   );
   win1.moveTo(newX1, newY1);
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => win1.screenX == newX1 && win1.screenY == newY1,
     `Waiting for window 1 to move to ${newX1}, ${newY1}`
   );
@@ -414,7 +414,7 @@ add_task(async function test_taskbarTab_persistence() {
   win2.moveTo(newX2, newY2);
 
   // Wait for move to settle and persist
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => win2.screenX == newX2 && win2.screenY == newY2,
     `Waiting for window 2 to move to ${newX2}, ${newY2}`
   );

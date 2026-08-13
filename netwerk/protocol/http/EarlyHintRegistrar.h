@@ -5,10 +5,10 @@
 #ifndef mozilla_net_EarlyHintRegistrar_h_
 #define mozilla_net_EarlyHintRegistrar_h_
 
+#include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/RefCounted.h"
 #include "mozilla/dom/ipc/IdType.h"
 #include "nsRefPtrHashtable.h"
-#include "mozilla/AlreadyAddRefed.h"
 
 class nsIParentChannel;
 

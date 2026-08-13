@@ -1,0 +1,15 @@
+{
+  "label": "nailsolutionplus.firebaseapp.com",
+  "bugs": {
+    "2051521": {
+      "issue": "firefox-blocked-completely",
+      "matches": ["*://nailsolutionplus.firebaseapp.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "ua_string": ["Chrome_with_FxQuantum"]
+    }
+  ]
+}

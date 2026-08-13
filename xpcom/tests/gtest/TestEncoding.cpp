@@ -3,8 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <stdlib.h>
-#include "nsString.h"
+
 #include "gtest/gtest.h"
+#include "nsString.h"
 
 TEST(Encoding, GoodSurrogatePair)
 {

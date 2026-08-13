@@ -4,14 +4,13 @@
 
 #include "AnimationSurfaceProvider.h"
 
+#include "DecodePool.h"
+#include "Decoder.h"
 #include "mozilla/StaticPrefs_image.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/SharedSurfacesChild.h"
 #include "mozilla/layers/SourceSurfaceSharedData.h"
 #include "nsProxyRelease.h"
-
-#include "DecodePool.h"
-#include "Decoder.h"
 
 using namespace mozilla::gfx;
 using namespace mozilla::layers;

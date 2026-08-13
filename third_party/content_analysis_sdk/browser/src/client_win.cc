@@ -194,6 +194,8 @@ std::vector<char> ReadNextMessageFromPipe(
         break;
       }
 
+      final_size += read;
+
       // Reaching here means the error is "more data", that is, the buffer
       // specified in ReadFile() was too small to contain the entire response
       // message from the server. ReadFile() has placed the start of the

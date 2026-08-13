@@ -3,6 +3,7 @@
 
 package org.mozilla.geckoview.test
 
+import android.net.Uri
 import android.os.SystemClock
 import androidx.test.filters.MediumTest
 import androidx.test.platform.app.InstrumentationRegistry
@@ -162,6 +163,18 @@ class WebExecutorTest {
         val response = fetch(webRequest("$TEST_ENDPOINT/assets/www/hello.html"))
         assertThat("Status should match", response.statusCode, equalTo(200))
         assertThat("Body should have bytes", response.getBodyBytes().remaining(), greaterThan(0))
+    }
+
+    @Test
+    fun testContentDispositionQueryParam() {
+        // The "contentDisposition" query param makes the server set that header verbatim on the
+        // asset response.
+        val disposition = "attachment; filename=\"server-name.txt\""
+        val response = fetch(
+            webRequest("$TEST_ENDPOINT/assets/www/hello.html?contentDisposition=${Uri.encode(disposition)}"),
+        )
+        assertThat("Status should match", response.statusCode, equalTo(200))
+        assertThat("Content-Disposition should match", response.headers["Content-Disposition"], equalTo(disposition))
     }
 
     @Test

@@ -1,12 +1,6 @@
-diff --git a/src/cubeb_aaudio.cpp b/media/libcubeb/src/cubeb_aaudio.cpp
 --- a/src/cubeb_aaudio.cpp
 +++ b/src/cubeb_aaudio.cpp
-@@ -6,16 +6,17 @@
-  */
- #include "cubeb-internal.h"
- #include "cubeb/cubeb.h"
- #include "cubeb_android.h"
- #include "cubeb_log.h"
+@@ -11,6 +11,7 @@
  #include "cubeb_resampler.h"
  #include "cubeb_triple_buffer.h"
  #include <aaudio/AAudio.h>
@@ -14,17 +8,7 @@ diff --git a/src/cubeb_aaudio.cpp b/media/libcubeb/src/cubeb_aaudio.cpp
  #include <atomic>
  #include <cassert>
  #include <chrono>
- #include <condition_variable>
- #include <cstdint>
- #include <cstring>
- #include <dlfcn.h>
- #include <inttypes.h>
-@@ -1700,13 +1701,16 @@ const static struct cubeb_ops aaudio_ops
-     /*.stream_get_current_device =*/nullptr,
-     /*.stream_device_destroy =*/nullptr,
-     /*.stream_register_device_changed_callback =*/nullptr,
-     /*.register_device_collection_changed =*/nullptr};
- 
+@@ -2158,6 +2159,9 @@ const static struct cubeb_ops aaudio_ops = {
  extern "C" /*static*/ int
  aaudio_init(cubeb ** context, char const * /* context_name */)
  {
@@ -34,5 +18,3 @@ diff --git a/src/cubeb_aaudio.cpp b/media/libcubeb/src/cubeb_aaudio.cpp
  #ifndef DISABLE_LIBAAUDIO_DLOPEN
    if (!AAudioLibrary::get().load()) {
      return CUBEB_ERROR;
-   }
- 

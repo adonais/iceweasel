@@ -2,6 +2,8 @@
 
 ["test_geolocation_monitor.js"]
 
+["test_geolocation_network_cache.js"]
+
 ["test_geolocation_position_unavailable.js"]
 
 ["test_geolocation_position_unavailable_wrap.js"]

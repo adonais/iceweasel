@@ -21,6 +21,7 @@ export class AutoCompleteChild extends JSWindowActorChild {
 
     this._input = null;
     this._popupOpen = false;
+    this._secondaryActionFocused = false;
   }
 
   receiveMessage(message) {
@@ -37,11 +38,13 @@ export class AutoCompleteChild extends JSWindowActorChild {
 
       case "AutoComplete:PopupClosed": {
         this._popupOpen = false;
+        this._secondaryActionFocused = false;
         break;
       }
 
       case "AutoComplete:PopupOpened": {
         this._popupOpen = true;
+        this._secondaryActionFocused = false;
         break;
       }
 
@@ -143,6 +146,7 @@ export class AutoCompleteChild extends JSWindowActorChild {
   }
 
   selectBy(reverse, page) {
+    this._secondaryActionFocused = false;
     Services.cpmm.sendSyncMessage("AutoComplete:SelectBy", {
       browsingContext: this.browsingContext,
       reverse,
@@ -325,6 +329,33 @@ export class AutoCompleteChild extends JSWindowActorChild {
     // we don't need to pass the selected index to the parent process because
     // the selected index is maintained in the parent.
     this.sendAsyncMessage("AutoComplete:SelectEntry");
+  }
+
+  navigateSecondaryAction(reverse) {
+    let result = Services.cpmm.sendSyncMessage(
+      "AutoComplete:NavigateSecondaryAction",
+      {
+        browsingContext: this.browsingContext,
+        reverse,
+      }
+    );
+    let consumed = result.length == 1 && result[0];
+    this._secondaryActionFocused = !reverse && consumed;
+    return consumed;
+  }
+
+  maybeActivateSecondaryAction() {
+    if (!this._secondaryActionFocused) {
+      return false;
+    }
+    let result = Services.cpmm.sendSyncMessage(
+      "AutoComplete:MaybeActivateSecondaryAction",
+      {
+        browsingContext: this.browsingContext,
+      }
+    );
+    this._secondaryActionFocused = false;
+    return result.length == 1 && result[0];
   }
 }
 

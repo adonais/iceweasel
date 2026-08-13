@@ -2,27 +2,28 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/Logging.h"
-#include "nsString.h"
-#include "prtime.h"
-#include "prenv.h"
-
 #include "IMContextWrapper.h"
 
 #include "GRefPtr.h"
-#include "nsGtkKeyUtils.h"
-#include "nsWindow.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/Likely.h"
+#include "mozilla/Logging.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/MiscEvents.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_intl.h"
-#include "mozilla/glean/WidgetGtkMetrics.h"
 #include "mozilla/TextEventDispatcher.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/ToString.h"
+#include "mozilla/Utf16.h"
+#include "mozilla/WidgetUtilsGtk.h"
 #include "mozilla/WritingModes.h"
+#include "mozilla/glean/WidgetGtkMetrics.h"
+#include "nsGtkKeyUtils.h"
+#include "nsString.h"
+#include "nsWindow.h"
+#include "prenv.h"
+#include "prtime.h"
 
 // For collecting other people's log, tell `MOZ_LOG=IMEHandler:4,sync`
 // rather than `MOZ_LOG=IMEHandler:5,sync` since using `5` may create too
@@ -2320,7 +2321,7 @@ bool IMContextWrapper::DispatchCompositionStart(GtkIMContext* aContext) {
     NS_ConvertUTF8toUTF16 im(GetIMName());
     // 72 is kMaximumKeyStringLength in TelemetryScalar.cpp
     if (im.Length() > 72) {
-      if (NS_IS_SURROGATE_PAIR(im[72 - 2], im[72 - 1])) {
+      if (mozilla::IsSurrogatePair(im[72 - 2], im[72 - 1])) {
         im.Truncate(72 - 2);
       } else {
         im.Truncate(72 - 1);
@@ -3045,6 +3046,16 @@ void IMContextWrapper::SetCursorPosition(GtkIMContext* aContext) {
 
   GdkRectangle area = rootWindow->DevicePixelsToGdkRectRoundOut(rect);
   gtk_im_context_set_cursor_location(aContext, &area);
+#ifdef MOZ_WAYLAND
+  if (GdkIsWaylandDisplay()) {
+    if (mOwnerWindow) {
+      GdkWindow* gdkWindow = mOwnerWindow->GetToplevelGdkWindow();
+      if (gdkWindow) {
+        gdk_window_invalidate_rect(gdkWindow, nullptr, false);
+      }
+    }
+  }
+#endif
 }
 
 nsresult IMContextWrapper::GetCurrentParagraph(nsAString& aText,

@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "gc/Zone.h"
-#include "js/shadow/Zone.h"  // JS::shadow::Zone
 
 #include "mozilla/Sprintf.h"
 #include "mozilla/TimeStamp.h"
@@ -16,6 +15,7 @@
 #include "jit/Invalidation.h"
 #include "jit/JitScript.h"
 #include "jit/JitZone.h"
+#include "js/shadow/Zone.h"  // JS::shadow::Zone
 #include "vm/Runtime.h"
 #include "vm/Time.h"
 

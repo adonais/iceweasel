@@ -38,13 +38,16 @@ import org.mozilla.fenix.GleanMetrics.ShortcutsLibrary
 import org.mozilla.fenix.GleanMetrics.TopSites
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
+import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
+import org.mozilla.fenix.components.appstate.AppAction.ShortcutAction
 import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.home.HomeFragmentDirections
-import org.mozilla.fenix.home.mars.MARSUseCases
+import org.mozilla.fenix.home.topsites.AddShortcutEntryPoint
+import org.mozilla.fenix.home.topsites.AddShortcutSource
 import org.mozilla.fenix.home.topsites.ShortcutsFragmentDirections
 import org.mozilla.fenix.home.topsites.interactor.TopSiteInteractor
 import org.mozilla.fenix.settings.SupportUtils
@@ -52,6 +55,15 @@ import org.mozilla.fenix.utils.Settings
 import java.lang.ref.WeakReference
 import androidx.appcompat.R as appcompatR
 import mozilla.components.ui.icons.R as iconsR
+
+/**
+ * The surface where a top sites / shortcuts interaction occurred. Used as the `source` extra on
+ * the `top_sites` Glean events.
+ */
+enum class TopSitesSource(val sourceName: String) {
+    HOMEPAGE("homepage"),
+    SHORTCUTS_LIBRARY("shortcuts_library"),
+}
 
 /**
  * An interface that handles the view manipulation of the top sites triggered by the Interactor.
@@ -110,7 +122,12 @@ interface TopSiteController {
     /**
      * @see [TopSiteInteractor.onSaveShortcut]
      */
-    fun handleSaveShortcut(title: String, url: String)
+    fun handleSaveShortcut(
+        title: String,
+        url: String,
+        source: AddShortcutSource,
+        entryPoint: AddShortcutEntryPoint,
+    )
 }
 
 /**
@@ -121,14 +138,15 @@ class DefaultTopSiteController(
     private val activityRef: WeakReference<Activity>,
     private val navControllerRef: WeakReference<NavController>,
     private val store: BrowserStore,
+    private val appStore: AppStore,
     private val settings: Settings,
     private val addTabUseCase: TabsUseCases.AddNewTabUseCase,
     private val selectTabUseCase: TabsUseCases.SelectTabUseCase,
     private val fenixBrowserUseCases: FenixBrowserUseCases,
     private val topSitesUseCases: TopSitesUseCases,
-    private val marsUseCases: MARSUseCases,
     private val mozAdsUseCases: MozAdsUseCases,
     private val viewLifecycleScope: CoroutineScope,
+    private val source: TopSitesSource,
 ) : TopSiteController {
 
     private val activity: Activity
@@ -139,12 +157,16 @@ class DefaultTopSiteController(
 
     override fun handleOpenInPrivateTabClicked(topSite: TopSite) {
         if (topSite is TopSite.Provided) {
-            TopSites.openContileInPrivateTab.record(NoExtras())
+            TopSites.openContileInPrivateTab.record(
+                TopSites.OpenContileInPrivateTabExtra(source = source.sourceName),
+            )
         } else {
-            TopSites.openInPrivateTab.record(NoExtras())
+            TopSites.openInPrivateTab.record(
+                TopSites.OpenInPrivateTabExtra(source = source.sourceName),
+            )
         }
 
-        activity.components.appStore.dispatch(
+        appStore.dispatch(
             AppAction.BrowsingModeManagerModeChanged(BrowsingMode.Private),
         )
 
@@ -227,6 +249,8 @@ class DefaultTopSiteController(
                 title = title,
                 url = url,
             )
+
+            appStore.dispatch(ShortcutAction.FrecencyTopSitePromoted)
         } else {
             topSitesUseCases.updateTopSites(
                 topSite = topSite,
@@ -237,10 +261,12 @@ class DefaultTopSiteController(
     }
 
     override fun handleRemoveTopSiteClicked(topSite: TopSite) {
-        TopSites.remove.record(NoExtras())
+        TopSites.remove.record(TopSites.RemoveExtra(source = source.sourceName))
 
         when (topSite.url) {
-            SupportUtils.GOOGLE_URL -> TopSites.googleTopSiteRemoved.record(NoExtras())
+            SupportUtils.GOOGLE_URL -> TopSites.googleTopSiteRemoved.record(
+                TopSites.GoogleTopSiteRemovedExtra(source = source.sourceName),
+            )
         }
 
         viewLifecycleScope.launch {
@@ -252,24 +278,30 @@ class DefaultTopSiteController(
 
     override fun handleSelectTopSite(topSite: TopSite, position: Int) {
         when (topSite) {
-            is TopSite.Default -> TopSites.openDefault.record(NoExtras())
-            is TopSite.Frecent -> TopSites.openFrecency.record(NoExtras())
-            is TopSite.Pinned -> TopSites.openPinned.record(NoExtras())
+            is TopSite.Default -> TopSites.openDefault.record(
+                TopSites.OpenDefaultExtra(source = source.sourceName),
+            )
+            is TopSite.Frecent -> TopSites.openFrecency.record(
+                TopSites.OpenFrecencyExtra(source = source.sourceName),
+            )
+            is TopSite.Pinned -> TopSites.openPinned.record(
+                TopSites.OpenPinnedExtra(source = source.sourceName),
+            )
             is TopSite.Provided -> {
-                if (settings.enableMozillaAdsClient) {
-                    sendMozAdsClickInteraction(clickUrl = topSite.clickUrl)
-                } else {
-                    sendMarsTopSiteCallback(topSite.clickUrl)
-                }
+                sendMozAdsClickInteraction(clickUrl = topSite.clickUrl)
 
-                TopSites.openContileTopSite.record(NoExtras()).also {
+                TopSites.openContileTopSite.record(
+                    TopSites.OpenContileTopSiteExtra(source = source.sourceName),
+                ).also {
                     recordTopSitesClickTelemetry(topSite, position)
                 }
             }
         }
 
         when (topSite.url) {
-            SupportUtils.GOOGLE_URL -> TopSites.openGoogleSearchAttribution.record(NoExtras())
+            SupportUtils.GOOGLE_URL -> TopSites.openGoogleSearchAttribution.record(
+                TopSites.OpenGoogleSearchAttributionExtra(source = source.sourceName),
+            )
         }
 
         val availableEngines: List<SearchEngine> = getAvailableSearchEngines()
@@ -302,7 +334,9 @@ class DefaultTopSiteController(
             }
 
             if (existingTabForUrl == null) {
-                TopSites.openInNewTab.record(NoExtras())
+                TopSites.openInNewTab.record(
+                    TopSites.OpenInNewTabExtra(source = source.sourceName),
+                )
 
                 addTabUseCase.invoke(
                     url = appendSearchAttributionToUrlIfNeeded(topSite.url),
@@ -326,7 +360,7 @@ class DefaultTopSiteController(
         TopSites.contileClick.record(
             TopSites.ContileClickExtra(
                 position = position + 1,
-                source = "newtab",
+                source = source.sourceName,
             ),
         )
 
@@ -337,16 +371,12 @@ class DefaultTopSiteController(
     }
 
     override fun handleTopSiteImpression(topSite: TopSite.Provided, position: Int) {
-        if (settings.enableMozillaAdsClient) {
-            sendMozAdsImpressionInteraction(impressionUrl = topSite.impressionUrl)
-        } else {
-            sendMarsTopSiteCallback(topSite.impressionUrl)
-        }
+        sendMozAdsImpressionInteraction(impressionUrl = topSite.impressionUrl)
 
         TopSites.contileImpression.record(
             TopSites.ContileImpressionExtra(
                 position = position + 1,
-                source = "newtab",
+                source = source.sourceName,
             ),
         )
 
@@ -354,12 +384,6 @@ class DefaultTopSiteController(
         topSite.title?.let { TopSites.contileAdvertiser.set(it.lowercase()) }
 
         Pings.topsitesImpression.submit()
-    }
-
-    private fun sendMarsTopSiteCallback(url: String) {
-        viewLifecycleScope.launch {
-            marsUseCases.recordInteraction(url)
-        }
     }
 
     private fun sendMozAdsClickInteraction(clickUrl: String) {
@@ -375,12 +399,16 @@ class DefaultTopSiteController(
     }
 
     override fun handleTopSiteSettingsClicked() {
-        TopSites.contileSettings.record(NoExtras())
+        TopSites.contileSettings.record(
+            TopSites.ContileSettingsExtra(source = source.sourceName),
+        )
         navController.navigate(R.id.homeSettingsFragment)
     }
 
     override fun handleSponsorPrivacyClicked() {
-        TopSites.contileSponsorsAndPrivacy.record(NoExtras())
+        TopSites.contileSponsorsAndPrivacy.record(
+            TopSites.ContileSponsorsAndPrivacyExtra(source = source.sourceName),
+        )
 
         if (navController.currentDestination?.id == R.id.shortcutsFragment) {
             navController.navigate(ShortcutsFragmentDirections.actionShortcutsFragmentToBrowserFragment())
@@ -396,7 +424,9 @@ class DefaultTopSiteController(
     }
 
     override fun handleTopSiteLongClicked(topSite: TopSite) {
-        TopSites.longPress.record(TopSites.LongPressExtra(topSite.type))
+        TopSites.longPress.record(
+            TopSites.LongPressExtra(type = topSite.type, source = source.sourceName),
+        )
     }
 
     override fun handleShowAllTopSitesClicked() {
@@ -410,7 +440,16 @@ class DefaultTopSiteController(
         ShortcutsLibrary.viewed.record(NoExtras())
     }
 
-    override fun handleSaveShortcut(title: String, url: String) {
+    override fun handleSaveShortcut(
+        title: String,
+        url: String,
+        source: AddShortcutSource,
+        entryPoint: AddShortcutEntryPoint,
+    ) {
+        appStore.dispatch(
+            ShortcutAction.ShortcutAdded(source = source, entryPoint = entryPoint),
+        )
+
         viewLifecycleScope.launch {
             topSitesUseCases.addPinnedSites(
                 title = title,

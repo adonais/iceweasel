@@ -130,7 +130,7 @@ nsresult Text::BindToTree(BindContext& aContext, nsINode& aParent) {
   nsresult rv = CharacterData::BindToTree(aContext, aParent);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  SetDirectionFromNewTextNode(this);
+  SetDirectionFromNewTextNode(this, &aParent);
 
   return NS_OK;
 }

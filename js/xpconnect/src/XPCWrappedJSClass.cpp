@@ -4,18 +4,6 @@
 
 /* Sharable code and data for wrapper around JSObjects. */
 
-#include "xpcprivate.h"
-#include "js/CallAndConstruct.h"  // JS_CallFunctionValue
-#include "js/Object.h"            // JS::GetClass
-#include "js/Printf.h"
-#include "js/PropertyAndElement.h"  // JS_Enumerate, JS_GetProperty, JS_GetPropertyById, JS_HasProperty, JS_HasPropertyById, JS_SetProperty, JS_SetPropertyById
-#include "nsArrayEnumerator.h"
-#include "nsINamed.h"
-#include "nsIScriptError.h"
-#include "nsWrapperCache.h"
-#include "AccessCheck.h"
-#include "nsJSUtils.h"
-#include "nsPrintfCString.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/BindingUtils.h"
@@ -24,8 +12,21 @@
 #include "mozilla/dom/DOMExceptionBinding.h"
 #include "mozilla/dom/MozQueryInterface.h"
 
+#include "AccessCheck.h"
 #include "jsapi.h"
 #include "jsfriendapi.h"
+#include "nsArrayEnumerator.h"
+#include "nsINamed.h"
+#include "nsIScriptError.h"
+#include "nsJSUtils.h"
+#include "nsPrintfCString.h"
+#include "nsWrapperCache.h"
+#include "xpcprivate.h"
+
+#include "js/CallAndConstruct.h"  // JS_CallFunctionValue
+#include "js/Object.h"            // JS::GetClass
+#include "js/Printf.h"
+#include "js/PropertyAndElement.h"  // JS_Enumerate, JS_GetProperty, JS_GetPropertyById, JS_HasProperty, JS_HasPropertyById, JS_SetProperty, JS_SetPropertyById
 
 using namespace xpc;
 using namespace JS;

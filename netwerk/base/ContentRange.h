@@ -6,8 +6,8 @@
 #define ContentRange_h_
 
 #include "nsContentUtils.h"
-#include "nsString.h"
 #include "nsISupportsImpl.h"
+#include "nsString.h"
 
 // nsIBaseChannel subclasses may support range headers when accessed via
 // Fetch or XMLHTTPRequest, even if they are not HTTP assets and so do not

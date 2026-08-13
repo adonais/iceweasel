@@ -347,8 +347,7 @@ bool WebGLContext::IsExtensionSupported(WebGLExtensionID ext) const {
              !gl->IsANGLE();
 
     case WebGLExtensionID::WEBGL_compressed_texture_pvrtc:
-      return gl->IsExtensionSupported(
-          gl::GLContext::IMG_texture_compression_pvrtc);
+      return false;
 
     case WebGLExtensionID::WEBGL_compressed_texture_s3tc:
       return WebGLExtensionCompressedTextureS3TC::IsSupported(this);

@@ -191,7 +191,7 @@ add_task(async function toggleRememberSignonNew() {
       info("waiting for pref to change");
       await prefChanged;
       ok(!checkbox.checked, "#savePasswords checkbox is un-checked");
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => generationCheckbox.disabled,
         "generation checkbox becomes disabled",
         200

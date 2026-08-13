@@ -3,13 +3,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/image/ImageUtils.h"
+
 #include "DecodePool.h"
 #include "Decoder.h"
 #include "DecoderFactory.h"
 #include "IDecodingTask.h"
 #include "mozilla/AppShutdown.h"
-#include "mozilla/gfx/2D.h"
 #include "mozilla/Logging.h"
+#include "mozilla/gfx/2D.h"
 #include "nsNetUtil.h"
 #include "nsStreamUtils.h"
 

@@ -36,6 +36,11 @@ der_indefinite_length(unsigned char *buf, unsigned char *end)
             if (lenCode & 0x80) {
                 /* Length of data is in multibyte format */
                 dataLenLen = lenCode & 0x7f;
+                if (dataLenLen < 1 || dataLenLen > 4 ||
+                    buf + dataLenLen > end) {
+                    PORT_SetError(SEC_ERROR_BAD_DER);
+                    return SECFailure;
+                }
                 switch (dataLenLen) {
                     case 1:
                         dataLen = buf[0];
@@ -140,6 +145,12 @@ der_capture(unsigned char *buf, unsigned char *end,
 
         bytes_of_encoded_len = contents_len & 0x7f;
         contents_len = 0;
+
+        if (bytes_of_encoded_len > 4 ||
+            (bytes_of_encoded_len > 0 && bp + bytes_of_encoded_len > end)) {
+            PORT_SetError(SEC_ERROR_BAD_DER);
+            return SECFailure;
+        }
 
         switch (bytes_of_encoded_len) {
             case 4:

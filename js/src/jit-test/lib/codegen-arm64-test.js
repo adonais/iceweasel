@@ -3,57 +3,29 @@
 
 load(libdir + "codegen-test-common.js");
 
-// End of prologue
-var arm64_prefix = `
+const arm64_arch = {
+    name: "arm64",
+
+    // End of prologue
+    prefix: `
 mov     x29, sp
 mov     x20, sp(
 str     x23, \\[x29, #16\\])?
-`;
+`,
 
-// Start of epilogue
-var arm64_suffix = `
+    // Start of epilogue
+    suffix: `
 ldp     x29, x30, \\[sp\\], #16
-`;
+`,
+
+    // Instruction encoding
+    encoding: `${HEX}{8}`,
+};
 
 // For when nothing else applies: `module_text` is the complete source text of
 // the module, `export_name` is the name of the function to be tested,
 // `expected` is the non-preprocessed pattern, and options is an options bag,
-// described above.
+// described in codegen-x64-test.js.
 function codegenTestARM64_adhoc(module_text, export_name, expected, options = {}) {
-    assertEq(hasDisassembler(), true);
-
-    let ins = wasmEvalText(module_text, {}, options.features);
-    if (options.instanceBox)
-        options.instanceBox.value = ins;
-    let output = wasmDis(ins.exports[export_name], {tier:"ion", asString:true});
-
-    const expected_initial = expected;
-    if (!options.no_prefix)
-        expected = arm64_prefix + '\n' + expected;
-    if (!options.no_suffix)
-        expected = expected + '\n' + arm64_suffix;
-    expected = fixlines(expected);
-
-    const output_simple = stripencoding(output, `${HEX}{8}`);
-    const output_matches_expected = output_simple.match(new RegExp(expected)) != null;
-    if (!output_matches_expected) {
-        print("---- codegen-arm64-test.js: TEST FAILED ----");
-    }
-    if (options.log && output_matches_expected) {
-        print("---- codegen-arm64-test.js: TEST PASSED ----");
-    }
-    if (options.log || !output_matches_expected) {
-        print("---- module text");
-        print(module_text);
-        print("---- actual");
-        print(output);
-        print("---- expected (initial)");
-        print(expected_initial);
-        print("---- expected (as used)");
-        print(expected);
-        print("----");
-    }
-
-    assertEq(output_matches_expected, true);
+    codegenTestShared_adhoc(arm64_arch, module_text, export_name, expected, options);
 }
-

@@ -305,16 +305,17 @@ namespace xsimd
                                              convert<T>, Mode, requires_arch<avx512f>) noexcept
         {
             constexpr auto half = batch<T, A>::size / 2;
-            XSIMD_IF_CONSTEXPR(mask.countl_zero() >= half) // lower-half AVX2 forwarding
+            using half_arch = typename ::xsimd::make_sized_batch_t<T, half>::arch_type;
+            XSIMD_IF_CONSTEXPR(mask.countl_zero() >= half) // lower 256-bit half
             {
-                constexpr auto mlo = ::xsimd::detail::lower_half<avx2>(mask);
-                const auto lo = load_masked<avx2>(mem, mlo, convert<T> {}, Mode {}, avx2 {});
+                constexpr auto mlo = ::xsimd::detail::lower_half<half_arch>(mask);
+                const auto lo = load_masked<half_arch>(mem, mlo, convert<T> {}, Mode {}, half_arch {});
                 return detail::load_masked(lo); // zero-extend low half
             }
-            else XSIMD_IF_CONSTEXPR(mask.countr_zero() >= half) // upper-half AVX2 forwarding
+            else XSIMD_IF_CONSTEXPR(mask.countr_zero() >= half) // upper 256-bit half
             {
-                constexpr auto mhi = ::xsimd::detail::upper_half<avx2>(mask);
-                const auto hi = load_masked<avx2>(mem + half, mhi, convert<T> {}, Mode {}, avx2 {});
+                constexpr auto mhi = ::xsimd::detail::upper_half<half_arch>(mask);
+                const auto hi = load_masked<half_arch>(mem + half, mhi, convert<T> {}, Mode {}, half_arch {});
                 return detail::load_masked(hi, detail::high_tag {});
             }
             else
@@ -332,17 +333,19 @@ namespace xsimd
                                        Mode, requires_arch<avx512f>) noexcept
         {
             constexpr auto half = batch<T, A>::size / 2;
-            XSIMD_IF_CONSTEXPR(mask.countl_zero() >= half) // lower-half AVX2 forwarding
+            using half_batch = ::xsimd::make_sized_batch_t<T, half>;
+            using half_arch = typename half_batch::arch_type;
+            XSIMD_IF_CONSTEXPR(mask.countl_zero() >= half) // lower 256-bit half
             {
-                constexpr auto mlo = ::xsimd::detail::lower_half<avx2>(mask);
-                const auto lo = detail::lower_half(src);
-                store_masked<avx2>(mem, lo, mlo, Mode {}, avx2 {});
+                constexpr auto mlo = ::xsimd::detail::lower_half<half_arch>(mask);
+                const half_batch lo = detail::lower_half(src);
+                store_masked<half_arch>(mem, lo, mlo, Mode {}, half_arch {});
             }
-            else XSIMD_IF_CONSTEXPR(mask.countr_zero() >= half) // upper-half AVX2 forwarding
+            else XSIMD_IF_CONSTEXPR(mask.countr_zero() >= half) // upper 256-bit half
             {
-                constexpr auto mhi = ::xsimd::detail::upper_half<avx2>(mask);
-                const auto hi = detail::upper_half(src);
-                store_masked<avx2>(mem + half, hi, mhi, Mode {}, avx2 {});
+                constexpr auto mhi = ::xsimd::detail::upper_half<half_arch>(mask);
+                const half_batch hi = detail::upper_half(src);
+                store_masked<half_arch>(mem + half, hi, mhi, Mode {}, half_arch {});
             }
             else
             {
@@ -1518,15 +1521,40 @@ namespace xsimd
         {
             // Adapted from https://github.com/serge-sans-paille/fast-bitset-from-bool-array
             // Generate a bitset from an array of boolean.
-            XSIMD_INLINE unsigned char tobitset(unsigned char unpacked[8])
+            template <size_t N>
+            XSIMD_INLINE unsigned char tobitset(unsigned char unpacked[N])
             {
-                uint64_t data;
-                memcpy(&data, unpacked, sizeof(uint64_t));
+                static_assert(N == 8 || N == 4 || N == 2, "valid pack size");
+                XSIMD_IF_CONSTEXPR(N == 8)
+                {
+                    uint64_t data;
+                    memcpy(&data, unpacked, sizeof(uint64_t));
 
-                const uint64_t magic = (0x80 + 0x4000 + 0x200000 + 0x10000000 + 0x0800000000 + 0x040000000000 + 0x02000000000000 + 0x0100000000000000);
+                    const uint64_t magic = (0x80 + 0x4000 + 0x200000 + 0x10000000 + 0x0800000000 + 0x040000000000 + 0x02000000000000 + 0x0100000000000000);
 
-                unsigned char res = ((data * magic) >> 56) & 0xFF;
-                return res;
+                    unsigned char res = ((data * magic) >> 56) & 0xFF;
+                    return res;
+                }
+                else XSIMD_IF_CONSTEXPR(N == 4)
+                {
+                    uint32_t data;
+                    memcpy(&data, unpacked, sizeof(uint32_t));
+
+                    const uint32_t magic = (0x80 + 0x4000 + 0x200000 + 0x10000000);
+
+                    unsigned char res = ((data * magic) >> 24) & 0xFF;
+                    return res;
+                }
+                else XSIMD_IF_CONSTEXPR(N == 2)
+                {
+                    uint16_t data;
+                    memcpy(&data, unpacked, sizeof(uint16_t));
+
+                    const uint16_t magic = (0x80 + 0x4000);
+
+                    unsigned char res = ((data * magic) >> 8) & 0xFF;
+                    return res;
+                }
             }
         }
 
@@ -1541,7 +1569,7 @@ namespace xsimd
             register_type mask = 0;
             for (std::size_t i = 0; i < iter; ++i)
             {
-                unsigned char block = detail::tobitset((unsigned char*)mem + i * 8);
+                unsigned char block = detail::tobitset<8>((unsigned char*)mem + i * 8);
                 mask |= (register_type(block) << (i * 8));
             }
             return mask;
@@ -1805,6 +1833,16 @@ namespace xsimd
             return detail::mulhi_i64_core<A>(self, other,
                                              [](batch<uint64_t, A> a, batch<uint64_t, A> b)
                                              { return batch<uint64_t, A>(_mm512_mul_epu32(a, b)); });
+        }
+
+        // mul_hilo
+        template <class A>
+        XSIMD_INLINE std::pair<batch<uint64_t, A>, batch<uint64_t, A>>
+        mul_hilo(batch<uint64_t, A> const& self, batch<uint64_t, A> const& other, requires_arch<avx512f>) noexcept
+        {
+            return detail::mulhilo_u64_core<A>(self, other,
+                                               [](batch<uint64_t, A> a, batch<uint64_t, A> b)
+                                               { return batch<uint64_t, A>(_mm512_mul_epu32(a, b)); });
         }
 
         // nearbyint

@@ -3,21 +3,20 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/SandboxSettings.h"
-#include "mozISandboxSettings.h"
-#include "nsServiceManagerUtils.h"
-#include "nsAppRunner.h"
 
+#include "mozISandboxSettings.h"
 #include "mozilla/Components.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPrefs_security.h"
-
+#include "nsAppRunner.h"
+#include "nsServiceManagerUtils.h"
 #include "prenv.h"
 
 #ifdef XP_WIN
-#  include "nsExceptionHandler.h"
 #  include "PDMFactory.h"
+#  include "nsExceptionHandler.h"
 #endif  // XP_WIN
 
 using namespace mozilla;

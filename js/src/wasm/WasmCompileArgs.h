@@ -239,8 +239,6 @@ struct CompileArgs : ShareableBase<CompileArgs> {
   // - two through factory functions `build`/`buildAndReport`, which checks
   //   that flags are consistent with each other, and optionally reports any
   //   errors.
-  // - the 'buildForAsmJS' one, which uses the appropriate configuration for
-  //   legacy asm.js code.
   // - the 'buildForValidation' one, which takes just the features to enable
   //   and sets the compilers to a null state.
   // - one that gives complete access to underlying fields.
@@ -252,7 +250,6 @@ struct CompileArgs : ShareableBase<CompileArgs> {
   static SharedCompileArgs build(JSContext* cx, ScriptedCaller&& scriptedCaller,
                                  const FeatureOptions& options,
                                  CompileArgsError* error);
-  static SharedCompileArgs buildForAsmJS(ScriptedCaller&& scriptedCaller);
   static SharedCompileArgs buildAndReport(JSContext* cx,
                                           ScriptedCaller&& scriptedCaller,
                                           const FeatureOptions& options,

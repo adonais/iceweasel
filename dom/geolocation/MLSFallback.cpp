@@ -34,7 +34,13 @@ mozilla::glean::geolocation::FallbackLabel MapReasonToLabel(
 
 nsresult MLSFallback::Startup(nsIGeolocationUpdate* aWatcher,
                               FallbackReason aReason) {
-  if (mHandoffTimer || mMLSFallbackProvider) {
+  if (mMLSFallbackProvider) {
+    // The fallback network provider is already running. Re-run startup()
+    // so this fresh request restarts the provider's failure backoff.
+    mMLSFallbackProvider->Startup();
+    return NS_OK;
+  }
+  if (mHandoffTimer) {
     return NS_OK;
   }
 

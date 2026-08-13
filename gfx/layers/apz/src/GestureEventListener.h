@@ -6,6 +6,7 @@
 #define mozilla_layers_GestureEventListener_h
 
 #include <iosfwd>
+
 #include "InputData.h"  // for MultiTouchInput, etc
 #include "Units.h"
 #include "mozilla/EventForwards.h"  // for nsEventStatus

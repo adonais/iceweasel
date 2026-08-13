@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<link rel="help" href="https://bugzilla.mozilla.org/show_bug.cgi?id=2045604">
+<link rel="match" href="mozPrintCallback-rect-001-print-ref.html">
+<style>
+  canvas {
+    background: yellow;
+  }
+</style>
+<canvas id="myCanvas" width="80" height="80"></canvas>
+<script>
+  function getGlobal(obj) {
+    return Object.getPrototypeOf(obj).constructor.constructor("return globalThis")();
+  }
+  let myCanvas = document.getElementById("myCanvas");
+  myCanvas.mozPrintCallback = function (obj) {
+    let ctx = obj.context;
+    let globalMatches = getGlobal(ctx) == getGlobal(myCanvas) &&
+                        getGlobal(obj) == getGlobal(myCanvas);
+    ctx.fillStyle = globalMatches ? "cyan" : "red";
+    ctx.fillRect(0, 0, 60, 60);
+    obj.done();
+  }
+</script>

@@ -28,6 +28,7 @@
 
 #if defined(XP_WIN)
 #  include <winternl.h>  // must include before util/WindowsWrapper.h's `#undef`s
+
 #  include "util/WindowsWrapper.h"
 #elif defined(XP_DARWIN)
 #  include <mach/exc.h>
@@ -750,8 +751,7 @@ static void MachExceptionHandlerThread() {
     // the kernel. The kernel is waiting for us to reply with instructions.
     // Our default is the "not handled" reply (by setting the RetCode field
     // of the reply to KERN_FAILURE) which tells the kernel to continue
-    // searching at the process and system level. If this is an asm.js
-    // expected exception, we handle it and return KERN_SUCCESS.
+    // searching at the process and system level.
     bool handled = HandleMachException(request);
     kern_return_t replyCode = handled ? KERN_SUCCESS : KERN_FAILURE;
 

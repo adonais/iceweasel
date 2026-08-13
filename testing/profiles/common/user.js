@@ -23,6 +23,10 @@ user_pref("browser.newtabpage.activity-stream.fxaccounts.endpoint", "");
 // Background thumbnails in particular cause grief, and disabling thumbnails
 // in general can't hurt - we re-enable them when tests need them.
 user_pref("browser.pagethumbnails.capturing_disabled", true);
+// Preonboarding (the first-run modal and splash) is enabled by default; disable
+// it for tests so it doesn't interfere. Tests that exercise preonboarding
+// enable it explicitly.
+user_pref("browser.preonboarding.enabled", false);
 // Tell the search service we are running in the US.  This also has the desired
 // side-effect of preventing our geoip lookup.
 user_pref("browser.search.region", "US");

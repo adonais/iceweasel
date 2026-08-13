@@ -23,8 +23,8 @@ import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.openToBrowser
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.webcompat.GOOGLE_SAFE_BROWSING_REPORT_URL
 import org.mozilla.fenix.webcompat.WEB_COMPAT_REPORTER_SUMO_URL
-import org.mozilla.fenix.webcompat.WEB_COMPAT_REPORTER_URL
 import org.mozilla.fenix.webcompat.di.WebCompatReporterMiddlewareProvider
 import org.mozilla.fenix.webcompat.store.WebCompatReporterAction
 import org.mozilla.fenix.webcompat.store.WebCompatReporterState
@@ -78,17 +78,19 @@ class WebCompatReporterFragment : Fragment(), SystemInsetsPaddedFragment {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 webCompatReporterStore.navEvents.collect { navEvent ->
                     when (navEvent) {
-                        is WebCompatReporterAction.SendMoreInfoSubmitted -> {
-                            findNavController().openToBrowser()
-                            requireComponents.useCases.fenixBrowserUseCases.loadUrlOrSearch(
-                                searchTermOrURL = "$WEB_COMPAT_REPORTER_URL${webCompatReporterStore.state.enteredUrl}",
-                                newTab = true,
-                            )
-                        }
                         is WebCompatReporterAction.LearnMoreClicked -> {
                             findNavController().openToBrowser()
                             requireComponents.useCases.fenixBrowserUseCases.loadUrlOrSearch(
                                 searchTermOrURL = WEB_COMPAT_REPORTER_SUMO_URL,
+                                newTab = true,
+                            )
+                        }
+                        is WebCompatReporterAction.DeceptiveSiteReportSelected -> {
+                            requireView().hideKeyboard()
+                            findNavController().openToBrowser()
+                            requireComponents.useCases.fenixBrowserUseCases.loadUrlOrSearch(
+                                searchTermOrURL =
+                                    "$GOOGLE_SAFE_BROWSING_REPORT_URL${webCompatReporterStore.state.enteredUrl}",
                                 newTab = true,
                             )
                         }
@@ -101,8 +103,6 @@ class WebCompatReporterFragment : Fragment(), SystemInsetsPaddedFragment {
                             val directions = WebCompatReporterFragmentDirections.actionGlobalBrowser()
                             findNavController().navigate(directions)
                         }
-                        is WebCompatReporterAction.BackPressed ->
-                            findNavController().popBackStack()
                     }
                 }
             }

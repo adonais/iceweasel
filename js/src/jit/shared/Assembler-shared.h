@@ -539,7 +539,7 @@ struct SymbolicAccess {
 
 using SymbolicAccessVector = Vector<SymbolicAccess, 0, SystemAllocPolicy>;
 
-// Describes a single wasm or asm.js memory access for the purpose of generating
+// Describes a single wasm memory access for the purpose of generating
 // code and metadata.
 
 class MemoryAccessDesc {

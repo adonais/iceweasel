@@ -10,6 +10,19 @@
   --smartwindow-text-color-accent-deemphasized: light-dark(var(--color-violet-60), var(--color-violet-30));
   --smartwindow-border-color-gradient: linear-gradient(117deg, #321bfd -17.87%, #cf30e2 52.93%, #f90 89.02%, #f5c451 109.44%);
 
+  /* Non-nova dark-theme ghost chrome buttons (history menu, new chat, close).
+     The dark fill approximates the design's #734d8d, which has no single
+     matching token, by desaturating purple toward a dark gray. */
+  --smartwindow-ghost-button-fill-dark: color-mix(in oklab, var(--color-purple-70) 50%, var(--color-gray-70));
+  --smartwindow-ghost-button-background: light-dark(var(--color-white), var(--color-purple-100));
+  --smartwindow-ghost-button-background-hover: light-dark(var(--color-violet-20), var(--smartwindow-ghost-button-fill-dark));
+  --smartwindow-ghost-button-background-active: light-dark(var(--color-violet-30), var(--smartwindow-ghost-button-fill-dark));
+  --smartwindow-ghost-button-text: light-dark(var(--color-violet-90), var(--button-text-color));
+  /* Nova uses the light violet token rather than moz-button's default text. */
+  @media -moz-pref("browser.nova.enabled") {
+    --smartwindow-ghost-button-text: light-dark(var(--color-violet-90), var(--color-violet-0));
+  }
+
   /* Override box-shadow-level-2 with custom colors */
   --box-shadow-color-lighter-layer-1: color-mix(in srgb, var(--color-violet-50) 15%, transparent);
   --box-shadow-color-lighter-layer-2: color-mix(in srgb, var(--color-violet-50) 25%, transparent);
@@ -23,10 +36,21 @@
     --smartwindow-text-color-accent-primary: var(--text-color);
     --smartwindow-icon-color-accent-primary-desaturated: var(--icon-color);
 
+    --smartwindow-panel-item-border-radius: var(--border-radius-xlarge);
+
     @media not (forced-colors) {
       /* Smart Window Nova Tokens */
       --smartwindow-text-color-accent-primary: light-dark(var(--color-violet-60), var(--color-violet-30));
       --smartwindow-icon-color-accent-primary-desaturated: light-dark(var(--color-violet-desaturated-60), var(--color-violet-desaturated-50));
+
+      --smartwindow-panel-item-background-color-hover: light-dark(
+        color-mix(in srgb, var(--color-violet-60) 15%, transparent),
+        color-mix(in srgb, var(--color-violet-40) 25%, transparent)
+      );
+      --smartwindow-panel-item-background-color-active: light-dark(
+        color-mix(in srgb, var(--color-violet-60) 27%, transparent),
+        color-mix(in srgb, var(--color-violet-40) 40%, transparent)
+      );
 
       --box-shadow-color-lighter-layer-1: color-mix(in srgb, var(--color-violet-70) 15%, transparent);
       --box-shadow-color-lighter-layer-2: color-mix(in srgb, var(--color-violet-70) 24%, transparent);

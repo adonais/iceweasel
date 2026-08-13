@@ -46,30 +46,37 @@
     <menuitem id="context_reverseSplitView"
       data-lazy-l10n-id="tab-context-reverse-split-view"
       hidden="true"/>
-    <menuseparator/>
-    <menuitem id="context_reloadTab" data-lazy-l10n-id="reload-tab"/>
+    <menuseparator id="context_openAndOrganizeSeparator"/>
+    <menuitem id="context_reloadTab" data-lazy-l10n-id="reload-tab" data-alt-l10n-id="reload-tab2"/>
     <menuitem id="context_reloadSelectedTabs" data-lazy-l10n-id="reload-tabs" hidden="true"/>
     <menuitem id="context_playTab" data-lazy-l10n-id="tab-context-play-tab" hidden="true"/>
     <menuitem id="context_playSelectedTabs" data-lazy-l10n-id="tab-context-play-tabs" hidden="true"/>
     <menuitem id="context_toggleMuteTab" />
     <menuitem id="context_toggleMuteSelectedTabs" hidden="true"/>
-    <menuitem id="context_pinTab" data-lazy-l10n-id="pin-tab"/>
-    <menuitem id="context_unpinTab" data-lazy-l10n-id="unpin-tab" hidden="true"/>
+    <menuitem id="context_pinTab" data-lazy-l10n-id="pin-tab" data-alt-l10n-id="tab-context-pin-tab2"/>
+    <menuitem id="context_unpinTab" data-lazy-l10n-id="unpin-tab" data-alt-l10n-id="tab-context-unpin-tab2" hidden="true"/>
     <menuitem id="context_pinSelectedTabs" data-lazy-l10n-id="pin-selected-tabs" hidden="true"/>
     <menuitem id="context_unpinSelectedTabs" data-lazy-l10n-id="unpin-selected-tabs" hidden="true"/>
     <menuitem id="context_unloadTab"
               data-lazy-l10n-id="tab-context-unload-n-tabs"
-              data-l10n-args='{"tabCount": 1}'/>
-    <menuitem id="context_duplicateTab" data-lazy-l10n-id="duplicate-tab"/>
-    <menuitem id="context_duplicateTabs" data-lazy-l10n-id="duplicate-tabs"/>
-    <menuseparator/>
+              data-l10n-args='{"tabCount": 1}'
+              data-alt-l10n-id="tab-context-unload-tabs"/>
+    <menuitem id="context_duplicateTab" data-lazy-l10n-id="duplicate-tab" data-alt-l10n-id="duplicate-tab2"/>
+    <menuitem id="context_duplicateTabs" data-lazy-l10n-id="duplicate-tabs" data-alt-l10n-id="duplicate-tabs2"/>
+    <menuseparator id="context_tabStateSeparator"/>
     <menu id="context_askChat"/>
-    <menuseparator/>
+    <!-- Flat "Summarize Page" item used by the alternate tab context menu layout
+         in place of the #context_askChat submenu. Populated by
+         GenAI.buildTabSummarizeItem; hidden by default. -->
+    <menuitem id="context_askChatSummarize" hidden="true"/>
+    <menuseparator id="context_aiSeparator"/>
     <menuitem id="context_bookmarkSelectedTabs"
               hidden="true"
-              data-lazy-l10n-id="bookmark-selected-tabs"/>
+              data-lazy-l10n-id="bookmark-selected-tabs"
+              data-alt-l10n-id="tab-context-bookmark-tab2"/>
     <menuitem id="context_bookmarkTab"
-              data-lazy-l10n-id="tab-context-bookmark-tab"/>
+              data-lazy-l10n-id="tab-context-bookmark-tab"
+              data-alt-l10n-id="tab-context-bookmark-tab2"/>
     <menuitem id="context_addNote" hidden="true" data-lazy-l10n-id="tab-context-add-note" />
     <menuitem id="context_editNote" hidden="true" data-lazy-l10n-id="tab-context-edit-note" />
     <menu id="context_moveTabOptions"
@@ -85,15 +92,18 @@
         <menuitem id="context_openTabInWindow" data-lazy-l10n-id="move-to-new-window"
                   tbattr="tabbrowser-multiple-visible"/>
         <menuseparator id="moveTabSeparator" hidden="true"/>
+        <menuseparator id="context_moveTabToGroupSeparator" hidden="true"/>
+        <menuseparator id="context_selectAllSeparator" hidden="true"/>
       </menupopup>
     </menu>
     <menu id="context_reopenInContainer"
           data-lazy-l10n-id="tab-context-open-in-new-container-tab"
+          data-alt-l10n-id="tab-context-open-in-new-container-tab2"
           hidden="true">
       <menupopup id="context_reopenInContainerPopupMenu"/>
     </menu>
     <menuitem id="context_selectAllTabs" data-lazy-l10n-id="select-all-tabs"/>
-    <menuseparator/>
+    <menuseparator id="context_tabToolsSeparator"/>
     <menuitem id="context_shareSelectedTabs"
           hidden="true"
           data-lazy-l10n-id="tab-context-share-selected-tabs"/>
@@ -107,11 +117,14 @@
     <menuseparator id="context_sendTabToDeviceSeparator" class="sync-ui-item"/>
     <menuitem id="context_closeTab"
               data-lazy-l10n-id="tab-context-close-n-tabs"
+              data-alt-l10n-id="tab-context-close-n-tabs2"
               data-l10n-args='{"tabCount": 1}'/>
     <menuitem id="context_closeDuplicateTabs"
-              data-lazy-l10n-id="tab-context-close-duplicate-tabs"/>
+              data-lazy-l10n-id="tab-context-close-duplicate-tabs"
+              data-alt-l10n-id="tab-context-close-duplicate-tabs2"/>
     <menu id="context_closeTabOptions"
-          data-lazy-l10n-id="tab-context-close-multiple-tabs">
+          data-lazy-l10n-id="tab-context-close-multiple-tabs"
+          data-alt-l10n-id="tab-context-close-multiple-tabs2">
       <menupopup id="closeTabOptions">
         <menuitem id="context_closeTabsToTheStart" data-lazy-l10n-id="close-tabs-to-the-start"/>
         <menuitem id="context_closeTabsToTheEnd" data-lazy-l10n-id="close-tabs-to-the-end"/>
@@ -122,7 +135,7 @@
               data-lazy-l10n-id="tab-context-reopen-closed-tabs"
               data-l10n-args='{"tabCount": 1}'
               command="History:UndoCloseTab"/>
-    <menuseparator contexttype="fullscreen"/>
+    <menuseparator id="context_fullscreenSeparator" contexttype="fullscreen"/>
     <menuitem id="context_fullscreenAutohide"
               class="fullscreen-context-autohide"
               contexttype="fullscreen"
@@ -136,6 +149,7 @@
   <menupopup id="open-tab-group-context-menu">
     <menuitem id="open-tab-group-context-menu_moveToThisWindow" data-l10n-id="tab-group-context-move-to-this-window"/>
     <menuitem id="open-tab-group-context-menu_moveToNewWindow" data-l10n-id="tab-group-context-move-to-new-window"/>
+    <menuitem id="open-tab-group-context-menu_share" data-l10n-id="tab-group-context-share-group" data-l10n-attrs="badge" class="badge-new" hidden="true"/>
     <menuitem id="open-tab-group-context-menu_delete" data-l10n-id="tab-group-context-delete"/>
   </menupopup>
 
@@ -743,9 +757,33 @@
   </menupopup>
 
   <menupopup id="userContext-indicator-menu">
+    <menuitem data-l10n-id="user-context-add-container"
+              command="Browser:AddContainer"/>
     <menuitem data-l10n-id="user-context-manage-containers"
               command="Browser:OpenAboutContainers"/>
   </menupopup>
+
+  <panel id="containerCreation-panel"
+         class="panel-no-padding"
+         type="arrow"
+         orient="vertical"
+         role="dialog"
+         aria-labelledby="containerCreation-panel-title">
+    <box class="panel-header">
+      <html:h1 id="containerCreation-panel-title">
+        <html:span data-l10n-id="containers-panel-title"/>
+      </html:h1>
+    </box>
+    <toolbarseparator/>
+    <vbox id="containerCreation-panel-body" class="panel-subview-body"/>
+    <html:moz-button-group class="panel-footer">
+      <html:moz-button id="containerCreation-cancel-button"
+                       data-l10n-id="containers-panel-cancel-button"/>
+      <html:moz-button id="containerCreation-create-button"
+                       type="primary"
+                       data-l10n-id="containers-panel-create-button"/>
+    </html:moz-button-group>
+  </panel>
 
 #include ../../components/places/content/bookmarksHistoryTooltip.inc.xhtml
 

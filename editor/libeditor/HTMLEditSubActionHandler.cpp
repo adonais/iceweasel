@@ -644,8 +644,9 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
     }
   }
 
-  // Browser should not handle spell check for EditContext
-  if (!GetEditContext()) {
+  // For EditContext, the DOM is not directly updated by libeditor, so
+  // don't run spellcheck here.
+  if (!GetEditActionEditContext()) {
     rv = HandleInlineSpellCheck(
         TopLevelEditSubActionDataRef().mSelectedRange->StartPoint(),
         TopLevelEditSubActionDataRef().mChangedRange);
@@ -879,7 +880,7 @@ nsresult HTMLEditor::MaybeCreatePaddingBRElementForEmptyEditor() {
   }
 
   // Skip adding <br> element for EditContext editors.
-  if (GetEditContext()) {
+  if (GetEditActionEditContext()) {
     return NS_OK;
   }
 
@@ -1030,9 +1031,14 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
 
   UndefineCaretBidiLevel();
 
-  if (RefPtr editContext = GetEditContext()) {
+  if (RefPtr editContext = GetEditActionEditContext()) {
     uint32_t start = editContext->SelectionStart();
     uint32_t end = editContext->SelectionEnd();
+    RefPtr<nsFrameSelection> frameSelection =
+        SelectionRef().GetFrameSelection();
+    if (NS_WARN_IF(!frameSelection)) {
+      return Err(NS_ERROR_FAILURE);
+    }
     if (InsertingTextForComposition(aPurpose)) {
       MOZ_ASSERT(mComposition);
       if (mComposition->GetContainerTextNode()) {
@@ -1046,9 +1052,18 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
     if (NS_WARN_IF(Destroyed())) {
       return Err(NS_ERROR_EDITOR_DESTROYED);
     }
-    if (editContext != GetEditContext()) {
+    if (EditContextChangedSinceStartOfEditAction()) {
       // textupdate handler deactivated this EditContext
       return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+    }
+
+    // Set caret association to "before" after text insertion.
+    // Without this, the caret will not be next to the
+    // inserted text when inserting LTR into RTL, for example.
+    // However, we don't do this if the web app changed the text next to the
+    // caret, since in that case this may not be a simple insertion.
+    if (!editContext->WasTextNextToCaretChangedByTextUpdateHandler()) {
+      frameSelection->SetHint(CaretAssociationHint::Before);
     }
     return EditActionResult::HandledResult();
   }
@@ -7514,8 +7529,12 @@ HTMLEditor::GetRangeExtendedToHardLineEdgesForBlockEditAction(
   // if the adjusted locations "cross" the old values: i.e., new end before old
   // start, or new start after old end.  If so then just leave things alone.
 
-  Maybe<int32_t> comp = nsContentUtils::ComparePoints(
-      startPoint.ToRawRangeBoundary(), newRange.EndRef().ToRawRangeBoundary());
+  // XXX Should use TreeKind::DOM? Editable state won't cross shadow DOM
+  // boundaries.
+  Maybe<int32_t> comp =
+      nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+          startPoint.ToRawRangeBoundary(),
+          newRange.EndRef().ToRawRangeBoundary());
 
   if (NS_WARN_IF(!comp)) {
     return Err(NS_ERROR_FAILURE);
@@ -7525,8 +7544,8 @@ HTMLEditor::GetRangeExtendedToHardLineEdgesForBlockEditAction(
     return EditorRawDOMRange();  // New end before old start.
   }
 
-  comp = nsContentUtils::ComparePoints(newRange.StartRef().ToRawRangeBoundary(),
-                                       endPoint.ToRawRangeBoundary());
+  comp = nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+      newRange.StartRef().ToRawRangeBoundary(), endPoint.ToRawRangeBoundary());
 
   if (NS_WARN_IF(!comp)) {
     return Err(NS_ERROR_FAILURE);

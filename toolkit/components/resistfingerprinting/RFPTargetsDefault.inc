@@ -13,6 +13,20 @@ DESKTOP_DEFAULT(ScreenAvailToResolution)
 DESKTOP_DEFAULT(NavigatorHWConcurrencyTiered)
 DESKTOP_DEFAULT(MaxTouchPointsCollapse)
 
+#ifdef NIGHTLY_BUILD
+// All WebGL Vendor targets are included; however
+// Randomize overrides Constant which overrides Sanitize.
+// We include them all so that relaxing one will still enforce the others
+DESKTOP_DEFAULT(WebGLRendererConstant)
+DESKTOP_DEFAULT(WebGLVendorRandomize)
+DESKTOP_DEFAULT(WebGLVendorConstant)
+DESKTOP_DEFAULT(WebGLVendorSanitize)
+ANDROID_DEFAULT(WebGLRendererConstant)
+ANDROID_DEFAULT(WebGLVendorRandomize)
+ANDROID_DEFAULT(WebGLVendorConstant)
+ANDROID_DEFAULT(WebGLVendorSanitize)
+#endif
+
 ANDROID_DEFAULT(CanvasRandomization)
 ANDROID_DEFAULT(EfficientCanvasRandomization)
 ANDROID_DEFAULT(FontVisibilityLangPack)

@@ -5,8 +5,9 @@
 #ifndef mozilla_PoisonIOInterposer_h
 #define mozilla_PoisonIOInterposer_h
 
-#include "mozilla/Types.h"
 #include <stdio.h>
+
+#include "mozilla/Types.h"
 
 #ifdef _WIN32
 typedef void* platform_handle_t;

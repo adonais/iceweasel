@@ -1,0 +1,11 @@
+diff --git a/include/libyuv/row.h b/include/libyuv/row.h
+--- a/include/libyuv/row.h
++++ b/include/libyuv/row.h
+@@ -601,7 +601,6 @@
+ #define HAS_ARGBTOUVJ444ROW_NEON_I8MM
+ #define HAS_ARGBTOUVJROW_NEON_I8MM
+ #define HAS_ARGBTOUVMATRIXROW_NEON_I8MM
+-#define HAS_RGBTOUVMATRIXROW_NEON
+ #define HAS_ARGBTOUVROW_NEON_I8MM
+ #define HAS_BGRATOUVROW_NEON_I8MM
+ #define HAS_RGBATOUVROW_NEON_I8MM

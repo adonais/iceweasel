@@ -14,15 +14,15 @@
 #include <unordered_set>
 #include <utility>
 
+#include "mozilla/Monitor.h"
+#include "mozilla/StaticPtr.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/Point.h"  // for IntSize
 #include "mozilla/gfx/Types.h"  // for SurfaceFormat
 #include "mozilla/ipc/Shmem.h"
 #include "mozilla/layers/CompositorTypes.h"  // for TextureFlags, etc
 #include "mozilla/layers/LayersSurfaces.h"   // for SurfaceDescriptor
 #include "mozilla/layers/TextureHost.h"
-#include "mozilla/Monitor.h"
-#include "mozilla/StaticPtr.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/webrender/WebRenderTypes.h"
 
 class nsISerialEventTarget;

@@ -1,0 +1,70 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+@import url("chrome://global/skin/design-system/text-and-typography.css");
+
+/* The switcher is only meaningful in "hide-launcher" mode, where there is no
+   launcher to switch panels with. It hides itself everywhere else. */
+:host {
+  display: none;
+  min-width: 0;
+}
+
+@media -moz-pref("sidebar.visibility", "hide-launcher") {
+  :host {
+    display: flex;
+    flex: 1 1 auto;
+  }
+}
+
+.switcher-button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: var(--space-xsmall) var(--space-small);
+  border: none;
+  border-radius: var(--border-radius-small);
+  background-color: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: var(--font-weight-bold);
+
+  &:hover {
+    background-color: var(--button-background-color-ghost-hover);
+  }
+
+  &:active {
+    background-color: var(--button-background-color-ghost-active);
+  }
+
+  &:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-inset);
+  }
+}
+
+.switcher-arrow {
+  flex: 0 0 auto;
+  width: var(--size-item-xsmall);
+  height: var(--size-item-xsmall);
+  -moz-context-properties: fill;
+  fill: currentColor;
+}
+
+/* Match the in-content menulist dropdown (e.g. about:preferences): the hovered
+   and keyboard-active option get a filled highlight instead of the default
+   button-hover color and focus ring. */
+panel-item::part(button):hover,
+panel-item::part(button):focus-visible {
+  background-color: var(--background-color-list-item-hover);
+  color: var(--text-color-list-item-hover);
+  outline: none;
+}
+
+/* Add space between the selected item's checkmark and its label. */
+panel-item::part(label) {
+  padding-inline-start: var(--space-small);
+}

@@ -4,9 +4,9 @@
 
 #include "Types.h"
 
-#include "nsPrintfCString.h"
-
 #include <ostream>
+
+#include "nsPrintfCString.h"
 
 namespace mozilla {
 
@@ -59,6 +59,7 @@ std::ostream& operator<<(std::ostream& aOut, const SurfaceFormat& aFormat) {
     Emit(SurfaceFormat::P016);
     Emit(SurfaceFormat::P010);
     Emit(SurfaceFormat::NV16);
+    Emit(SurfaceFormat::P210);
     Emit(SurfaceFormat::YUY2);
     Emit(SurfaceFormat::HSV);
     Emit(SurfaceFormat::Lab);

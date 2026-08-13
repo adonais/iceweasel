@@ -56,11 +56,7 @@ struct RC2ContextStr {
     R[1] = (PRUint16)input[3] << 8 | input[2]; \
     R[2] = (PRUint16)input[5] << 8 | input[4]; \
     R[3] = (PRUint16)input[7] << 8 | input[6];
-#define LOAD_EASY(R)               \
-    R[0] = ((PRUint16 *)input)[0]; \
-    R[1] = ((PRUint16 *)input)[1]; \
-    R[2] = ((PRUint16 *)input)[2]; \
-    R[3] = ((PRUint16 *)input)[3];
+#define LOAD_EASY(R) memcpy((R), input, RC2_BLOCK_SIZE);
 #define STORE_HARD(R)                 \
     output[0] = (PRUint8)(R[0]);      \
     output[1] = (PRUint8)(R[0] >> 8); \
@@ -70,11 +66,7 @@ struct RC2ContextStr {
     output[5] = (PRUint8)(R[2] >> 8); \
     output[6] = (PRUint8)(R[3]);      \
     output[7] = (PRUint8)(R[3] >> 8);
-#define STORE_EASY(R)               \
-    ((PRUint16 *)output)[0] = R[0]; \
-    ((PRUint16 *)output)[1] = R[1]; \
-    ((PRUint16 *)output)[2] = R[2]; \
-    ((PRUint16 *)output)[3] = R[3];
+#define STORE_EASY(R) memcpy(output, (R), RC2_BLOCK_SIZE);
 
 #if defined(NSS_X86_OR_X64)
 #define LOAD(R) LOAD_EASY(R)

@@ -3,14 +3,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsEnvironment.h"
-#include "prenv.h"
-#include "nsBaseHashtable.h"
-#include "nsHashKeys.h"
-#include "nsPromiseFlatString.h"
-#include "nsDependentString.h"
-#include "nsNativeCharsetUtils.h"
+
 #include "mozilla/Printf.h"
 #include "mozilla/StaticMutex.h"
+#include "nsBaseHashtable.h"
+#include "nsDependentString.h"
+#include "nsHashKeys.h"
+#include "nsNativeCharsetUtils.h"
+#include "nsPromiseFlatString.h"
+#include "prenv.h"
 
 using namespace mozilla;
 

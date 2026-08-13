@@ -16,13 +16,13 @@ diff --git a/sandbox/win/src/restricted_token_utils.cc b/sandbox/win/src/restric
  
  }  // namespace
  
- absl::optional<base::win::AccessToken> CreateRestrictedToken(
+ std::optional<base::win::AccessToken> CreateRestrictedToken(
      TokenLevel security_level,
      IntegrityLevel integrity_level,
      TokenType token_type,
      bool lockdown_default_dacl,
--    const absl::optional<base::win::Sid>& unique_restricted_sid) {
-+    const absl::optional<base::win::Sid>& unique_restricted_sid,
+-    const std::optional<base::win::Sid>& unique_restricted_sid) {
++    const std::optional<base::win::Sid>& unique_restricted_sid,
 +    bool use_restricting_sids) {
    RestrictedToken restricted_token;
    if (lockdown_default_dacl) {
@@ -171,7 +171,7 @@ diff --git a/sandbox/win/src/restricted_token_utils.cc b/sandbox/win/src/restric
 +      }
        break;
      case USER_LAST:
-       return absl::nullopt;
+       return std::nullopt;
    }
  
    if (deny_sids) {
@@ -180,17 +180,17 @@ diff --git a/sandbox/win/src/restricted_token_utils.cc b/sandbox/win/src/restric
 diff --git a/sandbox/win/src/restricted_token_utils.h b/sandbox/win/src/restricted_token_utils.h
 --- a/sandbox/win/src/restricted_token_utils.h
 +++ b/sandbox/win/src/restricted_token_utils.h
-@@ -34,17 +34,18 @@ enum TokenType { IMPERSONATION = 0, PRIM
+@@ -33,17 +33,18 @@ enum TokenType { IMPERSONATION = 0, PRIM
  // other sandboxed processes at the same security level.
  // If the function succeeds, the return value is the restricted token. If it
  // fails then the return value is empty.
- absl::optional<base::win::AccessToken> CreateRestrictedToken(
+ std::optional<base::win::AccessToken> CreateRestrictedToken(
      TokenLevel security_level,
      IntegrityLevel integrity_level,
      TokenType token_type,
      bool lockdown_default_dacl,
--    const absl::optional<base::win::Sid>& unique_restricted_sid);
-+    const absl::optional<base::win::Sid>& unique_restricted_sid,
+-    const std::optional<base::win::Sid>& unique_restricted_sid);
++    const std::optional<base::win::Sid>& unique_restricted_sid,
 +    bool use_restricting_sids);
  
  // Hardens the integrity level policy on a token. Specifically it sets the
@@ -203,8 +203,8 @@ diff --git a/sandbox/win/src/restricted_token_utils.h b/sandbox/win/src/restrict
 diff --git a/sandbox/win/src/sandbox_policy.h b/sandbox/win/src/sandbox_policy.h
 --- a/sandbox/win/src/sandbox_policy.h
 +++ b/sandbox/win/src/sandbox_policy.h
-@@ -101,16 +101,24 @@ class TargetPolicy {
-   virtual ResultCode SetTokenLevel(TokenLevel initial, TokenLevel lockdown) = 0;
+@@ -90,16 +90,24 @@ class TargetPolicy {
+                                                  TokenLevel lockdown) = 0;
  
    // Returns the initial token level.
    virtual TokenLevel GetInitialTokenLevel() const = 0;
@@ -231,7 +231,7 @@ diff --git a/sandbox/win/src/sandbox_policy.h b/sandbox/win/src/sandbox_policy.h
 diff --git a/sandbox/win/src/sandbox_policy_base.cc b/sandbox/win/src/sandbox_policy_base.cc
 --- a/sandbox/win/src/sandbox_policy_base.cc
 +++ b/sandbox/win/src/sandbox_policy_base.cc
-@@ -416,16 +416,24 @@ ResultCode PolicyBase::SetTokenLevel(Tok
+@@ -408,16 +408,24 @@ ResultCode PolicyBase::SetTokenLevel(Tok
  TokenLevel ConfigBase::GetInitialTokenLevel() const {
    return initial_level_;
  }
@@ -256,14 +256,14 @@ diff --git a/sandbox/win/src/sandbox_policy_base.cc b/sandbox/win/src/sandbox_po
  
  JobLevel ConfigBase::GetJobLevel() const {
    return job_level_;
-@@ -600,17 +608,17 @@ ResultCode PolicyBase::MakeTokens(
+@@ -593,17 +601,17 @@ ResultCode PolicyBase::MakeTokens(
    }
  
    IntegrityLevel integrity_level = config()->integrity_level();
    bool lockdown_default_dacl = config()->lockdown_default_dacl();
    // Create the 'naked' token. This will be the permanent token associated
    // with the process and therefore with any thread that is not impersonating.
-   absl::optional<base::win::AccessToken> primary = CreateRestrictedToken(
+   std::optional<base::win::AccessToken> primary = CreateRestrictedToken(
        config()->GetLockdownTokenLevel(), integrity_level, TokenType::kPrimary,
 -      lockdown_default_dacl, random_sid);
 +      lockdown_default_dacl, random_sid, config()->GetUseRestrictingSIDs());
@@ -275,14 +275,14 @@ diff --git a/sandbox/win/src/sandbox_policy_base.cc b/sandbox/win/src/sandbox_po
    if (app_container &&
        app_container->GetAppContainerType() == AppContainerType::kLowbox) {
      // Build the lowbox lockdown (primary) token.
-@@ -627,17 +635,18 @@ ResultCode PolicyBase::MakeTokens(
+@@ -620,17 +628,18 @@ ResultCode PolicyBase::MakeTokens(
  
    lockdown = std::move(*primary);
  
    // Create the 'better' token. We use this token as the one that the main
    // thread uses when booting up the process. It should contain most of
    // what we need (before reaching main( ))
-   absl::optional<base::win::AccessToken> impersonation = CreateRestrictedToken(
+   std::optional<base::win::AccessToken> impersonation = CreateRestrictedToken(
        config()->GetInitialTokenLevel(), integrity_level,
 -      TokenType::kImpersonation, lockdown_default_dacl, random_sid);
 +      TokenType::kImpersonation, lockdown_default_dacl, random_sid,
@@ -298,7 +298,7 @@ diff --git a/sandbox/win/src/sandbox_policy_base.cc b/sandbox/win/src/sandbox_po
 diff --git a/sandbox/win/src/sandbox_policy_base.h b/sandbox/win/src/sandbox_policy_base.h
 --- a/sandbox/win/src/sandbox_policy_base.h
 +++ b/sandbox/win/src/sandbox_policy_base.h
-@@ -52,16 +52,18 @@ class PolicyBase final : public TargetPo
+@@ -49,16 +49,18 @@ class ConfigBase final : public TargetCo
    ConfigBase(const ConfigBase&) = delete;
    ConfigBase& operator=(const ConfigBase&) = delete;
  
@@ -314,13 +314,14 @@ diff --git a/sandbox/win/src/sandbox_policy_base.h b/sandbox/win/src/sandbox_pol
    void SetJobMemoryLimit(size_t memory_limit) override;
    ResultCode AllowFileAccess(FileSemantics semantics,
                               const wchar_t* pattern) override;
-   ResultCode AllowNamedPipes(const wchar_t* pattern) override;
-   ResultCode AllowExtraDlls(const wchar_t* pattern) override;
+   ResultCode AllowExtraDll(const wchar_t* path) override;
    ResultCode SetFakeGdiInit() override;
-@@ -133,16 +135,17 @@ class PolicyBase final : public TargetPo
+   void AddDllToUnload(const wchar_t* dll_name) override;
+@@ -128,16 +130,17 @@ class ConfigBase final : public TargetCo
+   size_t memory_limit() { return memory_limit_; }
+   uint32_t ui_exceptions() { return ui_exceptions_; }
    Desktop desktop() { return desktop_; }
-   // nullptr if no objects have been added via AddKernelObjectToClose().
-   HandleCloser* handle_closer() { return handle_closer_.get(); }
+   const HandleCloserConfig& handle_closer() { return handle_closer_; }
    bool zero_appshim() { return zero_appshim_; }
  
    TokenLevel lockdown_level_;

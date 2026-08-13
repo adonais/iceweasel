@@ -241,9 +241,9 @@ add_task(async function test_aifeature_isAllowed() {
   );
 
   is(
-    LinkPreview.isAllowed,
     LinkPreview.canShowKeyPoints,
-    "isAllowed should match canShowKeyPoints"
+    LinkPreview.isAllowed && LinkPreview.canRunOnDevice,
+    "canShowKeyPoints requires both isAllowed and hardware support"
   );
 
   localeStub.restore();
@@ -308,6 +308,35 @@ add_task(async function test_aifeature_isAllowed_unsupported_locale() {
     "isAllowed matches canShowKeyPoints for unsupported locale"
   );
 
+  localeStub.restore();
+  regionStub.restore();
+});
+
+/**
+ * Test that key points are gated on device hardware support while isAllowed
+ * remains policy-only.
+ */
+add_task(async function test_aifeature_canRunOnDevice_unsupported() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ml.linkPreview.optin", true]],
+  });
+
+  const regionStub = sinon
+    .stub(LinkPreview, "_isRegionSupported")
+    .returns(true);
+  const localeStub = sinon
+    .stub(LinkPreview, "_isLocaleSupported")
+    .returns(true);
+  const deviceStub = sinon.stub(LinkPreview, "canRunOnDevice").get(() => false);
+
+  is(LinkPreview.isAllowed, true, "isAllowed ignores device hardware support");
+  is(
+    LinkPreview.canShowKeyPoints,
+    false,
+    "canShowKeyPoints is false when the device cannot run llama.cpp"
+  );
+
+  deviceStub.restore();
   localeStub.restore();
   regionStub.restore();
 });

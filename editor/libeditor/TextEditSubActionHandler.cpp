@@ -33,6 +33,7 @@
 #include "nsError.h"
 #include "nsGkAtoms.h"
 #include "mozilla/dom/ContentList.h"
+#include "mozilla/Utf16.h"
 #include "nsIContent.h"
 #include "nsINode.h"
 #include "nsISupports.h"
@@ -806,7 +807,7 @@ TextEditor::MaybeTruncateInsertionStringForMaxLength(
   char16_t maybeLowSurrogate =
       aInsertionString.CharAt(newInsertionStringLength);
   // Don't split the surrogate pair.
-  if (NS_IS_SURROGATE_PAIR(maybeHighSurrogate, maybeLowSurrogate)) {
+  if (mozilla::IsSurrogatePair(maybeHighSurrogate, maybeLowSurrogate)) {
     newInsertionStringLength--;
   }
   // XXX What should we do if we're removing IVS but its preceding

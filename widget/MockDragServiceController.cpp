@@ -3,14 +3,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "MockDragServiceController.h"
+
+#include "mozilla/MouseEvents.h"
+#include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DragEvent.h"
-#include "mozilla/MouseEvents.h"
-#include "mozilla/SpinEventLoopUntil.h"
+#include "nsBaseDragService.h"
 #include "nsIFrame.h"
 #include "nsPresContext.h"
-#include "nsBaseDragService.h"
 
 namespace mozilla::test {
 

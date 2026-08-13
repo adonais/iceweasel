@@ -1,0 +1,64 @@
+{
+  "triagers": {
+    "Chris DuPuis": {
+      "bzmail": "cdupuis@mozilla.com"
+    },
+    "Harshit Sohaney": {
+      "bzmail": "hsohaney@mozilla.com"
+    },
+    "Antonio Borondo": {
+      "bzmail": "aborondo@mozilla.com"
+    }
+  },
+  "duty-start-dates": {
+    "2026-06-15": "Chris DuPuis",
+    "2026-06-29": "Harshit Sohaney",
+    "2026-07-13": "Antonio Borondo",
+    "2026-07-27": "Chris DuPuis",
+    "2026-08-10": "Harshit Sohaney",
+    "2026-08-24": "Antonio Borondo",
+    "2026-09-07": "Chris DuPuis",
+    "2026-09-21": "Harshit Sohaney",
+    "2026-10-05": "Antonio Borondo",
+    "2026-10-19": "Chris DuPuis",
+    "2026-11-02": "Harshit Sohaney",
+    "2026-11-16": "Antonio Borondo",
+    "2026-11-30": "Chris DuPuis",
+    "2026-12-14": "Harshit Sohaney",
+    "2026-12-28": "Antonio Borondo",
+    "2027-01-11": "Chris DuPuis",
+    "2027-01-25": "Harshit Sohaney",
+    "2027-02-08": "Antonio Borondo",
+    "2027-02-22": "Chris DuPuis",
+    "2027-03-08": "Harshit Sohaney",
+    "2027-03-22": "Antonio Borondo",
+    "2027-04-05": "Chris DuPuis",
+    "2027-04-19": "Harshit Sohaney",
+    "2027-05-03": "Antonio Borondo",
+    "2027-05-17": "Chris DuPuis",
+    "2027-05-31": "Harshit Sohaney",
+    "2027-06-14": "Antonio Borondo",
+    "2027-06-28": "Chris DuPuis",
+    "2027-07-12": "Harshit Sohaney",
+    "2027-07-26": "Antonio Borondo",
+    "2027-08-09": "Chris DuPuis",
+    "2027-08-23": "Harshit Sohaney",
+    "2027-09-06": "Antonio Borondo",
+    "2027-09-20": "Chris DuPuis",
+    "2027-10-04": "Harshit Sohaney",
+    "2027-10-18": "Antonio Borondo",
+    "2027-11-01": "Chris DuPuis",
+    "2027-11-15": "Harshit Sohaney",
+    "2027-11-29": "Antonio Borondo",
+    "2027-12-13": "Chris DuPuis",
+    "2027-12-27": "Harshit Sohaney",
+    "2028-01-10": "Antonio Borondo",
+    "2028-01-24": "Chris DuPuis",
+    "2028-02-07": "Harshit Sohaney",
+    "2028-02-21": "Antonio Borondo",
+    "2028-03-06": "Chris DuPuis",
+    "2028-03-20": "Harshit Sohaney",
+    "2028-04-03": "Antonio Borondo",
+    "2028-04-17": "Chris DuPuis"
+  }
+}

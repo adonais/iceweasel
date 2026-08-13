@@ -98,7 +98,7 @@ internal fun IPProtectionMenuItem(
                 Icon(
                     painter = painterResource(iconsR.drawable.mozac_ic_chevron_right_24),
                     contentDescription = stringResource(R.string.ip_protection_navigate_settings),
-                    tint = MaterialTheme.colorScheme.onSurface,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -128,7 +128,7 @@ private fun IPProtectionToggle(
         Icon(
             painter = painterResource(iconsR.drawable.mozac_ic_globe_24),
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurface,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
         Column(modifier = Modifier.weight(1f)) {

@@ -6,8 +6,16 @@ support-files = [
   "annotate_list.txt",
 ]
 
+["browser_about_url_classifier.js"]
+
 ["browser_content_classifier_blocking.js"]
 
 ["browser_content_classifier_engines_pref.js"]
 
+["browser_content_classifier_harmful_addon.js"]
+
+["browser_content_classifier_pref_mirror.js"]
+
 ["browser_content_classifier_remote_settings.js"]
+
+["browser_urlclassifier_disable_for_channel_classifier.js"]

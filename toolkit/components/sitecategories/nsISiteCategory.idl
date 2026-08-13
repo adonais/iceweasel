@@ -1,0 +1,18 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+#include "nsISupports.idl"
+#include "nsIPrincipal.idl"
+
+/**
+ * Get the site category for telemetry based on the domain.
+ *
+ * @param principal The principal of the requesting site
+ * @returns The category name or "other" if not in the known list
+ */
+[scriptable, uuid(3aa4a54f-0091-4815-a962-6eced394b539)]
+interface nsISiteCategory : nsISupports
+{
+  ACString getCategory(in nsIPrincipal aPrincipal);
+};

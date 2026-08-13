@@ -40,7 +40,7 @@ class DefaultWebCompatReporterRetrievalService(
             ?: return null
 
         return suspendCancellableCoroutine { continuation ->
-            session.getWebCompatInfo(
+            session.getBrokenSiteReport(
                 onResult = { details ->
                     if (continuation.isActive) {
                         val webCompatInfo = webCompatInfoDeserializer.decode(details.toString())

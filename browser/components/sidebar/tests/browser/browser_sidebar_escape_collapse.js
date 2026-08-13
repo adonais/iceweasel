@@ -18,6 +18,9 @@ add_setup(async () => {
 registerCleanupFunction(async () => {
   await SidebarController.toggleExpandOnHover(false);
   await SidebarController.waitUntilStable();
+  // Reset visibility so SidebarManager doesn't persist "expand-on-hover" when
+  // popPrefEnv disables vertical tabs, leaking that state into the next test.
+  Services.prefs.clearUserPref(SIDEBAR_VISIBILITY_PREF);
   await SpecialPowers.popPrefEnv();
 });
 

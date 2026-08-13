@@ -7,7 +7,7 @@ from base_python_support import BasePythonSupport
 
 # Only geometric measurement is returned as score in the raw data. Otherwise
 # the measurement is in `ms`
-TIME_METRICS = ["Runtime", "Startup", "First", "Worst", "Average"]
+TIME_METRICS = ["Runtime", "Startup", "First", "Worst", "Average", "MainRun", "Stdlib"]
 
 
 class JetStreamSupport(BasePythonSupport):

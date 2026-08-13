@@ -18,7 +18,9 @@ import io.mockk.verify
 import mozilla.appservices.places.BookmarkRoot
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.prompt.ShareData
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -31,8 +33,11 @@ import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.components.usecases.ShareUseCases
+import org.mozilla.fenix.onboarding.MARKETING_CHANNEL_ID
+import org.mozilla.fenix.trackingprotection.ProtectionsDashboardFragment
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
+import android.provider.Settings as AndroidSettings
 
 @RunWith(RobolectricTestRunner::class)
 class HomeDeepLinkIntentProcessorTest {
@@ -310,11 +315,28 @@ class HomeDeepLinkIntentProcessorTest {
 
     @Test
     fun `process settings_notifications deep link`() {
+        val captured = slot<Intent>()
+        every { activity.startActivity(capture(captured)) } just Runs
+
         assertTrue(processorHome.process(testIntent("settings_notifications"), navController, out, settings))
 
         verify { navController wasNot Called }
         verify { out wasNot Called }
-        verify { activity.startActivity(any()) }
+        assertEquals(AndroidSettings.ACTION_APP_NOTIFICATION_SETTINGS, captured.captured.action)
+        assertNull(captured.captured.getStringExtra(AndroidSettings.EXTRA_CHANNEL_ID))
+    }
+
+    @Test
+    fun `process settings_marketing_notifications deep link`() {
+        val captured = slot<Intent>()
+        every { activity.startActivity(capture(captured)) } just Runs
+
+        assertTrue(processorHome.process(testIntent("settings_marketing_notifications"), navController, out, settings))
+
+        verify { navController wasNot Called }
+        verify { out wasNot Called }
+        assertEquals(AndroidSettings.ACTION_CHANNEL_NOTIFICATION_SETTINGS, captured.captured.action)
+        assertEquals(MARKETING_CHANNEL_ID, captured.captured.getStringExtra(AndroidSettings.EXTRA_CHANNEL_ID))
     }
 
     @Test
@@ -356,6 +378,22 @@ class HomeDeepLinkIntentProcessorTest {
 
         verify { activity wasNot Called }
         verify { navController.navigate(NavGraphDirections.actionGlobalAiControlsFragment()) }
+        verify { out wasNot Called }
+    }
+
+    @Test
+    fun `process protections_dashboard deep link`() {
+        assertTrue(processorHome.process(testIntent("protections_dashboard"), navController, out, settings))
+
+        verify { activity wasNot Called }
+        verify {
+            navController.navigate(
+                NavGraphDirections.actionGlobalProtectionsDashboard(
+                    customTabSessionId = null,
+                    source = ProtectionsDashboardFragment.SOURCE_DEEPLINK,
+                ),
+            )
+        }
         verify { out wasNot Called }
     }
 

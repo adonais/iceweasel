@@ -38,7 +38,7 @@
  * BytecodeEmitter.
  *
  * SharedContext.h: class Directives: this contains boolean flags for tracking
- * if we're in asm.js or "use strict" code. The "use strict" bit is stored in
+ * if we're in "use strict" code. The "use strict" bit is stored in
  * SharedContext, and additionally, the full Directives class is stored in
  * ParseContext - if a direcive is encountered while parsing, this is updated,
  * and checked in GeneralParser::functionDefinition, and if it changed, the

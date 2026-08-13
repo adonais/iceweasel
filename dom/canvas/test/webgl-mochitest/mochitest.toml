@@ -21,7 +21,6 @@ support-files = [
 ["ensure-exts/test_EXT_depth_clamp.html"]
 fail-if = [
   "os == 'android'",
-  "os == 'win'",
 ]
 
 ["ensure-exts/test_EXT_disjoint_timer_query.html"]
@@ -282,6 +281,8 @@ skip-if = [
 ["test_webgl_fingerprinting_resistance.html"]
 
 ["test_webgl_force_enable.html"]
+
+["test_webgl_high_power.html"]
 
 ["test_webgl_renderer_constant_fpp.html"]
 

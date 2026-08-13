@@ -9,8 +9,8 @@
 #include "mozilla/UniquePtrExtensions.h"
 #include "nsCOMPtr.h"
 #include "nsCRTGlue.h"
-#include "nsStringFwd.h"
 #include "nsIFile.h"
+#include "nsStringFwd.h"
 
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
 namespace sandbox {

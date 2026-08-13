@@ -5,13 +5,13 @@
 #ifndef NSCATEGORYMANAGER_H
 #define NSCATEGORYMANAGER_H
 
-#include "prio.h"
-#include "nsClassHashtable.h"
-#include "nsICategoryManager.h"
-#include "nsIMemoryReporter.h"
 #include "mozilla/ArenaAllocator.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Mutex.h"
+#include "nsClassHashtable.h"
+#include "nsICategoryManager.h"
+#include "nsIMemoryReporter.h"
+#include "prio.h"
 
 class nsIMemoryReporter;
 

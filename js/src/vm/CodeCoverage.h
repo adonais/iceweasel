@@ -8,7 +8,6 @@
 #include "mozilla/Vector.h"
 
 #include "ds/LifoAlloc.h"
-
 #include "js/AllocPolicy.h"
 #include "js/HashTable.h"
 #include "js/Printer.h"

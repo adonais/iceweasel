@@ -68,6 +68,10 @@ add_task(async function test_changeUPLoginOnPUpdateForm_accept() {
   await Services.logins.addLogins([login1, login1B]);
 
   let selectDialogPromise = TestUtils.topicObserved("select-dialog-loaded");
+  let storageChangedPromise = TestUtils.topicObserved(
+    "passwordmgr-storage-changed",
+    (_, data) => data == "modifyLogin"
+  );
 
   await testSubmittingLoginForm(
     "subtst_notifications_change_p.html",
@@ -101,6 +105,9 @@ add_task(async function test_changeUPLoginOnPUpdateForm_accept() {
       }, "Wait for selection dialog to disappear.");
     }
   );
+
+  info("Waiting for the login modification to be persisted.");
+  await storageChangedPromise;
 
   let logins = await Services.logins.getAllLogins();
   Assert.equal(logins.length, 2, "Should have 2 logins");

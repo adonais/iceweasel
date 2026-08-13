@@ -54,6 +54,16 @@ exports.PerfActor = class PerfActor extends Actor {
    */
   #previouslyRetrievedAdditionalInformationPromise = null;
 
+  /**
+   * Whether the currently running profiler was started by this actor (ie from
+   * the DevTools performance panel). This is used to only stop the profiler on
+   * destroy for recordings that DevTools started itself, leaving recordings
+   * started elsewhere (the profiler toolbar popup, MOZ_PROFILER_STARTUP) running.
+   *
+   * @type {boolean}
+   */
+  #startedByDevTools = false;
+
   constructor(conn) {
     super(conn, perfSpec);
 
@@ -73,6 +83,11 @@ exports.PerfActor = class PerfActor extends Actor {
     if (!IS_SUPPORTED_PLATFORM) {
       return;
     }
+
+    if (this.#startedByDevTools && Services.profiler.IsActive()) {
+      Services.profiler.StopProfiler();
+    }
+
     Services.obs.removeObserver(this._observer, "profiler-started");
     Services.obs.removeObserver(this._observer, "profiler-stopped");
   }
@@ -88,7 +103,7 @@ exports.PerfActor = class PerfActor extends Actor {
       entries: options.entries || 1000000,
       duration: options.duration || 0,
       interval: options.interval || 1,
-      features: options.features || ["js", "stackwalk", "cpu", "memory"],
+      features: options.features || ["js", "stackwalk", "memory"],
       threads: options.threads || ["GeckoMain", "Compositor"],
       activeTabID: RecordingUtils.getActiveBrowserID(),
     };
@@ -108,6 +123,7 @@ exports.PerfActor = class PerfActor extends Actor {
       return false;
     }
 
+    this.#startedByDevTools = true;
     return true;
   }
 
@@ -266,6 +282,7 @@ exports.PerfActor = class PerfActor extends Actor {
         break;
       }
       case "profiler-stopped":
+        this.#startedByDevTools = false;
         this.emit(topic);
         break;
     }

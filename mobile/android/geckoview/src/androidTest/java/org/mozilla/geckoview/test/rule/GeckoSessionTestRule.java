@@ -2922,6 +2922,44 @@ public class GeckoSessionTestRule implements TestRule {
   }
 
   /**
+   * Seeds the IP protection test auth provider (selected via the
+   * "toolkit.ipProtection.android.authProvider" pref set to "test") with a faked Guardian backend.
+   *
+   * @param options Overrides for the default stub setup, or {@code null} for defaults.
+   */
+  public void setupIPPAuthProvider(final @Nullable JSONObject options) {
+    webExtensionApiCall(
+        "SetupIPPAuthProvider",
+        args -> args.put("options", options != null ? options : new JSONObject()));
+  }
+
+  /** Toggles the IP protection test auth provider's sign-in state. */
+  public void simulateIPPSignIn(final boolean signedIn) {
+    webExtensionApiCall("SimulateIPPSignIn", args -> args.put("signedIn", signedIn));
+  }
+
+  /**
+   * Makes the IP protection test auth provider's proxy-pass fetch throw the given error string, or
+   * clears it with {@code null}.
+   */
+  public void setIPPProxyPassError(final @Nullable String error) {
+    webExtensionApiCall("SetIPPProxyPassError", args -> args.put("error", error));
+  }
+
+  /** Sets what the IP protection test auth provider's proxy-usage fetch resolves to. */
+  public void setIPPProxyUsage(final @Nullable JSONObject usage) {
+    webExtensionApiCall("SetIPPProxyUsage", args -> args.put("usage", usage));
+  }
+
+  /**
+   * Returns the active IP protection proxy connection's proxyInfo ({@code host}, {@code port},
+   * {@code type}), or {@code null} when no connection is active.
+   */
+  public @Nullable JSONObject getIPPProxyInfo() {
+    return (JSONObject) webExtensionApiCall("GetIPPProxyInfo", null);
+  }
+
+  /**
    * Gets all the permission names defined in the WebExtensions API JSONSchema given an array of
    * type names.
    *

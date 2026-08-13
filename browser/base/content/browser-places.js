@@ -608,6 +608,7 @@ class HistoryMenu extends PlacesMenu {
       hiddenTabsMenu: "hiddenTabsMenu",
       undoWindowMenu: "historyUndoWindowMenu",
       syncTabsMenuitem: "sync-tabs-menuitem",
+      remoteTabsPromo: "historyRemoteTabsPromo",
     };
     for (let [key, elemId] of Object.entries(elements)) {
       this[key] = document.getElementById(elemId);
@@ -703,6 +704,21 @@ class HistoryMenu extends PlacesMenu {
     // by HistoryMenu do not have this menuitem.
     if (!this.syncTabsMenuitem) {
       return;
+    }
+
+    // Show the promo to users who can't yet see remote tabs (see
+    // getSyncPromoState). Clicking it performs the state-specific action, which
+    // we stash in a data-action attribute for the command handler. When it
+    // applies we hide the synced-tabs menuitem, so only one is ever visible.
+    if (this.remoteTabsPromo) {
+      const promoState = gSync.getSyncPromoState(["tabs"]);
+      if (promoState) {
+        this.remoteTabsPromo.dataset.action = promoState;
+        this.remoteTabsPromo.hidden = false;
+        this.syncTabsMenuitem.hidden = true;
+        return;
+      }
+      this.remoteTabsPromo.hidden = true;
     }
 
     if (!PlacesUIUtils.shouldShowTabsFromOtherComputersMenuitem()) {
@@ -842,11 +858,25 @@ var BookmarksEventHandler = {
    */
   onCommand: function BEH_onCommand(aEvent) {
     var target = aEvent.originalTarget;
+    var eventAction = target.dataset.action;
+
     if (target._placesNode) {
       PlacesUIUtils.openNodeWithEvent(target._placesNode, aEvent);
       // Only record interactions through the Bookmarks Toolbar
       if (target.closest("#PersonalToolbar")) {
         Glean.browserEngagement.bookmarksToolbarBookmarkOpened.add(1);
+      }
+    } else if (eventAction) {
+      switch (eventAction) {
+        case "signin":
+          gSync.openFxAEmailFirstPage("bookmarks-top-menu");
+          break;
+        case "turnonsync":
+          gSync.openSyncSetupForEntryPoint("bookmarks-top-menu");
+          break;
+        case "connectdevice":
+          gSync.openConnectAnotherDevice("bookmarks-top-menu");
+          break;
       }
     }
   },
@@ -874,6 +904,24 @@ var BookmarksEventHandler = {
       } else {
         // This is a static non-Places node.
         targetURI = tooltipNode.getAttribute("targetURI");
+      }
+      // bhTooltip is only attached (directly or via popupsinherittooltip) to
+      // toolbarbuttons on the bookmarks toolbar/appmenu and to menu/menuitem
+      // entries in places popups. The croppable label is the child generated
+      // by the custom element fragment. crop=end labels clip via overflow on
+      // the element itself, so scrollWidth/clientWidth reflect cropping.
+      let isLabelCropped = label =>
+        !!label && label.scrollWidth > label.clientWidth;
+      switch (tooltipNode.localName) {
+        case "toolbarbutton":
+          cropped = isLabelCropped(
+            tooltipNode.querySelector(".toolbarbutton-text")
+          );
+          break;
+        case "menu":
+        case "menuitem":
+          cropped = isLabelCropped(tooltipNode.querySelector(".menu-text"));
+          break;
       }
     }
 
@@ -1995,6 +2043,12 @@ var BookmarkingUI = {
     if (event.target.id != "bookmarksMenuPopup") {
       return;
     }
+
+    var promoState = gSync.getSyncPromoState(["bookmarks"]);
+    var remoteTabsPromo = document.getElementById("bookmarksRemoteTabsPromo");
+
+    remoteTabsPromo.dataset.action = promoState;
+    remoteTabsPromo.hidden = !promoState;
 
     document.getElementById("menu_mobileBookmarks").hidden =
       !SHOW_MOBILE_BOOKMARKS;

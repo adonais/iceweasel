@@ -340,8 +340,7 @@ float NonSVGFrameUserSpaceMetrics::GetLineHeight(Type aType) const {
   switch (aType) {
     case Type::This: {
       const auto lineHeightAu = ReflowInput::CalcLineHeight(
-          *mFrame->Style(), context, mFrame->GetContent(), NS_UNCONSTRAINEDSIZE,
-          1.0f);
+          *mFrame->Style(), context, mFrame->GetContent(), 1.0f);
       return CSSPixel::FromAppUnits(lineHeightAu);
     }
     case Type::Root:

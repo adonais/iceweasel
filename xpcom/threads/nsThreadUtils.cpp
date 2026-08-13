@@ -4,8 +4,9 @@
 
 #include "nsThreadUtils.h"
 
-#include "chrome/common/ipc_message.h"  // for IPC::Message
 #include "MaybeLeakRefPtr.h"
+#include "TaskController.h"
+#include "chrome/common/ipc_message.h"  // for IPC::Message
 #include "mozilla/Likely.h"
 #include "mozilla/TaskQueue.h"
 #include "mozilla/TimeStamp.h"
@@ -14,13 +15,11 @@
 #include "nsIEventTarget.h"
 #include "nsITimer.h"
 #include "nsString.h"
+#include "nsThreadManager.h"
+#include "nsThreadPool.h"
 #include "nsThreadSyncDispatch.h"
 #include "nsTimerImpl.h"
 #include "prsystem.h"
-
-#include "nsThreadManager.h"
-#include "nsThreadPool.h"
-#include "TaskController.h"
 
 #ifdef XP_WIN
 #  include <windows.h>

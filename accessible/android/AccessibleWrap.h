@@ -19,8 +19,7 @@ class AccessibleWrap : public LocalAccessible {
   virtual ~AccessibleWrap();
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY  // TODO: Mark this as MOZ_CAN_RUN_SCRIPT
-      virtual nsresult
-      HandleAccEvent(AccEvent* aEvent) override;
+      virtual nsresult HandleAccEvent(AccEvent* aEvent) override;
 
   virtual void Shutdown() override;
 

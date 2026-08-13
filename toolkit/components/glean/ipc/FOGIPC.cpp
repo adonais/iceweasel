@@ -19,11 +19,13 @@
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/glean/bindings/jog/JOG.h"
 #include "mozilla/glean/GleanMetrics.h"
+#include "mozilla/glean/FOGTransportChild.h"
 #include "mozilla/Hal.h"
 #include "mozilla/Logging.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/net/SocketProcessChild.h"
 #include "mozilla/net/SocketProcessParent.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/ProcInfo.h"
 #include "mozilla/RDDChild.h"
 #include "mozilla/RDDParent.h"
@@ -32,6 +34,7 @@
 #include "mozilla/ipc/UtilityProcessManager.h"
 #include "mozilla/ipc/UtilityProcessParent.h"
 #include "mozilla/ipc/UtilityProcessSandboxing.h"
+#include "mozilla/StaticPrefs_telemetry.h"
 #include "GMPPlatform.h"
 #include "GMPServiceParent.h"
 #include "nsIClassifiedChannel.h"
@@ -476,7 +479,7 @@ void FlushAllChildData(
   ContentParent::GetAll(parents);
   nsTArray<RefPtr<FlushFOGDataPromise>> promises;
   for (auto* parent : parents) {
-    promises.EmplaceBack(parent->SendFlushFOGData());
+    promises.EmplaceBack(parent->DoFlushFOGData());
   }
 
   if (GPUProcessManager* gpuManager = GPUProcessManager::Get()) {
@@ -579,10 +582,22 @@ void FOGData(ipc::ByteBuf&& buf) {
  * @param buf - a bincoded serialized payload that the Rust impl understands.
  */
 void SendFOGData(ipc::ByteBuf&& buf) {
+  MOZ_LOG(sLog, LogLevel::Verbose, ("glean::SendFOGData: start"));
   switch (XRE_GetProcessType()) {
-    case GeckoProcessType_Content:
-      mozilla::dom::ContentChild::GetSingleton()->SendFOGData(std::move(buf));
-      break;
+    case GeckoProcessType_Content: {
+      FOGTransportChild* child = FOGTransportChild::GetSingleton();
+      if (child) {
+        MOZ_LOG(sLog, LogLevel::Verbose,
+                ("glean::SendFOGData: "
+                 "FOGTransportChild::GetSingleton()->SendFOGData called"));
+        child->SendFOGData(std::move(buf));
+      } else {
+        MOZ_LOG(sLog, LogLevel::Warning,
+                ("FOGTransportChild singleton is not initialized. Falling back "
+                 "to dom::ContentChild."));
+        mozilla::dom::ContentChild::GetSingleton()->SendFOGData(std::move(buf));
+      }
+    } break;
     case GeckoProcessType_GMPlugin: {
       mozilla::gmp::SendFOGData(std::move(buf));
     } break;
@@ -604,6 +619,7 @@ void SendFOGData(ipc::ByteBuf&& buf) {
     default:
       MOZ_ASSERT_UNREACHABLE("Unsuppored process type");
   }
+  MOZ_LOG(sLog, LogLevel::Verbose, ("glean::SendFOGData: end"));
 }
 
 /**
@@ -611,6 +627,7 @@ void SendFOGData(ipc::ByteBuf&& buf) {
  * sending it all down into Rust to be used.
  */
 RefPtr<GenericPromise> FlushAndUseFOGData() {
+  MOZ_LOG(sLog, LogLevel::Verbose, ("glean::FlushAndUseFOGData: start"));
   // Record power metrics on the parent before sending requests to child
   // processes.
   RecordPowerMetrics();
@@ -624,6 +641,7 @@ RefPtr<GenericPromise> FlushAndUseFOGData() {
         ret->Resolve(true, __func__);
       };
   FlushAllChildData(std::move(resolver));
+  MOZ_LOG(sLog, LogLevel::Verbose, ("glean::FlushAndUseFOGData: end"));
   return ret;
 }
 

@@ -152,8 +152,11 @@ function clickSecondaryAction(actionIndex) {
   );
   let popupNotification = getPopupNotificationNode();
   if (!actionIndex) {
-    popupNotification.secondaryButton.click();
-    return removePromise;
+    return (async function () {
+      await popupNotification.secondaryButton.updateComplete;
+      popupNotification.secondaryButton.click();
+      await removePromise;
+    })();
   }
 
   return (async function () {

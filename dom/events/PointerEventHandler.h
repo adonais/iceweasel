@@ -305,6 +305,11 @@ class PointerEventHandler final {
                                const WidgetMouseEvent& aMouseEvent);
 
   /**
+   * Called when PresShell dispatches aMouseEvent into the DOM.
+   */
+  static void WillDispatchMouseEventToDOM(const WidgetMouseEvent& aMouseEvent);
+
+  /**
    * Called when PresShell dispatches a mouse event to the DOM.
    */
   static void RecordMouseButtons(const WidgetMouseEvent& aMouseEvent) {

@@ -115,7 +115,7 @@ add_setup(async function () {
   // its toplevel code points to it.
   await makeFakeAppDir();
   ({ CrashReports } = ChromeUtils.importESModule(
-    "resource://gre/modules/CrashReports.sys.mjs"
+    "moz-src:///toolkit/crashreporter/CrashReports.sys.mjs"
   ));
 });
 

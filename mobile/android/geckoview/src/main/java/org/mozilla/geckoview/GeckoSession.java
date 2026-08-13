@@ -574,6 +574,9 @@ public class GeckoSession {
             "GeckoView:SavePdf",
             "GeckoView:GetNimbusFeature",
           }) {
+        // ThreadConstraint false positive: the @UiThread work runs inside
+        // ThreadUtils.runOnUiThread.
+        @SuppressLint("ThreadConstraint")
         @Override
         public void handleMessage(
             final ContentDelegate delegate,
@@ -2371,6 +2374,8 @@ public class GeckoSession {
    * @param request Loader for this request.
    * @see Loader
    */
+  // ThreadConstraint false positive: the @UiThread work runs inside ThreadUtils.runOnUiThread.
+  @SuppressLint("ThreadConstraint")
   @AnyThread
   public void load(final @NonNull Loader request) {
     if (request.mUri == null) {
@@ -2827,6 +2832,8 @@ public class GeckoSession {
    * @param active A boolean determining whether the GeckoSession is active.
    * @see #setFocused
    */
+  // ThreadConstraint false positive: the @UiThread work runs inside ThreadUtils.runOnUiThread.
+  @SuppressLint("ThreadConstraint")
   @AnyThread
   public void setActive(final boolean active) {
     final GeckoBundle msg = new GeckoBundle(1);
@@ -3270,6 +3277,25 @@ public class GeckoSession {
   }
 
   /**
+   * Get the report info when a site is reported as broken.
+   *
+   * @return a {@link GeckoResult} containing the BrokenSiteReport as a JSONObject.
+   */
+  @HandlerThread
+  public @NonNull GeckoResult<JSONObject> getBrokenSiteReport() {
+    ThreadUtils.assertOnHandlerThread();
+    return mEventDispatcher
+        .queryString("GeckoView:GetBrokenSiteReport")
+        .map(
+            value -> {
+              if (value == null) {
+                throw new IllegalStateException("Unable to get broken site report");
+              }
+              return new JSONObject(value);
+            });
+  }
+
+  /**
    * Get the web compatibility info when a site is reported as broken.
    *
    * @return a {@link GeckoResult} containing the WebCompatInfo as a JSONObject.
@@ -3530,7 +3556,7 @@ public class GeckoSession {
    *
    * @param delegate The history tracking delegate, or {@code null} to unset.
    */
-  @AnyThread
+  @UiThread
   public void setHistoryDelegate(final @Nullable HistoryDelegate delegate) {
     mHistoryHandler.setDelegate(delegate, this);
   }
@@ -3548,7 +3574,7 @@ public class GeckoSession {
    *
    * @param delegate An implementation of {@link ContentBlocking.Delegate}.
    */
-  @AnyThread
+  @UiThread
   public void setContentBlockingDelegate(final @Nullable ContentBlocking.Delegate delegate) {
     mContentBlockingHandler.setDelegate(delegate, this);
   }
@@ -3608,7 +3634,7 @@ public class GeckoSession {
    *
    * @param delegate An implementation of MediaDelegate.
    */
-  @AnyThread
+  @UiThread
   public void setMediaDelegate(final @Nullable MediaDelegate delegate) {
     mMediaHandler.setDelegate(delegate, this);
   }
@@ -3628,7 +3654,7 @@ public class GeckoSession {
    *
    * @param delegate An implementation of {@link MediaSession.Delegate}.
    */
-  @AnyThread
+  @UiThread
   public void setMediaSessionDelegate(final @Nullable MediaSession.Delegate delegate) {
     mMediaSessionHandler.setDelegate(delegate, this);
   }
@@ -3659,7 +3685,7 @@ public class GeckoSession {
    *
    * @param delegate An implementation of @link{TranslationsController.SessionTranslation.Delegate}.
    */
-  @AnyThread
+  @UiThread
   public void setTranslationsSessionDelegate(
       final @Nullable TranslationsController.SessionTranslation.Delegate delegate) {
     mTranslationsHandler.setDelegate(delegate, this);
@@ -6900,22 +6926,39 @@ public class GeckoSession {
     public @interface SourceType {}
 
     /** The new horizontal scroll position in CSS pixels. */
-    public float scrollX;
+    public final float scrollX;
 
     /** The new vertical scroll position in CSS pixels. */
-    public float scrollY;
+    public final float scrollY;
 
     /**
      * The new zoom level. This is used to relate scrollX and scrollY, which are in CSS pixels, to
      * quantities in screen pixels. Multiply scrollX/scrollY by zoom to get screen pixels.
      */
-    public float zoom;
+    public final float zoom;
 
     /**
      * The source of the scroll position change. One of {@link #SOURCE_USER_INTERACTION} or {@link
      * #SOURCE_OTHER}.
      */
-    public @SourceType int source;
+    public final @SourceType int source;
+
+    /**
+     * Construct a new, immutable ScrollPositionUpdate.
+     *
+     * @param scrollX The new horizontal scroll position in CSS pixels.
+     * @param scrollY The new vertical scroll position in CSS pixels.
+     * @param zoom The new zoom level.
+     * @param source The source of the scroll position change, one of {@link
+     *     #SOURCE_USER_INTERACTION} or {@link #SOURCE_OTHER}.
+     */
+    public ScrollPositionUpdate(
+        final float scrollX, final float scrollY, final float zoom, final @SourceType int source) {
+      this.scrollX = scrollX;
+      this.scrollY = scrollY;
+      this.zoom = zoom;
+      this.source = source;
+    }
   }
 
   /**
@@ -7475,7 +7518,7 @@ public class GeckoSession {
      * @param permissions List of permissions to request; possible values are,
      *     android.Manifest.permission.ACCESS_COARSE_LOCATION
      *     android.Manifest.permission.ACCESS_FINE_LOCATION android.Manifest.permission.CAMERA
-     *     android.Manifest.permission.RECORD_AUDIO
+     *     android.Manifest.permission.RECORD_AUDIO android.Manifest.permission.ACCESS_LOCAL_NETWORK
      * @param callback Callback interface.
      */
     @UiThread
@@ -8038,11 +8081,7 @@ public class GeckoSession {
     mViewportTop = scrollY * zoom;
     mViewportZoom = zoom;
 
-    final ScrollPositionUpdate update = new ScrollPositionUpdate();
-    update.scrollX = scrollX;
-    update.scrollY = scrollY;
-    update.zoom = zoom;
-    update.source = source;
+    final ScrollPositionUpdate update = new ScrollPositionUpdate(scrollX, scrollY, zoom, source);
     mLastScrollPositionUpdate = update;
     if (mCompositorScrollDelegate != null) {
       mCompositorScrollDelegate.onScrollChanged(this, update);
@@ -8560,7 +8599,7 @@ public class GeckoSession {
    *
    * @param delegate An instance of {@link PrintDelegate}.
    */
-  @AnyThread
+  @UiThread
   public void setPrintDelegate(final @Nullable PrintDelegate delegate) {
     mPrintHandler.setDelegate(delegate, this);
   }
@@ -8599,7 +8638,7 @@ public class GeckoSession {
    *
    * @param delegate An instance of {@link ExperimentDelegate}.
    */
-  @AnyThread
+  @UiThread
   public void setExperimentDelegate(final @Nullable ExperimentDelegate delegate) {
     mExperimentHandler.setDelegate(delegate, this);
   }

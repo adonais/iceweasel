@@ -93,6 +93,16 @@ if CONFIG["OS_TARGET"] == "Darwin":
     DEFINES["__STDC_CONSTANT_MACROS"] = True
     DEFINES["__STDC_FORMAT_MACROS"] = True
 
+    OS_LIBS += [
+        "-framework AppKit",
+        "-framework AVFoundation",
+        "-framework CoreMedia",
+        "-framework CoreVideo",
+        "-framework Foundation",
+        "-framework IOKit",
+        "-framework IOSurface"
+    ]
+
     UNIFIED_SOURCES += [
         "/third_party/libwebrtc/modules/desktop_capture/mac/desktop_configuration_monitor.cc",
         "/third_party/libwebrtc/modules/desktop_capture/mac/desktop_frame_utils.cc",

@@ -1,22 +1,24 @@
 import os
+from copy import deepcopy
 
-from tests.support.classic.asserts import assert_error, assert_success
+import pytest
+from webdriver.error import InvalidArgumentException
 
 
-def test_bad_binary(new_session, configuration):
+def test_bad_binary(configuration, geckodriver):
     # skipif annotations are forbidden in wpt
     if os.path.exists("/bin/echo"):
-        capabilities = configuration["capabilities"].copy()
-        capabilities["moz:firefoxOptions"]["binary"] = "/bin/echo"
+        config = deepcopy(configuration)
+        config["capabilities"]["moz:firefoxOptions"]["binary"] = "/bin/echo"
 
-        response, _ = new_session({"capabilities": {"alwaysMatch": capabilities}})
-        assert_error(response, "invalid argument")
+        driver = geckodriver(config=config, force_new=True)
+        with pytest.raises(InvalidArgumentException):
+            driver.new_session()
 
 
-def test_shell_script_binary(new_session, configuration):
+def test_shell_script_binary(configuration, geckodriver):
     # skipif annotations are forbidden in wpt
     if os.path.exists("/bin/bash"):
-        capabilities = configuration["capabilities"].copy()
         binary = configuration["browser"]["binary"]
 
         path = os.path.abspath("firefox.sh")
@@ -26,8 +28,11 @@ def test_shell_script_binary(new_session, configuration):
             with open("firefox.sh", "w") as f:
                 f.write(script)
             os.chmod(path, 0o744)
-            capabilities["moz:firefoxOptions"]["binary"] = path
-            response, _ = new_session({"capabilities": {"alwaysMatch": capabilities}})
-            assert_success(response)
+
+            config = deepcopy(configuration)
+            config["capabilities"]["moz:firefoxOptions"]["binary"] = path
+
+            driver = geckodriver(config=config, force_new=True)
+            driver.new_session()
         finally:
             os.unlink(path)

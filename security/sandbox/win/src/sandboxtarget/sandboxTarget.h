@@ -41,6 +41,8 @@ class SandboxTarget {
     mTargetServices = aTargetServices;
   }
 
+  bool IsSandboxed() const { return mTargetServices != nullptr; }
+
   template <typename CallbackT>
   void RegisterSandboxStartCallback(CallbackT&& aCallback) {
     mStartObservers.push_back(std::forward<CallbackT>(aCallback));

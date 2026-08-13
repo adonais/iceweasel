@@ -16,7 +16,7 @@
 
 #  ifdef MOZ_SANDBOX
 #    include "mozilla/sandboxing/SandboxInitialization.h"
-#    include "mozilla/sandboxing/sandboxLogging.h"
+#    include "mozilla/sandboxing/TargetGeckoServices.h"
 #  endif
 #endif  // defined(XP_WIN)
 
@@ -84,7 +84,8 @@ int main(int argc, char* argv[]) {
       return 1;
     }
 
-    childData.ProvideLogFunction = mozilla::sandboxing::ProvideLogFunction;
+    childData.setTargetGeckoServices =
+        mozilla::sandboxing::SetTargetGeckoServices;
   }
 #endif
 

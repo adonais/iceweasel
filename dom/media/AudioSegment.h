@@ -354,9 +354,11 @@ class AudioSegment final : public MediaSegmentBase<AudioSegment, AudioChunk> {
   // function finds a chunk with more channels, `aResampler` is destroyed and a
   // new resampler is created, and `aResamplerChannelCount` is updated with the
   // new channel count value.
-  void ResampleChunks(nsAutoRef<SpeexResamplerState>& aResampler,
-                      uint32_t* aResamplerChannelCount, uint32_t aInRate,
-                      uint32_t aOutRate);
+  // Rates must be non-zero. Clears the segment and returns an error if the
+  // output size is not representable.
+  [[nodiscard]] nsresult ResampleChunks(
+      nsAutoRef<SpeexResamplerState>& aResampler,
+      uint32_t* aResamplerChannelCount, uint32_t aInRate, uint32_t aOutRate);
 
   template <typename T>
   void AppendFrames(already_AddRefed<ThreadSharedObject> aBuffer,
@@ -465,9 +467,9 @@ class AudioSegment final : public MediaSegmentBase<AudioSegment, AudioChunk> {
 
  private:
   template <typename T>
-  void Resample(nsAutoRef<SpeexResamplerState>& aResampler,
-                uint32_t* aResamplerChannelCount, uint32_t aInRate,
-                uint32_t aOutRate);
+  [[nodiscard]] nsresult Resample(nsAutoRef<SpeexResamplerState>& aResampler,
+                                  uint32_t* aResamplerChannelCount,
+                                  uint32_t aInRate, uint32_t aOutRate);
 };
 
 template <typename SrcT>

@@ -2,7 +2,7 @@
    http://creativecommons.org/publicdomain/zero/1.0/ */
 
 Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/browser/components/preferences/tests/head.js",
+  "chrome://mochitests/content/browser/browser/components/preferences/tests/head-common.js",
   this
 );
 Services.scriptloader.loadSubScript(

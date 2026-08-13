@@ -4,15 +4,14 @@
 
 #include <stdio.h>
 
-#include "nspr.h"
 #include "ScopedNSSTypes.h"
+#include "TLSServer.h"
+#include "mozilla/Sprintf.h"
+#include "nspr.h"
 #include "ssl.h"
 #include "ssl3prot.h"
 #include "sslexp.h"
 #include "sslimpl.h"
-#include "TLSServer.h"
-
-#include "mozilla/Sprintf.h"
 
 using namespace mozilla;
 using namespace mozilla::test;
@@ -22,6 +21,7 @@ enum FaultType {
   ZeroRtt,
   UnknownSNI,
   Mlkem768x25519,
+  Mlkem1024,
 };
 
 struct FaultyServerHost {
@@ -48,6 +48,8 @@ const char* kHostMlkem768x25519NetInterrupt =
 const char* kHostMlkem768x25519AlertAfterServerHello =
     "mlkem768x25519-alert-after-server-hello.example.com";
 
+const char* kHostMlkem1024 = "mlkem1024.example.com";
+
 const char* kCertWildcard = "default-ee";
 
 /* Each type of failure gets a different SNI.
@@ -66,6 +68,7 @@ MOZ_RUNINIT const FaultyServerHost sFaultyServerHosts[]{
     {kHostPSKDecryptErrorNoEarlyData, kCertWildcard, ZeroRtt},
     {kHostMlkem768x25519NetInterrupt, kCertWildcard, Mlkem768x25519},
     {kHostMlkem768x25519AlertAfterServerHello, kCertWildcard, Mlkem768x25519},
+    {kHostMlkem1024, kCertWildcard, Mlkem1024},
     {nullptr, nullptr},
 };
 
@@ -229,8 +232,10 @@ int32_t DoSNISocketConfig(PRFileDesc* aFd, const SECItem* aSrvNameArr,
     fprintf(stderr, "found pre-defined host '%s'\n", host->mHostName);
   }
 
-  const SSLNamedGroup mlkemTestNamedGroups[] = {ssl_grp_kem_mlkem768x25519,
-                                                ssl_grp_ec_curve25519};
+  const SSLNamedGroup hybridTestNamedGroups[] = {ssl_grp_kem_mlkem768x25519,
+                                                 ssl_grp_ec_curve25519};
+
+  const SSLNamedGroup mlkem1024TestNamedGroups[] = {ssl_grp_kem_mlkem1024};
 
   switch (host->mFaultType) {
     case ZeroRtt:
@@ -238,8 +243,12 @@ int32_t DoSNISocketConfig(PRFileDesc* aFd, const SECItem* aSrvNameArr,
       break;
     case Mlkem768x25519:
       SSL_SecretCallback(aFd, &SecretCallbackFailMlkem768x25519, (void*)host);
-      SSL_NamedGroupConfig(aFd, mlkemTestNamedGroups,
-                           std::size(mlkemTestNamedGroups));
+      SSL_NamedGroupConfig(aFd, hybridTestNamedGroups,
+                           std::size(hybridTestNamedGroups));
+      break;
+    case Mlkem1024:
+      SSL_NamedGroupConfig(aFd, mlkem1024TestNamedGroups,
+                           std::size(mlkem1024TestNamedGroups));
       break;
     case None:
       break;

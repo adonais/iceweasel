@@ -5,15 +5,16 @@
 #ifndef mozilla_widget_WinMouseScrollHandler_h_
 #define mozilla_widget_WinMouseScrollHandler_h_
 
-#include "nscore.h"
-#include "nsDebug.h"
-#include "nsIWidget.h"
+#include <windows.h>
+
+#include "Units.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/TimeStamp.h"
-#include "Units.h"
-#include <windows.h>
+#include "nsDebug.h"
+#include "nsIWidget.h"
 #include "nsPoint.h"
+#include "nscore.h"
 
 class nsWindow;
 

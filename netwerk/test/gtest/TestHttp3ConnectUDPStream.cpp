@@ -2,21 +2,21 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "TestCommon.h"
-#include "gtest/gtest.h"
 #include "Http3ConnectUDPStream.h"
 #include "Http3Session.h"
-#include "nsIUDPSocket.h"
-#include "nsIIOService.h"
-#include "nsIProtocolProxyService.h"
-#include "nsIProtocolHandler.h"
-#include "nsThreadUtils.h"
-#include "nsStringStream.h"
-#include "nsProxyInfo.h"
-#include "nsHttpConnectionInfo.h"
-#include "nsHttpRequestHead.h"
-#include "nsHttpHandler.h"
+#include "TestCommon.h"
+#include "gtest/gtest.h"
 #include "mozilla/Components.h"
+#include "nsHttpConnectionInfo.h"
+#include "nsHttpHandler.h"
+#include "nsHttpRequestHead.h"
+#include "nsIIOService.h"
+#include "nsIProtocolHandler.h"
+#include "nsIProtocolProxyService.h"
+#include "nsIUDPSocket.h"
+#include "nsProxyInfo.h"
+#include "nsStringStream.h"
+#include "nsThreadUtils.h"
 
 using namespace mozilla;
 using namespace mozilla::net;

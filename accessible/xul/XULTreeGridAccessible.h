@@ -5,9 +5,9 @@
 #ifndef mozilla_a11y_XULTreeGridAccessible_h_
 #define mozilla_a11y_XULTreeGridAccessible_h_
 
+#include "XULTreeAccessible.h"
 #include "mozilla/a11y/TableAccessible.h"
 #include "mozilla/a11y/TableCellAccessible.h"
-#include "XULTreeAccessible.h"
 
 namespace mozilla {
 namespace a11y {

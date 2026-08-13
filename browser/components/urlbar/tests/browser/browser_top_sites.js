@@ -168,7 +168,7 @@ add_task(async function selectSearchTopSite() {
 
   Assert.equal(
     amazonSearch.result.type,
-    UrlbarUtils.RESULT_TYPE.SEARCH,
+    UrlbarShared.RESULT_TYPE.SEARCH,
     "First result should have SEARCH type."
   );
 
@@ -225,7 +225,7 @@ add_task(async function topSitesBookmarksAndTabs() {
 
   Assert.equal(
     exampleResult.source,
-    UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     "The example.com Top Site should not appear in the view as an open tab result since it is the current tab."
   );
 
@@ -237,7 +237,7 @@ add_task(async function topSitesBookmarksAndTabs() {
   );
   Assert.equal(
     youtubeResult.source,
-    UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     "The YouTube Top Site should appear in the view as a bookmark result."
   );
   await UrlbarTestUtils.promisePopupClose(window, () => {
@@ -334,7 +334,7 @@ add_task(async function topSitesPinned() {
 
   Assert.equal(
     exampleResult.source,
-    UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     "The example.com Top Site should not appear in the view as an open tab result since it is the current tab."
   );
 
@@ -391,7 +391,7 @@ add_task(async function topSitesBookmarksAndTabsDisabled() {
   );
   Assert.equal(
     exampleResult.source,
-    UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     "The example.com Top Site should appear as a normal result even though it's open in a tab."
   );
 
@@ -403,7 +403,7 @@ add_task(async function topSitesBookmarksAndTabsDisabled() {
   );
   Assert.equal(
     youtubeResult.source,
-    UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     "The YouTube Top Site should appear as a normal result even though it's bookmarked."
   );
   await UrlbarTestUtils.promisePopupClose(window, () => {
@@ -538,7 +538,7 @@ add_task(async function tabSwitchBehavior() {
   );
   Assert.equal(
     aboutRobotsResult.source,
-    UrlbarUtils.RESULT_SOURCE.TABS,
+    UrlbarShared.RESULT_SOURCE.TABS,
     "The about:robots Top Site should appear as an open tab result."
   );
 
@@ -578,7 +578,7 @@ add_task(async function tabSwitchBehavior() {
   );
   Assert.equal(
     aboutRobotsResult.source,
-    UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     "The about:robots Top Site should appear as a regular result."
   );
 

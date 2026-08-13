@@ -7,6 +7,7 @@
 #include <ntstatus.h>
 #include <stddef.h>
 
+#include "base/compiler_specific.h"
 #include "sandbox/win/src/crosscall_client.h"
 #include "sandbox/win/src/ipc_tags.h"
 #include "sandbox/win/src/policy_engine_processor.h"
@@ -26,10 +27,11 @@ extern void* volatile g_shared_policy_memory;
 SANDBOX_INTERCEPT size_t g_shared_policy_size;
 
 bool QueryBroker(IpcTag ipc_id, CountedParameterSetBase* params) {
-  DCHECK_NT(static_cast<size_t>(ipc_id) < kMaxServiceCount);
+  DCHECK_NT(ipc_id <= IpcTag::kMaxValue);
 
-  if (static_cast<size_t>(ipc_id) >= kMaxServiceCount)
+  if (ipc_id <= IpcTag::UNUSED || ipc_id > IpcTag::kMaxValue) {
     return false;
+  }
 
   // Policy is only sent if required.
   if (!g_shared_policy_memory) {
@@ -40,16 +42,17 @@ bool QueryBroker(IpcTag ipc_id, CountedParameterSetBase* params) {
   PolicyGlobal* global_policy =
       reinterpret_cast<PolicyGlobal*>(g_shared_policy_memory);
 
-  if (!global_policy->entry[static_cast<size_t>(ipc_id)])
+  if (!UNSAFE_TODO(global_policy->entry[static_cast<size_t>(ipc_id)])) {
     return false;
+  }
 
   PolicyBuffer* policy = reinterpret_cast<PolicyBuffer*>(
-      reinterpret_cast<char*>(g_shared_policy_memory) +
-      reinterpret_cast<size_t>(
-          global_policy->entry[static_cast<size_t>(ipc_id)]));
+      UNSAFE_TODO(reinterpret_cast<char*>(g_shared_policy_memory) +
+                  reinterpret_cast<size_t>(
+                      global_policy->entry[static_cast<size_t>(ipc_id)])));
 
   if ((reinterpret_cast<size_t>(
-           global_policy->entry[static_cast<size_t>(ipc_id)]) >
+           UNSAFE_TODO(global_policy->entry[static_cast<size_t>(ipc_id)])) >
        global_policy->data_size) ||
       (g_shared_policy_size < global_policy->data_size)) {
     NOTREACHED_NT();
@@ -57,7 +60,7 @@ bool QueryBroker(IpcTag ipc_id, CountedParameterSetBase* params) {
   }
 
   for (size_t i = 0; i < params->count; i++) {
-    if (!params->parameters[i].IsValid()) {
+    if (!UNSAFE_TODO(params->parameters[i]).IsValid()) {
       NOTREACHED_NT();
       return false;
     }
@@ -74,7 +77,7 @@ bool QueryBroker(IpcTag ipc_id, CountedParameterSetBase* params) {
 // -----------------------------------------------------------------------
 
 // Hooks NtImpersonateAnonymousToken so we can block until call to LowerToken.
-// This means a non-retricted token behaves the same as restricted one before
+// This means a non-restricted token behaves the same as restricted one before
 // LowerToken and prevents us from being left with an anonymous logon token
 // because we are blocking the RevertToSelf that would undo it.
 NTSTATUS WINAPI TargetNtImpersonateAnonymousToken(

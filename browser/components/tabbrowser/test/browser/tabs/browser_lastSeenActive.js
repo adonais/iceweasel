@@ -30,9 +30,7 @@ async function switchToWindow(win) {
   info("switchToWindow, waiting for promiseFocus");
   await SimpleTest.promiseFocus(win);
   info("switchToWindow, waiting for correct Services.focus.activeWindow");
-  await BrowserTestUtils.waitForCondition(
-    () => Services.focus.activeWindow == win
-  );
+  await TestUtils.waitForCondition(() => Services.focus.activeWindow == win);
 }
 
 async function changeSizeMode(win, mode) {

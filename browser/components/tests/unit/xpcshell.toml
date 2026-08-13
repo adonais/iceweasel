@@ -37,6 +37,8 @@ skip-if = [
 
 ["test_distribution_observer.js"]
 
+["test_profileDataUpgrade_duplicateCookiePerms.js"]
+
 ["test_profileDataUpgrade_smartwindow.js"]
 
 ["test_profileDataUpgrade_smartwindow_semanticHistory.js"]

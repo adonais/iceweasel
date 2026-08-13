@@ -4,6 +4,7 @@
 
 #include "mozilla/ProfilerThreadRegistration.h"
 
+#include "mozilla/FOGIPC.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/ProfilerThreadRegistry.h"
 #include "nsString.h"
@@ -67,7 +68,14 @@ ThreadRegistration::~ThreadRegistration() {
 
     profiler_mark_thread_asleep();
 #ifdef NIGHTLY_BUILD
-    mData.RecordWakeCount();
+    // Not holding the ThreadRegistry lock here, so it is safe to report to
+    // Glean directly.
+    nsAutoCString threadName;
+    uint64_t cpuTimeMs;
+    uint64_t wakeCount;
+    if (mData.RecordWakeCount(threadName, cpuTimeMs, wakeCount)) {
+      glean::RecordThreadCpuUse(threadName, cpuTimeMs, wakeCount);
+    }
 #endif
     ThreadRegistry::Unregister(OnThreadRef{*this});
 #ifdef DEBUG

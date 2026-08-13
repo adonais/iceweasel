@@ -473,15 +473,14 @@ void TabListener::RemoveListeners() {
   RemoveEventListeners();
 
   if (mPrefObserverRegistered) {
-    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-    if (!obs) {
+    nsCOMPtr<nsIPrefBranch> prefBranch =
+        do_GetService(NS_PREFSERVICE_CONTRACTID);
+    if (!prefBranch) {
       return;
     }
-    if (mPrefObserverRegistered) {
-      obs->RemoveObserver(this, kTimeOutDisable);
-      obs->RemoveObserver(this, kPrefInterval);
-      mPrefObserverRegistered = false;
-    }
+    prefBranch->RemoveObserver(kTimeOutDisable, this);
+    prefBranch->RemoveObserver(kPrefInterval, this);
+    mPrefObserverRegistered = false;
   }
 }
 

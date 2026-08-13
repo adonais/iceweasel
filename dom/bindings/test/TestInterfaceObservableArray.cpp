@@ -10,22 +10,20 @@
 
 namespace mozilla::dom {
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(TestInterfaceObservableArray, mParent,
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(TestInterfaceObservableArrayBase, mParent,
                                       mSetBooleanCallback,
                                       mDeleteBooleanCallback,
-                                      mSetObjectCallback, mDeleteObjectCallback,
-                                      mSetInterfaceCallback,
-                                      mDeleteInterfaceCallback)
+                                      mSetObjectCallback, mDeleteObjectCallback)
 
-NS_IMPL_CYCLE_COLLECTING_ADDREF(TestInterfaceObservableArray)
-NS_IMPL_CYCLE_COLLECTING_RELEASE(TestInterfaceObservableArray)
+NS_IMPL_CYCLE_COLLECTING_ADDREF(TestInterfaceObservableArrayBase)
+NS_IMPL_CYCLE_COLLECTING_RELEASE(TestInterfaceObservableArrayBase)
 
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(TestInterfaceObservableArray)
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(TestInterfaceObservableArrayBase)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-TestInterfaceObservableArray::TestInterfaceObservableArray(
+TestInterfaceObservableArrayBase::TestInterfaceObservableArrayBase(
     nsPIDOMWindowInner* aParent, const ObservableArrayCallbacks& aCallbacks)
     : mParent(aParent) {
   if (aCallbacks.mSetBooleanCallback.WasPassed()) {
@@ -40,6 +38,133 @@ TestInterfaceObservableArray::TestInterfaceObservableArray(
   if (aCallbacks.mDeleteObjectCallback.WasPassed()) {
     mDeleteObjectCallback = &aCallbacks.mDeleteObjectCallback.Value();
   }
+}
+
+nsPIDOMWindowInner* TestInterfaceObservableArrayBase::GetParentObject() const {
+  return mParent;
+}
+
+JSObject* TestInterfaceObservableArrayBase::WrapObject(
+    JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
+  MOZ_CRASH("Must be overridden");
+}
+
+void TestInterfaceObservableArrayBase::OnSetObservableArrayObject(
+    JSContext* aCx, JS::Handle<JSObject*> aValue, uint32_t aIndex,
+    ErrorResult& aRv) {
+  if (mSetObjectCallback) {
+    MOZ_KnownLive(mSetObjectCallback)
+        ->Call(aValue, aIndex, aRv, "OnSetObservableArrayObject",
+               CallbackFunction::eRethrowExceptions);
+  }
+}
+
+void TestInterfaceObservableArrayBase::OnDeleteObservableArrayObject(
+    JSContext* aCx, JS::Handle<JSObject*> aValue, uint32_t aIndex,
+    ErrorResult& aRv) {
+  if (mDeleteObjectCallback) {
+    MOZ_KnownLive(mDeleteObjectCallback)
+        ->Call(aValue, aIndex, aRv, "OnDeleteObservableArrayObject",
+               CallbackFunction::eRethrowExceptions);
+  }
+}
+
+void TestInterfaceObservableArrayBase::OnSetObservableArrayBoolean(
+    bool aValue, uint32_t aIndex, ErrorResult& aRv) {
+  if (mSetBooleanCallback) {
+    MOZ_KnownLive(mSetBooleanCallback)
+        ->Call(aValue, aIndex, aRv, "OnSetObservableArrayBoolean",
+               CallbackFunction::eRethrowExceptions);
+  }
+}
+
+void TestInterfaceObservableArrayBase::OnDeleteObservableArrayBoolean(
+    bool aValue, uint32_t aIndex, ErrorResult& aRv) {
+  if (mDeleteBooleanCallback) {
+    MOZ_KnownLive(mDeleteBooleanCallback)
+        ->Call(aValue, aIndex, aRv, "OnDeleteObservableArrayBoolean",
+               CallbackFunction::eRethrowExceptions);
+  }
+}
+
+bool TestInterfaceObservableArrayBase::BooleanElementAtInternal(
+    uint32_t aIndex, ErrorResult& aRv) {
+  return TestInterfaceObservableArrayBase_Binding::
+      ObservableArrayBooleanHelpers::ElementAt(this, aIndex, aRv);
+}
+
+void TestInterfaceObservableArrayBase::ObjectElementAtInternal(
+    JSContext* aCx, uint32_t aIndex, JS::MutableHandle<JSObject*> aValue,
+    ErrorResult& aRv) {
+  TestInterfaceObservableArrayBase_Binding::ObservableArrayObjectHelpers::
+      ElementAt(this, aCx, aIndex, aValue, aRv);
+}
+
+void TestInterfaceObservableArrayBase::BooleanReplaceElementAtInternal(
+    uint32_t aIndex, bool aValue, ErrorResult& aRv) {
+  TestInterfaceObservableArrayBase_Binding::ObservableArrayBooleanHelpers::
+      ReplaceElementAt(this, aIndex, aValue, aRv);
+}
+
+void TestInterfaceObservableArrayBase::ObjectReplaceElementAtInternal(
+    JSContext* aCx, uint32_t aIndex, JS::Handle<JSObject*> aValue,
+    ErrorResult& aRv) {
+  TestInterfaceObservableArrayBase_Binding::ObservableArrayObjectHelpers::
+      ReplaceElementAt(this, aIndex, aValue, aRv);
+}
+
+void TestInterfaceObservableArrayBase::BooleanAppendElementInternal(
+    bool aValue, ErrorResult& aRv) {
+  TestInterfaceObservableArrayBase_Binding::ObservableArrayBooleanHelpers::
+      AppendElement(this, aValue, aRv);
+}
+
+void TestInterfaceObservableArrayBase::ObjectAppendElementInternal(
+    JSContext* aCx, JS::Handle<JSObject*> aValue, ErrorResult& aRv) {
+  TestInterfaceObservableArrayBase_Binding::ObservableArrayObjectHelpers::
+      AppendElement(this, aValue, aRv);
+}
+
+void TestInterfaceObservableArrayBase::BooleanRemoveLastElementInternal(
+    ErrorResult& aRv) {
+  TestInterfaceObservableArrayBase_Binding::ObservableArrayBooleanHelpers::
+      RemoveLastElement(this, aRv);
+}
+
+void TestInterfaceObservableArrayBase::ObjectRemoveLastElementInternal(
+    ErrorResult& aRv) {
+  TestInterfaceObservableArrayBase_Binding::ObservableArrayObjectHelpers::
+      RemoveLastElement(this, aRv);
+}
+
+uint32_t TestInterfaceObservableArrayBase::BooleanLengthInternal(
+    ErrorResult& aRv) {
+  return TestInterfaceObservableArrayBase_Binding::
+      ObservableArrayBooleanHelpers::Length(this, aRv);
+}
+
+uint32_t TestInterfaceObservableArrayBase::ObjectLengthInternal(
+    ErrorResult& aRv) {
+  return TestInterfaceObservableArrayBase_Binding::
+      ObservableArrayObjectHelpers::Length(this, aRv);
+}
+
+NS_IMPL_CYCLE_COLLECTION_INHERITED(TestInterfaceObservableArray,
+                                   TestInterfaceObservableArrayBase,
+                                   mSetInterfaceCallback,
+                                   mDeleteInterfaceCallback)
+
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(TestInterfaceObservableArray)
+NS_INTERFACE_MAP_END_INHERITING(TestInterfaceObservableArrayBase)
+
+NS_IMPL_ADDREF_INHERITED(TestInterfaceObservableArray,
+                         TestInterfaceObservableArrayBase)
+NS_IMPL_RELEASE_INHERITED(TestInterfaceObservableArray,
+                          TestInterfaceObservableArrayBase)
+
+TestInterfaceObservableArray::TestInterfaceObservableArray(
+    nsPIDOMWindowInner* aParent, const ObservableArrayCallbacks& aCallbacks)
+    : TestInterfaceObservableArrayBase(aParent, aCallbacks) {
   if (aCallbacks.mSetInterfaceCallback.WasPassed()) {
     mSetInterfaceCallback = &aCallbacks.mSetInterfaceCallback.Value();
   }
@@ -70,48 +195,6 @@ JSObject* TestInterfaceObservableArray::WrapObject(
   return TestInterfaceObservableArray_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-nsPIDOMWindowInner* TestInterfaceObservableArray::GetParentObject() const {
-  return mParent;
-}
-
-void TestInterfaceObservableArray::OnSetObservableArrayObject(
-    JSContext* aCx, JS::Handle<JSObject*> aValue, uint32_t aIndex,
-    ErrorResult& aRv) {
-  if (mSetObjectCallback) {
-    MOZ_KnownLive(mSetObjectCallback)
-        ->Call(aValue, aIndex, aRv, "OnSetObservableArrayObject",
-               CallbackFunction::eRethrowExceptions);
-  }
-}
-
-void TestInterfaceObservableArray::OnDeleteObservableArrayObject(
-    JSContext* aCx, JS::Handle<JSObject*> aValue, uint32_t aIndex,
-    ErrorResult& aRv) {
-  if (mDeleteObjectCallback) {
-    MOZ_KnownLive(mDeleteObjectCallback)
-        ->Call(aValue, aIndex, aRv, "OnDeleteObservableArrayObject",
-               CallbackFunction::eRethrowExceptions);
-  }
-}
-
-void TestInterfaceObservableArray::OnSetObservableArrayBoolean(
-    bool aValue, uint32_t aIndex, ErrorResult& aRv) {
-  if (mSetBooleanCallback) {
-    MOZ_KnownLive(mSetBooleanCallback)
-        ->Call(aValue, aIndex, aRv, "OnSetObservableArrayBoolean",
-               CallbackFunction::eRethrowExceptions);
-  }
-}
-
-void TestInterfaceObservableArray::OnDeleteObservableArrayBoolean(
-    bool aValue, uint32_t aIndex, ErrorResult& aRv) {
-  if (mDeleteBooleanCallback) {
-    MOZ_KnownLive(mDeleteBooleanCallback)
-        ->Call(aValue, aIndex, aRv, "OnDeleteObservableArrayBoolean",
-               CallbackFunction::eRethrowExceptions);
-  }
-}
-
 void TestInterfaceObservableArray::OnSetObservableArrayInterface(
     TestInterfaceObservableArray* aValue, uint32_t aIndex, ErrorResult& aRv) {
   if (mSetInterfaceCallback && aValue) {
@@ -130,37 +213,11 @@ void TestInterfaceObservableArray::OnDeleteObservableArrayInterface(
   }
 }
 
-bool TestInterfaceObservableArray::BooleanElementAtInternal(uint32_t aIndex,
-                                                            ErrorResult& aRv) {
-  return TestInterfaceObservableArray_Binding::ObservableArrayBooleanHelpers::
-      ElementAt(this, aIndex, aRv);
-}
-
-void TestInterfaceObservableArray::ObjectElementAtInternal(
-    JSContext* aCx, uint32_t aIndex, JS::MutableHandle<JSObject*> aValue,
-    ErrorResult& aRv) {
-  TestInterfaceObservableArray_Binding::ObservableArrayObjectHelpers::ElementAt(
-      this, aCx, aIndex, aValue, aRv);
-}
-
 already_AddRefed<TestInterfaceObservableArray>
 TestInterfaceObservableArray::InterfaceElementAtInternal(uint32_t aIndex,
                                                          ErrorResult& aRv) {
   return TestInterfaceObservableArray_Binding::ObservableArrayInterfaceHelpers::
       ElementAt(this, aIndex, aRv);
-}
-
-void TestInterfaceObservableArray::BooleanReplaceElementAtInternal(
-    uint32_t aIndex, bool aValue, ErrorResult& aRv) {
-  TestInterfaceObservableArray_Binding::ObservableArrayBooleanHelpers::
-      ReplaceElementAt(this, aIndex, aValue, aRv);
-}
-
-void TestInterfaceObservableArray::ObjectReplaceElementAtInternal(
-    JSContext* aCx, uint32_t aIndex, JS::Handle<JSObject*> aValue,
-    ErrorResult& aRv) {
-  TestInterfaceObservableArray_Binding::ObservableArrayObjectHelpers::
-      ReplaceElementAt(this, aIndex, aValue, aRv);
 }
 
 void TestInterfaceObservableArray::InterfaceReplaceElementAtInternal(
@@ -169,50 +226,16 @@ void TestInterfaceObservableArray::InterfaceReplaceElementAtInternal(
       ReplaceElementAt(this, aIndex, aValue, aRv);
 }
 
-void TestInterfaceObservableArray::BooleanAppendElementInternal(
-    bool aValue, ErrorResult& aRv) {
-  TestInterfaceObservableArray_Binding::ObservableArrayBooleanHelpers::
-      AppendElement(this, aValue, aRv);
-}
-
-void TestInterfaceObservableArray::ObjectAppendElementInternal(
-    JSContext* aCx, JS::Handle<JSObject*> aValue, ErrorResult& aRv) {
-  TestInterfaceObservableArray_Binding::ObservableArrayObjectHelpers::
-      AppendElement(this, aValue, aRv);
-}
-
 void TestInterfaceObservableArray::InterfaceAppendElementInternal(
     TestInterfaceObservableArray& aValue, ErrorResult& aRv) {
   TestInterfaceObservableArray_Binding::ObservableArrayInterfaceHelpers::
       AppendElement(this, aValue, aRv);
 }
 
-void TestInterfaceObservableArray::BooleanRemoveLastElementInternal(
-    ErrorResult& aRv) {
-  TestInterfaceObservableArray_Binding::ObservableArrayBooleanHelpers::
-      RemoveLastElement(this, aRv);
-}
-
-void TestInterfaceObservableArray::ObjectRemoveLastElementInternal(
-    ErrorResult& aRv) {
-  TestInterfaceObservableArray_Binding::ObservableArrayObjectHelpers::
-      RemoveLastElement(this, aRv);
-}
-
 void TestInterfaceObservableArray::InterfaceRemoveLastElementInternal(
     ErrorResult& aRv) {
   TestInterfaceObservableArray_Binding::ObservableArrayInterfaceHelpers::
       RemoveLastElement(this, aRv);
-}
-
-uint32_t TestInterfaceObservableArray::BooleanLengthInternal(ErrorResult& aRv) {
-  return TestInterfaceObservableArray_Binding::ObservableArrayBooleanHelpers::
-      Length(this, aRv);
-}
-
-uint32_t TestInterfaceObservableArray::ObjectLengthInternal(ErrorResult& aRv) {
-  return TestInterfaceObservableArray_Binding::ObservableArrayObjectHelpers::
-      Length(this, aRv);
 }
 
 uint32_t TestInterfaceObservableArray::InterfaceLengthInternal(

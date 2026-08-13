@@ -19,10 +19,13 @@ function joinRelativePath(...args) {
 }
 
 const WIDGETS_PATH = "../../../../content/widgets".split("/");
+const BROWSER_THEMES_PATH = "../../../../../browser/themes/shared".split("/");
 const TOKEN_DIRS = [
   joinRelativePath("tokens", "base"),
   joinRelativePath("tokens", "components"),
   joinRelativePath(...WIDGETS_PATH),
+  joinRelativePath(...BROWSER_THEMES_PATH, "urlbar"),
+  joinRelativePath(...BROWSER_THEMES_PATH, "tabbrowser"),
 ];
 const FIGMA_VALUE_MAP = {
   Light: "/light",
@@ -31,7 +34,90 @@ const FIGMA_VALUE_MAP = {
   Value: "",
 };
 const TOKEN_VALUE_KEYS = new Set(["light", "dark", "forcedColors", "value"]);
-const FIGMA_IGNORES = new Set(["focus/outline", "focus/outline/inset"]);
+// Figma variables that we deliberately don't import, because the corresponding
+// base token relies on platform structure that Figma can't express (e.g.
+// `color-mix()` on `currentColor`, a `prefers-contrast` treatment, or a
+// brand/platform surface split). Ignoring the variable lets the Nova token fall
+// back to the carefully-chosen base value instead of a flattened light/dark pair.
+const FIGMA_IGNORES = new Set([
+  "focus/outline",
+  "focus/outline/inset",
+  "text/color/deemphasized",
+  "text/color/disabled",
+  "panel/separator/color",
+  // Base already has `inherit`; Figma stores a token reference that would overwrite it.
+  "urlbar/box/text/color",
+]);
+
+// Nova overrides whose value must keep platform structure that Figma flattens
+// away. Keyed by resolved token path (with `@base` segments removed). When the
+// importer reaches one of these tokens it emits this value verbatim and consumes
+// the matching Figma variables, so the structure survives a re-import. The colors
+// still come from Figma; only the surrounding structure is maintained here.
+// See bug 2031765.
+const NOVA_STRUCTURAL_OVERRIDES = {
+  "text/color": {
+    prefersContrast: "CanvasText",
+    nativeTheme: "currentColor",
+    light: "{color.violet-desaturated.90}",
+    dark: "{color.violet-desaturated.0}",
+  },
+  "text/color/error": {
+    light: "{color.red.50}",
+    dark: "{color.red.20}",
+    prefersContrast: "inherit",
+  },
+  "text/color/accent/primary/selected": {
+    forcedColors: "SelectedItemText",
+    brand: {
+      light: "{color.white.@base}",
+      dark: "{color.gray.55}",
+    },
+    platform: {
+      default: "SelectedItemText",
+    },
+  },
+  "tab/border/color/accent":
+    "linear-gradient(96deg, var(--tab-border-color-selected-leading) 20.68%, var(--tab-border-color-selected-trailing) 79.34%)",
+  // Tab HCM overrides are handled in CSS; strip forcedColors from these tokens.
+  "tab/background/color/hover": {
+    nativeTheme: "color-mix(in srgb, currentColor 17%, transparent)",
+    default: "{toolbarbutton.background.color.hover}",
+  },
+  "tab/background/color/selected": {
+    nativeTheme: "var(--toolbar-background-color)",
+    default: "{background.color.box.@base}",
+  },
+  "tab/border/color/selected/leading": "{color.violet.30}",
+  "tab/border/color/selected/trailing": {
+    light: "{color.orange.30}",
+    dark: "{color.violet.50}",
+  },
+  "tab/loading/fill": "{color.accent.primary.@base}",
+  "tab/outline/color": "transparent",
+  // color-mix() on currentColor for nativeTheme can't be stored in Figma.
+  "urlbar/box/background/color": {
+    nativeTheme: "color-mix(in srgb, currentColor 16%, transparent)",
+    default: "{urlbarview.background.color.hover}",
+  },
+  "urlbar/box/background/color/hover": {
+    nativeTheme: "color-mix(in srgb, currentColor 22%, transparent)",
+    default: "{urlbarview.background.color.selected}",
+  },
+  "urlbar/box/background/color/active": {
+    nativeTheme: "color-mix(in srgb, currentColor 30%, transparent)",
+    light: "rgba(117, 102, 159, 0.6)",
+    dark: "rgba(176, 163, 210, 0.6)",
+  },
+  // Figma's HCM mode maps to `forcedColors`, but the token intentionally uses
+  // `prefersContrast` (a different media query).
+  "urlbar/icon/fill/opacity": {
+    nativeTheme: "0.9",
+    light: "0.7",
+    dark: "0.95",
+    prefersContrast: "1",
+  },
+};
 
 function transformValue(val, tokenNames, figmaName) {
   if (typeof val === "number") {
@@ -39,6 +125,9 @@ function transformValue(val, tokenNames, figmaName) {
       // This is intended for opacity which is exported as a number between 0-100...
       // Likely we need to handle other numbers that are px, etc too
       return String(val / 100);
+    }
+    if (figmaName.includes("line/height")) {
+      return String(val);
     }
     return val === 0 ? String(val) : `${val}px`;
   }
@@ -191,6 +280,17 @@ function matchesFigmaVar(resolvedPath, figmaVar) {
   );
 }
 
+function consumeFigmaVars(resolvedPath, vars) {
+  for (const figmaVar in vars) {
+    if (matchesFigmaVar(resolvedPath, figmaVar)) {
+      const figmaName = figmaVar.slice(resolvedPath.length + 1);
+      if (!figmaName || TOKEN_VALUE_KEYS.has(figmaName)) {
+        delete vars[figmaVar];
+      }
+    }
+  }
+}
+
 function walkUpdateNovaTokens(tokens, vars, tokenNames, path = []) {
   for (const tokenProp in tokens) {
     if (tokenProp === "comment") {
@@ -198,6 +298,13 @@ function walkUpdateNovaTokens(tokens, vars, tokenNames, path = []) {
     }
     if (tokenProp === "value") {
       let resolvedPath = path.filter(p => p !== "@base").join("/");
+      if (resolvedPath in NOVA_STRUCTURAL_OVERRIDES) {
+        consumeFigmaVars(resolvedPath, vars);
+        tokens.value = JSON.parse(
+          JSON.stringify(NOVA_STRUCTURAL_OVERRIDES[resolvedPath])
+        );
+        continue;
+      }
       let newValue = {};
       let { nativeTheme } = tokens.value;
       for (const figmaVar in vars) {
@@ -232,7 +339,8 @@ function walkUpdateNovaTokens(tokens, vars, tokenNames, path = []) {
             simplified.light = newValue.light;
             simplified.dark = newValue.dark;
           }
-          if (newValue.forcedColors) {
+          // Tab group HCM is handled in CSS; strip forcedColors for all tab group tokens.
+          if (newValue.forcedColors && !resolvedPath.startsWith("tab/group/")) {
             if (
               !simplified.default ||
               newValue.forcedColors !== simplified.default

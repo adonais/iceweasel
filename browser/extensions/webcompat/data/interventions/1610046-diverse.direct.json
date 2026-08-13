@@ -1,0 +1,22 @@
+{
+  "label": "diverse.direct",
+  "bugs": {
+    "1610046": {
+      "issue": "broken-images",
+      "matches": ["*://www.diverse.direct/*"]
+    }
+  },
+  "css": {
+    "fix_image_flickering": "img { -moz-image-decoding: sync }"
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "min_version": 154,
+      "css": {
+        "user_styles": true,
+        "which": ["fix_image_flickering"]
+      }
+    }
+  ]
+}

@@ -4,29 +4,32 @@
 
 #include "WidgetUtilsGtk.h"
 
+#include <dlfcn.h>
+#include <glib.h>
+#include <gtk/gtk.h>
+#include <inttypes.h>
+#ifdef MOZ_X11
+#  include <X11/Xatom.h>
+#  include <X11/Xlib.h>
+
+#  include "X11UndefineNone.h"
+#endif
+
 #include "MainThreadUtils.h"
 #include "mozilla/StaticPrefs_widget.h"
 #include "mozilla/UniquePtr.h"
+#include "nsCOMPtr.h"
+#include "nsDirectoryServiceDefs.h"
+#include "nsGtkKeyUtils.h"
+#include "nsGtkUtils.h"
+#include "nsIFile.h"
+#include "nsIProperties.h"
 #include "nsReadableUtils.h"
 #include "nsString.h"
 #include "nsStringFwd.h"
 #include "nsWindow.h"
-#include "nsIGfxInfo.h"
-#include "mozilla/Components.h"
-#include "nsCOMPtr.h"
-#include "nsIProperties.h"
-#include "nsIFile.h"
-#include "nsXULAppAPI.h"
 #include "nsXPCOMCID.h"
-#include "nsDirectoryServiceDefs.h"
-#include "nsString.h"
-#include "nsGtkKeyUtils.h"
-#include "nsGtkUtils.h"
-
-#include <gtk/gtk.h>
-#include <dlfcn.h>
-#include <glib.h>
-#include <inttypes.h>
+#include "nsXULAppAPI.h"
 
 #ifdef MOZ_ENABLE_DBUS
 #  include "mozilla/ClearOnShutdown.h"
@@ -37,11 +40,6 @@
 #ifdef MOZ_WAYLAND
 #  include "nsWaylandDisplay.h"
 #endif  // MOZ_WAYLAND
-
-#ifdef MOZ_X11
-#  include <X11/Xlib.h>
-#  include <X11/Xatom.h>
-#endif /* MOZ_X11 */
 
 #undef LOGW
 #ifdef MOZ_LOGGING

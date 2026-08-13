@@ -83,7 +83,7 @@ export var NetUtil = {
    * is asynchronous, I/O may happen on the main thread.  When reading from
    * a local file, prefer using IOUtils methods instead.
    *
-   * @param {nsIChannel|nsIInputStream} aSource
+   * @param {nsIChannel|nsIInputStream|NewChannelOptions} aSource
    *        This argument can be one of the following:
    *         - An options object that will be passed to NetUtil.newChannel.
    *         - An existing nsIChannel.
@@ -185,29 +185,38 @@ export var NetUtil = {
   },
 
   /**
+   * @typedef {object} NewChannelOptions
+   *        The options for what to load.
+   * @property {string|nsIURI|nsIFile} uri
+   *        The URI to create the channel for.
+   *        Note that this cannot be an nsIFile if you have to specify a
+   *        non-default charset or base URI.  Call NetUtil.newURI first if
+   *        you need to construct an URI using those options.
+   * @property {Node} [loadingNode]
+   *        The node responsible for the load.
+   * @property {nsIPrincipal} [loadingPrincipal]
+   *        The principal responsible for the load.
+   * @property {nsIPrincipal} [triggeringPrincipal]
+   *        The principal that triggered the load.
+   * @property {number} [securityFlags]
+   *        Security flags for the load.
+   * @property {nsContentPolicyType} [contentPolicyType]
+   *        These will be used as values for the nsILoadInfo object on the
+   *        created channel. For details, see nsILoadInfo in nsILoadInfo.idl
+   * @property {boolean} [loadUsingSystemPrincipal]
+   *        Set this to true to use the system principal as loadingPrincipal.
+   *        Yhis must be omitted if loadingPrincipal or loadingNode are present.
+   *        This should be used with care as it skips security checks.
+   */
+
+  /**
    * Constructs a new channel for the given source.
    *
    * Keep in mind that URIs coming from a webpage should *never* use the
    * systemPrincipal as the loadingPrincipal.
    *
-   * @param {object} aWhatToLoad
+   * @param {NewChannelOptions} aWhatToLoad
    *        The options for what to load.
-   * @param {string|nsIURI|nsIFile} aWhatToLoad.uri
-   *        The URI to create the channel for.
-   *        Note that this cannot be an nsIFile if you have to specify a
-   *        non-default charset or base URI.  Call NetUtil.newURI first if
-   *        you need to construct an URI using those options.
-   * @param {Node} aWhatToLoad.loadingNode
-   * @param {nsIPrincipal} aWhatToLoad.loadingPrincipal
-   * @param {nsIPrincipal} aWhatToLoad.triggeringPrincipal
-   * @param {number} [aWhatToLoad.securityFlags]
-   * @param {nsContentPolicyType} [aWhatToLoad.contentPolicyType]
-   *        These will be used as values for the nsILoadInfo object on the
-   *        created channel. For details, see nsILoadInfo in nsILoadInfo.idl
-   * @param {boolean} [aWhatToLoad.loadUsingSystemPrincipal]
-   *        Set this to true to use the system principal as loadingPrincipal.
-   *        Yhis must be omitted if loadingPrincipal or loadingNode are present.
-   *        This should be used with care as it skips security checks.
    * @return {nsIChannel}
    */
   newChannel: function NetUtil_newChannel(aWhatToLoad) {

@@ -102,8 +102,7 @@ nsresult HTMLEditor::SetInlinePropertyAsAction(nsStaticAtom& aProperty,
   if (NS_WARN_IF(!editingHost)) {
     return NS_ERROR_FAILURE;
   }
-  if (IsPlaintextMailComposer() ||
-      editingHost->IsContentEditablePlainTextOnly()) {
+  if (!IsStyleEditable(editingHost)) {
     return NS_SUCCESS_DOM_NO_OPERATION;
   }
 
@@ -226,8 +225,7 @@ NS_IMETHODIMP HTMLEditor::SetInlineProperty(const nsAString& aProperty,
   if (NS_WARN_IF(!editingHost)) {
     return NS_ERROR_FAILURE;
   }
-  if (IsPlaintextMailComposer() ||
-      editingHost->IsContentEditablePlainTextOnly()) {
+  if (!IsStyleEditable(editingHost)) {
     return NS_SUCCESS_DOM_NO_OPERATION;
   }
 
@@ -3246,7 +3244,7 @@ nsresult HTMLEditor::RemoveAllInlinePropertiesAsAction(
 
   const RefPtr<Element> editingHost =
       ComputeEditingHost(LimitInBodyElement::No);
-  if (!editingHost || editingHost->IsContentEditablePlainTextOnly()) {
+  if (!editingHost || !IsStyleEditable(editingHost)) {
     return NS_SUCCESS_DOM_NO_OPERATION;
   }
 
@@ -3293,7 +3291,7 @@ nsresult HTMLEditor::RemoveInlinePropertyAsAction(nsStaticAtom& aHTMLProperty,
 
   const RefPtr<Element> editingHost =
       ComputeEditingHost(LimitInBodyElement::No);
-  if (!editingHost || editingHost->IsContentEditablePlainTextOnly()) {
+  if (!editingHost || !IsStyleEditable(editingHost)) {
     return NS_SUCCESS_DOM_NO_OPERATION;
   }
 
@@ -3341,7 +3339,7 @@ NS_IMETHODIMP HTMLEditor::RemoveInlineProperty(const nsAString& aProperty,
 
   const RefPtr<Element> editingHost =
       ComputeEditingHost(LimitInBodyElement::No);
-  if (!editingHost || editingHost->IsContentEditablePlainTextOnly()) {
+  if (!editingHost || !IsStyleEditable(editingHost)) {
     return NS_SUCCESS_DOM_NO_OPERATION;
   }
 

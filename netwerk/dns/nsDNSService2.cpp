@@ -3,45 +3,44 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsDNSService2.h"
-#include "nsIDNSRecord.h"
-#include "nsIDNSListener.h"
-#include "nsIDNSByTypeRecord.h"
-#include "nsICancelable.h"
-#include "nsIPrefBranch.h"
-#include "nsIOService.h"
-#include "nsIXPConnect.h"
-#include "nsProxyRelease.h"
-#include "nsReadableUtils.h"
-#include "nsString.h"
-#include "nsCRT.h"
-#include "nsNetCID.h"
-#include "nsError.h"
-#include "nsDNSPrefetch.h"
-#include "nsThreadUtils.h"
-#include "nsIProtocolProxyService.h"
-#include "nsIObliviousHttp.h"
-#include "prsystem.h"
-#include "prnetdb.h"
-#include "prmon.h"
-#include "prio.h"
-#include "nsCharSeparatedTokenizer.h"
-#include "nsNetAddr.h"
-#include "nsNetUtil.h"
-#include "nsProxyRelease.h"
-#include "nsQueryObject.h"
-#include "nsIObserverService.h"
-#include "nsINetworkLinkService.h"
+
 #include "DNSAdditionalInfo.h"
 #include "TRRService.h"
-
 #include "mozilla/ClearOnShutdown.h"
-#include "mozilla/net/NeckoCommon.h"
-#include "mozilla/net/ChildDNSService.h"
-#include "mozilla/net/DNSListenerProxy.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/SyncRunnable.h"
+#include "mozilla/net/ChildDNSService.h"
+#include "mozilla/net/DNSListenerProxy.h"
+#include "mozilla/net/NeckoCommon.h"
+#include "nsCRT.h"
+#include "nsCharSeparatedTokenizer.h"
+#include "nsDNSPrefetch.h"
+#include "nsError.h"
+#include "nsICancelable.h"
+#include "nsIDNSByTypeRecord.h"
+#include "nsIDNSListener.h"
+#include "nsIDNSRecord.h"
+#include "nsINetworkLinkService.h"
+#include "nsIOService.h"
+#include "nsIObliviousHttp.h"
+#include "nsIObserverService.h"
+#include "nsIPrefBranch.h"
+#include "nsIProtocolProxyService.h"
+#include "nsIXPConnect.h"
+#include "nsNetAddr.h"
+#include "nsNetCID.h"
+#include "nsNetUtil.h"
+#include "nsProxyRelease.h"
+#include "nsQueryObject.h"
+#include "nsReadableUtils.h"
+#include "nsString.h"
+#include "nsThreadUtils.h"
+#include "prio.h"
+#include "prmon.h"
+#include "prnetdb.h"
+#include "prsystem.h"
 // Put DNSLogging.h at the end to avoid LOG being overwritten by other headers.
 #include "DNSLogging.h"
 
@@ -881,6 +880,9 @@ nsDNSService::Init() {
   if (prefs) {
     // register as prefs observer
     prefs->AddObserver(kPrefDnsCacheEntries, this, false);
+    // [pref-trie-audit] "network.dnsCacheExpiration" is an ambiguous prefix of
+    // "network.dnsCacheExpirationGracePeriod"; triggers only for the exact pref
+    // (grace period has its own AddObserver on the next line).
     prefs->AddObserver(kPrefDnsCacheExpiration, this, false);
     prefs->AddObserver(kPrefDnsCacheGrace, this, false);
     prefs->AddObserver(kPrefIPv4OnlyDomains, this, false);

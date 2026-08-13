@@ -4,6 +4,8 @@
 
 #include "MFPMPHostWrapper.h"
 
+#include <cstring>
+
 #include "MFMediaEngineUtils.h"
 #include "WMF.h"
 #include "mozilla/EMEUtils.h"
@@ -53,13 +55,24 @@ STDMETHODIMP MFPMPHostWrapper::ActivateClassById(LPCWSTR aId, IStream* aStream,
     STATSTG statstg;
     RETURN_IF_FAILED(
         aStream->Stat(&statstg, STATFLAG_NOOPEN | STATFLAG_NONAME));
-    nsTArray<uint8_t> streamBlob;
-    streamBlob.SetLength(statstg.cbSize.LowPart);
-    unsigned long readSize = 0;
-    RETURN_IF_FAILED(
-        aStream->Read(&streamBlob[0], streamBlob.Length(), &readSize));
-    RETURN_IF_FAILED(creationAttributes->SetBlob(GUID_ObjectStream,
-                                                 &streamBlob[0], readSize));
+    if (statstg.cbSize.HighPart != 0) {
+      return E_INVALIDARG;
+    }
+    if (statstg.cbSize.LowPart > 0) {
+      nsTArray<uint8_t> streamBlob;
+      if (!streamBlob.SetLength(statstg.cbSize.LowPart, fallible)) {
+        return E_OUTOFMEMORY;
+      }
+      std::memset(streamBlob.Elements(), 0, streamBlob.Length());
+      unsigned long readSize = 0;
+      RETURN_IF_FAILED(
+          aStream->Read(&streamBlob[0], streamBlob.Length(), &readSize));
+      if (readSize > streamBlob.Length()) {
+        return E_UNEXPECTED;
+      }
+      RETURN_IF_FAILED(creationAttributes->SetBlob(GUID_ObjectStream,
+                                                   &streamBlob[0], readSize));
+    }
   }
 
   ComPtr<IStream> outputStream;

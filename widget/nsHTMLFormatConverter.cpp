@@ -5,17 +5,17 @@
 #include "nsHTMLFormatConverter.h"
 
 #include "nsArray.h"
-#include "nsCRT.h"
 #include "nsCOMPtr.h"
+#include "nsCRT.h"
+#include "nsISupportsPrimitives.h"
 #include "nsITransferable.h"
 #include "nsLiteralString.h"
 #include "nsXPCOM.h"
-#include "nsISupportsPrimitives.h"
 
 // HTML convertor stuff
-#include "nsPrimitiveHelpers.h"
-#include "nsIDocumentEncoder.h"
 #include "nsContentUtils.h"
+#include "nsIDocumentEncoder.h"
+#include "nsPrimitiveHelpers.h"
 
 nsHTMLFormatConverter::nsHTMLFormatConverter() = default;
 

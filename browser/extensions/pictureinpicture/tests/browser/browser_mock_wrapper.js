@@ -6,7 +6,8 @@
 /* import-globals-from ../../../../../toolkit/components/pictureinpicture/tests/head.js */
 
 ChromeUtils.defineESModuleGetters(this, {
-  TOGGLE_POLICIES: "resource://gre/modules/PictureInPictureControls.sys.mjs",
+  TOGGLE_POLICIES:
+    "moz-src:///toolkit/components/pictureinpicture/PictureInPictureControls.sys.mjs",
 });
 
 const TEST_URL =

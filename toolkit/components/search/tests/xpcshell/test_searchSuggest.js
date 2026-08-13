@@ -419,35 +419,44 @@ add_task(async function fetch_twice_in_a_row() {
   // it before use.
   Services.fog.testResetFOG();
 
-  // Two entries since the first will match the first fetch but not the second.
-  await updateSearchHistory("bump", "delay local");
-  await updateSearchHistory("bump", "delayed local");
+  // The second fetch must complete with remote results, but the server delays
+  // its response. Raise the remote timeout for this subtest so the response
+  // can't be timed out under load. Cleared in the finally below so the
+  // slow_timeout tests still use the default timeout.
+  Services.prefs.setIntPref("browser.search.suggest.timeout", 5000);
+  try {
+    // Two entries since the first will match the first fetch but not the second.
+    await updateSearchHistory("bump", "delay local");
+    await updateSearchHistory("bump", "delayed local");
 
-  let controller = new SearchSuggestionController();
-  let resultPromise1 = controller.fetch({
-    searchString: "delay",
-    inPrivateBrowsing: false,
-    engine: getEngine,
-  });
+    let controller = new SearchSuggestionController();
+    let resultPromise1 = controller.fetch({
+      searchString: "delay",
+      inPrivateBrowsing: false,
+      engine: getEngine,
+    });
 
-  // A second fetch while the server is still waiting to return results leads to an abort.
-  let resultPromise2 = controller.fetch({
-    searchString: "delayed ",
-    inPrivateBrowsing: false,
-    engine: getEngine,
-  });
-  await resultPromise1.then(results => Assert.equal(null, results));
+    // A second fetch while the server is still waiting to return results leads to an abort.
+    let resultPromise2 = controller.fetch({
+      searchString: "delayed ",
+      inPrivateBrowsing: false,
+      engine: getEngine,
+    });
+    await resultPromise1.then(results => Assert.equal(null, results));
 
-  let result = await resultPromise2;
-  Assert.equal(result.term, "delayed ");
-  Assert.equal(result.local.length, 1);
-  Assert.equal(result.local[0].value, "delayed local");
-  Assert.equal(result.remote.length, 1);
-  Assert.equal(result.remote[0].value, "delayed ");
+    let result = await resultPromise2;
+    Assert.equal(result.term, "delayed ");
+    Assert.equal(result.local.length, 1);
+    Assert.equal(result.local[0].value, "delayed local");
+    Assert.equal(result.remote.length, 1);
+    Assert.equal(result.remote[0].value, "delayed ");
 
-  // Only the second fetch's latency should be recorded since the first fetch
-  // was aborted and latencies for aborted fetches are not recorded.
-  assertLatencyCollection(getEngine, true);
+    // Only the second fetch's latency should be recorded since the first fetch
+    // was aborted and latencies for aborted fetches are not recorded.
+    assertLatencyCollection(getEngine, true);
+  } finally {
+    Services.prefs.clearUserPref("browser.search.suggest.timeout");
+  }
 });
 
 add_task(async function both_identical_with_more_than_max_results() {
@@ -727,8 +736,11 @@ add_task(async function slow_timeout() {
   // updated.
   assertLatencyCollection(getEngine, false);
 
-  // Wait for the remote fetch to finish.
-  await new Promise(r => setTimeout(r, delayMs));
+  // Wait for the remote fetch to finish and record its latency.
+  await TestUtils.waitForCondition(
+    () => Glean.searchSuggestions.latency[getEngine.id].testGetValue() != null,
+    "Waiting for the remote fetch latency to be recorded"
+  );
 
   // Now the latency histogram should be updated.
   assertLatencyCollection(getEngine, true);
@@ -766,8 +778,11 @@ add_task(async function slow_timeout_2() {
   // histogram should not be updated.
   assertLatencyCollection(getEngine, false);
 
-  // Wait for the second remote fetch to finish.
-  await new Promise(r => setTimeout(r, delayMs));
+  // Wait for the second remote fetch to finish and record its latency.
+  await TestUtils.waitForCondition(
+    () => Glean.searchSuggestions.latency[getEngine.id].testGetValue() != null,
+    "Waiting for the remote fetch latency to be recorded"
+  );
 
   // Now the latency histogram should be updated, and only the remote fetch of
   // the second search should be recorded.

@@ -47,6 +47,13 @@ add_setup(() => {
   // test. (Approximately, make sure Firefox starts 'long before' each test
   // runs.)
   sinon.stub(BackupService.prototype, "_startupTimeUnixSeconds").get(() => 0);
+
+  // onIdle kicks off takeMeasurements as a fire-and-forget Telemetry task.
+  // These tests exercise scheduling rather than measurement, so stub it out;
+  // otherwise the un-awaited promise can outlive the test and resume during
+  // shutdown, where measuring SessionStore lazily instantiates the cookie
+  // service and registers a ClearOnShutdown for an already-cleared phase.
+  sinon.stub(BackupService.prototype, "takeMeasurements").resolves();
 });
 
 /**

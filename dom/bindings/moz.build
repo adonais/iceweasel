@@ -140,6 +140,7 @@ if CONFIG["MOZ_DEBUG"] and CONFIG["ENABLE_TESTS"]:
         "test/TestInterfaceMaplikeJSObject.h",
         "test/TestInterfaceMaplikeObject.h",
         "test/TestInterfaceObservableArray.h",
+        "test/TestInterfaceObservableArrayBase.h",
         "test/TestInterfaceSetlike.h",
         "test/TestInterfaceSetlikeNode.h",
         "test/TestReflectedHTMLAttribute.h",

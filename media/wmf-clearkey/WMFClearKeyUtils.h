@@ -7,12 +7,13 @@
 
 #include <initguid.h>
 #include <mfidl.h>
+#include <stdio.h>
+#include <windows.h>
+#include <wrl.h>
+
 #include <mutex>
 #include <string>
 #include <thread>
-#include <windows.h>
-#include <wrl.h>
-#include <stdio.h>
 
 #include "MFCDMExtra.h"
 #include "mozilla/Assertions.h"

@@ -240,7 +240,8 @@ class GCLocProviderPriv final : public nsIGeolocationProvider,
   void DoShutdownClearCallback(bool aDestroying);
 
   nsresult FallbackToMLS(MLSFallback::FallbackReason aReason);
-  void StopMLSFallback();
+  void StopMLSFallback(MLSFallback::ShutdownReason aReason =
+                           MLSFallback::ShutdownReason::ProviderShutdown);
 
   void WatchStart();
 
@@ -330,14 +331,26 @@ void GCLocProviderPriv::Update(nsIDOMGeoPosition* aPosition) {
 
 void GCLocProviderPriv::UpdateLastPosition() {
   MOZ_DIAGNOSTIC_ASSERT(mLastPosition, "No last position to update");
-  if (mMLSFallbackTimer) {
-    // We are not going to wait for MLS fallback anymore
+
+  bool hadPendingTimer = !!mMLSFallbackTimer;
+  bool hadActiveFallback = !!mMLSFallback;
+
+  StopPositionTimer();
+  StopMLSFallbackTimer();
+  // GeoClue produced a position, so stop using the MLS fallback (matching
+  // CoreLocation/Portal). Without this an already-running fallback's
+  // NetworkGeolocation provider keeps issuing network requests for the rest of
+  // the session. ProviderResponded records the eNone fallback telemetry for an
+  // active fallback.
+  StopMLSFallback(MLSFallback::ShutdownReason::ProviderResponded);
+  if (hadPendingTimer && !hadActiveFallback) {
+    // We were only waiting to start the fallback (nothing for StopMLSFallback
+    // to shut down), so record eNone here instead.
     glean::geolocation::fallback
         .EnumGet(glean::geolocation::FallbackLabel::eNone)
         .Add();
   }
-  StopPositionTimer();
-  StopMLSFallbackTimer();
+
   Update(mLastPosition);
 }
 
@@ -353,15 +366,13 @@ nsresult GCLocProviderPriv::FallbackToMLS(MLSFallback::FallbackReason aReason) {
   return NS_OK;
 }
 
-void GCLocProviderPriv::StopMLSFallback() {
+void GCLocProviderPriv::StopMLSFallback(MLSFallback::ShutdownReason aReason) {
   if (!mMLSFallback) {
     return;
   }
   GCL_LOG(Debug, "Clearing MLS fallback");
-  if (mMLSFallback) {
-    mMLSFallback->Shutdown(MLSFallback::ShutdownReason::ProviderShutdown);
-    mMLSFallback = nullptr;
-  }
+  mMLSFallback->Shutdown(aReason);
+  mMLSFallback = nullptr;
 }
 
 void GCLocProviderPriv::NotifyError(int aError) {

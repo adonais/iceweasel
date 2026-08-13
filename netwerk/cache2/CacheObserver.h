@@ -5,13 +5,13 @@
 #ifndef CacheObserver_h_
 #define CacheObserver_h_
 
-#include "nsIObserver.h"
-#include "nsIFile.h"
-#include "nsCOMPtr.h"
-#include "nsWeakReference.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StaticPtr.h"
+#include "nsCOMPtr.h"
+#include "nsIFile.h"
+#include "nsIObserver.h"
+#include "nsWeakReference.h"
 
 namespace mozilla {
 namespace net {

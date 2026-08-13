@@ -8,6 +8,7 @@
         <!-- This is the default color for activated controls(buttons) -->
         <item name="colorAccent">@color/accentBright</item>
         <item name="android:windowBackground">@color/modal_background</item>
+        <item name="android:textColorLink">@color/accentBright</item>
         <item name="materialButtonOutlinedStyle">@style/Widget.App.Button.OutlinedButton</item>
         <item name="popupMenuBackground">@color/modal_background</item>
 
@@ -46,9 +47,6 @@
         <item name="windowSplashScreenBackground">@color/splash_screen_background</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_screen</item>
         <item name="postSplashScreenTheme">@style/AppTheme</item>
-    </style>
-
-    <style name="Theme.CrashActivityTheme" parent="Theme.AppCompat.NoActionBar">
     </style>
 
     <style name="Widget.App.Button.OutlinedButton" parent="Widget.Material3.Button.OutlinedButton">
@@ -137,117 +135,23 @@
         <item name="android:fontFamily">@font/metropolis_semibold</item>
     </style>
 
-    <style name="SettingsTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar.Bridge">
-        <item name="android:textColorSecondary">@color/preference_summary_text</item>
-        <item name="colorAccent">@color/accentBright</item>
-        <item name="android:windowTitleStyle">@style/DialogTitleStyle</item>
-        <item name="dialogPreferredPadding">24dp</item>
-        <item name="actionButtonStyle">@style/SettingsActionButtonStyle</item>
-        <item name="android:dialogTheme">@style/DialogStyle</item>
-        <item name="alertDialogTheme">@style/DialogStyle</item>
-        <item name="android:alertDialogStyle">@style/DialogStyle</item>
-        <item name="android:alertDialogTheme">@style/DialogStyle</item>
-        <item name="android:dialogPreferenceStyle">@style/DialogStyle</item>
-    </style>
-
-    <style name="SettingsActionButtonStyle" parent="@style/Widget.AppCompat.ActionButton">
-        <!-- We want 16dp of padding between (i) and "SAVE" on the "Add search engine" Toolbar.
-             Unfortunately, this Toolbar is shared across all of settings. Solutions:
-             1) (Current solution) Change the toolbar styles for all of settings
-             2) Dynamically change the styles for the Toolbar, in code, for this one Settings screen
-             3) Provide a unique toolbar for this one Settings screen
-
-             I opted for 1) because it's simple (we're pressed for time!) and no other screens have more
-             than one action button and are affected. This isn't very future proof, however.
-
-             We set paddingEnd=12dp to preserve the existing padding of the right-most action menu item to
-             the edge of the device (12dp) and set paddingStart=4dp to complete the 16dp between views.
-             We then set minWidth=0dp to avoid it's calculations affecting visible padding.
-
-             One concern I have is that paddingStart=4dp will cause the title to get too close to the
-             action menu items, but testing with German, that doesn't seem to be the case. -->
-        <item name="android:minWidth">0dp</item>
-        <item name="android:paddingStart">4dp</item>
-        <item name="android:paddingEnd">12dp</item>
-    </style>
-
-    <style name="InfoTheme" parent="SettingsTheme">
-        <item name="android:colorBackground">?attr/colorPrimary</item>
-    </style>
-
     <style name="PopupMenu" parent="@style/Widget.AppCompat.Light.PopupMenu">
         <item name="overlapAnchor">true</item>
     </style>
 
     <style name="Mozac.Browser.Menu" parent="">
-        <item name="cardBackgroundColor">@color/menuBackground</item>
+      <item name="cardBackgroundColor">@color/menuBackground</item>
     </style>
 
     <!-- Add new style to be able to use the same menu item style for both themes until light theme it will be implemented -->
     <style name="Mozac.Browser.Menu.Item.Text" parent="@android:style/TextAppearance.Material.Menu">
-        <item name="android:background">?android:attr/selectableItemBackground</item>
-        <item name="android:textSize">@dimen/mozac_browser_menu_item_text_size</item>
-        <item name="android:ellipsize">end</item>
-        <item name="android:lines">1</item>
-        <item name="android:focusable">true</item>
-        <item name="android:clickable">true</item>
-        <item name="android:textColor">@color/primaryText</item>
-    </style>
-
-    <style name="AppTheme.ContextMenuItem">
-
-        <!-- All these attributes bellow need to be defined in a theme using android:theme
-            otherwise they will have no effect... -->
-        <item name="android:listPreferredItemHeightSmall">48dp</item>
-
-        <!-- Set the padding to the children (menu item) of the NavigationView
-             (instead of the NavigationView itself) allowing the hit targets
-              to span the full width of the view. For more info, see
-              https://github.com/mozilla-mobile/focus-android/pull/1466#discussion_r144679954.
-
-              Note: listPreferredItemPaddingStart and listPreferredItemPaddingEnd
-              don't work in this context because in the design_navigation_item.xml (layout for NavigationMenuItem)
-              only listPreferredItemPaddingLeft and listPreferredItemPaddingRight attribute
-              are used for paddingLeft and paddingRight properties.
-              Check design_navigation_item.xml source here :
-              https://android.googlesource.com/platform/frameworks/support.git/+/master/design/res/layout/design_navigation_item.xml
-            -->
-        <item name="listPreferredItemPaddingLeft">@dimen/dialogHorizontalPadding</item>
-        <item name="listPreferredItemPaddingRight">@dimen/dialogHorizontalPadding</item>
-    </style>
-
-    <style name="ContextMenuTextAppearence">
-        <item name="android:textSize">16sp</item>
-        <item name="android:fontFamily">@string/font_roboto_medium</item>
-        <item name="android:textStyle">normal</item>
-        <item name="android:textColor">@color/primaryText</item>
-    </style>
-
-
-    <style name="DoorHanger">
-        <item name="android:textColor">@color/primaryText</item>
-        <item name="android:textColorLink">@color/doorhanger_link</item>
-    </style>
-
-    <style name="DoorHanger.Medium">
-        <item name="android:textSize">16sp</item>
-    </style>
-
-    <style name="DoorHanger.Medium.Bold">
-        <item name="android:fontFamily">sans-serif-medium</item>
-    </style>
-
-    <style name="DoorHanger.Medium.Light">
-        <item name="android:fontFamily">sans-serif-light</item>
-    </style>
-
-    <style name="HintTextAppearance">
-        <item name="android:textColor">@color/secondaryText</item>
-        <item name="android:textSize">9sp</item>
-    </style>
-
-    <style name="ColorHandleTheme">
-        <item name="android:colorControlActivated">@color/photonBlue50</item>
+      <item name="android:background">?android:attr/selectableItemBackground</item>
+      <item name="android:textSize">@dimen/mozac_browser_menu_item_text_size</item>
+      <item name="android:ellipsize">end</item>
+      <item name="android:lines">1</item>
+      <item name="android:focusable">true</item>
+      <item name="android:clickable">true</item>
+      <item name="android:textColor">@color/primaryText</item>
     </style>
 
     <style name="progressBarStyleHorizontal" parent="@style/Widget.AppCompat.ProgressBar.Horizontal">
@@ -396,5 +300,4 @@
         <item name="android:minWidth">48dp</item>
         <item name="android:background">?android:attr/selectableItemBackgroundBorderless</item>
     </style>
-
 </resources>

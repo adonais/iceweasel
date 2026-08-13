@@ -330,11 +330,10 @@ export class TranslationsEngine {
     if (this.#keepAliveTimeout) {
       lazy.clearTimeout(this.#keepAliveTimeout);
     }
-    for (const [innerWindowId, data] of ports) {
-      const { sourceLanguage, targetLanguage, port } = data;
+    for (const [innerWindowId, { languagePair, port }] of ports) {
       if (
-        sourceLanguage === this.sourceLanguage &&
-        targetLanguage === this.targetLanguage
+        languagePair.sourceLanguage === this.sourceLanguage &&
+        languagePair.targetLanguage === this.targetLanguage
       ) {
         // This port is still active but being closed.
         ports.delete(innerWindowId);

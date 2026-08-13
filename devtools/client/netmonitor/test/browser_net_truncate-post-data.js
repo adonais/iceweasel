@@ -4,17 +4,17 @@
 "use strict";
 
 // Get the default limit
-const defaultRequestBodyLimit = Services.prefs.getIntPref(
-  "devtools.netmonitor.requestBodyLimit"
+const defaultBodyLimit = Services.prefs.getIntPref(
+  "devtools.netmonitor.bodyLimit"
 );
 
 /**
  * Bug 1986196 -
  * Verifies that requests with large post data are not truncated if
- * devtools.netmonitor.requestBodyLimit is 0.
+ * devtools.netmonitor.bodyLimit is 0.
  */
 add_task(async function () {
-  await pushPref("devtools.netmonitor.requestBodyLimit", 0);
+  await pushPref("devtools.netmonitor.bodyLimit", 0);
 
   await checkPostDataRequest(false);
 });
@@ -25,7 +25,7 @@ add_task(async function () {
  * the limit are truncated and an error is displayed.
  */
 add_task(async function () {
-  await pushPref("devtools.netmonitor.requestBodyLimit", 1000);
+  await pushPref("devtools.netmonitor.bodyLimit", 1000);
 
   await checkPostDataRequest(true);
 });
@@ -36,16 +36,13 @@ add_task(async function () {
  * are not truncated and no error is displayed.
  */
 add_task(async function () {
-  // Set a limit over the size of the post data which is 2 * defaultRequestBodyLimit
-  await pushPref(
-    "devtools.netmonitor.requestBodyLimit",
-    defaultRequestBodyLimit * 3
-  );
+  // Set a limit over the size of the post data which is 2 * defaultBodyLimit
+  await pushPref("devtools.netmonitor.bodyLimit", defaultBodyLimit * 3);
   await checkPostDataRequest(false);
 });
 
 async function checkPostDataRequest(expectErrorDisplay) {
-  const { monitor, tab } = await initNetMonitor(POST_JSON_URL, {
+  const { monitor, tab, toolbox } = await initNetMonitor(POST_JSON_URL, {
     requestCount: 1,
   });
 
@@ -103,10 +100,10 @@ async function checkPostDataRequest(expectErrorDisplay) {
     "The Request Payload has the intended visibility."
   );
 
-  await pushPref(
-    "devtools.netmonitor.requestBodyLimit",
-    defaultRequestBodyLimit
-  );
+  const onConfigurationApplied = toolbox.once("new-configuration-applied");
+  await pushPref("devtools.netmonitor.bodyLimit", defaultBodyLimit);
+  await onConfigurationApplied;
+
   return teardown(monitor);
 }
 

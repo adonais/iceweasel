@@ -36,9 +36,22 @@ export class ProxyPass extends EventTarget {
     exp: 0,
   };
   /**
-   * @param {string} token - The JWT to use for authentication.
+   * The instant from which the pass is valid. Defaults to the token's nbf,
+   * unless one is supplied.
+   *
+   * @type {Temporal.Instant}
    */
-  constructor(token) {
+  #from;
+  /** @type {Temporal.Duration} - The token's lifetime (exp - nbf). */
+  #duration;
+  /** @type {Temporal.Instant} - The instant at which the pass expires. */
+  #until;
+  /**
+   * @param {string} token - The JWT to use for authentication.
+   * @param {Temporal.Instant} [from] - Instant from which the pass is valid.
+   *   Defaults to the token's nbf.
+   */
+  constructor(token, from) {
     super();
     if (typeof token !== "string") {
       throw new TypeError(
@@ -62,6 +75,12 @@ export class ProxyPass extends EventTarget {
     } catch (error) {
       throw new TypeError("Invalid token format: " + error.message);
     }
+    this.#from =
+      from ?? Temporal.Instant.fromEpochMilliseconds(this.#body.nbf * 1000);
+    this.#duration = Temporal.Duration.from({
+      seconds: this.#body.exp - this.#body.nbf,
+    });
+    this.#until = this.#from.add(this.#duration);
   }
 
   isValid(now = Temporal.Now.instant()) {
@@ -79,14 +98,16 @@ export class ProxyPass extends EventTarget {
     return Temporal.Instant.compare(now, this.rotationTimePoint) >= 0;
   }
 
+  get duration() {
+    return this.#duration;
+  }
+
   get from() {
-    // nbf is in seconds since epoch
-    return Temporal.Instant.fromEpochMilliseconds(this.#body.nbf * 1000);
+    return this.#from;
   }
 
   get until() {
-    // exp is in seconds since epoch
-    return Temporal.Instant.fromEpochMilliseconds(this.#body.exp * 1000);
+    return this.#until;
   }
 
   /**
@@ -111,7 +132,10 @@ export class ProxyPass extends EventTarget {
         lazy.logConsole.error("Missing or invalid token in response");
         return null;
       }
-      return new ProxyPass(token);
+      // Anchor the pass to our clock at receipt: it is valid from now for the
+      // token's lifetime. This makes rotation scheduling immune to any drift
+      // between Guardian's clock (nbf/exp) and ours.
+      return new ProxyPass(token, Temporal.Now.instant());
     } catch (error) {
       lazy.logConsole.error("Error parsing proxy pass response:", error);
       return null;

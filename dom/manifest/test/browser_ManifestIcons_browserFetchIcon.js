@@ -3,10 +3,10 @@
 Services.prefs.setBoolPref("dom.manifest.enabled", true);
 
 const { ManifestIcons } = ChromeUtils.importESModule(
-  "resource://gre/modules/ManifestIcons.sys.mjs"
+  "moz-src:///dom/manifest/ManifestIcons.sys.mjs"
 );
 const { ManifestObtainer } = ChromeUtils.importESModule(
-  "resource://gre/modules/ManifestObtainer.sys.mjs"
+  "moz-src:///dom/manifest/ManifestObtainer.sys.mjs"
 );
 
 const defaultURL = new URL(

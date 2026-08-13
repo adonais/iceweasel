@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/widget/nsGtkHtmlUtils.h"
+
 #include "mozilla/Encoding.h"
 #include "mozilla/Logging.h"
 #include "nsReadableUtils.h"

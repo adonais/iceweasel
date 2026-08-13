@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+@import url("chrome://global/content/elements/panel-item.tokens.css");
+
 :host(:not([hidden])) {
   display: flex;
   align-items: center;
@@ -14,15 +16,17 @@
 button {
   background-color: transparent;
   color: inherit;
-  background-position: 8px center;
+  background-position: var(--panel-menuitem-padding-inline) center;
   background-repeat: no-repeat;
-  background-size: 16px;
+  background-size: var(--icon-size);
   border: none;
+  border-radius: var(--panel-item-button-border-radius);
+  margin: var(--panel-item-button-margin);
   position: relative;
   display: flex;
   font: inherit;
-  padding: var(--space-xsmall) var(--space-small);
-  padding-inline-start: var(--space-xxlarge);
+  padding: var(--panel-item-button-padding);
+  padding-inline-start: var(--panel-item-button-padding-inline-start);
   text-align: start;
   width: 100%;
   -moz-context-properties: fill;
@@ -31,17 +35,17 @@ button {
 
   &:dir(rtl),
   &:-moz-locale-dir(rtl) {
-    background-position-x: right 8px;
+    background-position-x: right var(--panel-menuitem-padding-inline);
   }
 
   &:enabled:hover {
-    background-color: var(--button-background-color-hover);
-    color: var(--button-text-color-hover);
+    background-color: var(--button-background-color-menu-hover);
+    color: var(--button-text-color-menu-hover);
   }
 
   &:enabled:hover:active {
-    background-color: var(--button-background-color-active);
-    color: var(--button-text-color-active);
+    background-color: var(--button-background-color-menu-active);
+    color: var(--button-text-color-menu-active);
   }
 
   &:focus-visible {
@@ -51,7 +55,8 @@ button {
 
   &:disabled {
     opacity: var(--button-opacity-disabled);
-    color: var(--button-text-color-disabled);
+    background-color: var(--button-background-color-menu-disabled);
+    color: var(--button-text-color-menu-disabled);
   }
 
   :host([type="checkbox"][checked]) & {
@@ -74,8 +79,6 @@ button {
 :host([badged]) button::after {
   --panel-item-badge-size: 5px;
   --panel-item-badge-background-color: var(--color-accent-primary);
-  --panel-item-badge-inset-block-start: var(--dimension-4);
-  --panel-item-badge-inset-inline-start: var(--dimension-24);
 
   content: "";
   display: block;

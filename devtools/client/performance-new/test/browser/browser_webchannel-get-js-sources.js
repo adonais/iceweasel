@@ -14,10 +14,12 @@ add_task(async function test_webchannel_get_js_sources() {
   // retrieves the sources in other tests. This test focuses on the webchannel
   // itself only.
   const mockJSSources = {
-    "uuid-12345-1": "function testFunction() { return 42; }",
-    "uuid-12345-2": "console.log('Hello from source 2');",
-    "uuid-67890-5": "function anotherFunction() { return 'test'; }",
-    "uuid-67890-6": "alert('Hello world');",
+    "uuid-12345-1": { sourceText: "function testFunction() { return 42; }" },
+    "uuid-12345-2": { sourceText: "console.log('Hello from source 2');" },
+    "uuid-67890-5": {
+      sourceText: "function anotherFunction() { return 'test'; }",
+    },
+    "uuid-67890-6": { sourceText: "alert('Hello world');" },
   };
 
   const sourcesToRequest = ["uuid-12345-1", "uuid-12345-2", "uuid-67890-5"];
@@ -46,7 +48,7 @@ add_task(async function test_webchannel_get_js_sources() {
       const url =
         FRONTEND_URL +
         "?testType=basic" +
-        "&sourceUuids=" +
+        "&sourceIds=" +
         encodeURIComponent(JSON.stringify(sourcesToRequest)) +
         "&expectedResponse=" +
         encodeURIComponent(JSON.stringify(expectedResponse));
@@ -66,7 +68,7 @@ add_task(async function test_webchannel_get_js_sources_nonexistent() {
 
   // Register some mock JS sources
   const mockJSSources = {
-    "uuid-12345-1": "function testFunction() { return 42; }",
+    "uuid-12345-1": { sourceText: "function testFunction() { return 42; }" },
   };
 
   // Request non-existent sources (should return null)
@@ -98,7 +100,7 @@ add_task(async function test_webchannel_get_js_sources_nonexistent() {
       const url =
         FRONTEND_URL +
         "?testType=nonexistent" +
-        "&sourceUuids=" +
+        "&sourceIds=" +
         encodeURIComponent(JSON.stringify(sourcesToRequest)) +
         "&expectedResponse=" +
         encodeURIComponent(JSON.stringify(expectedResponse));
@@ -134,7 +136,7 @@ add_task(async function test_webchannel_get_js_sources_no_data() {
       const url =
         FRONTEND_URL +
         "?testType=no-data" +
-        "&sourceUuids=" +
+        "&sourceIds=" +
         encodeURIComponent(JSON.stringify(sourcesToRequest)) +
         "&expectError=true";
 
@@ -159,12 +161,12 @@ add_task(async function test_webchannel_get_js_sources_invalid_request() {
     async browser => {
       // Don't need to register JS sources for this test
 
-      // For this test, we need to pass invalid sourceUuids directly in the HTML
+      // For this test, we need to pass invalid sourceIds directly in the HTML
       // We'll use a special URL parameter that the HTML will use directly
       const url =
         FRONTEND_URL +
         "?testType=invalid-request" +
-        "&sourceUuids=invalid_not_array" + // This is intentionally not JSON
+        "&sourceIds=invalid_not_array" + // This is intentionally not JSON
         "&expectError=true";
 
       const loaded = BrowserTestUtils.browserLoaded(browser);

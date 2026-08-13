@@ -5,16 +5,16 @@
 #ifndef mozilla_layers_InputQueue_h
 #define mozilla_layers_InputQueue_h
 
+#include <unordered_map>
+
 #include "APZUtils.h"
 #include "DragTracker.h"
 #include "InputData.h"
 #include "mozilla/EventForwards.h"
-#include "mozilla/layers/TouchCounter.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/layers/TouchCounter.h"
 #include "nsTArray.h"
-
-#include <unordered_map>
 
 namespace mozilla {
 

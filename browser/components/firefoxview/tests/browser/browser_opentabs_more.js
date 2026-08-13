@@ -86,7 +86,7 @@ add_task(async function toggle_show_more_link() {
 
     let cards;
     info(`Waiting for ${NUMBER_OF_WINDOWS} of window cards`);
-    await BrowserTestUtils.waitForCondition(() => {
+    await TestUtils.waitForCondition(() => {
       cards = getOpenTabsCards(openTabs);
       return cards.length == NUMBER_OF_WINDOWS;
     });

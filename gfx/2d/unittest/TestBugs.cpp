@@ -3,8 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "TestBugs.h"
-#include "2D.h"
+
 #include <string.h>
+
+#include "2D.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;

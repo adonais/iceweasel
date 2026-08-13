@@ -6,13 +6,14 @@
 #define ConnectionEstablisher_h_
 
 #include <functional>
+
 #include "ConnectionHandle.h"
+#include "HappyEyeballsTransaction.h"
 #include "mozilla/Result.h"
 #include "mozilla/net/DNS.h"
 #include "nsAHttpConnection.h"
 #include "nsHttpConnection.h"
 #include "nsIAsyncOutputStream.h"
-#include "HappyEyeballsTransaction.h"
 
 class nsIDNSAddrRecord;
 class nsISocketTransport;
@@ -69,6 +70,7 @@ class ConnectionEstablisher : public nsITransportEventSink,
   }
   HappyEyeballsTransaction* Transaction() const { return mTransaction; }
   const NetAddr& Addr() const { return mAddr; }
+  already_AddRefed<nsIDNSAddrRecord> AddrRecord() const;
   void ClearResultConnection();
   HttpConnectionBase* ResultConn() const { return mResultConn; }
   virtual bool IsUDP() const { return false; }
@@ -147,7 +149,7 @@ class UDPConnectionEstablisher : public ConnectionEstablisher {
                                        ConnectionEstablisher)
 
   UDPConnectionEstablisher(nsHttpConnectionInfo* aConnInfo, NetAddr aAddr,
-                           uint32_t aCaps);
+                           uint32_t aCaps, bool aSpeculative, bool aAllow1918);
 
   bool Start(DoneCallback&& aCallback) override;
   void ResetSpeculativeFlags() override {}
@@ -159,6 +161,43 @@ class UDPConnectionEstablisher : public ConnectionEstablisher {
 
   nsresult CreateAndConfigureUDPConn();
   void Finish(nsresult aResult) override;
+};
+
+enum class ConnectionEstablisherType { TCP, UDP };
+
+// Factory for connection establishers. Default creates the real ones; tests
+// inject a fake whose establishers complete on demand instead of using sockets.
+class ConnectionEstablisherFactory {
+ public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ConnectionEstablisherFactory)
+
+  virtual already_AddRefed<ConnectionEstablisher> Create(
+      ConnectionEstablisherType aType, nsHttpConnectionInfo* aConnInfo,
+      const NetAddr& aAddr, uint32_t aCaps, bool aSpeculative,
+      bool aAllow1918) = 0;
+
+ protected:
+  virtual ~ConnectionEstablisherFactory() = default;
+};
+
+class DefaultConnectionEstablisherFactory final
+    : public ConnectionEstablisherFactory {
+ public:
+  already_AddRefed<ConnectionEstablisher> Create(
+      ConnectionEstablisherType aType, nsHttpConnectionInfo* aConnInfo,
+      const NetAddr& aAddr, uint32_t aCaps, bool aSpeculative,
+      bool aAllow1918) override {
+    switch (aType) {
+      case ConnectionEstablisherType::TCP:
+        return MakeAndAddRef<TCPConnectionEstablisher>(
+            aConnInfo, aAddr, aCaps, aSpeculative, aAllow1918);
+      case ConnectionEstablisherType::UDP:
+        return MakeAndAddRef<UDPConnectionEstablisher>(
+            aConnInfo, aAddr, aCaps, aSpeculative, aAllow1918);
+    }
+    MOZ_ASSERT_UNREACHABLE("unknown ConnectionEstablisherType");
+    return nullptr;
+  }
 };
 
 }  // namespace net

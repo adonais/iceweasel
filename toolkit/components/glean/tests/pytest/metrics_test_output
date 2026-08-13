@@ -28,6 +28,7 @@ pub mod test {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Application,
                 disabled: false,
+                in_session: false,
                 ..Default::default()
             };
         let metric = BooleanMetric::new(BaseMetricId(1), meta)
@@ -48,6 +49,7 @@ pub mod test {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Application,
                 disabled: false,
+                in_session: false,
                 ..Default::default()
             };
         let metric = CounterMetric::new(BaseMetricId(2), meta)
@@ -68,6 +70,7 @@ pub mod test {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Ping,
                 disabled: false,
+                in_session: false,
                 ..Default::default()
             };
         let metric = CustomDistributionMetric::new(BaseMetricId(3), meta, 0, 100, 100, HistogramType::Linear)
@@ -89,6 +92,7 @@ pub mod test {
                     send_in_pings: vec!["metrics".into()],
                     lifetime: Lifetime::Application,
                     disabled: false,
+                    in_session: false,
                     ..Default::default()
                 },
             };
@@ -158,6 +162,7 @@ pub mod test {
                     send_in_pings: vec!["metrics".into()],
                     lifetime: Lifetime::Application,
                     disabled: false,
+                    in_session: false,
                     ..Default::default()
                 },
             };
@@ -179,6 +184,7 @@ pub mod test {
                     send_in_pings: vec!["metrics".into()],
                     lifetime: Lifetime::Application,
                     disabled: false,
+                    in_session: false,
                     ..Default::default()
                 },
             };
@@ -224,6 +230,7 @@ pub mod test {
                     send_in_pings: vec!["metrics".into()],
                     lifetime: Lifetime::Application,
                     disabled: false,
+                    in_session: false,
                     ..Default::default()
                 },
             };
@@ -245,6 +252,7 @@ pub mod test {
                     send_in_pings: vec!["metrics".into()],
                     lifetime: Lifetime::Application,
                     disabled: false,
+                    in_session: false,
                     ..Default::default()
                 },
             };
@@ -290,6 +298,7 @@ pub mod test {
                     send_in_pings: vec!["metrics".into()],
                     lifetime: Lifetime::Application,
                     disabled: false,
+                    in_session: false,
                     ..Default::default()
                 },
             };
@@ -310,6 +319,7 @@ pub mod test {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Ping,
                 disabled: false,
+                in_session: false,
                 ..Default::default()
             };
         let metric = MemoryDistributionMetric::new(BaseMetricId(10), meta, MemoryUnit::Kilobyte)
@@ -330,6 +340,7 @@ pub mod test {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Application,
                 disabled: false,
+                in_session: false,
                 ..Default::default()
             };
         let metric = StringListMetric::new(BaseMetricId(11), meta)
@@ -350,6 +361,7 @@ pub mod test {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Application,
                 disabled: false,
+                in_session: false,
                 ..Default::default()
             };
         let metric = StringMetric::new(BaseMetricId(12), meta)
@@ -370,6 +382,7 @@ pub mod test {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Application,
                 disabled: false,
+                in_session: false,
                 ..Default::default()
             };
         let metric = TextMetric::new(BaseMetricId(13), meta)
@@ -390,6 +403,7 @@ pub mod test {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Application,
                 disabled: false,
+                in_session: false,
                 ..Default::default()
             };
         let metric = TimespanMetric::new(BaseMetricId(14), meta, TimeUnit::Millisecond)
@@ -410,6 +424,7 @@ pub mod test {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Ping,
                 disabled: false,
+                in_session: false,
                 ..Default::default()
             };
         let metric = TimingDistributionMetric::new(BaseMetricId(15), meta, TimeUnit::Nanosecond)
@@ -430,6 +445,7 @@ pub mod test {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Ping,
                 disabled: false,
+                in_session: false,
                 ..Default::default()
             };
         let metric = BooleanMetric::with_unordered_ipc(BaseMetricId(16), meta)
@@ -451,6 +467,7 @@ pub mod test {
                     send_in_pings: vec!["metrics".into()],
                     lifetime: Lifetime::Ping,
                     disabled: false,
+                    in_session: false,
                     ..Default::default()
                 },
             };
@@ -479,6 +496,7 @@ pub mod test_nested {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Ping,
                 disabled: false,
+                in_session: false,
                 ..Default::default()
             };
         let metric = DualLabeledCounterMetric::new(BaseMetricId(18), meta, None,
@@ -512,6 +530,7 @@ pub mod test_nested {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Ping,
                 disabled: false,
+                in_session: false,
                 ..Default::default()
             };
         let metric = ObjectMetric::new(BaseMetricId(19), meta)
@@ -539,6 +558,7 @@ pub mod test_nested {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Application,
                 disabled: false,
+                in_session: false,
                 ..Default::default()
             };
         let metric = DatetimeMetric::new(BaseMetricId(20), meta, TimeUnit::Millisecond)
@@ -559,6 +579,7 @@ pub mod test_nested {
                 send_in_pings: vec!["events".into()],
                 lifetime: Lifetime::Ping,
                 disabled: false,
+                in_session: true,
                 ..Default::default()
             };
         let metric = EventMetric::new(BaseMetricId(21), meta)
@@ -607,6 +628,7 @@ pub mod test_nested {
                 send_in_pings: vec!["events".into()],
                 lifetime: Lifetime::Ping,
                 disabled: false,
+                in_session: true,
                 ..Default::default()
             };
         let metric = EventMetric::new(BaseMetricId(22), meta)
@@ -634,9 +656,10 @@ pub mod test_nested {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Ping,
                 disabled: false,
+                in_session: false,
                 ..Default::default()
             };
-        let metric = DenominatorMetric::new(BaseMetricId(23), meta, vec![CommonMetricData {name: "rate_with_external_denominator".into(), category: "test.nested".into(), send_in_pings: vec!["metrics".into()], lifetime: Lifetime::Ping, disabled: false,  ..Default::default()}, CommonMetricData {name: "rate_with_external_denominator".into(), category: "test2.nested".into(), send_in_pings: vec!["metrics".into()], lifetime: Lifetime::Ping, disabled: true,  ..Default::default()}])
+        let metric = DenominatorMetric::new(BaseMetricId(23), meta, vec![CommonMetricData {name: "rate_with_external_denominator".into(), category: "test.nested".into(), send_in_pings: vec!["metrics".into()], lifetime: Lifetime::Ping, disabled: false, in_session: false,  ..Default::default()}, CommonMetricData {name: "rate_with_external_denominator".into(), category: "test2.nested".into(), send_in_pings: vec!["metrics".into()], lifetime: Lifetime::Ping, disabled: true, in_session: false,  ..Default::default()}])
 ;
         metric
     });
@@ -682,6 +705,7 @@ pub mod test_nested {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Ping,
                 disabled: false,
+                in_session: false,
                 ..Default::default()
             };
         let metric = QuantityMetric::new(BaseMetricId(26), meta)
@@ -702,6 +726,7 @@ pub mod test_nested {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Ping,
                 disabled: false,
+                in_session: false,
                 ..Default::default()
             };
         let metric = RateMetric::new(BaseMetricId(27), meta)
@@ -722,6 +747,7 @@ pub mod test_nested {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Ping,
                 disabled: false,
+                in_session: false,
                 ..Default::default()
             };
         let metric = NumeratorMetric::new(BaseMetricId(28), meta)
@@ -742,6 +768,7 @@ pub mod test_nested {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Ping,
                 disabled: false,
+                in_session: false,
                 ..Default::default()
             };
         let metric = QuantityMetric::with_unordered_ipc(BaseMetricId(29), meta)
@@ -762,6 +789,7 @@ pub mod test_nested {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Application,
                 disabled: false,
+                in_session: false,
                 ..Default::default()
             };
         let metric = UuidMetric::new(BaseMetricId(30), meta)
@@ -791,6 +819,7 @@ pub mod test2 {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Application,
                 disabled: true,
+                in_session: false,
                 ..Default::default()
             };
         let metric = BooleanMetric::new(BaseMetricId(31), meta)
@@ -811,6 +840,7 @@ pub mod test2 {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Application,
                 disabled: true,
+                in_session: false,
                 ..Default::default()
             };
         let metric = CounterMetric::new(BaseMetricId(32), meta)
@@ -831,6 +861,7 @@ pub mod test2 {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Ping,
                 disabled: true,
+                in_session: false,
                 ..Default::default()
             };
         let metric = CustomDistributionMetric::new(BaseMetricId(33), meta, 0, 100, 100, HistogramType::Linear)
@@ -852,6 +883,7 @@ pub mod test2 {
                     send_in_pings: vec!["metrics".into()],
                     lifetime: Lifetime::Application,
                     disabled: true,
+                    in_session: false,
                     ..Default::default()
                 },
             };
@@ -921,6 +953,7 @@ pub mod test2 {
                     send_in_pings: vec!["metrics".into()],
                     lifetime: Lifetime::Application,
                     disabled: true,
+                    in_session: false,
                     ..Default::default()
                 },
             };
@@ -942,6 +975,7 @@ pub mod test2 {
                     send_in_pings: vec!["metrics".into()],
                     lifetime: Lifetime::Application,
                     disabled: true,
+                    in_session: false,
                     ..Default::default()
                 },
             };
@@ -987,6 +1021,7 @@ pub mod test2 {
                     send_in_pings: vec!["metrics".into()],
                     lifetime: Lifetime::Application,
                     disabled: true,
+                    in_session: false,
                     ..Default::default()
                 },
             };
@@ -1008,6 +1043,7 @@ pub mod test2 {
                     send_in_pings: vec!["metrics".into()],
                     lifetime: Lifetime::Application,
                     disabled: true,
+                    in_session: false,
                     ..Default::default()
                 },
             };
@@ -1053,6 +1089,7 @@ pub mod test2 {
                     send_in_pings: vec!["metrics".into()],
                     lifetime: Lifetime::Application,
                     disabled: true,
+                    in_session: false,
                     ..Default::default()
                 },
             };
@@ -1073,6 +1110,7 @@ pub mod test2 {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Ping,
                 disabled: true,
+                in_session: false,
                 ..Default::default()
             };
         let metric = MemoryDistributionMetric::new(BaseMetricId(40), meta, MemoryUnit::Kilobyte)
@@ -1093,6 +1131,7 @@ pub mod test2 {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Application,
                 disabled: true,
+                in_session: false,
                 ..Default::default()
             };
         let metric = StringListMetric::new(BaseMetricId(41), meta)
@@ -1113,6 +1152,7 @@ pub mod test2 {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Application,
                 disabled: true,
+                in_session: false,
                 ..Default::default()
             };
         let metric = StringMetric::new(BaseMetricId(42), meta)
@@ -1133,6 +1173,7 @@ pub mod test2 {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Application,
                 disabled: true,
+                in_session: false,
                 ..Default::default()
             };
         let metric = TextMetric::new(BaseMetricId(43), meta)
@@ -1153,6 +1194,7 @@ pub mod test2 {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Application,
                 disabled: true,
+                in_session: false,
                 ..Default::default()
             };
         let metric = TimespanMetric::new(BaseMetricId(44), meta, TimeUnit::Millisecond)
@@ -1173,6 +1215,7 @@ pub mod test2 {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Ping,
                 disabled: true,
+                in_session: false,
                 ..Default::default()
             };
         let metric = TimingDistributionMetric::new(BaseMetricId(45), meta, TimeUnit::Nanosecond)
@@ -1193,6 +1236,7 @@ pub mod test2 {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Ping,
                 disabled: true,
+                in_session: false,
                 ..Default::default()
             };
         let metric = BooleanMetric::with_unordered_ipc(BaseMetricId(46), meta)
@@ -1214,6 +1258,7 @@ pub mod test2 {
                     send_in_pings: vec!["metrics".into()],
                     lifetime: Lifetime::Ping,
                     disabled: true,
+                    in_session: false,
                     ..Default::default()
                 },
             };
@@ -1256,6 +1301,7 @@ pub mod test2_nested {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Ping,
                 disabled: true,
+                in_session: false,
                 ..Default::default()
             };
         let metric = ObjectMetric::new(BaseMetricId(48), meta)
@@ -1283,6 +1329,7 @@ pub mod test2_nested {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Application,
                 disabled: true,
+                in_session: false,
                 ..Default::default()
             };
         let metric = DatetimeMetric::new(BaseMetricId(49), meta, TimeUnit::Millisecond)
@@ -1303,6 +1350,7 @@ pub mod test2_nested {
                 send_in_pings: vec!["events".into()],
                 lifetime: Lifetime::Ping,
                 disabled: true,
+                in_session: true,
                 ..Default::default()
             };
         let metric = EventMetric::new(BaseMetricId(50), meta)
@@ -1347,6 +1395,7 @@ pub mod test2_nested {
                 send_in_pings: vec!["events".into()],
                 lifetime: Lifetime::Ping,
                 disabled: true,
+                in_session: true,
                 ..Default::default()
             };
         let metric = EventMetric::new(BaseMetricId(51), meta)
@@ -1416,6 +1465,7 @@ pub mod test2_nested {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Ping,
                 disabled: true,
+                in_session: false,
                 ..Default::default()
             };
         let metric = QuantityMetric::new(BaseMetricId(55), meta)
@@ -1436,6 +1486,7 @@ pub mod test2_nested {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Ping,
                 disabled: true,
+                in_session: false,
                 ..Default::default()
             };
         let metric = RateMetric::new(BaseMetricId(56), meta)
@@ -1456,6 +1507,7 @@ pub mod test2_nested {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Ping,
                 disabled: true,
+                in_session: false,
                 ..Default::default()
             };
         let metric = NumeratorMetric::new(BaseMetricId(57), meta)
@@ -1476,6 +1528,7 @@ pub mod test2_nested {
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Application,
                 disabled: true,
+                in_session: false,
                 ..Default::default()
             };
         let metric = UuidMetric::new(BaseMetricId(58), meta)

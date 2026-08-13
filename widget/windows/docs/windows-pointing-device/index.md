@@ -138,7 +138,7 @@ input device.
 Here are some descriptions of a few pointing device types that demonstrate
 the diversity of hardware:
 
-**Touchscreen**
+## Touchscreen
 
 > A touchscreen is a computer display that is able to sense the
 > location of (possibly-multiple) fingers (or stylus) making contact with its
@@ -150,7 +150,7 @@ the diversity of hardware:
 > :width: 25%
 > ```
 
-**Digitizing Tablet + Pen Stylus**
+## Digitizing Tablet + Pen Stylus
 
 > These advanced pointing devices tend to
 > exist in two forms: as an external sensing "pad" that can be plugged into a
@@ -166,7 +166,7 @@ the diversity of hardware:
 > :width: 25%
 > ```
 
-**Joystick/Pointer Stick**
+## Joystick/Pointer Stick
 
 > Pointer sticks are most often seen in laptop
 > computers made by IBM/Lenovo, where they exist as a little red nub located
@@ -180,7 +180,7 @@ the diversity of hardware:
 > :width: 25%
 > ```
 
-**Touchpad**
+## Touchpad
 
 > A touchpad is a rectangular surface (often found on laptop
 > computers) that detects touch and motion of a finger and moves an on-screen
@@ -193,7 +193,7 @@ the diversity of hardware:
 > :width: 25%
 > ```
 
-**VR Controllers**
+## VR Controllers
 
 > VR controllers (and other similar devices like the
 > Wiimote from the Nintendo Wii) allow users to point at objects in a
@@ -207,7 +207,7 @@ the diversity of hardware:
 > :width: 25%
 > ```
 
-**Hand Tracking**
+## Hand Tracking
 
 > Devices like the Apple Vision (introduced during the
 > time this document was being written) and (to a lesser extent) the Meta
@@ -225,7 +225,7 @@ the diversity of hardware:
 > :width: 25%
 > ```
 
-**Mouse**
+## Mouse
 
 > A pointing device that needs no introduction. Moving a physical
 > clam-shaped device across a surface translates to relative movement of a
@@ -235,7 +235,7 @@ the diversity of hardware:
 > :width: 25%
 > ```
 
-#### The Buxton Three-State Model
+### The Buxton Three-State Model
 
 Bill Buxton, an early pioneer in the field of human-computer interaction,
 came up with a three-state model for pointing devices; a device can be
@@ -263,7 +263,7 @@ model individually applied.
 
 For demonstration, here is the model applied to a few devices:
 
-**Computer Mouse**
+## Computer Mouse
 
 > A mouse is never in the "Out of Range" state. Even though it can technically
 > be lifted off its surface, the mouse does not report this as a separate
@@ -281,7 +281,7 @@ For demonstration, here is the model applied to a few devices:
 > dragging, and two-button dragging. In practice, very little software
 > actually does anything meaningful with two-button dragging.
 
-**Touch Screen**
+## Touch Screen
 
 > Applying the model to a touch screen, one can observe that current hardware
 > has no way to sense that a finger that is "hovering, but not quite making
@@ -292,7 +292,7 @@ For demonstration, here is the model applied to a few devices:
 > "states" that a touchscreen can be in. Windows assigns meaning to many two,
 > three, and four-finger gestures.
 
-**Tablet Digitizer**
+## Tablet Digitizer
 
 > A tablet digitizer supports all three states: when the stylus is far away
 > from the surface, it is considered "out of range"; when it is located
@@ -335,7 +335,7 @@ Microsoft defines guidelines for various behaviours that Windows applications
 should ideally adhere to in the [Input and Interactions](https://learn.microsoft.com/en-us/windows/apps/design/input/)
 section on MSDN. Some of these are summarized quickly below:
 
-**Drag and Drop**
+## Drag and Drop
 
 > Drag and drop allows a user to transfer data from one application to
 > another. The gesture begins when a pointer device moves into the "Dragging"
@@ -349,7 +349,7 @@ section on MSDN. Some of these are summarized quickly below:
 > Firefox has supported Drag and Drop for a very long time, so it will not be
 > discussed further.
 
-**Pan and Zoom**
+## Pan and Zoom
 
 > When using touchscreens (and multi-touch touchpads), users expect to be able
 > to cause the viewport to "pan" left/right/up/down by pressing two fingers on
@@ -360,7 +360,7 @@ section on MSDN. Some of these are summarized quickly below:
 > A zoom can be signalled by moving the two fingers apart or together
 > in a "pinch" or "reverse pinch" gesture.
 
-**Single Pointer Panning**
+## Single Pointer Panning
 
 > Applications that are based on a UI model of the user interacting with a
 > "page" often allow a single pointer "Dragging" over the viewport to cause
@@ -371,7 +371,7 @@ section on MSDN. Some of these are summarized quickly below:
 > counterexample, graphics programs tend to treat one-finger dragging as
 > object manipulation and two-finger dragging as viewport panning.
 
-**Inertia**
+## Inertia
 
 > When a user is done panning, they may lift their finger/pen off the screen
 > while the viewport is still in motion. Users expect that the page will
@@ -386,7 +386,7 @@ section on MSDN. Some of these are summarized quickly below:
 > their web browser to behave this way, and so when Firefox fails to provide
 > this behavior it can be jarring.
 
-**Overscroll and Elastic Bounce**
+## Overscroll and Elastic Bounce
 
 > When a user is panning the page and reaches the outer edges, Microsoft
 > recommends that the app should begin an "elastic bounce" animation, where
@@ -414,12 +414,12 @@ and eventually a cross-platform standard is introduced into the Web Platform.
 The following sections detail the history of input devices supported by
 Windows and the Web Platform:
 
-**1985 - Computer Mouse Support (Windows 1.0)**
+## 1985 - Computer Mouse Support (Windows 1.0)
 
 > The first version of Windows (1985) supported a computer mouse. Support
 > for other input devices is not well-documented, but probably non-existant.
 
-**1991 - Third-Party De-facto Pen Support (Wintab)**
+## 1991 - Third-Party De-facto Pen Support (Wintab)
 
 > In the late 80s and early 90s, any tablet pen hardware vendor that wanted
 > to support Windows would need to write a device driver and design a
@@ -438,7 +438,7 @@ Windows and the Web Platform:
 > supported by virtually all artist tablets to this day. Notable companies
 > include Wacom, Huion, XP-Pen, etc.
 
-**1992 - Early Windows Pen Support (Windows for Pen Computing)**
+## 1992 - Early Windows Pen Support (Windows for Pen Computing)
 
 > The earliest Windows operating system to support non-mouse pointing devices
 > was Windows 3.1 with the "Windows for Pen Computing" add-on (1992).
@@ -455,7 +455,7 @@ Windows and the Web Platform:
 > Firefox) supported this add-on or not, but there is no trace of it in modern
 > Firefox code.
 
-**1995 - Introduction of JavaScript and Mouse Events (De-facto Web Standard)**
+## 1995 - Introduction of JavaScript and Mouse Events (De-facto Web Standard)
 
 > The introduction of JavaScript in 1995 by Netscape Communications added a
 > programmable, event-driven scripting environment to the Web Platform.
@@ -482,7 +482,7 @@ Windows and the Web Platform:
 > and eventually the "Pointer Events" to expose more of the rich information
 > provided by pens.
 
-**2005 - Mainstream Pen Support (Windows XP Tablet PC Edition)**
+## 2005 - Mainstream Pen Support (Windows XP Tablet PC Edition)
 
 > It was the release of Windows XP Tablet PC Edition (2005) that allowed
 > Windows applications to directly support tablet pens by using the new COM
@@ -606,7 +606,7 @@ Windows and the Web Platform:
 > Zoom (APZ) is enabled, but we do not use either the `IInertiaProcessor`
 > nor the `IManipulationProcessor`.
 
-**2012 - Unified Pointer API (Windows 8)**
+## 2012 - Unified Pointer API (Windows 8)
 
 > Windows 8 (2012) was Microsoft's initial attempt to make a touch-first,
 > mobile-first operating system that (ideally) would make it easy for app
@@ -659,7 +659,7 @@ Windows and the Web Platform:
 > while other input methods still use the historical mouse and touch input
 > APIs above.
 
-**2013 - DirectManipulation (Windows 8.1)**
+## 2013 - DirectManipulation (Windows 8.1)
 
 > DirectManipulation is a DirectX based API that was added during the release
 > of Windows 8.1 (2013). This API allows an app to create a series of
@@ -680,7 +680,7 @@ Windows and the Web Platform:
 > translates them into the standard Asynchronous Pan and Zoom (APZ) events
 > that the rest of the input pipeline uses.
 
-**2013 - Touch Events (Web Standard)**
+## 2013 - Touch Events (Web Standard)
 
 > "[Touch Events](https://www.w3.org/TR/touch-events/)" became a W3C
 > recommendation in October, 2013.
@@ -703,7 +703,7 @@ Windows and the Web Platform:
 > tilt, or multiple cursors like an erasure. Ultimately, its functionality
 > has been superceded by the newer "Pointer Events" API, discussed below.
 
-**2016 - Precision Touchpads (Windows 10)**
+## 2016 - Precision Touchpads (Windows 10)
 
 > Early touchpads emulated a computer mouse by directly using the same IBM
 > PS/2 interface that most computer mice used and translating relative
@@ -743,7 +743,7 @@ Windows and the Web Platform:
 > automatically get pan/zoom enabled for their app, or the RawInput API to
 > directly read touchpad data.
 
-**2019 - Pointer Events (Web Standard)**
+## 2019 - Pointer Events (Web Standard)
 
 > "[Pointer Events](https://www.w3.org/TR/pointerevents/)" became a level 2
 > W3C recommendation in April, 2019. They considered [the work done by Microsoft](https://www.w3.org/Submission/2012/SUBM-pointer-events-20120907/)
@@ -931,7 +931,7 @@ use the Pointer API and the misbehaving input devices do not may be related.
 
 ### Pointer Media Queries
 
-**"any-pointer" Queries**
+## "any-pointer" Queries
 
 Unlike the `pointer` media queries, which rely on the browser to make a policy
 decision about what should be considered the "primary" pointer in a given
@@ -939,7 +939,7 @@ system configuration, the `any-pointer` queries are much more objective and
 binary: the computer either has a type of device attached to it, or it
 doesn't.
 
-**any-pointer: coarse**
+## any-pointer: coarse
 
 Firefox reports that there are "coarse" pointing devices present if either of
 these two points is true:
@@ -963,7 +963,7 @@ on machines that wouldn't normally be considered a "tablet"). This is
 responsible for the incorrect "Windows 10 Dell XPS 15 (Touch Disabled) + Wacom
 USB Tablet" issue in the table below.
 
-**any-pointer: fine**
+## any-pointer: fine
 
 Firefox reports that there are "fine" pointing devices present if and only if
 it detects a mouse. This is clearly already wrong. Firefox determines that the
@@ -1002,14 +1002,14 @@ This is also responsible for failing to report the trackpad on the Dell XPS 15
 as "fine", because the Dell XPS 15 has a touchscreen and therefore looks like
 a "tablet", but doesn't report 2 mouse drivers.
 
-**any-pointer: hover**
+## any-pointer: hover
 
 Firefox reports that any device that is a "fine" pointer also supports "hover",
 which does generally hold true, but isn't necessarily true for lower-end pens
 that only support tapping. It would be better for Firefox to directly
 query the operating system instead of just assuming.
 
-**"pointer" media query**
+## "pointer" media query
 
 As discussed previously at length, this media query relies on a "primary"
 designation made by the browser. Below is the current algorithm used to
@@ -1036,7 +1036,7 @@ Firefox uses the following algorithm to determine if the computer is a
    it's a tablet.
 6. Otherwise, it's not a tablet.
 
-**Table with comparison to Chromium**
+## Table with comparison to Chromium
 
 The following table shows how Firefox and Chromium respond to various pointer
 queries. The "any-pointer" and "any-hover" columns are not subjective and
@@ -1049,7 +1049,7 @@ interpretation" because of the aforementioned difficulty in determining the
 :width: 100%
 ```
 
-**Related Bugs**
+## Related Bugs
 
 - Bug 1813979 - For Surface Pro media query "any-pointer: fine" is true only
   when both the Type Cover and mouse are connected

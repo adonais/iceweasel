@@ -469,7 +469,7 @@ nsresult WebrtcTCPSocket::OpenWithHttpProxy() {
     return NS_ERROR_FAILURE;
   }
 
-  rv = httpChannel->HTTPUpgrade(mProxyConfig->alpn(), this);
+  rv = httpChannel->HTTPUpgrade("webrtc,c-webrtc"_ns, this);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }

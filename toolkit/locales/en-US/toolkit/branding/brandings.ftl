@@ -34,6 +34,8 @@
 -mdn-brand-name = MDN Web Docs
 -yelp-brand-name = Yelp
 
+##
+
 # Note the name of the website is capitalized.
 -fakespot-website-name = Fakespot.com
 
@@ -57,3 +59,9 @@
 # The "Labs" portion can be localized, “Firefox” must be treated as a brand
 # and kept in English.
 -firefoxlabs-brand-name = Mozilla Labs
+
+-smart-window-brand-name =
+    { $plural-form ->
+        [true] Smart Windows
+       *[false] Smart Window
+    }

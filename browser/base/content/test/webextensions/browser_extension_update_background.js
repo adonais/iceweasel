@@ -7,7 +7,6 @@ const { AddonTestUtils } = ChromeUtils.importESModule(
 );
 
 AddonTestUtils.initMochitest(this);
-AddonTestUtils.hookAMTelemetryEvents();
 
 const ID = "update2@tests.mozilla.org";
 const ID_ICON = "update_icon2@tests.mozilla.org";
@@ -219,16 +218,6 @@ async function backgroundUpdateTest(url, id, checkIconFn) {
 
   let gleanUpdates = AddonTestUtils.getAMGleanEvents("update");
 
-  // Test that the expected telemetry events have been recorded (and that they include the
-  // permission_prompt event).
-  const amEvents = AddonTestUtils.getAMTelemetryEvents();
-  const updateEvents = amEvents
-    .filter(evt => evt.method === "update")
-    .map(evt => {
-      delete evt.value;
-      return evt;
-    });
-
   const expectedSteps = [
     // First update (cancelled).
     "started",
@@ -246,17 +235,10 @@ async function backgroundUpdateTest(url, id, checkIconFn) {
 
   Assert.deepEqual(
     expectedSteps,
-    updateEvents.map(evt => evt.extra && evt.extra.step),
-    "Got the steps from the collected telemetry events"
-  );
-
-  Assert.deepEqual(
-    expectedSteps,
     gleanUpdates.map(evt => evt.step),
     "Got the steps from the collected Glean events."
   );
 
-  const method = "update";
   const object = "extension";
   const baseExtra = {
     addon_id: addonId,
@@ -267,17 +249,6 @@ async function backgroundUpdateTest(url, id, checkIconFn) {
 
   // Expect the telemetry events to have num_strings set to 1, as only the origin permissions is going
   // to be listed in the permission prompt.
-  Assert.deepEqual(
-    updateEvents.filter(
-      evt => evt.extra && evt.extra.step === "permissions_prompt"
-    ),
-    [
-      { method, object, extra: { ...baseExtra, num_strings: "1" } },
-      { method, object, extra: { ...baseExtra, num_strings: "1" } },
-    ],
-    "Got the expected permission_prompts events"
-  );
-
   Assert.deepEqual(
     gleanUpdates.filter(e => e.step === "permissions_prompt"),
     [

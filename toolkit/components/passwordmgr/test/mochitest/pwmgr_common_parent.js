@@ -224,9 +224,13 @@ addMessageListener("isLoggedIn", () => {
 
 addMessageListener("setPrimaryPassword", ({ enable }) => {
   if (enable) {
-    LoginTestUtils.primaryPassword.enable();
+    LoginTestUtils.primaryPassword.enable().then(() => {
+      sendAsyncMessage("primaryPasswordSet");
+    });
   } else {
-    LoginTestUtils.primaryPassword.disable();
+    LoginTestUtils.primaryPassword.disable().then(() => {
+      sendAsyncMessage("primaryPasswordSet");
+    });
   }
 });
 

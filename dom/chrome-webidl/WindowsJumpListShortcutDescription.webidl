@@ -27,7 +27,7 @@ dictionary WindowsJumpListShortcutDescription {
    * Arguments to be supplied to the executable when the item is selected in
    * the Jump List.
    */
-  DOMString arguments;
+  sequence<DOMString> arguments;
 
   /**
    * A description of the item that is displayed as a tooltip.

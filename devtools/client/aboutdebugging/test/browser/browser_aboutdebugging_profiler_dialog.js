@@ -125,6 +125,77 @@ add_task(async function test_set_profiler_settings() {
   await removeTab(tab);
 });
 
+add_task(async function test_profiler_dialog_nova_design() {
+  await pushPref("browser.nova.enabled", true);
+
+  const { disconnect, mocks } = await connectToLocalFirefox({
+    runtimeId: RUNTIME_ID,
+    runtimeName: RUNTIME_NAME,
+    deviceName: DEVICE_NAME,
+  });
+  const { document, tab } = await openAboutDebugging();
+
+  mocks.emitUSBUpdate();
+  await connectToRuntime(DEVICE_NAME, document);
+  await waitForRuntimePage(RUNTIME_NAME, document);
+
+  info("Open the profiler dialog with the Nova design system enabled");
+  const contentDocument = await openProfilerDialogWithRealClient(document);
+
+  const startButton = contentDocument.querySelector(
+    ".perf-photon-button-primary"
+  );
+  const presetSelect = contentDocument.querySelector(".perf-presets-select");
+  const contentWindow = contentDocument.defaultView;
+
+  const novaOutline = contentWindow
+    .getComputedStyle(startButton)
+    .getPropertyValue("--theme-focus-outline");
+  const novaButtonRadius =
+    contentWindow.getComputedStyle(startButton).borderTopLeftRadius;
+  const novaSelectRadius =
+    contentWindow.getComputedStyle(presetSelect).borderTopLeftRadius;
+
+  info("Disable Nova");
+  await pushPref("browser.nova.enabled", false);
+
+  info("Wait until the panel restyles with Nova disabled");
+  await waitUntil(
+    () =>
+      contentWindow.getComputedStyle(startButton).borderTopLeftRadius !==
+      novaButtonRadius
+  );
+
+  const preNovaOutline = contentWindow
+    .getComputedStyle(startButton)
+    .getPropertyValue("--theme-focus-outline");
+  const preNovaButtonRadius =
+    contentWindow.getComputedStyle(startButton).borderTopLeftRadius;
+  const preNovaSelectRadius =
+    contentWindow.getComputedStyle(presetSelect).borderTopLeftRadius;
+
+  Assert.notEqual(
+    novaOutline,
+    preNovaOutline,
+    `The focus outline uses the Nova accent color when Nova is enabled.`
+  );
+
+  // The same elements get a larger radius with Nova enabled than without.
+  Assert.greater(
+    parseFloat(novaButtonRadius),
+    parseFloat(preNovaButtonRadius),
+    `The recording button is rounded by the Nova token.`
+  );
+  Assert.greater(
+    parseFloat(novaSelectRadius),
+    parseFloat(preNovaSelectRadius),
+    `The preset select is rounded by the Nova token.`
+  );
+
+  await disconnect(document);
+  await removeTab(tab);
+});
+
 function assertDialogVisible(doc) {
   ok(doc.querySelector(".qa-profiler-dialog"), "Dialog is displayed");
   ok(doc.querySelector(".qa-profiler-dialog-mask"), "Dialog mask is displayed");

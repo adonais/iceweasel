@@ -59,30 +59,6 @@ WebGPUChild::WebGPUChild()
 
 WebGPUChild::~WebGPUChild() = default;
 
-RawId WebGPUChild::RenderBundleEncoderFinish(
-    ffi::WGPURenderBundleEncoder& aEncoder, RawId aDeviceId,
-    const dom::GPURenderBundleDescriptor& aDesc) {
-  ffi::WGPURenderBundleDescriptor desc = {};
-
-  webgpu::StringHelper label(aDesc.mLabel);
-  desc.label = label.Get();
-
-  RawId id = ffi::wgpu_client_create_render_bundle(GetClient(), aDeviceId,
-                                                   &aEncoder, &desc);
-
-  return id;
-}
-
-RawId WebGPUChild::RenderBundleEncoderFinishError(RawId aDeviceId,
-                                                  const nsString& aLabel) {
-  webgpu::StringHelper label(aLabel);
-
-  RawId id = ffi::wgpu_client_create_render_bundle_error(GetClient(), aDeviceId,
-                                                         label.Get());
-
-  return id;
-}
-
 namespace ffi {
 void wgpu_child_send_messages(WGPUWebGPUChildPtr aChild, uint32_t aNrOfMessages,
                               struct WGPUByteBuf aSerializedMessages) {

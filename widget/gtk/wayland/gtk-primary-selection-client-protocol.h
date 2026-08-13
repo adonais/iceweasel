@@ -3,8 +3,9 @@
 #ifndef GTK_PRIMARY_SELECTION_CLIENT_PROTOCOL_H
 #define GTK_PRIMARY_SELECTION_CLIENT_PROTOCOL_H
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
+
 #include "wayland-client.h"
 
 #ifdef __cplusplus

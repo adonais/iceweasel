@@ -5,6 +5,7 @@
 
 ChromeUtils.defineESModuleGetters(this, {
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
 });
 
 ChromeUtils.defineLazyGetter(this, "UrlbarTestUtils", () => {
@@ -42,7 +43,7 @@ add_task(async function test_switch_tab() {
   ok(
     searchContext.results.find(result => {
       return (
-        result.type == UrlbarUtils.RESULT_TYPE.TAB_SWITCH &&
+        result.type == UrlbarShared.RESULT_TYPE.TAB_SWITCH &&
         result.payload.url == "https://example.com/" &&
         result.payload.userContextId == contextIdTabA
       );
@@ -54,7 +55,7 @@ add_task(async function test_switch_tab() {
   let tabSwitchRow = searchContext.results.find(result => {
     resultIndex += 1;
     return (
-      result.type == UrlbarUtils.RESULT_TYPE.TAB_SWITCH &&
+      result.type == UrlbarShared.RESULT_TYPE.TAB_SWITCH &&
       result.payload.url == "https://example.com/" &&
       result.payload.userContextId == contextIdTabB
     );

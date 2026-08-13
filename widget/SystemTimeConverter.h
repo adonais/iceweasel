@@ -8,9 +8,10 @@
 #include <cinttypes>
 #include <limits>
 #include <type_traits>
+
+#include "mozilla/RWLock.h"
 #include "mozilla/ThreadSafety.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/RWLock.h"
 
 namespace mozilla {
 

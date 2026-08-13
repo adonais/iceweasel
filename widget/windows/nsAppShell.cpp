@@ -2,38 +2,39 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/Attributes.h"
-#include "mozilla/ScopeExit.h"
-#include "mozilla/ipc/MessageChannel.h"
-#include "mozilla/ipc/WindowsMessageLoop.h"
 #include "nsAppShell.h"
-#include "nsToolkit.h"
-#include "nsThreadUtils.h"
-#include "WinUtils.h"
-#include "WinTaskbar.h"
-#include "WinMouseScrollHandler.h"
-#include "nsWindowDefs.h"
-#include "nsWindow.h"
-#include "nsString.h"
-#include "WinIMEHandler.h"
-#include "mozilla/BackgroundHangMonitor.h"
-#include "mozilla/Hal.h"
-#include "nsIDOMWakeLockListener.h"
-#include "nsIPowerManagerService.h"
-#include "mozilla/ProfilerLabels.h"
-#include "mozilla/StaticPtr.h"
-#include "nsTHashtable.h"
-#include "nsHashKeys.h"
-#include "nsComponentManagerUtils.h"
-#include "ScreenHelperWin.h"
-#include "HeadlessScreenHelper.h"
-#include "mozilla/widget/ScreenManager.h"
-#include "mozilla/Atomics.h"
-#include "mozilla/NativeNt.h"
-#include "mozilla/WindowsDiagnostics.h"
-#include "mozilla/WindowsProcessMitigations.h"
 
 #include <winternl.h>
+
+#include "HeadlessScreenHelper.h"
+#include "ScreenHelperWin.h"
+#include "WinIMEHandler.h"
+#include "WinMouseScrollHandler.h"
+#include "WinTaskbar.h"
+#include "WinUtils.h"
+#include "mozilla/Atomics.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/BackgroundHangMonitor.h"
+#include "mozilla/Hal.h"
+#include "mozilla/NativeNt.h"
+#include "mozilla/ProfilerLabels.h"
+#include "mozilla/ScopeExit.h"
+#include "mozilla/StaticPtr.h"
+#include "mozilla/WindowsDiagnostics.h"
+#include "mozilla/WindowsProcessMitigations.h"
+#include "mozilla/ipc/MessageChannel.h"
+#include "mozilla/ipc/WindowsMessageLoop.h"
+#include "mozilla/widget/ScreenManager.h"
+#include "nsComponentManagerUtils.h"
+#include "nsHashKeys.h"
+#include "nsIDOMWakeLockListener.h"
+#include "nsIPowerManagerService.h"
+#include "nsString.h"
+#include "nsTHashtable.h"
+#include "nsThreadUtils.h"
+#include "nsToolkit.h"
+#include "nsWindow.h"
+#include "nsWindowDefs.h"
 
 #if defined(ACCESSIBILITY)
 #  include "mozilla/a11y/Compatibility.h"
@@ -243,43 +244,6 @@ static void RemoveScreenWakeLockListener() {
     sPowerManagerService = nullptr;
     sWakeLockListener = nullptr;
   }
-}
-
-class SingleNativeEventPump final : public nsIThreadObserver {
- public:
-  NS_DECL_THREADSAFE_ISUPPORTS
-  NS_DECL_NSITHREADOBSERVER
-
-  SingleNativeEventPump() {
-    MOZ_ASSERT(!XRE_UseNativeEventProcessing(),
-               "Should only be used when not properly processing events.");
-  }
-
- private:
-  ~SingleNativeEventPump() {}
-};
-
-NS_IMPL_ISUPPORTS(SingleNativeEventPump, nsIThreadObserver)
-
-NS_IMETHODIMP
-SingleNativeEventPump::OnDispatchedEvent() { return NS_OK; }
-
-NS_IMETHODIMP
-SingleNativeEventPump::OnProcessNextEvent(nsIThreadInternal* aThread,
-                                          bool aMayWait) {
-  MSG msg;
-  bool gotMessage = WinUtils::PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE);
-  if (gotMessage) {
-    ::TranslateMessage(&msg);
-    ::DispatchMessageW(&msg);
-  }
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-SingleNativeEventPump::AfterProcessNextEvent(nsIThreadInternal* aThread,
-                                             bool aMayWait) {
-  return NS_OK;
 }
 
 // RegisterWindowMessage values
@@ -630,20 +594,6 @@ nsresult nsAppShell::Init() {
     // Load winmm.dll because it is still needed by our event loop and might not
     // get loaded before we lower the sandbox.
     ::LoadLibraryW(L"winmm.dll");
-
-    if (XRE_IsContentProcess() && !IsWin32kLockedDown()) {
-      // We're not generally processing native events, but still using GDI and
-      // we still have some internal windows, e.g. from calling CoInitializeEx.
-      // So we use a class that will do a single event pump where previously we
-      // might have processed multiple events to make sure any occasional
-      // messages to these windows are processed. This also allows any internal
-      // Windows messages to be processed to ensure the GDI data remains fresh.
-      nsCOMPtr<nsIThreadInternal> threadInt =
-          do_QueryInterface(NS_GetCurrentThread());
-      if (threadInt) {
-        threadInt->SetObserver(new SingleNativeEventPump());
-      }
-    }
   }
 
   if (XRE_IsParentProcess()) {

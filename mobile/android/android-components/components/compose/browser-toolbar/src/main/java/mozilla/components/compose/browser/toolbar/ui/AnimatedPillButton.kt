@@ -41,6 +41,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -69,7 +70,9 @@ const val ANIMATION_DELAY_MILLIS = 400L
  * @param highlighted Whether a highlight badge should be drawn on top of [icon].
  * @param onClick Interaction dispatched when the button is tapped.
  * @param onInteraction Callback for dispatching [BrowserToolbarEvent]s to the store.
+ * @param testTag Optional test tag for this button.
  */
+@Suppress("CognitiveComplexMethod")
 @Composable
 internal fun AnimatedPillButton(
     icon: Drawable,
@@ -80,6 +83,7 @@ internal fun AnimatedPillButton(
     highlighted: Boolean = false,
     onClick: BrowserToolbarInteraction,
     onInteraction: (BrowserToolbarEvent) -> Unit,
+    testTag: String? = null,
 ) {
     // refactoring planned in https://bugzilla.mozilla.org/show_bug.cgi?id=2030770
     val view = LocalView.current
@@ -123,6 +127,9 @@ internal fun AnimatedPillButton(
             }
             .semantics(mergeDescendants = true) {
                 this.contentDescription = contentDescription
+                if (testTag != null) {
+                    this.testTag = testTag
+                }
             },
     ) {
         Row(

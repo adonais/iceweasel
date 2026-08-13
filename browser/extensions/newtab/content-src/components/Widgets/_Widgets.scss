@@ -119,55 +119,16 @@
   }
 }
 
-
 .widgets-expand-button {
-  appearance: none;
-  align-items: center;
-  background-color: transparent;
-  border: 1px solid var(--newtab-primary-action-background);
-  border-radius: var(--border-radius-circle);
-  color: var(--newtab-primary-action-background);
-  cursor: pointer;
-  display: inline-flex;
-  height: var(--size-item-large);
-  justify-content: center;
-  margin: 0;
-  padding: 0;
-  width: var(--size-item-large);
+  transition: transform 160ms ease;
 
-  &::before {
-    background-color: currentColor;
-    content: '';
-    height: var(--size-item-small);
-    mask: url('chrome://global/skin/icons/arrow-down.svg') center / contain no-repeat;
-    transition: transform 160ms ease;
-    width: var(--size-item-small);
-  }
-
-  &.is-maximized::before {
+  &.is-maximized {
     transform: rotate(180deg);
-  }
-
-  &:hover {
-    background-color: var(--newtab-element-secondary-hover-color);
-  }
-
-  &:active {
-    background-color: var(--newtab-element-secondary-active-color);
-  }
-
-  &:focus {
-    outline: none;
-  }
-
-  &:focus-visible {
-    outline: var(--focus-outline);
-    outline-offset: var(--focus-outline-offset);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .widgets-expand-button::before {
+  .widgets-expand-button {
     transition: none;
   }
 }
@@ -195,9 +156,6 @@
     min-width: 256px;
   }
 
-  panel-item::part(button) {
-    min-block-size: 30px;
-  }
 }
 
 // Classic layout padding (when Nova is disabled)

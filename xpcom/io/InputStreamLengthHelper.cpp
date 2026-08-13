@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "InputStreamLengthHelper.h"
+
 #include "mozilla/dom/WorkerCommon.h"
 #include "nsIAsyncInputStream.h"
 #include "nsIInputStream.h"

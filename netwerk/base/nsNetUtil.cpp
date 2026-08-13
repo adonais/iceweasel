@@ -3,11 +3,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 // HttpLog.h should generally be included first
-#include "DecoderDoctorDiagnostics.h"
-#include "HttpLog.h"
-
 #include "nsNetUtil.h"
 
+#include "../mime/nsMIMEHeaderParamImpl.h"
+#include "DecoderDoctorDiagnostics.h"
+#include "DefaultURI.h"
+#include "HttpLog.h"
+#include "mozIThirdPartyUtil.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Components.h"
@@ -24,103 +26,98 @@
 #include "mozilla/StaticPrefs_urlclassifier.h"
 #include "mozilla/StoragePrincipalHelper.h"
 #include "mozilla/TaskQueue.h"
+#include "mozilla/dom/BlobURLProtocolHandler.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/nsCSPUtils.h"
+#include "mozilla/dom/nsHTTPSOnlyUtils.h"
+#include "mozilla/dom/nsMixedContentBlocker.h"
+#include "mozilla/net/HttpBaseChannel.h"
+#include "mozilla/net/RedirectChannelRegistrar.h"
 #include "nsAboutProtocolUtils.h"
 #include "nsBufferedStreams.h"
 #include "nsCategoryCache.h"
+#include "nsChromeProtocolHandler.h"
 #include "nsComponentManagerUtils.h"
 #include "nsContentUtils.h"
+#include "nsDataHandler.h"
 #include "nsEscape.h"
 #include "nsFileStreams.h"
 #include "nsHashKeys.h"
 #include "nsHttp.h"
-#include "nsMimeTypes.h"
+#include "nsHttpChannel.h"
+#include "nsHttpHandler.h"
 #include "nsIAuthPrompt.h"
 #include "nsIAuthPrompt2.h"
 #include "nsIAuthPromptAdapterFactory.h"
 #include "nsIBufferedStreams.h"
-#include "nsBufferedStreams.h"
+#include "nsICertOverrideService.h"
+#include "nsICertStorage.h"
 #include "nsIChannelEventSink.h"
 #include "nsIClassifiedChannel.h"
 #include "nsIContentSniffer.h"
-#include "mozilla/dom/Document.h"
 #include "nsIDownloader.h"
 #include "nsIFileProtocolHandler.h"
 #include "nsIFileStreams.h"
 #include "nsIFileURL.h"
 #include "nsIIDNService.h"
+#include "nsIIncrementalStreamLoader.h"
 #include "nsIInputStreamChannel.h"
 #include "nsIInputStreamPump.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsILoadContext.h"
 #include "nsIMIMEHeaderParam.h"
+#include "nsINestedURI.h"
 #include "nsINode.h"
 #include "nsIObjectLoadingContent.h"
-#include "nsPersistentProperties.h"
 #include "nsIPrivateBrowsingChannel.h"
 #include "nsIPropertyBag2.h"
 #include "nsIProtocolProxyService.h"
-#include "mozilla/net/RedirectChannelRegistrar.h"
-#include "nsRequestObserverProxy.h"
+#include "nsIRedirectHistoryEntry.h"
+#include "nsIScriptError.h"
 #include "nsISensitiveInfoHiddenURI.h"
 #include "nsISimpleStreamListener.h"
+#include "nsISiteSecurityService.h"
 #include "nsISocketProvider.h"
 #include "nsIStandardURL.h"
 #include "nsIStreamLoader.h"
-#include "nsIIncrementalStreamLoader.h"
-#include "nsStringStream.h"
-#include "nsSyncStreamListener.h"
 #include "nsITextToSubURI.h"
 #include "nsIURIWithSpecialOrigin.h"
 #include "nsIViewSourceChannel.h"
 #include "nsInterfaceRequestorAgg.h"
-#include "nsINestedURI.h"
-#include "mozilla/dom/nsCSPUtils.h"
-#include "mozilla/dom/nsHTTPSOnlyUtils.h"
-#include "mozilla/dom/nsMixedContentBlocker.h"
-#include "mozilla/dom/BlobURLProtocolHandler.h"
-#include "mozilla/net/HttpBaseChannel.h"
-#include "nsHttpChannel.h"
-#include "nsIScriptError.h"
-#include "nsISiteSecurityService.h"
-#include "nsHttpHandler.h"
-#include "nsNSSComponent.h"
-#include "nsIRedirectHistoryEntry.h"
-#include "nsICertStorage.h"
-#include "nsICertOverrideService.h"
-#include "nsQueryObject.h"
-#include "mozIThirdPartyUtil.h"
-#include "../mime/nsMIMEHeaderParamImpl.h"
-#include "nsStandardURL.h"
-#include "DefaultURI.h"
-#include "nsChromeProtocolHandler.h"
-#include "nsJSProtocolHandler.h"
-#include "nsDataHandler.h"
-#include "mozilla/dom/BlobURLProtocolHandler.h"
-#include "nsStreamUtils.h"
-#include "nsSocketTransportService2.h"
-#include "nsViewSourceHandler.h"
 #include "nsJARURI.h"
+#include "nsJSProtocolHandler.h"
+#include "nsMimeTypes.h"
+#include "nsNSSComponent.h"
+#include "nsPersistentProperties.h"
+#include "nsQueryObject.h"
+#include "nsRequestObserverProxy.h"
+#include "nsSocketTransportService2.h"
+#include "nsStandardURL.h"
+#include "nsStreamUtils.h"
+#include "nsStringStream.h"
+#include "nsSyncStreamListener.h"
+#include "nsViewSourceHandler.h"
 #ifndef XP_IOS
 #  include "nsIconURI.h"
 #endif
-#include "nsAboutProtocolHandler.h"
-#include "nsResProtocolHandler.h"
+#include "DecoderTraits.h"
+#include "MediaContainerType.h"
+#include "imgLoader.h"
+#include "mozilla/dom/MediaList.h"
 #include "mozilla/net/CookieJarSettings.h"
-#include "mozilla/net/MozSrcProtocolHandler.h"
 #include "mozilla/net/ExtensionProtocolHandler.h"
 #include "mozilla/net/MozNewTabWallpaperProtocolHandler.h"
+#include "mozilla/net/MozSrcProtocolHandler.h"
 #include "mozilla/net/PageThumbProtocolHandler.h"
 #include "mozilla/net/SFV.h"
 #include "mozilla/net/SFVService.h"
+#include "nsAboutProtocolHandler.h"
+#include "nsCRT.h"
 #include "nsICookieService.h"
 #include "nsIXPConnect.h"
 #include "nsParserConstants.h"
-#include "nsCRT.h"
+#include "nsResProtocolHandler.h"
 #include "nsServiceManagerUtils.h"
-#include "mozilla/dom/MediaList.h"
-#include "MediaContainerType.h"
-#include "DecoderTraits.h"
-#include "imgLoader.h"
 
 #if defined(MOZ_THUNDERBIRD) || defined(MOZ_SUITE)
 #  include "nsNewMailnewsURI.h"
@@ -428,21 +425,22 @@ nsresult NS_NewChannel(nsIChannel** outChannel, nsIURI* aUri,
                        nsIInterfaceRequestor* aCallbacks /* = nullptr */,
                        nsLoadFlags aLoadFlags /* = nsIRequest::LOAD_NORMAL */,
                        nsIIOService* aIoService /* = nullptr */,
-                       uint32_t aSandboxFlags /* = 0 */) {
+                       uint32_t aSandboxFlags /* = 0 */,
+                       uint64_t aAssociatedBrowsingContextID /* = 0 */) {
   AssertLoadingPrincipalAndClientInfoMatch(
       aLoadingPrincipal, aLoadingClientInfo, aContentPolicyType);
 
   Maybe<ClientInfo> loadingClientInfo;
   loadingClientInfo.emplace(aLoadingClientInfo);
 
-  return NS_NewChannelInternal(outChannel, aUri,
-                               nullptr,  // aLoadingNode,
-                               aLoadingPrincipal,
-                               nullptr,  // aTriggeringPrincipal
-                               loadingClientInfo, aController, aSecurityFlags,
-                               aContentPolicyType, aCookieJarSettings,
-                               aPerformanceStorage, aLoadGroup, aCallbacks,
-                               aLoadFlags, aIoService, aSandboxFlags);
+  return NS_NewChannelInternal(
+      outChannel, aUri,
+      nullptr,  // aLoadingNode,
+      aLoadingPrincipal,
+      nullptr,  // aTriggeringPrincipal
+      loadingClientInfo, aController, aSecurityFlags, aContentPolicyType,
+      aCookieJarSettings, aPerformanceStorage, aLoadGroup, aCallbacks,
+      aLoadFlags, aIoService, aSandboxFlags, aAssociatedBrowsingContextID);
 }
 
 nsresult NS_NewChannelInternal(
@@ -456,8 +454,8 @@ nsresult NS_NewChannelInternal(
     nsILoadGroup* aLoadGroup /* = nullptr */,
     nsIInterfaceRequestor* aCallbacks /* = nullptr */,
     nsLoadFlags aLoadFlags /* = nsIRequest::LOAD_NORMAL */,
-    nsIIOService* aIoService /* = nullptr */,
-    uint32_t aSandboxFlags /* = 0 */) {
+    nsIIOService* aIoService /* = nullptr */, uint32_t aSandboxFlags /* = 0 */,
+    uint64_t aAssociatedBrowsingContextID /* = 0 */) {
   NS_ENSURE_ARG_POINTER(outChannel);
 
   if (aContentPolicyType == nsIContentPolicy::TYPE_INTERNAL_FORCE_ALLOWED_DTD &&
@@ -473,7 +471,7 @@ nsresult NS_NewChannelInternal(
   rv = aIoService->NewChannelFromURIWithClientAndController(
       aUri, aLoadingNode, aLoadingPrincipal, aTriggeringPrincipal,
       aLoadingClientInfo, aController, aSecurityFlags, aContentPolicyType,
-      aSandboxFlags, getter_AddRefs(channel));
+      aSandboxFlags, aAssociatedBrowsingContextID, getter_AddRefs(channel));
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -4126,6 +4124,12 @@ void CheckForBrokenChromeURL(nsILoadInfo* aLoadInfo, nsIURI* aURI) {
   aURI->GetFilePath(filePath);
   // Fluent likes checking for files everywhere and expects failure.
   if (StringEndsWith(filePath, ".ftl"_ns)) {
+    return;
+  }
+
+  // l10n coverage data (localization/<locale>/coverage.json) is loaded
+  // speculatively and is absent for en-US and untranslated locales.
+  if (StringEndsWith(filePath, "/coverage.json"_ns)) {
     return;
   }
 

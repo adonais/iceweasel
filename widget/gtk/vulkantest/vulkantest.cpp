@@ -5,15 +5,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <cstdio>
-#include <cstdlib>
 #include <dlfcn.h>
 #include <fcntl.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <string.h>
 #include <getopt.h>
 #include <stdint.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+#include <cstdio>
+#include <cstdlib>
 
 #ifdef __linux__
 #  include <sys/sysmacros.h>

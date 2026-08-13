@@ -68,6 +68,41 @@ home-prefs-recent-activity-select =
 home-prefs-weather-header-srd =
     .label = Laikapstākļi
 
+## Strings for the Stocks widget
+
+# "Stocks widget options" is an icon-only button in the widget toolbar — the
+# attributes are consumed as tooltip/screen-reader label only. The button
+# never renders visible text.
+newtab-stocks-widget-menu-button =
+    .title = Akciju logrīka opcijas
+    .aria-label = Akciju logrīka opcijas
+# Heading for the Stocks widget.
+newtab-stocks-widget-title = Akcijas
+
+## Screen-reader summary of a stock ticker.
+## Variables:
+##   $name (String) - the full fund/ETF name, e.g. "SPDR S&P 500 ETF Trust".
+##   $change (String) - the day's percentage change, e.g. "+2.1%".
+##   $price (String) - the last price, e.g. "$559.44".
+
+# Stock increased (went up) during the day
+newtab-stocks-ticker-status-up = { $name }, { $change } augšup, { $price }
+# Stock decreased (went down) during the day
+newtab-stocks-ticker-status-down = { $name }, { $change } lejup, { $price }
+# Stock didn't change during the day
+newtab-stocks-ticker-status-flat = { $name }, bez izmaiņām, { $change }, { $price }
+
+## Strings for the Picture of the Day widget
+
+# Attribution line shown under the title once a picture loads: an author
+# credit, a link to the picture's source page, and a link to its license.
+# "©" is the copyright symbol.
+# $author (string) - the name of the image's author.
+newtab-picture-attribution-author = © { $author }
+# Link to the picture's source page (its Wikimedia Commons file page).
+# "Wikimedia Commons" is a brand name and should not be translated.
+newtab-picture-attribution-source-link = Wikimedia Commons
+
 ## Search box component.
 
 # "Search" is a verb/action

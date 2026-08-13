@@ -129,6 +129,8 @@ bool JSProcessActorProtocol::Matches(const nsACString& aRemoteType,
     return false;
   }
 
+  LogMatch(aRemoteType);
+
   return true;
 }
 

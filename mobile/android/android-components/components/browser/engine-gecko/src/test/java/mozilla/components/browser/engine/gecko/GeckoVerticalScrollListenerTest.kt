@@ -125,8 +125,10 @@ class GeckoVerticalScrollListenerTest {
     private fun buildScrollUpdate(
         scrollY: Float,
         zoom: Float = 1f,
-    ) = mock<GeckoSession>().ScrollPositionUpdate().apply {
-        this.scrollY = scrollY
-        this.zoom = zoom
-    }
+    ) = mock<GeckoSession>().ScrollPositionUpdate(
+        0f,
+        scrollY,
+        zoom,
+        GeckoSession.ScrollPositionUpdate.SOURCE_USER_INTERACTION,
+    )
 }

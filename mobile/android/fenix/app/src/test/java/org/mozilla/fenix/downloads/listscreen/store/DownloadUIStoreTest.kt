@@ -1758,7 +1758,7 @@ class DownloadUIStoreTest {
     }
 
     @Test
-    fun `GIVEN rename dialog shown WHEN the extension of proposed file name is removed THEN change file extension dialog is not shown`() = runTest(testDispatcher) {
+    fun `GIVEN rename dialog shown WHEN the extension of proposed file name is removed THEN change file extension dialog is shown`() = runTest(testDispatcher) {
         val browserStore = BrowserStore(
             initialState = BrowserState(
                 downloads = mapOf(
@@ -1796,7 +1796,49 @@ class DownloadUIStoreTest {
 
         testDispatcher.scheduler.advanceUntilIdle()
 
-        assertFalse(store.state.isChangeFileExtensionDialogVisible)
+        assertTrue(store.state.isChangeFileExtensionDialogVisible)
+    }
+
+    @Test
+    fun `GIVEN rename dialog shown WHEN the proposed name ends with a dot THEN change file extension dialog is shown`() = runTest(testDispatcher) {
+        val browserStore = BrowserStore(
+            initialState = BrowserState(
+                downloads = mapOf(
+                    "1" to downloadState1.copy(
+                        fileName = "original.pdf",
+                    ),
+                ),
+            ),
+        )
+
+        val store = DownloadUIStore(
+            initialState = DownloadUIState(
+                items = listOf(fileItem1),
+                mode = DownloadUIState.Mode.Normal,
+                pendingDeletionIds = emptySet(),
+                fileToRename = fileItem1.copy(fileName = "original.pdf"),
+                isChangeFileExtensionDialogVisible = false,
+            ),
+            middleware = listOf(
+                DownloadUIRenameMiddleware(
+                    browserStore = browserStore,
+                    scope = testScope,
+                    downloadFileUtils = FakeDownloadFileUtils(),
+                    mainDispatcher = testDispatcher,
+                ),
+            ),
+        )
+
+        store.dispatch(
+            DownloadUIAction.FileExtensionChangedByUser(
+                item = store.state.fileToRename!!,
+                newName = "original.",
+            ),
+        )
+
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(store.state.isChangeFileExtensionDialogVisible)
     }
 
     @Test

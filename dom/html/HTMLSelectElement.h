@@ -25,6 +25,7 @@ class EventChainPostVisitor;
 class EventChainPreVisitor;
 class SelectContentData;
 class PresState;
+class WidgetMouseEvent;
 
 namespace dom {
 
@@ -280,6 +281,10 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
     SetStates(ElementState::OPEN, aVal);
   }
 
+  void OnPopoverStateChanged(bool aOpen) {
+    SetStates(ElementState::OPEN, aOpen);
+  }
+
   void GetPreviewValue(nsAString& aValue) { aValue = mPreviewValue; }
   void SetPreviewValue(const nsAString& aValue);
 
@@ -330,6 +335,10 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   // https://html.spec.whatwg.org/#clone-an-option-into-a-selectedcontent
   MOZ_CAN_RUN_SCRIPT void CloneOptionIntoSelectedContent(
       HTMLOptionElement* aOption, HTMLSelectedContentElement* aSelectedContent);
+
+  void ScrollToSelectedOption() { return ScrollToOption(SelectedIndex()); }
+
+  void ResetListBoxSelection(bool aAllowScrolling);
 
  protected:
   virtual ~HTMLSelectElement();
@@ -404,12 +413,6 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   /** Get the frame as an nsListControlFrame (MAY RETURN nullptr) */
   nsListControlFrame* GetListBoxFrame();
 
-  /**
-   * Helper method for dispatching ContentReset notifications to list box
-   * frames.
-   */
-  void DispatchContentReset();
-
   void SetSelectedIndexInternal(int32_t aIndex, bool aNotify);
 
   void OnSelectionChanged();
@@ -428,9 +431,39 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   MOZ_CAN_RUN_SCRIPT nsresult HandleMouseUp(EventChainPostVisitor&);
   MOZ_CAN_RUN_SCRIPT nsresult HandleMouseMove(EventChainPostVisitor&);
 
+  // Returns the index of the option targeted by aEvent, using the
+  // listbox frame for the necessary hit-testing geometry. Returns a failure
+  // code if the event doesn't target a selectable option.
+  Maybe<int32_t> GetListBoxIndexFromEvent(const WidgetMouseEvent&);
+  // Grabs/releases mouse capture for listbox drag-selection.
+  void CaptureMouseEvents(bool aGrabMouseEvents);
+
+  // Selection-model helpers shared by the keyboard and mouse handlers above.
+  // The selection range (mStartSelectionIndex/mEndSelectionIndex) is only
+  // meaningful for a listbox, hence the nsListControlFrame argument used for
+  // the associated view updates (scrolling, focus invalidation and a11y
+  // events).
+  MOZ_CAN_RUN_SCRIPT
+  bool PerformListBoxSelection(int32_t aClickedIndex, bool aIsShift,
+                               bool aIsControl);
+  MOZ_CAN_RUN_SCRIPT
+  bool ListBoxSingleSelection(int32_t aClickedIndex, bool aDoToggle);
+  bool ExtendedSelection(int32_t aStartIndex, int32_t aEndIndex,
+                         bool aClearAll);
+  bool ToggleOptionSelected(int32_t aIndex);
+  void InitListBoxSelectionRange(int32_t aClickedIndex);
+  MOZ_CAN_RUN_SCRIPT void UpdateSelection();
+  MOZ_CAN_RUN_SCRIPT
+  void UpdateListBoxSelectionAfterKeyEvent(int32_t aNewIndex,
+                                           uint32_t aCharCode, bool aIsShift,
+                                           bool aIsControlOrMeta);
+  void RemoveOptionFromListBoxSelection(int32_t aIndex);
+  void ScrollToOption(int32_t aIndex);
+  MOZ_CAN_RUN_SCRIPT void DoScrollToOption(int32_t aIndex);
   void AdjustIndexForDisabledOpt(int32_t aStartIndex, int32_t& aNewIndex,
                                  int32_t aNumOptions, int32_t aDoAdjustInc,
                                  int32_t aDoAdjustIncNext);
+  void MaybeFireMenuItemActiveEvent(nsIContent* aPreviousCurrentOption);
   bool IsOptionInteractivelySelectable(uint32_t aIndex) const;
   int32_t GetEndSelectionIndex() const;
   int32_t ItemsPerPage() const;
@@ -451,6 +484,7 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   RefPtr<HTMLOptionsCollection> mOptions;
   nsContentUtils::AutocompleteAttrState mAutocompleteAttrState;
   nsContentUtils::AutocompleteAttrState mAutocompleteInfoState;
+
   /** false if the parser is in the middle of adding children. */
   bool mIsDoneAddingChildren : 1;
   /** true if our disabled state has changed from the default **/
@@ -479,6 +513,12 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
    */
   bool mIsUpdatingSelectedContent : 1 = false;
   /**
+   * True if the selection changed since the last mousedown that started a
+   * drag, used to decide whether to fire input/change on the matching
+   * mouseup.
+   */
+  bool mListBoxSelectionChangedSinceDragStart : 1 = false;
+  /**
    * The temporary restore state in case we try to restore before parser is
    * done adding options
    */
@@ -493,6 +533,18 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
    * The current displayed preview text.
    */
   nsString mPreviewValue;
+  /**
+   * Listbox selection range, only meaningful while a listbox frame exists.
+   * Both default to kNothingSelected (-1); mEndSelectionIndex is the option
+   * focused for keyboard navigation.
+   */
+  static constexpr int32_t kNothingSelected = -1;
+  struct {
+    int32_t mStart = -1;
+    int32_t mEnd = -1;
+
+    void SetTo(int32_t aIndex) { mStart = mEnd = aIndex; }
+  } mListBoxSelection;
 
  private:
   static void MapAttributesIntoRule(MappedDeclarationsBuilder&);

@@ -10,10 +10,16 @@ ChromeUtils.defineESModuleGetters(lazy, {
   EventDispatcher: "resource://gre/modules/Messaging.sys.mjs",
   IPPAndroidAuthProvider:
     "moz-src:///toolkit/components/ipprotection/fxa/IPPAndroidAuthProvider.sys.mjs",
+  IPPAuthProvider:
+    "moz-src:///toolkit/components/ipprotection/IPPAuthProvider.sys.mjs",
+  IPPDummyAuthProvider:
+    "moz-src:///toolkit/components/ipprotection/tests/IPPDummyAuthProvider.sys.mjs",
   IPPGpiAuthProvider:
     "moz-src:///toolkit/components/ipprotection/gpi/IPPGpiAuthProvider.sys.mjs",
   IPPProxyManager:
     "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
+  IPProtectionServerlist:
+    "moz-src:///toolkit/components/ipprotection/IPProtectionServerlist.sys.mjs",
   IPProtectionActivator:
     "moz-src:///toolkit/components/ipprotection/IPProtectionActivator.sys.mjs",
   IPProtectionService:
@@ -49,6 +55,13 @@ export const GeckoViewIPProtection = {
         };
         break;
       }
+      case "IPProtectionServerlist:ListChanged": {
+        lazy.EventDispatcher.instance.sendRequest(
+          "GeckoView:IPProtection:ServerList:ListChanged",
+          { countries: lazy.IPProtectionServerlist.countries }
+        );
+        return;
+      }
       default:
         detail = event.detail;
     }
@@ -78,6 +91,10 @@ export const GeckoViewIPProtection = {
             "IPProtectionService:StateChanged",
             GeckoViewIPProtection
           );
+          lazy.IPProtectionServerlist.addEventListener(
+            "IPProtectionServerlist:ListChanged",
+            GeckoViewIPProtection
+          );
           let providerName = Services.prefs.getCharPref(AUTH_PROVIDER_PREF, "");
           if (!providerName) {
             providerName = aData?.isSignedIn ? "fxa" : "gpi";
@@ -87,13 +104,15 @@ export const GeckoViewIPProtection = {
             lazy.IPProtectionActivator.setAuthProvider(
               lazy.IPPAndroidAuthProvider
             );
-            lazy.IPProtectionActivator.addHelpers(
-              lazy.IPPAndroidAuthProvider.helpers
+          } else if (providerName === "test") {
+            lazy.IPProtectionActivator.setAuthProvider(
+              lazy.IPPDummyAuthProvider
             );
           } else {
             lazy.IPProtectionActivator.setAuthProvider(lazy.IPPGpiAuthProvider);
-            lazy.IPProtectionActivator.addHelpers(
-              lazy.IPPGpiAuthProvider.helpers
+            lazy.IPProtectionActivator.setFallbackAuthProvider(
+              lazy.IPPAndroidAuthProvider,
+              () => Services.prefs.setCharPref(AUTH_PROVIDER_PREF, "fxa")
             );
           }
           lazy.IPProtectionActivator.init();
@@ -116,8 +135,17 @@ export const GeckoViewIPProtection = {
             "IPProtectionService:StateChanged",
             GeckoViewIPProtection
           );
+          lazy.IPProtectionServerlist.removeEventListener(
+            "IPProtectionServerlist:ListChanged",
+            GeckoViewIPProtection
+          );
           lazy.IPProtectionActivator.uninit();
           lazy.IPProtectionActivator.removeHelpers();
+
+          lazy.IPProtectionActivator.setAuthProvider(
+            new lazy.IPPAuthProvider()
+          );
+          lazy.IPPProxyManager.updateState();
         }
         aCallback.onSuccess();
         break;
@@ -135,8 +163,28 @@ export const GeckoViewIPProtection = {
         });
         break;
       }
+      case "GeckoView:IPProtection:ServerList:GetCountryList": {
+        lazy.IPProtectionServerlist.maybeFetchList()
+          .then(() => {
+            lazy.EventDispatcher.instance.sendRequest(
+              "GeckoView:IPProtection:ServerList:ListChanged",
+              { countries: lazy.IPProtectionServerlist.countries }
+            );
+            aCallback.onSuccess();
+          })
+          .catch(err => {
+            aCallback.onError(
+              typeof err === "string" ? err : (err?.message ?? "generic-error")
+            );
+          });
+        break;
+      }
       case "GeckoView:IPProtection:Activate": {
-        lazy.IPPProxyManager.start()
+        lazy.IPPProxyManager.start(
+          aData?.userAction ?? true,
+          aData?.inPrivateBrowsing ?? false,
+          aData?.country
+        )
           .then(({ started, error } = {}) => {
             if (started) {
               aCallback.onSuccess();
@@ -169,6 +217,18 @@ export const GeckoViewIPProtection = {
       }
       case "GeckoView:IPProtection:Deactivate": {
         lazy.IPPProxyManager.stop()
+          .then(() => {
+            aCallback.onSuccess();
+          })
+          .catch(err => {
+            aCallback.onError(
+              typeof err === "string" ? err : (err?.message ?? "generic-error")
+            );
+          });
+        break;
+      }
+      case "GeckoView:IPProtection:RefreshUsage": {
+        lazy.IPPProxyManager.refreshUsage()
           .then(() => {
             aCallback.onSuccess();
           })

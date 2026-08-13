@@ -18,12 +18,7 @@ already_AddRefed<TextFormatUpdateEvent> TextFormatUpdateEvent::Constructor(
     const TextFormatUpdateEventInit& aOptions) {
   nsCOMPtr<mozilla::dom::EventTarget> target =
       do_QueryInterface(aGlobal.GetAsSupports());
-  RefPtr<TextFormatUpdateEvent> event =
-      new TextFormatUpdateEvent(target, aOptions);
-  event->InitEvent(aType, aOptions.mBubbles, aOptions.mCancelable);
-  bool trusted = event->Init(target);
-  event->SetTrusted(trusted);
-  return event.forget();
+  return MakeAndAddRef<TextFormatUpdateEvent>(target, aType, aOptions);
 }
 
 JSObject* TextFormatUpdateEvent::WrapObjectInternal(
@@ -38,12 +33,16 @@ void TextFormatUpdateEvent::GetTextFormats(
 }
 
 TextFormatUpdateEvent::TextFormatUpdateEvent(
-    EventTarget* aOwner, const TextFormatUpdateEventInit& aOptions)
+    EventTarget* aOwner, const nsAString& aType,
+    const TextFormatUpdateEventInit& aOptions)
     : Event(aOwner, nullptr, nullptr) {
   mTextFormats.SetCapacity(aOptions.mTextFormats.Length());
   for (const auto& textFormat : aOptions.mTextFormats) {
     mTextFormats.AppendElement(textFormat);
   }
+  InitEvent(aType, aOptions.mBubbles, aOptions.mCancelable);
+  bool trusted = Init(aOwner);
+  SetTrusted(trusted);
 }
 
 }  // namespace mozilla::dom

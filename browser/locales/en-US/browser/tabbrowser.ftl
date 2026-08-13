@@ -337,6 +337,8 @@ tab-context-move-split-view-to-group =
 
 tab-splitview-splitter =
     .aria-label = Resize split view tabs
+tab-devtools-splitter =
+    .aria-label = Resize Developer Tools panel
 
 tab-context-move-tab-to-group-saved-groups =
     .label = Closed Groups
@@ -362,8 +364,8 @@ tab-group-editor-done =
     .label = Done
     .accessKey = D
 # Share is a verb here. Meaning to "Share" the "tab group"
-tab-group-editor-action-share-tab-group =
-    .label = Share tab group
+tab-group-editor-action-share-group =
+    .label = Share group
 
 tab-context-reopen-tab-group =
     .label = Reopen tab group
@@ -405,6 +407,13 @@ tab-group-context-move-to-new-window =
 # user's current window.
 tab-group-context-move-to-this-window =
     .label = Move Group to This Window
+
+# For a tab group that is open in any window, build a shareable link for the
+# tab group and open the content sharing dialog. Share is a verb here.
+# .badge labels this menu item as a newly introduced feature.
+tab-group-context-share-group =
+    .label = Share Group
+    .badge = New
 
 # For a tab group that is open in any window, close the tab group and
 # do not save it. For a tab group that is closed but saved by the user, clicking

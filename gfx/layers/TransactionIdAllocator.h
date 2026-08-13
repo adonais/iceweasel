@@ -5,10 +5,10 @@
 #ifndef GFX_TRANSACTION_ID_ALLOCATOR_H
 #define GFX_TRANSACTION_ID_ALLOCATOR_H
 
-#include "nsISupportsImpl.h"
-#include "mozilla/layers/LayersTypes.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/VsyncDispatcher.h"
+#include "mozilla/layers/LayersTypes.h"
+#include "nsISupportsImpl.h"
 
 namespace mozilla {
 namespace layers {

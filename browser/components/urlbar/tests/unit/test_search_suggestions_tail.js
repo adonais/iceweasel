@@ -358,8 +358,8 @@ add_task(async function limit_results() {
  */
 add_task(async function ai_chat_does_not_suppress_tail() {
   let aiChatResult = new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.AI_CHAT,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    type: UrlbarShared.RESULT_TYPE.AI_CHAT,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     suggestedIndex: 1,
     payload: {
       icon: "chrome://browser/content/aiwindow/assets/ask-icon.svg",

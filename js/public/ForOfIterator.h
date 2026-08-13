@@ -53,29 +53,31 @@ class MOZ_STACK_CLASS JS_PUBLIC_API ForOfIterator {
   // try to optimize iteration across arrays.
   //
   //  Case 1: Regular Iteration
-  //      iterator - pointer to the iterator object.
-  //      nextMethod - value of |iterator|.next.
-  //      index - fixed to NOT_ARRAY (== UINT32_MAX)
+  //      isOptimizedArray_ - false.
+  //      iteratorOrArray_ - pointer to the iterator object.
+  //      nextMethod_ - value of |iterator|.next.
+  //      arrayIndex_ - unused.
   //
   //  Case 2: Optimized Array Iteration
-  //      iterator - pointer to the array object.
-  //      nextMethod - the undefined value.
-  //      index - current position in array.
+  //      isOptimizedArray_ - true.
+  //      iteratorOrArray_ - pointer to the array object.
+  //      nextMethod_ - the undefined value.
+  //      arrayIndex_ - current position in array.
   //
-  // The cases are distinguished by whether |index == NOT_ARRAY|.
-  Rooted<JSObject*> iterator;
-  Rooted<Value> nextMethod;
+  // The cases are distinguished by |isOptimizedArray_|. In the optimized-array
+  // case, |iteratorOrArray_| is the array itself.
+  Rooted<JSObject*> iteratorOrArray_;
+  Rooted<Value> nextMethod_;
 
-  static constexpr uint32_t NOT_ARRAY = UINT32_MAX;
-
-  uint32_t index = NOT_ARRAY;
+  uint32_t arrayIndex_ = 0;
+  bool isOptimizedArray_ = false;
 
   ForOfIterator(const ForOfIterator&) = delete;
   ForOfIterator& operator=(const ForOfIterator&) = delete;
 
  public:
   explicit ForOfIterator(JSContext* cx)
-      : cx_(cx), iterator(cx), nextMethod(cx) {}
+      : cx_(cx), iteratorOrArray_(cx), nextMethod_(cx) {}
 
   enum NonIterableBehavior { ThrowOnNonIterable, AllowNonIterable };
 
@@ -105,7 +107,7 @@ class MOZ_STACK_CLASS JS_PUBLIC_API ForOfIterator {
    * If initialized with throwOnNonCallable = false, check whether
    * the value is iterable.
    */
-  bool valueIsIterable() const { return iterator; }
+  bool valueIsIterable() const { return iteratorOrArray_ != nullptr; }
 
  private:
   inline bool nextFromOptimizedArray(MutableHandle<Value> val, bool* done);

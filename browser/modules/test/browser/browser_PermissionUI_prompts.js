@@ -49,15 +49,8 @@ add_task(async function test_desktop_notification_permission_prompt() {
     "dom.webnotifications.requireuserinteraction",
     false
   );
-  Services.prefs.setBoolPref(
-    "permissions.desktop-notification.notNow.enabled",
-    true
-  );
   await testPrompt(PermissionUI.DesktopNotificationPermissionPrompt);
   Services.prefs.clearUserPref("dom.webnotifications.requireuserinteraction");
-  Services.prefs.clearUserPref(
-    "permissions.desktop-notification.notNow.enabled"
-  );
 });
 
 // Tests that PersistentStoragePermissionPrompt works as expected
@@ -191,10 +184,12 @@ async function testPrompt(Prompt, useLocalFile = false) {
       let popupNotification = getPopupNotificationNode();
       popupNotification.checkbox.checked = false;
 
+      // The notification prompt's only secondary action is a persistent
+      // "Always Block", so it denies persistently even without the checkbox.
       let isNotificationPrompt =
         Prompt == PermissionUI.DesktopNotificationPermissionPrompt;
 
-      let expectedSecondaryActionsCount = isNotificationPrompt ? 2 : 1;
+      let expectedSecondaryActionsCount = 1;
       Assert.equal(
         notification.secondaryActions.length,
         expectedSecondaryActionsCount,
@@ -213,9 +208,13 @@ async function testPrompt(Prompt, useLocalFile = false) {
           curPerm,
           {
             state: SitePermissions.BLOCK,
-            scope: SitePermissions.SCOPE_TEMPORARY,
+            scope: isNotificationPrompt
+              ? SitePermissions.SCOPE_PERSISTENT
+              : SitePermissions.SCOPE_TEMPORARY,
           },
-          "Should have denied the action temporarily"
+          isNotificationPrompt
+            ? "Should have denied the action persistently"
+            : "Should have denied the action temporarily"
         );
 
         Assert.ok(
@@ -243,13 +242,11 @@ async function testPrompt(Prompt, useLocalFile = false) {
       TestPrompt.prompt();
       await shownPromise;
 
-      // Test denying the permission request with the checkbox checked (for geolocation)
-      // or by clicking the "never" option from the dropdown (for notifications and persistent-storage).
+      // Test denying the permission request with the checkbox checked (for
+      // geolocation) or via the persistent "Always Block" action (for
+      // notifications).
       popupNotification = getPopupNotificationNode();
-      let secondaryActionToClickIndex = 0;
-      if (isNotificationPrompt) {
-        secondaryActionToClickIndex = 1;
-      } else {
+      if (!isNotificationPrompt) {
         popupNotification.checkbox.checked = true;
       }
 
@@ -260,7 +257,7 @@ async function testPrompt(Prompt, useLocalFile = false) {
           expectedSecondaryActionsCount +
           " secondary action(s)"
       );
-      await clickSecondaryAction(secondaryActionToClickIndex);
+      await clickSecondaryAction();
       if (permissionKey) {
         curPerm = SitePermissions.getForPrincipal(
           principal,

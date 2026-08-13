@@ -34,6 +34,42 @@ add_task(async function test_shouldLog_maxLogLevelPref() {
   );
 });
 
+add_task(async function test_shouldLog_maxLogLevelPref_case_match() {
+  Services.prefs.setStringPref("test.log.case", "Warn");
+  let ci = console.createInstance({ maxLogLevelPref: "test.log.case" });
+
+  Assert.ok(ci.shouldLog("Warn"), "Should log at the exact pref level");
+  Assert.ok(ci.shouldLog("Error"), "Should log above the pref level");
+  Assert.ok(!ci.shouldLog("Info"), "Should not log below the pref level");
+
+  Services.prefs.setStringPref("test.log.case", "Error");
+  Assert.ok(ci.shouldLog("Error"), "Should log at the updated pref level");
+  Assert.ok(
+    !ci.shouldLog("Warn"),
+    "Should not log below the updated pref level"
+  );
+});
+
+add_task(async function test_shouldLog_maxLogLevelPref_case_insensitive() {
+  let ci = console.createInstance({ maxLogLevelPref: "test.log.icase" });
+
+  for (const prefValue of ["warn", "WARN", "wArN"]) {
+    Services.prefs.setStringPref("test.log.icase", prefValue);
+    Assert.ok(
+      ci.shouldLog("Warn"),
+      `Should log at the Warn level when pref is "${prefValue}"`
+    );
+    Assert.ok(
+      ci.shouldLog("Error"),
+      `Should log above Warn when pref is "${prefValue}"`
+    );
+    Assert.ok(
+      !ci.shouldLog("Info"),
+      `Should not log below Warn when pref is "${prefValue}"`
+    );
+  }
+});
+
 add_task(async function test_shouldLog_env() {
   // https://searchfox.org/firefox-main/rev/a4d90d145864bee938bb23cb2684d64bff032431/mozglue/misc/LoggingCore.h#31-38
   //

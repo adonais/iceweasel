@@ -419,7 +419,7 @@ export let StartupTelemetry = {
 
     try {
       Glean.osEnvironment.isTaskbarPinned.set(
-        await shellService.isCurrentAppPinnedToTaskbarAsync(
+        await shellService.isCurrentAppPinnedToTaskbar(
           winTaskbar.defaultGroupId
         )
       );
@@ -431,7 +431,7 @@ export let StartupTelemetry = {
         !Services.sysinfo.getProperty("hasWinPackageId")
       ) {
         Glean.osEnvironment.isTaskbarPinnedPrivate.set(
-          await shellService.isCurrentAppPinnedToTaskbarAsync(
+          await shellService.isCurrentAppPinnedToTaskbar(
             winTaskbar.defaultPrivateGroupId
           )
         );

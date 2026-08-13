@@ -38,6 +38,8 @@ ProcessRuntime::ProcessRuntime() : ProcessRuntime(XRE_GetProcessType()) {}
 ProcessRuntime::ProcessRuntime(const GeckoProcessType aProcessType)
     : ProcessRuntime(aProcessType == GeckoProcessType_Default
                          ? ProcessCategory::GeckoBrowserParent
+                     : aProcessType == GeckoProcessType_Content
+                         ? ProcessCategory::GeckoContent
                          : ProcessCategory::GeckoChild) {}
 #endif  // defined(MOZILLA_INTERNAL_API)
 
@@ -65,45 +67,28 @@ ProcessRuntime::ProcessRuntime(const ProcessCategory aProcessCategory)
                             ProcessCategory::GeckoBrowserParent ||
                         isCurThreadImplicitMTA);
 
+  const bool needsMTAInit =
+      GetDesiredApartmentType(mProcessCategory) == COINIT_MULTITHREADED;
 #  if defined(MOZ_SANDBOX)
-  const bool isLockedDownChildProcess =
-      mProcessCategory == ProcessCategory::GeckoChild && IsWin32kLockedDown();
-  // If our process is running under Win32k lockdown, we cannot initialize
-  // COM with a single-threaded apartment. This is because STAs create a hidden
-  // window, which implicitly requires user32 and Win32k, which are blocked.
-  // Instead we start the multi-threaded apartment and conduct our process-wide
-  // COM initialization there.
-  if (isLockedDownChildProcess) {
-    // Make sure we're still running with the sandbox's privileged impersonation
-    // token.
-    HANDLE rawCurThreadImpToken;
-    if (!::OpenThreadToken(::GetCurrentThread(), TOKEN_DUPLICATE | TOKEN_QUERY,
-                           FALSE, &rawCurThreadImpToken)) {
-      mInitResult = HRESULT_FROM_WIN32(::GetLastError());
-      return;
-    }
-    nsAutoHandle curThreadImpToken(rawCurThreadImpToken);
+  // Child processes that want MTA and run under the sandbox need special
+  // handling: the sandbox provides a privileged impersonation token during
+  // early startup that must be active when COM is initialized, and PostInit
+  // must be deferred until privilege drop.
+  const bool needsSandboxedMTAInit =
+      needsMTAInit && SandboxTarget::Instance()->IsSandboxed();
+#  else
+  const bool needsSandboxedMTAInit = false;
+#  endif
 
-    // Ensure that our current token is still an impersonation token (ie, we
-    // have not yet called RevertToSelf() on this thread).
-    DWORD len;
-    TOKEN_TYPE tokenType;
-    MOZ_RELEASE_ASSERT(
-        ::GetTokenInformation(rawCurThreadImpToken, TokenType, &tokenType,
-                              sizeof(tokenType), &len) &&
-        len == sizeof(tokenType) && tokenType == TokenImpersonation);
-
-    // Ideally we want our current thread to be running implicitly inside the
-    // MTA, but if for some wacky reason we did not end up with that, we may
-    // compensate by completing initialization via EnsureMTA's persistent
-    // thread.
-    if (!isCurThreadImplicitMTA) {
-      InitUsingPersistentMTAThread(curThreadImpToken);
-      return;
-    }
+  // If we are initializing COM on the MTA, we ideally want our current thread
+  // to be running implicitly inside the MTA, but if for some reason we did
+  // not end up with that, we may compensate by completing initialization via
+  // EnsureMTA's persistent thread.
+  if (!isCurThreadImplicitMTA && needsMTAInit) {
+    InitUsingPersistentMTAThread(needsSandboxedMTAInit);
+    return;
   }
-#  endif  // defined(MOZ_SANDBOX)
-#endif    // defined(MOZILLA_INTERNAL_API)
+#endif  // defined(MOZILLA_INTERNAL_API)
 
   mAptRegion.Init(GetDesiredApartmentType(mProcessCategory));
 
@@ -141,8 +126,8 @@ ProcessRuntime::ProcessRuntime(const ProcessCategory aProcessCategory)
 
 #if defined(MOZILLA_INTERNAL_API)
 #  if defined(MOZ_SANDBOX)
-  if (isLockedDownChildProcess) {
-    // In locked-down child processes, defer PostInit until priv drop
+  if (needsSandboxedMTAInit) {
+    // In sandboxed MTA child processes, defer PostInit until priv drop
     SandboxTarget::Instance()->RegisterSandboxStartCallback([self = this]() {
       // Ensure that we're still live and the init was successful before
       // calling PostInit()
@@ -164,12 +149,38 @@ ProcessRuntime::~ProcessRuntime() {
   sInstance = nullptr;
 }
 
+void ProcessRuntime::InitUsingPersistentMTAThread(bool aNeedsSandboxedInit) {
+  if (!aNeedsSandboxedInit) {
+    EnsureMTA([this]() { InitInsideApartment(); },
+              EnsureMTA::Option::ForceDispatchToPersistentThread);
+    if (SUCCEEDED(mInitResult)) {
+      PostInit();
+    }
+
+    return;
+  }
+
 #  if defined(MOZ_SANDBOX)
-void ProcessRuntime::InitUsingPersistentMTAThread(
-    const nsAutoHandle& aCurThreadToken) {
+  HANDLE rawCurThreadImpToken;
+  if (!::OpenThreadToken(::GetCurrentThread(), TOKEN_DUPLICATE | TOKEN_QUERY,
+                         FALSE, &rawCurThreadImpToken)) {
+    mInitResult = HRESULT_FROM_WIN32(::GetLastError());
+    return;
+  }
+  nsAutoHandle curThreadImpToken(rawCurThreadImpToken);
+
+  // Ensure that our current token is still an impersonation token (ie, we
+  // have not yet called RevertToSelf() on this thread).
+  DWORD len;
+  TOKEN_TYPE tokenType;
+  MOZ_RELEASE_ASSERT(
+      ::GetTokenInformation(rawCurThreadImpToken, TokenType, &tokenType,
+                            sizeof(tokenType), &len) &&
+      len == sizeof(tokenType) && tokenType == TokenImpersonation);
+
   // Create an impersonation token based on the current thread's token
   HANDLE rawMtaThreadImpToken = nullptr;
-  if (!::DuplicateToken(aCurThreadToken, SecurityImpersonation,
+  if (!::DuplicateToken(rawCurThreadImpToken, SecurityImpersonation,
                         &rawMtaThreadImpToken)) {
     mInitResult = HRESULT_FROM_WIN32(::GetLastError());
     return;
@@ -210,9 +221,9 @@ void ProcessRuntime::InitUsingPersistentMTAThread(
           PostInit();
         }
       });
-}
 #  endif  // defined(MOZ_SANDBOX)
-#endif    // defined(MOZILLA_INTERNAL_API)
+}
+#endif  // defined(MOZILLA_INTERNAL_API)
 
 /* static */
 COINIT ProcessRuntime::GetDesiredApartmentType(
@@ -220,6 +231,8 @@ COINIT ProcessRuntime::GetDesiredApartmentType(
   switch (aProcessCategory) {
     case ProcessCategory::GeckoBrowserParent:
       return COINIT_APARTMENTTHREADED;
+    case ProcessCategory::GeckoContent:
+      return COINIT_MULTITHREADED;
     case ProcessCategory::GeckoChild:
       if (!IsWin32kLockedDown()) {
         // If Win32k is not locked down then we probably still need STA.
@@ -227,7 +240,6 @@ COINIT ProcessRuntime::GetDesiredApartmentType(
         return static_cast<COINIT>(COINIT_APARTMENTTHREADED |
                                    COINIT_DISABLE_OLE1DDE);
       }
-
       [[fallthrough]];
     default:
       return COINIT_MULTITHREADED;

@@ -45,4 +45,5 @@ pdfjs.jar:
  content/web/images/	(content/web/images/messageBar_*.svg)
  content/web/images/	(content/web/images/comment-*.svg)
  content/web/images/	(content/web/images/pages_*.svg)
+ content/web/images/	(content/web/images/signature-properties-*.svg)
 #endif

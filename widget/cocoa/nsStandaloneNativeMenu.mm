@@ -6,10 +6,10 @@
 
 #include "nsStandaloneNativeMenu.h"
 
-#include "mozilla/dom/Element.h"
 #include "NativeMenuMac.h"
-#include "nsISupports.h"
+#include "mozilla/dom/Element.h"
 #include "nsGkAtoms.h"
+#include "nsISupports.h"
 
 using namespace mozilla;
 

@@ -4,6 +4,9 @@
 with Files('moz.build'):
     BUG_COMPONENT = ('Firefox Build System', 'General')
 
+with Files('angle/**'):
+    BUG_COMPONENT = ('Core', 'Graphics')
+
 with Files('aom/**'):
     BUG_COMPONENT = ('Core', 'Audio/Video: Playback')
 

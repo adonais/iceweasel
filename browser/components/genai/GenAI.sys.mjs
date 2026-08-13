@@ -751,6 +751,92 @@ export const GenAI = {
   },
 
   /**
+   * Whether the browser's window is an active Smart Window (AI window).
+   *
+   * @param {MozBrowser} browser browser for the context's page
+   * @returns {boolean}
+   */
+  isSmartWindow(browser) {
+    return lazy.AIWindow.isAIWindowActive(
+      browser.documentGlobal.browsingContext?.topChromeWindow ??
+        browser.documentGlobal
+    );
+  },
+
+  /**
+   * Whether the ask-chat entrypoint may be shown for the given context. Shared
+   * by the full submenu (buildAskChatMenu) and the single page-summarize item
+   * (buildTabSummarizeItem) so the gating stays in one place.
+   *
+   * @param {MozBrowser} browser browser for the context's page
+   * @param {string} source one of "page", "tab", "tool"
+   * @param {MozTabbrowserTab[] | null} contextTabs tabs for a "tab" source
+   * @param {object | null} selectionInfo selection details, if any
+   * @returns {boolean}
+   */
+  canShowAskChat(browser, source, contextTabs, selectionInfo) {
+    // DO NOT show when inside an extension panel
+    const uri = browser.browsingContext?.currentURI.spec;
+    if (uri?.startsWith("moz-extension:")) {
+      return false;
+    }
+
+    // Popups don't have a sidebar, so don't show the menu.
+    // Also, it's not useful for most Document Picture-in-Picture API use-cases.
+    const isPopup = browser.documentGlobal.toolbar?.visible === false;
+    if (browser.browsingContext?.isDocumentPiP || isPopup) {
+      return false;
+    }
+
+    const isSmartWindow = this.isSmartWindow(browser);
+    if (isSmartWindow && !selectionInfo?.text) {
+      return false;
+    }
+
+    // Page feature can be shown without provider unless disabled via menu
+    // or revamp sidebar excludes chatbot
+    const isPageFeatureAllowed =
+      lazy.chatPage &&
+      (lazy.chatProvider != "" || lazy.chatMenu) &&
+      (!lazy.sidebarRevamp || lazy.sidebarTools.includes("aichat"));
+
+    const isSingleTab = contextTabs?.length === 1;
+    switch (source) {
+      case "page":
+        return isSmartWindow
+          ? true
+          : this.canShowChatEntrypoint || isPageFeatureAllowed;
+      case "tab":
+        return isSmartWindow
+          ? isSingleTab
+          : isPageFeatureAllowed && isSingleTab;
+      case "tool":
+        return lazy.chatPage;
+    }
+    return false;
+  },
+
+  /**
+   * Build the prompt context, using the current selection when present and
+   * otherwise the page content.
+   *
+   * @param {MozBrowser} browser browser for the context's page
+   * @param {object | null} selectionInfo selection details, if any
+   * @returns {Promise<object>} context for getContextualPrompts / handleAskChat
+   */
+  async buildAskChatContext(browser, selectionInfo) {
+    const context = {
+      contentType: "selection",
+      selection: selectionInfo?.fullText ?? "",
+    };
+    if (lazy.chatPage && !context.selection) {
+      // Get page content for prompts when no selection
+      await this.addPageContext(browser, context);
+    }
+    return context;
+  },
+
+  /**
    * Build prompts menu to ask chat for context menu.
    *
    * @param {MozMenu} menu element to update
@@ -765,58 +851,12 @@ export const GenAI = {
       contextTabs = null,
     } = contextMenu;
 
-    const uri = browser.browsingContext?.currentURI.spec;
-    if (uri?.startsWith("moz-extension:")) {
+    if (!this.canShowAskChat(browser, source, contextTabs, selectionInfo)) {
       showItem(menu, false);
       return;
     }
 
-    // Popups don't have a sidebar, so don't show the menu.
-    // Also, it's not useful for most Document Picture-in-Picture API use-cases.
-    const isPopup = browser.documentGlobal.toolbar?.visible === false;
-    if (browser.browsingContext?.isDocumentPiP || isPopup) {
-      showItem(menu, false);
-      return;
-    }
-
-    const isSmartWindow = lazy.AIWindow.isAIWindowActive(
-      browser.documentGlobal.browsingContext?.topChromeWindow ??
-        browser.documentGlobal
-    );
-
-    if (isSmartWindow && !selectionInfo?.text) {
-      showItem(menu, false);
-      return;
-    }
-
-    // Page feature can be shown without provider unless disabled via menu
-    // or revamp sidebar excludes chatbot
-    const isPageFeatureAllowed =
-      lazy.chatPage &&
-      (lazy.chatProvider != "" || lazy.chatMenu) &&
-      (!lazy.sidebarRevamp || lazy.sidebarTools.includes("aichat"));
-
-    const isSingleTab = contextTabs?.length === 1;
-    let canShow = false;
-    switch (source) {
-      case "page":
-        canShow = isSmartWindow
-          ? true
-          : this.canShowChatEntrypoint || isPageFeatureAllowed;
-        break;
-      case "tab":
-        canShow = isSmartWindow
-          ? isSingleTab
-          : isPageFeatureAllowed && isSingleTab;
-        break;
-      case "tool":
-        canShow = lazy.chatPage;
-        break;
-    }
-    if (!canShow) {
-      showItem(menu, false);
-      return;
-    }
+    const isSmartWindow = this.isSmartWindow(browser);
 
     const provider = this.chatProviders.get(lazy.chatProvider)?.name;
     const doc = menu.ownerDocument;
@@ -841,15 +881,7 @@ export const GenAI = {
     // NOTE: Show the menu item synchronously, before any `await`.
     showItem(menu, true);
 
-    // Determine if we have selection or should use page content
-    const context = {
-      contentType: "selection",
-      selection: selectionInfo?.fullText ?? "",
-    };
-    if (lazy.chatPage && !context.selection) {
-      // Get page content for prompts when no selection
-      await this.addPageContext(browser, context);
-    }
+    const context = await this.buildAskChatContext(browser, selectionInfo);
     const addItem = () =>
       source === "tool"
         ? menu.appendChild(doc.createXULElement("menuitem"))
@@ -962,6 +994,74 @@ export const GenAI = {
       source: "tab",
       contextTabs,
     });
+  },
+
+  /**
+   * Build a single "Summarize Page" item for the tab context menu, used by the
+   * alternate layout in place of the full ask-chat submenu. Reuses the same
+   * gating, page context, prompt targeting and click handling as
+   * buildAskChatMenu, but renders only the page-summarize prompt as a flat item.
+   *
+   * @param {MozMenuItem} item the menuitem to populate and show or hide
+   * @param {object} tabContextMenu the tab context menu instance
+   * @returns {promise} resolve when the item is configured
+   */
+  async buildTabSummarizeItem(item, tabContextMenu) {
+    const { contextTab, contextTabs } = tabContextMenu;
+    const browser = contextTab?.linkedBrowser;
+
+    if (!browser || !this.canShowAskChat(browser, "tab", contextTabs, null)) {
+      this.showItem(item, false);
+      return;
+    }
+
+    // Reuse the ask-chat pipeline to build the full handling context (including
+    // the window handleAskChat needs) and select prompts; capture the page
+    // summarize prompt and render it as a flat item below rather than via the
+    // pipeline's itemAdder.
+    let summarize;
+    const context = await this.addAskChatItems(
+      browser,
+      await this.buildAskChatContext(browser, null),
+      promptObj => {
+        if (promptObj.id === "summarize") {
+          summarize = promptObj;
+        }
+        // addAskChatItems prepares the content but the itemAdder we pass returns null
+        // here; the item is created & rendered below
+        return null;
+      },
+      "tab"
+    );
+    if (!summarize) {
+      this.showItem(item, false);
+      return;
+    }
+
+    item.setAttribute("label", summarize.label);
+    if (summarize.badge && lazy.chatPageMenuBadge) {
+      item.setAttribute("badge", summarize.badge);
+    } else {
+      item.removeAttribute("badge");
+    }
+    // Disabled when the page has no usable content to summarize.
+    item.disabled = context.contentType === "page" && !context.selection;
+    this.showItem(item, true);
+
+    // The item is reused across shows, so refresh the prompt/context it acts on
+    // and attach the command handler only once to avoid stacking listeners.
+    item.summarizePrompt = summarize;
+    item.summarizeContext = context;
+    if (!item.hasSummarizeHandler) {
+      item.hasSummarizeHandler = true;
+      item.addEventListener("command", () => {
+        this.handleAskChat(item.summarizePrompt, item.summarizeContext);
+        // Summarize is the only badged prompt; clear the badge once used.
+        if (item.hasAttribute("badge")) {
+          Services.prefs.setBoolPref("browser.ml.chat.page.menuBadge", false);
+        }
+      });
+    }
   },
 
   /**
@@ -1345,7 +1445,12 @@ export const GenAI = {
       context.window.document
     );
 
-    // Pass the prompt via GET url ?q= param or request header
+    // Pass the prompt via GET url ?q= param or request header. When the
+    // provider supports auto-submit, deliver the prompt through the textarea
+    // instead so the request URI stays short — long ?q= values combined with
+    // the user's cookies can otherwise exceed the server's request-line/header
+    // size limit (e.g. ChatGPT/CloudFlare returns 431 Request Header Fields
+    // Too Large for long page summaries from a logged-in profile).
     const {
       header,
       queryParam = "q",
@@ -1367,7 +1472,7 @@ export const GenAI = {
       options.headers.setByteStringData(
         `${header}: ${encodeURIComponent(prompt)}\r\n`
       );
-    } else {
+    } else if (!supportAutoSubmit) {
       url.searchParams.set(queryParam, prompt);
     }
 

@@ -26,6 +26,7 @@ const lazy = XPCOMUtils.declareLazy({
 /**
  * @import { SearchEngine } from "moz-src:///toolkit/components/search/SearchEngine.sys.mjs"
  * @import { SettingControlConfig } from "chrome://browser/content/preferences/widgets/setting-control.mjs"
+ * @import { UrlbarShared } from "chrome://browser/content/urlbar/UrlbarShared.mjs"
  */
 
 Preferences.addAll([
@@ -717,6 +718,9 @@ function EngineListItemSetting(settingId, engine) {
 
 Preferences.addSetting({
   id: "addEngineButton",
+  visible() {
+    return Services.policies.isAllowed("installSearchEngine");
+  },
   onUserClick() {
     window.gSubDialog.open(
       "chrome://browser/content/search/addEngine.xhtml",
@@ -782,7 +786,7 @@ Preferences.addSetting(
     static id = "engineList";
 
     /**
-     * @type {?Map<Values<typeof lazy.UrlbarUtils.RESULT_SOURCE>, string[]>}
+     * @type {?Map<Values<typeof UrlbarShared.RESULT_SOURCE>, string[]>}
      *   This maps local shortcut sources to their l10n names. The first item
      *   in the string array is the display name for the local source.
      *   All items in the string should be used for displaying as aliases.

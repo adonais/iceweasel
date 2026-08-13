@@ -12,7 +12,6 @@
 #include "jit/IonScript.h"
 #include "jit/JitScript.h"
 #include "vm/RegExpObject.h"
-#include "wasm/AsmJS.h"
 
 namespace js {
 
@@ -86,7 +85,7 @@ inline JSFunction* JSScript::getFunction(js::GCThingIndex index) const {
   JSObject* obj = getObject(index);
   MOZ_RELEASE_ASSERT(obj->is<JSFunction>(), "Script object is not JSFunction");
   JSFunction* fun = &obj->as<JSFunction>();
-  MOZ_ASSERT_IF(fun->isNativeFun(), IsAsmJSModuleNative(fun->native()));
+  MOZ_ASSERT(!fun->isNativeFun());
   return fun;
 }
 

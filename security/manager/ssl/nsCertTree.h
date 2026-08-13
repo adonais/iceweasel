@@ -5,13 +5,13 @@
 #ifndef NS_CERTTREE_H_
 #define NS_CERTTREE_H_
 
+#include "PLDHashTable.h"
 #include "nsCOMPtr.h"
 #include "nsICertTree.h"
-#include "nsITreeSelection.h"
 #include "nsIMutableArray.h"
+#include "nsITreeSelection.h"
 #include "nsNSSComponent.h"
 #include "nsTArray.h"
-#include "PLDHashTable.h"
 
 /* Disable the "base class XXX should be explicitly initialized
    in the copy constructor" warning. */

@@ -43,9 +43,9 @@ function scrollClose(actual, expected, msg) {
  */
 async function gotoPrefAndScroll(win, category, scrollTop) {
   /**
-   * `gotoPref` short-circuits without firing `paneshown` when called for the
-   *  pane that's already current, so only await the event when we're actually
-   *  changing panes.
+   * `gotoPref` is a no-op (beyond re-dispatching `paneshown`) when called for
+   *  the pane that's already current, so skip the redundant navigation and only
+   *  await the event when we're actually changing panes.
    */
   let internalName = `pane${category[0].toUpperCase()}${category.substring(1)}`;
   if (win.gLastCategory?.category !== internalName) {

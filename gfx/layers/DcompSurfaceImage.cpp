@@ -4,12 +4,12 @@
 
 #include "DcompSurfaceImage.h"
 
-#include "mozilla/ipc/FileDescriptor.h"
 #include "mozilla/gfx/gfxVars.h"
+#include "mozilla/ipc/FileDescriptor.h"
 #include "mozilla/layers/CompositorTypes.h"
+#include "mozilla/layers/KnowsCompositor.h"
 #include "mozilla/layers/LayersSurfaces.h"
 #include "mozilla/layers/TextureForwarder.h"
-#include "mozilla/layers/KnowsCompositor.h"
 #include "mozilla/webrender/RenderDcompSurfaceTextureHost.h"
 #include "mozilla/webrender/WebRenderAPI.h"
 
@@ -157,8 +157,8 @@ void DcompSurfaceHandleHost::PushResourceUpdates(
                                  wr::ToOpacityType(GetFormat()));
   // Prefer TextureExternal unless the backend requires TextureRect.
   TextureHost::NativeTexturePolicy policy =
-      TextureHost::BackendNativeTexturePolicy(aResources.GetBackendType(),
-                                              mSize);
+      TextureHost::BackendNativeTexturePolicy(
+          aResources.GetCapabilities().mBackendType, mSize);
   auto imageType = policy == TextureHost::NativeTexturePolicy::REQUIRE
                        ? wr::ExternalImageType::TextureHandle(
                              wr::ImageBufferKind::TextureRect)

@@ -9,8 +9,8 @@
  * nsWindowDbg - Debug related utilities for nsWindow.
  */
 
-#include "nsWindowDefs.h"
 #include "mozilla/BaseProfilerMarkersPrerequisites.h"
+#include "nsWindowDefs.h"
 
 // Enables debug output for popup rollup hooks
 // #define POPUP_ROLLUP_DEBUG_OUTPUT

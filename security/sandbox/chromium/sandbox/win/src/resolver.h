@@ -54,7 +54,6 @@ class [[clang::lto_visibility_public]] ResolverThunk {
                          const char* target_name,
                          const char* interceptor_name,
                          const void* interceptor_entry_point,
-                         void* local_thunk_storage,
                          void* thunk_storage,
                          size_t storage_bytes,
                          size_t* storage_used) = 0;
@@ -88,7 +87,6 @@ class [[clang::lto_visibility_public]] ResolverThunk {
                         const char* target_name,
                         const char* interceptor_name,
                         const void* interceptor_entry_point,
-                        void* local_thunk_storage,
                         void* thunk_storage,
                         size_t storage_bytes);
 
@@ -101,11 +99,11 @@ class [[clang::lto_visibility_public]] ResolverThunk {
                         const void* original_function, const void* interceptor);
 
   // Holds the resolved interception target.
-  // The field is accessed too early during the process startup to support
-  // raw_ptr<T>.
+  // RAW_PTR_EXCLUSION: #addr-of; Also, accessed too early during the process
+  // startup to support raw_ptr<T>.
   RAW_PTR_EXCLUSION void* target_;
   // Holds the resolved interception interceptor.
-  // The field is accessed too early during the process startup to support
+  // RAW_PTR_EXCLUSION: Accessed too early during the process startup to support
   // raw_ptr<T>.
   RAW_PTR_EXCLUSION const void* interceptor_;
 };

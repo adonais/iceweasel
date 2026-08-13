@@ -29,3 +29,17 @@ button {
   margin-inline: 0 8px;
   padding: 3px;
 }
+
+.content-classifier-verdict {
+  font-size: var(--font-size-xlarge);
+  font-weight: var(--font-weight-bold);
+  margin-block: var(--space-xsmall);
+}
+
+.content-classifier-verdict:empty {
+  display: none;
+}
+
+.content-classifier-results {
+  width: auto;
+}

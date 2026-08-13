@@ -13,6 +13,20 @@ var {
   callFunctionWithAsyncStack,
 } = require("resource://devtools/shared/platform/stack.js");
 
+const logger = console.createInstance({
+  prefix: "devtools_rdp",
+  maxLogLevel: "Warn",
+});
+
+// Hack MOZ_LOG/Console.cpp usage of ToSource logic
+// to be able to write raw strings to stdout.
+// This prevents being wrapped with quotes, and allow to use ANSI color codes.
+const EVENT_MOZ_LOG_SYMBOL = {
+  toSource() {
+    return " \x1b[2m<-\x1b[0m ";
+  },
+};
+
 /**
  * Base class for client-side actor fronts.
  *
@@ -338,6 +352,7 @@ class Front extends Pool {
     // Pick off event packets
     const type = packet.type || undefined;
     if (this._clientSpec.events && this._clientSpec.events.has(type)) {
+      logger.log(EVENT_MOZ_LOG_SYMBOL, packet);
       const event = this._clientSpec.events.get(packet.type);
       let args;
       try {

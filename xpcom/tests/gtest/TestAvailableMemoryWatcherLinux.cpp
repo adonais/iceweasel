@@ -4,9 +4,8 @@
 
 #include <sys/mman.h>  // For memory-locking.
 
-#include "gtest/gtest.h"
-
 #include "AvailableMemoryWatcher.h"
+#include "gtest/gtest.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
 #include "mozilla/SpinEventLoopUntil.h"

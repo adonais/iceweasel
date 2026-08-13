@@ -56,7 +56,7 @@ add_task(
 
     const { tab } = await openAboutWelcome();
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => initCalled,
       "ExperimentAPI.init should be called when experiments gate pref is enabled"
     );
@@ -90,7 +90,7 @@ add_task(
 
     const { tab } = await openAboutWelcome();
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => tab.linkedBrowser.currentURI.spec === "about:welcome",
       "about:welcome tab did load"
     );
@@ -129,7 +129,7 @@ add_task(
     const startTime = Date.now();
     const { tab } = await openAboutWelcome();
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => tab.linkedBrowser.currentURI.spec === "about:welcome",
       "about:welcome should load after timeout"
     );
@@ -165,7 +165,7 @@ add_task(async function test_aboutwelcome_renders_after_nimbus_gating() {
 
   const { tab, browser } = await openAboutWelcome();
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => tab.linkedBrowser.currentURI.spec === "about:welcome",
     "about:welcome should load"
   );
@@ -205,7 +205,7 @@ add_task(async function test_aboutwelcome_loads_after_nimbus_error() {
 
   const { tab } = await openAboutWelcome();
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => tab.linkedBrowser.currentURI.spec === "about:welcome",
     "about:welcome should load after Nimbus error"
   );
@@ -267,7 +267,7 @@ add_task(async function test_gate_awaits_in_flight_init() {
 
   enableGate.resolve();
   await firstInit;
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => hasUpdatedOnceAtFirstCall !== null,
     "finishedUpdating() was called"
   );

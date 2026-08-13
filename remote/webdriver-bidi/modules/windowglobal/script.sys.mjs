@@ -292,12 +292,12 @@ class ScriptModule extends WindowGlobalBiDiModule {
 
     realm.userActivationEnabled = userActivation;
 
-    const pausedDebuggerFrame = this.messageHandler.getPausedDebuggerFrame();
+    const debuggerEnvironment = this.messageHandler.debuggerEnvironment;
     const rv = realm.executeInRealmWithBindings(
       functionDeclaration,
       deserializedArguments,
       deserializedThis,
-      pausedDebuggerFrame
+      debuggerEnvironment
     );
 
     return this.#buildReturnValue(
@@ -369,8 +369,8 @@ class ScriptModule extends WindowGlobalBiDiModule {
 
     realm.userActivationEnabled = userActivation;
 
-    const pausedDebuggerFrame = this.messageHandler.getPausedDebuggerFrame();
-    const rv = realm.executeInRealm(expression, pausedDebuggerFrame);
+    const debuggerEnvironment = this.messageHandler.debuggerEnvironment;
+    const rv = realm.executeInRealm(expression, debuggerEnvironment);
     return this.#buildReturnValue(
       rv,
       realm,

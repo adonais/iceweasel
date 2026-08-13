@@ -243,7 +243,7 @@ avoid-blacklist-and-whitelist:
         - toolkit/components/reputationservice/test/unit/test_app_rep_maclinux.js
         - toolkit/components/reputationservice/test/unit/test_app_rep_windows.js
         - toolkit/components/satchel/test/test_form_autocomplete.html
-        - toolkit/components/telemetry/docs/data/environment.rst
+        - toolkit/components/telemetry/docs/data/environment.md
         - toolkit/components/url-classifier/nsUrlClassifierUtils.cpp
         - toolkit/components/url-classifier/SafeBrowsing.sys.mjs
         - toolkit/components/url-classifier/tests/mochitest/features.js
@@ -322,3 +322,35 @@ avoid-gobbledygook:
         - extensions/spellcheck/locales/en-US/hunspell/en-US.dic
         - taskcluster/test/params
         - tools/lint/rejected-words.yml
+
+forbid-moduleloaderbase-include:
+    description: >-
+        New #includes of js/loader/ModuleLoaderBase.h from a header are
+        forbidden because the header has a large build-wide include fan-out
+        (see bug 2054848): a header that pulls it in drags it into every
+        translation unit that includes that header. Prefer forward-declaring
+        JS::loader::ModuleLoaderBase, or move the code that needs the complete
+        type out-of-line into a .cpp. Including it from a .cpp is fine. If a new
+        header genuinely needs the full type, add it to the exclude list below
+        and consult the module loader owners.
+    level: error
+    include: ['.']
+    type: external
+    payload: mozcheck:lint
+    check: rejected-words
+    check-config:
+        regex-pattern: '#\s*include\s+"(js/loader/)?ModuleLoaderBase\.h"'
+        ignore-case: false
+    support-files:
+        - 'tools/lint/mozcheck/**'
+    extensions:
+        - h
+    exclude:
+        # Headers that genuinely require the complete type. Prefer shrinking
+        # this list over growing it (bug 2054848).
+        - js/loader/ModuleLoadRequest.h
+        - dom/script/ModuleLoader.h
+        - dom/workers/loader/WorkerModuleLoader.h
+        - dom/worklet/loader/WorkletModuleLoader.h
+        - js/xpconnect/loader/SyncModuleLoader.h
+        - js/xpconnect/loader/NonSharedGlobalSyncModuleLoaderScope.h

@@ -4,11 +4,13 @@
 
 #include "AutoscrollAnimation.h"
 
-#include <cmath>  // for sqrtf()
+#include <algorithm>  // for std::max()
+#include <cmath>      // for sqrtf()
 
-#include "AsyncPanZoomController.h"
 #include "APZCTreeManager.h"
+#include "AsyncPanZoomController.h"
 #include "FrameMetrics.h"
+#include "mozilla/StaticPrefs_general.h"
 
 namespace mozilla {
 namespace layers {
@@ -16,7 +18,13 @@ namespace layers {
 // Helper function for AutoscrollAnimation::DoSample().
 // Basically copied as-is from toolkit/actors/AutoScrollChild.sys.mjs.
 static float Accelerate(ScreenCoord curr, ScreenCoord start) {
-  static const int speed = 12;
+  // |speed| is the divisor in |val| below, so a higher multiplier must make
+  // |speed| smaller to produce a faster autoscroll. The multiplier is a
+  // percentage (100 = default). Clamp to avoid a zero divisor.
+  static const float baseSpeed = 12.0f;
+  int multiplier =
+      std::max(1, int(StaticPrefs::general_autoscroll_speed_multiplier()));
+  float speed = std::max(1.0f, baseSpeed * 100 / multiplier);
   float val = (curr - start) / speed;
   if (val > 1) {
     return val * sqrtf(val) - 1;

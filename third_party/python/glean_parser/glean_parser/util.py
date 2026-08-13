@@ -298,14 +298,14 @@ def fetch_remote_url(url: str, cache: bool = True):
 
     if cache:
         cache_dir = platformdirs.user_cache_dir("glean_parser", "mozilla")
-        with diskcache.Cache(cache_dir) as dc:
+        with diskcache.Cache(cache_dir, disk=diskcache.JSONDisk) as dc:
             if key in dc:
                 return dc[key]
 
-    contents: str = urllib.request.urlopen(url).read()
+    contents = urllib.request.urlopen(url).read().decode("utf-8")
 
     if cache:
-        with diskcache.Cache(cache_dir) as dc:
+        with diskcache.Cache(cache_dir, disk=diskcache.JSONDisk) as dc:
             dc[key] = contents
 
     return contents
@@ -515,6 +515,7 @@ common_metric_args = [
     "send_in_pings",
     "lifetime",
     "disabled",
+    "in_session",
 ]
 
 

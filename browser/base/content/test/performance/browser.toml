@@ -45,6 +45,7 @@ run-if = [
 ]
 skip-if = [
   "socketprocess_networking",
+  "os == 'win' && standalone", # Bug 2029498
 ]
 
 ["browser_startup.js"]

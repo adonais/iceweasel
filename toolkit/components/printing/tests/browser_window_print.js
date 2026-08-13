@@ -99,7 +99,7 @@ add_task(async function test_print_delayed_during_load() {
       gBrowser.getTabDialogBox(browser).abortAllDialogs();
 
       is(typeof browser.isConnected, "boolean");
-      await BrowserTestUtils.waitForCondition(() => !browser.isConnected);
+      await TestUtils.waitForCondition(() => !browser.isConnected);
       ok(true, "Tab should've been closed after printing");
     }
   );

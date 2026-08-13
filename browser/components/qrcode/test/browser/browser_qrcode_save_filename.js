@@ -38,7 +38,7 @@ async function openQRCodeDialog(browser, url) {
     { url, qrCodeDataURI: TINY_PNG_DATA_URI }
   );
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => dialogManager._dialogs.length,
     "Waiting for QR code subdialog"
   );

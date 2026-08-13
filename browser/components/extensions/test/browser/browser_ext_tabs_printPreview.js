@@ -24,14 +24,14 @@ add_task(async function testPrintPreview() {
   await extension.startup();
 
   // Ensure we're showing the preview...
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     let preview = document.querySelector(".printPreviewBrowser");
     return preview && BrowserTestUtils.isVisible(preview);
   });
 
   gBrowser.getTabDialogBox(gBrowser.selectedBrowser).abortAllDialogs();
   // Wait for the preview to go away
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !document.querySelector(".printPreviewBrowser")
   );
 

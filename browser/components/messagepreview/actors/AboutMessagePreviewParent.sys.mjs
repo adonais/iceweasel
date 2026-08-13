@@ -3,11 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
-import { ASRouter } from "resource:///modules/asrouter/ASRouter.sys.mjs";
-import { JsonSchema } from "resource://gre/modules/JsonSchema.sys.mjs";
 
 const lazy = XPCOMUtils.declareLazy({
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
+  ASRouter: "resource:///modules/asrouter/ASRouter.sys.mjs",
   BookmarksBarButton: "resource:///modules/asrouter/BookmarksBarButton.sys.mjs",
   CFRPageActions: "resource:///modules/asrouter/CFRPageActions.sys.mjs",
   CustomizableUI:
@@ -15,6 +14,10 @@ const lazy = XPCOMUtils.declareLazy({
   FeatureCalloutBroker:
     "resource:///modules/asrouter/FeatureCalloutBroker.sys.mjs",
   InfoBar: "resource:///modules/asrouter/InfoBar.sys.mjs",
+  JsonSchema: "resource://gre/modules/JsonSchema.sys.mjs",
+  MessageLoaderUtils: "resource:///modules/asrouter/ASRouter.sys.mjs",
+  SidebarChatBotPromo:
+    "resource:///modules/asrouter/SidebarChatBotPromo.sys.mjs",
   SpecialMessageActions:
     "resource://messaging-system/lib/SpecialMessageActions.sys.mjs",
   Spotlight: "resource:///modules/asrouter/Spotlight.sys.mjs",
@@ -119,7 +122,11 @@ const MESSAGE_HANDLERS = Object.freeze({
     lazy.BookmarksBarButton.showBookmarksBarButton(browser, message);
   },
 
-  pb_newtab: (message, browser) => ASRouter.forcePBWindow(browser, message),
+  pb_newtab: (message, browser) =>
+    lazy.ASRouter.forcePBWindow(browser, message),
+
+  sidebar_chatbot_promo: (message, browser) =>
+    lazy.SidebarChatBotPromo.showPromo(browser, message, true),
 });
 
 export class AboutMessagePreviewParent extends JSWindowActorParent {
@@ -176,13 +183,15 @@ export class AboutMessagePreviewParent extends JSWindowActorParent {
         "chrome://browser/content/asrouter/schemas/MessagingExperiment.schema.json",
         { credentials: "omit" }
       ).then(rsp => rsp.json());
-      const result = JsonSchema.validate(message, schema);
+      const result = lazy.JsonSchema.validate(message, schema);
       if (!result.valid) {
         lazy.log.error(
           `Invalid message: ${JSON.stringify(result.errors, undefined, 2)}`
         );
       }
     }
+
+    message = lazy.MessageLoaderUtils._delocalizeValues(message);
 
     const browser =
       this.browsingContext.topChromeWindow.gBrowser.selectedBrowser;

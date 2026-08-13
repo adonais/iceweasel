@@ -19,7 +19,7 @@ const PRIVATE_THEME_ID = "firefox-privatewindow@mozilla.org";
 
 async function checkWindowTheme(win, { effectiveThemeId, expectInApp }) {
   let root = win.document.documentElement;
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => root.getAttribute("theme-effective-id") === effectiveThemeId,
     `Waiting for theme-effective-id to be ${effectiveThemeId}`
   );
@@ -98,28 +98,28 @@ add_task(async function test_default_theme() {
   });
 });
 
-// Dark built-in (inApp): no substitution in private windows but theme-in-app is true
+// Dark built-in (inApp): gets the new theme in private windows
 add_task(async function test_dark_theme() {
   let darkTheme = await AddonManager.getAddonByID(DARK_THEME_ID);
   await darkTheme.enable();
 
   await testNormalAndPrivate({
     normalThemeId: DARK_THEME_ID,
-    privateThemeId: DARK_THEME_ID,
+    privateThemeId: PRIVATE_THEME_ID,
     expectInApp: true,
   });
 
   await darkTheme.disable();
 });
 
-// Light built-in (inApp): no substitution in private windows but theme-in-app is true
+// Light built-in (inApp): get the new theme in private windows
 add_task(async function test_light_theme() {
   let lightTheme = await AddonManager.getAddonByID(LIGHT_THEME_ID);
   await lightTheme.enable();
 
   await testNormalAndPrivate({
     normalThemeId: LIGHT_THEME_ID,
-    privateThemeId: LIGHT_THEME_ID,
+    privateThemeId: PRIVATE_THEME_ID,
     expectInApp: true,
   });
 

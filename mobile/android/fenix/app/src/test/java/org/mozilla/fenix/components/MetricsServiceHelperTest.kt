@@ -15,6 +15,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.mozilla.fenix.components.fake.FakeMetricController
+import org.mozilla.fenix.components.metrics.Event
 import org.mozilla.fenix.components.metrics.MetricServiceType
 
 class MetricsServiceHelperTest {
@@ -128,6 +129,30 @@ class MetricsServiceHelperTest {
             isDailyUsagePingEnabled = false,
         )
         assertTrue(fakeMetricController.startedServiceTypes.contains(MetricServiceType.Marketing))
+    }
+
+    @Test
+    fun `when marketing telemetry is enabled, track the conversion event`() {
+        startMetricsIfEnabled(
+            mockLogger,
+            mockAnalytics,
+            isTelemetryEnabled = false,
+            isMarketingTelemetryEnabled = true,
+            isDailyUsagePingEnabled = false,
+        )
+        assertTrue(fakeMetricController.trackedEvents.contains(Event.GrowthData.ConversionEvent6))
+    }
+
+    @Test
+    fun `when marketing telemetry is not enabled, do not track the conversion event`() {
+        startMetricsIfEnabled(
+            mockLogger,
+            mockAnalytics,
+            isTelemetryEnabled = true,
+            isMarketingTelemetryEnabled = false,
+            isDailyUsagePingEnabled = false,
+        )
+        assertFalse(fakeMetricController.trackedEvents.contains(Event.GrowthData.ConversionEvent6))
     }
 
     @Test

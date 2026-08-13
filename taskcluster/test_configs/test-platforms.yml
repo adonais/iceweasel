@@ -402,6 +402,7 @@ macosx1500-aarch64/opt:
     build-platform: macosx64-aarch64/opt
     build-signing-label: repackage-macosx64-aarch64/opt
     test-sets:
+        - desktop-screenshot-capture
         - macosx1500-aarch64-tests
 
 macosx1500-aarch64-vms/debug:
@@ -444,6 +445,11 @@ macosx1500-aarch64-devedition/opt:
     build-signing-label: repackage-macosx64-devedition/opt
     test-sets:
         - macosx1500-aarch64-tests
+
+macosx1500-aarch64-nightlyasrelease/opt:
+    build-platform: macosx64-aarch64-nightlyasrelease/opt
+    test-sets:
+        - browsertime
 
 macosx1470-64-nightlyasrelease/opt:
     build-platform: macosx64-nightlyasrelease/opt

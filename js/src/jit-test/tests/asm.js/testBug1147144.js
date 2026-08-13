@@ -1,5 +1,3 @@
-// |jit-test| skip-if: !isAsmJSCompilationAvailable()
-
 function test() {
 load(libdir + 'asm.js');
 load(libdir + 'asserts.js');
@@ -10,7 +8,7 @@ assertEq((evaluate(`function asmModule1() { "use asm"; function asmFun() {} retu
 assertEq((evaluate(`function asmModule3() { "use asm"; function asmFun() {} return asmFun }`), asmModule3)().toString(), "function asmFun() {\n    [native code]\n}");
 assertEq(asmCompile(USE_ASM + `function asmFun() {} return asmFun`).toString(), "function anonymous() {\n    [native code]\n}");
 assertEq(asmCompile(USE_ASM + `function asmFun() {} return asmFun`)().toString(), "function asmFun() {\n    [native code]\n}");
-assertThrowsInstanceOf(()=>asmCompile('stdlib',USE_ASM + "var sin=stdlib.Math.sin;return {}")({Math:{}}), Error);
+assertEq(typeof asmCompile('stdlib',USE_ASM + "var sin=stdlib.Math.sin;return {}")({Math:{}}), "object");
 }
 
 var g = newGlobal({ discardSource: true });

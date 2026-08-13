@@ -57,6 +57,7 @@ this.specialpowers = class extends ExtensionAPI {
       },
       allFrames: true,
       includeChrome: true,
+      safeForUntrustedWebProcess: true,
     });
   }
 

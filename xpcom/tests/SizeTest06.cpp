@@ -1,9 +1,9 @@
 // Test06.cpp
 
-#include "nsPIDOMWindow.h"
-#include "nsIDocShell.h"
-#include "nsIBaseWindow.h"
 #include "nsCOMPtr.h"
+#include "nsIBaseWindow.h"
+#include "nsIDocShell.h"
+#include "nsPIDOMWindow.h"
 
 NS_DEF_PTR(nsPIDOMWindow);
 NS_DEF_PTR(nsIBaseWindow);

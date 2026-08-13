@@ -5,13 +5,11 @@
 #ifndef mozilla_image_encoders_webp_nsWebPEncoder_h
 #define mozilla_image_encoders_webp_nsWebPEncoder_h
 
-#include "webp/encode.h"
-
 #include "imgIEncoder.h"
-#include "nsCOMPtr.h"
-
 #include "mozilla/Attributes.h"
 #include "mozilla/ReentrantMonitor.h"
+#include "nsCOMPtr.h"
+#include "webp/encode.h"
 
 #define NS_WEBPENCODER_CID                    \
   {/* a8e5a8e5-bebf-4512-9f50-e41e4748ce28 */ \

@@ -25,6 +25,7 @@ const rejected = [
   "S22",
   "5C",
   "Sep26 foo 1995",
+  "4294967303",
 ];
 
 for (const [test, expected] of Object.entries(accepted)) {

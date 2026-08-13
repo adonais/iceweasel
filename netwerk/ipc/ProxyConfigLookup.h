@@ -6,8 +6,9 @@
 #define mozilla_net_ProxyConfigLookup_h
 
 #include <functional>
-#include "nsIProtocolProxyCallback.h"
+
 #include "nsCOMPtr.h"
+#include "nsIProtocolProxyCallback.h"
 
 class nsIURI;
 

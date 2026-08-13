@@ -99,9 +99,7 @@ add_task(async function test_translations_telemetry_manual_translation() {
         lang_tags_match: true,
         is_lang_attribute_valid: true,
         extracted_code_units: 2132,
-        extraction_time: ms => 0 < ms,
         identification_time: ms => 0 < ms,
-        total_time: ms => 0 < ms,
         confident: true,
       },
     }
@@ -179,9 +177,7 @@ add_task(async function test_translations_telemetry_auto_translation() {
         lang_tags_match: true,
         is_lang_attribute_valid: true,
         extracted_code_units: 2132,
-        extraction_time: ms => 0 < ms,
         identification_time: ms => 0 < ms,
-        total_time: ms => 0 < ms,
         confident: true,
       },
     }

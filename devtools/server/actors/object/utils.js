@@ -377,12 +377,15 @@ function getPropNamesFromObject(obj, rawObj) {
 }
 
 /**
- * Returns an array of private properties of an object
+ * Returns an array of Debugger.PrivateName wrappers for an object's private
+ * properties. Each wrapper exposes the field's `description` (e.g. "#x") and
+ * can be passed to Debugger.Object.getOwnPropertyDescriptor; the underlying
+ * private name symbol is never exposed.
  *
  * @param obj
  * @returns {Array}
  */
-function getSafePrivatePropertiesSymbols(obj) {
+function getSafePrivateProperties(obj) {
   try {
     return obj.getOwnPrivateProperties();
   } catch (ex) {
@@ -535,7 +538,7 @@ module.exports = {
   getPropsForEvent,
   getPropNamesFromObject,
   getSafeOwnPropertySymbols,
-  getSafePrivatePropertiesSymbols,
+  getSafePrivateProperties,
   getModifiersForEvent,
   isObjectOrFunction,
   createStringGrip,

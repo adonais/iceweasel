@@ -803,9 +803,16 @@ JS_PUBLIC_API void js::RemapRemoteWindowProxies(
     target.set(targetCompartmentProxy);
   }
 
+  gc::GCRuntime* gc = &cx->runtime()->gc;
   RootedField<JSObject*, 2> deadWrapper(roots);
   for (JSObject*& obj : otherProxies) {
     deadWrapper = obj;
+
+    if (!gc->relocateFinalizationObserverTarget(ObjectValue(*deadWrapper),
+                                                ObjectValue(*target))) {
+      oomUnsafe.crash("js::RemapRemoteWindowProxies");
+    }
+
     js::RemapDeadWrapper(cx, deadWrapper, target);
   }
 }
@@ -1974,8 +1981,8 @@ JS_PUBLIC_API JSObject* JS_NewObjectWithGivenProtoAndUseAllocSite(
   MOZ_ASSERT(clasp != &ArrayObject::class_);
   MOZ_ASSERT(!(clasp->flags & JSCLASS_IS_GLOBAL));
 
-  return NewObjectWithGivenProtoAndAllocSite(cx, clasp, proto,
-                                             cx->realm()->localAllocSite);
+  return NewObjectWithGivenProto(cx, clasp, proto,
+                                 {.site = cx->realm()->localAllocSite});
 }
 
 JS_PUBLIC_API JSObject* JS_NewPlainObject(JSContext* cx) {
@@ -2625,15 +2632,6 @@ bool JS::OwningCompileOptions::copy(JS::FrontendContext* fc,
 JS::CompileOptions::CompileOptions(JSContext* cx) {
   prefableOptions_ = cx->options().compileOptions();
 
-  if (cx->options().asmJSOption() == AsmJSOption::Enabled) {
-    if (!js::IsAsmJSCompilationAvailable(cx)) {
-      prefableOptions_.setAsmJSOption(AsmJSOption::DisabledByNoWasmCompiler);
-    } else if (cx->realm() && (cx->realm()->debuggerObservesWasm() ||
-                               cx->realm()->debuggerObservesAsmJS())) {
-      prefableOptions_.setAsmJSOption(AsmJSOption::DisabledByDebugger);
-    }
-  }
-
   // Certain modes of operation disallow syntax parsing in general.
   if (coverage::IsLCovEnabled()) {
     eagerDelazificationStrategy_ = DelazificationOption::ParseEverythingEagerly;
@@ -2770,12 +2768,16 @@ JS_PUBLIC_API JSString* JS_DecompileScript(JSContext* cx, HandleScript script) {
   if (fun) {
     return JS_DecompileFunction(cx, fun);
   }
-  bool haveSource;
-  if (!ScriptSource::loadSource(cx, script->scriptSource(), &haveSource)) {
+
+  bool loaded;
+  Maybe<ScriptSource::DataReader> reader;
+  if (!script->scriptSource()->tryLoadSource(cx, reader, &loaded)) {
     return nullptr;
   }
-  return haveSource ? JSScript::sourceData(cx, script)
-                    : NewStringCopyZ<CanGC>(cx, "[no source]");
+  MOZ_ASSERT_IF(loaded, (*reader).hasSourceText());
+  return loaded ? (*reader)->substring(cx, script->sourceStart(),
+                                       script->sourceEnd())
+                : NewStringCopyZ<CanGC>(cx, "[no source]");
 }
 
 JS_PUBLIC_API JSString* JS_DecompileFunction(JSContext* cx,

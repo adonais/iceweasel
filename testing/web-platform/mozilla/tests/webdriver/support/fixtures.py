@@ -1,8 +1,10 @@
 import os
+from copy import deepcopy
 
 import pytest
 import pytest_asyncio
-from tests.support.helpers import deep_update
+import tests.support.fixtures as global_fixtures
+from tests.support import defaults
 
 from .chrome_handler import using_chrome_handler
 from .context import using_context
@@ -14,18 +16,14 @@ from .helpers import (
     read_user_preferences,
 )
 
-
-def pytest_collection_modifyitems(items):
-    """Auto-apply markers for specific API usage by fixtures"""
-    for item in items:
-        if "use_pref" in getattr(item, "fixturenames", ()):
-            item.add_marker("allow_system_access")
+_geckodriver_state = {"current": None}
 
 
 def pytest_configure(config):
-    # register the allow_system_access marker
     config.addinivalue_line(
-        "markers", "allow_system_access: Mark test to allow system access"
+        "markers",
+        "geckodriver(allow_system_access=False, force_new=False): "
+        "Configure the geckodriver instance for the test",
     )
 
 
@@ -55,11 +53,11 @@ def browser(configuration, firefox_options):
         log_level = None
         truncate_enabled = True
 
-        if "-vv" or "-vvv" in webdriver_args:
+        if "-vvv" in webdriver_args:
             log_level = "Trace"
-
-            if "-vvv" in webdriver_args:
-                truncate_enabled = False
+            truncate_enabled = False
+        elif "-vv" in webdriver_args:
+            log_level = "Trace"
         elif "-v" in webdriver_args:
             log_level = "Debug"
 
@@ -111,32 +109,6 @@ def browser(configuration, firefox_options):
     if current_browser is not None:
         current_browser.quit()
         current_browser = None
-
-
-@pytest.fixture
-def default_capabilities(request):
-    """Default capabilities to use for a new WebDriver session for Mozilla specific tests."""
-
-    # Get the value from the overwritten original fixture
-    capabilities = request.getfixturevalue("default_capabilities")
-
-    allow_system_access = any(
-        marker.name == "allow_system_access" for marker in request.node.own_markers
-    )
-
-    if allow_system_access:
-        deep_update(
-            capabilities,
-            {
-                "moz:firefoxOptions": {
-                    "args": [
-                        "--remote-allow-system-access",
-                    ]
-                }
-            },
-        )
-
-    return capabilities
 
 
 @pytest.fixture
@@ -267,30 +239,194 @@ def firefox_options(configuration):
     return configuration["capabilities"]["moz:firefoxOptions"]
 
 
-@pytest_asyncio.fixture
-async def geckodriver(configuration):
+@pytest.fixture(scope="module")
+def geckodriver(configuration, firefox_options):
     """Start a geckodriver instance directly."""
-    driver = None
+
+    custom_profile = None
 
     def _geckodriver(
-        config=None, hostname=None, extra_args=None, extra_env=None, popen_kwargs=None
+        config=None,
+        hostname=None,
+        extra_args=None,
+        extra_env=None,
+        popen_kwargs=None,
+        profile=None,
+        force_new=False,
     ):
-        nonlocal driver
+        nonlocal custom_profile
 
         if config is None:
-            config = configuration
+            config = deepcopy(configuration)
 
-        driver = Geckodriver(config, hostname, extra_args, extra_env, popen_kwargs)
-        driver.start()
+        if extra_args is None:
+            extra_args = []
 
-        return driver
+        if extra_env is None:
+            extra_env = {}
+
+        # When --profile-root is used, geckodriver manages its own profile.
+        uses_profile_root = "--profile-root" in extra_args
+
+        # Use a cloned profile to avoid conflicts with the harness Firefox.
+        if not uses_profile_root and profile is None:
+            if custom_profile is None:
+                profile_path = get_profile_folder(firefox_options)
+                default_prefs = read_user_preferences(profile_path)
+                custom_profile = create_custom_profile(
+                    profile_path, default_prefs, clone=True
+                )
+            profile = custom_profile
+
+        # Reuse the running geckodriver if the configuration matches.
+        current = _geckodriver_state["current"]
+        if current is not None:
+            if (
+                not force_new
+                and current.extra_args == extra_args
+                and current.extra_env == extra_env
+                and current.hostname == (hostname or config["host"])
+                and current.proc
+                and current.proc.poll() is None
+                and (
+                    uses_profile_root
+                    or (
+                        custom_profile is not None
+                        and profile.profile == custom_profile.profile
+                    )
+                )
+            ):
+                return current
+
+            current.kill()
+
+        if not uses_profile_root:
+            fx_options = config["capabilities"].setdefault("moz:firefoxOptions", {})
+            fx_args = fx_options.setdefault("args", [])
+            if "--profile" in fx_args:
+                index = fx_args.index("--profile")
+                fx_args[index + 1] = profile.profile
+            else:
+                fx_args.extend(["--profile", profile.profile])
+
+        # End any active harness session to free up ports and resources
+        # before starting the custom geckodriver instance.
+        harness_session = global_fixtures.get_current_session()
+        if harness_session is not None:
+            harness_session.end()
+            global_fixtures.set_current_session(None)
+
+        current = Geckodriver(config, hostname, extra_args, extra_env, popen_kwargs)
+        current.start()
+        _geckodriver_state["current"] = current
+
+        return current
 
     yield _geckodriver
 
-    if driver is not None:
-        await driver.stop()
+    if _geckodriver_state["current"] is not None:
+        _geckodriver_state["current"].kill()
+        _geckodriver_state["current"] = None
+
+    if custom_profile is not None:
+        custom_profile.cleanup()
 
 
 @pytest.fixture
 def profile_folder(firefox_options):
     return get_profile_folder(firefox_options)
+
+
+@pytest_asyncio.fixture
+async def bidi_session(request, geckodriver):
+    """Override bidi_session to use the geckodriver fixture.
+
+    Reads the ``geckodriver`` marker for extra arguments and the
+    ``capabilities`` marker for custom session capabilities.
+    """
+    extra_args, force_new = _get_geckodriver_marker_args(request)
+    capabilities = _get_capabilities_marker_args(request)
+
+    driver = geckodriver(extra_args=extra_args, force_new=force_new)
+
+    bidi_capabilities = {"webSocketUrl": True}
+    if capabilities is not None:
+        bidi_capabilities.update(capabilities)
+    driver.new_session(capabilities=bidi_capabilities)
+
+    bidi_session = driver.session.bidi_session
+
+    # Clear any stale transport from a previous event loop (e.g. from a test
+    # that used the geckodriver fixture directly to start a bidi session).
+    bidi_session.transport = None
+    await bidi_session.start()
+
+    if driver.session.capabilities.get("setWindowRect"):
+        driver.session.window.size = defaults.WINDOW_SIZE
+        driver.session.window.position = defaults.WINDOW_POSITION
+
+    yield bidi_session
+
+    if bidi_session.transport is not None:
+        await bidi_session.transport.end()
+        bidi_session.transport = None
+
+
+@pytest.fixture
+def session(request, configuration, geckodriver):
+    """Override session to use the geckodriver fixture."""
+    extra_args, force_new = _get_geckodriver_marker_args(request)
+    capabilities = _get_capabilities_marker_args(request)
+
+    driver = geckodriver(extra_args=extra_args, force_new=force_new)
+
+    session_capabilities = {"webSocketUrl": False}
+    if capabilities is not None:
+        session_capabilities.update(capabilities)
+    driver.new_session(capabilities=session_capabilities)
+
+    session = driver.session
+
+    if session.capabilities.get("setWindowRect"):
+        session.window.size = defaults.WINDOW_SIZE
+        session.window.position = defaults.WINDOW_POSITION
+
+    multiplier = configuration["timeout_multiplier"]
+    session.timeouts.implicit = defaults.IMPLICIT_WAIT_TIMEOUT * multiplier
+    session.timeouts.page_load = defaults.PAGE_LOAD_TIMEOUT * multiplier
+    session.timeouts.script = defaults.SCRIPT_TIMEOUT * multiplier
+
+    yield session
+
+
+@pytest.fixture
+def current_session():
+    """Override current_session to return the active geckodriver session."""
+    assert _geckodriver_state["current"] is not None, (
+        "current_session requires an active geckodriver session. "
+        "Use the bidi_session or session fixture first."
+    )
+    return _geckodriver_state["current"].session
+
+
+def _get_capabilities_marker_args(request):
+    """Read the capabilities marker and return extra capabilities, or None."""
+    capabilities_marker = request.node.get_closest_marker("capabilities")
+    if capabilities_marker and capabilities_marker.args:
+        return capabilities_marker.args[0]
+
+    return None
+
+
+def _get_geckodriver_marker_args(request):
+    """Read the geckodriver marker for extra args and force_new."""
+    extra_args = []
+    force_new = False
+
+    geckodriver_marker = request.node.get_closest_marker("geckodriver")
+    if geckodriver_marker:
+        if geckodriver_marker.kwargs.get("allow_system_access"):
+            extra_args.append("--allow-system-access")
+        force_new = geckodriver_marker.kwargs.get("force_new", False)
+
+    return extra_args, force_new

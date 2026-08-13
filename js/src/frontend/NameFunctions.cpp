@@ -97,7 +97,8 @@ class NameResolver : public ParseNodeVisitor<NameResolver> {
     switch (n->getKind()) {
       case ParseNodeKind::ArgumentsLength:
       case ParseNodeKind::DotExpr: {
-        PropertyAccess* prop = &n->as<PropertyAccess>();
+        NonOptionalPropertyAccessBase* prop =
+            &n->as<NonOptionalPropertyAccessBase>();
         if (!nameExpression(&prop->expression(), foundName)) {
           return false;
         }

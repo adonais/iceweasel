@@ -7,20 +7,19 @@
 
 #include <vector>
 
-#include "gtest/gtest.h"
-
-#include "mozilla/Attributes.h"
-#include "mozilla/gtest/MozAssertions.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/UniquePtr.h"
-#include "mozilla/gfx/2D.h"
 #include "Decoder.h"
-#include "gfxColor.h"
-#include "gfxPlatform.h"
-#include "nsCOMPtr.h"
 #include "SurfaceFlags.h"
 #include "SurfacePipe.h"
 #include "SurfacePipeFactory.h"
+#include "gfxColor.h"
+#include "gfxPlatform.h"
+#include "gtest/gtest.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/UniquePtr.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/gtest/MozAssertions.h"
+#include "nsCOMPtr.h"
 
 class nsIInputStream;
 

@@ -50,6 +50,8 @@ moz-button.close-button {
 
   @media not (forced-colors) {
     --button-background-color-ghost: var(--background-color-box);
+    --button-background-color-ghost-hover: color-mix(in srgb, currentColor 14%, var(--background-color-box));
+    --button-background-color-ghost-active: color-mix(in srgb, currentColor 21%, var(--background-color-box));
   }
 }
 
@@ -93,7 +95,7 @@ moz-button.close-button::part(button) {
   position: absolute;
   inset-inline: 0;
   pointer-events: none;
-  backdrop-filter: blur(3px);
+  backdrop-filter: blur(16px);
 }
 
 .fade-top {
@@ -106,7 +108,7 @@ moz-button.close-button::part(button) {
 
 .fade-bottom {
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  height: 20px;
+  height: 16px;
   bottom: 0;
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background: linear-gradient(to top, var(--background-color-box), light-dark(rgba(255, 255, 255, 0.8), rgba(35, 34, 43, 0.8)), transparent);

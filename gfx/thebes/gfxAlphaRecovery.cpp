@@ -7,9 +7,9 @@
 #include "gfxImageSurface.h"
 
 #define MOZILLA_SSE_INCLUDE_HEADER_FOR_SSE2
-#include "mozilla/SSE.h"
-
 #include <xsimd/xsimd.hpp>
+
+#include "mozilla/SSE.h"
 
 /* static */
 bool gfxAlphaRecovery::RecoverAlpha(gfxImageSurface* blackSurf,

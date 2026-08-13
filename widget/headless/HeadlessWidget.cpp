@@ -1,26 +1,27 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-#include "InputData.h"
 #include "HeadlessWidget.h"
+
+#include "BasicEvents.h"
 #include "ErrorList.h"
 #include "HeadlessCompositorWidget.h"
-#include "BasicEvents.h"
+#include "HeadlessKeyBindings.h"
+#include "InputData.h"
 #include "MouseEvents.h"
-#include "mozilla/gfx/gfxVars.h"
+#include "UnitTransforms.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/NativeKeyBindingsType.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/TextEventDispatcher.h"
 #include "mozilla/TextEvents.h"
-#include "UnitTransforms.h"
 #include "mozilla/WritingModes.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/widget/HeadlessWidgetTypes.h"
 #include "mozilla/widget/PlatformWidgetTypes.h"
 #include "mozilla/widget/Screen.h"
 #include "nsIScreen.h"
-#include "HeadlessKeyBindings.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;

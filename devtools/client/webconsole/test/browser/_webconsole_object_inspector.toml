@@ -13,6 +13,7 @@ support-files = [
 ]
 prefs = [
   "layout.css.scroll-driven-animations.enabled=true", # For browser_webconsole_object_inspector_entries.js
+  "layout.css.typed-om.enabled=true", # For browser_webconsole_object_inspector_entries.js
 ]
 
 ["browser_webconsole_object_ctrl_click.js"]

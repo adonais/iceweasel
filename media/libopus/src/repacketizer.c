@@ -166,7 +166,7 @@ opus_int32 opus_repacketizer_out_range_impl(OpusRepacketizer *rp, int begin, int
       if (ret<0)
       {
          RESTORE_STACK;
-         return OPUS_INTERNAL_ERROR;
+         return OPUS_INVALID_PACKET;
       }
       /* renumber the extension frame numbers */
       for (j=0;j<frame_ext_count;j++)
@@ -262,7 +262,11 @@ opus_int32 opus_repacketizer_out_range_impl(OpusRepacketizer *rp, int begin, int
          /* figure out how much space we need for the extensions */
          ext_len = opus_packet_extensions_generate(NULL, maxlen-tot_size,
           all_extensions, ext_count, count, 0);
-         if (ext_len < 0) return ext_len;
+         if (ext_len < 0)
+         {
+            RESTORE_STACK;
+            return ext_len;
+         }
          if (!pad)
             pad_amount = ext_len + (ext_len ? (ext_len+253)/254 : 1);
       }
@@ -350,7 +354,10 @@ opus_int32 opus_packet_pad_impl(unsigned char *data, opus_int32 len, opus_int32 
    OPUS_COPY(copy, data, len);
    ret = opus_repacketizer_cat(&rp, copy, len);
    if (ret != OPUS_OK)
+   {
+      RESTORE_STACK;
       return ret;
+   }
    ret = opus_repacketizer_out_range_impl(&rp, 0, rp.nb_frames, data, new_len, 0, pad, extensions, nb_extensions);
    RESTORE_STACK;
    return ret;

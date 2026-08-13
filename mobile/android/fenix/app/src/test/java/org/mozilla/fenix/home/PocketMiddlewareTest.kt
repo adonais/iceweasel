@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import mozilla.components.service.pocket.PocketStoriesService
 import mozilla.components.service.pocket.PocketStory.ContentRecommendation
-import mozilla.components.service.pocket.PocketStory.PocketRecommendedStory
 import mozilla.components.service.pocket.PocketStory.SponsoredContent
 import mozilla.components.service.pocket.PocketStory.SponsoredContentCallbacks
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
@@ -33,22 +32,27 @@ import org.mozilla.fenix.datastore.SelectedPocketStoriesCategories.SelectedPocke
 import org.mozilla.fenix.home.pocket.PocketImpression
 import org.mozilla.fenix.home.pocket.PocketRecommendedStoriesCategory
 import org.mozilla.fenix.home.pocket.PocketRecommendedStoriesSelectedCategory
+import org.mozilla.fenix.home.pocket.controller.StoriesImpressionSource
 
 class PocketMiddlewareTest {
 
     @Test
     fun `WHEN PocketStoriesShown is dispatched THEN update PocketStoriesService`() = runTest {
-        val story1 = PocketRecommendedStory(
-            "title",
-            "url1",
-            "imageUrl",
-            "publisher",
-            "category",
-            0,
-            timesShown = 0,
+        val recommendation = ContentRecommendation(
+            corpusItemId = "0",
+            scheduledCorpusItemId = "1",
+            url = "testUrl",
+            title = "",
+            excerpt = "",
+            topic = "",
+            publisher = "",
+            isTimeSensitive = false,
+            imageUrl = "",
+            tileId = 1,
+            receivedRank = 33,
+            recommendedAt = 1L,
+            impressions = 0,
         )
-        val story2 = story1.copy("title2", "url2")
-        val story3 = story1.copy("title3", "url3")
         val pocketService: PocketStoriesService = mockk(relaxed = true)
         val pocketMiddleware = PocketMiddleware(
             lazy { pocketService },
@@ -58,11 +62,7 @@ class PocketMiddlewareTest {
             this,
         )
         val appstore = AppStore(
-            AppState(
-                recommendationState = ContentRecommendationsState(
-                    pocketStories = listOf(story1, story2, story3),
-                ),
-            ),
+            AppState(),
             listOf(pocketMiddleware),
         )
 
@@ -70,28 +70,22 @@ class PocketMiddlewareTest {
             ContentRecommendationsAction.PocketStoriesShown(
                 impressions = listOf(
                     PocketImpression(
-                        story = story2,
+                        story = recommendation,
                         position = 1,
                     ),
                 ),
+                source = StoriesImpressionSource.HOMEPAGE,
             ),
         )
         testScheduler.advanceUntilIdle()
 
-        coVerify { pocketService.updateStoriesTimesShown(listOf(story2.copy(timesShown = 1))) }
+        coVerify {
+            pocketService.updateRecommendationsImpressions(listOf(recommendation.copy(impressions = 1)))
+        }
     }
 
     @Test
     fun `WHEN needing to persist impressions is called THEN update PocketStoriesService`() = runTest {
-        val story = PocketRecommendedStory(
-            "title",
-            "url1",
-            "imageUrl",
-            "publisher",
-            "category",
-            0,
-            timesShown = 3,
-        )
         val recommendation = ContentRecommendation(
             corpusItemId = "0",
             scheduledCorpusItemId = "1",
@@ -122,8 +116,7 @@ class PocketMiddlewareTest {
             caps = mockk(relaxed = true),
             priority = 3,
         )
-        val stories = listOf(story, recommendation, sponsoredContent)
-        val expectedStoryUpdate = story.copy(timesShown = story.timesShown.inc())
+        val stories = listOf(recommendation, sponsoredContent)
         val expectedRecommendationUpdate = recommendation.copy(impressions = recommendation.impressions.inc())
 
         val pocketService: PocketStoriesService = mockk(relaxed = true)
@@ -136,7 +129,6 @@ class PocketMiddlewareTest {
         testScheduler.advanceUntilIdle()
 
         coVerify {
-            pocketService.updateStoriesTimesShown(listOf(expectedStoryUpdate))
             pocketService.updateRecommendationsImpressions(listOf(expectedRecommendationUpdate))
             pocketService.recordSponsoredContentImpressions(impressions = listOf(sponsoredContent.url))
         }

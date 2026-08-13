@@ -683,7 +683,7 @@ export class DevToolsStartup {
         this.hookKeyShortcuts(doc.defaultView);
       },
     };
-    lazy.CustomizableUI.createWidget(item);
+    lazy.CustomizableUI.createWidget(item, lazy.CustomizableUI.SOURCE_BUILTIN);
     lazy.CustomizableWidgets.push(item);
 
     this.developerToggleCreated = true;

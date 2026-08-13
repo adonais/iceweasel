@@ -11,13 +11,16 @@
 #ifndef CALL_PAYLOAD_TYPE_PICKER_H_
 #define CALL_PAYLOAD_TYPE_PICKER_H_
 
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "absl/strings/string_view.h"
+#include "api/environment/environment.h"
 #include "api/payload_type.h"
 #include "api/rtc_error.h"
+#include "api/rtp_header_extension_id.h"
 #include "api/rtp_parameters.h"
 #include "call/payload_type.h"
 #include "media/base/codec.h"
@@ -39,8 +42,13 @@ class PayloadTypePicker final {
   // Suggest a payload type for the codec.
   // If the excluder maps it to something different, don't suggest it.
   RTCErrorOr<PayloadType> SuggestMapping(Codec codec,
-                                         const PayloadTypeRecorder* excluder);
+                                         const PayloadTypeRecorder* excluder,
+                                         bool pick_from_top_of_range = false);
   RTCError AddMapping(PayloadType payload_type, Codec codec);
+  std::optional<Codec> LookupCodec(PayloadType payload_type) const;
+  bool IsSeen(PayloadType payload_type) const {
+    return seen_payload_types_.contains(payload_type.value());
+  }
 
  private:
   class MapEntry final {
@@ -110,19 +118,24 @@ class PayloadTypeRecorder final {
 
 class RtpHeaderExtensionRecorder final {
  public:
-  RtpHeaderExtensionRecorder() {}
+  explicit RtpHeaderExtensionRecorder(const Environment& env) : env_(env) {}
   ~RtpHeaderExtensionRecorder() {}
 
-  RTCError AddMapping(int id, absl::string_view uri, bool encrypt);
-  RTCErrorOr<int> LookupId(absl::string_view uri, bool encrypt) const;
+  RTCError AddMapping(RtpHeaderExtensionId id,
+                      absl::string_view uri,
+                      bool encrypt);
+  RTCErrorOr<RtpHeaderExtensionId> LookupId(absl::string_view uri,
+                                            bool encrypt) const;
 
   void Commit();
   void Rollback();
 
  private:
+  const Environment env_;
   // (uri, encrypt) -> id
-  flat_map<std::pair<std::string, bool>, int> uri_to_id_;
-  flat_map<std::pair<std::string, bool>, int> checkpoint_uri_to_id_;
+  flat_map<std::pair<std::string, bool>, RtpHeaderExtensionId> uri_to_id_;
+  flat_map<std::pair<std::string, bool>, RtpHeaderExtensionId>
+      checkpoint_uri_to_id_;
 };
 
 class RtpHeaderExtensionPicker final {
@@ -130,21 +143,24 @@ class RtpHeaderExtensionPicker final {
   RtpHeaderExtensionPicker() {}
   ~RtpHeaderExtensionPicker() {}
 
-  RTCErrorOr<int> SuggestMapping(absl::string_view uri,
-                                 bool encrypt,
-                                 int preferred_id,
-                                 RtpTransceiverIdDomain id_domain,
-                                 const RtpHeaderExtensionRecorder* excluder);
-  RTCError AddMapping(int id, absl::string_view uri, bool encrypt);
+  RTCErrorOr<RtpHeaderExtensionId> SuggestMapping(
+      absl::string_view uri,
+      bool encrypt,
+      RtpHeaderExtensionId preferred_id,
+      RtpTransceiverIdDomain id_domain,
+      const RtpHeaderExtensionRecorder* excluder);
+  RTCError AddMapping(RtpHeaderExtensionId id,
+                      absl::string_view uri,
+                      bool encrypt);
 
  private:
   struct MapEntry {
     std::string uri;
     bool encrypt;
-    int id;
+    RtpHeaderExtensionId id;
   };
   std::vector<MapEntry> entries_;
-  flat_set<int> seen_ids_;
+  flat_set<RtpHeaderExtensionId> seen_ids_;
 };
 
 }  // namespace webrtc

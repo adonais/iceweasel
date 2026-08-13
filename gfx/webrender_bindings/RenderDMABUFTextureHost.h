@@ -5,9 +5,9 @@
 #ifndef MOZILLA_GFX_RENDERDMABUFTEXTUREHOST_H
 #define MOZILLA_GFX_RENDERDMABUFTEXTUREHOST_H
 
-#include "mozilla/layers/TextureHostOGL.h"
 #include "RenderTextureHost.h"
 #include "RenderTextureHostSWGL.h"
+#include "mozilla/layers/TextureHostOGL.h"
 #include "mozilla/widget/DMABufSurface.h"
 
 namespace mozilla {

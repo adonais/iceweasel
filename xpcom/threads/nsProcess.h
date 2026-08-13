@@ -10,16 +10,18 @@
 #endif
 
 #include "mozilla/Mutex.h"
-#include "nsIProcess.h"
 #include "nsIObserver.h"
+#include "nsIProcess.h"
 #include "nsMaybeWeakPtr.h"
 #include "nsString.h"
 #ifndef XP_UNIX
 #  include "prproces.h"
 #endif
 #if defined(PROCESSMODEL_WINAPI)
+// clang-format off
 #  include <windows.h>
 #  include <shellapi.h>
+// clang-format on
 #endif
 
 #define NS_PROCESS_CID \

@@ -4,6 +4,7 @@
 
 #include "mozilla/layers/WebRenderBridgeChild.h"
 
+#include "PDMFactory.h"
 #include "gfxPlatform.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/layers/CompositableClient.h"
@@ -11,11 +12,10 @@
 #include "mozilla/layers/CompositorManagerChild.h"
 #include "mozilla/layers/ImageDataSerializer.h"
 #include "mozilla/layers/IpcResourceUpdateQueue.h"
-#include "mozilla/layers/StackingContextHelper.h"
 #include "mozilla/layers/PTextureChild.h"
+#include "mozilla/layers/StackingContextHelper.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/webrender/WebRenderAPI.h"
-#include "PDMFactory.h"
 
 namespace mozilla {
 namespace layers {

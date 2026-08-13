@@ -5,6 +5,7 @@
 #include "MediaTransportHandler.h"
 
 #include "MediaTransportHandlerIPC.h"
+#include "transport/dtlsidentity.h"
 #include "transport/nricemediastream.h"
 #include "transport/nriceresolver.h"
 #include "transport/sigslot.h"
@@ -30,8 +31,10 @@
 #include <string>
 #include <vector>
 
+#include "mozilla/Base64.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/PublicSSL.h"  // For psm::InitializeCipherSuite
+#include "mozilla/ReverseIterator.h"
 #include "mozilla/dom/RTCStatsReportBinding.h"
 #include "nsDNSService2.h"
 #include "nsFmtString.h"
@@ -129,6 +132,13 @@ class MediaTransportHandlerSTS : public MediaTransportHandler,
   struct Transport {
     RefPtr<TransportFlow> mFlow;
     RefPtr<TransportFlow> mRtcpFlow;
+    // Counts of the (decrypted) payload that traverses this transport, used to
+    // populate RTCTransportStats. These exclude STUN connectivity checks and
+    // DTLS/SRTP protection overhead, both of which are added below this point.
+    uint64_t mBytesSent = 0;
+    uint64_t mBytesReceived = 0;
+    uint64_t mPacketsSent = 0;
+    uint64_t mPacketsReceived = 0;
   };
 
   using MediaTransportHandler::OnAlpnNegotiated;
@@ -942,6 +952,12 @@ void MediaTransportHandlerSTS::SendPacket(const std::string& aTransportId,
           CSFLogError(LOGTAG,
                       "%s: Transport flow (%s) failed to send packet. error=%d",
                       mIceCtx->name().c_str(), aTransportId.c_str(), error);
+        } else if (auto it = mTransports.find(aTransportId);
+                   it != mTransports.end()) {
+          // On success the layer returns the number of (unencrypted) payload
+          // bytes it was handed.
+          it->second.mBytesSent += error;
+          it->second.mPacketsSent += 1;
         }
       },
       [](const std::string& aError) {});
@@ -985,8 +1001,9 @@ void MediaTransportHandler::OnGatheringStateChange(
 }
 
 void MediaTransportHandler::OnConnectionStateChange(
-    const std::string& aTransportId, dom::RTCIceTransportState aState) {
-  mConnectionStateChange.Notify(aTransportId, aState);
+    const std::string& aTransportId, dom::RTCIceTransportState aState,
+    const Maybe<dom::IceCandidateAttributePair>& aSelectedPair) {
+  mConnectionStateChange.Notify(aTransportId, aState, aSelectedPair);
 }
 
 void MediaTransportHandler::OnPacketReceived(std::string&& aTransportId,
@@ -1017,21 +1034,23 @@ void MediaTransportHandler::OnEncryptedSending(const std::string& aTransportId,
 
 void MediaTransportHandler::OnStateChange(
     const std::string& aTransportId, TransportLayer::State aState,
-    nsTArray<nsTArray<uint8_t>>&& aRemoteCerts) {
+    nsTArray<nsTArray<uint8_t>>&& aRemoteCerts,
+    Maybe<dom::RTCErrorParams> aError) {
   {
     MutexAutoLock lock(mStateCacheMutex);
     mStateCache[aTransportId] = aState;
   }
-  mStateChange.Notify(aTransportId, aState, std::move(aRemoteCerts));
+  mStateChange.Notify(aTransportId, aState, std::move(aRemoteCerts), aError);
 }
 
-void MediaTransportHandler::OnRtcpStateChange(const std::string& aTransportId,
-                                              TransportLayer::State aState) {
+void MediaTransportHandler::OnRtcpStateChange(
+    const std::string& aTransportId, TransportLayer::State aState,
+    Maybe<dom::RTCErrorParams> aError) {
   {
     MutexAutoLock lock(mStateCacheMutex);
     mRtcpStateCache[aTransportId] = aState;
   }
-  mRtcpStateChange.Notify(aTransportId, aState);
+  mRtcpStateChange.Notify(aTransportId, aState, aError);
 }
 
 static uint16_t ToDtlsWireVersion(uint16_t aProtocolVersion) {
@@ -1045,6 +1064,57 @@ static uint16_t ToDtlsWireVersion(uint16_t aProtocolVersion) {
     default:
       return 0;
   }
+}
+
+// BuildCertificateStats returns the issuerCertificateId.
+// https://w3c.github.io/webrtc-stats/#dom-rtccertificatestats-issuercertificateid
+// "The issuerCertificateId refers to the stats object that contains the next
+// certificate in the certificate chain."
+static nsString BuildCertificateStats(const nsTArray<uint8_t>& aDerCert,
+                                      const nsAString& aIssuerId,
+                                      DOMHighResTimeStamp aNow,
+                                      dom::RTCStatsCollection* aStats) {
+  if (aDerCert.IsEmpty()) {
+    return nsString();
+  }
+
+  DtlsDigest digest(DtlsIdentity::DEFAULT_HASH_ALGORITHM);
+  if (NS_FAILED(DtlsIdentity::ComputeFingerprint(aDerCert.Elements(),
+                                                 aDerCert.Length(), &digest))) {
+    return nsString();
+  }
+  NS_ConvertUTF8toUTF16 fingerprint(
+      SdpFingerprintAttributeList::FormatFingerprint(digest.value_).c_str());
+
+  nsFmtString id(u"certificate_{}", fingerprint);
+
+  for (const auto& existing : aStats->mCertificateStats) {
+    if (existing.mId.WasPassed() && existing.mId.Value() == id) {
+      return id;
+    }
+  }
+
+  nsCString base64Cert;
+  if (NS_FAILED(Base64Encode(reinterpret_cast<const char*>(aDerCert.Elements()),
+                             aDerCert.Length(), base64Cert))) {
+    return nsString();
+  }
+
+  dom::RTCCertificateStats cert;
+  cert.mId.Construct(id);
+  cert.mTimestamp.Construct(aNow);
+  cert.mType.Construct(dom::RTCStatsType::Certificate);
+  cert.mFingerprint = fingerprint;
+  cert.mFingerprintAlgorithm = NS_ConvertUTF8toUTF16(digest.algorithm_);
+  cert.mBase64Certificate = NS_ConvertUTF8toUTF16(base64Cert);
+  if (!aIssuerId.IsEmpty()) {
+    cert.mIssuerCertificateId.Construct(aIssuerId);
+  }
+
+  if (!aStats->mCertificateStats.AppendElement(cert, fallible)) {
+    mozalloc_handle_oom(0);
+  }
+  return id;
 }
 
 RefPtr<dom::RTCStatsPromise> MediaTransportHandlerSTS::GetIceStats(
@@ -1142,7 +1212,48 @@ RefPtr<dom::RTCStatsPromise> MediaTransportHandlerSTS::GetIceStats(
                           NS_ConvertASCIItoUTF16(info.cipherSuiteName));
                     }
                   }
+
+                  if (dtlsLayer->state() == TransportLayer::TS_OPEN) {
+                    {
+                      nsString localId =
+                          BuildCertificateStats(dtlsLayer->GetLocalCertDer(),
+                                                u""_ns, aNow, stats.get());
+                      if (!localId.IsEmpty()) {
+                        transport.mLocalCertificateId.Construct(localId);
+                      }
+                    }
+
+                    {
+                      nsTArray<nsTArray<uint8_t>> remoteChain =
+                          dtlsLayer->GetPeerCertChainDer();
+                      nsString issuerId;
+                      // The chain is leaf-first. Here we start with the root;
+                      // for the root the issuerId is empty. In WebRTC the chain
+                      // often consists of a single certificate, i.e. it is
+                      // self-signed:
+                      // https://w3c.github.io/webrtc-stats/#dom-rtccertificatestats-issuercertificateid
+                      // "If the current certificate is at the end of the chain
+                      // (i.e. a self-signed certificate), this will not be
+                      // set."
+                      for (const auto& der : Reversed(remoteChain)) {
+                        issuerId = BuildCertificateStats(der, issuerId, aNow,
+                                                         stats.get());
+                      }
+                      // Having walked the chain root-first, issuerId now holds
+                      // the leaf certificate's id.
+                      if (!issuerId.IsEmpty()) {
+                        transport.mRemoteCertificateId.Construct(issuerId);
+                      }
+                    }
+                  }
                 }
+                transport.mBytesSent.Construct(transportIt->second.mBytesSent);
+                transport.mBytesReceived.Construct(
+                    transportIt->second.mBytesReceived);
+                transport.mPacketsSent.Construct(
+                    transportIt->second.mPacketsSent);
+                transport.mPacketsReceived.Construct(
+                    transportIt->second.mPacketsReceived);
               }
               // XXX(Bug 2037532) Fill missing fields on the transport.
               GetIceStats(*stream, aNow, stats.get(), transport);
@@ -1332,6 +1443,8 @@ void MediaTransportHandlerSTS::GetIceStats(
     s.mSelected.Construct(candPair.selected);
     s.mBytesSent.Construct(candPair.bytes_sent);
     s.mBytesReceived.Construct(candPair.bytes_recvd);
+    s.mPacketsSent.Construct(candPair.packets_sent);
+    s.mPacketsReceived.Construct(candPair.packets_recvd);
     s.mLastPacketSentTimestamp.Construct(candPair.ms_since_last_send);
     s.mLastPacketReceivedTimestamp.Construct(candPair.ms_since_last_recv);
     s.mState.Construct(dom::RTCStatsIceCandidatePairState(candPair.state));
@@ -1512,7 +1625,22 @@ static mozilla::dom::RTCIceTransportState toDomIceTransportState(
 
 void MediaTransportHandlerSTS::OnConnectionStateChange(
     NrIceMediaStream* aIceStream, NrIceCtx::ConnectionState aState) {
-  OnConnectionStateChange(aIceStream->GetId(), toDomIceTransportState(aState));
+  // Capture the currently-selected pair (if any) at the same time the state
+  // change is observed, so the spec's unified "change the selected candidate
+  // pair and state" algorithm can run with both bits of information
+  // atomically.
+  Maybe<dom::IceCandidateAttributePair> selectedPair;
+  std::string localAttr;
+  std::string remoteAttr;
+  // Only get the pair for the RTP component (1). webrtc-pc has no way of
+  // surfacing a separate pair for RTCP when rtcp-mux is not in use.
+  if (NS_SUCCEEDED(
+          aIceStream->GetActivePairAsAttributes(1, &localAttr, &remoteAttr))) {
+    selectedPair = Some(dom::IceCandidateAttributePair(nsCString(localAttr),
+                                                       nsCString(remoteAttr)));
+  }
+  OnConnectionStateChange(aIceStream->GetId(), toDomIceTransportState(aState),
+                          selectedPair);
 }
 
 // The stuff below here will eventually go into the MediaTransportChild class
@@ -1574,30 +1702,63 @@ void MediaTransportHandlerSTS::OnCandidateError(NrIceMediaStream* aStream,
   OnCandidateError(std::move(info));
 }
 
+dom::RTCErrorParams GetErrorInfo(const TransportLayerDtls& aDtlsLayer) {
+  dom::RTCErrorInit error;
+  if (aDtlsLayer.HasFingerprintError()) {
+    // We might have sent an alert for this, but webrtc-pc says sendAlert is
+    // only set when the error detail is "dtls-failure".
+    error.mErrorDetail = dom::RTCErrorDetailType::Fingerprint_failure;
+  } else {
+    error.mErrorDetail = dom::RTCErrorDetailType::Dtls_failure;
+    // Spec says these cannot be set in the "fingerprint-failure" case
+    aDtlsLayer.GetSentAlert().apply(
+        [&](auto value) { error.mSentAlert.Construct(value); });
+    aDtlsLayer.GetReceivedAlert().apply(
+        [&](auto value) { error.mReceivedAlert.Construct(value); });
+  }
+
+  return dom::RTCErrorParams{error, aDtlsLayer.GetErrorDescription()};
+}
+
 void MediaTransportHandlerSTS::OnStateChange(TransportLayer* aLayer,
                                              TransportLayer::State aState) {
   nsTArray<nsTArray<uint8_t>> remoteCerts;
+
+  MOZ_ASSERT(aLayer->id() == TransportLayerDtls::ID());
+  Maybe<dom::RTCErrorParams> error;
+  TransportLayerDtls* dtlsLayer = static_cast<TransportLayerDtls*>(aLayer);
   if (aState == TransportLayer::TS_OPEN) {
-    MOZ_ASSERT(aLayer->id() == TransportLayerDtls::ID());
-    TransportLayerDtls* dtlsLayer = static_cast<TransportLayerDtls*>(aLayer);
     OnAlpnNegotiated(dtlsLayer->GetNegotiatedAlpn());
     remoteCerts = dtlsLayer->GetPeerCertChainDer();
+  } else if (aState == TransportLayer::TS_ERROR) {
+    error = Some(GetErrorInfo(*dtlsLayer));
   }
 
   // DTLS state indicates the readiness of the transport as a whole, because
   // SRTP uses the keys from the DTLS handshake.
   MediaTransportHandler::OnStateChange(aLayer->flow_id(), aState,
-                                       std::move(remoteCerts));
+                                       std::move(remoteCerts), error);
 }
 
 void MediaTransportHandlerSTS::OnRtcpStateChange(TransportLayer* aLayer,
                                                  TransportLayer::State aState) {
-  MediaTransportHandler::OnRtcpStateChange(aLayer->flow_id(), aState);
+  MOZ_ASSERT(aLayer->id() == TransportLayerDtls::ID());
+  Maybe<dom::RTCErrorParams> error;
+  TransportLayerDtls* dtlsLayer = static_cast<TransportLayerDtls*>(aLayer);
+  if (aState == TransportLayer::TS_ERROR) {
+    error = Some(GetErrorInfo(*dtlsLayer));
+  }
+
+  MediaTransportHandler::OnRtcpStateChange(aLayer->flow_id(), aState, error);
 }
 
 void MediaTransportHandlerSTS::PacketReceived(TransportLayer* aLayer,
                                               MediaPacket& aPacket) {
   MEDIA_TRANSPORT_HANDLER_PACKET_RECEIVED(aPacket);
+  if (auto it = mTransports.find(aLayer->flow_id()); it != mTransports.end()) {
+    it->second.mBytesReceived += aPacket.len();
+    it->second.mPacketsReceived += 1;
+  }
   OnPacketReceived(std::string(aLayer->flow_id()), std::move(aPacket));
 }
 

@@ -1,0 +1,42 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+:host(:not([hidden])) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-large);
+}
+
+moz-segmented-control {
+  width: 100%;
+}
+
+moz-visual-picker::part(fieldset) {
+  --fieldset-gap-column: var(--space-xlarge);
+}
+
+moz-visual-picker-item {
+  --theme-picker-radius-inner-large: var(--border-radius-xlarge);
+  --theme-picker-radius-inner-small: var(--border-radius-small);
+  --theme-picker-radius-large: calc(var(--theme-picker-radius-inner-large) + var(--visual-picker-item-border-width-checked));
+  --theme-picker-radius-small: calc(var(--theme-picker-radius-inner-small) + var(--visual-picker-item-border-width-checked));
+
+  --visual-picker-item-border-radius-inner: var(--theme-picker-radius-inner-large) var(--theme-picker-radius-inner-large) var(--theme-picker-radius-inner-large)
+    var(--theme-picker-radius-inner-small);
+  --visual-picker-item-border-radius: var(--theme-picker-radius-large) var(--theme-picker-radius-large) var(--theme-picker-radius-large)
+    var(--theme-picker-radius-small);
+
+  &:dir(rtl) {
+    --visual-picker-item-border-radius-inner: var(--theme-picker-radius-inner-large) var(--theme-picker-radius-inner-large)
+      var(--theme-picker-radius-inner-small) var(--theme-picker-radius-inner-large);
+    --visual-picker-item-border-radius: var(--theme-picker-radius-large) var(--theme-picker-radius-large) var(--theme-picker-radius-small)
+      var(--theme-picker-radius-large);
+  }
+}
+
+.theme-preview {
+  display: block;
+  width: var(--size-item-xlarge);
+  height: var(--size-item-xlarge);
+}

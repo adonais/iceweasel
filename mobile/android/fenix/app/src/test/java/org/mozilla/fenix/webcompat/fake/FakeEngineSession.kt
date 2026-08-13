@@ -23,6 +23,13 @@ internal class FakeEngineSession(
     override val settings: Settings
         get() = DefaultSettings()
 
+    override fun getBrokenSiteReport(
+        onResult: (JSONObject) -> Unit,
+        onException: (Throwable) -> Unit,
+    ) {
+        onResult(JSONObject(jsonString))
+    }
+
     override fun getWebCompatInfo(
         onResult: (JSONObject) -> Unit,
         onException: (Throwable) -> Unit,

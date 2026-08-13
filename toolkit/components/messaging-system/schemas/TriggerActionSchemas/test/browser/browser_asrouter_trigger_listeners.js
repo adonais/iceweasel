@@ -93,7 +93,7 @@ add_task(async function check_openURL_listener() {
   openURLListener.init(triggerHandler, ["example.com"]);
 
   await openURLInWindow(normalWindow, TEST_URL);
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => urlVisitCount !== 0,
     "Wait for the location change listener to run"
   );
@@ -111,7 +111,7 @@ add_task(async function check_openURL_listener() {
 
   const secondNormalWindow = await BrowserTestUtils.openNewBrowserWindow();
   await openURLInWindow(secondNormalWindow, TEST_URL);
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => urlVisitCount === 2,
     "Wait for the location change listener to run"
   );
@@ -180,7 +180,7 @@ add_task(async function check_newSavedLogin_save_listener() {
     TEST_URL,
     async function triggerNewSavedPassword(browser) {
       Services.obs.notifyObservers(browser, "LoginStats:NewSavedPassword");
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => triggerTypesHandled.save !== 0,
         "Wait for the observer notification to run"
       );
@@ -231,7 +231,7 @@ add_task(async function check_newSavedLogin_update_listener() {
     TEST_URL,
     async function triggerLoginUpdateSaved(browser) {
       Services.obs.notifyObservers(browser, "LoginStats:LoginUpdateSaved");
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => triggerTypesHandled.update !== 0,
         "Wait for the observer notification to run"
       );
@@ -334,7 +334,7 @@ add_task(async function check_contentBlocking_listener() {
         "SiteProtection:ContentBlockingEvent"
       );
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => observerEvent !== 0,
         "Wait for the observer notification to run"
       );
@@ -352,7 +352,7 @@ add_task(async function check_contentBlocking_listener() {
         "SiteProtection:ContentBlockingEvent"
       );
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => observerEvent !== 1,
         "Wait for the observer notification to run"
       );
@@ -452,7 +452,7 @@ add_task(async function check_contentBlockingMilestone_listener() {
         "SiteProtection:ContentBlockingMilestone"
       );
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => observerEvent !== 0,
         "Wait for the observer notification to run"
       );

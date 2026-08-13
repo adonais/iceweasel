@@ -159,7 +159,8 @@ ExtensionManager = {
 
         manifestVersion: extension.manifestVersion,
         extensionPageCSP: extension.extensionPageCSP,
-
+        sandboxPageCSP: extension.sandboxPageCSP,
+        sandboxPages: extension.sandboxPages,
         localizeCallback,
 
         backgroundScripts,

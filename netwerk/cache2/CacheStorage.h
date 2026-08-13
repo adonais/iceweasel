@@ -5,10 +5,9 @@
 #ifndef CacheStorage_h_
 #define CacheStorage_h_
 
-#include "nsICacheStorage.h"
 #include "CacheEntry.h"
 #include "LoadContextInfo.h"
-
+#include "nsICacheStorage.h"
 #include "nsILoadContextInfo.h"
 #include "nsTArray.h"
 #include "nsTHashMap.h"
@@ -66,6 +65,17 @@ class CacheEntryTable : public TCacheEntryTable {
     entry->RemoveElement(aFullKey);
     if (entry->IsEmpty()) {
       mNoVarySearchIndex.Remove(aBasePath);
+    }
+  }
+
+  void RemoveNoVarySearchEntryByKey(const nsACString& aFullKey) {
+    for (auto iter = mNoVarySearchIndex.Iter(); !iter.Done(); iter.Next()) {
+      if (iter.Data().RemoveElement(aFullKey)) {
+        if (iter.Data().IsEmpty()) {
+          iter.Remove();
+        }
+        break;
+      }
     }
   }
 

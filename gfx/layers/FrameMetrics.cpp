@@ -7,8 +7,8 @@
 #include <ostream>
 
 #include "gfxUtils.h"
-#include "nsStyleConsts.h"
 #include "mozilla/gfx/Types.h"
+#include "nsStyleConsts.h"
 
 namespace mozilla {
 namespace layers {
@@ -251,6 +251,12 @@ void FrameMetrics::UpdatePendingScrollInfo(const ScrollPositionUpdate& aInfo) {
   // AsyncPanZoomController::SetVisualScrollOffset.
   RecalculateLayoutViewportOffset();
   mScrollGeneration = aInfo.GetGeneration();
+
+  // This mutates metadata retained from an earlier paint; a visual scroll
+  // update baked in by that paint is still set here. The scroll update we just
+  // applied supersedes it, so clear it.
+  SetVisualScrollUpdateType(ScrollOffsetUpdateType::None);
+  SetVisualDestination(GetVisualScrollOffset());
 }
 
 std::ostream& operator<<(std::ostream& aStream,

@@ -73,3 +73,57 @@ addAccessibleTask(
     );
   }
 );
+
+/**
+ * Verify AXChildrenInNavigationOrder exposes the same information
+ * in the same order as AXChildren
+ */
+addAccessibleTask(
+  `<a id="link" href="">Chat with a Specialist<span style="position:absolute;top:0;width:1px;height:1px;overflow:hidden;">(Opens in a new window)</span></a>`,
+  (browser, accDoc) => {
+    const link = getNativeInterface(accDoc, "link");
+    const children = link.getAttributeValue("AXChildren");
+
+    is(children.length, 2, "link has 2 children");
+    is(
+      children[0].getAttributeValue("AXRole"),
+      "AXStaticText",
+      "First child is a text node"
+    );
+    is(
+      children[0].getAttributeValue("AXValue"),
+      "Chat with a Specialist",
+      "First child is the visible text"
+    );
+    is(
+      children[1].getAttributeValue("AXRole"),
+      "AXGroup",
+      "Second child is the hidden group"
+    );
+
+    const navOrderChildren = link.getAttributeValue(
+      "AXChildrenInNavigationOrder"
+    );
+
+    is(
+      navOrderChildren.length,
+      2,
+      "AXChildrenInNavigationOrder has 2 children"
+    );
+    is(
+      navOrderChildren[0].getAttributeValue("AXRole"),
+      "AXStaticText",
+      "First child in navigation order is a text node"
+    );
+    is(
+      navOrderChildren[0].getAttributeValue("AXValue"),
+      "Chat with a Specialist",
+      "Visible text comes first in navigation order"
+    );
+    is(
+      navOrderChildren[1].getAttributeValue("AXRole"),
+      "AXGroup",
+      "Hidden group comes second in navigation order"
+    );
+  }
+);

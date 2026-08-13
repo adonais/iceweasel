@@ -375,51 +375,51 @@ e.g. steps 6 and 8 involve IPC, not just "stack unwinding").
     is a region containing an element with a non-passive event listener,
     as described above. (TODO: Add a section that talks about the other
     uses of the dispatch-to-content mechanism.)
-04. 1. If the input events landed outside a dispatch-to-content region,
-       any available events in the input block are processed. These may
-       trigger behaviours like scrolling or tap gestures.
-    2. If the input events landed inside a dispatch-to-content region,
+1. 1. If the input events landed outside a dispatch-to-content region,
+   any available events in the input block are processed. These may
+   trigger behaviours like scrolling or tap gestures.
+    1. If the input events landed inside a dispatch-to-content region,
        the events are left in the queue and a timeout is initiated. If
        the timeout expires before step 9 is completed, the APZ assumes
        the input block was not cancelled and the tentative target is
        correct, and processes them as part of step 10.
-05. The call stack unwinds back to APZCTreeManager::ReceiveInputEvent,
-    which does an in-place modification of the input event so that any
-    async transforms are removed.
-06. The call stack unwinds back to the widget code that called
-    ReceiveInputEvent. This code now has the event in the coordinate
-    space Gecko is expecting, and so can dispatch it to the Gecko main
-    thread.
-07. Gecko performs its own usual hit-testing and event dispatching for
-    the event. As part of this, it records whether any touch listeners
-    cancelled the input block by calling preventDefault(). It also
-    activates inactive scrollframes that were hit by the input events.
-08. The call stack unwinds back to the widget code, which sends two
-    notifications to the APZ code on the controller thread. The first
-    notification is via APZCTreeManager::ContentReceivedInputBlock, and
-    informs the APZ whether the input block was cancelled. The second
-    notification is via APZCTreeManager::SetTargetAPZC, and informs the
-    APZ of the results of the Gecko hit-test during event dispatch. Note
-    that Gecko may report that the input event did not hit any
-    scrollable frame at all. The SetTargetAPZC notification happens only
-    once per input block, while the ContentReceivedInputBlock
-    notification may happen once per block, or multiple times per block,
-    depending on the input type.
-09. 1. If the events were processed as part of step 4(i), the
-       notifications from step 8 are ignored and step 10 is skipped.
-    2. If events were queued as part of step 4(ii), and steps 5-8
+4. The call stack unwinds back to APZCTreeManager::ReceiveInputEvent,
+   which does an in-place modification of the input event so that any
+   async transforms are removed.
+5. The call stack unwinds back to the widget code that called
+   ReceiveInputEvent. This code now has the event in the coordinate
+   space Gecko is expecting, and so can dispatch it to the Gecko main
+   thread.
+6. Gecko performs its own usual hit-testing and event dispatching for
+   the event. As part of this, it records whether any touch listeners
+   cancelled the input block by calling preventDefault(). It also
+   activates inactive scrollframes that were hit by the input events.
+7. The call stack unwinds back to the widget code, which sends two
+   notifications to the APZ code on the controller thread. The first
+   notification is via APZCTreeManager::ContentReceivedInputBlock, and
+   informs the APZ whether the input block was cancelled. The second
+   notification is via APZCTreeManager::SetTargetAPZC, and informs the
+   APZ of the results of the Gecko hit-test during event dispatch. Note
+   that Gecko may report that the input event did not hit any
+   scrollable frame at all. The SetTargetAPZC notification happens only
+   once per input block, while the ContentReceivedInputBlock
+   notification may happen once per block, or multiple times per block,
+   depending on the input type.
+1. 1. If the events were processed as part of step 4(i), the
+   notifications from step 8 are ignored and step 10 is skipped.
+    1. If events were queued as part of step 4(ii), and steps 5-8
        complete before the timeout, the arrival of both notifications
        from step 8 will mark the input block ready for processing.
-    3. If events were queued as part of step 4(ii), but steps 5-8 take
+    2. If events were queued as part of step 4(ii), but steps 5-8 take
        longer than the timeout, the notifications from step 8 will be
        ignored and step 10 will already have happened.
-10. If events were queued as part of step 4(ii) they are now either
-    processed (if the input block was not cancelled and Gecko detected a
-    scrollframe under the input event, or if the timeout expired) or
-    dropped (all other cases). Note that the APZC that processes the
-    events may be different at this step than the tentative target from
-    step 3, depending on the SetTargetAPZC notification. Processing the
-    events may trigger behaviours like scrolling or tap gestures.
+8. If events were queued as part of step 4(ii) they are now either
+   processed (if the input block was not cancelled and Gecko detected a
+   scrollframe under the input event, or if the timeout expired) or
+   dropped (all other cases). Note that the APZC that processes the
+   events may be different at this step than the tentative target from
+   step 3, depending on the SetTargetAPZC notification. Processing the
+   events may trigger behaviours like scrolling or tap gestures.
 
 If the CSS touch-action property is enabled, the above steps are
 modified as follows:

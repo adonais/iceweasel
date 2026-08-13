@@ -62,6 +62,8 @@ struct nr_ice_cand_pair_ {
   // for RTCIceCandidatePairStats
   UINT8 bytes_sent;
   UINT8 bytes_recvd;
+  UINT8 packets_sent;
+  UINT8 packets_recvd;
   struct timeval last_sent;
   struct timeval last_recvd;
   UINT8 responses_recvd;

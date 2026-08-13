@@ -37,7 +37,15 @@ if CONFIG['CC_TYPE'] == 'clang-cl':
         SOURCES += [
             'yuv_row_win64.cpp',
         ]
+        # yuv_row_win64.cpp provides SSE2 versions of the row functions.
+        DEFINES['MOZ_YCBCR_ROW_SSE'] = True
     else:
+        # We only reach this branch for clang-cl (ie Windows) builds that
+        # aren't a type of x86, ie Windows on ARM64. yuv_row_win.cpp only
+        # contains x86 optimizations (guarded on _M_IX86), so its SSE code is
+        # inactive here and it falls back to the _C row functions, hence we do
+        # not define MOZ_YCBCR_ROW_SSE. This is kind of silly (it ends up
+        # equivalent to yuv_row_other.cpp) and should be cleaned up.
         SOURCES += [
             'yuv_row_win.cpp',
         ]
@@ -46,6 +54,9 @@ elif CONFIG['OS_ARCH'] in ('Linux', 'SunOS', 'Darwin', 'DragonFly',
     SOURCES += [
         'yuv_row_posix.cpp',
     ]
+    if CONFIG['INTEL_ARCHITECTURE']:
+        # yuv_row_posix.cpp provides SSE versions of the row functions on x86.
+        DEFINES['MOZ_YCBCR_ROW_SSE'] = True
 else:
     SOURCES += [
         'yuv_row_other.cpp',

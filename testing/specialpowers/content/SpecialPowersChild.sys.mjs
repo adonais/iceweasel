@@ -2138,12 +2138,19 @@ export class SpecialPowersChild extends JSWindowActorChild {
       case "cmd_fontColor":
       case "cmd_fontFace":
       case "cmd_fontSize":
+      case "cmd_formatBlock":
       case "cmd_highlight":
       case "cmd_insertImageNoUI":
       case "cmd_insertLinkNoUI":
       case "cmd_paragraphState": {
         const params = Cu.createCommandParams();
         params.setStringValue("state_attribute", param);
+        return window.docShell.doCommandWithParams(cmd, params);
+      }
+      case "cmd_insertHTML":
+      case "cmd_insertText": {
+        const params = Cu.createCommandParams();
+        params.setStringValue("state_data", param);
         return window.docShell.doCommandWithParams(cmd, params);
       }
       case "cmd_pasteTransferable": {

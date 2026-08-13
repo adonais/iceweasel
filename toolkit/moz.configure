@@ -2702,10 +2702,10 @@ def nasm_asflags(target):
 set_config("NASM_ASFLAGS", nasm_asflags)
 
 
-# ANGLE OpenGL->D3D translator for WebGL
+# ANGLE renderer
 # ==============================================================
 
-with only_when(compile_environment & target_is_windows):
+with only_when(compile_environment & (target_is_windows | target_is_osx)):
     set_config("MOZ_ANGLE_RENDERER", True)
 
 with only_when(target_is_windows):
@@ -4175,9 +4175,7 @@ with only_when(compile_environment):
 with only_when(target_has_linux_kernel & compile_environment):
     option(
         env="MOZ_LINKER",
-        default=depends(target.os, when="--enable-jemalloc")(
-            lambda os: os == "Android"
-        ),
+        default=False,
         help="{Enable|Disable} custom dynamic linker",
     )
 

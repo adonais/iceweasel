@@ -223,8 +223,7 @@ add_task(async function test_old_formats() {
 add_task(async function test_corrupted_pending_pings() {
   const TEST_TYPE = "test_corrupted";
 
-  Telemetry.getHistogramById("TELEMETRY_PENDING_LOAD_FAILURE_READ").clear();
-  Telemetry.getHistogramById("TELEMETRY_PENDING_LOAD_FAILURE_PARSE").clear();
+  Services.fog.testResetFOG();
 
   // Save a pending ping and get its id.
   let pendingPingId = await TelemetryController.addPendingPing(
@@ -236,20 +235,14 @@ add_task(async function test_corrupted_pending_pings() {
   // Try to load it: there should be no error.
   await TelemetryStorage.loadPendingPing(pendingPingId);
 
-  let h = Telemetry.getHistogramById(
-    "TELEMETRY_PENDING_LOAD_FAILURE_READ"
-  ).snapshot();
   Assert.equal(
-    h.sum,
-    0,
+    Glean.telemetry.pendingLoadFailureRead.testGetValue(),
+    null,
     "Telemetry must not report a pending ping load failure"
   );
-  h = Telemetry.getHistogramById(
-    "TELEMETRY_PENDING_LOAD_FAILURE_PARSE"
-  ).snapshot();
   Assert.equal(
-    h.sum,
-    0,
+    Glean.telemetry.pendingLoadFailureParse.testGetValue(),
+    null,
     "Telemetry must not report a pending ping parse failure"
   );
 
@@ -264,16 +257,14 @@ add_task(async function test_corrupted_pending_pings() {
     "Telemetry must fail loading a ping which isn't there"
   );
 
-  h = Telemetry.getHistogramById(
-    "TELEMETRY_PENDING_LOAD_FAILURE_READ"
-  ).snapshot();
-  Assert.equal(h.sum, 1, "Telemetry must report a pending ping load failure");
-  h = Telemetry.getHistogramById(
-    "TELEMETRY_PENDING_LOAD_FAILURE_PARSE"
-  ).snapshot();
   Assert.equal(
-    h.sum,
-    0,
+    Glean.telemetry.pendingLoadFailureRead.testGetValue(),
+    1,
+    "Telemetry must report a pending ping load failure"
+  );
+  Assert.equal(
+    Glean.telemetry.pendingLoadFailureParse.testGetValue(),
+    null,
     "Telemetry must not report a pending ping parse failure"
   );
 
@@ -290,14 +281,16 @@ add_task(async function test_corrupted_pending_pings() {
     "Telemetry must fail loading a corrupted ping"
   );
 
-  h = Telemetry.getHistogramById(
-    "TELEMETRY_PENDING_LOAD_FAILURE_READ"
-  ).snapshot();
-  Assert.equal(h.sum, 1, "Telemetry must report a pending ping load failure");
-  h = Telemetry.getHistogramById(
-    "TELEMETRY_PENDING_LOAD_FAILURE_PARSE"
-  ).snapshot();
-  Assert.equal(h.sum, 1, "Telemetry must report a pending ping parse failure");
+  Assert.equal(
+    Glean.telemetry.pendingLoadFailureRead.testGetValue(),
+    1,
+    "Telemetry must report a pending ping load failure"
+  );
+  Assert.equal(
+    Glean.telemetry.pendingLoadFailureParse.testGetValue(),
+    1,
+    "Telemetry must report a pending ping load failure"
+  );
 
   let exists = await IOUtils.exists(getSavePathForPingId(pendingPingId));
   Assert.ok(!exists, "The unparseable ping should have been removed");
@@ -425,40 +418,26 @@ add_task(async function test_pendingPingsQuota() {
 
   // We need to test the pending pings size before we hit the quota, otherwise a special
   // value is recorded.
-  Telemetry.getHistogramById("TELEMETRY_PENDING_PINGS_SIZE_MB").clear();
-  Telemetry.getHistogramById(
-    "TELEMETRY_PENDING_PINGS_EVICTED_OVER_QUOTA"
-  ).clear();
-  Telemetry.getHistogramById(
-    "TELEMETRY_PENDING_EVICTING_OVER_QUOTA_MS"
-  ).clear();
+  Services.fog.testResetFOG();
 
   await TelemetryController.testReset();
   await TelemetryStorage.testPendingQuotaTaskPromise();
 
   // Check that the correct values for quota probes are reported when no quota is hit.
-  let h = Telemetry.getHistogramById(
-    "TELEMETRY_PENDING_PINGS_SIZE_MB"
-  ).snapshot();
   Assert.equal(
-    h.sum,
-    Math.round(pingsSizeInBytes / 1024 / 1024),
+    Glean.telemetry.pendingPingsSize.testGetValue().sum,
+    Math.floor(pingsSizeInBytes / 1024 / 1024) * 1024 * 1024, // Value's trucated to MB, recorded as B.
     "Telemetry must report the correct pending pings directory size."
   );
-  h = Telemetry.getHistogramById(
-    "TELEMETRY_PENDING_PINGS_EVICTED_OVER_QUOTA"
-  ).snapshot();
   Assert.equal(
-    h.sum,
+    Glean.telemetry.pendingPingsEvictedOverQuota.testGetValue().sum,
     0,
     "Telemetry must report 0 evictions if quota is not hit."
   );
-  h = Telemetry.getHistogramById(
-    "TELEMETRY_PENDING_EVICTING_OVER_QUOTA_MS"
-  ).snapshot();
+  // TODO(bug 2049040): The minimum duration is 1ms in Glean.
   Assert.equal(
-    h.sum,
-    0,
+    Glean.telemetry.pendingEvictingOverQuota.testGetValue().sum,
+    1 * 1000000,
     "Telemetry must report a null elapsed time if quota is not hit."
   );
 
@@ -490,18 +469,14 @@ add_task(async function test_pendingPingsQuota() {
   await TelemetryStorage.testPendingQuotaTaskPromise();
   await checkPendingPings();
 
-  h = Telemetry.getHistogramById(
-    "TELEMETRY_PENDING_PINGS_EVICTED_OVER_QUOTA"
-  ).snapshot();
   Assert.equal(
-    h.sum,
+    Glean.telemetry.pendingPingsEvictedOverQuota.testGetValue().sum,
     pingsOutsideQuota.length,
     "Telemetry must correctly report the over quota pings evicted from the pending pings directory."
   );
-  h = Telemetry.getHistogramById("TELEMETRY_PENDING_PINGS_SIZE_MB").snapshot();
   Assert.equal(
-    h.sum,
-    17,
+    Glean.telemetry.pendingPingsSize.testGetValue().sum,
+    17 * 1024 * 1024,
     "Pending pings quota was hit, a special size must be reported."
   );
 
@@ -521,11 +496,8 @@ add_task(async function test_pendingPingsQuota() {
   };
   await TelemetryStorage.savePendingPing(OVERSIZED_PING);
 
-  // Reset the histograms.
-  Telemetry.getHistogramById("TELEMETRY_PING_SIZE_EXCEEDED_PENDING").clear();
-  Telemetry.getHistogramById(
-    "TELEMETRY_DISCARDED_PENDING_PINGS_SIZE_MB"
-  ).clear();
+  // Reset the metrics.
+  Services.fog.testResetFOG();
 
   // Try to manually load the oversized ping.
   await Assert.rejects(
@@ -539,18 +511,16 @@ add_task(async function test_pendingPingsQuota() {
   );
 
   // Make sure we're correctly updating the related histograms.
-  h = Telemetry.getHistogramById(
-    "TELEMETRY_PING_SIZE_EXCEEDED_PENDING"
-  ).snapshot();
   Assert.equal(
-    h.sum,
+    Glean.telemetry.pingSizeExceededPending.testGetValue(),
     1,
     "Telemetry must report 1 oversized ping in the pending pings directory."
   );
-  h = Telemetry.getHistogramById(
-    "TELEMETRY_DISCARDED_PENDING_PINGS_SIZE_MB"
-  ).snapshot();
-  Assert.equal(h.values[2], 1, "Telemetry must report a 2MB, oversized, ping.");
+  Assert.equal(
+    Glean.telemetry.discardedPendingPingsSize.testGetValue().sum,
+    2 * 1024 * 1024,
+    "Telemetry must report a 2MB, oversized, ping."
+  );
 
   // Save the ping again to check if it gets pruned when scanning the pings directory.
   await TelemetryStorage.savePendingPing(OVERSIZED_PING);
@@ -562,20 +532,19 @@ add_task(async function test_pendingPingsQuota() {
   await checkPendingPings();
 
   // Make sure we're correctly updating the related histograms.
-  h = Telemetry.getHistogramById(
-    "TELEMETRY_PING_SIZE_EXCEEDED_PENDING"
-  ).snapshot();
   Assert.equal(
-    h.sum,
+    Glean.telemetry.pingSizeExceededPending.testGetValue(),
     2,
     "Telemetry must report 1 oversized ping in the pending pings directory."
   );
-  h = Telemetry.getHistogramById(
-    "TELEMETRY_DISCARDED_PENDING_PINGS_SIZE_MB"
-  ).snapshot();
   Assert.equal(
-    h.values[2],
+    Glean.telemetry.discardedPendingPingsSize.testGetValue().count,
     2,
+    "Telemetry must report two 2MB, oversized, pings."
+  );
+  Assert.equal(
+    Glean.telemetry.discardedPendingPingsSize.testGetValue().sum,
+    4 * 1024 * 1024,
     "Telemetry must report two 2MB, oversized, pings."
   );
 

@@ -1,0 +1,47 @@
+# Release Selector
+
+This command configures the tree in preparation for doing a staging release,
+and pushes the result to try. The changes that that are made include:
+
+- Updating the version number.
+- Applying the migrations that are done as part of merge day.
+- Disabling repacking most locales. (This can be disabled by passing `--no-limit-locales`).
+
+For staging a beta release, run the following (with an appropriate version number):
+
+```shell
+mach try release --version 64.0b5 --migration main-to-beta
+```
+
+For staging a final release (rc or patch), run the following (with an appropriate version number)
+
+```shell
+mach try release --version 64.0 --migration main-to-beta --migration beta-to-release
+```
+
+Once the decision task is on the push is complete, you can start the release
+through [staging ship-it instance](https://shipit.staging.mozilla-releng.net/new)[^shipit].
+
+:::{note}
+If pushing from beta or release, the corresponding migration should not be
+passed, as they have already been applied.
+:::
+
+The `--tasks` flag controls the scope of the try push:
+
+```{eval-rst}
+.. option:: --tasks staging
+
+   *(default)* Only shippable build-phase tasks (builds, signing, repackaging,
+   PGO profiling) — the minimal set required before triggering a staging release
+   via `ShipIt staging <https://shipit.staging.mozilla-releng.net/>`_.
+```
+
+```{eval-rst}
+.. option:: --tasks release-sim
+
+   Simulates a full release branch push, including tests. Used by sheriffs to
+   look for branch-dependent test failures.
+```
+
+[^shipit]: This is only available to release engineering and release management (as of 2018-10-15).

@@ -182,6 +182,12 @@ nsIThread* RemoteWorkerService::Thread() {
 }
 
 /* static */
+bool RemoteWorkerService::IsInitialized() {
+  StaticMutexAutoLock lock(sRemoteWorkerServiceMutex);
+  return sRemoteWorkerService && sRemoteWorkerService->mThread;
+}
+
+/* static */
 void RemoteWorkerService::RegisterRemoteDebugger(
     RemoteWorkerDebuggerInfo aDebuggerInfo,
     mozilla::ipc::Endpoint<PRemoteWorkerDebuggerParent> aDebuggerParentEp) {

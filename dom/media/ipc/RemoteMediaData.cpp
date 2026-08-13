@@ -262,26 +262,11 @@ already_AddRefed<MediaRawData> ArrayOfRemoteMediaRawData::ElementAt(
   return true;
 }
 
-/* static */ void
-IPC::ParamTraits<mozilla::ArrayOfRemoteMediaRawData::RemoteMediaRawData>::Write(
-    MessageWriter* aWriter, const paramType& aVar) {
-  WriteParam(aWriter, aVar.mBase);
-  WriteParam(aWriter, aVar.mEOS);
-  WriteParam(aWriter, aVar.mHeight);
-  WriteParam(aWriter, aVar.mTemporalLayerId);
-  WriteParam(aWriter, aVar.mOriginalPresentationWindow);
-  WriteParam(aWriter, aVar.mCryptoConfig);
+namespace IPC {
+IMPLEMENT_IPC_SERIALIZER_WITH_FIELDS(
+    mozilla::ArrayOfRemoteMediaRawData::RemoteMediaRawData, mBase, mEOS,
+    mHeight, mTemporalLayerId, mOriginalPresentationWindow, mCryptoConfig);
 }
-
-/* static */ bool
-IPC::ParamTraits<mozilla::ArrayOfRemoteMediaRawData::RemoteMediaRawData>::Read(
-    MessageReader* aReader, paramType* aVar) {
-  return ReadParam(aReader, &aVar->mBase) && ReadParam(aReader, &aVar->mEOS) &&
-         ReadParam(aReader, &aVar->mHeight) &&
-         ReadParam(aReader, &aVar->mTemporalLayerId) &&
-         ReadParam(aReader, &aVar->mOriginalPresentationWindow) &&
-         ReadParam(aReader, &aVar->mCryptoConfig);
-};
 
 namespace mozilla {
 

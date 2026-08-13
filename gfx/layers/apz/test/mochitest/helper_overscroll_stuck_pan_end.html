@@ -1,0 +1,118 @@
+<!DOCTYPE HTML>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, minimum-scale=1.0">
+<title>
+  Tests that a sub scroll container's overscroll gutter is restored, not stuck,
+  when a prevent-defaulted pan gesture ends with a zero-delta pan-end
+</title>
+<script src="apz_test_utils.js"></script>
+<script src="apz_test_native_event_utils.js"></script>
+<script src="/tests/SimpleTest/paint_listener.js"></script>
+<style>
+  html {
+    overflow: scroll;
+  }
+
+  .content {
+    height: 50vh;
+    width: 300px;
+    overflow-y: scroll;
+    background-color: red;
+  }
+</style>
+<!-- a sub scroll container, with overscroll-behavior:auto so that an at-edge pan
+     hands off to the root scroll container -->
+<div class="content">
+  <div style="height:100vh; background-color: white;"></div>
+</div>
+<div style="height:200vh"></div>
+<script>
+  // Models a site that listens for touchpad (pixel-mode) wheel events and
+  // cancels real scroll deltas, but lets the terminating zero-delta wheel event
+  // (the pan-end) through. We enable the cancelling only for the second gesture
+  // (gIntercept), which is when the sub scroll container is already at its edge.
+  let gIntercept = false;
+  document.documentElement.addEventListener(
+    "wheel",
+    e => {
+      if (gIntercept && e.deltaY != 0 &&
+          e.deltaMode == WheelEvent.DOM_DELTA_PIXEL) {
+        e.preventDefault();
+      }
+    },
+    { passive: false }
+  );
+
+  const subScroller = document.querySelector(`div[class="content"]`);
+  SpecialPowers.DOMWindowUtils.setDisplayPortForElement(0, 0, 300, 4000, subScroller, 1);
+  // Make the sub scroll container overscrollable at the top edge.
+  // A `waitUntilApzStable()` call below ensures this scroll position has been
+  // informed into APZ before starting the test.
+  subScroller.scrollTop = 1;
+
+  // A utility function to collect overscrolled scroll container information.
+  function collectOverscrolledData() {
+    const apzData =
+      SpecialPowers.DOMWindowUtils.getCompositorAPZTestData().additionalData;
+    return apzData.filter(data => {
+      return SpecialPowers.wrap(data).value.split(",").includes("overscrolled");
+    });
+  }
+
+  async function test() {
+    const subScrollId = SpecialPowers.DOMWindowUtils.getViewId(subScroller);
+
+    // Gesture 1: pan upward to overscroll the sub scroll container.
+    const oneScrollPromise = new Promise(resolve => {
+      subScroller.addEventListener("scroll", () => resolve(), { once: true });
+    });
+    await NativePanHandler.promiseNativePanEvent(
+      subScroller, 100, 100, 0, -NativePanHandler.delta,
+      NativePanHandler.beginPhase);
+    await promiseApzFlushedRepaints();
+    await oneScrollPromise;
+
+    let overscrolledData = collectOverscrolledData();
+    ok(overscrolledData.some(data => SpecialPowers.wrap(data).key == subScrollId),
+       "The sub scroll container should be overscrolled after the first pan");
+
+    // End gesture 1 so the sub scroll container starts its overscroll snap-back
+    // animation. Do not wait for it to finish; apz.overscroll.damping keeps it
+    // running while the second gesture below happens.
+    await NativePanHandler.promiseNativePanEvent(
+      subScroller, 100, 100, 0, 0, NativePanHandler.endPhase);
+    await promiseApzFlushedRepaints();
+
+    // Gesture 2: the site now cancels the real scroll deltas, so the pan-begin
+    // and pan-delta blocks of this gesture are prevent-defaulted and discarded
+    // by APZ, leaving no live pan block. The sub scroll container is still
+    // mid-overscroll from gesture 1 (its snap-back animation is running, kept
+    // slow by apz.overscroll.damping).
+    gIntercept = true;
+    await NativePanHandler.promiseNativePanEvent(
+      subScroller, 100, 100, 0, -NativePanHandler.delta,
+      NativePanHandler.beginPhase);
+    await promiseApzFlushedRepaints();
+
+    // The terminating zero-delta pan-end is NOT prevent-defaulted. With no
+    // active pan block left (the prevented blocks above were discarded), APZ
+    // transmogrifies this PANGESTURE_END into a PANGESTURE_START. On a buggy
+    // build that reaches the sub scroll container as OnPanBegin and cancels its
+    // snap-back animation with ExcludeOverscroll, and since no OnPanEnd ever
+    // follows, the overscroll is left stuck. With the fix, an explicit pan-end
+    // is also emitted, so OnPanEnd runs and the overscroll snaps back.
+    let transformEndPromise = promiseTransformEnd();
+    await NativePanHandler.promiseNativePanEvent(
+      subScroller, 100, 100, 0, 0, NativePanHandler.endPhase);
+    await transformEndPromise;
+    await promiseApzFlushedRepaints();
+
+    overscrolledData = collectOverscrolledData();
+    ok(!overscrolledData.some(data => SpecialPowers.wrap(data).key == subScrollId),
+       "The sub scroll container's overscroll should be restored, not stuck");
+  }
+
+  waitUntilApzStable()
+  .then(test)
+  .then(subtestDone, subtestFailed);
+</script>

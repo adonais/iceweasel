@@ -48,7 +48,10 @@ function notify(alertName, principal) {
         reject(new Error("Alerts should not be clicked during test"));
       } else if (topic == "alertshow") {
         source = await chromeScript.sendQuery("getAlertSource");
-        notifier.closeAlert(alertName);
+        // Close by alert.name, not alertName: for a content principal,
+        // nsIAlertNotification.name returns the notification's internal id,
+        // which is the name the alert is registered (and must be closed) under.
+        notifier.closeAlert(alert.name);
       } else {
         is(topic, "alertfinished", "Should hide alert");
         resolve(source);

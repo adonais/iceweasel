@@ -45,4 +45,7 @@
 #define MOZ_WEBAUTHN_AUTHENTICATOR_TRANSPORT_HYBRID "hybrid"
 // WARNING: Change version number when adding new values!
 
+// "cable" is the legacy name for the "hybrid" transport.
+#define MOZ_WEBAUTHN_AUTHENTICATOR_TRANSPORT_CABLE "cable"
+
 #endif  // mozilla_dom_WebAuthnEnumStrings_h

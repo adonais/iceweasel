@@ -116,10 +116,10 @@ const archOptions =
 //   {a_generic_option: 1337, no_prefix: true}
 //
 function promoteArchSpecificOptions(options, archName) {
-    assertEq(true, knownArchs.some(a => archName == a));
+    assertEq(knownArchs.includes(archName), true);
     if (options.hasOwnProperty(archName)) {
         let archOptions = options[archName];
-        for (optName in archOptions) {
+        for (let optName in archOptions) {
             options[optName] = archOptions[optName];
             if (options.log) {
                 print("---- adding " + archName + "-specific option {"
@@ -127,12 +127,12 @@ function promoteArchSpecificOptions(options, archName) {
             }
         }
     }
-    for (a of knownArchs) {
+    for (let a of knownArchs) {
         delete options[a];
     }
     if (options.log) {
         print("---- final options");
-        for (optName in options) {
+        for (let optName in options) {
             print("{" + optName + ":" + options[optName] + "}");
         }
     }
@@ -146,26 +146,18 @@ function codegenTestMultiplatform_adhoc(module_text, export_name,
 
     // Check that we've been provided with an expected result for at least
     // x64, x86 and arm64.
-    assertEq(true,
-             requiredArchs.every(a => expectedAllTargets.hasOwnProperty(a)));
+    assertEq(requiredArchs.every(a => expectedAllTargets.hasOwnProperty(a)),
+             true);
 
     // Poke the build-configuration object to find out what target we're
     // generating code for.
-    let genX64   = getBuildConfiguration("x64");
-    let genX86   = getBuildConfiguration("x86");
-    let genArm64 = getBuildConfiguration("arm64");
-    let genArm   = getBuildConfiguration("arm");
-    // So far so good, except .. X64 or X86 might be emulating something else.
-    if (genX64 && genArm64 && getBuildConfiguration("arm64-simulator")) {
-        genX64 = false;
-    }
-    if (genX86 && genArm && getBuildConfiguration("arm-simulator")) {
-        genX86 = false;
-    }
+    let genX64   = !!getBuildConfiguration("x64");
+    let genX86   = !!getBuildConfiguration("x86");
+    let genArm64 = !!getBuildConfiguration("arm64");
+    let genArm   = !!getBuildConfiguration("arm");
 
     // Check we've definitively identified exactly one architecture to test.
-    assertEq(1, [genX64, genX86, genArm64, genArm].map(x => x ? 1 : 0)
-                                                  .reduce((a,b) => a+b, 0));
+    assertEq(genX64 + genX86 + genArm64 + genArm, 1);
 
     // Decide on the arch name for which we're testing.  Everything is keyed
     // off this.
@@ -183,20 +175,18 @@ function codegenTestMultiplatform_adhoc(module_text, export_name,
         print("---- testing for architecture \"" + archName + "\"");
     }
     // If this fails, it means we're running on an "unknown" architecture.
-    assertEq(true, archName.length > 0);
+    assertEq(archName.length > 0, true);
 
     // Finalise options, by promoting arch-specific ones to the top level of
     // the options object.
     options = promoteArchSpecificOptions(options, archName);
 
     // Get the architecture-specific strings for the target.
-    assertEq(true, archOptions.hasOwnProperty(archName));
-    let encoding = archOptions[archName].encoding;
-    let prefix = archOptions[archName].prefix;
-    let suffix = archOptions[archName].suffix;
-    assertEq(true, encoding.length > 0, `bad instruction encoding: ${encoding}`);
-    assertEq(true, prefix.length > 0, `bad prefix: ${prefix}`);
-    assertEq(true, suffix.length > 0, `bad suffix: ${suffix}`);
+    assertEq(archOptions.hasOwnProperty(archName), true);
+    let {encoding = "", prefix = "", suffix = ""} = archOptions[archName];
+    assertEq(encoding.length > 0, true, `bad instruction encoding: ${encoding}`);
+    assertEq(prefix.length > 0, true, `bad prefix: ${prefix}`);
+    assertEq(suffix.length > 0, true, `bad suffix: ${suffix}`);
 
     // Get the expected output string, or skip the test if no expected output
     // has been provided.  Note, because of the assertion near the top of this
@@ -215,7 +205,7 @@ function codegenTestMultiplatform_adhoc(module_text, export_name,
 
     // Finalise the expected-result string, and stash the original for
     // debug-printing.
-    expectedInitial = expected;
+    let expectedInitial = expected;
     if (!options.no_prefix) {
         expected = prefix + '\n' + expected;
     }

@@ -5,6 +5,7 @@
 #include "NSSCertDBTrustDomain.h"
 
 #include <stdint.h>
+
 #include <utility>
 
 #include "CRLiteTimestamp.h"

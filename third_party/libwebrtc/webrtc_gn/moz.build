@@ -75,6 +75,19 @@ if CONFIG["OS_TARGET"] == "Darwin":
         "/third_party/libwebrtc/sdk/objc/base/"
     ]
 
+    OS_LIBS += [
+        "-framework AppKit",
+        "-framework AVFoundation",
+        "-framework CoreGraphics",
+        "-framework CoreMedia",
+        "-framework CoreVideo",
+        "-framework Foundation",
+        "-framework IOKit",
+        "-framework IOSurface",
+        "-framework QuartzCore",
+        "-framework VideoToolbox"
+    ]
+
 if CONFIG["OS_TARGET"] == "Linux":
 
     DEFINES["USE_AURA"] = "1"

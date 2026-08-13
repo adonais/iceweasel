@@ -1,6 +1,6 @@
 [DEFAULT]
 head = "head.js"
-tags = "condprof inc-origin-init"
+tags = "condprof inc-origin-init privatebrowsing"
 support-files = [
   "archive_profile.zip",
   "corruptedDatabase_profile.zip",
@@ -29,54 +29,119 @@ run-if = [
 ]
 
 ["test_archive.js"]
+# Archive DB only stages legacy webappsstore.sqlite migration data; PB has no
+# legacy data to archive.
+skip-if = [
+  "privateBrowsing"
+]
 
 ["test_clientValidation.js"]
 
 ["test_corruptedDatabase.js"]
 prefs = ["security.storage.encryption.sqlite.enabled=false"]
+# Installs a packaged unencrypted SQLite profile; the PB cipher key can't
+# decrypt it.
+skip-if = [
+  "privateBrowsing"
+]
 
 ["test_databaseShadowing1.js"]
 prefs = ["dom.storage.shadow_writes=true", "security.storage.encryption.sqlite.enabled=false"]
 run-sequentially = ["true"] # test_databaseShadowing2.js depends on a file produced by this test
+# Shadow-database is a legacy-compat sync layer for non-PB; PB doesn't write
+# to it.
+skip-if = [
+  "privateBrowsing"
+]
 
 ["test_databaseShadowing2.js"]
 prefs = ["security.storage.encryption.sqlite.enabled=false"]
 run-sequentially = ["true"] # this test depends on a file produced by test_databaseShadowing1.js
+# Shadow-database is a legacy-compat sync layer for non-PB; PB doesn't write
+# to it.
+skip-if = [
+  "privateBrowsing"
+]
 
 ["test_databaseShadowing_clearOrigin1.js"]
 prefs = ["dom.storage.shadow_writes=true", "security.storage.encryption.sqlite.enabled=false"]
 run-sequentially = ["true"] # test_databaseShadowing_clearOrigin2.js depends on a file produced by this test
+# Shadow-database is a legacy-compat sync layer for non-PB; PB doesn't write
+# to it.
+skip-if = [
+  "privateBrowsing"
+]
 
 ["test_databaseShadowing_clearOrigin2.js"]
 prefs = ["security.storage.encryption.sqlite.enabled=false"]
 run-sequentially = ["true"] # this test depends on a file produced by test_databaseShadowing_clearOrigin1.js
+# Shadow-database is a legacy-compat sync layer for non-PB; PB doesn't write
+# to it.
+skip-if = [
+  "privateBrowsing"
+]
 
 ["test_databaseShadowing_clearOriginsByPattern1.js"]
 prefs = ["dom.storage.shadow_writes=true", "security.storage.encryption.sqlite.enabled=false"]
 run-sequentially = ["true"] # test_databaseShadowing_clearOriginsByPattern2.js depends on a file produced by this test
+# Shadow-database is a legacy-compat sync layer for non-PB; PB doesn't write
+# to it.
+skip-if = [
+  "privateBrowsing"
+]
 
 ["test_databaseShadowing_clearOriginsByPattern2.js"]
 prefs = ["security.storage.encryption.sqlite.enabled=false"]
 run-sequentially = ["true"] # this test depends on a file produced by test_databaseShadowing_clearOriginsByPattern1.js
+# Shadow-database is a legacy-compat sync layer for non-PB; PB doesn't write
+# to it.
+skip-if = [
+  "privateBrowsing"
+]
 
 ["test_databaseShadowing_clearOriginsByPrefix1.js"]
 prefs = ["dom.storage.shadow_writes=true", "security.storage.encryption.sqlite.enabled=false"]
 run-sequentially = ["true"] # test_databaseShadowing_clearOriginsByPrefix2.js depends on a file produced by this test
+# Shadow-database is a legacy-compat sync layer for non-PB; PB doesn't write
+# to it.
+skip-if = [
+  "privateBrowsing"
+]
 
 ["test_databaseShadowing_clearOriginsByPrefix2.js"]
 prefs = ["security.storage.encryption.sqlite.enabled=false"]
 run-sequentially = ["true"] # this test depends on a file produced by test_databaseShadowing_clearOriginsByPrefix1.js
+# Shadow-database is a legacy-compat sync layer for non-PB; PB doesn't write
+# to it.
+skip-if = [
+  "privateBrowsing"
+]
 
 ["test_databaseWorkStarted.js"]
 prefs = ["security.storage.encryption.sqlite.enabled=false"]
+# Installs a packaged unencrypted SQLite profile; the PB cipher key can't
+# decrypt it.
+skip-if = [
+  "privateBrowsing"
+]
 
 ["test_eviction.js"]
 
 ["test_flushing.js"]
+# Hard-codes the non-PB on-disk path (storage/default/http+++example1.com/...);
+# PB origin directories live under storage/private/uuid+++<UUID>/.
+skip-if = [
+  "privateBrowsing"
+]
 
 ["test_groupLimit.js"]
 
 ["test_groupMismatch.js"]
+# Installs a packaged unencrypted SQLite profile; the PB cipher key can't
+# decrypt it.
+skip-if = [
+  "privateBrowsing"
+]
 
 ["test_largeItems.js"]
 
@@ -87,6 +152,11 @@ prefs = [
   "dom.storage.enable_migration_from_unsupported_legacy_implementation=true",
   "security.storage.encryption.sqlite.enabled=false",
 ]
+# Tests migration from legacy webappsstore.sqlite; PB has no legacy data to
+# migrate.
+skip-if = [
+  "privateBrowsing"
+]
 
 ["test_migration_emptyValue.js"]
 prefs = [
@@ -94,44 +164,116 @@ prefs = [
   "security.storage.encryption.sqlite.enabled=false",
 ]
 support-files = ["migration_emptyValue_profile.zip",]
+# Tests migration from legacy webappsstore.sqlite; PB has no legacy data to
+# migrate.
+skip-if = [
+  "privateBrowsing"
+]
 
 ["test_old_lsng_pref.js"]
+# Exercises the legacy dom.storage.next_gen=false code path; PB is always LSNG.
+skip-if = [
+  "privateBrowsing"
+]
 
 ["test_open_and_multiple_preloads.js"]
+# Installs a packaged unencrypted SQLite profile; the PB cipher key can't
+# decrypt it.
+skip-if = [
+  "privateBrowsing"
+]
 
 ["test_orderingAfterRemoveAdd.js"]
+# Asserts that storage.key(i) and Object.keys(storage) agree on order. Both read
+# from LSSnapshot's unordered mValues hashmap, so it's not deterministic.
+skip-if = ["true"]
 
 ["test_originInit.js"]
+# Hard-codes the non-PB on-disk paths (storage/default/http+++example.com/...);
+# PB origin directories live under storage/private/uuid+++<UUID>/.
+skip-if = [
+  "privateBrowsing"
+]
 
 ["test_preloading.js"]
 
 ["test_requestFinalizationStarted.js"]
 prefs = ["security.storage.encryption.sqlite.enabled=false"]
+# Installs a packaged unencrypted SQLite profile; the PB cipher key can't
+# decrypt it.
+skip-if = [
+  "privateBrowsing"
+]
 
 ["test_schema3upgrade.js"]
 prefs = ["security.storage.encryption.sqlite.enabled=false"]
+# Installs a packaged old-schema profile to exercise schema upgrade; PB has no
+# pre-existing on-disk database to upgrade and the cipher key can't decrypt
+# the packaged DB.
+skip-if = [
+  "privateBrowsing"
+]
 
 ["test_schema4upgrade.js"]
 prefs = ["security.storage.encryption.sqlite.enabled=false"]
+# Installs a packaged old-schema profile to exercise schema upgrade; PB has no
+# pre-existing on-disk database to upgrade and the cipher key can't decrypt
+# the packaged DB.
+skip-if = [
+  "privateBrowsing"
+]
 
 ["test_shutdownDuringRequestFinalization.js"]
 prefs = ["security.storage.encryption.sqlite.enabled=false"]
+# Installs a packaged unencrypted SQLite profile; the PB cipher key can't
+# decrypt it.
+skip-if = [
+  "privateBrowsing"
+]
 
 ["test_slowDatabaseInitialization.js"]
 prefs = ["security.storage.encryption.sqlite.enabled=false"]
+# Installs a packaged unencrypted SQLite profile; the PB cipher key can't
+# decrypt it.
+skip-if = [
+  "privateBrowsing"
+]
 
 ["test_slowRequestFinalization.js"]
 prefs = ["security.storage.encryption.sqlite.enabled=false"]
+# Installs a packaged unencrypted SQLite profile; the PB cipher key can't
+# decrypt it.
+skip-if = [
+  "privateBrowsing"
+]
 
 ["test_slowStorageInitialization.js"]
+# Installs a packaged unencrypted SQLite profile; the PB cipher key can't
+# decrypt it.
+skip-if = [
+  "privateBrowsing"
+]
 
 ["test_snapshotting.js"]
 requesttimeoutfactor = 2  # Slow on debug
+# Asserts that storage.key(i) and Object.keys(storage) agree on order. Both read
+# from LSSnapshot's unordered mValues hashmap, so they only agree because
+# hashtable iteration is stable within a process. Chaos mode (test-verify)
+# randomizes that iteration, breaking the assertion. Pre-existing and benign in
+# production; skip under verify.
+skip-if = [
+  "verify"
+]
 
 ["test_stringLength.js"]
 prefs = [
   "dom.storage.enable_migration_from_unsupported_legacy_implementation=true",
   "security.storage.encryption.sqlite.enabled=false",
+]
+# Installs a packaged unencrypted SQLite profile; the PB cipher key can't
+# decrypt it.
+skip-if = [
+  "privateBrowsing"
 ]
 
 ["test_stringLength2.js"]
@@ -139,10 +281,21 @@ prefs = [
   "dom.storage.enable_migration_from_unsupported_legacy_implementation=true",
   "security.storage.encryption.sqlite.enabled=false",
 ]
+# Installs a packaged unencrypted SQLite profile; the PB cipher key can't
+# decrypt it.
+skip-if = [
+  "privateBrowsing"
+]
 
 ["test_unicodeCharacters.js"]
 
 ["test_uri_encoding_edge_cases.js"]
+# Asserts the non-PB URI->directory-name encoding (e.g.
+# file:///test'.html -> storage/default/file++++test'.html); PB uses
+# uuid+++<UUID> for every origin, so the test's premise doesn't apply.
+skip-if = [
+  "privateBrowsing"
+]
 
 ["test_usage.js"]
 
@@ -150,4 +303,9 @@ prefs = [
 prefs = [
   "dom.storage.enable_migration_from_unsupported_legacy_implementation=true",
   "security.storage.encryption.sqlite.enabled=false",
+]
+# Tests usage reporting after migration from legacy webappsstore.sqlite; PB
+# has no legacy data to migrate.
+skip-if = [
+  "privateBrowsing"
 ]

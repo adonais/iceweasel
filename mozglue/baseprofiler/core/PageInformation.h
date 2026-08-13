@@ -33,7 +33,7 @@ class PageInformation final {
   MFBT_API void AddRef() const { ++mRefCnt; }
   MFBT_API void Release() const {
     MOZ_ASSERT(int32_t(mRefCnt) > 0);
-    if (--mRefCnt) {
+    if (--mRefCnt == 0) {
       delete this;
     }
   }

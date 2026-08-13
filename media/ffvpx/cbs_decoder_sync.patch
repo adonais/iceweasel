@@ -1,0 +1,18 @@
+diff --git a/media/ffvpx/libavcodec/cbs_av1_syntax_template.c b/media/ffvpx/libavcodec/cbs_av1_syntax_template.c
+index f43c3a4de5145..f3d84f3c05986 100644
+--- a/media/ffvpx/libavcodec/cbs_av1_syntax_template.c
++++ b/media/ffvpx/libavcodec/cbs_av1_syntax_template.c
+@@ -186,10 +186,13 @@ static int FUNC(decoder_model_info)(CodedBitstreamContext *ctx, RWContext *rw,
+ static int FUNC(sequence_header_obu)(CodedBitstreamContext *ctx, RWContext *rw,
+                                      AV1RawSequenceHeader *current)
+ {
++    CodedBitstreamAV1Context *priv = ctx->priv_data;
+     int i, err;
+ 
+     HEADER("Sequence Header");
+ 
++    priv->seen_frame_header = 0;
++
+     fc(3, seq_profile, AV_PROFILE_AV1_MAIN,
+                        AV_PROFILE_AV1_PROFESSIONAL);
+     flag(still_picture);

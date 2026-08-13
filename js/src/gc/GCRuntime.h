@@ -244,20 +244,22 @@ class BufferAllocatorRuntime {
   // sweeping.
   MainThreadOrGCTaskData<LargeAllocMap> largeAllocMap;
 
-  // Atomic count of buffer allocators whose minor state is sweeping plus those
-  // whose major state is sweeping. Used to decide whether the mutex is
-  // required.
-  mozilla::Atomic<size_t, mozilla::ReleaseAcquire> allocatorSweepCount;
+  // Atomic count of:
+  //  - buffer allocators whose minor state is sweeping, plus
+  //  - buffer allocators whose major state is sweeping, plus
+  //  - number of concurrent marking threads (zero or one)
+  // Used to decide whether the mutex is required to access |largeAllocMap|.
+  mozilla::Atomic<size_t, mozilla::ReleaseAcquire> offThreadAccessCount;
 
  public:
   BufferAllocatorRuntime();
 
   void checkGCStateNotInUse();
 
- private:
-  void incSweepCount();
-  void decSweepCount();
+  void incOffThreadCount();
+  void decOffThreadCount();
 
+ private:
   bool needLockToAccessBufferMap() const;
 
   // Lookup a large buffer by pointer in the map.
@@ -914,7 +916,7 @@ class GCRuntime {
   std::tuple<JS::SliceBudget, JS::SliceBudget> budgetConcurrentMarking(
       const JS::SliceBudget& requestedBudget);
   void maybeStartConcurrentMarking(JS::SliceBudget& budget);
-  void finishAnyConcurrentMarking(JS::SliceBudget& budget);
+  bool finishAnyConcurrentMarking(JS::SliceBudget& budget);
   friend class BackgroundMarkTask;
   enum ParallelMarking : bool {
     NoParallelMarking = false,

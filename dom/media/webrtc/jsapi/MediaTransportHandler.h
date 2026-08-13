@@ -12,8 +12,11 @@
 #include "MediaEventSource.h"
 #include "RTCStatsReport.h"
 #include "common/CandidateInfo.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/dom/PMediaTransportChild.h"
 #include "mozilla/dom/RTCConfigurationBinding.h"
+#include "mozilla/dom/RTCErrorBinding.h"
 #include "mozilla/dom/RTCIceTransportBinding.h"  // RTCIceTransportState
 #include "mozilla/dom/RTCPeerConnectionBinding.h"
 #include "nsISupportsImpl.h"
@@ -142,7 +145,8 @@ class MediaTransportHandler {
   GetGatheringStateChange() {
     return mGatheringStateChange;
   }
-  MediaEventSource<std::string, dom::RTCIceTransportState>&
+  MediaEventSource<std::string, dom::RTCIceTransportState,
+                   Maybe<dom::IceCandidateAttributePair>>&
   GetConnectionStateChange() {
     return mConnectionStateChange;
   }
@@ -150,11 +154,13 @@ class MediaTransportHandler {
     return mEncryptedSending;
   }
   MediaEventSource<std::string, TransportLayer::State,
-                   nsTArray<nsTArray<uint8_t>>>&
+                   nsTArray<nsTArray<uint8_t>>, Maybe<dom::RTCErrorParams>>&
   GetStateChange() {
     return mStateChange;
   }
-  MediaEventSource<std::string, TransportLayer::State>& GetRtcpStateChange() {
+  MediaEventSource<std::string, TransportLayer::State,
+                   Maybe<dom::RTCErrorParams>>&
+  GetRtcpStateChange() {
     return mRtcpStateChange;
   }
 
@@ -165,16 +171,19 @@ class MediaTransportHandler {
   void OnAlpnNegotiated(const std::string& aAlpn);
   void OnGatheringStateChange(const std::string& aTransportId,
                               dom::RTCIceGathererState aState);
-  void OnConnectionStateChange(const std::string& aTransportId,
-                               dom::RTCIceTransportState aState);
+  void OnConnectionStateChange(
+      const std::string& aTransportId, dom::RTCIceTransportState aState,
+      const Maybe<dom::IceCandidateAttributePair>& aSelectedPair);
   void OnPacketReceived(std::string&& aTransportId, MediaPacket&& aPacket);
   void OnEncryptedSending(const std::string& aTransportId,
                           MediaPacket&& aPacket);
   void OnStateChange(const std::string& aTransportId,
                      TransportLayer::State aState,
-                     nsTArray<nsTArray<uint8_t>>&& aRemoteCerts);
+                     nsTArray<nsTArray<uint8_t>>&& aRemoteCerts,
+                     Maybe<dom::RTCErrorParams> aError = Nothing());
   void OnRtcpStateChange(const std::string& aTransportId,
-                         TransportLayer::State aState);
+                         TransportLayer::State aState,
+                         Maybe<dom::RTCErrorParams> aError = Nothing());
   virtual void Destroy() = 0;
   virtual ~MediaTransportHandler() = default;
   mutable Mutex mStateCacheMutex;
@@ -192,13 +201,16 @@ class MediaTransportHandler {
   MediaEventProducer<std::string, bool> mAlpnNegotiated;
   MediaEventProducer<std::string, dom::RTCIceGathererState>
       mGatheringStateChange;
-  MediaEventProducer<std::string, dom::RTCIceTransportState>
+  MediaEventProducer<std::string, dom::RTCIceTransportState,
+                     Maybe<dom::IceCandidateAttributePair>>
       mConnectionStateChange;
   MediaEventProducer<std::string, MediaPacket> mEncryptedSending;
   MediaEventProducer<std::string, TransportLayer::State,
-                     nsTArray<nsTArray<uint8_t>>>
+                     nsTArray<nsTArray<uint8_t>>, Maybe<dom::RTCErrorParams>>
       mStateChange;
-  MediaEventProducer<std::string, TransportLayer::State> mRtcpStateChange;
+  MediaEventProducer<std::string, TransportLayer::State,
+                     Maybe<dom::RTCErrorParams>>
+      mRtcpStateChange;
 };
 
 void TokenizeCandidate(const std::string& aCandidate,

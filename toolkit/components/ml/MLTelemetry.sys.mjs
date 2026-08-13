@@ -368,6 +368,8 @@ export class MLTelemetry {
    * @param {{cpuTime: number | null, memory: number | null}} [options.resourcesAfter]
    * @param {number | null} [options.tokenCount]
    * @param {number | null} [options.characterCount]
+   * @param {number | null} [options.timeToFirstChunk]
+   * @param {number | null} [options.averageChunkTime]
    * @param {string} [options.flow_id]
    * @param {string} [options.feature_id]
    */
@@ -380,6 +382,8 @@ export class MLTelemetry {
     resourcesAfter,
     tokenCount,
     characterCount,
+    timeToFirstChunk = null,
+    averageChunkTime = null,
     flow_id = this.#flowId,
     feature_id = this.#featureId,
   }) {
@@ -421,6 +425,8 @@ export class MLTelemetry {
       // the counts. We should count these as null.
       token_count: tokenCount || null,
       character_count: characterCount || null,
+      time_to_first_chunk: round(timeToFirstChunk),
+      average_chunk_time: round(averageChunkTime),
       system_memory_mb: MLTelemetry.#systemMemoryMB,
     };
 

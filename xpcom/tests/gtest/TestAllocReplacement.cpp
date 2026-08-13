@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozmemory.h"
 #include "gtest/gtest.h"
+#include "mozmemory.h"
 
 // We want to ensure that various functions are hooked properly and that
 // allocations are getting routed through jemalloc.  The strategy

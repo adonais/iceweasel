@@ -1,15 +1,13 @@
 plugins {
-    alias(libs.plugins.dependency.analysis)
-    alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.python.envs.plugin)
+    id 'com.android.application'
     id 'org.mozilla.conventions.zip-test-reports'
     id 'org.mozilla.nimbus-gradle-plugin'
+    id 'jacoco'
+    alias(libs.plugins.dependency.analysis)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.parcelize)
+    alias(libs.plugins.python.envs.plugin)
 }
-
-apply plugin: 'com.android.application'
-apply plugin: 'kotlin-parcelize'
-apply plugin: 'jacoco'
 
 if (gradle.mozconfig.substs.MOZILLA_OFFICIAL) {
     apply plugin: 'com.google.android.gms.oss-licenses-plugin'
@@ -303,7 +301,7 @@ dependencies {
     implementation libs.androidx.compose.ui.tooling
     implementation libs.androidx.constraintlayout
     implementation libs.androidx.constraintlayout.compose
-    implementation libs.androidx.core.ktx
+    implementation libs.androidx.core
     implementation libs.androidx.core.splashscreen
     implementation libs.androidx.datastore.preferences
     implementation libs.androidx.emoji2

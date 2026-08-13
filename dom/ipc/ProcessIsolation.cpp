@@ -978,6 +978,48 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
   return options;
 }
 
+static bool ValidateBehaviorForWorker(IsolationBehavior aBehavior,
+                                      const nsACString& aCurrentRemoteType) {
+  if (aCurrentRemoteType == NOT_REMOTE_TYPE) {
+    return true;
+  }
+
+  switch (aBehavior) {
+    case IsolationBehavior::Parent:
+      // Can't load in a parent process from any other process.
+      return false;
+
+    case IsolationBehavior::AboutReader:
+    case IsolationBehavior::Inherit:
+      // Not relevant for Workers.
+      return false;
+
+    case IsolationBehavior::WebContent:
+    case IsolationBehavior::ForceWebRemoteType:
+    case IsolationBehavior::Anywhere:
+      return true;
+
+    case IsolationBehavior::Extension:
+      // Extension iframes could be loaded in any process.
+      return true;
+
+    case IsolationBehavior::PrivilegedAbout:
+      return aCurrentRemoteType == PRIVILEGEDABOUT_REMOTE_TYPE;
+
+    case IsolationBehavior::File:
+      return !StaticPrefs::browser_tabs_remote_separateFileUriProcess() ||
+             aCurrentRemoteType == FILE_REMOTE_TYPE;
+
+    case IsolationBehavior::PrivilegedMozilla:
+      return aCurrentRemoteType == PRIVILEGEDMOZILLA_REMOTE_TYPE;
+
+    case IsolationBehavior::Error:
+      break;
+  }
+
+  return false;
+}
+
 Result<WorkerIsolationOptions, nsresult> IsolationOptionsForWorker(
     nsIPrincipal* aPrincipal, WorkerKind aWorkerKind,
     const nsACString& aCurrentRemoteType, bool aUseRemoteSubframes) {
@@ -1081,6 +1123,15 @@ Result<WorkerIsolationOptions, nsresult> IsolationOptionsForWorker(
             ("Ensuring sandboxed null-principal shared worker doesn't load in "
              "the parent process"));
     behavior = IsolationBehavior::ForceWebRemoteType;
+  }
+
+  if (!ValidateBehaviorForWorker(behavior, aCurrentRemoteType)) {
+    MOZ_LOG(
+        gProcessIsolationLog, LogLevel::Warning,
+        ("Rejecting invalid worker isolation behavior %s for remote type %s",
+         IsolationBehaviorName(behavior),
+         PromiseFlatCString(aCurrentRemoteType).get()));
+    return Err(NS_ERROR_FAILURE);
   }
 
   if (behavior != IsolationBehavior::WebContent) {
@@ -1476,6 +1527,11 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
   nsAutoCString originScheme;
   MOZ_ALWAYS_SUCCEEDS(net_ExtractURLScheme(originNoSuffix, originScheme));
 
+  // We never load a chrome:// principal within a content process.
+  if (originScheme == "chrome"_ns) {
+    return false;
+  }
+
   // We can load a `resource://` URI in any process. This usually comes up due
   // to pdf.js and the JSON viewer. See bug 1686200.
   if (originScheme == "resource"_ns) {
@@ -1556,10 +1612,21 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
   nsDependentCSubstring typePrefix(aRemoteType, 0, equalIdx);
   nsDependentCSubstring typeOrigin(aRemoteType, equalIdx + 1);
 
-  // Only validate webIsolated and webServiceWorker remote types for now. This
-  // should be expanded in the future.
+  // Only validate webIsolated, webCOOP+COEP and webServiceWorker remote types
+  // for now. This should be expanded in the future.
   if (typePrefix != FISSION_WEB_REMOTE_TYPE &&
+      typePrefix != WITH_COOP_COEP_REMOTE_TYPE &&
       typePrefix != SERVICEWORKER_REMOTE_TYPE) {
+    return true;
+  }
+
+  // COOP+COEP processes might have cross-site iframes without remote subframes.
+  //
+  // HACK: Unfortunately, we can't easily check useRemoteSubframes here, but we
+  // shouldn't be loading any webCOOP+COEP windows without useRemoteSubframes if
+  // Fission is enabled.
+  if (typePrefix == WITH_COOP_COEP_REMOTE_TYPE &&
+      !mozilla::FissionAutostart()) {
     return true;
   }
 

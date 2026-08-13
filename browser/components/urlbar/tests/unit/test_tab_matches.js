@@ -36,7 +36,7 @@ add_task(async function test_tab_matches() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         uri: "http://abc.com/",
         title: "ABC rocks",
         heuristic: true,
@@ -165,7 +165,7 @@ add_task(async function test_tab_matches() {
       makeSearchResult(context, {
         query: "abc",
         alias: UrlbarShared.RESTRICT_TOKENS.OPENPAGE,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         heuristic: true,
       }),
       makeTabSwitchResult(context, {
@@ -217,7 +217,7 @@ add_task(async function test_tab_matches() {
       makeSearchResult(context, {
         query: "mozilla",
         alias: UrlbarShared.RESTRICT_TOKENS.OPENPAGE,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         heuristic: true,
       }),
       makeTabSwitchResult(context, {
@@ -267,7 +267,7 @@ add_task(async function test_tab_matches() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         uri: "http://abc.com/",
         title: "ABC rocks",
         heuristic: true,

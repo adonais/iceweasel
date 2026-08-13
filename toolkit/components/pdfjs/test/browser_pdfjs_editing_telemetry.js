@@ -54,7 +54,7 @@ add_task(async function test() {
       await enableEditor(browser, "FreeText", 1);
       await addFreeText(browser, "hello", spanBox);
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         async () => (await countElements(browser, ".freeTextEditor")) !== 0
       );
       Assert.equal(await countElements(browser, ".freeTextEditor"), 2);
@@ -66,7 +66,7 @@ add_task(async function test() {
       spanBox = await getSpanBox(browser, "forums and ask questions");
       await addFreeText(browser, "world", spanBox);
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         async () => (await countElements(browser, ".freeTextEditor")) !== 1
       );
       Assert.equal(await countElements(browser, ".freeTextEditor"), 3);
@@ -77,7 +77,7 @@ add_task(async function test() {
 
       Assert.equal(Glean.pdfjs.editing.print.testGetValue() || 0, 0);
       document.getElementById("cmd_print").doCommand();
-      await BrowserTestUtils.waitForCondition(() => {
+      await TestUtils.waitForCondition(() => {
         let preview = document.querySelector(".printPreviewBrowser");
         return preview && BrowserTestUtils.isVisible(preview);
       });

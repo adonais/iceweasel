@@ -65,7 +65,7 @@ add_task(async function () {
   );
   await promiseLoaded;
 
-  await BrowserTestUtils.waitForCondition(() => console_messages.length === 0);
+  await TestUtils.waitForCondition(() => console_messages.length === 0);
 
   Services.console.unregisterListener(on_new_console_messages);
 });

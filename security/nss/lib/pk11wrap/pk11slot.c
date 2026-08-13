@@ -477,8 +477,16 @@ PK11_DestroySlot(PK11SlotInfo *slot)
     /* free up the cached keys and sessions */
     PK11_CleanKeyList(slot);
 
-    /* free up all the sessions on this slot */
     if (slot->functionList) {
+        /* Destroy any cached wrapping keys (see PK11_SetWrapKey). */
+        for (unsigned int i = 0; i < PR_ARRAY_SIZE(slot->refKeys); i++) {
+            if (slot->refKeys[i] != CK_INVALID_HANDLE) {
+                (void)PK11_DestroyObject(slot, slot->refKeys[i]);
+                slot->refKeys[i] = CK_INVALID_HANDLE;
+            }
+        }
+
+        /* free up all the sessions on this slot */
         PK11_GETTAB(slot)
             ->C_CloseAllSessions(slot->slotID);
     }

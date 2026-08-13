@@ -68,7 +68,7 @@ async function checkNotification(condition, shouldShow, action) {
     } else {
       // Poll for up to ~500ms; if a notification ever appears we fail
       // early, otherwise the wait times out and the assertion passes.
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => getNotification(tab),
         "watching for an unexpected notification",
         50,

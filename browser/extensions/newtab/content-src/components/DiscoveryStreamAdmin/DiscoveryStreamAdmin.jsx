@@ -3,6 +3,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
+import { WIDGET_REGISTRY } from "common/WidgetsRegistry.mjs";
 import { connect } from "react-redux";
 import React from "react";
 
@@ -24,6 +25,34 @@ const PREF_UNIFIED_ADS_ENDPOINT = "unifiedAds.endpoint";
 const PREF_ALLOWED_ENDPOINTS = "discoverystream.endpoints";
 const PREF_OHTTP_CONFIG = "discoverystream.ohttp.configURL";
 const PREF_OHTTP_RELAY = "discoverystream.ohttp.relayURL";
+const PREF_WIDGETS_SYSTEM_ENABLED = "widgets.system.enabled";
+
+// Turn a camelCase widget id into a human-readable label, e.g.
+// "pictureOfTheDay" -> "Picture Of The Day".
+function widgetLabel(id) {
+  const spaced = id.replace(/([A-Z])/g, " $1");
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
+// Internal, pref-gated widget features that default off but we want to test in
+// devtools. Hand-maintained (outside the automatic registry-driven toggles).
+// Each `pref` is the full activity-stream-relative pref; toggles reuse
+// handleWidgetToggle, which sets the pref named by the toggle's id.
+const WIDGET_EXTRA_FEATURES = {
+  pictureOfTheDay: [
+    {
+      pref: "widgets.pictureOfTheDay.setAsWallpaper.enabled",
+      label: "Set as wallpaper",
+    },
+  ],
+  sportsWidget: [
+    { pref: "widgets.sportsWidget.live.enabled", label: "Live scores" },
+    {
+      pref: "widgets.sportsWidget.celebrations.enabled",
+      label: "Celebrations",
+    },
+  ],
+};
 
 const Row = props => (
   <tr className="message-item" {...props}>
@@ -60,7 +89,7 @@ export class ToggleStoryButton extends React.PureComponent {
   }
 
   render() {
-    return <button onClick={this.handleClick}>collapse/open</button>;
+    return <moz-button onClick={this.handleClick}>collapse/open</moz-button>;
   }
 }
 
@@ -115,6 +144,13 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
     this.handleDebugOverrideChange = this.handleDebugOverrideChange.bind(this);
     this.handleResetAllOverrides = this.handleResetAllOverrides.bind(this);
     this.handleSectionsToggle = this.handleSectionsToggle.bind(this);
+    this.handleWidgetsSystemToggle = this.handleWidgetsSystemToggle.bind(this);
+    this.handleWidgetToggle = this.handleWidgetToggle.bind(this);
+    this.handleWidgetsToggleAll = this.handleWidgetsToggleAll.bind(this);
+    this.handleResetWidgetInteractions =
+      this.handleResetWidgetInteractions.bind(this);
+    this.handleResetWidgetsToDefaults =
+      this.handleResetWidgetsToDefaults.bind(this);
     this.toggleIABBanners = this.toggleIABBanners.bind(this);
     this.handleAllizomToggle = this.handleAllizomToggle.bind(this);
     this.sendConversionEvent = this.sendConversionEvent.bind(this);
@@ -403,6 +439,58 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
     );
   }
 
+  handleWidgetsSystemToggle(e) {
+    this.props.dispatch(
+      ac.SetPref(PREF_WIDGETS_SYSTEM_ENABLED, e.target.pressed)
+    );
+  }
+
+  handleWidgetToggle(e) {
+    // e.target.id is the widget's systemEnabledPref (widgets.system.<name>.enabled)
+    this.props.dispatch(ac.SetPref(e.target.id, e.target.pressed));
+  }
+
+  handleWidgetsToggleAll() {
+    const value = !this.areAllWidgetsEnabled();
+    const values = { [PREF_WIDGETS_SYSTEM_ENABLED]: value };
+    for (const widget of WIDGET_REGISTRY) {
+      values[widget.systemEnabledPref] = value;
+    }
+    this.props.dispatch(ac.SetMultiplePrefs(values));
+  }
+
+  areAllWidgetsEnabled() {
+    const { otherPrefs } = this.props;
+    return Boolean(
+      otherPrefs[PREF_WIDGETS_SYSTEM_ENABLED] &&
+      WIDGET_REGISTRY.every(widget => otherPrefs[widget.systemEnabledPref])
+    );
+  }
+
+  clearPrefs(prefNames) {
+    for (const prefName of prefNames) {
+      this.props.dispatch(
+        ac.OnlyToMain({ type: at.CLEAR_PREF, data: { name: prefName } })
+      );
+    }
+  }
+
+  handleResetWidgetInteractions() {
+    this.clearPrefs(
+      Object.keys(this.props.otherPrefs).filter(prefName =>
+        /^widgets\..+\.interaction$/.test(prefName)
+      )
+    );
+  }
+
+  handleResetWidgetsToDefaults() {
+    this.clearPrefs(
+      Object.keys(this.props.otherPrefs).filter(prefName =>
+        prefName.startsWith("widgets.")
+      )
+    );
+  }
+
   sendConversionEvent() {
     const detail = {
       partnerId: "295BEEF7-1E3B-4128-B8F8-858E12AA660B",
@@ -451,7 +539,7 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
               onChange={this.handleWeatherUpdate}
               value={this.weatherQuery}
             />
-            <button type="submit">Submit</button>
+            <moz-button onClick={this.handleWeatherSubmit}>Submit</moz-button>
           </form>
           <table>
             <tbody>
@@ -538,15 +626,12 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
         <div className="inferred-overrides-header">
           <h3 className="inferred-overrides-title">Inferred Personalization</h3>
           <div className="inferred-overrides-actions">
-            <button
-              className="button"
-              onClick={this.refreshInferredPersonalizationAndDebug}
-            >
+            <moz-button onClick={this.refreshInferredPersonalizationAndDebug}>
               Recompute Interest Vector
-            </button>
-            <button className="button" onClick={this.refreshCache}>
+            </moz-button>
+            <moz-button onClick={this.refreshCache}>
               Refresh Story Cache
-            </button>
+            </moz-button>
           </div>
         </div>
         <div className="inferred-overrides-last-refreshed">
@@ -573,13 +658,12 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
             </Row>
             <Row className="inferred-overrides-refresh-row">
               <td colSpan="3">
-                <button
-                  className="button"
+                <moz-button
                   disabled={hasAnyNonZeroOverride ? null : true}
                   onClick={this.handleResetAllOverrides}
                 >
                   Reset overrides
-                </button>
+                </moz-button>
               </td>
             </Row>
             <Row className="inferred-overrides-table-header">
@@ -691,9 +775,7 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
     return (
       <>
         <h4>Blocks</h4>
-        <button className="button" onClick={this.resetBlocks}>
-          Reset Blocks
-        </button>{" "}
+        <moz-button onClick={this.resetBlocks}>Reset Blocks</moz-button>{" "}
         <table>
           <tbody>
             {Object.keys(blocks).map(key => {
@@ -809,6 +891,12 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
             </Row>
           </tbody>
         </table>
+        <moz-button
+          style={{ marginBlockStart: "var(--space-large)" }}
+          onClick={this.sendConversionEvent}
+        >
+          Send conversion event
+        </moz-button>
         <h4>Spoc data</h4>
         <table>
           <tbody>{spocsData.map(spoc => this.renderStoryData(spoc))}</tbody>
@@ -893,32 +981,26 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
     const leaderboardPressed =
       leaderboardEnabled && spocPlacements.includes("newtab_leaderboard");
 
+    const widgetsSystemEnabled =
+      this.props.otherPrefs[PREF_WIDGETS_SYSTEM_ENABLED];
+
     return (
       <div>
-        <button className="button" onClick={this.refreshCache}>
-          Refresh Cache
-        </button>
-        <br />
-        <button className="button" onClick={this.expireCache}>
-          Expire Cache
-        </button>{" "}
-        <button className="button" onClick={this.systemTick}>
-          Trigger System Tick
-        </button>{" "}
-        <button className="button" onClick={this.idleDaily}>
-          Trigger Idle Daily
-        </button>
-        <br />
-        <button className="button" onClick={this.syncRemoteSettings}>
-          Sync Remote Settings
-        </button>{" "}
-        <button className="button" onClick={this.refreshTopicSelectionCache}>
-          Refresh Topic selection count
-        </button>
-        <br />
-        <button className="button" onClick={this.showPlaceholder}>
-          Show Placeholder Cards
-        </button>{" "}
+        <div className="admin-button-row">
+          <moz-button onClick={this.refreshCache}>Refresh Cache</moz-button>
+          <moz-button onClick={this.expireCache}>Expire Cache</moz-button>
+          <moz-button onClick={this.systemTick}>Trigger System Tick</moz-button>
+          <moz-button onClick={this.idleDaily}>Trigger Idle Daily</moz-button>
+          <moz-button onClick={this.syncRemoteSettings}>
+            Sync Remote Settings
+          </moz-button>
+          <moz-button onClick={this.refreshTopicSelectionCache}>
+            Refresh Topic selection count
+          </moz-button>
+          <moz-button onClick={this.showPlaceholder}>
+            Show Placeholder Cards
+          </moz-button>
+        </div>
         <div className="toggle-wrapper">
           <moz-toggle
             id="sections-toggle"
@@ -955,9 +1037,62 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
             />
           </div>
         </details>
-        <button className="button" onClick={this.sendConversionEvent}>
-          Send conversion event
-        </button>
+        <details className="details-section">
+          <summary>Widgets</summary>
+          <div className="toggle-wrapper">
+            <moz-toggle
+              id="widgets-system-enabled"
+              pressed={widgetsSystemEnabled || null}
+              ontoggle={this.handleWidgetsSystemToggle}
+              label="Enable widget system"
+            />
+          </div>
+          <div className="admin-button-row">
+            <moz-button onClick={this.handleWidgetsToggleAll}>
+              {this.areAllWidgetsEnabled() ? "Disable all" : "Enable all"}
+            </moz-button>
+            <moz-button onClick={this.handleResetWidgetInteractions}>
+              Reset interaction
+            </moz-button>
+            <moz-button
+              type="destructive"
+              onClick={this.handleResetWidgetsToDefaults}
+            >
+              Reset to defaults
+            </moz-button>
+          </div>
+          <hr />
+          {WIDGET_REGISTRY.map(widget => (
+            <React.Fragment key={widget.id}>
+              <div className="toggle-wrapper">
+                <moz-toggle
+                  id={widget.systemEnabledPref}
+                  pressed={
+                    this.props.otherPrefs[widget.systemEnabledPref] || null
+                  }
+                  disabled={!widgetsSystemEnabled || null}
+                  ontoggle={this.handleWidgetToggle}
+                  label={widgetLabel(widget.id)}
+                />
+              </div>
+              {(WIDGET_EXTRA_FEATURES[widget.id] || []).map(feature => (
+                <div
+                  className="toggle-wrapper"
+                  key={feature.pref}
+                  style={{ marginInlineStart: "var(--space-large)" }}
+                >
+                  <moz-toggle
+                    id={feature.pref}
+                    pressed={this.props.otherPrefs[feature.pref] || null}
+                    disabled={!widgetsSystemEnabled || null}
+                    ontoggle={this.handleWidgetToggle}
+                    label={feature.label}
+                  />
+                </div>
+              ))}
+            </React.Fragment>
+          ))}
+        </details>
         <h3>Layout</h3>
         {layout.map((row, rowIndex) => (
           <div key={`row-${rowIndex}`}>
@@ -990,6 +1125,32 @@ export class DiscoveryStreamAdminInner extends React.PureComponent {
   constructor(props) {
     super(props);
     this.setState = this.setState.bind(this);
+    this.dismiss = this.dismiss.bind(this);
+    this.handleKeyDown = this.handleKeyDown.bind(this);
+  }
+
+  componentDidMount() {
+    globalThis.addEventListener("keydown", this.handleKeyDown);
+  }
+
+  componentWillUnmount() {
+    globalThis.removeEventListener("keydown", this.handleKeyDown);
+  }
+
+  dismiss() {
+    globalThis.location.hash = "";
+  }
+
+  handleKeyDown(e) {
+    if (e.key !== "Escape" || e.defaultPrevented) {
+      return;
+    }
+    // Don't hijack Escape while the user is typing in a field.
+    const tag = e.target?.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA") {
+      return;
+    }
+    this.dismiss();
   }
 
   render() {
@@ -999,6 +1160,14 @@ export class DiscoveryStreamAdminInner extends React.PureComponent {
           this.props.collapsed ? "collapsed" : "expanded"
         }`}
       >
+        <moz-button
+          className="discoverystream-admin-close"
+          type="icon ghost"
+          title="Close devtools"
+          aria-label="Close devtools"
+          iconsrc="chrome://global/skin/icons/close.svg"
+          onClick={this.dismiss}
+        />
         <main className="main-panel">
           <h1>Discovery Stream Admin</h1>
 
@@ -1032,26 +1201,43 @@ export class DiscoveryStreamAdminInner extends React.PureComponent {
 export function CollapseToggle(props) {
   const { devtoolsCollapsed } = props;
   const label = `${devtoolsCollapsed ? "Expand" : "Collapse"} devtools`;
+  // @nova-cleanup(remove-conditional): Remove this novaEnabled read and the
+  // ternary below in the returned JSX; always render the moz-button icon button
+  // and delete the legacy classic-enabled <button> branch.
+  const novaEnabled = props.Prefs?.values?.["nova.enabled"];
+  const className = `discoverystream-admin-toggle ${
+    devtoolsCollapsed ? "expanded" : "collapsed"
+  }`;
+  const onToggleClick = () => {
+    globalThis.location.hash = devtoolsCollapsed ? "#devtools" : "";
+  };
 
   return (
     <>
-      <button
-        title={label}
-        aria-label={label}
-        className={`discoverystream-admin-toggle ${
-          devtoolsCollapsed ? "expanded" : "collapsed"
-        }`}
-        onClick={() => {
-          globalThis.location.hash = devtoolsCollapsed ? "#devtools" : "";
-        }}
-      >
-        <div>
-          <img
-            role="presentation"
-            src="chrome://global/skin/icons/developer.svg"
-          />
-        </div>
-      </button>
+      {novaEnabled ? (
+        <moz-button
+          type="icon"
+          className={className}
+          title={label}
+          aria-label={label}
+          iconsrc="chrome://global/skin/icons/developer.svg"
+          onClick={onToggleClick}
+        />
+      ) : (
+        <button
+          title={label}
+          aria-label={label}
+          className={`${className} classic-enabled`}
+          onClick={onToggleClick}
+        >
+          <div>
+            <img
+              role="presentation"
+              src="chrome://global/skin/icons/developer.svg"
+            />
+          </div>
+        </button>
+      )}
       {!devtoolsCollapsed ? (
         <DiscoveryStreamAdminInner {...props} collapsed={devtoolsCollapsed} />
       ) : null}

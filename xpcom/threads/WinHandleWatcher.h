@@ -9,7 +9,6 @@
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/RefPtr.h"
-
 #include "nsIEventTarget.h"
 #include "nsIRunnable.h"
 #include "nsIThread.h"

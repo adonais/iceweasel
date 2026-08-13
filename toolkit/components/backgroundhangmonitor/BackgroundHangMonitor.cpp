@@ -559,7 +559,7 @@ BackgroundHangThread* BackgroundHangThread::FindThread() {
 bool BackgroundHangMonitor::ShouldDisableOnBeta(const nsCString& clientID) {
   MOZ_ASSERT(clientID.Length() == 36, "clientID is invalid");
   const char* suffix = clientID.get() + clientID.Length() - 4;
-  return strtol(suffix, NULL, 16) % BHR_BETA_MOD;
+  return strtol(suffix, nullptr, 16) % BHR_BETA_MOD;
 }
 
 bool BackgroundHangMonitor::DisableOnBeta() {

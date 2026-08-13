@@ -139,6 +139,11 @@ enum class ErrorType(
         R.string.mozac_browser_errorpages_connection_failure_message,
         imageNameRes = iconsR.string.mozac_error_confused,
     ),
+    ERROR_LOCAL_NETWORK_ACCESS_DENIED(
+        R.string.mozac_browser_errorpages_connection_failure_title,
+        R.string.mozac_browser_errorpages_connection_failure_message,
+        imageNameRes = iconsR.string.mozac_error_confused,
+    ),
     ERROR_UNKNOWN_SOCKET_TYPE(
         R.string.mozac_browser_errorpages_unknown_socket_type_title,
         R.string.mozac_browser_errorpages_unknown_socket_type_message,

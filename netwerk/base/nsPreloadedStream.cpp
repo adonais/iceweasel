@@ -3,10 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsPreloadedStream.h"
-#include "nsIRunnable.h"
 
-#include "nsThreadUtils.h"
 #include <algorithm>
+
+#include "nsIRunnable.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla {
 namespace net {

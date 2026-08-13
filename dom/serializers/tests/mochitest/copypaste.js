@@ -158,18 +158,12 @@ async function testCopyPaste(isXHTML) {
     is(value, expected, id + ".innerHTML");
   }
 
-  const includeCommonAncestor = SpecialPowers.getBoolPref(
-    "dom.serializer.includeCommonAncestor.enabled"
-  );
-
   await copyChildrenToClipboard("draggable");
   testSelectionToString("This is a draggable bit of text.");
   testClipboardValue("text/plain", "This is a draggable bit of text.");
   testHtmlClipboardValue(
     "text/html",
-    `${includeCommonAncestor ? '<div id="draggable" title="title to have a long HTML line">' : ""}` +
-      `This is a <em>draggable</em> bit of text.` +
-      `${includeCommonAncestor ? "</div>" : ""}`
+    `This is a <em>draggable</em> bit of text.`
   );
   testPasteText("This is a draggable bit of text.");
 
@@ -178,9 +172,7 @@ async function testCopyPaste(isXHTML) {
   testClipboardValue("text/plain", " bla\n\n    foo\n    bar\n\n");
   testHtmlClipboardValue(
     "text/html",
-    `${includeCommonAncestor ? '<div id="alist">' : ""}` +
-      `\n    bla\n    <ul>\n      <li>foo</li>\n      \n      <li>bar</li>\n    </ul>\n  ` +
-      `${includeCommonAncestor ? "</div>" : ""}`
+    `\n    bla\n    <ul>\n      <li>foo</li>\n      \n      <li>bar</li>\n    </ul>\n  `
   );
   testPasteText(" bla\n\n    foo\n    bar\n\n");
 
@@ -189,9 +181,7 @@ async function testCopyPaste(isXHTML) {
   testClipboardValue("text/plain", " mozilla\n\n    foo\n    bar\n\n");
   testHtmlClipboardValue(
     "text/html",
-    `${includeCommonAncestor ? '<div id="blist">' : ""}` +
-      `\n    mozilla\n    <ol>\n      <li>foo</li>\n      \n      <li>bar</li>\n    </ol>\n  ` +
-      `${includeCommonAncestor ? "</div>" : ""}`
+    `\n    mozilla\n    <ol>\n      <li>foo</li>\n      \n      <li>bar</li>\n    </ol>\n  `
   );
   testPasteText(" mozilla\n\n    foo\n    bar\n\n");
 
@@ -203,9 +193,7 @@ async function testCopyPaste(isXHTML) {
   );
   testHtmlClipboardValue(
     "text/html",
-    `${includeCommonAncestor ? '<div id="clist">' : ""}` +
-      `\n    mzla\n    <ul>\n      <li>foo<ul>\n        <li>bazzinga!</li>\n      </ul></li>\n      \n      <li>bar</li>\n    </ul>\n  ` +
-      `${includeCommonAncestor ? "</div>" : ""}`
+    `\n    mzla\n    <ul>\n      <li>foo<ul>\n        <li>bazzinga!</li>\n      </ul></li>\n      \n      <li>bar</li>\n    </ul>\n  `
   );
   testPasteText(" mzla\n\n    foo\n        bazzinga!\n    bar\n\n");
 
@@ -222,12 +210,7 @@ async function testCopyPaste(isXHTML) {
       '\n  T<textarea xmlns="http://www.w3.org/1999/xhtml">t t t</textarea>\n'
     );
   } else {
-    testHtmlClipboardValue(
-      "text/html",
-      `${includeCommonAncestor ? '<div id="div4">' : ""}` +
-        `\n  T<textarea>t t t</textarea>\n` +
-        `${includeCommonAncestor ? "</div>" : ""}`
-    );
+    testHtmlClipboardValue("text/html", `\n  T<textarea>t t t</textarea>\n`);
     testInnerHTML("div4", "\n  T<textarea>t t t</textarea>\n");
   }
   testPasteText(" Tt t t ");
@@ -245,12 +228,7 @@ async function testCopyPaste(isXHTML) {
       '\n  T<textarea xmlns="http://www.w3.org/1999/xhtml">     </textarea>\n'
     );
   } else {
-    testHtmlClipboardValue(
-      "text/html",
-      `${includeCommonAncestor ? '<div id="div5">' : ""}` +
-        `\n  T<textarea>     </textarea>\n` +
-        `${includeCommonAncestor ? "</div>" : ""}`
-    );
+    testHtmlClipboardValue("text/html", `\n  T<textarea>     </textarea>\n`);
     testInnerHTML("div5", "\n  T<textarea>     </textarea>\n");
   }
   testPasteText(" T     ");
@@ -474,12 +452,7 @@ async function testCopyPaste(isXHTML) {
   await copyChildrenToClipboard("div13");
   testSelectionToString("__");
   testClipboardValue("text/plain", "__");
-  testHtmlClipboardValue(
-    "text/html",
-    `${includeCommonAncestor ? '<div id="div13">' : ""}` +
-      `__` +
-      `${includeCommonAncestor ? "</div>" : ""}`
-  );
+  testHtmlClipboardValue("text/html", `__`);
   testPasteText("__");
 
   // ============ converting cell boundaries to tabs in tables
@@ -519,12 +492,7 @@ async function testCopyPaste(isXHTML) {
     2
   );
   testClipboardValue("text/plain", "Xdiv11");
-  testHtmlClipboardValue(
-    "text/html",
-    `${includeCommonAncestor ? "<div>" : ""}` +
-      `<p>X<span>div</span>11</p>` +
-      `${includeCommonAncestor ? "</div>" : ""}`
-  );
+  testHtmlClipboardValue("text/html", `<p>X<span>div</span>11</p>`);
 
   await new Promise(resolve => {
     setTimeout(resolve, 0);
@@ -542,12 +510,7 @@ async function testCopyPaste(isXHTML) {
   );
 
   testClipboardValue("text/plain", "Xdiv12");
-  testHtmlClipboardValue(
-    "text/html",
-    `${includeCommonAncestor ? "<div>" : ""}` +
-      `<p>X<span>div</span>12</p>` +
-      `${includeCommonAncestor ? "</div>" : ""}`
-  );
+  testHtmlClipboardValue("text/html", `<p>X<span>div</span>12</p>`);
   await new Promise(resolve => {
     setTimeout(resolve, 0);
   });

@@ -48,10 +48,10 @@
 //!
 //! For complete example usage, see the [`tests/`](tests/).
 
-use std::cmp::Ordering;
-use std::collections::HashSet;
+use std::collections::{BTreeMap, HashSet, VecDeque};
 use std::fmt::Debug;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
+use std::num::NonZeroU32;
 use std::time::{Duration, Instant};
 
 use log::trace;
@@ -72,6 +72,11 @@ pub const RESOLUTION_DELAY: Duration = Duration::from_millis(50);
 ///
 /// <https://www.ietf.org/archive/id/draft-ietf-happy-happyeyeballs-v3-02.html#section-9>
 pub const CONNECTION_ATTEMPT_DELAY: Duration = Duration::from_millis(250);
+
+/// The default multiplier applied to the connection attempt delay after each
+/// successive attempt. A value of `1` keeps the delay constant, matching the
+/// RFC behavior.
+pub const CONNECTION_ATTEMPT_DELAY_MULTIPLIER: NonZeroU32 = NonZeroU32::MIN;
 
 /// Input events to the Happy Eyeballs state machine
 #[derive(Debug, Clone, PartialEq)]
@@ -159,22 +164,6 @@ impl DnsResult {
             .copied()
             .map(IpAddr::V6)
             .chain(v4.iter().copied().map(IpAddr::V4))
-    }
-
-    fn flatten_into_endpoints(
-        &self,
-        port: u16,
-        http_versions: &HashSet<ConnectionAttemptHttpVersions>,
-    ) -> Vec<Endpoint> {
-        self.ip_addrs()
-            .flat_map(|ip| {
-                http_versions.iter().map(move |v| Endpoint {
-                    address: SocketAddr::new(ip, port),
-                    http_version: *v,
-                    ech_config: None,
-                })
-            })
-            .collect()
     }
 }
 
@@ -316,7 +305,9 @@ impl ServiceInfo {
         // `None` if no AAAA response has been received yet; `Some(addrs)`
         // once an answer (positive or negative) has arrived.
         ipv6_addrs: Option<&[Ipv6Addr]>,
-        http_versions: &HashSet<ConnectionAttemptHttpVersions>,
+        // The HTTP versions the client allows; used to filter this record's own
+        // ALPNs.
+        enabled_http_versions: &HttpVersions,
         ech_enabled: bool,
     ) -> Vec<Endpoint> {
         let port = self.port.unwrap_or(port);
@@ -341,11 +332,19 @@ impl ServiceInfo {
             Some(_) => &[],
         };
 
-        let hint_http_versions: HashSet<ConnectionAttemptHttpVersions> =
-            ConnectionAttemptHttpVersions::from_http_versions(&self.alpn_http_versions)
-                .intersection(http_versions)
-                .cloned()
-                .collect();
+        // Each ServiceMode record's ALPN SvcParam lists the protocols available
+        // at its own TargetName, so use only this record's ALPNs, never another
+        // record's. Assembling the "SVCB ALPN set" -- including adding the
+        // scheme default ("http/1.1" for "https") when no "alpn" is present --
+        // is the caller's responsibility when interpreting the record (RFC 9460
+        // Section 7.1.1). A record that still carries no ALPN here is not usable
+        // (a "no-default-alpn" record without "alpn" is not even self-consistent,
+        // Section 2.4.3) and yields no endpoints.
+        //
+        // <https://www.rfc-editor.org/rfc/rfc9460#section-7.1.1>
+        let mut versions = self.alpn_http_versions.clone();
+        enabled_http_versions.filter_disabled(&mut versions);
+        let http_versions = ConnectionAttemptHttpVersions::from_http_versions(&versions);
 
         let hints = hint_v6
             .iter()
@@ -355,13 +354,11 @@ impl ServiceInfo {
             .flat_map(|ip| {
                 // TODO: way around allocation?
                 let ech_config = ech_enabled.then(|| self.ech_config.clone()).flatten();
-                hint_http_versions
-                    .iter()
-                    .map(move |&http_version| Endpoint {
-                        address: SocketAddr::new(ip, port),
-                        http_version,
-                        ech_config: ech_config.clone(),
-                    })
+                http_versions.iter().map(move |&http_version| Endpoint {
+                    address: SocketAddr::new(ip, port),
+                    http_version,
+                    ech_config: ech_config.clone(),
+                })
             });
 
         let addrs = ipv6_addrs
@@ -475,6 +472,21 @@ pub struct HttpVersions {
     pub h3: bool,
 }
 
+impl HttpVersions {
+    /// Remove the [`HttpVersion`]s disabled by this configuration from `versions`.
+    fn filter_disabled(&self, versions: &mut HashSet<HttpVersion>) {
+        if !self.h3 {
+            versions.remove(&HttpVersion::H3);
+        }
+        if !self.h2 {
+            versions.remove(&HttpVersion::H2);
+        }
+        if !self.h1 {
+            versions.remove(&HttpVersion::H1);
+        }
+    }
+}
+
 impl Default for HttpVersions {
     fn default() -> Self {
         // Enable all by default.
@@ -564,6 +576,23 @@ pub struct NetworkConfig {
     /// Defaults to [`CONNECTION_ATTEMPT_DELAY`] (250 ms) per
     /// <https://www.ietf.org/archive/id/draft-ietf-happy-happyeyeballs-v3-02.html#section-9>.
     pub connection_attempt_delay: Duration,
+    /// Multiplier applied to [`connection_attempt_delay`](Self::connection_attempt_delay)
+    /// as concurrent connection attempts pile up, growing the delay
+    /// exponentially.
+    ///
+    /// The delay before starting another attempt while `n` attempts are already
+    /// in progress is `connection_attempt_delay * multiplier^(n - 1)`. With a
+    /// base delay of 250 ms and a multiplier of `2`, racing attempts are
+    /// scheduled at `t=0`, `t=250`, `t=750`, `t=1750`, ... (intervals of 250,
+    /// 500, 1000 ms). This lets callers lower the base delay below the
+    /// RFC-recommended 250 ms while still backing off between attempts.
+    ///
+    /// Only in-progress attempts count, so attempts triggered by a previous
+    /// attempt failing do not grow the delay.
+    ///
+    /// Defaults to [`CONNECTION_ATTEMPT_DELAY_MULTIPLIER`] (`1`), which keeps the
+    /// delay constant per the RFC.
+    pub connection_attempt_delay_multiplier: NonZeroU32,
     /// Whether Encrypted Client Hello (ECH) is enabled.
     ///
     /// When `false`, ECH configs from HTTPS records are ignored: endpoints
@@ -572,6 +601,25 @@ pub struct NetworkConfig {
     ///
     /// Defaults to `true`.
     pub ech: bool,
+    /// Whether to wait for an answer for the preferred address family before
+    /// moving on to the connection phase.
+    ///
+    /// Per the spec, moving on without waiting out the resolution delay
+    /// requires a positive or negative answer for the preferred address family
+    /// (e.g. AAAA when IPv6 is preferred). When that answer is slow to arrive,
+    /// a client that already has the non-preferred family (e.g. A) still waits
+    /// out the [`resolution_delay`](Self::resolution_delay).
+    ///
+    /// When `false`, that requirement is dropped: once positive address answers
+    /// have been received and the SVCB/HTTPS query has completed (whether with a
+    /// positive or a negative response), the state machine moves on without
+    /// waiting for the preferred address family answer (and thus without the
+    /// resolution delay when the non-preferred family arrives first). The delay
+    /// still applies while the SVCB/HTTPS query is outstanding.
+    ///
+    /// Defaults to `true`, matching
+    /// <https://www.ietf.org/archive/id/draft-ietf-happy-happyeyeballs-v3-02.html#section-4.2>.
+    pub wait_for_preferred_address: bool,
 }
 
 impl Default for NetworkConfig {
@@ -582,7 +630,9 @@ impl Default for NetworkConfig {
             alt_svc: Vec::new(),
             resolution_delay: RESOLUTION_DELAY,
             connection_attempt_delay: CONNECTION_ATTEMPT_DELAY,
+            connection_attempt_delay_multiplier: CONNECTION_ATTEMPT_DELAY_MULTIPLIER,
             ech: true,
+            wait_for_preferred_address: true,
         }
     }
 }
@@ -645,23 +695,87 @@ pub struct Endpoint {
     pub ech_config: Option<EchConfig>,
 }
 
-impl Endpoint {
-    fn cmp_with_config(&self, other: &Endpoint, network_config: &NetworkConfig) -> Ordering {
-        if self.http_version != other.http_version {
-            return self.http_version.cmp(&other.http_version);
-        }
+/// Interleave a group's endpoints across protocol variants and address
+/// families so the diversity of options is tried early, instead of draining
+/// every attempt of one variant before moving on to the next.
+///
+/// Endpoints are grouped by `(protocol variant, address family)` and dealt one
+/// from each group per round, groups ordered by protocol preference and then
+/// preferred family. For three IPv6 and one IPv4 address that each offer HTTP/3
+/// and HTTP/2 that yields:
+///
+/// 1. v6a / H3 (most preferred)
+/// 2. v4 / H3 (next address family)
+/// 3. v6a / H2OrH1 (next protocol)
+/// 4. v4 / H2OrH1
+/// 5. v6b / H3 (second round)
+/// 6. v6b / H2OrH1
+/// 7. v6c / H3
+/// 8. v6c / H2OrH1
+///
+/// so IPv4 (the other family) and HTTP/2 (the other protocol) are both reached
+/// within the first few attempts, rather than after every IPv6 HTTP/3 attempt.
+///
+/// All endpoints belong to the same group (same application protocols and
+/// security properties, same service priority). The round-robin honors the
+/// draft's two interleavings.
+///
+/// Address families, per Section 5.3:
+///
+/// > Whichever address family is first in the list should be followed by an
+/// > endpoint of the other address family.
+///
+/// <https://www.ietf.org/archive/id/draft-ietf-happy-happyeyeballs-v3-03.html#section-5.3>
+///
+/// Protocol variants, per Section 5.1.1, since the HTTP version (HTTP/3 over
+/// QUIC vs. HTTP/2 over TCP) is non-critical here:
+///
+/// > Clients SHOULD avoid grouping and sorting separately in cases where their
+/// > use of an application protocol or feature is non-critical.
+///
+/// <https://www.ietf.org/archive/id/draft-ietf-happy-happyeyeballs-v3-03.html#section-5.1.1>
+fn interleave_endpoints(endpoints: Vec<Endpoint>, prefer_v6: bool) -> Vec<Endpoint> {
+    let total = endpoints.len();
 
-        let order = self
-            .address
-            .ip()
-            .is_ipv6()
-            .cmp(&other.address.ip().is_ipv6());
-        if network_config.prefer_v6() {
-            order.reverse()
-        } else {
-            order
-        }
+    // Where an address family sits relative to the preference; `Preferred` sorts
+    // before `Other`, which orders the preferred family first.
+    #[derive(PartialEq, Eq, PartialOrd, Ord)]
+    enum FamilyPreference {
+        Preferred,
+        Other,
     }
+
+    // Group endpoints into a queue per (protocol, address family), keeping DNS
+    // order. The `BTreeMap` orders the queues most preferred first: by protocol
+    // (the enum is ordered `H3 < H2OrH1 < H2 < H1`), then by family preference.
+    let mut groups: BTreeMap<
+        (ConnectionAttemptHttpVersions, FamilyPreference),
+        VecDeque<Endpoint>,
+    > = BTreeMap::new();
+    for endpoint in endpoints {
+        let family = if endpoint.address.is_ipv6() == prefer_v6 {
+            FamilyPreference::Preferred
+        } else {
+            FamilyPreference::Other
+        };
+        groups
+            .entry((endpoint.http_version, family))
+            .or_default()
+            .push_back(endpoint);
+    }
+
+    // Deal the front of every queue, round after round, dropping queues as they
+    // empty, until none are left.
+    let mut ordered = Vec::with_capacity(total);
+    while !groups.is_empty() {
+        for queue in groups.values_mut() {
+            if let Some(endpoint) = queue.pop_front() {
+                ordered.push(endpoint);
+            }
+        }
+        groups.retain(|_, queue| !queue.is_empty());
+    }
+    ordered
 }
 
 #[derive(Debug, Clone)]
@@ -831,6 +945,10 @@ impl HappyEyeballs {
             return Some(o);
         }
 
+        if let Some(o) = self.send_dns_request_for_alt_svc() {
+            return Some(o);
+        }
+
         if let Some(o) = self.delay(now) {
             return Some(o);
         }
@@ -845,6 +963,32 @@ impl HappyEyeballs {
         None
     }
 
+    /// The delay to wait before starting the next connection attempt, growing
+    /// exponentially with the number of attempts currently in progress per the
+    /// configured [`connection_attempt_delay_multiplier`](NetworkConfig::connection_attempt_delay_multiplier).
+    ///
+    /// Only in-progress (racing) attempts count: an attempt that has already
+    /// failed does not inflate the delay, so a sequence of attempts each
+    /// triggered by the previous one failing keeps the base delay.
+    fn connection_attempt_delay(&self) -> Duration {
+        let base = self.network_config.connection_attempt_delay;
+        let in_progress = self
+            .connection_attempts
+            .iter()
+            .filter(|a| a.state == ConnectionState::InProgress)
+            .count();
+        let exponent = u32::try_from(in_progress)
+            .unwrap_or(u32::MAX)
+            .saturating_sub(1);
+        let factor = self
+            .network_config
+            .connection_attempt_delay_multiplier
+            .get()
+            .checked_pow(exponent)
+            .unwrap_or(u32::MAX);
+        base.checked_mul(factor).unwrap_or(Duration::MAX)
+    }
+
     fn delay(&self, now: Instant) -> Option<Output> {
         // If we have a successful connection, no connection attempt delay
         // needed.
@@ -852,7 +996,8 @@ impl HappyEyeballs {
             return None;
         }
 
-        if let Some(connection_attempt_delay) = self
+        let connection_attempt_delay = self.connection_attempt_delay();
+        if let Some(remaining) = self
             .connection_attempts
             .iter()
             .filter(|a| a.state == ConnectionState::InProgress)
@@ -860,15 +1005,15 @@ impl HappyEyeballs {
             .max()
             .and_then(|started| {
                 let elapsed = now.duration_since(*started);
-                if elapsed < self.network_config.connection_attempt_delay {
-                    Some(self.network_config.connection_attempt_delay - elapsed)
+                if elapsed < connection_attempt_delay {
+                    Some(connection_attempt_delay - elapsed)
                 } else {
                     None
                 }
             })
         {
             return Some(Output::Timer {
-                duration: connection_attempt_delay,
+                duration: remaining,
             });
         }
 
@@ -941,16 +1086,7 @@ impl HappyEyeballs {
         let any_ech = self.any_ech();
 
         let target_names = self
-            .dns_queries
-            .iter()
-            .filter_map(|q| match &q.state {
-                DnsQueryState::Completed {
-                    response: DnsResult::Https(Ok(service_infos)),
-                    ..
-                } => Some(service_infos.iter()),
-                _ => None,
-            })
-            .flatten()
+            .completed_service_infos()
             // When any ServiceInfo has ECH, skip resolving targets without ECH.
             .filter(move |i| !any_ech || i.ech_config.is_some())
             .map(|i| &i.target_name);
@@ -971,6 +1107,46 @@ impl HappyEyeballs {
             })?;
 
         let target_name = target_name.clone();
+        let id = self.id_generator.next_id();
+        self.dns_queries.push(DnsQuery {
+            id,
+            target_name: target_name.clone(),
+            record_type,
+            state: DnsQueryState::InProgress,
+        });
+        Some(Output::SendDnsQuery {
+            id,
+            hostname: target_name,
+            record_type,
+        })
+    }
+
+    /// A/AAAA queries for alt-svc entries that name a custom host.
+    ///
+    /// Alt-svc hosts that are IP literals need no resolution and are skipped.
+    fn send_dns_request_for_alt_svc(&mut self) -> Option<Output> {
+        let hosts = self
+            .network_config
+            .alt_svc
+            .iter()
+            .filter_map(|a| a.host.as_deref())
+            .filter(|h| h.parse::<IpAddr>().is_err());
+
+        let (target_name, record_type) = hosts
+            .flat_map(|h| {
+                self.network_config
+                    .ip
+                    .address_record_types()
+                    .map(move |rt| (h, rt))
+            })
+            .find(|(h, rt)| {
+                !self
+                    .dns_queries
+                    .iter()
+                    .any(|q| q.target_name.as_str() == *h && q.record_type == *rt)
+            })?;
+
+        let target_name: TargetName = target_name.into();
         let id = self.id_generator.next_id();
         self.dns_queries.push(DnsQuery {
             id,
@@ -1111,11 +1287,12 @@ impl HappyEyeballs {
             return None;
         }
 
+        let connection_attempt_delay = self.connection_attempt_delay();
         if self
             .connection_attempts
             .iter()
             .filter(|a| a.state == ConnectionState::InProgress)
-            .any(|a| a.within_delay(now, self.network_config.connection_attempt_delay))
+            .any(|a| a.within_delay(now, connection_attempt_delay))
         {
             return None;
         }
@@ -1174,49 +1351,39 @@ impl HappyEyeballs {
     }
 
     fn endpoints_to_attempt(&self) -> Vec<Endpoint> {
-        match &self.host {
-            Host::Ip(ip) => self.endpoints_to_attempt_ip(*ip),
-            Host::Domain(domain) => self.endpoints_to_attempt_domain(domain),
-        }
-    }
+        let any_ech = self.any_ech();
 
-    fn endpoints_to_attempt_ip(&self, ip: IpAddr) -> Vec<Endpoint> {
-        let mut endpoints: Vec<Endpoint> = Vec::new();
-        for (http_version, port) in self.origin_version_port_pairs() {
-            let mut bucket = vec![Endpoint {
-                address: SocketAddr::new(ip, port),
-                http_version,
-                ech_config: None,
-            }];
-            bucket.sort_by(|a, b| a.cmp_with_config(b, &self.network_config));
-            endpoints.extend(bucket);
+        // HTTPS-record endpoints come first, ordered by priority.
+        let mut endpoints = self.service_info_endpoints();
+
+        // Alt-svc and the plain origin fallback never carry ECH (an alt-svc
+        // target may differ from the origin), so when at least one ServiceInfo
+        // advertises ECH we use only the HTTPS-record endpoints above.
+        // Otherwise both are tried, after the HTTPS-record endpoints and
+        // interleaved together as a single tier by protocol and address family.
+        if !any_ech {
+            let mut tier = self.alt_svc_endpoints();
+            tier.extend(self.origin_fallback_endpoints());
+            endpoints.extend(interleave_endpoints(tier, self.network_config.prefer_v6()));
         }
+
         endpoints
     }
 
-    fn endpoints_to_attempt_domain(&self, origin_domain: &str) -> Vec<Endpoint> {
+    /// Endpoints from completed HTTPS records, ordered by priority and
+    /// interleaved per record by protocol and address family.
+    fn service_info_endpoints(&self) -> Vec<Endpoint> {
         let any_ech = self.any_ech();
+        let prefer_v6 = self.network_config.prefer_v6();
 
         // Collect all ServiceInfos sorted by priority.
         let mut service_infos: Vec<&ServiceInfo> = self
-            .dns_queries
-            .iter()
-            .filter_map(|q| match &q.state {
-                DnsQueryState::Completed {
-                    response: DnsResult::Https(Ok(infos)),
-                    ..
-                } => Some(infos.as_slice()),
-                _ => None,
-            })
-            .flatten()
-            // When at least one ServiceInfo has ECH config, skip those without it
-            // and skip the origin fallback.
+            .completed_service_infos()
+            // When at least one ServiceInfo has ECH config, skip those without it.
             .filter(|i| !any_ech || i.ech_config.is_some())
             .collect();
         service_infos.sort_by_key(|i| i.priority);
 
-        // build a sorted endpoints per ServiceInfo.
-        let http_versions = self.https_record_http_versions();
         let mut endpoints: Vec<Endpoint> = Vec::new();
         for info in &service_infos {
             let ipv4_addrs: Option<&[Ipv4Addr]> =
@@ -1239,37 +1406,14 @@ impl HappyEyeballs {
                     }
                     _ => None,
                 });
-            let mut bucket = info.flatten_into_endpoints(
+            let bucket = info.flatten_into_endpoints(
                 self.port,
                 ipv4_addrs,
                 ipv6_addrs,
-                &http_versions,
+                &self.network_config.http_versions,
                 self.network_config.ech,
             );
-            bucket.sort_by(|a, b| a.cmp_with_config(b, &self.network_config));
-            endpoints.extend(bucket);
-        }
-
-        // Alt-svc and fallback endpoints use the origin domain without ECH.
-        // Only include them when ECH is not required.
-        if !any_ech {
-            for (http_version, port) in self.origin_version_port_pairs() {
-                let http_versions = HashSet::from([http_version]);
-                let mut bucket: Vec<Endpoint> = self
-                    .dns_queries
-                    .iter()
-                    .filter_map(|q| match &q.state {
-                        DnsQueryState::Completed {
-                            response: r @ (DnsResult::Aaaa(_) | DnsResult::A(_)),
-                            ..
-                        } if q.target_name.as_str() == origin_domain => Some(r),
-                        _ => None,
-                    })
-                    .flat_map(|r| r.flatten_into_endpoints(port, &http_versions))
-                    .collect();
-                bucket.sort_by(|a, b| a.cmp_with_config(b, &self.network_config));
-                endpoints.extend(bucket);
-            }
+            endpoints.extend(interleave_endpoints(bucket, prefer_v6));
         }
 
         endpoints
@@ -1305,17 +1449,26 @@ impl HappyEyeballs {
         )
     }
 
+    /// ServiceInfos from all completed HTTPS responses.
+    fn completed_service_infos(&self) -> impl Iterator<Item = &ServiceInfo> {
+        self.dns_queries
+            .iter()
+            .filter_map(|q| match &q.state {
+                DnsQueryState::Completed {
+                    response: DnsResult::Https(Ok(infos)),
+                    ..
+                } => Some(infos.as_slice()),
+                _ => None,
+            })
+            .flatten()
+    }
+
     fn any_ech(&self) -> bool {
         if !self.network_config.ech {
             return false;
         }
-        self.dns_queries.iter().any(|q| match &q.state {
-            DnsQueryState::Completed {
-                response: DnsResult::Https(Ok(infos)),
-                ..
-            } => infos.iter().any(|i| i.ech_config.is_some()),
-            _ => false,
-        })
+        self.completed_service_infos()
+            .any(|i| i.ech_config.is_some())
     }
 
     /// HTTP versions when the host is an IP address (no DNS involved).
@@ -1323,40 +1476,9 @@ impl HappyEyeballs {
     /// Default H2/H1, filtered by network config.
     fn ip_host_http_versions(&self) -> HashSet<ConnectionAttemptHttpVersions> {
         let mut http_versions = HashSet::from([HttpVersion::H2, HttpVersion::H1]);
-        self.filter_disabled_http_versions(&mut http_versions);
-        ConnectionAttemptHttpVersions::from_http_versions(&http_versions)
-    }
-
-    /// HTTP versions for HTTPS record (ServiceInfo) endpoints.
-    ///
-    /// Uses ALPNs from HTTPS records. Falls back to H2/H1 when
-    /// HTTPS records specify no versions. Filtered by network config.
-    fn https_record_http_versions(&self) -> HashSet<ConnectionAttemptHttpVersions> {
-        let mut http_versions = HashSet::new();
-
-        http_versions.extend(
-            self.dns_queries
-                .iter()
-                .filter_map(|q| match &q.state {
-                    DnsQueryState::Completed {
-                        response: DnsResult::Https(Ok(infos)),
-                        ..
-                    } => Some(
-                        infos
-                            .iter()
-                            .flat_map(|i| i.alpn_http_versions.iter().cloned()),
-                    ),
-                    _ => None,
-                })
-                .flatten(),
-        );
-
-        if http_versions.is_empty() {
-            http_versions.insert(HttpVersion::H2);
-            http_versions.insert(HttpVersion::H1);
-        }
-
-        self.filter_disabled_http_versions(&mut http_versions);
+        self.network_config
+            .http_versions
+            .filter_disabled(&mut http_versions);
         ConnectionAttemptHttpVersions::from_http_versions(&http_versions)
     }
 
@@ -1368,19 +1490,20 @@ impl HappyEyeballs {
         self.ip_host_http_versions()
     }
 
-    /// (http_version, port) pairs for origin endpoints (alt-svc and defaults).
+    /// Endpoints for every alt-svc entry, flat (interleaved by the caller).
     ///
-    /// Combines:
-    /// 1. Alt-svc entries (custom port or origin port)
-    /// 2. Default HTTP versions (H2/H1) at the origin port
-    fn origin_version_port_pairs(&self) -> Vec<(ConnectionAttemptHttpVersions, u16)> {
-        let mut pairs = Vec::new();
-
+    /// Per [RFC 7838](https://datatracker.ietf.org/doc/html/rfc7838), an alt-svc
+    /// entry advertises the origin's service at a host (and optionally port) over
+    /// a given protocol. An entry without a host of its own simply defaults to
+    /// the origin host, so both kinds are handled the same way: the effective
+    /// host is resolved (or taken as an IP literal) and attempted at the alt-svc
+    /// port (defaulting to the origin port) over the alt-svc protocol.
+    ///
+    /// ECH is never applied: an alt-svc target may differ from the origin, so
+    /// the origin's HTTPS-record ECH config does not apply to it.
+    fn alt_svc_endpoints(&self) -> Vec<Endpoint> {
+        let mut endpoints = Vec::new();
         for alt_svc in &self.network_config.alt_svc {
-            debug_assert!(
-                alt_svc.host.is_none(),
-                "alt-svc with custom host not yet supported"
-            );
             if self
                 .network_config
                 .is_http_version_disabled(alt_svc.http_version)
@@ -1388,26 +1511,65 @@ impl HappyEyeballs {
                 continue;
             }
             let port = alt_svc.port.unwrap_or(self.port);
-            pairs.push((alt_svc.http_version.into(), port));
+            let http_version: ConnectionAttemptHttpVersions = alt_svc.http_version.into();
+            endpoints.extend(self.alt_svc_addrs(alt_svc).into_iter().map(|ip| Endpoint {
+                address: SocketAddr::new(ip, port),
+                http_version,
+                ech_config: None,
+            }));
         }
-
-        for http_version in self.fallback_http_versions() {
-            pairs.push((http_version, self.port));
-        }
-
-        pairs
+        endpoints
     }
 
-    fn filter_disabled_http_versions(&self, http_versions: &mut HashSet<HttpVersion>) {
-        if !self.network_config.http_versions.h3 {
-            http_versions.remove(&HttpVersion::H3);
+    /// The default origin endpoints: the baseline H2/H1 connection at the origin
+    /// host and port, used when neither HTTPS records nor alt-svc apply. Flat
+    /// (interleaved by the caller).
+    fn origin_fallback_endpoints(&self) -> Vec<Endpoint> {
+        let http_versions = self.fallback_http_versions();
+        self.origin_addrs()
+            .into_iter()
+            .flat_map(|ip| {
+                http_versions.iter().map(move |&http_version| Endpoint {
+                    address: SocketAddr::new(ip, self.port),
+                    http_version,
+                    ech_config: None,
+                })
+            })
+            .collect()
+    }
+
+    /// Addresses for an alt-svc entry's effective host: its own host when set,
+    /// or the origin host otherwise.
+    fn alt_svc_addrs(&self, alt_svc: &AltSvc) -> Vec<IpAddr> {
+        match &alt_svc.host {
+            // An alt-svc host is a raw string that may be an IP literal.
+            Some(host) => match host.parse::<IpAddr>() {
+                Ok(ip) => vec![ip],
+                Err(_) => self.dns_resolved_addrs(host),
+            },
+            None => self.origin_addrs(),
         }
-        if !self.network_config.http_versions.h2 {
-            http_versions.remove(&HttpVersion::H2);
+    }
+
+    /// Addresses for the origin host: the literal when it is an IP, otherwise
+    /// the addresses received for the origin's A/AAAA queries.
+    fn origin_addrs(&self) -> Vec<IpAddr> {
+        match &self.host {
+            Host::Ip(ip) => vec![*ip],
+            // A `Host::Domain` is never an IP literal (the constructor already
+            // classified it), so resolve it directly.
+            Host::Domain(domain) => self.dns_resolved_addrs(domain),
         }
-        if !self.network_config.http_versions.h1 {
-            http_versions.remove(&HttpVersion::H1);
-        }
+    }
+
+    /// Addresses received for `host`'s completed A/AAAA queries.
+    fn dns_resolved_addrs(&self, host: &str) -> Vec<IpAddr> {
+        self.dns_queries
+            .iter()
+            .filter(|q| q.target_name.as_str() == host)
+            .filter_map(DnsQuery::response)
+            .flat_map(DnsResult::ip_addrs)
+            .collect()
     }
 
     /// Whether to move on to the connection attempt phase based on the received
@@ -1434,11 +1596,16 @@ impl HappyEyeballs {
         // > for the preferred address family that was queried AND
         //
         // <https://www.ietf.org/archive/id/draft-ietf-happy-happyeyeballs-v3-02.html#section-4.2>
-        if !self
-            .dns_queries
-            .iter()
-            .filter(|q| q.is_completed())
-            .any(|q| q.record_type == self.network_config.preferred_dns_record_type())
+        //
+        // Skipped when `wait_for_preferred_address` is disabled, letting the
+        // state machine move on with the non-preferred family rather than
+        // waiting out the resolution delay for the preferred one.
+        if self.network_config.wait_for_preferred_address
+            && !self
+                .dns_queries
+                .iter()
+                .filter(|q| q.is_completed())
+                .any(|q| q.record_type == self.network_config.preferred_dns_record_type())
         {
             return false;
         }

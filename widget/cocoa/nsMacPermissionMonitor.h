@@ -6,6 +6,7 @@
 #define nsMacPermissionMonitor_h_
 
 #include <CoreLocation/CoreLocation.h>
+
 #include "nsIPermissionMonitor.h"
 
 class nsMacPermissionMonitor : public nsIPermissionMonitor {

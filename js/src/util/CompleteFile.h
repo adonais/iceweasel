@@ -10,7 +10,8 @@
 #include <stdint.h>  // uint8_t
 #include <stdio.h>   // fclose, FILE, stdin
 
-#include "jstypes.h"         // JS_PUBLIC_API
+#include "jstypes.h"  // JS_PUBLIC_API
+
 #include "js/AllocPolicy.h"  // js::TempAllocPolicy
 #include "js/Vector.h"       // js::Vector
 

@@ -103,7 +103,7 @@ class nsJSContext : public nsIScriptContext {
   // The GC should run soon, in the zone of aObj if given. If aObj is
   // nullptr, collect all Zones.
   static void PokeGC(JS::GCReason aReason, JSObject* aObj,
-                     mozilla::TimeDuration aDelay = 0);
+                     mozilla::TimeDuration aDelay = {});
 
   // If usage is nearing a threshold, request idle-only GC work. (This is called
   // when a collection would be relatively convenient.)

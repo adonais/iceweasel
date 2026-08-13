@@ -3,27 +3,29 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "WaylandSurface.h"
-#include "WaylandBuffer.h"
-#include <wayland-egl.h>
-#include "nsGtkUtils.h"
-#include "mozilla/StaticPrefs_widget.h"
-#include "mozilla/ToString.h"
+
 #include <dlfcn.h>
 #include <fcntl.h>
-#include "ScreenHelperGTK.h"
-#include "nsWindow.h"
+#include <wayland-egl.h>
+
 #include "DMABufFormats.h"
-#include "mozilla/gfx/gfxVars.h"
+#include "ScreenHelperGTK.h"
+#include "WaylandBuffer.h"
+#include "mozilla/StaticPrefs_widget.h"
+#include "mozilla/ToString.h"
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/gfx/gfxVars.h"
+#include "nsGtkUtils.h"
+#include "nsWindow.h"
 #ifdef MOZ_LOGGING
 #  include "EncoderConfig.h"
 #endif
 
 #undef LOG
 #ifdef MOZ_LOGGING
+#  include "Units.h"
 #  include "mozilla/Logging.h"
 #  include "nsTArray.h"
-#  include "Units.h"
 #  undef LOGWAYLAND
 #  undef LOGVERBOSE
 #  undef LOG_ENABLED_VERBOSE
@@ -1042,7 +1044,7 @@ void WaylandSurface::SetViewPortDestLocked(
 }
 
 void WaylandSurface::SetViewPortSourceRectLocked(
-    const WaylandSurfaceLock& aProofOfLock, const DesktopIntRect& aRect) {
+    const WaylandSurfaceLock& aProofOfLock, const DesktopRect& aRect) {
   MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
 
   // Silently ignore missing viewport to allow broken compositors to show
@@ -1053,7 +1055,7 @@ void WaylandSurface::SetViewPortSourceRectLocked(
   mViewportSourceRect = aRect;
 
   LOGWAYLAND(
-      "WaylandSurface::SetViewPortSourceRectLocked(): [%d, %d] -> [%d x %d]",
+      "WaylandSurface::SetViewPortSourceRectLocked(): [%f, %f] -> [%f x %f]",
       mViewportSourceRect.x, mViewportSourceRect.y, mViewportSourceRect.width,
       mViewportSourceRect.height);
 
@@ -1064,13 +1066,13 @@ void WaylandSurface::SetViewPortSourceRectLocked(
                                ": Wrong coordinates!",
                                ToString(aRect).c_str())
                    .get());
-    mViewportSourceRect = DesktopIntRect(-1, -1, -1, -1);
+    mViewportSourceRect = DesktopRect(-1, -1, -1, -1);
   }
 
-  wp_viewport_set_source(mViewport, wl_fixed_from_int(mViewportSourceRect.x),
-                         wl_fixed_from_int(mViewportSourceRect.y),
-                         wl_fixed_from_int(mViewportSourceRect.width),
-                         wl_fixed_from_int(mViewportSourceRect.height));
+  wp_viewport_set_source(mViewport, wl_fixed_from_double(mViewportSourceRect.x),
+                         wl_fixed_from_double(mViewportSourceRect.y),
+                         wl_fixed_from_double(mViewportSourceRect.width),
+                         wl_fixed_from_double(mViewportSourceRect.height));
   mSurfaceNeedsCommit = true;
 }
 

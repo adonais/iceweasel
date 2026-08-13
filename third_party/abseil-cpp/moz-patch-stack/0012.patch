@@ -1,53 +1,27 @@
 From: Michael Froman <mfroman@mozilla.com>
-Date: Thu, 16 Jan 2025 11:29:00 -0600
-Subject: Bug 1935474 - don't demangle rust symbols. r?ng!
+Date: Mon, 21 Jul 2025 15:50:00 -0500
+Subject: Bug 1978462 - disable absl nullability specifiers since libwebrtc has
+ too many warnings. r?ng!
 
-Building demangle.cc causes errors in our hazard-linux64-haz/debug build.
-For now, we'll avoid calling DemangleRustSymbolEncoding, and skip building
-demangle.cc.
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/828151aa9455ccbfe45787bbe00127813c97cc9e
+There are too many places in libwebrtc that are not yet marked
+with nullability type specifiers.  We need to disable them until
+that is fixed upstream.
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/f3b19b7999b3271ca5858d587673e3eb43525c32
 ---
- abseil-cpp/absl/debugging/BUILD.gn             | 4 ++++
- abseil-cpp/absl/debugging/internal/demangle.cc | 4 ++++
- 2 files changed, 8 insertions(+)
+ abseil-cpp/absl/base/nullability.h | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/abseil-cpp/absl/debugging/BUILD.gn b/abseil-cpp/absl/debugging/BUILD.gn
-index 9041c59ddad..ed1d087c90d 100644
---- a/abseil-cpp/absl/debugging/BUILD.gn
-+++ b/abseil-cpp/absl/debugging/BUILD.gn
-@@ -187,6 +187,9 @@ absl_test("decode_rust_punycode_test") {
- }
+diff --git a/abseil-cpp/absl/base/nullability.h b/abseil-cpp/absl/base/nullability.h
+index ad80178adc1..b209f450cef 100644
+--- a/abseil-cpp/absl/base/nullability.h
++++ b/abseil-cpp/absl/base/nullability.h
+@@ -224,7 +224,8 @@
+ #define ABSL_POINTERS_DEFAULT_NONNULL
  
- absl_source_set("demangle_rust") {
-+# hazard-linux64-haz/debug builds fail when this section is
-+# included in the build.
-+if (!moz_webrtc_build) {
-   sources = [ "internal/demangle_rust.cc" ]
-   public = [ "internal/demangle_rust.h" ]
-   deps = [
-@@ -195,6 +198,7 @@ absl_source_set("demangle_rust") {
-     "//third_party/abseil-cpp/absl/base:core_headers",
-   ]
- }
-+}
- 
- absl_test("demangle_rust_test") {
-   sources = [ "internal/demangle_rust_test.cc" ]
-diff --git a/abseil-cpp/absl/debugging/internal/demangle.cc b/abseil-cpp/absl/debugging/internal/demangle.cc
-index dc15b8e5849..13683bec9e7 100644
---- a/abseil-cpp/absl/debugging/internal/demangle.cc
-+++ b/abseil-cpp/absl/debugging/internal/demangle.cc
-@@ -2957,9 +2957,13 @@ static bool Overflowed(const State *state) {
- 
- // The demangler entry point.
- bool Demangle(const char* mangled, char* out, size_t out_size) {
-+// mozilla - hazard-linux64-haz/debug failure when demangle_rust.cc is
-+// included in the build.  For now we'll avoid this code.
-+#if 0
-   if (mangled[0] == '_' && mangled[1] == 'R') {
-     return DemangleRustSymbolEncoding(mangled, out, out_size);
-   }
-+#endif
- 
-   State state;
-   InitState(&state, mangled, out, out_size);
+ #if defined(__clang__) && !defined(__OBJC__) && \
+-    ABSL_HAVE_FEATURE(nullability_on_classes)
++    ABSL_HAVE_FEATURE(nullability_on_classes) && \
++    0 // mozilla - stop warnings in libwebrtc for "missing a nullability type specifier"
+ // absl_nonnull (default with `ABSL_POINTERS_DEFAULT_NONNULL`)
+ //
+ // The indicated pointer is never null. It is the responsibility of the provider

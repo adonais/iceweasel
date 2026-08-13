@@ -11,27 +11,8 @@
 
 namespace IPC {
 
-template <>
-struct ParamTraits<
-    mozilla::PermissionDelegateHandler::DelegatedPermissionList> {
-  typedef mozilla::PermissionDelegateHandler::DelegatedPermissionList paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    for (auto& permission : aParam.mPermissions) {
-      WriteParam(aWriter, permission);
-    }
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    for (auto& permission : aResult->mPermissions) {
-      if (!ReadParam(aReader, &permission)) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(
+    mozilla::PermissionDelegateHandler::DelegatedPermissionList, mPermissions);
 
 }  // namespace IPC
 

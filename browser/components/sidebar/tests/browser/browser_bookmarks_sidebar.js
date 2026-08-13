@@ -24,7 +24,7 @@ async function showBookmarksSidebar() {
     await SidebarTestUtils.showPanel(window, "viewBookmarksSidebar");
   }
   const { contentDocument, contentWindow } = SidebarController.browser;
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => contentDocument.querySelector("sidebar-bookmarks"),
     "Wait for sidebar-bookmarks element"
   );
@@ -517,7 +517,7 @@ add_task(async function test_bookmarks_search_context_menu_show_in_folder() {
   );
   await promiseHidden;
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => component.searchQuery === "",
     "Search is cleared after Show in Folder."
   );
@@ -548,12 +548,12 @@ add_task(async function test_bookmarks_search_context_menu_show_in_folder() {
     return null;
   };
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => findRow(tabList),
     "The bookmark row appears in the tree view after Show in Folder."
   );
   const revealedRow = findRow(tabList);
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => revealedRow.selected,
     "The bookmark row is visually selected after Show in Folder."
   );
@@ -877,6 +877,178 @@ add_task(async function test_add_bookmark_into_right_clicked_folder() {
   SidebarTestUtils.closePanel(window);
 });
 
+add_task(async function test_bookmarks_copy_writes_all_flavors() {
+  await addBookmark({ title: "Copy Me", url: "https://example.com/copy" });
+
+  const { component } = await showBookmarksSidebar();
+  const tabList = component.bookmarkList;
+  const toolbarDetails = await openToolbarFolder(tabList);
+  const nestedList = toolbarDetails.querySelector("sidebar-bookmark-list");
+  await BrowserTestUtils.waitForMutationCondition(
+    nestedList.shadowRoot,
+    { childList: true, subtree: true },
+    () => [...nestedList.rowEls].some(r => r.title === "Copy Me")
+  );
+
+  const row = [...nestedList.rowEls].find(r => r.title === "Copy Me");
+  await activateContextMenuItem(row.mainEl, "sidebar-bookmarks-context-copy");
+
+  for (const flavor of [
+    PlacesUtils.TYPE_X_MOZ_PLACE,
+    PlacesUtils.TYPE_X_MOZ_URL,
+    PlacesUtils.TYPE_PLAINTEXT,
+  ]) {
+    ok(
+      Services.clipboard.hasDataMatchingFlavors(
+        [flavor],
+        Ci.nsIClipboard.kGlobalClipboard
+      ),
+      `Clipboard has the ${flavor} flavor.`
+    );
+  }
+
+  // Check text/plain flavor saved in clipboard holds the expected bookmark url
+  const xferable = Cc["@mozilla.org/widget/transferable;1"].createInstance(
+    Ci.nsITransferable
+  );
+  xferable.init(null);
+  xferable.addDataFlavor(PlacesUtils.TYPE_PLAINTEXT);
+  Services.clipboard.getData(xferable, Ci.nsIClipboard.kGlobalClipboard);
+  const plain = {};
+  xferable.getTransferData(PlacesUtils.TYPE_PLAINTEXT, plain);
+  is(
+    plain.value.QueryInterface(Ci.nsISupportsString).data,
+    "https://example.com/copy",
+    "text/plain flavor holds the bookmark URL."
+  );
+
+  Services.clipboard.emptyClipboard(Ci.nsIClipboard.kGlobalClipboard);
+  await PlacesUtils.bookmarks.eraseEverything();
+  SidebarTestUtils.closePanel(window);
+});
+
+add_task(async function test_bookmarks_copy_paste_into_folder() {
+  const bm = await addBookmark({
+    title: "Copy and Paste Me",
+    url: "https://example.com/paste",
+  });
+  const folder = await addFolder("Paste Target Folder");
+  await addBookmark({
+    title: "Inside Folder Already",
+    url: "https://example.com/existing-in-paste-folder",
+    parentGuid: folder.guid,
+  });
+
+  const { component } = await showBookmarksSidebar();
+  const tabList = component.bookmarkList;
+  const toolbarDetails = await openToolbarFolder(tabList);
+  const nestedList = toolbarDetails.querySelector("sidebar-bookmark-list");
+  await BrowserTestUtils.waitForMutationCondition(
+    nestedList.shadowRoot,
+    { childList: true, subtree: true },
+    () =>
+      [...nestedList.rowEls].some(r => r.title === "Copy and Paste Me") &&
+      [...nestedList.folderEls].some(
+        d =>
+          d.querySelector("summary")?.textContent.trim() ===
+          "Paste Target Folder"
+      )
+  );
+
+  const row = [...nestedList.rowEls].find(r => r.title === "Copy and Paste Me");
+  await activateContextMenuItem(row.mainEl, "sidebar-bookmarks-context-copy");
+
+  const folderDetails = [...nestedList.folderEls].find(
+    d =>
+      d.querySelector("summary")?.textContent.trim() === "Paste Target Folder"
+  );
+  const summary = folderDetails.querySelector("summary");
+  const promiseAdded = PlacesTestUtils.waitForNotification("bookmark-added");
+
+  await activateContextMenuItem(summary, "sidebar-bookmarks-context-paste");
+  const [{ guid: pastedGuid }] = await promiseAdded;
+
+  const pasted = await PlacesUtils.bookmarks.fetch(pastedGuid);
+  is(
+    pasted.parentGuid,
+    folder.guid,
+    "The copied bookmark is pasted inside the folder."
+  );
+  is(
+    pasted.url.href,
+    "https://example.com/paste",
+    "The pasted bookmark has the right URL."
+  );
+  ok(
+    await PlacesUtils.bookmarks.fetch(bm.guid),
+    "The original bookmark still exists after a copy."
+  );
+
+  Services.clipboard.emptyClipboard(Ci.nsIClipboard.kGlobalClipboard);
+  await PlacesUtils.bookmarks.eraseEverything();
+  SidebarTestUtils.closePanel(window);
+});
+
+add_task(async function test_bookmarks_cut_moves_after_paste() {
+  const bm = await addBookmark({
+    title: "Cut Me",
+    url: "https://example.com/cut",
+  });
+  const folder = await addFolder("Paste Target Folder");
+  await addBookmark({
+    title: "Inside Folder Already",
+    url: "https://example.com/existing",
+    parentGuid: folder.guid,
+  });
+
+  const { component } = await showBookmarksSidebar();
+  const tabList = component.bookmarkList;
+  const toolbarDetails = await openToolbarFolder(tabList);
+  const nestedList = toolbarDetails.querySelector("sidebar-bookmark-list");
+  await BrowserTestUtils.waitForMutationCondition(
+    nestedList.shadowRoot,
+    { childList: true, subtree: true },
+    () =>
+      [...nestedList.rowEls].some(r => r.title === "Cut Me") &&
+      [...nestedList.folderEls].some(
+        d =>
+          d.querySelector("summary")?.textContent.trim() ===
+          "Paste Target Folder"
+      )
+  );
+
+  const row = [...nestedList.rowEls].find(r => r.title === "Cut Me");
+  await activateContextMenuItem(row.mainEl, "sidebar-bookmarks-context-cut");
+
+  ok(
+    await PlacesUtils.bookmarks.fetch(bm.guid),
+    "The bookmark still exists after being cut, before pasting."
+  );
+
+  const folderDetails = [...nestedList.folderEls].find(
+    d =>
+      d.querySelector("summary")?.textContent.trim() === "Paste Target Folder"
+  );
+  const summary = folderDetails.querySelector("summary");
+  await activateContextMenuItem(summary, "sidebar-bookmarks-context-paste");
+
+  await TestUtils.waitForCondition(async () => {
+    const moved = await PlacesUtils.bookmarks.fetch(bm.guid);
+    return moved?.parentGuid === folder.guid;
+  }, "Cut bookmark is moved into the folder.");
+
+  const moved = await PlacesUtils.bookmarks.fetch(bm.guid);
+  isnot(
+    moved.parentGuid,
+    PlacesUtils.bookmarks.toolbarGuid,
+    "The bookmark is no longer in its original parent."
+  );
+
+  Services.clipboard.emptyClipboard(Ci.nsIClipboard.kGlobalClipboard);
+  await PlacesUtils.bookmarks.eraseEverything();
+  SidebarTestUtils.closePanel(window);
+});
+
 add_task(async function test_bookmarks_delete_via_context_menu() {
   await addBookmark({ title: "Delete Me" });
 
@@ -1031,7 +1203,7 @@ add_task(async function test_bookmarks_drag_reorders_items() {
     }
   );
 
-  await BrowserTestUtils.waitForCondition(async () => {
+  await TestUtils.waitForCondition(async () => {
     fetchA = await PlacesUtils.bookmarks.fetch(bmA.guid);
     fetchB = await PlacesUtils.bookmarks.fetch(bmB.guid);
     return fetchA.index > fetchB.index;
@@ -1099,7 +1271,7 @@ add_task(async function test_bookmarks_drag_into_folder() {
     }
   );
 
-  await BrowserTestUtils.waitForCondition(async () => {
+  await TestUtils.waitForCondition(async () => {
     const fetchBm = await PlacesUtils.bookmarks.fetch(bm.guid);
     return fetchBm.parentGuid === folder.guid;
   }, "Bookmark is moved into the folder.");
@@ -1164,7 +1336,7 @@ add_task(async function test_bookmarks_drag_hover_expands_folder() {
       }
     );
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => folderDetails.open,
       "Collapsed folder auto-expands while hovered during a drag."
     );
@@ -1411,6 +1583,79 @@ add_task(async function test_bookmarks_smart_bookmark_renders_as_folder() {
   await PlacesUtils.bookmarks.remove(tagsSmart.guid);
   await PlacesUtils.bookmarks.remove(recentSmart.guid);
   await PlacesUtils.bookmarks.remove(recentBookmark.guid);
+  SidebarController.hide();
+});
+
+add_task(async function test_bookmarks_smart_bookmark_uses_bookmark_guid() {
+  // A folder-shortcut smart bookmark expands into the contents of a folder.
+  // The expanded children must carry the bookmark guid (b.guid), not the page
+  // guid (h.guid), otherwise selecting/editing/removing them targets the wrong
+  // item.
+  const folder = await addFolder("Shortcut Target");
+  const innerBookmark = await addBookmark({
+    title: "Inner Page",
+    url: "https://example.com/inner-shortcut",
+    parentGuid: folder.guid,
+  });
+  const { guid: pageGuid } = await PlacesUtils.history.fetch(
+    "https://example.com/inner-shortcut"
+  );
+  Assert.notEqual(
+    pageGuid,
+    innerBookmark.guid,
+    "Sanity check: page guid and bookmark guid differ."
+  );
+
+  const shortcut = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+    title: "Folder Shortcut",
+    url: `place:parent=${folder.guid}`,
+  });
+
+  const { component } = await showBookmarksSidebar();
+  const tabList = component.bookmarkList;
+
+  const toolbarDetails = await openToolbarFolder(tabList);
+  const toolbarList = toolbarDetails.querySelector("sidebar-bookmark-list");
+
+  await BrowserTestUtils.waitForMutationCondition(
+    toolbarList.shadowRoot,
+    { childList: true, subtree: true },
+    () => [...toolbarList.folderEls].some(d => d.guid === shortcut.guid)
+  );
+
+  const shortcutFolder = [...toolbarList.folderEls].find(
+    d => d.guid === shortcut.guid
+  );
+  ok(shortcutFolder, "Folder shortcut renders as a folder.");
+
+  if (!shortcutFolder.open) {
+    shortcutFolder.querySelector("summary").click();
+    await BrowserTestUtils.waitForMutationCondition(
+      shortcutFolder,
+      { attributes: true },
+      () => shortcutFolder.open
+    );
+  }
+
+  const shortcutList = shortcutFolder.querySelector("sidebar-bookmark-list");
+  await BrowserTestUtils.waitForMutationCondition(
+    shortcutList.shadowRoot,
+    { childList: true, subtree: true },
+    () => [...shortcutList.rowEls].some(r => r.title === "Inner Page")
+  );
+
+  const innerRow = [...shortcutList.rowEls].find(r => r.title === "Inner Page");
+  ok(innerRow, "The folder's bookmark is visible inside the shortcut.");
+  Assert.equal(
+    innerRow.guid,
+    innerBookmark.guid,
+    "Expanded child carries the bookmark guid, not the page guid."
+  );
+
+  await PlacesUtils.bookmarks.remove(shortcut.guid);
+  await PlacesUtils.bookmarks.remove(innerBookmark.guid);
+  await PlacesUtils.bookmarks.remove(folder.guid);
   SidebarController.hide();
 });
 
@@ -1760,4 +2005,73 @@ add_task(async function test_bookmarks_smart_bookmark_context_menu() {
   await PlacesUtils.bookmarks.remove(recentSmart.guid);
   await PlacesUtils.bookmarks.remove(recentBookmark.guid);
   SidebarController.hide();
+});
+
+add_task(async function test_long_bookmark_title_is_truncated() {
+  // Regression coverage for bug 2049187: the bookmarks sidebar grid was
+  // creating implicit columns sized to content, which let long titles
+  // visually escape the sidebar instead of being clipped with an ellipsis.
+  // After the fix, the grid columns are minmax(0, 1fr), so the inner title
+  // span is bounded by its grid cell and `text-overflow: ellipsis` actually
+  // takes effect — observable as scrollWidth > clientWidth on the title span.
+  const longTitle =
+    "A bookmark title that is intentionally very long so the grid cell must " +
+    "clip it instead of expanding around it " +
+    "x".repeat(120);
+  const bookmark = await addBookmark({
+    title: longTitle,
+    url: "https://example.com/long-title-bookmark",
+  });
+
+  const { component } = await showBookmarksSidebar();
+  const tabList = component.bookmarkList;
+  await BrowserTestUtils.waitForMutationCondition(
+    tabList.shadowRoot,
+    { childList: true, subtree: true },
+    () => tabList.folderEls[0]
+  );
+
+  // Expand the top-level Bookmarks Toolbar folder so its rows render.
+  const topDetails = tabList.folderEls[0];
+  if (!topDetails.open) {
+    topDetails.querySelector("summary").click();
+    await BrowserTestUtils.waitForMutationCondition(
+      topDetails,
+      { attributes: true },
+      () => topDetails.open
+    );
+  }
+  const nestedList = topDetails.querySelector("sidebar-bookmark-list");
+  await BrowserTestUtils.waitForMutationCondition(
+    nestedList.shadowRoot,
+    { childList: true, subtree: true },
+    () => [...nestedList.rowEls].some(r => r.title === longTitle)
+  );
+  await nestedList.updateComplete;
+
+  const row = [...nestedList.rowEls].find(r => r.title === longTitle);
+  const titleEl = row.shadowRoot.getElementById("fxview-tab-row-title");
+  ok(titleEl, "Bookmark row exposes its inner title span.");
+
+  // The grid cell holding the title must be bounded so text-overflow can
+  // clip the long string. If the fix regresses, the cell expands to fit the
+  // content and scrollWidth equals clientWidth.
+  Assert.greater(
+    titleEl.scrollWidth,
+    titleEl.clientWidth,
+    "Long bookmark title is being clipped by its grid cell (scrollWidth > clientWidth)."
+  );
+
+  // The row itself must also not exceed the sidebar bookmark list host width:
+  // a runaway grid cell would let the row push past the sidebar viewport.
+  const rowRect = row.getBoundingClientRect();
+  const hostRect = nestedList.getBoundingClientRect();
+  Assert.lessOrEqual(
+    rowRect.right,
+    hostRect.right + 0.5,
+    "Bookmark row does not overflow the sidebar list horizontally."
+  );
+
+  await PlacesUtils.bookmarks.remove(bookmark);
+  SidebarTestUtils.closePanel(window);
 });

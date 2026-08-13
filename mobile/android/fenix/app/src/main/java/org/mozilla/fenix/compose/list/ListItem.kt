@@ -1100,7 +1100,7 @@ private fun IconListItemPreview() {
                 enabled = true,
                 onClick = {},
                 beforeIconTint = Color.Unspecified,
-                beforeIconPainter = painterResource(iconsR.drawable.mozac_ic_shield_slash_critical_24),
+                beforeIconPainter = painterResource(iconsR.drawable.mozac_ic_shield_slash_multicolor_24),
                 beforeIconDescription = "click me",
                 afterIconPainter = painterResource(iconsR.drawable.mozac_ic_chevron_right_24),
                 afterIconDescription = null,
@@ -1484,14 +1484,14 @@ private fun IconListItemBeforeIconPreview() {
             Row(modifier = Modifier.padding(all = FirefoxTheme.layout.space.static100)) {
                 IconListItemBeforeIcon(
                     isHighlighted = false,
-                    painter = painterResource(iconsR.drawable.mozac_ic_shield_slash_critical_24),
+                    painter = painterResource(iconsR.drawable.mozac_ic_shield_slash_multicolor_24),
                     description = "",
                     tint = Color.Unspecified,
                 )
 
                 IconListItemBeforeIcon(
                     isHighlighted = true,
-                    painter = painterResource(iconsR.drawable.mozac_ic_shield_slash_critical_24),
+                    painter = painterResource(iconsR.drawable.mozac_ic_shield_slash_multicolor_24),
                     description = "",
                     tint = Color.Unspecified,
                 )

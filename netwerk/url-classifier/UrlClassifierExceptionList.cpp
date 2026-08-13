@@ -3,14 +3,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "UrlClassifierExceptionList.h"
-#include "nsIEffectiveTLDService.h"
-#include "nsIUrlClassifierExceptionListEntry.h"
-#include "nsIURI.h"
-#include "mozilla/net/UrlClassifierCommon.h"
+
 #include "mozilla/ProfilerMarkers.h"
+#include "mozilla/RustRegex.h"
+#include "mozilla/net/UrlClassifierCommon.h"
+#include "nsIEffectiveTLDService.h"
+#include "nsIURI.h"
+#include "nsIUrlClassifierExceptionListEntry.h"
 #include "nsNetCID.h"
 #include "nsServiceManagerUtils.h"
-#include "mozilla/RustRegex.h"
 
 namespace mozilla::net {
 

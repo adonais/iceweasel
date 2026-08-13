@@ -2,20 +2,20 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/StaticPrefs_gfx.h"
+#include <unordered_map>
+
+#include "GeckoProfiler.h"
+#include "WebRenderTypes.h"
 #include "gfxUtils.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/Range.h"
+#include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/gfx/2D.h"
-#include "mozilla/gfx/RectAbsolute.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/RecordedEvent.h"
+#include "mozilla/gfx/RectAbsolute.h"
 #include "mozilla/layers/WebRenderDrawEventRecorder.h"
-#include "WebRenderTypes.h"
 #include "webrender_ffi.h"
-#include "GeckoProfiler.h"
-
-#include <unordered_map>
 #ifdef FUZZING
 #  include "prenv.h"
 #endif

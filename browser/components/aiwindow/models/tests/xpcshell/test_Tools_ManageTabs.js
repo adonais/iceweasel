@@ -78,11 +78,6 @@ add_task(function test_manageTabs_schema_is_well_formed() {
     "boolean",
     "ask_confirmation is boolean (not bool)"
   );
-  Assert.deepEqual(
-    params.properties.action.enum,
-    ["close_tabs"],
-    "Only close_tabs action is currently exposed"
-  );
   Assert.equal(
     params.properties.url_tokens.type,
     "array",

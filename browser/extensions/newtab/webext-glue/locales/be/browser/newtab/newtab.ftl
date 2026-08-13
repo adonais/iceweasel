@@ -93,6 +93,15 @@ home-prefs-sports-widget-header =
 # Clock is a widget on New Tab that displays time zones around the world.
 home-prefs-clocks-header =
     .label = Гадзіннік
+# Privacy is a widget on New Tab that shows tracking protection activity.
+home-prefs-privacy-header =
+    .label = Прыватнасць
+# Stocks is a widget on New Tab that shows stock ticker prices.
+home-prefs-stocks-header =
+    .label = Акцыі
+# Picture of the day is a widget on New Tab that shows a daily Wikimedia Commons image.
+home-prefs-picture-header =
+    .label = Фота дня
 home-prefs-mission-message2 =
     .message = Нашы спонсары падтрымліваюць нашу місію па стварэнні лепшага Інтэрнэту.
 home-prefs-manage-topics-link2 =
@@ -153,6 +162,238 @@ home-prefs-support-firefox-header-srd =
     .label = Падтрымаць { -brand-product-name }
 home-prefs-mission-message-learn-more-link-srd = Даведацца, як
 
+## Strings for the Privacy widget
+
+# Context menu item linking to more information about the Privacy widget.
+newtab-privacy-menu-learn-more = Падрабязней
+
+## Privacy widget — count readout
+
+# Label shown under the large tracker-count number, appearing like:
+# Line 1: 86
+# Line 2: Trackers blocked today
+# Translations can be adjusted to "Today's blocked trackers" or something
+# similar if this fixed order causes issues.
+# Variables:
+#   $count (number) - Number of trackers blocked today
+newtab-privacy-trackers-blocked-today =
+    { $count ->
+        [one] трэкер сёння заблакаваны
+        [few] трэкеры сёння заблакаваныя
+       *[many] трэкераў сёння заблакавана
+    }
+# Second line of the readout, under the large number and "Trackers blocked
+# today". Counts the sites those trackers were blocked on. The English is
+# shortened from "Blocked across { $count } sites" — translate it that fuller way
+# if the short fragment doesn't work in your language.
+# Variables:
+#   $count (number) - Number of sites where trackers were blocked
+newtab-privacy-across-sites =
+    { $count ->
+        [one] на { $count } сайце
+        [few] на { $count } сайтах
+       *[many] на { $count } сайтах
+    }
+
+## Privacy widget — empty state
+
+# Shown when no trackers have been blocked yet today.
+newtab-privacy-empty = { -brand-short-name } блакуе трэкеры ў часе аглядання. Вы ўбачыце іх тут.
+
+## Privacy widget — informational messages
+##
+## Rotating "info" secondary messages. Each message has a body plus a matched
+## "-cta" button label sharing the same id stem (the CTA button isn't rendered
+## yet; the labels are authored so the pairing is ready).
+
+newtab-privacy-message-info-1 = { -brand-short-name } аўтаматычна блакуе трэкеры ў часе аглядання інтэрнэту.
+newtab-privacy-message-info-1-cta = Паглядзець ахову
+newtab-privacy-message-info-2 = Блакаванне трэкераў дапамагае спыніць сачэнне за вамі ў інтэрнэце.
+newtab-privacy-message-info-2-cta = Паглядзець ахову
+newtab-privacy-message-info-3 = На многіх сайтах ёсць трэкеры, таму кампаніі, якія вы ніколі не наведвалі, могуць сачыць за вамі ў інтэрнэце.
+newtab-privacy-message-info-3-cta = Паглядзець ахову
+newtab-privacy-message-info-4 = Выбар { -brand-short-name } азначае выбар прадвызначанай аховы.
+newtab-privacy-message-info-4-cta = Паглядзець ахову
+newtab-privacy-message-info-5 = Блакаванне трэкераў азначае, што менш кампаній могуць сачыць за вамі на розных сайтах.
+newtab-privacy-message-info-5-cta = Паглядзець ахову
+newtab-privacy-message-info-6 = Захоўвайце свае дадзеныя з дапамогай { -brand-short-name }. Мы ніколі іх не прадаем, але іншыя браўзеры могуць.
+newtab-privacy-message-info-6-cta = Даведацца больш
+newtab-privacy-message-info-7 = Глядзіце, якія трэкеры { -brand-short-name } заблакаваў.
+newtab-privacy-message-info-7-cta = Паглядзець ахову
+newtab-privacy-message-info-8 = Агляданне з дапамогай { -brand-short-name } падтрымлівае місію { -vendor-short-name } па стварэнні лепшага Інтэрнэту.
+newtab-privacy-message-info-8-cta = Даведацца больш
+newtab-privacy-message-info-9 = Зрабіце { -brand-short-name } сваім асноўным браўзерам для ўбудаванай прыватнасці.
+newtab-privacy-message-info-9-cta = Зрабіць прадвызначаным
+newtab-privacy-message-info-10 = Захоўвайце паролі ў { -brand-short-name }, каб выкарыстоўваць надзейныя, унікальныя лагіны ўсюды.
+newtab-privacy-message-info-10-cta = Перайсці да пароляў
+newtab-privacy-message-info-11 = Даведайцеся, як { -brand-short-name } дапамагае забяспечыць большую прыватнасць вашага аглядання.
+newtab-privacy-message-info-11-cta = Даведацца больш
+newtab-privacy-message-info-12 = Блакаванне трэкераў можа дапамагчы зэканоміць прапускную здольнасць на тарыфных планах з абмежаваным трафікам.
+newtab-privacy-message-info-12-cta = Паглядзець ахову
+newtab-privacy-message-info-13 = { -brand-short-name } блакуе трэкеры, вызваляючы прапускную здольнасць для больш плаўнай трансляцыі.
+newtab-privacy-message-info-13-cta = Паглядзець ахову
+
+## Privacy widget — promotional messages
+##
+## Rotating "promo" secondary messages suggesting another Firefox feature. Each
+## has a body plus a matched "-cta" button label.
+
+newtab-privacy-message-promo-monitor-1 = Даведайцеся, ці выявілася ваша асабістая інфармацыя ва ўцечцы дадзеных.
+newtab-privacy-message-promo-monitor-1-cta = Даведацца больш
+newtab-privacy-message-promo-monitor-2 = Абараніце сваю інфармацыю з дапамогай бясплатнага маніторынгу ўцечак дадзеных, да 20 адрасоў электроннай пошты.
+newtab-privacy-message-promo-monitor-2-cta = Даведацца больш
+newtab-privacy-message-promo-signin-1 = Трымайце закладкі, паролі і карткі зашыфраванымі на ўсіх прыладах з дапамогай свайго ўліковага запісу { -vendor-short-name }.
+newtab-privacy-message-promo-signin-1-cta = Увайсці
+newtab-privacy-message-promo-vpn-1 = Робіце пакупкі праз грамадскі Wi-Fi? Уключыце ўбудаваны VPN для дадатковай аховы.
+newtab-privacy-message-promo-vpn-1-cta = Адкрыць VPN
+newtab-privacy-message-promo-vpn-2 = Карыстаецеся Wi-Fi ў аэрапорце? Абараніце сваё агляданне, уключыўшы ўбудаваны VPN.
+newtab-privacy-message-promo-vpn-2-cta = Адкрыць VPN
+newtab-privacy-message-promo-vpn-3 = Уключыце ўбудаваны VPN, каб трымаць сваё месцазнаходжанне больш прыватным.
+newtab-privacy-message-promo-vpn-3-cta = Адкрыць VPN
+newtab-privacy-message-promo-private-window-1 = Паспрабуйце прыватнае акно для больш прыватнага аглядання пры выкарыстанні агульнага камп'ютара.
+newtab-privacy-message-promo-private-window-1-cta = Адкрыць прыватнае акно
+newtab-privacy-message-promo-relay-1 = Захавайце свой сапраўдны адрас электроннай пошты для людзей, якім давяраеце; выкарыстоўвайце маску электроннай пошты для рэгістрацыі.
+newtab-privacy-message-promo-relay-1-cta = Атрымаць маскі
+newtab-privacy-message-promo-relay-2 = Абараніце сваю паштовую скрыню ад спаму з дапамогай бясплатнай маскіроўкі электроннай пошты.
+newtab-privacy-message-promo-relay-2-cta = Атрымаць маскі
+newtab-privacy-message-promo-relay-3 = Атрымайце 50 бясплатных масак электроннай пошты, каб захаваць прыватнасць вашай сапраўднай электроннай пошты.
+newtab-privacy-message-promo-relay-3-cta = Атрымаць маскі
+
+## Privacy widget — celebration messages
+##
+## Earned "celebration" moments (milestones, daily cap, streak, first
+## protection). Count-bearing ones interpolate { $count }.
+
+# Variables:
+#   $count (number) - Trackers blocked this week
+newtab-privacy-message-milestone-week =
+    { $count ->
+        [one] На гэтым тыдні заблакаваны { $count } трэкер. Паглядзіце, што { -brand-short-name } трымае далей ад вас.
+        [few] На гэтым тыдні заблакавана { $count } трэкеры. Паглядзіце, што { -brand-short-name } трымае далей ад вас.
+       *[many] На гэтым тыдні заблакавана { $count } трэкераў. Паглядзіце, што { -brand-short-name } трымае далей ад вас.
+    }
+newtab-privacy-message-milestone-week-cta = Паглядзець ахову
+# Variables:
+#   $count (number) - Trackers blocked this month
+newtab-privacy-message-milestone-month =
+    { $count ->
+        [one] У гэтым месяцы заблакаваны { $count } трэкер. Маленькі крок да прыватнасці. Вялікі крок да спакою.
+        [few] У гэтым месяцы заблакавана { $count } трэкеры. Маленькі крок да прыватнасці. Вялікі крок да спакою.
+       *[many] У гэтым месяцы заблакавана { $count } трэкераў. Маленькі крок да прыватнасці. Вялікі крок да спакою.
+    }
+newtab-privacy-message-milestone-month-cta = Паглядзець ахову
+# Variables:
+#   $count (number) - Trackers blocked this year
+newtab-privacy-message-milestone-year =
+    { $count ->
+        [one] У гэтым годзе заблакаваны { $count } трэкер. Гэта магутны год аховы вашай прыватнасці.
+        [few] У гэтым годзе заблакавана { $count } трэкеры. Гэта магутны год аховы вашай прыватнасці.
+       *[many] У гэтым годзе заблакавана { $count } трэкераў. Гэта магутны год аховы вашай прыватнасці.
+    }
+newtab-privacy-message-milestone-year-cta = Паглядзець ахову
+# Variables:
+#   $count (number) - Trackers blocked all-time
+newtab-privacy-message-milestone-total =
+    { $count ->
+        [one] Заблакіраваны { $count } трэкер. Гэта значны прагрэс у кірунку прыватнасці на вашых умовах.
+        [few] Заблакіравана { $count } трэкеры. Гэта значны прагрэс у кірунку прыватнасці на вашых умовах.
+       *[many] Заблакіравана { $count } трэкераў. Гэта значны прагрэс у кірунку прыватнасці на вашых умовах.
+    }
+newtab-privacy-message-milestone-total-cta = Паглядзець ахову
+# Shown when today's blocked-tracker count reaches the display cap ("100+").
+newtab-privacy-message-daily-cap = (Сёння заблакавана больш за 100 трэкераў). Менш трэкераў азначае больш прыватнасці.
+newtab-privacy-message-daily-cap-cta = Паглядзець ахову
+# Variables:
+#   $count (number) - Consecutive days the user has had trackers blocked
+newtab-privacy-message-streak =
+    { $count ->
+        [one] Вы абаронены { $count } дзень запар.
+        [few] Вы абаронены { $count } дні запар.
+       *[many] Вы абаронены { $count } дзён запар.
+    }
+newtab-privacy-message-streak-cta = Паглядзець ахову
+# Shown the first time the tracker count goes above zero.
+newtab-privacy-message-first-protection = Працягвайце аглядаць, { -brand-short-name } будзе працягваць блакаваць.
+newtab-privacy-message-first-protection-cta = Паглядзець ахову
+
+## Strings for the Stocks widget
+
+# Context menu item for searching stock ticker symbols.
+newtab-stocks-menu-search = Пошук сімвалаў тыкераў
+# Context menu item linking to more information about the Stocks widget.
+newtab-stocks-menu-learn-more = Падрабязней
+# "Stocks widget options" is an icon-only button in the widget toolbar — the
+# attributes are consumed as tooltip/screen-reader label only. The button
+# never renders visible text.
+newtab-stocks-widget-menu-button =
+    .title = Параметры віджэта "Акцыі"
+    .aria-label = Параметры віджэта "Акцыі"
+# Heading for the Stocks widget.
+newtab-stocks-widget-title = Акцыі
+
+## Screen-reader summary of a stock ticker.
+## Variables:
+##   $name (String) - the full fund/ETF name, e.g. "SPDR S&P 500 ETF Trust".
+##   $change (String) - the day's percentage change, e.g. "+2.1%".
+##   $price (String) - the last price, e.g. "$559.44".
+
+# Stock increased (went up) during the day
+newtab-stocks-ticker-status-up = { $name }, рост на { $change }, { $price }
+# Stock decreased (went down) during the day
+newtab-stocks-ticker-status-down = { $name }, спад на { $change }, { $price }
+# Stock didn't change during the day
+newtab-stocks-ticker-status-flat = { $name }, без змен, { $change }, { $price }
+
+## Strings for the Picture of the Day widget
+
+# Title shown at the top of the widget, with the source name appended.
+# "Wikimedia Commons" is a brand name and should not be translated.
+newtab-picture-header = Фота дня · Wikimedia Commons
+# Shorter title shown at the top of the widget, without the source name.
+newtab-picture-header-main = Фота дня
+# Attribution line shown under the title once a picture loads: an author
+# credit, a link to the picture's source page, and a link to its license.
+# "©" is the copyright symbol.
+# $author (string) - the name of the image's author.
+newtab-picture-attribution-author = © { $author }
+# Link to the picture's source page (its Wikimedia Commons file page).
+# "Wikimedia Commons" is a brand name and should not be translated.
+newtab-picture-attribution-source-link = Wikimedia Commons
+# Screen-reader label for the license link; the visible text is the license
+# name (for example "CC BY-SA 4.0") provided with the picture.
+# $license (string) - the name of the license.
+newtab-picture-attribution-license =
+    .aria-label = Праглядзець ліцэнзію { $license }
+# Tooltip and screen-reader label for the icon-only button that opens the
+# widget's context menu. The button never renders visible text.
+newtab-picture-widget-menu-button =
+    .title = Параметры фота дня
+    .aria-label = Параметры фота дня
+# Button that sets the current picture as the New Tab background wallpaper. The
+# button collapses to an icon when not hovered/focused, so .title is its tooltip.
+newtab-picture-set-wallpaper =
+    .label = Усталяваць шпалеры
+    .title = Усталяваць шпалеры
+    .aria-label = Усталюйце фота дня ў якасці шпалер
+# Context menu item that opens the New Tab customization panel.
+newtab-picture-menu-manage-wallpaper = Кіраваць шпалерамі
+# Context menu item that hides today’s picture, replacing it with an existing
+# wallpaper.
+newtab-picture-menu-hide-photo = Схаваць фота дня
+# Context menu item that restores today’s picture after it has been hidden.
+newtab-picture-menu-show-photo = Паказаць фота дня
+# Context menu item linking to more information about the widget.
+newtab-picture-menu-learn-more = Даведацца больш
+# Icon button shown on the widget once the picture is hidden; restores it.
+newtab-picture-show-button =
+    .title = Паказаць фота дня
+    .aria-label = Паказаць фота дня
+# Shown when there is no new picture to display yet.
+newtab-picture-check-back = Зазірніце заўтра, каб убачыць новае фота
+# Screen-reader text alternative for the picture; fallback used when the source
+# provides no localized description.
+newtab-picture-image-alt = Фота дня з Wikimedia Commons
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -188,6 +429,7 @@ newtab-topsites-add-shortcut-label = Дадаць цэтлік
 newtab-topsites-add-shortcut-title =
     .title = Дадаць цэтлік
     .aria-label = Дадаць цэтлік
+newtab-shortcuts-pinned-area = Замацаваная вобласць
 newtab-topsites-title-label = Загаловак
 newtab-topsites-title-input =
     .placeholder = Увядзіце назву
@@ -479,6 +721,8 @@ newtab-recommended-stories-toggle =
     .label = Рэкамендаваныя гісторыі
 newtab-custom-stories-personalized-toggle =
     .label = Гісторыі
+newtab-custom-stories-personalized-checkbox =
+    .label = Персаналізаваныя гісторыі на аснове вашай актыўнасці
 newtab-custom-stories-personalized-checkbox-label = Персаналізаваныя гісторыі на аснове вашай актыўнасці
 newtab-custom-pocket-sponsored = Артыкулы ад спонсараў
 newtab-custom-pocket-show-recent-saves = Паказваць апошнія захаванні
@@ -499,6 +743,12 @@ newtab-custom-widget-clock-toggle =
     .label = Гадзіннік
 newtab-custom-widget-sports-toggle2 =
     .label = Спорт
+newtab-custom-widget-privacy-toggle =
+    .label = Прыватнасць
+newtab-custom-widget-stocks-toggle =
+    .label = Акцыі
+newtab-custom-widget-picture-toggle =
+    .label = Фота дня
 newtab-custom-widget-section-title = Віджэты
 newtab-custom-widget-section-toggle =
     .label = Віджэты
@@ -975,6 +1225,8 @@ newtab-widget-timer-reset =
 newtab-widget-timer-menu-notifications = Выключыць апавяшчэнні
 newtab-widget-timer-menu-notifications-on = Уключыць апавяшчэнні
 newtab-widget-timer-menu-learn-more = Падрабязней
+newtab-widget-timer-menu-button =
+    .aria-label = Параметры таймера
 # The title displays above a set of top news headlines.
 newtab-daily-briefing-card-title = Галоўныя загалоўкі
 newtab-daily-briefing-card-menu-dismiss = Адхіліць
@@ -1092,6 +1344,8 @@ newtab-sports-widget-show-less =
 # Toggle that filters the list of teams the user follows
 newtab-sports-widget-followed-only-toggle =
     .label = Толькі каманды, за якімі вы сочыце
+# Status shown when more matches are being fetched.
+newtab-sports-widget-loading-more = Грузіцца больш матчаў…
 # Watch is a verb (as in watch matches online).
 newtab-sports-widget-watch =
     .label = Глядзець
@@ -1171,6 +1425,9 @@ newtab-sports-widget-third-place = Трэцяе месца
 newtab-sports-widget-runner-up = Другое месца
 newtab-sports-widget-champions = Чэмпіёны
 newtab-sports-widget-world-cup-champions = Чэмпіёны свету 2026
+# Compact champions label for the medium-size widget result card; the larger
+# card uses newtab-sports-widget-world-cup-champions.
+newtab-sports-widget-world-cup-champions-short = Чэмпіёны 2026
 # Variables:
 #   $date (Date) - The match start time
 newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
@@ -1269,12 +1526,23 @@ newtab-sports-widget-team-tbd = Падлягае вызначэнню
 newtab-sports-widget-message-wallpapers-title = Пачніце чэмпіянат свету з новымі шпалерамі
 newtab-sports-widget-message-wallpapers-body = Захапіцеся энергіяй матчавага дня ў сваім браўзеры ў час турніру.
 newtab-sports-widget-message-wallpapers-cta = Абраць шпалеры
+newtab-sports-widget-message-wallpapers-semifinals-title = Атрымайце новыя шпалеры для паўфіналаў
+newtab-sports-widget-message-wallpapers-semifinals-body = Падрыхтуйце глебу для найважнейшых матчаў чэмпіянату свету.
 newtab-sports-widget-message-add-widgets-cta =
     .label = Дадаць віджэты
 newtab-sports-widget-message-day-in-play-title = Не выходзьце з гульні з дапамогай віджэтаў { -brand-product-name }
 newtab-sports-widget-message-day-in-play-body = Сачыце за чэмпіянатам свету, засяроджвайцеся на задачах, асочвайце час па ўсім свеце і многае іншае.
 newtab-sports-widget-message-explore-widgets-cta =
     .label = Азнаёмцеся з віджэтамі
+
+## Survey prompts shown after the World Cup to gather feedback on the widgets experience.
+
+newtab-sports-widget-message-survey-title = Дапамажыце нам палепшыць віджэты
+newtab-sports-widget-message-survey-body = Вось і падвёў вынік чэмпіянату свету. Падзяліцеся сваімі ўражаннямі.
+newtab-sports-widget-message-survey-widget-title = Як вам спадабаўся віджэт чэмпіянату свету?
+newtab-sports-widget-message-survey-widget-body = Падзяліцеся сваім водгукам, каб дапамагчы нам палепшыць будучыя віджэты. Затым паспрабуйце новы ў сваёй падборцы.
+newtab-sports-widget-message-survey-cta =
+    .label = Прайсці апытанне
 
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input

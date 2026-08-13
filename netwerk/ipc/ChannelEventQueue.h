@@ -5,15 +5,15 @@
 #ifndef mozilla_net_ChannelEventQueue_h
 #define mozilla_net_ChannelEventQueue_h
 
-#include "nsTArray.h"
-#include "nsIEventTarget.h"
-#include "nsThreadUtils.h"
-#include "nsXULAppAPI.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/FlowMarkers.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/RecursiveMutex.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/FlowMarkers.h"
+#include "nsIEventTarget.h"
+#include "nsTArray.h"
+#include "nsThreadUtils.h"
+#include "nsXULAppAPI.h"
 
 class nsISupports;
 

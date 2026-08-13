@@ -10,11 +10,11 @@
 #ifndef mozilla_image_IDecodingTask_h
 #define mozilla_image_IDecodingTask_h
 
+#include "SourceBuffer.h"
 #include "imgFrame.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/RefPtr.h"
 #include "nsIEventTarget.h"
-#include "SourceBuffer.h"
 
 namespace mozilla {
 namespace image {

@@ -3,6 +3,10 @@
 
 /* eslint-disable mozilla/no-arbitrary-setTimeout */
 
+add_setup(function () {
+  registerCleanupFunction(clearSiteTestData);
+});
+
 add_task(async function () {
   info("Starting subResources test");
 
@@ -112,13 +116,4 @@ add_task(async function () {
   BrowserTestUtils.removeTab(tab);
 
   UrlClassifierTestUtils.cleanupTestTrackers();
-});
-
-add_task(async function () {
-  info("Cleaning up.");
-  await new Promise(resolve => {
-    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-      resolve()
-    );
-  });
 });

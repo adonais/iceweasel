@@ -4,22 +4,25 @@
 #ifndef NSNOTIFYADDRLISTENER_H_
 #define NSNOTIFYADDRLISTENER_H_
 
+// clang-format off
 #include <windows.h>
 #include <winsock2.h>
 #include <iptypes.h>
-#include "nsINetworkLinkService.h"
-#include "nsIRunnable.h"
-#include "nsIObserver.h"
-#include "nsString.h"
-#include "nsTArray.h"
-#include "nsThreadUtils.h"
-#include "nsThreadPool.h"
-#include "nsCOMPtr.h"
+// clang-format on
+
 #include "mozilla/Atomics.h"
-#include "mozilla/TimeStamp.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/SHA1.h"
+#include "mozilla/TimeStamp.h"
 #include "mozilla/net/DNS.h"
+#include "nsCOMPtr.h"
+#include "nsINetworkLinkService.h"
+#include "nsIObserver.h"
+#include "nsIRunnable.h"
+#include "nsString.h"
+#include "nsTArray.h"
+#include "nsThreadPool.h"
+#include "nsThreadUtils.h"
 
 class nsIThreadPool;
 

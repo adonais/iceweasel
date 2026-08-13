@@ -5,9 +5,9 @@
 #ifndef ScriptCache_h
 #define ScriptCache_h
 
-#include "mozilla/ScriptPreloader.h"
 #include "mozilla/loader/PScriptCacheChild.h"
 #include "mozilla/loader/PScriptCacheParent.h"
+#include "mozilla/ScriptPreloader.h"
 
 namespace mozilla {
 namespace ipc {

@@ -12,11 +12,11 @@ import android.widget.ArrayAdapter
 import android.widget.ListView
 import android.widget.TextView
 import androidx.annotation.RawRes
+import androidx.annotation.VisibleForTesting
 import androidx.fragment.app.Fragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import mozilla.components.support.license.databinding.FragmentLibrariesListBinding
 import mozilla.components.ui.widgets.withCenterAlignedButtons
-import java.nio.charset.Charset
 import java.util.Locale
 
 /**
@@ -51,7 +51,7 @@ abstract class LibrariesListFragment : Fragment(R.layout.fragment_libraries_list
     }
 
     private fun setupLibrariesListView(listView: ListView) {
-        val libraries = parseLibraries()
+        val libraries = loadLibraries()
         listView.adapter = ArrayAdapter(
             listView.context,
             android.R.layout.simple_list_item_1,
@@ -62,42 +62,15 @@ abstract class LibrariesListFragment : Fragment(R.layout.fragment_libraries_list
         }
     }
 
-    private fun parseLibraries(): List<LibraryItem> {
-        /*
-            The gradle plugin "oss-licenses-plugin" creates two "raw" resources:
-
-               - third_party_licenses which is the binary concatenation of all the licenses text for
-                 all the libraries. License texts can either be an URL to a license file or just the
-                 raw text of the license.
-
-               - third_party_licenses_metadata which contains one dependency per line formatted in
-                 the following way: "[start_offset]:[length] [name]"
-
-                 [start_offset]     : first byte in third_party_licenses that contains the license
-                                      text for this library.
-                 [length]           : length of the license text for this library in
-                                      third_party_licenses.
-                 [name]             : either the name of the library, or its artifact name.
-
-            See https://github.com/google/play-services-plugins/tree/master/oss-licenses-plugin
-         */
-
+    private fun loadLibraries(): List<LibraryItem> {
         val licensesData = resources
             .openRawResource(licenseData.licenses)
-            .readBytes()
-        val licensesMetadataReader = resources
+            .use { it.readBytes() }
+        val metadataLines = resources
             .openRawResource(licenseData.metadata)
             .bufferedReader()
-
-        return licensesMetadataReader.use { reader -> reader.readLines() }.map { line ->
-            val (section, name) = line.split(" ", limit = 2)
-            val (startOffset, length) = section.split(":", limit = 2).map(String::toInt)
-            val licenseData = licensesData.sliceArray(startOffset until startOffset + length)
-            val licenseText = licenseData.toString(Charset.forName("UTF-8"))
-            LibraryItem(name, licenseText)
-        }
-        .distinctBy { it.name.lowercase(Locale.ROOT) }
-        .sortedBy { it.name.lowercase(Locale.ROOT) }
+            .use { reader -> reader.readLines() }
+        return parseLibraries(licensesData, metadataLines)
     }
 
     private fun showLicenseDialog(libraryItem: LibraryItem) {
@@ -120,7 +93,40 @@ abstract class LibrariesListFragment : Fragment(R.layout.fragment_libraries_list
     }
 }
 
-private class LibraryItem(val name: String, val license: String) {
+/**
+ * Parses the "oss-licenses-plugin" raw resources into a sorted, de-duplicated list of libraries.
+ *
+ * [licensesData] is the binary concatenation of every license text; [metadataLines] holds one
+ * entry per line formatted "[start_offset]:[length] [name]" pointing into that blob. Lines that
+ * don't match this format or point out of bounds are skipped rather than throwing.
+ *
+ * See https://github.com/google/play-services-plugins/tree/main/oss-licenses-plugin
+ */
+@VisibleForTesting
+internal fun parseLibraries(
+    licensesData: ByteArray,
+    metadataLines: List<String>,
+): List<LibraryItem> =
+    metadataLines.mapNotNull { line -> parseLibraryLine(licensesData, line) }
+        .distinctBy { it.name.lowercase(Locale.ROOT) }
+        .sortedBy { it.name.lowercase(Locale.ROOT) }
+
+private fun parseLibraryLine(licensesData: ByteArray, line: String): LibraryItem? {
+    val (section, name) = line.split(" ", limit = 2).takeIf { it.size == 2 } ?: return null
+    if (name.isBlank()) return null
+    val (startText, lengthText) = section.split(":", limit = 2).takeIf { it.size == 2 } ?: return null
+    val startOffset = startText.toIntOrNull() ?: return null
+    val length = lengthText.toIntOrNull() ?: return null
+    if (startOffset < 0 || length < 0 || startOffset.toLong() + length > licensesData.size) {
+        return null
+    }
+    val licenseText = licensesData
+        .sliceArray(startOffset until startOffset + length)
+        .toString(Charsets.UTF_8)
+    return LibraryItem(name, licenseText)
+}
+
+internal class LibraryItem(val name: String, val license: String) {
     override fun toString(): String {
         return name
     }

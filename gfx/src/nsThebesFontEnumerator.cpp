@@ -3,15 +3,17 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsThebesFontEnumerator.h"
-#include <stdint.h>              // for uint32_t
+
+#include <stdint.h>  // for uint32_t
+
 #include "gfxPlatform.h"         // for gfxPlatform
 #include "mozilla/Assertions.h"  // for MOZ_ASSERT_HELPER2
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/Promise.h"  // for mozilla::dom::Promise
+#include "nsAtom.h"               // for nsAtom, NS_Atomize
 #include "nsCOMPtr.h"             // for nsCOMPtr
 #include "nsDebug.h"              // for NS_ENSURE_ARG_POINTER
 #include "nsError.h"              // for NS_OK, NS_FAILED, nsresult
-#include "nsAtom.h"               // for nsAtom, NS_Atomize
 #include "nsID.h"
 #include "nsString.h"  // for nsAutoCString, nsAutoString, etc
 #include "nsTArray.h"  // for nsTArray, nsTArray_Impl, etc

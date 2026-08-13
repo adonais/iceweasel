@@ -44,7 +44,7 @@ add_task(async function test_tabGroupsUndo() {
   await TabStateFlusher.flushWindow(window);
 
   info("Waiting for getLastClosedTabGroupId");
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => SessionStore.getLastClosedTabGroupId(window) !== null
   );
 
@@ -103,7 +103,7 @@ add_task(async function test_tabGroupsUndo() {
   await TabStateFlusher.flushWindow(window);
 
   info("Waiting for getLastClosedTabGroupId");
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => SessionStore.getLastClosedTabGroupId(window) !== null
   );
 

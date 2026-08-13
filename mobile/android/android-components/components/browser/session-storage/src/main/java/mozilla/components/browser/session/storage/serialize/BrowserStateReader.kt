@@ -85,12 +85,14 @@ private fun JsonReader.browsingSession(
     var tabPartitions: Map<String, TabPartition> = emptyMap()
     var selectedIndex: Int? = null
     var selectedTabId: String? = null
+    var isTranslationsEngineSupported: Boolean? = null
 
     while (hasNext()) {
         when (nextName()) {
             Keys.VERSION_KEY -> version = nextInt()
             Keys.SELECTED_SESSION_INDEX_KEY -> selectedIndex = nextInt()
             Keys.SELECTED_TAB_ID_KEY -> selectedTabId = nextStringOrNull()
+            Keys.TRANSLATIONS_ENGINE_IS_SUPPORTED_KEY -> isTranslationsEngineSupported = nextBooleanOrNull()
             Keys.SESSION_STATE_TUPLES_KEY -> tabs = tabs(engine, restoreSessionId, restoreParentId, predicate)
             Keys.TAB_PARTITIONS_KEY -> tabPartitions = tabPartitions()
         }
@@ -112,7 +114,7 @@ private fun JsonReader.browsingSession(
             selectedTabId = tabs.sortedByDescending { it.state.lastAccess }.first().state.id
         }
 
-        RecoverableBrowserState(tabs, selectedTabId, tabPartitions)
+        RecoverableBrowserState(tabs, selectedTabId, tabPartitions, isTranslationsEngineSupported)
     } else {
         null
     }

@@ -3,36 +3,38 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/layers/CompositorBridgeChild.h"
-#include "mozilla/layers/CompositorBridgeParent.h"
-#include "mozilla/layers/CompositorThread.h"
-#include <stddef.h>     // for size_t
+
+#include <stddef.h>  // for size_t
+
 #include "base/task.h"  // for NewRunnableMethod, etc
-#include "mozilla/StaticPrefs_layers.h"
-#include "mozilla/layers/CompositorManagerChild.h"
-#include "mozilla/layers/ImageBridgeChild.h"
-#include "mozilla/layers/APZChild.h"
-#include "mozilla/layers/IAPZCTreeManager.h"
-#include "mozilla/layers/APZCTreeManagerChild.h"
-#include "mozilla/layers/CanvasChild.h"
-#include "mozilla/layers/WebRenderLayerManager.h"
-#include "mozilla/layers/PTextureChild.h"
-#include "mozilla/layers/TextureClient.h"  // for TextureClient
-#include "mozilla/layers/WebRenderBridgeChild.h"
-#include "mozilla/layers/SyncObject.h"  // for SyncObjectClient
-#include "mozilla/gfx/CanvasManagerChild.h"
-#include "mozilla/gfx/gfxVars.h"
-#include "mozilla/gfx/GPUProcessManager.h"
-#include "mozilla/gfx/Logging.h"
-#include "mozilla/ipc/Endpoint.h"
-#include "mozilla/mozalloc.h"  // for operator new, etc
 #include "gfxConfig.h"
-#include "nsDebug.h"          // for NS_WARNING
-#include "nsISupportsImpl.h"  // for MOZ_COUNT_CTOR, etc
-#include "nsTArray.h"         // for nsTArray, nsTArray_Impl
+#include "mozilla/SpinEventLoopUntil.h"
+#include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/ContentChild.h"
-#include "mozilla/SpinEventLoopUntil.h"
+#include "mozilla/gfx/CanvasManagerChild.h"
+#include "mozilla/gfx/GPUProcessManager.h"
+#include "mozilla/gfx/Logging.h"
+#include "mozilla/gfx/gfxVars.h"
+#include "mozilla/ipc/Endpoint.h"
+#include "mozilla/layers/APZCTreeManagerChild.h"
+#include "mozilla/layers/APZChild.h"
+#include "mozilla/layers/CanvasChild.h"
+#include "mozilla/layers/CompositorBridgeParent.h"
+#include "mozilla/layers/CompositorManagerChild.h"
+#include "mozilla/layers/CompositorThread.h"
+#include "mozilla/layers/IAPZCTreeManager.h"
+#include "mozilla/layers/ImageBridgeChild.h"
+#include "mozilla/layers/PTextureChild.h"
+#include "mozilla/layers/SyncObject.h"     // for SyncObjectClient
+#include "mozilla/layers/TextureClient.h"  // for TextureClient
+#include "mozilla/layers/WebRenderBridgeChild.h"
+#include "mozilla/layers/WebRenderLayerManager.h"
+#include "mozilla/mozalloc.h"  // for operator new, etc
+#include "nsDebug.h"           // for NS_WARNING
+#include "nsISupportsImpl.h"   // for MOZ_COUNT_CTOR, etc
+#include "nsTArray.h"          // for nsTArray, nsTArray_Impl
 #include "nsThreadUtils.h"
 #if defined(XP_WIN)
 #  include "WinUtils.h"

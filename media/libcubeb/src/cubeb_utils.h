@@ -8,10 +8,15 @@
 #if !defined(CUBEB_UTILS)
 #define CUBEB_UTILS
 
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
 #include "cubeb/cubeb.h"
 
 #ifdef __cplusplus
 
+#include <algorithm>
 #include <assert.h>
 #include <mutex>
 #include <stdint.h>
@@ -124,6 +129,11 @@ public:
 
   ~auto_array() { delete[] data_; }
 
+  auto_array(const auto_array &) = delete;
+  auto_array & operator=(const auto_array &) = delete;
+  auto_array(auto_array &&) = delete;
+  auto_array & operator=(auto_array &&) = delete;
+
   /** Get a constant pointer to the underlying data. */
   T * data() const { return data_; }
 
@@ -150,16 +160,13 @@ public:
   /** Keeps the storage, but removes all the elements from the array. */
   void clear() { length_ = 0; }
 
-  /** Change the storage of this auto array, copying the elements to the new
-   * storage.
-   * @returns true in case of success
-   * @returns false if the new capacity is not big enough to accomodate for the
-   *                elements in the array.
+  /** Ensure the storage can hold at least `new_capacity` elements, reallocating
+   * if needed. Never shrinks.
    */
-  bool reserve(size_t new_capacity)
+  void reserve(size_t new_capacity)
   {
-    if (new_capacity < length_) {
-      return false;
+    if (new_capacity <= capacity_) {
+      return;
     }
     T * new_data = new T[new_capacity];
     if (data_ && length_) {
@@ -168,8 +175,6 @@ public:
     capacity_ = new_capacity;
     delete[] data_;
     data_ = new_data;
-
-    return true;
   }
 
   /** Append `length` elements to the end of the array, resizing the array if
@@ -180,7 +185,7 @@ public:
   void push(const T * elements, size_t length)
   {
     if (length_ + length > capacity_) {
-      reserve(length_ + length);
+      reserve(std::max(length_ + length, capacity_ * 2));
     }
     if (data_) {
       PodCopy(data_ + length_, elements, length);
@@ -195,7 +200,7 @@ public:
   void push_silence(size_t length)
   {
     if (length_ + length > capacity_) {
-      reserve(length + length_);
+      reserve(std::max(length_ + length, capacity_ * 2));
     }
     if (data_) {
       PodZero(data_ + length_, length);
@@ -210,7 +215,7 @@ public:
   void push_front_silence(size_t length)
   {
     if (length_ + length > capacity_) {
-      reserve(length + length_);
+      reserve(std::max(length_ + length, capacity_ * 2));
     }
     if (data_) {
       PodMove(data_ + length, data_, length_);
@@ -269,7 +274,7 @@ struct auto_array_wrapper {
   virtual void * data() = 0;
   virtual void * end() = 0;
   virtual void clear() = 0;
-  virtual bool reserve(size_t capacity) = 0;
+  virtual void reserve(size_t capacity) = 0;
   virtual void set_length(size_t length) = 0;
   virtual ~auto_array_wrapper() {}
 };
@@ -297,7 +302,7 @@ struct auto_array_wrapper_impl : public auto_array_wrapper {
 
   void clear() override { ar.clear(); }
 
-  bool reserve(size_t capacity) override { return ar.reserve(capacity); }
+  void reserve(size_t capacity) override { ar.reserve(capacity); }
 
   void set_length(size_t length) override { ar.set_length(length); }
 

@@ -99,6 +99,7 @@ export const NavigationState = {
  */
 class NavigationRegistry extends EventEmitter {
   #contextListener;
+  #downloadIds;
   #downloadListener;
   #downloadNavigations;
   #managers;
@@ -118,6 +119,10 @@ class NavigationRegistry extends EventEmitter {
     // Keep track of ongoing download navigations, from Download object to
     // navigation id.
     this.#downloadNavigations = new WeakMap();
+
+    // Keep track of download ids, from Download object to download id. The id
+    // is shared between the download-started and download-end events.
+    this.#downloadIds = new WeakMap();
 
     this.#webProgressListener = new lazy.ParentWebProgressListener();
 
@@ -806,6 +811,10 @@ class NavigationRegistry extends EventEmitter {
     // singleton and consistent navigation ids across sessions.
     this.emit(NAVIGATION_EVENTS.DownloadStarted, {
       contextId: browsingContext.id,
+      downloadId: this.#downloadIds.getOrInsertComputed(
+        download,
+        lazy.generateUUID
+      ),
       navigationId,
       navigableId,
       suggestedFilename: PathUtils.filename(download.target.path),
@@ -836,6 +845,10 @@ class NavigationRegistry extends EventEmitter {
     this.emit(NAVIGATION_EVENTS.DownloadEnd, {
       canceled,
       contextId: browsingContext.id,
+      downloadId: this.#downloadIds.getOrInsertComputed(
+        download,
+        lazy.generateUUID
+      ),
       filepath: download.target.path,
       navigableId,
       navigationId,

@@ -468,6 +468,32 @@ add_task(async function test_setTarget_fast() {
   destFile2.remove(false);
 });
 
+add_task(async function test_setTarget_rename_overwrites_existing() {
+  // Checks that renaming to a destination that already exists succeeds atomically.
+  let initialFile = getTempFile(TEST_FILE_NAME_1);
+  let renamedFile = getTempFile(TEST_FILE_NAME_2);
+
+  let saver = new BackgroundFileSaverOutputStream();
+  let completionPromise = promiseSaverComplete(saver);
+
+  saver.setTarget(initialFile, false);
+  await promiseCopyToSaver(TEST_DATA_SHORT, saver, true);
+
+  // Pre-create the rename destination to simulate a pre-existing file.
+  await IOUtils.writeUTF8(renamedFile.path, "pre-existing content");
+
+  saver.setTarget(renamedFile, false);
+  saver.finish(Cr.NS_OK);
+  await completionPromise;
+
+  Assert.ok(
+    !initialFile.exists(),
+    "the initial file should not exist after rename"
+  );
+  await promiseVerifyContents(renamedFile, TEST_DATA_SHORT);
+  renamedFile.remove(false);
+});
+
 add_task(async function test_setTarget_multiple() {
   // This test checks multiple renames of the target file.
   let destFile = getTempFile(TEST_FILE_NAME_1);

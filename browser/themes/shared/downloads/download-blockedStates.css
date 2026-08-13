@@ -4,10 +4,10 @@
 
 .downloadBlockedBadge {
   background-repeat: no-repeat;
-  width: 16px;
-  height: 16px;
+  width: var(--size-item-small);
+  height: var(--size-item-small);
   margin: 0;
-  margin-inline: 16px;
+  margin-inline: var(--space-large);
 }
 
 #downloadsPanel-blockedSubview[verdict="Insecure"] .downloadsPanel-blockedSubview-image,
@@ -16,18 +16,18 @@
 #downloadsListBox > richlistitem[verdict="Malware"] .downloadBlockedBadge {
   background-image: url("chrome://global/skin/icons/error.svg");
   -moz-context-properties: fill;
-  fill: light-dark(#e22850, #ff9aa2);
+  fill: var(--icon-color-critical);
 }
 
 #downloadsPanel-blockedSubview[verdict="Uncommon"] .downloadsPanel-blockedSubview-image,
 #downloadsListBox > richlistitem[verdict="Uncommon"] .downloadBlockedBadge {
   background-image: url("chrome://global/skin/icons/info-filled.svg");
   -moz-context-properties: fill;
-  fill: light-dark(#0090ed, #80ebff);
+  fill: var(--icon-color-information);
 }
 
 .downloadsPanel-blockedSubview-image {
-  width: 16px;
+  width: var(--size-item-small);
   background-repeat: no-repeat;
   margin-inline-end: 25px;
 }
@@ -45,6 +45,6 @@
 #downloadsListBox > richlistitem[verdict="PotentiallyUnwanted"] .downloadBlockedBadge,
 #downloadsListBox > richlistitem[verdict="DownloadSpam"] .downloadBlockedBadge {
   -moz-context-properties: fill;
-  fill: #ffbf00;
   background-image: url("chrome://global/skin/icons/warning.svg");
+  fill: var(--icon-color-warning);
 }

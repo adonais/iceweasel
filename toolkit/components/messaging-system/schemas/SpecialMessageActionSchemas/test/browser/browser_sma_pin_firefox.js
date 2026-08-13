@@ -6,10 +6,10 @@
 const isWin = AppConstants.platform == "win";
 const isMac = AppConstants.platform == "macosx";
 
-add_task(async function test_PIN_FIREFOX_TO_TASKBAR() {
+function getShell() {
   const sandbox = sinon.createSandbox();
   let shell = {
-    async checkPinCurrentAppToTaskbarAsync() {},
+    canPinToTaskbar() {},
     QueryInterface: () => shell,
     get macDockSupport() {
       return this;
@@ -19,8 +19,8 @@ add_task(async function test_PIN_FIREFOX_TO_TASKBAR() {
     },
 
     ensureAppIsPinnedToDock: sandbox.stub(),
-    isCurrentAppPinnedToTaskbarAsync: sandbox.stub(),
-    pinCurrentAppToTaskbarAsync: sandbox.stub().resolves(undefined),
+    isCurrentAppPinnedToTaskbar: sandbox.stub(),
+    pinCurrentAppToTaskbar: sandbox.stub().resolves(undefined),
     isAppInDock: false,
   };
 
@@ -31,6 +31,12 @@ add_task(async function test_PIN_FIREFOX_TO_TASKBAR() {
       return (prop in target ? target : ShellService)[prop];
     },
   });
+
+  return { sandbox, shell };
+}
+
+add_task(async function test_PIN_FIREFOX_TO_TASKBAR() {
+  const { sandbox, shell } = getShell();
 
   const test = () =>
     SMATestUtils.executeAndValidateAction(
@@ -46,10 +52,16 @@ add_task(async function test_PIN_FIREFOX_TO_TASKBAR() {
 
   function check(count, message) {
     Assert.equal(
-      shell.pinCurrentAppToTaskbarAsync.callCount,
+      shell.pinCurrentAppToTaskbar.callCount,
       count * isWin,
-      `pinCurrentAppToTaskbarAsync was ${message} by the action for windows`
+      `pinCurrentAppToTaskbar was ${message} by the action for windows`
     );
+    if (isWin) {
+      Assert.ok(
+        shell.pinCurrentAppToTaskbar.calledWithExactly(false, false),
+        "pinCurrentAppToTaskbar called with privateBrowsing=false and fireAndForget=false"
+      );
+    }
     Assert.equal(
       shell.ensureAppIsPinnedToDock.callCount,
       count * isMac,
@@ -59,14 +71,55 @@ add_task(async function test_PIN_FIREFOX_TO_TASKBAR() {
   check(1, "called");
 
   // Pretend the app is already pinned.
-  shell.isCurrentAppPinnedToTaskbarAsync.resolves(true);
+  shell.isCurrentAppPinnedToTaskbar.resolves(true);
   shell.isAppInDock = true;
   await test();
   check(1, "not called");
 
   // Pretend the app became unpinned.
-  shell.isCurrentAppPinnedToTaskbarAsync.resolves(false);
+  shell.isCurrentAppPinnedToTaskbar.resolves(false);
   shell.isAppInDock = false;
   await test();
   check(2, "called again");
+
+  sandbox.restore();
+});
+
+add_task(async function test_FIRE_AND_FORGET() {
+  // Test the fireAndForget parameter.
+  const { sandbox, shell } = getShell();
+
+  const test = () =>
+    SMATestUtils.executeAndValidateAction(
+      { type: "PIN_FIREFOX_TO_TASKBAR", data: { fireAndForget: true } },
+      {
+        documentGlobal: {
+          getShellService: () => shell,
+        },
+      }
+    );
+
+  await test();
+
+  function check(count, message) {
+    Assert.equal(
+      shell.pinCurrentAppToTaskbar.callCount,
+      count * isWin,
+      `pinCurrentAppToTaskbar was ${message} by the action for windows`
+    );
+    if (isWin) {
+      Assert.ok(
+        shell.pinCurrentAppToTaskbar.calledWithExactly(false, true),
+        "pinCurrentAppToTaskbar called with privateBrowsing=false and fireAndForget=true"
+      );
+    }
+    Assert.equal(
+      shell.ensureAppIsPinnedToDock.callCount,
+      count * isMac,
+      `ensureAppIsPinnedToDock was ${message} by the action for not windows`
+    );
+  }
+  check(1, "called");
+
+  sandbox.restore();
 });

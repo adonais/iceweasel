@@ -94,6 +94,8 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && !headless", # outdated current sizes
 ]
 
+["browser_popup_resize_clamp.js"]
+
 ["browser_popup_resize_instant.js"]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && !headless", # outdated current sizes

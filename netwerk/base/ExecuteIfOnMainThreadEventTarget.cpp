@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ExecuteIfOnMainThreadEventTarget.h"
+
 #include "mozilla/ClearOnShutdown.h"
 #include "nsThreadUtils.h"
 

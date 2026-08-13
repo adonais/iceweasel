@@ -3,10 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "PathCairo.h"
+
 #include "DrawTargetCairo.h"
+#include "HelpersCairo.h"
 #include "Logging.h"
 #include "PathHelpers.h"
-#include "HelpersCairo.h"
 
 namespace mozilla {
 namespace gfx {

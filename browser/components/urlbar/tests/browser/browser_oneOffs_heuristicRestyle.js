@@ -21,31 +21,31 @@ const KEYWORD_URL = "https://mozilla.org/search?q=%s";
 
 // Expected result data for our test results.
 const RESULT_DATA_BY_TYPE = {
-  [UrlbarUtils.RESULT_TYPE.URL]: {
+  [UrlbarShared.RESULT_TYPE.URL]: {
     icon: `page-icon:${HISTORY_URL}`,
     actionL10n: {
       id: "urlbar-result-action-visit",
     },
   },
-  [UrlbarUtils.RESULT_TYPE.SEARCH]: {
+  [UrlbarShared.RESULT_TYPE.SEARCH]: {
     icon: "chrome://global/skin/icons/search-glass.svg",
     actionL10n: {
       id: "urlbar-result-action-search-w-engine",
       args: { engine: TEST_DEFAULT_ENGINE_NAME },
     },
   },
-  [UrlbarUtils.RESULT_TYPE.KEYWORD]: {
+  [UrlbarShared.RESULT_TYPE.KEYWORD]: {
     icon: `page-icon:${KEYWORD_URL}`,
   },
 };
 
 function getSourceIcon(source) {
   switch (source) {
-    case UrlbarUtils.RESULT_SOURCE.BOOKMARKS:
+    case UrlbarShared.RESULT_SOURCE.BOOKMARKS:
       return "chrome://browser/skin/bookmark.svg";
-    case UrlbarUtils.RESULT_SOURCE.HISTORY:
+    case UrlbarShared.RESULT_SOURCE.HISTORY:
       return "chrome://browser/skin/history.svg";
-    case UrlbarUtils.RESULT_SOURCE.TABS:
+    case UrlbarShared.RESULT_SOURCE.TABS:
       return "chrome://browser/skin/tab.svg";
     default:
       return null;
@@ -56,7 +56,7 @@ function getSourceIcon(source) {
  * Asserts that the heuristic result is *not* restyled to look like a search
  * result.
  *
- * @param {UrlbarUtils.RESULT_TYPE} expectedType
+ * @param {UrlbarShared.RESULT_TYPE} expectedType
  *   The expected type of the heuristic.
  * @param {object} resultDetails
  *   The return value of UrlbarTestUtils.getDetailsOfResultAt(window, 0).
@@ -82,7 +82,7 @@ async function heuristicIsNotRestyled(expectedType, resultDetails) {
     : [""];
 
   if (
-    expectedType === UrlbarUtils.RESULT_TYPE.URL &&
+    expectedType === UrlbarShared.RESULT_TYPE.URL &&
     resultDetails.result.heuristic &&
     resultDetails.result.payload.title
   ) {
@@ -121,7 +121,7 @@ async function heuristicIsNotRestyled(expectedType, resultDetails) {
 /**
  * Asserts that the heuristic result is restyled to look like a search result.
  *
- * @param {UrlbarUtils.RESULT_TYPE} expectedType
+ * @param {UrlbarShared.RESULT_TYPE} expectedType
  *   The expected type of the heuristic.
  * @param {object} resultDetails
  *   The return value of UrlbarTestUtils.getDetailsOfResultAt(window, 0).
@@ -211,7 +211,7 @@ async function heuristicIsRestyled(
  * @param {string} searchString
  *   The current search string.  If a one-off is selected, then the restyled
  *   heuristic result's title is expected to be this string.
- * @param {UrlbarUtils.RESULT_TYPE} expectedHeuristicType
+ * @param {UrlbarShared.RESULT_TYPE} expectedHeuristicType
  *   The expected type of the heuristic.
  * @param {number} expectedSelectedOneOffIndex
  *   The index of the expected selected one-off button.  If no one-off is
@@ -290,27 +290,27 @@ add_setup(async () => {
 });
 
 add_task(async function arrow_engine_url() {
-  await doArrowTest("mozilla.or", UrlbarUtils.RESULT_TYPE.URL, false);
+  await doArrowTest("mozilla.or", UrlbarShared.RESULT_TYPE.URL, false);
 });
 
 add_task(async function arrow_engine_search() {
-  await doArrowTest("test", UrlbarUtils.RESULT_TYPE.SEARCH, false);
+  await doArrowTest("test", UrlbarShared.RESULT_TYPE.SEARCH, false);
 });
 
 add_task(async function arrow_engine_keyword() {
-  await doArrowTest(`${KEYWORD} test`, UrlbarUtils.RESULT_TYPE.KEYWORD, false);
+  await doArrowTest(`${KEYWORD} test`, UrlbarShared.RESULT_TYPE.KEYWORD, false);
 });
 
 add_task(async function arrow_local_url() {
-  await doArrowTest("mozilla.or", UrlbarUtils.RESULT_TYPE.URL, true);
+  await doArrowTest("mozilla.or", UrlbarShared.RESULT_TYPE.URL, true);
 });
 
 add_task(async function arrow_local_search() {
-  await doArrowTest("test", UrlbarUtils.RESULT_TYPE.SEARCH, true);
+  await doArrowTest("test", UrlbarShared.RESULT_TYPE.SEARCH, true);
 });
 
 add_task(async function arrow_local_keyword() {
-  await doArrowTest(`${KEYWORD} test`, UrlbarUtils.RESULT_TYPE.KEYWORD, true);
+  await doArrowTest(`${KEYWORD} test`, UrlbarShared.RESULT_TYPE.KEYWORD, true);
 });
 
 /**
@@ -318,7 +318,7 @@ add_task(async function arrow_local_keyword() {
  *
  * @param {string} searchString
  *   The search string to use.
- * @param {UrlbarUtils.RESULT_TYPE} expectedHeuristicType
+ * @param {UrlbarShared.RESULT_TYPE} expectedHeuristicType
  *   The type of heuristic result that the search string is expected to trigger.
  * @param {boolean} useLocal
  *   Whether to test a local one-off or an engine one-off.  If true, test a
@@ -362,33 +362,33 @@ async function doArrowTest(searchString, expectedHeuristicType, useLocal) {
 }
 
 add_task(async function altArrow_engine_url() {
-  await doAltArrowTest("mozilla.or", UrlbarUtils.RESULT_TYPE.URL, false);
+  await doAltArrowTest("mozilla.or", UrlbarShared.RESULT_TYPE.URL, false);
 });
 
 add_task(async function altArrow_engine_search() {
-  await doAltArrowTest("test", UrlbarUtils.RESULT_TYPE.SEARCH, false);
+  await doAltArrowTest("test", UrlbarShared.RESULT_TYPE.SEARCH, false);
 });
 
 add_task(async function altArrow_engine_keyword() {
   await doAltArrowTest(
     `${KEYWORD} test`,
-    UrlbarUtils.RESULT_TYPE.KEYWORD,
+    UrlbarShared.RESULT_TYPE.KEYWORD,
     false
   );
 });
 
 add_task(async function altArrow_local_url() {
-  await doAltArrowTest("mozilla.or", UrlbarUtils.RESULT_TYPE.URL, true);
+  await doAltArrowTest("mozilla.or", UrlbarShared.RESULT_TYPE.URL, true);
 });
 
 add_task(async function altArrow_local_search() {
-  await doAltArrowTest("test", UrlbarUtils.RESULT_TYPE.SEARCH, true);
+  await doAltArrowTest("test", UrlbarShared.RESULT_TYPE.SEARCH, true);
 });
 
 add_task(async function altArrow_local_keyword() {
   await doAltArrowTest(
     `${KEYWORD} test`,
-    UrlbarUtils.RESULT_TYPE.KEYWORD,
+    UrlbarShared.RESULT_TYPE.KEYWORD,
     true
   );
 });
@@ -399,7 +399,7 @@ add_task(async function altArrow_local_keyword() {
  *
  * @param {string} searchString
  *   The search string to use.
- * @param {UrlbarUtils.RESULT_TYPE} expectedHeuristicType
+ * @param {UrlbarShared.RESULT_TYPE} expectedHeuristicType
  *   The type of heuristic result that the search string is expected to trigger.
  * @param {boolean} useLocal
  *   Whether to test a local one-off or an engine one-off.  If true, test a
@@ -459,7 +459,7 @@ async function doAltArrowTest(searchString, expectedHeuristicType, useLocal) {
  *
  * @param {string} searchString
  *   The search string to use.
- * @param {UrlbarUtils.RESULT_TYPE} expectedHeuristicType
+ * @param {UrlbarShared.RESULT_TYPE} expectedHeuristicType
  *   The type of heuristic result that the search string is expected to trigger.
  * @param {boolean} useLocal
  *   Whether to test a local one-off or an engine one-off.  If true, test a

@@ -21,31 +21,31 @@
 #include "mozilla/layers/NativeLayerWayland.h"
 
 #include <dlfcn.h>
-#include <utility>
-#include <algorithm>
 
-#include "gfxUtils.h"
-#include "nsGtkUtils.h"
-#include "GLContextProvider.h"
+#include <algorithm>
+#include <utility>
+
 #include "GLBlitHelper.h"
+#include "GLContextProvider.h"
+#include "ScopedGLHelpers.h"
+#include "gfxUtils.h"
+#include "mozilla/StaticPrefs_widget.h"
 #include "mozilla/gfx/DataSurfaceHelpers.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/SurfacePoolWayland.h"
-#include "mozilla/StaticPrefs_widget.h"
-#include "mozilla/webrender/RenderThread.h"
 #include "mozilla/webrender/RenderDMABUFTextureHost.h"
+#include "mozilla/webrender/RenderThread.h"
 #include "mozilla/widget/WaylandSurface.h"
-#include "mozilla/StaticPrefs_widget.h"
-#include "ScopedGLHelpers.h"
+#include "nsGtkUtils.h"
 
 #ifdef MOZ_LOGGING
 #  undef LOG
 #  undef LOGVERBOSE
 #  undef LOG_VSYNC
+#  include "Units.h"
 #  include "mozilla/Logging.h"
 #  include "nsTArray.h"
-#  include "Units.h"
 extern mozilla::LazyLogModule gWidgetCompositorLog;
 extern mozilla::LazyLogModule gWidgetVsync;
 #  define LOG(str, ...)                                     \
@@ -969,20 +969,19 @@ void NativeLayerWayland::UpdateLayerPlacementLocked(
 
   auto transform2DInversed = transform2D.Inverse();
   Rect bufferClip = transform2DInversed.TransformBounds(surfaceRectClipped);
-  auto unscaledViewportRect =
+  Rect unscaledViewportRect =
       bufferClip.Intersect(Rect(0, 0, mSize.width, mSize.height));
-  auto viewportRect =
+  Rect scaledViewportRect =
       useCoordinatesScale
-          ? gfx::RoundedToInt(
-                unscaledViewportRect *
-                UnknownScaleFactor(mSurface->GetCoordinatesScaleRounded()))
-          : gfx::RoundedToInt(unscaledViewportRect);
+          ? unscaledViewportRect *
+                UnknownScaleFactor(mSurface->GetCoordinatesScaleRounded())
+          : unscaledViewportRect;
+  DesktopRect viewportRect = DesktopRect::FromUnknownRect(scaledViewportRect);
 
-  LOGVERBOSE("  source [%d, %d] -> [%d x %d] coordinate scale [%f]",
+  LOGVERBOSE("  source [%f, %f] -> [%f x %f] coordinate scale [%f]",
              viewportRect.x, viewportRect.y, viewportRect.width,
              viewportRect.height, mSurface->GetCoordinatesScaleRounded());
-  mSurface->SetViewPortSourceRectLocked(
-      aProofOfLock, DesktopIntRect::FromUnknownRect(viewportRect));
+  mSurface->SetViewPortSourceRectLocked(aProofOfLock, viewportRect);
 }
 
 void NativeLayerWayland::RenderLayer(double aScale) {

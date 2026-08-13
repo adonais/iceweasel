@@ -8,13 +8,15 @@ description: >
 features: [iterator-includes]
 ---*/
 
-class IteratorThrows extends Iterator {
+let iterator = {
+  __proto__: Iterator.prototype,
   get next() {
     throw new Test262Error();
+  },
+  get return() {
+    throw new TypeError();
   }
-}
-
-let iterator = new IteratorThrows();
+};
 
 assert.throws(Test262Error, function() {
   iterator.includes(0);

@@ -5,6 +5,7 @@
 #include "RemoteMediaDataEncoderParent.h"
 
 #include "ImageContainer.h"
+#include "ImageConversion.h"
 #include "PEMFactory.h"
 #include "RemoteMediaManagerParent.h"
 #include "mozilla/dom/WebCodecsUtils.h"
@@ -149,6 +150,14 @@ IPCResult RemoteMediaDataEncoderParent::RecvEncode(
         LOGE("[{}] failed to get image from video frame at index {}",
              fmt::ptr(this), i);
         aResolver(MediaResult(NS_ERROR_OUT_OF_MEMORY, __func__));
+        return IPC_OK();
+      }
+
+      const gfx::IntSize imageSize = image->GetSize();
+      if (!IsImageDimensionSupportedForConversion(imageSize)) {
+        LOGE("[{}] video frame at index {} has unsupported dimensions {}x{}",
+             fmt::ptr(this), i, imageSize.width, imageSize.height);
+        aResolver(MediaResult(NS_ERROR_INVALID_ARG, __func__));
         return IPC_OK();
       }
 

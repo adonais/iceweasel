@@ -5,24 +5,26 @@
 #ifndef GFX_FONTENTRY_H
 #define GFX_FONTENTRY_H
 
-#include <limits>
 #include <math.h>
+
+#include <limits>
 #include <utility>
+
 #include "ThebesRLBoxTypes.h"
+#include "gfxFontFeatures.h"
+#include "gfxFontUtils.h"
 #include "gfxFontVariations.h"
 #include "gfxRect.h"
-#include "gfxTypes.h"
 #include "gfxSparseBitSet.h"
-#include "gfxFontUtils.h"
-#include "gfxFontFeatures.h"
+#include "gfxTypes.h"
 #include "harfbuzz/hb.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/FontPropertyTypes.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Mutex.h"
-#include "mozilla/RefPtr.h"
 #include "mozilla/RWLock.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/TypedEnumBits.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/intl/UnicodeScriptCodes.h"
@@ -196,6 +198,7 @@ class gfxFontEntry {
   typedef mozilla::WeightRange WeightRange;
   typedef mozilla::SlantStyleRange SlantStyleRange;
   typedef mozilla::StretchRange StretchRange;
+  using imgDrawingParams = mozilla::image::imgDrawingParams;
 
   // Used by stylo
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(gfxFontEntry)
@@ -342,7 +345,8 @@ class gfxFontEntry {
   bool GetSVGGlyphExtents(DrawTarget* aDrawTarget, uint32_t aGlyphId,
                           gfxFloat aSize, gfxRect* aResult);
   void RenderSVGGlyph(gfxContext* aContext, uint32_t aGlyphId,
-                      mozilla::SVGContextPaint* aContextPaint);
+                      mozilla::SVGContextPaint* aContextPaint,
+                      imgDrawingParams& aImgParams);
   // Call this when glyph geometry or rendering has changed
   // (e.g. animated SVG glyphs)
   void NotifyGlyphsChanged();

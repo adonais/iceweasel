@@ -8,8 +8,9 @@
 #ifndef CHECKINVARIANTWRAPPER_H_
 #define CHECKINVARIANTWRAPPER_H_
 
-#include "mozilla/Attributes.h"
 #include <utility>
+
+#include "mozilla/Attributes.h"
 
 namespace mozilla {
 

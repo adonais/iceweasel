@@ -361,8 +361,10 @@ template <TextScanDirection direction>
 
   Maybe<int32_t> compare =
       direction == TextScanDirection::Left
-          ? nsContentUtils::ComparePoints(aRange.StartRef(), boundary)
-          : nsContentUtils::ComparePoints(boundary, aRange.EndRef());
+          ? nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+                aRange.StartRef(), boundary)
+          : nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+                boundary, aRange.EndRef());
   if (compare && *compare == -1) {
     // *compare == -1 means that the found boundary is after the range start
     // when looking left, and before the range end when looking right.

@@ -16,6 +16,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlbarSearchUtils:
     "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
 });
@@ -56,9 +57,9 @@ export class UrlbarProviderQuickSuggest extends UrlbarProvider {
     // If the sources don't include search or the user used a restriction
     // character other than search, don't allow any suggestions.
     if (
-      !queryContext.sources.includes(UrlbarUtils.RESULT_SOURCE.SEARCH) ||
+      !queryContext.sources.includes(lazy.UrlbarShared.RESULT_SOURCE.SEARCH) ||
       (queryContext.restrictSource &&
-        queryContext.restrictSource != UrlbarUtils.RESULT_SOURCE.SEARCH)
+        queryContext.restrictSource != lazy.UrlbarShared.RESULT_SOURCE.SEARCH)
     ) {
       return false;
     }
@@ -66,7 +67,7 @@ export class UrlbarProviderQuickSuggest extends UrlbarProvider {
     if (
       !lazy.UrlbarPrefs.get("quickSuggestEnabled") ||
       queryContext.isPrivate ||
-      queryContext.searchMode
+      queryContext.restrictInSearchMode()
     ) {
       return false;
     }
@@ -488,8 +489,8 @@ export class UrlbarProviderQuickSuggest extends UrlbarProvider {
     }
 
     return new lazy.UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      type: lazy.UrlbarShared.RESULT_TYPE.URL,
+      source: lazy.UrlbarShared.RESULT_SOURCE.SEARCH,
       isBestMatch: !!suggestion.is_top_pick,
       payload,
       highlights: {

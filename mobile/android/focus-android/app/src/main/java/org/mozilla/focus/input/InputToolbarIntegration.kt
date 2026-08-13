@@ -24,6 +24,7 @@ import mozilla.components.browser.domains.autocomplete.ShippedDomainsProvider
 import mozilla.components.browser.toolbar.BrowserToolbar
 import mozilla.components.browser.toolbar.display.DisplayToolbar.DisplayMargins
 import mozilla.components.compose.cfr.CFRPopup
+import mozilla.components.compose.cfr.CFRPopupBackground
 import mozilla.components.compose.cfr.CFRPopupProperties
 import mozilla.components.concept.toolbar.AutocompleteResult
 import mozilla.components.concept.toolbar.Toolbar
@@ -162,14 +163,16 @@ class InputToolbarIntegration(
                             properties = CFRPopupProperties(
                                 popupWidth = 256.dp,
                                 popupAlignment = CFRPopup.PopupAlignment.BODY_TO_ANCHOR_START,
-                                popupBodyColors = listOf(
-                                    ContextCompat.getColor(
-                                        fragment.requireContext(),
-                                        R.color.cfr_pop_up_shape_end_color,
-                                    ),
-                                    ContextCompat.getColor(
-                                        fragment.requireContext(),
-                                        R.color.cfr_pop_up_shape_start_color,
+                                popupBodyColors = CFRPopupBackground.Colors(
+                                    listOf(
+                                        ContextCompat.getColor(
+                                            fragment.requireContext(),
+                                            R.color.cfr_pop_up_shape_end_color,
+                                        ),
+                                        ContextCompat.getColor(
+                                            fragment.requireContext(),
+                                            R.color.cfr_pop_up_shape_start_color,
+                                        ),
                                     ),
                                 ),
                                 dismissButtonColor = ContextCompat.getColor(

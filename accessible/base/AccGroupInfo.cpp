@@ -3,14 +3,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "AccGroupInfo.h"
-#include "mozilla/a11y/Accessible.h"
-#include "mozilla/a11y/TableAccessible.h"
-
-#include "nsAccUtils.h"
-#include "nsIAccessiblePivot.h"
 
 #include "Pivot.h"
 #include "States.h"
+#include "mozilla/a11y/Accessible.h"
+#include "mozilla/a11y/TableAccessible.h"
+#include "nsAccUtils.h"
+#include "nsIAccessiblePivot.h"
 
 using namespace mozilla::a11y;
 

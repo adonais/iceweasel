@@ -1,0 +1,109 @@
+From e8407590dcd8432d77dbe5a54dd3b0328484f7ea Mon Sep 17 00:00:00 2001
+From: Ashley Hale <ahale@mozilla.com>
+Date: Wed, 1 Mar 2023 18:03:04 -0800
+Subject: [PATCH] Disable ClearView with scissor on Skylake iGPU because of
+ observed bugs with edge corruption. (#27)
+
+---
+ include/platform/autogen/FeaturesD3D_autogen.h       | 6 ++++++
+ include/platform/d3d_features.json                   | 8 ++++++++
+ src/libANGLE/renderer/d3d/d3d11/Clear11.cpp          | 5 +++++
+ src/libANGLE/renderer/d3d/d3d11/renderer11_utils.cpp | 4 ++++
+ util/autogen/angle_features_autogen.cpp              | 1 +
+ util/autogen/angle_features_autogen.h                | 1 +
+ 6 files changed, 25 insertions(+)
+
+diff --git a/include/platform/autogen/FeaturesD3D_autogen.h b/include/platform/autogen/FeaturesD3D_autogen.h
+index 0dd1015cbe..271a40eab7 100644
+--- a/include/platform/autogen/FeaturesD3D_autogen.h
++++ b/include/platform/autogen/FeaturesD3D_autogen.h
+@@ -116,6 +116,12 @@ struct FeaturesD3D : FeatureSetBase
+         &members,
+     };
+ 
++    FeatureInfo scissoredClearArtifacts = {
++        "scissoredClearArtifacts",
++        FeatureCategory::D3DWorkarounds,
++        &members,
++    };
++
+     FeatureInfo useSystemMemoryForConstantBuffers = {
+         "useSystemMemoryForConstantBuffers",
+         FeatureCategory::D3DWorkarounds,
+diff --git a/include/platform/d3d_features.json b/include/platform/d3d_features.json
+index 941918c8d0..daebb529fc 100644
+--- a/include/platform/d3d_features.json
++++ b/include/platform/d3d_features.json
+@@ -128,6 +128,14 @@
+             ],
+             "issue": "https://bugzilla.mozilla.org/show_bug.cgi?id=1633628"
+         },
++        {
++            "name": "scissored_clear_artifacts",
++            "category": "Workarounds",
++            "description": [
++                "On Skylake, calling ClearView with a scissor rect that is not a multiple of 8x4 pixels causes corruption of pixels in the 8x4 pixel tiles along the edge which resembles a square wave"
++            ],
++            "issue": "https://bugzilla.mozilla.org/show_bug.cgi?id=1817240"
++        },
+         {
+             "name": "use_system_memory_for_constant_buffers",
+             "category": "Workarounds",
+diff --git a/src/libANGLE/renderer/d3d/d3d11/Clear11.cpp b/src/libANGLE/renderer/d3d/d3d11/Clear11.cpp
+index 764349c3d0..ccedcf99d3 100644
+--- a/src/libANGLE/renderer/d3d/d3d11/Clear11.cpp
++++ b/src/libANGLE/renderer/d3d/d3d11/Clear11.cpp
+@@ -510,6 +510,11 @@ angle::Result Clear11::clearFramebuffer(const gl::Context *context,
+             }
+         }
+ 
++        if (needScissoredClear && mRenderer->getFeatures().scissoredClearArtifacts.enabled)
++        {
++            canClearView = false;
++        }
++
+         if ((!canClearView && needScissoredClear) || clearParams.colorType != GL_FLOAT ||
+             (formatInfo.redBits > 0 && !r) || (formatInfo.greenBits > 0 && !g) ||
+             (formatInfo.blueBits > 0 && !b) || (formatInfo.alphaBits > 0 && !a))
+diff --git a/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.cpp b/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.cpp
+index af7969dcf0..f410161ff6 100644
+--- a/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.cpp
++++ b/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.cpp
+@@ -2467,6 +2467,10 @@ void InitializeFeatures(const Renderer11DeviceCaps &deviceCaps,
+     ANGLE_FEATURE_CONDITION(features, preAddTexelFetchOffsets, isIntel);
+     ANGLE_FEATURE_CONDITION(features, useSystemMemoryForConstantBuffers, isIntel);
+ 
++    // ClearView on Skylake seems to incorrectly clear with unaligned rects (edge has saw tooth
++    // pattern instead of straight).
++    ANGLE_FEATURE_CONDITION(features, scissoredClearArtifacts, isIntel && isSkylake);
++
+     ANGLE_FEATURE_CONDITION(features, callClearTwice,
+                             isIntel && isSkylake && capsVersion >= angle::VersionTriple(16, 0, 0) &&
+                                 capsVersion < angle::VersionTriple(16, 4771, 0));
+diff --git a/util/autogen/angle_features_autogen.cpp b/util/autogen/angle_features_autogen.cpp
+index 49e00dcb3a..47958dd246 100644
+--- a/util/autogen/angle_features_autogen.cpp
++++ b/util/autogen/angle_features_autogen.cpp
+@@ -305,6 +305,7 @@ constexpr PackedEnumMap<Feature, const char *> kFeatureNames = {{
+     {Feature::RoundOutputAfterDithering, "roundOutputAfterDithering"},
+     {Feature::SanitizeAMDGPURendererString, "sanitizeAMDGPURendererString"},
+     {Feature::ScalarizeVecAndMatConstructorArgs, "scalarizeVecAndMatConstructorArgs"},
++    {Feature::ScissoredClearArtifacts, "scissoredClearArtifacts"},
+     {Feature::SelectViewInGeometryShader, "selectViewInGeometryShader"},
+     {Feature::SetDataFasterThanImageUpload, "setDataFasterThanImageUpload"},
+     {Feature::SetDataFasterThanImageUploadOn128bitFormats, "setDataFasterThanImageUploadOn128bitFormats"},
+diff --git a/util/autogen/angle_features_autogen.h b/util/autogen/angle_features_autogen.h
+index e916dc0807..74b0fc4cbc 100644
+--- a/util/autogen/angle_features_autogen.h
++++ b/util/autogen/angle_features_autogen.h
+@@ -305,6 +305,7 @@ enum class Feature
+     RoundOutputAfterDithering,
+     SanitizeAMDGPURendererString,
+     ScalarizeVecAndMatConstructorArgs,
++    ScissoredClearArtifacts,
+     SelectViewInGeometryShader,
+     SetDataFasterThanImageUpload,
+     SetDataFasterThanImageUploadOn128bitFormats,
+-- 
+2.54.0
+

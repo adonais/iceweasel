@@ -4,14 +4,11 @@
 
 "use strict";
 
-const { openDocLink } = require("resource://devtools/client/shared/link.js");
-
 const {
   createFactory,
   PureComponent,
 } = require("resource://devtools/client/shared/vendor/react.mjs");
 const {
-  a,
   article,
   aside,
   div,
@@ -22,6 +19,10 @@ const {
 
 const FluentReact = require("resource://devtools/client/shared/vendor/fluent-react.js");
 const Localized = createFactory(FluentReact.Localized);
+
+const MDNLink = createFactory(
+  require("resource://devtools/client/shared/components/MdnLink.js")
+);
 
 const { getMdnLinkParams } = ChromeUtils.importESModule(
   "resource://devtools/shared/mdn.mjs"
@@ -35,10 +36,6 @@ const DOC_URL =
  * current target.
  */
 class ManifestEmpty extends PureComponent {
-  openDocumentation() {
-    openDocLink(DOC_URL);
-  }
-
   render() {
     return article(
       { className: "app-page__icon-container js-manifest-empty" },
@@ -69,9 +66,7 @@ class ManifestEmpty extends PureComponent {
           {},
           Localized(
             { id: "manifest-empty-intro-link" },
-            a({
-              onClick: () => this.openDocumentation(),
-            })
+            MDNLink({ url: DOC_URL })
           )
         ),
         Localized({ id: "manifest-non-existing" }, p({}))

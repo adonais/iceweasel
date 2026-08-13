@@ -1,53 +1,69 @@
 # HG changeset patch
-# User Tom Ritter <tom@mozilla.com>
-# Date 1516825559 21600
-#      Wed Jan 24 14:25:59 2018 -0600
-# Node ID 9ce534c9f572dfb5abd3e409d9cfec069ccee0cd
-# Parent  6413cb580dccd986c61e6dbdc72fc370765b8f10
-Bug 1431797 Correct the capitalization of headers inside the chromium code so MinGW can compile
+Remove incorrectly capitalized headers inside the chromium code so MinGW can compile
 
-diff --git a/base/win/pe_image.h b/base/win/pe_image.h
---- a/base/win/pe_image.h
-+++ b/base/win/pe_image.h
-@@ -10,17 +10,17 @@
+diff --git a/base/base_paths_win.cc b/base/base_paths_win.cc
+--- a/base/base_paths_win.cc
++++ b/base/base_paths_win.cc
+@@ -1,17 +1,17 @@
+ // Copyright 2012 The Chromium Authors
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
  
- #ifndef BASE_WIN_PE_IMAGE_H_
- #define BASE_WIN_PE_IMAGE_H_
+ #include "base/base_paths.h"
  
  #include <windows.h>
  
- #include <stdint.h>
+-#include <KnownFolders.h>
++#include <knownfolders.h>
+ #include <shlobj.h>
  
--#include <DelayIMP.h>
-+#include <delayimp.h>
+ #include "base/environment.h"
+ #include "base/files/file_path.h"
+ #include "base/files/file_util.h"
+ #include "base/path_service.h"
+ #include "base/strings/string_util.h"
+ #include "base/strings/utf_string_conversions.h"
+diff --git a/sandbox/win/src/handle_closer_agent.cc b/sandbox/win/src/handle_closer_agent.cc
+--- a/sandbox/win/src/handle_closer_agent.cc
++++ b/sandbox/win/src/handle_closer_agent.cc
+@@ -1,15 +1,15 @@
+ // Copyright 2012 The Chromium Authors
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
  
- namespace base {
- namespace win {
+ #include "sandbox/win/src/handle_closer_agent.h"
  
- // This class is a wrapper for the Portable Executable File Format (PE).
- // Its main purpose is to provide an easy way to work with imports and exports
- // from a file, mapped in memory as image. A PEImage object is constructed from
- // a loaded PE file by passing the HMODULE to the constructor. Loading a PE file
+-#include <Windows.h>
++#include <windows.h>
+ 
+ #include <stddef.h>
+ #include <winnls.h>
+ 
+ #include "base/check.h"
+ #include "base/containers/heap_array.h"
+ #include "base/containers/span.h"
+ #include "base/logging.h"
 diff --git a/sandbox/win/src/startup_information_helper.cc b/sandbox/win/src/startup_information_helper.cc
 --- a/sandbox/win/src/startup_information_helper.cc
 +++ b/sandbox/win/src/startup_information_helper.cc
-@@ -1,15 +1,15 @@
+@@ -1,16 +1,16 @@
  // Copyright 2020 The Chromium Authors
  // Use of this source code is governed by a BSD-style license that can be
  // found in the LICENSE file.
+ 
  
  #include "sandbox/win/src/startup_information_helper.h"
  
 -#include <Windows.h>
 +#include <windows.h>
  
+ #include <algorithm>
  #include <vector>
  
  #include "base/check.h"
  #include "base/memory/scoped_refptr.h"
- #include "base/ranges/algorithm.h"
  #include "base/win/startup_information.h"
- #include "base/win/windows_version.h"
+ #include "base/win/windows_handle_util.h"
 diff --git a/sandbox/win/src/startup_information_helper.h b/sandbox/win/src/startup_information_helper.h
 --- a/sandbox/win/src/startup_information_helper.h
 +++ b/sandbox/win/src/startup_information_helper.h

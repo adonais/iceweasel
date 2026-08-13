@@ -24,7 +24,7 @@ class DOMLocalization;
 class L10nMutations final : public nsStubMultiMutationObserver,
                             public nsARefreshObserver {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(L10nMutations, nsIMutationObserver)
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED

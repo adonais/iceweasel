@@ -13,8 +13,8 @@ origin:
   url: "https://perfetto.dev"
   license: Apache-2.0
 
-  release: v49.0 (2025-01-06T17:37:16+00:00).
-  revision: v49.0
+  release: v56.1 (2026-06-10T12:50:13+01:00).
+  revision: v56.1
 
 updatebot:
   maintainer-phab: denispal
@@ -28,16 +28,23 @@ vendoring:
   url: https://github.com/google/perfetto
   source-hosting: github
   tracking: tag
+  release-artifact: perfetto-cpp-sdk-src.zip
   keep:
     - moz.build
     - moz_attributes.patch
+    - LICENSE
   skip-vendoring-steps:
     - update-moz-build
-  exclude:
-    - '**'
   include:
-    - sdk/
-    - LICENSE
+    - perfetto.h
+    - perfetto.cc
+  update-actions:
+    - action: move-file
+      from: perfetto.h
+      to: sdk/perfetto.h
+    - action: move-file
+      from: perfetto.cc
+      to: sdk/perfetto.cc
   # Add an implicit attribute to EventFinalizer() and use the
   # asan declarations from "mozilla/MemoryChecking.h".
   patches:

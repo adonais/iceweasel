@@ -38,7 +38,7 @@ class InteractableListTest {
     private val testDispatcher = StandardTestDispatcher()
     private val scope = TestScope(testDispatcher)
 
-    private val defaultIgnoredItems = setOf("header", "span")
+    private val defaultIgnoredItems = setOf(TabKeys.HEADER, TabKeys.SPAN)
 
     @Test
     fun `GIVEN a y value is inside the Rect THEN closestDistanceTo returns 0`() {
@@ -111,24 +111,19 @@ class InteractableListTest {
 
     @Test
     fun `GIVEN a visible ListItem WHEN gatherCandidates is called THEN Overlap, Top and Bottom gutter candidates are created`() {
-        val listState = mockListState(listOf(mockListItem("key"), mockListItem("key2")))
+        val listState = mockListState(listOf(mockListItem("key"), mockListItem(TabKeys.TAB_BETA)))
 
         val candidates = gatherCandidates(
             listState = listState,
             draggedItemOffset = fakeDraggedListItemOffset(),
-            draggedItem = InteractionState.List.Active(
-                index = 0,
-                key = "key",
-                initialOffset = 0f,
-            ),
+            draggedItem = fakeListActiveState(),
             ignoredItems = defaultIgnoredItems,
         )
-        assertTrue(
-            candidates.any { it.type is InteractionType.Overlap } &&
-                candidates.any { it.type is InteractionType.TopGutter } &&
-                candidates.any { it.type is InteractionType.BottomGutter } &&
-                candidates.size == 3,
-        )
+
+        assertEquals(3, candidates.size)
+        assertTrue(candidates.any { it.type is InteractionType.Overlap })
+        assertTrue(candidates.any { it.type is InteractionType.TopGutter })
+        assertTrue(candidates.any { it.type is InteractionType.BottomGutter })
     }
 
     @Test
@@ -136,7 +131,7 @@ class InteractableListTest {
         val listState = mockListState(
             listOf(
                 mockListItem("key"),
-                mockListItem("key2"),
+                mockListItem(TabKeys.TAB_BETA),
                 mockListItem("key3"),
             ),
             firstVisibleIndex = 1,
@@ -145,16 +140,11 @@ class InteractableListTest {
         val candidates = gatherCandidates(
             listState = listState,
             draggedItemOffset = fakeDraggedListItemOffset(),
-            draggedItem = InteractionState.List.Active(
-                index = 0,
-                key = "key",
-                initialOffset = 0f,
-            ),
+            draggedItem = fakeListActiveState(),
             ignoredItems = defaultIgnoredItems,
         )
-        assertTrue(
-            candidates.filter { it.type is InteractionType.Scroll }.size == 1,
-        )
+
+        assertEquals(1, candidates.count { it.type is InteractionType.Scroll })
     }
 
     @Test
@@ -162,7 +152,7 @@ class InteractableListTest {
         val listState = mockListState(
             listOf(
                 mockListItem("key"),
-                mockListItem("key2"),
+                mockListItem(TabKeys.TAB_BETA),
                 mockListItem("key3"),
             ),
             firstVisibleIndex = 0,
@@ -184,9 +174,8 @@ class InteractableListTest {
             draggedItem = draggedItem,
             ignoredItems = defaultIgnoredItems,
         )
-        assertTrue(
-            candidates.filter { it.type is InteractionType.Scroll }.size == 1,
-        )
+
+        assertEquals(1, candidates.count { it.type is InteractionType.Scroll })
     }
 
     @Test
@@ -196,16 +185,11 @@ class InteractableListTest {
         val candidates = gatherCandidates(
             listState = listState,
             draggedItemOffset = fakeDraggedListItemOffset(),
-            draggedItem = InteractionState.List.Active(
-                index = 0,
-                key = "key",
-                initialOffset = 0f,
-            ),
+            draggedItem = fakeListActiveState(),
             ignoredItems = setOf("ignored"),
         )
-        assertTrue(
-            candidates.isEmpty(),
-        )
+
+        assertTrue(candidates.isEmpty())
     }
 
     @Test
@@ -215,164 +199,194 @@ class InteractableListTest {
         val candidates = gatherCandidates(
             listState = listState,
             draggedItemOffset = fakeDraggedListItemOffset(),
-            draggedItem = InteractionState.List.Active(
-                index = 0,
-                key = "key",
-                initialOffset = .0f,
-            ),
+            draggedItem = fakeListActiveState(),
             ignoredItems = defaultIgnoredItems,
         )
-        assertTrue(
-            candidates.isEmpty(),
-        )
+
+        assertTrue(candidates.isEmpty())
     }
 
     @Test
-    fun `GIVEN an item is dragged onto another WHEN onDragEnd is called THEN onDrop is called`() {
+    fun `GIVEN liveReorderEnabled is false WHEN an item is dragged onto another WHEN onDragEnd is called THEN onDrop is called`() {
         val handler = mockk<TabInteractionHandler>(relaxed = true)
         val dragItemOffset = 120
-        val targetItemOffset = 140
-        val reorderState = fakeListInteractionState(
-            mockListState(
-                mockItems = listOf(
-                    mockk<LazyListItemInfo> {
-                        every { key } returns "header"
-                        every { index } returns 0
-                        every { size } returns 100
-                        every { offset } returns 0
-                    },
-                    mockk<LazyListItemInfo> {
-                        every { key } returns "key1"
-                        every { index } returns 1
-                        every { size } returns 10
-                        every { offset } returns dragItemOffset
-                    },
-                    mockk<LazyListItemInfo> {
-                        every { key } returns "key2"
-                        every { index } returns 1
-                        every { size } returns 10
-                        every { offset } returns targetItemOffset
-                    },
-                ),
-            ),
+        val reorderState = twoTabReorderState(
             handler = handler,
+            alphaTabOffset = dragItemOffset,
+            betaTabOffset = 140,
+            includeHeader = true,
+            liveReorderEnabled = false,
         )
 
         reorderState.onTouchSlopPassed(dragItemOffset.toFloat(), false)
-        reorderState.onDrag(offset = 20f, preserveSelectMode = false) // 20 down
+        reorderState.dragDown(distance = 20f, preserveSelectMode = false) // 20 down
         reorderState.onDragEnd()
 
-        verify { handler.onDrop("key1", "key2") }
+        verify { handler.onDrop(TabKeys.TAB_ALPHA, TabKeys.TAB_BETA) }
+    }
+
+    @Test
+    fun `GIVEN liveReorderEnabled is true WHEN an item is dragged onto another WHEN onDragEnd is called THEN onDrop is called`() {
+        val handler = mockk<TabInteractionHandler>(relaxed = true)
+        val dragItemOffset = 120
+        val reorderState = twoTabReorderState(
+            handler = handler,
+            alphaTabOffset = dragItemOffset,
+            betaTabOffset = 140,
+            includeHeader = true,
+            liveReorderEnabled = true,
+        )
+
+        reorderState.onTouchSlopPassed(dragItemOffset.toFloat(), false)
+        reorderState.dragDown(distance = 20f, preserveSelectMode = false) // 20 down
+        reorderState.onDragEnd()
+
+        verify { handler.onDrop(TabKeys.TAB_ALPHA, TabKeys.TAB_BETA) }
     }
 
     @Test
     fun `GIVEN drag and drop disabled and an item is dragged onto another WHEN onDragEnd is called THEN onDrop is not called`() {
         val handler = mockk<TabInteractionHandler>(relaxed = true)
         val dragItemOffset = 120
-        val targetItemOffset = 140
-        val reorderState = fakeListInteractionState(
-            listState = mockListState(
-                mockItems = listOf(
-                    mockk<LazyListItemInfo> {
-                        every { key } returns "header"
-                        every { index } returns 0
-                        every { size } returns 100
-                        every { offset } returns 0
-                    },
-                    mockk<LazyListItemInfo> {
-                        every { key } returns "key1"
-                        every { index } returns 1
-                        every { size } returns 10
-                        every { offset } returns dragItemOffset
-                    },
-                    mockk<LazyListItemInfo> {
-                        every { key } returns "key2"
-                        every { index } returns 1
-                        every { size } returns 10
-                        every { offset } returns targetItemOffset
-                    },
-                ),
-            ),
+        val reorderState = twoTabReorderState(
             handler = handler,
+            alphaTabOffset = dragItemOffset,
+            betaTabOffset = 140,
+            includeHeader = true,
             dragAndDropEnabled = false,
         )
 
         reorderState.onTouchSlopPassed(dragItemOffset.toFloat(), false)
-        reorderState.onDrag(offset = 20f, preserveSelectMode = false) // 20 down
+        reorderState.dragDown(distance = 20f, preserveSelectMode = false) // 20 down
         reorderState.onDragEnd()
 
-        verify(exactly = 0) { handler.onDrop("key1", "key2") }
-        verify { handler.onMove("key1", "key2", false) }
+        verify(exactly = 0) { handler.onDrop(TabKeys.TAB_ALPHA, TabKeys.TAB_BETA) }
+        verify { handler.onMove(TabKeys.TAB_ALPHA, TabKeys.TAB_BETA, false) }
     }
 
     @Test
-    fun `GIVEN an item is dragged to the bottom of another WHEN onDragEnd is called THEN onMove is called`() {
+    fun `GIVEN liveReorderEnabled is false WHEN an item is dragged to the bottom of another WHEN onDrag is called THEN onMove is not called`() {
         val handler = mockk<TabInteractionHandler>(relaxed = true)
         val dragItemOffset = 110
-        val targetItemOffset = 130
-        val reorderState = fakeListInteractionState(
-            mockListState(
-                mockItems = listOf(
-                    mockk<LazyListItemInfo> {
-                        every { key } returns "header"
-                        every { index } returns 0
-                        every { size } returns 100
-                        every { offset } returns 0
-                    },
-                    mockk<LazyListItemInfo> {
-                        every { key } returns "key1"
-                        every { index } returns 1
-                        every { size } returns 10
-                        every { offset } returns dragItemOffset
-                    },
-                    mockk<LazyListItemInfo> {
-                        every { key } returns "key2"
-                        every { index } returns 2
-                        every { size } returns 10
-                        every { offset } returns targetItemOffset
-                    },
-                ),
-            ),
+        val reorderState = twoTabReorderState(
             handler = handler,
+            alphaTabOffset = dragItemOffset,
+            betaTabOffset = 130,
+            includeHeader = true,
         )
 
         reorderState.onTouchSlopPassed(dragItemOffset.toFloat(), false)
-        reorderState.onDrag(offset = 50f, preserveSelectMode = false) // 50 down
-        reorderState.onDragEnd()
+        reorderState.dragDown(distance = 50f, preserveSelectMode = false) // 50 down
 
-        verify { handler.onMove("key1", "key2", true) }
+        verify(exactly = 0) { handler.onMove(any<String>(), any<String>(), any<Boolean>()) }
     }
 
     @Test
-    fun `GIVEN an item is dragged to the top of another WHEN onDragEnd is called THEN onMove is called`() {
+    fun `GIVEN liveReorderEnabled is true WHEN an item is dragged to the bottom of another WHEN onDrag is called THEN onMove is called`() {
         val handler = mockk<TabInteractionHandler>(relaxed = true)
-        val dragItemOffset = 30
-        val targetItemOffset = 10
-        val reorderState = fakeListInteractionState(
-            mockListState(
-                mockItems = listOf(
-                    mockk<LazyListItemInfo> {
-                        every { key } returns "key1"
-                        every { index } returns 1
-                        every { size } returns 10
-                        every { offset } returns targetItemOffset
-                    },
-                    mockk<LazyListItemInfo> {
-                        every { key } returns "key2"
-                        every { index } returns 2
-                        every { size } returns 10
-                        every { offset } returns dragItemOffset
-                    },
-                ),
-            ),
+        val dragItemOffset = 110
+        val reorderState = twoTabReorderState(
             handler = handler,
+            alphaTabOffset = dragItemOffset,
+            betaTabOffset = 130,
+            includeHeader = true,
+            liveReorderEnabled = true,
         )
 
         reorderState.onTouchSlopPassed(dragItemOffset.toFloat(), false)
-        reorderState.onDrag(offset = -30f, preserveSelectMode = false) // 30 up
+        reorderState.dragDown(distance = 50f, preserveSelectMode = false) // 50 down
+
+        verify { handler.onMove(TabKeys.TAB_ALPHA, TabKeys.TAB_BETA, true) }
+    }
+
+    @Test
+    fun `GIVEN liveReorderEnabled is false WHEN an item is dragged to the bottom of another WHEN onDragEnd is called THEN onMove is called`() {
+        val handler = mockk<TabInteractionHandler>(relaxed = true)
+        val dragItemOffset = 110
+        val reorderState = twoTabReorderState(
+            handler = handler,
+            alphaTabOffset = dragItemOffset,
+            betaTabOffset = 130,
+            includeHeader = true,
+            liveReorderEnabled = false,
+        )
+
+        reorderState.onTouchSlopPassed(dragItemOffset.toFloat(), false)
+        reorderState.dragDown(distance = 50f, preserveSelectMode = false) // 50 down
         reorderState.onDragEnd()
 
-        verify { handler.onMove("key2", "key1", false) }
+        verify { handler.onMove(TabKeys.TAB_ALPHA, TabKeys.TAB_BETA, true) }
+    }
+
+    @Test
+    fun `GIVEN liveReorderEnabled is false WHEN an item is dragged to the top of another WHEN onDrag is called THEN onMove is not called`() {
+        val handler = mockk<TabInteractionHandler>(relaxed = true)
+        val dragItemOffset = 30
+        val reorderState = twoTabReorderState(
+            handler = handler,
+            alphaTabOffset = 10,
+            betaTabOffset = dragItemOffset,
+            liveReorderEnabled = false,
+        )
+
+        reorderState.onTouchSlopPassed(dragItemOffset.toFloat(), false)
+        reorderState.dragUp(distance = 30f, preserveSelectMode = false) // 30 up
+
+        verify(exactly = 0) { handler.onMove(any<String>(), any<String>(), any<Boolean>()) }
+    }
+
+    @Test
+    fun `GIVEN liveReorderEnabled is true WHEN an item is dragged to the top of another WHEN onDrag is called THEN onMove is called`() {
+        val handler = mockk<TabInteractionHandler>(relaxed = true)
+        val dragItemOffset = 30
+        val reorderState = twoTabReorderState(
+            handler = handler,
+            alphaTabOffset = 10,
+            betaTabOffset = dragItemOffset,
+            liveReorderEnabled = true,
+        )
+
+        reorderState.onTouchSlopPassed(dragItemOffset.toFloat(), false)
+        reorderState.dragUp(distance = 30f, preserveSelectMode = false) // 30 up
+
+        verify { handler.onMove(TabKeys.TAB_BETA, TabKeys.TAB_ALPHA, false) }
+    }
+
+    @Test
+    fun `GIVEN liveReorderEnabled is false WHEN an item is dragged to the top of another WHEN onDragEnd is called THEN onMove is called`() {
+        val handler = mockk<TabInteractionHandler>(relaxed = true)
+        val dragItemOffset = 30
+        val reorderState = twoTabReorderState(
+            handler = handler,
+            alphaTabOffset = 10,
+            betaTabOffset = dragItemOffset,
+            liveReorderEnabled = false,
+        )
+
+        reorderState.onTouchSlopPassed(dragItemOffset.toFloat(), false)
+        reorderState.dragUp(distance = 30f, preserveSelectMode = false) // 30 up
+        reorderState.onDragEnd()
+
+        verify { handler.onMove(TabKeys.TAB_BETA, TabKeys.TAB_ALPHA, false) }
+    }
+
+    @Test
+    fun `GIVEN liveReorderEnabled is true WHEN multiple drag events to the same position occur THEN only one onMove is called`() {
+        val handler = mockk<TabInteractionHandler>(relaxed = true)
+        val dragItemOffset = 30
+        val reorderState = twoTabReorderState(
+            handler = handler,
+            alphaTabOffset = 10,
+            betaTabOffset = dragItemOffset,
+            liveReorderEnabled = true,
+        )
+
+        reorderState.onTouchSlopPassed(dragItemOffset.toFloat(), false)
+        reorderState.dragUp(distance = 30f, preserveSelectMode = false) // 30 up
+        reorderState.dragDown(distance = 0f, preserveSelectMode = false)
+        reorderState.dragDown(distance = 0f, preserveSelectMode = false)
+
+        verify(exactly = 1) { handler.onMove(TabKeys.TAB_BETA, TabKeys.TAB_ALPHA, false) }
     }
 
     @Test
@@ -393,21 +407,12 @@ class InteractableListTest {
         val handler = mockk<TabInteractionHandler>(relaxed = true)
         val draggedItemOffset = 30
         val reorderState = fakeListInteractionState(
-            mockListState(
-                mockItems = listOf(
-                    mockk<LazyListItemInfo> {
-                        every { key } returns "key2"
-                        every { index } returns 1
-                        every { size } returns 10
-                        every { offset } returns draggedItemOffset
-                    },
-                ),
-            ),
+            mockListState(mockItems = listOf(mockListItem(key = TabKeys.TAB_BETA, offset = draggedItemOffset))),
             handler = handler,
         )
 
         reorderState.onTouchSlopPassed(draggedItemOffset.toFloat(), false)
-        reorderState.onDrag(offset = 50f, preserveSelectMode = false)
+        reorderState.dragDown(distance = 50f, preserveSelectMode = false)
         reorderState.onDragEnd()
 
         verify { handler.onDragCancel() }
@@ -417,91 +422,46 @@ class InteractableListTest {
     fun `WHEN an item is dragged GIVEN preserveSelectMode is true THEN onDragStart is called with the same flag`() {
         val handler = mockk<TabInteractionHandler>(relaxed = true)
         val dragItemOffset = 10
-        val targetItemOffset = 30
-        val reorderState = fakeListInteractionState(
-            mockListState(
-                mockItems = listOf(
-                    mockk<LazyListItemInfo> {
-                        every { key } returns "key1"
-                        every { index } returns 1
-                        every { size } returns 10
-                        every { offset } returns dragItemOffset
-                    },
-                    mockk<LazyListItemInfo> {
-                        every { key } returns "key2"
-                        every { index } returns 1
-                        every { size } returns 10
-                        every { offset } returns targetItemOffset
-                    },
-                ),
-            ),
+        val reorderState = twoTabReorderState(
             handler = handler,
+            alphaTabOffset = dragItemOffset,
+            betaTabOffset = 30,
         )
 
         reorderState.onTouchSlopPassed(dragItemOffset.toFloat(), true)
-        reorderState.onDrag(offset = 50f, preserveSelectMode = true) // 50 down
+        reorderState.dragDown(distance = 50f, preserveSelectMode = true) // 50 down
 
-        verify { handler.onDragStart(sourceKey = "key1", preserveSelectMode = true) }
+        verify { handler.onDragStart(sourceKey = TabKeys.TAB_ALPHA, preserveSelectMode = true) }
     }
 
     @Test
     fun `WHEN an item is dragged GIVEN preserveSelectMode is false THEN onDragStart is called with the same flag`() {
         val handler = mockk<TabInteractionHandler>(relaxed = true)
         val dragItemOffset = 10
-        val targetItemOffset = 30
-        val reorderState = fakeListInteractionState(
-            mockListState(
-                mockItems = listOf(
-                    mockk<LazyListItemInfo> {
-                        every { key } returns "key1"
-                        every { index } returns 1
-                        every { size } returns 10
-                        every { offset } returns dragItemOffset
-                    },
-                    mockk<LazyListItemInfo> {
-                        every { key } returns "key2"
-                        every { index } returns 1
-                        every { size } returns 10
-                        every { offset } returns targetItemOffset
-                    },
-                ),
-            ),
+        val reorderState = twoTabReorderState(
             handler = handler,
+            alphaTabOffset = dragItemOffset,
+            betaTabOffset = 30,
         )
 
         reorderState.onTouchSlopPassed(dragItemOffset.toFloat(), true)
-        reorderState.onDrag(offset = 50f, preserveSelectMode = false) // 50 down
+        reorderState.dragDown(distance = 50f, preserveSelectMode = false) // 50 down
 
-        verify { handler.onDragStart(sourceKey = "key1", preserveSelectMode = false) }
+        verify { handler.onDragStart(sourceKey = TabKeys.TAB_ALPHA, preserveSelectMode = false) }
     }
 
     @Test
     fun `WHEN a drag is cancelled THEN the handler is invoked with a drag cancel call`() {
         val handler = mockk<TabInteractionHandler>(relaxed = true)
         val dragItemOffset = 10
-        val targetItemOffset = 30
-        val reorderState = fakeListInteractionState(
-            mockListState(
-                mockItems = listOf(
-                    mockk<LazyListItemInfo> {
-                        every { key } returns "key1"
-                        every { index } returns 1
-                        every { size } returns 10
-                        every { offset } returns dragItemOffset
-                    },
-                    mockk<LazyListItemInfo> {
-                        every { key } returns "key2"
-                        every { index } returns 1
-                        every { size } returns 10
-                        every { offset } returns targetItemOffset
-                    },
-                ),
-            ),
+        val reorderState = twoTabReorderState(
             handler = handler,
+            alphaTabOffset = dragItemOffset,
+            betaTabOffset = 30,
         )
 
         reorderState.onTouchSlopPassed(offset = dragItemOffset.toFloat(), shouldLongPress = false)
-        reorderState.onDrag(offset = 50f, preserveSelectMode = false)
+        reorderState.dragDown(distance = 50f, preserveSelectMode = false)
         reorderState.onDragCancelled()
 
         verify { handler.onDragCancel() }
@@ -511,25 +471,10 @@ class InteractableListTest {
     fun `WHEN a drag starts and the pointer does not move THEN the moved parameter is false`() {
         val handler = mockk<TabInteractionHandler>(relaxed = true)
         val dragItemOffset = 10
-        val targetItemOffset = 30
-        val reorderState = fakeListInteractionState(
-            mockListState(
-                mockItems = listOf(
-                    mockk<LazyListItemInfo> {
-                        every { key } returns "key1"
-                        every { index } returns 1
-                        every { size } returns 10
-                        every { offset } returns dragItemOffset
-                    },
-                    mockk<LazyListItemInfo> {
-                        every { key } returns "key2"
-                        every { index } returns 1
-                        every { size } returns 10
-                        every { offset } returns targetItemOffset
-                    },
-                ),
-            ),
+        val reorderState = twoTabReorderState(
             handler = handler,
+            alphaTabOffset = dragItemOffset,
+            betaTabOffset = 30,
         )
 
         reorderState.onTouchSlopPassed(offset = dragItemOffset.toFloat(), shouldLongPress = false)
@@ -542,29 +487,15 @@ class InteractableListTest {
     fun `WHEN a drag starts and the pointer moves THEN the moved parameter is true`() {
         val handler = mockk<TabInteractionHandler>(relaxed = true)
         val dragItemOffset = 10
-        val targetItemOffset = 30
-        val reorderState = fakeListInteractionState(
-            mockListState(
-                mockItems = listOf(
-                    mockk<LazyListItemInfo> {
-                        every { key } returns "key1"
-                        every { index } returns 1
-                        every { size } returns 10
-                        every { offset } returns dragItemOffset
-                    },
-                    mockk<LazyListItemInfo> {
-                        every { key } returns "key2"
-                        every { index } returns 1
-                        every { size } returns 10
-                        every { offset } returns targetItemOffset
-                    },
-                ),
-            ),
+        val reorderState = twoTabReorderState(
             handler = handler,
+            alphaTabOffset = dragItemOffset,
+            betaTabOffset = 30,
         )
 
         reorderState.onTouchSlopPassed(offset = dragItemOffset.toFloat(), shouldLongPress = false)
-        reorderState.onDrag(40f, true)
+        reorderState.dragDown(distance = 40f, preserveSelectMode = true)
+
         assertIs<InteractionState.List.Active>(reorderState.draggedItem)
         assertTrue(reorderState.draggedItem.moved)
     }
@@ -573,30 +504,16 @@ class InteractableListTest {
     fun `GIVEN an in progress drag WHEN onCancelled is called THEN the dragged item is reset to None and moved is false`() {
         val handler = mockk<TabInteractionHandler>(relaxed = true)
         val dragItemOffset = 10
-        val targetItemOffset = 30
-        val reorderState = fakeListInteractionState(
-            mockListState(
-                mockItems = listOf(
-                    mockk<LazyListItemInfo> {
-                        every { key } returns "key1"
-                        every { index } returns 1
-                        every { size } returns 10
-                        every { offset } returns dragItemOffset
-                    },
-                    mockk<LazyListItemInfo> {
-                        every { key } returns "key2"
-                        every { index } returns 1
-                        every { size } returns 10
-                        every { offset } returns targetItemOffset
-                    },
-                ),
-            ),
+        val reorderState = twoTabReorderState(
             handler = handler,
+            alphaTabOffset = dragItemOffset,
+            betaTabOffset = 30,
         )
 
         reorderState.onTouchSlopPassed(offset = dragItemOffset.toFloat(), shouldLongPress = false)
-        reorderState.onDrag(40f, true)
+        reorderState.dragDown(distance = 40f, preserveSelectMode = true)
         reorderState.onDragCancelled()
+
         assertIs<InteractionState.List.None>(reorderState.draggedItem)
         assertFalse(reorderState.draggedItem.moved)
     }
@@ -604,29 +521,12 @@ class InteractableListTest {
     @Test
     fun `GIVEN a large ignored header item WHEN itemSize is called it retrieves a regular tab item size`() {
         val handler = mockk<TabInteractionHandler>(relaxed = true)
-        val dragItemOffset = 10
-        val targetItemOffset = 30
         val reorderState = fakeListInteractionState(
             mockListState(
                 mockItems = listOf(
-                    mockk<LazyListItemInfo> {
-                        every { key } returns "header"
-                        every { index } returns 1
-                        every { size } returns 10000
-                        every { offset } returns 0
-                    },
-                    mockk<LazyListItemInfo> {
-                        every { key } returns "key1"
-                        every { index } returns 1
-                        every { size } returns 10
-                        every { offset } returns dragItemOffset
-                    },
-                    mockk<LazyListItemInfo> {
-                        every { key } returns "key2"
-                        every { index } returns 1
-                        every { size } returns 10
-                        every { offset } returns targetItemOffset
-                    },
+                    mockListItem(key = TabKeys.HEADER, index = 1, size = 10000, offset = 0),
+                    mockListItem(key = TabKeys.TAB_ALPHA, offset = 10),
+                    mockListItem(key = TabKeys.TAB_BETA, offset = 30),
                 ),
             ),
             handler = handler,
@@ -635,13 +535,80 @@ class InteractableListTest {
         assertEquals(reorderState.itemSize, 10)
     }
 
-    private fun mockListItem(mockItemKey: String = "key"): LazyListItemInfo {
+    @Test
+    fun `GIVEN a hovered item WHEN the mode changes THEN the hovered item is reset`() {
+        val handler = mockk<TabInteractionHandler>(relaxed = true)
+        val dragItemOffset = 120
+        val reorderState = twoTabReorderState(
+            handler = handler,
+            alphaTabOffset = dragItemOffset,
+            betaTabOffset = 140,
+            includeHeader = true,
+            liveReorderEnabled = false,
+        )
+
+        reorderState.onTouchSlopPassed(dragItemOffset.toFloat(), false)
+        reorderState.dragDown(distance = 20f, preserveSelectMode = false) // 20 down
+        assertIs<InteractionState.List.Active>(reorderState.hoveredItem)
+
+        reorderState.dragUp(distance = 20f, preserveSelectMode = false)
+
+        assertIs<InteractionState.List.None>(reorderState.hoveredItem)
+    }
+
+    @Test
+    fun `WHEN reset is called THEN the state is reset`() {
+        val reorderState = fakeListInteractionState(listState = mockListState())
+        reorderState.onTouchSlopPassed(0f, false)
+        reorderState.onDragEnd()
+
+        reorderState.reset()
+
+        assertEquals(InteractionState.List.None, reorderState.draggedItem)
+        assertEquals(InteractionState.List.None, reorderState.hoveredItem)
+        assertNull(reorderState.highlightedRect)
+        assertEquals(InteractionMode.List.None, reorderState.interactionMode)
+        assertEquals(reorderState.previousItemAnimatableOffset.value, 0f)
+    }
+
+    private fun mockListItem(
+        key: String = "key",
+        index: Int = 1,
+        size: Int = 10,
+        offset: Int = 0,
+    ): LazyListItemInfo {
         return mockk<LazyListItemInfo> {
-            every { key } returns mockItemKey
-            every { index } returns 1
-            every { size } returns 10
-            every { offset } returns 0
+            every { this@mockk.key } returns key
+            every { this@mockk.index } returns index
+            every { this@mockk.size } returns size
+            every { this@mockk.offset } returns offset
         }
+    }
+
+    private fun mockHeaderItem(): LazyListItemInfo =
+        mockListItem(key = TabKeys.HEADER, index = 0, size = 100, offset = 0)
+
+    private fun twoTabReorderState(
+        handler: TabInteractionHandler,
+        alphaTabOffset: Int,
+        betaTabOffset: Int,
+        includeHeader: Boolean = false,
+        dragAndDropEnabled: Boolean = true,
+        liveReorderEnabled: Boolean = false,
+    ): ListInteractionState {
+        val items = buildList {
+            if (includeHeader) {
+                add(mockHeaderItem())
+            }
+            add(mockListItem(key = TabKeys.TAB_ALPHA, index = 1, offset = alphaTabOffset))
+            add(mockListItem(key = TabKeys.TAB_BETA, index = 2, offset = betaTabOffset))
+        }
+        return fakeListInteractionState(
+            mockListState(mockItems = items),
+            handler = handler,
+            dragAndDropEnabled = dragAndDropEnabled,
+            liveReorderEnabled = liveReorderEnabled,
+        )
     }
 
     private fun mockListState(
@@ -670,6 +637,7 @@ class InteractableListTest {
         listState: LazyListState,
         handler: TabInteractionHandler = NoOpTabInteractionHandler,
         dragAndDropEnabled: Boolean = true,
+        liveReorderEnabled: Boolean = false,
     ): ListInteractionState {
         return ListInteractionStateImpl(
             listState = listState,
@@ -682,6 +650,15 @@ class InteractableListTest {
                 every { performHapticFeedback(any()) } just Runs
             },
             dragAndDropEnabled = dragAndDropEnabled,
+            liveReorderEnabled = liveReorderEnabled,
         )
+    }
+
+    private fun ListInteractionState.dragDown(distance: Float, preserveSelectMode: Boolean) {
+        this.onDrag(offset = distance, preserveSelectMode = preserveSelectMode)
+    }
+
+    private fun ListInteractionState.dragUp(distance: Float, preserveSelectMode: Boolean) {
+        this.onDrag(offset = -distance, preserveSelectMode = preserveSelectMode)
     }
 }

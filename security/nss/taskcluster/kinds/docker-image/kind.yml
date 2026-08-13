@@ -7,22 +7,25 @@ loader: taskgraph.loader.transform:loader
 
 transforms:
     - taskgraph.transforms.docker_image:transforms
+    - nss_taskgraph.transforms.docker_image
     - taskgraph.transforms.cached_tasks:transforms
     - taskgraph.transforms.task:transforms
 
 tasks:
     base:
         symbol: I(base)
+    base-i386:
+        symbol: I(base-i386)
+        parent: base
     builds:
         symbol: I(builds)
-        parent: base
+        parent: base-i386
+    builds-legacy:
+        symbol: I(builds-legacy)
     acvp:
         symbol: I(acvp)
     clang-format:
         symbol: I(clang-format)
-    gcc-4.4:
-        symbol: I(gcc-4.4)
-        parent: base
     fuzz:
         symbol: I(fuzz)
     docs:
@@ -31,3 +34,16 @@ tasks:
     tlsinterop:
         symbol: I(tlsinterop)
         parent: base
+    # aarch64 image variants, built natively on aarch64 workers. Any image
+    # whose name ends in -aarch64 is routed to the images-aarch64 worker (and
+    # built with the published arm64 image_builder) by
+    # nss_taskgraph.transforms.docker_image.
+    base-aarch64:
+        symbol: I(base-aarch64)
+        definition: base
+    builds-aarch64:
+        symbol: I(builds-aarch64)
+        parent: base-aarch64
+    tlsinterop-aarch64:
+        symbol: I(tlsinterop-aarch64)
+        parent: base-aarch64

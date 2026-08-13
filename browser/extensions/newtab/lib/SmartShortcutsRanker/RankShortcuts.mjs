@@ -19,8 +19,6 @@ These prefs can be accessed at prefValues.trainhopConfig.smartShortcuts
 * min_exp_clicks: minimum recent clicks before exploration is enabled
 * min_exp_impressions: minimum recent impressions before exploration is enabled
 * tau: seasonality smoothing strength
-* sticky_numimps: number of impressions for sticky clicks. 0 turns off
-*
 * thom_weight: weight of thompson sampling. divided by 100
 * frec_weight: weight of frecency. divided by 100
 * hour_weight: weight of hourly seasonality. divided by 100
@@ -47,25 +45,24 @@ const PREF_SYSTEM_SHORTCUTS_PERSONALIZATION =
   "discoverystream.shortcuts.personalization.enabled";
 
 const FEATURE_META = {
-  thom: { pref: "thom_weight", def: 0 },
-  frec: { pref: "frec_weight", def: 70 },
+  thom: { pref: "thom_weight", def: 181 },
+  frec: { pref: "frec_weight", def: 0 },
   hour: { pref: "hour_weight", def: 0 },
   daily: { pref: "daily_weight", def: 0 },
   bmark: { pref: "bmark_weight", def: 0 },
-  rece: { pref: "rece_weight", def: 30 },
-  freq: { pref: "freq_weight", def: 0 },
+  rece: { pref: "rece_weight", def: 466 },
+  freq: { pref: "freq_weight", def: 200 },
   refre: { pref: "refre_weight", def: 0 },
   open: { pref: "open_weight", def: 0 },
   unid: { pref: "unid_weight", def: 0 },
-  ctr: { pref: "ctr_weight", def: 0 },
+  ctr: { pref: "ctr_weight", def: 954 },
   bias: { pref: "bias_weight", def: 0 },
 };
 
-const FEATURES = ["frec", "rece"];
+const FEATURES = ["thom", "rece", "freq", "ctr"];
 const SHORTCUT_POSITIVE_PRIOR = 1;
 const SHORTCUT_NEGATIVE_PRIOR = 1000;
 const SHORTCUT_TAU = 100;
-const STICKY_NUMIMPS = 0;
 const SMART_TELEM = false;
 const MIN_EXP_IMPRESSIONS = 1000;
 const MIN_EXP_CLICKS = 10;
@@ -162,100 +159,6 @@ export const roundNum = (x, sig = 4, eps = 1e-6) => {
   // normalize -0 to 0
   return Object.is(n, -0) ? 0 : n;
 };
-
-/**
- * For each guid, look at its last 10 shortcut interactions and, if a click occurred,
- * return the position of the (most recent) click within those 10.
- *
- * @param {Array<{guid:string}>} topsites  Array of top site objects (must include guid)
- * @param {string} table                   Shortcuts interactions table name (columns: place_id, event_type, position, timestamp_s, …)
- * @param {string} placeTable              moz_places table name (columns: id, guid, …)
- * @returns {Promise<number[]| (number|null)[]>} Array aligned with input topsites: position or null
- */
-export async function fetchShortcutLastClickPositions(
-  guidList,
-  table,
-  placeTable,
-  numImps = 10
-) {
-  if (!guidList.length) {
-    return [];
-  }
-
-  // Build VALUES(...) for the GUIDs, escaping any single quotes just in case
-  const valuesClause = guidList
-    .map(guid => `('${String(guid).replace(/'/g, "''")}')`)
-    .join(", ");
-
-  // We:
-  //  1) map input GUIDs -> place_id
-  //  2) rank each guid's interactions by timestamp desc (and rowid as tie-breaker)
-  //  3) keep only the last numImps (rn <= numImps)
-  //  4) within those numImps, pick the most recent row that is a click (event_type=1), and grab its position
-  //
-  // Note: LEFT JOINs ensure we still return rows for GUIDs that have no interactions.
-  const sql = `
-    -- input array of strings becomes column vector
-    WITH input_keys(guid) AS (
-      VALUES ${valuesClause}
-    ),
-    -- build map guid->place.id
-    place_ids AS (
-      SELECT i.guid, p.id AS place_id
-      FROM input_keys i
-      JOIN ${placeTable} p ON p.guid = i.guid
-    ),
-    -- grab the last N iteractions for each place_id
-    recent AS (
-      SELECT
-        pi.guid,
-        t.tile_position AS position,
-        t.event_type    AS event_type,
-        t.timestamp_s   AS ts
-      FROM place_ids pi
-      JOIN ${table} t
-        ON t.place_id = pi.place_id
-      AND t.rowid IN (
-            SELECT tt.rowid
-            FROM ${table} tt
-            WHERE tt.place_id = pi.place_id
-            ORDER BY tt.timestamp_s DESC, tt.rowid DESC
-            LIMIT ${Number(numImps)}
-          )
-    ),
-    -- amongst the last numImps, get most recent click
-    -- build a column for rank of each event in a guid sublist
-    -- sort by putting clicks at top then time
-    -- get only the first position (r=1)
-    -- only get clicks (event_type=1)
-    -- returns null if no click events
-    best AS (
-      SELECT guid, position
-      FROM (
-        SELECT
-          guid, position, event_type, ts,
-          ROW_NUMBER() OVER (
-            PARTITION BY guid
-            ORDER BY (event_type = 1) DESC, ts DESC
-          ) AS r
-        FROM recent
-      )
-      WHERE r = 1 AND event_type = 1
-    )
-      -- map back to guid
-    SELECT pi.guid AS key, b.position
-    FROM place_ids pi
-    LEFT JOIN best b ON b.guid = pi.guid;
-  `;
-
-  const { activityStreamProvider } = lazy.NewTabUtils;
-  const rows = await activityStreamProvider.executePlacesQuery(sql);
-
-  // rows: [guid, position|null][]
-  const posByGuid = new Map(rows.map(([key, position]) => [key, position]));
-  // Return array aligned to input order (null if no click in last 10)
-  return guidList.map(g => (posByGuid.has(g) ? posByGuid.get(g) : null));
-}
 
 export async function getOpenTabURLsFromSessionLive() {
   // Ensure SessionStore is ready (important at early startup)
@@ -945,7 +848,7 @@ export class RankShortcutsProvider {
    * @param {object} isStartup stores the boolean isStartup
    * @returns {Promise<{}>} topsites reordered
    */
-  async rankTopSites(topsites, prefValues, isStartup, numSponsored = 0) {
+  async rankTopSites(topsites, prefValues, isStartup) {
     if (!smartshortcutsEnabled(prefValues)) {
       return topsites;
     }
@@ -1095,29 +998,6 @@ export class RankShortcutsProvider {
     const sortedSitesVals = sortKeysValues(final_scores, withGuid);
     let [sortedSites] = sortedSitesVals;
 
-    // sticky clicks. keep an item at a certain position for at least
-    // numImps impressions after a click occurs
-    const numImps =
-      prefValues?.trainhopConfig?.smartShortcuts?.sticky_numimps ??
-      STICKY_NUMIMPS;
-    if (numImps > 0) {
-      const sguid = sortedSites.map(s => s.guid);
-      const positions = await fetchShortcutLastClickPositions(
-        sguid,
-        SHORTCUT_TABLE,
-        PLACES_TABLE,
-        numImps
-      );
-      const stickyGuids = await this.rankShortcutsWorker.post(
-        "applyStickyClicks",
-        [positions, sguid, numSponsored]
-      );
-      // Build a lookup table guid -> site object
-      const byGuid = new Map(sortedSites.map(site => [site.guid, site]));
-
-      // Map over ordered guids, pulling objects from the lookup
-      sortedSites = stickyGuids.map(g => byGuid.get(g)).filter(Boolean);
-    }
     // grab topsites without guid
     const combined = sortedSites.concat(withoutGuid);
 

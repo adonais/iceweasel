@@ -9,8 +9,8 @@
 #include "nsDeviceContext.h"
 #include "nsIFrame.h"
 #include "nsLayoutUtils.h"
-#include "nsScrollbarFrame.h"
 #include "nsNativeTheme.h"
+#include "nsScrollbarFrame.h"
 
 using namespace mozilla::gfx;
 

@@ -187,7 +187,7 @@ void L10nMutations::WillRefresh(mozilla::TimeStamp aTime) {
  **/
 class L10nMutationFinalizationHandler final : public PromiseNativeHandler {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS(L10nMutationFinalizationHandler)
 
   explicit L10nMutationFinalizationHandler(L10nMutations* aMutations,

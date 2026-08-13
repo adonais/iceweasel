@@ -361,10 +361,12 @@ export class OpenAIPipeline {
         : null;
       const chatId = request.chatId;
 
+      const userAgent = navigator.userAgent;
       const client = new OpenAIPipeline.OpenAILib.OpenAI({
         baseURL: baseURL ? baseURL : "http://localhost:11434/v1",
         apiKey: apiKey || fxAccountToken || "apiKey",
         defaultHeaders: {
+          "user-agent": userAgent,
           ...extraHeaders,
           "service-type": serviceType || "ai",
           purpose: purpose || "chat",

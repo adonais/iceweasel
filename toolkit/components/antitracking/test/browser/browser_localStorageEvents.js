@@ -1,7 +1,4 @@
-add_task(async function () {
-  info("Starting subResources test");
-
-  await SpecialPowers.flushPrefEnv();
+add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["dom.storage_access.enabled", true],
@@ -25,6 +22,9 @@ add_task(async function () {
   });
 
   await UrlClassifierTestUtils.addTestTrackers();
+  registerCleanupFunction(() => {
+    UrlClassifierTestUtils.cleanupTestTrackers();
+  });
 });
 
 add_task(async function testLocalStorageEventPropagation() {
@@ -96,11 +96,7 @@ add_task(async function testLocalStorageEventPropagation() {
   BrowserTestUtils.removeTab(tab);
 
   info("Cleaning up.");
-  await new Promise(resolve => {
-    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-      resolve()
-    );
-  });
+  await clearSiteTestData();
 });
 
 add_task(async function testBlockedLocalStorageEventPropagation() {
@@ -180,12 +176,6 @@ add_task(async function testBlockedLocalStorageEventPropagation() {
   info("Removing the tab");
   BrowserTestUtils.removeTab(tab);
 
-  UrlClassifierTestUtils.cleanupTestTrackers();
-
   info("Cleaning up.");
-  await new Promise(resolve => {
-    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-      resolve()
-    );
-  });
+  await clearSiteTestData();
 });

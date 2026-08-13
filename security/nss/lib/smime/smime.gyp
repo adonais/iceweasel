@@ -20,6 +20,7 @@
         'cmsdigest.c',
         'cmsencdata.c',
         'cmsencode.c',
+        'cmsauthenvdata.c',
         'cmsenvdata.c',
         'cmsmessage.c',
         'cmspubkey.c',

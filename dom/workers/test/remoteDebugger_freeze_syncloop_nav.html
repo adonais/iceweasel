@@ -1,0 +1,29 @@
+<!--
+  Any copyright is dedicated to the Public Domain.
+  http://creativecommons.org/publicdomain/zero/1.0/
+-->
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>RemoteWorkerDebugger freeze/sync-loop nav</title>
+  </head>
+  <body>
+    <script type="text/javascript">
+      "use strict";
+      // Intermediate page: the frame navigates here to enter bfcache, then the
+      // test asks us to go back, restoring (thawing) the frame and its worker.
+      const bc = SpecialPowers.wrap(BroadcastChannel).unpartitionedTestingChannel(
+        "remoteDebugger_freeze_syncloop_nav"
+      );
+      bc.onmessage = event => {
+        if (event.data.command == "thaw") {
+          history.back();
+        }
+      };
+      window.onload = () => {
+        bc.postMessage({ event: "navloaded" });
+      };
+    </script>
+  </body>
+</html>

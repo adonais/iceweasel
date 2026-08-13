@@ -39,6 +39,11 @@ fi
 source "${ABSEIL_ROOT}/ci/linux_docker_containers.sh"
 readonly DOCKER_CONTAINER=${LINUX_CLANG_LATEST_CONTAINER}
 
+# Print information about the environment.
+docker run "${DOCKER_CONTAINER}" /usr/bin/fastfetch -c ci
+docker run "${DOCKER_CONTAINER}" /opt/llvm/bin/clang -v
+docker run "${DOCKER_CONTAINER}" cat /root/cached_bazel_versions
+
 # USE_BAZEL_CACHE=1 only works on Kokoro.
 # Without access to the credentials this won't work.
 if [[ ${USE_BAZEL_CACHE:-0} -ne 0 ]]; then
@@ -51,12 +56,12 @@ if [[ ${USE_BAZEL_CACHE:-0} -ne 0 ]]; then
   BAZEL_EXTRA_ARGS="--remote_cache=https://storage.googleapis.com/absl-bazel-remote-cache/${container_key} --google_credentials=/keystore/73103_absl-bazel-remote-cache ${BAZEL_EXTRA_ARGS:-}"
 fi
 
-# Avoid depending on external sites like GitHub by checking --distdir for
-# external dependencies first.
-# https://docs.bazel.build/versions/master/guide.html#distdir
-if [[ ${KOKORO_GFILE_DIR:-} ]] && [[ -d "${KOKORO_GFILE_DIR}/distdir" ]]; then
-  DOCKER_EXTRA_ARGS="--mount type=bind,source=${KOKORO_GFILE_DIR}/distdir,target=/distdir,readonly ${DOCKER_EXTRA_ARGS:-}"
-  BAZEL_EXTRA_ARGS="--distdir=/distdir ${BAZEL_EXTRA_ARGS:-}"
+# Use Bazel Vendor mode to reduce reliance on external dependencies.
+# See https://bazel.build/external/vendor and the Dockerfile for
+# an explaination of how this works.
+if [[ ${KOKORO_GFILE_DIR:-} ]] && [[ -f "${KOKORO_GFILE_DIR}/distdir/abseil-cpp_vendor.tar.gz" ]]; then
+  DOCKER_EXTRA_ARGS="--mount type=bind,source=${KOKORO_GFILE_DIR}/distdir,target=/distdir,readonly --env=BAZEL_VENDOR_ARCHIVE=/distdir/abseil-cpp_vendor.tar.gz ${DOCKER_EXTRA_ARGS:-}"
+  BAZEL_EXTRA_ARGS="--vendor_dir=/abseil-cpp_vendor ${BAZEL_EXTRA_ARGS:-}"
 fi
 
 for std in ${STD}; do
@@ -64,34 +69,38 @@ for std in ${STD}; do
     for exceptions_mode in ${EXCEPTIONS_MODE}; do
       echo "--------------------------------------------------------------------"
       time docker run \
+        --env="USE_BAZEL_VERSION=9.1.0" \
+        --env="CC=/opt/llvm/bin/clang" \
+        --env="BAZEL_CXXOPTS=-std=${std}:-nostdinc++" \
+        --env="BAZEL_LINKOPTS=-L/opt/llvm-tsan/lib:-lc++:-lc++abi:-lgcc_s:-lm:-Wl,-rpath=/opt/llvm-tsan/lib" \
+        --env="CPLUS_INCLUDE_PATH=/opt/llvm-tsan/include/c++/v1" \
         --mount type=bind,source="${ABSEIL_ROOT}",target=/abseil-cpp,readonly \
         --workdir=/abseil-cpp \
         --cap-add=SYS_PTRACE \
         --rm \
         ${DOCKER_EXTRA_ARGS:-} \
         ${DOCKER_CONTAINER} \
+        /bin/bash --login -c "
         /usr/local/bin/bazel test ... \
-          --action_env="CC=/opt/llvm/clang/bin/clang" \
-          --action_env="BAZEL_CXXOPTS=-std=${std}:-nostdinc++" \
-          --action_env="BAZEL_LINKOPTS=-L/opt/llvm/libcxx-tsan/lib:-lc++:-lc++abi:-lm:-Wl,-rpath=/opt/llvm/libcxx-tsan/lib" \
-          --action_env="CPLUS_INCLUDE_PATH=/opt/llvm/libcxx-tsan/include/c++/v1" \
-          --build_tag_filters="-notsan" \
-          --compilation_mode="${compilation_mode}" \
-          --copt="${exceptions_mode}" \
-          --copt="-DGTEST_REMOVE_LEGACY_TEST_CASEAPI_=1" \
-          --copt="-fsanitize=thread" \
-          --copt="-fno-sanitize-blacklist" \
+          --build_tag_filters=\"-notsan\" \
+          --compilation_mode=\"${compilation_mode}\" \
+          --copt=\"${exceptions_mode}\" \
+          --copt=\"-DGTEST_REMOVE_LEGACY_TEST_CASEAPI_=1\" \
+          --copt=\"-fsanitize=thread\" \
+          --copt=\"-fno-sanitize-blacklist\" \
           --copt=-Werror \
+          --define=\"absl=1\" \
           --enable_bzlmod=true \
           --features=external_include_paths \
           --keep_going \
-          --linkopt="-fsanitize=thread" \
+          --linkopt=\"-fsanitize=thread\" \
+          --per_file_copt=external/.*@-w \
           --show_timestamps \
-          --test_env="TSAN_SYMBOLIZER_PATH=/opt/llvm/clang/bin/llvm-symbolizer" \
-          --test_env="TZDIR=/abseil-cpp/absl/time/internal/cctz/testdata/zoneinfo" \
+          --test_env=\"TSAN_SYMBOLIZER_PATH=/opt/llvm/bin/llvm-symbolizer\" \
+          --test_env=\"TZDIR=/abseil-cpp/absl/time/internal/cctz/testdata/zoneinfo\" \
           --test_output=errors \
-          --test_tag_filters="-benchmark,-notsan" \
-          ${BAZEL_EXTRA_ARGS:-}
+          --test_tag_filters=\"-benchmark,-notsan\" \
+          ${BAZEL_EXTRA_ARGS:-}"
     done
   done
 done

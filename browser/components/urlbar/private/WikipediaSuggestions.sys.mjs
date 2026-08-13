@@ -9,7 +9,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   QuickSuggest: "moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
-  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
 });
 
 /**
@@ -50,8 +50,8 @@ export class WikipediaSuggestions extends SuggestProvider {
   makeResult(queryContext, suggestion) {
     // Note that Rust uses camelCase, Merino uses snake_case.
     return new lazy.UrlbarResult({
-      type: lazy.UrlbarUtils.RESULT_TYPE.URL,
-      source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
+      type: lazy.UrlbarShared.RESULT_TYPE.URL,
+      source: lazy.UrlbarShared.RESULT_SOURCE.SEARCH,
       isBottomUrlSuggestion: true,
       richSuggestionIconSize: 16,
       payload: {
@@ -76,14 +76,14 @@ export class WikipediaSuggestions extends SuggestProvider {
       {
         name: "dismiss",
         l10n: {
-          id: "urlbar-result-menu-dismiss-suggestion",
+          id: "urlbar-result-menu-dismiss-suggestion2",
         },
       },
       { name: "separator" },
       {
         name: "manage",
         l10n: {
-          id: "urlbar-result-menu-manage-firefox-suggest",
+          id: "urlbar-result-menu-manage-firefox-suggest2",
         },
       },
     ];

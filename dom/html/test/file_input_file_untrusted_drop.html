@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Untrusted drop events on input type=file</title>
+</head>
+<body>
+<div id="dragsource" draggable="true" style="width: 100px; height: 50px">drag me</div>
+<input id="fileinput" type="file">
+<script>
+var stealResult = null;
+
+function installDragEnterStealer() {
+  window.addEventListener("dragenter", onDragEnter, true);
+}
+
+function onDragEnter(event) {
+  const dt = event.dataTransfer;
+  const input = document.getElementById("fileinput");
+
+  let anyItemReadableAsFile = false;
+  for (const item of dt.items) {
+    if (item.getAsFile()) {
+      anyItemReadableAsFile = true;
+    }
+  }
+
+  stealResult = {
+    types: Array.from(dt.types),
+    itemCount: dt.items.length,
+    fileCountDuringDragEnter: dt.files.length,
+    anyItemReadableAsFile,
+  };
+
+  stealResult.dropEventCancelled = !input.dispatchEvent(
+    new DragEvent("drop", {
+      bubbles: true,
+      cancelable: true,
+      dataTransfer: dt,
+    })
+  );
+  stealResult.fileCountAfterUntrustedDrop = input.files.length;
+}
+
+function spoofUntrustedDrop() {
+  const input = document.getElementById("fileinput");
+  input.dispatchEvent(
+    new DragEvent("drop", {
+      bubbles: true,
+      cancelable: true,
+      dataTransfer: makeFileDataTransfer(),
+    })
+  );
+  return input.files.length;
+}
+
+function spoofUntrustedDragOver() {
+  const input = document.getElementById("fileinput");
+  // Returns false if something called preventDefault(), which is how the file
+  // control signals that it would accept the drag.
+  return input.dispatchEvent(
+    new DragEvent("dragover", {
+      bubbles: true,
+      cancelable: true,
+      dataTransfer: makeFileDataTransfer(),
+    })
+  );
+}
+
+function makeFileDataTransfer() {
+  const dt = new DataTransfer();
+  dt.items.add(new File(["spoofed"], "spoofed.txt", { type: "text/plain" }));
+  return dt;
+}
+</script>
+</body>
+</html>

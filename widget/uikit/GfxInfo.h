@@ -6,9 +6,8 @@
 #ifndef _mozilla_widget_GfxInfo_h_
 #define _mozilla_widget_GfxInfo_h_
 
-#include "GfxInfoBase.h"
 #include "GfxDriverInfo.h"
-
+#include "GfxInfoBase.h"
 #include "nsString.h"
 
 namespace mozilla {

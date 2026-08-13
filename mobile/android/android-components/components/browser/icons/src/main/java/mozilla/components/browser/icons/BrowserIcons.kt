@@ -50,7 +50,6 @@ import mozilla.components.browser.icons.preparer.DiskIconPreparer
 import mozilla.components.browser.icons.preparer.IconPreprarer
 import mozilla.components.browser.icons.preparer.MemoryIconPreparer
 import mozilla.components.browser.icons.preparer.MerinoManifestIconPreparer
-import mozilla.components.browser.icons.preparer.TippyTopIconPreparer
 import mozilla.components.browser.icons.processor.DiskIconProcessor
 import mozilla.components.browser.icons.processor.IconProcessor
 import mozilla.components.browser.icons.processor.MemoryIconProcessor
@@ -94,8 +93,6 @@ internal val sharedDiskCache = IconDiskCache()
  * @param memoryInfoProvider Used to check available memory when deciding whether to cache icons.
  * @param manifestProvider An instance of [MerinoManifestProvider] used to look up website metadata
  * for loading an icon.
- * @param useMerinoManifest Whether to use the embedded Merino manifest instead of the Tippy Top
- * icon list as an icon source.
  * @param preparers List of [IconPreprarer] instances that enrich an [IconRequest] before loading.
  * @param loaders List of [IconLoader] instances used to load icons.
  * @param decoders List of [ImageDecoder] instances to use when decoding a loaded icon into a [Bitmap].
@@ -108,13 +105,8 @@ class BrowserIcons(
     private val generator: IconGenerator = DefaultIconGenerator(),
     private val memoryInfoProvider: MemoryInfoProvider = DefaultMemoryInfoProvider(context),
     manifestProvider: MerinoManifestProvider = MerinoManifestProvider(context.assets),
-    useMerinoManifest: Boolean = false,
     private val preparers: List<IconPreprarer> = listOf(
-        if (useMerinoManifest) {
-            MerinoManifestIconPreparer(manifestProvider = manifestProvider)
-        } else {
-            TippyTopIconPreparer(context.assets)
-        },
+        MerinoManifestIconPreparer(manifestProvider = manifestProvider),
         MemoryIconPreparer(sharedMemoryCache),
         DiskIconPreparer(sharedDiskCache),
     ),

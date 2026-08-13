@@ -3,10 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsPaper.h"
-#include "nsPaperMargin.h"
-#include "nsPrinterBase.h"
+
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/Promise.h"
+#include "nsPaperMargin.h"
+#include "nsPrinterBase.h"
 
 using mozilla::ErrorResult;
 using mozilla::PaperInfo;

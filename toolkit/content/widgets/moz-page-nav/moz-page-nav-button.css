@@ -3,24 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :host {
-  --page-nav-button-border-radius: var(--button-border-radius);
-  --page-nav-button-text-color: var(--button-text-color-ghost);
-  --page-nav-button-text-color-hover: var(--button-text-color-ghost-hover);
-  --page-nav-button-text-color-active: var(--button-text-color-ghost-active);
-  --page-nav-button-background-color: var(--button-background-color-ghost);
-  --page-nav-button-background-color-hover: var(--button-background-color-ghost-hover);
-  --page-nav-button-background-color-active: var(--button-background-color-ghost-active);
-  --page-nav-button-background-color-selected: color-mix(in srgb, currentColor 8%, transparent);
-  --page-nav-button-padding: var(--space-small) var(--space-medium);
-  --page-nav-button-border-color-hover: var(--button-border-color-ghost-hover);
-  --page-nav-button-border-color-active: var(--button-border-color-ghost-active);
-  --page-nav-button-indicator-color: var(--color-accent-primary);
-  --page-nav-button-indicator-width: var(--dimension-4);
-
-  border-radius: var(--border-radius-small);
-
-  @media (max-width: 950px) {
-    --page-nav-button-padding: var(--space-small);
+  @container style(--page-nav-collapsed: collapsed) {
+    --page-nav-button-padding: var(--page-nav-button-padding-small);
   }
 }
 
@@ -30,7 +14,7 @@
 }
 
 :host([iconsrc]) {
-  @media (max-width: 950px) {
+  @container style(--page-nav-collapsed: collapsed) {
     width: var(--button-size-icon);
   }
 }
@@ -39,7 +23,7 @@ a[href],
 button {
   background-color: var(--page-nav-button-background-color);
   transition: background-color 150ms;
-  border: unset;
+  border: var(--page-nav-button-border-color);
   -moz-context-properties: fill, fill-opacity;
   fill: var(--icon-color);
   display: flex;
@@ -59,7 +43,12 @@ button {
   }
 
   @media (prefers-contrast) {
-    border: 1px solid var(--page-nav-border-color, var(--border-color-transparent));
+    border: 1px solid var(--page-nav-button-border-color, var(--border-color-transparent));
+  }
+
+  @container style(--page-nav-collapsed: collapsed) {
+    height: var(--button-size-icon);
+    justify-content: center;
   }
 }
 
@@ -87,7 +76,7 @@ button {
   }
 
   &[selected] {
-    color: var(--page-nav-button-indicator-color);
+    color: var(--page-nav-button-text-color-selected);
     background-color: var(--page-nav-button-background-color-selected);
     font-weight: var(--font-weight-semibold);
 
@@ -96,7 +85,7 @@ button {
     }
 
     &::before {
-      background-color: var(--page-nav-button-indicator-color);
+      background-color: var(--page-nav-button-indicator-background-color);
     }
   }
 
@@ -121,8 +110,8 @@ a[href]:focus-visible,
 button:focus-visible,
 button[selected]:focus-visible {
   outline: var(--focus-outline);
-  outline-offset: var(--page-nav-focus-outline-inset);
-  border-radius: var(--border-radius-small);
+  outline-offset: var(--page-nav-focus-outline-offset);
+  border-radius: var(--page-nav-button-border-radius-focused);
 }
 
 .page-nav-icon {
@@ -137,7 +126,7 @@ slot {
   padding-inline-start: 0;
   user-select: none;
 
-  @media (max-width: 950px) {
+  @container style(--page-nav-collapsed: collapsed) {
     display: inline-block;
     overflow: hidden;
     text-overflow: ellipsis;

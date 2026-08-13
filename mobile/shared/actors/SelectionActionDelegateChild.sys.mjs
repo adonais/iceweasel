@@ -221,14 +221,11 @@ export class SelectionActionDelegateChild extends GeckoViewActorChild {
       return { x: rect.left, y: rect.top + rect.height / 2 };
     }
 
-    if (win.HTMLTextAreaElement?.isInstance(focus)) {
-      // TODO:
-      // <textarea> element. How to get better selection bounds?
-      return this._getDefaultMagnifierPoint(aEvent);
-    }
+    const selection = win.HTMLTextAreaElement?.isInstance(focus)
+      ? focus.editor.selection
+      : win.getSelection();
 
-    const selection = win.getSelection();
-    if (selection.rangeCount != 1) {
+    if (!selection || selection.rangeCount != 1) {
       // When selecting text using accessible caret, selection count will be 1.
       // This situation means that current selection isn't into text.
       return this._getDefaultMagnifierPoint(aEvent);

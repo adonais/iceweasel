@@ -174,6 +174,7 @@ class StringLintXmlDetector : ResourceXmlDetector() {
             "Firefox",
             "Focus",
             "Klar",
+            "Mozilla",
             "Pocket",
         )
 

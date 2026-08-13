@@ -1987,6 +1987,7 @@ function RegisterMessageListenersAndLoadContentScript(aReload) {
     },
     allFrames: true,
     includeChrome: true,
+    safeForUntrustedWebProcess: true,
   });
 }
 

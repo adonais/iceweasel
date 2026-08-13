@@ -196,7 +196,7 @@ add_task(async function test_aboutpreferences_simple_template() {
     "All product cards displayed"
   );
 
-  let qrCodeButtons = doc.querySelectorAll('.qr-code-box[hidden="false"]');
+  let qrCodeButtons = doc.querySelectorAll(".qr-code-box:not([hidden])");
   Assert.equal(qrCodeButtons.length, 1, "1 qr-code box displayed");
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);

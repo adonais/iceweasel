@@ -26,8 +26,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -58,6 +56,7 @@ import androidx.fragment.compose.content
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.feature.app.links.RedirectDialogFragment
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.compose.ExpandableMenuItemAnimation
@@ -467,18 +466,10 @@ private fun AppLinkActionButtons(
 
         Spacer(modifier = Modifier.size(8.dp))
 
-        Button(
+        FilledButton(
+            text = stringResource(AppLinksR.string.mozac_feature_applinks_confirm_dialog_confirm_2),
             onClick = onConfirm,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-            ),
-        ) {
-            Text(
-                text = stringResource(AppLinksR.string.mozac_feature_applinks_confirm_dialog_confirm_2),
-                style = FirefoxTheme.typography.button,
-                color = MaterialTheme.colorScheme.onPrimary,
-            )
-        }
+        )
     }
 }
 

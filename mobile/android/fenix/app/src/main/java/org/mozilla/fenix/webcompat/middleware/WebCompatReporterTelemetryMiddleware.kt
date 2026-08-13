@@ -31,10 +31,6 @@ class WebCompatReporterTelemetryMiddleware :
                 Webcompatreporting.reasonDropdown.set(action.newReason.name)
             }
 
-            WebCompatReporterAction.AddMoreInfoClicked -> {
-                Webcompatreporting.addMoreInfo.record(NoExtras())
-            }
-
             WebCompatReporterAction.SendReportClicked -> {
                 Webcompatreporting.send.record(
                     Webcompatreporting.SendExtra(sentWithBlockedTrackers = store.state.includeEtpBlockedUrls),

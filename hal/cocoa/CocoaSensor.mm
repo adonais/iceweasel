@@ -56,7 +56,7 @@ void UpdateHandler(nsITimer* aTimer, void* aClosure) {
       uint64_t lightLMU[outputs];
 
       kr = IOConnectCallMethod(sDataPort, 0, nil, 0, nil, 0, lightLMU, &outputs,
-                               nil, 0);
+                               nil, nullptr);
       if (kr == KERN_SUCCESS) {
         uint64_t mean = (lightLMU[0] + lightLMU[1]) / 2;
         if (mean == sLastMean) {

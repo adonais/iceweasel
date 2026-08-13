@@ -44,14 +44,14 @@ const { sinon } = ChromeUtils.importESModule(
 const FAKE_RECORDS = [
   {
     feature: MODEL_FEATURES.CONVERSATION_SUGGESTIONS_SIDEBAR_STARTER,
-    version: "2.0",
+    version: "3.0",
     model: "test-model",
     is_default: true,
     parameters: {},
     service_type: "ai",
     purpose: "convo-starters-sidebar",
     prompts:
-      "Suggest {n} starters.\nCurrent tab:\n{current_tab}\nOpen tabs:\n{open_tabs}\nDate: {date}\n{assistant_limitations}",
+      "Suggest {n} starters.\nCurrent tab:\n{current_tab}\nOpen tabs:\n{open_tabs}\nDate: {date}\nLocale: {locale}\n{assistant_limitations}",
   },
   {
     feature: MODEL_FEATURES.CONVERSATION_STARTERS_SIDEBAR_SYSTEM,
@@ -367,15 +367,15 @@ add_task(
   async function test_createNewTabPromptGenerator_with_history_enabled() {
     const sb = sinon.createSandbox();
     const writingPrompts = [
-      "Write a first draft",
-      "Improve writing",
-      "Proofread a message",
+      "aiwindow-starter-writing-first-draft",
+      "aiwindow-starter-writing-improve",
+      "aiwindow-starter-writing-proofread",
     ];
 
     const planningPrompts = [
-      "Simplify a topic",
-      "Brainstorm ideas",
-      "Help make a plan",
+      "aiwindow-starter-planning-simplify",
+      "aiwindow-starter-planning-brainstorm",
+      "aiwindow-starter-planning-plan",
     ];
     try {
       const cases = [
@@ -385,26 +385,29 @@ add_task(
         },
         {
           input: { tabCount: 0 },
-          expectedBrowsing: ["Find tabs in history"],
+          expectedBrowsing: ["aiwindow-starter-browsing-history"],
         },
         {
           input: { tabCount: 1 },
-          expectedBrowsing: ["Find tabs in history", "Summarize tabs"],
+          expectedBrowsing: [
+            "aiwindow-starter-browsing-history",
+            "aiwindow-starter-browsing-summarize",
+          ],
         },
         {
           input: { tabCount: 2 },
           expectedBrowsing: [
-            "Find tabs in history",
-            "Summarize tabs",
-            "Compare tabs",
+            "aiwindow-starter-browsing-history",
+            "aiwindow-starter-browsing-summarize",
+            "aiwindow-starter-browsing-compare",
           ],
         },
         {
           input: { tabCount: 3 },
           expectedBrowsing: [
-            "Find tabs in history",
-            "Summarize tabs",
-            "Compare tabs",
+            "aiwindow-starter-browsing-history",
+            "aiwindow-starter-browsing-summarize",
+            "aiwindow-starter-browsing-compare",
           ],
         },
       ];
@@ -424,17 +427,17 @@ add_task(
           );
         }
         Assert.ok(
-          writingPrompts.includes(results[0].text),
-          "Results should include a valid writing prompt"
+          writingPrompts.includes(results[0].l10nId),
+          "Results should include a valid writing prompt id"
         );
         Assert.ok(
-          planningPrompts.includes(results[1].text),
-          "Results should include a valid planning prompt"
+          planningPrompts.includes(results[1].l10nId),
+          "Results should include a valid planning prompt id"
         );
         if (results[2]) {
           Assert.ok(
-            expectedBrowsing.includes(results[2].text),
-            "Results should include a valid browsing prompt"
+            expectedBrowsing.includes(results[2].l10nId),
+            "Results should include a valid browsing prompt id"
           );
         }
       }
@@ -451,15 +454,15 @@ add_task(
   async function test_createNewTabPromptGenerator_with_history_disabled() {
     const sb = sinon.createSandbox();
     const writingPrompts = [
-      "Write a first draft",
-      "Improve writing",
-      "Proofread a message",
+      "aiwindow-starter-writing-first-draft",
+      "aiwindow-starter-writing-improve",
+      "aiwindow-starter-writing-proofread",
     ];
 
     const planningPrompts = [
-      "Simplify a topic",
-      "Brainstorm ideas",
-      "Help make a plan",
+      "aiwindow-starter-planning-simplify",
+      "aiwindow-starter-planning-brainstorm",
+      "aiwindow-starter-planning-plan",
     ];
     try {
       const cases = [
@@ -473,15 +476,21 @@ add_task(
         },
         {
           input: { tabCount: 1 },
-          expectedBrowsing: ["Summarize tabs"],
+          expectedBrowsing: ["aiwindow-starter-browsing-summarize"],
         },
         {
           input: { tabCount: 2 },
-          expectedBrowsing: ["Summarize tabs", "Compare tabs"],
+          expectedBrowsing: [
+            "aiwindow-starter-browsing-summarize",
+            "aiwindow-starter-browsing-compare",
+          ],
         },
         {
           input: { tabCount: 3 },
-          expectedBrowsing: ["Summarize tabs", "Compare tabs"],
+          expectedBrowsing: [
+            "aiwindow-starter-browsing-summarize",
+            "aiwindow-starter-browsing-compare",
+          ],
         },
       ];
       for (const pref of [
@@ -511,17 +520,17 @@ add_task(
             );
           }
           Assert.ok(
-            writingPrompts.includes(results[0].text),
-            "Results should include a valid writing prompt"
+            writingPrompts.includes(results[0].l10nId),
+            "Results should include a valid writing prompt id"
           );
           Assert.ok(
-            planningPrompts.includes(results[1].text),
-            "Results should include a valid planning prompt"
+            planningPrompts.includes(results[1].l10nId),
+            "Results should include a valid planning prompt id"
           );
           if (results[2]) {
             Assert.ok(
-              expectedBrowsing.includes(results[2].text),
-              "Results should include a valid browsing prompt"
+              expectedBrowsing.includes(results[2].l10nId),
+              "Results should include a valid browsing prompt id"
             );
           }
         }
@@ -1030,6 +1039,12 @@ add_task(
         callArgs.args[1].content.includes("memory 1") &&
           callArgs.args[1].content.includes("memory 2"),
         "Memories from the stub should be injected into the prompt"
+      );
+      // The browser locale was injected into the prompt
+      Assert.ok(
+        callArgs.args[1].content.includes(Services.locale.appLocaleAsBCP47) &&
+          !callArgs.args[1].content.includes("{locale}"),
+        "Browser locale should be injected into the prompt and no {locale} placeholder should remain"
       );
     } finally {
       sb.restore();

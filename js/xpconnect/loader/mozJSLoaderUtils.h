@@ -7,8 +7,8 @@
 
 #include "nsString.h"
 
-#include "js/experimental/JSStencil.h"
 #include "js/CompileOptions.h"  // JS::ReadOnlyDecodeOptions
+#include "js/experimental/JSStencil.h"
 
 namespace mozilla {
 namespace scache {

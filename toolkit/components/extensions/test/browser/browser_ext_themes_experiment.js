@@ -343,9 +343,7 @@ add_task(async function test_experiment_stylesheet() {
 
   if (AddonSettings.EXPERIMENTS_ENABLED) {
     // Wait for stylesheet load.
-    await BrowserTestUtils.waitForCondition(
-      () => computedStyle.fill === expectedFill
-    );
+    await TestUtils.waitForCondition(() => computedStyle.fill === expectedFill);
 
     is(
       root.style.getPropertyValue("--menu-button-background"),

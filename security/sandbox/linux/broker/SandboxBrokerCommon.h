@@ -5,10 +5,10 @@
 #ifndef mozilla_SandboxBrokerCommon_h
 #define mozilla_SandboxBrokerCommon_h
 
-#include "mozilla/UsingEnum.h"
-
-#include <sys/types.h>
 #include <stdint.h>
+#include <sys/types.h>
+
+#include "mozilla/UsingEnum.h"
 
 struct iovec;
 

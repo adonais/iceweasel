@@ -131,7 +131,6 @@
 #include "vm/StringObject.h"
 #include "vm/StringType.h"
 #include "vm/WrapperObject.h"
-#include "wasm/AsmJS.h"
 #include "wasm/WasmBaselineCompile.h"
 #include "wasm/WasmBuiltinModule.h"
 #include "wasm/WasmDump.h"
@@ -872,16 +871,11 @@ static bool GCParameter(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  if (fuzzingSafe) {
-    // Some Params are not yet fuzzing safe and so we silently skip
-    // changing said parameters.
-    switch (param) {
-      case JSGC_SEMISPACE_NURSERY_ENABLED:
-        args.rval().setUndefined();
-        return true;
-      default:
-        break;
-    }
+  // Some Params are not yet fuzzing safe and so we silently skip changing said
+  // parameters.
+  if (fuzzingSafe && !IsGCParameterFuzzingSafe(param)) {
+    args.rval().setUndefined();
+    return true;
   }
 
   if (disableOOMFunctions) {
@@ -1887,14 +1881,7 @@ static bool DisassembleNative(JSContext* cx, unsigned argc, Value* vp) {
   uint8_t* jit_begin = nullptr;
   uint8_t* jit_end = nullptr;
 
-  if (fun->isAsmJSNative() || fun->isWasmWithJitEntry()) {
-    if (IsAsmJSModule(fun)) {
-      JS_ReportErrorASCII(cx, "Can't disassemble asm.js module function.");
-      return false;
-    }
-    if (fun->isAsmJSNative()) {
-      sprinter.printf("; backend=asmjs\n");
-    }
+  if (fun->isWasmWithJitEntry()) {
     sprinter.printf("; backend=wasm\n");
 
     js::wasm::Instance& inst = fun->wasmInstance();
@@ -2537,6 +2524,43 @@ static bool WasmGcArrayLength(JSContext* cx, unsigned argc, Value* vp) {
   args.rval().setInt32(int32_t(arr.numElements_));
   return true;
 }
+
+#ifdef ENABLE_WASM_COMPONENTS
+static bool WasmComponentCoreInstance(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  RootedObject callee(cx, &args.callee());
+
+  if (!args.requireAtLeast(cx, "wasmComponentCoreInstance", 2)) {
+    return false;
+  }
+
+  if (!args[0].isObject() ||
+      !args[0].toObject().is<WasmComponentInstanceObject>()) {
+    ReportUsageErrorASCII(
+        cx, callee, "First argument must be a WebAssembly component instance");
+    return false;
+  }
+
+  uint32_t coreInstanceIndex;
+  if (!JS::ToUint32(cx, args[1], &coreInstanceIndex)) {
+    return false;
+  }
+
+  const WasmComponentInstanceObject& instanceObj =
+      args[0].toObject().as<WasmComponentInstanceObject>();
+  const wasm::ComponentInstance& instance = instanceObj.instance();
+  WasmInstanceObject* coreInstance = instance.coreInstance(coreInstanceIndex);
+  if (!coreInstance) {
+    ReportUsageErrorASCII(
+        cx, callee,
+        "Second argument must refer to a `(core instance (instantiate ...))`");
+    return false;
+  }
+
+  args.rval().setObject(*coreInstance);
+  return true;
+}
+#endif
 
 static bool LargeArrayBufferSupported(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -4963,7 +4987,6 @@ static bool SettlePromiseNow(JSContext* cx, unsigned argc, Value* vp) {
       Int32Value(flags | PROMISE_FLAG_RESOLVED | PROMISE_FLAG_FULFILLED));
   promise->setFixedSlot(PromiseSlot_ReactionsOrResult, UndefinedValue());
 
-  DebugAPI::onPromiseSettled(cx, promise);
   return true;
 }
 
@@ -8461,7 +8484,8 @@ static bool AllocationMarker(JSContext* cx, unsigned argc, Value* vp) {
   JSObject* obj =
       allocateInsideNursery
           ? NewObjectWithGivenProto<AllocationMarkerObject>(cx, nullptr)
-          : NewTenuredObjectWithGivenProto<AllocationMarkerObject>(cx, nullptr);
+          : NewObjectWithGivenProto<AllocationMarkerObject>(
+                cx, nullptr, {.newKind = TenuredObject});
   if (!obj) {
     return false;
   }
@@ -9922,11 +9946,18 @@ static bool ResetFallbackStubStates(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   jit::ICScript* icScript = script->jitScript()->icScript();
+  gc::AutoMarkingLock lock(cx->zone(), icScript->markingLock());
+
   uint32_t numEntries = script->jitScript()->numICEntries();
   JS::Zone* zone = script->zone();
   for (uint32_t i = 0; i < numEntries; i++) {
     jit::ICFallbackStub* stub = script->jitScript()->fallbackStub(i);
-    stub->discardStubs(zone, &icScript->icEntry(i));
+    stub->discardStubs(zone, &icScript->icEntry(i), lock);
+
+    if (icScript->hasInlinedChild(stub->pcOffset())) {
+      icScript->removeInlinedChild(stub->pcOffset());
+    }
+
     stub->state().reset();
   }
   script->jitScript()->notePurgedStubs();
@@ -10322,6 +10353,26 @@ static bool GetLastOOMStackTrace(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+static bool ValueAsRawBits(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  if (js::SupportDifferentialTesting()) {
+    RootedObject callee(cx, &args.callee());
+    ReportUsageErrorASCII(cx, callee,
+                          "Function unavailable in differential testing mode.");
+    return false;
+  }
+
+  uint64_t rawBits = args.get(0).asRawBits();
+  auto* bigInt = BigInt::createFromUint64(cx, rawBits);
+  if (!bigInt) {
+    return false;
+  }
+
+  args.rval().setBigInt(bigInt);
+  return true;
+}
+
 // clang-format off
 static const JSFunctionSpecWithHelp TestingFunctions[] = {
     JS_FN_HELP("gc", ::GC, 0, 0,
@@ -10607,9 +10658,7 @@ static const JSFunctionSpecWithHelp TestingFunctions[] = {
     JS_FN_HELP("settlePromiseNow", SettlePromiseNow, 1, 0,
 "settlePromiseNow(promise)",
 "  'Settle' a 'promise' immediately. This just marks the promise as resolved\n"
-"  with a value of `undefined` and causes the firing of any onPromiseSettled\n"
-"  hooks set on Debugger instances that are observing the given promise's\n"
-"  global as a debuggee."),
+"  with a value of `undefined`."),
     JS_FN_HELP("getWaitForAllPromise", GetWaitForAllPromise, 1, 0,
 "getWaitForAllPromise(densePromisesArray)",
 "  Calls the 'GetWaitForAllPromise' JSAPI function and returns the result\n"
@@ -10802,24 +10851,9 @@ gc::ZealModeHelpText),
 "  inferred name based on where the function was defined. This can be\n"
 "  different from the 'name' property on the function."),
 
-    JS_FN_HELP("isAsmJSCompilationAvailable", IsAsmJSCompilationAvailable, 0, 0,
-"isAsmJSCompilationAvailable",
-"  Returns whether asm.js compilation is currently available or whether it is disabled\n"
-"  (e.g., by the debugger)."),
-
     JS_FN_HELP("getJitCompilerOptions", GetJitCompilerOptions, 0, 0,
 "getJitCompilerOptions()",
 "  Return an object describing some of the JIT compiler options.\n"),
-
-    JS_FN_HELP("isAsmJSModule", IsAsmJSModule, 1, 0,
-"isAsmJSModule(fn)",
-"  Returns whether the given value is a function containing \"use asm\" that has been\n"
-"  validated according to the asm.js spec."),
-
-    JS_FN_HELP("isAsmJSFunction", IsAsmJSFunction, 1, 0,
-"isAsmJSFunction(fn)",
-"  Returns whether the given value is a nested function in an asm.js module that has been\n"
-"  both compile- and link-time validated."),
 
     JS_FN_HELP("isAvxPresent", IsAvxPresent, 0, 0,
 "isAvxPresent([minVersion])",
@@ -11502,6 +11536,10 @@ JS_FN_HELP("supportDifferentialTesting", TestingFunc_SupportDifferentialTesting,
 "supportDifferentialTesting()",
 "  Return the value of JS::SupportDifferentialTesting."),
 
+  JS_FN_HELP("valueAsRawBits", ValueAsRawBits, 1, 0,
+"valueAsRawBits(value)",
+"  Return the raw bits of the input value as a BigInt."),
+
   JS_FS_HELP_END
 };
 // clang-format on
@@ -11653,6 +11691,12 @@ JS_FN_HELP("getFuseState", GetFuseState, 0, 0,
     JS_FN_HELP("wasmMetadataAnalysis", wasmMetadataAnalysis, 1, 0,
 "wasmMetadataAnalysis(wasmObject)",
 "  Prints an analysis of the size of metadata on this wasm object.\n"),
+
+#ifdef ENABLE_WASM_COMPONENTS
+    JS_FN_HELP("wasmComponentCoreInstance", WasmComponentCoreInstance, 2, 0,
+"wasmComponentCoreInstance(componentInstance, coreInstanceIndex)",
+"  Extracts a WebAssembly.Instance from a WebAssembly.ComponentInstance.\n"),
+#endif
 
     JS_FS_HELP_END
 };

@@ -5,11 +5,11 @@
 #ifndef mozilla_SnappyUncompressInputStream_h_
 #define mozilla_SnappyUncompressInputStream_h_
 
+#include "SnappyFrameUtils.h"
 #include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
 #include "nsIInputStream.h"
 #include "nsISupportsImpl.h"
-#include "SnappyFrameUtils.h"
 
 namespace mozilla {
 

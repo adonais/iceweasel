@@ -77,7 +77,7 @@ add_task(async function test_tab_switch_result() {
     assertElementsDisplayed(details, {
       separator: true,
       title: "about:mozilla",
-      type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+      type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
     });
   });
 
@@ -101,7 +101,7 @@ add_task(async function test_search_result() {
     assertElementsDisplayed(details, {
       separator: false,
       title: "foofoo",
-      type: UrlbarUtils.RESULT_TYPE.SEARCH,
+      type: UrlbarShared.RESULT_TYPE.SEARCH,
     });
 
     // Down to select the first search suggestion.
@@ -113,7 +113,7 @@ add_task(async function test_search_result() {
     assertElementsDisplayed(details, {
       separator: true,
       title: "foofoo",
-      type: UrlbarUtils.RESULT_TYPE.SEARCH,
+      type: UrlbarShared.RESULT_TYPE.SEARCH,
     });
   });
 
@@ -142,7 +142,7 @@ add_task(async function test_url_result() {
     assertElementsDisplayed(details, {
       separator: true,
       title: "example",
-      type: UrlbarUtils.RESULT_TYPE.URL,
+      type: UrlbarShared.RESULT_TYPE.URL,
     });
   });
 
@@ -170,7 +170,7 @@ add_task(async function test_keyword_result() {
     assertElementsDisplayed(details, {
       separator: true,
       title: TEST_URL.substring("https://".length) + "?q=",
-      type: UrlbarUtils.RESULT_TYPE.KEYWORD,
+      type: UrlbarShared.RESULT_TYPE.KEYWORD,
     });
 
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -184,7 +184,7 @@ add_task(async function test_keyword_result() {
     assertElementsDisplayed(details, {
       separator: false,
       title: "example.com: test",
-      type: UrlbarUtils.RESULT_TYPE.KEYWORD,
+      type: UrlbarShared.RESULT_TYPE.KEYWORD,
     });
   });
 });
@@ -224,7 +224,7 @@ add_task(async function test_omnibox_result() {
     assertElementsDisplayed(details, {
       separator: true,
       title: "doit",
-      type: UrlbarUtils.RESULT_TYPE.OMNIBOX,
+      type: UrlbarShared.RESULT_TYPE.OMNIBOX,
     });
   });
 
@@ -306,7 +306,7 @@ add_task(async function test_remote_tab_result() {
     assertElementsDisplayed(details, {
       separator: true,
       title: "Test Remote",
-      type: UrlbarUtils.RESULT_TYPE.REMOTE_TAB,
+      type: UrlbarShared.RESULT_TYPE.REMOTE_TAB,
     });
   });
   await SpecialPowers.popPrefEnv();

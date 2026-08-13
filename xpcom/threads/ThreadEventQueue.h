@@ -5,8 +5,8 @@
 #ifndef mozilla_ThreadEventQueue_h
 #define mozilla_ThreadEventQueue_h
 
-#include "mozilla/EventQueue.h"
 #include "mozilla/CondVar.h"
+#include "mozilla/EventQueue.h"
 #include "mozilla/SynchronizedEventQueue.h"
 #include "mozilla/TargetShutdownTaskSet.h"
 #include "nsCOMPtr.h"

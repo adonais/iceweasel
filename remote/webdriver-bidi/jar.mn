@@ -51,8 +51,9 @@ remote.jar:
   content/webdriver-bidi/modules/windowglobal-in-root/network.sys.mjs (modules/windowglobal-in-root/network.sys.mjs)
   content/webdriver-bidi/modules/windowglobal-in-root/script.sys.mjs (modules/windowglobal-in-root/script.sys.mjs)
 
-  # WebDriver BiDi moz modules
+  # WebDriver BiDi root moz modules
   content/webdriver-bidi/modules/root/moz/debugging.sys.mjs (modules/root/moz/debugging.sys.mjs)
+  content/webdriver-bidi/modules/root/moz/profiler.sys.mjs (modules/root/moz/profiler.sys.mjs)
 
   # WebDriver BiDi windowglobal moz modules
   content/webdriver-bidi/modules/windowglobal/moz/debugging.sys.mjs (modules/windowglobal/moz/debugging.sys.mjs)

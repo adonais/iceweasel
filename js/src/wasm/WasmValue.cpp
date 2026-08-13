@@ -829,14 +829,14 @@ bool ToJSValue_i64(JSContext* cx, int64_t src, MutableHandleValue dst) {
 
 template <typename Debug = NoDebug>
 bool ToJSValue_f32(JSContext* cx, float src, MutableHandleValue dst) {
-  dst.set(JS::CanonicalizedDoubleValue(src));
+  dst.set(DoubleValue(src));
   Debug::print(src);
   return true;
 }
 
 template <typename Debug = NoDebug>
 bool ToJSValue_f64(JSContext* cx, double src, MutableHandleValue dst) {
-  dst.set(JS::CanonicalizedDoubleValue(src));
+  dst.set(DoubleValue(src));
   Debug::print(src);
   return true;
 }

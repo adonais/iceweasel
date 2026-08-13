@@ -5,14 +5,15 @@
 #ifndef GFX_VR_H
 #define GFX_VR_H
 
+#include <type_traits>
+
 #include "moz_external_vr.h"
-#include "nsTArray.h"
-#include "nsString.h"
-#include "nsCOMPtr.h"
-#include "mozilla/gfx/2D.h"
 #include "mozilla/TiedFields.h"
 #include "mozilla/TimeStamp.h"
-#include <type_traits>
+#include "mozilla/gfx/2D.h"
+#include "nsCOMPtr.h"
+#include "nsString.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 namespace layers {

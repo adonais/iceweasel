@@ -97,6 +97,81 @@ describe("useLocalizedTeamNames", () => {
     });
   });
 
+  it("resolves CDR (DR Congo, the production API's non-standard key) via COD's Fluent string", async () => {
+    const teams = [{ key: "CDR", name: "Congo (source)" }];
+    const { result } = renderHook(() => useLocalizedTeamNames(teams));
+    await waitFor(() => expect(result.current).not.toBeNull());
+    expect(document.l10n.formatMessages).toHaveBeenCalledWith([
+      { id: "newtab-sports-widget-team-name-label-cod" },
+    ]);
+    expect(result.current.CDR).toBe("DR Congo");
+  });
+
+  it("resolves alpha-3 keys the production API uses (PRT, HRV, CHE, NLD, URY, CVI) via Intl.DisplayNames", async () => {
+    const teams = [
+      { key: "PRT", name: "Portugal (source)" },
+      { key: "HRV", name: "Croatia (source)" },
+      { key: "CHE", name: "Switzerland (source)" },
+      { key: "NLD", name: "Netherlands (source)" },
+      { key: "URY", name: "Uruguay (source)" },
+      { key: "CVI", name: "Cabo Verde (source)" },
+    ];
+    const { result } = renderHook(() => useLocalizedTeamNames(teams));
+    await waitFor(() => expect(result.current).not.toBeNull());
+    expect(result.current.PRT).toBe("Portugal");
+    expect(result.current.HRV).toBe("Croatia");
+    expect(result.current.CHE).toBe("Switzerland");
+    expect(result.current.NLD).toBe("Netherlands");
+    expect(result.current.URY).toBe("Uruguay");
+    // CLDR has used both "Cape Verde" and "Cabo Verde" over the years.
+    expect(result.current.CVI).toMatch(/^(Cape Verde|Cabo Verde)$/);
+  });
+
+  it("resolves both CDR and COD to the same localized name when both keys appear", async () => {
+    // Defensive: if the API ever sends both schemes in one payload, both
+    // should localize identically rather than one falling back to team.name.
+    const teams = [
+      { key: "CDR", name: "Congo (source CDR)" },
+      { key: "COD", name: "Congo (source COD)" },
+    ];
+    const { result } = renderHook(() => useLocalizedTeamNames(teams));
+    await waitFor(() => expect(result.current).not.toBeNull());
+    expect(result.current.CDR).toBe("DR Congo");
+    expect(result.current.COD).toBe("DR Congo");
+  });
+
+  it("resolves both FIFA and alpha-3 keys for the same country to the same localized name", async () => {
+    // TEAM_REGION_CODES carries both styles for countries where they
+    // differ (POR/PRT, CRO/HRV, SUI/CHE, NED/NLD, URU/URY, CPV/CVI).
+    // Verifies the additive lookup hits whichever key the API delivers.
+    const teams = [
+      { key: "POR", name: "Portugal FIFA" },
+      { key: "PRT", name: "Portugal alpha-3" },
+      { key: "CRO", name: "Croatia FIFA" },
+      { key: "HRV", name: "Croatia alpha-3" },
+      { key: "SUI", name: "Switzerland FIFA" },
+      { key: "CHE", name: "Switzerland alpha-3" },
+    ];
+    const { result } = renderHook(() => useLocalizedTeamNames(teams));
+    await waitFor(() => expect(result.current).not.toBeNull());
+    expect(result.current.POR).toBe(result.current.PRT);
+    expect(result.current.CRO).toBe(result.current.HRV);
+    expect(result.current.SUI).toBe(result.current.CHE);
+    expect(result.current.POR).toBe("Portugal");
+    expect(result.current.CRO).toBe("Croatia");
+    expect(result.current.SUI).toBe("Switzerland");
+  });
+
+  it("falls back to team.name when CDR's Fluent message has no label attribute", async () => {
+    document.l10n.formatMessages = jest.fn(async ids =>
+      ids.map(() => ({ value: null, attributes: [] }))
+    );
+    const teams = [{ key: "CDR", name: "Congo (source CDR)" }];
+    const { result } = renderHook(() => useLocalizedTeamNames(teams));
+    await waitFor(() => expect(result.current).not.toBeNull());
+    expect(result.current.CDR).toBe("Congo (source CDR)");
+  });
+
   it("falls back to team.name when key is in neither map", async () => {
     const teams = [
       { key: "ZZZ", name: "Atlantis" },

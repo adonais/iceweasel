@@ -6,8 +6,8 @@
 
 #include "FormControlAccessible.h"
 
-#include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/a11y/Role.h"
+#include "mozilla/dom/HTMLInputElement.h"
 
 using namespace mozilla::a11y;
 

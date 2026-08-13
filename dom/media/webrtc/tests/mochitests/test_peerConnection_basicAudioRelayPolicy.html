@@ -71,9 +71,9 @@ runNetworkTest(async () => {
       localCandidates.filter(cand => cand.candidateType != 'relay');
   is(localNonRelayCandidates.length, 0, `There should only be local relay candidates, because we are using the "relay" IceTransportPolicy, but we got ${JSON.stringify(localNonRelayCandidates)}`);
 
-  const remoteHostCandidates =
-      remoteCandidates.filter(cand => cand.candidateType == 'host');
-  is(remoteHostCandidates.length, 0, `There should be no remote host candidates in the stats, because mDNS resolution should have been disabled by the "relay" IceTransportPolicy, but we got ${JSON.stringify(remoteHostCandidates)}`);
+  const remoteHostIpCandidates =
+      remoteCandidates.filter(cand => cand.candidateType == 'host' && !cand.address.endsWith('.local') );
+  is(remoteHostIpCandidates.length, 0, `There should be no IP-address-based remote host candidates in the stats, because mDNS resolution should have been disabled by the "relay" IceTransportPolicy, but we got ${JSON.stringify(remoteHostIpCandidates)}`);
 
   offerer.close();
   answerer.close();

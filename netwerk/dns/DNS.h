@@ -5,14 +5,14 @@
 #ifndef DNS_h_
 #define DNS_h_
 
+#include "mozilla/MemoryReporting.h"
 #include "nsILoadInfo.h"
-#include "nscore.h"
+#include "nsISupportsImpl.h"
 #include "nsString.h"
+#include "nsTArray.h"
+#include "nscore.h"
 #include "prio.h"
 #include "prnetdb.h"
-#include "nsISupportsImpl.h"
-#include "mozilla/MemoryReporting.h"
-#include "nsTArray.h"
 
 #if !defined(XP_WIN)
 #  include <arpa/inet.h>

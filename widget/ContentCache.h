@@ -7,17 +7,17 @@
 
 #include <stdint.h>
 
-#include "mozilla/widget/IMEData.h"
-#include "mozilla/ipc/IPCForwards.h"
+#include "Units.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/ToString.h"
 #include "mozilla/WritingModes.h"
+#include "mozilla/ipc/IPCForwards.h"
+#include "mozilla/widget/IMEData.h"
 #include "nsString.h"
 #include "nsTArray.h"
-#include "Units.h"
 
 class nsIWidget;
 

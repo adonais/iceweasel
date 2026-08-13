@@ -208,7 +208,7 @@ function test_newtab(testInfo, browserURL = "about:newtab") {
     // Chain together before -> contentTask -> after data passing
     try {
       // Wait for React to render something
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () =>
           SpecialPowers.spawn(
             browser,

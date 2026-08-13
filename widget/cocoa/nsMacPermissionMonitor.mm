@@ -9,9 +9,9 @@
 #include <CoreLocation/CLLocationManager.h>
 #include <CoreLocation/CLLocationManagerDelegate.h>
 
-#include "nsAString.h"
 #include "MainThreadUtils.h"
 #include "mozilla/Services.h"
+#include "nsAString.h"
 #include "nsIObserverService.h"
 
 static auto* PERMISSION_CHANGED_TOPIC = "system-permission-changed";

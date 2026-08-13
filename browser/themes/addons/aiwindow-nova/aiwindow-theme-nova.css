@@ -1,0 +1,46 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+body {
+  --tabpanel-background-color: transparent;
+
+  /* TODO Bug 2050935 - Confirm if we need to update more than this div */
+  /* Toolbox Panel Menu Overrides from tokens-shared */
+  #mainPopupSet {
+    --panel-separator-color: light-dark(var(--color-violet-desaturated-20), var(--color-violet-desaturated-50));
+    --button-background-color-ghost-active: light-dark(
+      color-mix(in srgb, var(--color-violet-60) 30%, transparent),
+      color-mix(in srgb, var(--color-violet-30) 36%, transparent)
+    );
+    --button-background-color-ghost-hover: light-dark(
+      color-mix(in srgb, var(--color-violet-60) 15%, transparent),
+      color-mix(in srgb, var(--color-violet-30) 24%, transparent)
+    );
+  }
+}
+
+#navigator-toolbox {
+  --smartwindow-box-shadow: light-dark(var(--color-violet-70), var(--color-violet-50));
+
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  background-color: color-mix(in srgb, var(--ai-background-color) 80%, transparent) !important;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  box-shadow: 0 0 80px 0 color-mix(in srgb, var(--smartwindow-box-shadow) 60%, transparent);
+}
+
+.tab-preview-thumbnail-container > canvas {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  background-color: var(--ai-background-color);
+}
+
+#tabbrowser-tabpanels > :not(.split-view-panel) .browserContainer {
+  --chrome-box-shadow: light-dark(color-mix(in srgb, var(--color-violet-60) 15%, transparent), color-mix(in srgb, var(--color-violet-40) 15%, transparent));
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  box-shadow: 0 0 14px 0 var(--chrome-box-shadow);
+
+  :root[aiwindow-immersive-view] & {
+    --chrome-content-separator-color: transparent;
+    box-shadow: none;
+  }
+}

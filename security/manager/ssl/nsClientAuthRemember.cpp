@@ -5,35 +5,51 @@
 
 #include "nsClientAuthRemember.h"
 
+#include "SSLTokensCache.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/RefPtr.h"
 #include "nsCRT.h"
-#include "nsINSSComponent.h"
-#include "nsPrintfCString.h"
-#include "nsNSSComponent.h"
 #include "nsIDataStorage.h"
+#include "nsINSSComponent.h"
 #include "nsIObserverService.h"
+#include "nsJSUtils.h"
+#include "nsNSSComponent.h"
 #include "nsNetUtil.h"
+#include "nsPrintfCString.h"
 #include "nsPromiseFlatString.h"
 #include "nsThreadUtils.h"
-#include "cert.h"
 #include "nspr.h"
 #include "pk11pub.h"
-#include "certdb.h"
 #include "sechash.h"
-
-#include "nsJSUtils.h"
 
 #ifdef XP_MACOSX
 #  include <CoreFoundation/CoreFoundation.h>
 #  include <Security/Security.h>
+
 #  include "KeychainSecret.h"  // for ScopedCFType
-#endif                         // XP_MACOSX
+#endif
 
 using namespace mozilla;
 using namespace mozilla::psm;
 
 NS_IMPL_ISUPPORTS(nsClientAuthRememberService, nsIClientAuthRememberService)
+
+// Builds a pattern that matches exactly aAttrs (every field
+// OriginAttributesPattern::Matches checks), so eviction is scoped to the
+// affected origin attributes rather than every OA sharing the same
+// privateBrowsingId.
+static OriginAttributesPattern PatternForExactOA(
+    const OriginAttributes& aAttrs) {
+  OriginAttributesPattern pattern;
+  pattern.mPrivateBrowsingId.Construct(aAttrs.mPrivateBrowsingId);
+  pattern.mUserContextId.Construct(aAttrs.mUserContextId);
+  pattern.mFirstPartyDomain.Construct(aAttrs.mFirstPartyDomain);
+  pattern.mGeckoViewSessionContextId.Construct(
+      aAttrs.mGeckoViewSessionContextId);
+  pattern.mPartitionKey.Construct(aAttrs.mPartitionKey);
+  return pattern;
+}
+
 NS_IMPL_ISUPPORTS(nsClientAuthRemember, nsIClientAuthRememberRecord)
 
 NS_IMETHODIMP
@@ -94,11 +110,25 @@ nsClientAuthRememberService::ForgetRememberedDecision(const nsACString& key) {
   if (NS_FAILED(rv)) {
     return rv;
   }
-  nsCOMPtr<nsINSSComponent> nssComponent(do_GetService(NS_NSSCOMPONENT_CID));
-  if (!nssComponent) {
-    return NS_ERROR_NOT_AVAILABLE;
+  // The client-auth entry key has the format "host,,<OA suffix>".
+  nsAutoCString host(key);
+  int32_t firstComma = host.FindChar(',');
+  OriginAttributesPattern pattern;
+  if (firstComma != kNotFound) {
+    // OA suffix starts two characters after the first comma (skip ",,").
+    OriginAttributes oa;
+    nsDependentCSubstring oaSuffix = Substring(key, firstComma + 2);
+    if (!oaSuffix.IsEmpty()) {
+      (void)oa.PopulateFromSuffix(oaSuffix);
+    }
+    pattern = PatternForExactOA(oa);
+    host.Truncate(firstComma);
   }
-  return nssComponent->ClearSSLExternalAndInternalSessionCache();
+  if (!host.IsEmpty()) {
+    mozilla::net::SSLTokensCache::ClearSessionCacheAndTokensForHost(host,
+                                                                    pattern);
+  }
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -142,11 +172,8 @@ nsClientAuthRememberService::ClearRememberedDecisions() {
   if (NS_FAILED(rv)) {
     return rv;
   }
-  nsCOMPtr<nsINSSComponent> nssComponent(do_GetService(NS_NSSCOMPONENT_CID));
-  if (!nssComponent) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-  return nssComponent->ClearSSLExternalAndInternalSessionCache();
+  mozilla::net::SSLTokensCache::ClearSessionCacheAndTokens();
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -194,11 +221,11 @@ nsClientAuthRememberService::DeleteDecisionsByHost(
       }
     }
   }
-  nsCOMPtr<nsINSSComponent> nssComponent(do_GetService(NS_NSSCOMPONENT_CID));
-  if (!nssComponent) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-  return nssComponent->ClearSSLExternalAndInternalSessionCache();
+  OriginAttributesPattern pattern;
+  pattern.mPrivateBrowsingId.Construct(attrs.mPrivateBrowsingId);
+  mozilla::net::SSLTokensCache::ClearSessionCacheAndTokensForHost(aHostName,
+                                                                  pattern);
+  return NS_OK;
 }
 
 NS_IMETHODIMP

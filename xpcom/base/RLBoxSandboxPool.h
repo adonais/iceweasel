@@ -5,13 +5,12 @@
 #ifndef SECURITY_RLBOX_SANDBOX_POOL_H_
 #define SECURITY_RLBOX_SANDBOX_POOL_H_
 
-#include "nsCOMPtr.h"
-#include "nsITimer.h"
-#include "nsTArray.h"
-#include "nsINamed.h"
-
 #include "mozilla/Mutex.h"
 #include "mozilla/rlbox/rlbox_types.hpp"
+#include "nsCOMPtr.h"
+#include "nsINamed.h"
+#include "nsITimer.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 

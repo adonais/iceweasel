@@ -8,6 +8,11 @@ Services.scriptloader.loadSubScript(
 );
 /* import-globals-from storageAccessAPIHelpers.js */
 
+add_setup(async function () {
+  await setPreferences();
+  registerCleanupFunction(clearSiteTestData);
+});
+
 async function testEmbeddedPageBehavior() {
   // Get the storage access permission
   SpecialPowers.wrap(document).notifyUserGestureActivation();
@@ -56,15 +61,10 @@ async function testEmbeddedPageBehavior() {
 // then interacting with the page and waiting for that storageAccessAPI
 // permission to reappear.
 add_task(async function testInteractionGivesPermission() {
-  await setPreferences();
-
   await openPageAndRunCode(
     TEST_TOP_PAGE,
     getExpectPopupAndClick("accept"),
     TEST_3RD_PARTY_PAGE,
     testEmbeddedPageBehavior
   );
-
-  await cleanUpData();
-  await SpecialPowers.flushPrefEnv();
 });

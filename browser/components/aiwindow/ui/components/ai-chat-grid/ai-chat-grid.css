@@ -5,6 +5,13 @@
 :host {
   display: block;
   --ai-chat-grid-columns: repeat(3, minmax(0, 1fr));
+  --ai-chat-grid-scrollbar-color: rgba(0, 0, 0, 0.35) transparent;
+  --ai-chat-grid-scrollarea-border-color: light-dark(var(--color-violet-10), var(--color-violet-80));
+
+  @media (forced-colors: active) {
+    --ai-chat-grid-scrollbar-color: auto;
+    --ai-chat-grid-scrollarea-border-color: var(--background-color-canvas);
+  }
 }
 
 .ai-chat-grid {
@@ -45,11 +52,30 @@
     display: grid;
     gap: var(--panel-padding-block);
     grid-template-columns: var(--ai-chat-grid-columns);
+    background-color: transparent;
+    margin-top: var(--space-medium);
+    scrollbar-width: thin;
+    scrollbar-color: var(--ai-chat-grid-scrollbar-color);
   }
 
   .scroll-area.list {
+    --background-color: light-dark(var(--color-violet-10), var(--color-violet-80));
+    --card-border: var(--card-border-radius) solid var(--ai-chat-grid-scrollarea-border-color);
+
     display: flex;
     flex-direction: column;
+    box-sizing: border-box;
+    background-color: var(--background-color);
+    border-radius: var(--card-border-radius);
+    padding: 0 var(--space-xlarge);
+    margin-top: var(--space-medium);
+    /* stylelint-disable-next-line -- Figma design */
+    height: 255px;
+    overflow: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ai-chat-grid-scrollbar-color);
+    border-inline-end: var(--card-border);
+    border-block: var(--card-border);
   }
 
   &.loading {
@@ -76,31 +102,6 @@ ai-chat-grid::part(row) {
 
 [part~="row"]:first-child {
   padding-top: 0;
-}
-
-ai-chat-grid::part(scrollarea-grid) {
-  background-color: transparent;
-  margin-top: var(--space-medium);
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.5) transparent;
-}
-
-ai-chat-grid::part(scrollarea-list) {
-  --background-color: light-dark(var(--color-violet-10), var(--color-violet-80));
-  --card-border: var(--card-border-radius) solid light-dark(var(--color-violet-10), var(--color-violet-80));
-
-  box-sizing: border-box;
-  background-color: var(--background-color);
-  border-radius: var(--card-border-radius);
-  padding: 0 var(--space-xlarge);
-  margin-top: var(--space-medium);
-  /* stylelint-disable-next-line -- Figma design */
-  height: 255px;
-  overflow: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.5) transparent;
-  border-inline-end: var(--card-border);
-  border-block: var(--card-border);
 }
 
 .list-controls moz-button {

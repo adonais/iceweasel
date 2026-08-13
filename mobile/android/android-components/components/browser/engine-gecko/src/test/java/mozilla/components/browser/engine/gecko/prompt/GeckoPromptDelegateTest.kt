@@ -1268,6 +1268,109 @@ class GeckoPromptDelegateTest {
     }
 
     @Test
+    fun `Calling onAddressSave must provide a SaveAddress PromptRequest`() {
+        val mockSession = GeckoEngineSession(runtime)
+        var onAddressSaved = false
+        var onDismissWasCalled = false
+
+        var saveAddressPrompt: PromptRequest.SaveAddress = mock()
+
+        val promptDelegate = spy(GeckoPromptDelegate(mockSession))
+
+        mockSession.register(
+            object : EngineSession.Observer {
+                override fun onPromptRequest(promptRequest: PromptRequest) {
+                    saveAddressPrompt = promptRequest as PromptRequest.SaveAddress
+                }
+            },
+        )
+
+        val address = Address(
+            guid = "1",
+            name = "Firefox",
+            organization = "-",
+            streetAddress = "street",
+            addressLevel3 = "address3",
+            addressLevel2 = "address2",
+            addressLevel1 = "address1",
+            postalCode = "1",
+            country = "Country",
+            tel = "1",
+            email = "@",
+        )
+        val addressSaveOption =
+            Autocomplete.AddressSaveOption(address.toAutocompleteAddress())
+
+        var geckoResult = promptDelegate.onAddressSave(
+            mock(),
+            geckoAddressSavePrompt(arrayOf(addressSaveOption)),
+        )
+
+        geckoResult.accept {
+            onDismissWasCalled = true
+        }
+
+        saveAddressPrompt.onDismiss()
+        shadowOf(getMainLooper()).idle()
+        assertTrue(onDismissWasCalled)
+
+        val geckoPrompt = geckoAddressSavePrompt(arrayOf(addressSaveOption))
+        geckoResult = promptDelegate.onAddressSave(mock(), geckoPrompt)
+
+        geckoResult.accept {
+            onAddressSaved = true
+        }
+
+        saveAddressPrompt.onConfirm(address)
+        shadowOf(getMainLooper()).idle()
+
+        assertTrue(onAddressSaved)
+
+        whenever(geckoPrompt.isComplete).thenReturn(true)
+        onAddressSaved = false
+        saveAddressPrompt.onConfirm(address)
+
+        assertFalse(onAddressSaved)
+    }
+
+    @Test
+    fun `Calling onAddressSave must set a PromptInstanceDismissDelegate`() {
+        val mockSession = GeckoEngineSession(runtime)
+        var saveAddressPrompt: PromptRequest.SaveAddress = mock()
+        val promptDelegate = spy(GeckoPromptDelegate(mockSession))
+
+        mockSession.register(
+            object : EngineSession.Observer {
+                override fun onPromptRequest(promptRequest: PromptRequest) {
+                    saveAddressPrompt = promptRequest as PromptRequest.SaveAddress
+                }
+            },
+        )
+
+        val address = Address(
+            guid = "1",
+            name = "Firefox",
+            organization = "-",
+            streetAddress = "street",
+            addressLevel3 = "address3",
+            addressLevel2 = "address2",
+            addressLevel1 = "address1",
+            postalCode = "1",
+            country = "Country",
+            tel = "1",
+            email = "@",
+        )
+        val addressSaveOption =
+            Autocomplete.AddressSaveOption(address.toAutocompleteAddress())
+        val geckoPrompt = geckoAddressSavePrompt(arrayOf(addressSaveOption))
+
+        promptDelegate.onAddressSave(mock(), geckoPrompt)
+
+        assertNotNull(saveAddressPrompt)
+        assertNotNull(geckoPrompt.delegate)
+    }
+
+    @Test
     fun `Calling onCreditCardSelect must provide as CreditCardSelectOption PromptRequest`() {
         val mockSession = GeckoEngineSession(runtime)
         var onConfirmWasCalled = false
@@ -2508,6 +2611,19 @@ class GeckoPromptDelegateTest {
         ) as GeckoSession.PromptDelegate.AutocompleteRequest<Autocomplete.CreditCardSaveOption>
 
         ReflectionUtils.setField(prompt, "options", creditCard)
+        return prompt
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun geckoAddressSavePrompt(
+        address: Array<Autocomplete.AddressSaveOption>,
+    ): GeckoSession.PromptDelegate.AutocompleteRequest<Autocomplete.AddressSaveOption> {
+        val prompt = Mockito.mock(
+            GeckoSession.PromptDelegate.AutocompleteRequest::class.java,
+            Mockito.RETURNS_DEEP_STUBS, // for testing prompt.delegate
+        ) as GeckoSession.PromptDelegate.AutocompleteRequest<Autocomplete.AddressSaveOption>
+
+        ReflectionUtils.setField(prompt, "options", address)
         return prompt
     }
 }

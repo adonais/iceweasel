@@ -33,6 +33,7 @@ async function testExecuteScript({
   manifest_version,
   userScript = false,
   activeTabPermission = false,
+  sandbox = false,
 }) {
   const TEST_SUBFRAME_URL = "https://example.com/?test=mozExtIframe";
   const EXPECTED_ERROR_MESSAGE = "Missing host permission for the tab";
@@ -60,6 +61,12 @@ async function testExecuteScript({
     // ExtensionTestCommon's internal normalization if the
     // test extension is an manifest_version 2 extension.
     manifestPart.host_permissions = ["https://example.com/*"];
+  }
+
+  if (sandbox) {
+    manifestPart.sandbox = {
+      pages: ["extpage.html", "extpage-sandboxed.html"],
+    };
   }
 
   const web_accessible_resources =
@@ -172,10 +179,18 @@ async function testExecuteScript({
     files: {
       "extpage.html": `<script src='extpage.js'><\/script>`,
       "extpage.js": function () {
-        browser.test.sendMessage("extpage:ready");
+        window.top.postMessage("extpage:ready", "*");
       },
-      "extpage-sandboxed.html": `<h1>sandboxed iframe</h1>`,
+      "extpage-sandboxed.html": `<script src='extpage-sandboxed.js'><\/script>`,
+      "extpage-sandboxed.js": function () {
+        window.top.postMessage("sandboxed-subframe:ready", "*");
+      },
       "createSubFrame.js": function () {
+        // forward post message events
+        // eslint-disable-next-line mozilla/balanced-listeners
+        window.addEventListener("message", event => {
+          browser.test.sendMessage(event.data);
+        });
         const iframeExt = document.createElement("iframe");
         iframeExt.src = browser.runtime.getURL("extpage.html");
         const iframeExtSandboxed = document.createElement("iframe");
@@ -183,14 +198,7 @@ async function testExecuteScript({
           "extpage-sandboxed.html"
         );
         iframeExtSandboxed.setAttribute("sandbox", "allow-scripts");
-        const promiseSandboxFrameLoaded = new Promise(resolve =>
-          iframeExtSandboxed.addEventListener("load", resolve, { once: true })
-        );
-        document.body.append(iframeExtSandboxed);
-        document.body.append(iframeExt);
-        promiseSandboxFrameLoaded.then(() =>
-          browser.test.sendMessage("sandboxed-subframe:ready")
-        );
+        document.body.append(iframeExtSandboxed, iframeExt);
       },
     },
   });
@@ -215,8 +223,6 @@ async function testExecuteScript({
   const scriptingAPI = userScript
     ? "userScripts.execute"
     : "scripting.executeScript";
-
-  await extension.awaitMessage("extpage:ready");
 
   if (manifest_version < 3) {
     extension.sendMessage("tabs.executeScript", {
@@ -339,6 +345,53 @@ add_task(
     });
   }
 );
+
+add_task(function test_csp_sandbox_mv2_executeScript() {
+  return testExecuteScript({
+    manifest_version: 2,
+    sandbox: true,
+  });
+});
+
+add_task(function test_csp_sandbox_mv3_executeScript() {
+  return testExecuteScript({
+    manifest_version: 3,
+    sandbox: true,
+  });
+});
+
+add_task(function test_csp_sandbox_activeTab_mv2_executeScript() {
+  return testExecuteScript({
+    manifest_version: 2,
+    sandbox: true,
+    activeTabPermission: true,
+  });
+});
+
+add_task(function test_csp_sandbox_activeTab_mv3_executeScript() {
+  return testExecuteScript({
+    manifest_version: 3,
+    sandbox: true,
+    activeTabPermission: true,
+  });
+});
+
+add_task(function test_csp_sandbox_mv3_userScripts_execute() {
+  return testExecuteScript({
+    manifest_version: 3,
+    sandbox: true,
+    userScript: true,
+  });
+});
+
+add_task(function test_csp_sandbox_activeTab_mv3_userScripts_execute() {
+  return testExecuteScript({
+    manifest_version: 3,
+    sandbox: true,
+    userScript: true,
+    activeTabPermission: true,
+  });
+});
 
 add_task(async function testContentScriptsAndUserScriptsRegister() {
   const extensionMV2 = ExtensionTestUtils.loadExtension({

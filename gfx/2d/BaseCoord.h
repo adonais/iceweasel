@@ -6,6 +6,7 @@
 #define MOZILLA_GFX_BASECOORD_H_
 
 #include <ostream>
+#include <tuple>
 
 #include "mozilla/MathAlgorithms.h"
 
@@ -84,6 +85,8 @@ struct BaseCoord {
   friend constexpr T operator+(T aA, Sub aB) { return aA + aB.value; }
   friend constexpr T operator-(Sub aA, T aB) { return aA.value - aB; }
   friend constexpr T operator-(T aA, Sub aB) { return aA - aB.value; }
+
+  auto MutTiedFields() { return std::tie(value); }
 
   constexpr Sub operator-() const { return Sub(-value); }
 

@@ -41,23 +41,66 @@ async function writeJsonFile(filename, data) {
   console.log(`Saved ${filePath} - ${Math.round(stats.size / 1024)}KB`);
 }
 
-async function fetchJson(url) {
-  const response = await fetch(url);
-  if (!response.ok) {
-    console.error(
-      `Failed to fetch ${url}: HTTP ${response.status} ${response.statusText}`
-    );
-    return null;
+const MAX_FETCH_ATTEMPTS = 4;
+
+// Network-level failures encountered across the whole run. Populated by the
+// fetch helpers and summarized at the end so a degraded run is visible in the
+// log rather than silently dropping data.
+let networkRetryCount = 0;
+const networkGiveUpUrls = [];
+
+function describeError(err) {
+  let message = err.message;
+  if (err.cause) {
+    message += ` (${err.cause.code || err.cause.message})`;
   }
-  return response.json();
+  return message;
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Run a fetch (and its body read) with retries on network-level failures, which
+// Node's fetch surfaces as thrown errors ("fetch failed") rather than a non-ok
+// response. Returns the awaited body via readBody, or null once retries are
+// exhausted so a single transient failure doesn't abort the whole run.
+async function fetchWithRetry(url, readBody, logHttpError = true) {
+  for (let attempt = 1; attempt <= MAX_FETCH_ATTEMPTS; attempt++) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        if (logHttpError) {
+          console.error(
+            `Failed to fetch ${url}: HTTP ${response.status} ${response.statusText}`
+          );
+        }
+        return null;
+      }
+      return await readBody(response);
+    } catch (e) {
+      networkRetryCount++;
+      const lastAttempt = attempt === MAX_FETCH_ATTEMPTS;
+      console.error(
+        `Network error fetching ${url} (attempt ${attempt}/${MAX_FETCH_ATTEMPTS}): ${describeError(e)}` +
+          (lastAttempt ? " - giving up" : ", retrying")
+      );
+      if (lastAttempt) {
+        networkGiveUpUrls.push(url);
+        return null;
+      }
+      await sleep(500 * 2 ** (attempt - 1));
+    }
+  }
+  return null;
+}
+
+async function fetchJson(url) {
+  return fetchWithRetry(url, response => response.json());
 }
 
 async function fetchText(url) {
-  const response = await fetch(url);
-  if (!response.ok) {
-    return null;
-  }
-  return response.text();
+  return fetchWithRetry(url, response => response.text(), false);
 }
 
 function getTaskPath(taskId, retryId) {
@@ -434,6 +477,14 @@ async function processDate(targetDate) {
     `Collected ${durations.length} manifest timings across ${tables.manifest.array.length} unique manifests and ${tables.jobName.array.length} job types`
   );
 
+  console.log(
+    `Network: ${networkRetryCount} transient error(s) retried, ` +
+      `${networkGiveUpUrls.length} request(s) dropped after ${MAX_FETCH_ATTEMPTS} attempts`
+  );
+  for (const url of networkGiveUpUrls) {
+    console.log(`  Dropped after retries: ${url}`);
+  }
+
   if (durations.length === 0) {
     throw new Error(
       "No manifest timing data collected. Aborting to avoid overwriting previous data with empty results."
@@ -559,6 +610,9 @@ async function main() {
 }
 
 main().catch(err => {
-  console.error(`FatalError: ${err.message}`);
+  console.error(`FatalError: ${describeError(err)}`);
+  if (err.stack) {
+    console.error(err.stack);
+  }
   process.exit(1);
 });

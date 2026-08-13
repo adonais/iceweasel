@@ -7,6 +7,7 @@ import { HeuristicsRegExp } from "resource://gre/modules/shared/HeuristicsRegExp
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
+  AutofillDataTypes: "resource://gre/modules/shared/AutofillDataTypes.sys.mjs",
   CreditCard: "resource://gre/modules/CreditCard.sys.mjs",
   CreditCardRulesets: "resource://gre/modules/shared/CreditCardRuleset.sys.mjs",
   FieldDetail: "resource://gre/modules/shared/FieldScanner.sys.mjs",
@@ -43,6 +44,7 @@ export const FormAutofillHeuristics = {
 
   CREDIT_CARD_FIELDNAMES: [],
   ADDRESS_FIELDNAMES: [],
+  PASSPORT_FIELDNAMES: [],
 
   useTestYear: null, // set by tests to the current year to use
 
@@ -371,7 +373,7 @@ export const FormAutofillHeuristics = {
         scanner.parsingIndex++;
       } else if (
         prev &&
-        lazy.FormAutofillUtils.getCategoryFromFieldName(prev.fieldName) == "tel"
+        lazy.AutofillDataTypes.fieldToSubCategory[prev.fieldName] == "tel"
       ) {
         // If the previous parsed field is a "tel" field, run heuristic to see
         // if the current field is a "tel-extension" field
@@ -404,8 +406,8 @@ export const FormAutofillHeuristics = {
 
       // A house number suffix immediately afterwards implies that this
       // really is a house number field.
-      const detail = scanner.getFieldDetailByIndex(savedIndex + 1);
-      if (detail?.fieldName == "address-extra-housesuffix") {
+      const nextDetail = scanner.getFieldDetailByIndex(savedIndex + 1);
+      if (nextDetail?.fieldName == "address-extra-housesuffix") {
         return false;
       }
 
@@ -655,7 +657,7 @@ export const FormAutofillHeuristics = {
     for (let idx = scanner.parsingIndex - 1; ; idx--) {
       const detail = scanner.getFieldDetailByIndex(idx);
       if (
-        lazy.FormAutofillUtils.getCategoryFromFieldName(detail?.fieldName) !=
+        lazy.AutofillDataTypes.fieldToSubCategory[detail?.fieldName] !=
         "creditCard"
       ) {
         break;
@@ -760,7 +762,7 @@ export const FormAutofillHeuristics = {
     for (let idx = scanner.parsingIndex - 1; ; idx--) {
       const detail = scanner.getFieldDetailByIndex(idx);
       if (
-        lazy.FormAutofillUtils.getCategoryFromFieldName(detail?.fieldName) !=
+        lazy.AutofillDataTypes.fieldToSubCategory[detail?.fieldName] !=
         "creditCard"
       ) {
         break;
@@ -776,12 +778,12 @@ export const FormAutofillHeuristics = {
         // For updates we only check subsequent fields that are not of type address or do not have an
         // alternative field name that is of type address, to avoid falsely updating address
         // form name fields to cc-*-name.
-        lazy.FormAutofillUtils.getCategoryFromFieldName(detail?.fieldName) !=
+        lazy.AutofillDataTypes.fieldToSubCategory[detail?.fieldName] !=
           "creditCard" ||
         (detail?.alternativeFieldName !== undefined &&
-          lazy.FormAutofillUtils.getCategoryFromFieldName(
+          lazy.AutofillDataTypes.fieldToSubCategory[
             detail?.alternativeFieldName
-          ) != "creditCard")
+          ] != "creditCard")
       ) {
         break;
       }
@@ -912,7 +914,11 @@ export const FormAutofillHeuristics = {
   },
 
   tokenizeElements(elements) {
-    if (!lazy.FormAutofillUtils.useMLInference) {
+    // If ML inference is disabled or not yet ready, revert to heuristics.
+    if (
+      !lazy.FormAutofillUtils.useMLInference ||
+      !lazy.FormAutofillUtils.isMLUsedAlready
+    ) {
       return null;
     }
 
@@ -1209,6 +1215,14 @@ export const FormAutofillHeuristics = {
       // by fathom but is considered cc-name by regex-based heuristic, if the form
       // also contains a cc-number identified by fathom, we will treat the form as a
       // valid cc form; hence both cc-number & cc-name are identified.
+    }
+
+    // Passport fields are not covered by the ML model yet, so detect them with
+    // a dedicated regex heuristic. This runs before the ML path on purpose, so
+    // passport detection works whether or not ML is enabled.
+    const passportFieldName = this._inferPassportField(element);
+    if (passportFieldName) {
+      return [passportFieldName, inferredInfo];
     }
 
     if (mlTokens) {
@@ -1526,6 +1540,32 @@ export const FormAutofillHeuristics = {
   },
 
   /**
+   * Infer a passport field name from an element using the passport regexp
+   * rules from HeuristicsRegExp. Only runs when passport autofill is available;
+   * returns the first matching passport field name (in PASSPORT_FIELDNAMES
+   * order), or null when nothing matches.
+   *
+   * @param {HTMLElement} element The input element to classify.
+   * @returns {?string} A passport field name, or null.
+   */
+  _inferPassportField(element) {
+    if (
+      !FormAutofill.isAutofillTypeAvailable(lazy.AutofillDataTypes.PASSPORT)
+    ) {
+      return null;
+    }
+
+    // TODO: This regexp-based passport detection is temporary and should be
+    // removed once the ML model supports passport fields.
+    for (const fieldName of this.PASSPORT_FIELDNAMES) {
+      if (this._matchRegexp(element, this.RULES[fieldName])) {
+        return fieldName;
+      }
+    }
+    return null;
+  },
+
+  /**
    * Determine whether the regexp can match any of element strings.
    *
    * @param {HTMLElement} element The HTML element to match.
@@ -1693,6 +1733,15 @@ ChromeUtils.defineLazyGetter(FormAutofillHeuristics, "ADDRESS_FIELDNAMES", () =>
   Object.keys(FormAutofillHeuristics.RULES).filter(name =>
     lazy.FormAutofillUtils.isAddressField(name)
   )
+);
+
+ChromeUtils.defineLazyGetter(
+  FormAutofillHeuristics,
+  "PASSPORT_FIELDNAMES",
+  () =>
+    Object.keys(FormAutofillHeuristics.RULES).filter(name =>
+      lazy.FormAutofillUtils.isPassportField(name)
+    )
 );
 
 export default FormAutofillHeuristics;

@@ -1,8 +1,8 @@
 diff --git a/ggml/src/ggml.cpp b/ggml/src/ggml.cpp
-index 0d388d4553..8354bb0cc8 100644
+index 0d388d45536d..8354bb0cc8e8 100644
 --- a/ggml/src/ggml.cpp
 +++ b/ggml/src/ggml.cpp
-@@ -13,6 +13,7 @@
+@@ -13,6 +13,7 @@ GGML_NORETURN static void ggml_uncaught_exception() {
      abort(); // unreachable unless previous_terminate_handler was nullptr
  }
  
@@ -10,7 +10,7 @@ index 0d388d4553..8354bb0cc8 100644
  static bool ggml_uncaught_exception_init = []{
      const char * GGML_NO_BACKTRACE = getenv("GGML_NO_BACKTRACE");
      if (GGML_NO_BACKTRACE) {
-@@ -24,3 +25,4 @@
+@@ -24,3 +25,4 @@ static bool ggml_uncaught_exception_init = []{
      std::set_terminate(ggml_uncaught_exception);
      return true;
  }();

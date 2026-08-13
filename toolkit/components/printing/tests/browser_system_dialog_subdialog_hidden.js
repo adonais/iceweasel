@@ -94,7 +94,7 @@ add_task(async function testPrintDoesNotWaitForPreview() {
     await helper.setupMockPrint();
 
     let systemPrint = helper.get("system-print");
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => BrowserTestUtils.isVisible(systemPrint),
       "Wait for the system-print to be visible"
     );

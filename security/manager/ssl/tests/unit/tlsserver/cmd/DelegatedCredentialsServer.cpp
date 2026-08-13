@@ -16,7 +16,6 @@
 #include <iostream>
 
 #include "TLSServer.h"
-
 #include "sslexp.h"
 
 using namespace mozilla;

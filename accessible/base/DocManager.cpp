@@ -7,9 +7,9 @@
 #include "ApplicationAccessible.h"
 #include "DocAccessible-inl.h"
 #include "DocAccessibleParent.h"
-#include "nsAccessibilityService.h"
 #include "Platform.h"
 #include "RootAccessibleWrap.h"
+#include "nsAccessibilityService.h"
 
 #ifdef A11Y_LOG
 #  include "Logging.h"
@@ -26,12 +26,12 @@
 #include "mozilla/StaticPrefs_accessibility.h"
 #include "mozilla/dom/Event.h"  // for Event
 #include "nsContentUtils.h"
+#include "nsCoreUtils.h"
 #include "nsDocShellLoadTypes.h"
 #include "nsIChannel.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIWebNavigation.h"
 #include "nsIWebProgress.h"
-#include "nsCoreUtils.h"
 #include "xpcAccessibleDocument.h"
 
 using namespace mozilla;
@@ -238,6 +238,11 @@ void DocManager::NotifyOfPrintDocument(dom::Document* aDoc) {
     }
   }
   if (DocAccessibleChild* ipcDoc = topDocAcc->IPCDoc()) {
+    // We already told the parent process that this is a print document when we
+    // constructed the PDocAccessible in DoInitialUpdate. However, this alone
+    // isn't sufficient. The parent process also needs to know when the initial
+    // tree has been sent, which might be split over several IPDL calls. We use
+    // PDocAccessible::Printing for this purpose.
     ipcDoc->SendPrinting();
   } else if (XRE_IsParentProcess()) {
     if (BrowsingContext* bc = aDoc->GetBrowsingContext()) {
@@ -682,12 +687,14 @@ void DocManager::RemoteDocAdded(DocAccessibleParent* aDoc) {
   MOZ_ASSERT(!sRemoteDocuments->Contains(aDoc),
              "How did we already have the doc!");
   sRemoteDocuments->AppendElement(aDoc);
-  ProxyCreated(aDoc);
-  // Fire a reorder event on the OuterDocAccessible.
-  if (LocalAccessible* outerDoc = aDoc->OuterDocOfRemoteBrowser()) {
-    MOZ_ASSERT(outerDoc->Document());
-    auto reorder = MakeRefPtr<AccReorderEvent>(outerDoc);
-    outerDoc->Document()->FireDelayedEvent(reorder);
+  if (!aDoc->IsPrintDoc()) {
+    ProxyCreated(aDoc);
+    // Fire a reorder event on the OuterDocAccessible.
+    if (LocalAccessible* outerDoc = aDoc->OuterDocOfRemoteBrowser()) {
+      MOZ_ASSERT(outerDoc->Document());
+      auto reorder = MakeRefPtr<AccReorderEvent>(outerDoc);
+      outerDoc->Document()->FireDelayedEvent(reorder);
+    }
   }
 }
 

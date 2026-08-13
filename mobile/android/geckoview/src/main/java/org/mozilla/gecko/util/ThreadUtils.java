@@ -7,7 +7,6 @@ package org.mozilla.gecko.util;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
-import org.mozilla.gecko.annotation.RobocopTarget;
 
 public final class ThreadUtils {
   private static final String LOGTAG = "ThreadUtils";
@@ -83,7 +82,6 @@ public final class ThreadUtils {
     assertOnThread(getUiThread(), AssertBehavior.THROW);
   }
 
-  @RobocopTarget
   public static void assertOnGeckoThread() {
     assertOnThread(sGeckoThread, AssertBehavior.THROW);
   }
@@ -151,7 +149,6 @@ public final class ThreadUtils {
     return isOnThread(getUiThread());
   }
 
-  @RobocopTarget
   public static boolean isOnThread(final Thread thread) {
     return (Thread.currentThread().getId() == thread.getId());
   }

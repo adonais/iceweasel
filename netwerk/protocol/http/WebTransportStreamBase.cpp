@@ -4,8 +4,8 @@
 
 #include "WebTransportStreamBase.h"
 
-#include "nsIPipe.h"
 #include "nsIOService.h"
+#include "nsIPipe.h"
 #include "nsSocketTransportService2.h"
 
 namespace mozilla::net {

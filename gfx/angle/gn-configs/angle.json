@@ -1,0 +1,98 @@
+{
+  "build_root_dir": "third_party",
+  "target_dir": "angle",
+  "moz_build_flag": "build_mozilla_angle",
+  "mozilla_add_override_dir": "",
+  "gn_target": {
+    "*": "//:translator",
+    "mac": "//:libEGL",
+    "win": "//:libEGL"
+  },
+  "gn_args": {
+    "*": {
+      "angle_build_all": false,
+      "angle_enable_abseil": false,
+      "angle_build_vulkan_system_info": false,
+      "angle_enable_d3d9": false,
+      "angle_enable_d3d11": false,
+      "angle_enable_essl": true,
+      "angle_enable_gl": false,
+      "angle_enable_glsl": true,
+      "angle_enable_hlsl": false,
+      "angle_enable_metal": false,
+      "angle_enable_msl": false,
+      "angle_enable_null": false,
+      "angle_enable_vulkan": false,
+      "angle_enable_wgpu": false,
+      "angle_has_frame_capture": false,
+      "angle_standalone": false,
+      "angle_use_wayland": false,
+      "enable_rust": false,
+      "is_component_build": false,
+      "use_custom_libcxx": false,
+      "use_sysroot": false
+    },
+    "mac": {
+      "angle_enable_metal": true,
+      "angle_enable_msl": true
+    },
+    "win": {
+      "angle_enable_d3d9": true,
+      "angle_enable_d3d11": true,
+      "angle_enable_hlsl": true
+    }
+  },
+  "gn_sandbox_variables": {
+    "COMPILE_FLAGS": {
+      "WARNINGS_AS_ERRORS": []
+    },
+    "DEFINES": {
+      "ANGLE_ENABLE_DEBUG_ANNOTATIONS": false,
+      "ANGLE_ENABLE_KEYEDMUTEX": true,
+      "ANGLE_PLATFORM_EXPORT": "",
+      "ANGLE_SKIP_DXGI_1_2_CHECK": true
+    }
+  },
+  "mozilla_flags": ["-Wno-unguarded-availability"],
+  "write_mozbuild_variables": {
+    "INCLUDE_GECKO_ZLIB_HANDLING": [
+      "third_party/angle/third_party/zlib/zlib_gn"
+    ]
+  },
+  "non_unified_sources": [
+    "third_party/angle/src/compiler/preprocessor/preprocessor_tab_autogen.cpp",
+    "third_party/angle/src/compiler/translator/VariablePacker.cpp",
+    "third_party/angle/src/compiler/translator/glslang_lex_autogen.cpp",
+    "third_party/angle/src/compiler/translator/glslang_tab_autogen.cpp",
+    "third_party/angle/src/compiler/translator/msl/AstHelpers.cpp",
+    "third_party/angle/src/compiler/translator/tree_ops/RewriteStructSamplers.cpp",
+    "third_party/angle/src/compiler/translator/tree_ops/RewriteTexelFetchOffset.cpp",
+    "third_party/angle/src/compiler/translator/tree_ops/SeparateStructFromUniformDeclarations.cpp",
+    "third_party/angle/src/compiler/translator/tree_ops/hlsl/ExpandIntegerPowExpressions.cpp",
+    "third_party/angle/src/compiler/translator/tree_ops/hlsl/RewriteUnaryMinusOperatorInt.cpp",
+    "third_party/angle/src/compiler/translator/tree_ops/msl/AddExplicitTypeCasts.cpp",
+    "third_party/angle/src/compiler/translator/tree_ops/msl/GuardFragDepthWrite.cpp",
+    "third_party/angle/src/compiler/translator/tree_ops/msl/HoistConstants.cpp",
+    "third_party/angle/src/compiler/translator/tree_ops/msl/IntroduceVertexIndexID.cpp",
+    "third_party/angle/src/compiler/translator/tree_ops/msl/RewriteCaseDeclarations.cpp",
+    "third_party/angle/src/compiler/translator/tree_ops/msl/RewriteOutArgs.cpp",
+    "third_party/angle/src/compiler/translator/tree_ops/msl/TransposeRowMajorMatrices.cpp",
+    "third_party/angle/src/libANGLE/Context.cpp",
+    "third_party/angle/src/libANGLE/Context_gles_1_0.cpp",
+    "third_party/angle/src/libANGLE/Device.cpp",
+    "third_party/angle/src/libANGLE/Display.cpp",
+    "third_party/angle/src/libANGLE/Overlay.cpp",
+    "third_party/angle/src/libANGLE/OverlayWidgets.cpp",
+    "third_party/angle/src/libANGLE/Overlay_autogen.cpp",
+    "third_party/angle/src/libANGLE/renderer/d3d/d3d11/win32/NativeWindow11Win32.cpp",
+    "third_party/angle/src/libANGLE/renderer/metal/ProgramExecutableMtl.mm",
+    "third_party/angle/src/libANGLE/validationES2.cpp",
+    "third_party/angle/src/libANGLE/validationESEXT.cpp",
+    "third_party/angle/src/libGLESv2/entry_points_gles_1_0_autogen.cpp",
+    "third_party/angle/src/libGLESv2/entry_points_gles_2_0_autogen.cpp",
+    "third_party/angle/src/libGLESv2/entry_points_gles_3_0_autogen.cpp",
+    "third_party/angle/src/libGLESv2/entry_points_gles_3_1_autogen.cpp",
+    "third_party/angle/src/libGLESv2/entry_points_gles_3_2_autogen.cpp",
+    "third_party/angle/src/libGLESv2/entry_points_gles_ext_autogen.cpp"
+  ]
+}

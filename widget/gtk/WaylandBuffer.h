@@ -9,15 +9,15 @@
 #include "DMABufSurface.h"
 #include "GLContext.h"
 #include "MozFramebuffer.h"
-#include "mozilla/ipc/SharedMemoryHandle.h"
-#include "mozilla/ipc/SharedMemoryMapping.h"
-#include "mozilla/gfx/2D.h"
-#include "mozilla/gfx/Types.h"
+#include "WaylandSurface.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/Types.h"
+#include "mozilla/ipc/SharedMemoryHandle.h"
+#include "mozilla/ipc/SharedMemoryMapping.h"
 #include "nsTArray.h"
 #include "nsWaylandDisplay.h"
-#include "WaylandSurface.h"
 
 namespace mozilla::widget {
 

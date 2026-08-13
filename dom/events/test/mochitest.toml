@@ -471,6 +471,12 @@ skip-if = [
 ["test_deviceSensor.html"]
 tags = "os_integration"
 
+["test_deviceorientation_threshold.html"]
+skip-if = [
+  "os == 'android'", # Android fires deviceorientation from the device sensors.
+  "xorigin", # nsIDeviceSensor doesn't dispatch sensor event to another process.
+]
+
 ["test_disabled_events.html"]
 
 ["test_dnd_with_modifiers.html"]

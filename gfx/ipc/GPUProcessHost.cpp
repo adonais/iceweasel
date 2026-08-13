@@ -3,16 +3,17 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "GPUProcessHost.h"
+
+#include "VRGPUChild.h"
 #include "chrome/common/process_watcher.h"
 #include "gfxPlatform.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/gfx/GPUChild.h"
 #include "mozilla/gfx/Logging.h"
-#include "mozilla/layers/SynchronousTask.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/StaticPrefs_layers.h"
-#include "VRGPUChild.h"
 #include "mozilla/ipc/ProcessUtils.h"
+#include "mozilla/layers/SynchronousTask.h"
 #ifdef MOZ_WIDGET_ANDROID
 #  include "mozilla/java/GeckoProcessManagerWrappers.h"
 #endif

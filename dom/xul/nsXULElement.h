@@ -506,10 +506,12 @@ class nsXULElement : public nsStyledElement {
   friend nsXULElement* NS_NewBasicXULElement(
       already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
-  friend nsresult NS_NewXULElement(mozilla::dom::Element** aResult,
-                                   mozilla::dom::NodeInfo* aNodeInfo,
-                                   mozilla::dom::FromParser aFromParser,
-                                   const nsAString* aIs);
+  friend nsresult NS_NewXULElement(
+      mozilla::dom::Element** aResult, mozilla::dom::NodeInfo* aNodeInfo,
+      mozilla::dom::FromParser aFromParser, nsAtom* aIsAtom,
+      mozilla::dom::CustomElementDefinition* aDefinition,
+      mozilla::Maybe<RefPtr<mozilla::dom::CustomElementRegistry>>
+          aCustomElementRegistry);
   friend void NS_TrustedNewXULElement(mozilla::dom::Element** aResult,
                                       mozilla::dom::NodeInfo* aNodeInfo);
 

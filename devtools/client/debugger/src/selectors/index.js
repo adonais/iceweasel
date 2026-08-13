@@ -24,6 +24,7 @@ export * from "./source-blackbox";
 export * from "./sources-content";
 export * from "./sources-tree";
 export * from "./sources";
+export * from "./stylesheets";
 export * from "./tabs";
 export * from "./threads";
 export * from "./tracer";

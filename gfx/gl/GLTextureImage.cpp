@@ -3,15 +3,16 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "GLTextureImage.h"
+
 #include "GLContext.h"
+#include "GLUploadHelpers.h"
+#include "GfxTexturesReporter.h"
+#include "ScopedGLHelpers.h"
+#include "gfx2DGlue.h"
 #include "gfxContext.h"
 #include "gfxPlatform.h"
 #include "gfxUtils.h"
-#include "gfx2DGlue.h"
 #include "mozilla/gfx/2D.h"
-#include "ScopedGLHelpers.h"
-#include "GLUploadHelpers.h"
-#include "GfxTexturesReporter.h"
 
 using namespace mozilla::gfx;
 

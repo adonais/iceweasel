@@ -11,8 +11,8 @@
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "nsClassHashtable.h"
-#include "nsIGeckoViewBridge.h"
 #include "nsHashKeys.h"
+#include "nsIGeckoViewBridge.h"
 #include "nsTObserverArray.h"
 
 namespace mozilla::widget {

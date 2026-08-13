@@ -124,7 +124,7 @@ export var PoliciesPrefTracker = {
 
   start() {
     let { PoliciesUtils } = ChromeUtils.importESModule(
-      "resource:///modules/policies/Policies.sys.mjs"
+      "resource://gre/modules/PoliciesHelpers.sys.mjs"
     );
     this._originalFunc = PoliciesUtils.setDefaultPref;
     PoliciesUtils.setDefaultPref = this.hoistedSetDefaultPref.bind(this);
@@ -134,7 +134,7 @@ export var PoliciesPrefTracker = {
     this.restoreDefaultValues();
 
     let { PoliciesUtils } = ChromeUtils.importESModule(
-      "resource:///modules/policies/Policies.sys.mjs"
+      "resource://gre/modules/PoliciesHelpers.sys.mjs"
     );
     PoliciesUtils.setDefaultPref = this._originalFunc;
     this._originalFunc = null;
@@ -147,7 +147,10 @@ export var PoliciesPrefTracker = {
       let defaults = new Preferences({ defaultBranch: true });
       let stored = {};
 
-      if (defaults.has(prefName)) {
+      if (
+        Services.prefs.getDefaultBranch("").getPrefType(prefName) !=
+        Ci.nsIPrefBranch.PREF_INVALID
+      ) {
         stored.originalDefaultValue = defaults.get(prefName);
       } else {
         stored.originalDefaultValue = undefined;
@@ -179,7 +182,7 @@ export var PoliciesPrefTracker = {
       // If a pref was used through setDefaultPref instead
       // of setAndLockPref, it wasn't locked, but calling
       // unlockPref is harmless
-      Preferences.unlock(prefName);
+      Services.prefs.unlockPref(prefName);
 
       if (stored.originalDefaultValue !== undefined) {
         defaults.set(prefName, stored.originalDefaultValue);

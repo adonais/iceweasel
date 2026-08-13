@@ -9,13 +9,13 @@
 #include "mozilla/dom/PrecompiledScriptBinding.h"
 #include "mozilla/RefPtr.h"
 
-#include "js/experimental/JSStencil.h"
-#include "js/TypeDecls.h"
-
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsISupports.h"
 #include "nsWrapperCache.h"
+
+#include "js/experimental/JSStencil.h"
+#include "js/TypeDecls.h"
 
 namespace JS {
 class ReadOnlyCompileOptions;

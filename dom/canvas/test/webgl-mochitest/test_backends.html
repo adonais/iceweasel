@@ -63,6 +63,8 @@ function GetRendererType() {
       return 'd3d11';
     if (renderer.includes('Direct3D9'))
       return 'd3d9';
+    if (renderer.includes('Metal'))
+      return 'metal';
 
   } else {
     return 'gl';
@@ -82,8 +84,17 @@ function TestActualType(testName, expectedType) {
 function TestDefault() {
   var expectedType = 'gl';
   var isWindows = (navigator.platform.indexOf('Win') == 0);
+  var isMac = (navigator.platform.indexOf('Mac') == 0);
   if (isWindows) {
     expectedType = expectD3DType;
+  } else if (isMac) {
+    var gfxInfo = SpecialPowers.Cc["@mozilla.org/gfx/info;1"]
+      .getService(SpecialPowers.Ci.nsIGfxInfo);
+    var isMetalAngleEnabled =
+      gfxInfo.getFeatureStatusStr("WEBGL_ANGLE_METAL") == "STATUS_OK";
+    if (isMetalAngleEnabled) {
+      expectedType = 'metal';
+    }
   }
   TestActualType('TestDefault', expectedType);
 
@@ -92,6 +103,14 @@ function TestDefault() {
       ['webgl.angle.force-warp', true],
     ];
     RunWithPrefs(prefPairList, TestWARP);
+    return;
+  }
+
+  if (isMac) {
+    var prefPairList = [
+      ['webgl.disable-angle', true],
+    ];
+    RunWithPrefs(prefPairList, TestMacGL);
     return;
   }
 
@@ -147,6 +166,16 @@ function TestWinGL() {
 }
 
 
+function TestMacGL() {
+  TestActualType('TestMacGL', 'gl');
+
+  var prefPairList = [
+    ['webgl.disabled', true],
+  ];
+  RunWithPrefs(prefPairList, TestDisabled);
+}
+
+
 function TestDisabled() {
   TestActualType('TestDisabled', 'none');
 
@@ -160,6 +189,7 @@ SimpleTest.waitForExplicitFinish();
 var prefPairList = [
   ['webgl.force-enabled', true],
   ['webgl.enable-debug-renderer-info', true],
+  ['webgl.disable-angle', false],
 ];
 RunWithPrefs(prefPairList, TestDefault);
 

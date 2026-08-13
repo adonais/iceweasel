@@ -3,22 +3,21 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/Assertions.h"
-
-#include "js/LocaleSensitive.h"
-
-#include "nsIObserver.h"
-#include "nsIObserverService.h"
-#include "nsComponentManagerUtils.h"
-#include "nsIPrefService.h"
-#include "nsServiceManagerUtils.h"
-#include "mozilla/Services.h"
-#include "mozilla/CycleCollectedJSRuntime.h"
 #include "mozilla/CycleCollectedJSContext.h"
+#include "mozilla/CycleCollectedJSRuntime.h"
 #include "mozilla/intl/LocaleService.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/Services.h"
 
-#include "xpcpublic.h"
+#include "nsComponentManagerUtils.h"
+#include "nsIObserver.h"
+#include "nsIObserverService.h"
+#include "nsIPrefService.h"
+#include "nsServiceManagerUtils.h"
 #include "xpcprivate.h"
+#include "xpcpublic.h"
+
+#include "js/LocaleSensitive.h"
 
 using namespace mozilla;
 using mozilla::intl::LocaleService;

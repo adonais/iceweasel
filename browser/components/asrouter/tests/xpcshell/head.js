@@ -56,6 +56,10 @@ async function makeValidators() {
   );
 
   const messageValidators = {
+    action_only: await schemaValidatorFor(
+      "resource://testing-common/ActionOnlyMessage.schema.json",
+      { common: true }
+    ),
     bookmarks_bar_button: await schemaValidatorFor(
       "resource://testing-common/BookmarksBarButton.schema.json",
       { common: true }
@@ -82,6 +86,10 @@ async function makeValidators() {
     ),
     pb_newtab: await schemaValidatorFor(
       "resource://testing-common/NewtabPromoMessage.schema.json",
+      { common: true }
+    ),
+    sidebar_chatbot_promo: await schemaValidatorFor(
+      "resource://testing-common/SidebarChatBotPromo.schema.json",
       { common: true }
     ),
     smart_window_newtab_promo: await schemaValidatorFor(

@@ -4,12 +4,14 @@
 package org.mozilla.geckoview.test
 
 import android.graphics.SurfaceTexture
+import android.net.Uri
 import android.view.PointerIcon
 import android.view.Surface
 import androidx.annotation.AnyThread
 import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.endsWith
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.greaterThan
@@ -116,6 +118,109 @@ class ContentDelegateTest : BaseSessionTest() {
                 assertThat("Content type should match", response.headers.get("content-type"), equalTo("text/plain"))
                 assertThat("Content length should be non-zero", response.headers.get("Content-Length")!!.toLong(), greaterThan(0L))
                 assertThat("Filename should match", response.headers.get("cONTent-diSPOsiTion"), equalTo("attachment; filename=\"download.txt\""))
+                assertThat("Request external response should not be set.", response.requestExternalApp, equalTo(false))
+                assertThat("Should not skip the confirmation on a regular download.", response.skipConfirmation, equalTo(false))
+            }
+        })
+    }
+
+    @Test fun downloadAnchorFilenameRequest() {
+        // disable test on pgo for frequently failing Bug 1543355
+        assumeThat(sessionRule.env.isDebugBuild, equalTo(true))
+
+        mainSession.loadTestPath(DOWNLOAD_WEBPAGE_HTML_PATH)
+
+        sessionRule.waitUntilCalled(object : NavigationDelegate, ContentDelegate {
+
+            @AssertCalled(count = 2)
+            override fun onLoadRequest(session: GeckoSession, request: LoadRequest): GeckoResult<AllowOrDeny>? {
+                return null
+            }
+
+            @AssertCalled(false)
+            override fun onNewSession(session: GeckoSession, uri: String): GeckoResult<GeckoSession>? {
+                return null
+            }
+
+            @AssertCalled(count = 1)
+            override fun onExternalResponse(session: GeckoSession, response: WebResponse) {
+                assertThat("Uri should be the anchor target", response.uri, endsWith(HELLO_HTML_PATH))
+                assertThat("We should download the item", response.body, notNullValue())
+                assertThat("Content type should match", response.headers["content-type"], equalTo("text/html"))
+                assertThat("Content length should be non-zero", response.headers["Content-Length"]!!.toLong(), greaterThan(0L))
+                assertThat(
+                    "Filename from the download anchor attribute is in the content-disposition header",
+                    response.headers["content-disposition"],
+                    equalTo("attachment; filename=\"download-specified-name.html\""),
+                )
+                assertThat("Request external response should not be set.", response.requestExternalApp, equalTo(false))
+                assertThat("Should not skip the confirmation on a regular download.", response.skipConfirmation, equalTo(false))
+            }
+        })
+    }
+
+    private val contentDisposition = "attachment; filename=\"server-name.txt\""
+
+    private fun withContentDisposition(path: String, contentDisposition: String) =
+        "$path?contentDisposition=${Uri.encode(contentDisposition)}"
+
+    @Test fun downloadServerContentDisposition() {
+        mainSession.loadTestPath(withContentDisposition(HELLO_HTML_PATH, contentDisposition))
+
+        sessionRule.waitUntilCalled(object : ContentDelegate {
+            @AssertCalled(count = 1)
+            override fun onExternalResponse(session: GeckoSession, response: WebResponse) {
+                assertThat("Uri should be the served page", response.uri, containsString(HELLO_HTML_PATH))
+                assertThat("We should download the item", response.body, notNullValue())
+                assertThat("Content type should match", response.headers["content-type"], equalTo("text/html"))
+                assertThat("Content length should be non-zero", response.headers["Content-Length"]!!.toLong(), greaterThan(0L))
+                assertThat(
+                    "Server-set Content-Disposition header is passed through unchanged",
+                    response.headers["content-disposition"],
+                    equalTo(contentDisposition),
+                )
+                assertThat("Request external response should not be set.", response.requestExternalApp, equalTo(false))
+                assertThat("Should not skip the confirmation on a regular download.", response.skipConfirmation, equalTo(false))
+            }
+        })
+    }
+
+    @Test fun downloadServerHeaderVsBlobName() {
+        mainSession.loadTestPath(withContentDisposition(DOWNLOAD_HTML_PATH, contentDisposition))
+
+        sessionRule.waitUntilCalled(object : ContentDelegate {
+            @AssertCalled(count = 1)
+            override fun onExternalResponse(session: GeckoSession, response: WebResponse) {
+                assertThat("Uri should be the served page", response.uri, containsString(DOWNLOAD_HTML_PATH))
+                assertThat("We should download the item", response.body, notNullValue())
+                assertThat("Content type should match", response.headers["content-type"], equalTo("text/html"))
+                assertThat("Content length should be non-zero", response.headers["Content-Length"]!!.toLong(), greaterThan(0L))
+                assertThat(
+                    "A page served with an attachment header and is a blob downloads under the server filename",
+                    response.headers["content-disposition"],
+                    equalTo(contentDisposition),
+                )
+                assertThat("Request external response should not be set.", response.requestExternalApp, equalTo(false))
+                assertThat("Should not skip the confirmation on a regular download.", response.skipConfirmation, equalTo(false))
+            }
+        })
+    }
+
+    @Test fun downloadServerHeaderVsAnchorName() {
+        mainSession.loadTestPath(withContentDisposition(DOWNLOAD_WEBPAGE_HTML_PATH, contentDisposition))
+
+        sessionRule.waitUntilCalled(object : ContentDelegate {
+            @AssertCalled(count = 1)
+            override fun onExternalResponse(session: GeckoSession, response: WebResponse) {
+                assertThat("Uri should be the served page", response.uri, containsString(DOWNLOAD_WEBPAGE_HTML_PATH))
+                assertThat("We should download the item", response.body, notNullValue())
+                assertThat("Content type should match", response.headers["content-type"], equalTo("text/html"))
+                assertThat("Content length should be non-zero", response.headers["Content-Length"]!!.toLong(), greaterThan(0L))
+                assertThat(
+                    "A page served with an attachment header and is a href downloads under the server filename",
+                    response.headers["content-disposition"],
+                    equalTo(contentDisposition),
+                )
                 assertThat("Request external response should not be set.", response.requestExternalApp, equalTo(false))
                 assertThat("Should not skip the confirmation on a regular download.", response.skipConfirmation, equalTo(false))
             }

@@ -5,10 +5,10 @@
 #ifndef MozSrcProtocolHandler_h_
 #define MozSrcProtocolHandler_h_
 
+#include "SubstitutingProtocolHandler.h"
+#include "mozilla/StaticMutex.h"
 #include "nsIProtocolHandler.h"
 #include "nsISubstitutingProtocolHandler.h"
-#include "mozilla/StaticMutex.h"
-#include "SubstitutingProtocolHandler.h"
 
 namespace mozilla {
 namespace net {

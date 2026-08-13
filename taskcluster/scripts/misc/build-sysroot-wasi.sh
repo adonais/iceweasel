@@ -48,6 +48,7 @@ if grep -q build/libcxxabi.BUILT Makefile; then
 fi
 
 mv build/install/wasi/share/wasi-sysroot $sysroot
+cp -r $sysroot/lib/wasm32-wasi $sysroot/lib/wasm32-wasip1
 tar --zstd -cf $artifact $sysroot
 mkdir -p $UPLOAD_DIR
 mv $artifact $UPLOAD_DIR/

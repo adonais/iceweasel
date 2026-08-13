@@ -23,4 +23,21 @@ RUN apt-get update && \
       gperf \
       procps \
       libdbus-1-3 \
-      libxcb1
+      libx11-6 \
+      libx11-xcb1 \
+      libxau6 \
+      libxcb1 \
+      libxcb-cursor0 \
+      libxcomposite1 \
+      libxcursor1 \
+      libxdamage1 \
+      libxdmcp6 \
+      libxext6 \
+      libxfixes3 \
+      libxi6 \
+      libxinerama1 \
+      libxkbcommon0 \
+      libxrandr2 \
+      libxrender1 \
+      libxss1 \
+      libxtst6

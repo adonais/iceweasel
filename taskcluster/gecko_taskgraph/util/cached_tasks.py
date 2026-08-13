@@ -2,15 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-
-import hashlib
-import time
-
-TARGET_CACHE_INDEX = "{trust_domain}.cache.level-{level}.{type}.{name}.hash.{digest}"
-EXTRA_CACHE_INDEXES = [
-    "{trust_domain}.cache.level-{level}.{type}.{name}.latest",
-    "{trust_domain}.cache.level-{level}.{type}.{name}.pushdate.{build_date_long}",
-]
+from taskgraph.util.cached_tasks import TARGET_CACHE_INDEX
+from taskgraph.util.cached_tasks import add_optimization as tg_add_optimization
 
 
 def add_optimization(
@@ -34,49 +27,26 @@ def add_optimization(
         task.
     :type digest_data: list of bytes or None
     """
-    cached_task = taskdesc.get("attributes", {}).get("cached_task")
-    if cached_task is False:
+    if taskdesc.get("attributes", {}).get("cached_task") is False:
         return
 
-    if (digest is None) == (digest_data is None):
-        raise Exception("Must pass exactly one of `digest` and `digest_data`.")
-    if digest is None:
-        digest = hashlib.sha256("\n".join(digest_data).encode("utf-8")).hexdigest()
-
-    subs = {
-        "trust_domain": config.graph_config["trust-domain"],
-        "type": cache_type,
-        "name": cache_name,
-        "digest": digest,
-    }
-
-    # We'll try to find a cached version of the toolchain at levels above
-    # and including the current level, starting at the highest level.
-    index_routes = []
-    for level in reversed(range(int(config.params["level"]), 4)):
-        subs["level"] = level
-        index_routes.append(TARGET_CACHE_INDEX.format(**subs))
-    taskdesc["optimization"] = {"index-search": index_routes}
-
-    # ... and cache at the lowest level.
-    taskdesc.setdefault("routes", []).append(
-        f"index.{TARGET_CACHE_INDEX.format(**subs)}"
+    tg_add_optimization(
+        config, taskdesc, cache_type, cache_name, digest=digest, digest_data=digest_data
     )
 
-    # ... and add some extra routes for humans
-    subs["build_date_long"] = time.strftime(
-        "%Y.%m.%d.%Y%m%d%H%M%S", time.gmtime(config.params["build_date"])
-    )
-    taskdesc["routes"].extend([
-        f"index.{route.format(**subs)}" for route in EXTRA_CACHE_INDEXES
-    ])
-
-    taskdesc["attributes"]["cached_task"] = {
-        "type": cache_type,
-        "name": cache_name,
-        "digest": digest,
-    }
+    if "cached-task-prefix" in config.graph_config["taskgraph"]:
+        cache_prefix = config.graph_config["taskgraph"]["cached-task-prefix"]
+    else:
+        cache_prefix = config.graph_config["trust-domain"]
 
     # Allow future pushes to find this task before it completes
     # Implementation in morphs
-    taskdesc["attributes"]["eager_indexes"] = [TARGET_CACHE_INDEX.format(**subs)]
+    taskdesc["attributes"]["eager_indexes"] = [
+        TARGET_CACHE_INDEX.format(
+            cache_prefix=cache_prefix,
+            level=config.params["level"],
+            type=cache_type,
+            name=cache_name,
+            digest=taskdesc["attributes"]["cached_task"]["digest"],
+        )
+    ]

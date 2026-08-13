@@ -100,7 +100,8 @@ class JsepTrack {
 
   void ClearStreamIds() { mStreamIds.clear(); }
 
-  void RecvTrackSetRemote(const Sdp& aSdp, const SdpMediaSection& aMsection);
+  void RecvTrackSetRemote(const Sdp& aSdp, const SdpMediaSection& aMsection,
+                          const std::vector<uint32_t>& aOwnSendSsrcs = {});
   void RecvTrackSetLocal(const SdpMediaSection& aMsection);
 
   // This is called whenever a remote description is set; we do not wait for
@@ -303,6 +304,11 @@ class JsepTrack {
   std::vector<std::string> mRids;
   UniquePtr<JsepTrackNegotiatedDetails> mNegotiatedDetails;
   // Storage of mSsrcs and mSsrcToRtxSsrc could be improved, see Bug 1990364
+  // For send tracks: the SSRCs this endpoint will transmit on, populated by
+  // UpdateSsrcs(). For recv tracks: SSRCs from the remote's a=ssrc lines,
+  // populated by RecvTrackSetRemote(); any that duplicate our own send SSRCs
+  // (aOwnSendSsrcs) are filtered out to prevent EnsureLocalSSRC() from
+  // regenerating our send SSRC to a value the peer never negotiated.
   std::vector<uint32_t> mSsrcs;
   std::map<uint32_t, uint32_t> mSsrcToRtxSsrc;
   bool mActive;

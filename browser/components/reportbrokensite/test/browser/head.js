@@ -145,7 +145,7 @@ async function waitForAllElems(elems, what, condition, msg) {
   msg = `${msg}waiting for ${prettyElems} to ${what}`;
   info(msg);
   try {
-    return await BrowserTestUtils.waitForCondition(
+    return await TestUtils.waitForCondition(
       () => !elems.some(e => !condition(e)),
       msg
     );

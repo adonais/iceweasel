@@ -4,8 +4,11 @@
 
 #include "WebrtcTCPSocketParent.h"
 
+#include <limits>
+
 #include "WebrtcTCPSocket.h"
 #include "WebrtcTCPSocketLog.h"
+#include "mozilla/IceServerParser.h"
 #include "mozilla/net/NeckoParent.h"
 
 using namespace mozilla::dom;
@@ -23,6 +26,22 @@ mozilla::ipc::IPCResult WebrtcTCPSocketParent::RecvAsyncOpen(
   MOZ_ASSERT(mChannel, "webrtc TCP socket should be non-null");
   if (!mChannel) {
     return IPC_FAIL(this, "Called with null channel.");
+  }
+
+  // Silently drop connections to a port that is not allowed for webrtc.
+  // webrtc-pc requires a prohibited address/port to be indistinguishable from
+  // one that never responds, so the child gets no OnClose; the connectivity
+  // check times out on its own. CleanupChannel() must run before any OnClose
+  // could fire: it nulls mChannel, which is what suppresses SendOnClose and
+  // makes any later RecvWrite a no-op.
+  // See Bug 2058576 for fixing the port types in AsyncOpen.
+  if (aPort < 0 || aPort > std::numeric_limits<uint16_t>::max() ||
+      !IsWebrtcPortAllowed(static_cast<uint16_t>(aPort))) {
+    LOG("WebrtcTCPSocketParent::RecvAsyncOpen {} dropping open to disallowed "
+        "port {}\n",
+        fmt::ptr(this), aPort);
+    CleanupChannel();
+    return IPC_OK();
   }
 
   mChannel->Open(aHost, aPort, aLocalAddress, aLocalPort, aUseTls,

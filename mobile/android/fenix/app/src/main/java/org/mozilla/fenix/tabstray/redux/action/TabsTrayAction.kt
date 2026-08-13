@@ -10,6 +10,7 @@ import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
+import org.mozilla.fenix.tabstray.repository.uistate.data.PersistedUIState
 import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListItem
 
 /**
@@ -26,12 +27,19 @@ sealed interface TabsTrayAction : Action {
     /**
      * Dispatched when the Store has initialized.
      */
-    object InitAction : TabsTrayAction, TabsStorageAction
+    object InitAction : TabsTrayAction, TabsStorageAction, TabManagerUiStateStorageAction
 
     /**
      * Dispatched when a tab data update has been received.
      */
-    data class TabDataUpdateReceived(val tabStorageUpdate: TabStorageUpdate) : TabsTrayAction
+    data class TabDataUpdateReceived(val tabStorageUpdate: TabStorageUpdate) :
+        TabsTrayAction,
+        TabManagerUiStateStorageAction
+
+    /**
+     * Dispatched when a UI state update has been received from the UI state persistence layer.
+     */
+    data class PersistedUiStateUpdateReceived(val update: PersistedUIState) : TabsTrayAction
 
     /**
      * Entered multi-select mode.
@@ -61,7 +69,7 @@ sealed interface TabsTrayAction : Action {
     /**
      * The active page in the tray that is now in focus.
      */
-    data class PageSelected(val page: Page) : TabsTrayAction
+    data class PageSelected(val page: Page) : TabsTrayAction, TabManagerUiStateStorageAction
 
     /**
      * A request to perform a "sync" action.

@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsScriptableBase64Encoder.h"
+
 #include "mozilla/Base64.h"
 
 using namespace mozilla;

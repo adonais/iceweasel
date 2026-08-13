@@ -430,20 +430,11 @@ this.windows = class extends ExtensionAPIPersistent {
           if (createData.height !== null) {
             features.push("outerHeight=" + createData.height);
           }
-          // TODO bug 2049007: openWindow() with null parent currently
-          // interprets left/top as desktop pixels instead of CSS pixels.
-          const cssToDesktopScale = baseWindow
-            ? baseWindow.devicePixelRatio / baseWindow.desktopToDeviceScale
-            : 1;
           if (createData.left !== null) {
-            features.push(
-              "left=" + Math.round(createData.left * cssToDesktopScale)
-            );
+            features.push("left=" + createData.left);
           }
           if (createData.top !== null) {
-            features.push(
-              "top=" + Math.round(createData.top * cssToDesktopScale)
-            );
+            features.push("top=" + createData.top);
           }
 
           let window = Services.ww.openWindow(

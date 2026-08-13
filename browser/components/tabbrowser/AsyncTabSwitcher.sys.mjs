@@ -8,7 +8,8 @@ import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  PictureInPicture: "resource://gre/modules/PictureInPicture.sys.mjs",
+  PictureInPicture:
+    "moz-src:///toolkit/components/pictureinpicture/PictureInPicture.sys.mjs",
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(

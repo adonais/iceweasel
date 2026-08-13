@@ -15,7 +15,6 @@ You should consider requesting accessibility review if you aren't certain
 whether your change is accessible to people with disabilities. Accessibility
 review is optional, but it is strongly encouraged if you are introducing new
 user interface or are significantly redesigning existing user interface.
-Review should be requested both on the design side *and* on the engineering side.
 
 ## When Should I Request Accessibility Review?
 
@@ -40,13 +39,55 @@ This is the same date as the Manual QA Request deadline.
 
 ## Requesting Design Review
 
+### Review Request Policy
+
+The accessibility team is committed to reviewing projects in the following categories.
+Not sure if your project qualifies? Submit a review with the workflow below and an accessibility
+team member will reach out after triaging.
+
+#### High-Severity Surface Projects
+
+Certain Firefox surfaces, like the URL bar and the tab strip, must remain free of accessibility
+bugs to ensure the rest of the browser is usable. Here are some examples of projects that
+fall into this category:
+
+- Address Bar
+- Container Tabs
+- Tab Groups, Notes
+- Tab Strip (Vertical and Horizontal Tabs)
+
+#### Revenue-Generating/For-Pay Projects
+
+Projects that generate revenue, and those that are offered to users at a cost, have additional
+risks and requirements when it comes to accessibility. Here are some examples of projects that
+fall into this category:
+
+- Firefox Enterprise
+- VPN
+- Homepage New Tab
+- Anything in the Subscription Platforms ecosystem
+
+#### Other Projects
+
+Teams with projects outside of the above categories should reach out to the accessibility
+team on slack (#accessibility) for ad-hoc assistance on specific questions.
+These teams should also request engineering review after the project has been implemented.
+
+:::{note} Unlike design reviews, there are no categorical restrictions on engineering reviews. Every
+project is eligible.
+:::
+
+### How to Request Design Review
+
 Design review should be requested using the Accessibility Review Request
 workflow in the #accessibility slack channel. To access this workflow, click on
 the workflow link in the #accessibility slack channel header or in the links
 sidebar. You can also type `/accessibility design review request` from any
 channel or DM. Then, fill in the information requested.
 
-Please complete all following self-review tasks **before requesting review**. Note: Some of the following links require SSO authentication.
+### Self-Review Tasks
+
+Please complete all following self-review tasks **before requesting a design review**. Note: Some of the following links require SSO authentication.
 
 - **Perform a contrast audit**: Using either a [Figma Contrast Checker tool](https://www.figma.com/color-contrast-checker/) or a third-party [Figma plugin that audits contrast](https://www.figma.com/community/plugin/748533339900865323/Contrast), check your designs for color contrast sufficiency. Your designs should be at least "AA" rated in order to pass accessibility review. "AAA" is even better! If there are particular components that are difficult to adjust to meet "AA" standards, make a note in the figma file and the a11y team will provide specific guidance during review.
 - **Add focus order and role annotations**: Focus order annotations describe the behaviour a keyboard user should expect when navigating your design. Generally this follows the reading order. Note that we only care about focusable elements here (ie. links, buttons, inputs, etc.).
@@ -62,6 +103,9 @@ field. For features spanning several bugs, you may wish to file a new, dedicated
 bug for the accessibility review. Otherwise, particularly for smaller changes,
 you may do this on an existing bug. Note that if you file a new bug, you will
 need to submit the bug and then edit it to set the flag.
+
+Unlike design reviews, there are no categorical restrictions on engineering reviews. Every
+project is eligible.
 
 During the review process, the accessibility team will modify the a11y-review
 flag:
@@ -89,22 +133,50 @@ flag:
 
 There is also an
 [accessibility-frontend-reviewers](https://phabricator.services.mozilla.com/tag/accessibility-frontend-reviewers/)
-group on Phabricator. This should generally only be used if:
+group on Phabricator. We recommend using the automated review tool described below before submitting
+to the review group. This group should only be used if:
 
-1. The patch is a change requested as part of an accessibility review as
-   described above; or
+1. The patch addresses a complex change requested
+   **by an accessibility team member** as part of an engineering review and
+   you aren't confident that the patch correctly addresses the change; or
 2. There is a very specific aspect of accessibility implemented in the patch and
    you would like the accessibility team to confirm whether it has been
-   implemented correctly.
+   implemented correctly. You should first discuss your approach with the team
+   in the #accessibility channel on slack.
 
-We recommend using the automated review tool described below before submitting
-to the review group.
+After tagging the accessibility-frontend-reviewers group, review-bot will
+prompt you for some additional information about your patch. **Your patch
+will be removed from our queue until you post a comment with the requested
+information, and re-add the group.**
 
-If you would instead like the accessibility team to assess **whether a feature
-or change is sufficiently accessible**, please request an accessibility
-**engineering** review as described above. Without this, the accessibility team
-will not have sufficient context or understanding of the change or how to test
-it, which is necessary to thoroughly assess its accessibility.
+Here's what you'll see:
+```markdown
+You've tagged the accessibility team for review. If you've already spoken
+to a team member about your request, please request review from the
+specific team member you spoke to.
+
+Otherwise, please do ALL of the following:
+
+    1. Post a comment describing the specific accessibility behaviour
+       you're looking for feedback about
+    2. Attach screenshots showing behaviour before and after your
+       patch (if this is a visual change)
+    3. Post a description of screen reader output/behaviour before
+       and after your patch (if this change affects assistive
+       technology users)
+
+Once you have posted all of the above, please re-add the group.
+The group will not be removed again after you re-add it if the
+above conditions are met.
+```
+
+If you would like the accessibility team to assess **whether a feature
+or change is sufficiently accessible**, this is not the right pathway.
+
+Please request an accessibility **engineering** review as described above.
+Without this, the accessibility team will not have sufficient context or
+understanding of the change or how to test it.
+This is necessary to thoroughly assess its accessibility.
 
 ## Automated Accessibility Review Skill
 

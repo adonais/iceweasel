@@ -92,6 +92,7 @@ class MicrosurveyBottomSheetFragment : BottomSheetDialogFragment() {
                     question = it.question,
                     icon = it.icon,
                     answers = it.answers,
+                    maxLabelLines = it.maxNumberLines,
                     onPrivacyPolicyLinkClick = {
                         closeBottomSheet()
                         microsurveyMessageController.onPrivacyPolicyLinkClicked(

@@ -211,6 +211,27 @@ describe("ActionCreators", () => {
       });
     });
   });
+  describe("SetMultiplePrefs", () => {
+    it("should set the type and a values map", () => {
+      const values = {
+        "widgets.maximized": true,
+        "widgets.lists.size": "large",
+      };
+      const action = ac.SetMultiplePrefs(values);
+      assert.equal(action.type, at.SET_MULTIPLE_PREFS);
+      assert.equal(action.data.values, values);
+    });
+    it("should wrap with AlsoToMain if in UI code", () => {
+      assert.isTrue(
+        au.isSendToMain(ac.SetMultiplePrefs({ foo: 1 })),
+        "isSendToMain"
+      );
+    });
+    it("should not wrap with AlsoToMain if not in UI code", () => {
+      const action = ac.SetMultiplePrefs({ foo: 1 }, BACKGROUND_PROCESS);
+      assert.isFalse(au.isSendToMain(action), "isSendToMain");
+    });
+  });
 });
 
 describe("ActionUtils", () => {

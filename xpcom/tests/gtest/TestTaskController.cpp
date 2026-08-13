@@ -2,17 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "gtest/gtest.h"
-
 #include <stdint.h>  // uint32_t
 
-#include "nsString.h"                // nsACString
-#include "nsThreadUtils.h"           // NS_ProcessNextEvent
+#include "gtest/gtest.h"
 #include "mozilla/Atomics.h"         // Atomic
 #include "mozilla/EventQueue.h"      // EventQueuePriority
 #include "mozilla/Mutex.h"           // Mutex, MutexAutoLock
 #include "mozilla/RefPtr.h"          // RefPtr, do_AddRef
 #include "mozilla/TaskController.h"  // TaskController, Task
+#include "nsString.h"                // nsACString
+#include "nsThreadUtils.h"           // NS_ProcessNextEvent
 #include "prthread.h"                // PR_Sleep
 
 using namespace mozilla;

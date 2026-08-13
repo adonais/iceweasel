@@ -6,6 +6,7 @@
 #define mozilla_image_Orientation_h
 
 #include <stdint.h>
+
 #include "mozilla/gfx/Rect.h"
 
 namespace mozilla {

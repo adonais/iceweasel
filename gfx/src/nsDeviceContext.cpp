@@ -3,25 +3,27 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsDeviceContext.h"
+
 #include <algorithm>  // for max
+
 #include "gfxContext.h"
 #include "gfxPoint.h"    // for gfxSize
 #include "gfxTextRun.h"  // for gfxFontGroup
 #include "mozilla/LookAndFeel.h"
-#include "mozilla/gfx/PathHelpers.h"
-#include "mozilla/gfx/PrintTarget.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/StaticPrefs_layout.h"
-#include "mozilla/Try.h"            // for MOZ_TRY
-#include "mozilla/widget/Screen.h"  // for Screen
-#include "nsDebug.h"                // for NS_ASSERTION, etc
-#include "nsFontMetrics.h"          // for nsFontMetrics
-#include "nsIDeviceContextSpec.h"   // for nsIDeviceContextSpec
-#include "nsIWidget.h"              // for nsIWidget, NS_NATIVE_WINDOW
-#include "nsRect.h"                 // for nsRect
-#include "nsTArray.h"               // for nsTArray, nsTArray_Impl
+#include "mozilla/Try.h"  // for MOZ_TRY
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/gfx/PathHelpers.h"
+#include "mozilla/gfx/PrintTarget.h"
+#include "mozilla/widget/Screen.h"         // for Screen
 #include "mozilla/widget/ScreenManager.h"  // for ScreenManager
+#include "nsDebug.h"                       // for NS_ASSERTION, etc
+#include "nsFontMetrics.h"                 // for nsFontMetrics
+#include "nsIDeviceContextSpec.h"          // for nsIDeviceContextSpec
+#include "nsIWidget.h"                     // for nsIWidget, NS_NATIVE_WINDOW
+#include "nsRect.h"                        // for nsRect
+#include "nsTArray.h"                      // for nsTArray, nsTArray_Impl
 
 #if defined(ACCESSIBILITY) && defined(MOZ_ENABLE_SKIA_PDF)
 #  include "mozilla/a11y/PdfStructTreeBuilder.h"

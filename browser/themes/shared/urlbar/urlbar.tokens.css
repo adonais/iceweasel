@@ -10,8 +10,10 @@
 @layer tokens-foundation {
   :root,
   :host {
+    --urlbar-background-color: var(--toolbar-field-background-color);
+    --urlbar-background-color-focus: var(--toolbar-field-background-color-focus);
     --urlbar-border-radius: var(--button-border-radius);
-    --urlbar-box-background-color: light-dark(var(--button-background-color-hover), color-mix(in srgb, currentColor 16%, transparent));
+    --urlbar-box-background-color: var(--button-background-color);
     --urlbar-box-background-color-hover: light-dark(var(--button-background-color-hover), color-mix(in srgb, currentColor 22%, transparent));
     --urlbar-box-background-color-active: var(--button-background-color-active);
     --urlbar-box-background-color-focus: light-dark(var(--button-background-color), color-mix(in srgb, currentColor 16%, transparent));
@@ -38,10 +40,48 @@
    until Bug 1879349 lands */
 @layer tokens-browser-theme {
   @media not ((forced-colors) or (-moz-native-theme)) {
-    :root:not([lwtheme]),
+    :root:is([theme-in-app], :not([lwtheme])),
     :host(.anonymous-content-host) {
       --urlbar-box-background-color: light-dark(white, rgb(66, 65, 77));
       --urlbar-icon-fill-opacity: 0.72;
+    }
+  }
+}
+
+@media -moz-pref("browser.nova.enabled") {
+  @layer tokens-foundation-nova {
+    :root,
+    :host {
+      --urlbar-box-background-color: color-mix(in srgb, currentColor 16%, transparent);
+      --urlbar-box-background-color-hover: color-mix(in srgb, currentColor 22%, transparent);
+      --urlbar-box-background-color-active: color-mix(in srgb, currentColor 30%, transparent);
+      --urlbar-box-background-color-focus: var(--urlbar-box-background-color);
+      --urlbar-icon-fill-opacity: 0.9;
+    }
+  }
+
+  /* Bug 1879900: Can't nest media queries inside of :host, :root selector
+   until Bug 1879349 lands */
+  @layer tokens-prefers-contrast-nova {
+    @media (prefers-contrast) {
+      :root,
+      :host {
+        --urlbar-icon-fill-opacity: 1;
+      }
+    }
+  }
+
+  /* Bug 1879900: Can't nest media queries inside of :host, :root selector
+   until Bug 1879349 lands */
+  @layer tokens-browser-theme-nova {
+    @media not ((forced-colors) or (-moz-native-theme)) {
+      :root:is([theme-in-app], :not([lwtheme])),
+      :host(.anonymous-content-host) {
+        --urlbar-box-background-color: var(--urlbarview-background-color-hover);
+        --urlbar-box-background-color-hover: var(--urlbarview-background-color-selected);
+        --urlbar-box-background-color-active: light-dark(rgba(117, 102, 159, 0.6), rgba(176, 163, 210, 0.6));
+        --urlbar-icon-fill-opacity: light-dark(0.7, 0.95);
+      }
     }
   }
 }

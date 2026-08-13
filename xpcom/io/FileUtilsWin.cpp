@@ -4,8 +4,8 @@
 
 #include "FileUtilsWin.h"
 
-#include <windows.h>
 #include <psapi.h>
+#include <windows.h>
 
 #include "base/process_util.h"
 #include "mozilla/ProfilerLabels.h"

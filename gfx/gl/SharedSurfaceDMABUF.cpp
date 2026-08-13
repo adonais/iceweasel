@@ -4,11 +4,11 @@
 
 #include "SharedSurfaceDMABUF.h"
 
-#include "gfxPlatform.h"
 #include "GLContextEGL.h"
 #include "MozFramebuffer.h"
-#include "mozilla/layers/LayersSurfaces.h"  // for SurfaceDescriptor, etc
+#include "gfxPlatform.h"
 #include "mozilla/gfx/gfxVars.h"
+#include "mozilla/layers/LayersSurfaces.h"  // for SurfaceDescriptor, etc
 #include "mozilla/widget/DMABufDevice.h"
 
 namespace mozilla::gl {

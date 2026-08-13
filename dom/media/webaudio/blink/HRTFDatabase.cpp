@@ -100,8 +100,8 @@ void HRTFDatabase::getKernelsFromAzimuthElevation(
              m_elevations.Length() > 0);
 
   if (!m_elevations.Length()) {
-    kernelL = 0;
-    kernelR = 0;
+    kernelL = nullptr;
+    kernelR = nullptr;
     return;
   }
 
@@ -111,8 +111,8 @@ void HRTFDatabase::getKernelsFromAzimuthElevation(
   HRTFElevation* hrtfElevation = m_elevations[elevationIndex].get();
   MOZ_ASSERT(hrtfElevation);
   if (!hrtfElevation) {
-    kernelL = 0;
-    kernelR = 0;
+    kernelL = nullptr;
+    kernelR = nullptr;
     return;
   }
 

@@ -12,9 +12,9 @@
 #define nsSimpleNestedURI_h_
 
 #include "nsCOMPtr.h"
-#include "nsSimpleURI.h"
 #include "nsINestedURI.h"
 #include "nsIURIMutator.h"
+#include "nsSimpleURI.h"
 
 namespace mozilla {
 namespace net {
@@ -51,6 +51,10 @@ class nsSimpleNestedURI : public nsSimpleURI, public nsINestedURI {
   nsresult SetQuery(const nsACString& aQuery) override;
   nsresult SetRef(const nsACString& aRef) override;
   bool Deserialize(const mozilla::ipc::URIParams&);
+
+  // Returns true if aInnerURI is the inner URI our own spec implies.
+  virtual bool IsValidInnerURI(nsIURI* aInnerURI);
+
   nsresult ReadPrivate(nsIObjectInputStream* stream);
 
  public:

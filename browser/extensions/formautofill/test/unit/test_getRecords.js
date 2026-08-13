@@ -257,8 +257,8 @@ add_task(async function test_getRecords_creditCards() {
       let token = Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(
         Ci.nsIPKCS11Token
       );
-      token.reset();
-      token.changePassword("", "password");
+      await token.reset();
+      await token.changePassword("", "password");
     }
     const fap = new FormAutofillParent();
     sinon.stub(fap, "browsingContext").get(() => {

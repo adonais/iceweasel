@@ -80,7 +80,7 @@ class JSFunction : public js::NativeObject {
      *  - JSJitInfo* to be used by the JIT, only used if isBuiltinNative() for
      *    builtin natives
      *
-     *  - wasm function index for wasm/asm.js without a jit entry. Always has
+     *  - wasm function index for wasm without a jit entry. Always has
      *    the low bit set to ensure it's never identical to a BaseScript*
      *    pointer
      *
@@ -193,15 +193,8 @@ class JSFunction : public js::NativeObject {
     return flags().isNonBuiltinConstructor();
   }
 
-  /* Possible attributes of a native function: */
-  bool isAsmJSNative() const { return flags().isAsmJSNative(); }
-
   // A WebAssembly "Exported Function" is the spec name for the JS function
-  // objects created to wrap wasm functions. This predicate returns false
-  // for asm.js functions which are semantically just normal JS functions
-  // (even if they are implemented via wasm under the hood). The accessor
-  // functions for extracting the instance and func-index of a wasm function
-  // can be used for both wasm and asm.js, however.
+  // objects created to wrap wasm functions.
   bool isWasm() const { return flags().isWasm(); }
   bool isWasmWithJitEntry() const { return flags().isWasmWithJitEntry(); }
 
@@ -863,21 +856,18 @@ class FunctionExtended : public JSFunction {
 
   static const uint32_t METHOD_HOMEOBJECT_SLOT = 0;
 
-  // wasm/asm.js exported functions store a code pointer to their direct entry
+  // wasm exported functions store a code pointer to their direct entry
   // point (see CodeRange::funcUncheckedCallEntry()) to support the call_ref
   // instruction.
   static const uint32_t WASM_FUNC_UNCHECKED_ENTRY_SLOT = 0;
 
-  // wasm/asm.js exported functions store the wasm::Instance pointer of their
+  // wasm exported functions store the wasm::Instance pointer of their
   // instance.
   static const uint32_t WASM_INSTANCE_SLOT = 1;
 
-  // wasm/asm.js exported functions store a pointer to their
+  // wasm exported functions store a pointer to their
   // wasm::SuperTypeVector for downcasting.
   static const uint32_t WASM_STV_SLOT = 2;
-
-  // asm.js module functions store their WasmModuleObject in the first slot.
-  static const uint32_t ASMJS_MODULE_SLOT = 0;
 
   // Async module callback handlers store their ModuleObject in the first slot.
   static const uint32_t MODULE_SLOT = 0;
@@ -902,8 +892,6 @@ extern JSFunction* CloneFunctionReuseScript(JSContext* cx, HandleFunction fun,
                                             HandleObject proto,
                                             gc::Heap heap = gc::Heap::Default,
                                             gc::AllocSite* site = nullptr);
-
-extern JSFunction* CloneAsmJSModuleFunction(JSContext* cx, HandleFunction fun);
 
 }  // namespace js
 
@@ -933,7 +921,7 @@ inline const js::Value& JSFunction::getExtendedSlot(uint32_t which) const {
 }
 
 inline js::wasm::Instance& JSFunction::wasmInstance() const {
-  MOZ_ASSERT(isWasm() || isAsmJSNative());
+  MOZ_ASSERT(isWasm());
   MOZ_ASSERT(
       !getExtendedSlot(js::FunctionExtended::WASM_INSTANCE_SLOT).isUndefined());
   return *static_cast<js::wasm::Instance*>(

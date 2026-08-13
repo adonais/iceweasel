@@ -3,13 +3,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 // HttpLog.h should generally be included first
-#include "HttpLog.h"
+#include "Http2WebTransportStream.h"
 
 #include <algorithm>
-#include "Http2WebTransportStream.h"
-#include "Http2WebTransportSession.h"
+
 #include "Capsule.h"
 #include "CapsuleEncoder.h"
+#include "Http2WebTransportSession.h"
+#include "HttpLog.h"
 #include "nsIOService.h"
 
 namespace mozilla::net {

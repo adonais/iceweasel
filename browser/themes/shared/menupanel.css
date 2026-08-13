@@ -25,3 +25,7 @@
 #appMenu-fullscreen-button2[checked] {
   list-style-image: url(chrome://browser/skin/fullscreen-exit.svg);
 }
+
+#appMenu-fullscreen-button2:dir(rtl) > .toolbarbutton-icon {
+  scale: -1 1;
+}

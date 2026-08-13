@@ -5,6 +5,9 @@
 #ifndef mozilla_CycleCollectedJSRuntime_h
 #define mozilla_CycleCollectedJSRuntime_h
 
+#include "js/TypeDecls.h"
+#include "jsapi.h"
+#include "jsfriendapi.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/DeferredFinalize.h"
 #include "mozilla/HashTable.h"
@@ -13,14 +16,10 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/SegmentedVector.h"
 #include "mozilla/Variant.h"
-#include "jsapi.h"
-#include "jsfriendapi.h"
-#include "js/TypeDecls.h"
-
 #include "nsCycleCollectionParticipant.h"
-#include "nsTHashMap.h"
 #include "nsHashKeys.h"
 #include "nsStringFwd.h"
+#include "nsTHashMap.h"
 #include "nsTHashSet.h"
 
 class nsCycleCollectionNoteRootCallback;

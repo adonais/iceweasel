@@ -6,14 +6,14 @@
 #define mozilla_net_WebTransportEventService_h
 
 #include "mozilla/AlreadyAddRefed.h"
-#include "nsIWebTransportEventService.h"
 #include "nsCOMPtr.h"
-#include "nsTArray.h"
-#include "nsIObserver.h"
-#include "nsISupportsImpl.h"
-#include "nsTHashMap.h"
 #include "nsClassHashtable.h"
 #include "nsHashKeys.h"
+#include "nsIObserver.h"
+#include "nsISupportsImpl.h"
+#include "nsIWebTransportEventService.h"
+#include "nsTArray.h"
+#include "nsTHashMap.h"
 
 namespace mozilla {
 namespace net {

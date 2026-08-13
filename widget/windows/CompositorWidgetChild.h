@@ -6,8 +6,8 @@
 #define widget_windows_CompositorWidgetChild_h
 
 #include "WinCompositorWidget.h"
-#include "mozilla/widget/PCompositorWidgetChild.h"
 #include "mozilla/widget/CompositorWidgetVsyncObserver.h"
+#include "mozilla/widget/PCompositorWidgetChild.h"
 
 namespace mozilla {
 class CompositorVsyncDispatcher;

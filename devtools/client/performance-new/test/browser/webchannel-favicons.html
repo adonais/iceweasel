@@ -25,6 +25,16 @@
 
       // A function which requests the favicons from the browser using the GET_PAGE_FAVICONS
       // WebChannel message.
+      // The list of page URLs to request favicons for. The test can override
+      // this by encoding a JSON array in the location hash; otherwise we just
+      // request the profiler's own URL.
+      function getPageUrls() {
+        if (window.location.hash.length > 1) {
+          return JSON.parse(decodeURIComponent(window.location.hash.slice(1)));
+        }
+        return ["https://profiler.firefox.com"];
+      }
+
       function getPageFavicons() {
         return new Promise((resolve, reject) => {
           const requestId = 0;
@@ -69,9 +79,7 @@
             new CustomEvent("WebChannelMessageToChrome", {
               detail: JSON.stringify({
                 id: "profiler.firefox.com",
-                message: { type: "GET_PAGE_FAVICONS", requestId, pageUrls: [
-                  "https://profiler.firefox.com"
-                ] },
+                message: { type: "GET_PAGE_FAVICONS", requestId, pageUrls: getPageUrls() },
               }),
             })
           );
@@ -82,6 +90,10 @@
         try {
           // Get the favicons.
           const favicons = await getPageFavicons();
+
+          // Expose the result so tests can inspect the exact shape of the
+          // response (e.g. that unparseable URLs resolve to null in position).
+          window.faviconsResult = favicons;
 
           // Check that the favicons are reasonable.
           // After the check, modify the title of the document, so the tab title gets

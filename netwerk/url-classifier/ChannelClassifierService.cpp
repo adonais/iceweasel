@@ -4,19 +4,17 @@
 
 #include "ChannelClassifierService.h"
 
+#include "UrlClassifierFeatureCryptominingProtection.h"
+#include "UrlClassifierFeatureFingerprintingProtection.h"
+#include "UrlClassifierFeatureSocialTrackingProtection.h"
+#include "UrlClassifierFeatureTrackingProtection.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/net/UrlClassifierCommon.h"
-
-#include "UrlClassifierFeatureCryptominingProtection.h"
-#include "UrlClassifierFeatureFingerprintingProtection.h"
-#include "UrlClassifierFeatureSocialTrackingProtection.h"
-#include "UrlClassifierFeatureTrackingProtection.h"
-
-#include "mozilla/StaticPtr.h"
 #include "nsIChannel.h"
 
 namespace mozilla {

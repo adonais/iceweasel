@@ -6,6 +6,7 @@
 #define nsCycleCollectionTraversalCallback_h_
 
 #include <cstdint>
+
 #include "nscore.h"
 
 class nsCycleCollectionParticipant;

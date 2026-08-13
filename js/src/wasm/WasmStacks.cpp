@@ -651,13 +651,25 @@ void ContStack::traceFields(JSTracer* trc) {
   }
 }
 
-void ContStack::traceSuspended(JSTracer* trc) {
+void ContStack::traceSuspended(JSTracer* trc, JSObject* src) {
   MOZ_RELEASE_ASSERT(canResume());
 
   WasmFrameIter iter = WasmFrameIter(
       resumeTarget_->instance,
       static_cast<FrameWithInstances*>(resumeTarget_->framePointer),
       resumeTarget_->resumePC);
+
+#  ifdef ENABLE_WASM_JSPI
+  // Inferred ContObject to Debugger.Frame edges are traced only while marking;
+  // see DebugAPI::traceWasmContFrame for why generic tracers must skip them.
+  //
+  // |src| (the owning ContObject) is passed only by ContObject::trace, which is
+  // the sole path that reaches here as a marking tracer. The other caller,
+  // TraceWasmSuspendedContStacks, is always the tenuring tracer and passes no
+  // src. So src is guaranteed present whenever we are marking.
+  MOZ_ASSERT_IF(trc->isMarkingTracer(), src);
+  const bool traceDebugFrames = src && trc->isMarkingTracer();
+#  endif
 
   // If the iter is done, then we're a stack that's never been resumed. We just
   // need to trace our fields and return.
@@ -689,6 +701,12 @@ void ContStack::traceSuspended(JSTracer* trc) {
     TraceInstanceEdge(trc, instance, "WasmFrameIter instance");
     highestByteVisitedInPrevWasmFrame = instance->traceFrame(
         trc, iter, nextPC, highestByteVisitedInPrevWasmFrame);
+
+#  ifdef ENABLE_WASM_JSPI
+    if (traceDebugFrames && iter.debugEnabled()) {
+      DebugAPI::traceWasmContFrame(trc, src, iter.debugFrame(), instance);
+    }
+#  endif
 
     if (iter.frame()->wasmCaller() == baseFrame()) {
       break;
@@ -1082,7 +1100,12 @@ void ContObject::trace(JSTracer* trc, JSObject* obj) {
   ContStack* resumeBase = cont.resumeBase();
   if (resumeBase) {
     MOZ_RELEASE_ASSERT(resumeBase->canResume());
-    resumeBase->traceSuspended(trc);
+    // Passing |obj| also traces the inferred ContObject to Debugger.Frame edges
+    // (see traceSuspended). The resume barrier marks suspended stacks through
+    // this hook, so that tracing must stay funnelled through here to keep those
+    // edges marked before resumed wasm code runs. See the GC barriers section
+    // of [SMDOC] Wasm Stack Switching above.
+    resumeBase->traceSuspended(trc, obj);
   }
 }
 

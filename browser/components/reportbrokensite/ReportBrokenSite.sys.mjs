@@ -847,13 +847,11 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
 
   async #sendMoreInfoButtonHandler(event) {
     const { target } = event;
-    const state = ViewState.get(target.documentGlobal.document);
     event.preventDefault();
     const tabbrowser = target.documentGlobal.gBrowser;
     this.#recordGleanEvent("sendMoreInfo");
     event.target.documentGlobal.CustomizableUI.hidePanelForNode(target);
     await this.#openWebCompatTab(tabbrowser);
-    state.reset();
   }
 
   #previewButtonHandler(event) {
@@ -993,7 +991,7 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
       for (const [category, values] of Object.entries(brokenSiteReportData)) {
         previewData[category] = Object.fromEntries(
           Object.entries(values)
-            .filter(([_, { do_not_preview }]) => !do_not_preview)
+            .filter(([_, { doNotPreview }]) => !doNotPreview)
             .map(([name, value]) => [name, value])
         );
       }

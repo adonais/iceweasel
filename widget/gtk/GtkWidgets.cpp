@@ -2,12 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "GtkWidgets.h"
+
 #include <dlfcn.h>
 #include <gtk/gtk.h>
-#include "GtkWidgets.h"
+
 #include "mozilla/Assertions.h"
-#include "mozilla/PodOperations.h"
 #include "mozilla/EnumeratedArray.h"
+#include "mozilla/PodOperations.h"
 #include "mozilla/WidgetUtilsGtk.h"
 
 namespace mozilla::widget::GtkWidgets {

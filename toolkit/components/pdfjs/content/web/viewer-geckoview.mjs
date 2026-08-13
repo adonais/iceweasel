@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.346
- * pdfjsBuild = e75a7cfd6
+ * pdfjsVersion = 6.1.335
+ * pdfjsBuild = dd7e3731d
  */
 
 ;// ./web/ui_utils.js
@@ -680,6 +680,10 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE
   },
+  enableSignatureVerification: {
+    value: true,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE
+  },
   enableSplitMerge: {
     value: false,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE
@@ -954,6 +958,7 @@ const {
   makeArr,
   makeMap,
   makeObj,
+  makeSet,
   MathClamp,
   noContextMenu,
   normalizeUnicode,
@@ -985,7 +990,7 @@ const {
 } = globalThis.pdfjsLib;
 
 ;// ./web/internal_evt.js
-const INTERNAL_EVT = "ba480cbc-beb0-4b9d-9c8e-d0795f27ee33";
+const INTERNAL_EVT = "ef6148f6-6ec0-4217-9ce6-b56c33db7fbd";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -1534,6 +1539,9 @@ class BaseExternalServices {
   createSignatureStorage() {
     throw new Error("Not implemented: createSignatureStorage");
   }
+  createSignatureVerifier() {
+    return null;
+  }
   updateEditorStates(data) {
     throw new Error("Not implemented: updateEditorStates");
   }
@@ -1800,7 +1808,7 @@ class Preferences extends BasePreferences {
     if (!viewerApp.initialized) {
       return;
     }
-    if (type === "zoomreset" && viewerApp.pdfViewer.currentScaleValue === DEFAULT_SCALE_VALUE) {
+    if (type === "zoomreset" && viewerApp.pdfViewer.currentScaleValue === (/* inlined export .DEFAULT_SCALE_VALUE */"auto")) {
       return;
     }
     viewerApp.eventBus.dispatch(type, {
@@ -2136,6 +2144,129 @@ class SignatureStorage {
     return false;
   }
 }
+const NSS_ERR_CODES = {
+  EXPIRED: new Set(["SEC_ERROR_EXPIRED_CERTIFICATE", "SEC_ERROR_EXPIRED_ISSUER_CERTIFICATE", "MOZILLA_PKIX_ERROR_NOT_YET_VALID_CERTIFICATE", "MOZILLA_PKIX_ERROR_NOT_YET_VALID_ISSUER_CERTIFICATE"]),
+  REVOKED: new Set(["SEC_ERROR_REVOKED_CERTIFICATE", "SEC_ERROR_REVOKED_KEY", "MOZILLA_PKIX_ERROR_REVOKED_CERTIFICATE"]),
+  UNTRUSTED: new Set(["SEC_ERROR_UNKNOWN_ISSUER", "SEC_ERROR_UNTRUSTED_CERT", "SEC_ERROR_UNTRUSTED_ISSUER", "MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT", "MOZILLA_PKIX_ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED"]),
+  CMS_NOT_YET_ATTEMPTED: "NS_ERROR_CMS_VERIFY_NOT_YET_ATTEMPTED"
+};
+function mapVerificationStatus(signatureCode, certificateCode) {
+  if (signatureCode === NSS_ERR_CODES.CMS_NOT_YET_ATTEMPTED) {
+    return {
+      status: "unknown",
+      errorCode: signatureCode
+    };
+  }
+  if (signatureCode && signatureCode !== "NS_OK") {
+    return {
+      status: "invalid",
+      errorCode: signatureCode
+    };
+  }
+  if (!certificateCode || certificateCode === "NS_OK") {
+    return {
+      status: "verified",
+      errorCode: null
+    };
+  }
+  if (NSS_ERR_CODES.REVOKED.has(certificateCode)) {
+    return {
+      status: "revoked",
+      errorCode: certificateCode
+    };
+  }
+  if (NSS_ERR_CODES.EXPIRED.has(certificateCode)) {
+    return {
+      status: "expired",
+      errorCode: certificateCode
+    };
+  }
+  if (NSS_ERR_CODES.UNTRUSTED.has(certificateCode)) {
+    return {
+      status: "untrusted",
+      errorCode: certificateCode
+    };
+  }
+  return {
+    status: "untrusted",
+    errorCode: certificateCode
+  };
+}
+class SignatureVerifier {
+  async verify(signature) {
+    if (signature.signatureType === null) {
+      return {
+        status: "unknown",
+        errorCode: "SUBFILTER_NOT_SUPPORTED",
+        message: signature.subFilter,
+        certificate: null,
+        documentModifiedAfterSigning: !signature.coversWholeDocument
+      };
+    }
+    let response;
+    try {
+      response = await FirefoxCom.requestAsync("verifyPdfSignature", {
+        pkcs7: signature.pkcs7,
+        data: signature.data,
+        signatureType: signature.signatureType
+      });
+    } catch (ex) {
+      return {
+        status: "unknown",
+        errorCode: "BRIDGE_ERROR",
+        message: ex?.message ?? null,
+        certificate: null,
+        documentModifiedAfterSigning: !signature.coversWholeDocument
+      };
+    }
+    if (!response || response.error) {
+      return {
+        status: "unknown",
+        errorCode: response?.error ?? "EMPTY_RESPONSE",
+        message: null,
+        certificate: null,
+        documentModifiedAfterSigning: !signature.coversWholeDocument
+      };
+    }
+    const entry = Array.isArray(response) ? response[0] : response;
+    if (!entry) {
+      return {
+        status: "unknown",
+        errorCode: "EMPTY_RESPONSE",
+        message: null,
+        certificate: null,
+        documentModifiedAfterSigning: !signature.coversWholeDocument
+      };
+    }
+    const {
+      status,
+      errorCode
+    } = mapVerificationStatus(entry.signatureResult, entry.certificateResult);
+    return {
+      status,
+      errorCode,
+      message: entry.message ?? null,
+      certificate: entry.certificate ?? null,
+      documentModifiedAfterSigning: !signature.coversWholeDocument
+    };
+  }
+  async viewCertificate(certificate) {
+    if (!certificate) {
+      return false;
+    }
+    const certs = Array.isArray(certificate.chain) && certificate.chain.length ? certificate.chain.map(c => c.derBase64).filter(Boolean) : [certificate.derBase64].filter(Boolean);
+    if (certs.length === 0) {
+      return false;
+    }
+    try {
+      return await FirefoxCom.requestAsync("viewPdfCertificate", {
+        certs
+      });
+    } catch {
+      return false;
+    }
+  }
+}
 class ExternalServices extends BaseExternalServices {
   updateFindControlState(data) {
     FirefoxCom.request("updateFindControlState", data);
@@ -2213,27 +2344,13 @@ class ExternalServices extends BaseExternalServices {
   createSignatureStorage(eventBus, signal) {
     return new SignatureStorage(eventBus, signal);
   }
+  createSignatureVerifier() {
+    return new SignatureVerifier();
+  }
   dispatchGlobalEvent(event) {
     FirefoxCom.request("dispatchGlobalEvent", event);
   }
 }
-
-;// ./web/stubs-geckoview.js
-const AltTextManager = null;
-const AnnotationEditorParams = null;
-const ImageAltTextSettings = null;
-const NewAltTextManager = null;
-const PDFAttachmentViewer = null;
-const PDFCursorTools = null;
-const PDFDocumentProperties = null;
-const PDFFindBar = null;
-const PDFLayerViewer = null;
-const PDFOutlineViewer = null;
-const PDFPresentationMode = null;
-const PDFThumbnailViewer = null;
-const SecondaryToolbar = null;
-const SignatureManager = null;
-const ViewsManager = null;
 
 ;// ./web/caret_browsing.js
 const PRECISION = 1e-1;
@@ -3735,6 +3852,7 @@ class PasswordPrompt {
     this.input.addEventListener("keydown", e => {
       if (e.keyCode === 13) {
         this.#verify();
+        e.preventDefault();
       }
     });
     this.overlayManager.register(this.dialog, true);
@@ -3788,72 +3906,26 @@ class PasswordPrompt {
 
 ;// ./web/pdf_find_utils.js
 
-const CharacterType = {
-  SPACE: 0,
-  ALPHA_LETTER: 1,
-  PUNCT: 2,
-  HAN_LETTER: 3,
-  KATAKANA_LETTER: 4,
-  HIRAGANA_LETTER: 5,
-  HALFWIDTH_KATAKANA_LETTER: 6,
-  THAI_LETTER: 7
-};
-function isAlphabeticalScript(charCode) {
-  return charCode < 0x2e80;
-}
-function isAscii(charCode) {
-  return (charCode & 0xff80) === 0;
-}
-function isAsciiAlpha(charCode) {
-  return charCode >= 0x61 && charCode <= 0x7a || charCode >= 0x41 && charCode <= 0x5a;
-}
-function isAsciiDigit(charCode) {
-  return charCode >= 0x30 && charCode <= 0x39;
-}
-function isAsciiSpace(charCode) {
-  return charCode === 0x20 || charCode === 0x09 || charCode === 0x0d || charCode === 0x0a;
-}
-function isHan(charCode) {
-  return charCode >= 0x3400 && charCode <= 0x9fff || charCode >= 0xf900 && charCode <= 0xfaff;
-}
-function isKatakana(charCode) {
-  return charCode >= 0x30a0 && charCode <= 0x30ff;
-}
-function isHiragana(charCode) {
-  return charCode >= 0x3040 && charCode <= 0x309f;
-}
-function isHalfwidthKatakana(charCode) {
-  return charCode >= 0xff60 && charCode <= 0xff9f;
-}
-function isThai(charCode) {
-  return (charCode & 0xff80) === 0x0e00;
-}
-function getCharacterType(charCode) {
-  if (isAlphabeticalScript(charCode)) {
-    if (isAscii(charCode)) {
-      if (isAsciiSpace(charCode)) {
-        return CharacterType.SPACE;
-      } else if (isAsciiAlpha(charCode) || isAsciiDigit(charCode) || charCode === 0x5f) {
-        return CharacterType.ALPHA_LETTER;
-      }
-      return CharacterType.PUNCT;
-    } else if (isThai(charCode)) {
-      return CharacterType.THAI_LETTER;
-    } else if (charCode === 0xa0) {
-      return CharacterType.SPACE;
-    }
-    return CharacterType.ALPHA_LETTER;
+let wordSegmenter = null;
+let graphemeSegmenter = null;
+function isWordBreakAt(content, pos) {
+  graphemeSegmenter ||= new Intl.Segmenter(undefined, {
+    granularity: "grapheme"
+  });
+  const graphemes = graphemeSegmenter.segment(content);
+  const after = graphemes.containing(pos);
+  if (after.index !== pos) {
+    return false;
   }
-  if (isHan(charCode)) {
-    return CharacterType.HAN_LETTER;
-  } else if (isKatakana(charCode)) {
-    return CharacterType.KATAKANA_LETTER;
-  } else if (isHiragana(charCode)) {
-    return CharacterType.HIRAGANA_LETTER;
-  } else if (isHalfwidthKatakana(charCode)) {
-    return CharacterType.HALFWIDTH_KATAKANA_LETTER;
-  }
-  return CharacterType.ALPHA_LETTER;
+  wordSegmenter ||= new Intl.Segmenter(undefined, {
+    granularity: "word"
+  });
+  const before = graphemes.containing(pos - 1).segment;
+  return wordSegmenter.segment(before + after.segment).containing(before.length).index === before.length;
+}
+function isEntireWord(content, startIdx, length) {
+  const endIdx = startIdx + length;
+  return (startIdx === 0 || isWordBreakAt(content, startIdx)) && (endIdx === content.length || isWordBreakAt(content, endIdx));
 }
 let NormalizeWithNFKC;
 function getNormalizeWithNFKC() {
@@ -3889,8 +3961,6 @@ const DIACRITICS_EXCEPTION = new Set([0x3099, 0x309a, 0x094d, 0x09cd, 0x0a4d, 0x
 let DIACRITICS_EXCEPTION_STR;
 const DIACRITICS_REG_EXP = /\p{M}+/gu;
 const SPECIAL_CHARS_REG_EXP = /([+^$|])|(\p{P}+)|(\s+)|(\p{M})|(\p{L})/gu;
-const NOT_DIACRITIC_FROM_END_REG_EXP = /(\P{M})\p{M}*$/u;
-const NOT_DIACRITIC_FROM_START_REG_EXP = /^\p{M}*(\P{M})/u;
 const SYLLABLES_REG_EXP = /[\uAC00-\uD7AF\uFA6C\uFACF-\uFAD1\uFAD5-\uFAD7]+/g;
 const SYLLABLES_LENGTHS = new Map();
 const FIRST_CHAR_SYLLABLES_REG_EXP = "[\\u1100-\\u1112\\ud7a4-\\ud7af\\ud84a\\ud84c\\ud850\\ud854\\ud857\\ud85f]";
@@ -3958,11 +4028,7 @@ function normalize(text, options = {}) {
       return replacement;
     }
     if (p2) {
-      let replacement = NFKC_CHARS_TO_NORMALIZE.get(p2);
-      if (!replacement) {
-        replacement = p2.normalize("NFKC");
-        NFKC_CHARS_TO_NORMALIZE.set(p2, replacement);
-      }
+      const replacement = NFKC_CHARS_TO_NORMALIZE.getOrInsertComputed(p2, () => p2.normalize("NFKC"));
       const jj = replacement.length;
       for (let j = 1; j < jj; j++) {
         positions.push(i - shift + j, shift - j);
@@ -4265,25 +4331,6 @@ class PDFFindController {
     }
     return true;
   }
-  #isEntireWord(content, startIdx, length) {
-    let match = content.slice(0, startIdx).match(NOT_DIACRITIC_FROM_END_REG_EXP);
-    if (match) {
-      const first = content.charCodeAt(startIdx);
-      const limit = match[1].charCodeAt(0);
-      if (getCharacterType(first) === getCharacterType(limit)) {
-        return false;
-      }
-    }
-    match = content.slice(startIdx + length).match(NOT_DIACRITIC_FROM_START_REG_EXP);
-    if (match) {
-      const last = content.charCodeAt(startIdx + length - 1);
-      const limit = match[1].charCodeAt(0);
-      if (getCharacterType(last) === getCharacterType(limit)) {
-        return false;
-      }
-    }
-    return true;
-  }
   #convertToRegExpString(query, hasDiacritics) {
     const {
       matchDiacritics
@@ -4400,7 +4447,7 @@ class PDFFindController {
     const matches = [];
     let match;
     while ((match = query.exec(pageContent)) !== null) {
-      if (entireWord && !this.#isEntireWord(pageContent, match.index, match[0].length)) {
+      if (entireWord && !isEntireWord(pageContent, match.index, match[0].length)) {
         continue;
       }
       matches.push({
@@ -4980,7 +5027,7 @@ class PDFHistory {
     if (this._destination.hash === position.hash) {
       return;
     }
-    if (!this._destination.page && (POSITION_UPDATED_THRESHOLD <= 0 || this._numPositionUpdates <= POSITION_UPDATED_THRESHOLD)) {
+    if (!this._destination.page && ( false || this._numPositionUpdates <= POSITION_UPDATED_THRESHOLD)) {
       return;
     }
     let forceReplace = false;
@@ -5063,10 +5110,10 @@ class PDFHistory {
     if (this._popStateInProgress) {
       return;
     }
-    if (POSITION_UPDATED_THRESHOLD > 0 && this._isPagesLoaded && this._destination && !this._destination.page) {
+    if ( true && this._isPagesLoaded && this._destination && !this._destination.page) {
       this._numPositionUpdates++;
     }
-    if (UPDATE_VIEWAREA_TIMEOUT > 0) {
+    if (true) {
       this._updateViewareaTimeout = setTimeout(() => {
         if (!this._popStateInProgress) {
           this.#tryPushCurrentPosition(true);
@@ -6194,6 +6241,7 @@ class AnnotationLayerBuilder {
     this._cancelled = true;
     this.#eventAC?.abort();
     this.#eventAC = null;
+    this.annotationLayer?.destroy();
   }
   refreshCanvases() {
     this.annotationLayer?.refreshCanvases();
@@ -6236,7 +6284,7 @@ class AnnotationLayerBuilder {
         return;
     }
     for (const section of this.div.childNodes) {
-      if (section.hasAttribute("data-internal-link")) {
+      if (section.hasAttribute("data-internal-link") || section.classList.contains("mediaAnnotation")) {
         continue;
       }
       section.inert = disableFormElements;
@@ -6281,7 +6329,7 @@ class AnnotationLayerBuilder {
     return inferredLinks.filter(link => {
       let linkAreaRects;
       for (const annotation of this.#annotations) {
-        if (annotation.annotationType !== AnnotationType.LINK || !annotation.url) {
+        if (annotation.annotationType !== AnnotationType.LINK) {
           continue;
         }
         const intersections = intersectAnnotations(annotation, link);
@@ -6461,7 +6509,7 @@ class BasePDFPageView extends RenderableView {
     this.pageColors = options.pageColors || null;
     this.renderingQueue = options.renderingQueue;
     this.enableOptimizedPartialRendering = options.enableOptimizedPartialRendering ?? false;
-    this.enableSelectionRendering = options.enableSelectionRendering !== false;
+    this.enableSelectionRendering = options.enableSelectionRendering !== false && FeatureTest.isBackdropFilterSupported;
     this.imagesRightClickMinSize = options.imagesRightClickMinSize ?? -1;
     this.minDurationToUpdateCanvas = options.minDurationToUpdateCanvas ?? 500;
   }
@@ -7258,7 +7306,7 @@ class TextAccessibilityManager {
       return;
     }
     const children = this.#textChildren;
-    if (!children || children.length === 0) {
+    if (!children?.length) {
       return;
     }
     const {
@@ -7303,7 +7351,7 @@ class TextAccessibilityManager {
       this.removePointerInTextLayer(element);
     }
     const children = this.#textChildren;
-    if (!children || children.length === 0) {
+    if (!children?.length) {
       return null;
     }
     const index = binarySearchFirstItem(children, node => TextAccessibilityManager.#compareElementPositions(element, node) < 0);
@@ -7791,7 +7839,7 @@ class PDFPageView extends BasePDFPageView {
     this.pdfPage = null;
     this.pageLabel = null;
     this.rotation = 0;
-    this.scale = options.scale || DEFAULT_SCALE;
+    this.scale = options.scale || (/* inlined export .DEFAULT_SCALE */1);
     this.viewport = defaultViewport;
     this.pdfPageRotate = defaultViewport.rotation;
     this._optionalContentConfigPromise = options.optionalContentConfigPromise || null;
@@ -8673,7 +8721,7 @@ class PDFViewer {
   #savedPageViews = null;
   #deletedPageNumbers = null;
   constructor(options) {
-    const viewerVersion = "6.0.346";
+    const viewerVersion = "6.1.335";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
@@ -8838,7 +8886,7 @@ class PDFViewer {
     }
   }
   get currentScale() {
-    return this._currentScale !== UNKNOWN_SCALE ? this._currentScale : DEFAULT_SCALE;
+    return this._currentScale !== (/* inlined export .UNKNOWN_SCALE */0) ? this._currentScale : (/* inlined export .DEFAULT_SCALE */1);
   }
   set currentScale(val) {
     if (isNaN(val)) {
@@ -9386,7 +9434,7 @@ class PDFViewer {
   _resetView() {
     this._pages = [];
     this._currentPageNumber = 1;
-    this._currentScale = UNKNOWN_SCALE;
+    this._currentScale = (/* inlined export .UNKNOWN_SCALE */0);
     this._currentScaleValue = null;
     this._pageLabels = null;
     this.#buffer = new PDFPageViewBuffer(DEFAULT_CACHE_SIZE);
@@ -9584,8 +9632,8 @@ class PDFViewer {
       if (!currentPage) {
         return;
       }
-      let hPadding = SCROLLBAR_PADDING,
-        vPadding = VERTICAL_PADDING;
+      let hPadding = (/* inlined export .SCROLLBAR_PADDING */40),
+        vPadding = (/* inlined export .VERTICAL_PADDING */5);
       if (this.isInPresentationMode) {
         hPadding = vPadding = 4;
         if (this._spreadMode !== SpreadMode.NONE) {
@@ -9611,7 +9659,7 @@ class PDFViewer {
           break;
         case "auto":
           const horizontalScale = isPortraitOrientation(currentPage) ? pageWidthScale : Math.min(pageHeightScale, pageWidthScale);
-          scale = Math.min(MAX_AUTO_SCALE, horizontalScale);
+          scale = Math.min((/* inlined export .MAX_AUTO_SCALE */1.25), horizontalScale);
           break;
         default:
           console.error(`#setScale: "${value}" is an unknown zoom value.`);
@@ -9704,8 +9752,8 @@ class PDFViewer {
         y = destArray[3];
         width = destArray[4] - x;
         height = destArray[5] - y;
-        let hPadding = SCROLLBAR_PADDING,
-          vPadding = VERTICAL_PADDING;
+        let hPadding = (/* inlined export .SCROLLBAR_PADDING */40),
+          vPadding = (/* inlined export .VERTICAL_PADDING */5);
         widthScale = (this.container.clientWidth - hPadding) / width / PixelsPerInch.PDF_TO_CSS_UNITS;
         heightScale = (this.container.clientHeight - vPadding) / height / PixelsPerInch.PDF_TO_CSS_UNITS;
         scale = Math.min(Math.abs(widthScale), Math.abs(heightScale));
@@ -9717,8 +9765,8 @@ class PDFViewer {
     if (!ignoreDestinationZoom) {
       if (scale && scale !== this._currentScale) {
         this.currentScaleValue = scale;
-      } else if (this._currentScale === UNKNOWN_SCALE) {
-        this.currentScaleValue = DEFAULT_SCALE_VALUE;
+      } else if (this._currentScale === (/* inlined export .UNKNOWN_SCALE */0)) {
+        this.currentScaleValue = (/* inlined export .DEFAULT_SCALE_VALUE */"auto");
       }
     }
     if (scale === "page-fit" && !destArray[4]) {
@@ -10190,14 +10238,14 @@ class PDFViewer {
     if (scaleFactor > 0 && scaleFactor !== 1) {
       newScale = Math.round(newScale * scaleFactor * 100) / 100;
     } else if (steps) {
-      const delta = steps > 0 ? DEFAULT_SCALE_DELTA : 1 / DEFAULT_SCALE_DELTA;
+      const delta = steps > 0 ? (/* inlined export .DEFAULT_SCALE_DELTA */1.1) : 1 / (/* inlined export .DEFAULT_SCALE_DELTA */1.1);
       const round = steps > 0 ? Math.ceil : Math.floor;
       steps = Math.abs(steps);
       do {
         newScale = round((newScale * delta).toFixed(2) * 10) / 10;
       } while (--steps > 0);
     }
-    newScale = MathClamp(newScale, MIN_SCALE, MAX_SCALE);
+    newScale = MathClamp(newScale, (/* inlined export .MIN_SCALE */0.1), (/* inlined export .MAX_SCALE */25));
     this.#setScale(newScale, {
       noScroll: false,
       drawingDelay,
@@ -10515,6 +10563,7 @@ class ViewHistory {
 
 
 
+
 const FORCE_PAGES_LOADED_TIMEOUT = 10000;
 const ViewOnLoad = {
   UNKNOWN: -1,
@@ -10554,6 +10603,7 @@ const PDFViewerApplication = {
   eventBus: null,
   l10n: null,
   annotationEditorParams: null,
+  signaturePropertiesManager: null,
   imageAltTextSettings: null,
   isInitialViewSet: false,
   isViewerEmbedded: window.parent !== window,
@@ -10758,14 +10808,14 @@ const PDFViewerApplication = {
     const enableSplitMerge = AppOptions.get("enableSplitMerge");
     let altTextManager;
     if (AppOptions.get("enableUpdatedAddImage")) {
-      altTextManager = appConfig.newAltTextDialog ? new NewAltTextManager(appConfig.newAltTextDialog, overlayManager, eventBus) : null;
+      altTextManager = appConfig.newAltTextDialog ? new (/* inlined export .NewAltTextManager */null)(appConfig.newAltTextDialog, overlayManager, eventBus) : null;
     } else {
-      altTextManager = appConfig.altTextDialog ? new AltTextManager(appConfig.altTextDialog, container, overlayManager, eventBus) : null;
+      altTextManager = appConfig.altTextDialog ? new (/* inlined export .AltTextManager */null)(appConfig.altTextDialog, container, overlayManager, eventBus) : null;
     }
     if (appConfig.editorUndoBar) {
       this.editorUndoBar = new EditorUndoBar(appConfig.editorUndoBar, eventBus);
     }
-    const signatureManager = AppOptions.get("enableSignatureEditor") && appConfig.addSignatureDialog ? new SignatureManager(appConfig.addSignatureDialog, appConfig.editSignatureDialog, appConfig.annotationEditorParams?.editorSignatureAddSignature || null, overlayManager, l10n, externalServices.createSignatureStorage(eventBus, abortSignal), eventBus) : null;
+    const signatureManager = AppOptions.get("enableSignatureEditor") && appConfig.addSignatureDialog ? new (/* inlined export .SignatureManager */null)(appConfig.addSignatureDialog, appConfig.editSignatureDialog, appConfig.annotationEditorParams?.editorSignatureAddSignature || null, overlayManager, l10n, externalServices.createSignatureStorage(eventBus, abortSignal), eventBus) : null;
     const commentManager = AppOptions.get("enableComment") && appConfig.editCommentDialog ? new CommentManager(appConfig.editCommentDialog, {
       learnMoreUrl: AppOptions.get("commentLearnMoreUrl"),
       sidebar: appConfig.annotationEditorParams?.editorCommentsSidebar || null,
@@ -10825,7 +10875,7 @@ const PDFViewerApplication = {
       const {
         viewsManager
       } = appConfig;
-      this.pdfThumbnailViewer = new PDFThumbnailViewer({
+      this.pdfThumbnailViewer = new (/* inlined export .PDFThumbnailViewer */null)({
         container: viewsManager.thumbnailsView,
         eventBus,
         renderingQueue,
@@ -10853,7 +10903,7 @@ const PDFViewerApplication = {
       linkService.setHistory(this.pdfHistory);
     }
     if (!this.supportsIntegratedFind && appConfig.findBar) {
-      this.findBar = new PDFFindBar(appConfig.findBar, appConfig.principalContainer, eventBus);
+      this.findBar = new (/* inlined export .PDFFindBar */null)(appConfig.findBar, appConfig.principalContainer, eventBus);
     }
     if (appConfig.annotationEditorParams) {
       if (annotationEditorMode !== AnnotationEditorType.DISABLE) {
@@ -10865,7 +10915,7 @@ const PDFViewerApplication = {
         if (editorCommentButton && AppOptions.get("enableComment")) {
           editorCommentButton.parentElement.hidden = false;
         }
-        this.annotationEditorParams = new AnnotationEditorParams(appConfig.annotationEditorParams, eventBus);
+        this.annotationEditorParams = new (/* inlined export .AnnotationEditorParams */null)(appConfig.annotationEditorParams, eventBus);
       } else {
         for (const id of ["editorModeButtons", "editorModeSeparator"]) {
           document.getElementById(id)?.classList.add("hidden");
@@ -10873,13 +10923,13 @@ const PDFViewerApplication = {
       }
     }
     if (mlManager && appConfig.secondaryToolbar?.imageAltTextSettingsButton) {
-      this.imageAltTextSettings = new ImageAltTextSettings(appConfig.altTextSettingsDialog, overlayManager, eventBus, mlManager);
+      this.imageAltTextSettings = new (/* inlined export .ImageAltTextSettings */null)(appConfig.altTextSettingsDialog, overlayManager, eventBus, mlManager);
     }
     if (appConfig.documentProperties) {
-      this.pdfDocumentProperties = new PDFDocumentProperties(appConfig.documentProperties, overlayManager, eventBus, l10n, () => this._docFilename, () => this._docTitle);
+      this.pdfDocumentProperties = new (/* inlined export .PDFDocumentProperties */null)(appConfig.documentProperties, overlayManager, eventBus, l10n, () => this._docFilename, () => this._docTitle);
     }
     if (appConfig.secondaryToolbar?.cursorHandToolButton) {
-      this.pdfCursorTools = new PDFCursorTools({
+      this.pdfCursorTools = new (/* inlined export .PDFCursorTools */null)({
         container,
         eventBus,
         cursorToolOnLoad: AppOptions.get("cursorToolOnLoad")
@@ -10894,10 +10944,10 @@ const PDFViewerApplication = {
         appConfig.secondaryToolbar.imageAltTextSettingsButton?.classList.remove("hidden");
         appConfig.secondaryToolbar.imageAltTextSettingsSeparator?.classList.remove("hidden");
       }
-      this.secondaryToolbar = new SecondaryToolbar(appConfig.secondaryToolbar, eventBus);
+      this.secondaryToolbar = new (/* inlined export .SecondaryToolbar */null)(appConfig.secondaryToolbar, eventBus);
     }
     if (this.supportsFullscreen && appConfig.secondaryToolbar?.presentationModeButton) {
-      this.pdfPresentationMode = new PDFPresentationMode({
+      this.pdfPresentationMode = new (/* inlined export .PDFPresentationMode */null)({
         container,
         pdfViewer,
         eventBus
@@ -10907,7 +10957,7 @@ const PDFViewerApplication = {
       this.passwordPrompt = new PasswordPrompt(appConfig.passwordOverlay, overlayManager, this.isViewerEmbedded);
     }
     if (appConfig.viewsManager?.outlinesView) {
-      this.pdfOutlineViewer = new PDFOutlineViewer({
+      this.pdfOutlineViewer = new (/* inlined export .PDFOutlineViewer */null)({
         container: appConfig.viewsManager.outlinesView,
         eventBus,
         l10n,
@@ -10916,7 +10966,7 @@ const PDFViewerApplication = {
       });
     }
     if (appConfig.viewsManager?.attachmentsView) {
-      this.pdfAttachmentViewer = new PDFAttachmentViewer({
+      this.pdfAttachmentViewer = new (/* inlined export .PDFAttachmentViewer */null)({
         container: appConfig.viewsManager.attachmentsView,
         eventBus,
         l10n,
@@ -10925,14 +10975,14 @@ const PDFViewerApplication = {
       });
     }
     if (appConfig.viewsManager?.layersView) {
-      this.pdfLayerViewer = new PDFLayerViewer({
+      this.pdfLayerViewer = new (/* inlined export .PDFLayerViewer */null)({
         container: appConfig.viewsManager.layersView,
         eventBus,
         l10n
       });
     }
     if (appConfig.viewsManager) {
-      this.viewsManager = new ViewsManager({
+      this.viewsManager = new (/* inlined export .ViewsManager */null)({
         elements: appConfig.viewsManager,
         eventBus,
         l10n,
@@ -11016,7 +11066,7 @@ const PDFViewerApplication = {
     if (this.pdfViewer.isInPresentationMode) {
       return;
     }
-    this.pdfViewer.currentScaleValue = DEFAULT_SCALE_VALUE;
+    this.pdfViewer.currentScaleValue = (/* inlined export .DEFAULT_SCALE_VALUE */"auto");
   },
   touchPinchCallback(origin, prevDistance, distance) {
     if (this.supportsPinchToZoom) {
@@ -11138,6 +11188,7 @@ const PDFViewerApplication = {
       this.pdfViewer.setDocument(null);
       this.pdfLinkService.setDocument(null);
       this.pdfDocumentProperties?.setDocument(null);
+      this.signaturePropertiesManager?.setDocument(null);
     }
     this.pdfLinkService.externalLinkEnabled = true;
     this.store = null;
@@ -11254,6 +11305,7 @@ const PDFViewerApplication = {
     if (!this.downloadManager) {
       return;
     }
+    this.pdfViewer._layerProperties.annotationEditorUIManager?.endCurrentEditing();
     const {
       classList
     } = this.appConfig.appContainer;
@@ -11357,7 +11409,7 @@ const PDFViewerApplication = {
     this.pdfThumbnailViewer?.setDocument(pdfDocument);
     const storedPromise = (this.store = new ViewHistory(pdfDocument.fingerprints[0])).getMultiple({
       page: null,
-      zoom: DEFAULT_SCALE_VALUE,
+      zoom: (/* inlined export .DEFAULT_SCALE_VALUE */"auto"),
       scrollLeft: "0",
       scrollTop: "0",
       rotation: null,
@@ -11575,11 +11627,33 @@ const PDFViewerApplication = {
       console.warn("Warning: Interactive form support is not enabled");
     }
     if (info.IsSignaturesPresent) {
-      console.warn("Warning: Digital signatures validation is not supported");
+      const success = this._maybeInitSignatureProperties(pdfDocument);
+      if (!success) {
+        console.warn("Warning: Digital signatures validation is not supported");
+      }
     }
     this.eventBus.dispatch("metadataloaded", {
       source: this
     });
+  },
+  _maybeInitSignatureProperties(pdfDocument) {
+    if (!AppOptions.get("enableSignatureVerification")) {
+      return false;
+    }
+    const verifier = this.externalServices.createSignatureVerifier();
+    if (!verifier) {
+      return false;
+    }
+    if (pdfDocument !== this.pdfDocument) {
+      return true;
+    }
+    this.signaturePropertiesManager ??= new (/* inlined export .SignaturePropertiesManager */null)({
+      appConfig: this.appConfig.toolbar,
+      verifier,
+      eventBus: this.eventBus
+    });
+    this.signaturePropertiesManager.setDocument(pdfDocument);
+    return true;
   },
   async _initializePageLabels(pdfDocument) {},
   _initializePdfHistory({
@@ -11657,9 +11731,7 @@ const PDFViewerApplication = {
     }
     this.toolbar?.setPageNumber(this.pdfViewer.currentPageNumber, this.pdfViewer.currentPageLabel);
     this.secondaryToolbar?.setPageNumber(this.pdfViewer.currentPageNumber);
-    if (!this.pdfViewer.currentScaleValue) {
-      this.pdfViewer.currentScaleValue = DEFAULT_SCALE_VALUE;
-    }
+    this.pdfViewer.currentScaleValue ||= (/* inlined export .DEFAULT_SCALE_VALUE */"auto");
   },
   _cleanup() {
     if (!this.pdfDocument) {
@@ -12260,6 +12332,13 @@ function closeEditorUndoBar(evt) {
     this.editorUndoBar.hide();
   }
 }
+function closeSignatureProperties({
+  target
+}) {
+  if (this.signaturePropertiesManager?.shouldCloseOnClick(target)) {
+    this.signaturePropertiesManager.close();
+  }
+}
 function onBeforeUnload(evt) {
   if (this._hasChanges()) {
     evt.preventDefault();
@@ -12271,6 +12350,7 @@ function onBeforeUnload(evt) {
 function onClick(evt) {
   closeSecondaryToolbar.call(this, evt);
   closeEditorUndoBar.call(this, evt);
+  closeSignatureProperties.call(this, evt);
 }
 function onKeyUp(evt) {
   if (evt.key === "Control") {
@@ -12428,6 +12508,10 @@ function onKeyDown(evt) {
       case 27:
         if (this.secondaryToolbar?.isOpen) {
           this.secondaryToolbar.close();
+          handled = true;
+        }
+        if (this.signaturePropertiesManager?.isOpen) {
+          this.signaturePropertiesManager.close();
           handled = true;
         }
         if (!this.supportsIntegratedFind && this.findBar?.opened) {

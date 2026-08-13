@@ -5,16 +5,14 @@
 #ifndef mozilla_widget_AndroidAlerts_h_
 #define mozilla_widget_AndroidAlerts_h_
 
-#include "nsTHashMap.h"
-#include "nsInterfaceHashtable.h"
+#include "mozilla/StaticPtr.h"
+#include "mozilla/java/WebNotificationWrappers.h"
 #include "nsCOMPtr.h"
 #include "nsHashKeys.h"
 #include "nsIAlertsService.h"
 #include "nsIObserver.h"
-
-#include "mozilla/java/WebNotificationWrappers.h"
-
-#include "mozilla/StaticPtr.h"
+#include "nsInterfaceHashtable.h"
+#include "nsTHashMap.h"
 
 namespace mozilla {
 namespace widget {

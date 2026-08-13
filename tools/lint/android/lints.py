@@ -258,16 +258,14 @@ def report_gradlew(config, fix, subdir, project_name, lint_tasks=[], **lintargs)
     ktlint_file = "ktlint.json"
     if fix:
         ktlint_file = "ktlintFormat.json"
-    try:
-        issues = json.load(
-            open(
-                os.path.join(
-                    reports,
-                    "ktlint",
-                    ktlint_file,
-                ),
-            )
+
+    ktlint_report = os.path.join(reports, "ktlint", ktlint_file)
+    if not os.path.exists(ktlint_report):
+        ktlint_report = os.path.join(
+            topsrcdir, subdir, "app", "build", "reports", "ktlint", ktlint_file
         )
+    try:
+        issues = json.load(open(ktlint_report))
 
         for issue in issues:
             name = issue["file"]
@@ -284,7 +282,7 @@ def report_gradlew(config, fix, subdir, project_name, lint_tasks=[], **lintargs)
                 }
                 results.append(result.from_config(config, **err))
     except FileNotFoundError:
-        print(f"Could not read ktlint report: `{ktlint_file}`")
+        print(f"Could not read ktlint report: `{ktlint_report}`")
         pass
 
     return results + parse_lint_report(
@@ -385,35 +383,52 @@ def lint(_paths, config, **lintargs):
         topsrcdir=topsrcdir,
         topobjdir=topobjdir,
         tasks=lintargs["substs"]["GRADLE_ANDROID_LINT_TASKS"],
-        extra_args=lintargs.get("extra_args") or [],
+        extra_args=(lintargs.get("extra_args") or []) + ["--continue"],
     )
 
-    path = os.path.join(
-        lintargs["topobjdir"],
-        "gradle/build/mobile/android/geckoview/reports",
-        "lint-results-{}.xml".format(
-            lintargs["substs"]["GRADLE_ANDROID_GECKOVIEW_VARIANT_NAME"]
-        ),
-    )
-    tree = ET.parse(open(path))
-    root = tree.getroot()
+    gradle_build = os.path.join(topobjdir, "gradle/build/mobile/android")
 
     results = []
 
-    for issue in root.findall("issue"):
-        location = issue[0]
-        if "third_party" in location.get("file") or "thirdparty" in location.get(
-            "file"
-        ):
-            continue
-        err = {
-            "level": issue.get("severity").lower(),
-            "rule": issue.get("id"),
-            "message": issue.get("message"),
-            "path": location.get("file"),
-            "lineno": int(location.get("line") or 0),
-        }
-        results.append(result.from_config(config, **err))
+    def collect(path):
+        tree = ET.parse(open(path))
+        root = tree.getroot()
+        for issue in root.findall("issue"):
+            location = issue[0]
+            if "third_party" in location.get("file") or "thirdparty" in location.get(
+                "file"
+            ):
+                continue
+            err = {
+                "level": issue.get("severity").lower(),
+                "rule": issue.get("id"),
+                "message": issue.get("message"),
+                "path": location.get("file"),
+                "lineno": int(location.get("line") or 0),
+            }
+            results.append(result.from_config(config, **err))
+
+    collect(
+        os.path.join(
+            gradle_build,
+            "geckoview/reports",
+            "lint-results-{}.xml".format(
+                lintargs["substs"]["GRADLE_ANDROID_GECKOVIEW_VARIANT_NAME"]
+            ),
+        )
+    )
+
+    # The included Gradle plugin builds carry the AndroidX lint-gradle checks and
+    # each emit their own lint report.
+    for plugin in (
+        "gradle/plugins/conventions",
+        "android-components/plugins/dependencies",
+        "android-components/plugins/publicsuffixlist",
+        "fenix/plugins/apksize",
+    ):
+        report = os.path.join(gradle_build, plugin, "reports/lint-results.xml")
+        if os.path.exists(report):
+            collect(report)
 
     return results
 

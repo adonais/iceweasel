@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use crate::{Pid, IO_TIMEOUT};
+use crate::{AsProcessReaderHandle, Pid, IO_TIMEOUT};
 use std::{
     ffi::{CStr, CString, OsString},
     mem::{zeroed, MaybeUninit},
@@ -50,6 +50,12 @@ impl ProcessHandle {
         Ok(ProcessHandle(unsafe {
             OwnedHandle::from_raw_handle(handle as RawHandle)
         }))
+    }
+}
+
+impl AsProcessReaderHandle for ProcessHandle {
+    fn as_handle(&self) -> process_reader::ProcessHandle {
+        self.0.as_raw_handle() as process_reader::ProcessHandle
     }
 }
 

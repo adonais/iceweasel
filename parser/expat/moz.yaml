@@ -9,8 +9,8 @@ origin:
   name: libexpat
   description: Expat is an XML parser.
   url: https://github.com/libexpat/libexpat
-  release: R_2_8_1 (2026-05-10T19:17:11+02:00).
-  revision: R_2_8_1
+  release: R_2_8_2 (2026-06-25T16:07:00+02:00).
+  revision: R_2_8_2
   license: MIT
   license-file: COPYING
 
@@ -28,6 +28,7 @@ vendoring:
     - expat/lib/Makefile.am
     - expat/lib/libexpat.def.cmake
     - expat/lib/libexpat.map.in
+    - expat/lib/memory_sanitizer.h
     - expat/lib/random_*.c
     - expat/lib/random_*.h
 
@@ -64,3 +65,4 @@ vendoring:
     - 10_version_limit.patch
     - 11_no_debug_report.patch
     - 12_unused.patch
+    - 13_high_surrogate_mask.patch

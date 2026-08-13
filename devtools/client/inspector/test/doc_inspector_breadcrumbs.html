@@ -21,6 +21,13 @@
         /* large number so the view-transition pseudo elements are available during the whole test */
         animation-duration: 3600s;
       }
+
+      select {
+        appearance: base-select;
+      }
+      select::picker-icon {
+        background-color: hotpink;
+      }
     </style>
   </head>
   <body>
@@ -80,6 +87,11 @@
       </clipPath>
       <circle cx="5" cy="5" r="5" fill="blue" clip-path="url(#clip)"></circle>
     </svg>
+    <select>
+      <option>Apricot</option>
+      <option>Banana</option>
+      <option>Cherry</option>
+    </select>
     <script>
       "use strict";
 

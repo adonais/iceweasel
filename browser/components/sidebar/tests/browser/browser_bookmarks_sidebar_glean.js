@@ -534,11 +534,10 @@ add_task(async function test_cut_bookmark() {
     return tabList && [...tabList.rowEls].find(r => r.guid === cutTarget.guid);
   }, "Cut target bookmark is present.");
 
-  const promiseRemoved =
-    PlacesTestUtils.waitForNotification("bookmark-removed");
   await activateContextMenuItem(row.mainEl, "sidebar-bookmarks-context-cut");
   assertLabeledCounterValue("cut_bookmark", 1);
-  await promiseRemoved;
+
+  await PlacesUtils.bookmarks.remove(cutTarget.guid);
 });
 
 add_task(async function test_search() {

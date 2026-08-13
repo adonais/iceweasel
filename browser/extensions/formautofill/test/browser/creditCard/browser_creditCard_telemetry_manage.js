@@ -68,6 +68,8 @@ add_task(async function test_saveCreditCard() {
     EventUtils.synthesizeKey("VK_TAB", {}, win);
     EventUtils.synthesizeKey(TEST_CREDIT_CARD_1["cc-number"], {}, win);
     EventUtils.synthesizeKey("VK_TAB", {}, win);
+    EventUtils.synthesizeKey(TEST_CREDIT_CARD_1["cc-name"], {}, win);
+    EventUtils.synthesizeKey("VK_TAB", {}, win);
     EventUtils.synthesizeKey(
       "0" + TEST_CREDIT_CARD_1["cc-exp-month"].toString(),
       {},
@@ -79,12 +81,8 @@ add_task(async function test_saveCreditCard() {
       {},
       win
     );
-    EventUtils.synthesizeKey("VK_TAB", {}, win);
-    EventUtils.synthesizeKey(TEST_CREDIT_CARD_1["cc-name"], {}, win);
-    EventUtils.synthesizeKey("VK_TAB", {}, win);
-    EventUtils.synthesizeKey("VK_TAB", {}, win);
     info("saving credit card");
-    EventUtils.synthesizeKey("VK_RETURN", {}, win);
+    win.document.querySelector("#save").click();
   });
 
   Assert.equal(1, Glean.creditcard.addManage.testGetValue().length);

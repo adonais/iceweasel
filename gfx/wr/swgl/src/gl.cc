@@ -1840,6 +1840,7 @@ static void convert_copy(GLenum external_format, GLenum internal_format,
           }
           return;
         case GL_R8:
+        case GL_R16:
           break;
         default:
           debugf("unsupported format conversion from %x to %x\n",

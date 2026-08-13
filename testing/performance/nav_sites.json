@@ -1,0 +1,99 @@
+{
+  "desktop": [
+    {
+      "name": "reddit-nav",
+      "type": "interactive",
+      "test_url": "https://www.reddit.com/r/IAmA/comments/m8n4vt/im_bill_gates_cochair_of_the_bill_and_melinda/",
+      "test_cmds": [
+        ["measure.start", "load"],
+        [
+          "navigate",
+          "https://www.reddit.com/r/IAmA/comments/m8n4vt/im_bill_gates_cochair_of_the_bill_and_melinda/"
+        ],
+        ["wait.byTime", 6000],
+        ["measure.stop", ""],
+        ["measure.start", "interaction"],
+        ["click.bySelectorAndWait", "#pdp-credit-bar a"],
+        ["wait.byTime", 4000],
+        ["measure.stop", ""]
+      ]
+    },
+    {
+      "name": "wikipedia-nav",
+      "type": "interactive",
+      "test_url": "https://en.wikipedia.org/wiki/Barack_Obama",
+      "test_cmds": [
+        ["measure.start", "load"],
+        ["navigate", "https://en.wikipedia.org/wiki/Barack_Obama"],
+        ["wait.byTime", 3000],
+        ["measure.stop", ""],
+        ["measure.start", "interaction"],
+        ["click.bySelectorAndWait", "a[href=\"/wiki/Honolulu\"]"],
+        ["wait.byTime", 3000],
+        ["measure.stop", ""]
+      ]
+    },
+    {
+      "name": "google-slides-nav",
+      "type": "interactive",
+      "test_url": "https://docs.google.com/presentation/d/1Ici0ceWwpFvmIb3EmKeWSq_vAQdmmdFcWqaiLqUkJng/edit?usp=sharing",
+      "test_cmds": [
+        ["measure.start", "load"],
+        [
+          "navigate",
+          "https://docs.google.com/presentation/d/1Ici0ceWwpFvmIb3EmKeWSq_vAQdmmdFcWqaiLqUkJng/edit?usp=sharing"
+        ],
+        ["wait.byTime", 5000],
+        ["measure.stop", ""]
+      ]
+    },
+    {
+      "name": "amazon-nav",
+      "type": "interactive",
+      "test_url": "https://www.amazon.ca/s?k=laptop&ref=nb_sb_noss_1",
+      "test_cmds": [
+        ["measure.start", "load"],
+        ["navigate", "https://www.amazon.ca/s?k=laptop&ref=nb_sb_noss_1"],
+        ["wait.byTime", 4000],
+        ["measure.stop", ""],
+        ["measure.start", "interaction"],
+        [
+          "click.bySelectorAndWait",
+          "[data-component-type=\"s-search-result\"] a.a-link-normal[href*=\"/dp/\"]"
+        ],
+        ["wait.byTime", 4000],
+        ["measure.stop", ""]
+      ]
+    },
+    {
+      "name": "duckduckgo-nav",
+      "type": "interactive",
+      "test_url": "https://duckduckgo.com/?q=mandelbrot+set",
+      "test_cmds": [
+        ["measure.start", "load"],
+        ["navigate", "https://duckduckgo.com/?q=mandelbrot+set"],
+        ["wait.byTime", 5000],
+        ["measure.stop", ""],
+        ["measure.start", "interaction"],
+        ["click.bySelectorAndWait", "nav ul li:nth-of-type(2) > a"],
+        ["wait.byTime", 5000],
+        ["measure.stop", ""]
+      ]
+    },
+    {
+      "name": "bbc-nav",
+      "type": "interactive",
+      "test_url": "https://www.bbc.com/news/",
+      "test_cmds": [
+        ["measure.start", "load"],
+        ["navigate", "https://www.bbc.com/news/"],
+        ["wait.byTime", 4000],
+        ["measure.stop", ""],
+        ["measure.start", "interaction"],
+        ["click.bySelectorAndWait", "a[href*=\"bbcindepth\"]"],
+        ["wait.byTime", 3000],
+        ["measure.stop", ""]
+      ]
+    }
+  ]
+}

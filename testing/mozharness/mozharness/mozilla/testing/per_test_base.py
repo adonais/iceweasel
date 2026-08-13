@@ -584,8 +584,8 @@ class SingleTestMixin:
 
     def get_indexed_logs(self, dir, test_suite):
         """
-        Per-test tasks need distinct file names for the raw and errorsummary logs
-        on each run.
+        Per-test tasks need distinct file names for the raw, errorsummary and
+        testsummary logs on each run.
         """
         index = ""
         if self.verify_enabled or self.per_test_coverage:
@@ -595,4 +595,7 @@ class SingleTestMixin:
         error_summary_file = os.path.join(
             dir, "%s%s_errorsummary.log" % (test_suite, index)
         )
-        return raw_log_file, error_summary_file
+        test_summary_file = os.path.join(
+            dir, "%s%s_testsummary.jsonl" % (test_suite, index)
+        )
+        return raw_log_file, error_summary_file, test_summary_file

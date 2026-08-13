@@ -217,10 +217,12 @@ parent:
      * Tell the parent process a new accessible document has been created.
      * aParentDoc is the accessible document it was created in if any, and
      * aParentAcc is the id of the accessible in that document the new document
-     * is a child of.
+     * is a child of. aIsPrintDoc indicates whether this document is a static
+     * clone created for printing.
      */
     async PDocAccessible(nullable PDocAccessible aParentDoc, uint64_t aParentAcc,
-                         MaybeDiscardedBrowsingContext aBrowsingContext);
+                         MaybeDiscardedBrowsingContext aBrowsingContext,
+                         bool aIsPrintDoc);
 #endif
 
     async PPaymentRequest();

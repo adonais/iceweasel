@@ -42,15 +42,15 @@ edit-profile-page-profile-name-label = Profile name
 edit-profile-page-theme-header-2 =
     .label = Theme
 edit-profile-page-explore-themes = Explore more themes
-edit-profile-page-desktop-shortcut-header = Create desktop shortcut
-edit-profile-page-desktop-shortcut-toggle =
-    .aria-label = Create desktop shortcut
+edit-profile-page-desktop-shortcut-toggle-2 =
+    .label = Create desktop shortcut
 edit-profile-page-avatar-header-2 =
     .label = Avatar
 edit-profile-page-delete-button =
     .label = Delete
 
-edit-profile-page-avatar-selector-opener-link = Edit
+edit-profile-page-avatar-selector-opener-button =
+    .title = Edit avatar
 avatar-selector-icon-tab = Icon
 avatar-selector-custom-tab = Custom
 avatar-selector-cancel-button =
@@ -93,7 +93,7 @@ delete-profile-page-title-2 = Delete “{ $profilename }” profile
 
 # Variables
 #   $profilename (String) - The name of the profile.
-delete-profile-header = Delete { $profilename } profile?
+delete-profile-header-2 = Delete “{ $profilename }” profile?
 delete-profile-description = { -brand-short-name } will permanently delete the following data from this device:
 # Open is an adjective, as in "browser windows currently open".
 delete-profile-windows = Open windows

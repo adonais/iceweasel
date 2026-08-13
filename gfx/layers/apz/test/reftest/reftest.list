@@ -15,8 +15,8 @@ skip-if(useDrawSnapshot) fuzzy(0-15,0-24) pref(apz.allow_zooming,true) == async-
 # off, hence the fuzzy-if clauses.
 skip-if(Android) fuzzy(0-107,0-72) pref(apz.allow_zooming,true) pref(apz.scrollthumb.recalc,true) == root-scrollbar-async-zoomed-in.html root-scrollbar-async-zoomed-in-ref.html
 skip-if(Android) fuzzy(0-107,0-167) pref(apz.allow_zooming,true) pref(apz.scrollthumb.recalc,true) == root-scrollbar-async-zoomed-out.html root-scrollbar-async-zoomed-out-ref.html
-skip-if(!Android) fuzzy(0-54,0-33) pref(apz.allow_zooming,true) == root-scrollbar-async-zoomed-in.html root-scrollbar-async-zoomed-in-ref.html
-skip-if(!Android) fuzzy(0-54,0-30) pref(apz.allow_zooming,true) == root-scrollbar-async-zoomed-out.html root-scrollbar-async-zoomed-out-ref.html
+skip-if(!Android) fuzzy(0-60,0-33) pref(apz.allow_zooming,true) == root-scrollbar-async-zoomed-in.html root-scrollbar-async-zoomed-in-ref.html
+skip-if(!Android) fuzzy(0-60,0-30) pref(apz.allow_zooming,true) == root-scrollbar-async-zoomed-out.html root-scrollbar-async-zoomed-out-ref.html
 
 # Test that the compositor thumb sizing calculations handle a non-default device scale correctly
 fuzzy-if(Android,0-31,0-29) fuzzy-if(gtkWidget,0-18,0-49) fuzzy-if(cocoaWidget,0-21,0-53) == async-scrollbar-1-v-fullzoom.html async-scrollbar-1-v-fullzoom-ref.html
@@ -47,7 +47,7 @@ fuzzy-if(nogpu,0-1,0-24) skip-if(winWidget&&isCoverageBuild) pref(apz.allow_zoom
 pref(apz.allow_zooming,true) == iframe-zoomed.html iframe-zoomed-ref.html
 pref(apz.allow_zooming,true) == scaled-iframe-zoomed.html scaled-iframe-zoomed-ref.html
 
-== root-scrollbars-1.html root-scrollbars-1-ref.html
+fuzzy(0-1,0-10) == root-scrollbars-1.html root-scrollbars-1-ref.html
 skip-if(Android) pref(dom.meta-viewport.enabled,true) pref(apz.allow_zooming,true) pref(formhelper.autozoom,true) needs-focus HTTP == zoom-to-focus-input-oopif.html zoom-to-focus-input-oopif-ref.html
 
 == checkerboard-on-subscroller.html checkerboard-on-subscroller-ref.html

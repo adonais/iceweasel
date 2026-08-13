@@ -1,0 +1,72 @@
+{
+  "nova": {
+    "badge": {
+      "inset": {
+        "block": {
+          "start": {
+            "value": "{space.xsmall}"
+          }
+        },
+        "inline": {
+          "start": {
+            "value": "calc({panel-menuitem.padding.inline} + {icon.size.@base})"
+          }
+        }
+      }
+    },
+    "button": {
+      "border": {
+        "radius": {
+          "value": "{panel-menuitem.border.radius}"
+        }
+      },
+      "margin": {
+        "value": "{panel-menuitem.margin.@base}"
+      },
+      "padding": {
+        "@base": {
+          "value": "{panel-menuitem.padding.@base}"
+        },
+        "inline": {
+          "start": {
+            "value": "calc({panel-menuitem.padding.inline} + {icon.size.@base} + {space.small})"
+          }
+        }
+      }
+    }
+  },
+  "badge": {
+    "inset": {
+      "block": {
+        "start": {
+          "value": "4px"
+        }
+      },
+      "inline": {
+        "start": {
+          "value": "24px"
+        }
+      }
+    }
+  },
+  "button": {
+    "border": {
+      "radius": {
+        "value": "0"
+      }
+    },
+    "margin": {
+      "value": "0"
+    },
+    "padding": {
+      "@base": {
+        "value": "{space.xsmall} {space.small}"
+      },
+      "inline": {
+        "start": {
+          "value": "{space.xxlarge}"
+        }
+      }
+    }
+  }
+}

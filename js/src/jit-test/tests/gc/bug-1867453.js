@@ -10,4 +10,8 @@ array.fill(0);
 let keys = Object.keys(array);
 
 let count = gcparam("minorGCNumber") - initialCount;
-assertEq(count <= 3, true);
+let limit = 3;
+if (gcparam("semispaceNurseryEnabled")) {
+  limit *= 2;
+}
+assertEq(count <= limit, true);

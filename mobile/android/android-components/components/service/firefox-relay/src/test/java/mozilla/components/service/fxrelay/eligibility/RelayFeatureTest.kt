@@ -9,7 +9,6 @@ import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.sync.AccessTokenInfo
 import mozilla.components.concept.sync.AccountObserver
 import mozilla.components.concept.sync.AttachedClient
-import mozilla.components.concept.sync.AuthFlowUrl
 import mozilla.components.concept.sync.AuthType
 import mozilla.components.concept.sync.DeviceConstellation
 import mozilla.components.concept.sync.DeviceType
@@ -324,22 +323,10 @@ class RelayFeatureTest {
         private val attachedClients: List<AttachedClient> = emptyList(),
     ) : OAuthAccount {
         override suspend fun getAttachedClient() = attachedClients
-        override suspend fun beginOAuthFlow(
-            scopes: Set<String>,
-            entryPoint: FxAEntryPoint,
-        ): AuthFlowUrl? = null
-
-        override suspend fun beginPairingFlow(
-            pairingUrl: String,
-            scopes: Set<String>,
-            entryPoint: FxAEntryPoint,
-        ): AuthFlowUrl? = null
-
         override fun getCurrentDeviceId(): String? = null
         override suspend fun handleWebChannelLogin(jsonPayload: String) = Unit
         override fun getSignedInUserForWebChannel(): String? = null
         override suspend fun getProfile(ignoreCache: Boolean): Profile? = null
-        override suspend fun completeOAuthFlow(code: String, state: String) = false
         override suspend fun getAccessToken(singleScope: String): AccessTokenInfo? = null
         override fun authErrorDetected() = Unit
         override suspend fun checkAuthorizationStatus(singleScope: String): Boolean? = null

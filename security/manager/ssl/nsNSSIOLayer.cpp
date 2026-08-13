@@ -15,6 +15,7 @@
 #include "SSLServerCertVerification.h"
 #include "ScopedNSSTypes.h"
 #include "TLSClientAuthCertSelection.h"
+#include "brotli/decode.h"
 #include "keyhi.h"
 #include "mozilla/Base64.h"
 #include "mozilla/Logging.h"
@@ -25,10 +26,10 @@
 #include "mozilla/glean/SecurityManagerSslMetrics.h"
 #include "mozilla/net/SSLTokensCache.h"
 #include "mozilla/net/SocketProcessChild.h"
-#include "mozilla/psm/IPCClientCertsChild.h"
-#include "mozilla/psm/mozilla_abridged_certs_generated.h"
-#include "mozilla/psm/PIPCClientCertsChild.h"
 #include "mozilla/psm/EnabledSignatureSchemes.h"
+#include "mozilla/psm/IPCClientCertsChild.h"
+#include "mozilla/psm/PIPCClientCertsChild.h"
+#include "mozilla/psm/mozilla_abridged_certs_generated.h"
 #include "mozpkix/pkixnss.h"
 #include "mozpkix/pkixtypes.h"
 #include "mozpkix/pkixutil.h"
@@ -41,7 +42,6 @@
 #include "nsISocketProvider.h"
 #include "nsIWebProgressListener.h"
 #include "nsNSSComponent.h"
-#include "nsNSSHelper.h"
 #include "nsPrintfCString.h"
 #include "nsServiceManagerUtils.h"
 #include "prmem.h"
@@ -53,7 +53,6 @@
 #include "sslexp.h"
 #include "sslproto.h"
 #include "zlib.h"
-#include "brotli/decode.h"
 #include "zstd/zstd.h"
 
 #if defined(__arm__)
@@ -543,52 +542,42 @@ static_assert((mozilla::pkix::ERROR_BASE - mozilla::pkix::END_OF_LIST) < 31,
 static void reportHandshakeResult(int32_t bytesTransferred, bool wasReading,
                                   PRErrorCode err,
                                   NSSSocketControl* socketInfo) {
-  uint32_t bucket;
+  nsAutoCString result;
 
   // A negative bytesTransferred or a 0 read are errors.
   if (bytesTransferred > 0) {
-    bucket = 0;
+    result.Assign("Success");
   } else if ((bytesTransferred == 0) && !wasReading) {
     // PR_Write() is defined to never return 0, but let's make sure.
     // https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSPR/Reference/PR_Write.
     MOZ_ASSERT(false);
-    bucket = 671;
-  } else if (IS_SSL_ERROR(err)) {
-    bucket = err - SSL_ERROR_BASE;
-    MOZ_ASSERT(bucket > 0);  // SSL_ERROR_EXPORT_ONLY_SERVER isn't used.
-  } else if (IS_SEC_ERROR(err)) {
-    bucket = (err - SEC_ERROR_BASE) + 256;
-  } else if ((err >= PR_NSPR_ERROR_BASE) && (err < PR_MAX_ERROR)) {
-    bucket = (err - PR_NSPR_ERROR_BASE) + 512;
-  } else if ((err >= mozilla::pkix::ERROR_BASE) &&
-             (err < mozilla::pkix::ERROR_LIMIT)) {
-    bucket = (err - mozilla::pkix::ERROR_BASE) + 640;
+    result.Assign("PR_Write_returned_0");
   } else {
-    bucket = 671;
+    result.Assign(PR_ErrorToName(err));
   }
 
   uint32_t flags = socketInfo->GetProviderFlags();
   if (!(flags & nsISocketProvider::IS_RETRY)) {
-    glean::ssl_handshake::result_first_try.AccumulateSingleSample(bucket);
+    glean::tls_handshake::result.Get("first_try"_ns, result).Add();
   }
 
   if (flags & nsISocketProvider::BE_CONSERVATIVE) {
-    glean::ssl_handshake::result_conservative.AccumulateSingleSample(bucket);
+    glean::tls_handshake::result.Get("conservative"_ns, result).Add();
   }
 
   switch (socketInfo->GetEchExtensionStatus()) {
     case EchExtensionStatus::kGREASE:
-      glean::ssl_handshake::result_ech_grease.AccumulateSingleSample(bucket);
+      glean::tls_handshake::result.Get("ech_grease"_ns, result).Add();
       break;
     case EchExtensionStatus::kReal:
-      glean::ssl_handshake::result_ech.AccumulateSingleSample(bucket);
+      glean::tls_handshake::result.Get("ech"_ns, result).Add();
       break;
     default:
       break;
   }
-  glean::ssl_handshake::result.AccumulateSingleSample(bucket);
+  glean::tls_handshake::result.Get("all"_ns, result).Add();
 
-  if (bucket == 0) {
+  if (bytesTransferred > 0) {
     nsCOMPtr<nsITransportSecurityInfo> securityInfo;
     if (NS_FAILED(socketInfo->GetSecurityInfo(getter_AddRefs(securityInfo))) ||
         !securityInfo) {
@@ -620,7 +609,10 @@ static void reportHandshakeResult(int32_t bytesTransferred, bool wasReading,
       TLSPrivacyResult |= usedPrivateDNS << 2;
       TLSPrivacyResult |= usedECH << 3;
 
-      glean::ssl_handshake::privacy.AccumulateSingleSample(TLSPrivacyResult);
+      glean::tls_handshake::privacy
+          .EnumGet(
+              static_cast<glean::tls_handshake::PrivacyLabel>(TLSPrivacyResult))
+          .Add();
     }
   }
 }
@@ -1588,26 +1580,27 @@ static nsresult nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
   // nsNSSCallbacks.cpp when changing the lists here.
   unsigned int additional_shares =
       StaticPrefs::security_tls_client_hello_send_p256_keyshare();
-  if (StaticPrefs::security_tls_enable_kyber() &&
-      range.max >= SSL_LIBRARY_VERSION_TLS_1_3) {
-    const SSLNamedGroup namedGroups[] = {
-        ssl_grp_kem_mlkem768x25519, ssl_grp_ec_curve25519, ssl_grp_ec_secp256r1,
-        ssl_grp_ec_secp384r1,       ssl_grp_ec_secp521r1,  ssl_grp_ffdhe_2048,
-        ssl_grp_ffdhe_3072};
-    if (SECSuccess !=
-        SSL_NamedGroupConfig(fd, namedGroups, std::size(namedGroups))) {
-      return NS_ERROR_FAILURE;
-    }
+  bool tls13 = range.max >= SSL_LIBRARY_VERSION_TLS_1_3;
+
+  AutoTArray<SSLNamedGroup, 8> namedGroups;
+  if (StaticPrefs::security_tls_enable_kyber() && tls13) {
+    namedGroups.AppendElement(ssl_grp_kem_mlkem768x25519);
     additional_shares += 1;
-  } else {
-    const SSLNamedGroup namedGroups[] = {
-        ssl_grp_ec_curve25519, ssl_grp_ec_secp256r1, ssl_grp_ec_secp384r1,
-        ssl_grp_ec_secp521r1,  ssl_grp_ffdhe_2048,   ssl_grp_ffdhe_3072};
-    // Skip the |ssl_grp_kem_mlkem768x25519| entry.
-    if (SECSuccess !=
-        SSL_NamedGroupConfig(fd, namedGroups, std::size(namedGroups))) {
-      return NS_ERROR_FAILURE;
-    }
+  }
+  namedGroups.AppendElement(ssl_grp_ec_curve25519);
+  namedGroups.AppendElement(ssl_grp_ec_secp256r1);
+  namedGroups.AppendElement(ssl_grp_ec_secp384r1);
+  namedGroups.AppendElement(ssl_grp_ec_secp521r1);
+  namedGroups.AppendElement(ssl_grp_ffdhe_2048);
+  namedGroups.AppendElement(ssl_grp_ffdhe_3072);
+
+  if (StaticPrefs::security_tls_enable_mlkem1024() && tls13) {
+    namedGroups.AppendElement(ssl_grp_kem_mlkem1024);
+  }
+
+  if (SECSuccess !=
+      SSL_NamedGroupConfig(fd, namedGroups.Elements(), namedGroups.Length())) {
+    return NS_ERROR_FAILURE;
   }
 
   // If additional_shares == 2, send mlkem768x25519, x25519, and p256.
@@ -1618,7 +1611,7 @@ static nsresult nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
   }
 
   // Enabling Certificate Compression Decoding mechanisms.
-  if (range.max >= SSL_LIBRARY_VERSION_TLS_1_3 &&
+  if (tls13 &&
       !(infoObject->GetProviderFlags() &
         (nsISocketProvider::BE_CONSERVATIVE | nsISocketProvider::IS_RETRY))) {
     SSLCertificateCompressionAlgorithm zlibAlg = {1, "zlib", nullptr,

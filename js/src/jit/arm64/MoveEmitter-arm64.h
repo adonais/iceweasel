@@ -30,7 +30,7 @@ class MoveEmitterARM64 {
   uint32_t pushedAtStart_;
 
   // This stores a stack offset to a spill location, snapshotting
-  // codegen->framePushed_ at the time it was allocated. It is -1 if no
+  // `masm.framePushed()` at the time it was allocated. It is -1 if no
   // stack space has been allocated for that particular spill.
   int32_t pushedAtCycle_;
 
@@ -70,8 +70,7 @@ class MoveEmitterARM64 {
   void emitGeneralMove(const MoveOperand& from, const MoveOperand& to);
 
   void emitMove(const MoveOp& move);
-  void breakCycle(const MoveOperand& from, const MoveOperand& to,
-                  MoveOp::Type type);
+  void breakCycle(const MoveOperand& to, MoveOp::Type type);
   void completeCycle(const MoveOperand& from, const MoveOperand& to,
                      MoveOp::Type type);
 
@@ -86,7 +85,6 @@ class MoveEmitterARM64 {
 
   void emit(const MoveResolver& moves);
   void finish();
-  void setScratchRegister(Register reg) {}
 };
 
 using MoveEmitter = MoveEmitterARM64;

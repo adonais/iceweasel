@@ -4,16 +4,16 @@
 
 #include "XULElementAccessibles.h"
 
-#include "LocalAccessible-inl.h"
 #include "BaseAccessibles.h"
 #include "DocAccessible-inl.h"
+#include "LocalAccessible-inl.h"
+#include "Relation.h"
+#include "States.h"
+#include "TextUpdater.h"
+#include "mozilla/a11y/Role.h"
 #include "nsAccUtils.h"
 #include "nsCoreUtils.h"
 #include "nsTextEquivUtils.h"
-#include "Relation.h"
-#include "mozilla/a11y/Role.h"
-#include "States.h"
-#include "TextUpdater.h"
 
 #ifdef A11Y_LOG
 #  include "Logging.h"

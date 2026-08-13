@@ -349,56 +349,6 @@
   }
 
   .section {
-    .customize-menu-checkbox-label {
-      font-size: inherit;
-      margin-inline-start: var(--space-xsmall);
-    }
-
-    .check-wrapper {
-      position: relative;
-      display: flex;
-    }
-
-    .customize-menu-checkbox {
-      margin-inline-start: var(--space-xxsmall);
-      width: 16px;
-      height: 16px;
-      vertical-align: middle;
-      border: $customize-menu-border-tint;
-      box-sizing: border-box;
-      border-radius: var(--border-radius-small);
-      appearance: none;
-      background-color: var(--newtab-element-secondary-color);
-      flex-shrink: 0;
-
-      &:hover {
-        background-color: var(--newtab-element-secondary-hover-color);
-      }
-    }
-
-    .customize-menu-checkbox:checked {
-      -moz-context-properties: fill;
-      fill: var(--newtab-primary-element-text-color);
-      background: url('chrome://global/skin/icons/check.svg') center no-repeat;
-      background-color: var(--newtab-primary-action-background);
-
-      &:hover {
-        background-color: var(--newtab-primary-element-hover-color);
-      }
-
-      &:active {
-        background-color: var(--newtab-primary-element-active-color);
-      }
-
-      @media (forced-colors: active) {
-        fill: $black;
-      }
-    }
-
-    .customize-menu-checkbox:active + .checkmark {
-      fill: var(--newtab-element-secondary-color);
-    }
-
     #shortcuts-toggle {
       display: flex;
       flex-direction: column;
@@ -439,19 +389,19 @@
         padding-block: var(--space-medium);
       }
 
-      .check-wrapper {
-        margin-block-end: var(--space-small);
+      .customize-menu-checkbox {
+        // Reset the wider --input-width that moz-toggle (#pocket-toggle) sets on
+        // its host; it inherits across the slot and would otherwise reserve a
+        // toggle-sized gap between the checkbox and its label.
+        --input-width: var(--size-item-small);
+
+        margin-block-end: var(--space-medium);
       }
 
       // Prevent focus outline clipping by allowing overflow
-      &:has(moz-box-button:focus-within) {
+      &:has(moz-box-button:focus-within),
+      &:has(.customize-menu-checkbox:focus-within) {
         overflow: visible;
-      }
-    }
-
-    .more-info-top-wrapper {
-      .check-wrapper {
-        margin-block-start: var(--space-large);
       }
     }
   }
@@ -522,36 +472,10 @@
   box-shadow: $shadow-focus;
 }
 
-// Make sure form elements under the "Shortcuts" subsection don't change position on focus
-// by always having a 2px box shadow around them - one that blends in with the background.
-.home-section .section {
-  .customize-menu-checkbox {
-    outline: 0;
-    box-shadow: 0 0 0 2px light-dark(var(--newtab-background-color), var(--newtab-background-color-dark));
-  }
-}
-
 // Move the Shortcuts dropdown slightly down so that the box shadow is not cut off at the top
 // in active & focus states.
 .home-section .section .selector {
   margin-block-start: var(--space-xxsmall)
-}
-
-// Improve accessibility of shortcuts dropdown and sponsored shortcuts checkbox
-// by setting a bright 2px box shadow in active and focus states.
-.home-section .section
-{
-  .customize-menu-checkbox {
-    &:is(:focus-visible) {
-      box-shadow: 0 0 0 2px var(--color-accent-primary);
-      outline: var(--focus-outline); // For Windows high-contrast mode
-    }
-
-    &:is(:active) {
-      box-shadow: 0 0 0 2px var(--color-accent-primary-active);
-      outline: 0;
-    }
-  }
 }
 
 .sections-mgmt-panel,

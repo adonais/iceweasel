@@ -628,7 +628,7 @@ static inline void calc_interp_skip_pred_flag(MACROBLOCK *const x,
 
   // Configure flags to skip chroma RD evaluation when skip_model_rd_uv is
   // enabled
-  if (cpi->sf.interp_sf.skip_model_rd_uv) {
+  if (cpi->sf.interp_sf.skip_model_rd_uv && num_planes > 1) {
     *skip_hor |= INTERP_EVAL_LUMA_SKIP_CHROMA;
     *skip_ver |= INTERP_EVAL_LUMA_SKIP_CHROMA;
   }

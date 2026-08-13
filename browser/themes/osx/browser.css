@@ -11,7 +11,7 @@
 @media (-moz-native-theme) {
   @media not (prefers-contrast) {
     :root:not([lwtheme]) {
-      @media (prefers-color-scheme: light) {
+      @media (prefers-color-scheme: light) and (not -moz-pref("browser.nova.enabled")) {
         --urlbar-box-background-color: #fafafa;
       }
       @media (prefers-color-scheme: dark) {

@@ -25,9 +25,6 @@ add_setup(async function setup() {
     "Expect en-US builtin dictionary to be registered"
   );
 
-  // Starts collecting the Addon Manager Telemetry events.
-  AddonTestUtils.hookAMTelemetryEvents();
-
   do_get_profile();
   Services.fog.initializeFOG();
 });
@@ -118,35 +115,11 @@ add_task(
     await addon.uninstall();
     await addon2.uninstall();
 
-    let amEvents = AddonTestUtils.getAMTelemetryEvents();
-
-    let amInstallEvents = amEvents
-      .filter(evt => evt.method === "install")
-      .map(evt => {
-        const { object, extra } = evt;
-        return { object, extra };
-      });
-
     const errorExtra = {
       step: "started",
       error: "ERROR_CORRUPT_FILE",
       install_origins: "0",
     };
-
-    Assert.deepEqual(
-      amInstallEvents.filter(evt => evt.object === "unknown"),
-      [
-        {
-          object: "unknown",
-          extra: errorExtra,
-        },
-        {
-          object: "unknown",
-          extra: errorExtra,
-        },
-      ],
-      "Got the expected install telemetry events for the corrupted dictionaries"
-    );
 
     Assert.deepEqual(
       AddonTestUtils.getAMGleanEvents("install", { addon_type: "unknown" }),
@@ -159,21 +132,6 @@ add_task(
 
     const extra1 = { addon_id: addon.id, install_origins: "0" };
     Assert.deepEqual(
-      amInstallEvents.filter(evt => evt.extra.addon_id === addon.id),
-      [
-        {
-          object: "dictionary",
-          extra: { step: "started", ...extra1 },
-        },
-        {
-          object: "dictionary",
-          extra: { step: "completed", ...extra1 },
-        },
-      ],
-      "Got the expected install telemetry events for the first installed dictionary"
-    );
-
-    Assert.deepEqual(
       AddonTestUtils.getAMGleanEvents("install", { addon_id: addon.id }),
       [
         { addon_type: "dictionary", step: "started", ...extra1 },
@@ -184,21 +142,6 @@ add_task(
 
     const extra2 = { addon_id: addon2.id, install_origins: "0" };
     Assert.deepEqual(
-      amInstallEvents.filter(evt => evt.extra.addon_id === addon2.id),
-      [
-        {
-          object: "dictionary",
-          extra: { step: "started", ...extra2 },
-        },
-        {
-          object: "dictionary",
-          extra: { step: "completed", ...extra2 },
-        },
-      ],
-      "Got the expected install telemetry events for the second installed dictionary"
-    );
-
-    Assert.deepEqual(
       AddonTestUtils.getAMGleanEvents("install", { addon_id: addon2.id }),
       [
         { addon_type: "dictionary", step: "started", ...extra2 },
@@ -206,27 +149,7 @@ add_task(
       ]
     );
 
-    let amUninstallEvents = amEvents
-      .filter(evt => evt.method === "uninstall")
-      .map(evt => {
-        const { object, value, extra } = evt;
-        return {
-          object,
-          value,
-          extra: { blocklist_state: extra.blocklist_state },
-        };
-      });
-
     const blocklist_state = `${Ci.nsIBlocklistService.STATE_NOT_BLOCKED}`;
-
-    Assert.deepEqual(
-      amUninstallEvents,
-      [
-        { object: "dictionary", value: addon.id, extra: { blocklist_state } },
-        { object: "dictionary", value: addon2.id, extra: { blocklist_state } },
-      ],
-      "Got the expected uninstall telemetry events"
-    );
 
     const baseGleanExtra = {
       addon_type: "dictionary",
@@ -291,9 +214,4 @@ SFX A   0       en         [^elr]
     !spellCheck.check(WORD),
     "Word should not pass check after add-on unloads"
   );
-});
-
-add_task(function teardown_telemetry_events() {
-  // Ignore any additional telemetry events collected in this file.
-  AddonTestUtils.getAMTelemetryEvents();
 });

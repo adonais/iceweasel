@@ -5,9 +5,9 @@
 #ifndef MOZILLA_GFX_FONTSRCURI_H
 #define MOZILLA_GFX_FONTSRCURI_H
 
+#include "PLDHashTable.h"
 #include "nsCOMPtr.h"
 #include "nsTString.h"
-#include "PLDHashTable.h"
 
 class nsIURI;
 

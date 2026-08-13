@@ -5,11 +5,10 @@
 #ifndef GFX_RENDERROOTSTATEMANAGER_H
 #define GFX_RENDERROOTSTATEMANAGER_H
 
-#include "mozilla/webrender/WebRenderAPI.h"
-
 #include "mozilla/layers/IpcResourceUpdateQueue.h"
 #include "mozilla/layers/SharedSurfacesChild.h"
 #include "mozilla/layers/WebRenderCommandBuilder.h"
+#include "mozilla/webrender/WebRenderAPI.h"
 #include "nsTHashSet.h"
 
 namespace mozilla {

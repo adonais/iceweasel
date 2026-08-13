@@ -6,6 +6,7 @@
 #define jit_JitHints_inl_h
 
 #include "jit/JitHints.h"
+
 #include "mozilla/HashFunctions.h"
 
 namespace js::jit {

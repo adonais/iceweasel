@@ -6,20 +6,20 @@
 
 #include "GLContext.h"
 #include "GLContextProvider.h"
+#include "RenderCompositorRecordedFrame.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/ProfilerMarkers.h"
-#include "mozilla/gfx/gfxVars.h"
+#include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/CompositionRecorder.h"
 #include "mozilla/layers/GpuFence.h"
 #include "mozilla/layers/NativeLayer.h"
 #include "mozilla/layers/ProfilerScreenshots.h"
 #include "mozilla/layers/SurfacePool.h"
-#include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/webrender/RenderTextureHost.h"
 #include "mozilla/webrender/RenderThread.h"
 #include "mozilla/widget/CompositorWidget.h"
-#include "RenderCompositorRecordedFrame.h"
 
 namespace mozilla::wr {
 

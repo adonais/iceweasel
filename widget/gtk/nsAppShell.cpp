@@ -2,38 +2,43 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "nsAppShell.h"
+
+#include <errno.h>
+#include <fcntl.h>
+#include <gdk/gdk.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <gdk/gdk.h>
-#include "nsAppShell.h"
-#include "nsBaseAppShell.h"
-#include "nsWindow.h"
-#include "mozilla/Logging.h"
-#include "prenv.h"
+
 #include "mozilla/BackgroundHangMonitor.h"
+#include "mozilla/GRefPtr.h"
+#include "mozilla/GUniquePtr.h"
 #include "mozilla/Hal.h"
+#include "mozilla/Logging.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/ProfilerThreadSleep.h"
-#include "mozilla/GUniquePtr.h"
-#include "mozilla/GRefPtr.h"
 #include "mozilla/StaticPrefs_widget.h"
 #include "mozilla/WidgetUtils.h"
-#include "nsIPowerManagerService.h"
+#include "nsAppShell.h"
+#include "nsBaseAppShell.h"
+#include "nsCRT.h"
 #include "nsIObserverService.h"
-#include "mozilla/Preferences.h"
+#include "nsIPowerManagerService.h"
+#include "nsWindow.h"
+#include "prenv.h"
 #ifdef MOZ_ENABLE_DBUS
 #  include <gio/gio.h>
+
 #  include "WidgetUtilsGtk.h"
 #endif
+#include "HeadlessScreenHelper.h"
+#include "ScreenHelperGTK.h"
 #include "WakeLockListener.h"
 #include "gfxPlatform.h"
-#include "nsAppRunner.h"
 #include "mozilla/XREAppData.h"
-#include "ScreenHelperGTK.h"
-#include "HeadlessScreenHelper.h"
 #include "mozilla/widget/ScreenManager.h"
+#include "nsAppRunner.h"
 #ifdef MOZ_WAYLAND
 #  include "nsWaylandDisplay.h"
 #endif
@@ -598,21 +603,66 @@ bool nsAppShell::ProcessNextNativeEvent(bool mayWait) {
   return didProcessEvent;
 }
 
+void nsAppShell::InitSessionRestore() {
+#ifdef MOZ_WAYLAND
+  if (WaylandDisplayGet()) {
+    WaylandDisplayGet()->SessionManagerInit();
+  }
+#endif
+}
+
+// We can't query widget_wayland_session_management_enabled_AtStartup()
+// from nsAppShell::Init() as it's too early and we don't have profile loaded.
+bool nsAppShell::IsSessionRestoreSupported() {
+#ifdef MOZ_WAYLAND
+  static bool isSupported = []() {
+    if (!WaylandDisplayGet() || !WaylandDisplayGet()->GetSessionManager()) {
+      LOGW(
+          "nsAppShell::IsSessionRestoreSupported(): SessionManager is "
+          "missing.");
+      return false;
+    }
+    if (!StaticPrefs::widget_wayland_session_management_enabled_AtStartup()) {
+      LOGW("nsAppShell::IsSessionRestoreSupported(): disabled by pref.");
+      return false;
+    }
+
+    GType waylandWindowType = g_type_from_name("GdkWaylandWindow");
+    bool supported =
+        waylandWindowType &&
+        g_signal_lookup("xdg-toplevel-realized", waylandWindowType);
+    if (!supported) {
+      LOGW(
+          "nsAppShell::IsSessionRestoreSupported(): xdg-toplevel-realized is "
+          "missing.");
+    }
+    return supported;
+  }();
+  return isSupported;
+#else
+  return false;
+#endif
+}
+
 SessionRestoreState nsAppShell::UpdateAndGetSessionState() {
   if (!sAppShell) {
     return eSessionRestoreFinished;
   }
-#ifdef MOZ_WAYLAND
-  // If session restore is not supported, report 'finished' as we don't want to
-  // block window creation.
-  if (!WaylandDisplayGet()->GetSessionManager()) {
+
+  // If session restore is not supported or disabled,
+  // report 'finished' as we don't want to block window creation.
+  if (!IsSessionRestoreSupported()) {
+    sAppShell->mSessionRestoreState = eSessionRestoreFinished;
     return eSessionRestoreFinished;
   }
-#endif
+
   // Check for browser.startup.page / re-open previous windows and tabs (session
   // restore enabled).
   if (sAppShell->mSessionRestoreState == eSessionDefault &&
       Preferences::GetInt("browser.startup.page", 0) == 3) {
+    LOGW(
+        "nsAppShell::UpdateAndGetSessionState(): session restore enabled, "
+        "restoring...");
     sAppShell->mSessionRestoreState = eSessionRestoring;
   }
   LOGW("nsAppShell::GetSessionState() state %d",
@@ -625,10 +675,16 @@ nsAppShell::Observe(nsISupports* aSubject, const char* aTopic,
                     const char16_t* aData) {
   LOGW("nsAppShell::Observe() topic %s", aTopic);
   if (!nsCRT::strcmp(aTopic, "sessionstore-restoring-on-startup")) {
-    mSessionRestoreState = eSessionRestoring;
+    if (IsSessionRestoreSupported()) {
+      LOGW("  mSessionRestoreState = eSessionRestoring");
+      mSessionRestoreState = eSessionRestoring;
+    }
   } else if (!nsCRT::strcmp(aTopic, "sessionstore-windows-restored")) {
-    mSessionRestoreState = eSessionRestoreFinished;
-    nsWindow::SessionRestoreFinished();
+    if (IsSessionRestoreSupported()) {
+      LOGW("  mSessionRestoreState = eSessionRestoreFinished");
+      mSessionRestoreState = eSessionRestoreFinished;
+      nsWindow::SessionRestoreFinished();
+    }
   } else {
     return nsBaseAppShell::Observe(aSubject, aTopic, aData);
   }

@@ -182,9 +182,11 @@ test_newtab({
       "No context menu found"
     );
 
-    const dismissBtn = content.document.querySelector(
-      ".top-sites li:nth-child(7) button"
-    );
+    const dismissBtn = content.document
+      .querySelector(
+        '.top-sites-list .context-menu [data-l10n-id="newtab-menu-dismiss"]'
+      )
+      .closest("button");
     dismissBtn.click();
 
     // Wait for Topsite to be removed
@@ -264,7 +266,7 @@ add_task(async function test_search_topsite_remove_engine() {
   SpecialPowers.spawn(browser, [], addContentHelpers);
 
   // Wait for React to render something
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       SpecialPowers.spawn(
         browser,

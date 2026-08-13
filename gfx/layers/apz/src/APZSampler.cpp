@@ -5,12 +5,12 @@
 #include "mozilla/layers/APZSampler.h"
 
 #include "AsyncPanZoomController.h"
+#include "TreeTraversal.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/layers/APZThreadUtils.h"
 #include "mozilla/layers/APZUtils.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/SynchronousTask.h"
-#include "TreeTraversal.h"
 #include "mozilla/webrender/WebRenderAPI.h"
 
 namespace mozilla {

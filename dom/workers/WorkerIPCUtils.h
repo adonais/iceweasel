@@ -4,6 +4,7 @@
 #ifndef _mozilla_dom_WorkerIPCUtils_h
 #define _mozilla_dom_WorkerIPCUtils_h
 
+#include "ipc/IPCMessageUtils.h"
 #include "mozilla/dom/BindingIPCUtils.h"
 
 // For RequestCredentials
@@ -20,22 +21,8 @@ template <>
 struct ParamTraits<mozilla::dom::WorkerType>
     : public mozilla::dom::WebIDLEnumSerializer<mozilla::dom::WorkerType> {};
 
-template <>
-struct ParamTraits<mozilla::dom::WorkerOptions> {
-  typedef mozilla::dom::WorkerOptions paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mType);
-    WriteParam(aWriter, aParam.mCredentials);
-    WriteParam(aWriter, aParam.mName);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mType) &&
-           ReadParam(aReader, &aResult->mCredentials) &&
-           ReadParam(aReader, &aResult->mName);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::WorkerOptions, mType,
+                                  mCredentials, mName);
 
 }  // namespace IPC
 

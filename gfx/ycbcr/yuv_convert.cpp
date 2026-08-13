@@ -437,7 +437,14 @@ ScaleYCbCrToRGB32(const uint8_t* y_buf,
       // libyuv does not support SIMD scaling on MSVC 64bit. See Bug 1295927.
       supports_sse3() ||
 #endif
+#if defined(MOZ_YCBCR_ROW_SSE)
+      // Only worth taking the deprecated path where the SSE row functions
+      // exist; otherwise it just falls back to LinearScaleYUVToRGB32Row_C and
+      // friends, which are no faster than libyuv.
       (supports_mmx() && supports_sse() && !supports_sse3());
+#else
+      false;
+#endif
   // The deprecated function only support BT601.
   // See Bug 1210357.
   if (yuv_color_space != YUVColorSpace::BT601) {

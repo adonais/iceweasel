@@ -20,7 +20,11 @@ async function getSandboxMessages(sandbox, code) {
   let { messages } = await AddonTestUtils.promiseConsoleOutput(async () => {
     Cu.evalInSandbox(code, sandbox, null, filename, 1);
 
-    // We need two trips through the event loop for this error to be reported.
+    // We need three trips through the event loop for this error to be reported:
+    // 1. FlushRejections (defers to event path)
+    // 2. NotifyUnhandledRejections (calls ReportRejectedPromise)
+    // 3. AsyncErrorReporter (logs to console)
+    await new Promise(executeSoon);
     await new Promise(executeSoon);
     await new Promise(executeSoon);
   });

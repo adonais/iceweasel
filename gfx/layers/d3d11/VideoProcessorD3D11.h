@@ -7,8 +7,8 @@
 
 #include <d3d11.h>
 
-#include "mozilla/gfx/2D.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/gfx/2D.h"
 #include "nsISupportsImpl.h"
 
 struct ID3D11Device;

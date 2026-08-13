@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>mailto test</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <script>
+      var x = (Math.random() + 1).toString(36).substring(7);
+      function addSingle() {
+        navigator.registerProtocolHandler("mailto", document.URL +
+          "/mailto/" + x + "/?from=%s");
+      }
+    </script>
+    <style>
+      button {
+        padding: 1em;
+        margin: 0.75em;
+        margin-left: 0;
+        cursor: pointer;
+        border-color: ThreeDshadow;
+        background-color: ButtonFace;
+        color: ButtonText;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>mailto:// test page</h1>
+    <button onclick='navigator.registerProtocolHandler("mailto",
+      document.URL + "/mailto/" + (Math.random() +
+      1).toString(36).substring(7) +"/?from=%s");'>
+      add random site as mailto handler
+    </button>
+    <button onclick="addSingle()">add a single site as mailto handler</button>
+    <button onclick='navigator.registerProtocolHandler("mailto", document.URL + "?something=%s")'>
+      add a steady site address
+    </button>
+    <br/>
+    <br/>
+    <a href="mailto:mailto-works@example.com?cc=cc-works@example.com&subject=It all works as expected :)">
+      mailto-link
+    </a>
+  </body>
+</html>

@@ -771,6 +771,8 @@ class WindowGlobalTargetActor extends BaseTargetActor {
         watchpoints: true,
         // Supports back and forward navigation
         navigation: true,
+        // Supports navigation by index
+        navigationByIndex: true,
       },
     };
 
@@ -1347,6 +1349,24 @@ class WindowGlobalTargetActor extends BaseTargetActor {
 
         this.webNavigation.goBack();
       }, "WindowGlobalTargetActor.prototype.goBack's delayed body")
+    );
+
+    return {};
+  }
+
+  gotoIndex(index) {
+    // Wait a tick so that the response packet can be dispatched before the
+    // subsequent navigation event packet.
+    Services.tm.dispatchToMainThread(
+      DevToolsUtils.makeInfallible(() => {
+        // This won't work while the browser is shutting down and we don't really
+        // care.
+        if (Services.startup.shuttingDown) {
+          return;
+        }
+
+        this.webNavigation.gotoIndex(index, true);
+      }, "WindowGlobalTargetActor.prototype.gotoIndex's delayed body")
     );
 
     return {};

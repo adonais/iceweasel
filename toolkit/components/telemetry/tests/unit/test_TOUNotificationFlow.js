@@ -103,10 +103,12 @@ add_setup(skipIfNotBrowser(), async () => {
 });
 
 add_setup(() => {
-  // In head.js, we force TOU pre-onboarding off in xpcshell so Telemetry isn't
-  // gated on Browser UI. Revert for these tests.
-  const TOS_ENABLED_PREF = "browser.preonboarding.enabled";
-  Services.prefs.clearUserPref(TOS_ENABLED_PREF);
+  // head.js turns pre-onboarding off in xpcshell so Telemetry isn't gated on
+  // browser UI, but this test needs the TOU flow on
+  Services.prefs
+    .getDefaultBranch("")
+    .setBoolPref("browser.preonboarding.enabled", true);
+  Services.prefs.clearUserPref("browser.preonboarding.enabled");
 });
 
 add_setup(() => {
@@ -156,6 +158,10 @@ add_task(skipIfNotBrowser(), async function test_feature_prefs() {
 
   unsetMinimumPolicyVersion();
   Services.prefs.clearUserPref(TOU_CURRENT_VERSION_PREF);
+  // Preonboarding is enabled by default, so we pin it off here so the enrolled vs.
+  // unenrolled `enabled` assertions below reflect the experiment, and not the
+  // default fallback pref.
+  Services.prefs.setBoolPref("browser.preonboarding.enabled", false);
 
   let doCleanup = await NimbusTestUtils.enrollWithFeatureConfig(
     {
@@ -215,11 +221,18 @@ add_task(skipIfNotBrowser(), async function test_feature_prefs() {
   Assert.ok(NimbusFeatures.preonboarding.getVariable("enabled"));
   assertPrefs(900, 899, "http://mochi.test/v900");
   await doCleanup();
+
+  // This task pinned browser.preonboarding.enabled off (as a user pref) for its
+  // enrolled/unenrolled assertions. Clear it so later tasks that don't enroll
+  // fall back to the enabled default set in add_setup.
+  Services.prefs.clearUserPref("browser.preonboarding.enabled");
 });
 
 async function doOneModalFlow(version) {
   let doCleanup = await enrollInPreonboardingExperiment(version);
 
+  // On Linux the modal is gated on an eligible distribution.
+  sinon.stub(Policy, "isEligibleOnLinux").returns(true);
   let displayStub = sinon.stub(Policy, "showModal").returns(true);
 
   // This will notify the user via a modal.
@@ -381,7 +394,9 @@ add_task(
       return;
     }
 
-    sinon.stub(Policy, "shouldEnableTOUAtRuntime").returns(false);
+    Services.prefs
+      .getDefaultBranch(null)
+      .setCharPref("distribution.id", "fedora");
     let modalStub = sinon.stub(Policy, "showModal").returns(true);
 
     fakeResetAcceptedPolicy();
@@ -398,6 +413,7 @@ add_task(
     );
 
     sinon.restore();
+    Services.prefs.getDefaultBranch(null).deleteBranch("distribution.id");
     fakeResetAcceptedPolicy();
   }
 );
@@ -410,7 +426,10 @@ add_task(
       return;
     }
 
-    sinon.stub(Policy, "shouldEnableTOUAtRuntime").returns(true);
+    // The full TOU modal shows on eligible Linux distributions.
+    Services.prefs
+      .getDefaultBranch(null)
+      .setCharPref("distribution.id", "mozilla-official");
     let modalStub = sinon.stub(Policy, "showModal").returns(true);
 
     fakeResetAcceptedPolicy();
@@ -433,6 +452,7 @@ add_task(
     );
 
     sinon.restore();
+    Services.prefs.getDefaultBranch(null).deleteBranch("distribution.id");
     fakeResetAcceptedPolicy();
   }
 );
@@ -604,6 +624,8 @@ add_task(
   async function test_user_tou_accepted_now_notification() {
     // User has *not* accepted yet; they will accept via the modal we display.
     const modalStub = sinon.stub(Policy, "showModal").returns(true);
+    // On Linux the modal is gated on an eligible distribution.
+    sinon.stub(Policy, "isEligibleOnLinux").returns(true);
     let doCleanup = await enrollInPreonboardingExperiment(999);
     TelemetryReportingPolicy.reset();
 
@@ -665,6 +687,8 @@ add_task(
   async function test_user_tou_ignored_no_notification() {
     // User has *not* accepted yet; they will accept via the modal we display.
     const modalStub = sinon.stub(Policy, "showModal").returns(true);
+    // On Linux the modal is gated on an eligible distribution.
+    sinon.stub(Policy, "isEligibleOnLinux").returns(true);
     let doCleanup = await enrollInPreonboardingExperiment(999);
     TelemetryReportingPolicy.reset();
 
@@ -724,6 +748,8 @@ add_task(
   async function test_user_tou_accept_later_notification() {
     // User has *not* accepted yet; they will accept via the modal we display.
     const modalStub = sinon.stub(Policy, "showModal").returns(true);
+    // On Linux the modal is gated on an eligible distribution.
+    sinon.stub(Policy, "isEligibleOnLinux").returns(true);
     let doCleanup = await enrollInPreonboardingExperiment(999);
     TelemetryReportingPolicy.reset();
 
@@ -906,9 +932,13 @@ add_task(async function test_canUpload_allowed_when_both_bypass_prefs_true() {
     Services.prefs.clearUserPref(TelemetryUtils.Preferences.BypassNotification);
     Services.prefs.clearUserPref("termsofuse.bypassNotification");
     Services.prefs.clearUserPref("browser.preonboarding.enabled");
+    sinon.restore();
     TelemetryReportingPolicy.reset();
   };
 
+  // These scenarios test the TOU-should-show path, which on Linux only
+  // applies to eligible distributions.
+  sinon.stub(Policy, "isEligibleOnLinux").returns(true);
   Services.prefs.setBoolPref(
     TelemetryUtils.Preferences.BypassNotification,
     true
@@ -955,6 +985,13 @@ add_task(async function test_canUpload_allowed_when_both_bypass_prefs_true() {
 });
 
 add_task(async function test_canUpload_reconfigures_when_nimbus_not_ready() {
+  if (AppConstants.platform === "linux") {
+    // On non-eligible Linux the TOU gate in _shouldShowTOU() short-circuits
+    // before Nimbus is consulted, so canUpload() does not reconfigure from
+    // Nimbus on this platform. Covered on macOS/Windows.
+    info("Skipping test on Linux where TOU is gated before Nimbus is read");
+    return;
+  }
   const cleanup = () => {
     Services.prefs.clearUserPref("browser.preonboarding.enabled");
     Services.prefs.clearUserPref(TelemetryUtils.Preferences.BypassNotification);
@@ -1012,6 +1049,7 @@ add_task(
       Services.prefs.clearUserPref(
         "datareporting.policy.dataSubmissionPolicyAcceptedVersion"
       );
+      sinon.restore();
       TelemetryReportingPolicy.reset();
       await unenroll();
     };
@@ -1036,6 +1074,8 @@ add_task(
     );
 
     // Make _shouldShowTOU() return true
+    // On Linux this path only applies to eligible distros.
+    sinon.stub(Policy, "isEligibleOnLinux").returns(true);
     Services.prefs.setBoolPref("browser.preonboarding.enabled", true);
     const unenroll = await NimbusTestUtils.enrollWithFeatureConfig(
       {
@@ -1073,6 +1113,7 @@ add_task(
       true
     );
     sinon.stub(Policy, "shouldEnableTOUAtRuntime").returns(true);
+    sinon.stub(Policy, "isEligibleOnLinux").returns(true);
     TelemetryReportingPolicy.reset();
 
     Assert.ok(
@@ -1100,6 +1141,7 @@ add_task(
     Services.prefs.setStringPref(TOU_ACCEPTED_DATE_PREF, String(Date.now()));
     Services.prefs.setIntPref(TOU_ACCEPTED_VERSION_PREF, 4);
     sinon.stub(Policy, "shouldEnableTOUAtRuntime").returns(true);
+    sinon.stub(Policy, "isEligibleOnLinux").returns(true);
     TelemetryReportingPolicy.reset();
 
     Assert.ok(
@@ -1134,6 +1176,36 @@ add_task(
 
     sinon.restore();
     Services.prefs.clearUserPref("browser.preonboarding.enabled");
+    Services.prefs.clearUserPref(TelemetryUtils.Preferences.BypassNotification);
+    TelemetryReportingPolicy.reset();
+  }
+);
+
+add_task(
+  skipIfNotBrowser(),
+  async function test_linux_non_mozilla_distro_upload_unblocked_when_preonboarding_enabled() {
+    if (AppConstants.platform !== "linux") {
+      info("Skipping test on non-Linux platforms");
+      return;
+    }
+
+    Services.prefs.setBoolPref(
+      TelemetryUtils.Preferences.BypassNotification,
+      true
+    );
+    // shouldEnableTOUAtRuntime=true causes _configureFromNimbus to load the
+    // default TOU message (enabled=true, screens populated).
+    sinon.stub(Policy, "shouldEnableTOUAtRuntime").returns(true);
+    // isEligibleOnLinux=false simulates a non-official Linux distribution.
+    sinon.stub(Policy, "isEligibleOnLinux").returns(false);
+    TelemetryReportingPolicy.reset();
+
+    Assert.ok(
+      TelemetryReportingPolicy.canUpload(),
+      "TOU should not block upload for non-Mozilla Linux even when preonboarding is fully configured"
+    );
+
+    sinon.restore();
     Services.prefs.clearUserPref(TelemetryUtils.Preferences.BypassNotification);
     TelemetryReportingPolicy.reset();
   }
@@ -1192,7 +1264,7 @@ add_task(async function test_shouldEnableTOUAtRuntime() {
     return;
   }
 
-  for (const [id, expected] of [
+  const DISTRO_CASES = [
     ["mozilla-official", true],
     ["mozilla-flatpak", true],
     ["mozilla-rpm", true],
@@ -1204,12 +1276,19 @@ add_task(async function test_shouldEnableTOUAtRuntime() {
     ["redhat", false],
     ["fedora", false],
     ["", false],
-  ]) {
+  ];
+
+  for (const [id, expected] of DISTRO_CASES) {
     defaultBranch.setCharPref("distribution.id", id);
     Assert.equal(
       Policy.shouldEnableTOUAtRuntime(),
       expected,
       `shouldEnableTOUAtRuntime() is ${expected} for distribution.id "${id}"`
+    );
+    Assert.equal(
+      Policy.isEligibleOnLinux(),
+      expected,
+      `isEligibleOnLinux() is ${expected} for distribution.id "${id}"`
     );
   }
 

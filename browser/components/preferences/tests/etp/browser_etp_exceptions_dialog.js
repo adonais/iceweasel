@@ -29,8 +29,9 @@ async function addETPPermission(doc) {
 
   url.value = TRACKING_URL;
   url.dispatchEvent(new Event("input", { bubbles: true }));
+  await buttonDisableETP.updateComplete;
   is(
-    buttonDisableETP.hasAttribute("disabled"),
+    buttonDisableETP.disabled,
     false,
     "Disable ETP button is selectable after url is entered"
   );
@@ -56,8 +57,9 @@ async function removeETPPermission(doc) {
   permissionsBox.selectItem(elements[0]);
   let removePermissionButton =
     dialog.document.getElementById("removePermission");
+  await removePermissionButton.updateComplete;
   is(
-    removePermissionButton.hasAttribute("disabled"),
+    removePermissionButton.disabled,
     false,
     "The button should be clickable to remove selected item"
   );

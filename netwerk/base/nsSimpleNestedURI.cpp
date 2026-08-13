@@ -2,16 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "base/basictypes.h"
-
-#include "nsNetCID.h"
-#include "nsNetUtil.h"
-#include "nsIClassInfoImpl.h"
 #include "nsSimpleNestedURI.h"
+
+#include "base/basictypes.h"
+#include "mozilla/ipc/URIUtils.h"
+#include "nsIClassInfoImpl.h"
 #include "nsIObjectInputStream.h"
 #include "nsIObjectOutputStream.h"
-
-#include "mozilla/ipc/URIUtils.h"
+#include "nsNetCID.h"
+#include "nsNetUtil.h"
 
 namespace mozilla {
 namespace net {
@@ -133,7 +132,29 @@ bool nsSimpleNestedURI::Deserialize(const mozilla::ipc::URIParams& aParams) {
   if (!nsSimpleURI::Deserialize(params.simpleParams())) return false;
 
   mInnerURI = DeserializeURI(params.innerURI());
+  if (!mInnerURI || !IsValidInnerURI(mInnerURI)) {
+    return false;
+  }
+
   return true;
+}
+
+bool nsSimpleNestedURI::IsValidInnerURI(nsIURI* aInnerURI) {
+  if (!Scheme().EqualsLiteral("view-source")) {
+    return false;
+  }
+
+  nsAutoCString innerSpec;
+  if (NS_FAILED(aInnerURI->GetAsciiSpec(innerSpec))) {
+    return false;
+  }
+
+  nsAutoCString pathQueryRef;
+  if (NS_FAILED(GetPathQueryRef(pathQueryRef))) {
+    return false;
+  }
+
+  return innerSpec == pathQueryRef;
 }
 
 // nsINestedURI

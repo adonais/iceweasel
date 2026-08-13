@@ -15,6 +15,8 @@ prefs = [
   # Disable tab previews as some tests click on the toolbar.
   "browser.tabs.hoverPreview.enabled=false",
   "browser.tabs.groups.hoverPreview.enabled=false",
+  # TODO(Bug 2039395): adapt this test to the new bookmarks sidebar panel and remove this sidebar.updateBookmarks.enabled pushPrefEnv
+  "sidebar.updatedBookmarks.enabled=false"
 ]
 
 ["browser_addBookmarkForFrame.js"]
@@ -23,6 +25,8 @@ skip-if = [
 ]
 
 ["browser_autoshow_bookmarks_toolbar.js"]
+
+["browser_bhTooltip_folder_cropping.js"]
 
 ["browser_bookmarkMenu_hiddenWindow.js"]
 run-if = [

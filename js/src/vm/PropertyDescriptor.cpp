@@ -9,7 +9,8 @@
 #include <stddef.h>  // size_t
 #include <string.h>  // strlen
 
-#include "jstypes.h"              // JS_PUBLIC_API
+#include "jstypes.h"  // JS_PUBLIC_API
+
 #include "js/Context.h"           // js::AssertHeapIsIdle
 #include "js/Id.h"                // jsid
 #include "js/RootingAPI.h"        // JS::Rooted, JS::Handle, JS::MutableHandle

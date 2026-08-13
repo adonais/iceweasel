@@ -5,7 +5,6 @@
 #include "nsCOMArray.h"
 
 #include "mozilla/OperatorNewExtensions.h"
-
 #include "nsCOMPtr.h"
 
 // This specialization is private to nsCOMArray.

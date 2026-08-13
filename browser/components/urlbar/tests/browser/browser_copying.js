@@ -714,7 +714,7 @@ add_task(async function loadingPageInBlank() {
     content.document.querySelector("a").click();
   });
   const newtab = await onNewTabCreated;
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       newtab.linkedBrowser.browsingContext.mostRecentLoadingSessionHistoryEntry
   );

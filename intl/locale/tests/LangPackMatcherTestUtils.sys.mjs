@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { LangPackMatcher } from "resource://gre/modules/LangPackMatcher.sys.mjs";
+import { LangPackMatcher } from "moz-src:///intl/locale/LangPackMatcher.sys.mjs";
 
 /**
  * LangPackMatcher.sys.mjs calls out to to the addons store, which involves network requests.

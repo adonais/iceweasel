@@ -4,7 +4,3 @@
 MOCHITEST_MANIFESTS += [
     "mochitest.toml",
 ]
-
-ANDROID_INSTRUMENTATION_MANIFESTS += [
-    "instrumentation.toml",
-]

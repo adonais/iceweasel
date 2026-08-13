@@ -15,6 +15,7 @@ import mozilla.components.browser.state.action.RestoreCompleteAction
 import mozilla.components.browser.state.action.TabGroupAction
 import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.action.TabListAction.RestoreAction.RestoreLocation
+import mozilla.components.browser.state.action.TranslationsAction
 import mozilla.components.browser.state.action.UndoAction
 import mozilla.components.browser.state.selector.findNormalOrPrivateTabByUrl
 import mozilla.components.browser.state.selector.findNormalOrPrivateTabByUrlIgnoringFragment
@@ -355,6 +356,9 @@ class TabsUseCases(
             state: RecoverableBrowserState,
             restoreLocation: RestoreLocation = RestoreLocation.END,
         ) {
+            state.isTranslationsEngineSupported?.let { isEngineSupported ->
+                store.dispatch(TranslationsAction.SetEngineSupportedAction(isEngineSupported))
+            }
             invoke(
                 tabs = state.tabs,
                 tabPartitions = state.tabPartitions,

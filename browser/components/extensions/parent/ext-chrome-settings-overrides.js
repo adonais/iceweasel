@@ -54,14 +54,20 @@ ChromeUtils.defineLazyGetter(this, "homepagePopup", () => {
       let gBrowser = win.gBrowser;
       let tab = gBrowser.selectedTab;
       await replaceUrlInTab(gBrowser, tab, Services.io.newURI("about:blank"));
-      Services.prefs.addObserver(HOMEPAGE_PREF, async function prefObserver() {
-        Services.prefs.removeObserver(HOMEPAGE_PREF, prefObserver);
-        let loaded = waitForTabLoaded(tab);
-        win.BrowserCommands.home();
-        await loaded;
-        // Manually trigger an event in case this is controlled again.
-        popup.open();
-      });
+      Services.prefs.addObserver(
+        HOMEPAGE_PREF,
+        async function prefObserver(subject, topic, data) {
+          if (data !== HOMEPAGE_PREF) {
+            return;
+          }
+          Services.prefs.removeObserver(HOMEPAGE_PREF, prefObserver);
+          let loaded = waitForTabLoaded(tab);
+          win.BrowserCommands.home();
+          await loaded;
+          // Manually trigger an event in case this is controlled again.
+          popup.open();
+        }
+      );
     },
   });
 });

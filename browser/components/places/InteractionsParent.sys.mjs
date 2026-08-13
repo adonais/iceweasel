@@ -18,7 +18,11 @@ export class InteractionsParent extends JSWindowActorParent {
       case "Interactions:PageLoaded":
         lazy.Interactions.registerNewInteraction(
           this.browsingContext.embedderElement,
-          msg.data
+          {
+            url: this.manager.documentURI.specIgnoringRef,
+            referrer: msg.data.referrer,
+            isActive: this.browsingContext.isActive,
+          }
         );
         break;
       case "Interactions:PageHide":

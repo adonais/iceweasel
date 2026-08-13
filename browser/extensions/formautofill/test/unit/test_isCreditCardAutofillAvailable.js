@@ -37,12 +37,12 @@ add_task(async function test_detect_unsupportedRegion() {
   await addon.reload();
 
   Assert.equal(
-    FormAutofill.isAutofillCreditCardsAvailable,
+    FormAutofill.isAutofillTypeAvailable("creditCard"),
     false,
     "Credit card autofill should not be available"
   );
   Assert.equal(
-    FormAutofill.isAutofillCreditCardsEnabled,
+    FormAutofill.isAutofillTypeEnabled("creditCard"),
     false,
     "Credit card autofill should not be enabled"
   );
@@ -72,12 +72,12 @@ add_task(async function test_detect_supportedRegion() {
   await addon.reload();
 
   Assert.equal(
-    FormAutofill.isAutofillCreditCardsAvailable,
+    FormAutofill.isAutofillTypeAvailable("creditCard"),
     true,
     "Credit card autofill should be available"
   );
   Assert.equal(
-    FormAutofill.isAutofillCreditCardsEnabled,
+    FormAutofill.isAutofillTypeEnabled("creditCard"),
     true,
     "Credit card autofill should be enabled"
   );

@@ -2573,6 +2573,174 @@ WasmFunctionScope* WasmInstanceObject::getFunctionScope(
   return funcScope;
 }
 
+#ifdef ENABLE_WASM_COMPONENTS
+// ============================================================================
+// WebAssembly.ComponentInstance class and methods
+
+const JSClassOps WasmComponentInstanceObject::classOps_ = {
+    .finalize = WasmComponentInstanceObject::finalize,
+    .trace = WasmComponentInstanceObject::trace,
+};
+
+const JSClass WasmComponentInstanceObject::class_ = {
+    "WebAssembly.ComponentInstance",
+    JSCLASS_DELAY_METADATA_BUILDER |
+        JSCLASS_HAS_RESERVED_SLOTS(
+            WasmComponentInstanceObject::RESERVED_SLOTS) |
+        JSCLASS_FOREGROUND_FINALIZE,
+    &WasmComponentInstanceObject::classOps_,
+    &WasmComponentInstanceObject::classSpec_,
+};
+
+const JSClass& WasmComponentInstanceObject::protoClass_ = PlainObject::class_;
+
+static constexpr char WasmComponentInstanceName[] = "ComponentInstance";
+
+const ClassSpec WasmComponentInstanceObject::classSpec_ = {
+    CreateWasmConstructor<WasmComponentInstanceObject,
+                          WasmComponentInstanceName>,
+    GenericCreatePrototype<WasmComponentInstanceObject>,
+    WasmComponentInstanceObject::static_methods,
+    nullptr,
+    WasmComponentInstanceObject::methods,
+    WasmComponentInstanceObject::properties,
+    nullptr,
+    ClassSpec::DontDefineConstructor,
+};
+
+const JSPropertySpec WasmComponentInstanceObject::properties[] = {
+    JS_STRING_SYM_PS(toStringTag, "WebAssembly.ComponentInstance",
+                     JSPROP_READONLY),
+    JS_PS_END,
+};
+
+const JSFunctionSpec WasmComponentInstanceObject::methods[] = {
+    JS_FS_END,
+};
+
+const JSFunctionSpec WasmComponentInstanceObject::static_methods[] = {
+    JS_FS_END,
+};
+
+bool WasmComponentInstanceObject::isNewborn() const {
+  MOZ_ASSERT(is<WasmComponentInstanceObject>());
+  return getReservedSlot(INSTANCE_SLOT).isUndefined();
+}
+
+/* static */
+void WasmComponentInstanceObject::finalize(JS::GCContext* gcx, JSObject* obj) {
+  WasmComponentInstanceObject& instance =
+      obj->as<WasmComponentInstanceObject>();
+  if (!instance.isNewborn()) {
+    ComponentInstance::destroy(&instance.instance());
+    gcx->removeCellMemory(obj, sizeof(ComponentInstance),
+                          MemoryUse::WasmComponentInstanceInstance);
+  }
+}
+
+/* static */
+void WasmComponentInstanceObject::trace(JSTracer* trc, JSObject* obj) {
+  WasmComponentInstanceObject& instanceObj =
+      obj->as<WasmComponentInstanceObject>();
+  if (!instanceObj.isNewborn()) {
+    instanceObj.instance().tracePrivate(trc);
+  }
+}
+
+/* static */
+WasmComponentInstanceObject* WasmComponentInstanceObject::create(
+    JSContext* cx, HandleObject proto, const SharedComponent component) {
+  ComponentInstance* instance = nullptr;
+  Rooted<WasmComponentInstanceObject*> obj(cx);
+
+  {
+    // We must delay creating metadata for this object until after all its
+    // slots have been initialized. We must also create the metadata before
+    // calling init as that may allocate new objects.
+    AutoSetNewObjectMetadata metadata(cx);
+    obj = NewObjectWithGivenProto<WasmComponentInstanceObject>(cx, proto);
+    if (!obj) {
+      return nullptr;
+    }
+
+    // The INSTANCE_SLOT may not be initialized if instance allocation fails,
+    // leading to an observable "newborn" state in tracing/finalization.
+    MOZ_ASSERT(obj->isNewborn());
+
+    // Create this just before constructing the instance to avoid rooting
+    // hazards.
+    instance = ComponentInstance::create(cx, obj, component);
+    if (!instance) {
+      return nullptr;
+    }
+
+    InitReservedSlot(obj, INSTANCE_SLOT, instance,
+                     MemoryUse::WasmComponentInstanceInstance);
+    MOZ_ASSERT(!obj->isNewborn());
+  }
+
+  if (!instance->init(cx)) {
+    return nullptr;
+  }
+
+  return obj;
+}
+
+/* static */
+bool WasmComponentInstanceObject::construct(JSContext* cx, unsigned argc,
+                                            Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  Log(cx, "sync new ComponentInstance() started");
+
+  if (!ThrowIfNotConstructing(cx, args, "ComponentInstance")) {
+    return false;
+  }
+
+  if (!args.requireAtLeast(cx, "WebAssembly.ComponentInstance", 1)) {
+    return false;
+  }
+
+  if (!args[0].isObject()) {
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                             JSMSG_WASM_BAD_COMPONENT_ARG);
+    return false;
+  }
+
+  Rooted<WasmComponentObject*> componentObj(
+      cx, args[0].toObject().maybeUnwrapIf<WasmComponentObject>());
+  if (!componentObj) {
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                             JSMSG_WASM_BAD_COMPONENT_ARG);
+    return false;
+  }
+
+  // TODO(wasm-cm): Introduce imports
+
+  RootedObject proto(
+      cx, GetWasmConstructorPrototype(cx, args, JSProto_WasmComponentInstance));
+  if (!proto) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  Rooted<WasmComponentInstanceObject*> instanceObj(cx);
+  if (!componentObj->component().instantiate(cx, proto, &instanceObj)) {
+    return false;
+  }
+
+  Log(cx, "sync new ComponentInstance() succeeded");
+
+  args.rval().setObject(*instanceObj);
+  return true;
+}
+
+ComponentInstance& WasmComponentInstanceObject::instance() const {
+  MOZ_ASSERT(!isNewborn());
+  return *(ComponentInstance*)getReservedSlot(INSTANCE_SLOT).toPrivate();
+}
+#endif
+
 // ============================================================================
 // WebAssembly.Memory class and methods
 
@@ -2751,7 +2919,7 @@ bool WasmMemoryObject::bufferGetterImpl(JSContext* cx, const CallArgs& args) {
       cx, &args.thisv().toObject().as<WasmMemoryObject>());
 
   Rooted<ArrayBufferObjectMaybeShared*> buffer(cx, &memoryObj->buffer());
-  MOZ_RELEASE_ASSERT(buffer->isWasm() && !buffer->isPreparedForAsmJS());
+  MOZ_RELEASE_ASSERT(buffer->isWasm());
 
   ArrayBufferObjectMaybeShared* refreshedBuffer =
       WasmMemoryObject::refreshBuffer(cx, memoryObj, buffer);
@@ -2866,7 +3034,7 @@ bool WasmMemoryObject::toFixedLengthBufferImpl(JSContext* cx,
       cx, &args.thisv().toObject().as<WasmMemoryObject>());
 
   Rooted<ArrayBufferObjectMaybeShared*> buffer(cx, &memory->buffer());
-  MOZ_RELEASE_ASSERT(buffer->isWasm() && !buffer->isPreparedForAsmJS());
+  MOZ_RELEASE_ASSERT(buffer->isWasm());
   // If IsFixedLengthArrayBuffer(buffer) is true, return buffer.
   if (!buffer->isResizable()) {
     ArrayBufferObjectMaybeShared* refreshedBuffer =
@@ -3319,7 +3487,6 @@ WasmTableObject* WasmTableObject::create(JSContext* cx, const TableType& type,
   MOZ_ASSERT(obj->isNewborn());
 
   TableDesc td(type, Nothing(),
-               /*isAsmJS*/ false,
                /*isImported=*/true, /*isExported=*/true);
 
   SharedTable table = Table::create(cx, td, obj);
@@ -3655,7 +3822,6 @@ bool WasmTableObject::fillRange(JSContext* cx, uint32_t index, uint32_t length,
   }
   switch (tab.repr()) {
     case TableRepr::Func:
-      MOZ_RELEASE_ASSERT(!tab.isAsmJS());
       tab.fillFuncRef(index, length, FuncRef::fromAnyRefUnchecked(any.get()),
                       cx);
       break;
@@ -5286,6 +5452,10 @@ class CompileStreamTask : public PromiseHelperTask, public JS::StreamConsumer {
   enum StreamState { Env, Code, Tail, Closed };
   ExclusiveWaitableData<StreamState> streamState_;
 
+  // Total number of bytes streamed so far. Written and read on the stream
+  // thread only; used to cap the total module size (see consumeChunk).
+  size_t bytesLength_;
+
   // Immutable:
   const bool instantiate_;
   const PersistentRootedObject importObj_;
@@ -5376,6 +5546,22 @@ class CompileStreamTask : public PromiseHelperTask, public JS::StreamConsumer {
   }
 
   bool consumeChunk(const uint8_t* begin, size_t length) override {
+    // Enforce the MaxModuleBytes limit early.
+    if (length > MaxModuleBytes - bytesLength_) {
+      // The state tells us whether we are before or after the helper thread
+      // started.
+      if (streamState_.lock().get() == Env) {
+        return rejectAndDestroyBeforeHelperThreadStarted(StreamOOMCode);
+      }
+      return rejectAndDestroyAfterHelperThreadStarted(StreamOOMCode);
+    }
+    bytesLength_ += length;
+    return consumeChunkImpl(begin, length);
+  }
+
+  // The chunk-processing worker. consumeChunk() re-dispatches trailing bytes to
+  // the next state through this method so that they are counted once, above.
+  bool consumeChunkImpl(const uint8_t* begin, size_t length) {
     switch (streamState_.lock().get()) {
       case Env: {
         if (!envBytes_->append(begin, length)) {
@@ -5413,7 +5599,7 @@ class CompileStreamTask : public PromiseHelperTask, public JS::StreamConsumer {
         streamState_.lock().get() = Code;
 
         if (extraBytes) {
-          return consumeChunk(begin + length - extraBytes, extraBytes);
+          return consumeChunkImpl(begin + length - extraBytes, extraBytes);
         }
 
         return true;
@@ -5437,7 +5623,7 @@ class CompileStreamTask : public PromiseHelperTask, public JS::StreamConsumer {
         streamState_.lock().get() = Tail;
 
         if (uint32_t extraBytes = length - copyLength) {
-          return consumeChunk(begin + copyLength, extraBytes);
+          return consumeChunkImpl(begin + copyLength, extraBytes);
         }
 
         return true;
@@ -5567,6 +5753,7 @@ class CompileStreamTask : public PromiseHelperTask, public JS::StreamConsumer {
                     HandleObject importObj)
       : PromiseHelperTask(cx, promise),
         streamState_(mutexid::WasmStreamStatus, Env),
+        bytesLength_(0),
         instantiate_(instantiate),
         importObj_(cx, importObj),
         compileArgs_(&compileArgs),
@@ -6020,8 +6207,8 @@ static JSObject* CreateWebAssemblyObject(JSContext* cx, JSProtoKey key) {
   MOZ_RELEASE_ASSERT(HasSupport(cx));
 
   RootedObject proto(cx, &cx->global()->getObjectPrototype());
-  return NewTenuredObjectWithGivenProto(cx, &WasmNamespaceObject::class_,
-                                        proto);
+  return NewObjectWithGivenProto(cx, &WasmNamespaceObject::class_, proto,
+                                 {.newKind = TenuredObject});
 }
 
 struct NameAndProtoKey {
@@ -6113,6 +6300,13 @@ static bool WebAssemblyClassFinish(JSContext* cx, HandleObject object,
                                                 JSProto_WasmComponent};
     if (!WebAssemblyDefineConstructor(cx, wasm, componentEntry, &ctorValue,
                                       &id)) {
+      return false;
+    }
+
+    constexpr NameAndProtoKey componentInstanceEntry = {
+        "ComponentInstance", JSProto_WasmComponentInstance};
+    if (!WebAssemblyDefineConstructor(cx, wasm, componentInstanceEntry,
+                                      &ctorValue, &id)) {
       return false;
     }
   }

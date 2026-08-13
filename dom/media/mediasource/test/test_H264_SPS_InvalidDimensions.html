@@ -1,0 +1,62 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>MSE: HTMLVideoElement behaviour when fed an H.264 init segment with an oversized SPS picture width.</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script type="text/javascript" src="mediasource.js"></script>
+  <script type="text/javascript" src="h264_sps_utils.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+</head>
+<body>
+<pre id="test">
+<script class="testbody" type="text/javascript">
+
+SimpleTest.waitForExplicitFinish();
+
+runWithMSE(async (ms, video) => {
+  await once(ms, "sourceopen");
+  ok(true, "MediaSource opened");
+
+  const sb = ms.addSourceBuffer("video/mp4");
+
+  // Fetch a known-good init segment to use as the chassis. The splice below
+  // only rewrites the avcC SPS, so the container's display dimensions (read
+  // from tkhd) are unchanged and are what the video element must fall back to.
+  info("Fetching bipbop_videoinit.mp4 as chassis");
+  const initBuffer = await fetchWithXHR("bipbop/bipbop_videoinit.mp4");
+  const { width: containerWidth, height: containerHeight } =
+    parseDisplayDimensions(initBuffer);
+  info(`Container display dimensions: ${containerWidth}x${containerHeight}`);
+
+  // Craft an SPS with a very large pic_width_in_mbs_minus1 so the computed
+  // picture width is too large to be usable. The parser rejects it, so the
+  // demuxer falls back to the container's display dimensions (400x300). The
+  // init segment is therefore accepted and loadedmetadata fires with the
+  // container size.
+  const craftedSps = buildSPSNALU(0x0FFFFFFE, 9);
+  const malformedInit = spliceSPSIntoInitSegment(initBuffer, craftedSps);
+  info(`Crafted init segment: ${malformedInit.length} bytes`);
+
+  // Register the listener before appending. The init segment must be accepted
+  // and surface metadata with the container dimensions; otherwise loadedmetadata
+  // never fires and the test times out at the harness level.
+  const loadedMetadata = once(video, "loadedmetadata");
+
+  info("Appending crafted init segment via SourceBuffer");
+  sb.appendBuffer(malformedInit);
+  await loadedMetadata;
+
+  info(`videoWidth=${video.videoWidth}, videoHeight=${video.videoHeight}, ` +
+       `readyState=${video.readyState}`);
+  is(video.videoWidth, containerWidth,
+     "videoWidth falls back to the container display width");
+  is(video.videoHeight, containerHeight,
+     "videoHeight falls back to the container display height");
+
+  SimpleTest.finish();
+});
+
+</script>
+</pre>
+</body>
+</html>

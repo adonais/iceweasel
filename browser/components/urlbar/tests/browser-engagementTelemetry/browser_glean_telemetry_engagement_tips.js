@@ -43,8 +43,8 @@ add_task(async function selected_result_tip() {
     const provider = new UrlbarTestUtils.TestProvider({
       results: [
         new UrlbarResult({
-          type: UrlbarUtils.RESULT_TYPE.TIP,
-          source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+          type: UrlbarShared.RESULT_TYPE.TIP,
+          source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
           payload: {
             type,
             helpUrl: "https://example.com/",
@@ -76,7 +76,7 @@ add_task(async function selected_result_tip() {
       EventUtils.synthesizeKey("VK_RETURN");
       await deferred.promise;
 
-      assertEngagementTelemetry([
+      await assertEngagementTelemetry([
         {
           selected_result: expected,
           results: expected,
@@ -160,8 +160,8 @@ add_task(async function learn_more_link() {
   const provider = new UrlbarTestUtils.TestProvider({
     results: [
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.TIP,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        type: UrlbarShared.RESULT_TYPE.TIP,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         payload: {
           type: "test",
           titleL10n: { id: "urlbar-search-tips-confirm" },
@@ -190,7 +190,7 @@ add_task(async function learn_more_link() {
     info("Wait until expected url is loaded in the current tab");
     let newTab = await newTabOpened;
 
-    assertEngagementTelemetry([
+    await assertEngagementTelemetry([
       {
         selected_result: "tip_unknown",
         engagement_type: "help",
@@ -213,6 +213,6 @@ async function doInterventionTest(keyword, type, dialog, expectedTelemetry) {
     EventUtils.synthesizeKey("VK_RETURN");
     await onDialog;
 
-    assertEngagementTelemetry(expectedTelemetry);
+    await assertEngagementTelemetry(expectedTelemetry);
   });
 }

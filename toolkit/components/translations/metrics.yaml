@@ -78,15 +78,9 @@ translations:
       extracted_code_units:
         type: quantity
         description: The length of the page text sample that was used for detection.
-      extraction_time:
-        type: quantity
-        description: The time it took to extract a sample of page text, in ms.
       identification_time:
         type: quantity
         description: The time it took to identify a language from the extracted text, in ms.
-      total_time:
-        type: quantity
-        description: The total time it took to extract page text and identify it, in ms.
       confident:
         type: boolean
         description: Whether the language detection was confident in the result.

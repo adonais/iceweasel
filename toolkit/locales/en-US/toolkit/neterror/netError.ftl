@@ -34,6 +34,14 @@ neterror-view-certificate-link = View Certificate
 
 neterror-pref-reset = It looks like your network security settings might be causing this. Do you want the default settings to be restored?
 
+## Shown on about:neterror and about:certerror when the SSLKEYLOGFILE
+## environment variable is set, which causes { -brand-short-name } to log TLS
+## session keys that can be used to decrypt encrypted network traffic.
+
+neterror-sslkeylogging-warning =
+    .heading = Your connection may not be private
+    .message = An app or service may see your encrypted traffic from this site.
+
 ## Specific error messages
 
 neterror-generic-error = { -brand-short-name } can’t load this page for some reason.

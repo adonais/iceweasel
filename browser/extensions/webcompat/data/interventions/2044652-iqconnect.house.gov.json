@@ -1,0 +1,17 @@
+{
+  "label": "iqconnect.house.gov",
+  "bugs": {
+    "2044652": {
+      "issue": "broken-interactive-elements",
+      "matches": ["*://iqconnect.house.gov/*.aspx*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "js": ["bug2044652-iqconnect.house.gov-fix-forms.js"]
+      }
+    }
+  ]
+}

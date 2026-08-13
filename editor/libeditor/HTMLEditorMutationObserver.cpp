@@ -374,7 +374,10 @@ void HTMLEditor::DoContentInserted(nsIContent* aChild,
   }
 
   // We don't need to handle our own modifications
-  if (!GetTopLevelEditSubAction() && container->IsEditable()) {
+  // (If firing textupdate, then we do want to run spell check,
+  //  since the textupdate handler may update the DOM arbitrarily.)
+  if ((!GetTopLevelEditSubAction() || IsFiringTextUpdate()) &&
+      container->IsEditable()) {
     if (EditorUtils::IsPaddingBRElementForEmptyEditor(*aChild)) {
       // Ignore insertion of the padding <br> element.
       return;
@@ -411,7 +414,7 @@ void HTMLEditor::DoContentInserted(nsIContent* aChild,
       RefPtr<nsRange> range = nsRange::Create(aChild);
       range->SelectNodesInContainer(container, aChild, endContent);
       DebugOnly<nsresult> rvIgnored =
-          mInlineSpellChecker->SpellCheckRange(range);
+          mInlineSpellChecker->SpellCheckRangeIgnoringWordAtCaret(range);
       NS_WARNING_ASSERTION(
           rvIgnored == NS_ERROR_NOT_INITIALIZED || NS_SUCCEEDED(rvIgnored),
           "mozInlineSpellChecker::SpellCheckRange() failed, but ignored");
@@ -485,8 +488,12 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void HTMLEditor::CharacterDataChanged(
   if (MOZ_LOG_TEST(gHTMLEditorMutationLog, LogLevel::Info)) {
     MaybeLogCharacterDataChanged(aContent, aInfo);
   }
+  // We don't need to handle our own modifications
+  // (If firing textupdate, then we do want to run spell check,
+  //  since the textupdate handler may update the DOM arbitrarily.)
   if (!mInlineSpellChecker || !aContent->IsEditable() ||
-      GetTopLevelEditSubAction() != EditSubAction::eNone) {
+      (GetTopLevelEditSubAction() != EditSubAction::eNone &&
+       !IsFiringTextUpdate())) {
     return;
   }
 
@@ -497,7 +504,8 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void HTMLEditor::CharacterDataChanged(
 
   RefPtr<nsRange> range = nsRange::Create(aContent);
   range->SelectNodesInContainer(parent, aContent, aContent);
-  DebugOnly<nsresult> rvIgnored = mInlineSpellChecker->SpellCheckRange(range);
+  DebugOnly<nsresult> rvIgnored =
+      mInlineSpellChecker->SpellCheckRangeIgnoringWordAtCaret(range);
 }
 
 nsresult HTMLEditor::RunOrScheduleOnModifyDocument(

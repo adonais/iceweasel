@@ -183,6 +183,50 @@ describe("useWidgetDnD - interactive descendant guard", () => {
     document.body.removeChild(article);
   });
 
+  it("aborts the drag when mousedown was inside an open dialog (modal should not drag the widget)", () => {
+    const { result } = setup();
+    const article = makeArticle("sportsWidget");
+    const dialog = document.createElement("dialog");
+    dialog.setAttribute("open", "");
+    const dialogContent = document.createElement("div");
+    dialog.appendChild(dialogContent);
+    article.appendChild(dialog);
+    document.body.appendChild(article);
+
+    act(() => {
+      result.current.handleMouseDown({ target: dialogContent });
+    });
+    const e = dragEvent({ currentTarget: article, target: article });
+    act(() => {
+      result.current.handleDragStart(e, "sportsWidget");
+    });
+    expect(e.preventDefault).toHaveBeenCalled();
+    expect(result.current.draggedId).toBe(null);
+
+    document.body.removeChild(article);
+  });
+
+  it("aborts the drag when mousedown was directly on the dialog backdrop", () => {
+    const { result } = setup();
+    const article = makeArticle("sportsWidget");
+    const dialog = document.createElement("dialog");
+    dialog.setAttribute("open", "");
+    article.appendChild(dialog);
+    document.body.appendChild(article);
+
+    act(() => {
+      result.current.handleMouseDown({ target: dialog });
+    });
+    const e = dragEvent({ currentTarget: article, target: article });
+    act(() => {
+      result.current.handleDragStart(e, "sportsWidget");
+    });
+    expect(e.preventDefault).toHaveBeenCalled();
+    expect(result.current.draggedId).toBe(null);
+
+    document.body.removeChild(article);
+  });
+
   it("does not abort the drag when mousedown was on an anchor (anchors should drag the widget)", () => {
     const { result } = setup();
     const article = makeArticle("weather");

@@ -281,7 +281,7 @@ add_task(async function test_pages_context_menu() {
       await clickOnItem(browser, menuitems, "context-pdfjs-delete-page");
       await pagesEditedPromise;
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         async () =>
           (await countElements(browser, "#thumbnailsView .thumbnail")) ===
           thumbnailCount - 1,
@@ -308,7 +308,7 @@ add_task(async function test_pages_context_menu() {
       await clickOnItem(browser, menuitems, "context-pdfjs-cut-page");
       await cutEditedPromise;
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         async () =>
           (await countElements(browser, "#thumbnailsView .thumbnail")) ===
           countAfterDelete - 1,

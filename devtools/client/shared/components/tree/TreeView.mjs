@@ -138,6 +138,8 @@ class TreeView extends Component {
       bucketLargeArrays: PropTypes.bool,
       // Custom row click callback
       onClickRow: PropTypes.func,
+      // Row select callback
+      onRowSelected: PropTypes.func,
       // Row context menu event handler
       onContextMenuRow: PropTypes.func,
       // Tree context menu event handler
@@ -243,6 +245,7 @@ class TreeView extends Component {
     this.onSort = this.onSort.bind(this);
     this.getMembers = this.getMembers.bind(this);
     this.renderRows = this.renderRows.bind(this);
+    this.onRowSelected = this.onRowSelected.bind(this);
   }
 
   // FIXME: https://bugzilla.mozilla.org/show_bug.cgi?id=1774507
@@ -280,8 +283,13 @@ class TreeView extends Component {
     );
   }
 
-  componentDidUpdate() {
+  componentDidUpdate(prevProps, prevState) {
     const selected = this.getSelectedRow();
+
+    if (prevState && prevState.selected != this.state.selected) {
+      this.onRowSelected();
+    }
+
     if (selected || this.state.active) {
       return;
     }
@@ -525,6 +533,15 @@ class TreeView extends Component {
     }
 
     scrollIntoView(element, { ...options });
+  }
+
+  onRowSelected() {
+    const onRowSelected = this.props.onRowSelected;
+
+    if (onRowSelected && this.state.selected) {
+      const selectedRowPath = this.state.selected;
+      onRowSelected(selectedRowPath);
+    }
   }
 
   selectRow(row, options = {}) {

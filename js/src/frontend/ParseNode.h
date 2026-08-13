@@ -139,8 +139,7 @@ class FunctionBox;
   F(YieldStarExpr, UnaryNode)                                             \
   F(LexicalScope, LexicalScopeNode)                                       \
   F(LetDecl, DeclarationListNode)                                         \
-  F(ImportDecl, BinaryNode)                                               \
-  F(ImportSourceDecl, BinaryNode)                                         \
+  F(ImportDecl, ImportDeclarationNode)                                    \
   F(ImportSpecList, ListNode)                                             \
   F(ImportSpec, BinaryNode)                                               \
   F(ImportNamespaceSpec, UnaryNode)                                       \
@@ -174,8 +173,7 @@ class FunctionBox;
   F(SuperCallExpr, CallNode)                                              \
   F(SetThis, BinaryNode)                                                  \
   F(ImportMetaExpr, BinaryNode)                                           \
-  F(CallImportExpr, BinaryNode)                                           \
-  F(CallImportSourceExpr, BinaryNode)                                     \
+  F(CallImportExpr, CallImportNode)                                       \
   F(CallImportSpec, BinaryNode)                                           \
   F(InitExpr, BinaryNode)                                                 \
                                                                           \
@@ -403,15 +401,15 @@ inline bool IsTypeofKind(ParseNodeKind kind) {
  * ImportAttributeList (ListNode)
  *   head: list of N ImportAttribute nodes
  *   count: N >= 0 (N = 0 for `with {key0: "value", key1: "value", ...}`)
- * ImportDecl (BinaryNode)
- *   left: ImportSpecList import specifiers
+ * ImportDecl (ImportDeclarationNode)
+ *   phase: Evaluation for `import ...`, Source for `import source ...`
+ *   left: ImportSpecList import specifiers (Evaluation phase), or
+ *         String imported binding (Source phase)
  *   right: ImportModuleRequest module request
  * ImportModuleRequest (BinaryNode)
  *   left: String module specifier
- *   right: ImportAttributeList import attributes
- * ImportSourceDecl (BinaryNode)
- *   left: String imported binding
- *   right: ImportModuleRequest module request
+ *   right: ImportAttributeList import attributes (Evaluation phase), or
+ *          PosHolder (Source phase, which forbids attributes)
  * ImportSpecList (ListNode)
  *   head: list of N ImportSpec nodes
  *   count: N >= 0 (N = 0 for `import {} from ...`)
@@ -621,6 +619,8 @@ inline bool IsTypeofKind(ParseNodeKind kind) {
 #define FOR_EACH_PARSENODE_SUBCLASS(MACRO) \
   MACRO(BinaryNode)                        \
   MACRO(AssignmentNode)                    \
+  MACRO(ImportDeclarationNode)             \
+  MACRO(CallImportNode)                    \
   MACRO(CaseClause)                        \
   MACRO(ClassMethod)                       \
   MACRO(ClassField)                        \
@@ -1081,6 +1081,46 @@ class AssignmentNode : public BinaryNode {
     MOZ_ASSERT_IF(match, node.is<BinaryNode>());
     return match;
   }
+};
+
+// `import ... from ...` and `import source ... from ...` declarations. The
+// import phase distinguishes the two: for the Source phase `left()` is the
+// imported binding Name, otherwise it is the ImportSpecList.
+class ImportDeclarationNode : public BinaryNode {
+  ImportPhase phase_;
+
+ public:
+  ImportDeclarationNode(const TokenPos& pos, ParseNode* importClause,
+                        ParseNode* moduleRequest, ImportPhase phase)
+      : BinaryNode(ParseNodeKind::ImportDecl, pos, importClause, moduleRequest),
+        phase_(phase) {}
+
+  static bool test(const ParseNode& node) {
+    bool match = node.isKind(ParseNodeKind::ImportDecl);
+    MOZ_ASSERT_IF(match, node.is<BinaryNode>());
+    return match;
+  }
+
+  ImportPhase phase() const { return phase_; }
+};
+
+// `import(...)` and `import.source(...)` dynamic import calls. The import phase
+// distinguishes the two.
+class CallImportNode : public BinaryNode {
+  ImportPhase phase_;
+
+ public:
+  CallImportNode(ParseNode* importHolder, ParseNode* spec, ImportPhase phase)
+      : BinaryNode(ParseNodeKind::CallImportExpr, importHolder, spec),
+        phase_(phase) {}
+
+  static bool test(const ParseNode& node) {
+    bool match = node.isKind(ParseNodeKind::CallImportExpr);
+    MOZ_ASSERT_IF(match, node.is<BinaryNode>());
+    return match;
+  }
+
+  ImportPhase phase() const { return phase_; }
 };
 
 class ForNode : public BinaryNode {
@@ -2033,6 +2073,11 @@ class PropertyAccessBase : public BinaryNode {
     return match;
   }
 
+  bool isSuper() const {
+    // ParseNodeKind::SuperBase cannot result from any expression syntax.
+    return expression().isKind(ParseNodeKind::SuperBase);
+  }
+
   NameNode& key() const { return right()->as<NameNode>(); }
 
   // Method used by BytecodeEmitter::emitPropLHS for optimization.
@@ -2045,14 +2090,10 @@ class PropertyAccessBase : public BinaryNode {
   TaggedParserAtomIndex name() const { return right()->as<NameNode>().atom(); }
 };
 
-class PropertyAccess : public PropertyAccessBase {
+// A PropertyAccess or ArgumentsLength: a property access that isn't part of an
+// optional chain.
+class NonOptionalPropertyAccessBase : public PropertyAccessBase {
  public:
-  PropertyAccess(ParseNode* lhs, NameNode* name, uint32_t begin, uint32_t end)
-      : PropertyAccessBase(ParseNodeKind::DotExpr, lhs, name, begin, end) {
-    MOZ_ASSERT(lhs);
-    MOZ_ASSERT(name);
-  }
-
   static bool test(const ParseNode& node) {
     bool match = node.isKind(ParseNodeKind::DotExpr) ||
                  node.isKind(ParseNodeKind::ArgumentsLength);
@@ -2060,30 +2101,44 @@ class PropertyAccess : public PropertyAccessBase {
     return match;
   }
 
-  bool isSuper() const {
-    // ParseNodeKind::SuperBase cannot result from any expression syntax.
-    return expression().isKind(ParseNodeKind::SuperBase);
-  }
-
  protected:
   using PropertyAccessBase::PropertyAccessBase;
 };
 
-class ArgumentsLength : public PropertyAccess {
+class PropertyAccess : public NonOptionalPropertyAccessBase {
+ public:
+  PropertyAccess(ParseNode* lhs, NameNode* name, uint32_t begin, uint32_t end)
+      : NonOptionalPropertyAccessBase(ParseNodeKind::DotExpr, lhs, name, begin,
+                                      end) {
+    MOZ_ASSERT(lhs);
+    MOZ_ASSERT(name);
+  }
+
+  // Note: ArgumentsLength is deliberately not a PropertyAccess to ensure the
+  // arguments length optimization is respected.
+  static bool test(const ParseNode& node) {
+    bool match = node.isKind(ParseNodeKind::DotExpr);
+    MOZ_ASSERT_IF(match, node.is<NonOptionalPropertyAccessBase>());
+    return match;
+  }
+};
+
+// The optimizable |arguments.length| intrinsic. Deliberately not a
+// PropertyAccess to ensure we always respect the arguments.length optimization.
+class ArgumentsLength : public NonOptionalPropertyAccessBase {
  public:
   ArgumentsLength(ParseNode* lhs, NameNode* name, uint32_t begin, uint32_t end)
-      : PropertyAccess(ParseNodeKind::ArgumentsLength, lhs, name, begin, end) {
+      : NonOptionalPropertyAccessBase(ParseNodeKind::ArgumentsLength, lhs, name,
+                                      begin, end) {
     MOZ_ASSERT(lhs);
     MOZ_ASSERT(name);
   }
 
   static bool test(const ParseNode& node) {
     bool match = node.isKind(ParseNodeKind::ArgumentsLength);
-    MOZ_ASSERT_IF(match, node.is<PropertyAccessBase>());
+    MOZ_ASSERT_IF(match, node.is<NonOptionalPropertyAccessBase>());
     return match;
   }
-
-  bool isSuper() const { return false; }
 };
 
 class OptionalPropertyAccess : public PropertyAccessBase {

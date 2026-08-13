@@ -33,29 +33,38 @@ struct DeclarationTraits;
 // Specialization for inline style (specified values)
 struct InlineStyleDeclarations {};
 
-template <>
-struct DeclarationTraits<InlineStyleDeclarations> {
-  static StylePropertyTypedValueList GetAll(nsStyledElement* aStyledElement,
-                                            const CSSPropertyId& aPropertyId,
-                                            ErrorResult& aRv) {
-    MOZ_ASSERT(aStyledElement);
-
-    auto valueList = StylePropertyTypedValueList::None();
-
-    RefPtr block = aStyledElement->GetInlineStyleDeclaration();
-    if (!block) {
-      return valueList;
-    }
-
-    if (!Servo_DeclarationBlock_GetPropertyTypedValueList(block, &aPropertyId,
-                                                          &valueList)) {
-      aRv.ThrowTypeError("Invalid property");
-      return valueList;
-    }
-
+static StylePropertyTypedValueList DeclarationBlockGetAll(
+    const StyleLockedDeclarationBlock* aBlock, const CSSPropertyId& aPropertyId,
+    ErrorResult& aRv) {
+  auto valueList = StylePropertyTypedValueList::None();
+  if (!aBlock) {
     return valueList;
   }
+  if (!Servo_DeclarationBlock_GetPropertyTypedValueList(aBlock, &aPropertyId,
+                                                        &valueList)) {
+    aRv.ThrowTypeError("Invalid property");
+    return valueList;
+  }
+  return valueList;
+}
 
+static uint32_t DeclarationBlockHas(const StyleLockedDeclarationBlock* aBlock,
+                                    const CSSPropertyId& aProp) {
+  return aBlock && Servo_DeclarationBlock_HasProperty(aBlock, &aProp);
+}
+
+static uint32_t DeclarationBlockSize(
+    const StyleLockedDeclarationBlock* aBlock) {
+  return aBlock ? Servo_DeclarationBlock_Count(aBlock) : 0;
+}
+
+static bool DeclarationBlockKeyAt(const StyleLockedDeclarationBlock* aBlock,
+                                  uint32_t aIndex, CSSPropertyId& aId) {
+  return aBlock && Servo_DeclarationBlock_GetAt(aBlock, aIndex, &aId);
+}
+
+template <>
+struct DeclarationTraits<InlineStyleDeclarations> {
   static URLExtraData* GetURLExtraData(nsStyledElement* aStyledElement) {
     MOZ_ASSERT(aStyledElement);
 
@@ -89,6 +98,45 @@ struct DeclarationTraits<ComputedStyleDeclarations> {
     return valueList;
   }
 
+  static bool Has(Element* aElement, const CSSPropertyId& aId) {
+    RefPtr style = nsComputedDOMStyle::GetComputedStyle(aElement);
+    if (!style) {
+      return false;
+    }
+    if (!aId.IsCustom()) {
+      return nsComputedDOMStyle::HasNonCustomProperty(aId.mId);
+    }
+    return Servo_ComputedValues_HasCustomProperty(style, aId.mCustomName.get());
+  }
+
+  static uint32_t Size(Element* aElement) {
+    RefPtr style = nsComputedDOMStyle::GetComputedStyle(aElement);
+    if (!style) {
+      return 0;
+    }
+    return nsComputedDOMStyle::NonCustomPropertyCount() +
+           Servo_GetCustomPropertiesCount(style);
+  }
+
+  static bool GetKeyAt(Element* aElement, uint32_t aIndex, CSSPropertyId& aId) {
+    RefPtr style = nsComputedDOMStyle::GetComputedStyle(aElement);
+    if (!style) {
+      return false;
+    }
+    uint32_t nonCustomCount = nsComputedDOMStyle::NonCustomPropertyCount();
+    if (aIndex < nonCustomCount) {
+      aId = CSSPropertyId(nsComputedDOMStyle::NonCustomPropertyAt(aIndex));
+      return true;
+    }
+    uint32_t customPropIndex = aIndex - nonCustomCount;
+    nsAtom* prop = Servo_GetCustomPropertyNameAt(style, customPropIndex);
+    if (!prop) {
+      return false;
+    }
+    aId = CSSPropertyId::FromCustomName(prop);
+    return true;
+  }
+
   static URLExtraData* GetURLExtraData(Element* aElement) {
     MOZ_ASSERT(aElement);
 
@@ -100,23 +148,6 @@ struct DeclarationTraits<ComputedStyleDeclarations> {
 struct StyleRuleDeclarations {};
 template <>
 struct DeclarationTraits<StyleRuleDeclarations> {
-  static StylePropertyTypedValueList GetAll(const CSSStyleRule* aRule,
-                                            const CSSPropertyId& aPropertyId,
-                                            ErrorResult& aRv) {
-    MOZ_ASSERT(aRule);
-
-    auto valueList = StylePropertyTypedValueList::None();
-
-    StyleLockedDeclarationBlock& block = aRule->GetDeclarationBlock();
-    if (!Servo_DeclarationBlock_GetPropertyTypedValueList(&block, &aPropertyId,
-                                                          &valueList)) {
-      aRv.ThrowTypeError("Invalid property");
-      return valueList;
-    }
-
-    return valueList;
-  }
-
   static URLExtraData* GetURLExtraData(const CSSStyleRule* aRule) {
     MOZ_ASSERT(aRule);
 
@@ -189,26 +220,18 @@ void StylePropertyMapReadOnly::Get(const nsACString& aProperty,
   }
 
   // Step 2.
-  NonCustomCSSPropertyId id = nsCSSProps::LookupProperty(aProperty);
-  if (id == eCSSProperty_UNKNOWN) {
+  auto propertyId = CSSPropertyId::Parse(aProperty);
+  if (!propertyId.IsValid()) {
     aRv.ThrowTypeError("Invalid property: "_ns + aProperty);
     return;
   }
 
-  auto propertyId = CSSPropertyId::FromIdOrCustomProperty(id, aProperty);
-
-  // Step 3.
-  const Declarations& declarations = mDeclarations;
-
-  // Step 4.
-  auto valueList = declarations.GetAll(propertyId, aRv);
+  // Steps 3 and 4.
+  nsTArray<RefPtr<CSSStyleValue>> styleValues;
+  GetAll(propertyId, styleValues, aRv);
   if (aRv.Failed()) {
     return;
   }
-
-  nsTArray<RefPtr<CSSStyleValue>> styleValues;
-  CSSStyleValue::Create(mParent, propertyId, std::move(valueList), styleValues);
-
   if (!styleValues.IsEmpty()) {
     aRetVal.SetAsCSSStyleValue() = styleValues[0];
   } else {
@@ -228,46 +251,66 @@ void StylePropertyMapReadOnly::GetAll(const nsACString& aProperty,
   }
 
   // Step 2.
-  NonCustomCSSPropertyId id = nsCSSProps::LookupProperty(aProperty);
-  if (id == eCSSProperty_UNKNOWN) {
+  auto propertyId = CSSPropertyId::Parse(aProperty);
+  if (!propertyId.IsValid()) {
     aRv.ThrowTypeError("Invalid property: "_ns + aProperty);
     return;
   }
 
-  auto propertyId = CSSPropertyId::FromIdOrCustomProperty(id, aProperty);
+  // Steps 3 and 4.
+  GetAll(propertyId, aRetVal, aRv);
+}
 
+void StylePropertyMapReadOnly::GetAll(const CSSPropertyId& aProperty,
+                                      nsTArray<RefPtr<CSSStyleValue>>& aRetVal,
+                                      ErrorResult& aRv) const {
   // Step 3.
   const Declarations& declarations = mDeclarations;
-
   // Step 4.
-  auto valueList = declarations.GetAll(propertyId, aRv);
+  auto valueList = declarations.GetAll(aProperty, aRv);
   if (aRv.Failed()) {
     return;
   }
-
-  CSSStyleValue::Create(mParent,
-                        CSSPropertyId::FromIdOrCustomProperty(id, aProperty),
-                        std::move(valueList), aRetVal);
+  CSSStyleValue::Create(mParent, aProperty, std::move(valueList), aRetVal);
 }
 
 bool StylePropertyMapReadOnly::Has(const nsACString& aProperty,
                                    ErrorResult& aRv) const {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-  return false;
+  // Step 2.
+  auto propertyId = CSSPropertyId::Parse(aProperty);
+  if (!propertyId.IsValid()) {
+    aRv.ThrowTypeError("Invalid property: "_ns + aProperty);
+    return false;
+  }
+  // Steps 3 and 4.
+  return mDeclarations.Has(propertyId);
 }
 
-uint32_t StylePropertyMapReadOnly::Size() const { return 0; }
+uint32_t StylePropertyMapReadOnly::Size() const { return mDeclarations.Size(); }
 
-uint32_t StylePropertyMapReadOnly::GetIterableLength() const { return 0; }
+uint32_t StylePropertyMapReadOnly::GetIterableLength() const {
+  return mDeclarations.Size();
+}
 
-const nsACString& StylePropertyMapReadOnly::GetKeyAtIndex(
-    uint32_t aIndex) const {
-  return EmptyCString();
+nsCString StylePropertyMapReadOnly::GetKeyAtIndex(uint32_t aIndex) const {
+  nsCString result;
+  CSSPropertyId id{eCSSProperty_UNKNOWN};
+  if (!mDeclarations.GetKeyAt(aIndex, id)) {
+    return result;
+  }
+  id.ToString(result);
+  return result;
 }
 
 nsTArray<RefPtr<CSSStyleValue>> StylePropertyMapReadOnly::GetValueAtIndex(
     uint32_t aIndex) const {
-  return nsTArray<RefPtr<CSSStyleValue>>();
+  nsTArray<RefPtr<CSSStyleValue>> result;
+  CSSPropertyId id{eCSSProperty_UNKNOWN};
+  if (!mDeclarations.GetKeyAt(aIndex, id)) {
+    return result;
+  }
+  GetAll(id, result, IgnoreErrors());
+  return result;
 }
 
 // end of StylePropertyMapReadOnly Web IDL implementation
@@ -286,16 +329,58 @@ StylePropertyTypedValueList StylePropertyMapReadOnly::Declarations::GetAll(
     const CSSPropertyId& aPropertyId, ErrorResult& aRv) const {
   switch (mKind) {
     case Kind::Inline:
-      return DeclarationTraits<InlineStyleDeclarations>::GetAll(
-          mStyledElement, aPropertyId, aRv);
+      return DeclarationBlockGetAll(mStyledElement->GetInlineStyleDeclaration(),
+                                    aPropertyId, aRv);
 
     case Kind::Computed:
       return DeclarationTraits<ComputedStyleDeclarations>::GetAll(
           mElement, aPropertyId, aRv);
 
     case Kind::Rule:
-      return DeclarationTraits<StyleRuleDeclarations>::GetAll(mRule,
-                                                              aPropertyId, aRv);
+      return DeclarationBlockGetAll(&mRule->GetDeclarationBlock(), aPropertyId,
+                                    aRv);
+  }
+  MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Bad kind value!");
+}
+
+bool StylePropertyMapReadOnly::Declarations::Has(
+    const CSSPropertyId& aPropertyId) const {
+  switch (mKind) {
+    case Kind::Inline:
+      return DeclarationBlockHas(mStyledElement->GetInlineStyleDeclaration(),
+                                 aPropertyId);
+    case Kind::Computed:
+      return DeclarationTraits<ComputedStyleDeclarations>::Has(mElement,
+                                                               aPropertyId);
+    case Kind::Rule:
+      return DeclarationBlockHas(&mRule->GetDeclarationBlock(), aPropertyId);
+  }
+  MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Bad kind value!");
+}
+
+uint32_t StylePropertyMapReadOnly::Declarations::Size() const {
+  switch (mKind) {
+    case Kind::Inline:
+      return DeclarationBlockSize(mStyledElement->GetInlineStyleDeclaration());
+    case Kind::Computed:
+      return DeclarationTraits<ComputedStyleDeclarations>::Size(mElement);
+    case Kind::Rule:
+      return DeclarationBlockSize(&mRule->GetDeclarationBlock());
+  }
+  MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Bad kind value!");
+}
+
+bool StylePropertyMapReadOnly::Declarations::GetKeyAt(
+    uint32_t aIndex, CSSPropertyId& aId) const {
+  switch (mKind) {
+    case Kind::Inline:
+      return DeclarationBlockKeyAt(mStyledElement->GetInlineStyleDeclaration(),
+                                   aIndex, aId);
+    case Kind::Computed:
+      return DeclarationTraits<ComputedStyleDeclarations>::GetKeyAt(
+          mElement, aIndex, aId);
+    case Kind::Rule:
+      return DeclarationBlockKeyAt(&mRule->GetDeclarationBlock(), aIndex, aId);
   }
   MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Bad kind value!");
 }

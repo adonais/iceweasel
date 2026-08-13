@@ -3,10 +3,9 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ARIAMap.h"
-#include "nsAccUtils.h"
 #include "States.h"
-
 #include "mozilla/dom/Element.h"
+#include "nsAccUtils.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;

@@ -102,11 +102,11 @@ NonCustomCSSPropertyId nsCSSProps::LookupPropertyByIDLName(
   if (!gPropertyIDLNameTable->Get(aPropertyIDLName, &res)) {
     return eCSSProperty_UNKNOWN;
   }
-  MOZ_ASSERT(res < eCSSProperty_COUNT);
+  MOZ_ASSERT(res < eCSSProperty_COUNT_with_aliases);
   if (!IsEnabled(res, aEnabled)) {
     return eCSSProperty_UNKNOWN;
   }
-  return res;
+  return Servo_Property_ResolveAlias(res);
 }
 
 template <typename Id, size_t N>
@@ -114,6 +114,7 @@ static Maybe<Id> LookupDescriptor(
     const nsACString& aName,
     const nsCSSProps::DescriptorTableEntry<Id> (&aTable)[N]) {
   for (const auto& entry : aTable) {
+    // XXX should probably handle aliases but doesn't right now.
     if (aName.LowerCaseEqualsASCII(entry.mName.get(), entry.mName.Length())) {
       return Some(entry.mId);
     }

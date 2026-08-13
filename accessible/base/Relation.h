@@ -5,9 +5,9 @@
 #ifndef mozilla_a11y_relation_h_
 #define mozilla_a11y_relation_h_
 
-#include "AccIterator.h"
-
 #include <memory>
+
+#include "AccIterator.h"
 
 namespace mozilla {
 namespace a11y {

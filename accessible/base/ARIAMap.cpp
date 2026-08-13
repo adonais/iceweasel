@@ -5,20 +5,17 @@
 #include "ARIAMap.h"
 
 #include "AccAttributes.h"
-#include "nsAccUtils.h"
-#include "nsCoreUtils.h"
-#include "mozilla/a11y/Role.h"
 #include "States.h"
-
-#include "nsAttrName.h"
-#include "nsGenericHTMLElement.h"
-#include "nsWhitespaceTokenizer.h"
-
 #include "mozilla/BinarySearch.h"
+#include "mozilla/a11y/Role.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
-
+#include "nsAccUtils.h"
+#include "nsAttrName.h"
+#include "nsCoreUtils.h"
+#include "nsGenericHTMLElement.h"
 #include "nsUnicharUtils.h"
+#include "nsWhitespaceTokenizer.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;

@@ -5,14 +5,14 @@
 #ifndef nsHttpChannelAuthProvider_h_
 #define nsHttpChannelAuthProvider_h_
 
-#include "nsIHttpChannelAuthProvider.h"
-#include "nsIAuthPromptCallback.h"
-#include "nsIHttpAuthenticatorCallback.h"
-#include "nsString.h"
 #include "nsCOMPtr.h"
 #include "nsHttpAuthCache.h"
-#include "nsProxyInfo.h"
+#include "nsIAuthPromptCallback.h"
 #include "nsICancelable.h"
+#include "nsIHttpAuthenticatorCallback.h"
+#include "nsIHttpChannelAuthProvider.h"
+#include "nsProxyInfo.h"
+#include "nsString.h"
 
 class nsIHttpAuthenticableChannel;
 class nsIHttpAuthenticator;

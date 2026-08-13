@@ -190,14 +190,6 @@ impl VertexAttribute {
         }
     }
 
-    pub const fn u16(name: &'static str) -> Self {
-        VertexAttribute {
-            name,
-            count: 1,
-            kind: VertexAttributeKind::U16,
-        }
-    }
-
     pub const fn u16x2(name: &'static str) -> Self {
         VertexAttribute {
             name,
@@ -1089,6 +1081,10 @@ pub struct Capabilities {
     pub supports_image_external_essl3: bool,
     /// Whether the VAO must be rebound after an attached VBO has been orphaned.
     pub requires_vao_rebind_after_orphaning: bool,
+    /// Whether glReadPixels can read back BGRA directly (e.g. on GLES this
+    /// requires GL_EXT_read_format_bgra). If false, callers must read RGBA
+    /// instead and swap the red and blue channels themselves.
+    pub supports_bgra_read: bool,
     /// The name of the renderer, as reported by GL
     pub renderer_name: String,
 }
@@ -1686,6 +1682,15 @@ impl Device {
                 gl::GlType::Gles => true,
             };
 
+        // Reading pixels back as BGRA with glReadPixels is always supported in
+        // desktop GL, but on GLES it requires the GL_EXT_read_format_bgra
+        // extension. When it is missing we read as RGBA and swap the red and
+        // blue channels on the CPU instead.
+        let supports_bgra_read = match gl.get_type() {
+            gl::GlType::Gl => true,
+            gl::GlType::Gles => supports_extension(&extensions, "GL_EXT_read_format_bgra"),
+        };
+
         let (color_formats, bgra_formats, bgra_pixel_type, bgra8_sampling_swizzle, texture_storage_usage) = match gl.get_type() {
             // There is `glTexStorage`, use it and expect RGBA on the input.
             gl::GlType::Gl if supports_texture_storage && supports_texture_swizzle => (
@@ -2028,6 +2033,7 @@ impl Device {
                 uses_native_antialiasing,
                 supports_image_external_essl3,
                 requires_vao_rebind_after_orphaning,
+                supports_bgra_read,
                 renderer_name,
             },
 
@@ -3409,6 +3415,10 @@ impl Device {
     }
 
     /// Read rectangle of pixels into the specified output slice.
+    ///
+    /// Reading back `BGRA8` requires `Capabilities::supports_bgra_read`. When
+    /// that is false the caller must instead read `RGBA8` and swap the red and
+    /// blue channels itself.
     pub fn read_pixels_into(
         &mut self,
         rect: FramebufferIntRect,
@@ -4056,12 +4066,6 @@ impl Device {
         self.set_blend_factors(
             (gl::ONE, gl::ONE_MINUS_SRC1_COLOR),
             (gl::ONE, gl::ONE_MINUS_SRC1_ALPHA),
-        );
-    }
-    pub fn set_blend_mode_multiply_dual_source(&mut self) {
-        self.set_blend_factors(
-            (gl::ONE_MINUS_DST_ALPHA, gl::ONE_MINUS_SRC1_COLOR),
-            (gl::ONE, gl::ONE_MINUS_SRC_ALPHA),
         );
     }
     pub fn set_blend_mode_screen(&mut self) {

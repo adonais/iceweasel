@@ -36,7 +36,7 @@ class MoveEmitterX86 {
   mozilla::Maybe<Register> scratchRegister_;
 #endif
 
-  void assertDone();
+  void assertDone() { MOZ_ASSERT(!inCycle_); }
   Address cycleSlot();
   Address toAddress(const MoveOperand& operand) const;
   Operand toOperand(const MoveOperand& operand) const;
@@ -57,20 +57,18 @@ class MoveEmitterX86 {
   void breakCycle(const MoveOperand& to, MoveOp::Type type);
   void completeCycle(const MoveOperand& to, MoveOp::Type type);
 
+  mozilla::Maybe<Register> findScratchRegister(const MoveResolver& moves,
+                                               size_t i);
+
  public:
   explicit MoveEmitterX86(MacroAssembler& masm);
-  ~MoveEmitterX86();
+  ~MoveEmitterX86() { assertDone(); }
   void emit(const MoveResolver& moves);
   void finish();
 
-  void setScratchRegister(Register reg) {
 #ifdef JS_CODEGEN_X86
-    scratchRegister_.emplace(reg);
+  void setScratchRegister(Register reg) { scratchRegister_.emplace(reg); }
 #endif
-  }
-
-  mozilla::Maybe<Register> findScratchRegister(const MoveResolver& moves,
-                                               size_t i);
 };
 
 using MoveEmitter = MoveEmitterX86;

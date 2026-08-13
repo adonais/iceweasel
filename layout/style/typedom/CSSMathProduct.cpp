@@ -7,6 +7,7 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/NotNull.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSMathInvert.h"
@@ -18,9 +19,12 @@
 
 namespace mozilla::dom {
 
-CSSMathProduct::CSSMathProduct(nsCOMPtr<nsISupports> aParent,
-                               RefPtr<CSSNumericArray> aValues)
-    : CSSMathValue(std::move(aParent), MathValueType::MathProduct),
+CSSMathProduct::CSSMathProduct(
+    nsCOMPtr<nsISupports> aParent,
+    MovingNotNull<UniquePtr<StyleNumericType>> aNumericType,
+    RefPtr<CSSNumericArray> aValues)
+    : CSSMathValue(std::move(aParent), std::move(aNumericType),
+                   MathValueType::MathProduct),
       mValues(std::move(aValues)) {}
 
 // static
@@ -28,13 +32,17 @@ RefPtr<CSSMathProduct> CSSMathProduct::Create(
     nsCOMPtr<nsISupports> aParent, const StyleMathProduct& aMathProduct) {
   nsTArray<RefPtr<CSSNumericValue>> values;
 
-  for (const auto& value : aMathProduct) {
+  for (const auto& value : aMathProduct.values) {
     values.AppendElement(CSSNumericValue::Create(aParent, value));
   }
 
   auto array = MakeRefPtr<CSSNumericArray>(aParent, std::move(values));
 
-  return MakeRefPtr<CSSMathProduct>(std::move(aParent), std::move(array));
+  return MakeRefPtr<CSSMathProduct>(
+      std::move(aParent),
+      WrapMovingNotNull(
+          MakeUnique<StyleNumericType>(aMathProduct.numeric_type)),
+      std::move(array));
 }
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(CSSMathProduct, CSSMathValue)
@@ -71,13 +79,27 @@ already_AddRefed<CSSMathProduct> CSSMathProduct::Constructor(
     return nullptr;
   }
 
-  // XXX Step 3 is not yet implemented!
+  // Step 3.
+
+  AutoTArray<const StyleNumericType*, 8> numericTypes;
+  numericTypes.SetCapacity(values.Length());
+
+  for (const auto& value : values) {
+    numericTypes.AppendElement(&value->GetNumericType());
+  }
+
+  auto numericType = MakeUnique<StyleNumericType>();
+  if (!Servo_NumericType_MultiplyTypes(&numericTypes, numericType.get())) {
+    aRv.ThrowTypeError("Incompatible types");
+    return nullptr;
+  }
 
   // Step 4.
 
   auto array = MakeRefPtr<CSSNumericArray>(global, std::move(values));
 
-  return MakeAndAddRef<CSSMathProduct>(global, std::move(array));
+  return MakeAndAddRef<CSSMathProduct>(
+      global, WrapMovingNotNull(std::move(numericType)), std::move(array));
 }
 
 CSSNumericArray* CSSMathProduct::Values() const { return mValues; }
@@ -122,14 +144,14 @@ void CSSMathProduct::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
   }
 }
 
-StyleMathSum CSSMathProduct::ToStyleMathProduct() const {
+StyleMathProduct CSSMathProduct::ToStyleMathProduct() const {
   nsTArray<StyleNumericValue> values;
 
   for (const RefPtr<CSSNumericValue>& value : mValues->GetValues()) {
     values.AppendElement(value->ToStyleNumericValue());
   }
 
-  return StyleMathProduct{std::move(values)};
+  return StyleMathProduct{GetNumericType(), std::move(values)};
 }
 
 const CSSMathProduct& CSSMathValue::GetAsCSSMathProduct() const {

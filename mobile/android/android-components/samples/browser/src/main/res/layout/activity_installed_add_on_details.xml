@@ -84,6 +84,7 @@
             android:textSize="18sp"/>
 
         <Button
+            style="@style/Mozac.Widgets.NeutralButton"
             android:id="@+id/remove_add_on"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

@@ -10,26 +10,61 @@
       content="default-src chrome:; object-src 'none'"
     />
     <meta charset="utf-8" />
+    <link rel="localization" href="branding/brand.ftl" />
     <link rel="localization" href="browser/customkeys.ftl" />
     <link
       rel="stylesheet"
       href="chrome://browser/content/customkeys/customkeys.css"
     />
+    <link
+      rel="stylesheet"
+      href="chrome://browser/content/customkeys/customkeys-sidebar.css"
+    />
     <link rel="stylesheet" href="chrome://global/skin/in-content/common.css" />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="chrome://browser/skin/preferences/category-accessibility.svg"
+    />
     <title data-l10n-id="customkeys-title"></title>
   </head>
   <body>
-    <p>
-      <em id="cautionMessage" data-l10n-id="customkeys-caution-message"></em>
-    </p>
-    <div>
-      <label for="search" data-l10n-id="customkeys-search"></label>
-      <input id="search" type="search" />
-    </div>
-    <table id="table"></table>
-    <div>
-      <button id="resetAll" data-l10n-id="customkeys-reset-all"></button>
-    </div>
+    <customkeys-sidebar></customkeys-sidebar>
+    <main class="main-container">
+      <div id="table"></div>
+    </main>
     <script src="chrome://browser/content/customkeys/customkeys.js"></script>
+    <script
+      type="module"
+      src="chrome://browser/content/customkeys/customkeys-sidebar.mjs"
+    ></script>
+    <script
+      type="module"
+      src="chrome://global/content/elements/moz-support-link.mjs"
+    ></script>
+    <script
+      type="module"
+      src="chrome://global/content/elements/moz-input-search.mjs"
+    ></script>
+    <script
+      type="module"
+      src="chrome://global/content/elements/moz-button.mjs"
+    ></script>
+    <script
+      type="module"
+      src="chrome://global/content/elements/moz-card.mjs"
+    ></script>
+    <script
+      type="module"
+      src="chrome://global/content/elements/moz-box-group.mjs"
+    ></script>
+    <script
+      type="module"
+      src="chrome://global/content/elements/moz-box-item.mjs"
+    ></script>
+    <script
+      type="module"
+      src="chrome://global/content/elements/moz-input-text.mjs"
+    ></script>
   </body>
 </html>

@@ -362,7 +362,7 @@ function testStyles({ win, theme }) {
       Assert.equal(
         !!calloutStyle.getPropertyValue(`--fc-${name}-${type}`),
         !!(scheme?.[name] || appliedTheme.all?.[name]),
-        `Theme property --fc-${name}-${type} is set`
+        `Theme property --fc-${name}-${type} is set for theme ${theme.preset}`
       );
     }
   }

@@ -242,9 +242,9 @@ add_task(async function search_with_nothing_found() {
 });
 
 /**
- * Test for if we go back to general tab after search case
+ * Test that clearing the search returns to the previously viewed pane.
  */
-add_task(async function exiting_search_reverts_to_general_pane() {
+add_task(async function exiting_search_reverts_to_previous_pane() {
   await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
   let generalPane = gBrowser.contentDocument.getElementById("generalCategory");
 
@@ -280,8 +280,13 @@ add_task(async function exiting_search_reverts_to_general_pane() {
   }
   await searchCompletedPromise;
 
-  // Checks if back to normal
-  is_element_visible(generalPane, "Should be in generalPane");
+  // Bug 2040000: clearing the search returns to the previously viewed pane
+  // (privacy) via history.back(), not the default (general) pane.
+  let privacyPane = gBrowser.contentDocument.getElementById(
+    "browserPrivacyCategory"
+  );
+  is_element_visible(privacyPane, "Should return to the privacy pane");
+  is_element_hidden(generalPane, "General pane stays hidden after clearing");
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });

@@ -1033,6 +1033,36 @@ let gPermissions = {
       exactHostMatch: true,
     },
 
+    // Clear-on-shutdown exception. ALLOW means the site's data is kept when
+    // the browser closes; absent (the default) means it is cleared. The
+    // Sanitizer reads this via testPermissionFromPrincipal (base-domain
+    // matching), so exactHostMatch is false to mirror that read path. Only
+    // relevant while data is actually cleared on shutdown, so it's hidden
+    // (from Page Info and the permission panel) when that's off.
+    "persist-data-on-shutdown": {
+      exactHostMatch: false,
+      get disabled() {
+        return !SitePermissions.sanitizeOnShutdownEnabled;
+      },
+      getDefault() {
+        return SitePermissions.UNKNOWN;
+      },
+      states: [SitePermissions.UNKNOWN, SitePermissions.ALLOW],
+      getMultichoiceStateLabel(state) {
+        switch (state) {
+          case SitePermissions.UNKNOWN:
+            return gStringBundle.GetStringFromName(
+              "state.multichoice.clearDataOnShutdown"
+            );
+          case SitePermissions.ALLOW:
+            return gStringBundle.GetStringFromName(
+              "state.multichoice.persistDataOnShutdown"
+            );
+        }
+        throw new Error(`Unknown state: ${state}`);
+      },
+    },
+
     shortcuts: {
       states: [SitePermissions.ALLOW, SitePermissions.BLOCK],
     },
@@ -1112,6 +1142,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   SitePermissions.invalidatePermissionList.bind(SitePermissions)
 );
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  SitePermissions,
+  "sanitizeOnShutdownEnabled",
+  "privacy.sanitize.sanitizeOnShutdown",
+  false,
+  SitePermissions.invalidatePermissionList.bind(SitePermissions)
+);
 XPCOMUtils.defineLazyPreferenceGetter(
   SitePermissions,
   "popupBlockerEnabled",

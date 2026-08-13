@@ -14,6 +14,7 @@ import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.bookmark.parser.BookmarksFileParser
+import mozilla.components.concept.bookmarks.file.BookmarksImporterError
 import mozilla.components.concept.storage.bookmarks.BookmarkInserter
 import mozilla.components.concept.storage.bookmarks.InsertableBookmarkTreeRoot
 import org.junit.Assert.assertEquals
@@ -62,36 +63,37 @@ class HtmlBookmarksFileImporterTest {
     }
 
     @Test
-    fun `importBookmarksFromUri returns failure when uriOpener fails`() = runTest {
+    fun `importBookmarksFromUri returns file read error when uriOpener fails`() = runTest {
         val importer = createImporter(
             uriOpener = { Result.failure(IOException("cannot open")) },
         )
 
         val result = importer.importBookmarksFromUri(testUri)
 
-        assertTrue(result.isFailure)
-        assertIs<IOException>(result.exceptionOrNull())
+        assertTrue("Expected the result to be failure, but got success", result.isFailure)
+        assertIs<BookmarksImporterError.FileReadError>(result.exceptionOrNull())
     }
 
     @Test
-    fun `importBookmarksFromUri returns failure when parser fails`() = runTest {
+    fun `importBookmarksFromUri returns file parsing error when parser fails`() = runTest {
         val importer = createImporter(parser = BookmarksFileParser.fakeFailure())
 
         val result = importer.importBookmarksFromUri(testUri)
 
-        assertTrue(result.isFailure)
+        assertTrue("Expected the result to be failure, but got success", result.isFailure)
+        assertIs<BookmarksImporterError.FileParseError>(result.exceptionOrNull())
     }
 
     @Test
-    fun `importBookmarksFromUri returns failure when inserter fails`() = runTest {
+    fun `importBookmarksFromUri returns bookmarks insert error when inserter fails`() = runTest {
         val importer = createImporter(
             inserter = fakeInserter(result = Result.failure(RuntimeException("insert failed"))),
         )
 
         val result = importer.importBookmarksFromUri(testUri)
 
-        assertTrue(result.isFailure)
-        assertIs<RuntimeException>(result.exceptionOrNull())
+        assertTrue("Expected the result to be failure, but got success", result.isFailure)
+        assertIs<BookmarksImporterError.BookmarksSaveError>(result.exceptionOrNull())
     }
 
     @Test

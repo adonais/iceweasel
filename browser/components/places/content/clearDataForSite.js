@@ -6,7 +6,8 @@
 
 let lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
-  ForgetAboutSite: "resource://gre/modules/ForgetAboutSite.sys.mjs",
+  ForgetAboutSite:
+    "moz-src:///toolkit/components/forgetaboutsite/ForgetAboutSite.sys.mjs",
 });
 
 let retVals = window.arguments[0];

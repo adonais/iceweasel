@@ -19,6 +19,14 @@ allowed-tools:
 
 CLI for managing queries and dashboards on Mozilla's Redash instance (sql.telemetry.mozilla.org).
 
+## Command reference
+
+Before anything else, run `stmo-cli --help`. It prints LLM-optimized, version-matched
+output — every command, flag, required YAML field, the slug-derivation rule, enum/date
+syntax gotchas, and dynamic date tokens — automatically inside this environment
+(`CLAUDECODE` is set). Treat that output as the source of truth for the command surface;
+the sections below are workflow guidance it doesn't cover.
+
 ## Prerequisites
 
 Before running any stmo-cli command (except `init` and `update`), verify `REDASH_API_KEY` is set. If missing, every command fails immediately with:
@@ -50,16 +58,9 @@ The temp directory is not a git repo, so `stmo-cli deploy` (which uses git diff 
 
 ## Data exploration workflow
 
-1. **Find data sources**
-   ```bash
-   stmo-cli data-sources
-   stmo-cli data-sources <id> --schema
-   ```
+1. **Find data sources** — `stmo-cli data-sources` (inspect one with `--schema`)
 
-2. **Discover existing queries**
-   ```bash
-   stmo-cli discover
-   ```
+2. **Discover existing queries** — `stmo-cli discover` (full-text search across queries and dashboards with `--search`)
 
 3. **Fetch and read an existing query**
    ```bash
@@ -67,14 +68,7 @@ The temp directory is not a git repo, so `stmo-cli deploy` (which uses git diff 
    # reads: queries/<id>-*.sql and queries/<id>-*.yaml
    ```
 
-4. **Execute**
-   ```bash
-   stmo-cli execute <id> --format table --limit 50
-   stmo-cli execute <id> --format json --limit 50
-   stmo-cli execute <id> --param key=value
-   stmo-cli execute <id> --param channels='["release","beta"]'  # multi-value enum: always JSON array
-   stmo-cli execute <id> --interactive  # prompts for parameter values
-   ```
+4. **Execute** — `stmo-cli execute <id>`; see `--help` for output format, parameters, interactive prompting, and multi-value enum syntax.
 
 5. **Clean up newly created queries**
 
@@ -92,6 +86,22 @@ The temp directory is not a git repo, so `stmo-cli deploy` (which uses git diff 
    stmo-cli unarchive <id>
    stmo-cli fetch <id>
    ```
+
+## Quick one-off SQL (no tracked query)
+
+For a single throwaway question, skip the create/deploy/archive cycle above entirely and run SQL directly against a data source:
+
+```bash
+stmo-cli data-sources                                   # find the data source ID
+echo 'SELECT 1' | stmo-cli execute --data-source <id>   # SQL via stdin
+stmo-cli execute --data-source <id> --file scratch.sql  # or from a file
+```
+
+This creates no `queries/` file and needs no `archive` afterwards. It has no parameter schema, so `d_*` dynamic date tokens and multi-value enum expansion don't apply — inline concrete values directly in the SQL (e.g. `IN ('release', 'beta')`). `--data-source` can't be combined with a query ID. Reach for the tracked-query workflow above instead when you want to iterate, save, schedule, or share the query.
+
+## Scheduling refreshes
+
+`stmo-cli schedule <id> --interval SECS [--time HH:MM] [--day-of-week N]` sets a query's refresh cadence; `stmo-cli schedule <id> --clear` removes it. This only updates the local YAML — run `stmo-cli deploy` afterwards to push the change to Redash.
 
 ## Bootstrap context from existing queries
 
@@ -123,6 +133,10 @@ A static website updated via cron (behind SSO) is a proven pattern for sharing r
 
 STMO queries run on BigQuery. Use BigQuery SQL syntax: backtick-quoted identifiers, `DATE_ADD(date, INTERVAL N DAY)`, `FORMAT_DATE`, `APPROX_COUNT_DISTINCT`, etc.
 
+## Dynamic date tokens
+
+Tracked queries (queries deployed with a real ID, not ephemeral ones) can use `d_*` parameter tokens — e.g. `d_today`, `d_last_7_days` — that stmo-cli resolves client-side before execution. See `stmo-cli --help` for the full token list.
+
 ## mozdata integration
 
 Use the mozdata MCP tools (`mozdata:probe-discovery`, `mozdata:query-writing`) to find the right telemetry probes, metrics, and table schemas. Then use stmo-cli to write, deploy, and execute the actual Redash queries.
@@ -133,7 +147,7 @@ Use the mozdata MCP tools (`mozdata:probe-discovery`, `mozdata:query-writing`) t
 
 1. Create `queries/0-{slug}.sql` with the SQL
 
-2. Create `queries/0-{slug}.yaml` with metadata:
+2. Create `queries/0-{slug}.yaml` with metadata — see `stmo-cli --help` for the required fields and the slug-derivation rule (the `{slug}` in both filenames must match it):
    ```yaml
    id: 0
    name: My Query Name
@@ -146,9 +160,7 @@ Use the mozdata MCP tools (`mozdata:probe-discovery`, `mozdata:query-writing`) t
 
    Do **not** add a default Table visualization — Redash creates one automatically for every new query.
 
-   **Slug rule**: stmo-cli derives the expected SQL filename by slugifying the `name` field — non-alphanumeric chars become `-`, consecutive dashes collapse, apostrophes are stripped (e.g. `"Mozilla's .rpm"` → `mozilla-s-rpm`). The `{slug}` in both filenames must match this transform.
-
-3. **For enum parameters**, use YAML multiline format — escaped newlines (`\\n`) are not valid:
+3. **For enum parameters**, use YAML multiline format (see `--help` for the exact syntax rule — escaped newlines are not valid):
    ```yaml
    options:
      parameters:
@@ -181,29 +193,30 @@ Use the mozdata MCP tools (`mozdata:probe-discovery`, `mozdata:query-writing`) t
 
 ## Dashboard management
 
-Dashboards are addressed by slug, not ID.
-
-```bash
-stmo-cli dashboards discover                    # only shows favorited dashboards
-stmo-cli dashboards fetch <slug>
-stmo-cli dashboards deploy <slug>
-stmo-cli dashboards deploy --all
-stmo-cli dashboards archive <slug>
-stmo-cli dashboards unarchive <slug>
-```
+Dashboards are addressed by slug, not ID. See `stmo-cli --help` for the full `dashboards` subcommand list (`discover`, `fetch`, `deploy`, `archive`, `unarchive`).
 
 Create: `dashboards/0-{slug}.yaml` with `id: 0`, deploy, file auto-renames with real ID.
 
-## Command reference
+## Query snippets
 
-Run `stmo-cli --help` — stmo-cli outputs LLM-optimized help when run inside an AI coding environment (`CLAUDECODE` is set automatically).
+Redash [query snippets](https://redash.io/help/user-guide/querying/query-snippets) are reusable SQL fragments (e.g. a shared set of CTEs) that get pasted into a query's editor by typing their `trigger`. Pasting is a one-time text expansion, not a live reference — editing a snippet later does **not** update queries that already pasted it; re-paste (or hand-edit) each affected query after changing a snippet it's used in.
+
+Snippet files are keyed by `trigger`, not `slug`: `snippets/{id}-{trigger}.sql` (the fragment body) + `snippets/{id}-{trigger}.yaml` (metadata: `id`, `trigger`, `description`).
+
+The `.sql` file is **not standalone SQL** — it's a bare list of CTEs (no leading `WITH`, no trailing `SELECT`) meant to be pasted into a larger query, so it can't be run or linted on its own.
+
+**Create a new snippet:** create `snippets/0-{trigger}.sql` + `snippets/0-{trigger}.yaml` with `id: 0`, then `stmo-cli snippets deploy 0` — same auto-rename-to-real-ID pattern as queries and dashboards.
+
+Snippets have no archive concept in Redash: `stmo-cli snippets delete <ids>` removes the snippet on the server **and** deletes the local files in one irreversible step — there's no `unarchive` equivalent. See `stmo-cli --help` for the full `snippets` subcommand list (`list`, `fetch`, `deploy`, `delete`).
 
 ## File format
 
 ```
-queries/{id}-{slug}.sql    # SQL text
-queries/{id}-{slug}.yaml   # metadata: name, data_source_id, options, visualizations
+queries/{id}-{slug}.sql       # SQL text
+queries/{id}-{slug}.yaml      # metadata: name, data_source_id, options, visualizations
 dashboards/{id}-{slug}.yaml
+snippets/{id}-{trigger}.sql   # fragment body (not standalone SQL — see "Query snippets" above)
+snippets/{id}-{trigger}.yaml  # metadata: id, trigger, description
 ```
 
-New queries/dashboards use `id: 0` in the filename until deployed.
+New queries/dashboards/snippets use `id: 0` in the filename until deployed.

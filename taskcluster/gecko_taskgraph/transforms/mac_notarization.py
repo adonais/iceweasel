@@ -116,4 +116,4 @@ def _configure_geckodriver(task, job, dep_job, build_platform):
 
     platform = build_platform.rsplit("-", 1)[0]
     task["run-on-projects"] = ["mozilla-central"]
-    task["index"] = {"product": "geckodriver", "job-name": f"{platform}-notarized"}
+    task["index"] = {"product": "geckodriver", "job-name": platform}

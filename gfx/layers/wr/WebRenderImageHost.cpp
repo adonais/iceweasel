@@ -6,7 +6,10 @@
 
 #include <utility>
 
+#include "mozilla/ProfilerMarkers.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/StaticPrefs_gfx.h"
+#include "mozilla/StaticPrefs_webgl.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/AsyncImagePipelineManager.h"
 #include "mozilla/layers/CompositorThread.h"
@@ -16,9 +19,6 @@
 #include "mozilla/layers/RemoteTextureMap.h"
 #include "mozilla/layers/WebRenderBridgeParent.h"
 #include "mozilla/layers/WebRenderTextureHost.h"
-#include "mozilla/ProfilerMarkers.h"
-#include "mozilla/StaticPrefs_gfx.h"
-#include "mozilla/StaticPrefs_webgl.h"
 #include "nsAString.h"
 #include "nsDebug.h"          // for NS_WARNING, NS_ASSERTION
 #include "nsPrintfCString.h"  // for nsPrintfCString
@@ -155,7 +155,7 @@ void WebRenderImageHost::PushPendingRemoteTexture(
       CompositableTextureHostRef(texture.get()));
 }
 
-void WebRenderImageHost::UseRemoteTexture() {
+void WebRenderImageHost::UseRemoteTexture(bool aCalledInCallback) {
   if (mPendingRemoteTextureWrappers.empty()) {
     return;
   }
@@ -190,7 +190,7 @@ void WebRenderImageHost::UseRemoteTexture() {
             }
 
             self->mWaitingReadyCallback = false;
-            self->UseRemoteTexture();
+            self->UseRemoteTexture(/* aCalledInCallback */ true);
           });
 
       CompositorThread()->Dispatch(runnable.forget());
@@ -201,7 +201,10 @@ void WebRenderImageHost::UseRemoteTexture() {
       auto* wrapper =
           mPendingRemoteTextureWrappers.front()->AsRemoteTextureHostWrapper();
 
-      if (mWaitForRemoteTextureOwner) {
+      // When UseRemoteTexture() is called in callback, it does not need to wait
+      // RemoteTextureOwner. In this case, RemoteTextureOwner should be alive or
+      // obsoleted.
+      if (mWaitForRemoteTextureOwner && !aCalledInCallback) {
         // XXX remove sync wait
         RemoteTextureMap::Get()->WaitForRemoteTextureOwner(wrapper);
       }

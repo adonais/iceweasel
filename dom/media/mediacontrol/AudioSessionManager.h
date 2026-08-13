@@ -7,13 +7,22 @@
 
 #include "AudioSessionRecord.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/DefineEnum.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/dom/AudioSessionBinding.h"
 #include "nsTHashMap.h"
+#include "nsTHashSet.h"
 
 namespace mozilla::dom {
 
 class MediaController;
+
+// Whether an audio-focus loss is resumable. A Transient loss moves the
+// interrupted sessions to Interrupted and remembers them so a later restore
+// re-activates them; a Permanent loss moves them to Inactive and is not
+// restorable.
+MOZ_DEFINE_ENUM_CLASS_WITH_BASE_AND_TOSTRING(AudioSessionInterruptKind, uint8_t,
+                                             (Transient, Permanent));
 
 /**
  * Owns the parent-side AudioSession spec state for a single tab
@@ -39,6 +48,14 @@ class AudioSessionManager final {
   void SetTypeOverride(uint64_t aBrowsingContextId, AudioSessionType aType);
   void NotifyAudibilityChanged(uint64_t aBrowsingContextId);
   void NotifyBcDiscarded(uint64_t aBrowsingContextId);
+
+  // Interrupt every active audio session in the tab on a system audio-focus
+  // loss, regardless of type, with aKind selecting whether the loss is
+  // resumable.
+  void InterruptAudioSessions(AudioSessionInterruptKind aKind);
+  // Re-activate the sessions a transient loss interrupted. No-op when no
+  // interrupt is outstanding.
+  void RestoreAudioSessions();
 
   // The audio-session type that applies to the given browsing context. The
   // user override takes precedence; otherwise the type comes from the
@@ -83,6 +100,12 @@ class AudioSessionManager final {
   // the record empty.
   void RemoveRecordIfEmpty(uint64_t aBrowsingContextId);
 
+  // The mutators for mInterruptedBcIds; each logs so the interrupted-session
+  // set's lifetime is traceable.
+  void AddInterruptedBcId(uint64_t aBrowsingContextId);
+  void RemoveInterruptedBcId(uint64_t aBrowsingContextId);
+  void ClearInterruptedBcIds();
+
   // §5.4 update-all-audiosession-states.
   // Inactivates other exclusive sessions when the just-updated session is
   // itself exclusive and active, with the auto-vs-auto exemption that two
@@ -110,6 +133,10 @@ class AudioSessionManager final {
 
   // Cached last value of GetEffectiveType().
   AudioSessionType mLastDispatchedEffectiveType = AudioSessionType::Auto;
+
+  // The browsing contexts whose sessions a transient audio-focus loss
+  // interrupted; re-activated by RestoreAudioSessions.
+  nsTHashSet<uint64_t> mInterruptedBcIds;
 };
 
 }  // namespace mozilla::dom

@@ -6,7 +6,8 @@
 
 #include "mozilla/Assertions.h"  // MOZ_ASSERT
 
-#include "jstypes.h"                  // JS_PUBLIC_API
+#include "jstypes.h"  // JS_PUBLIC_API
+
 #include "gc/Zone.h"                  // js::Zone
 #include "js/Context.h"               // AssertHeapIsIdle
 #include "js/friend/ErrorMessages.h"  // JSMSG_*

@@ -5,9 +5,9 @@
 #include "UiaText.h"
 
 #include "MsaaAccessible.h"
-#include "mozilla/a11y/States.h"
 #include "TextLeafRange.h"
 #include "UiaTextRange.h"
+#include "mozilla/a11y/States.h"
 
 namespace mozilla::a11y {
 

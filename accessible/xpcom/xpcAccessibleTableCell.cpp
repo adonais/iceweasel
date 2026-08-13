@@ -6,9 +6,8 @@
 
 #include "mozilla/a11y/TableAccessible.h"
 #include "mozilla/a11y/TableCellAccessible.h"
-#include "nsIAccessibleTable.h"
-
 #include "nsComponentManagerUtils.h"
+#include "nsIAccessibleTable.h"
 #include "nsIMutableArray.h"
 #include "xpcAccessibleDocument.h"
 

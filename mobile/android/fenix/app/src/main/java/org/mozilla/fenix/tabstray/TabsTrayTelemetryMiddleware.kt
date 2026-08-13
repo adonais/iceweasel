@@ -182,19 +182,15 @@ class TabsTrayTelemetryMiddleware(
         store: Store<TabsTrayState, TabsTrayAction>,
         action: TabGroupAction,
     ) {
-        val selectedTabsCount = store.state.mode.selectedTabs.size
-        val isDraggingOntoTab = if (action is TabGroupAction.DragAndDropCompleted) {
-            store.state.normalTabsState.items.find { it.id == action.destinationId } is TabsTrayItem.Tab
-        } else {
-            false
-        }
-
         when (action) {
-            is TabGroupAction.SaveClicked -> {
-                val isEditing = store.state.tabGroupState.formState?.inEditState == true
-                if (!isEditing) {
-                    TabsTray.tabGroupCreated.record(NoExtras())
-                }
+            is TabGroupAction.EditTabGroupClicked -> {
+                TabsTray.tabGroupEdited.record(NoExtras())
+            }
+
+            is TabGroupAction.SaveClicked,
+            is TabGroupAction.ThemeChanged,
+                -> {
+                handleTabGroupFormAction(store, action)
             }
 
             is TabGroupAction.DeleteConfirmed,
@@ -203,16 +199,10 @@ class TabsTrayTelemetryMiddleware(
                 TabsTray.tabGroupDeleted.record(NoExtras())
             }
 
-            is TabGroupAction.TabAddedToGroup -> {
-                TabsTray.tabAddedToGroup.record(
-                    TabsTray.TabAddedToGroupExtra(tabCount = 1),
-                )
-            }
-
-            is TabGroupAction.SelectedTabsAddedToGroup -> {
-                TabsTray.tabAddedToGroup.record(
-                    TabsTray.TabAddedToGroupExtra(tabCount = selectedTabsCount),
-                )
+            is TabGroupAction.TabAddedToGroup,
+            is TabGroupAction.SelectedTabsAddedToGroup,
+                -> {
+                handleTabAdditionToGroupAction(store, action)
             }
 
             is TabGroupAction.TabGroupClicked -> {
@@ -229,15 +219,97 @@ class TabsTrayTelemetryMiddleware(
                 }
             }
 
-            is TabGroupAction.AddToNewTabGroup -> {
-                Metrics.tabGroupCreationMode["menu"].add()
+            is TabGroupAction.AddToNewTabGroup,
+            is TabGroupAction.NewTabGroupFabClicked,
+            is TabGroupAction.DragAndDropInitiated,
+                -> {
+                handleTabGroupCreationAction(store, action)
             }
 
             is TabGroupAction.CloseTabGroupClicked -> {
                 TabsTray.tabGroupClosed.record(NoExtras())
             }
 
-            is TabGroupAction.DragAndDropCompleted -> {
+            else -> {
+                // no-op
+            }
+        }
+    }
+
+    private fun handleTabGroupFormAction(
+        store: Store<TabsTrayState, TabsTrayAction>,
+        action: TabGroupAction,
+    ) {
+        val formState = store.state.tabGroupState.formState ?: return
+        val inEditState = formState.inEditState
+
+        when (action) {
+            is TabGroupAction.SaveClicked -> {
+                if (inEditState) {
+                    val originalGroup = store.state.tabGroupState.groups.find { it.id == formState.tabGroupId }
+                    if (originalGroup != null && originalGroup.title != formState.name) {
+                        TabsTray.tabGroupNameChanged.record(NoExtras())
+                    }
+                } else {
+                    TabsTray.tabGroupCreated.record(NoExtras())
+                    TabsTray.tabGroupNamed.record(NoExtras())
+                }
+            }
+
+            is TabGroupAction.ThemeChanged -> {
+                val themeName = action.theme.name
+                if (inEditState) {
+                    TabsTray.tabGroupColorChanged.record(TabsTray.TabGroupColorChangedExtra(themeName))
+                } else {
+                    TabsTray.tabGroupColorAssigned.record(TabsTray.TabGroupColorAssignedExtra(themeName))
+                }
+            }
+
+            else -> {
+                // no-op
+            }
+        }
+    }
+
+    private fun handleTabAdditionToGroupAction(
+        store: Store<TabsTrayState, TabsTrayAction>,
+        action: TabGroupAction,
+    ) {
+        when (action) {
+            is TabGroupAction.TabAddedToGroup -> {
+                TabsTray.tabAddedToGroup.record(
+                    TabsTray.TabAddedToGroupExtra(tabCount = 1),
+                )
+            }
+
+            is TabGroupAction.SelectedTabsAddedToGroup -> {
+                TabsTray.tabAddedToGroup.record(
+                    TabsTray.TabAddedToGroupExtra(tabCount = store.state.mode.selectedTabs.size),
+                )
+            }
+
+            else -> {
+                // no-op
+            }
+        }
+    }
+
+    private fun handleTabGroupCreationAction(
+        store: Store<TabsTrayState, TabsTrayAction>,
+        action: TabGroupAction,
+    ) {
+        when (action) {
+            is TabGroupAction.AddToNewTabGroup -> {
+                Metrics.tabGroupCreationMode["menu"].add()
+            }
+
+            is TabGroupAction.NewTabGroupFabClicked -> {
+                Metrics.tabGroupCreationMode["fab"].add()
+            }
+
+            is TabGroupAction.DragAndDropInitiated -> {
+                val isDraggingOntoTab =
+                    store.state.normalTabsState.items.find { it.id == action.destinationId } is TabsTrayItem.Tab
                 if (isDraggingOntoTab) {
                     Metrics.tabGroupCreationMode["drag_and_drop"].add()
                 }

@@ -222,7 +222,7 @@ add_task(async function test_pipDisabled() {
       pipUrlbarToggle.click();
 
       let panel = browser.ownerDocument.querySelector("#PictureInPicturePanel");
-      await BrowserTestUtils.waitForCondition(async () => {
+      await TestUtils.waitForCondition(async () => {
         if (!panel) {
           panel = browser.ownerDocument.querySelector("#PictureInPicturePanel");
         }
@@ -243,7 +243,7 @@ add_task(async function test_pipDisabled() {
 
       pipUrlbarToggle.click();
 
-      await BrowserTestUtils.waitForCondition(async () => {
+      await TestUtils.waitForCondition(async () => {
         return BrowserTestUtils.isHidden(panel);
       });
 

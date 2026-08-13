@@ -79,6 +79,60 @@ describe("<WallpaperCategories>", () => {
     expect(container.querySelector(".wallpapers-reset")).toBeInTheDocument();
   });
 
+  it("opens the requested category when deep-linked via App state", () => {
+    const onSubpanelToggle = jest.fn();
+    const ref = React.createRef();
+    const props = {
+      ...DEFAULT_PROPS,
+      onSubpanelToggle,
+      Wallpapers: {
+        ...DEFAULT_PROPS.Wallpapers,
+        categories: ["celestial", "solid-colors", "firefox"],
+      },
+      customizePanelWallpaperCategory: null,
+    };
+    const { rerender } = render(<WallpaperCategories {...props} ref={ref} />);
+    expect(ref.current.state.activeCategory).toBeNull();
+
+    act(() => {
+      rerender(
+        <WallpaperCategories
+          {...props}
+          customizePanelWallpaperCategory="firefox"
+          ref={ref}
+        />
+      );
+    });
+
+    expect(ref.current.state.activeCategory).toBe("firefox");
+    expect(ref.current.state.activeCategoryFluentID).toBe(
+      "newtab-wallpaper-category-title-firefox"
+    );
+    expect(onSubpanelToggle).toHaveBeenCalledWith(true);
+  });
+
+  it("ignores a deep-linked category that is unavailable", () => {
+    const ref = React.createRef();
+    const props = {
+      ...DEFAULT_PROPS,
+      customizePanelWallpaperCategory: null,
+    };
+    const { rerender } = render(<WallpaperCategories {...props} ref={ref} />);
+
+    act(() => {
+      rerender(
+        <WallpaperCategories
+          {...props}
+          customizePanelWallpaperCategory="firefox"
+          ref={ref}
+        />
+      );
+    });
+
+    // "firefox" is not in DEFAULT_PROPS categories, so nothing should open.
+    expect(ref.current.state.activeCategory).toBeNull();
+  });
+
   it("should clear initialWallpaper when a custom colour is set", () => {
     const ref = React.createRef();
     render(<WallpaperCategories {...DEFAULT_PROPS} ref={ref} />);

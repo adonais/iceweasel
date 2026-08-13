@@ -5,12 +5,12 @@
 #ifndef mozilla_image_SVGDrawingParameters_h
 #define mozilla_image_SVGDrawingParameters_h
 
+#include "ImageRegion.h"
 #include "gfxContext.h"
 #include "gfxTypes.h"
-#include "ImageRegion.h"
+#include "mozilla/SVGImageContext.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/gfx/Types.h"
-#include "mozilla/SVGImageContext.h"
 #include "nsSize.h"
 
 namespace mozilla {

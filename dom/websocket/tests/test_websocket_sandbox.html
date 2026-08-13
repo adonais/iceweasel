@@ -14,7 +14,7 @@ var urls = [ "https://example.com/tests/dom/websocket/tests/iframe_websocket_san
              "https://example.com/tests/dom/websocket/tests/iframe_websocket_sandbox.html?popup" ];
 
 onmessage = function(e) {
-  is(e.data, "WS Throws!", "ws://URI cannot be used by a https iframe");
+  is(e.data, "WS onerror", "ws://URI cannot be used by a https iframe");
   runTest();
 }
 

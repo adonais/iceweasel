@@ -4,6 +4,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "WindowSurfaceX11.h"
+
 #include "gfxPlatform.h"
 
 namespace mozilla::widget {

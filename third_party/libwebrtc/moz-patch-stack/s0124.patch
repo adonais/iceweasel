@@ -1,61 +1,31 @@
 From: Michael Froman <mfroman@mozilla.com>
-Date: Sun, 28 Dec 2025 15:36:00 -0600
-Subject: Bug 2006933 - (fix-d381cc8b23) fix base-toolchains build
+Date: Mon, 29 Dec 2025 13:18:00 -0600
+Subject: Bug 2006933 - (fix-932f274e86) don't include rtc_error.h, forward
+ declare RTCError
 
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/ff7279205c599769b913c9359873562896b80799
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/fb61f91d422c3d77545d0d10778314eb958fc8c6
 ---
- modules/rtp_rtcp/source/rtp_format.cc | 15 +++++++--------
- 1 file changed, 7 insertions(+), 8 deletions(-)
+ api/rtp_parameters.h | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/modules/rtp_rtcp/source/rtp_format.cc b/modules/rtp_rtcp/source/rtp_format.cc
-index 5d3c880aff..6363c92da6 100644
---- a/modules/rtp_rtcp/source/rtp_format.cc
-+++ b/modules/rtp_rtcp/source/rtp_format.cc
-@@ -36,32 +36,31 @@ std::unique_ptr<RtpPacketizer> RtpPacketizer::Create(
-     PayloadSizeLimits limits,
-     // Codec-specific details.
-     const RTPVideoHeader& rtp_video_header) {
--  using enum PacketizationFormat;
-   switch (format) {
--    case kRaw: {
-+    case PacketizationFormat::kRaw: {
-       return std::make_unique<RtpPacketizerGeneric>(payload, limits);
-     }
--    case kH264: {
-+    case PacketizationFormat::kH264: {
-       const auto& h264 =
-           std::get<RTPVideoHeaderH264>(rtp_video_header.video_type_header);
-       return std::make_unique<RtpPacketizerH264>(payload, limits,
-                                                  h264.packetization_mode);
-     }
--    case kVP8: {
-+    case PacketizationFormat::kVP8: {
-       const auto& vp8 =
-           std::get<RTPVideoHeaderVP8>(rtp_video_header.video_type_header);
-       return std::make_unique<RtpPacketizerVp8>(payload, limits, vp8);
-     }
--    case kVP9: {
-+    case PacketizationFormat::kVP9: {
-       const auto& vp9 =
-           std::get<RTPVideoHeaderVP9>(rtp_video_header.video_type_header);
-       return std::make_unique<RtpPacketizerVp9>(payload, limits, vp9);
-     }
--    case kAV1:
-+    case PacketizationFormat::kAV1:
-       return std::make_unique<RtpPacketizerAv1>(
-           payload, limits, rtp_video_header.frame_type,
-           rtp_video_header.is_last_frame_in_picture);
--    case kH265: {
-+    case PacketizationFormat::kH265: {
- #ifdef RTC_ENABLE_H265
-       return std::make_unique<RtpPacketizerH265>(payload, limits);
- #else
-@@ -69,7 +68,7 @@ std::unique_ptr<RtpPacketizer> RtpPacketizer::Create(
-                                                     rtp_video_header);
- #endif
-     }
--    case kGeneric: {
-+    case PacketizationFormat::kGeneric: {
-       return std::make_unique<RtpPacketizerGeneric>(payload, limits,
-                                                     rtp_video_header);
-     }
+diff --git a/api/rtp_parameters.h b/api/rtp_parameters.h
+index 99fff6c673..cd210945c9 100644
+--- a/api/rtp_parameters.h
++++ b/api/rtp_parameters.h
+@@ -34,7 +34,6 @@
+ #include "absl/strings/string_view.h"
+ #include "api/media_types.h"
+ #include "api/priority.h"
+-#include "api/rtc_error.h"
+ #include "api/rtp_header_extension_id.h"
+ #include "api/rtp_transceiver_direction.h"
+ #include "api/video/resolution.h"
+@@ -44,7 +43,7 @@
+ #include "rtc_base/system/rtc_export.h"
+ 
+ namespace webrtc {
+-
++class RTCError;
+ class StringBuilder;
+ 
+ using CodecParameterMap = std::map<std::string, std::string>;

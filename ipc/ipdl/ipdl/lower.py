@@ -4602,7 +4602,8 @@ class _GenerateProtocolActorCode(ipdl.ast.Visitor):
 
     def genHelperCtor(self, md):
         helperdecl = self.makeSendMethodDecl(md)
-        helperdecl.params = helperdecl.params[1:]
+        params = helperdecl.params
+        helperdecl.params = params[1:]
         helper = MethodDefn(helperdecl)
 
         helper.addstmts(
@@ -4610,7 +4611,10 @@ class _GenerateProtocolActorCode(ipdl.ast.Visitor):
                 self.callAllocActor(md, retsems="out", side=self.side),
                 StmtReturn(
                     ExprCall(
-                        ExprVar(helperdecl.name), args=md.makeCxxArgs(paramsems="move")
+                        ExprVar(helperdecl.name), args=[
+                            ExprCode("std::forward<${t}>(${n})", t=p.type, n=p.name)
+                            for p in params
+                        ]
                     )
                 ),
             ]

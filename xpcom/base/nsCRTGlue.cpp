@@ -3,14 +3,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsCRTGlue.h"
-#include "nsXPCOM.h"
-#include "nsDebug.h"
-#include "prtime.h"
 
 #include <stdlib.h>
 #include <string.h>
 
 #include "mozilla/Sprintf.h"
+#include "nsDebug.h"
+#include "nsXPCOM.h"
+#include "prtime.h"
 
 #ifdef XP_WIN
 #  include <io.h>

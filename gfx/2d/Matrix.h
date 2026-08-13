@@ -5,18 +5,20 @@
 #ifndef MOZILLA_GFX_MATRIX_H_
 #define MOZILLA_GFX_MATRIX_H_
 
-#include "Types.h"
-#include "Triangle.h"
-#include "Rect.h"
+#include <math.h>
+
+#include <iosfwd>
+
 #include "Point.h"
 #include "Quaternion.h"
-#include <iosfwd>
-#include <math.h>
+#include "Rect.h"
+#include "Triangle.h"
+#include "Types.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/FloatingPoint.h"
-#include "mozilla/gfx/ScaleFactors2D.h"
 #include "mozilla/Span.h"
+#include "mozilla/gfx/ScaleFactors2D.h"
 
 namespace mozilla {
 
@@ -606,6 +608,8 @@ class Matrix4x4Typed {
     };
     T components[16];
   };
+
+  auto MutTiedFields() { return std::tie(components); }
 
   friend std::ostream& operator<<(std::ostream& aStream,
                                   const Matrix4x4Typed& aMatrix) {

@@ -56,7 +56,7 @@ const clickImportFromCsv = async (
   MockFilePicker.returnValue = MockFilePicker.returnOK;
   const csvFile = await LoginTestUtils.file.setupCsvFileWithLines(linesInFile);
   if (isFromMenuDropdown) {
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => passwordsSidebar.querySelector(".second-row"),
       "Second row failed to render"
     );

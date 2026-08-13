@@ -1,20 +1,19 @@
-#include "gtest/gtest.h"
-#include "gtest/MozGTestBench.h"  // For MOZ_GTEST_BENCH
-
-#include "nsCOMPtr.h"
-#include "nsNetCID.h"
-#include "nsIURL.h"
-#include "nsIStandardURL.h"
-#include "nsString.h"
-#include "nsPrintfCString.h"
-#include "nsComponentManagerUtils.h"
-#include "nsIURIMutator.h"
-#include "mozilla/ipc/URIUtils.h"
-#include "nsSerializationHelper.h"
-#include "mozilla/Base64.h"
-#include "nsEscape.h"
-#include "nsURLHelper.h"
 #include "IPv4Parser.h"
+#include "gtest/MozGTestBench.h"  // For MOZ_GTEST_BENCH
+#include "gtest/gtest.h"
+#include "mozilla/Base64.h"
+#include "mozilla/ipc/URIUtils.h"
+#include "nsCOMPtr.h"
+#include "nsComponentManagerUtils.h"
+#include "nsEscape.h"
+#include "nsIStandardURL.h"
+#include "nsIURIMutator.h"
+#include "nsIURL.h"
+#include "nsNetCID.h"
+#include "nsPrintfCString.h"
+#include "nsSerializationHelper.h"
+#include "nsString.h"
+#include "nsURLHelper.h"
 
 using namespace mozilla;
 

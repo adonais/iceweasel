@@ -9,6 +9,11 @@
 COMPILE_FLAGS["OS_INCLUDES"] = []
 AllowCompilerWarnings()
 
+CXXFLAGS += [
+    "-Wno-comma",
+    "-Wno-tautological-type-limit-compare"
+]
+
 DEFINES["ABSL_ALLOCATOR_NOTHROW"] = "1"
 
 FINAL_LIBRARY = "abseil"

@@ -9,10 +9,10 @@
 #include <windows.h>
 #include <wrl.h>
 
-#include "content_decryption_module.h"
 #include "MFCDMExtra.h"
 #include "RefCounted.h"
 #include "WMFClearKeyUtils.h"
+#include "content_decryption_module.h"
 
 namespace mozilla {
 

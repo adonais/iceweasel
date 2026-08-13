@@ -3,8 +3,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "gc/Nursery-inl.h"
-
 #include "mozilla/DebugOnly.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Sprintf.h"
@@ -37,6 +35,7 @@
 #include "gc/BufferAllocator-inl.h"
 #include "gc/Heap-inl.h"
 #include "gc/Marking-inl.h"
+#include "gc/Nursery-inl.h"
 #include "gc/StableCellHasher-inl.h"
 #include "gc/StoreBuffer-inl.h"
 #include "vm/GeckoProfiler-inl.h"
@@ -1654,7 +1653,9 @@ void js::Nursery::traceRoots(AutoGCSession& session, TenuringTracer& mover) {
     // Trace the store buffer, which must happen first.
 
     // Create an empty store buffer on the stack and swap it with the main store
-    // buffer, clearing it.
+    // buffer, clearing it. Preserve the 'mayHavePointersToDeadCells' flag over
+    // semispace collections that may not clear these entries.
+
     StoreBuffer sb(gc);
     {
       AutoEnterOOMUnsafeRegion oomUnsafe;
@@ -1662,7 +1663,13 @@ void js::Nursery::traceRoots(AutoGCSession& session, TenuringTracer& mover) {
         oomUnsafe.crash("Nursery::traceRoots");
       }
     }
+
+    bool hadPointersToDeadCells =
+        gc->storeBuffer().mayHavePointersToDeadCells();
     std::swap(sb, gc->storeBuffer());
+    if (hadPointersToDeadCells && !tenuredEverything) {
+      gc->storeBuffer().setMayHavePointersToDeadCells();
+    }
     MOZ_ASSERT(gc->storeBuffer().isEnabled());
     MOZ_ASSERT(gc->storeBuffer().isEmpty());
 

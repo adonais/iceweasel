@@ -222,7 +222,7 @@ How to trigger a custom Gecko Profile
 5. Fill in the profiling parameters:
 
    * ``gecko_profile_interval`` – sampling interval in milliseconds (e.g. `1`)
-   * ``gecko_profile_features`` – comma-separated feature list (e.g. `js,stackwalk,cpu,screenshots,memory`)
+   * ``gecko_profile_features`` – comma-separated feature list (e.g. `js,stackwalk,screenshots,memory`)
    * ``gecko_profile_threads`` – comma-separated thread names (e.g. `GeckoMain,Compositor,Renderer`)
 
  .. image:: ./gpc_form.png
@@ -252,7 +252,7 @@ When the job completes, click on the artifacts tab, and then click the `Open in 
 
 Native Profiling
 ----------------
-To generate CI profiles with an OS-specific profiler (i.e., Simpleperf for Android), use the ``--native-profiling`` flag with ``./mach try`` and select a `supported job <browsertime.html#native-profiling-with-raptor-browsertime>`_.
+To generate CI profiles with an OS-specific profiler (i.e., Simpleperf for Android, Xperf for Windows), use the ``--native-profiling`` flag with ``./mach try`` and select a `supported job <browsertime.html#native-profiling-with-raptor-browsertime>`_.
 
 Side-by-Side
 ------------

@@ -5,8 +5,8 @@
 #ifndef nsTouchBarUpdater_h_
 #define nsTouchBarUpdater_h_
 
-#include "nsITouchBarUpdater.h"
 #include "nsCocoaWindow.h"
+#include "nsITouchBarUpdater.h"
 
 class nsTouchBarUpdater : public nsITouchBarUpdater {
  public:

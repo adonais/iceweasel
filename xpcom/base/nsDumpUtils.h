@@ -5,13 +5,13 @@
 #ifndef mozilla_nsDumpUtils_h
 #define mozilla_nsDumpUtils_h
 
-#include "nsIObserver.h"
 #include "base/message_loop.h"
-#include "nsXULAppAPI.h"
-#include "nsThreadUtils.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticPtr.h"
+#include "nsIObserver.h"
 #include "nsTArray.h"
+#include "nsThreadUtils.h"
+#include "nsXULAppAPI.h"
 
 #ifdef LOG
 #  undef LOG

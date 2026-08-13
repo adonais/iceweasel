@@ -424,56 +424,6 @@ void LIRGenerator::visitWasmUnsignedToFloat32(MWasmUnsignedToFloat32* ins) {
   define(lir, ins);
 }
 
-void LIRGenerator::visitAsmJSLoadHeap(MAsmJSLoadHeap* ins) {
-  MOZ_ASSERT(ins->access().offset32() == 0);
-
-  MDefinition* base = ins->base();
-  MOZ_ASSERT(base->type() == MIRType::Int32);
-  LAllocation baseAlloc;
-  LAllocation limitAlloc;
-  // For MIPS it is best to keep the 'base' in a register if a bounds check
-  // is needed.
-  if (base->isConstant() && !ins->needsBoundsCheck()) {
-    // A bounds check is only skipped for a positive index.
-    MOZ_ASSERT(base->toConstant()->toInt32() >= 0);
-    baseAlloc = LAllocation(base->toConstant());
-  } else {
-    baseAlloc = useRegisterAtStart(base);
-    if (ins->needsBoundsCheck()) {
-      MDefinition* boundsCheckLimit = ins->boundsCheckLimit();
-      MOZ_ASSERT(boundsCheckLimit->type() == MIRType::Int32);
-      limitAlloc = useRegisterAtStart(boundsCheckLimit);
-    }
-  }
-
-  define(new (alloc()) LAsmJSLoadHeap(baseAlloc, limitAlloc, LAllocation()),
-         ins);
-}
-
-void LIRGenerator::visitAsmJSStoreHeap(MAsmJSStoreHeap* ins) {
-  MOZ_ASSERT(ins->access().offset32() == 0);
-
-  MDefinition* base = ins->base();
-  MOZ_ASSERT(base->type() == MIRType::Int32);
-  LAllocation baseAlloc;
-  LAllocation limitAlloc;
-  if (base->isConstant() && !ins->needsBoundsCheck()) {
-    MOZ_ASSERT(base->toConstant()->toInt32() >= 0);
-    baseAlloc = LAllocation(base->toConstant());
-  } else {
-    baseAlloc = useRegisterAtStart(base);
-    if (ins->needsBoundsCheck()) {
-      MDefinition* boundsCheckLimit = ins->boundsCheckLimit();
-      MOZ_ASSERT(boundsCheckLimit->type() == MIRType::Int32);
-      limitAlloc = useRegisterAtStart(boundsCheckLimit);
-    }
-  }
-
-  add(new (alloc()) LAsmJSStoreHeap(baseAlloc, useRegisterAtStart(ins->value()),
-                                    limitAlloc, LAllocation()),
-      ins);
-}
-
 void LIRGenerator::visitSubstr(MSubstr* ins) {
   LSubstr* lir = new (alloc())
       LSubstr(useRegister(ins->string()), useRegister(ins->begin()),

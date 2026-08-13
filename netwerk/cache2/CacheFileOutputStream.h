@@ -5,11 +5,11 @@
 #ifndef CacheFileOutputStream_h_
 #define CacheFileOutputStream_h_
 
-#include "nsIAsyncOutputStream.h"
-#include "nsISeekableStream.h"
-#include "nsCOMPtr.h"
 #include "CacheFileChunk.h"
 #include "Dictionary.h"
+#include "nsCOMPtr.h"
+#include "nsIAsyncOutputStream.h"
+#include "nsISeekableStream.h"
 
 namespace mozilla {
 namespace net {

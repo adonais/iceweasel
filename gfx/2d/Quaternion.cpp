@@ -3,9 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "Quaternion.h"
+
+#include <ostream>
+
 #include "Matrix.h"
 #include "Tools.h"
-#include <ostream>
 
 namespace mozilla {
 namespace gfx {

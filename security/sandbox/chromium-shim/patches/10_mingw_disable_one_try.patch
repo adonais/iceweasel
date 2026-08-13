@@ -18,7 +18,7 @@ MozReview-Commit-ID: JRKY4wp7sdu
 diff --git a/base/threading/platform_thread_win.cc b/base/threading/platform_thread_win.cc
 --- a/base/threading/platform_thread_win.cc
 +++ b/base/threading/platform_thread_win.cc
-@@ -32,27 +32,30 @@ typedef struct tagTHREADNAME_INFO {
+@@ -54,27 +54,30 @@ typedef struct tagTHREADNAME_INFO {
  } THREADNAME_INFO;
  
  // The SetThreadDescription API was brought in version 1607 of Windows 10.
@@ -32,7 +32,7 @@ diff --git a/base/threading/platform_thread_win.cc b/base/threading/platform_thr
    THREADNAME_INFO info;
    info.dwType = 0x1000;
    info.szName = name;
-   info.dwThreadID = thread_id;
+   info.dwThreadID = thread_id.raw();
    info.dwFlags = 0;
  
    __try {
@@ -47,5 +47,5 @@ diff --git a/base/threading/platform_thread_win.cc b/base/threading/platform_thr
    raw_ptr<PlatformThread::Delegate> delegate;
    bool joinable;
    ThreadType thread_type;
-   MessagePumpType message_pump_type;
  };
+ 

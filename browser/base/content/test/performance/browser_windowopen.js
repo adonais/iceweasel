@@ -142,7 +142,7 @@ add_task(async function () {
             const tabRect = tabBoundingRect
               ? tabBoundingRect
               : (tabBoundingRect = gBrowser.tabContainer
-                  .querySelector("tab[selected=true] .tab-background")
+                  .querySelector("tab[selected] .tab-background")
                   .getBoundingClientRect());
             return (
               inRange(r.x1, tabRect.x - 2, tabRect.x + 2) &&

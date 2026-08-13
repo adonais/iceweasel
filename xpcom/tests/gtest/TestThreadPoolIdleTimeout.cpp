@@ -2,23 +2,21 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "gtest/gtest.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/CondVar.h"
+#include "mozilla/Logging.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/ThreadSafety.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/gtest/MozAssertions.h"
 #include "nsIThread.h"
-
 #include "nsThreadPool.h"
 #include "nsThreadUtils.h"
 #include "pratom.h"
 #include "prinrval.h"
 #include "prmon.h"
 #include "prthread.h"
-#include "mozilla/Assertions.h"
-#include "mozilla/Logging.h"
-#include "mozilla/gtest/MozAssertions.h"
-
-#include "gtest/gtest.h"
 
 using namespace mozilla;
 

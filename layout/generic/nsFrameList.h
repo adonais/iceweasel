@@ -244,13 +244,13 @@ class nsFrameList {
   template <typename Predicate>
   nsFrameList Split(Predicate&& aPredicate) {
     static_assert(
-        std::is_same<
+        std::is_same_v<
             typename mozilla::FunctionTypeTraits<Predicate>::ReturnType,
-            bool>::value &&
+            bool> &&
             mozilla::FunctionTypeTraits<Predicate>::arity == 1 &&
-            std::is_same<typename mozilla::FunctionTypeTraits<
-                             Predicate>::template ParameterType<0>,
-                         nsIFrame*>::value,
+            std::is_same_v<typename mozilla::FunctionTypeTraits<
+                               Predicate>::template ParameterType<0>,
+                           nsIFrame*>,
         "aPredicate should be of this function signature: bool(nsIFrame*)");
 
     for (nsIFrame* f : *this) {

@@ -1,17 +1,16 @@
 #include "gtest/gtest.h"
-
-#include "nsCOMPtr.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PreloadHashKey.h"
 #include "mozilla/SpinEventLoopUntil.h"
-#include "nsNetUtil.h"
-#include "nsIChannel.h"
-#include "nsIStreamListener.h"
-#include "nsThreadUtils.h"
-#include "nsStringStream.h"
-#include "nsIPrivateBrowsingChannel.h"
-#include "nsIInterfaceRequestor.h"
+#include "nsCOMPtr.h"
 #include "nsContentUtils.h"
+#include "nsIChannel.h"
+#include "nsIInterfaceRequestor.h"
+#include "nsIPrivateBrowsingChannel.h"
+#include "nsIStreamListener.h"
+#include "nsNetUtil.h"
+#include "nsStringStream.h"
+#include "nsThreadUtils.h"
 
 using namespace mozilla;
 

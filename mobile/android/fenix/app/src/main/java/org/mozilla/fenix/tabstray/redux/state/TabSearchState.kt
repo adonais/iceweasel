@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.tabstray.redux.state
 
+import androidx.compose.runtime.Immutable
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 
 /**
@@ -12,6 +13,7 @@ import org.mozilla.fenix.tabstray.data.TabsTrayItem
  * @property query The text in the search field.
  * @property searchResults The list of open tabs that match the current [query].
  */
+@Immutable
 data class TabSearchState(
     val query: String = "",
     val searchResults: List<TabsTrayItem> = emptyList(),

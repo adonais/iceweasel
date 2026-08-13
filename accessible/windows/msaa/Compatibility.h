@@ -5,11 +5,11 @@
 #ifndef COMPATIBILITY_MANAGER_H
 #define COMPATIBILITY_MANAGER_H
 
-#include <windows.h>
-#include "nsTArray.h"
-#include "nsString.h"
-
 #include <stdint.h>
+#include <windows.h>
+
+#include "nsString.h"
+#include "nsTArray.h"
 
 namespace mozilla::a11y {
 

@@ -123,7 +123,6 @@ FunctionBox::FunctionBox(FrontendContext* fc, SourceExtent extent,
       emitBytecode(false),
       wasEmittedByEnclosingScript_(false),
       isAnnexB(false),
-      useAsm(false),
       hasParameterExprs(false),
       hasDestructuringArgs(false),
       hasDuplicateParameters(false),
@@ -149,8 +148,7 @@ void FunctionBox::initWithEnclosingParseContext(ParseContext* enclosing,
                                                 FunctionSyntaxKind kind) {
   SharedContext* sc = enclosing->sc();
 
-  // HasModuleGoal and useAsm are inherited from enclosing context.
-  useAsm = sc->isFunctionBox() && sc->asFunctionBox()->useAsmOrInsideUseAsm();
+  // HasModuleGoal is inherited from enclosing context.
   setHasModuleGoal(sc->hasModuleGoal());
 
   // Arrow functions don't have their own `this` binding.
@@ -163,14 +161,10 @@ void FunctionBox::initWithEnclosingParseContext(ParseContext* enclosing,
   } else {
     if (IsConstructorKind(kind)) {
       // Record this function into the enclosing class statement so that
-      // finishClassConstructor can final processing. Due to aborted syntax
-      // parses (eg, because of asm.js), this may have already been set with an
-      // early FunctionBox. In that case, the FunctionNode should still match.
+      // finishClassConstructor can do its final processing.
       auto classStmt =
           enclosing->findInnermostStatement<ParseContext::ClassStatement>();
       MOZ_ASSERT(classStmt);
-      MOZ_ASSERT(classStmt->constructorBox == nullptr ||
-                 classStmt->constructorBox->functionNode == this->functionNode);
       classStmt->constructorBox = this;
     }
 
@@ -264,47 +258,6 @@ void FunctionBox::setEnclosingScopeForInnerLazyFunction(ScopeIndex scopeIndex) {
   if (isFunctionFieldCopiedToStencil) {
     copyUpdatedEnclosingScopeIndex();
   }
-}
-
-bool FunctionBox::setUseAsm() {
-  MOZ_ASSERT(!useAsm);
-
-  // Mark this function as being in "use asm".
-  useAsm = true;
-
-  // Initialize the stencil asm.js container eagerly. We do this before
-  // we validate/compile so that we can use the presence of this container to
-  // fire a use counter that works even if asm.js is disabled and the function
-  // doesn't end up being compiled with asm.js optimizations.
-  //
-  // This field is used to disable network and in-memory caching of stencils,
-  // and so we will be effectively disabling those even if this asm.js
-  // compilation fails or asm.js was disabled. Disabling asm.js is a non-
-  // standard configuration and so this is expected to be quite rare.
-  if (compilationState_.asmJS) {
-    return true;
-  }
-  compilationState_.asmJS = fc_->getAllocator()->new_<StencilAsmJSContainer>();
-  return !!compilationState_.asmJS;
-}
-
-bool FunctionBox::setAsmJSModule(const JS::WasmModule* module) {
-  MOZ_ASSERT(!isFunctionFieldCopiedToStencil);
-
-  MOZ_ASSERT(flags_.kind() == FunctionFlags::NormalFunction);
-
-  // Update flags we will use to allocate the JSFunction.
-  flags_.clearBaseScript();
-  flags_.setIsExtended();
-  flags_.setKind(FunctionFlags::AsmJS);
-
-  // The asm.js stencil container should have been initialized in `setUseAsm`
-  // above.
-  if (!compilationState_.asmJS->moduleMap.putNew(index(), module)) {
-    js::ReportOutOfMemory(fc_);
-    return false;
-  }
-  return true;
 }
 
 ModuleSharedContext::ModuleSharedContext(

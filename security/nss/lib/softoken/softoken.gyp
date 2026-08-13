@@ -42,6 +42,15 @@
     {
       'target_name': 'softokn_base',
       'type': 'none',
+      'conditions': [
+        [ 'fuzz==1', {
+          'direct_dependent_settings': {
+            'defines': [
+              'SOFTOKEN_FUZZ',
+            ],
+          },
+        }],
+      ],
       'direct_dependent_settings': {
         'sources': [
           'fipsaudt.c',

@@ -3,8 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 // FIXME: Due to an include cycle, we need to include `nsTSubstring` first.
+// clang-format off
 #include "nsTSubstring.h"
 #include "nsTDependentSubstring.h"
+// clang-format on
 
 template <typename T>
 void nsTDependentSubstring<T>::Rebind(const substring_type& str,

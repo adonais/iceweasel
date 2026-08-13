@@ -21,7 +21,6 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = XPCOMUtils.declareLazy({
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
-  ObjectUtils: "resource://gre/modules/ObjectUtils.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   SearchEngineClassification:
     "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustSearch.sys.mjs",
@@ -423,15 +422,6 @@ export class ConfigSearchEngine extends SearchEngine {
    */
   #isGeneralPurposeSearchEngine = false;
 
-  /**
-   * Stores certain initial info about an engine. Used to verify whether we've
-   * actually changed the engine, so that we don't record default engine
-   * changed telemetry unnecessarily.
-   *
-   * @type {?Map<string, any>}
-   */
-  #prevEngineInfo = null;
-
   #partnerCode = "";
 
   /**
@@ -470,15 +460,6 @@ export class ConfigSearchEngine extends SearchEngine {
 
     this.#init(config);
     this._loadSettings(settings);
-
-    this.#prevEngineInfo = new Map(
-      /** @type {[string, any][]} */ ([
-        ["name", this.name],
-        ["_loadPath", this._loadPath],
-        ["submissionURL", this.getSubmission("foo").uri.spec],
-        ["aliases", this._definedAliases],
-      ])
-    );
   }
 
   /**
@@ -504,25 +485,7 @@ export class ConfigSearchEngine extends SearchEngine {
     this._urls = [];
     this.#init(configuration);
 
-    let needToSendUpdate = this.#hasBeenModified(this, this.#prevEngineInfo, [
-      "name",
-      "_loadPath",
-      "aliases",
-    ]);
-
-    // We only send a notification if critical fields have changed, e.g., ones
-    // that may affect the UI or telemetry. If we want to add more fields here
-    // in the future, we need to ensure we don't send unnecessary
-    // `engine-update` telemetry. Therefore we may need additional notification
-    // types or to implement an alternative.
-    if (needToSendUpdate) {
-      lazy.SearchUtils.notifyAction(
-        this,
-        lazy.SearchUtils.MODIFIED_TYPE.CHANGED
-      );
-
-      this._resetPrevEngineInfo();
-    }
+    lazy.SearchUtils.notifyAction(this, lazy.SearchUtils.MODIFIED_TYPE.CHANGED);
   }
 
   /**
@@ -809,55 +772,6 @@ export class ConfigSearchEngine extends SearchEngine {
     }
 
     this._urls.push(engineURL);
-  }
-
-  /**
-   * Determines whether the specified engine properties differ between their
-   * current and initial values.
-   *
-   * @param {ConfigSearchEngine} currentEngine
-   *   The current engine.
-   * @param {Map} initialValues
-   *   The initial values stored for the currentEngine.
-   * @param {Array<string>} targetKeys
-   *   The relevant keys to compare (current value for the engine vs. initial
-   *   value).
-   * @returns {boolean}
-   *   Returns true if any of the properties relevant to default engine changed
-   *   telemetry was changed.
-   */
-  #hasBeenModified(currentEngine, initialValues, targetKeys) {
-    for (let i = 0; i < targetKeys.length; i++) {
-      let key = targetKeys[i];
-
-      if (
-        !lazy.ObjectUtils.deepEqual(currentEngine[key], initialValues.get(key))
-      ) {
-        return true;
-      }
-
-      let currentEngineSubmissionURL =
-        currentEngine.getSubmission("foo").uri.spec;
-      if (currentEngineSubmissionURL != initialValues.get("submissionURL")) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  // Not #-prefixed private because it's spied upon in a test.
-  _resetPrevEngineInfo() {
-    this.#prevEngineInfo.forEach((_value, key) => {
-      let newValue;
-      if (key == "submissionURL") {
-        newValue = this.getSubmission("foo").uri.spec;
-      } else {
-        newValue = this[key];
-      }
-
-      this.#prevEngineInfo.set(key, newValue);
-    });
   }
 }
 

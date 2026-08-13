@@ -5,14 +5,14 @@
 #ifndef mozilla_net_ChildDNSService_h
 #define mozilla_net_ChildDNSService_h
 
-#include "DNSServiceBase.h"
-#include "nsPIDNSService.h"
-#include "mozilla/Attributes.h"
-#include "mozilla/Mutex.h"
 #include "DNSRequestChild.h"
 #include "DNSRequestParent.h"
-#include "nsHashKeys.h"
+#include "DNSServiceBase.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/Mutex.h"
 #include "nsClassHashtable.h"
+#include "nsHashKeys.h"
+#include "nsPIDNSService.h"
 
 namespace mozilla {
 namespace net {

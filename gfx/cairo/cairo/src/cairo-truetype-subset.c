@@ -114,7 +114,7 @@ check (tt_glyph_data_t,	26);
 
 static cairo_status_t
 cairo_truetype_font_use_glyph (cairo_truetype_font_t	    *font,
-	                       unsigned short		     glyph,
+	                       unsigned long		     glyph,
 			       unsigned short		    *out);
 
 #define SFNT_VERSION			0x00010000
@@ -1026,7 +1026,7 @@ cairo_truetype_font_generate (cairo_truetype_font_t  *font,
 
 static cairo_status_t
 cairo_truetype_font_use_glyph (cairo_truetype_font_t	    *font,
-	                       unsigned short		     glyph,
+	                       unsigned long		     glyph,
 			       unsigned short		    *out)
 {
     if (glyph >= font->base.num_glyphs_in_face)
@@ -1150,7 +1150,7 @@ cairo_truetype_subset_init_internal (cairo_truetype_subset_t     *truetype_subse
 	return status;
 
     for (i = 0; i < font->scaled_font_subset->num_glyphs; i++) {
-	unsigned short parent_glyph = font->scaled_font_subset->glyphs[i];
+	unsigned long parent_glyph = font->scaled_font_subset->glyphs[i];
 	status = cairo_truetype_font_use_glyph (font, parent_glyph, &parent_glyph);
 	if (unlikely (status))
 	    goto fail1;
@@ -1451,13 +1451,22 @@ find_name (tt_name_t *name, unsigned long size, int name_id, int platform, int e
 {
     tt_name_record_t *record;
     unsigned int i, len;
+    unsigned long max_records;
     char *str;
     char *p;
     cairo_bool_t has_tag;
     cairo_status_t status;
 
     str = NULL;
-    for (i = 0; i < MIN(be16_to_cpu (name->num_records), size / sizeof(name->records[0])); i++) {
+    /* records[] starts after the 6-byte tt_name_t header (format,
+     * num_records, strings_offset); only records lying entirely within the
+     * size-byte table may be read. */
+    if (size < offsetof (tt_name_t, records)) {
+	*str_out = NULL;
+	return CAIRO_STATUS_SUCCESS;
+    }
+    max_records = (size - offsetof (tt_name_t, records)) / sizeof(name->records[0]);
+    for (i = 0; i < MIN(be16_to_cpu (name->num_records), max_records); i++) {
         record = &(name->records[i]);
 	if (be16_to_cpu (record->name) == name_id &&
 	    be16_to_cpu (record->platform) == platform &&

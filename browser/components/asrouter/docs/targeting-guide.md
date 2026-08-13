@@ -82,6 +82,13 @@ Returns `true` if the preference exists with any valid type (`string`, `integer`
 "some.optional.pref" | preferenceExists
 ```
 
+### `preferenceIsLocked`
+Returns `true` if the preference is locked (for example, by an enterprise policy), meaning its value cannot be changed. Returns `false` for unlocked or nonexistent preferences. Useful to avoid offering an action that would silently no-op because the preference it sets is locked.
+
+```java
+"browser.startup.page" | preferenceIsLocked
+```
+
 ### `keys`
 Returns an array of the enumerable keys of an object, or `undefined` if the input is not an object.
 

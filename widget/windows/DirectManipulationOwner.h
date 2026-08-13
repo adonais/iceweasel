@@ -6,6 +6,7 @@
 #define DirectManipulationOwner_h_
 
 #include <windows.h>
+
 #include "Units.h"
 #include "nsIWidget.h"  // for TouchpadGesturePhase
 

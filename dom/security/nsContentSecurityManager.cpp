@@ -1332,6 +1332,25 @@ static nsresult CheckAllowLoadByTriggeringRemoteType(nsIChannel* aChannel) {
 
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
 
+  nsAutoCString triggeringRemoteType;
+  nsresult rv = loadInfo->GetTriggeringRemoteType(triggeringRemoteType);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  // Before getting to document-load content policy checks, validate the
+  // principal to inherit against the triggering remote type.
+  if (!ValidatePrincipalCouldPotentiallyBeLoadedBy(
+          loadInfo->PrincipalToInherit(), triggeringRemoteType,
+          {ValidatePrincipalOptions::AllowNullPtr})) {
+    if (MOZ_LOG_TEST(sUELLog, LogLevel::Warning)) {
+      nsAutoCString origin;
+      loadInfo->PrincipalToInherit()->GetOrigin(origin);
+      MOZ_LOG(sUELLog, LogLevel::Warning,
+              ("Unexpected PrincipalToInherit %s for remote %s", origin.get(),
+               triggeringRemoteType.get()));
+    }
+    return NS_ERROR_CONTENT_BLOCKED;
+  }
+
   // For now, only restrict loads for documents. We currently have no
   // interesting subresource checks for protocols which are are not fully
   // handled within the content process.
@@ -1345,10 +1364,6 @@ static nsresult CheckAllowLoadByTriggeringRemoteType(nsIChannel* aChannel) {
   MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread(),
                         "Unexpected off-the-main-thread call to "
                         "CheckAllowLoadByTriggeringRemoteType");
-
-  nsAutoCString triggeringRemoteType;
-  nsresult rv = loadInfo->GetTriggeringRemoteType(triggeringRemoteType);
-  NS_ENSURE_SUCCESS(rv, rv);
 
   // For now, only restrict loads coming from web remote types. In the future we
   // may want to expand this a bit.

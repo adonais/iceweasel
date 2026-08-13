@@ -2,27 +2,28 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "CookieStorage.h"
+
 #include "Cookie.h"
 #include "CookieCommons.h"
 #include "CookieLogging.h"
-#include "CookieParser.h"
 #include "CookieNotification.h"
-#include "mozilla/net/MozURL_ffi.h"
+#include "CookieParser.h"
 #include "CookieService.h"
-#include "nsCOMPtr.h"
-#include "nsICookieNotification.h"
-#include "CookieStorage.h"
+#include "mozilla/StaticPrefs_network.h"
 #include "mozilla/dom/nsMixedContentBlocker.h"
 #include "mozilla/glean/NetwerkMetrics.h"
-#include "mozilla/StaticPrefs_network.h"
+#include "mozilla/net/MozURL_ffi.h"
+#include "nsCOMPtr.h"
+#include "nsComponentManagerUtils.h"
+#include "nsICookieNotification.h"
 #include "nsIMutableArray.h"
-#include "nsTPriorityQueue.h"
+#include "nsIPrefService.h"
 #include "nsIScriptError.h"
 #include "nsIUserIdleService.h"
 #include "nsServiceManagerUtils.h"
-#include "nsComponentManagerUtils.h"
+#include "nsTPriorityQueue.h"
 #include "prprf.h"
-#include "nsIPrefService.h"
 
 #undef ADD_TEN_PERCENT
 #define ADD_TEN_PERCENT(i) static_cast<uint32_t>((i) + (i) / 10)

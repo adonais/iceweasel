@@ -4,10 +4,10 @@
 #ifndef nsDeviceContextAndroid_h_
 #define nsDeviceContextAndroid_h_
 
-#include "nsIDeviceContextSpec.h"
-#include "nsCOMPtr.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/gfx/PrintPromise.h"
+#include "nsCOMPtr.h"
+#include "nsIDeviceContextSpec.h"
 
 class nsDeviceContextSpecAndroid final : public nsIDeviceContextSpec {
  private:

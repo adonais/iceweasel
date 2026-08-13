@@ -30,9 +30,17 @@ object SettingsHTTPSOnlyModeSelectors {
         groups = listOf(),
     )
 
+    val HTTPS_ONLY_PRIVATE_TABS_OPTION = Selector(
+        strategy = SelectorStrategy.ESPRESSO_BY_ID,
+        value = "https_only_private_tabs",
+        description = "Enable in private tabs only option",
+        groups = listOf(),
+    )
+
     val all = listOf(
         HTTPS_MODE_OPTION_SUMMARY,
         HTTPS_ONLY_MODE_TOGGLE,
         HTTPS_ONLY_ALL_TABS_OPTION,
+        HTTPS_ONLY_PRIVATE_TABS_OPTION,
     )
 }

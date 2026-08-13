@@ -50,6 +50,15 @@ nsresult nsInlineFrame::GetFrameName(nsAString& aResult) const {
 }
 #endif
 
+nsInlineFrame::InlineReflowInput::InlineReflowInput(
+    const ReflowInput& aReflowInput,
+    SetParentDuringReflow aSetParentDuringReflow)
+    : mNextInFlow(
+          static_cast<nsInlineFrame*>(aReflowInput.mFrame->GetNextInFlow())),
+      mLineContainer(aReflowInput.mLineLayout->LineContainerFrame()),
+      mLineLayout(aReflowInput.mLineLayout),
+      mSetParentDuringReflow(aSetParentDuringReflow) {}
+
 void nsInlineFrame::InvalidateFrame(uint32_t aDisplayItemKey,
                                     bool aRebuildDisplayItems) {
   if (IsInSVGTextSubtree()) {
@@ -166,8 +175,7 @@ nscoord nsInlineFrame::GetCaretBaseline() const {
     // will get placed into a non-empty line unless all lines are empty, I
     // believe...
     if (container && container->LinesAreEmpty()) {
-      nscoord blockSize = container->ContentBSize(GetWritingMode());
-      return GetFontMetricsDerivedCaretBaseline(blockSize);
+      return GetFontMetricsDerivedCaretBaseline();
     }
   }
   return nsIFrame::GetCaretBaseline();
@@ -304,7 +312,7 @@ void nsInlineFrame::Reflow(nsPresContext* aPresContext,
     return;
   }
 
-  bool lazilySetParentPointer = false;
+  SetParentDuringReflow setParentDuringReflow = SetParentDuringReflow::No;
 
   // Check for an overflow list with our prev-in-flow
   nsInlineFrame* prevInFlow = (nsInlineFrame*)GetPrevInFlow();
@@ -312,7 +320,7 @@ void nsInlineFrame::Reflow(nsPresContext* aPresContext,
     AutoFrameListPtr prevOverflowFrames(aPresContext,
                                         prevInFlow->StealOverflowFrames());
     if (prevOverflowFrames) {
-      // Check if we should do the lazilySetParentPointer optimization.
+      // Check if we can defer setting the parent until reflow (optimization).
       // Only do it in simple cases where we're being reflowed for the
       // first time, nothing (e.g. bidi resolution) has already given
       // us children, and there's no next-in-flow, so all our frames
@@ -325,7 +333,7 @@ void nsInlineFrame::Reflow(nsPresContext* aPresContext,
         // list contains thousands of frames this is a big performance issue
         // (see bug #5588)
         mFrames = std::move(*prevOverflowFrames);
-        lazilySetParentPointer = true;
+        setParentDuringReflow = SetParentDuringReflow::Yes;
       } else {
         // Insert the new frames at the beginning of the child list
         // and set their parent pointer
@@ -333,8 +341,8 @@ void nsInlineFrame::Reflow(nsPresContext* aPresContext,
             mFrames.InsertFrames(this, nullptr, std::move(*prevOverflowFrames));
         // If our prev in flow was under the first continuation of a first-line
         // frame then we need to reparent the ComputedStyles to remove the
-        // the special first-line styling. In the lazilySetParentPointer case
-        // we reparent the ComputedStyles when we set their parents in
+        // special first-line styling. In the deferred case, we reparent
+        // the ComputedStyles when we set their parents in
         // nsInlineFrame::ReflowFrames and nsInlineFrame::ReflowInlineFrame.
         if (aReflowInput.mLineLayout->GetInFirstLine()) {
           ReparentChildListStyle(aPresContext, newFrames, this);
@@ -359,12 +367,7 @@ void nsInlineFrame::Reflow(nsPresContext* aPresContext,
   }
 
   // Set our own reflow input (additional state above and beyond aReflowInput).
-  InlineReflowInput irs;
-  irs.mPrevFrame = nullptr;
-  irs.mLineContainer = aReflowInput.mLineLayout->LineContainerFrame();
-  irs.mLineLayout = aReflowInput.mLineLayout;
-  irs.mNextInFlow = (nsInlineFrame*)GetNextInFlow();
-  irs.mSetParentPointer = lazilySetParentPointer;
+  InlineReflowInput irs(aReflowInput, setParentDuringReflow);
 
   if (mFrames.IsEmpty()) {
     // Try to pull over one frame before starting so that we know
@@ -433,8 +436,8 @@ bool nsInlineFrame::DrainSelfOverflowListInternal(bool aInFirstLine) {
     return false;
   }
 
-  // The frames on our own overflowlist may have been pushed by a
-  // previous lazilySetParentPointer Reflow so we need to ensure the
+  // The frames on our own overflowlist may have been pushed by a previous
+  // reflow that deferred setting their parent, so we need to ensure the
   // correct parent pointer.  This is sometimes skipped by Reflow.
   nsIFrame* firstChild = overflowFrames->FirstChild();
   RestyleManager* restyleManager = PresContext()->RestyleManager();
@@ -521,8 +524,9 @@ void nsInlineFrame::ReflowFrames(nsPresContext* aPresContext,
   nsIFrame* frame = mFrames.FirstChild();
   bool done = false;
   while (frame) {
-    // Check if we should lazily set the child frame's parent pointer.
-    if (irs.mSetParentPointer) {
+    // Set the child frame's parent pointer if we've deferred setting it until
+    // now.
+    if (irs.mSetParentDuringReflow == SetParentDuringReflow::Yes) {
       nsIFrame* child = frame;
       do {
         child->SetParent(this);
@@ -586,7 +590,7 @@ void nsInlineFrame::ReflowFrames(nsPresContext* aPresContext,
       done = aStatus.IsInlineBreak() ||
              (!reflowingFirstLetter && aStatus.IsIncomplete());
       if (done) {
-        if (!irs.mSetParentPointer) {
+        if (irs.mSetParentDuringReflow == SetParentDuringReflow::No) {
           break;
         }
         // Keep reparenting the remaining siblings, but don't reflow them.
@@ -1057,11 +1061,7 @@ void nsFirstLineFrame::Reflow(nsPresContext* aPresContext,
   DrainSelfOverflowList();
 
   // Set our own reflow input (additional state above and beyond aReflowInput).
-  InlineReflowInput irs;
-  irs.mPrevFrame = nullptr;
-  irs.mLineContainer = aReflowInput.mLineLayout->LineContainerFrame();
-  irs.mLineLayout = aReflowInput.mLineLayout;
-  irs.mNextInFlow = (nsInlineFrame*)GetNextInFlow();
+  InlineReflowInput irs(aReflowInput, SetParentDuringReflow::No);
 
   bool wasEmpty = mFrames.IsEmpty();
   if (wasEmpty) {

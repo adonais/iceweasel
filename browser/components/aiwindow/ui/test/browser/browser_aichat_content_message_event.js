@@ -148,6 +148,8 @@ add_task(async function test_completed_assistant_message_announced() {
     const browser = win.gBrowser.selectedBrowser;
 
     await typeInSmartbar(browser, "Hello");
+    await waitForSmartbarAction(browser, "chat");
+    await stubLoadURL(browser);
     await submitSmartbar(browser);
 
     const aiWindowEl = browser.contentDocument?.querySelector("ai-window");

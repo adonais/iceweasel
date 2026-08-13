@@ -7,16 +7,14 @@
 #include "AccessibleApplication_i.c"
 #include "ApplicationAccessibleWrap.h"
 #include "DocAccessible.h"
-#include "nsAccUtils.h"
-#include "nsCoreUtils.h"
+#include "ISimpleDOM.h"
 #include "Relation.h"
 #include "RootAccessible.h"
-#include "uiaRawElmProvider.h"
-
 #include "mozilla/a11y/Compatibility.h"
 #include "mozilla/a11y/DocAccessibleChild.h"
-
-#include "ISimpleDOM.h"
+#include "nsAccUtils.h"
+#include "nsCoreUtils.h"
+#include "uiaRawElmProvider.h"
 
 namespace mozilla {
 namespace a11y {

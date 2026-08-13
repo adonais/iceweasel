@@ -5,6 +5,7 @@
 package org.mozilla.fenix.tabstray.data
 
 import android.graphics.Bitmap
+import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.asImageBitmap
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.isActive
@@ -20,16 +21,24 @@ private const val MEDIUM_LARGE_WINDOW_FULL_EXPAND_TAB_COUNT = 8
 
 /**
  * Data entity representing items in the Tabs Tray.
- *
- * @property id The ID of the item.
- * @property isHomepageItem Whether the entity represents a Homepage item.
- * @property isFocused Whether the entity is focused.
  */
-sealed class TabsTrayItem(
-    open val id: String,
-    val isHomepageItem: Boolean,
-    open val isFocused: Boolean,
-) {
+@Immutable
+sealed interface TabsTrayItem {
+    /**
+     * The ID of the item.
+     */
+    val id: String
+
+    /**
+     * Whether the entity represents a Homepage item.
+     */
+    val isHomepageItem: Boolean
+
+    /**
+     * Whether the entity is focused.
+     */
+    val isFocused: Boolean
+
     /**
      * Data entity representing a tab in the Tabs Tray.
      *
@@ -42,6 +51,7 @@ sealed class TabsTrayItem(
      * @property lastAccess The last time this tab was accessed.
      * @property isFocused Whether the tab is focused. This is only set when the tab data model is generated.
      */
+    @Immutable
     data class Tab(
         override val id: String,
         val url: String,
@@ -51,11 +61,9 @@ sealed class TabsTrayItem(
         val icon: Bitmap?,
         val lastAccess: Long,
         override val isFocused: Boolean,
-    ) : TabsTrayItem(
-        id = id,
-        isFocused = isFocused,
-        isHomepageItem = url.equals(ABOUT_HOME_URL, ignoreCase = true),
-    ) {
+    ) : TabsTrayItem {
+        override val isHomepageItem: Boolean = url.equals(ABOUT_HOME_URL, ignoreCase = true)
+
         constructor(
             tab: TabSessionState,
             isFocused: Boolean = false,
@@ -94,20 +102,19 @@ sealed class TabsTrayItem(
      * @property initialScrollIndex The index to open the tab group to when first expanded. This is only set when the
      * tab data model is generated.
      */
+    @Immutable
     data class TabGroup(
         override val id: String = UUID.randomUUID().toString(),
         val title: String,
         val theme: TabGroupTheme,
-        val tabs: MutableList<Tab>,
+        val tabs: List<Tab>,
         val closed: Boolean = false,
         val lastModified: Long = 0L,
-        override var isFocused: Boolean = false,
-        var initialScrollIndex: Int = 0,
-    ) : TabsTrayItem(
-        id = id,
-        isHomepageItem = false,
-        isFocused = isFocused,
-    ) {
+        override val isFocused: Boolean = false,
+        val initialScrollIndex: Int = 0,
+    ) : TabsTrayItem {
+        override val isHomepageItem: Boolean = false
+
         /**
          * Retrieves the thumbnail image data for the first 4 tabs in the group's tab collection.
          */
@@ -164,7 +171,7 @@ internal fun createTabGroup(
     id: String = UUID.randomUUID().toString(),
     title: String = "",
     theme: TabGroupTheme = TabGroupTheme.default,
-    tabs: MutableList<TabsTrayItem.Tab> = mutableListOf(),
+    tabs: List<TabsTrayItem.Tab> = listOf(),
     closed: Boolean = false,
     lastModified: Long = 0L,
     isFocused: Boolean = false,

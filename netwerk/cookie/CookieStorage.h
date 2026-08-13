@@ -5,14 +5,14 @@
 #ifndef mozilla_net_CookieStorage_h
 #define mozilla_net_CookieStorage_h
 
-#include "CookieKey.h"
+#include <functional>
 
+#include "CookieCommons.h"
+#include "CookieKey.h"
 #include "nsICookieNotification.h"
 #include "nsIObserver.h"
 #include "nsTHashtable.h"
 #include "nsWeakReference.h"
-#include <functional>
-#include "CookieCommons.h"
 
 class nsIArray;
 class nsICookie;

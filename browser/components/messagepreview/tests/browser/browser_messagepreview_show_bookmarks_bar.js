@@ -47,7 +47,7 @@ add_task(async function test_show_bookmarks_bar_button_message() {
   const { callCount } = aboutMessagePreviewActor.showMessage;
   Assert.greaterOrEqual(callCount, 1, "showMessage was called");
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => selectorIsVisible("#fxms-bmb-button"),
     "Bookmarks toolbar button should be visible"
   );

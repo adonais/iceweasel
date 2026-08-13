@@ -8,6 +8,7 @@
 #include "mozilla/BloomFilter.h"
 #include "mozilla/HashTable.h"
 #include "mozilla/LinkedList.h"
+
 #include "jit/ICState.h"
 #include "jit/JitOptions.h"
 #include "vm/BytecodeLocation.h"

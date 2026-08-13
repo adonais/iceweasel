@@ -3,69 +3,68 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 // HttpLog.h should generally be included first
-#include "HttpLog.h"
-
-#include "nsError.h"
-#include "nsHttp.h"
-#include "nsICacheEntry.h"
-#include "mozilla/BasePrincipal.h"
-#include "mozilla/PerfStats.h"
-#include "mozilla/dom/ContentChild.h"
-#include "mozilla/dom/DocGroup.h"
-#include "mozilla/dom/ServiceWorkerUtils.h"
-#include "mozilla/dom/BrowserChild.h"
-#include "mozilla/dom/LinkStyle.h"
-#include "mozilla/dom/ReferrerInfo.h"
-#include "mozilla/extensions/StreamFilterParent.h"
-#include "mozilla/ipc/IPCStreamUtils.h"
-#include "mozilla/net/NeckoChild.h"
 #include "mozilla/net/HttpChannelChild.h"
-#include "mozilla/net/CacheEntryWriteHandleChild.h"
-#include "mozilla/net/PBackgroundDataBridge.h"
-#include "mozilla/net/ChannelClassifierUtils.h"
+
+#include <functional>
 
 #include "AltDataOutputStreamChild.h"
 #include "CookieServiceChild.h"
 #include "HttpBackgroundChannelChild.h"
+#include "HttpLog.h"
 #include "NetworkMarker.h"
-#include "nsCOMPtr.h"
-#include "nsContentPolicyUtils.h"
-#include "nsDOMNavigationTiming.h"
-#include "nsISocketTransport.h"
-#include "nsIThreadRetargetableStreamListener.h"
-#include "nsIStreamTransportService.h"
-#include "nsStringStream.h"
-#include "nsHttpChannel.h"
-#include "nsHttpHandler.h"
-#include "nsQueryObject.h"
-#include "nsNetUtil.h"
-#include "nsSerializationHelper.h"
-#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
-#include "mozilla/dom/PerformanceStorage.h"
-#include "mozilla/glean/NetwerkMetrics.h"
-#include "mozilla/ipc/InputStreamUtils.h"
-#include "mozilla/ipc/URIUtils.h"
-#include "mozilla/ipc/BackgroundUtils.h"
-#include "mozilla/net/DNS.h"
-#include "mozilla/net/SocketProcessBridgeChild.h"
+#include "SerializedLoadContext.h"
+#include "mozilla/BasePrincipal.h"
+#include "mozilla/PerfStats.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StoragePrincipalHelper.h"
-#include "SerializedLoadContext.h"
-#include "nsInputStreamPump.h"
-#include "nsContentSecurityManager.h"
-#include "nsICompressConvStats.h"
+#include "mozilla/dom/BrowserChild.h"
+#include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/LinkStyle.h"
+#include "mozilla/dom/PerformanceStorage.h"
+#include "mozilla/dom/ReferrerInfo.h"
+#include "mozilla/dom/ServiceWorkerUtils.h"
+#include "mozilla/extensions/StreamFilterParent.h"
+#include "mozilla/glean/NetwerkMetrics.h"
+#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
+#include "mozilla/ipc/BackgroundUtils.h"
+#include "mozilla/ipc/IPCStreamUtils.h"
+#include "mozilla/ipc/InputStreamUtils.h"
+#include "mozilla/ipc/URIUtils.h"
+#include "mozilla/net/CacheEntryWriteHandleChild.h"
+#include "mozilla/net/ChannelClassifierUtils.h"
+#include "mozilla/net/DNS.h"
+#include "mozilla/net/NeckoChild.h"
+#include "mozilla/net/PBackgroundDataBridge.h"
+#include "mozilla/net/SocketProcessBridgeChild.h"
+#include "nsCOMPtr.h"
+#include "nsCORSListenerProxy.h"
+#include "nsContentPolicyUtils.h"
+#include "nsContentSecurityManager.h"
+#include "nsDOMNavigationTiming.h"
+#include "nsError.h"
+#include "nsHttp.h"
+#include "nsHttpChannel.h"
+#include "nsHttpHandler.h"
+#include "nsICacheEntry.h"
+#include "nsICompressConvStats.h"
+#include "nsIOService.h"
 #include "nsIScriptError.h"
 #include "nsISerialEventTarget.h"
+#include "nsISocketTransport.h"
+#include "nsIStreamTransportService.h"
+#include "nsIThreadRetargetableStreamListener.h"
+#include "nsInputStreamPump.h"
+#include "nsNetUtil.h"
+#include "nsQueryObject.h"
 #include "nsRedirectHistoryEntry.h"
+#include "nsSerializationHelper.h"
 #include "nsSocketTransportService2.h"
 #include "nsStreamUtils.h"
+#include "nsStringStream.h"
 #include "nsThreadUtils.h"
-#include "nsCORSListenerProxy.h"
-#include "nsIOService.h"
-
-#include <functional>
 
 using namespace mozilla::dom;
 using namespace mozilla::ipc;
@@ -1923,6 +1922,9 @@ HttpChannelChild::ConnectParent(uint32_t registrarId) {
     return NS_ERROR_FAILURE;
   }
 
+  // Defensively ensure the process is marked as untrusted.
+  ContentChild::MaybeBecomeUntrusted();
+
   HttpBaseChannel::SetDocshellUserAgentOverride();
 
   // This must happen before the constructor message is sent. Otherwise messages
@@ -2486,6 +2488,9 @@ nsresult HttpChannelChild::ContinueAsyncOpen() {
     return NS_ERROR_FAILURE;
   }
 
+  // Defensively ensure the process is marked as untrusted.
+  ContentChild::MaybeBecomeUntrusted();
+
   // add ourselves to the load group.
   if (mLoadGroup) {
     mLoadGroup->AddRequest(this, nullptr);
@@ -2523,7 +2528,6 @@ nsresult HttpChannelChild::ContinueAsyncOpen() {
 
   openArgs.preflightArgs() = optionalCorsPreflightArgs;
 
-  openArgs.uploadStreamHasHeaders() = LoadUploadStreamHasHeaders();
   openArgs.priority() = mPriority;
   openArgs.classOfService() = mClassOfService;
   openArgs.redirectionLimit() = mRedirectionLimit;

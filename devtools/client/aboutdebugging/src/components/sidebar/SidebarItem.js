@@ -72,6 +72,7 @@ class SidebarItem extends PureComponent {
             ? " sidebar-item--selected qa-sidebar-item-selected"
             : "") +
           (to ? " sidebar-item--selectable" : ""),
+        slot: "secondary-nav",
       },
       this.renderContent()
     );

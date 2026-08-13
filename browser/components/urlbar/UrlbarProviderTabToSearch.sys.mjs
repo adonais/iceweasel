@@ -23,6 +23,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarProviderGlobalActions:
     "moz-src:///browser/components/urlbar/UrlbarProviderGlobalActions.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlbarSearchUtils:
     "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
   UrlUtils: "resource://gre/modules/UrlUtils.sys.mjs",
@@ -117,7 +118,7 @@ export class UrlbarProviderTabToSearch extends UrlbarProvider {
     return (
       queryContext.searchString &&
       queryContext.tokens.length == 1 &&
-      !queryContext.searchMode &&
+      !queryContext.restrictInSearchMode() &&
       lazy.UrlbarPrefs.get("suggest.engines") &&
       !(
         (await this.queryInstance
@@ -216,19 +217,6 @@ export class UrlbarProviderTabToSearch extends UrlbarProvider {
       }
 
       UrlbarProviderTabToSearch.onboardingInteractionAtTime = Date.now();
-    }
-  }
-
-  onEngagement(queryContext, controller, details) {
-    let { result, element } = details;
-    if (result.type == UrlbarUtils.RESULT_TYPE.DYNAMIC) {
-      // Confirm search mode, but only for the onboarding (dynamic) result. The
-      // input will handle confirming search mode for the non-onboarding
-      // `RESULT_TYPE.SEARCH` result since it sets `providesSearchMode`.
-      element.documentGlobal.gURLBar.maybeConfirmSearchModeFromResult({
-        result,
-        checkValue: false,
-      });
     }
   }
 
@@ -353,8 +341,8 @@ export class UrlbarProviderTabToSearch extends UrlbarProvider {
 
 function makeOnboardingResult(engine, satisfiesAutofillThreshold = false) {
   return new lazy.UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.DYNAMIC,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    type: lazy.UrlbarShared.RESULT_TYPE.DYNAMIC,
+    source: lazy.UrlbarShared.RESULT_SOURCE.SEARCH,
     resultSpan: 2,
     suggestedIndex: 1,
     payload: {
@@ -370,8 +358,8 @@ function makeOnboardingResult(engine, satisfiesAutofillThreshold = false) {
 
 function makeResult(context, engine, satisfiesAutofillThreshold = false) {
   return new lazy.UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.SEARCH,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    type: lazy.UrlbarShared.RESULT_TYPE.SEARCH,
+    source: lazy.UrlbarShared.RESULT_SOURCE.SEARCH,
     suggestedIndex: 1,
     payload: {
       engine: engine.name,

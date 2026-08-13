@@ -3,11 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "EarlyHintsService.h"
+
 #include "EarlyHintPreconnect.h"
 #include "EarlyHintPreloader.h"
-#include "mozilla/dom/LinkStyle.h"
 #include "mozilla/PreloadHashKey.h"
 #include "mozilla/StoragePrincipalHelper.h"
+#include "mozilla/dom/LinkStyle.h"
 #include "nsContentUtils.h"
 #include "nsIChannel.h"
 #include "nsICookieJarSettings.h"

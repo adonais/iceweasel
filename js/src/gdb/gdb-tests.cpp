@@ -2,13 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "gdb-tests.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "gdb-tests.h"
 #include "jsapi.h"
 #include "jsfriendapi.h"
+
 #include "js/Context.h"
 #include "js/GlobalObject.h"
 #include "js/Initialization.h"

@@ -5,8 +5,8 @@
 
 add_task(async function test_filtering_disable_only_source() {
   let match = new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-    source: UrlbarUtils.RESULT_SOURCE.TABS,
+    type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
+    source: UrlbarShared.RESULT_SOURCE.TABS,
     payload: { url: "http://mozilla.org/foo/" },
   });
   let provider = registerBasicTestProvider([match]);
@@ -30,13 +30,13 @@ add_task(async function test_filtering_disable_only_source() {
 add_task(async function test_filtering_disable_one_source() {
   let matches = [
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-      source: UrlbarUtils.RESULT_SOURCE.TABS,
+      type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
+      source: UrlbarShared.RESULT_SOURCE.TABS,
       payload: { url: "http://mozilla.org/foo/" },
     }),
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url: "http://mozilla.org/foo/" },
     }),
   ];
@@ -60,13 +60,13 @@ add_task(async function test_filtering_disable_one_source() {
 add_task(async function test_filtering_restriction_token() {
   let matches = [
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-      source: UrlbarUtils.RESULT_SOURCE.TABS,
+      type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
+      source: UrlbarShared.RESULT_SOURCE.TABS,
       payload: { url: "http://mozilla.org/foo/" },
     }),
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url: "http://mozilla.org/foo/" },
     }),
   ];
@@ -89,13 +89,13 @@ add_task(async function test_filtering_restriction_token() {
 
 add_task(async function test_filter_javascript() {
   let match = new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-    source: UrlbarUtils.RESULT_SOURCE.TABS,
+    type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
+    source: UrlbarShared.RESULT_SOURCE.TABS,
     payload: { url: "http://mozilla.org/foo/" },
   });
   let jsMatch = new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
+    source: UrlbarShared.RESULT_SOURCE.HISTORY,
     payload: { url: "javascript:foo" },
   });
   let provider = registerBasicTestProvider([match, jsMatch]);
@@ -132,13 +132,13 @@ add_task(async function test_filter_javascript() {
 add_task(async function test_filter_isActive() {
   let goodMatches = [
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-      source: UrlbarUtils.RESULT_SOURCE.TABS,
+      type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
+      source: UrlbarShared.RESULT_SOURCE.TABS,
       payload: { url: "http://mozilla.org/foo/" },
     }),
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      type: UrlbarShared.RESULT_TYPE.URL,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url: "http://mozilla.org/foo/" },
     }),
   ];
@@ -146,8 +146,8 @@ add_task(async function test_filter_isActive() {
 
   let badMatches = [
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      type: UrlbarShared.RESULT_TYPE.URL,
+      source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
       payload: { url: "http://mozilla.org/foo/" },
     }),
   ];
@@ -163,7 +163,7 @@ add_task(async function test_filter_isActive() {
     }
     async isActive(context) {
       info("Acceptable sources: " + context.sources);
-      return context.sources.includes(UrlbarUtils.RESULT_SOURCE.BOOKMARKS);
+      return context.sources.includes(UrlbarShared.RESULT_SOURCE.BOOKMARKS);
     }
     async startQuery(context, add) {
       Assert.ok(false, "Provider should no be invoked");
@@ -177,7 +177,7 @@ add_task(async function test_filter_isActive() {
   providersManager.registerProvider(badProvider);
 
   let context = createContext(undefined, {
-    sources: [UrlbarUtils.RESULT_SOURCE.TABS],
+    sources: [UrlbarShared.RESULT_SOURCE.TABS],
     providers: [provider.name, "BadProvider"],
   });
   let controller = UrlbarTestUtils.newMockController();
@@ -189,7 +189,7 @@ add_task(async function test_filter_isActive() {
   Assert.deepEqual(context.results.length, 1, "Should find only one match");
   Assert.deepEqual(
     context.results[0].source,
-    UrlbarUtils.RESULT_SOURCE.TABS,
+    UrlbarShared.RESULT_SOURCE.TABS,
     "Should find only a tab match"
   );
   providersManager.unregisterProvider(provider);
@@ -236,14 +236,14 @@ add_task(async function test_nofilter_heuristic() {
   // result is returned.
   let matches = [
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-      source: UrlbarUtils.RESULT_SOURCE.TABS,
+      type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
+      source: UrlbarShared.RESULT_SOURCE.TABS,
       heuristic: true,
       payload: { url: "http://mozilla.org/foo/" },
     }),
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-      source: UrlbarUtils.RESULT_SOURCE.TABS,
+      type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
+      source: UrlbarShared.RESULT_SOURCE.TABS,
       payload: { url: "http://mozilla.org/foo2/" },
     }),
   ];
@@ -254,7 +254,7 @@ add_task(async function test_nofilter_heuristic() {
   );
 
   let context = createContext(undefined, {
-    sources: [UrlbarUtils.RESULT_SOURCE.SEARCH],
+    sources: [UrlbarShared.RESULT_SOURCE.SEARCH],
     providers: [provider.name],
   });
   let controller = UrlbarTestUtils.newMockController();
@@ -269,7 +269,7 @@ add_task(async function test_nofilter_heuristic() {
   Assert.deepEqual(context.results.length, 1, "Should find only one match");
   Assert.deepEqual(
     context.results[0].source,
-    UrlbarUtils.RESULT_SOURCE.TABS,
+    UrlbarShared.RESULT_SOURCE.TABS,
     "Should find only a tab match"
   );
   ProvidersManager.getInstanceForSap("urlbar").unregisterProvider(provider);
@@ -280,23 +280,23 @@ add_task(async function test_nofilter_restrict() {
   // restriction token.
   let matches = [
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-      source: UrlbarUtils.RESULT_SOURCE.TABS,
+      type: UrlbarShared.RESULT_TYPE.TAB_SWITCH,
+      source: UrlbarShared.RESULT_SOURCE.TABS,
       payload: { url: "http://mozilla.org/foo_tab/" },
     }),
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      type: UrlbarShared.RESULT_TYPE.URL,
+      source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
       payload: { url: "http://mozilla.org/foo_bookmark/" },
     }),
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      type: UrlbarShared.RESULT_TYPE.URL,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       payload: { url: "http://mozilla.org/foo_history/" },
     }),
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.SEARCH,
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      type: UrlbarShared.RESULT_TYPE.SEARCH,
+      source: UrlbarShared.RESULT_SOURCE.SEARCH,
       payload: { engine: "noengine" },
     }),
   ];
@@ -345,7 +345,7 @@ add_task(async function test_nofilter_restrict() {
     Assert.equal(context.results.length, 1, "Should find one result");
     Assert.equal(
       context.results[0].source,
-      UrlbarUtils.RESULT_SOURCE[properties.source],
+      UrlbarShared.RESULT_SOURCE[properties.source],
       "Check result source"
     );
     Services.prefs.clearUserPref(pref);

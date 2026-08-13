@@ -121,7 +121,7 @@ add_task(async function topSites_otherEmptySearch() {
     await UrlbarTestUtils.assertSearchMode(win, {
       engineName: SearchService.defaultEngine.name,
       isGeneralPurposeEngine: true,
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      source: UrlbarShared.RESULT_SOURCE.SEARCH,
       isPreview: false,
       entry: "shortcut",
     });
@@ -198,8 +198,8 @@ add_task(async function topSites_nonTopSitesResults() {
       priority: lazy.UrlbarProviderTopSites.PRIORITY,
       results: [
         new UrlbarResult({
-          type: UrlbarUtils.RESULT_TYPE.URL,
-          source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+          type: UrlbarShared.RESULT_TYPE.URL,
+          source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
           suggestedIndex: 0,
           payload: {
             url: suggestedIndexURL,

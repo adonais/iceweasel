@@ -45,14 +45,15 @@
 // the one of interest. (Alternatively, use --callgrind-out-file=clgout.%p to
 // get separate output files for each process, with a PID suffix.)
 
-#include "gtest/gtest.h"
+#include <unordered_set>
+
 #include "gtest/MozGTestBench.h"  // For MOZ_GTEST_BENCH
+#include "gtest/gtest.h"
 #include "mozilla/AllocPolicy.h"
 #include "mozilla/HashTable.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/TimeStamp.h"
 #include "nsTHashtable.h"
-#include <unordered_set>
 
 using namespace mozilla;
 

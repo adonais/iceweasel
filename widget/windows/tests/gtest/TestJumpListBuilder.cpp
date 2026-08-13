@@ -3,10 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <objectarray.h>
+#include <propkey.h>
+#include <propvarutil.h>
 #include <shobjidl.h>
 #include <windows.h>
-#include <propvarutil.h>
-#include <propkey.h>
 
 #ifdef __MINGW32__
 // MinGW-w64 headers are missing PropVariantToString.
@@ -14,17 +14,17 @@
 PSSTDAPI PropVariantToString(REFPROPVARIANT propvar, PWSTR psz, UINT cch);
 #endif
 
-#include "gtest/gtest.h"
+#include "JumpListBuilder.h"
 #include "gmock/gmock.h"
-
+#include "gtest/gtest.h"
+#include "mozilla/CmdLineAndEnvUtils.h"
+#include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/PromiseNativeHandler.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/dom/WindowsJumpListShortcutDescriptionBinding.h"
-#include "mozilla/SpinEventLoopUntil.h"
-#include "JumpListBuilder.h"
 
 using namespace mozilla;
 using namespace testing;
@@ -114,7 +114,17 @@ MATCHER_P(ShellLinksEq, descs,
     }
 
     if (desc.mArguments.WasPassed()) {
-      if (!desc.mArguments.Value().Equals(argsBuf)) {
+      mozilla::CommandLineParserWin<char16_t> parser;
+      parser.HandleCommandLine(nsDependentString(argsBuf));
+
+      const mozilla::dom::Sequence<nsString>& args = desc.mArguments.Value();
+
+      bool same = std::equal(
+          parser.Argv(), parser.Argv() + parser.Argc(), args.cbegin(),
+          args.cend(), [](const char16_t* aParsed, const nsAString& aExpected) {
+            return aExpected == nsDependentString(aParsed);
+          });
+      if (!same) {
         return false;
       }
     } else {
@@ -311,8 +321,8 @@ void GenerateWindowsJumpListShortcutDescriptions(
     desc.mFallbackIconIndex = 0;
 
     if (!(i % 2)) {
-      nsAutoString arguments(u"-arg1 -arg2 -arg3");
-      desc.mArguments.Construct(arguments);
+      desc.mArguments.Construct(nsTArray<nsString>{
+          u"-arg1"_ns, u"argument with a space"_ns, u"-arg3"_ns});
       nsAutoString iconPath(u"C:\\Some\\icon.png");
       desc.mIconPath.Construct(iconPath);
     }

@@ -22,7 +22,6 @@ static inline void update_coeff_general(
     const LV_MAP_COEFF_COST *txb_costs, const tran_low_t *tcoeff,
     tran_low_t *qcoeff, tran_low_t *dqcoeff, uint8_t *levels,
     const qm_val_t *iqmatrix, const qm_val_t *qmatrix) {
-  const int dqv = get_dqv(dequant, scan[si], iqmatrix);
   const int ci = scan[si];
   const tran_low_t qc = qcoeff[ci];
   const int is_last = si == (eob - 1);
@@ -51,6 +50,7 @@ static inline void update_coeff_general(
       dist_low = dist0;
       rate_low = txb_costs->base_cost[coeff_ctx][0];
     } else {
+      const int dqv = get_dqv(dequant, scan[si], iqmatrix);
       get_qc_dqc_low(abs_qc, sign, dqv, shift, &qc_low, &dqc_low);
       abs_qc_low = abs_qc - 1;
       dist_low = get_coeff_dist(tqc, dqc_low, shift, qmatrix, ci);
@@ -95,34 +95,62 @@ static AOM_FORCE_INLINE void update_coeff_simple(
     const tran_low_t abs_qc = abs(qc);
     const tran_low_t abs_tqc = abs(tcoeff[ci]);
     const tran_low_t abs_dqc = abs(dqcoeff[ci]);
-    int rate_low = 0;
-    const int rate = get_two_coeff_cost_simple(
-        ci, abs_qc, coeff_ctx, txb_costs, bhl, tx_class, levels, &rate_low);
-    if (abs_dqc < abs_tqc) {
-      *accu_rate += rate;
-      return;
-    }
+    if (abs_qc == 1) {
+      const int *base_cost = txb_costs->base_cost[coeff_ctx];
+      const int rate = base_cost[1] + av1_cost_literal(1);
+      if (abs_dqc < abs_tqc) {
+        *accu_rate += rate;
+        return;
+      }
 
-    const int dqv = get_dqv(dequant, scan[si], iqmatrix);
-    const int64_t dist = get_coeff_dist(abs_tqc, abs_dqc, shift, qmatrix, ci);
-    const int64_t rd = RDCOST(rdmult, rate, dist);
+      const int64_t dist = get_coeff_dist(abs_tqc, abs_dqc, shift, qmatrix, ci);
+      const int64_t rd = RDCOST(rdmult, rate, dist);
 
-    const tran_low_t abs_qc_low = abs_qc - 1;
-    const tran_low_t abs_dqc_low = (abs_qc_low * dqv) >> shift;
-    const int64_t dist_low =
-        get_coeff_dist(abs_tqc, abs_dqc_low, shift, qmatrix, ci);
-    const int64_t rd_low = RDCOST(rdmult, rate_low, dist_low);
+      const int64_t dist_low =
+          get_coeff_dist(abs_tqc, /*abs_dqc_low*/ 0, shift, qmatrix, ci);
+      const int rate_low = rate - base_cost[5];
+      const int64_t rd_low = RDCOST(rdmult, rate_low, dist_low);
 
-    int allow_lower_qc = sharpness ? (abs_qc > 1) : 1;
+      const int allow_lower_qc = sharpness ? 0 : 1;
 
-    if (rd_low < rd && allow_lower_qc) {
-      const int sign = (qc < 0) ? 1 : 0;
-      qcoeff[ci] = (-sign ^ abs_qc_low) + sign;
-      dqcoeff[ci] = (-sign ^ abs_dqc_low) + sign;
-      levels[get_padded_idx(ci, bhl)] = AOMMIN(abs_qc_low, INT8_MAX);
-      *accu_rate += rate_low;
+      if (rd_low < rd && allow_lower_qc) {
+        qcoeff[ci] = 0;
+        dqcoeff[ci] = 0;
+        levels[get_padded_idx(ci, bhl)] = 0;
+        *accu_rate += rate_low;
+      } else {
+        *accu_rate += rate;
+      }
     } else {
-      *accu_rate += rate;
+      int rate_low = 0;
+      const int rate = get_two_coeff_cost_simple(
+          ci, abs_qc, coeff_ctx, txb_costs, bhl, tx_class, levels, &rate_low);
+      if (abs_dqc < abs_tqc) {
+        *accu_rate += rate;
+        return;
+      }
+
+      const int dqv = get_dqv(dequant, scan[si], iqmatrix);
+      const int64_t dist = get_coeff_dist(abs_tqc, abs_dqc, shift, qmatrix, ci);
+      const int64_t rd = RDCOST(rdmult, rate, dist);
+
+      const tran_low_t abs_qc_low = abs_qc - 1;
+      const tran_low_t abs_dqc_low = (abs_qc_low * dqv) >> shift;
+      const int64_t dist_low =
+          get_coeff_dist(abs_tqc, abs_dqc_low, shift, qmatrix, ci);
+      const int64_t rd_low = RDCOST(rdmult, rate_low, dist_low);
+
+      const int allow_lower_qc = sharpness ? (abs_qc > 1) : 1;
+
+      if (rd_low < rd && allow_lower_qc) {
+        const int sign = (qc < 0) ? 1 : 0;
+        qcoeff[ci] = (-sign ^ abs_qc_low) + sign;
+        dqcoeff[ci] = (-sign ^ abs_dqc_low) + sign;
+        levels[get_padded_idx(ci, bhl)] = AOMMIN(abs_qc_low, INT8_MAX);
+        *accu_rate += rate_low;
+      } else {
+        *accu_rate += rate;
+      }
     }
   }
 }

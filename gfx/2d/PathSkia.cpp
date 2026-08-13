@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "PathSkia.h"
+
 #include "HelpersSkia.h"
 #include "PathHelpers.h"
 #include "skia/include/core/SkPathUtils.h"

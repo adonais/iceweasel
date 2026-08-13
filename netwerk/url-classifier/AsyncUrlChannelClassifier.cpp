@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "mozilla/net/AsyncUrlChannelClassifier.h"
+
 #include "ChannelClassifierService.h"
 #include "Classifier.h"
 #include "ContentClassifierService.h"
@@ -12,11 +14,11 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/PerfStats.h"
 #include "mozilla/ProfilerMarkers.h"
+#include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/glean/UrlClassifierMetrics.h"
-#include "mozilla/net/AsyncUrlChannelClassifier.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
+#include "mozilla/glean/UrlClassifierMetrics.h"
 #include "mozilla/net/UrlClassifierCommon.h"
 #include "mozilla/net/UrlClassifierFeatureFactory.h"
 #include "mozilla/net/UrlClassifierFeatureResult.h"
@@ -31,7 +33,6 @@
 #include "nsServiceManagerUtils.h"
 #include "nsUrlClassifierDBService.h"
 #include "nsUrlClassifierUtils.h"
-#include "mozilla/net/UrlClassifierCommon.h"
 
 namespace mozilla {
 namespace net {
@@ -937,44 +938,55 @@ nsresult AntiTrackingChannelClassifierUtils::CheckChannelHelper(
 
   std::function<void()> callbackFromFeature = aCallback;
 
+  // Acquire the ContentClassifier service. We check if it's initialized and
+  // enabled before returning the instance. If it's returning a nullptr, the
+  // service is either not initialized or disabled.
+  RefPtr<ContentClassifierService> contentClassifier =
+      ContentClassifierService::GetInstance();
+
+  const bool skipURLClassifier =
+      StaticPrefs::
+          privacy_trackingprotection_urlclassifier_disable_for_channel_classifier() &&
+      contentClassifier;
+
   RefPtr<FeatureTask> task = nullptr;
 
-  if (aPerformAnnotations && aPerformBlocking) {
-    nsresult rv = FeatureTask::Create(aChannel, std::move(aCallback),
-                                      getter_AddRefs(task));
-    if (NS_FAILED(rv)) {
-      return rv;
+  if (!skipURLClassifier) {
+    if (aPerformAnnotations && aPerformBlocking) {
+      nsresult rv = FeatureTask::Create(aChannel, std::move(aCallback),
+                                        getter_AddRefs(task));
+      if (NS_FAILED(rv)) {
+        return rv;
+      }
+    } else if (aPerformAnnotations) {
+      nsTArray<nsCOMPtr<nsIUrlClassifierFeature>> features;
+      UrlClassifierFeatureFactory::GetNonCancelingFeaturesFromChannel(aChannel,
+                                                                      features);
+      nsresult rv = FeatureTask::CreateWithFeatures(
+          aChannel, features, std::move(aCallback), getter_AddRefs(task));
+      if (NS_FAILED(rv)) {
+        return rv;
+      }
+    } else if (aPerformBlocking) {
+      nsTArray<nsCOMPtr<nsIUrlClassifierFeature>> features;
+      UrlClassifierFeatureFactory::GetCancelingFeaturesFromChannel(aChannel,
+                                                                   features);
+      nsresult rv = FeatureTask::CreateWithFeatures(
+          aChannel, features, std::move(aCallback), getter_AddRefs(task));
+      if (NS_FAILED(rv)) {
+        return rv;
+      }
+    } else {
+      return NS_ERROR_FAILURE;
     }
-  } else if (aPerformAnnotations) {
-    nsTArray<nsCOMPtr<nsIUrlClassifierFeature>> features;
-    UrlClassifierFeatureFactory::GetNonCancelingFeaturesFromChannel(aChannel,
-                                                                    features);
-    nsresult rv = FeatureTask::CreateWithFeatures(
-        aChannel, features, std::move(aCallback), getter_AddRefs(task));
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-  } else if (aPerformBlocking) {
-    nsTArray<nsCOMPtr<nsIUrlClassifierFeature>> features;
-    UrlClassifierFeatureFactory::GetCancelingFeaturesFromChannel(aChannel,
-                                                                 features);
-    nsresult rv = FeatureTask::CreateWithFeatures(
-        aChannel, features, std::move(aCallback), getter_AddRefs(task));
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-  } else {
-    return NS_ERROR_FAILURE;
   }
 
   Maybe<ContentClassifierRequest> contentClassifierRequest;
-  RefPtr<ContentClassifierService> contentClassifier =
-      ContentClassifierService::GetInstance();
   if (contentClassifier) {
     contentClassifierRequest.emplace(aChannel);
   }
 
-  if (!task && !(contentClassifier && contentClassifier->IsInitialized())) {
+  if (!task && !contentClassifier) {
     return NS_ERROR_FAILURE;
   }
 

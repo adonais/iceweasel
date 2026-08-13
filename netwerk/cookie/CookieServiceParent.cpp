@@ -2,22 +2,24 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "CookieServiceParent.h"
+
 #include "CookieCommons.h"
 #include "CookieLogging.h"
-#include "CookieServiceParent.h"
+#include "mozIThirdPartyUtil.h"
+#include "mozilla/BasePrincipal.h"
+#include "mozilla/StaticPrefs_network.h"
+#include "mozilla/StoragePrincipalHelper.h"
 #include "mozilla/dom/ContentParent.h"
+#include "mozilla/ipc/URIUtils.h"
 #include "mozilla/net/CookieService.h"
 #include "mozilla/net/CookieServiceParent.h"
-
-#include "mozilla/ipc/URIUtils.h"
-#include "mozilla/StoragePrincipalHelper.h"
-#include "mozIThirdPartyUtil.h"
+#include "mozilla/net/PNeckoParent.h"
 #include "nsArrayUtils.h"
 #include "nsIChannel.h"
-#include "mozilla/StaticPrefs_network.h"
 #include "nsIEffectiveTLDService.h"
-#include "nsNetCID.h"
 #include "nsMixedContentBlocker.h"
+#include "nsNetCID.h"
 
 using namespace mozilla::ipc;
 
@@ -108,10 +110,10 @@ bool CookieServiceParent::ContentProcessHasCookie(const Cookie& cookie) {
 }
 
 bool CookieServiceParent::ContentProcessHasCookie(
-    const nsACString& aHost, const OriginAttributes& aOriginAttributes) {
+    const nsACString& aBaseDomain, const OriginAttributes& aOriginAttributes) {
   nsCString baseDomain;
   if (NS_WARN_IF(NS_FAILED(CookieCommons::GetBaseDomainFromHost(
-          mTLDService, aHost, baseDomain)))) {
+          mTLDService, aBaseDomain, baseDomain)))) {
     return false;
   }
 
@@ -277,10 +279,26 @@ IPCResult CookieServiceParent::RecvGetCookieList(
     return IPC_FAIL(this, "aHost must not be null");
   }
 
-  // we append outgoing cookie info into a list here so the ContentParent can
-  // filter cookies that do not need to go to certain ContentProcesses
+  auto* contentParent = static_cast<dom::ContentParent*>(Manager()->Manager());
+  if (!contentParent) {
+    return IPC_FAIL(this, "Missing ContentParent in GetCookieList");
+  }
+
+  // Reads are non-mutating, and GetCookieList requests can race content
+  // process teardown, so a failed authorization fails closed (no cookies are
+  // served or registered for that principal) rather than killing the process.
+  nsTArray<OriginAttributes> authorizedAttrsList;
   for (const auto& attrs : aAttrsList) {
+    nsCOMPtr<nsIPrincipal> principal =
+        BasePrincipal::CreateContentPrincipal(aHost, attrs);
+    if (!contentParent->ValidatePrincipal(principal)) {
+      continue;
+    }
+
+    // Register the key so the parent can filter proactive cookie pushes to
+    // this content process.
     UpdateCookieInContentList(aHost, attrs);
+    authorizedAttrsList.AppendElement(attrs);
   }
 
   nsTArray<RefPtr<Cookie>> foundCookieList;
@@ -291,7 +309,8 @@ IPCResult CookieServiceParent::RecvGetCookieList(
       aHost, nullptr, aIsForeign, aIsThirdPartyTrackingResource,
       aIsThirdPartySocialTrackingResource, aStorageAccessPermissionGranted,
       aRejectedReason, aIsSafeTopLevelNav, aIsSameSiteForeign,
-      aHadCrossSiteRedirects, false, true, aAttrsList, foundCookieList);
+      aHadCrossSiteRedirects, false, true, authorizedAttrsList,
+      foundCookieList);
 
   nsTArray<CookieStructTable> matchingCookiesListTable;
   SerializeCookieListTable(foundCookieList, matchingCookiesListTable, aHost);
@@ -309,7 +328,18 @@ void CookieServiceParent::ActorDestroy(ActorDestroyReason aWhy) {
 IPCResult CookieServiceParent::RecvSetCookies(
     const nsCString& aBaseDomain, const OriginAttributes& aOriginAttributes,
     nsIURI* aHost, bool aIsThirdParty, const nsTArray<CookieStruct>& aCookies) {
-  if (!ContentProcessHasCookie(aBaseDomain, aOriginAttributes)) {
+  if (!aHost) {
+    return IPC_FAIL(this, "aHost must not be null");
+  }
+
+  // Authorize the write if the process has already loaded this cookie key, or
+  // could legitimately load this principal. The latter covers documents with no
+  // channel registration (e.g. file://), which never populate the key set.
+  auto* contentParent = static_cast<dom::ContentParent*>(Manager()->Manager());
+  nsCOMPtr<nsIPrincipal> principal =
+      BasePrincipal::CreateContentPrincipal(aHost, aOriginAttributes);
+  if (!ContentProcessHasCookie(aBaseDomain, aOriginAttributes) &&
+      !(contentParent && contentParent->ValidatePrincipal(principal))) {
     return IPC_FAIL(this, "Invalid set-cookie request from content process");
   }
 

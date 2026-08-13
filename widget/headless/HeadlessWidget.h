@@ -5,10 +5,10 @@
 #ifndef HEADLESSWIDGET_H
 #define HEADLESSWIDGET_H
 
-#include "mozilla/widget/InProcessCompositorWidget.h"
-#include "nsIWidget.h"
 #include "CompositorWidget.h"
 #include "mozilla/dom/WheelEventBinding.h"
+#include "mozilla/widget/InProcessCompositorWidget.h"
+#include "nsIWidget.h"
 
 // The various synthesized event values are hardcoded to avoid pulling
 // in the platform specific widget code.

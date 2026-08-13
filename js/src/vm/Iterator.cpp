@@ -11,6 +11,7 @@
 #include "vm/ObjectOperations.h"
 #include "vm/SelfHosting.h"
 #include "vm/StringType.h"
+
 #include "vm/JSContext-inl.h"  // JSContext::check
 #include "vm/JSObject-inl.h"
 

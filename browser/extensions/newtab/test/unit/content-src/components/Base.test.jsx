@@ -11,7 +11,7 @@ import { TopSites } from "content-src/components/TopSites/TopSites";
 import React from "react";
 import { Search } from "content-src/components/Search/Search";
 import { shallow } from "enzyme";
-import { actionCreators as ac } from "common/Actions.mjs";
+import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 
 describe("<Base>", () => {
   let DEFAULT_PROPS = {
@@ -842,5 +842,74 @@ describe("WithDsAdmin", () => {
 
       assert.isNull(instance.spocPlaceholderStartTime);
     });
+  });
+});
+
+describe("<BaseContent> onWindowScroll", () => {
+  let sandbox;
+  const DEFAULT_PROPS = {
+    store: { getState: () => {} },
+    App: { initialized: true },
+    Prefs: { values: {} },
+    Sections: [],
+    DiscoveryStream: { config: { enabled: false }, spocs: {} },
+    dispatch: () => {},
+    document: {
+      visibilityState: "visible",
+      addEventListener: sinon.stub(),
+      removeEventListener: sinon.stub(),
+    },
+  };
+
+  function setScrollY(value) {
+    Object.defineProperty(global, "scrollY", { value, configurable: true });
+  }
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+    setScrollY(0);
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+    setScrollY(0);
+  });
+
+  it("should dispatch NEW_TAB_SCROLL when scrollY exceeds threshold", () => {
+    const dispatch = sandbox.stub();
+    const wrapper = shallow(
+      <BaseContent {...DEFAULT_PROPS} dispatch={dispatch} />
+    );
+    setScrollY(150);
+    wrapper.instance().onWindowScroll();
+    assert.calledWith(dispatch, ac.OnlyToMain({ type: at.NEW_TAB_SCROLL }));
+  });
+
+  it("should not dispatch NEW_TAB_SCROLL when scrollY is at or below threshold", () => {
+    const dispatch = sandbox.stub();
+    const wrapper = shallow(
+      <BaseContent {...DEFAULT_PROPS} dispatch={dispatch} />
+    );
+    setScrollY(10);
+    wrapper.instance().onWindowScroll();
+    assert.notCalled(dispatch);
+  });
+
+  it("should set _hasScrolledForSession to true when scroll threshold exceeded", () => {
+    const wrapper = shallow(<BaseContent {...DEFAULT_PROPS} />);
+    setScrollY(150);
+    wrapper.instance().onWindowScroll();
+    assert.isTrue(wrapper.instance()._hasScrolledForSession);
+  });
+
+  it("should not dispatch NEW_TAB_SCROLL again once _hasScrolledForSession is true", () => {
+    const dispatch = sandbox.stub();
+    const wrapper = shallow(
+      <BaseContent {...DEFAULT_PROPS} dispatch={dispatch} />
+    );
+    wrapper.instance()._hasScrolledForSession = true;
+    setScrollY(150);
+    wrapper.instance().onWindowScroll();
+    assert.notCalled(dispatch);
   });
 });

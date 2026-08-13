@@ -9,6 +9,11 @@
 COMPILE_FLAGS["OS_INCLUDES"] = []
 AllowCompilerWarnings()
 
+CXXFLAGS += [
+    "-Wno-comma",
+    "-Wno-tautological-type-limit-compare"
+]
+
 DEFINES["ABSL_ALLOCATOR_NOTHROW"] = "1"
 
 FINAL_LIBRARY = "abseil"
@@ -59,6 +64,10 @@ if CONFIG["OS_TARGET"] == "Darwin":
 
     DEFINES["_XOPEN_SOURCE"] = "700"
 
+    OS_LIBS += [
+        "-framework Foundation"
+    ]
+
 if CONFIG["OS_TARGET"] == "Linux":
 
     DEFINES["USE_AURA"] = "1"
@@ -102,6 +111,10 @@ if CONFIG["OS_TARGET"] == "WINNT":
     DEFINES["_WINDOWS"] = True
     DEFINES["_WINSOCK_DEPRECATED_NO_WARNINGS"] = True
     DEFINES["__STD_C"] = True
+
+    UNIFIED_SOURCES += [
+        "/third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_name_win.cc"
+    ]
 
 if CONFIG["TARGET_CPU"] == "aarch64":
 

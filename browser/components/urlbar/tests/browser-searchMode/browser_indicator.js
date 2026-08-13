@@ -302,7 +302,7 @@ add_task(async function keyboard_shortcut() {
   );
   EventUtils.synthesizeKey("k", { accelKey: true });
   await UrlbarTestUtils.assertSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     engineName: defaultEngine.name,
     entry: "shortcut",
   });
@@ -337,7 +337,7 @@ add_task(async function menubar_item() {
   let command = window.document.getElementById("Tools:Search");
   command.doCommand();
   await UrlbarTestUtils.assertSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     engineName: defaultEngine.name,
     entry: "shortcut",
   });

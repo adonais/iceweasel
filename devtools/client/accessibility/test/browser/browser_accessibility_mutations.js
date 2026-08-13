@@ -92,7 +92,7 @@ function removeRow(rowNumber) {
 
       content.document.getElementById("p").remove();
     });
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => doc.querySelectorAll(".treeRow").length === rowNumber - 1,
       "Tree updated."
     );

@@ -2,25 +2,24 @@
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
-
-#include "mozilla/gfx/2D.h"
-#include "mozilla/gfx/Tools.h"
-#include "mozilla/layers/BufferTexture.h"
-#include "mozilla/layers/ImageBridgeChild.h"  // for ImageBridgeChild
-#include "mozilla/layers/TextureClient.h"
-#include "mozilla/layers/TextureHost.h"
-#include "mozilla/RefPtr.h"
+#include "ImageContainer.h"
 #include "gfx2DGlue.h"
 #include "gfxImageSurface.h"
 #include "gfxPlatform.h"
 #include "gfxTypes.h"
-#include "ImageContainer.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/Tools.h"
 #include "mozilla/gtest/MozHelpers.h"
+#include "mozilla/ipc/Shmem.h"
+#include "mozilla/layers/BufferTexture.h"
+#include "mozilla/layers/ImageBridgeChild.h"  // for ImageBridgeChild
 #include "mozilla/layers/ImageDataSerializer.h"
 #include "mozilla/layers/LayersSurfaces.h"
-#include "mozilla/ipc/Shmem.h"
+#include "mozilla/layers/TextureClient.h"
+#include "mozilla/layers/TextureHost.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;

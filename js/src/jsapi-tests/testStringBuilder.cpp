@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "jsapi-tests/tests.h"
+
 #include "util/StringBuilder.h"
 #include "vm/JSAtomUtils.h"  // AtomizeString
 

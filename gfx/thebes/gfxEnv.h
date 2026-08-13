@@ -5,12 +5,12 @@
 #ifndef GFX_ENV_H
 #define GFX_ENV_H
 
+#include <sstream>
+#include <string_view>
+
 #include "mozilla/Attributes.h"
 #include "nsDebug.h"
 #include "prenv.h"
-
-#include <sstream>
-#include <string_view>
 
 // To register the check for an environment variable existence (and not empty),
 // add a line in this file using the DECL_GFX_ENV macro.

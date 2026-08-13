@@ -314,6 +314,16 @@ export const LinkMenuOptions = {
       data: { index },
     },
   }),
+  // Opens the "New Shortcut" dialog. index -1 routes through the feed's insert
+  // path (append to the pinned group / first free slot), like the add button.
+  AddTopSite: () => ({
+    id: "newtab-menu-add-topsite",
+    ariaHasPopup: "dialog",
+    action: {
+      type: at.TOP_SITES_EDIT,
+      data: { index: -1 },
+    },
+  }),
   CheckBookmark: site =>
     site.bookmarkGuid
       ? LinkMenuOptions.RemoveBookmark(site)

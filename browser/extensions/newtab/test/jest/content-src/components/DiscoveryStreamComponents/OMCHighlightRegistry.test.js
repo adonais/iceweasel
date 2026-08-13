@@ -149,4 +149,46 @@ describe("OMCHighlightRegistry", () => {
       expect(nonWc.chrome.modalClassName).toBe(wc.chrome.modalClassName);
     });
   });
+
+  describe("World Cup survey popover entries", () => {
+    it("WorldCupSurveyCallout references the survey l10n ids and cta", () => {
+      const entry = OMC_HIGHLIGHT_REGISTRY.WorldCupSurveyCallout;
+      expect(entry.body.title.l10nId).toBe(
+        "newtab-sports-widget-message-survey-title"
+      );
+      expect(entry.body.subtitle.l10nId).toBe(
+        "newtab-sports-widget-message-survey-body"
+      );
+      expect(entry.body.cta.l10nId).toBe(
+        "newtab-sports-widget-message-survey-cta"
+      );
+    });
+
+    it("WorldCupWidgetSurveyCallout references the widget-mention survey l10n ids", () => {
+      const entry = OMC_HIGHLIGHT_REGISTRY.WorldCupWidgetSurveyCallout;
+      expect(entry.body.title.l10nId).toBe(
+        "newtab-sports-widget-message-survey-widget-title"
+      );
+      expect(entry.body.subtitle.l10nId).toBe(
+        "newtab-sports-widget-message-survey-widget-body"
+      );
+      expect(entry.body.cta.l10nId).toBe(
+        "newtab-sports-widget-message-survey-cta"
+      );
+    });
+
+    it("both survey entries use BLOCK dismiss, the widgets-row slot, and the widgets-callout className", () => {
+      for (const key of [
+        "WorldCupSurveyCallout",
+        "WorldCupWidgetSurveyCallout",
+      ]) {
+        const entry = OMC_HIGHLIGHT_REGISTRY[key];
+        expect(entry.dismiss).toBe(DISMISS_MODES.BLOCK);
+        expect(entry.slot).toBe(SLOTS.WIDGETS_ROW);
+        expect(entry.chrome.modalClassName).toBe(
+          "widgets-callout widgets-survey-callout"
+        );
+      }
+    });
+  });
 });

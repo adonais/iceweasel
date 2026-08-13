@@ -7,40 +7,38 @@
 
 #include <mutex>  // std::call_once
 
+#include "DriverCrashGuard.h"
 #include "GfxDriverInfo.h"
+#include "gfxConfig.h"
+#include "gfxPlatform.h"
 #include "js/Array.h"               // JS::GetArrayLength, JS::NewArrayObject
 #include "js/PropertyAndElement.h"  // JS_SetElement, JS_SetProperty
-#include "nsCOMPtr.h"
-#include "nsCOMArray.h"
-#include "nsIPropertyBag2.h"
-#include "nsString.h"
-#include "nsUnicharUtils.h"
-#include "nsVersionComparator.h"
-#include "mozilla/Services.h"
-#include "mozilla/Observer.h"
-#include "nsIObserver.h"
-#include "nsIObserverService.h"
-#include "nsTArray.h"
-#include "nsXULAppAPI.h"
-#include "nsIXULAppInfo.h"
+#include "jsapi.h"
 #include "mozilla/BinarySearch.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/LookAndFeel.h"
+#include "mozilla/Observer.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/BuildConstants.h"
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/gfxVars.h"
-#include "mozilla/widget/ScreenManager.h"
 #include "mozilla/widget/Screen.h"
-
-#include "jsapi.h"
-
-#include "gfxPlatform.h"
-#include "gfxConfig.h"
-#include "DriverCrashGuard.h"
+#include "mozilla/widget/ScreenManager.h"
+#include "nsCOMArray.h"
+#include "nsCOMPtr.h"
+#include "nsIObserver.h"
+#include "nsIObserverService.h"
+#include "nsIPropertyBag2.h"
+#include "nsIXULAppInfo.h"
+#include "nsString.h"
+#include "nsTArray.h"
+#include "nsUnicharUtils.h"
+#include "nsVersionComparator.h"
+#include "nsXULAppAPI.h"
 
 #ifdef MOZ_WIDGET_ANDROID
 #  include "AndroidBuild.h"
@@ -1387,11 +1385,11 @@ static void AppendMonitor(JSContext* aCx, widget::Screen& aScreen,
 
   JS::Rooted<JS::Value> defaultCssScaleFactor(
       aCx,
-      JS_NumberValue(static_cast<float>(aScreen.GetDefaultCSSScaleFactor())));
+      JS::NumberValue(static_cast<float>(aScreen.GetDefaultCSSScaleFactor())));
   JS_SetProperty(aCx, obj, "defaultCSSScaleFactor", defaultCssScaleFactor);
 
   JS::Rooted<JS::Value> contentsScaleFactor(
-      aCx, JS_NumberValue(aScreen.GetContentsScaleFactor()));
+      aCx, JS::NumberValue(aScreen.GetContentsScaleFactor()));
   JS_SetProperty(aCx, obj, "contentsScaleFactor", contentsScaleFactor);
 
 #ifdef XP_WIN

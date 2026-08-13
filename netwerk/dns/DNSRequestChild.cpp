@@ -2,21 +2,22 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "mozilla/net/DNSRequestChild.h"
+
+#include "mozilla/SchedulerGroup.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/net/ChildDNSService.h"
 #include "mozilla/net/DNSByTypeRecord.h"
-#include "mozilla/net/DNSRequestChild.h"
 #include "mozilla/net/DNSRequestParent.h"
 #include "mozilla/net/NeckoChild.h"
 #include "mozilla/net/SocketProcessChild.h"
-#include "mozilla/SchedulerGroup.h"
 #include "mozilla/net/SocketProcessParent.h"
-#include "nsIDNSRecord.h"
-#include "nsIDNSByTypeRecord.h"
 #include "nsHostResolver.h"
+#include "nsIDNSByTypeRecord.h"
+#include "nsIDNSRecord.h"
 #include "nsIOService.h"
-#include "nsTArray.h"
 #include "nsNetAddr.h"
+#include "nsTArray.h"
 #include "nsThreadUtils.h"
 
 using namespace mozilla::ipc;

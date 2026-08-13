@@ -2228,7 +2228,7 @@ ICAttachResult js::jit::AttachBaselineCacheIRStubLocked(
 
   // Try including this case in an existing folded stub.
   if (stub->mayHaveFoldedStub() &&
-      AddToFoldedStub(cx, writer, icScript, stub)) {
+      AddToFoldedStub(cx, writer, icScript, stub, lock)) {
     JitSpew(JitSpew_StubFolding,
             "Added to folded stub at offset %u (icScript: %p) (%s:%u:%u)",
             stub->pcOffset(), icScript, outerScript->filename(),
@@ -2303,7 +2303,7 @@ ICAttachResult js::jit::AttachBaselineCacheIRStubLocked(
     case TrialInliningState::Inlined:
       stub->setTrialInliningState(TrialInliningState::Failure);
       // Ensure we stop using the callee's trial inlining ICScript.
-      stub->discardStubs(cx->zone(), icEntry);
+      stub->discardStubs(cx->zone(), icEntry, lock);
       icScript->removeInlinedChild(stub->pcOffset());
       break;
     case TrialInliningState::Failure:

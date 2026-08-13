@@ -7,11 +7,11 @@
 
 #include "Capsule.h"
 #include "CapsuleEncoder.h"
+#include "WebTransportStreamBase.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
 #include "mozilla/net/neqo_glue_ffi_generated.h"
-#include "WebTransportStreamBase.h"
 
 namespace mozilla::net {
 

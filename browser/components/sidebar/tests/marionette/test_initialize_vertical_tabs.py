@@ -132,10 +132,10 @@ class TestInitializeVerticalTabs(MarionetteTestCase):
         self.assertEqual(
             horiz_tab_ids,
             [
-                "firefox-view-button",
                 "tabbrowser-tabs",
                 "new-tab-button",
                 "alltabs-button",
+                "ai-window-toggle",
             ],
             msg="The tabstrip was populated with the expected defaults",
         )
@@ -244,7 +244,7 @@ class TestInitializeVerticalTabs(MarionetteTestCase):
         self.assertEqual(pref_value, "always-show")
 
         # Restart with vertical tabs disabled. We should get the default for horizontal tabs
-        # which is hide-sidebar
+        # which is hide-on-close
 
         fixture_prefs["sidebar.visibility"] = None
         fixture_prefs["sidebar.verticalTabs"] = False
@@ -255,7 +255,7 @@ class TestInitializeVerticalTabs(MarionetteTestCase):
             return Services.prefs.getStringPref("sidebar.visibility", null);
         """
         )
-        self.assertEqual(pref_value, "hide-sidebar")
+        self.assertEqual(pref_value, "hide-on-close")
 
     def test_hide_drag_to_pin_promo_if_horizontal_tabs_pinned(self):
         # Pin a tab using the horizontal tabstrip.

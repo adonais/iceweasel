@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "builtin/RawJSONObject.h"
+
 #include "js/PropertyDescriptor.h"
 
 #include "vm/JSObject-inl.h"

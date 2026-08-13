@@ -6,7 +6,6 @@
 
 #include "gtest/gtest-param-test.h"
 #include "gtest/gtest.h"
-
 #include "mozilla/gtest/MozAssertions.h"
 #include "nsNetUtil.h"
 

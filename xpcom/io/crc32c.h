@@ -5,8 +5,8 @@
 #ifndef crc32c_h
 #define crc32c_h
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {

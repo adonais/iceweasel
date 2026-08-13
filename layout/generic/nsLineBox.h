@@ -150,6 +150,25 @@ class nsLineBox final : public nsLineLink {
   void ClearMovedFragments() { mFlags.mMovedFragments = false; }
   bool MovedFragments() const { return mFlags.mMovedFragments; }
 
+  // mTextBoxTrimStartApplied bit
+  void SetTextBoxTrimStartApplied() { mFlags.mTextBoxTrimStartApplied = true; }
+  void ClearTextBoxTrimStartApplied() {
+    mFlags.mTextBoxTrimStartApplied = false;
+  }
+  bool TextBoxTrimStartApplied() const {
+    return mFlags.mTextBoxTrimStartApplied;
+  }
+
+  // mTextBoxTrimEndApplied bit
+  void SetTextBoxTrimEndApplied() { mFlags.mTextBoxTrimEndApplied = true; }
+  void ClearTextBoxTrimEndApplied() { mFlags.mTextBoxTrimEndApplied = false; }
+  bool TextBoxTrimEndApplied() const { return mFlags.mTextBoxTrimEndApplied; }
+
+  // mTextBoxTrimEndForced bit
+  void SetTextBoxTrimEndForced() { mFlags.mTextBoxTrimEndForced = true; }
+  void ClearTextBoxTrimEndForced() { mFlags.mTextBoxTrimEndForced = false; }
+  bool TextBoxTrimEndForced() const { return mFlags.mTextBoxTrimEndForced; }
+
  private:
   // Add a hash table for fast lookup when the line has more frames than this.
   static const uint32_t kMinChildCountForHashtable = 200;
@@ -494,6 +513,11 @@ class nsLineBox final : public nsLineLink {
   // reflowing it) and the end of reflowing the block.
   bool CachedIsEmpty();
 
+  // This line box is considered to not exist when identifying the
+  // first formatted line or when applying text-box-trim.
+  // https://drafts.csswg.org/css-inline-3/#invisible-line-boxes
+  bool IsPhantom() const { return IsEmpty() && !HasForcedLineBreakAfter(); }
+
   void InvalidateCachedIsEmpty() { mFlags.mEmptyCacheValid = false; }
 
   // For debugging purposes
@@ -576,6 +600,14 @@ class nsLineBox final : public nsLineLink {
     // Note: This bit is unrelated to CSS break-after property because it is all
     // about line break-after for inline-level boxes.
     bool mHasForcedLineBreakAfter : 1;
+    // Indicates that text-box-trim was successfully applied to the start or end
+    // side of this line box.
+    bool mTextBoxTrimStartApplied : 1;
+    bool mTextBoxTrimEndApplied : 1;
+    // Indicates that this line box requires text-box-trim on the trim-end side
+    // when being reflowed, as it was identified as the last formatted line of
+    // a fragmented box in a prior reflow.
+    bool mTextBoxTrimEndForced : 1;
     // mFloatClearType indicates that there's a float clearance before a block
     // line, or after an inline line.
     mozilla::UsedClear mFloatClearType;

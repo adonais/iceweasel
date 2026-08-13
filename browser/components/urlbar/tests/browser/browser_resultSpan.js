@@ -8,8 +8,8 @@
 
 const TEST_RESULTS = [
   new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    type: UrlbarShared.RESULT_TYPE.URL,
+    source: UrlbarShared.RESULT_SOURCE.HISTORY,
     payload: { url: "http://mozilla.org/1" },
   }),
   makeTipResult(),
@@ -17,7 +17,7 @@ const TEST_RESULTS = [
 
 const MAX_RESULTS = UrlbarPrefs.get("maxRichResults");
 const TIP_SPAN = UrlbarUtils.getSpanForResult({
-  type: UrlbarUtils.RESULT_TYPE.TIP,
+  type: UrlbarShared.RESULT_TYPE.TIP,
 });
 
 add_setup(async function () {
@@ -34,8 +34,8 @@ add_task(async function oneTip() {
   for (let i = TEST_RESULTS.length; i < MAX_RESULTS; i++) {
     results.push(
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         payload: { url: `http://mozilla.org/${i}` },
       })
     );
@@ -70,8 +70,8 @@ add_task(async function threeTips() {
   for (let i = 2; i < 15; i++) {
     results.push(
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         payload: { url: `http://mozilla.org/${i}` },
       })
     );
@@ -103,8 +103,8 @@ add_task(async function oneTip_nonRestricting() {
   for (let i = 2; i < 15; i++) {
     results.push(
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         payload: { url: `http://mozilla.org/${i}` },
       })
     );
@@ -114,8 +114,8 @@ add_task(async function oneTip_nonRestricting() {
 
   // UrlbarProviderHeuristicFallback's heuristic search result
   expectedResults.unshift({
-    type: UrlbarUtils.RESULT_TYPE.SEARCH,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    type: UrlbarShared.RESULT_TYPE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     payload: {
       engine: SearchService.defaultEngine.name,
       query: "test",
@@ -148,8 +148,8 @@ add_task(async function threeTips_nonRestricting() {
   for (let i = 2; i < 15; i++) {
     results.push(
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         payload: { url: `http://mozilla.org/${i}` },
       })
     );
@@ -159,8 +159,8 @@ add_task(async function threeTips_nonRestricting() {
 
   // UrlbarProviderHeuristicFallback's heuristic search result
   expectedResults.unshift({
-    type: UrlbarUtils.RESULT_TYPE.SEARCH,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    type: UrlbarShared.RESULT_TYPE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     payload: {
       engine: SearchService.defaultEngine.name,
       query: "test",
@@ -189,8 +189,8 @@ add_task(async function customValue() {
   for (let i = 0; i < 15; i++) {
     results.push(
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         resultSpan: i == 1 ? 5 : undefined,
         payload: { url: `http://mozilla.org/${i}` },
       })
@@ -241,8 +241,8 @@ function collectExpectedProperties(actualObj, expectedObj) {
 
 function makeTipResult() {
   return new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.TIP,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    type: UrlbarShared.RESULT_TYPE.TIP,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     payload: {
       helpUrl: "http://example.com/",
       type: "test",

@@ -4,8 +4,7 @@
   http://creativecommons.org/publicdomain/zero/1.0/
 -->
 <window title="Test for WorkerDebuggerGlobalScope.setImmediate"
-        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
-        onload="test();">
+        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
   <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"/>
   <script src="chrome://mochikit/content/tests/SimpleTest/EventUtils.js"/>
@@ -17,9 +16,8 @@
     const WORKER_URL = "WorkerDebuggerGlobalScope.setImmediate_worker.js";
     const DEBUGGER_URL = BASE_URL + "WorkerDebuggerGlobalScope.setImmediate_debugger.js";
 
-    function test() {
-      (async function() {
-        SimpleTest.waitForExplicitFinish();
+    addTaskWithBothWorkerDebuggers(
+      async function () {
 
         let promise = waitForRegister(WORKER_URL, DEBUGGER_URL);
         let worker = new Worker(WORKER_URL);
@@ -36,9 +34,8 @@
         dbg.postMessage("ping");
         await promise;
 
-        SimpleTest.finish();
-      })();
-    }
+      }
+    );
 
   ]]>
   </script>

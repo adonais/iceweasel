@@ -5,9 +5,10 @@
 #ifndef MOZILLA_GFX_TextureHostWrapperD3D11_H
 #define MOZILLA_GFX_TextureHostWrapperD3D11_H
 
+#include <dxgiformat.h>
+
 #include <deque>
 #include <unordered_map>
-#include <dxgiformat.h>
 
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/TextureHost.h"

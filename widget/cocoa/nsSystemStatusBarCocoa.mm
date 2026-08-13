@@ -4,11 +4,11 @@
 
 #import <Cocoa/Cocoa.h>
 
-#include "nsComponentManagerUtils.h"
-#include "nsSystemStatusBarCocoa.h"
 #include "NativeMenuMac.h"
-#include "nsObjCExceptions.h"
 #include "mozilla/dom/Element.h"
+#include "nsComponentManagerUtils.h"
+#include "nsObjCExceptions.h"
+#include "nsSystemStatusBarCocoa.h"
 
 using mozilla::dom::Element;
 using mozilla::widget::NativeMenuMac;

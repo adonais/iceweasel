@@ -177,7 +177,7 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
     else:
         for arch in CONFIG["MOZ_ANDROID_FAT_AAR_ARCHITECTURES"]:
             FINAL_TARGET_FILES[arch] += [
-                "!/dist/fat-aar/output/{arch}/greprefs.js".format(arch=arch),
+                "!/dist/fat-aar/output/geckoview/{arch}/greprefs.js".format(arch=arch),
             ]
 else:
     FINAL_TARGET_PP_FILES += [

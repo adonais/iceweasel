@@ -3,17 +3,17 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsDNSPrefetch.h"
-#include "nsCOMPtr.h"
-#include "nsString.h"
-#include "nsThreadUtils.h"
 
+#include "mozilla/Preferences.h"
+#include "nsCOMPtr.h"
+#include "nsICancelable.h"
 #include "nsIDNSAdditionalInfo.h"
+#include "nsIDNSByTypeRecord.h"
 #include "nsIDNSListener.h"
 #include "nsIDNSService.h"
-#include "nsIDNSByTypeRecord.h"
-#include "nsICancelable.h"
 #include "nsIURI.h"
-#include "mozilla/Preferences.h"
+#include "nsString.h"
+#include "nsThreadUtils.h"
 
 static mozilla::StaticRefPtr<nsIDNSService> sDNSService;
 

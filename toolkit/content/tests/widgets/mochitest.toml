@@ -67,7 +67,9 @@ tags = "os_integration"
 
 ["test_panel_list_shadow_node_anchor.html"]
 support-files = [
+  "../../widgets/panel-list/panel-item.tokens.css",
   "../../widgets/panel-list/panel-item.css",
+  "../../widgets/panel-list/panel-list.tokens.css",
   "../../widgets/panel-list/panel-list.mjs",
   "../../widgets/panel-list/panel-list.css",
 ]
@@ -116,6 +118,8 @@ skip-if = [
 ]
 
 ["test_videocontrols_l10n_trusted_types.html"]
+
+["test_videocontrols_muted_attr.html"]
 
 ["test_videocontrols_scrubber_position.html"]
 

@@ -1,0 +1,377 @@
+From d1a7429512a6e904dcbfff390c20c2ade66f96b3 Mon Sep 17 00:00:00 2001
+From: Jamie Nicol <jnicol@mozilla.com>
+Date: Fri, 1 May 2026 10:56:48 +0100
+Subject: [PATCH] Patch build scripts for Firefox's gn_processor.py
+
+When vendored into Firefox, the script gn_processor.py is used to
+generate moz.build files from ANGLE's GN build scripts.
+
+This relies upon Firefox's vendored fork of Chromium's "build" repo,
+which we explicitly opt in to building ANGLE with by setting the
+`angle_has_build` GN arg in `gn-configs/angle.json`. In Firefox, this
+repo is located at `third_party/chromium/build`. We must therefore
+replace all references to `//build/` with `//chromium/build` in the GN
+files.
+
+The `//dotfile_settings.gni` import must also be replaced with
+`//angle/dotfile_settings.gni` due to gn_processor.py executing in the
+parent directory (i.e `third_party`, rather than `third_party/angle`).
+
+Lastly, we comment out a couple dependencies on chromium's "testing"
+repo, which ANGLE assumes is available due to enabling
+`angle_has_build`, but we opted not to vendor.
+---
+ .gn                                   | 14 ++++----
+ BUILD.gn                              | 24 ++++++-------
+ android/angle_apk.gni                 |  2 +-
+ gni/angle.gni                         | 50 +++++++++++++--------------
+ src/compiler/translator/ir/BUILD.gn   |  2 +-
+ src/libANGLE/renderer/gl/BUILD.gn     |  4 +--
+ src/libANGLE/renderer/metal/BUILD.gn  |  2 +-
+ src/libANGLE/renderer/vulkan/BUILD.gn |  2 +-
+ 8 files changed, 50 insertions(+), 50 deletions(-)
+
+diff --git a/.gn b/.gn
+index cb77c2a94f..f9b4bbb67a 100644
+--- a/.gn
++++ b/.gn
+@@ -7,11 +7,11 @@
+ # As a result this file will only affect stand-alone ANGLE builds,
+ # not chromium builds.
+ 
+-import("//build/dotfile_settings.gni")
+-import("//dotfile_settings.gni")
++import("//chromium/build/dotfile_settings.gni")
++import("//angle/dotfile_settings.gni")
+ 
+ # Location of the build configuration file.
+-buildconfig = "//build/config/BUILDCONFIG.gn"
++buildconfig = "//chromium/build/config/BUILDCONFIG.gn"
+ 
+ # The python interpreter to use by default. On Windows, this will look
+ # for python3.exe and python3.bat.
+@@ -29,10 +29,10 @@ script_executable = "python3"
+ exec_script_allowlist = angle_dotfile_settings.exec_script_allowlist +
+                         build_dotfile_settings.exec_script_allowlist +
+                         [
+-                          "//build/config/sysroot.gni",
+-                          "//build/config/win/BUILD.gn",
+-                          "//build/config/win/visual_studio_version.gni",
+-                          "//build/gn_helpers.py",
++                          "//chromium/build/config/sysroot.gni",
++                          "//chromium/build/config/win/BUILD.gn",
++                          "//chromium/build/config/win/visual_studio_version.gni",
++                          "//chromium/build/gn_helpers.py",
+                           "//build_overrides/build.gni",
+                         ]
+ 
+diff --git a/BUILD.gn b/BUILD.gn
+index 4767e34614..4e10417a56 100644
+--- a/BUILD.gn
++++ b/BUILD.gn
+@@ -15,15 +15,15 @@ if (angle_enable_wgpu) {
+   import("//build_overrides/tint.gni")
+ }
+ if (angle_has_build) {
+-  import("//build/config/linux/pkg_config.gni")
+-  import("//build/config/sanitizers/sanitizers.gni")
+-  import("//build/config/ui.gni")
+-  import("//testing/libfuzzer/fuzzer_test.gni")
++  import("//chromium/build/config/linux/pkg_config.gni")
++  import("//chromium/build/config/sanitizers/sanitizers.gni")
++  import("//chromium/build/config/ui.gni")
++  #import("//testing/libfuzzer/fuzzer_test.gni")
+ 
+   if (is_android) {
+     # android/rules.gni can only be imported for Android targets
+-    import("//build/config/android/config.gni")
+-    import("//build/config/android/rules.gni")
++    import("//chromium/build/config/android/config.gni")
++    import("//chromium/build/config/android/rules.gni")
+     import("android/angle_apk.gni")
+   }
+ } else {
+@@ -531,7 +531,7 @@ angle_source_set("xxhash") {
+   }
+ }
+ 
+-if (angle_has_build) {
++if (false && angle_has_build) {
+   fuzzer_test("xxhash_fuzzer") {
+     sources = [ "src/common/third_party/xxhash/xxhash_fuzzer.cpp" ]
+     deps = [ ":xxhash" ]
+@@ -578,7 +578,7 @@ template("angle_common_lib") {
+ 
+     if (using_sanitizer && !build_with_chromium) {
+       data_deps =
+-          [ "//build/config/clang:llvm-symbolizer_data($host_toolchain)" ]
++          [ "//chromium/build/config/clang:llvm-symbolizer_data($host_toolchain)" ]
+     }
+ 
+     if (is_apple) {
+@@ -1273,13 +1273,13 @@ group("angle_abseil") {
+ }
+ 
+ config("angle_compression_config") {
+-  include_dirs = [ "//third_party/zlib/google" ]
++  include_dirs = [ "//angle/third_party/zlib/google" ]
+ }
+ 
+ group("angle_compression") {
+   public_configs = [
+     ":angle_compression_config",
+-    "//third_party/zlib:zlib_config",
++    "//angle/third_party/zlib:zlib_config",
+   ]
+   public_deps =
+       [ "$angle_zlib_compression_utils_dir:compression_utils_portable" ]
+@@ -1369,7 +1369,7 @@ config("shared_library_public_config") {
+     if (build_with_chromium) {
+       ldflags += [
+         # Path for loading shared libraries for unbundled binaries.
+-        # From //build/config/mac/BUILD.gn, this is only added for
++        # From //chromium/build/config/mac/BUILD.gn, this is only added for
+         # component builds. However, since ANGLE always dynamically
+         # links to libvulkan, it should be re-added for non-component
+         # builds. (anglebug.com/42263076)
+@@ -1878,7 +1878,7 @@ group("angle_static") {
+ # toolchain will ensure write_file() is called only once.
+ if (!build_with_chromium && angle_has_build &&
+     current_toolchain == default_toolchain) {
+-  import("//build/gn_logs.gni")
++  import("//chromium/build/gn_logs.gni")
+ 
+   # Write debug logs to gn_logs.txt.
+   _lines = [
+diff --git a/android/angle_apk.gni b/android/angle_apk.gni
+index 51ab05cb6f..669d6802b8 100644
+--- a/android/angle_apk.gni
++++ b/android/angle_apk.gni
+@@ -2,7 +2,7 @@
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+-import("//build/config/android/rules.gni")
++import("//chromium/build/config/android/rules.gni")
+ import("../gni/angle.gni")
+ 
+ vulkan_validation_layers = [ "VkLayer_khronos_validation" ]
+diff --git a/gni/angle.gni b/gni/angle.gni
+index 1938b485a1..d56245adb4 100644
+--- a/gni/angle.gni
++++ b/gni/angle.gni
+@@ -4,7 +4,7 @@
+ 
+ import("//build_overrides/angle.gni")
+ if (angle_has_build) {
+-  import("//build/config/gclient_args.gni")
++  import("//chromium/build/config/gclient_args.gni")
+ }
+ 
+ if (!defined(checkout_angle_cl_deps)) {
+@@ -67,17 +67,17 @@ declare_args() {
+ }
+ 
+ if (angle_has_build) {
+-  import("//build/config/dcheck_always_on.gni")
+-  import("//build/config/ozone.gni")  # import the ozone_platform_x11 variable
+-  import("//build/config/sanitizers/sanitizers.gni")
++  import("//chromium/build/config/dcheck_always_on.gni")
++  import("//chromium/build/config/ozone.gni")  # import the ozone_platform_x11 variable
++  import("//chromium/build/config/sanitizers/sanitizers.gni")
+   import("//build_overrides/build.gni")
+-  import("//testing/test.gni")
++  #import("//testing/test.gni")
+   if (is_android) {
+-    import("//build/config/android/config.gni")
++    import("//chromium/build/config/android/config.gni")
+   }
+ 
+   if (is_win) {
+-    import("//build/config/win/visual_studio_version.gni")
++    import("//chromium/build/config/win/visual_studio_version.gni")
+   }
+ 
+   if (is_chromeos) {
+@@ -363,22 +363,22 @@ angle_common_configs = [
+ angle_remove_configs = []
+ 
+ if (angle_has_build) {
+-  angle_remove_configs += [ "//build/config/compiler:default_include_dirs" ]
++  angle_remove_configs += [ "//chromium/build/config/compiler:default_include_dirs" ]
+ 
+   if (is_clang) {
+-    angle_remove_configs += [ "//build/config/clang:find_bad_constructs" ]
++    angle_remove_configs += [ "//chromium/build/config/clang:find_bad_constructs" ]
+   }
+ 
+   if (!is_debug && !is_fuchsia) {
+     # default->optimize_max (e.g. Android defaults to -Oz, optimize_max is -O2)
+-    angle_remove_configs += [ "//build/config/compiler:default_optimization" ]
+-    angle_common_configs += [ "//build/config/compiler:optimize_max" ]
++    angle_remove_configs += [ "//chromium/build/config/compiler:default_optimization" ]
++    angle_common_configs += [ "//chromium/build/config/compiler:optimize_max" ]
+   }
+ 
+   # See https://crbug.com/386992829
+   if (defined(angle_sanitize_array_bounds) && !angle_sanitize_array_bounds) {
+     angle_remove_configs +=
+-        [ "//build/config/compiler:sanitize_c_array_bounds" ]
++        [ "//chromium/build/config/compiler:sanitize_c_array_bounds" ]
+   }
+ }
+ 
+@@ -448,7 +448,7 @@ template("angle_executable") {
+     configs -= invoker.suppressed_configs
+ 
+     if (angle_has_build && is_win) {
+-      data_deps += [ "//build/win:runtime_libs" ]
++      data_deps += [ "//chromium/build/win:runtime_libs" ]
+     }
+ 
+     if (is_ios) {
+@@ -484,9 +484,9 @@ template("angle_shared_library") {
+ 
+     if (is_apple) {
+       # If a "build with ARC" config is present, remove it.
+-      if (filter_include(configs, [ "//build/config/compiler:enable_arc" ]) !=
++      if (filter_include(configs, [ "//chromium/build/config/compiler:enable_arc" ]) !=
+           []) {
+-        configs -= [ "//build/config/compiler:enable_arc" ]
++        configs -= [ "//chromium/build/config/compiler:enable_arc" ]
+       }
+     }
+ 
+@@ -494,7 +494,7 @@ template("angle_shared_library") {
+ 
+     if (is_android) {
+       configs += [ angle_root + ":build_id_config" ]
+-      configs -= [ "//build/config/android:hide_all_but_jni_onload" ]
++      configs -= [ "//chromium/build/config/android:hide_all_but_jni_onload" ]
+     }
+     if (is_ios) {
+       info_plist = "$angle_root/util/ios/Info.plist"
+@@ -537,9 +537,9 @@ template("angle_source_set") {
+ 
+     if (is_apple) {
+       # If a "build with ARC" config is present, remove it.
+-      if (filter_include(configs, [ "//build/config/compiler:enable_arc" ]) !=
++      if (filter_include(configs, [ "//chromium/build/config/compiler:enable_arc" ]) !=
+           []) {
+-        configs -= [ "//build/config/compiler:enable_arc" ]
++        configs -= [ "//chromium/build/config/compiler:enable_arc" ]
+       }
+     }
+   }
+@@ -563,9 +563,9 @@ template("angle_static_library") {
+ 
+     if (is_apple) {
+       # If a "build with ARC" config is present, remove it.
+-      if (filter_include(configs, [ "//build/config/compiler:enable_arc" ]) !=
++      if (filter_include(configs, [ "//chromium/build/config/compiler:enable_arc" ]) !=
+           []) {
+-        configs -= [ "//build/config/compiler:enable_arc" ]
++        configs -= [ "//chromium/build/config/compiler:enable_arc" ]
+       }
+     }
+   }
+@@ -588,9 +588,9 @@ if (angle_standalone || build_with_chromium ||
+ 
+       if (is_apple) {
+         # If a "build with ARC" config is present, remove it.
+-        if (filter_include(configs, [ "//build/config/compiler:enable_arc" ]) !=
++        if (filter_include(configs, [ "//chromium/build/config/compiler:enable_arc" ]) !=
+             []) {
+-          configs -= [ "//build/config/compiler:enable_arc" ]
++          configs -= [ "//chromium/build/config/compiler:enable_arc" ]
+         }
+       }
+ 
+@@ -655,12 +655,12 @@ if (angle_standalone || build_with_chromium ||
+ 
+       if ((is_linux || is_chromeos) && !is_component_build) {
+         # Set rpath to find shared libs in a non-component build.
+-        configs += [ "//build/config/gcc:rpath_for_built_shared_libraries" ]
++        configs += [ "//chromium/build/config/gcc:rpath_for_built_shared_libraries" ]
+       }
+ 
+       if (is_android) {
+         public_configs += [ "$angle_root:build_id_config" ]
+-        configs -= [ "//build/config/android:hide_all_but_jni" ]
++        configs -= [ "//chromium/build/config/android:hide_all_but_jni" ]
+         use_default_launcher = false
+         generate_final_jni = false
+         if (angle_standalone_benchmark) {
+@@ -684,7 +684,7 @@ if (angle_standalone || build_with_chromium ||
+       }
+ 
+       if (angle_has_build && is_win) {
+-        data_deps += [ "//build/win:runtime_libs" ]
++        data_deps += [ "//chromium/build/win:runtime_libs" ]
+       }
+     }
+   }
+diff --git a/src/compiler/translator/ir/BUILD.gn b/src/compiler/translator/ir/BUILD.gn
+index a044364024..22668ab664 100644
+--- a/src/compiler/translator/ir/BUILD.gn
++++ b/src/compiler/translator/ir/BUILD.gn
+@@ -4,7 +4,7 @@
+ 
+ import("../../../../gni/angle.gni")
+ if (angle_has_build) {
+-  import("//build/rust/rust_static_library.gni")
++  import("//chromium/build/rust/rust_static_library.gni")
+ }
+ 
+ angle_translator_ir_sources = [
+diff --git a/src/libANGLE/renderer/gl/BUILD.gn b/src/libANGLE/renderer/gl/BUILD.gn
+index 6be94901ed..e25f58b352 100644
+--- a/src/libANGLE/renderer/gl/BUILD.gn
++++ b/src/libANGLE/renderer/gl/BUILD.gn
+@@ -8,7 +8,7 @@ import("../../../../gni/angle.gni")
+ import("gl_backend.gni")
+ 
+ if (angle_use_gbm) {
+-  import("//build/config/linux/pkg_config.gni")
++  import("//chromium/build/config/linux/pkg_config.gni")
+ }
+ 
+ assert(angle_enable_gl)
+@@ -47,7 +47,7 @@ angle_source_set("angle_gl_backend") {
+   ]
+ 
+   if (angle_has_build && (is_linux || is_chromeos)) {
+-    deps += [ "//build/config/linux/libdrm" ]
++    deps += [ "//chromium/build/config/linux/libdrm" ]
+   }
+ 
+   if (is_win) {
+diff --git a/src/libANGLE/renderer/metal/BUILD.gn b/src/libANGLE/renderer/metal/BUILD.gn
+index 50ac42a5b9..f8912aaec9 100644
+--- a/src/libANGLE/renderer/metal/BUILD.gn
++++ b/src/libANGLE/renderer/metal/BUILD.gn
+@@ -8,7 +8,7 @@ import("../../../../gni/angle.gni")
+ import("metal_backend.gni")
+ 
+ if (metal_internal_shader_compilation_supported) {
+-  import("//build/config/mac/mac_sdk.gni")
++  import("//chromium/build/config/mac/mac_sdk.gni")
+ }
+ 
+ assert(is_mac || is_ios)
+diff --git a/src/libANGLE/renderer/vulkan/BUILD.gn b/src/libANGLE/renderer/vulkan/BUILD.gn
+index e37790b2eb..db89840f50 100644
+--- a/src/libANGLE/renderer/vulkan/BUILD.gn
++++ b/src/libANGLE/renderer/vulkan/BUILD.gn
+@@ -4,7 +4,7 @@
+ #
+ # This file houses the build configuration for the ANGLE Vulkan back-end.
+ 
+-import("//build/config/dcheck_always_on.gni")
++import("//chromium/build/config/dcheck_always_on.gni")
+ import("//build_overrides/swiftshader.gni")
+ import("vulkan_backend.gni")
+ 
+-- 
+2.54.0
+

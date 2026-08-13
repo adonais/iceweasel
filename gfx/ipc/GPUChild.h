@@ -6,9 +6,9 @@
 
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/ipc/CrashReporterHelper.h"
 #include "mozilla/gfx/PGPUChild.h"
 #include "mozilla/gfx/gfxVarReceiver.h"
+#include "mozilla/ipc/CrashReporterHelper.h"
 
 namespace mozilla {
 

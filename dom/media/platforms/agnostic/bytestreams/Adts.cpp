@@ -16,9 +16,9 @@
   MOZ_LOG_FMT(gMediaDemuxerLog, LogLevel::Debug, \
               MOZ_LOG_EXPAND_ARGS __VA_ARGS__)
 #define ADTSLOG(msg, ...) \
-  DDMOZ_LOG(gMediaDemuxerLog, LogLevel::Debug, msg, ##__VA_ARGS__)
+  DDMOZ_LOG_FMT(gMediaDemuxerLog, LogLevel::Debug, msg, ##__VA_ARGS__)
 #define ADTSLOGV(msg, ...) \
-  DDMOZ_LOG(gMediaDemuxerLog, LogLevel::Verbose, msg, ##__VA_ARGS__)
+  DDMOZ_LOG_FMT(gMediaDemuxerLog, LogLevel::Verbose, msg, ##__VA_ARGS__)
 
 namespace mozilla {
 namespace ADTS {

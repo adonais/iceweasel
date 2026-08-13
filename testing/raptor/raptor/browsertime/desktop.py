@@ -4,6 +4,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import sys
+
 from logger.logger import RaptorLogger
 from perftest import PerftestDesktop
 
@@ -57,6 +59,12 @@ class BrowsertimeDesktop(PerftestDesktop, Browsertime):
 
         # Disable finch experiments
         chrome_args += ["--enable-benchmarking"]
+
+        if not self.config.get("run_local", False) and sys.platform.startswith("linux"):
+            # The Intel GPU on our Linux workers causes Chrome's Vulkan/ANGLE
+            # init to crash on startup (bug 2046664). Native GLX sidesteps that
+            # and puts Chrome on the same Intel GPU path as Firefox.
+            chrome_args += ["--use-gl=desktop"]
 
         btime_chrome_args = []
         for arg in chrome_args:

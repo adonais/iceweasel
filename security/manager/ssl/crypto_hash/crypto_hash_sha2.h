@@ -5,8 +5,8 @@
 #ifndef crypto_hash_sha2_h
 #define crypto_hash_sha2_h
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 extern "C" {
 // 32 bytes will be written to `output` so it must point at a buffer

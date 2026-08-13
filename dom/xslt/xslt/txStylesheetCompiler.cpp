@@ -592,7 +592,7 @@ nsresult txStylesheetCompilerState::openInstructionContainer(
 void txStylesheetCompilerState::closeInstructionContainer() {
   NS_ASSERTION(mGotoTargetPointers.IsEmpty(),
                "GotoTargets still exists, did you forget to add txReturn?");
-  mNextInstrPtr = 0;
+  mNextInstrPtr = nullptr;
 }
 
 txInstruction* txStylesheetCompilerState::addInstruction(

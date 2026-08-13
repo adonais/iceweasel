@@ -839,14 +839,22 @@ class PathMeta(type):
             assert isinstance(context, Context)
             if isinstance(value, Path):
                 context = value.context
+        # A (source, target_basename) tuple requests installation under a
+        # different base name than the source's own.
+        target_basename = None
         if not issubclass(cls, (SourcePath, ObjDirPath, AbsolutePath)):
+            if isinstance(value, tuple):
+                value, target_basename = value
             if value.startswith("!"):
                 cls = ObjDirPath
             elif value.startswith("%"):
                 cls = AbsolutePath
             else:
                 cls = SourcePath
-        return super().__call__(context, value)
+        path = super().__call__(context, value)
+        if target_basename is not None:
+            path._target_basename = target_basename
+        return path
 
 
 class Path(ContextDerivedValue, str, metaclass=PathMeta):
@@ -908,9 +916,11 @@ class Path(ContextDerivedValue, str, metaclass=PathMeta):
     def __hash__(self):
         return hash(self.full_path)
 
-    @functools.cached_property
+    @property
     def target_basename(self):
-        return mozpath.basename(self.full_path)
+        return getattr(self, "_target_basename", None) or mozpath.basename(
+            self.full_path
+        )
 
 
 class SourcePath(Path):
@@ -948,10 +958,10 @@ class SourcePath(Path):
 class RenamedSourcePath(SourcePath):
     """Like SourcePath, but with a different base name when installed.
 
-    The constructor takes a tuple of (source, target_basename).
-
-    This class is not meant to be exposed to moz.build sandboxes as of now,
-    and is not supported by the RecursiveMake backend.
+    The constructor takes a tuple of (source, target_basename). In moz.build
+    files the same effect is achieved by appending a (source, target_basename)
+    tuple to a ``*_FILES`` variable; this class is kept for direct internal
+    construction (e.g. from jar manifests).
     """
 
     def __new__(cls, context, value):
@@ -960,10 +970,6 @@ class RenamedSourcePath(SourcePath):
         self = super().__new__(cls, context, source)
         self._target_basename = target_basename
         return self
-
-    @property
-    def target_basename(self):
-        return self._target_basename
 
 
 class ObjDirPath(Path):
@@ -1139,9 +1145,14 @@ class Schedules:
 
 
 @functools.cache
-def ContextDerivedTypedHierarchicalStringList(type):
+def ContextDerivedTypedHierarchicalStringList(type, allow_renames=False):
     """Specialized HierarchicalStringList for use with ContextDerivedValue
-    types."""
+    types.
+
+    With ``allow_renames``, entries may also be ``(source, target_basename)``
+    tuples requesting installation under a different base name. Only the
+    variables whose backend honors this (``FINAL_TARGET_FILES`` and
+    ``OBJDIR_FILES``) enable it."""
 
     class _TypedListWithItems(ContextDerivedValue, HierarchicalStringList):
         __slots__ = ("_strings", "_children", "_context")
@@ -1158,6 +1169,18 @@ def ContextDerivedTypedHierarchicalStringList(type):
             if not child:
                 child = self._children[name] = _TypedListWithItems(self._context)
             return child
+
+        if allow_renames:
+
+            def _check_list(self, value):
+                if not isinstance(value, list):
+                    raise ValueError(f"Expected a list, not {value.__class__}")
+                for v in value:
+                    if not isinstance(v, (str, tuple)):
+                        raise ValueError(
+                            "Expected a list of strings or (source, target_basename) "
+                            f"tuples, not an element of {v.__class__}"
+                        )
 
     return _TypedListWithItems
 
@@ -1638,7 +1661,7 @@ VARIABLES = {
         """,
     ),
     "FINAL_TARGET_FILES": (
-        ContextDerivedTypedHierarchicalStringList(Path),
+        ContextDerivedTypedHierarchicalStringList(Path, allow_renames=True),
         list,
         """List of files to be installed into the application directory.
 
@@ -1767,7 +1790,7 @@ VARIABLES = {
         """,
     ),
     "OBJDIR_FILES": (
-        ContextDerivedTypedHierarchicalStringList(Path),
+        ContextDerivedTypedHierarchicalStringList(Path, allow_renames=True),
         list,
         """List of files to be installed anywhere in the objdir. Use sparingly.
 
@@ -2305,12 +2328,6 @@ VARIABLES = {
         ManifestparserManifestList,
         list,
         """List of manifest files defining browser chrome tests.
-        """,
-    ),
-    "ANDROID_INSTRUMENTATION_MANIFESTS": (
-        ManifestparserManifestList,
-        list,
-        """List of manifest files defining Android instrumentation tests.
         """,
     ),
     "FIREFOX_UI_FUNCTIONAL_MANIFESTS": (

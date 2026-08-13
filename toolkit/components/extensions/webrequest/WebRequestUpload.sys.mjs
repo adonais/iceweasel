@@ -524,13 +524,6 @@ WebRequestUpload = {
       return null;
     }
 
-    if (
-      channel instanceof Ci.nsIUploadChannel2 &&
-      channel.uploadStreamHasHeaders
-    ) {
-      return { error: "Upload streams with headers are unsupported" };
-    }
-
     try {
       let stream = channel.uploadStream;
 

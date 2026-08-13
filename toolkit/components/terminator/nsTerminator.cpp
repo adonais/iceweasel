@@ -240,6 +240,12 @@ void RunWatchdog(void* arg) {
     }
 
     // Arrived here we know we will crash in a way or another.
+
+    // If the sampler thread is mid-write on a scheduled profile dump, let it
+    // finish (and, since it exits the process on completion, we never reach the
+    // crash below) rather than crashing over a half-written profile.
+    profiler_wait_for_scheduled_dump();
+
     NoteIntentionalCrash(XRE_GetProcessTypeString());
 
     MaybeSaveShutdownHangProfile();

@@ -154,6 +154,55 @@ function writeRandomStringToClipboard(
   return randomString;
 }
 
+function writeMultipleDataToClipboard(
+  aFlavorList,
+  aClipboardType,
+  aClipboardOwner = null,
+  aAsync = false
+) {
+  let expectedResults = new Map();
+
+  if (aFlavorList.length === 0) {
+    throw Components.Exception("", Cr.NS_ERROR_FAILURE);
+  }
+
+  let trans = Cc["@mozilla.org/widget/transferable;1"].createInstance(
+    Ci.nsITransferable
+  );
+  trans.init(null);
+
+  aFlavorList.forEach(flavor => {
+    dump(`save ${flavor} in transferable\n`);
+    trans.addDataFlavor(flavor);
+    let str = generateRandomString();
+    // Web custom format data is stored as a byte string (nsISupportsCString),
+    // matching how the DOM bindings wrap clipboard custom format payloads.
+    let supports;
+    if (flavor.startsWith("web ")) {
+      supports = Cc["@mozilla.org/supports-cstring;1"].createInstance(
+        Ci.nsISupportsCString
+      );
+    } else {
+      supports = Cc["@mozilla.org/supports-string;1"].createInstance(
+        Ci.nsISupportsString
+      );
+    }
+    supports.data = str;
+    trans.setTransferData(flavor, supports);
+
+    expectedResults.set(flavor, str);
+  });
+
+  if (aAsync) {
+    let request = clipboard.asyncSetData(aClipboardType);
+    request.setData(trans, aClipboardOwner);
+    return expectedResults;
+  }
+
+  clipboard.setData(trans, aClipboardOwner, aClipboardType);
+  return expectedResults;
+}
+
 function getClipboardData(aFlavor, aClipboardType) {
   var trans = Cc["@mozilla.org/widget/transferable;1"].createInstance(
     Ci.nsITransferable
@@ -169,6 +218,13 @@ function getClipboardData(aFlavor, aClipboardType) {
   try {
     var data = SpecialPowers.createBlankObject();
     trans.getTransferData(aFlavor, data);
+    if (aFlavor === "application/x-moz-web-custom-format-map") {
+      return data.value.QueryInterface(SpecialPowers.Ci.nsIArray);
+    }
+    if (aFlavor.startsWith("web ")) {
+      return data.value.QueryInterface(SpecialPowers.Ci.nsISupportsCString)
+        .data;
+    }
     return data.value.QueryInterface(SpecialPowers.Ci.nsISupportsString).data;
   } catch (ex) {
     // If the clipboard is empty getTransferData will throw.
@@ -178,14 +234,24 @@ function getClipboardData(aFlavor, aClipboardType) {
 
 function getClipboardDataSnapshotSync(aClipboardType) {
   return clipboard.getDataSnapshotSync(
-    ["text/plain", "text/html", "image/png"],
+    [
+      "text/plain",
+      "text/html",
+      "image/png",
+      "application/x-moz-web-custom-format-map",
+    ],
     aClipboardType
   );
 }
 
 function getClipboardDataSnapshot(
   aClipboardType,
-  aFormats = ["text/plain", "text/html", "image/png"]
+  aFormats = [
+    "text/plain",
+    "text/html",
+    "image/png",
+    "application/x-moz-web-custom-format-map",
+  ]
 ) {
   return new Promise((resolve, reject) => {
     try {
@@ -233,7 +299,10 @@ function asyncClipboardRequestGetData(aRequest, aFlavor, aThrows = false) {
         try {
           var data = SpecialPowers.createBlankObject();
           trans.getTransferData(aFlavor, data);
-          resolve(data.value.QueryInterface(Ci.nsISupportsString).data);
+          const ctor = aFlavor.startsWith("web ")
+            ? Ci.nsISupportsCString
+            : Ci.nsISupportsString;
+          resolve(data.value.QueryInterface(ctor).data);
         } catch (ex) {
           // XXX: should widget set empty string to transferable when there no
           // data in system clipboard?
@@ -270,7 +339,10 @@ function syncClipboardRequestGetData(aRequest, aFlavor, aResult = Cr.NS_OK) {
     try {
       var data = SpecialPowers.createBlankObject();
       trans.getTransferData(aFlavor, data);
-      return data.value.QueryInterface(Ci.nsISupportsString).data;
+      const ctor = aFlavor.startsWith("web ")
+        ? Ci.nsISupportsCString
+        : Ci.nsISupportsString;
+      return data.value.QueryInterface(ctor).data;
     } catch (ex) {
       // should widget set empty string to transferable when there no
       // data in system clipboard?

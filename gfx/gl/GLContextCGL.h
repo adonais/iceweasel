@@ -6,7 +6,6 @@
 #define GLCONTEXTCGL_H_
 
 #include "GLContext.h"
-
 #include "OpenGL/OpenGL.h"
 
 #ifdef __OBJC__
@@ -42,7 +41,7 @@ class GLContextCGL : public GLContext {
   }
 
   static GLContextCGL* Cast(GLContext* gl) {
-    MOZ_ASSERT(gl->GetContextType() == GLContextType::CGL);
+    MOZ_RELEASE_ASSERT(gl->GetContextType() == GLContextType::CGL);
     return static_cast<GLContextCGL*>(gl);
   }
 
@@ -70,6 +69,10 @@ class GLContextCGL : public GLContext {
   virtual void GetWSIInfo(nsCString* const out) const override;
 
   Maybe<SymbolLoader> GetSymbolLoader() const override;
+
+  GLenum GetPreferredMacIOSurfaceTextureTarget() const override {
+    return LOCAL_GL_TEXTURE_RECTANGLE_ARB;
+  }
 };
 
 }  // namespace gl

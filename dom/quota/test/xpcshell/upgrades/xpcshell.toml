@@ -21,6 +21,7 @@ support-files = [
   "persistentStorageDirectory_originDirectories_profile.zip",
   "persistentStorageDirectory_profile.json",
   "persistentStorageDirectory_profile.zip",
+  "upgradeStorageFrom3to4_profile.zip",
   "version0_0_profile.json",
   "version0_0_profile.zip",
   "version1_0_appsData_profile.json",
@@ -37,6 +38,11 @@ support-files = [
   "version2_1_profile.zip",
   "version2_2_profile.json",
   "version2_2_profile.zip",
+]
+
+["make_upgradeStorageFrom3to4.js"]
+run-if = [
+  "false", # Only used for recreating upgradeStorageFrom3to4_profile.zip
 ]
 
 ["test_localStorageArchive1upgrade.js"]
@@ -77,3 +83,5 @@ prefs = ["security.storage.encryption.sqlite.enabled=false"]
 ["test_upgradeStorageFrom2_1.js"]
 
 ["test_upgradeStorageFrom2_2.js"]
+
+["test_upgradeStorageFrom3to4.js"]

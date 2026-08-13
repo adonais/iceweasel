@@ -113,6 +113,7 @@ class DebugTargetPane extends PureComponent {
           dom.img({
             className: "main-subheading__icon",
             src: icon,
+            alt: "",
           }),
           `${name} (${targets.length})`,
           dom.img({
@@ -120,6 +121,7 @@ class DebugTargetPane extends PureComponent {
               "main-subheading__icon debug-target-pane__icon" +
               (isCollapsed ? " debug-target-pane__icon--collapsed" : ""),
             src: "chrome://devtools/skin/images/arrow-e.svg",
+            alt: "",
           })
         )
       ),

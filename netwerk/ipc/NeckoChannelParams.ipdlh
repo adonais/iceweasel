@@ -208,7 +208,6 @@ struct LoadInfoArgs
   RequestMode?                requestMode;
   bool                        isFromProcessingFrameAttributes;
   bool                        isMediaRequest;
-  bool                        isMediaInitialRequest;
   bool                        isFromObjectOrEmbed;
   CookieJarSettingsArgs       cookieJarSettings;
   uint32_t                    requestBlockingReason;
@@ -402,7 +401,6 @@ struct HttpChannelOpenArgs
   uint32_t                    initialRwin;
   uint32_t                    redirectMode;
   int16_t                     priority;
-  bool                        uploadStreamHasHeaders;
   bool                        allowSTS;
   bool                        resumeAt;
   bool                        allowSpdy;
@@ -474,11 +472,13 @@ struct HttpConnectionInfoCloneArgs
   uint8_t trrMode;
   bool isIPv4Disabled;
   bool isIPv6Disabled;
+  bool isHttp3Disabled;
   nsCString topWindowOrigin;
   bool isHttp3;
   bool webTransport;
   uint64_t webTransportId;
   bool hasIPHintAddress;
+  bool http3Only;
   nsCString echConfig;
   bool happyEyeballsEnabled;
   ProxyInfoCloneArgs[] proxyInfo;

@@ -6,6 +6,7 @@
 #define jit_JitFrames_inl_h
 
 #include "jit/JitFrames.h"
+
 #include "vm/JSContext.h"
 
 #include "jit/JSJitFrameIter-inl.h"

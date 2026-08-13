@@ -7,10 +7,10 @@
 
 #include "nsLookAndFeel.h"
 
-#include "mozilla/FontPropertyTypes.h"
-#include "nsStyleConsts.h"
 #include "gfxFont.h"
 #include "gfxFontConstants.h"
+#include "mozilla/FontPropertyTypes.h"
+#include "nsStyleConsts.h"
 
 using namespace mozilla;
 

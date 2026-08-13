@@ -4,14 +4,14 @@
 
 #include "SyncModuleLoader.h"
 
+#include "mozJSModuleLoader.h"
+#include "nsContentSecurityUtils.h"
 #include "nsISupportsImpl.h"
 
 #include "js/loader/ModuleLoadRequest.h"
-#include "js/RootingAPI.h"          // JS::Rooted
 #include "js/PropertyAndElement.h"  // JS_SetProperty
+#include "js/RootingAPI.h"          // JS::Rooted
 #include "js/Value.h"               // JS::Value, JS::NumberValue
-#include "mozJSModuleLoader.h"
-#include "nsContentSecurityUtils.h"
 
 using namespace JS::loader;
 

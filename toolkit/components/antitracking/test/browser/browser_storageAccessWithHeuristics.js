@@ -47,6 +47,9 @@ add_setup(async function () {
   });
 
   await UrlClassifierTestUtils.addTestTrackers();
+  registerCleanupFunction(async () => {
+    await UrlClassifierTestUtils.cleanupTestTrackers();
+  });
 });
 
 async function runTestWindowOpenHeuristic(disableHeuristics) {
@@ -136,11 +139,7 @@ async function runTestWindowOpenHeuristic(disableHeuristics) {
   await SpecialPowers.popPrefEnv();
 
   info("Cleaning up.");
-  await new Promise(resolve => {
-    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-      resolve()
-    );
-  });
+  await clearSiteTestData();
 }
 
 add_task(async function testWindowOpenHeuristic() {
@@ -217,15 +216,9 @@ add_task(async function testDoublyNestedWindowOpenHeuristic() {
 
   info("Removing the tab");
   BrowserTestUtils.removeTab(tab);
-});
 
-add_task(async function () {
   info("Cleaning up.");
-  await new Promise(resolve => {
-    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-      resolve()
-    );
-  });
+  await clearSiteTestData();
 });
 
 async function runTestUserInteractionHeuristic(disableHeuristics) {
@@ -476,12 +469,7 @@ async function runTestUserInteractionHeuristic(disableHeuristics) {
   }
 
   info("Cleaning up.");
-  await new Promise(resolve => {
-    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-      resolve()
-    );
-  });
-
+  await clearSiteTestData();
   await SpecialPowers.popPrefEnv();
 }
 
@@ -720,18 +708,12 @@ add_task(async function testDoublyNestedUserInteractionHeuristic() {
 
   info("Removing the tab");
   BrowserTestUtils.removeTab(tab);
-});
 
-add_task(async function () {
   info("Wait until the storage permission is ready before cleaning up.");
   await waitStoragePermission();
 
   info("Cleaning up.");
-  await new Promise(resolve => {
-    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-      resolve()
-    );
-  });
+  await clearSiteTestData();
 });
 
 async function runTestFirstPartyWindowOpenHeuristic(disableHeuristics) {
@@ -886,11 +868,7 @@ async function runTestFirstPartyWindowOpenHeuristic(disableHeuristics) {
   await SpecialPowers.popPrefEnv();
 
   info("Cleaning up.");
-  await new Promise(resolve => {
-    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-      resolve()
-    );
-  });
+  await clearSiteTestData();
 }
 
 add_task(async function testFirstPartyWindowOpenHeuristic() {
@@ -899,8 +877,4 @@ add_task(async function testFirstPartyWindowOpenHeuristic() {
 
 add_task(async function testFirstPartyWindowOpenHeuristicDisabled() {
   await runTestFirstPartyWindowOpenHeuristic(true);
-});
-
-add_task(async function () {
-  UrlClassifierTestUtils.cleanupTestTrackers();
 });

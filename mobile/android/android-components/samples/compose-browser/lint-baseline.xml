@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.13.2" type="baseline" client="gradle" dependencies="false" name="AGP (8.13.2)" variant="all" version="8.13.2">
+<issues format="6" by="lint 9.2.1" type="baseline" client="gradle" dependencies="false" name="AGP (9.2.1)" variant="all" version="9.2.1">
 
     <issue
         id="UnusedResources"
@@ -32,28 +32,6 @@
             file="src/main/res/values/colors.xml"
             line="8"
             column="12"/>
-    </issue>
-
-    <issue
-        id="MonochromeLauncherIcon"
-        message="The application adaptive icon is missing a monochrome tag"
-        errorLine1="&lt;adaptive-icon xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;>"
-        errorLine2="^">
-        <location
-            file="src/main/res/mipmap-anydpi/ic_launcher.xml"
-            line="6"
-            column="1"/>
-    </issue>
-
-    <issue
-        id="MonochromeLauncherIcon"
-        message="The application adaptive roundIcon is missing a monochrome tag"
-        errorLine1="&lt;adaptive-icon xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;>"
-        errorLine2="^">
-        <location
-            file="src/main/res/mipmap-anydpi/ic_launcher_round.xml"
-            line="6"
-            column="1"/>
     </issue>
 
 </issues>

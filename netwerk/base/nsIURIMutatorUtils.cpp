@@ -2,9 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsIURIMutator.h"
-#include "nsIURI.h"
 #include "nsComponentManagerUtils.h"
+#include "nsIURI.h"
+#include "nsIURIMutator.h"
 
 static nsresult GetURIMutator(nsIURI* aURI, nsIURIMutator** aMutator) {
   if (NS_WARN_IF(!aURI)) {

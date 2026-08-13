@@ -9,6 +9,7 @@
 #include "gfxContext.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ReflowInput.h"
+#include "mozilla/Utf16.h"
 #include "nsContentUtils.h"
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"
@@ -79,7 +80,7 @@ void nsMathMLTokenFrame::MarkTextFramesAsTokenMathML() {
     int32_t length = data.Length();
 
     bool isSingleCharacter =
-        length == 1 || (length == 2 && NS_IS_HIGH_SURROGATE(data[0]));
+        length == 1 || (length == 2 && mozilla::IsHighSurrogate(data[0]));
 
     if (isSingleCharacter) {
       child->AddStateBits(NS_FRAME_IS_IN_SINGLE_CHAR_MI);

@@ -756,8 +756,7 @@ bool ChannelMach::IsValidHandle(const ChannelHandle& handle) {
           std::get_if<mozilla::UniqueMachReceiveRight>(&handle)) {
     return !!*server;
   }
-  if (const auto* client =
-          std::get_if<mozilla::UniqueMachReceiveRight>(&handle)) {
+  if (const auto* client = std::get_if<mozilla::UniqueMachSendRight>(&handle)) {
     return !!*client;
   }
   return false;

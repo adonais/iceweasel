@@ -5,11 +5,11 @@
 #ifndef mozilla_net_IPCTransportProvider_h
 #define mozilla_net_IPCTransportProvider_h
 
-#include "nsISupportsImpl.h"
-#include "mozilla/net/PTransportProviderParent.h"
 #include "mozilla/net/PTransportProviderChild.h"
+#include "mozilla/net/PTransportProviderParent.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsISocketTransport.h"
+#include "nsISupportsImpl.h"
 #include "nsITransportProvider.h"
 
 /*

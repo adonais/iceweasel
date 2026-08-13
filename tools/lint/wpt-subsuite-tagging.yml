@@ -18,6 +18,7 @@ wpt-subsuite-tagging:
         - testing/web-platform/mozilla/tests/html/canvas/mozPrintCallback-text-001-print.html
         - testing/web-platform/mozilla/tests/html/canvas/mozPrintCallback-text-002-print-ref.html
         - testing/web-platform/mozilla/tests/html/canvas/mozPrintCallback-text-002-print.html
+        - testing/web-platform/mozilla/tests/html/canvas/mozPrintCallback-global-print.html
         # yamllint enable rule:line-length
     extensions:
         - .html

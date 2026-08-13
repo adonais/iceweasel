@@ -7,6 +7,7 @@
 
 #include "js/TypeDecls.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/CSSMathValue.h"
 #include "mozilla/dom/CSSNumericValueBindingFwd.h"
 #include "nsCycleCollectionParticipant.h"
@@ -22,9 +23,8 @@ namespace mozilla {
 
 struct CSSPropertyId;
 template <typename T>
-struct StyleBox;
-struct StyleNumericValue;
-using StyleMathInvert = StyleBox<StyleNumericValue>;
+class MovingNotNull;
+struct StyleMathInvert;
 
 namespace dom {
 
@@ -32,7 +32,9 @@ class GlobalObject;
 
 class CSSMathInvert final : public CSSMathValue {
  public:
-  CSSMathInvert(nsCOMPtr<nsISupports> aParent, RefPtr<CSSNumericValue> aValue);
+  CSSMathInvert(nsCOMPtr<nsISupports> aParent,
+                MovingNotNull<UniquePtr<StyleNumericType>> aNumericType,
+                RefPtr<CSSNumericValue> aValue);
 
   static RefPtr<CSSMathInvert> Create(nsCOMPtr<nsISupports> aParent,
                                       const StyleMathInvert& aMathInvert);

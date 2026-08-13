@@ -6,7 +6,6 @@
 #define SECURITY_SANDBOX_COMMON_TEST_SANDBOXTESTINGCHILDTESTS_H_
 
 #include "SandboxTestingChild.h"
-
 #include "mozilla/ipc/UtilityProcessSandboxing.h"
 #include "nsXULAppAPI.h"
 
@@ -31,6 +30,7 @@
 #    include <sys/un.h>
 #    include <sys/utsname.h>
 #    include <termios.h>
+
 #    include "mozilla/ProcInfo_linux.h"
 #    ifdef MOZ_X11
 #      include "X11/Xlib.h"
@@ -45,17 +45,18 @@
 #endif
 
 #ifdef XP_MACOSX
+#  include "mozilla/Sandbox.h"
 #  if defined(__SSE2__) || defined(_M_X64) || \
       (defined(_M_IX86_FP) && _M_IX86_FP >= 2)
 #    include "emmintrin.h"
 #  endif
-#  include <spawn.h>
+#  include <AudioToolbox/AudioToolbox.h>
 #  include <CoreFoundation/CoreFoundation.h>
 #  include <CoreGraphics/CoreGraphics.h>
-#  include <AudioToolbox/AudioToolbox.h>
 #  include <dirent.h>
 #  include <fcntl.h>
 #  include <limits.h>
+#  include <spawn.h>
 #  include <sys/stat.h>
 #  include <sys/sysctl.h>
 #  include <unistd.h>
@@ -70,8 +71,8 @@ extern "C" int sandbox_check(pid_t pid, const char* operation, int type, ...);
 #  include <winternl.h>
 
 #  include "mozilla/DynamicallyLinkedFunctionPtr.h"
-#  include "nsAppDirectoryServiceDefs.h"
 #  include "mozilla/WindowsProcessMitigations.h"
+#  include "nsAppDirectoryServiceDefs.h"
 #endif
 
 #ifdef XP_LINUX
@@ -1348,7 +1349,7 @@ void RunTestsGPU(SandboxTestingChild* child) {
 
   RunMacTestLaunchProcess(child, EPERM);
   RunMacTestAudioAPI(child);
-  RunMacTestWindowServer(child, true);
+  RunMacTestWindowServer(child, ProcessIsX86_64());
 
 #else   // defined(XP_WIN)
     child->ReportNoTests();

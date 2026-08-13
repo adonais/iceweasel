@@ -2493,7 +2493,9 @@ void ScrollContainerFrame::ScrollToCSSPixels(const CSSPoint& aScrollPosition,
 }
 
 void ScrollContainerFrame::ScrollToCSSPixelsForApz(
-    const CSSPoint& aScrollPosition, ScrollSnapTargetIds&& aLastSnapTargetIds) {
+    const CSSPoint& aScrollPosition, ScrollSnapTargetIds&& aLastSnapTargetIds,
+    const APZScrollGeneration& aGenerationOnApz) {
+  mScrollGenerationOnApz = aGenerationOnApz;
   nsPoint pt = CSSPoint::ToAppUnits(aScrollPosition);
   nscoord halfRange = nsPresContext::CSSPixelsToAppUnits(1000);
   nsRect range(pt.x - halfRange, pt.y - halfRange, 2 * halfRange - 1,
@@ -7383,7 +7385,6 @@ ScrollContainerFrame::ScrollAnimationState() const {
 
 void ScrollContainerFrame::ResetScrollInfoIfNeeded(
     const MainThreadScrollGeneration& aGeneration,
-    const APZScrollGeneration& aGenerationOnApz,
     APZScrollAnimationType aAPZScrollAnimationType,
     InScrollingGesture aInScrollingGesture) {
   if (aGeneration == mScrollGeneration) {
@@ -7392,7 +7393,6 @@ void ScrollContainerFrame::ResetScrollInfoIfNeeded(
     mApzAnimationTriggeredByScriptRequested = false;
   }
 
-  mScrollGenerationOnApz = aGenerationOnApz;
   // We can reset this regardless of scroll generation, as this is only set
   // here, as a response to APZ requesting a repaint.
   mCurrentAPZScrollAnimationType = aAPZScrollAnimationType;
@@ -8241,9 +8241,22 @@ void ScrollContainerFrame::ApzSmoothScrollTo(
   // animation for this scroll.
   MOZ_ASSERT(aOrigin != ScrollOrigin::None);
   mApzSmoothScrollDestination = Some(aDestination);
-  AppendScrollUpdate(ScrollPositionUpdate::NewSmoothScroll(
-      aMode, aOrigin, aDestination, aTriggeredByScript,
-      std::move(aSnapTargetIds), aViewportToScroll));
+
+  // If the layout viewport is already at the destination, sending a regular
+  // smooth scroll update would forcibly cancel any ongoing user-triggered
+  // animation. Instead, send a zero-delta update so that APZ only cancels
+  // script-triggered smooth scroll animations without disturbing user-triggered
+  // ones.
+  if (GetScrollPosition() == aDestination &&
+      aViewportToScroll == ViewportType::Layout &&
+      aTriggeredByScript == ScrollTriggeredByScript::Yes) {
+    AppendScrollUpdate(ScrollPositionUpdate::NewZeroDeltaLayoutScroll(
+        aOrigin, aMode, std::move(aSnapTargetIds)));
+  } else {
+    AppendScrollUpdate(ScrollPositionUpdate::NewSmoothScroll(
+        aMode, aOrigin, aDestination, aTriggeredByScript,
+        std::move(aSnapTargetIds), aViewportToScroll));
+  }
 
   nsIContent* content = GetContent();
   if (!DisplayPortUtils::HasNonMinimalNonZeroDisplayPort(content)) {

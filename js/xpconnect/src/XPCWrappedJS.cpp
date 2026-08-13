@@ -4,16 +4,18 @@
 
 /* Class that wraps JS objects to appear as XPCOM objects. */
 
-#include "xpcprivate.h"
-#include "XPCMaps.h"
 #include "mozilla/DeferredFinalize.h"
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/Sprintf.h"
-#include "js/Object.h"  // JS::GetCompartment
-#include "js/RealmIterators.h"
+
 #include "nsCCUncollectableMarker.h"
 #include "nsContentUtils.h"
 #include "nsThreadUtils.h"
+#include "XPCMaps.h"
+#include "xpcprivate.h"
+
+#include "js/Object.h"  // JS::GetCompartment
+#include "js/RealmIterators.h"
 
 using namespace mozilla;
 

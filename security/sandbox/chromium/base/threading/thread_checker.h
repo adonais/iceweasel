@@ -5,10 +5,11 @@
 #ifndef BASE_THREADING_THREAD_CHECKER_H_
 #define BASE_THREADING_THREAD_CHECKER_H_
 
+#include <string_view>
+
 #include "base/base_export.h"
 #include "base/dcheck_is_on.h"
 #include "base/macros/uniquify.h"
-#include "base/strings/string_piece.h"
 #include "base/thread_annotations.h"
 #include "base/threading/thread_checker_impl.h"
 
@@ -123,11 +124,9 @@ class LOCKABLE ThreadCheckerDoNothing {
 // even if the tasks happen to run on the same thread (e.g. two independent
 // SingleThreadTaskRunners on the ThreadPool that happen to share a thread).
 #if DCHECK_IS_ON()
-class ThreadChecker : public ThreadCheckerImpl {
-};
+class ThreadChecker : public ThreadCheckerImpl {};
 #else
-class ThreadChecker : public ThreadCheckerDoNothing {
-};
+class ThreadChecker : public ThreadCheckerDoNothing {};
 #endif  // DCHECK_IS_ON()
 
 #if DCHECK_IS_ON()
@@ -136,7 +135,7 @@ class BASE_EXPORT SCOPED_LOCKABLE ScopedValidateThreadChecker {
   explicit ScopedValidateThreadChecker(const ThreadChecker& checker)
       EXCLUSIVE_LOCK_FUNCTION(checker);
   ScopedValidateThreadChecker(const ThreadChecker& checker,
-                              const StringPiece& msg)
+                              std::string_view msg)
       EXCLUSIVE_LOCK_FUNCTION(checker);
 
   ScopedValidateThreadChecker(const ScopedValidateThreadChecker&) = delete;

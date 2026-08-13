@@ -1,6 +1,5 @@
-#include "gtest/gtest.h"
-
 #include "chrome/common/ipc_message.h"
+#include "gtest/gtest.h"
 #include "mozilla/net/PHttpChannelParams.h"
 #include "nsHttp.h"
 #include "nsIPrefBranch.h"

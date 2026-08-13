@@ -4,6 +4,8 @@
 
 package org.mozilla.fenix.settings.labs.ui
 
+import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -20,7 +22,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.R
 import org.mozilla.fenix.settings.labs.LabsItem
-import org.mozilla.fenix.settings.labs.LabsItemSlugs
 import org.mozilla.fenix.settings.labs.store.DialogState
 import org.mozilla.fenix.settings.labs.store.LabsState
 import org.mozilla.fenix.settings.labs.store.LabsStore
@@ -32,19 +33,30 @@ class FirefoxLabsScreenTest {
     @get:Rule
     val composeTestRule = createComposeRule()
 
+    private fun testItem(
+        enrolled: Boolean = false,
+        requiresRestart: Boolean = true,
+        feedbackUrl: String? = null,
+        available: Boolean = true,
+    ) = LabsItem(
+        slug = "test-lab",
+        title = TITLE,
+        description = "Description for screen tests.",
+        enrolled = enrolled,
+        requiresRestart = requiresRestart,
+        feedbackUrl = feedbackUrl,
+        available = available,
+    )
+
+    private companion object {
+        const val TITLE = "Test lab"
+    }
+
     @Test
     fun `WHEN all labs items are unenrolled THEN the restore defaults button is disabled`() {
         val store = LabsStore(
             initialState = LabsState(
-                labsItems = listOf(
-                    LabsItem(
-                        slug = LabsItemSlugs.HOMEPAGE_AS_NEW_TAB,
-                        title = R.string.firefox_labs_homepage_as_a_new_tab,
-                        description = R.string.firefox_labs_homepage_as_a_new_tab_description,
-                        enrolled = false,
-                        requiresRestart = true,
-                    ),
-                ),
+                labsItems = listOf(testItem(enrolled = false)),
                 dialogState = DialogState.Closed,
             ),
         )
@@ -68,15 +80,7 @@ class FirefoxLabsScreenTest {
     fun `WHEN at least one labs item is enrolled THEN the restore defaults button is enabled`() {
         val store = LabsStore(
             initialState = LabsState(
-                labsItems = listOf(
-                    LabsItem(
-                        slug = LabsItemSlugs.HOMEPAGE_AS_NEW_TAB,
-                        title = R.string.firefox_labs_homepage_as_a_new_tab,
-                        description = R.string.firefox_labs_homepage_as_a_new_tab_description,
-                        enrolled = true,
-                        requiresRestart = true,
-                    ),
-                ),
+                labsItems = listOf(testItem(enrolled = true)),
                 dialogState = DialogState.Closed,
             ),
         )
@@ -100,16 +104,7 @@ class FirefoxLabsScreenTest {
     fun `WHEN a labs item has no feedback URL THEN the share feedback link is not displayed`() {
         val store = LabsStore(
             initialState = LabsState(
-                labsItems = listOf(
-                    LabsItem(
-                        slug = LabsItemSlugs.HOMEPAGE_AS_NEW_TAB,
-                        title = R.string.firefox_labs_homepage_as_a_new_tab,
-                        description = R.string.firefox_labs_homepage_as_a_new_tab_description,
-                        enrolled = false,
-                        feedbackUrl = null,
-                        requiresRestart = true,
-                    ),
-                ),
+                labsItems = listOf(testItem(feedbackUrl = null)),
                 dialogState = DialogState.Closed,
             ),
         )
@@ -127,7 +122,7 @@ class FirefoxLabsScreenTest {
         composeTestRule.onNodeWithContentDescription(
             testContext.getString(
                 R.string.firefox_labs_share_feedback_content_description,
-                testContext.getString(R.string.firefox_labs_homepage_as_a_new_tab),
+                TITLE,
             ),
         ).assertDoesNotExist()
     }
@@ -136,16 +131,7 @@ class FirefoxLabsScreenTest {
     fun `WHEN a labs item has a feedback URL THEN the share feedback link is displayed`() {
         val store = LabsStore(
             initialState = LabsState(
-                labsItems = listOf(
-                    LabsItem(
-                        slug = LabsItemSlugs.HOMEPAGE_AS_NEW_TAB,
-                        title = R.string.firefox_labs_homepage_as_a_new_tab,
-                        description = R.string.firefox_labs_homepage_as_a_new_tab_description,
-                        enrolled = false,
-                        feedbackUrl = "https://connect.mozilla.org/",
-                        requiresRestart = true,
-                    ),
-                ),
+                labsItems = listOf(testItem(feedbackUrl = "https://connect.mozilla.org/")),
                 dialogState = DialogState.Closed,
             ),
         )
@@ -163,20 +149,66 @@ class FirefoxLabsScreenTest {
         composeTestRule.onNodeWithContentDescription(
             testContext.getString(
                 R.string.firefox_labs_share_feedback_content_description,
-                testContext.getString(R.string.firefox_labs_homepage_as_a_new_tab),
+                TITLE,
             ),
         ).assertExists()
     }
 
     @Test
-    fun `WHEN tapping a labs item with requiresRestart=true THEN the toggle confirmation dialog is shown`() {
-        val item = LabsItem(
-            slug = LabsItemSlugs.HOMEPAGE_AS_NEW_TAB,
-            title = R.string.firefox_labs_homepage_as_a_new_tab,
-            description = R.string.firefox_labs_homepage_as_a_new_tab_description,
-            enrolled = false,
-            requiresRestart = true,
+    fun `WHEN a labs item is unavailable THEN its toggle is deactivated and the helper text is shown`() {
+        val store = LabsStore(
+            initialState = LabsState(
+                labsItems = listOf(testItem(available = false)),
+                dialogState = DialogState.Closed,
+            ),
         )
+
+        composeTestRule.setContent {
+            FirefoxTheme(theme = Theme.Light) {
+                FirefoxLabsScreen(
+                    store = store,
+                    onNavigationIconClick = {},
+                    onShareFeedbackClick = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText(TITLE).assertHasNoClickAction()
+        composeTestRule.onNodeWithText(
+            testContext.getString(R.string.firefox_labs_feature_conflict),
+            useUnmergedTree = true,
+        ).assertExists()
+    }
+
+    @Test
+    fun `WHEN a labs item is available THEN the helper text is not shown`() {
+        val store = LabsStore(
+            initialState = LabsState(
+                labsItems = listOf(testItem(available = true)),
+                dialogState = DialogState.Closed,
+            ),
+        )
+
+        composeTestRule.setContent {
+            FirefoxTheme(theme = Theme.Light) {
+                FirefoxLabsScreen(
+                    store = store,
+                    onNavigationIconClick = {},
+                    onShareFeedbackClick = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText(TITLE).assertHasClickAction()
+        composeTestRule.onNodeWithText(
+            testContext.getString(R.string.firefox_labs_feature_conflict),
+            useUnmergedTree = true,
+        ).assertDoesNotExist()
+    }
+
+    @Test
+    fun `WHEN tapping a labs item with requiresRestart=true THEN the toggle confirmation dialog is shown`() {
+        val item = testItem(requiresRestart = true)
         val store = LabsStore(
             initialState = LabsState(
                 labsItems = listOf(item),
@@ -194,9 +226,7 @@ class FirefoxLabsScreenTest {
             }
         }
 
-        composeTestRule.onNodeWithText(
-            testContext.getString(R.string.firefox_labs_homepage_as_a_new_tab),
-        ).performClick()
+        composeTestRule.onNodeWithText(TITLE).performClick()
 
         composeTestRule.waitForIdle()
         assertEquals(DialogState.ToggleLabsItem(item), store.state.dialogState)
@@ -205,13 +235,7 @@ class FirefoxLabsScreenTest {
 
     @Test
     fun `WHEN tapping a labs item with requiresRestart=false THEN the item is toggled directly with no dialog`() {
-        val item = LabsItem(
-            slug = LabsItemSlugs.HOMEPAGE_AS_NEW_TAB,
-            title = R.string.firefox_labs_homepage_as_a_new_tab,
-            description = R.string.firefox_labs_homepage_as_a_new_tab_description,
-            enrolled = false,
-            requiresRestart = false,
-        )
+        val item = testItem(requiresRestart = false)
         val store = LabsStore(
             initialState = LabsState(
                 labsItems = listOf(item),
@@ -229,9 +253,7 @@ class FirefoxLabsScreenTest {
             }
         }
 
-        composeTestRule.onNodeWithText(
-            testContext.getString(R.string.firefox_labs_homepage_as_a_new_tab),
-        ).performClick()
+        composeTestRule.onNodeWithText(TITLE).performClick()
 
         composeTestRule.waitForIdle()
         assertEquals(DialogState.Closed, store.state.dialogState)
@@ -242,15 +264,7 @@ class FirefoxLabsScreenTest {
     fun `WHEN tapping Restore defaults AND an enrolled item requires restart THEN the restore defaults dialog is shown`() {
         val store = LabsStore(
             initialState = LabsState(
-                labsItems = listOf(
-                    LabsItem(
-                        slug = LabsItemSlugs.HOMEPAGE_AS_NEW_TAB,
-                        title = R.string.firefox_labs_homepage_as_a_new_tab,
-                        description = R.string.firefox_labs_homepage_as_a_new_tab_description,
-                        enrolled = true,
-                        requiresRestart = true,
-                    ),
-                ),
+                labsItems = listOf(testItem(enrolled = true, requiresRestart = true)),
                 dialogState = DialogState.Closed,
             ),
         )
@@ -278,15 +292,7 @@ class FirefoxLabsScreenTest {
     fun `WHEN tapping Restore defaults AND no enrolled item requires restart THEN items are unenrolled with no dialog`() {
         val store = LabsStore(
             initialState = LabsState(
-                labsItems = listOf(
-                    LabsItem(
-                        slug = LabsItemSlugs.HOMEPAGE_AS_NEW_TAB,
-                        title = R.string.firefox_labs_homepage_as_a_new_tab,
-                        description = R.string.firefox_labs_homepage_as_a_new_tab_description,
-                        enrolled = true,
-                        requiresRestart = false,
-                    ),
-                ),
+                labsItems = listOf(testItem(enrolled = true, requiresRestart = false)),
                 dialogState = DialogState.Closed,
             ),
         )

@@ -1,0 +1,6 @@
+#ifndef CLANG_TIDY_MISC_DEFINITIONS_IN_HEADERS_H
+#define CLANG_TIDY_MISC_DEFINITIONS_IN_HEADERS_H
+
+int foo() { return 0;}
+
+#endif

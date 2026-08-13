@@ -1,0 +1,86 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+:host {
+  /* sets a custom margin between the grouped-chips button and the panel list */
+  --smartwindow-panel-list-valign-bottom-margin-block-start: var(--space-xsmall);
+}
+
+.grouped-chips {
+  border: var(--border-width) solid var(--border-color-transparent);
+  border-radius: var(--border-radius-large);
+  border-end-end-radius: var(--border-radius-small);
+  cursor: pointer;
+  display: flex;
+  gap: var(--space-xsmall);
+  padding: var(--space-medium);
+
+  @media not (prefers-reduced-motion) {
+    transition: gap 0.3s ease-in-out;
+  }
+
+  /* Bug 2033070: remove nova media queries */
+  @media -moz-pref("browser.nova.enabled") {
+    border-radius: var(--border-radius-large);
+    border-end-end-radius: var(--border-radius-xsmall);
+  }
+
+  @media not forced-colors {
+    --ai-grouped-chip-container-bg-color: light-dark(var(--color-violet-20), var(--color-violet-70));
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    background-color: var(--ai-grouped-chip-container-bg-color);
+
+    /* Bug 2033070: remove nova media queries */
+    @media -moz-pref("browser.nova.enabled") {
+      --ai-grouped-chip-container-bg-color: light-dark(var(--color-violet-desaturated-10), var(--color-violet-desaturated-60));
+    }
+  }
+}
+
+.grouped-chips__label {
+  color: var(--text-color);
+  font-size: var(--font-size-small);
+  margin-inline-start: var(--space-xsmall);
+}
+
+.grouped-chips__favicon-group {
+  display: flex;
+
+  @media not (prefers-reduced-motion) {
+    transition: gap 0.3s ease-in-out;
+  }
+
+  .grouped-chips:hover &,
+  .grouped-chips:focus-visible &,
+  .grouped-chips[data-is-smartwindow-panel-open] & {
+    gap: var(--space-xxsmall);
+  }
+}
+
+.grouped-chips__favicon {
+  border-radius: var(--border-radius-xsmall);
+  height: var(--size-item-small);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  margin-inline-end: calc(-1 * var(--space-xxsmall));
+  width: var(--size-item-small);
+
+  @media not (prefers-reduced-motion) {
+    transition: margin-inline-end 0.3s ease-in-out;
+  }
+
+  .grouped-chips:hover &,
+  .grouped-chips:focus-visible &,
+  .grouped-chips[data-is-smartwindow-panel-open] & {
+    margin-inline-end: 0;
+  }
+}
+
+.grouped-chips__arrow-icon {
+  fill: var(--icon-color);
+  -moz-context-properties: fill;
+
+  .grouped-chips[data-is-smartwindow-panel-open] & {
+    transform: rotate(180deg);
+  }
+}

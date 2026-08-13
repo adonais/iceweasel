@@ -82,7 +82,6 @@ import mozilla.components.ui.icons.R as iconsR
  * @param isBookmarked Whether or not the current tab is bookmarked.
  * @param isDesktopMode Whether or not the desktop mode is enabled.
  * @param isPdf Whether or not the current tab is a PDF.
- * @param isPrivate Whether or not the current browsing mode is private
  * @param isReaderViewActive Whether or not Reader View is active or not.
  * @param isExtensionsProcessDisabled Whether or not the extensions process is disabled due to extension errors.
  * @param isMoreMenuHighlighted Whether or not the more menu icon is highlighted.
@@ -139,7 +138,6 @@ fun MainMenu(
     isBookmarked: Boolean,
     isDesktopMode: Boolean,
     isPdf: Boolean,
-    isPrivate: Boolean,
     isReaderViewActive: Boolean,
     isExtensionsProcessDisabled: Boolean,
     isMoreMenuHighlighted: Boolean,
@@ -277,7 +275,6 @@ fun MainMenu(
             MenuGroup {
                 ExtensionsMenuItem(
                     inCustomTab = false,
-                    isPrivate = isPrivate,
                     isExtensionsProcessDisabled = isExtensionsProcessDisabled,
                     isExtensionsExpanded = isExtensionsExpanded,
                     isAllWebExtensionsDisabled = isAllWebExtensionsDisabled,
@@ -294,7 +291,6 @@ fun MainMenu(
                 isBookmarked = isBookmarked,
                 isDesktopMode = isDesktopMode,
                 isPdf = isPdf,
-                isPrivate = isPrivate,
                 isExtensionsProcessDisabled = isExtensionsProcessDisabled,
                 isExtensionsExpanded = isExtensionsExpanded,
                 isMoreMenuHighlighted = isMoreMenuHighlighted,
@@ -325,7 +321,6 @@ fun MainMenu(
             MozillaAccountMenuItem(
                 account = account,
                 accountState = accountState,
-                isPrivate = isPrivate,
                 onClick = onMozillaAccountButtonClick,
             )
 
@@ -375,7 +370,6 @@ private fun ToolsAndActionsMenuGroup(
     isBookmarked: Boolean,
     isDesktopMode: Boolean,
     isPdf: Boolean,
-    isPrivate: Boolean,
     isExtensionsProcessDisabled: Boolean,
     isExtensionsExpanded: Boolean,
     isMoreMenuHighlighted: Boolean,
@@ -452,7 +446,6 @@ private fun ToolsAndActionsMenuGroup(
 
         ExtensionsMenuItem(
             inCustomTab = false,
-            isPrivate = isPrivate,
             isExtensionsProcessDisabled = isExtensionsProcessDisabled,
             isExtensionsExpanded = isExtensionsExpanded,
             isAllWebExtensionsDisabled = isAllWebExtensionsDisabled,
@@ -501,7 +494,7 @@ private fun MoreMenuButtonGroup(
             Icon(
                 painter = painterResource(id = iconsR.drawable.mozac_ic_chevron_down_20),
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurface,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.semantics {
                     testTagsAsResourceId = true
                     testTag = MORE_OPTION_CHEVRON
@@ -740,7 +733,6 @@ private fun MenuDialogPreview(
                 accessPoint = MenuAccessPoint.Browser,
                 account = null,
                 accountState = AuthenticationProblem,
-                isPrivate = false,
                 showQuitMenu = true,
                 isBottomToolbar = false,
                 isExpandedToolbarEnabled = false,
@@ -809,7 +801,6 @@ private fun MenuDialogPrivatePreview(
                 accessPoint = MenuAccessPoint.Home,
                 account = null,
                 accountState = AuthenticationProblem,
-                isPrivate = false,
                 showQuitMenu = true,
                 isBottomToolbar = true,
                 isExpandedToolbarEnabled = false,

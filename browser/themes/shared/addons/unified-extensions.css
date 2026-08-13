@@ -32,6 +32,9 @@
   > img {
     /* The parent is a vbox using flexbox, which causes the img to grow to the full width by default. Avoid that: */
     align-self: center;
+    /* Guard against the illustration overflowing the panel at larger chrome font sizes. */
+    max-width: 100%;
+    height: auto;
   }
   > h2 {
     color: inherit; /* undo var(--text-color-deemphasized) from panelUI-shared.css */
@@ -165,7 +168,7 @@ unified-extensions-item {
 }
 
 .unified-extensions-item-menu-button.subviewbutton {
-  list-style-image: url("chrome://global/skin/icons/settings.svg");
+  list-style-image: url("chrome://global/skin/icons/more.svg");
   /* subtract the child's ~1px border from the block padding */
   padding: calc(var(--panel-menuitem-margin-inline) - 1px) var(--panel-menuitem-margin-inline);
   padding-inline-end: 0;

@@ -2,12 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "gtest/gtest.h"
 #include "mozilla/TimeStamp.h"
-
 #include "prinrval.h"
 #include "prthread.h"
-
-#include "gtest/gtest.h"
 
 using mozilla::TimeDuration;
 using mozilla::TimeStamp;

@@ -1,0 +1,47 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>Test plaintext encoding of a selection inside a mail quote span</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+</head>
+<body>
+<a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=187997">Mozilla Bug 187997</a>
+<p id="display"></p>
+<div id="content" style="display: none"></div>
+<div id="container">
+  <div id="reply">On 19 Feb 2025 21:23, user wrote:<br><br><span id="quote" _moz_quote="true" style="display: block; width: 98vw;">&gt; Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since 1966, when designers at Letraset and James Mosley, the librarian at St Bride Printing Library in London, took a 1914 Cicero translation and scrambled it to make dummy text for Letraset's Body Type sheets. It has survived not only many decades, but also the leap into electronic typesetting, remaining essentially unchanged.</span></div>
+</div>
+<script>
+
+const de = SpecialPowers.Ci.nsIDocumentEncoder;
+const QUOTE_WRAP_COLUMN = 72;
+
+function serializeQuoteSelectionForRewrap(aSelection) {
+  const encoder = SpecialPowers.Cu.createDocumentEncoder("text/plain");
+  encoder.init(document, "text/plain",
+    de.OutputFormatted | de.OutputLFLineBreak | de.OutputSelectionOnly);
+  encoder.setWrapColumn(QUOTE_WRAP_COLUMN);
+  encoder.setSelection(aSelection);
+  return encoder.encodeToString();
+}
+
+add_task(async function test_quote_span_keeps_markers() {
+  const quote = document.getElementById("quote");
+  const selection = window.getSelection();
+  selection.removeAllRanges();
+  const quoteRange = document.createRange();
+  quoteRange.selectNodeContents(quote);
+  selection.addRange(quoteRange);
+
+  const serializedQuote = serializeQuoteSelectionForRewrap(selection);
+
+  const quoteLines = serializedQuote.split("\n").filter(line => line.trim().length);
+  const unquotedLines = quoteLines.filter(line => !line.startsWith(">"));
+  is(unquotedLines.join("\n"), "",
+     "every serialized quote line keeps its '>' marker");
+});
+
+</script>
+</body>
+</html>

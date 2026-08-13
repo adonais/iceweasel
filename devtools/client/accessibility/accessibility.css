@@ -287,30 +287,26 @@ body {
   margin: auto;
 }
 
-.description .link,
-.accessibility-check-annotation .link {
+:is(.description, .accessibility-check-annotation) .learn-more-link {
   color: var(--accessibility-link-color);
   cursor: pointer;
   outline: 0;
-}
 
-.description .link:hover:not(:focus),
-.accessibility-check-annotation .link:hover:not(:focus) {
-  text-decoration: underline;
-}
+  &:hover:not(:focus) {
+    text-decoration: underline;
+  }
 
-.description .link:focus:not(:active),
-.accessibility-check-annotation .link:focus:not(:active) {
-  box-shadow:
-    0 0 0 2px var(--accessibility-toolbar-focus),
-    0 0 0 4px var(--accessibility-toolbar-focus-alpha30);
-  border-radius: 2px;
-}
+  &:focus:not(:active) {
+    box-shadow:
+      0 0 0 2px var(--accessibility-toolbar-focus),
+      0 0 0 4px var(--accessibility-toolbar-focus-alpha30);
+    border-radius: 2px;
+  }
 
-.description .link:active,
-.accessibility-check-annotation .link:active {
-  color: var(--accessibility-link-color-active);
-  text-decoration: underline;
+  &:active {
+    color: var(--accessibility-link-color-active);
+    text-decoration: underline;
+  }
 }
 
 /* TreeView Customization */
@@ -746,7 +742,7 @@ body {
   color: var(--badge-color);
 }
 
-.accessibility-check-annotation .link {
+.accessibility-check-annotation .learn-more-link {
   white-space: nowrap;
   font-style: normal;
 }

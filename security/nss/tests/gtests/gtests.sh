@@ -58,6 +58,13 @@ gtest_start()
     if [ ! -d "$DIR" ]; then
       "${QADIR}/gtests/gtest_db.sh" "$DIR" "${BINDIR}/certutil" "${R_NOISE_FILE}"
       html_msg $? 0 "create gtest certificates for $i"
+      # smime_gtest decodes an AuthEnvelopedData blob (RFC 5083) encrypted to
+      # Fran; import that identity into this suite's DB only, so sibling suites'
+      # cert-count expectations are unaffected.
+      if [ "$i" = "smime_gtest" ]; then
+        "${BINDIR}/pk12util" -d "$DIR" -i "${QADIR}/smime/interop-openssl/Fran.p12" -W nss -K "" >/dev/null
+        html_msg $? 0 "import Fran's identity for $i"
+      fi
     fi
     pushd "$DIR"
     GTESTREPORT="$DIR/report.xml"

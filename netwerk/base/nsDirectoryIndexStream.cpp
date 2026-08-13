@@ -11,12 +11,13 @@
 
  */
 
-#include "nsEscape.h"
 #include "nsDirectoryIndexStream.h"
+
 #include "mozilla/Logging.h"
-#include "prtime.h"
+#include "nsEscape.h"
 #include "nsIFile.h"
 #include "nsNativeCharsetUtils.h"
+#include "prtime.h"
 
 // NOTE: This runs on the _file transport_ thread.
 // The problem is that now that we're actually doing something with the data,

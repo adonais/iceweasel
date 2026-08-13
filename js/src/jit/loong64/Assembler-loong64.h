@@ -127,6 +127,7 @@ class UseScratchRegisterScope {
   Register Acquire();
   void Release(const Register& reg);
   bool hasAvailable() const;
+  uint32_t countAvailable() const;
   void Include(const GeneralRegisterSet& list) {
     *available_ = GeneralRegisterSet::Union(*available_, list);
   }
@@ -961,7 +962,8 @@ class AssemblerLOONG64 : public AssemblerShared {
         printer(nullptr),
 #endif
         isFinished(false),
-        scratch_register_list_((1 << t7.code()) | (1 << t8.code())) {
+        scratch_register_list_((1 << t6.code()) | (1 << t7.code()) |
+                               (1 << t8.code())) {
   }
 
   static Condition InvertCondition(Condition cond);

@@ -4,8 +4,8 @@
 
 #include "gfxMathTable.h"
 
-#include "harfbuzz/hb.h"
 #include "harfbuzz/hb-ot.h"
+#include "harfbuzz/hb.h"
 #include "mozilla/StaticPrefs_mathml.h"
 
 #define FloatToFixed(f) (65536 * (f))

@@ -115,9 +115,8 @@ class HistoryTest {
                     1,
                 ),
             ) {
-                clickDeleteHistoryButton(firstWebPage.url.toString())
             }
-            verifySnackBarText(expectedText = "Deleted")
+            clickDeleteHistoryButton(firstWebPage.url.toString())
             verifyEmptyHistoryView()
         }
     }
@@ -147,7 +146,6 @@ class HistoryTest {
             verifyDeleteConfirmationMessage()
             selectEverythingOption()
             confirmDeleteAllHistory()
-            verifySnackBarText(expectedText = "Browsing data deleted")
             verifyEmptyHistoryView()
         }
     }

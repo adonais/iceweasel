@@ -3,16 +3,17 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "CompositableHost.h"
-#include "Effects.h"  // for EffectMask, Effect, etc
+
+#include "Effects.h"      // for EffectMask, Effect, etc
+#include "gfxPlatform.h"  // for gfxPlatform
 #include "gfxUtils.h"
+#include "mozilla/RefPtr.h"  // for nsRefPtr
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/LayersSurfaces.h"  // for SurfaceDescriptor
 #include "mozilla/layers/TextureHost.h"     // for TextureHost, etc
 #include "mozilla/layers/WebRenderImageHost.h"
-#include "mozilla/RefPtr.h"   // for nsRefPtr
 #include "nsDebug.h"          // for NS_WARNING
 #include "nsISupportsImpl.h"  // for MOZ_COUNT_CTOR, etc
-#include "gfxPlatform.h"      // for gfxPlatform
 
 namespace mozilla {
 

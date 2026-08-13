@@ -2,14 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "gc/StoreBuffer-inl.h"
-
 #include "mozilla/Assertions.h"
 
 #include "gc/GCRuntime.h"
 #include "gc/Statistics.h"
 #include "vm/MutexIDs.h"
 #include "vm/Runtime.h"
+
+#include "gc/StoreBuffer-inl.h"
 
 using namespace js;
 using namespace js::gc;

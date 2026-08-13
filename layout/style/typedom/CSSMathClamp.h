@@ -7,6 +7,7 @@
 
 #include "js/TypeDecls.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/CSSMathValue.h"
 #include "mozilla/dom/CSSNumericValueBindingFwd.h"
 #include "nsCycleCollectionParticipant.h"
@@ -22,10 +23,9 @@ namespace mozilla {
 
 struct CSSPropertyId;
 class ErrorResult;
-struct StyleNumericValue;
-template <typename T, size_t N>
-struct StyleOwnedArray;
-using StyleMathClamp = StyleOwnedArray<StyleNumericValue, 3>;
+template <typename T>
+class MovingNotNull;
+struct StyleMathClamp;
 
 namespace dom {
 
@@ -33,8 +33,10 @@ class GlobalObject;
 
 class CSSMathClamp final : public CSSMathValue {
  public:
-  CSSMathClamp(nsCOMPtr<nsISupports> aParent, RefPtr<CSSNumericValue> aLower,
-               RefPtr<CSSNumericValue> aValue, RefPtr<CSSNumericValue> aUpper);
+  CSSMathClamp(nsCOMPtr<nsISupports> aParent,
+               MovingNotNull<UniquePtr<StyleNumericType>> aNumericType,
+               RefPtr<CSSNumericValue> aLower, RefPtr<CSSNumericValue> aValue,
+               RefPtr<CSSNumericValue> aUpper);
 
   static RefPtr<CSSMathClamp> Create(nsCOMPtr<nsISupports> aParent,
                                      const StyleMathClamp& aMathClamp);

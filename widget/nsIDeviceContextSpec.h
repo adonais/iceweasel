@@ -6,11 +6,11 @@
 #define nsIDeviceContextSpec_h_
 
 #include "gfxPoint.h"
-#include "nsISupports.h"
+#include "mozilla/MoveOnlyFunction.h"
 #include "mozilla/StaticPrefs_print.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/gfx/PrintPromise.h"
-#include "mozilla/MoveOnlyFunction.h"
+#include "nsISupports.h"
 
 class nsIWidget;
 class nsIPrintSettings;

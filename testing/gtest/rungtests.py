@@ -5,6 +5,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import argparse
+import functools
 import json
 import os
 import pathlib
@@ -17,6 +18,7 @@ import mozprocess
 from mozfile import load_source
 from mozlog import commandline
 from mozrunner.utils import get_stack_fixer_function
+from suites import get_gtest_suites, suite_filters
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 
@@ -65,9 +67,10 @@ class GTests:
         utility_path=None,
         enable_inc_origin_init=False,
         filter_set=None,
+        combine_suites=False,
     ):
         """
-        Run a single C++ unit test program.
+        Run a C++ unit test program.
 
         Arguments:
         * prog: The path to the test program to run.
@@ -79,8 +82,10 @@ class GTests:
         * utility_path: A path to a directory containing utility programs.
                         currently used to locate a stack fixer to provide
                         symbols symbols for assertion stacks.
+        * combine_suites: Run one program with all suites, rather than running
+                          each suite as a separate program invocation.
 
-        Return True if the program exits with a zero status, False otherwise.
+        Return True if the program(s) exit with a zero status, False otherwise.
         """
         self.xre_path = xre_path
         env = self.build_environment(enable_inc_origin_init, filter_set)
@@ -95,8 +100,6 @@ class GTests:
         if utility_path:
             stack_fixer = get_stack_fixer_function(utility_path, symbols_path)
 
-        GTests.run_gtest.timed_out = False
-
         def output_line_handler(proc, line):
             if stack_fixer:
                 print(stack_fixer(line))
@@ -108,29 +111,56 @@ class GTests:
                 data = json.loads(match.group(1))
                 perfherder_data.append(data)
 
-        def proc_timeout_handler(proc):
-            GTests.run_gtest.timed_out = True
-            log.error("gtest | timed out after %d seconds" % self.gtest_timeout_value())
-            mozcrash.kill_and_get_minidump(proc.pid, cwd, utility_path)
+        args = [prog, "-unittest", "--gtest_death_test_style=threadsafe"]
 
-        def output_timeout_handler(proc):
-            GTests.run_gtest.timed_out = True
-            log.error(
-                "gtest | timed out after %d seconds without output"
-                % GTests.TEST_PROC_NO_OUTPUT_TIMEOUT
+        def run_test_process(test_name, env):
+            def timeout_handler(timeout, context, proc):
+                timeout_handler.timed_out = True
+                log.error(f"{test_name} | timed out after {timeout} seconds{context}")
+                mozcrash.kill_and_get_minidump(proc.pid, cwd, utility_path)
+
+            timeout_handler.timed_out = False
+
+            proc = mozprocess.run_and_wait(
+                args,
+                cwd=cwd,
+                env=env,
+                output_line_handler=output_line_handler,
+                timeout=self.gtest_timeout_value(),
+                timeout_handler=functools.partial(
+                    timeout_handler, self.gtest_timeout_value(), ""
+                ),
+                output_timeout=GTests.TEST_PROC_NO_OUTPUT_TIMEOUT,
+                output_timeout_handler=functools.partial(
+                    timeout_handler,
+                    GTests.TEST_PROC_NO_OUTPUT_TIMEOUT,
+                    " without output",
+                ),
             )
-            mozcrash.kill_and_get_minidump(proc.pid, cwd, utility_path)
+            returncode = proc.returncode
 
-        proc = mozprocess.run_and_wait(
-            [prog, "-unittest", "--gtest_death_test_style=threadsafe"],
-            cwd=cwd,
-            env=env,
-            output_line_handler=output_line_handler,
-            timeout=self.gtest_timeout_value(),
-            timeout_handler=proc_timeout_handler,
-            output_timeout=GTests.TEST_PROC_NO_OUTPUT_TIMEOUT,
-            output_timeout_handler=output_timeout_handler,
-        )
+            log.info(f"{test_name} | process wait complete, returncode={returncode}")
+            if mozcrash.check_for_crashes(cwd, symbols_path, test_name=test_name):
+                # mozcrash will output the log failure line for us.
+                return False
+            if timeout_handler.timed_out:
+                return False
+            result = returncode == 0
+            if not result:
+                log.error(f"{test_name} | test failed with return code {returncode}")
+            return result
+
+        if combine_suites:
+            result = run_test_process("gtest", env)
+        else:
+            suites = get_gtest_suites(args, cwd, env)
+            # Some suites have side-effects like emitting PERFHERDER_DATA, so
+            # don't short-circuit on the first failure.
+            results = [
+                run_test_process(f"gtest.{filt.suite}", filt(env))
+                for filt in suite_filters(suites)
+            ]
+            result = all(results)
 
         if perfherder_data and "MOZ_AUTOMATION" in os.environ:
             upload_dir = pathlib.Path(os.getenv("MOZ_UPLOAD_DIR"))
@@ -146,15 +176,6 @@ class GTests:
                 with out_path.open("w", encoding="utf-8") as f:
                     json.dump(data, f)
 
-        log.info("gtest | process wait complete, returncode=%s" % proc.returncode)
-        if mozcrash.check_for_crashes(cwd, symbols_path, test_name="gtest"):
-            # mozcrash will output the log failure line for us.
-            return False
-        if GTests.run_gtest.timed_out:
-            return False
-        result = proc.returncode == 0
-        if not result:
-            log.error("gtest | test failed with return code %d" % proc.returncode)
         return result
 
     def build_core_environment(self, env={}):
@@ -296,6 +317,13 @@ class gtestOptions(argparse.ArgumentParser):
             default=None,
             help="predefined gtest filter",
         )
+        self.add_argument(
+            "--combine-suites",
+            action="store_true",
+            dest="combine_suites",
+            default=False,
+            help="test all suites in one program invocation",
+        )
         self.add_argument("args", nargs=argparse.REMAINDER)
 
 
@@ -339,6 +367,7 @@ def main():
             utility_path=options.utility_path,
             enable_inc_origin_init=options.enable_inc_origin_init,
             filter_set=options.filter_set,
+            combine_suites=options.combine_suites,
         )
     except Exception as e:
         log.error(str(e))

@@ -5,8 +5,8 @@
 #ifndef mozilla_widget_ScrollbarDrawingAndroid_h
 #define mozilla_widget_ScrollbarDrawingAndroid_h
 
-#include "nsITheme.h"
 #include "ScrollbarDrawing.h"
+#include "nsITheme.h"
 
 namespace mozilla::widget {
 

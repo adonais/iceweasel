@@ -6,6 +6,7 @@
 #define MOZILLA_GFX_PRINTTARGETCG_H
 
 #include <Carbon/Carbon.h>
+
 #include "PrintTarget.h"
 
 class nsIOutputStream;

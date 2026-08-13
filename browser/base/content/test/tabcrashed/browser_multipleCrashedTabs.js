@@ -126,7 +126,7 @@ add_task(async function test_multiple_tabcrashed_pages() {
   // was a single about:tabcrashed page at unload time, so we expect
   // only a single entry for the probe for when we removed the last
   // crashed tab.
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return snapshotCount(histogram.snapshot()) == 1;
   }, `Collected value should become 1.`);
 

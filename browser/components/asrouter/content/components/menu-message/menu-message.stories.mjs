@@ -10,7 +10,16 @@ import "./menu-message.mjs";
 export default {
   title: "Domain-specific UI Widgets/ASRouter/Menu Message",
   component: "menu-message",
-  argTypes: {},
+  argTypes: {
+    layout: {
+      options: ["column", "row", "simple", "split"],
+      control: { type: "select" },
+    },
+    imagePosition: {
+      options: ["start", "end"],
+      control: { type: "inline-radio" },
+    },
+  },
 };
 
 const Template = ({
@@ -25,6 +34,7 @@ const Template = ({
   containerVerticalBottomOffset,
   containerPaddingBottom,
   layout,
+  imagePosition,
   imageWidth,
   logoWidth,
 }) => html`
@@ -53,6 +63,7 @@ const Template = ({
         : ""}
       "
       layout=${layout}
+      image-position=${imagePosition}
     >
     </menu-message>
   </moz-card>
@@ -73,6 +84,20 @@ Default.args = {
   containerVerticalBottomOffset: 0,
   containerPaddingBottom: 8,
   layout: "column",
+  imagePosition: "end",
   imageWidth: 120,
   logoWidth: 18,
+};
+
+export const Split = Template.bind({});
+Split.args = {
+  ...Default.args,
+  primaryText: "Sync all your devices",
+  secondaryText:
+    "Instantly get your bookmarks and passwords everywhere you’re signed in to Firefox.",
+  buttonText: "Sign in",
+  layout: "split",
+  imagePosition: "end",
+  imageWidth: 100,
+  imageVerticalTopOffset: 0,
 };

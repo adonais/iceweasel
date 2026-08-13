@@ -91,12 +91,14 @@ def fat_aar(distdir, zip_paths, no_process=False, no_compatibility_check=False):
             aar_file.file.filename, JarReader(fileobj=aar_file.open())
         )
         for path, fileobj in UnpackFinder(jar_finder):
+            path_with_prefix = mozpath.join("geckoview", path)
+
             # Native libraries go straight through.
             if mozpath.match(path, "jni/**"):
-                copier.add(path, fileobj)
+                copier.add(path_with_prefix, fileobj)
 
             elif path in arch_prefs:
-                copier.add(path, fileobj)
+                copier.add(path_with_prefix, fileobj)
 
             elif path in ("classes.jar", "annotations.zip"):
                 # annotations.zip differs due to timestamps, but the contents should not.
@@ -107,29 +109,29 @@ def fat_aar(distdir, zip_paths, no_process=False, no_compatibility_check=False):
                 z = ZipFile(BytesIO(fileobj.open().read()))
                 for r in z.namelist():
                     fingerprint = sha1(z.open(r).read()).hexdigest()
-                    diffs[f"{path}!/{r}"][fingerprint].append(arch)
+                    diffs[f"{path_with_prefix}!/{r}"][fingerprint].append(arch)
 
             else:
                 fingerprint = sha1(fileobj.open().read()).hexdigest()
                 # There's no need to distinguish `target.maven.zip` from `assets/omni.ja` here,
                 # since in practice they will never overlap.
-                diffs[path][fingerprint].append(arch)
+                diffs[path_with_prefix][fingerprint].append(arch)
 
             missing_arch_prefs.discard(path)
 
     # Some differences are allowed across the architecture-specific AARs.  We could allow-list
     # the actual content, but it's not necessary right now.
     allow_pattern_list = {
-        "AndroidManifest.xml",  # Min SDK version is different for 32- and 64-bit builds.
-        "classes.jar!/org/mozilla/gecko/util/HardwareUtils.class",  # Min SDK as well.
-        "classes.jar!/org/mozilla/geckoview/BuildConfig.class",
+        "geckoview/AndroidManifest.xml",  # Min SDK version is different for 32- and 64-bit builds.
+        "geckoview/classes.jar!/org/mozilla/gecko/util/HardwareUtils.class",  # Min SDK as well.
+        "geckoview/classes.jar!/org/mozilla/geckoview/BuildConfig.class",
         # Each input captures its CPU architecture.
-        "chrome/toolkit/content/global/buildconfig.html",
+        "geckoview/chrome/toolkit/content/global/buildconfig.html",
         # Bug 1556162: localized resources are not deterministic across
         # per-architecture builds triggered from the same push.
-        "**/*.ftl",
-        "**/*.dtd",
-        "**/*.properties",
+        "geckoview/**/*.ftl",
+        "geckoview/**/*.dtd",
+        "geckoview/**/*.properties",
     }
 
     not_allowed = OrderedDict()

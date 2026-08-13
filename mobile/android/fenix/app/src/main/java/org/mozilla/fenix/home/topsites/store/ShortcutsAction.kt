@@ -6,6 +6,7 @@ package org.mozilla.fenix.home.topsites.store
 
 import mozilla.components.feature.top.sites.TopSite
 import mozilla.components.lib.state.Action
+import org.mozilla.fenix.home.topsites.AddShortcutSource
 
 /**
  * Actions to dispatch through the [ShortcutsStore] to modify the [ShortcutsState].
@@ -60,6 +61,11 @@ sealed class ShortcutsAction : Action {
      *
      * @property title The title for the new shortcut.
      * @property url The URL for the new shortcut.
+     * @property source The [AddShortcutSource] of how the shortcut was added.
      */
-    data class SaveShortcut(val title: String, val url: String) : ShortcutsAction()
+    data class SaveShortcut(
+        val title: String,
+        val url: String,
+        val source: AddShortcutSource,
+    ) : ShortcutsAction()
 }

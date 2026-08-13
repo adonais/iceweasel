@@ -5,8 +5,8 @@
 #ifndef mozilla_ClipboardReadRequestParent_h
 #define mozilla_ClipboardReadRequestParent_h
 
-#include "mozilla/dom/ContentParent.h"
 #include "mozilla/PClipboardReadRequestParent.h"
+#include "mozilla/dom/ContentParent.h"
 #include "nsIClipboard.h"
 
 namespace mozilla {

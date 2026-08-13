@@ -26,10 +26,11 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 import traceback
 import urllib.error
 import urllib.request
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from tempfile import NamedTemporaryFile
 
 from mardor.reader import MarReader
@@ -61,7 +62,16 @@ STAGING_URL_PREFIXES = (
     "https://ftp.stage.mozaws.net/",
 )
 
+# Download retry tuning. Sleep grows linearly per attempt, capped at the max.
+DOWNLOAD_ATTEMPTS = 5
+DOWNLOAD_SLEEPTIME = 5
+DOWNLOAD_MAX_SLEEPTIME = 30
+
 logging.basicConfig(level=logging.INFO)
+
+
+class DownloadError(Exception):
+    """Raised when a file download fails after exhausting all retries."""
 
 
 # TODO: use logging context instead of this
@@ -562,16 +572,25 @@ def download_file(url, save_path, allow_staging, signing_cert=None):
     allow_staging (bool): Allows staging URLs
     """
     validate_url(url, allow_staging)
-    try:
-        # Download the file and save it to the specified path
-        urllib.request.urlretrieve(url, save_path)
-        log(f"File downloaded successfully: {save_path}", "download_file")
-    except urllib.error.URLError as e:
-        log(f"Error downloading file: {url} -> {e}", "download_file")
-        raise Exception("Failed to download file.")
-    except Exception as e:
-        log(f"An unexpected error occurred: {url} -> {e}", "download_file")
-        raise Exception("Failed to download file.")
+    last_error = None
+    for attempt in range(1, DOWNLOAD_ATTEMPTS + 1):
+        try:
+            # Download the file and save it to the specified path
+            urllib.request.urlretrieve(url, save_path)
+            log(f"File downloaded successfully: {save_path}", "download_file")
+            break
+        except Exception as e:
+            last_error = e
+            log(
+                f"Error downloading file (attempt {attempt}/{DOWNLOAD_ATTEMPTS}): {url} -> {e}",
+                "download_file",
+            )
+            if attempt < DOWNLOAD_ATTEMPTS:
+                time.sleep(min(DOWNLOAD_SLEEPTIME * attempt, DOWNLOAD_MAX_SLEEPTIME))
+    else:
+        raise DownloadError(
+            f"Failed to download file after {DOWNLOAD_ATTEMPTS} attempts: {url} -> {last_error}"
+        )
 
     if signing_cert:
         verify_signature(save_path, signing_cert)
@@ -732,21 +751,13 @@ def main():
     compute_hashes = args.generate_hashes or bool(args.patch_cache_dir)
     to_hashes = _hash_dir(to_mar_dir) if compute_hashes else None
 
-    futures = []
     futures_result = []
 
-    def future_cb(f):
-        if not f.cancelled():
-            futures_result.append(f.result())
-        else:
-            futures_result.append(("Cancelled", None, None))
+    from_data = json.loads(args.from_mars_json)
+    assert isinstance(from_data, list), "Param --from-mars-json should be a JSON list."
 
     with ProcessPoolExecutor(cpus) as executor:
-        from_data = json.loads(args.from_mars_json)
-        assert isinstance(from_data, list), (
-            "Param --from-mars-json should be a JSON list."
-        )
-
+        futures = []
         for from_data_index in range(len(from_data)):
             source_data = from_data[from_data_index]
             update_number = source_data["update_number"]
@@ -780,8 +791,20 @@ def main():
                 to_hashes=to_hashes,
                 patch_cache_dir=args.patch_cache_dir,
             )
-            future.add_done_callback(future_cb)
             futures.append(future)
+
+        for future in as_completed(futures):
+            result = future.result()
+            futures_result.append(result)
+            # A download that failed every retry is unrecoverable, so abort the
+            # whole run rather than letting the remaining partials proceed.
+            if isinstance(result[0], DownloadError):
+                log(
+                    f"Aborting: a download failed and could not be retried: {result[0]}",
+                    "main",
+                )
+                executor.shutdown(wait=False, cancel_futures=True)
+                sys.exit(1)
 
     log("Finished all processes.", "main")
 

@@ -37,7 +37,7 @@ class RowStub {
       return this.data[key];
     }
 
-    throw new Error("NS_ERROR_NOT_AVAILABLE");
+    throw new Error(`NS_ERROR_NOT_AVAILABLE: could not find key: ${key}`);
   }
 }
 
@@ -117,6 +117,12 @@ add_task(function test_missingField_parseConversationRow() {
 
 add_task(function test_parseConversationRow() {
   const now = Date.now();
+
+  const tool_results = JSON.stringify({
+    0: [{ toolCallId: "t1", uiType: "ai-action-result" }], // 0 == TOOL_RESULT_TYPE.TOOL_UI
+    1: [{ url: "history url 1" }, { url: "history url 2" }], // 1 == TOOL_RESULT_TYPE.HISTORY_RESULTS
+  });
+
   const testRow = new RowStub({
     message_id: "123456789012",
     created_date: now,
@@ -137,7 +143,7 @@ add_task(function test_parseConversationRow() {
     memories_applied: '{ "some": "memories" }',
     web_search_queries: '{ "some": "web search queries" }',
     page_history_deleted: false,
-    tool_ui_data: '{ "toolCallId": "t1", "uiType": "ai-action-result" }',
+    tool_results,
   });
 
   const rows = parseMessageRows([testRow]);
@@ -169,6 +175,10 @@ add_task(function test_parseConversationRow() {
       toolCallId: "t1",
       uiType: "ai-action-result",
     });
+    soft.deepEqual(message.historyResults, [
+      { url: "history url 1" },
+      { url: "history url 2" },
+    ]);
   });
 });
 

@@ -1569,6 +1569,19 @@ static inline void prepare_enc_workers(AV1_COMP *cpi, AVxWorkerHook hook,
                                        int num_workers) {
   MultiThreadInfo *const mt_info = &cpi->mt_info;
   AV1_COMMON *const cm = &cpi->common;
+
+  // If a previous frame's encode raised an error after this function ran,
+  // accumulate_counters_enc_workers() was skipped via longjmp and the mb
+  // buffers (including cpi->td.mb) were never freed. Free them here so the
+  // shallow copy of cpi->td.mb below cannot leave a worker's mb aliasing
+  // cpi->td.mb's heap allocations on a subsequent partial-allocation failure
+  // (which would double-free in encoder_destroy()).
+  for (int i = num_workers - 1; i >= 0; i--) {
+    EncWorkerData *const thread_data = &mt_info->tile_thr_data[i];
+    ThreadData *const td = (i == 0) ? &cpi->td : thread_data->original_td;
+    if (td) av1_dealloc_mb_data(&td->mb, av1_num_planes(cm));
+  }
+
   for (int i = num_workers - 1; i >= 0; i--) {
     AVxWorker *const worker = &mt_info->workers[i];
     EncWorkerData *const thread_data = &mt_info->tile_thr_data[i];
@@ -2946,6 +2959,7 @@ static inline size_t get_bs_chunk_size(int tg_or_tile_size,
 
 // Initializes params required for pack bitstream tile.
 static void init_tile_pack_bs_params(AV1_COMP *const cpi, uint8_t *const dst,
+                                     size_t dst_size,
                                      struct aom_write_bit_buffer *saved_wb,
                                      PackBSParams *const pack_bs_params_arr,
                                      uint8_t obu_extn_header) {
@@ -2998,9 +3012,9 @@ static void init_tile_pack_bs_params(AV1_COMP *const cpi, uint8_t *const dst,
     }
   }
 
-  assert(cpi->available_bs_size > 0);
+  assert(dst_size > 0);
   size_t tg_buf_size[MAX_TILES] = { 0 };
-  size_t max_buf_size = cpi->available_bs_size;
+  size_t max_buf_size = dst_size;
   size_t remain_buf_size = max_buf_size;
   const int frame_size_mi = cm->mi_params.mi_rows * cm->mi_params.mi_cols;
 
@@ -3224,12 +3238,15 @@ static void accumulate_pack_bs_data(
   }
 }
 
-void av1_write_tile_obu_mt(
-    AV1_COMP *const cpi, uint8_t *const dst, uint32_t *total_size,
-    struct aom_write_bit_buffer *saved_wb, uint8_t obu_extn_header,
-    const FrameHeaderInfo *fh_info, int *const largest_tile_id,
-    unsigned int *max_tile_size, uint32_t *const obu_header_size,
-    uint8_t **tile_data_start, const int num_workers) {
+void av1_write_tile_obu_mt(AV1_COMP *const cpi, uint8_t *const dst,
+                           size_t dst_size, uint32_t *total_size,
+                           struct aom_write_bit_buffer *saved_wb,
+                           uint8_t obu_extn_header,
+                           const FrameHeaderInfo *fh_info,
+                           int *const largest_tile_id,
+                           unsigned int *max_tile_size,
+                           uint32_t *const obu_header_size,
+                           uint8_t **tile_data_start, const int num_workers) {
   MultiThreadInfo *const mt_info = &cpi->mt_info;
 
   PackBSParams pack_bs_params[MAX_TILES];
@@ -3238,7 +3255,8 @@ void av1_write_tile_obu_mt(
   for (int tile_idx = 0; tile_idx < MAX_TILES; tile_idx++)
     pack_bs_params[tile_idx].total_size = &tile_size[tile_idx];
 
-  init_tile_pack_bs_params(cpi, dst, saved_wb, pack_bs_params, obu_extn_header);
+  init_tile_pack_bs_params(cpi, dst, dst_size, saved_wb, pack_bs_params,
+                           obu_extn_header);
   prepare_pack_bs_workers(cpi, pack_bs_params, pack_bs_worker_hook,
                           num_workers);
   launch_workers(mt_info, num_workers);

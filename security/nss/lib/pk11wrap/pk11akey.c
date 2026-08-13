@@ -5,6 +5,7 @@
  * This file contains functions to manage asymetric keys, (public and
  * private keys).
  */
+#include <limits.h>
 #include <stddef.h>
 
 #include "seccomon.h"
@@ -1977,7 +1978,13 @@ PK11_GenerateKeyPairWithOpFlags(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
     SECITEM_FreeItem(cka_id, PR_TRUE);
 
     if (crv != CKR_OK) {
-        PK11_DestroyObject(slot, pubID);
+        /* SECKEY_DestroyPublicKey frees *pubKey and destroys the underlying
+         * PKCS #11 object, but only for session objects; a freshly generated
+         * token object must be removed explicitly. */
+        SECKEY_DestroyPublicKey(*pubKey);
+        if (pubIsToken) {
+            PK11_DestroyObject(slot, pubID);
+        }
         PK11_DestroyObject(slot, privID);
         PORT_SetError(PK11_MapError(crv));
         *pubKey = NULL;
@@ -1987,6 +1994,9 @@ PK11_GenerateKeyPairWithOpFlags(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
     privKey = pk11_MakePrivKey(slot, keyType, !token, privID, wincx);
     if (privKey == NULL) {
         SECKEY_DestroyPublicKey(*pubKey);
+        if (pubIsToken) {
+            PK11_DestroyObject(slot, pubID);
+        }
         PK11_DestroyObject(slot, privID);
         *pubKey = NULL;
         return NULL;
@@ -2837,6 +2847,49 @@ PK11_FindKeyByKeyID(PK11SlotInfo *slot, SECItem *keyID, void *wincx)
         return NULL;
     }
     privKey = pk11_MakePrivKey(slot, nullKey, PR_FALSE, keyHandle, wincx);
+    return privKey;
+}
+
+/*
+ * Create a SECKEYPrivateKey directly from a PKCS #11 private key template.
+ *
+ * The template must fully describe a private key object (at minimum CKA_CLASS =
+ * CKO_PRIVATE_KEY, CKA_KEY_TYPE, and the key material). The object is created
+ * as a session (non-token) object on 'slot'. The returned SECKEYPrivateKey owns
+ * the underlying PKCS #11 object and destroys it when the key is freed with
+ * SECKEY_DestroyPrivateKey.
+ */
+SECKEYPrivateKey *
+PK11_CreatePrivateKeyFromTemplate(PK11SlotInfo *slot,
+                                  const CK_ATTRIBUTE *theTemplate,
+                                  unsigned int count, void *wincx)
+{
+    CK_OBJECT_HANDLE keyHandle;
+    SECKEYPrivateKey *privKey;
+    SECStatus rv;
+
+    /* PK11_CreateNewObject takes the count as an int, so guard against a
+     * value that would overflow when narrowed. */
+    if (slot == NULL || theTemplate == NULL || count == 0 || count > INT_MAX) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return NULL;
+    }
+
+    rv = PK11_CreateNewObject(slot, CK_INVALID_HANDLE, theTemplate, count,
+                              PR_FALSE, &keyHandle);
+    if (rv != SECSuccess) {
+        return NULL;
+    }
+
+    /* Pass isOwner = PR_TRUE so the returned key owns the session object we
+     * just created and destroys it on cleanup. */
+    privKey = pk11_MakePrivKey(slot, nullKey, PR_TRUE, keyHandle, wincx);
+    if (privKey == NULL) {
+        /* Don't leak the object we created if wrapping it failed. */
+        (void)PK11_DestroyObject(slot, keyHandle);
+        return NULL;
+    }
+
     return privKey;
 }
 

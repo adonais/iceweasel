@@ -139,13 +139,10 @@ body {
 }
 
 #dropzone-error {
+  display: inline-flex;
   align-items: flex-start;
   gap: var(--space-xsmall);
   color: var(--text-color);
-
-  &:not([hidden]) {
-    display: inline-flex;
-  }
 
   &::before {
     content: "";

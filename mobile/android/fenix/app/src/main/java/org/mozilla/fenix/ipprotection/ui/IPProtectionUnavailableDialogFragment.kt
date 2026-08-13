@@ -19,6 +19,7 @@ import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.tabstray.redux.state.Page
+import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
  * A host dialog for [IPProtectionUnavailableDialog].
@@ -45,20 +46,22 @@ class IPProtectionUnavailableDialogFragment : AppCompatDialogFragment() {
             dismiss()
         }
 
-        IPProtectionUnavailableDialog(
-            onDismiss = {
-                // no-op, the dialog fragment is intentionally blocking the UI so the user has to make a choice.
-            },
-            onTurnOffProxyClicked = {
-                requireComponents.ipProtection.store.dispatch(IPProtectionAction.Toggle)
-            },
-            onOpenTabsTrayClicked = {
-                findNavController().navigate(
-                    IPProtectionUnavailableDialogFragmentDirections.actionGlobalTabManagementFragment(
-                        page = if (isPrivateMode) Page.PrivateTabs else Page.NormalTabs,
-                    ),
-                )
-            },
-        )
+        FirefoxTheme {
+            IPProtectionUnavailableDialog(
+                onDismiss = {
+                    // no-op, the dialog fragment is intentionally blocking the UI so the user has to make a choice.
+                },
+                onTurnOffProxyClicked = {
+                    requireComponents.ipProtection.store.dispatch(IPProtectionAction.Toggle)
+                },
+                onOpenTabsTrayClicked = {
+                    findNavController().navigate(
+                        IPProtectionUnavailableDialogFragmentDirections.actionGlobalTabManagementFragment(
+                            page = if (isPrivateMode) Page.PrivateTabs else Page.NormalTabs,
+                        ),
+                    )
+                },
+            )
+        }
     }
 }

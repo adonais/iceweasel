@@ -6,19 +6,19 @@
 #include "nsShmImage.h"
 
 #ifdef MOZ_HAVE_SHMIMAGE
-#  include "mozilla/X11Util.h"
-#  include "mozilla/PodOperations.h"
-#  include "mozilla/gfx/gfxVars.h"
-#  include "mozilla/ipc/SharedMemoryMapping.h"
-#  include "gfxPlatform.h"
-#  include "nsPrintfCString.h"
-#  include "nsTArray.h"
-
 #  include <dlfcn.h>
 #  include <errno.h>
 #  include <string.h>
 #  include <sys/ipc.h>
 #  include <sys/shm.h>
+
+#  include "gfxPlatform.h"
+#  include "mozilla/PodOperations.h"
+#  include "mozilla/X11Util.h"
+#  include "mozilla/gfx/gfxVars.h"
+#  include "mozilla/ipc/SharedMemoryMapping.h"
+#  include "nsPrintfCString.h"
+#  include "nsTArray.h"
 
 extern "C" {
 #  include <X11/ImUtil.h>

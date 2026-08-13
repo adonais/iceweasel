@@ -5,12 +5,14 @@
 #ifndef mozilla_Queue_h
 #define mozilla_Queue_h
 
+#include <stdint.h>
+
 #include <algorithm>
 #include <utility>
-#include <stdint.h>
-#include "mozilla/MemoryReporting.h"
-#include "mozilla/Assertions.h"
+
 #include "mozalloc.h"
+#include "mozilla/Assertions.h"
+#include "mozilla/MemoryReporting.h"
 
 namespace mozilla {
 

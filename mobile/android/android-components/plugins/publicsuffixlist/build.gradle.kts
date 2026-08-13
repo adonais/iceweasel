@@ -3,8 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 plugins {
-    alias(libs.plugins.dependency.analysis)
     `kotlin-dsl`
+    alias(libs.plugins.android.lint.plugin)
+    alias(libs.plugins.dependency.analysis)
 }
 
 val mozconfig = gradle.extra["mozconfig"] as Map<*, *>
@@ -17,6 +18,8 @@ dependencies {
     implementation(libs.okio)
 
     compileOnly(libs.android.gradle.plugin)
+
+    lintChecks(libs.androidx.lint)
 }
 
 gradlePlugin {

@@ -102,7 +102,7 @@ fun LibraryMenuItem(
                 size = BADGE_SIZE_SMALL,
                 contentDescription = null,
                 containerColor = MaterialTheme.colorScheme.information,
-                tint = MaterialTheme.colorScheme.onSurface,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
             Spacer(Modifier.height(4.dp))

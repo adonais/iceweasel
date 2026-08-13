@@ -19,7 +19,6 @@
 #include "mozilla/Maybe.h"
 
 #include "js/Value.h"
-
 #include "wasm/WasmGcObject.h"
 #include "wasm/WasmInstance.h"
 #include "wasm/WasmOpIter.h"

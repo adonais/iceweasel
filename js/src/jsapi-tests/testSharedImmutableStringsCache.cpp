@@ -2,15 +2,22 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "jsapi-tests/tests.h"
+
 #include "mozilla/IntegerRange.h"
 
 #include "js/Vector.h"
-#include "jsapi-tests/tests.h"
 #include "threading/Thread.h"
 #include "util/Text.h"
 #include "vm/SharedImmutableStringsCache.h"
 
+// Use only 32 threads on 32-bit ASan builds to avoid OOMs.
+#if defined(MOZ_ASAN) && !defined(JS_64BIT)
+const int NUM_THREADS = 32;
+#else
 const int NUM_THREADS = 256;
+#endif
+
 const int NUM_ITERATIONS = 256;
 
 const int NUM_STRINGS = 4;

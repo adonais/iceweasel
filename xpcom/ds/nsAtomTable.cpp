@@ -2,6 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "nsAtomTable.h"
+
+#include "PLDHashTable.h"
+#include "mozilla/AppShutdown.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/HashFunctions.h"
@@ -9,19 +13,14 @@
 #include "mozilla/MruCache.h"
 #include "mozilla/RWLock.h"
 #include "mozilla/TextUtils.h"
-#include "mozilla/AppShutdown.h"
-#include "nsHashKeys.h"
-#include "nsTHashtable.h"
-#include "nsThreadUtils.h"
-
 #include "nsAtom.h"
-#include "nsAtomTable.h"
 #include "nsGkAtoms.h"
-#include "nsIThread.h"
+#include "nsHashKeys.h"
 #include "nsPrintfCString.h"
 #include "nsString.h"
+#include "nsTHashtable.h"
+#include "nsThreadUtils.h"
 #include "nsUnicharUtils.h"
-#include "PLDHashTable.h"
 #include "prenv.h"
 
 // There are two kinds of atoms handled by this module.
@@ -69,20 +68,10 @@ nsDynamicAtom::nsDynamicAtom(already_AddRefed<mozilla::StringBuffer> aBuffer,
       mRefCnt(1),
       mStringBuffer(aBuffer) {}
 
-// Returns true if ToLowercaseASCII would return the string unchanged.
-static bool IsAsciiLowercase(const char16_t* aString, const uint32_t aLength) {
-  for (uint32_t i = 0; i < aLength; ++i) {
-    if (IS_ASCII_UPPER(aString[i])) {
-      return false;
-    }
-  }
-  return true;
-}
-
 nsDynamicAtom* nsDynamicAtom::Create(const nsAString& aString, uint32_t aHash) {
   // We tack the chars onto the end of the nsDynamicAtom object.
   const bool isAsciiLower =
-      ::IsAsciiLowercase(aString.Data(), aString.Length());
+      ComputeIsAsciiLowercase(aString.Data(), aString.Length());
   RefPtr<mozilla::StringBuffer> buffer = aString.GetStringBuffer();
   if (!buffer) {
     buffer = mozilla::StringBuffer::Create(aString.Data(), aString.Length());
@@ -151,10 +140,11 @@ struct AtomTableKey {
       : AtomTableKey(aUTF16String, aLength, HashString(aUTF16String, aLength)) {
   }
 
-  AtomTableKey(const char* aUTF8String, uint32_t aLength, bool* aErr)
-      : mUTF16String(nullptr), mUTF8String(aUTF8String), mLength(aLength) {
-    mHash = HashUTF8AsUTF16(mUTF8String, mLength, aErr);
-  }
+  AtomTableKey(const char* aUTF8String, uint32_t aLength)
+      : mUTF16String(nullptr),
+        mUTF8String(aUTF8String),
+        mLength(aLength),
+        mHash(HashUTF8AsUTF16(aUTF8String, aLength)) {}
 
   const char16_t* mUTF16String;
   const char* mUTF8String;
@@ -175,12 +165,10 @@ struct AtomTableEntry : public PLDHashEntryHdr {
   // NOTE: GetKey cannot be implemented.
   bool KeyEquals(KeyTypePointer aKey) const {
     if (aKey->mUTF8String) {
-      bool err = false;
-      return (CompareUTF8toUTF16(
-                  nsDependentCSubstring(aKey->mUTF8String,
-                                        aKey->mUTF8String + aKey->mLength),
-                  nsDependentAtomString(mAtom), &err) == 0) &&
-             !err;
+      return CompareUTF8toUTF16(
+                 nsDependentCSubstring(aKey->mUTF8String,
+                                       aKey->mUTF8String + aKey->mLength),
+                 nsDependentAtomString(mAtom)) == 0;
     }
 
     return mAtom->Equals(aKey->mUTF16String, aKey->mLength);
@@ -474,7 +462,8 @@ void NS_InitAtomTable() {
   // We register static atoms immediately so they're available for use as early
   // as possible.
   gAtomTable = new nsAtomTable();
-  gAtomTable->RegisterStaticAtoms(nsGkAtoms::sAtoms, nsGkAtoms::sAtomsLen);
+  gAtomTable->RegisterStaticAtoms(nsGkAtoms::detail::gGkAtoms.mAtoms,
+                                  nsGkAtoms::kStaticAtomCount);
   gStaticAtomsDone = true;
 }
 
@@ -515,13 +504,14 @@ void nsAtomTable::RegisterStaticAtoms(const nsStaticAtom* aAtoms,
     const nsStaticAtom* atom = &aAtoms[i];
     MOZ_ASSERT(IsAsciiNullTerminated(atom->String()));
     MOZ_ASSERT(NS_strlen(atom->String()) == atom->GetLength());
-    MOZ_ASSERT(atom->IsAsciiLowercase() ==
-               ::IsAsciiLowercase(atom->String(), atom->GetLength()));
+    MOZ_ASSERT(
+        atom->IsAsciiLowercase() ==
+        nsAtom::ComputeIsAsciiLowercase(atom->String(), atom->GetLength()));
 
     // This assertion ensures the static atom's precomputed hash value matches
     // what would be computed by mozilla::HashString(aStr), which is what we use
     // when atomizing strings. We compute this hash in Atom.py.
-    MOZ_ASSERT(HashString(atom->String()) == atom->hash());
+    MOZ_ASSERT(HashString(atom->String(), atom->GetLength()) == atom->hash());
 
     AtomTableKey key(atom);
     nsAtomSubTable& table = SelectSubTable(key);
@@ -548,16 +538,7 @@ already_AddRefed<nsAtom> NS_Atomize(const char* aUTF8String) {
 }
 
 already_AddRefed<nsAtom> nsAtomTable::Atomize(const nsACString& aUTF8String) {
-  bool err;
-  AtomTableKey key(aUTF8String.Data(), aUTF8String.Length(), &err);
-  if (MOZ_UNLIKELY(err)) {
-    MOZ_ASSERT_UNREACHABLE("Tried to atomize invalid UTF-8.");
-    // The input was invalid UTF-8. Let's replace the errors with U+FFFD
-    // and atomize the result.
-    nsString str;
-    CopyUTF8toUTF16(aUTF8String, str);
-    return Atomize(str, HashString(str));
-  }
+  AtomTableKey key(aUTF8String.Data(), aUTF8String.Length());
   nsAtomSubTable& table = SelectSubTable(key);
   {
     AutoReadLock lock(table.mLock);

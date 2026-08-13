@@ -14,3 +14,16 @@ UNIFIED_SOURCES += [
 OS_LIBS += [
     "-framework Foundation",
 ]
+
+# In a compile build, assemble the `UpdateSettings-localbuild.framework`
+# artifact (its binary renamed to `UpdateSettings`) that artifact builds
+# consume. An artifact build already has the binary from upstream.
+if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
+    framework = OBJDIR_FILES.dist.update_framework_artifacts[
+        "UpdateSettings-localbuild.framework"
+    ]
+    if CONFIG["COMPILE_ENVIRONMENT"]:
+        framework += [
+            (f"!/{FINAL_TARGET}/UpdateSettings-localbuild", "UpdateSettings")
+        ]
+    framework.Resources += ["../UpdateSettings/Info.plist"]

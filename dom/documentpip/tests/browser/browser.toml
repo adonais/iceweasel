@@ -14,6 +14,8 @@ skip-if = [
 
 ["browser_pip_closes_once.js"]
 
+["browser_pip_extensions.js"]
+
 ["browser_pip_fullscreen_disallowed.js"]
 
 ["browser_pip_remembers_position.js"]

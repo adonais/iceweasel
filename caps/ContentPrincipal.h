@@ -5,14 +5,14 @@
 #ifndef mozilla_ContentPrincipal_h
 #define mozilla_ContentPrincipal_h
 
-#include "nsCOMPtr.h"
-#include "nsJSPrincipals.h"
-#include "nsTArray.h"
-#include "nsNetUtil.h"
-#include "nsScriptSecurityManager.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/extensions/WebExtensionPolicy.h"
+#include "nsCOMPtr.h"
+#include "nsJSPrincipals.h"
+#include "nsNetUtil.h"
+#include "nsScriptSecurityManager.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 

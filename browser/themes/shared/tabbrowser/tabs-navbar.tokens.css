@@ -19,7 +19,7 @@
    until Bug 1879349 lands */
 @layer tokens-browser-theme {
   @media not ((forced-colors) or (-moz-native-theme)) {
-    :root:not([lwtheme]),
+    :root:is([theme-in-app], :not([lwtheme])),
     :host(.anonymous-content-host) {
       --tabs-navbar-separator-style: none;
     }

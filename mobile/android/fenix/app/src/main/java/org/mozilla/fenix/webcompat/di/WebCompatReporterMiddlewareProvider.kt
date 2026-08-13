@@ -11,7 +11,6 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.service.nimbus.NimbusApi
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.webcompat.WebCompatState
-import org.mozilla.fenix.webcompat.DefaultWebCompatReporterMoreInfoSender
 import org.mozilla.fenix.webcompat.middleware.DefaultNimbusExperimentsProvider
 import org.mozilla.fenix.webcompat.middleware.DefaultWebCompatReporterRetrievalService
 import org.mozilla.fenix.webcompat.middleware.WebCompatInfoDeserializer
@@ -71,11 +70,7 @@ object WebCompatReporterMiddlewareProvider {
 
         return WebCompatReporterSubmissionMiddleware(
             appStore = appStore,
-            browserStore = browserStore,
             webCompatReporterRetrievalService = webCompatReporterRetrievalService,
-            webCompatReporterMoreInfoSender = DefaultWebCompatReporterMoreInfoSender(
-                webCompatReporterRetrievalService = webCompatReporterRetrievalService,
-            ),
             scope = scope,
             nimbusExperimentsProvider = DefaultNimbusExperimentsProvider(nimbusApi),
         )

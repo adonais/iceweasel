@@ -557,33 +557,79 @@ class ArtifactJob:
 
 
 class AndroidArtifactJob(ArtifactJob):
-    package_re = r"public/build/geckoview_example\.apk$"
+    package_re = r"public/build/target\.maven\.zip$"
     job_configuration = AndroidJobConfiguration
 
-    package_artifact_patterns = {"**/*.so"}
+    @property
+    def _host_jna_arch(self):
+        """Map host platform to JNA's architecture directory name."""
+        os_arch = self._substs.get("HOST_OS_ARCH", "")
+        # JNA uses hyphenated arch names (e.g. `x86-64`) but `HOST_CPU_ARCH`
+        # is underscored (e.g. `x86_64`).
+        cpu = self._substs.get("HOST_CPU_ARCH", "x86_64").replace("_", "-")
+        if os_arch == "Darwin":
+            return f"darwin-{cpu}"
+        elif os_arch == "WINNT":
+            return f"win32-{cpu}"
+        return f"linux-{cpu}"
+
+    @property
+    def package_artifact_patterns(self):
+        return {
+            # Android target libraries.
+            f"**/{self._substs['ANDROID_CPU_ARCH']}/{self._substs['DLL_PREFIX']}*{self._substs['DLL_SUFFIX']}",
+            # Desktop host libraries for libsForTests.
+            f"{self._host_jna_arch}/{self._substs['HOST_DLL_PREFIX']}*{self._substs['HOST_DLL_SUFFIX']}",
+        }
 
     def process_package_artifact(self, filename, processed_filename):
-        # Extract all .so files into the root, which will get copied into dist/bin.
+        # Extract all libraries into the root, which will get copied into `dist/bin` and `dist/host/bin`.
         with self.get_writer(file=processed_filename, compress_level=5) as writer:
-            for p, f in UnpackFinder(JarFinder(filename, JarReader(filename))):
-                if not any(
-                    mozpath.match(p, pat) for pat in self.package_artifact_patterns
+            zip_path = filename
+
+            for pattern, prefix in (
+                (
+                    "**/full-megazord-libsForTests*.jar",
+                    f"host/bin/appservices/resources/{self._host_jna_arch}",
+                ),
+                ("**/geckoview-*.aar", "bin"),
+            ):
+                # New `JarReader` each time to avoid iteration ordering issues.
+                for aar_path, aar_file in JarFinder(zip_path, JarReader(zip_path)).find(
+                    pattern
                 ):
-                    continue
+                    # exoplayer2 is bundled in `target.maven.zip` but its
+                    # libs aren't needed for libsForTests.
+                    if "exoplayer2" in aar_path:
+                        continue
 
-                dirname, basename = os.path.split(p)
-                self.log(
-                    logging.DEBUG,
-                    "artifact",
-                    {"basename": basename},
-                    "Adding {basename} to processed archive",
-                )
+                    self.log(
+                        logging.DEBUG,
+                        "artifact",
+                        {"aar_path": aar_path},
+                        "Processing Maven artifact {aar_path}",
+                    )
 
-                basedir = "bin"
-                if not basename.endswith(".so"):
-                    basedir = mozpath.join("bin", dirname.lstrip("assets/"))
-                basename = mozpath.join(basedir, basename)
-                writer.add(basename.encode("utf-8"), f.open())
+                    jar_finder = JarFinder(
+                        aar_file.file.filename, JarReader(fileobj=aar_file.open())
+                    )
+                    for p, f in jar_finder:
+                        if not any(
+                            mozpath.match(p, pat)
+                            for pat in self.package_artifact_patterns
+                        ):
+                            continue
+
+                        dirname, basename = os.path.split(p)
+                        procname = mozpath.join(prefix, basename)
+                        self.log(
+                            logging.DEBUG,
+                            "artifact",
+                            {"basename": basename, "procname": procname},
+                            "Adding {procname} to processed archive",
+                        )
+
+                        writer.add(procname.encode("utf-8"), f.open())
 
     def process_symbols_archive(self, filename, processed_filename):
         ArtifactJob.process_symbols_archive(
@@ -737,6 +783,7 @@ class MacArtifactJob(ArtifactJob):
                 "XUL",
             ],
         ),
+        ("Contents/Library/LaunchServices", ["org.mozilla.dmgInstallHelper"]),
     )
 
     @property

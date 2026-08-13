@@ -578,7 +578,9 @@ EffectCompositor::GetAnimationElementAndPseudoForFrame(const nsIFrame* aFrame) {
     case PseudoStyleType::Before:
     case PseudoStyleType::After:
     case PseudoStyleType::Marker:
-    case PseudoStyleType::Backdrop: {
+    case PseudoStyleType::Backdrop:
+    case PseudoStyleType::Checkmark:
+    case PseudoStyleType::PickerIcon: {
       nsIContent* parent = element->GetParent();
       if (!parent || !parent->IsElement()) {
         return result;

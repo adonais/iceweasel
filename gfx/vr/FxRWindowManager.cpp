@@ -3,11 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "FxRWindowManager.h"
+
 #include "mozilla/Assertions.h"
-#include "nsPIDOMWindow.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/WidgetUtils.h"
-
+#include "nsPIDOMWindow.h"
 #include "nsWindow.h"
 
 static mozilla::StaticAutoPtr<FxRWindowManager> sFxrWinMgrInstance;

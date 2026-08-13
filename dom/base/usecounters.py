@@ -38,9 +38,7 @@ def read_conf(conf_filename):
                 name, desc = m.groups()
                 yield {"type": "custom", "name": name, "desc": desc}
                 continue
-            raise ValueError(
-                "error parsing %s at line %d" % (conf_filename, line_num + 1)
-            )
+            raise ValueError(f"error parsing {conf_filename} at line {line_num + 1}")
 
     return parse_counters(stream)
 

@@ -5,7 +5,6 @@
 package mozilla.components.feature.summarize
 
 import mozilla.components.concept.llm.LlmProvider
-import mozilla.components.feature.summarize.SummarizationState.Finished
 import mozilla.components.lib.state.State
 import mozilla.components.ui.richtext.ir.RichDocument
 
@@ -19,6 +18,11 @@ sealed class SummarizationState : State {
      * @param initializedWithShake Whether the feature was first triggered via a shake gesture.
      */
     data class Inert(val initializedWithShake: Boolean) : SummarizationState()
+
+    /**
+     * The user has requested summary but the feature is waiting for the browser page to load.
+     */
+    data object PageLoading : SummarizationState()
 
     /** The user must consent to shake-to-summarize before proceeding. */
     data object ShakeConsentRequired : SummarizationState()
@@ -35,14 +39,14 @@ sealed class SummarizationState : State {
     }
 
     /**
-     * We're waiting for a response from the [mozilla.components.concept.llm.Llm]
+     * We're waiting for an initial response from the [mozilla.components.concept.llm.Llm].
      *
      * @param info the information for the current [mozilla.components.concept.llm.Llm]
      */
     data class Loading(val info: LlmProvider.Info) : SummarizationState()
 
     /**
-     * Summarization is in progress.
+     * Summarization is in progress. The LLM has started to respond, but it has not finished yet.
      *
      * @param info metadata about the LLM that generated the summary
      * @param document the document we've generated so far.
@@ -107,5 +111,6 @@ sealed class SummarizationError {
 }
 
 val SummarizationState.isLoading get() = this is SummarizationState.Loading
+val SummarizationState.isPageLoading get() = this is SummarizationState.PageLoading
 val SummarizationState.isSummarizing get() = this is SummarizationState.Summarizing
 val SummarizationState.isSummarized get() = this is SummarizationState.Summarized

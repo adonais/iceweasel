@@ -5,9 +5,10 @@
 #ifndef MOZILLA_GFX_FILTERNODESOFTWARE_H_
 #define MOZILLA_GFX_FILTERNODESOFTWARE_H_
 
+#include <vector>
+
 #include "Filters.h"
 #include "mozilla/Mutex.h"
-#include <vector>
 
 namespace mozilla {
 namespace gfx {

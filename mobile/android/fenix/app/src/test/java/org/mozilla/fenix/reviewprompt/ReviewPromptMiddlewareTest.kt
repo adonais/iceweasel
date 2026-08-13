@@ -23,16 +23,13 @@ class ReviewPromptMiddlewareTest {
 
     private val eventStore = FakeNimbusEventStore()
 
-    private var shouldUseNewTriggerCriteria = true
     private var shouldShowCustomPrompt = true
     private lateinit var mainCriteria: Sequence<Boolean>
     private lateinit var subCriteria: Sequence<Boolean>
-    private lateinit var legacyCriteria: Sequence<Boolean>
 
     private val store = AppStore(
         middlewares = listOf(
             ReviewPromptMiddleware(
-                shouldUseNewTriggerCriteria = { shouldUseNewTriggerCriteria },
                 shouldShowCustomPrompt = { shouldShowCustomPrompt },
                 disableCustomPrompt = { shouldShowCustomPrompt = false },
                 createJexlHelper = {
@@ -45,29 +42,21 @@ class ReviewPromptMiddlewareTest {
                 },
                 buildTriggerMainCriteria = { mainCriteria },
                 buildTriggerSubCriteria = { subCriteria },
-                buildTriggerLegacyCriteria = { legacyCriteria },
                 nimbusEventStore = eventStore,
             ),
         ),
     )
 
     @Test
-    fun `GIVEN new criteria are enabled WHEN check requested THEN main and sub-criteria are checked`() {
-        shouldUseNewTriggerCriteria = true
-
+    fun `WHEN check requested THEN main and sub-criteria are checked`() {
         var mainCriteriaChecked = false
         var subCriteriaChecked = false
-        var legacyCriteriaChecked = false
         mainCriteria = sequence {
             mainCriteriaChecked = true
             yield(true)
         }
         subCriteria = sequence {
             subCriteriaChecked = true
-            yield(true)
-        }
-        legacyCriteria = sequence {
-            legacyCriteriaChecked = true
             yield(true)
         }
 
@@ -75,34 +64,6 @@ class ReviewPromptMiddlewareTest {
 
         assertTrue(mainCriteriaChecked)
         assertTrue(subCriteriaChecked)
-        assertFalse(legacyCriteriaChecked)
-    }
-
-    @Test
-    fun `GIVEN new criteria are disabled WHEN check requested THEN legacy criteria are checked`() {
-        shouldUseNewTriggerCriteria = false
-
-        var mainCriteriaChecked = false
-        var subCriteriaChecked = false
-        var legacyCriteriaChecked = false
-        mainCriteria = sequence {
-            mainCriteriaChecked = true
-            yield(true)
-        }
-        subCriteria = sequence {
-            subCriteriaChecked = true
-            yield(true)
-        }
-        legacyCriteria = sequence {
-            legacyCriteriaChecked = true
-            yield(true)
-        }
-
-        store.dispatch(ReviewPromptAction.CheckIfEligibleForReviewPrompt)
-
-        assertFalse(mainCriteriaChecked)
-        assertFalse(subCriteriaChecked)
-        assertTrue(legacyCriteriaChecked)
     }
 
     @Test
@@ -272,34 +233,6 @@ class ReviewPromptMiddlewareTest {
         shouldShowCustomPrompt = false
         mainCriteria = sequenceOf(true)
         subCriteria = sequenceOf(true)
-
-        store.dispatch(ReviewPromptAction.CheckIfEligibleForReviewPrompt)
-
-        assertEquals(
-            AppState(reviewPrompt = ReviewPromptState.Eligible(Type.PlayStore)),
-            store.state,
-        )
-    }
-
-    @Test
-    fun `GIVEN new criteria are disabled AND custom prompt enabled AND criteria satisfied WHEN check requested THEN sets eligible for Custom prompt`() {
-        shouldUseNewTriggerCriteria = false
-        shouldShowCustomPrompt = true
-        legacyCriteria = sequenceOf(true)
-
-        store.dispatch(ReviewPromptAction.CheckIfEligibleForReviewPrompt)
-
-        assertEquals(
-            AppState(reviewPrompt = ReviewPromptState.Eligible(Type.Custom)),
-            store.state,
-        )
-    }
-
-    @Test
-    fun `GIVEN new criteria are disabled AND custom prompt disabled AND criteria satisfied WHEN check requested THEN sets eligible for Play Store prompt`() {
-        shouldUseNewTriggerCriteria = false
-        shouldShowCustomPrompt = false
-        legacyCriteria = sequenceOf(true)
 
         store.dispatch(ReviewPromptAction.CheckIfEligibleForReviewPrompt)
 

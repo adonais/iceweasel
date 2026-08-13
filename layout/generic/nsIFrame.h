@@ -1823,15 +1823,7 @@ class nsIFrame : public nsQueryFrame {
   }
 
   // Gets a caret baseline suitable for the frame if the frame doesn't have one.
-  //
-  // @param aBSize the content box block size of the line container. Needed to
-  // resolve line-height: -moz-block-height. NS_UNCONSTRAINEDSIZE is fine
-  // otherwise.
-  //
-  // TODO(emilio): Now we support align-content on blocks it seems we could
-  // get rid of line-height: -moz-block-height.
-  nscoord GetFontMetricsDerivedCaretBaseline(
-      nscoord aBSize = NS_UNCONSTRAINEDSIZE) const;
+  nscoord GetFontMetricsDerivedCaretBaseline() const;
 
   /**
    * Subclasses can call this method to enable visibility tracking for this
@@ -2375,9 +2367,19 @@ class nsIFrame : public nsQueryFrame {
                                     int32_t* aContentOffset,
                                     mozilla::TableSelectionMode* aTarget);
 
+  enum class ForSelectionStart : bool {
+    No,
+    Yes,
+  };
   // Whether this frame should move the selection as a response to mouse moves /
-  // presses / drags.
-  bool ShouldHandleSelectionMovementEvents();
+  // presses / drags (Or a subset of them).
+  bool ShouldHandleSelectionMovementEvents(
+      ForSelectionStart aType = ForSelectionStart::No);
+
+  static mozilla::StyleUserSelect UsedUserSelect(const nsIFrame* aFrame,
+                                                 ForSelectionStart aType);
+  static Maybe<mozilla::StyleUserSelect> UsedUserSelectRecurse(
+      const nsIFrame* aFrame, ForSelectionStart aType);
 
  public:
   /**
@@ -2512,7 +2514,13 @@ class nsIFrame : public nsQueryFrame {
    */
   void DisassociateImage(const mozilla::StyleImage&);
 
-  mozilla::StyleImageRendering UsedImageRendering() const;
+  const mozilla::ComputedStyle* UsedStyleForImages() const;
+  mozilla::StyleImageRendering UsedImageRendering() const {
+    return UsedStyleForImages()->StyleVisibility()->mImageRendering;
+  }
+  mozilla::StyleImageDecoding UsedImageDecoding() const {
+    return UsedStyleForImages()->StyleVisibility()->mImageDecoding;
+  }
   mozilla::StyleTouchAction UsedTouchAction() const;
 
   enum class AllowCustomCursorImage {
@@ -3695,9 +3703,17 @@ class nsIFrame : public nsQueryFrame {
 
   /**
    * Returns true if the frame is an instance of nsBlockFrame or one of its
-   * subclasses.
+   * subclasses. Note: This uses a slow do_QueryFrame call when |this| is not
+   * nsBlockFrame itself, but a subclass of nsBlockFrame.
    */
   bool IsBlockFrameOrSubclass() const;
+
+  /**
+   * Returns true if the frame is an instance of nsInlineFrame or one of its
+   * subclasses. Note: This uses a slow do_QueryFrame call when |this| is not
+   * nsInlineFrame itself, but a subclass of nsInlineFrame.
+   */
+  bool IsInlineFrameOrSubclass() const;
 
   /**
    * Returns true if the frame is an instance of nsImageFrame or one of its

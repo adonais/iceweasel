@@ -675,16 +675,29 @@ function registerRunTests(existingPasswordFieldsCount = 0, callback) {
   });
 }
 
-function enablePrimaryPassword() {
-  setPrimaryPassword(true);
+async function enablePrimaryPassword() {
+  await setPrimaryPassword(true);
 }
 
-function disablePrimaryPassword() {
-  setPrimaryPassword(false);
+async function disablePrimaryPassword() {
+  await setPrimaryPassword(false);
 }
 
 function setPrimaryPassword(enable) {
+  let primaryPasswordSet = new Promise(resolve => {
+    PWMGR_COMMON_PARENT.addMessageListener(
+      "primaryPasswordSet",
+      function primaryPasswordSet() {
+        PWMGR_COMMON_PARENT.removeMessageListener(
+          "primaryPasswordSet",
+          primaryPasswordSet
+        );
+        resolve();
+      }
+    );
+  });
   PWMGR_COMMON_PARENT.sendAsyncMessage("setPrimaryPassword", { enable });
+  return primaryPasswordSet;
 }
 
 function isLoggedIn() {

@@ -3,13 +3,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsUnicharInputStream.h"
+
+#include <fcntl.h>
+
+#include "nsCRT.h"
+#include "nsConverterInputStream.h"
 #include "nsIInputStream.h"
+#include "nsStreamUtils.h"
 #include "nsString.h"
 #include "nsTArray.h"
-#include "nsCRT.h"
-#include "nsStreamUtils.h"
-#include "nsConverterInputStream.h"
-#include <fcntl.h>
 #if defined(XP_WIN)
 #  include <io.h>
 #else

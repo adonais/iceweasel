@@ -3,19 +3,22 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ScaledFontMac.h"
+
 #include "UnscaledFontMac.h"
 #include "mozilla/webrender/WebRenderTypes.h"
 #ifdef MOZ_WIDGET_COCOA
 #  include "nsCocoaFeatures.h"
 #endif
+#include <dlfcn.h>
+
+#include <vector>
+
 #include "PathSkia.h"
 #include "skia/include/core/SkFont.h"
 #include "skia/include/core/SkFontTypes.h"
 #include "skia/include/core/SkPaint.h"
 #include "skia/include/core/SkPath.h"
 #include "skia/include/ports/SkTypeface_mac.h"
-#include <vector>
-#include <dlfcn.h>
 #ifdef MOZ_WIDGET_UIKIT
 #  include <CoreFoundation/CoreFoundation.h>
 #endif

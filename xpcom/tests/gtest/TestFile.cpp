@@ -2,18 +2,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "nsComponentManagerUtils.h"
+#include "nsDirectoryServiceDefs.h"
+#include "nsDirectoryServiceUtils.h"
+#include "nsIFile.h"
+#include "nsPrintfCString.h"
+#include "nsString.h"
 #include "prio.h"
 #include "prsystem.h"
 
-#include "nsIFile.h"
-#include "nsComponentManagerUtils.h"
-#include "nsString.h"
-#include "nsDirectoryServiceDefs.h"
-#include "nsDirectoryServiceUtils.h"
-#include "nsPrintfCString.h"
-
 #ifdef XP_WIN
 #  include <aclapi.h>
+
 #  include "mozilla/RandomNum.h"
 #  include "nsILocalFileWin.h"
 #  include "nsLocalFile.h"

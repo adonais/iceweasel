@@ -6,6 +6,7 @@
 #define CTLog_h
 
 #include <stdint.h>
+
 #include <vector>
 
 namespace mozilla {

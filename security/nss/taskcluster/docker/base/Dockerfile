@@ -1,5 +1,8 @@
-# Lean image for running the bulk of the NSS CI tests on taskcluster.
-FROM ubuntu:focal
+# Lean, architecture-neutral image for running the bulk of the NSS CI tests on
+# taskcluster. Anything x86-specific (i386 multilib for 32-bit cross builds)
+# lives in the base-i386 image layered on top of this; that keeps this image
+# usable as-is on both x86_64 and aarch64 workers.
+FROM ubuntu:noble-20240605
 
 VOLUME /builds/worker/checkouts
 VOLUME /builds/worker/.cache
@@ -8,20 +11,17 @@ VOLUME /builds/worker/workspace
 # %include-run-task
 
 ENV DEBIAN_FRONTEND noninteractive
-RUN dpkg --add-architecture i386
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
     build-essential \
     python3 \
+    python3-pip \
     ca-certificates \
     clang \
     curl \
-    g++-multilib \
     git \
     gyp \
     libxml2-utils \
-    lib32z1-dev \
-    linux-libc-dev:i386 \
     llvm-dev \
     locales \
     mercurial \
@@ -44,7 +44,10 @@ ENV DOMSUF localdomain
 RUN locale-gen $LANG \
  && dpkg-reconfigure locales
 
-RUN useradd -d $HOME -s $SHELL -m $USER && \
+# noble ships a default 'ubuntu' user at uid 1000; remove it so 'worker' gets
+# uid 1000, which run-task requires.
+RUN userdel ubuntu && \
+    useradd -d $HOME -s $SHELL -m $USER && \
     mkdir -p /builds/worker/workspace && \
     mkdir -p /builds/worker/artifacts && \
     chown -R $USER /builds/worker

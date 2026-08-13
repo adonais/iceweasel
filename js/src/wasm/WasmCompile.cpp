@@ -322,23 +322,6 @@ void wasm::SetUseCountersForFeatureUsage(JSContext* cx, JSObject* object,
   }
 }
 
-SharedCompileArgs CompileArgs::buildForAsmJS(ScriptedCaller&& scriptedCaller) {
-  CompileArgs* target = js_new<CompileArgs>();
-  if (!target) {
-    return nullptr;
-  }
-
-  target->scriptedCaller = std::move(scriptedCaller);
-  // AsmJS is deprecated and doesn't have mechanisms for experimental features,
-  // so we don't need to initialize the FeatureArgs. It also only targets the
-  // Ion backend and does not need WASM debug support since it is de-optimized
-  // to JS in that case.
-  target->ionEnabled = true;
-  target->debugEnabled = false;
-
-  return target;
-}
-
 SharedCompileArgs CompileArgs::buildForValidation(const FeatureArgs& args) {
   CompileArgs* target = js_new<CompileArgs>();
   if (!target) {
@@ -1110,7 +1093,7 @@ bool wasm::CompileCompleteTier2(const ShareableBytes* codeSection,
   const CodeMetadata& codeMeta = module.codeMeta();
   ModuleGenerator mg(codeMeta, compilerEnv, CompileState::EagerTier2, cancelled,
                      error, warnings);
-  if (!mg.initializeCompleteTier(nullptr, &module.codeTailMeta())) {
+  if (!mg.initializeCompleteTier(&module.codeTailMeta())) {
     return false;
   }
 
@@ -1303,14 +1286,13 @@ class DumpIonModuleGenerator {
         error_(error) {}
 
   bool finishFuncDefs() { return true; }
-  bool compileFuncDef(uint32_t funcIndex, uint32_t lineOrBytecode,
+  bool compileFuncDef(uint32_t funcIndex, uint32_t bytecodeOffset,
                       const uint8_t* begin, const uint8_t* end) {
     if (funcIndex != targetFuncIndex_) {
       return true;
     }
 
-    FuncCompileInput input(funcIndex, lineOrBytecode, begin, end,
-                           Uint32Vector());
+    FuncCompileInput input(funcIndex, bytecodeOffset, begin, end);
     return IonDumpFunction(compilerEnv_, codeMeta_, input, out_, error_);
   }
 };

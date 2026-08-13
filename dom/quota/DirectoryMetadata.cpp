@@ -5,7 +5,6 @@
 #include "DirectoryMetadata.h"
 
 #include "mozilla/Result.h"
-#include "mozilla/TypedEnumBits.h"
 #include "mozilla/dom/quota/Assertions.h"
 #include "mozilla/dom/quota/CommonMetadata.h"
 #include "mozilla/dom/quota/QuotaCommon.h"
@@ -16,18 +15,6 @@
 
 namespace mozilla::dom::quota {
 
-// clang-format off
-
-enum class DirectoryMetadataFlags : uint32_t {
-  None        = 0,
-  Initialized = 1 << 0,
-  Accessed    = 1 << 1,
-};
-
-// clang-format on
-
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(DirectoryMetadataFlags)
-
 Result<OriginStateMetadata, nsresult> ReadDirectoryMetadataHeader(
     nsIBinaryInputStream& aStream) {
   AssertIsOnIOThread();
@@ -37,21 +24,29 @@ Result<OriginStateMetadata, nsresult> ReadDirectoryMetadataHeader(
   QM_TRY_UNWRAP(originStateMetadata.mLastAccessTime,
                 MOZ_TO_RESULT_INVOKE_MEMBER(aStream, Read64));
 
-  QM_TRY_UNWRAP(originStateMetadata.mPersisted,
-                MOZ_TO_RESULT_INVOKE_MEMBER(aStream, ReadBoolean));
+  QM_TRY_INSPECT(const bool& persistedByte,
+                 MOZ_TO_RESULT_INVOKE_MEMBER(aStream, ReadBoolean));
 
   QM_TRY_INSPECT(const uint32_t& rawFlags,
                  MOZ_TO_RESULT_INVOKE_MEMBER(aStream, Read32));
 
-  auto flags = static_cast<DirectoryMetadataFlags>(rawFlags);
-
   // If DirectoryMetadataFlags::Initialized is not set, the flags field
-  // contains no valid data. Since mAccessed indicates whether a full scan must
-  // be done during initialization, we conservatively set it to true when the
-  // access state is unknown.
-  originStateMetadata.mAccessed =
-      rawFlags == 0 || (flags & DirectoryMetadataFlags::Accessed) !=
-                           DirectoryMetadataFlags::None;
+  // contains no valid data. Conservatively assume that the origin was in
+  // use during the previous session (mAccessed) and that the cached
+  // metadata is out of sync with the directory (mDirty).
+  if (rawFlags == 0) {
+    originStateMetadata.mAccessed = true;
+    originStateMetadata.mDirty = true;
+  } else {
+    originStateMetadata.FromMetadataFlags(rawFlags);
+  }
+
+  // persistedByte is the authoritative source for mPersisted: it is always
+  // written by both schema-3 and schema-4 code, whereas the Persisted bit in
+  // rawFlags was only introduced in schema-4. Schema-3 .metadata-v2 files have
+  // rawFlags != 0 (Initialized is always set) but no Persisted bit, so relying
+  // solely on FromMetadataFlags would silently lose the persisted state.
+  originStateMetadata.mPersisted = persistedByte;
 
   QM_TRY_UNWRAP(originStateMetadata.mLastMaintenanceDate,
                 MOZ_TO_RESULT_INVOKE_MEMBER(aStream, Read32));
@@ -71,55 +66,11 @@ nsresult WriteDirectoryMetadataHeader(
   // Always set DirectoryMetadataFlags::Initialized when writing new metadata,
   // to mark the flags field as valid. This distinguishes real flags from older
   // files where the field was reserved and always written as zero.
-  auto flags =
-      DirectoryMetadataFlags::Initialized |
-      (aOriginStateMetadata.mAccessed ? DirectoryMetadataFlags::Accessed
-                                      : DirectoryMetadataFlags::None);
-
-  auto rawFlags = static_cast<uint32_t>(flags);
-
-  QM_TRY(MOZ_TO_RESULT(aStream.Write32(rawFlags)));
+  QM_TRY(
+      MOZ_TO_RESULT(aStream.Write32(aOriginStateMetadata.ToMetadataFlags())));
 
   QM_TRY(MOZ_TO_RESULT(
       aStream.Write32(aOriginStateMetadata.mLastMaintenanceDate)));
-
-  return NS_OK;
-}
-
-Result<OriginStateMetadata, nsresult> LoadDirectoryMetadataHeader(
-    nsIFile& aDirectory) {
-  AssertIsOnIOThread();
-
-  QM_TRY_INSPECT(
-      const auto& stream,
-      GetBinaryInputStream(aDirectory, nsLiteralString(METADATA_V2_FILE_NAME)));
-
-  QM_TRY_INSPECT(const OriginStateMetadata& originStateMetadata,
-                 ReadDirectoryMetadataHeader(*stream));
-
-  QM_TRY(MOZ_TO_RESULT(stream->Close()));
-
-  return originStateMetadata;
-}
-
-nsresult SaveDirectoryMetadataHeader(
-    nsIFile& aDirectory, const OriginStateMetadata& aOriginStateMetadata) {
-  AssertIsOnIOThread();
-
-  QM_TRY_INSPECT(
-      const auto& file,
-      CloneFileAndAppend(aDirectory, nsLiteralString(METADATA_V2_FILE_NAME)));
-
-  QM_TRY_INSPECT(const auto& stream,
-                 GetBinaryOutputStream(*file, FileFlag::Update));
-  MOZ_ASSERT(stream);
-
-  QM_TRY(MOZ_TO_RESULT(
-      WriteDirectoryMetadataHeader(*stream, aOriginStateMetadata)));
-
-  QM_TRY(MOZ_TO_RESULT(stream->Flush()));
-
-  QM_TRY(MOZ_TO_RESULT(stream->Close()));
 
   return NS_OK;
 }

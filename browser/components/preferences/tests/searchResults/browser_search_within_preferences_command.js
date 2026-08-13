@@ -38,8 +38,13 @@ add_task(async function () {
   EventUtils.synthesizeKey("VK_BACK_SPACE");
   await searchCompletedPromise;
 
-  // Checks if back to normal
-  is_element_visible(generalPane, "Should be in generalPane");
+  // Bug 2040000: clearing the search returns to the previously viewed pane
+  // (privacy) via history.back(), not the default (general) pane.
+  let privacyPane = gBrowser.contentDocument.getElementById(
+    "browserPrivacyCategory"
+  );
+  is_element_visible(privacyPane, "Should return to the privacy pane");
+  is_element_hidden(generalPane, "General pane stays hidden after clearing");
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });

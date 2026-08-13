@@ -56,7 +56,7 @@ add_task(async function test_autocomplete_new_password_popup_item_visible() {
       let item = popup.querySelector(`[originaltype="generatedPassword"]`);
       Assert.ok(item, "Should get 'Generate password' richlistitem");
 
-      let onPopupClosed = BrowserTestUtils.waitForCondition(
+      let onPopupClosed = TestUtils.waitForCondition(
         () => !popup.popupOpen,
         "Popup should get closed"
       );

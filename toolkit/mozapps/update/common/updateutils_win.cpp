@@ -54,7 +54,7 @@ dirent* readdir(DIR* dir) {
       if (GetLastError() != ERROR_NO_MORE_FILES) {
         errno = ENOENT;
       }
-      return 0;
+      return nullptr;
     }
   } else {
     // Reading the first directory entry
@@ -65,7 +65,7 @@ dirent* readdir(DIR* dir) {
       } else {
         errno = EBADF;
       }
-      return 0;
+      return nullptr;
     }
   }
   size_t direntBufferLength =

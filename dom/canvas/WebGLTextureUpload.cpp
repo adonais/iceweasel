@@ -120,6 +120,9 @@ static layers::SurfaceDescriptor Flatten(const layers::SurfaceDescriptor& sd) {
     case layers::RemoteDecoderVideoSubDescriptor::
         TSurfaceDescriptorDcompSurface:
       return subdesc.get_SurfaceDescriptorDcompSurface();
+    case layers::RemoteDecoderVideoSubDescriptor::
+        TAndroidImageReaderImageDescriptor:
+      return subdesc.get_AndroidImageReaderImageDescriptor();
   }
   MOZ_CRASH("unreachable");
 }
@@ -199,7 +202,7 @@ Maybe<webgl::TexUnpackBlobDesc> FromSurfaceFromElementResult(
   if (!sd && sfer.GetSourceSurface()) {
     const auto surf = sfer.GetSourceSurface();
     elemSize = *uvec2::FromSize(surf->GetSize());
-    if (surf->GetType() == gfx::SurfaceType::RECORDING) {
+    if (surf->GetType() == gfx::SurfaceType::CANVAS_RECORDING) {
       // If we find a recording surface, then try to create a descriptor for it
       // to avoid transferring data for it. The underlying Canvas2D commands
       // have most likely not been processed yet, so trying to access the data
@@ -209,7 +212,7 @@ Maybe<webgl::TexUnpackBlobDesc> FromSurfaceFromElementResult(
       // source surface will be converted to data for transferring later.
       layers::SurfaceDescriptor desc;
       if (surf->GetSurfaceDescriptor(desc)) {
-        sd = Some(desc);
+        sd.emplace(std::move(desc));
         sourceSurf = surf;
       }
     }

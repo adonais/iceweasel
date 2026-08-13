@@ -21,6 +21,10 @@ const LOCAL_NETWORK_ACCESS_ENABLED = Services.prefs.getBoolPref(
   "network.lna.blocking"
 );
 
+const SANITIZE_ON_SHUTDOWN_ENABLED = Services.prefs.getBoolPref(
+  "privacy.sanitize.sanitizeOnShutdown"
+);
+
 add_task(async function testPermissionsListing() {
   let expectedPermissions = [
     "autoplay-media",
@@ -60,6 +64,11 @@ add_task(async function testPermissionsListing() {
   if (LOCAL_NETWORK_ACCESS_ENABLED) {
     expectedPermissions.push("loopback-network");
     expectedPermissions.push("local-network");
+  }
+  if (SANITIZE_ON_SHUTDOWN_ENABLED) {
+    // The clear-on-shutdown exception is hidden unless data is cleared on
+    // shutdown.
+    expectedPermissions.push("persist-data-on-shutdown");
   }
   Assert.deepEqual(
     SitePermissions.listPermissions().sort(),
@@ -233,6 +242,94 @@ add_task(async function testGetAvailableStates() {
   ]);
 });
 
+add_task(async function testPersistDataOnShutdownPermission() {
+  let principal =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+      "https://example.com"
+    );
+
+  // The permission is hidden from the listing while clear-on-shutdown is off.
+  Services.prefs.setBoolPref("privacy.sanitize.sanitizeOnShutdown", false);
+  Assert.ok(
+    !SitePermissions.listPermissions().includes("persist-data-on-shutdown"),
+    "Hidden when data is not cleared on shutdown"
+  );
+
+  // Turning clear-on-shutdown on surfaces it.
+  Services.prefs.setBoolPref("privacy.sanitize.sanitizeOnShutdown", true);
+  registerCleanupFunction(() =>
+    Services.prefs.clearUserPref("privacy.sanitize.sanitizeOnShutdown")
+  );
+  Assert.ok(
+    SitePermissions.listPermissions().includes("persist-data-on-shutdown"),
+    "Shown when data is cleared on shutdown"
+  );
+
+  Assert.equal(
+    SitePermissions.getDefault("persist-data-on-shutdown"),
+    SitePermissions.UNKNOWN,
+    "Defaults to no exception (cleared on shutdown)"
+  );
+
+  Assert.deepEqual(
+    SitePermissions.getAvailableStates("persist-data-on-shutdown"),
+    [SitePermissions.UNKNOWN, SitePermissions.ALLOW],
+    "Exposes the default and keep states"
+  );
+
+  Assert.equal(
+    SitePermissions.getPermissionLabel("persist-data-on-shutdown"),
+    "Keep site data when closing"
+  );
+  Assert.equal(
+    SitePermissions.getMultichoiceStateLabel(
+      "persist-data-on-shutdown",
+      SitePermissions.UNKNOWN
+    ),
+    "Clear when closing"
+  );
+  Assert.equal(
+    SitePermissions.getMultichoiceStateLabel(
+      "persist-data-on-shutdown",
+      SitePermissions.ALLOW
+    ),
+    "Always keep site data"
+  );
+
+  // Setting ALLOW persists the exception.
+  SitePermissions.setForPrincipal(
+    principal,
+    "persist-data-on-shutdown",
+    SitePermissions.ALLOW
+  );
+  Assert.equal(
+    SitePermissions.getForPrincipal(principal, "persist-data-on-shutdown")
+      .state,
+    SitePermissions.ALLOW
+  );
+
+  // Setting back to the default removes the exception.
+  SitePermissions.setForPrincipal(
+    principal,
+    "persist-data-on-shutdown",
+    SitePermissions.UNKNOWN
+  );
+  Assert.equal(
+    SitePermissions.getForPrincipal(principal, "persist-data-on-shutdown")
+      .state,
+    SitePermissions.UNKNOWN
+  );
+  Assert.equal(
+    Services.perms.getPermissionObject(
+      principal,
+      "persist-data-on-shutdown",
+      false
+    ),
+    null,
+    "Permission is fully removed, not stored"
+  );
+});
+
 add_task(async function testExactHostMatch() {
   let principal =
     Services.scriptSecurityManager.createContentPrincipalFromOrigin(
@@ -279,6 +376,7 @@ add_task(async function testExactHostMatch() {
     "popup",
     "install",
     "shortcuts",
+    "persist-data-on-shutdown",
     "storage-access",
     "3rdPartyStorage",
     "3rdPartyFrameStorage",

@@ -504,6 +504,7 @@ function OnLDBLoad() {
         esModuleURI: "resource://gre/actors/LayoutDebugChild.sys.mjs",
       },
       allFrames: true,
+      safeForUntrustedWebProcess: true,
     });
   } catch (ex) {
     // Only register the actor once.

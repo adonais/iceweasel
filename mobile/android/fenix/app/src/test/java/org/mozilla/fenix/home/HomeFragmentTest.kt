@@ -9,6 +9,7 @@ import android.view.View
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
+import io.mockk.verify
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -49,21 +50,28 @@ class HomeFragmentTest {
     }
 
     @Test
-    fun `WHEN isMicrosurveyEnabled is true GIVEN a call to initializeMicrosurveyFeature THEN messagingFeature is initialized`() {
+    fun `WHEN isMicrosurveyEnabled is true GIVEN a call to initializeMicrosurveyFeature THEN messagingFeature is initialized and observer is added`() {
+        val lifecycle = homeFragment.viewLifecycleOwner.lifecycle
+
         assertNull(homeFragment.messagingFeatureMicrosurvey.get())
 
         homeFragment.initializeMicrosurveyFeature(isMicrosurveyEnabled = true, view = view)
 
-        assertNotNull(homeFragment.messagingFeatureMicrosurvey.get())
+        val feature = homeFragment.messagingFeatureMicrosurvey.get()
+        assertNotNull(feature)
+        verify { lifecycle.addObserver(feature) }
     }
 
     @Test
-    fun `WHEN isMicrosurveyEnabled is false GIVEN a call to initializeMicrosurveyFeature THEN messagingFeature is not initialized`() {
+    fun `WHEN isMicrosurveyEnabled is false GIVEN a call to initializeMicrosurveyFeature THEN messagingFeature is not initialized and observer is not added`() {
+        val lifecycle = homeFragment.viewLifecycleOwner.lifecycle
+
         assertNull(homeFragment.messagingFeatureMicrosurvey.get())
 
         homeFragment.initializeMicrosurveyFeature(isMicrosurveyEnabled = false, view = view)
 
         assertNull(homeFragment.messagingFeatureMicrosurvey.get())
+        verify(exactly = 0) { lifecycle.addObserver(any()) }
     }
 
     @Test

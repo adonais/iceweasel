@@ -5,8 +5,8 @@
 #ifndef mozilla_SandboxTestingParent_h
 #define mozilla_SandboxTestingParent_h
 
-#include "mozilla/PSandboxTestingParent.h"
 #include "mozilla/Monitor.h"
+#include "mozilla/PSandboxTestingParent.h"
 #include "mozilla/UniquePtr.h"
 
 #if !defined(MOZ_SANDBOX) || !defined(MOZ_DEBUG) || !defined(ENABLE_TESTS)

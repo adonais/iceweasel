@@ -9,26 +9,26 @@
 #  include "mozilla/X11Util.h"
 #endif
 
+#include <bitset>
+#include <memory>
+#include <unordered_map>
+
+#include "GLContext.h"
 #include "base/platform_thread.h"  // for PlatformThreadId
 #include "gfxEnv.h"
-#include "GLContext.h"
 #include "mozilla/EnumTypeTraits.h"
-#include "mozilla/gfx/Logging.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/gfx/Logging.h"
 #include "nsISupports.h"
 #include "prlink.h"
 
-#include <bitset>
-#include <memory>
-#include <unordered_map>
-
 #ifdef MOZ_WIDGET_ANDROID
-#  include "mozilla/ProfilerLabels.h"
 #  include "AndroidBuild.h"
+#  include "mozilla/ProfilerLabels.h"
 #endif
 
 #if defined(MOZ_X11)
@@ -74,6 +74,7 @@ enum class EGLLibExtension {
   ANDROID_get_native_client_buffer,
   ANGLE_device_creation,
   ANGLE_device_creation_d3d11,
+  ANGLE_display_power_preference,
   ANGLE_platform_angle,
   ANGLE_platform_angle_d3d,
   EXT_device_enumeration,
@@ -119,7 +120,21 @@ enum class EGLExtension {
   EXT_image_dma_buf_import_modifiers,
   MESA_image_dma_buf_export,
   KHR_no_config_context,
+  ANGLE_iosurface_client_buffer,
   Max
+};
+
+struct EGLCreateDisplayFlags {
+  // Force creation of a hardware accelerated Display. Must be false if
+  // mForceSoftware is true.
+  bool mForceAccel = false;
+  // Force creation of a software display. Must be false if mForceAccel is true.
+  bool mForceSoftware = false;
+  // Request display to be created on a high-power (discrete) GPU. If false,
+  // the low-power (integrated) GPU will be preferred. This is just a hint and
+  // may be ignored. Ignored if mForceSoftware is true or if there is only a
+  // single GPU.
+  bool mPreferHighPower = false;
 };
 
 // -
@@ -152,13 +167,13 @@ class GLLibraryEGL final {
   void InitLibExtensions();
 
   std::shared_ptr<EglDisplay> CreateDisplayLocked(
-      bool forceAccel, bool forceSoftware, nsACString* const out_failureId,
+      const EGLCreateDisplayFlags& aFlags, nsACString* const out_failureId,
       const StaticMutexAutoLock& aProofOfLock);
 
  public:
   Maybe<SymbolLoader> GetSymbolLoader() const;
 
-  std::shared_ptr<EglDisplay> CreateDisplay(bool forceAccel, bool forceSoftware,
+  std::shared_ptr<EglDisplay> CreateDisplay(const EGLCreateDisplayFlags& aFlags,
                                             nsACString* const out_failureId);
   std::shared_ptr<EglDisplay> CreateDisplay(ID3D11Device*);
   std::shared_ptr<EglDisplay> DefaultDisplay(nsACString* const out_failureId);

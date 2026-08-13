@@ -44,6 +44,12 @@ add_setup(async function setup() {
   h3Port = server.port();
 
   Services.prefs.setBoolPref("network.http.http3.enable", true);
+  // Give the H3 attempt a long head start so Happy Eyeballs does not pick the
+  // TCP fallback before H3 connects (the default delay is intentionally short).
+  Services.prefs.setIntPref(
+    "network.http.happy_eyeballs_connection_attempt_delay",
+    3000
+  );
   Services.prefs.setCharPref("network.dns.localDomains", "foo.example.com");
   Services.prefs.setBoolPref("network.dns.disableIPv6", true);
   Services.prefs.setCharPref(
@@ -60,6 +66,9 @@ add_setup(async function setup() {
   await channelOpenPromise(chan, CL_EXPECT_FAILURE);
 
   registerCleanupFunction(async () => {
+    Services.prefs.clearUserPref(
+      "network.http.happy_eyeballs_connection_attempt_delay"
+    );
     await server.stop();
   });
 });

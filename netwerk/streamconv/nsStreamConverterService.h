@@ -5,9 +5,8 @@
 #ifndef _nsstreamconverterservice_h_
 #define _nsstreamconverterservice_h_
 
-#include "nsIStreamConverterService.h"
-
 #include "nsClassHashtable.h"
+#include "nsIStreamConverterService.h"
 #include "nsStringFwd.h"
 #include "nsTArrayForwardDeclare.h"
 

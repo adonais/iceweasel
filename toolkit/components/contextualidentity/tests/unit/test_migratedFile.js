@@ -3,7 +3,7 @@
 const profileDir = do_get_profile();
 
 const { ContextualIdentityService } = ChromeUtils.importESModule(
-  "resource://gre/modules/ContextualIdentityService.sys.mjs"
+  "moz-src:///toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs"
 );
 
 const TEST_STORE_FILE_PATH = PathUtils.join(

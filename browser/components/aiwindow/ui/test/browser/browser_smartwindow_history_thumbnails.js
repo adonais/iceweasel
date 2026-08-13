@@ -197,6 +197,41 @@ describe("smartwindow history thumbnails", () => {
       });
     });
 
+    describe("when the tab is reloaded and conversation is restored from db", () => {
+      it("re-renders the ai-chat-grid", async () => {
+        const browser = win.gBrowser.selectedBrowser;
+
+        await typeInSmartbar(browser, "show me sites in browsing history");
+        await submitSmartbar(browser);
+
+        await mockResponseWithSearchBrowsingHistory(
+          mockEngineMan,
+          fakeHistoryResults
+        );
+
+        Assert.ok(
+          await checkForElementInChatMessage(browser, "ai-chat-grid", -1),
+          "Grid should render before the chat reloads"
+        );
+
+        // Wait for ai-chat-content to get reloaded so that
+        // checkForElementInChatMessage's mutation observer can check
+        // the correct DOM element.
+        const chatContentReloaded = BrowserTestUtils.browserLoaded(
+          browser,
+          true,
+          "about:aichatcontent"
+        );
+        browser.reload();
+        await chatContentReloaded;
+
+        Assert.ok(
+          await checkForElementInChatMessage(browser, "ai-chat-grid", -1),
+          "Grid should re-render after the chat reloads from the persisted conversation"
+        );
+      });
+    });
+
     describe("when the user clicks on the grid view toggle", () => {
       it("switches from one view to the next", async () => {
         const browser = win.gBrowser.selectedBrowser;

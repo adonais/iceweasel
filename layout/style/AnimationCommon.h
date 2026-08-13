@@ -140,6 +140,8 @@ class OwningElementRef final {
       Marker,
       Before,
       After,
+      Checkmark,
+      PickerIcon,
       ViewTransition,
       ViewTransitionGroup,
       ViewTransitionImagePair,
@@ -160,6 +162,10 @@ class OwningElementRef final {
           return SortingIndex::Before;
         case PseudoStyleType::After:
           return SortingIndex::After;
+        case PseudoStyleType::Checkmark:
+          return SortingIndex::Checkmark;
+        case PseudoStyleType::PickerIcon:
+          return SortingIndex::PickerIcon;
         case PseudoStyleType::ViewTransition:
           return SortingIndex::ViewTransition;
         case PseudoStyleType::ViewTransitionGroup:

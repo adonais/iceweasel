@@ -242,8 +242,8 @@ Once the configuration is available and an account instance was created, the aut
 
 ```kotlin
 launch {
-    val url = account.beginOAuthFlow(scopes).await()
-    openWebView(url)
+    val url = accountManager.beginAuthentication(entrypoint = entrypoint)
+    url?.let { openWebView(it) }
 }
 ```
 
@@ -269,17 +269,9 @@ Finally, complete the OAuth flow, retrieve the profile information, then save yo
 
 ```kotlin
 launch {
-    // Complete authentication flow
-    account.completeOAuthFlow(code, state).await()
-
-    // Display profile information
-    val profile = account.getProfile().await()
-    txtView.txt = profile.displayName
-
-    // Persist login state
-    val json = account.toJSONString()
-    getSharedPreferences(FXA_STATE_PREFS_KEY, Context.MODE_PRIVATE).edit()
-        .putString(FXA_STATE_KEY, json).apply()
+    // Complete the authentication flow. The account manager persists login state and
+    // fetches the profile, delivering it via AccountObserver.onProfileUpdated.
+    accountManager.finishAuthentication(FxaAuthData(AuthType.Signin, code, state))
 }
 ```
 

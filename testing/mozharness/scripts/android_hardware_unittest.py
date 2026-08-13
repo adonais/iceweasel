@@ -232,7 +232,7 @@ class AndroidHardwareTest(
             ),
         ]
 
-        raw_log_file, error_summary_file = self.get_indexed_logs(
+        raw_log_file, error_summary_file, test_summary_file = self.get_indexed_logs(
             dirs["abs_blob_upload_dir"], self.test_suite
         )
 
@@ -271,6 +271,7 @@ class AndroidHardwareTest(
             "log_tbpl_level": self.log_tbpl_level,
             "log_raw_level": self.log_raw_level,
             "error_summary_file": error_summary_file,
+            "test_summary_file": test_summary_file,
             "xpcshell_extra": c.get("xpcshell_extra", ""),
             "jittest_flags": self.jittest_flags,
             "test_tags": self.test_tags,

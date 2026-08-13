@@ -1,0 +1,69 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title></title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<script src="/tests/SimpleTest/EventUtils.js"></script>
+<link rel="stylesheet" href="/tests/SimpleTest/test.css">
+<script>
+"use strict";
+
+SimpleTest.waitForExplicitFinish();
+SimpleTest.waitForFocus(async () => {
+  const span = document.querySelector("p > span");
+  const svg = document.getElementById("target");
+  const use = svg.firstElementChild;
+  const uaShadowRoot = SpecialPowers.wrap(svg.firstElementChild).openOrClosedShadowRoot;
+  const rectElement = uaShadowRoot.querySelector("rect");
+  const rect = svg.getBoundingClientRect();
+  info(`rect: ${rect.x}, ${rect.y}, ${rect.width}, ${rect.height}`);
+  synthesizeMouseAtCenter(span, {type: "mousedown"});
+  for (let i = Math.max(-10, -rect.x); i < rect.width; i += 3) {
+    synthesizeMouseAtPoint(rect.x + i, rect.y + rect.height / 2, {type: "mousemove", buttons: 1});
+    await new Promise(resolve => requestAnimationFrame(resolve));
+  }
+  for (let i = Math.max(-10, -rect.y); i < rect.height; i += 3) {
+    synthesizeMouseAtPoint(rect.x + rect.width / 2, rect.y + i, {type: "mousemove", buttons: 1});
+    await new Promise(resolve => requestAnimationFrame(resolve));
+  }
+  synthesizeMouseAtPoint(rect.x + rect.width / 2, rect.y + rect.height / 2, {type: "mouseup"});
+  const startContainer = SpecialPowers.unwrap(
+    SpecialPowers.wrap(getSelection().getRangeAt(0))?.mayCrossShadowBoundaryStartContainer
+  );
+  is(
+    startContainer,
+    span.firstChild,
+    "Selection should start from the text"
+  );
+  const endContainer = SpecialPowers.unwrap(
+    SpecialPowers.wrap(getSelection().getRangeAt(0))?.mayCrossShadowBoundaryEndContainer
+  );
+  ok(
+    svg.contains(endContainer) || uaShadowRoot.contains(endContainer) || svg.previousSibling == endContainer,
+    `Selection should end after the <p> (got: ${
+      endContainer instanceof Text
+        ? `#text in "${endContainer.parentNode.outerHTML}"`
+        : `"${endContainer?.outerHTML}"`
+    })`
+  );
+
+  SimpleTest.finish();
+});
+</script>
+</head>
+<body>
+<svg id="def" style="display: none">
+  <defs>
+    <symbol id="rect">
+      <rect x="0" y="0" width="64" height="64" fill="gray"/>
+    </symbol>
+  </defs>
+</svg>
+<p><span>Text</span></p>
+<svg id="target" style="width:64px; height:64px;">
+  <use xlink:href="#rect"/>
+</svg>
+</body>
+</html>

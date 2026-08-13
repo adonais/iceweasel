@@ -60,11 +60,17 @@ static CFDictionaryRef BuildEncoderSpec(const bool aHardwareNotAllowed,
                             &kCFTypeDictionaryValueCallBacks);
 }
 
+// Sentinel passed to VideoToolbox as the per-frame sourceFrameRefcon to mark a
+// frame submitted with a forced-keyframe request. It is delivered back in the
+// output callback (including when the frame is dropped), letting us report
+// whether a dropped frame was the one carrying a forced-keyframe request.
+static void* const kForcedKeyframeRefcon = reinterpret_cast<void*>(1);
+
 static void FrameCallback(void* aEncoder, void* aFrameRefCon, OSStatus aStatus,
                           VTEncodeInfoFlags aInfoFlags,
                           CMSampleBufferRef aSampleBuffer) {
   (static_cast<AppleVTEncoder*>(aEncoder))
-      ->OutputFrame(aStatus, aInfoFlags, aSampleBuffer);
+      ->OutputFrame(aStatus, aInfoFlags, aSampleBuffer, aFrameRefCon);
 }
 
 bool AppleVTEncoder::SetAverageBitrate(uint32_t aBitsPerSec) {
@@ -758,7 +764,8 @@ static bool WriteNALUs(MediaRawData* aDst, CMSampleBufferRef aSrc,
 }
 
 void AppleVTEncoder::OutputFrame(OSStatus aStatus, VTEncodeInfoFlags aFlags,
-                                 CMSampleBufferRef aBuffer) {
+                                 CMSampleBufferRef aBuffer,
+                                 void* aSourceFrameRefcon) {
   LOGV("status: {}, flags: {}, buffer {}", aStatus, aFlags, fmt::ptr(aBuffer));
 
   if (aStatus != noErr) {
@@ -767,7 +774,8 @@ void AppleVTEncoder::OutputFrame(OSStatus aStatus, VTEncodeInfoFlags aFlags,
   }
 
   if (aFlags & kVTEncodeInfo_FrameDropped) {
-    ProcessOutput(nullptr, EncodeResult::FrameDropped);
+    ProcessOutput(nullptr, EncodeResult::FrameDropped,
+                  aSourceFrameRefcon == kForcedKeyframeRefcon);
     return;
   }
 
@@ -809,13 +817,15 @@ void AppleVTEncoder::OutputFrame(OSStatus aStatus, VTEncodeInfoFlags aFlags,
 }
 
 void AppleVTEncoder::ProcessOutput(RefPtr<MediaRawData>&& aOutput,
-                                   EncodeResult aResult) {
+                                   EncodeResult aResult,
+                                   bool aWasForcedKeyframe) {
   if (!mTaskQueue->IsCurrentThreadIn()) {
     LOGV("Dispatch ProcessOutput to task queue");
     nsresult rv = mTaskQueue->Dispatch(
-        NewRunnableMethod<RefPtr<MediaRawData>, EncodeResult>(
+        NewRunnableMethod<RefPtr<MediaRawData>, EncodeResult, bool>(
             "AppleVTEncoder::ProcessOutput", this,
-            &AppleVTEncoder::ProcessOutput, std::move(aOutput), aResult));
+            &AppleVTEncoder::ProcessOutput, std::move(aOutput), aResult,
+            aWasForcedKeyframe));
     MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
     (void)rv;
     return;
@@ -834,10 +844,12 @@ void AppleVTEncoder::ProcessOutput(RefPtr<MediaRawData>&& aOutput,
       case EncodeResult::FrameDropped:
         if (mConfig.mUsage == Usage::Realtime) {
           // Dropping a frame in real-time usage is okay.
-          LOGW("Frame is dropped");
+          LOGW("Frame is dropped{}",
+               aWasForcedKeyframe ? " (forced keyframe)" : "");
         } else {
           // Some usages like transcoding should not drop a frame.
-          LOGE("Frame is dropped");
+          LOGE("Frame is dropped{}",
+               aWasForcedKeyframe ? " (forced keyframe)" : "");
           mError =
               MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR, "Frame is dropped"_ns);
         }
@@ -942,7 +954,7 @@ void AppleVTEncoder::ProcessEncode(const RefPtr<const VideoData>& aSample) {
       mSession, buffer,
       CMTimeMake(aSample->mTime.ToMicroseconds(), USECS_PER_S),
       CMTimeMake(aSample->mDuration.ToMicroseconds(), USECS_PER_S), frameProps,
-      nullptr /* sourceFrameRefcon */, &info);
+      aSample->mKeyframe ? kForcedKeyframeRefcon : nullptr, &info);
   if (status != noErr) {
     LOGE("VTCompressionSessionEncodeFrame error: {}", status);
     mError = MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,

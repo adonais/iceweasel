@@ -17,6 +17,7 @@
 #include "nsIURI.h"
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
+#include "nsSandboxFlags.h"
 
 using namespace mozilla;
 using namespace mozilla::intl;
@@ -365,5 +366,69 @@ AddonContentPolicy::ValidateAddonCSP(const nsAString& aPolicyString,
     }
   }
 
+  return NS_OK;
+}
+
+/**
+ * Validates a custom content security policy string for use by sandboxed add-on
+ * pages. The CSP must not contain allow-same-origin.
+ */
+NS_IMETHODIMP
+AddonContentPolicy::ValidateAddonSandboxCSP(const nsAString& aPolicyString,
+                                            nsAString& aResult) {
+  nsresult rv;
+
+  // Validate against a randomly-generated extension origin.
+  // There is no add-on-specific behavior in the CSP code, beyond the ability
+  // for add-ons to specify a custom policy, but the parser requires a valid
+  // origin in order to operate correctly.
+  nsAutoString url(u"moz-extension://");
+  {
+    nsCOMPtr<nsIUUIDGenerator> uuidgen = components::UUIDGenerator::Service();
+    NS_ENSURE_TRUE(uuidgen, NS_ERROR_FAILURE);
+
+    nsID id;
+    rv = uuidgen->GenerateUUIDInPlace(&id);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    char idString[NSID_LENGTH];
+    id.ToProvidedString(idString);
+
+    MOZ_RELEASE_ASSERT(idString[0] == '{' && idString[NSID_LENGTH - 2] == '}',
+                       "UUID generator did not return a valid UUID");
+
+    url.AppendASCII(idString + 1, NSID_LENGTH - 3);
+  }
+
+  RefPtr<BasePrincipal> principal =
+      BasePrincipal::CreateContentPrincipal(NS_ConvertUTF16toUTF8(url));
+
+  nsCOMPtr<nsIURI> selfURI;
+  principal->GetURI(getter_AddRefs(selfURI));
+  RefPtr<nsCSPContext> csp = new nsCSPContext();
+  rv = csp->SetRequestContextWithPrincipal(principal, selfURI, ""_ns, 0);
+  NS_ENSURE_SUCCESS(rv, rv);
+  csp->AppendPolicy(aPolicyString, false, false);
+
+  uint32_t sandboxFlags = 0;
+  rv = csp->GetCSPSandboxFlags(&sandboxFlags);
+  NS_ENSURE_SUCCESS(rv, rv);
+  // ensure sandbox without allow-same-origin
+  if (sandboxFlags & SANDBOXED_ORIGIN) {
+    aResult.SetIsVoid(true);
+  } else {
+    CSPDirective directive = nsIContentSecurityPolicy::SANDBOX_DIRECTIVE;
+    CSPValidator validator(url, directive, true,
+                           nsIAddonContentPolicy::CSP_ALLOW_ANY);
+    // provide more detailed error when allow-same-origin is set
+    if (sandboxFlags != SANDBOXED_NONE) {
+      validator.FormatError("csp-error-illegal-keyword"_ns, "keyword"_ns,
+                            u"'allow-same-origin'"_ns);
+    } else {
+      MOZ_ASSERT(!validator.GetError().IsVoid(),
+                 "CSPValidator should have raised an error.");
+    }
+    aResult.Assign(validator.GetError());
+  }
   return NS_OK;
 }

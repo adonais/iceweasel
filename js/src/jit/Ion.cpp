@@ -12,7 +12,6 @@
 #include "gc/GCContext.h"
 #include "gc/PublicIterators.h"
 #include "jit/AliasAnalysis.h"
-#include "jit/AlignmentMaskAnalysis.h"
 #include "jit/AutoWritableJitCode.h"
 #include "jit/BacktrackingAllocator.h"
 #include "jit/BaselineFrame.h"
@@ -226,6 +225,14 @@ bool JitRuntime::generateTrampolines(JSContext* cx) {
   JitSpew(JitSpew_Codegen, "# Emitting Ion generic construct stub");
   generateIonGenericCallStub(masm, IonGenericCallKind::Construct);
   rangeRecorder.recordOffset("Trampoline: IonGenericConstruct");
+
+  JitSpew(JitSpew_Codegen, "# Emitting megamorphic load stub");
+  generateMegamorphicLoadStub(masm);
+  rangeRecorder.recordOffset("Trampoline: MegamorphicLoad");
+
+  JitSpew(JitSpew_Codegen, "# Emitting permissive megamorphic load stub");
+  generateMegamorphicLoadStubPermissive(masm);
+  rangeRecorder.recordOffset("Trampoline: MegamorphicLoadPermissive");
 
   JitSpew(JitSpew_Codegen, "# Emitting trampoline natives");
   TrampolineNativeJitEntryOffsets nativeOffsets;
@@ -762,9 +769,7 @@ IonScript* IonScript::New(JSContext* cx, IonCompilationId compilationId,
 }
 
 void IonScript::trace(JSTracer* trc) {
-  if (method_) {
-    TraceEdge(trc, &method_, "method");
-  }
+  TraceEdge(trc, &method_, "method");
 
   for (size_t i = 0; i < numConstants(); i++) {
     TraceEdge(trc, &getConstant(i), "constant");
@@ -915,6 +920,9 @@ const OsiIndex* IonScript::getOsiIndex(uint8_t* retAddr) const {
 }
 
 void IonScript::Destroy(JS::GCContext* gcx, IonScript* script) {
+  // Trigger write barrier since we are destroying this outside GC.
+  script->method_ = nullptr;
+
   // Destroy the HeapPtrs to ensure there are no pointers into the IonScript's
   // nursery objects list or constants list in the store buffer. Because this
   // can be called during sweeping when discarding JIT code, we have to lock the
@@ -1149,19 +1157,6 @@ bool OptimizeMIR(MIRGenerator* mir) {
     }
   }
 
-  if (mir->optimizationInfo().amaEnabled()) {
-    AlignmentMaskAnalysis ama(graph);
-    if (!ama.analyze()) {
-      return false;
-    }
-    mir->spewPass("Alignment Mask Analysis");
-    AssertExtendedGraphCoherency(graph);
-
-    if (mir->shouldCancel("Alignment Mask Analysis")) {
-      return false;
-    }
-  }
-
   ValueNumberer gvn(mir, graph);
 
   // Alias analysis is required for LICM and GVN so that we don't move
@@ -1223,6 +1218,18 @@ bool OptimizeMIR(MIRGenerator* mir) {
     AssertExtendedGraphCoherency(graph);
 
     if (mir->shouldCancel("GVN")) {
+      return false;
+    }
+  }
+
+  if (!JitOptions.disableCanonicalizeNaNAtUses && !mir->compilingWasm()) {
+    if (!CanonicalizeNaNAtUses(mir, graph)) {
+      return false;
+    }
+    mir->spewPass("CanonicalizeNaN");
+    AssertExtendedGraphCoherency(graph);
+
+    if (mir->shouldCancel("CanonicalizeNaN")) {
       return false;
     }
   }
@@ -1369,7 +1376,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
 
   // EAA, but only for wasm; it appears to be of minimal benefit for JS inputs.
   if (mir->compilingWasm() && mir->optimizationInfo().eaaEnabled()) {
-    EffectiveAddressAnalysis eaa(mir, graph);
+    EffectiveAddressAnalysis eaa(graph);
     JitSpew(JitSpew_EAA, "\n");
     if (!eaa.analyze()) {
       return false;

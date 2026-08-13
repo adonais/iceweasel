@@ -6,6 +6,7 @@
 #define XPCOM_THREADS_STATICSTRING_H_
 
 #include <cstddef>
+
 #include "mozilla/Attributes.h"
 
 // from "nsStringFwd.h"

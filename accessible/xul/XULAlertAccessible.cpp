@@ -5,8 +5,8 @@
 #include "XULAlertAccessible.h"
 
 #include "LocalAccessible-inl.h"
-#include "mozilla/a11y/Role.h"
 #include "States.h"
+#include "mozilla/a11y/Role.h"
 
 using namespace mozilla::a11y;
 

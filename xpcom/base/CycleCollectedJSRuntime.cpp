@@ -61,15 +61,15 @@
 #include <utility>
 
 #include "js/Debug.h"
-#include "js/RealmOptions.h"
-#include "js/friend/CycleCollector.h"
-#include "js/friend/DumpFunctions.h"  // js::DumpHeap
 #include "js/GCAPI.h"
 #include "js/HeapAPI.h"
 #include "js/Object.h"  // JS::GetClass, JS::GetCompartment, JS::GetPrivate
 #include "js/PropertyAndElement.h"  // JS_DefineProperty
-#include "js/Warnings.h"            // JS::SetWarningReporter
+#include "js/RealmOptions.h"
 #include "js/SliceBudget.h"
+#include "js/Warnings.h"  // JS::SetWarningReporter
+#include "js/friend/CycleCollector.h"
+#include "js/friend/DumpFunctions.h"  // js::DumpHeap
 #include "jsfriendapi.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/CycleCollectedJSContext.h"
@@ -80,7 +80,6 @@
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/StaticPrefs_javascript.h"
-#include "mozilla/glean/XpcomMetrics.h"
 #include "mozilla/UseCounter.h"
 #include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/DOMJSClass.h"
@@ -89,6 +88,7 @@
 #include "mozilla/dom/PromiseBinding.h"
 #include "mozilla/dom/PromiseDebugging.h"
 #include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/glean/XpcomMetrics.h"
 #include "nsContentUtils.h"
 #include "nsCycleCollectionNoteRootCallback.h"
 #include "nsCycleCollectionParticipant.h"

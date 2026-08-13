@@ -186,9 +186,8 @@
     });
 
     /**
-     * Tests that SelectNewFilepickerPath triggers a GetBackupFileInfo request
-     * when state has a backupFileToRestore, and that a subsequent state update
-     * with the same path does not result in a duplicate request.
+     * Tests that missing backup file info doesn't result in another backup
+     * file info request.
      */
     add_task(async function test_getbackupfileinfo_from_picked_file() {
       let restoreFromBackup = document.getElementById("test-restore-from-backup");
@@ -196,8 +195,7 @@
       let path = "/Some/User/Documents/Firefox Backup/backup-default.html";
 
       for (let i = 0; i < 2; i++) {
-        // Simulate parent setting backupFileToRestore via setBackupFileToRestore
-        // before SelectNewFilepickerPath reaches the component.
+        // Simulate parent setting backupFileToRestore via setBackupFileToRestore.
         restoreFromBackup.backupServiceState = {
           ...restoreFromBackup.backupServiceState,
           backupFileToRestore: path,
@@ -221,10 +219,11 @@
 
         let inTest = true;
         BrowserTestUtils.waitForEvent(content, "BackupUI:GetBackupFileInfo").then(() => {
+          // This lingers after the test finishes, so make sure it's a no-op.
+          // (Within this test, it should NOT be sent.)
           ok(!inTest, "A second GetBackupFileInfo request was sent");
         });
 
-        // Same state again should not trigger a duplicate request.
         restoreFromBackup.backupServiceState = {
           ...restoreFromBackup.backupServiceState,
           backupFileToRestore: path,
@@ -232,6 +231,8 @@
         };
         await restoreFromBackup.updateComplete;
 
+        // BrowserTestUtils.waitForEvent doesn't run immediately, so give it a
+        // tick.
         await TestUtils.waitForTick();
 
         inTest = false;

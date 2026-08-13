@@ -4,40 +4,33 @@
 
 #include "nsDeviceContextSpecG.h"
 
+#include <dlfcn.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+#include "mozilla/GUniquePtr.h"
+#include "mozilla/Logging.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/Services.h"
+#include "mozilla/StaticPrefs_print.h"
+#include "mozilla/WidgetUtilsGtk.h"
 #include "mozilla/gfx/PrintPromise.h"
 #include "mozilla/gfx/PrintTargetPDF.h"
-#include "mozilla/Logging.h"
-#include "mozilla/Services.h"
-#include "mozilla/GUniquePtr.h"
-#include "mozilla/WidgetUtilsGtk.h"
-
-#include "prenv.h" /* for PR_GetEnv */
-
+#include "nsCUPSShim.h"
 #include "nsComponentManagerUtils.h"
+#include "nsIFile.h"
+#include "nsIFileStreams.h"
 #include "nsIObserverService.h"
+#include "nsPrintSettingsGTK.h"
+#include "nsPrinterCUPS.h"
 #include "nsPrintfCString.h"
 #include "nsQueryObject.h"
 #include "nsReadableUtils.h"
-#include "nsThreadUtils.h"
-
-#include "nsCUPSShim.h"
-#include "nsPrinterCUPS.h"
-
-#include "nsPrintSettingsGTK.h"
-
-#include "nsIFileStreams.h"
-#include "nsIFile.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
-
-#include "mozilla/Preferences.h"
-#include "mozilla/StaticPrefs_print.h"
-
-#include <dlfcn.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+#include "prenv.h" /* for PR_GetEnv */
 
 // To check if we need to use flatpak portal for printing
 #include "nsIGIOService.h"

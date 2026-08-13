@@ -7,12 +7,12 @@
 
 #include <stddef.h>
 
+#include "mozilla/DataMutex.h"
+#include "mozilla/UniquePtrExtensions.h"
 #include "nsCOMPtr.h"
 #include "nsDebug.h"
 #include "nsError.h"
 #include "nsTArray.h"
-#include "mozilla/DataMutex.h"
-#include "mozilla/UniquePtrExtensions.h"
 
 class nsIEventTarget;
 

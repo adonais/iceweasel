@@ -17,7 +17,3 @@ if CONFIG["MOZ_SYSTEM_NSS"]:
     LDFLAGS += CONFIG["NSS_LIBS"]
 else:
     USE_LIBS += ["nss"]
-    if CONFIG["OS_TARGET"] == "Linux":
-        USE_LIBS += ["freeblpriv3"]
-    else:
-        USE_LIBS += ["freebl3"]

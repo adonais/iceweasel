@@ -12,6 +12,10 @@ Services.scriptloader.loadSubScript(
   this
 );
 
+add_setup(async function () {
+  await setPreferences();
+});
+
 // Callback function to check if the user activation remained active
 async function requestStorageAccessAndExpectUserActivationActive() {
   SpecialPowers.wrap(document).notifyUserGestureActivation();
@@ -65,8 +69,6 @@ async function requestStorageAccessAndExpectUserActivationConsumed() {
 }
 
 add_task(async function testActiveEvent() {
-  await setPreferences();
-
   await openPageAndRunCode(
     TEST_TOP_PAGE_HTTPS,
     getExpectPopupAndClick("accept"),
@@ -74,12 +76,10 @@ add_task(async function testActiveEvent() {
     requestStorageAccessAndExpectUserActivationActive
   );
 
-  await cleanUpData();
-  await SpecialPowers.flushPrefEnv();
+  await clearSiteTestData();
 });
 
 add_task(async function testConsumedEvent() {
-  await setPreferences();
   SpecialPowers.Services.prefs.setIntPref(
     "dom.user_activation.transient.timeout",
     1000
@@ -94,6 +94,5 @@ add_task(async function testConsumedEvent() {
     TEST_3RD_PARTY_PAGE,
     requestStorageAccessAndExpectUserActivationConsumed
   );
-  await cleanUpData();
-  await SpecialPowers.flushPrefEnv();
+  await clearSiteTestData();
 });

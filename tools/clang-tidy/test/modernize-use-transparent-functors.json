@@ -1,0 +1,8 @@
+[
+  [
+    "warning",
+    "prefer transparent functors 'greater<>'",
+    "modernize-use-transparent-functors"
+  ],
+  { "reliability": "high" }
+]

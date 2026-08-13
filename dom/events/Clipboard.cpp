@@ -34,7 +34,9 @@
 #include "nsISupportsPrimitives.h"
 #include "nsITransferable.h"
 #include "nsNetUtil.h"
+#include "nsPrintfCString.h"
 #include "nsServiceManagerUtils.h"
+#include "nsStreamUtils.h"
 #include "nsStringStream.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
@@ -43,6 +45,13 @@
 static mozilla::LazyLogModule gClipboardLog("Clipboard");
 
 namespace mozilla::dom {
+
+// Maximum number of "web foo/bar" custom format entries permitted per
+// ClipboardItem on write. The cap is defined by the Async Clipboard spec's
+// "write web custom formats" algorithm, step 4.6:
+//   https://www.w3.org/TR/clipboard-apis/#write-web-custom-formats
+// Enforced at the DOM layer; platform clipboard backends rely on this cap.
+static constexpr uint32_t kMaxWebCustomFormatCount = 100;
 
 Clipboard::Clipboard(nsPIDOMWindowInner* aWindow)
     : DOMEventTargetHelper(aWindow) {}
@@ -123,7 +132,19 @@ class ClipboardGetCallbackForRead final : public ClipboardGetCallback {
     AutoTArray<RefPtr<ClipboardItem::ItemEntry>, 3> entries;
     // We might reuse the request from DataTransfer created for paste event,
     // which could contain more types that are not in the mandatory list.
+    // If there is any web custom formats in the list, it should be added before
+    // kMandatoryDataTypes.
+    for (const auto& format : flavorList) {
+      // custom format
+      if (StringBeginsWith(format, nsLiteralCString(kWebCustomFormatPrefix))) {
+        auto entry = MakeRefPtr<ClipboardItem::ItemEntry>(
+            mGlobal, NS_ConvertUTF8toUTF16(format));
+        entry->LoadDataFromSystemClipboard(aClipboardDataSnapshot);
+        entries.AppendElement(std::move(entry));
+      }
+    }
     for (const auto& format : kMandatoryDataTypes) {
+      // format in kMandatoryDataTypes
       if (flavorList.Contains(format)) {
         auto entry = MakeRefPtr<ClipboardItem::ItemEntry>(
             mGlobal, NS_ConvertUTF8toUTF16(format));
@@ -290,7 +311,12 @@ void Clipboard::RequestRead(Promise* aPromise, ReadRequestType aType,
         return;
       }
 
-      AutoTArray<nsCString, std::size(kMandatoryDataTypes)> types;
+      AutoTArray<nsCString, std::size(kMandatoryDataTypes) + 1> types;
+      if (StaticPrefs::dom_clipboard_customFormatSupport_enabled()) {
+        // This is for reading web custom format.
+        // This type should not be in the returned transferable.
+        types.AppendElement(nsLiteralCString(kWebCustomFormatMapType));
+      }
       types.AppendElements(Span<const nsLiteralCString>(kMandatoryDataTypes));
 
       callback = MakeRefPtr<ClipboardGetCallbackForRead>(global, std::move(p));
@@ -558,10 +584,207 @@ static Result<NativeEntry, ErrorResult> SanitizeNativeEntry(
   return NativeEntry(aEntry.mType, variant);
 }
 
+class WebCustomFormatStreamCallback final : public nsIInputStreamCallback {
+ public:
+  NS_DECL_ISUPPORTS
+
+  NS_IMETHOD
+  OnInputStreamReady(nsIAsyncInputStream* aStream) override {
+    MOZ_ASSERT(NS_IsMainThread());
+    MOZ_ASSERT(mStream == aStream);
+
+    MOZ_LOG(
+        gClipboardLog, LogLevel::Debug,
+        ("%s: aStream(%p) mStream(%p)", __FUNCTION__, aStream, mStream.get()));
+    nsCString buffer;
+    nsresult rv = NS_ConsumeStream(aStream, mSize - mData.Length(), buffer);
+    mData += buffer;
+    if (rv == NS_BASE_STREAM_CLOSED) {
+      // stream reading done
+      MOZ_LOG(gClipboardLog, LogLevel::Debug,
+              ("%s: stream reading done", __FUNCTION__));
+
+      RefPtr<nsVariantCC> variant = new nsVariantCC();
+      variant->SetAsACString(mData);
+      mStream = nullptr;
+      mHolder.Resolve(NativeEntry(mType, variant), __func__);
+      return NS_OK;
+    } else if (rv == NS_BASE_STREAM_WOULD_BLOCK) {
+      // need to wait data from stream
+      MOZ_LOG(gClipboardLog, LogLevel::Debug,
+              ("%s: waiting for stream be available", __FUNCTION__));
+      rv = mStream->AsyncWait(this, 0, mSize - mData.Length(),
+                              GetCurrentSerialEventTarget());
+      if (NS_FAILED(rv)) {
+        mStream = nullptr;
+        CopyableErrorResult err;
+        err.ThrowDataError("Unable to get remaining data for '"_ns +
+                           NS_ConvertUTF16toUTF8(mType) + "'"_ns);
+        mHolder.Reject(err, __func__);
+      }
+      return rv;
+    }
+    // encounter error while reading from stream.
+    MOZ_LOG(gClipboardLog, LogLevel::Debug,
+            ("%s: stream reading error: %u", __FUNCTION__, (uint32_t)rv));
+    MOZ_ASSERT(!NS_SUCCEEDED(rv));
+    mStream = nullptr;
+
+    CopyableErrorResult err;
+    err.ThrowDataError("Unable to read blob for '"_ns +
+                       NS_ConvertUTF16toUTF8(mType) + "'"_ns);
+    mHolder.Reject(err, __func__);
+    return rv;
+  }
+
+  WebCustomFormatStreamCallback(const nsAString& aType, uint64_t aSize,
+                                nsIAsyncInputStream* aStream)
+      : mType(aType), mSize(aSize), mStream(aStream) {}
+
+  RefPtr<NativeEntryPromise> Promise() { return mHolder.Ensure(__func__); }
+
+ private:
+  ~WebCustomFormatStreamCallback() = default;
+
+  nsCString mData;
+  nsString mType;
+  uint64_t mSize;
+  nsCOMPtr<nsIAsyncInputStream> mStream;
+  MozPromiseHolder<NativeEntryPromise> mHolder;
+};
+
+NS_IMPL_ISUPPORTS(WebCustomFormatStreamCallback, nsIInputStreamCallback)
+
+static RefPtr<NativeEntryPromise> GetWebCustomFormatNativeEntry(
+    const nsAString& aType, const OwningStringOrBlob& aData) {
+  MOZ_LOG(gClipboardLog, LogLevel::Debug,
+          ("%s: Handle data for type %s", __FUNCTION__,
+           NS_ConvertUTF16toUTF8(aType).get()));
+
+  // Convert string as UTF8Strings
+  if (aData.IsString()) {
+    MOZ_LOG(gClipboardLog, LogLevel::Debug,
+            ("%s: Handle type %s as string data", __FUNCTION__,
+             NS_ConvertUTF16toUTF8(aType).get()));
+    MOZ_LOG(
+        gClipboardLog, LogLevel::Debug,
+        ("%s: %s data: %s", __FUNCTION__, NS_ConvertUTF16toUTF8(aType).get(),
+         NS_ConvertUTF16toUTF8(aData.GetAsString()).get()));
+
+    RefPtr<nsVariantCC> variant = new nsVariantCC();
+    variant->SetAsACString(NS_ConvertUTF16toUTF8(aData.GetAsString()));
+    NativeEntry native(aType, variant);
+    return NativeEntryPromise::CreateAndResolve(native, __func__);
+  }
+
+  MOZ_LOG(gClipboardLog, LogLevel::Debug,
+          ("%s: Handle type %s as blob data", __FUNCTION__,
+           NS_ConvertUTF16toUTF8(aType).get()));
+
+  IgnoredErrorResult ignored;
+  nsCOMPtr<nsIInputStream> stream;
+  aData.GetAsBlob()->CreateInputStream(getter_AddRefs(stream), ignored);
+  if (ignored.Failed()) {
+    MOZ_LOG(gClipboardLog, LogLevel::Debug,
+            ("%s: Fail to create inputstream", __FUNCTION__));
+
+    CopyableErrorResult rv;
+    rv.ThrowUnknownError("Failed to read blob for '"_ns +
+                         NS_ConvertUTF16toUTF8(aType) + "'"_ns);
+    return NativeEntryPromise::CreateAndReject(rv, __func__);
+  }
+
+  nsCOMPtr<nsIAsyncInputStream> asyncStream = do_QueryInterface(stream);
+  if (!asyncStream) {
+    MOZ_LOG(gClipboardLog, LogLevel::Debug,
+            ("%s: Not async stream...", __FUNCTION__));
+    nsCString buffer;
+    if (NS_FAILED(NS_ConsumeStream(stream, UINT32_MAX, buffer))) {
+      CopyableErrorResult rv;
+      rv.ThrowUnknownError("Failed to read blob for '"_ns +
+                           NS_ConvertUTF16toUTF8(aType) + "'"_ns);
+      return NativeEntryPromise::CreateAndReject(rv, __func__);
+    }
+    RefPtr<nsVariantCC> variant = new nsVariantCC();
+    variant->SetAsACString(buffer);
+    NativeEntry native(aType, variant);
+    return NativeEntryPromise::CreateAndResolve(native, __func__);
+  }
+
+  uint64_t blobSize = aData.GetAsBlob()->GetSize(ignored);
+  if (ignored.Failed()) {
+    MOZ_LOG(gClipboardLog, LogLevel::Debug,
+            ("%s: Fail to get blob size", __FUNCTION__));
+
+    CopyableErrorResult rv;
+    rv.ThrowUnknownError("Failed to get blob size for '"_ns +
+                         NS_ConvertUTF16toUTF8(aType) + "'"_ns);
+    return NativeEntryPromise::CreateAndReject(rv, __func__);
+  }
+
+  RefPtr<WebCustomFormatStreamCallback> callback =
+      new WebCustomFormatStreamCallback(aType, blobSize, asyncStream);
+
+  MOZ_LOG(gClipboardLog, LogLevel::Debug,
+          ("%s: Async wait for blob reading", __FUNCTION__));
+
+  if (NS_FAILED(asyncStream->AsyncWait(
+          callback, 0, blobSize < UINT32_MAX ? blobSize : UINT32_MAX,
+          GetCurrentSerialEventTarget()))) {
+    MOZ_LOG(gClipboardLog, LogLevel::Debug,
+            ("%s: Fail to get data form stream", __FUNCTION__));
+    CopyableErrorResult rv;
+    rv.ThrowUnknownError("Failed to get blob data for '"_ns +
+                         NS_ConvertUTF16toUTF8(aType) + "'"_ns);
+    return NativeEntryPromise::CreateAndReject(rv, __func__);
+  }
+
+  MOZ_LOG(gClipboardLog, LogLevel::Debug, ("%s: return promise", __FUNCTION__));
+
+  return callback->Promise();
+}
+
 static RefPtr<NativeEntryPromise> GetNativeEntry(
     const nsAString& aType, const OwningStringOrBlob& aData) {
+  // When the entry data is a Blob, its MIME type is required to match the
+  // entry's declared type (with any leading "web " prefix stripped on both
+  // sides). The W3C clipboard-apis spec does not codify this matching, but
+  // Chrome and Safari enforce it and the wpt tests
+  //   clipboard-apis/async-custom-formats-write-fail.tentative.https.html
+  // depend on the mismatch being rejected as NotAllowedError.
+  if (aData.IsBlob()) {
+    nsAutoString blobType;
+    aData.GetAsBlob()->GetType(blobType);
+    // Only enforce the blob/type match when the page has set an explicit
+    // Blob type. A constructor like `new Blob(undefined, {type: 'text/html'})`
+    // yields an empty type and is treated as "no constraint" by the spec's
+    // type matching step, matching the de-facto behavior of other engines.
+    if (!blobType.IsEmpty()) {
+      nsAutoString customPrefix(
+          NS_LITERAL_STRING_FROM_CSTRING(kWebCustomFormatPrefix));
+      const size_t typePrefixLen =
+          StringBeginsWith(aType, customPrefix) ? customPrefix.Length() : 0;
+      const size_t blobPrefixLen =
+          StringBeginsWith(blobType, customPrefix) ? customPrefix.Length() : 0;
+      if (!Substring(blobType, blobPrefixLen)
+               .Equals(Substring(aType, typePrefixLen))) {
+        CopyableErrorResult rv;
+        rv.ThrowNotAllowedError("Blob type '"_ns +
+                                NS_ConvertUTF16toUTF8(blobType) +
+                                "' does not match ClipboardItem type '"_ns +
+                                NS_ConvertUTF16toUTF8(aType) + "'"_ns);
+        return NativeEntryPromise::CreateAndReject(rv, __func__);
+      }
+    }
+  }
+
   if (aType.EqualsLiteral(kPNGImageMime)) {
     return GetImageNativeEntry(aType, aData);
+  }
+
+  if (StringBeginsWith(
+          aType, NS_LITERAL_STRING_FROM_CSTRING(kWebCustomFormatPrefix))) {
+    return GetWebCustomFormatNativeEntry(aType, aData);
   }
 
   RefPtr<NativeEntryPromise> promise = GetStringNativeEntry(aType, aData);
@@ -587,20 +810,21 @@ static RefPtr<NativeEntryPromise> GetNativeEntry(
   return promise;
 }
 
-// Restrict to types allowed by Chrome
-// SVG is still disabled by default in Chrome.
-static bool IsValidType(const nsAString& aType) {
-  return aType.EqualsLiteral(kPNGImageMime) || aType.EqualsLiteral(kTextMime) ||
-         aType.EqualsLiteral(kHTMLMime);
-}
-
 using NativeItemPromise = NativeEntryPromise::AllPromiseType;
 static RefPtr<NativeItemPromise> GetClipboardNativeItem(
     const ClipboardItem& aItem) {
   nsTArray<RefPtr<NativeEntryPromise>> promises;
+  if (aItem.CustomFormatCount() > kMaxWebCustomFormatCount) {
+    CopyableErrorResult rv;
+    rv.ThrowNotAllowedError(nsPrintfCString(
+        "More than %u custom format for write", kMaxWebCustomFormatCount));
+    return NativeItemPromise::CreateAndReject(rv, __func__);
+  }
   for (const auto& entry : aItem.Entries()) {
     const nsAString& type = entry->Type();
-    if (!IsValidType(type)) {
+    // The entry's type is verified in ClipboardItem::Constructor.
+    // Here we just need to check if the type is supported or not.
+    if (entry->IsUnsupportedType()) {
       CopyableErrorResult rv;
       rv.ThrowNotAllowedError("Type '"_ns + NS_ConvertUTF16toUTF8(type) +
                               "' not supported for write"_ns);

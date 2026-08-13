@@ -3,12 +3,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "WebTransportEventService.h"
-#include "nsThreadUtils.h"
-#include "nsIObserverService.h"
-#include "mozilla/StaticPtr.h"
+
 #include "mozilla/Services.h"
-#include "nsISupportsPrimitives.h"
 #include "mozilla/StaticMutex.h"
+#include "mozilla/StaticPtr.h"
+#include "nsIObserverService.h"
+#include "nsISupportsPrimitives.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla {
 namespace net {

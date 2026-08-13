@@ -6,8 +6,8 @@
 
 #include "mozilla/ServoStyleSet.h"
 #include "nsIProtocolHandler.h"
-#include "nsProxyRelease.h"
 #include "nsNetUtil.h"
+#include "nsProxyRelease.h"
 #include "nsQueryObject.h"
 #include "nsSimpleURI.h"
 #include "nsURIHashKey.h"

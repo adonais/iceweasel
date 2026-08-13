@@ -109,7 +109,7 @@ const Template = ({
         ? html` <hr /> `
         : html`
             <panel-item
-              icon=${item.icon ?? ""}
+              icon=${ifDefined(item.icon)}
               ?checked=${item.checked}
               ?disabled=${item.disabled}
               type=${ifDefined(item.checked ? "checkbox" : undefined)}

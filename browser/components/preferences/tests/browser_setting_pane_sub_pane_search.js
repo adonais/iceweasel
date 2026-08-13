@@ -104,4 +104,39 @@ describe("setting-pane sub-pane search", () => {
       "Top-level pane is visible when the parent label matches directly"
     );
   });
+
+  it("dedupes concurrent initializeCategories and waits for Lit updates", async () => {
+    /**
+     * Simulates fast typing right after page load: two input events fire
+     * before initializeCategories has a chance to finish. Both calls must
+     * share the same in-flight promise so that no caller proceeds to search
+     * with a half-rendered DOM, and the promise must not resolve until each
+     * setting-pane / setting-group has finished its pending Lit update.
+     */
+    win.gSearchResultsPane._categoriesInitialized = null;
+
+    let p1 = win.gSearchResultsPane.initializeCategories();
+    let p2 = win.gSearchResultsPane.initializeCategories();
+    is(p1, p2, "Concurrent initializeCategories calls share a Promise");
+
+    await p1;
+
+    ok(
+      win.gSearchResultsPane._categoriesInitialized,
+      "_categoriesInitialized stays truthy once init resolves"
+    );
+
+    for (let pane of doc.querySelectorAll("setting-pane")) {
+      ok(
+        !pane.isUpdatePending,
+        `setting-pane "${pane.name}" has no pending render update`
+      );
+      for (let group of pane.querySelectorAll("setting-group")) {
+        ok(
+          !group.isUpdatePending,
+          `setting-group "${group.getAttribute("groupid")}" in "${pane.name}" has no pending render update`
+        );
+      }
+    }
+  });
 });

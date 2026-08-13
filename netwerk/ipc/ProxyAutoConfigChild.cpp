@@ -4,13 +4,13 @@
 
 #include "ProxyAutoConfigChild.h"
 
+#include "ProxyAutoConfig.h"
+#include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/net/SocketProcessChild.h"
-#include "mozilla/SpinEventLoopUntil.h"
 #include "nsIObserver.h"
 #include "nsIObserverService.h"
 #include "nsThreadUtils.h"
-#include "ProxyAutoConfig.h"
 
 namespace mozilla::net {
 

@@ -113,6 +113,16 @@ bool ModuleLoader::ImportMetaResolve(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+static bool OnRootModuleEvaluationSettled(JSContext* cx, unsigned argc,
+                                          Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  ShellContext* sc = GetShellContext(cx);
+  MOZ_ASSERT(sc->pendingRootModuleEvaluations > 0);
+  sc->pendingRootModuleEvaluations--;
+  args.rval().setUndefined();
+  return true;
+}
+
 bool ModuleLoader::loadRootModule(JSContext* cx, HandleString path) {
   Rooted<JSAtom*> specifier(cx, AtomizeString(cx, path));
   if (!specifier) {
@@ -135,6 +145,17 @@ bool ModuleLoader::loadRootModule(JSContext* cx, HandleString path) {
   if (evaluationPromise == nullptr) {
     return false;
   }
+
+  RootedFunction onSettled(
+      cx, NewNativeFunction(cx, OnRootModuleEvaluationSettled, 0, nullptr));
+  if (!onSettled) {
+    return false;
+  }
+  if (!JS::AddPromiseReactions(cx, evaluationPromise, onSettled, onSettled)) {
+    return false;
+  }
+
+  GetShellContext(cx)->pendingRootModuleEvaluations++;
 
   return JS::ThrowOnModuleEvaluationFailure(cx, evaluationPromise);
 }

@@ -5,9 +5,9 @@
 #ifndef NSMARGIN_H
 #define NSMARGIN_H
 
-#include "nsCoord.h"
 #include "mozilla/gfx/BaseMargin.h"
 #include "mozilla/gfx/Rect.h"
+#include "nsCoord.h"
 
 struct nsMargin : public mozilla::gfx::BaseMargin<nscoord, nsMargin> {
   typedef mozilla::gfx::BaseMargin<nscoord, nsMargin> Super;

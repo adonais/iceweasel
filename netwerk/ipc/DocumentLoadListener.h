@@ -5,12 +5,12 @@
 #ifndef mozilla_net_DocumentLoadListener_h
 #define mozilla_net_DocumentLoadListener_h
 
+#include "EarlyHintsService.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/Variant.h"
 #include "mozilla/WeakPtr.h"
-#include "mozilla/ipc/Endpoint.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
-#include "EarlyHintsService.h"
+#include "mozilla/ipc/Endpoint.h"
 #include "mozilla/net/NeckoCommon.h"
 #include "mozilla/net/NeckoParent.h"
 #include "mozilla/net/PDocumentChannelParent.h"

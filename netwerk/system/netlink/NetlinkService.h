@@ -6,19 +6,20 @@
 
 #include <netinet/in.h>
 
-#include "nsIRunnable.h"
-#include "nsThreadUtils.h"
-#include "nsCOMPtr.h"
 #include "mozilla/Mutex.h"
-#include "mozilla/TimeStamp.h"
-#include "nsClassHashtable.h"
 #include "mozilla/SHA1.h"
+#include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
-#include "nsTArray.h"
 #include "mozilla/net/DNS.h"
+#include "nsCOMPtr.h"
+#include "nsClassHashtable.h"
+#include "nsIRunnable.h"
+#include "nsTArray.h"
+#include "nsThreadUtils.h"
 
-namespace mozilla {
-namespace net {
+struct nlmsghdr;
+
+namespace mozilla::net {
 
 class NetlinkAddress;
 class NetlinkNeighbor;
@@ -162,7 +163,6 @@ class NetlinkService : public nsIRunnable {
   RefPtr<NetlinkServiceListener> mListener MOZ_GUARDED_BY(mMutex);
 };
 
-}  // namespace net
-}  // namespace mozilla
+}  // namespace mozilla::net
 
 #endif /* NETLINKSERVICE_H_ */

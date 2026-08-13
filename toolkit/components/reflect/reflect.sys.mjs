@@ -5,7 +5,7 @@
 /*
  * This is the js module for Reflect. Import it like so:
  *   const { Reflect } = ChromeUtils.importESModule(
- *     "resource://gre/modules/reflect.sys.mjs"
+ *     "moz-src:///toolkit/components/reflect/reflect.sys.mjs"
  *   );
  *
  * This will create a 'Reflect' object, which provides an interface to the

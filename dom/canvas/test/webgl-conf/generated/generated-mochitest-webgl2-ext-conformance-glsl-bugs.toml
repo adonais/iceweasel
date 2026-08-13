@@ -119,8 +119,6 @@ support-files = [
 ["test_2_conformance__glsl__bugs__vector-matrix-constructor-scalarization.html"]
 fail-if = [
   "os == 'android' && os_version == '14' && arch == 'aarch64' && opt",
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'",
 ]
 
 ["test_2_conformance__glsl__bugs__vector-scalar-arithmetic-inside-loop-complex.html"]

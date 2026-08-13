@@ -32,6 +32,7 @@ add_setup(async function setup() {
   Assert.notEqual(h3NoResponsePort, null);
   Assert.notEqual(h3NoResponsePort, "");
 
+  Services.prefs.setBoolPref("network.http.happy_eyeballs_enabled", true);
   Services.prefs.setBoolPref("network.dns.upgrade_with_https_rr", true);
   Services.prefs.setBoolPref("network.dns.use_https_rr_as_altsvc", true);
   Services.prefs.setBoolPref("network.dns.echconfig.enabled", true);
@@ -42,6 +43,7 @@ add_setup(async function setup() {
 
   registerCleanupFunction(async () => {
     trr_clear_prefs();
+    Services.prefs.clearUserPref("network.http.happy_eyeballs_enabled");
     Services.prefs.clearUserPref("network.dns.upgrade_with_https_rr");
     Services.prefs.clearUserPref("network.dns.use_https_rr_as_altsvc");
     Services.prefs.clearUserPref("network.dns.echconfig.enabled");
@@ -403,6 +405,8 @@ add_task(async function testFallbackToTheOrigin2() {
     ],
   });
 
+  Services.dns.clearCache(true);
+
   chan = makeChan(`https://test.example.com:${h2Port}/server-timing`);
   await channelOpenPromise(chan);
 
@@ -569,6 +573,8 @@ add_task(async function testResetExclusionList() {
     "network.dns.httpssvc.reset_exclustion_list",
     true
   );
+
+  Services.dns.clearCache(true);
 
   // After enable network.dns.httpssvc.reset_exclustion_list and register
   // A record for test.reset1.com, this request should be succeeded.
@@ -852,6 +858,17 @@ add_task(async function testHttp3ExcludedList() {
 });
 
 add_task(async function testAllRecordsInHttp3ExcludedList() {
+  // This test exercises the legacy (non-Happy-Eyeballs-v3) behavior where a
+  // request is not retried against the origin when all HTTPS RRs are in the
+  // HTTP/3 excluded list. HE-v3 handles this case differently and the load
+  // succeeds, so the test only applies to the legacy path.
+  if (
+    Services.prefs.getBoolPref("network.http.happy_eyeballs_enabled", false)
+  ) {
+    info("Skipping testAllRecordsInHttp3ExcludedList: not applicable to HE-v3");
+    return;
+  }
+
   trrServer = new TRRServer();
   await trrServer.start();
   Services.dns.clearCache(true);

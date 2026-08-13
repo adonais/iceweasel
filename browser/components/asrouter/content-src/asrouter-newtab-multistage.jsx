@@ -5,6 +5,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { MultiStageAboutWelcome } from "./components/MultiStageAboutWelcome";
+import { MultiStageUtils } from "./lib/multistage-utils.mjs";
 
 function MultistageWithDismiss({ config, handleDismiss, handleBlock }) {
   function onDismiss() {
@@ -13,7 +14,16 @@ function MultistageWithDismiss({ config, handleDismiss, handleBlock }) {
   }
 
   return (
-    <div className="multistage-newtab-wrapper">
+    <div
+      className="multistage-newtab-wrapper"
+      style={
+        config.wrapper_content_style
+          ? MultiStageUtils.getValidStyle(config.wrapper_content_style, [
+              "height",
+            ])
+          : { height: "500px" }
+      }
+    >
       <moz-button
         type="icon ghost"
         size="small"

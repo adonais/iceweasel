@@ -6,21 +6,21 @@
 #include "OSReauthenticator.h"
 
 #include "OSKeyStore.h"
-#include "nsNetCID.h"
-#include "mozilla/dom/Promise.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/dom/Promise.h"
+#include "mozilla/ipc/IPCTypes.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIBaseWindow.h"
 #include "nsIDocShell.h"
 #include "nsISupportsUtils.h"
 #include "nsIWidget.h"
+#include "nsNetCID.h"
 #include "nsPIDOMWindow.h"
 #include "nsPIDOMWindowInlines.h"
 #include "nsServiceManagerUtils.h"
 #include "nsThreadUtils.h"
-#include "mozilla/ipc/IPCTypes.h"
 
 NS_IMPL_ISUPPORTS(OSReauthenticator, nsIOSReauthenticator)
 
@@ -43,11 +43,12 @@ using mozilla::dom::Promise;
 #  include <ntsecapi.h>
 #  include <wincred.h>
 #  include <windows.h>
+
 #  include "nsIWindowsRegKey.h"  // Must be included after <windows.h> for HKEY definition
 #  define SECURITY_WIN32
+#  include <lm.h>
 #  include <security.h>
 #  include <shlwapi.h>
-#  include <lm.h>
 #  undef ACCESS_READ  // nsWindowsRegKey defines its own ACCESS_READ
 struct HandleCloser {
   typedef HANDLE pointer;

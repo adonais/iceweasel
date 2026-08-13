@@ -453,3 +453,238 @@ TEST(AudioSessionManager, State_TwoAutoTypedExclusiveSessionsCoexist)
   EXPECT_EQ(StateOf(controller, kBcA), AudioSessionState::Active);
   EXPECT_EQ(StateOf(controller, kBcB), AudioSessionState::Active);
 }
+
+// A system audio-focus loss interrupts every active session regardless of
+// type, so these tests iterate all (non-Auto) session types and both control
+// types to confirm the behaviour holds across the matrix.
+constexpr ControlType kBothControlTypes[] = {ControlType::eControllable,
+                                             ControlType::eUncontrollable};
+
+TEST(AudioSessionManager, Interrupt_TransientMovesSelectedToInterruptedAndBack)
+{
+  // A transient audio-focus loss moves the tab's selected session to
+  // Interrupted; restoring re-activates the same session.
+  for (AudioSessionType type : kAllAudioSessionTypesExceptAuto) {
+    for (ControlType control : kBothControlTypes) {
+      RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+      constexpr uint64_t kBc = 91;
+
+      controller->NotifyMediaAudibleChanged(kBc, MediaAudibleState::eAudible,
+                                            control, type);
+      ASSERT_EQ(StateOf(controller, kBc), AudioSessionState::Active);
+
+      controller->InterruptAudioSession(AudioSessionInterruptKind::Transient);
+      EXPECT_EQ(StateOf(controller, kBc), AudioSessionState::Interrupted);
+
+      controller->RestoreAudioSession();
+      EXPECT_EQ(StateOf(controller, kBc), AudioSessionState::Active);
+    }
+  }
+}
+
+TEST(AudioSessionManager, Interrupt_PermanentIsNotRestorable)
+{
+  // A permanent audio-focus loss moves the selected session to Inactive and
+  // a subsequent restore does not re-activate it.
+  for (AudioSessionType type : kAllAudioSessionTypesExceptAuto) {
+    for (ControlType control : kBothControlTypes) {
+      RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+      constexpr uint64_t kBc = 92;
+
+      controller->NotifyMediaAudibleChanged(kBc, MediaAudibleState::eAudible,
+                                            control, type);
+      ASSERT_EQ(StateOf(controller, kBc), AudioSessionState::Active);
+
+      controller->InterruptAudioSession(AudioSessionInterruptKind::Permanent);
+      EXPECT_EQ(StateOf(controller, kBc), AudioSessionState::Inactive);
+
+      controller->RestoreAudioSession();
+      EXPECT_EQ(StateOf(controller, kBc), AudioSessionState::Inactive);
+    }
+  }
+}
+
+TEST(AudioSessionManager, Interrupt_RepeatedTransientIsIdempotent)
+{
+  // At most one transient interruption is outstanding at a time. Once a session
+  // is interrupted it leaves the `active` set, so it is no longer the selected
+  // session and a second interruption with no intervening restore finds no
+  // selected session and does nothing; the original interruption stays
+  // restorable. This guards the single-outstanding-interrupt invariant.
+  for (AudioSessionType type : kAllAudioSessionTypesExceptAuto) {
+    for (ControlType control : kBothControlTypes) {
+      RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+      constexpr uint64_t kBc = 93;
+
+      controller->NotifyMediaAudibleChanged(kBc, MediaAudibleState::eAudible,
+                                            control, type);
+      ASSERT_EQ(StateOf(controller, kBc), AudioSessionState::Active);
+
+      controller->InterruptAudioSession(AudioSessionInterruptKind::Transient);
+      EXPECT_EQ(StateOf(controller, kBc), AudioSessionState::Interrupted);
+
+      controller->InterruptAudioSession(AudioSessionInterruptKind::Transient);
+      EXPECT_EQ(StateOf(controller, kBc), AudioSessionState::Interrupted);
+
+      controller->RestoreAudioSession();
+      EXPECT_EQ(StateOf(controller, kBc), AudioSessionState::Active);
+    }
+  }
+}
+
+TEST(AudioSessionManager, Interrupt_TransientThenPermanentInactivates)
+{
+  // A transient loss escalating to a permanent one before focus returns must
+  // move the interrupted session to Inactive: it can no longer be restored, so
+  // a later restore is a no-op.
+  for (AudioSessionType type : kAllAudioSessionTypesExceptAuto) {
+    for (ControlType control : kBothControlTypes) {
+      RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+      constexpr uint64_t kBc = 96;
+
+      controller->NotifyMediaAudibleChanged(kBc, MediaAudibleState::eAudible,
+                                            control, type);
+      ASSERT_EQ(StateOf(controller, kBc), AudioSessionState::Active);
+
+      controller->InterruptAudioSession(AudioSessionInterruptKind::Transient);
+      EXPECT_EQ(StateOf(controller, kBc), AudioSessionState::Interrupted);
+
+      controller->InterruptAudioSession(AudioSessionInterruptKind::Permanent);
+      EXPECT_EQ(StateOf(controller, kBc), AudioSessionState::Inactive);
+
+      controller->RestoreAudioSession();
+      EXPECT_EQ(StateOf(controller, kBc), AudioSessionState::Inactive);
+    }
+  }
+}
+
+TEST(AudioSessionManager, Interrupt_AllActiveSessionsRegardlessOfType)
+{
+  // A system interruption interrupts every active session in the tab, not only
+  // the selected exclusive one: an exclusive (playback) and a non-exclusive
+  // (ambient) session both move to Interrupted and both restore.
+  RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+  constexpr uint64_t kExclusiveBc = 97;
+  constexpr uint64_t kAmbientBc = 98;
+
+  controller->NotifyMediaAudibleChanged(
+      kExclusiveBc, MediaAudibleState::eAudible, ControlType::eControllable,
+      AudioSessionType::Playback);
+  controller->NotifyMediaAudibleChanged(kAmbientBc, MediaAudibleState::eAudible,
+                                        ControlType::eControllable,
+                                        AudioSessionType::Ambient);
+  ASSERT_EQ(StateOf(controller, kExclusiveBc), AudioSessionState::Active);
+  ASSERT_EQ(StateOf(controller, kAmbientBc), AudioSessionState::Active);
+
+  controller->InterruptAudioSession(AudioSessionInterruptKind::Transient);
+  EXPECT_EQ(StateOf(controller, kExclusiveBc), AudioSessionState::Interrupted);
+  EXPECT_EQ(StateOf(controller, kAmbientBc), AudioSessionState::Interrupted);
+
+  controller->RestoreAudioSession();
+  EXPECT_EQ(StateOf(controller, kExclusiveBc), AudioSessionState::Active);
+  EXPECT_EQ(StateOf(controller, kAmbientBc), AudioSessionState::Active);
+}
+
+TEST(AudioSessionManager, Interrupt_InactiveExclusiveStaysInactive)
+{
+  // Per spec 5.3.4 only one exclusive session is active at a time, so with two
+  // exclusive sessions one is already inactive. A system interruption only
+  // interrupts and later restores the active sessions (the active exclusive and
+  // an active non-exclusive one); the already-inactive exclusive session is
+  // never interrupted and stays inactive throughout. Each exclusive session
+  // explicitly claims the `playback` type so the cascade inactivates one of
+  // them: two auto-typed exclusive sessions would instead coexist per the
+  // auto-vs-auto exemption.
+  RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+  // The exclusive session that becomes audible first; the second exclusive
+  // session activating then runs the cascade and inactivates this one.
+  constexpr uint64_t kInactiveExcl = 101;
+  constexpr uint64_t kActiveExcl = 102;
+  constexpr uint64_t kAmbient = 103;
+
+  controller->SetAudioSessionTypeOverride(kInactiveExcl,
+                                          AudioSessionType::Playback);
+  controller->NotifyMediaAudibleChanged(
+      kInactiveExcl, MediaAudibleState::eAudible, ControlType::eControllable,
+      AudioSessionType::Playback);
+  controller->SetAudioSessionTypeOverride(kActiveExcl,
+                                          AudioSessionType::Playback);
+  controller->NotifyMediaAudibleChanged(
+      kActiveExcl, MediaAudibleState::eAudible, ControlType::eControllable,
+      AudioSessionType::Playback);
+  controller->NotifyMediaAudibleChanged(kAmbient, MediaAudibleState::eAudible,
+                                        ControlType::eControllable,
+                                        AudioSessionType::Ambient);
+
+  ASSERT_EQ(StateOf(controller, kActiveExcl), AudioSessionState::Active);
+  ASSERT_EQ(StateOf(controller, kInactiveExcl), AudioSessionState::Inactive);
+  ASSERT_EQ(StateOf(controller, kAmbient), AudioSessionState::Active);
+
+  controller->InterruptAudioSession(AudioSessionInterruptKind::Transient);
+  EXPECT_EQ(StateOf(controller, kActiveExcl), AudioSessionState::Interrupted);
+  EXPECT_EQ(StateOf(controller, kAmbient), AudioSessionState::Interrupted);
+  EXPECT_EQ(StateOf(controller, kInactiveExcl), AudioSessionState::Inactive);
+
+  controller->RestoreAudioSession();
+  EXPECT_EQ(StateOf(controller, kActiveExcl), AudioSessionState::Active);
+  EXPECT_EQ(StateOf(controller, kAmbient), AudioSessionState::Active);
+  EXPECT_EQ(StateOf(controller, kInactiveExcl), AudioSessionState::Inactive);
+}
+
+TEST(AudioSessionManager, PauseWithReason_TransientInterruptsAndResumeRestores)
+{
+  // The chrome pause(reason) surface maps a transient audio-focus loss to an
+  // interrupt of the active session, and resume restores it.
+  for (AudioSessionType type : kAllAudioSessionTypesExceptAuto) {
+    for (ControlType control : kBothControlTypes) {
+      RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+      constexpr uint64_t kBc = 93;
+
+      controller->NotifyMediaAudibleChanged(kBc, MediaAudibleState::eAudible,
+                                            control, type);
+      ASSERT_EQ(StateOf(controller, kBc), AudioSessionState::Active);
+
+      controller->PauseWithReason(AudioFocusLossReason::System_transient);
+      EXPECT_EQ(StateOf(controller, kBc), AudioSessionState::Interrupted);
+
+      controller->Resume();
+      EXPECT_EQ(StateOf(controller, kBc), AudioSessionState::Active);
+    }
+  }
+}
+
+TEST(AudioSessionManager, PauseWithReason_PermanentInactivates)
+{
+  for (AudioSessionType type : kAllAudioSessionTypesExceptAuto) {
+    for (ControlType control : kBothControlTypes) {
+      RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+      constexpr uint64_t kBc = 94;
+
+      controller->NotifyMediaAudibleChanged(kBc, MediaAudibleState::eAudible,
+                                            control, type);
+      ASSERT_EQ(StateOf(controller, kBc), AudioSessionState::Active);
+
+      controller->PauseWithReason(AudioFocusLossReason::System_permanent);
+      EXPECT_EQ(StateOf(controller, kBc), AudioSessionState::Inactive);
+    }
+  }
+}
+
+TEST(AudioSessionManager, PauseWithReason_UserDoesNotChangeAudioSessionState)
+{
+  // A user pause uses the existing media-key path and must not move the
+  // audio-session state machine.
+  for (AudioSessionType type : kAllAudioSessionTypesExceptAuto) {
+    for (ControlType control : kBothControlTypes) {
+      RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
+      constexpr uint64_t kBc = 95;
+
+      controller->NotifyMediaAudibleChanged(kBc, MediaAudibleState::eAudible,
+                                            control, type);
+      ASSERT_EQ(StateOf(controller, kBc), AudioSessionState::Active);
+
+      controller->PauseWithReason(AudioFocusLossReason::User);
+      EXPECT_EQ(StateOf(controller, kBc), AudioSessionState::Active);
+    }
+  }
+}

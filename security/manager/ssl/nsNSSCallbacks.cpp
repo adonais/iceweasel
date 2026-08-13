@@ -5,8 +5,9 @@
 
 #include "nsNSSCallbacks.h"
 
-#include "NSSSocketControl.h"
 #include "EnabledSignatureSchemes.h"
+#include "NSSSocketControl.h"
+#include "SSLTokensCache.h"
 #include "ScopedNSSTypes.h"
 #include "SharedCertVerifier.h"
 #include "mozilla/Assertions.h"
@@ -21,6 +22,7 @@
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/glean/SecurityManagerSslMetrics.h"
+#include "mozpkix/pkixtypes.h"
 #include "nsComponentManagerUtils.h"
 #include "nsContentUtils.h"
 #include "nsIChannel.h"
@@ -29,8 +31,8 @@
 #include "nsIObserverService.h"
 #include "nsIPrompt.h"
 #include "nsIProtocolProxyService.h"
-#include "nsISupportsPriority.h"
 #include "nsIStreamLoader.h"
+#include "nsISupportsPriority.h"
 #include "nsIUploadChannel.h"
 #include "nsIWebProgressListener.h"
 #include "nsIWindowWatcher.h"
@@ -38,15 +40,12 @@
 #include "nsNSSCertHelper.h"
 #include "nsNSSCertificate.h"
 #include "nsNSSComponent.h"
-#include "nsNSSHelper.h"
 #include "nsNSSIOLayer.h"
 #include "nsNetUtil.h"
 #include "nsProxyRelease.h"
 #include "nsStringStream.h"
-#include "mozpkix/pkixtypes.h"
 #include "ssl.h"
 #include "sslproto.h"
-#include "SSLTokensCache.h"
 
 using namespace mozilla;
 using namespace mozilla::pkix;
@@ -803,6 +802,9 @@ nsCString getKeaGroupName(uint32_t aKeaGroup) {
     case ssl_grp_kem_secp384r1mlkem1024:
       groupName = "secp384r1mlkem1024"_ns;
       break;
+    case ssl_grp_kem_mlkem1024:
+      groupName = "mlkem1024"_ns;
+      break;
     case ssl_grp_ffdhe_2048:
       groupName = "FF 2048"_ns;
       break;
@@ -1129,7 +1131,9 @@ void HandshakeCallback(PRFileDesc* fd, void* client_data) {
   // 1=tls1, 2=tls1.1, 3=tls1.2, 4=tls1.3
   unsigned int versionEnum = channelInfo.protocolVersion & 0xFF;
   MOZ_ASSERT(versionEnum > 0);
-  glean::ssl_handshake::version.AccumulateSingleSample(versionEnum);
+  glean::tls_handshake::version
+      .EnumGet(static_cast<glean::tls_handshake::VersionLabel>(versionEnum - 1))
+      .Add();
 
   SSLCipherSuiteInfo cipherInfo;
   rv = SSL_GetCipherSuiteInfo(channelInfo.cipherSuite, &cipherInfo,
@@ -1162,6 +1166,7 @@ void HandshakeCallback(PRFileDesc* fd, void* client_data) {
             ECCCurve(channelInfo.keaKeyBits));
         break;
       case ssl_kea_ecdh_hybrid:
+      case ssl_kea_kem:
         break;
       default:
         MOZ_CRASH("impossible KEA");

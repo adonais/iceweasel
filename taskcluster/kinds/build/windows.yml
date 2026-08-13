@@ -225,6 +225,7 @@ win64-non-unified/plain:
         platform: windows2012-64/debug
         symbol: Bp-nu
         tier: 1
+    worker-type: b-linux-docker-large-amd
     worker:
         max-run-time: 7200
         env:

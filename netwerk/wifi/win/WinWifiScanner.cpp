@@ -2,8 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsWifiAccessPoint.h"
 #include "WinWifiScanner.h"
+
+#include "nsWifiAccessPoint.h"
 
 #define DOT11_BSS_TYPE_UNUSED static_cast<DOT11_BSS_TYPE>(0)
 

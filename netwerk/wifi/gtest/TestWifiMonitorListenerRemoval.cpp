@@ -2,13 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "WifiScanner.h"
 #include "gtest/gtest.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "nsCOMPtr.h"
 #include "nsIWifiListener.h"
-#include "nsWifiMonitor.h"
 #include "nsWifiAccessPoint.h"
-#include "WifiScanner.h"
+#include "nsWifiMonitor.h"
 
 #if defined(XP_WIN) && defined(_M_IX86)
 #  include <objbase.h>  // STDMETHODCALLTYPE

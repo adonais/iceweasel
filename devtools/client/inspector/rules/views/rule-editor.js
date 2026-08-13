@@ -690,15 +690,7 @@ class RuleEditor extends EventEmitter {
       });
     }
 
-    let focusedElSelector;
     if (reset) {
-      // If we're going to reset the rule (i.e. if this is the `element` rule),
-      // we want to restore the focus after the rule is populated.
-      // So if this element contains the active element, retrieve its selector for later use.
-      if (this.element.contains(this.doc.activeElement)) {
-        focusedElSelector = CssLogic.findCssSelector(this.doc.activeElement);
-      }
-
       this.propertyList.replaceChildren();
     }
 
@@ -756,19 +748,6 @@ class RuleEditor extends EventEmitter {
       this.#updateShowUnusedCustomCssPropertiesButtonText();
     } else if (this.#showUnusedCustomCssPropertiesButton) {
       this.#nullifyShowUnusedCustomCssProperties();
-    }
-
-    // Set focus if the focus is still in the current document (avoid stealing
-    // the focus, see Bug 1911627).
-    if (this.doc.hasFocus() && focusedElSelector) {
-      const elementToFocus = this.doc.querySelector(focusedElSelector);
-      if (elementToFocus && this.element.contains(elementToFocus)) {
-        // We need to wait for a tick for the focus to be properly set
-        setTimeout(() => {
-          elementToFocus.focus();
-          this.ruleView.emitForTests("rule-editor-focus-reset");
-        }, 0);
-      }
     }
   }
 

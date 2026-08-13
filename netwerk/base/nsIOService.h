@@ -5,28 +5,27 @@
 #ifndef nsIOService_h_
 #define nsIOService_h_
 
-#include "nsStringFwd.h"
-#include "nsIIOService.h"
-#include "nsTArray.h"
-#include "nsCOMPtr.h"
-#include "nsIObserver.h"
-#include "nsIWeakReferenceUtils.h"
-#include "nsILoadInfo.h"
-#include "nsINetUtil.h"
-#include "nsIChannelEventSink.h"
-#include "nsCategoryCache.h"
-#include "nsISpeculativeConnect.h"
-#include "nsWeakReference.h"
+#include "SimpleURIUnknownSchemes.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/RWLock.h"
 #include "mozilla/net/ProtocolHandlerInfo.h"
-#include "prtime.h"
+#include "nsCOMPtr.h"
+#include "nsCategoryCache.h"
 #include "nsICaptivePortalService.h"
+#include "nsIChannelEventSink.h"
+#include "nsIIOService.h"
+#include "nsILoadInfo.h"
+#include "nsINetUtil.h"
+#include "nsIObserver.h"
 #include "nsIObserverService.h"
+#include "nsISpeculativeConnect.h"
+#include "nsIWeakReferenceUtils.h"
+#include "nsNetCID.h"
+#include "nsStringFwd.h"
+#include "nsTArray.h"
 #include "nsTHashSet.h"
 #include "nsWeakReference.h"
-#include "nsNetCID.h"
-#include "SimpleURIUnknownSchemes.h"
+#include "prtime.h"
 
 // We don't want to expose this observer topic.
 // Intended internal use only for remoting offline/inline events.
@@ -182,7 +181,8 @@ class nsIOService final : public nsIIOService,
       const mozilla::Maybe<mozilla::dom::ClientInfo>& aLoadingClientInfo,
       const mozilla::Maybe<mozilla::dom::ServiceWorkerDescriptor>& aController,
       uint32_t aSecurityFlags, nsContentPolicyType aContentPolicyType,
-      uint32_t aSandboxFlags, nsIChannel** result);
+      uint32_t aSandboxFlags, uint64_t aAssociatedBrowsingContextID,
+      nsIChannel** result);
 
   nsresult NewChannelFromURIWithProxyFlagsInternal(nsIURI* aURI,
                                                    nsIURI* aProxyURI,

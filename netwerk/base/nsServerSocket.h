@@ -5,11 +5,11 @@
 #ifndef nsServerSocket_h_
 #define nsServerSocket_h_
 
-#include "prio.h"
+#include "mozilla/Mutex.h"
 #include "nsASocketHandler.h"
 #include "nsCOMPtr.h"
 #include "nsIServerSocket.h"
-#include "mozilla/Mutex.h"
+#include "prio.h"
 
 //-----------------------------------------------------------------------------
 

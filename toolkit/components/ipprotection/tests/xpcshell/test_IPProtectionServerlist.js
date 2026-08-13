@@ -83,11 +83,13 @@ const TEST_COUNTRIES = [
   {
     name: "United States",
     code: "US",
+    locked: false,
     cities: [TEST_US_CITY],
   },
   {
     name: "Canada",
     code: "CA",
+    locked: false,
     cities: [
       {
         name: "Test City 2",
@@ -99,7 +101,20 @@ const TEST_COUNTRIES = [
   {
     name: "Quarantineland",
     code: "QL",
+    locked: false,
     cities: [TEST_QUARANTINED_CITY],
+  },
+  {
+    name: "Locksmithania",
+    code: "LK",
+    locked: true,
+    cities: [
+      {
+        name: "Vault",
+        code: "VLT",
+        servers: [TEST_SERVER_1],
+      },
+    ],
   },
 ];
 
@@ -195,7 +210,7 @@ add_task(async function test_countries() {
   Assert.ok(!codes.includes("REC"), "REC is excluded from the countries list");
   Assert.deepEqual(
     codes.sort(),
-    ["CA", "QL", "US"],
+    ["CA", "LK", "QL", "US"],
     "Every non-REC country is included"
   );
 
@@ -206,6 +221,37 @@ add_task(async function test_countries() {
     byCode.QL.available,
     false,
     "QL has only quarantined servers, so available is false"
+  );
+
+  ["US", "CA", "QL"].forEach(code => {
+    Assert.equal(
+      byCode[code].locked,
+      false,
+      `${code} has \`locked: false\` in remote-settings and is parsed correctly`
+    );
+  });
+  Assert.equal(
+    byCode.LK.locked,
+    true,
+    "LK has `locked: true` in remote-settings and is parsed correctly"
+  );
+});
+
+add_task(async function test_country_locked_parsing() {
+  Assert.equal(
+    IPProtectionServerlist.getLocation("LK").country.locked,
+    true,
+    "getLocation('LK').country.locked is true"
+  );
+  Assert.equal(
+    IPProtectionServerlist.getLocation("US").country.locked,
+    false,
+    "getLocation('US').country.locked is false"
+  );
+  Assert.equal(
+    IPProtectionServerlist.getLocation("REC").country.locked,
+    false,
+    "getLocation('REC').country.locked defaults to false"
   );
 });
 

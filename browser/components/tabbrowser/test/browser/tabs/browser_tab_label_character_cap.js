@@ -30,7 +30,7 @@ add_task(async function test_tab_label_is_capped_at_255_chars() {
       "Sanity check: content received the full title"
     );
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => tab.label.length === EXPECTED_LABEL_LENGTH,
       "Tab label should be clamped"
     );

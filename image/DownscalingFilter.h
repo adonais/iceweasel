@@ -14,17 +14,16 @@
 #ifndef mozilla_image_DownscalingFilter_h
 #define mozilla_image_DownscalingFilter_h
 
-#include <algorithm>
-#include <ctime>
 #include <stdint.h>
 
+#include <algorithm>
+#include <ctime>
+
+#include "SurfacePipe.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/2D.h"
-
 #include "mozilla/gfx/ConvolutionFilter.h"
-
-#include "SurfacePipe.h"
 
 namespace mozilla {
 namespace image {

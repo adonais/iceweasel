@@ -30,6 +30,7 @@
 #include "absl/log/log.h"
 #include "absl/log/scoped_mock_log.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/source_location.h"
 
 namespace {
 using ::absl::log_internal::DeathTestExpectedLogging;
@@ -66,6 +67,7 @@ void WriteToStreamRef(absl::string_view data, std::ostream& os) {
 
 TEST(LogStreamerTest, LogInfoStreamer) {
   absl::ScopedMockLog test_sink(absl::MockLogDefault::kDisallowUnexpected);
+  EXPECT_CALL(test_sink, Send).Times(0);
 
   EXPECT_CALL(
       test_sink,
@@ -87,6 +89,7 @@ TEST(LogStreamerTest, LogInfoStreamer) {
 
 TEST(LogStreamerTest, LogWarningStreamer) {
   absl::ScopedMockLog test_sink(absl::MockLogDefault::kDisallowUnexpected);
+  EXPECT_CALL(test_sink, Send).Times(0);
 
   EXPECT_CALL(
       test_sink,
@@ -109,6 +112,7 @@ TEST(LogStreamerTest, LogWarningStreamer) {
 
 TEST(LogStreamerTest, LogErrorStreamer) {
   absl::ScopedMockLog test_sink(absl::MockLogDefault::kDisallowUnexpected);
+  EXPECT_CALL(test_sink, Send).Times(0);
 
   EXPECT_CALL(
       test_sink,
@@ -133,6 +137,7 @@ TEST(LogStreamerDeathTest, LogFatalStreamer) {
   EXPECT_EXIT(
       {
         absl::ScopedMockLog test_sink;
+        EXPECT_CALL(test_sink, Send).Times(0);
 
         EXPECT_CALL(test_sink, Send)
             .Times(AnyNumber())
@@ -164,6 +169,7 @@ TEST(LogStreamerDeathTest, LogFatalStreamer) {
 #ifdef NDEBUG
 TEST(LogStreamerTest, LogDebugFatalStreamer) {
   absl::ScopedMockLog test_sink(absl::MockLogDefault::kDisallowUnexpected);
+  EXPECT_CALL(test_sink, Send).Times(0);
 
   EXPECT_CALL(
       test_sink,
@@ -188,6 +194,7 @@ TEST(LogStreamerDeathTest, LogDebugFatalStreamer) {
   EXPECT_EXIT(
       {
         absl::ScopedMockLog test_sink;
+        EXPECT_CALL(test_sink, Send).Times(0);
 
         EXPECT_CALL(test_sink, Send)
             .Times(AnyNumber())
@@ -218,6 +225,7 @@ TEST(LogStreamerDeathTest, LogDebugFatalStreamer) {
 
 TEST(LogStreamerTest, LogStreamer) {
   absl::ScopedMockLog test_sink(absl::MockLogDefault::kDisallowUnexpected);
+  EXPECT_CALL(test_sink, Send).Times(0);
 
   EXPECT_CALL(
       test_sink,
@@ -244,6 +252,7 @@ TEST(LogStreamerDeathTest, LogStreamer) {
   EXPECT_EXIT(
       {
         absl::ScopedMockLog test_sink;
+        EXPECT_CALL(test_sink, Send).Times(0);
 
         EXPECT_CALL(test_sink, Send)
             .Times(AnyNumber())
@@ -275,6 +284,7 @@ TEST(LogStreamerDeathTest, LogStreamer) {
 
 TEST(LogStreamerTest, PassedByReference) {
   absl::ScopedMockLog test_sink(absl::MockLogDefault::kDisallowUnexpected);
+  EXPECT_CALL(test_sink, Send).Times(0);
 
   EXPECT_CALL(
       test_sink,
@@ -291,6 +301,7 @@ TEST(LogStreamerTest, PassedByReference) {
 
 TEST(LogStreamerTest, StoredAsLocal) {
   absl::ScopedMockLog test_sink(absl::MockLogDefault::kDisallowUnexpected);
+  EXPECT_CALL(test_sink, Send).Times(0);
 
   auto streamer = absl::LogInfoStreamer("path/file.cc", 1234);
   WriteToStream("foo", &streamer.stream());
@@ -328,6 +339,7 @@ TEST(LogStreamerDeathTest, StoredAsLocal) {
 
 TEST(LogStreamerTest, LogsEmptyLine) {
   absl::ScopedMockLog test_sink(absl::MockLogDefault::kDisallowUnexpected);
+  EXPECT_CALL(test_sink, Send).Times(0);
 
   EXPECT_CALL(test_sink, Send(AllOf(SourceFilename(Eq("path/file.cc")),
                                     SourceLine(Eq(1234)), TextMessage(Eq("")),
@@ -345,8 +357,7 @@ TEST(LogStreamerDeathTest, LogsEmptyLine) {
   EXPECT_EXIT(
       {
         absl::ScopedMockLog test_sink;
-
-        EXPECT_CALL(test_sink, Log)
+        EXPECT_CALL(test_sink, Send)
             .Times(AnyNumber())
             .WillRepeatedly(DeathTestUnexpectedLogging());
 
@@ -368,6 +379,7 @@ TEST(LogStreamerDeathTest, LogsEmptyLine) {
 
 TEST(LogStreamerTest, MoveConstruction) {
   absl::ScopedMockLog test_sink(absl::MockLogDefault::kDisallowUnexpected);
+  EXPECT_CALL(test_sink, Send).Times(0);
 
   EXPECT_CALL(
       test_sink,
@@ -389,6 +401,7 @@ TEST(LogStreamerTest, MoveConstruction) {
 
 TEST(LogStreamerTest, MoveAssignment) {
   absl::ScopedMockLog test_sink(absl::MockLogDefault::kDisallowUnexpected);
+  EXPECT_CALL(test_sink, Send).Times(0);
 
   testing::InSequence seq;
   EXPECT_CALL(
@@ -423,6 +436,7 @@ TEST(LogStreamerTest, MoveAssignment) {
 
 TEST(LogStreamerTest, CorrectDefaultFlags) {
   absl::ScopedMockLog test_sink(absl::MockLogDefault::kDisallowUnexpected);
+  EXPECT_CALL(test_sink, Send).Times(0);
 
   // The `boolalpha` and `showbase` flags should be set by default, to match
   // `LOG`.
@@ -433,6 +447,23 @@ TEST(LogStreamerTest, CorrectDefaultFlags) {
   absl::LogInfoStreamer("path/file.cc", 1234).stream()
       << false << std::hex << 0xdeadbeef;
   LOG(INFO) << false << std::hex << 0xdeadbeef;
+}
+
+TEST(LogStreamerTest, AtSourceLocation) {
+  const int log_line = __LINE__ + 2;
+  auto do_log = [] {
+    WriteToStream("foo", &absl::LogInfoStreamer().stream());  //
+  };
+  absl::ScopedMockLog test_sink(absl::MockLogDefault::kDisallowUnexpected);
+  EXPECT_CALL(test_sink, Send).Times(0);
+
+  EXPECT_CALL(test_sink,
+              Send(AllOf(SourceFilename(
+                             Eq(absl::SourceLocation::current().file_name())),
+                         SourceLine(Eq(log_line)))));
+
+  test_sink.StartCapturingLogs();
+  do_log();
 }
 
 }  // namespace

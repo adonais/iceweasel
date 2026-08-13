@@ -15,7 +15,8 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"  // for override
 #include "mozilla/Mutex.h"
-#include "mozilla/RefPtr.h"  // for RefPtr, RefCounted
+#include "mozilla/RefPtr.h"               // for RefPtr, RefCounted
+#include "mozilla/UniquePtrExtensions.h"  // for UniqueFileHandle
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/gfx/2D.h"  // for DrawTarget
 #include "mozilla/gfx/CriticalSection.h"
@@ -29,8 +30,7 @@
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/PTextureChild.h"  // for PTextureChild
 #include "mozilla/layers/SyncObject.h"
-#include "mozilla/mozalloc.h"             // for operator delete
-#include "mozilla/UniquePtrExtensions.h"  // for UniqueFileHandle
+#include "mozilla/mozalloc.h"  // for operator delete
 #include "mozilla/webrender/WebRenderTypes.h"
 #include "nsCOMPtr.h"         // for already_AddRefed
 #include "nsISupportsImpl.h"  // for TextureImage::AddRef, etc

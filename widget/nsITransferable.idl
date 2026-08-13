@@ -65,6 +65,12 @@ interface nsIReferrerInfo;
 
 #define kPDFJSMime "application/pdfjs"
 
+// The web custom format prefix
+#define kWebCustomFormatPrefix "web "
+
+// The web custom format map type
+// This is used to query the web custom format map from clipboard.
+#define kWebCustomFormatMapType "application/x-moz-web-custom-format-map"
 %}
 
 

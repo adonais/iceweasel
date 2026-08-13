@@ -29,14 +29,23 @@ browser {
   display: flex;
   flex-direction: row;
   padding-inline: var(--space-large);
+  /* Leave room for the buttons' focus outlines so they aren't clipped by the
+     header edges. */
+  padding-block: var(--space-xsmall);
 
-  ::part(button),
+  ::part(button) {
+    margin: 0;
+  }
+
+  /* The provider switcher is a <select> styled like a button; the moz-buttons
+     keep their default (design-system) radius so the close button matches the
+     close buttons in other sidebar panels (notably with nova enabled). */
   select {
     border-radius: var(--border-radius-small);
     margin: 0;
   }
 
-  moz-button:first-of-type {
+  #header-more {
     margin-inline-end: var(--space-xsmall);
   }
 
@@ -68,9 +77,49 @@ browser {
 #header-close {
   position: relative;
   z-index: 1;
+  /* The close button is ordered early in the DOM (for keyboard focus order) but
+     should stay visually last in the default single-row header. In
+     "hide-launcher" mode the grid layout below positions it explicitly. */
+  order: 1;
 
   @media not -moz-pref("sidebar.revamp") {
     display: none;
+  }
+}
+
+/* In horizontal-tabs "hide-launcher" mode there is no launcher to switch
+   sidebar panels with, so the chatbot panel gains a panel switcher. It shares a
+   first row with the (single) close button, while the chatbot's own provider
+   switcher and options menu move to a second row. */
+@media -moz-pref("sidebar.visibility", "hide-launcher") {
+  #header {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    grid-template-areas:
+      "switcher switcher close"
+      "provider perm     more";
+    column-gap: var(--space-xsmall);
+    row-gap: var(--space-xsmall);
+  }
+
+  sidebar-panel-switcher {
+    grid-area: switcher;
+  }
+
+  #header-close {
+    grid-area: close;
+  }
+
+  #provider {
+    grid-area: provider;
+  }
+
+  #permissions-indicator {
+    grid-area: perm;
+  }
+
+  #header-more {
+    grid-area: more;
   }
 }
 
@@ -85,6 +134,7 @@ browser {
   inset: 0;
   overflow: auto;
   position: absolute;
+  z-index: 2;
 
   .onboardingContainer {
     height: unset;
@@ -229,10 +279,46 @@ browser {
   }
 }
 
-#summarize-btn-container {
+#footer {
   border-top: 1px solid var(--border-color);
-  padding: var(--space-large);
+
+  &.promo-active {
+    --promo-background: linear-gradient(
+      180deg,
+      light-dark(color-mix(in srgb, var(--color-violet-10) 20%, transparent), color-mix(in srgb, var(--color-violet-70) 20%, transparent)) 0%,
+      light-dark(color-mix(in srgb, var(--color-orange-10) 20%, transparent), color-mix(in srgb, var(--color-orange-70) 20%, transparent)) 100%
+    );
+    --promo-mask:
+      linear-gradient(to right, transparent 0%, black 45%, black 55%, transparent 100%),
+      linear-gradient(to bottom, transparent 0%, black 45%, black 55%, transparent 100%);
+    overflow: hidden;
+    padding: var(--space-large);
+    position: relative;
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background: var(--promo-background);
+      mask-image: var(--promo-mask);
+      pointer-events: none;
+    }
+
+    #summarize-btn-container {
+      padding: 0;
+      padding-block-start: var(--space-large);
+
+      .badge {
+        inset-inline-start: -5px;
+      }
+    }
+  }
+}
+
+#summarize-btn-container {
   position: relative;
+  padding: var(--space-large);
 
   .badge {
     --badge-background-color-new: var(--color-green-40);
@@ -242,7 +328,7 @@ browser {
     border-radius: var(--border-radius-small);
     color: var(--button-text-color-primary-hover);
     font-size: var(--font-size-small);
-    left: 10px;
+    inset-inline-start: 10px;
     padding: var(--space-xxsmall) var(--space-small);
     position: absolute;
     text-align: center;
@@ -255,6 +341,28 @@ browser {
   }
 
   @media (not -moz-pref("browser.ml.chat.page")) or -moz-pref("browser.ml.chat.provider", "") {
+    display: none;
+  }
+}
+
+/* During chatbot onboarding the overlay normally hides the panel header. In
+   horizontal-tabs "hide-launcher" mode the header holds the only controls for
+   switching or closing the panel (there is no launcher), so keep the switcher
+   and close button visible above the overlay. The provider switcher and options
+   menu stay hidden until a provider is chosen. */
+@media -moz-pref("sidebar.visibility", "hide-launcher") {
+  #multi-stage-message-root + #header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "switcher close";
+    position: relative;
+    z-index: 1;
+    background-color: var(--background-color-overlay);
+  }
+
+  #multi-stage-message-root + #header > #provider,
+  #multi-stage-message-root + #header > #permissions-indicator,
+  #multi-stage-message-root + #header > #header-more {
     display: none;
   }
 }

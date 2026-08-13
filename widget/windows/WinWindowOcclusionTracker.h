@@ -11,10 +11,10 @@
 #include <unordered_set>
 #include <vector>
 
-#include "nsIWeakReferenceUtils.h"
+#include "Units.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/widget/WindowOcclusionState.h"
-#include "Units.h"
+#include "nsIWeakReferenceUtils.h"
 #include "nsThreadUtils.h"
 
 class nsIWidget;

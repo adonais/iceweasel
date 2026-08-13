@@ -30,9 +30,9 @@ child:
   // Each will return `Ok(Nothing)` if the operation was canceled by the user,
   // or `Err(...)` if the operation actually failed.
 
-  async ShowFileDialog(WindowsHandle parentHwnd, FileDialogType type, Command[] commands)
+  async ShowFileDialog(WindowsHandle parentHwnd, FileDialogType type, Command[] commands, bool needsInputProtection)
     returns (FileResult result);
-  async ShowFolderDialog(WindowsHandle parentHwnd, Command[] commands)
+  async ShowFolderDialog(WindowsHandle parentHwnd, Command[] commands, bool needsInputProtection)
     returns (FolderResult result);
 };
 

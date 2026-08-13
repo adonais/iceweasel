@@ -101,10 +101,6 @@ var checkPingsSaved = async function (pingIds) {
   return allFound;
 };
 
-function histogramValueCount(h) {
-  return Object.values(h.values).reduce((a, b) => a + b, 0);
-}
-
 add_task(async function test_setup() {
   // Trigger a proper telemetry init.
   do_get_profile(true);
@@ -136,14 +132,7 @@ add_task(async function test_sendPendingPings() {
   const TYPE_A_COUNT = 20;
   const TYPE_B_COUNT = 5;
 
-  let histSuccess = Telemetry.getHistogramById("TELEMETRY_SUCCESS");
-  let histSendTimeSuccess = Telemetry.getHistogramById(
-    "TELEMETRY_SEND_SUCCESS"
-  );
-  let histSendTimeFail = Telemetry.getHistogramById("TELEMETRY_SEND_FAILURE");
-  histSuccess.clear();
-  histSendTimeSuccess.clear();
-  histSendTimeFail.clear();
+  Services.fog.testResetFOG();
 
   // Fake a current date.
   let now = TelemetryUtils.truncateToDays(new Date());
@@ -181,18 +170,18 @@ add_task(async function test_sendPendingPings() {
   );
 
   Assert.deepEqual(
-    histSuccess.snapshot().values,
+    Glean.telemetry.success.testGetValue(),
     {},
     "Should not have recorded any sending in histograms yet."
   );
   Assert.equal(
-    histSendTimeSuccess.snapshot().sum,
-    0,
+    Glean.telemetry.sendSuccess.testGetValue(),
+    null,
     "Should not have recorded any sending in histograms yet."
   );
   Assert.equal(
-    histSendTimeFail.snapshot().sum,
-    0,
+    Glean.telemetry.sendFailure.testGetValue(),
+    null,
     "Should not have recorded any sending in histograms yet."
   );
 
@@ -235,18 +224,18 @@ add_task(async function test_sendPendingPings() {
   );
 
   Assert.deepEqual(
-    histSuccess.snapshot().values,
-    { 0: 0, 1: 10, 2: 0 },
+    Glean.telemetry.success.testGetValue(),
+    { true: 10 },
     "Should have recorded sending success in histograms."
   );
   Assert.equal(
-    histogramValueCount(histSendTimeSuccess.snapshot()),
+    Glean.telemetry.sendSuccess.testGetValue().count,
     10,
     "Should have recorded successful send times in histograms."
   );
   Assert.equal(
-    histogramValueCount(histSendTimeFail.snapshot()),
-    0,
+    Glean.telemetry.sendFailure.testGetValue(),
+    null,
     "Should not have recorded any failed sending in histograms yet."
   );
 
@@ -334,12 +323,6 @@ add_task(async function test_backoffTimeout() {
   const TEST_TYPE_D = TYPE_PREFIX + "D";
   const TEST_TYPE_E = TYPE_PREFIX + "E";
 
-  let histSuccess = Telemetry.getHistogramById("TELEMETRY_SUCCESS");
-  let histSendTimeSuccess = Telemetry.getHistogramById(
-    "TELEMETRY_SEND_SUCCESS"
-  );
-  let histSendTimeFail = Telemetry.getHistogramById("TELEMETRY_SEND_FAILURE");
-
   // Failing a ping send now should trigger backoff behavior.
   let now = fakeNow(2010, 1, 1, 11, 0, 0);
   await TelemetrySend.reset();
@@ -348,9 +331,7 @@ add_task(async function test_backoffTimeout() {
   TelemetrySend.setServer(PingServer.ipv4URL);
   PingServer.stop();
 
-  histSuccess.clear();
-  histSendTimeSuccess.clear();
-  histSendTimeFail.clear();
+  Services.fog.testResetFOG();
 
   fakePingId("c", 0);
   now = fakeNow(futureDate(now, MS_IN_A_MINUTE));
@@ -397,22 +378,22 @@ add_task(async function test_backoffTimeout() {
   ++sendAttempts;
 
   Assert.deepEqual(
-    histSuccess.snapshot().values,
-    { 0: sendAttempts, 1: 0 },
+    Glean.telemetry.success.testGetValue(),
+    { false: sendAttempts },
     "Should have recorded sending failure in histograms."
   );
   Assert.equal(
-    histSendTimeSuccess.snapshot().sum,
-    0,
+    Glean.telemetry.sendSuccess.testGetValue(),
+    null,
     "Should not have recorded any sending success in histograms yet."
   );
   Assert.greaterOrEqual(
-    histSendTimeFail.snapshot().sum,
+    Glean.telemetry.sendFailure.testGetValue().sum,
     0,
     "Should have recorded send failure times in histograms."
   );
   Assert.equal(
-    histogramValueCount(histSendTimeFail.snapshot()),
+    Glean.telemetry.sendFailure.testGetValue().count,
     sendAttempts,
     "Should have recorded send failure times in histograms."
   );
@@ -466,22 +447,22 @@ add_task(async function test_backoffTimeout() {
   );
 
   Assert.deepEqual(
-    histSuccess.snapshot().values,
-    { 0: sendAttempts, 1: 3, 2: 0 },
+    Glean.telemetry.success.testGetValue(),
+    { false: sendAttempts, true: 3 },
     "Should have recorded sending failure in histograms."
   );
   Assert.greaterOrEqual(
-    histSendTimeSuccess.snapshot().sum,
+    Glean.telemetry.sendSuccess.testGetValue().sum,
     0,
     "Should have recorded sending success in histograms."
   );
   Assert.equal(
-    histogramValueCount(histSendTimeSuccess.snapshot()),
+    Glean.telemetry.sendSuccess.testGetValue().count,
     3,
     "Should have recorded sending success in histograms."
   );
   Assert.equal(
-    histogramValueCount(histSendTimeFail.snapshot()),
+    Glean.telemetry.sendFailure.testGetValue().count,
     sendAttempts,
     "Should have recorded send failure times in histograms."
   );
@@ -493,26 +474,7 @@ add_task(async function test_backoffTimeout() {
 add_task(async function test_discardBigPings() {
   const TEST_PING_TYPE = "test-ping-type";
 
-  let histSizeExceeded = Telemetry.getHistogramById(
-    "TELEMETRY_PING_SIZE_EXCEEDED_SEND"
-  );
-  let histDiscardedSize = Telemetry.getHistogramById(
-    "TELEMETRY_DISCARDED_SEND_PINGS_SIZE_MB"
-  );
-  let histSuccess = Telemetry.getHistogramById("TELEMETRY_SUCCESS");
-  let histSendTimeSuccess = Telemetry.getHistogramById(
-    "TELEMETRY_SEND_SUCCESS"
-  );
-  let histSendTimeFail = Telemetry.getHistogramById("TELEMETRY_SEND_FAILURE");
-  for (let h of [
-    histSizeExceeded,
-    histDiscardedSize,
-    histSuccess,
-    histSendTimeSuccess,
-    histSendTimeFail,
-  ]) {
-    h.clear();
-  }
+  Services.fog.testResetFOG();
 
   // Submit a ping of a normal size and check that we don't count it in the histogram.
   await TelemetryController.submitExternalPing(TEST_PING_TYPE, {
@@ -522,33 +484,33 @@ add_task(async function test_discardBigPings() {
   await PingServer.promiseNextPing();
 
   Assert.equal(
-    histSizeExceeded.snapshot().sum,
-    0,
+    Glean.telemetry.pingSizeExceededSend.testGetValue(),
+    null,
     "Telemetry must report no oversized ping submitted."
   );
   Assert.equal(
-    histDiscardedSize.snapshot().sum,
-    0,
+    Glean.telemetry.discardedSendPingsSize.testGetValue(),
+    null,
     "Telemetry must report no oversized pings."
   );
   Assert.deepEqual(
-    histSuccess.snapshot().values,
-    { 0: 0, 1: 1, 2: 0 },
+    Glean.telemetry.success.testGetValue(),
+    { true: 1 },
     "Should have recorded sending success."
   );
   Assert.equal(
-    histogramValueCount(histSendTimeSuccess.snapshot()),
+    Glean.telemetry.sendSuccess.testGetValue().count,
     1,
     "Should have recorded send success time."
   );
   Assert.greaterOrEqual(
-    histSendTimeSuccess.snapshot().sum,
+    Glean.telemetry.sendSuccess.testGetValue().sum,
     0,
     "Should have recorded send success time."
   );
   Assert.equal(
-    histogramValueCount(histSendTimeFail.snapshot()),
-    0,
+    Glean.telemetry.sendFailure.testGetValue(),
+    null,
     "Should not have recorded send failure time."
   );
 
@@ -588,34 +550,34 @@ add_task(async function test_discardBigPings() {
   );
 
   Assert.equal(
-    histSizeExceeded.snapshot().sum,
+    Glean.telemetry.pingSizeExceededSend.testGetValue(),
     1,
     "Telemetry must report 1 oversized ping submitted."
   );
   Assert.equal(
-    histDiscardedSize.snapshot().values[2],
-    1,
+    Glean.telemetry.discardedSendPingsSize.testGetValue().sum,
+    2 * 1024 * 1024,
     "Telemetry must report a 2MB, oversized, ping submitted."
   );
 
   Assert.deepEqual(
-    histSuccess.snapshot().values,
-    { 0: 0, 1: 2, 2: 0 },
+    Glean.telemetry.success.testGetValue(),
+    { true: 2 },
     "Should have recorded sending success."
   );
   Assert.equal(
-    histogramValueCount(histSendTimeSuccess.snapshot()),
+    Glean.telemetry.sendSuccess.testGetValue().count,
     2,
     "Should have recorded send success time."
   );
   Assert.greaterOrEqual(
-    histSendTimeSuccess.snapshot().sum,
+    Glean.telemetry.sendSuccess.testGetValue().sum,
     0,
     "Should have recorded send success time."
   );
   Assert.equal(
-    histogramValueCount(histSendTimeFail.snapshot()),
-    0,
+    Glean.telemetry.sendFailure.testGetValue(),
+    null,
     "Should not have recorded send failure time."
   );
 });
@@ -623,8 +585,7 @@ add_task(async function test_discardBigPings() {
 add_task(async function test_largeButWithinLimit() {
   const TEST_PING_TYPE = "test-ping-type";
 
-  let histSuccess = Telemetry.getHistogramById("TELEMETRY_SUCCESS");
-  histSuccess.clear();
+  Services.fog.testResetFOG();
 
   // Next ping will have a 900KB gzip payload.
   fakeGzipCompressStringForNextPing(900 * 1024);
@@ -637,8 +598,8 @@ add_task(async function test_largeButWithinLimit() {
   await PingServer.promiseNextRequest();
 
   Assert.deepEqual(
-    histSuccess.snapshot().values,
-    { 0: 0, 1: 1, 2: 0 },
+    Glean.telemetry.success.testGetValue(),
+    { true: 1 },
     "Should have sent large ping."
   );
 });
@@ -648,22 +609,7 @@ add_task(async function test_evictedOnServerErrors() {
 
   await TelemetrySend.reset();
 
-  let histEvicted = Telemetry.getHistogramById(
-    "TELEMETRY_PING_EVICTED_FOR_SERVER_ERRORS"
-  );
-  let histSuccess = Telemetry.getHistogramById("TELEMETRY_SUCCESS");
-  let histSendTimeSuccess = Telemetry.getHistogramById(
-    "TELEMETRY_SEND_SUCCESS"
-  );
-  let histSendTimeFail = Telemetry.getHistogramById("TELEMETRY_SEND_FAILURE");
-  for (let h of [
-    histEvicted,
-    histSuccess,
-    histSendTimeSuccess,
-    histSendTimeFail,
-  ]) {
-    h.clear();
-  }
+  Services.fog.testResetFOG();
 
   // Write a custom ping handler which will return 403. This will trigger ping eviction
   // on client side.
@@ -678,14 +624,14 @@ add_task(async function test_evictedOnServerErrors() {
   await TelemetrySend.testWaitOnOutgoingPings();
 
   Assert.equal(
-    histEvicted.snapshot().sum,
+    Glean.telemetry.pingEvictedForServerErrors.testGetValue(),
     1,
     "Telemetry must report a ping evicted due to server errors"
   );
-  Assert.deepEqual(histSuccess.snapshot().values, { 0: 0, 1: 1, 2: 0 });
-  Assert.equal(histogramValueCount(histSendTimeSuccess.snapshot()), 1);
-  Assert.greaterOrEqual(histSendTimeSuccess.snapshot().sum, 0);
-  Assert.equal(histogramValueCount(histSendTimeFail.snapshot()), 0);
+  Assert.deepEqual(Glean.telemetry.success.testGetValue(), { true: 1 });
+  Assert.equal(Glean.telemetry.sendSuccess.testGetValue().count, 1);
+  Assert.greaterOrEqual(Glean.telemetry.sendSuccess.testGetValue().sum, 0);
+  Assert.equal(Glean.telemetry.sendFailure.testGetValue(), null);
 
   // The ping should not be persisted.
   await Assert.rejects(
@@ -704,13 +650,13 @@ add_task(async function test_evictedOnServerErrors() {
   // We should not have updated the error histogram.
   await TelemetrySend.testWaitOnOutgoingPings();
   Assert.equal(
-    histEvicted.snapshot().sum,
+    Glean.telemetry.pingEvictedForServerErrors.testGetValue(),
     1,
     "Telemetry must report only one ping evicted due to server errors"
   );
-  Assert.deepEqual(histSuccess.snapshot().values, { 0: 0, 1: 2, 2: 0 });
-  Assert.equal(histogramValueCount(histSendTimeSuccess.snapshot()), 2);
-  Assert.equal(histogramValueCount(histSendTimeFail.snapshot()), 0);
+  Assert.deepEqual(Glean.telemetry.success.testGetValue(), { true: 2 });
+  Assert.equal(Glean.telemetry.sendSuccess.testGetValue().count, 2);
+  Assert.equal(Glean.telemetry.sendFailure.testGetValue(), null);
 });
 
 add_task(async function test_tooLateToSend() {
@@ -740,15 +686,14 @@ add_task(async function test_tooLateToSend() {
   Assert.equal(pendingPings[0].id, id, "Should have pended our test's ping");
 
   Assert.equal(
-    Telemetry.getHistogramById("TELEMETRY_SEND_FAILURE_TYPE").snapshot()
-      .values[7],
+    Glean.telemetry.sendFailureType.eTooLate.testGetValue(),
     1,
     "Should have registered the failed attempt to send"
   );
   Assert.equal(
-    Telemetry.getKeyedHistogramById(
-      "TELEMETRY_SEND_FAILURE_TYPE_PER_PING"
-    ).snapshot()[TEST_TYPE].values[7],
+    Glean.telemetry.sendFailureTypePerPing
+      .get(TEST_TYPE, "eTooLate")
+      .testGetValue(),
     1,
     "Should have registered the failed attempt to send TEST_TYPE ping"
   );

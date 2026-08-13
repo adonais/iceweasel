@@ -1,0 +1,83 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+---
+task-defaults:
+    description: "treeherder-cli toolchain build"
+    attributes:
+        local-toolchain: true
+    worker-type: b-linux-docker-amd
+    worker:
+        max-run-time: 1800
+    run:
+        script: build-rust-based-toolchain.sh
+        toolchain-artifact: public/build/treeherder-cli.tar.zst
+    fetches:
+        fetch:
+            - treeherder-cli
+
+linux64-treeherder-cli:
+    treeherder:
+        symbol: TL(treeherder-cli)
+    run:
+        arguments: ['x86_64-unknown-linux-gnu']
+    fetches:
+        toolchain:
+            - linux64-clang-toolchain
+            - linux64-rust-toolchain
+            - linux64-toolchain-sysroot
+
+linux64-aarch64-treeherder-cli:
+    treeherder:
+        symbol: TLA64(treeherder-cli)
+    run:
+        arguments: ['aarch64-unknown-linux-gnu']
+    fetches:
+        toolchain:
+            - linux64-clang-toolchain
+            - linux64-rust-toolchain
+            - linux64-aarch64-toolchain-sysroot
+
+macosx64-treeherder-cli:
+    treeherder:
+        symbol: TM(treeherder-cli)
+    run:
+        arguments: ['x86_64-apple-darwin']
+    fetches:
+        toolchain:
+            - linux64-clang-toolchain
+            - linux64-rust-macos-toolchain
+            - macosx64-sdk-toolchain
+
+macosx64-aarch64-treeherder-cli:
+    treeherder:
+        symbol: TMA64(treeherder-cli)
+    run:
+        arguments: ['aarch64-apple-darwin']
+    fetches:
+        toolchain:
+            - linux64-clang-toolchain
+            - linux64-rust-macos-toolchain
+            - macosx64-sdk-toolchain
+
+win32-treeherder-cli:
+    treeherder:
+        symbol: TW32(treeherder-cli)
+    run:
+        arguments: ['i686-pc-windows-msvc']
+    fetches:
+        toolchain:
+            - linux64-clang-toolchain
+            - linux64-rust-windows-toolchain
+            - vs-toolchain
+
+win64-treeherder-cli:
+    treeherder:
+        symbol: TW64(treeherder-cli)
+    run:
+        arguments: ['x86_64-pc-windows-msvc']
+    fetches:
+        toolchain:
+            - linux64-clang-toolchain
+            - linux64-rust-windows-toolchain
+            - vs-toolchain

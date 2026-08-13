@@ -25,11 +25,7 @@ import mozilla.components.ui.colors.PhotonColors
 @Suppress("LongParameterList")
 @Stable
 class AcornColors(
-    layerGradientStart: Color,
-    layerGradientEnd: Color,
     formDefault: Color,
-    textOnColorPrimary: Color,
-    iconOnColor: Color,
     information: Color,
     onInformation: Color,
     informationContainer: Color,
@@ -45,28 +41,8 @@ class AcornColors(
     selectedText: Color,
     iconPrivate: Color,
 ) {
-    // Tooltip
-    var layerGradientStart by mutableStateOf(layerGradientStart)
-        private set
-
-    // Tooltip
-    var layerGradientEnd by mutableStateOf(layerGradientEnd)
-        private set
-
     // Checkbox default, Radio button default
     var formDefault by mutableStateOf(formDefault)
-        private set
-
-    // Text
-
-    // Text Inverted/On Color
-    var textOnColorPrimary by mutableStateOf(textOnColorPrimary)
-        private set
-
-    // Icon
-
-    // Icon inverted (on color)
-    var iconOnColor by mutableStateOf(iconOnColor)
         private set
 
     /*
@@ -164,11 +140,7 @@ class AcornColors(
      * Updates the existing colors with the provided [AcornColors].
      */
     fun update(other: AcornColors) {
-        layerGradientStart = other.layerGradientStart
-        layerGradientEnd = other.layerGradientEnd
         formDefault = other.formDefault
-        textOnColorPrimary = other.textOnColorPrimary
-        iconOnColor = other.iconOnColor
         information = other.information
         onInformation = other.onInformation
         informationContainer = other.informationContainer
@@ -189,11 +161,7 @@ class AcornColors(
      * Return a copy of this [AcornColors] and optionally overriding any of the provided values.
      */
     fun copy(
-        layerGradientStart: Color = this.layerGradientStart,
-        layerGradientEnd: Color = this.layerGradientEnd,
         formDefault: Color = this.formDefault,
-        textOnColorPrimary: Color = this.textOnColorPrimary,
-        iconOnColor: Color = this.iconOnColor,
         information: Color = this.information,
         onInformation: Color = this.onInformation,
         informationContainer: Color = this.informationContainer,
@@ -209,11 +177,7 @@ class AcornColors(
         selectedText: Color = this.selectedText,
         iconPrivate: Color = this.iconPrivate,
     ): AcornColors = AcornColors(
-        layerGradientStart = layerGradientStart,
-        layerGradientEnd = layerGradientEnd,
         formDefault = formDefault,
-        textOnColorPrimary = textOnColorPrimary,
-        iconOnColor = iconOnColor,
         information = information,
         onInformation = onInformation,
         informationContainer = informationContainer,
@@ -232,11 +196,7 @@ class AcornColors(
 }
 
 val darkColorPalette = AcornColors(
-    layerGradientStart = PhotonColors.Violet70,
-    layerGradientEnd = PhotonColors.Violet60,
     formDefault = PhotonColors.LightGrey05,
-    textOnColorPrimary = PhotonColors.LightGrey05,
-    iconOnColor = PhotonColors.LightGrey05,
     information = NovaColors.Blue30,
     onInformation = NovaColors.Gray80,
     informationContainer = NovaColors.Blue70,
@@ -254,11 +214,7 @@ val darkColorPalette = AcornColors(
 )
 
 val lightColorPalette = AcornColors(
-    layerGradientStart = PhotonColors.Violet70,
-    layerGradientEnd = PhotonColors.Violet60,
     formDefault = PhotonColors.DarkGrey90,
-    textOnColorPrimary = PhotonColors.LightGrey05,
-    iconOnColor = PhotonColors.LightGrey05,
     information = NovaColors.Blue50,
     onInformation = NovaColors.White,
     informationContainer = NovaColors.Blue10,
@@ -311,7 +267,7 @@ fun acornDarkColorScheme(): ColorScheme = darkColorScheme(
     errorContainer = NovaColors.Red70,
     onErrorContainer = NovaColors.VioletDesaturated0,
     outline = NovaColors.Gray45,
-    outlineVariant = NovaColors.Gray65,
+    outlineVariant = NovaColors.Gray60,
     scrim = NovaColors.BlackA50,
     surfaceBright = NovaColors.Gray65,
     surfaceDim = NovaColors.Gray85,
@@ -395,7 +351,7 @@ fun acornPrivateColorScheme(): ColorScheme = darkColorScheme(
     errorContainer = NovaColors.Red70,
     onErrorContainer = NovaColors.VioletDesaturated0,
     outline = NovaColors.Gray45,
-    outlineVariant = NovaColors.VioletDesaturated80,
+    outlineVariant = Color(0xFF332752),
     scrim = NovaColors.BlackA50,
     surfaceBright = NovaColors.VioletDesaturated80,
     surfaceDim = Color(0xFF0D0321),

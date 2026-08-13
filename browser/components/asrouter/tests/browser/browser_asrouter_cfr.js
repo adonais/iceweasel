@@ -330,7 +330,7 @@ add_task(async function test_cfr_notification_minimize() {
     "Should return true if addRecommendation checks were successful"
   );
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => gURLBar.hasAttribute("cfr-recommendation-state"),
     "Wait for the notification to show up and have a state"
   );
@@ -342,7 +342,7 @@ add_task(async function test_cfr_notification_minimize() {
 
   gURLBar.focus();
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => gURLBar.getAttribute("cfr-recommendation-state") === "collapsed",
     "After urlbar focus the CFR notification should collapse"
   );
@@ -379,7 +379,7 @@ add_task(async function test_cfr_notification_minimize_2() {
     "Should return true if addRecommendation checks were successful"
   );
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => gURLBar.hasAttribute("cfr-recommendation-state"),
     "Wait for the notification to show up and have a state"
   );
@@ -421,7 +421,7 @@ add_task(async function test_cfr_notification_minimize_2() {
     "The notification should not disappear"
   );
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => gURLBar.getAttribute("cfr-recommendation-state") === "collapsed",
     "Clicking the secondary button should collapse the notification"
   );
@@ -632,7 +632,7 @@ add_task(async function test_matchPattern() {
   BrowserTestUtils.startLoadingURIString(browser, "http://example.com/");
   await BrowserTestUtils.browserLoaded(browser, false, "http://example.com/");
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => frequentVisitsTrigger._visits.get("example.com").length === 1,
     "Registered pattern matched the current location"
   );
@@ -640,7 +640,7 @@ add_task(async function test_matchPattern() {
   BrowserTestUtils.startLoadingURIString(browser, "about:config");
   await BrowserTestUtils.browserLoaded(browser, false, "about:config");
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => frequentVisitsTrigger._visits.get("example.com").length === 1,
     "Navigated to a new page but not a match"
   );
@@ -648,7 +648,7 @@ add_task(async function test_matchPattern() {
   BrowserTestUtils.startLoadingURIString(browser, "http://example.com/");
   await BrowserTestUtils.browserLoaded(browser, false, "http://example.com/");
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => frequentVisitsTrigger._visits.get("example.com").length === 1,
     "Navigated to a location that matches the pattern but within 15 mins"
   );
@@ -660,11 +660,11 @@ add_task(async function test_matchPattern() {
     "http://www.example.com/"
   );
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => frequentVisitsTrigger._visits.get("www.example.com").length === 1,
     "www.example.com is a different host that also matches the pattern."
   );
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => frequentVisitsTrigger._visits.get("example.com").length === 1,
     "www.example.com is a different host that also matches the pattern."
   );
@@ -688,7 +688,7 @@ add_task(async function test_matchRegex() {
   BrowserTestUtils.startLoadingURIString(browser, "http://example.com/");
   await BrowserTestUtils.browserLoaded(browser, false, "http://example.com/");
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => frequentVisitsTrigger._visits.get("example.com").length === 1,
     "Registered regex matched the current location"
   );
@@ -696,7 +696,7 @@ add_task(async function test_matchRegex() {
   BrowserTestUtils.startLoadingURIString(browser, "about:config");
   await BrowserTestUtils.browserLoaded(browser, false, "about:config");
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => frequentVisitsTrigger._visits.get("example.com").length === 1,
     "Navigated to a new page but not a match"
   );
@@ -704,7 +704,7 @@ add_task(async function test_matchRegex() {
   BrowserTestUtils.startLoadingURIString(browser, "http://example.com/");
   await BrowserTestUtils.browserLoaded(browser, false, "http://example.com/");
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => frequentVisitsTrigger._visits.get("example.com").length === 1,
     "Navigated to a location that matches the pattern but within 15 mins"
   );
@@ -716,11 +716,11 @@ add_task(async function test_matchRegex() {
     "http://www.example.com/"
   );
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => frequentVisitsTrigger._visits.get("www.example.com").length === 1,
     "www.example.com is a different host that also matches the pattern."
   );
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => frequentVisitsTrigger._visits.get("example.com").length === 1,
     "www.example.com is a different host that also matches the pattern."
   );
@@ -782,7 +782,7 @@ add_task(async function test_heartbeat_tactic_2() {
   Assert.ok(shown, "Heartbeat CFR added");
 
   // Wait for visibility change
-  BrowserTestUtils.waitForCondition(
+  TestUtils.waitForCondition(
     () => document.getElementById("contextual-feature-recommendation"),
     "Heartbeat button exists"
   );

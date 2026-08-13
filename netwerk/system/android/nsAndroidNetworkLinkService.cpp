@@ -3,17 +3,16 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsAndroidNetworkLinkService.h"
-#include "nsServiceManagerUtils.h"
-
-#include "nsIObserverService.h"
-#include "mozilla/StaticPrefs_network.h"
-#include "mozilla/IntegerPrintfMacros.h"
-#include "mozilla/Services.h"
-#include "mozilla/Logging.h"
 
 #include "AndroidBridge.h"
+#include "mozilla/IntegerPrintfMacros.h"
+#include "mozilla/Logging.h"
+#include "mozilla/Services.h"
+#include "mozilla/StaticPrefs_network.h"
 #include "mozilla/java/GeckoAppShellWrappers.h"
 #include "mozilla/jni/Utils.h"
+#include "nsIObserverService.h"
+#include "nsServiceManagerUtils.h"
 
 namespace java = mozilla::java;
 namespace jni = mozilla::jni;

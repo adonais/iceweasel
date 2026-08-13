@@ -869,9 +869,9 @@ FaultingCodeOffset MacroAssemblerMIPS64::ma_load(Register dest, Address address,
   return fco;
 }
 
-void MacroAssemblerMIPS64::ma_store(ImmWord imm, const BaseIndex& dest,
-                                    LoadStoreSize size,
-                                    LoadStoreExtension extension) {
+FaultingCodeOffset MacroAssemblerMIPS64::ma_store(
+    ImmWord imm, const BaseIndex& dest, LoadStoreSize size,
+    LoadStoreExtension extension) {
   UseScratchRegisterScope temps(*this);
   Register scratch2 = temps.Acquire();
 
@@ -884,16 +884,16 @@ void MacroAssemblerMIPS64::ma_store(ImmWord imm, const BaseIndex& dest,
 
   // with offset=0 scratch will not be used in ma_store()
   // so we can use it as a parameter here
-  ma_store(scratch, Address(scratch2, 0), size, extension);
+  return ma_store(scratch, Address(scratch2, 0), size, extension);
 }
 
-void MacroAssemblerMIPS64::ma_store(ImmWord imm, Address address,
-                                    LoadStoreSize size,
-                                    LoadStoreExtension extension) {
+FaultingCodeOffset MacroAssemblerMIPS64::ma_store(
+    ImmWord imm, Address address, LoadStoreSize size,
+    LoadStoreExtension extension) {
   UseScratchRegisterScope temps(*this);
   Register scratch2 = temps.Acquire();
   ma_li(scratch2, imm);
-  ma_store(scratch2, address, size, extension);
+  return ma_store(scratch2, address, size, extension);
 }
 
 FaultingCodeOffset MacroAssemblerMIPS64::ma_store(
@@ -1644,13 +1644,14 @@ FaultingCodeOffset MacroAssemblerMIPS64Compat::store32(Register src,
 }
 
 template <typename T>
-void MacroAssemblerMIPS64Compat::storePtr(ImmWord imm, T address) {
-  ma_store(imm, address, SizeDouble);
+FaultingCodeOffset MacroAssemblerMIPS64Compat::storePtr(ImmWord imm,
+                                                        T address) {
+  return ma_store(imm, address, SizeDouble);
 }
 
-template void MacroAssemblerMIPS64Compat::storePtr<Address>(ImmWord imm,
-                                                            Address address);
-template void MacroAssemblerMIPS64Compat::storePtr<BaseIndex>(
+template FaultingCodeOffset MacroAssemblerMIPS64Compat::storePtr<Address>(
+    ImmWord imm, Address address);
+template FaultingCodeOffset MacroAssemblerMIPS64Compat::storePtr<BaseIndex>(
     ImmWord imm, BaseIndex address);
 
 template <typename T>

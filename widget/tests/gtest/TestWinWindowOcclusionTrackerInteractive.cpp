@@ -2,15 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "gtest/gtest.h"
-
 #include "MockWinWidget.h"
+#include "Units.h"
+#include "WinUtils.h"
+#include "gtest/gtest.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/widget/WinEventObserver.h"
 #include "mozilla/widget/WinWindowOcclusionTracker.h"
 #include "nsThreadUtils.h"
-#include "Units.h"
-#include "WinUtils.h"
 
 using namespace mozilla;
 using namespace mozilla::widget;

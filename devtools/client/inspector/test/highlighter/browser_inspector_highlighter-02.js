@@ -9,6 +9,8 @@
 const TEST_URI = URL_ROOT + "doc_inspector_highlighter.html";
 
 add_task(async function () {
+  await pushPref("dom.select.customizable_select.enabled", true);
+
   const { inspector, highlighterTestFront } =
     await openInspectorForURL(TEST_URI);
   const { waitForHighlighterTypeShown } = getHighlighterTestHelpers(inspector);
@@ -107,6 +109,22 @@ add_task(async function () {
     await getHighlighterInfobarText(),
     "dialog::backdrop85 × 333",
     `::backdrop is properly displayed`
+  );
+
+  info("Highlighting the select::picker-icon node");
+  const selectNodeFront = await getNodeFront("select", inspector);
+  const { nodes: selectChildren } =
+    await inspector.walker.children(selectNodeFront);
+  const selectPickerIconNodeFront = selectChildren[3];
+  onHighlighterShown = waitForHighlighterTypeShown(
+    inspector.highlighters.TYPES.BOXMODEL
+  );
+  await selectNode(selectPickerIconNodeFront, inspector, "test-highlight");
+  await onHighlighterShown;
+  is(
+    await getHighlighterInfobarText(),
+    "select::picker-icon20 × 20",
+    `::picker-icon is properly displayed`
   );
 
   info("Check highlighting for ::view-transition pseudo elements");

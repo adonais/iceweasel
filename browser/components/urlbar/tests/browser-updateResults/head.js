@@ -73,8 +73,8 @@ class DelayingTestProvider extends UrlbarTestUtils.TestProvider {
  */
 function makeSuggestedIndexResult(suggestedIndex, resultSpan = 1) {
   return new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    type: UrlbarShared.RESULT_TYPE.URL,
+    source: UrlbarShared.RESULT_SOURCE.HISTORY,
     suggestedIndex,
     resultSpan,
     payload: {
@@ -82,7 +82,7 @@ function makeSuggestedIndexResult(suggestedIndex, resultSpan = 1) {
       title: "suggested index",
       helpUrl: "http://example.com/",
       isBlockable: true,
-      blockL10n: { id: "urlbar-result-menu-remove-from-history" },
+      blockL10n: { id: "urlbar-result-menu-remove-from-history2" },
     },
   });
 }
@@ -96,7 +96,7 @@ function makeSuggestedIndexResult(suggestedIndex, resultSpan = 1) {
  * @param {number} [options.count]
  *   The number of results to return other than the heuristic. This and
  *   `type` must be given together.
- * @param {UrlbarUtils.RESULT_TYPE} [options.type]
+ * @param {UrlbarShared.RESULT_TYPE} [options.type]
  *   The type of results to return other than the heuristic. This and `count`
  *   must be given together.
  * @param {Array} [options.specs]
@@ -105,7 +105,7 @@ function makeSuggestedIndexResult(suggestedIndex, resultSpan = 1) {
  *   object with the following properties:
  *   {number} count
  *     The number of results to return for the given `type`.
- *   {UrlbarUtils.RESULT_TYPE} type
+ *   {UrlbarShared.RESULT_TYPE} type
  *     The type of results.
  * @returns {Array}
  *   An array of results.
@@ -118,8 +118,8 @@ function makeProviderResults({ count = 0, type = undefined, specs = [] }) {
   let query = "test";
   let results = [
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.SEARCH,
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      type: UrlbarShared.RESULT_TYPE.SEARCH,
+      source: UrlbarShared.RESULT_SOURCE.SEARCH,
       heuristic: true,
       payload: {
         query,
@@ -132,11 +132,11 @@ function makeProviderResults({ count = 0, type = undefined, specs = [] }) {
     for (let i = 0; i < specCount; i++) {
       let str = `${query} ${results.length}`;
       switch (specType) {
-        case UrlbarUtils.RESULT_TYPE.SEARCH:
+        case UrlbarShared.RESULT_TYPE.SEARCH:
           results.push(
             new UrlbarResult({
-              type: UrlbarUtils.RESULT_TYPE.SEARCH,
-              source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+              type: UrlbarShared.RESULT_TYPE.SEARCH,
+              source: UrlbarShared.RESULT_SOURCE.SEARCH,
               payload: {
                 query,
                 suggestion: str,
@@ -146,17 +146,17 @@ function makeProviderResults({ count = 0, type = undefined, specs = [] }) {
             })
           );
           break;
-        case UrlbarUtils.RESULT_TYPE.URL:
+        case UrlbarShared.RESULT_TYPE.URL:
           results.push(
             new UrlbarResult({
-              type: UrlbarUtils.RESULT_TYPE.URL,
-              source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+              type: UrlbarShared.RESULT_TYPE.URL,
+              source: UrlbarShared.RESULT_SOURCE.HISTORY,
               payload: {
                 url: "http://example.com/" + i,
                 title: str,
                 helpUrl: "http://example.com/",
                 isBlockable: true,
-                blockL10n: { id: "urlbar-result-menu-remove-from-history" },
+                blockL10n: { id: "urlbar-result-menu-remove-from-history2" },
               },
             })
           );
@@ -214,7 +214,7 @@ function initSuggestedIndexTest() {
  *   The number of results other than the heuristic and suggestedIndex results
  *   that the provider should return for search 1. This and `otherType` must be
  *   given together.
- * @property {UrlbarUtils.RESULT_TYPE} [otherType]
+ * @property {UrlbarShared.RESULT_TYPE} [otherType]
  *   The type of results other than the heuristic and suggestedIndex results
  *   that the provider should return for search 1. This and `otherCount` must be
  *   given together.
@@ -224,7 +224,7 @@ function initSuggestedIndexTest() {
  *   item in this array must be an object with the following properties:
  *   {number} count
  *     The number of results to return for the given `type`.
- *   {UrlbarUtils.RESULT_TYPE} type
+ *   {UrlbarShared.RESULT_TYPE} type
  *     The type of results.
  * @property {number} viewCount
  *   The total number of results expected in the view after search 1 finishes,
@@ -259,12 +259,12 @@ function initSuggestedIndexTest() {
  * @param {SuggestedIndexTestOptions} options.search2
  *   This object has the same properties as the `search1` object but it applies
  *   to the second search.
- * @param {Array<{ count: number, type: UrlbarUtils.RESULT_TYPE, suggestedIndex: ?number, stale: ?boolean, hidden: ?boolean }>} options.duringUpdate
+ * @param {Array<{ count: number, type: UrlbarShared.RESULT_TYPE, suggestedIndex: ?number, stale: ?boolean, hidden: ?boolean }>} options.duringUpdate
  *   An array of expected row states during the view update. Each item in the
  *   array must be an object with the following properties:
  *   {number} count
  *     The number of rows in the view to which this row state object applies.
- *   {UrlbarUtils.RESULT_TYPE} type
+ *   {UrlbarShared.RESULT_TYPE} type
  *     The expected type of the rows.
  *   {number} [suggestedIndex]
  *     The expected suggestedIndex of the row.

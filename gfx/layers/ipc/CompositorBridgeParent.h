@@ -6,7 +6,9 @@
 #define mozilla_layers_CompositorBridgeParent_h
 
 #include <stdint.h>  // for uint64_t
+
 #include <unordered_map>
+
 #include "mozilla/Maybe.h"
 #include "mozilla/Monitor.h"        // for Monitor
 #include "mozilla/RefPtr.h"         // for RefPtr
@@ -14,6 +16,7 @@
 #include "mozilla/TimeStamp.h"      // for TimeStamp
 #include "mozilla/gfx/Point.h"      // for IntSize
 #include "mozilla/ipc/ProtocolUtils.h"
+#include "mozilla/layers/APZInputBridgeParent.h"
 #include "mozilla/layers/CompositorController.h"
 #include "mozilla/layers/CompositorVsyncSchedulerOwner.h"
 #include "mozilla/layers/FocusTarget.h"
@@ -21,7 +24,6 @@
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/PCompositorBridgeParent.h"
 #include "mozilla/layers/PWebRenderBridgeParent.h"
-#include "mozilla/layers/APZInputBridgeParent.h"
 #include "mozilla/webrender/WebRenderTypes.h"
 
 namespace mozilla {
@@ -152,6 +154,8 @@ class CompositorBridgeParentBase : public PCompositorBridgeParent,
   virtual void EnsureWebRenderBridgeParentInitialized() = 0;
 
   bool OwnsExternalImageId(const wr::ExternalImageId& aId) const;
+
+  bool OwnsPipelineId(const wr::PipelineId& aPipelineId) const;
 
   CompositorManagerParent* GetCompositorManager() const {
     return mCompositorManager;

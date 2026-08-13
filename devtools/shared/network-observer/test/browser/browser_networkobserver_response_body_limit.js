@@ -55,14 +55,14 @@ const bigSize = BYTES_1000 * 2;
 const hugeSize = BYTES_1000 * 20;
 const tooManyArgumentsSize = BYTES_1000 * 1000;
 
-add_task(async function testNetworkObserverWithResponseBodyLimit1000() {
+add_task(async function testNetworkObserverWithBodyLimit1000() {
   info("Test a network observer with specific response body limit (1000)");
   const tab = await addTab(TEST_URL);
 
   const events = [];
   const networkObserver = createNetworkObserver({
     events,
-    responseBodyLimit: BYTES_1000,
+    bodyLimit: BYTES_1000,
     decodeResponseBodies: true,
   });
 
@@ -76,7 +76,7 @@ add_task(async function testNetworkObserverWithResponseBodyLimit1000() {
   await assertNetworkEventContent(events.at(-1), BYTES_1000, true);
 
   info("Increase the response body limit dynamically");
-  networkObserver.setResponseBodyLimit(bigSize);
+  networkObserver.setBodyLimit(bigSize);
 
   await performGetDataRequest(gBrowser, events, bigSize);
   await assertNetworkEventContent(events.at(-1), bigSize, false);
@@ -89,7 +89,7 @@ add_task(async function testNetworkObserverWithResponseBodyLimit1000() {
   gBrowser.removeTab(tab);
 });
 
-add_task(async function testNetworkObserverWithResponseBodyLimitGzipped() {
+add_task(async function testNetworkObserverWithBodyLimitGzipped() {
   info("Test a network observer with specific response body limit (1000)");
   const tab = await addTab(TEST_URL);
 
@@ -98,7 +98,7 @@ add_task(async function testNetworkObserverWithResponseBodyLimitGzipped() {
   info("Create a first NetworkObserver which stores decoded responses");
   const networkObserver = createNetworkObserver({
     events,
-    responseBodyLimit: BYTES_1000,
+    bodyLimit: BYTES_1000,
     decodeResponseBodies: true,
   });
 
@@ -110,7 +110,7 @@ add_task(async function testNetworkObserverWithResponseBodyLimitGzipped() {
   info("Create another NetworkObserver which will store encoded responses");
   const noDecodeObserver = createNetworkObserver({
     events,
-    responseBodyLimit: BYTES_1000,
+    bodyLimit: BYTES_1000,
     decodeResponseBodies: false,
   });
 
@@ -125,7 +125,7 @@ add_task(async function testNetworkObserverWithResponseBodyLimitGzipped() {
   gBrowser.removeTab(tab);
 });
 
-add_task(async function testNetworkObserverWithResponseBodyLimitZero() {
+add_task(async function testNetworkObserverWithBodyLimitZero() {
   info("Test a network observer with a response body limit = zero (unlimited)");
   const tab = await addTab(TEST_URL);
 
@@ -135,7 +135,7 @@ add_task(async function testNetworkObserverWithResponseBodyLimitZero() {
       const events = [];
       const noLimitNetworkObserver = createNetworkObserver({
         events,
-        responseBodyLimit: 0,
+        bodyLimit: 0,
         decodeResponseBodies,
       });
 
@@ -167,14 +167,14 @@ add_task(async function testNetworkObserverWithResponseBodyLimitZero() {
   gBrowser.removeTab(tab);
 });
 
-add_task(async function testNetworkObserverWithResponseBodyLimitDefault() {
+add_task(async function testNetworkObserverWithBodyLimitDefault() {
   info("Test a network observer with default response body limit (unlimited)");
   const tab = await addTab(TEST_URL);
 
   const events = [];
   const noLimitNetworkObserver = createNetworkObserver({
     events,
-    responseBodyLimit: undefined,
+    bodyLimit: undefined,
     decodeResponseBodies: true,
   });
 
@@ -194,11 +194,11 @@ add_task(async function testNetworkObserverWithResponseBodyLimitDefault() {
 
 function createNetworkObserver({
   events,
-  responseBodyLimit,
+  bodyLimit,
   decodeResponseBodies = false,
 }) {
   info(
-    `Create a NetworkObserver with responseBodyLimit=${responseBodyLimit}, ` +
+    `Create a NetworkObserver with bodyLimit=${bodyLimit}, ` +
       `decodeResponseBodies=${decodeResponseBodies}`
   );
   const networkObserver = new NetworkObserver({
@@ -209,7 +209,7 @@ function createNetworkObserver({
       events.push(owner);
       return owner;
     },
-    responseBodyLimit,
+    bodyLimit,
   });
   registerCleanupFunction(() => networkObserver.destroy());
   return networkObserver;
@@ -228,15 +228,13 @@ async function performGetDataRequest(gBrowser, events, size, gzip = false) {
   );
 
   info("Wait for network event to be received");
-  await BrowserTestUtils.waitForCondition(
-    () => events.length > currentEventsCount
-  );
+  await TestUtils.waitForCondition(() => events.length > currentEventsCount);
   is(
     events.length,
     currentEventsCount + 1,
     "Received the expected number of network events"
   );
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => events.at(-1).hasResponseContentComplete
   );
 }

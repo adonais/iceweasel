@@ -23,7 +23,8 @@ RUNTIME_PING_BIT = PING_INDEX_BITS - 1
 # The list of all args to CommonMetricData.
 # No particular order is required, but I have these in common_metric_data.rs
 # order just to be organized.
-# Note that this is util.common_metric_args + "dynamic_label"
+# Note that this is util.common_metric_args with "dynamic_label" in the spot
+# expected by glean-core's CommonMetricData.
 common_metric_data_args = [
     "name",
     "category",
@@ -31,6 +32,7 @@ common_metric_data_args = [
     "lifetime",
     "disabled",
     "dynamic_label",
+    "in_session",
 ]
 
 # List of all metric-type-specific args that JOG understands.
@@ -190,15 +192,16 @@ def output_file(objs, output_fd, options={}):
             return value.name
         if isinstance(value, Rate):  # `numerators` for an external Denominator metric
             args = []
-            for arg_name in common_metric_data_args[:-1]:
+            for arg_name in common_metric_data_args:
+                if arg_name == "dynamic_label":
+                    # "dynamic_label" is special because it is on the Rust
+                    # CommonMetricData struct, but isn't in the glean_parser
+                    # object model.
+                    # Luckily, JOG doesn't need it. So merely supply None.
+                    args.append(None)
+                    continue
                 args.append(getattr(value, arg_name))
 
-            # These are deserialized as CommonMetricData.
-            # CMD have a final param JOG never uses: `dynamic_label`
-            # It's optional, so we should be able to omit it, but we'd need to
-            # annotate it with #[serde(default)]... so here we add the sixth
-            # param as None.
-            args.append(None)
             return args
         return json.dumps(value)
 
@@ -206,9 +209,9 @@ def output_file(objs, output_fd, options={}):
         dict_cat = jog_data["metrics"].setdefault(category, [])
         for metric in metrics.values():
             metric_arg_list = [camel_to_snake(metric.__class__.__name__)]
-            for arg in common_metric_data_args[:-1]:
-                if arg in ["category"]:
-                    continue  # We don't include the category in each metric.
+            for arg in common_metric_data_args:
+                if arg in ["category", "dynamic_label"]:
+                    continue
                 metric_arg_list.append(getattr(metric, arg))
             extra = {}
             for arg in known_extra_args:

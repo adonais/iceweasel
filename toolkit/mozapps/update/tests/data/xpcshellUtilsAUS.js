@@ -960,6 +960,15 @@ gTestDirsPartialSuccess = gTestDirsCommon.concat(gTestDirsPartialSuccess);
 function setupTestCommon(aAppUpdateAutoEnabled = false, aAllowBits = false) {
   debugDump("start - general test setup");
 
+  // At this point in startup, no moz-src URIs have been imported yet. The
+  // first one is imported after the directory service is mocked out, which
+  // causes the module import to fail; see bug 2057244. Work around this by
+  // forcefully initializing the protocol handler while the directory service
+  // is still 'clean'.
+  Cc["@mozilla.org/network/protocol;1?name=moz-src"].getService(
+    Ci.nsIProtocolHandler
+  );
+
   Assert.strictEqual(
     gTestID,
     undefined,

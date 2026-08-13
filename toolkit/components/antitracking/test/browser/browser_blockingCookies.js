@@ -1,4 +1,4 @@
-requestLongerTimeout(4);
+requestLongerTimeout(2);
 
 // Bug 1617611: Fix all the tests broken by "cookies SameSite=lax by default"
 Services.prefs.setBoolPref("network.cookie.sameSite.laxByDefault", false);
@@ -66,13 +66,7 @@ AntiTracking.runTestInNormalAndPrivateMode(
   },
 
   // Cleanup callback
-  async _ => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  }
+  clearSiteTestData
 );
 
 AntiTracking.runTestInNormalAndPrivateMode(
@@ -172,13 +166,7 @@ AntiTracking.runTestInNormalAndPrivateMode(
   },
 
   // Cleanup callback
-  async _ => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  },
+  clearSiteTestData,
   null,
   false,
   false

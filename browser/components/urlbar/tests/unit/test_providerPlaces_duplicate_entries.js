@@ -29,7 +29,7 @@ add_task(async function test_duplicates() {
   );
   Assert.equal(
     context.results[1].type,
-    UrlbarUtils.RESULT_TYPE.URL,
+    UrlbarShared.RESULT_TYPE.URL,
     "Should have a history  result"
   );
   Assert.equal(

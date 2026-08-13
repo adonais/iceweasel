@@ -3,45 +3,46 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "DrawTargetSkia.h"
-#include "SourceSurfaceSkia.h"
-#include "ScaledFontBase.h"
+
+#include <algorithm>
+#include <cmath>
+
+#include "Blur.h"
+#include "DataSurfaceHelpers.h"
 #include "FilterNodeSoftware.h"
 #include "HelpersSkia.h"
-
+#include "Logging.h"
+#include "PathHelpers.h"
+#include "PathSkia.h"
+#include "ScaledFontBase.h"
+#include "SourceSurfaceSkia.h"
+#include "Swizzle.h"
+#include "Tools.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/Vector.h"
-
 #include "skia/include/core/SkAnnotation.h"
 #include "skia/include/core/SkBitmap.h"
-#include "skia/include/core/SkData.h"
 #include "skia/include/core/SkCanvas.h"
+#include "skia/include/core/SkColorFilter.h"
+#include "skia/include/core/SkData.h"
 #include "skia/include/core/SkFont.h"
+#include "skia/include/core/SkRegion.h"
 #include "skia/include/core/SkSurface.h"
 #include "skia/include/core/SkTextBlob.h"
 #include "skia/include/core/SkTypeface.h"
 #include "skia/include/effects/SkGradient.h"
-#include "skia/include/core/SkColorFilter.h"
-#include "skia/include/core/SkRegion.h"
 #include "skia/include/effects/SkImageFilters.h"
 #include "skia/include/private/base/SkMalloc.h"
 #include "skia/src/core/SkEffectPriv.h"
 #include "skia/src/core/SkRasterPipeline.h"
 #include "skia/src/core/SkWriteBuffer.h"
 #include "skia/src/shaders/SkEmptyShader.h"
-#include "Blur.h"
-#include "DataSurfaceHelpers.h"
-#include "Logging.h"
-#include "Tools.h"
-#include "PathHelpers.h"
-#include "PathSkia.h"
-#include "Swizzle.h"
-#include <algorithm>
-#include <cmath>
 
 #ifdef XP_DARWIN
-#  include "BorrowedContext.h"
 #  include <CoreGraphics/CGBitmapContext.h>
+
+#  include "BorrowedContext.h"
 #endif
 
 #ifdef XP_WIN
@@ -1280,7 +1281,6 @@ static bool CanDrawFont(ScaledFont* aFont) {
     case FontType::FREETYPE:
     case FontType::FONTCONFIG:
     case FontType::MAC:
-    case FontType::GDI:
     case FontType::DWRITE:
       return true;
     default:

@@ -666,6 +666,43 @@ class AutofillDelegateTest : BaseSessionTest() {
 
     @WithDisplay(width = 100, height = 100)
     @Test
+    fun autofillPhoneAsUsername() {
+        mainSession.loadTestPath(FORMS_AUTOCOMPLETE2_HTML_PATH)
+        sessionRule.waitUntilCalled(object : Autofill.Delegate, GeckoSession.ProgressDelegate {
+            @AssertCalled(count = -1)
+            override fun onNodeAdd(
+                session: GeckoSession,
+                node: Autofill.Node,
+                data: Autofill.NodeData,
+            ) {}
+
+            @AssertCalled(count = 1)
+            override fun onPageStop(session: GeckoSession, success: Boolean) {}
+        })
+
+        fun checkAutofillChild(child: Autofill.Node): Int {
+            var sum = 0
+            for (c in child.children) {
+                sum += checkAutofillChild(c!!)
+            }
+            if (child.hint == Autofill.Hint.USERNAME &&
+                child.inputType == Autofill.InputType.PHONE
+            ) {
+                return sum + 1
+            }
+            return sum
+        }
+
+        val root = mainSession.autofillSession.root
+        assertThat(
+            "autofill username hint count",
+            checkAutofillChild(root),
+            equalTo(2),
+        )
+    }
+
+    @WithDisplay(width = 100, height = 100)
+    @Test
     fun autofillWaitForKeyboard() {
         // Wait for the accessibility nodes to populate.
         mainSession.loadUri(pageUrl)
@@ -726,6 +763,31 @@ class AutofillDelegateTest : BaseSessionTest() {
                 assertThat("ID should be valid", node, notNullValue())
                 // iframe's input element should consider iframe's offset. 200 is enough offset.
                 assertThat("position is valid", node.getScreenRect().top, greaterThanOrEqualTo(screenRect.top + 200))
+            }
+        })
+    }
+
+    @WithDisplay(width = 100, height = 100)
+    @Test
+    fun autofillDatalist() {
+        mainSession.loadTestPath(FORMS_DATALIST_HTML_PATH)
+        mainSession.waitForPageStop()
+
+        mainSession.evaluateJS("document.querySelector('input').focus()")
+        sessionRule.waitUntilCalled(object : Autofill.Delegate {
+            @AssertCalled(count = 1)
+            override fun onNodeFocus(
+                session: GeckoSession,
+                node: Autofill.Node,
+                data: Autofill.NodeData,
+            ) {
+                assertThat("Should have HTML tag", node.tag, equalTo("input"))
+                assertThat("Datalist should be valid", node.getDatalist(), notNullValue())
+                assertThat(
+                    "Datalist should have options",
+                    node.getDatalist()!!.asList(),
+                    equalTo(listOf("foo", "bar", "baz")),
+                )
             }
         })
     }

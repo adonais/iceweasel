@@ -6,14 +6,14 @@
 
 #include "RenderCompositorD3D11SWGL.h"
 
-#include "gfxConfig.h"
-#include "mozilla/gfx/2D.h"
-#include "mozilla/widget/CompositorWidget.h"
-#include "mozilla/layers/TextureD3D11.h"
-#include "mozilla/layers/Effects.h"
-#include "mozilla/webrender/RenderD3D11TextureHost.h"
 #include "RenderCompositorRecordedFrame.h"
 #include "RenderThread.h"
+#include "gfxConfig.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/layers/Effects.h"
+#include "mozilla/layers/TextureD3D11.h"
+#include "mozilla/webrender/RenderD3D11TextureHost.h"
+#include "mozilla/widget/CompositorWidget.h"
 
 namespace mozilla {
 using namespace layers;

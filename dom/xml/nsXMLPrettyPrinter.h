@@ -26,11 +26,12 @@ class nsXMLPrettyPrinter : public nsStubDocumentObserver {
    * displayed window.
    *
    * @param aDocument  document to prettyprint
+   * @param aShowXSLTDisabledMessage if we should suggest an XSLT extension
    * @param [out] aDidPrettyPrint if true, and error not returned, actually
    *              went ahead with prettyprinting the document.
    */
   nsresult PrettyPrint(mozilla::dom::Document* aDocument,
-                       bool* aDidPrettyPrint);
+                       bool aShowXSLTDisabledMessage, bool* aDidPrettyPrint);
 
   /**
    * Unhook the prettyprinter

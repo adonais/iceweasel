@@ -3,15 +3,16 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ProxyConfigLookup.h"
+
 #include "ProxyConfigLookupChild.h"
 #include "mozilla/Components.h"
 #include "nsContentUtils.h"
 #include "nsICancelable.h"
+#include "nsIChannel.h"
 #include "nsIProtocolProxyService.h"
 #include "nsIProtocolProxyService2.h"
 #include "nsNetUtil.h"
 #include "nsThreadUtils.h"
-#include "nsIChannel.h"
 
 namespace mozilla {
 namespace net {

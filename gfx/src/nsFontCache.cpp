@@ -8,9 +8,8 @@
 #include "gfxTextRun.h"
 #include "mozilla/Services.h"
 #include "mozilla/ServoUtils.h"
-#include "nsCRT.h"
-
 #include "mozilla/dom/Document.h"
+#include "nsCRT.h"
 #include "nsPresContext.h"
 
 using mozilla::services::GetObserverService;

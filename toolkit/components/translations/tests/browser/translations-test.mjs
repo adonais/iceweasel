@@ -129,6 +129,33 @@ export function waitForCondition(callback, message) {
 }
 
 /**
+ * Collects the translated documents for the current page and any translated descendant frames.
+ *
+ * @param {WindowGlobalChild} [windowGlobalChild=content.windowGlobalChild]
+ * @returns {TranslationsDocument[]}
+ */
+export function collectTranslatedDocs(
+  windowGlobalChild = content.windowGlobalChild
+) {
+  const translatedDocs = [];
+
+  const translationsChild = windowGlobalChild.getExistingActor("Translations");
+  if (translationsChild?.translatedDoc) {
+    translatedDocs.push(translationsChild.translatedDoc);
+  }
+
+  for (const childBrowsingContext of windowGlobalChild.browsingContext
+    .children) {
+    const childWindowGlobal = childBrowsingContext.currentWindowGlobal;
+    if (childWindowGlobal) {
+      translatedDocs.push(...collectTranslatedDocs(childWindowGlobal));
+    }
+  }
+
+  return translatedDocs;
+}
+
+/**
  * Asserts that a page was translated with a specific result.
  *
  * @param {string} message The assertion message.

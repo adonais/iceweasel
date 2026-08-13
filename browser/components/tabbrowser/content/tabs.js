@@ -517,11 +517,18 @@
         let tab = event.target?.closest("tab");
         if (tab) {
           if (tab.multiselected) {
-            gBrowser.removeMultiSelectedTabs();
+            gBrowser.removeMultiSelectedTabs({
+              metricsContext: gBrowser.TabMetrics.userTriggeredContext(
+                gBrowser.TabMetrics.METRIC_SOURCE.MIDDLE_CLICK
+              ),
+            });
           } else {
             gBrowser.removeTab(tab, {
               animate: true,
               triggeringEvent: event,
+              metricsContext: gBrowser.TabMetrics.userTriggeredContext(
+                gBrowser.TabMetrics.METRIC_SOURCE.MIDDLE_CLICK
+              ),
             });
           }
         } else if (isTabGroupLabel(event.target)) {
@@ -588,32 +595,37 @@
           }
         }
       } else if (keyComboForMove) {
+        let moveOptions = {
+          metricsContext: gBrowser.TabMetrics.userTriggeredContext(
+            gBrowser.TabMetrics.METRIC_SOURCE.KEYBOARD
+          ),
+        };
         switch (event.keyCode) {
           case KeyEvent.DOM_VK_UP:
-            gBrowser.moveTabBackward();
+            gBrowser.moveTabBackward(moveOptions);
             break;
           case KeyEvent.DOM_VK_DOWN:
-            gBrowser.moveTabForward();
+            gBrowser.moveTabForward(moveOptions);
             break;
           case KeyEvent.DOM_VK_RIGHT:
             if (RTL_UI) {
-              gBrowser.moveTabBackward();
+              gBrowser.moveTabBackward(moveOptions);
             } else {
-              gBrowser.moveTabForward();
+              gBrowser.moveTabForward(moveOptions);
             }
             break;
           case KeyEvent.DOM_VK_LEFT:
             if (RTL_UI) {
-              gBrowser.moveTabForward();
+              gBrowser.moveTabForward(moveOptions);
             } else {
-              gBrowser.moveTabBackward();
+              gBrowser.moveTabBackward(moveOptions);
             }
             break;
           case KeyEvent.DOM_VK_HOME:
-            gBrowser.moveTabToStart();
+            gBrowser.moveTabToStart(undefined, moveOptions);
             break;
           case KeyEvent.DOM_VK_END:
-            gBrowser.moveTabToEnd();
+            gBrowser.moveTabToEnd(undefined, moveOptions);
             break;
           default:
             // Consume the keydown event for the above keyboard
@@ -1090,6 +1102,25 @@
     }
 
     /**
+     * @override
+     * @param {-1|1} aDir
+     * @param {boolean} aWrap
+     * @param {Event} [aEvent] The DOM event that triggered this call.
+     */
+    advanceSelectedTab(aDir, aWrap, aEvent) {
+      let prevTab = gBrowser.selectedTab;
+      super.advanceSelectedTab(aDir, aWrap, aEvent);
+      if (gBrowser.selectedTab !== prevTab) {
+        gBrowser.recordTabMetrics(
+          gBrowser.TabMetrics.METRIC_ACTION.ACTIVATE,
+          gBrowser.TabMetrics.userTriggeredContext(
+            gBrowser.TabMetrics.sourceForEvent(aEvent)
+          )
+        );
+      }
+    }
+
+    /**
      * Changes the selected tab or tab group label on the tab strip
      * relative to the ARIA-focused tab strip element or the active tab. This
      * is intended for traversing the tab strip visually, e.g by using keyboard
@@ -1145,7 +1176,16 @@
       // group label.
       let newItem = ariaFocusableItems[newItemIndex];
       if (isTab(newItem)) {
+        let prevTab = gBrowser.selectedTab;
         this._selectNewTab(newItem, aDir, aWrap);
+        if (gBrowser.selectedTab !== prevTab) {
+          gBrowser.recordTabMetrics(
+            gBrowser.TabMetrics.METRIC_ACTION.ACTIVATE,
+            gBrowser.TabMetrics.userTriggeredContext(
+              gBrowser.TabMetrics.METRIC_SOURCE.KEYBOARD
+            )
+          );
+        }
       }
       this.ariaFocusedItem = newItem;
 

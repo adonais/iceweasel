@@ -9,10 +9,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import mozilla.components.concept.sync.SyncEngine
 import mozilla.components.feature.syncedtabs.storage.SyncedTabsProvider
 import mozilla.components.feature.syncedtabs.view.SyncedTabsView
 import mozilla.components.feature.syncedtabs.view.SyncedTabsView.ErrorType
-import mozilla.components.service.fxa.SyncEngine
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.service.fxa.manager.ext.withConstellationIfExists
 import mozilla.components.service.fxa.sync.SyncReason

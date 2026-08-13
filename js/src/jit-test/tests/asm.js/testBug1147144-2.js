@@ -1,4 +1,4 @@
-// |jit-test| skip-if: !isAsmJSCompilationAvailable()||!Function.prototype.toSource
+// |jit-test| skip-if: !Function.prototype.toSource
 
 function test() {
 load(libdir + 'asm.js');

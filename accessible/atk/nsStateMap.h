@@ -6,9 +6,10 @@
 #define ACCESSIBLE_ATK_NSSTATEMAP_H_
 
 #include <atk/atk.h>
-#include "AccessibleWrap.h"
 
 #include <type_traits>
+
+#include "AccessibleWrap.h"
 
 // clang-format off
 /******************************************************************************

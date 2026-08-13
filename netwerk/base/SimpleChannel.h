@@ -8,8 +8,8 @@
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/UniquePtr.h"
 #include "nsBaseChannel.h"
-#include "nsIChildChannel.h"
 #include "nsCOMPtr.h"
+#include "nsIChildChannel.h"
 
 class nsIChannel;
 class nsIInputStream;

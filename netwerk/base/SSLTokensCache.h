@@ -7,23 +7,28 @@
 
 #include "CertVerifier.h"  // For EVStatus
 #include "mozilla/Maybe.h"
+#include "mozilla/OriginAttributes.h"
 #include "mozilla/Span.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPtr.h"
-#include "mozilla/OriginAttributes.h"
 #include "mozilla/TimeStamp.h"
 #include "nsClassHashtable.h"
+#include "nsIAsyncShutdown.h"
 #include "nsIFile.h"
 #include "nsIMemoryReporter.h"
-#include "nsIAsyncShutdown.h"
 #include "nsIObserver.h"
+#include "nsISSLTokensCache.h"
 #include "nsISerialEventTarget.h"
 #include "nsISupportsImpl.h"
 #include "nsITransportSecurityInfo.h"
 #include "nsTArray.h"
 #include "nsTHashMap.h"
 #include "nsXULAppAPI.h"
+
+#ifdef ENABLE_TESTS
+#  include "nsISSLTokensCacheTest.h"
+#endif
 
 class CommonSocketControl;
 struct SslTokensPersistedRecord;
@@ -74,7 +79,31 @@ class SSLTokensCache : public nsIMemoryReporter,
   static nsresult Remove(const nsACString& aKey, uint64_t aId);
   static nsresult RemoveAll(const nsACString& aKey);
   static void Clear();
+  // Clears the NSS in-memory client session cache (if NSS is initialized)
+  // and all resumption tokens, and (in the parent process) forwards the
+  // clear to the socket process via IPC. This is the entry point for
+  // "clear the TLS session cache" from anywhere in the tree; PSM no longer
+  // has its own copy of this logic.
+  static void ClearSessionCacheAndTokens();
+  // Forwards the IPC clear request to the socket process; no-op in non-parent
+  // processes.
+  static void ForwardClearToSocketProcess();
+  // Forwards a PBM-scoped cache-clear request to the socket process (parent
+  // only). The socket process clears only PBM SSLTokensCache entries and the
+  // NSS session cache; normal-browsing tokens are preserved.
+  static void ForwardClearPrivateBrowsingToSocketProcess();
+  // Remove only private-browsing entries (privateBrowsingId != 0).
+  static void ClearPrivateBrowsing();
+  // Socket-process only: clears the NSS in-memory client session cache (if
+  // NSS is initialized) and private-browsing resumption tokens. Invoked by
+  // the socket process in response to a PBM-scoped clear request.
+  static void ClearSessionCacheAndPBMTokens();
   static void RemoveByHostAndOAPattern(
+      const nsACString& aHost, const mozilla::OriginAttributesPattern& aPattern)
+      MOZ_EXCLUDES(sLock);
+  // Removes aHost's matching resumption tokens, clears the NSS in-memory
+  // client session cache, and forwards the clear to the socket process.
+  static void ClearSessionCacheAndTokensForHost(
       const nsACString& aHost, const mozilla::OriginAttributesPattern& aPattern)
       MOZ_EXCLUDES(sLock);
   static void RemoveBySiteAndOAPattern(
@@ -122,6 +151,11 @@ class SSLTokensCache : public nsIMemoryReporter,
   static bool ShouldPersistKey(const nsACString& aKey,
                                uint8_t aOverridableError);
 
+  // Reconcile persistence infrastructure with the current pref value.
+  // The signature matches PrefChangedFunc so it can be passed directly to
+  // Preferences::RegisterCallback; the two parameters are ignored.
+  static void ReconcilePersistence(const char* = nullptr, void* = nullptr);
+
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const
       MOZ_REQUIRES(sLock);
 
@@ -132,6 +166,7 @@ class SSLTokensCache : public nsIMemoryReporter,
   uint32_t mCacheSize MOZ_GUARDED_BY(sLock){0};
 
   // Persistence state (parent process only)
+  bool mPrefCallbackRegistered{false};  // main-thread-only
   bool mWriteObserversRegistered MOZ_GUARDED_BY(sLock){false};
   nsCOMPtr<nsIFile> mBackingFile MOZ_GUARDED_BY(sLock);
   nsCOMPtr<nsISerialEventTarget> mWriteTaskQueue MOZ_GUARDED_BY(sLock);
@@ -231,6 +266,28 @@ class SSLTokensCache : public nsIMemoryReporter,
   nsClassHashtable<nsCStringHashKey, TokenCacheEntry> mTokenCacheRecords
       MOZ_GUARDED_BY(sLock);
   nsTArray<TokenCacheRecord*> mExpirationArray MOZ_GUARDED_BY(sLock);
+};
+
+// Scriptable entry point (@mozilla.org/network/ssl-tokens-cache;1) for
+// SSLTokensCache. Stateless: all state lives in the SSLTokensCache singleton
+// reached via its static methods.
+class SSLTokensCacheService final : public nsISSLTokensCache
+#ifdef ENABLE_TESTS
+    ,
+                                    public nsISSLTokensCacheTest
+#endif
+{
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSISSLTOKENSCACHE
+#ifdef ENABLE_TESTS
+  NS_DECL_NSISSLTOKENSCACHETEST
+#endif
+
+  SSLTokensCacheService() = default;
+
+ private:
+  ~SSLTokensCacheService() = default;
 };
 
 }  // namespace net

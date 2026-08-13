@@ -181,6 +181,27 @@ SHA256_Update_Native(SHA256Context *ctx, const unsigned char *input,
 }
 #endif
 
+/* Select the HW or SW SHA-256 implementation; never (de)serialise these
+ * function pointers, they are local to this process/library load. */
+static void
+SHA256_SelectImpl(SHA256Context *ctx)
+{
+    PRBool use_hw_sha2 = PR_FALSE;
+
+#if defined(USE_HW_SHA2) && defined(IS_LITTLE_ENDIAN)
+    /* arm's implementation is tested on little endian only */
+    use_hw_sha2 = arm_sha2_support() || (sha_support() && ssse3_support() && sse4_1_support());
+#endif
+
+    if (use_hw_sha2) {
+        ctx->compress = SHA256_Compress_Native;
+        ctx->update = SHA256_Update_Native;
+    } else {
+        ctx->compress = SHA256_Compress_Generic;
+        ctx->update = SHA256_Update_Generic;
+    }
+}
+
 SHA256Context *
 SHA256_NewContext(void)
 {
@@ -200,23 +221,9 @@ SHA256_DestroyContext(SHA256Context *ctx, PRBool freeit)
 void
 SHA256_Begin(SHA256Context *ctx)
 {
-    PRBool use_hw_sha2 = PR_FALSE;
-
     memset(ctx, 0, sizeof *ctx);
     memcpy(H, H256, sizeof H256);
-
-#if defined(USE_HW_SHA2) && defined(IS_LITTLE_ENDIAN)
-    /* arm's implementation is tested on little endian only */
-    use_hw_sha2 = arm_sha2_support() || (sha_support() && ssse3_support() && sse4_1_support());
-#endif
-
-    if (use_hw_sha2) {
-        ctx->compress = SHA256_Compress_Native;
-        ctx->update = SHA256_Update_Native;
-    } else {
-        ctx->compress = SHA256_Compress_Generic;
-        ctx->update = SHA256_Update_Generic;
-    }
+    SHA256_SelectImpl(ctx);
 }
 
 #if defined(USE_PPC_CRYPTO)
@@ -645,16 +652,20 @@ SHA256_TraceState(SHA256Context *ctx)
 {
 }
 
+/* Only the hash data state is serialised; the trailing |compress|/|update|
+ * function pointers must never be exposed to or read back from callers. */
+#define SHA256_STATE_SIZE offsetof(SHA256Context, compress)
+
 unsigned int
 SHA256_FlattenSize(SHA256Context *ctx)
 {
-    return sizeof *ctx;
+    return SHA256_STATE_SIZE;
 }
 
 SECStatus
 SHA256_Flatten(SHA256Context *ctx, unsigned char *space)
 {
-    PORT_Memcpy(space, ctx, sizeof *ctx);
+    PORT_Memcpy(space, ctx, SHA256_STATE_SIZE);
     return SECSuccess;
 }
 
@@ -662,8 +673,11 @@ SHA256Context *
 SHA256_Resurrect(unsigned char *space, void *arg)
 {
     SHA256Context *ctx = SHA256_NewContext();
-    if (ctx)
-        PORT_Memcpy(ctx, space, sizeof *ctx);
+    if (ctx) {
+        PORT_Memcpy(ctx, space, SHA256_STATE_SIZE);
+        /* Re-derive dispatch pointers locally; never trust serialised ones. */
+        SHA256_SelectImpl(ctx);
+    }
     return ctx;
 }
 
@@ -696,25 +710,9 @@ SHA224_DestroyContext(SHA224Context *ctx, PRBool freeit)
 void
 SHA224_Begin(SHA224Context *ctx)
 {
-    PRBool use_hw_sha2;
-
     memset(ctx, 0, sizeof *ctx);
     memcpy(H, H224, sizeof H224);
-
-#if defined(USE_HW_SHA2) && defined(IS_LITTLE_ENDIAN)
-    /* arm's implementation is tested on little endian only */
-    use_hw_sha2 = arm_sha2_support() || (sha_support() && ssse3_support() && sse4_1_support());
-#else
-    use_hw_sha2 = PR_FALSE;
-#endif
-
-    if (use_hw_sha2) {
-        ctx->compress = SHA256_Compress_Native;
-        ctx->update = SHA256_Update_Native;
-    } else {
-        ctx->compress = SHA256_Compress_Generic;
-        ctx->update = SHA256_Update_Generic;
-    }
+    SHA256_SelectImpl(ctx);
 }
 
 void

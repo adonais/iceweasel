@@ -3,14 +3,14 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "xpcAccessibleDocument.h"
-#include "xpcAccessibleImage.h"
-#include "xpcAccessibleTable.h"
-#include "xpcAccessibleTableCell.h"
 
-#include "nsAccUtils.h"
 #include "DocAccessible-inl.h"
 #include "mozilla/a11y/DocAccessibleParent.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
+#include "nsAccUtils.h"
+#include "xpcAccessibleImage.h"
+#include "xpcAccessibleTable.h"
+#include "xpcAccessibleTableCell.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;

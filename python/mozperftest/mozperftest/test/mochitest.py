@@ -131,7 +131,7 @@ class _Mochitest(Layer):
         gecko_profile_args = []
 
         gecko_profile_features = os.getenv(
-            "MOZ_PROFILER_STARTUP_FEATURES", "js,stackwalk,cpu,screenshots,memory"
+            "MOZ_PROFILER_STARTUP_FEATURES", "js,stackwalk,screenshots,memory"
         )
         gecko_profile_threads = os.getenv(
             "MOZ_PROFILER_STARTUP_FILTERS", "GeckoMain,Compositor,Renderer"

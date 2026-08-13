@@ -3,10 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 // HttpLog.h should generally be included first
-#include "HttpLog.h"
-
 #include "AltServiceParent.h"
+
 #include "AlternateServices.h"
+#include "HttpLog.h"
 #include "nsHttpHandler.h"
 
 namespace mozilla {

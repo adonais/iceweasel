@@ -7,7 +7,6 @@
 #define KeychainSecret_h
 
 #include "CoreFoundation/CFBase.h"
-
 #include "OSKeyStore.h"
 #include "nsString.h"
 

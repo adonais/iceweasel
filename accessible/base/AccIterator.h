@@ -5,14 +5,14 @@
 #ifndef mozilla_a11y_AccIterator_h_
 #define mozilla_a11y_AccIterator_h_
 
+#include <memory>
+
 #include "Filters.h"
 #include "mozilla/a11y/DocAccessible.h"
 #include "mozilla/dom/Element.h"
-#include "nsTArray.h"
-#include "nsContentUtils.h"
 #include "mozilla/dom/TreeOrderedArray.h"
-
-#include <memory>
+#include "nsContentUtils.h"
+#include "nsTArray.h"
 
 class nsITreeView;
 

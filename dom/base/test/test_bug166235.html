@@ -101,16 +101,13 @@ var originalStrings = [
 ];
 
 // expected results for clipboard text/html
-const includeCommonAncestor = SpecialPowers.getBoolPref(
-  "dom.serializer.includeCommonAncestor.enabled"
-);
 var clipboardHTML = [
-  `${includeCommonAncestor ? "<p id=\"test0\">" : ""}This text should be copied.${includeCommonAncestor ? "</p>" : ""}`,
-  `${includeCommonAncestor ? "<p id=\"test1\">" : ""}This text should be copied.${includeCommonAncestor ? "</p>" : ""}`,
-  `${includeCommonAncestor ? "<p id=\"test2\">" : ""}This<span style=\"user-select: text\"> text should</span> be copied.${includeCommonAncestor ? "</p>" : ""}`,
-  `${includeCommonAncestor ? "<p id=\"test3\">" : ""}This text should be copied.${includeCommonAncestor ? "</p>" : ""}`,
-  `${includeCommonAncestor ? "<p id=\"test4\">" : ""}This<span style=\"user-select: text\"> text should</span> be copied.${includeCommonAncestor ? "</p>" : ""}`,
-  `${includeCommonAncestor ? "<p id=\"test5\">" : ""}This<span style=\"user-select: all\"> text should</span> be copied.${includeCommonAncestor ? "</p>" : ""}`,
+  'This text should be copied.',
+  'This text should be copied.',
+  'This<span style="user-select: text"> text should</span> be copied.',
+  'This text should be copied.',
+  'This<span style="user-select: text"> text should</span> be copied.',
+  'This<span style="user-select: all"> text should</span> be copied.',
 ];
 
 // expected results for clipboard text/plain

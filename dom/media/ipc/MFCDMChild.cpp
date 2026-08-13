@@ -199,6 +199,8 @@ already_AddRefed<PromiseType> MFCDMChild::InvokeAsync(
     MozPromiseHolder<PromiseType>& aPromise) {
   AssertSendable();
 
+  RefPtr<PromiseType> promise = aPromise.Ensure(aCallerName);
+
   if (mState == NS_OK) {
     // mRemotePromise is resolved, send on manager thread.
     mManagerThread->Dispatch(
@@ -214,7 +216,7 @@ already_AddRefed<PromiseType> MFCDMChild::InvokeAsync(
         });
   }
 
-  return aPromise.Ensure(aCallerName);
+  return promise.forget();
 }
 
 RefPtr<MFCDMChild::InitPromise> MFCDMChild::Init(

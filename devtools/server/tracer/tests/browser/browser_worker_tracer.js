@@ -12,7 +12,7 @@ const BASE_URL =
 const WORKER_URL = BASE_URL + "Worker.tracer.js";
 const WORKER_DEBUGGER_URL = BASE_URL + "WorkerDebugger.tracer.js";
 
-add_task(async function testTracingWorker() {
+async function doTest() {
   const onDbg = waitForWorkerDebugger(WORKER_URL);
 
   info("Instantiate a regular worker");
@@ -50,7 +50,22 @@ add_task(async function testTracingWorker() {
   is(lastFrame.formatedDisplayName, "λ bar");
   is(lastFrame.prefix, "testWorkerPrefix: ");
   ok(lastFrame.frame);
-});
+}
+
+// Run once per dom.worker.remoteDebugger.enabled value so the worker debugger
+// is exercised against both the local WorkerDebugger and the parent-process
+// RemoteWorkerDebugger (bug 1944240).
+for (const remoteDebuggerEnabled of [false, true]) {
+  add_task(async function testTracingWorker() {
+    await SpecialPowers.pushPrefEnv({
+      set: [["dom.worker.remoteDebugger.enabled", remoteDebuggerEnabled]],
+    });
+    info(
+      "Running with dom.worker.remoteDebugger.enabled=" + remoteDebuggerEnabled
+    );
+    await doTest();
+  });
+}
 
 function waitForWorkerDebugger(url) {
   return new Promise(function (resolve) {

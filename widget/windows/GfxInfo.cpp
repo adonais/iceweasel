@@ -4,33 +4,32 @@
 
 #include "GfxInfo.h"
 
-#include "gfxConfig.h"
+#include <batclass.h>  // for BATTERY_*
+#include <devguid.h>   // for GUID_DEVCLASS_BATTERY
+#include <intrin.h>
+#include <setupapi.h>  // for SetupDi*
+#include <windows.h>
+#include <winioctl.h>  // for IOCTL_*
+
 #include "GfxDriverInfo.h"
+#include "gfxConfig.h"
 #include "gfxWindowsPlatform.h"
-#include "jsapi.h"
 #include "js/PropertyAndElement.h"  // JS_SetElement, JS_SetProperty
+#include "jsapi.h"
+#include "mozilla/Components.h"
+#include "mozilla/PodOperations.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/SSE.h"
+#include "mozilla/WindowsProcessMitigations.h"
+#include "mozilla/gfx/DeviceManagerDx.h"
+#include "mozilla/gfx/Logging.h"
+#include "mozilla/widget/WinRegistry.h"
 #include "nsExceptionHandler.h"
 #include "nsPrintfCString.h"
 #include "nsUnicharUtils.h"
 #include "prenv.h"
 #include "prprf.h"
 #include "xpcpublic.h"
-
-#include "mozilla/Components.h"
-#include "mozilla/PodOperations.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/gfx/DeviceManagerDx.h"
-#include "mozilla/gfx/Logging.h"
-#include "mozilla/SSE.h"
-#include "mozilla/widget/WinRegistry.h"
-#include "mozilla/WindowsProcessMitigations.h"
-
-#include <intrin.h>
-#include <windows.h>
-#include <devguid.h>   // for GUID_DEVCLASS_BATTERY
-#include <setupapi.h>  // for SetupDi*
-#include <winioctl.h>  // for IOCTL_*
-#include <batclass.h>  // for BATTERY_*
 
 using namespace mozilla;
 using namespace mozilla::gfx;

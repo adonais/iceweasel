@@ -53,7 +53,7 @@ add_task(async function test_adopt_from_window() {
       "sidebar box from the new window should be a different object"
     );
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => !!newSidebarBox.getAttribute("sidebarcommand"),
       "Category has been set"
     );
@@ -64,7 +64,7 @@ add_task(async function test_adopt_from_window() {
     );
 
     // Check width of new window sidebar is that of opener window sidebar
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => !!newSidebarBox.style.width,
       "Width has been set"
     );
@@ -109,7 +109,7 @@ add_task(async function test_focus_history_from_adopted() {
   const { contentDocument } = SidebarController.browser;
   const historySidebar = contentDocument.querySelector("sidebar-history");
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !historySidebar.controller.isHistoryPending
   );
   await historySidebar.updateComplete;
@@ -129,7 +129,7 @@ add_task(async function test_focus_history_from_adopted() {
   let NewSidebarController = newWin.SidebarController;
   let newWinHistorySidebar;
   let newContentDocument;
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     newContentDocument = NewSidebarController.browser.contentDocument;
     newWinHistorySidebar = newContentDocument?.querySelector("sidebar-history");
     return (

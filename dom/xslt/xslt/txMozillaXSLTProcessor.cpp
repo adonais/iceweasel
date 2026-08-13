@@ -1263,7 +1263,8 @@ already_AddRefed<txMozillaXSLTProcessor> txMozillaXSLTProcessor::Constructor(
   nsISupports* supports = aGlobal.GetAsSupports();
   nsCOMPtr<nsPIDOMWindowInner> win = do_QueryInterface(supports);
   if (win && win->GetExtantDoc()) {
-    win->GetExtantDoc()->WarnOnceAbout(DeprecatedOperations::eXSLTDeprecated);
+    win->GetExtantDoc()->WarnOnceAndReportAbout(
+        DeprecatedOperations::eXSLTDeprecated);
   }
   RefPtr<txMozillaXSLTProcessor> processor =
       new txMozillaXSLTProcessor(supports);

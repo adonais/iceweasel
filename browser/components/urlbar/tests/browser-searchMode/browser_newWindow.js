@@ -26,7 +26,7 @@ async function doTest(exitSearchMode) {
   await UrlbarTestUtils.assertSearchMode(win, {
     engineName: SearchService.defaultEngine.name,
     isGeneralPurposeEngine: true,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     isPreview: false,
     entry: "shortcut",
   });

@@ -32,6 +32,7 @@ void EditorController::RegisterEditingCommands(
 
   NS_REGISTER_COMMAND(PasteCommand, "cmd_paste");
   NS_REGISTER_COMMAND(PasteTransferableCommand, "cmd_pasteTransferable");
+  NS_REGISTER_COMMAND(PasteNoFormattingCommand, "cmd_pasteNoFormatting");
 
   NS_REGISTER_COMMAND(SwitchTextDirectionCommand, "cmd_switchTextDirection");
 

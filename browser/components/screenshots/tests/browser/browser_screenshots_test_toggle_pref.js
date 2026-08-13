@@ -39,7 +39,7 @@ add_task(async function test_toggling_screenshots_pref() {
     },
     async browser => {
       let helper = new ScreenshotsHelper(browser);
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => ScreenshotsUtils.initialized,
         "The component is initialized"
       );

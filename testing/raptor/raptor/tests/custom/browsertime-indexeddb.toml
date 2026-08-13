@@ -4,7 +4,7 @@ alert_threshold = 2.0
 browser_cycles = 1
 custom_data = true
 gecko_profile_entries = 131072000 # 1GB
-gecko_profile_features = "js,stackwalk,cpu,memory"
+gecko_profile_features = "js,stackwalk,memory"
 gecko_profile_threads = "GeckoMain,DOM Worker,IndexedDB"
 lower_is_better = true
 measure = "cpuTime"
@@ -98,3 +98,22 @@ test_script = "indexeddb_write.js"
 ["getkeyrng"]
 support_class = "browsertime_pageload.py"
 test_script = "indexeddb_getkeyrange.js"
+
+# Meaning of the idbCur names: they measure iterating an IDBIndex cursor
+# over many rows sharing the same index value (bug 1899194), exercising the
+# continueQuery / continuePrimaryKeyQuery SQL paths.
+# 1. Next - plain cursor.continue(), "next" direction
+# 2. PKey - cursor.continuePrimaryKey()
+# 3. Prev - plain cursor.continue(), "prev" direction
+
+["idbCurNext"]
+browsertime_args = "--browsertime.iterations=50000 --browsertime.cursor_mode=continue"
+test_script = "indexeddb_cursor.js"
+
+["idbCurPKey"]
+browsertime_args = "--browsertime.iterations=50000 --browsertime.cursor_mode=continuePrimaryKey"
+test_script = "indexeddb_cursor.js"
+
+["idbCurPrev"]
+browsertime_args = "--browsertime.iterations=50000 --browsertime.cursor_mode=continue --browsertime.direction=prev"
+test_script = "indexeddb_cursor.js"

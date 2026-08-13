@@ -241,6 +241,12 @@ GeckoViewHistory::VisitURI(nsIWidget* aWidget, nsIURI* aURI,
     return NS_OK;
   }
 
+  // TODO (Bug 2053043): POST visits are currently filtered out until
+  // a decision is made on how to handle them in GeckoView.
+  if (aFlags & IHistory::SOURCE_IS_POST_RESPONSE) {
+    return NS_OK;
+  }
+
   if (XRE_IsContentProcess()) {
     // If we're in the content process, send the visit to the parent. The parent
     // will find the matching chrome window for the content process and tab,

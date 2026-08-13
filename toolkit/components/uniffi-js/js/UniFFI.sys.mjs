@@ -882,6 +882,14 @@ export class UniFFICallbackHandler {
         console.error(
           `UniFFI Callback interface error during xpcom-shutdown: ${ex}`
         );
+
+        if (Services.appinfo.crashReporterEnabled) {
+          Services.appinfo.annotateCrashReport(
+            "UniFFILeakedCallbackId",
+            this.#interfaceId
+          );
+        }
+
         // See bug 2034905 for filename / fileName shenanigans.
         Cc["@mozilla.org/xpcom/debug;1"]
           .getService(Ci.nsIDebug2)

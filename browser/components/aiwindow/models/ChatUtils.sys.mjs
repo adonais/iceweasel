@@ -328,6 +328,25 @@ export function resolveMentionUrls(text) {
 }
 
 /**
+ * Filters for stray characters that may be emitted in token.
+ * (e.g. "§url_token: UNKNOWN_1§,")
+ *
+ * @param {string} item
+ * @param {Map<string, string>} tokenToUrl
+ * @returns {string}
+ */
+function resolveUrlTokenItem(item, tokenToUrl) {
+  const matches = [...item.matchAll(/§url_token:\s*([A-Z0-9_]+_\d+)§/g)];
+  if (matches.length === 1) {
+    const url = tokenToUrl.get(matches[0][1]);
+    if (url) {
+      return url;
+    }
+  }
+  return expandUrlTokens(item, tokenToUrl);
+}
+
+/**
  * Expands URL tokens in tool call parameters in-place.
  * Handles both string values and arrays of strings.
  *
@@ -343,7 +362,7 @@ export function expandUrlTokensInToolParams(toolParams, tokenToUrl) {
       toolParams[key] = expandUrlTokens(value, tokenToUrl);
     } else if (Array.isArray(value)) {
       toolParams[key] = value.map(item =>
-        typeof item === "string" ? expandUrlTokens(item, tokenToUrl) : item
+        typeof item === "string" ? resolveUrlTokenItem(item, tokenToUrl) : item
       );
     }
   }
@@ -410,14 +429,24 @@ function constructUrlTokensFromMessageContent(content, conversation, role) {
  * @param {object[]} messages
  */
 export function replaceUrlsWithTokens(conversation, messages) {
-  // Construct all of the URL tokens from the message content.
+  // Construct all of the URL tokens from the message content and from any
+  // assistant tool call arguments.
   for (const msg of messages) {
     if (msg.role != "system" && typeof msg.content === "string") {
       constructUrlTokensFromMessageContent(msg.content, conversation, msg.role);
     }
+    if (Array.isArray(msg.tool_calls)) {
+      for (const toolCall of msg.tool_calls) {
+        const args = toolCall.function?.arguments;
+        if (typeof args === "string") {
+          constructUrlTokensFromMessageContent(args, conversation, "tool");
+        }
+      }
+    }
   }
 
-  // Replace full URLs with their short tokens in user and tool messages.
+  // Replace full URLs with their short tokens in user, tool, and assistant
+  // tool call messages.
   if (conversation.tokenToUrl.size) {
     // Sorting the entries ensures that http://example.com/v1 gets replaced before
     // http://example.com
@@ -425,10 +454,24 @@ export function replaceUrlsWithTokens(conversation, messages) {
       ([, a], [, b]) => b.length - a.length
     );
 
+    const tokenizeUrls = text => {
+      for (const [token, url] of sortedEntries) {
+        text = text.replaceAll(url, `§url_token: ${token}§`);
+      }
+      return text;
+    };
+
     for (const msg of messages) {
       if (msg.role != "system" && typeof msg.content === "string") {
-        for (const [token, url] of sortedEntries) {
-          msg.content = msg.content.replaceAll(url, `§url_token: ${token}§`);
+        msg.content = tokenizeUrls(msg.content);
+      }
+      if (Array.isArray(msg.tool_calls)) {
+        for (const toolCall of msg.tool_calls) {
+          if (typeof toolCall.function?.arguments === "string") {
+            toolCall.function.arguments = tokenizeUrls(
+              toolCall.function.arguments
+            );
+          }
         }
       }
     }

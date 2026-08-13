@@ -91,7 +91,7 @@ class AccountDeviceViewHolder(
                 )
                 is SyncShareOption.SendAll -> Triple(
                     context.getText(R.string.sync_send_to_all),
-                    iconsR.drawable.mozac_ic_select_all,
+                    iconsR.drawable.mozac_ic_select_all_24,
                     R.color.default_share_background,
                 )
                 is SyncShareOption.SingleDevice -> when (option.device.deviceType) {

@@ -155,6 +155,7 @@ const MESSAGE_TYPE_LIST = [
   "MENU_MESSAGE_TELEMETRY",
   "NEWTAB_MESSAGE_TELEMETRY",
   "SMART_WINDOW_PROMO_TELEMETRY",
+  "SIDEBAR_CHATBOT_PROMO_TELEMETRY",
   "ACTION_ONLY_TELEMETRY",
   "AS_ROUTER_TELEMETRY_USER_EVENT",
 
@@ -928,7 +929,7 @@ class ASRouterAdminInner extends (react__WEBPACK_IMPORTED_MODULE_1___default().P
     const impressions = this.state.messageImpressions[msg.id] ? this.state.messageImpressions[msg.id].length : 0;
     const isCollapsed = this.state.collapsedMessages.includes(msg.id);
     const isModified = this.state.modifiedMessages.includes(msg.id);
-    const aboutMessagePreviewSupported = ["infobar", "spotlight", "cfr_doorhanger", "feature_callout", "pb_newtab"].includes(msg.template);
+    const aboutMessagePreviewSupported = ["infobar", "spotlight", "cfr_doorhanger", "feature_callout", "pb_newtab", "sidebar_chatbot_promo"].includes(msg.template);
     let itemClassName = "message-item";
     if (isBlocked) {
       itemClassName += " blocked";

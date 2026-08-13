@@ -125,6 +125,7 @@ pub fn create_feature_prop_pref_map(
     )
 }
 
+#[uniffi::trait_interface]
 pub trait GeckoPrefHandler: Send + Sync {
     /// Used to obtain the prefs values from Gecko
     fn get_prefs_with_state(&self) -> MapOfFeatureIdToPropertyNameToGeckoPrefState;
@@ -161,12 +162,12 @@ impl GeckoPrefStoreState {
 
 pub struct GeckoPrefStore {
     // This is Arc<Box<_>> because of FFI
-    pub handler: Arc<Box<dyn GeckoPrefHandler>>,
+    pub handler: Arc<dyn GeckoPrefHandler>,
     pub state: Mutex<GeckoPrefStoreState>,
 }
 
 impl GeckoPrefStore {
-    pub fn new(handler: Arc<Box<dyn GeckoPrefHandler>>) -> Self {
+    pub fn new(handler: Arc<dyn GeckoPrefHandler>) -> Self {
         Self {
             handler,
             state: Mutex::new(GeckoPrefStoreState::default()),
@@ -221,6 +222,8 @@ impl GeckoPrefStore {
         enrollments: &[ExperimentEnrollment],
         // contains slug of enrolled branch
         experiments_by_slug: &HashMap<String, EnrolledExperiment>,
+        // when true, sets Gecko prefs using the handler. when false, only updates internal store state
+        update_gecko_prefs: bool,
     ) -> HashMap<String, HashSet<String>> {
         struct RecipeData<'a> {
             experiment: &'a Experiment,
@@ -325,17 +328,20 @@ impl GeckoPrefStore {
             }
         }
 
-        // obtain a list of all Gecko pref states for which there is an enrollment value
-        let mut set_state_list = Vec::new();
-        state.gecko_prefs_with_state.iter().for_each(|(_, props)| {
-            props.iter().for_each(|(_, pref_state)| {
-                if pref_state.enrollment_value.is_some() {
-                    set_state_list.push(pref_state.clone());
-                }
+        // setting with Gecko is used for true updates, sometimes the state just needs to be recalculated (e.g., registering the original value on the enrollment)
+        if update_gecko_prefs {
+            // obtain a list of all Gecko pref states for which there is an enrollment value
+            let mut set_state_list = Vec::new();
+            state.gecko_prefs_with_state.iter().for_each(|(_, props)| {
+                props.iter().for_each(|(_, pref_state)| {
+                    if pref_state.enrollment_value.is_some() {
+                        set_state_list.push(pref_state.clone());
+                    }
+                });
             });
-        });
-        // tell the handler to set the aforementioned Gecko prefs
-        self.handler.set_gecko_prefs_state(set_state_list);
+            // tell the handler to set the aforementioned Gecko prefs
+            self.handler.set_gecko_prefs_state(set_state_list);
+        }
 
         results
     }

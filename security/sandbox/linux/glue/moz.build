@@ -5,6 +5,10 @@
 UNIFIED_SOURCES += [
     "../SandboxLogging.cpp",
     "SandboxCrash.cpp",
+]
+
+# Conflicts with ipc/chromium headers in a unified build.
+SOURCES += [
     "SandboxPrefBridge.cpp",
 ]
 
@@ -27,6 +31,7 @@ LOCAL_INCLUDES += [
     "/security/sandbox/chromium-shim/base/allocator/partition_allocator/src",
     "/security/sandbox/chromium/base/allocator/partition_allocator/src",
     "/security/sandbox/linux",
+    "/tools/profiler",
 ]
 
 USE_LIBS += [

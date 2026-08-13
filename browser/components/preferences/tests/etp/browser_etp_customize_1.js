@@ -87,7 +87,7 @@ add_task(async function test_custom_allow_list_controls_match_old_behavior() {
   );
   synthesizeClick(baselineCheckbox);
   await baselinePrefChange;
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !convenienceCheckbox.parentDisabled,
     "Custom convenience checkbox enabled once baseline rechecked"
   );

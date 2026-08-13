@@ -5,20 +5,20 @@
 
 #include "SecretDecoderRing.h"
 
+#include "SSLTokensCache.h"
 #include "ScopedNSSTypes.h"
 #include "mozilla/Base64.h"
 #include "mozilla/Casting.h"
+#include "mozilla/ErrorResult.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_security.h"
-#include "mozilla/ErrorResult.h"
 #include "mozilla/dom/Promise.h"
 #include "nsCOMPtr.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIObserverService.h"
 #include "nsNSSComponent.h"
-#include "nsNSSHelper.h"
 #include "nsNetCID.h"
 #include "pk11func.h"
 #include "pk11sdr.h"
@@ -115,8 +115,7 @@ nsresult SecretDecoderRing::Encrypt(CK_MECHANISM_TYPE type,
   }
 
   /* Force authentication */
-  nsCOMPtr<nsIInterfaceRequestor> ctx = new PipUIContext();
-  if (PK11_Authenticate(slot.get(), true, ctx) != SECSuccess) {
+  if (PK11_Authenticate(slot.get(), true, nullptr) != SECSuccess) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
@@ -129,7 +128,7 @@ nsresult SecretDecoderRing::Encrypt(CK_MECHANISM_TYPE type,
   request.len = data.Length();
   ScopedAutoSECItem reply;
   if (PK11SDR_EncryptWithMechanism(slot.get(), &keyid, type, &request, &reply,
-                                   ctx) != SECSuccess) {
+                                   nullptr) != SECSuccess) {
     return NS_ERROR_FAILURE;
   }
 
@@ -146,8 +145,7 @@ nsresult SecretDecoderRing::Decrypt(const nsACString& data,
   }
 
   /* Force authentication */
-  nsCOMPtr<nsIInterfaceRequestor> ctx = new PipUIContext();
-  if (PK11_Authenticate(slot.get(), true, ctx) != SECSuccess) {
+  if (PK11_Authenticate(slot.get(), true, nullptr) != SECSuccess) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
@@ -155,7 +153,7 @@ nsresult SecretDecoderRing::Decrypt(const nsACString& data,
   request.data = BitwiseCast<unsigned char*, const char*>(data.BeginReading());
   request.len = data.Length();
   ScopedAutoSECItem reply;
-  if (PK11SDR_Decrypt(&request, &reply, ctx) != SECSuccess) {
+  if (PK11SDR_Decrypt(&request, &reply, nullptr) != SECSuccess) {
     return NS_ERROR_FAILURE;
   }
 
@@ -313,11 +311,8 @@ SecretDecoderRing::Login(const nsACString& password, bool* success) {
 NS_IMETHODIMP
 SecretDecoderRing::Logout() {
   PK11_LogoutAll();
-  nsCOMPtr<nsINSSComponent> nssComponent(do_GetService(NS_NSSCOMPONENT_CID));
-  if (!nssComponent) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-  return nssComponent->ClearSSLExternalAndInternalSessionCache();
+  mozilla::net::SSLTokensCache::ClearSessionCacheAndTokens();
+  return NS_OK;
 }
 
 NS_IMETHODIMP

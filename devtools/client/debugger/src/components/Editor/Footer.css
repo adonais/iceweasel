@@ -126,4 +126,5 @@
 .source-footer .cursor-position {
   padding: 5px;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }

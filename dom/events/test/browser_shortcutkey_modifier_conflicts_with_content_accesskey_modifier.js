@@ -219,7 +219,7 @@ add_task(async function ctrl_alt() {
 
     switch (expected_focus) {
       case "browser_urlbar": {
-        await BrowserTestUtils.waitForCondition(
+        await TestUtils.waitForCondition(
           () => document.activeElement == gURLBar.inputField
         );
         break;

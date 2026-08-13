@@ -42,12 +42,14 @@ if CONFIG["MOZ_WMF_CDM"]:
         "MFCDMSession.h",
         "MFContentProtectionManager.h",
         "MFPMPHostWrapper.h",
+        "MFProtectedPathReadinessMonitor.h",
     ]
     UNIFIED_SOURCES += [
         "MFCDMProxy.cpp",
         "MFCDMSession.cpp",
         "MFContentProtectionManager.cpp",
         "MFPMPHostWrapper.cpp",
+        "MFProtectedPathReadinessMonitor.cpp",
     ]
 
 UNIFIED_SOURCES += [

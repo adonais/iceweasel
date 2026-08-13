@@ -4,166 +4,607 @@
 "use strict";
 
 /**
- * Run through the test cases for how auto translation and offering translations works
- * with a variety of conditions. The
+ * The decision table for Translations offer behavior after resolving the HTML lang
+ * attribute and the identified page language.
  *
- * Keep this table up to date with TranslationParent's maybeOfferTranslation and
- * shouldAutoTranslate methods. When an entry is blank "-" it has no affect on the
- * outcome.
+ * The table below expands the resulting outcomes.
+ * Keep this in sync with TranslationsParent's offer-outcome logic.
  *
- * ┌────┬──────────┬───────────┬───────────────────┬───────────────────┬─────────────────────────────┐
- * │ #  │ Has HTML │ Detection │ Detection Content │ Always Translate  │ Outcome                     │
- * │    │ Tag      │ Agrees    │ > 200 code units  │ List Contains Tag │                             │
- * ├────┼──────────┼───────────┼───────────────────┼───────────────────┼─────────────────────────────┤
- * │  1 │ TRUE     │ TRUE      │ -                 │ TRUE              │ Auto Translate Matching Tag │
- * │  2 │ TRUE     │ TRUE      │ -                 │ FALSE             │ Offer Matching Tag          │
- * │  3 │ TRUE     │ TRUE      │ -                 │ TRUE              │ Auto Translate Matching Tag │
- * │  4 │ TRUE     │ TRUE      │ -                 │ FALSE             │ Offer Matching Tag          │
- * │  5 │ TRUE     │ FALSE     │ -                 │ TRUE              │ Show Button Only            │
- * │  6 │ TRUE     │ FALSE     │ -                 │ FALSE             │ Show Button Only            │
- * │  7 │ TRUE     │ FALSE     │ -                 │ TRUE              │ Show Button Only            │
- * │  8 │ TRUE     │ FALSE     │ -                 │ FALSE             │ Show Button Only            │
- * │  9 │ FALSE    │ -         │ TRUE              │ TRUE              │ Auto Translate Detected Tag │
- * │ 10 │ FALSE    │ -         │ TRUE              │ FALSE             │ Offer Detected Tag          │
- * │ 11 │ FALSE    │ -         │ FALSE             │ TRUE              │ Show Button Only            │
- * │ 12 │ FALSE    │ -         │ FALSE             │ FALSE             │ Show Button Only            │
- * └────┴──────────┴───────────┴───────────────────┴───────────────────┴─────────────────────────────┘
+ * Status values:
+ * - SUPPORTED:
+ *     The candidate maps to a source language that Translations can use.
+ *
+ * - UNSUPPORTED:
+ *     The candidate does not map to a supported source language.
+ *
+ * - USER:
+ *     The candidate matches a user's web-content language. This may help us determine
+ *     which language tag we want to use if there is a discrepancy between the HTML
+ *     language tag and the language tag that was identified from the page's sample text.
+ *
+ * - NONE:
+ *     There is no usable HTML language candidate.
+ *
+ * Actions:
+ * - ALLOW:
+ *     Either show the Translations panel, or auto-translate if the user's settings say to.
+ *
+ * - BUTTON:
+ *     Show only the translations button in the URL bar.
+ *     This is used when we have a signal that the page may be translatable, but not enough
+ *     confidence in the chosen source language to justify taking an automatic action.
+ *
+ * - HIDE:
+ *     Hide the translations button.
+ *
+ * Source values:
+ *
+ * - HTML:
+ *     Use the HTML lang tag as the source language.
+ *
+ * - IDENTIFIED:
+ *     Use the language identified from the sample text as the source language.
+ *
+ * - -:
+ *     All values produce the same outcome.
+ *
+ * ID Agrees values:
+ * - TRUE:
+ *     The HTML and identified candidates match after language-tag normalization.
+ *
+ * - FALSE:
+ *     The HTML and identified candidates do not match after language-tag normalization.
+ *
+ * - -:
+ *     All values produce the same outcome.
+ *
+ * Confidence values:
+ * - HIGH:
+ *     The extracted text sample was long enough to trust the language identification.
+ *
+ * - LOW:
+ *     The extracted text sample was too short to fully trust the language identification.
+ *
+ * - -:
+ *     All values produce the same outcome.
+ *
+ * ┌─────┬─────────────┬─────────────┬───────────┬────────────┬────────┬────────────┐
+ * │ #   │ HTML Status │ ID Status   │ ID Agrees │ Confidence │ Action │ Source     │
+ * ├─────┼─────────────┼─────────────┼───────────┼────────────┼────────┼────────────┤
+ * │ 01  │ SUPPORTED   │ SUPPORTED   │ TRUE      │ -          │ ALLOW  │ HTML       │
+ * │ 02  │ USER        │ USER        │ TRUE      │ -          │ HIDE   │ -          │
+ * │ 03  │ UNSUPPORTED │ UNSUPPORTED │ TRUE      │ -          │ HIDE   │ -          │
+ * │ 04  │ SUPPORTED   │ SUPPORTED   │ FALSE     │ HIGH       │ ALLOW  │ IDENTIFIED │
+ * │ 05  │ USER        │ SUPPORTED   │ FALSE     │ HIGH       │ ALLOW  │ IDENTIFIED │
+ * │ 06  │ USER        │ UNSUPPORTED │ FALSE     │ HIGH       │ HIDE   │ IDENTIFIED │
+ * │ 07  │ SUPPORTED   │ USER        │ FALSE     │ HIGH       │ ALLOW  │ HTML       │
+ * │ 08  │ UNSUPPORTED │ USER        │ FALSE     │ HIGH       │ HIDE   │ IDENTIFIED │
+ * │ 09  │ USER        │ USER        │ FALSE     │ HIGH       │ HIDE   │ IDENTIFIED │
+ * │ 10  │ SUPPORTED   │ UNSUPPORTED │ FALSE     │ HIGH       │ BUTTON │ HTML       │
+ * │ 11  │ UNSUPPORTED │ SUPPORTED   │ FALSE     │ HIGH       │ ALLOW  │ IDENTIFIED │
+ * │ 12  │ UNSUPPORTED │ UNSUPPORTED │ FALSE     │ HIGH       │ HIDE   │ IDENTIFIED │
+ * │ 13  │ SUPPORTED   │ -           │ FALSE     │ LOW        │ ALLOW  │ HTML       │
+ * │ 14  │ USER        │ SUPPORTED   │ FALSE     │ LOW        │ BUTTON │ IDENTIFIED │
+ * │ 15  │ USER        │ UNSUPPORTED │ FALSE     │ LOW        │ HIDE   │ HTML       │
+ * │ 16  │ USER        │ USER        │ FALSE     │ LOW        │ HIDE   │ HTML       │
+ * │ 17  │ UNSUPPORTED │ SUPPORTED   │ FALSE     │ LOW        │ BUTTON │ IDENTIFIED │
+ * │ 18  │ UNSUPPORTED │ UNSUPPORTED │ FALSE     │ LOW        │ HIDE   │ HTML       │
+ * │ 19  │ UNSUPPORTED │ USER        │ FALSE     │ LOW        │ HIDE   │ HTML       │
+ * │ 20  │ NONE        │ SUPPORTED   │ -         │ HIGH       │ ALLOW  │ IDENTIFIED │
+ * │ 21  │ NONE        │ USER        │ -         │ HIGH       │ HIDE   │ IDENTIFIED │
+ * │ 22  │ NONE        │ UNSUPPORTED │ -         │ HIGH       │ HIDE   │ IDENTIFIED │
+ * │ 23  │ NONE        │ SUPPORTED   │ -         │ LOW        │ BUTTON │ IDENTIFIED │
+ * │ 24  │ NONE        │ USER        │ -         │ LOW        │ HIDE   │ IDENTIFIED │
+ * │ 25  │ NONE        │ UNSUPPORTED │ -         │ LOW        │ HIDE   │ IDENTIFIED │
+ * └─────┴─────────────┴─────────────┴───────────┴────────────┴────────┴────────────┘
  */
 
 /**
- * Request 2x longer timeout for this test.
- * There are lot of test cases in this file, but it doesn't make sense to split them up.
+ * Request 5x longer timeout for this test.
+ * There are a lot of test cases in this file, but it doesn't make sense to split them up,
+ * since this file serves as comprehensive, testable documentation of the expected behavior.
  */
-requestLongerTimeout(2);
+requestLongerTimeout(5);
 
 /**
  * Definitions for the test cases.
  *
  * @typedef {object} Case
- * @property {string} page - The page to load.
+ * @property {string} [testPage] - The page to load.
+ * @property {string} [testHtml] - The HTML document to load.
  * @property {string} message - A message for the primary assertion.
+ * @property {Array<{fromLang: string, toLang: string}>} [languagePairs] - The supported language pairs.
+ * @property {string[]} [webLanguages] - The user's web content languages.
  * @property {string} [alwaysTranslateLanguages] - Set the pref: browser.translations.alwaysTranslateLanguages
- * @property {string} [neverTranslateLanguages] - Set the pref: browser.translations.alwaysTranslateLanguages
+ * @property {string} [neverTranslateLanguages] - Set the pref: browser.translations.neverTranslateLanguages
+ * @property {string} [manualPanelSourceLanguage] - The expected docLangTag after opening the panel manually.
+ * @property {boolean} [skipPageContentAssertion] - Skip content assertions for synthetic pages.
  *
  * Outcomes, use only one:
  * @property {string} [translatePage] - The page is expected to be translated.
  * @property {string} [offerTranslation] - The page offers a translation in this language.
  * @property {boolean} [buttonShown] - The button was shown to offer a translation.
+ * @property {boolean} [buttonHidden] - The button was not shown.
  */
+
+const LANGUAGE_PAIRS_WITHOUT_SPANISH_OR_FRENCH = LANGUAGE_PAIRS.filter(
+  ({ fromLang, toLang }) =>
+    !["es", "fr"].includes(fromLang) && !["es", "fr"].includes(toLang)
+);
+
+const LANGUAGE_PAIRS_WITHOUT_FRENCH = LANGUAGE_PAIRS.filter(
+  ({ fromLang, toLang }) => fromLang !== "fr" && toLang !== "fr"
+);
+
+const html = String.raw;
+
+function spanishContentWithLangHtml(langTag) {
+  return html`
+    <!DOCTYPE html>
+    <html lang=${langTag}>
+      <head>
+        <meta charset="utf-8" />
+        <title>Translations Test</title>
+        <style>
+          div {
+            margin: 10px auto;
+            width: 300px;
+          }
+          p {
+            margin: 47px 0;
+            font-size: 21px;
+            line-height: 2;
+          }
+        </style>
+      </head>
+      <body>
+        <div>
+          <header lang="en">
+            The following is an excerpt from Don Quijote de la Mancha, which is
+            in the public domain
+          </header>
+          <h1 title="Este es el título del encabezado de página">
+            Don Quijote de La Mancha
+          </h1>
+          <h2>Capítulo VIII.</h2>
+          <p>
+            Del buen suceso que el valeroso don Quijote tuvo en la espantable y
+            jamás imaginada aventura de los molinos de viento, con otros sucesos
+            dignos de felice recordación
+          </p>
+          <p>
+            En esto, descubrieron treinta o cuarenta molinos de viento que hay
+            en aquel campo; y, así como don Quijote los vio, dijo a su escudero:
+          </p>
+          <p>
+            — La ventura va guiando nuestras cosas mejor de lo que acertáramos a
+            desear, porque ves allí, amigo Sancho Panza, donde se descubren
+            treinta, o pocos más, desaforados gigantes, con quien pienso hacer
+            batalla y quitarles a todos las vidas, con cuyos despojos
+            comenzaremos a enriquecer; que ésta es buena guerra, y es gran
+            servicio de Dios quitar tan mala simiente de sobre la faz de la
+            tierra.
+          </p>
+          <p>— ¿Qué gigantes? —dijo Sancho Panza.</p>
+          <p>
+            — Aquellos que allí ves —respondió su amo— de los brazos largos, que
+            los suelen tener algunos de casi dos leguas.
+          </p>
+          <p>
+            — Mire vuestra merced —respondió Sancho— que aquellos que allí se
+            parecen no son gigantes, sino molinos de viento, y lo que en ellos
+            parecen brazos son las aspas, que, volteadas del viento, hacen andar
+            la piedra del molino.
+          </p>
+          <p>
+            — Bien parece —respondió don Quijote— que no estás cursado en esto
+            de las aventuras: ellos son gigantes; y si tienes miedo, quítate de
+            ahí, y ponte en oración en el espacio que yo voy a entrar con ellos
+            en fiera y desigual batalla.
+          </p>
+          <p>
+            Y, diciendo esto, dio de espuelas a su caballo Rocinante, sin
+            atender a las voces que su escudero Sancho le daba, advirtiéndole
+            que, sin duda alguna, eran molinos de viento, y no gigantes,
+            aquellos que iba a acometer. Pero él iba tan puesto en que eran
+            gigantes, que ni oía las voces de su escudero Sancho ni echaba de
+            ver, aunque estaba ya bien cerca, lo que eran; antes, iba diciendo
+            en voces altas:
+          </p>
+          <p>
+            — Non fuyades, cobardes y viles criaturas, que un solo caballero es
+            el que os acomete.
+          </p>
+          <p>
+            Levantóse en esto un poco de viento y las grandes aspas comenzaron a
+            moverse, lo cual visto por don Quijote, dijo:
+          </p>
+          <p title="Este es el título del último párrafo">
+            — Pues, aunque mováis más brazos que los del gigante Briareo, me lo
+            habéis de pagar.
+          </p>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+function shortSpanishContentWithLangHtml(langTag) {
+  return html`
+    <!DOCTYPE html>
+    <html lang=${langTag}>
+      <head>
+        <meta charset="utf-8" />
+        <title>Translations Test</title>
+        <style>
+          div {
+            margin: 10px auto;
+            width: 300px;
+          }
+          p {
+            margin: 47px 0;
+            font-size: 21px;
+            line-height: 2;
+          }
+        </style>
+      </head>
+      <body>
+        <div>
+          <h1 title="Este es el título del encabezado de página">
+            Don Quijote de La Mancha
+          </h1>
+          <p title="Este es el título del último párrafo">
+            — Pues, aunque mováis más brazos que los del gigante Briareo, me lo
+            habéis de pagar.
+          </p>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+function englishContentWithLangHtml(langTag) {
+  const englishParagraphs = html`
+    <p>
+      The little girl, seeing she had lost one of her pretty shoes, grew angry,
+      and said to the Witch, "Give me back my shoe!"
+    </p>
+    <p>
+      "I will not," retorted the Witch, "for it is now my shoe, and not yours."
+    </p>
+    <p>
+      "You are a wicked creature!" cried Dorothy. "You have no right to take my
+      shoe from me."
+    </p>
+  `;
+
+  return html`
+    <!DOCTYPE html>
+    <html lang=${langTag}>
+      <head>
+        <meta charset="utf-8" />
+        <title>Translations Test</title>
+      </head>
+      <body>
+        <h1>The Wonderful Wizard of Oz</h1>
+        ${englishParagraphs.repeat(8)}
+      </body>
+    </html>
+  `;
+}
 
 /**
  * @type {Case[]}
  */
 const cases = [
-  // HTML tag and (confident) detection agree.
+  // HTML tag and (confident) identification agree.
   {
-    // Case 1 - Spanish is set to auto translate.
-    page: SPANISH_PAGE_URL,
+    // Table row 01 - Auto-translate path.
+    testPage: SPANISH_PAGE_URL,
     alwaysTranslateLanguages: "es",
     translatePage: "es",
     message:
-      "Auto-translate since the declared language and identified language agree",
+      "Auto-translate since the HTML language and identified language agree",
   },
   {
-    // Case 2 - Nothing is set to auto translate.
-    page: SPANISH_PAGE_URL,
+    // Table row 01 - Offer path.
+    testPage: SPANISH_PAGE_URL,
     offerTranslation: "es",
     message:
-      "The declared language and identified language agree, offer a translation",
+      "The HTML language and identified language agree, offer a translation",
   },
-  // HTML tag and (low-confidence) detection agree.
+  // HTML tag and (low-confidence) identification agree.
   {
-    // Case 3 - Spanish is set to auto translate.
-    page: SPANISH_PAGE_SHORT_URL,
+    // Table row 01 - Auto-translate path, with low-confidence identification.
+    testPage: SPANISH_PAGE_SHORT_URL,
     alwaysTranslateLanguages: "es",
     translatePage: "es",
     message:
-      "The declared language and identified language agree, offer a translation even " +
+      "The HTML language and identified language agree, offer a translation even " +
       "though the page has a short amount of content.",
   },
   {
-    // Case 4 - Nothing is set to auto translate.
-    page: SPANISH_PAGE_SHORT_URL,
+    // Table row 01 - Offer path, with low-confidence identification.
+    testPage: SPANISH_PAGE_SHORT_URL,
     offerTranslation: "es",
     message:
-      "The declared language and identified language agree, offer a translation",
+      "The HTML language and identified language agree, offer a translation",
   },
-  // HTML tag and (confident) detection disagree.
   {
-    // Case 5 - Spanish is set to auto translate.
-    page: SPANISH_PAGE_MISMATCH_URL,
+    // Table row 01 - Offer path, with canonicalized HTML language and low-confidence identification.
+    testHtml: shortSpanishContentWithLangHtml("spa"),
+    offerTranslation: "es",
+    message:
+      "The HTML language is canonicalized to a supported language, and the low-confidence identified language agrees. Offer a translation.",
+  },
+  {
+    // Table row 02.
+    testPage: SPANISH_PAGE_URL,
+    webLanguages: ["es"],
+    buttonHidden: true,
+    manualPanelSourceLanguage: "es",
+    message:
+      "The HTML and identified language agree, but they match a user language. Hide the button.",
+  },
+  {
+    // Table row 03.
+    testPage: SPANISH_PAGE_URL,
+    languagePairs: LANGUAGE_PAIRS_WITHOUT_SPANISH,
+    buttonHidden: true,
+    manualPanelSourceLanguage: "es",
+    message:
+      "The HTML and identified language agree, but the language is unsupported. Hide the button.",
+  },
+  // HTML tag and (confident) identification disagree.
+  {
+    // Table row 04 - Auto-translate path.
+    testPage: SPANISH_PAGE_MISMATCH_URL,
+    alwaysTranslateLanguages: "es",
+    translatePage: "es",
+    message:
+      "The HTML and (confident) identified language disagree. Trust the identified language and auto-translate.",
+  },
+  {
+    // Table row 04 - Offer path.
+    testPage: SPANISH_PAGE_MISMATCH_URL,
+    offerTranslation: "es",
+    message:
+      "The HTML and (confident) identified language disagree. Trust the identified language and offer.",
+  },
+  {
+    // Table row 05.
+    testHtml: spanishContentWithLangHtml("en"),
+    offerTranslation: "es",
+    message:
+      "The HTML language matches the user language, but the confident identified language disagrees. Trust the identified language and offer.",
+  },
+  {
+    // Table row 06.
+    testHtml: spanishContentWithLangHtml("en"),
+    languagePairs: LANGUAGE_PAIRS_WITHOUT_SPANISH,
+    buttonHidden: true,
+    manualPanelSourceLanguage: "es",
+    message:
+      "The HTML language matches the user language, and the confident identified language is unsupported. Hide the button.",
+  },
+  {
+    // Table row 07.
+    testHtml: englishContentWithLangHtml("es"),
+    offerTranslation: "es",
+    skipPageContentAssertion: true,
+    message:
+      "The confident identified language matches a user-preferred language, so trust the supported HTML language and offer.",
+  },
+  {
+    // Table row 08.
+    testHtml: englishContentWithLangHtml("de"),
+    buttonHidden: true,
+    manualPanelSourceLanguage: "en",
+    skipPageContentAssertion: true,
+    message:
+      "The confident identified language matches a user-preferred language, and the HTML language is unsupported. Hide the button.",
+  },
+  {
+    // Table row 09.
+    testPage: SPANISH_PAGE_MISMATCH_URL,
+    webLanguages: ["fr", "es"],
+    buttonHidden: true,
+    manualPanelSourceLanguage: "es",
+    message:
+      "The HTML and confident identified languages are both user-preferred languages but disagree. Hide the button.",
+  },
+  {
+    // Table row 10.
+    testPage: SPANISH_PAGE_MISMATCH_URL,
+    languagePairs: LANGUAGE_PAIRS_WITHOUT_SPANISH,
+    buttonShown: true,
+    manualPanelSourceLanguage: "fr",
+    message:
+      "The HTML and (confident) identified language disagree, and only the HTML language is supported. Only show the button.",
+  },
+  {
+    // Table row 11.
+    testPage: SPANISH_PAGE_MISMATCH_URL,
+    languagePairs: LANGUAGE_PAIRS_WITHOUT_FRENCH,
+    offerTranslation: "es",
+    message:
+      "The HTML and (confident) identified language disagree, and only the identified language is supported. Trust the identified language and offer.",
+  },
+  {
+    // Table row 12.
+    testPage: SPANISH_PAGE_MISMATCH_URL,
+    languagePairs: LANGUAGE_PAIRS_WITHOUT_SPANISH_OR_FRENCH,
+    buttonHidden: true,
+    manualPanelSourceLanguage: "es",
+    message:
+      "The HTML and (confident) identified language disagree, and neither language is supported. Hide the button.",
+  },
+  // HTML tag and (low-confidence) identification disagree.
+  {
+    // Table row 13 - Auto-translate path.
+    testPage: SPANISH_PAGE_MISMATCH_SHORT_URL,
+    alwaysTranslateLanguages: "fr",
+    translatePage: "fr",
+    message:
+      "The HTML and (low-confidence) identified language disagree. Trust the HTML language and auto-translate.",
+  },
+  {
+    // Table row 13 - Always-translate setting is for the identified language, not the HTML language.
+    testPage: SPANISH_PAGE_MISMATCH_SHORT_URL,
+    alwaysTranslateLanguages: "es",
+    offerTranslation: "fr",
+    message:
+      "The HTML and (low-confidence) identified language disagree. Trust the HTML language and offer.",
+  },
+  {
+    // Table row 13 - Offer path.
+    testPage: SPANISH_PAGE_MISMATCH_SHORT_URL,
+    offerTranslation: "fr",
+    message:
+      "The HTML and (low-confidence) identified language disagree. Trust the HTML language and offer.",
+  },
+  {
+    // Table row 14.
+    testHtml: shortSpanishContentWithLangHtml("en"),
+    buttonShown: true,
+    manualPanelSourceLanguage: "es",
+    message:
+      "The HTML language matches the user language, but the supported identified language disagrees with low confidence. Only show the button.",
+  },
+  {
+    // Table row 15.
+    testHtml: shortSpanishContentWithLangHtml("en"),
+    languagePairs: LANGUAGE_PAIRS_WITHOUT_SPANISH,
+    buttonHidden: true,
+    manualPanelSourceLanguage: "en",
+    message:
+      "The HTML language matches the user language, and the low-confidence identified language is unsupported. Hide the button.",
+  },
+  {
+    // Table row 16.
+    testPage: SPANISH_PAGE_MISMATCH_SHORT_URL,
+    webLanguages: ["fr", "es"],
+    buttonHidden: true,
+    manualPanelSourceLanguage: "fr",
+    message:
+      "The HTML and low-confidence identified languages are both user-preferred languages but disagree. Hide the button.",
+  },
+  {
+    // Table row 17.
+    testPage: SPANISH_PAGE_MISMATCH_SHORT_URL,
+    languagePairs: LANGUAGE_PAIRS_WITHOUT_FRENCH,
     alwaysTranslateLanguages: "es",
     buttonShown: true,
+    manualPanelSourceLanguage: "es",
     message:
-      "The declared and (confident) detected language disagree. Only show the button, do not auto-translate.",
+      "The HTML language is unsupported, and the supported identified language is low-confidence. Only show the button.",
   },
   {
-    // Case 6 - Nothing is set to auto translate.
-    page: SPANISH_PAGE_MISMATCH_URL,
-    buttonShown: true,
+    // Table row 18.
+    testPage: SPANISH_PAGE_MISMATCH_SHORT_URL,
+    languagePairs: LANGUAGE_PAIRS_WITHOUT_SPANISH_OR_FRENCH,
+    buttonHidden: true,
+    manualPanelSourceLanguage: "fr",
     message:
-      "The declared and (confident) detected language disagree. Only show the button, do not offer.",
-  },
-  // HTML tag and (low-confidence) detection disagree.
-  {
-    // Case 7 - Spanish is set to auto translate.
-    page: SPANISH_PAGE_MISMATCH_SHORT_URL,
-    alwaysTranslateLanguages: "es",
-    buttonShown: true,
-    message:
-      "The declared and (low-confidence) detected language disagree. Only show the button, do not auto-translate.",
+      "The HTML language is unsupported, and the low-confidence identified language is unsupported. Hide the button.",
   },
   {
-    // Case 8 - Nothing is set to auto translate.
-    page: SPANISH_PAGE_MISMATCH_SHORT_URL,
-    buttonShown: true,
+    // Table row 19.
+    testHtml: shortSpanishContentWithLangHtml("de"),
+    webLanguages: ["es"],
+    buttonHidden: true,
+    manualPanelSourceLanguage: "de",
     message:
-      "The declared and (low-confidence) detected language disagree. Only show the button, do not offer.",
+      "The HTML language is unsupported, and the low-confidence identified language matches a user language. Hide the button.",
   },
-  // Undeclared language and (high-confidence) detection.
+  // No HTML language tag and (high-confidence) identification.
   {
-    // Case 9 - Spanish is set to auto translate.
-    page: SPANISH_PAGE_UNDECLARED_URL,
+    // Table row 20 - Auto-translate path.
+    testPage: SPANISH_PAGE_UNDECLARED_URL,
     alwaysTranslateLanguages: "es,fr",
     translatePage: "es",
     message:
-      "There is no declared language, but there is high confidence in the detected language, so go ahead and auto-translate.",
+      "There is no HTML language tag, but there is high confidence in the identified language, so go ahead and auto-translate.",
   },
   {
-    // Case 10 - Nothing is set to auto translate.
-    page: SPANISH_PAGE_UNDECLARED_URL,
+    // Table row 20 - Offer path.
+    testPage: SPANISH_PAGE_UNDECLARED_URL,
     offerTranslation: "es",
     message:
-      "There is no declared language, but there is high confidence in the detected language, so go ahead and offer.",
+      "There is no HTML language tag, but there is high confidence in the identified language, so go ahead and offer.",
   },
-  // Undeclared language and (low-confidence) detection.
   {
-    // Case 11 - Spanish is set to auto translate.
-    page: SPANISH_PAGE_MISMATCH_SHORT_URL,
+    // Table row 21.
+    testPage: SPANISH_PAGE_UNDECLARED_URL,
+    webLanguages: ["es"],
+    buttonHidden: true,
+    manualPanelSourceLanguage: "es",
+    message:
+      "There is no HTML language tag, and the confident identified language matches a user language. Hide the button.",
+  },
+  {
+    // Table row 22.
+    testPage: SPANISH_PAGE_UNDECLARED_URL,
+    languagePairs: LANGUAGE_PAIRS_WITHOUT_SPANISH,
+    buttonHidden: true,
+    manualPanelSourceLanguage: "es",
+    message:
+      "There is no HTML language tag, and the confident identified language is unsupported. Hide the button.",
+  },
+  // No HTML language tag and (low-confidence) identification.
+  {
+    // Table row 23 - Always-translate setting should not auto-translate.
+    testPage: SPANISH_PAGE_UNDECLARED_SHORT_URL,
     alwaysTranslateLanguages: "es",
     buttonShown: true,
+    manualPanelSourceLanguage: "es",
     message:
-      "A language was detected, but it was so low confidence only show the button.",
+      "A language was identified, but it had such low confidence that only the button should be shown.",
   },
   {
-    // Case 12 - Nothing is set to auto translate.
-    page: SPANISH_PAGE_UNDECLARED_SHORT_URL,
+    // Table row 23 - Offer path should not auto-offer.
+    testPage: SPANISH_PAGE_UNDECLARED_SHORT_URL,
     buttonShown: true,
+    manualPanelSourceLanguage: "es",
     message:
-      "A language was detected, but it was so low confidence only show the button.",
+      "A language was identified, but it had such low confidence that only the button should be shown.",
+  },
+  {
+    // Table row 24.
+    testPage: SPANISH_PAGE_UNDECLARED_SHORT_URL,
+    webLanguages: ["es"],
+    buttonHidden: true,
+    manualPanelSourceLanguage: "es",
+    message:
+      "There is no HTML language tag, and the low-confidence identified language matches a user language. Hide the button.",
+  },
+  {
+    // Table row 25.
+    testPage: SPANISH_PAGE_UNDECLARED_SHORT_URL,
+    languagePairs: LANGUAGE_PAIRS_WITHOUT_SPANISH,
+    buttonHidden: true,
+    manualPanelSourceLanguage: "es",
+    message:
+      "There is no HTML language tag, and the low-confidence identified language is unsupported. Hide the button.",
   },
 ];
 
 add_task(async function test_language_identification_behavior() {
   for (const [caseNo, testCase] of Object.entries(cases)) {
     const {
-      page,
+      testPage,
+      testHtml,
       message,
+      languagePairs,
+      webLanguages,
       alwaysTranslateLanguages,
       neverTranslateLanguages,
       translatePage,
       offerTranslation,
       buttonShown,
+      buttonHidden,
+      manualPanelSourceLanguage,
+      skipPageContentAssertion,
     } = testCase;
     info(`Testing Case ${Number(caseNo) + 1}`);
     TranslationsParent.testAutomaticPopup = true;
@@ -184,125 +625,160 @@ add_task(async function test_language_identification_behavior() {
     }
     panel.addEventListener("popupshown", handlePopupShown);
 
-    const { cleanup, runInPage, win } = await loadTestPage({
-      page,
-      languagePairs: LANGUAGE_PAIRS,
-      autoDownloadFromRemoteSettings: true,
-      contentEagerMode: true,
-      prefs: [
-        [
-          "browser.translations.alwaysTranslateLanguages",
-          alwaysTranslateLanguages,
+    let pageState;
+    try {
+      pageState = await loadTestPage({
+        page: testPage,
+        html: testHtml,
+        languagePairs: languagePairs ?? LANGUAGE_PAIRS,
+        webLanguages,
+        autoDownloadFromRemoteSettings: true,
+        contentEagerMode: true,
+        prefs: [
+          [
+            "browser.translations.alwaysTranslateLanguages",
+            alwaysTranslateLanguages,
+          ],
+          [
+            "browser.translations.neverTranslateLanguages",
+            neverTranslateLanguages,
+          ],
         ],
-        [
-          "browser.translations.neverTranslateLanguages",
-          neverTranslateLanguages,
-        ],
-      ],
-    });
-
-    let outcomes = 0;
-    if (buttonShown) {
-      outcomes++;
-    }
-    if (offerTranslation) {
-      outcomes++;
-    }
-    if (translatePage) {
-      outcomes++;
-    }
-    if (outcomes !== 1) {
-      throw new Error("Expected only 1 main outcome.");
-    }
-
-    if (buttonShown || offerTranslation || translatePage) {
-      await FullPageTranslationsTestUtils.assertTranslationsButton(
-        {
-          button: true,
-          circleArrows: false,
-          locale: translatePage,
-          icon: true,
-        },
-        offerTranslation ? "The translation button is visible" : message
-      );
-    } else {
-      await FullPageTranslationsTestUtils.assertTranslationsButton(
-        { button: false },
-        "The translations button is not visible."
-      );
-    }
-
-    if (translatePage) {
-      await FullPageTranslationsTestUtils.assertAllPageContentIsTranslated({
-        fromLanguage: translatePage,
-        toLanguage: "en",
-        runInPage,
-        message,
-      });
-      await FullPageTranslationsTestUtils.assertPageH1TitleIsTranslated({
-        fromLanguage: "es",
-        toLanguage: "en",
-        runInPage,
-        message:
-          "The page's H1's title should be translated because it intersects with the viewport.",
       });
 
-      if (
-        page === SPANISH_PAGE_SHORT_URL ||
-        page === SPANISH_PAGE_MISMATCH_SHORT_URL
-      ) {
-        await FullPageTranslationsTestUtils.assertPageFinalParagraphTitleIsTranslated(
+      const { runInPage, win } = pageState;
+
+      let outcomes = 0;
+      if (buttonShown) {
+        outcomes++;
+      }
+      if (buttonHidden) {
+        outcomes++;
+      }
+      if (offerTranslation) {
+        outcomes++;
+      }
+      if (translatePage) {
+        outcomes++;
+      }
+      if (outcomes !== 1) {
+        throw new Error("Expected only 1 main outcome.");
+      }
+
+      if (!buttonHidden) {
+        await FullPageTranslationsTestUtils.assertTranslationsButton(
           {
-            fromLanguage: "es",
-            toLanguage: "en",
-            runInPage,
-            message:
-              "The page's final paragraph's title should be translated because it intersects with the viewport.",
-          }
+            button: true,
+            circleArrows: false,
+            locale: translatePage,
+            icon: true,
+          },
+          offerTranslation ? "The translation button is visible" : message
         );
       } else {
-        await FullPageTranslationsTestUtils.assertPageFinalParagraphTitleIsNotTranslated(
-          {
-            runInPage,
-            message:
-              "Attribute translations are always lazy based on intersection, so the final paragraph's title should remain untranslated.",
-          }
+        await FullPageTranslationsTestUtils.assertTranslationsButton(
+          { button: false },
+          "The translations button is not visible."
         );
       }
-    } else {
-      await FullPageTranslationsTestUtils.assertPageIsNotTranslated(
-        runInPage,
-        message
-      );
-    }
 
-    if (offerTranslation) {
-      await popupShown;
-      ok(wasPopupShown, message);
-      FullPageTranslationsTestUtils.assertSelectedFromLanguage({
-        win,
-        langTag: offerTranslation,
-      });
-      FullPageTranslationsTestUtils.assertSelectedToLanguage({
-        win,
-        langTag: "en",
-      });
-    } else {
-      is(wasPopupShown, false, "A translation was not offered");
-    }
+      if (translatePage) {
+        await FullPageTranslationsTestUtils.assertAllPageContentIsTranslated({
+          fromLanguage: translatePage,
+          toLanguage: "en",
+          runInPage,
+          message,
+        });
+        await FullPageTranslationsTestUtils.assertPageH1TitleIsTranslated({
+          fromLanguage: translatePage,
+          toLanguage: "en",
+          runInPage,
+          message:
+            "The page's H1's title should be translated because it intersects with the viewport.",
+        });
 
-    TranslationsParent.testAutomaticPopup = false;
-    panel.removeEventListener("popupshown", handlePopupShown);
-    await cleanup();
+        if (
+          testPage === SPANISH_PAGE_SHORT_URL ||
+          testPage === SPANISH_PAGE_MISMATCH_SHORT_URL
+        ) {
+          await FullPageTranslationsTestUtils.assertPageFinalParagraphTitleIsTranslated(
+            {
+              fromLanguage: translatePage,
+              toLanguage: "en",
+              runInPage,
+              message:
+                "The page's final paragraph's title should be translated because it intersects with the viewport.",
+            }
+          );
+        } else {
+          await FullPageTranslationsTestUtils.assertPageFinalParagraphTitleIsNotTranslated(
+            {
+              runInPage,
+              message:
+                "Attribute translations are always lazy based on intersection, so the final paragraph's title should remain untranslated.",
+            }
+          );
+        }
+      } else if (!skipPageContentAssertion) {
+        await FullPageTranslationsTestUtils.assertPageIsNotTranslated(
+          runInPage,
+          message
+        );
+      }
+
+      if (offerTranslation) {
+        await popupShown;
+        ok(wasPopupShown, message);
+        FullPageTranslationsTestUtils.assertSelectedFromLanguage({
+          win,
+          langTag: offerTranslation,
+        });
+        FullPageTranslationsTestUtils.assertSelectedToLanguage({
+          win,
+          langTag: "en",
+        });
+      } else {
+        is(wasPopupShown, false, "A translation was not offered");
+      }
+
+      if (manualPanelSourceLanguage) {
+        await FullPageTranslationsTestUtils.openPanel({
+          win,
+          openFromAppMenu: true,
+        });
+
+        const { docLangTag, isDocLangTagSupported } =
+          getTranslationsParent(win).languageState.detectedLanguages;
+        is(
+          docLangTag,
+          manualPanelSourceLanguage,
+          `The source language is resolved after opening the panel manually: ${message}`
+        );
+
+        if (isDocLangTagSupported) {
+          FullPageTranslationsTestUtils.assertPanelViewIntro();
+          FullPageTranslationsTestUtils.assertSelectedFromLanguage({
+            win,
+            langTag: manualPanelSourceLanguage,
+          });
+        } else {
+          FullPageTranslationsTestUtils.assertPanelViewUnsupportedLanguage();
+        }
+      }
+    } finally {
+      TranslationsParent.testAutomaticPopup = false;
+      panel.removeEventListener("popupshown", handlePopupShown);
+      await pageState?.cleanup();
+    }
   }
 });
 
 /**
- * This test case tests the behavior when the page has no declared language
- * tag and the detected language is not supported by Translations.
+ * This test case tests the behavior when the page has no HTML language tag
+ * and the identified language is not supported by Translations.
  */
-add_task(async function test_detected_language_unsupported() {
-  info("Testing unsupported detected language with no declared language");
+add_task(async function test_identified_language_unsupported() {
+  info("Testing unsupported identified language with no HTML language tag");
   TranslationsParent.testAutomaticPopup = true;
 
   let wasPopupShown = false;
@@ -333,18 +809,18 @@ add_task(async function test_detected_language_unsupported() {
 
   await FullPageTranslationsTestUtils.assertTranslationsButton(
     { button: false },
-    "The translations button is not visible when the detected language is unsupported."
+    "The translations button is not visible when the identified language is unsupported."
   );
 
   await FullPageTranslationsTestUtils.assertPageIsNotTranslated(
     runInPage,
-    "No translation should occur when the detected language is unsupported."
+    "No translation should occur when the identified language is unsupported."
   );
 
   is(
     wasPopupShown,
     false,
-    "A translation was not offered for an unsupported detected language."
+    "A translation was not offered for an unsupported identified language."
   );
 
   TranslationsParent.testAutomaticPopup = false;
@@ -365,7 +841,6 @@ add_task(async function test_norwegian_bokmal_offered_for_translation() {
   }
   panel.addEventListener("popupshown", handlePopupShown);
 
-  const html = String.raw;
   const { cleanup, win } = await loadTestPage({
     html: html`
       <!DOCTYPE html>
@@ -523,7 +998,6 @@ add_task(
     }
     panel.addEventListener("popupshown", handlePopupShown);
 
-    const html = String.raw;
     const { cleanup, win } = await loadTestPage({
       html: html`
         <!DOCTYPE html>

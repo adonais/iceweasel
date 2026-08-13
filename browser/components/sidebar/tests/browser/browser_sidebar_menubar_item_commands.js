@@ -5,7 +5,7 @@
 
 add_setup(async () => {
   await SpecialPowers.pushPrefEnv({
-    set: [[SIDEBAR_VISIBILITY_PREF, "hide-sidebar"]],
+    set: [[SIDEBAR_VISIBILITY_PREF, "hide-launcher"]],
   });
   await SidebarController.waitUntilStable();
   await SidebarController.updateUIState({
@@ -48,7 +48,9 @@ add_task(async function test_sidebar_view_commands() {
   bookmarkMenuItem.doCommand();
   await sidebar.updateComplete;
 
-  ok(BrowserTestUtils.isVisible(sidebar), "Sidebar is visible");
+  // In horizontal-tabs "hide-launcher" mode the launcher stays hidden; only the
+  // panel box is shown.
+  ok(BrowserTestUtils.isHidden(sidebar), "Sidebar launcher stays hidden");
   ok(BrowserTestUtils.isVisible(sidebarBox), "Sidebar box is visible");
   is(
     SidebarController.currentID,
@@ -65,7 +67,7 @@ add_task(async function test_sidebar_view_commands() {
   // Confirm that toggling the sidebar using the toolbarbutton re-opens it with the previous panel
   document.getElementById("sidebar-button").doCommand();
   await sidebar.updateComplete;
-  ok(BrowserTestUtils.isVisible(sidebar), "Sidebar is visible again.");
+  ok(BrowserTestUtils.isHidden(sidebar), "Sidebar launcher stays hidden.");
   ok(BrowserTestUtils.isVisible(sidebarBox), "Sidebar panel is visible.");
   is(
     SidebarController.currentID,

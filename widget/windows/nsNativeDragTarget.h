@@ -4,9 +4,10 @@
 #ifndef _nsNativeDragTarget_h_
 #define _nsNativeDragTarget_h_
 
-#include "nsCOMPtr.h"
 #include <ole2.h>
 #include <shlobj.h>
+
+#include "nsCOMPtr.h"
 
 #ifndef IDropTargetHelper
 #  include <shobjidl.h>  // Vista drag image interfaces

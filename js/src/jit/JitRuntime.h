@@ -167,6 +167,13 @@ class JitRuntime {
                            size_t(IonGenericCallKind::Count)>
       ionGenericCallStubOffset_;
 
+  // Thunks to attempt a megamorphic load using the MegamorphicCache.
+  WriteOnceData<uint32_t> megamorphicLoadStubOffset_{0};
+  // The "Permissive" variants support getters. We have to do a little
+  // more work if the op supports getters, so we split this out into a
+  // separate stub to avoid that work for the common case.
+  WriteOnceData<uint32_t> megamorphicLoadStubPermissiveOffset_{0};
+
   // Thunk used by the debugger for breakpoint and step mode.
   mozilla::EnumeratedArray<DebugTrapHandlerKind, WriteOnceData<JitCode*>,
                            size_t(DebugTrapHandlerKind::Count)>
@@ -266,6 +273,8 @@ class JitRuntime {
                                             Register scratch, Label* done);
   void generateIonGenericHandleUnderflow(MacroAssembler& masm,
                                          bool isConstructing, Label* vmCall);
+  void generateMegamorphicLoadStub(MacroAssembler& masm);
+  void generateMegamorphicLoadStubPermissive(MacroAssembler& masm);
 
   JitCode* generateDebugTrapHandler(JSContext* cx, DebugTrapHandlerKind kind);
 
@@ -302,6 +311,13 @@ class JitRuntime {
   }
 
  public:
+  // Magic values set by the megamorphic load stubs into CallTempReg2 to
+  // indicate the two kinds of cache hits. If CallTempReg2 does not hold one
+  // of these two after calling the stub, it will hold a pointer to an entry
+  // in the MegamorphicCache
+  static constexpr size_t MegamorphicLoadStubCacheHit = 1;
+  static constexpr size_t MegamorphicLoadStubCacheHitGetter = 2;
+
   JitCode* generateEntryTrampolineForScript(JSContext* cx, JSScript* script);
 
   JitRuntime() = default;
@@ -408,6 +424,12 @@ class JitRuntime {
 
   TrampolinePtr lazyLinkStub() const {
     return trampolineCode(lazyLinkStubOffset_);
+  }
+  TrampolinePtr megamorphicLoadStub() const {
+    return trampolineCode(megamorphicLoadStubOffset_);
+  }
+  TrampolinePtr megamorphicLoadStubPermissive() const {
+    return trampolineCode(megamorphicLoadStubPermissiveOffset_);
   }
   TrampolinePtr interpreterStub() const {
     return trampolineCode(interpreterStubOffset_);

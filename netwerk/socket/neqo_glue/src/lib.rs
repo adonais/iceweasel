@@ -667,6 +667,12 @@ impl NeqoHttp3Conn {
             return;
         }
 
+        let version_label = match stats.version {
+            Version::Version1 => "v1",
+            Version::Version2 => "v2",
+        };
+        glean::http_3_quic_version.get(version_label).add(1);
+
         if !static_prefs::pref!("network.http.http3.use_nspr_for_io")
             && static_prefs::pref!("network.http.http3.ecn_report")
         {
@@ -914,6 +920,11 @@ impl NeqoHttp3Conn {
                 glean::http_3_peer_max_udp_payload.accumulate_single_sample_signed(v);
             }
         }
+
+        let rtt_ms = |d: Duration| i64::try_from(d.as_millis()).unwrap_or(i64::MAX);
+        glean::http_3_rtt.accumulate_single_sample_signed(rtt_ms(stats.rtt));
+        glean::http_3_rtt_var.accumulate_single_sample_signed(rtt_ms(stats.rttvar));
+        glean::http_3_min_rtt.accumulate_single_sample_signed(rtt_ms(stats.min_rtt));
 
         // Ignore connections that never had loss induced congestion events (and prevent dividing by zero).
         if stats.cc.congestion_events.loss != 0 {
@@ -1327,12 +1338,28 @@ pub extern "C" fn neqo_http3conn_process_output_and_send(
                         }
                     }
                     Err(e) if e.raw_os_error() == Some(libc::EIO) && dg.num_datagrams() > 1 => {
-                        // See following resources for details:
-                        // - <https://github.com/quinn-rs/quinn/blob/93b6d01605147b9763ee1b1b381a6feb9fcd454e/quinn-udp/src/unix.rs#L345-L349>
-                        // - <https://bugzilla.mozilla.org/show_bug.cgi?id=1989895>
+                        // GSO is unsupported on this send path. quinn-udp has now
+                        // disabled GSO for subsequent sends, but the kernel
+                        // dropped the current batch. Resend it as individual
+                        // datagrams right away, rather than waiting for the QUIC
+                        // PTO (~300ms) to retransmit.
                         //
-                        // Ideally one would retry at the quinn-udp layer, see <https://github.com/quinn-rs/quinn/issues/2399>.
-                        qdebug!("Failed to send datagram batch size {} with error {e}. Missing GSO support? Socket will set max_gso_segments to 1. QUIC layer will retry.", dg.num_datagrams());
+                        // See following resources for details:
+                        // - <https://bugzilla.mozilla.org/show_bug.cgi?id=2049334>
+                        // - <https://bugzilla.mozilla.org/show_bug.cgi?id=1989895>
+                        // - <https://github.com/quinn-rs/quinn/blob/93b6d01605147b9763ee1b1b381a6feb9fcd454e/quinn-udp/src/unix.rs#L345-L349>
+                        //
+                        // Long term this fallback belongs in quinn-udp, see
+                        // <https://github.com/quinn-rs/quinn/issues/2399>.
+                        qdebug!("Failed to send datagram batch size {} with error {e}. Missing GSO support? Resending as individual datagrams.", dg.num_datagrams());
+                        let socket = conn.socket.as_mut().expect("non NSPR IO");
+                        for single in dg.iter() {
+                            let single = datagram::Batch::from(single.to_owned());
+                            if let Err(e) = socket.send(&single) {
+                                qwarn!("failed to resend datagram without GSO: {e}");
+                                break;
+                            }
+                        }
                     }
                     Err(e) => {
                         qwarn!("failed to send datagram: {}", e);

@@ -50,6 +50,7 @@ import org.mozilla.fenix.home.fake.FakeHomepagePreview.bookmarks
 import org.mozilla.fenix.home.topsites.ui.HomepageCard
 import org.mozilla.fenix.home.topsites.ui.homepageCardImageShape
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.wallpapers.WallpaperTheme
 
 private val imageWidth = 126.dp
 private val imageHeight = 82.dp
@@ -71,7 +72,7 @@ private fun Modifier.getImageModifier(): Modifier = this
 fun Bookmarks(
     bookmarks: List<Bookmark>,
     menuItems: List<BookmarksMenuItem>,
-    backgroundColor: Color,
+    backgroundColor: Color = WallpaperTheme.cardBackgroundColor,
     onBookmarkClick: (Bookmark) -> Unit = {},
 ) {
     LazyRow(
@@ -225,7 +226,6 @@ private fun BookmarksPreview() {
             Bookmarks(
                 bookmarks = bookmarks(),
                 menuItems = listOf(),
-                backgroundColor = MaterialTheme.colorScheme.surfaceBright,
             )
         }
     }

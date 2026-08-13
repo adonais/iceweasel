@@ -4,26 +4,30 @@
 
 #include <algorithm>
 
-#include "mozilla/gfx/2D.h"
 #include "mozilla/Logging.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/widget/WebCustomFormatUtils.h"
 
 #include "gfxPlatform.h"
+#include "imgIContainer.h"
 #include "nsArrayUtils.h"
 #include "nsCOMPtr.h"
 #include "nsClipboard.h"
-#include "nsString.h"
-#include "nsISupportsPrimitives.h"
-#include "nsPrimitiveHelpers.h"
-#include "nsIFile.h"
-#include "nsStringStream.h"
-#include "nsEscape.h"
-#include "nsPrintfCString.h"
-#include "nsObjCExceptions.h"
-#include "imgIContainer.h"
 #include "nsCocoaUtils.h"
+#include "nsComponentManagerUtils.h"
+#include "nsContentUtils.h"
+#include "nsEscape.h"
+#include "nsIFile.h"
+#include "nsISupportsPrimitives.h"
+#include "nsObjCExceptions.h"
+#include "nsPrimitiveHelpers.h"
+#include "nsPrintfCString.h"
+#include "nsString.h"
+#include "nsStringStream.h"
 
 using mozilla::gfx::DataSourceSurface;
 using mozilla::gfx::SourceSurface;
+using namespace mozilla::widget;
 
 mozilla::StaticRefPtr<nsITransferable> nsClipboard::sSelectionCache;
 int32_t nsClipboard::sSelectionCacheChangeCount = 0;
@@ -68,6 +72,22 @@ static NSPasteboard* GetPasteboard(
     default:
       return nil;
   }
+}
+
+static bool GetWebCustomFormatMapFromPasteboard(
+    NSPasteboard* aPasteboard, WebCustomFormatMap& aWebCustomFormatMap) {
+  NSString* webCustomFormatMapType =
+      [UTIHelper stringFromPboardType:kWebCustomFormatMapPboardType];
+
+  NSString* webCustomFormatMapData =
+      [aPasteboard stringForType:webCustomFormatMapType];
+
+  if (!webCustomFormatMapData) {
+    return false;
+  }
+
+  return JSONToWebCustomFormatMap(
+      nsAutoCString([webCustomFormatMapData UTF8String]), aWebCustomFormatMap);
 }
 
 }  // namespace
@@ -158,6 +178,11 @@ nsClipboard::SetNativeClipboardData(nsITransferable* aTransferable,
         // It's fine to set the data to null for this field - this field is an
         // addition to a value's other type and works like a flag.
         [cocoaPasteboard setData:nullptr forType:currentKey];
+      } else if ([currentKey
+                     isEqualToString:[UTIHelper
+                                         stringFromPboardType:
+                                             kWebCustomFormatMapPboardType]]) {
+        [cocoaPasteboard setString:currentValue forType:currentKey];
       } else {
         [cocoaPasteboard setData:currentValue forType:currentKey];
       }
@@ -418,6 +443,69 @@ nsClipboard::GetDataFromPasteboard(const nsACString& aFlavor,
     return nsCOMPtr<nsISupports>(std::move(byteStream));
   }
 
+  if (aFlavor.EqualsLiteral(kWebCustomFormatMapType)) {
+    WebCustomFormatMap webCustomFormatMap;
+    if (!GetWebCustomFormatMapFromPasteboard(aPasteboard, webCustomFormatMap)) {
+      return nsCOMPtr<nsISupports>{};
+    }
+
+    nsCOMPtr<nsIMutableArray> customFormats =
+        do_CreateInstance(NS_ARRAY_CONTRACTID);
+
+    for (const auto& format : webCustomFormatMap.Keys()) {
+      nsCOMPtr<nsISupportsCString> customFormat =
+          do_CreateInstance(NS_SUPPORTS_CSTRING_CONTRACTID);
+      customFormat->SetData(nsLiteralCString(kWebCustomFormatPrefix) + format);
+      customFormats->AppendElement(customFormat);
+    }
+
+    return nsCOMPtr<nsISupports>(std::move(customFormats));
+  }
+
+  if (StringBeginsWith(aFlavor, nsLiteralCString(kWebCustomFormatPrefix))) {
+    nsDependentCSubstring essence(
+        Substring(aFlavor, strlen(kWebCustomFormatPrefix)));
+
+    // Get the web custom format map from clipboard.
+    WebCustomFormatMap webCustomFormatMap;
+    if (!GetWebCustomFormatMapFromPasteboard(aPasteboard, webCustomFormatMap)) {
+      return nsCOMPtr<nsISupports>{};
+    }
+
+    auto entry = webCustomFormatMap.Lookup(essence);
+    if (!entry) {
+      return nsCOMPtr<nsISupports>{};
+    }
+
+    NSString* pasteBoardFormat =
+        [NSString stringWithFormat:@"%s", entry.Data().get()];
+
+    if (!pasteBoardFormat) {
+      return nsCOMPtr<nsISupports>{};
+    }
+
+    NSData* customFormatData =
+        GetNSDataFromPasteboard(aPasteboard, pasteBoardFormat);
+
+    if (!customFormatData) {
+      return nsCOMPtr<nsISupports>{};
+    }
+
+    unsigned int dataLength = [customFormatData length];
+    void* customFormatDataPtr = malloc(dataLength);
+    if (!customFormatDataPtr) {
+      return mozilla::Err(NS_ERROR_OUT_OF_MEMORY);
+    }
+    [customFormatData getBytes:customFormatDataPtr length:dataLength];
+
+    nsCOMPtr<nsISupports> genericDataWrapper;
+    nsPrimitiveHelpers::CreatePrimitiveForData(
+        aFlavor, customFormatDataPtr, dataLength,
+        getter_AddRefs(genericDataWrapper));
+    free(customFormatDataPtr);
+    return std::move(genericDataWrapper);
+  }
+
   return nsCOMPtr<nsISupports>{};
 
   NS_OBJC_END_TRY_BLOCK_RETURN(mozilla::Err(NS_ERROR_FAILURE));
@@ -431,6 +519,7 @@ nsClipboard::GetNativeClipboardData(const nsACString& aFlavor,
 
   MOZ_DIAGNOSTIC_ASSERT(
       nsIClipboard::IsClipboardTypeSupported(aWhichClipboard));
+  MOZ_DIAGNOSTIC_ASSERT(IsValidFlavor(aFlavor));
 
   if (kSelectionCache == aWhichClipboard) {
     if (!sSelectionCache) {
@@ -482,6 +571,7 @@ nsClipboard::HasNativeClipboardDataMatchingFlavors(
 
       for (const auto& transferableFlavor : transferableFlavors) {
         for (const auto& flavor : aFlavorList) {
+          MOZ_DIAGNOSTIC_ASSERT(IsValidFlavor(flavor));
           if (transferableFlavor.Equals(flavor)) {
             MOZ_CLIPBOARD_LOG("    has %s", flavor.get());
             return true;
@@ -502,6 +592,7 @@ nsClipboard::HasNativeClipboardDataMatchingFlavors(
   if (MOZ_CLIPBOARD_LOG_ENABLED()) {
     NSArray* types = [cocoaPasteboard types];
     uint32_t count = [types count];
+    // XXX Maybe handle custom format here to show the type mapping.
     MOZ_CLIPBOARD_LOG("    Pasteboard types (nums %u)\n", count);
     for (uint32_t i = 0; i < count; i++) {
       NSPasteboardType type = [types objectAtIndex:i];
@@ -513,7 +604,10 @@ nsClipboard::HasNativeClipboardDataMatchingFlavors(
     }
   }
 
+  WebCustomFormatMap webCustomFormatMap;
+  bool hasReadWebCustomFormatMapFromPasteboard = false;
   for (auto& mimeType : aFlavorList) {
+    MOZ_DIAGNOSTIC_ASSERT(IsValidFlavor(mimeType));
     NSString* pboardType = nil;
     if (nsClipboard::IsStringType(mimeType, &pboardType)) {
       NSString* availableType = [cocoaPasteboard
@@ -572,6 +666,23 @@ nsClipboard::HasNativeClipboardDataMatchingFlavors(
         MOZ_CLIPBOARD_LOG("    has %s\n", mimeType.get());
         return true;
       }
+    } else if (StringBeginsWith(mimeType,
+                                nsLiteralCString(kWebCustomFormatPrefix))) {
+      if (!hasReadWebCustomFormatMapFromPasteboard) {
+        hasReadWebCustomFormatMapFromPasteboard = true;
+        if (!GetWebCustomFormatMapFromPasteboard(cocoaPasteboard,
+                                                 webCustomFormatMap)) {
+          continue;
+        }
+      }
+
+      // mimeType is checked above, so we don't need to parse it again.
+      nsDependentCSubstring essence(
+          Substring(mimeType, strlen(kWebCustomFormatPrefix)));
+      if (webCustomFormatMap.Lookup(essence)) {
+        MOZ_CLIPBOARD_LOG("    has %s\n", mimeType.get());
+        return true;
+      }
     }
   }
 
@@ -623,8 +734,15 @@ NSDictionary* nsClipboard::PasteboardDictFromTransferable(
     // other apps, the order shouldn't matter.
     std::swap(*flavors.begin(), flavors[*imageFlavorIndex]);
   }
+
+  uint32_t clipboardCustomFormatIndex = 0;
+  WebCustomFormatMap clipboardCustomFormatMap;
   for (uint32_t i = 0; i < flavors.Length(); i++) {
     nsCString& flavorStr = flavors[i];
+
+    if (!IsValidFlavor(flavorStr)) {
+      continue;
+    }
 
     MOZ_CLIPBOARD_LOG("writing out clipboard data of type %s (%u)\n",
                       flavorStr.get(), i);
@@ -860,10 +978,71 @@ NSDictionary* nsClipboard::PasteboardDictFromTransferable(
         [pasteboardOutputDict setObject:nativeTitle forKey:urlName];
         [pasteboardOutputDict setObject:urlsAndTitles forKey:urlsWithTitles];
       }
+    } else if (StringBeginsWith(flavorStr,
+                                nsLiteralCString(kWebCustomFormatPrefix))) {
+      nsCOMPtr<nsISupports> genericDataWrapper;
+      rv = aTransferable->GetTransferData(flavorStr.get(),
+                                          getter_AddRefs(genericDataWrapper));
+      if (NS_FAILED(rv)) {
+        continue;
+      }
+
+      nsAutoCString data;
+      if (nsCOMPtr<nsISupportsCString> text =
+              do_QueryInterface(genericDataWrapper)) {
+        text->GetData(data);
+      }
+
+      NSData* nativeData = [NSData dataWithBytes:data.get()
+                                          length:data.Length()];
+
+      nsDependentCSubstring essence(
+          Substring(flavorStr, strlen(kWebCustomFormatPrefix)));
+
+      nsAutoCString clipboardCustomFormatString(nsPrintfCString(
+          "%s%u",
+          [[UTIHelper stringFromPboardType:kWebCustomFormatPboardTypePrefix]
+              UTF8String],
+          clipboardCustomFormatIndex));
+      // Skip the pasteboard write and index bump when a prior flavor already
+      // claimed this essence, otherwise the second payload lands on the
+      // pasteboard unreferenced by the map JSON. Transferables should not
+      // normally carry duplicate "web foo/bar" flavors, but the map lookup
+      // gives us a cheap way to keep the two in sync.
+      bool inserted = clipboardCustomFormatMap.WithEntryHandle(
+          essence, [&clipboardCustomFormatString](auto&& entry) {
+            if (entry.HasEntry()) {
+              return false;
+            }
+            entry.Insert(clipboardCustomFormatString);
+            return true;
+          });
+      if (!inserted) {
+        continue;
+      }
+      [pasteboardOutputDict
+          setObject:nativeData
+             forKey:[NSString
+                        stringWithFormat:@"%s",
+                                         clipboardCustomFormatString.get()]];
+
+      clipboardCustomFormatIndex++;
     }
     // If it wasn't a type that we recognize as exportable we don't put it on
     // the system clipboard. We'll just access it from our cached transferable
     // when we need it.
+  }
+  if (!clipboardCustomFormatMap.IsEmpty()) {
+    NSString* clipboardCustomFormatMapString =
+        [UTIHelper stringFromPboardType:kWebCustomFormatMapPboardType];
+
+    nsAutoCString clipboardCustomFormatMapData;
+    WebCustomFormatMapToJSON(clipboardCustomFormatMap,
+                             clipboardCustomFormatMapData);
+    [pasteboardOutputDict
+        setObject:[NSString stringWithFormat:@"%s",
+                                             clipboardCustomFormatMapData.get()]
+           forKey:clipboardCustomFormatMapString];
   }
 
   return pasteboardOutputDict;

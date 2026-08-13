@@ -2,17 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "gtest/gtest.h"
+#include <fcntl.h>
+#include <unistd.h>
 
-#include "mozilla/widget/DMABufSurface.h"
+#include "gtest/gtest.h"
+#include "mozilla/NotNull.h"
 #include "mozilla/gfx/FileHandleWrapper.h"
 #include "mozilla/ipc/FileDescriptor.h"
 #include "mozilla/layers/LayersSurfaces.h"
-#include "mozilla/NotNull.h"
+#include "mozilla/widget/DMABufSurface.h"
 #include "nsTArray.h"
-
-#include <fcntl.h>
-#include <unistd.h>
 
 using namespace mozilla;
 using namespace mozilla::gfx;

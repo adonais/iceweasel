@@ -43,9 +43,9 @@ mkdir -p mobile/android/android-components/components/{category}/{name}/src/test
 Reference the example at `mobile/android/android-components/components/feature/example/build.gradle` for the standard structure.
 
 Key elements:
-- Apply plugins: `com.android.library` and `kotlin-android`
+- Apply the `com.android.library` plugin in the `plugins {}` block
 - Set namespace: `mozilla.components.{category}.{name}`
-- Include common dependencies: `androidx.core.ktx`, `kotlinx.coroutines`
+- Include common dependencies: `androidx.core`, `kotlinx.coroutines`
 - Include test dependencies: `junit.bom`, `junit4`, `robolectric`, `kotlinx.coroutines.test`
 - Apply common config and publish scripts
 

@@ -5,9 +5,9 @@
 #ifndef GFX_SRC_NSRECTINTERSECTGENERICIMPL_H_
 #define GFX_SRC_NSRECTINTERSECTGENERICIMPL_H_
 
-#include "nsRectIntersectGeneric.h"
-
 #include <xsimd/xsimd.hpp>
+
+#include "nsRectIntersectGeneric.h"
 
 template <class Arch>
 void mozilla::IntersectEngine<Arch>::Intersect(const int32_t lhs[4],

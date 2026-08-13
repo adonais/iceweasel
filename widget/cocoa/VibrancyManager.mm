@@ -5,12 +5,11 @@
 #include "VibrancyManager.h"
 #include "ViewRegion.h"
 #include "nsRegion.h"
-#include "ViewRegion.h"
 
 #import <objc/message.h>
 
-#include "nsCocoaWindow.h"
 #include "mozilla/StaticPrefs_widget.h"
+#include "nsCocoaWindow.h"
 
 using namespace mozilla;
 

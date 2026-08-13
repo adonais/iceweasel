@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<style>
+body {
+    font-family: system-ui, sans-serif;
+    padding: 20px;
+}
+#container {
+    width: 100%;
+    border-radius: 8px;
+    overflow: auto;
+}
+</style>
+
+<div id="container"></div>
+
+<script src="util.js"></script>
+
+<script>
+// Based on testcase from https://bugzilla.mozilla.org/show_bug.cgi?id=2042294
+function generateText() {
+    const n = 5000;
+    const fragment = document.createDocumentFragment();
+
+    for (let i = 0; i < n; i++) {
+        const element = document.createElement('span');
+        element.style.fontSize = `${10 + Math.random() * 24}px`;
+        element.textContent = "1";
+        fragment.appendChild(element);
+    }
+
+    container.appendChild(fragment);
+}
+
+onload = function() {
+    flush_layout();
+    perf_start();
+    generateText();
+    flush_layout();
+    perf_finish();
+}
+</script>

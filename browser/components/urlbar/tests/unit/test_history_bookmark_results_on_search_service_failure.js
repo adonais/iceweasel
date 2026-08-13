@@ -53,13 +53,13 @@ add_task(
         makeVisitResult(context, {
           uri: "http://cat/",
           heuristic: true,
-          source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+          source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
           title: "cat/",
         }),
         makeBookmarkResult(context, {
           title: "cat",
           uri: "http://cat.com/",
-          source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+          source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
         }),
       ],
     });
@@ -108,13 +108,13 @@ add_task(
           title: "example/",
           uri: "http://example/",
           heuristic: true,
-          source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+          source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         }),
         makeVisitResult(context, {
           type: 3,
           title: "example",
           uri: "http://example.com/",
-          source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+          source: UrlbarShared.RESULT_SOURCE.HISTORY,
         }),
       ],
     });

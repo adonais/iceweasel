@@ -6,11 +6,11 @@
 #define nsBaseAppShell_h_
 
 #include "mozilla/Atomics.h"
+#include "nsCOMPtr.h"
 #include "nsIAppShell.h"
-#include "nsIThreadInternal.h"
 #include "nsIObserver.h"
 #include "nsIRunnable.h"
-#include "nsCOMPtr.h"
+#include "nsIThreadInternal.h"
 #include "nsTArray.h"
 #include "prinrval.h"
 

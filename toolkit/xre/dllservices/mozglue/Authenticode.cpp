@@ -176,6 +176,9 @@ bool SignedBinary::HasNestedMicrosoftSignature() const {
   for (DWORD i = 0; i < attributesInfo->cAttr; ++i) {
     PCRYPT_ATTRIBUTE cur = &attributesInfo->rgAttr[i];
     if (!strcmp(cur->pszObjId, szOID_NESTED_SIGNATURE)) {
+      if (cur->cValue < 1 || !cur->rgValue) {
+        continue;
+      }
       CryptMsgUniquePtr nestedMsg(
           CryptMsgOpenToDecode(kEncodingTypes, 0, 0, NULL, NULL, NULL));
       if (!nestedMsg) {

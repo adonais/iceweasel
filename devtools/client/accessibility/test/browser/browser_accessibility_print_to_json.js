@@ -16,7 +16,7 @@ function getMenuItems(toolbox) {
 
 async function newTabSelected(tab) {
   info("Waiting for the JSON viewer tab.");
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       gBrowser.selectedTab !== tab &&
       gBrowser.selectedTab.linkedBrowser.currentURI.spec !== "about:blank",

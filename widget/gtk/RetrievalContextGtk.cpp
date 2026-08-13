@@ -4,11 +4,11 @@
 
 #include "RetrievalContextGtk.h"
 
+#include <gtk/gtk.h>
+
 #include "AsyncClipboardRequest.h"
 #include "mozilla/TimeStamp.h"
 #include "prtime.h"
-
-#include <gtk/gtk.h>
 
 using namespace mozilla;
 using namespace mozilla::widget;

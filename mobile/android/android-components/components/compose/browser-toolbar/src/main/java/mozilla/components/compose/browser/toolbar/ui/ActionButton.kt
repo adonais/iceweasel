@@ -14,8 +14,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import mozilla.components.compose.base.badge.BadgedIcon
@@ -44,6 +46,7 @@ import mozilla.components.ui.icons.R as iconsR
  * @param onClick [BrowserToolbarInteraction] describing how to handle this button being clicked.
  * @param onLongClick Optional [BrowserToolbarInteraction] describing how to handle this button being long clicked.
  * @param onInteraction Callback for handling [BrowserToolbarEvent]s on user interactions.
+ * @param testTag Optional test tag for this button.
  */
 @Composable
 @Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
@@ -55,6 +58,7 @@ internal fun ActionButton(
     onClick: BrowserToolbarInteraction? = null,
     onLongClick: BrowserToolbarInteraction? = null,
     onInteraction: (BrowserToolbarEvent) -> Unit,
+    testTag: String? = null,
 ) {
     val shouldReactToLongClicks = remember(onLongClick) {
         onLongClick != null
@@ -109,6 +113,10 @@ internal fun ActionButton(
             },
             enabled = isEnabled,
             contentDescription = contentDescription,
+            modifier = when (testTag) {
+                null -> Modifier
+                else -> Modifier.testTag(testTag)
+            },
         ) {
             ActionButtonIcon(icon, tint, highlighted)
 
@@ -129,6 +137,10 @@ internal fun ActionButton(
             },
             enabled = isEnabled,
             contentDescription = contentDescription,
+            modifier = when (testTag) {
+                null -> Modifier
+                else -> Modifier.testTag(testTag)
+            },
         ) {
             ActionButtonIcon(icon, tint, highlighted)
 

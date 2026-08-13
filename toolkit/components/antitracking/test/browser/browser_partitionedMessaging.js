@@ -10,11 +10,6 @@ PartitionedStorageHelper.runTestInNormalAndPrivateMode(
     // BroadcastChannel uses the incument global, this means that its CTOR will
     // always use the 3rd party iframe's window as global.
   },
-  async _ => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  }
+  // Cleanup callback
+  clearSiteTestData
 );

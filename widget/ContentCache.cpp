@@ -8,7 +8,6 @@
 
 #include "IMEData.h"
 #include "TextEvents.h"
-
 #include "mozilla/Assertions.h"
 #include "mozilla/IMEStateManager.h"
 #include "mozilla/IntegerPrintfMacros.h"

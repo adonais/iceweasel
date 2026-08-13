@@ -1,0 +1,11 @@
+diff -u /src/RateTransposer.cpp /src/RateTransposer.cpp
+--- /src/RateTransposer.cpp
++++ /src/RateTransposer.cpp
+@@ -35,6 +35,7 @@
+ #include <assert.h>
+ #include <stdlib.h>
+ #include <stdio.h>
++#include <algorithm>
+ #include "RateTransposer.h"
+ #include "InterpolateLinear.h"
+ #include "InterpolateCubic.h"

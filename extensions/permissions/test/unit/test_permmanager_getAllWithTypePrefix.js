@@ -4,8 +4,21 @@
 function check_enumerator(prefix, permissions) {
   let pm = Services.perms;
 
-  let array = pm.getAllWithTypePrefix(prefix);
-  for (let [principal, type, capability] of permissions) {
+  // getAllWithTypePrefix returns permissions in hash-table order, which is not
+  // guaranteed, so sort both sides by a stable key before comparing.
+  let sortKey = (principal, type) => `${principal.origin}|${type}`;
+
+  let array = pm
+    .getAllWithTypePrefix(prefix)
+    .sort((a, b) =>
+      sortKey(a.principal, a.type).localeCompare(sortKey(b.principal, b.type))
+    );
+  let expected = [...permissions].sort(([aP, aT], [bP, bT]) =>
+    sortKey(aP, aT).localeCompare(sortKey(bP, bT))
+  );
+
+  Assert.equal(array.length, expected.length);
+  for (let [principal, type, capability] of expected) {
     let perm = array.shift();
     Assert.notEqual(perm, null);
     Assert.ok(perm.principal.equals(principal));

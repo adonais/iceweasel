@@ -6,9 +6,10 @@
 
 // List of Features
 #include "UrlClassifierFeatureAntiFraudAnnotation.h"
+#include "UrlClassifierFeatureConsentManagerAnnotation.h"
 #include "UrlClassifierFeatureCryptominingAnnotation.h"
 #include "UrlClassifierFeatureCryptominingProtection.h"
-#include "UrlClassifierFeatureConsentManagerAnnotation.h"
+#include "UrlClassifierFeatureCustomTables.h"
 #include "UrlClassifierFeatureEmailTrackingDataCollection.h"
 #include "UrlClassifierFeatureEmailTrackingProtection.h"
 #include "UrlClassifierFeatureFingerprintingAnnotation.h"
@@ -18,10 +19,8 @@
 #include "UrlClassifierFeaturePhishingProtection.h"
 #include "UrlClassifierFeatureSocialTrackingAnnotation.h"
 #include "UrlClassifierFeatureSocialTrackingProtection.h"
-#include "UrlClassifierFeatureTrackingProtection.h"
 #include "UrlClassifierFeatureTrackingAnnotation.h"
-#include "UrlClassifierFeatureCustomTables.h"
-
+#include "UrlClassifierFeatureTrackingProtection.h"
 #include "nsAppRunner.h"
 
 namespace mozilla {

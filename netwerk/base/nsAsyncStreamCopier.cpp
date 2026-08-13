@@ -3,17 +3,18 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsAsyncStreamCopier.h"
-#include "nsComponentManagerUtils.h"
-#include "nsIOService.h"
-#include "nsIEventTarget.h"
-#include "nsStreamUtils.h"
-#include "nsThreadUtils.h"
-#include "nsNetUtil.h"
-#include "nsNetCID.h"
-#include "nsIBufferedStreams.h"
-#include "nsIRequestObserver.h"
+
 #include "mozilla/Components.h"
 #include "mozilla/Logging.h"
+#include "nsComponentManagerUtils.h"
+#include "nsIBufferedStreams.h"
+#include "nsIEventTarget.h"
+#include "nsIOService.h"
+#include "nsIRequestObserver.h"
+#include "nsNetCID.h"
+#include "nsNetUtil.h"
+#include "nsStreamUtils.h"
+#include "nsThreadUtils.h"
 
 using namespace mozilla;
 using namespace mozilla::net;

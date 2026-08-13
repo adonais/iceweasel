@@ -51,6 +51,10 @@
   const { PlacesTestUtils } = ChromeUtils.importESModule(
     "resource://testing-common/PlacesTestUtils.sys.mjs"
   );
+  const { TestUtils } = ChromeUtils.importESModule(
+    "resource://testing-common/TestUtils.sys.mjs"
+  );
+
 
   const fxviewTabList = document.querySelector("fxview-tab-list");
   let tabItems = [];
@@ -362,7 +366,7 @@
     // Check date only format
     fxviewTabList.dateTimeFormat = "date";
     await fxviewTabList.getUpdateComplete();
-    await BrowserTestUtils.waitForCondition(() => {
+    await TestUtils.waitForCondition(() => {
       return getCurrentDisplayDate().includes("/");
     });
     ok(
@@ -384,7 +388,7 @@
     // Check time only format
     fxviewTabList.dateTimeFormat = "time";
     await fxviewTabList.getUpdateComplete();
-    await BrowserTestUtils.waitForCondition(() => {
+    await TestUtils.waitForCondition(() => {
       return getCurrentDisplayTime().includes("AM") || getCurrentDisplayTime().includes("PM");
     });
     ok(
@@ -406,7 +410,7 @@
     // Check date and time format
     fxviewTabList.dateTimeFormat = "dateTime";
     await fxviewTabList.getUpdateComplete();
-    await BrowserTestUtils.waitForCondition(() => {
+    await TestUtils.waitForCondition(() => {
       return getCurrentDisplayDate().includes("/") &&
       (getCurrentDisplayTime().includes("AM") || getCurrentDisplayTime().includes("PM"));
     });
@@ -430,7 +434,7 @@
   add_task(async function test_relative_time_updates() {
     await addHistoryItems();
 
-    await BrowserTestUtils.waitForCondition(() => {
+    await TestUtils.waitForCondition(() => {
       return getCurrentDisplayDate().includes("Just now");
     });
 
@@ -444,7 +448,7 @@
     await SpecialPowers.pushPrefEnv({
       set: [["browser.tabs.firefox-view.updateTimeMs", TAB_UPDATE_TIME_MS]],
     });
-    await BrowserTestUtils.waitForCondition(() => {
+    await TestUtils.waitForCondition(() => {
       return !getCurrentDisplayDate().includes("now");
     });
     info("Currently displayed date is something other than 'Just now'");

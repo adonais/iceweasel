@@ -336,6 +336,7 @@ const JSProcessActorConfig = {
   // This uses the ParentProcessTarget which inherits from BrowsingContextTarget
   // and is, for now, manually created by the descriptor as the top level target.
   includeParent: true,
+  safeForUntrustedWebProcess: true,
 };
 
 const BrowserToolboxJSProcessActorConfig = {

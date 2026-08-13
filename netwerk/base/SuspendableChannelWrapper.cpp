@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SuspendableChannelWrapper.h"
+
 #include "nsIStreamListener.h"
 
 namespace mozilla {

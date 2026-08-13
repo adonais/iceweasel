@@ -35,12 +35,6 @@ function testDebuggerHooksNX(dbg, g, testHook) {
   if ('Promise' in g) {
       testDebuggerHook("onNewPromise",
                        () => { new g.Promise(()=>{}); });
-
-      testDebuggerHook("onPromiseSettled",
-                       () => {
-                         var p = new g.Promise(()=>{});
-                         g.settlePromiseNow(p);
-                       });
   }
 
   // Hooks on frames.

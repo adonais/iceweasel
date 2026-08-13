@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use api::{AlphaType, PremultipliedColorF, YuvFormat, YuvRangedColorSpace};
+use api::{PremultipliedColorF, YuvFormat, YuvRangedColorSpace};
 use api::units::*;
 use euclid::HomogeneousVector;
 use crate::composite::{CompositeFeatures, CompositorClip};
@@ -11,7 +11,7 @@ use crate::quad::LayoutOrDeviceRect;
 use crate::segment::EdgeMask;
 use crate::transform::GpuTransformId;
 use crate::internal_types::{FrameVec, FrameMemory};
-use crate::prim_store::{ClipData, VECS_PER_SEGMENT};
+use crate::prim_store::VECS_PER_SEGMENT;
 use crate::render_task::RenderTaskAddress;
 use crate::render_task_graph::RenderTaskId;
 use crate::renderer::{GpuBufferAddress, GpuBufferBuilderF, GpuBufferHandle, GpuBufferWriterF, GpuBufferDataF, GpuBufferDataI, GpuBufferWriterI, ShaderColorMode};
@@ -80,15 +80,6 @@ pub struct CopyInstance {
     pub src_rect: DeviceRect,
     pub dst_rect: DeviceRect,
     pub dst_texture_size: DeviceSize,
-}
-
-#[derive(Debug, Copy, Clone)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[repr(C)]
-pub enum RasterizationSpace {
-    Local = 0,
-    Screen = 1,
 }
 
 #[repr(i32)]
@@ -194,42 +185,37 @@ pub enum BorderSegment {
     Bottom,
 }
 
+pub struct BorderInstanceGpuData {
+    pub local_rect: DeviceRect,
+    pub color0: PremultipliedColorF,
+    pub color1: PremultipliedColorF,
+    pub widths: DeviceSize,
+    pub radius: DeviceSize,
+    pub shape: f32,
+}
+
+impl BorderInstanceGpuData {
+    pub fn write(&self, gpu_buffer_builder: &mut GpuBufferBuilderF) -> GpuBufferAddress {
+        let mut writer = gpu_buffer_builder.write_blocks(5);
+        writer.push_one(self.local_rect);
+        writer.push_one(self.color0);
+        writer.push_one(self.color1);
+        writer.push_one([self.widths.width, self.widths.height, self.radius.width, self.radius.height]);
+        writer.push_one([self.shape, 0.0, 0.0, 0.0]);
+
+        writer.finish()
+    }
+}
+
 #[derive(Debug, Clone)]
 #[repr(C)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct BorderInstance {
     pub task_origin: DevicePoint,
-    pub local_rect: DeviceRect,
-    pub color0: PremultipliedColorF,
-    pub color1: PremultipliedColorF,
     pub flags: i32,
-    pub widths: DeviceSize,
-    pub radius: DeviceSize,
+    pub gpu_data_address: GpuBufferAddress,
     pub clip_params: [f32; 8],
-}
-
-#[derive(Copy, Clone, Debug)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[repr(C)]
-pub struct ClipMaskInstanceCommon {
-    pub sub_rect: DeviceRect,
-    pub task_origin: DevicePoint,
-    pub screen_origin: DevicePoint,
-    pub device_pixel_scale: f32,
-    pub clip_transform_id: GpuTransformId,
-    pub prim_transform_id: GpuTransformId,
-}
-
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[repr(C)]
-pub struct ClipMaskInstanceRect {
-    pub common: ClipMaskInstanceCommon,
-    pub local_pos: LayoutPoint,
-    pub clip_data: ClipData,
 }
 
 // 16 bytes per instance should be enough for anyone!
@@ -644,8 +630,11 @@ impl GpuBufferDataI for QuadHeader {
 
 /// Matches QuadPrimitive in ps_quad.glsl
 pub struct QuadPrimitive {
+    /// The (clipped) coverage rect: the local rect intersected with the local
+    /// clip rect. There is no separate clip rect; it is folded in here.
     pub bounds: LayoutOrDeviceRect,
-    pub clip: LayoutOrDeviceRect,
+    /// The rect that situates the source pattern.
+    pub pattern_rect: LayoutOrDeviceRect,
     // TODO: This gets translated into a Rect just before upload.
     // It would be better to send the gpu buffer address to the shader.
     pub input_task: RenderTaskId,
@@ -658,7 +647,7 @@ impl GpuBufferDataF for QuadPrimitive {
     const NUM_BLOCKS: usize = 5;
     fn write(&self, writer: &mut GpuBufferWriterF) {
         writer.push_one(self.bounds);
-        writer.push_one(self.clip);
+        writer.push_one(self.pattern_rect);
         writer.push_render_task(self.input_task);
         writer.push_one(self.pattern_scale_offset);
         writer.push_one(self.color);
@@ -799,27 +788,6 @@ impl From<BrushInstance> for PrimitiveInstanceData {
     }
 }
 
-/// Convenience structure to encode into the image brush's user data.
-#[derive(Copy, Clone, Debug)]
-pub struct ImageBrushUserData {
-    pub color_mode: ShaderColorMode,
-    pub alpha_type: AlphaType,
-    pub raster_space: RasterizationSpace,
-    pub opacity: f32,
-}
-
-impl ImageBrushUserData {
-    #[inline]
-    pub fn encode(&self) -> [i32; 4] {
-        [
-            self.color_mode as i32 | ((self.alpha_type as i32) << 16),
-            self.raster_space as i32,
-            get_shader_opacity(self.opacity),
-            0,
-        ]
-    }
-}
-
 // Texture cache resources can be either a simple rect, or define
 // a polygon within a rect by specifying a UV coordinate for each
 // corner. This is useful for rendering screen-space rasterized
@@ -926,25 +894,3 @@ impl GpuBufferDataF for BrushSegmentGpuData {
     }
 }
 
-/// Matches YuvPrimitive in yuv.glsl
-pub struct YuvPrimitive {
-    pub channel_bit_depth: u32,
-    pub color_space: YuvRangedColorSpace,
-    pub yuv_format: YuvFormat,
-}
-
-impl GpuBufferDataF for YuvPrimitive {
-    const NUM_BLOCKS: usize = 1;
-    fn write(&self, writer: &mut GpuBufferWriterF) {
-        writer.push_one([
-            pack_as_float(self.channel_bit_depth),
-            pack_as_float(self.color_space as u32),
-            pack_as_float(self.yuv_format as u32),
-            0.0
-        ]);
-    }
-}
-
-pub fn get_shader_opacity(opacity: f32) -> i32 {
-    (opacity * 65535.0).round() as i32
-}

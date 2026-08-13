@@ -23,11 +23,11 @@ profiler_helper = { path = "../../../../tools/profiler/rust-helper" }
 mozurl = { path = "../../../../netwerk/base/mozurl" }
 harfbuzz_glue = { path = "../../../../gfx/harfbuzz_glue" }
 webrender_bindings = { path = "../../../../gfx/webrender_bindings" }
-cubeb-coreaudio = { git = "https://github.com/mozilla/cubeb-coreaudio-rs", rev = "0bb8a45a040e85d313eb18deb36570e87df3a6af", optional = true, features=["vpio-forcelist"] }
-cubeb-pulse = { git = "https://github.com/mozilla/cubeb-pulse-rs", rev="5eb4d5bdb725d3d53e42cc88f82269fac2aa42b7", optional = true, features=["pulse-dlopen"] }
-cubeb-sys = { version = "0.32.0", optional = true, features=["gecko-in-tree"] }
-audioipc2-client = { git = "https://github.com/mozilla/audioipc", rev = "c9dcbaee1624daad2fa6b1445fd047efde4f1ec0", optional = true }
-audioipc2-server = { git = "https://github.com/mozilla/audioipc", rev = "c9dcbaee1624daad2fa6b1445fd047efde4f1ec0", optional = true }
+cubeb-coreaudio = { git = "https://github.com/mozilla/cubeb-coreaudio-rs", rev = "840f69c1b3f95accd582555e10abcef8ee67514b", optional = true, features=["vpio-forcelist"] }
+cubeb-pulse = { git = "https://github.com/mozilla/cubeb-pulse-rs", rev="88194f91c8778fa608a19af7b91306094525595d", optional = true, features=["pulse-dlopen"] }
+cubeb-sys = { version = "0.34", optional = true, features=["gecko-in-tree"] }
+audioipc2-client = { git = "https://github.com/mozilla/audioipc", rev = "88fe860", optional = true }
+audioipc2-server = { git = "https://github.com/mozilla/audioipc", rev = "88fe860", optional = true }
 encoding_glue = { path = "../../../../intl/encoding_glue" }
 locale_service_glue = { path = "../../../../intl/locale/rust/locale_service_glue" }
 app_collator_glue = { path = "../../../../intl/app_collator_glue" }
@@ -74,6 +74,7 @@ gecko-profiler = { path = "../../../../tools/profiler/rust-api"}
 midir_impl = { path = "../../../../dom/midi/midir_impl", optional = true }
 dom = { path = "../../../../dom/base/rust" }
 dom_fragmentdirectives = { path="../../../../dom/base/fragmentdirectives" }
+dom_speculationrules = { path="../../../../dom/base/speculationrules" }
 origin-trials-ffi = { path = "../../../../dom/origin-trials/ffi" }
 jog = { path = "../../../components/glean/bindings/jog" }
 dap_ffi = { path = "../../../components/dap/ffi" }
@@ -129,6 +130,8 @@ zlib-rs = { version = "0.6", features = ["avx512"], optional = true }
 
 gecko-trace = { path = "../../../components/gecko-trace" }
 
+sitecategories = { path = "../../../components/sitecategories" }
+
 [target.'cfg(any(target_os = "android", target_os = "macos", target_os = "ios", all(target_os = "windows", not(target_arch = "aarch64"))))'.dependencies]
 osclientcerts = { path = "../../../../security/manager/ssl/osclientcerts" }
 
@@ -177,6 +180,7 @@ for_xul = [
 ]
 webrender_debugger = ["webrender_bindings/debugger"]
 shell_windows = ["dep:shell_windows"]
+enable_tests = ["shell_windows?/enable_tests"]
 
 [lib]
 path = "lib.rs"

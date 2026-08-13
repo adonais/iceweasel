@@ -69,34 +69,57 @@ async function checkValues(oi, storageType) {
   const length = [...nodes[2].querySelectorAll(".object-label,.objectBox")].map(
     node => node.textContent
   );
-  const key2 = [
-    ...nodes[4].querySelectorAll(".object-label,.nodeName,.objectBox-string"),
-  ].map(node => node.textContent);
-  const key = [
-    ...nodes[5].querySelectorAll(".object-label,.nodeName,.objectBox-string"),
-  ].map(node => node.textContent);
+
+  // The iteration order of storage entries follows the underlying hashtable
+  // order, which isn't guaranteed (see bug 2048926), so don't assume which of
+  // "key"/"key2" comes first.
+  const expectedValues =
+    storageType === "localStorage"
+      ? { key: `"value1"`, key2: `"value2"` }
+      : { key: `"value3"`, key2: `"value4"` };
+
+  // nodes[4] and nodes[5] are the two entries; collect them as index -> [key, value].
+  const entries = [4, 5].map(index =>
+    [
+      ...nodes[index].querySelectorAll(
+        ".object-label,.nodeName,.objectBox-string"
+      ),
+    ].map(node => node.textContent)
+  );
 
   is(title, "Storage", `${storageType} object has the expected title`);
   is(length[0], "length", `${storageType} length property name is correct`);
   is(length[1], "2", `${storageType} length property value is correct`);
-  is(key2[0], "0", `1st entry of ${storageType} entry has the correct index`);
-  is(key2[1], "key2", `1st entry of ${storageType} entry has the correct key`);
 
-  const firstValue = storageType === "localStorage" ? `"value2"` : `"value4"`;
-  is(name1, "key2", "Name of short descriptor is correct");
-  is(value1, firstValue, "Value of short descriptor is correct");
-  is(
-    key2[2],
-    firstValue,
-    `1st entry of ${storageType} entry has the correct value`
-  );
-  is(key[0], "1", `2nd entry of ${storageType} entry has the correct index`);
-  is(key[1], "key", `2nd entry of ${storageType} entry has the correct key`);
+  entries.forEach(([entryIndex, entryKey, entryValue], i) => {
+    is(
+      entryIndex,
+      String(i),
+      `entry #${i} of ${storageType} has the correct index`
+    );
+    ok(
+      entryKey in expectedValues,
+      `entry #${i} of ${storageType} has a known key (got "${entryKey}")`
+    );
+    is(
+      entryValue,
+      expectedValues[entryKey],
+      `entry #${i} of ${storageType} has the correct value`
+    );
+  });
 
-  const secondValue = storageType === "localStorage" ? `"value1"` : `"value3"`;
-  is(
-    key[2],
-    secondValue,
-    `2nd entry of ${storageType} entry has the correct value`
+  const entryKeys = entries.map(([, entryKey]) => entryKey);
+  Assert.deepEqual(
+    [...entryKeys].sort(),
+    ["key", "key2"],
+    `${storageType} has the expected set of keys`
   );
+
+  // The inline short descriptor shows one of the entries; its ordering is
+  // independent from the <entries> list above, so just check it is consistent.
+  ok(
+    name1 in expectedValues,
+    `Name of short descriptor is a known key (got "${name1}")`
+  );
+  is(value1, expectedValues[name1], "Value of short descriptor is correct");
 }

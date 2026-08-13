@@ -1,0 +1,21 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+@import url("chrome://global/content/elements/moz-segmented-control.tokens.css");
+
+:host {
+  display: block;
+  width: fit-content;
+  padding: var(--segmented-control-padding);
+  border: var(--segmented-control-border);
+  border-radius: var(--segmented-control-border-radius);
+}
+
+moz-fieldset {
+  --fieldset-gap-column: var(--space-xsmall);
+}
+
+::slotted(moz-segmented-control-item) {
+  flex-grow: 1;
+}

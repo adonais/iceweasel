@@ -20,6 +20,12 @@ password-card,
   margin-block: var(--space-small);
 }
 
+@media -moz-pref("browser.nova.enabled") {
+  .empty-state-card {
+    --card-padding: var(--space-medium);
+  }
+}
+
 .passwords-list {
   display: flex;
   flex-direction: column;
@@ -108,6 +114,7 @@ login-form {
   > img {
     max-width: 232px;
     align-self: center;
+    margin-block-end: var(--space-medium);
   }
 }
 

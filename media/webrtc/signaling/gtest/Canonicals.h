@@ -5,9 +5,9 @@
 #ifndef MEDIA_WEBRTC_SIGNALING_GTEST_CANONICALS_H_
 #define MEDIA_WEBRTC_SIGNALING_GTEST_CANONICALS_H_
 
-#include "mozilla/gtest/WaitFor.h"
 #include "MediaConduitControl.h"
 #include "MediaPipeline.h"
+#include "mozilla/gtest/WaitFor.h"
 
 namespace mozilla {
 

@@ -5,12 +5,15 @@
 /* Debug Logging support. */
 
 #include "XPCLog.h"
+
 #include "mozilla/Logging.h"
-#include "mozilla/Sprintf.h"
 #include "mozilla/mozalloc.h"
-#include "prlog.h"
-#include <string.h>
+#include "mozilla/Sprintf.h"
+
 #include <stdarg.h>
+#include <string.h>
+
+#include "prlog.h"
 
 // this all only works for DEBUG...
 #ifdef DEBUG

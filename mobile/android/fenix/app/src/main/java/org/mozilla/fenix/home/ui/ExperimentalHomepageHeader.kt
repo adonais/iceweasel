@@ -45,6 +45,7 @@ import org.mozilla.fenix.home.ui.HomepageTestTag.PRIVATE_BROWSING_HOMEPAGE_BUTTO
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.wallpapers.WallpaperTheme
 import mozilla.components.ui.icons.R as iconsR
 
 private const val NEWS_BUTTON_ANIMATION_TRANSITION_DURATION = 600
@@ -54,7 +55,6 @@ private const val NEWS_BUTTON_ANIMATION_DELAY = 500L
 /**
  * Homepage header for the entry points experiment.
  *
- * @param wordmarkTextColor [Color] for the wordmark.
  * @param showStoriesButton Whether to show the stories button or not.
  * @param showButtonAnimation Whether to animate the news label on the stories button.
  * @param onPrivateModeTapped Callback for when the private mode button is tapped.
@@ -66,7 +66,6 @@ private const val NEWS_BUTTON_ANIMATION_DELAY = 500L
 @Suppress("LongParameterList")
 @Composable
 fun ExperimentalHomepageHeader(
-    wordmarkTextColor: Color?,
     showStoriesButton: Boolean,
     showButtonAnimation: Boolean,
     onPrivateModeTapped: () -> Unit,
@@ -110,7 +109,7 @@ fun ExperimentalHomepageHeader(
             Spacer(modifier = Modifier.height(28.dp))
 
             WordmarkAndLogo(
-                wordmarkTextColor = wordmarkTextColor,
+                wordmarkTextColor = WallpaperTheme.onWallpaper,
                 onLogoClicked = onLogoClicked,
                 isSportsWidgetEnabled = isSportsWidgetEnabled,
             )
@@ -233,7 +232,6 @@ private fun HomepageHeaderPreview(
     FirefoxTheme(theme) {
         Surface {
             ExperimentalHomepageHeader(
-                wordmarkTextColor = null,
                 showStoriesButton = true,
                 showButtonAnimation = false,
                 onPrivateModeTapped = {},

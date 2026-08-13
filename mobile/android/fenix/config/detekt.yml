@@ -792,6 +792,11 @@ style:
 
 # Custom Rules
 
+mozilla-rules:
+  active: true
+  ClassAcronymCasing:
+    active: true
+
 mozilla-detekt-rules:
   active: true
   MozillaBannedPropertyAccess:
@@ -815,6 +820,10 @@ acorn-detekt-rules:
     active: true
     excludes: ['**/theme/FirefoxTheme.kt']
     appThemeName: 'org.mozilla.fenix.theme.FirefoxTheme'
+  MaterialButtonUsage:
+    active: true
+  MaterialOutlinedButtonUsage:
+    active: true
   MaterialSwitchUsage:
     active: true
   MaterialTextButtonUsage:

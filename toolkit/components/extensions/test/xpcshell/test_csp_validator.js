@@ -329,3 +329,43 @@ add_task(async function test_csp_validator_extension_pages() {
     );
   }
 });
+
+add_task(async function test_csp_validator_sandbox_pages() {
+  const checkPolicy = (policy, expectedResult) => {
+    info(`Checking policy: ${policy}`);
+
+    const result = cps.validateAddonSandboxCSP(policy);
+    equal(result, expectedResult);
+  };
+
+  // Validate hard coded default csp
+  const defaultPolicy = "sandbox allow-scripts; script-src 'self';";
+  checkPolicy(defaultPolicy, null);
+
+  for (const policy of [
+    "script-src 'self';",
+    "script-src 'self'; default-src 'self';",
+  ]) {
+    checkPolicy(
+      policy,
+      "Policy is missing a required \u2018sandbox\u2019 directive"
+    );
+    checkPolicy(`sandbox allow-scripts; ${policy}`, null);
+  }
+
+  for (const policy of [
+    "sandbox allow-same-origin;",
+    "sandbox allow-scripts allow-same-origin;",
+  ]) {
+    checkPolicy(
+      policy,
+      "‘sandbox’ directive contains a forbidden 'allow-same-origin' keyword"
+    );
+  }
+
+  // check with all existing sandbox flags except for allow-same-origin
+  checkPolicy(
+    `sandbox allow-downloads allow-downloads-without-user-activation allow-forms allow-modals allow-orientation-lock allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-presentation allow-scripts allow-storage-access-by-user-activation allow-top-navigation allow-top-navigation-by-user-activation allow-top-navigation-to-custom-protocols; script-src 'unsafe-inline' 'unsafe-eval' https: http: data: blob: 'self';`,
+    null
+  );
+});

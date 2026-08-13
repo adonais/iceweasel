@@ -218,7 +218,7 @@ static constexpr Register ABINonArgReturnVolatileReg = r10;
 static constexpr Register InstanceReg = r14;
 static constexpr Register HeapReg = r15;
 
-// Registers used for asm.js/wasm table calls. These registers must be disjoint
+// Registers used for wasm table calls. These registers must be disjoint
 // from the ABI argument registers, InstanceReg and each other.
 static constexpr Register WasmTableCallScratchReg0 = ABINonArgReg0;
 static constexpr Register WasmTableCallScratchReg1 = ABINonArgReg1;

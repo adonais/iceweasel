@@ -18,6 +18,7 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.data.createTabGroup
+import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.ui.tabpage.TabGroupsPage
 import org.mozilla.fenix.theme.FirefoxTheme
 
@@ -32,7 +33,7 @@ class TabGroupsPageTest {
         composeTestRule.setContent {
             FirefoxTheme {
                 TabGroupsPage(
-                    groups = emptyList(),
+                    state = TabsTrayState.TabGroupState(),
                     onTabGroupClick = {},
                     onDeleteTabGroupClick = {},
                     onEditTabGroupClick = {},
@@ -53,7 +54,9 @@ class TabGroupsPageTest {
         composeTestRule.setContent {
             FirefoxTheme {
                 TabGroupsPage(
-                    groups = listOf(group),
+                    state = TabsTrayState.TabGroupState(
+                        groups = listOf(group),
+                    ),
                     onTabGroupClick = {
                         groupClicked = true
                         clickedGroup = it
@@ -80,7 +83,9 @@ class TabGroupsPageTest {
         composeTestRule.setContent {
             FirefoxTheme {
                 TabGroupsPage(
-                    groups = listOf(group),
+                    state = TabsTrayState.TabGroupState(
+                        groups = listOf(group),
+                    ),
                     onTabGroupClick = {},
                     onDeleteTabGroupClick = {
                         deleteClicked = true
@@ -109,7 +114,9 @@ class TabGroupsPageTest {
         composeTestRule.setContent {
             FirefoxTheme {
                 TabGroupsPage(
-                    groups = listOf(group),
+                    state = TabsTrayState.TabGroupState(
+                        groups = listOf(group),
+                    ),
                     onTabGroupClick = {},
                     onDeleteTabGroupClick = {},
                     onEditTabGroupClick = {

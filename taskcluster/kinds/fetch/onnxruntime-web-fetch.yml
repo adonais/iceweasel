@@ -10,14 +10,6 @@ ort.jsep.wasm:
         sha256: c46655e8a94afc45338d4cb2b840475f88e5012d524509916e505079c00bfa39
         size: 21596019
 
-wllama.wasm:
-    description: Llama.cpp WASM files
-    fetch:
-        type: static-url
-        url: https://storage.googleapis.com/moz-model-hub/wasm/2.3.1/wllama.wasm
-        sha256: d7e1cd83a4ee7a3cb460be6c8b7762dfa2a992269786101dc4c5e4517c9177a3
-        size: 1762319
-
 xenova-all-minilm-l6-v2:
     description: feature extraction model
     fetch:

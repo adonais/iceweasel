@@ -6,7 +6,6 @@
 #define jit_mips64_Assembler_mips64_h
 
 #include "jit/mips-shared/Assembler-mips-shared.h"
-
 #include "jit/mips64/Architecture-mips64.h"
 
 namespace js {

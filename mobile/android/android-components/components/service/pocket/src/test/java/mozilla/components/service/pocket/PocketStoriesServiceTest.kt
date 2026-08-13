@@ -7,7 +7,6 @@ package mozilla.components.service.pocket
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.test.runTest
 import mozilla.components.service.pocket.PocketStory.ContentRecommendation
-import mozilla.components.service.pocket.PocketStory.PocketRecommendedStory
 import mozilla.components.service.pocket.PocketStory.SponsoredContent
 import mozilla.components.service.pocket.helpers.assertConstructorsVisibility
 import mozilla.components.service.pocket.mars.SponsoredContentsUseCases
@@ -16,9 +15,6 @@ import mozilla.components.service.pocket.mars.SponsoredContentsUseCases.RecordIm
 import mozilla.components.service.pocket.recommendations.ContentRecommendationsUseCases
 import mozilla.components.service.pocket.recommendations.ContentRecommendationsUseCases.GetContentRecommendations
 import mozilla.components.service.pocket.recommendations.ContentRecommendationsUseCases.UpdateRecommendationsImpressions
-import mozilla.components.service.pocket.stories.PocketStoriesUseCases
-import mozilla.components.service.pocket.stories.PocketStoriesUseCases.GetPocketStories
-import mozilla.components.service.pocket.stories.PocketStoriesUseCases.UpdateStoriesTimesShown
 import mozilla.components.support.test.any
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
@@ -34,14 +30,11 @@ import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class PocketStoriesServiceTest {
-    private val storiesUseCases: PocketStoriesUseCases = mock()
     private val contentRecommendationsUseCases: ContentRecommendationsUseCases = mock()
     private val sponsoredContentsUseCases: SponsoredContentsUseCases = mock()
     private val service = PocketStoriesService(testContext, PocketStoriesConfig(mock())).also {
-        it.storiesRefreshScheduler = mock()
         it.contentRecommendationsRefreshScheduler = mock()
         it.sponsoredContentsRefreshScheduler = mock()
-        it.storiesUseCases = storiesUseCases
         it.contentRecommendationsUseCases = contentRecommendationsUseCases
         it.sponsoredContentsUseCases = sponsoredContentsUseCases
     }
@@ -49,52 +42,12 @@ class PocketStoriesServiceTest {
     @After
     fun teardown() {
         GlobalDependencyProvider.ContentRecommendations.reset()
-        GlobalDependencyProvider.RecommendedStories.reset()
         GlobalDependencyProvider.SponsoredContents.reset()
     }
 
     @Test
     fun `GIVEN PocketStoriesService THEN it should be publicly available`() {
         assertConstructorsVisibility(PocketStoriesConfig::class, KVisibility.PUBLIC)
-    }
-
-    @Test
-    fun `GIVEN PocketStoriesService WHEN startPeriodicStoriesRefresh THEN persist dependencies and schedule stories refresh`() {
-        service.startPeriodicStoriesRefresh()
-
-        assertNotNull(GlobalDependencyProvider.RecommendedStories.useCases)
-        verify(service.storiesRefreshScheduler).schedulePeriodicRefreshes(any())
-    }
-
-    @Test
-    fun `GIVEN PocketStoriesService WHEN stopPeriodicStoriesRefresh THEN stop refreshing stories and clear dependencies`() {
-        service.stopPeriodicStoriesRefresh()
-
-        verify(service.storiesRefreshScheduler).stopPeriodicRefreshes(any())
-        assertNull(GlobalDependencyProvider.RecommendedStories.useCases)
-    }
-
-    @Test
-    fun `GIVEN PocketStoriesService WHEN getStories THEN stories useCases should return`() = runTest {
-        val stories = listOf(mock<PocketRecommendedStory>())
-        val getStoriesUseCase: GetPocketStories = mock()
-        doReturn(stories).`when`(getStoriesUseCase).invoke()
-        doReturn(getStoriesUseCase).`when`(storiesUseCases).getStories
-
-        val result = service.getStories()
-
-        assertEquals(stories, result)
-    }
-
-    @Test
-    fun `GIVEN PocketStoriesService WHEN updateStoriesTimesShown THEN delegate to spocs useCases`() = runTest {
-        val updateTimesShownUseCase: UpdateStoriesTimesShown = mock()
-        doReturn(updateTimesShownUseCase).`when`(storiesUseCases).updateTimesShown
-        val stories = listOf(mock<PocketRecommendedStory>())
-
-        service.updateStoriesTimesShown(stories)
-
-        verify(updateTimesShownUseCase).invoke(stories)
     }
 
     @Test

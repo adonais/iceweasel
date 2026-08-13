@@ -229,9 +229,10 @@ static MediaResult ValidateBufferAndPicture(
   }
   // Ensure the picture size specified in the headers can be extracted out of
   // the frame we've been supplied without indexing out of bounds.
+  // The picture extent and the plane width are both measured in samples.
   CheckedUint32 xLimit = aPicture.x + CheckedUint32(aPicture.width);
   CheckedUint32 yLimit = aPicture.y + CheckedUint32(aPicture.height);
-  if (!xLimit.isValid() || xLimit.value() > aBuffer.mPlanes[0].mStride ||
+  if (!xLimit.isValid() || xLimit.value() > aBuffer.mPlanes[0].mWidth ||
       !yLimit.isValid() || yLimit.value() > aBuffer.mPlanes[0].mHeight) {
     // The specified picture dimensions can't be contained inside the video
     // frame, we'll stomp memory if we try to copy it. Fail.
@@ -341,6 +342,11 @@ MediaResult VideoData::SetVideoDataToImage(PlanarYCbCrImage* aVideoImage,
                                            const IntRect& aPicture,
                                            bool aCopyData) {
   MOZ_ASSERT(aVideoImage);
+
+  if (MediaResult r = ValidateBufferAndPicture(aBuffer, aPicture);
+      NS_FAILED(r)) {
+    return r;
+  }
 
   PlanarYCbCrData data = ConstructPlanarYCbCrData(aInfo, aBuffer, aPicture);
 

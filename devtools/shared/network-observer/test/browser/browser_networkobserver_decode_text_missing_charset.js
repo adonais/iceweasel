@@ -75,11 +75,9 @@ async function testMissingCharset({ decodeResponseBodies }) {
   });
 
   info("Wait for all network events to be received");
-  await BrowserTestUtils.waitForCondition(() => events.length >= 1);
+  await TestUtils.waitForCondition(() => events.length >= 1);
   is(events.length, 1, "Received the expected number of network events");
-  await BrowserTestUtils.waitForCondition(
-    () => events[0].hasResponseContentComplete
-  );
+  await TestUtils.waitForCondition(() => events[0].hasResponseContentComplete);
   is(
     await events[0].getDecodedContent(),
     ASCII_TEXT,

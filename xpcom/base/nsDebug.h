@@ -5,13 +5,12 @@
 #ifndef nsDebug_h_
 #define nsDebug_h_
 
-#include "nscore.h"
-#include "nsError.h"
-
-#include "nsXPCOM.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/glue/Debug.h"
 #include "mozilla/Likely.h"
+#include "mozilla/glue/Debug.h"
+#include "nsError.h"
+#include "nsXPCOM.h"
+#include "nscore.h"
 
 #ifdef DEBUG
 #  include "mozilla/ErrorNames.h"

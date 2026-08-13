@@ -55,7 +55,7 @@ function findCertByCommonName(commonName) {
   return null;
 }
 
-function run_test() {
+add_task(async function run_test() {
   let promptFactoryCID = MockRegistrar.register(
     "@mozilla.org/prompter;1",
     gPromptFactory
@@ -69,8 +69,8 @@ function run_test() {
   let token = Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(
     Ci.nsIPKCS11Token
   );
-  token.changePassword("", "password");
-  token.logout();
+  await token.changePassword("", "password");
+  await token.logout();
 
   // Import the certificate and key so we have something to export.
   let cert = findCertByCommonName(CERT_COMMON_NAME);
@@ -83,7 +83,7 @@ function run_test() {
   notEqual(cert, null, "cert should be found now");
 
   // Log out so we're prompted for the password.
-  token.logout();
+  await token.logout();
 
   // Export the certificate and key (and don't cancel the password request
   // dialog).
@@ -96,7 +96,7 @@ function run_test() {
   output.remove(false /* not a directory; recursive doesn't apply */);
 
   // Log out again so we're prompted for the password.
-  token.logout();
+  await token.logout();
 
   // Attempt to export the certificate and key, but this time cancel the
   // password request dialog. The export operation should also be canceled.
@@ -112,4 +112,4 @@ function run_test() {
   );
 
   ok(!output2.exists(), "output2 shouldn't exist after failing to export");
-}
+});

@@ -47,7 +47,7 @@ add_task(async function test_normal_favicon() {
       true
     );
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => tab.getAttribute("image"),
       "Waiting for the tab's favicon to load."
     );

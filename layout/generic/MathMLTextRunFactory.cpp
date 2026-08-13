@@ -8,6 +8,7 @@
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/ComputedStyleInlines.h"
 #include "mozilla/StaticPrefs_mathml.h"
+#include "mozilla/Utf16.h"
 #include "mozilla/intl/UnicodeScriptCodes.h"
 #include "nsDeviceContext.h"
 #include "nsFontMetrics.h"
@@ -529,8 +530,8 @@ void MathMLTextRunFactory::RebuildTextRun(
     }
 
     uint32_t ch = str[i];
-    if (i < length - 1 && NS_IS_SURROGATE_PAIR(ch, str[i + 1])) {
-      ch = SURROGATE_TO_UCS4(ch, str[i + 1]);
+    if (i < length - 1 && mozilla::IsSurrogatePair(ch, str[i + 1])) {
+      ch = mozilla::SurrogateToUCS4(ch, str[i + 1]);
     }
     uint32_t ch2 = MathVariant(ch, mathVar);
 
@@ -570,13 +571,13 @@ void MathMLTextRunFactory::RebuildTextRun(
     styleArray.AppendElement(styles[i]);
     canBreakBeforeArray.AppendElement(aTextRun->CanBreakLineBefore(i));
 
-    if (IS_IN_BMP(ch2)) {
+    if (mozilla::IsInBMP(ch2)) {
       convertedString.Append(ch2);
     } else {
-      convertedString.Append(H_SURROGATE(ch2));
-      convertedString.Append(L_SURROGATE(ch2));
+      convertedString.Append(mozilla::HighSurrogate(ch2));
+      convertedString.Append(mozilla::LowSurrogate(ch2));
       ++extraChars;
-      if (!IS_IN_BMP(ch)) {
+      if (!mozilla::IsInBMP(ch)) {
         deletedCharsArray.AppendElement(
             true);  // not exactly deleted, but
                     // the trailing surrogate is skipped

@@ -38,9 +38,7 @@ async function waitForServiceWorkerTerminated(swRegInfo) {
   info(`Wait all ${swRegInfo.scope} workers to be terminated`);
 
   try {
-    await BrowserTestUtils.waitForCondition(
-      () => !getServiceWorkerInfo(swRegInfo)
-    );
+    await TestUtils.waitForCondition(() => !getServiceWorkerInfo(swRegInfo));
   } catch (err) {
     const workerInfo = getServiceWorkerInfo(swRegInfo);
     if (workerInfo) {
@@ -103,7 +101,7 @@ async function waitForServiceWorkerRegistrationsRemoved(extension) {
     {}
   );
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     let regs = swm.getAllRegistrations();
 
     for (let i = 0; i < regs.length; i++) {

@@ -4,6 +4,7 @@
 
 #include "BufferMediaResource.h"
 #include "DecoderData.h"
+#include "H265.h"
 #include "MP4Demuxer.h"
 #include "MediaDataDemuxer.h"
 #include "MockMediaResource.h"
@@ -585,6 +586,58 @@ TEST(MP4Demuxer, GetNextKeyframe)
           binding->mTaskQueue->BeginShutdown();
         },
         DO_FAIL);
+  });
+}
+
+// Generated with open GOP so non-first keyframes are CRA_NUT, not IDR:
+//   ffmpeg -f lavfi -i testsrc=duration=4:size=128x96:rate=30
+//     -c:v libx265 -x265-params keyint=30:min-keyint=30:open-gop=1:info=0
+//     -an test_hevc_open_gop.mp4
+// Sample 1 is IDR_N_LP; samples 28, 60, 88 are CRA_NUT.
+// H265::IsKeyFrame() returns true only for IDR_W_RADL/IDR_N_LP, not CRA.
+TEST(MP4Demuxer, SeekHEVC)
+{
+  RefPtr<MP4DemuxerBinding> binding =
+      new MP4DemuxerBinding("test_hevc_open_gop.mp4");
+
+  // Seek past the first GOP. The nearest stss sync sample is a CRA_NUT.
+  // VideoToolbox can return a bad data error when a CRA is the first sample
+  // fed to a fresh decode session, analogous to non-IDR I-frames for H.264.
+  // The demuxer must only mark IDR frames as keyframes on macOS.
+  const TimeUnit seekTime = TimeUnit::FromSeconds(2.0);
+
+  binding->RunTestAndWait([binding, seekTime]() {
+    binding->mVideoTrack =
+        binding->mDemuxer->GetTrackDemuxer(TrackInfo::kVideoTrack, 0);
+    binding->mVideoTrack->Seek(seekTime)->Then(
+        binding->mTaskQueue, __func__,
+        [binding, seekTime](TimeUnit aActualTime) {
+          EXPECT_LE(aActualTime, seekTime);
+          binding->mVideoTrack->GetSamples()->Then(
+              binding->mTaskQueue, __func__,
+              [binding,
+               aActualTime](RefPtr<MediaTrackDemuxer::SamplesHolder> aSamples) {
+                EXPECT_GT(aSamples->GetSamples().Length(), 0u);
+                RefPtr<MediaRawData> first = aSamples->GetSamples()[0];
+                EXPECT_TRUE(first->mKeyframe);
+                EXPECT_EQ(first->mTime, aActualTime);
+#ifdef MOZ_APPLEMEDIA
+                // CRA keyframe flags are stripped on Apple platforms, so the
+                // seek falls back to the preceding IDR.
+                auto isIDR = H265::IsKeyFrame(first);
+                EXPECT_TRUE(isIDR.isOk() && isIDR.unwrap());
+#endif
+                binding->mTaskQueue->BeginShutdown();
+              },
+              [binding](const MediaResult&) {
+                EXPECT_TRUE(false) << "GetSamples failed after seek";
+                binding->mTaskQueue->BeginShutdown();
+              });
+        },
+        [binding](const MediaResult&) {
+          EXPECT_TRUE(false) << "Seek failed";
+          binding->mTaskQueue->BeginShutdown();
+        });
   });
 }
 

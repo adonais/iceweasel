@@ -18,12 +18,13 @@
 
 #ifdef XP_MACOSX
 #  include <Security/Security.h>
+
 #  include "KeychainSecret.h"
 #endif
 
 #ifdef XP_WIN
-#  include <windows.h>
 #  include <wincrypt.h>
+#  include <windows.h>
 #endif  // XP_WIN
 
 extern mozilla::LazyLogModule gPIPNSSLog;

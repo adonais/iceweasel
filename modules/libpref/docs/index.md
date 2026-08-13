@@ -121,6 +121,21 @@ will be notified when the value of the named pref value changes, or when the
 value of any pref matching a given prefix changes. E.g. all font pref changes
 can be observed by adding a `font.` prefix-matching observer.
 
+Prefix matching is done on dot-segment boundaries, not on raw string prefixes.
+A prefix observer fires for the named pref and for any pref that extends it by
+one or more whole `.`-delimited segments, but never for a pref that merely
+shares a leading substring. E.g. a `font.` (or equivalently `font`) observer
+fires for `font.size.variable` but not for `fontomatic`. A trailing `.` is
+optional and is normalized away at registration, so `font.` and `font` register
+the same observer.
+
+A consequence worth noting: pref families that pack sub-levels into a single
+segment using `_` or camelCase (e.g. `network.proxy.socks` alongside
+`network.proxy.socks_port`, or `…linkPreview.shift` alongside
+`…linkPreview.shiftAlt`) are *not* covered by a parent-segment prefix, because
+`_` and camelCase are intra-segment characters rather than separators. An
+observer that wants such pseudo-children must register their names explicitly.
+
 See also the section on static prefs below.
 
 ### Static prefs

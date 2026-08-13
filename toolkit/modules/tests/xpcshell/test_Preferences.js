@@ -12,7 +12,7 @@ add_test(function test_set_get_pref() {
   Assert.equal(Preferences.get("test_set_get_pref.boolean"), true);
 
   // Clean up.
-  Preferences.resetBranch("test_set_get_pref.");
+  Services.prefs.clearUserBranch("test_set_get_pref.");
 
   run_next_test();
 });
@@ -22,7 +22,6 @@ add_test(function test_set_get_branch_pref() {
 
   prefs.set("something", 1);
   Assert.equal(prefs.get("something"), 1);
-  Assert.ok(!Preferences.has("something"));
 
   // Clean up.
   prefs.reset("something");
@@ -48,7 +47,7 @@ add_test(function test_set_get_multiple_prefs() {
   Assert.equal(b, true);
 
   // Clean up.
-  Preferences.resetBranch("test_set_get_multiple_prefs.");
+  Services.prefs.clearUserBranch("test_set_get_multiple_prefs.");
 
   run_next_test();
 });
@@ -73,7 +72,7 @@ add_test(function test_get_multiple_prefs_with_default_value() {
   Assert.equal(c, 0);
 
   // Clean up.
-  Preferences.resetBranch("test_get_multiple_prefs_with_default_value.");
+  Services.prefs.clearUserBranch("test_get_multiple_prefs_with_default_value.");
 
   run_next_test();
 });
@@ -183,28 +182,10 @@ add_test(function test_reset_pref() {
   run_next_test();
 });
 
-add_test(function test_reset_pref_branch() {
-  Preferences.set("test_reset_pref_branch.foo", 1);
-  Preferences.set("test_reset_pref_branch.bar", 2);
-  Preferences.resetBranch("test_reset_pref_branch.");
-  Assert.equal(Preferences.get("test_reset_pref_branch.foo"), undefined);
-  Assert.equal(Preferences.get("test_reset_pref_branch.bar"), undefined);
-
-  run_next_test();
-});
-
 // Make sure the module doesn't throw an exception when asked to reset
 // a nonexistent pref.
 add_test(function test_reset_nonexistent_pref() {
   Preferences.reset("test_reset_nonexistent_pref");
-
-  run_next_test();
-});
-
-// Make sure the module doesn't throw an exception when asked to reset
-// a nonexistent pref branch.
-add_test(function test_reset_nonexistent_pref_branch() {
-  Preferences.resetBranch("test_reset_nonexistent_pref_branch.");
 
   run_next_test();
 });
@@ -339,28 +320,6 @@ add_test(function test_observe_value_of_reset_pref() {
   run_next_test();
 });
 
-add_test(function test_has_pref() {
-  Assert.ok(!Preferences.has("test_has_pref"));
-  Preferences.set("test_has_pref", "foo");
-  Assert.ok(Preferences.has("test_has_pref"));
-
-  Preferences.set("test_has_pref.foo", "foo");
-  Preferences.set("test_has_pref.bar", "bar");
-  let [hasFoo, hasBar, hasBaz] = Preferences.has([
-    "test_has_pref.foo",
-    "test_has_pref.bar",
-    "test_has_pref.baz",
-  ]);
-  Assert.ok(hasFoo);
-  Assert.ok(hasBar);
-  Assert.ok(!hasBaz);
-
-  // Clean up.
-  Preferences.resetBranch("test_has_pref");
-
-  run_next_test();
-});
-
 add_test(function test_isSet_pref() {
   // Use a pref that we know has a default value but no user-set value.
   // This feels dangerous; perhaps we should create some other default prefs
@@ -374,29 +333,3 @@ add_test(function test_isSet_pref() {
 
   run_next_test();
 });
-
-/*
-add_test(function test_lock_prefs() {
-  // Use a pref that we know has a default value.
-  // This feels dangerous; perhaps we should create some other default prefs
-  // that we can use for testing.
-  do_check_false(Preferences.locked("toolkit.defaultChromeURI"));
-  Preferences.lock("toolkit.defaultChromeURI");
-  do_check_true(Preferences.locked("toolkit.defaultChromeURI"));
-  Preferences.unlock("toolkit.defaultChromeURI");
-  do_check_false(Preferences.locked("toolkit.defaultChromeURI"));
-
-  let val = Preferences.get("toolkit.defaultChromeURI");
-  Preferences.set("toolkit.defaultChromeURI", "test_lock_prefs");
-  do_check_eq(Preferences.get("toolkit.defaultChromeURI"), "test_lock_prefs");
-  Preferences.lock("toolkit.defaultChromeURI");
-  do_check_eq(Preferences.get("toolkit.defaultChromeURI"), val);
-  Preferences.unlock("toolkit.defaultChromeURI");
-  do_check_eq(Preferences.get("toolkit.defaultChromeURI"), "test_lock_prefs");
-
-  // Clean up.
-  Preferences.reset("toolkit.defaultChromeURI");
-
-  run_next_test();
-});
-*/

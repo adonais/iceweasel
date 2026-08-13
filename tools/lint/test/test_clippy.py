@@ -159,5 +159,50 @@ def test_gkrust_invocation_keeps_going_and_demotes_dwarnings(tmpdir):
     assert "clippy::items_after_statements" in tokens
 
 
+def test_driver_flags_warn_allow_deny_ordering():
+    """get_clippy_driver_flags must emit warn lints as `-W`, allow lints as
+    `-A` and deny lints as `-D`, in that order. The allows have to come after
+    the warns so that opting out of an individual lint pulled in by a warned
+    lint group (e.g. clippy::pedantic) actually wins, since for a given lint
+    the rightmost flag is the one clippy honours.
+    """
+    import clippy
+
+    config = {
+        "warn": ["all", "pedantic", "use_self"],
+        "allow": ["doc_markdown", "missing_errors_doc"],
+        "deny": ["needless_return"],
+    }
+    flags = clippy.get_clippy_driver_flags(config)
+
+    assert flags == [
+        "-W",
+        "clippy::all",
+        "-W",
+        "clippy::pedantic",
+        "-W",
+        "clippy::use_self",
+        "-A",
+        "clippy::doc_markdown",
+        "-A",
+        "clippy::missing_errors_doc",
+        "-D",
+        "clippy::needless_return",
+    ]
+
+    # Every allow must come after every warn so the opt-out takes effect.
+    last_warn = max(i for i, f in enumerate(flags) if f == "-W")
+    first_allow = min(i for i, f in enumerate(flags) if f == "-A")
+    assert first_allow > last_warn
+
+
+def test_driver_flags_default_when_lists_absent():
+    """A config without warn/allow/deny keys yields no driver flags rather
+    than raising."""
+    import clippy
+
+    assert clippy.get_clippy_driver_flags({}) == []
+
+
 if __name__ == "__main__":
     mozunit.main()

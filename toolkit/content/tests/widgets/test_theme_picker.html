@@ -1,0 +1,502 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>ThemePicker Tests</title>
+    <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
+    <script src="chrome://mochikit/content/tests/SimpleTest/EventUtils.js"></script>
+    <link rel="stylesheet" href="chrome://global/skin/in-content/common.css" />
+    <link
+      rel="stylesheet"
+      href="chrome://mochikit/content/tests/SimpleTest/test.css"
+    />
+    <script>
+      const DEFAULT_THEME_ID = "default-theme@mozilla.org";
+
+      // Loaded in add_setup so the tasks below can exercise a specific controller.
+      let ThemePicker;
+      let ThemePickerStorybookController;
+      let ThemePickerDirectController;
+
+      const PREF_SYSTEM_USES_DARK = "ui.systemUsesDarkTheme";
+      const PREF_NATIVE_THEME = "browser.theme.native-theme";
+      const PREF_ACTIVE_THEME_ID = "extensions.activeThemeID";
+
+      let originalCreateController;
+
+      // The theme-picker element picks its controller in its constructor based on
+      // whether platform APIs are available. In this chrome test they always are,
+      // so we override the factory to deterministically exercise each controller.
+      function useController(ControllerClass) {
+        ThemePicker.createController = host => new ControllerClass(host);
+      }
+
+      async function waitForCondition(condition, message) {
+        for (let i = 0; i < 100; i++) {
+          if (condition()) {
+            return;
+          }
+          await new Promise(resolve => setTimeout(resolve, 20));
+        }
+        ok(false, `Timed out waiting for condition: ${message}`);
+      }
+
+      function setThemePrefs({ systemUsesDark, nativeTheme, activeThemeId }) {
+        if (systemUsesDark === null) {
+          Services.prefs.clearUserPref(PREF_SYSTEM_USES_DARK);
+        } else {
+          Services.prefs.setIntPref(PREF_SYSTEM_USES_DARK, systemUsesDark);
+        }
+        Services.prefs.setBoolPref(PREF_NATIVE_THEME, nativeTheme);
+        Services.prefs.setCharPref(PREF_ACTIVE_THEME_ID, activeThemeId);
+      }
+
+      async function renderThemePicker({ layout = "full" } = {}) {
+        await customElements.whenDefined("theme-picker");
+        let content = document.getElementById("content");
+        content.textContent = "";
+        let picker = document.createElement("theme-picker");
+        picker.layout = layout;
+        content.append(picker);
+        // The direct controller loads its theme list asynchronously, so wait for
+        // it before asserting on rendered state.
+        await waitForCondition(
+          () => picker.themes.length,
+          "The theme picker is populated with themes."
+        );
+        await picker.updateComplete;
+        return picker;
+      }
+
+      add_setup(async function () {
+        ({ ThemePicker } =
+          await import("chrome://global/content/elements/theme-picker.mjs"));
+        ({ ThemePickerStorybookController } =
+          await import("chrome://global/content/elements/theme-picker-storybook-controller.mjs"));
+        ({ ThemePickerDirectController } =
+          await import("chrome://global/content/elements/theme-picker-direct-controller.mjs"));
+
+        originalCreateController = ThemePicker.createController;
+        let originalActiveThemeId = Services.prefs.getCharPref(
+          PREF_ACTIVE_THEME_ID,
+          DEFAULT_THEME_ID
+        );
+        SimpleTest.registerCleanupFunction(() => {
+          ThemePicker.createController = originalCreateController;
+          Services.prefs.clearUserPref(PREF_SYSTEM_USES_DARK);
+          Services.prefs.clearUserPref(PREF_NATIVE_THEME);
+          Services.prefs.setCharPref(
+            PREF_ACTIVE_THEME_ID,
+            originalActiveThemeId
+          );
+        });
+      });
+
+      // Storybook controller tests: the mocked controller populates the picker
+      // with themes and default state and mirrors themechange events back onto
+      // the host, without touching prefs or AddonManager.
+      add_task(async function testStorybookInitialState() {
+        useController(ThemePickerStorybookController);
+        let picker = await renderThemePicker();
+
+        ok(picker.themes.length, "Theme picker is populated with themes.");
+        is(
+          picker.activeThemeId,
+          DEFAULT_THEME_ID,
+          "The default theme is active initially."
+        );
+        is(picker.appearance, "device", "Device appearance is set initially.");
+        ok(!picker.nativeTheme, "Native theme is off initially.");
+
+        let items = picker.shadowRoot.querySelectorAll(
+          "moz-visual-picker-item"
+        );
+        is(
+          items.length,
+          picker.themes.length,
+          "A picker item is rendered for each theme."
+        );
+
+        let segmentedControl = picker.shadowRoot.querySelector(
+          "moz-segmented-control"
+        );
+        is(
+          segmentedControl.value,
+          "device",
+          "The segmented control reflects the current appearance."
+        );
+      });
+
+      // Changing appearance, theme, and native theme each dispatch a
+      // themechange event with the expected detail, and the mocked controller
+      // reflects the change back onto the picker.
+      add_task(async function testStorybookThemeChangeEvents() {
+        useController(ThemePickerStorybookController);
+        let picker = await renderThemePicker();
+
+        let events = [];
+        picker.addEventListener("themechange", e => events.push(e.detail));
+
+        picker.appearanceChange({ target: { value: "dark" } });
+        await picker.updateComplete;
+        is(picker.appearance, "dark", "Appearance is updated to dark.");
+
+        let secondTheme = picker.themes[1];
+        picker.themeChange({ target: { value: secondTheme.id } });
+        await picker.updateComplete;
+        is(
+          picker.activeThemeId,
+          secondTheme.id,
+          "The active theme is updated."
+        );
+
+        picker.nativeThemeChange({ target: { checked: true } });
+        await picker.updateComplete;
+        ok(picker.nativeTheme, "Native theme is turned on.");
+
+        SimpleTest.isDeeply(
+          events,
+          [
+            { property: "appearance", value: "dark" },
+            { property: "theme", value: secondTheme.id },
+            { property: "nativeTheme", value: true },
+          ],
+          "themechange events are dispatched with the expected details."
+        );
+      });
+
+      // The native theme checkbox is only enabled while the default theme is
+      // active.
+      add_task(async function testStorybookNativeThemeCheckboxDisabled() {
+        useController(ThemePickerStorybookController);
+        let picker = await renderThemePicker();
+
+        let checkbox = picker.shadowRoot.querySelector("moz-checkbox");
+        ok(
+          !checkbox.disabled,
+          "The native theme checkbox is enabled for the default theme."
+        );
+
+        picker.themeChange({ target: { value: picker.themes[1].id } });
+        await picker.updateComplete;
+        ok(
+          checkbox.disabled,
+          "The native theme checkbox is disabled for non-default themes."
+        );
+
+        picker.themeChange({ target: { value: DEFAULT_THEME_ID } });
+        await picker.updateComplete;
+        ok(
+          !checkbox.disabled,
+          "The native theme checkbox is re-enabled for the default theme."
+        );
+      });
+
+      // Direct controller tests: the controller reads its initial state from
+      // prefs and writes appearance/native-theme changes back to them.
+      add_task(async function testDirectInitialState() {
+        useController(ThemePickerDirectController);
+        setThemePrefs({
+          systemUsesDark: null,
+          nativeTheme: false,
+          activeThemeId: DEFAULT_THEME_ID,
+        });
+        let picker = await renderThemePicker();
+
+        ok(picker.themes.length, "Theme picker is populated with themes.");
+        is(
+          picker.activeThemeId,
+          DEFAULT_THEME_ID,
+          "The active theme id is read from the pref."
+        );
+        is(
+          picker.appearance,
+          "device",
+          "Device appearance is used when the pref has no user value."
+        );
+        ok(!picker.nativeTheme, "Native theme reflects the pref value.");
+
+        let items = picker.shadowRoot.querySelectorAll(
+          "moz-visual-picker-item"
+        );
+        is(
+          items.length,
+          picker.themes.length,
+          "A picker item is rendered for each theme."
+        );
+      });
+
+      // The controller maps the appearance and native-theme prefs onto the host.
+      add_task(async function testDirectReflectsPrefs() {
+        useController(ThemePickerDirectController);
+        setThemePrefs({
+          systemUsesDark: 1,
+          nativeTheme: true,
+          activeThemeId: "nova-sun@mozilla.org",
+        });
+        let darkPicker = await renderThemePicker();
+        is(darkPicker.appearance, "dark", "systemUsesDark=1 maps to dark.");
+        ok(darkPicker.nativeTheme, "Native theme pref is reflected.");
+        is(
+          darkPicker.activeThemeId,
+          "nova-sun@mozilla.org",
+          "The active theme id pref is reflected."
+        );
+
+        setThemePrefs({
+          systemUsesDark: 0,
+          nativeTheme: false,
+          activeThemeId: DEFAULT_THEME_ID,
+        });
+        let lightPicker = await renderThemePicker();
+        is(lightPicker.appearance, "light", "systemUsesDark=0 maps to light.");
+      });
+
+      // Appearance changes are written to ui.systemUsesDarkTheme and mirrored
+      // back onto the host.
+      add_task(async function testDirectAppearanceChange() {
+        useController(ThemePickerDirectController);
+        setThemePrefs({
+          systemUsesDark: null,
+          nativeTheme: false,
+          activeThemeId: DEFAULT_THEME_ID,
+        });
+        let picker = await renderThemePicker();
+        let appearanceChooser = picker.shadowRoot.querySelector(
+          "moz-segmented-control"
+        );
+        let [light, dark, device] = [
+          ...appearanceChooser.querySelectorAll("moz-segmented-control-item"),
+        ];
+
+        synthesizeMouseAtCenter(dark, {});
+        await picker.updateComplete;
+        is(
+          Services.prefs.getIntPref(PREF_SYSTEM_USES_DARK),
+          1,
+          "Dark appearance sets the pref to 1."
+        );
+        is(
+          picker.appearance,
+          "dark",
+          "The host appearance is updated to dark."
+        );
+
+        synthesizeMouseAtCenter(light, {});
+        await picker.updateComplete;
+        is(
+          Services.prefs.getIntPref(PREF_SYSTEM_USES_DARK),
+          0,
+          "Light appearance sets the pref to 0."
+        );
+        is(
+          picker.appearance,
+          "light",
+          "The host appearance is updated to light."
+        );
+
+        synthesizeMouseAtCenter(device, {});
+        await picker.updateComplete;
+        ok(
+          !Services.prefs.prefHasUserValue(PREF_SYSTEM_USES_DARK),
+          "Device appearance clears the pref."
+        );
+        is(
+          picker.appearance,
+          "device",
+          "The host appearance is updated to device."
+        );
+      });
+
+      // The native theme checkbox is written to browser.theme.native-theme.
+      add_task(async function testDirectNativeThemeChange() {
+        useController(ThemePickerDirectController);
+        setThemePrefs({
+          systemUsesDark: null,
+          nativeTheme: false,
+          activeThemeId: DEFAULT_THEME_ID,
+        });
+        let picker = await renderThemePicker();
+        let checkbox = picker.shadowRoot.querySelector("moz-checkbox");
+
+        synthesizeMouseAtCenter(checkbox, {});
+        await picker.updateComplete;
+        ok(
+          Services.prefs.getBoolPref(PREF_NATIVE_THEME),
+          "The native theme pref is turned on."
+        );
+        ok(picker.nativeTheme, "The host native theme is turned on.");
+
+        synthesizeMouseAtCenter(checkbox, {});
+        await picker.updateComplete;
+        ok(
+          !Services.prefs.getBoolPref(PREF_NATIVE_THEME),
+          "The native theme pref is turned off."
+        );
+        ok(!picker.nativeTheme, "The host native theme is turned off.");
+      });
+
+      // Selecting a theme delegates to the themes manager and reflects the
+      // resulting active theme. The manager's install/enable behavior (which
+      // talks to AddonManager) is covered by FirefoxThemesList tests, so it is
+      // stubbed here to keep the test focused on the controller.
+      add_task(async function testDirectThemeChange() {
+        useController(ThemePickerDirectController);
+        setThemePrefs({
+          systemUsesDark: null,
+          nativeTheme: false,
+          activeThemeId: DEFAULT_THEME_ID,
+        });
+        let picker = await renderThemePicker();
+
+        let requested = [];
+        picker.controller.themesManager.updateThemeState = async (
+          themeId,
+          enabled
+        ) => {
+          requested.push({ themeId, enabled });
+          Services.prefs.setCharPref(PREF_ACTIVE_THEME_ID, themeId);
+          return true;
+        };
+
+        let themeItems = picker.shadowRoot.querySelectorAll(
+          "moz-visual-picker-item"
+        );
+        let novaSunItem = [...themeItems].find(
+          item => item.value === "nova-sun@mozilla.org"
+        );
+
+        synthesizeMouseAtCenter(novaSunItem, {});
+        await waitForCondition(
+          () => picker.activeThemeId == "nova-sun@mozilla.org",
+          "The active theme is updated after selecting a theme."
+        );
+
+        SimpleTest.isDeeply(
+          requested,
+          [{ themeId: "nova-sun@mozilla.org", enabled: true }],
+          "The themes manager is asked to enable the selected theme."
+        );
+      });
+
+      // Compact mode renders exactly 6 themes in a fixed order,
+      // without appearance chooser or native theme checkbox.
+      add_task(async function testCompactModeRendering() {
+        useController(ThemePickerDirectController);
+        setThemePrefs({
+          systemUsesDark: null,
+          nativeTheme: false,
+          activeThemeId: DEFAULT_THEME_ID,
+        });
+        let picker = await renderThemePicker({ layout: "compact" });
+
+        ok(
+          !picker.shadowRoot.querySelector("moz-segmented-control"),
+          "Compact mode does not render the appearance chooser."
+        );
+        ok(
+          !picker.shadowRoot.querySelector("moz-checkbox"),
+          "Compact mode does not render the native theme checkbox."
+        );
+
+        let items = picker.shadowRoot.querySelectorAll(
+          "moz-visual-picker-item"
+        );
+        is(items.length, 6, "Compact mode renders exactly 6 themes.");
+
+        is(
+          picker.themes[0].id,
+          DEFAULT_THEME_ID,
+          "The default theme is always in the first position."
+        );
+        ok(
+          items[0].checked,
+          "The default theme item is selected when it is active."
+        );
+      });
+
+      // Themes can be changed in compact mode. The same 6 themes are always
+      // shown, and the selected theme is highlighted if it's one of them.
+      add_task(async function testCompactModeThemeChange() {
+        useController(ThemePickerDirectController);
+        setThemePrefs({
+          systemUsesDark: null,
+          nativeTheme: false,
+          activeThemeId: DEFAULT_THEME_ID,
+        });
+        let picker = await renderThemePicker({ layout: "compact" });
+
+        picker.controller.themesManager.updateThemeState = async themeId => {
+          Services.prefs.setCharPref(PREF_ACTIVE_THEME_ID, themeId);
+          return true;
+        };
+
+        let secondTheme = picker.themes[1];
+        let themeItems = picker.shadowRoot.querySelectorAll(
+          "moz-visual-picker-item"
+        );
+        let secondItem = [...themeItems].find(
+          item => item.value === secondTheme.id
+        );
+
+        synthesizeMouseAtCenter(secondItem, {});
+        await waitForCondition(
+          () => picker.activeThemeId == secondTheme.id,
+          "The active theme is updated after clicking."
+        );
+
+        let picker2 = await renderThemePicker({ layout: "compact" });
+        is(
+          picker2.themes.length,
+          6,
+          "Compact mode always shows the same 6 themes."
+        );
+        is(
+          picker2.themes[0].id,
+          DEFAULT_THEME_ID,
+          "The default theme is always first."
+        );
+
+        let items2 = picker2.shadowRoot.querySelectorAll(
+          "moz-visual-picker-item"
+        );
+        let selectedItem = [...items2].find(
+          item => item.value === secondTheme.id
+        );
+        ok(
+          selectedItem?.checked,
+          "The newly selected theme is highlighted in the fixed list."
+        );
+      });
+
+      add_task(async function testShowLabels() {
+        useController(ThemePickerDirectController);
+        setThemePrefs({
+          systemUsesDark: null,
+          nativeTheme: false,
+          activeThemeId: DEFAULT_THEME_ID,
+        });
+        let picker = await renderThemePicker();
+
+        ok(picker.showLabels, "showLabels defaults to true.");
+        let item = picker.shadowRoot.querySelector("moz-visual-picker-item");
+        ok(
+          !item.getAttribute("data-l10n-id").endsWith("-aria-label"),
+          "Uses base l10n ID when showLabels is true."
+        );
+
+        picker.showLabels = false;
+        await picker.updateComplete;
+        ok(
+          item.getAttribute("data-l10n-id").endsWith("-aria-label"),
+          "Uses aria-label l10n ID when showLabels is false."
+        );
+      });
+    </script>
+  </head>
+  <body>
+    <p id="display"></p>
+    <div id="content"></div>
+    <pre id="test"></pre>
+  </body>
+</html>

@@ -20,8 +20,8 @@ add_task(async function rowCanUpdateToResult() {
   for (let i = 0; i < 2; i++) {
     provider.results.push(
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         payload: {
           url: "https://example.com/" + i,
         },
@@ -56,8 +56,8 @@ add_task(async function rowCanUpdateToResult() {
   // make sure the two results are the exact same type.
   provider.results = [
     new UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      type: UrlbarShared.RESULT_TYPE.URL,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.HIDDEN,
       payload: {
         url: "https://example.com/hidden-exposure",

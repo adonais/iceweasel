@@ -967,6 +967,8 @@ rt {
   font-size: 50%;
   -moz-min-font-size-ratio: 50%;
   line-height: 1;
+  text-emphasis: none;
+  text-indent: 0;
 }
 @media not (-moz-platform: windows) {
   rtc,
@@ -976,10 +978,6 @@ rt {
     * Microsoft fixes this issue. See bug 1164279. */
     font-variant-east-asian: ruby;
   }
-}
-rtc,
-rt {
-  text-emphasis: none;
 }
 rtc:lang(zh),
 rt:lang(zh) {

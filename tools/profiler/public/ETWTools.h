@@ -185,7 +185,7 @@ template <typename T>
 void CreateDataDescForPayloadPOD(PayloadBuffer& aBuffer,
                                  EVENT_DATA_DESCRIPTOR& aDescriptor,
                                  const T& aPayload) {
-  static_assert(std::is_pod<T>::value,
+  static_assert(std::is_trivial<T>::value && std::is_standard_layout<T>::value,
                 "Writing a non-POD payload requires template specialization.");
 
   // Ensure we never overflow our stack buffer.
@@ -245,7 +245,8 @@ template <typename T>
 static inline void CreateDataDescForPayload(PayloadBuffer& aBuffer,
                                             EVENT_DATA_DESCRIPTOR& aDescriptor,
                                             const T& aPayload) {
-  if constexpr (std::is_pod<T>::value) {
+  if constexpr (std::is_trivial<T>::value &&
+                std::is_standard_layout<T>::value) {
     CreateDataDescForPayloadPOD(aBuffer, aDescriptor, aPayload);
   } else {
     CreateDataDescForPayloadNonPOD(aBuffer, aDescriptor, aPayload);

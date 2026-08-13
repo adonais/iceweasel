@@ -86,6 +86,8 @@ struct ScaleFactor {
                                   const ScaleFactor<Src, Dst>& aSF) {
     return aStream << aSF.scale;
   }
+
+  auto MutTiedFields() { return std::tie(scale); }
 };
 
 }  // namespace gfx

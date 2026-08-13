@@ -4,9 +4,9 @@
 
 #include "RenderCompositor.h"
 
+#include "GLContext.h"
 #include "gfxConfig.h"
 #include "gfxPlatform.h"
-#include "GLContext.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/gfxVars.h"

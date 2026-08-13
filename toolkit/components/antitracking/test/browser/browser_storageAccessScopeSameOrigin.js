@@ -7,23 +7,21 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-add_task(async function testInitialBlock() {
+add_setup(async function () {
   await setPreferences();
+  registerCleanupFunction(clearSiteTestData);
+});
 
+add_task(async function testInitialBlock() {
   await openPageAndRunCode(
     TEST_TOP_PAGE_7,
     getExpectPopupAndClick("reject"),
     TEST_3RD_PARTY_PAGE,
     requestStorageAccessAndExpectFailure
   );
-
-  await cleanUpData();
-  await SpecialPowers.flushPrefEnv();
 });
 
 add_task(async function testSameOriginPermission() {
-  await setPreferences();
-
   await openPageAndRunCode(
     TEST_TOP_PAGE_7,
     getExpectPopupAndClick("accept"),
@@ -37,7 +35,4 @@ add_task(async function testSameOriginPermission() {
     TEST_3RD_PARTY_PAGE,
     requestStorageAccessAndExpectSuccess
   );
-
-  await cleanUpData();
-  await SpecialPowers.flushPrefEnv();
 });

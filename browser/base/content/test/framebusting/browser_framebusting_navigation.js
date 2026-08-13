@@ -34,7 +34,7 @@ add_task(async function () {
     await triggerFramebusting(tab, /*attrs=*/ {}, /*params=*/ { variant });
 
     info("Waiting for notification...");
-    await BrowserTestUtils.waitForCondition(() =>
+    await TestUtils.waitForCondition(() =>
       gBrowser.getNotificationBox().getNotificationWithValue("popup-blocked")
     );
 

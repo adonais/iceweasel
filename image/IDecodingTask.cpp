@@ -4,13 +4,12 @@
 
 #include "IDecodingTask.h"
 
-#include "nsThreadUtils.h"
-#include "mozilla/AppShutdown.h"
-
-#include "Decoder.h"
 #include "DecodePool.h"
+#include "Decoder.h"
 #include "RasterImage.h"
 #include "SurfaceCache.h"
+#include "mozilla/AppShutdown.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla {
 

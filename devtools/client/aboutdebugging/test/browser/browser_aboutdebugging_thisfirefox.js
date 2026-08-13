@@ -91,7 +91,10 @@ add_task(async function testThisFirefoxWithXpinstallDisabled() {
 async function checkThisFirefoxTargetPanes(doc, expectedTargetPanes) {
   const win = doc.documentGlobal;
   // Check that the selected sidebar item is "This Firefox"/"This Nightly"/...
-  const selectedSidebarItem = doc.querySelector(".qa-sidebar-item-selected");
+  const sidebarItems = getSidebarItems(doc);
+  const selectedSidebarItem = sidebarItems.find(item =>
+    isSidebarItemSelected(item)
+  );
   ok(selectedSidebarItem, "An item is selected in the sidebar");
 
   const thisFirefoxString = getThisFirefoxString(win);

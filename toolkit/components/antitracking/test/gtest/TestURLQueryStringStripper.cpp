@@ -152,6 +152,11 @@ TEST(TestURLQueryStringStripper, TestStripping)
                expectStrip ? 2 : 0);
         DoTest("https://example.com/?AfoobazB=123"_ns, isPBM,
                "https://example.com/?AfoobazB=123"_ns, 0);
+
+        // Verify that special characters in the value of a non-stripped param
+        // are not re-encoded.
+        DoTest("https://example.com/?fooBar=123&nostrip=val!ue"_ns, isPBM,
+               "https://example.com/?nostrip=val!ue"_ns, expectStrip ? 1 : 0);
       }
     }
   }

@@ -3,15 +3,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "InterfaceInitFuncs.h"
-
+#include "RemoteAccessible.h"
+#include "mozilla/Likely.h"
 #include "mozilla/a11y/TableAccessible.h"
 #include "mozilla/a11y/TableCellAccessible.h"
 #include "nsAccessibilityService.h"
 #include "nsMai.h"
-#include "RemoteAccessible.h"
 #include "nsTArray.h"
-
-#include "mozilla/Likely.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;

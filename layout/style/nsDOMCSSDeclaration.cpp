@@ -7,6 +7,7 @@
 #include "nsDOMCSSDeclaration.h"
 
 #include "mozAutoDocUpdate.h"
+#include "mozilla/CSSPropertyId.h"
 #include "mozilla/DeclarationBlock.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/StyleSheetInlines.h"
@@ -144,8 +145,10 @@ uint32_t nsDOMCSSDeclaration::Length() {
 void nsDOMCSSDeclaration::IndexedGetter(uint32_t aIndex, bool& aFound,
                                         nsACString& aPropName) {
   Block* decl = GetOrCreateCSSDeclaration(Operation::Read, nullptr);
-  aFound =
-      decl && Servo_DeclarationBlock_GetNthProperty(decl, aIndex, &aPropName);
+  CSSPropertyId id{eCSSProperty_UNKNOWN};
+  if ((aFound = decl && Servo_DeclarationBlock_GetAt(decl, aIndex, &id))) {
+    id.ToString(aPropName);
+  }
 }
 
 void nsDOMCSSDeclaration::GetPropertyValue(const nsACString& aPropertyName,

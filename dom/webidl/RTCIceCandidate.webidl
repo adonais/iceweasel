@@ -37,7 +37,6 @@ enum RTCIceTcpCandidateType {
 };
 
 [Pref="media.peerconnection.enabled",
- JSImplementation="@mozilla.org/dom/rtcicecandidate;1",
  Exposed=Window]
 interface RTCIceCandidate {
   [Throws]

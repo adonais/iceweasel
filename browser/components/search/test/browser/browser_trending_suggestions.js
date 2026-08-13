@@ -162,7 +162,7 @@ add_task(async function test_block_trending() {
     resultIndex: 0,
   });
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => UrlbarTestUtils.getResultCount(window) == 1
   );
   let { result: heuristicResult } = await UrlbarTestUtils.getDetailsOfResultAt(
@@ -226,7 +226,7 @@ async function check_results({
   if (expectedResults) {
     for (let i = 0; i < expectedResults; i++) {
       let { result } = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
-      Assert.equal(result.type, UrlbarUtils.RESULT_TYPE.SEARCH);
+      Assert.equal(result.type, UrlbarShared.RESULT_TYPE.SEARCH);
       Assert.equal(result.providerName, "UrlbarProviderSearchSuggestions");
       Assert.equal(result.payload.engine, "basic");
       Assert.equal(result.payload.trending, true);

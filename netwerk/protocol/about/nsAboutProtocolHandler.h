@@ -6,9 +6,9 @@
 #define nsAboutProtocolHandler_h_
 
 #include "nsIProtocolHandler.h"
+#include "nsIURIMutator.h"
 #include "nsSimpleNestedURI.h"
 #include "nsWeakReference.h"
-#include "nsIURIMutator.h"
 
 class nsIURI;
 
@@ -76,6 +76,7 @@ class nsNestedAboutURI final : public nsSimpleNestedURI {
  protected:
   nsCOMPtr<nsIURI> mBaseURI;
   bool Deserialize(const mozilla::ipc::URIParams&);
+  bool IsValidInnerURI(nsIURI* aInnerURI) override;
   nsresult ReadPrivate(nsIObjectInputStream* stream);
 
  public:

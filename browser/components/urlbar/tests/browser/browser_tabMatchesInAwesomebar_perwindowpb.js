@@ -153,7 +153,7 @@ add_task(async function same_url_both_windows() {
   Assert.ok(result.heuristic, "First result is heuristic");
   result = await UrlbarTestUtils.getDetailsOfResultAt(win, 1);
   Assert.equal(
-    UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+    UrlbarShared.RESULT_TYPE.TAB_SWITCH,
     result.type,
     "Second result is tab switch"
   );
@@ -170,7 +170,7 @@ add_task(async function same_url_both_windows() {
   Assert.ok(result.heuristic, "First result is heuristic");
   result = await UrlbarTestUtils.getDetailsOfResultAt(win, 1);
   Assert.notEqual(
-    UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+    UrlbarShared.RESULT_TYPE.TAB_SWITCH,
     result.type,
     "Second result is not tab switch"
   );

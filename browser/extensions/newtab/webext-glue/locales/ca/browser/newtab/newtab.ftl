@@ -27,6 +27,9 @@ newtab-personalize-dialog-label =
     .aria-label = Personalitza
 newtab-logo-and-wordmark =
     .aria-label = { -brand-full-name }
+newtab-card-dismiss-button =
+    .title = Tanca
+    .aria-label = Tanca
 
 ## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
 ## Homepage panel
@@ -84,12 +87,34 @@ home-prefs-lists-header =
 # Timer is a widget on New Tab, similar to the Pomodoro timer.
 home-prefs-timer-header =
     .label = Temporitzador
+# Sports is a widget on New Tab showing sports scores and schedules.
+home-prefs-sports-widget-header =
+    .label = Esports
+# Clock is a widget on New Tab that displays time zones around the world.
+home-prefs-clocks-header =
+    .label = Rellotge
+# Privacy is a widget on New Tab that shows tracking protection activity.
+home-prefs-privacy-header =
+    .label = Privadesa
+# Stocks is a widget on New Tab that shows stock ticker prices.
+home-prefs-stocks-header =
+    .label = Accions
+# Picture of the day is a widget on New Tab that shows a daily Wikimedia Commons image.
+home-prefs-picture-header =
+    .label = Imatge del dia
 home-prefs-mission-message2 =
     .message = Els nostres patrocinadors donen suport a la nostra missió de crear un web millor.
 home-prefs-manage-topics-link2 =
     .label = Gestiona els temes
 home-prefs-choose-wallpaper-link2 =
     .label = Trieu un fons de pantalla
+home-prefs-firefox-logo-header =
+    .label = Logotip del { -brand-short-name }
+# Informational message bar that appears in the Firefox Home section when the options are disabled.
+# The user must select Firefox Home as their homepage for either new tabs or new windows to enable
+# the features in settings.
+home-prefs-firefox-home-disabled-notice =
+    .message = Per utilitzar aquestes funcions, establiu que les pestanyes o finestres noves s'obrin al { -firefox-home-brand-name }.
 # Variables:
 #   $num (number) - Number of rows displayed
 home-prefs-sections-rows-option-srd =
@@ -136,6 +161,104 @@ home-prefs-support-firefox-header-srd =
     .label = Doneu suport al { -brand-product-name }
 home-prefs-mission-message-learn-more-link-srd = Descobriu com
 
+## Strings for the Privacy widget
+
+# Context menu item linking to more information about the Privacy widget.
+newtab-privacy-menu-learn-more = Més informació
+
+## Privacy widget — informational messages
+##
+## Rotating "info" secondary messages. Each message has a body plus a matched
+## "-cta" button label sharing the same id stem (the CTA button isn't rendered
+## yet; the labels are authored so the pairing is ready).
+
+newtab-privacy-message-info-1-cta = Mostra les proteccions
+newtab-privacy-message-info-2-cta = Mostra les proteccions
+newtab-privacy-message-info-3-cta = Mostra les proteccions
+newtab-privacy-message-info-4-cta = Mostra les proteccions
+newtab-privacy-message-info-5-cta = Mostra les proteccions
+newtab-privacy-message-info-6-cta = Més informació
+newtab-privacy-message-info-7-cta = Mostra les proteccions
+newtab-privacy-message-info-8-cta = Més informació
+newtab-privacy-message-info-9-cta = Fes que sigui el navegador per defecte
+newtab-privacy-message-info-11-cta = Més informació
+newtab-privacy-message-info-12-cta = Mostra les proteccions
+newtab-privacy-message-info-13-cta = Mostra les proteccions
+
+## Privacy widget — promotional messages
+##
+## Rotating "promo" secondary messages suggesting another Firefox feature. Each
+## has a body plus a matched "-cta" button label.
+
+newtab-privacy-message-promo-monitor-1-cta = Més informació
+newtab-privacy-message-promo-monitor-2-cta = Més informació
+newtab-privacy-message-promo-signin-1-cta = Inicia la sessió
+newtab-privacy-message-promo-vpn-1-cta = Obre la VPN
+
+## Privacy widget — celebration messages
+##
+## Earned "celebration" moments (milestones, daily cap, streak, first
+## protection). Count-bearing ones interpolate { $count }.
+
+newtab-privacy-message-milestone-year-cta = Mostra les proteccions
+newtab-privacy-message-milestone-total-cta = Mostra les proteccions
+newtab-privacy-message-daily-cap-cta = Mostra les proteccions
+newtab-privacy-message-streak-cta = Mostra les proteccions
+newtab-privacy-message-first-protection-cta = Mostra les proteccions
+
+## Strings for the Stocks widget
+
+# Context menu item for searching stock ticker symbols.
+newtab-stocks-menu-search = Cerca símbols de tíquer
+# Context menu item linking to more information about the Stocks widget.
+newtab-stocks-menu-learn-more = Més informació
+# Heading for the Stocks widget.
+newtab-stocks-widget-title = Accions
+
+## Screen-reader summary of a stock ticker.
+## Variables:
+##   $name (String) - the full fund/ETF name, e.g. "SPDR S&P 500 ETF Trust".
+##   $change (String) - the day's percentage change, e.g. "+2.1%".
+##   $price (String) - the last price, e.g. "$559.44".
+
+# Stock increased (went up) during the day
+newtab-stocks-ticker-status-up = { $name }, puja un { $change }, { $price }
+# Stock decreased (went down) during the day
+newtab-stocks-ticker-status-down = { $name }, baixa un { $change }, { $price }
+# Stock didn't change during the day
+newtab-stocks-ticker-status-flat = { $name }, sense canvis, { $change }, { $price }
+
+## Strings for the Picture of the Day widget
+
+# Shorter title shown at the top of the widget, without the source name.
+newtab-picture-header-main = Imatge del dia
+# Attribution line shown under the title once a picture loads: an author
+# credit, a link to the picture's source page, and a link to its license.
+# "©" is the copyright symbol.
+# $author (string) - the name of the image's author.
+newtab-picture-attribution-author = © { $author }
+# Link to the picture's source page (its Wikimedia Commons file page).
+# "Wikimedia Commons" is a brand name and should not be translated.
+newtab-picture-attribution-source-link = Wikimedia Commons
+# Tooltip and screen-reader label for the icon-only button that opens the
+# widget's context menu. The button never renders visible text.
+newtab-picture-widget-menu-button =
+    .title = Opcions de la imatge del dia
+    .aria-label = Opcions de la imatge del dia
+# Context menu item that opens the New Tab customization panel.
+newtab-picture-menu-manage-wallpaper = Gestiona el fons de pantalla
+# Context menu item that hides today’s picture, replacing it with an existing
+# wallpaper.
+newtab-picture-menu-hide-photo = Amaga la imatge del dia
+# Context menu item that restores today’s picture after it has been hidden.
+newtab-picture-menu-show-photo = Mostra la imatge del dia
+# Context menu item linking to more information about the widget.
+newtab-picture-menu-learn-more = Més informació
+# Icon button shown on the widget once the picture is hidden; restores it.
+newtab-picture-show-button =
+    .title = Mostra la imatge del dia
+    .aria-label = Mostra la imatge del dia
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -181,6 +304,11 @@ newtab-topsites-url-validation = Es necessita un URL vàlid
 newtab-topsites-image-url-label = URL d'imatge personalitzada
 newtab-topsites-use-image-link = Utilitza una imatge personalitzada…
 newtab-topsites-image-validation = S'ha produït un error en carregar la imatge. Proveu un altre URL.
+
+## Clear text button for the URL and image URL input fields in the Top Sites form.
+
+newtab-topsites-clear-input =
+    .aria-label = Esborra el text
 
 ## Top Sites - General form dialog buttons. These are verbs/actions.
 
@@ -248,6 +376,9 @@ newtab-menu-report = Informa
 # Context menu option to personalize New Tab recommended stories by blocking a section of stories,
 # e.g. "Sports". "Block" is a verb here.
 newtab-menu-section-block = Bloca
+# "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
+# e.g. Following the travel section of stories.
+newtab-menu-section-unfollow-topic = Deixar de seguir
 # Context menu option to open a support page explaining the New Tab personalization features and privacy controls.
 newtab-menu-section-learn-more = Més informació
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
@@ -423,6 +554,8 @@ newtab-custom-shortcuts-toggle =
     .description = Llocs que deseu o visiteu
 newtab-custom-shortcuts-nova =
     .label = Dreceres
+newtab-custom-row-description =
+    .description = Nombre de files
 # Variables
 #   $num (number) - Number of rows to display
 #  (developer note): @nova-cleanup(remove-string): Remove string once Nova lands. We won't be using "row"/"rows" anymore for the dropdown
@@ -450,6 +583,8 @@ newtab-recommended-stories-toggle =
     .label = Articles recomanats
 newtab-custom-stories-personalized-toggle =
     .label = Articles
+newtab-custom-stories-personalized-checkbox =
+    .label = Articles personalitzats basats en la vostra activitat
 newtab-custom-stories-personalized-checkbox-label = Articles personalitzats basats en la vostra activitat
 newtab-custom-pocket-sponsored = Articles patrocinats
 newtab-custom-pocket-show-recent-saves = Mostra els elements desats recentment
@@ -464,10 +599,24 @@ newtab-custom-widget-lists-toggle =
     .label = Llistes
 newtab-custom-widget-timer-toggle =
     .label = Temporitzador
+newtab-custom-widget-sports-toggle =
+    .label = Copa del Món
+newtab-custom-widget-clock-toggle =
+    .label = Rellotge
+newtab-custom-widget-sports-toggle2 =
+    .label = Esports
+newtab-custom-widget-privacy-toggle =
+    .label = Privadesa
+newtab-custom-widget-stocks-toggle =
+    .label = Accions
+newtab-custom-widget-picture-toggle =
+    .label = Imatge del dia
 newtab-custom-widget-section-title = Ginys
 newtab-custom-widget-section-toggle =
     .label = Ginys
 newtab-widget-manage-title = Ginys
+newtab-widget-manage-widget-button =
+    .label = Gestioneu els ginys
 # Tooltip for close button
 newtab-custom-close-menu-button =
     .title = Tanca
@@ -481,6 +630,7 @@ newtab-wallpaper-title = Fons de pantalla
 newtab-wallpaper-reset = Reinicia als valors per defecte
 #  (developer note): @nova-cleanup(remove-string): Remove old "Upload an image" string once Nova lands. The new "Add an image"  string will take over
 newtab-wallpaper-upload-image = Puja una imatge
+newtab-wallpaper-add-an-image = Afegiu una imatge
 newtab-wallpaper-custom-color = Trieu un color
 newtab-wallpaper-toggle-title =
     .label = Fons de pantalla
@@ -508,6 +658,7 @@ newtab-wallpaper-light-fox-anniversary = Una guineu en un camp d'herba amb un pa
 
 #  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = Colors sòlids
+newtab-wallpaper-colors = Colors
 newtab-wallpaper-blue = Blau
 newtab-wallpaper-light-blue = Blau clar
 newtab-wallpaper-light-purple = Porpra clar
@@ -598,7 +749,12 @@ newtab-weather-menu-change-location = Canvia la ubicació
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Cerca la ubicació
     .aria-label = Cerca la ubicació
+# "Current" refers to the user's physical/geographic location detected via geolocation.
+newtab-weather-change-location-search-use-current =
+    .label = Utilitza la ubicació actual
 newtab-weather-menu-weather-display = Visualització de la informació meteorològica
+newtab-weather-todays-forecast = Previsió del temps d'avui
+newtab-weather-see-full-forecast = Mostra la previsió completa
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
 # - Detailed: Include simple information plus a short text summary: e.g. "Mostly cloudy"
@@ -621,8 +777,18 @@ newtab-weather-opt-in-not-now =
     .label = Ara no
 newtab-weather-opt-in-yes =
     .label = Sí
+newtab-weather-opt-in-headline = Obteniu la previsió meteorològica local
+newtab-weather-opt-in-use-location =
+    .label = Utilitza la ubicació
+newtab-weather-opt-in-choose-location = Trieu la ubicació
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = Nova York
+# "Highest" here refers to the highest temperature of the day
+newtab-weather-high =
+    .aria-label = Màxima
+# "Lowest" here refers to the lowest temperature of the day
+newtab-weather-low =
+    .aria-label = Baixa
 # Variables:
 #   $provider (string) - Service provider for weather data
 newtab-weather-see-forecast-description =
@@ -674,8 +840,16 @@ newtab-topic-selection-button-pick-interests = Trieu els vostres interessos
 ## e.g. Following the travel section of stories.
 
 newtab-section-follow-button = Segueix
+# Variables:
+#   $topic (string) - Topic that the user can follow
+newtab-section-follow-button-label =
+    .aria-label = Segueix { $topic }
 newtab-section-following-button = Seguint
 newtab-section-unfollow-button = Deixar de seguir
+# Variables:
+#   $topic (string) - Topic that the user is following and can unfollow
+newtab-section-unfollow-button-label =
+    .aria-label = Seguint: Deixa de seguir { $topic }
 # A modal may appear next to the Follow button, directing users to try out the feature
 newtab-section-follow-highlight-title = Ajusteu el canal
 newtab-section-follow-highlight-subtitle = Seguiu els vostres interessos per a veure més contingut que us agradi.
@@ -687,6 +861,22 @@ newtab-section-follow-highlight-subtitle = Seguiu els vostres interessos per a v
 newtab-section-block-button = Bloqueja
 newtab-section-blocked-button = Blocat
 newtab-section-unblock-button = Desbloca
+# Variables:
+#   $topic (string) - Name of topic that user is following
+newtab-section-follow-topic =
+    .aria-label = Segueix { $topic }
+# Variables:
+#   $topic (string) - Name of topic that user is unfollowing
+newtab-section-unfollow-topic =
+    .aria-label = Deixa de seguir { $topic }
+# Variables:
+#   $topic (string) - Name of topic that user is blocking
+newtab-section-block-topic =
+    .aria-label = Bloca { $topic }
+# Variables:
+#   $topic (string) - Name of topic that user is unblocking
+newtab-section-unblock-topic =
+    .aria-label = Desbloca { $topic }
 
 ## Confirmation modal for blocking a section
 
@@ -696,6 +886,7 @@ newtab-section-confirm-block-topic-p2 = Els temes blocats ja no apareixeran a la
 # Variables:
 #   $topic (string) - Name of topic that user is blocking
 newtab-section-block-topic-button = Bloca { $topic }
+newtab-section-block-cancel-button = Cancel·la
 
 ## Strings for custom wallpaper highlight
 
@@ -716,6 +907,12 @@ newtab-custom-wallpaper-cta = Proveu-ho
 newtab-new-user-custom-wallpaper-title = Trieu un fons de pantalla per a personalitzar el { -brand-product-name }
 newtab-new-user-custom-wallpaper-subtitle = Decoreu cada pestanya nova al vostre gust amb fons de pantalla i colors personalitzats.
 newtab-new-user-custom-wallpaper-cta = Proveu-ho ara
+
+## Strings for Nova wallpaper feature highlight
+
+newtab-wallpaper-feature-highlight-title = Nous fons de pantalla acabats d'arribar
+newtab-wallpaper-feature-highlight-subtitle = Trieu el vostre preferit i feu que cada pestanya nova us faci sentir com a casa.
+newtab-wallpaper-feature-highlight-cta = Trieu un fons de pantalla
 
 ## Strings for download mobile highlight
 
@@ -757,6 +954,20 @@ newtab-report-cancel = Cancel·la
 newtab-report-submit = Envia
 newtab-toast-thanks-for-reporting =
     .message = Gràcies per denunciar-ho.
+newtab-toast-widgets-hidden =
+    .message = Seleccioneu la icona del llapis per tornar a afegir ginys en qualsevol moment.
+# Variables:
+#   $topic (string) - Topic that the user has followed
+newtab-section-toast-follow =
+    .message = Ara seguiu { $topic }.
+# Variables:
+#   $topic (string) - Topic that the user has unfollowed
+newtab-section-toast-unfollow =
+    .message = Ja no seguiu { $topic }.
+# Variables:
+#   $topic (string) - Topic that the user has blocked
+newtab-section-toast-block =
+    .message = Ja no veureu més històries sobre { $topic }.
 
 ## Strings for task / to-do list productivity widget
 
@@ -771,6 +982,8 @@ newtab-widget-lists-label-beta =
 # Variables:
 #   $number (number) - Amount of list items marked complete
 newtab-widget-lists-completed-list = Completats ({ $number })
+newtab-widget-lists-celebration-headline = Molt bé
+newtab-widget-lists-celebration-subhead = Tot al dia
 newtab-widget-task-list-menu-copy = Copia
 newtab-widget-lists-menu-edit = Edita el nom de la llista
 newtab-widget-lists-menu-edit2 =
@@ -789,18 +1002,40 @@ newtab-widget-lists-input-menu-move-up = Mou cap amunt
 newtab-widget-lists-input-menu-move-down = Mou cap avall
 newtab-widget-lists-input-menu-delete = Suprimeix
 newtab-widget-lists-input-menu-edit = Edita
+newtab-widget-lists-edit-clear =
+    .aria-label = Cancel·la
+    .title = Cancel·la
 # the + symbol emphasises the functionality of adding a new list
 newtab-widget-lists-dropdown-create =
     .label = + Crea una llista nova
 newtab-widget-lists-name-label-default =
     .label = Llista de tasques
+newtab-widget-lists-name-label-checklist =
+    .label = Llista de comprovació
 newtab-widget-lists-name-placeholder-default =
     .placeholder = Llista de tasques
+newtab-widget-lists-name-placeholder-checklist2 =
+    .placeholder = Llista de comprovació
+    .aria-label = Edita el nom de la llista
 # The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new2 =
     .placeholder = Llista nova
     .aria-label = Edita el nom de la llista
 newtab-widget-section-title = Ginys
+newtab-widget-menu-hide = Amaga el giny
+newtab-widget-menu-change-size = Canvia la mida
+# Parent label for a submenu in the widget menu that reorders the widget
+# among its siblings. "Left" and "Right" appear as items inside this submenu.
+newtab-widget-menu-move = Mou
+# Submenu item under "Move"; moves the widget one position to the left.
+# RTL locales should translate this as "Right".
+newtab-widget-menu-move-left = Esquerra
+# Submenu item under "Move"; moves the widget one position to the right.
+# RTL locales should translate this as "Left".
+newtab-widget-menu-move-right = Dreta
+newtab-widget-size-small = Petita
+newtab-widget-size-medium = Mitjana
+newtab-widget-size-large = Grossa
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = Amaga els ginys
@@ -811,6 +1046,25 @@ newtab-widget-section-maximize =
 newtab-widget-section-minimize =
     .title = Minimitza els widgets
     .aria-label = Minimitza tots els widgets a mida compacta
+newtab-widget-section-menu-button =
+    .title = Menú de ginys
+    .aria-label = Obre el menú dels ginys
+newtab-widget-add-widgets-button =
+    .aria-label = Afegeix el giny
+    .title = Afegeix el giny
+newtab-widget-section-menu-manage = Gestioneu els ginys
+newtab-widget-section-menu-hide-all = Amaga els ginys
+newtab-widget-section-menu-learn-more = Més informació
+newtab-widget-section-feedback = Digueu-nos què penseu
+# Button shown when additional widgets are hidden beyond the
+# first row, allowing users to show them.
+newtab-widget-section-show-more =
+    .label = Mostra més ginys
+# Button shown when the widgets row is expanded to multiple rows,
+# allowing users to collapse it back to one row.
+newtab-widget-section-show-less =
+    .label = Mostra menys ginys
+newtab-widget-lists-name-default = Llista de comprovació
 
 ## Strings introduced by the Nova redesign of the Timer widget
 
@@ -824,16 +1078,178 @@ newtab-widget-timer-mode-break =
     .label = Pausa
 newtab-widget-timer-label-play =
     .label = Reprodueix
+newtab-widget-timer-label-pause =
+    .label = Posa en pausa
 newtab-widget-timer-reset =
     .title = Reinicia
 newtab-widget-timer-menu-notifications = Desactiva les notificacions
 newtab-widget-timer-menu-notifications-on = Activa les notificacions
 newtab-widget-timer-menu-learn-more = Més informació
+# The title displays above a set of top news headlines.
+newtab-daily-briefing-card-title = Titulars principals
+newtab-daily-briefing-card-menu-dismiss = Tanca
+# Variables:
+#   $minutes (number) - Time since the feed has been refreshed
+newtab-daily-briefing-card-timestamp = S'ha actualitzat fa { $minutes } min
 newtab-widget-message-title = Mantingueu la concentració amb les llistes i amb un temporitzador integrat
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Des de recordatoris ràpids fins a tasques diàries pendents, sessions de concentració o pauses d'estirament: manteniu la productivitat i la puntualitat.
+newtab-promo-card-title = Col·laboreu amb el { -brand-product-name }
 newtab-promo-card-body = Els nostres patrocinadors donen suport a la nostra missió de crear un web millor
 newtab-promo-card-cta = Més informació
 newtab-promo-card-dismiss-button =
     .title = Ignora
     .aria-label = Ignora
+
+## Strings introduced by the Nova redesign of the Timer widget
+
+# Variables:
+#   $minutes (number) - The currently selected timer duration in minutes
+newtab-widget-timer-spinbutton-name =
+    .aria-label =
+        { $minutes ->
+            [one] { $minutes } minut
+           *[other] { $minutes } minuts
+        }
+# Context-menu item to hide the Timer widget. Replaces the shared "Hide widget"
+# copy with a widget-specific string per the Nova design.
+newtab-widget-timer-menu-hide = Amaga el temporitzador
+
+##
+
+newtab-sports-widget-menu-follow-teams = Segueix els equips
+newtab-sports-widget-menu-learn-more = Més informació
+newtab-sports-widget-follow-teams =
+    .label = Segueix els equips
+newtab-sports-widget-skip = Omet
+newtab-sports-widget-cancel = Cancel·la
+newtab-sports-widget-back-button =
+    .aria-label = Enrere
+# Shown in the follow-teams list for a team that has been knocked out of the tournament.
+# Variables:
+#   $teamName (string) - the localized team name (e.g. "Canada").
+newtab-sports-widget-team-name-eliminated = { $teamName } (eliminat)
+newtab-sports-widget-view-all =
+    .label = Mostra-ho tot
+newtab-sports-widget-show-less =
+    .label = Mostra’n menys
+newtab-sports-widget-watch-dialog-close =
+    .title = Tanca
+    .aria-label = Tanca
+# Tag: user can watch without paying (sign-in may still be required).
+newtab-sports-widget-watch-stream-free = Gratuït
+# Tag: user can start watching via a trial; continued access may require payment after it ends.
+newtab-sports-widget-watch-stream-free-trial = Prova gratuïta
+# Tag: provider offers both a no-cost or trial path and a paid path.
+newtab-sports-widget-watch-stream-free-paid = Gratuït i de pagament
+# Tag: user must pay to watch (subscription, TV provider, premium plan, or add-on).
+newtab-sports-widget-watch-stream-paid = De pagament
+newtab-sports-widget-group-a = Grup A
+newtab-sports-widget-group-b = Grup B
+newtab-sports-widget-group-c = Grup C
+newtab-sports-widget-group-d = Grup D
+newtab-sports-widget-group-e = Grup E
+newtab-sports-widget-group-f = Grup F
+newtab-sports-widget-group-g = Grup G
+newtab-sports-widget-group-h = Grup H
+newtab-sports-widget-group-i = Grup I
+newtab-sports-widget-group-j = Grup J
+newtab-sports-widget-group-k = Grup K
+newtab-sports-widget-group-l = Grup L
+newtab-sports-widget-round-32 = Setzens de final
+newtab-sports-widget-round-16 = Vuitens de final
+newtab-sports-widget-quarter-finals = Quarts de final
+# Milestone dates (e.g. group stage, semifinals, etc.). Refers to calendar dates.
+newtab-sports-widget-key-dates = Dates principals
+# Used for a match currently ongoing
+newtab-sports-widget-now = Ara
+# Variables:
+#   $start (Date) - Start date of a tournament stage
+#   $end (Date) - End date of a tournament stage
+newtab-sports-widget-key-date-range = { DATETIME($start, month: "short", day: "numeric") } – { DATETIME($end, month: "short", day: "numeric") }
+# Runner-up is the team in 2nd place.
+newtab-sports-widget-runner-up = Subcampió
+# Compact champions label for the medium-size widget result card; the larger
+# card uses newtab-sports-widget-world-cup-champions.
+newtab-sports-widget-world-cup-champions-short = Campions 2026
+# Separator shown between two teams in a placeholder match row when no upcoming
+# match details are available yet.
+newtab-sports-widget-match-vs = contra
+
+## Sports widget live-games pagination. Shown when 2+ matches are live at the same time
+
+# arrow button that goes to the previous page of live matches.
+newtab-sports-widget-pagination-previous =
+    .title = Anterior
+    .aria-label = Anterior
+# arrow button that goes to the next page of live matches.
+newtab-sports-widget-pagination-next =
+    .title = Següent
+    .aria-label = Següent
+
+## Accessible labels for match rows in the sports widget. These are read by
+## screen readers to announce the match details and status.
+## Variables shared by all messages in this group:
+##   $homeTeam (String) - The full name of the home team (e.g. "Mexico")
+##   $awayTeam (String) - The full name of the away team (e.g. "Russia")
+
+# An upcoming match row whose status is "cancelled".
+newtab-sports-widget-match-aria-label-upcoming-cancelled =
+    .aria-label = { $homeTeam } contra { $awayTeam }, cancel·lat
+
+## Sports widget — team names (FIFA country codes)
+## Only includes names not adequately covered by standard country-code
+## internationalization tooling.
+
+newtab-sports-widget-team-name-label-bih =
+    .label = Bòsnia i Hercegovina
+newtab-sports-widget-team-name-label-civ =
+    .label = Costa d’Ivori
+newtab-sports-widget-team-name-label-eng =
+    .label = Anglaterra
+newtab-sports-widget-team-name-label-sco =
+    .label = Escòcia
+
+## Sports widget OMC messages
+## Shown as on-screen messages promoting the Sports widget and World Cup wallpapers.
+
+newtab-sports-widget-message-add-widgets-cta =
+    .label = Afegeix ginys
+
+## Survey prompts shown after the World Cup to gather feedback on the widgets experience.
+
+newtab-sports-widget-message-survey-title = Ajudeu-nos a millorar els ginys
+newtab-sports-widget-message-survey-body = Això és el final de la Copa del Món. Compartiu la vostra opinió de l’experiència.
+
+## Strings for activation window message variants. In certain experiment configurations,
+## the strings from these variants may be displayed in a message below the search input
+## for the first 48 hours of a new profile's lifetime. Some messages include buttons with
+## labels, but not all.
+
+newtab-activation-window-message-dismiss-button =
+    .title = Tanca
+    .aria-label = Tanca
+newtab-activation-window-message-customization-focus-primary-button =
+    .label = Comença a personalitzar
+
+## Strings for the Clock widget
+
+# Context menu item: toggle the clock card off.
+newtab-clock-widget-menu-hide = Amaga el rellotge
+newtab-clock-widget-menu-learn-more = Més informació
+newtab-clock-widget-menu-edit = Edita els rellotges
+newtab-clock-widget-menu-switch-to-12h = Canvia al format de 12 hores
+newtab-clock-widget-menu-switch-to-24h = Canvia al format de 24 hores
+# Accessible name for a clock row in the "Your clocks" management panel
+# when the row has no user-provided nickname. Read aloud by screen
+# readers when focus lands on the row.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+newtab-clock-widget-edit-item =
+    .aria-label = { $city }
+# Accessible name for a clock row when a user nickname has been set.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+#   $nickname (string) - The user-provided nickname for the row.
+newtab-clock-widget-edit-item-with-nickname =
+    .aria-label = { $city }, sobrenom: { $nickname }

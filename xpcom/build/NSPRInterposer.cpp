@@ -2,20 +2,21 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "IOInterposer.h"
 #include "NSPRInterposer.h"
 
-#include "prio.h"
-#include "private/pprio.h"
+#include <sys/param.h>
+
+#include "IOInterposer.h"
 #include "nsDebug.h"
 #include "nscore.h"
-
-#include <sys/param.h>
+#include "prio.h"
+#include "private/pprio.h"
 #ifdef XP_MACOSX
 #  include <fcntl.h>
 #else
-#  include "prprf.h"
 #  include <unistd.h>
+
+#  include "prprf.h"
 #endif
 
 namespace {

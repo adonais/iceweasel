@@ -5,12 +5,13 @@
 #ifndef IdleTaskRunner_h
 #define IdleTaskRunner_h
 
+#include <functional>
+
 #include "mozilla/TimeStamp.h"
 #include "nsIEventTarget.h"
 #include "nsISupports.h"
 #include "nsITimer.h"
 #include "nsString.h"
-#include <functional>
 
 namespace mozilla {
 

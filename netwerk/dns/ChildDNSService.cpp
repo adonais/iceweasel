@@ -3,26 +3,27 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/net/ChildDNSService.h"
-#include "nsDNSPrefetch.h"
-#include "nsIDNSListener.h"
-#include "nsIOService.h"
-#include "nsThreadUtils.h"
-#include "nsIXPConnect.h"
-#include "nsIProtocolProxyService.h"
-#include "nsNetCID.h"
-#include "nsQueryObject.h"
+
+#include "DNSAdditionalInfo.h"
+#include "TRRService.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/SyncRunnable.h"
-#include "mozilla/net/NeckoChild.h"
 #include "mozilla/net/DNSListenerProxy.h"
+#include "mozilla/net/NeckoChild.h"
 #include "mozilla/net/TRRServiceParent.h"
+#include "nsDNSPrefetch.h"
 #include "nsHostResolver.h"
+#include "nsIDNSListener.h"
+#include "nsIOService.h"
+#include "nsIProtocolProxyService.h"
+#include "nsIXPConnect.h"
+#include "nsNetCID.h"
+#include "nsQueryObject.h"
 #include "nsServiceManagerUtils.h"
+#include "nsThreadUtils.h"
 #include "prsystem.h"
-#include "DNSAdditionalInfo.h"
-#include "TRRService.h"
 
 namespace mozilla {
 namespace net {

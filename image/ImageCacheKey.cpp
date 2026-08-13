@@ -6,12 +6,11 @@
 
 #include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/HashFunctions.h"
+#include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StorageAccess.h"
 #include "mozilla/StoragePrincipalHelper.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/ServiceWorkerManager.h"
-#include "mozilla/StaticPrefs_privacy.h"
-#include "mozilla/StorageAccess.h"
 #include "nsContentUtils.h"
 #include "nsHashKeys.h"
 #include "nsLayoutUtils.h"
@@ -77,10 +76,13 @@ void ImageCacheKey::EnsureHash() const {
 
   // NOTE(emilio): Not adding the partition principal to the hash, since it
   // can mutate (see bug 1955775).
-  nsAutoCString spec;
-  (void)mURI->GetSpec(spec);
+  //
+  // We build several ImageCacheKeys from the same URI per image load (e.g. the
+  // sync availability check and the actual cache lookup). nsIURI::SpecHash()
+  // lets implementations cache the hash so we don't rescan a potentially very
+  // large spec (such as a data: URI) more than once.
   mHash.emplace(
-      AddToHash(HashString(spec), mControlledDocument, mAppType, mCORSMode));
+      AddToHash(mURI->SpecHash(), mControlledDocument, mAppType, mCORSMode));
 }
 
 /* static */

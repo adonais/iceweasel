@@ -1,12 +1,33 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
-<title>WebGL Vendor Sanitize with FPP - Vendor should be sanitized</title>
+<title>WebGL Vendor FPP precedence - added WebGLVendorSanitize does not override an enabled Randomize/Constant</title>
 <script src="/tests/SimpleTest/SimpleTest.js"></script>
 <script>
 /* global SimpleTest SpecialPowers */
 SimpleTest.waitForExplicitFinish();
+
+// RFPTarget enum values, from
+// toolkit/components/resistfingerprinting/RFPTargets.inc. The precedence is
+// "Randomize overrides Constant overrides Sanitize".
+const RFPTarget = {
+  WebGLVendorConstant: 78,
+  WebGLVendorRandomize: 79,
+};
+
+// Whether a given RFPTarget is in the currently-enabled fingerprinting
+// protection set (compiled defaults plus the overrides pref). Evaluated in the
+// parent process and returned as a plain boolean, so the test follows the
+// actual configuration instead of assuming a particular build channel.
+function isFPPTargetEnabled(target) {
+  return SpecialPowers.spawnChrome([target], t => {
+    let set = Services.rfp.enabledFingerprintingProtections;
+    let part = set.getNth32BitSet(t >>> 5);
+    return (part & (1 << (t & 31))) !== 0;
+  });
+}
+
 document.addEventListener("DOMContentLoaded", async function() {
-  // Enable FPP with WebGLVendorSanitize
+  // Additively enable WebGLVendorSanitize on top of the defaults.
   await SpecialPowers.pushPrefEnv({
     set: [
       ["privacy.fingerprintingProtection", true],
@@ -37,8 +58,6 @@ document.addEventListener("DOMContentLoaded", async function() {
     return;
   }
 
-  // With FPP and WebGLVendorSanitize enabled, the vendor should be sanitized
-  // to one of the known values
   let vendor = gl.getParameter(ext.UNMASKED_VENDOR_WEBGL);
 
   // List of valid sanitized vendor strings
@@ -57,12 +76,26 @@ document.addEventListener("DOMContentLoaded", async function() {
     "Other"
   ];
 
-  SimpleTest.ok(validVendors.includes(vendor),
-    "UNMASKED_VENDOR_WEBGL should be sanitized to one of the known values. Got: " + vendor);
-
-  // Verify it's NOT "Mozilla" (which would indicate WebGLRenderInfo is active)
-  SimpleTest.isnot(vendor, "Mozilla",
-    "UNMASKED_VENDOR_WEBGL should be sanitized, not 'Mozilla' (WebGLRenderInfo not active)");
+  if (await isFPPTargetEnabled(RFPTarget.WebGLVendorRandomize)) {
+    // The higher-precedence WebGLVendorRandomize is enabled, so it overrides
+    // the added WebGLVendorSanitize and the vendor is randomized.
+    SimpleTest.ok(vendor.startsWith("Mozilla "),
+      "Vendor should be the randomized 'Mozilla <Base64>'. Got: " + vendor);
+    SimpleTest.ok(!validVendors.includes(vendor),
+      "Added WebGLVendorSanitize must not override the enabled WebGLVendorRandomize. Got: " + vendor);
+  } else if (await isFPPTargetEnabled(RFPTarget.WebGLVendorConstant)) {
+    // WebGLVendorConstant is enabled and also outranks Sanitize, so the vendor
+    // is the constant "Mozilla".
+    SimpleTest.is(vendor, "Mozilla",
+      "Added WebGLVendorSanitize must not override the enabled WebGLVendorConstant");
+  } else {
+    // Only WebGLVendorSanitize applies, so the vendor is sanitized to a known
+    // value (and is not "Mozilla").
+    SimpleTest.ok(validVendors.includes(vendor),
+      "WebGLVendorSanitize should yield a known vendor value. Got: " + vendor);
+    SimpleTest.isnot(vendor, "Mozilla",
+      "Sanitized vendor should not be 'Mozilla'");
+  }
 
   SimpleTest.finish();
 });

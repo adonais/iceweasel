@@ -5,36 +5,34 @@
 #include "APZCCallbackHelper.h"
 
 #include "APZEventState.h"  // for PrecedingPointerDown
-
-#include "gfxPlatform.h"  // For gfxPlatform::UseTiling
-
+#include "gfxPlatform.h"    // For gfxPlatform::UseTiling
+#include "jsapi.h"
 #include "mozilla/AsyncEventDispatcher.h"
-#include "mozilla/EventForwards.h"
-#include "mozilla/dom/CustomEvent.h"
-#include "mozilla/dom/Element.h"
-#include "mozilla/dom/MouseEventBinding.h"
-#include "mozilla/dom/BrowserParent.h"
-#include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/IntegerPrintfMacros.h"
-#include "mozilla/layers/RepaintRequest.h"
-#include "mozilla/layers/WebRenderLayerManager.h"
-#include "mozilla/layers/WebRenderBridgeChild.h"
 #include "mozilla/DisplayPortUtils.h"
+#include "mozilla/EventForwards.h"
+#include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/ToString.h"
 #include "mozilla/ViewportUtils.h"
-#include "jsapi.h"
+#include "mozilla/dom/BrowserParent.h"
+#include "mozilla/dom/CustomEvent.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/dom/MouseEventBinding.h"
+#include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/layers/RepaintRequest.h"
+#include "mozilla/layers/WebRenderBridgeChild.h"
+#include "mozilla/layers/WebRenderLayerManager.h"
 #include "nsContainerFrame.h"
 #include "nsContentUtils.h"
 #include "nsIContent.h"
 #include "nsIDOMWindowUtils.h"
-#include "mozilla/dom/Document.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsLayoutUtils.h"
 #include "nsMenuPopupFrame.h"
-#include "nsPrintfCString.h"
 #include "nsPIDOMWindow.h"
+#include "nsPrintfCString.h"
 #include "nsRefreshDriver.h"
 #include "nsString.h"
 
@@ -131,7 +129,8 @@ static CSSPoint ScrollFrameTo(ScrollContainerFrame* aFrame,
   if (!scrollInProgress) {
     ScrollSnapTargetIds snapTargetIds = aRequest.GetLastSnapTargetIds();
     aFrame->ScrollToCSSPixelsForApz(targetScrollPosition,
-                                    std::move(snapTargetIds));
+                                    std::move(snapTargetIds),
+                                    aRequest.GetScrollGenerationOnApz());
     geckoScrollPosition = CSSPoint::FromAppUnits(aFrame->GetScrollPosition());
     aSuccessOut = true;
   }
@@ -157,7 +156,6 @@ static DisplayPortMargins ScrollFrame(nsIContent* aContent,
       nsLayoutUtils::FindScrollContainerFrameFor(aRequest.GetScrollId());
   if (sf) {
     sf->ResetScrollInfoIfNeeded(aRequest.GetScrollGeneration(),
-                                aRequest.GetScrollGenerationOnApz(),
                                 aRequest.GetScrollAnimationType(),
                                 ScrollContainerFrame::InScrollingGesture(
                                     aRequest.IsInScrollingGesture()));
@@ -389,8 +387,8 @@ void APZCCallbackHelper::UpdateRootFrame(const RepaintRequest& aRequest) {
     CSSPoint currentScrollPosition =
         CSSPoint::FromAppUnits(sf->GetScrollPosition());
     ScrollSnapTargetIds snapTargetIds = aRequest.GetLastSnapTargetIds();
-    sf->ScrollToCSSPixelsForApz(currentScrollPosition,
-                                std::move(snapTargetIds));
+    sf->ScrollToCSSPixelsForApz(currentScrollPosition, std::move(snapTargetIds),
+                                sf->ScrollGenerationOnApz());
   }
 
   // Do this as late as possible since scrolling can flush layout. It also
@@ -986,7 +984,7 @@ void APZCCallbackHelper::NotifyScaleGestureComplete(
     return;
   }
   JSContext* cx = jsapi.cx();
-  JS::Rooted<JS::Value> detail(cx, JS_NumberValue(aScale));
+  JS::Rooted<JS::Value> detail(cx, JS::NumberValue(aScale));
   RefPtr<dom::CustomEvent> event = NS_NewDOMCustomEvent(doc, nullptr, nullptr);
   event->InitCustomEvent(cx, u"MozScaleGestureComplete"_ns,
                          /* CanBubble */ true,

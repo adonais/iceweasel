@@ -4,6 +4,7 @@
 
 import os
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -326,7 +327,7 @@ class BaseBootstrapper:
         pass
 
     def install_toolchain_artifact(self, toolchain_job):
-        bootstrap_toolchain(toolchain_job)
+        return bootstrap_toolchain(toolchain_job)
 
     def auto_bootstrap(self, application, exclude=[]):
         args = ["--with-ccache=sccache"]
@@ -695,27 +696,16 @@ class BaseBootstrapper:
         return all(which(tool, extra_search_dirs=extra) for tool in self.CARGO_TOOLS)
 
     def ensure_cargo_tools(self):
-        """Install cargo-binstall and required developer tools."""
+        """Install required developer tools from prebuilt toolchain artifacts."""
         cargo_home, cargo_bin = self.cargo_home()
-        extra = [str(cargo_bin)]
-
-        cargo = to_optional_path(which("cargo", extra_search_dirs=extra))
-        if not cargo:
-            print(
-                "cargo is required to install agentic coding tools but was not found. "
-                "Please install Rust from https://rustup.rs/ and re-run bootstrap."
-            )
-            return
-
-        binstall = cargo_bin / ("cargo-binstall" + rust.exe_suffix())
-        if not binstall.exists():
-            print("Installing cargo-binstall...")
-            subprocess.check_call([str(cargo), "install", "cargo-binstall"])
 
         print("Installing cargo tools: {}...".format(", ".join(self.CARGO_TOOLS)))
-        subprocess.check_call([
-            str(cargo),
-            "binstall",
-            "--no-confirm",
-            *self.CARGO_TOOLS,
-        ])
+        for tool in self.CARGO_TOOLS:
+            tool_dir = self.install_toolchain_artifact(tool)
+            if not tool_dir:
+                print(f"Could not install {tool}.")
+                continue
+            exe = Path(tool_dir) / (tool + rust.exe_suffix())
+            dest = cargo_bin / exe.name
+            dest.unlink(missing_ok=True)
+            shutil.copy2(exe, dest)

@@ -133,8 +133,7 @@ class ConnectPage extends PureComponent {
       dom.button(
         {
           className:
-            "default-button connect-page__usb-section__heading__toggle " +
-            "qa-connect-usb-toggle-button",
+            "connect-section__header__toggle qa-connect-usb-toggle-button",
           disabled,
           onClick: () => this.onToggleUSBClick(),
         },
@@ -162,9 +161,9 @@ class ConnectPage extends PureComponent {
               "USB"
             )
           ),
-          this.renderUsbStatus(),
-          this.renderUsbToggleButton()
+          this.renderUsbStatus()
         ),
+        headerButton: this.renderUsbToggleButton(),
       },
       isAddonInstalled
         ? ConnectSteps({
@@ -269,7 +268,7 @@ class ConnectPage extends PureComponent {
         },
         dom.h1(
           {
-            className: "alt-heading alt-heading--larger",
+            className: "main-heading header-name",
           },
           "Setup"
         )

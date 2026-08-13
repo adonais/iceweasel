@@ -175,7 +175,9 @@ MatchComponentType(const SEC_ASN1Template* templateEntry,
             /* optional component. This is the hard case. Now we need to
                look at the subtemplate to get the expected kind */
             const SEC_ASN1Template* subTemplate =
-                SEC_ASN1GetSubtemplate(templateEntry, dest, PR_FALSE);
+                SEC_ASN1GetSubtemplate(templateEntry,
+                                       (char*)dest + templateEntry->offset,
+                                       PR_FALSE);
             if (!subTemplate) {
                 PORT_SetError(SEC_ERROR_BAD_TEMPLATE);
                 return SECFailure;
@@ -401,7 +403,9 @@ DecodeInline(void* dest,
              SECItem* src, PLArenaPool* arena, PRBool checkTag)
 {
     const SEC_ASN1Template* inlineTemplate =
-        SEC_ASN1GetSubtemplate(templateEntry, dest, PR_FALSE);
+        SEC_ASN1GetSubtemplate(templateEntry,
+                               (char*)dest + templateEntry->offset,
+                               PR_FALSE);
     return DecodeItem((void*)((char*)dest + templateEntry->offset),
                       inlineTemplate, src, arena, checkTag);
 }
@@ -412,7 +416,9 @@ DecodePointer(void* dest,
               SECItem* src, PLArenaPool* arena, PRBool checkTag)
 {
     const SEC_ASN1Template* ptrTemplate =
-        SEC_ASN1GetSubtemplate(templateEntry, dest, PR_FALSE);
+        SEC_ASN1GetSubtemplate(templateEntry,
+                               (char*)dest + templateEntry->offset,
+                               PR_FALSE);
     if (!ptrTemplate) {
         PORT_SetError(SEC_ERROR_INVALID_ARGS);
         return SECFailure;
@@ -498,7 +504,9 @@ DecodeGroup(void* dest,
     void** entries = NULL;
 
     const SEC_ASN1Template* subTemplate =
-        SEC_ASN1GetSubtemplate(templateEntry, dest, PR_FALSE);
+        SEC_ASN1GetSubtemplate(templateEntry,
+                               (char*)dest + templateEntry->offset,
+                               PR_FALSE);
 
     source = *src;
 

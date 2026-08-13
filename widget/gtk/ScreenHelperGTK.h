@@ -5,8 +5,8 @@
 #ifndef mozilla_widget_gtk_ScreenHelperGTK_h
 #define mozilla_widget_gtk_ScreenHelperGTK_h
 
-#include "mozilla/widget/ScreenManager.h"
 #include "gdk/gdk.h"
+#include "mozilla/widget/ScreenManager.h"
 #ifdef MOZ_WAYLAND
 #  include "nsWaylandDisplay.h"
 #endif

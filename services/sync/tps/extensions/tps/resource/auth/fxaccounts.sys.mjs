@@ -90,6 +90,7 @@ function ensureAutofillActorRegistered() {
         "https://accounts.stage.mozaws.net/*",
       ],
       messageManagerGroups: ["browsers"],
+      safeForUntrustedWebProcess: true,
     });
     gAutofillActorRegistered = true;
   } catch (error) {

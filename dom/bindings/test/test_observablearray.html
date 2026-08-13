@@ -9,7 +9,7 @@
 </head>
 <body>
 <script>
-/* global TestInterfaceObservableArray */
+/* global TestInterfaceObservableArrayBase, TestInterfaceObservableArray */
 
 add_setup(async function init() {
   await SpecialPowers.pushPrefEnv({set: [["dom.expose_test_interfaces", true]]});
@@ -725,7 +725,7 @@ add_task(async function testObservableArray_ccw() {
     {property1: [], property2: 2},
   ];
 
-  let descriptor = Object.getOwnPropertyDescriptor(TestInterfaceObservableArray.prototype, 'observableArrayObject');
+  let descriptor = Object.getOwnPropertyDescriptor(TestInterfaceObservableArrayBase.prototype, 'observableArrayObject');
   descriptor.set.call(m, values);
 
   let b = descriptor.get.call(m);

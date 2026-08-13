@@ -11,6 +11,7 @@
 #include "mozilla/DeclarationBlock.h"
 #include "mozilla/DocumentStyleRootIterator.h"
 #include "mozilla/EffectCompositor.h"
+#include "mozilla/FontPropertyTypes.h"
 #include "mozilla/IntegerRange.h"
 #include "mozilla/Keyframe.h"
 #include "mozilla/LookAndFeel.h"
@@ -20,6 +21,7 @@
 #include "mozilla/RestyleManager.h"
 #include "mozilla/SMILAnimationController.h"
 #include "mozilla/ServoBindings.h"
+#include "mozilla/ServoStyleConsts.h"
 #include "mozilla/ServoStyleRuleMap.h"
 #include "mozilla/ServoStyleSetInlines.h"
 #include "mozilla/ServoTypes.h"
@@ -1133,10 +1135,11 @@ void ServoStyleSet::AssertTreeIsClean() {
 bool ServoStyleSet::GetKeyframesForName(
     const Element& aElement, const ComputedStyle& aStyle, nsAtom* aName,
     const StyleComputedTimingFunction& aTimingFunction,
+    const StyleAnimationComposition aComposition,
     nsTArray<Keyframe>& aKeyframes) {
   MOZ_ASSERT(!StylistNeedsUpdate());
   if (Servo_StyleSet_GetKeyframesForName(mRawData.get(), &aElement, &aStyle,
-                                         aName, &aTimingFunction,
+                                         aName, &aTimingFunction, aComposition,
                                          &aKeyframes)) {
     return true;
   }
@@ -1459,6 +1462,13 @@ bool ServoStyleSet::MightHaveAttributeDependency(const Element& aElement,
                                                  nsAtom* aAttribute) const {
   return Servo_StyleSet_MightHaveAttributeDependency(mRawData.get(), &aElement,
                                                      aAttribute);
+}
+
+StyleContainerAttributeDependencyKind
+ServoStyleSet::MightHaveAttributeDependencyInContainer(
+    const Element& aElement, nsAtom* aAttribute) const {
+  return Servo_StyleSet_MightHaveAttributeDependencyInContainer(
+      mRawData.get(), &aElement, aAttribute);
 }
 
 bool ServoStyleSet::MightHaveNthOfIDDependency(const Element& aElement,

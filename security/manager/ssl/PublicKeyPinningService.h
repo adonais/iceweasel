@@ -6,11 +6,11 @@
 #define PublicKeyPinningService_h
 
 #include "CertVerifier.h"
+#include "mozilla/Span.h"
+#include "mozpkix/Time.h"
 #include "nsIPublicKeyPinningService.h"
 #include "nsString.h"
 #include "nsTArray.h"
-#include "mozilla/Span.h"
-#include "mozpkix/Time.h"
 
 namespace mozilla {
 namespace psm {

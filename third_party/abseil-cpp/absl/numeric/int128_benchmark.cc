@@ -13,31 +13,28 @@
 // limitations under the License.
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <random>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "absl/base/config.h"
 #include "absl/numeric/int128.h"
+#include "absl/random/random.h"
 #include "benchmark/benchmark.h"
 
 namespace {
 
 constexpr size_t kSampleSize = 1000000;
 
-std::mt19937 MakeRandomEngine() {
-  std::random_device r;
-  std::seed_seq seed({r(), r(), r(), r(), r(), r(), r(), r()});
-  return std::mt19937(seed);
-}
-
-template <typename T,
-          typename H = typename std::conditional<
-              std::numeric_limits<T>::is_signed, int64_t, uint64_t>::type>
+template <typename T, typename H = std::conditional_t<
+                          std::numeric_limits<T>::is_signed, int64_t, uint64_t>>
 std::vector<std::pair<T, T>> GetRandomClass128SampleUniformDivisor() {
   std::vector<std::pair<T, T>> values;
-  std::mt19937 random = MakeRandomEngine();
+  absl::InsecureBitGen random;
   std::uniform_int_distribution<H> uniform_h;
   values.reserve(kSampleSize);
   for (size_t i = 0; i < kSampleSize; ++i) {
@@ -72,12 +69,11 @@ void BM_RemainderClass128UniformDivisor(benchmark::State& state) {
 BENCHMARK_TEMPLATE(BM_RemainderClass128UniformDivisor, absl::uint128);
 BENCHMARK_TEMPLATE(BM_RemainderClass128UniformDivisor, absl::int128);
 
-template <typename T,
-          typename H = typename std::conditional<
-              std::numeric_limits<T>::is_signed, int64_t, uint64_t>::type>
+template <typename T, typename H = std::conditional_t<
+                          std::numeric_limits<T>::is_signed, int64_t, uint64_t>>
 std::vector<std::pair<T, H>> GetRandomClass128SampleSmallDivisor() {
   std::vector<std::pair<T, H>> values;
-  std::mt19937 random = MakeRandomEngine();
+  absl::InsecureBitGen random;
   std::uniform_int_distribution<H> uniform_h;
   values.reserve(kSampleSize);
   for (size_t i = 0; i < kSampleSize; ++i) {
@@ -114,7 +110,7 @@ BENCHMARK_TEMPLATE(BM_RemainderClass128SmallDivisor, absl::int128);
 
 std::vector<std::pair<absl::uint128, absl::uint128>> GetRandomClass128Sample() {
   std::vector<std::pair<absl::uint128, absl::uint128>> values;
-  std::mt19937 random = MakeRandomEngine();
+  absl::InsecureBitGen random;
   std::uniform_int_distribution<uint64_t> uniform_uint64;
   values.reserve(kSampleSize);
   for (size_t i = 0; i < kSampleSize; ++i) {
@@ -149,13 +145,13 @@ BENCHMARK(BM_AddClass128);
 
 // Some implementations of <random> do not support __int128 when it is
 // available, so we make our own uniform_int_distribution-like type.
-template <typename T,
-          typename H = typename std::conditional<
-              std::is_same<T, __int128>::value, int64_t, uint64_t>::type>
+template <typename T, typename H = std::conditional_t<
+                          std::is_same_v<T, __int128>, int64_t, uint64_t>>
 class UniformIntDistribution128 {
  public:
   // NOLINTNEXTLINE: mimicking std::uniform_int_distribution API
-  T operator()(std::mt19937& generator) {
+  template <class URBG>
+  T operator()(URBG& generator) {
     return (static_cast<T>(dist64_(generator)) << 64) | dist64_(generator);
   }
 
@@ -163,12 +159,11 @@ class UniformIntDistribution128 {
   std::uniform_int_distribution<H> dist64_;
 };
 
-template <typename T,
-          typename H = typename std::conditional<
-              std::is_same<T, __int128>::value, int64_t, uint64_t>::type>
+template <typename T, typename H = std::conditional_t<
+                          std::is_same_v<T, __int128>, int64_t, uint64_t>>
 std::vector<std::pair<T, T>> GetRandomIntrinsic128SampleUniformDivisor() {
   std::vector<std::pair<T, T>> values;
-  std::mt19937 random = MakeRandomEngine();
+  absl::InsecureBitGen random;
   UniformIntDistribution128<T> uniform_128;
   values.reserve(kSampleSize);
   for (size_t i = 0; i < kSampleSize; ++i) {
@@ -204,12 +199,11 @@ void BM_RemainderIntrinsic128UniformDivisor(benchmark::State& state) {
 BENCHMARK_TEMPLATE(BM_RemainderIntrinsic128UniformDivisor, unsigned __int128);
 BENCHMARK_TEMPLATE(BM_RemainderIntrinsic128UniformDivisor, __int128);
 
-template <typename T,
-          typename H = typename std::conditional<
-              std::is_same<T, __int128>::value, int64_t, uint64_t>::type>
+template <typename T, typename H = std::conditional_t<
+                          std::is_same_v<T, __int128>, int64_t, uint64_t>>
 std::vector<std::pair<T, H>> GetRandomIntrinsic128SampleSmallDivisor() {
   std::vector<std::pair<T, H>> values;
-  std::mt19937 random = MakeRandomEngine();
+  absl::InsecureBitGen random;
   UniformIntDistribution128<T> uniform_int128;
   std::uniform_int_distribution<H> uniform_int64;
   values.reserve(kSampleSize);
@@ -246,9 +240,9 @@ BENCHMARK_TEMPLATE(BM_RemainderIntrinsic128SmallDivisor, unsigned __int128);
 BENCHMARK_TEMPLATE(BM_RemainderIntrinsic128SmallDivisor, __int128);
 
 std::vector<std::pair<unsigned __int128, unsigned __int128>>
-      GetRandomIntrinsic128Sample() {
+GetRandomIntrinsic128Sample() {
   std::vector<std::pair<unsigned __int128, unsigned __int128>> values;
-  std::mt19937 random = MakeRandomEngine();
+  absl::InsecureBitGen random;
   UniformIntDistribution128<unsigned __int128> uniform_uint128;
   values.reserve(kSampleSize);
   for (size_t i = 0; i < kSampleSize; ++i) {

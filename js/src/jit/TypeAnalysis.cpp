@@ -489,8 +489,8 @@ bool TypeAnalyzer::adjustPhiInputs(MPhi* phi) {
     // original box. Don't bother optimizing if magic values are involved.
     if (in->isUnbox()) {
       MDefinition* unboxInput = in->toUnbox()->input();
-      if (!IsMagicType(unboxInput->type()) && phi->typeIncludes(unboxInput)) {
-        in = in->toUnbox()->input();
+      if (!IsMagicType(unboxInput->type())) {
+        in = unboxInput;
       }
     }
 

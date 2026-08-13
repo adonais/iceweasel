@@ -10,6 +10,9 @@ const { IPProtectionService, IPProtectionStates } = ChromeUtils.importESModule(
 const { ERRORS, IPPProxyManager, IPPProxyStates } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs"
 );
+const { IPPExceptionsManager, IPPPrincipalRules } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/ipprotection/IPPExceptionsManager.sys.mjs"
+);
 const { ProxyPass, ProxyUsage, Entitlement } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/ipprotection/GuardianTypes.sys.mjs"
 );
@@ -22,9 +25,8 @@ const { IPProtectionActivator } = ChromeUtils.importESModule(
 const { IPPDummyAuthProvider } = ChromeUtils.importESModule(
   "resource://testing-common/ipprotection/IPPDummyAuthProvider.sys.mjs"
 );
-IPProtectionActivator.addHelpers(IPPDummyAuthProvider.helpers);
-IPProtectionActivator.setupHelpers();
 IPProtectionActivator.setAuthProvider(IPPDummyAuthProvider);
+IPProtectionActivator.setupHelpers();
 
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
@@ -41,6 +43,34 @@ function waitForEvent(target, eventName, callback = () => true) {
     target.addEventListener(eventName, listener);
   });
 }
+
+/**
+ * Initializes IPProtectionService and resolves once it reaches READY.
+ */
+async function initServiceToReady() {
+  const readyEvent = waitForEvent(
+    IPProtectionService,
+    "IPProtectionService:StateChanged",
+    () => IPProtectionService.state === IPProtectionStates.READY
+  );
+  IPProtectionService.init();
+  await readyEvent;
+}
+/* exported initServiceToReady */
+
+/**
+ * Resolves once IPPProxyManager reaches the given state.
+ *
+ * @param {string} state - One of IPPProxyStates.
+ */
+function waitForProxyState(state) {
+  return waitForEvent(
+    IPPProxyManager,
+    "IPPProxyManager:StateChanged",
+    () => IPPProxyManager.state === state
+  );
+}
+/* exported waitForProxyState */
 
 async function putServerInRemoteSettings(
   server = {
@@ -107,6 +137,8 @@ function setupStubs(aOptions = {}) {
   });
   IPPDummyAuthProvider.setProxyUsage(options.proxyUsage);
   IPPDummyAuthProvider.setProxyPassError(null);
+  IPPDummyAuthProvider.setProxyPassHang(false);
+  IPPDummyAuthProvider.setProxyPassResolveOnAbort(null);
 }
 
 /**

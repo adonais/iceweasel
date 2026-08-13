@@ -5,14 +5,14 @@
 #ifndef MOZILLA_GFX_VR_VRMANAGERPARENT_H
 #define MOZILLA_GFX_VR_VRMANAGERPARENT_H
 
+#include "gfxVR.h"              // for VRFieldOfView
+#include "mozilla/TimeStamp.h"  // for TimeStamp
 #include "mozilla/dom/ipc/IdType.h"
-#include "mozilla/layers/CompositorThread.h"  // for CompositorThreadHolder
-#include "mozilla/layers/CompositableTransactionParent.h"  // need?
-#include "mozilla/gfx/PVRManagerParent.h"  // for PVRManagerParent
 #include "mozilla/gfx/PVRLayerParent.h"    // for PVRLayerParent
+#include "mozilla/gfx/PVRManagerParent.h"  // for PVRManagerParent
 #include "mozilla/ipc/ProtocolUtils.h"     // for IToplevelProtocol
-#include "mozilla/TimeStamp.h"             // for TimeStamp
-#include "gfxVR.h"                         // for VRFieldOfView
+#include "mozilla/layers/CompositableTransactionParent.h"  // need?
+#include "mozilla/layers/CompositorThread.h"  // for CompositorThreadHolder
 
 namespace mozilla {
 using namespace layers;

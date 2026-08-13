@@ -17,10 +17,10 @@ function clearLoggingPrefs() {
 
   // Clear devtools.performance.recording preferences that may be set by about:logging
   const devtoolsPrefs = [
-    "devtools.performance.recording.preset",
-    "devtools.performance.recording.entries",
-    "devtools.performance.recording.threads",
-    "devtools.performance.recording.features",
+    "devtools.performance.recording.preset.aboutlogging",
+    "devtools.performance.recording.entries.aboutlogging",
+    "devtools.performance.recording.threads.aboutlogging",
+    "devtools.performance.recording.features.aboutlogging",
     "devtools.performance.popup.intro-displayed",
   ];
 
@@ -465,6 +465,67 @@ add_task(async function testProfilerOpens() {
     Assert.ok(true, "Profiler tab opened after profiling");
     await BrowserTestUtils.removeTab(tab);
   });
+  clearLoggingPrefs();
+});
+
+// Test that starting and stopping log collection via about:logging doesn't
+// clobber the recording settings used for normal profiling (the profiler
+// popup, about:profiling), since they're stored under different prefs.
+add_task(async function testProfilerPrefsIsolation() {
+  // Simulate a preset already configured for normal, day to day profiling.
+  Services.prefs.setCharPref("devtools.performance.recording.preset", "media");
+  Services.prefs.setIntPref("devtools.performance.recording.entries", 12345);
+
+  await BrowserTestUtils.withNewTab(PAGE, async browser => {
+    let profilerOpenedPromise = BrowserTestUtils.waitForNewTab(
+      gBrowser,
+      "https://example.com/",
+      false
+    );
+    SpecialPowers.spawn(browser, [], async () => {
+      let $ = content.document.querySelector.bind(content.document);
+      // Override the URL the profiler uses to avoid hitting external
+      // resources (and crash).
+      await SpecialPowers.pushPrefEnv({
+        set: [
+          ["devtools.performance.recording.ui-base-url", "https://example.com"],
+          ["devtools.performance.recording.ui-base-url-path", "/"],
+        ],
+      });
+      $("#logging-preset-dropdown").value = "networking";
+      $("#logging-preset-dropdown").dispatchEvent(new content.Event("change"));
+      $("#set-log-modules-button").click();
+      $("#toggle-logging-button").click();
+      // Wait for the profiler to start. This can be very slow.
+      await content.profilerPromise();
+      // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
+      await new Promise(resolve => content.setTimeout(resolve, 200));
+      $("#toggle-logging-button").click();
+    });
+    let tab = await profilerOpenedPromise;
+    await BrowserTestUtils.removeTab(tab);
+  });
+
+  Assert.equal(
+    Services.prefs.getCharPref("devtools.performance.recording.preset"),
+    "media",
+    "Using about:logging must not change the profiler popup's preset."
+  );
+  Assert.equal(
+    Services.prefs.getIntPref("devtools.performance.recording.entries"),
+    12345,
+    "Using about:logging must not change the profiler popup's entries pref."
+  );
+  Assert.equal(
+    Services.prefs.getCharPref(
+      "devtools.performance.recording.preset.aboutlogging"
+    ),
+    "networking",
+    "about:logging uses its own, separate preset pref."
+  );
+
+  Services.prefs.clearUserPref("devtools.performance.recording.preset");
+  Services.prefs.clearUserPref("devtools.performance.recording.entries");
   clearLoggingPrefs();
 });
 

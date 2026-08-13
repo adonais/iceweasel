@@ -5,10 +5,9 @@
 #ifndef nsLiteralString_h_
 #define nsLiteralString_h_
 
-#include "nscore.h"
 #include "nsString.h"
-
 #include "nsTLiteralString.h"
+#include "nscore.h"
 
 #define NS_CSTRING_LITERAL_AS_STRING_LITERAL(s) u"" s
 

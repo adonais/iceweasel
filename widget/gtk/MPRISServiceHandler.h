@@ -7,6 +7,7 @@
 #define WIDGET_GTK_MPRIS_SERVICE_HANDLER_H_
 
 #include <gio/gio.h>
+
 #include "mozilla/dom/MediaControlKeySource.h"
 #include "nsIFile.h"
 #include "nsMimeTypes.h"

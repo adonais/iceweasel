@@ -27,6 +27,7 @@ config = {
         "800x1280",
         "-no-snapstorage",
         "-no-snapshot",
+        "-no-metrics",
         # Skips first-run dialogs
         "-prop",
         "ro.test_harness=true",

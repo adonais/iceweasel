@@ -6,13 +6,13 @@
 use std::sync::Arc;
 
 use ads_client::{
-    MozAdsClientBuilder, MozAdsEnvironment, MozAdsPlacementRequest,
-    MozAdsPlacementRequestWithCount, MozAdsReportReason, MozAdsRequestOptions,
+    MozAdsClientBuilder, MozAdsEnvironment, MozAdsIABContent, MozAdsIABContentTaxonomy,
+    MozAdsPlacementRequest, MozAdsPlacementRequestWithCount, MozAdsReportReason,
+    MozAdsRequestOptions,
 };
 
 fn init_backend() {
-    // Err means the backend is already initialized.
-    let _ = viaduct_hyper::viaduct_init_backend_hyper();
+    viaduct_hyper::viaduct_init_backend_hyper();
 }
 
 fn prod_client() -> ads_client::MozAdsClient {
@@ -42,6 +42,39 @@ fn test_contract_image_prod() {
     );
     let placements = result.unwrap();
     assert!(placements.contains_key("mock_billboard_1"));
+}
+
+#[test]
+#[ignore = "integration test: run manually with -- --ignored"]
+fn test_contract_image_with_categories_prod() {
+    init_backend();
+
+    let client = prod_client();
+    let result = client.request_image_ads(
+        vec![MozAdsPlacementRequest {
+            iab_content: Some(MozAdsIABContent {
+                category_ids: vec!["338".to_string()],
+                taxonomy: MozAdsIABContentTaxonomy::IAB3_0,
+            }),
+            placement_id: "mock_billboard_1".to_string(),
+        }],
+        Some(MozAdsRequestOptions {
+            flags: std::collections::HashMap::from([("contextual_placement".to_string(), true)]),
+            ..Default::default()
+        }),
+    );
+
+    assert!(
+        result.is_ok(),
+        "Image ad request with categories failed: {:?}",
+        result.err()
+    );
+    let placements = result.unwrap();
+    let ad = placements
+        .get("mock_billboard_1")
+        .expect("mock_billboard_1 should be present in the response");
+    assert!(!ad.url.is_empty(), "destination url should be populated");
+    assert!(!ad.image_url.is_empty(), "image url should be populated");
 }
 
 #[test]

@@ -5,24 +5,23 @@
 #ifndef HttpConnectionUDP_h_
 #define HttpConnectionUDP_h_
 
+#include "ARefBase.h"
+#include "Http3Session.h"
 #include "HttpConnectionBase.h"
-#include "nsHttpConnectionInfo.h"
-#include "nsHttpResponseHead.h"
+#include "HttpTrafficAnalyzer.h"
+#include "TimingStruct.h"
+#include "mozilla/Mutex.h"
 #include "nsAHttpTransaction.h"
 #include "nsCOMPtr.h"
-#include "nsProxyRelease.h"
-#include "prinrval.h"
-#include "mozilla/Mutex.h"
-#include "ARefBase.h"
-#include "TimingStruct.h"
-#include "HttpTrafficAnalyzer.h"
-
+#include "nsHttpConnectionInfo.h"
+#include "nsHttpResponseHead.h"
 #include "nsIAsyncInputStream.h"
 #include "nsIAsyncOutputStream.h"
-#include "nsISupportsPriority.h"
 #include "nsIInterfaceRequestor.h"
+#include "nsISupportsPriority.h"
 #include "nsITimer.h"
-#include "Http3Session.h"
+#include "nsProxyRelease.h"
+#include "prinrval.h"
 
 class nsIDNSRecord;
 class nsISocketTransport;
@@ -106,6 +105,12 @@ class HttpConnectionUDP final : public HttpConnectionBase,
   void OnConnected();
 
   void SetDontExclude() override;
+
+  // True for a connection that finished connecting (mExperienced) and can no
+  // longer serve new transactions (!CanReuse()). Unlike a bare !CanReuse(),
+  // this stays false while the connection is still handshaking, so it is a safe
+  // signal for "was usable, now unusable".
+  bool IsConnectedAndUnusable();
 
  private:
   nsresult InitCommon(nsIUDPSocket* aSocket, const NetAddr& aPeerAddr,

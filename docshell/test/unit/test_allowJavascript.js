@@ -71,6 +71,7 @@ add_task(async function () {
     parent: {
       esModuleURI: "resource://test/AllowJavascriptParent.sys.mjs",
     },
+    safeForUntrustedWebProcess: true,
   });
 
   let page = await XPCShellContentUtils.loadContentPage("http://example.com/", {

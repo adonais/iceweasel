@@ -39,6 +39,14 @@ template void RuntimeScopeData<WasmFunctionScope::SlotInfo>::trace(
 void JS::TracingContext::getEdgeName(const char* name, char* buffer,
                                      size_t bufferSize) {
   MOZ_ASSERT(bufferSize > 0);
+  if (weak_) {
+    snprintf(buffer, bufferSize, "[weak] %s", name);
+    return;
+  }
+  if (nesting_ != 0) {
+    snprintf(buffer, bufferSize, "[nesting=%zu] %s", nesting_, name);
+    return;
+  }
   if (functor_) {
     (*functor_)(this, name, buffer, bufferSize);
     return;

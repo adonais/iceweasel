@@ -47,3 +47,9 @@ export function unHighlightDomElement(grip) {
     return panel.unHighlightDomElement(grip);
   };
 }
+
+export function isLocalTab() {
+  return ({ panel }) => {
+    return panel.toolbox.commands.descriptorFront.isLocalTab;
+  };
+}

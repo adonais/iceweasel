@@ -1,0 +1,15 @@
+{
+  "label": "www.1blv.com",
+  "bugs": {
+    "1893908": {
+      "issue": "desktop-layout-not-mobile",
+      "matches": ["*://www.1blv.com/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["android"],
+      "ua_string": ["Chrome_with_FxQuantum"]
+    }
+  ]
+}

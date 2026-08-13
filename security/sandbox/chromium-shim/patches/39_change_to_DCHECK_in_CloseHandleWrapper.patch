@@ -12,21 +12,19 @@ currently we can't work out how this can happen.
 diff --git a/base/win/scoped_handle_verifier.cc b/base/win/scoped_handle_verifier.cc
 --- a/base/win/scoped_handle_verifier.cc
 +++ b/base/win/scoped_handle_verifier.cc
-@@ -111,17 +111,23 @@ ScopedHandleVerifier* ScopedHandleVerifi
-   if (!g_active_verifier)
+@@ -109,17 +109,21 @@ ScopedHandleVerifier* ScopedHandleVerifi
+   if (!g_active_verifier) {
      ScopedHandleVerifier::InstallVerifier();
+   }
  
    return g_active_verifier;
  }
  
  bool CloseHandleWrapper(HANDLE handle) {
-   if (!::CloseHandle(handle))
-+    // Making this DCHECK on non-Nighly as we are hitting this frequently,
-+    // looks like we are closing handles twice somehow. See bug 1564899.
 +#if defined(NIGHTLY_BUILD)
-     CHECK(false) << "CloseHandle failed";
+   CHECK(::CloseHandle(handle)) << "CloseHandle failed";
 +#else
-+    DCHECK(false) << "CloseHandle failed";
++  DCHECK(::CloseHandle(handle)) << "CloseHandle failed";
 +#endif
    return true;
  }

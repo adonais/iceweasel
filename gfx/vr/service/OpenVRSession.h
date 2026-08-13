@@ -5,12 +5,11 @@
 #ifndef GFX_VR_SERVICE_OPENVRSESSION_H
 #define GFX_VR_SERVICE_OPENVRSESSION_H
 
-#include "VRSession.h"
-
-#include "openvr.h"
-#include "mozilla/TimeStamp.h"
-#include "moz_external_vr.h"
 #include "OpenVRControllerMapper.h"
+#include "VRSession.h"
+#include "moz_external_vr.h"
+#include "mozilla/TimeStamp.h"
+#include "openvr.h"
 
 #if defined(XP_WIN)
 #  include <d3d11_1.h>

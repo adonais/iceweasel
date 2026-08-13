@@ -31,7 +31,7 @@ add_task(async function test_sidebar_memories_toggle_visibility() {
     Services.prefs.setBoolPref(PREF_MEMORIES_CONVERSATION, false);
     Services.prefs.setBoolPref(PREF_MEMORIES_HISTORY, false);
 
-    await BrowserTestUtils.waitForCondition(() => {
+    await TestUtils.waitForCondition(() => {
       const btn = getMemoriesButton(sidebarBrowser);
       return btn && btn.show === true;
     }, "Sidebar: shown when prefs off but memories exist");
@@ -39,7 +39,7 @@ add_task(async function test_sidebar_memories_toggle_visibility() {
 
     Services.prefs.setBoolPref(PREF_MEMORIES_CONVERSATION, true);
     Services.prefs.setBoolPref(PREF_MEMORIES_HISTORY, true);
-    await BrowserTestUtils.waitForCondition(() => {
+    await TestUtils.waitForCondition(() => {
       const btn = getMemoriesButton(sidebarBrowser);
       return btn && btn.show === true;
     }, "Sidebar: shown when prefs on");

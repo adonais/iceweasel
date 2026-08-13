@@ -6,24 +6,22 @@
  * Implementation of nsIFile for "unixy" systems.
  */
 
-#include "nsLocalFile.h"
-
-#include "mozilla/CheckedInt.h"
-#include "mozilla/DebugOnly.h"
-#include "mozilla/Sprintf.h"
-#include "mozilla/FilePreferences.h"
-#include "mozilla/Base64.h"
-#include "mozilla/dom/Promise.h"
-#include "prtime.h"
-
+#include <dirent.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <sys/select.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <dirent.h>
+
+#include "mozilla/CheckedInt.h"
+#include "mozilla/DebugOnly.h"
+#include "mozilla/FilePreferences.h"
+#include "mozilla/Sprintf.h"
+#include "mozilla/dom/Promise.h"
+#include "nsLocalFile.h"
+#include "prtime.h"
 
 #if defined(XP_MACOSX)
 #  include <sys/xattr.h>
@@ -38,35 +36,36 @@
 #  endif
 #endif
 
-#include "nsDirectoryServiceDefs.h"
 #include "nsCOMPtr.h"
-#include "nsIFile.h"
-#include "nsString.h"
+#include "nsDirectoryServiceDefs.h"
 #include "nsIDirectoryEnumerator.h"
+#include "nsIFile.h"
 #include "nsSimpleEnumerator.h"
+#include "nsString.h"
 #include "private/pprio.h"
 #include "prlink.h"
 
 #ifdef MOZ_WIDGET_GTK
 #  include "nsIGIOService.h"
 #  ifdef MOZ_ENABLE_DBUS
-#    include "mozilla/widget/AsyncDBus.h"
 #    include "mozilla/WidgetUtilsGtk.h"
+#    include "mozilla/widget/AsyncDBus.h"
 #  endif
 #endif
 
 #ifdef MOZ_WIDGET_COCOA
 #  include <Carbon/Carbon.h>
+
 #  include "CocoaFileUtils.h"
-#  include "mozilla/Base64.h"
 
 static nsresult MacErrorMapper(OSErr inErr);
 #endif
 
 #ifdef MOZ_WIDGET_ANDROID
+#  include <linux/magic.h>
+
 #  include "mozilla/java/GeckoAppShellWrappers.h"
 #  include "nsIMIMEService.h"
-#  include <linux/magic.h>
 #endif
 
 #include "nsNativeCharsetUtils.h"

@@ -3,20 +3,18 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "Hal.h"
-#include "mozilla/java/GeckoAppShellWrappers.h"
+#include "mozilla/java/GeckoSensorWrappers.h"
 
 using namespace mozilla::hal;
 
-namespace mozilla {
-namespace hal_impl {
+namespace mozilla::hal_impl {
 
 void EnableSensorNotifications(SensorType aSensor) {
-  java::GeckoAppShell::EnableSensor(aSensor);
+  java::GeckoSensor::EnableSensor(aSensor);
 }
 
 void DisableSensorNotifications(SensorType aSensor) {
-  java::GeckoAppShell::DisableSensor(aSensor);
+  java::GeckoSensor::DisableSensor(aSensor);
 }
 
-}  // namespace hal_impl
-}  // namespace mozilla
+}  // namespace mozilla::hal_impl

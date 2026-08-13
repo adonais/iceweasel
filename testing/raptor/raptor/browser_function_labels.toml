@@ -1,0 +1,661 @@
+# Browser function labels (for profiles from samply)
+#
+# This file is intended to be used with `profiler-edit --insert-label-frames`,
+# to create a "labeled" profile from a raw samply profile.
+#
+# See https://github.com/firefox-devtools/profiler/pull/5966 .
+#
+# This file has grown organically over the years. We add matchers whenever we
+# notice a misclassified sample. This file will need to be updated in response
+# to implementation changes, and whenever we try it on a new type of profile.
+# For example, we've mostly been using this on profiles of a content process
+# main thread running the Speedometer 3 benchmark. But you could also use it
+# to classify samples on all threads / processes, to see the pure CPU time cost
+# (rather than latency) by label.
+#
+# It's not always clear how "small" we should make the buckets, for example is
+# it worth splitting HTML text node allocation from innerHTML parsing? Should
+# we split Baseline IC compilation from JS execution?
+# Often, what informs whether something is split or grouped is determined by
+# whether the same split can be applied across browsers. If e.g. Chrome doesn't
+# have an equivalent for Baseline IC compilation, splitting it out would make
+# comparisons across engines less meaningful.
+
+[[auto_labels]]
+nameTemplate = "{Class}.{method}"
+funcPrefixTemplates = [
+  "mozilla::dom::{Class}_Binding::{method}(",
+  "blink::`anonymous namespace'::v8_{Class:blink_snake}::{method:pascal}Operation",
+  "blink::(anonymous namespace)::v8_{Class:blink_snake}::{method:pascal}Operation",
+  "WebCore::js{Class}PrototypeFunction_{method}",
+]
+
+[[auto_labels]]
+nameTemplate = "set {Class}.{prop}"
+funcPrefixTemplates = [
+  "mozilla::dom::{Class}_Binding::set_{prop}(",
+  "blink::`anonymous namespace'::v8_{Class:blink_snake}::{prop:pascal}AttributeSetCallback",
+  "blink::(anonymous namespace)::v8_{Class:blink_snake}::{prop:pascal}AttributeSetCallback",
+  "WebCore::setJS{Class}_{prop}(",
+]
+
+[[auto_labels]]
+nameTemplate = "get {Class}.{prop}"
+funcPrefixTemplates = [
+  "mozilla::dom::{Class}_Binding::get_{prop}(",
+  "blink::`anonymous namespace'::v8_{Class:blink_snake}::{prop:pascal}AttributeGetCallback",
+  "blink::(anonymous namespace)::v8_{Class:blink_snake}::{prop:pascal}AttributeGetCallback",
+  "WebCore::getJS{Class}_{prop}(",
+]
+
+[[auto_labels]]
+nameTemplate = "{Class} constructor"
+funcPrefixTemplates = [
+  "mozilla::dom::{Class}_Binding::_constructor(",
+  "blink::`anonymous namespace'::v8_{Class:blink_snake}::ConstructorCallback",
+  "blink::(anonymous namespace)::v8_{Class:blink_snake}::ConstructorCallback",
+  # TODO: Add WebKit
+]
+
+[[auto_labels]]
+nameTemplate = "CanvasRenderingContext2D.{method}"
+funcPrefixTemplates = [
+  "mozilla::dom::CanvasRenderingContext2D_Binding::{method}(",
+  "mozilla::dom::OffscreenCanvasRenderingContext2D_Binding::{method}(",
+  "blink::`anonymous namespace'::v8_canvas_rendering_context_2d::{method:pascal}Operation",
+  "blink::(anonymous namespace)::v8_canvas_rendering_context_2d::{method:pascal}Operation",
+  "blink::Canvas2DRecorderContext::{method}(",
+  "WebCore::jsCanvasRenderingContext2DPrototypeFunction_{method}(",
+]
+
+[[auto_labels]]
+nameTemplate = "set CanvasRenderingContext2D.{prop}"
+funcPrefixTemplates = [
+  "mozilla::dom::CanvasRenderingContext2D_Binding::set_{prop}(",
+  "mozilla::dom::OffscreenCanvasRenderingContext2D_Binding::set_{prop}(",
+  "blink::`anonymous namespace'::v8_canvas_rendering_context_2d::{prop:pascal}AttributeSetCallback",
+  "blink::(anonymous namespace)::v8_canvas_rendering_context_2d::{prop:pascal}AttributeSetCallback",
+  "WebCore::setJSCanvasRenderingContext2D_{prop}(",
+]
+
+[[labels]]
+name = "set Element.className"
+funcPrefixes = [
+  "blink::bindings::PerformAttributeSetCEReactionsReflectTypeString", # https://share.firefox.dev/4bECHVt
+]
+
+[[labels]]
+name = "Profiling overhead"
+funcPrefixes = [
+  "KiSwapThread", # ETW context switch events overhead
+  "js::jit::PerfSpewer::saveJSProfile",
+  "js::jit::PerfSpewer::saveWasmProfile",
+  "js::jit::InlineCachePerfSpewer::saveProfile",
+  "js::jit::BaselinePerfSpewer::saveProfile",
+  "js::jit::BaselineICPerfSpewer::saveProfile",
+  "js::jit::IonPerfSpewer::saveJSProfile",
+  "js::jit::IonPerfSpewer::saveWasmProfile",
+  "js::jit::IonICPerfSpewer::saveProfile",
+  "js::jit::WasmBaselinePerfSpewer::saveProfile",
+  "js::jit::PerfSpewer::CollectJitCodeInfo",
+  "js::jit::JitRuntime::generateEntryTrampolineForScript",
+  "mozilla::dom::Performance::MaybeEmitExternalProfilerMarker",
+  "v8::internal::Compiler::LogFunctionCompilation",
+  "v8::internal::LinuxPerfJitLogger::LogRecordedBuffer",
+  "v8::internal::Builtins::CreateInterpreterEntryTrampolineForProfiling",
+  "v8::internal::compiler::JSHeapBroker::CollectArrayAndObjectPrototypes", # gets slower over time (probably accumulating functions) only when profiling with xperf -start "usersession" -on Microsoft-JScript:0x3
+  "v8::internal::V8FileLogger::SetEtwCodeEventHandler", # https://share.firefox.dev/4ae8lrL
+  "base::trace_event::ETWInterceptor::OnTracePacket", # https://share.firefox.dev/4maEaIU
+  "JSC::PerfLog::log",
+  "WTF::PrintStream::print",
+  "WebCore::maybeEmitExternalProfilerMarker",
+]
+
+[[labels]]
+name = "Minor GC"
+funcPrefixes = [
+  "js::gc::GCRuntime::minorGC",
+  "v8::internal::Heap::Scavenge",
+  "v8::internal::Heap::MinorMarkSweep",
+  "v8::internal::Heap::CompleteSweepingYoung",
+]
+
+[[labels]]
+name = "JS source compression"
+funcPrefixes = [
+  "js::SourceCompressionTask::runHelperThreadTask",
+]
+
+[[labels]]
+name = "GC / CC"
+funcPrefixes = [
+  "js::gc::GCRuntime::minorGC",
+  "js::gc::GCRuntime::collect(",
+  "js::gc::GCRuntime::refillFreeList",
+  "js::gc::UnmarkGrayTracer::unmark", # https://share.firefox.dev/3PVZjZ1
+  "nsCycleCollector::Collect",
+  "nsCycleCollector_collectSlice", # https://share.firefox.dev/46ePue5
+  "nsCycleCollector::ForgetSkippable",
+  "AsyncFreeSnowWhite::Run",
+  "mozilla::IncrementalFinalizeRunnable::Run", # https://share.firefox.dev/46ePue5
+  "js::GCParallelTask::runHelperThreadTask",
+  "v8::internal::Heap::CollectGarbage",
+  "v8::internal::IncrementalMarking::Step",
+  "v8::internal::Heap::StartIncrementalMarking", # https://share.firefox.dev/48FllGk
+  "v8::internal::IncrementalMarking::StartMarkingMajor", # https://share.firefox.dev/44MgvVb
+  "v8::internal::IncrementalMarking::AdvanceAndFinalizeIfComplete", # https://share.firefox.dev/48FllGk
+  "v8::internal::ScavengerCollector::JobTask::Run",
+  "v8::internal::ConcurrentMarking::JobTaskMajor::Run",
+  "v8::internal::Sweeper::MajorSweeperJob::Run",
+  "cppgc::internal::Sweeper::SweeperImpl::ScheduleIncrementalSweeping",
+  "cppgc::internal::Sweeper::SweeperImpl::PerformSweepOnMutatorThread",
+  "cppgc::internal::`anonymous namespace'::ConcurrentMarkingTask::Run",
+  "cppgc::internal::`anonymous namespace'::ConcurrentSweepTask::Run",
+  "JSC::IncrementalSweeper::doSweep",
+  "JSC::Heap::collectInMutatorThread",
+  "JSC::MarkedBlock::Handle::sweep",
+]
+
+[[labels]]
+name = "High-tier JIT compilation kickoff"
+funcPrefixes = [
+  "js::jit::IonCompile(",
+  "v8::internal::`anonymous namespace'::GetOrCompileOptimized(",
+  "v8::internal::(anonymous namespace)::GetOrCompileOptimized(",
+]
+
+[[labels]]
+name = "High-tier JIT compilation"
+funcPrefixes = [
+  "js::jit::IonCompileTask::runHelperThreadTask",
+  "js::jit::IonFreeTask::runHelperThreadTask",
+  "v8::internal::OptimizedCompilationJob::ExecuteJob",
+]
+
+[[labels]]
+name = "High-tier JIT code installation"
+funcPrefixes = [
+  "js::jit::LinkIonScript",
+  "v8::internal::Compiler::FinalizeTurbofanCompilationJob",
+  "v8::internal::OptimizingCompileDispatcher::InstallOptimizedFunctions",
+  "v8::internal::maglev::MaglevConcurrentDispatcher::FinalizeFinishedJobs",
+  "JSC::DFG::Plan::finalize",
+]
+
+[[labels]]
+name = "Baseline compilation + code cache management"
+funcPrefixes = [
+  # Entirety of baseline compilation:
+  "js::jit::BaselineCompile(",
+
+  # Kick-off:
+  "v8::internal::baseline::BaselineBatchCompiler::EnqueueFunction",
+  "v8::internal::CanCompileWithBaseline",
+  "v8::internal::JSFunction::CreateAndAttachFeedbackVector",
+  "JSC::BaselineJITPlan::finalize",
+
+  # Code installation:
+  "js::jit::Linker::newCode",
+  "js::jit::Linker::~Linker",
+  "v8::internal::baseline::ConcurrentBaselineCompiler::InstallBatch",
+  "JSC::CodeBlock::finishCreation",
+  "JSC::LinkBuffer::linkCode",
+
+  # Cache management:
+  "blink::V8CodeCache::ProduceCache", # https://share.firefox.dev/4a3sErT
+  "blink::ModulatorImplBase::ProduceCacheModuleTreeTopLevel", # https://share.firefox.dev/46yVRtQ
+]
+
+[[labels]]
+name = "Synthetic mouse move event"
+funcPrefixes = [
+  "mozilla::PresShell::ProcessSynthMouseMoveEvent",
+]
+
+# [[labels]]
+# name = "Baseline IC compilation"
+# funcPrefixes = [
+#   "js::jit::CallIRGenerator::tryAttachStub(",
+#   "js::jit::AttachBaselineCacheIRStub(",
+#   "js::jit::TryAttachStub",
+#   "JSC::InlineCacheCompiler::regenerate",
+#   "JSC::repatch",
+# ]
+
+[[labels]]
+name = "Ion IC compilation / FTL lazy slow path and stub generation"
+funcPrefixes = [
+  "js::jit::IonIC::attachCacheIRStub",
+  "TryAttachIonStub",
+  "JSC::FTL::LazySlowPath::generate",
+  "JSC::FTL::compileStub",
+]
+
+[[labels]]
+name = "JS Parsing"
+funcPrefixes = [
+  "JSFunction::getOrCreateScript",
+  "CompileGlobalScriptToStencilAndMaybeInstantiate",
+  "mozilla::dom::JSExecutionContext::InstantiateStencil",
+  "js::frontend::ParseModuleToStencil",
+  "v8::internal::Compiler::Compile(",
+  "v8::internal::Compiler::CompileToplevel", # https://share.firefox.dev/4cBEV8t
+  "v8::internal::CodeSerializer::Deserialize",
+  "v8::internal::Parser::DoParseProgram",
+  "generateUnlinkedFunctionCodeBlock",
+  "JSC::generateUnlinkedFunctionCodeBlock",
+]
+
+[[labels]]
+name = "CSS Animation / Transition handling"
+funcPrefixes = [
+  "nsTransitionManager::ConsiderInitiatingTransition",
+  "mozilla::dom::Animation::Cancel",
+  "mozilla::dom::AnimationTimeline::Tick",
+  "nsRefreshDriver::DispatchAnimationEvents",
+  "blink::CSSAnimations::CalculateTransitionUpdate",
+  "blink::CSSAnimations::Cancel",
+  "blink::DocumentAnimations::UpdateAnimationTimingForAnimationFrame",
+  "blink::DocumentAnimations::UpdateAnimationTimingIfNeeded",
+  "WebCore::Style::TreeResolver::createAnimatedElementUpdate",
+  "WebCore::DocumentTimelinesController::updateAnimationsAndSendEvents",
+]
+
+[[labels]]
+name = "Network request handling"
+funcPrefixes = [
+  "mozilla::net::HttpChannelChild::AsyncOpen",
+  "mozilla::net::HttpChannelChild::DoOnDataAvailable", # https://share.firefox.dev/3TEe2rN
+  "mozilla::net::HttpChannelChild::DoOnStopRequest",
+  "mozilla::net::ChannelFunctionEvent::~ChannelFunctionEvent", # https://share.firefox.dev/3PFx8gg
+]
+
+[[labels]]
+name = "Layout object destruction"
+funcPrefixes = [
+  "mozilla::PresShell::ContentWillBeRemoved",
+  "mozilla::PresShell::ContentRemoved",
+  "mozilla::PresShell::Destroy",
+  "blink::Element::DetachLayoutTree", # https://share.firefox.dev/3sXBczH
+  "WTF::DefaultRefCountedTraits<blink::StyleInheritedVariables>::Destruct", # https://share.firefox.dev/47xsJlD
+  "blink::ObjectPaintPropertiesSparse::~ObjectPaintPropertiesSparse", # https://share.firefox.dev/47xsJlD
+  "cppgc::internal::FinalizerTrait<blink::ComputedStyleBase", # https://share.firefox.dev/47xsJlD
+  "WebCore::RenderTreeUpdater::tearDownRenderers(WebCore::Element&)",
+  "WebCore::RenderTreeUpdater::tearDownRenderers(WebCore::Text&)",
+]
+
+[[labels]]
+name = "Initiate image loads"
+funcPrefixes = [
+  "mozilla::css::ImageLoader::LoadImage",
+  "mozilla::dom::HTMLImageElement::LoadSelectedImage",
+  "nsImageLoadingContent::StringToURI",
+  "mozilla::dom::HTMLImageElement::UpdateSourceSyncAndQueueImageTask", # https://share.firefox.dev/3A2Zz2T
+  "blink::HTMLImageElement::SelectSourceURL",
+  "blink::CSSImageValue::RestoreCachedResourceIfNeeded", # https://share.firefox.dev/3EGsOqU
+  "blink::ResourceFetcher::UpdateAllImageResourcePriorities", # https://share.firefox.dev/49rGL9W
+  "WebCore::HTMLImageElement::selectImageSource",
+]
+
+[[labels]]
+name = "Notify images"
+funcPrefixes = [
+  "mozilla::image::AsyncNotifyRunnable::Run",
+  "mozilla::image::RasterImage::NotifyDecodeComplete", # https://share.firefox.dev/4bv05oi
+]
+
+[[labels]]
+name = "Image decoding"
+funcPrefixes = [
+  "mozilla::image::Decoder::Decode",
+  "cc::GpuImageDecodeTaskImpl::RunOnWorkerThread",
+]
+
+[[labels]]
+name = "HTML Element creation"
+funcPrefixes = [
+  "NS_NewHTML",
+  "NS_NewSVG",
+  "NS_NewXUL",
+  "cppgc::MakeGarbageCollectedTrait<blink::HTML",
+  "WebCore::HTMLFastPathParser<unsigned char>::TagInfo::Tag",
+  "WebCore::HTMLFastPathParser<unsigned char>::TagInfo::Input::create",
+  "WebCore::HTMLFastPathParser<char16_t>::TagInfo::Tag",
+  "WebCore::HTMLFastPathParser<char16_t>::TagInfo::Input::create",
+]
+
+[[labels]]
+name = "HTML Text node creation"
+funcPrefixes = [
+  "nsTextNode::nsTextNode",
+  "blink::Text::Create",
+  "WebCore::Text::create",
+]
+
+[[labels]]
+name = "HTML Parsing: Attribute parsing"
+funcPrefixes = [
+  "nsHtml5TreeBuilder::createElement(int, nsAtom*, nsHtml5HtmlAttributes*, void*, nsHtml5ContentCreatorFunction)",
+  "nsHtml5TreeBuilder::createElement",
+  "nsHtml5TreeOperation::DoneCreatingElement",
+  "blink::`anonymous namespace'::HTMLFastPathParser<unsigned char>::ParseAttributes",
+  "blink::(anonymous namespace)::HTMLFastPathParser<unsigned char>::ParseAttributes",
+  "blink::`anonymous namespace'::HTMLFastPathParser<char16_t>::ParseAttributes",
+  "blink::(anonymous namespace)::HTMLFastPathParser<char16_t>::ParseAttributes",
+  "blink::HTMLConstructionSite::CreateElement",
+  "WebCore::HTMLFastPathParser<unsigned char>::parseAttributes",
+  "WebCore::HTMLFastPathParser<char16_t>::parseAttributes",
+]
+
+[[labels]]
+name = "Update style"
+funcPrefixes = [
+  "mozilla::RestyleManager::ProcessPendingRestyles",
+  "mozilla::ServoStyleSet::UpdateStylist", # https://share.firefox.dev/3tfg2hg
+  "nsCSSFrameConstructor::ContentInserted", # https://share.firefox.dev/409OcRF
+  "nsCSSFrameConstructor::RecalcQuotesAndCounters", # https://share.firefox.dev/3P9SjpC
+  "style::parallel::style_trees",
+  "blink::StyleEngine::RecalcStyle",
+  "blink::PostStyleUpdateScope::Apply",
+  "blink::StyleEngine::RebuildLayoutTree",
+  "blink::LocalFrameView::RunStyleAndLayoutLifecyclePhases",
+  "WebCore::Document::updateStyleIfNeeded",
+]
+
+[[labels]]
+name = "Load inline style"
+funcPrefixes = [
+  "mozilla::css::Loader::LoadInlineStyle", # https://share.firefox.dev/3NR8vfn
+]
+
+[[labels]]
+name = "Background hang reporter"
+funcPrefixes = [
+  "mozilla::BackgroundHangMonitor::NotifyActivity", # https://share.firefox.dev/3Yrf0LI
+]
+
+[[labels]]
+name = "Native event loop"
+funcPrefixes = [
+  "mozilla::widget::WinUtils::PeekMessage", # https://share.firefox.dev/3Yrf0LI
+  "mozilla::widget::WinUtils::WaitForMessage", # https://share.firefox.dev/3Yrf0LI
+  "nsAppShell::ScheduleNativeEventCallback",
+  "base::MessagePumpForUI::ProcessNextWindowsMessage",
+  "base::MessagePumpForUI::WaitForWork",
+]
+
+[[labels]]
+name = "Font reading"
+funcPrefixes = [
+  "gfxPlatformFontList::InitializeFamily",
+]
+
+[[labels]]
+name = "System info initialization"
+funcPrefixes = [
+  "nsSystemInfo::Init",
+  "gfxPlatform::Init",
+  "system_cpu::CpuProbeWin::BlockingTaskRunnerHelper::Update", # not sure if this is initialization or periodic
+]
+
+[[labels]]
+name = "Update browser UI"
+funcPrefixes = [
+  "_callProgressListeners",
+  "onStateChange (chrome://browser/content/tabbrowser/",
+  "enableDisableCommands (resource://gre/actors/ControllersParent",
+  "mozilla::dom::BrowserParent::RecvOnLocationChange",
+  "BrowserFrameViewWin::Layout", # https://share.firefox.dev/4eOtWJM
+]
+
+[[labels]]
+name = "Initialize frame"
+funcPrefixes = [
+  "content::RenderFrameHostManager::CreateSpeculativeRenderFrame",
+]
+
+[[labels]]
+name = "Network cache"
+funcPrefixes = [
+  "mozilla::net::nsHttpChannel::InitCacheEntry",
+  "mozilla::net::nsHttpChannel::OpenCacheEntry",
+  "mozilla::net::nsHttpChannel::InstallCacheListener",
+  "mozilla::net::nsHttpChannel::AddCacheEntryHeaders",
+  "mozilla::net::Predictor::UpdateCacheability",
+  "mozilla::net::CacheFileOutputStream::Write",
+  "mozilla::net::CacheFileInputStream::ReadSegments",
+  "mozilla::net::CacheFileChunk::Release",
+  "mozilla::net::nsHttpChannel::MaybeCreateCacheEntryWhenRCWN",
+  "mozilla::net::nsHttpChannel::CloseCacheEntry",
+  "mozilla::net::CacheIOThread::LoopOneLevel",
+  "disk_cache::SimpleSynchronousEntry::OpenOrCreateEntry", # https://share.firefox.dev/3BQcNAO
+  "disk_cache::SimpleSynchronousEntry::OpenEntry",
+  "disk_cache::SimpleSynchronousEntry::CreateEntry",
+  "disk_cache::SimpleSynchronousEntry::Close",
+  "disk_cache::SimpleSynchronousEntry::WriteData",
+  "disk_cache::SimpleSynchronousEntry::DeleteEntryFiles",
+  "disk_cache::BackendIO::ExecuteOperation",
+]
+
+[[labels]]
+name = "Network request handling"
+funcPrefixes = [
+  "mozilla::net::HttpChannelParent::Init",
+  "mozilla::net::nsHttpChannel::AsyncOpen",
+  "mozilla::net::nsHttpChannel::BeginConnect",
+  "nsInputStreamPump::OnInputStreamReady",
+  "nsTransportStatusEvent::~nsTransportStatusEvent",
+  "mozilla::net::NeckoParent::RecvPredLearn",
+  "mozilla::net::DocumentLoadListener::Open",
+  "mozilla::net::nsHttpConnectionMgr::DispatchTransaction",
+  "mozilla::net::nsHttpConnection::OnInputStreamReady",
+  "mozilla::net::nsSocketTransportService::Poll",
+  "mozilla::net::HttpChannelChild::DoOnDataAvailable",
+  "mozilla::net::PHttpBackgroundChannelChild::OnMessageReceived",
+  "mozilla::net::PendingPACQuery::Run", # could also go in a separate "Proxy handling" bucket
+  "mozilla::safebrowsing::Classifier::CheckURIFragments", # safebrowsing
+  "net::URLRequestHttpJob::OnReadCompleted",
+  "content::NavigationURLLoaderImpl::MaybeStartLoader",
+  "net::URLRequestHttpJob::OnReadCompleted",
+  "net::SpdySession::DoReadComplete",
+  "network::cors::CorsURLLoader::Start",
+  "net::HttpNetworkTransaction::DoCreateStream",
+  "net::URLRequestHttpJob::OnStartCompleted",
+  "content::NavigationRequest::OnResponseStarted",
+  "net::SpdySession::DoWrite",
+  "net::URLRequest::Read",
+  "net::HttpNetworkTransaction::DoSendRequest",
+]
+
+[[labels]]
+name = "Spell checking"
+funcPrefixes = [
+  "mozHunspell::SetDictionaries",
+]
+
+[[labels]]
+name = "Webdriver"
+funcPrefixes = [
+  "receiveMessage (chrome://remote/content/marionette/",
+]
+
+[[labels]]
+name = "Add-on initialization"
+funcPrefixes = [
+  "startup (resource://gre/modules/addons/",
+]
+
+[[labels]]
+name = "Off-main-thread painting / canvas / compositing"
+funcPrefixes = [
+  "mozilla::wr::RendererOGL::UpdateAndRender",
+  "webrender::render_backend::RenderBackend::run",
+  "webrender::scene_builder_thread::SceneBuilderThread::run",
+  "mozilla::wr::Moz2DRenderCallback",
+  "rx::ProgramD3D::GetVertexExecutableTask::run",
+  "mozilla::layers::CanvasTranslator::TranslateRecording",
+  "gpu::Scheduler::RunNextTask",
+  "gpu::GpuChannel::ExecuteDeferredRequest",
+  "cc::GpuRasterBufferProvider::RasterBufferImpl::Playback",
+  "dawn::native::d3d::CompileShader",
+  "cc::Scheduler::DrawIfPossible",
+  "cc::LayerTreeHostImpl::CommitComplete",
+  "cc::LayerTreeHostImpl::FinishCommit",
+  "cc::LayerTreeHostImpl::ReclaimResources",
+  "cc::Scheduler::DidPresentCompositorFrame",
+  "cc::TileManager::IssueSignals",
+  "viz::DisplayScheduler::OnBeginFrameDeadline",
+  "viz::mojom::CompositorFrameSinkStubDispatch::Accept",
+  "viz::mojom::CompositorFrameSinkRequestValidator::Accept",
+  "viz::ExternalBeginFrameSourceWin::OnVSyncOnSequence",
+  "viz::SkiaOutputSurfaceImpl::DidSwapBuffersComplete",
+  "viz::SkiaOutputSurfaceImpl::BufferPresented",
+  "viz::ExternalBeginFrameSourceWin::OnVSync",
+  # "viz::",
+]
+
+[[labels]]
+name = "Update layout"
+funcPrefixes = [
+  "mozilla::PresShell::ProcessReflowCommands",
+  "mozilla::PresShell::RebuildApproximateFrameVisibility", # https://share.firefox.dev/3P9SjpC
+  "blink::LayoutView::UpdateLayout",
+  "blink::LocalFrameView::UpdateLayout",
+  "blink::LocalFrameView::PerformPostLayoutTasks",
+  "blink::PhysicalBoxFragment::RecalcInkOverflow", # https://share.firefox.dev/3LMuzqm
+  "WebCore::LocalFrameViewLayoutContext::layout",
+]
+
+[[labels]]
+name = "Microtask / async await overhead"
+funcPrefixes = [
+  "mozilla::CycleCollectedJSContext::PerformMicroTaskCheckPoint", # https://share.firefox.dev/3yptoKf
+  "v8::internal::MicrotaskQueue::PerformCheckpoint(", # https://share.firefox.dev/3YtNeyy
+]
+
+[[labels]]
+name = "Editor / IME updates"
+funcPrefixes = [
+  "mozilla::IMEContentObserver::IMENotificationSender::Run",
+  "mozilla::widget::IMEHandler::NotifyIME",
+  "mozilla::widget::IMEHandler::DismissOnScreenKeyboard", # https://share.firefox.dev/4fc2khA
+  "mozilla::IMEStateManager::SetInputContext",
+  "blink::WidgetBase::UpdateTextInputState",
+  "WebKit::WebPage::flushPendingEditorStateUpdate",
+  "WebKit::WebPage::getPlatformEditorState",
+]
+
+[[labels]]
+name = "Asynchronous Canvas work"
+funcPrefixes = [
+  "mozilla::layers::CanvasChild::OnTextureForwarded",
+  "mozilla::gfx::DrawTargetWebgl::GetFrontBuffer",
+  "blink::Canvas2DLayerBridge::FlushRecording",
+  "blink::CanvasRenderingContext2D::FinalizeFrame",
+  "WebKit::RemoteImageBufferProxy::flushDrawingContext",
+  "WebKit::RemoteImageBufferProxy::ensureBackendCreated",
+]
+
+[[labels]]
+name = "Paint"
+funcPrefixes = [
+  "nsRefreshDriver::PaintIfNeeded",
+  "blink::WidgetBase::UpdateVisualState", # https://share.firefox.dev/3GRrWB4
+  "blink::ReportTimeSwapPromise::RunCallbackAfterPresentation",
+  "blink::AnchorElementMetricsSender::DidFinishLifecycleUpdate",
+  "blink::LocalFrameView::RunCompositingInputsLifecyclePhase",
+  "blink::LocalFrameView::RunPaintLifecyclePhase",
+  "blink::LocalFrameView::RunPrePaintLifecyclePhase",
+  "cc::LayerTreeHost::DoUpdateLayers",
+  "cc::LayerTreeHost::WillCommit",
+  "WebKit::RemoteLayerTreeContext::buildTransaction",
+  "WebCore::Page::doAfterUpdateRendering",
+  "WebKit::WebPage::finalizeRenderingUpdate",
+  "CA::Transaction::commit",
+  "WebCore::ThreadedScrollingCoordinator::willStartRenderingUpdate",
+  "WebCore::RenderLayerBacking::updateEventRegion",
+]
+
+[[labels]]
+name = "Form Autofill + Login Manager"
+funcPrefixes = [
+  "identifyAutofillFields", # https://share.firefox.dev/3Ph0bpv
+  "handleEvent (resource://autofill/", # https://share.firefox.dev/3woLV81
+  "handleEvent (resource://gre/actors/FormHistory", # https://share.firefox.dev/3SGnPx3
+  "handleEvent (resource://gre/modules/LoginManager", # https://share.firefox.dev/3woLV81
+  "receiveMessage (resource://autofill/", # https://share.firefox.dev/3NoJgQY
+  "FormAutofillChild (resource://autofill/", # https://share.firefox.dev/3NoJgQY
+  "getFormAutofillConfidences", # https://share.firefox.dev/3NoJgQY
+  "autofill::PasswordAutofillAgent::SendPasswordForms", # https://share.firefox.dev/4ht73gL
+  "autofill::AutofillAgent::DidDispatchDOMContentLoadedEvent",
+  "autofill::AutofillAgent::ExtractFormsUnthrottled",
+  "autofill::AutofillAgent::FocusedElementChanged",
+  "autofill::AutofillAgent::DidChangeFormRelatedElementDynamically",
+  "autofill::mojom::PasswordAutofillAgentRequestValidator::Accept",
+  "autofill::mojom::AutofillAgentRequestValidator::Accept",
+  "autofill::AutofillManager::ParseFormsAsync::<lambda_2>::__invoke",
+  "autofill::AutofillManager::ParseFormsAsync::<lambda_6>::__invoke",
+  "autofill::mojom::AutofillDriverStubDispatch::Accept",
+  "autofill::ContentAutofillDriverFactory::RenderFrameDeleted",
+  # "autofill::", # https://share.firefox.dev/3sXBczH , https://share.firefox.dev/421zKtz
+]
+
+[[labels]]
+name = "Key event compatibility hacks"
+funcPrefixes = [
+  "handleEvent (resource://gre/actors/KeyPressEventModelCheckerChild", # https://share.firefox.dev/4862Mvu
+  "KeyPressEventModelCheckerChild", # https://share.firefox.dev/4862Mvu
+]
+
+[[labels]]
+name = "Intersection observers"
+funcPrefixes = [
+  "nsRefreshDriver::UpdateIntersectionObservations",
+  "blink::LocalFrameView::RunIntersectionObserverSteps",
+  "WebCore::IntersectionObserver::updateObservations",
+]
+
+[[labels]]
+name = "Resize observers"
+funcPrefixes = [
+  "nsRefreshDriver::DetermineProximityToViewportAndNotifyResizeObservers", # https://share.firefox.dev/3U4mZvK
+]
+
+[[labels]]
+name = "CSS Parsing"
+funcPrefixes = [
+  "mozilla::css::Loader::ParseSheet(",
+  "blink::StyleEngine::ParseSheet",
+  "blink::CSSParser::ParseSheet", # https://share.firefox.dev/4a3sErT
+  "blink::CSSStyleSheetResource::CreateParsedStyleSheetFromCache", # https://share.firefox.dev/3Q3V9hl
+  "WebCore::InlineStyleSheetOwner::createSheet",
+]
+
+[[labels]]
+name = "JSON.parse"
+funcPrefixes = [
+  "json_parse(",
+  "v8::internal::Builtin_JsonParse",
+  "v8::internal::Builtin_Impl_JsonParse",
+  "JSC::jsonProtoFuncParse",
+]
+
+[[labels]]
+name = "JSON.stringify"
+funcPrefixes = [
+  "json_stringify(",
+  "v8::internal::Builtin_JsonStringify",
+  "v8::internal::Builtin_Impl_JsonStringify",
+  "JSC::jsonProtoFuncStringify",
+]
+
+[[labels]]
+name = "set CSS2Properties.*"
+# Catch-all for any setter on CSS2Properties / CSSStyleDeclaration; not a
+# per-property setter, so does not fit the dom_setter template.
+funcPrefixes = [
+  "mozilla::dom::CSS2Properties_Binding::set_",
+  "mozilla::dom::CSS2Properties_Binding::SetPropertyValue",
+  "blink::V8CSSStyleDeclaration::NamedPropertySetterCallback",
+  "WebCore::setJSCSSStyleDeclaration_propertyValueForCamelCasedIDLAttribute",
+]

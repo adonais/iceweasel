@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "vm/ArrayBufferObject.h"  // js::ArrayBufferObject
+
 #include "mozilla/Assertions.h"  // MOZ_ASSERT
 
 #include <stdint.h>  // uint8_t, uint32_t
@@ -9,7 +11,6 @@
 #include "jstypes.h"  // JS_PUBLIC_API
 
 #include "js/ArrayBufferMaybeShared.h"
-#include "vm/ArrayBufferObject.h"  // js::ArrayBufferObject
 #include "vm/JSObject.h"           // JSObject
 #include "vm/SharedArrayObject.h"  // js::SharedArrayBufferObject
 #include "vm/SharedMem.h"          // SharedMem

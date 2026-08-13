@@ -1,0 +1,18 @@
+{
+  "label": "anyto.imyfone.com",
+  "bugs": {
+    "2009389": {
+      "issue": "broken-layout",
+      "matches": ["https://anyto.imyfone.com/*"]
+    }
+  },
+  "css": {
+    "fix_table_of_contents_height": "section.article-wraper > .catalog-box { height: fit-content; }"
+  },
+  "interventions": [
+    {
+      "platforms": ["android"],
+      "css": ["fix_table_of_contents_height"]
+    }
+  ]
+}

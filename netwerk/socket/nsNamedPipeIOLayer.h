@@ -5,8 +5,8 @@
 #ifndef mozilla_netwerk_socket_nsNamedPipeIOLayer_h
 #define mozilla_netwerk_socket_nsNamedPipeIOLayer_h
 
-#include "nscore.h"
 #include "nsStringFwd.h"
+#include "nscore.h"
 #include "prio.h"
 
 namespace mozilla {

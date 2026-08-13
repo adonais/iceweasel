@@ -7,19 +7,20 @@
 
 #include <bitset>
 
-#include "nsString.h"
-#include "nsIIPCSerializableURI.h"
-#include "nsISerializable.h"
-#include "nsIFileURL.h"
-#include "nsIStandardURL.h"
-#include "mozilla/Encoding.h"
-#include "nsCOMPtr.h"
-#include "nsURLHelper.h"
+#include "URIHasher.h"
 #include "mozilla/Atomics.h"
+#include "mozilla/Encoding.h"
 #include "mozilla/LinkedList.h"
+#include "nsCOMPtr.h"
+#include "nsIFileURL.h"
+#include "nsIIPCSerializableURI.h"
 #include "nsISensitiveInfoHiddenURI.h"
+#include "nsISerializable.h"
+#include "nsIStandardURL.h"
 #include "nsIURIMutator.h"
 #include "nsIURIWithSizeOf.h"
+#include "nsString.h"
+#include "nsURLHelper.h"
 
 #ifdef NS_BUILD_REFCNT_LOGGING
 #  define DEBUG_DUMP_URLS_AT_SHUTDOWN
@@ -113,7 +114,8 @@ class nsStandardURL : public nsIFileURL,
                       public nsISerializable,
                       public nsISensitiveInfoHiddenURI,
                       public nsIIPCSerializableURI,
-                      public nsIURIWithSizeOf
+                      public nsIURIWithSizeOf,
+                      public URIHasher
 #ifdef DEBUG_DUMP_URLS_AT_SHUTDOWN
     ,
                       public LinkedListElement<nsStandardURL>
@@ -239,6 +241,8 @@ class nsStandardURL : public nsIFileURL,
   bool Deserialize(const mozilla::ipc::URIParams&);
   nsresult ReadPrivate(nsIObjectInputStream* stream);
 
+  bool CheckSegmentInvariants() const;
+
  private:
   nsresult Init(uint32_t urlType, int32_t defaultPort, const nsACString& spec,
                 const char* charset, nsIURI* baseURI);
@@ -332,8 +336,10 @@ class nsStandardURL : public nsIFileURL,
   // Asserts that the URL has sane values
   void SanityCheck();
 
-  // Checks if the URL has a valid representation.
-  bool IsValid();
+  // Checks if the URL has a valid representation. On failure, if
+  // aFailReason is non-null, it receives a code identifying the first check
+  // that failed (see the InvalidURLReason values in nsStandardURL.cpp).
+  bool IsValid(uint32_t* aFailReason = nullptr);
 
   // This value will only be updated on the main thread once.
   static Atomic<bool, Relaxed> gInitialized;

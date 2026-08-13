@@ -167,7 +167,7 @@ add_task(async function test_devtools_panels_elements_sidebar() {
   toolbox.selectTool("inspector");
   await waitInspector;
 
-  const sidebarIds = Array.from(toolbox._inspectorExtensionSidebars.keys());
+  const sidebarIds = Array.from(toolbox.inspectorExtensionSidebars.keys());
 
   const inspector = await toolbox.getPanel("inspector");
 
@@ -288,7 +288,7 @@ add_task(async function test_devtools_panels_elements_sidebar() {
   await extension.unload();
 
   is(
-    Array.from(toolbox._inspectorExtensionSidebars.keys()).length,
+    Array.from(toolbox.inspectorExtensionSidebars.keys()).length,
     0,
     "All the registered sidebars have been unregistered on extension unload"
   );

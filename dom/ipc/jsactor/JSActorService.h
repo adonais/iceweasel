@@ -105,10 +105,13 @@ class JSActorProtocol : public nsISupports {
 
  protected:
   explicit JSActorProtocol(const nsACString& aName) : mName(aName) {}
+  void LogMatch(const nsACString& aRemoteType);
   bool RemoteTypePrefixMatches(const nsACString& aRemoteType);
 
   nsCString mName;
   nsTArray<nsCString> mRemoteTypes;
+  nsTArray<nsCString> mLoggedRemoteTypes;
+  bool mSafeForUntrustedWebProcess = false;
 };
 
 }  // namespace dom

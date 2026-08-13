@@ -39,8 +39,8 @@ add_task(async function test_default_supported_module_and_autofill_region() {
   let addon = await AddonManager.getAddonByID(EXTENSION_ID);
   await addon.reload();
 
-  Assert.equal(FormAutofill.isAutofillAddressesAvailable, true);
-  Assert.equal(FormAutofill.isAutofillAddressesEnabled, true);
+  Assert.equal(FormAutofill.isAutofillTypeAvailable("address"), true);
+  Assert.equal(FormAutofill.isAutofillTypeEnabled("address"), true);
 });
 
 add_task(
@@ -80,7 +80,7 @@ add_task(
     Assert.ok(
       Services.prefs.getBoolPref("extensions.formautofill.creditCards.enabled")
     );
-    Assert.equal(FormAutofill.isAutofillAddressesAvailable, false);
-    Assert.equal(FormAutofill.isAutofillAddressesEnabled, false);
+    Assert.equal(FormAutofill.isAutofillTypeAvailable("address"), false);
+    Assert.equal(FormAutofill.isAutofillTypeEnabled("address"), false);
   }
 );

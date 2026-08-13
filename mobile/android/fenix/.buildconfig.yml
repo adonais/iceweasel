@@ -116,6 +116,7 @@ projects:
     - components:support-utils
     - components:support-webextensions
     - components:tooling-lint
+    - components:ui-animation
     - components:ui-autocomplete
     - components:ui-colors
     - components:ui-icons

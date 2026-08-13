@@ -23,6 +23,8 @@ ChromeUtils.defineESModuleGetters(this, {
   Utils: "resource://services-settings/Utils.sys.mjs",
 });
 
+const IS_ANDROID = AppConstants.platform == "android";
+
 function arrayEqual(a, b) {
   return JSON.stringify(a) == JSON.stringify(b);
 }
@@ -42,6 +44,21 @@ function enableUptakeMetric() {
 }
 
 function assertTelemetryEvents(expectedEvents) {
+  if (IS_ANDROID) {
+    /*
+      Since `Services.fog.applyServerKnobsConfig()` has no effect on Android
+      https://searchfox.org/firefox-main/rev/e28b34ab33dbf49364999070168cbb7e11e8e5bd/toolkit/components/glean/xpcom/FOG.cpp#379-390
+      we skip assertions on events on this platform.
+      Alternatively we could have disabled the whole tests suites or introduced `if IS_ANDROID` on each
+      test involving telemetry, but this seems the most reasonable way.
+      See Bug 2028765 and Bug 2042499
+    */
+    Assert.ok(
+      true,
+      "Glean Uptake Telemetry assertions are ALWAYS true on Android"
+    );
+    return;
+  }
   const events =
     Glean.uptakeRemotecontentResult.uptakeRemotesettings.testGetValue() ?? [];
   const receivedValues = events.map(e => e.extra.value);

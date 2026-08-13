@@ -26,6 +26,10 @@ export default {
       options: ["radio", "listbox"],
       control: { type: "select" },
     },
+    labelPosition: {
+      options: ["inside", "outside"],
+      control: { type: "select" },
+    },
   },
   parameters: {
     actions: {
@@ -80,9 +84,11 @@ const Template = ({
   pickerL10nId,
   supportPage,
   type,
+  orientation,
   showItemLabels,
   imageSrc,
   showItemDescriptions,
+  labelPosition,
 }) => {
   return html`
     <style>
@@ -90,6 +96,7 @@ const Template = ({
         display: flex;
         justify-content: center;
         align-items: center;
+        height: 100%;
       }
 
       .demo-card {
@@ -99,11 +106,13 @@ const Template = ({
         span {
           padding: var(--space-xsmall);
           text-align: center;
+          flex: 1;
         }
 
         img {
           border-top-left-radius: inherit;
           border-top-right-radius: inherit;
+          flex: 1;
         }
       }
 
@@ -126,9 +135,16 @@ const Template = ({
       moz-visual-picker-item {
         max-width: 150px;
       }
+
+      /* Items are full-width rows in the vertical orientation, so the
+         horizontal max-width would make them look cramped. */
+      moz-visual-picker[orientation="vertical"] moz-visual-picker-item {
+        max-width: none;
+      }
     </style>
     <moz-visual-picker
       type=${type}
+      orientation=${ifDefined(orientation)}
       data-l10n-id=${pickerL10nId}
       value=${ifDefined(value)}
       support-page=${supportPage}
@@ -136,6 +152,7 @@ const Template = ({
       ${[...Array.from({ length: 3 })].map(
         (_, i) =>
           html`<moz-visual-picker-item
+            labelposition=${labelPosition}
             value=${i + 1}
             class=${classMap({ "avatar-item": slottedItem == "avatar" })}
             data-l10n-id=${slottedItem == "avatar"
@@ -163,6 +180,7 @@ Default.args = {
   type: "radio",
   showItemLabels: false,
   showItemDescriptions: false,
+  labelPosition: "inside",
 };
 
 export const WithPickerDescription = Template.bind({});
@@ -212,4 +230,29 @@ export const WithImageAndLabel = Template.bind({});
 WithImageAndLabel.args = {
   ...WithImage.args,
   showItemLabels: true,
+};
+
+const VerticalTemplate = args => html`
+  <style>
+    .vertical-container {
+      max-width: 400px;
+    }
+  </style>
+  <div class="vertical-container">${Template(args)}</div>
+`;
+
+export const Vertical = VerticalTemplate.bind({});
+Vertical.args = {
+  ...WithImage.args,
+  orientation: "vertical",
+  showItemLabels: true,
+  showItemDescriptions: true,
+};
+
+export const LabelOutside = Template.bind({});
+LabelOutside.args = {
+  ...Default.args,
+  showItemLabels: true,
+  showItemDescriptions: true,
+  labelPosition: "outside",
 };

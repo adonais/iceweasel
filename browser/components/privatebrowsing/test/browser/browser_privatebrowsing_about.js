@@ -4,7 +4,7 @@
 
 ChromeUtils.defineESModuleGetters(this, {
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
-  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
 });
 
 ChromeUtils.defineLazyGetter(this, "UrlbarTestUtils", () => {
@@ -302,7 +302,7 @@ add_task(async function test_search_handoff_search_mode() {
   ok(urlBarHasNormalFocus(win), "Urlbar has normal focus");
   await UrlbarTestUtils.assertSearchMode(win, {
     engineName: "DuckDuckGo",
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     entry: "handoff",
   });
   is(win.gURLBar.value, "f", "url bar has search text");

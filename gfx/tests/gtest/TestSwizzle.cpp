@@ -2,11 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <bit>
+
+#include "Orientation.h"
 #include "gtest/gtest.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/gfx/Swizzle.h"
-#include "Orientation.h"
-#include <bit>
 
 using namespace mozilla;
 using namespace mozilla::gfx;

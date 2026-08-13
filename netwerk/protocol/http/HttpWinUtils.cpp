@@ -3,10 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "HttpWinUtils.h"
-#include "nsIURI.h"
-#include "nsHttpChannel.h"
-#include "mozilla/ClearOnShutdown.h"
+
 #include <proofofpossessioncookieinfo.h>
+
+#include "mozilla/ClearOnShutdown.h"
+#include "nsHttpChannel.h"
+#include "nsIURI.h"
 
 namespace mozilla {
 namespace net {

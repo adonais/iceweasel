@@ -1834,7 +1834,7 @@ add_task(async function test_dom_full_screen() {
   });
   await exited;
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return !gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.getActor(
       "DOMFullscreen"
     ).timerId;

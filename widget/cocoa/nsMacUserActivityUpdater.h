@@ -5,8 +5,8 @@
 #ifndef nsMacUserActivityUpdater_h_
 #define nsMacUserActivityUpdater_h_
 
-#include "nsIMacUserActivityUpdater.h"
 #include "nsCocoaWindow.h"
+#include "nsIMacUserActivityUpdater.h"
 
 class nsMacUserActivityUpdater : public nsIMacUserActivityUpdater {
  public:

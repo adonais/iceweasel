@@ -9,6 +9,7 @@ import androidx.test.filters.MediumTest
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.nullValue
+import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertThrows
 import org.junit.Before
@@ -35,6 +36,10 @@ class IPProtectionControllerTest : BaseSessionTest() {
                 "browser.ipProtection.cacheDisabled" to true,
                 "browser.ipProtection.guardian.endpoint" to "https://vpn.mozilla.com",
                 "browser.ipProtection.log" to true,
+                // Use a pref-backed server list so activation does not depend on
+                // Remote Settings. Selected once when the serverlist module first
+                // loads, so it must be set before any test triggers init().
+                "browser.ipProtection.override.serverlist" to SERVER_LIST_JSON,
             ),
         )
     }
@@ -191,6 +196,8 @@ class IPProtectionControllerTest : BaseSessionTest() {
             "pass-unavailable" to IPProtectionController.IPProxyException.ERROR_PASS_UNAVAILABLE,
             "server-not-found" to IPProtectionController.IPProxyException.ERROR_SERVER_NOT_FOUND,
             "activation-canceled" to IPProtectionController.IPProxyException.ERROR_ACTIVATION_CANCELED,
+            "catastrophic-error" to IPProtectionController.IPProxyException.ERROR_CATASTROPHIC,
+            "vpn-unavailable" to IPProtectionController.IPProxyException.ERROR_VPN_UNAVAILABLE,
         )
         for ((errorString, expectedCode) in cases) {
             assertThat(
@@ -202,7 +209,7 @@ class IPProtectionControllerTest : BaseSessionTest() {
 
     @Test
     fun ipProxyExceptionUnknownErrorStringsMapsToErrorUnknown() {
-        val unknownStrings = listOf("generic-error", "catastrophic-error", "some-unknown-error", null)
+        val unknownStrings = listOf("generic-error", "some-unknown-error", null)
         for (errorString in unknownStrings) {
             assertThat(
                 IPProtectionController.IPProxyException.fromErrorString(errorString).code,
@@ -225,7 +232,7 @@ class IPProtectionControllerTest : BaseSessionTest() {
     private class StubAuthProvider(
         private val token: GeckoResult<String> = GeckoResult.fromValue("stub-token"),
     ) : IPProtectionController.AuthProvider {
-        override fun getToken(): GeckoResult<String> = token
+        override fun onTokenRequest(): GeckoResult<String> = token
     }
 
     @Test
@@ -313,5 +320,370 @@ class IPProtectionControllerTest : BaseSessionTest() {
         assertThrows(IllegalStateException::class.java) {
             sessionRule.waitForResult(ipProtectionController.notifySignInStateChanged(true))
         }
+    }
+
+    @Test
+    fun getCountryListDeliversConfiguredCountriesToDelegate() {
+        // Countries come from the pref-backed server list (SERVER_LIST_JSON):
+        // US has a usable server, DE only a quarantined one, and REC is the
+        // reserved recommended entry. getCountryList pushes the current list to
+        // the delegate via onCountryListChanged rather than returning it.
+        sessionRule.waitForResult(ipProtectionController.init())
+
+        val received = GeckoResult<List<IPProtectionController.Country>>()
+        ipProtectionController.setDelegate(
+            object : IPProtectionController.Delegate {
+                override fun onCountryListChanged(countries: List<IPProtectionController.Country>) {
+                    received.complete(countries)
+                }
+            },
+        )
+
+        sessionRule.waitForResult(ipProtectionController.getCountryList())
+
+        val countries = sessionRule.waitForResult(received)
+        assertThat(
+            "the recommended entry is not reported as a country",
+            countries.none { it.code == "REC" },
+            equalTo(true),
+        )
+        assertThat(countries.size, equalTo(2))
+        assertThat(countries[0].code, equalTo("US"))
+        assertThat(countries[0].available, equalTo(true))
+        assertThat(countries[1].code, equalTo("DE"))
+        assertThat(countries[1].available, equalTo(false))
+    }
+
+    @Test
+    fun delegateIsNotifiedWhenServerlistChanges() {
+        sessionRule.waitForResult(ipProtectionController.init())
+
+        // First push from getCountryList reflects the initial SERVER_LIST_JSON.
+        val initial = GeckoResult<List<IPProtectionController.Country>>()
+        val updated = GeckoResult<List<IPProtectionController.Country>>()
+        var sawInitial = false
+        ipProtectionController.setDelegate(
+            object : IPProtectionController.Delegate {
+                override fun onCountryListChanged(countries: List<IPProtectionController.Country>) {
+                    if (!sawInitial) {
+                        sawInitial = true
+                        initial.complete(countries)
+                    } else {
+                        updated.complete(countries)
+                    }
+                }
+            },
+        )
+
+        sessionRule.waitForResult(ipProtectionController.getCountryList())
+        val initialCountries = sessionRule.waitForResult(initial)
+        assertThat(initialCountries.map { it.code }, equalTo(listOf("US", "DE")))
+
+        // Changing the serverlist pref makes the pref-backed list re-fetch and
+        // dispatch a change event, which is forwarded to the delegate.
+        sessionRule.setPrefsUntilTestEnd(
+            mapOf("browser.ipProtection.override.serverlist" to UPDATED_SERVER_LIST_JSON),
+        )
+
+        val updatedCountries = sessionRule.waitForResult(updated)
+        assertThat(updatedCountries.map { it.code }, equalTo(listOf("FR")))
+        assertThat(updatedCountries[0].available, equalTo(true))
+    }
+
+    @Test
+    fun activateReachesActiveWithTestAuthProvider() {
+        sessionRule.setPrefsUntilTestEnd(
+            mapOf("toolkit.ipProtection.android.authProvider" to "test"),
+        )
+        // Seed the faked Guardian backend, starting signed out.
+        sessionRule.setupIPPAuthProvider(JSONObject().put("signedIn", false))
+
+        sessionRule.waitForResult(ipProtectionController.init())
+        assertThat(
+            "signed out after init",
+            sessionRule.waitForResult(ipProtectionController.getServiceState()),
+            equalTo(IPProtectionController.SERVICE_STATE_UNAUTHENTICATED),
+        )
+
+        sessionRule.simulateIPPSignIn(true)
+        assertThat(
+            "ready once signed in",
+            sessionRule.waitForResult(ipProtectionController.getServiceState()),
+            equalTo(IPProtectionController.SERVICE_STATE_READY),
+        )
+
+        sessionRule.waitForResult(ipProtectionController.activate())
+        assertThat(
+            "proxy is active after activate",
+            sessionRule.waitForResult(ipProtectionController.getProxyState()).state,
+            equalTo(IPProtectionController.ProxyState.ACTIVE),
+        )
+    }
+
+    @Test
+    fun activateRejectsWithPassUnavailableWhenProxyPassFails() {
+        sessionRule.setPrefsUntilTestEnd(
+            mapOf("toolkit.ipProtection.android.authProvider" to "test"),
+        )
+        sessionRule.setupIPPAuthProvider(JSONObject().put("signedIn", false))
+
+        sessionRule.waitForResult(ipProtectionController.init())
+        sessionRule.simulateIPPSignIn(true)
+        assertThat(
+            "ready once signed in",
+            sessionRule.waitForResult(ipProtectionController.getServiceState()),
+            equalTo(IPProtectionController.SERVICE_STATE_READY),
+        )
+
+        sessionRule.setIPPProxyPassError("pass-unavailable")
+
+        val thrown = assertThrows(IPProtectionController.IPProxyException::class.java) {
+            sessionRule.waitForResult(ipProtectionController.activate())
+        }
+        assertThat(
+            thrown.code,
+            equalTo(IPProtectionController.IPProxyException.ERROR_PASS_UNAVAILABLE),
+        )
+    }
+
+    @Test
+    fun refreshUsageInvokesDelegate() {
+        sessionRule.setPrefsUntilTestEnd(
+            mapOf("toolkit.ipProtection.android.authProvider" to "test"),
+        )
+        sessionRule.setupIPPAuthProvider(JSONObject().put("signedIn", false))
+        sessionRule.waitForResult(ipProtectionController.init())
+        sessionRule.simulateIPPSignIn(true)
+
+        val received = GeckoResult<IPProtectionController.UsageInfo>()
+        ipProtectionController.setDelegate(
+            object : IPProtectionController.Delegate {
+                override fun onUsageChanged(info: IPProtectionController.UsageInfo) {
+                    received.complete(info)
+                }
+            },
+        )
+
+        sessionRule.waitForResult(ipProtectionController.refreshUsage())
+
+        val info = sessionRule.waitForResult(received)
+        // Seeded by setupIPPAuthProvider: ProxyUsage(max, remaining) = (5368709120, 4294967296).
+        assertThat(info.max, equalTo(5368709120L))
+        assertThat(info.remaining, equalTo(4294967296L))
+    }
+
+    @Test
+    fun refreshUsageReportsZeroForUnlimitedBandwidth() {
+        sessionRule.setPrefsUntilTestEnd(
+            mapOf("toolkit.ipProtection.android.authProvider" to "test"),
+        )
+        sessionRule.setupIPPAuthProvider(JSONObject().put("signedIn", false))
+        sessionRule.waitForResult(ipProtectionController.init())
+        sessionRule.simulateIPPSignIn(true)
+
+        // It shouldn't matter what guardian sends down for the usage values,
+        // if the unlimited bit is sent, it should be ignored and set to 0.
+        sessionRule.setIPPProxyUsage(
+            JSONObject()
+                .put("max", "999999999999")
+                .put("remaining", "888888888888")
+                .put("unlimited", true),
+        )
+
+        val received = GeckoResult<IPProtectionController.UsageInfo>()
+        ipProtectionController.setDelegate(
+            object : IPProtectionController.Delegate {
+                override fun onUsageChanged(info: IPProtectionController.UsageInfo) {
+                    received.complete(info)
+                }
+            },
+        )
+
+        sessionRule.waitForResult(ipProtectionController.refreshUsage())
+        val info = sessionRule.waitForResult(received)
+        assertThat("max bytes is 0 for unlimited", info.max, equalTo(0L))
+        assertThat("used bytes is 0 for unlimited", info.remaining, equalTo(0L))
+    }
+
+    @Test
+    fun activateRoutesThroughSelectedServer() {
+        sessionRule.setPrefsUntilTestEnd(
+            mapOf("toolkit.ipProtection.android.authProvider" to "test"),
+        )
+        sessionRule.setupIPPAuthProvider(JSONObject().put("signedIn", false))
+        sessionRule.waitForResult(ipProtectionController.init())
+        sessionRule.simulateIPPSignIn(true)
+
+        // No country: the recommended (REC) anycast location is selected.
+        sessionRule.waitForResult(ipProtectionController.activate())
+        assertThat(
+            "recommended location routes through the REC server",
+            sessionRule.getIPPProxyInfo()?.getString("host"),
+            equalTo("rec.example.com"),
+        )
+
+        sessionRule.waitForResult(ipProtectionController.deactivate())
+
+        // Explicit country: the matching country's server is selected.
+        sessionRule.waitForResult(
+            ipProtectionController.activate(true, false, "US"),
+        )
+        assertThat(
+            "the selected country routes through its server",
+            sessionRule.getIPPProxyInfo()?.getString("host"),
+            equalTo("us.example.com"),
+        )
+    }
+
+    @Test
+    fun activateRejectsWithServerNotFoundForUnknownCountry() {
+        sessionRule.setPrefsUntilTestEnd(
+            mapOf("toolkit.ipProtection.android.authProvider" to "test"),
+        )
+        sessionRule.setupIPPAuthProvider(JSONObject().put("signedIn", false))
+        sessionRule.waitForResult(ipProtectionController.init())
+        sessionRule.simulateIPPSignIn(true)
+
+        // "ZZ" is not present in the serverlist, so no server can be selected.
+        val thrown = assertThrows(IPProtectionController.IPProxyException::class.java) {
+            sessionRule.waitForResult(ipProtectionController.activate(true, false, "ZZ"))
+        }
+        assertThat(
+            thrown.code,
+            equalTo(IPProtectionController.IPProxyException.ERROR_SERVER_NOT_FOUND),
+        )
+    }
+
+    companion object {
+        private const val SERVER_LIST_JSON =
+            """[{"name":"United States","code":"US","cities":[{"name":"Test City",""" +
+                """"code":"TC","servers":[{"hostname":"us.example.com","port":443,""" +
+                """"quarantined":false}]}]},""" +
+                """{"name":"Germany","code":"DE","cities":[{"name":"Berlin",""" +
+                """"code":"BE","servers":[{"hostname":"de.example.com","port":443,""" +
+                """"quarantined":true}]}]},""" +
+                """{"name":"Recommended","code":"REC","cities":[{"name":"Anycast",""" +
+                """"code":"REC","servers":[{"hostname":"rec.example.com","port":443,""" +
+                """"quarantined":false}]}]}]"""
+
+        private const val UPDATED_SERVER_LIST_JSON =
+            """[{"name":"France","code":"FR","cities":[{"name":"Paris",""" +
+                """"code":"PA","servers":[{"hostname":"fr1.example.com","port":443,""" +
+                """"quarantined":false}]}]}]"""
+    }
+
+    private class StubGpiProvider(
+        private val warmUpResult: GeckoResult<Void> = GeckoResult.fromValue(null),
+        private val tokenResult: GeckoResult<String> = GeckoResult.fromValue("stub-gpi-token"),
+    ) : IPProtectionController.GpiProvider {
+        override fun warmUp(): GeckoResult<Void> = warmUpResult
+        override fun onTokenRequest(): GeckoResult<String> = tokenResult
+    }
+
+    @Test
+    fun setGpiProviderRoundTrips() {
+        val provider = StubGpiProvider()
+        ipProtectionController.setGpiProvider(provider)
+        assertThat(ipProtectionController.gpiProvider, equalTo<IPProtectionController.GpiProvider>(provider))
+        ipProtectionController.setGpiProvider(null)
+        assertThat(ipProtectionController.gpiProvider, nullValue())
+    }
+
+    @Test
+    fun gpiWarmUpEventIsRoutedToGpiProvider() {
+        val warmUpCompleted = GeckoResult<Boolean>()
+        val listener = BundleEventListener { _, _, callback ->
+            warmUpCompleted.complete(true)
+            callback?.sendSuccess(null)
+        }
+        EventDispatcher.getInstance()
+            .registerUiThreadListener(listener, "GeckoView:IPProtection:GPI:WarmUpCompleted")
+        try {
+            ipProtectionController.setGpiProvider(StubGpiProvider())
+            EventDispatcher.getInstance().dispatch("GeckoView:IPProtection:GPI:WarmUp", null)
+            assertThat(sessionRule.waitForResult(warmUpCompleted), equalTo(true))
+        } finally {
+            EventDispatcher.getInstance()
+                .unregisterUiThreadListener(listener, "GeckoView:IPProtection:GPI:WarmUpCompleted")
+        }
+    }
+
+    @Test
+    fun gpiWarmUpFailureDispatchesWarmUpFailed() {
+        val warmUpFailed = GeckoResult<Boolean>()
+        val listener = BundleEventListener { _, _, callback ->
+            warmUpFailed.complete(true)
+            callback?.sendSuccess(null)
+        }
+        EventDispatcher.getInstance()
+            .registerUiThreadListener(listener, "GeckoView:IPProtection:GPI:WarmUpFailed")
+        try {
+            ipProtectionController.setGpiProvider(
+                StubGpiProvider(warmUpResult = GeckoResult.fromException(RuntimeException("warm-up failed"))),
+            )
+            EventDispatcher.getInstance().dispatch("GeckoView:IPProtection:GPI:WarmUp", null)
+            assertThat(sessionRule.waitForResult(warmUpFailed), equalTo(true))
+        } finally {
+            EventDispatcher.getInstance()
+                .unregisterUiThreadListener(listener, "GeckoView:IPProtection:GPI:WarmUpFailed")
+        }
+    }
+
+    @Test
+    fun gpiWarmUpWithNoProviderIsSilentlyDropped() {
+        ipProtectionController.setGpiProvider(null)
+        // Should not crash when no provider is set.
+        EventDispatcher.getInstance().dispatch("GeckoView:IPProtection:GPI:WarmUp", null)
+    }
+
+    @Test
+    fun requestTokenEventIsRoutedToGpiProvider() {
+        ipProtectionController.setGpiProvider(
+            StubGpiProvider(tokenResult = GeckoResult.fromValue("secret-gpi-token")),
+        )
+        val response = sessionRule.waitForResult(
+            EventDispatcher.getInstance().queryBundle("GeckoView:IPProtection:GPI:RequestToken"),
+        )
+        assertThat(response.getString("token"), equalTo("secret-gpi-token"))
+    }
+
+    @Test
+    fun requestTokenEventWithoutProviderReturnsError() {
+        ipProtectionController.setGpiProvider(null)
+        assertRequestTokenError("no-gpi-provider")
+    }
+
+    @Test
+    fun requestTokenEventWithRejectedTokenReturnsError() {
+        ipProtectionController.setGpiProvider(
+            StubGpiProvider(tokenResult = GeckoResult.fromException(RuntimeException("no-gpi-token"))),
+        )
+        assertRequestTokenError("no-gpi-token")
+    }
+
+    @Test
+    fun requestTokenEventWithNullTokenStringReturnsError() {
+        ipProtectionController.setGpiProvider(
+            StubGpiProvider(tokenResult = GeckoResult.fromValue(null)),
+        )
+        assertRequestTokenError("no-gpi-token")
+    }
+
+    @Test
+    fun requestTokenEventWithEmptyTokenStringReturnsError() {
+        ipProtectionController.setGpiProvider(
+            StubGpiProvider(tokenResult = GeckoResult.fromValue("")),
+        )
+        assertRequestTokenError("no-gpi-token")
+    }
+
+    private fun assertRequestTokenError(expected: String) {
+        val thrown = assertThrows(RuntimeException::class.java) {
+            sessionRule.waitForResult(
+                EventDispatcher.getInstance().queryBundle("GeckoView:IPProtection:GPI:RequestToken"),
+            )
+        }
+        val cause = thrown.cause as EventDispatcher.QueryException
+        assertThat(cause.data.toString(), equalTo(expected))
     }
 }

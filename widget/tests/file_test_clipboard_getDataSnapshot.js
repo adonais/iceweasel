@@ -261,3 +261,50 @@ add_task(async function test_invalidate_dataSnapshot() {
     ),
   ]);
 });
+
+add_task(async function test_web_custom_format_data() {
+  info(`Test getDataSnapshot request with web custom format data`);
+
+  if (SpecialPowers.isHeadless) {
+    info("Skipping: HeadlessClipboard does not support web custom formats");
+    return;
+  }
+
+  let inputFormats = ["web text/plain", "web text/plain;foo=1"];
+  let expectedData = writeMultipleDataToClipboard(
+    inputFormats,
+    clipboard.kGlobalClipboard
+  );
+
+  let request = await getClipboardDataSnapshot(clipboard.kGlobalClipboard);
+  isDeeply(request.flavorList, ["web text/plain"], "Check flavorList");
+  is(
+    await asyncClipboardRequestGetData(request, "web text/plain"),
+    expectedData.get("web text/plain"),
+    "Check data"
+  );
+  // Requesting a flavor that is not in the list should throw error.
+  await asyncClipboardRequestGetData(
+    request,
+    "web text/plain;foo=1",
+    true
+  ).catch(e => {
+    is(
+      e,
+      Cr.NS_ERROR_FAILURE,
+      "should be rejected with NS_ERROR_FAILURE error"
+    );
+  });
+
+  is(
+    syncClipboardRequestGetData(request, "web text/plain"),
+    expectedData.get("web text/plain"),
+    "Check data (sync)"
+  );
+  // Requesting a flavor that is not in the list should throw error.
+  syncClipboardRequestGetData(
+    request,
+    "web text/plain;foo=1",
+    Cr.NS_ERROR_FAILURE
+  );
+});

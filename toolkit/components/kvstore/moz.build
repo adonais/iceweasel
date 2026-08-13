@@ -5,7 +5,7 @@
 with Files("**"):
     BUG_COMPONENT = ("Core", "SQLite and Embedded Database Bindings")
 
-EXTRA_JS_MODULES += [
+MOZ_SRC_FILES += [
     "kvstore.sys.mjs",
 ]
 

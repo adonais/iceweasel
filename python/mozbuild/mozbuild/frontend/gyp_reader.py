@@ -465,7 +465,7 @@ class GypProcessor:
         # The NSS gyp configuration uses CC and CFLAGS to determine the
         # floating-point ABI on arm.
         os.environ.update(
-            CC=config.substs["CC"],
+            CC=mozshellutil.quote(*config.substs["CC"]),
             CFLAGS=mozshellutil.quote(*config.substs["CC_BASE_FLAGS"]),
         )
 

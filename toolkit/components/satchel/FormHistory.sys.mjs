@@ -86,6 +86,7 @@ import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  CreditCard: "resource://gre/modules/CreditCard.sys.mjs",
   Sqlite: "resource://gre/modules/Sqlite.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
 });
@@ -94,6 +95,8 @@ const DB_SCHEMA_VERSION = 5;
 const DAY_IN_MS = 86400000; // 1 day in milliseconds
 const MAX_SEARCH_TOKENS = 10;
 const DB_FILENAME = "formhistory.sqlite";
+
+const MAX_FIELD_LENGTH = 200;
 
 var supportsDeletedTable = AppConstants.platform == "android";
 
@@ -1013,6 +1016,45 @@ export let FormHistory = {
 
   get enabled() {
     return Prefs.get("enabled");
+  },
+
+  /**
+   * Whether a fieldname is allowed to be written through FormHistory.
+   *
+   * @param {string} fieldname - the fieldname to test
+   * @returns {boolean}
+   */
+  isAllowedFieldname(fieldname) {
+    return !["searchbar-history"].includes(fieldname);
+  },
+
+  /**
+   * Whether an entry is eligible to be stored in form history.
+   *
+   * @param {string} name - the fieldname
+   * @param {string} value - the value
+   * @returns {boolean}
+   */
+  isAllowedEntry(name, value) {
+    if (typeof name != "string" || typeof value != "string") {
+      return false;
+    }
+
+    if (!this.isAllowedFieldname(name)) {
+      return false;
+    }
+
+    // Limit stored data to 200 characters.
+    if (name.length > MAX_FIELD_LENGTH || value.length > MAX_FIELD_LENGTH) {
+      return false;
+    }
+
+    // Don't save credit card numbers.
+    if (lazy.CreditCard.isValidNumber(value)) {
+      return false;
+    }
+
+    return true;
   },
 
   async search(aSelectTerms, aSearchData, aRowFunc) {

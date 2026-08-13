@@ -1,0 +1,90 @@
+<!doctype html>
+<meta charset=utf-8>
+<title>Strict RTCIceCandidate parse tests</title>
+<script src=/resources/testharness.js></script>
+<script src=/resources/testharnessreport.js></script>
+<script>
+  'use strict';
+
+  // webrtc-pc allows browsers to support grammar extensions, so there are many
+  // cases that are technically not testable in cross-browser WPT.
+
+  function makeCandidate(candidateStr) {
+    return new RTCIceCandidate({ candidate: candidateStr, sdpMid: 'audio' });
+  }
+
+  function assertParseFailed(c) {
+    assert_equals(c.foundation, null, 'foundation');
+    assert_equals(c.component, null, 'component');
+    assert_equals(c.priority, null, 'priority');
+    assert_equals(c.address, null, 'address');
+    assert_equals(c.protocol, null, 'protocol');
+    assert_equals(c.port, null, 'port');
+    assert_equals(c.type, null, 'type');
+    assert_equals(c.tcpType, null, 'tcpType');
+    assert_equals(c.relatedAddress, null, 'relatedAddress');
+    assert_equals(c.relatedPort, null, 'relatedPort');
+  }
+
+  // ---- Transport: only udp and tcp are accepted ----
+  // The BNF treats <transport> as a token ("UDP" / "TCP" /
+  // transport-extension), and there is no explicit spec language forbidding
+  // other values.
+
+  ['quic', 'magic'].forEach(transport => {
+    test(t => {
+      assertParseFailed(makeCandidate(
+        `candidate:1 1 ${transport} 100 1.2.3.4 5678 typ host`));
+    }, `transport "${transport}" fails to parse`);
+  });
+
+  // ---- Port: 16-bit range enforced ----
+  // RFC 8866's BNF for <port> doesn't constrain numeric range (1*DIGIT), but
+  // TCP/UDP ports are 16-bit, so Firefox rejects values outside 0..65535.
+
+  test(t => {
+    assertParseFailed(makeCandidate(
+      'candidate:1 1 udp 100 1.2.3.4 65536 typ host'));
+  }, 'port 65536 fails to parse');
+
+  test(t => {
+    assertParseFailed(makeCandidate(
+      'candidate:1 1 udp 100 1.2.3.4 99999 typ host'));
+  }, 'port 99999 fails to parse');
+
+  test(t => {
+    assertParseFailed(makeCandidate(
+      'candidate:1 1 udp 100 1.2.3.4 5678 typ srflx raddr 5.6.7.8 rport 65536'));
+  }, 'rport 65536 fails to parse');
+
+  // ---- Candidate type: only the four named values are accepted ----
+  // RFC 8839's <candidate-types> production allows extension tokens, so
+  // browsers can technically accept additional values.
+
+  ['magic', 'extension', 'unknown'].forEach(type => {
+    test(t => {
+      assertParseFailed(makeCandidate(
+        `candidate:1 1 udp 100 1.2.3.4 5678 typ ${type}`));
+    }, `candidate type "${type}" fails to parse`);
+  });
+
+  // ---- IPv6 connection-address is preserved verbatim ----
+  // No browser currently normalizes the IPv6 textual form, and the spec
+  // is silent on this. Live here in moz-only WPT until we settle the
+  // spec story (see https://github.com/w3c/webrtc-pc/issues/3115).
+
+  test(t => {
+    const c = makeCandidate(
+      'candidate:1 1 udp 2113937151 2001:0db8:0000::0001 58041 typ host');
+    assert_equals(c.address, '2001:0db8:0000::0001',
+                  'uncompressed IPv6 preserved verbatim');
+  }, 'IPv6 connection-address is not normalized');
+
+  test(t => {
+    const c = makeCandidate(
+      'candidate:1 1 udp 100 1.2.3.4 5678 typ srflx ' +
+      'raddr 2001:0db8:0000::0001 rport 9012');
+    assert_equals(c.relatedAddress, '2001:0db8:0000::0001',
+                  'uncompressed IPv6 raddr preserved verbatim');
+  }, 'IPv6 rel-addr is not normalized');
+</script>

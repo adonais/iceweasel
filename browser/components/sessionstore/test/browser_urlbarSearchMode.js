@@ -6,7 +6,7 @@
  */
 
 ChromeUtils.defineESModuleGetters(this, {
-  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
 });
 
 ChromeUtils.defineLazyGetter(this, "UrlbarTestUtils", () => {
@@ -27,7 +27,7 @@ add_task(async function test() {
     value: "test",
   });
   await UrlbarTestUtils.enterSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    source: UrlbarShared.RESULT_SOURCE.HISTORY,
   });
 
   // The search mode should be in the tab state.
@@ -39,7 +39,7 @@ add_task(async function test() {
   Assert.deepEqual(
     state.searchMode,
     {
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
       entry: "oneoff",
       isPreview: false,
     },

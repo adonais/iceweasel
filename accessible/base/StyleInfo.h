@@ -5,10 +5,10 @@
 #ifndef _mozilla_a11y_style_h_
 #define _mozilla_a11y_style_h_
 
-#include "mozilla/gfx/Types.h"
 #include "mozilla/AlreadyAddRefed.h"
-#include "nsStringFwd.h"
+#include "mozilla/gfx/Types.h"
 #include "nsColor.h"
+#include "nsStringFwd.h"
 
 class nsAtom;
 

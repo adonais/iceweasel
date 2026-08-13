@@ -5,10 +5,10 @@
 #ifndef SizeOfState_h
 #define SizeOfState_h
 
-#include "mozilla/fallible.h"
 #include "mozilla/MemoryReporting.h"
-#include "nsTHashtable.h"
+#include "mozilla/fallible.h"
 #include "nsHashKeys.h"
+#include "nsTHashtable.h"
 
 // This file includes types that are useful during memory reporting, but which
 // cannot be put into mfbt/MemoryReporting.h because they depend on things that

@@ -143,6 +143,9 @@ constexpr absl::string_view kAttributeSimulcast = "simulcast";
 constexpr absl::string_view kAttributeRid = "rid";
 const char kAttributePacketization[] = "packetization";
 
+// https://www.rfc-editor.org/rfc/rfc9335.html
+const char kAttributeCryptex[] = "cryptex";
+
 // Experimental flags
 const char kAttributeXGoogleFlag[] = "x-google-flag";
 const char kValueConference[] = "conference";
@@ -1263,9 +1266,14 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
   // The attribute MUST be either on session level or media level. We support
   // responding on both levels, however, we don't respond on media level if it's
   // set on session level.
-  if (media_desc->extmap_allow_mixed_enum() ==
-      MediaContentDescription::kMedia) {
+  if (media_desc->extmap_allow_mixed_level() ==
+      MediaContentDescription::AttributeLevel::kMedia) {
     InitAttrLine(kAttributeExtmapAllowMixed, &os);
+    AddLine(os.str(), message);
+  }
+  if (media_desc->cryptex_level() ==
+      MediaContentDescription::AttributeLevel::kMedia) {
+    InitAttrLine(kAttributeCryptex, &os);
     AddLine(os.str(), message);
   }
   BuildRtpHeaderExtensions(media_desc->rtp_header_extensions(), message);
@@ -1659,6 +1667,8 @@ bool ParseSessionDescription(absl::string_view message,
 
   desc->set_msid_signaling(kMsidSignalingNotUsed);
   desc->set_extmap_allow_mixed(false);
+  desc->set_cryptex(false);
+
   // RFC 4566
   // v=  (protocol version)
   line = GetLineWithType(message, pos, kLineTypeVersion);
@@ -1810,6 +1820,8 @@ bool ParseSessionDescription(absl::string_view message,
         return false;
       }
       session_extmaps->push_back(extmap);
+    } else if (HasAttribute(*aline, kAttributeCryptex)) {
+      desc->set_cryptex(true);
     }
   }
   return true;
@@ -2799,8 +2811,8 @@ bool ParseContent(absl::string_view message,
       } else if (HasAttribute(*line, kAttributeSendRecv)) {
         media_desc->set_direction(RtpTransceiverDirection::kSendRecv);
       } else if (HasAttribute(*line, kAttributeExtmapAllowMixed)) {
-        media_desc->set_extmap_allow_mixed_enum(
-            MediaContentDescription::kMedia);
+        media_desc->set_extmap_allow_mixed_level(
+            MediaContentDescription::AttributeLevel::kMedia);
       } else if (HasAttribute(*line, kAttributeExtmap)) {
         RtpExtension extmap;
         if (!ParseExtmap(*line, &extmap, error)) {
@@ -2871,6 +2883,9 @@ bool ParseContent(absl::string_view message,
         // Ignore and do not log a=rtcp line.
         // JSEP  section 5.8.2 (media section parsing) says to ignore it.
         continue;
+      } else if (HasAttribute(*line, kAttributeCryptex)) {
+        media_desc->set_cryptex_level(
+            MediaContentDescription::AttributeLevel::kMedia);
       } else {
         // Unrecognized attribute in RTP protocol.
         RTC_LOG(LS_VERBOSE) << "Ignored line: " << *line;
@@ -3013,7 +3028,9 @@ std::unique_ptr<MediaContentDescription> ParseContentDescription(
     return nullptr;
   }
 
-  media_desc->set_extmap_allow_mixed_enum(MediaContentDescription::kNo);
+  media_desc->set_extmap_allow_mixed_level(
+      MediaContentDescription::AttributeLevel::kNone);
+  media_desc->set_cryptex_level(MediaContentDescription::AttributeLevel::kNone);
   if (!ParseContent(message, media_type, mline_index, protocol, payload_types,
                     pos, content_name, bundle_only, msid_signaling,
                     media_desc.get(), transport, candidates, error)) {
@@ -3323,6 +3340,10 @@ std::string SdpSerialize(const SessionDescriptionInterface& jdesc) {
   // Mixed one- and two-byte header extension.
   if (desc->extmap_allow_mixed()) {
     InitAttrLine(kAttributeExtmapAllowMixed, &os);
+    AddLine(os.str(), &message);
+  }
+  if (desc->cryptex()) {
+    InitAttrLine(kAttributeCryptex, &os);
     AddLine(os.str(), &message);
   }
 

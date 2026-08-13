@@ -5,25 +5,24 @@
 #ifndef CacheStorageService_h_
 #define CacheStorageService_h_
 
+#include "mozilla/AtomicBitfields.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/LinkedList.h"
-#include "nsICacheStorageService.h"
-#include "nsIMemoryReporter.h"
-#include "nsINamed.h"
-#include "nsITimer.h"
-#include "nsICacheTesting.h"
-
-#include "nsClassHashtable.h"
-#include "nsTHashMap.h"
-#include "nsString.h"
-#include "nsThreadUtils.h"
-#include "nsProxyRelease.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticMutex.h"
-#include "mozilla/AtomicBitfields.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/TimeStamp.h"
+#include "nsClassHashtable.h"
+#include "nsICacheStorageService.h"
+#include "nsICacheTesting.h"
+#include "nsIMemoryReporter.h"
+#include "nsINamed.h"
+#include "nsITimer.h"
+#include "nsProxyRelease.h"
+#include "nsString.h"
 #include "nsTArray.h"
+#include "nsTHashMap.h"
+#include "nsThreadUtils.h"
 
 class nsICacheEntry;
 class nsIURI;

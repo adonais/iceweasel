@@ -1,0 +1,162 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
+
+.privacy {
+  @include widget-base-style;
+
+  padding: var(--space-large);
+
+  &.medium-widget {
+    grid-row: span 2;
+  }
+
+  &.large-widget {
+    grid-row: span 4;
+  }
+}
+
+// Free-float the context menu in the top-right corner (mirrors FocusTimer).
+.privacy-title-wrapper {
+  inset-block-start: var(--space-small);
+  inset-inline-end: var(--space-small);
+  inset-inline-start: auto;
+  margin-block-end: 0;
+  position: absolute;
+  width: auto;
+}
+
+.privacy-context-menu-wrapper {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.privacy:hover,
+.privacy:focus-within {
+  .privacy-context-menu-wrapper {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.privacy-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  font-size: var(--font-size-small);
+  // Default (incl. medium no-tip): bottom-left, matching large.
+  align-items: flex-start;
+  justify-content: flex-end;
+
+  // Medium styles
+  .medium-widget & {
+    font-size: var(--font-size-xsmall);
+  }
+
+  .has-tip-msg.medium-widget & {
+    justify-content: flex-end;
+    flex-direction: row;
+    align-items: stretch;
+    gap: var(--space-large);
+
+    .privacy-tip, .privacy-count {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+  }
+
+  // Large styles
+  .large-widget & {
+    align-items: flex-start;
+    justify-content: flex-end;
+    gap: var(--space-large);
+  }
+
+  // Empty state: center the image + message in the card.
+  .is-empty & {
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.privacy-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  // Stretch to the body width so the message's max-width is 75% of the card.
+  align-self: stretch;
+  gap: var(--space-medium);
+
+  .large-widget & {
+    gap: var(--space-large);
+  }
+
+  .privacy-empty-message {
+    margin: 0;
+    max-width: 75%;
+  }
+}
+
+.privacy-image-icon {
+  .medium-widget & {
+    max-height: var(--icon-size-xlarge)
+  }
+
+  .large-widget & {
+    max-height: calc( var(--icon-size-large) * 2 );
+  }
+}
+
+.privacy-count {
+  display: flex;
+  flex-direction: column;
+
+  .privacy-count-number-wrapper {
+    align-items: center;
+    display: flex;
+    gap: var(--space-small);
+  }
+
+  .privacy-count-number {
+    font-size: calc(var(--font-size-root) * 2.75); // ~42px
+    .large-widget & {
+      font-size: calc(var(--font-size-root) * 4.5); // ~67px
+    }
+  }
+}
+
+// Divider between the count and tip sections. As a flex item between two
+// equal (flex: 1) sections it stays optically centered, unlike a border on one
+// container. align-self: stretch fills the cross axis: full height in the
+// medium row, full width in the large column.
+.privacy-divider {
+  align-self: stretch;
+  margin: 0;
+  border: 0;
+  background-color: var(--border-color);
+
+  .medium-widget & {
+    inline-size: var(--border-width);
+  }
+
+  .large-widget & {
+    block-size: var(--border-width);
+  }
+}
+
+.privacy-tip {
+  .large-widget & {
+    align-items: center;
+    display: flex;
+    gap: var(--space-small);
+  }
+
+  .privacy-tip-message {
+    margin: 0;
+  }
+}

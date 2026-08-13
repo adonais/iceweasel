@@ -1,0 +1,4 @@
+[DEFAULT]
+prefs = ["dom.multiple_import_maps.enabled=true"]
+
+["test_bug_2054717.html"]

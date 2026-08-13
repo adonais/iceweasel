@@ -5,8 +5,8 @@
 #ifndef nsSupportsPrimitives_h_
 #define nsSupportsPrimitives_h_
 
-#include "nsISupportsPrimitives.h"
 #include "nsCOMPtr.h"
+#include "nsISupportsPrimitives.h"
 #include "nsString.h"
 
 /***************************************************************************/

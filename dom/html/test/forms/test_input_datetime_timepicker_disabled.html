@@ -1,0 +1,54 @@
+<!DOCTYPE HTML>
+<html>
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=2047355
+-->
+<head>
+<title>Test time picker button stays hidden on disabled/readonly inputs when the timepicker pref is enabled</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<link rel="stylesheet" href="/tests/SimpleTest/test.css" />
+</head>
+<body>
+Created for <a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=2047355">Mozilla Bug 2047355</a>
+<p id="display"></p>
+<div id="content">
+<input type="time" id="id_time" value="10:30">
+<input type="time" id="id_time_readonly" value="10:30" readonly>
+<input type="time" id="id_time_disabled" value="10:30" disabled>
+</div>
+<pre id="test">
+<script class="testbody">
+
+SimpleTest.waitForExplicitFinish();
+
+function picker_display(id) {
+  const input = document.getElementById(id);
+  const shadowRoot = SpecialPowers.wrap(input).openOrClosedShadowRoot;
+  const button = shadowRoot.getElementById("picker-button");
+  return SpecialPowers.wrap(window).getComputedStyle(button).display;
+}
+
+(async function run() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.forms.datetime.timepicker", true]],
+  });
+  await new Promise(resolve => requestAnimationFrame(resolve));
+
+  isnot(picker_display("id_time"), "none",
+    "Enabled time input shows the picker button when the pref is on");
+  is(picker_display("id_time_disabled"), "none",
+    "Disabled time input hides the picker button");
+  is(picker_display("id_time_readonly"), "none",
+    "Read-only time input hides the picker button");
+
+  document.getElementById("id_time_disabled").disabled = false;
+  isnot(picker_display("id_time_disabled"), "none",
+    "Removing disabled re-shows the picker button");
+
+  SimpleTest.finish();
+})();
+
+</script>
+</pre>
+</body>
+</html>

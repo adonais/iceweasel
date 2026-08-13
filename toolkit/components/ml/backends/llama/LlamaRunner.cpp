@@ -16,6 +16,8 @@
 #include "nsXPCOM.h"
 #include "prsystem.h"
 #include "mozilla/Casting.h"
+#include "mozilla/ScopeExit.h"
+#include "mozilla/UniquePtrExtensions.h"
 #include <cstddef>
 #include "mozilla/dom/Promise.h"
 
@@ -37,6 +39,7 @@
 #include "nsThreadManager.h"
 #include "mozilla/ThreadEventQueue.h"
 #include "mozilla/dom/Promise-inl.h"
+#include "mozilla/Encoding.h"
 #include "nsQueryObject.h"
 #include "private/pprio.h"
 
@@ -92,10 +95,42 @@ LlamaGenerateTask::~LlamaGenerateTask() {
   LOGD_RUNNER("Entered {}", __PRETTY_FUNCTION__);
 }
 
+namespace {
+
+// Decode `aBytes` through the streaming UTF-8 `aDecoder`, appending the valid
+// UTF-8 output to `aOut`. An incomplete trailing sequence is retained inside
+// the decoder until a later call completes it; bytes that can never be valid
+// are replaced with U+FFFD.
+[[nodiscard]] bool AppendDecodedUtf8(Decoder& aDecoder,
+                                     const nsACString& aBytes,
+                                     nsACString& aOut) {
+  Span<const uint8_t> src(
+      reinterpret_cast<const uint8_t*>(aBytes.BeginReading()), aBytes.Length());
+  CheckedInt<size_t> capacity = aDecoder.MaxUTF8BufferLength(src.Length());
+  size_t base = aOut.Length();
+  if (!capacity.isValid() ||
+      !aOut.SetLength(base + capacity.value(), fallible)) {
+    return false;
+  }
+  Span<uint8_t> dst(reinterpret_cast<uint8_t*>(aOut.BeginWriting()) + base,
+                    capacity.value());
+  aOut.SetLength(base + std::get<2>(aDecoder.DecodeToUTF8(src, dst, false)));
+  return true;
+}
+
+}  // namespace
+
 nsresult LlamaGenerateTask::Run() {
   LOGD_RUNNER("Entered {}", __PRETTY_FUNCTION__);
   mState = TaskState::Running;
   mozilla::dom::LlamaChatResponse response;
+
+  // llama.cpp byte-fallback tokens are single bytes, so a multi-byte codepoint
+  // is emitted across several tokens. Feeding the pieces through one streaming
+  // UTF-8 decoder holds an incomplete trailing sequence back until a later
+  // token completes it (a sequence that never completes stays buffered and is
+  // dropped).
+  UniquePtr<Decoder> decoder = UTF_8_ENCODING->NewDecoderWithoutBOMHandling();
 
   // Used by the backend to check cancellation status during generation.
   auto cancelCallback = [&state = mState]() -> bool {
@@ -104,8 +139,9 @@ nsresult LlamaGenerateTask::Run() {
 
   // Called by the backend each time new tokens are generated.
   auto tokenCallback =
-      [&response, bufSize = mChatOptions.mMinOutputBufferSize, self = this](
-          const mozilla::dom::LlamaChatResponse& chunk) -> ResultStatus {
+      [&response, &decoder, bufSize = mChatOptions.mMinOutputBufferSize,
+       self =
+           this](const mozilla::dom::LlamaChatResponse& chunk) -> ResultStatus {
     LOGV_RUNNER("Entered {}", __PRETTY_FUNCTION__);
     // Flush if phase has changed
     if ((response.mPhase != chunk.mPhase) && !response.mTokens.IsEmpty()) {
@@ -123,7 +159,12 @@ nsresult LlamaGenerateTask::Run() {
       }
     }
 
-    response.mPiece.Append(chunk.mPiece);
+    if (!AppendDecodedUtf8(*decoder, chunk.mPiece, response.mPiece)) {
+      auto msg = nsFmtCString("{}: Unable to append message to the response",
+                              __PRETTY_FUNCTION__);
+      LOGE_RUNNER("{}", msg);
+      return mozilla::Err(Error{std::move(msg)});
+    }
     auto out =
         response.mTokens.AppendElements(chunk.mTokens, mozilla::fallible);
     if (!out) {
@@ -168,6 +209,23 @@ nsresult LlamaGenerateTask::Run() {
     mState = TaskState::CompletedFailure;
 
     return NS_ERROR_FAILURE;
+  }
+
+  // Any remaining must be flushed here with the guaranteed `PushMessage` before
+  // we signal end of stream.
+  if (!response.mPiece.IsEmpty() || !response.mTokens.IsEmpty()) {
+    if (MOZ_UNLIKELY(!PushMessage(mozilla::Some(response)))) {
+      auto msg = nsFmtCString(
+          "{}: Fatal error: Unable to flush the final chunk as the queue is "
+          "full",
+          __PRETTY_FUNCTION__);
+      LOGE_RUNNER("{}", msg);
+
+      mErrorMessage = std::move(msg);
+      mState = TaskState::CompletedFailure;
+
+      return NS_ERROR_FAILURE;
+    }
   }
 
   // Notify completion (nullopt signals end of stream)
@@ -672,24 +730,38 @@ void LlamaRunner::OnMetadataReceived() {
 
   MOZ_ASSERT(fileDesc);
 
+  // fileDesc stays owned by mStream, which closes it when this LlamaRunner is
+  // destroyed. _open_osfhandle()/fdopen() below take ownership of the handle
+  // they are given and fclose() closes it, so hand them a duplicate to avoid
+  // closing mStream's handle twice (on Windows the reused handle value is then
+  // closed again by an unrelated owner, crashing the process).
+  mozilla::UniqueFileHandle dupHandle = mozilla::DuplicateFileHandle(
+      mozilla::ipc::FileDescriptor::PlatformHandleType(
+          PR_FileDesc2NativeHandle(fileDesc)));
+  if (!dupHandle) {
+    LOGE_RUNNER("DuplicateFileHandle failed");
+    return;
+  }
+
 #ifdef XP_WIN
-  // Convert our file descriptor to FILE*
-  void* handle = mozilla::ipc::FileDescriptor::PlatformHandleType(
-      PR_FileDesc2NativeHandle(fileDesc));
-  int fd = _open_osfhandle(reinterpret_cast<intptr_t>(handle), _O_RDONLY);
+  // _open_osfhandle() takes ownership of the duplicated handle.
+  // FileHandleHelper implicitly converts to intptr_t on Windows.
+  int fd = _open_osfhandle(dupHandle.release(), _O_RDONLY);
   if (fd == -1) {
     LOGE_RUNNER("Convertion to integer fd failed");
     return;
   }
   FILE* fp = fdopen(fd, "rb");
+#else
+  // fdopen() takes ownership of the duplicated fd.
+  FILE* fp = fdopen(dupHandle.release(), "r");
+#endif
   if (!fp) {
     LOGE_RUNNER("Conversion to FILE* failed");
     return;
   }
-#else
-  PROsfd fd = PR_FileDesc2NativeHandle(fileDesc);
-  FILE* fp = fdopen(fd, "r");
-#endif
+
+  auto closeFp = mozilla::MakeScopeExit([fp] { fclose(fp); });
 
   auto result = mBackend->Reinitialize(LlamaModelOptions(mModelOptions), fp);
 

@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 export const WEBEXTENSION_FALLBACK_DOC_URL =
-  "chrome://devtools/content/shared/webextension-fallback.html";
+  "resource://devtools-webextension-fallback/webextension-fallback.html";
 
 /**
  * Retrieve the addon id corresponding to a given window global.

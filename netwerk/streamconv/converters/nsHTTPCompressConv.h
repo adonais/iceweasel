@@ -5,14 +5,13 @@
 #if !defined(_nsHTTPCompressConv_h_)
 #  define _nsHTTPCompressConv_h_ 1
 
-#  include "nsIStreamConverter.h"
-#  include "nsICompressConvStats.h"
-#  include "nsIThreadRetargetableStreamListener.h"
-#  include "nsCOMPtr.h"
-#  include "nsString.h"
 #  include "mozilla/Atomics.h"
 #  include "mozilla/Mutex.h"
-
+#  include "nsCOMPtr.h"
+#  include "nsICompressConvStats.h"
+#  include "nsIStreamConverter.h"
+#  include "nsIThreadRetargetableStreamListener.h"
+#  include "nsString.h"
 #  include "zlib.h"
 
 class nsIStringInputStream;

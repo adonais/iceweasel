@@ -812,6 +812,22 @@ extern SECStatus
 NSS_CMSEnvelopedData_Decode_AfterEnd(NSSCMSEnvelopedData *envd);
 
 /************************************************************************
+ * cmsauthenvdata.c - CMS AuthEnvelopedData methods (RFC 5083)
+ ************************************************************************/
+
+extern void
+NSS_CMSAuthEnvelopedData_Destroy(NSSCMSAuthEnvelopedData *authenvd);
+
+extern NSSCMSContentInfo *
+NSS_CMSAuthEnvelopedData_GetContentInfo(NSSCMSAuthEnvelopedData *authenvd);
+
+extern SECStatus
+NSS_CMSAuthEnvelopedData_Decode_BeforeData(NSSCMSAuthEnvelopedData *authenvd);
+
+extern SECStatus
+NSS_CMSAuthEnvelopedData_Decode_AfterEnd(NSSCMSAuthEnvelopedData *authenvd);
+
+/************************************************************************
  * cmsrecinfo.c - CMS recipientInfo methods
  ************************************************************************/
 

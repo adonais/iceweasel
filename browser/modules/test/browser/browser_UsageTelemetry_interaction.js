@@ -463,7 +463,7 @@ add_task(async function contextMenu_entrypoints() {
   gTabsPanel.showAllTabsPanel(null);
   await allTabsPopupShownPromise;
 
-  let firstTabItem = gTabsPanel.allTabsViewTabs.children[0];
+  let firstTabItem = gTabsPanel.allTabsViewTabs.querySelector(".all-tabs-item");
   await openAndCloseTabContextMenu(firstTabItem);
   Assert.deepEqual(
     Glean.browserUiInteraction.tabsContextEntrypoint.testGetValue(),
@@ -1006,7 +1006,7 @@ add_task(async function preferences() {
       const privacyClickId = srdEnabled
         ? "etpStatusAdvancedButton"
         : "contentBlockingLearnMore";
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () =>
           gBrowser.selectedBrowser.contentDocument.getElementById(
             privacyClickId

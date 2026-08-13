@@ -171,7 +171,7 @@ impl PictureCompositeMode {
         &self,
         surface: &SurfaceInfo,
         gpu_buffers: &mut GpuBufferBuilder,
-        data_stores: &mut DataStores,
+        data_stores: &DataStores,
         extra_gpu_data: &mut SmallVec<[GpuBufferAddress; 1]>,
     ) {
         // TODO(gw): Almost all of the composite modes below use extra_gpu_data
@@ -242,23 +242,19 @@ impl PictureCompositeMode {
                 }
             }
             PictureCompositeMode::ComponentTransferFilter(handle) => {
-                let filter_data = &mut data_stores.filter_data[handle];
-                filter_data.write_gpu_blocks(&mut gpu_buffers.f32);
+                if extra_gpu_data.is_empty() {
+                    extra_gpu_data.push(GpuBufferAddress::INVALID);
+                }
+                let filter_data = &data_stores.filter_data[handle];
+                extra_gpu_data[0] = filter_data.data.write_gpu_blocks(&mut gpu_buffers.f32);
             }
             PictureCompositeMode::MixBlend(..) |
             PictureCompositeMode::Blit(_) |
             PictureCompositeMode::IntermediateSurface => {}
-            PictureCompositeMode::SVGFEGraph(ref filters) => {
-                // Update interned filter data
-                for (_node, op) in filters {
-                    match op {
-                        FilterGraphOp::SVGFEComponentTransferInterned { handle, creates_pixels: _ } => {
-                            let filter_data = &mut data_stores.filter_data[*handle];
-                            filter_data.write_gpu_blocks(&mut gpu_buffers.f32);
-                        }
-                        _ => {}
-                    }
-                }
+            PictureCompositeMode::SVGFEGraph(..) => {
+                // SVGFE component-transfer filter data GPU blocks are written
+                // per-node in RenderTask::new_svg_filter_graph, which is the
+                // authoritative consumer of the resulting addresses.
             }
         }
     }
@@ -303,7 +299,7 @@ pub fn prepare_composite_mode(
     can_use_shared_surface: bool,
     frame_context: &FrameBuildingContext,
     frame_state: &mut FrameBuildingState,
-    data_stores: &mut DataStores,
+    data_stores: &DataStores,
     extra_gpu_data: &mut SmallVec<[GpuBufferAddress; 1]>,
 ) -> (SurfaceDescriptor, [Option<RenderTaskId>; 2]) {
     let surface = &frame_state.surfaces[surface_index.0];
@@ -462,7 +458,6 @@ pub fn prepare_composite_mode(
             mode,
             frame_context.fb_config.gpu_supports_advanced_blend,
             frame_context.fb_config.advanced_blend_is_coherent,
-            frame_context.fb_config.dual_source_blending_is_supported,
         ).is_none() => {
             let parent_surface = &frame_state.surfaces[parent_surface_index.0];
 
@@ -809,8 +804,35 @@ fn request_render_task(
 
     let task_id = match snapshot {
         Some(info) => {
+            // `info.area` is the snapshot's (un-snapped) reference area, but the
+            // image primitive this adjustment is later applied to has already
+            // been snapped to the device pixel grid. Snap the reference to that
+            // same grid first, so the adjustment maps snapped-reference ->
+            // rasterized-area; otherwise it re-applies the (already-performed)
+            // snap delta to the snapped prim, pushing the 1:1 snapshot paint off
+            // the texture grid and blurring it. The surface's `clipped_local ->
+            // clipped_notsnapped` rects give the local->device mapping.
+            let cl = surface_rects.clipped_local;
+            let cd = surface_rects.clipped_notsnapped;
+            let reference = if cl.width() > 0.0 && cl.height() > 0.0 {
+                let sx = cd.width() / cl.width();
+                let sy = cd.height() / cl.height();
+                let ox = cd.min.x - cl.min.x * sx;
+                let oy = cd.min.y - cl.min.y * sy;
+                let snap = |x: f32, y: f32| {
+                    let dx = (x * sx + ox).round();
+                    let dy = (y * sy + oy).round();
+                    LayoutPoint::new((dx - ox) / sx, (dy - oy) / sy)
+                };
+                LayoutRect::new(
+                    snap(info.area.min.x, info.area.min.y),
+                    snap(info.area.max.x, info.area.max.y),
+                )
+            } else {
+                info.area
+            };
             let adjustment = AdjustedImageSource::from_rects(
-                &info.area,
+                &reference,
                 &surface_rects.clipped_local.cast_unit()
             );
             let task_id = frame_state.resource_cache.render_as_image(

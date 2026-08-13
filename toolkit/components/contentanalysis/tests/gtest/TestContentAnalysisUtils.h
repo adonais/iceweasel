@@ -4,8 +4,7 @@
 #ifndef mozilla_testcontentanalysis_h
 #define mozilla_testcontentanalysis_h
 
-#include <processthreadsapi.h>
-#include <errhandlingapi.h>
+#include <windows.h>
 #include <vector>
 
 #include "ContentAnalysis.h"

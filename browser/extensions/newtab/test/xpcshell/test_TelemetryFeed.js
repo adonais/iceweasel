@@ -15,16 +15,12 @@ ChromeUtils.defineESModuleGetters(this, {
   ExtensionSettingsStore:
     "resource://gre/modules/ExtensionSettingsStore.sys.mjs",
   HomePage: "resource:///modules/HomePage.sys.mjs",
-  JsonSchemaValidator:
-    "resource://gre/modules/components-utils/JsonSchemaValidator.sys.mjs",
   NewTabContentPing: "resource://newtab/lib/NewTabContentPing.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
   TelemetryController: "resource://gre/modules/TelemetryController.sys.mjs",
   TelemetryFeed: "resource://newtab/lib/TelemetryFeed.sys.mjs",
   TelemetryTestUtils: "resource://testing-common/TelemetryTestUtils.sys.mjs",
-  USER_PREFS_ENCODING: "resource://newtab/lib/TelemetryFeed.sys.mjs",
-  UTEventReporting: "resource://newtab/lib/UTEventReporting.sys.mjs",
 });
 
 const FAKE_UUID = "{foo-123-foo}";
@@ -34,60 +30,10 @@ const PREF_PRIVATE_PING_ENABLED =
   "browser.newtabpage.activity-stream.telemetry.privatePing.enabled";
 const PREF_REDACT_NEWTAB_PING_ENABLED =
   "browser.newtabpage.activity-stream.telemetry.privatePing.redactNewtabPing.enabled";
-const PREF_EVENT_TELEMETRY =
-  "browser.newtabpage.activity-stream.telemetry.ut.events";
 const PREF_IS_MERINO_FEED_EXPERIMENT =
   "browser.newtabpage.activity-stream.discoverystream.merino-feed-experiment";
 
-let BasePingSchemaPromise;
-let SessionPingSchemaPromise;
-let UserEventPingSchemaPromise;
-
-function assertPingMatchesSchema(pingKind, ping, schema) {
-  // Unlike the validator from JsonSchema.sys.mjs, JsonSchemaValidator
-  // lets us opt-in to having "undefined" properties, which are then
-  // ignored. This is fine because the ping is sent as a JSON string
-  // over an XHR, and undefined properties are culled as part of the
-  // JSON encoding process.
-  let result = JsonSchemaValidator.validate(ping, schema, {
-    allowExplicitUndefinedProperties: true,
-  });
-
-  if (!result.valid) {
-    info(`${pingKind} failed to validate against the schema: ${result.error}`);
-  }
-
-  Assert.ok(result.valid, `${pingKind} is valid against the schema.`);
-}
-
-async function assertSessionPingValid(ping) {
-  let schema = await SessionPingSchemaPromise;
-  assertPingMatchesSchema("SessionPing", ping, schema);
-}
-
-async function assertBasePingValid(ping) {
-  let schema = await BasePingSchemaPromise;
-  assertPingMatchesSchema("BasePing", ping, schema);
-}
-
-async function assertUserEventPingValid(ping) {
-  let schema = await UserEventPingSchemaPromise;
-  assertPingMatchesSchema("UserEventPing", ping, schema);
-}
-
 add_setup(async function setup() {
-  BasePingSchemaPromise = IOUtils.readJSON(
-    do_get_file("../schemas/base_ping.schema.json").path
-  );
-
-  SessionPingSchemaPromise = IOUtils.readJSON(
-    do_get_file("../schemas/session_ping.schema.json").path
-  );
-
-  UserEventPingSchemaPromise = IOUtils.readJSON(
-    do_get_file("../schemas/user_event_ping.schema.json").path
-  );
-
   do_get_profile();
   // FOG needs to be initialized in order for data to flow.
   Services.fog.initializeFOG();
@@ -114,10 +60,6 @@ add_task(async function test_construction() {
   Assert.ok(
     testInstance,
     "Should have been able to create an instance of TelemetryFeed."
-  );
-  Assert.ok(
-    testInstance.utEvents instanceof UTEventReporting,
-    "Should add .utEvents, a UTEventReporting instance."
   );
   Assert.ok(
     testInstance._impressionId,
@@ -178,15 +120,6 @@ add_task(async function test_telemetry_prefs() {
   Services.prefs.setBoolPref(PREF_TELEMETRY, true);
   Assert.ok(instance.telemetryEnabled, "Telemetry enabled");
 
-  info("Event telemetry pref changes from false to true");
-
-  Services.prefs.setBoolPref(PREF_EVENT_TELEMETRY, false);
-  Assert.ok(!instance.eventTelemetryEnabled, "Event telemetry disabled");
-
-  Services.prefs.setBoolPref(PREF_EVENT_TELEMETRY, true);
-  Assert.ok(instance.eventTelemetryEnabled, "Event telemetry enabled");
-
-  Services.prefs.clearUserPref(PREF_EVENT_TELEMETRY);
   Services.prefs.clearUserPref(PREF_TELEMETRY);
 });
 
@@ -472,47 +405,6 @@ add_task(async function test_addSession_perf_properties() {
   Assert.notEqual(session2.perf.load_trigger_type, "first_window_opened");
 });
 
-add_task(async function test_addSession_valid_ping_on_first_abouthome() {
-  info(
-    "TelemetryFeed.addSession should create a valid session ping " +
-      "on the first about:home seen"
-  );
-  let instance = new TelemetryFeed();
-  // Add a session
-  const PORT_ID = "foo";
-  let session = instance.addSession(PORT_ID, "about:home");
-
-  // Create a ping referencing the session
-  let ping = instance.createSessionEndEvent(session);
-  await assertSessionPingValid(ping);
-});
-
-add_task(async function test_addSession_valid_ping_data_late_by_ms() {
-  info(
-    "TelemetryFeed.addSession should create a valid session ping " +
-      "with the data_late_by_ms perf"
-  );
-  let instance = new TelemetryFeed();
-  // Add a session
-  const PORT_ID = "foo";
-  let session = instance.addSession(PORT_ID, "about:home");
-
-  const TOPSITES_LATE_BY_MS = 10;
-  const HIGHLIGHTS_LATE_BY_MS = 20;
-  instance.saveSessionPerfData("foo", {
-    topsites_data_late_by_ms: TOPSITES_LATE_BY_MS,
-  });
-  instance.saveSessionPerfData("foo", {
-    highlights_data_late_by_ms: HIGHLIGHTS_LATE_BY_MS,
-  });
-
-  // Create a ping referencing the session
-  let ping = instance.createSessionEndEvent(session);
-  await assertSessionPingValid(ping);
-  Assert.equal(session.perf.topsites_data_late_by_ms, TOPSITES_LATE_BY_MS);
-  Assert.equal(session.perf.highlights_data_late_by_ms, HIGHLIGHTS_LATE_BY_MS);
-});
-
 add_task(async function test_addSession_valid_ping_topsites_stats_perf() {
   info(
     "TelemetryFeed.addSession should create a valid session ping " +
@@ -521,7 +413,7 @@ add_task(async function test_addSession_valid_ping_topsites_stats_perf() {
   let instance = new TelemetryFeed();
   // Add a session
   const PORT_ID = "foo";
-  let session = instance.addSession(PORT_ID, "about:home");
+  instance.addSession(PORT_ID, "about:home");
 
   const SCREENSHOT_WITH_ICON = 2;
   const TOPSITES_PINNED = 3;
@@ -540,9 +432,6 @@ add_task(async function test_addSession_valid_ping_topsites_stats_perf() {
     topsites_search_shortcuts: TOPSITES_SEARCH_SHORTCUTS,
   });
 
-  // Create a ping referencing the session
-  let ping = instance.createSessionEndEvent(session);
-  await assertSessionPingValid(ping);
   Assert.equal(
     instance.sessions.get("foo").perf.topsites_icon_stats.screenshot_with_icon,
     SCREENSHOT_WITH_ICON
@@ -593,7 +482,6 @@ add_task(async function test_endSession_no_ping_on_no_visibility_event() {
       "no visibility_event_rcvd_ts"
   );
   Services.prefs.setBoolPref(PREF_TELEMETRY, true);
-  Services.prefs.setBoolPref(PREF_EVENT_TELEMETRY, true);
   let instance = new TelemetryFeed();
 
   let sandbox = sinon.createSandbox();
@@ -609,7 +497,6 @@ add_task(async function test_endSession_no_ping_on_no_visibility_event() {
   Assert.ok(!instance.sessions.has("foo"));
 
   Services.prefs.clearUserPref(PREF_TELEMETRY);
-  Services.prefs.clearUserPref(PREF_EVENT_TELEMETRY);
 
   sandbox.restore();
 });
@@ -620,12 +507,9 @@ add_task(async function test_endSession_send_ping() {
       "session if visibilty_event_rcvd_ts was set"
   );
   Services.prefs.setBoolPref(PREF_TELEMETRY, true);
-  Services.prefs.setBoolPref(PREF_EVENT_TELEMETRY, true);
   let instance = new TelemetryFeed();
 
   let sandbox = sinon.createSandbox();
-  sandbox.stub(instance, "createSessionEndEvent");
-  sandbox.stub(instance.utEvents, "sendSessionEndEvent");
   sandbox.stub(instance, "configureContentPing");
 
   let session = instance.addSession("foo");
@@ -633,181 +517,11 @@ add_task(async function test_endSession_send_ping() {
   session.perf.visibility_event_rcvd_ts = 444.4732;
   instance.endSession("foo");
 
-  Assert.ok(instance.createSessionEndEvent.calledWith(session));
-  let sessionEndEvent = instance.createSessionEndEvent.firstCall.returnValue;
-  Assert.ok(instance.utEvents.sendSessionEndEvent.calledWith(sessionEndEvent));
-
   info("TelemetryFeed.endSession should remove the session from .sessions");
   Assert.ok(!instance.sessions.has("foo"));
 
   Services.prefs.clearUserPref(PREF_TELEMETRY);
-  Services.prefs.clearUserPref(PREF_EVENT_TELEMETRY);
 
-  sandbox.restore();
-});
-
-add_task(async function test_createPing_valid_base_if_no_portID() {
-  info(
-    "TelemetryFeed.createPing should create a valid base ping " +
-      "without a session if no portID is supplied"
-  );
-  let instance = new TelemetryFeed();
-  let ping = await instance.createPing();
-  await assertBasePingValid(ping);
-  Assert.ok(!ping.session_id);
-  Assert.ok(!ping.page);
-});
-
-add_task(async function test_createPing_valid_base_if_portID() {
-  info(
-    "TelemetryFeed.createPing should create a valid base ping " +
-      "with session info if a portID is supplied"
-  );
-  // Add a session
-  const PORT_ID = "foo";
-  let instance = new TelemetryFeed();
-  instance.addSession(PORT_ID, "about:home");
-  let sessionID = instance.sessions.get(PORT_ID).session_id;
-
-  // Create a ping referencing the session
-  let ping = await instance.createPing(PORT_ID);
-  await assertBasePingValid(ping);
-
-  // Make sure we added the right session-related stuff to the ping
-  Assert.equal(ping.session_id, sessionID);
-  Assert.equal(ping.page, "about:home");
-});
-
-add_task(async function test_createPing_no_session_yet_portID() {
-  info(
-    "TelemetryFeed.createPing should create an 'unexpected' base ping " +
-      "if no session yet portID is supplied"
-  );
-  let instance = new TelemetryFeed();
-  let ping = await instance.createPing("foo");
-  await assertBasePingValid(ping);
-
-  Assert.equal(ping.page, "unknown");
-  Assert.equal(
-    instance.sessions.get("foo").perf.load_trigger_type,
-    "unexpected"
-  );
-});
-
-add_task(async function test_createPing_includes_userPrefs() {
-  info("TelemetryFeed.createPing should create a base ping with user_prefs");
-  let expectedUserPrefs = 0;
-
-  for (let pref of Object.keys(USER_PREFS_ENCODING)) {
-    Services.prefs.setBoolPref(
-      `browser.newtabpage.activity-stream.${pref}`,
-      true
-    );
-    expectedUserPrefs |= USER_PREFS_ENCODING[pref];
-  }
-
-  let instance = new TelemetryFeed();
-  let ping = await instance.createPing("foo");
-  await assertBasePingValid(ping);
-  Assert.equal(ping.user_prefs, expectedUserPrefs);
-
-  for (const pref of Object.keys(USER_PREFS_ENCODING)) {
-    Services.prefs.clearUserPref(`browser.newtabpage.activity-stream.${pref}`);
-  }
-});
-
-add_task(async function test_createUserEvent_is_valid() {
-  info(
-    "TelemetryFeed.createUserEvent should create a valid user event ping " +
-      "with the right session_id"
-  );
-  const PORT_ID = "foo";
-
-  let instance = new TelemetryFeed();
-  let data = { source: "TOP_SITES", event: "CLICK" };
-  let action = actionCreators.AlsoToMain(
-    actionCreators.UserEvent(data),
-    PORT_ID
-  );
-  let session = instance.addSession(PORT_ID);
-
-  let ping = await instance.createUserEvent(action);
-
-  // Is it valid?
-  await assertUserEventPingValid(ping);
-  // Does it have the right session_id?
-  Assert.equal(ping.session_id, session.session_id);
-});
-
-add_task(async function test_createSessionEndEvent_is_valid() {
-  info(
-    "TelemetryFeed.createSessionEndEvent should create a valid session ping"
-  );
-  const FAKE_DURATION = 12345;
-  let instance = new TelemetryFeed();
-  let ping = await instance.createSessionEndEvent({
-    session_id: FAKE_UUID,
-    page: "about:newtab",
-    session_duration: FAKE_DURATION,
-    perf: {
-      load_trigger_ts: 10,
-      load_trigger_type: "menu_plus_or_keyboard",
-      visibility_event_rcvd_ts: 20,
-      is_preloaded: true,
-    },
-  });
-
-  // Is it valid?
-  await assertSessionPingValid(ping);
-  Assert.equal(ping.session_id, FAKE_UUID);
-  Assert.equal(ping.page, "about:newtab");
-  Assert.equal(ping.session_duration, FAKE_DURATION);
-});
-
-add_task(async function test_createSessionEndEvent_with_unexpected_is_valid() {
-  info(
-    "TelemetryFeed.createSessionEndEvent should create a valid 'unexpected' " +
-      "session ping"
-  );
-  const FAKE_DURATION = 12345;
-  const FAKE_TRIGGER_TYPE = "unexpected";
-
-  let instance = new TelemetryFeed();
-  let ping = await instance.createSessionEndEvent({
-    session_id: FAKE_UUID,
-    page: "about:newtab",
-    session_duration: FAKE_DURATION,
-    perf: {
-      load_trigger_type: FAKE_TRIGGER_TYPE,
-      is_preloaded: true,
-    },
-  });
-
-  // Is it valid?
-  await assertSessionPingValid(ping);
-  Assert.equal(ping.session_id, FAKE_UUID);
-  Assert.equal(ping.page, "about:newtab");
-  Assert.equal(ping.session_duration, FAKE_DURATION);
-  Assert.equal(ping.perf.load_trigger_type, FAKE_TRIGGER_TYPE);
-});
-
-add_task(async function test_sendUTEvent_call_right_function() {
-  info("TelemetryFeed.sendUTEvent should call the UT event function passed in");
-  let sandbox = sinon.createSandbox();
-
-  Services.prefs.setBoolPref(PREF_TELEMETRY, true);
-  Services.prefs.setBoolPref(PREF_EVENT_TELEMETRY, true);
-
-  let event = {};
-  let instance = new TelemetryFeed();
-  sandbox.stub(instance.utEvents, "sendUserEvent");
-  instance.addSession("foo");
-
-  await instance.sendUTEvent(event, instance.utEvents.sendUserEvent);
-  Assert.ok(instance.utEvents.sendUserEvent.calledWith(event));
-
-  Services.prefs.clearUserPref(PREF_TELEMETRY);
-  Services.prefs.clearUserPref(PREF_EVENT_TELEMETRY);
   sandbox.restore();
 });
 
@@ -1157,73 +871,6 @@ add_task(async function test_onAction_basic_actions() {
       );
     }
   );
-
-  info(
-    "TelemetryFeed.onAction should send an event on a TELEMETRY_USER_EVENT " +
-      "action"
-  );
-  Services.prefs.setBoolPref(PREF_EVENT_TELEMETRY, true);
-  Services.prefs.setBoolPref(PREF_TELEMETRY, true);
-  testOnAction(
-    (sandbox, instance) => {
-      sandbox.stub(instance, "createUserEvent");
-      sandbox.stub(instance.utEvents, "sendUserEvent");
-    },
-    { type: actionTypes.TELEMETRY_USER_EVENT },
-    instance => {
-      Assert.ok(
-        instance.createUserEvent.calledOnce,
-        "TelemetryFeed.createUserEvent called once"
-      );
-      Assert.ok(
-        instance.createUserEvent.calledWith({
-          type: actionTypes.TELEMETRY_USER_EVENT,
-        })
-      );
-      Assert.ok(
-        instance.utEvents.sendUserEvent.calledOnce,
-        "TelemetryFeed.utEvents.sendUserEvent called once"
-      );
-      Assert.ok(
-        instance.utEvents.sendUserEvent.calledWith(
-          instance.createUserEvent.returnValue
-        )
-      );
-    }
-  );
-  Services.prefs.clearUserPref(PREF_EVENT_TELEMETRY);
-  Services.prefs.clearUserPref(PREF_TELEMETRY);
-
-  info(
-    "TelemetryFeed.onAction should send an event on a " +
-      "DISCOVERY_STREAM_USER_EVENT action"
-  );
-  Services.prefs.setBoolPref(PREF_EVENT_TELEMETRY, true);
-  Services.prefs.setBoolPref(PREF_TELEMETRY, true);
-  testOnAction(
-    (sandbox, instance) => {
-      sandbox.stub(instance, "createUserEvent");
-      sandbox.stub(instance.utEvents, "sendUserEvent");
-    },
-    { type: actionTypes.DISCOVERY_STREAM_USER_EVENT },
-    instance => {
-      Assert.ok(
-        instance.createUserEvent.calledOnce,
-        "TelemetryFeed.createUserEvent called once"
-      );
-      Assert.ok(
-        instance.utEvents.sendUserEvent.calledOnce,
-        "TelemetryFeed.utEvents.sendUserEvent called once"
-      );
-      Assert.ok(
-        instance.utEvents.sendUserEvent.calledWith(
-          instance.createUserEvent.returnValue
-        )
-      );
-    }
-  );
-  Services.prefs.clearUserPref(PREF_EVENT_TELEMETRY);
-  Services.prefs.clearUserPref(PREF_TELEMETRY);
 });
 
 add_task(
@@ -3249,5 +2896,16 @@ add_task(async function test_recordEnabledWidgets_none_enabled() {
     Glean.newtab.widgetsEnabledList.testGetValue(),
     [],
     "widgetsEnabledList should be empty when no widgets are enabled"
+  );
+});
+
+add_task(async function test_onAction_NEW_TAB_SCROLL_records_scroll_metric() {
+  Services.fog.testResetFOG();
+  let instance = new TelemetryFeed();
+  instance.onAction({ type: actionTypes.NEW_TAB_SCROLL });
+  Assert.equal(
+    Glean.newtab.scroll.testGetValue(),
+    true,
+    "newtab.scroll should be true after NEW_TAB_SCROLL action"
   );
 });

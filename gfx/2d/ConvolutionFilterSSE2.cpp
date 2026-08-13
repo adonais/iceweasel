@@ -2,9 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the gfx/skia/LICENSE file.
 
+#include <tmmintrin.h>
+
 #include "SkConvolver.h"
 #include "mozilla/Attributes.h"
-#include <tmmintrin.h>
 
 namespace skia {
 

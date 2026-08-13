@@ -36,6 +36,7 @@ support-files = [
   "websocket_frontend_iframe.html",
   "websocket_frontend.html",
   "worker-sources.js",
+  "parent_worker_debugger_statement.js",
 ]
 
 ["browser_browser_resources_console_messages.js"]
@@ -117,6 +118,8 @@ skip-if = [
 ["browser_resources_target_switching.js"]
 
 ["browser_resources_thread_states.js"]
+
+["browser_resources_thread_states_parent_worker.js"]
 
 ["browser_resources_unwatch_early.js"]
 

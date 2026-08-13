@@ -4,19 +4,21 @@
 
 /* JavaScript JSClasses and JSOps for our Wrapped Native JS Objects. */
 
-#include "xpcprivate.h"
-#include "xpc_make_class.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Preferences.h"
+
+#include <string_view>
+
+#include "xpc_make_class.h"
+#include "xpcprivate.h"
+
 #include "js/CharacterEncoding.h"
 #include "js/Class.h"
 #include "js/Object.h"  // JS::GetClass
 #include "js/Printf.h"
 #include "js/PropertyAndElement.h"  // JS_DefineProperty, JS_DefinePropertyById, JS_GetProperty, JS_GetPropertyById
 #include "js/Symbol.h"
-
-#include <string_view>
 
 using namespace mozilla;
 using namespace JS;

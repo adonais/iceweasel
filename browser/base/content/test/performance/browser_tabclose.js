@@ -41,6 +41,15 @@ add_task(async function () {
     gBrowser.tabContainer.newTabButton.getBoundingClientRect();
   let inRange = (val, min, max) => min <= val && val <= max;
 
+  // The '+' button uses a different glyph under nova which paints 1px
+  // shorter than the proton one.
+  const kNewTabIconHeight = Services.prefs.getBoolPref(
+    "browser.nova.enabled",
+    false
+  )
+    ? 12
+    : 13;
+
   // Add a reflow observer and open a new tab.
   await withPerfObserver(
     async function () {
@@ -71,7 +80,8 @@ add_task(async function () {
                     // The '+' icon moves with an animation. At the end of the animation
                     // the former and new positions can touch each other causing the rect
                     // to have twice the icon's width.
-                    (r.h == 13 && r.w <= 2 * 13 + kMaxEmptyPixels) ||
+                    (r.h == kNewTabIconHeight &&
+                      r.w <= 2 * kNewTabIconHeight + kMaxEmptyPixels) ||
                     // We sometimes have a rect for the right most 2px of the '+' button.
                     (r.h == 2 && r.w == 2))
                 )

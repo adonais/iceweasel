@@ -5,6 +5,7 @@
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 import { ServiceRequest } from "resource://gre/modules/ServiceRequest.sys.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+import { setTimeout } from "resource://gre/modules/Timer.sys.mjs";
 
 const lazy = {};
 
@@ -91,11 +92,16 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "gAttachmentsBaseUrl",
+  "services.settings.base_attachments_url",
+  ""
+);
+
 function _isUndefined(value) {
   return typeof value === "undefined";
 }
-
-const _cdnURLs = {};
 
 export var Utils = {
   get SERVER_URL() {
@@ -298,14 +304,21 @@ export var Utils = {
     });
   },
 
+  _baseAttachmentsURLPromise: null,
+
   /**
    * Retrieves the base URL for attachments from the server configuration.
    *
    * If the URL has been previously fetched and cached, it returns the cached URL.
    *
+   * Note: it is important to not hard-code this value in consumer code.
+   *
    * @async
    * @function baseAttachmentsURL
    * @memberof Utils
+   * @param {object} options Some download options.
+   * @param {number} options.retries Number of times server fetch should be retried (default: `0`)
+   * @param {number} options.retryWaitMsec Wait milliseconds between each retry (default: `1000`)
    * @returns {Promise<string>} A promise that resolves to the base URL for attachments.
    *
    * @throws {Error} If there is an error fetching or parsing the server response.
@@ -314,21 +327,66 @@ export var Utils = {
    * const attachmentsURL = await Downloader.baseAttachmentsURL();
    * console.log(attachmentsURL);
    */
-  async baseAttachmentsURL() {
-    if (!_cdnURLs[Utils.SERVER_URL]) {
-      const resp = await Utils.fetch(`${Utils.SERVER_URL}/`);
-      const serverInfo = await resp.json();
+  async baseAttachmentsURL(options = {}) {
+    if (Utils._baseAttachmentsURLPromise) {
+      // Wait for ongoing call to finish.
+      return Utils._baseAttachmentsURLPromise;
+    }
+
+    // We save the obtained value in a pref, so that it's only fetched from
+    // the server on first use. When the remote server changes (eg. using the DevTools for QA)
+    // the value will be fetched again from the server.
+    const [server_url = "", attachments_url = ""] =
+      lazy.gAttachmentsBaseUrl.split("|", 2);
+    if (
+      server_url == Utils.SERVER_URL &&
+      /^https?:\/\/(.+)\/$/.test(attachments_url)
+    ) {
+      return attachments_url;
+    }
+
+    // Saved attachments URL does not match current server (eg. on empty profile, or
+    // user switched remote environment), fetch it again from the server.
+    const { retries = 0, retryWaitMsec = 1000 } = options;
+    Utils._baseAttachmentsURLPromise = (async () => {
+      let retried = 0;
+      let serverInfo;
+      while (retried <= retries) {
+        try {
+          const resp = await Utils.fetch(`${Utils.SERVER_URL}/`);
+          if (!resp.ok) {
+            throw new Error(`Failed to fetch server info: ${resp.status}`);
+          }
+          serverInfo = await resp.json();
+          break;
+        } catch (error) {
+          retried++;
+          if (retried > retries) {
+            throw error;
+          }
+          await new Promise(resolve =>
+            setTimeout(resolve, retryWaitMsec * retried)
+          );
+        }
+      }
       // Server capabilities expose attachments configuration.
       const {
         capabilities: {
           attachments: { base_url },
         },
       } = serverInfo;
-      // Make sure the URL always has a trailing slash.
-      _cdnURLs[Utils.SERVER_URL] =
-        base_url + (base_url.endsWith("/") ? "" : "/");
+      Services.prefs.setStringPref(
+        "services.settings.base_attachments_url",
+        `${Utils.SERVER_URL}|${base_url}`
+      );
+      return base_url;
+    })();
+
+    try {
+      return await Utils._baseAttachmentsURLPromise;
+    } finally {
+      Utils._baseAttachmentsURLPromise = null;
     }
-    return _cdnURLs[Utils.SERVER_URL];
   },
 
   /**

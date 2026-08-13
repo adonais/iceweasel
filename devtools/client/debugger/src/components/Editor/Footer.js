@@ -28,6 +28,7 @@ import {
   areSourceMapsEnabled,
   getShouldSelectOriginalLocation,
   isSourceActorWithSourceMap,
+  isStyleSheetDisabled,
   getSourceMapResolvedURL,
   isSelectedMappedSourceLoading,
 } from "../../selectors/index";
@@ -57,9 +58,42 @@ class SourceFooter extends PureComponent {
       sourceLoaded: PropTypes.bool.isRequired,
       toggleBlackBox: PropTypes.func.isRequired,
       togglePaneCollapse: PropTypes.func.isRequired,
+      toggleStylesheetVisibility: PropTypes.func.isRequired,
       prettyPrintAndSelectSource: PropTypes.func.isRequired,
       isSourceOnIgnoreList: PropTypes.bool.isRequired,
+      isSelectedStyleSheetDisabled: PropTypes.func.isRequired,
     };
+  }
+
+  toggleVisibilityButton() {
+    const {
+      selectedLocation,
+      toggleStylesheetVisibility,
+      isSelectedStyleSheetDisabled,
+      selectedSource,
+    } = this.props;
+    if (
+      !selectedSource?.isStyleSheet ||
+      // There's a limitation with toggling non pretty printed original stylesheets,
+      // these will likely just toggle the whole bundle.
+      (selectedSource.isOriginal && !selectedSource.isPrettyPrinted)
+    ) {
+      return null;
+    }
+    return button(
+      {
+        onClick: () => {
+          toggleStylesheetVisibility(selectedLocation.sourceActor);
+        },
+        className: classnames("action", "toggleStyleSheetVisibility"),
+        key: "toggleStyleSheetVisibility",
+        title: L10N.getStr("sourceFooter.toggleStyleSheetVisibility"),
+        "aria-label": L10N.getStr("sourceFooter.toggleStyleSheetVisibility"),
+      },
+      React.createElement(DebuggerImage, {
+        name: isSelectedStyleSheetDisabled ? "eye-closed" : "eye-opened",
+      })
+    );
   }
 
   prettyPrintButton() {
@@ -171,6 +205,7 @@ class SourceFooter extends PureComponent {
 
   renderCommands() {
     const commands = [
+      this.toggleVisibilityButton(),
       this.blackBoxButton(),
       this.prettyPrintButton(),
       this.renderSourceMapButton(),
@@ -416,7 +451,7 @@ class SourceFooter extends PureComponent {
 SourceFooter.contextTypes = {
   toolboxDoc: PropTypes.object,
 };
-
+// eslint-disable-next-line complexity
 const mapStateToProps = state => {
   const selectedSource = getSelectedSource(state);
   const selectedLocation = getSelectedLocation(state);
@@ -449,6 +484,9 @@ const mapStateToProps = state => {
     isSourceOnIgnoreList:
       isSourceMapIgnoreListEnabled(state) &&
       isSourceOnSourceMapIgnoreList(state, selectedSource),
+    isSelectedStyleSheetDisabled: selectedSource?.isStyleSheet
+      ? isStyleSheetDisabled(state, selectedSource)
+      : false,
     sourceLoaded: !!sourceTextContent,
     mappedSource,
     isSourceMapLoading,
@@ -486,6 +524,7 @@ export default connect(mapStateToProps, {
   jumpToMappedLocation: actions.jumpToMappedLocation,
   togglePaneCollapse: actions.togglePaneCollapse,
   toggleSourceMapsEnabled: actions.toggleSourceMapsEnabled,
+  toggleStylesheetVisibility: actions.toggleStylesheetVisibility,
   setDefaultSelectedLocation: actions.setDefaultSelectedLocation,
   jumpToMappedSelectedLocation: actions.jumpToMappedSelectedLocation,
   openSourceMap: actions.openSourceMap,

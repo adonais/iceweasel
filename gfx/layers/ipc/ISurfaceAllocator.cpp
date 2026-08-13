@@ -4,10 +4,10 @@
 
 #include "ISurfaceAllocator.h"
 
-#include "mozilla/layers/ImageBridgeParent.h"  // for ImageBridgeParent
-#include "mozilla/layers/TextureHost.h"        // for TextureHost
-#include "mozilla/layers/TextureForwarder.h"
 #include "mozilla/layers/CompositableForwarder.h"
+#include "mozilla/layers/ImageBridgeParent.h"  // for ImageBridgeParent
+#include "mozilla/layers/TextureForwarder.h"
+#include "mozilla/layers/TextureHost.h"  // for TextureHost
 
 namespace mozilla {
 namespace layers {

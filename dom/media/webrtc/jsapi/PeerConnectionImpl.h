@@ -217,8 +217,9 @@ class PeerConnectionImpl final
   virtual const std::string& GetName();
 
   // ICE events
-  void IceConnectionStateChange(const std::string& aTransportId,
-                                dom::RTCIceTransportState state);
+  void IceConnectionStateChange(
+      const std::string& aTransportId, dom::RTCIceTransportState state,
+      const Maybe<dom::IceCandidateAttributePair>& aSelectedPair);
   void IceGatheringStateChange(const std::string& aTransportId,
                                dom::RTCIceGathererState state);
   void OnCandidateFound(const std::string& aTransportId,
@@ -503,9 +504,11 @@ class PeerConnectionImpl final
 
   void OnDtlsStateChange(const std::string& aTransportId,
                          TransportLayer::State aState,
-                         const nsTArray<nsTArray<uint8_t>>& aRemoteCerts);
+                         const nsTArray<nsTArray<uint8_t>>& aRemoteCerts,
+                         Maybe<dom::RTCErrorParams> aError);
   void OnRtcpStateChange(const std::string& aTransportId,
-                         TransportLayer::State aState);
+                         TransportLayer::State aState,
+                         Maybe<dom::RTCErrorParams> aError);
   dom::RTCPeerConnectionState GetNewConnectionState() const;
   // Returns whether we need to fire a state change event
   bool UpdateConnectionState();

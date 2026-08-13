@@ -3,7 +3,7 @@
  */
 "use strict";
 const { ManifestProcessor } = SpecialPowers.ChromeUtils.importESModule(
-  "resource://gre/modules/ManifestProcessor.sys.mjs"
+  "moz-src:///dom/manifest/ManifestProcessor.sys.mjs"
 );
 const processor = ManifestProcessor;
 const manifestURL = new URL(document.location.origin + "/manifest.json");

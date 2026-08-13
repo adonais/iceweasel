@@ -2,26 +2,27 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "mozilla/net/CookieJarSettings.h"
+
 #include "mozIThirdPartyUtil.h"
 #include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Components.h"
 #include "mozilla/ContentBlockingAllowList.h"
-#include "mozilla/dom/BrowsingContext.h"
-#include "mozilla/net/CookieJarSettings.h"
-#include "mozilla/net/NeckoChannelParams.h"
 #include "mozilla/Permission.h"
 #include "mozilla/PermissionManager.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StoragePrincipalHelper.h"
+#include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/net/NeckoChannelParams.h"
 #include "nsIPrincipal.h"
 #if defined(MOZ_THUNDERBIRD) || defined(MOZ_SUITE)
 #  include "nsIProtocolHandler.h"
 #endif
-#include "nsIClassInfoImpl.h"
 #include "nsIChannel.h"
+#include "nsIClassInfoImpl.h"
 #include "nsICookieManager.h"
 #include "nsICookieService.h"
 #include "nsIObjectInputStream.h"

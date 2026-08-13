@@ -13,6 +13,7 @@
 #include <map>
 
 #include "MFCDMExtra.h"
+#include "mozilla/Mutex.h"
 #include "nsISupportsImpl.h"
 
 namespace mozilla {
@@ -63,14 +64,21 @@ class MFCDMProxy {
  private:
   ~MFCDMProxy();
 
-  Microsoft::WRL::ComPtr<IMFContentDecryptionModule> mCDM;
+  void ResetTrustedInputUnlocked() MOZ_REQUIRES(mMutex);
+
+  // Serialises access to the guarded state below, which is reached from both
+  // the manager thread and Media Foundation worker threads.
+  mozilla::Mutex mMutex;
+
+  Microsoft::WRL::ComPtr<IMFContentDecryptionModule> mCDM
+      MOZ_GUARDED_BY(mMutex);
 
   // The same ITA is always mapping to the same stream Id.
   std::map<uint32_t /* stream Id */,
            Microsoft::WRL::ComPtr<IMFInputTrustAuthority>>
-      mInputTrustAuthorities;
+      mInputTrustAuthorities MOZ_GUARDED_BY(mMutex);
 
-  Microsoft::WRL::ComPtr<IMFTrustedInput> mTrustedInput;
+  Microsoft::WRL::ComPtr<IMFTrustedInput> mTrustedInput MOZ_GUARDED_BY(mMutex);
 
   const uint64_t mCDMParentId;
 

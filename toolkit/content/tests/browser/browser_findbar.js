@@ -260,9 +260,7 @@ add_task(async function e10sLostKeys() {
     }
   );
 
-  await BrowserTestUtils.waitForCondition(
-    () => findBar._findField.value.length == 3
-  );
+  await TestUtils.waitForCondition(() => findBar._findField.value.length == 3);
   is(document.activeElement, findBar._findField, "findbar is now focused");
   is(findBar._findField.value, "abc", "abc fully entered as find query");
 

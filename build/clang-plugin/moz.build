@@ -46,6 +46,7 @@ HOST_SOURCES += [
     "RefCountedCopyConstructorChecker.cpp",
     "RefCountedInsideLambdaChecker.cpp",
     "RefCountedThisInsideConstructorChecker.cpp",
+    "Registration.cpp",
     "ScopeChecker.cpp",
     "SprintfLiteralChecker.cpp",
     "SupportsWeakPtrCycleCollectionChecker.cpp",
@@ -64,6 +65,7 @@ if CONFIG["OS_ARCH"] == "WINNT":
     ]
 
 if CONFIG["ENABLE_MOZSEARCH_PLUGIN"]:
+    HOST_DEFINES["ENABLE_MOZSEARCH_PLUGIN"] = True
     HOST_SOURCES += [
         "mozsearch-plugin/BindingOperations.cpp",
         "mozsearch-plugin/FileOperations.cpp",

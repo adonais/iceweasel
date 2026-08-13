@@ -1357,8 +1357,8 @@ void WebGLContext::UniformData(
   // -
 
   const auto lengthInType = data.size();
-  const auto elemCount = lengthInType / channels;
-  if (elemCount > 1 && !validationInfo.isArray) {
+  const size_t availElemCount = lengthInType / channels;
+  if (availElemCount > 1 && !validationInfo.isArray) {
     GenerateError(
         LOCAL_GL_INVALID_OPERATION,
         "(uniform %s) `values` length (%u) must exactly match size of %s.",
@@ -1366,6 +1366,10 @@ void WebGLContext::UniformData(
         EnumString(activeInfo.elemType).c_str());
     return;
   }
+  const size_t elemCount =
+      validationInfo.isArray
+          ? std::min(availElemCount, size_t(activeInfo.elemCount))
+          : availElemCount;
 
   // -
 

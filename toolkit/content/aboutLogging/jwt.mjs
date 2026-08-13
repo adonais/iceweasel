@@ -4,8 +4,8 @@
 // @flow
 
 // This file provides simple utils to deal with JWT tokens.
-// It was copied from https://github.com/firefox-devtools/profiler/blob/main/src/utils/jwt.js
-// and transformed to use typescript jsdocs instead flow types (even though it's
+// It was copied from https://github.com/firefox-devtools/profiler/blob/main/src/utils/jwt.ts
+// and transformed to use typescript jsdocs instead TS types (even though it's
 // not TS-checked at the moment).
 
 /**

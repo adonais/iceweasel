@@ -23,7 +23,6 @@
 #include <type_traits>
 
 #include "js/WasmFeatures.h"
-
 #include "wasm/WasmBinaryTypes.h"
 #include "wasm/WasmCompile.h"
 #include "wasm/WasmCompileArgs.h"

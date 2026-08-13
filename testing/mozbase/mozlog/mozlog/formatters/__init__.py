@@ -7,6 +7,7 @@ from .grouping import GroupingFormatter
 from .html import HTMLFormatter
 from .machformatter import MachFormatter
 from .tbplformatter import TbplFormatter
+from .testsummary import TestSummaryFormatter
 from .unittest import UnittestFormatter
 from .xunit import XUnitFormatter
 
@@ -27,6 +28,7 @@ __all__ = [
     "MachFormatter",
     "TbplFormatter",
     "ErrorSummaryFormatter",
+    "TestSummaryFormatter",
     "JSONFormatter",
     "GroupingFormatter",
 ]

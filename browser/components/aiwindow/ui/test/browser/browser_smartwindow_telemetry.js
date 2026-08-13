@@ -367,24 +367,17 @@ add_task(async function test_memories_count_metric() {
     {
       id: "memory-history",
       memory_summary: "User is vegan",
-      category: "preference",
-      intent: "profile",
-      reasoning: "Test memory",
-      score: 0.5,
-      updated_at: Date.now(),
-      is_deleted: false,
-      source: "history",
+      sources: ["history"],
     },
     {
       id: "memory-conversation",
       memory_summary: "User has a cat",
-      category: "personal",
-      intent: "profile",
-      reasoning: "Test memory",
-      score: 0.5,
-      updated_at: Date.now(),
-      is_deleted: false,
-      source: "conversation",
+      sources: ["conversation"],
+    },
+    {
+      id: "memory-session",
+      memory_summary: "User researches firefox privacy",
+      sources: ["session"],
     },
   ];
   for (const memory of memories) {
@@ -394,9 +387,10 @@ add_task(async function test_memories_count_metric() {
   await TestUtils.waitForCondition(() => {
     return (
       Glean.smartWindow.memoriesCount.history.testGetValue() === 1 &&
-      Glean.smartWindow.memoriesCount.conversation.testGetValue() === 1
+      Glean.smartWindow.memoriesCount.conversation.testGetValue() === 1 &&
+      Glean.smartWindow.memoriesCount.session.testGetValue() === 1
     );
-  }, "memories_count should record history and conversation counts");
+  }, "memories_count should record history, conversation and session counts");
 
   for (const memory of memories) {
     await MemoryStore.hardDeleteMemory(memory.id, "other");

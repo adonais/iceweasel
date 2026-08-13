@@ -16,6 +16,7 @@ ChromeUtils.defineLazyGetter(lazy, "gFluentStrings", function () {
 });
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
   FirefoxProfileMigrator: "resource:///modules/FirefoxProfileMigrator.sys.mjs",
   InternalTestingProfileMigrator:
     "resource:///modules/InternalTestingProfileMigrator.sys.mjs",
@@ -168,6 +169,16 @@ export class MigrationWizardParent extends JSWindowActorParent {
       case "OpenURL": {
         let browser = this.browsingContext.topChromeWindow;
         this.#openURL(browser, message.data.url, message.data.where);
+        break;
+      }
+
+      case "LaunchMacOSPasswordsApp": {
+        let pwAppFile = lazy.FileUtils.File(
+          "/System/Applications/Passwords.app"
+        );
+        if (await IOUtils.exists(pwAppFile.path)) {
+          pwAppFile.launch();
+        }
         break;
       }
     }

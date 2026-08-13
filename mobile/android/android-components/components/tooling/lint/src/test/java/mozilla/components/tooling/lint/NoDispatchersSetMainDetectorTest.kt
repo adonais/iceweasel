@@ -67,7 +67,6 @@ class NoDispatchersSetMainDetectorTest : LintDetectorTest() {
     @Test
     fun `GIVEN a test file, WHEN Dispatchers_setMain is called THEN expect lint error`() {
         lint()
-            .allowMissingSdk()
             .files(dispatcherStub, setMainUsage)
             .run()
             .expectErrorCount(1)
@@ -81,7 +80,6 @@ class NoDispatchersSetMainDetectorTest : LintDetectorTest() {
     @Test
     fun `GIVEN a test file, WHEN Dispatchers_resetMain is called THEN expect lint error`() {
         lint()
-            .allowMissingSdk()
             .files(dispatcherStub, resetMainUsage)
             .run()
             .expectErrorCount(1)
@@ -109,7 +107,6 @@ class NoDispatchersSetMainDetectorTest : LintDetectorTest() {
         ).indented()
 
         lint()
-            .allowMissingSdk()
             .files(dispatcherStub, cleanUsage)
             .run()
             .expectClean()

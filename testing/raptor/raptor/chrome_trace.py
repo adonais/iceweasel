@@ -79,7 +79,7 @@ class ChromeTrace(RaptorProfiling):
             for profile_info in profiles:
                 profile_path = profile_info["path"]
 
-                LOG.info("Opening profile at %s" % profile_path)
+                LOG.info(f"Opening profile at {profile_path}")
                 try:
                     profile = self._open_profile_file(profile_path)
                 except FileNotFoundError:
@@ -95,7 +95,7 @@ class ChromeTrace(RaptorProfiling):
                         if test_type == "pageload"
                         else test_type
                     )
-                    folder_name = "%s-%s" % (self.test_config["name"], test_run_type)
+                    folder_name = f"{self.test_config['name']}-{test_run_type}"
                     iteration = Path(profile_path).parts[-1].split("-")[-1]
                     if test_type == "pageload" and profile_info["type"] == "cold":
                         iteration_type = "browser-cycle"
@@ -107,8 +107,8 @@ class ChromeTrace(RaptorProfiling):
                     path_in_zip = Path(folder_name, profile_name)
 
                     LOG.info(
-                        "Adding profile %s to archive %s as %s"
-                        % (profile_path, self.profile_arcname, path_in_zip)
+                        f"Adding profile {profile_path} to archive "
+                        f"{self.profile_arcname} as {path_in_zip}"
                     )
                     arc.writestr(
                         str(path_in_zip),
@@ -116,8 +116,8 @@ class ChromeTrace(RaptorProfiling):
                     )
                 except Exception:
                     LOG.exception(
-                        "Failed to add profile %s to archive %s"
-                        % (profile_path, self.profile_arcname)
+                        f"Failed to add profile {profile_path} to archive "
+                        f"{self.profile_arcname}"
                     )
                     raise
 
@@ -133,4 +133,4 @@ class ChromeTrace(RaptorProfiling):
         """
         Clean up temp folders created with the instance creation.
         """
-        mozfile.remove(self.temp_profile_dir)
+        super().clean()

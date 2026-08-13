@@ -27,9 +27,10 @@ nsresult NS_CopyUnicodeToNative(const nsAString& aInput, nsACString& aOutput) {
 #else
 
 #  include <windows.h>
-#  include "nsString.h"
+
 #  include "nsAString.h"
 #  include "nsReadableUtils.h"
+#  include "nsString.h"
 
 using namespace mozilla;
 

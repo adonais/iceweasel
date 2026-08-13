@@ -10,6 +10,7 @@
 #include "nsClassHashtable.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
+#include "nsHashKeys.h"
 #include "nsServiceManagerUtils.h"
 #include "plhash.h"
 #include "prio.h"
@@ -307,7 +308,7 @@ class GMPDiskStorage : public GMPStorage {
       return rv;
     }
 
-    uint64_t recordNameHash = HashString(PromiseFlatCString(aRecordName).get());
+    uint64_t recordNameHash = HashString(aRecordName);
     for (int i = 0; i < 1000000; i++) {
       nsCOMPtr<nsIFile> f;
       rv = storageDir->Clone(getter_AddRefs(f));
@@ -434,7 +435,7 @@ class GMPDiskStorage : public GMPStorage {
 
   struct Record {
     Record(const nsAString& aFilename, const nsACString& aRecordName)
-        : mFilename(aFilename), mRecordName(aRecordName), mFileDesc(0) {}
+        : mFilename(aFilename), mRecordName(aRecordName), mFileDesc(nullptr) {}
     ~Record() { MOZ_ASSERT(!mFileDesc); }
     nsString mFilename;
     nsCString mRecordName;

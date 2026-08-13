@@ -95,6 +95,10 @@ class TransportLayerDtls final : public TransportLayer {
   // while the layer is in TS_OPEN; must be called on the STS thread.
   nsTArray<nsTArray<uint8_t>> GetPeerCertChainDer() const;
 
+  // Returns the DER-encoded local certificate, or an empty array if no
+  // identity has been set. Must be called on the STS thread.
+  nsTArray<uint8_t> GetLocalCertDer() const;
+
   nsresult SetSrtpCiphers(const std::vector<uint16_t>& ciphers);
   nsresult GetSrtpCipher(uint16_t* cipher) const;
   static std::vector<uint16_t> GetDefaultSrtpCiphers();
@@ -120,6 +124,14 @@ class TransportLayerDtls final : public TransportLayer {
   }
 
   TRANSPORT_LAYER_ID("dtls")
+
+  Maybe<SSLAlertDescription> GetReceivedAlert() const { return mReceivedAlert; }
+
+  Maybe<SSLAlertDescription> GetSentAlert() const { return mSentAlert; }
+
+  bool HasFingerprintError() const { return mHasFingerprintError; }
+
+  const std::string& GetErrorDescription() const { return mErrorDescription; }
 
  protected:
   void SetState(State state, const char* file, unsigned line) override;
@@ -160,6 +172,10 @@ class TransportLayerDtls final : public TransportLayer {
   static SECStatus HandleSrtpXtn(PRFileDesc* fd, SSLHandshakeType message,
                                  const uint8_t* data, unsigned int len,
                                  SSLAlertDescription* alert, void* arg);
+  static void SentAlertCallback(const PRFileDesc* fd, void* arg,
+                                const SSLAlert* alert);
+  static void ReceivedAlertCallback(const PRFileDesc* fd, void* arg,
+                                    const SSLAlert* alert);
 
   RefPtr<DtlsIdentity> identity_;
   // What ALPN identifiers are permitted.
@@ -190,6 +206,12 @@ class TransportLayerDtls final : public TransportLayer {
 
   // We record once the fact that the handshake was started
   bool handshakeTelemetryRecorded = false;
+
+  // Error reporting
+  Maybe<SSLAlertDescription> mSentAlert;
+  Maybe<SSLAlertDescription> mReceivedAlert;
+  std::string mErrorDescription;
+  bool mHasFingerprintError = false;
 };
 
 }  // namespace mozilla

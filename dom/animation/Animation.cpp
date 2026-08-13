@@ -178,7 +178,7 @@ already_AddRefed<Animation> Animation::Constructor(
 
   RefPtr<Animation> animation = new Animation(global);
   // JS side can't refer to timeline by name.
-  animation->SetTimelineNoUpdate(timeline, nullptr, FromJS::Yes);
+  animation->SetTimelineNoUpdate(timeline, {}, FromJS::Yes);
   animation->SetEffectNoUpdate(aEffect);
 
   return animation.forget();
@@ -300,14 +300,15 @@ void Animation::SetTimelineFromJS(AnimationTimeline* aTimeline) {
   TimelineWillSetFromJS();
   // Can't refer to timeline by name from JS side.
   const auto prevTimelineName = GetTimelineName();
-  SetTimeline(aTimeline, nullptr, FromJS::Yes);
-  if (prevTimelineName) {
-    RemovedNamedTimelineReferenceFromJS(prevTimelineName);
+  SetTimeline(aTimeline, {}, FromJS::Yes);
+  if (prevTimelineName.mName) {
+    RemovedNamedTimelineReferenceFromJS(prevTimelineName.mName);
   }
 }
 
 bool Animation::SetTimeline(AnimationTimeline* aTimeline,
-                            const nsAtom* aTimelineName, FromJS aFromJS) {
+                            const ScopedTimelineName& aTimelineName,
+                            FromJS aFromJS) {
   const auto updated = SetTimelineNoUpdate(aTimeline, aTimelineName, aFromJS);
   PostUpdate();
   return updated;
@@ -315,7 +316,7 @@ bool Animation::SetTimeline(AnimationTimeline* aTimeline,
 
 // https://drafts.csswg.org/web-animations-2/#setting-the-timeline
 bool Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
-                                    const nsAtom* aTimelineName,
+                                    const ScopedTimelineName& aTimelineName,
                                     FromJS aFromJS) {
   if (aFromJS == FromJS::No && TimelineOverridenByJS()) {
     return false;
@@ -326,7 +327,7 @@ bool Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
   if (mTimeline == aTimeline) {
     // nullptr -> nullptr but going from/to named timeline is significant.
     if (mTimelineName != aTimelineName) {
-      mTimelineName = aTimelineName;
+      mTimelineName = OwningScopedTimelineName{aTimelineName};
     }
     // Timeline still didn't update, so...
     return false;
@@ -373,7 +374,7 @@ bool Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
     oldTimeline->RemoveAnimation(this);
   }
   mTimeline = aTimeline;
-  mTimelineName = aTimelineName;
+  mTimelineName = OwningScopedTimelineName{aTimelineName};
   // Update the normalized timing and keyframe timeline range ofset because we
   // are using the new timeline.
   if (mEffect) {
@@ -600,7 +601,7 @@ Nullable<double> Animation::GetOverallProgress() const {
 
   const StickyTimeDuration endTime = EffectEnd();
   if (endTime.IsZero()) {
-    if (currentTime.Value() < TimeDuration(0)) {
+    if (currentTime.Value() < TimeDuration()) {
       result.SetValue(0.0);
     } else {
       result.SetValue(1.0);
@@ -860,7 +861,7 @@ void Animation::Finish(ErrorResult& aRv) {
 
   // Seek to the end
   TimeDuration limit =
-      PlaybackRateInternal() > 0 ? TimeDuration(EffectEnd()) : TimeDuration(0);
+      PlaybackRateInternal() > 0 ? TimeDuration(EffectEnd()) : TimeDuration();
   bool didChange = GetCurrentTimeAsDuration() != Nullable<TimeDuration>(limit);
   SilentlySetCurrentTime(limit);
 
@@ -1794,7 +1795,7 @@ void Animation::Pause(ErrorResult& aRv) {
       // below:
       if (PlaybackRateInternal() >= 0.0) {
         // If animation’s playback rate is ≥ 0, set hold time to zero.
-        mHoldTime.SetValue(TimeDuration(0));
+        mHoldTime.SetValue(TimeDuration());
       } else {
         if (EffectEnd() == TimeDuration::Forever()) {
           // If associated effect end for animation is positive infinity, throw
@@ -1949,9 +1950,9 @@ void Animation::UpdateFinishedState(SeekFlag aSeekFlag,
         mHoldTime = unconstrainedCurrentTime;
       } else if (!mPreviousCurrentTime.IsNull()) {
         mHoldTime.SetValue(
-            std::min(mPreviousCurrentTime.Value(), TimeDuration(0)));
+            std::min(mPreviousCurrentTime.Value(), TimeDuration()));
       } else {
-        mHoldTime.SetValue(0);
+        mHoldTime.SetValue(TimeDuration());
       }
     } else if (PlaybackRateInternal() != 0.0 && mTimeline &&
                !mTimeline->GetCurrentTimeAsDuration().IsNull()) {
@@ -2093,7 +2094,7 @@ void Animation::MaybeUpdateKeyframeComputedOffsets() {
 
 StickyTimeDuration Animation::EffectEnd() const {
   if (!mEffect) {
-    return StickyTimeDuration(0);
+    return StickyTimeDuration();
   }
 
   // FIXME: The definition of end time in web-animation-1 is different from that

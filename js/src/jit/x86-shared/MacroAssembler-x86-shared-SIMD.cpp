@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "jit/MacroAssembler.h"
+
 #include "jit/x86-shared/MacroAssembler-x86-shared.h"
 
 #include "jit/MacroAssembler-inl.h"

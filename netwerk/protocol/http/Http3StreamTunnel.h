@@ -6,8 +6,8 @@
 #define mozilla_net_Http3StreamTunnel_h
 
 #include "Http3Stream.h"
-#include "nsHttpConnection.h"
 #include "SimpleBuffer.h"
+#include "nsHttpConnection.h"
 
 namespace mozilla::net {
 

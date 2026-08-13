@@ -149,3 +149,4 @@ class SimpleperfProfile(RaptorProfiling):
     def clean(self):
         if self.breakpad_symbol_dir and self.breakpad_symbol_dir.exists():
             shutil.rmtree(self.breakpad_symbol_dir)
+        super().clean()

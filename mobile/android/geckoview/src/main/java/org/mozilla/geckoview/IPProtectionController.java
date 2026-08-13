@@ -12,6 +12,8 @@ import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.util.BundleEventListener;
@@ -25,6 +27,7 @@ public class IPProtectionController {
   private static final String LOGTAG = "IPProtectionController";
   private Delegate mDelegate;
   private AuthProvider mAuthProvider;
+  private GpiProvider mGpiProvider;
   private final BundleEventListener mEventListener;
 
   /** The possible states of the IP protection service. */
@@ -153,7 +156,10 @@ public class IPProtectionController {
     }
   }
 
-  /** Holds information about the current IP proxy usage. */
+  /**
+   * Holds information about the current IP proxy usage. Whenever remaining,max and resetTime are
+   * equal to 0, this means there are no usage restrictions for the current User at the time.
+   */
   public static class UsageInfo {
     /** Remaining usage allowance in bytes. */
     public final long remaining;
@@ -178,11 +184,67 @@ public class IPProtectionController {
     }
   }
 
+  /** A country available in the proxy serverlist. */
+  public static class Country {
+    /** ISO 3166-1 alpha-2 country code. */
+    public final @NonNull String code;
+
+    /** Whether the country has at least one available (non-quarantined) server. */
+    public final boolean available;
+
+    /**
+     * Creates a country.
+     *
+     * @param code ISO 3166-1 alpha-2 country code.
+     * @param available Whether the country has at least one available server.
+     */
+    public Country(final @NonNull String code, final boolean available) {
+      this.code = code;
+      this.available = available;
+    }
+
+    /* package */ Country(final @NonNull GeckoBundle bundle) {
+      this(bundle.getString("code", ""), bundle.getBoolean("available", true));
+    }
+  }
+
+  /** Embedder-provided hooks for Google Play Integrity authentication. */
+  public interface GpiProvider {
+    /**
+     * Called when Gecko requests GPI warm-up. The returned {@link GeckoResult} should resolve once
+     * warm-up is complete. On success the controller dispatches {@code
+     * GeckoView:IPProtection:GPI:WarmUpCompleted} to Gecko; on failure {@code
+     * GeckoView:IPProtection:GPI:WarmUpFailed} is dispatched so the auth provider can fall back to
+     * FxA.
+     *
+     * @return A {@link GeckoResult} that resolves when warm-up finishes.
+     */
+    @UiThread
+    default @NonNull GeckoResult<Void> warmUp() {
+      return GeckoResult.fromValue(null);
+    }
+
+    /**
+     * Invoked by Gecko to obtain a fresh GPI integrity token from the embedder. This is triggered
+     * during enrollment with the Guardian backend when the user turns on IP Protection, or when the
+     * cached auth token has expired and must be renewed.
+     *
+     * <p>To signal that no token is available, return a {@link GeckoResult} that rejects or
+     * resolves to {@code null} or an empty string.
+     *
+     * @return A {@link GeckoResult} that resolves to a non-empty token string.
+     */
+    @UiThread
+    default @NonNull GeckoResult<String> onTokenRequest() {
+      return GeckoResult.fromException(new RuntimeException(ERROR_NO_GPI_TOKEN));
+    }
+  }
+
   /** Embedder-provided hooks for authentication. */
   public interface AuthProvider {
     /**
-     * Returns a fresh authentication token. Called for every Guardian API request; the implementer
-     * is responsible for caching and refreshing.
+     * Invoked by Gecko to obtain a fresh authentication token from the embedder. Called for every
+     * Guardian API request; the implementer is responsible for caching and refreshing.
      *
      * <p>The token must have the "https://identity.mozilla.com/apps/vpn" scope.
      *
@@ -193,7 +255,7 @@ public class IPProtectionController {
      * @return A {@link GeckoResult} that resolves to a non-empty token string.
      */
     @UiThread
-    default @NonNull GeckoResult<String> getToken() {
+    default @NonNull GeckoResult<String> onTokenRequest() {
       return GeckoResult.fromException(new RuntimeException(ERROR_NO_TOKEN));
     }
   }
@@ -223,6 +285,15 @@ public class IPProtectionController {
      */
     @UiThread
     default void onUsageChanged(final @NonNull UsageInfo info) {}
+
+    /**
+     * Called when the proxy serverlist changes, either in response to {@link
+     * IPProtectionController#getCountryList()} or whenever the underlying list is replaced.
+     *
+     * @param countries The current list of available {@link Country countries}.
+     */
+    @UiThread
+    default void onCountryListChanged(final @NonNull List<Country> countries) {}
   }
 
   /* package */ IPProtectionController() {
@@ -233,7 +304,10 @@ public class IPProtectionController {
             "GeckoView:IPProtection:IPProtectionService:StateChanged",
             "GeckoView:IPProtection:IPPProxyManager:StateChanged",
             "GeckoView:IPProtection:IPPProxyManager:UsageChanged",
-            "GeckoView:IPProtection:GetToken");
+            "GeckoView:IPProtection:ServerList:ListChanged",
+            "GeckoView:IPProtection:GetToken",
+            "GeckoView:IPProtection:GPI:WarmUp",
+            "GeckoView:IPProtection:GPI:RequestToken");
   }
 
   /**
@@ -301,6 +375,30 @@ public class IPProtectionController {
   }
 
   /**
+   * Sets the {@link GpiProvider} used to handle Google Play Integrity warm-up and token requests.
+   * Pass {@code null} to clear the provider.
+   *
+   * @param provider The {@link GpiProvider}, or {@code null} to clear.
+   */
+  @UiThread
+  public void setGpiProvider(final @Nullable GpiProvider provider) {
+    ThreadUtils.assertOnUiThread();
+    mGpiProvider = provider;
+  }
+
+  /**
+   * Gets the {@link GpiProvider} for this instance.
+   *
+   * @return The {@link GpiProvider} instance, or {@code null} if none is set.
+   */
+  @UiThread
+  @Nullable
+  public GpiProvider getGpiProvider() {
+    ThreadUtils.assertOnUiThread();
+    return mGpiProvider;
+  }
+
+  /**
    * Notifies the IP protection service of a sign-in state change. The service recomputes its state
    * and may transition in or out of {@link #SERVICE_STATE_UNAUTHENTICATED}.
    *
@@ -358,6 +456,31 @@ public class IPProtectionController {
   }
 
   /**
+   * Requests the list of countries available in the proxy serverlist. The list is delivered
+   * asynchronously via {@link Delegate#onCountryListChanged(List)}, which is also invoked whenever
+   * the underlying serverlist changes.
+   *
+   * @return A {@link GeckoResult} that resolves once the request has been processed.
+   */
+  @HandlerThread
+  public @NonNull GeckoResult<Void> getCountryList() {
+    ThreadUtils.assertOnHandlerThread();
+    return EventDispatcher.getInstance()
+        .queryVoid("GeckoView:IPProtection:ServerList:GetCountryList");
+  }
+
+  private static @NonNull List<Country> countriesFromBundle(final @NonNull GeckoBundle bundle) {
+    final List<Country> result = new ArrayList<>();
+    final GeckoBundle[] countries = bundle.getBundleArray("countries");
+    if (countries != null) {
+      for (final GeckoBundle country : countries) {
+        result.add(new Country(country));
+      }
+    }
+    return result;
+  }
+
+  /**
    * Gets the current IP proxy state.
    *
    * @return A {@link GeckoResult} that resolves to a {@link ProxyState}.
@@ -371,16 +494,40 @@ public class IPProtectionController {
   }
 
   /**
-   * Activates the IP proxy.
+   * Activates the IP proxy by user action, in a non-private context, using the recommended
+   * location.
    *
    * @return A {@link GeckoResult} that resolves when activated, or rejects with an {@link
    *     IPProxyException} describing the failure.
    */
   @HandlerThread
   public @NonNull GeckoResult<Void> activate() {
+    return activate(true, false, null);
+  }
+
+  /**
+   * Activates the IP proxy.
+   *
+   * @param userAction Whether activation was triggered by an explicit user action, as opposed to a
+   *     system action.
+   * @param inPrivateBrowsing Whether activation was triggered from a private browsing context.
+   * @param country The ISO 3166-1 alpha-2 code of the country to route through, or {@code null} to
+   *     use the recommended location.
+   * @return A {@link GeckoResult} that resolves when activated, or rejects with an {@link
+   *     IPProxyException} describing the failure.
+   */
+  @HandlerThread
+  public @NonNull GeckoResult<Void> activate(
+      final boolean userAction, final boolean inPrivateBrowsing, final @Nullable String country) {
     ThreadUtils.assertOnHandlerThread();
+    final GeckoBundle bundle = new GeckoBundle(3);
+    bundle.putBoolean("userAction", userAction);
+    bundle.putBoolean("inPrivateBrowsing", inPrivateBrowsing);
+    if (country != null) {
+      bundle.putString("country", country);
+    }
     return EventDispatcher.getInstance()
-        .queryVoid("GeckoView:IPProtection:Activate")
+        .queryVoid("GeckoView:IPProtection:Activate", bundle)
         .map(
             null,
             e ->
@@ -418,6 +565,21 @@ public class IPProtectionController {
         .map(null, e -> new IPProxyException(IPProxyException.ERROR_UNKNOWN));
   }
 
+  /**
+   * Requests a refresh of the proxy usage information. The updated usage will be delivered
+   * asynchronously via {@link Delegate#onUsageChanged(UsageInfo)}.
+   *
+   * @return A {@link GeckoResult} that resolves when the refresh request has been processed, or
+   *     rejects with an {@link IPProxyException} if an unexpected error occurs.
+   */
+  @HandlerThread
+  public @NonNull GeckoResult<Void> refreshUsage() {
+    ThreadUtils.assertOnHandlerThread();
+    return EventDispatcher.getInstance()
+        .queryVoid("GeckoView:IPProtection:RefreshUsage")
+        .map(null, e -> new IPProxyException(IPProxyException.ERROR_UNKNOWN));
+  }
+
   /** Exception type for IP proxy errors. */
   public static class IPProxyException extends RuntimeException {
 
@@ -439,6 +601,12 @@ public class IPProtectionController {
     /** Activation was canceled (e.g. deactivate was called mid-activation). */
     public static final int ERROR_ACTIVATION_CANCELED = -6;
 
+    /** The proxy service failed in a way it cannot recover from. */
+    public static final int ERROR_CATASTROPHIC = -7;
+
+    /** The proxy is not available in the region of the user. */
+    public static final int ERROR_VPN_UNAVAILABLE = -8;
+
     /** Error codes for {@link IPProxyException}. */
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
@@ -449,6 +617,8 @@ public class IPProtectionController {
           ERROR_PASS_UNAVAILABLE,
           ERROR_SERVER_NOT_FOUND,
           ERROR_ACTIVATION_CANCELED,
+          ERROR_CATASTROPHIC,
+          ERROR_VPN_UNAVAILABLE,
         })
     public @interface Code {}
 
@@ -481,6 +651,10 @@ public class IPProtectionController {
           return new IPProxyException(ERROR_SERVER_NOT_FOUND);
         case "activation-canceled":
           return new IPProxyException(ERROR_ACTIVATION_CANCELED);
+        case "catastrophic-error":
+          return new IPProxyException(ERROR_CATASTROPHIC);
+        case "vpn-unavailable":
+          return new IPProxyException(ERROR_VPN_UNAVAILABLE);
         default:
           return new IPProxyException(ERROR_UNKNOWN);
       }
@@ -489,6 +663,8 @@ public class IPProtectionController {
 
   private static final String ERROR_NO_AUTH_PROVIDER = "no-auth-provider";
   private static final String ERROR_NO_TOKEN = "no-token";
+  private static final String ERROR_NO_GPI_PROVIDER = "no-gpi-provider";
+  private static final String ERROR_NO_GPI_TOKEN = "no-gpi-token";
 
   private class EventListener implements BundleEventListener {
     @Override
@@ -505,17 +681,61 @@ public class IPProtectionController {
         case "GeckoView:IPProtection:IPPProxyManager:UsageChanged":
           withDelegate(event, d -> d.onUsageChanged(new UsageInfo(message)));
           break;
+        case "GeckoView:IPProtection:ServerList:ListChanged":
+          withDelegate(event, d -> d.onCountryListChanged(countriesFromBundle(message)));
+          break;
         case "GeckoView:IPProtection:GetToken":
           {
             final AuthProvider provider = tryAuthProvider(event, callback);
             if (provider == null) return;
             callback.resolveTo(
                 provider
-                    .getToken()
+                    .onTokenRequest()
                     .map(
                         token -> {
                           if (token == null || token.isEmpty()) {
                             throw new RuntimeException(ERROR_NO_TOKEN);
+                          }
+                          final GeckoBundle result = new GeckoBundle(1);
+                          result.putString("token", token);
+                          return result;
+                        }));
+            break;
+          }
+        case "GeckoView:IPProtection:GPI:WarmUp":
+          {
+            final GpiProvider gpiProvider = mGpiProvider;
+            if (gpiProvider == null) {
+              Log.w(LOGTAG, "Received " + event + " but no GPI provider is set");
+              break;
+            }
+            gpiProvider
+                .warmUp()
+                .then(
+                    v -> {
+                      EventDispatcher.getInstance()
+                          .dispatch("GeckoView:IPProtection:GPI:WarmUpCompleted", null);
+                      return null;
+                    },
+                    e -> {
+                      Log.w(LOGTAG, "GPI warm-up failed", e);
+                      EventDispatcher.getInstance()
+                          .dispatch("GeckoView:IPProtection:GPI:WarmUpFailed", null);
+                      return null;
+                    });
+            break;
+          }
+        case "GeckoView:IPProtection:GPI:RequestToken":
+          {
+            final GpiProvider gpiProvider = tryGpiProvider(event, callback);
+            if (gpiProvider == null) return;
+            callback.resolveTo(
+                gpiProvider
+                    .onTokenRequest()
+                    .map(
+                        token -> {
+                          if (token == null || token.isEmpty()) {
+                            throw new RuntimeException(ERROR_NO_GPI_TOKEN);
                           }
                           final GeckoBundle result = new GeckoBundle(1);
                           result.putString("token", token);
@@ -542,6 +762,15 @@ public class IPProtectionController {
         return null;
       }
       return mAuthProvider;
+    }
+
+    private @Nullable GpiProvider tryGpiProvider(final String event, final EventCallback callback) {
+      if (mGpiProvider == null) {
+        Log.w(LOGTAG, "Received event " + event + " but no GPI provider is set");
+        callback.sendError(ERROR_NO_GPI_PROVIDER);
+        return null;
+      }
+      return mGpiProvider;
     }
   }
 }

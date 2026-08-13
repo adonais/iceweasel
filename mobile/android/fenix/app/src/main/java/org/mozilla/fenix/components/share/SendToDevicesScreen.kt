@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -114,7 +115,7 @@ private fun SendToAllItem(onSendToAll: () -> Unit) {
     MenuGroup {
         MenuItem(
             label = stringResource(id = R.string.sync_send_to_all),
-            beforeIconPainter = painterResource(id = IconsR.drawable.mozac_ic_select_all),
+            beforeIconPainter = painterResource(id = IconsR.drawable.mozac_ic_select_all_24),
             onClick = onSendToAll,
         )
     }
@@ -157,26 +158,34 @@ private fun previewDevice(name: String, type: DeviceType) = SyncShareOption.Sing
 @Preview
 @Composable
 private fun SendToDevicesContentWithDevicesPreview() {
-    SendToDevicesContent(
-        uiState = ShareViewModel.ShareUiState(
-            devices = listOf(
-                previewDevice("My Phone", DeviceType.MOBILE),
-                previewDevice("My Laptop", DeviceType.DESKTOP),
-            ),
-        ),
-        onDismiss = {},
-        onSendToDevice = {},
-        onSendToAll = {},
-    )
+    FirefoxTheme {
+        Surface {
+            SendToDevicesContent(
+                uiState = ShareViewModel.ShareUiState(
+                    devices = listOf(
+                        previewDevice("My Phone", DeviceType.MOBILE),
+                        previewDevice("My Laptop", DeviceType.DESKTOP),
+                    ),
+                ),
+                onDismiss = {},
+                onSendToDevice = {},
+                onSendToAll = {},
+            )
+        }
+    }
 }
 
 @Preview
 @Composable
 private fun SendToDevicesContentNoDevicesPreview() {
-    SendToDevicesContent(
-        uiState = ShareViewModel.ShareUiState(devices = emptyList()),
-        onDismiss = {},
-        onSendToDevice = {},
-        onSendToAll = {},
-    )
+    FirefoxTheme {
+        Surface {
+            SendToDevicesContent(
+                uiState = ShareViewModel.ShareUiState(devices = emptyList()),
+                onDismiss = {},
+                onSendToDevice = {},
+                onSendToAll = {},
+            )
+        }
+    }
 }

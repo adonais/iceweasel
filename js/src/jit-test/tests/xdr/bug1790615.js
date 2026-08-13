@@ -1,4 +1,4 @@
-// |jit-test| --fuzzing-safe; --cpu-count=2; --ion-offthread-compile=off; skip-if: !isAsmJSCompilationAvailable()
+// |jit-test| --fuzzing-safe; --cpu-count=2; --ion-offthread-compile=off
 
 load(libdir + "asserts.js");
 
@@ -15,5 +15,4 @@ function f(i,j) {
 return f
 `);
 let g80 = newGlobal({newCompartment: true});
-// Compiling to a Stencil XDR should fail because XDR encoding does not support asm.js
-assertThrowsInstanceOf(() => g80.compileToStencilXDR(code, {}), g80.Error);
+g80.compileToStencilXDR(code, {});

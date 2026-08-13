@@ -116,7 +116,11 @@ export class MozLitElement extends LitElement {
       if (attrName.startsWith("aria")) {
         domAttrName = domAttrName.replace("aria", "aria-");
       }
-      this.mappedAttributes ??= [];
+      // Give this class its own array so we don't mutate the one we inherit
+      // from an ancestor, which would leak our attributes into every sibling.
+      if (!Object.hasOwn(this, "mappedAttributes")) {
+        this.mappedAttributes = [...(this.mappedAttributes ?? [])];
+      }
       this.mappedAttributes.push([attrName, domAttrPropertyName]);
       options.state = true;
       super.createProperty(domAttrPropertyName, {
@@ -126,7 +130,10 @@ export class MozLitElement extends LitElement {
       });
     }
     if (options.fluent) {
-      this.fluentProperties ??= [];
+      // Same as above: give this class its own array.
+      if (!Object.hasOwn(this, "fluentProperties")) {
+        this.fluentProperties = [...(this.fluentProperties ?? [])];
+      }
       this.fluentProperties.push(options.attribute || attrName.toLowerCase());
     }
     return super.createProperty(attrName, options);

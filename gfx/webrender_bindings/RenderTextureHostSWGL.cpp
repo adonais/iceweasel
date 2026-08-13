@@ -4,9 +4,9 @@
 
 #include "RenderTextureHostSWGL.h"
 
+#include "RenderThread.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/layers/TextureHost.h"
-#include "RenderThread.h"
 
 namespace mozilla {
 namespace wr {

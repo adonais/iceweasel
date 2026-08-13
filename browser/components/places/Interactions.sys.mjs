@@ -201,6 +201,7 @@ class _Interactions {
         },
       },
       messageManagerGroups: ["browsers"],
+      safeForUntrustedWebProcess: true,
     });
 
     this.#activeWindow = Services.wm.getMostRecentBrowserWindow();

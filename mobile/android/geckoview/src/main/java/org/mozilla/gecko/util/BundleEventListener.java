@@ -4,9 +4,6 @@
 
 package org.mozilla.gecko.util;
 
-import org.mozilla.gecko.annotation.RobocopTarget;
-
-@RobocopTarget
 public interface BundleEventListener {
   /**
    * Handles a message sent from Gecko.

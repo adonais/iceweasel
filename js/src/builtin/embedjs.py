@@ -183,7 +183,7 @@ def process_inputs(namespace, c_out, msg_file, inputs):
         path for path in inputs if path.endswith(".js") and not path.endswith(".h.js")
     ]
     assert len(deps) + len(sources) == len(inputs)
-    cxx = shlex.split(buildconfig.substs["CXX"])
+    cxx = buildconfig.substs["CXX"]
     pp_option = buildconfig.substs["PREPROCESS_OPTION"]
     cppflags = buildconfig.substs["OS_CPPFLAGS"]
     cppflags += shlex.split(buildconfig.substs["WARNINGS_AS_ERRORS"])

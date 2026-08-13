@@ -5,21 +5,21 @@
 #ifndef InputData_h_
 #define InputData_h_
 
-#include "nsDebug.h"
-#include "nsPoint.h"
-#include "nsTArray.h"
 #include "Units.h"
-#include "mozilla/ScrollTypes.h"
 #include "mozilla/DefineEnum.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/ScrollTypes.h"
+#include "mozilla/TextEvents.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/WheelHandlingHelper.h"  // for WheelDeltaAdjustmentStrategy
 #include "mozilla/gfx/MatrixFwd.h"
+#include "mozilla/ipc/IPCForwards.h"
 #include "mozilla/layers/APZPublicUtils.h"
 #include "mozilla/layers/KeyboardScrollAction.h"
-#include "mozilla/TextEvents.h"
-#include "mozilla/ipc/IPCForwards.h"
+#include "nsDebug.h"
+#include "nsPoint.h"
+#include "nsTArray.h"
 
 template <class E>
 struct already_AddRefed;

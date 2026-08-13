@@ -396,10 +396,9 @@ ml-summarizer-perf:
 ml-llama-summarizer-perf:
     fetches:
         fetch:
-            - wllama.wasm
             - smollm2-360-instruct-gguf
             - Qwen3-0.6B-GGUF
-    description: Run ML Summarizer Model Using Wllama
+    description: Run ML Summarizer Model Using llama.cpp
     treeherder:
         symbol: perftest(ml-llama-sum-perf)
         tier: 2
@@ -422,7 +421,6 @@ ml-llama-summarizer-perf:
 ml-security-perf:
     fetches:
         fetch:
-            - wllama.wasm
             - smollm2-360-instruct-gguf
     description: Run ML Security Performance Tests
     treeherder:

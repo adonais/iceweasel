@@ -45,7 +45,7 @@ static void SK_BLITBWMASK_NAME(const SkPixmap& dstPixmap, const SkMask& srcMask,
     const uint8_t* bits = srcMask.getAddr1(cx, cy);
     SK_BLITBWMASK_DEVTYPE* device = dstPixmap.SK_BLITBWMASK_GETADDR(cx, cy);
 
-    if (cx == maskLeft && clip.fRight == srcMask.fBounds.fRight)
+    if (cx == maskLeft && clip.fRight == srcMask.fBounds.fRight && (clip.width() & 7) == 0)
     {
         do {
             SK_BLITBWMASK_DEVTYPE* dst = device;

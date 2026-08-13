@@ -8,17 +8,14 @@
 #include <stddef.h>  // size_t
 #include <stdint.h>  // uint32_t
 
-#include "js/TypeDecls.h"  // JS::Latin1Char
-
-#include "mozilla/Variant.h"  // Variant
-#include "mozilla/RefPtr.h"   // RefPtr
-
-#include "nsDebug.h"  // NS_WARNING
-
 #include "BasePrincipal.h"
 #include "ContentPrincipalJSONHandler.h"
 #include "NullPrincipalJSONHandler.h"
 #include "SharedJSONHandler.h"
+#include "js/TypeDecls.h"     // JS::Latin1Char
+#include "mozilla/RefPtr.h"   // RefPtr
+#include "mozilla/Variant.h"  // Variant
+#include "nsDebug.h"          // NS_WARNING
 
 namespace mozilla {
 

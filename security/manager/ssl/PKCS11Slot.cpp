@@ -2,13 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <string.h>
-
 #include "PKCS11Slot.h"
 
+#include <string.h>
+
+#include "PKCS11Token.h"
 #include "nsComponentManagerUtils.h"
 #include "nsNSSCertHelper.h"
-#include "PKCS11Token.h"
 
 using namespace mozilla::psm;
 

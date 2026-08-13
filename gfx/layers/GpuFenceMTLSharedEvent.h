@@ -5,10 +5,10 @@
 #ifndef MOZILLA_GFX_GpuFenceMTLSharedEvent_H
 #define MOZILLA_GFX_GpuFenceMTLSharedEvent_H
 
-#include "mozilla/layers/GpuFence.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/webgpu/ffi/wgpu.h"
+#include "mozilla/layers/GpuFence.h"
 #include "mozilla/webgpu/WebGPUTypes.h"
+#include "mozilla/webgpu/ffi/wgpu.h"
 
 namespace mozilla {
 

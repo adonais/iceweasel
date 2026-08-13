@@ -10,8 +10,8 @@
 #include "nsIAsyncInputStream.h"
 #include "nsICloneableInputStream.h"
 #include "nsIIPCSerializableInputStream.h"
-#include "nsISeekableStream.h"
 #include "nsIInputStreamLength.h"
+#include "nsISeekableStream.h"
 
 namespace mozilla {
 

@@ -45,6 +45,44 @@ TEST(OriginAttributes, Suffix_default)
   TestSuffix(attrs);
 }
 
+// A host may now contain an asterisk or a double quote (bug 1815926), so they
+// can end up in the first-party domain and partition key. The serialized suffix
+// is used by the quota manager for file naming, where both characters are
+// illegal on Windows, so they must never appear verbatim in the suffix.
+TEST(OriginAttributes, Suffix_HostIsEscaped)
+{
+  bool oldFpiPref = Preferences::GetBool(FPI_PREF);
+  Preferences::SetBool(FPI_PREF, true);
+  bool oldSitePref = Preferences::GetBool(SITE_PREF);
+  Preferences::SetBool(SITE_PREF, true);
+
+  auto testChar = [](const nsACString& spec, char illegalChar) {
+    OriginAttributes attrs;
+    nsCOMPtr<nsIURI> url;
+    ASSERT_EQ(NS_NewURI(getter_AddRefs(url), spec), NS_OK);
+    attrs.SetFirstPartyDomain(true, url);
+    attrs.SetPartitionKey(url, false);
+
+    // Sanity check that the character actually made it into the attributes;
+    // otherwise the test below would pass trivially.
+    EXPECT_NE(attrs.mFirstPartyDomain.FindChar(illegalChar), kNotFound);
+    EXPECT_NE(attrs.mPartitionKey.FindChar(illegalChar), kNotFound);
+
+    nsAutoCString suffix;
+    attrs.CreateSuffix(suffix);
+    EXPECT_EQ(suffix.FindChar(illegalChar), kNotFound);
+
+    // The suffix must still round-trip back to the original attributes.
+    TestSuffix(attrs);
+  };
+
+  testChar("http://a*b.com"_ns, '*');
+  testChar("http://a\"b.com"_ns, '"');
+
+  Preferences::SetBool(FPI_PREF, oldFpiPref);
+  Preferences::SetBool(SITE_PREF, oldSitePref);
+}
+
 TEST(OriginAttributes, FirstPartyDomain_default)
 {
   bool oldFpiPref = Preferences::GetBool(FPI_PREF);
@@ -56,6 +94,11 @@ TEST(OriginAttributes, FirstPartyDomain_default)
   TEST_FPD(u"http://www.example.com:80", u"example.com");
   TEST_FPD(u"http://www.example.com:8080", u"example.com");
   TEST_FPD(u"http://s3.amazonaws.com", u"s3.amazonaws.com");
+  // A host may contain an asterisk or a double quote (bug 1815926). Both are
+  // illegal in file names on Windows, so the suffix must escape them while
+  // still round-tripping.
+  TEST_FPD(u"http://a*b.com", u"a*b.com");
+  TEST_FPD(u"http://a\"b.com", u"a\"b.com");
   TEST_FPD(u"http://com", u"com");
   TEST_FPD(u"http://com.", u"com.");
   TEST_FPD(u"http://com:8080", u"com");
@@ -88,6 +131,11 @@ TEST(OriginAttributes, FirstPartyDomain_site)
   TEST_FPD(u"http://www.example.com:80", u"(http,example.com)");
   TEST_FPD(u"http://www.example.com:8080", u"(http,example.com)");
   TEST_FPD(u"http://s3.amazonaws.com", u"(http,s3.amazonaws.com)");
+  // A host may contain an asterisk or a double quote (bug 1815926). Both are
+  // illegal in file names on Windows, so the suffix must escape them while
+  // still round-tripping.
+  TEST_FPD(u"http://a*b.com", u"(http,a*b.com)");
+  TEST_FPD(u"http://a\"b.com", u"(http,a\"b.com)");
   TEST_FPD(u"http://com", u"(http,com)");
   TEST_FPD(u"http://com.", u"(http,com.)");
   TEST_FPD(u"http://com:8080", u"(http,com)");

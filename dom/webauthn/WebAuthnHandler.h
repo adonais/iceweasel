@@ -73,7 +73,7 @@ class WebAuthnTransaction {
 
 class WebAuthnHandler final : public AbortFollower {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS(WebAuthnHandler)
 
   explicit WebAuthnHandler(nsPIDOMWindowInner* aWindow) : mWindow(aWindow) {

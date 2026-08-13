@@ -4,17 +4,17 @@
 
 #include "SocketProcessHost.h"
 
+#include "ProfilerParent.h"
 #include "SocketProcessParent.h"
 #include "mozilla/dom/ContentParent.h"
+#include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/FileDescriptor.h"
+#include "mozilla/ipc/ProcessChild.h"
 #include "mozilla/ipc/ProcessUtils.h"
 #include "nsAppRunner.h"
 #include "nsIOService.h"
 #include "nsIObserverService.h"
-#include "ProfilerParent.h"
 #include "nsNetUtil.h"
-#include "mozilla/ipc/Endpoint.h"
-#include "mozilla/ipc/ProcessChild.h"
 
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
 #  include "mozilla/SandboxBroker.h"

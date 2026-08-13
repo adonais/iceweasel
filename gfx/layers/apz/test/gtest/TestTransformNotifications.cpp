@@ -5,10 +5,9 @@
 #include "APZCBasicTester.h"
 #include "APZCTreeManagerTester.h"
 #include "APZTestCommon.h"
-#include "mozilla/layers/WebRenderScrollDataWrapper.h"
-#include "apz/util/APZEventState.h"
-
 #include "InputUtils.h"
+#include "apz/util/APZEventState.h"
+#include "mozilla/layers/WebRenderScrollDataWrapper.h"
 
 class APZCTransformNotificationTester : public APZCTreeManagerTester {
  public:

@@ -620,6 +620,10 @@ typedef struct {
    * CBR mode.
    */
   int max_consec_drop_ms;
+  /*!
+   * Force to allow the usage of maximum q in vbr mode.
+   */
+  int force_max_q;
 } RateControlCfg;
 
 /*!\cond */
@@ -881,6 +885,12 @@ typedef struct {
    * on reconstructed frame.
    */
   bool skip_postproc_filtering;
+
+  /*!
+   * Indicates if mode and reference frame delta should be enabled during
+   * loopfiltering.
+   */
+  int mode_ref_delta_enabled;
 
   /*!
    * Controls screen content detection mode
@@ -3519,11 +3529,6 @@ typedef struct AV1_COMP {
   int sb_counter;
 
   /*!
-   * Available bitstream buffer size in bytes
-   */
-  size_t available_bs_size;
-
-  /*!
    * The controller of the external partition model.
    * It is used to do partition type selection based on external models.
    */
@@ -3732,6 +3737,11 @@ typedef struct AV1_COMP {
    * Store TPL stats before propagation
    */
   AomTplGopStats extrc_tpl_gop_stats;
+
+  /*!
+   * If true fills residual pixels outside the actual frame border
+   */
+  bool do_border_pad;
 } AV1_COMP;
 
 /*!
@@ -4148,7 +4158,7 @@ static inline int is_stat_consumption_stage(const AV1_COMP *const cpi) {
 
 // Decide whether 'dv_costs' need to be allocated/stored during the encoding.
 static inline bool av1_need_dv_costs(const AV1_COMP *const cpi) {
-  return !cpi->sf.rt_sf.use_nonrd_pick_mode &&
+  return (!cpi->sf.rt_sf.use_nonrd_pick_mode || cpi->sf.rt_sf.rt_use_intrabc) &&
          av1_allow_intrabc(&cpi->common) && !is_stat_generation_stage(cpi);
 }
 
@@ -4275,6 +4285,18 @@ static inline int get_mi_ext_idx(const int mi_row, const int mi_col,
   const int mi_ext_row = mi_row / mi_ext_size_1d;
   const int mi_ext_col = mi_col / mi_ext_size_1d;
   return mi_ext_row * mbmi_ext_stride + mi_ext_col;
+}
+
+static inline void set_pixels_to_frame_edge(MACROBLOCK *x, int bw, int bh,
+                                            int mi_col, int mi_row, int mi_cols,
+                                            int mi_rows, int frame_width,
+                                            int frame_height,
+                                            bool do_border_pad) {
+  int total_frame_width = do_border_pad ? frame_width : (mi_cols * 4);
+  int total_frame_height = do_border_pad ? frame_height : (mi_rows * 4);
+
+  x->pix_to_bottom_edge = total_frame_height - ((mi_row + bh) << MI_SIZE_LOG2);
+  x->pix_to_right_edge = total_frame_width - ((mi_col + bw) << MI_SIZE_LOG2);
 }
 
 // Lighter version of set_offsets that only sets the mode info
@@ -4517,6 +4539,13 @@ static inline int get_lpf_opt_level(const SPEED_FEATURES *sf) {
 static inline bool is_switchable_motion_mode_allowed(bool allow_warped_motion,
                                                      bool enable_obmc) {
   return (allow_warped_motion || enable_obmc);
+}
+
+static inline int warped_motion_update_num_proj_ref(
+    const struct AV1_COMP *const cpi, const MB_MODE_INFO *const mi) {
+  return cpi->oxcf.motion_mode_cfg.allow_warped_motion && is_inter_block(mi) &&
+         !mi->skip_mode && is_motion_variation_allowed_bsize(mi->bsize) &&
+         !has_second_ref(mi);
 }
 
 #if CONFIG_AV1_TEMPORAL_DENOISING

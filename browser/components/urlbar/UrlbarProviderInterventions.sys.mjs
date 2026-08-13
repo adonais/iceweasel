@@ -20,6 +20,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarProviderGlobalActions:
     "moz-src:///browser/components/urlbar/UrlbarProviderGlobalActions.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlUtils: "resource://gre/modules/UrlUtils.sys.mjs",
 });
 
@@ -640,15 +641,15 @@ export class UrlbarProviderInterventions extends UrlbarProvider {
     // returned early above if it was.
 
     let result = new lazy.UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.TIP,
-      source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+      type: lazy.UrlbarShared.RESULT_TYPE.TIP,
+      source: lazy.UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
       suggestedIndex: 1,
       payload: {
         ...getPayloadForTip(this.currentTip),
         type: this.currentTip,
         icon: UrlbarUtils.ICON.TIP,
         helpL10n: {
-          id: "urlbar-result-menu-tip-get-help",
+          id: "urlbar-result-menu-tip-get-help2",
         },
       },
     });

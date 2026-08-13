@@ -37,6 +37,9 @@ class AboutHomeBinding(
                     !listOf(
                         R.id.homeFragment,
                         R.id.onboardingFragment,
+                        // Closing a tab in the tabs tray can select an [ABOUT_HOME_URL] tab. Do not
+                        // navigate to the homepage in that case since it would dismiss the tabs tray.
+                        R.id.tabManagementFragment,
                     ).contains(navController.currentDestination?.id)
                 ) {
                     navController.navigate(NavGraphDirections.actionGlobalHome())

@@ -6004,6 +6004,7 @@ CERT_EnableOCSPDefaultResponder(CERTCertDBHandle *handle)
                                    certificateUsageCheckAllUsages,
                                    NULL, &usage);
     if (rv != SECSuccess || (usage & (certificateUsageSSLClient | certificateUsageSSLServer | certificateUsageSSLServerWithStepUp | certificateUsageEmailSigner | certificateUsageObjectSigner | certificateUsageStatusResponder | certificateUsageSSLCA)) == 0) {
+        CERT_DestroyCertificate(cert);
         PORT_SetError(SEC_ERROR_OCSP_RESPONDER_CERT_INVALID);
         return SECFailure;
     }

@@ -84,8 +84,8 @@ add_task(async function () {
   );
 
   info("Wait for `test.js` to be saved to disk and re-write it");
-  await BrowserTestUtils.waitForCondition(() => IOUtils.exists(path));
-  await BrowserTestUtils.waitForCondition(async () => {
+  await TestUtils.waitForCondition(() => IOUtils.exists(path));
+  await TestUtils.waitForCondition(async () => {
     const { size } = await IOUtils.stat(path);
     return size > 0;
   });

@@ -38,10 +38,10 @@ support-files = [
   "empty_worker.js",
 ]
 
-["browser_privilegedmozilla_remoteworker.js"]
+["browser_parent_worker_nested.js"]
 support-files = [
-  "file_service_worker.js",
-  "file_service_worker_container.html",
+  "nested_chrome_worker.js",
+  "nested_worker.js",
 ]
 
 ["browser_serviceworker_fetch_new_process.js"]

@@ -1617,7 +1617,6 @@ CodeOffset MacroAssembler::call(Label* label) {
 
 void MacroAssembler::call(ImmPtr imm) {
   // This sync has been observed (and is expected) to be necessary.
-  // eg testcase: asm.js/testTimeout5.js
   syncStackPtr();
   vixl::UseScratchRegisterScope temps(this);
   const Register scratch = temps.AcquireX().asUnsized();

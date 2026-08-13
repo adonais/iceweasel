@@ -55,6 +55,7 @@ namespace dom {
 class MediaStreamTrack;
 struct RTCRTPContributingSourceStats;
 class RTCStatsTimestampMaker;
+class RTCErrorParams;
 }  // namespace dom
 
 struct MediaPipelineReceiveControlInterface {
@@ -185,8 +186,10 @@ class MediaPipeline : public sigslot::has_slots<> {
 
   // Process slots on transports
   void RtpStateChange(const std::string& aTransportId, TransportLayer::State,
-                      const nsTArray<nsTArray<uint8_t>>& aRemoteCerts);
-  void RtcpStateChange(const std::string& aTransportId, TransportLayer::State);
+                      const nsTArray<nsTArray<uint8_t>>& aRemoteCerts,
+                      Maybe<dom::RTCErrorParams>);
+  void RtcpStateChange(const std::string& aTransportId, TransportLayer::State,
+                       Maybe<dom::RTCErrorParams>);
   virtual void CheckTransportStates();
   void PacketReceived(std::string& aTransportId, MediaPacket& packet);
   void RtpPacketReceived(std::string& aTransportId, MediaPacket& packet);

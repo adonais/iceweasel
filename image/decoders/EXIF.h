@@ -6,12 +6,12 @@
 #define mozilla_image_decoders_EXIF_h
 
 #include <stdint.h>
-#include "nsDebug.h"
 
 #include "Orientation.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/image/Resolution.h"
 #include "mozilla/gfx/Point.h"
+#include "mozilla/image/Resolution.h"
+#include "nsDebug.h"
 
 namespace mozilla::image {
 

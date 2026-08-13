@@ -1,0 +1,181 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+  ### This moz.build was AUTOMATICALLY GENERATED from a GN config,  ###
+  ### DO NOT edit it by hand.                                       ###
+
+COMPILE_FLAGS["OS_INCLUDES"] = []
+AllowCompilerWarnings()
+
+DEFINES["ANGLE_CAPTURE_ENABLED"] = "0"
+DEFINES["ANGLE_DISABLE_POOL_ALLOC"] = True
+DEFINES["ANGLE_ENABLE_CONTEXT_MUTEX"] = "1"
+DEFINES["ANGLE_ENABLE_DEBUG_ANNOTATIONS"] = False
+DEFINES["ANGLE_ENABLE_KEYEDMUTEX"] = True
+DEFINES["ANGLE_ENABLE_SHARE_CONTEXT_LOCK"] = "1"
+DEFINES["ANGLE_PLATFORM_EXPORT"] = ""
+DEFINES["ANGLE_SKIP_DXGI_1_2_CHECK"] = True
+DEFINES["EGL_EGLEXT_PROTOTYPES"] = True
+DEFINES["EGL_EGL_PROTOTYPES"] = "1"
+DEFINES["GL_GLES_PROTOTYPES"] = "1"
+DEFINES["GL_GLEXT_PROTOTYPES"] = True
+DEFINES["LIBANGLE_IMPLEMENTATION"] = True
+DEFINES["LIBGLESV2_IMPLEMENTATION"] = True
+
+LOCAL_INCLUDES += [
+    "!/ipc/ipdl/_ipdlheaders",
+    "!/third_party/angle/gen",
+    "/ipc/chromium/src",
+    "/third_party/angle/include/",
+    "/third_party/angle/src/",
+    "/third_party/angle/src/common/base/",
+    "/third_party/angle/src/common/third_party/xxhash/",
+    "/tools/profiler/public"
+]
+
+SOURCES += [
+    "/third_party/angle/src/libGLESv2/entry_points_gles_1_0_autogen.cpp",
+    "/third_party/angle/src/libGLESv2/entry_points_gles_2_0_autogen.cpp",
+    "/third_party/angle/src/libGLESv2/entry_points_gles_3_0_autogen.cpp",
+    "/third_party/angle/src/libGLESv2/entry_points_gles_3_1_autogen.cpp",
+    "/third_party/angle/src/libGLESv2/entry_points_gles_3_2_autogen.cpp",
+    "/third_party/angle/src/libGLESv2/entry_points_gles_ext_autogen.cpp"
+]
+
+UNIFIED_SOURCES += [
+    "/third_party/angle/src/libGLESv2/egl_ext_stubs.cpp",
+    "/third_party/angle/src/libGLESv2/egl_stubs.cpp",
+    "/third_party/angle/src/libGLESv2/egl_stubs_getprocaddress_autogen.cpp",
+    "/third_party/angle/src/libGLESv2/entry_points_egl_autogen.cpp",
+    "/third_party/angle/src/libGLESv2/entry_points_egl_ext_autogen.cpp",
+    "/third_party/angle/src/libGLESv2/global_state.cpp",
+    "/third_party/angle/src/libGLESv2/libGLESv2_autogen.cpp"
+]
+
+USE_LIBS += [
+    "ANGLE_gn",
+    "includes_gn"
+]
+
+if not CONFIG["MOZ_DEBUG"]:
+
+    DEFINES["DYNAMIC_ANNOTATIONS_ENABLED"] = "0"
+    DEFINES["NDEBUG"] = True
+    DEFINES["NVALGRIND"] = True
+
+if CONFIG["MOZ_DEBUG"] == "1":
+
+    DEFINES["ANGLE_DEBUG_LAYERS_ENABLED"] = True
+    DEFINES["DYNAMIC_ANNOTATIONS_ENABLED"] = "1"
+
+if CONFIG["OS_TARGET"] == "Darwin":
+
+    DEFINES["ANGLE_ENABLE_METAL"] = True
+    DEFINES["GL_API"] = "__attribute__((visibility(\"default\")))"
+    DEFINES["GL_APICALL"] = "__attribute__((visibility(\"default\")))"
+    DEFINES["__STDC_CONSTANT_MACROS"] = True
+    DEFINES["__STDC_FORMAT_MACROS"] = True
+
+    OS_LIBS += [
+        "-framework Cocoa",
+        "-framework CoreFoundation",
+        "-framework CoreGraphics",
+        "-framework IOKit",
+        "-framework IOSurface",
+        "-framework Metal",
+        "-framework QuartzCore"
+    ]
+
+    SHARED_LIBRARY_NAME = "GLESv2"
+
+
+if CONFIG["OS_TARGET"] == "WINNT":
+
+    DEFFILE = "/third_party/angle/src/libGLESv2/libGLESv2_autogen.def"
+
+
+    DEFINES["ANGLE_ENABLE_D3D11"] = True
+    DEFINES["ANGLE_ENABLE_D3D9"] = True
+    DEFINES["ANGLE_IS_WIN"] = True
+    DEFINES["ANGLE_PRELOADED_D3DCOMPILER_MODULE_NAMES"] = "{ \"d3dcompiler_47.dll\", \"d3dcompiler_46.dll\", \"d3dcompiler_43.dll\" }"
+    DEFINES["CERT_CHAIN_PARA_HAS_EXTRA_FIELDS"] = True
+    DEFINES["GL_API"] = ""
+    DEFINES["GL_APICALL"] = ""
+    DEFINES["NOMINMAX"] = True
+    DEFINES["NTDDI_VERSION"] = "0x0A000000"
+    DEFINES["PSAPI_VERSION"] = "2"
+    DEFINES["UNICODE"] = True
+    DEFINES["USE_AURA"] = "1"
+    DEFINES["WIN32"] = True
+    DEFINES["WIN32_LEAN_AND_MEAN"] = True
+    DEFINES["WINAPI_FAMILY"] = "WINAPI_FAMILY_DESKTOP_APP"
+    DEFINES["WINVER"] = "0x0A00"
+    DEFINES["_ATL_NO_OPENGL"] = True
+    DEFINES["_CRT_NONSTDC_NO_WARNINGS"] = True
+    DEFINES["_CRT_RAND_S"] = True
+    DEFINES["_CRT_SECURE_NO_DEPRECATE"] = True
+    DEFINES["_HAS_EXCEPTIONS"] = "0"
+    DEFINES["_HAS_NODISCARD"] = True
+    DEFINES["_SCL_SECURE_NO_DEPRECATE"] = True
+    DEFINES["_SECURE_ATL"] = True
+    DEFINES["_UNICODE"] = True
+    DEFINES["_WIN32_WINNT"] = "0x0A00"
+    DEFINES["_WINDOWS"] = True
+    DEFINES["_WINSOCK_DEPRECATED_NO_WARNINGS"] = True
+    DEFINES["__STD_C"] = True
+
+    OS_LIBS += [
+        "advapi32",
+        "comdlg32",
+        "d3d9",
+        "dbghelp",
+        "delayimp",
+        "dnsapi",
+        "dxgi",
+        "dxguid",
+        "gdi32",
+        "kernel32",
+        "msimg32",
+        "odbc32",
+        "odbccp32",
+        "ole32",
+        "oleaut32",
+        "setupapi",
+        "shell32",
+        "shlwapi",
+        "synchronization",
+        "user32",
+        "usp10",
+        "uuid",
+        "version",
+        "wininet",
+        "winmm",
+        "winspool",
+        "ws2_32"
+    ]
+
+    RCFILE = "/third_party/angle/src/libGLESv2/libGLESv2.rc"
+
+
+    SHARED_LIBRARY_NAME = "libGLESv2"
+
+
+    USE_LIBS += [
+        "angle_version_gn"
+    ]
+
+if CONFIG["TARGET_CPU"] == "aarch64":
+
+    DEFINES["__ARM_NEON__"] = "1"
+
+if CONFIG["MOZ_DEBUG"] == "1" and CONFIG["OS_TARGET"] == "Darwin":
+
+    DEFINES["_DEBUG"] = True
+
+if CONFIG["MOZ_DEBUG"] == "1" and CONFIG["OS_TARGET"] == "WINNT":
+
+    DEFINES["_HAS_ITERATOR_DEBUGGING"] = "0"
+
+GeckoSharedLibrary("GLESv2_gn")

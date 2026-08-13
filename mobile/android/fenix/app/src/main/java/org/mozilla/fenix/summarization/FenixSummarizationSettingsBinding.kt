@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import mozilla.components.feature.summarize.settings.SummarizationSettings
+import mozilla.components.lib.shake.ShakeSensitivity
 
 /**
  * See [FenixSummarizationSettingsBinding].
@@ -21,6 +22,7 @@ import mozilla.components.feature.summarize.settings.SummarizationSettings
 interface SummarizationSettingsBinding {
     val isFeatureEnabled: StateFlow<Boolean>
     val isGestureEnabled: StateFlow<Boolean>
+    val shakeSensitivity: StateFlow<ShakeSensitivity>
 }
 
 /**
@@ -34,6 +36,8 @@ class FenixSummarizationSettingsBinding(
     override val isFeatureEnabled: StateFlow<Boolean> = _isFeatureEnabled
     private val _isGestureEnabled = MutableStateFlow(false)
     override val isGestureEnabled: StateFlow<Boolean> = _isGestureEnabled
+    private val _shakeSensitivity = MutableStateFlow(ShakeSensitivity.Medium)
+    override val shakeSensitivity: StateFlow<ShakeSensitivity> = _shakeSensitivity
 
     override fun onCreate(owner: LifecycleOwner) {
         super.onCreate(owner)
@@ -42,13 +46,15 @@ class FenixSummarizationSettingsBinding(
                 summarizationSettings.getFeatureEnabledUserStatus()
                     .mapNotNull { it },
                 summarizationSettings.getGestureEnabledUserStatus(),
-            ) { a, b ->
-                a to b
+                summarizationSettings.getShakeSensitivity(),
+            ) { featureEnabled, gestureEnabled, sensitivity ->
+                Triple(featureEnabled, gestureEnabled, sensitivity)
             }
                 .distinctUntilChanged()
-                .collect { (isFeatureEnabled, isGestureEnabled) ->
+                .collect { (isFeatureEnabled, isGestureEnabled, sensitivity) ->
                     this@FenixSummarizationSettingsBinding._isFeatureEnabled.value = isFeatureEnabled
                     this@FenixSummarizationSettingsBinding._isGestureEnabled.value = isGestureEnabled
+                    this@FenixSummarizationSettingsBinding._shakeSensitivity.value = sensitivity
                 }
         }
     }

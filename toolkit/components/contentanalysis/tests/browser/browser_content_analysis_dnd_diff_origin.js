@@ -46,6 +46,14 @@ let mockCA = {
       Ci.nsIContentAnalysisRequest.eDroppedText,
       "request has correct operation type"
     );
+    // getURIForDropEvent walks up to the top same-origin ancestor of the drop
+    // target. Since these tests load same-origin iframes, that is always the top
+    // browsing context's document.
+    is(
+      aRequest.url.spec,
+      this.targetBrowsingCxt.top.currentWindowGlobal.documentURI.spec,
+      "request url matches the expected drop target URL"
+    );
     is(
       aRequest.userActionRequestsCount,
       1,

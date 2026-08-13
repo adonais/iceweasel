@@ -4,33 +4,21 @@ import java.time.format.DateTimeFormatter
 
 import static org.mozilla.conventions.BuildConfigKt.getBuildId
 
-buildscript {
-    repositories {
-        gradle.configureMavenRepositories(delegate)
-    }
-
-    dependencies {
-        classpath libs.kotlin.serialization
-    }
-}
-
 plugins {
-    alias(libs.plugins.dependency.analysis)
-    alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.python.envs.plugin)
-    alias(libs.plugins.protobuf.plugin)
-    id 'ApkSizePlugin'
+    id 'com.android.application'
     id 'org.mozilla.conventions.zip-test-reports'
     id 'org.mozilla.nimbus-gradle-plugin'
+    id 'ApkSizePlugin'
+    id 'jacoco'
+    alias(libs.plugins.androidx.safeargs)
+    alias(libs.plugins.dependency.analysis)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.parcelize)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.protobuf.plugin)
+    alias(libs.plugins.python.envs.plugin)
 }
-
-apply plugin: 'com.android.application'
-apply plugin: 'kotlin-parcelize'
-apply plugin: 'jacoco'
-apply plugin: 'androidx.navigation.safeargs.kotlin'
-apply plugin: 'kotlinx-serialization'
-apply plugin: 'com.google.devtools.ksp'
 
 // The OSS-licenses plugin is only needed for shipping builds, so skip it during
 // `mach lint` (which always passes `-Pandroid-lint`) to avoid unnecessary overhead.
@@ -177,8 +165,10 @@ android {
     }
 
     buildFeatures {
-        viewBinding = true
         buildConfig = true
+        compose = true
+        resValues = true
+        viewBinding = true
     }
 
     androidResources {
@@ -213,7 +203,6 @@ android {
             returnDefaultValues = true
         }
     }
-
 
     sourceSets {
         androidTest {
@@ -271,10 +260,6 @@ android {
                 useLegacyPackaging = true
             }
         }
-    }
-
-    buildFeatures {
-        compose = true
     }
 
     namespace = 'org.mozilla.fenix'
@@ -346,7 +331,7 @@ android.defaultConfig.with {
 
     // Setting buildDate with every build ID changes the generated BuildConfig and slows down the
     // build, so debug builds (overridden below) use a fixed string instead.
-    def buildDate = LocalDateTime.parse(getBuildId(gradle.mozconfig.topobjdir), DateTimeFormatter.ofPattern("yyyyMMddHHmmss")).toString()
+    def buildDate = LocalDateTime.parse(getBuildId(gradle.mozconfig.topobjdir, providers.environmentVariable("MOZ_BUILD_DATE").getOrNull()), DateTimeFormatter.ofPattern("yyyyMMddHHmmss")).toString()
     buildConfigField 'String', 'BUILD_DATE', '"' + buildDate + '"'
 
     try {
@@ -538,6 +523,7 @@ dependencies {
     implementation project(':components:support-utils')
     implementation project(':components:support-webextensions')
     implementation project(':components:lib-publicsuffixlist')
+    implementation project(':components:ui-animation')
     implementation project(':components:ui-icons')
     implementation project(':components:ui-colors')
     implementation project(':components:ui-tabcounter')
@@ -580,7 +566,6 @@ dependencies {
     implementation libs.androidx.constraintlayout
     implementation libs.androidx.coordinatorlayout
     implementation libs.androidx.core
-    implementation libs.androidx.core.ktx
     implementation libs.androidx.core.splashscreen
     implementation libs.androidx.datastore
     implementation libs.androidx.datastore.preferences
@@ -682,6 +667,9 @@ dependencies {
         implementation(libs.androidx.startup.runtime)
         // okhttp is test-only; prevents older releases being resolved on the main classpath.
         implementation(libs.okio)
+        // espresso-contrib pulls hamcrest 2.2 only at runtime; align the test compile classpath to match.
+        androidTestImplementation(libs.hamcrest.core)
+        androidTestImplementation(libs.hamcrest.library)
     }
 
     androidTestUtil libs.androidx.test.orchestrator
@@ -750,16 +738,17 @@ if (project.hasProperty("coverage")) {
     }
 }
 
-// Work around generated SafeArgs code hitting USELESS_CAST warnings with Kotlin 2.3+
-// (https://issuetracker.google.com/issues/458082829). Suppress as generateSafeArgs' own
-// final action, not a separate finalizedBy task: finalizedBy isn't ordered before the
-// Kotlin compile that consumes the output, so it races and fails under -Werror.
+// Work around generated SafeArgs code hitting UNSAFE_CAST_RELYING_ON_NULL warnings with
+// Kotlin 2.4+ (https://issuetracker.google.com/issues/458082829). Suppress as
+// generateSafeArgs' own final action, not a separate finalizedBy task: finalizedBy isn't
+// ordered before the Kotlin compile that consumes the output, so it races and fails under
+// -Werror.
 tasks.matching { it.name.startsWith("generateSafeArgs") }.configureEach {
     doLast {
         outputs.files.asFileTree.matching { include "**/*.kt" }.each { File f ->
-            if (!f.text.contains('@file:Suppress("USELESS_CAST")')) {
+            if (!f.text.contains('@file:Suppress("UNSAFE_CAST_RELYING_ON_NULL")')) {
                 f.text =
-"""@file:Suppress("USELESS_CAST")
+"""@file:Suppress("UNSAFE_CAST_RELYING_ON_NULL")
 
 ${f.text}"""
             }

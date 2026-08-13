@@ -15,6 +15,9 @@ using struct mozilla::void_t from "mozilla/ipc/IPCCore.h";
 using class mozilla::dom::indexedDB::Key
   from "mozilla/dom/indexedDB/Key.h";
 
+using struct mozilla::dom::indexedDB::TransactionOpResult
+  from "mozilla/dom/indexedDB/TransactionOpResult.h";
+
 namespace mozilla {
 namespace dom {
 namespace indexedDB {
@@ -100,7 +103,7 @@ struct IndexCountResponse
 
 union RequestResponse
 {
-  nsresult;
+  TransactionOpResult;
   ObjectStoreGetResponse;
   ObjectStoreGetKeyResponse;
   ObjectStoreAddResponse;

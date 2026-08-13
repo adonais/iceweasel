@@ -1654,6 +1654,7 @@ void jit::AssertBasicGraphCoherency(MIRGraph& graph, bool force) {
     for (MPhiIterator phi(block->phisBegin()); phi != block->phisEnd(); phi++) {
       MOZ_ASSERT(phi->numOperands() == block->numPredecessors());
       MOZ_ASSERT(!phi->isRecoveredOnBailout());
+      MOZ_ASSERT(!phi->isInWorklist());
       MOZ_ASSERT(phi->type() != MIRType::None);
       MOZ_ASSERT(phi->dependency() == nullptr);
     }
@@ -1661,6 +1662,7 @@ void jit::AssertBasicGraphCoherency(MIRGraph& graph, bool force) {
       MOZ_ASSERT(iter->block() == *block);
       MOZ_ASSERT_IF(iter->hasUses(), iter->type() != MIRType::None);
       MOZ_ASSERT(!iter->isDiscarded());
+      MOZ_ASSERT(!iter->isInWorklist());
       MOZ_ASSERT_IF(iter->isStart(),
                     *block == graph.entryBlock() || *block == graph.osrBlock());
       MOZ_ASSERT_IF(iter->isParameter(),

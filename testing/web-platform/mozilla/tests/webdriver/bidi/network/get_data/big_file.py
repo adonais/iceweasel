@@ -9,6 +9,7 @@ PAGE_BIG_IMAGE = "_mozilla/webdriver/support/assets/big.png"
 TWO_MB = 2_000_000
 
 
+@pytest.mark.geckodriver(allow_system_access=True)
 async def test_data_type_response_big_file(
     bidi_session,
     url,

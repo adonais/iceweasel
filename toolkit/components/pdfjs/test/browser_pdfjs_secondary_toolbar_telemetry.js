@@ -42,7 +42,7 @@ add_task(async function test() {
         content.document.querySelector("#secondaryToolbarToggleButton").click();
       });
 
-      await BrowserTestUtils.waitForCondition(async () =>
+      await TestUtils.waitForCondition(async () =>
         SpecialPowers.spawn(browser, [], async function () {
           return !content.document
             .querySelector("#secondaryToolbar")

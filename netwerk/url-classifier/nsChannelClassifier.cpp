@@ -4,6 +4,14 @@
 
 #include "nsChannelClassifier.h"
 
+#include "mozilla/ClearOnShutdown.h"
+#include "mozilla/Components.h"
+#include "mozilla/ErrorNames.h"
+#include "mozilla/Logging.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/Services.h"
+#include "mozilla/net/ChannelClassifierUtils.h"
+#include "mozilla/net/UrlClassifierCommon.h"
 #include "nsCharSeparatedTokenizer.h"
 #include "nsICacheEntry.h"
 #include "nsICachingChannel.h"
@@ -12,18 +20,9 @@
 #include "nsIProtocolHandler.h"
 #include "nsIScriptSecurityManager.h"
 #include "nsNetUtil.h"
-#include "nsXULAppAPI.h"
-#include "nsQueryObject.h"
 #include "nsPrintfCString.h"
-
-#include "mozilla/Components.h"
-#include "mozilla/ErrorNames.h"
-#include "mozilla/Logging.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/net/ChannelClassifierUtils.h"
-#include "mozilla/net/UrlClassifierCommon.h"
-#include "mozilla/ClearOnShutdown.h"
-#include "mozilla/Services.h"
+#include "nsQueryObject.h"
+#include "nsXULAppAPI.h"
 
 namespace mozilla {
 namespace net {

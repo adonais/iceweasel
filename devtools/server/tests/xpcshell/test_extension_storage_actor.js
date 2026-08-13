@@ -42,9 +42,6 @@ const { PromiseTestUtils } = ChromeUtils.importESModule(
 PromiseTestUtils.allowMatchingRejectionsGlobally(
   /Message manager disconnected/
 );
-PromiseTestUtils.allowMatchingRejectionsGlobally(
-  /sendRemoveListener on closed conduit/
-);
 
 const { createAppInfo, promiseStartupManager } = AddonTestUtils;
 
@@ -1632,3 +1629,40 @@ add_task(
     await shutdown(extension, commands);
   }
 );
+
+// Regression test for bug 2045866: unloading an extension with an active
+// listener on a parent-side (ProxyAPIImplementation) API should not emit a
+// "closed conduit" error for the RemoveListener message sent from revoke().
+add_task(async function test_no_conduit_error_on_listener_teardown() {
+  const closedConduitErrors = [];
+  const consoleObserver = {
+    observe(msg) {
+      if (/RemoveListener.*conduit.*already closed/.test(msg.message)) {
+        closedConduitErrors.push(msg.message);
+      }
+    },
+  };
+  Services.console.registerListener(consoleObserver);
+
+  const extension = ExtensionTestUtils.loadExtension({
+    manifest: { permissions: ["storage"] },
+    background() {
+      // Register a listener for a parent-side API which goes through
+      // ProxyAPIImplementation. We expect no log spam for a RemoveListener
+      // message being sent over an already-closed conduit on teardown.
+      browser.storage.local.onChanged.addListener(() => {});
+      browser.test.sendMessage("ready");
+    },
+  });
+
+  await extension.startup();
+  await extension.awaitMessage("ready");
+  await extension.unload();
+
+  Services.console.unregisterListener(consoleObserver);
+  Assert.equal(
+    closedConduitErrors.length,
+    0,
+    "No 'closed conduit' error when unloading an extension with active listeners (bug 2045866)"
+  );
+});

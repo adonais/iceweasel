@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "vm/Stack-inl.h"
-
 #include "mozilla/Maybe.h"  // mozilla::Maybe
 
 #include <algorithm>  // std::max
@@ -22,6 +20,7 @@
 
 #include "jit/JSJitFrameIter-inl.h"
 #include "vm/Probes-inl.h"
+#include "vm/Stack-inl.h"
 
 using namespace js;
 

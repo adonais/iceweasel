@@ -5,10 +5,9 @@
 #ifndef mozilla_psm_VerifySSLServerCertChild_h_
 #define mozilla_psm_VerifySSLServerCertChild_h_
 
-#include "mozilla/psm/PVerifySSLServerCertChild.h"
-
 #include "SSLServerCertVerification.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/psm/PVerifySSLServerCertChild.h"
 #include "nsISupportsImpl.h"
 #include "nsString.h"
 #include "seccomon.h"

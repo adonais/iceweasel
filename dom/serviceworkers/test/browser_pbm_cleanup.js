@@ -202,7 +202,7 @@ add_task(async function test_pbm_sw_removed_by_last_pb_context_exited() {
 
   Services.obs.notifyObservers(null, "last-pb-context-exited");
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => getPBMRegistrationCount() === 0,
     "PBM registrations removed after last-pb-context-exited"
   );

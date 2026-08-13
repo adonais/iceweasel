@@ -2,6 +2,8 @@
 shellcheck:
     description: Shell script linter
     include:
+        - browser/installer/linux/script/install-firefox.sh
+        - browser/installer/linux/script/install-firefox-test-unit.sh
         - extensions/spellcheck/locales/en-US/hunspell/dictionary-sources/
         - taskcluster/docker/
         - tools/update-verify/release/common

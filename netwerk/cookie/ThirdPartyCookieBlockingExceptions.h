@@ -7,10 +7,10 @@
 
 #include "mozilla/MozPromise.h"
 #include "nsEffectiveTLDService.h"
+#include "nsIThirdPartyCookieBlockingExceptionListService.h"
 #include "nsString.h"
 #include "nsTArray.h"
 #include "nsTHashSet.h"
-#include "nsIThirdPartyCookieBlockingExceptionListService.h"
 
 class nsIEffectiveTLDService;
 class nsIURI;

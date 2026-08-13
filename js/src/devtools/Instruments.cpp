@@ -3,12 +3,13 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "Instruments.h"
+
 #include "mozilla/Attributes.h"
 
 #ifdef __APPLE__
 
-#  include <dlfcn.h>
 #  include <CoreFoundation/CoreFoundation.h>
+#  include <dlfcn.h>
 #  include <unistd.h>
 
 #  define DTPerformanceLibraryPath                                   \

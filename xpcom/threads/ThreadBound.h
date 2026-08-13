@@ -7,10 +7,10 @@
 #ifndef mozilla_ThreadBound_h
 #define mozilla_ThreadBound_h
 
+#include <type_traits>
+
 #include "mozilla/Atomics.h"
 #include "prthread.h"
-
-#include <type_traits>
 
 namespace mozilla {
 

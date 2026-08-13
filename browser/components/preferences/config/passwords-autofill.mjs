@@ -29,6 +29,7 @@ const lazy = XPCOMUtils.declareLazy({
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
   FormAutofillPreferences:
     "resource://autofill/FormAutofillPreferences.sys.mjs",
+  AutofillDataTypes: "resource://gre/modules/shared/AutofillDataTypes.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "AboutLoginsL10n", () => {
@@ -266,12 +267,14 @@ Preferences.addAll([
 Preferences.addSetting({
   id: "saveAndFillAddresses",
   pref: ENABLED_AUTOFILL_ADDRESSES_PREF,
-  visible: () => FormAutofill.isAutofillAddressesAvailable,
+  visible: () =>
+    FormAutofill.isAutofillTypeAvailable(lazy.AutofillDataTypes.ADDRESS),
 });
 Preferences.addSetting({
   id: "savedAddressesButton",
   pref: null,
-  visible: () => FormAutofill.isAutofillAddressesAvailable,
+  visible: () =>
+    FormAutofill.isAutofillTypeAvailable(lazy.AutofillDataTypes.ADDRESS),
   onUserClick: e => {
     e.preventDefault();
     if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
@@ -285,12 +288,14 @@ Preferences.addSetting({
 Preferences.addSetting({
   id: "saveAndFillPayments",
   pref: ENABLED_AUTOFILL_CREDITCARDS_PREF,
-  visible: () => FormAutofill.isAutofillCreditCardsAvailable,
+  visible: () =>
+    FormAutofill.isAutofillTypeAvailable(lazy.AutofillDataTypes.CREDIT_CARD),
 });
 Preferences.addSetting({
   id: "savedPaymentsButton",
   pref: null,
-  visible: () => FormAutofill.isAutofillCreditCardsAvailable,
+  visible: () =>
+    FormAutofill.isAutofillTypeAvailable(lazy.AutofillDataTypes.CREDIT_CARD),
   onUserClick: e => {
     e.preventDefault();
 
@@ -650,12 +655,12 @@ Preferences.addSetting({
     }
   },
   getControlConfig(config) {
-    config.options[0].controlAttrs = {
-      ...config.options[0].controlAttrs,
-      ...(!Services.policies.isAllowed("removeMasterPassword")
-        ? { disabled: "" }
-        : {}),
-    };
+    const button = config.options?.find(
+      o => o.key === "turnOffPrimaryPassword"
+    );
+    if (button && !Services.policies.isAllowed("removeMasterPassword")) {
+      button.controlAttrs = { ...button.controlAttrs, disabled: "" };
+    }
     return config;
   },
 });
@@ -753,13 +758,33 @@ SettingGroupManager.registerGroups({
             items: [
               {
                 id: "statusPrimaryPassword",
-                l10nId: "forms-primary-pw-on",
                 control: "moz-box-item",
-                controlAttrs: {
-                  iconsrc: "chrome://global/skin/icons/check-filled.svg",
-                },
                 options: [
                   {
+                    key: "primaryPasswordOnStatus",
+                    control: "span",
+                    controlAttrs: {
+                      class: "primary-pw-status",
+                    },
+                    options: [
+                      {
+                        key: "primaryPasswordOnIcon",
+                        control: "img",
+                        controlAttrs: {
+                          src: "chrome://global/skin/icons/check-filled.svg",
+                          alt: "",
+                          class: "primary-pw-status-icon",
+                        },
+                      },
+                      {
+                        key: "primaryPasswordOnLabel",
+                        control: "span",
+                        l10nId: "forms-primary-pw-on-2",
+                      },
+                    ],
+                  },
+                  {
+                    key: "turnOffPrimaryPassword",
                     id: "turnOffPrimaryPassword",
                     l10nId: "forms-primary-pw-turn-off",
                     control: "moz-button",

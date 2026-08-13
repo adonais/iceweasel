@@ -6,9 +6,10 @@
 #define GFX_XLIBDISPLAY_H
 
 #include <X11/Xlib.h>
-#include "X11UndefineNone.h"
 
 #include <memory>
+
+#include "X11UndefineNone.h"
 
 namespace mozilla::gfx {
 

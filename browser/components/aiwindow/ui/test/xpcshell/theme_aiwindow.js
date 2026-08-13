@@ -21,6 +21,7 @@ AddonTestUtils.createAppInfo(
 );
 
 const AI_WINDOW_THEME_ID = "firefox-aiwindow@mozilla.org";
+const AI_WINDOW_NOVA_THEME_ID = "firefox-aiwindow-nova@mozilla.org";
 
 add_setup(async function () {
   await AddonTestUtils.promiseStartupManager();
@@ -43,6 +44,28 @@ add_task(async function test_ai_theme_manifest_is_valid() {
   Assert.equal(addon.id, AI_WINDOW_THEME_ID, "Theme should have correct ID");
   Assert.equal(addon.type, "theme", "Should be recognized as a theme");
   Assert.equal(addon.name, "Firefox AI Window", "Should have correct name");
+
+  await addon.uninstall();
+});
+
+add_task(async function test_ai_nova_theme_manifest_is_valid() {
+  info("Validating AI window Nova theme manifest through AddonManager");
+
+  const themeURI = "resource://builtin-themes/aiwindow-nova/";
+  const addon = await AddonManager.installBuiltinAddon(themeURI);
+
+  Assert.ok(addon, "Theme manifest should be valid and loadable");
+  Assert.equal(
+    addon.id,
+    AI_WINDOW_NOVA_THEME_ID,
+    "Theme should have correct ID"
+  );
+  Assert.equal(addon.type, "theme", "Should be recognized as a theme");
+  Assert.equal(
+    addon.name,
+    "Firefox AI Window Nova",
+    "Should have correct name"
+  );
 
   await addon.uninstall();
 });

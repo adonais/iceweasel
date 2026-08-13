@@ -6,7 +6,9 @@
 #define js_AllocationRecording_h
 
 #include <stdint.h>
+
 #include "jstypes.h"
+
 #include "js/TypeDecls.h"
 
 namespace JS {

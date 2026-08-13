@@ -4,13 +4,13 @@
 
 #include "OuterDocAccessible.h"
 
-#include "LocalAccessible-inl.h"
 #include "DocAccessible-inl.h"
+#include "LocalAccessible-inl.h"
 #include "mozilla/a11y/DocAccessibleChild.h"
 #include "mozilla/a11y/DocAccessibleParent.h"
+#include "mozilla/a11y/Role.h"
 #include "mozilla/dom/BrowserBridgeChild.h"
 #include "mozilla/dom/BrowserParent.h"
-#include "mozilla/a11y/Role.h"
 
 #ifdef A11Y_LOG
 #  include "Logging.h"

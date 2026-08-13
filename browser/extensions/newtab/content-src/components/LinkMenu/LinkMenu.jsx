@@ -11,6 +11,7 @@ import React from "react";
 const DEFAULT_SITE_MENU_OPTIONS = [
   "CheckPinTopSite",
   "EditTopSite",
+  "AddTopSite",
   "Separator",
   "OpenInNewWindow",
   "OpenInPrivateWindow",

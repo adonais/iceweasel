@@ -39,9 +39,9 @@ struct Register {
 
   Encoding reg_;
   explicit constexpr Register(Encoding e) : reg_(e) {}
-  Register() : reg_(Encoding(Codes::Invalid)) {}
+  constexpr Register() : reg_(Encoding(Codes::Invalid)) {}
 
-  static Register FromCode(Code i) {
+  constexpr static Register FromCode(Code i) {
     MOZ_ASSERT(i < Registers::Total);
     Register r{Encoding(i)};
     return r;
@@ -51,22 +51,18 @@ struct Register {
     Register r{Encoding(code)};
     return r;
   }
-  constexpr static Register Invalid() {
-    Register r{Encoding(Codes::Invalid)};
-    return r;
-  }
+  constexpr static Register Invalid() { return Register{}; }
   constexpr Code code() const { return Code(reg_); }
   Encoding encoding() const {
     MOZ_ASSERT(Code(reg_) < Registers::Total);
     return reg_;
   }
   const char* name() const { return Registers::GetName(code()); }
-  constexpr bool operator==(Register other) const { return reg_ == other.reg_; }
-  constexpr bool operator!=(Register other) const { return reg_ != other.reg_; }
+  constexpr bool operator==(const Register&) const = default;
   bool volatile_() const {
     return !!((SetType(1) << code()) & Registers::VolatileMask);
   }
-  bool aliases(const Register& other) const { return reg_ == other.reg_; }
+  constexpr bool aliases(const Register& other) const { return *this == other; }
   uint32_t numAliased() const { return 1; }
 
   Register aliased(uint32_t aliasIdx) const {

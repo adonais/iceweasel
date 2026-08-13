@@ -3,30 +3,29 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 // HttpLog.h should generally be included first
-#include "HttpLog.h"
-
 #include "HttpTransactionChild.h"
 
+#include "HttpLog.h"
+#include "OpaqueResponseUtils.h"
+#include "mozilla/ScopeExit.h"
+#include "mozilla/StaticPrefs_network.h"
 #include "mozilla/ipc/IPCStreamUtils.h"
 #include "mozilla/net/BackgroundDataBridgeParent.h"
 #include "mozilla/net/ChannelEventQueue.h"
 #include "mozilla/net/InputChannelThrottleQueueChild.h"
 #include "mozilla/net/SocketProcessChild.h"
-#include "mozilla/ScopeExit.h"
-#include "mozilla/StaticPrefs_network.h"
+#include "nsHttpHandler.h"
 #include "nsHttpResponseHead.h"
-#include "nsInputStreamPump.h"
+#include "nsHttpTransaction.h"
+#include "nsIRequestContext.h"
 #include "nsISocketTransport.h"
 #include "nsITransportSecurityInfo.h"
-#include "nsHttpHandler.h"
-#include "nsHttpTransaction.h"
+#include "nsInputStreamPump.h"
 #include "nsNetUtil.h"
 #include "nsProxyInfo.h"
 #include "nsProxyRelease.h"
 #include "nsQueryObject.h"
 #include "nsSerializationHelper.h"
-#include "OpaqueResponseUtils.h"
-#include "nsIRequestContext.h"
 
 namespace mozilla::net {
 
@@ -66,10 +65,10 @@ static already_AddRefed<nsIRequestContext> CreateRequestContext(
 nsresult HttpTransactionChild::InitInternal(
     uint32_t caps, const HttpConnectionInfoCloneArgs& infoArgs,
     nsHttpRequestHead* requestHead, nsIInputStream* requestBody,
-    uint64_t requestContentLength, bool requestBodyHasHeaders,
-    uint64_t browserId, HttpTrafficCategory httpTrafficCategory,
-    uint64_t requestContextID, ClassOfService classOfService,
-    uint32_t initialRwin, bool responseTimeoutEnabled, uint64_t channelId,
+    uint64_t requestContentLength, uint64_t browserId,
+    HttpTrafficCategory httpTrafficCategory, uint64_t requestContextID,
+    ClassOfService classOfService, uint32_t initialRwin,
+    bool responseTimeoutEnabled, uint64_t channelId,
     bool aHasTransactionObserver,
     const nsILoadInfo::IPAddressSpace& aParentIPAddressSpace,
     const LNAPerms& aLnaPermissionStatus) {
@@ -91,7 +90,7 @@ nsresult HttpTransactionChild::InitInternal(
 
   nsresult rv = mTransaction->Init(
       caps, cinfo, requestHead, requestBody, requestContentLength,
-      requestBodyHasHeaders, GetCurrentSerialEventTarget(),
+      GetCurrentSerialEventTarget(),
       nullptr,  // TODO: security callback, fix in bug 1512479.
       this, browserId, httpTrafficCategory, rc, classOfService, initialRwin,
       responseTimeoutEnabled, channelId, std::move(observer),
@@ -143,7 +142,7 @@ mozilla::ipc::IPCResult HttpTransactionChild::RecvResumePump() {
 mozilla::ipc::IPCResult HttpTransactionChild::RecvInit(
     const uint32_t& aCaps, const HttpConnectionInfoCloneArgs& aArgs,
     const nsHttpRequestHead& aReqHeaders, const Maybe<IPCStream>& aRequestBody,
-    const uint64_t& aReqContentLength, const bool& aReqBodyIncludesHeaders,
+    const uint64_t& aReqContentLength,
     const uint64_t& aTopLevelOuterContentWindowId,
     const HttpTrafficCategory& aHttpTrafficCategory,
     const uint64_t& aRequestContextID, const ClassOfService& aClassOfService,
@@ -172,10 +171,9 @@ mozilla::ipc::IPCResult HttpTransactionChild::RecvInit(
 
   nsresult rv = InitInternal(
       aCaps, aArgs, &mRequestHead, mUploadStream, aReqContentLength,
-      aReqBodyIncludesHeaders, aTopLevelOuterContentWindowId,
-      aHttpTrafficCategory, aRequestContextID, aClassOfService, aInitialRwin,
-      aResponseTimeoutEnabled, aChannelId, aHasTransactionObserver,
-      aParentIPAddressSpace, aLnaPermissionStatus);
+      aTopLevelOuterContentWindowId, aHttpTrafficCategory, aRequestContextID,
+      aClassOfService, aInitialRwin, aResponseTimeoutEnabled, aChannelId,
+      aHasTransactionObserver, aParentIPAddressSpace, aLnaPermissionStatus);
   if (NS_FAILED(rv)) {
     LOG(("HttpTransactionChild::RecvInit: [this=%p] InitInternal failed!\n",
          this));

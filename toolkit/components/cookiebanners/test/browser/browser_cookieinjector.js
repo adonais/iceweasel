@@ -366,7 +366,7 @@ add_task(async function test_pbm() {
           value: "optOut2",
         },
       ],
-      true
+      { privateBrowsingId: 1 }
     ),
     "Should set opt-out cookies for top-level ORIGIN_A in private browsing."
   );
@@ -596,7 +596,7 @@ add_task(async function test_site_preference_pbm() {
     !SiteDataTestUtils.hasCookies(
       tab.linkedBrowser.contentPrincipal.origin,
       null,
-      true
+      { privateBrowsingId: 1 }
     ),
     "Should not set any cookies for ORIGIN_B in the private window"
   );
@@ -623,7 +623,7 @@ add_task(async function test_site_preference_pbm() {
           value: "optIn1",
         },
       ],
-      true
+      { privateBrowsingId: 1 }
     ),
     "Should set opt-in cookies for ORIGIN_B"
   );

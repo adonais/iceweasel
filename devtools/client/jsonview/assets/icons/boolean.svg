@@ -1,0 +1,11 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+- License, v. 2.0. If a copy of the MPL was not distributed with this
+- file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<svg viewBox="0 0 76 76" xmlns="http://www.w3.org/2000/svg" baseProfile="full"
+  enable-background="new 0 0 76.00 76.00" xml:space="preserve" fill="context-fill">
+  <g stroke-width="0"></g>
+  <g stroke-linecap="round" stroke-linejoin="round"></g>
+  <g>
+   <path fill="context-fill" fill-opacity="1" stroke-linejoin="round" d="M 36,23L 30,23L 30,40L 25,40L 25,23L 19,23L 19,19L 36,19L 36,23 Z M 57,40L 50,40L 50,45L 56,45L 56,49L 50,49L 50,57L 45,57L 45,36L 57,36L 57,40 Z M 44,19L 48.5,19L 32.5,57L 28,57L 44,19 Z "></path>
+  </g>
+</svg>

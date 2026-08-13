@@ -54,6 +54,7 @@ class NimbusExperimentDataProviderTest {
             userFacingName = "Experiment name for $slug",
             userFacingDescription = "Experiment desc for $slug",
             branchSlug = branchSlug,
+            isRollout = false,
         )
     }
 

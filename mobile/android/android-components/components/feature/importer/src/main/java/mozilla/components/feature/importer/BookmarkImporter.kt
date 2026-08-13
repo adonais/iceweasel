@@ -15,13 +15,12 @@ import mozilla.components.concept.bookmarks.file.BookmarksFileImporter
  * Self-contained bookmarks import flow that drives file selection, the in-progress dialog, and
  * completion via an internal [ImporterStore].
  *
- * @param onFinished Invoked when the import flow has reached a terminal [ImporterState.Finished]
- * state, carrying the [ImporterResult]. Hosts typically use this to dismiss the surrounding UI.
+ * @param onEventReceived Invoked when the import flow has received an import event.
  */
 @Composable
 fun BookmarkImporter(
     importer: BookmarksFileImporter,
-    onFinished: (ImporterResult) -> Unit,
+    onEventReceived: (ImporterEvent) -> Unit,
 ) {
     val viewModel: ImporterViewModel = viewModel(
         factory = ImporterViewModel.factory(importer),
@@ -47,6 +46,10 @@ fun BookmarkImporter(
         }
         ImporterState.Loading -> {
             ImporterDialog(
+                onImportStarted = {
+                    viewModel.store.dispatch(ImporterAction.ImportStarted)
+                    onEventReceived(ImporterEvent.Started)
+                },
                 onCancel = {
                     viewModel.store.dispatch(ImporterAction.ImportCancelled)
                 },
@@ -54,7 +57,7 @@ fun BookmarkImporter(
         }
         is ImporterState.Finished -> {
             LaunchedEffect(current) {
-                onFinished(current.result)
+                onEventReceived(current.result)
             }
         }
     }

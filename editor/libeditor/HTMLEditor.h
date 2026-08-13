@@ -170,7 +170,8 @@ class HTMLEditor final : public EditorBase,
 
   bool IsEmpty() const final;
 
-  dom::EditContext* GetEditContext() const final;
+  dom::EditContext* ComputeEditContext() const final;
+  bool IsFiringTextUpdate() const;
 
   bool CanPaste(nsIClipboard::ClipboardType aClipboardType) const final;
   using EditorBase::CanPaste;
@@ -428,9 +429,12 @@ class HTMLEditor final : public EditorBase,
   bool IsCSSEnabled() const { return mIsCSSPrefChecked; }
 
   /**
-   * Return true when editing host is not plaintext-only.
+   * Return true when editing host is not plaintext-only/EditContext.
+   *
+   * @param aEditingHost Pass editing host to avoid recomputing it.
    */
-  [[nodiscard]] bool IsStyleEditable() const;
+  [[nodiscard]] bool IsStyleEditable(
+      const Element* aEditingHost = nullptr) const;
 
   /**
    * Enable/disable object resizers for <img> elements, <table> elements,

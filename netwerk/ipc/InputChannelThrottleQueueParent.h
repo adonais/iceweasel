@@ -5,9 +5,9 @@
 #ifndef InputChannelThrottleQueueParent_h_
 #define InputChannelThrottleQueueParent_h_
 
+#include "mozilla/net/PInputChannelThrottleQueueParent.h"
 #include "nsISupportsImpl.h"
 #include "nsIThrottledInputChannel.h"
-#include "mozilla/net/PInputChannelThrottleQueueParent.h"
 
 namespace mozilla {
 namespace net {

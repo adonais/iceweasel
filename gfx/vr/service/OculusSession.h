@@ -5,15 +5,14 @@
 #ifndef GFX_VR_SERVICE_OCULUSSESSION_H
 #define GFX_VR_SERVICE_OCULUSSESSION_H
 
+#include "ShaderDefinitionsD3D11.h"  // for VertexShaderConstants and PixelShaderConstants
 #include "VRSession.h"
-
 #include "moz_external_vr.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/gfx/2D.h"
 #include "nsTArray.h"
 #include "oculus/ovr_capi_dynamic.h"
 #include "prlink.h"
-#include "ShaderDefinitionsD3D11.h"  // for VertexShaderConstants and PixelShaderConstants
 
 struct ID3D11Device;
 

@@ -24,7 +24,7 @@ CFDataRef messageServerCallback(CFMessagePortRef aLocal, int32_t aMsgid,
   // One of the clients submitted a structure.
   static_cast<nsMacRemoteServer*>(aInfo)->HandleCommandLine(aData);
 
-  return NULL;
+  return nullptr;
 }
 
 // aData contains serialized Dictionary, which in turn contains command line
@@ -99,21 +99,21 @@ nsresult nsMacRemoteServer::Startup(const char* aAppName,
                     length:className.Length()];
 
   CFMessagePortContext context;
-  context.copyDescription = NULL;
+  context.copyDescription = nullptr;
   context.info = this;
-  context.release = NULL;
-  context.retain = NULL;
+  context.release = nullptr;
+  context.retain = nullptr;
   context.version = NULL;
   mMessageServer =
-      CFMessagePortCreateLocal(NULL, (CFStringRef)serverNameString,
-                               messageServerCallback, &context, NULL);
+      CFMessagePortCreateLocal(nullptr, (CFStringRef)serverNameString,
+                               messageServerCallback, &context, nullptr);
   if (!mMessageServer) {
     return NS_ERROR_FAILURE;
   }
-  mRunLoopSource = CFMessagePortCreateRunLoopSource(NULL, mMessageServer, 0);
+  mRunLoopSource = CFMessagePortCreateRunLoopSource(nullptr, mMessageServer, 0);
   if (!mRunLoopSource) {
     CFRelease(mMessageServer);
-    mMessageServer = NULL;
+    mMessageServer = nullptr;
     return NS_ERROR_FAILURE;
   }
   CFRunLoopRef runLoop = CFRunLoopGetMain();
@@ -131,12 +131,12 @@ void nsMacRemoteServer::Shutdown() {
   // 2) Release run loop source
   if (mRunLoopSource) {
     CFRelease(mRunLoopSource);
-    mRunLoopSource = NULL;
+    mRunLoopSource = nullptr;
   }
 
   // 3) Release server connection
   if (mMessageServer) {
     CFRelease(mMessageServer);
-    mMessageServer = NULL;
+    mMessageServer = nullptr;
   }
 }

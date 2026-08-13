@@ -19,17 +19,9 @@ namespace mozilla::webgpu {
 class BindGroup;
 class Buffer;
 class RenderPipeline;
-
-namespace ffi {
-struct WGPURenderBundleEncoder;
-}  // namespace ffi
-
 class Device;
 class RenderBundle;
-
-struct ffiWGPURenderBundleEncoderDeleter {
-  void operator()(ffi::WGPURenderBundleEncoder*);
-};
+class ExternalTexture;
 
 class RenderBundleEncoder final : public nsWrapperCache,
                                   public ObjectBase,
@@ -38,28 +30,17 @@ class RenderBundleEncoder final : public nsWrapperCache,
   GPU_DECL_CYCLE_COLLECTION(RenderBundleEncoder)
   GPU_DECL_JS_WRAP(RenderBundleEncoder)
 
-  RenderBundleEncoder(Device* const aParent, RawId aId,
-                      const dom::GPURenderBundleEncoderDescriptor& aDesc);
+  RenderBundleEncoder(Device* const aParent, RawId aId);
 
  private:
   virtual ~RenderBundleEncoder();
 
-  std::unique_ptr<ffi::WGPURenderBundleEncoder,
-                  ffiWGPURenderBundleEncoderDeleter>
-      mEncoder;
-  // keep all the used objects alive while the encoder is finished
-  nsTArray<RefPtr<const BindGroup>> mUsedBindGroups;
-  nsTArray<RefPtr<const Buffer>> mUsedBuffers;
-  nsTArray<RefPtr<const RenderPipeline>> mUsedPipelines;
-
   // The canvas contexts of any canvas textures used in bind groups of this
   // render bundle.
   CanvasContextArray mUsedCanvasContexts;
+  nsTArray<RefPtr<ExternalTexture>> mExternalTextures;
 
-  // programmable pass encoder
  private:
-  bool mValid = true;
-
   void SetBindGroup(uint32_t aSlot, BindGroup* const aBindGroup,
                     const uint32_t* aDynamicOffsets,
                     size_t aDynamicOffsetsLength);
@@ -99,6 +80,10 @@ class RenderBundleEncoder final : public nsWrapperCache,
   // helpers not defined by WebGPU
   mozilla::Span<const WeakPtr<CanvasContext>> GetCanvasContexts() const {
     return mUsedCanvasContexts;
+  }
+
+  mozilla::Span<const RefPtr<ExternalTexture>> GetExternalTextures() const {
+    return mExternalTextures;
   }
 };
 

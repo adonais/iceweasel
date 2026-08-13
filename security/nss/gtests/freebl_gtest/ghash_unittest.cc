@@ -12,7 +12,7 @@ namespace nss_test {
 
 class GHashTest : public ::testing::TestWithParam<AesGcmKatValue> {
  protected:
-  void TestGHash(const AesGcmKatValue val, bool sw) {
+  void TestGHash(const AesGcmKatValue val) {
     // Read test data.
     std::vector<uint8_t> hash_key = hex_string_to_bytes(val.hash_key);
     ASSERT_EQ(16UL, hash_key.size());
@@ -25,7 +25,8 @@ class GHashTest : public ::testing::TestWithParam<AesGcmKatValue> {
 
     // Prepare context.
     gcmHashContext ghashCtx;
-    ASSERT_EQ(SECSuccess, gcmHash_InitContext(&ghashCtx, hash_key.data(), sw));
+    ASSERT_EQ(SECSuccess,
+              gcmHash_InitContext(&ghashCtx, hash_key.data(), PR_FALSE));
 
     // Hash additional_data, cipher_text.
     gcmHash_Reset(&ghashCtx,
@@ -44,10 +45,7 @@ class GHashTest : public ::testing::TestWithParam<AesGcmKatValue> {
   }
 };
 
-#ifdef NSS_X86_OR_X64
-TEST_P(GHashTest, KAT_X86_HW) { TestGHash(GetParam(), false); }
-#endif
-TEST_P(GHashTest, KAT_Sftw) { TestGHash(GetParam(), true); }
+TEST_P(GHashTest, KAT) { TestGHash(GetParam()); }
 
 INSTANTIATE_TEST_SUITE_P(NISTTestVector, GHashTest,
                          ::testing::ValuesIn(kGcmKatValues));

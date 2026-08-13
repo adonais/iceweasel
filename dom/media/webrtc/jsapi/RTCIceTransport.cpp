@@ -4,13 +4,15 @@
 
 #include "RTCIceTransport.h"
 
+#include "RTCIceCandidatePair.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/EventBinding.h"
 #include "mozilla/dom/RTCIceTransportBinding.h"
 
 namespace mozilla::dom {
 
-NS_IMPL_CYCLE_COLLECTION_INHERITED(RTCIceTransport, DOMEventTargetHelper)
+NS_IMPL_CYCLE_COLLECTION_INHERITED(RTCIceTransport, DOMEventTargetHelper,
+                                   mSelectedCandidatePair)
 
 NS_IMPL_ADDREF_INHERITED(RTCIceTransport, DOMEventTargetHelper)
 NS_IMPL_RELEASE_INHERITED(RTCIceTransport, DOMEventTargetHelper)
@@ -38,6 +40,15 @@ void RTCIceTransport::SetGatheringState(RTCIceGathererState aState) {
   mGatheringState = aState;
 }
 
+already_AddRefed<RTCIceCandidatePair>
+RTCIceTransport::GetSelectedCandidatePair() const {
+  return do_AddRef(mSelectedCandidatePair);
+}
+
+void RTCIceTransport::SetSelectedCandidatePair(RTCIceCandidatePair* aPair) {
+  mSelectedCandidatePair = aPair;
+}
+
 void RTCIceTransport::FireStateChangeEvent() {
   EventInit init;
   init.mBubbles = false;
@@ -55,6 +66,17 @@ void RTCIceTransport::FireGatheringStateChangeEvent() {
 
   RefPtr<Event> event =
       Event::Constructor(this, u"gatheringstatechange"_ns, init);
+
+  DispatchTrustedEvent(event);
+}
+
+void RTCIceTransport::FireSelectedCandidatePairChangeEvent() {
+  EventInit init;
+  init.mBubbles = false;
+  init.mCancelable = false;
+
+  RefPtr<Event> event =
+      Event::Constructor(this, u"selectedcandidatepairchange"_ns, init);
 
   DispatchTrustedEvent(event);
 }

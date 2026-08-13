@@ -68,7 +68,7 @@ add_task(async function menuBookmarkShowInFolderUpdatedSidebar() {
   // rather than the bookmarks-view tree.
   let sidebar = document.getElementById("sidebar");
   let component;
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     component = sidebar.contentDocument.querySelector("sidebar-bookmarks");
     return component;
   }, "The sidebar-bookmarks element is present.");
@@ -93,12 +93,12 @@ add_task(async function menuBookmarkShowInFolderUpdatedSidebar() {
     return null;
   };
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => findRow(component.bookmarkList),
     "The bookmark row appears in the tree view after Show in Folder."
   );
   let revealedRow = findRow(component.bookmarkList);
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => revealedRow.selected,
     "The bookmark row is selected after Show in Folder."
   );

@@ -1,0 +1,61 @@
+[DEFAULT]
+browser_cycles = 3
+cold = true
+gecko_profile_interval = 1
+# Capture the Socket Thread (where connection establishment happens) alongside the
+# usual threads, so the extra profiler run is useful for diagnosing HEv3 connection
+# behaviour.
+gecko_profile_threads = "GeckoMain,Compositor,Renderer,Socket Thread"
+lower_is_better = true
+owner = "Network Team"
+page_cycles = 1 # this is a cold pageload test
+# Per-navigation timeout; also bounds the overall browsertime process timeout, so a
+# hung live navigation fails fast instead of retrying for minutes.
+page_timeout = 75000
+type = "pageload"
+unit = "ms"
+alert_threshold = 2.0
+use_live_sites = true
+# Force the connectivity service on so it is active during the connection.
+# Firefox preference, ignored on Chrome.
+preferences = [
+    "network.connectivity-service.enabled=true",
+]
+
+# Keep this list in alphabetical order
+
+# Chrome cross-browser baseline. The Happy Eyeballs v3 / DoH preferences are
+# Firefox-only, so Chrome runs a single variant with no test-specific prefs.
+["baseline"]
+apps = "chrome,chrome-m"
+test_script = "hev3_connection.js"
+test_url = "None"
+custom_data = true
+
+["he3off-dns"]
+apps = "firefox,fenix"
+browsertime_args = "--firefox.preference network.http.happy_eyeballs_enabled:false --firefox.preference network.trr.mode:0"
+test_script = "hev3_connection.js"
+test_url = "None"
+custom_data = true
+
+["he3off-doh"]
+apps = "firefox,fenix"
+browsertime_args = "--firefox.preference network.http.happy_eyeballs_enabled:false --firefox.preference network.trr.mode:2 --firefox.preference network.trr.uri:https://private.canadianshield.cira.ca/dns-query"
+test_script = "hev3_connection.js"
+test_url = "None"
+custom_data = true
+
+["he3on-dns"]
+apps = "firefox,fenix"
+browsertime_args = "--firefox.preference network.http.happy_eyeballs_enabled:true --firefox.preference network.trr.mode:0"
+test_script = "hev3_connection.js"
+test_url = "None"
+custom_data = true
+
+["he3on-doh"]
+apps = "firefox,fenix"
+browsertime_args = "--firefox.preference network.http.happy_eyeballs_enabled:true --firefox.preference network.trr.mode:2 --firefox.preference network.trr.uri:https://private.canadianshield.cira.ca/dns-query"
+test_script = "hev3_connection.js"
+test_url = "None"
+custom_data = true

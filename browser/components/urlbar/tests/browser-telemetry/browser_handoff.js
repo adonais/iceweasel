@@ -88,7 +88,7 @@ add_task(async function test_search() {
     searchInput.click();
   });
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => window.gURLBar._hideFocus,
     "Wait until _hideFocus will be true"
   );
@@ -129,7 +129,7 @@ add_task(async function test_search_private_mode() {
     searchInput.click();
   });
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => privateWindow.gURLBar._hideFocus,
     "Wait until _hideFocus will be true"
   );

@@ -6,9 +6,9 @@
 // garbled text/html and missing text/plain data on Linux/X11.
 
 #include "gtest/gtest.h"
+#include "mozilla/Span.h"
 #include "mozilla/widget/nsGtkHtmlUtils.h"
 #include "nsString.h"
-#include "mozilla/Span.h"
 
 using namespace mozilla;
 using namespace mozilla::widget;

@@ -7,6 +7,19 @@
 
 "use strict";
 
+const { MockEngineManager } = ChromeUtils.importESModule(
+  "resource://testing-common/AIWindowTestUtils.sys.mjs"
+);
+
+add_setup(async function () {
+  const mockEngineManager = new MockEngineManager();
+
+  registerCleanupFunction(() => {
+    mockEngineManager.rejectAllRequests();
+    mockEngineManager.cleanupMocks();
+  });
+});
+
 /**
  * Asserts whether the smartbar placeholder should animate.
  *

@@ -67,7 +67,7 @@ add_task(async function test_protocol_trimming() {
       context,
       matches: [
         makeVisitResult(context, {
-          source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+          source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
           uri: `${input.trim()}/`,
           title: `${input.trim()}/`,
           iconUri: "",

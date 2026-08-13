@@ -11,7 +11,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
-  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   SessionStore: "resource:///modules/sessionstore/SessionStore.sys.mjs",
   TabMetrics: "moz-src:///browser/components/tabbrowser/TabMetrics.sys.mjs",
 });
@@ -31,7 +31,7 @@ class ProviderTabGroups extends ActionsProvider {
       queryContext.sapName == "urlbar" &&
       Services.prefs.getBoolPref("browser.tabs.groups.enabled") &&
       (!queryContext.restrictSource ||
-        queryContext.restrictSource == lazy.UrlbarUtils.RESULT_SOURCE.TABS) &&
+        queryContext.restrictSource == lazy.UrlbarShared.RESULT_SOURCE.TABS) &&
       queryContext.trimmedSearchString.length < 50 &&
       queryContext.trimmedSearchString.length >=
         lazy.UrlbarPrefs.get(MIN_SEARCH_PREF)
@@ -135,6 +135,7 @@ class ProviderTabGroups extends ActionsProvider {
 
   #makeResult({ key, l10nId, l10nArgs, color, dataset }) {
     return new ActionsResult({
+      providerName: this.name,
       key,
       l10nId,
       l10nArgs,
@@ -142,9 +143,9 @@ class ProviderTabGroups extends ActionsProvider {
       dataset: {
         ...dataset,
         style: {
-          "--tab-group-color": `var(--tab-group-color-${color})`,
-          "--tab-group-color-invert": `var(--tab-group-color-${color}-invert)`,
-          "--tab-group-color-pale": `var(--tab-group-color-${color}-pale)`,
+          "--tab-group-color": `var(--tab-group-${color})`,
+          "--tab-group-color-invert": `var(--tab-group-${color}-invert)`,
+          "--tab-group-color-pale": `var(--tab-group-${color}-pale)`,
           "--tab-group-background-color": `var(--tab-group-${color})`,
           "--tab-group-text-color": `var(--tab-group-${color}-text)`,
           "--tab-group-background-color-hover": `var(--tab-group-${color}-hover)`,

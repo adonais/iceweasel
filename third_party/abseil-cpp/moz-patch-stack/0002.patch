@@ -1,32 +1,83 @@
 From: Michael Froman <mfroman@mozilla.com>
-Date: Thu, 20 Oct 2022 16:14:00 +0000
-Subject: Bug 1795982 - pt3 - re-enable building absl/base:throw_delegate for
- missing ThrowStdOutOfRange. r=ng
+Date: Thu, 10 Oct 2024 13:42:00 +0000
+Subject: Bug 1921707 - absl.gni - filter dep paths from
+ '//third_party/abseil-cpp/' to '//' r=ng
 
-More code in the new libwebrtc/third_party update uses throw_delegate, which
-until now we've been able to carefully avoid.  However, in most cases, it
-appears that ABSL_HAVE_EXCEPTIONS is turned off.  This is good because throwing
-exceptions isn't enabled, but upstream aborts instead.  A static_assert was
-added in throw_delegate.cc to verify that no exceptions can be thrown.
-
-Differential Revision: https://phabricator.services.mozilla.com/D159740
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/3e09f1c91f790a6dbd0fb0faaa18fd2dd4535c50
+Differential Revision: https://phabricator.services.mozilla.com/D224080
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/afc78fbdb5666ffa9c87da7427cc7249220f4908
 ---
- abseil-cpp/absl/base/internal/throw_delegate.cc | 4 ++++
- 1 file changed, 4 insertions(+)
+ abseil-cpp/absl.gni | 54 ++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 53 insertions(+), 1 deletion(-)
 
-diff --git a/abseil-cpp/absl/base/internal/throw_delegate.cc b/abseil-cpp/absl/base/internal/throw_delegate.cc
-index 337e870cd68..11467e08b41 100644
---- a/abseil-cpp/absl/base/internal/throw_delegate.cc
-+++ b/abseil-cpp/absl/base/internal/throw_delegate.cc
-@@ -26,6 +26,10 @@ namespace absl {
- ABSL_NAMESPACE_BEGIN
- namespace base_internal {
- 
-+#ifdef ABSL_HAVE_EXCEPTIONS
-+static_assert(false, "Mozilla - ABSL_HAVE_EXCEPTIONS has been turned on");
-+#endif
+diff --git a/abseil-cpp/absl.gni b/abseil-cpp/absl.gni
+index 3e5c21f9544..96c7338af71 100644
+--- a/abseil-cpp/absl.gni
++++ b/abseil-cpp/absl.gni
+@@ -80,8 +80,45 @@ template("absl_source_set") {
+           visibility = [ "*" ]
+         }
+       }
++      visibility += [ "//abseil-cpp/*" ]
 +
- // NOTE: The exception types, like `std::logic_error`, do not exist on all
- // platforms. (For example, the Android NDK does not have them.)
- // Therefore, their use must be guarded by `#ifdef` or equivalent.
++      # Now that abseil-cpp lives under Mozilla's third_party instead
++      # of under libwebrtc's third_party and is built as a stand-alone
++      # library, we need to "re-root" the dependency paths.  We can
++      # modify the dependencies here to avoid modifying most, if not
++      # all, of the BUILD.gn files.
++      if (defined(deps)) {
++        modified_deps = []
++        foreach (dep, deps) {
++          newdep = string_replace(dep, "//third_party/abseil-cpp/", "//")
++          modified_deps += [ newdep ]
++        }
++        deps = []
++        deps = modified_deps
++      }
++
++      # Same for public_deps
++      if (defined(public_deps)) {
++        modified_deps = []
++        foreach (dep, public_deps) {
++          newdep = string_replace(dep, "//third_party/abseil-cpp/", "//")
++          modified_deps += [ newdep ]
++        }
++        public_deps = []
++        public_deps = modified_deps
++      }
++
++      # Same for visibility
++      if (defined(visibility)) {
++        modified_deps = []
++        foreach (dep, visibility) {
++          newdep = string_replace(dep, "//third_party/abseil-cpp/", "//")
++          modified_deps += [ newdep ]
++        }
++        visibility = []
++        visibility = modified_deps
++      }
+     }
+-    visibility += [ "//abseil-cpp/*" ]
+   }
+ }
+ 
+@@ -111,5 +148,20 @@ template("absl_test") {
+         "//third_party/googletest:gtest",
+       ]
+     }
++
++    # Now that abseil-cpp lives under Mozilla's third_party instead
++    # of under libwebrtc's third_party and is built as a stand-alone
++    # library, we need to "re-root" the dependency paths.  We can
++    # modify the dependencies here to avoid modifying most, if not
++    # all, of the BUILD.gn files.
++    if (defined(deps)) {
++      modified_deps = []
++      foreach (dep, deps) {
++        newdep = string_replace(dep, "//third_party/abseil-cpp/", "//")
++        modified_deps += [ newdep ]
++      }
++      deps = []
++      deps = modified_deps
++    }
+   }
+ }

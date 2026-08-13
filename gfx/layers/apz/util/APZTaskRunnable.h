@@ -35,8 +35,7 @@ class APZTaskRunnable final : public Runnable {
       // Queue a RepaintRequest.
       // If there's already a RepaintRequest having the same scroll id, the old
       // one will be discarded.
-      void
-      QueueRequest(const RepaintRequest& aRequest);
+      void QueueRequest(const RepaintRequest& aRequest);
   void QueueAPZStateChange(const ScrollableLayerGuid& aGuid,
                            const APZStateChange& aChange, const int& aArg,
                            Maybe<uint64_t> aInputBlockId);

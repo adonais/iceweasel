@@ -297,8 +297,7 @@ class UniqueStacks final : public mozilla::FailureLatch {
         const FrameKey::NormalFrameData& data =
             aLookup.mData.as<FrameKey::NormalFrameData>();
         if (!data.mLocation.IsEmpty()) {
-          hash = mozilla::AddToHash(hash,
-                                    mozilla::HashString(data.mLocation.get()));
+          hash = mozilla::AddToHash(hash, mozilla::HashString(data.mLocation));
         }
         hash = mozilla::AddToHash(hash, data.mRelevantForJS);
         hash = mozilla::AddToHash(hash, data.mBaselineInterp);

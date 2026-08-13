@@ -2,21 +2,23 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "DBusService.h"
+
+#include <errno.h>
+#include <fcntl.h>
+#include <gdk/gdk.h>
+#include <gio/gio.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <gdk/gdk.h>
-#include "DBusService.h"
-#include "nsAppRunner.h"
+
+#include "WidgetUtilsGtk.h"
 #include "mozilla/GUniquePtr.h"
 #include "mozilla/WidgetUtils.h"
-#include <gio/gio.h>
-#include "nsIObserverService.h"
-#include "WidgetUtilsGtk.h"
-#include "prproces.h"
 #include "mozilla/XREAppData.h"
+#include "nsAppRunner.h"
+#include "nsIObserverService.h"
 #include "nsPrintfCString.h"
+#include "prproces.h"
 
 using namespace mozilla;
 using namespace mozilla::widget;

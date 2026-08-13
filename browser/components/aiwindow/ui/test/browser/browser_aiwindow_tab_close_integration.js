@@ -236,6 +236,7 @@ add_task(async function test_renders_action_result_confirmed_state() {
         uiType: "ai-action-result",
         properties: {
           confirmedData: {
+            actionType: "close_tabs",
             selectedTabs: [
               {
                 linkedPanel: "panel-1",
@@ -269,7 +270,9 @@ add_task(async function test_renders_action_result_confirmed_state() {
         chatContent.shadowRoot.querySelector("ai-action-result");
       Assert.ok(actionResult, "Action result component should be rendered");
       Assert.ok(
-        actionResult.parentElement?.classList.contains("chat-bubble-assistant"),
+        actionResult.parentElement?.parentElement?.classList.contains(
+          "chat-bubble-assistant"
+        ),
         "Action result should be inside assistant message bubble"
       );
 
@@ -310,6 +313,7 @@ add_task(async function test_renders_action_result_restored_state() {
         uiType: "ai-action-result",
         properties: {
           confirmedData: {
+            actionType: "close_tabs",
             wasRestored: true,
             restoredCount: 2,
             originalClosedTabs: [

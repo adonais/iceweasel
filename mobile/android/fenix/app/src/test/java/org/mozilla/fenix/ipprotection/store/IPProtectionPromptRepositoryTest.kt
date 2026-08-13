@@ -17,7 +17,11 @@ import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.Settings.Companion.ONE_WEEK_MS
 import org.robolectric.RobolectricTestRunner
 
-private const val CURRENT_TIME_MILLIS = 1759926358L
+private const val CURRENT_TIME_MILLIS = 1_759_926_358_000L
+
+private const val EXACTLY_ONE_WEEK_AGO = CURRENT_TIME_MILLIS - ONE_WEEK_MS
+private const val LESS_THAN_ONE_WEEK_AGO = EXACTLY_ONE_WEEK_AGO + 1
+private const val MORE_THAN_ONE_WEEK_AGO = EXACTLY_ONE_WEEK_AGO - 1
 
 @RunWith(RobolectricTestRunner::class)
 class IPProtectionPromptRepositoryTest {
@@ -28,10 +32,8 @@ class IPProtectionPromptRepositoryTest {
     @Before
     fun setup() {
         settings = Settings(testContext)
-        repository = DefaultIPProtectionPromptRepository(
-            settings = settings,
-            installedTimeMillis = { CURRENT_TIME_MILLIS - ONE_WEEK_MS },
-        )
+        settings.onboardingCompletedTimestamp = MORE_THAN_ONE_WEEK_AGO
+        repository = DefaultIPProtectionPromptRepository(settings)
     }
 
     @Test
@@ -40,7 +42,6 @@ class IPProtectionPromptRepositoryTest {
         repository.isShowingPrompt = false
 
         assertTrue(settings.isIPProtectionAvailable)
-
         assertTrue(repository.canShowIPProtectionPrompt(CURRENT_TIME_MILLIS))
     }
 
@@ -50,7 +51,6 @@ class IPProtectionPromptRepositoryTest {
         repository.isShowingPrompt = true
 
         assertTrue(settings.isIPProtectionAvailable)
-
         assertFalse(repository.canShowIPProtectionPrompt(CURRENT_TIME_MILLIS))
     }
 
@@ -76,44 +76,36 @@ class IPProtectionPromptRepositoryTest {
     }
 
     @Test
-    fun `WHEN the application was installed less than a week ago THEN do not show the prompt`() {
-        repository = DefaultIPProtectionPromptRepository(
-            settings = settings,
-            installedTimeMillis = { CURRENT_TIME_MILLIS - (ONE_WEEK_MS - 1) },
-        )
+    fun `WHEN onboarding was completed less than a week ago THEN do not show the prompt`() {
+        settings.onboardingCompletedTimestamp = LESS_THAN_ONE_WEEK_AGO
+
+        repository = DefaultIPProtectionPromptRepository(settings)
         settings.isIPProtectionEnabled = true
         repository.isShowingPrompt = false
 
         assertTrue(settings.isIPProtectionAvailable)
-
         assertFalse(repository.canShowIPProtectionPrompt(CURRENT_TIME_MILLIS))
     }
 
     @Test
-    fun `WHEN the application was installed exactly a week ago THEN show the prompt`() {
-        repository = DefaultIPProtectionPromptRepository(
-            settings = settings,
-            installedTimeMillis = { CURRENT_TIME_MILLIS - ONE_WEEK_MS },
-        )
+    fun `WHEN onboarding was completed exactly a week ago THEN do not show the prompt`() {
+        settings.onboardingCompletedTimestamp = EXACTLY_ONE_WEEK_AGO
+        repository = DefaultIPProtectionPromptRepository(settings)
         settings.isIPProtectionEnabled = true
         repository.isShowingPrompt = false
 
         assertTrue(settings.isIPProtectionAvailable)
-
-        assertTrue(repository.canShowIPProtectionPrompt(CURRENT_TIME_MILLIS))
+        assertFalse(repository.canShowIPProtectionPrompt(CURRENT_TIME_MILLIS))
     }
 
     @Test
-    fun `WHEN the application was installed over a week ago THEN show the prompt`() {
-        repository = DefaultIPProtectionPromptRepository(
-            settings = settings,
-            installedTimeMillis = { CURRENT_TIME_MILLIS - (ONE_WEEK_MS + 1) },
-        )
+    fun `WHEN onboarding was completed over a week ago THEN show the prompt`() {
+        settings.onboardingCompletedTimestamp = MORE_THAN_ONE_WEEK_AGO
+        repository = DefaultIPProtectionPromptRepository(settings)
         settings.isIPProtectionEnabled = true
         repository.isShowingPrompt = false
 
         assertTrue(settings.isIPProtectionAvailable)
-
         assertTrue(repository.canShowIPProtectionPrompt(CURRENT_TIME_MILLIS))
     }
 }

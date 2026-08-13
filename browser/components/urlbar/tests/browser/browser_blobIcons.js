@@ -38,8 +38,8 @@ add_task(async function test() {
   let provider = new UrlbarTestUtils.TestProvider({
     results: [
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         payload: {
           url: "https://example.com/",
           iconBlob: TEST_ICON_BLOB,

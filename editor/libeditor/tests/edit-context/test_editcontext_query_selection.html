@@ -1,0 +1,81 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test that EditContext selectiopn bounds and text are correctly reported for QuerySelectedText content event</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="/tests/SimpleTest/EventUtils.js"></script>
+  <script src="common.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<div></div>
+<canvas></canvas>
+
+<script>
+'use strict';
+
+const domHost = document.querySelector('div');
+const canvasHost = document.querySelector('canvas');
+const editContext = new EditContext({
+  text: 'something else',
+});
+const selectionBounds = new DOMRect(123, 456, 789, 10);
+editContext.updateSelectionBounds(selectionBounds);
+
+// Add information about active EditContext to assertion message
+function formatMessage(message) {
+  const editContextType = document.activeElement.tagName === 'CANVAS'
+         ? '<canvas>-based EditContext'
+         : 'DOM-based EditContext';
+  return `${message} (${editContextType})`;
+}
+
+function checkSelectedText(expectedText, expectedOffset, expectedReversed) {
+  let result = synthesizeQuerySelectedText();
+  ok(result.succeeded,
+     formatMessage('QuerySelectedText should succeed on EditContext.'));
+  is(result.text, expectedText,
+     formatMessage('QuerySelectedText should get content from EditContext.text/selectionStart/selectionEnd.'));
+  is(result.offset, expectedOffset,
+     formatMessage('QuerySelectedText should get offset from min(EditContext.selectionStart, EditContext.selectionEnd).'));
+  is(result.reversed, expectedReversed,
+     formatMessage('QuerySelectedText should get reversed from EditContext.selectionStart/End.'));
+
+  const {selectionStart, selectionEnd} = editContext;
+  const textRect = synthesizeQueryTextRect(Math.min(selectionStart, selectionEnd),
+                                           Math.abs(selectionEnd - selectionStart));
+  ok(textRect.succeeded,
+     formatMessage('QueryTextRect should succeed.'));
+  checkRect(textRect, selectionBounds,
+            formatMessage('QueryTextRect should return selection bounds if queried range is selection.'));
+  if (selectionStart === selectionEnd) {
+    const textRectArray = synthesizeQueryTextRectArray(selectionStart, 0);
+    ok(textRectArray.succeeded,
+       formatMessage('QueryTextRectArray should succeed.'));
+    const left = {}, top = {}, width = {}, height = {};
+    textRectArray.getCharacterRect(0, left, top, width, height);
+    checkRect({left: left.value, top: top.value, width: width.value, height: height.value},
+              selectionBounds,
+              formatMessage('QueryTextRectArray should return selection bounds if queried range is caret.'));
+  }
+}
+
+for (let host of [domHost, canvasHost]) {
+  add_task(async () => {
+    await SimpleTest.promiseFocus();
+    domHost.editContext = null;
+    canvasHost.editContext = null;
+    host.editContext = editContext;
+    host.focus();
+    editContext.updateSelection(1, 3);
+    checkSelectedText('om', 1, false);
+    editContext.updateSelection(9, 5);
+    checkSelectedText('hing', 5, true);
+    editContext.updateSelection(7, 7);
+    checkSelectedText('', 7, false);
+  });
+}
+</script>
+</body>
+</html>

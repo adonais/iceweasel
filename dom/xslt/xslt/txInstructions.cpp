@@ -26,7 +26,7 @@ using mozilla::UniquePtr;
 nsresult txApplyDefaultElementTemplate::execute(txExecutionState& aEs) {
   txExecutionState::TemplateRule* rule = aEs.getCurrentTemplateRule();
   txExpandedName mode(rule->mModeNsId, rule->mModeLocalName);
-  txStylesheet::ImportFrame* frame = 0;
+  txStylesheet::ImportFrame* frame = nullptr;
   txInstruction* templ;
   nsresult rv =
       aEs.mStylesheet->findTemplate(aEs.getEvalContext()->getContextNode(),
@@ -57,7 +57,7 @@ nsresult txApplyImportsStart::execute(txExecutionState& aEs) {
 
   aEs.pushParamMap(rule.mParams);
 
-  txStylesheet::ImportFrame* frame = 0;
+  txStylesheet::ImportFrame* frame = nullptr;
   txExpandedName mode(rule.mModeNsId, rule.mModeLocalName);
   txInstruction* templ;
   nsresult rv =
@@ -79,7 +79,7 @@ txApplyTemplates::txApplyTemplates(const txExpandedName& aMode)
     : mMode(aMode) {}
 
 nsresult txApplyTemplates::execute(txExecutionState& aEs) {
-  txStylesheet::ImportFrame* frame = 0;
+  txStylesheet::ImportFrame* frame = nullptr;
   txInstruction* templ;
   nsresult rv =
       aEs.mStylesheet->findTemplate(aEs.getEvalContext()->getContextNode(),

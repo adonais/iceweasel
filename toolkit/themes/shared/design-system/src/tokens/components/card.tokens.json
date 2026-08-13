@@ -21,7 +21,12 @@
       }
     },
     "radius": {
-      "value": "{border.radius.large}"
+      "@base": {
+        "value": "{border.radius.large}"
+      },
+      "compact": {
+        "value": "{border.radius.medium}"
+      }
     }
   },
   "box": {
@@ -39,15 +44,87 @@
       "value": "{focus.outline.@base}"
     }
   },
+  "font": {
+    "size": {
+      "@base": {
+        "value": "{font.size.root}"
+      },
+      "compact": {
+        "value": "{font.size.small}"
+      }
+    }
+  },
   "padding": {
-    "value": "{space.large}"
+    "@base": {
+      "value": "{space.large}"
+    },
+    "compact": {
+      "value": "{space.small}"
+    }
   },
   "gap": {
     "@base": {
-      "value": "{card.padding}"
+      "value": "{card.padding.@base}"
+    },
+    "compact": {
+      "value": "{space.small}"
     },
     "article": {
       "value": "{space.small}"
+    }
+  },
+  "header": {
+    "background": {
+      "color": {
+        "@base": {
+          "value": {
+            "default": "initial",
+            "forcedColors": "{button.background.color.@base}"
+          }
+        },
+        "hover": {
+          "value": "{button.background.color.hover}"
+        },
+        "active": {
+          "value": "{button.background.color.active}"
+        }
+      }
+    },
+    "border": {
+      "color": {
+        "@base": {
+          "value": {
+            "default": "transparent",
+            "forcedColors": "{button.border.color.@base}",
+            "prefersContrast": "{button.border.color.@base}"
+          }
+        },
+        "hover": {
+          "value": {
+            "default": "transparent",
+            "forcedColors": "{button.border.color.hover}"
+          }
+        },
+        "active": {
+          "value": {
+            "default": "transparent",
+            "forcedColors": "{button.border.color.active}"
+          }
+        }
+      }
+    },
+    "text": {
+      "color": {
+        "@base": {
+          "value": "{button.text.color.@base}"
+        },
+        "hover": {
+          "value": "{button.text.color.hover}"
+        },
+        "active": {
+          "value": "{button.text.color.active}"
+        }
+      }
     }
   }
 }

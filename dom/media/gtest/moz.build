@@ -22,13 +22,16 @@ LOCAL_INCLUDES += [
 
 UNIFIED_SOURCES += [
     "MockMediaResource.cpp",
+    "TestADTSDemuxer.cpp",
     "TestAOMDecoder.cpp",
     "TestAsyncLogger.cpp",
     "TestAudioBuffer.cpp",
     "TestAudioBufferAddWithScale.cpp",
     "TestAudioBuffers.cpp",
     "TestAudioCallbackDriver.cpp",
+    "TestAudioClock.cpp",
     "TestAudioCompactor.cpp",
+    "TestAudioConfig.cpp",
     "TestAudioData.cpp",
     "TestAudioDecoderInputTrack.cpp",
     "TestAudioInputSource.cpp",
@@ -50,6 +53,7 @@ UNIFIED_SOURCES += [
     "TestDeviceInputTrack.cpp",
     "TestDriftCompensation.cpp",
     "TestGMPUtils.cpp",
+    "TestGMPVideoEncodedFrame.cpp",
     "TestGMPVideoi420Frame.cpp",
     "TestGroupId.cpp",
     "TestHDRUtils.cpp",
@@ -73,9 +77,11 @@ UNIFIED_SOURCES += [
     "TestOggWriter.cpp",
     "TestOpusParser.cpp",
     "TestPDMFactorySupport.cpp",
+    "TestQuantizableBuffer.cpp",
     "TestRemoteImageHolder.cpp",
     "TestRust.cpp",
     "TestSimpleMap.cpp",
+    "TestTelemetryProbesReporter.cpp",
     "TestTimeUnit.cpp",
     "TestUnboundedMPSCQueue.cpp",
     "TestVideoData.cpp",
@@ -101,6 +107,7 @@ if CONFIG["MOZ_WEBRTC"]:
         "TestCamerasParent.cpp",
         "TestH264FmtpParser.cpp",
         "TestRTCStatsTimestampMaker.cpp",
+        "TestWebrtcCodecFactory.cpp",
         "TestWebrtcTaskQueueWrapper.cpp",
     ]
 
@@ -131,6 +138,7 @@ if CONFIG["MOZ_WEBRTC"] and CONFIG["OS_TARGET"] != "Android":
     ]
 
 TEST_HARNESS_FILES.gtest += [
+    "../test/adts.aac",
     "../test/av1.mp4",
     "../test/gizmo-frag.mp4",
     "../test/gizmo.mp4",
@@ -149,6 +157,7 @@ TEST_HARNESS_FILES.gtest += [
     "test_case_1224361.vp8.ivf",
     "test_case_1224363.vp8.ivf",
     "test_case_1224369.vp8.ivf",
+    "test_hevc_open_gop.mp4",
     "test_InvalidElementId.webm",
     "test_InvalidElementSize.webm",
     "test_InvalidLargeEBMLMaxIdLength.webm",

@@ -4,11 +4,12 @@
 #ifndef nsCRT_h_
 #define nsCRT_h_
 
-#include <stdlib.h>
 #include <ctype.h>
-#include "plstr.h"
-#include "nscore.h"
+#include <stdlib.h>
+
 #include "nsCRTGlue.h"
+#include "nscore.h"
+#include "plstr.h"
 
 #if defined(XP_WIN)
 #  define NS_LINEBREAK "\015\012"

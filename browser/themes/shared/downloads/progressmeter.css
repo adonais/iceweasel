@@ -37,6 +37,11 @@
   height: 4px;
   border-radius: var(--border-radius-xsmall);
   background-color: color-mix(in srgb, currentColor 15%, transparent);
+  @media -moz-pref("browser.nova.enabled") {
+    /* Note: It is not ideal to reset the value of a base background color token. See follow-up Bug 2053911 */
+    --background-color-canvas: light-dark(var(--color-gray-05), var(--color-gray-85));
+    background-color: var(--background-color-canvas);
+  }
 }
 
 /* Ensure we have contrast in selected download items */

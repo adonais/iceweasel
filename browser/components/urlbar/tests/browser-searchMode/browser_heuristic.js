@@ -38,7 +38,7 @@ add_task(async function noResults() {
     value: "doesn't match anything",
   });
   await UrlbarTestUtils.enterSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
   });
 
   Assert.equal(
@@ -64,7 +64,7 @@ add_task(async function localNoHeuristic() {
     value: "bookmark",
   });
   await UrlbarTestUtils.enterSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
   });
 
   Assert.equal(
@@ -76,12 +76,12 @@ add_task(async function localNoHeuristic() {
   let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
   Assert.equal(
     result.source,
-    UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     "Result source should be BOOKMARKS"
   );
   Assert.equal(
     result.type,
-    UrlbarUtils.RESULT_TYPE.URL,
+    UrlbarShared.RESULT_TYPE.URL,
     "Result type should be URL"
   );
   Assert.equal(
@@ -110,7 +110,7 @@ add_task(async function localAutofill() {
       value: "example",
     });
     await UrlbarTestUtils.enterSearchMode(window, {
-      source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     });
 
     Assert.equal(
@@ -122,12 +122,12 @@ add_task(async function localAutofill() {
     let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
     Assert.equal(
       result.source,
-      UrlbarUtils.RESULT_SOURCE.HISTORY,
+      UrlbarShared.RESULT_SOURCE.HISTORY,
       "Result source should be HISTORY"
     );
     Assert.equal(
       result.type,
-      UrlbarUtils.RESULT_TYPE.URL,
+      UrlbarShared.RESULT_TYPE.URL,
       "Result type should be URL"
     );
     Assert.equal(
@@ -141,12 +141,12 @@ add_task(async function localAutofill() {
     result = await UrlbarTestUtils.getDetailsOfResultAt(window, 1);
     Assert.equal(
       result.source,
-      UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      UrlbarShared.RESULT_SOURCE.BOOKMARKS,
       "Result source should be BOOKMARKS"
     );
     Assert.equal(
       result.type,
-      UrlbarUtils.RESULT_TYPE.URL,
+      UrlbarShared.RESULT_TYPE.URL,
       "Result type should be URL"
     );
     Assert.equal(
@@ -188,12 +188,12 @@ add_task(async function remote() {
     let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
     Assert.equal(
       result.source,
-      UrlbarUtils.RESULT_SOURCE.SEARCH,
+      UrlbarShared.RESULT_SOURCE.SEARCH,
       "Result source should be SEARCH"
     );
     Assert.equal(
       result.type,
-      UrlbarUtils.RESULT_TYPE.SEARCH,
+      UrlbarShared.RESULT_TYPE.SEARCH,
       "Result type should be SEARCH"
     );
     Assert.ok(result.searchParams, "searchParams should be present");

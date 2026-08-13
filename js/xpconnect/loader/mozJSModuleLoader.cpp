@@ -2,14 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "ScriptLoadRequest.h"
 #include "mozilla/Assertions.h"  // MOZ_ASSERT, MOZ_ASSERT_IF
 #include "mozilla/Attributes.h"
+#include "mozilla/dom/RequestBinding.h"
+#include "mozilla/Logging.h"
 #include "mozilla/RefPtr.h"  // RefPtr, mozilla::StaticRefPtr
 #include "mozilla/Utf8.h"    // mozilla::Utf8Unit
 
-#include "mozilla/Logging.h"
-#include "mozilla/dom/RequestBinding.h"
+#include "ScriptLoadRequest.h"
 #ifdef ANDROID
 #  include <android/log.h>
 #endif
@@ -17,15 +17,57 @@
 #  include <windows.h>
 #endif
 
+#include "mozilla/ClearOnShutdown.h"
+#include "mozilla/dom/AutoEntryScript.h"
+#include "mozilla/dom/ModuleLoader.h"
+#include "mozilla/dom/ReferrerPolicyBinding.h"
+#include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/dom/WorkerCommon.h"  // dom::GetWorkerPrivateFromContext
+#include "mozilla/dom/WorkerPrivate.h"  // dom::WorkerPrivate, dom::AutoSyncLoopHolder
+#include "mozilla/dom/WorkerRef.h"  // dom::StrongWorkerRef, dom::ThreadSafeWorkerRef
+#include "mozilla/dom/WorkerRunnable.h"  // dom::MainThreadStopSyncLoopRunnable
+#include "mozilla/MacroForEach.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/ProfilerLabels.h"
+#include "mozilla/ProfilerMarkers.h"
+#include "mozilla/ResultExtensions.h"
+#include "mozilla/scache/StartupCache.h"
+#include "mozilla/scache/StartupCacheUtils.h"
+#include "mozilla/ScriptPreloader.h"
+#include "mozilla/StaticPrefs_browser.h"
+#include "mozilla/Try.h"
+
 #include "jsapi.h"
+#include "JSServices.h"
+#include "mozJSLoaderUtils.h"
+#include "mozJSModuleLoader.h"
+#include "NonSharedGlobalSyncModuleLoaderScope.h"
+#include "nsCOMPtr.h"
+#include "nsContentSecurityUtils.h"
+#include "nsContentUtils.h"
+#include "nsDirectoryServiceDefs.h"
+#include "nsDirectoryServiceUtils.h"
+#include "nsIChannel.h"
+#include "nsIFile.h"
+#include "nsIFileURL.h"
+#include "nsIJARURI.h"
+#include "nsIStreamListener.h"
+#include "nsJSUtils.h"
+#include "nsNetUtil.h"
+#include "nsXULAppAPI.h"
+#include "SyncModuleLoader.h"
+#include "WrapperFactory.h"
+#include "xpcprivate.h"
+#include "xpcpublic.h"
+
 #include "js/Array.h"  // JS::GetArrayLength, JS::IsArrayObject
 #include "js/CharacterEncoding.h"
 #include "js/CompilationAndEvaluation.h"
 #include "js/CompileOptions.h"         // JS::CompileOptions
 #include "js/ErrorReport.h"            // JS_ReportErrorUTF8, JSErrorReport
 #include "js/Exception.h"              // JS_ErrorFromException
-#include "js/friend/JSMEnvironment.h"  // JS::ExecuteInJSMEnvironment, JS::GetJSMEnvironmentOfScriptedCaller, JS::NewJSMEnvironment
 #include "js/friend/ErrorMessages.h"   // JSMSG_*
+#include "js/friend/JSMEnvironment.h"  // JS::ExecuteInJSMEnvironment, JS::GetJSMEnvironmentOfScriptedCaller, JS::NewJSMEnvironment
 #include "js/loader/ModuleLoadRequest.h"
 #include "js/Modules.h"  // JS::CompileJsonModule, JS::CreateDefaultExportSyntheticModule
 #include "js/Object.h"  // JS::GetCompartment
@@ -33,45 +75,6 @@
 #include "js/PropertyAndElement.h"  // JS_DefineFunctions, JS_DefineProperty, JS_Enumerate, JS_GetElement, JS_GetProperty, JS_GetPropertyById, JS_HasOwnProperty, JS_HasOwnPropertyById, JS_SetProperty, JS_SetPropertyById
 #include "js/PropertySpec.h"
 #include "js/SourceText.h"  // JS::SourceText
-#include "nsCOMPtr.h"
-#include "nsDirectoryServiceDefs.h"
-#include "nsDirectoryServiceUtils.h"
-#include "nsIFile.h"
-#include "mozJSModuleLoader.h"
-#include "mozJSLoaderUtils.h"
-#include "nsIFileURL.h"
-#include "nsIJARURI.h"
-#include "nsIChannel.h"
-#include "nsIStreamListener.h"
-#include "nsNetUtil.h"
-#include "nsJSUtils.h"
-#include "xpcprivate.h"
-#include "xpcpublic.h"
-#include "nsContentUtils.h"
-#include "nsContentSecurityUtils.h"
-#include "nsXULAppAPI.h"
-#include "WrapperFactory.h"
-#include "JSServices.h"
-
-#include "mozilla/scache/StartupCache.h"
-#include "mozilla/scache/StartupCacheUtils.h"
-#include "mozilla/ClearOnShutdown.h"
-#include "mozilla/MacroForEach.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/ProfilerLabels.h"
-#include "mozilla/ProfilerMarkers.h"
-#include "mozilla/ResultExtensions.h"
-#include "mozilla/ScriptPreloader.h"
-#include "mozilla/StaticPrefs_browser.h"
-#include "mozilla/Try.h"
-#include "mozilla/dom/AutoEntryScript.h"
-#include "mozilla/dom/ReferrerPolicyBinding.h"
-#include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/dom/WorkerCommon.h"  // dom::GetWorkerPrivateFromContext
-#include "mozilla/dom/WorkerPrivate.h"  // dom::WorkerPrivate, dom::AutoSyncLoopHolder
-#include "mozilla/dom/WorkerRef.h"  // dom::StrongWorkerRef, dom::ThreadSafeWorkerRef
-#include "mozilla/dom/WorkerRunnable.h"  // dom::MainThreadStopSyncLoopRunnable
-#include "mozilla/dom/ModuleLoader.h"
 
 using namespace mozilla;
 using namespace mozilla::scache;

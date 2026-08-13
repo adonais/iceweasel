@@ -376,18 +376,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     }
 
     /**
-     * Sets whether Session History in Parent (SHIP) should be disabled or not. As SHIP can no
-     * longer be disabled this is a no-op.
-     *
-     * @param value A flag determining whether SHIP should be disabled or not.
-     * @return The builder instance.
-     */
-    public @Deprecated @DeprecationSchedule(id = "disable-ship-removal", version = 153) @NonNull
-    Builder disableShip(final boolean value) {
-      return this;
-    }
-
-    /**
      * When set, the specified {@link android.app.Service} will be started by an {@link
      * android.content.Intent} with action {@link GeckoRuntime#ACTION_CRASHED} when a crash is
      * encountered. Crash details can be found in the Intent extras, such as {@link
@@ -2389,22 +2377,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
   public @NonNull GeckoRuntimeSettings setUserCharacteristicPingCurrentVersion(final int version) {
     mUserCharacteristicPingCurrentVersion.commit(version);
     return this;
-  }
-
-  /**
-   * Retrieve the status of the disable session history in parent (SHIP) preference. Since SHIP can
-   * no longer be disabled this is always false.
-   *
-   * <p>Note, there is no conventional setter because this may only be set before Gecko is
-   * initialized.
-   *
-   * <p>Set before initialization using {@link Builder#disableShip(boolean)}.
-   *
-   * @return True if SHIP is disabled, false if SHIP is enabled.
-   */
-  public @Deprecated @DeprecationSchedule(id = "disable-ship-removal", version = 153) @Nullable
-  Boolean getDisableShip() {
-    return false;
   }
 
   /**

@@ -5,6 +5,7 @@
 #define mozilla_gfx_config_gfxFallback_h
 
 #include <stdint.h>
+
 #include "gfxTelemetry.h"
 
 namespace mozilla {

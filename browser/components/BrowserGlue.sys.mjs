@@ -24,7 +24,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ContentBlockingPrefs:
     "moz-src:///browser/components/protections/ContentBlockingPrefs.sys.mjs",
   ContextualIdentityService:
-    "resource://gre/modules/ContextualIdentityService.sys.mjs",
+    "moz-src:///toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs",
   DAPIncrementality: "resource://gre/modules/DAPIncrementality.sys.mjs",
   DAPTelemetrySender: "resource://gre/modules/DAPTelemetrySender.sys.mjs",
   DAPVisitCounter: "resource://gre/modules/DAPVisitCounter.sys.mjs",
@@ -50,6 +50,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PdfJs: "resource://pdf.js/PdfJs.sys.mjs",
   PlacesBrowserStartup:
     "moz-src:///browser/components/places/PlacesBrowserStartup.sys.mjs",
+  PreonboardingSplash:
+    "resource:///modules/asrouter/PreonboardingSplash.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   ProfileDataUpgrader:
     "moz-src:///browser/components/ProfileDataUpgrader.sys.mjs",
@@ -623,6 +625,18 @@ BrowserGlue.prototype = {
         return false;
       }
 
+      // Bug 1635927: skip the early blank window when the user passes window
+      // sizing/positioning flags, otherwise the blank window's persisted size
+      // from xulstore is reused and the CLI values are silently dropped.
+      if (
+        cmdLine.findFlag("width", false) != -1 ||
+        cmdLine.findFlag("height", false) != -1 ||
+        cmdLine.findFlag("left", false) != -1 ||
+        cmdLine.findFlag("top", false) != -1
+      ) {
+        return false;
+      }
+
       // Until bug 1450626 and bug 1488384 are fixed, skip the blank window when
       // using a non-default theme.
       if (
@@ -911,6 +925,7 @@ BrowserGlue.prototype = {
     }
     this._windowsWereRestored = true;
 
+    lazy.PreonboardingSplash.maybeShowStartupSplash();
     lazy.BrowserUsageTelemetry.init();
     lazy.SearchSERPTelemetry.init();
 
@@ -1600,7 +1615,7 @@ BrowserGlue.prototype = {
     // Use an increasing number to keep track of the current state of the user's
     // profile, so we can move data around as needed as the browser evolves.
     // Completely unrelated to the current Firefox release number.
-    const APP_DATA_VERSION = 175;
+    const APP_DATA_VERSION = 177;
     const PREF = "browser.migration.version";
 
     let profileDataVersion = Services.prefs.getIntPref(PREF, -1);

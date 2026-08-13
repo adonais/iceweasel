@@ -74,9 +74,6 @@ DefaultJitOptions::DefaultJitOptions() {
   // RangeAnalysis results.
   SET_DEFAULT(checkRangeAnalysis, false);
 
-  // Toggles whether Alignment Mask Analysis is globally disabled.
-  SET_DEFAULT(disableAma, false);
-
   // Toggles whether Effective Address Analysis is globally disabled.
   SET_DEFAULT(disableEaa, false);
 
@@ -136,6 +133,9 @@ DefaultJitOptions::DefaultJitOptions() {
 
   // Whether replacing Object.keys with NativeIterators is globally disabled.
   SET_DEFAULT(disableObjectKeysScalarReplacement, false);
+
+  // Toggles whether CanonicalizeNaN pass is globally disabled.
+  SET_DEFAULT(disableCanonicalizeNaNAtUses, true);
 
 #ifdef ENABLE_PORTABLE_BASELINE_INTERP
   // Whether the Portable Baseline Interpreter is enabled.

@@ -60,7 +60,7 @@ const launchDialog = async tab => {
   let dialogMgr = gBrowser
     .getTabDialogBox(tab.linkedBrowser)
     .getContentDialogManager();
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => dialogMgr._dialogs.length,
     "Waiting for the beforeunload dialog to be displayed"
   );
@@ -103,7 +103,7 @@ const dismissDialog = async (tab, dialog, shouldAccept) => {
     cancelButton.click();
   }
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !dialogMgr.dialogs.length,
     "Waiting for the beforeunload dialog to be removed"
   );

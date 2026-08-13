@@ -69,11 +69,24 @@ export const Spotlight = {
    */
   async showSpotlightDialog(browser, message, dispatch = this.defaultDispatch) {
     const win = browser?.documentGlobal;
-    if (!win || win.gDialogBox.isOpen) {
+    if (!win) {
       return false;
     }
-    const spotlight_url = "chrome://browser/content/spotlight.html";
 
+    if (message.trigger?.id === "lastWindowClose") {
+      win.gDialogBox.replaceDialogIfOpen();
+      // We do this for the selected browser, not the triggering browser, since
+      // even a global modal is prevented by a tab modal in the selected
+      // browser, and we want lastWindowClose modals to take priority: this is
+      // the user's last chance to see it before the window actually closes.
+      win.gBrowser
+        .getTabDialogBox(win.gBrowser.selectedBrowser)
+        .abortAllDialogs();
+    } else if (win.gDialogBox.isOpen) {
+      return false;
+    }
+
+    const spotlight_url = "chrome://browser/content/spotlight.html";
     const dispatchCFRAction =
       // This also blocks CFR impressions, which is fine for current use cases.
       message.content?.metrics === "block" ? () => {} : dispatch;
@@ -105,10 +118,10 @@ export const Spotlight = {
         this._dialogWindow = win;
         await closedPromise;
       } else {
-        let openPromise = win.gDialogBox.open(spotlight_url, message.content);
+        let closedPromise = win.gDialogBox.open(spotlight_url, message.content);
         this._dialog = win.gDialogBox.dialog;
         this._dialogWindow = win;
-        await openPromise;
+        await closedPromise;
       }
     } finally {
       win.removeEventListener("unload", unloadHandler);

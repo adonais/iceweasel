@@ -50,9 +50,7 @@ async function testReloadPageWithIframe(url) {
   );
   BrowserTestUtils.reloadTab(tab);
 
-  await BrowserTestUtils.waitForCondition(
-    () => onStateChangeEvents.length == 2
-  );
+  await TestUtils.waitForCondition(() => onStateChangeEvents.length == 2);
   is(onStateChangeEvents.length, 2);
 
   gBrowser.removeTab(tab);

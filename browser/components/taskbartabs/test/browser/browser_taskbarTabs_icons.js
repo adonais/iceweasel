@@ -284,7 +284,7 @@ add_task(async function test_findOrCreateTaskbarTab_noIcon() {
 
   let result = await TaskbarTabs.findOrCreateTaskbarTab(kBaseUri, 0);
   Assert.equal(
-    pinStub.firstCall?.args[2],
+    pinStub.firstCall?.args[1],
     fakeImg,
     "The default icon was selected when no favicon was available"
   );
@@ -348,7 +348,7 @@ async function checkManifestIcon(aImageWithTab, aImageWithoutTab, aManifest) {
   await TaskbarTabs.removeTaskbarTab(taskbarTab.id);
   Assert.equal(pinStub.callCount, 1, "The taskbar tab was pinned once");
   assertBytesEqual(
-    encodeImagePNG(pinStub.firstCall?.args[2]),
+    encodeImagePNG(pinStub.firstCall?.args[1]),
     aImageWithoutTab
   );
 
@@ -399,10 +399,10 @@ async function checkTaskbarTabIcon(
 
   Assert.equal(pinStub.callCount, 1, "Tried to pin taskbar tab");
   if (aImage) {
-    assertBytesEqual(encodeImagePNG(pinStub.firstCall.args[2]), aImage);
+    assertBytesEqual(encodeImagePNG(pinStub.firstCall.args[1]), aImage);
   } else {
     assertBytesEqual(
-      encodeImagePNG(pinStub.firstCall.args[2]),
+      encodeImagePNG(pinStub.firstCall.args[1]),
       encodeImagePNG(await TaskbarTabsUtils.getDefaultIcon())
     );
   }

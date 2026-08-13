@@ -175,6 +175,8 @@ async function loadTRRErrorPage() {
   // Disable proxy, otherwise TRR isn't used for name resolution.
   Services.prefs.setIntPref("network.proxy.type", 0);
 
+  Services.dns.clearCache(true);
+
   let browser;
   let pageLoaded;
   await BrowserTestUtils.openNewForegroundTab(

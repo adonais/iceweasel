@@ -1484,7 +1484,10 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
   void BindBufferBase(const GLenum target, const GLuint index,
                       WebGLBufferJS* const buffer) {
     const FuncScope funcScope(*this, "bindBufferBase");
-    if (IsContextLost()) return;
+    RefPtr<webgl::NotLostData> notLost(mNotLost);
+    if (!notLost) {
+      return;
+    }
 
     BindBufferRangeImpl(target, index, buffer, 0, 0);
   }
@@ -1493,7 +1496,10 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
                        WebGLBufferJS* const buffer, const WebGLintptr offset,
                        const WebGLsizeiptr size) {
     const FuncScope funcScope(*this, "bindBufferRange");
-    if (IsContextLost()) return;
+    RefPtr<webgl::NotLostData> notLost(mNotLost);
+    if (!notLost) {
+      return;
+    }
 
     if (buffer) {
       if (!ValidateNonNegative("offset", offset)) return;
@@ -1554,7 +1560,11 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
   void FramebufferRenderbuffer(GLenum target, GLenum attachSlot,
                                GLenum rbTarget, WebGLRenderbufferJS* rb) const {
     const FuncScope funcScope(*this, "framebufferRenderbuffer");
-    if (IsContextLost()) return;
+    RefPtr<webgl::NotLostData> notLost(mNotLost);
+    if (!notLost) {
+      return;
+    }
+
     if (rbTarget != LOCAL_GL_RENDERBUFFER) {
       EnqueueError_ArgEnum("rbTarget", rbTarget);
       return;
@@ -1570,7 +1580,11 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
                                WebGLTextureJS* tex, GLint mipLevel,
                                GLint zLayer) const {
     const FuncScope funcScope(*this, "framebufferTextureLayer");
-    if (IsContextLost()) return;
+    RefPtr<webgl::NotLostData> notLost(mNotLost);
+    if (!notLost) {
+      return;
+    }
+
     FramebufferAttach(target, attachSlot, 0, nullptr, tex,
                       static_cast<uint32_t>(mipLevel),
                       static_cast<uint32_t>(zLayer), 0);
@@ -1581,7 +1595,11 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
                                    GLint zLayerBase,
                                    GLsizei numViewLayers) const {
     const FuncScope funcScope(*this, "framebufferTextureMultiview");
-    if (IsContextLost()) return;
+    RefPtr<webgl::NotLostData> notLost(mNotLost);
+    if (!notLost) {
+      return;
+    }
+
     if (tex && numViewLayers < 1) {
       EnqueueError(LOCAL_GL_INVALID_VALUE, "`numViewLayers` must be >=1.");
       return;
@@ -2110,7 +2128,10 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
 
   void VertexAttrib1fv(const GLuint index, const Float32ListU& list) {
     const FuncScope funcScope(*this, "vertexAttrib1fv");
-    if (IsContextLost()) return;
+    RefPtr<webgl::NotLostData> notLost(mNotLost);
+    if (!notLost) {
+      return;
+    }
 
     float arr[1];
     if (!MakeArrayFromList(list, arr)) {
@@ -2121,7 +2142,10 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
 
   void VertexAttrib2fv(const GLuint index, const Float32ListU& list) {
     const FuncScope funcScope(*this, "vertexAttrib1fv");
-    if (IsContextLost()) return;
+    RefPtr<webgl::NotLostData> notLost(mNotLost);
+    if (!notLost) {
+      return;
+    }
 
     float arr[2];
     if (!MakeArrayFromList(list, arr)) {
@@ -2132,7 +2156,10 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
 
   void VertexAttrib3fv(const GLuint index, const Float32ListU& list) {
     const FuncScope funcScope(*this, "vertexAttrib1fv");
-    if (IsContextLost()) return;
+    RefPtr<webgl::NotLostData> notLost(mNotLost);
+    if (!notLost) {
+      return;
+    }
 
     float arr[3];
     if (!MakeArrayFromList(list, arr)) {

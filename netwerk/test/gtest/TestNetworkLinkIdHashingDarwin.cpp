@@ -1,11 +1,11 @@
 #include <arpa/inet.h>
 
 #include "gtest/gtest.h"
-#include "mozilla/SHA1.h"
-#include "nsString.h"
-#include "nsPrintfCString.h"
 #include "mozilla/Logging.h"
+#include "mozilla/SHA1.h"
 #include "nsNetworkLinkService.h"
+#include "nsPrintfCString.h"
+#include "nsString.h"
 
 using namespace mozilla;
 

@@ -8,6 +8,7 @@
 #include "mozilla/Atomics.h"
 
 #include "NamespaceImports.h"
+
 #include "gc/Cell.h"
 #include "js/Vector.h"
 #include "threading/ProtectedData.h"

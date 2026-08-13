@@ -157,8 +157,9 @@ export function buildSessions(history = [], chats = [], opts = {}) {
       }
     } else if (ev.kind === KIND_SEARCH) {
       cur._searchCount++;
-      if (row.title) {
-        cur._queries.add(row.title);
+      const queryText = row.searchQuery || row.title;
+      if (queryText) {
+        cur._queries.add(queryText);
       }
       if (row.urlHash != null) {
         cur._urlHashes.add(row.urlHash);

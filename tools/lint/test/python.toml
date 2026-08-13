@@ -77,4 +77,6 @@ sequential = true
 
 ["test_updatebot.py"]
 
+["test_wpt-subsuite-tagging.py"]
+
 ["test_yaml.py"]

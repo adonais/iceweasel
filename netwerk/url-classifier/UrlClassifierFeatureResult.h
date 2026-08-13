@@ -5,10 +5,10 @@
 #ifndef mozilla_net_UrlClassifierFeatureResult_h
 #define mozilla_net_UrlClassifierFeatureResult_h
 
-#include "nsIUrlClassifierFeature.h"
-#include "nsString.h"
 #include "nsCOMPtr.h"
 #include "nsIURI.h"
+#include "nsIUrlClassifierFeature.h"
+#include "nsString.h"
 
 namespace mozilla {
 namespace net {

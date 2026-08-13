@@ -6,7 +6,7 @@
 /*globals Cu, ok*/
 "use strict";
 const { ManifestObtainer } = ChromeUtils.importESModule(
-  "resource://gre/modules/ManifestObtainer.sys.mjs"
+  "moz-src:///dom/manifest/ManifestObtainer.sys.mjs"
 );
 const path = "/tests/dom/security/test/csp/";
 const mixedContent = `${path}file_web_manifest_mixed_content.html`;

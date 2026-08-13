@@ -43,13 +43,18 @@
     }
   }
 
+  /* Keep idle items transparent so only hovered/current items stand out. */
+  @media (forced-colors) {
+    background-color: transparent;
+  }
+
   &:focus-visible {
     outline: var(--focus-outline);
     outline-offset: var(--focus-outline-inset);
   }
 
   &[aria-checked="true"] {
-    background-color: var(--button-background-color-selected);
+    background-color: var(--button-background-color-menu-selected);
     color: var(--button-text-color-menu-selected);
     .location-check {
       visibility: visible;
@@ -57,15 +62,9 @@
     .location-label {
       font-weight: var(--font-weight-bold);
     }
-
-    /* TODO: (Bug 2046583) Clean up use of --button-text-color-menu
-     * for forced colors once Bug 2011528 is fixed. */
-    @media (forced-colors) {
-      color: var(--button-text-color-menu);
-    }
   }
 
-  &[disabled] {
+  &[aria-disabled] {
     .location-label,
     .location-description,
     .location-unavailable-label {

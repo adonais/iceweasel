@@ -2,10 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "IOInterposer.h"
+
 #include <algorithm>
 #include <vector>
-
-#include "IOInterposer.h"
 
 #include "IOInterposerPrivate.h"
 #include "MainThreadIOLogger.h"
@@ -18,8 +18,8 @@
 #if !defined(XP_WIN)
 #  include "NSPRInterposer.h"
 #endif  // !defined(XP_WIN)
-#include "nsXULAppAPI.h"
 #include "PoisonIOInterposer.h"
+#include "nsXULAppAPI.h"
 #include "prenv.h"
 
 namespace {

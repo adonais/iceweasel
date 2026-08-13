@@ -18,7 +18,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   EnrollmentType: "resource://nimbus/ExperimentAPI.sys.mjs",
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
   FxAccounts: "resource://gre/modules/FxAccounts.sys.mjs",
-  LangPackMatcher: "resource://gre/modules/LangPackMatcher.sys.mjs",
+  LangPackMatcher: "moz-src:///intl/locale/LangPackMatcher.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   ShellService: "moz-src:///browser/components/shell/ShellService.sys.mjs",
   SpecialMessageActions:

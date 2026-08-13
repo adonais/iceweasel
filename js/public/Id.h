@@ -95,10 +95,10 @@ class PropertyKey {
 
   constexpr uintptr_t asRawBits() const { return asBits_; }
 
-  MOZ_ALWAYS_INLINE int32_t toInt() const {
+  MOZ_ALWAYS_INLINE uint32_t toInt() const {
     MOZ_ASSERT(isInt());
     uint32_t bits = static_cast<uint32_t>(asBits_) >> 1;
-    return static_cast<int32_t>(bits);
+    return bits;
   }
 
   MOZ_ALWAYS_INLINE JSString* toString() const {
@@ -363,7 +363,7 @@ class WrappedPtrOperations<JS::PropertyKey, Wrapper> {
   bool isSymbol() const { return id().isSymbol(); }
   bool isGCThing() const { return id().isGCThing(); }
 
-  int32_t toInt() const { return id().toInt(); }
+  uint32_t toInt() const { return id().toInt(); }
   JSString* toString() const { return id().toString(); }
   JS::Symbol* toSymbol() const { return id().toSymbol(); }
 

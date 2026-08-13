@@ -86,7 +86,7 @@ PickleIterator::PickleIterator(const Pickle& pickle)
 
 template <typename T>
 void PickleIterator::CopyInto(T* dest) {
-  static_assert(std::is_trivially_copyable<T>::value,
+  static_assert(std::is_trivially_copyable_v<T>,
                 "Copied type must be a POD type");
   Copier<T, sizeof(T), (alignof(T) <= sizeof(Pickle::memberAlignmentType))>::
       Copy(dest, iter_.Data());
@@ -95,9 +95,6 @@ template void PickleIterator::CopyInto<char>(char*);
 
 bool Pickle::IteratorHasRoomFor(const PickleIterator& iter,
                                 uint32_t len) const {
-  // Make sure we don't get into trouble where AlignInt(len) == 0.
-  MOZ_RELEASE_ASSERT(len < 64);
-
   return iter.iter_.HasRoomFor(AlignInt(len));
 }
 
@@ -106,9 +103,6 @@ bool Pickle::HasBytesAvailable(const PickleIterator* iter, uint32_t len) const {
 }
 
 void Pickle::UpdateIter(PickleIterator* iter, uint32_t bytes) const {
-  // Make sure we don't get into trouble where AlignInt(bytes) == 0.
-  MOZ_RELEASE_ASSERT(bytes < 64);
-
   iter->iter_.Advance(buffers_, AlignInt(bytes));
 }
 
@@ -355,24 +349,22 @@ static void WritePadding(Pickle::BufferList& buffers, uint32_t padding) {
 
 void Pickle::BeginWrite(uint32_t length) {
   // write at an alignment-aligned offset from the beginning of the header
-  uint32_t offset = AlignInt(header_->payload_size);
-  uint32_t padding = (header_size_ + offset) % sizeof(memberAlignmentType);
-  uint32_t new_size = offset + padding + AlignInt(length);
-  MOZ_RELEASE_ASSERT(new_size >= header_->payload_size);
+  mozilla::CheckedInt<uint32_t> offset = AlignInt(header_->payload_size);
+  mozilla::CheckedInt<uint32_t> padding =
+      (header_size_ + offset) % sizeof(memberAlignmentType);
+  const mozilla::CheckedInt<uint32_t> new_size =
+      offset + padding + AlignInt(length);
+  MOZ_RELEASE_ASSERT(new_size.isValid());
 
   DCHECK(intptr_t(header_) % sizeof(memberAlignmentType) == 0);
 
-#ifdef HAVE_64BIT_BUILD
-  DCHECK_LE(length, std::numeric_limits<uint32_t>::max());
-#endif
+  WritePadding(buffers_, padding.value());
 
-  WritePadding(buffers_, padding);
-
-  DCHECK((header_size_ + header_->payload_size + padding) %
+  DCHECK((header_size_ + header_->payload_size + padding.value()) %
              sizeof(memberAlignmentType) ==
          0);
 
-  header_->payload_size = new_size;
+  header_->payload_size = new_size.value();
 }
 
 void Pickle::EndWrite(uint32_t length) {
@@ -434,8 +426,7 @@ bool Pickle::WriteUnsignedChar(unsigned char value) {
   return WriteBytes(&value, sizeof(value));
 }
 
-bool Pickle::WriteBytesZeroCopy(void* data, uint32_t data_len,
-                                uint32_t capacity) {
+bool Pickle::WriteBytesZeroCopy(void* data, size_t data_len, size_t capacity) {
   BeginWrite(data_len);
 
   uint32_t new_capacity = AlignInt(capacity);

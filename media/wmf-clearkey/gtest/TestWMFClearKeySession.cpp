@@ -4,9 +4,10 @@
 
 #include <gtest/gtest.h>
 #include <mfidl.h>
-#include <string>
 #include <windows.h>
 #include <wrl.h>
+
+#include <string>
 
 #include "RefCounted.h"
 #include "content_decryption_module.h"

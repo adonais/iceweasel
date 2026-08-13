@@ -29,8 +29,8 @@ declare global {
   type Items<A> = A extends ReadonlyArray<infer U extends string> ? U : never;
 }
 
-import { PointConduit, ProcessConduitsChild } from "ConduitsChild.sys.mjs";
-import { ConduitAddress } from "ConduitsParent.sys.mjs";
+import { PointConduit, ProcessConduitsChild } from "../ConduitsChild.sys.mjs";
+import { ConduitAddress } from "../ConduitsParent.sys.mjs";
 
 type Conduit<Send> = PointConduit & { [s in `send${Items<Send>}`]: callback };
 type Init<Send> = ConduitAddress & { send: Send };

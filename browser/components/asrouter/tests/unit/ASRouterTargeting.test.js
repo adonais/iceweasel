@@ -154,7 +154,7 @@ describe("#CachedTargetingGetter", () => {
           { ...m2, priority: 1 },
           { ...m3, priority: 2 },
         ],
-        trigger: "testing",
+        trigger: { id: "testing" },
       });
 
       assert.equal(checkMessageTargetingStub.callCount, 3);
@@ -182,7 +182,7 @@ describe("#CachedTargetingGetter", () => {
           { ...m2, priority: undefined },
           { ...m3, priority: 2 },
         ],
-        trigger: "testing",
+        trigger: { id: "testing" },
       });
 
       assert.equal(checkMessageTargetingStub.callCount, 3);
@@ -210,7 +210,7 @@ describe("#CachedTargetingGetter", () => {
           { ...m2, priority: undefined, targeting: undefined, rank: 1 },
           { ...m3, priority: 2, targeting: undefined, rank: 1 },
         ],
-        trigger: "testing",
+        trigger: { id: "testing" },
       });
 
       assert.equal(checkMessageTargetingStub.callCount, 3);
@@ -270,6 +270,79 @@ describe("#isTriggerMatch", () => {
     trigger.param = { type: 538091584 };
 
     assert.isTrue(Boolean(ASRouterTargeting.isTriggerMatch(trigger, message)));
+  });
+});
+describe("#getMessageTriggers", () => {
+  it("should return [trigger] for a message with a singular trigger", () => {
+    const trigger = { id: "openURL" };
+    assert.deepEqual(ASRouterTargeting.getMessageTriggers({ trigger }), [
+      trigger,
+    ]);
+  });
+  it("should return the triggers array for a message with plural triggers", () => {
+    const triggers = [{ id: "openURL" }, { id: "frequentVisits" }];
+    assert.deepEqual(
+      ASRouterTargeting.getMessageTriggers({ triggers }),
+      triggers
+    );
+  });
+  it("should prefer triggers over trigger when both are present", () => {
+    const triggers = [{ id: "openURL" }];
+    assert.deepEqual(
+      ASRouterTargeting.getMessageTriggers({
+        trigger: { id: "frequentVisits" },
+        triggers,
+      }),
+      triggers
+    );
+  });
+  it("should return an empty array when neither is present", () => {
+    assert.deepEqual(ASRouterTargeting.getMessageTriggers({}), []);
+  });
+});
+describe("#_isMessageMatch with multiple triggers", () => {
+  let sandbox;
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+    sandbox.stub(ASRouterTargeting, "checkMessageTargeting").resolves(true);
+  });
+  afterEach(() => {
+    sandbox.restore();
+  });
+  it("should match when any of the message's triggers matches", async () => {
+    const message = {
+      id: "MULTI",
+      triggers: [{ id: "openURL" }, { id: "frequentVisits" }],
+    };
+    assert.isTrue(
+      await ASRouterTargeting._isMessageMatch(message, { id: "openURL" }, {})
+    );
+    assert.isTrue(
+      await ASRouterTargeting._isMessageMatch(
+        message,
+        { id: "frequentVisits" },
+        {}
+      )
+    );
+  });
+  it("should not match when none of the message's triggers matches", async () => {
+    const message = {
+      id: "MULTI",
+      triggers: [{ id: "openURL" }, { id: "frequentVisits" }],
+    };
+    assert.isFalse(
+      await ASRouterTargeting._isMessageMatch(
+        message,
+        { id: "openArticleURL" },
+        {}
+      )
+    );
+  });
+  it("should not match a triggered message when no trigger is requested", async () => {
+    const message = { id: "MULTI", triggers: [{ id: "openURL" }] };
+    assert.isFalse(
+      await ASRouterTargeting._isMessageMatch(message, undefined, {})
+    );
   });
 });
 describe("ASRouterTargeting", () => {

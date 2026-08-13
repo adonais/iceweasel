@@ -4,8 +4,6 @@
 
 ### These strings are used inside the Accessibility panel.
 
-accessibility-learn-more = Learn more
-
 accessibility-text-label-header = Text Labels and Names
 
 accessibility-keyboard-header = Keyboard

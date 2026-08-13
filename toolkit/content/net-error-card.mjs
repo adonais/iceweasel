@@ -1058,6 +1058,12 @@ export class NetErrorCard extends MozLitElement {
       const category = gIsCertError
         ? "securityUiCerterror"
         : "securityUiNeterror";
+      let errorInfo = this.errorInfo;
+      if (!gIsCertError && !errorInfo.errorCodeString) {
+        errorInfo = Object.assign({}, errorInfo, {
+          errorCodeString: gErrorCode,
+        });
+      }
       void recordSecurityUITelemetry(
         category,
         "click" +
@@ -1065,7 +1071,7 @@ export class NetErrorCard extends MozLitElement {
             .split("_")
             .map(word => word[0].toUpperCase() + word.slice(1))
             .join(""),
-        this.errorInfo
+        errorInfo
       );
     }
   }

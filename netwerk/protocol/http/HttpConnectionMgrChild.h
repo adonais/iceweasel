@@ -5,8 +5,8 @@
 #ifndef HttpConnectionMgrChild_h_
 #define HttpConnectionMgrChild_h_
 
-#include "mozilla/net/PHttpConnectionMgrChild.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/net/PHttpConnectionMgrChild.h"
 
 namespace mozilla::net {
 

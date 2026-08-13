@@ -4,9 +4,6 @@
 
 package org.mozilla.fenix.ui.efficiency.logging
 
-import org.mozilla.fenix.ui.efficiency.factory.logging.LoggerFactory
-import org.mozilla.fenix.ui.efficiency.factory.logging.StepLogger
-
 /**
  * LoggingBridge
  *

@@ -3,18 +3,20 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsJPEGEncoder.h"
-#include "prprf.h"
-#include "nsString.h"
-#include "nsStreamUtils.h"
+
 #include "gfxColor.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/UniquePtrExtensions.h"
+#include "nsStreamUtils.h"
+#include "nsString.h"
+#include "prprf.h"
 
 extern "C" {
 #include "jpeglib.h"
 }
 
 #include <setjmp.h>
+
 #include "jerror.h"
 
 using namespace mozilla;

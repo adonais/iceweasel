@@ -1,5 +1,3 @@
-# META: timeout=long
-
 import asyncio
 
 import pytest
@@ -78,6 +76,7 @@ async def test_unhandled_prompt_behavior(
         "handler": prompt_behavior,
         "message": "test",
         "type": prompt_type,
+        "userContext": "default",
     }
 
     if prompt_type == "prompt":
@@ -97,6 +96,7 @@ async def test_unhandled_prompt_behavior(
         "accepted": prompt_type == "alert" or prompt_behavior in {"accept", "ignore"},
         "context": top_context["context"],
         "type": prompt_type,
+        "userContext": "default",
     }
 
     await bidi_session.session.unsubscribe(
@@ -185,6 +185,7 @@ async def test_unhandled_prompt_behavior_for_beforeunload(
         "handler": prompt_behavior,
         "message": "This page is asking you to confirm that you want to leave — information you’ve entered may not be saved.",
         "type": "beforeunload",
+        "userContext": "default",
     }
 
     if prompt_behavior == "ignore":
@@ -199,6 +200,7 @@ async def test_unhandled_prompt_behavior_for_beforeunload(
         "accepted": prompt_behavior != "dismiss",
         "context": top_context["context"],
         "type": "beforeunload",
+        "userContext": "default",
     }
 
     if prompt_behavior != "dismiss":

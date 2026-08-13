@@ -219,9 +219,14 @@ async function testSendMoreInfo(tab, menu, expectedOverrides = {}) {
     receivedData
   );
 
-  // re-opening the panel, the url, reason, and description should be reset
+  // re-opening the panel, the url, reason, and description should not be reset
   rbs = await menu.openReportBrokenSite();
-  rbs.isProperlyReset();
+  ok(
+    !rbs.urlInputs.some(i => i.input && i.input.value != url),
+    "URL inputs were not reset"
+  );
+  is(rbs.reason, reason, "Reason was not reset");
+  is(rbs.description, description, "Description was not reset");
   rbs.close();
 }
 

@@ -5,9 +5,10 @@
 #ifndef MOZILLA_GFX_PATH_CAIRO_H_
 #define MOZILLA_GFX_PATH_CAIRO_H_
 
+#include <vector>
+
 #include "2D.h"
 #include "cairo.h"
-#include <vector>
 
 namespace mozilla {
 namespace gfx {

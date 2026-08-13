@@ -44,6 +44,11 @@ int main(int argc, char** argv) {
       SECSuccess) {
     return 1;
   }
+  // ML-KEM-1024 is disabled by default; enable it for the gtests.
+  if (NSS_SetAlgorithmPolicy(SEC_OID_ML_KEM_1024, NSS_USE_ALG_IN_SSL_KX, 0) !=
+      SECSuccess) {
+    return 1;
+  }
   int rv = RUN_ALL_TESTS();
 
   if (NSS_Shutdown() != SECSuccess) {

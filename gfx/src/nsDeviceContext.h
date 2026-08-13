@@ -5,19 +5,20 @@
 #ifndef NS_DEVICECONTEXT_H_
 #define NS_DEVICECONTEXT_H_
 
-#include <stdint.h>                    // for uint32_t
+#include <stdint.h>  // for uint32_t
+
 #include "gfxTypes.h"                  // for gfxFloat
+#include "mozilla/AppUnits.h"          // for AppUnits
 #include "mozilla/RefPtr.h"            // for RefPtr
+#include "mozilla/gfx/Point.h"         // for IntSize
+#include "mozilla/gfx/PrintPromise.h"  // for PrintEndDocumentPromise
 #include "nsCOMPtr.h"                  // for nsCOMPtr
 #include "nsCoord.h"                   // for nscoord
 #include "nsError.h"                   // for nsresult
+#include "nsFontMetrics.h"             // for nsFontMetrics::Params
 #include "nsISupports.h"               // for NS_INLINE_DECL_REFCOUNTING
 #include "nsMathUtils.h"               // for NS_round
 #include "nscore.h"                    // for char16_t, nsAString
-#include "mozilla/AppUnits.h"          // for AppUnits
-#include "nsFontMetrics.h"             // for nsFontMetrics::Params
-#include "mozilla/gfx/Point.h"         // for IntSize
-#include "mozilla/gfx/PrintPromise.h"  // for PrintEndDocumentPromise
 
 class gfxContext;
 class gfxTextPerfMetrics;

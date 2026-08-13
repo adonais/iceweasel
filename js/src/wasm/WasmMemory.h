@@ -209,7 +209,7 @@ extern Pages ClampedMaxPages(AddressType t, Pages initialPages,
                              const mozilla::Maybe<Pages>& sourceMaxPages,
                              bool useHugeMemory);
 
-// For a given WebAssembly/asm.js 'clamped' max pages, return the number of
+// For a given WebAssembly 'clamped' max pages, return the number of
 // bytes to map which will necessarily be a multiple of the system page size and
 // greater than clampedMaxPages in bytes.  See "Wasm Linear Memory Structure" in
 // vm/ArrayBufferObject.cpp.
@@ -222,7 +222,7 @@ extern uint64_t GetMaxOffsetGuardLimit(bool hugeMemory, PageSize sz);
 extern uint64_t RoundUpToNextValidBoundsCheckImmediate(uint64_t i);
 
 #ifdef WASM_SUPPORTS_HUGE_MEMORY
-// On WASM_SUPPORTS_HUGE_MEMORY platforms, every asm.js or WebAssembly 32-bit
+// On WASM_SUPPORTS_HUGE_MEMORY platforms, every WebAssembly 32-bit
 // memory unconditionally allocates a huge region of virtual memory of size
 // wasm::HugeMappedSize. This allows all memory resizing to work without
 // reallocation and provides enough guard space for most offsets to be folded

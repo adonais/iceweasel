@@ -5,10 +5,10 @@
 #ifndef ManifestParser_h
 #define ManifestParser_h
 
-#include "nsComponentManager.h"
-#include "nsChromeRegistry.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/FileLocation.h"
+#include "nsChromeRegistry.h"
+#include "nsComponentManager.h"
 
 void ParseManifest(NSLocationType aType, mozilla::FileLocation& aFile,
                    char* aBuf, bool aChromeOnly);

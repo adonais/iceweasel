@@ -15,7 +15,7 @@ pub use environment::Environment;
 pub use report_reason::ReportReason;
 
 use self::{
-    ad_request::{AdPlacementRequest, AdRequest},
+    ad_request::{AdPlacementRequest, AdRequest, AdRequestFlags},
     ad_response::{AdResponse, AdResponseValue},
     error::{
         CallbackRequestError, FetchAdsError, RecordClickError, RecordImpressionError, ReportAdError,
@@ -60,6 +60,7 @@ where
     pub fn fetch_ads<A>(
         &self,
         context_id: String,
+        flags: AdRequestFlags,
         placements: Vec<AdPlacementRequest>,
         cache_policy: CachePolicy,
         ohttp: bool,
@@ -67,8 +68,8 @@ where
     where
         A: AdResponseValue,
     {
-        let url = self.environment.into_url("ads");
-        let mut ad_request = AdRequest::try_new(context_id, placements, url, ohttp)?;
+        let mut ad_request =
+            AdRequest::try_new(context_id, self.environment, flags, ohttp, placements)?;
         let request_hash = RequestHash::new(&ad_request);
 
         if ohttp {
@@ -225,6 +226,7 @@ mod tests {
 
         let result = client.fetch_ads::<AdImage>(
             TEST_CONTEXT_ID.to_string(),
+            AdRequestFlags::default(),
             make_happy_placement_requests(),
             CachePolicy::default(),
             false,
@@ -257,6 +259,7 @@ mod tests {
         let (response1, _) = client
             .fetch_ads::<AdImage>(
                 TEST_CONTEXT_ID.to_string(),
+                AdRequestFlags::default(),
                 make_happy_placement_requests(),
                 CachePolicy::default(),
                 false,
@@ -268,6 +271,7 @@ mod tests {
         let (response2, _) = client
             .fetch_ads::<AdImage>(
                 TEST_CONTEXT_ID.to_string(),
+                AdRequestFlags::default(),
                 make_happy_placement_requests(),
                 CachePolicy::default(),
                 false,

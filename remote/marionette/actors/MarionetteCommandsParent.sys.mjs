@@ -490,6 +490,7 @@ export function registerCommandsActor(sessionId) {
 
       allFrames: true,
       includeChrome: true,
+      safeForUntrustedWebProcess: true,
     });
   } catch (e) {
     if (e.name === "NotSupportedError") {

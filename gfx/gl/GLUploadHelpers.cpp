@@ -7,12 +7,12 @@
 #include <bit>
 
 #include "GLContext.h"
-#include "mozilla/gfx/2D.h"
+#include "GfxTexturesReporter.h"
 #include "gfxUtils.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/Tools.h"  // For BytesPerPixel
 #include "nsRegion.h"
-#include "GfxTexturesReporter.h"
-#include "mozilla/gfx/Logging.h"
 
 namespace mozilla {
 

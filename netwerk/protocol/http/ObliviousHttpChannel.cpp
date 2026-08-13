@@ -3,11 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 // HttpLog.h should generally be included first
-#include "HttpLog.h"
-
 #include "ObliviousHttpChannel.h"
 
 #include "BinaryHttpRequest.h"
+#include "HttpLog.h"
 #include "nsIHttpHeaderVisitor.h"
 #include "nsStringStream.h"
 
@@ -603,7 +602,7 @@ ObliviousHttpChannel::AsyncOpen(nsIStreamListener* aListener) {
     return rv;
   }
   rv = uploadChannel->ExplicitSetUploadStream(
-      uploadStream, "message/ohttp-req"_ns, streamLength, "POST"_ns, false);
+      uploadStream, "message/ohttp-req"_ns, streamLength, "POST"_ns);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -812,15 +811,12 @@ ObliviousHttpChannel::GetRelayChannel(nsIHttpChannel** aChannel) {
 
 NS_IMETHODIMP ObliviousHttpChannel::ExplicitSetUploadStream(
     nsIInputStream* aStream, const nsACString& aContentType,
-    int64_t aContentLength, const nsACString& aMethod, bool aStreamHasHeaders) {
+    int64_t aContentLength, const nsACString& aMethod) {
   // This function should only be called before AsyncOpen.
   if (mStreamListener) {
     return NS_ERROR_IN_PROGRESS;
   }
   if (aMethod != "POST"_ns && aMethod != "PUT" && aMethod != "DELETE") {
-    return NS_ERROR_INVALID_ARG;
-  }
-  if (aStreamHasHeaders) {
     return NS_ERROR_INVALID_ARG;
   }
   mMethod.Assign(aMethod);
@@ -849,12 +845,6 @@ NS_IMETHODIMP ObliviousHttpChannel::ExplicitSetUploadStream(
     return NS_ERROR_FAILURE;
   }
   mContentType = aContentType;
-  return NS_OK;
-}
-
-NS_IMETHODIMP ObliviousHttpChannel::GetUploadStreamHasHeaders(
-    bool* aUploadStreamHasHeaders) {
-  *aUploadStreamHasHeaders = false;
   return NS_OK;
 }
 

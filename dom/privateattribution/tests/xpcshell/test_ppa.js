@@ -8,7 +8,7 @@ const { HttpServer } = ChromeUtils.importESModule(
 );
 
 const { PrivateAttributionService } = ChromeUtils.importESModule(
-  "resource://gre/modules/PrivateAttributionService.sys.mjs"
+  "moz-src:///dom/privateattribution/PrivateAttributionService.sys.mjs"
 );
 
 const { AppConstants } = ChromeUtils.importESModule(

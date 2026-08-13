@@ -7,7 +7,9 @@
   margin-block-end: var(--space-large);
 }
 
+/* Re-show an otherwise-hidden control when it carries a message bar.
+   `!important` to beat the global `[hidden] { display: none !important }` rule. */
 setting-control[hidden]:has(> moz-message-bar):not([slot="nested"], :last-child) {
-  display: block;
+  display: block !important;
   margin-block-start: calc(-1 * var(--space-large));
 }

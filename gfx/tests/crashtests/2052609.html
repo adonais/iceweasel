@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<!-- Bug 2052609: a view-transition snapshot picture that is culled (invisible)
+     must not leave an invalid picture-scratch handle behind when it is
+     re-visited in the main pass. Should not crash. -->
+<html class="reftest-wait">
+<script>
+function finish() { document.documentElement.removeAttribute("class") }
+addEventListener("message", () => {
+  // Give WebRender a couple of frames to build the view-transition frame.
+  requestAnimationFrame(() => requestAnimationFrame(finish))
+})
+document.addEventListener("DOMContentLoaded", () => {
+  const a = document.getElementById("a")
+  a.setAttribute("width", 2147483647)
+  a.src = "2052609-frame.html"
+})
+// Fallback so a non-crashing run still terminates.
+setTimeout(finish, 5000)
+</script>
+<iframe id="a"></iframe>
+</html>

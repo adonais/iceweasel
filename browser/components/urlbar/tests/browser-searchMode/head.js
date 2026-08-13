@@ -46,7 +46,7 @@ async function focusSearchModeSwitcher(win = window) {
 
   EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true }, win);
   let switcher = win.gURLBar.querySelector(".searchmode-switcher");
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => win.document.activeElement == switcher
   );
   Assert.ok(true, "Search mode switcher was focused");

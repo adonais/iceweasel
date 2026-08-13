@@ -154,6 +154,7 @@ pub extern "C" fn crashtools_crashping_init(
                 .unwrap_or_else(|| "Unknown".to_string()),
             channel: None,
             locale: None,
+            os_version: None,
         },
     );
     init_glean.configuration.uploader = Some(Box::new(Uploader(upload_fn)));

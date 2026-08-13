@@ -323,18 +323,13 @@ TEST_SUITES = {
             "test-verify-gpu($|.*(-1|[^0-9])$)",
         ],
     },
-    "robocop": {
-        "mach_command": "robocop",
-        "kwargs": {"test_paths": None},
-        "task_regex": ["robocop($|.*(-1|[^0-9])$)"],
-    },
     "web-platform-tests": {
         "aliases": ("wpt",),
         "mach_command": "web-platform-tests",
         "build_flavor": "web-platform-tests",
         "kwargs": {"subsuite": "testharness"},
         "task_regex": [
-            "web-platform-tests(?!-crashtest|-reftest|-wdspec|-print)"
+            "web-platform-tests(?!-crashtest|-reftest|-wdspec|-print|-aam)"
             "($|.*(-1|[^0-9])$)",
             "test-verify-wpt",
         ],
@@ -375,6 +370,16 @@ TEST_SUITES = {
         "kwargs": {"subsuite": "wdspec"},
         "task_regex": [
             "web-platform-tests-wdspec($|.*(-1|[^0-9])$)",
+            "test-verify-wpt",
+        ],
+    },
+    "web-platform-tests-aam": {
+        "aliases": ("wpt",),
+        "mach_command": "web-platform-tests",
+        "build_flavor": "web-platform-tests",
+        "kwargs": {"subsuite": "aamtest"},
+        "task_regex": [
+            "web-platform-tests-aam($|.*(-1|[^0-9])$)",
             "test-verify-wpt",
         ],
     },
@@ -508,7 +513,6 @@ _test_subsuites = {
     ("marionette", "unittest"): "marionette-unittest",
     ("mochitest", "gpu"): "mochitest-plain-gpu",
     ("mochitest", "media"): "mochitest-media",
-    ("mochitest", "robocop"): "robocop",
     ("mochitest", "webgl1-core"): "mochitest-webgl1-core",
     ("mochitest", "webgl1-ext"): "mochitest-webgl1-ext",
     ("mochitest", "webgl2-core"): "mochitest-webgl2-core",

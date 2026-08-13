@@ -4,77 +4,77 @@
 
 #include "nsCocoaWindow.h"
 
-#include "nsISupportsPrimitives.h"
-#include "nsArrayUtils.h"
-#include "nsComponentManagerUtils.h"
-#include "nsMenuPopupFrame.h"
-#include "nsDeviceContext.h"
-#include "mozilla/dom/XULPopupElement.h"
-#include "MOZDynamicCursor.h"
-#include "nsIAppStartup.h"
-#include "nsIDOMWindowUtils.h"
-#include "nsILocalFileMac.h"
 #include "CocoaCompositorWidget.h"
 #include "GLContextCGL.h"
+#include "MOZDynamicCursor.h"
 #include "MacThemeGeometryType.h"
+#include "NativeKeyBindings.h"
 #include "NativeMenuSupport.h"
+#include "ScreenHelperCocoa.h"
+#include "TextInputHandler.h"
+#include "VibrancyManager.h"
 #include "WindowRenderer.h"
 #include "mozilla/Components.h"
 #include "mozilla/MiscEvents.h"
+#include "mozilla/ProfilerMarkers.h"
 #include "mozilla/SwipeTracker.h"
+#include "mozilla/TextEventDispatcher.h"
+#include "mozilla/dom/SimpleGestureEventBinding.h"
+#include "mozilla/dom/WheelEventBinding.h"
+#include "mozilla/dom/XULPopupElement.h"
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/layers/APZInputBridge.h"
 #include "mozilla/layers/APZThreadUtils.h"
-#include "mozilla/layers/NativeLayerCA.h"
-#include "mozilla/widget/CompositorWidget.h"
-#include "mozilla/TextEventDispatcher.h"
 #include "mozilla/layers/CompositorThread.h"
-#include "mozilla/layers/SurfacePool.h"
 #include "mozilla/layers/IAPZCTreeManager.h"
-#include "mozilla/dom/SimpleGestureEventBinding.h"
-#include "mozilla/dom/WheelEventBinding.h"
-#include "mozilla/ProfilerMarkers.h"
-#include "NativeKeyBindings.h"
-#include "ScreenHelperCocoa.h"
-#include "TextInputHandler.h"
-#include "nsCocoaUtils.h"
-#include "nsObjCExceptions.h"
-#include "nsCOMPtr.h"
-#include "nsWidgetsCID.h"
-#include "nsIRollupListener.h"
-#include "nsChildView.h"
-#include "nsWindowMap.h"
+#include "mozilla/layers/NativeLayerCA.h"
+#include "mozilla/layers/SurfacePool.h"
+#include "mozilla/widget/CompositorWidget.h"
 #include "nsAppShell.h"
-#include "nsIAppShellService.h"
-#include "nsIBaseWindow.h"
-#include "nsIInterfaceRequestorUtils.h"
-#include "nsIAppWindow.h"
-#include "nsToolkit.h"
-#include "nsPIDOMWindow.h"
-#include "nsThreadUtils.h"
-#include "nsMenuBarX.h"
-#include "nsMenuGroupOwnerX.h"
-#include "nsMenuUtilsX.h"
-#include "nsStyleConsts.h"
-#include "nsLayoutUtils.h"
-#include "nsDragService.h"
-#include "nsNativeThemeColors.h"
-#include "nsNativeThemeCocoa.h"
+#include "nsArrayUtils.h"
+#include "nsCOMPtr.h"
+#include "nsChildView.h"
 #include "nsClipboard.h"
 #include "nsCocoaFeatures.h"
-#include "nsIScreenManager.h"
-#include "nsIWidgetListener.h"
-#include "nsXULPopupManager.h"
-#include "VibrancyManager.h"
-#include "nsPresContext.h"
+#include "nsCocoaUtils.h"
+#include "nsComponentManagerUtils.h"
+#include "nsDeviceContext.h"
 #include "nsDocShell.h"
+#include "nsDragService.h"
+#include "nsIAppShellService.h"
+#include "nsIAppStartup.h"
+#include "nsIAppWindow.h"
+#include "nsIBaseWindow.h"
+#include "nsIDOMWindowUtils.h"
+#include "nsIInterfaceRequestorUtils.h"
+#include "nsILocalFileMac.h"
+#include "nsIRollupListener.h"
+#include "nsIScreenManager.h"
+#include "nsISupportsPrimitives.h"
+#include "nsIWidgetListener.h"
+#include "nsLayoutUtils.h"
+#include "nsMenuBarX.h"
+#include "nsMenuGroupOwnerX.h"
+#include "nsMenuPopupFrame.h"
+#include "nsMenuUtilsX.h"
+#include "nsNativeThemeCocoa.h"
+#include "nsNativeThemeColors.h"
+#include "nsObjCExceptions.h"
+#include "nsPIDOMWindow.h"
+#include "nsPresContext.h"
+#include "nsStyleConsts.h"
+#include "nsThreadUtils.h"
+#include "nsToolkit.h"
+#include "nsWidgetsCID.h"
+#include "nsWindowMap.h"
+#include "nsXULPopupManager.h"
 
 #include "gfxPlatform.h"
 #include "qcms.h"
 
+#include <algorithm>
 #include "mozilla/AutoRestore.h"
 #include "mozilla/BasicEvents.h"
-#include "mozilla/dom/Document.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/NativeKeyBindingsType.h"
 #include "mozilla/Preferences.h"
@@ -82,14 +82,14 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/StaticPrefs_browser.h"
-#include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_general.h"
+#include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_ui.h"
 #include "mozilla/StaticPrefs_widget.h"
 #include "mozilla/WritingModes.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/widget/Screen.h"
-#include <algorithm>
 
 #ifdef ACCESSIBILITY
 #  include "mozilla/a11y/DocAccessible.h"
@@ -1180,7 +1180,8 @@ bool nsCocoaWindow::PreRender(WidgetRenderingContext* aContext)
   // composition is done, thus keeping the GL context locked forever.
   mCompositingLock.Lock();
 
-  if (aContext->mGL && StaticPrefs::gfx_compositor_gpu_migration()) {
+  if (aContext->mGL && aContext->mGL->GetContextType() == GLContextType::CGL &&
+      StaticPrefs::gfx_compositor_gpu_migration()) {
     GLContextCGL::Cast(aContext->mGL)->MigrateToActiveGPU();
   }
 
@@ -3647,14 +3648,19 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
 }
 
 - (void)viewsWindowDidResignKey {
+  // Always release Secure Event Input when our window resigns key, even if the
+  // widget has already been torn down.  The window-delegate twin
+  // windowDidResignKey drains unconditionally; matching that here avoids
+  // leaking Secure Event Input and locking other apps out of keyboard input
+  // (bug 2050794).
+  TextInputHandler::EnsureSecureEventInputDisabled();
+
   if (!mGeckoChild) return;
 
   nsAutoRetainCocoaObject kungFuDeathGrip(self);
 
   nsIWidgetListener* listener = mGeckoChild->GetWidgetListener();
   if (listener) listener->WindowDeactivated();
-
-  TextInputHandler::EnsureSecureEventInputDisabled();
 }
 
 // If the call to removeFromSuperview isn't delayed from nsCocoaWindow::
@@ -7000,8 +7006,33 @@ void nsCocoaWindow::DispatchOcclusionEvent() {
     return;
   }
 
+  // macOS occasionally reports a window as not visible (its occlusionState is
+  // missing NSWindowOcclusionStateVisible) even while the window is on screen
+  // and frontmost. This has been observed on systems running menu-bar managers
+  // such as Bartender that reshuffle window layering. When it happens we would
+  // mark the window fully occluded below, which causes
+  // CanonicalBrowsingContext::RecomputeAppWindowVisibility to deactivate the
+  // window and pause its compositor (nsIWidget::PauseOrResumeCompositor). The
+  // visible-but-paused window then stops repainting and appears frozen (e.g.
+  // hover effects stop updating) until some unrelated event re-evaluates
+  // occlusion. A key or main window is by definition frontmost and focused, so
+  // it cannot truly be fully occluded; never treat it as occluded regardless of
+  // what macOS reports so the window the user is interacting with keeps
+  // rendering. See bug 2033230.
+  //
+  // Limit this override to windowed mode. Entering or exiting fullscreen
+  // legitimately drives the window through occluded and visible states (the
+  // docshell is deactivated and then reactivated), which the activation
+  // machinery relies on, and that re-evaluation happens while the window is
+  // still key and main. Applying the override there would suppress the
+  // reactivation and leave the docshell wedged.
+  bool keyOrMainNonFullscreen =
+      !mInFullScreenMode && !mHasStartedNativeFullscreen &&
+      ([mWindow isKeyWindow] || [mWindow isMainWindow]);
+
   // Our new occlusion state is true if the window is not visible.
   bool newOcclusionState =
+      !keyOrMainNonFullscreen &&
       !(mHasStartedNativeFullscreen ||
         ([mWindow occlusionState] & NSWindowOcclusionStateVisible));
 

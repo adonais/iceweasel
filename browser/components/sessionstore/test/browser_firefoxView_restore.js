@@ -5,6 +5,12 @@
 
 const CLOSED_URI = "https://www.example.com/";
 
+const FirefoxViewTestUtils = ChromeUtils.importESModule(
+  "resource://testing-common/FirefoxViewTestUtils.sys.mjs"
+);
+FirefoxViewTestUtils.init(this);
+FirefoxViewTestUtils.enableFirefoxViewButton(window);
+
 add_task(async function test_TODO() {
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, CLOSED_URI);
 

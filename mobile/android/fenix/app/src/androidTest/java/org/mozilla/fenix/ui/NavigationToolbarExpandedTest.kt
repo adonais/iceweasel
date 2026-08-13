@@ -17,6 +17,7 @@ import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.refreshAsset
+import org.mozilla.fenix.helpers.TestHelper.exitMenu
 import org.mozilla.fenix.helpers.TestHelper.verifySnackBarText
 import org.mozilla.fenix.helpers.TestHelper.waitUntilSnackbarGone
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
@@ -551,10 +552,44 @@ class NavigationToolbarExpandedTest {
             verifyTheBackButton()
             verifyTheForwardButton()
             verifyTheRefreshButton()
-            verifyTheNewTabButton(false)
+            verifyTheTabStripAddTabButton()
             verifyTheTabCounter("1")
             verifyTheMainMenuButton()
         }
         setScreenOrientation(composeTestRule, ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3911787
+    @Test
+    fun verifyTheExpandedToolbarHomepageItemsWithEdgeToEdgeTest() {
+        homeScreen(composeTestRule) {
+            verifyEdgeToEdgeWallpaperApplied(composeTestRule)
+            verifyHomeWordmark()
+            verifyToolbarPosition(bottomPosition = false)
+        }
+        navigationToolbar(composeTestRule) {
+            verifyNavBarPositionForEdgeToEdge()
+            verifyTheNavigationBarAddBookmarkButton()
+            verifyTheNavigationBarShareButton()
+            verifyTheNewTabButton()
+            verifyTheTabCounter("0")
+            verifyTheMainMenuButton()
+        }
+        homeScreen(composeTestRule) {
+        }.openThreeDotMenu {
+        }.clickSettingsButton {
+        }.openCustomizeSubMenu {
+            clickBottomToolbarToggle()
+            verifyAddressBarPositionPreference("Bottom")
+            exitMenu()
+        }
+        navigationToolbar(composeTestRule) {
+            verifyNavBarPositionForEdgeToEdge()
+            verifyTheNavigationBarAddBookmarkButton()
+            verifyTheNavigationBarShareButton()
+            verifyTheNewTabButton()
+            verifyTheTabCounter("0")
+            verifyTheMainMenuButton()
+        }
     }
 }

@@ -25,7 +25,6 @@
 #include "js/RefCounted.h"
 #include "js/Utility.h"
 #include "js/Vector.h"
-
 #include "wasm/WasmCompileArgs.h"
 #include "wasm/WasmConstants.h"
 #include "wasm/WasmExprType.h"
@@ -41,10 +40,6 @@ namespace js {
 namespace wasm {
 
 class FuncType;
-
-// A Module can either be asm.js or wasm.
-
-enum ModuleKind { Wasm, AsmJS };
 
 // CacheableChars is used to cacheably store UniqueChars.
 
@@ -121,6 +116,20 @@ struct NameHasher {
 
   static bool match(const Key& aKey, const Lookup& aLookup) {
     return aKey == aLookup;
+  }
+};
+
+// A variant of the same hash policy for tables/sets that own their keys.
+struct CacheableNameHasher {
+  using Key = CacheableName;
+  using Lookup = mozilla::Span<const char>;
+
+  static HashNumber hash(const Lookup& aLookup) {
+    return mozilla::HashString(aLookup.data(), aLookup.Length());
+  }
+
+  static bool match(const Key& aKey, const Lookup& aLookup) {
+    return aKey.utf8Bytes() == aLookup;
   }
 };
 
@@ -454,10 +463,6 @@ struct GlobalType {
 // A GlobalDesc describes a single global variable.
 //
 // wasm can import and export mutable and immutable globals.
-//
-// asm.js can import mutable and immutable globals, but a mutable global has a
-// location that is private to the module, and its initial value is copied into
-// that cell from the environment.  asm.js cannot export globals.
 class GlobalDesc {
   GlobalKind kind_ = GlobalKind::Constant;
   // Stores the value type of this global for all kinds, and the initializer
@@ -466,7 +471,6 @@ class GlobalDesc {
   // Metadata for the global when `variable` or `import`.
   unsigned offset_ = 0;
   bool isMutable_ = false;
-  bool isWasm_ = false;
   bool isExport_ = false;
   // Metadata for the global when `import`.
   uint32_t importIndex_ = 0;
@@ -474,31 +478,26 @@ class GlobalDesc {
   // Private, as they have unusual semantics.
 
   bool isExport() const { return !isConstant() && isExport_; }
-  bool isWasm() const { return !isConstant() && isWasm_; }
 
  public:
   GlobalDesc() = default;
 
-  explicit GlobalDesc(InitExpr&& initial, bool isMutable,
-                      ModuleKind kind = ModuleKind::Wasm)
+  explicit GlobalDesc(InitExpr&& initial, bool isMutable)
       : kind_((!isMutable && initial.isLiteral()) ? GlobalKind::Constant
                                                   : GlobalKind::Variable) {
     initial_ = std::move(initial);
     if (isVariable()) {
       isMutable_ = isMutable;
-      isWasm_ = kind == Wasm;
       isExport_ = false;
       offset_ = UINT32_MAX;
     }
   }
 
-  explicit GlobalDesc(const GlobalType& type, uint32_t importIndex,
-                      ModuleKind kind = ModuleKind::Wasm)
+  explicit GlobalDesc(const GlobalType& type, uint32_t importIndex)
       : kind_(GlobalKind::Import) {
     initial_ = InitExpr(LitVal(type.type));
     importIndex_ = importIndex;
     isMutable_ = type.isMutable;
-    isWasm_ = kind == Wasm;
     isExport_ = false;
     offset_ = UINT32_MAX;
   }
@@ -548,14 +547,18 @@ class GlobalDesc {
   // Note that isIndirect() isn't equivalent to getting a WasmGlobalObject:
   // an immutable exported global will still get an object, but will not be
   // indirect.
-  bool isIndirect() const {
-    return isMutable() && isWasm() && (isImport() || isExport());
-  }
+  bool isIndirect() const { return isMutable() && (isImport() || isExport()); }
 
   ValType type() const { return initial_.type(); }
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
   WASM_DECLARE_FRIEND_SERIALIZE(GlobalDesc);
+
+  // Checks whether the `src` global's type is compatible with the `dst` global
+  // type. This is a subtyping relationship on the value type + extra rules for
+  // mutability.
+  // https://webassembly.github.io/spec/core/valid/matching.html#global-types
+  static bool matches(const GlobalDesc& src, const GlobalDesc& dst);
 };
 
 using GlobalDescVector = Vector<GlobalDesc, 0, SystemAllocPolicy>;
@@ -860,6 +863,12 @@ struct Limits {
         maximum(maximum),
         shared(shared),
         pageSize(pageSize) {}
+
+  // Checks whether the `src` limits are compatible with the `dst` limits; i.e.
+  // that a memory or table with the `src` limits can be used in a context where
+  // the `dst` limits are expected:
+  // https://webassembly.github.io/spec/core/valid/matching.html#match-limits
+  static bool matches(Limits src, Limits dst);
 };
 
 WASM_DECLARE_CACHEABLE_POD(Limits);
@@ -912,6 +921,10 @@ struct MemoryDesc {
   MemoryDesc() = default;
   explicit MemoryDesc(Limits limits)
       : limits(limits), importIndex(mozilla::Nothing()) {}
+
+  // Checks if the `src` memory's type is compatible with the `dst` memory type:
+  // https://webassembly.github.io/spec/core/valid/matching.html#memory-types
+  static bool matches(const MemoryDesc& src, const MemoryDesc& dst);
 };
 
 WASM_DECLARE_CACHEABLE_POD(MemoryDesc);
@@ -933,6 +946,11 @@ struct TableType {
   TableType() = default;
   TableType(Limits limits, RefType elemType)
       : limits(limits), elemType(elemType) {}
+
+  // Checks if the `src` table type is compatible with the `dst` table type,
+  // e.g. for imports:
+  // https://webassembly.github.io/spec/core/valid/matching.html#table-types
+  static bool matches(TableType src, TableType dst);
 };
 
 struct TableDesc {
@@ -940,16 +958,14 @@ struct TableDesc {
 
   bool isImported = false;
   bool isExported = false;
-  bool isAsmJS = false;
   mozilla::Maybe<InitExpr> initExpr;
 
   TableDesc() = default;
   TableDesc(const TableType& type, mozilla::Maybe<InitExpr>&& initExpr,
-            bool isAsmJS, bool isImported = false, bool isExported = false)
+            bool isImported = false, bool isExported = false)
       : type(type),
         isImported(isImported),
         isExported(isExported),
-        isAsmJS(isAsmJS),
         initExpr(std::move(initExpr)) {}
 
   AddressType addressType() const { return type.limits.addressType; }

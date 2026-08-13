@@ -5,10 +5,10 @@
 #ifndef mozilla_net_SocketProcessChild_h
 #define mozilla_net_SocketProcessChild_h
 
-#include "mozilla/net/PSocketProcessChild.h"
-#include "mozilla/ipc/InputStreamUtils.h"
-#include "mozilla/psm/IPCClientCertsChild.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/ipc/InputStreamUtils.h"
+#include "mozilla/net/PSocketProcessChild.h"
+#include "mozilla/psm/IPCClientCertsChild.h"
 #include "nsRefPtrHashtable.h"
 #include "nsTHashMap.h"
 
@@ -109,6 +109,8 @@ class SocketProcessChild final : public PSocketProcessChild {
 
   mozilla::ipc::IPCResult RecvClearSessionCache(
       ClearSessionCacheResolver&& aResolve);
+  mozilla::ipc::IPCResult RecvClearPrivateBrowsingSessionCache(
+      ClearPrivateBrowsingSessionCacheResolver&& aResolve);
 
   already_AddRefed<PTRRServiceChild> AllocPTRRServiceChild(
       const bool& aCaptiveIsPassed, const bool& aParentalControlEnabled,

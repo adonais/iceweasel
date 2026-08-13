@@ -77,6 +77,71 @@ add_task(async function testMainViewVisible() {
   });
 });
 
+// The clear-on-shutdown exception (persist-data-on-shutdown) is shown in the
+// site permission panel when clear-on-shutdown is on, and can be cleared from
+// there.
+add_task(async function testPersistDataOnShutdownShown() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["privacy.sanitize.sanitizeOnShutdown", true]],
+  });
+  await BrowserTestUtils.withNewTab(PERMISSIONS_PAGE, async function () {
+    PermissionTestUtils.add(
+      gBrowser.currentURI,
+      "persist-data-on-shutdown",
+      Services.perms.ALLOW_ACTION
+    );
+
+    await openPermissionPopup();
+
+    testPermListHasEntries(true);
+
+    let permissionsList = document.getElementById(
+      "permission-popup-permission-list"
+    );
+    let item = permissionsList.querySelector(
+      ".permission-popup-permission-item-persist-data-on-shutdown"
+    );
+    ok(
+      item,
+      "The clear-on-shutdown exception is shown in the permission panel."
+    );
+    ok(
+      BrowserTestUtils.isVisible(item),
+      "The permission row should be visible."
+    );
+
+    let label = item.querySelector(".permission-popup-permission-label");
+    is(
+      label.textContent,
+      SitePermissions.getPermissionLabel("persist-data-on-shutdown"),
+      "The permission row has the correct label."
+    );
+
+    // The remove button clears the exception.
+    let removeButton = item.querySelector(
+      ".permission-popup-permission-remove-button"
+    );
+    ok(removeButton, "The permission row has a remove button.");
+    ok(
+      BrowserTestUtils.isVisible(removeButton),
+      "The remove button should be visible."
+    );
+    removeButton.click();
+
+    ok(
+      !PermissionTestUtils.getPermissionObject(
+        gBrowser.currentURI,
+        "persist-data-on-shutdown"
+      ),
+      "Clicking the remove button clears the exception."
+    );
+
+    await closePermissionPopup();
+
+    PermissionTestUtils.remove(gBrowser.currentURI, "persist-data-on-shutdown");
+  });
+});
+
 add_task(async function testIdentityIcon() {
   await BrowserTestUtils.withNewTab(PERMISSIONS_PAGE, function () {
     PermissionTestUtils.add(

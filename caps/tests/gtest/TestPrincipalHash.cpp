@@ -4,8 +4,8 @@
 #include "gtest/gtest.h"
 #include "mozilla/gtest/MozAssertions.h"
 #include "nsIPrincipal.h"
-#include "nsScriptSecurityManager.h"
 #include "nsNetUtil.h"
+#include "nsScriptSecurityManager.h"
 
 TEST(PrincipalHash, DocumentDomain)
 {

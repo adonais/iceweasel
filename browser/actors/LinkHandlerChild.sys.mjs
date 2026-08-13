@@ -129,10 +129,7 @@ export class LinkHandlerChild extends JSWindowActorChild {
           }
           break;
         case "search":
-          if (
-            Services.policies &&
-            !Services.policies.isAllowed("installSearchEngine")
-          ) {
+          if (!Services.policies.isAllowed("installSearchEngine")) {
             break;
           }
 

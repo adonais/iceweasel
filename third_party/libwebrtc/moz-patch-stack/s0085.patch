@@ -1,52 +1,31 @@
 From: Nico Grunbaum <na-g@nostrum.com>
-Date: Thu, 2 May 2024 00:47:00 -0700
-Subject: Bug 1892299 - fix-afaae4e38a - fix adapted_track_source build
- exclusion;r?mjf
+Date: Thu, 23 May 2024 17:28:00 +0000
+Subject: Bug 1897459 - P0 - for BSD do not build physical_socket_server in
+ libwebrtc;r=mjf,webrtc-reviewers
 
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/60304c5d8a86fdecfe7527e75629dbc65fc9cbc1
+libwebrtc added the use of several non-portable socket options in this code.
+Firefox does not use any of the code in this file, but there is a header dependency chain leading from code that is used.
+
+Differential Revision: https://phabricator.services.mozilla.com/D210858
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/4e7b3c485e549e7e35b227b517acadbbad957004
 ---
- media/BUILD.gn | 17 +++++++++++------
- 1 file changed, 11 insertions(+), 6 deletions(-)
+ rtc_base/BUILD.gn | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/media/BUILD.gn b/media/BUILD.gn
-index bb6348eb50..78542f7b60 100644
---- a/media/BUILD.gn
-+++ b/media/BUILD.gn
-@@ -56,6 +56,11 @@ rtc_library("rtc_media_base") {
-     "base/video_broadcaster.h",  # Used downstream
-     "base/video_common.h",  # Used downstream
+diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
+index 3fd3f9329f..8b0fc52990 100644
+--- a/rtc_base/BUILD.gn
++++ b/rtc_base/BUILD.gn
+@@ -1100,6 +1100,12 @@ rtc_library("threading") {
+     "thread.cc",
+     "thread.h",
    ]
-+  if (build_with_mozilla) {
++  if (is_bsd && build_with_mozilla) {
 +    sources -= [
-+      "base/adapted_video_track_source.h",
++      "physical_socket_server.cc",
++      "physical_socket_server.h",
 +    ]
 +  }
    deps = [
-     ":adapted_video_track_source",
-     ":codec",
-@@ -127,12 +132,6 @@ rtc_library("rtc_media_base") {
-     "../video/config:encoder_config",
-     "//third_party/abseil-cpp/absl/base:core_headers",
-   ]
--    if (build_with_mozilla) {
--    sources -= [
--      "base/adapted_video_track_source.cc",
--      "base/adapted_video_track_source.h",
--    ]
--  }
- }
- 
- rtc_library("adapted_video_track_source") {
-@@ -140,6 +139,12 @@ rtc_library("adapted_video_track_source") {
-     "base/adapted_video_track_source.cc",
-     "base/adapted_video_track_source.h",
-   ]
-+  if (build_with_mozilla) {
-+    sources -= [
-+      "base/adapted_video_track_source.cc",
-+      "base/adapted_video_track_source.h",
-+    ]
-+  }
-   deps = [
-     ":video_adapter",
-     ":video_broadcaster",
+     ":async_dns_resolver",
+     ":checks",

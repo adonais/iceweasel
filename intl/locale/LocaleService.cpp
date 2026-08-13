@@ -12,7 +12,9 @@
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/intl/AppDateTimeFormat.h"
 #include "mozilla/intl/Locale.h"
+#include "mozilla/intl/FluentBindings.h"
 #include "mozilla/intl/OSPreferences.h"
+#include "mozilla/intl/RegistryBindings.h"
 #include "mozilla/intl/locale_service_glue_generated.h"
 #include "nsContentUtils.h"
 #include "nsDirectoryService.h"
@@ -661,6 +663,40 @@ LocaleService::GetAvailableLocales(nsTArray<nsCString>& aRetVal) {
 NS_IMETHODIMP
 LocaleService::GetIsAppLocaleRTL(bool* aRetVal) {
   (*aRetVal) = IsAppLocaleRTL();
+  return NS_OK;
+}
+
+static bool OverrideEnabled(const nsACString& aOverridePref) {
+  return !aOverridePref.IsEmpty() &&
+         Preferences::GetBool(PromiseFlatCString(aOverridePref).get(), false);
+}
+
+NS_IMETHODIMP
+LocaleService::IsLocalizedEnough(const nsACString& aFtlPath,
+                                 const nsACString& aOverridePref,
+                                 double aMinCoverage, bool* aRetVal) {
+  if (OverrideEnabled(aOverridePref)) {
+    *aRetVal = true;
+    return NS_OK;
+  }
+
+  float coverage = 1.0f;
+  ffi::l10nregistry_get_coverage(&aFtlPath, &coverage);
+  *aRetVal = static_cast<double>(coverage) >= aMinCoverage;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+LocaleService::AreMessagesLocalized(const nsACString& aFtlPath,
+                                    const nsTArray<nsCString>& aRequiredIds,
+                                    const nsACString& aOverridePref,
+                                    bool* aRetVal) {
+  if (OverrideEnabled(aOverridePref)) {
+    *aRetVal = true;
+    return NS_OK;
+  }
+
+  *aRetVal = ffi::l10nregistry_are_messages_localized(&aFtlPath, &aRequiredIds);
   return NS_OK;
 }
 

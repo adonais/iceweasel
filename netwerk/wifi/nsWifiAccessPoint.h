@@ -6,12 +6,12 @@
 #define _nsWifiAccessPoint_
 
 #include <algorithm>
-#include "nsWifiMonitor.h"
-#include "nsIWifiAccessPoint.h"
 
-#include "nsString.h"
-#include "nsCOMArray.h"
 #include "mozilla/Sprintf.h"
+#include "nsCOMArray.h"
+#include "nsIWifiAccessPoint.h"
+#include "nsString.h"
+#include "nsWifiMonitor.h"
 
 class nsWifiAccessPoint final : public nsIWifiAccessPoint {
   ~nsWifiAccessPoint() = default;

@@ -71,6 +71,21 @@ enum PermitUnloadAction {
   "unload",
 };
 
+// Language metadata sampled from the document associated with a WindowGlobal.
+dictionary DocumentLanguageMetadata {
+  required DOMString htmlLangAttribute;
+  required DOMString textSample;
+};
+
+dictionary DocumentLanguageMetadataRequestOptions {
+  // The sample length that is sufficient to resolve without additional retry attempts.
+  required unsigned long textSampleMinCodeUnits;
+
+  // The target sample length for text extraction. The returned sample may exceed this value
+  // depending on the text-content length of the final node prior to hitting this threshold.
+  required unsigned long textSampleTargetCodeUnits;
+};
+
 [Exposed=Window, ChromeOnly]
 interface WindowGlobalParent : WindowContext {
   readonly attribute boolean isClosed;
@@ -123,11 +138,18 @@ interface WindowGlobalParent : WindowContext {
 
   // Information about the currently loaded document.
   readonly attribute Principal documentPrincipal;
+  readonly attribute Principal documentPartitionedPrincipal;
   readonly attribute Principal documentStoragePrincipal;
   readonly attribute Principal? contentBlockingAllowListPrincipal;
   readonly attribute URI? documentURI;
   readonly attribute DOMString documentTitle;
   readonly attribute nsICookieJarSettings? cookieJarSettings;
+
+  // Requests a language-metadata sample from the current document.
+  // Resolves to null if this WindowGlobal is closed, no longer current, or cannot provide metadata.
+  [NewObject]
+  Promise<DocumentLanguageMetadata?> requestDocumentLanguageMetadata(
+      DocumentLanguageMetadataRequestOptions options);
 
   // The bare nsIChannel instances which were created in the parent process by
   // DocumentLoadListener to load this document.

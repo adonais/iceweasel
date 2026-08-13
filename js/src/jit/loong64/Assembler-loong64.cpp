@@ -2514,3 +2514,7 @@ void UseScratchRegisterScope::Release(const Register& reg) {
 bool UseScratchRegisterScope::hasAvailable() const {
   return (available_->size()) != 0;
 }
+
+uint32_t UseScratchRegisterScope::countAvailable() const {
+  return available_->size();
+}

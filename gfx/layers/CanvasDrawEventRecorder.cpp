@@ -4,14 +4,14 @@
 
 #include "CanvasDrawEventRecorder.h"
 
+#include "RecordedCanvasEventImpl.h"
+#include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRef.h"
 #include "mozilla/dom/WorkerRunnable.h"
-#include "mozilla/layers/TextureRecorded.h"
 #include "mozilla/layers/SharedSurfacesChild.h"
-#include "mozilla/StaticPrefs_gfx.h"
-#include "RecordedCanvasEventImpl.h"
+#include "mozilla/layers/TextureRecorded.h"
 
 namespace mozilla {
 namespace layers {

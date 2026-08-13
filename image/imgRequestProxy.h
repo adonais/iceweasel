@@ -6,19 +6,17 @@
 #ifndef mozilla_image_imgRequestProxy_h
 #define mozilla_image_imgRequestProxy_h
 
+#include "IProgressObserver.h"
 #include "imgIRequest.h"
-
-#include "nsIPrincipal.h"
-#include "nsISupportsPriority.h"
-#include "nsITimedChannel.h"
-#include "nsCOMPtr.h"
-#include "nsThreadUtils.h"
 #include "mozilla/PreloaderBase.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/Rect.h"
-
-#include "IProgressObserver.h"
+#include "nsCOMPtr.h"
+#include "nsIPrincipal.h"
+#include "nsISupportsPriority.h"
+#include "nsITimedChannel.h"
+#include "nsThreadUtils.h"
 
 #define NS_IMGREQUESTPROXY_CID                \
   {/* 20557898-1dd2-11b2-8f65-9c462ee2bc95 */ \

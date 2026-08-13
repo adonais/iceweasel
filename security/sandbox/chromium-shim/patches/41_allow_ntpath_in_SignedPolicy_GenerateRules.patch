@@ -10,15 +10,16 @@ so that our SandboxBroker can add a policy rule with an NT path directly.
 diff --git a/sandbox/win/src/signed_policy.cc b/sandbox/win/src/signed_policy.cc
 --- a/sandbox/win/src/signed_policy.cc
 +++ b/sandbox/win/src/signed_policy.cc
-@@ -11,31 +11,54 @@
+@@ -11,37 +11,60 @@
 
+ #include "base/containers/contains.h"
  #include "sandbox/win/src/ipc_tags.h"
  #include "sandbox/win/src/policy_engine_opcodes.h"
  #include "sandbox/win/src/policy_params.h"
  #include "sandbox/win/src/sandbox_nt_util.h"
  #include "sandbox/win/src/sandbox_policy.h"
  #include "sandbox/win/src/win_utils.h"
-
++
 +namespace {
 +bool IsValidNtPath(const base::FilePath& name) {
 +  UNICODE_STRING uni_name;
@@ -36,37 +37,43 @@ diff --git a/sandbox/win/src/signed_policy.cc b/sandbox/win/src/signed_policy.cc
 +         NT_SUCCESS(NtQueryAttributesFile(&obj_attr, &file_info));
 +}
 +}  // namespace
-+
+ 
  namespace sandbox {
-
- bool SignedPolicy::GenerateRules(const wchar_t* name,
+ 
+ bool SignedPolicy::GenerateRules(base::FilePath dll_path,
                                   LowLevelPolicy* policy) {
-   base::FilePath file_path(name);
+   // Disallow patterns to allow for future API changes.
+   if (base::Contains(dll_path.value(), L'*')) {
+     return false;
+   }
+   if (!dll_path.IsAbsolute()) {
+     return false;
+   }
+ 
+   auto nt_path_name = GetNtPathFromWin32Path(dll_path.DirName().value());
+-  if (!nt_path_name) {
 +  base::FilePath nt_filename;
-   auto nt_path_name = GetNtPathFromWin32Path(file_path.DirName().value());
--  if (!nt_path_name)
 +  if (nt_path_name) {
 +    base::FilePath nt_path(nt_path_name.value());
-+    nt_filename = nt_path.Append(file_path.BaseName());
-+  } else if (IsValidNtPath(file_path)) {
-+    nt_filename = std::move(file_path);
++    nt_filename = nt_path.Append(dll_path.BaseName());
++  } else if (IsValidNtPath(dll_path)) {
++    nt_filename = dll_path;
 +  } else {
      return false;
-+  }
-
+   }
+ 
 -  base::FilePath nt_path(nt_path_name.value());
--  std::wstring nt_filename = nt_path.Append(file_path.BaseName()).value();
+-  std::wstring nt_filename = nt_path.Append(dll_path.BaseName()).value();
    // Create a rule to ASK_BROKER if name matches.
    PolicyRule signed_policy(ASK_BROKER);
--  if (!signed_policy.AddStringMatch(IF, NameBased::NAME, nt_filename.c_str(),
--                                    CASE_INSENSITIVE)) {
-+  if (!signed_policy.AddStringMatch(
-+          IF, NameBased::NAME, nt_filename.value().c_str(), CASE_INSENSITIVE)) {
+-  if (!signed_policy.AddStringMatch(IF, NameBased::NAME, nt_filename.c_str())) {
++  if (!signed_policy.AddStringMatch(IF, NameBased::NAME,
++                                    nt_filename.value().c_str())) {
      return false;
    }
    if (!policy->AddRule(IpcTag::NTCREATESECTION, &signed_policy)) {
      return false;
    }
-
+ 
    return true;
  }

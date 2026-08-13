@@ -16,12 +16,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
@@ -71,6 +71,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupPositionProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.cfr.CFRPopup.IndicatorDirection
@@ -193,6 +194,15 @@ fun CFRScope.CFR(
         CFRShape(transformationMatrix, containerShape, indicatorShape)
     }
 
+    val backgroundBrush = when (val background = colors.background) {
+        is CFRBackground.Gradient -> background.brush
+        is CFRBackground.Colors -> Brush.linearGradient(
+            colors = background.colors,
+            start = Offset(Float.POSITIVE_INFINITY, 0f),
+            end = Offset(0f, Float.POSITIVE_INFINITY),
+        )
+    }
+
     CFRContentLayout(
         modifier = Modifier
             .layoutIndicator(
@@ -209,11 +219,7 @@ fun CFRScope.CFR(
                 minHeight = CFR_MIN_HEIGHT,
             )
             .background(
-                brush = Brush.linearGradient(
-                    colors = colors.backgroundColors,
-                    start = Offset(Float.POSITIVE_INFINITY, 0f),
-                    end = Offset(0f, Float.POSITIVE_INFINITY),
-                ),
+                brush = backgroundBrush,
                 shape = resolvedShape,
             )
             .clip(resolvedShape),
@@ -234,9 +240,6 @@ private fun CFRContentLayout(
     colors: CFRColors,
     text: @Composable () -> Unit,
 ) {
-    val titleStyle = MaterialTheme.typography.titleSmall
-    val textStyle = MaterialTheme.typography.bodyMedium
-
     Row(modifier) {
         Column(
             modifier = Modifier
@@ -246,14 +249,15 @@ private fun CFRContentLayout(
             title?.let {
                 CompositionLocalProvider(
                     LocalContentColor provides colors.titleContentColor,
-                    LocalTextStyle provides titleStyle,
+                    LocalTextStyle provides AcornTheme.typography.headline8,
                     content = it,
                 )
                 Spacer(modifier = Modifier.size(8.dp))
             }
+
             CompositionLocalProvider(
                 LocalContentColor provides colors.contentColor,
-                LocalTextStyle provides textStyle,
+                LocalTextStyle provides AcornTheme.typography.body2,
                 content = text,
             )
         }
@@ -274,7 +278,6 @@ private fun CFRContentLayout(
                     Icon(
                         painter = painterResource(iconsR.drawable.mozac_ic_cross_20),
                         contentDescription = null,
-                        modifier = Modifier.size(24.dp),
                         tint = colors.dismissButtonColor,
                     )
                 }
@@ -560,16 +563,32 @@ private val CFR_MIN_HEIGHT = 24.dp
 // endregion
 
 /**
+ * The background painted in the [CFR].
+ */
+sealed interface CFRBackground {
+
+    /**
+     * One or more [colors] painted as a linear gradient. A single color renders as a solid fill.
+     */
+    data class Colors(val colors: List<Color>) : CFRBackground
+
+    /**
+     * A [brush] painted directly as the background.
+     */
+    data class Gradient(val brush: Brush) : CFRBackground
+}
+
+/**
  * Color configuration for [CFR].
  *
- * @property backgroundColors One or more colors for the gradient background.
+ * @property background The [CFRBackground] painted in the CFR content.
  * @property contentColor Color for the main text.
  * @property titleContentColor Color for the title text.
  * @property dismissButtonColor Tint for the dismiss "X" icon.
  */
 @Immutable
 data class CFRColors(
-    val backgroundColors: List<Color>,
+    val background: CFRBackground,
     val contentColor: Color,
     val titleContentColor: Color,
     val dismissButtonColor: Color,
@@ -602,15 +621,12 @@ object CFRDefaults {
      */
     @Composable
     fun colors(
-        backgroundColors: List<Color> = listOf(
-            AcornTheme.colors.layerGradientEnd,
-            AcornTheme.colors.layerGradientStart,
-        ),
-        contentColor: Color = AcornTheme.colors.textOnColorPrimary,
-        titleContentColor: Color = AcornTheme.colors.textOnColorPrimary,
-        dismissButtonColor: Color = AcornTheme.colors.iconOnColor,
+        background: CFRBackground = CFRBackground.Gradient(brush = AcornTheme.gradients.cfr.brush),
+        contentColor: Color = Color.White,
+        titleContentColor: Color = Color.White,
+        dismissButtonColor: Color = Color.White,
     ) = CFRColors(
-        backgroundColors = backgroundColors,
+        background = background,
         contentColor = contentColor,
         titleContentColor = titleContentColor,
         dismissButtonColor = dismissButtonColor,
@@ -624,22 +640,27 @@ object CFRDefaults {
 @PreviewLightDark
 private fun CFRWithTitlePreview() {
     AcornTheme {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+        Surface {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center,
             ) {
-                SampleButtonWithCFR(buttonText = "Button 1")
-                SampleButtonWithCFR(direction = IndicatorDirection.DOWN, buttonText = "Button 2")
-                SampleButtonWithCFR(buttonText = "Button 3")
-                SampleButtonWithCFR(showDismissButton = false, buttonText = "Button 4")
-                SampleButtonWithCFR(buttonText = "Button 5")
-                SampleButtonWithCFR(buttonText = "Button 6")
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    SampleButtonWithCFR(buttonText = "Button 1")
+                    SampleButtonWithCFR(
+                        direction = IndicatorDirection.DOWN,
+                        buttonText = "Button 2",
+                    )
+                    SampleButtonWithCFR(buttonText = "Button 3")
+                    SampleButtonWithCFR(showDismissButton = false, buttonText = "Button 4")
+                    SampleButtonWithCFR(buttonText = "Button 5")
+                    SampleButtonWithCFR(buttonText = "Button 6")
+                }
             }
         }
     }
@@ -670,15 +691,14 @@ private fun SampleButtonWithCFR(
         },
         state = state,
     ) {
-        Button(
+        FilledButton(
+            text = buttonText,
             onClick = {
                 scope.launch {
                     state.show()
                 }
             },
-        ) {
-            Text(text = buttonText)
-        }
+        )
     }
 
     DisposableEffect(Unit) {

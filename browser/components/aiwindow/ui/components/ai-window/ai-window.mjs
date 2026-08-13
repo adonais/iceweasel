@@ -12,6 +12,8 @@ import "chrome://browser/content/aiwindow/components/smartwindow-promo.mjs";
 import "chrome://browser/content/aiwindow/components/smartwindow-topsites.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/kit-mention.mjs";
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://browser/content/aiwindow/components/smartwindow-history-menu.mjs";
 
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
@@ -33,13 +35,15 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/models/TitleGeneration.sys.mjs",
   AIWindow:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
+  AIWindowUI:
+    "moz-src:///browser/components/aiwindow/ui/modules/AIWindowUI.sys.mjs",
   EMPTY_SMARTBAR_INPUT_STATE:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindowTabStatesManager.sys.mjs",
   FeedbackModal:
     "moz-src:///browser/components/aiwindow/ui/modules/FeedbackModal.sys.mjs",
   ChatConversation:
     "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs",
-  TopSites: "resource:///modules/topsites/TopSites.sys.mjs",
+  AboutNewTab: "resource:///modules/AboutNewTab.sys.mjs",
   URILoadingHelper: "resource:///modules/URILoadingHelper.sys.mjs",
   MEMORIES_FLAG_SOURCE:
     "moz-src:///browser/components/aiwindow/ui/modules/ChatEnums.sys.mjs",
@@ -58,6 +62,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   MemoriesManager:
     "moz-src:///browser/components/aiwindow/models/memories/MemoriesManager.sys.mjs",
   getAllModelsData:
+    "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
+  refreshModelsDataCache:
     "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
   getCurrentModelChoiceId:
     "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
@@ -144,11 +150,23 @@ const PREF_MEMORIES_HAS_SEEN_MEMORIES =
   "browser.smartwindow.memories.hasSeenMemories";
 const PREF_MODEL_CHOICE = "browser.smartwindow.firstrun.modelChoice";
 const PREF_CUSTOM_ENDPOINT = "browser.smartwindow.customEndpoint";
+// TODO Bug 2053495: remove with mistral release pref
+const PREF_MISTRAL_RELEASE = "browser.smartwindow.mistralRelease";
 const TAB_FAVICON_CHAT =
   "chrome://browser/content/aiwindow/assets/ask-icon.svg";
 const PREF_CHAT_INTERACTION_COUNT = "browser.smartwindow.chat.interactionCount";
 const PREF_HIDE_TOP_SITES = "browser.smartwindow.hideTopSites";
 const MAX_INTERACTION_COUNT = 1000;
+const HISTORY_MENU_MAX_RECENT_CHATS = 6;
+
+// Events dispatched by <smartwindow-history-menu> and handled here.
+const HISTORY_MENU_EVENTS = [
+  "smartwindow-history-menu:new-chat",
+  "smartwindow-history-menu:open-chat",
+  "smartwindow-history-menu:view-all-chats",
+  "smartwindow-history-menu:open-settings",
+  "smartwindow-history-menu:request-recent-chats",
+];
 const MAX_SIDEBAR_STARTER_CACHE_KEYS = 20;
 const MAX_TOP_SITES = 8;
 
@@ -205,6 +223,7 @@ export class AIWindow extends MozLitElement {
     selectedModelId: { type: String, state: true },
     topSites: { type: Array, state: true },
     startersResolved: { type: Boolean, state: true },
+    recentChats: { type: Array, state: true },
   };
 
   #browser;
@@ -223,6 +242,7 @@ export class AIWindow extends MozLitElement {
   #sidebarStarterCache = new Map();
   #smartbarResizeObserver = null;
   #windowModeObserver = null;
+  #topSitesObserver = null;
   #swapDocShellsChromeWindow = null;
   #hasMemories = false;
   #selectedModelChoiceId = null;
@@ -406,6 +426,17 @@ export class AIWindow extends MozLitElement {
       false,
       () => this.#syncTopSites()
     );
+    // TODO Bug 2053495: remove with mistral release pref
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "mistralReleasePref",
+      PREF_MISTRAL_RELEASE,
+      false,
+      () => this.#onMistralReleasePrefChanged()
+    );
+    // defineLazyPreferenceGetter registers its pref observer on first read, so
+    // touch the value here to arm the onUpdate callback above.
+    void this.mistralReleasePref;
 
     this.userPrompt = "";
     this.#browser = null;
@@ -419,6 +450,7 @@ export class AIWindow extends MozLitElement {
     this.showStarters = false;
     this.topSites = [];
     this.startersResolved = false;
+    this.recentChats = [];
     this.showFooter = this.mode === MODE.FULLPAGE;
     this.promoMessage = null;
     this.showDisclaimer = this.mode !== MODE.FULLPAGE;
@@ -452,9 +484,6 @@ export class AIWindow extends MozLitElement {
       "chat-conversation:seen-urls-updated",
       this.#onSeenUrlsUpdated
     );
-    this.#conversation.setHistoryResultsDispatcher(
-      this.#dispatchHistoryResults
-    );
   }
 
   #removeConversationListeners() {
@@ -474,7 +503,6 @@ export class AIWindow extends MozLitElement {
       "chat-conversation:seen-urls-updated",
       this.#onSeenUrlsUpdated
     );
-    this.#conversation.setHistoryResultsDispatcher(null);
   }
 
   #onSeenUrlsUpdated = () => {
@@ -483,9 +511,6 @@ export class AIWindow extends MozLitElement {
       this.#dispatchSeenUrls(actor);
     }
   };
-
-  #dispatchHistoryResults = payload =>
-    this.#getAIChatContentActor()?.dispatchHistoryResultsToChatContent(payload);
 
   #onMessageUpdate = (_event, message) => {
     // In fullpage, Kit must anchor to the chrome viewport (bottom of the
@@ -555,6 +580,9 @@ export class AIWindow extends MozLitElement {
       "aiwindow-input-model-select:open-settings",
       this.#handleOpenModelSettings
     );
+    for (const eventName of HISTORY_MENU_EVENTS) {
+      this.ownerDocument.addEventListener(eventName, this.#onHistoryMenuEvent);
+    }
 
     Services.prefs.addObserver(
       PREF_MODEL_CHOICE,
@@ -563,6 +591,15 @@ export class AIWindow extends MozLitElement {
     Services.prefs.addObserver(
       PREF_CUSTOM_ENDPOINT,
       this.#onCustomEndpointPrefChanged
+    );
+
+    // AboutNewTab populates its Top Sites store asynchronously, so on a fresh
+    // browser start the store can still be empty when we first read it. Reload
+    // whenever it changes so the row appears once the feed is ready.
+    this.#topSitesObserver = () => this.#syncTopSites();
+    Services.obs.addObserver(
+      this.#topSitesObserver,
+      "newtab-top-sites-changed"
     );
 
     this.#loadPendingConversation();
@@ -787,6 +824,15 @@ export class AIWindow extends MozLitElement {
       this.#onCustomEndpointPrefChanged
     );
 
+    // Clean up Top Sites store observer
+    if (this.#topSitesObserver) {
+      Services.obs.removeObserver(
+        this.#topSitesObserver,
+        "newtab-top-sites-changed"
+      );
+      this.#topSitesObserver = null;
+    }
+
     // Clean up smartbar toggle button
     if (this.#smartbarToggleButton) {
       this.#smartbarToggleButton.remove();
@@ -811,6 +857,12 @@ export class AIWindow extends MozLitElement {
       "aiwindow-input-model-select:open-settings",
       this.#handleOpenModelSettings
     );
+    for (const eventName of HISTORY_MENU_EVENTS) {
+      this.ownerDocument.removeEventListener(
+        eventName,
+        this.#onHistoryMenuEvent
+      );
+    }
     if (this.#smartbar) {
       this.#smartbar.removeEventListener(
         "aiwindow-memories-toggle:on-change",
@@ -906,6 +958,23 @@ export class AIWindow extends MozLitElement {
       await this.#switchModel(defaultModelChoiceId, { isTabOverride: false });
     }
 
+    this.#updateSmartbarModels(this.#smartbar);
+  };
+
+  // TODO Bug 2053495: remove with mistral release pref.
+  #onMistralReleasePrefChanged = async () => {
+    await lazy.refreshModelsDataCache();
+    await this.#loadAvailableModels();
+    // The model backing a choice can change across the flip, so re-resolve the
+    // current choice's model to keep selectedModelId valid; otherwise the select
+    // can't find the selected model and renders in a stale/blank state.
+    const defaultModelChoiceId = lazy.getCurrentModelChoiceId();
+    if (
+      !this.#hasModelChoiceOverride &&
+      this.availableModels[defaultModelChoiceId]
+    ) {
+      await this.#switchModel(defaultModelChoiceId, { isTabOverride: false });
+    }
     this.#updateSmartbarModels(this.#smartbar);
   };
 
@@ -1060,6 +1129,21 @@ export class AIWindow extends MozLitElement {
   }
 
   /**
+   * Restores the smartbar context chips from a persisted per-tab state. Called
+   * on tab switch so the chips are scoped to the tab they were added in.
+   *
+   * @param {ContextWebsite[]} [contextChips] - The user-added chips to restore.
+   * @param {boolean} [removedImplicitContextChip] - Restored dismissal of the
+   *   implicit current-tab chip.
+   */
+  restoreContextChips(contextChips = [], removedImplicitContextChip = false) {
+    this.#smartbar?.restoreContextChips(
+      contextChips,
+      removedImplicitContextChip
+    );
+  }
+
+  /**
    * Captures the current smartbar input as a structured state suitable for
    * persistence: plain text plus the list of inline mention chips with their
    * text-character offsets.
@@ -1135,13 +1219,15 @@ export class AIWindow extends MozLitElement {
     try {
       const gBrowser = window.browsingContext?.topChromeWindow.gBrowser;
       const tabCount = gBrowser?.tabs.length || 0;
-      starters = await lazy.NewTabStarterGenerator.getPrompts(tabCount).catch(
-        e => {
-          lazy.log.error("[Prompts] Failed to load initial starters:", e);
-          return [];
-        }
-      );
 
+      const newTabStarterIds =
+        await lazy.NewTabStarterGenerator.getPrompts(tabCount);
+
+      // Kick off the sidebar generation concurrently so its request is issued
+      // before the l10n await can be interrupted by a re-entrant call.
+      let sidebarStartersPromise = null;
+      let startersKey = null;
+      let sidebarStarters = null;
       if (this.mode === MODE.SIDEBAR && gBrowser) {
         const { contextWebsites } = this.#smartbar.getCurrentContextData();
         const contextTabs = contextWebsites.map(contextWebsite => ({
@@ -1152,14 +1238,14 @@ export class AIWindow extends MozLitElement {
         // Get memories setting from user preferences
         const memoriesEnabled =
           this.#memoriesToggled ?? this.#memoriesIconShown;
-        const startersKey = JSON.stringify({
+        startersKey = JSON.stringify({
           contextTabs,
           memoriesEnabled,
         });
-        let sidebarStarters = this.#sidebarStarterCache.get(startersKey);
+        sidebarStarters = this.#sidebarStarterCache.get(startersKey);
 
         if (!sidebarStarters) {
-          sidebarStarters = await lazy
+          sidebarStartersPromise = lazy
             .generateConversationStartersSidebar(
               contextTabs,
               2,
@@ -1174,6 +1260,22 @@ export class AIWindow extends MozLitElement {
               );
               return null;
             });
+        }
+      }
+
+      starters = await this.ownerDocument.l10n
+        .formatValues(newTabStarterIds.map(({ l10nId }) => ({ id: l10nId })))
+        .then(texts =>
+          texts.map((text, i) => ({ text, type: newTabStarterIds[i].type }))
+        )
+        .catch(e => {
+          lazy.log.error("[Prompts] Failed to load initial starters:", e);
+          return [];
+        });
+
+      if (this.mode === MODE.SIDEBAR && gBrowser) {
+        if (sidebarStartersPromise) {
+          sidebarStarters = await sidebarStartersPromise;
 
           if (sidebarStarters) {
             this.#sidebarStarterCache.delete(startersKey);
@@ -1241,8 +1343,8 @@ export class AIWindow extends MozLitElement {
 
   /**
    * Loads the user's Top Sites and renders a single row of them below the
-   * Smartbar in fullpage mode. TopSites.getSites() already excludes sponsored
-   * sites; we only keep the first MAX_TOP_SITES entries to fit a single row.
+   * Smartbar in fullpage mode. Sponsored sites are filtered out; we only keep
+   * the first MAX_TOP_SITES entries to fit a single row.
    *
    * @private
    */
@@ -1272,10 +1374,10 @@ export class AIWindow extends MozLitElement {
     }
   }
 
-  async #loadTopSites() {
+  #loadTopSites() {
     let sites = [];
     try {
-      sites = await lazy.TopSites.getSites();
+      sites = lazy.AboutNewTab.getTopSites();
     } catch (e) {
       lazy.log.error("[TopSites] Failed to load top sites:", e);
     }
@@ -1285,7 +1387,7 @@ export class AIWindow extends MozLitElement {
     }
 
     this.topSites = (sites ?? [])
-      .filter(site => site?.url)
+      .filter(site => site?.url && !site.sponsored_position)
       .slice(0, MAX_TOP_SITES);
 
     if (this.topSites.length) {
@@ -1364,6 +1466,10 @@ export class AIWindow extends MozLitElement {
         "aiwindow-memories-toggle:on-change",
         this.#handleMemoriesToggle
       );
+      smartbar.addEventListener(
+        "smartbar-context-chips-changed",
+        this.#handleContextChips
+      );
     }
     this.#smartbar = smartbar;
     this.#memoriesButton = smartbar.querySelector("memories-icon-button");
@@ -1393,6 +1499,23 @@ export class AIWindow extends MozLitElement {
     this.#smartbarToggleButton = toggleButton;
     this.#updateSmartbarAndHeaderVisibility();
   }
+
+  /**
+   * Dispatches the context chips via ai-window:context-chips-changed
+   * to the tab state manager to save them"
+   *
+   * @private
+   */
+  #handleContextChips = () => {
+    this.#dispatchChromeEvent("ai-window:context-chips-changed", {
+      bubbles: true,
+      detail: {
+        contextChips: this.#smartbar?.contextChips,
+        removedImplicitContextChip: this.#smartbar?.removedImplicitContextChip,
+        tab: this.#getEventTab(),
+      },
+    });
+  };
 
   #setupSmartbarFocus(smartbar) {
     let hasAutoFocused = false;
@@ -2370,6 +2493,25 @@ export class AIWindow extends MozLitElement {
   }
 
   /**
+   * Resolves the tab this ai-window instance relates to: for fullpage that's
+   * the tab hosting the element; for sidebar (no owner tab), fall back to the
+   * currently selected tab the sidebar reflects. Intention is to get the
+   * correct reference for fullpage tabs that might be opening in the
+   * background, like for session restore or tab restores.
+   *
+   * @returns {?MozTabbrowserTab}
+   *
+   * @private
+   */
+  #getEventTab() {
+    const gBrowser = window?.browsingContext?.topChromeWindow?.gBrowser;
+    const ownerTab = this.#hostBrowser
+      ? gBrowser?.getTabForBrowser(this.#hostBrowser)
+      : null;
+    return ownerTab ?? gBrowser?.selectedTab;
+  }
+
+  /**
    * Gets event options for a TabStateEvent
    *
    * @param {false|string} [input=false] The latest input contents
@@ -2380,12 +2522,6 @@ export class AIWindow extends MozLitElement {
    * @private
    */
   #getAIWindowEventOptions(input = false, isAsk = false) {
-    const topChromeWindow = window?.browsingContext?.topChromeWindow;
-    const gBrowser = topChromeWindow?.gBrowser;
-    const ownerTab = this.#hostBrowser
-      ? gBrowser?.getTabForBrowser(this.#hostBrowser)
-      : null;
-
     return {
       bubbles: true,
       detail: {
@@ -2398,14 +2534,7 @@ export class AIWindow extends MozLitElement {
         modelChoiceId: this.#hasModelChoiceOverride
           ? this.#selectedModelChoiceId
           : null,
-
-        // The tab this ai-window instance relates to: for fullpage that's
-        // the tab hosting the element; for sidebar (no owner tab), fall
-        // back to the currently selected tab the sidebar reflects.
-        // Intention is to get the correct reference for fullpage tabs
-        // that might be opening in the background, like for session restore
-        // or tab restores.
-        tab: ownerTab ?? gBrowser?.selectedTab,
+        tab: this.#getEventTab(),
       },
     };
   }
@@ -2545,6 +2674,98 @@ export class AIWindow extends MozLitElement {
 
   #onCloseSidebarClick() {
     this.#dispatchChromeEvent("ai-window:close-sidebar");
+  }
+
+  /** Loads recent conversations for the history menu. */
+  async #refreshRecentChats() {
+    try {
+      const items = await lazy.AIWindow.chatStore.findRecentConversations(
+        HISTORY_MENU_MAX_RECENT_CHATS
+      );
+      this.recentChats = items.map(item => ({
+        id: item.id,
+        title: item.title,
+        pageUrl: item.pageUrl,
+      }));
+    } catch (e) {
+      lazy.log.error("Failed to load recent chats for history menu", e);
+      this.recentChats = [];
+    }
+  }
+
+  /**
+   * Opens a recent chat: switch to its tab if open, otherwise reopen it.
+   *
+   * @param {string} conversationId
+   */
+  async #onRecentChatSelected(conversationId) {
+    const conversation =
+      await lazy.AIWindow.chatStore.findConversationById(conversationId);
+    if (!conversation) {
+      return;
+    }
+
+    const win = this.#topChromeWindow;
+    if (!win) {
+      this.openConversation(conversation);
+      return;
+    }
+
+    const existingTab = Array.from(win.gBrowser.tabs).find(tab => {
+      const browser = tab.linkedBrowser;
+      return (
+        browser?.getAttribute("data-conversation-id") === conversationId &&
+        browser.currentURI &&
+        lazy.AIWindow.isAIWindowContentPage(browser.currentURI)
+      );
+    });
+
+    if (existingTab) {
+      win.gBrowser.selectedTab = existingTab;
+      return;
+    }
+
+    // Tab was closed: reopen it on the page it was about.
+    lazy.AIWindowUI.reopenConversationInTab(win, conversation);
+  }
+
+  /** Opens the Chats section of Firefox View. */
+  #onViewAllChatsSelected() {
+    this.#topChromeWindow?.FirefoxViewHandler.openTab("chats");
+  }
+
+  /** Opens the Smart Window preferences. */
+  #onSmartWindowSettingsSelected() {
+    this.#topChromeWindow?.openPreferences("personalizeSmartWindow");
+  }
+
+  // Handles action events from <smartwindow-history-menu>.
+  #onHistoryMenuEvent = event => {
+    switch (event.type) {
+      case "smartwindow-history-menu:new-chat":
+        this.onCreateNewChatClick();
+        break;
+      case "smartwindow-history-menu:open-chat":
+        this.#onRecentChatSelected(event.detail.conversationId);
+        break;
+      case "smartwindow-history-menu:view-all-chats":
+        this.#onViewAllChatsSelected();
+        break;
+      case "smartwindow-history-menu:open-settings":
+        this.#onSmartWindowSettingsSelected();
+        break;
+      case "smartwindow-history-menu:request-recent-chats":
+        this.#refreshRecentChats();
+        break;
+    }
+  };
+
+  // Renders the <smartwindow-history-menu> for the given mode.
+  #historyMenu(mode) {
+    return html`<smartwindow-history-menu
+      mode=${mode}
+      .recentChats=${this.recentChats}
+    ></smartwindow-history-menu>`;
   }
 
   showSearchingIndicator(isSearching, searchQuery) {
@@ -2693,6 +2914,22 @@ export class AIWindow extends MozLitElement {
       withPageContent: { log: messages },
       withoutPageContent: hasPageContent ? { log: withoutPageContent } : null,
     };
+  }
+
+  /**
+   * Cache resolved history-result page assets (thumbnail/favicon) onto the
+   * conversation's pool so later message snapshots carry them. Called by the
+   * actor after it resolves assets requested by a rendered grid.
+   *
+   * @param {string} conversationId
+   * @param {Array<{url: string, image: ?string, hasFavicon: boolean}>} assets
+   */
+  applyHistoryAssets(conversationId, assets) {
+    if (this.conversationId !== conversationId) {
+      return;
+    }
+
+    this.#conversation?.applyHistoryAssets(assets);
   }
 
   #openFeedbackModal(type) {
@@ -2863,6 +3100,7 @@ export class AIWindow extends MozLitElement {
               iconsrc="chrome://browser/content/aiwindow/assets/new-chat.svg"
               @click=${this.onCreateNewChatClick}
             ></moz-button>
+            ${this.#historyMenu("sidebar")}
             <moz-button
               data-l10n-id="aiwindow-close-sidebar"
               data-l10n-attrs="tooltiptext,aria-label"
@@ -2877,14 +3115,7 @@ export class AIWindow extends MozLitElement {
         ? html`
             <smartwindow-heading></smartwindow-heading>
             <div class="chat-header fullpage-header">
-              <moz-button
-                data-l10n-id="aiwindow-new-chat"
-                data-l10n-attrs="tooltiptext,aria-label"
-                class="new-chat-icon-button"
-                type="ghost icon"
-                iconsrc="chrome://browser/content/aiwindow/assets/new-chat.svg"
-                @click=${this.onCreateNewChatClick}
-              ></moz-button>
+              ${this.#historyMenu("fullpage")}
             </div>
           `
         : ""}

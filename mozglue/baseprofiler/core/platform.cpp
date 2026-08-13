@@ -202,8 +202,7 @@ static uint32_t AvailableFeatures() {
 // Default features common to all contexts (even if not available).
 static constexpr uint32_t DefaultFeatures() {
   return ProfilerFeature::Java | ProfilerFeature::JS |
-         ProfilerFeature::StackWalk | ProfilerFeature::CPUUtilization |
-         ProfilerFeature::ProcessCPU;
+         ProfilerFeature::StackWalk | ProfilerFeature::ProcessCPU;
 }
 
 // Extra default features when MOZ_PROFILER_STARTUP is set (even if not
@@ -2079,7 +2078,7 @@ void SamplerThread::Run() {
 
   // This will be positive if we are running behind schedule (sampling less
   // frequently than desired) and negative if we are ahead of schedule.
-  TimeDuration lastSleepOvershoot = 0;
+  TimeDuration lastSleepOvershoot{};
   TimeStamp sampleStart = TimeStamp::Now();
 
   while (true) {

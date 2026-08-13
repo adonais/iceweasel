@@ -5,10 +5,9 @@
 #ifndef ArrayAlgorithm_h_
 #define ArrayAlgorithm_h_
 
-#include "nsTArray.h"
-
 #include "mozilla/Algorithm.h"
 #include "mozilla/ResultExtensions.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 

@@ -334,6 +334,11 @@ void nsBlockReflowContext::ReflowBlock(const LogicalRect& aSpace,
                                                         true);
     }
   }
+
+  // If a frame indicated that it needs to be reflowed to apply text-box-trim
+  // on the trim-end side, propagate that signal up to the block parent.
+  aState.mNeedsTextBoxTrimAtFragmentEndRetry |=
+      mMetrics.mNeedsTextBoxTrimAtFragmentEndRetry;
 }
 
 /**

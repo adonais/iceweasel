@@ -414,15 +414,6 @@ AbortReasonOr<WarpScriptSnapshot*> WarpScriptOracle::createScriptSnapshot() {
         break;
       }
 
-      case JSOp::Lambda: {
-        JSFunction* fun = loc.getFunction(script_);
-        if (IsAsmJSModule(fun)) {
-          return abort(AbortReason::Disable, "asm.js module function lambda");
-        }
-        MOZ_TRY(maybeInlineIC(opSnapshots, loc));
-        break;
-      }
-
       case JSOp::GetElemSuper: {
 #if defined(JS_CODEGEN_X86)
         // x86 does not have enough registers.
@@ -593,6 +584,7 @@ AbortReasonOr<WarpScriptSnapshot*> WarpScriptOracle::createScriptSnapshot() {
       case JSOp::Not:
       case JSOp::CloseIter:
       case JSOp::OptimizeGetIterator:
+      case JSOp::Lambda:
         MOZ_TRY(maybeInlineIC(opSnapshots, loc));
         break;
       case JSOp::Call:

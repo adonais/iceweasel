@@ -73,11 +73,10 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP PostMessageEvent::Run() {
   // If we bailed before this point we're going to leak mMessage, but
   // that's probably better than crashing.
 
-  RefPtr<nsGlobalWindowInner> targetWindow;
-  if (mTargetWindow->IsClosedOrClosing() ||
-      !(targetWindow = nsGlobalWindowInner::Cast(
-            mTargetWindow->GetCurrentInnerWindow())) ||
-      targetWindow->IsDying())
+  RefPtr<nsGlobalWindowInner> targetWindow =
+      nsGlobalWindowInner::Cast(mTargetWindow->GetCurrentInnerWindow());
+  if (mTargetWindow->IsClosedOrClosing() || !targetWindow ||
+      targetWindow->IsDying() || !targetWindow->IsFullyActive())
     return NS_OK;
 
   // If the window's document has suppressed event handling, hand off this event

@@ -19,6 +19,23 @@ absl_source_set("errno_saver") {
   visibility = [ "//third_party/abseil-cpp/absl/*" ]
 }
 
+absl_source_set("cpu_detect") {
+  public = [ "internal/cpu_detect.h" ]
+  sources = [ "internal/cpu_detect.cc" ]
+  deps = [ ":config" ]
+  visibility = [ "//third_party/abseil-cpp/absl/*" ]
+}
+
+absl_source_set("hardening") {
+  public = [ "internal/hardening.h" ]
+  sources = [ "internal/hardening.cc" ]
+  deps = [
+    ":config",
+    ":core_headers",
+  ]
+  visibility = [ "//third_party/abseil-cpp/absl/*" ]
+}
+
 absl_source_set("log_severity") {
   sources = [ "log_severity.cc" ]
   public = [ "log_severity.h" ]
@@ -37,13 +54,17 @@ absl_source_set("no_destructor") {
 }
 
 absl_source_set("nullability") {
-  sources = [ "internal/nullability_impl.h" ]
   public = [ "nullability.h" ]
+  deps = [ ":config" ]
+}
+
+absl_source_set("nullability_traits_internal") {
+  public = [ "internal/nullability_traits.h" ]
   deps = [
     ":config",
-    ":core_headers",
-    "//third_party/abseil-cpp/absl/meta:type_traits",
+    ":nullability",
   ]
+  visibility = [ "//third_party/abseil-cpp/absl/*" ]
 }
 
 absl_source_set("raw_logging_internal") {
@@ -145,7 +166,6 @@ absl_source_set("malloc_internal") {
 absl_source_set("base_internal") {
   public = [
     "internal/hide_ptr.h",
-    "internal/identity.h",
     "internal/scheduling_mode.h",
   ]
   deps = [
@@ -157,6 +177,7 @@ absl_source_set("base_internal") {
 
 absl_source_set("base") {
   sources = [
+    "casts.cc",
     "internal/cycleclock.cc",
     "internal/spinlock.cc",
     "internal/sysinfo.cc",
@@ -185,8 +206,6 @@ absl_source_set("base") {
     ":config",
     ":core_headers",
     ":cycleclock_internal",
-    ":dynamic_annotations",
-    ":log_severity",
     ":nullability",
     ":raw_logging_internal",
     ":spinlock_wait",
@@ -214,13 +233,12 @@ if (absl_build_tests) {
 }
 
 absl_source_set("throw_delegate") {
-  sources = [ "internal/throw_delegate.cc" ]
-  public = [ "internal/throw_delegate.h" ]
+  sources = [ "throw_delegate.cc" ]
+  public = [ "throw_delegate.h" ]
   deps = [
     ":config",
     ":raw_logging_internal",
   ]
-  visibility = [ "//third_party/abseil-cpp/absl/*" ]
 }
 
 absl_source_set("exception_testing") {
@@ -253,6 +271,7 @@ absl_source_set("endian") {
     "internal/endian.h",
     "internal/unaligned_access.h",
   ]
+  visibility = [ "//third_party/abseil-cpp/absl/*" ]
   deps = [
     ":base",
     ":config",
@@ -284,9 +303,8 @@ absl_source_set("strerror") {
 }
 
 absl_source_set("fast_type_id") {
-  public = [ "internal/fast_type_id.h" ]
+  public = [ "fast_type_id.h" ]
   deps = [ ":config" ]
-  visibility = [ "//third_party/abseil-cpp/absl/*" ]
 }
 
 absl_source_set("prefetch") {
@@ -322,6 +340,7 @@ absl_test("poison_test") {
 
 absl_source_set("iterator_traits_internal") {
   public = [ "internal/iterator_traits.h" ]
+  visibility = [ "//third_party/abseil-cpp/absl/*" ]
   deps = [
     ":config",
     "//third_party/abseil-cpp/absl/meta:type_traits",
@@ -373,6 +392,23 @@ absl_test("config_test") {
   ]
 }
 
+absl_test("casts_test") {
+  sources = [ "casts_test.cc" ]
+  deps = [
+    ":base",
+    ":config",
+  ]
+}
+
+absl_test("hardening_test") {
+  sources = [ "internal/hardening_test.cc" ]
+  deps = [
+    ":config",
+    ":core_headers",
+    ":hardening",
+  ]
+}
+
 absl_test("no_destructor_test") {
   sources = [ "no_destructor_test.cc" ]
   deps = [
@@ -384,13 +420,60 @@ absl_test("no_destructor_test") {
 
 absl_test("nullability_test") {
   sources = [ "nullability_test.cc" ]
-  deps = [
-    ":core_headers",
-    ":nullability",
-  ]
+  deps = [ ":nullability" ]
 }
 
 absl_test("nullability_default_nonnull_test") {
   sources = [ "nullability_default_nonnull_test.cc" ]
   deps = [ ":nullability" ]
+}
+
+absl_test("nullability_traits_test") {
+  sources = [ "internal/nullability_traits_test.cc" ]
+  deps = [
+    ":config",
+    ":nullability",
+    ":nullability_traits_internal",
+  ]
+}
+
+absl_test("raw_logging_test") {
+  sources = [ "raw_logging_test.cc" ]
+  deps = [
+    ":raw_logging_internal",
+    "//third_party/abseil-cpp/absl/strings",
+  ]
+}
+
+absl_test("sysinfo_test") {
+  sources = [ "internal/sysinfo_test.cc" ]
+  deps = [
+    ":base",
+    "//third_party/abseil-cpp/absl/synchronization",
+  ]
+}
+
+absl_test("cpu_detect_test") {
+  sources = [ "internal/cpu_detect_test.cc" ]
+  deps = [
+    ":config",
+    ":cpu_detect",
+  ]
+}
+
+# low_level_alloc_test is not included because it has own main function.
+# absl_test("low_level_alloc_test")
+
+absl_test("thread_identity_test") {
+  sources = [ "internal/thread_identity_test.cc" ]
+  deps = [
+    ":base",
+    ":core_headers",
+    "//third_party/abseil-cpp/absl/synchronization",
+  ]
+}
+
+absl_test("optimization_test") {
+  sources = [ "optimization_test.cc" ]
+  deps = [ ":core_headers" ]
 }

@@ -58,7 +58,7 @@ async function doPickResultTest(initialURL, searchString) {
     });
 
     await UrlbarTestUtils.enterSearchMode(window, {
-      source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     });
 
     // Arrow down to the bookmark result.

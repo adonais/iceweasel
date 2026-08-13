@@ -44,6 +44,16 @@ struct StorageWithTArray {
     return true;
   }
 
+  template <typename Pred>
+  static bool AnyElement(const StorageType& aStorage, Pred&& aPred) {
+    for (const T& entry : aStorage) {
+      if (aPred(entry)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   static void Clear(StorageType& aStorage) { aStorage.Clear(); }
 
   static void Compact(StorageType& aStorage) { aStorage.Compact(); }
@@ -124,6 +134,15 @@ class Queue : public LockingPolicy {
       mBack = tmp;
     }
     return StoragePolicy::Pop(*mFront, aEntry);
+  }
+
+  // Return true if any queued element satisfies aPred. Order-independent, so it
+  // scans both internal storages without disturbing them.
+  template <typename Pred>
+  bool AnyElement(Pred&& aPred) {
+    AutoLock lock(*this);
+    return StoragePolicy::AnyElement(*mFront, aPred) ||
+           StoragePolicy::AnyElement(*mBack, aPred);
   }
 
   void Clear() {

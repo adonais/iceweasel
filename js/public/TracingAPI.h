@@ -120,6 +120,12 @@ class TracingContext {
   constexpr static size_t InvalidIndex = size_t(-1);
   size_t index() const { return index_; }
 
+  // Gets the nesting level. Sometimes, when logging from the CC, we skip GC
+  // cells and simply attribute their edges to the current node. This value
+  // is set from AutoClearTracingContext in that case to indicate how nested
+  // we are in that cycle.
+  size_t nesting() const { return nesting_; }
+
   // Build a description of this edge in the heap graph. This call may invoke
   // the context functor, if set, which may inspect arbitrary areas of the
   // heap. On the other hand, the description provided by this method may be
@@ -142,8 +148,14 @@ class TracingContext {
   friend class AutoTracingIndex;
   size_t index_ = InvalidIndex;
 
+  friend class AutoClearTracingContext;
+  size_t nesting_ = 0;
+
   friend class AutoTracingDetails;
   Functor* functor_ = nullptr;
+
+  friend class AutoTracingWeakEdge;
+  bool weak_ = false;
 };
 
 }  // namespace JS
@@ -271,6 +283,21 @@ class MOZ_RAII AutoTracingIndex {
   }
 };
 
+// Sets a bool on the tracer's context indicating a weak edge
+class MOZ_RAII AutoTracingWeakEdge {
+  JSTracer* trc_;
+
+ public:
+  explicit AutoTracingWeakEdge(JSTracer* trc) : trc_(trc) {
+    MOZ_ASSERT(!trc_->context().weak_);
+    trc_->context().weak_ = true;
+  }
+  ~AutoTracingWeakEdge() {
+    MOZ_ASSERT(trc_->context().weak_);
+    trc_->context().weak_ = false;
+  }
+};
+
 // Set a context callback for the trace callback to use, if it needs a detailed
 // edge description.
 class MOZ_RAII AutoTracingDetails {
@@ -296,6 +323,7 @@ class MOZ_RAII AutoClearTracingContext {
   explicit AutoClearTracingContext(JSTracer* trc)
       : trc_(trc), prev_(trc->context()) {
     trc_->context() = TracingContext();
+    trc_->context().nesting_ = prev_.nesting_ + 1;
   }
 
   ~AutoClearTracingContext() { trc_->context() = prev_; }

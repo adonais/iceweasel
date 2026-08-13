@@ -12,7 +12,7 @@ add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       [
-        "permissions.desktop-notification.telemetry.siteCategories",
+        "toolkit.telemetry.site_categories",
         JSON.stringify({
           "example.com": "social",
           "example.org": "news_publishers",

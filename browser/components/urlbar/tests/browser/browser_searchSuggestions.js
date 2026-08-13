@@ -269,7 +269,7 @@ add_task(async function heuristicAddsFormHistory() {
 
   let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
   Assert.ok(result.heuristic);
-  Assert.equal(result.type, UrlbarUtils.RESULT_TYPE.SEARCH);
+  Assert.equal(result.type, UrlbarShared.RESULT_TYPE.SEARCH);
   Assert.equal(result.searchParams.query, "foo");
 
   let uri = (await SearchService.getDefault()).getSubmission("foo").uri;
@@ -336,7 +336,7 @@ async function getSuggestionResults() {
   for (let i = 0; i < matchCount; i++) {
     let result = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
     if (
-      result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
+      result.type == UrlbarShared.RESULT_TYPE.SEARCH &&
       result.searchParams.suggestion
     ) {
       result.index = i;

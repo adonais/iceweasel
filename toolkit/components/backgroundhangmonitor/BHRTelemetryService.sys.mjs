@@ -2,12 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
-  TelemetryController: "resource://gre/modules/TelemetryController.sys.mjs",
-});
-
 export function BHRTelemetryService() {
   // Allow tests to get access to this object to verify it works correctly.
   this.wrappedJSObject = this;
@@ -26,7 +20,6 @@ BHRTelemetryService.prototype = Object.freeze({
   TRANSMIT_HANG_COUNT: 50,
 
   resetPayload() {
-    this.startTime = +new Date();
     this.payload = {
       modules: [],
       hangs: [],
@@ -122,17 +115,11 @@ BHRTelemetryService.prototype = Object.freeze({
 
     // NOTE: We check a separate bhrPing.enabled pref here. This pref is unset
     // when running tests so that we run as much of BHR as possible (to catch
-    // errors) while avoiding timeouts caused by invoking `pingsender` during
-    // testing.
+    // errors) while avoiding submitting the ping during testing.
     if (
       Services.prefs.getBoolPref("toolkit.telemetry.bhrPing.enabled", false) &&
       this.payload.hangs.length
     ) {
-      this.payload.timeSinceLastPing = new Date() - this.startTime;
-      lazy.TelemetryController.submitExternalPing("bhr", this.payload, {
-        addEnvironment: true,
-      });
-
       Glean.hangs.modules.set(this.payload.modules);
       let gleanHangs = this.payload.hangs.map(
         ({ stack, duration, ...restOfHang }) => ({

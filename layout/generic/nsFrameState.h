@@ -20,6 +20,7 @@ typedef uint64_t nsFrameState_size_t;
 #define NS_FRAME_STATE_BIT(n_) (nsFrameState(nsFrameState_size_t(1) << (n_)))
 
 enum nsFrameState : nsFrameState_size_t {
+  NS_FRAME_STATE_NONE = 0,
 #define FRAME_STATE_BIT(group_, value_, name_) \
   name_ = NS_FRAME_STATE_BIT(value_),
 #include "nsFrameStateBits.h"

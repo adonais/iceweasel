@@ -16,6 +16,8 @@ skip-if = [
 
 ["test_localeService.js"]
 
+["test_localeService_coverage.js"]
+
 ["test_localeService_negotiateLanguages.js"]
 
 ["test_osPreferences.js"]

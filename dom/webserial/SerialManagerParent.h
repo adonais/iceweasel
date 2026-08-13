@@ -27,7 +27,8 @@ class SerialDeviceChangeProxy final : public SerialDeviceChangeObserver,
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOBSERVER
 
-  explicit SerialDeviceChangeProxy(uint64_t aBrowserId);
+  explicit SerialDeviceChangeProxy(
+      uint64_t aBrowserId, RefPtr<SerialPlatformService> aPlatformService);
 
   void AddPortActor(SerialPortParent* aActor);
   void RemovePortActor(SerialPortParent* aActor);
@@ -47,6 +48,9 @@ class SerialDeviceChangeProxy final : public SerialDeviceChangeObserver,
 
   nsTArray<RefPtr<SerialPortParent>> mPortActors MOZ_GUARDED_BY(mMutex);
   const uint64_t mBrowserId;
+  // Guaranteed non-null: the proxy is only created once the manager has a
+  // valid platform service.
+  const RefPtr<SerialPlatformService> mPlatformService;
 };
 
 // Parent-side actor for PSerialManager, managed by PWindowGlobal.
@@ -101,6 +105,9 @@ class SerialManagerParent final : public PSerialManagerParent {
                                                 TResolver&& aResolver);
 
   uint64_t mBrowserId = 0;
+  // Set in Init() and guaranteed non-null for the lifetime of the actor: if
+  // the platform service is unavailable, Init() tears the actor down.
+  RefPtr<SerialPlatformService> mPlatformService;
   RefPtr<SerialDeviceChangeProxy> mProxy;
 
   // Whether there is a currently outstanding chooser request. If true,

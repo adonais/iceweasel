@@ -6,7 +6,6 @@
 #define IOSBridge_h
 
 #include "nsCOMPtr.h"
-
 #include "nsIGeckoViewBridge.h"
 
 class nsIOSBridge final : public nsIGeckoViewBridge {

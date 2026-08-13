@@ -470,7 +470,7 @@ BaseAllocCell* BaseAlloc::chunk_alloc(base_alloc_size_t aSize)
   MOZ_ASSERT(net_size >= aSize);
 
   void* base_pages = base_chunk_alloc(csize, kChunkSize);
-  if (base_pages == 0) {
+  if (base_pages == nullptr) {
     return nullptr;
   }
   mStats.mCommitted += csize;

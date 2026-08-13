@@ -197,6 +197,7 @@ Function .onUserAbort
       Call StartDownload
     ${EndIf}
   ${Else}
+    StrCpy $ExitCode "${ERR_USER_CANCELLED_BEFORE_DOWNLOAD}"
     Call SendPing
   ${EndIf}
 

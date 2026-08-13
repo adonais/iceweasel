@@ -3,33 +3,33 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SessionAccessibility.h"
-#include "LocalAccessible-inl.h"
-#include "AndroidUiThread.h"
-#include "AndroidBridge.h"
-#include "DocAccessibleParent.h"
-#include "IDSet.h"
-#include "nsThreadUtils.h"
+
 #include "AccAttributes.h"
 #include "AccessibilityEvent.h"
+#include "AndroidBridge.h"
+#include "AndroidUiThread.h"
+#include "DocAccessibleParent.h"
 #include "DocAccessibleWrap.h"
+#include "IDSet.h"
 #include "JavaBuiltins.h"
-#include "nsAccessibilityService.h"
-#include "nsAccUtils.h"
-
+#include "LocalAccessible-inl.h"
+#include "mozilla/MouseEvents.h"
 #include "mozilla/PresShell.h"
-#include "mozilla/dom/BrowserParent.h"
-#include "mozilla/dom/CanonicalBrowsingContext.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/a11y/Accessible.h"
 #include "mozilla/a11y/DocAccessibleParent.h"
 #include "mozilla/a11y/DocManager.h"
 #include "mozilla/a11y/HyperTextAccessibleBase.h"
+#include "mozilla/dom/BrowserParent.h"
+#include "mozilla/dom/CanonicalBrowsingContext.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/DocumentInlines.h"
+#include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/jni/GeckoBundleUtils.h"
 #include "mozilla/jni/NativesInlines.h"
 #include "mozilla/widget/GeckoViewSupport.h"
-#include "mozilla/MouseEvents.h"
-#include "mozilla/dom/MouseEventBinding.h"
+#include "nsAccUtils.h"
+#include "nsAccessibilityService.h"
+#include "nsThreadUtils.h"
 
 #ifdef DEBUG
 #  include <android/log.h>
@@ -354,15 +354,14 @@ RefPtr<SessionAccessibility> SessionAccessibility::GetInstanceFor(
       return GetInstanceFor(doc->GetPresShell());
     }
   } else {
-    dom::CanonicalBrowsingContext* cbc =
-        static_cast<dom::BrowserParent*>(
-            aAccessible->AsRemote()->Document()->Manager())
-            ->GetBrowsingContext()
-            ->Top();
+    dom::CanonicalBrowsingContext* cbc = aAccessible->AsRemote()
+                                             ->Document()
+                                             ->Manager()
+                                             ->GetBrowsingContext()
+                                             ->Top();
     dom::BrowserParent* bp = cbc->GetBrowserParent();
     if (!bp) {
-      bp = static_cast<dom::BrowserParent*>(
-          aAccessible->AsRemote()->Document()->Manager());
+      bp = aAccessible->AsRemote()->Document()->Manager();
     }
     if (auto element = bp->GetOwnerElement()) {
       if (auto doc = element->OwnerDoc()) {

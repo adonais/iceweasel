@@ -29,9 +29,9 @@ import mozilla.appservices.syncmanager.SyncTelemetry
 import mozilla.components.concept.sync.AccountObserver
 import mozilla.components.concept.sync.ConstellationState
 import mozilla.components.concept.sync.DeviceConstellationObserver
+import mozilla.components.concept.sync.SyncEngine
 import mozilla.components.lib.state.ext.consumeFrom
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
-import mozilla.components.service.fxa.SyncEngine
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.service.fxa.manager.SyncEnginesStorage
 import mozilla.components.service.fxa.sync.SyncReason

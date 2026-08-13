@@ -9,13 +9,13 @@
 #include <cstdint>
 
 #include "mozilla/Assertions.h"
-#include "mozilla/fallible.h"
 #include "mozilla/Likely.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/MemoryChecking.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/OperatorNewExtensions.h"
 #include "mozilla/Poison.h"
+#include "mozilla/fallible.h"
 #include "nsDebug.h"
 
 namespace mozilla {

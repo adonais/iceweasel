@@ -60,6 +60,9 @@ NSS_CMSContentInfo_Destroy(NSSCMSContentInfo *cinfo)
         case SEC_OID_PKCS7_ENVELOPED_DATA:
             NSS_CMSEnvelopedData_Destroy(cinfo->content.envelopedData);
             break;
+        case SEC_OID_CMS_AUTH_ENVELOPED_DATA:
+            NSS_CMSAuthEnvelopedData_Destroy(cinfo->content.authEnvelopedData);
+            break;
         case SEC_OID_PKCS7_SIGNED_DATA:
             NSS_CMSSignedData_Destroy(cinfo->content.signedData);
             break;
@@ -105,6 +108,11 @@ NSS_CMSContentInfo_GetChildContentInfo(NSSCMSContentInfo *cinfo)
         case SEC_OID_PKCS7_ENVELOPED_DATA:
             if (cinfo->content.envelopedData != NULL) {
                 ccinfo = &(cinfo->content.envelopedData->contentInfo);
+            }
+            break;
+        case SEC_OID_CMS_AUTH_ENVELOPED_DATA:
+            if (cinfo->content.authEnvelopedData != NULL) {
+                ccinfo = &(cinfo->content.authEnvelopedData->contentInfo);
             }
             break;
         case SEC_OID_PKCS7_DIGESTED_DATA:

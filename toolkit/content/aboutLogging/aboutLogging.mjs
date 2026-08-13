@@ -70,6 +70,9 @@ const gOsSpecificLoggingPresets = (() => {
 
 const gLoggingPresets = {
   networking: {
+    // Keep these MOZ_LOG modules in sync with the "networking-with-logs"
+    // profiler preset in devtools/shared/performance-new/prefs-presets.sys.mjs
+    // (the profiler preset omits the "timestamp" and "sync" modules used here).
     modules:
       "timestamp,sync,nsHttp:5,cache2:5,nsSocketTransport:5,nsHostResolver:5,EarlyHint:5",
     l10nIds: {

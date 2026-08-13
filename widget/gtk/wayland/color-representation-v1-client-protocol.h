@@ -3,8 +3,8 @@
 #ifndef COLOR_REPRESENTATION_V1_CLIENT_PROTOCOL_H
 #define COLOR_REPRESENTATION_V1_CLIENT_PROTOCOL_H
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {

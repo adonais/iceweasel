@@ -2,23 +2,21 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsTimerImpl.h"
 #include "TimerThread.h"
 
-#include "GeckoProfiler.h"
-#include "nsThreadUtils.h"
+#include <bit>
 
+#include "GeckoProfiler.h"
+#include "mozilla/ArenaAllocator.h"
+#include "mozilla/ChaosMode.h"
+#include "mozilla/OperatorNewExtensions.h"
+#include "mozilla/Services.h"
+#include "mozilla/StaticPrefs_timer.h"
+#include "mozilla/glean/XpcomMetrics.h"
 #include "nsIObserverService.h"
 #include "nsIPropertyBag2.h"
-#include "mozilla/Services.h"
-#include "mozilla/ChaosMode.h"
-#include "mozilla/ArenaAllocator.h"
-#include "mozilla/OperatorNewExtensions.h"
-#include "mozilla/StaticPrefs_timer.h"
-
-#include "mozilla/glean/XpcomMetrics.h"
-
-#include <bit>
+#include "nsThreadUtils.h"
+#include "nsTimerImpl.h"
 
 using namespace mozilla;
 

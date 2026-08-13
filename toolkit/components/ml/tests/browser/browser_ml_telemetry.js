@@ -273,9 +273,9 @@ add_task(async function test_model_download_telemetry_success() {
 
   await createEngine({
     engineId: "main",
-    taskName: "real-wllama-text-generation",
+    taskName: "real-llama-text-generation",
     featureId: "link-preview",
-    backend: "wllama",
+    backend: "llama.cpp",
     modelId: "acme/bert",
     modelHubUrlTemplate: "{model}/resolve/{revision}",
     modelRevision: "v0.1",
@@ -303,6 +303,17 @@ add_task(async function test_model_download_telemetry_success() {
       "end_download_success",
     ]
   );
+
+  let endDownload = observed.at(-1);
+  let fileDurationSum = observed
+    .filter(obj => obj.extra.step === "end_file_download_success")
+    .reduce((sum, obj) => sum + Number(obj.extra.duration), 0);
+  Assert.greaterOrEqual(
+    Number(endDownload.extra.duration),
+    fileDurationSum,
+    "end_download_success reports the total model download time, which spans at least the individual file downloads"
+  );
+
   await EngineProcess.destroyMLEngine();
   await IndexedDBCache.init({ reset: true });
 
@@ -333,9 +344,9 @@ add_task(async function test_model_download_telemetry_fail() {
   await EngineProcess.destroyMLEngine();
   await createEngine({
     engineId: "main",
-    taskName: "real-wllama-text-generation",
+    taskName: "real-llama-text-generation",
     featureId: "link-preview",
-    backend: "wllama",
+    backend: "llama.cpp",
     modelId: "acme-not-found/bert",
     modelHubUrlTemplate: "{model}/resolve/{revision}",
     modelRevision: "v0.1",
@@ -392,9 +403,9 @@ add_task(async function test_model_download_telemetry_mixed() {
 
   await createEngine({
     engineId: "main",
-    taskName: "real-wllama-text-generation",
+    taskName: "real-llama-text-generation",
     featureId: "link-preview",
-    backend: "wllama",
+    backend: "llama.cpp",
     modelId: "acme/bert",
     modelHubUrlTemplate: "{model}/resolve/{revision}",
     modelRevision: "v0.4",
@@ -605,7 +616,19 @@ add_task(async function test_run_with_generator_telemetry() {
     checkNumber("memory_bytes");
     checkNumber("system_memory_mb");
     checkNumber("character_count");
+    checkNumber("time_to_first_chunk");
     Assert.ok(!extra.token_count, "Token count is not implemented yet.");
+
+    Assert.notEqual(
+      extra.average_chunk_time,
+      null,
+      "average_chunk_time is recorded when more than one chunk streams"
+    );
+    Assert.greaterOrEqual(
+      Number(extra.average_chunk_time),
+      0,
+      "average_chunk_time should be a non-negative number"
+    );
 
     Assert.equal(extra.feature_id, "about-inference");
     Assert.equal(extra.backend, "openai");

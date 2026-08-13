@@ -5,13 +5,13 @@
 
 #include "WindowSurfaceX11Image.h"
 
+#include <X11/extensions/shape.h>
+
+#include "gfx2DGlue.h"
+#include "gfxPlatform.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Tools.h"
 #include "mozilla/gfx/gfxVars.h"
-#include "gfxPlatform.h"
-#include "gfx2DGlue.h"
-
-#include <X11/extensions/shape.h>
 
 namespace mozilla {
 namespace widget {

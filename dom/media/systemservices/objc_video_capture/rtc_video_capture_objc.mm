@@ -107,7 +107,7 @@ using namespace webrtc::videocapturemodule;
 }
 
 - (void)directOutputToNil {
-  [[self currentOutput] setSampleBufferDelegate:nil queue:NULL];
+  [[self currentOutput] setSampleBufferDelegate:nil queue:nullptr];
 }
 
 - (void)deviceOrientationDidChange:(NSNotification*)notification {

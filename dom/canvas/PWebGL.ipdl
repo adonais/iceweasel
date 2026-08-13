@@ -25,7 +25,7 @@ using mozilla::webgl::LinkResult from "mozilla/dom/WebGLIpdl.h";
 using mozilla::webgl::OpaqueFramebufferOptions from "mozilla/dom/WebGLIpdl.h";
 using mozilla::webgl::PackingInfo from "mozilla/dom/WebGLIpdl.h";
 using mozilla::webgl::ReadPixelsDesc from "mozilla/dom/WebGLIpdl.h";
-using mozilla::webgl::ReadPixelsResultIpc from "mozilla/dom/WebGLIpdl.h";
+[MoveOnly] using mozilla::webgl::ReadPixelsResultIpc from "mozilla/dom/WebGLIpdl.h";
 using mozilla::webgl::ShaderPrecisionFormat from "mozilla/dom/WebGLIpdl.h";
 [MoveOnly] using mozilla::webgl::TexUnpackBlobDesc from "mozilla/dom/WebGLIpdl.h";
 

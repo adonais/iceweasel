@@ -3,12 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 plugins {
+    id 'com.android.library'
     alias(libs.plugins.dependency.analysis)
+    alias(libs.plugins.kotlin.parcelize)
 }
-
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-parcelize'
 
 android {
     buildFeatures {
@@ -31,7 +29,7 @@ dependencies {
     implementation libs.androidx.cardview
     implementation libs.androidx.constraintlayout
     implementation libs.androidx.coordinatorlayout
-    implementation libs.androidx.core.ktx
+    implementation libs.androidx.core
     implementation libs.androidx.recyclerview
 
     testImplementation project(':components:support-test')

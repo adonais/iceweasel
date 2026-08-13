@@ -254,10 +254,25 @@ pref("browser.uitour.surveyDuration", 7200);
 
 // UI density of the browser chrome. This mostly affects toolbarbutton
 // and urlbar spacing. The possible values are 0=normal, 1=compact, 2=touch.
-pref("browser.uidensity", 0);
+// Sticky so an explicit "Standard" choice (value 0, equal to the default)
+// is still recorded as a user value. This lets the appearance settings and
+// gUIDensity distinguish an explicit normal density (which must never be
+// auto-compacted) from the automatic density (no user value).
+sticky_pref("browser.uidensity", 0);
 // Whether Firefox will automatically override the uidensity to "touch"
 // while the user is in a touch environment (such as Windows tablet mode).
 pref("browser.touchmode.auto", true);
+// Threshold (under nova) at which the uidensity is automatically overridden
+// to "compact" in small windows, expressed as a ratio of chrome size to
+// window inner size. The trigger fires when either:
+//   - the natural (non-compact) tabstrip height / window inner height, or
+//   - (with sidebar.revamp enabled and the launcher visible but collapsed)
+//     the collapsed sidebar launcher width / window inner width
+// exceeds this value, unless the user has explicitly chosen a uidensity
+// value. Default 0.05 means compact engages when the tabstrip would
+// otherwise take up more than 5% of the window's vertical space, or the
+// collapsed sidebar would take up more than 5% of horizontal space.
+pref("browser.compactmode.auto.threshold", "0.05");
 // Whether Firefox will show the Compact Mode UIDensity option.
 pref("browser.compactmode.show", false);
 
@@ -293,6 +308,15 @@ pref("browser.shell.checkDefaultPDF.silencedByUser", false);
 // setting Firefox as their default browser.
 pref("browser.shell.setDefaultGuidanceNotifications", true);
 pref("browser.shell.focusSetDefaultBrowserButton", false);
+
+// Whether to display a Kit image behind the set default browser button in
+// Windows Settings. It can take the following values:
+// - "off": Don't display the image.
+// - "static": Display a static image.
+// - "animated": Display an animated image.
+pref("browser.shell.displayKitImageBehindSetDefaultBrowserButton", "off");
+
+pref("browser.shell.customIcon.enabled", true);
 
 // After a failed UserChoice attempt, show the OS "Open with" picker via the
 // undocumented IOpenWithLauncher API so the user can pick Firefox themselves.
@@ -415,6 +439,13 @@ pref("browser.urlbar.filter.javascript", true);
 // Focus the content document when pressing the Escape key, if there's no
 // remaining typed history.
 pref("browser.urlbar.focusContentDocumentOnEsc", true);
+
+// When true, in-process (chrome) <moz-urlbar> instances route through the
+// Urlbar actor's message-passing path instead of holding a direct
+// UrlbarParentController reference, exercising the same wire path a
+// content-process <moz-urlbar> uses. Off by default; intended for the
+// pref-on CI variant and local testing of the actor path.
+pref("browser.urlbar.ipc.chromeMessagePassing", false);
 
 // Enable a certain level of urlbar logging to the Browser Console. See
 // ConsoleInstance.webidl.
@@ -990,11 +1021,6 @@ pref("permissions.default.desktop-notification", 0);
 pref("permissions.default.shortcuts", 0);
 
 pref("permissions.desktop-notification.postPrompt.enabled", true);
-pref("permissions.desktop-notification.notNow.enabled", false);
-
-// Site categories for notification permission telemetry
-// Maps domains to categories for analyzing permission behavior by site type
-pref("permissions.desktop-notification.telemetry.siteCategories", '{"facebook.com":"social","instagram.com":"social","twitter.com":"social","x.com":"social","tiktok.com":"social","linkedin.com":"social","reddit.com":"social","pinterest.com":"social","snapchat.com":"social","tumblr.com":"social","slack.com":"chat_communication","discord.com":"chat_communication","teams.microsoft.com":"chat_communication","zoom.us":"chat_communication","whatsapp.com":"chat_communication","telegram.org":"chat_communication","messenger.com":"chat_communication","skype.com":"chat_communication","signal.org":"chat_communication","viber.com":"chat_communication","mail.google.com":"email","gmail.com":"email","outlook.com":"email","outlook.live.com":"email","mail.yahoo.com":"email","yahoo.com":"email","protonmail.com":"email","aol.com":"email","icloud.com":"email","zoho.com":"email","youtube.com":"media_streaming","netflix.com":"media_streaming","twitch.tv":"media_streaming","hulu.com":"media_streaming","disneyplus.com":"media_streaming","hbomax.com":"media_streaming","primevideo.com":"media_streaming","crunchyroll.com":"media_streaming","paramountplus.com":"media_streaming","spotify.com":"media_streaming","soundcloud.com":"media_streaming","pandora.com":"media_streaming","tv.apple.com":"media_streaming","steampowered.com":"gaming","steamcommunity.com":"gaming","store.epicgames.com":"gaming","roblox.com":"gaming","playstation.com":"gaming","xbox.com":"gaming","nintendo.com":"gaming","battle.net":"gaming","itch.io":"gaming","chess.com":"gaming","calendar.google.com":"calendar","outlook.live.com":"calendar","calendar.yahoo.com":"calendar","calendar.com":"calendar","drive.google.com":"productivity_collaboration","docs.google.com":"productivity_collaboration","sheets.google.com":"productivity_collaboration","office.com":"productivity_collaboration","onedrive.live.com":"productivity_collaboration","dropbox.com":"productivity_collaboration","box.com":"productivity_collaboration","notion.so":"productivity_collaboration","trello.com":"productivity_collaboration","asana.com":"productivity_collaboration","monday.com":"productivity_collaboration","atlassian.com":"productivity_collaboration","gitlab.com":"productivity_collaboration","bitbucket.org":"productivity_collaboration","miro.com":"productivity_collaboration","figma.com":"productivity_collaboration","cnn.com":"news_publishers","nytimes.com":"news_publishers","bbc.com":"news_publishers","theguardian.com":"news_publishers","washingtonpost.com":"news_publishers","foxnews.com":"news_publishers","reuters.com":"news_publishers","apnews.com":"news_publishers","bloomberg.com":"news_publishers","wsj.com":"news_publishers","usatoday.com":"news_publishers","nbcnews.com":"news_publishers","abcnews.go.com":"news_publishers","cbsnews.com":"news_publishers","npr.org":"news_publishers","time.com":"news_publishers","newsweek.com":"news_publishers","politico.com":"news_publishers","huffpost.com":"news_publishers","buzzfeednews.com":"news_publishers"}');
 
 pref("permissions.fullscreen.allowed", false);
 
@@ -1079,6 +1105,11 @@ pref("browser.tabs.tabMinWidth", 76);
 // false  return to the adjacent tab (old default)
 pref("browser.tabs.selectOwnerOnClose", true);
 
+// When the active tab is closed and no successor/owner directs the next
+// selection, switch to the most-recently-used tab instead of the adjacent
+// tab. Tabs are ordered by their lastAccessed timestamp.
+pref("browser.tabs.selectMRUOnClose", false);
+
 // This should match Chromium's audio indicator delay.
 pref("browser.tabs.delayHidingAudioPlayingIconMS", 3000);
 
@@ -1122,6 +1153,11 @@ pref("browser.tabs.groups.smart.topicModelRevision", "latest");
 pref("browser.tabs.groups.smart.embeddingModelRevision", "latest");
 // value should be <= 1000 to be correctly converted (275 -> 0.275)
 pref("browser.tabs.groups.smart.nearestNeighborThresholdInt", 275);
+// Clustering method: KMEANS or AGGLOMERATIVE (hierarchical, average-linkage).
+pref("browser.tabs.groups.smart.clusterMethod", "AGGLOMERATIVE");
+// AGGLOMERATIVE cosine-distance cutoff in thousandths (825 -> 0.825). Lower is
+// stricter (more, smaller groups); higher is more lenient (fewer, larger).
+pref("browser.tabs.groups.smart.agglomerativeThresholdInt", 825);
 pref("browser.tabs.groups.smart.optin", false);
 
 pref("browser.tabs.dragDrop.createGroup.enabled", true);
@@ -1157,6 +1193,9 @@ pref("browser.tabs.searchclipboardfor.middleclick", true);
 #else
 pref("browser.tabs.searchclipboardfor.middleclick", false);
 #endif
+
+// Use default or new-and-improved tab context menu structure
+pref("browser.tabs.contextmenu.altstructure.enabled", false);
 
 #if defined(XP_MACOSX)
   // During low memory periods, poll with this frequency (milliseconds)
@@ -1310,9 +1349,6 @@ pref("privacy.globalprivacycontrol.functionality.enabled",  true);
 
 // Enable GPC in private browsing mode
 pref("privacy.globalprivacycontrol.pbmode.enabled", true);
-
-// What custom schemes to treat as accessing digital wallets, comma separated
-pref("privacy.wallet_schemes", "openid4vp,mdoc,mdoc-openid4vp,haip,eudi-wallet,eudi-openid4vp,openid-credential-offer");
 
 pref("network.proxy.share_proxy_settings",  false); // use the same proxy settings for all protocols
 
@@ -1474,7 +1510,7 @@ pref("browser.sessionstore.log.appender.file.logOnError", true);
 // The default log level for all Session restore logs.
 pref("browser.sessionstore.loglevel", "Warn");
 
-#ifdef EARLY_BETA_OR_EARLIER
+#ifdef NIGHTLY_BUILD
   pref("browser.sessionstore.loglevel", "Debug");
   pref("browser.sessionstore.log.appender.file.logOnSuccess", true);
 #else
@@ -1846,13 +1882,6 @@ pref("browser.partnerlink.campaign.topsites", "amzn_2020_a1");
 // Activates preloading of the new tab url.
 pref("browser.newtab.preload", true);
 
-// Preonboarding is disabled by default on platforms other than Windows and
-// macOS. For official Mozilla distributions (only for Linux), enabled at
-// runtime in TelemetryReportingPolicy.
-#if !defined(XP_WIN) && !defined(XP_MACOSX)
-  pref("browser.preonboarding.enabled", false);
-#endif
-
 // For further detail on the TOU prefs below, see the `preonboarding` feature in
 // FeatureManifest.yaml
 // Version of the TOU that the user last accepted
@@ -1875,6 +1904,14 @@ pref("termsofuse.minimumVersion", 4);
   pref("termsofuse.bypassNotification", false);
 #else
   pref("termsofuse.bypassNotification", true);
+#endif
+
+// Should we bypass auto-triggering actions that show an OS-level consent
+// prompt, currently only true for local/non-official builds
+#ifdef MOZILLA_OFFICIAL
+  pref("browser.bypassAutoTriggerActions", false);
+#else
+  pref("browser.bypassAutoTriggerActions", true);
 #endif
 
 // Show "Download Firefox for mobile" QR code modal on newtab
@@ -2045,7 +2082,7 @@ pref("browser.newtabpage.activity-stream.discoverystream.sections.interestPicker
 pref("browser.newtabpage.activity-stream.discoverystream.sections.interestPicker.visibleSections", "");
 
 // List of regions for contextual ads.
-pref("browser.newtabpage.activity-stream.discoverystream.sections.contextualAds.region-config", "");
+pref("browser.newtabpage.activity-stream.discoverystream.sections.contextualAds.region-config", "US");
 // List of locales for contextual ads.
 pref("browser.newtabpage.activity-stream.discoverystream.sections.contextualAds.locale-config", "en-US,en-GB,en-CA");
 
@@ -2124,13 +2161,10 @@ pref("browser.aboutwelcome.enabled", false);
 // Used to set multistage welcome UX
 pref("browser.aboutwelcome.screens", "");
 // Whether to gate loading about:welcome on Nimbus experiments having loaded.
-// Enable the Nimbus experiments gate on Mac and Windows. The gate shows a splash
-// screen while experiments load, then auto-advances. On platforms where experiments
-// are already loaded when the modal opens, skipSplashIfLoaded (true by default)
-// causes the splash to be skipped via screen targeting.
-#if defined(XP_MACOSX) || defined(XP_WIN)
-  pref("browser.aboutwelcome.experimentsGate.enabled", true);
-#endif
+// The gate shows a splash screen while experiments load, then auto-advances.
+// On platforms where experiments are already loaded when the modal opens,
+// skipSplashIfLoaded causes the splash to be skipped via screen targeting.
+pref("browser.aboutwelcome.experimentsGate.enabled", true);
 // Whether to skip showing the experiment loading splash screen if Nimbus is
 // already initialized when the preonboarding modal's screen targeting is
 // evaluated.
@@ -2222,6 +2256,11 @@ pref("sidebar.main.tools", "");
 pref("sidebar.installed.extensions", "");
 pref("sidebar.verticalTabs", false);
 pref("sidebar.verticalTabs.dragToPinPromo.dismissed", false);
+// One value per behavior, none shared across tab orientations. Vertical tabs:
+// "always-show", "expand-on-hover", "hide-sidebar". Horizontal tabs:
+// "hide-on-close" (default) and "hide-launcher" (switcher-only). The default
+// here is the vertical default; SidebarManager normalizes to the right value
+// for the current orientation.
 pref("sidebar.visibility", "always-show");
 // Sidebar UI state is stored per-window via session restore. Use this pref
 // as a backup to restore the sidebar UI state when a user has PPB mode on
@@ -2231,8 +2270,13 @@ pref("sidebar.expandOnHover", true);
 pref("sidebar.old-sidebar.has-used", false);
 pref("sidebar.new-sidebar.has-used", false);
 pref("sidebar.history.sortOption", "date");
+#ifdef NIGHTLY_BUILD
+pref("sidebar.updatedBookmarks.enabled", true);
+#else
 pref("sidebar.updatedBookmarks.enabled", false);
+#endif
 pref("sidebar.openTabsPanel.enabled", false);
+pref("sidebar.openTabsPanel.collapsedWindows", "{}");
 
 pref("sidebar.notification.badge.aichat", false);
 
@@ -2288,6 +2332,20 @@ pref("browser.smartwindow.sidebar.openByDefault", true);
 pref("browser.smartwindow.isDefaultWindow", false);
 pref("browser.smartwindow.firstrun.explainerURL", "https://www.firefox.com/en-US/smart-window/?v=product");
 pref("places.semanticHistory.smartwindow.featureGate", false);
+// TODO Bug 2053495: remove with mistral release pref
+pref("browser.smartwindow.mistralRelease", false);
+
+// Semantic distance threshold for Smart Window history search only.
+pref("places.semanticHistory.smartwindow.distanceThreshold", "0.6");
+
+// Smart Window: Auto Tab Grouping (bug 2054500).
+pref("browser.smartwindow.autoTabGrouping.enabled", true);
+pref("browser.smartwindow.autoTabGrouping.maxGroups", 3);
+pref("browser.smartwindow.autoTabGrouping.minTabsPerGroup", 2);
+pref("browser.smartwindow.autoTabGrouping.minCandidateTabs", 4);
+pref("browser.smartwindow.autoTabGrouping.minCohesion", "0.15");
+pref("browser.smartwindow.autoTabGrouping.timeoutMs", 8000);
+pref("browser.smartwindow.autoTabGrouping.loglevel", "Warn");
 
 // Smart Window: Merino World Cup Soccer tool call (bug 2038266)
 pref("browser.smartwindow.worldcup.enabled", true);
@@ -3226,6 +3284,8 @@ pref("devtools.webconsole.filter.debug", true);
 pref("devtools.webconsole.filter.css", false);
 pref("devtools.webconsole.filter.net", false);
 pref("devtools.webconsole.filter.netxhr", false);
+pref("devtools.webconsole.filter.chrome", true);
+pref("devtools.webconsole.filter.content", true);
 
 // Webconsole autocomplete preference
 pref("devtools.webconsole.input.autocomplete",true);
@@ -3243,6 +3303,10 @@ pref("devtools.browserconsole.filter.debug", true);
 pref("devtools.browserconsole.filter.css", false);
 pref("devtools.browserconsole.filter.net", false);
 pref("devtools.browserconsole.filter.netxhr", false);
+// Origin filters allow to separately show or hide messages emitted by the
+// browser itself (privileged code) and those emitted by web content.
+pref("devtools.browserconsole.filter.chrome", true);
+pref("devtools.browserconsole.filter.content", true);
 
 // Max number of inputs to store in web console history.
 pref("devtools.webconsole.inputHistoryCount", 300);
@@ -3522,13 +3586,8 @@ pref("browser.backup.enabled", true);
 pref("browser.backup.scheduled.enabled", false);
 
 // Prefs to control visibility and usability of the create backup and restore from backup features.
-#ifndef XP_MACOSX
-  pref("browser.backup.archive.enabled", true);
-  pref("browser.backup.restore.enabled", true);
-#else
-  pref("browser.backup.archive.enabled", false);
-  pref("browser.backup.restore.enabled", false);
-#endif
+pref("browser.backup.archive.enabled", true);
+pref("browser.backup.restore.enabled", true);
 
 // The number of SQLite database pages to backup per step.
 pref("browser.backup.sqlite.pages_per_step", 50);
@@ -3623,8 +3682,6 @@ pref("browser.ipProtection.bandwidthThreshold", 0);
 pref("browser.ipProtection.bandwidthWarningDismissedThreshold", "");
 // Pref to track if the "NEW" badge on the location selection button should be visible.
 pref("browser.ipProtection.locationButtonBadgeDismissed", false);
-// Pref to use the FxA activate flow as the auth provider.
-pref("browser.ipProtection.fxa.useActivateFlow", true);
 
 // Pref to enable aboug:glean redesign.
 pref("about.glean.redesign.enabled", false);
@@ -3647,6 +3704,11 @@ pref("widget.support-xdg-config", true, locked);
 
 // A preference that enables Content Sharing
 pref("browser.contentsharing.enabled", false);
+
+// Preferences for the Firefox Referral program #2051647).
+pref("browser.referrals.enabled", false);
+// Per-profile referral code, locked at runtime once generated.
+pref("browser.referrals.code", "");
 
 // When enabled, Firefox ignores the distribution.ini file if global.id is MozillaOnline.
 pref("distribution.mozillaonline.ignore", true);

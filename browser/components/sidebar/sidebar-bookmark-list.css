@@ -3,7 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 .fxview-tab-list {
-  grid-template-columns: unset;
+  /* The base fxview grid template assumes a multi-column tab list; the sidebar
+     is a single shrink-to-fit column. Use minmax(0, 1fr) on both explicit and
+     implicit tracks so rows can shrink below their min-content width and the
+     row text actually truncates with text-overflow: ellipsis. */
+  grid-template-columns: minmax(0, 1fr);
+  grid-auto-columns: minmax(0, 1fr);
   position: relative;
 }
 
@@ -31,12 +36,13 @@ details[drag-over] > summary,
 }
 
 virtual-list {
-  grid-column: unset;
-  grid-template-columns: unset;
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(0, 1fr);
+  grid-auto-columns: minmax(0, 1fr);
 
   .top-padding,
   .bottom-padding {
-    grid-column: unset;
+    grid-column: 1 / -1;
   }
 }
 
@@ -68,6 +74,7 @@ details summary,
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  user-select: none;
   /* Reserve a leading gutter for the expand/collapse chevron so the folder icon
      stays aligned whether or not the folder has children. The gutter is the
      leading inset (--space-small, where the chevron sits), plus the chevron width
@@ -155,7 +162,7 @@ details {
 
 sidebar-bookmark-row {
   border-radius: var(--border-radius-circle);
-  height: var(--size-item-large);
+  height: var(--sidebar-panel-list-item-height, var(--size-item-large));
   align-items: center;
 
   &:hover:not([selected]) {

@@ -209,6 +209,40 @@ const SEC_ASN1Template NSS_PointerToCMSEnvelopedDataTemplate[] = {
     { SEC_ASN1_POINTER, 0, NSSCMSEnvelopedDataTemplate }
 };
 
+/* -----------------------------------------------------------------------------
+ * AUTHENTICATED ENVELOPED DATA (RFC 5083)
+ */
+const SEC_ASN1Template NSSCMSAuthEnvelopedDataTemplate[] = {
+    { SEC_ASN1_SEQUENCE | SEC_ASN1_MAY_STREAM,
+      0, NULL, sizeof(NSSCMSAuthEnvelopedData) },
+    { SEC_ASN1_INTEGER,
+      offsetof(NSSCMSAuthEnvelopedData, version) },
+    { SEC_ASN1_OPTIONAL | SEC_ASN1_POINTER | SEC_ASN1_CONSTRUCTED |
+          SEC_ASN1_CONTEXT_SPECIFIC | 0,
+      offsetof(NSSCMSAuthEnvelopedData, originatorInfo),
+      NSSCMSOriginatorInfoTemplate },
+    { SEC_ASN1_SET_OF,
+      offsetof(NSSCMSAuthEnvelopedData, recipientInfos),
+      NSSCMSRecipientInfoTemplate },
+    { SEC_ASN1_INLINE,
+      offsetof(NSSCMSAuthEnvelopedData, contentInfo),
+      NSSCMSEncryptedContentInfoTemplate },
+    { SEC_ASN1_OPTIONAL | SEC_ASN1_CONSTRUCTED | SEC_ASN1_CONTEXT_SPECIFIC | 1,
+      offsetof(NSSCMSAuthEnvelopedData, authAttrs),
+      nss_cms_set_of_attribute_template },
+    { SEC_ASN1_OCTET_STRING | SEC_ASN1_XTRN,
+      offsetof(NSSCMSAuthEnvelopedData, mac),
+      SEC_ASN1_SUB(SEC_OctetStringTemplate) },
+    { SEC_ASN1_OPTIONAL | SEC_ASN1_CONSTRUCTED | SEC_ASN1_CONTEXT_SPECIFIC | 2,
+      offsetof(NSSCMSAuthEnvelopedData, unauthAttrs),
+      nss_cms_set_of_attribute_template },
+    { 0 }
+};
+
+const SEC_ASN1Template NSS_PointerToCMSAuthEnvelopedDataTemplate[] = {
+    { SEC_ASN1_POINTER, 0, NSSCMSAuthEnvelopedDataTemplate }
+};
+
 /* here come the 15 gazillion templates for all the v3 varieties of RecipientInfo */
 
 /* -----------------------------------------------------------------------------
@@ -506,6 +540,9 @@ nss_cms_choose_content_template(void *src_or_dest, PRBool encoding)
             break;
         case SEC_OID_PKCS7_ENCRYPTED_DATA:
             theTemplate = NSS_PointerToCMSEncryptedDataTemplate;
+            break;
+        case SEC_OID_CMS_AUTH_ENVELOPED_DATA:
+            theTemplate = NSS_PointerToCMSAuthEnvelopedDataTemplate;
             break;
     }
     return theTemplate;

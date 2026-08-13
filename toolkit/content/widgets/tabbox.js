@@ -147,20 +147,21 @@
           if (this.tabs && this.handleCtrlTab) {
             this.tabs.advanceSelectedTab(
               event.shiftKey ? DIRECTION_BACKWARD : DIRECTION_FORWARD,
-              true
+              true,
+              event
             );
             event.preventDefault();
           }
           break;
         case ShortcutUtils.PREVIOUS_TAB:
           if (this.tabs) {
-            this.tabs.advanceSelectedTab(DIRECTION_BACKWARD, true);
+            this.tabs.advanceSelectedTab(DIRECTION_BACKWARD, true, event);
             event.preventDefault();
           }
           break;
         case ShortcutUtils.NEXT_TAB:
           if (this.tabs) {
-            this.tabs.advanceSelectedTab(DIRECTION_FORWARD, true);
+            this.tabs.advanceSelectedTab(DIRECTION_FORWARD, true, event);
             event.preventDefault();
           }
           break;
@@ -778,17 +779,12 @@
     }
 
     get selected() {
-      return this.getAttribute("selected") == "true";
+      return this.hasAttribute("selected");
     }
 
     set _selected(val) {
-      if (val) {
-        this.setAttribute("selected", "true");
-        this.setAttribute("visuallyselected", "true");
-      } else {
-        this.removeAttribute("selected");
-        this.removeAttribute("visuallyselected");
-      }
+      this.toggleAttribute("selected", val);
+      this.toggleAttribute("visuallyselected", val);
     }
 
     /** @returns {boolean} */
@@ -819,9 +815,9 @@
       this.addEventListener("DOMMouseScroll", event => {
         if (Services.prefs.getBoolPref("toolkit.tabbox.switchByScrolling")) {
           if (event.detail > 0) {
-            this.advanceSelectedTab(DIRECTION_FORWARD, false);
+            this.advanceSelectedTab(DIRECTION_FORWARD, false, event);
           } else {
-            this.advanceSelectedTab(DIRECTION_BACKWARD, false);
+            this.advanceSelectedTab(DIRECTION_BACKWARD, false, event);
           }
           event.stopPropagation();
         }
@@ -848,7 +844,7 @@
       let children = this.allTabs;
       let length = children.length;
       for (var i = 0; i < length; i++) {
-        if (children[i].getAttribute("selected") == "true") {
+        if (children[i].hasAttribute("selected")) {
           this.selectedIndex = i;
           return;
         }
@@ -1175,8 +1171,10 @@
      *
      * @param {-1|1} [aDir]
      * @param {boolean} [aWrap]
+     * @param {Event} [aEvent] The DOM event that triggered this call.
      */
-    advanceSelectedTab(aDir, aWrap) {
+    // eslint-disable-next-line no-unused-vars
+    advanceSelectedTab(aDir, aWrap, aEvent) {
       let { ariaFocusedItem } = this;
       let startTab = ariaFocusedItem;
       if (!ariaFocusedItem || !this.allTabs.includes(ariaFocusedItem)) {

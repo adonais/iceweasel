@@ -57,7 +57,7 @@ add_task(async function testDocumentOpenWriteClose() {
   await loadURL(browser, url);
 
   info("Wait until 3 events have been received");
-  await BrowserTestUtils.waitForCondition(() => events.length >= 3);
+  await TestUtils.waitForCondition(() => events.length >= 3);
 
   is(events.length, 3, "Recorded 3 navigation events");
   is(

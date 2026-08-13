@@ -5,7 +5,8 @@
 #ifndef js_friend_PerformanceHint_h
 #define js_friend_PerformanceHint_h
 
-#include "jstypes.h"       // JS_PUBLIC_API
+#include "jstypes.h"  // JS_PUBLIC_API
+
 #include "js/TypeDecls.h"  // JSContext
 
 namespace js {

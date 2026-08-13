@@ -17,7 +17,7 @@
 >
   <dialog
     buttons="accept,cancel"
-    data-l10n-id="permission-dialog"
+    data-l10n-id="permissions-save-changes-2"
     data-l10n-attrs="buttonlabelaccept, buttonaccesskeyaccept"
   >
     <linkset>
@@ -53,42 +53,45 @@
       <description id="permissionsText" control="url" />
       <separator class="thin" />
       <label id="urlLabel" control="url" data-l10n-id="permissions-address" />
-      <hbox align="start">
-        <html:input id="url" type="text" style="flex: 1" />
-      </hbox>
-      <hbox pack="end">
-        <button
+      <html:moz-input-text id="url" hidden="true" />
+      <html:moz-button-group class="permissions-input-buttons">
+        <html:moz-button
           id="btnDisableETP"
           disabled="true"
           data-l10n-id="permissions-disable-etp"
         />
-        <button
+        <html:moz-button
           id="btnBlock"
           disabled="true"
           data-l10n-id="permissions-block"
+          type="primary"
         />
-        <button
+        <html:moz-button
           id="btnCookieSession"
           disabled="true"
           data-l10n-id="permissions-session"
         />
-        <button
+        <html:moz-button
           id="btnAllow"
           disabled="true"
           data-l10n-id="permissions-allow"
         />
-        <button
+        <html:moz-button
           id="btnHttpsOnlyOff"
           disabled="true"
           data-l10n-id="permissions-button-off"
         />
-        <button
+        <html:moz-button
           id="btnHttpsOnlyOffTmp"
           disabled="true"
           data-l10n-id="permissions-button-off-temporarily"
         />
-        <button id="btnAdd" disabled="true" data-l10n-id="permissions-add" />
-      </hbox>
+        <html:moz-button
+          id="btnAdd"
+          disabled="true"
+          data-l10n-id="permissions-add"
+        />
+      </html:moz-button-group>
       <separator class="thin" />
       <listheader>
         <treecol
@@ -106,13 +109,18 @@
       <richlistbox id="permissionsBox" selected="false" />
     </vbox>
 
-    <hbox class="actionButtons">
-      <button
+    <html:moz-button-group class="actionButtons">
+      <html:moz-button
         id="removePermission"
         disabled="true"
         data-l10n-id="permissions-remove"
+        size="small"
       />
-      <button id="removeAllPermissions" data-l10n-id="permissions-remove-all" />
-    </hbox>
+      <html:moz-button
+        id="removeAllPermissions"
+        data-l10n-id="permissions-remove-all"
+        size="small"
+      />
+    </html:moz-button-group>
   </dialog>
 </window>

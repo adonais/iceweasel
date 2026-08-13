@@ -1,0 +1,18 @@
+{
+  "label": "deadpixeltest.org",
+  "bugs": {
+    "2009187": {
+      "issue": "broken-layout",
+      "matches": ["*://deadpixeltest.org/fixer*"]
+    }
+  },
+  "css": {
+    "fix_popup_position": "#popup { -moz-transform: unset; transform: translate(-50%, -50%); }"
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "css": ["fix_popup_position"]
+    }
+  ]
+}

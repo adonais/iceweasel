@@ -5,7 +5,6 @@
 #define GFX_VR_PROCESS_MANAGER_H
 
 #include "VRProcessParent.h"
-
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "nsIObserver.h"
 

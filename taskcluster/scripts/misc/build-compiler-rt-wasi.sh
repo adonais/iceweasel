@@ -31,6 +31,7 @@ make \
 
 mkdir -p $dir/lib
 mv build/install/wasi/lib/clang/*/lib/wasi $dir/lib
+cp -r $dir/lib/wasi $dir/lib/wasip1
 tar --zstd -cf $artifact $dir
 mkdir -p $UPLOAD_DIR
 mv $artifact $UPLOAD_DIR/

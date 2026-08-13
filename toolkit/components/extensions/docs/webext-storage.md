@@ -1,0 +1,31 @@
+# How webext storage works
+
+This document describes the implementation of the the `storage.sync` part of the
+[WebExtensions Storage APIs](https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/API/storage).
+The implementation lives in the {searchfox}`toolkit/components/extensions/storage folder <toolkit/components/extensions/storage>`
+
+The app-services component [lives on github](https://github.com/mozilla/application-services/blob/main/components/webext-storage).
+There are docs that describe {doc}`how to update/vendor this (and all) external rust code </build/buildsystem/rust>` you might be interested in.
+We use UniFFI to generate JS bindings for the components. More details about UniFFI can be found in [these docs](https://firefox-source-docs.mozilla.org/rust-components/developing-rust-components/uniffi.html).
+
+To set the scene, let's look at the parts exposed to WebExtensions first; there are lots of
+moving part there too.
+
+## WebExtension API
+
+The WebExtension API is owned by the addons team. The implementation of this API is quite complex
+as it involves multiple processes, but for the sake of this document, we can consider the entry-point
+into the WebExtension Storage API as being {searchfox}`parent/ext-storage.js <toolkit/components/extensions/parent/ext-storage.js>`.
+
+## Overview of the API
+
+At a high level, this API is quite simple - there are methods to "get/set/remove" extension
+storage data. Note that the "external" API exposed to the addon has subtly changed the parameters
+for this "internal" API, so there's an extension ID parameter and the JSON data has already been
+converted to a string.
+The semantics of the API are beyond this doc but are
+[documented on MDN](https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/API/storage/sync).
+
+As you will see in those docs, the API is promise-based, but the rust implementation is fully
+synchronous and Rust knows nothing about Javascript promises - so this system converts
+the callback-based API to a promise-based one.

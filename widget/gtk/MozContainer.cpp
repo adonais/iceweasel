@@ -6,6 +6,7 @@
 
 #include <glib.h>
 #include <gtk/gtk.h>
+
 #include "mozilla/WidgetUtilsGtk.h"
 #include "nsWindow.h"
 #ifdef MOZ_WAYLAND
@@ -13,9 +14,9 @@
 #endif
 
 #ifdef MOZ_LOGGING
+#  include "Units.h"
 #  include "mozilla/Logging.h"
 #  include "nsTArray.h"
-#  include "Units.h"
 extern mozilla::LazyLogModule gWidgetLog;
 #  define LOGCONTAINER(args) MOZ_LOG(gWidgetLog, mozilla::LogLevel::Debug, args)
 #else

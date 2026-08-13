@@ -4,21 +4,20 @@
 
 #include "mozilla/net/TRRServiceParent.h"
 
+#include "DNSLogging.h"
 #include "DNSServiceBase.h"
+#include "TRRService.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/ipc/FileDescriptor.h"
 #include "mozilla/net/SocketProcessParent.h"
 #include "mozilla/psm/PSMIPCTypes.h"
-#include "mozilla/Preferences.h"
 #include "nsHttpConnectionInfo.h"
 #include "nsICaptivePortalService.h"
-#include "nsIParentalControlsService.h"
 #include "nsINetworkLinkService.h"
-#include "nsIObserverService.h"
 #include "nsIOService.h"
+#include "nsIObserverService.h"
+#include "nsIParentalControlsService.h"
 #include "nsNetCID.h"
-#include "TRRService.h"
-
-#include "DNSLogging.h"
 
 namespace mozilla {
 namespace net {

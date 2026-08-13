@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.StringTokenizer;
-import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.mozglue.GeckoLoader;
 import org.mozilla.gecko.process.MemoryController;
@@ -298,7 +297,6 @@ public class GeckoThread extends Thread {
     return !isState(State.INITIAL);
   }
 
-  @RobocopTarget
   public static boolean isRunning() {
     return isState(State.RUNNING);
   }

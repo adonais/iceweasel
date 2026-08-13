@@ -5,12 +5,12 @@
 #ifndef GLTEXTUREIMAGE_H_
 #define GLTEXTUREIMAGE_H_
 
+#include "GLContextTypes.h"
+#include "gfxTypes.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/gfx/Rect.h"
 #include "nsRegion.h"
 #include "nsTArray.h"
-#include "gfxTypes.h"
-#include "GLContextTypes.h"
-#include "mozilla/gfx/Rect.h"
-#include "mozilla/RefPtr.h"
 
 class gfxASurface;
 

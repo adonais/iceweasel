@@ -6,6 +6,8 @@
 #define mozilla_net_WebTransportProxy_h
 
 #include <functional>
+
+#include "mozilla/Mutex.h"
 #include "nsIChannelEventSink.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsIRedirectResultListener.h"
@@ -176,6 +178,8 @@ class WebTransportSessionProxy final
   void OnMaxDatagramSizeInternal(uint64_t aSize);
   void OnOutgoingDatagramOutComeInternal(
       uint64_t aId, WebTransportSessionEventListener::DatagramOutcome aOutCome);
+  void OnStopSendingInternal(uint64_t aStreamId, nsresult aError);
+  void OnResetReceivedInternal(uint64_t aStreamId, nsresult aError);
 
   nsCOMPtr<nsIChannel> mChannel;
   uint64_t mHttpChannelID = 0;

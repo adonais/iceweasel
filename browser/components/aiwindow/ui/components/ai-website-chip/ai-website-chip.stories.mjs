@@ -13,6 +13,10 @@ export default {
       control: "select",
       options: ["in-line", "context-chip"],
     },
+    size: {
+      control: "select",
+      options: ["default", "small"],
+    },
     label: {
       control: "text",
     },
@@ -35,9 +39,10 @@ aiwindow-website-chip-remove-button =
   },
 };
 
-const Template = ({ type, label, iconSrc, href, removable }) => html`
+const Template = ({ type, size, label, iconSrc, href, removable }) => html`
   <ai-website-chip
     .type=${type}
+    .size=${size}
     .label=${label}
     .iconSrc=${iconSrc}
     .href=${href || ""}
@@ -78,6 +83,15 @@ ContextChip.args = {
   removable: true,
 };
 
+export const ContextChipSmall = Template.bind({});
+ContextChipSmall.args = {
+  type: "context-chip",
+  size: "small",
+  label: "example.com",
+  iconSrc: "chrome://branding/content/icon16.png",
+  href: "https://example.com",
+};
+
 export const MixedCollection = () => html`
   <div style="display: flex; flex-wrap: wrap; gap: 8px;">
     <ai-website-chip
@@ -92,6 +106,13 @@ export const MixedCollection = () => html`
       iconSrc="chrome://branding/content/about-logo.svg"
       href="https://example.com"
       .removable=${true}
+    ></ai-website-chip>
+    <ai-website-chip
+      type="context-chip"
+      size="small"
+      label="example.com"
+      iconSrc="chrome://branding/content/icon16.png"
+      href="https://example.com"
     ></ai-website-chip>
   </div>
 `;

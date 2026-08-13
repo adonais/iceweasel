@@ -6,12 +6,13 @@
 #define MOZILLA_GFX_CompositeProcessD3D11FencesHolderMap_H
 
 #include <d3d11.h>
+
 #include <vector>
 
-#include "mozilla/gfx/FileHandleWrapper.h"
-#include "mozilla/layers/LayersTypes.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/gfx/FileHandleWrapper.h"
+#include "mozilla/layers/LayersTypes.h"
 
 namespace mozilla {
 namespace layers {

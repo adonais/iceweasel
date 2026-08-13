@@ -157,7 +157,7 @@ add_task(async function testNotInstalled() {
     let item = getAddonCard(win, addon.id);
     Assert.ok(item, "Got add-on element:" + addon.id);
 
-    let warningMessageBar = await BrowserTestUtils.waitForCondition(() => {
+    let warningMessageBar = await TestUtils.waitForCondition(() => {
       return item.querySelector(
         "moz-message-bar.addon-card-message[type=warning]"
       );
@@ -192,7 +192,7 @@ add_task(async function testNotInstalledDetails() {
     let el = addonCard.querySelector("[action=update-check]");
     is_element_visible(el, "Check for Updates action is visible");
 
-    let warningMessageBar = await BrowserTestUtils.waitForCondition(() => {
+    let warningMessageBar = await TestUtils.waitForCondition(() => {
       return addonCard.querySelector(
         "moz-message-bar.addon-card-message[type=warning]"
       );

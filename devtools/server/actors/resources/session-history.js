@@ -28,7 +28,7 @@ class SessionHistoryWatcher {
     this.onDestroyed = onDestroyed;
 
     this.#sessionHistory = BrowsingContext.get(
-      this.watcherActor.browserElement.browsingContext.id
+      this.watcherActor.browsingContext.id
     ).sessionHistory;
 
     this.#processSessionHistory();
@@ -59,8 +59,7 @@ class SessionHistoryWatcher {
             resourceUpdates: {
               sessionHistoryEntry: { url, title, name, key: key(entry.ID) },
             },
-            browsingContextID:
-              this.watcherActor.browserElement.browsingContext.id,
+            browsingContextID: this.watcherActor.browsingContext.id,
           },
         ]);
       },
@@ -70,7 +69,7 @@ class SessionHistoryWatcher {
   }
 
   get resourceId() {
-    return "session-history-" + this.watcherActor.browserElement.browserId;
+    return "session-history-" + this.watcherActor.browsingContext.browserId;
   }
 
   /**
@@ -92,7 +91,7 @@ class SessionHistoryWatcher {
 
     const resource = {
       resourceId: this.resourceId,
-      browsingContextID: this.watcherActor.browserElement.browsingContext.id,
+      browsingContextID: this.watcherActor.browsingContext.id,
       count: this.#sessionHistory.count,
       current: this.#sessionHistory.index,
       diagrams: sessionHistorydiagrams,
@@ -104,8 +103,7 @@ class SessionHistoryWatcher {
         {
           resourceId: this.resourceId,
           resourceUpdates: { sessionHistory: resource },
-          browsingContextID:
-            this.watcherActor.browserElement.browsingContext.id,
+          browsingContextID: this.watcherActor.browsingContext.id,
         },
       ]);
     } else {

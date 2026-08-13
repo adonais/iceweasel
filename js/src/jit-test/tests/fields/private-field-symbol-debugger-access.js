@@ -8,30 +8,21 @@ global.eval("\nclass MyClass {\n #privateProperty1\n }\nobj = new MyClass();");
 const debug = Debugger();
 const globalDebugObject = debug.addDebuggee(global);
 
-// Leak the private name symbol backing the private field.
-var otherGlobalObj = globalDebugObject.getOwnPropertyDescriptor("obj").value
-var privateSymbol = otherGlobalObj.getOwnPrivateProperties()[0]
+// getOwnPrivateProperties must not leak the raw private name symbol backing the
+// private field; it returns an opaque Debugger.PrivateName wrapper instead (see
+// bug 1917308). Handing a raw private name symbol to a proxy used to crash, as
+// it violated the assumption baked into the proxy code that all accesses are
+// scripted, and thus creation and symbol management invariants are correctly
+// observed.
+var otherGlobalObj = globalDebugObject.getOwnPropertyDescriptor("obj").value;
+var privateName = otherGlobalObj.getOwnPrivateProperties()[0];
 
-// Create a different proxy.
+// The wrapper is an ordinary object, not a symbol.
+assertEq(typeof privateName, "object");
+assertEq(typeof privateName === "symbol", false);
+
+// Using the wrapper with a proxy must not crash or throw: it is just an
+// ordinary object key.
 var p = new Proxy({}, {});
-
-// Try to look up the leaked private symbol on the new proxy.
-// This crashes, as it violates the assumption baked into the proxy code
-// that all accesses are scripted, and thus creation and symbol management
-// invariants are correctly observed.
-fail = false;
-try {
-    p[privateSymbol] = 1;
-    fail = true;
-} catch (e) {
-    assertEq(e instanceof TypeError, true);
-}
-assertEq(fail, false);
-
-try {
-    p[privateSymbol];
-    fail = true;
-} catch (e) {
-    assertEq(e instanceof TypeError, true);
-}
-assertEq(fail, false);
+p[privateName] = 1;
+assertEq(privateName in p, true);

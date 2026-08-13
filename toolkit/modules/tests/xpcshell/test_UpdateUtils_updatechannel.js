@@ -14,21 +14,21 @@ const PREF_PARTNER_B = "app.partner.test_partner_b";
 const TEST_PARTNER_B = "TestPartnerB";
 
 add_task(async function test_updatechannel() {
-  let defaultPrefs = new Preferences({ defaultBranch: true });
-  let currentChannel = defaultPrefs.get(PREF_APP_UPDATE_CHANNEL);
+  let defaultBranch = Services.prefs.getDefaultBranch("");
+  let currentChannel = defaultBranch.getStringPref(PREF_APP_UPDATE_CHANNEL);
 
   Assert.equal(UpdateUtils.UpdateChannel, currentChannel);
   Assert.equal(UpdateUtils.getUpdateChannel(true), currentChannel);
   Assert.equal(UpdateUtils.getUpdateChannel(false), currentChannel);
 
-  defaultPrefs.unlock(PREF_APP_UPDATE_CHANNEL);
-  defaultPrefs.set(PREF_APP_UPDATE_CHANNEL, TEST_CHANNEL);
+  Services.prefs.unlockPref(PREF_APP_UPDATE_CHANNEL);
+  defaultBranch.setStringPref(PREF_APP_UPDATE_CHANNEL, TEST_CHANNEL);
   Assert.equal(UpdateUtils.UpdateChannel, TEST_CHANNEL);
   Assert.equal(UpdateUtils.getUpdateChannel(true), TEST_CHANNEL);
   Assert.equal(UpdateUtils.getUpdateChannel(false), TEST_CHANNEL);
 
-  defaultPrefs.set(PREF_PARTNER_A, TEST_PARTNER_A);
-  defaultPrefs.set(PREF_PARTNER_B, TEST_PARTNER_B);
+  defaultBranch.setStringPref(PREF_PARTNER_A, TEST_PARTNER_A);
+  defaultBranch.setStringPref(PREF_PARTNER_B, TEST_PARTNER_B);
   Assert.equal(
     UpdateUtils.UpdateChannel,
     TEST_CHANNEL + "-cck-" + TEST_PARTNER_A + "-" + TEST_PARTNER_B

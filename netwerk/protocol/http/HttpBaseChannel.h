@@ -5,15 +5,16 @@
 #ifndef mozilla_net_HttpBaseChannel_h
 #define mozilla_net_HttpBaseChannel_h
 
+#include <mozilla/Maybe.h>
+
 #include <utility>
 
 #include "OpaqueResponseUtils.h"
 #include "mozilla/AtomicBitfields.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/CompactPair.h"
-#include "mozilla/dom/DOMTypes.h"
 #include "mozilla/DataMutex.h"
-#include <mozilla/Maybe.h>
+#include "mozilla/dom/DOMTypes.h"
 #include "mozilla/net/DNS.h"
 #include "mozilla/net/NeckoChannelParams.h"
 #include "mozilla/net/NeckoCommon.h"
@@ -58,6 +59,7 @@ namespace mozilla {
 namespace dom {
 class PerformanceStorage;
 class ContentParent;
+enum class NoCorsMediaRequestState : uint8_t;
 }  // namespace dom
 
 class LogCollector;
@@ -530,10 +532,6 @@ class HttpBaseChannel : public nsHashPropertyBag,
                                    int64_t aContentLength = -1,
                                    bool aSetContentLengthHeader = false);
 
-  void SetUploadStreamHasHeaders(bool hasHeaders) {
-    StoreUploadStreamHasHeaders(hasHeaders);
-  }
-
   virtual nsresult SetReferrerHeader(const nsACString& aReferrer,
                                      bool aRespectBeforeConnect = true) {
     if (aRespectBeforeConnect) {
@@ -569,7 +567,6 @@ class HttpBaseChannel : public nsHashPropertyBag,
     Maybe<dom::TimedChannelInfo> timedChannelInfo;
     nsCOMPtr<nsIInputStream> uploadStream;
     uint64_t uploadStreamLength = 0;
-    bool uploadStreamHasHeaders = false;
     Maybe<nsCString> contentType;
     Maybe<nsCString> contentLength;
 
@@ -709,12 +706,18 @@ class HttpBaseChannel : public nsHashPropertyBag,
   OpaqueResponse PerformOpaqueResponseSafelistCheckAfterSniff(
       const nsACString& aContentType, bool aNoSniff);
 
+  dom::NoCorsMediaRequestState NoCorsMediaRequestState();
+  void RecordSubsequentNoCorsRequestState();
+
   bool NeedOpaqueResponseAllowedCheckAfterSniff() const;
   void BlockOpaqueResponseAfterSniff(
       const nsAString& aReason,
       const OpaqueResponseBlockedTelemetryReason aTelemetryReason);
   void AllowOpaqueResponseAfterSniff();
   void SetChannelBlockedByOpaqueResponse();
+  // Called when ORB allows a response after its asynchronous validation.
+  // Subclasses that retained state pending the validation can release it here.
+  virtual void OnOpaqueResponseAllowed() {}
   bool Http3Allowed() const;
 
   virtual void ExplicitSetUploadStreamLength(uint64_t aContentLength,
@@ -914,7 +917,6 @@ class HttpBaseChannel : public nsHashPropertyBag,
     (uint32_t, ResponseHeadersModified, 1),
     (uint32_t, AllowSTS, 1),
     (uint32_t, ThirdPartyFlags, 3),
-    (uint32_t, UploadStreamHasHeaders, 1),
     (uint32_t, ChannelIsForDownload, 1),
     (uint32_t, TracingEnabled, 1),
     (uint32_t, ReportTiming, 1),

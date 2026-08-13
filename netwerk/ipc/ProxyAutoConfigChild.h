@@ -6,9 +6,9 @@
 #define ProxyAutoConfigChild_h_
 
 #include "mozilla/LinkedList.h"
-#include "mozilla/net/PProxyAutoConfigChild.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/net/PProxyAutoConfigChild.h"
 
 namespace mozilla {
 namespace net {

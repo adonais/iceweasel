@@ -10,13 +10,13 @@
 #include "GLLibraryEGL.h"
 #include "GLReadTexImageHelper.h"
 #include "MozFramebuffer.h"
-#include "mozilla/layers/LayersSurfaces.h"  // for SurfaceDescriptor, etc
 #include "SharedSurface.h"
+#include "mozilla/layers/LayersSurfaces.h"  // for SurfaceDescriptor, etc
 
 #if defined(MOZ_WIDGET_ANDROID)
 #  include "AndroidNativeWindow.h"
-#  include "mozilla/java/SurfaceAllocatorWrappers.h"
 #  include "mozilla/java/GeckoSurfaceTextureWrappers.h"
+#  include "mozilla/java/SurfaceAllocatorWrappers.h"
 #endif  // defined(MOZ_WIDGET_ANDROID)
 
 namespace mozilla {
@@ -37,7 +37,9 @@ UniquePtr<SurfaceFactory_EGLImage> SurfaceFactory_EGLImage::Create(
   if (!HasEglImageExtensions(gl)) return nullptr;
 
   const auto partialDesc = PartialSharedSurfaceDesc{
-      &gl, SharedSurfaceType::EGLImageShare, layers::TextureType::EGLImage,
+      &gl,
+      SharedSurfaceType::EGLImageShare,
+      layers::TextureType::EGLImage,
       false,  // Can't recycle, as mSync changes never update TextureHost.
   };
   return AsUnique(new SurfaceFactory_EGLImage(partialDesc));

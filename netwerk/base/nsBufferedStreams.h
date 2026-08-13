@@ -5,19 +5,19 @@
 #ifndef nsBufferedStreams_h_
 #define nsBufferedStreams_h_
 
+#include "mozilla/Mutex.h"
+#include "mozilla/RecursiveMutex.h"
+#include "nsCOMPtr.h"
+#include "nsIAsyncInputStream.h"
 #include "nsIBufferedStreams.h"
+#include "nsICloneableInputStream.h"
+#include "nsIIPCSerializableInputStream.h"
 #include "nsIInputStream.h"
+#include "nsIInputStreamLength.h"
 #include "nsIOutputStream.h"
 #include "nsISafeOutputStream.h"
 #include "nsISeekableStream.h"
 #include "nsIStreamBufferAccess.h"
-#include "nsCOMPtr.h"
-#include "nsIIPCSerializableInputStream.h"
-#include "nsIAsyncInputStream.h"
-#include "nsICloneableInputStream.h"
-#include "nsIInputStreamLength.h"
-#include "mozilla/Mutex.h"
-#include "mozilla/RecursiveMutex.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 

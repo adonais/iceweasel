@@ -49,8 +49,6 @@ using mozilla::DebugOnly;
 namespace js {
 namespace jit {
 
-#define UNIMPLEMENTED_RISCV() MOZ_CRASH("RISC_V not implemented");
-
 bool Assembler::FLAG_riscv_debug = false;
 
 // Size of the instruction stream, in bytes.
@@ -86,31 +84,6 @@ void Assembler::executableCopy(uint8_t* buffer) {
   m_buffer.executableCopy(buffer);
 }
 
-uint32_t Assembler::AsmPoolMaxOffset = 1024;
-
-uint32_t Assembler::GetPoolMaxOffset() {
-  static bool isSet = false;
-  if (!isSet) {
-    char* poolMaxOffsetStr = getenv("ASM_POOL_MAX_OFFSET");
-    uint32_t poolMaxOffset;
-    if (poolMaxOffsetStr &&
-        sscanf(poolMaxOffsetStr, "%u", &poolMaxOffset) == 1) {
-      AsmPoolMaxOffset = poolMaxOffset;
-    }
-    isSet = true;
-  }
-  return AsmPoolMaxOffset;
-}
-
-// Pool callbacks stuff:
-void Assembler::InsertIndexIntoTag(uint8_t* load_, uint32_t index) {
-  MOZ_CRASH("Unimplement");
-}
-
-void Assembler::PatchConstantPoolLoad(void* loadAddr, void* constPoolAddr) {
-  MOZ_CRASH("Unimplement");
-}
-
 void Assembler::processCodeLabels(uint8_t* rawCode) {
   for (const CodeLabel& label : codeLabels_) {
     Bind(rawCode, label);
@@ -127,22 +100,20 @@ void Assembler::WritePoolGuard(BufferOffset branch, Instruction* inst,
 
   DEBUG_PRINTF("%p(%x): ", inst, branch.getOffset());
 #ifdef JS_DISASM_RISCV64
-  disassembleInstr(inst, JitSpew_Codegen);
-#endif /* JS_DISASM_RISCV64 */
-}
+  if (JitSpewEnabled(JitSpew_Codegen)) {
+    disassembleInstr(branch, inst);
+    inst += kInstrSize;
 
-void Assembler::WritePoolHeader(uint8_t* start, Pool* p, bool isNatural) {
-  static_assert(sizeof(PoolHeader) == 4);
-
-  // Get the total size of the pool.
-  const uintptr_t totalPoolSize = sizeof(PoolHeader) + p->getPoolSize();
-  const uintptr_t totalPoolInstructions = totalPoolSize / kInstrSize;
-
-  MOZ_ASSERT((totalPoolSize & 0x3) == 0);
-  MOZ_ASSERT(totalPoolInstructions < (1 << 15));
-
-  PoolHeader header(totalPoolInstructions, isNatural);
-  *(PoolHeader*)start = header;
+    // Disassemble veneer branches after spewing the pool guard, so all
+    // instructions appear in order.
+    BufferOffset bo(branch.getOffset() + kInstrSize);
+    while (bo < dest) {
+      disassembleInstr(bo, inst);
+      inst += kInstrSize;
+      bo = BufferOffset(bo.getOffset() + kInstrSize);
+    }
+  }
+#endif
 }
 
 void Assembler::copyJumpRelocationTable(uint8_t* dest) {
@@ -155,291 +126,6 @@ void Assembler::copyDataRelocationTable(uint8_t* dest) {
   if (dataRelocations_.length()) {
     memcpy(dest, dataRelocations_.buffer(), dataRelocations_.length());
   }
-}
-
-void Assembler::RV_li(Register rd, int64_t imm) {
-  UseScratchRegisterScope temps(this);
-  if (RecursiveLiCount(imm) > GeneralLiCount(imm, temps.hasAvailable())) {
-    GeneralLi(rd, imm);
-  } else {
-    RecursiveLi(rd, imm);
-  }
-}
-
-int Assembler::RV_li_count(int64_t imm, bool is_get_temp_reg) {
-  if (RecursiveLiCount(imm) > GeneralLiCount(imm, is_get_temp_reg)) {
-    return GeneralLiCount(imm, is_get_temp_reg);
-  }
-  return RecursiveLiCount(imm);
-}
-
-void Assembler::GeneralLi(Register rd, int64_t imm) {
-  // 64-bit imm is put in the register rd.
-  // In most cases the imm is 32 bit and 2 instructions are generated. If a
-  // temporary register is available, in the worst case, 6 instructions are
-  // generated for a full 64-bit immediate. If temporay register is not
-  // available the maximum will be 8 instructions. If imm is more than 32 bits
-  // and a temp register is available, imm is divided into two 32-bit parts,
-  // low_32 and up_32. Each part is built in a separate register. low_32 is
-  // built before up_32. If low_32 is negative (upper 32 bits are 1), 0xffffffff
-  // is subtracted from up_32 before up_32 is built. This compensates for 32
-  // bits of 1's in the lower when the two registers are added. If no temp is
-  // available, the upper 32 bit is built in rd, and the lower 32 bits are
-  // devided to 3 parts (11, 11, and 10 bits). The parts are shifted and added
-  // to the upper part built in rd.
-  if (is_int32(imm + 0x800)) {
-    // 32-bit case. Maximum of 2 instructions generated
-    auto [high_20, low_12] = ToHigh20Low12(int32_t(imm));
-    if (high_20) {
-      lui(rd, (int32_t)high_20);
-      if (low_12) {
-        addi(rd, rd, low_12);
-      }
-    } else {
-      addi(rd, zero_reg, low_12);
-    }
-    return;
-  }
-  UseScratchRegisterScope temps(this);
-  AutoForbidPoolsAndNops afp(this, 8);
-  // 64-bit case: divide imm into two 32-bit parts, upper and lower
-  int64_t up_32 = imm >> 32;
-  int64_t low_32 = imm & 0xffffffffull;
-  Register temp_reg = rd;
-  // Check if a temporary register is available
-  if (up_32 == 0 || low_32 == 0) {
-    // No temp register is needed
-  } else {
-    temp_reg = temps.hasAvailable() ? temps.Acquire() : InvalidReg;
-  }
-  if (temp_reg != InvalidReg) {
-    // keep track of hardware behavior for lower part in sim_low
-    int64_t sim_low = 0;
-    // Build lower part
-    if (low_32 != 0) {
-      int64_t high_20 = ((low_32 + 0x800) >> 12);
-      int64_t low_12 = low_32 & 0xfff;
-      if (high_20) {
-        // Adjust to 20 bits for the case of overflow
-        high_20 &= 0xfffff;
-        sim_low = ((high_20 << 12) << 32) >> 32;
-        lui(rd, (int32_t)high_20);
-        if (low_12) {
-          sim_low += (low_12 << 52 >> 52) | low_12;
-          addi(rd, rd, low_12);
-        }
-      } else {
-        sim_low = low_12;
-        ori(rd, zero_reg, low_12);
-      }
-    }
-    if (sim_low & 0x100000000) {
-      // Bit 31 is 1. Either an overflow or a negative 64 bit
-      if (up_32 == 0) {
-        // Positive number, but overflow because of the add 0x800
-        ZeroExtendWord(rd, rd);
-        return;
-      }
-      // low_32 is a negative 64 bit after the build
-      up_32 = (up_32 - 0xffffffff) & 0xffffffff;
-    }
-    if (up_32 == 0) {
-      return;
-    }
-    // Build upper part in a temporary register
-    if (low_32 == 0) {
-      // Build upper part in rd
-      temp_reg = rd;
-    }
-    int64_t high_20 = (up_32 + 0x800) >> 12;
-    int64_t low_12 = up_32 & 0xfff;
-    if (high_20) {
-      // Adjust to 20 bits for the case of overflow
-      high_20 &= 0xfffff;
-      lui(temp_reg, (int32_t)high_20);
-      if (low_12) {
-        addi(temp_reg, temp_reg, low_12);
-      }
-    } else {
-      ori(temp_reg, zero_reg, low_12);
-    }
-    // Put it at the bgining of register
-    slli(temp_reg, temp_reg, 32);
-    if (low_32 != 0) {
-      add(rd, rd, temp_reg);
-    }
-    return;
-  }
-  // No temp register. Build imm in rd.
-  // Build upper 32 bits first in rd. Divide lower 32 bits parts and add
-  // parts to the upper part by doing shift and add.
-  // First build upper part in rd.
-  int64_t high_20 = (up_32 + 0x800) >> 12;
-  int64_t low_12 = up_32 & 0xfff;
-  if (high_20) {
-    // Adjust to 20 bits for the case of overflow
-    high_20 &= 0xfffff;
-    lui(rd, (int32_t)high_20);
-    if (low_12) {
-      addi(rd, rd, low_12);
-    }
-  } else {
-    ori(rd, zero_reg, low_12);
-  }
-  // upper part already in rd. Each part to be added to rd, has maximum of 11
-  // bits, and always starts with a 1. rd is shifted by the size of the part
-  // plus the number of zeros between the parts. Each part is added after the
-  // left shift.
-  uint32_t mask = 0x80000000;
-  int32_t shift_val = 0;
-  int32_t i;
-  for (i = 0; i < 32; i++) {
-    if ((low_32 & mask) == 0) {
-      mask >>= 1;
-      shift_val++;
-      if (i == 31) {
-        // rest is zero
-        slli(rd, rd, shift_val);
-      }
-      continue;
-    }
-    // The first 1 seen
-    int32_t part;
-    if ((i + 11) < 32) {
-      // Pick 11 bits
-      part = ((uint32_t)(low_32 << i) >> i) >> (32 - (i + 11));
-      slli(rd, rd, shift_val + 11);
-      ori(rd, rd, part);
-      i += 10;
-      mask >>= 11;
-    } else {
-      part = (uint32_t)(low_32 << i) >> i;
-      slli(rd, rd, shift_val + (32 - i));
-      ori(rd, rd, part);
-      break;
-    }
-    shift_val = 0;
-  }
-}
-
-int Assembler::GeneralLiCount(int64_t imm, bool is_get_temp_reg) {
-  int count = 0;
-  // imitate Assembler::RV_li
-  if (is_int32(imm + 0x800)) {
-    // 32-bit case. Maximum of 2 instructions generated
-    auto [high_20, low_12] = ToHigh20Low12(int32_t(imm));
-    if (high_20) {
-      count++;
-      if (low_12) {
-        count++;
-      }
-    } else {
-      count++;
-    }
-    return count;
-  }
-  // 64-bit case: divide imm into two 32-bit parts, upper and lower
-  int64_t up_32 = imm >> 32;
-  int64_t low_32 = imm & 0xffffffffull;
-  // Check if a temporary register is available
-  if (is_get_temp_reg) {
-    // keep track of hardware behavior for lower part in sim_low
-    int64_t sim_low = 0;
-    // Build lower part
-    if (low_32 != 0) {
-      int64_t high_20 = ((low_32 + 0x800) >> 12);
-      int64_t low_12 = low_32 & 0xfff;
-      if (high_20) {
-        // Adjust to 20 bits for the case of overflow
-        high_20 &= 0xfffff;
-        sim_low = ((high_20 << 12) << 32) >> 32;
-        count++;
-        if (low_12) {
-          sim_low += (low_12 << 52 >> 52) | low_12;
-          count++;
-        }
-      } else {
-        sim_low = low_12;
-        count++;
-      }
-    }
-    if (sim_low & 0x100000000) {
-      // Bit 31 is 1. Either an overflow or a negative 64 bit
-      if (up_32 == 0) {
-        // Positive number, but overflow because of the add 0x800
-        count += HasZbaExtension() ? /* zext.w */ 1 : /* slli; srli */ 2;
-        return count;
-      }
-      // low_32 is a negative 64 bit after the build
-      up_32 = (up_32 - 0xffffffff) & 0xffffffff;
-    }
-    if (up_32 == 0) {
-      return count;
-    }
-    int64_t high_20 = (up_32 + 0x800) >> 12;
-    int64_t low_12 = up_32 & 0xfff;
-    if (high_20) {
-      // Adjust to 20 bits for the case of overflow
-      high_20 &= 0xfffff;
-      count++;
-      if (low_12) {
-        count++;
-      }
-    } else {
-      count++;
-    }
-    // Put it at the bgining of register
-    count++;
-    if (low_32 != 0) {
-      count++;
-    }
-    return count;
-  }
-  // No temp register. Build imm in rd.
-  // Build upper 32 bits first in rd. Divide lower 32 bits parts and add
-  // parts to the upper part by doing shift and add.
-  // First build upper part in rd.
-  int64_t high_20 = (up_32 + 0x800) >> 12;
-  int64_t low_12 = up_32 & 0xfff;
-  if (high_20) {
-    // Adjust to 20 bits for the case of overflow
-    high_20 &= 0xfffff;
-    count++;
-    if (low_12) {
-      count++;
-    }
-  } else {
-    count++;
-  }
-  // upper part already in rd. Each part to be added to rd, has maximum of 11
-  // bits, and always starts with a 1. rd is shifted by the size of the part
-  // plus the number of zeros between the parts. Each part is added after the
-  // left shift.
-  uint32_t mask = 0x80000000;
-  int32_t i;
-  for (i = 0; i < 32; i++) {
-    if ((low_32 & mask) == 0) {
-      mask >>= 1;
-      if (i == 31) {
-        // rest is zero
-        count++;
-      }
-      continue;
-    }
-    // The first 1 seen
-    if ((i + 11) < 32) {
-      // Pick 11 bits
-      count++;
-      count++;
-      i += 10;
-      mask >>= 11;
-    } else {
-      count++;
-      count++;
-      break;
-    }
-  }
-  return count;
 }
 
 struct ImmPtrParts {
@@ -496,14 +182,12 @@ class LiPtr {
    * Disassemble the li_ptr instruction sequence.
    */
   void disassemble() {
-#ifdef JS_DISASM_RISCV64
     Assembler::disassembleInstr(at(0));
     Assembler::disassembleInstr(at(1));
     Assembler::disassembleInstr(at(2));
     Assembler::disassembleInstr(at(3));
     Assembler::disassembleInstr(at(4));
     Assembler::disassembleInstr(at(5));
-#endif
   }
 
   /**
@@ -595,13 +279,13 @@ class LiPtr {
     at(1)->SetIFormat(RO_ADDI, rd.code(), rd.code(), low_12);
 
     // slli(rd, rd, 11);  // Space for next 11 bits
-    at(2)->SetIFormat(RO_SLLI, rd.code(), rd.code(), 11);
+    at(2)->SetIShiftFormat(RO_SLLI, rd.code(), rd.code(), 11);
 
     // ori(rd, rd, b11);  // 11 bits are added, 42 bit in rd.
     at(3)->SetIFormat(RO_ORI, rd.code(), rd.code(), b11);
 
     // slli(rd, rd, 6);  // Space for next 6 bits
-    at(4)->SetIFormat(RO_SLLI, rd.code(), rd.code(), 6);
+    at(4)->SetIShiftFormat(RO_SLLI, rd.code(), rd.code(), 6);
 
     // ori(rd, rd, a6);  // 6 bits are added, 48 bit in rd.
     at(5)->SetIFormat(RO_ORI, rd.code(), rd.code(), a6);
@@ -718,7 +402,6 @@ class LiConstant {
    * Disassemble the li_constant instruction sequence.
    */
   void disassemble() {
-#ifdef JS_DISASM_RISCV64
     Assembler::disassembleInstr(at(0));
     Assembler::disassembleInstr(at(1));
     Assembler::disassembleInstr(at(2));
@@ -727,7 +410,6 @@ class LiConstant {
     Assembler::disassembleInstr(at(5));
     Assembler::disassembleInstr(at(6));
     Assembler::disassembleInstr(at(7));
-#endif
   }
 
   /**
@@ -902,24 +584,105 @@ ABIArg ABIArgGenerator::next(MIRType type) {
 
 bool Assembler::oom() const {
   return AssemblerShared::oom() || m_buffer.oom() || jumpRelocations_.oom() ||
-         dataRelocations_.oom() || !enoughLabelCache_;
+         dataRelocations_.oom();
 }
 
 #ifdef JS_DISASM_RISCV64
-int Assembler::disassembleInstr(Instruction* instr, bool enable_spew) {
-  if (!FLAG_riscv_debug && !enable_spew) {
-    return -1;
+class NameConverterWithInstruction : public disasm::NameConverter {
+  BufferOffset offs_;
+  Instruction* instr_;
+
+ public:
+  NameConverterWithInstruction(BufferOffset offs, Instruction* instr)
+      : offs_(offs), instr_(instr) {}
+
+  const char* NameOfAddress(uint8_t* addr) const {
+    if (instr_->IsJal()) {
+      // Print target buffer offset.
+      SNPrintF(tmp_buffer_, "%06" PRIx32,
+               offs_.getOffset() + instr_->Imm20JValue());
+    } else {
+      SNPrintF(tmp_buffer_, "(unknown)");
+    }
+    return tmp_buffer_.start();
+  }
+};
+
+class NameConverterWithLabelDoc : public disasm::NameConverter {
+  DisassemblerSpew::LabelDoc target_;
+
+ public:
+  explicit NameConverterWithLabelDoc(DisassemblerSpew::LabelDoc target)
+      : target_(target) {}
+
+  const char* NameOfAddress(uint8_t* addr) const {
+    if (target_.valid) {
+      // Print target label identifier, with optional "f" for forward branches.
+      SNPrintF(tmp_buffer_, "%d%s", target_.doc, !target_.bound ? "f" : "");
+    } else {
+      SNPrintF(tmp_buffer_, "(link-time target)");
+    }
+    return tmp_buffer_.start();
+  }
+};
+
+void Assembler::disassembleInstr(Instruction* instr) {
+  if (!FLAG_riscv_debug) {
+    return;
   }
   disasm::NameConverter converter;
   disasm::Disassembler disasm(converter);
-  EmbeddedVector<char, 128> disasm_buffer;
+  EmbeddedVector<char, disasm::ReasonableBufferSize> buffer;
 
-  int size = disasm.InstructionDecode(disasm_buffer, instr);
-  DEBUG_PRINTF("%s\n", disasm_buffer.start());
-  if (enable_spew) {
-    JitSpew(JitSpew_Codegen, "%s", disasm_buffer.start());
+  disasm.InstructionDecode(buffer, instr);
+  DEBUG_PRINTF("%s\n", buffer.start());
+}
+
+void Assembler::disassembleInstr(BufferOffset offs, Instruction* instr) {
+  NameConverterWithInstruction converter(offs, instr);
+  disasm::Disassembler disasm(converter);
+  EmbeddedVector<char, disasm::ReasonableBufferSize> buffer;
+
+  disasm.InstructionDecode(buffer, instr);
+
+  JitSpew(JitSpew_Codegen, "[?] %06" PRIx32 " %s", uint32_t(offs.getOffset()),
+          buffer.start());
+}
+
+void Assembler::spew(BufferOffset offs, Instruction* instr) {
+  if (spew_.isDisabled() || !instr) {
+    return;
   }
-  return size;
+
+  disasm::NameConverter converter;
+  disasm::Disassembler disasm(converter);
+  EmbeddedVector<char, disasm::ReasonableBufferSize> buffer;
+
+  disasm.InstructionDecode(buffer, instr);
+
+  spew_.spew("%06" PRIx32 " %s", uint32_t(offs.getOffset()), buffer.start());
+}
+
+void Assembler::spewBranch(BufferOffset offs, Instruction* instr,
+                           LabelDoc target) {
+  if (spew_.isDisabled() || !instr) {
+    return;
+  }
+
+  NameConverterWithLabelDoc converter(target);
+  disasm::Disassembler disasm(converter);
+  EmbeddedVector<char, disasm::ReasonableBufferSize> buffer;
+
+  disasm.InstructionDecode(buffer, instr);
+
+  spew_.spew("%06" PRIx32 " %s", uint32_t(offs.getOffset()), buffer.start());
+}
+
+DisassemblerSpew::LabelDoc Assembler::refLabel(Label* label) {
+  if (spew_.isDisabled()) {
+    return LabelDoc();
+  }
+  return spew_.refLabel(label);
 }
 #endif /* JS_DISASM_RISCV64 */
 
@@ -998,224 +761,188 @@ void Assembler::PatchWrite_Imm32(CodeLocationLabel label, Imm32 imm) {
   *(raw - 1) = imm.value;
 }
 
-bool Assembler::jumpChainPutTargetAt(BufferOffset pos,
-                                     BufferOffset target_pos) {
-  if (m_buffer.oom()) {
-    return true;
+// Unbound Label Representation.
+//
+// We can have multiple branches using the same label before it is bound.
+// Assembler::bind() must then be able to enumerate all the branches and patch
+// them to target the final label location.
+//
+// When a Label is unbound with uses, its offset is pointing to the tip of a
+// linked list of uses. The uses can be branch, jal, or auipc+jalr instructions.
+//
+// The end of the list is encoded as a 0 pc offset, i.e. the tail is pointing to
+// itself.
+
+static constexpr int32_t kEndOfJumpChain = 0;
+
+static int32_t ImmPCRawOffset(const Instruction* instr) {
+  if (instr->IsBranch()) {
+    return instr->BranchOffset();
   }
-
-  Instruction* instruction = getInstructionAt(pos);
-  DEBUG_PRINTF("\tjumpChainPutTargetAt: %p (%d) to %p (%d)\n", instruction,
-               pos.getOffset(),
-               instruction + target_pos.getOffset() - pos.getOffset(),
-               target_pos.getOffset());
-  switch (instruction->InstructionOpcodeType()) {
-    case BRANCH: {
-      int32_t offset = target_pos.getOffset() - pos.getOffset();
-      if (!is_intn(offset, kBranchOffsetBits)) {
-        return false;
-      }
-      instruction->SetBranchOffset(offset);
-    } break;
-    case JAL: {
-      MOZ_ASSERT(instruction->IsJal());
-      int32_t offset = target_pos.getOffset() - pos.getOffset();
-      if (!is_intn(offset, kJumpOffsetBits)) {
-        return false;
-      }
-      instruction->SetImm20JValue(offset);
-    } break;
-    case LUI: {
-      uintptr_t target =
-          reinterpret_cast<uintptr_t>(getInstructionAt(target_pos));
-      UpdateLiPtrInstructions(instruction, target);
-    } break;
-    case AUIPC: {
-      Instruction* instruction2 =
-          getInstructionAt(BufferOffset(pos.getOffset() + kInstrSize));
-      MOZ_ASSERT(instruction2->IsJalr() || instruction2->IsAddi());
-      MOZ_ASSERT(instruction->RdValue() == instruction2->Rs1Value());
-
-      int32_t offset = target_pos.getOffset() - pos.getOffset();
-      auto [Hi20, Lo12] = ToHigh20Low12(offset);
-
-      instruction->SetImm20UValue(Hi20);
-      instruction2->SetImm12Value(Lo12);
-    } break;
-    default:
-      UNIMPLEMENTED_RISCV();
-      break;
+  if (instr->IsJal()) {
+    return instr->Imm20JValue();
   }
-  return true;
+  MOZ_CRASH("unexpected jump instruction");
 }
 
-const int kEndOfChain = -1;
-const int32_t kEndOfJumpChain = 0;
+static int32_t ImmPCRawOffset(const Instruction* auipc,
+                              const Instruction* jalr) {
+  MOZ_ASSERT(auipc->IsAuipc());
+  MOZ_ASSERT(jalr->IsJalr());
 
-int Assembler::jumpChainTargetAt(BufferOffset pos) {
-  if (oom()) {
-    return kEndOfChain;
-  }
-  Instruction* instruction = getInstructionAt(pos);
-  Instruction* instruction2 = nullptr;
-  if (instruction->IsAuipc()) {
-    instruction2 = getInstructionAt(BufferOffset(pos.getOffset() + kInstrSize));
-  }
-  return jumpChainTargetAt(instruction, pos, instruction2);
-}
-
-int Assembler::jumpChainTargetAt(Instruction* instruction, BufferOffset pos,
-                                 Instruction* instruction2) {
-  DEBUG_PRINTF("\t jumpChainTargetAt: %p(%x)\n\t",
-               reinterpret_cast<Instr*>(instruction), pos.getOffset());
-#ifdef JS_DISASM_RISCV64
-  disassembleInstr(instruction);
-#endif /* JS_DISASM_RISCV64 */
-
-  switch (instruction->InstructionOpcodeType()) {
-    case BRANCH: {
-      int32_t imm13 = instruction->BranchOffset();
-      if (imm13 == kEndOfJumpChain) {
-        // EndOfChain sentinel is returned directly, not relative to pc or pos.
-        return kEndOfChain;
-      }
-      DEBUG_PRINTF("\t jumpChainTargetAt: %d %d\n", imm13,
-                   pos.getOffset() + imm13);
-      return pos.getOffset() + imm13;
-    }
-    case JAL: {
-      int32_t imm21 = instruction->Imm20JValue();
-      if (imm21 == kEndOfJumpChain) {
-        // EndOfChain sentinel is returned directly, not relative to pc or pos.
-        return kEndOfChain;
-      }
-      DEBUG_PRINTF("\t jumpChainTargetAt: %d %d\n", imm21,
-                   pos.getOffset() + imm21);
-      return pos.getOffset() + imm21;
-    }
-    case JALR: {
-      int32_t imm12 = instruction->Imm12Value();
-      if (imm12 == kEndOfJumpChain) {
-        // EndOfChain sentinel is returned directly, not relative to pc or pos.
-        return kEndOfChain;
-      }
-      DEBUG_PRINTF("\t jumpChainTargetAt: %d %d\n", imm12,
-                   pos.getOffset() + imm12);
-      return pos.getOffset() + imm12;
-    }
-    case LUI: {
-      uintptr_t imm = LoadLiPtrInstructions(instruction);
-      uintptr_t instr_address = reinterpret_cast<uintptr_t>(instruction);
-      if (imm == kEndOfJumpChain) {
-        return kEndOfChain;
-      }
-      MOZ_ASSERT(instr_address - imm < INT32_MAX);
-      int32_t delta = static_cast<int32_t>(instr_address - imm);
-      MOZ_ASSERT(pos.getOffset() > delta);
-      return pos.getOffset() - delta;
-    }
-    case AUIPC: {
-      MOZ_ASSERT(instruction2 != nullptr);
-      MOZ_ASSERT(instruction2->IsJalr() || instruction2->IsAddi());
-
-      int32_t imm_auipc = instruction->Imm20UValue() << kImm20Shift;
-      int32_t imm12 = instruction2->Imm12Value();
-      int32_t offset = imm_auipc + imm12;
-      if (offset == kEndOfJumpChain) {
-        return kEndOfChain;
-      }
-      DEBUG_PRINTF("\t jumpChainTargetAt: %d %d\n", offset,
-                   pos.getOffset() + offset);
-      return offset + pos.getOffset();
-    }
-    default: {
-      UNIMPLEMENTED_RISCV();
-    }
-  }
+  int32_t imm_auipc = auipc->Imm20UValue() << kImm20Shift;
+  int32_t imm12 = jalr->Imm12Value();
+  return imm_auipc + imm12;
 }
 
 BufferOffset Assembler::jumpChainGetNextLink(BufferOffset pos) {
-  int link = jumpChainTargetAt(pos);
-  return link == kEndOfChain ? BufferOffset() : BufferOffset(link);
+  if (oom()) {
+    return BufferOffset();
+  }
+
+  Instruction* link = getInstructionAt(pos);
+  MOZ_ASSERT(link->IsBranch() || link->IsJal() || link->IsAuipc());
+
+  // Raw encoded offset.
+  int32_t offset;
+  if (link->IsAuipc()) {
+    Instruction* instr1 =
+        getInstructionAt(BufferOffset(pos.getOffset() + kInstrSize));
+    offset = ImmPCRawOffset(link, instr1);
+  } else {
+    offset = ImmPCRawOffset(link);
+  }
+
+  // End of the list is encoded as 0.
+  if (offset == kEndOfJumpChain) {
+    return BufferOffset();
+  }
+
+  // The encoded offset is the number of instructions to move.
+  return BufferOffset(pos.getOffset() + offset);
 }
 
-uint32_t Assembler::jumpChainUseNextLink(Label* L) {
-  MOZ_ASSERT(L->used());
-  BufferOffset link = jumpChainGetNextLink(BufferOffset(L));
-  if (!link.assigned()) {
-    L->reset();
-    return LabelBase::INVALID_OFFSET;
+void Assembler::jumpChainPutTargetAt(BufferOffset pos,
+                                     BufferOffset target_pos) {
+  if (oom()) {
+    return;
   }
-  int offset = link.getOffset();
-  DEBUG_PRINTF("next: %p to offset %d\n", L, offset);
-  L->use(offset);
-  return offset;
+
+  int32_t offset = target_pos.getOffset() - pos.getOffset();
+  MOZ_ASSERT((offset & 1) == 0);
+
+  Instruction* instruction = getInstructionAt(pos);
+  DEBUG_PRINTF("\tjumpChainPutTargetAt: %p (%d) to %p (%d)\n", instruction,
+               pos.getOffset(), instruction + offset, target_pos.getOffset());
+
+  switch (instruction->InstructionOpcodeType()) {
+    case BRANCH: {
+      MOZ_ASSERT(is_intn(offset, kBranchOffsetBits));
+      instruction->SetBranchOffset(offset);
+      break;
+    }
+    case JAL: {
+      MOZ_ASSERT(is_intn(offset, kJumpOffsetBits));
+      instruction->SetImm20JValue(offset);
+      break;
+    }
+    case AUIPC: {
+      Instruction* jalr =
+          getInstructionAt(BufferOffset(pos.getOffset() + kInstrSize));
+      MOZ_ASSERT(jalr->IsJalr());
+      MOZ_ASSERT(instruction->RdValue() == jalr->Rs1Value());
+
+      auto [Hi20, Lo12] = ToHigh20Low12(offset);
+      instruction->SetImm20UValue(Hi20);
+      jalr->SetImm12Value(Lo12);
+      break;
+    }
+    default:
+      MOZ_CRASH("unexpected jump instruction");
+  }
 }
 
 void Assembler::bind(Label* label, BufferOffset boff) {
-  JitSpew(JitSpew_Codegen, ".set Llabel %p %u", label, currentOffset());
+#ifdef JS_DISASM_RISCV64
+  spew_.spewBind(label);
+#endif
   DEBUG_PRINTF(".set Llabel %p %u\n", label, currentOffset());
+
   // If our caller didn't give us an explicit target to bind to
   // then we want to bind to the location of the next instruction
-  BufferOffset dest = boff.assigned() ? boff : nextOffset();
-  if (label->used()) {
-    uint32_t next;
+  BufferOffset targetOffset = boff.assigned() ? boff : nextOffset();
 
-    do {
-      // A used label holds a link to branch that uses it.
-      // It's okay we use it here since jumpChainUseNextLink() mutates `label`.
-      BufferOffset b(label);
-      DEBUG_PRINTF("\tbind next:%d\n", b.getOffset());
-      // Even a 0 offset may be invalid if we're out of memory.
-      if (oom()) {
-        return;
-      }
-      int fixup_pos = b.getOffset();
-      int dist = dest.getOffset() - fixup_pos;
-      next = jumpChainUseNextLink(label);
-      DEBUG_PRINTF(
-          "\t%p fixup: %d next: %u dest: %d dist: %d nextOffset: %d "
-          "currOffset: %d\n",
-          label, fixup_pos, next, dest.getOffset(), dist,
-          nextOffset().getOffset(), currentOffset());
-      Instruction* instr = getInstructionAt(b);
-      if (instr->IsBranch()) {
-        if (!is_intn(dist, kBranchOffsetBits)) {
-          MOZ_ASSERT(next != LabelBase::INVALID_OFFSET);
-          MOZ_RELEASE_ASSERT(
-              is_intn(static_cast<int>(next) - fixup_pos, kJumpOffsetBits));
-          MOZ_ASSERT(getInstructionAt(BufferOffset(next))->IsAuipc());
-          MOZ_ASSERT(
-              getInstructionAt(BufferOffset(next + kInstrSize))->IsJalr());
-          DEBUG_PRINTF("\t\ttrampolining: %d\n", next);
-        } else {
-          jumpChainPutTargetAt(b, dest);
-          BufferOffset deadline(b.getOffset() +
-                                ImmBranchMaxForwardOffset(CondBranchRangeType));
-          m_buffer.unregisterBranchDeadline(CondBranchRangeType, deadline);
-        }
-      } else if (instr->IsJal()) {
-        if (!is_intn(dist, kJumpOffsetBits)) {
-          MOZ_ASSERT(next != LabelBase::INVALID_OFFSET);
-          MOZ_RELEASE_ASSERT(
-              is_intn(static_cast<int>(next) - fixup_pos, kJumpOffsetBits));
-          MOZ_ASSERT(getInstructionAt(BufferOffset(next))->IsAuipc());
-          MOZ_ASSERT(
-              getInstructionAt(BufferOffset(next + kInstrSize))->IsJalr());
-          DEBUG_PRINTF("\t\ttrampolining: %d\n", next);
-        } else {
-          jumpChainPutTargetAt(b, dest);
-          BufferOffset deadline(
-              b.getOffset() + ImmBranchMaxForwardOffset(UncondBranchRangeType));
-          m_buffer.unregisterBranchDeadline(UncondBranchRangeType, deadline);
-        }
-      } else {
-        MOZ_ASSERT(instr->IsAuipc());
-        jumpChainPutTargetAt(b, dest);
-      }
-    } while (next != LabelBase::INVALID_OFFSET);
+  // Nothing has seen the label yet: just mark the location.
+  //
+  // If we've run out of memory, don't attempt to modify the buffer which may
+  // not be there. Just mark the label as bound to the (possibly bogus)
+  // targetOffset.
+  if (!label->used() || oom()) {
+    label->bind(targetOffset.getOffset());
+    return;
   }
-  label->bind(dest.getOffset());
+
+  // Get the most recent instruction that used the label, as stored in the
+  // label. This instruction is the head of an implicit linked list of label
+  // uses.
+  BufferOffset branchOffset(label);
+
+  while (branchOffset.assigned()) {
+    // Before overwriting the offset in this instruction, get the offset of
+    // the next link in the implicit branch list.
+    BufferOffset nextOffset = jumpChainGetNextLink(branchOffset);
+
+    // Linking against the actual (Instruction*) would be invalid, since that
+    // Instruction could be anywhere in memory. Instead, just link against the
+    // correct relative offset, assuming no constant pools, which will be taken
+    // into consideration during finalization.
+    ptrdiff_t relativeByteOffset =
+        targetOffset.getOffset() - branchOffset.getOffset();
+
+    Instruction* link = getInstructionAt(branchOffset);
+    OffsetSize offsetSize;
+    if (link->IsBranch() || link->IsJal()) {
+      offsetSize = link->GetOffsetSize();
+    } else {
+      MOZ_ASSERT(link->IsAuipc());
+      offsetSize = OffsetSize::kOffset32;
+    }
+
+    // This branch may still be registered for callbacks. Stop tracking it.
+    if (offsetSize < OffsetSize::kOffset32) {
+      ImmBranchRangeType branchRange =
+          OffsetSizeToImmBranchRangeType(offsetSize);
+      BufferOffset deadline(branchOffset.getOffset() +
+                            ImmBranchMaxForwardOffset(branchRange));
+      m_buffer.unregisterBranchDeadline(branchRange, deadline);
+    }
+
+    // Is link able to reach the label?
+    if (is_intn(relativeByteOffset, offsetSize)) {
+      // Write a new relative offset into the instruction.
+      jumpChainPutTargetAt(branchOffset, targetOffset);
+    } else {
+      // This is a short-range branch, and it can't reach the label directly.
+      // Verify that it branches to a veneer: an unconditional branch.
+      MOZ_ASSERT(offsetSize < OffsetSize::kOffset32);
+
+      // |nextOffset| is a veneer branch (auipc; jalr).
+      MOZ_ASSERT(nextOffset.assigned());
+      MOZ_ASSERT(getInstructionAt(nextOffset)->IsAuipc());
+      MOZ_ASSERT(
+          getInstructionAt(BufferOffset(nextOffset.getOffset() + kInstrSize))
+              ->IsJalr());
+
+      // The veneer must be reachable from the branch.
+      MOZ_RELEASE_ASSERT(is_intn(
+          nextOffset.getOffset() - branchOffset.getOffset(), offsetSize));
+    }
+
+    branchOffset = nextOffset;
+  }
+
+  // Bind the label, so that future uses may encode the offset immediately.
+  label->bind(targetOffset.getOffset());
 }
 
 void Assembler::Bind(uint8_t* rawCode, const CodeLabel& label) {
@@ -1235,7 +962,20 @@ void Assembler::Bind(uint8_t* rawCode, const CodeLabel& label) {
   }
 }
 
-int32_t Assembler::branchLongOffsetHelper(Label* L) {
+// A common implementation for the public branchOffset methods.
+//
+// If the label is bound, returns the offset to the label. Otherwise, links the
+// instruction to the label and returns |kEndOfJumpChain|.
+//
+// The offset is calculated by the difference between the PC and the label
+// address.
+//
+// For an unbound label, the returned offset will be encodable in the provided
+// branch range. If the label is already bound, the caller is expected to make
+// sure that it is in range, and emit the necessary branch instructions if it
+// isn't.
+int32_t Assembler::branchOffset(Label* L, OffsetSize bits,
+                                BufferOffset next_instr_offset) {
   if (oom()) {
     return kEndOfJumpChain;
   }
@@ -1243,113 +983,33 @@ int32_t Assembler::branchLongOffsetHelper(Label* L) {
   // Prevent nop sequences in branch instructions.
   AutoForbidNops afn(this);
 
-  BufferOffset next_instr_offset = nextInstrOffset(2, 0);
-  DEBUG_PRINTF("\tbranchLongOffsetHelper: %p to (%d)\n", L,
-               next_instr_offset.getOffset());
+  DEBUG_PRINTF("\branchOffset: %p to %d\n", L, next_instr_offset.getOffset());
 
   if (L->bound()) {
     // The label is bound: all uses are already linked.
-    JitSpew(JitSpew_Codegen, ".use Llabel %p on %d", L,
-            next_instr_offset.getOffset());
     int32_t offset = L->offset() - next_instr_offset.getOffset();
-    MOZ_ASSERT((offset & 3) == 0);
-    return offset;
-  }
-
-  // The label is unbound and previously unused: Store the offset in the label
-  // itself for patching by bind().
-  if (!L->used()) {
-    JitSpew(JitSpew_Codegen, ".use Llabel %p on %d", L,
-            next_instr_offset.getOffset());
-    L->use(next_instr_offset.getOffset());
-    DEBUG_PRINTF("\tLabel %p added to link: %d\n", L,
-                 next_instr_offset.getOffset());
-    if (!label_cache_.putNew(L->offset(), next_instr_offset)) {
-      NoEnoughLabelCache();
-    }
-    return kEndOfJumpChain;
-  }
-
-  LabelCache::Ptr p = label_cache_.lookup(L->offset());
-  MOZ_ASSERT(p);
-  MOZ_ASSERT(p->key() == L->offset());
-  const int32_t target_pos = p->value().getOffset();
-
-  // If the existing instruction at the head of the list is within reach of the
-  // new branch, we can simply insert the new branch at the front of the list.
-  if (jumpChainPutTargetAt(BufferOffset(target_pos), next_instr_offset)) {
-    DEBUG_PRINTF("\tLabel %p added to link: %d\n", L,
-                 next_instr_offset.getOffset());
-    if (!label_cache_.put(L->offset(), next_instr_offset)) {
-      NoEnoughLabelCache();
-    }
-  } else {
-    DEBUG_PRINTF("\tLabel  %p can't be added to link: %d -> %d\n", L,
-                 BufferOffset(target_pos).getOffset(),
-                 next_instr_offset.getOffset());
-
-    // The label already has a linked list of uses, but we can't reach the head
-    // of the list with the allowed branch range. Insert this branch at a
-    // different position in the list. We need to find an existing branch
-    // `exbr`.
-    //
-    // In particular, the end of the list is always a viable candidate, so we'll
-    // just get that.
-    //
-    // See also vixl::MozBaseAssembler::LinkAndGetOffsetTo.
-
-    BufferOffset next(L);
-    BufferOffset exbr;
-    do {
-      exbr = next;
-      next = jumpChainGetNextLink(next);
-    } while (next.assigned());
-    mozilla::DebugOnly<bool> ok = jumpChainPutTargetAt(exbr, next_instr_offset);
-    MOZ_ASSERT(ok, "Still can't reach list head");
-  }
-
-  return kEndOfJumpChain;
-}
-
-int32_t Assembler::branchOffsetHelper(Label* L, OffsetSize bits) {
-  if (oom()) {
-    return kEndOfJumpChain;
-  }
-
-  // Prevent nop sequences in branch instructions.
-  AutoForbidNops afn(this);
-
-  BufferOffset next_instr_offset = nextInstrOffset(1, 1);
-  DEBUG_PRINTF("\tbranchOffsetHelper: %p to %d\n", L,
-               next_instr_offset.getOffset());
-
-  if (L->bound()) {
-    // The label is bound: all uses are already linked.
-    JitSpew(JitSpew_Codegen, ".use Llabel %p on %d", L,
-            next_instr_offset.getOffset());
-    int32_t offset = L->offset() - next_instr_offset.getOffset();
-    DEBUG_PRINTF("\toffset = %d\n", offset);
     MOZ_ASSERT(is_intn(offset, bits));
     MOZ_ASSERT((offset & 1) == 0);
+    MOZ_ASSERT_IF(bits == OffsetSize::kOffset32, (offset & 3) == 0);
     return offset;
   }
 
-  BufferOffset deadline(next_instr_offset.getOffset() +
-                        ImmBranchMaxForwardOffset(bits));
-  DEBUG_PRINTF("\tregisterBranchDeadline %d type %d\n", deadline.getOffset(),
-               OffsetSizeToImmBranchRangeType(bits));
-  m_buffer.registerBranchDeadline(OffsetSizeToImmBranchRangeType(bits),
-                                  deadline);
+  // Keep track of short-range branches targeting unbound labels. We may need
+  // to insert veneers in PatchShortRangeBranchToVeneer() below.
+  if (bits < OffsetSize::kOffset32) {
+    // This is the last possible branch target.
+    BufferOffset deadline(next_instr_offset.getOffset() +
+                          ImmBranchMaxForwardOffset(bits));
+    DEBUG_PRINTF("\tregisterBranchDeadline %d type %d\n", deadline.getOffset(),
+                 OffsetSizeToImmBranchRangeType(bits));
+    m_buffer.registerBranchDeadline(OffsetSizeToImmBranchRangeType(bits),
+                                    deadline);
+  }
 
   // The label is unbound and previously unused: Store the offset in the label
   // itself for patching by bind().
   if (!L->used()) {
-    JitSpew(JitSpew_Codegen, ".use Llabel %p on %d", L,
-            next_instr_offset.getOffset());
     L->use(next_instr_offset.getOffset());
-    if (!label_cache_.putNew(L->offset(), next_instr_offset)) {
-      NoEnoughLabelCache();
-    }
     DEBUG_PRINTF("\tLabel  %p added to link: %d\n", L,
                  next_instr_offset.getOffset());
     return kEndOfJumpChain;
@@ -1360,45 +1020,56 @@ int32_t Assembler::branchOffsetHelper(Label* L, OffsetSize bits) {
   // not always trivial since the branches in the linked list have limited
   // ranges.
 
-  LabelCache::Ptr p = label_cache_.lookup(L->offset());
-  MOZ_ASSERT(p);
-  MOZ_ASSERT(p->key() == L->offset());
-  const int32_t target_pos = p->value().getOffset();
+  // What is the earliest buffer offset that would be reachable by the branch
+  // we're about to add?
+  int32_t earliestReachable =
+      next_instr_offset.getOffset() + ImmBranchMinBackwardOffset(bits);
 
   // If the existing instruction at the head of the list is within reach of the
   // new branch, we can simply insert the new branch at the front of the list.
-  if (jumpChainPutTargetAt(BufferOffset(target_pos), next_instr_offset)) {
-    DEBUG_PRINTF("\tLabel  %p added to link: %d\n", L,
-                 next_instr_offset.getOffset());
-    if (!label_cache_.put(L->offset(), next_instr_offset)) {
-      NoEnoughLabelCache();
-    }
-  } else {
-    DEBUG_PRINTF("\tLabel  %p can't be added to link: %d -> %d\n", L,
-                 BufferOffset(target_pos).getOffset(),
-                 next_instr_offset.getOffset());
+  if (L->offset() >= earliestReachable) {
+    int32_t offset = L->offset() - next_instr_offset.getOffset();
+    MOZ_ASSERT(offset != kEndOfJumpChain);
+    MOZ_ASSERT(is_intn(offset, bits));
+    MOZ_ASSERT((offset & 1) == 0);
 
-    // The label already has a linked list of uses, but we can't reach the head
-    // of the list with the allowed branch range. Insert this branch at a
-    // different position in the list. We need to find an existing branch
-    // `exbr`.
-    //
-    // In particular, the end of the list is always a viable candidate, so we'll
-    // just get that.
-    //
-    // See also vixl::MozBaseAssembler::LinkAndGetOffsetTo.
-
-    BufferOffset next(L);
-    BufferOffset exbr;
-    do {
-      exbr = next;
-      next = jumpChainGetNextLink(next);
-    } while (next.assigned());
-    mozilla::DebugOnly<bool> ok = jumpChainPutTargetAt(exbr, next_instr_offset);
-    MOZ_ASSERT(ok, "Still can't reach list head");
+    L->use(next_instr_offset.getOffset());
+    return offset;
   }
 
+  // The label already has a linked list of uses, but we can't reach the head
+  // of the list with the allowed branch range. Insert this branch at a
+  // different position in the list. We need to find an existing branch
+  // `exbr`.
+  //
+  // In particular, the end of the list is always a viable candidate, so we'll
+  // just get that.
+  //
+  // See also vixl::MozBaseAssembler::LinkAndGetOffsetTo.
+
+  BufferOffset next(L);
+  BufferOffset exbr;
+  do {
+    exbr = next;
+    next = jumpChainGetNextLink(next);
+  } while (next.assigned());
+  jumpChainPutTargetAt(exbr, next_instr_offset);
+
   return kEndOfJumpChain;
+}
+
+int32_t Assembler::branchOffset(Label* L) {
+  // Two instructions (auipc + jalr), without any new deadlines.
+  BufferOffset next_instr_offset = nextInstrOffset(2, 0);
+  return branchOffset(L, OffsetSize::kOffset32, next_instr_offset);
+}
+
+int32_t Assembler::branchOffset(Label* L, OffsetSize bits) {
+  MOZ_ASSERT(bits < OffsetSize::kOffset32);
+
+  // One instruction (jal, branch, etc), possibly one new deadline.
+  BufferOffset next_instr_offset = nextInstrOffset(1, 1);
+  return branchOffset(L, bits, next_instr_offset);
 }
 
 Assembler::Condition Assembler::InvertCondition(Condition cond) {
@@ -1594,39 +1265,51 @@ Register UseScratchRegisterScope::Acquire() {
   return index;
 }
 
-void UseScratchRegisterScope::Release(const Register& reg) {
+void UseScratchRegisterScope::Acquire(Register reg) {
+  MOZ_ASSERT(available_ != nullptr);
+  MOZ_ASSERT(available_->hasRegisterIndex(reg));
+  available_->takeRegisterIndex(reg);
+}
+
+void UseScratchRegisterScope::Release(Register reg) {
   MOZ_ASSERT(available_ != nullptr);
   MOZ_ASSERT(old_available_.hasRegisterIndex(reg));
   MOZ_ASSERT(!available_->hasRegisterIndex(reg));
-  Include(GeneralRegisterSet(1 << reg.code()));
+  available_->addRegisterIndex(reg);
 }
 
 bool UseScratchRegisterScope::hasAvailable() const {
   return (available_->size()) != 0;
 }
 
+uint32_t UseScratchRegisterScope::countAvailable() const {
+  return available_->size();
+}
+
 void Assembler::retarget(Label* label, Label* target) {
-  spew("retarget %p -> %p", label, target);
-  if (label->used() && !oom()) {
+#ifdef JS_DISASM_RISCV64
+  spew_.spewRetarget(label, target);
+#endif
+
+  if (label->used()) {
     if (target->bound()) {
       bind(label, BufferOffset(target));
     } else if (target->used()) {
       // The target is not bound but used. Prepend label's branch list
       // onto target's.
-      int32_t next;
       BufferOffset labelBranchOffset(label);
 
       // Find the head of the use chain for label.
-      do {
-        next = jumpChainUseNextLink(label);
-        labelBranchOffset = BufferOffset(next);
-      } while (next != LabelBase::INVALID_OFFSET);
+      BufferOffset next = jumpChainGetNextLink(labelBranchOffset);
+      while (next.assigned()) {
+        labelBranchOffset = next;
+        next = jumpChainGetNextLink(next);
+      }
 
       // Then patch the head of label's use chain to the tail of
       // target's use chain, prepending the entire use chain of target.
-      target->use(label->offset());
       jumpChainPutTargetAt(labelBranchOffset, BufferOffset(target));
-      MOZ_CRASH("check");
+      target->use(label->offset());
     } else {
       // The target is unbound and unused.  We can just take the head of
       // the list hanging off of label, and dump that into target.
@@ -1664,9 +1347,6 @@ void Assembler::ToggleCall(CodeLocationLabel inst_, bool enabled) {
 void Assembler::PatchShortRangeBranchToVeneer(Buffer* buffer, unsigned rangeIdx,
                                               BufferOffset deadline,
                                               BufferOffset veneer) {
-  if (buffer->oom()) {
-    return;
-  }
   DEBUG_PRINTF("\tPatchShortRangeBranchToVeneer\n");
 
   // Reconstruct the position of the branch from (rangeIdx, deadline).
@@ -1674,35 +1354,34 @@ void Assembler::PatchShortRangeBranchToVeneer(Buffer* buffer, unsigned rangeIdx,
   BufferOffset branch(deadline.getOffset() -
                       ImmBranchMaxForwardOffset(branchRange));
   Instruction* branchInst = buffer->getInst(branch);
+  MOZ_ASSERT(branchInst->IsBranch() || branchInst->IsJal());
+
   Instruction* veneerInst_1 = buffer->getInst(veneer);
   Instruction* veneerInst_2 =
       buffer->getInst(BufferOffset(veneer.getOffset() + kInstrSize));
 
-  // Verify that the branch range matches what's encoded.
   DEBUG_PRINTF("\t%p(%x): ", branchInst, branch.getOffset());
-#ifdef JS_DISASM_RISCV64
-  disassembleInstr(branchInst, JitSpew_Codegen);
-#endif /* JS_DISASM_RISCV64 */
+  disassembleInstr(branchInst);
   DEBUG_PRINTF("\t insert veneer %x, branch: %x deadline: %x\n",
                veneer.getOffset(), branch.getOffset(), deadline.getOffset());
+
+  // Verify that the branch range matches what's encoded.
   MOZ_ASSERT(branchRange <= UncondBranchRangeType);
   MOZ_ASSERT(branchInst->GetImmBranchRangeType() == branchRange);
 
   // We want to insert veneer after branch in the linked list of instructions
   // that use the same unbound label.
   // The veneer should be an unconditional branch.
-  int32_t nextElemOffset = jumpChainTargetAt(buffer->getInst(branch), branch);
-  int32_t dist;
-  // If offset is kEndOfChain, this is the end of the linked list.
-  if (nextElemOffset != kEndOfChain) {
+  int32_t nextElemOffset = ImmPCRawOffset(branchInst);
+
+  // If nextElemOffset is 0, this is the end of the linked list.
+  if (nextElemOffset != kEndOfJumpChain) {
     // Make the offset relative to veneer so it targets the same instruction
     // as branchInst.
-    dist = nextElemOffset - veneer.getOffset();
-  } else {
-    dist = kEndOfJumpChain;
+    nextElemOffset += branch.getOffset() - veneer.getOffset();
   }
 
-  auto [Hi20, Lo12] = ToHigh20Low12(dist);
+  auto [Hi20, Lo12] = ToHigh20Low12(nextElemOffset);
 
   // Insert veneer as a long jump.
   veneerInst_1->SetUFormat(RO_AUIPC, t6.code(), Hi20);
@@ -1716,10 +1395,9 @@ void Assembler::PatchShortRangeBranchToVeneer(Buffer* buffer, unsigned rangeIdx,
     MOZ_ASSERT(branchInst->IsJal());
     branchInst->SetImm20JValue(offset);
   }
-#ifdef JS_DISASM_RISCV64
+
   DEBUG_PRINTF("\tfix to veneer:");
   disassembleInstr(branchInst);
-#endif /* JS_DISASM_RISCV64 */
 }
 }  // namespace jit
 }  // namespace js

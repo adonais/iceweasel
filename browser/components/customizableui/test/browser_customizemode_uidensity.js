@@ -52,7 +52,7 @@ async function testModeMenuitem(mode, modePref) {
 
   // Hover the normal menuitem again and check that the UI density reset to normal.
   EventUtils.synthesizeMouseAtCenter(normalItem, { type: "mouseover" });
-  await BrowserTestUtils.waitForCondition(() => !win.hasAttribute("uidensity"));
+  await TestUtils.waitForCondition(() => !win.hasAttribute("uidensity"));
 
   ok(
     !win.hasAttribute("uidensity"),
@@ -162,6 +162,11 @@ async function testModeMenuitem(mode, modePref) {
 }
 
 add_task(async function test_touch_mode_menuitem() {
+  // The density dropdown is only shown when Nova is disabled.
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.nova.enabled", false]],
+  });
+
   // OSX doesn't get touch mode for now.
   if (AppConstants.platform == "macosx") {
     is(
@@ -169,6 +174,7 @@ add_task(async function test_touch_mode_menuitem() {
       null,
       "There's no touch option on Mac OSX"
     );
+    await SpecialPowers.popPrefEnv();
     return;
   }
 
@@ -220,6 +226,45 @@ add_task(async function test_touch_mode_menuitem() {
       "Automatic Touch Mode is on when the checkbox is checked."
     );
   }
+
+  await endCustomizing();
+  await SpecialPowers.popPrefEnv();
+});
+
+// When Nova is enabled, a link to the Window Density section of
+// about:preferences is shown instead of the density dropdown.
+add_task(async function test_uidensity_link() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.nova.enabled", true]],
+  });
+
+  await startCustomizing();
+
+  let button = document.getElementById("customization-uidensity-button");
+  let link = document.getElementById("customization-uidensity-link");
+
+  ok(button.hidden, "The density dropdown button is hidden when Nova is on");
+  ok(!link.hidden, "The density link is visible when Nova is on");
+
+  let waitForNewTab = BrowserTestUtils.waitForNewTab(gBrowser, url =>
+    url.startsWith("about:preferences")
+  );
+  link.click();
+  let prefsTab = await waitForNewTab;
+
+  ok(
+    gBrowser.currentURI.spec.startsWith("about:preferences#appearance"),
+    "The link opened about:preferences#appearance"
+  );
+  BrowserTestUtils.removeTab(prefsTab);
+
+  // Wait for customize mode to be re-entered now that the customize tab is
+  // active. This is needed for endCustomizing() to work properly.
+  await TestUtils.waitForCondition(() =>
+    document.documentElement.hasAttribute("customizing")
+  );
+  await endCustomizing();
+  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function cleanup() {

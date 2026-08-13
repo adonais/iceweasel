@@ -14,6 +14,9 @@ import androidx.preference.Preference.OnPreferenceClickListener
 import androidx.preference.PreferenceFragmentCompat
 import kotlinx.coroutines.launch
 import mozilla.components.concept.sync.FxAEntryPoint
+import mozilla.components.service.fxa.manager.SCOPE_PROFILE
+import mozilla.components.service.fxa.manager.SCOPE_SESSION
+import mozilla.components.service.fxa.manager.SCOPE_SYNC
 import org.mozilla.fenix.R
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.requireComponents
@@ -81,6 +84,7 @@ class SyncDebugFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment
         setupSimulateErrorPreferences()
         setupScopeAuthorizationPreferences()
         setupOauthTokenFetchPreferences()
+        setupPairingPreferences()
         updateMenu()
     }
 
@@ -148,6 +152,33 @@ class SyncDebugFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment
                         ).show()
                     }
                 }
+                true
+            }
+        }
+    }
+
+    // Drives the pairing supplicant flow from a pasted pairing URL, standing in for
+    // the QR scanner so pairing can be exercised on an emulator with no camera.
+    private fun setupPairingPreferences() {
+        requirePreference<EditTextPreference>(R.string.pref_key_sync_debug_pairing_url).let { pref ->
+            pref.setOnBindEditTextListener { it.setSingleLine() }
+        }
+        requirePreference<Preference>(R.string.pref_key_sync_debug_pairing_start).let { pref ->
+            pref.onPreferenceClickListener = OnPreferenceClickListener {
+                val pairingUrl = requirePreference<EditTextPreference>(
+                    R.string.pref_key_sync_debug_pairing_url,
+                ).text?.trim().orEmpty()
+                if (pairingUrl.isEmpty()) {
+                    Toast.makeText(requireContext(), "Enter a pairing URL", Toast.LENGTH_SHORT).show()
+                    return@OnPreferenceClickListener true
+                }
+                val fxaEntryPoint = object : FxAEntryPoint { override val entryName = "sync-debug-pairing" }
+                requireComponents.services.accountsAuthFeature.beginPairingAuthentication(
+                    requireContext(),
+                    pairingUrl,
+                    fxaEntryPoint,
+                    setOf(SCOPE_SYNC, SCOPE_PROFILE, SCOPE_SESSION),
+                )
                 true
             }
         }

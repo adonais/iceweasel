@@ -32,8 +32,7 @@ JSObject* TextFormat::WrapObject(JSContext* aCx,
 already_AddRefed<TextFormat> TextFormat::Constructor(
     const GlobalObject& aGlobal, const TextFormatInit& aOptions) {
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
-  RefPtr<TextFormat> fmt = new TextFormat(global, aOptions);
-  return fmt.forget();
+  return MakeAndAddRef<TextFormat>(global, aOptions);
 }
 
 }  // namespace mozilla::dom

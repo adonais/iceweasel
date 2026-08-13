@@ -36,7 +36,6 @@
       --input-color-background-color: var(--button-background-color);
       --input-color-background-color-hover: var(--button-background-color-hover);
       --input-color-background-color-active: var(--button-background-color-active);
-      --input-color-border-radius: var(--border-radius-large);
       --input-color-space-padding-inline: var(--space-small);
     }
   }

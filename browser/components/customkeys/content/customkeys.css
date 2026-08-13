@@ -2,33 +2,184 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-th {
-  text-align: start;
+/* General color variables */
+:root {
+  /* These variables are set in customkeys.js for .search-highlight */
+  /* Source: https://searchfox.org/firefox-main/rev/37ae122d8d03366820f487aeac25e74a4be97fab/browser/components/preferences/findInPage.js#250 */
+  --search-highlight-background-color: light-dark(#ffe900, #003eaa);
+  --search-highlight-text-color: currentColor;
+
+  @media (forced-colors) {
+    --search-highlight-background-color: Highlight;
+    --search-highlight-text-color: HighlightText;
+  }
 }
 
-.clear {
+/* General page layout */
+
+body {
+  display: grid;
+  grid-template-columns: var(--size-sidebar) 1fr;
+  padding-inline-start: calc(var(--space-xlarge) * 4);
+  padding-inline-end: calc(var(--space-xlarge) * 2);
+  gap: calc(var(--space-xlarge) * 2);
+}
+
+.main-container {
+  max-width: var(--page-main-content-width);
+  padding-block: var(--space-xxlarge);
+}
+
+@media (max-width: 950px) {
+  body {
+    display: block;
+    padding-inline: var(--space-xxlarge);
+  }
+
+  .main-container {
+    max-width: unset;
+    padding-block-start: var(--space-xxlarge);
+    padding-block-end: unset;
+    padding-inline: calc(var(--space-xlarge) * 2);
+    box-sizing: border-box;
+  }
+}
+
+@media (max-width: 600px) {
+  .main-container {
+    padding-inline: var(--space-large);
+  }
+}
+
+.search-highlight {
+  background-color: var(--search-highlight-background-color);
+  color: var(--search-highlight-text-color);
+}
+
+/* List of keys styling */
+
+#table {
+  width: 100%;
+}
+
+/* ToDo: Remove when bug 1964412 is fixed: */
+.hidden {
   display: none;
 }
-.assigned .clear {
-  display: revert;
+
+/* Category accordions */
+
+moz-card {
+  margin-block: var(--space-xlarge);
 }
+
+moz-card::part(heading) {
+  --font-size-root: var(--font-size-heading-medium);
+}
+
+moz-card::part(summary) {
+  padding: var(--space-large);
+}
+
+moz-card[expanded]::part(summary) {
+  padding-inline-start: var(--space-large);
+}
+
+moz-box-group {
+  margin-inline: var(--space-large);
+  margin-bottom: var(--space-large);
+}
+
+/* Individual key rows */
+
+.key-content {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-medium);
+}
+
+.key-label-container {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+@media (max-width: 600px) {
+  /* Reflow the row to have two lines and use the first one for the label */
+  .key-label-container {
+    flex: 1 1 100%;
+  }
+}
+
+.key-label {
+  display: block;
+}
+
+.key-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xsmall);
+  /* 1 input + 2 icon buttons with gaps between them */
+  flex: 0 0 calc(var(--input-width) * 10 + var(--button-size-icon) * 2 + var(--space-xsmall) * 2);
+}
+
+@media (max-width: 600px) {
+  /* Reflow the row to have two lines and use the second one for actions */
+  .key-actions {
+    flex: 1 1 100%;
+  }
+}
+
+.key-actions .currentShortcut {
+  flex: 1 1 auto;
+  min-width: 0;
+  /* 1 input without 2 icon buttons and gaps between them */
+  max-width: calc(var(--input-width) * 10);
+}
+
+/* Edit button */
+
+.internal .change {
+  display: none;
+}
+
+/* Clear button */
+
+.clear {
+  visibility: hidden;
+  .assigned & {
+    visibility: visible;
+  }
+  .internal &,
+  .customized & {
+    display: none;
+  }
+}
+
+/* Reset/Restore button */
 
 .reset {
   display: none;
-}
-.customized .reset {
-  display: revert;
+  .customized & {
+    display: revert;
+  }
 }
 
-.newLabel {
+/* Editing mode controls (after Change/Edit button is activated) */
+
+.newKey {
   display: none;
 }
 
 .editing {
-  .change {
+  .change,
+  .currentShortcut {
     display: none;
   }
-  .newLabel {
+
+  .newKey {
     display: revert;
+    text-wrap: nowrap;
+    flex: 1 1 auto;
   }
 }

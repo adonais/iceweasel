@@ -7,6 +7,21 @@
 // This is loaded into all XUL windows. Wrap in a block to prevent
 // leaking to window scope.
 {
+  const lazy = {};
+
+  ChromeUtils.defineESModuleGetters(lazy, {
+    AutoCompleteParent: "resource://gre/actors/AutoCompleteParent.sys.mjs",
+  });
+
+  if (!customElements.get("autocomplete-row-item")) {
+    customElements.setElementCreationCallback("autocomplete-row-item", () => {
+      ChromeUtils.importESModule(
+        "chrome://global/content/autocomplete-row-item/autocomplete-row-item.mjs",
+        { global: "current" }
+      );
+    });
+  }
+
   const MozPopupElement = MozElements.MozElementMixin(XULPopupElement);
   MozElements.MozAutocompleteRichlistboxPopup = class MozAutocompleteRichlistboxPopup extends (
     MozPopupElement
@@ -26,6 +41,7 @@
       this.mPopupOpen = false;
       this._currentIndex = 0;
       this._disabledItemClicked = false;
+      this._secondaryActionFocused = false;
 
       this.setListeners();
     }
@@ -105,7 +121,7 @@
                 this.mousedOverIndex = index;
 
                 if (item.selectedByMouseOver) {
-                  this.richlistbox.selectedIndex = index;
+                  this._setSelectedIndex(index, true);
                 }
 
                 this.mLastMoveTime = Date.now();
@@ -153,10 +169,48 @@
     }
 
     set selectedIndex(val) {
-      if (val != this.richlistbox.selectedIndex) {
+      this._setSelectedIndex(val, false);
+    }
+
+    _setSelectedIndex(val, pointer) {
+      const changed = val != this.richlistbox.selectedIndex;
+      if (changed) {
         this._previousSelectedIndex = this.richlistbox.selectedIndex;
       }
+
+      this.richlistbox.toggleAttribute("pointerselected", pointer);
+
       this.richlistbox.selectedIndex = val;
+
+      const prevSelectedItem = this.richlistbox.children[
+        this._previousSelectedIndex
+      ]?.querySelector("autocomplete-row-item");
+      const selectedItem = this.richlistbox.children[val]?.querySelector(
+        "autocomplete-row-item"
+      );
+
+      if (prevSelectedItem) {
+        prevSelectedItem.selected = false;
+      }
+
+      if (selectedItem) {
+        selectedItem.selected = true;
+      }
+
+      if (changed) {
+        this._secondaryActionFocused = false;
+        if (prevSelectedItem) {
+          prevSelectedItem.subfocused = false;
+        }
+        if (selectedItem) {
+          selectedItem.subfocused = false;
+        }
+      }
+
+      if (changed && (selectedItem || prevSelectedItem)) {
+        lazy.AutoCompleteParent.getCurrentActor()?.previewAutoCompleteEntry();
+      }
+
       // Since ensureElementIsVisible may cause an expensive Layout flush,
       // invoke it only if there may be a scrollbar, so if we could fetch
       // more results than we can show at once.
@@ -291,9 +345,11 @@
       this._invalidate(reason);
     }
 
-    _invalidate(reason) {
+    _invalidate() {
       // collapsed if no matches
       this.richlistbox.collapsed = this.matchCount == 0;
+
+      this._setSecondaryActionFocused(false);
 
       // Update the richlistbox height.
       if (this._adjustHeightRAFToken) {
@@ -314,7 +370,15 @@
       if (this._appendResultTimeout) {
         clearTimeout(this._appendResultTimeout);
       }
-      this._appendCurrentResult(reason);
+
+      if (
+        !this.richlistbox.classList.contains("autocomplete-row-item-container")
+      ) {
+        this.richlistbox.replaceChildren();
+      }
+
+      this.richlistbox.classList.add("autocomplete-row-item-container");
+      this._appendAutocompleteResults();
     }
 
     _collapseUnusedItems() {
@@ -381,20 +445,37 @@
       this.richlistbox.style.maxHeight = Math.ceil(height) + "px";
     }
 
-    _appendCurrentResult(invalidateReason) {
-      var controller = this.mInput.controller;
-      var matchCount = this.matchCount;
-      var existingItemsCount = this.richlistbox.children.length;
+    _createAutocompleteRowItem() {
+      const item = document.createXULElement("richlistitem");
+      item.className = "autocomplete-row-item";
+      item.selectedByMouseOver = true;
+      item.appendChild(document.createElement("autocomplete-row-item"));
+      return item;
+    }
+
+    // Importable-login results reuse legacy Fluent strings whose value embeds
+    // <div data-l10n-name="line1/line2"> markup; split it into the row item's
+    // label and description.
+    async _localizeRowLabel(row, { id, args }) {
+      MozXULElement.insertFTLIfNeeded("toolkit/main-window/autocomplete.ftl");
+      const value = await document.l10n.formatValue(id, args);
+      const parsed = new DOMParser().parseFromString(value, "text/html");
+      const line1 = parsed.querySelector('[data-l10n-name="line1"]');
+      const line2 = parsed.querySelector('[data-l10n-name="line2"]');
+      row.label = (line1 ?? parsed.body).textContent;
+      row.description = line2?.textContent ?? null;
+    }
+
+    _appendAutocompleteResults() {
+      const controller = this.mInput.controller;
+      const matchCount = this.matchCount;
 
       // Process maxRows per chunk to improve performance and user experience
       for (let i = 0; i < this.maxRows; i++) {
         if (this._currentIndex >= matchCount) {
           break;
         }
-        let item;
-        let itemExists = this._currentIndex < existingItemsCount;
 
-        let originalValue, originalText, originalType;
         let style = controller.getStyleAt(this._currentIndex);
         let value =
           style && style.includes("autofill")
@@ -403,153 +484,71 @@
         let label = controller.getLabelAt(this._currentIndex);
         let comment = controller.getCommentAt(this._currentIndex);
         let image = controller.getImageAt(this._currentIndex);
-        // trim the leading/trailing whitespace
-        let trimmedSearchString = controller.searchString
-          .replace(/^\s+/, "")
-          .replace(/\s+$/, "");
 
-        // Generic items can pack their details as JSON inside label
+        let parsedComment = null;
         try {
-          const details = JSON.parse(label);
-          if (details.title) {
-            value = details.title;
-            label = details.subtitle ?? "";
-          }
+          parsedComment = comment?.length ? JSON.parse(comment) : null;
         } catch {}
 
-        let reusable = false;
-        if (itemExists) {
-          item = this.richlistbox.children[this._currentIndex];
-
-          // Url may be a modified version of value, see _adjustAcItem().
-          originalValue =
-            item.getAttribute("url") || item.getAttribute("ac-value");
-          originalText = item.getAttribute("ac-text");
-          originalType = item.getAttribute("originaltype");
-
-          // The styles on the list which have different <content> structure and overrided
-          // _adjustAcItem() are unreusable.
-          const UNREUSEABLE_STYLES = [
-            "autofill",
-            "action",
-            "generatedPassword",
-            "generic",
-            "importableLearnMore",
-            "importableLogins",
-            "insecureWarning",
-            "loginsFooter",
-            "loginWithOrigin",
-          ];
-          // Reuse the item when its style is exactly equal to the previous style or
-          // neither of their style are in the UNREUSEABLE_STYLES.
-          reusable =
-            originalType === style ||
-            !(
-              UNREUSEABLE_STYLES.includes(style) ||
-              UNREUSEABLE_STYLES.includes(originalType)
-            );
+        // Reuse the existing row item for an existing result if possible.
+        if (!this.richlistbox.children[this._currentIndex]) {
+          this.richlistbox.appendChild(this._createAutocompleteRowItem());
         }
 
-        // If no reusable item available, then create a new item.
-        if (!reusable) {
-          let options = null;
-          switch (style) {
-            case "autofill":
-              options = { is: "autocomplete-autofill-richlistitem" };
-              break;
-            case "action":
-              options = { is: "autocomplete-action-richlistitem" };
-              break;
-            case "generic":
-              options = { is: "autocomplete-two-line-richlistitem" };
-              break;
-            case "importableLearnMore":
-              options = {
-                is: "autocomplete-importable-learn-more-richlistitem",
-              };
-              break;
-            case "importableLogins":
-              options = { is: "autocomplete-importable-logins-richlistitem" };
-              break;
-            case "generatedPassword":
-              options = { is: "autocomplete-generated-password-richlistitem" };
-              break;
-            case "insecureWarning":
-              options = { is: "autocomplete-richlistitem-insecure-warning" };
-              break;
-            case "loginsFooter":
-              options = { is: "autocomplete-richlistitem-logins-footer" };
-              break;
-            case "loginWithOrigin":
-              options = { is: "autocomplete-login-richlistitem" };
-              break;
-            default:
-              options = { is: "autocomplete-richlistitem" };
+        const item = this.richlistbox.children[this._currentIndex];
+        const row = item.querySelector("autocomplete-row-item");
+
+        if (row) {
+          if (parsedComment?.l10n) {
+            this._localizeRowLabel(row, parsedComment.l10n);
+          } else {
+            row.label = label;
+            row.description = parsedComment?.secondary ?? null;
           }
-          item = document.createXULElement("richlistitem", options);
-          item.className = "autocomplete-richlistitem";
+          row.icon = parsedComment?.icon ?? image;
+          row.value = value;
+          const secondaryAction = parsedComment?.secondaryAction;
+          row.actions = {
+            primary: () => {},
+            secondary: secondaryAction
+              ? {
+                  type: secondaryAction.type,
+                  label: secondaryAction.label,
+                  action: () =>
+                    lazy.AutoCompleteParent.getCurrentActor()?.selectAutoCompleteEntry(
+                      true
+                    ),
+                }
+              : null,
+          };
         }
 
         item.setAttribute("dir", this.style.direction);
-        item.setAttribute("ac-image", image);
-        item.setAttribute("ac-value", value);
-        item.setAttribute("ac-label", label);
-        item.setAttribute("ac-comment", comment);
-        item.setAttribute("ac-text", trimmedSearchString);
+        item.setAttribute("originaltype", style);
+        item.toggleAttribute(
+          "footer",
+          ["action", "loginsFooter"].includes(style)
+        );
 
-        // Completely reuse the existing richlistitem for invalidation
-        // due to new results, but only when: the item is the same, *OR*
-        // we are about to replace the currently moused-over item, to
-        // avoid surprising the user.
-        let iface = Ci.nsIAutoCompletePopup;
-        if (
-          reusable &&
-          originalText == trimmedSearchString &&
-          invalidateReason == iface.INVALIDATE_REASON_NEW_RESULT &&
-          (originalValue == value ||
-            this.mousedOverIndex === this._currentIndex)
-        ) {
-          // try to re-use the existing item
-          item._reuseAcItem();
-          this._currentIndex++;
-          continue;
+        if (parsedComment?.ariaLabel) {
+          item.setAttribute("aria-label", parsedComment.ariaLabel);
         } else {
-          if (typeof item._cleanup == "function") {
-            item._cleanup();
-          }
-          item.setAttribute("originaltype", style);
+          item.removeAttribute("aria-label");
         }
 
-        if (reusable) {
-          // Adjust only when the result's type is reusable for existing
-          // item's. Otherwise, we might insensibly call old _adjustAcItem()
-          // as new binding has not been attached yet.
-          // We don't need to worry about switching to new binding, since
-          // _adjustAcItem() will fired by its own constructor accordingly.
-          item._adjustAcItem();
-          item.collapsed = false;
-        } else if (itemExists) {
-          let oldItem = this.richlistbox.children[this._currentIndex];
-          this.richlistbox.replaceChild(item, oldItem);
+        if (parsedComment?.type) {
+          item.setAttribute("type", parsedComment.type);
         } else {
-          this.richlistbox.appendChild(item);
+          item.removeAttribute("type");
         }
+        item.collapsed = false;
 
         this._currentIndex++;
       }
 
-      if (typeof this.onResultsAdded == "function") {
-        // The items bindings may not be attached yet, so we must delay this
-        // before we can properly handle items properly without breaking
-        // the richlistbox.
-        Services.tm.dispatchToMainThread(() => this.onResultsAdded());
-      }
-
       if (this._currentIndex < matchCount) {
-        // yield after each batch of items so that typing the url bar is
-        // responsive
         this._appendResultTimeout = setTimeout(
-          () => this._appendCurrentResult(),
+          () => this._appendAutocompleteResults(),
           0
         );
       }
@@ -574,6 +573,58 @@
         // e.g. "this.selectedIndex has no properties", when you type fast and hit a
         // navigation key before this popup has opened
       }
+    }
+
+    get _selectedRowItem() {
+      return this.richlistbox.selectedItem?.querySelector(
+        "autocomplete-row-item"
+      );
+    }
+
+    _setSecondaryActionFocused(focused) {
+      this._secondaryActionFocused = focused;
+      const rowItem = this._selectedRowItem;
+      if (rowItem) {
+        rowItem.subfocused = focused;
+      }
+      if (focused && this.mPopupOpen && this.richlistbox.selectedItem) {
+        this.richlistbox.ensureElementIsVisible(this.richlistbox.selectedItem);
+        const label = rowItem?.actions?.secondary?.label;
+        if (label) {
+          window.A11yUtils?.announce({ raw: label });
+        }
+      }
+    }
+
+    navigateSecondaryAction(reverse) {
+      if (!this._selectedRowItem?.actions?.secondary) {
+        return false;
+      }
+
+      if (reverse) {
+        if (this._secondaryActionFocused) {
+          this._setSecondaryActionFocused(false);
+          return true;
+        }
+        return false;
+      }
+
+      if (this._secondaryActionFocused) {
+        this._setSecondaryActionFocused(false);
+        return false;
+      }
+      this._setSecondaryActionFocused(true);
+      return true;
+    }
+
+    maybeActivateSecondaryAction() {
+      if (!this._secondaryActionFocused) {
+        return false;
+      }
+      const rowItem = this._selectedRowItem;
+      rowItem?.activateSecondaryAction();
+      this._setSecondaryActionFocused(false);
+      return true;
     }
 
     disconnectedCallback() {
@@ -613,6 +664,7 @@
         this.input.controller.stopSearch();
 
         this.mPopupOpen = false;
+        this._setSecondaryActionFocused(false);
 
         // Reset the maxRows property to the cached "normal" value (if there's
         // any), and reset normalMaxRows so that we can detect whether it was set

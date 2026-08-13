@@ -5,21 +5,21 @@
 #include "nsPACMan.h"
 
 #include "mozilla/Preferences.h"
-#include "nsContentUtils.h"
+#include "mozilla/StaticPrefs_network.h"
+#include "mozilla/Try.h"
 #include "nsComponentManagerUtils.h"
+#include "nsContentUtils.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
 #include "nsIAuthPrompt.h"
 #include "nsIDHCPClient.h"
 #include "nsIHttpChannel.h"
+#include "nsIOService.h"
 #include "nsIPrefBranch.h"
 #include "nsIPromptFactory.h"
 #include "nsIProtocolProxyService.h"
 #include "nsISystemProxySettings.h"
-#include "nsIOService.h"
 #include "nsNetUtil.h"
 #include "nsThreadUtils.h"
-#include "mozilla/StaticPrefs_network.h"
-#include "mozilla/Try.h"
 
 //-----------------------------------------------------------------------------
 

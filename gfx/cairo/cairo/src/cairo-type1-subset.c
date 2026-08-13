@@ -1068,6 +1068,8 @@ cairo_type1_font_for_each_subr (cairo_type1_font_subset_t  *font,
     p = array_start;
     while (p + 3 < cleartext_end && strncmp (p, "dup", 3) == 0) {
 	p = skip_token (p, cleartext_end);
+	if (p == NULL)
+	    return CAIRO_INT_STATUS_UNSUPPORTED;
 
 	/* get subr number */
 	subr_num = strtol (p, &end, 10);
@@ -1085,7 +1087,14 @@ cairo_type1_font_for_each_subr (cairo_type1_font_subset_t  *font,
 
 	/* Skip past -| or RD to binary data.  There is exactly one space
 	 * between the -| or RD token and the encrypted data, thus '+ 1'. */
-	subr_string = skip_token (end, cleartext_end) + 1;
+	subr_string = skip_token (end, cleartext_end);
+	if (subr_string == NULL)
+	    return CAIRO_INT_STATUS_UNSUPPORTED;
+	subr_string++;
+
+	/* The declared subr length must lie within the cleartext buffer. */
+	if (subr_length < 0 || subr_length > cleartext_end - subr_string)
+	    return CAIRO_INT_STATUS_UNSUPPORTED;
 
 	np = NULL;
 	np_length = 0;
@@ -1101,6 +1110,8 @@ cairo_type1_font_for_each_subr (cairo_type1_font_subset_t  *font,
 	/* Some fonts have "noaccess put" instead of "NP" */
 	if (p + 3 < cleartext_end && strncmp (p, "put", 3) == 0) {
 	    p = skip_token (p, cleartext_end);
+	    if (p == NULL)
+		return CAIRO_INT_STATUS_UNSUPPORTED;
 	    while (p < cleartext_end && _cairo_isspace(*p))
 		p++;
 
@@ -1246,6 +1257,8 @@ cairo_type1_font_subset_for_each_glyph (cairo_type1_font_subset_t *font,
     while (*p == '/') {
 	name = p + 1;
 	p = skip_token (p, dict_end);
+	if (p == NULL)
+	    return CAIRO_INT_STATUS_UNSUPPORTED;
 	name_length = p - name;
 
 	charstring_length = strtol (p, &end, 10);
@@ -1254,7 +1267,14 @@ cairo_type1_font_subset_for_each_glyph (cairo_type1_font_subset_t *font,
 
 	/* Skip past -| or RD to binary data.  There is exactly one space
 	 * between the -| or RD token and the encrypted data, thus '+ 1'. */
-	charstring = skip_token (end, dict_end) + 1;
+	charstring = skip_token (end, dict_end);
+	if (charstring == NULL)
+	    return CAIRO_INT_STATUS_UNSUPPORTED;
+	charstring++;
+
+	/* The declared charstring length must lie within the cleartext buffer. */
+	if (charstring_length < 0 || charstring_length > dict_end - charstring)
+	    return CAIRO_INT_STATUS_UNSUPPORTED;
 
 	/* Skip binary data and |- or ND token. */
 	p = skip_token (charstring + charstring_length, dict_end);

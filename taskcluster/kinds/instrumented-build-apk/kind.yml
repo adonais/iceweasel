@@ -32,8 +32,6 @@ task-defaults:
 tasks:
     fenix:
         description: 'Generate baseline profile apks for fenix.'
-        attributes:
-            shipping-product: fenix
         dependencies:
             build-fat-aar: build-fat-aar-android-geckoview-fat-aar/opt
         source-project-name: "fenix"

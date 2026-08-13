@@ -1,0 +1,19 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+about:
+  description: Nimbus Feature Manifest for the Media feature.
+  android:
+    package: mozilla.components.feature.media
+    class: .MediaNimbus
+channels:
+  - default
+features:
+  media-notification-improvements:
+    description: Whether to show the media notification improvements
+    variables:
+      enabled:
+        description: enabled media notification improvements if true, else not enabled
+        type: Boolean
+        default: false

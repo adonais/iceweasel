@@ -5,12 +5,12 @@
 #ifndef mozilla_net_NullHttpChannel_h
 #define mozilla_net_NullHttpChannel_h
 
-#include "nsINullChannel.h"
+#include "mozilla/TimeStamp.h"
+#include "nsCOMPtr.h"
 #include "nsIHttpChannel.h"
+#include "nsINullChannel.h"
 #include "nsITimedChannel.h"
 #include "nsIURI.h"
-#include "nsCOMPtr.h"
-#include "mozilla/TimeStamp.h"
 #include "nsString.h"
 #include "prtime.h"
 

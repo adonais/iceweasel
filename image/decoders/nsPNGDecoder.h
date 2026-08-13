@@ -7,10 +7,10 @@
 #define mozilla_image_decoders_nsPNGDecoder_h
 
 #include "Decoder.h"
-#include "png.h"
 #include "StreamingLexer.h"
 #include "SurfacePipe.h"
 #include "mozilla/gfx/Swizzle.h"
+#include "png.h"
 
 namespace mozilla {
 namespace image {

@@ -614,7 +614,7 @@ add_task(async function restrictToken() {
     context,
     matches: [
       makeSearchResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         heuristic: true,
         query: SEARCH_STRING,
         alias: UrlbarShared.RESTRICT_TOKENS.BOOKMARK,
@@ -894,7 +894,7 @@ add_task(async function prohibit_suggestions() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: `http://${SEARCH_STRING}/`,
         title: `${SEARCH_STRING}/`,
         iconUri: "",
@@ -939,7 +939,7 @@ add_task(async function prohibit_suggestions() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: `http://${SEARCH_STRING}/`,
         title: `${SEARCH_STRING}/`,
         iconUri: "",
@@ -958,7 +958,7 @@ add_task(async function prohibit_suggestions() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: "http://somethingelse/",
         title: "somethingelse/",
         iconUri: "",
@@ -993,7 +993,7 @@ add_task(async function prohibit_suggestions() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: "http://1.2.3.4/",
         title: "http://1.2.3.4/",
         iconUri: "page-icon:http://1.2.3.4/",
@@ -1007,7 +1007,7 @@ add_task(async function prohibit_suggestions() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: "http://[2001::1]:30/",
         title: "[2001::1]:30/",
         iconUri: "",
@@ -1021,7 +1021,7 @@ add_task(async function prohibit_suggestions() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: "http://user:pass@test/",
         title: "user:pass@test/",
         iconUri: "",
@@ -1035,7 +1035,7 @@ add_task(async function prohibit_suggestions() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: "http://user:pass@mozilla.org/",
         title: "user:pass@mozilla.org/",
         iconUri: "",
@@ -1049,7 +1049,7 @@ add_task(async function prohibit_suggestions() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: "http://mozilla.org:1234/",
         title: "mozilla.org:1234/",
         iconUri: "",
@@ -1063,7 +1063,7 @@ add_task(async function prohibit_suggestions() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: "data:text/plain,Content",
         title: "data:text/plain,Content",
         iconUri: "",
@@ -1106,7 +1106,7 @@ add_task(async function simple_origin_queries() {
       let context = createContext(query, { isPrivate: false });
       let expected = [
         makeVisitResult(context, {
-          source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+          source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
           title: `${query}/`,
           uri: `http://${query}/`,
           iconUri: "",
@@ -1428,7 +1428,7 @@ add_task(async function avoid_remote_url_suggestions_2() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: "ftp://test/",
         title: "ftp://test/",
         iconUri: "",
@@ -1486,7 +1486,7 @@ add_task(async function avoid_remote_url_suggestions_2() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: "http://www/",
         title: "http://www/",
         iconUri: "",
@@ -1500,7 +1500,7 @@ add_task(async function avoid_remote_url_suggestions_2() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: "https://www/",
         title: "https://www/",
         iconUri: "",
@@ -1514,7 +1514,7 @@ add_task(async function avoid_remote_url_suggestions_2() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: "http://test/",
         title: "http://test/",
         iconUri: "",
@@ -1528,7 +1528,7 @@ add_task(async function avoid_remote_url_suggestions_2() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: "https://test/",
         title: "https://test/",
         iconUri: "",
@@ -1542,7 +1542,7 @@ add_task(async function avoid_remote_url_suggestions_2() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: "http://www.test/",
         title: "http://www.test/",
         iconUri: "",
@@ -1556,7 +1556,7 @@ add_task(async function avoid_remote_url_suggestions_2() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: "http://www.test.com/",
         title: "http://www.test.com/",
         iconUri: "",
@@ -1600,7 +1600,7 @@ add_task(async function avoid_remote_url_suggestions_2() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: "file:///Users",
         title: "file:///Users",
         iconUri: "",
@@ -1876,7 +1876,7 @@ add_task(async function formHistory() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         uri: "http://foo.example.com/",
         title: "test visit for http://foo.example.com/",
         heuristic: true,

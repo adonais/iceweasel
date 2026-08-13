@@ -5,15 +5,15 @@
 #ifndef mozilla_textcompositionsynthesizer_h_
 #define mozilla_textcompositionsynthesizer_h_
 
-#include "mozilla/RefPtr.h"
-#include "nsString.h"
+#include "WritingModes.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/TextEventDispatcherListener.h"
 #include "mozilla/TextRange.h"
 #include "mozilla/widget/IMEData.h"
-#include "WritingModes.h"
+#include "nsString.h"
 
 class nsIWidget;
 

@@ -5,6 +5,46 @@
 #include "nsISupports.idl"
 
 /**
+ * Interface used to probe the active content classification
+ * engines. This contains enough information to define a
+ * request uniquely. requestType should be one of the types
+ * accepted by the underlying Rust crate.
+ *
+ * These are not used internally to save an nsISupports
+ * construction on every network request. Currently only
+ * used by the about:url-classifier.
+ */
+[scriptable, uuid(a229970f-205f-48fd-9eaf-a2f8aa8a0e4f)]
+interface nsIContentClassifierProbeRequest : nsISupports {
+    readonly attribute ACString url;
+    readonly attribute ACString sourceUrl;
+    readonly attribute ACString topWindowUrl;
+    readonly attribute ACString requestType;
+    readonly attribute boolean privateBrowsing;
+    readonly attribute boolean forceThirdPartyToTop;
+    readonly attribute boolean isNonRecommendedAddon;
+};
+
+/**
+ * Interface used to get results from an active content
+ * classification engine. If you want a combined verdict
+ * from multiple engines, see
+ * nsIContentClassifierService_ProbeStatus.
+ *
+ * These are not used internally to save an nsISupports
+ * construction on every network request. Currently only
+ * used by the about:url-classifier.
+ */
+[scriptable, uuid(2B0F5D14-3D44-4F9A-9FB8-A8D9C9F6D921)]
+interface nsIContentClassifierProbeResult : nsISupports {
+    readonly attribute ACString featureName;
+    readonly attribute boolean matched;
+    readonly attribute boolean exception;
+    readonly attribute boolean important;
+    readonly attribute nsresult engineResult;
+};
+
+/**
  * Interface for the content classifier service. Used by the JS
  * RemoteSettings client to notify the C++ service of filter list
  * additions, updates, and removals. The service pulls the actual
@@ -32,6 +72,52 @@ interface nsIContentClassifierService : nsISupports {
      * filter list IDs are grouped into a single classification engine.
      */
     Array<ACString> getFeatureNames();
+
+    /**
+     * Result enum of a classification against a set of engines.
+     */
+    cenum ProbeStatus : 8 {
+        Miss = 0,
+        Hit = 1,
+        Exception = 2,
+        ImportantHit = 3,
+        ImportantException = 4,
+    };
+
+    /**
+     * Return the results of testing if a request would be blocked.
+     * Used for about:url-classifier. Resolves with an
+     * nsIContentClassifierProbeReport.
+     */
+    [implicit_jscontext] Promise probeBlocking(
+        in nsIContentClassifierProbeRequest aRequest);
+
+    /**
+     * Return the results of testing if a request would be annotated
+     * as a tracker. Used for about:url-classifier. Resolves with an
+     * nsIContentClassifierProbeReport.
+     */
+    [implicit_jscontext] Promise probeAnnotate(
+        in nsIContentClassifierProbeRequest aRequest);
+
+    /**
+     * Return the results of testing if a request would match a
+     * particular feature. Used for about:url-classifier. Resolves with
+     * an nsIContentClassifierProbeResult.
+     */
+    [implicit_jscontext] Promise probeFeature(
+        in ACString aFeatureName,
+        in nsIContentClassifierProbeRequest aRequest);
+};
+
+/**
+ * Aggregated report from a probeBlocking / probeAnnotate call: the
+ * per-engine results plus the combined ProbeStatus verdict.
+ */
+[scriptable, uuid(f5c1c07e-1b8d-4fbd-9df5-1c1b0dfb2d61)]
+interface nsIContentClassifierProbeReport : nsISupports {
+    readonly attribute nsIContentClassifierService_ProbeStatus status;
+    readonly attribute Array<nsIContentClassifierProbeResult> results;
 };
 
 %{C++
@@ -40,4 +126,7 @@ interface nsIContentClassifierService : nsISupports {
 // in production.
 #define NS_CONTENT_CLASSIFIER_FILTER_LISTS_LOADED_TOPIC \
   "test-content-classifier-filter-lists-loaded"
+
+#define NS_CONTENTCLASSIFIERSERVICE_CONTRACTID \
+  "@mozilla.org/content-classifier-service;1"
 %}

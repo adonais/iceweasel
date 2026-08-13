@@ -7,8 +7,8 @@
 #define ZeroRttHandle_h_
 
 #include "mozilla/Maybe.h"
-#include "nsIWeakReferenceUtils.h"
 #include "nsISupportsImpl.h"
+#include "nsIWeakReferenceUtils.h"
 #include "nscore.h"
 
 namespace mozilla::net {
@@ -108,6 +108,9 @@ class ZeroRttHandle {
   // connect-target:port and no path, which is what the HT shim would
   // otherwise return before Adopt.
   nsHttpTransaction* RealTxn() const;
+
+  // Test-only: force the race-wide 0-RTT started flag directly.
+  void SetAnyStartedForTesting() { mAny0RttStarted = true; }
 
   void Cleanup();
 

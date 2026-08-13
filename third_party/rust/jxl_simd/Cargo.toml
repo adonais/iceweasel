@@ -46,7 +46,8 @@ sse42 = []
 name = "jxl_simd"
 path = "src/lib.rs"
 
-[dependencies]
+[dependencies.rustversion]
+version = "1"
 
 [dev-dependencies]
 arbtest = "0.3.2"

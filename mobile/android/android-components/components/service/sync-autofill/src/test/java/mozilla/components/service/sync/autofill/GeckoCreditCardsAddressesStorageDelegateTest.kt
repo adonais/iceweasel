@@ -14,6 +14,7 @@ import mozilla.components.concept.storage.CreditCardEntry
 import mozilla.components.concept.storage.CreditCardNumber
 import mozilla.components.concept.storage.CreditCardValidationDelegate
 import mozilla.components.concept.storage.NewCreditCardFields
+import mozilla.components.concept.storage.UpdatableAddressFields
 import mozilla.components.concept.storage.UpdatableCreditCardFields
 import mozilla.components.lib.dataprotect.SecureAbove22Preferences
 import mozilla.components.support.ktx.kotlin.last4Digits
@@ -208,6 +209,85 @@ class GeckoCreditCardsAddressesStorageDelegateTest {
             verify(storage, times(0)).updateCreditCard(any(), any())
         }
     }
+
+    @Test
+    fun `GIVEN an address without a guid WHEN onAddressSave is called THEN it adds a new address in storage`() =
+        runTest(testDispatcher) {
+            val storage: AutofillCreditCardsAddressesStorage = mock()
+            delegate = GeckoCreditCardsAddressesStorageDelegate(lazy { storage }, testDispatcher, validationDelegate)
+
+            val address = Address(
+                guid = "",
+                name = "John Doe",
+                organization = "Mozilla",
+                streetAddress = "999 Test Street",
+                addressLevel3 = "",
+                addressLevel2 = "Mountain View",
+                addressLevel1 = "CA",
+                postalCode = "94016",
+                country = "US",
+                tel = "+15551234567",
+                email = "john@example.com",
+            )
+
+            delegate.onAddressSave(address)
+
+            verify(storage, times(1)).addAddress(
+                UpdatableAddressFields(
+                    name = "John Doe",
+                    organization = "Mozilla",
+                    streetAddress = "999 Test Street",
+                    addressLevel3 = "",
+                    addressLevel2 = "Mountain View",
+                    addressLevel1 = "CA",
+                    postalCode = "94016",
+                    country = "US",
+                    tel = "+15551234567",
+                    email = "john@example.com",
+                ),
+            )
+            verify(storage, never()).updateAddress(any(), any())
+        }
+
+    @Test
+    fun `GIVEN an address with a guid WHEN onAddressSave is called THEN it updates the existing address in storage`() =
+        runTest(testDispatcher) {
+            val storage: AutofillCreditCardsAddressesStorage = mock()
+            delegate = GeckoCreditCardsAddressesStorageDelegate(lazy { storage }, testDispatcher, validationDelegate)
+
+            val address = Address(
+                guid = "test-guid",
+                name = "John Doe",
+                organization = "Mozilla",
+                streetAddress = "999 Test Street",
+                addressLevel3 = "",
+                addressLevel2 = "Mountain View",
+                addressLevel1 = "CA",
+                postalCode = "94016",
+                country = "US",
+                tel = "+15551234567",
+                email = "john@example.com",
+            )
+
+            delegate.onAddressSave(address)
+
+            verify(storage, times(1)).updateAddress(
+                guid = "test-guid",
+                address = UpdatableAddressFields(
+                    name = "John Doe",
+                    organization = "Mozilla",
+                    streetAddress = "999 Test Street",
+                    addressLevel3 = "",
+                    addressLevel2 = "Mountain View",
+                    addressLevel1 = "CA",
+                    postalCode = "94016",
+                    country = "US",
+                    tel = "+15551234567",
+                    email = "john@example.com",
+                ),
+            )
+            verify(storage, never()).addAddress(any())
+        }
 
     @Test
     fun `GIVEN address autofill is enabled WHEN onAddressesFetch is called THEN it returns all stored addresses`() =

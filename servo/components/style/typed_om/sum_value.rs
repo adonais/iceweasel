@@ -5,6 +5,7 @@
 //! Typed OM Sum Value.
 
 use crate::typed_om::numeric::NoCalcNumeric;
+use crate::typed_om::numeric_type::NumericType;
 use crate::typed_om::{MathSum, MathValue, NumericValue, UnitValue};
 use itertools::Itertools;
 use std::collections::HashMap;
@@ -46,6 +47,7 @@ impl SumValueItem {
         // Step 2.
         if self.unit_map.is_empty() {
             return Ok(UnitValue {
+                numeric_type: NumericType::number(),
                 value: self.value,
                 unit: CssString::from("number"),
             });
@@ -59,6 +61,7 @@ impl SumValueItem {
 
         // Step 4.
         Ok(UnitValue {
+            numeric_type: NumericType::from_unit_unchecked(unit),
             value: self.value,
             unit: CssString::from(unit),
         })
@@ -108,7 +111,7 @@ impl SumValue {
                 let mut values: Vec<SumValueItem> = Vec::new();
 
                 // Step 2.
-                for item in math_sum {
+                for item in &math_sum.values {
                     // Step 2.1.
                     let value = SumValue::try_from_numeric_value(item)?;
 
@@ -150,7 +153,7 @@ impl SumValue {
                 }];
 
                 // Step 2.
-                for item in math_product {
+                for item in &math_product.values {
                     // Step 2.1 & 2.2.
                     let new_values = SumValue::try_from_numeric_value(item)?;
 
@@ -185,7 +188,7 @@ impl SumValue {
             // CSSMathNegate
             NumericValue::Math(MathValue::Negate(math_negate)) => {
                 // Step 1 & 2.
-                let mut values = SumValue::try_from_numeric_value(math_negate)?.0;
+                let mut values = SumValue::try_from_numeric_value(&math_negate.value)?.0;
 
                 // Step 3.
                 for item in &mut values {
@@ -199,7 +202,7 @@ impl SumValue {
             // CSSMathInvert
             NumericValue::Math(MathValue::Invert(math_invert)) => {
                 // Step 1 & 2.
-                let mut values = SumValue::try_from_numeric_value(math_invert)?.0;
+                let mut values = SumValue::try_from_numeric_value(&math_invert.value)?.0;
 
                 // Step 3.
                 if values.len() != 1 {
@@ -223,7 +226,7 @@ impl SumValue {
                 // Step 1 & 2.
                 let mut args = Vec::new();
 
-                for item in math_min {
+                for item in &math_min.values {
                     let values = SumValue::try_from_numeric_value(item)?;
 
                     if values.0.len() > 1 {
@@ -255,7 +258,7 @@ impl SumValue {
                 // Step 1 & 2.
                 let mut args = Vec::new();
 
-                for item in math_max {
+                for item in &math_max.values {
                     let values = SumValue::try_from_numeric_value(item)?;
 
                     if values.0.len() > 1 {
@@ -303,9 +306,9 @@ impl SumValue {
             // See https://github.com/w3c/csswg-drafts/issues/14038
             NumericValue::Math(MathValue::Clamp(math_clamp)) => {
                 // Step 1 & 2.
-                let lower = SumValue::try_from_numeric_value(&math_clamp[0])?;
-                let value = SumValue::try_from_numeric_value(&math_clamp[1])?;
-                let upper = SumValue::try_from_numeric_value(&math_clamp[2])?;
+                let lower = SumValue::try_from_numeric_value(&math_clamp.values[0])?;
+                let value = SumValue::try_from_numeric_value(&math_clamp.values[1])?;
+                let upper = SumValue::try_from_numeric_value(&math_clamp.values[2])?;
 
                 if lower.0.len() > 1 || value.0.len() > 1 || upper.0.len() > 1 {
                     return Err(());
@@ -330,6 +333,8 @@ impl SumValue {
     /// Step 3 of:
     /// https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-to
     pub fn to_unit(&self, unit: &str) -> Result<UnitValue, ()> {
+        debug_assert!(NumericType::try_from_unit(unit).is_ok());
+
         if self.0.len() != 1 {
             return Err(());
         }
@@ -343,6 +348,7 @@ impl SumValue {
             let converted = numeric.to(unit)?;
 
             UnitValue {
+                numeric_type: NumericType::from_unit_unchecked(converted.unit()),
                 value: converted.unitless_value(),
                 unit: CssString::from(converted.unit()),
             }
@@ -354,6 +360,10 @@ impl SumValue {
     /// Step 3-6 of:
     /// https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-tosum
     pub fn to_units(&self, units: &[&str]) -> Result<MathSum, ()> {
+        debug_assert!(units
+            .iter()
+            .all(|unit| NumericType::try_from_unit(unit).is_ok()));
+
         // Step 3.
         let mut values = self
             .0
@@ -364,7 +374,10 @@ impl SumValue {
         // Step 4.
         if units.is_empty() {
             values.sort_by(|a, b| a.unit.cmp(&b.unit));
-            return Ok(values.into_iter().map(NumericValue::Unit).collect());
+
+            return Ok(MathSum::from_numeric_values_unchecked(
+                values.into_iter().map(NumericValue::Unit).collect(),
+            ));
         }
 
         // Step 5.
@@ -373,6 +386,7 @@ impl SumValue {
         for unit in units {
             // Step 5.1.
             let mut temp = UnitValue {
+                numeric_type: NumericType::from_unit_unchecked(*unit),
                 value: 0.0,
                 unit: CssString::from(*unit),
             };
@@ -407,6 +421,6 @@ impl SumValue {
             return Err(());
         }
 
-        Ok(result)
+        Ok(MathSum::from_numeric_values_unchecked(result))
     }
 }

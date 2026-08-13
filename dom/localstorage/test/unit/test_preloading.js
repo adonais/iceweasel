@@ -41,26 +41,10 @@ add_task(async function testSteps() {
 
     storage.close();
 
-    if (principal.privateBrowsingId > 0) {
-      ok(
-        await isPreloaded(principal),
-        "Data is still preloaded after closing storage"
-      );
-
-      info("Closing private session");
-
-      Services.obs.notifyObservers(null, "last-pb-context-exited");
-
-      ok(
-        !(await isPreloaded(principal)),
-        "Data is not preloaded anymore after closing private session"
-      );
-    } else {
-      ok(
-        !(await isPreloaded(principal)),
-        "Data is not preloaded anymore after closing storage"
-      );
-    }
+    ok(
+      !(await isPreloaded(principal)),
+      "Data is not preloaded anymore after closing storage"
+    );
 
     info("Opening storage again");
 

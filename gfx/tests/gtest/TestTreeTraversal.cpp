@@ -2,13 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <vector>
-#include "mozilla/RefPtr.h"
-#include "gtest/gtest.h"
-#include "nsRegion.h"
-#include "nsRect.h"
-#include "TreeTraversal.h"
 #include <queue>
+#include <vector>
+
+#include "TreeTraversal.h"
+#include "gtest/gtest.h"
+#include "mozilla/RefPtr.h"
+#include "nsRect.h"
+#include "nsRegion.h"
 
 using namespace mozilla::layers;
 using namespace mozilla;

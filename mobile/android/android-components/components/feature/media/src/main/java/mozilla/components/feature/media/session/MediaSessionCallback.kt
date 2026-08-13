@@ -25,4 +25,16 @@ internal class MediaSessionCallback(
 
         store.state.findActiveMediaTab()?.mediaSessionState?.controller?.pause()
     }
+
+    override fun onSkipToNext() {
+        logger.debug("nextTrack()")
+
+        store.state.findActiveMediaTab()?.mediaSessionState?.controller?.nextTrack()
+    }
+
+    override fun onSkipToPrevious() {
+        logger.debug("previousTrack()")
+
+        store.state.findActiveMediaTab()?.mediaSessionState?.controller?.previousTrack()
+    }
 }

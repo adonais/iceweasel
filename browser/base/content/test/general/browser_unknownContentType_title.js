@@ -76,7 +76,7 @@ add_task(async function unknownContentType_title_with_pref_disabled() {
   BrowserTestUtils.startLoadingURIString(browser, unknown_url);
   // If the pref is disabled, then the downloads panel should open right away
   // since there is no UCT window prompt to block it.
-  let waitForPanelShown = BrowserTestUtils.waitForCondition(() => {
+  let waitForPanelShown = TestUtils.waitForCondition(() => {
     return DownloadsPanel.isPanelShowing;
   }).then(() => "panel-shown");
 

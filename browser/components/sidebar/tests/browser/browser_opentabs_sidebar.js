@@ -10,10 +10,14 @@ add_setup(async () => {
 });
 
 async function showOpenTabsPanel() {
-  await SidebarController.show("viewOpenTabsSidebar");
+  await SidebarTestUtils.showPanel(window, "viewOpenTabsSidebar");
   const { contentDocument } = SidebarController.browser;
   const component = contentDocument.querySelector("sidebar-opentabs");
-  Assert.ok(component, "Open tabs panel is shown.");
+  Assert.ok(component, "Open tabs panel element exists.");
+  Assert.ok(
+    BrowserTestUtils.isVisible(SidebarController.sidebarContainer),
+    "Open tabs panel is shown."
+  );
   return component;
 }
 
@@ -57,7 +61,7 @@ add_task(async function test_opentabs_lists_current_window_tabs() {
 
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab2);
-  SidebarController.hide();
+  SidebarTestUtils.closePanel(window);
 });
 
 add_task(async function test_clicking_row_selects_tab() {
@@ -89,7 +93,7 @@ add_task(async function test_clicking_row_selects_tab() {
   );
 
   BrowserTestUtils.removeTab(tab);
-  SidebarController.hide();
+  SidebarTestUtils.closePanel(window);
 });
 
 add_task(async function test_list_updates_on_open_and_close() {
@@ -118,7 +122,7 @@ add_task(async function test_list_updates_on_open_and_close() {
     "Closing a tab removes its row."
   );
 
-  SidebarController.hide();
+  SidebarTestUtils.closePanel(window);
 });
 
 add_task(async function test_close_button_closes_tab() {
@@ -157,7 +161,7 @@ add_task(async function test_close_button_closes_tab() {
   );
   await waitForRowCount(tabList, initialCount - 1);
 
-  SidebarController.hide();
+  SidebarTestUtils.closePanel(window);
 });
 
 add_task(async function test_pinned_tabs_show_as_icons_above_regular_list() {
@@ -234,12 +238,12 @@ add_task(async function test_pinned_tabs_show_as_icons_above_regular_list() {
   );
 
   BrowserTestUtils.removeTab(tabToPin);
-  SidebarController.hide();
+  SidebarTestUtils.closePanel(window);
 });
 
 add_task(async function test_keyboard_shortcut_toggles_open_tabs_panel() {
   // Ensure sidebar starts closed so the first keystroke is an unambiguous open.
-  SidebarController.hide();
+  SidebarTestUtils.closePanel(window);
   Assert.ok(!SidebarController.isOpen, "Sidebar starts closed.");
 
   // On macOS the shortcut is literal Ctrl+U; on Windows/Linux it is Ctrl+Alt+U.
@@ -248,7 +252,7 @@ add_task(async function test_keyboard_shortcut_toggles_open_tabs_panel() {
 
   EventUtils.synthesizeKey("u", modifiers);
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       SidebarController.isOpen &&
       SidebarController.currentID === "viewOpenTabsSidebar",
@@ -262,7 +266,7 @@ add_task(async function test_keyboard_shortcut_toggles_open_tabs_panel() {
 
   // Press the shortcut again — toggle should close the sidebar.
   EventUtils.synthesizeKey("u", modifiers);
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !SidebarController.isOpen,
     "Pressing the shortcut again closes the sidebar."
   );
@@ -316,5 +320,410 @@ add_task(async function test_multiple_windows_render_separate_cards() {
     "Closing the second window removes its card."
   );
 
-  SidebarController.hide();
+  SidebarTestUtils.closePanel(window);
+});
+
+add_task(async function test_nova_current_tab_marker() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.nova.enabled", true]],
+  });
+
+  const tabA = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:blank"
+  );
+  const tabB = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:blank"
+  );
+
+  const component = await showOpenTabsPanel();
+  const tabList = getTabList(component);
+  await waitForRowCount(tabList, getVisibleTabCount());
+
+  const rowFor = tab =>
+    [...tabList.rowEls].find(rowEl => rowEl.tabElement === tab);
+
+  Assert.ok(
+    rowFor(tabB).hasAttribute("current"),
+    "The currently-selected tab's row carries the [current] attribute."
+  );
+  Assert.ok(
+    !rowFor(tabA).hasAttribute("current"),
+    "A non-selected tab's row does not carry the [current] attribute."
+  );
+
+  gBrowser.selectedTab = tabA;
+  await BrowserTestUtils.waitForMutationCondition(
+    tabList.shadowRoot,
+    { subtree: true, attributes: true, attributeFilter: ["current"] },
+    () => rowFor(tabA)?.hasAttribute("current")
+  );
+
+  Assert.ok(
+    rowFor(tabA).hasAttribute("current"),
+    "Switching gBrowser.selectedTab moves the [current] attribute."
+  );
+  Assert.ok(
+    !rowFor(tabB).hasAttribute("current"),
+    "The previously-selected tab no longer has the [current] attribute."
+  );
+
+  BrowserTestUtils.removeTab(tabA);
+  BrowserTestUtils.removeTab(tabB);
+  SidebarTestUtils.closePanel(window);
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_window_card_collapse_state_persists() {
+  const PREF = "sidebar.openTabsPanel.collapsedWindows";
+  const { SidebarCollapsedWindows } = ChromeUtils.importESModule(
+    "moz-src:///browser/components/sidebar/SidebarCollapsedWindows.sys.mjs"
+  );
+
+  await SpecialPowers.pushPrefEnv({ set: [[PREF, "{}"]] });
+
+  const component = await showOpenTabsPanel();
+  await BrowserTestUtils.waitForMutationCondition(
+    component.shadowRoot,
+    { childList: true, subtree: true },
+    () => component.shadowRoot.querySelector("moz-card")
+  );
+
+  const card = component.shadowRoot.querySelector("moz-card");
+  Assert.ok(card, "Window card exists.");
+  const windowId = card.dataset.windowId;
+  Assert.ok(windowId, "Card has a data-window-id from SessionStore.");
+
+  // Collapsing the card writes through to the module and the pref.
+  card.dispatchEvent(
+    new ToggleEvent("toggle", { newState: "closed", oldState: "open" })
+  );
+  Assert.ok(
+    SidebarCollapsedWindows.isCollapsed(window),
+    "Module reports the current window as collapsed."
+  );
+  Assert.equal(
+    JSON.parse(Services.prefs.getStringPref(PREF))[windowId],
+    true,
+    "Pref persists the collapsed state for this window."
+  );
+
+  // Hide and re-show the panel; the module's state should survive.
+  SidebarTestUtils.closePanel(window);
+  const component2 = await showOpenTabsPanel();
+  await BrowserTestUtils.waitForMutationCondition(
+    component2.shadowRoot,
+    { childList: true, subtree: true },
+    () => component2.shadowRoot.querySelector("moz-card")
+  );
+  Assert.ok(
+    SidebarCollapsedWindows.isCollapsed(window),
+    "Module still reports collapsed after panel re-mount."
+  );
+
+  // Expanding clears the entry from both the module and the pref.
+  const card2 = component2.shadowRoot.querySelector("moz-card");
+  card2.dispatchEvent(
+    new ToggleEvent("toggle", { newState: "open", oldState: "closed" })
+  );
+  Assert.equal(
+    SidebarCollapsedWindows.isCollapsed(window),
+    false,
+    "Expanding clears the module's state."
+  );
+  Assert.equal(
+    JSON.parse(Services.prefs.getStringPref(PREF))[windowId],
+    undefined,
+    "Pref no longer has an entry for this window."
+  );
+
+  SidebarTestUtils.closePanel(window);
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_private_window_skips_pref() {
+  const PREF = "sidebar.openTabsPanel.collapsedWindows";
+  const { SidebarCollapsedWindows } = ChromeUtils.importESModule(
+    "moz-src:///browser/components/sidebar/SidebarCollapsedWindows.sys.mjs"
+  );
+
+  await SpecialPowers.pushPrefEnv({ set: [[PREF, "{}"]] });
+
+  const privateWin = await BrowserTestUtils.openNewBrowserWindow({
+    private: true,
+  });
+
+  // The module must never write the pref for a private window, regardless
+  // of how the toggle path is exercised.
+  SidebarCollapsedWindows.collapseWindow(privateWin);
+  Assert.equal(
+    Services.prefs.getStringPref(PREF),
+    "{}",
+    "Pref is untouched after collapseWindow on a private window."
+  );
+  Assert.equal(
+    SidebarCollapsedWindows.isCollapsed(privateWin),
+    false,
+    "isCollapsed reports false for private windows."
+  );
+
+  await BrowserTestUtils.closeWindow(privateWin);
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_window_close_drops_pref_entry() {
+  const PREF = "sidebar.openTabsPanel.collapsedWindows";
+  const { SidebarCollapsedWindows } = ChromeUtils.importESModule(
+    "moz-src:///browser/components/sidebar/SidebarCollapsedWindows.sys.mjs"
+  );
+
+  await SpecialPowers.pushPrefEnv({ set: [[PREF, "{}"]] });
+
+  const secondWin = await BrowserTestUtils.openNewBrowserWindow();
+  const secondWindowId = secondWin.__SSi;
+  Assert.ok(secondWindowId, "Second window has a SessionStore id.");
+
+  // Collapse the second window via the module and confirm the pref records it.
+  SidebarCollapsedWindows.collapseWindow(secondWin);
+  Assert.ok(
+    SidebarCollapsedWindows.isCollapsed(secondWin),
+    "Module reports the second window as collapsed."
+  );
+  Assert.equal(
+    JSON.parse(Services.prefs.getStringPref(PREF))[secondWindowId],
+    true,
+    "Pref records the collapsed entry for the second window."
+  );
+
+  // Close the window. The module's domwindowclosed observer should drop the
+  // entry from both the in-memory map and the pref.
+  await BrowserTestUtils.closeWindow(secondWin);
+
+  await TestUtils.waitForCondition(
+    () =>
+      JSON.parse(Services.prefs.getStringPref(PREF))[secondWindowId] ===
+      undefined,
+    "Pref entry for the closed window is dropped."
+  );
+
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_search_filters_visible_rows() {
+  const appleTab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "data:text/html,<title>Apple</title>"
+  );
+  const bananaTab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "data:text/html,<title>Banana</title>"
+  );
+
+  const component = await showOpenTabsPanel();
+  const allTabsCount = getVisibleTabCount();
+  await waitForRowCount(getTabList(component), allTabsCount);
+
+  const searchBox = component.shadowRoot.querySelector("moz-input-search");
+  Assert.ok(searchBox, "Search input is present in the panel.");
+
+  // Searching shows the results header and filters the window card rows.
+  searchBox.dispatchEvent(
+    new CustomEvent("MozInputSearch:search", { detail: { query: "Apple" } })
+  );
+  await BrowserTestUtils.waitForMutationCondition(
+    component.shadowRoot,
+    { childList: true, subtree: true },
+    () =>
+      component.shadowRoot.querySelector(
+        "[data-l10n-id='sidebar-search-results-header']"
+      )
+  );
+  await waitForRowCount(getTabList(component), 1);
+  Assert.ok(
+    getTabList(component).rowEls[0].url.includes("Apple"),
+    "Only the matching tab is shown while searching."
+  );
+  const count = component.shadowRoot.querySelector("[slot='secondary-header']");
+  Assert.equal(
+    JSON.parse(count.getAttribute("data-l10n-args")).count,
+    1,
+    "The results count reflects the single match."
+  );
+
+  // Clearing removes the header and restores all rows.
+  searchBox.dispatchEvent(
+    new CustomEvent("MozInputSearch:search", { detail: { query: "" } })
+  );
+  await BrowserTestUtils.waitForMutationCondition(
+    component.shadowRoot,
+    { childList: true, subtree: true },
+    () =>
+      !component.shadowRoot.querySelector(
+        "[data-l10n-id='sidebar-search-results-header']"
+      )
+  );
+  await waitForRowCount(getTabList(component), allTabsCount);
+  Assert.equal(
+    getTabList(component).rowEls.length,
+    allTabsCount,
+    "Clearing the query restores all tab rows."
+  );
+
+  BrowserTestUtils.removeTab(appleTab);
+  BrowserTestUtils.removeTab(bananaTab);
+  SidebarTestUtils.closePanel(window);
+});
+
+add_task(async function test_medium_view_shows_domain_and_time() {
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "https://example.com/"
+  );
+
+  const component = await showOpenTabsPanel();
+  const tabList = getTabList(component);
+  await waitForRowCount(tabList, getVisibleTabCount());
+
+  const row = [...tabList.rowEls].find(r => r.url === "https://example.com/");
+  Assert.ok(row, "Found the row for the opened tab.");
+
+  const domain = row.domainEl;
+  Assert.ok(domain, "The row renders a domain in the medium view.");
+  Assert.equal(
+    domain.textContent.trim(),
+    "example.com",
+    "The domain shows the base domain of the tab URL."
+  );
+
+  const time = row.timeEl;
+  Assert.ok(time, "The row renders a time in the medium view.");
+  Assert.equal(
+    time.getAttribute("data-l10n-id"),
+    "fxviewtabrow-time",
+    "The time uses the clock-time format."
+  );
+
+  // about: pages have no base domain, so the row falls back to the formatted
+  // URI instead of showing nothing (matching Firefox View).
+  const aboutTab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:robots"
+  );
+  await waitForRowCount(tabList, getVisibleTabCount());
+  const aboutRow = [...tabList.rowEls].find(r => r.url === "about:robots");
+  Assert.ok(aboutRow, "Found the row for the about: tab.");
+  Assert.equal(
+    aboutRow.domainEl.textContent.trim(),
+    "about:robots",
+    "An about: page shows its formatted URI, not an empty domain."
+  );
+  BrowserTestUtils.removeTab(aboutTab);
+  await waitForRowCount(tabList, getVisibleTabCount());
+
+  // The domain and time are revealed by container-query breakpoints on the
+  // row width, so constrain the list width to exercise each state.
+  tabList.style.width = "240px";
+  await TestUtils.waitForCondition(
+    () => !BrowserTestUtils.isVisible(domain),
+    "Domain is hidden when the panel is narrow."
+  );
+  Assert.ok(
+    !BrowserTestUtils.isVisible(time),
+    "Time is hidden when the panel is narrow."
+  );
+
+  tabList.style.width = "370px";
+  await TestUtils.waitForCondition(
+    () => BrowserTestUtils.isVisible(domain),
+    "Domain becomes visible past the first breakpoint."
+  );
+  Assert.ok(
+    !BrowserTestUtils.isVisible(time),
+    "Time is still hidden before the second breakpoint."
+  );
+
+  tabList.style.width = "520px";
+  await TestUtils.waitForCondition(
+    () => BrowserTestUtils.isVisible(time),
+    "Time becomes visible past the second breakpoint."
+  );
+  Assert.ok(
+    BrowserTestUtils.isVisible(domain),
+    "Domain remains visible when the panel is wide."
+  );
+
+  tabList.style.width = "";
+
+  BrowserTestUtils.removeTab(tab);
+  SidebarTestUtils.closePanel(window);
+});
+
+add_task(async function test_pinned_tab_selected_marker() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.nova.enabled", true]],
+  });
+
+  const nonPinnedTab = gBrowser.selectedTab;
+  const tabA = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "data:text/html,<title>PinnedA</title>"
+  );
+  const tabB = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "data:text/html,<title>PinnedB</title>"
+  );
+  gBrowser.pinTab(tabA);
+  gBrowser.pinTab(tabB);
+
+  const component = await showOpenTabsPanel();
+  await BrowserTestUtils.waitForMutationCondition(
+    component.shadowRoot,
+    { childList: true, subtree: true },
+    () =>
+      component.shadowRoot.querySelectorAll(".pinned-tabs moz-button")
+        .length === 2
+  );
+
+  const buttonFor = title =>
+    [...component.shadowRoot.querySelectorAll(".pinned-tabs moz-button")].find(
+      button => button.title === title
+    );
+
+  // tabB is the currently-selected tab, so its pinned button is marked.
+  await TestUtils.waitForCondition(
+    () => buttonFor("PinnedB").classList.contains("selected"),
+    "The selected pinned tab's button carries the selected class."
+  );
+  Assert.ok(
+    !buttonFor("PinnedA").classList.contains("selected"),
+    "A non-selected pinned tab's button does not carry the selected class."
+  );
+
+  // Selecting the other pinned tab moves the marker.
+  gBrowser.selectedTab = tabA;
+  await TestUtils.waitForCondition(
+    () => buttonFor("PinnedA").classList.contains("selected"),
+    "Selecting the other pinned tab moves the selected class."
+  );
+  Assert.ok(
+    !buttonFor("PinnedB").classList.contains("selected"),
+    "The previously-selected pinned tab no longer carries the selected class."
+  );
+
+  // Selecting a non-pinned tab clears the marker from both pinned buttons.
+  gBrowser.selectedTab = nonPinnedTab;
+  await TestUtils.waitForCondition(
+    () =>
+      !buttonFor("PinnedA").classList.contains("selected") &&
+      !buttonFor("PinnedB").classList.contains("selected"),
+    "Selecting a non-pinned tab clears the marker from the pinned buttons."
+  );
+
+  gBrowser.unpinTab(tabA);
+  gBrowser.unpinTab(tabB);
+  BrowserTestUtils.removeTab(tabA);
+  BrowserTestUtils.removeTab(tabB);
+  SidebarTestUtils.closePanel(window);
+  await SpecialPowers.popPrefEnv();
 });

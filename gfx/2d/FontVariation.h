@@ -6,6 +6,7 @@
 #define MOZILLA_GFX_FONTVARIATION_H_
 
 #include <stdint.h>
+
 #include "mozilla/FloatingPoint.h"
 
 namespace mozilla::gfx {

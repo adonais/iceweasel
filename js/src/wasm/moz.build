@@ -12,7 +12,6 @@ include("../js-config.mozbuild")
 include("../js-cxxflags.mozbuild")
 
 UNIFIED_SOURCES += [
-    "AsmJS.cpp",
     "WasmAnyRef.cpp",
     "WasmBaselineCompile.cpp",
     "WasmBCFrame.cpp",

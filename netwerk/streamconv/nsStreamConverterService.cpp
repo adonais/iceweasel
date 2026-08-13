@@ -3,22 +3,23 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsComponentManagerUtils.h"
 #include "nsStreamConverterService.h"
-#include "nsIComponentRegistrar.h"
-#include "nsString.h"
-#include "nsAtom.h"
-#include "nsDeque.h"
-#include "nsIInputStream.h"
-#include "nsIStreamConverter.h"
-#include "nsICategoryManager.h"
-#include "nsXPCOM.h"
-#include "nsISupportsPrimitives.h"
-#include "nsTArray.h"
-#include "nsServiceManagerUtils.h"
-#include "nsISimpleEnumerator.h"
+
 #include "mozilla/Components.h"
 #include "mozilla/UniquePtr.h"
+#include "nsAtom.h"
+#include "nsComponentManagerUtils.h"
+#include "nsDeque.h"
+#include "nsICategoryManager.h"
+#include "nsIComponentRegistrar.h"
+#include "nsIInputStream.h"
+#include "nsISimpleEnumerator.h"
+#include "nsIStreamConverter.h"
+#include "nsISupportsPrimitives.h"
+#include "nsServiceManagerUtils.h"
+#include "nsString.h"
+#include "nsTArray.h"
+#include "nsXPCOM.h"
 
 ///////////////////////////////////////////////////////////////////
 // Breadth-First-Search (BFS) algorithm state classes and types.

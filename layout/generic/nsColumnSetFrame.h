@@ -77,6 +77,12 @@ class nsColumnSetFrame final : public nsContainerFrame {
       mozilla::WritingMode aWM, BaselineSharingGroup aBaselineGroup,
       BaselineExportContext aExportContext) const override;
 
+  // Returns true if this column set contains only empty column boxes. For
+  // example, this occurs when a multi-column container starts/ends with a
+  // column spanner, as the wrapper still constructs an empty column set as
+  // the first/last child (see nsCSSFrameConstructor::ConstructBlock).
+  bool IsEmpty() override;
+
  protected:
   nscoord mLastBalanceBSize;
   nsReflowStatus mLastFrameStatus;

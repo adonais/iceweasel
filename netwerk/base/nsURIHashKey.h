@@ -53,11 +53,10 @@ class nsURIHashKey : public PLDHashEntryHdr {
       // If the key is null, return hash for empty string.
       return mozilla::HashString(""_ns);
     }
-    nsAutoCString spec;
-    // If GetSpec() fails, ignoring the failure and proceeding with an
-    // empty |spec| seems like the best thing to do.
-    (void)const_cast<nsIURI*>(aKey)->GetSpec(spec);
-    return mozilla::HashString(spec);
+    // SpecHash() is HashString(spec), cached on the URI. The const_cast is
+    // needed because it lazily populates the cache; this matches the prior
+    // GetSpec() call here, which was likewise non-const.
+    return const_cast<nsIURI*>(aKey)->SpecHash();
   }
 
   enum { ALLOW_MEMMOVE = true };

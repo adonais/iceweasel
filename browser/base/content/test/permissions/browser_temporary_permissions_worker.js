@@ -60,7 +60,7 @@ add_task(async function testWorkerSeesBrowserScopedPermission() {
     0
   );
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => queryPermissionInWorker(browser).then(s => s === "granted"),
     "Waiting for worker to see granted"
   );
@@ -70,7 +70,7 @@ add_task(async function testWorkerSeesBrowserScopedPermission() {
 
   Services.perms.removeFromPrincipalForBrowser(principal, "geo", browserId);
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => queryPermissionInWorker(browser).then(s => s === "prompt"),
     "Waiting for worker to see prompt after removal"
   );
@@ -98,14 +98,14 @@ add_task(async function testWorkerSurvivesBulkBrowserPermClear() {
     0
   );
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => queryPermissionInWorker(browser).then(s => s === "granted"),
     "Waiting for worker to see granted"
   );
 
   Services.perms.removeAllForBrowser(browserId);
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => queryPermissionInWorker(browser).then(s => s === "prompt"),
     "Waiting for worker to see prompt after bulk clear"
   );

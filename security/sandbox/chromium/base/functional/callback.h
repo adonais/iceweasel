@@ -10,6 +10,8 @@
 #define BASE_FUNCTIONAL_CALLBACK_H_
 
 #include <stddef.h>
+
+#include <type_traits>
 #include <utility>
 
 #include "base/check.h"
@@ -20,7 +22,6 @@
 #include "base/functional/callback_tags.h"
 #include "base/functional/function_ref.h"
 #include "base/notreached.h"
-#include "base/types/always_false.h"
 
 // -----------------------------------------------------------------------------
 // Usage documentation
@@ -142,7 +143,7 @@ class TRIVIAL_ABI OnceCallback<R(Args...)> {
   //
   // May not be called on a null callback.
   R Run(Args... args) && {
-    CHECK(!holder_.is_null());
+    CHECK(!is_null());
 
     // Move the callback instance into a local variable before the invocation,
     // that ensures the internal state is cleared after the invocation.
@@ -208,17 +209,23 @@ class TRIVIAL_ABI OnceCallback<R(Args...)> {
 
   // NOLINTNEXTLINE(google-explicit-constructor)
   constexpr OnceCallback(internal::DoNothingCallbackTag)
+    requires(std::is_void_v<R>)
       : OnceCallback(BindOnce([](Args... args) {})) {}
-  constexpr OnceCallback& operator=(internal::DoNothingCallbackTag) {
+  constexpr OnceCallback& operator=(internal::DoNothingCallbackTag)
+    requires(std::is_void_v<R>)
+  {
     *this = BindOnce([](Args... args) {});
     return *this;
   }
 
   // NOLINTNEXTLINE(google-explicit-constructor)
   constexpr OnceCallback(internal::DoNothingCallbackTag::WithSignature<RunType>)
+    requires(std::is_void_v<R>)
       : OnceCallback(internal::DoNothingCallbackTag()) {}
   constexpr OnceCallback& operator=(
-      internal::DoNothingCallbackTag::WithSignature<RunType>) {
+      internal::DoNothingCallbackTag::WithSignature<RunType>)
+    requires(std::is_void_v<R>)
+  {
     *this = internal::DoNothingCallbackTag();
     return *this;
   }
@@ -227,11 +234,14 @@ class TRIVIAL_ABI OnceCallback<R(Args...)> {
   // NOLINTNEXTLINE(google-explicit-constructor)
   constexpr OnceCallback(
       internal::DoNothingCallbackTag::WithBoundArguments<BoundArgs...> tag)
+    requires(std::is_void_v<R>)
       : OnceCallback(
             internal::ToDoNothingCallback<true, R, Args...>(std::move(tag))) {}
   template <typename... BoundArgs>
   constexpr OnceCallback& operator=(
-      internal::DoNothingCallbackTag::WithBoundArguments<BoundArgs...> tag) {
+      internal::DoNothingCallbackTag::WithBoundArguments<BoundArgs...> tag)
+    requires(std::is_void_v<R>)
+  {
     *this = internal::ToDoNothingCallback<true, R, Args...>(std::move(tag));
     return *this;
   }
@@ -244,7 +254,7 @@ class TRIVIAL_ABI OnceCallback<R(Args...)> {
   // NOLINTNEXTLINE(google-explicit-constructor)
   operator FunctionRef<Signature>() & {
     static_assert(
-        AlwaysFalse<Signature>,
+        !std::is_same_v<Signature, Signature>,
         "need to convert a base::OnceCallback to base::FunctionRef? "
         "Please bring up this use case on #cxx (Slack) or cxx@chromium.org.");
   }
@@ -253,7 +263,7 @@ class TRIVIAL_ABI OnceCallback<R(Args...)> {
   // NOLINTNEXTLINE(google-explicit-constructor)
   operator FunctionRef<Signature>() && {
     static_assert(
-        AlwaysFalse<Signature>,
+        !std::is_same_v<Signature, Signature>,
         "using base::BindOnce() is not necessary with base::FunctionRef; is it "
         "possible to use a capturing lambda directly? If not, please bring up "
         "this use case on #cxx (Slack) or cxx@chromium.org.");
@@ -311,12 +321,8 @@ class TRIVIAL_ABI RepeatingCallback<R(Args...)> {
   bool MaybeValid() const { return holder_.MaybeValid(); }
 
   // Equality operators: two `RepeatingCallback`'s are equal
-  bool operator==(const RepeatingCallback& other) const {
-    return holder_ == other.holder_;
-  }
-  bool operator!=(const RepeatingCallback& other) const {
-    return !operator==(other);
-  }
+  friend bool operator==(const RepeatingCallback&,
+                         const RepeatingCallback&) = default;
 
   // Resets this to null.
   REINITIALIZES_AFTER_MOVE void Reset() { holder_.Reset(); }
@@ -326,7 +332,7 @@ class TRIVIAL_ABI RepeatingCallback<R(Args...)> {
   //
   // May not be called on a null callback.
   R Run(Args... args) const& {
-    CHECK(!holder_.is_null());
+    CHECK(!is_null());
 
     // Keep `bind_state` alive at least until after the invocation to ensure all
     // bound `Unretained` arguments remain protected by MiraclePtr.
@@ -410,8 +416,11 @@ class TRIVIAL_ABI RepeatingCallback<R(Args...)> {
 
   // NOLINTNEXTLINE(google-explicit-constructor)
   constexpr RepeatingCallback(internal::DoNothingCallbackTag)
+    requires(std::is_void_v<R>)
       : RepeatingCallback(BindRepeating([](Args... args) {})) {}
-  constexpr RepeatingCallback& operator=(internal::DoNothingCallbackTag) {
+  constexpr RepeatingCallback& operator=(internal::DoNothingCallbackTag)
+    requires(std::is_void_v<R>)
+  {
     *this = BindRepeating([](Args... args) {});
     return *this;
   }
@@ -419,9 +428,12 @@ class TRIVIAL_ABI RepeatingCallback<R(Args...)> {
   // NOLINTNEXTLINE(google-explicit-constructor)
   constexpr RepeatingCallback(
       internal::DoNothingCallbackTag::WithSignature<RunType>)
+    requires(std::is_void_v<R>)
       : RepeatingCallback(internal::DoNothingCallbackTag()) {}
   constexpr RepeatingCallback& operator=(
-      internal::DoNothingCallbackTag::WithSignature<RunType>) {
+      internal::DoNothingCallbackTag::WithSignature<RunType>)
+    requires(std::is_void_v<R>)
+  {
     *this = internal::DoNothingCallbackTag();
     return *this;
   }
@@ -430,11 +442,14 @@ class TRIVIAL_ABI RepeatingCallback<R(Args...)> {
   // NOLINTNEXTLINE(google-explicit-constructor)
   constexpr RepeatingCallback(
       internal::DoNothingCallbackTag::WithBoundArguments<BoundArgs...> tag)
+    requires(std::is_void_v<R>)
       : RepeatingCallback(
             internal::ToDoNothingCallback<false, R, Args...>(std::move(tag))) {}
   template <typename... BoundArgs>
   constexpr RepeatingCallback& operator=(
-      internal::DoNothingCallbackTag::WithBoundArguments<BoundArgs...> tag) {
+      internal::DoNothingCallbackTag::WithBoundArguments<BoundArgs...> tag)
+    requires(std::is_void_v<R>)
+  {
     *this = internal::ToDoNothingCallback<false, R, Args...>(std::move(tag));
     return this;
   }
@@ -447,7 +462,7 @@ class TRIVIAL_ABI RepeatingCallback<R(Args...)> {
   // NOLINTNEXTLINE(google-explicit-constructor)
   operator FunctionRef<Signature>() & {
     static_assert(
-        AlwaysFalse<Signature>,
+        !std::is_same_v<Signature, Signature>,
         "need to convert a base::RepeatingCallback to base::FunctionRef? "
         "Please bring up this use case on #cxx (Slack) or cxx@chromium.org.");
   }
@@ -456,7 +471,7 @@ class TRIVIAL_ABI RepeatingCallback<R(Args...)> {
   // NOLINTNEXTLINE(google-explicit-constructor)
   operator FunctionRef<Signature>() && {
     static_assert(
-        AlwaysFalse<Signature>,
+        !std::is_same_v<Signature, Signature>,
         "using base::BindRepeating() is not necessary with base::FunctionRef; "
         "is it possible to use a capturing lambda directly? If not, please "
         "bring up this use case on #cxx (Slack) or cxx@chromium.org.");
@@ -482,11 +497,12 @@ auto ToDoNothingCallback(
   return std::apply(
       [](auto&&... args) {
         if constexpr (is_once) {
-          return BindOnce([](TransformToUnwrappedType<is_once, BoundArgs>...,
-                             UnboundArgs...) {},
-                          std::move(args)...);
+          return base::BindOnce(
+              [](TransformToUnwrappedType<is_once, BoundArgs>...,
+                 UnboundArgs...) {},
+              std::move(args)...);
         } else {
-          return BindRepeating(
+          return base::BindRepeating(
               [](TransformToUnwrappedType<is_once, BoundArgs>...,
                  UnboundArgs...) {},
               std::move(args)...);

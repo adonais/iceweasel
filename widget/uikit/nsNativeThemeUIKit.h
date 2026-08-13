@@ -5,8 +5,8 @@
 #ifndef nsNativeThemeUIKit_h
 #define nsNativeThemeUIKit_h
 
-#include "nsITheme.h"
 #include "Theme.h"
+#include "nsITheme.h"
 
 class nsNativeThemeUIKit final : public mozilla::widget::Theme {
  public:

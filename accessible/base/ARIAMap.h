@@ -9,7 +9,6 @@
 #include "mozilla/a11y/AccTypes.h"
 #include "mozilla/a11y/DocAccessible.h"
 #include "mozilla/a11y/Role.h"
-
 #include "nsAtom.h"
 #include "nsIContent.h"
 #include "nsTHashSet.h"

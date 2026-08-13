@@ -33,15 +33,22 @@ load(libdir + "codegen-test-common.js");
 // RIP-relative address following the instruction mnemonic
 var RIPR = `0x${HEXES}`;
 
-// End of prologue. The move from r14 to rbp is writing the callee's wasm
-// instance into the frame for debug checks -- see WasmFrame.h.
-var x64_prefix = `
+const x64_arch = {
+    name: "x64",
+
+    // End of prologue. The move from r14 to rbp is writing the callee's wasm
+    // instance into the frame for debug checks -- see WasmFrame.h.
+    prefix: `
 mov %rsp, %rbp(
 movq %r14, (0x10|0x30)\\(%rbp\\))?
-`
+`,
 
-// Start of epilogue
-var x64_suffix = `pop %rbp`;
+    // Start of epilogue
+    suffix: `pop %rbp`,
+
+    // Instruction encoding
+    encoding: `(?:${HEX}{2} )*`,
+};
 
 // v128 OP v128 -> v128
 // inputs: [[complete-opname, expected-pattern], ...]
@@ -150,36 +157,7 @@ function codegenTestX64_unit_v128(inputs, options = {}) {
 // `expected` is the non-preprocessed pattern, and options is an options bag,
 // described above.
 function codegenTestX64_adhoc(module_text, export_name, expected, options = {}) {
-    assertEq(hasDisassembler(), true);
-
-    let ins = wasmEvalText(module_text, {}, options.features);
-    if (options.instanceBox)
-        options.instanceBox.value = ins;
-    let tierTxt = options.baseline ? "baseline" : "ion";
-    let output = wasmDis(ins.exports[export_name],
-                         {tier:tierTxt, asString:true});
-    if (!options.no_prefix)
-        expected = x64_prefix + '\n' + expected;
-    if (!options.no_suffix)
-        expected = expected + '\n' + x64_suffix;
-    const expected_pretty = striplines(expected);
-    expected = fixlines(expected);
-
-    const output_simple = stripencoding(output, `(?:${HEX}{2} )*`);
-    const success = output_simple.match(new RegExp(expected)) != null;
-    if (options.log || !success) {
-        print("Module text:")
-        print(module_text);
-        print("Actual output:")
-        print(output);
-        print("Expected output (as text):")
-        print(expected_pretty);
-        print("");
-        print("Expected output (as regex):")
-        print(expected);
-        print("");
-    }
-    assertEq(success, true);
+    codegenTestShared_adhoc(x64_arch, module_text, export_name, expected, options);
 }
 
 // Internal code below this line

@@ -200,10 +200,11 @@ void nsFontFaceUtils::MarkDirtyForFontChange(nsIFrame* aSubtreeRoot,
       if (alreadyScheduled == ReflowAlreadyScheduled::No ||
           usesMetricsFromStyle) {
         if (f->IsPlaceholderFrame()) {
-          nsIFrame* oof = nsPlaceholderFrame::GetRealFrameForPlaceholder(f);
-          if (!nsLayoutUtils::IsProperAncestorFrame(subtreeRoot, oof)) {
-            // We have another distinct subtree we need to mark.
-            subtrees.AppendElement(oof);
+          if (auto* oof = nsPlaceholderFrame::GetRealFrameForPlaceholder(f)) {
+            if (!nsLayoutUtils::IsProperAncestorFrame(subtreeRoot, oof)) {
+              // We have another distinct subtree we need to mark.
+              subtrees.AppendElement(oof);
+            }
           }
         }
 

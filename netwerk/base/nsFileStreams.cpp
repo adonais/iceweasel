@@ -2,32 +2,32 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "ipc/IPCMessageUtils.h"
-
 #include <algorithm>
+
+#include "ipc/IPCMessageUtils.h"
 
 #if defined(XP_UNIX)
 #  include <unistd.h>
 #elif defined(XP_WIN)
 #  include <windows.h>
+
 #  include "nsILocalFileWin.h"
 #else
 // XXX add necessary include file for ftruncate (or equivalent)
 #endif
 
-#include "private/pprio.h"
-
-#include "nsFileStreams.h"
-#include "nsIFile.h"
-#include "nsReadLine.h"
-#include "nsIClassInfoImpl.h"
-#include "mozilla/ipc/InputStreamUtils.h"
-#include "mozilla/ipc/RandomAccessStreamParams.h"
 #include "mozilla/FileUtils.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/ipc/InputStreamUtils.h"
+#include "mozilla/ipc/RandomAccessStreamParams.h"
+#include "nsFileStreams.h"
+#include "nsIClassInfoImpl.h"
+#include "nsIFile.h"
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
+#include "nsReadLine.h"
 #include "nsXULAppAPI.h"
+#include "private/pprio.h"
 
 using FileHandleType = mozilla::ipc::FileDescriptor::PlatformHandleType;
 

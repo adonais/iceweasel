@@ -4,9 +4,9 @@
 
 #import <Cocoa/Cocoa.h>
 
-#include "nsMacWebAppUtils.h"
 #include "nsCOMPtr.h"
 #include "nsCocoaUtils.h"
+#include "nsMacWebAppUtils.h"
 #include "nsString.h"
 
 // This must be included last:

@@ -1,0 +1,158 @@
+[DEFAULT]
+dupe-manifest = true
+support-files = [
+  "tree_shared.js",
+  "popup_shared.js",
+  "window_label_checkbox.xhtml",
+  "window_menubar.xhtml",
+  "seek_with_sound.webm",
+  "lit-test-helpers.js",
+]
+prefs = [
+  "app.support.baseURL='https://support.mozilla.org/'",
+  "browser.nova.enabled=true",
+]
+
+["test_contextmenu_menugroup.xhtml"]
+skip-if = [
+  "debug && standalone", # Bug 2026600
+]
+
+["test_contextmenu_nested.xhtml"]
+
+["test_editor_currentURI.xhtml"]
+
+["test_label_checkbox.xhtml"]
+
+["test_menubar.xhtml"]
+skip-if = [
+  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1933983
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2023967
+]
+
+["test_moz_badge.html"]
+
+["test_moz_base_input_element.html"]
+
+["test_moz_box_button.html"]
+
+["test_moz_box_group.html"]
+
+["test_moz_box_item.html"]
+
+["test_moz_box_link.html"]
+
+["test_moz_breadcrumb.html"]
+
+["test_moz_breadcrumb_group.html"]
+
+["test_moz_button.html"]
+
+["test_moz_button_group.html"]
+
+["test_moz_card.html"]
+
+["test_moz_checkbox.html"]
+
+["test_moz_fieldset.html"]
+
+["test_moz_five_star.html"]
+
+["test_moz_input_color.html"]
+
+["test_moz_input_elems_in_form.html"]
+
+["test_moz_input_email.html"]
+
+["test_moz_input_folder.html"]
+
+["test_moz_input_number.html"]
+
+["test_moz_input_password.html"]
+
+["test_moz_input_search.html"]
+
+["test_moz_input_tel.html"]
+
+["test_moz_input_text.html"]
+
+["test_moz_input_url.html"]
+
+["test_moz_label.html"]
+
+["test_moz_lit_element.html"]
+
+["test_moz_message_bar.html"]
+
+["test_moz_page_header.html"]
+
+["test_moz_page_nav.html"]
+
+["test_moz_promo.html"]
+
+["test_moz_radio.html"]
+
+["test_moz_radio_group.html"]
+
+["test_moz_reorderable_list.html"]
+
+["test_moz_select.html"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1997197
+  "os == 'win' && os_version == '10.2009' && arch == 'x86_64' && debug", # Bug 1997197
+  "os == 'win' && os_version == '11.26100' && arch == 'x86' && debug", # Bug 1997197
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug", # Bug 1997197
+  "os == 'win' && os_version == '11.26200' && arch == 'x86' && debug", # Bug 1997197
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug", # Bug 1997197
+]
+
+["test_moz_select_panel.html"]
+
+["test_moz_support_link.html"]
+
+["test_moz_textarea.html"]
+
+["test_moz_toggle.html"]
+
+["test_moz_visual_picker.html"]
+
+["test_panel_item_accesskey.html"]
+
+["test_panel_item_badge.html"]
+
+["test_panel_item_checkbox.html"]
+
+["test_panel_item_disabled.html"]
+
+["test_panel_item_mouseup_click.html"]
+
+["test_panel_list_accessibility.html"]
+
+["test_panel_list_anchoring.html"]
+
+["test_panel_list_in_xul_panel.html"]
+
+["test_panel_list_min_width_from_anchor.html"]
+
+["test_panel_list_popover.html"]
+
+["test_popupanchor.xhtml"]
+skip-if = [
+  "os == 'win' && standalone", # Bug 2026600
+]
+
+["test_popupreflows.xhtml"]
+
+["test_segmented_control.html"]
+
+["test_theme_picker.html"]
+
+["test_tree_column_reorder.xhtml"]
+
+["test_videocontrols_focus.html"]
+support-files = [
+  "head.js",
+  "video.webm",
+]
+
+["test_videocontrols_onclickplay.html"]

@@ -366,7 +366,7 @@ async function doDismiss({ menu, assert }) {
   details = await UrlbarTestUtils.getDetailsOfResultAt(window, resultIndex);
   Assert.equal(
     details.type,
-    UrlbarUtils.RESULT_TYPE.TIP,
+    UrlbarShared.RESULT_TYPE.TIP,
     "Row should be a tip after dismissal"
   );
   Assert.equal(
@@ -402,7 +402,7 @@ async function doDismiss({ menu, assert }) {
   for (let i = 0; i < UrlbarTestUtils.getResultCount(window); i++) {
     details = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
     Assert.ok(
-      details.type != UrlbarUtils.RESULT_TYPE.TIP &&
+      details.type != UrlbarShared.RESULT_TYPE.TIP &&
         details.result.payload.provider !== "Yelp",
       "Tip result and Yelp result should not be present"
     );

@@ -29,22 +29,8 @@ struct ParamTraits<nsIRemoteTab::NavigationType>
           nsIRemoteTab::NavigationType::NAVIGATE_BACK,
           nsIRemoteTab::NavigationType::NAVIGATE_URL> {};
 
-template <>
-struct ParamTraits<mozilla::dom::EffectsInfo> {
-  typedef mozilla::dom::EffectsInfo paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mVisibleRect);
-    WriteParam(aWriter, aParam.mRasterScale);
-    WriteParam(aWriter, aParam.mTransformToAncestorScale);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mVisibleRect) &&
-           ReadParam(aReader, &aResult->mRasterScale) &&
-           ReadParam(aReader, &aResult->mTransformToAncestorScale);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::EffectsInfo, mVisibleRect,
+                                  mRasterScale, mTransformToAncestorScale);
 
 template <>
 struct ParamTraits<mozilla::WhenToScroll>
@@ -57,38 +43,10 @@ struct ParamTraits<mozilla::ScrollFlags>
     : public BitFlagsEnumSerializer<mozilla::ScrollFlags,
                                     mozilla::ScrollFlags::ALL_BITS> {};
 
-template <>
-struct ParamTraits<mozilla::WhereToScroll> {
-  using paramType = mozilla::WhereToScroll;
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::WhereToScroll, mPercentage);
 
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mPercentage);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mPercentage);
-  }
-};
-
-template <>
-struct ParamTraits<mozilla::AxisScrollParams> {
-  typedef mozilla::AxisScrollParams paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mWhereToScroll);
-    WriteParam(aWriter, aParam.mWhenToScroll);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    if (!ReadParam(aReader, &aResult->mWhereToScroll)) {
-      return false;
-    }
-    if (!ReadParam(aReader, &aResult->mWhenToScroll)) {
-      return false;
-    }
-    return true;
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::AxisScrollParams, mWhereToScroll,
+                                  mWhenToScroll);
 
 template <>
 struct ParamTraits<mozilla::dom::EmbedderElementEventType>

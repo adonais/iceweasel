@@ -66,6 +66,35 @@ class TestCompileDBBackends(BackendTester):
 
         self.perform_check(compile_commands_path, env.topsrcdir, env.topobjdir)
 
+    def test_clangd_strips_compiler_wrapper(self):
+        """Ensure a compiler wrapper (ccache and/or --with-compiler-wrapper) is
+        stripped from the clangd `compile_commands.json`. clangd treats the
+        leading token as the compiler driver, so a wrapper prefix makes it
+        misparse the rest of the command."""
+
+        env = self._get_environment("database-compiler-wrapper", srcdir_name="database")
+        env = self._consume("database", ClangdBackend, env=env)
+        compile_commands_path = os.path.join(
+            env.topobjdir, "clangd", "compile_commands.json"
+        )
+
+        # With the wrapper stripped, the output matches a wrapper-less build.
+        self.perform_check(compile_commands_path, env.topsrcdir, env.topobjdir)
+
+    def test_clangd_strips_ccache(self):
+        """Ensure a ccache wrapper is also stripped from the clangd
+        `compile_commands.json`. ccache is folded into COMPILER_WRAPPER by
+        configure, so the same prefix stripping covers it."""
+
+        env = self._get_environment("database-ccache", srcdir_name="database")
+        env = self._consume("database", ClangdBackend, env=env)
+        compile_commands_path = os.path.join(
+            env.topobjdir, "clangd", "compile_commands.json"
+        )
+
+        # With the wrapper stripped, the output matches a wrapper-less build.
+        self.perform_check(compile_commands_path, env.topsrcdir, env.topobjdir)
+
     def test_static_analysis(self):
         """Ensure we can generate a `compile_commands.json` and that is correct.
         in order to be used by StaticAnalysisBackend"""

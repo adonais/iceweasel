@@ -78,10 +78,19 @@ class ProfileBufferGlobalController final {
                  const ProfileBufferControlledChunkManager::Update& aUpdate);
   void LogDeletion(base::ProcessId aProcessId, const TimeStamp& aTimeStamp);
 
+  struct ChunkToDestroy {
+    base::ProcessId mProcessId;
+    TimeStamp mTimeStamp;
+  };
+
+  // Collects the chunks to destroy into aToDestroy rather than destroying them,
+  // so the caller can do so after releasing
+  // sParentChunkManagerAndPendingUpdate; see the destruction loop in
+  // HandleChildChunkManagerUpdate for why.
   void HandleChunkManagerNonFinalUpdate(
       base::ProcessId aProcessId,
       ProfileBufferControlledChunkManager::Update&& aUpdate,
-      ProfileBufferControlledChunkManager& aParentChunkManager);
+      nsTArray<ChunkToDestroy>& aToDestroy);
 
   const size_t mMaximumBytes;
 
@@ -348,59 +357,94 @@ void ProfileBufferGlobalController::HandleChildChunkManagerUpdate(
   MOZ_ASSERT(!aUpdate.IsNotUpdate(),
              "HandleChildChunkManagerUpdate should not be given a non-update");
 
-  auto lockedParentChunkManagerAndPendingUpdate =
-      sParentChunkManagerAndPendingUpdate.Lock();
-  if (!lockedParentChunkManagerAndPendingUpdate->mChunkManager) {
-    // No chunk manager, ignore updates.
-    return;
-  }
+  // Chunks to destroy are collected while holding the lock and destroyed below,
+  // after releasing it.
+  nsTArray<ChunkToDestroy> toDestroy;
+  ProfileBufferControlledChunkManager* parentChunkManager = nullptr;
 
-  if (aUpdate.IsFinal()) {
-    // Final update in a child process, remove all traces of that process.
-    LogUpdate(aProcessId, aUpdate);
-    size_t index = mUnreleasedBytesByPid.BinaryIndexOf(aProcessId);
-    if (index != PidAndBytesArray::NoIndex) {
-      // We already have a value for this pid.
-      PidAndBytes& pidAndBytes = mUnreleasedBytesByPid[index];
-      mUnreleasedTotalBytes -= pidAndBytes.mBytes;
-      mUnreleasedBytesByPid.RemoveElementAt(index);
+  {
+    auto lockedParentChunkManagerAndPendingUpdate =
+        sParentChunkManagerAndPendingUpdate.Lock();
+    if (!lockedParentChunkManagerAndPendingUpdate->mChunkManager) {
+      // No chunk manager, ignore updates.
+      return;
     }
 
-    size_t released = 0;
-    mReleasedChunksByTime.RemoveElementsBy(
-        [&released, aProcessId](const auto& chunk) {
-          const bool match = chunk.mProcessId == aProcessId;
-          if (match) {
-            released += chunk.mBytes;
-          }
-          return match;
-        });
-    if (released != 0) {
-      mReleasedTotalBytes -= released;
+    if (aUpdate.IsFinal()) {
+      // Final update in a child process, remove all traces of that process.
+      LogUpdate(aProcessId, aUpdate);
+      size_t index = mUnreleasedBytesByPid.BinaryIndexOf(aProcessId);
+      if (index != PidAndBytesArray::NoIndex) {
+        // We already have a value for this pid.
+        PidAndBytes& pidAndBytes = mUnreleasedBytesByPid[index];
+        mUnreleasedTotalBytes -= pidAndBytes.mBytes;
+        mUnreleasedBytesByPid.RemoveElementAt(index);
+      }
+
+      size_t released = 0;
+      mReleasedChunksByTime.RemoveElementsBy(
+          [&released, aProcessId](const auto& chunk) {
+            const bool match = chunk.mProcessId == aProcessId;
+            if (match) {
+              released += chunk.mBytes;
+            }
+            return match;
+          });
+      if (released != 0) {
+        mReleasedTotalBytes -= released;
+      }
+
+      // Total can only have gone down, so there's no need to check the limit.
+      return;
     }
 
-    // Total can only have gone down, so there's no need to check the limit.
-    return;
+    parentChunkManager =
+        lockedParentChunkManagerAndPendingUpdate->mChunkManager;
+
+    // Non-final update in child process.
+
+    // Before handling the child update, we may have pending updates from the
+    // parent, which can be processed now since we're in an IPC callback outside
+    // of any profiler-related scope.
+    if (!lockedParentChunkManagerAndPendingUpdate->mPendingUpdate
+             .IsNotUpdate()) {
+      MOZ_ASSERT(
+          !lockedParentChunkManagerAndPendingUpdate->mPendingUpdate.IsFinal());
+      HandleChunkManagerNonFinalUpdate(
+          mParentProcessId,
+          std::move(lockedParentChunkManagerAndPendingUpdate->mPendingUpdate),
+          toDestroy);
+      lockedParentChunkManagerAndPendingUpdate->mPendingUpdate.Clear();
+    }
+
+    HandleChunkManagerNonFinalUpdate(aProcessId, std::move(aUpdate), toDestroy);
   }
 
-  // Non-final update in child process.
-
-  // Before handling the child update, we may have pending updates from the
-  // parent, which can be processed now since we're in an IPC callback outside
-  // of any profiler-related scope.
-  if (!lockedParentChunkManagerAndPendingUpdate->mPendingUpdate.IsNotUpdate()) {
-    MOZ_ASSERT(
-        !lockedParentChunkManagerAndPendingUpdate->mPendingUpdate.IsFinal());
-    HandleChunkManagerNonFinalUpdate(
-        mParentProcessId,
-        std::move(lockedParentChunkManagerAndPendingUpdate->mPendingUpdate),
-        *lockedParentChunkManagerAndPendingUpdate->mChunkManager);
-    lockedParentChunkManagerAndPendingUpdate->mPendingUpdate.Clear();
+  // Now that sParentChunkManagerAndPendingUpdate is released, perform the
+  // actual chunk destructions. Doing this under the lock would close a
+  // lock-order-inversion cycle: DestroyChunksAtOrBefore re-enters the parent
+  // chunk manager and takes the profiler buffer lock, and
+  // SendDestroyReleasedChunksAtOrBefore sends an IPC message and takes the
+  // channel lock; both of those locks can be held elsewhere while a profiler
+  // marker is recorded, which takes the buffer lock under which the parent
+  // chunk manager update callback takes sParentChunkManagerAndPendingUpdate.
+  //
+  // parentChunkManager stays valid even though it was captured under the lock:
+  // it is only cleared/destroyed on the main thread (~ProfileBufferGlobal
+  // controller and the final-update callback), and this runs on the main thread
+  // without spinning the event loop between the release above and this loop.
+  for (const ChunkToDestroy& chunk : toDestroy) {
+    if (chunk.mProcessId == mParentProcessId) {
+      parentChunkManager->DestroyChunksAtOrBefore(chunk.mTimeStamp);
+    } else {
+      ProfilerParentTracker::ForChild(
+          chunk.mProcessId,
+          [timestamp = chunk.mTimeStamp](ProfilerParent* profilerParent) {
+            (void)profilerParent->SendDestroyReleasedChunksAtOrBefore(
+                timestamp);
+          });
+    }
   }
-
-  HandleChunkManagerNonFinalUpdate(
-      aProcessId, std::move(aUpdate),
-      *lockedParentChunkManagerAndPendingUpdate->mChunkManager);
 }
 
 /* static */
@@ -411,7 +455,7 @@ bool ProfileBufferGlobalController::IsLockedOnCurrentThread() {
 void ProfileBufferGlobalController::HandleChunkManagerNonFinalUpdate(
     base::ProcessId aProcessId,
     ProfileBufferControlledChunkManager::Update&& aUpdate,
-    ProfileBufferControlledChunkManager& aParentChunkManager) {
+    nsTArray<ChunkToDestroy>& aToDestroy) {
   MOZ_ASSERT(!aUpdate.IsFinal());
   LogUpdate(aProcessId, aUpdate);
 
@@ -469,7 +513,6 @@ void ProfileBufferGlobalController::HandleChunkManagerNonFinalUpdate(
   MOZ_ASSERT(mReleasedTotalBytes == totalReleased);
 #endif  // DEBUG
 
-  std::vector<ProfileBufferControlledChunkManager::ChunkMetadata> toDestroy;
   while (mUnreleasedTotalBytes + mReleasedTotalBytes > mMaximumBytes &&
          !mReleasedChunksByTime.IsEmpty()) {
     // We have reached the global memory limit, and there *are* released chunks
@@ -477,16 +520,8 @@ void ProfileBufferGlobalController::HandleChunkManagerNonFinalUpdate(
     const TimeStampAndBytesAndPid& oldest = mReleasedChunksByTime[0];
     LogDeletion(oldest.mProcessId, oldest.mTimeStamp);
     mReleasedTotalBytes -= oldest.mBytes;
-    if (oldest.mProcessId == mParentProcessId) {
-      aParentChunkManager.DestroyChunksAtOrBefore(oldest.mTimeStamp);
-    } else {
-      ProfilerParentTracker::ForChild(
-          oldest.mProcessId,
-          [timestamp = oldest.mTimeStamp](ProfilerParent* profilerParent) {
-            (void)profilerParent->SendDestroyReleasedChunksAtOrBefore(
-                timestamp);
-          });
-    }
+    aToDestroy.AppendElement(
+        ChunkToDestroy{oldest.mProcessId, oldest.mTimeStamp});
     mReleasedChunksByTime.RemoveElementAt(0);
   }
 }

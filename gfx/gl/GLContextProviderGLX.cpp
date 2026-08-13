@@ -11,33 +11,31 @@
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-#include "X11UndefineNone.h"
 
-#include "mozilla/StaticPtr.h"
-#include "mozilla/layers/CompositorOptions.h"
+#include "GLContextGLX.h"
+#include "GLContextProvider.h"
+#include "GLLibraryLoader.h"
+#include "GLScreenBuffer.h"
+#include "GLXLibrary.h"
+#include "X11UndefineNone.h"
+#include "gfx2DGlue.h"
+#include "gfxContext.h"
+#include "gfxCrashReporterUtils.h"
+#include "gfxEnv.h"
+#include "gfxPlatform.h"
+#include "gfxUtils.h"
 #include "mozilla/Range.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/StaticPtr.h"
+#include "mozilla/layers/CompositorOptions.h"
 #include "mozilla/widget/CompositorWidget.h"
 #include "mozilla/widget/GtkCompositorWidget.h"
-
-#include "prenv.h"
-#include "GLContextProvider.h"
-#include "GLLibraryLoader.h"
 #include "nsDebug.h"
 #include "nsIWidget.h"
-#include "GLXLibrary.h"
-#include "gfxContext.h"
-#include "gfxEnv.h"
-#include "gfxPlatform.h"
-#include "GLContextGLX.h"
-#include "gfxUtils.h"
-#include "gfx2DGlue.h"
-#include "GLScreenBuffer.h"
-
-#include "gfxCrashReporterUtils.h"
+#include "prenv.h"
 
 #ifdef MOZ_WIDGET_GTK
 #  include "gfxPlatformGtk.h"

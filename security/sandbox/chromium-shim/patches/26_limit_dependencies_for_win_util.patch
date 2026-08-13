@@ -1,0 +1,159 @@
+Only include functions we need in win_util.cc to limit dependencies.
+
+diff --git a/base/win/win_util.cc b/base/win/win_util.cc
+index 979ec82df3da..b453b959c121 100644
+--- a/base/win/win_util.cc
++++ b/base/win/win_util.cc
+@@ -6,17 +6,22 @@
+ 
+ #include <objbase.h>
+ 
++#if !defined(MOZ_SANDBOX)
+ #include <initguid.h>
+ #include <shobjidl.h>
+ #include <tchar.h>
++#endif  // !defined(MOZ_SANDBOX)
+ #include <winternl.h>
+ 
++#if !defined(MOZ_SANDBOX)
+ #include <aclapi.h>
+ #include <cfgmgr32.h>
+ #include <inspectable.h>
+ #include <lm.h>
+ #include <mdmregistration.h>
++#endif  // !defined(MOZ_SANDBOX)
+ #include <ntstatus.h>
++#if !defined(MOZ_SANDBOX)
+ #include <powrprof.h>
+ #include <propkey.h>
+ #include <psapi.h>
+@@ -46,16 +51,22 @@
+ #include "base/base_switches.h"
+ #include "base/check_op.h"
+ #include "base/command_line.h"
++#endif  // !defined(MOZ_SANDBOX)
+ #include "base/containers/heap_array.h"
+ #include "base/debug/crash_logging.h"
+ #include "base/debug/dump_without_crashing.h"
++#if !defined(MOZ_SANDBOX)
+ #include "base/files/file_path.h"
++#endif  // !defined(MOZ_SANDBOX)
+ #include "base/logging.h"
++#if !defined(MOZ_SANDBOX)
+ #include "base/metrics/histogram_functions.h"
+ #include "base/notreached.h"
+ #include "base/scoped_native_library.h"
+ #include "base/strings/string_util.h"
++#endif  // !defined(MOZ_SANDBOX)
+ #include "base/strings/string_util_win.h"
++#if !defined(MOZ_SANDBOX)
+ #include "base/strings/utf_string_conversions.h"
+ #include "base/task/sequenced_task_runner.h"
+ #include "base/task/thread_pool.h"
+@@ -77,13 +88,20 @@
+ #include "base/win/scoped_safearray.h"
+ #include "base/win/scoped_variant.h"
+ #include "base/win/shlwapi.h"
++#endif  // !defined(MOZ_SANDBOX)
+ #include "base/win/static_constants.h"
++#if !defined(MOZ_SANDBOX)
+ #include "base/win/windows_version.h"
+ #include "base/win/wmi.h"
++#else
++#include <intsafe.h>
++#include <processthreadsapi.h>
++#endif  // !defined(MOZ_SANDBOX)
+ 
+ namespace base {
+ namespace win {
+ 
++#if !defined(MOZ_SANDBOX)
+ namespace {
+ 
+ using QueryKeyFunction =
+@@ -932,6 +950,7 @@ bool IsDeviceRegisteredWithManagement() {
+ bool IsJoinedToAzureAD() {
+   return *GetAzureADJoinStateStorage();
+ }
++#endif  // !defined(MOZ_SANDBOX)
+ 
+ bool IsUser32AndGdi32Available() {
+   static const bool is_user32_and_gdi32_available = [] {
+@@ -948,6 +967,7 @@ bool IsUser32AndGdi32Available() {
+   return is_user32_and_gdi32_available;
+ }
+ 
++#if !defined(MOZ_SANDBOX)
+ bool GetLoadedModulesSnapshot(HANDLE process, std::vector<HMODULE>* snapshot) {
+   DCHECK(snapshot);
+   DCHECK_EQ(0u, snapshot->size());
+@@ -1052,6 +1072,7 @@ void* GetUser32FunctionPointer(const char* function_name,
+   }
+   return nullptr;
+ }
++#endif  // !defined(MOZ_SANDBOX)
+ 
+ std::wstring GetWindowObjectName(HANDLE handle) {
+   // Get the size of the name.
+@@ -1076,6 +1097,7 @@ std::wstring GetWindowObjectName(HANDLE handle) {
+   return object_name;
+ }
+ 
++#if !defined(MOZ_SANDBOX)
+ bool GetPointerDevice(HANDLE device, POINTER_DEVICE_INFO& result) {
+   return ::GetPointerDevice(device, &result);
+ }
+@@ -1139,11 +1161,13 @@ bool IsCurrentSessionRemote() {
+ 
+   return current_session_id != glass_session_id;
+ }
++#endif  // !defined(MOZ_SANDBOX)
+ 
+ bool IsAppVerifierLoaded() {
+   return GetModuleHandleA(kApplicationVerifierDllName);
+ }
+ 
++#if !defined(MOZ_SANDBOX)
+ std::optional<std::wstring> ExpandEnvironmentVariables(wcstring_view str) {
+   std::wstring path_expanded;
+   DWORD path_len = MAX_PATH;
+@@ -1162,6 +1186,7 @@ std::optional<std::wstring> ExpandEnvironmentVariables(wcstring_view str) {
+ 
+   return std::nullopt;
+ }
++#endif  // !defined(MOZ_SANDBOX)
+ 
+ expected<std::wstring, NTSTATUS> GetObjectTypeName(HANDLE handle) {
+   if (!HandleTraits::IsHandleValid(handle)) {
+@@ -1198,6 +1223,7 @@ expected<std::wstring, NTSTATUS> GetObjectTypeName(HANDLE handle) {
+                       type_info->TypeName.Length / sizeof(wchar_t));
+ }
+ 
++#if !defined(MOZ_SANDBOX)
+ ProcessPowerState GetProcessEcoQoSState(HANDLE process) {
+   return GetProcessPowerThrottlingState(
+       process, PROCESS_POWER_THROTTLING_EXECUTION_SPEED);
+@@ -1238,6 +1264,7 @@ std::optional<std::wstring> GetSerialNumber() {
+   }
+   return std::nullopt;
+ }
++#endif  // !defined(MOZ_SANDBOX)
+ 
+ std::wstring_view UnicodeStringToView(const UNICODE_STRING& ustr) {
+   return std::wstring_view(ustr.Buffer, ustr.Length / sizeof(wchar_t));
+@@ -1254,6 +1281,7 @@ bool ViewToUnicodeString(std::wstring_view str, UNICODE_STRING& ustr) {
+   return true;
+ }
+ 
++#if !defined(MOZ_SANDBOX)
+ bool EnableStrictHandleCheckingForCurrentProcess() {
+   PROCESS_MITIGATION_STRICT_HANDLE_CHECK_POLICY policy = {};
+   policy.HandleExceptionsPermanentlyEnabled =
+@@ -1308,6 +1336,7 @@ ScopedDeviceConvertibilityStateForTesting::
+ 
+ ScopedDeviceConvertibilityStateForTesting::
+     ~ScopedDeviceConvertibilityStateForTesting() = default;
++#endif  // !defined(MOZ_SANDBOX)
+ 
+ }  // namespace win
+ }  // namespace base

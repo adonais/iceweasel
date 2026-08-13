@@ -2,19 +2,20 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <stdlib.h>
-#include <stdio.h>
 #include <prthread.h>
-#include "nsExpirationTracker.h"
-#include "nsString.h"
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "gtest/gtest.h"
+#include "mozilla/UniquePtr.h"
+#include "nsComponentManagerUtils.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
-#include "nsComponentManagerUtils.h"
+#include "nsExpirationTracker.h"
+#include "nsString.h"
+#include "nsThreadUtils.h"
 #include "nsXPCOM.h"
 #include "prinrval.h"
-#include "nsThreadUtils.h"
-#include "mozilla/UniquePtr.h"
-#include "gtest/gtest.h"
 
 namespace TestExpirationTracker {
 

@@ -55,7 +55,7 @@ add_task(async function test_show_infobar_message() {
 
   Assert.ok(notificationStack);
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => notificationStack.currentNotification,
     "Wait for notification to show"
   );

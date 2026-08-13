@@ -66,13 +66,20 @@ dropzone.addEventListener("click", e => {
 
 setDefault.addEventListener("click", async () => {
   setDefault.disabled = true;
+  let isDefaultNow = false;
   try {
-    await RPMSetDefaultPDFHandler();
+    isDefaultNow = await RPMSetDefaultPDFHandler();
   } catch (e) {
     console.error("Failed to set Firefox as the default PDF handler", e);
   } finally {
     setDefault.disabled = false;
-    updatePromoVisibility();
+    // Hide the promo if Firefox is the default now; otherwise re-check (an
+    // out-of-process picker the user hasn't finished, or a declined set).
+    if (isDefaultNow) {
+      promo.hidden = true;
+    } else {
+      updatePromoVisibility();
+    }
   }
 });
 

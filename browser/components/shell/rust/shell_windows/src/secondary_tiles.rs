@@ -1,7 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-use nserror::{NS_OK, NS_ERROR_INVALID_ARG, nsresult};
+use nserror::{NS_ERROR_INVALID_ARG, NS_OK, nsresult};
 use nsstring::{nsACString, nsAString, nsCString};
 use std::path::PathBuf;
 use thin_vec::ThinVec;
@@ -134,7 +134,7 @@ impl SecondaryTileService {
             .await?;
 
         // Wait until unpinning succeeded before removing the image.
-        moz_task::spawn_blocking("SeconaryTile image deletion", async move {
+        moz_task::spawn_blocking("SecondaryTile image deletion", async move {
             Self::remove_images(&tile_id)
         })
         .await?;
@@ -206,7 +206,7 @@ fn windows_error_from_io_error(io_error: std::io::Error) -> windows::core::Error
 ///
 /// # Safety
 ///
-/// This function much be called with valid `iid` and `result` pointers.
+/// This function must be called with valid `iid` and `result` pointers.
 #[unsafe(no_mangle)]
 pub extern "C" fn shell_windows_new_secondary_tile_service(
     iid: &xpcom::nsIID,

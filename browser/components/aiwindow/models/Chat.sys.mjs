@@ -22,6 +22,7 @@ import {
   WORLD_CUP_LIVE,
   WORLD_CUP_TOOLS,
   WORLD_CUP_PREF,
+  ADD_MEMORY,
   SEARCH_THE_WEB,
 } from "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs";
 import { runSearchTheWeb } from "moz-src:///browser/components/aiwindow/models/search/SearchWorkflow.sys.mjs";
@@ -104,6 +105,10 @@ export async function executeToolByName(
         conversation.addUIToolToCurrentMessage(toolCallId, uiData);
       }
       result = toolResult;
+      break;
+    }
+    case ADD_MEMORY: {
+      result = await toolFns.addMemory(toolParams, conversation);
       break;
     }
     default: {

@@ -5,19 +5,17 @@
 #ifndef GFX_DWRITEFONTLIST_H
 #define GFX_DWRITEFONTLIST_H
 
-#include "mozilla/FontPropertyTypes.h"
-#include "mozilla/MemoryReporting.h"
-#include "gfxDWriteCommon.h"
-#include "dwrite_3.h"
-
-#include "gfxFont.h"
-#include "gfxUserFontSet.h"
-#include "cairo-win32.h"
-
-#include "gfxPlatformFontList.h"
-#include "gfxPlatform.h"
 #include <algorithm>
 
+#include "cairo-win32.h"
+#include "dwrite_3.h"
+#include "gfxDWriteCommon.h"
+#include "gfxFont.h"
+#include "gfxPlatform.h"
+#include "gfxPlatformFontList.h"
+#include "gfxUserFontSet.h"
+#include "mozilla/FontPropertyTypes.h"
+#include "mozilla/MemoryReporting.h"
 #include "mozilla/gfx/UnscaledFontDWrite.h"
 
 /**

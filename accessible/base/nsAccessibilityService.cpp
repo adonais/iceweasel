@@ -5,14 +5,13 @@
 #include "nsAccessibilityService.h"
 
 // NOTE: alphabetically ordered
-#include "ApplicationAccessibleWrap.h"
 #include "ARIAGridAccessible.h"
 #include "ARIAMap.h"
+#include "ApplicationAccessibleWrap.h"
 #include "CssAltContent.h"
 #include "DocAccessible-inl.h"
 #include "DocAccessibleChild.h"
 #include "FocusManager.h"
-#include "mozilla/FocusModel.h"
 #include "HTMLCanvasAccessible.h"
 #include "HTMLElementAccessibles.h"
 #include "HTMLImageMapAccessible.h"
@@ -21,21 +20,22 @@
 #include "HTMLSelectAccessible.h"
 #include "HTMLTableAccessible.h"
 #include "HyperTextAccessible.h"
+#include "OuterDocAccessible.h"
+#include "Pivot.h"
 #include "RootAccessible.h"
+#include "mozilla/FocusModel.h"
+#include "mozilla/a11y/Role.h"
 #include "nsAccUtils.h"
 #include "nsArrayUtils.h"
 #include "nsAttrName.h"
-#include "nsDOMTokenList.h"
 #include "nsCRT.h"
+#include "nsDOMTokenList.h"
 #include "nsEventShell.h"
 #include "nsGkAtoms.h"
 #include "nsIAccessibleAnnouncementEvent.h"
 #include "nsIFrameInlines.h"
 #include "nsServiceManagerUtils.h"
 #include "nsTextFormatter.h"
-#include "OuterDocAccessible.h"
-#include "Pivot.h"
-#include "mozilla/a11y/Role.h"
 #ifdef MOZ_ACCESSIBILITY_ATK
 #  include "RootAccessibleWrap.h"
 #endif
@@ -44,32 +44,13 @@
 #include "xpcAccessibleApplication.h"
 
 #ifdef XP_WIN
-#  include "mozilla/a11y/Compatibility.h"
 #  include "mozilla/StaticPtr.h"
+#  include "mozilla/a11y/Compatibility.h"
 #endif
 
 #ifdef A11Y_LOG
 #  include "Logging.h"
 #endif
-
-#include "nsExceptionHandler.h"
-#include "nsImageFrame.h"
-#include "nsIObserverService.h"
-#include "nsMenuPopupFrame.h"
-#include "nsLayoutUtils.h"
-#include "nsTreeBodyFrame.h"
-#include "nsTreeUtils.h"
-#include "mozilla/a11y/AccTypes.h"
-#include "mozilla/dom/ARIANotifyMixinBinding.h"
-#include "mozilla/dom/ContentParent.h"
-#include "mozilla/dom/DOMStringList.h"
-#include "mozilla/dom/EventTarget.h"
-#include "mozilla/dom/HTMLTableElement.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/PresShell.h"
-#include "mozilla/ProfilerMarkers.h"
-#include "mozilla/RefPtr.h"
-#include "mozilla/Services.h"
 
 #include "XULAlertAccessible.h"
 #include "XULComboboxAccessible.h"
@@ -79,6 +60,24 @@
 #include "XULMenuAccessible.h"
 #include "XULTabAccessible.h"
 #include "XULTreeGridAccessible.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/PresShell.h"
+#include "mozilla/ProfilerMarkers.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/Services.h"
+#include "mozilla/a11y/AccTypes.h"
+#include "mozilla/dom/ARIANotifyMixinBinding.h"
+#include "mozilla/dom/ContentParent.h"
+#include "mozilla/dom/DOMStringList.h"
+#include "mozilla/dom/EventTarget.h"
+#include "mozilla/dom/HTMLTableElement.h"
+#include "nsExceptionHandler.h"
+#include "nsIObserverService.h"
+#include "nsImageFrame.h"
+#include "nsLayoutUtils.h"
+#include "nsMenuPopupFrame.h"
+#include "nsTreeBodyFrame.h"
+#include "nsTreeUtils.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;
@@ -1361,6 +1360,11 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
       newAcc = MakeRefPtr<HyperTextAccessible>(content, document);
     }
 
+    if (content->IsElement() && content->AsElement()->GetPseudoElementType() ==
+                                    PseudoStyleType::Picker) {
+      newAcc = MakeRefPtr<HTMLComboboxListAccessible>(content, document);
+    }
+
     // If there's still no Accessible but we do have an entry in the markup
     // map for this non-presentational element, create a generic
     // HyperTextAccessible.
@@ -1662,8 +1666,8 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
 }
 
 #if defined(ANDROID)
-#  include "mozilla/Monitor.h"
 #  include "mozilla/Maybe.h"
+#  include "mozilla/Monitor.h"
 
 constinit static Maybe<Monitor> sAndroidMonitor;
 

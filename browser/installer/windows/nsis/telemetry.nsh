@@ -347,6 +347,8 @@ Function PrepareStubInstallPing
   ${Select} "$ExitCode"
     ${Case} ${ERR_SUCCESS}
       nsJSON::Set /tree ping "Data" "succeeded" /value true
+    ${Case} ${ERR_USER_CANCELLED_BEFORE_DOWNLOAD}
+      nsJSON::Set /tree ping "Data" "user_cancelled_before_download" /value true
     ${Case} ${ERR_DOWNLOAD_CANCEL}
       nsJSON::Set /tree ping "Data" "user_cancelled" /value true
     ${Case} ${ERR_DOWNLOAD_TOO_MANY_RETRIES}

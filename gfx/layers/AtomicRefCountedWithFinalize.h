@@ -5,10 +5,10 @@
 #ifndef MOZILLA_ATOMICREFCOUNTEDWITHFINALIZE_H_
 #define MOZILLA_ATOMICREFCOUNTEDWITHFINALIZE_H_
 
-#include "mozilla/RefPtr.h"
 #include "MainThreadUtils.h"
 #include "base/message_loop.h"
 #include "base/task.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/gfx/Logging.h"
 
 #define ADDREF_MANUALLY(obj) \

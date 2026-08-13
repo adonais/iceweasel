@@ -32,6 +32,8 @@ export var ShortcutUtils = {
   TOGGLE_CARET_BROWSING: "TOGGLE_CARET_BROWSING",
   MOVE_TAB_BACKWARD: "MOVE_TAB_BACKWARD",
   MOVE_TAB_FORWARD: "MOVE_TAB_FORWARD",
+  MOVE_TAB_TO_START: "MOVE_TAB_TO_START",
+  MOVE_TAB_TO_END: "MOVE_TAB_TO_END",
   NEXT_TAB: "NEXT_TAB",
   PREVIOUS_TAB: "PREVIOUS_TAB",
 
@@ -411,6 +413,16 @@ export var ShortcutUtils = {
         }
         if (ctrlShift) {
           return ShortcutUtils.MOVE_TAB_FORWARD;
+        }
+        break;
+      case event.DOM_VK_HOME:
+        if (ctrlShift) {
+          return ShortcutUtils.MOVE_TAB_TO_START;
+        }
+        break;
+      case event.DOM_VK_END:
+        if (ctrlShift) {
+          return ShortcutUtils.MOVE_TAB_TO_END;
         }
         break;
       case event.DOM_VK_UP: // fall through

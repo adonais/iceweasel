@@ -5,16 +5,16 @@
 #ifndef mozilla_a11y_RemoteAccessible_h
 #define mozilla_a11y_RemoteAccessible_h
 
+#include "AccAttributes.h"
+#include "LocalAccessible.h"
 #include "mozilla/a11y/Accessible.h"
 #include "mozilla/a11y/CacheConstants.h"
 #include "mozilla/a11y/HyperTextAccessibleBase.h"
 #include "mozilla/a11y/Role.h"
-#include "AccAttributes.h"
 #include "nsIAccessibleText.h"
 #include "nsIAccessibleTypes.h"
-#include "nsTArray.h"
 #include "nsRect.h"
-#include "LocalAccessible.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 namespace a11y {

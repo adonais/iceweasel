@@ -208,6 +208,26 @@ function Widgets() {
       prefs,
       widgetsEnabled
     ),
+    privacy: isWidgetEnabled(
+      WIDGET_REGISTRY.find(w => w.id === "privacy"),
+      prefs,
+      widgetsEnabled
+    ),
+    crossword: isWidgetEnabled(
+      WIDGET_REGISTRY.find(w => w.id === "crossword"),
+      prefs,
+      widgetsEnabled
+    ),
+    stocks: isWidgetEnabled(
+      WIDGET_REGISTRY.find(w => w.id === "stocks"),
+      prefs,
+      widgetsEnabled
+    ),
+    pictureOfTheDay: isWidgetEnabled(
+      WIDGET_REGISTRY.find(w => w.id === "pictureOfTheDay"),
+      prefs,
+      widgetsEnabled
+    ),
   };
 
   const widgetOrder = resolveWidgetOrder(prefs);
@@ -333,38 +353,39 @@ function Widgets() {
     const newWidgetSize =
       widgetsMayBeMaximized && !newMaximizedState ? "medium" : "large";
 
-    batch(() => {
-      dispatch(ac.SetPref(PREF_WIDGETS_MAXIMIZED, newMaximizedState));
+    // Batch into one SET_MULTIPLE_PREFS so the sizes return in a single broadcast,
+    // not one staggered round-trip per widget.
+    const prefUpdates = { [PREF_WIDGETS_MAXIMIZED]: newMaximizedState };
 
-      // When Nova is enabled, treat the shared header control as a toggle
-      // between the default/full widget presentation and the compact one.
-      // Widgets at "small" are skipped — they are either in the sidebar or
-      // user-pinned and should not be moved by the row toggle.
-      //
-      // Future: if we add a "small" in-row presentation for a widget, this
-      // loop will need to distinguish between "small-in-sidebar" and
-      // "small-in-row". One way to do that is to add a hasSidebar-aware
-      // helper (e.g. isWidgetInSidebar(widget, prefs)) and only skip widgets
-      // that are actually rendered in the sidebar, not all widgets at "small".
-      // The registry already carries hasSidebar and trainhopSidebarKey, so
-      // resolveWidgetHasSidebar(widget, prefs) provides that check today.
-      if (novaEnabled) {
-        const targetSize = newMaximizedState ? "large" : "medium";
-        for (const widget of WIDGET_REGISTRY) {
-          if (resolveWidgetSize(widget, prefs) !== "small") {
-            dispatch(ac.SetPref(widget.sizePref, targetSize));
-          }
+    // When Nova is enabled, treat the shared header control as a toggle
+    // between the default/full widget presentation and the compact one.
+    // Only widgets actually rendered in the sidebar are skipped — that is the
+    // same hasSidebar + size === "small" test used in WidgetsSidebar and by
+    // weatherGoesToSidebar above, not "any small widget". A "small" widget
+    // sitting in the row is resized along with the others so it isn't left
+    // behind by the row toggle. On minimize such a widget lands at "medium"
+    // rather than returning to "small", since the size pref holds the display
+    // state directly and the pre-maximize size isn't retained.
+    if (novaEnabled) {
+      const targetSize = newMaximizedState ? "large" : "medium";
+      for (const widget of WIDGET_REGISTRY) {
+        const inSidebar =
+          resolveWidgetHasSidebar(widget, prefs) &&
+          resolveWidgetSize(widget, prefs) === "small";
+        if (!inSidebar) {
+          prefUpdates[widget.sizePref] = targetSize;
         }
       }
+    }
 
-      const telemetryData = {
-        action_type: CONTAINER_ACTION_TYPES.CHANGE_SIZE_ALL,
-        action_value: newMaximizedState
-          ? "maximize_widgets"
-          : "minimize_widgets",
-        widget_size: newWidgetSize,
-      };
+    const telemetryData = {
+      action_type: CONTAINER_ACTION_TYPES.CHANGE_SIZE_ALL,
+      action_value: newMaximizedState ? "maximize_widgets" : "minimize_widgets",
+      widget_size: newWidgetSize,
+    };
 
+    batch(() => {
+      dispatch(ac.SetMultiplePrefs(prefUpdates));
       dispatch(
         ac.OnlyToMain({
           type: at.WIDGETS_CONTAINER_ACTION,
@@ -456,15 +477,15 @@ function Widgets() {
       <div className="widgets-title-heading">
         <h1 data-l10n-id="newtab-widget-section-title"></h1>
         {showWidgetsSizeToggle ? (
-          <button
+          <moz-button
             id="toggle-widgets-size-button"
-            type="button"
             className={`widgets-expand-button${isMaximized ? " is-maximized" : ""}`}
             data-l10n-id={
               isMaximized
                 ? "newtab-widget-section-minimize"
                 : "newtab-widget-section-maximize"
             }
+            iconsrc="chrome://global/skin/icons/arrow-down.svg"
             onClick={handleToggleMaximizeClick}
             onKeyDown={handleToggleMaximizeKeyDown}
           />
@@ -538,66 +559,30 @@ function Widgets() {
   }
 
   // CSS container queries on the widgets section decide whether the toggle
-  // button is shown — see _Widgets.scss. JS builds the ordered list of
-  // enabled widget sizes and, for each possible card-column count
-  // (1–4), checks whether the layout overflows: any large past the
-  // first N positions can't fit, and any medium past N needs a medium
-  // in the first N to pair with. The matching `data-overflow-N`
-  // attribute is read by the @container rules in CSS.
-  const sizes = [];
+  // button is shown — see _Widgets.scss. The collapsed row holds one widget
+  // per card-column slot regardless of size, so for each card-column count
+  // (1–4) anything past the first N positions overflows. This keeps mediums
+  // to a single (shorter) row rather than stacking them two-deep to fill a
+  // large-height band. The matching `data-overflow-N` attribute is read by
+  // the @container rules in CSS.
   const enabledWidgetIds = [];
   // Use effectiveOrder (matches the render loop) so optimistic reorders aren't briefly mis-hidden.
   for (const id of effectiveOrder) {
     if (!WIDGET_ROW_COMPONENTS[id] || !widgetEnabledMap[id]) {
       continue;
     }
-    const entry = WIDGET_REGISTRY.find(w => w.id === id);
-    let size = entry ? resolveWidgetSize(entry, prefs) : null;
-    // Mirrors the size override applied in the render loop below — when
-    // the sports follow-teams panel is active it always renders large.
-    if (id === "sportsWidget" && sportsWidgetState === "sports-follow-state") {
-      size = "large";
-    }
-    sizes.push(size);
     enabledWidgetIds.push(id);
   }
-  const overflowsAt = cols => {
-    if (sizes.length <= cols) {
-      return false;
-    }
-    const rest = sizes.slice(cols);
-    if (rest.some(s => s === "large")) {
-      return true;
-    }
-    const partnersAvailable = sizes
-      .slice(0, cols)
-      .filter(s => s !== "large").length;
-    return rest.length > partnersAvailable;
-  };
+  const widgetCount = enabledWidgetIds.length;
+  const overflowsAt = cols => widgetCount > cols;
   // For each viewport (cols 1–4), returns the set of widget render indices
-  // that would be clipped when the row is collapsed: any large past the
-  // first `cols` positions, plus mediums past `cols` whose pair-partner
-  // in the first `cols` is already taken. CSS keys off the matching
-  // `data-hidden-N` to make them tab-out and a11y-hide via
-  // `visibility: hidden` at that viewport.
+  // that would be clipped when the row is collapsed: everything past the
+  // first `cols` slots. CSS keys off the matching `data-hidden-N` to make
+  // them tab-out and a11y-hide at that viewport.
   const hiddenIndicesAt = cols => {
     const set = new Set();
-    if (sizes.length <= cols) {
-      return set;
-    }
-    const partnersCount = sizes
-      .slice(0, cols)
-      .filter(s => s !== "large").length;
-    let mediumOverflowSeen = 0;
-    for (let i = cols; i < sizes.length; i++) {
-      if (sizes[i] === "large") {
-        set.add(i);
-      } else {
-        if (mediumOverflowSeen >= partnersCount) {
-          set.add(i);
-        }
-        mediumOverflowSeen++;
-      }
+    for (let i = cols; i < widgetCount; i++) {
+      set.add(i);
     }
     return set;
   };

@@ -370,7 +370,7 @@ add_task(async function triggered_feature_tour_with_custom_pref() {
   const tab2 = await BrowserTestUtils.openNewForegroundTab(win2.gBrowser);
   await TestUtils.waitForTick();
   win2.gBrowser.removeTab(tab2);
-  await BrowserTestUtils.waitForCondition(async () => {
+  await TestUtils.waitForCondition(async () => {
     const rvs = await Promise.all(showFeatureCalloutSpy.returnValues);
     return (
       showFeatureCalloutSpy.calledWith(
@@ -385,7 +385,7 @@ add_task(async function triggered_feature_tour_with_custom_pref() {
   );
   await BrowserTestUtils.closeWindow(win2);
   win1.focus();
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     async () => Services.focus.activeWindow === win1,
     "Waiting for window 1 to be active"
   );
@@ -398,7 +398,7 @@ add_task(async function triggered_feature_tour_with_custom_pref() {
 
   // Test that the callout advances screen and sets the tour pref
   win1.document.querySelector(calloutCTASelector).click();
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       Services.prefs.prefHasUserValue(TEST_MESSAGES[0].content.tour_pref_name),
     "Waiting for tour pref to be set"
@@ -433,7 +433,7 @@ add_task(async function triggered_feature_tour_with_custom_pref() {
     !Services.prefs.prefHasUserValue(TEST_MESSAGES[0].content.tour_pref_name),
     "Tour pref is cleaned up correctly"
   );
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !FeatureCalloutBroker.isCalloutShowing,
     "Waiting for all callouts to empty from the callout broker"
   );
@@ -594,7 +594,7 @@ add_task(async function triggered_feature_tour_with_advance_screens() {
     !win1.document.querySelector(calloutSelector),
     "Feature Callout is not rendered after the tour ends"
   );
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !FeatureCalloutBroker.isCalloutShowing,
     "Waiting for all callouts to empty from the callout broker"
   );
@@ -698,7 +698,7 @@ add_task(
 
     const tab2 = await openURLInNewTab(win, "about:preferences");
     tab2.focus();
-    await BrowserTestUtils.waitForCondition(() => {
+    await TestUtils.waitForCondition(() => {
       return !doc.body.querySelector(
         "#multi-stage-message-root.featureCallout"
       );

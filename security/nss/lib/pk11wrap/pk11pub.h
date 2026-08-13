@@ -251,6 +251,7 @@ SECItem *PK11_ParamFromIV(CK_MECHANISM_TYPE type, SECItem *iv);
 unsigned char *PK11_IVFromParam(CK_MECHANISM_TYPE type, SECItem *param, int *len);
 SECItem *PK11_BlockData(SECItem *data, unsigned long size);
 int PK11_GetMaxKeyLength(CK_MECHANISM_TYPE type);
+PRBool PK11_IsAEAD(CK_MECHANISM_TYPE type);
 
 /* PKCS #11 to DER mapping functions */
 SECItem *PK11_ParamFromAlgid(SECAlgorithmID *algid);
@@ -562,6 +563,14 @@ SECKEYPrivateKey *PK11_FindPrivateKeyFromCert(PK11SlotInfo *slot,
 SECKEYPrivateKey *PK11_FindKeyByAnyCert(CERTCertificate *cert, void *wincx);
 SECKEYPrivateKey *PK11_FindKeyByKeyID(PK11SlotInfo *slot, SECItem *keyID,
                                       void *wincx);
+/*
+ * Create a SECKEYPrivateKey directly from a fully-specified PKCS #11 private
+ * key template (CKA_CLASS = CKO_PRIVATE_KEY, CKA_KEY_TYPE, and the key
+ * material). The key is created as a session object on 'slot'.
+ */
+SECKEYPrivateKey *PK11_CreatePrivateKeyFromTemplate(
+    PK11SlotInfo *slot, const CK_ATTRIBUTE *theTemplate, unsigned int count,
+    void *wincx);
 int PK11_GetPrivateModulusLen(SECKEYPrivateKey *key);
 
 SECStatus PK11_Decrypt(PK11SymKey *symkey,
@@ -928,6 +937,9 @@ SECStatus PK11_Finalize(PK11Context *context);
 SECStatus PK11_DigestFinal(PK11Context *context, unsigned char *data,
                            unsigned int *outLen, unsigned int length);
 #define PK11_CipherFinal PK11_DigestFinal
+/* deprecated in favor of PK11_SaveContextAlloc, which handles buffer
+ * ownership correctly.  PK11_SaveContext fails (SEC_ERROR_OUTPUT_LEN) if the
+ * supplied buffer is too small to hold the state; it never allocates. */
 SECStatus PK11_SaveContext(PK11Context *cx, unsigned char *save,
                            int *len, int saveLength);
 

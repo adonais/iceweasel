@@ -434,7 +434,7 @@ static bool TryFoldingGuardShapes(JSContext* cx, ICFallbackStub* fallback,
   }
 
   // Replace the existing stubs with the new folded stub.
-  fallback->discardStubs(cx->zone(), icEntry);
+  fallback->discardStubs(cx->zone(), icEntry, lock);
 
   ICAttachResult result = AttachBaselineCacheIRStubLocked(
       cx, writer, cacheKind, script, icScript, fallback, "StubFold", lock);
@@ -507,7 +507,8 @@ bool js::jit::TryFoldingStubsLocked(JSContext* cx, ICFallbackStub* fallback,
 }
 
 bool js::jit::AddToFoldedStub(JSContext* cx, const CacheIRWriter& writer,
-                              ICScript* icScript, ICFallbackStub* fallback) {
+                              ICScript* icScript, ICFallbackStub* fallback,
+                              const gc::AutoMarkingLock& lock) {
   ICEntry* icEntry = icScript->icEntryForStub(fallback);
   ICStub* entryStub = icEntry->firstStub();
 
@@ -753,7 +754,7 @@ bool js::jit::AddToFoldedStub(JSContext* cx, const CacheIRWriter& writer,
   if (numShapes == maxLength) {
     MOZ_ASSERT(fallback->state().mode() != ICState::Mode::Generic);
     fallback->state().forceTransition();
-    fallback->discardStubs(cx->zone(), icEntry);
+    fallback->discardStubs(cx->zone(), icEntry, lock);
     return false;
   }
 

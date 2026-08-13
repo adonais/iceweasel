@@ -40,6 +40,8 @@ pref("devtools.webconsole.filter.debug", true);
 pref("devtools.webconsole.filter.css", false);
 pref("devtools.webconsole.filter.net", false);
 pref("devtools.webconsole.filter.netxhr", false);
+pref("devtools.webconsole.filter.chrome", true);
+pref("devtools.webconsole.filter.content", true);
 pref("devtools.webconsole.inputHistoryCount", 300);
 pref("devtools.webconsole.persistlog", false);
 pref("devtools.webconsole.timestampMessages", false);

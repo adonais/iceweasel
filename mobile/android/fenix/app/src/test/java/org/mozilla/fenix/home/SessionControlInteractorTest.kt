@@ -21,6 +21,7 @@ import org.mozilla.fenix.home.logo.LogoController
 import org.mozilla.fenix.home.logo.TrackingProtectionController
 import org.mozilla.fenix.home.pocket.PocketRecommendedStoriesCategory
 import org.mozilla.fenix.home.pocket.controller.PocketStoriesController
+import org.mozilla.fenix.home.pocket.controller.StoriesImpressionSource
 import org.mozilla.fenix.home.privatebrowsing.controller.PrivateBrowsingController
 import org.mozilla.fenix.home.recentsyncedtabs.RecentSyncedTab
 import org.mozilla.fenix.home.recentsyncedtabs.controller.RecentSyncedTabController
@@ -32,6 +33,8 @@ import org.mozilla.fenix.home.sessioncontrol.SessionControlInteractor
 import org.mozilla.fenix.home.sports.SportsController
 import org.mozilla.fenix.home.termsofuse.PrivacyNoticeBannerController
 import org.mozilla.fenix.home.toolbar.ToolbarController
+import org.mozilla.fenix.home.topsites.AddShortcutEntryPoint
+import org.mozilla.fenix.home.topsites.AddShortcutSource
 import org.mozilla.fenix.home.topsites.controller.TopSiteController
 
 class SessionControlInteractorTest {
@@ -227,8 +230,20 @@ class SessionControlInteractorTest {
 
     @Test
     fun `WHEN save shortcut is called THEN handle the save action in the controller`() {
-        interactor.onSaveShortcut(title = "Firefox", url = "firefox.com")
-        verify { topSiteController.handleSaveShortcut(title = "Firefox", url = "firefox.com") }
+        interactor.onSaveShortcut(
+            title = "Firefox",
+            url = "firefox.com",
+            source = AddShortcutSource.MANUAL,
+            entryPoint = AddShortcutEntryPoint.HOMEPAGE,
+        )
+        verify {
+            topSiteController.handleSaveShortcut(
+                title = "Firefox",
+                url = "firefox.com",
+                source = AddShortcutSource.MANUAL,
+                entryPoint = AddShortcutEntryPoint.HOMEPAGE,
+            )
+        }
     }
 
     @Test
@@ -245,9 +260,11 @@ class SessionControlInteractorTest {
     fun `GIVEN a PocketStoriesInteractor WHEN stories are shown THEN handle it in a PocketStoriesController`() {
         val shownStories: List<PocketStory> = emptyList()
 
-        interactor.onStoriesShown(shownStories)
+        interactor.onStoriesShown(shownStories, StoriesImpressionSource.HOMEPAGE)
 
-        verify { pocketStoriesController.handleStoriesShown(shownStories) }
+        verify {
+            pocketStoriesController.handleStoriesShown(shownStories, StoriesImpressionSource.HOMEPAGE)
+        }
     }
 
     @Test
@@ -264,9 +281,15 @@ class SessionControlInteractorTest {
         val clickedStory: PocketStory = mockk()
         val storyPosition = Triple(1, 2, 3)
 
-        interactor.onStoryClicked(clickedStory, storyPosition)
+        interactor.onStoryClicked(clickedStory, storyPosition, StoriesImpressionSource.HOMEPAGE)
 
-        verify { pocketStoriesController.handleStoryClicked(clickedStory, storyPosition) }
+        verify {
+            pocketStoriesController.handleStoryClicked(
+                clickedStory,
+                storyPosition,
+                StoriesImpressionSource.HOMEPAGE,
+            )
+        }
     }
 
     @Test

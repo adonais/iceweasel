@@ -13,7 +13,7 @@
   :root:not([lwtheme]) {
     @media (-moz-gtk-theme-family) {
       --tabs-navbar-separator-style: none;
-      @media (prefers-color-scheme: light) {
+      @media (prefers-color-scheme: light) and (not -moz-pref("browser.nova.enabled")) {
         --urlbar-box-background-color: #fafafa;
       }
     }
@@ -34,7 +34,7 @@
   :root[customtitlebar] {
     background-color: transparent;
 
-    &[sizemode="normal"]:not([gtktiledwindow]) {
+    &[sizemode="normal"]:not([tiled]) {
       /* Firefox draws its contents to a child window, while GTK takes care of
        * drawing the toplevel (which in most cases is just the window
        * decorations).
@@ -120,10 +120,6 @@
 }
 
 /* All tabs menupopup */
-
-.alltabs-item[selected="true"] {
-  font-weight: var(--font-weight-bold);
-}
 
 #UITourHighlight {
   /* Below are some fixes for people without an X compositor on Linux.

@@ -20,9 +20,9 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/OperatorNewExtensions.h"
 #include "mozilla/fallible.h"
+#include "nsCycleCollectionContainerParticipant.h"
 #include "nsPointerHashKeys.h"
 #include "nsTArrayForwardDeclare.h"
-#include "nsCycleCollectionContainerParticipant.h"
 
 template <class EntryType>
 class nsTHashtable;

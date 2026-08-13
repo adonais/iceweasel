@@ -328,7 +328,7 @@ describe("WorkerListener", function () {
     info("Reload the selected tab to unregister all workers");
     BrowserCommands.reload();
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () =>
         unregisteredWorkers.filter(w => workerIds.includes(w.id)).length === 4,
       "Wait for all 4 workers to be unregistered"

@@ -119,10 +119,6 @@ class ReportingHeader final : public nsIObserver,
   // Checks if a channel contains a Report-To header and parses its value.
   void ReportingFromChannel(nsIHttpChannel* aChannel);
 
-  // This method checks if the protocol handler of the URI has the
-  // URI_IS_POTENTIALLY_TRUSTWORTHY flag.
-  static bool IsSecureURI(nsIURI* aURI);
-
   void RemoveOriginsFromHost(const nsAString& aHost);
 
   void RemoveOriginsFromOriginAttributesPattern(

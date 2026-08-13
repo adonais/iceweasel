@@ -3,8 +3,9 @@
 #ifndef XX_PIP_V1_CLIENT_PROTOCOL_H
 #define XX_PIP_V1_CLIENT_PROTOCOL_H
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
+
 #include "wayland-client.h"
 
 #ifdef __cplusplus

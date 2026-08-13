@@ -1884,20 +1884,38 @@ class WheelScrollAction extends WheelAction {
 
     await assertInViewPort(scrollCoordinates, context);
 
-    lazy.logger.trace(
-      `Dispatch ${this.constructor.name} with id: ${this.id} ` +
-        `pageX: ${scrollCoordinates[0]} pageY: ${scrollCoordinates[1]} ` +
-        `deltaX: ${this.deltaX} deltaY: ${this.deltaY} ` +
-        `async: ${actions.useAsyncWheelEvents}`
-    );
-
     // Only convert coordinates if those are for a content process
     if (context.isContent && actions.useAsyncWheelEvents) {
-      scrollCoordinates = await toBrowserWindowCoordinates(
+      const origin = await toBrowserWindowCoordinates(
         scrollCoordinates,
         context
       );
+
+      // The deltas are specified in CSS pixels by the WebDriver specification,
+      // but the synthesized wheel event is dispatched in the top-level widget's
+      // coordinate space, which has the visual viewport scale (resolution)
+      // applied. Convert the deltas through the same transform as the origin,
+      // so that a non-unit resolution doesn't make the resulting scroll offset
+      // wrong by that factor. The translation cancels in the difference, leaving
+      // only the scale.
+      const target = await toBrowserWindowCoordinates(
+        [
+          scrollCoordinates[0] + this.deltaX,
+          scrollCoordinates[1] + this.deltaY,
+        ],
+        context
+      );
+      this.deltaX = target[0] - origin[0];
+      this.deltaY = target[1] - origin[1];
+
+      scrollCoordinates = origin;
     }
+
+    lazy.logger.trace(
+      `Dispatch ${this.constructor.name} with id: ${this.id} ` +
+        `pageX: ${scrollCoordinates[0]} pageY: ${scrollCoordinates[1]} ` +
+        `deltaX: ${this.deltaX} deltaY: ${this.deltaY} async: ${actions.useAsyncWheelEvents}`
+    );
 
     const startX = 0;
     const startY = 0;

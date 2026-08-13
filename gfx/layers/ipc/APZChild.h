@@ -6,8 +6,8 @@
 #define mozilla_layers_APZChild_h
 
 #include "mozilla/ipc/ProtocolUtils.h"
-#include "mozilla/layers/PAPZChild.h"
 #include "mozilla/layers/APZTaskRunnable.h"
+#include "mozilla/layers/PAPZChild.h"
 
 namespace mozilla {
 namespace layers {

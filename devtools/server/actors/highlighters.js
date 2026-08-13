@@ -58,6 +58,7 @@ exports.CustomHighlighterActor = class CustomHighligherActor extends Actor {
     super(parent.conn, customHighlighterSpec);
 
     this._parent = parent;
+    this.highlighterTypeName = typeName;
 
     const modulePath = highlighterTypes.get(typeName);
     if (!modulePath) {
@@ -92,9 +93,17 @@ exports.CustomHighlighterActor = class CustomHighligherActor extends Actor {
     super.destroy();
     this.finalize();
     this._parent = null;
+    this.#isShown = false;
   }
 
-  release() {}
+  #isShown = false;
+
+  form() {
+    return {
+      actor: this.actorID,
+      isShown: this.#isShown,
+    };
+  }
 
   /**
    * Get current instance of the highlighter object.
@@ -125,6 +134,7 @@ exports.CustomHighlighterActor = class CustomHighligherActor extends Actor {
 
     const rawNode = node?.rawNode;
 
+    this.#isShown = true;
     return this._highlighter.show(rawNode, options);
   }
 
@@ -135,6 +145,7 @@ exports.CustomHighlighterActor = class CustomHighligherActor extends Actor {
     if (this._highlighter) {
       this._highlighter.hide();
     }
+    this.#isShown = false;
   }
 
   /**

@@ -18,13 +18,14 @@
 #include "api/jsep.h"
 #include "api/payload_type.h"
 #include "api/rtc_error.h"
+#include "api/rtp_header_extension_id.h"
 #include "api/rtp_parameters.h"
 #include "call/payload_type.h"
 #include "call/payload_type_picker.h"
 #include "media/base/codec.h"
+#include "media/base/codec_comparators.h"
 #include "pc/session_description.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/logging.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/trace_event.h"
 
@@ -33,23 +34,34 @@ namespace webrtc {
 // Implementation of the SdpPayloadTypeSuggester
 RTCErrorOr<PayloadType> SdpPayloadTypeSuggester::SuggestPayloadType(
     absl::string_view mid,
-    const Codec& codec) {
+    const Codec& codec,
+    bool pick_from_top_of_range) {
   RTC_DCHECK_DISALLOW_THREAD_BLOCKING_CALLS();
   PayloadTypeRecorder& local_recorder = LookupRecorder(mid, /* local= */ true);
-  {  // Local scope to limit lifetime of local_result.
-    RTCErrorOr<PayloadType> local_result =
-        local_recorder.LookupPayloadType(codec);
-    if (local_result.ok()) {
-      return local_result;
+
+  if (pick_from_top_of_range && codec.id.IsSet()) {
+    RTCErrorOr<Codec> existing = local_recorder.LookupCodec(codec.id);
+    if (existing.ok()) {
+      if (MatchesWithReferenceAttributes(existing.value(), codec)) {
+        return codec.id;
+      }
+    } else if (codec.id >= 0 && codec.id <= 127 &&
+               !payload_type_picker_.IsSeen(codec.id)) {
+      local_recorder.AddMapping(codec.id, codec);
+      return codec.id;
     }
   }
+
+  auto local_result = local_recorder.LookupPayloadType(codec);
+  if (local_result.ok()) {
+    return local_result;
+  }
+
   PayloadTypeRecorder& remote_recorder =
       LookupRecorder(mid, /* local= */ false);
   RTCErrorOr<PayloadType> remote_result =
       remote_recorder.LookupPayloadType(codec);
   if (remote_result.ok()) {
-    RTC_LOG(LS_INFO) << "SuggestPayloadType: Found remote mapping for " << codec
-                     << " to PT " << remote_result.value();
     RTCErrorOr<Codec> local_codec =
         local_recorder.LookupCodec(remote_result.value());
     if (!local_codec.ok()) {
@@ -60,11 +72,14 @@ RTCErrorOr<PayloadType> SdpPayloadTypeSuggester::SuggestPayloadType(
     }
     // If we get here, PT is already in use, possibly for something else.
     // Fall through to SuggestMapping.
-  } else {
-    RTC_LOG(LS_INFO) << "SuggestPayloadType: FAILED to find remote mapping for "
-                     << codec;
   }
-  return payload_type_picker_.SuggestMapping(codec, &local_recorder);
+  RTCErrorOr<PayloadType> suggested_result =
+      payload_type_picker_.SuggestMapping(codec, &local_recorder,
+                                          pick_from_top_of_range);
+  if (suggested_result.ok()) {
+    local_recorder.AddMapping(suggested_result.value(), codec);
+  }
+  return suggested_result;
 }
 
 RTCError SdpPayloadTypeSuggester::AddLocalMapping(absl::string_view mid,
@@ -75,14 +90,16 @@ RTCError SdpPayloadTypeSuggester::AddLocalMapping(absl::string_view mid,
   return recorder.AddMapping(payload_type, codec);
 }
 
-RTCErrorOr<int> SdpPayloadTypeSuggester::SuggestRtpHeaderExtensionId(
+RTCErrorOr<RtpHeaderExtensionId>
+SdpPayloadTypeSuggester::SuggestRtpHeaderExtensionId(
     absl::string_view mid,
     const RtpExtension& extension,
     RtpTransceiverIdDomain id_domain) {
   RTC_DCHECK_DISALLOW_THREAD_BLOCKING_CALLS();
   BundleTypeRecorder& bundle_recorder = LookupBundleRecorder(mid);
-  auto result = bundle_recorder.header_extensions().LookupId(extension.uri,
-                                                             extension.encrypt);
+  RTCErrorOr<RtpHeaderExtensionId> result =
+      bundle_recorder.header_extensions().LookupId(extension.uri,
+                                                   extension.encrypt);
   if (result.ok()) {
     return result;
   }
@@ -117,7 +134,7 @@ RTCError SdpPayloadTypeSuggester::Update(const SessionDescription* description,
     PayloadTypeRecorder& recorder = LookupRecorder(content.mid(), local);
     recorder.DisallowRedefinition();
     RTCError error;
-    for (auto codec : content.media_description()->codecs()) {
+    for (const Codec& codec : content.media_description()->codecs()) {
       error = recorder.AddMapping(codec.id, codec);
       if (!error.ok()) {
         break;
@@ -163,7 +180,7 @@ SdpPayloadTypeSuggester::LookupBundleRecorder(absl::string_view mid) {
   }
   if (!recorder_by_mid_.contains(transport_mapped_name)) {
     recorder_by_mid_.emplace(std::make_pair(
-        transport_mapped_name, BundleTypeRecorder(payload_type_picker_)));
+        transport_mapped_name, BundleTypeRecorder(payload_type_picker_, env_)));
   }
   return recorder_by_mid_.at(transport_mapped_name);
 }

@@ -5,8 +5,9 @@
 #ifndef CRLiteTimestamp_h
 #define CRLiteTimestamp_h
 
-#include "nsICertStorage.h"
+#include "CTVerifyResult.h"
 #include "SignedCertificateTimestamp.h"
+#include "nsICertStorage.h"
 
 namespace mozilla::psm {
 

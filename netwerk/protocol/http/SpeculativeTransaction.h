@@ -5,8 +5,8 @@
 #ifndef SpeculativeTransaction_h_
 #define SpeculativeTransaction_h_
 
-#include "mozilla/Maybe.h"
 #include "NullHttpTransaction.h"
+#include "mozilla/Maybe.h"
 
 namespace mozilla {
 namespace net {

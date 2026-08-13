@@ -2,35 +2,36 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "nsDirectoryService.h"
+
+#include "mozilla/ProfilerMarkers.h"
+#include "mozilla/SimpleEnumerator.h"
 #include "nsArrayEnumerator.h"
 #include "nsCOMArray.h"
 #include "nsCOMPtr.h"
-#include "nsDirectoryService.h"
-#include "nsLocalFile.h"
 #include "nsDebug.h"
-#include "nsGkAtoms.h"
 #include "nsEnumeratorUtils.h"
-#include "nsThreadUtils.h"
-
-#include "mozilla/SimpleEnumerator.h"
-#include "mozilla/ProfilerMarkers.h"
+#include "nsGkAtoms.h"
 #include "nsICategoryManager.h"
 #include "nsISimpleEnumerator.h"
+#include "nsLocalFile.h"
+#include "nsThreadUtils.h"
 
 #if defined(XP_WIN)
-#  include <windows.h>
 #  include <shlobj.h>
 #  include <stdlib.h>
+#  include <windows.h>
 #elif defined(XP_UNIX)
-#  include <unistd.h>
 #  include <stdlib.h>
 #  include <sys/param.h>
+#  include <unistd.h>
+
 #  include "prenv.h"
 #endif
 
+#include "BinaryPath.h"
 #include "SpecialSystemDirectory.h"
 #include "nsAppFileLocationProvider.h"
-#include "BinaryPath.h"
 
 using namespace mozilla;
 

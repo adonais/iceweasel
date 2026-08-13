@@ -5,11 +5,11 @@
 #ifndef mozilla_layers_MatrixMessage_h
 #define mozilla_layers_MatrixMessage_h
 
+#include "UnitTransforms.h"
+#include "Units.h"  // for ScreenRect
 #include "mozilla/Maybe.h"
 #include "mozilla/gfx/Matrix.h"
 #include "mozilla/layers/LayersTypes.h"
-#include "Units.h"  // for ScreenRect
-#include "UnitTransforms.h"
 
 namespace mozilla {
 namespace layers {

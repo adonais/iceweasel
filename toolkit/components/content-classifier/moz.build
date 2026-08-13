@@ -13,6 +13,8 @@ XPIDL_SOURCES += [
 XPIDL_MODULE = "content-classifier"
 
 UNIFIED_SOURCES += [
+    "ContentClassifierFeatureUtils.cpp",
+    "ContentClassifierPrefMirror.cpp",
     "ContentClassifierService.cpp",
 ]
 
@@ -24,6 +26,7 @@ LOCAL_INCLUDES += [
     "/netwerk/base",
     "/netwerk/protocol/http",
     "/netwerk/url-classifier",
+    "/toolkit/components/url-classifier",
 ]
 
 EXTRA_JS_MODULES += [

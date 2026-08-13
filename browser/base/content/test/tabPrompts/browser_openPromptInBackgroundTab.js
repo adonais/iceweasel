@@ -123,7 +123,7 @@ add_task(async function test_modal_ui() {
   let openedTabSelectedPromise = BrowserTestUtils.waitForAttribute(
     "selected",
     openedTab,
-    "true"
+    true
   );
 
   // switch to other tab again

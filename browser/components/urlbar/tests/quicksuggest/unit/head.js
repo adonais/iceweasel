@@ -574,6 +574,10 @@ async function doTelemetryTypeTest({ feature, tests }) {
  *     The properties that will be passed to check_results().
  *   {Array} expected
  *     The expected results that will be passed to check_results().
+ *   {Array} merinoSuggestions (optional)
+ *     Merino suggestions that will be used for this test. Overrides
+ *     `env.merinoSuggestions`. Generally, if any test has `merinoSuggestions`,
+ *     they all should, and `env.merinoSuggestions` should not be used.
  */
 async function doResultCheckTest({ env, tests }) {
   // Setup
@@ -585,9 +589,11 @@ async function doResultCheckTest({ env, tests }) {
     env?.remoteSettingRecords ?? []
   );
 
+  let startedMerino = false;
   if (env?.merinoSuggestions) {
     await MerinoTestUtils.server.start();
     MerinoTestUtils.server.response.body.suggestions = env.merinoSuggestions;
+    startedMerino = true;
   }
 
   let additionalProviderCleanup;
@@ -612,12 +618,21 @@ async function doResultCheckTest({ env, tests }) {
     context,
     conditionalPayloadProperties,
     expected,
+    merinoSuggestions = null,
   } of tests) {
     if (description) {
-      info(description);
+      info("doResultCheckTest: " + description);
     }
     for (let [name, value] of prefs) {
       UrlbarPrefs.set(name, value);
+    }
+
+    if (merinoSuggestions) {
+      if (!startedMerino) {
+        await MerinoTestUtils.server.start();
+        startedMerino = true;
+      }
+      MerinoTestUtils.server.response.body.suggestions = merinoSuggestions;
     }
 
     let cleanUpNimbus;
@@ -651,7 +666,7 @@ async function doResultCheckTest({ env, tests }) {
     UrlbarPrefs.clear(name);
   }
   additionalProviderCleanup?.();
-  if (env?.merinoSuggestions) {
+  if (startedMerino) {
     await MerinoTestUtils.server.stop();
   }
 }

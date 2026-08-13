@@ -7,6 +7,8 @@
 
 "use strict";
 
+/* import-globals-from ../../../../base/content/browser-siteProtections.js */
+
 ChromeUtils.defineESModuleGetters(this, {
   BreachAlertStorage: "resource://gre/modules/BreachAlertStore.sys.mjs",
   ContentBlockingAllowList:
@@ -100,7 +102,7 @@ add_task(async function basic_test() {
     waitForLoad: true,
   });
 
-  await BrowserTestUtils.waitForCondition(() => urlbarIcon(window) != "none");
+  await TestUtils.waitForCondition(() => urlbarIcon(window) != "none");
 
   Assert.equal(urlbarIcon(window), ETP_ACTIVE_ICON, "Showing trusted icon");
   Assert.equal(
@@ -137,7 +139,7 @@ add_task(async function test_notsecure_label() {
     waitForLoad: true,
   });
 
-  await BrowserTestUtils.waitForCondition(() => urlbarIcon(window) != "none");
+  await TestUtils.waitForCondition(() => urlbarIcon(window) != "none");
 
   Assert.ok(
     BrowserTestUtils.isVisible(urlbarLabel(window)),
@@ -175,7 +177,7 @@ add_task(async function test_notsecure_label_without_tracking() {
     waitForLoad: true,
   });
 
-  await BrowserTestUtils.waitForCondition(() => urlbarIcon(window) != "none");
+  await TestUtils.waitForCondition(() => urlbarIcon(window) != "none");
   await toggleETP(tab);
 
   Assert.ok(
@@ -197,9 +199,7 @@ add_task(async function test_drag_and_drop() {
   info("Start DnD");
   let trustIcon = document.getElementById("trust-icon");
   let newtabButton = document.getElementById("tabs-newtab-button");
-  await BrowserTestUtils.waitForCondition(() =>
-    BrowserTestUtils.isVisible(trustIcon)
-  );
+  await TestUtils.waitForCondition(() => BrowserTestUtils.isVisible(trustIcon));
 
   let newTabOpened = BrowserTestUtils.waitForNewTab(
     gBrowser,
@@ -249,34 +249,116 @@ add_task(async function test_update() {
 
   await UrlbarTestUtils.openTrustPanel(window);
 
-  let blockerSection = document.getElementById(
+  let blockerSection = document.getElementById("trustpanel-blocker-section");
+  let blockerHeader = document.getElementById(
     "trustpanel-blocker-section-header"
   );
-  Assert.equal(
-    0,
-    parseInt(blockerSection.textContent, 10),
-    "Initially not blocked any trackers"
+
+  // With nothing blocked yet the section must be hidden rather than showing a
+  // misleading "0 trackers blocked" (Bug: intermittent 0-blocked state).
+  Assert.ok(
+    blockerSection.hasAttribute("hidden"),
+    "Blocker section is hidden while no trackers have been blocked"
   );
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], function () {
     content.postMessage("cryptomining", "*");
   });
 
-  await BrowserTestUtils.waitForCondition(
-    () => parseInt(blockerSection.textContent, 10) == 1,
+  await TestUtils.waitForCondition(
+    () => parseInt(blockerHeader.textContent, 10) == 1,
     "Updated to show new cryptominer blocked"
+  );
+  Assert.ok(
+    !blockerSection.hasAttribute("hidden"),
+    "Blocker section is shown once a tracker is blocked"
   );
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], function () {
     content.postMessage("fingerprinting", "*");
   });
 
-  await BrowserTestUtils.waitForCondition(
-    () => parseInt(blockerSection.textContent, 10) == 2,
+  await TestUtils.waitForCondition(
+    () => parseInt(blockerHeader.textContent, 10) == 2,
     "Updated to show new fingerprinter blocked"
+  );
+  Assert.ok(
+    !blockerSection.hasAttribute("hidden"),
+    "Blocker section stays shown with multiple trackers blocked"
   );
 
   BrowserTestUtils.removeTab(tab);
+});
+
+// Regression test: a slower/older content-blocking update must not overwrite a
+// fresher one's blocked count. Without the guard in #updateBlockerView, a stale
+// run that resolves last clobbers the header back to 0 ("0 trackers blocked"),
+// which QA hit intermittently on tracker-heavy sites like Meta.
+add_task(async function test_blocker_count_no_stale_overwrite() {
+  const tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    opening: "https://example.com",
+    waitForLoad: true,
+  });
+
+  await UrlbarTestUtils.openTrustPanel(window);
+
+  let blockerSection = document.getElementById("trustpanel-blocker-section");
+  let blockerHeader = document.getElementById(
+    "trustpanel-blocker-section-header"
+  );
+
+  // Drive a single blocker and control when its async count resolves, so we can
+  // interleave two updates and force the stale one to resolve last.
+  let sandbox = sinon.createSandbox();
+  registerCleanupFunction(() => sandbox.restore());
+  let pendingCounts = [];
+  sandbox.stub(TrackingProtection, "isBlocking").returns(true);
+  sandbox
+    .stub(TrackingProtection, "getBlockerCount")
+    .callsFake(() => new Promise(resolve => pendingCounts.push(resolve)));
+
+  // Start the older update and let it park awaiting its blocker count.
+  gTrustPanelHandler.onContentBlockingEvent(0);
+  await TestUtils.waitForCondition(
+    () => pendingCounts.length == 1,
+    "Older update is awaiting its blocker count"
+  );
+
+  // Start the newer update and let it park too.
+  gTrustPanelHandler.onContentBlockingEvent(0);
+  await TestUtils.waitForCondition(
+    () => pendingCounts.length == 2,
+    "Newer update is awaiting its blocker count"
+  );
+
+  // Resolve the newer update first with the real count.
+  pendingCounts[1](3);
+  await TestUtils.waitForCondition(
+    () => parseInt(blockerHeader.textContent, 10) == 3,
+    "Fresh count is applied"
+  );
+  Assert.ok(
+    !blockerSection.hasAttribute("hidden"),
+    "Section is shown for the fresh non-zero count"
+  );
+
+  // Now resolve the older (stale) update with 0 — it must be ignored.
+  pendingCounts[0](0);
+  await new Promise(resolve => setTimeout(resolve, 0));
+  Assert.equal(
+    parseInt(blockerHeader.textContent, 10),
+    3,
+    "Stale update did not overwrite the fresh count with 0"
+  );
+  Assert.ok(
+    !blockerSection.hasAttribute("hidden"),
+    "Stale update did not hide the section"
+  );
+
+  sandbox.restore();
+  await UrlbarTestUtils.closeTrustPanel(window);
+  await BrowserTestUtils.removeTab(tab);
 });
 
 add_task(async function test_etld() {
@@ -411,7 +493,7 @@ add_task(async function test_breach_alert_check_button_glean() {
 
   // The breach-alert-panel renders its content in a shadow root via Lit.
   // Wait for the shadow root and the "Check Mozilla Monitor" button to appear.
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       breachAlertSection.shadowRoot?.querySelector("moz-button[type=primary]"),
     "The Check Monitor button should appear in the breach-alert-panel shadow root"
@@ -473,7 +555,7 @@ add_task(async function test_breach_alert_check_button_utm() {
 
   // The breach-alert-panel renders its content in a shadow root via Lit.
   // Wait for the shadow root and the "Check Mozilla Monitor" button to appear.
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       breachAlertSection.shadowRoot?.querySelector("moz-button[type=primary]"),
     "The Check Monitor button should appear in the breach-alert-panel shadow root"
@@ -555,7 +637,7 @@ add_task(async function test_breach_dismissal_via_dismiss_button() {
       "trustpanel-breach-alert-section"
     );
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => breachAlertSection.hidden === false,
       "The breach alert section should be visible before dismissal"
     );
@@ -566,7 +648,7 @@ add_task(async function test_breach_dismissal_via_dismiss_button() {
 
     dismissButton.click();
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => breachAlertSection.hidden === true,
       "The breach alert section should be hidden after dismissal"
     );
@@ -581,7 +663,7 @@ add_task(async function test_breach_dismissal_via_dismiss_button() {
       "trustpanel-graphic-section"
     );
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => graphicSection.hidden === false,
       "The graphic section should be visible after dismissal"
     );
@@ -627,7 +709,7 @@ add_task(async function test_breach_dismissal_via_check_button() {
       "trustpanel-breach-alert-section"
     );
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => breachAlertSection.hidden === false,
       "The breach alert section should be visible before dismissal"
     );
@@ -645,7 +727,7 @@ add_task(async function test_breach_dismissal_via_check_button() {
 
       checkButton.click();
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => breachAlertSection.hidden === true,
         "The breach alert section should be hidden after dismissal"
       );
@@ -660,7 +742,7 @@ add_task(async function test_breach_dismissal_via_check_button() {
         "trustpanel-graphic-section"
       );
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => graphicSection.hidden === false,
         "The graphic section should be visible after dismissal"
       );
@@ -708,7 +790,7 @@ add_task(async function test_dismiss_button_glean() {
 
   // The breach-alert-panel renders its content in a shadow root via Lit.
   // Wait for the shadow root and the "Check Mozilla Monitor" button to appear.
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       breachAlertSection.shadowRoot?.querySelector(
         "moz-button:not([type=primary])"
@@ -1144,4 +1226,79 @@ add_task(async function test_legacy_graphic_when_nova_disabled() {
   await UrlbarTestUtils.closeTrustPanel(window);
   await BrowserTestUtils.removeTab(tab);
   await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function clear_cookie_hidden_in_private_browsing() {
+  const privateWin = await BrowserTestUtils.openNewBrowserWindow({
+    private: true,
+  });
+
+  await BrowserTestUtils.openNewForegroundTab({
+    gBrowser: privateWin.gBrowser,
+    opening: TEST_ORIGIN,
+    waitForLoad: true,
+  });
+
+  await UrlbarTestUtils.openTrustPanel(privateWin);
+
+  Assert.ok(
+    BrowserTestUtils.isHidden(
+      privateWin.document.getElementById("trustpanel-clear-cookies-footer")
+    ),
+    "Clear cookies footer is hidden in private browsing"
+  );
+
+  await BrowserTestUtils.closeWindow(privateWin);
+});
+
+add_task(async function test_close_on_tab_switch() {
+  const tab1 = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    TEST_ORIGIN,
+    true
+  );
+  const tab2 = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "https://example.org",
+    true
+  );
+
+  const scenarios = [
+    {
+      initialTab: tab1,
+      key: "VK_PAGE_DOWN",
+      modifiers: { ctrlKey: true },
+      desc: "Ctrl+PageDown",
+    },
+    {
+      initialTab: tab2,
+      key: "VK_PAGE_UP",
+      modifiers: { ctrlKey: true },
+      desc: "Ctrl+PageUp",
+    },
+  ];
+
+  const popup = document.getElementById("trustpanel-popup");
+  for (const scenario of scenarios) {
+    gBrowser.selectedTab = scenario.initialTab;
+    await UrlbarTestUtils.openTrustPanel(window);
+    Assert.equal(
+      popup.state,
+      "open",
+      `Trust Panel is open before ${scenario.desc}`
+    );
+
+    let popupHidden = BrowserTestUtils.waitForEvent(popup, "popuphidden");
+    EventUtils.synthesizeKey(scenario.key, scenario.modifiers);
+    await popupHidden;
+
+    Assert.equal(
+      popup.state,
+      "closed",
+      `Trust Panel closed after ${scenario.desc}`
+    );
+  }
+
+  BrowserTestUtils.removeTab(tab2);
+  BrowserTestUtils.removeTab(tab1);
 });

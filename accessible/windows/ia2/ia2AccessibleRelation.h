@@ -5,15 +5,14 @@
 #ifndef NS_ACCESSIBLE_RELATION_WRAP_H
 #define NS_ACCESSIBLE_RELATION_WRAP_H
 
-#include "MsaaAccessible.h"
-#include "IUnknownImpl.h"
-
 #include <utility>
-#include "nsTArray.h"
 
-#include "mozilla/a11y/RelationType.h"
-#include "mozilla/a11y/Accessible.h"
 #include "AccessibleRelation.h"
+#include "IUnknownImpl.h"
+#include "MsaaAccessible.h"
+#include "mozilla/a11y/Accessible.h"
+#include "mozilla/a11y/RelationType.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 namespace a11y {

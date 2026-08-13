@@ -93,7 +93,9 @@ fun ProtectionsDashboardContent(
 
             BottomSheetHandle(
                 onRequestDismiss = onDismiss,
-                contentDescription = "",
+                contentDescription = stringResource(
+                    R.string.tracker_protections_dashboard_close_handlebar_content_description,
+                ),
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .minimumInteractiveComponentSize()
@@ -116,7 +118,7 @@ private fun ProtectionsDashboardContentPreview(
             category = TrackerCategory.CROSS_SITE_COOKIES,
         ),
         TrackersBlockedCategory(
-            icon = iconsR.drawable.mozac_ic_social_tracker_24,
+            icon = iconsR.drawable.mozac_ic_thumbs_down_24,
             name = R.plurals.trackers_blocked_panel_num_social_media_trackers,
             count = 241,
             category = TrackerCategory.SOCIAL_MEDIA_TRACKERS,

@@ -168,6 +168,15 @@ def fill_template(config, tasks):
 
         worker = taskdesc["worker"]
 
+        # image_builder_arm64 is built `FROM scratch` on an amd64 worker (only
+        # its binaries are cross-compiled via the ARCH build arg), so kaniko has
+        # no base image to infer the architecture from and defaults it to amd64.
+        # Tell kaniko the real target architecture so the image metadata is
+        # correct. Other arm64 images build natively from arm64 base images and
+        # don't need this.
+        if image_name == "image_builder_arm64":
+            worker["env"]["TARGET_ARCH"] = "arm64"
+
         if image_name == "image_builder":
             worker["docker-image"] = IMAGE_BUILDER_IMAGE
             digest_data.append(f"image-builder-image:{IMAGE_BUILDER_IMAGE}")

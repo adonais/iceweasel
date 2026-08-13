@@ -5,7 +5,6 @@
 "use strict";
 
 const {
-  openDocLink,
   openTrustedLink,
 } = require("resource://devtools/client/shared/link.js");
 const {
@@ -24,6 +23,10 @@ const {
 
 const FluentReact = require("resource://devtools/client/shared/vendor/fluent-react.js");
 const Localized = createFactory(FluentReact.Localized);
+
+const MDNLink = createFactory(
+  require("resource://devtools/client/shared/components/MdnLink.js")
+);
 
 const {
   services,
@@ -50,10 +53,6 @@ class RegistrationListEmpty extends PureComponent {
 
   openAboutDebugging() {
     openTrustedLink("about:debugging#workers");
-  }
-
-  openDocumentation() {
-    openDocLink(DOC_URL);
   }
 
   render() {
@@ -100,9 +99,7 @@ class RegistrationListEmpty extends PureComponent {
           {},
           Localized(
             { id: "serviceworker-empty-intro-link" },
-            a({
-              onClick: () => this.openDocumentation(),
-            })
+            MDNLink({ url: DOC_URL })
           )
         ),
         p(

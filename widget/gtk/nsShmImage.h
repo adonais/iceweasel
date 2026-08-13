@@ -12,12 +12,12 @@
 
 #ifdef MOZ_HAVE_SHMIMAGE
 
-#  include "mozilla/gfx/2D.h"
-#  include "nsIWidget.h"
-#  include "Units.h"
-
 #  include <X11/Xlib-xcb.h>
 #  include <xcb/shm.h>
+
+#  include "Units.h"
+#  include "mozilla/gfx/2D.h"
+#  include "nsIWidget.h"
 
 class nsShmImage {
   // bug 1168843, compositor thread may create shared memory instances that are

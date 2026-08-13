@@ -4,28 +4,30 @@
 
 #include "CacheIndex.h"
 
+#include <algorithm>
+#include <limits>
+
 #include "CacheCrypto.h"
-#include "CacheLog.h"
 #include "CacheFileIOManager.h"
 #include "CacheFileMetadata.h"
 #include "CacheFileUtils.h"
-#include "CacheIndexIterator.h"
 #include "CacheIndexContextIterator.h"
-#include "nsThreadUtils.h"
-#include "nsPrintfCString.h"
-#include "mozilla/DebugOnly.h"
-#include "prinrval.h"
-#include "nsIFile.h"
-#include "nsITimer.h"
-#include "nsNetUtil.h"
+#include "CacheIndexIterator.h"
+#include "CacheLog.h"
 #include "mozilla/AutoRestore.h"
-#include <algorithm>
+#include "mozilla/DebugOnly.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/glean/NetwerkCache2Metrics.h"
+#include "nsIFile.h"
+#include "nsITimer.h"
+#include "nsNetUtil.h"
+#include "nsPrintfCString.h"
+#include "nsThreadUtils.h"
+#include "prinrval.h"
 
 #define kMaxBufSize 16384
-#define kIndexVersion 0x0000000C
+#define kIndexVersion 0x0000000D
 #define kTelemetryReportBytesLimit (2U * 1024U * 1024U * 1024U)  // 2GB
 
 #define INDEX_NAME "index"
@@ -418,6 +420,42 @@ void CacheIndex::PreShutdownInternal() {
 
   // We should end up in READY state
   MOZ_ASSERT(mState == READY);
+}
+
+// static
+void CacheIndex::WriteIndexToDiskNow() {
+  StaticMutexAutoLock lock(sLock);
+
+  RefPtr<CacheIndex> index = gInstance;
+  if (!index || index->mShuttingDown) {
+    return;
+  }
+
+  LOG(("CacheIndex::WriteIndexToDiskNow()"));
+
+  nsCOMPtr<nsIEventTarget> ioTarget = CacheFileIOManager::IOTarget();
+  if (!ioTarget) {
+    return;
+  }
+
+  nsCOMPtr<nsIRunnable> event =
+      NewRunnableMethod("net::CacheIndex::WriteIndexToDiskNowInternal", index,
+                        &CacheIndex::WriteIndexToDiskNowInternal);
+  (void)ioTarget->Dispatch(event, nsIEventTarget::DISPATCH_NORMAL);
+}
+
+void CacheIndex::WriteIndexToDiskNowInternal() {
+  StaticMutexAutoLock lock(sLock);
+
+  LOG(("CacheIndex::WriteIndexToDiskNowInternal() [state=%d, dirty=%u]", mState,
+       mIndexStats.Dirty()));
+
+  if (mState != READY || mShuttingDown || mRWPending ||
+      mIndexStats.Dirty() == 0) {
+    return;
+  }
+
+  WriteIndexToDisk(lock);
 }
 
 // static
@@ -955,18 +993,18 @@ nsresult CacheIndex::RemoveEntry(const SHA1Sum::Hash* aHash,
 nsresult CacheIndex::UpdateEntry(const SHA1Sum::Hash* aHash,
                                  const uint32_t* aFrecency,
                                  const bool* aHasAltData,
-                                 const uint16_t* aOnStartTime,
-                                 const uint16_t* aOnStopTime,
+                                 const uint32_t* aLastFetched,
+                                 const uint32_t* aFetchCount,
                                  const uint8_t* aContentType,
                                  const uint32_t* aSize) {
   LOG(
       ("CacheIndex::UpdateEntry() [hash=%08x%08x%08x%08x%08x, "
-       "frecency=%s, hasAltData=%s, onStartTime=%s, onStopTime=%s, "
+       "frecency=%s, hasAltData=%s, lastFetched=%s, fetchCount=%s, "
        "contentType=%s, size=%s]",
        LOGSHA1(aHash), aFrecency ? nsPrintfCString("%u", *aFrecency).get() : "",
        aHasAltData ? (*aHasAltData ? "true" : "false") : "",
-       aOnStartTime ? nsPrintfCString("%u", *aOnStartTime).get() : "",
-       aOnStopTime ? nsPrintfCString("%u", *aOnStopTime).get() : "",
+       aLastFetched ? nsPrintfCString("%u", *aLastFetched).get() : "",
+       aFetchCount ? nsPrintfCString("%u", *aFetchCount).get() : "",
        aContentType ? nsPrintfCString("%u", *aContentType).get() : "",
        aSize ? nsPrintfCString("%u", *aSize).get() : ""));
 
@@ -1005,8 +1043,8 @@ nsresult CacheIndex::UpdateEntry(const SHA1Sum::Hash* aHash,
         return NS_ERROR_UNEXPECTED;
       }
 
-      if (!HasEntryChanged(entry, aFrecency, aHasAltData, aOnStartTime,
-                           aOnStopTime, aContentType, aSize)) {
+      if (!HasEntryChanged(entry, aFrecency, aHasAltData, aLastFetched,
+                           aFetchCount, aContentType, aSize)) {
         return NS_OK;
       }
 
@@ -1022,12 +1060,12 @@ nsresult CacheIndex::UpdateEntry(const SHA1Sum::Hash* aHash,
         entry->SetHasAltData(*aHasAltData);
       }
 
-      if (aOnStartTime) {
-        entry->SetOnStartTime(*aOnStartTime);
+      if (aLastFetched) {
+        entry->SetLastFetched(*aLastFetched);
       }
 
-      if (aOnStopTime) {
-        entry->SetOnStopTime(*aOnStopTime);
+      if (aFetchCount) {
+        entry->SetFetchCount(*aFetchCount);
       }
 
       if (aContentType) {
@@ -1072,12 +1110,12 @@ nsresult CacheIndex::UpdateEntry(const SHA1Sum::Hash* aHash,
         updated->SetHasAltData(*aHasAltData);
       }
 
-      if (aOnStartTime) {
-        updated->SetOnStartTime(*aOnStartTime);
+      if (aLastFetched) {
+        updated->SetLastFetched(*aLastFetched);
       }
 
-      if (aOnStopTime) {
-        updated->SetOnStopTime(*aOnStopTime);
+      if (aFetchCount) {
+        updated->SetFetchCount(*aFetchCount);
       }
 
       if (aContentType) {
@@ -1648,7 +1686,7 @@ bool CacheIndex::IsCollision(CacheIndexEntry* aEntry,
 // static
 bool CacheIndex::HasEntryChanged(
     CacheIndexEntry* aEntry, const uint32_t* aFrecency, const bool* aHasAltData,
-    const uint16_t* aOnStartTime, const uint16_t* aOnStopTime,
+    const uint32_t* aLastFetched, const uint32_t* aFetchCount,
     const uint8_t* aContentType, const uint32_t* aSize) {
   if (aFrecency && *aFrecency != aEntry->GetFrecency()) {
     return true;
@@ -1658,11 +1696,11 @@ bool CacheIndex::HasEntryChanged(
     return true;
   }
 
-  if (aOnStartTime && *aOnStartTime != aEntry->GetOnStartTime()) {
+  if (aLastFetched && *aLastFetched != aEntry->GetLastFetched()) {
     return true;
   }
 
-  if (aOnStopTime && *aOnStopTime != aEntry->GetOnStopTime()) {
+  if (aFetchCount && *aFetchCount != aEntry->GetFetchCount()) {
     return true;
   }
 
@@ -1740,14 +1778,28 @@ bool CacheIndex::WriteIndexToDiskIfNeeded(
     return false;
   }
 
-  if (!mLastDumpTime.IsNull() &&
-      (TimeStamp::NowLoRes() - mLastDumpTime).ToMilliseconds() <
-          StaticPrefs::browser_cache_disk_index_min_dump_interval_ms()) {
+  if (mIndexStats.Dirty() == 0) {
     return false;
   }
 
+  double sinceLastDump =
+      mLastDumpTime.IsNull()
+          ? std::numeric_limits<double>::infinity()
+          : (TimeStamp::NowLoRes() - mLastDumpTime).ToMilliseconds();
+
+  if (sinceLastDump <
+      StaticPrefs::browser_cache_disk_index_min_dump_interval_ms()) {
+    return false;
+  }
+
+  // Write either once enough changes have accumulated, or once the maximum
+  // interval has elapsed with any dirty entry. The latter is a safety net so
+  // that recently-updated frecency is not lost on a crash or process kill under
+  // light browsing, where the dirty-count threshold may never be reached.
   if (mIndexStats.Dirty() <
-      StaticPrefs::browser_cache_disk_index_min_unwritten_changes()) {
+          StaticPrefs::browser_cache_disk_index_min_unwritten_changes() &&
+      sinceLastDump <
+          StaticPrefs::browser_cache_disk_index_max_dump_interval_ms()) {
     return false;
   }
 
@@ -2777,20 +2829,8 @@ nsresult CacheIndex::InitEntryFromDiskData(CacheIndexEntry* aEntry,
   }
   aEntry->SetHasAltData(hasAltData);
 
-  static auto toUint16 = [](const char* aUint16String) -> uint16_t {
-    if (!aUint16String) {
-      return kIndexTimeNotAvailable;
-    }
-    nsresult rv;
-    uint64_t n64 = nsDependentCString(aUint16String).ToInteger64(&rv);
-    MOZ_ASSERT(NS_SUCCEEDED(rv));
-    return n64 <= kIndexTimeOutOfBound ? n64 : kIndexTimeOutOfBound;
-  };
-
-  aEntry->SetOnStartTime(
-      toUint16(aMetaData->GetElement("net-response-time-onstart")));
-  aEntry->SetOnStopTime(
-      toUint16(aMetaData->GetElement("net-response-time-onstop")));
+  aEntry->SetLastFetched(aMetaData->GetLastFetched());
+  aEntry->SetFetchCount(aMetaData->GetFetchCount());
 
   const char* contentTypeStr = aMetaData->GetElement("ctid");
   uint8_t contentType = nsICacheEntry::CONTENT_TYPE_UNKNOWN;

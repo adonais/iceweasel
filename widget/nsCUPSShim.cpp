@@ -2,10 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "nsCUPSShim.h"
+
+#include "mozilla/Logging.h"
 #include "nsDebug.h"
 #include "nsString.h"
-#include "nsCUPSShim.h"
-#include "mozilla/Logging.h"
 #include "prlink.h"
 
 #ifdef CUPS_SHIM_RUNTIME_LINK

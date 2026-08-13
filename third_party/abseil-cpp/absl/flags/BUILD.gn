@@ -88,6 +88,7 @@ absl_source_set("commandlineflag") {
     ":commandlineflag_internal",
     "//third_party/abseil-cpp/absl/base:config",
     "//third_party/abseil-cpp/absl/base:fast_type_id",
+    "//third_party/abseil-cpp/absl/base:nullability",
     "//third_party/abseil-cpp/absl/strings:string_view",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
@@ -118,6 +119,7 @@ absl_source_set("reflection") {
     ":private_handle_accessor",
     "//third_party/abseil-cpp/absl/base:config",
     "//third_party/abseil-cpp/absl/base:core_headers",
+    "//third_party/abseil-cpp/absl/base:fast_type_id",
     "//third_party/abseil-cpp/absl/base:no_destructor",
     "//third_party/abseil-cpp/absl/container:flat_hash_map",
     "//third_party/abseil-cpp/absl/strings",
@@ -142,6 +144,7 @@ absl_source_set("flag_internal") {
     "//third_party/abseil-cpp/absl/base:config",
     "//third_party/abseil-cpp/absl/base:core_headers",
     "//third_party/abseil-cpp/absl/base:dynamic_annotations",
+    "//third_party/abseil-cpp/absl/base:fast_type_id",
     "//third_party/abseil-cpp/absl/base:no_destructor",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/meta:type_traits",
@@ -254,6 +257,5 @@ absl_test("flag_test") {
     "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/strings:string_view",
     "//third_party/abseil-cpp/absl/time",
-    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }

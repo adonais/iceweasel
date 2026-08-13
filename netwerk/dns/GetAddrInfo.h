@@ -5,18 +5,18 @@
 #ifndef netwerk_dns_GetAddrInfo_h
 #define netwerk_dns_GetAddrInfo_h
 
-#include "nsError.h"
-#include "nscore.h"
-#include "nsINativeDNSResolverOverride.h"
-#include "nsHashKeys.h"
-#include "nsTHashMap.h"
-#include "mozilla/RWLock.h"
-#include "nsTArray.h"
-#include "prio.h"
-#include "mozilla/net/DNS.h"
-#include "nsIDNSByTypeRecord.h"
 #include "mozilla/Logging.h"
+#include "mozilla/RWLock.h"
+#include "mozilla/net/DNS.h"
+#include "nsError.h"
+#include "nsHashKeys.h"
+#include "nsIDNSByTypeRecord.h"
 #include "nsIDNSService.h"
+#include "nsINativeDNSResolverOverride.h"
+#include "nsTArray.h"
+#include "nsTHashMap.h"
+#include "nscore.h"
+#include "prio.h"
 
 #if defined(XP_WIN)
 #  define DNSQUERY_AVAILABLE 1

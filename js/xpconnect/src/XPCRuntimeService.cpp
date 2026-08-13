@@ -2,18 +2,20 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "xpcprivate.h"
-#include "xpc_make_class.h"
-
-#include "nsContentUtils.h"
-#include "SystemGlobal.h"
-#include "mozilla/Result.h"
 #include "mozilla/dom/BindingUtils.h"
-#include "mozilla/dom/WebIDLGlobalNameHash.h"
 #include "mozilla/dom/IndexedDatabaseManager.h"
+#include "mozilla/dom/WebIDLGlobalNameHash.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "mozilla/net/CookieJarSettings.h"
+#include "mozilla/Result.h"
+
+#include "nsContentUtils.h"
+#include "SystemGlobal.h"
+#include "xpc_make_class.h"
+#include "xpcprivate.h"
+
+#include "js/loader/ModuleLoaderBase.h"
 
 using namespace mozilla::dom;
 
@@ -25,6 +27,14 @@ SystemGlobal::SystemGlobal()
       mPrincipal(nsContentUtils::GetSystemPrincipal()),
       mCookieJarSettings(mozilla::net::CookieJarSettings::Create(mPrincipal)),
       mWrapper(nullptr) {}
+
+SystemGlobal::~SystemGlobal() = default;
+
+void SystemGlobal::InitModuleLoader(
+    JS::loader::ModuleLoaderBase* aModuleLoader) {
+  MOZ_ASSERT(!mModuleLoader);
+  mModuleLoader = aModuleLoader;
+}
 // XXX(nika): It appears we don't have support for mayresolve hooks in
 // nsIXPCScriptable, and I don't really want to add it because I'd rather just
 // kill nsIXPCScriptable alltogether, so we don't use it here.

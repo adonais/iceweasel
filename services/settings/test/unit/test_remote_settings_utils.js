@@ -159,6 +159,26 @@ add_task(async function test_utils_fetch_with_bad_proxy() {
 add_task(async function test_base_attachment_url_depends_on_server() {
   Services.prefs.setStringPref(
     "services.settings.server",
+    `http://localhost:${server.identity.primaryPort}/v1`
+  );
+  server.registerPathHandler("/v1/", (request, response) => {
+    response.write(
+      JSON.stringify({
+        capabilities: {
+          attachments: {
+            base_url: "http://default-url.com/",
+          },
+        },
+      })
+    );
+    response.setHeader("Content-Type", "application/json; charset=UTF-8");
+    response.setStatusLine(null, 200, "OK");
+  });
+  const before = await Utils.baseAttachmentsURL();
+  Assert.equal(before, "http://default-url.com/");
+
+  Services.prefs.setStringPref(
+    "services.settings.server",
     `http://localhost:${server.identity.primaryPort}/v2`
   );
 
@@ -172,7 +192,7 @@ add_task(async function test_base_attachment_url_depends_on_server() {
       JSON.stringify({
         capabilities: {
           attachments: {
-            base_url: "http://some-cdn-url.org",
+            base_url: "http://some-cdn-url.org/",
           },
         },
       })
@@ -182,6 +202,98 @@ add_task(async function test_base_attachment_url_depends_on_server() {
   });
 
   const after = await Utils.baseAttachmentsURL();
+  Assert.equal(after, "http://some-cdn-url.org/");
+});
 
-  Assert.equal(after, "http://some-cdn-url.org/", "A trailing slash is added");
+add_task(async function test_base_attachment_url_reads_from_prefs() {
+  Services.prefs.setStringPref(
+    "services.settings.base_attachments_url",
+    `${Utils.SERVER_URL}|https://other/`
+  );
+  Assert.equal(await Utils.baseAttachmentsURL(), "https://other/");
+});
+
+add_task(async function test_base_attachment_url_is_robust_to_bad_saved_data() {
+  server.registerPathHandler("/v1/", (request, response) => {
+    response.write(
+      JSON.stringify({
+        capabilities: {
+          attachments: {
+            base_url: "http://some-cdn-url.org/",
+          },
+        },
+      })
+    );
+    response.setHeader("Content-Type", "application/json; charset=UTF-8");
+    response.setStatusLine(null, 200, "OK");
+  });
+
+  for (const badValue of [
+    "",
+    "|",
+    Utils.SERVER_URL,
+    `${Utils.SERVER_URL}|https://other`, // Missing trailing slash.
+    `${Utils.SERVER_URL}|https://other/path`, // Missing trailing slash.
+  ]) {
+    Services.prefs.setStringPref(
+      "services.settings.base_attachments_url",
+      badValue
+    );
+    Assert.equal(
+      await Utils.baseAttachmentsURL(),
+      "http://some-cdn-url.org/",
+      "Fallsback to server's"
+    );
+  }
+});
+
+add_task(async function test_base_attachment_url_does_not_retry_by_default() {
+  Services.prefs.clearUserPref("services.settings.base_attachments_url");
+  Services.prefs.setStringPref(
+    "services.settings.server",
+    `http://localhost:${server.identity.primaryPort}/v1`
+  );
+  let requests = 0;
+  server.registerPathHandler("/v1/", (request, response) => {
+    requests++;
+    response.setStatusLine(null, 503, "Service Unavailable");
+  });
+  try {
+    await Utils.baseAttachmentsURL({ retryWaitMsec: 10 });
+    Assert.ok(false, "should throw on error");
+  } catch (e) {}
+  Assert.equal(requests, 1);
+});
+
+add_task(async function test_base_attachment_url_can_retry() {
+  Services.prefs.clearUserPref("services.settings.base_attachments_url");
+  Services.prefs.setStringPref(
+    "services.settings.server",
+    `http://localhost:${server.identity.primaryPort}/v1`
+  );
+  let requests = 0;
+  server.registerPathHandler("/v1/", (request, response) => {
+    requests++;
+    if (requests < 4) {
+      response.setStatusLine(null, 503, "Service Unavailable");
+      return;
+    }
+
+    response.write(
+      JSON.stringify({
+        capabilities: {
+          attachments: {
+            base_url: "http://some-cdn-url.org/",
+          },
+        },
+      })
+    );
+    response.setHeader("Content-Type", "application/json; charset=UTF-8");
+    response.setStatusLine(null, 200, "OK");
+  });
+  Assert.equal(
+    await Utils.baseAttachmentsURL({ retries: 3, retryWaitMsec: 10 }),
+    "http://some-cdn-url.org/"
+  );
+  Assert.equal(requests, 4);
 });

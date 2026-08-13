@@ -3,6 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "use strict";
 
+const { ProfilerTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/ProfilerTestUtils.sys.mjs"
+);
+
+add_setup(ProfilerTestUtils.assertProfilerInactive);
+
 /**
  * Run through a series of basic recording actions for the perf actor.
  */

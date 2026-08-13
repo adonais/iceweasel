@@ -6,7 +6,7 @@ use kvstore::{Database, GetOptions, Key, Store, StorePath};
 use lockstore_rs::bytes_to_value;
 use lockstore_rs::crypto::{
     decrypt_with_key, encrypt_with_key, generate_random_key, generate_random_nonce, secure_delete,
-    zeroize, CipherSuite,
+    zeroize_on_disk, CipherSuite,
 };
 use lockstore_rs::value_to_bytes;
 use lockstore_rs::{LockstoreError, DEFAULT_CIPHER_SUITE};
@@ -41,7 +41,7 @@ fn test_zeroize_overwrites_with_zeros() {
     let before = store_get(&store, "testdb", "mykey").expect("should exist");
     assert_eq!(before, data);
 
-    zeroize(&store, "testdb", "mykey").expect("zeroize");
+    zeroize_on_disk(&store, "testdb", "mykey").expect("zeroize");
 
     let after = store_get(&store, "testdb", "mykey").expect("should still exist");
     assert_eq!(after.len(), data.len());
@@ -54,7 +54,7 @@ fn test_zeroize_preserves_length() {
     let data = vec![0xFFu8; 128];
     store_put(&store, "testdb", "lenkey", &data);
 
-    zeroize(&store, "testdb", "lenkey").expect("zeroize");
+    zeroize_on_disk(&store, "testdb", "lenkey").expect("zeroize");
 
     let after = store_get(&store, "testdb", "lenkey").expect("should still exist");
     assert_eq!(after.len(), 128);
@@ -64,7 +64,8 @@ fn test_zeroize_preserves_length() {
 #[test]
 fn test_zeroize_nonexistent_key_is_noop() {
     let store = make_store();
-    zeroize(&store, "testdb", "no_such_key").expect("zeroize of missing key should succeed");
+    zeroize_on_disk(&store, "testdb", "no_such_key")
+        .expect("zeroize of missing key should succeed");
     assert!(store_get(&store, "testdb", "no_such_key").is_none());
 }
 
@@ -116,7 +117,7 @@ fn test_encrypt_decrypt_roundtrip_aes256gcm() {
     assert!(ciphertext.len() > plaintext.len());
 
     let decrypted = decrypt_with_key(&ciphertext, &key).expect("decrypt failed");
-    assert_eq!(decrypted, plaintext);
+    assert_eq!(&decrypted[..], &plaintext[..]);
 }
 
 #[test]
@@ -129,7 +130,7 @@ fn test_encrypt_decrypt_roundtrip_chacha20() {
         encrypt_with_key(plaintext, &key, CipherSuite::ChaCha20Poly1305).expect("encrypt failed");
 
     let decrypted = decrypt_with_key(&ciphertext, &key).expect("decrypt failed");
-    assert_eq!(decrypted, plaintext);
+    assert_eq!(&decrypted[..], &plaintext[..]);
 }
 
 #[test]
@@ -153,7 +154,7 @@ fn test_encrypt_large_plaintext() {
         encrypt_with_key(&plaintext, &key, CipherSuite::Aes256Gcm).expect("encrypt failed");
 
     let decrypted = decrypt_with_key(&ciphertext, &key).expect("decrypt failed");
-    assert_eq!(decrypted, plaintext);
+    assert_eq!(&decrypted[..], &plaintext[..]);
 }
 
 #[test]

@@ -5,20 +5,20 @@
 #ifndef mozilla_image_Decoder_h
 #define mozilla_image_Decoder_h
 
-#include "FrameAnimator.h"
-#include "RasterImage.h"
-#include "mozilla/glean/ImageDecodersMetrics.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/NotNull.h"
-#include "mozilla/RefPtr.h"
 #include "AnimationParams.h"
 #include "DecoderFlags.h"
+#include "FrameAnimator.h"
 #include "ImageMetadata.h"
 #include "Orientation.h"
+#include "RasterImage.h"
 #include "Resolution.h"
 #include "SourceBuffer.h"
 #include "StreamingLexer.h"
 #include "SurfaceFlags.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/NotNull.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/glean/ImageDecodersMetrics.h"
 #include "qcms.h"
 
 enum class CMSMode : int32_t;

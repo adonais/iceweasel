@@ -6,11 +6,11 @@
 #define mozilla_UrlClassifierExceptionList_h
 
 #include "nsHashKeys.h"
-#include "nsTHashMap.h"
-#include "nsIUrlClassifierExceptionList.h"
 #include "nsISupports.h"
-#include "nsTArray.h"
+#include "nsIUrlClassifierExceptionList.h"
 #include "nsString.h"
+#include "nsTArray.h"
+#include "nsTHashMap.h"
 
 namespace mozilla::net {
 

@@ -5,11 +5,11 @@
 #ifndef mozilla_a11y_Accessible_inl_h_
 #define mozilla_a11y_Accessible_inl_h_
 
-#include "DocAccessible.h"
 #include "ARIAMap.h"
-#include "nsCoreUtils.h"
-#include "mozilla/dom/Element.h"
+#include "DocAccessible.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/dom/Element.h"
+#include "nsCoreUtils.h"
 
 #ifdef A11Y_LOG
 #  include "Logging.h"

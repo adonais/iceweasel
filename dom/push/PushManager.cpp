@@ -215,6 +215,7 @@ class GetSubscriptionRunnable final : public Runnable {
     AssertIsOnMainThread();
 
     nsCOMPtr<nsIPrincipal> principal;
+    nsCOMPtr<nsIPrincipal> effectiveStoragePrincipal;
 
     {
       // Bug 1228723: If permission is revoked or an error occurs, the
@@ -226,6 +227,8 @@ class GetSubscriptionRunnable final : public Runnable {
         return NS_OK;
       }
       principal = mProxy->GetWorkerPrivate()->GetPrincipal();
+      effectiveStoragePrincipal =
+          mProxy->GetWorkerPrivate()->GetEffectiveStoragePrincipal();
     }
 
     MOZ_ASSERT(principal);
@@ -233,11 +236,14 @@ class GetSubscriptionRunnable final : public Runnable {
     RefPtr<GetSubscriptionCallback> callback =
         new GetSubscriptionCallback(mProxy, mScope);
 
-    PermissionState state;
-    nsresult rv = GetPermissionState(principal, state);
-    if (NS_FAILED(rv)) {
-      callback->OnPushSubscriptionError(NS_ERROR_FAILURE);
-      return NS_OK;
+    PermissionState state = PermissionState::Denied;
+
+    if (effectiveStoragePrincipal->OriginAttributesRef()
+            .mPartitionKey.IsEmpty()) {
+      if (NS_FAILED(GetPermissionState(principal, state))) {
+        callback->OnPushSubscriptionError(NS_ERROR_FAILURE);
+        return NS_OK;
+      }
     }
 
     if (state != PermissionState::Granted) {
@@ -256,6 +262,7 @@ class GetSubscriptionRunnable final : public Runnable {
       return NS_OK;
     }
 
+    nsresult rv;
     if (mAction == PushManager::SubscribeAction) {
       if (mAppServerKey.IsEmpty()) {
         rv = service->Subscribe(mScope, principal, callback);

@@ -82,25 +82,20 @@ static inline bool StatementKindIsUnlabeledBreakTarget(StatementKind kind) {
 // (ES5 15.1).
 class Directives {
   bool strict_;
-  bool asmJS_;
 
  public:
-  explicit Directives(bool strict) : strict_(strict), asmJS_(false) {}
+  explicit Directives(bool strict) : strict_(strict) {}
   explicit Directives(ParseContext* parent);
 
   void setStrict() { strict_ = true; }
   bool strict() const { return strict_; }
 
-  void setAsmJS() { asmJS_ = true; }
-  bool asmJS() const { return asmJS_; }
-
   Directives& operator=(Directives rhs) {
     strict_ = rhs.strict_;
-    asmJS_ = rhs.asmJS_;
     return *this;
   }
   bool operator==(const Directives& rhs) const {
-    return strict_ == rhs.strict_ && asmJS_ == rhs.asmJS_;
+    return strict_ == rhs.strict_;
   }
   bool operator!=(const Directives& rhs) const { return !(*this == rhs); }
 };
@@ -387,9 +382,6 @@ class FunctionBox : public SuspendableContext {
   MemberInitializers memberInitializers_ = MemberInitializers::Invalid();
 
  public:
-  // Back pointer used by asm.js for error messages.
-  FunctionNode* functionNode = nullptr;
-
   // True if bytecode will be emitted for this function in the current
   // compilation.
   bool emitBytecode : 1;
@@ -401,10 +393,6 @@ class FunctionBox : public SuspendableContext {
 
   // Need to emit a synthesized Annex B assignment
   bool isAnnexB : 1;
-
-  // Track if we saw "use asm".
-  // If we successfully validated it, `flags_` is seto to `AsmJS` kind.
-  bool useAsm : 1;
 
   // Analysis of parameter list
   bool hasParameterExprs : 1;
@@ -487,10 +475,6 @@ class FunctionBox : public SuspendableContext {
       copyUpdatedWasEmitted();
     }
   }
-
-  [[nodiscard]] bool setUseAsm();
-  [[nodiscard]] bool setAsmJSModule(const JS::WasmModule* module);
-  bool isAsmJSModule() const { return flags_.isAsmJSNative(); }
 
   bool hasEnclosingScopeIndex() const { return enclosingScopeIndex_.isSome(); }
   ScopeIndex getEnclosingScopeIndex() const { return *enclosingScopeIndex_; }
@@ -627,13 +611,6 @@ class FunctionBox : public SuspendableContext {
   bool hasMappedArgsObj() const {
     return !strict() && hasSimpleParameterList();
   }
-
-  // Return whether this or an enclosing function is being parsed and
-  // validated as asm.js. Note: if asm.js validation fails, this will be false
-  // while the function is being reparsed. This flag can be used to disable
-  // certain parsing features that are necessary in general, but unnecessary
-  // for validated asm.js.
-  bool useAsmOrInsideUseAsm() const { return useAsm; }
 
   void setStart(uint32_t offset, uint32_t line,
                 JS::LimitedColumnNumberOneOrigin column) {

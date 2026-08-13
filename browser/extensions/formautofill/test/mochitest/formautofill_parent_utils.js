@@ -147,7 +147,7 @@ var ParentUtils = {
   },
 
   async cleanUpCreditCards() {
-    if (!FormAutofill.isAutofillCreditCardsAvailable) {
+    if (!FormAutofill.isAutofillTypeAvailable("creditCard")) {
       return;
     }
     const guids = (await this._getRecords(CREDITCARDS_COLLECTION_NAME)).map(

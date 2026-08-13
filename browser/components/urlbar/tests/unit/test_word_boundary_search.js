@@ -207,7 +207,7 @@ add_task(async function test_escape() {
       : makeVisitResult(context, {
           uri: "file:///",
           title: "file:///",
-          source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+          source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
           heuristic: true,
         });
   await check_results({

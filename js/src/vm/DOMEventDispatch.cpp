@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "js/DOMEventDispatch.h"
+
 #include "js/Printf.h"
 #include "vm/JSContext.h"
 #include "vm/JSScript.h"

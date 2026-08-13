@@ -422,7 +422,7 @@ private fun TrackerProtectionDashboardPreview() {
             category = TrackerCategory.CROSS_SITE_COOKIES,
         ),
         TrackersBlockedCategory(
-            icon = mozilla.components.ui.icons.R.drawable.mozac_ic_social_tracker_24,
+            icon = mozilla.components.ui.icons.R.drawable.mozac_ic_thumbs_down_24,
             name = R.plurals.protections_dashboard_category_social,
             count = 241,
             category = TrackerCategory.SOCIAL_MEDIA_TRACKERS,

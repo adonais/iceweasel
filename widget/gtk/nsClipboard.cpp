@@ -2,42 +2,45 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsArrayUtils.h"
 #include "nsClipboard.h"
+
+#include "nsArrayUtils.h"
+#include "nsComponentManagerUtils.h"
 #if defined(MOZ_X11)
 #  include "RetrievalContextX11.h"
 #endif
 #if defined(MOZ_WAYLAND)
 #  include "RetrievalContextGtk.h"
+#  include "RetrievalContextWayland.h"
 #  include "nsWaylandDisplay.h"
 #endif
-#include "nsGtkUtils.h"
-#include "nsIURI.h"
-#include "nsIFile.h"
-#include "nsNetUtil.h"
-#include "nsContentUtils.h"
+#include <gtk/gtk.h>
+
+#include "GRefPtr.h"
 #include "HeadlessClipboard.h"
-#include "nsSupportsPrimitives.h"
-#include "nsString.h"
-#include "nsReadableUtils.h"
-#include "nsPrimitiveHelpers.h"
-#include "nsImageToPixbuf.h"
-#include "nsStringStream.h"
-#include "nsIFileURL.h"
-#include "nsIObserverService.h"
+#include "WidgetUtilsGtk.h"
+#include "imgIContainer.h"
 #include "mozilla/GRefPtr.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_clipboard.h"
+#include "mozilla/StaticPrefs_widget.h"
 #include "mozilla/TimeStamp.h"
-#include "GRefPtr.h"
-#include "WidgetUtilsGtk.h"
-
-#include "imgIContainer.h"
 #include "mozilla/widget/nsGtkHtmlUtils.h"
-
-#include <gtk/gtk.h>
+#include "nsContentUtils.h"
+#include "nsGtkUtils.h"
+#include "nsIFile.h"
+#include "nsIFileURL.h"
+#include "nsIObserverService.h"
+#include "nsIURI.h"
+#include "nsImageToPixbuf.h"
+#include "nsNetUtil.h"
+#include "nsPrimitiveHelpers.h"
+#include "nsReadableUtils.h"
+#include "nsString.h"
+#include "nsStringStream.h"
+#include "nsSupportsPrimitives.h"
 #if defined(MOZ_X11)
 #  include <gtk/gtkx.h>
 #endif
@@ -55,6 +58,17 @@ const int mozilla::kClipboardTimeout = 1000000;
 const int mozilla::kClipboardFastIterationNum = 3;
 
 static const char kURIListMime[] = "text/uri-list";
+
+// Per-platform target names from the W3C clipboard-apis spec, Appendix A
+// (https://www.w3.org/TR/clipboard-apis/#to-os-specific-custom-map-name and
+// #to-os-specific-custom-name). On Linux/ChromeOS/Android, the map atom is
+// served as "application/web;type=\"custom/formatmap\"" and each per-slot
+// atom is "application/web;type=\"custom/formatN\"" where N is the slot
+// index.
+static constexpr char kWebCustomFormatMapTarget[] =
+    "application/web;type=\"custom/formatmap\"";
+static constexpr char kWebCustomFormatTargetPrefix[] =
+    "application/web;type=\"custom/format";
 
 // MIME to exclude sensitive data (password) from the clipboard history on not
 // just KDE.
@@ -180,12 +194,16 @@ NS_IMPL_ISUPPORTS_INHERITED(nsClipboard, nsBaseClipboard, nsIObserver)
 nsresult nsClipboard::Init(void) {
 #if defined(MOZ_X11)
   if (widget::GdkIsX11Display()) {
-    mContext = new RetrievalContextX11();
+    mContext = MakeRefPtr<RetrievalContextX11>();
   }
 #endif
 #if defined(MOZ_WAYLAND)
-  if (widget::GdkIsWaylandDisplay()) {
-    mContext = new RetrievalContextGtk();
+  if (widget::GdkIsWaylandDisplay() &&
+      StaticPrefs::widget_wayland_native_data_session_AtStartup()) {
+    mContext = MakeRefPtr<RetrievalContextWayland>();
+  }
+  if (!mContext) {
+    mContext = MakeRefPtr<RetrievalContextGtk>();
   }
 #endif
 
@@ -240,7 +258,15 @@ nsClipboard::SetNativeClipboardData(nsITransferable* aTransferable,
     // Fall through.  |gtkTargets| will be null below.
   }
 
-  // Add all the flavors to this widget's supported type.
+  // Add all the flavors to this widget's supported type. For "web foo/bar"
+  // flavors we publish only the W3C-spec per-target atom (not the literal
+  // flavor name); the essence -> target mapping is recorded in a local map
+  // that we'll assign to the member after gtk_clipboard_set_with_data
+  // succeeds (that call synchronously fires clipboard_clear_cb for any
+  // previously-owned data, which would otherwise wipe the entries we just
+  // built).
+  mozilla::widget::WebCustomFormatMap newWebCustomFormatMap;
+  uint32_t webCustomFormatIndex = 0;
   bool imagesAdded = false;
   for (uint32_t i = 0; i < flavors.Length(); i++) {
     nsCString& flavorStr = flavors[i];
@@ -271,10 +297,37 @@ nsClipboard::SetNativeClipboardData(nsITransferable* aTransferable,
       continue;
     }
 
+    if (StringBeginsWith(flavorStr, nsLiteralCString(kWebCustomFormatPrefix))) {
+      if (!nsBaseClipboard::IsValidFlavor(flavorStr)) {
+        continue;
+      }
+      nsAutoCString targetName(kWebCustomFormatTargetPrefix);
+      targetName.AppendInt(webCustomFormatIndex);
+      targetName.Append('"');
+      MOZ_CLIPBOARD_LOG("    adding web custom format target %s for %s\n",
+                        targetName.get(), flavorStr.get());
+      GdkAtom atom = gdk_atom_intern(targetName.get(), FALSE);
+      gtk_target_list_add(list, atom, 0, 0);
+      nsDependentCSubstring essence(
+          Substring(flavorStr, strlen(kWebCustomFormatPrefix)));
+      newWebCustomFormatMap.InsertOrUpdate(essence, targetName);
+      webCustomFormatIndex++;
+      continue;
+    }
+
     // Add this to our list of valid targets
     MOZ_CLIPBOARD_LOG("    adding OTHER target %s\n", flavorStr.get());
     GdkAtom atom = gdk_atom_intern(flavorStr.get(), FALSE);
     gtk_target_list_add(list, atom, 0, 0);
+  }
+
+  // If any web custom formats were published, also advertise the map atom so
+  // readers can discover what's available.
+  if (!newWebCustomFormatMap.IsEmpty()) {
+    MOZ_CLIPBOARD_LOG("    adding web custom format map target %s\n",
+                      kWebCustomFormatMapTarget);
+    GdkAtom mapAtom = gdk_atom_intern(kWebCustomFormatMapTarget, FALSE);
+    gtk_target_list_add(list, mapAtom, 0, 0);
   }
 
   // Try to exclude private data from clipboard history.
@@ -320,6 +373,7 @@ nsClipboard::SetNativeClipboardData(nsITransferable* aTransferable,
       mGlobalTransferable = aTransferable;
       gtk_clipboard_set_can_store(gtkClipboard, gtkTargets, numTargets);
     }
+    WebCustomFormatMapFor(aWhichClipboard) = std::move(newWebCustomFormatMap);
     MOZ_CLIPBOARD_LOG("     sequence %d", GetSequenceNumber(aWhichClipboard));
     rv = NS_OK;
   } else {
@@ -345,6 +399,26 @@ nsClipboard::GetNativeClipboardSequenceNumber(ClipboardType aWhichClipboard) {
 // When clipboard contains only images, X11/Gtk tries to convert them
 // to text when we request text instead of just fail to provide the data.
 // So if clipboard contains images only remove text MIME offer.
+mozilla::widget::WebCustomFormatMap
+nsClipboard::GetWebCustomFormatMapFromClipboard(int32_t aWhichClipboard) {
+  mozilla::widget::WebCustomFormatMap map;
+  if (!mContext) {
+    return map;
+  }
+  auto mapData =
+      mContext->GetClipboardData(kWebCustomFormatMapTarget, aWhichClipboard);
+  if (!mapData) {
+    MOZ_CLIPBOARD_LOG("    no web custom format map on clipboard\n");
+    return map;
+  }
+  if (!mozilla::widget::JSONToWebCustomFormatMap(
+          nsDependentCSubstring(mapData.AsSpan()), map)) {
+    MOZ_CLIPBOARD_LOG("    failed to parse web custom format map JSON\n");
+    map.Clear();
+  }
+  return map;
+}
+
 bool nsClipboard::HasSuitableData(int32_t aWhichClipboard,
                                   const nsACString& aFlavor) {
   MOZ_CLIPBOARD_LOG("%s for %s", __FUNCTION__,
@@ -432,6 +506,7 @@ nsClipboard::GetNativeClipboardData(const nsACString& aFlavor,
                                     uint64_t aThreshold) {
   MOZ_DIAGNOSTIC_ASSERT(
       nsIClipboard::IsClipboardTypeSupported(aWhichClipboard));
+  MOZ_DIAGNOSTIC_ASSERT(IsValidFlavor(aFlavor));
 
   MOZ_CLIPBOARD_LOG(
       "nsClipboard::GetNativeClipboardData (%s) for %s sequence num %d",
@@ -443,11 +518,74 @@ nsClipboard::GetNativeClipboardData(const nsACString& aFlavor,
     return Err(NS_ERROR_FAILURE);
   }
 
-  // Filter out MIME types on X11 to prevent unwanted conversions,
-  // see Bug 1611407
-  if (widget::GdkIsX11Display() && !HasSuitableData(aWhichClipboard, aFlavor)) {
+  // Web custom format flavors are virtual: the strings the caller asks
+  // for (kWebCustomFormatMapType, "web foo/bar") are never atoms on the
+  // clipboard. Resolve them to the actual atom name up front by fetching
+  // the map JSON, so the TARGETS filter below can do its job on the
+  // real atom. We also keep the map so the type-specific fetch can reuse
+  // it without re-parsing.
+  const bool isWebMap = aFlavor.EqualsLiteral(kWebCustomFormatMapType);
+  const bool isWebFormat =
+      StringBeginsWith(aFlavor, nsLiteralCString(kWebCustomFormatPrefix));
+  mozilla::widget::WebCustomFormatMap cachedMap;
+  nsAutoCString targetName(aFlavor);
+  if (isWebMap || isWebFormat) {
+    cachedMap = GetWebCustomFormatMapFromClipboard(aWhichClipboard);
+    if (cachedMap.IsEmpty()) {
+      return nsCOMPtr<nsISupports>{};
+    }
+    if (isWebMap) {
+      targetName.Assign(kWebCustomFormatMapTarget);
+    } else {
+      nsDependentCSubstring essence(
+          Substring(aFlavor, strlen(kWebCustomFormatPrefix)));
+      auto entry = cachedMap.Lookup(essence);
+      if (!entry) {
+        return nsCOMPtr<nsISupports>{};
+      }
+      targetName.Assign(entry.Data());
+    }
+  }
+
+  // X11 TARGETS-based filter (also avoids unwanted conversions, see
+  // Bug 1611407). targetName is the resolved target atom for web
+  // flavors and aFlavor itself for everything else.
+  if (widget::GdkIsX11Display() &&
+      !HasSuitableData(aWhichClipboard, targetName)) {
     MOZ_CLIPBOARD_LOG("    Missing suitable clipboard data, quit.");
     return nsCOMPtr<nsISupports>{};
+  }
+
+  // Web custom format map: surface the parsed map's keys as "web foo/bar"
+  // flavors.
+  if (isWebMap) {
+    nsCOMPtr<nsIMutableArray> customFormats =
+        do_CreateInstance(NS_ARRAY_CONTRACTID);
+    for (const auto& essence : cachedMap.Keys()) {
+      nsCOMPtr<nsISupportsCString> customFormat =
+          do_CreateInstance(NS_SUPPORTS_CSTRING_CONTRACTID);
+      customFormat->SetData(nsLiteralCString(kWebCustomFormatPrefix) + essence);
+      customFormats->AppendElement(customFormat);
+    }
+    return nsCOMPtr<nsISupports>(std::move(customFormats));
+  }
+
+  // Specific web custom format: read the bytes from the resolved
+  // per-target atom and wrap them as nsISupportsCString.
+  if (isWebFormat) {
+    MOZ_CLIPBOARD_LOG(
+        "    Getting web custom format %s clipboard data (target %s)\n",
+        PromiseFlatCString(aFlavor).get(), targetName.get());
+    auto targetData =
+        mContext->GetClipboardData(targetName.get(), aWhichClipboard);
+    if (!targetData) {
+      return nsCOMPtr<nsISupports>{};
+    }
+    auto span = targetData.AsSpan();
+    nsCOMPtr<nsISupports> wrapper;
+    nsPrimitiveHelpers::CreatePrimitiveForData(
+        aFlavor, span.data(), span.Length(), getter_AddRefs(wrapper));
+    return wrapper;
   }
 
   if (aFlavor.EqualsLiteral(kJPEGImageMime) ||
@@ -581,6 +719,39 @@ struct DataCallbackHandler {
   }
 };
 
+// Async fetch + decode the web custom format map JSON for the given
+// clipboard, then invoke the callback with the decoded map. The map will be
+// empty if the target isn't published or the JSON is malformed.
+using WebCustomFormatMapCallback =
+    mozilla::MoveOnlyFunction<void(mozilla::widget::WebCustomFormatMap&&)>;
+static void AsyncGetWebCustomFormatMapImpl(
+    int32_t aWhichClipboard, WebCustomFormatMapCallback&& aCallback) {
+  MOZ_CLIPBOARD_LOG("AsyncGetWebCustomFormatMapImpl() type '%s'",
+                    aWhichClipboard == nsClipboard::kSelectionClipboard
+                        ? "primary"
+                        : "clipboard");
+  auto* heapCallback = new WebCustomFormatMapCallback(std::move(aCallback));
+  gtk_clipboard_request_contents(
+      gtk_clipboard_get(GetSelectionAtom(aWhichClipboard)),
+      gdk_atom_intern(kWebCustomFormatMapTarget, FALSE),
+      [](GtkClipboard*, GtkSelectionData* aSelection, gpointer aData) -> void {
+        mozilla::UniquePtr<WebCustomFormatMapCallback> cb(
+            static_cast<WebCustomFormatMapCallback*>(aData));
+        mozilla::widget::WebCustomFormatMap map;
+        int dataLength = gtk_selection_data_get_length(aSelection);
+        if (dataLength > 0) {
+          const char* data =
+              (const char*)gtk_selection_data_get_data(aSelection);
+          if (data) {
+            mozilla::widget::JSONToWebCustomFormatMap(
+                nsDependentCSubstring(data, dataLength), map);
+          }
+        }
+        (*cb)(std::move(map));
+      },
+      heapCallback);
+}
+
 static void AsyncGetTextImpl(
     int32_t aWhichClipboard,
     nsBaseClipboard::GetNativeDataCallback&& aCallback) {
@@ -619,20 +790,30 @@ static void AsyncGetTextImpl(
                               nsLiteralCString(kTextMime)));
 }
 
-static void AsyncGetDataImpl(
-    int32_t aWhichClipboard, const nsACString& aMimeType, DataType aDataType,
-    nsBaseClipboard::GetNativeDataCallback&& aCallback) {
+// aMimeType is the nsIClipboard flavor (what callers know about: text/plain,
+// image/png, "web foo/bar", ...). aTargetName, when non-empty, is the
+// distinct GTK target atom to query on the system clipboard. For most
+// flavors the atom is the same string as the MIME type and aTargetName can
+// stay empty; web custom format reads are the one case where it diverges
+// (the atom is "application/web;type=\"custom/formatN\"" while the MIME
+// type is "web foo/bar").
+static void AsyncGetDataImpl(int32_t aWhichClipboard,
+                             const nsACString& aMimeType, DataType aDataType,
+                             nsBaseClipboard::GetNativeDataCallback&& aCallback,
+                             const nsACString& aTargetName = ""_ns) {
   MOZ_CLIPBOARD_LOG("AsyncGetData() type '%s'",
                     aWhichClipboard == nsClipboard::kSelectionClipboard
                         ? "primary"
                         : "clipboard");
 
+  const nsACString& targetName =
+      aTargetName.IsEmpty() ? aMimeType : aTargetName;
   gtk_clipboard_request_contents(
       gtk_clipboard_get(GetSelectionAtom(aWhichClipboard)),
       // Don't ask Gtk for application/x-moz-file.
       gdk_atom_intern((aDataType == DATATYPE_FILE)
                           ? kURIListMime
-                          : PromiseFlatCString(aMimeType).get(),
+                          : PromiseFlatCString(targetName).get(),
                       FALSE),
       [](GtkClipboard* aClipboard, GtkSelectionData* aSelection,
          gpointer aData) -> void {
@@ -695,9 +876,65 @@ static void AsyncGetDataImpl(
       new DataCallbackHandler(std::move(aCallback), aMimeType, aDataType));
 }
 
+// aWebCustomFormatMap, when present, lets web-flavor reads skip the map
+// JSON round-trip by looking up the per-target atom directly. Typically
+// supplied by AsyncHasNativeClipboardDataMatchingFlavorsWithMap, which has
+// already fetched the map while resolving the flavor query.
 static void AsyncGetDataFlavor(
     int32_t aWhichClipboard, const nsACString& aFlavorStr,
-    nsBaseClipboard::GetNativeDataCallback&& aCallback) {
+    nsBaseClipboard::GetNativeDataCallback&& aCallback,
+    mozilla::Maybe<mozilla::widget::WebCustomFormatMap>&& aWebCustomFormatMap =
+        mozilla::Nothing()) {
+  // Web custom format map: build the nsIMutableArray of "web foo/bar"
+  // flavors from the map we (may have) been handed; fall back to a fresh
+  // fetch if we weren't.
+  if (aFlavorStr.EqualsLiteral(kWebCustomFormatMapType)) {
+    auto buildResult = [callback = std::move(aCallback)](
+                           mozilla::widget::WebCustomFormatMap&& map) mutable {
+      nsCOMPtr<nsIMutableArray> customFormats =
+          do_CreateInstance(NS_ARRAY_CONTRACTID);
+      for (const auto& essence : map.Keys()) {
+        nsCOMPtr<nsISupportsCString> customFormat =
+            do_CreateInstance(NS_SUPPORTS_CSTRING_CONTRACTID);
+        customFormat->SetData(nsLiteralCString(kWebCustomFormatPrefix) +
+                              essence);
+        customFormats->AppendElement(customFormat);
+      }
+      callback(nsCOMPtr<nsISupports>(std::move(customFormats)));
+    };
+    if (aWebCustomFormatMap.isSome()) {
+      buildResult(aWebCustomFormatMap.extract());
+      return;
+    }
+    AsyncGetWebCustomFormatMapImpl(aWhichClipboard, std::move(buildResult));
+    return;
+  }
+  // Specific "web foo/bar" flavor: use the map (cached or freshly fetched)
+  // to find the per-target atom, then read its bytes.
+  if (StringBeginsWith(aFlavorStr, nsLiteralCString(kWebCustomFormatPrefix))) {
+    nsCString flavorCopy(aFlavorStr);
+    auto lookupAndFetch =
+        [aWhichClipboard, flavorCopy, callback = std::move(aCallback)](
+            mozilla::widget::WebCustomFormatMap&& map) mutable {
+          nsDependentCSubstring essence(
+              Substring(flavorCopy, strlen(kWebCustomFormatPrefix)));
+          auto entry = map.Lookup(essence);
+          if (!entry) {
+            callback(nsCOMPtr<nsISupports>{});
+            return;
+          }
+          // aMimeType is the user-visible flavor ("web foo/bar"); aTargetName
+          // is the per-essence atom Firefox published it under.
+          AsyncGetDataImpl(aWhichClipboard, flavorCopy, DATATYPE_RAW,
+                           std::move(callback), entry.Data());
+        };
+    if (aWebCustomFormatMap.isSome()) {
+      lookupAndFetch(aWebCustomFormatMap.extract());
+      return;
+    }
+    AsyncGetWebCustomFormatMapImpl(aWhichClipboard, std::move(lookupAndFetch));
+    return;
+  }
   if (aFlavorStr.EqualsLiteral(kJPEGImageMime) ||
       aFlavorStr.EqualsLiteral(kJPGImageMime) ||
       aFlavorStr.EqualsLiteral(kPNGImageMime) ||
@@ -748,13 +985,18 @@ void nsClipboard::AsyncGetNativeClipboardData(
                         : "clipboard",
                     PromiseFlatCString(aFlavor).get());
 
-  // Filter out MIME types on X11 to prevent unwanted conversions,
-  // see Bug 1611407
+  // X11 path: filter against TARGETS (also avoids unwanted conversions,
+  // see Bug 1611407). When the filter has to fetch the web custom format
+  // map to resolve a web-related entry, it forwards the parsed map via
+  // the callback so AsyncGetDataFlavor can reuse it without re-fetching.
   if (widget::GdkIsX11Display()) {
-    AsyncHasNativeClipboardDataMatchingFlavors(
+    AsyncHasNativeClipboardDataMatchingFlavorsWithMap(
         nsTArray<nsCString>{PromiseFlatCString(aFlavor)}, aWhichClipboard,
-        [aWhichClipboard,
-         callback = std::move(aCallback)](auto aResultOrError) mutable {
+        [aWhichClipboard, flavorCopy = nsCString(aFlavor),
+         callback = std::move(aCallback)](
+            auto aResultOrError,
+            mozilla::Maybe<mozilla::widget::WebCustomFormatMap>
+                aWebCustomFormatMap) mutable {
           if (aResultOrError.isErr()) {
             callback(Err(aResultOrError.unwrapErr()));
             return;
@@ -768,13 +1010,26 @@ void nsClipboard::AsyncGetNativeClipboardData(
             return;
           }
 
-          AsyncGetDataFlavor(aWhichClipboard, clipboardFlavors[0],
-                             std::move(callback));
+          // For web custom format reads we want to read back the flavor
+          // the caller asked for (kWebCustomFormatMapType or "web foo/bar"),
+          // not whatever the filter expanded it into.
+          const bool isWebRequest =
+              flavorCopy.EqualsLiteral(kWebCustomFormatMapType) ||
+              StringBeginsWith(flavorCopy,
+                               nsLiteralCString(kWebCustomFormatPrefix));
+          const nsACString& fetchFlavor =
+              isWebRequest
+                  ? static_cast<const nsACString&>(flavorCopy)
+                  : static_cast<const nsACString&>(clipboardFlavors[0]);
+          AsyncGetDataFlavor(aWhichClipboard, fetchFlavor, std::move(callback),
+                             std::move(aWebCustomFormatMap));
         });
     return;
   }
 
-  // Read clipboard directly on Wayland
+  // Wayland path: no TARGETS filter step. Hand directly to
+  // AsyncGetDataFlavor, which knows how to fetch the web custom format
+  // map on demand when needed.
   AsyncGetDataFlavor(aWhichClipboard, aFlavor, std::move(aCallback));
 }
 
@@ -809,6 +1064,7 @@ void nsClipboard::ClearTransferable(int32_t aWhichClipboard) {
   } else {
     mGlobalTransferable = nullptr;
   }
+  WebCustomFormatMapFor(aWhichClipboard).Clear();
 }
 
 static bool FlavorMatchesTarget(const nsACString& aFlavor, GdkAtom aTarget) {
@@ -883,9 +1139,38 @@ nsClipboard::HasNativeClipboardDataMatchingFlavors(
   }
 #endif
 
+  // Web custom format map: lazy-loaded only when a "web " query needs it.
+  mozilla::widget::WebCustomFormatMap webCustomFormatMap;
+  bool didLoadWebCustomFormatMap = false;
+  auto loadWebCustomFormatMap = [&]() {
+    if (didLoadWebCustomFormatMap) {
+      return;
+    }
+    didLoadWebCustomFormatMap = true;
+    webCustomFormatMap = GetWebCustomFormatMapFromClipboard(aWhichClipboard);
+  };
+  GdkAtom webMapAtom = gdk_atom_intern(kWebCustomFormatMapTarget, FALSE);
+
   // Walk through the provided types and try to match it to a
   // provided type.
   for (auto& flavor : aFlavorList) {
+    if (flavor.EqualsLiteral(kWebCustomFormatMapType)) {
+      for (const auto& target : targets.AsSpan()) {
+        if (target == webMapAtom) {
+          return true;
+        }
+      }
+      continue;
+    }
+    if (StringBeginsWith(flavor, nsLiteralCString(kWebCustomFormatPrefix))) {
+      loadWebCustomFormatMap();
+      nsDependentCSubstring essence(
+          Substring(flavor, strlen(kWebCustomFormatPrefix)));
+      if (webCustomFormatMap.Lookup(essence)) {
+        return true;
+      }
+      continue;
+    }
     // We special case text/plain here.
     if (flavor.EqualsLiteral(kTextMime) &&
         gtk_targets_include_text(targets.AsSpan().data(),
@@ -903,23 +1188,38 @@ nsClipboard::HasNativeClipboardDataMatchingFlavors(
   return false;
 }
 
-struct TragetCallbackHandler {
-  TragetCallbackHandler(const nsTArray<nsCString>& aAcceptedFlavorList,
-                        nsBaseClipboard::HasMatchingFlavorsCallback&& aCallback)
+struct TargetCallbackHandler {
+  TargetCallbackHandler(
+      const nsTArray<nsCString>& aAcceptedFlavorList,
+      nsClipboard::HasMatchingFlavorsCallbackWithMap&& aCallback)
       : mAcceptedFlavorList(aAcceptedFlavorList.Clone()),
         mCallback(std::move(aCallback)) {
-    MOZ_CLIPBOARD_LOG("TragetCallbackHandler(%p) created", this);
+    MOZ_CLIPBOARD_LOG("TargetCallbackHandler(%p) created", this);
   }
-  ~TragetCallbackHandler() {
-    MOZ_CLIPBOARD_LOG("TragetCallbackHandler(%p) deleted", this);
+  ~TargetCallbackHandler() {
+    MOZ_CLIPBOARD_LOG("TargetCallbackHandler(%p) deleted", this);
   }
   nsTArray<nsCString> mAcceptedFlavorList;
-  nsBaseClipboard::HasMatchingFlavorsCallback mCallback;
+  nsClipboard::HasMatchingFlavorsCallbackWithMap mCallback;
 };
 
 void nsClipboard::AsyncHasNativeClipboardDataMatchingFlavors(
     const nsTArray<nsCString>& aFlavorList, ClipboardType aWhichClipboard,
     nsBaseClipboard::HasMatchingFlavorsCallback&& aCallback) {
+  // Thin adapter over the richer internal variant: callers of the
+  // base-class signature don't need the WebCustomFormatMap, so we forward
+  // their callback after dropping the map argument.
+  AsyncHasNativeClipboardDataMatchingFlavorsWithMap(
+      aFlavorList, aWhichClipboard,
+      [callback = std::move(aCallback)](
+          mozilla::Result<nsTArray<nsCString>, nsresult> aResultOrError,
+          mozilla::Maybe<mozilla::widget::WebCustomFormatMap>
+          /* aCachedMap */) mutable { callback(std::move(aResultOrError)); });
+}
+
+void nsClipboard::AsyncHasNativeClipboardDataMatchingFlavorsWithMap(
+    const nsTArray<nsCString>& aFlavorList, ClipboardType aWhichClipboard,
+    nsClipboard::HasMatchingFlavorsCallbackWithMap&& aCallback) {
   MOZ_DIAGNOSTIC_ASSERT(
       nsIClipboard::IsClipboardTypeSupported(aWhichClipboard));
 
@@ -934,8 +1234,8 @@ void nsClipboard::AsyncHasNativeClipboardDataMatchingFlavors(
          gpointer aData) -> void {
         MOZ_CLIPBOARD_LOG("gtk_clipboard_request_contents async handler (%p)",
                           aData);
-        UniquePtr<TragetCallbackHandler> handler(
-            static_cast<TragetCallbackHandler*>(aData));
+        UniquePtr<TargetCallbackHandler> handler(
+            static_cast<TargetCallbackHandler*>(aData));
 
         if (gtk_selection_data_get_length(aSelection) > 0) {
           GdkAtom* targets = nullptr;
@@ -958,8 +1258,32 @@ void nsClipboard::AsyncHasNativeClipboardDataMatchingFlavors(
             }
 #endif
 
+            // Is the web custom format map atom published? Used below to
+            // decide whether web-related flavors need a chained async fetch
+            // of the map JSON.
+            GdkAtom webMapAtom =
+                gdk_atom_intern(kWebCustomFormatMapTarget, FALSE);
+            bool mapAtomPresent = false;
+            for (int i = 0; i < targetsNum; i++) {
+              if (targets[i] == webMapAtom) {
+                mapAtomPresent = true;
+                break;
+              }
+            }
+
             nsTArray<nsCString> results;
+            bool needsMap = false;
             for (auto& flavor : handler->mAcceptedFlavorList) {
+              // When the map atom is on the clipboard, defer web-related
+              // flavors so the chained async fetch decides them based on
+              // the map JSON contents.
+              if (mapAtomPresent &&
+                  (flavor.EqualsLiteral(kWebCustomFormatMapType) ||
+                   StringBeginsWith(
+                       flavor, nsLiteralCString(kWebCustomFormatPrefix)))) {
+                needsMap = true;
+                continue;
+              }
               if (flavor.EqualsLiteral(kTextMime) &&
                   gtk_targets_include_text(targets, targetsNum)) {
                 results.AppendElement(flavor);
@@ -971,7 +1295,44 @@ void nsClipboard::AsyncHasNativeClipboardDataMatchingFlavors(
                 }
               }
             }
-            handler->mCallback(std::move(results));
+
+            if (needsMap) {
+              // aClipboard came from gtk_clipboard_get(GetSelectionAtom(...)),
+              // so it must round-trip back to a known ClipboardType.
+              mozilla::Maybe<nsIClipboard::ClipboardType> whichClipboard =
+                  GetGeckoClipboardType(aClipboard);
+              MOZ_ASSERT(whichClipboard.isSome());
+              AsyncGetWebCustomFormatMapImpl(
+                  *whichClipboard,
+                  [handler = std::move(handler), results = std::move(results)](
+                      mozilla::widget::WebCustomFormatMap&& map) mutable {
+                    for (const auto& flavor : handler->mAcceptedFlavorList) {
+                      if (flavor.EqualsLiteral(kWebCustomFormatMapType)) {
+                        for (const auto& essence : map.Keys()) {
+                          results.AppendElement(
+                              nsLiteralCString(kWebCustomFormatPrefix) +
+                              essence);
+                        }
+                      } else if (StringBeginsWith(
+                                     flavor, nsLiteralCString(
+                                                 kWebCustomFormatPrefix))) {
+                        nsDependentCSubstring essence(
+                            Substring(flavor, strlen(kWebCustomFormatPrefix)));
+                        if (map.Lookup(essence)) {
+                          results.AppendElement(flavor);
+                        }
+                      }
+                    }
+                    // Pass the fetched map back so a chained read path
+                    // (e.g. AsyncGetNativeClipboardData for a web flavor)
+                    // can reuse it instead of fetching it again.
+                    handler->mCallback(std::move(results),
+                                       mozilla::Some(std::move(map)));
+                  });
+              return;
+            }
+
+            handler->mCallback(std::move(results), mozilla::Nothing());
             return;
           }
         }
@@ -989,23 +1350,23 @@ void nsClipboard::AsyncHasNativeClipboardDataMatchingFlavors(
                    gpointer aData) -> void {
                   MOZ_CLIPBOARD_LOG(
                       "gtk_clipboard_request_text async handler (%p)", aData);
-                  UniquePtr<TragetCallbackHandler> handler(
-                      static_cast<TragetCallbackHandler*>(aData));
+                  UniquePtr<TargetCallbackHandler> handler(
+                      static_cast<TargetCallbackHandler*>(aData));
 
                   nsTArray<nsCString> results;
                   if (aText) {
                     results.AppendElement(kTextMime);
                   }
-                  handler->mCallback(std::move(results));
+                  handler->mCallback(std::move(results), mozilla::Nothing());
                 },
                 handler.release());
             return;
           }
         }
 
-        handler->mCallback(nsTArray<nsCString>{});
+        handler->mCallback(nsTArray<nsCString>{}, mozilla::Nothing());
       },
-      new TragetCallbackHandler(aFlavorList, std::move(aCallback)));
+      new TargetCallbackHandler(aFlavorList, std::move(aCallback)));
 }
 
 nsITransferable* nsClipboard::GetTransferable(int32_t aWhichClipboard) {
@@ -1226,6 +1587,56 @@ void nsClipboard::SelectionGetEvent(GtkClipboard* aClipboard,
   GUniquePtr<gchar> target_name(gdk_atom_name(selectionTarget));
   if (!target_name) {
     MOZ_CLIPBOARD_LOG("  Failed to get target name!\n");
+    return;
+  }
+
+  // Web custom format support. The map target is a synthetic flavor that
+  // publishes the essence -> target map as JSON. Each per-target serves the
+  // raw bytes of one "web foo/bar" entry stored in the transferable. Target
+  // names come from the W3C clipboard-apis spec, Appendix A.
+  const mozilla::widget::WebCustomFormatMap& webCustomFormatMap =
+      WebCustomFormatMapFor(whichClipboard);
+  if (!strcmp(target_name.get(), kWebCustomFormatMapTarget)) {
+    nsAutoCString json;
+    mozilla::widget::WebCustomFormatMapToJSON(webCustomFormatMap, json);
+    MOZ_CLIPBOARD_LOG("  Setting %zd bytes of web custom format map JSON\n",
+                      json.Length());
+    gtk_selection_data_set(aSelectionData, selectionTarget, 8,
+                           reinterpret_cast<const guchar*>(json.get()),
+                           json.Length());
+    return;
+  }
+  if (!strncmp(target_name.get(), kWebCustomFormatTargetPrefix,
+               strlen(kWebCustomFormatTargetPrefix))) {
+    for (const auto& entry : webCustomFormatMap) {
+      if (!strcmp(entry.GetData().get(), target_name.get())) {
+        nsAutoCString webFlavor(kWebCustomFormatPrefix);
+        webFlavor.Append(entry.GetKey());
+        nsCOMPtr<nsISupports> targetData;
+        if (NS_FAILED(trans->GetTransferData(webFlavor.get(),
+                                             getter_AddRefs(targetData))) ||
+            !targetData) {
+          MOZ_CLIPBOARD_LOG("  Failed to get %s data\n", webFlavor.get());
+          return;
+        }
+        nsCOMPtr<nsISupportsCString> cstr = do_QueryInterface(targetData);
+        if (!cstr) {
+          MOZ_CLIPBOARD_LOG("  %s isn't an nsISupportsCString\n",
+                            webFlavor.get());
+          return;
+        }
+        nsAutoCString bytes;
+        cstr->GetData(bytes);
+        MOZ_CLIPBOARD_LOG("  Setting %zd bytes for %s (target %s)\n",
+                          bytes.Length(), webFlavor.get(), target_name.get());
+        gtk_selection_data_set(aSelectionData, selectionTarget, 8,
+                               reinterpret_cast<const guchar*>(bytes.get()),
+                               bytes.Length());
+        return;
+      }
+    }
+    MOZ_CLIPBOARD_LOG("  No web custom format mapped to %s\n",
+                      target_name.get());
     return;
   }
 

@@ -150,6 +150,12 @@ object TestAssetHelper {
     val MockWebServer.storageWritePageAsset
         get() = createTestAsset("pages/storage_write.html")
 
+    val MockWebServer.navigablePageStartAsset
+        get() = createTestAsset("pages/linkNavigationStart.html")
+
+    val MockWebServer.navigablePageTargetAsset
+        get() = createTestAsset("pages/linkNavigationTarget.html")
+
     private fun MockWebServer.createTestAsset(
         path: String,
         content: String = "",

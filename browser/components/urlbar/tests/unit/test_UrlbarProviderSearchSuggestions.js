@@ -21,7 +21,7 @@ add_task(async function test_allowRemoteSuggestions() {
   let context = createContext("bacon", {
     isPrivate: false,
     sapName: "urlbar",
-    sources: [UrlbarUtils.RESULT_SOURCE.SEARCH],
+    sources: [UrlbarShared.RESULT_SOURCE.SEARCH],
   });
   Assert.ok(
     suggestionsProvider._allowRemoteSuggestions(context),
@@ -34,7 +34,7 @@ add_task(async function test_allowRemoteSuggestions() {
   context = createContext("bacon", {
     isPrivate: false,
     sapName: "urlbar",
-    sources: [UrlbarUtils.RESULT_SOURCE.SEARCH],
+    sources: [UrlbarShared.RESULT_SOURCE.SEARCH],
   });
   Assert.ok(
     !suggestionsProvider._allowRemoteSuggestions(context),
@@ -44,7 +44,7 @@ add_task(async function test_allowRemoteSuggestions() {
   context = createContext("bacon", {
     isPrivate: false,
     sapName: "searchbar",
-    sources: [UrlbarUtils.RESULT_SOURCE.SEARCH],
+    sources: [UrlbarShared.RESULT_SOURCE.SEARCH],
   });
   Assert.ok(
     suggestionsProvider._allowRemoteSuggestions(context),
@@ -60,7 +60,7 @@ add_task(async function test_allowSuggestions() {
   let context = createContext("bacon eggs", {
     isPrivate: false,
     sapName: "urlbar",
-    sources: [UrlbarUtils.RESULT_SOURCE.SEARCH],
+    sources: [UrlbarShared.RESULT_SOURCE.SEARCH],
   });
   Assert.ok(
     suggestionsProvider._allowSuggestions(context),
@@ -70,7 +70,7 @@ add_task(async function test_allowSuggestions() {
   context = createContext("bacon eggs", {
     isPrivate: false,
     sapName: "searchbar",
-    sources: [UrlbarUtils.RESULT_SOURCE.SEARCH],
+    sources: [UrlbarShared.RESULT_SOURCE.SEARCH],
   });
   Assert.ok(
     suggestionsProvider._allowSuggestions(context),
@@ -83,7 +83,7 @@ add_task(async function test_allowSuggestions() {
   context = createContext("bacon eggs", {
     isPrivate: false,
     sapName: "urlbar",
-    sources: [UrlbarUtils.RESULT_SOURCE.SEARCH],
+    sources: [UrlbarShared.RESULT_SOURCE.SEARCH],
   });
   Assert.ok(
     !suggestionsProvider._allowSuggestions(context),
@@ -93,7 +93,7 @@ add_task(async function test_allowSuggestions() {
   context = createContext("bacon eggs", {
     isPrivate: false,
     sapName: "searchbar",
-    sources: [UrlbarUtils.RESULT_SOURCE.SEARCH],
+    sources: [UrlbarShared.RESULT_SOURCE.SEARCH],
   });
   Assert.ok(
     suggestionsProvider._allowSuggestions(context),
@@ -106,7 +106,7 @@ add_task(async function test_allowSuggestions() {
   context = createContext("bacon eggs", {
     isPrivate: false,
     sapName: "urlbar",
-    sources: [UrlbarUtils.RESULT_SOURCE.SEARCH],
+    sources: [UrlbarShared.RESULT_SOURCE.SEARCH],
   });
   Assert.ok(
     !suggestionsProvider._allowSuggestions(context),
@@ -116,7 +116,7 @@ add_task(async function test_allowSuggestions() {
   context = createContext("bacon eggs", {
     isPrivate: false,
     sapName: "searchbar",
-    sources: [UrlbarUtils.RESULT_SOURCE.SEARCH],
+    sources: [UrlbarShared.RESULT_SOURCE.SEARCH],
   });
   Assert.ok(
     !suggestionsProvider._allowSuggestions(context),

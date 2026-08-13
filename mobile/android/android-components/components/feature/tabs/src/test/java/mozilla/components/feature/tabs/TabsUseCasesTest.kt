@@ -441,6 +441,40 @@ class TabsUseCasesTest {
     }
 
     @Test
+    fun `GIVEN a recoverable browser state with translations engine support WHEN browsing session is restored THEN update the store with the recovered value`() = runTest(testDispatcher) {
+        val restoredTabs = listOf(createTab(id = "tab1", url = "https://mozilla.org"))
+        val recoverableBrowserState = RecoverableBrowserState(
+            tabs = restoredTabs.map { it.toRecoverableTab() },
+            selectedTabId = null,
+            tabPartitions = emptyMap(),
+            isTranslationsEngineSupported = true,
+        )
+        val sessionStorage: SessionStorage = mock()
+        whenever(sessionStorage.restore(any())).thenReturn(recoverableBrowserState)
+
+        tabsUseCases.restore.invoke(storage = sessionStorage)
+
+        assertEquals(true, store.state.translationEngine.isEngineSupported)
+    }
+
+    @Test
+    fun `GIVEN a recoverable browser state without translations engine support WHEN browsing session is restored THEN leave the store value undetermined`() = runTest(testDispatcher) {
+        val restoredTabs = listOf(createTab(id = "tab1", url = "https://mozilla.org"))
+        val recoverableBrowserState = RecoverableBrowserState(
+            tabs = restoredTabs.map { it.toRecoverableTab() },
+            selectedTabId = null,
+            tabPartitions = emptyMap(),
+            isTranslationsEngineSupported = null,
+        )
+        val sessionStorage: SessionStorage = mock()
+        whenever(sessionStorage.restore(any())).thenReturn(recoverableBrowserState)
+
+        tabsUseCases.restore.invoke(storage = sessionStorage)
+
+        assertNull(store.state.translationEngine.isEngineSupported)
+    }
+
+    @Test
     fun `selectOrAddTab selects already existing tab`() {
         val tab = createTab("https://mozilla.org")
         val otherTab = createTab("https://firefox.com")

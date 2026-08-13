@@ -6,6 +6,7 @@
 
 #include <stddef.h>
 
+#include "base/compiler_specific.h"
 #include "sandbox/win/src/crosscall_params.h"
 #include "sandbox/win/src/crosscall_server.h"
 
@@ -14,16 +15,15 @@ namespace sandbox {
 // Releases memory allocated for IPC arguments, if needed.
 void ReleaseArgs(const IPCParams* ipc_params, void* args[kMaxIpcParams]) {
   for (size_t i = 0; i < kMaxIpcParams; i++) {
-    switch (ipc_params->args[i]) {
+    switch (UNSAFE_TODO(ipc_params->args[i])) {
       case WCHAR_TYPE: {
-        delete reinterpret_cast<std::wstring*>(args[i]);
-        args[i] = nullptr;
+        delete reinterpret_cast<std::wstring*>(UNSAFE_TODO(args[i]));
+        UNSAFE_TODO(args[i]) = nullptr;
         break;
       }
-      case INPTR_TYPE:
       case INOUTPTR_TYPE: {
-        delete reinterpret_cast<CountedBuffer*>(args[i]);
-        args[i] = nullptr;
+        delete reinterpret_cast<CountedBuffer*>(UNSAFE_TODO(args[i]));
+        UNSAFE_TODO(args[i]) = nullptr;
         break;
       }
       default:
@@ -42,18 +42,18 @@ bool GetArgs(CrossCallParamsEx* params,
   for (uint32_t i = 0; i < params->GetParamsCount(); i++) {
     uint32_t size;
     ArgType type;
-    args[i] = params->GetRawParameter(i, &size, &type);
-    if (args[i]) {
-      ipc_params->args[i] = type;
+    UNSAFE_TODO(args[i]) = params->GetRawParameter(i, &size, &type);
+    if (UNSAFE_TODO(args[i])) {
+      UNSAFE_TODO(ipc_params->args[i]) = type;
       switch (type) {
         case WCHAR_TYPE: {
           std::unique_ptr<std::wstring> data(new std::wstring);
           if (!params->GetParameterStr(i, data.get())) {
-            args[i] = 0;
+            UNSAFE_TODO(args[i]) = 0;
             ReleaseArgs(ipc_params, args);
             return false;
           }
-          args[i] = data.release();
+          UNSAFE_TODO(args[i]) = data.release();
           break;
         }
         case UINT32_TYPE: {
@@ -63,7 +63,7 @@ bool GetArgs(CrossCallParamsEx* params,
             return false;
           }
           IPCInt ipc_int(data);
-          args[i] = ipc_int.AsVoidPtr();
+          UNSAFE_TODO(args[i]) = ipc_int.AsVoidPtr();
           break;
         }
         case VOIDPTR_TYPE: {
@@ -72,17 +72,16 @@ bool GetArgs(CrossCallParamsEx* params,
             ReleaseArgs(ipc_params, args);
             return false;
           }
-          args[i] = data;
+          UNSAFE_TODO(args[i]) = data;
           break;
         }
-        case INPTR_TYPE:
         case INOUTPTR_TYPE: {
-          if (!args[i]) {
+          if (!UNSAFE_TODO(args[i])) {
             ReleaseArgs(ipc_params, args);
             return false;
           }
-          CountedBuffer* buffer = new CountedBuffer(args[i], size);
-          args[i] = buffer;
+          CountedBuffer* buffer = new CountedBuffer(UNSAFE_TODO(args[i]), size);
+          UNSAFE_TODO(args[i]) = buffer;
           break;
         }
         default:

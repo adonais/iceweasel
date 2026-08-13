@@ -3,12 +3,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 // Moz headers (alphabetical)
+#include "nsINIParser.h"
+
+#include "mozilla/Try.h"
+#include "mozilla/URLPreloader.h"
 #include "nsCRTGlue.h"
 #include "nsError.h"
 #include "nsIFile.h"
-#include "nsINIParser.h"
-#include "mozilla/Try.h"
-#include "mozilla/URLPreloader.h"
 
 using namespace mozilla;
 

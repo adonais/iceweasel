@@ -94,6 +94,8 @@ class WebExtensionPolicyCore final {
 
   const nsString& BaseCSP() const { return mBaseCSP; }
 
+  const nsString& SandboxPageCSP() const { return mSandboxPageCSP; }
+
   const nsString& BackgroundWorkerScript() const {
     return mBackgroundWorkerScript;
   }
@@ -106,6 +108,8 @@ class WebExtensionPolicyCore final {
     }
     return false;
   }
+
+  bool IsSandboxPage(nsIURI* aURL) const;
 
   bool SourceMayAccessPath(const URLInfo& aURI, const nsACString& aPath) const;
 
@@ -197,6 +201,9 @@ class WebExtensionPolicyCore final {
   const uint32_t mManifestVersion;
   /* const */ nsString mExtensionPageCSP;
   /* const */ nsString mBaseCSP;
+
+  /* const */ nsString mSandboxPageCSP;
+  /* const */ dom::Nullable<MatchGlobSet> mSandboxPages;
 
   const bool mIsPrivileged;
   const bool mTemporarilyInstalled;
@@ -318,6 +325,9 @@ class WebExtensionPolicy final : public nsISupports, public nsWrapperCache {
 
   const nsString& BaseCSP() const { return mCore->BaseCSP(); }
   void GetBaseCSP(nsAString& aCSP) const { aCSP = BaseCSP(); }
+
+  const nsString& SandboxPageCSP() const { return mCore->SandboxPageCSP(); }
+  void GetSandboxPageCSP(nsAString& aCSP) const { aCSP = SandboxPageCSP(); }
 
   already_AddRefed<MatchPatternSet> AllowedOrigins() {
     return do_AddRef(mHostPermissions);

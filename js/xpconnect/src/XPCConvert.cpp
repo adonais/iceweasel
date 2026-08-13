@@ -4,22 +4,25 @@
 
 /* Data conversion between native and JavaScript types. */
 
+#include "mozilla/dom/BindingUtils.h"
+#include "mozilla/dom/DOMException.h"
+#include "mozilla/dom/PrimitiveConversions.h"
+#include "mozilla/dom/Promise.h"
 #include "mozilla/Range.h"
 #include "mozilla/Sprintf.h"
 
-#include "xpcprivate.h"
+#include "jsapi.h"
+#include "jsfriendapi.h"
 #include "nsIScriptError.h"
 #include "nsISimpleEnumerator.h"
-#include "nsWrapperCache.h"
 #include "nsJSUtils.h"
 #include "nsQueryObject.h"
 #include "nsScriptError.h"
-#include "WrapperFactory.h"
-
+#include "nsWrapperCache.h"
 #include "nsWrapperCacheInlines.h"
+#include "WrapperFactory.h"
+#include "xpcprivate.h"
 
-#include "jsapi.h"
-#include "jsfriendapi.h"
 #include "js/Array.h"  // JS::GetArrayLength, JS::IsArrayObject, JS::NewArrayObject
 #include "js/CharacterEncoding.h"
 #include "js/experimental/TypedData.h"  // JS_GetArrayBufferViewType, JS_GetArrayBufferViewData, JS_GetTypedArrayLength, JS_IsTypedArrayObject
@@ -27,11 +30,6 @@
 #include "js/Object.h"              // JS::GetClass
 #include "js/PropertyAndElement.h"  // JS_DefineElement, JS_GetElement
 #include "js/String.h"              // JS::StringHasLatin1Chars
-
-#include "mozilla/dom/BindingUtils.h"
-#include "mozilla/dom/DOMException.h"
-#include "mozilla/dom/PrimitiveConversions.h"
-#include "mozilla/dom/Promise.h"
 
 using namespace xpc;
 using namespace mozilla;
@@ -98,10 +96,10 @@ bool XPCConvert::NativeData2JS(JSContext* cx, MutableHandleValue d,
       d.setNumber(static_cast<double>(*static_cast<const uint64_t*>(s)));
       return true;
     case nsXPTType::T_FLOAT:
-      d.set(JS_NumberValue(double(*static_cast<const float*>(s))));
+      d.setNumber(double(*static_cast<const float*>(s)));
       return true;
     case nsXPTType::T_DOUBLE:
-      d.set(JS_NumberValue(*static_cast<const double*>(s)));
+      d.setNumber(*static_cast<const double*>(s));
       return true;
     case nsXPTType::T_BOOL:
       d.setBoolean(*static_cast<const bool*>(s));

@@ -56,7 +56,7 @@ add_task(async function test_viewmodel_rebuildSnapshots() {
 
   await addMockPasswords();
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => view.snapshots.length === EXPECTED_SNAPSHOTS_DATA.length,
     "Received expected number of snapshots"
   );

@@ -553,7 +553,7 @@ private fun SelectFolderPreview() {
             ),
             bookmarksMultiselectMoveState = null,
             isLoading = false,
-            isSearching = false,
+            searchState = null,
         ),
     )
     FirefoxTheme {

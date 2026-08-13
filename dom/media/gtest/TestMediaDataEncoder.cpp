@@ -8,6 +8,7 @@
 #include "BufferReader.h"
 #include "H264.h"
 #include "ImageContainer.h"
+#include "MediaData.h"
 #include "PEMFactory.h"
 #include "TimeUnits.h"
 #include "VPXDecoder.h"
@@ -16,6 +17,7 @@
 #include "mozilla/AbstractThread.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/SpinEventLoopUntil.h"
+#include "mozilla/gtest/ScopedPrefSetter.h"
 #include "mozilla/gtest/WaitFor.h"
 #include "mozilla/media/MediaUtils.h"  // For media::Await
 
@@ -367,6 +369,55 @@ Result<Ok, nsresult> IsValidAVCC(const mozilla::MediaRawData* aSample,
   return Ok();
 }
 
+// Validate the encoded output shared by the H264 encode tests. In the lossy
+// real-time 4K path the encoder may drop frames, including the frame that
+// carried a forced-keyframe request. aToleratesKeyframeDrop selects whether
+// that path still requires every requested keyframe (single-frame submission,
+// which has enough slack not to drop one) or only a stream that starts with a
+// keyframe (batch submission, which can drop a forced-keyframe frame).
+static void CheckH264EncodeOutput(const MediaDataEncoder::EncodedData& aOutput,
+                                  size_t aExpectedFrames,
+                                  size_t aInputKeyframes, Usage aUsage,
+                                  bool aIs4KOrLarger, bool aIsAVCC,
+                                  bool aToleratesKeyframeDrop) {
+  const bool lossyRealtime = aUsage == Usage::Realtime && aIs4KOrLarger;
+  if (lossyRealtime) {
+    // Realtime encoding may drop frames for large frame sizes.
+    EXPECT_LE(aOutput.Length(), aExpectedFrames);
+  } else {
+    EXPECT_EQ(aOutput.Length(), aExpectedFrames);
+  }
+
+  ASSERT_FALSE(aOutput.IsEmpty());
+
+  if (lossyRealtime && aToleratesKeyframeDrop) {
+    // A dropped frame can be the one that requested a forced keyframe, so the
+    // output may contain fewer keyframes than requested; require only that the
+    // stream still starts with a keyframe.
+    EXPECT_TRUE(aOutput[0]->mKeyframe);
+  } else {
+    EXPECT_GE(GetKeyFrameCount(aOutput), aInputKeyframes);
+  }
+
+  if (aIsAVCC) {
+    uint8_t naluSize = GetNALUSize(aOutput[0]).unwrapOr(0);
+    EXPECT_GT(naluSize, 0);
+    EXPECT_LE(naluSize, 4);
+    for (const auto& frame : aOutput) {
+      if (frame->mExtraData && !frame->mExtraData->IsEmpty()) {
+        naluSize = GetNALUSize(frame).unwrapOr(0);
+        EXPECT_GT(naluSize, 0);
+        EXPECT_LE(naluSize, 4);
+      }
+      EXPECT_TRUE(IsValidAVCC(frame, naluSize).isOk());
+    }
+  } else {
+    for (const auto& frame : aOutput) {
+      EXPECT_TRUE(AnnexB::IsAnnexB(*frame));
+    }
+  }
+}
+
 static already_AddRefed<MediaDataEncoder> CreateH264Encoder(
     Usage aUsage = Usage::Realtime,
     EncoderConfig::SampleFormat aFormat =
@@ -438,30 +489,9 @@ static void H264EncodesTest(Usage aUsage,
     EncodeResult r = GET_OR_RETURN_ON_ERROR(
         EncodeWithInputStats(e, numFrames, aFrameSource));
     output = std::move(r.mEncodedData);
-    if (aUsage == Usage::Realtime && is4KOrLarger) {
-      // Realtime encoding may drop frames for large frame sizes.
-      EXPECT_LE(output.Length(), numFrames);
-    } else {
-      EXPECT_EQ(output.Length(), numFrames);
-    }
-    EXPECT_GE(GetKeyFrameCount(output), r.mInputKeyframes);
-    if (isAVCC) {
-      uint8_t naluSize = GetNALUSize(output[0]).unwrapOr(0);
-      EXPECT_GT(naluSize, 0);
-      EXPECT_LE(naluSize, 4);
-      for (auto frame : output) {
-        if (frame->mExtraData && !frame->mExtraData->IsEmpty()) {
-          naluSize = GetNALUSize(frame).unwrapOr(0);
-          EXPECT_GT(naluSize, 0);
-          EXPECT_LE(naluSize, 4);
-        }
-        EXPECT_TRUE(IsValidAVCC(frame, naluSize).isOk());
-      }
-    } else {
-      for (auto frame : output) {
-        EXPECT_TRUE(AnnexB::IsAnnexB(*frame));
-      }
-    }
+    CheckH264EncodeOutput(output, numFrames, r.mInputKeyframes, aUsage,
+                          is4KOrLarger, isAVCC,
+                          /* aToleratesKeyframeDrop */ false);
 
     WaitForShutdown(e);
   });
@@ -526,30 +556,9 @@ static void H264EncodeBatchTest(
     EncodeResult r = GET_OR_RETURN_ON_ERROR(
         EncodeBatchWithInputStats(e, numFrames, aFrameSource, batchSize));
     MediaDataEncoder::EncodedData output = std::move(r.mEncodedData);
-    if (aUsage == Usage::Realtime && is4KOrLarger) {
-      // Realtime encoding may drop frames for large frame sizes.
-      EXPECT_LE(output.Length(), numFrames);
-    } else {
-      EXPECT_EQ(output.Length(), numFrames);
-    }
-    EXPECT_GE(GetKeyFrameCount(output), r.mInputKeyframes);
-    if (isAVCC) {
-      uint8_t naluSize = GetNALUSize(output[0]).unwrapOr(0);
-      EXPECT_GT(naluSize, 0);
-      EXPECT_LE(naluSize, 4);
-      for (auto frame : output) {
-        if (frame->mExtraData && !frame->mExtraData->IsEmpty()) {
-          naluSize = GetNALUSize(frame).unwrapOr(0);
-          EXPECT_GT(naluSize, 0);
-          EXPECT_LE(naluSize, 4);
-        }
-        EXPECT_TRUE(IsValidAVCC(frame, naluSize).isOk());
-      }
-    } else {
-      for (auto frame : output) {
-        EXPECT_TRUE(AnnexB::IsAnnexB(*frame));
-      }
-    }
+    CheckH264EncodeOutput(output, numFrames, r.mInputKeyframes, aUsage,
+                          is4KOrLarger, isAVCC,
+                          /* aToleratesKeyframeDrop */ true);
 
     WaitForShutdown(e);
   });
@@ -1157,6 +1166,135 @@ TEST_F(MediaDataEncoderTest, VP9EncodeWithScalabilityModeL1T3) {
 }
 #  endif
 #endif
+
+already_AddRefed<MediaDataEncoder> CreateAudioEncoder(
+    CodecType aCodec, uint32_t aChannels, uint32_t aSampleRate,
+    uint32_t aBitrate, BitrateMode aBitrateMode,
+    const EncoderConfig::CodecSpecific& aSpecific =
+        EncoderConfig::CodecSpecific(void_t{})) {
+  RefPtr<PEMFactory> f(new PEMFactory());
+
+  if (f->SupportsCodec(aCodec).isEmpty()) {
+    return nullptr;
+  }
+
+  const EncoderConfig config(aCodec, aChannels, aBitrateMode, aSampleRate,
+                             aBitrate, aSpecific);
+  if (f->Supports(config).isEmpty()) {
+    return nullptr;
+  }
+
+  const RefPtr<TaskQueue> taskQueue(
+      TaskQueue::Create(GetMediaThreadPool(MediaThreadType::PLATFORM_ENCODER),
+                        "TestMediaDataEncoder"));
+  RefPtr<MediaDataEncoder> e = f->CreateEncoder(config, taskQueue);
+  return e.forget();
+}
+
+TEST_F(MediaDataEncoderTest, RejectsOversizedOutput) {
+  ScopedPrefSetter encoderEnabled("media.ffmpeg.encoder.enabled", true);
+
+  // Opus only supports a fixed set of sample rates, so FFmpegAudioEncoder snaps
+  // this 1 Hz request up to Opus's lowest supported rate, 8000 Hz, and installs
+  // a 1 -> 8000 resampler. At that 8000x ratio, kOverLargeFrameCount input
+  // frames resample to more than UINT32_MAX output frames, which the encoder
+  // cannot represent, so Encode() rejects the AudioData.
+  const uint32_t kChannels = 1;
+  const uint32_t kInputRate = 1;
+  const size_t kOverLargeFrameCount = 600000;
+
+  RefPtr<MediaDataEncoder> e =
+      CreateAudioEncoder(CodecType::Opus, kChannels, kInputRate,
+                         128000 /* bitrate */, BitrateMode::Constant);
+  EXPECT_TRUE(EnsureInit(e));
+
+  AlignedAudioBuffer data(kOverLargeFrameCount * kChannels);
+  ASSERT_TRUE(!!data);
+  RefPtr<MediaData> frame =
+      new AudioData(0, media::TimeUnit::Zero(kInputRate), std::move(data),
+                    kChannels, kInputRate);
+  nsTArray<RefPtr<MediaData>> batch;
+  batch.AppendElement(std::move(frame));
+
+  EXPECT_TRUE(WaitFor(e->Encode(std::move(batch))).isErr());
+  EXPECT_TRUE(WaitFor(e->Drain()).isOk());
+
+  WaitForShutdown(e);
+}
+
+TEST_F(MediaDataEncoderTest, SmallDownsampledInput) {
+  ScopedPrefSetter encoderEnabled("media.ffmpeg.encoder.enabled", true);
+
+  // libopus's maximum supported sample rate.
+  constexpr uint32_t kCodecRate = 48000;
+  // Above 48 kHz libopus snaps the rate down to kCodecRate; 384000 Hz gives an
+  // 8:1 downsample through the resampler.
+  constexpr uint32_t kInputRate = 384000;
+  // kInputCount below divides by kInputRate / kCodecRate and relies on libopus
+  // snapping kInputRate down to kCodecRate, so the ratio must be a whole number
+  // greater than one.
+  static_assert(kInputRate > kCodecRate && kInputRate % kCodecRate == 0,
+                "kInputRate must be a whole multiple of kCodecRate above it");
+
+  // Pin the shortest Opus frame (2.5 ms) so a packet needs the fewest input
+  // frames. The codec-rate packet size is kCodecRate * frame duration.
+  const uint32_t kFrameDurationUs = 2500;  // microseconds
+  OpusSpecific opus;
+  opus.mFrameDuration = kFrameDurationUs;
+  const uint32_t kCodecFramesPerPacket =
+      kCodecRate * kFrameDurationUs / 1000000;
+
+  constexpr uint32_t kChannels = 2;
+  RefPtr<MediaDataEncoder> e = CreateAudioEncoder(
+      CodecType::Opus, kChannels, kInputRate, 128000 /* bitrate */,
+      BitrateMode::Constant, AsVariant(opus));
+  EXPECT_TRUE(EnsureInit(e));
+
+  // The resampler delivers floor(N / R) - L frames to the packetizer, where
+  //   N = kInputCount, the input frames fed,
+  //   R = kInputRate / kCodecRate, the downsample ratio,
+  //   L = the speex resampler's filter latency: output frames still inside the
+  //       filter, never flushed because the encoder drains the packetizer, not
+  //       the resampler.
+  //
+  // To emit a whole packet the resampler must deliver at least
+  // kCodecFramesPerPacket frames:
+  //   floor(N / R) - L >= kCodecFramesPerPacket
+  //   => N >= R * (kCodecFramesPerPacket + L)
+  //
+  // The resampler latency stays below one packet, so for any
+  // L <= kCodecFramesPerPacket:
+  //   R * (kCodecFramesPerPacket + L) <= 2 * R * kCodecFramesPerPacket
+  // Hence N = 2 * R * kCodecFramesPerPacket always clears a full packet,
+  // regardless of the exact latency. (With the bug every input is dropped, so
+  // nothing accumulates and output stays empty.)
+  const size_t kInputCount =
+      2 * kCodecFramesPerPacket * (kInputRate / kCodecRate);
+  nsTArray<RefPtr<MediaData>> batch;
+  for (size_t i = 0; i < kInputCount; i++) {
+    AlignedAudioBuffer data(kChannels);  // one frame, two channels
+    ASSERT_TRUE(!!data);
+    // One frame per input keeps every call on the small-downsample path whose
+    // per-call output capacity floors to zero.
+    RefPtr<MediaData> frame =
+        new AudioData(0, media::TimeUnit::Zero(kInputRate), std::move(data),
+                      kChannels, kInputRate);
+    batch.AppendElement(std::move(frame));
+  }
+
+  auto result = WaitFor(e->Encode(std::move(batch)));
+  ASSERT_TRUE(result.isOk());
+  MediaDataEncoder::EncodedData output = result.unwrap();
+
+  auto drained = WaitFor(e->Drain());
+  ASSERT_TRUE(drained.isOk());
+  output.AppendElements(drained.unwrap());
+
+  EXPECT_GT(output.Length(), 0u)
+      << "small downsampled input was dropped instead of consumed";
+
+  WaitForShutdown(e);
+}
 
 #undef BLOCK_SIZE
 #undef GET_OR_RETURN_ON_ERROR

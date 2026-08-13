@@ -7,7 +7,7 @@ BROWSER_CHROME_MANIFESTS += ["tests/browser/browser.toml"]
 
 JAR_MANIFESTS += ["jar.mn"]
 
-EXTRA_JS_MODULES.contentsharing += [
+MOZ_SRC_FILES += [
     "ContentSharingUtils.sys.mjs",
 ]
 

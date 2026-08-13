@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "IdleTaskRunner.h"
+
 #include "mozilla/AppShutdown.h"
 #include "mozilla/TaskController.h"
 #include "nsRefreshDriver.h"
@@ -178,6 +179,11 @@ void IdleTaskRunner::Schedule(bool aAllowIdleDispatch) {
   }
 
   if (mMayStopProcessing && mMayStopProcessing()) {
+    Cancel();
+    return;
+  }
+
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdownThreads)) {
     Cancel();
     return;
   }

@@ -528,7 +528,7 @@ common cases are:
 ## Diagnosing performance issues with some tooling
 
 [You can read about it in the dedicated
-page](./performance.md#diagnosing-performance-issues-in-react-based-applications).
+page](./performance.md).
 
 ## Breaking the rules: always measure first
 

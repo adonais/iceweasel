@@ -47,6 +47,7 @@ class PageSummariesSettingsFragment : Fragment(), SystemInsetsPaddedFragment {
             initialState = SummarizeSettingsState(
                 isFeatureEnabled = cache.featureEnabled.value,
                 isGestureEnabled = cache.gestureEnabled.value,
+                shakeSensitivity = cache.shakeSensitivity.value,
             ),
             reducer = ::summarizeSettingsReducer,
             middleware = listOf(

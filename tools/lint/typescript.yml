@@ -10,6 +10,7 @@ typescript:
         - browser/components/places/
         - browser/components/search/
         - browser/components/urlbar/
+        - toolkit/components/extensions/
         - toolkit/components/places/
         - toolkit/components/search/
     exclude: []

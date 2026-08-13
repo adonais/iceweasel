@@ -19,8 +19,6 @@ function setup() {
   Assert.notEqual(h3Port, null);
   Assert.notEqual(h3Port, "");
   Services.prefs.setBoolPref("network.http.http3.enable", true);
-  // Happy Eyeballs does not support connection coalescing for now.
-  Services.prefs.setBoolPref("network.http.happy_eyeballs_enabled", false);
 }
 
 setup();

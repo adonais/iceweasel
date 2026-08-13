@@ -84,6 +84,7 @@ XPC_MSG_DEF(NS_ERROR_FACTORY_REGISTER_AGAIN        , "Factory not registered (ma
 XPC_MSG_DEF(NS_ERROR_FACTORY_NOT_LOADED            , "Factory not loaded")
 XPC_MSG_DEF(NS_ERROR_FACTORY_NO_SIGNATURE_SUPPORT  , "Factory does not support signatures")
 XPC_MSG_DEF(NS_ERROR_FACTORY_EXISTS                , "Factory already exists")
+XPC_MSG_DEF(NS_ERROR_INVALID_SIGNATURE             , "Invalid signature")
 
 /* added from nsError.h on Feb 28 2001... */
 
@@ -244,6 +245,7 @@ XPC_MSG_DEF(NS_ERROR_DOM_PUSH_INVALID_KEY_ERR         , "Invalid raw ECDSA P-256
 XPC_MSG_DEF(NS_ERROR_DOM_PUSH_MISMATCHED_KEY_ERR      , "A subscription with a different application server key already exists.")
 
 /* Codes defined in WebIDL https://heycam.github.io/webidl/#idl-DOMException-error-names */
+XPC_MSG_DEF(NS_ERROR_DOM_NETWORK_ERR                  , "A network error occurred.")
 XPC_MSG_DEF(NS_ERROR_DOM_NOT_FOUND_ERR                , "The object can not be found here.")
 XPC_MSG_DEF(NS_ERROR_DOM_NOT_ALLOWED_ERR              , "The request is not allowed.")
 

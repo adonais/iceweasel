@@ -3,25 +3,24 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "ImageLogging.h"  // Must appear first
 #include "nsPNGDecoder.h"
 
 #include <algorithm>
 #include <cstdint>
 
 #include "EXIF.h"
+#include "ImageLogging.h"  // Must appear first
+#include "RasterImage.h"
+#include "SurfaceCache.h"
+#include "SurfacePipeFactory.h"
 #include "gfxColor.h"
 #include "gfxPlatform.h"
 #include "imgFrame.h"
+#include "mozilla/DebugOnly.h"
 #include "nsColor.h"
 #include "nsRect.h"
 #include "nspr.h"
 #include "png.h"
-
-#include "RasterImage.h"
-#include "SurfaceCache.h"
-#include "SurfacePipeFactory.h"
-#include "mozilla/DebugOnly.h"
 
 using namespace mozilla::gfx;
 

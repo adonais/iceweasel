@@ -55,7 +55,7 @@ var check_use_counter_worker = async function (
   // We'd like for this to be synchronous, but use counters are reported on
   // worker destruction which we don't directly observe.
   // So we check in a quick loop.
-  await BrowserTestUtils.waitForCondition(async () => {
+  await TestUtils.waitForCondition(async () => {
     await Services.fog.testFlushAllChildren();
     return (
       glean_before !=

@@ -310,7 +310,7 @@ void RemoteDecoderParent::AbortPendingRequests() {
 }
 
 bool RemoteDecoderParent::OnManagerThread() {
-  return mParent->OnManagerThread();
+  return RemoteMediaManagerParent::OnManagerThread();
 }
 
 }  // namespace mozilla

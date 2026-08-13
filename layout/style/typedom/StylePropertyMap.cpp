@@ -149,7 +149,14 @@ void StylePropertyMap::Delete(const nsACString& aProperty, ErrorResult& aRv) {
   aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
 }
 
-void StylePropertyMap::Clear() {}
+// https://drafts.css-houdini.org/css-typed-om/#dom-stylepropertymap-clear
+void StylePropertyMap::Clear() {
+  if (!mParent) {
+    return;
+  }
+
+  mDeclarations.Clear(IgnoreErrors());
+}
 
 // end of StylePropertyMap Web IDL implementation
 
@@ -175,6 +182,24 @@ void StylePropertyMapReadOnly::Declarations::Set(
       DeclarationTraits<MutableStyleRuleDeclarations>::Set(mRule, aPropertyId,
                                                            aValue, aRv);
       return;
+  }
+}
+void StylePropertyMapReadOnly::Declarations::Clear(ErrorResult& aRv) {
+  switch (mKind) {
+    case Kind::Inline:
+      mStyledElement->SetAttr(kNameSpaceID_None, nsGkAtoms::style, u""_ns,
+                              true);
+      return;
+
+    case Kind::Computed:
+      MOZ_ASSERT_UNREACHABLE("ComputedStyleMap is not writable");
+      return;
+
+    case Kind::Rule: {
+      nsCOMPtr<nsDOMCSSDeclaration> declaration = mRule->Style();
+      declaration->SetCssText(""_ns, nullptr, aRv);
+      return;
+    }
   }
 }
 

@@ -142,6 +142,10 @@ using google_breakpad::PageAllocator;
 #endif
 using namespace mozilla;
 
+// The gToolkitBuildID global is defined to MOZ_BUILDID via gen_buildid.py
+// in toolkit/library. See related comment in toolkit/library/moz.build.
+extern const char gToolkitBuildID[];
+
 #ifdef MOZ_PHC
 
 namespace mozilla::phc {
@@ -264,7 +268,7 @@ static
 #elif defined(XP_WIN)  // defined(XP_UNIX)
     DWORD
 #endif                 // defined(XP_WIN)
-        gMainThreadId = 0;
+        gMainThreadId;
 
 // Avoid a race during application termination.
 static Mutex* dumpSafetyLock;
@@ -1899,17 +1903,9 @@ static void TeardownAppNotes() {
 nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force /*=false*/) {
   if (gExceptionHandler) return NS_ERROR_ALREADY_INITIALIZED;
 
-#if defined(DEBUG)
-  // In debug builds, disable the crash reporter by default, and allow to
-  // enable it with the MOZ_CRASHREPORTER environment variable.
-  const char* envvar = PR_GetEnv("MOZ_CRASHREPORTER");
-  if ((!envvar || !*envvar) && !force) return NS_OK;
-#else
-  // In other builds, enable the crash reporter by default, and allow
-  // disabling it with the MOZ_CRASHREPORTER_DISABLE environment variable.
-  const char* envvar = PR_GetEnv("MOZ_CRASHREPORTER_DISABLE");
-  if (envvar && *envvar && !force) return NS_OK;
-#endif
+  if (!CrashReporterIsEnabled(force)) {
+    return NS_OK;
+  }
 
   // this environment variable prevents us from launching
   // the crash reporter client
@@ -1951,6 +1947,14 @@ nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force /*=false*/) {
   // Pre-load psapi.dll to prevent it from being loaded during exception
   // handling.
   ::LoadLibraryW(L"psapi.dll");
+
+  // Pre-load verifier.dll for the same reason: when MiniDumpWithHandleData is
+  // set, dbgcore loads it mid-dump (Win32LiveSystemProvider) to enumerate
+  // handle operations. Because MiniDumpWriteDump has already suspended every
+  // other thread, that LoadLibrary deadlocks in LdrpDrainWorkQueue waiting on
+  // the loader worker threads it just suspended, wedging the crashing process
+  // (bug 1760099). Loading it now turns the mid-dump load into a refcount bump.
+  ::LoadLibraryW(L"verifier.dll");
 #endif  // XP_WIN
 
 #ifdef MOZ_WIDGET_ANDROID
@@ -3109,87 +3113,14 @@ bool WriteExtraFile(const nsAString& id, const AnnotationTable& annotations) {
   return WriteExtraFile(pw, annotations);
 }
 
-template <typename T>
-static bool IsFixedSizeAnnotation(uint32_t contents, size_t len) {
-  return ((contents == ANNOTATION_CONTENTS_BYTEBUFFER) && (len == sizeof(T))) ||
-         ((contents == ANNOTATION_CONTENTS_OWNEDBYTEBUFFER) &&
-          (len == sizeof(T)));
-}
-
-// This adds annotations that were populated in the main process but are not
-// present among the ones that were passed in. Additionally common annotations
-// which are present in every crash report are added, including crash time,
-// uptime, etc...
+// This filters out annotations that have specific values we don't want to
+// include and adds common annotations which are present in every crash report
+// including crash time, uptime, etc...
 static void AddSharedAnnotations(AnnotationTable& aAnnotations) {
   for (auto key : MakeEnumeratedRange(Annotation::Count)) {
-    uint32_t contents = 0;
-    size_t len = 0;
-    nsAutoCString value;
-    size_t address =
-        mozannotation_get_contents(static_cast<uint32_t>(key), &contents, &len);
-
-    if (address) {
-      switch (TypeOfAnnotation(key)) {
-        case AnnotationType::String:
-          switch (contents) {
-            case ANNOTATION_CONTENTS_EMPTY:
-              break;
-            case ANNOTATION_CONTENTS_CSTRINGPOINTER:
-              address = *reinterpret_cast<size_t*>(address);
-              if (address == 0) {
-                break;
-              }
-              // FALLTHROUGH
-            case ANNOTATION_CONTENTS_CSTRING:
-              value.Assign(reinterpret_cast<const char*>(address));
-              break;
-            case ANNOTATION_CONTENTS_NSCSTRINGPOINTER:
-              value.Assign(*reinterpret_cast<nsCString*>(address));
-              break;
-            case ANNOTATION_CONTENTS_BYTEBUFFER:
-              value.Assign(reinterpret_cast<const char*>(address), len);
-              break;
-            case ANNOTATION_CONTENTS_OWNEDBYTEBUFFER:
-              value.Assign(reinterpret_cast<const char*>(address), len);
-              break;
-          }
-
-          break;
-        case AnnotationType::Boolean:
-          if (IsFixedSizeAnnotation<bool>(contents, len)) {
-            value.Assign(*reinterpret_cast<const bool*>(address) ? "1" : "0");
-          }
-          break;
-        case AnnotationType::U32:
-          if (IsFixedSizeAnnotation<uint32_t>(contents, len)) {
-            value.AppendInt(*reinterpret_cast<const uint32_t*>(address));
-          }
-          break;
-        case AnnotationType::U64:
-          if (IsFixedSizeAnnotation<uint64_t>(contents, len)) {
-            value.AppendInt(*reinterpret_cast<const uint64_t*>(address));
-          }
-          break;
-        case AnnotationType::USize:
-          if (IsFixedSizeAnnotation<size_t>(contents, len)) {
-#ifdef XP_MACOSX
-            // macOS defines size_t as unsigned long, which causes ambiguity
-            // when it comes to function overload, use a 64-bit integer instead
-            value.AppendInt(*reinterpret_cast<const uint64_t*>(address));
-#else
-            value.AppendInt(*reinterpret_cast<const size_t*>(address));
-#endif
-          }
-          break;
-        case AnnotationType::Object:
-          // Object annotations are only produced later by minidump-analyzer.
-          break;
-      }
-
-      if (!value.IsEmpty() && aAnnotations[key].IsEmpty() &&
-          ShouldIncludeAnnotation(key, value.get())) {
-        aAnnotations[key] = std::move(value);
-      }
+    if (!aAnnotations[key].IsEmpty() &&
+        !ShouldIncludeAnnotation(key, aAnnotations[key].get())) {
+      aAnnotations[key] = EmptyCString();
     }
   }
 
@@ -3233,7 +3164,23 @@ static bool MoveToPending(nsIFile* dumpFile, nsIFile* extraFile,
   return true;
 }
 
-nsresult OOPInit(nsIFile* aXREDirectory) {
+nsresult OOPInit(nsIFile* aXREDirectory, bool force /*=false*/) {
+  // Android is exempt from early return because the helper has already been
+  // started and is unconditionally expecting a rendezvous.
+#if !defined(MOZ_WIDGET_ANDROID)
+  if (!CrashReporterIsEnabled(force)) {
+    return NS_OK;
+  }
+#endif
+
+  {
+    // It's already started, no work to do here!
+    StaticMutexAutoLock lock(gCrashHelperClientMutex);
+    if (gCrashHelperClient) {
+      return NS_OK;
+    }
+  }
+
   CrashHelperClient* crashHelperClient;
 
   PathString tempPath;
@@ -3267,7 +3214,8 @@ nsresult OOPInit(nsIFile* aXREDirectory) {
   crashHelperClient = crash_helper_launch(
       (const BreakpadChar*)crashHelperPath.c_str(),
       (const BreakpadChar*)NS_ConvertUTF8toUTF16(childCrashNotifyPipe).getW(),
-      mozilla::BitwiseCast<const BreakpadChar*>(tempPath.get()));
+      mozilla::BitwiseCast<const BreakpadChar*>(tempPath.get()),
+      gToolkitBuildID);
 #elif defined(XP_LINUX)
 #  if !defined(MOZ_WIDGET_ANDROID)
   if (!CrashGenerationServer::CreateReportChannel(&serverSocketFd,
@@ -3275,8 +3223,8 @@ nsresult OOPInit(nsIFile* aXREDirectory) {
     MOZ_CRASH("can't create crash reporter socketpair()");
   }
 
-  crashHelperClient = crash_helper_launch(crashHelperPath.c_str(),
-                                          serverSocketFd, tempPath.get());
+  crashHelperClient = crash_helper_launch(
+      crashHelperPath.c_str(), serverSocketFd, tempPath.get(), gToolkitBuildID);
   close(serverSocketFd);
 #  else
   crashHelperClient = crash_helper_connect(crashHelperClientFd);
@@ -3291,7 +3239,7 @@ nsresult OOPInit(nsIFile* aXREDirectory) {
 
   crashHelperClient = crash_helper_launch(
       crashHelperPath.c_str(), (BreakpadRawData)childCrashNotifyPipe.get(),
-      tempPath.get());
+      tempPath.get(), gToolkitBuildID);
 #endif
   if (!crashHelperClient) {
     return NS_ERROR_FAILURE;
@@ -3312,6 +3260,14 @@ void OOPDeinit() {
     crash_helper_shutdown(gCrashHelperClient);
     gCrashHelperClient = nullptr;
   }
+}
+
+uint32_t GetCrashHelperPid() {
+  StaticMutexAutoLock lock(gCrashHelperClientMutex);
+  if (!gCrashHelperClient) {
+    return 0;
+  }
+  return static_cast<uint32_t>(crash_helper_pid(gCrashHelperClient));
 }
 
 // Parent-side API for children

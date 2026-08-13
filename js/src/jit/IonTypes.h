@@ -14,7 +14,6 @@
 #include "NamespaceImports.h"
 
 #include "jit/ABIFunctionType.h"
-
 #include "js/ScalarType.h"  // js::Scalar::Type
 #include "js/Value.h"
 

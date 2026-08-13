@@ -1,5 +1,7 @@
 /* eslint-disable no-shadow */
+import { actionTypes as at } from "common/Actions.mjs";
 import { ContextMenu } from "content-src/components/ContextMenu/ContextMenu";
+import { LinkMenuOptions } from "content-src/lib/link-menu-options";
 import { _LinkMenu as LinkMenu } from "content-src/components/LinkMenu/LinkMenu";
 import React from "react";
 import { shallow } from "enzyme";
@@ -57,6 +59,7 @@ describe("<LinkMenu>", () => {
     let i = 0;
     assert.propertyVal(options[i++], "id", "newtab-menu-pin");
     assert.propertyVal(options[i++], "id", "newtab-menu-edit-topsites");
+    assert.propertyVal(options[i++], "id", "newtab-menu-add-topsite");
     assert.propertyVal(options[i++], "type", "separator");
     assert.propertyVal(options[i++], "id", "newtab-menu-open-new-window");
     assert.propertyVal(
@@ -73,6 +76,11 @@ describe("<LinkMenu>", () => {
       .forEach(o => {
         assert.notInclude(["newtab-menu-delete-history"], o.id);
       });
+  });
+  it("AddTopSite option opens the New Shortcut form", () => {
+    const { action } = LinkMenuOptions.AddTopSite();
+    assert.propertyVal(action, "type", at.TOP_SITES_EDIT);
+    assert.propertyVal(action.data, "index", -1);
   });
   it("should show Unpin option for a pinned site if CheckPinTopSite in options list", () => {
     wrapper = shallow(

@@ -14,6 +14,7 @@ import org.junit.Test
 import org.mozilla.fenix.IntentReceiverActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.customannotations.Converted
+import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.assertExternalAppOpens
 import org.mozilla.fenix.helpers.AppAndSystemHelper.assertNativeAppOpens
@@ -28,9 +29,12 @@ import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.MatcherHelper
 import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
 import org.mozilla.fenix.helpers.MockBrowserDataHelper
+import org.mozilla.fenix.helpers.MockBrowserDataHelper.createBookmarkItem
 import org.mozilla.fenix.helpers.TestAssetHelper.articleSummaryAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.firstForeignWebPageAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
+import org.mozilla.fenix.helpers.TestAssetHelper.navigablePageStartAsset
+import org.mozilla.fenix.helpers.TestAssetHelper.navigablePageTargetAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.pdfFormAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.refreshAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
@@ -63,7 +67,6 @@ class MainMenuTest {
         AndroidComposeTestRuleV2(
             HomeActivityIntentTestRule(
                 skipOnboarding = true,
-                isMenuRedesignCFREnabled = false,
                 isPageLoadTranslationsPromptEnabled = false,
                 shakeToSummarizeFeatureFlagEnabled = true,
             ),
@@ -357,6 +360,11 @@ class MainMenuTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080113
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.MainMenuTest#verifyTheAddToHomeScreenSubMenuOptionTest"],
+        bug = 2052183,
+        since = "2026-07",
+    )
     @SmokeTest
     @Test
     fun verifyTheAddToShortcutsSubMenuOptionTest() {
@@ -382,6 +390,11 @@ class MainMenuTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080114
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.MainMenuTest#verifyTheAddToHomeScreenSubMenuOptionTest"],
+        bug = 2051566,
+        since = "2026-06",
+    )
     @SmokeTest
     @Test
     fun verifyTheAddToHomeScreenSubMenuOptionTest() {
@@ -406,6 +419,11 @@ class MainMenuTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080115
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.MainMenuTest#verifyTheSaveToCollectionSubMenuOptionTest"],
+        bug = 2048584,
+        since = "2026-06",
+    )
     @SmokeTest
     @Test
     fun verifyTheSaveToCollectionSubMenuOptionTest() {
@@ -458,6 +476,11 @@ class MainMenuTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080111
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.MainMenuTest#verifyTheTranslatePageSubMenuOptionTest"],
+        bug = 2049332,
+        since = "2026-07",
+    )
     @SmokeTest
     @Test
     fun verifyTheTranslatePageSubMenuOptionTest() {
@@ -520,6 +543,11 @@ class MainMenuTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080131
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.MainMenuTest#verifyDesktopSiteModeOnOffIsEnabledTest"],
+        bug = 2048234,
+        since = "2026-06",
+    )
     @SmokeTest
     @Test
     fun verifyDesktopSiteModeOnOffIsEnabledTest() {
@@ -602,22 +630,6 @@ class MainMenuTest {
             verifySettingsToolbar()
         }.goBack(composeTestRule) {
             verifyHomeWordmark()
-        }
-    }
-
-    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080121
-    @Ignore("Disabled after enabling the composable toolbar and main menu: https://bugzilla.mozilla.org/show_bug.cgi?id=2006295")
-    @Test
-    fun verifyTheBrowserViewMainMenuCFRTest() {
-        val genericURL = mockWebServer.getGenericAsset(1)
-
-        composeTestRule.activityRule.applySettingsExceptions {
-            it.isMenuRedesignCFREnabled = true
-        }
-        navigationToolbar(composeTestRule) {
-        }.enterURLAndEnterToBrowser(genericURL.url) {
-        }.openThreeDotMenu {
-            verifyMainMenuCFR()
         }
     }
 
@@ -767,6 +779,61 @@ class MainMenuTest {
         }
     }
 
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/4135485
+    @Test
+    @SkipLeaks(
+        reasons = [
+            "https://bugzilla.mozilla.org/show_bug.cgi?id=2041351",
+        ],
+    )
+    fun verifyTheAddBookmarkMenuItemInACustomTabTest() {
+        val customTabPage = mockWebServer.getGenericAsset(1)
+
+        intentReceiverActivityTestRule.launchActivity(
+            createCustomTabIntent(
+                customTabPage.url.toString(),
+            ),
+        )
+
+        customTabScreen(composeTestRule) {
+        }.openMainMenu {
+            verifyBookmarkThisPageButton()
+            clickBookmarkThisPageButton()
+            verifySnackBarText("Saved in “Bookmarks”")
+            waitUntilSnackbarGone()
+        }.openMainMenu {
+            verifyEditBookmarkButton()
+        }
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/4135486
+    @Ignore("Disabled for recently failing due to race conditions https://bugzilla.mozilla.org/show_bug.cgi?id=2050387")
+    @Test
+    @SkipLeaks(
+        reasons = [
+            "https://bugzilla.mozilla.org/show_bug.cgi?id=2041351",
+        ],
+    )
+    fun verifyTheDeleteBookmarkMenuItemInACustomTabTest() {
+        val customTabPage = mockWebServer.getGenericAsset(1)
+        // presume we have bookmarked the page
+        createBookmarkItem(customTabPage.url.toString(), customTabPage.title, null)
+
+        intentReceiverActivityTestRule.launchActivity(
+            createCustomTabIntent(
+                customTabPage.url.toString(),
+            ),
+        )
+
+        customTabScreen(composeTestRule) {
+        }.openMainMenu {
+            verifyEditBookmarkButton()
+        }.clickEditBookmarkButton {
+            verifyEditBookmarksView()
+            clickDeleteBookmarkButtonInEditMode()
+        }
+    }
+
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080162
     @SmokeTest
     @Test
@@ -835,6 +902,7 @@ class MainMenuTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2937924
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=2053348")
     @Test
     fun verifyTheWhatIsBrokenErrorMessageTest() {
         val defaultWebPage = mockWebServer.getGenericAsset(1)
@@ -847,7 +915,6 @@ class MainMenuTest {
             verifyWebCompatReporterViewItems(defaultWebPage.url.toString())
             verifyWhatIsBrokenField(composeTestRule)
             verifySendButtonIsEnabled(isEnabled = false)
-            clickChooseReasonField(composeTestRule)
             clickSiteDoesNotLoadReason(composeTestRule)
             verifyChooseReasonErrorMessageIsNotDisplayed(composeTestRule)
             verifySendButtonIsEnabled(isEnabled = true)
@@ -855,6 +922,7 @@ class MainMenuTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2937926
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=2053348")
     @Test
     fun verifyThatTheBrokenSiteFormSubmissionCanBeCanceledTest() {
         val defaultWebPage = mockWebServer.getGenericAsset(1)
@@ -865,7 +933,6 @@ class MainMenuTest {
             clickTheMoreButton()
         }.clickReportBrokenSiteButton {
             verifyWebCompatReporterViewItems(defaultWebPage.url.toString())
-            clickChooseReasonField(composeTestRule)
             clickSiteDoesNotLoadReason(composeTestRule)
             clickBrokenSiteFormCancelButton(composeTestRule)
         }.openThreeDotMenu {
@@ -876,6 +943,7 @@ class MainMenuTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2937927
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=2053348")
     @Test
     fun verifyTheBrokenSiteFormSubmissionWithOptionalFieldsTest() {
         val defaultWebPage = mockWebServer.getGenericAsset(1)
@@ -886,7 +954,6 @@ class MainMenuTest {
             clickTheMoreButton()
         }.clickReportBrokenSiteButton {
             verifyWebCompatReporterViewItems(defaultWebPage.url.toString())
-            clickChooseReasonField(composeTestRule)
             clickSiteDoesNotLoadReason(composeTestRule)
             describeBrokenSiteProblem(problemDescription = "Prolonged page loading time")
             clickBrokenSiteFormSendButton(composeTestRule)
@@ -905,6 +972,7 @@ class MainMenuTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2937930
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=2053348")
     @Test
     fun verifyThatTheBrokenSiteFormInfoPersistsTest() {
         val defaultWebPage = mockWebServer.getGenericAsset(1)
@@ -915,7 +983,6 @@ class MainMenuTest {
             clickTheMoreButton()
         }.clickReportBrokenSiteButton {
             verifyWebCompatReporterViewItems(defaultWebPage.url.toString())
-            clickChooseReasonField(composeTestRule)
             clickSiteDoesNotLoadReason(composeTestRule)
             describeBrokenSiteProblem(problemDescription = "Prolonged page loading time")
         }.closeWebCompatReporter {
@@ -930,6 +997,7 @@ class MainMenuTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2937931
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=2053348")
     @Test
     fun verifyTheBrokenSiteFormIsEmptyWithoutSubmittingThePreviousOneTest() {
         val firstWebPage = mockWebServer.getGenericAsset(1)
@@ -941,7 +1009,6 @@ class MainMenuTest {
             clickTheMoreButton()
         }.clickReportBrokenSiteButton {
             verifyWebCompatReporterViewItems(firstWebPage.url.toString())
-            clickChooseReasonField(composeTestRule)
             clickSiteDoesNotLoadReason(composeTestRule)
             describeBrokenSiteProblem(
                 problemDescription = "Prolonged page loading time",
@@ -962,6 +1029,7 @@ class MainMenuTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2937932
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=2053348")
     @Test
     fun verifyThatTheBrokenSiteFormInfoIsErasedWhenKillingTheAppTest() {
         val defaultWebPage = mockWebServer.getGenericAsset(1)
@@ -972,7 +1040,6 @@ class MainMenuTest {
             clickTheMoreButton()
         }.clickReportBrokenSiteButton {
             verifyWebCompatReporterViewItems(defaultWebPage.url.toString())
-            clickChooseReasonField(composeTestRule)
             clickSiteDoesNotLoadReason(composeTestRule)
             describeBrokenSiteProblem(problemDescription = "Prolonged page loading time")
         }
@@ -1146,6 +1213,27 @@ class MainMenuTest {
         }
     }
 
+    @SmokeTest
+    @Test
+    fun verifyTheMainMenuBackButtonLongPressTest() {
+        val firstWebPage = mockWebServer.getGenericAsset(1)
+        val nextWebPage = mockWebServer.getGenericAsset(2)
+
+        navigationToolbar(composeTestRule) {
+        }.enterURLAndEnterToBrowser(firstWebPage.url) {
+        }
+        navigationToolbar(composeTestRule) {
+        }.enterURLAndEnterToBrowser(nextWebPage.url) {
+            verifyUrl(nextWebPage.url.toString())
+        }.openThreeDotMenu {
+        }.longClickPreviousPageButton {
+            waitForAppWindowToBeUpdated()
+            verifyTabHistorySheetIsDisplayed(true)
+            verifyTabHistoryContainsWebsite(nextWebPage.url.toString(), true)
+            verifyTabHistoryContainsWebsite(firstWebPage.url.toString(), true)
+        }
+    }
+
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080126
     @Converted(
         replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.MainMenuTest#verifyTheMainMenuForwardButtonTest"],
@@ -1172,6 +1260,29 @@ class MainMenuTest {
         }.clickForwardButton {
             waitForAppWindowToBeUpdated()
             verifyUrl(nextWebPage.url.toString())
+        }
+    }
+
+    @SmokeTest
+    @Test
+    fun verifyTheMainMenuForwardButtonLongPressTest() {
+        val firstWebPage = mockWebServer.getGenericAsset(1)
+        val nextWebPage = mockWebServer.getGenericAsset(2)
+
+        navigationToolbar(composeTestRule) {
+        }.enterURLAndEnterToBrowser(firstWebPage.url) {
+        }
+        navigationToolbar(composeTestRule) {
+        }.enterURLAndEnterToBrowser(nextWebPage.url) {
+            verifyUrl(nextWebPage.url.toString())
+        }.openThreeDotMenu {
+        }.clickPreviousPageButton {
+        }.openThreeDotMenu {
+        }.longClickForwardPageButton {
+            waitForAppWindowToBeUpdated()
+            verifyTabHistorySheetIsDisplayed(true)
+            verifyTabHistoryContainsWebsite(nextWebPage.url.toString(), true)
+            verifyTabHistoryContainsWebsite(firstWebPage.url.toString(), true)
         }
     }
 
@@ -1289,6 +1400,34 @@ class MainMenuTest {
 
         browserScreen(composeTestRule) {
             verifyPageContent(customTabPage.content)
+        }
+    }
+
+    @SmokeTest
+    @Test
+    fun verifyTheMainMenuBackButtonLongClickFromCustomTabTest() {
+        val customMenuItem = "TestMenuItem"
+        val startPage = mockWebServer.navigablePageStartAsset
+        val targetPage = mockWebServer.navigablePageTargetAsset
+
+        intentReceiverActivityTestRule.launchActivity(
+            createCustomTabIntent(
+                startPage.url.toString(),
+                customMenuItem,
+            ),
+        )
+
+        customTabScreen(composeTestRule) {
+            clickPageObject(composeTestRule, itemContainingText("Go to target page"))
+        }.openMainMenu {
+        }.longClickBackButtonFromMenu {
+            waitForAppWindowToBeUpdated()
+        }
+
+        browserScreen(composeTestRule) {
+            verifyTabHistorySheetIsDisplayed(true)
+            verifyTabHistoryContainsWebsite(startPage.url.toString(), true)
+            verifyTabHistoryContainsWebsite(targetPage.url.toString(), true)
         }
     }
 

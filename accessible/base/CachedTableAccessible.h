@@ -5,9 +5,9 @@
 #ifndef CACHED_TABLE_ACCESSIBLE_H
 #define CACHED_TABLE_ACCESSIBLE_H
 
+#include "mozilla/UniquePtr.h"
 #include "mozilla/a11y/TableAccessible.h"
 #include "mozilla/a11y/TableCellAccessible.h"
-#include "mozilla/UniquePtr.h"
 #include "nsTHashMap.h"
 
 namespace mozilla::a11y {

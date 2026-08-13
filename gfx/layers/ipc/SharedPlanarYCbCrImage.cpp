@@ -3,22 +3,24 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SharedPlanarYCbCrImage.h"
-#include <stddef.h>              // for size_t
-#include <stdio.h>               // for printf
-#include "gfx2DGlue.h"           // for Moz2D transition helpers
+
+#include <stddef.h>  // for size_t
+#include <stdio.h>   // for printf
+
 #include "ISurfaceAllocator.h"   // for ISurfaceAllocator, etc
+#include "gfx2DGlue.h"           // for Moz2D transition helpers
 #include "mozilla/Assertions.h"  // for MOZ_ASSERT, etc
 #include "mozilla/gfx/Types.h"   // for SurfaceFormat::SurfaceFormat::YUV
-#include "mozilla/layers/ImageClient.h"     // for ImageClient
+#include "mozilla/ipc/Shmem.h"
+#include "mozilla/layers/BufferTexture.h"
+#include "mozilla/layers/ImageBridgeChild.h"  // for ImageBridgeChild
+#include "mozilla/layers/ImageClient.h"       // for ImageClient
+#include "mozilla/layers/ImageDataSerializer.h"
 #include "mozilla/layers/LayersSurfaces.h"  // for SurfaceDescriptor, etc
 #include "mozilla/layers/TextureClient.h"
 #include "mozilla/layers/TextureClientRecycleAllocator.h"
-#include "mozilla/layers/BufferTexture.h"
-#include "mozilla/layers/ImageDataSerializer.h"
-#include "mozilla/layers/ImageBridgeChild.h"  // for ImageBridgeChild
-#include "mozilla/mozalloc.h"                 // for operator delete
-#include "nsISupportsImpl.h"                  // for Image::AddRef
-#include "mozilla/ipc/Shmem.h"
+#include "mozilla/mozalloc.h"  // for operator delete
+#include "nsISupportsImpl.h"   // for Image::AddRef
 
 namespace mozilla {
 namespace layers {

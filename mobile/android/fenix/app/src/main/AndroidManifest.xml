@@ -17,6 +17,7 @@
 
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
     <uses-permission android:name="android.permission.CAMERA" />
 
     <!-- This is needed because the android.permission.CAMERA above automatically
@@ -55,6 +56,10 @@
     <uses-permission android:name="com.adjust.preinstall.READ_PERMISSION"/>
 
     <uses-permission android:name="${applicationId}.permission.PROFILER_INTERNAL" />
+
+    <!-- Needed to prompt the user directly for app uninstallation as part of an
+    'uninstall survey' experiment. This is ONLY used to uninstall the Firefox application -->
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" tools:node="replace" />
 
     <permission
         android:name="${applicationId}.permission.PROFILER_INTERNAL"
@@ -529,6 +534,7 @@
                 <data android:host="settings_delete_browsing_data"/>
                 <data android:host="settings_logins"/>
                 <data android:host="settings_notifications"/>
+                <data android:host="settings_marketing_notifications"/>
                 <data android:host="settings_privacy"/>
                 <data android:host="settings_search_engine"/>
                 <data android:host="settings_tracking_protection"/>
@@ -538,6 +544,7 @@
                 <data android:host="urls_bookmarks"/>
                 <data android:host="urls_history"/>
                 <data android:host="settings_private_browsing"/>
+                <data android:host="protections_dashboard"/>
             </intent-filter>
         </activity>
 

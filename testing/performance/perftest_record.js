@@ -477,7 +477,8 @@ async function interactive_test(input_cmds, context, commands) {
   let cmds = input_cmds.split(";;;");
 
   let logins;
-  if (context.options.browsertime.login) {
+  // login is passed as a string ("true"/"false"), not a boolean.
+  if (context.options.browsertime.login === "true") {
     logins = await get_logins(context);
   }
 

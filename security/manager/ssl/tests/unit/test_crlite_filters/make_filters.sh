@@ -22,14 +22,30 @@ cat > ./ct-logs.json << EOF
 }]
 EOF
 
-rust-create-cascade --filter-type clubcard --ct-logs-json ./ct-logs.json \
-        --known ./${L1}/known/ --revoked ./${L1}/revoked --outdir ./${L1}/out
+# Build the filters in each supported clubcard encoding. The bincode and tls
+# encodings describe the same filter; only the on-disk serialization differs.
+# The bincode files keep their original names; the tls files get a ".tls"
+# suffix.
+for encoding in bincode tls; do
+        if [ "${encoding}" = "bincode" ]; then
+                suffix=""
+        else
+                suffix=".${encoding}"
+        fi
 
-rust-create-cascade --filter-type clubcard --ct-logs-json ./ct-logs.json \
-        --known ./${L2}/known/ --revoked ./${L2}/revoked --outdir ./${L2}/out \
-        --prev-revset ./${L1}/out/revset.bin
+        rust-create-cascade --filter-type clubcard --encoding ${encoding} \
+                --ct-logs-json ./ct-logs.json \
+                --known ./${L1}/known/ --revoked ./${L1}/revoked \
+                --outdir ./${L1}/out-${encoding}
 
-mv ./${L1}/out/filter ./${L1}-filter
-mv ./${L2}/out/filter.delta ./${L2}-filter.delta
+        rust-create-cascade --filter-type clubcard --encoding ${encoding} \
+                --ct-logs-json ./ct-logs.json \
+                --known ./${L2}/known/ --revoked ./${L2}/revoked \
+                --outdir ./${L2}/out-${encoding} \
+                --prev-revset ./${L1}/out-${encoding}/revset.bin
+
+        mv ./${L1}/out-${encoding}/filter ./${L1}-filter${suffix}
+        mv ./${L2}/out-${encoding}/filter.delta ./${L2}-filter.delta${suffix}
+done
 
 rm -rf ./${L1} ./${L2} ./ct-logs.json

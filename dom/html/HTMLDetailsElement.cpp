@@ -66,13 +66,15 @@ void HTMLDetailsElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
             new AsyncEventDispatcher(this, toggleEvent.forget());
         mToggleEventDispatcher->PostDOMEvent();
 
+        SetStates(ElementState::OPEN, isOpen);
         if (isOpen) {
           CloseOtherElementsIfNeeded();
         }
-        SetStates(ElementState::OPEN, isOpen);
       }
     } else if (aName == nsGkAtoms::name) {
-      CloseElementIfNeeded();
+      if (aValue && !aValue->IsEmptyString() && Open()) {
+        CloseElementIfNeeded(aValue->GetAtomValue());
+      }
     }
   }
 
@@ -85,7 +87,9 @@ nsresult HTMLDetailsElement::BindToTree(BindContext& aContext,
   nsresult rv = nsGenericHTMLElement::BindToTree(aContext, aParent);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  CloseElementIfNeeded();
+  if (HasName() && Open()) {
+    CloseElementIfNeeded(GetParsedAttr(nsGkAtoms::name)->GetAtomValue());
+  }
 
   return NS_OK;
 }
@@ -229,20 +233,9 @@ bool HTMLDetailsElement::HandleCommandInternal(Element* aSource,
   return false;
 }
 
-void HTMLDetailsElement::CloseElementIfNeeded() {
-  if (!StaticPrefs::dom_details_group_enabled()) {
-    return;
-  }
+void HTMLDetailsElement::CloseElementIfNeeded(nsAtom* aName) {
+  MOZ_ASSERT(Open());
 
-  if (!Open()) {
-    return;
-  }
-
-  if (!HasName()) {
-    return;
-  }
-
-  const RefPtr<nsAtom> name = GetParsedAttr(nsGkAtoms::name)->GetAsAtom();
   nsINode* const root = SubtreeRoot();
   for (nsINode* cur = root; cur; cur = cur->GetNextNode(root)) {
     if (!cur->HasName()) {
@@ -250,8 +243,7 @@ void HTMLDetailsElement::CloseElementIfNeeded() {
     }
     if (auto* other = HTMLDetailsElement::FromNode(cur)) {
       if (other != this && other->Open() &&
-          other->AttrValueIs(kNameSpaceID_None, nsGkAtoms::name, name,
-                             eCaseMatters)) {
+          other->GetParsedAttr(nsGkAtoms::name)->GetAtomValue() == aName) {
         SetOpen(false, IgnoreErrors());
         break;
       }
@@ -260,17 +252,13 @@ void HTMLDetailsElement::CloseElementIfNeeded() {
 }
 
 void HTMLDetailsElement::CloseOtherElementsIfNeeded() {
-  if (!StaticPrefs::dom_details_group_enabled()) {
-    return;
-  }
-
   MOZ_ASSERT(Open());
 
   if (!HasName()) {
     return;
   }
 
-  const RefPtr<nsAtom> name = GetParsedAttr(nsGkAtoms::name)->GetAsAtom();
+  nsAtom* name = GetParsedAttr(nsGkAtoms::name)->GetAtomValue();
   nsINode* const root = SubtreeRoot();
   for (nsINode* cur = root; cur; cur = cur->GetNextNode(root)) {
     if (!cur->HasName()) {
@@ -278,8 +266,7 @@ void HTMLDetailsElement::CloseOtherElementsIfNeeded() {
     }
     if (auto* other = HTMLDetailsElement::FromNode(cur)) {
       if (other != this && other->Open() &&
-          other->AttrValueIs(kNameSpaceID_None, nsGkAtoms::name, name,
-                             eCaseMatters)) {
+          other->GetParsedAttr(nsGkAtoms::name)->GetAtomValue() == name) {
         RefPtr<HTMLDetailsElement> otherDetails = other;
         otherDetails->SetOpen(false, IgnoreErrors());
         break;

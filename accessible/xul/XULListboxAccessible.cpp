@@ -4,19 +4,18 @@
 
 #include "XULListboxAccessible.h"
 
-#include "LocalAccessible-inl.h"
-#include "nsAccessibilityService.h"
-#include "nsAccUtils.h"
 #include "DocAccessible.h"
-#include "mozilla/a11y/Role.h"
+#include "LocalAccessible-inl.h"
 #include "States.h"
-
+#include "mozilla/a11y/Role.h"
+#include "mozilla/dom/NodeList.h"
+#include "nsAccUtils.h"
+#include "nsAccessibilityService.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIAutoCompletePopup.h"
 #include "nsIDOMXULMenuListElement.h"
 #include "nsIDOMXULMultSelectCntrlEl.h"
 #include "nsIDOMXULSelectCntrlItemEl.h"
-#include "mozilla/dom/NodeList.h"
 
 using namespace mozilla::a11y;
 

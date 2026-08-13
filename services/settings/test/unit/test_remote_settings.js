@@ -4,8 +4,6 @@ const { ObjectUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/ObjectUtils.sys.mjs"
 );
 
-const IS_ANDROID = AppConstants.platform == "android";
-
 let server;
 let client;
 let clientWithDump;

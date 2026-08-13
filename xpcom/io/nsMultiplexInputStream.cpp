@@ -7,24 +7,23 @@
  * stream.
  */
 
+#include "nsMultiplexInputStream.h"
+
+#include "base/basictypes.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Mutex.h"
-
-#include "base/basictypes.h"
-
-#include "nsMultiplexInputStream.h"
+#include "mozilla/ipc/InputStreamUtils.h"
+#include "nsCOMArray.h"
+#include "nsCOMPtr.h"
+#include "nsIAsyncInputStream.h"
 #include "nsIBufferedStreams.h"
+#include "nsIClassInfoImpl.h"
 #include "nsICloneableInputStream.h"
+#include "nsIIPCSerializableInputStream.h"
+#include "nsIInputStreamLength.h"
 #include "nsIMultiplexInputStream.h"
 #include "nsISeekableStream.h"
-#include "nsCOMPtr.h"
-#include "nsCOMArray.h"
-#include "nsIClassInfoImpl.h"
-#include "nsIIPCSerializableInputStream.h"
-#include "mozilla/ipc/InputStreamUtils.h"
-#include "nsIAsyncInputStream.h"
-#include "nsIInputStreamLength.h"
 #include "nsNetUtil.h"
 #include "nsStreamUtils.h"
 

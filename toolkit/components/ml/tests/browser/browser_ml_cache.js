@@ -2135,3 +2135,57 @@ add_task(async function test_migrateStore_dedupsLegacyAndNewEngineIds() {
 
   await deleteCache(cache);
 });
+
+/**
+ * Verify the 7 -> 8 schema migration re-keys task rows whose taskName was
+ * renamed, so already-downloaded model files keep hitting the cache instead
+ * of being downloaded again.
+ */
+add_task(async function test_migrateStore_renamesWllamaTaskName() {
+  const dbName = `modelFiles-${crypto.randomUUID()}`;
+  await TestIndexedDBCache.deleteDatabaseAndWait(dbName).catch(() => {});
+
+  const model = "org/link-preview";
+  const revision = "v1";
+  const file = "weights.bin";
+
+  // Seed a row under the pre-migration schema with the obsolete taskName.
+  let cache = await IndexedDBCache.init({ dbName, version: 7 });
+  await cache.put({
+    engineId: "link-preview",
+    taskName: "wllama-text-generation",
+    model,
+    revision,
+    file,
+    data: createBlob(),
+    headers: null,
+  });
+  cache.db.close();
+
+  // Reopen at the current schema version and confirm the row was re-keyed.
+  cache = await IndexedDBCache.init({ dbName });
+
+  let listed = await cache.listFiles({
+    taskName: "llama-text-generation",
+    model,
+    revision,
+  });
+  Assert.equal(
+    listed.files.length,
+    1,
+    "Migration should re-key the row to the new taskName."
+  );
+
+  listed = await cache.listFiles({
+    taskName: "wllama-text-generation",
+    model,
+    revision,
+  });
+  Assert.deepEqual(
+    listed.files,
+    [],
+    "No row should remain under the old taskName."
+  );
+
+  await deleteCache(cache);
+});

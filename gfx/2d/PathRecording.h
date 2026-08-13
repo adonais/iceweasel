@@ -6,10 +6,9 @@
 #define MOZILLA_GFX_PATHRECORDING_H_
 
 #include "2D.h"
-
-#include "mozilla/Vector.h"
 #include "PathHelpers.h"
 #include "RecordingTypes.h"
+#include "mozilla/Vector.h"
 
 namespace mozilla {
 namespace gfx {

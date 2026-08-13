@@ -3,62 +3,65 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsDragService.h"
+
 #include "nsDragServiceGtk.h"
 #ifdef MOZ_WAYLAND
 #  include "nsDragServiceWayland.h"
 #endif
-#include "nsArrayUtils.h"
-#include "nsComponentManagerUtils.h"
-#include "nsIObserverService.h"
-#include "nsWidgetsCID.h"
-#include "nsWindow.h"
-#include "nsSystemInfo.h"
-#include "nsXPCOM.h"
-#include "nsICookieJarSettings.h"
-#include "nsISupportsPrimitives.h"
-#include "nsIIOService.h"
-#include "nsIFileURL.h"
-#include "nsNetUtil.h"
-#include "mozilla/Logging.h"
-#include "nsTArray.h"
-#include "nsPrimitiveHelpers.h"
-#include "prtime.h"
-#include "prthread.h"
 #include <dlfcn.h>
-#include <mutex>
 #include <gtk/gtk.h>
-#include "nsCRT.h"
-#include "mozilla/BasicEvents.h"
-#include "mozilla/Services.h"
-#include "mozilla/ClearOnShutdown.h"
-#include "mozilla/PresShell.h"
+
+#include <mutex>
+
+#include "GRefPtr.h"
 #include "mozilla/AutoRestore.h"
+#include "mozilla/BasicEvents.h"
+#include "mozilla/ClearOnShutdown.h"
+#include "mozilla/Logging.h"
+#include "mozilla/PresShell.h"
+#include "mozilla/Services.h"
+#include "mozilla/StaticPrefs_widget.h"
 #include "mozilla/WidgetUtils.h"
 #include "mozilla/WidgetUtilsGtk.h"
-#include "mozilla/StaticPrefs_widget.h"
-#include "GRefPtr.h"
 #include "nsAppShell.h"
+#include "nsArrayUtils.h"
+#include "nsCRT.h"
+#include "nsComponentManagerUtils.h"
+#include "nsICookieJarSettings.h"
+#include "nsIFileURL.h"
+#include "nsIIOService.h"
+#include "nsIObserverService.h"
+#include "nsISupportsPrimitives.h"
+#include "nsNetUtil.h"
+#include "nsPrimitiveHelpers.h"
+#include "nsSystemInfo.h"
+#include "nsTArray.h"
+#include "nsWidgetsCID.h"
+#include "nsWindow.h"
+#include "nsXPCOM.h"
+#include "prthread.h"
+#include "prtime.h"
 #ifdef MOZ_X11
 #  include "gfxXlibSurface.h"
 #endif
-#include "gfxContext.h"
-#include "nsImageToPixbuf.h"
-#include "nsPresContext.h"
-#include "nsIContent.h"
-#include "mozilla/dom/Document.h"
-#include "nsIFrame.h"
-#include "nsGtkUtils.h"
-#include "nsGtkKeyUtils.h"
-#include "mozilla/widget/nsGtkHtmlUtils.h"
-#include "mozilla/gfx/2D.h"
-#include "gfxPlatform.h"
 #include "ScreenHelperGTK.h"
+#include "gfxContext.h"
+#include "gfxPlatform.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/widget/nsGtkHtmlUtils.h"
 #include "nsArrayUtils.h"
-#include "nsStringStream.h"
 #include "nsDirectoryService.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsEscape.h"
+#include "nsGtkKeyUtils.h"
+#include "nsGtkUtils.h"
+#include "nsIContent.h"
+#include "nsIFrame.h"
+#include "nsImageToPixbuf.h"
+#include "nsPresContext.h"
 #include "nsString.h"
+#include "nsStringStream.h"
 
 using namespace mozilla;
 using namespace mozilla::widget;
@@ -649,14 +652,7 @@ already_AddRefed<nsDragService> nsDragService::GetInstance() {
   return service.forget();
 }
 
-nsDragService::nsDragService() {
-#ifdef MOZ_WAYLAND
-  if (StaticPrefs::widget_wayland_native_data_session_AtStartup() &&
-      GdkIsWaylandDisplay()) {
-    mContext = MakeRefPtr<RetrievalContextWayland>(/* aIsDragContext */ true);
-  }
-#endif
-}
+nsDragService::nsDragService() = default;
 
 already_AddRefed<nsIDragSession> nsDragService::CreateDragSession() {
 #ifdef MOZ_WAYLAND

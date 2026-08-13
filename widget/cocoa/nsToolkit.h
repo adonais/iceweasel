@@ -5,12 +5,12 @@
 #ifndef nsToolkit_h_
 #define nsToolkit_h_
 
-#include "nscore.h"
-
 #import <Carbon/Carbon.h>
 #import <Cocoa/Cocoa.h>
-#import <objc/Object.h>
 #import <IOKit/IOKitLib.h>
+#import <objc/Object.h>
+
+#include "nscore.h"
 
 class nsToolkit {
  public:

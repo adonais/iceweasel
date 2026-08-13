@@ -2,18 +2,23 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef BASE_ALLOCATOR_PARTITION_ALLOCATOR_SRC_PARTITION_ALLOC_OOM_H_
-#define BASE_ALLOCATOR_PARTITION_ALLOCATOR_SRC_PARTITION_ALLOC_OOM_H_
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40284755): Remove this and spanify to fix the errors.
+#pragma allow_unsafe_buffers
+#endif
+
+#ifndef PARTITION_ALLOC_OOM_H_
+#define PARTITION_ALLOC_OOM_H_
 
 #include <cstddef>
 
-#include "base/allocator/partition_allocator/src/partition_alloc/allocation_guard.h"
-#include "base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/compiler_specific.h"
-#include "base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/component_export.h"
-#include "build/build_config.h"
+#include "partition_alloc/allocation_guard.h"
+#include "partition_alloc/build_config.h"
+#include "partition_alloc/partition_alloc_base/compiler_specific.h"
+#include "partition_alloc/partition_alloc_base/component_export.h"
 
-#if BUILDFLAG(IS_WIN)
-#include "base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/win/windows_types.h"
+#if PA_BUILDFLAG(IS_WIN)
+#include "partition_alloc/partition_alloc_base/win/windows_types.h"
 #endif
 
 namespace partition_alloc {
@@ -22,15 +27,15 @@ namespace partition_alloc {
 // |size| is the size of the failed allocation, or 0 if not known.
 // Crash reporting classifies such crashes as OOM.
 // Must be allocation-safe.
-PA_COMPONENT_EXPORT(PARTITION_ALLOC)
-void TerminateBecauseOutOfMemory(size_t size);
+[[noreturn]] PA_NOT_TAIL_CALLED PA_COMPONENT_EXPORT(
+    PARTITION_ALLOC) void TerminateBecauseOutOfMemory(size_t size);
 
 // Records the size of the allocation that caused the current OOM crash, for
 // consumption by Breakpad.
 // TODO: this can be removed when Breakpad is no longer supported.
 PA_COMPONENT_EXPORT(PARTITION_ALLOC) extern size_t g_oom_size;
 
-#if BUILDFLAG(IS_WIN)
+#if PA_BUILDFLAG(IS_WIN)
 namespace win {
 
 // Custom Windows exception code chosen to indicate an out of memory error.
@@ -52,6 +57,16 @@ namespace internal {
 [[noreturn]] PA_NOT_TAIL_CALLED PA_COMPONENT_EXPORT(
     PARTITION_ALLOC) void OnNoMemory(size_t size);
 
+#if PA_BUILDFLAG(IS_POSIX)
+// See above for annotations.
+//
+// THis is used to identify cases where the kernel return ENOMEM for memory
+// management calls. This can indicate several things, but in particular on
+// Linux that the current process has exceeded the per-process VMA limit.
+[[noreturn]] PA_NOT_TAIL_CALLED PA_COMPONENT_EXPORT(
+    PARTITION_ALLOC) void OnErrnoNoMem();
+#endif
+
 // OOM_CRASH(size) - Specialization of IMMEDIATE_CRASH which will raise a custom
 // exception on Windows to signal this is OOM and not a normal assert.
 // OOM_CRASH(size) is called by users of PageAllocator (including
@@ -67,4 +82,4 @@ namespace internal {
 
 }  // namespace partition_alloc
 
-#endif  // BASE_ALLOCATOR_PARTITION_ALLOCATOR_SRC_PARTITION_ALLOC_OOM_H_
+#endif  // PARTITION_ALLOC_OOM_H_

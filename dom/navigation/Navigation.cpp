@@ -784,15 +784,15 @@ struct NavigationWaitForAllScope final : public nsISupports,
     // 4. Set navigation's ongoing navigate event to null.
     mNavigation->mOngoingNavigateEvent = nullptr;
 
-    // 5. Finish event given true.
-    RefPtr event = mEvent;
-    event->Finish(true);
-
-    // 6. If apiMethodTracker is non-null, then resolve the finished promise for
+    // 5. If apiMethodTracker is non-null, then resolve the finished promise for
     // apiMethodTracker.
     if (mAPIMethodTracker) {
       mAPIMethodTracker->ResolveFinishedPromise();
     }
+
+    // 6. Finish event given true.
+    RefPtr event = mEvent;
+    event->Finish(true);
 
     // 7. Fire an event named navigatesuccess at navigation.
     RefPtr navigation = mNavigation;
@@ -1369,7 +1369,7 @@ void Navigation::TraverseTo(JSContext* aCx, const nsAString& aKey,
   //    early error result for an "InvalidStateError" DOMException.
   nsID key{};
   const bool foundKey =
-      key.Parse(NS_ConvertUTF16toUTF8(aKey).get()) &&
+      key.Parse(NS_ConvertUTF16toUTF8(aKey)) &&
       std::find_if(mEntries.begin(), mEntries.end(), [&](const auto& aEntry) {
         return aEntry->Key() == key;
       }) != mEntries.end();
@@ -2048,21 +2048,21 @@ void Navigation::AbortNavigateEvent(JSContext* aCx, const NavigateEvent* aEvent,
   // 1. Let navigation be event's relevant global object's navigation API.
   // Omitted since this is called from a Navigation object.
 
-  // 4. Set navigation's ongoing navigate event to null.
+  // 2. Set navigation's ongoing navigate event to null.
   mOngoingNavigateEvent = nullptr;
 
-  // 2. Signal abort on event's abort controller given reason.
-  aEvent->AbortController()->Abort(aCx, aReason);
-
-  // 3. Let errorInfo be the result of extracting error information from reason.
-  RootedDictionary<ErrorEventInit> init(aCx);
-  ExtractErrorInformation(aCx, aReason, init, aEvent);
-
-  // 5. If navigation's ongoing API method tracker is non-null, then reject the
-  //    finished promise for apiMethodTracker with error.
+  // 3. If navigation's ongoing API method tracker is non-null, then reject the
+  //    finished promise for apiMethodTracker with reason.
   if (mOngoingAPIMethodTracker) {
     mOngoingAPIMethodTracker->RejectFinishedPromise(aReason);
   }
+
+  // 4. Signal abort on event's abort controller given reason.
+  aEvent->AbortController()->Abort(aCx, aReason);
+
+  // 5. Let errorInfo be the result of extracting error information from reason.
+  RootedDictionary<ErrorEventInit> init(aCx);
+  ExtractErrorInformation(aCx, aReason, init, aEvent);
 
   // 6. Fire an event named navigateerror at navigation using ErrorEvent, with
   //    additional attributes initialized according to errorInfo.
@@ -2073,9 +2073,9 @@ void Navigation::AbortNavigateEvent(JSContext* aCx, const NavigateEvent* aEvent,
     return;
   }
 
-  // 8. Reject navigation's transition's committed promise with error.
+  // 8. Reject navigation's transition's committed promise with reason.
   mTransition->Committed()->MaybeReject(aReason);
-  // 9. Reject navigation's transition's finished promise with error.
+  // 9. Reject navigation's transition's finished promise with reason.
   mTransition->Finished()->MaybeReject(aReason);
 
   // 10. Set navigation's transition to null.
@@ -2286,9 +2286,7 @@ void Navigation::CreateNavigationActivationFrom(
   } else {
     mActivation->SetNewEntry(currentEntry);
     mActivation->SetNavigationType(navigationType);
-    if (oldEntry) {
-      mActivation->SetOldEntry(oldEntry);
-    }
+    mActivation->SetOldEntry(oldEntry);
   }
 }
 

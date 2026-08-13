@@ -5,11 +5,11 @@
 #ifndef loader_mozJSSubScriptLoader_h
 #define loader_mozJSSubScriptLoader_h
 
-#include "nsCOMPtr.h"
 #include "mozIJSSubScriptLoader.h"
+#include "nsCOMPtr.h"
 
-#include "js/experimental/JSStencil.h"
 #include "js/CompileOptions.h"  // JS::ReadOnlyCompileOptions
+#include "js/experimental/JSStencil.h"
 
 class nsIPrincipal;
 class nsIURI;

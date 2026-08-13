@@ -2757,25 +2757,6 @@ bool MPhi::markIteratorPhis(const PhiVector& iterators) {
   return true;
 }
 
-bool MPhi::typeIncludes(MDefinition* def) {
-  MOZ_ASSERT(!IsMagicType(def->type()));
-
-  if (def->type() == this->type()) {
-    return true;
-  }
-
-  // This phi must be able to be any value.
-  if (this->type() == MIRType::Value) {
-    return true;
-  }
-
-  if (def->type() == MIRType::Int32 && this->type() == MIRType::Double) {
-    return true;
-  }
-
-  return false;
-}
-
 void MCallBase::addArg(size_t argnum, MDefinition* arg) {
   // The operand vector is initialized in reverse order by WarpBuilder.
   // It cannot be checked for consistency until all arguments are added.
@@ -2828,9 +2809,8 @@ MDefinition* MBinaryBitwiseInstruction::foldsTo(TempAllocator& alloc) {
 }
 
 MDefinition* MBinaryBitwiseInstruction::foldUnnecessaryBitop() {
-  // It's probably OK to perform this optimization only for int32, as it will
-  // have the greatest effect for asm.js code that is compiled with the JS
-  // pipeline, and that code will not see int64 values.
+  // It's probably OK to perform this optimization only for int32, as JS
+  // bytecode does not see int64 values.
 
   if (type() != MIRType::Int32) {
     return this;
@@ -3085,9 +3065,8 @@ MDefinition* MRsh::foldsTo(TempAllocator& alloc) {
   MDefinition* lhs = getOperand(0);
   MDefinition* rhs = getOperand(1);
 
-  // It's probably OK to perform this optimization only for int32, as it will
-  // have the greatest effect for asm.js code that is compiled with the JS
-  // pipeline, and that code will not see int64 values.
+  // It's probably OK to perform this optimization only for int32, as JS
+  // bytecode does not see int64 values.
 
   if (!lhs->isLsh() || !rhs->isConstant() || rhs->type() != MIRType::Int32) {
     return this;
@@ -4911,13 +4890,19 @@ MDefinition* MToFloat16::foldsTo(TempAllocator& alloc) {
       return def;
     }
 
+    // Unwrap CanonicalizeNaN added after load instructions.
+    MDefinition* load = def;
+    if (load->isCanonicalizeNaN()) {
+      load = load->toCanonicalizeNaN()->input();
+    }
+
     // ToFloat16(LoadFloat16(x)) => LoadFloat16(x)
-    if (def->isLoadUnboxedScalar() &&
-        def->toLoadUnboxedScalar()->storageType() == Scalar::Float16) {
+    if (load->isLoadUnboxedScalar() &&
+        load->toLoadUnboxedScalar()->storageType() == Scalar::Float16) {
       return def;
     }
-    if (def->isLoadDataViewElement() &&
-        def->toLoadDataViewElement()->storageType() == Scalar::Float16) {
+    if (load->isLoadDataViewElement() &&
+        load->toLoadDataViewElement()->storageType() == Scalar::Float16) {
       return def;
     }
     return nullptr;

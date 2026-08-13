@@ -5,17 +5,17 @@
 #ifndef GFX_WEBRENDERCOMMANDBUILDER_H
 #define GFX_WEBRENDERCOMMANDBUILDER_H
 
-#include "mozilla/webrender/WebRenderAPI.h"
+#include "ImgDrawResult.h"
+#include "mozilla/SVGIntegrationUtils.h"  // for WrFiltersHolder
 #include "mozilla/layers/ClipManager.h"
 #include "mozilla/layers/HitTestInfoManager.h"
 #include "mozilla/layers/WebRenderMessages.h"
 #include "mozilla/layers/WebRenderScrollData.h"
 #include "mozilla/layers/WebRenderUserData.h"
-#include "mozilla/SVGIntegrationUtils.h"  // for WrFiltersHolder
+#include "mozilla/webrender/WebRenderAPI.h"
 #include "nsDisplayList.h"
 #include "nsIFrame.h"
 #include "nsTHashSet.h"
-#include "ImgDrawResult.h"
 
 namespace mozilla {
 
@@ -179,6 +179,34 @@ class WebRenderCommandBuilder final {
       default:
         break;
     }
+
+    RefPtr<T> res = static_cast<T*>(data.get());
+    return res.forget();
+  }
+  template <class T>
+  already_AddRefed<T> GetWebRenderUserData(nsDisplayItem* aItem) {
+    MOZ_ASSERT(aItem);
+    return GetWebRenderUserData<T>(aItem->GetPerFrameKey(), aItem->Frame());
+  }
+
+  template <class T>
+  already_AddRefed<T> GetWebRenderUserData(uint32_t aDisplayItemKey,
+                                           nsIFrame* aFrame) {
+    WebRenderUserDataTable* userDataTable =
+        aFrame->GetProperty(WebRenderUserDataProperty::Key());
+
+    if (!userDataTable) {
+      return nullptr;
+    }
+
+    RefPtr<WebRenderUserData> data =
+        userDataTable->Get(WebRenderUserDataKey(aDisplayItemKey, T::Type()));
+
+    if (!data) {
+      return nullptr;
+    }
+
+    MOZ_ASSERT(data->GetType() == T::Type());
 
     RefPtr<T> res = static_cast<T*>(data.get());
     return res.forget();

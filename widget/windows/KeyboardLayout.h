@@ -5,11 +5,8 @@
 #ifndef KeyboardLayout_h_
 #define KeyboardLayout_h_
 
-#include "nscore.h"
-#include "nsString.h"
-#include "nsTArray.h"
-#include "nsWindow.h"
-#include "nsWindowDefs.h"
+#include <windows.h>
+
 #include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/RefPtr.h"
@@ -17,7 +14,11 @@
 #include "mozilla/TextEventDispatcher.h"
 #include "mozilla/widget/WinMessages.h"
 #include "mozilla/widget/WinModifierKeyState.h"
-#include <windows.h>
+#include "nsString.h"
+#include "nsTArray.h"
+#include "nsWindow.h"
+#include "nsWindowDefs.h"
+#include "nscore.h"
 
 #define NS_NUM_OF_KEYS 70
 

@@ -1,4 +1,5 @@
 import argparse
+import contextlib
 import json
 import os
 import re
@@ -8,13 +9,13 @@ import sys
 import tempfile
 import threading
 import time
-from contextlib import suppress
 from copy import deepcopy
 from urllib.parse import urlparse
 
 import webdriver
 from mozprofile import Preferences, Profile
 from mozrunner import FirefoxRunner
+from tests.support.helpers import deep_update
 
 from .context import using_context
 
@@ -51,7 +52,7 @@ class Browser:
             self.webdriver_bidi_file = os.path.join(
                 self.profile.profile, "WebDriverBiDiServer.json"
             )
-            with suppress(FileNotFoundError):
+            with contextlib.suppress(FileNotFoundError):
                 os.remove(self.webdriver_bidi_file)
 
         if use_marionette:
@@ -129,20 +130,25 @@ class Geckodriver:
         popen_kwargs=None,
     ):
         self.config = configuration["webdriver"]
-        self.requested_capabilities = configuration["capabilities"]
-        self.hostname = hostname or configuration["host"]
-        self.extra_args = extra_args or []
         self.env = configuration["browser"]["env"]
+        self.extra_args = extra_args or []
         self.extra_env = extra_env or {}
+        self.hostname = hostname or configuration["host"]
         self.popen_kwargs = popen_kwargs or {}
+
+        self.default_capabilities = configuration["capabilities"]
+        self.requested_capabilities = self.default_capabilities
+        self.capabilities = {"alwaysMatch": self.requested_capabilities}
 
         self.command = None
         self.proc = None
         self.port = None
         self.reader_thread = None
-
-        self.capabilities = {"alwaysMatch": self.requested_capabilities}
         self.session = None
+
+    @property
+    def has_active_session(self):
+        return self.session is not None and self.session.session_id is not None
 
     @property
     def remote_agent_port(self):
@@ -150,6 +156,11 @@ class Geckodriver:
         assert webSocketUrl is not None
 
         return urlparse(webSocketUrl).port
+
+    def kill(self):
+        if self.has_active_session:
+            self.session.end()
+        self._kill()
 
     def start(self):
         self.command = (
@@ -210,22 +221,50 @@ class Geckodriver:
                 self.port = int(m.groups()[0])
 
     async def stop(self):
-        if self.session is not None:
+        if self.has_active_session:
             await self.delete_session()
+        self._kill()
+
+    def new_session(self, capabilities=None):
+        requested_capabilities = deepcopy(self.default_capabilities)
+
+        if capabilities is not None:
+            deep_update(requested_capabilities, capabilities)
+
+        # Default to WebDriver BiDi enabled if flag was not set
+        requested_capabilities.setdefault("webSocketUrl", True)
+
+        if requested_capabilities != self.requested_capabilities:
+            if self.has_active_session:
+                self.session.end()
+
+            self.requested_capabilities = requested_capabilities
+            self.capabilities = {"alwaysMatch": self.requested_capabilities}
+            self.session = webdriver.Session(
+                self.hostname,
+                self.port,
+                capabilities=self.capabilities,
+            )
+
+        if self.has_active_session:
+            return
+
+        self.session.start()
+
+    async def delete_session(self):
+        if self.session is not None and self.session.bidi_session is not None:
+            await self.session.bidi_session.end()
+
+        self.session.end()
+
+    def _kill(self):
         if self.proc:
             self.proc.kill()
         self.port = None
         if self.reader_thread is not None:
             self.reader_thread.join()
-
-    def new_session(self):
-        self.session.start()
-
-    async def delete_session(self):
-        if self.session.bidi_session is not None:
-            await self.session.bidi_session.end()
-
-        self.session.end()
+        if self.proc:
+            self.proc.wait()
 
 
 def clear_pref(session, pref):

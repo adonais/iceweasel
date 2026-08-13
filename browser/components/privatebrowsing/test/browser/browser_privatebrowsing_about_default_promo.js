@@ -79,6 +79,10 @@ add_task(async function test_default_promo() {
     const promoHeader = content.document.getElementById("promo-header");
 
     ok(promoContainer, "Focus promo is shown");
+    ok(
+      ContentTaskUtils.isVisible(promoContainer),
+      "Focus promo container is visible"
+    );
     is(
       promoHeader.getAttribute("data-l10n-id"),
       "about-private-browsing-focus-promo-header-c",

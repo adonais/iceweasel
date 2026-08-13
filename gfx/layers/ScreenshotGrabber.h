@@ -5,11 +5,11 @@
 #ifndef mozilla_layers_ScreenshotGrabber_h
 #define mozilla_layers_ScreenshotGrabber_h
 
-#include "nsISupportsImpl.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/gfx/Rect.h"
+#include "nsISupportsImpl.h"
 
 namespace mozilla {
 namespace layers {

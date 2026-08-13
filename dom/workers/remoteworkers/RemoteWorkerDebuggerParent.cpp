@@ -33,6 +33,10 @@ mozilla::ipc::IPCResult RemoteWorkerDebuggerParent::RecvUnregister() {
 
   MOZ_ASSERT_DEBUG_OR_FUZZING(manager);
   manager->UnregisterDebugger(this);
+  // Unregistering means the worker is gone, so the debugger is now closed.
+  // This mirrors the local WorkerDebugger, whose Close() (called on unregister)
+  // makes nsIWorkerDebugger.isClosed return true and property accesses throw.
+  mIsClosed = true;
   for (const auto& listener : mListeners.Clone()) {
     listener->OnClose();
   }
@@ -107,6 +111,10 @@ RemoteWorkerDebuggerParent::GetIsChrome(bool* aResult) {
   AssertIsOnMainThread();
   MOZ_ASSERT_DEBUG_OR_FUZZING(aResult);
 
+  if (mIsClosed) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
   *aResult = mWorkerDebuggerInfo.isChrome();
   return NS_OK;
 }
@@ -125,6 +133,10 @@ RemoteWorkerDebuggerParent::GetIsInitialized(bool* aResult) {
   AssertIsOnMainThread();
   MOZ_ASSERT_DEBUG_OR_FUZZING(aResult);
 
+  if (mIsClosed) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
   *aResult = mIsInitialized;
   return NS_OK;
 }
@@ -133,6 +145,10 @@ NS_IMETHODIMP
 RemoteWorkerDebuggerParent::GetParent(nsIWorkerDebugger** aResult) {
   AssertIsOnMainThread();
   MOZ_ASSERT_DEBUG_OR_FUZZING(aResult);
+
+  if (mIsClosed) {
+    return NS_ERROR_UNEXPECTED;
+  }
 
   nsCOMPtr<nsIWorkerDebugger> parent;
   if (!mWorkerDebuggerInfo.parentId().IsEmpty()) {
@@ -150,6 +166,10 @@ RemoteWorkerDebuggerParent::GetType(uint32_t* aResult) {
   AssertIsOnMainThread();
   MOZ_ASSERT_DEBUG_OR_FUZZING(aResult);
 
+  if (mIsClosed) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
   *aResult = mWorkerDebuggerInfo.type();
   return NS_OK;
 }
@@ -158,6 +178,10 @@ NS_IMETHODIMP
 RemoteWorkerDebuggerParent::GetUrl(nsAString& aResult) {
   AssertIsOnMainThread();
 
+  if (mIsClosed) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
   aResult = mWorkerDebuggerInfo.url();
   return NS_OK;
 }
@@ -165,12 +189,28 @@ RemoteWorkerDebuggerParent::GetUrl(nsAString& aResult) {
 NS_IMETHODIMP
 RemoteWorkerDebuggerParent::GetWindow(mozIDOMWindow** aResult) {
   AssertIsOnMainThread();
-  return NS_ERROR_NOT_IMPLEMENTED;
+  MOZ_ASSERT_DEBUG_OR_FUZZING(aResult);
+
+  if (mIsClosed) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  // A remote worker runs in a content process, so there is no associated
+  // window object in this (parent) process. Consumers that need the owning
+  // document should use the inner window id(s) exposed through windowIDs
+  // instead. Return null rather than throwing so that `debugger.window`
+  // behaves like an absent optional value.
+  *aResult = nullptr;
+  return NS_OK;
 }
 
 NS_IMETHODIMP
 RemoteWorkerDebuggerParent::GetWindowIDs(nsTArray<uint64_t>& aResult) {
   AssertIsOnMainThread();
+
+  if (mIsClosed) {
+    return NS_ERROR_UNEXPECTED;
+  }
 
   aResult = mWindowIDs.Clone();
   return NS_OK;
@@ -180,6 +220,10 @@ NS_IMETHODIMP
 RemoteWorkerDebuggerParent::GetPrincipal(nsIPrincipal** aResult) {
   AssertIsOnMainThread();
   MOZ_ASSERT_DEBUG_OR_FUZZING(aResult);
+
+  if (mIsClosed) {
+    return NS_ERROR_UNEXPECTED;
+  }
 
   nsCOMPtr<nsIPrincipal> principal = mWorkerDebuggerInfo.principal();
   principal.forget(aResult);
@@ -192,6 +236,10 @@ RemoteWorkerDebuggerParent::GetServiceWorkerID(uint32_t* aResult) {
   AssertIsOnMainThread();
   MOZ_ASSERT_DEBUG_OR_FUZZING(aResult);
 
+  if (mIsClosed) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
   *aResult = mWorkerDebuggerInfo.serviceWorkerID();
   return NS_OK;
 }
@@ -199,6 +247,10 @@ RemoteWorkerDebuggerParent::GetServiceWorkerID(uint32_t* aResult) {
 NS_IMETHODIMP
 RemoteWorkerDebuggerParent::GetId(nsAString& aResult) {
   AssertIsOnMainThread();
+
+  if (mIsClosed) {
+    return NS_ERROR_UNEXPECTED;
+  }
 
   aResult = mWorkerDebuggerInfo.Id();
   return NS_OK;
@@ -208,6 +260,10 @@ NS_IMETHODIMP
 RemoteWorkerDebuggerParent::GetName(nsAString& aResult) {
   AssertIsOnMainThread();
 
+  if (mIsClosed) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
   aResult = mWorkerDebuggerInfo.name();
   return NS_OK;
 }
@@ -215,6 +271,9 @@ RemoteWorkerDebuggerParent::GetName(nsAString& aResult) {
 NS_IMETHODIMP
 RemoteWorkerDebuggerParent::Initialize(const nsAString& aURL) {
   AssertIsOnMainThread();
+  if (mIsClosed) {
+    return NS_ERROR_UNEXPECTED;
+  }
   if (CanSend()) {
     nsAutoString url(aURL);
     (void)SendInitialize(url);
@@ -225,6 +284,9 @@ RemoteWorkerDebuggerParent::Initialize(const nsAString& aURL) {
 NS_IMETHODIMP
 RemoteWorkerDebuggerParent::PostMessageMoz(const nsAString& aMessage) {
   AssertIsOnMainThread();
+  if (mIsClosed) {
+    return NS_ERROR_UNEXPECTED;
+  }
   if (CanSend()) {
     nsAutoString message(aMessage);
     (void)SendPostMessage(message);

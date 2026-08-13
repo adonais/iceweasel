@@ -6,11 +6,11 @@
 
 #include "nsMacSharingService.h"
 
-#include "jsapi.h"
 #include "js/Array.h"               // JS::NewArrayObject
 #include "js/PropertyAndElement.h"  // JS_SetElement, JS_SetProperty
-#include "nsCocoaUtils.h"
+#include "jsapi.h"
 #include "mozilla/MacStringHelpers.h"
+#include "nsCocoaUtils.h"
 
 NS_IMPL_ISUPPORTS(nsMacSharingService, nsIMacSharingService)
 

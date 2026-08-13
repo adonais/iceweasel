@@ -745,7 +745,7 @@ nsAppShellService::RegisterTopLevelWindow(nsIAppWindow* aWindow) {
       do_GetService(NS_WINDOWWATCHER_CONTRACTID));
   NS_ASSERTION(wwatcher, "No windowwatcher?");
   if (wwatcher && domWindow) {
-    wwatcher->AddWindow(domWindow, 0);
+    wwatcher->AddWindow(domWindow, nullptr);
   }
 
   // an ongoing attempt to quit is stopped by a newly opened window

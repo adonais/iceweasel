@@ -19,6 +19,7 @@ transforms:
 
 task-defaults:
     run-on-repo-type: [hg]
+    run-on-projects: []
     shipping-phase: build
     treeherder:
         symbol: Bpgo(instr)
@@ -60,7 +61,37 @@ tasks:
                 - builds/releng_base_linux_64_builds.py
             mozconfig-variant: profile-generate
             tooltool-downloads: public
-        run-on-projects: ['release']
+        fetches:
+            toolchain:
+                - linux64-clang
+                - linux64-rust
+                - linux64-rust-size
+                - linux64-cbindgen
+                - linux64-dump_syms
+                - linux64-nasm
+                - linux64-node
+                - linux64-pkgconf
+                - sysroot-x86_64-linux-gnu
+                - sysroot-wasm32-wasi
+
+    linux64-nightlyasrelease/opt:
+        description: "Linux64 Nightly-As-Release Instrumented"
+        index:
+            product: firefox
+            job-name: instrumented-nightlyasrelease-linux64
+        shipping-product: firefox
+        treeherder:
+            platform: linux64-nightlyasrelease/opt
+        worker-type: b-linux-docker-amd
+        run:
+            config:
+                - builds/releng_base_firefox.py
+                - builds/releng_base_linux_64_builds.py
+            mozconfig-variant: profile-generate
+            tooltool-downloads: public
+            extra-config:
+                extra_mozconfig_content:
+                    - ac_add_options --as-milestone=release
         fetches:
             toolchain:
                 - linux64-clang
@@ -92,7 +123,6 @@ tasks:
                 extra_mozconfig_content:
                     - ac_add_options --target=aarch64
             tooltool-downloads: public
-        run-on-projects: ['mozilla-central']
         fetches:
             toolchain:
                 - linux64-clang
@@ -140,7 +170,6 @@ tasks:
             script: "mozharness/scripts/fx_desktop_build.py"
             secrets: true
             mozconfig-variant: profile-generate
-        run-on-projects: ['release']
         fetches:
             toolchain:
                 - linux64-clang
@@ -191,7 +220,58 @@ tasks:
             mozconfig-variant: profile-generate
             extra-config:
                 mozconfig_platform: macosx64-aarch64
-        run-on-projects: ['release']
+        fetches:
+            toolchain:
+                - linux64-clang
+                - linux64-hfsplus
+                - linux64-libdmg
+                - linux64-rust-macos
+                - linux64-rust-size
+                - linux64-cbindgen
+                - linux64-dump_syms
+                - linux64-nasm
+                - linux64-node
+                - macosx64-sdk
+                - sysroot-x86_64-linux-gnu
+                - sysroot-wasm32-wasi
+
+    macosx64-aarch64-nightlyasrelease/opt:
+        description: "MacOS X aarch64 Cross-compile Instrumented (Nightly-As-Release)"
+        shipping-phase: build
+        shipping-product: firefox
+        treeherder:
+            platform: osx-aarch64-nightlyasrelease/opt
+        worker-type: b-linux-docker-amd
+        worker:
+            max-run-time: 7200
+            env:
+                PERFHERDER_EXTRA_OPTIONS: instrumented
+            artifacts:
+                - name: public/build/security/{browser_entitlement}.xml
+                  path: checkouts/gecko/security/mac/hardenedruntime/{entitlement_directory}/{browser_entitlement}.xml
+                  type: file
+                - name: public/build/security/media-plugin-helper.xml
+                  path: checkouts/gecko/security/mac/hardenedruntime/{entitlement_directory}/media-plugin-helper.xml
+                  type: file
+                - name: public/build/security/plugin-container.xml
+                  path: checkouts/gecko/security/mac/hardenedruntime/{entitlement_directory}/plugin-container.xml
+                  type: file
+                - name: public/build/security/security-module-helper.xml
+                  path: checkouts/gecko/security/mac/hardenedruntime/{entitlement_directory}/security-module-helper.xml
+                  type: file
+        run:
+            using: mozharness
+            actions: [get-secrets, build]
+            config:
+                - builds/releng_base_firefox.py
+                - builds/releng_base_mac_64_cross_builds.py
+            script: "mozharness/scripts/fx_desktop_build.py"
+            secrets: true
+            mozconfig-variant: profile-generate
+            extra-config:
+                mozconfig_platform: macosx64-aarch64
+                extra_mozconfig_content:
+                    - ac_add_options --as-milestone=release
         fetches:
             toolchain:
                 - linux64-clang
@@ -245,7 +325,6 @@ tasks:
                 - builds/releng_base_android_64_builds.py
             custom-build-variant-cfg: x86_64-profile-generate
             tooltool-downloads: internal
-        run-on-projects: ['release']
         fetches:
             toolchain:
                 - android-gradle-dependencies
@@ -302,7 +381,6 @@ tasks:
                 - builds/releng_base_android_64_builds.py
             custom-build-variant-cfg: aarch64-profile-generate
             tooltool-downloads: internal
-        run-on-projects: ['release']
         fetches:
             toolchain:
                 - android-gradle-dependencies
@@ -359,7 +437,6 @@ tasks:
                 - builds/releng_base_android_64_builds.py
             custom-build-variant-cfg: arm-profile-generate
             tooltool-downloads: internal
-        run-on-projects: ['release']
         fetches:
             toolchain:
                 - android-gradle-dependencies
@@ -396,7 +473,6 @@ tasks:
             extra-config:
                 stage_platform: win32
                 mozconfig_platform: win32
-        run-on-projects: ['release']
         fetches:
             toolchain:
                 - linux64-7zz
@@ -438,7 +514,6 @@ tasks:
                 mozconfig_platform: win64
                 extra_mozconfig_content:
                     - ac_add_options --as-milestone=release
-        run-on-projects: [trunk-only]
         fetches:
             toolchain:
                 - linux64-7zz
@@ -479,7 +554,6 @@ tasks:
             extra-config:
                 stage_platform: win64
                 mozconfig_platform: win64
-        run-on-projects: ['release']
         fetches:
             toolchain:
                 - linux64-7zz
@@ -520,7 +594,6 @@ tasks:
             extra-config:
                 stage_platform: win64-aarch64
                 mozconfig_platform: win64-aarch64
-        run-on-projects: ['release']
         fetches:
             toolchain:
                 - linux64-7zz

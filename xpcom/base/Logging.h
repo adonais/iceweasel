@@ -5,18 +5,17 @@
 #ifndef mozilla_logging_h
 #define mozilla_logging_h
 
+#include <stdarg.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>
 
+#include "fmt/format.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Likely.h"
 #include "mozilla/LoggingCore.h"
-
-#include "fmt/format.h"
 
 #define MOZ_LOGGING_ENABLED 1
 

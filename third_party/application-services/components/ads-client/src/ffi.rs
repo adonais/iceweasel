@@ -12,15 +12,18 @@ use crate::client::config::{AdsCacheConfig, AdsClientConfig};
 use crate::client::{AdsClient, ContextIdProvider};
 use crate::ffi::telemetry::MozAdsTelemetryWrapper;
 use crate::http_cache::CachePolicy;
-use crate::mars::ad_request::{AdContentCategory, AdPlacementRequest, IABContentTaxonomy};
+use crate::mars::ad_request::{
+    AdContentCategory, AdPlacementRequest, AdRequestFlags, IABContentTaxonomy,
+};
 use crate::mars::ad_response::{
     AdCallbacks, AdImage, AdSpoc, AdTile, SpocFrequencyCaps, SpocRanking,
 };
 use crate::mars::Environment;
 use crate::mars::ReportReason;
+use crate::AdsClientUrl;
 use crate::MozAdsClient;
 use parking_lot::Mutex;
-use url::Url;
+use std::collections::HashMap;
 
 pub use error::{AdsClientApiResult, MozAdsClientApiError};
 pub use telemetry::MozAdsTelemetry;
@@ -55,6 +58,8 @@ impl From<MozAdsContextIdProviderWrapper> for Box<dyn ContextIdProvider> {
 #[derive(Default, uniffi::Record)]
 pub struct MozAdsRequestOptions {
     pub cache_policy: Option<MozAdsCachePolicy>,
+    #[uniffi(default)]
+    pub flags: HashMap<String, bool>,
     #[uniffi(default = false)]
     pub ohttp: bool,
 }
@@ -88,9 +93,9 @@ pub struct MozAdsPlacementRequestWithCount {
 
 #[derive(Debug, PartialEq, uniffi::Record)]
 pub struct MozAdsCallbacks {
-    pub click: Url,
-    pub impression: Url,
-    pub report: Option<Url>,
+    pub click: AdsClientUrl,
+    pub impression: AdsClientUrl,
+    pub report: Option<AdsClientUrl>,
 }
 
 #[derive(uniffi::Object)]
@@ -157,8 +162,8 @@ impl MozAdsClientBuilder {
         self
     }
 
-    pub fn telemetry(self: Arc<Self>, telemetry: Arc<dyn MozAdsTelemetry>) -> Arc<Self> {
-        self.0.lock().telemetry = Some(telemetry);
+    pub fn telemetry(self: Arc<Self>, telemetry: Box<dyn MozAdsTelemetry>) -> Arc<Self> {
+        self.0.lock().telemetry = Some(Arc::from(telemetry));
         self
     }
 }
@@ -425,15 +430,15 @@ impl From<&MozAdsIABContent> for AdContentCategory {
     }
 }
 
-impl From<MozAdsRequestOptions> for CachePolicy {
-    fn from(options: MozAdsRequestOptions) -> Self {
-        options.cache_policy.map(Into::into).unwrap_or_default()
+impl From<&MozAdsRequestOptions> for AdRequestFlags {
+    fn from(options: &MozAdsRequestOptions) -> Self {
+        options.flags.clone()
     }
 }
 
-impl From<Option<MozAdsRequestOptions>> for CachePolicy {
-    fn from(options: Option<MozAdsRequestOptions>) -> Self {
-        options.map(Into::into).unwrap_or_default()
+impl From<MozAdsRequestOptions> for CachePolicy {
+    fn from(options: MozAdsRequestOptions) -> Self {
+        options.cache_policy.map(Into::into).unwrap_or_default()
     }
 }
 

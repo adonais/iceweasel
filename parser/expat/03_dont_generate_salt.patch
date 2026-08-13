@@ -1,16 +1,16 @@
 diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
 --- a/expat/lib/xmlparse.c
 +++ b/expat/lib/xmlparse.c
-@@ -115,6 +115,8 @@
- #include "expat.h"
+@@ -119,6 +119,8 @@
  #include "siphash.h"
+ #include "xcsinc.c"
  
 +/* BEGIN MOZILLA CHANGE (we already set a salt through XML_SetHashSalt16Bytes) */
 +#if 0
  #if defined(HAVE_ARC4RANDOM)
  #  include "random_arc4random.h"
  #endif /* defined(HAVE_ARC4RANDOM) */
-@@ -138,6 +140,8 @@
+@@ -142,6 +144,8 @@
  #if defined(_WIN32)
  #  include "random_rand_s.h"
  #endif /* defined(_WIN32) */
@@ -19,7 +19,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  
  #if ! defined(HAVE_GETRANDOM) && ! defined(HAVE_SYSCALL_GETRANDOM)             \
      && ! defined(HAVE_ARC4RANDOM_BUF) && ! defined(HAVE_ARC4RANDOM)            \
-@@ -1036,6 +1036,8 @@
+@@ -1083,6 +1087,8 @@ static const XML_Char implicitContext[]
         ASCII_s,     ASCII_p,     ASCII_a,      ASCII_c,      ASCII_e,
         '\0'};
  
@@ -28,7 +28,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
  #if ! defined(HAVE_ARC4RANDOM_BUF) && ! defined(HAVE_ARC4RANDOM)
  
  static unsigned long
-@@ -1062,9 +1064,14 @@
+@@ -1109,9 +1115,14 @@ gather_time_entropy(void) {
  }
  
  #endif /* ! defined(HAVE_ARC4RANDOM_BUF) && ! defined(HAVE_ARC4RANDOM) */
@@ -43,7 +43,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
    if (getDebugLevel("EXPAT_ENTROPY_DEBUG", 0) >= 1u) {
      fprintf(stderr,
              "expat: Entropy: %s --> [0x" EXPAT_FMT_LLX(
-@@ -1072,11 +1079,16 @@
+@@ -1119,11 +1130,16 @@ ENTROPY_DEBUG(const char *label, struct sipkey entropy_128) {
              label, (unsigned long long)entropy_128.k[0],
              (unsigned long long)entropy_128.k[1]);
    }
@@ -60,7 +60,7 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
    struct sipkey entropy;
  
    /* "Failproof" high quality providers: */
-@@ -1125,6 +1137,8 @@
+@@ -1172,6 +1188,8 @@ generate_hash_secret_salt(void) {
      return ENTROPY_DEBUG("fallback(8)", entropy);
    }
  #endif
@@ -68,4 +68,4 @@ diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
 +/* END MOZILLA CHANGE */
  }
  
- static enum XML_Error
+ static void

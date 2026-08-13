@@ -1,12 +1,6 @@
-diff -U8 b/test/test_duplex.cpp b/test/test_duplex.cpp
---- b/test/test_duplex.cpp
+--- a/test/test_duplex.cpp
 +++ b/test/test_duplex.cpp
-@@ -13,16 +13,18 @@
- #endif
- #include "cubeb/cubeb.h"
- #include <atomic>
- #include <math.h>
- #include <memory>
+@@ -18,6 +18,8 @@
  #include <stdio.h>
  #include <stdlib.h>
  
@@ -15,17 +9,7 @@ diff -U8 b/test/test_duplex.cpp b/test/test_duplex.cpp
  // #define ENABLE_NORMAL_LOG
  // #define ENABLE_VERBOSE_LOG
  #include "common.h"
- 
- #define SAMPLE_FREQUENCY 48000
- #define STREAM_FORMAT CUBEB_SAMPLE_FLOAT32LE
- #define INPUT_CHANNELS 1
- #define INPUT_LAYOUT CUBEB_LAYOUT_MONO
-@@ -196,16 +198,21 @@ TEST(cubeb, duplex_collection_change)
- 
-   duplex_collection_change_impl(ctx);
-   r = cubeb_register_device_collection_changed(
-       ctx, static_cast<cubeb_device_type>(CUBEB_DEVICE_TYPE_INPUT), nullptr,
-       nullptr);
+@@ -201,6 +203,11 @@
    ASSERT_EQ(r, CUBEB_OK);
  }
  
@@ -37,17 +21,7 @@ diff -U8 b/test/test_duplex.cpp b/test/test_duplex.cpp
  #ifdef GTEST_HAS_DEATH_TEST
  TEST(cubeb, duplex_collection_change_no_unregister)
  {
-   cubeb * ctx;
-   int r;
- 
-   r = common_init(&ctx, "Cubeb duplex example with collection change");
-   ASSERT_EQ(r, CUBEB_OK) << "Error initializing cubeb library";
-@@ -213,19 +220,27 @@ TEST(cubeb, duplex_collection_change_no_
-   /* This test needs an available input device, skip it if this host does not
-    * have one. */
-   if (!can_run_audio_input_test(ctx)) {
-     cubeb_destroy(ctx);
-     return;
+@@ -218,9 +225,17 @@
    }
  
    std::unique_ptr<cubeb, decltype(&cubeb_destroy)> cleanup_cubeb_at_exit(
@@ -66,8 +40,3 @@ diff -U8 b/test/test_duplex.cpp b/test/test_duplex.cpp
  }
  #endif
  
- long
- data_cb_input(cubeb_stream * stream, void * user, const void * inputbuffer,
-               void * outputbuffer, long nframes)
- {
-   if (stream == NULL || inputbuffer == NULL || outputbuffer != NULL) {

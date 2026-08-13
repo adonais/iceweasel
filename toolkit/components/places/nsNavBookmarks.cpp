@@ -142,9 +142,7 @@ nsresult nsNavBookmarks::Init() {
 
 nsresult nsNavBookmarks::AdjustIndices(int64_t aFolderId, int32_t aStartIndex,
                                        int32_t aEndIndex, int32_t aDelta) {
-  NS_ASSERTION(
-      aStartIndex >= 0 && aEndIndex <= INT32_MAX && aStartIndex <= aEndIndex,
-      "Bad indices");
+  NS_ASSERTION(aStartIndex >= 0 && aStartIndex <= aEndIndex, "Bad indices");
 
   nsCOMPtr<mozIStorageStatement> stmt = mDB->GetStatement(
       "UPDATE moz_bookmarks SET position = position + :delta "

@@ -9,6 +9,7 @@
 #include "MMPrinter.h"
 #include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/AsyncEventDispatcher.h"
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/BounceTrackingProtection.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Components.h"
@@ -20,6 +21,7 @@
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_network.h"
+#include "mozilla/StoragePrincipalHelper.h"
 #include "mozilla/dom/BrowserBridgeParent.h"
 #include "mozilla/dom/BrowserHost.h"
 #include "mozilla/dom/BrowserParent.h"
@@ -28,6 +30,7 @@
 #include "mozilla/dom/ChromeUtils.h"
 #include "mozilla/dom/ClientIPCTypes.h"
 #include "mozilla/dom/ClientInfo.h"
+#include "mozilla/dom/ClientValidation.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/DOMException.h"
@@ -59,6 +62,7 @@
 #include "mozilla/glean/GeckoviewMetrics.h"
 #include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "mozilla/ipc/ProtocolUtils.h"
+#include "mozilla/net/CookieCommons.h"
 #include "mozilla/net/CookieServiceParent.h"
 #include "mozilla/net/NeckoParent.h"
 #include "mozilla/net/PCookieServiceParent.h"
@@ -124,7 +128,8 @@ WindowGlobalParent::WindowGlobalParent(
       mDocumentHasLoaded(false),
       mDocumentHasUserInteracted(false),
       mBlockAllMixedContent(false),
-      mUpgradeInsecureRequests(false) {
+      mUpgradeInsecureRequests(false),
+      mPartitionStoragePrincipal(false) {
   MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess(), "Parent process only");
 }
 
@@ -142,30 +147,34 @@ already_AddRefed<WindowGlobalParent> WindowGlobalParent::CreateDisconnected(
       GetByInnerWindowId(aInit.context().mInnerWindowId);
   MOZ_RELEASE_ASSERT(!wgp, "Creating duplicate WindowGlobalParent");
 
+  MOZ_RELEASE_ASSERT(VerifyPartitionedPrincipalMatchesDocumentPrincipal(
+                         aInit.principal(), aInit.partitionedPrincipal()),
+                     "Invalid partitioned principal from content");
+
   FieldValues fields(aInit.context().mFields);
   wgp =
       new WindowGlobalParent(browsingContext, aInit.context().mInnerWindowId,
                              aInit.context().mOuterWindowId, std::move(fields));
   wgp->mDocumentPrincipal = aInit.principal();
+  wgp->mDocumentPartitionedPrincipal = aInit.partitionedPrincipal();
   wgp->mDocumentURI = aInit.documentURI();
+  if (aInit.isVideoDocument() && wgp->mDocumentURI) {
+    wgp->RecordSubsequentNoCorsRequestState(wgp->mDocumentURI);
+  }
   wgp->mStaticCloneOf = aInit.staticCloneOf().get_canonical();
   wgp->mIsInitialDocument = Some(aInit.isInitialDocument());
   wgp->mIsUncommittedInitialDocument = aInit.isUncommittedInitialDocument();
   wgp->mBlockAllMixedContent = aInit.blockAllMixedContent();
   wgp->mUpgradeInsecureRequests = aInit.upgradeInsecureRequests();
+  wgp->mPartitionStoragePrincipal = aInit.partitionStoragePrincipal();
   wgp->mSandboxFlags = aInit.sandboxFlags();
   wgp->mHttpsOnlyStatus = aInit.httpsOnlyStatus();
   net::CookieJarSettings::Deserialize(aInit.cookieJarSettings(),
                                       getter_AddRefs(wgp->mCookieJarSettings));
-  MOZ_RELEASE_ASSERT(wgp->mDocumentPrincipal, "Must have a valid principal");
   MOZ_RELEASE_ASSERT(
       !aForProcess || !wgp->mStaticCloneOf ||
           wgp->mStaticCloneOf->GetContentParent() == aForProcess,
       "Cannot static clone from a document in a different process!");
-
-  nsresult rv = wgp->SetDocumentStoragePrincipal(aInit.storagePrincipal());
-  MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv),
-                     "Must succeed in setting storage principal");
 
   if (aInit.documentChannelHandle()) {
     auto result = aInit.documentChannelHandle()->GetChannel(
@@ -483,57 +492,41 @@ IPCResult WindowGlobalParent::RecvUpdateDocumentURI(NotNull<nsIURI*> aURI) {
   return IPC_OK();
 }
 
-nsresult WindowGlobalParent::SetDocumentStoragePrincipal(
-    nsIPrincipal* aNewDocumentStoragePrincipal) {
-  if (mDocumentPrincipal->Equals(aNewDocumentStoragePrincipal)) {
-    mDocumentStoragePrincipal = mDocumentPrincipal;
-    return NS_OK;
-  }
-
-  // Compare originNoSuffix to ensure it's equal.
-  nsCString noSuffix;
-  nsresult rv = mDocumentPrincipal->GetOriginNoSuffix(noSuffix);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  nsCString storageNoSuffix;
-  rv = aNewDocumentStoragePrincipal->GetOriginNoSuffix(storageNoSuffix);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  if (noSuffix != storageNoSuffix) {
-    return NS_ERROR_FAILURE;
-  }
-
-  if (!mDocumentPrincipal->OriginAttributesRef().EqualsIgnoringPartitionKey(
-          aNewDocumentStoragePrincipal->OriginAttributesRef())) {
-    return NS_ERROR_FAILURE;
-  }
-
-  mDocumentStoragePrincipal = aNewDocumentStoragePrincipal;
-  return NS_OK;
-}
-
 IPCResult WindowGlobalParent::RecvUpdateDocumentPrincipal(
     nsIPrincipal* aNewDocumentPrincipal,
-    nsIPrincipal* aNewDocumentStoragePrincipal) {
+    nsIPrincipal* aNewDocumentPartitionedPrincipal) {
   if (!mDocumentPrincipal->Equals(aNewDocumentPrincipal)) {
     return IPC_FAIL(this,
                     "Trying to reuse WindowGlobalParent but the principal of "
                     "the new document does not match the old one");
   }
-  mDocumentPrincipal = aNewDocumentPrincipal;
+  // NOTE: Unfortunately, we cannot check ->Equals for our old & new partitioned
+  // principals, as the partition key for an initial about:blank document may
+  // not match the partition key of the load which replaces it.
+  if (!VerifyPartitionedPrincipalMatchesDocumentPrincipal(
+          aNewDocumentPrincipal, aNewDocumentPartitionedPrincipal)) {
+    return IPC_FAIL(
+        this, "Invalid PartitionedPrincipal when re-using WindowGlobalParent");
+  }
 
-  if (NS_FAILED(SetDocumentStoragePrincipal(aNewDocumentStoragePrincipal))) {
-    return IPC_FAIL(this,
-                    "Trying to reuse WindowGlobalParent but the principal of "
-                    "the new document does not match the storage principal");
+  mDocumentPrincipal = aNewDocumentPrincipal;
+  if (mDocumentPrincipal->Equals(aNewDocumentPartitionedPrincipal)) {
+    // Keep only one copy of the principal around if we don't have a partition
+    // key.
+    mDocumentPartitionedPrincipal = mDocumentPrincipal;
+  } else {
+    mDocumentPartitionedPrincipal = aNewDocumentPartitionedPrincipal;
   }
 
   return IPC_OK();
 }
+
+mozilla::ipc::IPCResult WindowGlobalParent::RecvUpdatePrincipalPartitioning(
+    bool aPartitionStoragePrincipal) {
+  mPartitionStoragePrincipal = aPartitionStoragePrincipal;
+  return IPC_OK();
+}
+
 mozilla::ipc::IPCResult WindowGlobalParent::RecvUpdateDocumentTitle(
     const nsString& aTitle) {
   if (mDocumentTitle.isSome() && mDocumentTitle.value() == aTitle) {
@@ -571,6 +564,42 @@ mozilla::ipc::IPCResult WindowGlobalParent::RecvUpdateHttpsOnlyStatus(
   return IPC_OK();
 }
 
+already_AddRefed<Promise> WindowGlobalParent::RequestDocumentLanguageMetadata(
+    const DocumentLanguageMetadataRequestOptions& aOptions, ErrorResult& aRv) {
+  nsIGlobalObject* global = GetParentObject();
+  RefPtr<Promise> domPromise = Promise::Create(global, aRv);
+  if (NS_WARN_IF(aRv.Failed())) {
+    return nullptr;
+  }
+
+  MOZ_ASSERT(aOptions.mTextSampleMinCodeUnits <=
+             aOptions.mTextSampleTargetCodeUnits);
+
+  if (!IsCurrentGlobal()) {
+    domPromise->MaybeResolve(JS::NullHandleValue);
+    return domPromise.forget();
+  }
+
+  auto ipcPromise = SendRequestDocumentLanguageMetadata(
+      aOptions.mTextSampleMinCodeUnits, aOptions.mTextSampleTargetCodeUnits);
+  ipcPromise->Then(
+      GetMainThreadSerialEventTarget(), __func__,
+      [domPromise,
+       self = RefPtr{this}](const Maybe<DocumentLanguageMetadata>& aMetadata) {
+        if (!self->IsCurrentGlobal() || aMetadata.isNothing()) {
+          domPromise->MaybeResolve(JS::NullHandleValue);
+          return;
+        }
+
+        domPromise->MaybeResolve(*aMetadata);
+      },
+      [domPromise](ResponseRejectReason&&) {
+        domPromise->MaybeResolve(JS::NullHandleValue);
+      });
+
+  return domPromise.forget();
+}
+
 IPCResult WindowGlobalParent::RecvUpdateDocumentHasLoaded(
     bool aDocumentHasLoaded) {
   mDocumentHasLoaded = aDocumentHasLoaded;
@@ -597,6 +626,10 @@ IPCResult WindowGlobalParent::RecvUpdateDocumentCspSettings(
 
 mozilla::ipc::IPCResult WindowGlobalParent::RecvSetClientInfo(
     const IPCClientInfo& aIPCClientInfo) {
+  if (!ClientIsValidPrincipalInfo(aIPCClientInfo.principalInfo(),
+                                  GetRemoteType())) {
+    return IPC_FAIL(this, "SetClientInfo principal not valid for remote type");
+  }
   mClientInfo = Some(ClientInfo(aIPCClientInfo));
   return IPC_OK();
 }
@@ -847,6 +880,22 @@ already_AddRefed<nsIChannel> WindowGlobalParent::GetFailedChannel() {
     return do_AddRef(doc->GetFailedChannel());
   }
   return nullptr;
+}
+
+dom::NoCorsMediaRequestState WindowGlobalParent::NoCorsMediaRequestState(
+    nsIURI* aURI) const {
+  nsCString uri;
+  return (NS_SUCCEEDED(aURI->GetSpecIgnoringRef(uri)) &&
+          mNoCorsMediaRequestURIs.Contains(uri))
+             ? dom::NoCorsMediaRequestState::Subsequent
+             : dom::NoCorsMediaRequestState::Initial;
+}
+
+void WindowGlobalParent::RecordSubsequentNoCorsRequestState(nsIURI* aURI) {
+  nsCString uri;
+  if (NS_SUCCEEDED(aURI->GetSpecIgnoringRef(uri)) && !uri.IsEmpty()) {
+    mNoCorsMediaRequestURIs.PutEntry(uri);
+  }
 }
 
 mozilla::ipc::IPCResult WindowGlobalParent::RecvShare(
@@ -2024,6 +2073,27 @@ void WindowGlobalParent::SetShouldReportHasBlockedOpaqueResponse(
 IPCResult WindowGlobalParent::RecvSetCookies(
     const nsCString& aBaseDomain, const OriginAttributes& aOriginAttributes,
     nsIURI* aHost, bool aIsThirdParty, const nsTArray<CookieStruct>& aCookies) {
+  // Only content principals should be setting cookies via this path.
+  // Reject non-content principals (system, null, expanded) to prevent a
+  // compromised content process from bypassing the baseDomain check below.
+  nsIPrincipal* documentPrincipal = DocumentPrincipal();
+  if (!documentPrincipal || !documentPrincipal->GetIsContentPrincipal()) {
+    return IPC_FAIL(this,
+                    "SetCookies requires a content principal on the window");
+  }
+
+  // file:// principals have no meaningful baseDomain for cookie validation,
+  // skip the domain check.
+  if (!documentPrincipal->SchemeIs("file")) {
+    nsAutoCString principalBaseDomain;
+    if (NS_FAILED(net::CookieCommons::GetBaseDomain(documentPrincipal,
+                                                    principalBaseDomain)) ||
+        !principalBaseDomain.Equals(aBaseDomain)) {
+      return IPC_FAIL(
+          this, "SetCookies baseDomain does not match document principal");
+    }
+  }
+
   // Get CookieServiceParent via
   // ContentParent->NeckoParent->CookieServiceParent.
   ContentParent* contentParent = GetContentParent();
@@ -2036,6 +2106,21 @@ IPCResult WindowGlobalParent::RecvSetCookies(
       LoneManagedOrNullAsserts(neckoParent->ManagedPCookieServiceParent());
   NS_ENSURE_TRUE(csParent, IPC_OK());
   auto* cs = static_cast<net::CookieServiceParent*>(csParent);
+
+  if (!aHost) {
+    return IPC_FAIL(this, "aHost must not be null");
+  }
+
+  // Authorize the write if the process has already loaded this cookie key, or
+  // could legitimately load this principal. The latter covers documents with no
+  // channel registration (e.g. file://), which never populate the key set.
+  nsCOMPtr<nsIPrincipal> principal =
+      BasePrincipal::CreateContentPrincipal(aHost, aOriginAttributes);
+  if (!cs->ContentProcessHasCookie(aBaseDomain, aOriginAttributes) &&
+      !contentParent->ValidatePrincipal(principal)) {
+    return IPC_FAIL(this,
+                    "Content process not authorized for this cookie domain");
+  }
 
   return cs->SetCookies(aBaseDomain, aOriginAttributes, aHost, aIsThirdParty,
                         aCookies, GetBrowsingContext());

@@ -4,16 +4,16 @@
 
 #include "TestCommon.h"
 #include "gtest/gtest.h"
-#include "nsIUDPSocket.h"
-#include "nsISocketTransport.h"
-#include "nsIOutputStream.h"
-#include "nsINetAddr.h"
-#include "nsITimer.h"
-#include "nsContentUtils.h"
 #include "mozilla/gtest/MozAssertions.h"
 #include "mozilla/net/DNS.h"
-#include "prerror.h"
 #include "nsComponentManagerUtils.h"
+#include "nsContentUtils.h"
+#include "nsINetAddr.h"
+#include "nsIOutputStream.h"
+#include "nsISocketTransport.h"
+#include "nsITimer.h"
+#include "nsIUDPSocket.h"
+#include "prerror.h"
 
 #define REQUEST 0x68656c6f
 #define RESPONSE 0x6f6c6568

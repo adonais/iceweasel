@@ -7,7 +7,6 @@ package org.mozilla.fenix.components
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.content.IntentSender
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
@@ -16,50 +15,6 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.home.intent.StartSearchIntentProcessor
 import org.mozilla.fenix.utils.IntentUtils
 import java.util.UUID
-
-/**
- * A wrapper for ShortcutManagerCompat to simplify testing.
- *
- * This interface abstracts the static methods of ShortcutManagerCompat,
- * allowing for easier mocking and verification in unit tests.
- */
-interface ShortcutManagerCompatWrapper {
-    /**
-     * Checks if the system supports pinning shortcuts.
-     *
-     * @param context The application context.
-     * @return `true` if pinning shortcuts is supported, `false` otherwise.
-     */
-    fun isRequestPinShortcutSupported(context: Context): Boolean
-
-    /**
-     * Requests the system to pin a shortcut to the home screen.
-     *
-     * @param context The application context.
-     * @param shortcut The [ShortcutInfoCompat] object representing the shortcut to be pinned.
-     * @param intentSender An optional [IntentSender] to be notified when the shortcut is pinned or canceled.
-     * @return `true` if the request was successfully sent, `false` otherwise.
-     *         Note that this does not guarantee the shortcut will be pinned, as the user can cancel the request.
-     */
-    fun requestPinShortcut(context: Context, shortcut: ShortcutInfoCompat, intentSender: IntentSender?): Boolean
-}
-
-/**
- * A wrapper for [ShortcutManagerCompat] to allow for easier testing.
- */
-class DefaultShortcutManagerCompatWrapper : ShortcutManagerCompatWrapper {
-    override fun isRequestPinShortcutSupported(context: Context): Boolean {
-        return ShortcutManagerCompat.isRequestPinShortcutSupported(context)
-    }
-
-    override fun requestPinShortcut(
-        context: Context,
-        shortcut: ShortcutInfoCompat,
-        intentSender: IntentSender?,
-    ): Boolean {
-        return ShortcutManagerCompat.requestPinShortcut(context, shortcut, intentSender)
-    }
-}
 
 /**
  * Interface for creating [PendingIntent]s.

@@ -164,34 +164,7 @@ Preferences._set = function (prefName, prefValue) {
 };
 
 /**
- * Whether or not the given pref has a value.  This is different from isSet
- * because it returns true whether the value of the pref is a default value
- * or a user-set value, while isSet only returns true if the value
- * is a user-set value.
- *
- * @param   prefName  {String|Array}
- *          the pref to check, or an array of prefs to check
- *
- * @returns {boolean | Array}
- *          whether or not the pref has a value; or, if the caller provided
- *          an array of pref names, an array of booleans indicating whether
- *          or not the prefs have values
- */
-Preferences.has = function (prefName) {
-  if (Array.isArray(prefName)) {
-    return prefName.map(this.has, this);
-  }
-
-  return (
-    this._prefBranch.getPrefType(prefName) != Ci.nsIPrefBranch.PREF_INVALID
-  );
-};
-
-/**
- * Whether or not the given pref has a user-set value.  This is different
- * from |has| because it returns true only if the value of the pref is a user-
- * set value, while |has| returns true if the value of the pref is a default
- * value or a user-set value.
+ * Whether or not the given pref has a user-set value.
  *
  * @param   prefName  {String|Array}
  *          the pref to check, or an array of prefs to check
@@ -206,17 +179,7 @@ Preferences.isSet = function (prefName) {
     return prefName.map(this.isSet, this);
   }
 
-  return this.has(prefName) && this._prefBranch.prefHasUserValue(prefName);
-};
-
-/**
- * Whether or not the given pref has a user-set value. Use isSet instead,
- * which is equivalent.
- *
- * @deprecated
- */
-Preferences.modified = function (prefName) {
-  return this.isSet(prefName);
+  return this._prefBranch.prefHasUserValue(prefName);
 };
 
 Preferences.reset = function (prefName) {
@@ -226,34 +189,6 @@ Preferences.reset = function (prefName) {
   }
 
   this._prefBranch.clearUserPref(prefName);
-};
-
-/**
- * Lock a pref so it can't be changed.
- *
- * @param   prefName  {String|Array}
- *          the pref to lock, or an array of prefs to lock
- */
-Preferences.lock = function (prefName) {
-  if (Array.isArray(prefName)) {
-    prefName.map(this.lock, this);
-  }
-
-  this._prefBranch.lockPref(prefName);
-};
-
-/**
- * Unlock a pref so it can be changed.
- *
- * @param   prefName  {String|Array}
- *          the pref to unlock, or an array of prefs to unlock
- */
-Preferences.unlock = function (prefName) {
-  if (Array.isArray(prefName)) {
-    prefName.map(this.unlock, this);
-  }
-
-  this._prefBranch.unlockPref(prefName);
 };
 
 /**
@@ -347,10 +282,6 @@ Preferences.ignore = function (prefName, callback, thisObject) {
       `Attempt to stop observing a preference "${prefName}" that's not being observed`
     );
   }
-};
-
-Preferences.resetBranch = function (prefBranch = "") {
-  this.reset(this._prefBranch.getChildList(prefBranch));
 };
 
 /**

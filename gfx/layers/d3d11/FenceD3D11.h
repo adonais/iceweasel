@@ -7,9 +7,9 @@
 
 #include <unordered_map>
 
+#include "mozilla/Mutex.h"
 #include "mozilla/gfx/FileHandleWrapper.h"
 #include "mozilla/layers/Fence.h"
-#include "mozilla/Mutex.h"
 
 struct ID3D11Device;
 struct ID3D11Fence;

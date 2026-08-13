@@ -7,9 +7,8 @@
 
 #include <map>
 
-#include "nsDebug.h"                // for NS_WARNING
-#include "nsDOMNavigationTiming.h"  // for DOMHighResTimeStamp
-#include "nsTArray.h"
+#include "ipc/IPCMessageUtils.h"
+#include "js/TypeDecls.h"
 #include "mozilla/Assertions.h"       // for MOZ_ASSERT
 #include "mozilla/DebugOnly.h"        // for DebugOnly
 #include "mozilla/GfxMessageUtils.h"  // for ParamTraits specializations
@@ -18,8 +17,9 @@
 #include "mozilla/gfx/CompositorHitTestInfo.h"
 #include "mozilla/layers/LayersMessageUtils.h"  // for ParamTraits specializations
 #include "mozilla/layers/ScrollableLayerGuid.h"
-#include "ipc/IPCMessageUtils.h"
-#include "js/TypeDecls.h"
+#include "nsDOMNavigationTiming.h"  // for DOMHighResTimeStamp
+#include "nsDebug.h"                // for NS_WARNING
+#include "nsTArray.h"
 
 namespace mozilla {
 namespace layers {
@@ -174,76 +174,28 @@ class APZPaintLogHelper {
 
 namespace IPC {
 
-template <>
-struct ParamTraits<mozilla::layers::APZTestData> {
-  typedef mozilla::layers::APZTestData paramType;
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::layers::APZTestData, mPaints,
+                                  mRepaintRequests, mHitResults,
+                                  mSampledResults, mAdditionalData);
 
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mPaints);
-    WriteParam(aWriter, aParam.mRepaintRequests);
-    WriteParam(aWriter, aParam.mHitResults);
-    WriteParam(aWriter, aParam.mSampledResults);
-    WriteParam(aWriter, aParam.mAdditionalData);
-  }
+DEFINE_IPC_SERIALIZER_WITH_SUPER_CLASS(
+    mozilla::layers::APZTestData::ScrollFrameData,
+    mozilla::layers::APZTestData::ScrollFrameDataBase);
 
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return (ReadParam(aReader, &aResult->mPaints) &&
-            ReadParam(aReader, &aResult->mRepaintRequests) &&
-            ReadParam(aReader, &aResult->mHitResults) &&
-            ReadParam(aReader, &aResult->mSampledResults) &&
-            ReadParam(aReader, &aResult->mAdditionalData));
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_SUPER_CLASS(
+    mozilla::layers::APZTestData::Bucket,
+    mozilla::layers::APZTestData::BucketBase);
 
-template <>
-struct ParamTraits<mozilla::layers::APZTestData::ScrollFrameData>
-    : ParamTraits<mozilla::layers::APZTestData::ScrollFrameDataBase> {};
+DEFINE_IPC_SERIALIZER_WITH_SUPER_CLASS(
+    mozilla::layers::APZTestData::DataStore,
+    mozilla::layers::APZTestData::DataStoreBase);
 
-template <>
-struct ParamTraits<mozilla::layers::APZTestData::Bucket>
-    : ParamTraits<mozilla::layers::APZTestData::BucketBase> {};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::layers::APZTestData::HitResult,
+                                  point, result, layersId, scrollId);
 
-template <>
-struct ParamTraits<mozilla::layers::APZTestData::DataStore>
-    : ParamTraits<mozilla::layers::APZTestData::DataStoreBase> {};
-
-template <>
-struct ParamTraits<mozilla::layers::APZTestData::HitResult> {
-  typedef mozilla::layers::APZTestData::HitResult paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.point);
-    WriteParam(aWriter, aParam.result);
-    WriteParam(aWriter, aParam.layersId);
-    WriteParam(aWriter, aParam.scrollId);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return (ReadParam(aReader, &aResult->point) &&
-            ReadParam(aReader, &aResult->result) &&
-            ReadParam(aReader, &aResult->layersId) &&
-            ReadParam(aReader, &aResult->scrollId));
-  }
-};
-
-template <>
-struct ParamTraits<mozilla::layers::APZTestData::SampledResult> {
-  typedef mozilla::layers::APZTestData::SampledResult paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.scrollOffset);
-    WriteParam(aWriter, aParam.sampledTimeStamp);
-    WriteParam(aWriter, aParam.layersId);
-    WriteParam(aWriter, aParam.scrollId);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return (ReadParam(aReader, &aResult->scrollOffset) &&
-            ReadParam(aReader, &aResult->sampledTimeStamp) &&
-            ReadParam(aReader, &aResult->layersId) &&
-            ReadParam(aReader, &aResult->scrollId));
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::layers::APZTestData::SampledResult,
+                                  scrollOffset, sampledTimeStamp, layersId,
+                                  scrollId);
 
 }  // namespace IPC
 

@@ -24,9 +24,10 @@ const SUPPORTED_OPTIONS = {
   ignoreCaughtExceptions: true,
   // Log the event break points.
   logEventBreakpoints: true,
-  // Enable debugging asm & wasm.
-  // See https://searchfox.org/firefox-main/source/js/src/doc/Debugger/Debugger.md#16-26
+  // @backward-compat { version 151 } asm.js was removed in Fx152; accepted
+  // from old clients for compatibility but no longer acted upon.
   observeAsmJS: true,
+  // Enable debugging wasm.
   observeWasm: true,
   // Enable pausing on exceptions.
   pauseOnExceptions: true,

@@ -11,8 +11,8 @@
 #include "mozilla/TimeStamp.h"
 
 #include <gemmology_fwd.h>
-#include "fmt/format.h"
 
+#include "fmt/format.h"
 #include "js/ErrorReport.h"
 #include "js/HeapAPI.h"
 #include "vm/ArrayBufferObject.h"
@@ -97,7 +97,7 @@ struct AutoProfilerMarker {
           text, sizeof(text) - 1, aFormatStr,
           fmt::make_format_args<fmt::buffered_context<CharT>>(aArgs...));
 
-      MOZ_ASSERT(size > sizeof(text) - 1,
+      MOZ_ASSERT(size <= sizeof(text) - 1,
                  "Truncated marker, consider increasing the buffer");
 
       *out = 0;

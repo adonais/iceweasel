@@ -2,13 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-use crate::{
-    create_instance,
-    interfaces::{nsIVariant, nsIWritableVariant},
-    RefCounted,
-};
+use crate::{interfaces::nsIVariant, RefCounted};
 
-use cstr::*;
+use nserror::nsresult;
 
 mod ffi {
     use super::*;
@@ -17,8 +13,11 @@ mod ffi {
         // These are implemented in dom/promise/Promise.cpp
         pub fn DomPromise_AddRef(promise: *const Promise);
         pub fn DomPromise_Release(promise: *const Promise);
-        pub fn DomPromise_RejectWithVariant(promise: *const Promise, variant: *const nsIVariant);
+        pub fn DomPromise_ResolveWithUndefined(promise: *const Promise);
+        pub fn DomPromise_RejectWithUndefined(promise: *const Promise);
         pub fn DomPromise_ResolveWithVariant(promise: *const Promise, variant: *const nsIVariant);
+        pub fn DomPromise_RejectWithVariant(promise: *const Promise, variant: *const nsIVariant);
+        pub fn DomPromise_RejectWithNsresult(promise: *const Promise, result: nsresult);
     }
 }
 
@@ -36,21 +35,26 @@ pub struct Promise {
 }
 
 impl Promise {
+    pub fn resolve_with_undefined(&self) {
+        unsafe { ffi::DomPromise_ResolveWithUndefined(self) }
+    }
+
     pub fn reject_with_undefined(&self) {
-        let variant = create_instance::<nsIWritableVariant>(cstr!("@mozilla.org/variant;1"))
-            .expect("Failed to create writable variant");
-        unsafe {
-            variant.SetAsVoid();
-        }
-        self.reject_with_variant(&variant);
+        unsafe { ffi::DomPromise_RejectWithUndefined(self) }
+    }
+
+    pub fn resolve_with_variant(&self, variant: &nsIVariant) {
+        unsafe { ffi::DomPromise_ResolveWithVariant(self, variant) }
     }
 
     pub fn reject_with_variant(&self, variant: &nsIVariant) {
         unsafe { ffi::DomPromise_RejectWithVariant(self, variant) }
     }
 
-    pub fn resolve_with_variant(&self, variant: &nsIVariant) {
-        unsafe { ffi::DomPromise_ResolveWithVariant(self, variant) }
+    pub fn reject_with_nsresult(&self, result: nsresult) {
+        unsafe {
+            ffi::DomPromise_RejectWithNsresult(self, result);
+        }
     }
 }
 

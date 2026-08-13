@@ -229,14 +229,15 @@ class ProxyRunner(Layer):
         err = None
         if self.proxy is not None:
             returncode = self.proxy.wait(0)
-            if returncode is not None:
-                err = ValueError(
-                    f"mozproxy terminated early with return code {returncode:d}"
-                )
-            else:
+            if returncode is None:
+                # Process still running, signal it and wait for exit
                 kill_signal = getattr(signal, "CTRL_BREAK_EVENT", signal.SIGINT)
                 os.kill(self.proxy.pid, kill_signal)
                 self.proxy.wait()
+            elif returncode != 0:
+                err = ValueError(
+                    f"mozproxy terminated early with return code {returncode}"
+                )
             self.proxy = None
         if self.tmpdir is not None:
             self.tmpdir.cleanup()

@@ -6,18 +6,18 @@ task-defaults:
             path: artifacts
             name: public
 
-macosx64/opt:
+mac-x64/opt:
     description: "Mac (opt)"
 
-macosx64/opt-static:
+mac-x64/opt-static:
     description: "Mac Static (opt)"
     attributes:
         static: true
 
-macosx64/debug:
+mac-x64/debug:
     description: "Mac (debug)"
 
-macosx64/opt-make:
+mac-x64/opt-make:
     description: "Mac (opt, make)"
     attributes:
         make: true
@@ -25,7 +25,7 @@ macosx64/opt-make:
         env:
             USE_64: "1"
 
-macosx64/debug-make:
+mac-x64/debug-make:
     description: "Mac (debug, make)"
     attributes:
         make: true

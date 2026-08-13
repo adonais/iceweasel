@@ -6,29 +6,30 @@
 #define GFX_FRAMEMETRICS_H
 
 #include <stdint.h>  // for uint8_t, uint32_t, uint64_t
+
 #include <iosfwd>
 
-#include "Units.h"                  // for CSSRect, CSSPixel, etc
+#include "PLDHashTable.h"           // for PLDHashNumber
 #include "UnitTransforms.h"         // for ViewAs
+#include "Units.h"                  // for CSSRect, CSSPixel, etc
 #include "mozilla/DefineEnum.h"     // for MOZ_DEFINE_ENUM
 #include "mozilla/HashFunctions.h"  // for HashGeneric
 #include "mozilla/Maybe.h"
-#include "mozilla/dom/InteractiveWidget.h"
-#include "mozilla/gfx/BasePoint.h"               // for BasePoint
-#include "mozilla/gfx/Rect.h"                    // for RoundedIn
-#include "mozilla/gfx/ScaleFactor.h"             // for ScaleFactor
-#include "mozilla/gfx/Logging.h"                 // for Log
-#include "mozilla/layers/LayersTypes.h"          // for ScrollDirection
-#include "mozilla/layers/ScrollableLayerGuid.h"  // for ScrollableLayerGuid
-#include "mozilla/ScrollPositionUpdate.h"        // for ScrollPositionUpdate
+#include "mozilla/ScrollPositionUpdate.h"  // for ScrollPositionUpdate
 #include "mozilla/ScrollSnapInfo.h"
 #include "mozilla/ScrollSnapTargetId.h"
 #include "mozilla/StaticPtr.h"  // for StaticAutoPtr
 #include "mozilla/TimeStamp.h"  // for TimeStamp
 #include "mozilla/WritingModes.h"
-#include "nsTHashMap.h"  // for nsTHashMap
+#include "mozilla/dom/InteractiveWidget.h"
+#include "mozilla/gfx/BasePoint.h"               // for BasePoint
+#include "mozilla/gfx/Logging.h"                 // for Log
+#include "mozilla/gfx/Rect.h"                    // for RoundedIn
+#include "mozilla/gfx/ScaleFactor.h"             // for ScaleFactor
+#include "mozilla/layers/LayersTypes.h"          // for ScrollDirection
+#include "mozilla/layers/ScrollableLayerGuid.h"  // for ScrollableLayerGuid
 #include "nsString.h"
-#include "PLDHashTable.h"  // for PLDHashNumber
+#include "nsTHashMap.h"  // for nsTHashMap
 
 struct nsStyleDisplay;
 namespace mozilla {
@@ -236,16 +237,6 @@ struct FrameMetrics {
   }
 
   void ZoomBy(float aScale) { mZoom.scale *= aScale; }
-
-  /*
-   * Compares an APZ frame metrics with an incoming content frame metrics
-   * to see if APZ has a scroll offset that has not been incorporated into
-   * the content frame metrics.
-   */
-  bool HasPendingScroll(const FrameMetrics& aContentFrameMetrics) const {
-    return GetVisualScrollOffset() !=
-           aContentFrameMetrics.GetVisualScrollOffset();
-  }
 
   /*
    * Returns true if the layout scroll offset or visual scroll offset changed.
@@ -830,7 +821,8 @@ struct ScrollMetadata {
            mOverscrollBehavior == aOther.mOverscrollBehavior &&
            mOverflow == aOther.mOverflow &&
            mScrollUpdates == aOther.mScrollUpdates &&
-           mWritingMode == aOther.mWritingMode;
+           mWritingMode == aOther.mWritingMode &&
+           mScrollGenerationOnApz == aOther.mScrollGenerationOnApz;
   }
 
   bool operator!=(const ScrollMetadata& aOther) const {
@@ -948,6 +940,13 @@ struct ScrollMetadata {
   }
   const WritingMode GetWritingMode() const { return mWritingMode; }
 
+  void SetScrollGenerationOnApz(const APZScrollGeneration& aGeneration) {
+    mScrollGenerationOnApz = aGeneration;
+  }
+  const APZScrollGeneration& GetScrollGenerationOnApz() const {
+    return mScrollGenerationOnApz;
+  }
+
   void UpdatePendingScrollInfo(nsTArray<ScrollPositionUpdate>&& aUpdates) {
     MOZ_ASSERT(!aUpdates.IsEmpty());
     mMetrics.UpdatePendingScrollInfo(aUpdates.LastElement());
@@ -1055,6 +1054,12 @@ struct ScrollMetadata {
 
   // The writing-mode of this scroll container.
   WritingMode mWritingMode;
+
+  // The APZ scroll generation associated with the last APZ scroll offset for
+  // which the main thread processed a repaint request. This is relayed back to
+  // APZ so it can tell which of its own generations the main-thread state in
+  // this transaction reflects.
+  APZScrollGeneration mScrollGenerationOnApz;
 
   // WARNING!!!!
   //

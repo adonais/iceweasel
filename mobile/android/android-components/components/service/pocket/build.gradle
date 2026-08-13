@@ -2,24 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-buildscript {
-    repositories {
-        gradle.configureMavenRepositories(delegate)
-    }
-
-    dependencies {
-        classpath libs.kotlin.serialization
-    }
-}
-
 plugins {
+    id 'com.android.library'
     alias(libs.plugins.dependency.analysis)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
 }
-
-apply plugin: 'com.android.library'
-apply plugin: 'com.google.devtools.ksp'
-apply plugin: 'kotlin-android'
-apply plugin: 'kotlinx-serialization'
 
 android {
     defaultConfig {
@@ -46,7 +34,7 @@ dependencies {
     implementation project(':components:support-base')
     implementation project(':components:support-ktx')
 
-    implementation libs.androidx.core.ktx
+    implementation libs.androidx.core
     implementation libs.androidx.room.runtime
     ksp libs.androidx.room.compiler
     implementation libs.androidx.work.runtime

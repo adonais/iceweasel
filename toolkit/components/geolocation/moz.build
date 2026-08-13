@@ -1,0 +1,41 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+with Files("**"):
+    BUG_COMPONENT = ("Toolkit", "Geolocation Provider")
+
+EXPORTS.mozilla += [
+    "GeolocationService.h",
+]
+
+UNIFIED_SOURCES += [
+    "GeolocationService.cpp",
+]
+
+XPCOM_MANIFESTS += [
+    "components.conf",
+]
+XPIDL_SOURCES += ["nsIGeolocationService.idl"]
+XPIDL_MODULE = "toolkit_geolocation"
+
+include("/ipc/chromium/chromium-config.mozbuild")
+
+FINAL_LIBRARY = "xul"
+
+if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
+    LOCAL_INCLUDES += [
+        "/dom/system/android",
+    ]
+elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
+    LOCAL_INCLUDES += [
+        "/dom/system/mac",
+    ]
+elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
+    LOCAL_INCLUDES += [
+        "/dom/system/windows/location",
+    ]
+elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
+    if CONFIG["MOZ_ENABLE_DBUS"]:
+        LOCAL_INCLUDES += ["/dom/system/linux"]
+        CXXFLAGS += CONFIG["MOZ_GTK3_CFLAGS"]

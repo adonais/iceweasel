@@ -5,14 +5,14 @@
 #ifndef nsHttpAuthCache_h_
 #define nsHttpAuthCache_h_
 
-#include "nsError.h"
-#include "nsTArray.h"
-#include "nsClassHashtable.h"
 #include "nsCOMPtr.h"
+#include "nsClassHashtable.h"
+#include "nsError.h"
 #include "nsHashKeys.h"
-#include "nsStringFwd.h"
 #include "nsIHttpAuthCache.h"
 #include "nsIObserver.h"
+#include "nsStringFwd.h"
+#include "nsTArray.h"
 #include "nsWeakReference.h"
 
 namespace mozilla {

@@ -1,0 +1,2 @@
+spirv_tools_standalone = false
+spirv_tools_spirv_headers_dir = "//angle/third_party/spirv-headers/src"

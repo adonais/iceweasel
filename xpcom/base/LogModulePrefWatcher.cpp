@@ -4,6 +4,7 @@
 
 #include "LogModulePrefWatcher.h"
 
+#include "base/process_util.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
@@ -11,7 +12,6 @@
 #include "nsString.h"
 #include "nsXULAppAPI.h"
 #include "prenv.h"
-#include "base/process_util.h"
 
 static const char kLoggingPrefPrefix[] = "logging.";
 static const char kLoggingConfigPrefPrefix[] = "logging.config";

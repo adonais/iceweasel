@@ -85,8 +85,7 @@ interface nsIAddonContentPolicy : nsISupports
   /* options to pass to validateAddonCSP
    *
    * Manifest V2 uses CSP_ALLOW_ANY.
-   * In Manifest V3, extension_pages would use CSP_ALLOW_WASM
-   * and sandbox would use CSP_ALLOW_EVAL.
+   * In Manifest V3, extension_pages would use CSP_ALLOW_WASM.
    */
   const unsigned long CSP_ALLOW_ANY = 0xFFFF;
   const unsigned long CSP_ALLOW_LOCALHOST = (1<<0);
@@ -100,4 +99,11 @@ interface nsIAddonContentPolicy : nsISupports
    * string describing the error for invalid policies.
    */
   AString validateAddonCSP(in AString aPolicyString, in unsigned long aPermittedPolicy);
+
+  /**
+   * Checks a custom content security policy string, to ensure that it meets
+   * minimum security requirements for sandboxed extensions. Returns null for
+   * valid policies, or a string describing the error for invalid policies.
+   */
+  AString validateAddonSandboxCSP(in AString aPolicyString);
 };

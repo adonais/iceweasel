@@ -21,9 +21,10 @@ support-files = [
 
 ["browser_policies_notice_in_aboutpreferences.js"]
 
-["browser_policies_setAndLockPref_API.js"]
-
 ["browser_policy_allowfileselectiondialogs.js"]
+skip-if = [
+  "headless", # bug 2046455 - file dialog can't be exercised headless
+]
 
 ["browser_policy_app_auto_update.js"]
 run-if = [
@@ -51,6 +52,8 @@ support-files = "favicon.svg"
 
 ["browser_policy_cookie_settings.js"]
 https_first_disabled = true
+
+["browser_policy_default_browser_setting.js"]
 
 ["browser_policy_disable_feedback_commands.js"]
 
@@ -133,6 +136,9 @@ support-files = [
 ["browser_policy_sanitize_on_shutdown.js"]
 
 ["browser_policy_search_engine.js"]
+support-files = [
+  "!/browser/base/content/test/contextMenu/subtst_contextmenu_add_search_engine.html",
+]
 
 ["browser_policy_searchbar.js"]
 

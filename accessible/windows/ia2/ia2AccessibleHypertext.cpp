@@ -4,12 +4,10 @@
 
 #include "ia2AccessibleHypertext.h"
 
-#include "AccessibleHypertext_i.c"
 #include "AccessibleHypertext2_i.c"
-
-#include "mozilla/a11y/HyperTextAccessibleBase.h"
-
+#include "AccessibleHypertext_i.c"
 #include "IUnknownImpl.h"
+#include "mozilla/a11y/HyperTextAccessibleBase.h"
 
 using namespace mozilla::a11y;
 

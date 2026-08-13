@@ -398,7 +398,9 @@ describe("<SpinSmooth>", () => {
     const animNode = container.querySelector("animateTransform");
     animNode.beginElement = jest.fn();
 
-    animNode.dispatchEvent(new Event("beginEvent"));
+    act(() => {
+      animNode.dispatchEvent(new Event("beginEvent"));
+    });
     fireEvent.click(svg);
 
     expect(animNode.beginElement).not.toHaveBeenCalled();
@@ -410,8 +412,10 @@ describe("<SpinSmooth>", () => {
     const animNode = container.querySelector("animateTransform");
     animNode.beginElement = jest.fn();
 
-    animNode.dispatchEvent(new Event("beginEvent"));
-    animNode.dispatchEvent(new Event("endEvent"));
+    act(() => {
+      animNode.dispatchEvent(new Event("beginEvent"));
+      animNode.dispatchEvent(new Event("endEvent"));
+    });
     fireEvent.click(svg);
 
     expect(animNode.beginElement).toHaveBeenCalledTimes(1);
@@ -501,7 +505,9 @@ describe("<RotatingBall>", () => {
     const animNode = container.querySelector("animateTransform");
     animNode.beginElement = jest.fn();
 
-    animNode.dispatchEvent(new Event("beginEvent"));
+    act(() => {
+      animNode.dispatchEvent(new Event("beginEvent"));
+    });
     fireEvent.click(svg);
 
     expect(animNode.beginElement).not.toHaveBeenCalled();
@@ -513,8 +519,10 @@ describe("<RotatingBall>", () => {
     const animNode = container.querySelector("animateTransform");
     animNode.beginElement = jest.fn();
 
-    animNode.dispatchEvent(new Event("beginEvent"));
-    animNode.dispatchEvent(new Event("endEvent"));
+    act(() => {
+      animNode.dispatchEvent(new Event("beginEvent"));
+      animNode.dispatchEvent(new Event("endEvent"));
+    });
     fireEvent.click(svg);
 
     expect(animNode.beginElement).toHaveBeenCalledTimes(1);
@@ -611,7 +619,9 @@ describe("<FootballBounce>", () => {
     const animNode = container.querySelector("animateTransform");
     animNode.beginElement = jest.fn();
 
-    animNode.dispatchEvent(new Event("beginEvent"));
+    act(() => {
+      animNode.dispatchEvent(new Event("beginEvent"));
+    });
     fireEvent.click(wrapper);
 
     expect(animNode.beginElement).not.toHaveBeenCalled();
@@ -623,8 +633,10 @@ describe("<FootballBounce>", () => {
     const animNode = container.querySelector("animateTransform");
     animNode.beginElement = jest.fn();
 
-    animNode.dispatchEvent(new Event("beginEvent"));
-    animNode.dispatchEvent(new Event("endEvent"));
+    act(() => {
+      animNode.dispatchEvent(new Event("beginEvent"));
+      animNode.dispatchEvent(new Event("endEvent"));
+    });
     fireEvent.click(wrapper);
 
     expect(animNode.beginElement).toHaveBeenCalledTimes(1);

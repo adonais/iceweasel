@@ -98,11 +98,15 @@ class ExternalEngineStateMachine final
                                  self->NotifyResizingInternal(aWidth, aHeight);
                                }));
   }
-  void NotifyHardwareReset() {
+  void NotifyHardwareReset(uint32_t aPlatformError) {
     // On the engine manager thread.
     (void)OwnerThread()->Dispatch(NS_NewRunnableFunction(
         "ExternalEngineStateMachine::NotifyHardwareReset",
-        [self = RefPtr{this}] { self->RecoverFromHardwareReset(); }));
+        [self = RefPtr{this}, aPlatformError] {
+          self->mHardwareResetError =
+              Some(static_cast<int32_t>(aPlatformError));
+          self->RecoverFromHardwareReset();
+        }));
   }
 #ifdef MOZ_WMF_CDM
   void NotifyWaitingForKey() {
@@ -329,6 +333,7 @@ class ExternalEngineStateMachine final
 #endif
 
   void ReportTelemetry(const MediaResult& aError);
+  void ReportRecoveryTelemetry(bool aRecovered);
 
   void DecodeError(const MediaResult& aError) override;
 
@@ -376,6 +381,11 @@ class ExternalEngineStateMachine final
   // and cleared on recovery (crash or hardware reset). Used to defer
   // operations that require a ready engine.
   bool mIsEngineReady = false;
+
+  // Number of recovery attempts in the current recovery sequence, and the
+  // platform error that triggered it. Reset once a recovery event is reported.
+  uint32_t mRecoveryAttempts = 0;
+  Maybe<int32_t> mHardwareResetError;
 };
 
 class ExternalPlaybackEngine {

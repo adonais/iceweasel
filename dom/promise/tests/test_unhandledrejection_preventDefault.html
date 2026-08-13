@@ -1,0 +1,90 @@
+<!--
+  Any copyright is dedicated to the Public Domain.
+  http://creativecommons.org/publicdomain/zero/1.0/
+-->
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test for Bug 1642147 - unhandledrejection preventDefault suppresses console error</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=1642147">Mozilla Bug 1642147</a>
+<pre id="test">
+<script type="application/javascript">
+// ReportRejectedPromise dispatches AsyncErrorReporter to the event loop,
+// and SPConsoleListener also dispatches its callback asynchronously.
+// We need enough event loop turns for everything to settle.
+function flushAsyncTasks() {
+  return new Promise(r => setTimeout(() => setTimeout(r, 0), 0));
+}
+
+function waitForConsoleCheck(pattern) {
+  return new Promise(resolve => {
+    let seen = false;
+    SpecialPowers.registerConsoleListener(function(msg) {
+      if (msg.message === "SENTINEL") {
+        resolve(seen);
+        return;
+      }
+      if (pattern.test(msg.message || "")) {
+        seen = true;
+      }
+    });
+  });
+}
+
+add_task(async function test_preventDefault_suppresses_console() {
+  const check = waitForConsoleCheck(/bug1642147_test_error/);
+
+  window.addEventListener("unhandledrejection", function(e) {
+    e.preventDefault();
+    flushAsyncTasks().then(() => SpecialPowers.postConsoleSentinel());
+  }, {once: true});
+
+  Promise.reject("bug1642147_test_error");
+
+  const consoleErrorSeen = await check;
+  ok(!consoleErrorSeen,
+     "Console error should NOT be logged when preventDefault is called");
+});
+
+add_task(async function test_no_preventDefault_logs_console() {
+  const check = waitForConsoleCheck(/bug1642147_control_error/);
+
+  window.addEventListener("unhandledrejection", function(_e) {
+    flushAsyncTasks().then(() => SpecialPowers.postConsoleSentinel());
+  }, {once: true});
+
+  Promise.reject("bug1642147_control_error");
+
+  const consoleErrorSeen = await check;
+  ok(consoleErrorSeen,
+     "Console error SHOULD be logged when preventDefault is NOT called");
+});
+
+add_task(async function test_worker_shutdown_still_reports() {
+  const pattern = /bug1642147_worker_shutdown_error/;
+  // The worker rejects a promise then calls self.close(). The shutdown
+  // path (FlushUncaughtRejections) reports the error cross-thread, so
+  // we listen for it event-driven rather than using a fixed flush count.
+  const seen = await new Promise(resolve => {
+    SpecialPowers.registerConsoleListener(function(msg) {
+      if (pattern.test(msg.message || "")) {
+        SpecialPowers.postConsoleSentinel();
+      }
+      if (msg.message === "SENTINEL") {
+        resolve(true);
+      }
+    });
+    new Worker("worker_unhandledrejection_shutdown.js");
+  });
+  ok(seen,
+     "Worker shutdown should still report unhandled rejection to console");
+});
+</script>
+</pre>
+</body>
+</html>

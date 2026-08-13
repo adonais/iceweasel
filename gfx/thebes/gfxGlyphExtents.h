@@ -7,11 +7,11 @@
 
 #include "gfxFont.h"
 #include "gfxRect.h"
-#include "nsTHashtable.h"
-#include "nsHashKeys.h"
-#include "nsTArray.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/RWLock.h"
+#include "nsHashKeys.h"
+#include "nsTArray.h"
+#include "nsTHashtable.h"
 
 class gfxContext;
 

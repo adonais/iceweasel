@@ -7,6 +7,7 @@
 
 #include <d3d11.h>
 #include <windows.h>
+
 #include "SharedSurface.h"
 
 namespace mozilla {

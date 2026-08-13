@@ -13,6 +13,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mozilla.fenix.home.topsites.AddShortcutSource
 
 @RunWith(AndroidJUnit4::class)
 class ShortcutsStoreTest {
@@ -113,7 +114,13 @@ class ShortcutsStoreTest {
         val initialState = ShortcutsState.INITIAL.copy(dialogState = DialogState.AddShortcut)
         val store = ShortcutsStore(initialState = initialState)
 
-        store.dispatch(ShortcutsAction.SaveShortcut(title = "Mozilla", url = "https://mozilla.org"))
+        store.dispatch(
+            ShortcutsAction.SaveShortcut(
+                title = "Mozilla",
+                url = "https://mozilla.org",
+                source = AddShortcutSource.MANUAL,
+            ),
+        )
 
         assertEquals(initialState, store.state)
     }

@@ -1,0 +1,18 @@
+{
+  "label": "keywords.smarthr.jp",
+  "bugs": {
+    "2040371": {
+      "issue": "unsupported-warning",
+      "matches": ["https://keywords.smarthr.jp/*"]
+    }
+  },
+  "css": {
+    "hide_browser_notice": "#system-requirements-alert { display: none; }"
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "css": ["hide_browser_notice"]
+    }
+  ]
+}

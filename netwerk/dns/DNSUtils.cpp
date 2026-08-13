@@ -4,14 +4,14 @@
 
 #include "DNSUtils.h"
 
+#include "TRRLoadInfo.h"
+#include "TRRServiceChannel.h"
+#include "mozilla/SyncRunnable.h"
 #include "nsContentUtils.h"
 #include "nsHttpHandler.h"
 #include "nsIHttpChannel.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsIIOService.h"
-#include "mozilla/SyncRunnable.h"
-#include "TRRServiceChannel.h"
-#include "TRRLoadInfo.h"
 
 namespace mozilla {
 namespace net {

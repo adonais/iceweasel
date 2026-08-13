@@ -12,7 +12,7 @@ async function navigateAndWait(win, url) {
     browser: win.gBrowser.selectedTab.linkedBrowser,
     uriString: url,
   });
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => win.gBrowser.selectedBrowser.currentURI.spec === url,
     `Should navigate to ${url}`
   );

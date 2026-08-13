@@ -2,15 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "MacIOSurfaceHelpers.h"
 #include "MacIOSurfaceImage.h"
+
+#include "MacIOSurfaceHelpers.h"
+#include "YCbCrUtils.h"
 #include "gfxPlatform.h"
+#include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/layers/CompositableClient.h"
 #include "mozilla/layers/CompositableForwarder.h"
 #include "mozilla/layers/MacIOSurfaceTextureClientOGL.h"
 #include "mozilla/layers/TextureForwarder.h"
-#include "mozilla/StaticPrefs_layers.h"
-#include "YCbCrUtils.h"
 
 using namespace mozilla::layers;
 using namespace mozilla::gfx;
@@ -134,7 +135,8 @@ bool MacIOSurfaceImage::SetData(ImageContainer* aContainer,
         rowCrSrc++;
       }
     }
-  } else if (surf->GetFormat() == SurfaceFormat::NV12) {
+  } else if (surf->GetFormat() == SurfaceFormat::NV12 ||
+             surf->GetFormat() == SurfaceFormat::NV16) {
     MOZ_ASSERT(ySize.height > 0);
     uint8_t* dst = (uint8_t*)surf->GetBaseAddressOfPlane(0);
     size_t stride = surf->GetBytesPerRow(0);
@@ -163,7 +165,9 @@ bool MacIOSurfaceImage::SetData(ImageContainer* aContainer,
         rowCrSrc++;
       }
     }
-  } else if (surf->GetFormat() == SurfaceFormat::P010) {
+  } else if (surf->GetFormat() == SurfaceFormat::P010 ||
+             surf->GetFormat() == SurfaceFormat::P210) {
+    MOZ_ASSERT(aData.mColorDepth == ColorDepth::COLOR_10);
     MOZ_ASSERT(ySize.height > 0);
     auto dst = reinterpret_cast<uint16_t*>(surf->GetBaseAddressOfPlane(0));
     size_t stride = surf->GetBytesPerRow(0) / 2;
@@ -183,51 +187,6 @@ bool MacIOSurfaceImage::SetData(ImageContainer* aContainer,
 
     // Copy and interleave the Cb and Cr channels.
     MOZ_ASSERT(cbcrSize.height > 0);
-    dst = (uint16_t*)surf->GetBaseAddressOfPlane(1);
-    stride = surf->GetBytesPerRow(1) / 2;
-    for (size_t i = 0; i < (size_t)cbcrSize.height; i++) {
-      uint16_t* rowCbSrc =
-          (uint16_t*)(aData.mCbChannel + aData.mCbCrStride * i);
-      uint16_t* rowCrSrc =
-          (uint16_t*)(aData.mCrChannel + aData.mCbCrStride * i);
-      uint16_t* rowDst = dst + stride * i;
-
-      for (const auto j : IntegerRange(cbcrSize.width)) {
-        (void)j;
-
-        *rowDst = safeShift10BitBy6(*rowCbSrc);
-        rowDst++;
-        rowCbSrc++;
-
-        *rowDst = safeShift10BitBy6(*rowCrSrc);
-        rowDst++;
-        rowCrSrc++;
-      }
-    }
-  } else if (surf->GetFormat() == SurfaceFormat::NV16) {
-    MOZ_ASSERT(aData.mColorDepth == ColorDepth::COLOR_10,
-               "Currently NV16 only supports 10-bit color.");
-    MOZ_ASSERT(ySize.height > 0);
-    auto dst = reinterpret_cast<uint16_t*>(surf->GetBaseAddressOfPlane(0));
-    size_t stride = surf->GetBytesPerRow(0) / 2;
-    for (size_t i = 0; i < (size_t)ySize.height; i++) {
-      auto rowSrc = reinterpret_cast<const uint16_t*>(aData.mYChannel +
-                                                      aData.mYStride * i);
-      auto rowDst = dst + stride * i;
-
-      for (const auto j : IntegerRange(ySize.width)) {
-        (void)j;
-
-        *rowDst = safeShift10BitBy6(*rowSrc);
-        rowDst++;
-        rowSrc++;
-      }
-    }
-
-    // Copy and interleave the Cb and Cr channels.
-    MOZ_ASSERT(cbcrSize.height > 0);
-    MOZ_ASSERT(cbcrSize.height == ySize.height,
-               "4:2:2 CbCr should have same height as Y.");
     dst = (uint16_t*)surf->GetBaseAddressOfPlane(1);
     stride = surf->GetBytesPerRow(1) / 2;
     for (size_t i = 0; i < (size_t)cbcrSize.height; i++) {
@@ -308,27 +267,13 @@ already_AddRefed<MacIOSurface> MacIOSurfaceRecycleAllocator::Allocate(
                                        MacIOSurface::AllowAlpha::No);
   }
 
-  // Time to decide if we are creating a single planar or bi-planar surface.
-  // We limit ourselves to macOS's single planar and bi-planar formats for
-  // simplicity reasons, possibly gaining some small memory or performance
-  // benefit relative to the tri-planar formats. We try and use as few
-  // planes as possible.
-  // 4:2:0 formats are always bi-planar, because there is no 4:2:0 single
-  // planar format.
-  // 4:2:2 formats with 8 bit color are single planar, otherwise bi-planar.
-
-  RefPtr<MacIOSurface> result;
-  if (aChromaSubsampling == gfx::ChromaSubsampling::HALF_WIDTH &&
-      aColorDepth == gfx::ColorDepth::COLOR_8) {
-    result = MacIOSurface::CreateSinglePlanarSurface(
-        aYSize, aYUVColorSpace, aTransferFunction, aColorRange,
-        MacIOSurface::AllowAlpha::Yes);
-  } else {
-    result = MacIOSurface::CreateBiPlanarSurface(
-        aYSize, aCbCrSize, aChromaSubsampling, aYUVColorSpace,
-        aTransferFunction, aColorRange, aColorDepth,
-        MacIOSurface::AllowAlpha::Yes);
-  }
+  // We limit ourselves to macOS's bi-planar formats for simplicity reasons,
+  // possibly gaining some small memory or performance benefit relative to the
+  // tri-planar formats. Single planar interleaved formats cannot be used with
+  // ANGLE, so we avoid them.
+  RefPtr<MacIOSurface> result = MacIOSurface::CreateBiPlanarSurface(
+      aYSize, aCbCrSize, aChromaSubsampling, aYUVColorSpace, aTransferFunction,
+      aColorRange, aColorDepth, MacIOSurface::AllowAlpha::Yes);
 
   if (result &&
       mSurfaces.Length() < StaticPrefs::layers_iosurfaceimage_recycle_limit()) {

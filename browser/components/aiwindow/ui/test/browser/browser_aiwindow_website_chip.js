@@ -165,7 +165,11 @@ add_task(async function test_website_chip_context_with_link() {
     const link = shadow.querySelector("a.chip");
 
     Assert.ok(link, "Context chip with href should render as link");
-    Assert.equal(link.target, "_blank", "Link should open in new tab");
+    Assert.equal(
+      link.getAttribute("href"),
+      "https://mozilla.org",
+      "Link should expose href for native browser features (copy link, middle-click)"
+    );
   });
 
   BrowserTestUtils.removeTab(tab);

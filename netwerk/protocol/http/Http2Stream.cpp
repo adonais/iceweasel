@@ -3,18 +3,18 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 // HttpLog.h should generally be included first
-#include "HttpLog.h"
-
 #include "Http2Stream.h"
+
+#include "Http2Session.h"
+#include "HttpLog.h"
+#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "nsHttp.h"
 #include "nsHttpConnectionInfo.h"
 #include "nsHttpRequestHead.h"
-#include "nsISocketTransport.h"
-#include "Http2Session.h"
-#include "nsIRequestContext.h"
 #include "nsHttpTransaction.h"
+#include "nsIRequestContext.h"
+#include "nsISocketTransport.h"
 #include "nsSocketTransportService2.h"
-#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 
 namespace mozilla::net {
 
@@ -80,7 +80,7 @@ nsresult Http2Stream::CallToWriteData(uint32_t count, uint32_t* countWritten) {
 // This is really a headers frame, but open is pretty clear from a workflow pov
 nsresult Http2Stream::GenerateHeaders(nsCString& aCompressedData,
                                       uint8_t& firstFrameFlags) {
-  nsHttpRequestHead* head = mTransaction->RequestHead();
+  const nsHttpRequestHead* head = mTransaction->RequestHead();
   nsAutoCString requestURI;
   head->RequestURI(requestURI);
   RefPtr<Http2Session> session = Session();

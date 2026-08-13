@@ -10,6 +10,7 @@
 #include "jit/Lowering.h"
 #include "jit/MIR-wasm.h"
 #include "jit/MIR.h"
+
 #include "jit/shared/Lowering-shared-inl.h"
 
 using namespace js;
@@ -691,50 +692,6 @@ void LIRGenerator::visitReturnImpl(MDefinition* opd, bool isGenerator) {
   LReturn* ins = new (alloc()) LReturn(isGenerator);
   ins->setOperand(0, useFixed(opd, JSReturnReg));
   add(ins);
-}
-
-void LIRGenerator::visitAsmJSLoadHeap(MAsmJSLoadHeap* ins) {
-  MDefinition* base = ins->base();
-  MOZ_ASSERT(base->type() == MIRType::Int32);
-
-  MDefinition* boundsCheckLimit = ins->boundsCheckLimit();
-  MOZ_ASSERT_IF(ins->needsBoundsCheck(),
-                boundsCheckLimit->type() == MIRType::Int32);
-
-  LAllocation baseAlloc = useRegisterAtStart(base);
-
-  LAllocation limitAlloc = ins->needsBoundsCheck()
-                               ? useRegisterAtStart(boundsCheckLimit)
-                               : LAllocation();
-
-  // We have no memory-base value, meaning that HeapReg is to be used as the
-  // memory base.  This follows from the definition of
-  // FunctionCompiler::maybeLoadMemoryBase() in WasmIonCompile.cpp.
-  MOZ_ASSERT(!ins->hasMemoryBase());
-  auto* lir =
-      new (alloc()) LAsmJSLoadHeap(baseAlloc, limitAlloc, LAllocation());
-  define(lir, ins);
-}
-
-void LIRGenerator::visitAsmJSStoreHeap(MAsmJSStoreHeap* ins) {
-  MDefinition* base = ins->base();
-  MOZ_ASSERT(base->type() == MIRType::Int32);
-
-  MDefinition* boundsCheckLimit = ins->boundsCheckLimit();
-  MOZ_ASSERT_IF(ins->needsBoundsCheck(),
-                boundsCheckLimit->type() == MIRType::Int32);
-
-  LAllocation baseAlloc = useRegisterAtStart(base);
-
-  LAllocation limitAlloc = ins->needsBoundsCheck()
-                               ? useRegisterAtStart(boundsCheckLimit)
-                               : LAllocation();
-
-  // See comment in LIRGenerator::visitAsmJSStoreHeap just above.
-  MOZ_ASSERT(!ins->hasMemoryBase());
-  add(new (alloc()) LAsmJSStoreHeap(baseAlloc, useRegisterAtStart(ins->value()),
-                                    limitAlloc, LAllocation()),
-      ins);
 }
 
 void LIRGenerator::visitWasmLoad(MWasmLoad* ins) {

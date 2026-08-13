@@ -104,8 +104,7 @@ struct StreamFunctionTypeHelper;
 template <typename R, typename... As>
 struct StreamFunctionTypeHelper<R(baseprofiler::SpliceableJSONWriter&, As...)> {
   constexpr static size_t scArity = sizeof...(As);
-  using TupleType =
-      std::tuple<std::remove_cv_t<std::remove_reference_t<As>>...>;
+  using TupleType = std::tuple<std::remove_cvref_t<As>...>;
 
   // Serialization function that takes the exact same parameter types
   // (const-ref'd) as `StreamJSONMarkerData`. This has to be inside the helper

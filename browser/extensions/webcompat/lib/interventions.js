@@ -223,13 +223,20 @@ class SpecialContentScriptMetadataServer {
 
     const { cssToInject } = dataToSend;
     if (cssToInject) {
+      const { allFrames, css, useUserStyles } = cssToInject;
+      const target = {
+        tabId: tab.id,
+      };
+      if (allFrames) {
+        target.allFrames = true;
+      } else {
+        target.frameIds = [frameId];
+      }
       browser.scripting
         .insertCSS({
-          css: cssToInject,
-          target: {
-            tabId: tab.id,
-            frameIds: [frameId],
-          },
+          css,
+          origin: useUserStyles ? "USER" : "AUTHOR",
+          target,
         })
         .catch(err =>
           console.error(

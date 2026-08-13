@@ -71,14 +71,6 @@ class FrontendContext;
 namespace JS {
 using FrontendContext = js::FrontendContext;
 
-enum class AsmJSOption : uint8_t {
-  Enabled,
-  DisabledByAsmJSPref,
-  DisabledByLinker,
-  DisabledByNoWasmCompiler,
-  DisabledByDebugger,
-};
-
 #define FOREACH_DELAZIFICATION_STRATEGY(_)                                     \
   /* Do not delazify anything eagerly. */                                      \
   _(OnDemandOnly)                                                              \
@@ -130,8 +122,7 @@ class JS_PUBLIC_API PrefableCompileOptions {
         explicitResourceManagement_(
             JS::Prefs::experimental_explicit_resource_management()),
 #endif
-        sourcePhaseImports_(JS::Prefs::experimental_source_phase_imports()),
-        throwOnAsmJSValidationFailure_(false) {
+        sourcePhaseImports_(JS::Prefs::experimental_source_phase_imports()) {
   }
 
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
@@ -157,58 +148,16 @@ class JS_PUBLIC_API PrefableCompileOptions {
     return *this;
   }
 
-  AsmJSOption asmJSOption() const { return asmJSOption_; }
-  PrefableCompileOptions& setAsmJS(bool flag) {
-    asmJSOption_ =
-        flag ? AsmJSOption::Enabled : AsmJSOption::DisabledByAsmJSPref;
-    return *this;
-  }
-  PrefableCompileOptions& setAsmJSOption(AsmJSOption option) {
-    asmJSOption_ = option;
-    return *this;
-  }
-
-  bool throwOnAsmJSValidationFailure() const {
-    return throwOnAsmJSValidationFailure_;
-  }
-  PrefableCompileOptions& setThrowOnAsmJSValidationFailure(bool flag) {
-    throwOnAsmJSValidationFailure_ = flag;
-    return *this;
-  }
-  PrefableCompileOptions& toggleThrowOnAsmJSValidationFailure() {
-    throwOnAsmJSValidationFailure_ = !throwOnAsmJSValidationFailure_;
-    return *this;
-  }
-
 #if defined(DEBUG) || defined(JS_JITSPEW)
   template <typename Printer>
   void dumpWith(Printer& print) const {
 #  define PrintFields_(Name) print(#Name, Name)
     PrintFields_(sourcePragmas_);
-    PrintFields_(throwOnAsmJSValidationFailure_);
 #  ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     PrintFields_(explicitResourceManagement_);
 #  endif
     PrintFields_(sourcePhaseImports_);
 #  undef PrintFields_
-
-    switch (asmJSOption_) {
-      case AsmJSOption::Enabled:
-        print("asmJSOption_", "AsmJSOption::Enabled");
-        break;
-      case AsmJSOption::DisabledByAsmJSPref:
-        print("asmJSOption_", "AsmJSOption::DisabledByAsmJSPref");
-        break;
-      case AsmJSOption::DisabledByLinker:
-        print("asmJSOption_", "AsmJSOption::DisabledByLinker");
-        break;
-      case AsmJSOption::DisabledByNoWasmCompiler:
-        print("asmJSOption_", "AsmJSOption::DisabledByNoWasmCompiler");
-        break;
-      case AsmJSOption::DisabledByDebugger:
-        print("asmJSOption_", "AsmJSOption::DisabledByDebugger");
-        break;
-    }
   }
 #endif  // defined(DEBUG) || defined(JS_JITSPEW)
 
@@ -225,11 +174,6 @@ class JS_PUBLIC_API PrefableCompileOptions {
 #endif
 
   bool sourcePhaseImports_ : 1;
-
-  // ==== asm.js options. ====
-  bool throwOnAsmJSValidationFailure_ : 1;
-
-  AsmJSOption asmJSOption_ = AsmJSOption::DisabledByAsmJSPref;
 };
 
 /**
@@ -414,13 +358,6 @@ class JS_PUBLIC_API TransitiveCompileOptions {
 #endif
   bool sourcePhaseImports() const {
     return prefableOptions_.sourcePhaseImports();
-  }
-  bool throwOnAsmJSValidationFailure() const {
-    return prefableOptions_.throwOnAsmJSValidationFailure();
-  }
-  AsmJSOption asmJSOption() const { return prefableOptions_.asmJSOption(); }
-  void setAsmJSOption(AsmJSOption option) {
-    prefableOptions_.setAsmJSOption(option);
   }
 
   JS::ConstUTF8CharsZ filename() const { return filename_; }

@@ -121,7 +121,7 @@ static constexpr Register ABINonArgReturnVolatileReg = ecx;
 // WasmFrame.h for more information.
 static constexpr Register InstanceReg = esi;
 
-// Registers used for asm.js/wasm table calls. These registers must be disjoint
+// Registers used for wasm table calls. These registers must be disjoint
 // from the ABI argument registers, InstanceReg and each other.
 static constexpr Register WasmTableCallScratchReg0 = ABINonArgReg0;
 static constexpr Register WasmTableCallScratchReg1 = ABINonArgReg1;

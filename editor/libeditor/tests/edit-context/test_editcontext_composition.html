@@ -29,6 +29,13 @@ editContext.addEventListener('textupdate', e => {
                                     textNode, editContext.selectionEnd);
   }
 });
+editContext.addEventListener('textformatupdate', e => {
+  for (let format of e.getTextFormats()) {
+    is(format.underlineStyle, 'none', 'Synthesized compositions should not have any styling');
+    is(format.underlineThickness, 'none', 'Synthesized compositions should not have any styling');
+  }
+  events.push(e);
+});
 
 // event properties we care about
 const kEventProperties = {
@@ -40,7 +47,12 @@ const kEventProperties = {
   keypress: ['key'],
   keyup: ['key'],
   textupdate: ['text', 'selectionStart', 'selectionEnd', 'updateRangeStart', 'updateRangeEnd'],
+  textformatupdate: ['textFormats'],
 };
+
+function textFormatToPlainObject(format) {
+  return {rangeStart: format.rangeStart, rangeEnd: format.rangeEnd};
+}
 
 function stringifyEvent(e) {
   if (!e) {
@@ -51,7 +63,12 @@ function stringifyEvent(e) {
     if (!string.endsWith('{')) {
       string += ', ';
     }
-    string += `${property}: ${JSON.stringify(e[property])}`;
+    string += `${property}: `;
+    if (property === 'textFormats' && e.getTextFormats) {
+      string += JSON.stringify(e.getTextFormats().map(textFormatToPlainObject));
+    } else {
+      string += JSON.stringify(e[property]);
+    }
   }
   return string + '}';
 }
@@ -165,6 +182,7 @@ async function runTests() {
     {type: 'compositionstart', data: ''},
     {type: 'beforeinput'},
     {type: 'textupdate', text: 'foo', selectionStart: 3, selectionEnd: 3, updateRangeStart: 0, updateRangeEnd: 0},
+    {type: 'textformatupdate', textFormats: [{rangeStart: 0, rangeEnd: 3}]},
     {type: 'keyup', key: 'a'},
   ], 'Start composition with text "foo"');
   compositionUpdate('');
@@ -172,6 +190,7 @@ async function runTests() {
     {type: 'keydown', key: 'Process'},
     {type: 'beforeinput'},
     {type: 'textupdate', text: '', selectionStart: 0, selectionEnd: 0, updateRangeStart: 0, updateRangeEnd: 3},
+    {type: 'textformatupdate', textFormats: []},
     {type: 'keyup', key: 'a'},
   ], 'Update composition with empty text');
   compositionUpdate('bar');
@@ -179,6 +198,7 @@ async function runTests() {
     {type: 'keydown', key: 'Process'},
     {type: 'beforeinput'},
     {type: 'textupdate', text: 'bar', selectionStart: 3, selectionEnd: 3, updateRangeStart: 0, updateRangeEnd: 0},
+    {type: 'textformatupdate', textFormats: [{rangeStart: 0, rangeEnd: 3}]},
     {type: 'keyup', key: 'a'},
   ], 'Update composition with text "bar"');
   compositionUpdate('abcd');
@@ -186,6 +206,7 @@ async function runTests() {
     {type: 'keydown', key: 'Process'},
     {type: 'beforeinput'},
     {type: 'textupdate', text: 'abcd', selectionStart: 4, selectionEnd: 4, updateRangeStart: 0, updateRangeEnd: 3},
+    {type: 'textformatupdate', textFormats: [{rangeStart: 0, rangeEnd: 4}]},
     {type: 'keyup', key: 'a'},
   ], 'Update composition with text "abcd"');
   compositionEnd();
@@ -195,6 +216,7 @@ async function runTests() {
     // textupdate is fired when composition is comitted, even if the text didn't change.
     // This matches Chrome's behaviour currently.
     {type: 'textupdate', text: 'abcd', selectionStart: 4, selectionEnd: 4, updateRangeStart: 0, updateRangeEnd: 4},
+    {type: 'textformatupdate', textFormats: []},
     {type: 'compositionend', data: 'abcd'},
     {type: 'keyup', key: 'b'},
   ], 'End composition with text "abcd"');
@@ -204,6 +226,7 @@ async function runTests() {
     {type: 'compositionstart', data: ''},
     {type: 'beforeinput'},
     {type: 'textupdate', text: 'efg', selectionStart: 7, selectionEnd: 7, updateRangeStart: 4, updateRangeEnd: 4},
+    {type: 'textformatupdate', textFormats: [{rangeStart: 4, rangeEnd: 7}]},
     {type: 'keyup', key: 'a'},
   ], 'Start composition with text "efg"');
   compositionEnd();
@@ -211,6 +234,7 @@ async function runTests() {
     {type: 'keydown', key: 'Process'},
     {type: 'beforeinput'},
     {type: 'textupdate', text: 'efg', selectionStart: 7, selectionEnd: 7, updateRangeStart: 4, updateRangeEnd: 7},
+    {type: 'textformatupdate', textFormats: []},
     {type: 'compositionend', data: 'efg'},
     {type: 'keyup', key: 'b'},
   ], 'End composition with text "efg"');

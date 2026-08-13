@@ -143,16 +143,6 @@ bool CaseInsensitiveUTF8CharsEqual(const char* aLeft, const char* aRight,
 namespace mozilla {
 
 /**
- * Hash a UTF8 string as though it were a UTF16 string.
- *
- * The value returned is the same as if we converted the string to UTF16 and
- * then ran HashString() on the result.
- *
- * The given |length| is in bytes.
- */
-uint32_t HashUTF8AsUTF16(const char* aUTF8, size_t aLength, bool* aErr);
-
-/**
  * Tests used in CSS Segment Break Transformation to determine whether a
  * newline is discardable.
  */

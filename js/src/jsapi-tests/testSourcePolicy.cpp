@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "jsapi-tests/tests.h"
+
 #include "mozilla/Utf8.h"  // mozilla::Utf8Unit
 
 #include "js/CompilationAndEvaluation.h"  // JS::CompileFunction, JS::Evaluate
@@ -9,7 +11,6 @@
 #include "js/GlobalObject.h"              // JS_NewGlobalObject
 #include "js/MemoryFunctions.h"
 #include "js/SourceText.h"  // JS::Source{Ownership,Text}
-#include "jsapi-tests/tests.h"
 #include "vm/JSScript.h"
 
 BEGIN_TEST(testBug795104) {

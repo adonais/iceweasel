@@ -10,11 +10,11 @@
 #include "CTLogVerifier.h"
 #include "CTVerifyResult.h"
 #include "SignedCertificateTimestamp.h"
+#include "mozilla/UniquePtr.h"
 #include "mozpkix/Input.h"
 #include "mozpkix/Result.h"
 #include "mozpkix/Time.h"
 #include "signature_cache_ffi.h"
-#include "mozilla/UniquePtr.h"
 
 namespace mozilla {
 namespace ct {

@@ -1,15 +1,14 @@
+#include "Helpers.h"
 #include "gtest/gtest.h"
-
-#include "mozilla/gtest/MozAssertions.h"
 #include "mozilla/SlicedInputStream.h"
 #include "mozilla/SpinEventLoopUntil.h"
+#include "mozilla/gtest/MozAssertions.h"
 #include "nsCOMPtr.h"
 #include "nsIInputStream.h"
 #include "nsIPipe.h"
 #include "nsStreamUtils.h"
 #include "nsString.h"
 #include "nsStringStream.h"
-#include "Helpers.h"
 
 using namespace mozilla;
 

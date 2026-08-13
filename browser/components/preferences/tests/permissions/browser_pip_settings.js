@@ -18,7 +18,7 @@ async function withSettingVisible(settingId, testFn) {
   let win = gBrowser.contentWindow;
   let el;
   if (SRD_PREF_VALUE) {
-    let settingControl = await BrowserTestUtils.waitForCondition(
+    let settingControl = await TestUtils.waitForCondition(
       () =>
         win.document.querySelector(
           `setting-pane[data-category="${pane}"] #setting-control-${settingId}`

@@ -2023,9 +2023,9 @@ already_AddRefed<Promise> VideoFrame::CopyTo(
       gfx::IntSize size(
           l.mSourceWidthBytes / mResource->mFormat->SampleBytes(planes[i]),
           l.mSourceHeight);
-      if (!mResource->CopyTo(planes[i], {origin, size},
-                             aData.From(destinationOffset),
-                             static_cast<size_t>(l.mDestinationStride))) {
+      if (!mResource->CopyPlaneInto(
+              planes[i], {origin, size}, aData.From(destinationOffset),
+              static_cast<size_t>(l.mDestinationStride))) {
         p->MaybeRejectWithTypeError(
             nsPrintfCString("Failed to copy image data in %s plane",
                             mResource->mFormat->PlaneName(planes[i])));
@@ -2816,65 +2816,148 @@ uint32_t VideoFrame::Resource::Stride(const Format::Plane& aPlane) const {
   return 0;
 }
 
-bool VideoFrame::Resource::CopyTo(const Format::Plane& aPlane,
-                                  const gfx::IntRect& aRect,
-                                  Span<uint8_t>&& aPlaneDest,
-                                  size_t aDestinationStride) const {
+// int32_t stride keeps CheckedInt's negative-stride guard; size_t needs none.
+template <typename StrideT>
+static CheckedInt<size_t> RegionByteReach(const gfx::IntRect& aRect,
+                                          StrideT aStride,
+                                          size_t aBytesPerSample) {
+  return CheckedInt<size_t>(aRect.Height() - 1) * aStride +
+         CheckedInt<size_t>(aRect.Width()) * aBytesPerSample;
+}
+
+// Validates that region aRect, read at aStride with aBytesPerSample bytes per
+// sample, fits within an aSrcLen-byte source and that each row fits aStride.
+// Returns aRect's origin byte offset (to add to the source base pointer), or
+// Nothing when aRect is empty, has a negative origin or stride, or does not
+// fit within aStride and the source.
+static Maybe<size_t> CheckedSourceRegionOffset(const gfx::IntRect& aRect,
+                                               size_t aBytesPerSample,
+                                               int32_t aStride,
+                                               size_t aSrcLen) {
+  if (aRect.X() < 0 || aRect.Y() < 0 || aRect.IsEmpty() || aStride < 0) {
+    return Nothing();
+  }
+  CheckedInt<size_t> rowEnd =
+      CheckedInt<size_t>(aRect.XMost()) * aBytesPerSample;
+  if (!rowEnd.isValid() || rowEnd.value() > static_cast<size_t>(aStride)) {
+    return Nothing();
+  }
+  CheckedInt<size_t> offset = CheckedInt<size_t>(aRect.Y()) * aStride +
+                              CheckedInt<size_t>(aRect.X()) * aBytesPerSample;
+  CheckedInt<size_t> regionEnd =
+      offset + RegionByteReach(aRect, aStride, aBytesPerSample);
+  if (!regionEnd.isValid() || regionEnd.value() > aSrcLen) {
+    return Nothing();
+  }
+  return Some(offset.value());
+}
+
+// Copies aRect from aSrc into the packed destination aDst. aRect is relative to
+// aSrc's origin; per row the source advances by aSrcStride and the destination
+// by aDstStride. Returns false without copying unless aRect, with these
+// strides, fits within both aSrc and aDst.
+static bool CopyPlaneRegion(size_t aBytesPerSample, Span<const uint8_t> aSrc,
+                            int32_t aSrcStride, const gfx::IntRect& aRect,
+                            Span<uint8_t> aDst, size_t aDstStride) {
+  MOZ_ASSERT(aBytesPerSample > 0);
+
+  Maybe<size_t> srcOffset = CheckedSourceRegionOffset(
+      aRect, aBytesPerSample, aSrcStride, aSrc.Length());
+  if (!srcOffset) {
+    return false;
+  }
+  // The packed destination row must fit aDstStride, and the packed region must
+  // fit aDst (destination origin is 0, so only the region end is checked).
+  CheckedInt<size_t> rowBytes =
+      CheckedInt<size_t>(aRect.Width()) * aBytesPerSample;
+  CheckedInt<size_t> dstEnd =
+      RegionByteReach(aRect, aDstStride, aBytesPerSample);
+  if (!rowBytes.isValid() || rowBytes.value() > aDstStride ||
+      !dstEnd.isValid() || dstEnd.value() > aDst.Length()) {
+    return false;
+  }
+
+  const uint8_t* src = aSrc.data() + *srcOffset;
+  uint8_t* dst = aDst.data();
+  for (int32_t row = 0; row < aRect.Height(); ++row) {
+    PodCopy(dst, src, rowBytes.value());
+    src += aSrcStride;
+    dst += aDstStride;
+  }
+  return true;
+}
+
+static size_t PlaneByteLengthOrZero(int32_t aStride, int32_t aHeight) {
+  CheckedInt<size_t> length = CheckedInt<size_t>(aStride) * aHeight;
+  return length.isValid() ? length.value() : 0;
+}
+
+bool VideoFrame::Resource::CopyPlaneInto(const Format::Plane& aPlane,
+                                         const gfx::IntRect& aRect,
+                                         Span<uint8_t> aPlaneDest,
+                                         size_t aDestinationStride) const {
   if (!mFormat) {
     return false;
   }
 
-  auto copyPlane = [&](const uint8_t* aPlaneData, int32_t aSourceStride) {
-    MOZ_ASSERT(aPlaneData);
-
-    CheckedInt<size_t> offset(aRect.Y());
-    offset *= aSourceStride;
-    offset += aRect.X() * mFormat->SampleBytes(aPlane);
-    if (!offset.isValid()) {
-      return false;
-    }
-
-    CheckedInt<size_t> elementsBytes(aRect.Width());
-    elementsBytes *= mFormat->SampleBytes(aPlane);
-    if (!elementsBytes.isValid()) {
-      return false;
-    }
-
-    aPlaneData += offset.value();
-    for (int32_t row = 0; row < aRect.Height(); ++row) {
-      PodCopy(aPlaneDest.data(), aPlaneData, elementsBytes.value());
-      aPlaneData += aSourceStride;
-      // Spec asks to move `aDestinationStride` bytes instead of
-      // `aSourceStride` forward.
-      aPlaneDest = aPlaneDest.From(aDestinationStride);
-    }
-    return true;
-  };
-
   if (mImage->GetFormat() == ImageFormat::PLANAR_YCBCR) {
     const auto* data = mImage->AsPlanarYCbCrImage()->GetData();
+    const gfx::IntSize ySize = data->YDataSize();
+    const gfx::IntSize cbcrSize = data->CbCrDataSize();
     switch (aPlane) {
       case Format::Plane::Y:
-        return copyPlane(data->mYChannel, data->mYStride);
+        return CopyPlaneRegion(
+            mFormat->SampleBytes(aPlane),
+            Span<const uint8_t>(
+                data->mYChannel,
+                PlaneByteLengthOrZero(data->mYStride, ySize.height)),
+            data->mYStride, aRect, aPlaneDest, aDestinationStride);
       case Format::Plane::U:
-        return copyPlane(data->mCbChannel, data->mCbCrStride);
+        return CopyPlaneRegion(
+            mFormat->SampleBytes(aPlane),
+            Span<const uint8_t>(
+                data->mCbChannel,
+                PlaneByteLengthOrZero(data->mCbCrStride, cbcrSize.height)),
+            data->mCbCrStride, aRect, aPlaneDest, aDestinationStride);
       case Format::Plane::V:
-        return copyPlane(data->mCrChannel, data->mCbCrStride);
+        return CopyPlaneRegion(
+            mFormat->SampleBytes(aPlane),
+            Span<const uint8_t>(
+                data->mCrChannel,
+                PlaneByteLengthOrZero(data->mCbCrStride, cbcrSize.height)),
+            data->mCbCrStride, aRect, aPlaneDest, aDestinationStride);
       case Format::Plane::A:
         MOZ_ASSERT(mFormat->PixelFormat() == VideoPixelFormat::I420A);
         MOZ_ASSERT(data->mAlpha);
-        return copyPlane(data->mAlpha->mChannel, data->mYStride);
+        return CopyPlaneRegion(
+            mFormat->SampleBytes(aPlane),
+            Span<const uint8_t>(
+                data->mAlpha->mChannel,
+                PlaneByteLengthOrZero(data->mYStride, ySize.height)),
+            data->mYStride, aRect, aPlaneDest, aDestinationStride);
     }
     MOZ_ASSERT_UNREACHABLE("invalid plane");
   }
 
   if (mImage->GetFormat() == ImageFormat::NV_IMAGE) {
     const auto* data = mImage->AsNVImage()->GetData();
+    const gfx::IntSize ySize = data->YDataSize();
+    const gfx::IntSize cbcrSize = data->CbCrDataSize();
     switch (aPlane) {
       case Format::Plane::Y:
-        return copyPlane(data->mYChannel, data->mYStride);
+        return CopyPlaneRegion(
+            mFormat->SampleBytes(aPlane),
+            Span<const uint8_t>(
+                data->mYChannel,
+                PlaneByteLengthOrZero(data->mYStride, ySize.height)),
+            data->mYStride, aRect, aPlaneDest, aDestinationStride);
       case Format::Plane::UV:
-        return copyPlane(data->mCbChannel, data->mCbCrStride);
+        return CopyPlaneRegion(
+            mFormat->SampleBytes(aPlane),
+            Span<const uint8_t>(
+                data->mCbChannel,
+                PlaneByteLengthOrZero(data->mCbCrStride, cbcrSize.height)),
+            data->mCbCrStride, aRect, aPlaneDest, aDestinationStride);
       case Format::Plane::V:
       case Format::Plane::A:
         MOZ_ASSERT_UNREACHABLE("invalid plane");
@@ -2931,11 +3014,39 @@ bool VideoFrame::Resource::CopyTo(const Format::Plane& aPlane,
       f == gfx::SurfaceFormat::R8G8B8A8 || f == gfx::SurfaceFormat::R8G8B8X8 ||
       f == gfx::SurfaceFormat::B8G8R8A8 || f == gfx::SurfaceFormat::B8G8R8X8);
 
+  const int32_t srcStride = map.GetStride();
+  Span<const uint8_t> mapSpan(
+      map.GetData(),
+      PlaneByteLengthOrZero(srcStride, dataSurface->GetSize().height));
+
+  // Fast path: when the source format already matches the destination format
+  // exactly, no swizzle is needed and aRect can be copied straight from the
+  // mapped surface. This must be an exact match, since e.g. B8G8R8X8 ->
+  // B8G8R8A8 is an opaque-alpha swizzle that must not be skipped.
+  if (format == f) {
+    return CopyPlaneRegion(mFormat->SampleBytes(aPlane), mapSpan, srcStride,
+                           aRect, aPlaneDest, aDestinationStride);
+  }
+
+  // Offset the mapped source to the crop origin and swizzle only the visible
+  // region into a temporary surface; the swizzled result is a zero-origin copy
+  // of aRect's size.
+  const size_t srcBytesPerPixel = BytesPerPixel(format);
+  // Validate the cropped source region (each row fits the stride and the region
+  // fits the span) and get aRect's origin offset. SwizzleData reads
+  // aRect.Size() starting there, so the whole region must fit mapSpan; a
+  // zero-length mapSpan also fails this check.
+  Maybe<size_t> swizzleOffset = CheckedSourceRegionOffset(
+      aRect, srcBytesPerPixel, srcStride, mapSpan.Length());
+  if (!swizzleOffset) {
+    return false;
+  }
+  const uint8_t* swizzleSrc = mapSpan.data() + *swizzleOffset;
+
   // TODO: We could use Factory::CreateWrappingDataSourceSurface to wrap
   // `aDestination` to avoid extra copy.
   RefPtr<gfx::DataSourceSurface> tempSurface =
-      gfx::Factory::CreateDataSourceSurfaceWithStride(dataSurface->GetSize(), f,
-                                                      map.GetStride());
+      gfx::Factory::CreateDataSourceSurface(aRect.Size(), f);
   if (NS_WARN_IF(!tempSurface)) {
     LOGE("Failed to create a temporary DataSourceSurface");
     return false;
@@ -2948,15 +3059,28 @@ bool VideoFrame::Resource::CopyTo(const Format::Plane& aPlane,
     return false;
   }
 
-  if (!gfx::SwizzleData(map.GetData(), map.GetStride(),
-                        dataSurface->GetFormat(), tempMap.GetData(),
-                        tempMap.GetStride(), tempSurface->GetFormat(),
-                        tempSurface->GetSize())) {
+  // SwizzleData writes aRect.Size() into the temp surface; require that region
+  // to fit the mapped destination before writing.
+  const int32_t tempStride = tempMap.GetStride();
+  CheckedInt<size_t> dstWriteEnd =
+      RegionByteReach(aRect, tempStride, BytesPerPixel(f));
+  if (!dstWriteEnd.isValid() ||
+      dstWriteEnd.value() >
+          PlaneByteLengthOrZero(tempStride, tempSurface->GetSize().height)) {
+    return false;
+  }
+
+  if (!gfx::SwizzleData(swizzleSrc, srcStride, format, tempMap.GetData(),
+                        tempStride, tempSurface->GetFormat(), aRect.Size())) {
     LOGE("Failed to write data into temporary DataSourceSurface");
     return false;
   }
 
-  return copyPlane(tempMap.GetData(), tempMap.GetStride());
+  Span<const uint8_t> tempSpan(
+      tempMap.GetData(), PlaneByteLengthOrZero(tempStride, aRect.Height()));
+  return CopyPlaneRegion(mFormat->SampleBytes(aPlane), tempSpan, tempStride,
+                         gfx::IntRect(0, 0, aRect.Width(), aRect.Height()),
+                         aPlaneDest, aDestinationStride);
 }
 
 #undef LOGW

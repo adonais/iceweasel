@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SimpleURIUnknownSchemes.h"
+
 #include "mozilla/StaticPrefs_network.h"
 
 static mozilla::LazyLogModule gURLLog("URL");

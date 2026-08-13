@@ -4,8 +4,7 @@
   http://creativecommons.org/publicdomain/zero/1.0/
 -->
 <window title="Test for WorkerDebuggerGlobalScope.enterEventLoop"
-        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
-        onload="test();">
+        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
   <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"/>
   <script src="chrome://mochikit/content/tests/SimpleTest/EventUtils.js"/>
@@ -18,9 +17,8 @@
     const CHILD_WORKER_URL = "WorkerDebuggerGlobalScope.enterEventLoop_childWorker.js";
     const DEBUGGER_URL = BASE_URL + "WorkerDebuggerGlobalScope.enterEventLoop_debugger.js";
 
-    function test() {
-      (async function() {
-        SimpleTest.waitForExplicitFinish();
+    addTaskWithBothWorkerDebuggers(
+      async function () {
 
         info("Create a worker that creates a child worker, wait for their " +
              "debuggers to be registered, and initialize them.");
@@ -108,9 +106,8 @@
         dbg.postMessage("resume");
         await promise;
 
-        SimpleTest.finish();
-      })();
-    }
+      }
+    );
 
   ]]>
   </script>

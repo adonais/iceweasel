@@ -266,7 +266,8 @@ async function doTestForAllTabsFavicon(aTestPage, aFaviconHost, aFaviconURL) {
   await allTabsPopupShownPromise;
 
   assertIconIsData(
-    gTabsPanel.allTabsViewTabs.lastElementChild.firstElementChild
+    [...gTabsPanel.allTabsViewTabs.querySelectorAll(".all-tabs-item")].at(-1)
+      .firstElementChild
   );
 
   // Close the popup of allTabs and wait until it's done.
@@ -300,7 +301,8 @@ async function doTestForAllTabsFavicon(aTestPage, aFaviconHost, aFaviconURL) {
   await allTabsPopupShownPromise;
 
   assertIconIsData(
-    gTabsPanel.allTabsViewTabs.lastElementChild.firstElementChild
+    [...gTabsPanel.allTabsViewTabs.querySelectorAll(".all-tabs-item")].at(-1)
+      .firstElementChild
   );
 
   // Close the popup of allTabs and wait until it's done.

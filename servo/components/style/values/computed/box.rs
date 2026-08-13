@@ -5,23 +5,24 @@
 //! Computed types for box properties.
 
 use crate::derives::*;
-use crate::values::animated::{Animate, Procedure, ToAnimatedValue};
+use crate::values::animated::ToAnimatedValue;
 use crate::values::computed::length::{LengthPercentage, NonNegativeLength};
 use crate::values::computed::{Context, Integer, Number, ToComputedValue};
 use crate::values::generics::box_::{
     GenericBaselineShift, GenericContainIntrinsicSize, GenericLineClamp, GenericOverflowClipMargin,
     GenericPerspective,
 };
+use crate::values::generics::GreaterThanOrEqualToOne;
 use crate::values::specified::box_ as specified;
 use std::fmt;
 use style_traits::{CssWriter, ToCss};
 
 pub use crate::values::specified::box_::{
     AlignmentBaseline, Appearance, BaselineSource, BreakBetween, BreakWithin, Clear, Contain,
-    ContainerName, ContainerType, ContentVisibility, Display, DominantBaseline, Float, Overflow,
-    OverflowAnchor, OverscrollBehavior, PositionProperty, ScrollSnapAlign, ScrollSnapAxis,
-    ScrollSnapStop, ScrollSnapStrictness, ScrollSnapType, ScrollbarGutter, TouchAction, WillChange,
-    WritingModeProperty,
+    ContainerName, ContainerType, ContentVisibility, Display, DominantBaseline, Float, MarginTrim,
+    Overflow, OverflowAnchor, OverscrollBehavior, PositionProperty, ScrollSnapAlign,
+    ScrollSnapAxis, ScrollSnapStop, ScrollSnapStrictness, ScrollSnapType, ScrollbarGutter,
+    TouchAction, WillChange, WritingModeProperty,
 };
 
 /// A computed value for the `baseline-shift` property.
@@ -45,29 +46,27 @@ impl ContainIntrinsicSize {
 }
 
 /// A computed value for the `line-clamp` property.
-pub type LineClamp = GenericLineClamp<Integer>;
-
-impl Animate for LineClamp {
-    #[inline]
-    fn animate(&self, other: &Self, procedure: Procedure) -> Result<Self, ()> {
-        if self.is_none() != other.is_none() {
-            return Err(());
-        }
-        if self.is_none() {
-            return Ok(Self::none());
-        }
-        Ok(Self(self.0.animate(&other.0, procedure)?.max(1)))
-    }
-}
+pub type LineClamp = GenericLineClamp<GreaterThanOrEqualToOne<Integer>>;
 
 /// A computed value for the `perspective` property.
 pub type Perspective = GenericPerspective<NonNegativeLength>;
 
 /// A computed value for the `resize` property.
 #[allow(missing_docs)]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[derive(
-    Clone, Copy, Debug, Eq, Hash, MallocSizeOf, Parse, PartialEq, ToCss, ToResolvedValue, ToTyped,
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Eq,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    Serialize,
+    ToCss,
+    ToResolvedValue,
+    ToTyped,
 )]
 #[repr(u8)]
 pub enum Resize {
@@ -130,13 +129,14 @@ impl ToComputedValue for specified::Resize {
     ComputeSquaredDistance,
     Copy,
     Debug,
+    Deserialize,
     MallocSizeOf,
     PartialEq,
     PartialOrd,
+    Serialize,
     ToResolvedValue,
     ToTyped,
 )]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[repr(C)]
 pub struct Zoom(f32);
 

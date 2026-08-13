@@ -152,7 +152,6 @@ enum class OpKind {
   Conversion,
   Load,
   Store,
-  TeeStore,
   MemorySize,
   MemoryGrow,
   Select,
@@ -161,15 +160,12 @@ enum class OpKind {
   TeeLocal,
   GetGlobal,
   SetGlobal,
-  TeeGlobal,
   Call,
   ReturnCall,
   CallIndirect,
   ReturnCallIndirect,
   CallRef,
   ReturnCallRef,
-  OldCallDirect,
-  OldCallIndirect,
   Return,
   If,
   Else,
@@ -715,9 +711,6 @@ class MOZ_STACK_CLASS OpIter : private Policy {
                               LinearMemoryAddress<Value>* addr);
   [[nodiscard]] bool readStore(ValType resultType, uint32_t byteSize,
                                LinearMemoryAddress<Value>* addr, Value* value);
-  [[nodiscard]] bool readTeeStore(ValType resultType, uint32_t byteSize,
-                                  LinearMemoryAddress<Value>* addr,
-                                  Value* value);
   [[nodiscard]] bool readNop();
   [[nodiscard]] bool readMemorySize(uint32_t* memoryIndex);
   [[nodiscard]] bool readMemoryGrow(uint32_t* memoryIndex, Value* input);
@@ -728,7 +721,6 @@ class MOZ_STACK_CLASS OpIter : private Policy {
   [[nodiscard]] bool readTeeLocal(uint32_t* id, Value* value);
   [[nodiscard]] bool readGetGlobal(uint32_t* id);
   [[nodiscard]] bool readSetGlobal(uint32_t* id, Value* value);
-  [[nodiscard]] bool readTeeGlobal(uint32_t* id, Value* value);
   [[nodiscard]] bool readI32Const(int32_t* i32);
   [[nodiscard]] bool readI64Const(int64_t* i64);
   [[nodiscard]] bool readF32Const(float* f32);
@@ -754,11 +746,6 @@ class MOZ_STACK_CLASS OpIter : private Policy {
                                  ValueVector* argValues);
   [[nodiscard]] bool readReturnCallRef(uint32_t* funcTypeIndex, Value* callee,
                                        ValueVector* argValues);
-  [[nodiscard]] bool readOldCallDirect(uint32_t numFuncImports,
-                                       uint32_t* funcIndex,
-                                       ValueVector* argValues);
-  [[nodiscard]] bool readOldCallIndirect(uint32_t* funcTypeIndex, Value* callee,
-                                         ValueVector* argValues);
   [[nodiscard]] bool readNotify(LinearMemoryAddress<Value>* addr, Value* count);
   [[nodiscard]] bool readWait(LinearMemoryAddress<Value>* addr,
                               ValType valueType, uint32_t byteSize,
@@ -2160,24 +2147,6 @@ inline bool OpIter<Policy>::readStore(ValType resultType, uint32_t byteSize,
 }
 
 template <typename Policy>
-inline bool OpIter<Policy>::readTeeStore(ValType resultType, uint32_t byteSize,
-                                         LinearMemoryAddress<Value>* addr,
-                                         Value* value) {
-  MOZ_ASSERT(Classify(op_) == OpKind::TeeStore);
-
-  if (!popWithType(resultType, value)) {
-    return false;
-  }
-
-  if (!readLinearMemoryAddress(byteSize, addr)) {
-    return false;
-  }
-
-  infalliblePush(TypeAndValue(resultType, *value));
-  return true;
-}
-
-template <typename Policy>
 inline bool OpIter<Policy>::readNop() {
   MOZ_ASSERT(Classify(op_) == OpKind::Nop);
 
@@ -2392,34 +2361,6 @@ inline bool OpIter<Policy>::readSetGlobal(uint32_t* id, Value* value) {
   }
 
   return popWithType(codeMeta_.globals[*id].type(), value);
-}
-
-template <typename Policy>
-inline bool OpIter<Policy>::readTeeGlobal(uint32_t* id, Value* value) {
-  MOZ_ASSERT(Classify(op_) == OpKind::TeeGlobal);
-
-  if (!d_.readGlobalIndex(id)) {
-    return false;
-  }
-
-  if (*id >= codeMeta_.globals.length()) {
-    return fail("global.set index out of range");
-  }
-
-  if (!codeMeta_.globals[*id].isMutable()) {
-    return fail("can't write an immutable global");
-  }
-
-  ValueVector single;
-  if (!checkTopTypeMatches(ResultType::Single(codeMeta_.globals[*id].type()),
-                           &single,
-                           /*rewriteStackTypes=*/true)) {
-    return false;
-  }
-
-  MOZ_ASSERT(single.length() == 1);
-  *value = single[0];
-  return true;
 }
 
 template <typename Policy>
@@ -2836,67 +2777,6 @@ inline bool OpIter<Policy>::readReturnCallRef(uint32_t* funcTypeIndex,
 
   afterUnconditionalBranch();
   return true;
-}
-
-template <typename Policy>
-inline bool OpIter<Policy>::readOldCallDirect(uint32_t numFuncImports,
-                                              uint32_t* funcIndex,
-                                              ValueVector* argValues) {
-  MOZ_ASSERT(Classify(op_) == OpKind::OldCallDirect);
-
-  uint32_t funcDefIndex;
-  if (!readVarU32(&funcDefIndex)) {
-    return fail("unable to read call function index");
-  }
-
-  if (UINT32_MAX - funcDefIndex < numFuncImports) {
-    return fail("callee index out of range");
-  }
-
-  *funcIndex = numFuncImports + funcDefIndex;
-
-  if (*funcIndex >= codeMeta_.funcs.length()) {
-    return fail("callee index out of range");
-  }
-
-  const FuncType& funcType = codeMeta_.getFuncType(*funcIndex);
-
-  if (!popCallArgs(funcType.args(), argValues)) {
-    return false;
-  }
-
-  return push(ResultType::Vector(funcType.results()));
-}
-
-template <typename Policy>
-inline bool OpIter<Policy>::readOldCallIndirect(uint32_t* funcTypeIndex,
-                                                Value* callee,
-                                                ValueVector* argValues) {
-  MOZ_ASSERT(Classify(op_) == OpKind::OldCallIndirect);
-
-  if (!readVarU32(funcTypeIndex)) {
-    return fail("unable to read call_indirect signature index");
-  }
-
-  if (*funcTypeIndex >= codeMeta_.numTypes()) {
-    return fail("signature index out of range");
-  }
-
-  const TypeDef& typeDef = codeMeta_.types->type(*funcTypeIndex);
-  if (!typeDef.isFuncType()) {
-    return fail("expected signature type");
-  }
-  const FuncType& funcType = typeDef.funcType();
-
-  if (!popCallArgs(funcType.args(), argValues)) {
-    return false;
-  }
-
-  if (!popWithType(ValType::I32, callee)) {
-    return false;
-  }
-
-  return push(ResultType::Vector(funcType.results()));
 }
 
 template <typename Policy>
@@ -4741,18 +4621,18 @@ inline bool OpIter<Policy>::readCallBuiltinModuleFunc(
 }  // namespace wasm
 }  // namespace js
 
-static_assert(std::is_trivially_copyable<
-                  js::wasm::TypeAndValueT<mozilla::Nothing>>::value,
-              "Must be trivially copyable");
-static_assert(std::is_trivially_destructible<
-                  js::wasm::TypeAndValueT<mozilla::Nothing>>::value,
-              "Must be trivially destructible");
+static_assert(
+    std::is_trivially_copyable_v<js::wasm::TypeAndValueT<mozilla::Nothing>>,
+    "Must be trivially copyable");
+static_assert(
+    std::is_trivially_destructible_v<js::wasm::TypeAndValueT<mozilla::Nothing>>,
+    "Must be trivially destructible");
 
-static_assert(std::is_trivially_copyable<
-                  js::wasm::ControlStackEntry<mozilla::Nothing>>::value,
-              "Must be trivially copyable");
-static_assert(std::is_trivially_destructible<
-                  js::wasm::ControlStackEntry<mozilla::Nothing>>::value,
+static_assert(
+    std::is_trivially_copyable_v<js::wasm::ControlStackEntry<mozilla::Nothing>>,
+    "Must be trivially copyable");
+static_assert(std::is_trivially_destructible_v<
+                  js::wasm::ControlStackEntry<mozilla::Nothing>>,
               "Must be trivially destructible");
 
 #endif  // wasm_op_iter_h

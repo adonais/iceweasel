@@ -10,7 +10,7 @@
     android:layout_marginTop="16dp" >
 
     <ImageView
-        android:id="@+id/toolbar_simple_preview"
+        android:id="@+id/toolbar_simple_shortcut_preview_image"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:contentDescription="@null"
@@ -23,11 +23,11 @@
         android:layout_width="24dp"
         android:layout_height="24dp"
         android:contentDescription="@null"
-        app:tint="@color/fx_mobile_icon_color_accent_violet"
-        app:layout_constraintStart_toStartOf="@id/toolbar_simple_preview"
-        app:layout_constraintEnd_toEndOf="@id/toolbar_simple_preview"
-        app:layout_constraintTop_toTopOf="@id/toolbar_simple_preview"
-        app:layout_constraintBottom_toBottomOf="@id/toolbar_simple_preview"
+        app:tint="?attr/colorPrimary"
+        app:layout_constraintStart_toStartOf="@id/toolbar_simple_shortcut_preview_image"
+        app:layout_constraintEnd_toEndOf="@id/toolbar_simple_shortcut_preview_image"
+        app:layout_constraintTop_toTopOf="@id/toolbar_simple_shortcut_preview_image"
+        app:layout_constraintBottom_toBottomOf="@id/toolbar_simple_shortcut_preview_image"
         app:layout_constraintHorizontal_bias="0.67"
         app:layout_constraintVertical_bias="0.5" />
 </androidx.constraintlayout.widget.ConstraintLayout>

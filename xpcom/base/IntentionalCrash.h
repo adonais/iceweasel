@@ -5,10 +5,11 @@
 #ifndef mozilla_IntentionalCrash_h
 #define mozilla_IntentionalCrash_h
 
-#include <string>
-#include <sstream>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+
+#include <sstream>
+#include <string>
 
 #ifdef XP_WIN
 #  include <process.h>

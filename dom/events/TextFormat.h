@@ -17,6 +17,8 @@ class TextFormat final : public nsISupports, public nsWrapperCache {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(TextFormat)
 
+  TextFormat(nsIGlobalObject* aGlobal, const TextFormatInit& aOptions);
+
   nsIGlobalObject* GetParentObject() const { return mGlobal; }
 
   JSObject* WrapObject(JSContext* aCx,
@@ -36,7 +38,6 @@ class TextFormat final : public nsISupports, public nsWrapperCache {
   }
 
  private:
-  TextFormat(nsIGlobalObject* aGlobal, const TextFormatInit& aOptions);
   ~TextFormat() = default;
 
   nsCOMPtr<nsIGlobalObject> mGlobal;

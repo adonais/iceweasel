@@ -15,16 +15,6 @@ const NORMAL_URL =
   "https://example.com/browser/dom/notification/test/browser/file_safebrowsing_test.html";
 const PERMISSION_NAME = "desktop-notification";
 
-async function getTelemetryRate() {
-  await Services.fog.testFlushAllChildren();
-  return (
-    Glean.webNotification.showSafeBrowsingBlock.testGetValue() ?? {
-      numerator: 0,
-      denominator: 0,
-    }
-  );
-}
-
 function waitForDBInit() {
   let principal = Services.scriptSecurityManager.createContentPrincipal(
     Services.io.newURI(PHISH_URL),
@@ -34,7 +24,7 @@ function waitForDBInit() {
     Ci.nsIUrlClassifierDBService
   );
 
-  return BrowserTestUtils.waitForCondition(
+  return TestUtils.waitForCondition(
     () =>
       new Promise(resolve => {
         dbService.lookup(principal, PHISH_TABLE, value => {
@@ -71,10 +61,7 @@ add_setup(async function () {
 
 // Test 1: Normal site registers SW, sends notification - should succeed.
 // This is a control test ensuring notifications work for non-phishing sites.
-// Also verifies telemetry: denominator increments, numerator does not.
 add_task(async function test_sw_notification_allowed_for_normal_site() {
-  Services.fog.testResetFOG();
-
   let normalPrincipal = Services.scriptSecurityManager.createContentPrincipal(
     Services.io.newURI("https://example.com"),
     {}
@@ -118,11 +105,6 @@ add_task(async function test_sw_notification_allowed_for_normal_site() {
     "Permission should still be granted for normal site"
   );
 
-  // Verify telemetry: denominator should be 1, numerator should be 0
-  let rate = await getTelemetryRate();
-  is(rate.denominator, 1, "Denominator should be 1 (one notification checked)");
-  is(rate.numerator, 0, "Numerator should be 0 (no notifications blocked)");
-
   // Cleanup
   await SpecialPowers.removeAllServiceWorkerData();
   PermissionTestUtils.remove(normalPrincipal, PERMISSION_NAME);
@@ -131,11 +113,8 @@ add_task(async function test_sw_notification_allowed_for_normal_site() {
 // Test 2: Site registers SW when clean, then becomes phishing, then tries to
 // send notification via SW - should be blocked and permission revoked.
 // This is the key scenario we're protecting against.
-// Also verifies telemetry: both numerator and denominator increment.
 add_task(
   async function test_sw_notification_blocked_when_site_becomes_phishing() {
-    Services.fog.testResetFOG();
-
     let testOrigin = "https://example.com";
     let testPrincipal = Services.scriptSecurityManager.createContentPrincipal(
       Services.io.newURI(testOrigin),
@@ -231,15 +210,6 @@ add_task(
       Services.perms.UNKNOWN_ACTION,
       "Permission should be revoked after Safe Browsing block"
     );
-
-    // Verify telemetry: both numerator and denominator should be 1
-    let rate = await getTelemetryRate();
-    is(
-      rate.denominator,
-      1,
-      "Denominator should be 1 (one notification checked)"
-    );
-    is(rate.numerator, 1, "Numerator should be 1 (one notification blocked)");
 
     // Cleanup
     await SpecialPowers.removeAllServiceWorkerData();

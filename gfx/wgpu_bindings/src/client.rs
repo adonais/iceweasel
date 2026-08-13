@@ -3,17 +3,16 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use crate::{
-    cow_label, wgpu_string, AdapterInformation, ByteBuf, CommandEncoderAction, DeviceAction,
-    FfiSlice, QueueWriteAction, RawString, TexelCopyBufferLayout, TextureAction,
+    cow_label, raw_string_to_string, wgpu_string, AdapterInformation, BindingCommand, ByteBuf,
+    CommandEncoderCommand, DebugCommand, DeviceAction, FfiSlice, QueueWriteAction, RawString,
+    RenderBundleEncoderCommand, RenderCommand, TexelCopyBufferLayout, TextureAction,
 };
 
 use crate::{BufferMapResult, Message, QueueWriteDataSource, ServerMessage, SwapChainId};
 
 use wgc::naga::front::wgsl::ImplementedLanguageExtension;
-use wgc::{command::RenderBundleEncoder, id, identity::IdentityManager};
-use wgt::{
-    error::WebGpuError, BufferAddress, BufferSize, DynamicOffset, IndexFormat, TextureFormat,
-};
+use wgc::{id, identity::IdentityManager};
+use wgt::{BufferAddress, DynamicOffset, IndexFormat, TextureFormat};
 
 use wgc::id::markers;
 
@@ -22,8 +21,8 @@ use parking_lot::Mutex;
 use nsstring::{nsACString, nsCString, nsString};
 
 use std::array;
+use std::borrow::Cow;
 use std::fmt::Write;
-use std::{borrow::Cow, ptr};
 
 use self::render_pass::{
     FfiOption, FfiRenderPassColorAttachment, RenderPassDepthStencilAttachment,
@@ -48,15 +47,7 @@ impl ProgrammableStageDescriptor<'_> {
     fn to_wgpu(&self) -> wgc::pipeline::ProgrammableStageDescriptor<'_> {
         let constants = unsafe { self.constants.as_slice() }
             .iter()
-            .map(|ce| {
-                (
-                    unsafe { std::ffi::CStr::from_ptr(ce.key) }
-                        .to_str()
-                        .unwrap()
-                        .to_string(),
-                    ce.value,
-                )
-            })
+            .map(|ce| (raw_string_to_string(ce.key), ce.value))
             .collect();
         wgc::pipeline::ProgrammableStageDescriptor {
             module: self.module,
@@ -376,7 +367,7 @@ pub struct Client {
 }
 
 impl Client {
-    fn queue_message(&self, message: &Message) {
+    pub(crate) fn queue_message(&self, message: &Message) {
         let mut message_queue = self.message_queue.lock();
         message_queue.push(self.owner, message);
     }
@@ -503,7 +494,13 @@ pub extern "C" fn wgpu_client_instance_get_wgsl_language_feature(
     buffer: &mut nsstring::nsCString,
     index: usize,
 ) {
-    match ImplementedLanguageExtension::all().get(index) {
+    // TODO(Bug 2005059): Exclude `ImmediateAddressSpace` until we expose the
+    // rest of the immediates API.
+    let extensions = ImplementedLanguageExtension::all()
+        .iter()
+        .filter(|ext| !matches!(ext, ImplementedLanguageExtension::ImmediateAddressSpace))
+        .collect::<Vec<_>>();
+    match extensions.get(index) {
         Some(some) => buffer.write_str(some.to_ident()).unwrap(),
         None => (),
     }
@@ -556,25 +553,6 @@ pub extern "C" fn wgpu_client_request_device(
         device: device_id,
         queue: queue_id,
     }
-}
-
-#[no_mangle]
-pub extern "C" fn wgpu_client_make_render_pass_encoder_id(
-    client: &Client,
-) -> id::RenderPassEncoderId {
-    client.identities.lock().render_pass_encoders.process()
-}
-#[no_mangle]
-pub extern "C" fn wgpu_client_make_compute_pass_encoder_id(
-    client: &Client,
-) -> id::ComputePassEncoderId {
-    client.identities.lock().compute_pass_encoders.process()
-}
-#[no_mangle]
-pub extern "C" fn wgpu_client_make_render_bundle_encoder_id(
-    client: &Client,
-) -> id::RenderBundleEncoderId {
-    client.identities.lock().render_bundle_encoders.process()
 }
 
 #[rustfmt::skip]
@@ -686,7 +664,6 @@ pub extern "C" fn wgpu_client_receive_server_message(client: &Client, byte_buf: 
                 name,
                 vendor,
                 support_use_shared_texture_in_swap_chain,
-                transient_saves_memory,
                 subgroup_min_size,
                 subgroup_max_size,
             }) = adapter_information
@@ -708,7 +685,6 @@ pub extern "C" fn wgpu_client_receive_server_message(client: &Client, byte_buf: 
                     name: nss(&name),
                     vendor,
                     support_use_shared_texture_in_swap_chain,
-                    transient_saves_memory,
                     subgroup_min_size,
                     subgroup_max_size,
                 };
@@ -770,7 +746,7 @@ pub extern "C" fn wgpu_client_receive_server_message(client: &Client, byte_buf: 
                         Some(&ns_error),
                     );
                 }
-                client.identities.lock().render_pipelines.free(pipeline_id);
+                drop::wgpu_client_drop_render_pipeline(client, pipeline_id);
             } else {
                 unsafe {
                     wgpu_child_resolve_create_pipeline_promise(
@@ -796,7 +772,7 @@ pub extern "C" fn wgpu_client_receive_server_message(client: &Client, byte_buf: 
                         Some(&ns_error),
                     );
                 }
-                client.identities.lock().compute_pipelines.free(pipeline_id);
+                drop::wgpu_client_drop_compute_pipeline(client, pipeline_id);
             } else {
                 unsafe {
                     wgpu_child_resolve_create_pipeline_promise(
@@ -1237,18 +1213,20 @@ pub extern "C" fn wgpu_client_create_command_encoder(
 }
 
 #[no_mangle]
-pub extern "C" fn wgpu_device_create_render_bundle_encoder(
+pub extern "C" fn wgpu_client_create_render_bundle_encoder(
     client: &Client,
     device_id: id::DeviceId,
     desc: &RenderBundleEncoderDescriptor,
-) -> *mut wgc::command::RenderBundleEncoder {
+) -> id::RenderBundleEncoderId {
     let label = wgpu_string(desc.label);
+
+    let id = client.identities.lock().render_bundle_encoders.process();
 
     let color_formats: Vec<_> = unsafe { desc.color_formats.as_slice() }
         .iter()
         .map(|format_opt| format_opt.to_std())
         .collect();
-    let descriptor = wgc::command::RenderBundleEncoderDescriptor {
+    let desc = wgc::command::RenderBundleEncoderDescriptor {
         label,
         color_formats: Cow::Owned(color_formats),
         depth_stencil: desc
@@ -1261,62 +1239,215 @@ pub extern "C" fn wgpu_device_create_render_bundle_encoder(
         sample_count: desc.sample_count,
         multiview: None,
     };
-    match wgc::command::RenderBundleEncoder::new(&descriptor, None, device_id) {
-        Ok(encoder) => Box::into_raw(Box::new(encoder)),
-        Err(e) => {
-            let message = format!("Error in `Device::create_render_bundle_encoder`: {}", e);
-            let action = DeviceAction::Error {
-                message,
-                r#type: e.webgpu_error_type(),
-            };
-            let message = Message::Device(device_id, action);
-            client.queue_message(&message);
-            ptr::null_mut()
-        }
-    }
+
+    let action = DeviceAction::CreateRenderBundleEncoder(id, desc);
+    let message = Message::Device(device_id, action);
+    client.queue_message(&message);
+    id
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn wgpu_render_bundle_encoder_destroy(
-    pass: *mut wgc::command::RenderBundleEncoder,
-) {
-    // The RB encoder is just a boxed Rust struct, it doesn't have any API primitives
-    // associated with it right now, but in the future it will.
-    let _ = Box::from_raw(pass);
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn wgpu_client_create_render_bundle(
+pub unsafe extern "C" fn wgpu_client_render_bundle_encoder_set_bind_group(
     client: &Client,
     device_id: id::DeviceId,
-    encoder: *mut wgc::command::RenderBundleEncoder,
+    encoder_id: id::RenderBundleEncoderId,
+    index: u32,
+    bind_group: Option<id::BindGroupId>,
+    dynamic_offsets: FfiSlice<'_, DynamicOffset>,
+) {
+    let command = RenderBundleEncoderCommand::BindingCommand(BindingCommand::SetBindGroup {
+        index,
+        bind_group,
+        dynamic_offsets: dynamic_offsets.as_slice().to_vec(),
+    });
+    let message = Message::RenderBundleEncoder(device_id, encoder_id, command);
+    client.queue_message(&message);
+}
+
+#[no_mangle]
+pub extern "C" fn wgpu_client_render_bundle_encoder_set_pipeline(
+    client: &Client,
+    device_id: id::DeviceId,
+    encoder_id: id::RenderBundleEncoderId,
+    pipeline_id: id::RenderPipelineId,
+) {
+    let command =
+        RenderBundleEncoderCommand::RenderCommand(RenderCommand::SetPipeline(pipeline_id));
+    let message = Message::RenderBundleEncoder(device_id, encoder_id, command);
+    client.queue_message(&message);
+}
+
+#[no_mangle]
+pub extern "C" fn wgpu_client_render_bundle_encoder_set_index_buffer(
+    client: &Client,
+    device_id: id::DeviceId,
+    encoder_id: id::RenderBundleEncoderId,
+    buffer: id::BufferId,
+    index_format: IndexFormat,
+    offset: BufferAddress,
+    size: FfiOption<BufferAddress>,
+) {
+    let command = RenderBundleEncoderCommand::RenderCommand(RenderCommand::SetIndexBuffer {
+        buffer,
+        index_format,
+        offset,
+        size: size.to_std(),
+    });
+    let message = Message::RenderBundleEncoder(device_id, encoder_id, command);
+    client.queue_message(&message);
+}
+
+#[no_mangle]
+pub extern "C" fn wgpu_client_render_bundle_encoder_set_vertex_buffer(
+    client: &Client,
+    device_id: id::DeviceId,
+    encoder_id: id::RenderBundleEncoderId,
+    slot: u32,
+    buffer: Option<id::BufferId>,
+    offset: BufferAddress,
+    size: FfiOption<BufferAddress>,
+) {
+    let command = RenderBundleEncoderCommand::RenderCommand(RenderCommand::SetVertexBuffer {
+        slot,
+        buffer,
+        offset,
+        size: size.to_std(),
+    });
+    let message = Message::RenderBundleEncoder(device_id, encoder_id, command);
+    client.queue_message(&message);
+}
+
+#[no_mangle]
+pub extern "C" fn wgpu_client_render_bundle_encoder_draw(
+    client: &Client,
+    device_id: id::DeviceId,
+    encoder_id: id::RenderBundleEncoderId,
+    vertex_count: u32,
+    instance_count: u32,
+    first_vertex: u32,
+    first_instance: u32,
+) {
+    let command = RenderBundleEncoderCommand::RenderCommand(RenderCommand::Draw {
+        vertex_count,
+        instance_count,
+        first_vertex,
+        first_instance,
+    });
+    let message = Message::RenderBundleEncoder(device_id, encoder_id, command);
+    client.queue_message(&message);
+}
+
+#[no_mangle]
+pub extern "C" fn wgpu_client_render_bundle_encoder_draw_indexed(
+    client: &Client,
+    device_id: id::DeviceId,
+    encoder_id: id::RenderBundleEncoderId,
+    index_count: u32,
+    instance_count: u32,
+    first_index: u32,
+    base_vertex: i32,
+    first_instance: u32,
+) {
+    let command = RenderBundleEncoderCommand::RenderCommand(RenderCommand::DrawIndexed {
+        index_count,
+        instance_count,
+        first_index,
+        base_vertex,
+        first_instance,
+    });
+    let message = Message::RenderBundleEncoder(device_id, encoder_id, command);
+    client.queue_message(&message);
+}
+
+#[no_mangle]
+pub extern "C" fn wgpu_client_render_bundle_encoder_draw_indirect(
+    client: &Client,
+    device_id: id::DeviceId,
+    encoder_id: id::RenderBundleEncoderId,
+    indirect_buffer: id::BufferId,
+    indirect_offset: BufferAddress,
+) {
+    let command = RenderBundleEncoderCommand::RenderCommand(RenderCommand::DrawIndirect {
+        indirect_buffer,
+        indirect_offset,
+    });
+    let message = Message::RenderBundleEncoder(device_id, encoder_id, command);
+    client.queue_message(&message);
+}
+
+#[no_mangle]
+pub extern "C" fn wgpu_client_render_bundle_encoder_draw_indexed_indirect(
+    client: &Client,
+    device_id: id::DeviceId,
+    encoder_id: id::RenderBundleEncoderId,
+    indirect_buffer: id::BufferId,
+    indirect_offset: BufferAddress,
+) {
+    let command = RenderBundleEncoderCommand::RenderCommand(RenderCommand::DrawIndexedIndirect {
+        indirect_buffer,
+        indirect_offset,
+    });
+    let message = Message::RenderBundleEncoder(device_id, encoder_id, command);
+    client.queue_message(&message);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn wgpu_client_render_bundle_encoder_push_debug_group(
+    client: &Client,
+    device_id: id::DeviceId,
+    encoder_id: id::RenderBundleEncoderId,
+    label: RawString,
+) {
+    let command = RenderBundleEncoderCommand::DebugCommand(DebugCommand::PushDebugGroup(
+        raw_string_to_string(label),
+    ));
+    let message = Message::RenderBundleEncoder(device_id, encoder_id, command);
+    client.queue_message(&message);
+}
+
+#[no_mangle]
+pub extern "C" fn wgpu_client_render_bundle_encoder_pop_debug_group(
+    client: &Client,
+    device_id: id::DeviceId,
+    encoder_id: id::RenderBundleEncoderId,
+) {
+    let command = RenderBundleEncoderCommand::DebugCommand(DebugCommand::PopDebugGroup);
+    let message = Message::RenderBundleEncoder(device_id, encoder_id, command);
+    client.queue_message(&message);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn wgpu_client_render_bundle_encoder_insert_debug_marker(
+    client: &Client,
+    device_id: id::DeviceId,
+    encoder_id: id::RenderBundleEncoderId,
+    label: RawString,
+) {
+    let command = RenderBundleEncoderCommand::DebugCommand(DebugCommand::InsertDebugMarker(
+        raw_string_to_string(label),
+    ));
+    let message = Message::RenderBundleEncoder(device_id, encoder_id, command);
+    client.queue_message(&message);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn wgpu_client_render_bundle_encoder_finish(
+    client: &Client,
+    device_id: id::DeviceId,
+    encoder_id: id::RenderBundleEncoderId,
     desc: &wgt::RenderBundleDescriptor<Option<&nsACString>>,
 ) -> id::RenderBundleId {
     let label = wgpu_string(desc.label);
 
-    let id = client.identities.lock().render_bundles.process();
+    let render_bundle_id = client.identities.lock().render_bundles.process();
 
-    let action =
-        DeviceAction::CreateRenderBundle(id, *Box::from_raw(encoder), desc.map_label(|_| label));
-    let message = Message::Device(device_id, action);
+    let command = RenderBundleEncoderCommand::Finish {
+        desc: desc.map_label(|_| label),
+        render_bundle_id,
+    };
+    let message = Message::RenderBundleEncoder(device_id, encoder_id, command);
     client.queue_message(&message);
-    id
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn wgpu_client_create_render_bundle_error(
-    client: &Client,
-    device_id: id::DeviceId,
-    label: Option<&nsACString>,
-) -> id::RenderBundleId {
-    let label = wgpu_string(label);
-
-    let id = client.identities.lock().render_bundles.process();
-
-    let action = DeviceAction::CreateRenderBundleError(id, label);
-    let message = Message::Device(device_id, action);
-    client.queue_message(&message);
-    id
+    render_bundle_id
 }
 
 #[repr(C)]
@@ -1372,9 +1503,12 @@ pub struct PassTimestampWrites<'a> {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn wgpu_command_encoder_begin_compute_pass(
+pub unsafe extern "C" fn wgpu_client_command_encoder_begin_compute_pass(
+    client: &Client,
+    device_id: id::DeviceId,
+    encoder_id: id::CommandEncoderId,
     desc: &ComputePassDescriptor,
-) -> *mut crate::command::RecordedComputePass {
+) -> id::ComputePassEncoderId {
     let &ComputePassDescriptor {
         label,
         timestamp_writes,
@@ -1397,28 +1531,20 @@ pub unsafe extern "C" fn wgpu_command_encoder_begin_compute_pass(
         }
     });
 
-    let pass = crate::command::RecordedComputePass::new(&wgc::command::ComputePassDescriptor {
+    let desc = wgc::command::ComputePassDescriptor {
         label,
         timestamp_writes,
-    });
-    Box::into_raw(Box::new(pass))
-}
+    };
 
-#[no_mangle]
-pub unsafe extern "C" fn wgpu_compute_pass_finish(
-    client: &Client,
-    device_id: id::DeviceId,
-    encoder_id: id::CommandEncoderId,
-    pass: *mut crate::command::RecordedComputePass,
-) {
-    let pass = *Box::from_raw(pass);
-    let message = Message::ReplayComputePass(device_id, encoder_id, pass);
+    let compute_pass_encoder_id = client.identities.lock().compute_pass_encoders.process();
+
+    let command = CommandEncoderCommand::BeginComputePass {
+        desc,
+        compute_pass_encoder_id,
+    };
+    let message = Message::CommandEncoder(device_id, encoder_id, command);
     client.queue_message(&message);
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn wgpu_compute_pass_destroy(pass: *mut crate::command::RecordedComputePass) {
-    let _ = Box::from_raw(pass);
+    compute_pass_encoder_id
 }
 
 #[repr(C)]
@@ -1431,9 +1557,12 @@ pub struct RenderPassDescriptor<'a> {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn wgpu_command_encoder_begin_render_pass(
+pub unsafe extern "C" fn wgpu_client_command_encoder_begin_render_pass(
+    client: &Client,
+    device_id: id::DeviceId,
+    encoder_id: id::CommandEncoderId,
     desc: &RenderPassDescriptor,
-) -> *mut crate::command::RecordedRenderPass {
+) -> id::RenderPassEncoderId {
     let &RenderPassDescriptor {
         label,
         color_attachments,
@@ -1442,7 +1571,7 @@ pub unsafe extern "C" fn wgpu_command_encoder_begin_render_pass(
         occlusion_query_set,
     } = desc;
 
-    let label = wgpu_string(label).map(|l| l.to_string());
+    let label = wgpu_string(label);
 
     let timestamp_writes = timestamp_writes.map(|tsw| {
         let &PassTimestampWrites {
@@ -1465,31 +1594,25 @@ pub unsafe extern "C" fn wgpu_command_encoder_begin_render_pass(
         .map(|att_opt| att_opt.as_ref().map(|att| att.clone().to_wgpu()))
         .collect();
     let depth_stencil_attachment = depth_stencil_attachment.cloned().map(|dsa| dsa.to_wgpu());
-    let pass = crate::command::RecordedRenderPass::new(
+
+    let desc = wgc::command::RenderPassDescriptor {
         label,
-        color_attachments,
+        color_attachments: Cow::Owned(color_attachments),
         depth_stencil_attachment,
         timestamp_writes,
         occlusion_query_set,
-    );
-    Box::into_raw(Box::new(pass))
-}
+        multiview_mask: None,
+    };
 
-#[no_mangle]
-pub unsafe extern "C" fn wgpu_render_pass_finish(
-    client: &Client,
-    device_id: id::DeviceId,
-    encoder_id: id::CommandEncoderId,
-    pass: *mut crate::command::RecordedRenderPass,
-) {
-    let pass = *Box::from_raw(pass);
-    let message = Message::ReplayRenderPass(device_id, encoder_id, pass);
+    let render_pass_encoder_id = client.identities.lock().render_pass_encoders.process();
+
+    let command = CommandEncoderCommand::BeginRenderPass {
+        desc,
+        render_pass_encoder_id,
+    };
+    let message = Message::CommandEncoder(device_id, encoder_id, command);
     client.queue_message(&message);
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn wgpu_render_pass_destroy(pass: *mut crate::command::RecordedRenderPass) {
-    let _ = Box::from_raw(pass);
+    render_pass_encoder_id
 }
 
 #[no_mangle]
@@ -1765,14 +1888,14 @@ pub unsafe extern "C" fn wgpu_client_create_render_pipeline(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn wgpu_command_encoder_copy_buffer_to_buffer(
+pub unsafe extern "C" fn wgpu_client_command_encoder_copy_buffer_to_buffer(
     client: &Client,
     device_id: id::DeviceId,
     command_encoder_id: id::CommandEncoderId,
-    src: id::BufferId,
-    src_offset: wgt::BufferAddress,
-    dst: id::BufferId,
-    dst_offset: wgt::BufferAddress,
+    source: id::BufferId,
+    source_offset: wgt::BufferAddress,
+    destination: id::BufferId,
+    destination_offset: wgt::BufferAddress,
     size: wgt::BufferAddress,
 ) {
     // In Javascript, `size === undefined` means "copy from src_offset to end of
@@ -1783,150 +1906,172 @@ pub unsafe extern "C" fn wgpu_command_encoder_copy_buffer_to_buffer(
     // CommandEncoder::CopyBufferToBuffer decrements it by four, which
     // will still fail for mis-alignment.)
     let size = (size != wgt::BufferAddress::MAX).then_some(size);
-    let action = CommandEncoderAction::CopyBufferToBuffer {
-        src,
-        src_offset,
-        dst,
-        dst_offset,
+    let command = CommandEncoderCommand::CopyBufferToBuffer {
+        source,
+        source_offset,
+        destination,
+        destination_offset,
         size,
     };
-    let message = Message::CommandEncoder(device_id, command_encoder_id, action);
+    let message = Message::CommandEncoder(device_id, command_encoder_id, command);
     client.queue_message(&message);
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn wgpu_command_encoder_copy_texture_to_buffer(
-    client: &Client,
-    device_id: id::DeviceId,
-    command_encoder_id: id::CommandEncoderId,
-    src: wgc::command::TexelCopyTextureInfo,
-    dst_buffer: wgc::id::BufferId,
-    dst_layout: &TexelCopyBufferLayout,
-    size: wgt::Extent3d,
-) {
-    let action = CommandEncoderAction::CopyTextureToBuffer {
-        src,
-        dst: wgc::command::TexelCopyBufferInfo {
-            buffer: dst_buffer,
-            layout: dst_layout.into_wgt(),
-        },
-        size,
-    };
-    let message = Message::CommandEncoder(device_id, command_encoder_id, action);
-    client.queue_message(&message);
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn wgpu_command_encoder_copy_buffer_to_texture(
+pub unsafe extern "C" fn wgpu_client_command_encoder_copy_buffer_to_texture(
     client: &Client,
     device_id: id::DeviceId,
     command_encoder_id: id::CommandEncoderId,
     src_buffer: wgc::id::BufferId,
     src_layout: &TexelCopyBufferLayout,
-    dst: wgc::command::TexelCopyTextureInfo,
-    size: wgt::Extent3d,
+    destination: wgc::command::TexelCopyTextureInfo,
+    copy_size: wgt::Extent3d,
 ) {
-    let action = CommandEncoderAction::CopyBufferToTexture {
-        src: wgc::command::TexelCopyBufferInfo {
+    let command = CommandEncoderCommand::CopyBufferToTexture {
+        source: wgc::command::TexelCopyBufferInfo {
             buffer: src_buffer,
             layout: src_layout.into_wgt(),
         },
-        dst,
-        size,
+        destination,
+        copy_size,
     };
-    let message = Message::CommandEncoder(device_id, command_encoder_id, action);
+    let message = Message::CommandEncoder(device_id, command_encoder_id, command);
     client.queue_message(&message);
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn wgpu_command_encoder_copy_texture_to_texture(
+pub unsafe extern "C" fn wgpu_client_command_encoder_copy_texture_to_buffer(
     client: &Client,
     device_id: id::DeviceId,
     command_encoder_id: id::CommandEncoderId,
-    src: wgc::command::TexelCopyTextureInfo,
-    dst: wgc::command::TexelCopyTextureInfo,
-    size: wgt::Extent3d,
+    source: wgc::command::TexelCopyTextureInfo,
+    dst_buffer: wgc::id::BufferId,
+    dst_layout: &TexelCopyBufferLayout,
+    copy_size: wgt::Extent3d,
 ) {
-    let action = CommandEncoderAction::CopyTextureToTexture { src, dst, size };
-    let message = Message::CommandEncoder(device_id, command_encoder_id, action);
+    let command = CommandEncoderCommand::CopyTextureToBuffer {
+        source,
+        destination: wgc::command::TexelCopyBufferInfo {
+            buffer: dst_buffer,
+            layout: dst_layout.into_wgt(),
+        },
+        copy_size,
+    };
+    let message = Message::CommandEncoder(device_id, command_encoder_id, command);
     client.queue_message(&message);
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn wgpu_command_encoder_clear_buffer(
+pub unsafe extern "C" fn wgpu_client_command_encoder_copy_texture_to_texture(
     client: &Client,
     device_id: id::DeviceId,
     command_encoder_id: id::CommandEncoderId,
-    dst: wgc::id::BufferId,
+    source: wgc::command::TexelCopyTextureInfo,
+    destination: wgc::command::TexelCopyTextureInfo,
+    copy_size: wgt::Extent3d,
+) {
+    let command = CommandEncoderCommand::CopyTextureToTexture {
+        source,
+        destination,
+        copy_size,
+    };
+    let message = Message::CommandEncoder(device_id, command_encoder_id, command);
+    client.queue_message(&message);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn wgpu_client_command_encoder_clear_buffer(
+    client: &Client,
+    device_id: id::DeviceId,
+    command_encoder_id: id::CommandEncoderId,
+    buffer: wgc::id::BufferId,
     offset: u64,
     size: Option<&u64>,
 ) {
-    let action = CommandEncoderAction::ClearBuffer {
-        dst,
+    let command = CommandEncoderCommand::ClearBuffer {
+        buffer,
         offset,
         size: size.cloned(),
     };
-    let message = Message::CommandEncoder(device_id, command_encoder_id, action);
+    let message = Message::CommandEncoder(device_id, command_encoder_id, command);
     client.queue_message(&message);
 }
 
 #[no_mangle]
-pub extern "C" fn wgpu_command_encoder_push_debug_group(
-    client: &Client,
-    device_id: id::DeviceId,
-    command_encoder_id: id::CommandEncoderId,
-    marker: &nsACString,
-) {
-    let string = marker.to_string();
-    let action = CommandEncoderAction::PushDebugGroup(string);
-    let message = Message::CommandEncoder(device_id, command_encoder_id, action);
-    client.queue_message(&message);
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn wgpu_command_encoder_pop_debug_group(
-    client: &Client,
-    device_id: id::DeviceId,
-    command_encoder_id: id::CommandEncoderId,
-) {
-    let action = CommandEncoderAction::PopDebugGroup;
-    let message = Message::CommandEncoder(device_id, command_encoder_id, action);
-    client.queue_message(&message);
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn wgpu_command_encoder_insert_debug_marker(
-    client: &Client,
-    device_id: id::DeviceId,
-    command_encoder_id: id::CommandEncoderId,
-    marker: &nsACString,
-) {
-    let string = marker.to_string();
-    let action = CommandEncoderAction::InsertDebugMarker(string);
-    let message = Message::CommandEncoder(device_id, command_encoder_id, action);
-    client.queue_message(&message);
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn wgpu_command_encoder_resolve_query_set(
+pub unsafe extern "C" fn wgpu_client_command_encoder_resolve_query_set(
     client: &Client,
     device_id: id::DeviceId,
     command_encoder_id: id::CommandEncoderId,
     query_set_id: id::QuerySetId,
-    start_query: u32,
+    first_query: u32,
     query_count: u32,
     destination: id::BufferId,
     destination_offset: wgt::BufferAddress,
 ) {
-    let action = CommandEncoderAction::ResolveQuerySet {
+    let command = CommandEncoderCommand::ResolveQuerySet {
         query_set: query_set_id,
-        start_query,
+        first_query,
         query_count,
         destination,
         destination_offset,
     };
-    let message = Message::CommandEncoder(device_id, command_encoder_id, action);
+    let message = Message::CommandEncoder(device_id, command_encoder_id, command);
     client.queue_message(&message);
+}
+
+#[no_mangle]
+pub extern "C" fn wgpu_client_command_encoder_push_debug_group(
+    client: &Client,
+    device_id: id::DeviceId,
+    command_encoder_id: id::CommandEncoderId,
+    marker: &nsACString,
+) {
+    let string = marker.to_string();
+    let command = CommandEncoderCommand::DebugCommand(DebugCommand::PushDebugGroup(string));
+    let message = Message::CommandEncoder(device_id, command_encoder_id, command);
+    client.queue_message(&message);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn wgpu_client_command_encoder_pop_debug_group(
+    client: &Client,
+    device_id: id::DeviceId,
+    command_encoder_id: id::CommandEncoderId,
+) {
+    let command = CommandEncoderCommand::DebugCommand(DebugCommand::PopDebugGroup);
+    let message = Message::CommandEncoder(device_id, command_encoder_id, command);
+    client.queue_message(&message);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn wgpu_client_command_encoder_insert_debug_marker(
+    client: &Client,
+    device_id: id::DeviceId,
+    command_encoder_id: id::CommandEncoderId,
+    marker: &nsACString,
+) {
+    let string = marker.to_string();
+    let command = CommandEncoderCommand::DebugCommand(DebugCommand::InsertDebugMarker(string));
+    let message = Message::CommandEncoder(device_id, command_encoder_id, command);
+    client.queue_message(&message);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn wgpu_client_command_encoder_finish(
+    client: &Client,
+    device_id: id::DeviceId,
+    command_encoder_id: id::CommandEncoderId,
+    desc: &wgt::CommandBufferDescriptor<Option<&nsACString>>,
+) -> id::CommandBufferId {
+    let command_buffer_id = client.identities.lock().command_buffers.process();
+    let label = wgpu_string(desc.label);
+    let command = CommandEncoderCommand::Finish {
+        desc: desc.map_label(|_| label),
+        command_buffer_id,
+    };
+    let message = Message::CommandEncoder(device_id, command_encoder_id, command);
+    client.queue_message(&message);
+    command_buffer_id
 }
 
 #[no_mangle]
@@ -1961,25 +2106,6 @@ pub unsafe extern "C" fn wgpu_report_validation_error(
     };
     let message = Message::Device(device_id, action);
     client.queue_message(&message);
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn wgpu_command_encoder_finish(
-    client: &Client,
-    device_id: id::DeviceId,
-    command_encoder_id: id::CommandEncoderId,
-    desc: &wgt::CommandBufferDescriptor<Option<&nsACString>>,
-) -> id::CommandBufferId {
-    let command_buffer_id = client.identities.lock().command_buffers.process();
-    let label = wgpu_string(desc.label);
-    let message = Message::CommandEncoderFinish(
-        device_id,
-        command_encoder_id,
-        command_buffer_id,
-        desc.map_label(|_| label),
-    );
-    client.queue_message(&message);
-    command_buffer_id
 }
 
 #[no_mangle]
@@ -2085,138 +2211,4 @@ pub extern "C" fn wgpu_client_use_shared_texture_in_swapChain(format: wgt::Textu
     };
 
     supported
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn wgpu_render_bundle_set_bind_group(
-    bundle: &mut RenderBundleEncoder,
-    index: u32,
-    bind_group_id: Option<id::BindGroupId>,
-    offsets: *const DynamicOffset,
-    offset_length: usize,
-) {
-    wgc::command::bundle_ffi::wgpu_render_bundle_set_bind_group(
-        bundle,
-        index,
-        bind_group_id,
-        offsets,
-        offset_length,
-    )
-}
-
-#[no_mangle]
-pub extern "C" fn wgpu_render_bundle_set_pipeline(
-    bundle: &mut RenderBundleEncoder,
-    pipeline_id: id::RenderPipelineId,
-) {
-    wgc::command::bundle_ffi::wgpu_render_bundle_set_pipeline(bundle, pipeline_id)
-}
-
-#[no_mangle]
-pub extern "C" fn wgpu_render_bundle_set_vertex_buffer(
-    bundle: &mut RenderBundleEncoder,
-    slot: u32,
-    buffer_id: Option<id::BufferId>,
-    offset: BufferAddress,
-    size: Option<&BufferSize>,
-) {
-    wgc::command::bundle_ffi::wgpu_render_bundle_set_vertex_buffer(
-        bundle,
-        slot,
-        buffer_id,
-        offset,
-        size.copied(),
-    )
-}
-
-#[no_mangle]
-pub extern "C" fn wgpu_render_bundle_set_index_buffer(
-    encoder: &mut RenderBundleEncoder,
-    buffer: id::BufferId,
-    index_format: IndexFormat,
-    offset: BufferAddress,
-    size: Option<&BufferSize>,
-) {
-    wgc::command::bundle_ffi::wgpu_render_bundle_set_index_buffer(
-        encoder,
-        buffer,
-        index_format,
-        offset,
-        size.copied(),
-    )
-}
-
-#[no_mangle]
-pub extern "C" fn wgpu_render_bundle_draw(
-    bundle: &mut RenderBundleEncoder,
-    vertex_count: u32,
-    instance_count: u32,
-    first_vertex: u32,
-    first_instance: u32,
-) {
-    wgc::command::bundle_ffi::wgpu_render_bundle_draw(
-        bundle,
-        vertex_count,
-        instance_count,
-        first_vertex,
-        first_instance,
-    )
-}
-
-#[no_mangle]
-pub extern "C" fn wgpu_render_bundle_draw_indexed(
-    bundle: &mut RenderBundleEncoder,
-    index_count: u32,
-    instance_count: u32,
-    first_index: u32,
-    base_vertex: i32,
-    first_instance: u32,
-) {
-    wgc::command::bundle_ffi::wgpu_render_bundle_draw_indexed(
-        bundle,
-        index_count,
-        instance_count,
-        first_index,
-        base_vertex,
-        first_instance,
-    )
-}
-
-#[no_mangle]
-pub extern "C" fn wgpu_render_bundle_draw_indirect(
-    bundle: &mut RenderBundleEncoder,
-    buffer_id: id::BufferId,
-    offset: BufferAddress,
-) {
-    wgc::command::bundle_ffi::wgpu_render_bundle_draw_indirect(bundle, buffer_id, offset)
-}
-
-#[no_mangle]
-pub extern "C" fn wgpu_render_bundle_draw_indexed_indirect(
-    bundle: &mut RenderBundleEncoder,
-    buffer_id: id::BufferId,
-    offset: BufferAddress,
-) {
-    wgc::command::bundle_ffi::wgpu_render_bundle_draw_indexed_indirect(bundle, buffer_id, offset)
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn wgpu_render_bundle_push_debug_group(
-    _bundle: &mut RenderBundleEncoder,
-    _label: RawString,
-) {
-    wgc::command::bundle_ffi::wgpu_render_bundle_push_debug_group(_bundle, _label)
-}
-
-#[no_mangle]
-pub extern "C" fn wgpu_render_bundle_pop_debug_group(_bundle: &mut RenderBundleEncoder) {
-    wgc::command::bundle_ffi::wgpu_render_bundle_pop_debug_group(_bundle)
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn wgpu_render_bundle_insert_debug_marker(
-    _bundle: &mut RenderBundleEncoder,
-    _label: RawString,
-) {
-    wgc::command::bundle_ffi::wgpu_render_bundle_insert_debug_marker(_bundle, _label)
 }

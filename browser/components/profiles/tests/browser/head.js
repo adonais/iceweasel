@@ -103,9 +103,9 @@ add_setup(async () => {
   registerCleanupFunction(async () => {
     await SpecialPowers.popPrefEnv();
     ProfilesDatastoreService.overrideDirectoryService(null);
+    await SelectableProfileService.uninit();
     await ProfilesDatastoreService.resetProfileService(null);
     await ProfilesDatastoreService.uninit();
-    await SelectableProfileService.uninit();
   });
 });
 

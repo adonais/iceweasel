@@ -253,6 +253,7 @@ rtc_library("media_engine") {
     "../api/video:video_codec_constants",
     "../api/video_codecs:scalability_mode",
     "../api/video_codecs:scalability_mode_helper",
+    "../api/video_codecs:video_codecs_api",
     "../call:call_interfaces",
     "../rtc_base:checks",
     "../rtc_base:safe_compare",
@@ -260,6 +261,7 @@ rtc_library("media_engine") {
     "../rtc_base:stringutils",
     "../rtc_base/system:file_wrapper",
     "//third_party/abseil-cpp/absl/algorithm:container",
+    "//third_party/abseil-cpp/absl/functional:any_invocable",
   ]
   if (build_with_mozilla) {
     sources -= [
@@ -366,6 +368,7 @@ rtc_source_set("media_channel") {
     "../rtc_base:network_route",
     "../rtc_base:socket",
     "../rtc_base:stringutils",
+    "../rtc_base/containers:flat_set",
     "../rtc_base/network:sent_packet",
     "../video/config:encoder_config",
     "//third_party/abseil-cpp/absl/container:flat_hash_map",
@@ -387,6 +390,7 @@ rtc_library("codec") {
   ]
   deps = [
     ":media_constants",
+    "../api:field_trials_view",
     "../api:payload_type",
     "../api:rtp_parameters",
     "../api/audio_codecs:audio_codecs_api",
@@ -697,6 +701,7 @@ rtc_library("rtc_audio_video") {
     "../video/config:encoder_config",
     "//third_party/abseil-cpp/absl/algorithm",
     "//third_party/abseil-cpp/absl/algorithm:container",
+    "//third_party/abseil-cpp/absl/base:nullability",
     "//third_party/abseil-cpp/absl/functional:any_invocable",
     "//third_party/abseil-cpp/absl/functional:bind_front",
     "//third_party/abseil-cpp/absl/strings",
@@ -861,6 +866,7 @@ if (rtc_include_tests) {
       "../api:frame_transformer_interface",
       "../api:make_ref_counted",
       "../api:rtc_error",
+      "../api:rtp_header_extension_id",
       "../api:rtp_headers",
       "../api:rtp_parameters",
       "../api:rtp_sender_interface",
@@ -922,6 +928,7 @@ if (rtc_include_tests) {
       "../rtc_base:stringutils",
       "../rtc_base:threading",
       "../rtc_base:timeutils",
+      "../rtc_base/containers:flat_set",
       "../rtc_base/network:sent_packet",
       "../rtc_base/synchronization:mutex",
       "../rtc_base/system:file_wrapper",
@@ -1014,6 +1021,7 @@ if (rtc_include_tests) {
         "../api:priority",
         "../api:ref_count",
         "../api:rtc_error",
+        "../api:rtp_header_extension_id",
         "../api:rtp_headers",
         "../api:rtp_parameters",
         "../api:rtp_transceiver_direction",

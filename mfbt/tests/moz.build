@@ -55,6 +55,7 @@ CppUnitTests([
     "TestSmallPointerArray",
     "TestSplayTree",
     "TestTextUtils",
+    "TestTiedFields",
     "TestTypedEnum",
     "TestUniquePtr",
     "TestVariant",

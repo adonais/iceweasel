@@ -2,11 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+@import url("chrome://browser/skin/tabbrowser/tab.tokens.css");
+
 #fxview-tab-row-secondary-button {
-  display: none;
+  visibility: hidden;
 
   :host(:hover) & {
-    display: inline;
+    visibility: visible;
   }
 }
 
@@ -113,4 +115,70 @@
   -moz-context-properties: fill;
   fill: var(--identity-icon-color);
   margin-inline-end: 8px;
+}
+
+:host([current]) {
+  @media -moz-pref("browser.nova.enabled") {
+    outline: 1px solid var(--tab-selected-outline-color);
+    outline-offset: -1px;
+
+    @media (not (prefers-contrast)) {
+      border: 1px solid transparent;
+      background:
+        var(--tab-border-color-accent) border-box border-area,
+        var(--tab-background-color-selected) padding-box;
+    }
+  }
+}
+
+:host([medium-view]) {
+  container-type: inline-size;
+}
+
+:host([medium-view]) .fxview-tab-row-main {
+  display: grid;
+  grid-template-columns: min-content 1fr;
+  align-items: center;
+  min-width: 0;
+}
+
+:host([medium-view]) .fxview-tab-row-title {
+  min-width: 0;
+}
+
+.sidebar-tab-row-domain,
+.fxview-tab-row-time {
+  display: none;
+  min-width: 0;
+  color: var(--text-color-deemphasized);
+  white-space: nowrap;
+}
+
+@container (min-width: 320px) {
+  :host([medium-view]) .fxview-tab-row-main {
+    grid-template-columns: min-content 3fr 2fr;
+  }
+
+  :host([medium-view]) .sidebar-tab-row-domain {
+    display: block;
+  }
+}
+
+@container (min-width: 400px) {
+  :host([medium-view]) .fxview-tab-row-main {
+    grid-template-columns: min-content 3fr 2fr 1fr;
+  }
+
+  :host([medium-view]) .fxview-tab-row-time {
+    display: block;
+  }
+}
+
+:host([medium-view]) #fxview-tab-row-secondary-button {
+  display: inline;
+  visibility: hidden;
+}
+
+:host([medium-view]:hover) #fxview-tab-row-secondary-button {
+  visibility: visible;
 }

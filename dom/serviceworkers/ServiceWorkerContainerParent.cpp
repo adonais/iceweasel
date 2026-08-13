@@ -6,9 +6,12 @@
 
 #include "ServiceWorkerContainerProxy.h"
 #include "mozilla/dom/ClientInfo.h"
+#include "mozilla/dom/ClientValidation.h"
+#include "mozilla/ipc/BackgroundParent.h"
 
 namespace mozilla::dom {
 
+using mozilla::ipc::BackgroundParent;
 using mozilla::ipc::IPCResult;
 
 void ServiceWorkerContainerParent::ActorDestroy(ActorDestroyReason aReason) {
@@ -26,6 +29,12 @@ IPCResult ServiceWorkerContainerParent::RecvRegister(
   if (!mProxy) {
     aResolver(CopyableErrorResult(NS_ERROR_DOM_INVALID_STATE_ERR));
     return IPC_OK();
+  }
+
+  if (!ClientIsValidPrincipalInfo(aClientInfo.principalInfo(),
+                                  BackgroundParent::GetRemoteType(Manager()))) {
+    return IPC_FAIL(this,
+                    "Register ClientInfo principal not valid for remote type");
   }
 
   mProxy
@@ -51,6 +60,12 @@ IPCResult ServiceWorkerContainerParent::RecvGetRegistration(
     return IPC_OK();
   }
 
+  if (!ClientIsValidPrincipalInfo(aClientInfo.principalInfo(),
+                                  BackgroundParent::GetRemoteType(Manager()))) {
+    return IPC_FAIL(
+        this, "GetRegistration ClientInfo principal not valid for remote type");
+  }
+
   mProxy->GetRegistration(ClientInfo(aClientInfo), aURL)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
@@ -69,6 +84,13 @@ IPCResult ServiceWorkerContainerParent::RecvGetRegistrations(
   if (!mProxy) {
     aResolver(CopyableErrorResult(NS_ERROR_DOM_INVALID_STATE_ERR));
     return IPC_OK();
+  }
+
+  if (!ClientIsValidPrincipalInfo(aClientInfo.principalInfo(),
+                                  BackgroundParent::GetRemoteType(Manager()))) {
+    return IPC_FAIL(
+        this,
+        "GetRegistrations ClientInfo principal not valid for remote type");
   }
 
   mProxy->GetRegistrations(ClientInfo(aClientInfo))
@@ -94,6 +116,12 @@ IPCResult ServiceWorkerContainerParent::RecvGetReady(
   if (!mProxy) {
     aResolver(CopyableErrorResult(NS_ERROR_DOM_INVALID_STATE_ERR));
     return IPC_OK();
+  }
+
+  if (!ClientIsValidPrincipalInfo(aClientInfo.principalInfo(),
+                                  BackgroundParent::GetRemoteType(Manager()))) {
+    return IPC_FAIL(this,
+                    "GetReady ClientInfo principal not valid for remote type");
   }
 
   mProxy->GetReady(ClientInfo(aClientInfo))

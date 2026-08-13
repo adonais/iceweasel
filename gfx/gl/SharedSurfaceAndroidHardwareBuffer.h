@@ -5,9 +5,9 @@
 #ifndef SHARED_SURFACE_ANDROID_HARDWARE_BUFFER_H_
 #define SHARED_SURFACE_ANDROID_HARDWARE_BUFFER_H_
 
-#include "mozilla/Mutex.h"
 #include "CompositorTypes.h"
 #include "SharedSurface.h"
+#include "mozilla/Mutex.h"
 
 namespace mozilla {
 

@@ -5,8 +5,8 @@
 #ifndef nsBinaryStream_h_
 #define nsBinaryStream_h_
 
-#include "nsCOMPtr.h"
 #include "nsAString.h"
+#include "nsCOMPtr.h"
 #include "nsIObjectInputStream.h"
 #include "nsIObjectOutputStream.h"
 #include "nsIStreamBufferAccess.h"

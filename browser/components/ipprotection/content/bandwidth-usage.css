@@ -15,12 +15,6 @@
   gap: var(--space-medium);
 }
 
-#bandwidth-header {
-  margin: 0;
-  font-weight: var(--font-weight-heading);
-  font-size: var(--font-size-heading-medium);
-}
-
 #usage-help-text {
   color: var(--text-color-deemphasized);
 }
@@ -53,6 +47,14 @@
   &[percent="90"] + #min-progress {
     --progress-color: var(--icon-color-critical);
   }
+}
+
+#progress-description {
+  margin-block-start: var(--space-small);
+}
+
+#progress-description [data-l10n-name="usage"] {
+  font-weight: var(--font-weight-bold);
 }
 
 #progress-container {

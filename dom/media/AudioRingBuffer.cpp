@@ -29,7 +29,7 @@ class RingBuffer final {
   explicit RingBuffer(AlignedByteBuffer&& aMemoryBuffer)
       : mStorage(ConvertToSpan(aMemoryBuffer)),
         mMemoryBuffer(std::move(aMemoryBuffer)) {
-    MOZ_ASSERT(std::is_trivial<T>::value);
+    MOZ_ASSERT(std::is_trivial_v<T>);
   }
 
   /**

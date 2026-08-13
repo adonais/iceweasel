@@ -41,7 +41,7 @@ async function queryPermissionInTab(browser, permName) {
 // IPC, which may arrive after SpecialPowers messages (different protocol).
 // Poll the Permissions API until the expected state is visible.
 async function waitForPermissionState(browser, permName, expectedState) {
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () =>
       queryPermissionInTab(browser, permName).then(s => s === expectedState),
     `Waiting for ${permName} to become "${expectedState}"`

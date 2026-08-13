@@ -21,7 +21,7 @@ async function showBookmarksSidebar() {
     await SidebarTestUtils.showPanel(window, "viewBookmarksSidebar");
   }
   const { contentDocument, contentWindow } = SidebarController.browser;
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => contentDocument.querySelector("sidebar-bookmarks"),
     "Wait for sidebar-bookmarks element"
   );

@@ -4,18 +4,19 @@
 
 browser.jar:
     content/browser/usercontext/usercontext.css (content/usercontext.css)
+    content/browser/usercontext/ContainerEditor.mjs (content/ContainerEditor.mjs)
 
-% resource usercontext-content %content/ contentaccessible=yes
-    content/briefcase.svg     (content/briefcase.svg)
-    content/cart.svg          (content/cart.svg)
-    content/circle.svg        (content/circle.svg)
-    content/dollar.svg        (content/dollar.svg)
-    content/fence.svg         (content/fence.svg)
-    content/fingerprint.svg   (content/fingerprint.svg)
-    content/gift.svg          (content/gift.svg)
-    content/vacation.svg      (content/vacation.svg)
-    content/food.svg          (content/food.svg)
-    content/fruit.svg         (content/fruit.svg)
-    content/pet.svg           (content/pet.svg)
-    content/tree.svg          (content/tree.svg)
-    content/chill.svg         (content/chill.svg)
+% resource usercontext-content %content/usercontext/ contentaccessible=yes
+    content/usercontext/briefcase.svg     (content/briefcase.svg)
+    content/usercontext/cart.svg          (content/cart.svg)
+    content/usercontext/circle.svg        (content/circle.svg)
+    content/usercontext/dollar.svg        (content/dollar.svg)
+    content/usercontext/fence.svg         (content/fence.svg)
+    content/usercontext/fingerprint.svg   (content/fingerprint.svg)
+    content/usercontext/gift.svg          (content/gift.svg)
+    content/usercontext/vacation.svg      (content/vacation.svg)
+    content/usercontext/food.svg          (content/food.svg)
+    content/usercontext/fruit.svg         (content/fruit.svg)
+    content/usercontext/pet.svg           (content/pet.svg)
+    content/usercontext/tree.svg          (content/tree.svg)
+    content/usercontext/chill.svg         (content/chill.svg)

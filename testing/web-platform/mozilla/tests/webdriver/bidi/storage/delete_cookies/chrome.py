@@ -5,15 +5,11 @@ from webdriver.bidi.modules.storage import BrowsingContextPartitionDescriptor
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.mark.allow_system_access
-async def test_chrome_browsing_context_not_supported(bidi_session):
+@pytest.mark.geckodriver(allow_system_access=True)
+async def test_chrome_browsing_context_not_supported(bidi_session, chrome_context):
     # Retrieve the chrome browsing context for the open browser window
-    parent_contexts = await bidi_session.browsing_context.get_tree(
-        max_depth=0, _extension_params={"moz:scope": "chrome"}
-    )
+    assert chrome_context["moz:scope"] == "chrome"
 
-    assert parent_contexts[0]["moz:scope"] == "chrome"
-
-    partition = BrowsingContextPartitionDescriptor(parent_contexts[0]["context"])
+    partition = BrowsingContextPartitionDescriptor(chrome_context["context"])
     with pytest.raises(error.UnsupportedOperationException):
         await bidi_session.storage.delete_cookies(partition=partition)

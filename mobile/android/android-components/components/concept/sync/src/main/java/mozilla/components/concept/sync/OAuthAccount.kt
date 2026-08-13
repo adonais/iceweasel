@@ -7,14 +7,6 @@ package mozilla.components.concept.sync
 import kotlinx.coroutines.Deferred
 
 /**
- * An object that represents a login flow initiated by [OAuthAccount].
- * @property state OAuth state parameter, identifying a specific authentication flow.
- * This string is randomly generated during [OAuthAccount.beginOAuthFlow] and [OAuthAccount.beginPairingFlow].
- * @property url Url which needs to be loaded to go through the authentication flow identified by [state].
- */
-data class AuthFlowUrl(val state: String, val url: String)
-
-/**
  * User data provided by the web content as a means of delivering the session token to the
  * application
  */
@@ -42,36 +34,6 @@ interface FxAEntryPoint {
  * Facilitates testing consumers of FirefoxAccount.
  */
 interface OAuthAccount : AutoCloseable {
-
-    /**
-     * Constructs a URL used to begin the OAuth flow for the requested scopes and keys.
-     *
-     * @param scopes List of OAuth scopes for which the client wants access
-     * @param entryPoint The UI entryPoint used to start this flow. An arbitrary
-     * string which is recorded in telemetry by the server to help analyze the
-     * most effective touchpoints
-     * @return [AuthFlowUrl] if available, `null` in case of a failure
-     */
-    suspend fun beginOAuthFlow(
-        scopes: Set<String>,
-        entryPoint: FxAEntryPoint,
-    ): AuthFlowUrl?
-
-    /**
-     * Constructs a URL used to begin the pairing flow for the requested scopes and pairingUrl.
-     *
-     * @param pairingUrl URL string for pairing
-     * @param scopes List of OAuth scopes for which the client wants access
-     * @param entryPoint The UI entryPoint used to start this flow. An arbitrary
-     * string which is recorded in telemetry by the server to help analyze the
-     * most effective touchpoints
-     * @return [AuthFlowUrl] if available, `null` in case of a failure
-     */
-    suspend fun beginPairingFlow(
-        pairingUrl: String,
-        scopes: Set<String>,
-        entryPoint: FxAEntryPoint,
-    ): AuthFlowUrl?
 
     /**
      * Returns current FxA Device ID for an authenticated account.
@@ -102,17 +64,6 @@ interface OAuthAccount : AutoCloseable {
      * @return Profile (optional, if successfully retrieved) representing the user's basic profile info
      */
     suspend fun getProfile(ignoreCache: Boolean = false): Profile?
-
-    /**
-     * Authenticates the current account using the [code] and [state] parameters obtained via the
-     * OAuth flow initiated by [beginOAuthFlow].
-     *
-     * Modifies the FirefoxAccount state.
-     * @param code OAuth code string
-     * @param state state token string
-     * @return Deferred boolean representing success or failure
-     */
-    suspend fun completeOAuthFlow(code: String, state: String): Boolean
 
     /**
      * Tries to fetch an access token for the given scope.

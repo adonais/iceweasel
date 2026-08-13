@@ -224,8 +224,7 @@ static const JSClass TestClass = {
 };
 
 BEGIN_TEST(testNewObject_elements) {
-  Rooted<NativeObject*> obj(
-      cx, NewBuiltinClassInstance(cx, &TestClass, GenericObject));
+  Rooted<NativeObject*> obj(cx, NewBuiltinClassInstance(cx, &TestClass));
   CHECK(obj);
   CHECK(!obj->isTenured());
   CHECK(obj->hasEmptyElements());

@@ -1518,9 +1518,6 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
   bool noteDeclaredPrivateName(Node nameNode, TaggedParserAtomIndex name,
                                PropertyType propType, FieldPlacement placement,
                                TokenPos pos);
-
- private:
-  inline bool asmJS(TokenPos directivePos, ListNodeType list);
 };
 
 template <typename Unit>
@@ -1654,8 +1651,6 @@ class MOZ_STACK_CLASS Parser<SyntaxParseHandler, Unit> final
 
   bool skipLazyInnerFunction(FunctionNodeType funNode, uint32_t toStringStart,
                              bool tryAnnexB);
-
-  bool asmJS(TokenPos directivePos, ListNodeType list);
 
   // Functions present only in Parser<SyntaxParseHandler, Unit>.
 };
@@ -1838,8 +1833,6 @@ class MOZ_STACK_CLASS Parser<FullParseHandler, Unit> final
   bool checkLocalExportName(TaggedParserAtomIndex ident, uint32_t offset) {
     return checkLabelOrIdentifierReference(ident, offset, YieldIsName);
   }
-
-  bool asmJS(TokenPos directivePos, ListNodeType list);
 };
 
 template <class Parser>

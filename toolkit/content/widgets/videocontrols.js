@@ -2861,6 +2861,7 @@ this.VideoControlsImplWidget = class {
 
   onchange() {
     this.Utils.updatePictureInPictureMessage();
+    this.Utils.updateVolumeControls();
     this.shadowRoot.firstChild.removeAttribute("flipped");
   }
 

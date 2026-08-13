@@ -465,6 +465,9 @@ class DrawTargetRecording final : public DrawTarget {
                   const DrawOptions& aOptions = DrawOptions(),
                   const StrokeOptions* aStrokeOptions = nullptr);
 
+  bool TryToReplaySurface(SourceSurface* aSurface, const Rect& aDest,
+                          const Rect& aSource) override;
+
   void MarkChanged();
 
   RefPtr<DrawEventRecorderPrivate> mRecorder;

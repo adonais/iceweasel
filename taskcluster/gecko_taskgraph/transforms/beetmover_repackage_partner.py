@@ -8,6 +8,7 @@ Transform the beetmover task into an actual task description.
 import logging
 from typing import Optional
 
+from mozilla_taskgraph.util.attributes import copy_attributes_from_dependent_job
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.dependencies import get_primary_dependency
 from taskgraph.util.schema import Schema
@@ -15,9 +16,6 @@ from taskgraph.util.taskcluster import get_artifact_prefix
 
 from gecko_taskgraph.transforms.beetmover import craft_release_properties
 from gecko_taskgraph.transforms.task import TaskDescriptionSchema
-from gecko_taskgraph.util.attributes import (
-    copy_attributes_from_dependent_job,
-)
 from gecko_taskgraph.util.partners import get_ftp_platform, get_partner_config_by_kind
 from gecko_taskgraph.util.scriptworker import (
     add_scope_prefix,

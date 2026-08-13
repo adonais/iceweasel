@@ -16,6 +16,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "chrome://remote/content/shared/messagehandler/MessageHandler.sys.mjs",
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
   EventPromise: "chrome://remote/content/shared/Sync.sys.mjs",
+  generateUUID: "chrome://remote/content/shared/UUID.sys.mjs",
   getTimeoutMultiplier: "chrome://remote/content/shared/AppInfo.sys.mjs",
   getWebDriverSessionById:
     "chrome://remote/content/shared/webdriver/Session.sys.mjs",
@@ -195,6 +196,8 @@ export const MozContextScope = {
   CONTENT: "content",
 };
 
+const NULL = Symbol("NULL");
+
 /**
  * Used as an argument for browsingContext._updateNavigableViewport command
  * to represent an object which holds viewport settings which should be applied.
@@ -214,6 +217,7 @@ class BrowsingContextModule extends RootBiDiModule {
   #contextListener;
   #navigationListener;
   #promptListener;
+  #screencastRecordings;
   #subscribedEvents;
   #waitForContextCreatedEvent;
 
@@ -265,6 +269,9 @@ class BrowsingContextModule extends RootBiDiModule {
     // until configurations are applied.
     this.#blockedCreateCommands = new WeakMap();
 
+    // Maps screencast ids to an object of recording settings.
+    this.#screencastRecordings = new Map();
+
     // Maps browsing contexts to a promise and resolver that is used to block the create method
     // until "browsingContext.contextCreated" event is submitted.
     this.#waitForContextCreatedEvent = new WeakMap();
@@ -296,6 +303,12 @@ class BrowsingContextModule extends RootBiDiModule {
     this.#promptListener.off("closed", this.#onPromptClosed);
     this.#promptListener.off("opened", this.#onPromptOpened);
     this.#promptListener.destroy();
+
+    for (const screencastRecording of this.#screencastRecordings.values()) {
+      // Don't await to avoid making destroy method asynchronous.
+      this.#stopScreencastRecording(screencastRecording);
+    }
+    this.#screencastRecordings = new Map();
 
     this.#subscribedEvents = null;
 
@@ -834,6 +847,9 @@ class BrowsingContextModule extends RootBiDiModule {
 
     return {
       context: lazy.NavigableManager.getIdForBrowser(browser),
+      userContext: lazy.UserContextManager.getIdByBrowsingContext(
+        browser.browsingContext
+      ),
     };
   }
 
@@ -1622,6 +1638,17 @@ class BrowsingContextModule extends RootBiDiModule {
 
     const context = this._getNavigable(contextId);
 
+    // Disallow refreshing privileged URLs
+    // unless system access is enabled.
+    if (
+      !lazy.RemoteAgent.allowSystemAccess &&
+      !lazy.isWebdriverSafeNavigationURL(context.currentURI, context)
+    ) {
+      throw new lazy.error.UnsupportedOperationError(
+        lazy.truncate`Reloading "${context.currentURI.spec}" is not allowed in this context`
+      );
+    }
+
     // webProgress will be stable even if the context navigates, retrieve it
     // immediately before doing any asynchronous call.
     const { webProgress } = context;
@@ -1829,6 +1856,280 @@ class BrowsingContextModule extends RootBiDiModule {
   }
 
   /**
+   * Used as an argument for the browsingContext.startScreencast command
+   * to configure the video track of the recording.
+   *
+   * @typedef MediaTrackConstraints
+   *
+   * @property {number=} frameRate
+   *     The target frame rate of the recording.
+   * @property {number=} height
+   *     The height of the recorded video in pixels.
+   * @property {number=} width
+   *     The width of the recorded video in pixels.
+   */
+
+  /**
+   * An object that holds the output of the "browsingContext.startScreencast" command
+   *
+   * @typedef StartScreencastResult
+   *
+   * @property {string} screencast
+   *     The id of the recording.
+   * @property {string} path
+   *     The absolute path of the file the recording
+   *     is being written to.
+   */
+
+  /**
+   * Start recording a screencast of the viewport of the provided
+   * top-level browsing context, saving the output to a file.
+   *
+   * @param {object=} options
+   * @param {string} options.context
+   *     Id of the top-level browsing context to record.
+   * @param {MediaTrackConstraints=} options.video
+   *     An object describing the desired video track.
+   * @param {boolean=} options.audio
+   *     Whether to also record the audio track. Defaults to `false`.
+   * @param {string=} options.mimeType
+   *     The MIME type of the output file. Defaults to `video/webm`.
+   *
+   * @returns {StartScreencastResult}
+   *     The result of the starting screencast recording.
+   *
+   * @throws {InvalidArgumentError}
+   *     Raised if an argument is of an invalid type or value.
+   * @throws {NoSuchFrameError}
+   *     If the browsing context cannot be found.
+   * @throws {UnknownError}
+   *     If the file for the recording couldn't be created.
+   * @throws {UnsupportedOperationError}
+   *     If the requested `mimeType` is not supported by the platform,
+   *     or if the audio track is requested.
+   */
+  async startScreencast(options = {}) {
+    const {
+      context: contextId,
+      mimeType = "video/webm",
+      video = NULL,
+      audio = false,
+    } = options;
+
+    lazy.assert.string(
+      contextId,
+      lazy.pprint`Expected "context" to be a string, got ${contextId}`
+    );
+
+    const navigable = this._getNavigable(contextId);
+
+    lazy.assert.topLevel(
+      navigable,
+      lazy.pprint`Browsing context with id ${contextId} is not top-level`
+    );
+
+    lazy.assert.string(
+      mimeType,
+      lazy.pprint`Expected "mimeType" to be a string, got ${mimeType}`
+    );
+
+    if (mimeType === "" || !MediaRecorder.isTypeSupported(mimeType)) {
+      throw new lazy.error.UnsupportedOperationError(
+        `"mimeType" with value: ${mimeType} is not supported`
+      );
+    }
+
+    if (video !== NULL) {
+      lazy.assert.object(
+        video,
+        lazy.pprint`Expected "video" to be an object, got ${video}`
+      );
+
+      const { frameRate = NULL, height = NULL, width = NULL } = video;
+
+      if (frameRate !== NULL) {
+        lazy.assert.positiveInteger(
+          frameRate,
+          lazy.pprint`Expected "frameRate" to be a positive integer, got ${frameRate}`
+        );
+      }
+
+      if (height !== NULL) {
+        lazy.assert.positiveInteger(
+          height,
+          lazy.pprint`Expected "height" to be a positive integer, got ${height}`
+        );
+      }
+
+      if (width !== NULL) {
+        lazy.assert.positiveInteger(
+          width,
+          lazy.pprint`Expected "width" to be a positive integer, got ${width}`
+        );
+      }
+    }
+
+    lazy.assert.boolean(
+      audio,
+      lazy.pprint`Expected "audio" to be a boolean, got ${audio}`
+    );
+
+    if (audio) {
+      // Bug 2047554. Audio track support requires audio support in getDisplayMedia.
+      throw new lazy.error.UnsupportedOperationError(
+        "The audio track is not supported"
+      );
+    }
+
+    // Get the chrome window for privileged capture and MediaRecorder.
+    const chromeWindow =
+      lazy.windowManager.getChromeWindowForBrowsingContext(navigable);
+
+    const stream = await chromeWindow.navigator.mediaDevices.getUserMedia({
+      audio,
+      video: {
+        deviceId: { exact: String(navigable.browserId) },
+        mediaSource: "browser",
+        ...(video === NULL
+          ? {}
+          : {
+              frameRate: video.frameRate,
+              height: video.height,
+              width: video.width,
+            }),
+      },
+    });
+
+    const downloadsDir = Services.dirsvc.get("DfltDwnld", Ci.nsIFile).path;
+    const screencast = lazy.generateUUID();
+
+    // Extract video file extension from mimeType.
+    // We only have to take care of the mime types that are supported by MediaRecorder.
+    let fileExtension = mimeType.match(/\/([\w-]+)/)[1];
+    if (fileExtension.endsWith("matroska")) {
+      fileExtension = "mkv";
+    } else if (fileExtension === "ogg") {
+      // Use more common `.ogv` extension.
+      fileExtension = "ogv";
+    }
+
+    const path = PathUtils.join(
+      downloadsDir,
+      `screencast-${screencast}.${fileExtension}`
+    );
+
+    const mediaRecorder = new chromeWindow.MediaRecorder(stream, {
+      mimeType,
+    });
+
+    const recording = {
+      mediaRecorder,
+      path,
+      state: "recording",
+      stream,
+      writeChain: Promise.resolve(),
+      writeError: null,
+    };
+    this.#screencastRecordings.set(screencast, recording);
+
+    try {
+      // Create an empty file.
+      await IOUtils.write(path, new Uint8Array([]));
+    } catch (e) {
+      recording.writeError = e.message;
+
+      await this.#stopScreencastRecording(recording);
+
+      throw new lazy.error.UnknownError(
+        `Failed to create screencast recording file "${path}": ${e.message}`
+      );
+    }
+
+    mediaRecorder.ondataavailable = async event => {
+      if (event.data.size) {
+        recording.writeChain = recording.writeChain.then(async () => {
+          const buffer = await event.data.arrayBuffer();
+          try {
+            await IOUtils.write(path, new Uint8Array(buffer), {
+              mode: "append",
+            });
+          } catch (e) {
+            recording.writeError = e.message;
+            await this.#stopScreencastRecording(recording);
+          }
+        });
+      }
+    };
+
+    try {
+      // Use timeslice of 10s to get better quality and bitrate.
+      mediaRecorder.start(10000);
+    } catch (e) {
+      recording.writeError = e.message;
+    }
+
+    return { path, screencast };
+  }
+
+  /**
+   * An object that holds the output of the "browsingContext.stopScreencast" command.
+   *
+   * @typedef StopScreencastResult
+   *
+   * @property {string} path
+   *     The absolute path of the file the recording
+   *     is being written to.
+   * @property {string=} error
+   *     Optionally, an error message if the error occurred
+   *     during recording or saving the data to the file.
+   */
+
+  /**
+   * Stop an in-progress screencast recording started with
+   * "browsingContext.startScreencast".
+   *
+   * @param {object=} options
+   * @param {string} options.screencast
+   *     The id of the screencast, as returned by
+   *     browsingContext.startScreencast.
+   *
+   * @returns {StopScreencastResult}
+   *     The result of the stopping screencast recording.
+   *
+   * @throws {InvalidArgumentError}
+   *     Raised if an argument is of an invalid type or value.
+   * @throws {NoSuchScreencastError}
+   *     If the screencast cannot be found.
+   */
+  async stopScreencast(options = {}) {
+    const { screencast } = options;
+
+    lazy.assert.string(
+      screencast,
+      lazy.pprint`Expected "screencast" to be a string, got ${screencast}`
+    );
+
+    if (!this.#screencastRecordings.has(screencast)) {
+      throw new lazy.error.NoSuchScreencastError(
+        `Screencast with id ${screencast} not found`
+      );
+    }
+
+    const screencastRecording = this.#screencastRecordings.get(screencast);
+    const { path } = screencastRecording;
+
+    await this.#stopScreencastRecording(screencastRecording);
+
+    this.#screencastRecordings.delete(screencast);
+
+    const body = { path };
+    if (screencastRecording.writeError !== null) {
+      body.error = screencastRecording.writeError;
+    }
+    return body;
+  }
+
+  /**
    * Traverses the history of a given context by a given delta.
    *
    * @param {object=} options
@@ -1874,6 +2175,18 @@ class BrowsingContextModule extends RootBiDiModule {
       throw new lazy.error.NoSuchHistoryEntryError(
         `History entry with delta ${delta} not found`
       );
+    }
+
+    if (!lazy.RemoteAgent.allowSystemAccess) {
+      const targetEntry = sessionHistory.getEntryAtIndex(targetIndex);
+
+      // Disallow traversing to privileged URLs
+      // unless system access is enabled.
+      if (!lazy.isWebdriverSafeNavigationURL(targetEntry.URI, context)) {
+        throw new lazy.error.UnsupportedOperationError(
+          lazy.truncate`Navigation to "${targetEntry.URI.spec}" is not allowed in this context`
+        );
+      }
     }
 
     context.goToIndex(targetIndex);
@@ -2195,6 +2508,7 @@ class BrowsingContextModule extends RootBiDiModule {
       const {
         canceled,
         contextId,
+        downloadId,
         filepath,
         navigableId,
         navigationId,
@@ -2204,12 +2518,14 @@ class BrowsingContextModule extends RootBiDiModule {
 
       const browsingContextInfo = {
         context: navigableId,
+        download: downloadId,
         navigation: navigationId,
         status: canceled
           ? DownloadEndStatus.canceled
           : DownloadEndStatus.complete,
         timestamp,
         url,
+        userContext: lazy.UserContextManager.getIdByNavigableId(navigableId),
       };
 
       if (!canceled) {
@@ -2230,6 +2546,7 @@ class BrowsingContextModule extends RootBiDiModule {
     if (this.#subscribedEvents.has("browsingContext.downloadWillBegin")) {
       const {
         contextId,
+        downloadId,
         navigationId,
         navigableId,
         suggestedFilename,
@@ -2239,10 +2556,12 @@ class BrowsingContextModule extends RootBiDiModule {
 
       const browsingContextInfo = {
         context: navigableId,
+        download: downloadId,
         navigation: navigationId,
         suggestedFilename,
         timestamp,
         url,
+        userContext: lazy.UserContextManager.getIdByNavigableId(navigableId),
       };
 
       this.#emitContextEventForBrowsingContext(
@@ -2262,6 +2581,7 @@ class BrowsingContextModule extends RootBiDiModule {
         navigation: navigationId,
         timestamp: Date.now(),
         url,
+        userContext: lazy.UserContextManager.getIdByNavigableId(navigableId),
       };
 
       this.#emitContextEventForBrowsingContext(
@@ -2280,6 +2600,7 @@ class BrowsingContextModule extends RootBiDiModule {
         context: navigableId,
         timestamp: Date.now(),
         url,
+        userContext: lazy.UserContextManager.getIdByNavigableId(navigableId),
       };
 
       this.#emitContextEventForBrowsingContext(
@@ -2312,6 +2633,7 @@ class BrowsingContextModule extends RootBiDiModule {
         context: navigableId,
         accepted: detail.accepted,
         type: detail.promptType,
+        userContext: lazy.UserContextManager.getIdByNavigableId(navigableId),
         userText: detail.userText,
       };
 
@@ -2361,6 +2683,7 @@ class BrowsingContextModule extends RootBiDiModule {
         handler: handlerConfig.handler,
         message,
         type,
+        userContext: lazy.UserContextManager.getIdByNavigableId(navigableId),
       };
 
       if (defaultValue !== null) {
@@ -2384,6 +2707,7 @@ class BrowsingContextModule extends RootBiDiModule {
         navigation: navigationId,
         timestamp: Date.now(),
         url,
+        userContext: lazy.UserContextManager.getIdByNavigableId(navigableId),
       };
 
       this.#emitContextEventForBrowsingContext(
@@ -2403,6 +2727,7 @@ class BrowsingContextModule extends RootBiDiModule {
         navigation: navigationId,
         timestamp: Date.now(),
         url,
+        userContext: lazy.UserContextManager.getIdByNavigableId(navigableId),
       };
 
       this.#emitContextEventForBrowsingContext(
@@ -2422,6 +2747,7 @@ class BrowsingContextModule extends RootBiDiModule {
         navigation: navigationId,
         timestamp: Date.now(),
         url,
+        userContext: lazy.UserContextManager.getIdByNavigableId(navigableId),
       };
 
       this.#emitContextEventForBrowsingContext(
@@ -2479,6 +2805,41 @@ class BrowsingContextModule extends RootBiDiModule {
     if (!hasPromptEvent) {
       this.#promptListener.stopListening();
     }
+  }
+
+  /**
+   * Stop a screencast recording.
+   *
+   * @see https://www.w3.org/TR/webdriver-bidi/#stop-a-screencast-recording
+   */
+  async #stopScreencastRecording(recording) {
+    const { mediaRecorder, state, stream } = recording;
+
+    if (state != "recording") {
+      return;
+    }
+
+    recording.state = "stopping";
+    if (mediaRecorder.state !== "inactive") {
+      mediaRecorder.stop();
+      await new Promise(r => (mediaRecorder.onstop = r));
+    }
+
+    // mediaRecorder.stop() queues a final "dataavailable" task before the
+    // "stop" event, so by the time onstop resolves the ondataavailable
+    // handler has already extended screencastRecording.writeChain to
+    // include the final chunk. Wait for that latest chain to ensure the
+    // closing cluster is flushed to disk before returning.
+    await recording.writeChain;
+
+    mediaRecorder.ondataavailable = null;
+    mediaRecorder.onstop = null;
+
+    for (const track of stream.getTracks()) {
+      track.stop();
+    }
+
+    recording.state = "stopped";
   }
 
   #subscribeEvent(event) {

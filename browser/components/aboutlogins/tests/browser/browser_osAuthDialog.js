@@ -167,7 +167,7 @@ add_task(async function test_os_auth_and_prp() {
   // This is a weird hack. If we enable it after opening the tab we are not
   // prompted for opening it.
   // I should probably come up with a better way to test for OS auth.
-  LoginTestUtils.primaryPassword.enable();
+  await LoginTestUtils.primaryPassword.enable();
   info("PrP has been enabled");
 
   // Now we have a PrP and OS auth enabled so revealing a password should
@@ -239,7 +239,7 @@ add_task(async function test_os_auth_and_prp() {
 
   // cleanup
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
-  LoginTestUtils.primaryPassword.disable();
+  await LoginTestUtils.primaryPassword.disable();
 });
 
 // When OS auth is disabled and a primary password exists but is already
@@ -255,7 +255,7 @@ add_task(
     });
 
     // Enable PrP after opening the tab so it doesn't prompt on load.
-    LoginTestUtils.primaryPassword.enable();
+    await LoginTestUtils.primaryPassword.enable();
     info("PrP has been enabled");
 
     // First reveal: token is locked so PrP dialog must appear.
@@ -298,7 +298,7 @@ add_task(
     });
 
     BrowserTestUtils.removeTab(gBrowser.selectedTab);
-    LoginTestUtils.primaryPassword.disable();
+    await LoginTestUtils.primaryPassword.disable();
     LoginHelper.setOSAuthEnabled(osAuthWasEnabled);
   }
 );

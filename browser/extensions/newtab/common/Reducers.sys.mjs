@@ -4,11 +4,22 @@
 
 import { actionTypes as at } from "resource://newtab/common/Actions.mjs";
 import { Dedupe } from "resource:///modules/Dedupe.sys.mjs";
+// Namespace import: a named import of an export missing on older train-hop
+// platforms is a link error; a namespace member is just undefined.
+import * as PlatformTopSitesConstants from "resource:///modules/topsites/constants.mjs";
 
 export {
   TOP_SITES_DEFAULT_ROWS,
   TOP_SITES_MAX_SITES_PER_ROW,
 } from "resource:///modules/topsites/constants.mjs";
+
+// @backward-compat { version 154 }
+// TOP_SITES_MAX_ROWS lands in platform constants.mjs in 154; until that reaches
+// Release it's absent on train-hop, so fall back to 4. At 154-Release: drop the
+// namespace import above, delete this shim, and add TOP_SITES_MAX_ROWS to the
+// re-export block above.
+export const TOP_SITES_MAX_ROWS =
+  PlatformTopSitesConstants.TOP_SITES_MAX_ROWS ?? 4;
 
 const dedupe = new Dedupe(site => site && site.url);
 
@@ -25,6 +36,10 @@ export const INITIAL_STATE = {
       Wallpaper: false,
     },
     customizeMenuVisible: false,
+    // When the customize panel is opened via a CTA that should deep-link into a
+    // specific wallpaper category (e.g. "firefox"), this holds that category id
+    // so WallpaperCategories can open it. Cleared when the panel closes.
+    customizePanelWallpaperCategory: null,
   },
   Ads: {
     initialized: false,
@@ -131,6 +146,17 @@ export const INITIAL_STATE = {
     // For can be a queue in the future, but for now is one item
     toastQueue: [],
   },
+  // Snapshot of the platform NotificationDB (persisted web notifications).
+  // Distinct from `Notifications` above, which is in-newtab toast UI state.
+  // Normalized: `notifications` is the canonical id-keyed table; `byOrigin`
+  // is an id-only index. Fed by WebNotificationsFeed.
+  WebNotifications: {
+    initialized: false,
+    lastUpdated: null,
+    notifications: {},
+    byOrigin: {},
+    error: null,
+  },
   InferredPersonalization: {
     initialized: false,
     lastUpdated: null,
@@ -175,6 +201,25 @@ export const INITIAL_STATE = {
     suggestedLocations: [],
   },
   // Widgets
+  Stocks: {
+    tickers: [],
+    lastUpdated: null,
+    error: false,
+  },
+  PictureOfTheDay: {
+    initialized: false,
+    lastUpdated: null,
+    imageUrl: "",
+    thumbnailUrl: "",
+    title: "",
+    description: "",
+    publishedDate: "",
+    sourceUrl: "",
+    author: "",
+    licenseLabel: "",
+    licenseUrl: "",
+    error: null,
+  },
   ListsWidget: {
     // value pointing to last selectled list
     selected: "taskList",
@@ -234,6 +279,24 @@ export const INITIAL_STATE = {
     // just-ended match's global_event_id to the ms timestamp it left /live;
     // `celebrated` lists ids that have already triggered a celebration.
     celebrations: { endedAt: {}, celebrated: [] },
+    // Session-only state for infinite-scroll load-more on the Upcoming and
+    // Results expanded "View all" lists. Each direction tracks its own
+    // in-flight flag, end-of-data flag, and the most recently requested
+    // date. Fetched windows are NOT persisted — they re-fetch on next
+    // session start.
+    loadMore: {
+      upcoming: { loading: false, exhausted: false, lastFetchedDate: null },
+      results: { loading: false, exhausted: false, lastFetchedDate: null },
+    },
+  },
+  PrivacyWidget: {
+    initialized: false,
+    // Count of trackers blocked today, fetched by PrivacyFeed.
+    trackersToday: 0,
+    // Count of distinct sites visited today (Places-based proxy for
+    // "sites where we blocked something"; see PrivacyFeed).
+    sitesToday: 0,
+    lastUpdated: null,
   },
 };
 
@@ -277,10 +340,12 @@ function App(prevState = INITIAL_STATE.App, action) {
     case at.SHOW_PERSONALIZE:
       return Object.assign({}, prevState, {
         customizeMenuVisible: true,
+        customizePanelWallpaperCategory: action.data?.wallpaperCategory ?? null,
       });
     case at.HIDE_PERSONALIZE:
       return Object.assign({}, prevState, {
         customizeMenuVisible: false,
+        customizePanelWallpaperCategory: null,
       });
     default:
       return prevState;
@@ -441,6 +506,10 @@ function Prefs(prevState = INITIAL_STATE.Prefs, action) {
       newValues = Object.assign({}, prevState.values);
       newValues[action.data.name] = action.data.value;
       return Object.assign({}, prevState, { values: newValues });
+    case at.MULTIPLE_PREFS_CHANGED:
+      return Object.assign({}, prevState, {
+        values: Object.assign({}, prevState.values, action.data.values),
+      });
     default:
       return prevState;
   }
@@ -1074,6 +1143,27 @@ function Notifications(prevState = INITIAL_STATE.Notifications, action) {
   }
 }
 
+function WebNotifications(prevState = INITIAL_STATE.WebNotifications, action) {
+  switch (action.type) {
+    case at.WEB_NOTIFICATIONS_UPDATED:
+      return {
+        ...prevState,
+        initialized: true,
+        lastUpdated: action.data.lastUpdated,
+        notifications: action.data.notifications,
+        byOrigin: action.data.byOrigin,
+        error: null,
+      };
+    case at.WEB_NOTIFICATIONS_ERROR:
+      return {
+        ...prevState,
+        error: action.data,
+      };
+    default:
+      return prevState;
+  }
+}
+
 function Weather(prevState = INITIAL_STATE.Weather, action) {
   switch (action.type) {
     case at.WEATHER_UPDATE:
@@ -1093,6 +1183,44 @@ function Weather(prevState = INITIAL_STATE.Weather, action) {
       return { ...prevState, suggestedLocations: action.data };
     case at.WEATHER_LOCATION_DATA_UPDATE:
       return { ...prevState, locationData: action.data };
+    default:
+      return prevState;
+  }
+}
+
+const PictureOfTheDay = (prevState = INITIAL_STATE.PictureOfTheDay, action) => {
+  switch (action.type) {
+    case at.PICTURE_OF_THE_DAY_UPDATE:
+      return {
+        ...prevState,
+        imageUrl: action.data.imageUrl ?? "",
+        thumbnailUrl: action.data.thumbnailUrl ?? "",
+        title: action.data.title ?? "",
+        description: action.data.description ?? "",
+        publishedDate: action.data.publishedDate ?? "",
+        sourceUrl: action.data.sourceUrl ?? "",
+        author: action.data.author ?? "",
+        licenseLabel: action.data.licenseLabel ?? "",
+        licenseUrl: action.data.licenseUrl ?? "",
+        lastUpdated: action.data.lastUpdated ?? null,
+        error: action.data.error ?? null,
+        initialized: true,
+      };
+    default:
+      return prevState;
+  }
+};
+
+function PrivacyWidget(prevState = INITIAL_STATE.PrivacyWidget, action) {
+  switch (action.type) {
+    case at.WIDGETS_PRIVACY_UPDATE:
+      return {
+        ...prevState,
+        trackersToday: action.data.trackersToday,
+        sitesToday: action.data.sitesToday,
+        lastUpdated: action.data.lastUpdated,
+        initialized: true,
+      };
     default:
       return prevState;
   }
@@ -1199,6 +1327,20 @@ function TimerWidget(prevState = INITIAL_STATE.TimerWidget, action) {
   }
 }
 
+function Stocks(prevState = INITIAL_STATE.Stocks, action) {
+  switch (action.type) {
+    case at.WIDGETS_STOCKS_UPDATE:
+      return {
+        ...prevState,
+        tickers: action.data.tickers,
+        lastUpdated: action.data.lastUpdated,
+        error: action.data.error ?? false,
+      };
+    default:
+      return prevState;
+  }
+}
+
 function ListsWidget(prevState = INITIAL_STATE.ListsWidget, action) {
   switch (action.type) {
     case at.WIDGETS_LISTS_SET:
@@ -1224,8 +1366,6 @@ function ExternalComponents(
 
 function SportsWidget(prevState = INITIAL_STATE.SportsWidget, action) {
   switch (action.type) {
-    case at.WIDGETS_SPORTS_WIDGET_SET:
-      return { ...prevState, data: action.data, initialized: true };
     case at.WIDGETS_SPORTS_SET_WIDGET_STATE:
       return { ...prevState, widgetState: action.data };
     case at.WIDGETS_SPORTS_SET_SELECTED_TEAMS:
@@ -1237,11 +1377,19 @@ function SportsWidget(prevState = INITIAL_STATE.SportsWidget, action) {
         ...prevState,
         followedOnly: { ...prevState.followedOnly, ...action.data },
       };
-    case at.WIDGETS_SPORTS_WATCH_LIVE_REQUEST:
+    case at.WIDGETS_SPORTS_WATCH_LIVE_REQUEST: {
+      // Preserve any previously-fetched payload so a re-request (e.g. the modal
+      // refreshing links on open) doesn't drop the data the "Watch live" entry
+      // point is gated on. Only show the loading state when nothing is cached.
+      const existingWatchLiveData = prevState.watchLive?.data ?? null;
       return {
         ...prevState,
-        watchLive: { loaded: false, data: null },
+        watchLive: {
+          loaded: !!existingWatchLiveData,
+          data: existingWatchLiveData,
+        },
       };
+    }
     case at.WIDGETS_SPORTS_WATCH_LIVE_SET:
       return {
         ...prevState,
@@ -1261,6 +1409,67 @@ function SportsWidget(prevState = INITIAL_STATE.SportsWidget, action) {
       return { ...prevState, liveIndex: action.data };
     case at.WIDGETS_SPORTS_SET_CELEBRATIONS:
       return { ...prevState, celebrations: action.data };
+    case at.WIDGETS_SPORTS_SET_LOAD_MORE: {
+      const {
+        direction,
+        matches: newMatches,
+        ...loadMoreUpdates
+      } = action.data || {};
+      if (direction !== "upcoming" && direction !== "results") {
+        return prevState;
+      }
+      // Upcoming appends to data.matches.next; results appends to
+      // data.matches.previous. The key used to skip duplicates is the same
+      // in both cases.
+      const targetField = direction === "upcoming" ? "next" : "previous";
+      const nextState = {
+        ...prevState,
+        loadMore: {
+          ...prevState.loadMore,
+          [direction]: {
+            ...prevState.loadMore[direction],
+            ...loadMoreUpdates,
+          },
+        },
+      };
+      if (Array.isArray(newMatches) && newMatches.length && prevState.data) {
+        const existing = prevState.data.matches?.[targetField] ?? [];
+        // Build a stable key for each match so we can skip ones already in
+        // the list. Prefer global_event_id; fall back to a composite that
+        // mirrors the React row key used in the list view.
+        const matchKey = match =>
+          match?.global_event_id ??
+          `${match?.home_team?.key}-${match?.away_team?.key}-${match?.date}`;
+        const existingKeys = new Set(existing.map(matchKey));
+        const additions = newMatches.filter(
+          m => !existingKeys.has(matchKey(m))
+        );
+        if (additions.length) {
+          nextState.data = {
+            ...prevState.data,
+            matches: {
+              ...(prevState.data.matches || {
+                previous: [],
+                current: [],
+                next: [],
+              }),
+              [targetField]: [...existing, ...additions],
+            },
+          };
+        }
+      }
+      return nextState;
+    }
+    case at.WIDGETS_SPORTS_WIDGET_SET:
+      // A wholesale-replace of `data` (initial load / post-match resync) also
+      // resets the session-only load-more state so we don't keep stale
+      // lastFetchedDate / exhausted flags from a previous fetch round.
+      return {
+        ...prevState,
+        data: action.data,
+        initialized: true,
+        loadMore: { ...INITIAL_STATE.SportsWidget.loadMore },
+      };
     default:
       return prevState;
   }
@@ -1275,6 +1484,7 @@ export const reducers = {
   Sections,
   Messages,
   Notifications,
+  WebNotifications,
   Pocket,
   InferredPersonalization,
   DiscoveryStream,
@@ -1284,6 +1494,9 @@ export const reducers = {
   Wallpapers,
   SectionsLayout,
   Weather,
+  Stocks,
   ExternalComponents,
   SportsWidget,
+  PrivacyWidget,
+  PictureOfTheDay,
 };

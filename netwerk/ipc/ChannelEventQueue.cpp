@@ -5,10 +5,10 @@
 #include "ChannelEventQueue.h"
 
 #include "mozilla/Assertions.h"
-#include "nsIChannel.h"
-#include "mozilla/dom/Document.h"
-#include "nsThreadUtils.h"
 #include "mozilla/FlowMarkers.h"
+#include "mozilla/dom/Document.h"
+#include "nsIChannel.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla {
 namespace net {

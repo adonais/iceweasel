@@ -3,7 +3,7 @@
   "bugs": {
     "1902507": {
       "issue": "broken-meetings",
-      "matches": ["https://riverside.fm/*", "https://riverside.com/*"]
+      "matches": ["https://*.riverside.fm/*", "https://*.riverside.com/*"]
     }
   },
   "interventions": [

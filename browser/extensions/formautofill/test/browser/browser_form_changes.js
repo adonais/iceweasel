@@ -69,7 +69,7 @@ async function checkMenuEntries(
   const expectedLength = expectedValues.length + extraRows;
 
   let actualValues;
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     actualValues = browser.autoCompletePopup.view.results;
     return actualValues.length == expectedLength;
   });

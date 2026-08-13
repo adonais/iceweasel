@@ -63,6 +63,9 @@ support-files = [
   "file_favicon_empty.html",
 ]
 
+["browser_favicon_force_reload.js"]
+support-files = ["file_force_reload_page.html"]
+
 ["browser_favicon_load.js"]
 https_first_disabled = true
 support-files = [
@@ -105,13 +108,6 @@ skip-if = [
 ["browser_invalid_href_fallback.js"]
 https_first_disabled = true
 support-files = ["file_invalid_href.html"]
-
-["browser_favicon_pdf.js"]
-# Bug 2015285: PDF.js now declares an explicit chrome:// favicon, so no
-# /favicon.ico request is made to the PDF's origin and this test no longer
-# observes one. Disabled until the test is updated for the new behavior.
-skip-if = ["true"]
-support-files = ["blank.pdf"]
 
 ["browser_missing_favicon.js"]
 support-files = ["blank.html"]

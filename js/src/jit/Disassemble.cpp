@@ -127,9 +127,7 @@ void Disassemble(uint8_t* code, size_t length, InstrCallback callback) {
     buffer[0] = '\0';
     uint8_t* next_instr = instr + d.InstructionDecode(buffer, instr);
 
-    JS::UniqueChars formatted =
-        JS_smprintf("0x%p  %08x  %s", instr, *reinterpret_cast<int32_t*>(instr),
-                    buffer.start());
+    JS::UniqueChars formatted = JS_smprintf("0x%p  %s", instr, buffer.start());
     callback(formatted.get());
 
     instr = next_instr;

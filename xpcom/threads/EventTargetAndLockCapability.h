@@ -6,8 +6,8 @@
 #define mozilla_EventTargetAndLockCapability_h
 
 #include "MainThreadUtils.h"
-#include "mozilla/ThreadSafety.h"
 #include "mozilla/EventTargetCapability.h"
+#include "mozilla/ThreadSafety.h"
 
 // This header contains helper types for combining a Lock and a thread
 // capability allow using both independently, as well as combined together.

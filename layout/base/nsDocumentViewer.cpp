@@ -24,6 +24,7 @@
 #include "nsFrameSelection.h"
 #include "nsGenericHTMLElement.h"
 #include "nsIContent.h"
+#include "nsIContentInlines.h"
 #include "nsIDocumentViewer.h"
 #include "nsIDocumentViewerPrint.h"
 #include "nsIFrame.h"
@@ -1215,7 +1216,8 @@ nsDocumentViewer::DispatchBeforeUnload() {
   if (window->AreDialogsEnabled() && mDocument &&
       !(mDocument->GetSandboxFlags() & SANDBOXED_MODALS) &&
       (!StaticPrefs::dom_require_user_interaction_for_beforeunload() ||
-       mDocument->ChromeRulesEnabled() || mDocument->UserHasInteracted()) &&
+       mDocument->ChromeRulesEnabled() ||
+       mDocument->HasBeenUserGestureActivated()) &&
       (event->WidgetEventPtr()->DefaultPrevented() || !text.IsEmpty())) {
     return eCanceledByBeforeUnload;
   }

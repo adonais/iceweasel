@@ -2,22 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-buildscript {
-    repositories {
-        gradle.configureMavenRepositories(delegate)
-    }
-    dependencies {
-        classpath libs.kotlin.serialization
-    }
-}
-
 plugins {
+    id 'com.android.library'
     alias(libs.plugins.dependency.analysis)
+    alias(libs.plugins.kotlin.serialization)
 }
-
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
-apply plugin: 'kotlinx-serialization'
 
 android {
     namespace = 'mozilla.components.support.remotesettings'
@@ -37,9 +26,12 @@ dependencies {
     testImplementation project(':components:support-test')
 
     testImplementation ComponentsDependencies.mozilla_remote_settings
+    testImplementation ComponentsDependencies.mozilla_appservices_full_megazord_libsForTests
+    testImplementation ComponentsDependencies.mozilla_appservices_init_rust_components
     testImplementation libs.androidx.test.core
     testImplementation libs.androidx.test.junit
     testImplementation libs.androidx.work.testing
+    testImplementation libs.kotlin.test
     testImplementation libs.kotlinx.coroutines.test
     testImplementation libs.mockito
     testImplementation libs.robolectric

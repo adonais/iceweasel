@@ -635,6 +635,7 @@ export default [
     "  ├ ariaValueNow: null",
     "  ├ ariaValueText: null",
     "  ├ assignedSlot: null",
+    "  ▶︎  attributeStyleMap: StylePropertyMap { size: 0 }",
     "  ▶︎  attributes: NamedNodeMap(4) [ class=\"test-class-a test-class-b\", id=\"my-element\", aria-collapsed=\"false\", … ]",
     "  ├ autocapitalize: \"\"",
     "  ├ autocorrect: true",

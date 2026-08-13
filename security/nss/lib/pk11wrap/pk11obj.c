@@ -1371,7 +1371,7 @@ PK11_UnwrapPrivKey(PK11SlotInfo *slot, PK11SymKey *wrappingKey,
         return NULL;
     }
     SECITEM_FreeItem(param_free, PR_TRUE);
-    privKey = pk11_MakePrivKey(slot, nullKey, PR_FALSE, privKeyID, wincx);
+    privKey = pk11_MakePrivKey(slot, nullKey, !perm /*isOwner*/, privKeyID, wincx);
     if (!privKey) {
         goto loser;
     }

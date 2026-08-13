@@ -5,11 +5,11 @@
 #ifndef nsPersistentProperties_h_
 #define nsPersistentProperties_h_
 
-#include "nsIPersistentProperties2.h"
-#include "nsTHashMap.h"
-#include "nsString.h"
-#include "nsCOMPtr.h"
 #include "mozilla/ArenaAllocator.h"
+#include "nsCOMPtr.h"
+#include "nsIPersistentProperties2.h"
+#include "nsString.h"
+#include "nsTHashMap.h"
 
 class nsIUnicharInputStream;
 

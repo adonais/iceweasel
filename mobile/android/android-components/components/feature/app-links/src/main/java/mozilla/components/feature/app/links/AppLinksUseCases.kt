@@ -18,6 +18,7 @@ import androidx.core.net.toUri
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.android.content.pm.isPackageInstalled
 import mozilla.components.support.ktx.android.net.isHttpOrHttps
+import mozilla.components.support.ktx.kotlin.trimmed
 import mozilla.components.support.utils.Browsers
 import mozilla.components.support.utils.BrowsersCache
 import mozilla.components.support.utils.ext.packageManagerCompatHelper
@@ -70,11 +71,17 @@ class AppLinksUseCases(
         }
     }
 
+    @Suppress("TooGenericExceptionCaught")
     private fun findDefaultActivity(intent: Intent): ResolveInfo? {
-        return context.packageManagerCompatHelper.resolveActivityCompat(
-            intent,
-            PackageManager.MATCH_DEFAULT_ONLY,
-        )
+        return try {
+            context.packageManagerCompatHelper.resolveActivityCompat(
+                intent,
+                PackageManager.MATCH_DEFAULT_ONLY,
+            )
+        } catch (e: RuntimeException) {
+            Logger("AppLinksUseCases").error("failed to resolve activity", e)
+            null
+        }
     }
 
     /**
@@ -93,6 +100,8 @@ class AppLinksUseCases(
     ) {
         @Suppress("CyclomaticComplexMethod")
         operator fun invoke(url: String): AppLinkRedirect {
+            // Absurdly long URLs put unneeded pressure on the system and can even lead to crashes.
+            val url = url.trimmed()
             val urlHash = (url + includeHttpAppLinks + includeHttpAppLinks).hashCode()
             val currentTimeStamp = SystemClock.elapsedRealtime()
             // since redirectCache is mutable, get the latest

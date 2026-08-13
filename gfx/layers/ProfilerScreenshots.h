@@ -10,10 +10,9 @@
 #include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/gfx/Point.h"
 #include "nsCOMPtr.h"
 #include "nsTArray.h"
-
-#include "mozilla/gfx/Point.h"
 
 class nsIThread;
 

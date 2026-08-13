@@ -5,9 +5,9 @@
 #include "mozilla/widget/NativeMenuSupport.h"
 
 #include "MainThreadUtils.h"
+#include "NativeMenuMac.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_widget.h"
-#include "NativeMenuMac.h"
 #include "nsCocoaWindow.h"
 #include "nsMenuBarX.h"
 

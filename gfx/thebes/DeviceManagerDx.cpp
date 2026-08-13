@@ -3,23 +3,24 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "DeviceManagerDx.h"
+
 #include "D3D11Checks.h"
-#include "gfxConfig.h"
 #include "GfxDriverInfo.h"
+#include "gfxConfig.h"
 #include "gfxWindowsPlatform.h"
 #include "mozilla/D3DMessageUtils.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_layers.h"
-#include "mozilla/glean/GfxMetrics.h"
 #include "mozilla/gfx/GPUParent.h"
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/gfx/GraphicsMessages.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/gfxVars.h"
+#include "mozilla/glean/GfxMetrics.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/DeviceAttachmentsD3D11.h"
-#include "mozilla/Preferences.h"
 #include "nsPrintfCString.h"
 #include "nsString.h"
 

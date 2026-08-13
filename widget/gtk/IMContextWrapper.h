@@ -8,17 +8,17 @@
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
 
-#include "nsString.h"
-#include "nsCOMPtr.h"
-#include "nsTArray.h"
-#include "nsIWidget.h"
 #include "mozilla/ContentData.h"
 #include "mozilla/EventForwards.h"
+#include "mozilla/GUniquePtr.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/TextEventDispatcherListener.h"
 #include "mozilla/WritingModes.h"
-#include "mozilla/GUniquePtr.h"
 #include "mozilla/widget/IMEData.h"
+#include "nsCOMPtr.h"
+#include "nsIWidget.h"
+#include "nsString.h"
+#include "nsTArray.h"
 
 class nsWindow;
 

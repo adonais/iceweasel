@@ -18,6 +18,8 @@
 #include "mozilla/dom/CustomElementRegistryBinding.h"
 #include "mozilla/dom/CustomEvent.h"
 #include "mozilla/dom/DocGroup.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/DocumentOrShadowRoot.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/HTMLElement.h"
@@ -739,6 +741,11 @@ void CustomElementRegistry::RemoveScopedRegistry(nsINode& aNode) {
   }
 }
 
+/* static */
+bool CustomElementRegistry::IsInScopedRegistryMap(nsINode& aNode) {
+  return gScopedRegistryMap && gScopedRegistryMap->Contains(&aNode);
+}
+
 namespace {
 
 class CandidateFinder {
@@ -1344,6 +1351,7 @@ void CustomElementRegistry::Initialize(nsINode& aRoot, ErrorResult& aRv) {
   if (aRoot.IsDocument()) {
     Document* doc = aRoot.AsDocument();
     if (!doc->GetCustomElementRegistry()) {
+      doc->SetHasScopedCustomElementRegistry(true);
       CustomElementRegistry::SetScopedRegistry(*doc, *this);
     }
   } else if (ShadowRoot* shadowRoot = ShadowRoot::FromNode(aRoot)) {

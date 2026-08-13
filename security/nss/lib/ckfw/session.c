@@ -1446,20 +1446,27 @@ nssCKFWSession_CopyObject(
             return (NSSCKFWObject *)NULL;
         }
 
-        newLength = n;
-        for (i = 0; i < ulAttributeCount; i++) {
-            for (j = 0; j < n; j++) {
+        /* Sizing loop must mirror the population loop below; otherwise
+         * duplicate template entries can desync the count and cause a heap
+         * overflow. Both loops iterate per existing attribute and pick the
+         * first matching template entry. */
+        newLength = 0;
+        for (j = 0; j < n; j++) {
+            for (i = 0; i < ulAttributeCount; i++) {
                 if (oldTypes[j] == pTemplate[i].type) {
                     if ((CK_VOID_PTR)NULL ==
                         pTemplate[i].pValue) {
                         /* Removing the attribute */
-                        newLength--;
+                        ;
+                    } else {
+                        /* Replacing the attribute */
+                        newLength++;
                     }
                     break;
                 }
             }
-            if (j == n) {
-                /* Not found */
+            if (i == ulAttributeCount) {
+                /* Not found in template - copying from old object */
                 newLength++;
             }
         }

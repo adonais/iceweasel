@@ -68,7 +68,7 @@ mozilla::detail::ConditionVariableImpl::ConditionVariableImpl() {
   int r3 = pthread_condattr_destroy(&attr);
   MOZ_RELEASE_ASSERT(!r3);
 #else
-  int r = pthread_cond_init(&mCond, NULL);
+  int r = pthread_cond_init(&mCond, nullptr);
   MOZ_RELEASE_ASSERT(!r);
 #endif
 }

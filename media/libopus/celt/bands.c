@@ -1672,7 +1672,7 @@ void quant_all_bands(int encode, const CELTMode *m, int start, int end,
 #ifdef ENABLE_QEXT
    ctx.ext_ec = ext_ec;
    ctx.ext_total_bits = ext_total_bits;
-   ctx.extra_bands = end == NB_QEXT_BANDS || end == 2;
+   ctx.extra_bands = (cap == NULL);
    if (ctx.extra_bands || ext_total_bits!=0) theta_rdo = 0;
    ALLOC(ext_bytes_save, theta_rdo ? QEXT_PACKET_SIZE_CAP : ALLOC_NONE, unsigned char);
 #endif
@@ -1748,9 +1748,10 @@ void quant_all_bands(int encode, const CELTMode *m, int start, int end,
       ctx.tf_change = tf_change;
       if (i>=m->effEBands)
       {
+         celt_assert(eBands[i+1]-eBands[i] <= eBands[m->nbEBands-1]-eBands[start]);
          X=norm;
          if (Y_!=NULL)
-            Y = norm;
+            Y = norm2;
          lowband_scratch = NULL;
       }
       if (last && !theta_rdo)

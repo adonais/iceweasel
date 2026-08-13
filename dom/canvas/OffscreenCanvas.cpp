@@ -505,6 +505,7 @@ already_AddRefed<Promise> OffscreenCanvas::ConvertToBlob(
 
   // Only image/jpeg and image/webp support the quality parameter.
   if (aOptions.mQuality.WasPassed() &&
+      (aOptions.mQuality.Value() >= 0.0 && aOptions.mQuality.Value() <= 1.0) &&
       (type.EqualsLiteral("image/jpeg") || type.EqualsLiteral("image/webp"))) {
     encodeOptions.AppendLiteral("quality=");
     encodeOptions.AppendInt(NS_lround(aOptions.mQuality.Value() * 100.0));

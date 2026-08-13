@@ -15,6 +15,7 @@
 #include "mozilla/Logging.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/StaticMutex.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ONNXBinding.h"
@@ -37,6 +38,8 @@ namespace mozilla::dom {
 // valid until the shutdown of the inference process.
 static OrtEnv* sEnv = nullptr;
 static OrtApi* sAPI = nullptr;
+
+static StaticMutex sOrtAPIMutex;
 
 // RAII wrapper over OrtStatus.
 // Takes ownership of a externally allocated OrtStatus* passed at construction.
@@ -166,6 +169,11 @@ OrtSessionOptions* ToOrtSessionOption(
 }  // namespace mozilla::dom
 
 OrtApi* GetOrtAPI() {
+  StaticMutexAutoLock lock(sOrtAPIMutex);
+  if (sAPI) {
+    return sAPI;
+  }
+
 #ifdef XP_WIN
   PathString path = GetLibraryFilePathname(LXUL_DLL, (PRFuncPtr)&GetOrtAPI);
 #else
@@ -224,6 +232,7 @@ OrtApi* GetOrtAPI() {
     return nullptr;
   }
 
+  sAPI = ortAPI;
   return ortAPI;
 }
 
@@ -233,6 +242,10 @@ bool InferenceSession::InInferenceProcess(JSContext*, JSObject*) {
   }
   return ContentChild::GetSingleton()->GetRemoteType().Equals(
       INFERENCE_REMOTE_TYPE);
+}
+
+bool InferenceSession::IsAvailable(const GlobalObject&) {
+  return GetOrtAPI() != nullptr;
 }
 
 nsCString InferenceSessionSessionOptionsToString(
@@ -310,8 +323,7 @@ void InferenceSession::Init(const RefPtr<Promise>& aPromise,
        aUriOrBuffer.IsUTF8String() ? "string" : "buffer");
 
   if (!sEnv) {
-    sAPI = GetOrtAPI();
-    if (!sAPI) {
+    if (!GetOrtAPI()) {
       LOGD("Couldn't get ahold of ORT API");
       // Use a distinguishable error so JS callers can recognize that the
       // native runtime is unavailable on this machine and fall back to the

@@ -10,7 +10,6 @@
 #include "ContentChild.h"
 #include "GMPServiceChild.h"
 #include "GeckoProfiler.h"
-#include "Geolocation.h"
 #include "HandlerServiceChild.h"
 #include "ScrollingMetrics.h"
 #include "imgLoader.h"
@@ -23,6 +22,7 @@
 #include "mozilla/ClipboardReadRequestChild.h"
 #include "mozilla/Components.h"
 #include "mozilla/FOGIPC.h"
+#include "mozilla/GeolocationService.h"
 #include "mozilla/HangDetails.h"
 #include "mozilla/LoadInfo.h"
 #include "mozilla/Logging.h"
@@ -96,6 +96,7 @@
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/gfxVars.h"
+#include "mozilla/glean/FOGTransportChild.h"
 #include "mozilla/hal_sandbox/PHalChild.h"
 #include "mozilla/image/FetchDecodedImage.h"
 #include "mozilla/image/RemoteImageProtocolHandler.h"
@@ -1256,6 +1257,42 @@ bool ContentChild::IsAlive() const { return mIsAlive; }
 
 bool ContentChild::IsShuttingDown() const { return mShuttingDown; }
 
+// NOTE: This is atomic only for reading. Modifying this flag is only possible
+// using MaybeBecomeUntrusted on the main thread.
+static std::atomic<bool> sContentChildIsUntrusted;
+
+/* static */
+bool ContentChild::IsUntrusted() {
+  return sContentChildIsUntrusted.load(std::memory_order_relaxed);
+}
+
+/* static */
+void ContentChild::MaybeBecomeUntrusted() {
+  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
+  if (!XRE_IsContentProcess() || IsUntrusted()) {
+    return;
+  }
+
+  ContentChild* cc = ContentChild::GetSingleton();
+  MOZ_DIAGNOSTIC_ASSERT(cc->GetRemoteType() != PREALLOC_REMOTE_TYPE,
+                        "Prealloc process cannot become untrusted");
+
+  // Never mark the privilegedabout process as untrusted.
+  if (cc->GetRemoteType() == PRIVILEGEDABOUT_REMOTE_TYPE) {
+    return;
+  }
+
+  if (nsCOMPtr<nsIObserverService> obs =
+          mozilla::services::GetObserverService()) {
+    obs->NotifyObservers(nullptr, kBecameUntrustedTopic.get(), nullptr);
+  }
+
+  // Flip the flag & notify last, as the process should be considered trusted
+  // while observing kBecomeUntrustedTopic.
+  sContentChildIsUntrusted.store(true, std::memory_order_relaxed);
+  cc->SendBecomeUntrusted();
+}
+
 void ContentChild::GetProcessName(nsACString& aName) const {
   aName = mProcessName;
 }
@@ -1423,6 +1460,9 @@ mozilla::ipc::IPCResult ContentChild::RecvRequestMemoryReport(
 mozilla::ipc::IPCResult ContentChild::RecvDecodeImage(
     NotNull<nsIURI*> aURI, const ImageIntSize& aSize,
     const ColorScheme& aColorScheme, DecodeImageResolver&& aResolver) {
+  // We're about to decode a potentially untrusted image.
+  MaybeBecomeUntrusted();
+
   auto size = aSize.ToUnknownSize();
   // TODO(Bug 1999930): Investigate using  a content-principal for
   // moz-remote-image: requests
@@ -2396,8 +2436,7 @@ mozilla::ipc::IPCResult ContentChild::RecvForceGlobalReflow(
 
 mozilla::ipc::IPCResult ContentChild::RecvGeolocationUpdate(
     nsIDOMGeoPosition* aPosition) {
-  RefPtr<nsGeolocationService> gs =
-      nsGeolocationService::GetGeolocationService();
+  RefPtr<GeolocationService> gs = GeolocationService::GetGeolocationService();
   if (!gs) {
     return IPC_OK();
   }
@@ -2407,8 +2446,7 @@ mozilla::ipc::IPCResult ContentChild::RecvGeolocationUpdate(
 
 mozilla::ipc::IPCResult ContentChild::RecvGeolocationError(
     const uint16_t& errorCode) {
-  RefPtr<nsGeolocationService> gs =
-      nsGeolocationService::GetGeolocationService();
+  RefPtr<GeolocationService> gs = GeolocationService::GetGeolocationService();
   if (!gs) {
     return IPC_OK();
   }
@@ -3626,6 +3664,18 @@ mozilla::ipc::IPCResult ContentChild::RecvUpdateMediaControlAction(
   return IPC_OK();
 }
 
+mozilla::ipc::IPCResult ContentChild::RecvUpdateMediaSessionInterrupt(
+    const MaybeDiscarded<BrowsingContext>& aContext,
+    const AudioFocusInterruptAction& aAction) {
+  if (NS_WARN_IF(aContext.IsNullOrDiscarded())) {
+    return IPC_OK();
+  }
+
+  ContentMediaControlKeyHandler::HandleAudioFocusInterrupt(aContext.get(),
+                                                           aAction);
+  return IPC_OK();
+}
+
 mozilla::ipc::IPCResult ContentChild::RecvOnAllowAccessFor(
     const MaybeDiscarded<BrowsingContext>& aContext,
     const nsCString& aTrackingOrigin, uint32_t aCookieBehavior,
@@ -4730,6 +4780,17 @@ NS_IMETHODIMP ContentChild::GetCanSend(bool* aCanSend) {
 ContentChild* ContentChild::AsContentChild() { return this; }
 
 JSActorManager* ContentChild::AsJSActorManager() { return this; }
+
+IPCResult ContentChild::RecvCreateFOGTransport(
+    Endpoint<PFOGTransportChild>&& aChildEndpoint) {
+  if (glean::FOGTransportChild::GetSingleton()) {
+    return IPC_FAIL(this, "FOGTransportChild already created");
+  }
+
+  glean::FOGTransportChild::Create(std::move(aChildEndpoint));
+
+  return IPC_OK();
+}
 
 IPCResult ContentChild::RecvFlushFOGData(FlushFOGDataResolver&& aResolver) {
   glean::FlushFOGData(std::move(aResolver));

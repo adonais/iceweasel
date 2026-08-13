@@ -10,9 +10,9 @@
 // operations wouldn't be a bad thing.
 
 #ifdef XP_UNIX
-#  include <unistd.h>
 #  include <sys/types.h>
 #  include <sys/wait.h>
+#  include <unistd.h>
 #endif
 
 // We can test that certain operations cause expected aborts by forking

@@ -4,10 +4,10 @@
 
 #include "SiteIntegrityService.h"
 
+#include "PublicKeyPinningService.h"
 #include "mozilla/Logging.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIDataStorage.h"
-#include "PublicKeyPinningService.h"
 #include "nsIURI.h"
 #include "nsNetUtil.h"
 #include "prtime.h"

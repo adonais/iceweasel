@@ -7,7 +7,7 @@ evaluationDependsOn(':annotations')
 
 // Whether to include compiled artifacts: `lib/**/*.so` and `assets/omni.ja`.
 // Multi-locale packaging wants to include compiled artifacts but *not* rebuild
-// them: see also `rootProject.{machStagePackage,geckoBinariesOnlyIf}`.
+// them: see also the `rootProject.machStagePackage` task and `MachExec.geckoBinariesOnlyIf`.
 def hasCompileArtifacts() {
     return project.mozconfig.substs.COMPILE_ENVIRONMENT // Full builds.
         || project.mozconfig.substs.MOZ_ARTIFACT_BUILDS // Artifact builds.

@@ -1,4 +1,4 @@
-// |jit-test| skip-if: !isAsmJSCompilationAvailable() || helperThreadCount() === 0
+// |jit-test| skip-if: helperThreadCount() === 0
 
 const maxSize = Math.pow(2, 29) - 1;
 

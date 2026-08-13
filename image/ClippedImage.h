@@ -5,13 +5,13 @@
 #ifndef mozilla_image_ClippedImage_h
 #define mozilla_image_ClippedImage_h
 
+#include <utility>
+
 #include "ImageWrapper.h"
-#include "mozilla/gfx/2D.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
-
-#include <utility>
+#include "mozilla/gfx/2D.h"
 
 namespace mozilla {
 namespace image {

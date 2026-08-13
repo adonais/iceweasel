@@ -163,18 +163,18 @@ def all_tests(create_tests):
             },
         ),
         (
-            "fig/grape/src/TestInstrumentationA.java",
+            "fig/grape/test_MochitestA.html",
             {
-                "flavor": "instrumentation",
-                "manifest": "fig/grape/instrumentation.toml",
+                "flavor": "mochitest",
+                "manifest": "fig/grape/mochitest.toml",
                 "subsuite": "background",
             },
         ),
         (
-            "fig/huckleberry/src/TestInstrumentationB.java",
+            "fig/huckleberry/test_MochitestB.html",
             {
-                "flavor": "instrumentation",
-                "manifest": "fig/huckleberry/instrumentation.toml",
+                "flavor": "mochitest",
+                "manifest": "fig/huckleberry/mochitest.toml",
                 "subsuite": "browser",
             },
         ),
@@ -477,11 +477,11 @@ def test_subsuites(resolver):
 
     tests = list(resolver.resolve_tests(paths=["fig"], subsuite="browser"))
     assert len(tests) == 1
-    assert tests[0]["name"] == "src/TestInstrumentationB.java"
+    assert tests[0]["name"] == "test_MochitestB.html"
 
     tests = list(resolver.resolve_tests(paths=["fig"], subsuite="background"))
     assert len(tests) == 1
-    assert tests[0]["name"] == "src/TestInstrumentationA.java"
+    assert tests[0]["name"] == "test_MochitestA.html"
 
     # Resolve tests *without* a subsuite.
     tests = list(resolver.resolve_tests(flavor="browser-chrome", subsuite="undefined"))
@@ -590,14 +590,10 @@ def test_task_regexes():
         "test-linux64/opt-geckoview-reftest",
         "test-linux64/debug-reftest-e10s-1",
         "test-linux64/debug-reftest-e10s-11",
-        "test-linux64/opt-robocop",
-        "test-linux64/opt-robocop-1",
-        "test-linux64/opt-robocop-e10s",
-        "test-linux64/opt-robocop-e10s-1",
-        "test-linux64/opt-robocop-e10s-11",
         "test-linux64/opt-web-platform-tests-e10s-1",
         "test-linux64/opt-web-platform-tests-reftest-e10s-1",
         "test-linux64/opt-web-platform-tests-wdspec-e10s-1",
+        "test-linux64/opt-web-platform-tests-aam-e10s-1",
         "test-linux64/opt-web-platform-tests-1",
         "test-linux64/opt-web-platform-test-e10s-1",
         "test-linux64/opt-xpcshell",
@@ -636,12 +632,6 @@ def test_task_regexes():
             "test-linux64/opt-geckoview-reftest",
             "test-linux64/debug-reftest-e10s-1",
         ],
-        "robocop": [
-            "test-linux64/opt-robocop",
-            "test-linux64/opt-robocop-1",
-            "test-linux64/opt-robocop-e10s",
-            "test-linux64/opt-robocop-e10s-1",
-        ],
         "web-platform-tests": [
             "test-linux64/opt-web-platform-tests-e10s-1",
             "test-linux64/opt-web-platform-tests-1",
@@ -651,6 +641,9 @@ def test_task_regexes():
         ],
         "web-platform-tests-wdspec": [
             "test-linux64/opt-web-platform-tests-wdspec-e10s-1",
+        ],
+        "web-platform-tests-aam": [
+            "test-linux64/opt-web-platform-tests-aam-e10s-1",
         ],
         "xpcshell": [
             "test-linux64/opt-xpcshell",

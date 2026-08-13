@@ -15,6 +15,9 @@ const RESPONSE_HEADER_KEY_VALUE_DELIMETER = ": ";
 const RESPONSE_HEADER_DELIMETER = "\r\n";
 const RESPONSE_HEADER_METADATA_ELEMENT = "original-response-headers";
 
+// Dedicated cache entry id extension to namespace our entries.
+const CACHE_ID_EXTENSION = "moz-cached-ohttp";
+
 /**
  * Parent process JSActor for handling cache lookups for moz-cachged-ohttp
  * protocol. This actor handles cache operations that require parent process
@@ -181,19 +184,25 @@ export class MozCachedOHTTPParent extends JSProcessActorParent {
    *   Promise that resolves to cache entry or null if not available.
    */
   async #openCacheEntry(uri, openFlags) {
+    // Only https resource URLs may be cached; the child-side channel enforces
+    // the same restriction, and the child is not trusted to bypass it.
+    if (!uri.schemeIs("https")) {
+      throw new Error("Only https resource URLs may be cached.");
+    }
+
     const lci = Services.loadContextInfo.anonymous;
     const storage = Services.cache2.diskCacheStorage(lci);
 
     // For read-only access, check existence first
     if (
       openFlags === Ci.nsICacheStorage.OPEN_READONLY &&
-      !storage.exists(uri, "")
+      !storage.exists(uri, CACHE_ID_EXTENSION)
     ) {
       throw new Error("Cache entry does not exist.");
     }
 
     return new Promise((resolve, reject) => {
-      storage.asyncOpenURI(uri, "", openFlags, {
+      storage.asyncOpenURI(uri, CACHE_ID_EXTENSION, openFlags, {
         onCacheEntryCheck: () => Ci.nsICacheEntryOpenCallback.ENTRY_WANTED,
         onCacheEntryAvailable: (entry, _isNew, status) => {
           if (Components.isSuccessCode(status)) {

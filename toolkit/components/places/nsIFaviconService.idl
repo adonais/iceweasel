@@ -138,6 +138,18 @@ interface nsIFaviconService : nsISupports
                             in unsigned short aPreferredWidth);
 
   /**
+   * Removes all favicon associations for the given page URI. Typically called
+   * when force-reloading a page so that stale icons are cleared before new
+   * ones are loaded.
+   *
+   * @param aPageURI
+   *        URI of the page whose favicon associations should be removed.
+   * @return Promise resolved when the operation completes.
+   */
+  [implicit_jscontext, must_use]
+  Promise expireFaviconsForPage(in nsIURI aPageURI);
+
+  /**
    * Try to copy cached favicons from a page to another one.
    *
    * @param aFromPageURI

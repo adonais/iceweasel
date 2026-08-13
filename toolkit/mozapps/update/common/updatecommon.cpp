@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "updatedefines.h"
 #if defined(XP_WIN)
 #  include <windows.h>
 #  include <winioctl.h>  // for FSCTL_GET_REPARSE_POINT
@@ -9,6 +10,10 @@
 #  ifndef RRF_SUBKEY_WOW6464KEY
 #    define RRF_SUBKEY_WOW6464KEY 0x00010000
 #  endif
+#endif
+
+#if defined(XP_MACOSX)
+#  include <os/log.h>
 #endif
 
 #include <stdio.h>
@@ -63,7 +68,10 @@ void UpdateLog::Init(NS_tchar* logFilePath) {
   if (dstFilePathLen > 0 && dstFilePathLen < MAXPATHLEN - 1) {
     NS_tstrncpy(mDstFilePath, logFilePath, MAXPATHLEN);
 #if defined(XP_WIN) || defined(XP_MACOSX)
-    logFP = NS_tfopen(mDstFilePath, NS_T("w"));
+    logFP = CreateAndOpenFile(mDstFilePath, false);
+    if (logFP == nullptr) {
+      LogToOS(NS_T("Failed to create FILE*"));
+    }
 #else
     // On platforms that have an updates directory in the installation directory
     // (e.g. platforms other than Windows and Mac) the update log is written to
@@ -87,7 +95,11 @@ void UpdateLog::Finish() {
   fflush(logFP);
   rewind(logFP);
 
-  FILE* updateLogFP = NS_tfopen(mDstFilePath, NS_T("wb+"));
+  FILE* updateLogFP = CreateAndOpenFile(mDstFilePath, true);
+  if (updateLogFP == nullptr) {
+    return;
+  }
+
   while (!feof(logFP)) {
     size_t read = fread(buffer, 1, blockSize, logFP);
     if (ferror(logFP)) {
@@ -188,6 +200,61 @@ void UpdateLog::WarnPrintf(const char* fmt, ...) {
   // When the updater crashes on Windows the log file won't be flushed and this
   // can make it easier to debug what is going on.
   fflush(logFP);
+}
+
+/**
+ * Creates and opens a file for logging in read/write mode.
+ *
+ * @param filePath  The path of the log file.
+ * @param binary  If the file should be opened as binary (ignored on
+ * macOS/Linux).
+ * @return a pointer to the FILE struct or nullptr on error.
+ */
+FILE* CreateAndOpenFile(NS_tchar* filePath, bool binary) {
+#ifdef XP_WIN
+  return NS_tfopen(filePath, binary ? NS_T("wb+") : NS_T("w+"));
+#else
+  LogToOS(NS_T("Opening logfile"));
+  NS_tchar* lastSeperator = NS_tstrrchr(filePath, '/');
+  if (lastSeperator == nullptr) {
+    // No separator, disable logging.
+    return nullptr;
+  }
+
+  const NS_tchar templateSuffix[] = NS_T("/temp.XXXXXX");
+  size_t templateLen = NS_tstrlen(templateSuffix);
+
+  long dirLength = lastSeperator - filePath;
+  // +1 to account for the \0 terminator
+  if (dirLength < 0 ||
+      (unsigned long)dirLength >= MAXPATHLEN - (templateLen + 1)) {
+    // Too short, or too long. Disable logging.
+    return nullptr;
+  }
+
+  NS_tchar tmpFilePath[MAXPATHLEN] = {L'\0'};
+  // Use memcpy here to only copy the directory portion of filePath
+  // and using strncpy triggered GCC's stringop-truncation error because
+  // filePath's \0 terminator wasn't being carried over. This isn't a problem
+  // here because the next strncpy adds it.
+  memcpy(tmpFilePath, filePath, dirLength);
+  NS_tstrncpy(tmpFilePath + dirLength, templateSuffix, MAXPATHLEN - dirLength);
+
+  int fd = mkstemp(tmpFilePath);
+  if (fd == -1) {
+    LogToOS(NS_T("Failed to open tmp"));
+    return nullptr;
+  }
+
+  if (rename(tmpFilePath, filePath) == -1) {
+    LogToOS(NS_T("Failed to rename"));
+    close(fd);
+    return nullptr;
+  }
+
+  LogToOS(NS_T("Opening file*"));
+  return fdopen(fd, "w+");
+#endif
 }
 
 #ifdef XP_WIN
@@ -473,4 +540,23 @@ bool IsValidFullPath(NS_tchar* origFullPath) {
   }
 #endif
   return true;
+}
+
+#if defined(XP_MACOSX)
+// This is never deallocated by the system
+MOZ_RUNINIT static os_log_t updaterLogger =
+    os_log_create("org.mozilla.updater", "Updater");
+#endif
+
+/**
+ * Logs a message to the system log for debugging purposes before our log
+ * file has been set up.
+ *
+ * @param  message
+ *         The message to log.
+ */
+void LogToOS(const NS_tchar* message) {
+#if defined(XP_MACOSX)
+  os_log(updaterLogger, "%{public}s", message);
+#endif
 }

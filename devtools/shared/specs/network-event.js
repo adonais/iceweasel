@@ -151,6 +151,7 @@ const networkEventSpec = generateActorSpec({
       encoding: Option(1, "string"),
       transferredSize: Option(1, "number"),
       blockedReason: Option(1, "number"),
+      truncated: Option(1, "boolean"),
       extension: Option(1, "json"),
     },
 

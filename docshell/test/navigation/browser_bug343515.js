@@ -17,7 +17,7 @@ add_task(async function () {
   ctx.tab0 = gBrowser.selectedTab;
   ctx.tab0Browser = gBrowser.getBrowserForTab(ctx.tab0);
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => ctx.tab0Browser.docShellIsActive,
     "Timed out waiting for initial tab to be active."
   );

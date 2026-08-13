@@ -541,6 +541,22 @@ class NoSuchElementError extends WebDriverError {
 }
 
 /**
+ * A command tried to stop an unknown screencast.
+ *
+ * @param {(string|Error)=} obj
+ *     Optional string describing error situation or Error instance
+ *     to propagate.
+ * @param {object=} data
+ *     Additional error data helpful in diagnosing the error.
+ */
+class NoSuchScreencastError extends WebDriverError {
+  constructor(obj, data = {}) {
+    super(obj, data);
+    this.status = "no such screencast";
+  }
+}
+
+/**
  * A command tried to remove an unknown preload script.
  *
  * @param {(string|Error)=} obj
@@ -988,6 +1004,7 @@ const STATUSES = new Map([
   ["no such network data", NoSuchNetworkDataError],
   ["no such node", NoSuchNodeError],
   ["no such request", NoSuchRequestError],
+  ["no such screencast", NoSuchScreencastError],
   ["no such script", NoSuchScriptError],
   ["no such shadow root", NoSuchShadowRootError],
   ["no such user context", NoSuchUserContextError],

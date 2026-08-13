@@ -5,9 +5,9 @@
 #ifndef nsDirectoryIndexStream_h_
 #define nsDirectoryIndexStream_h_
 
-#include "nsString.h"
-#include "nsIInputStream.h"
 #include "nsCOMArray.h"
+#include "nsIInputStream.h"
+#include "nsString.h"
 
 class nsIFile;
 

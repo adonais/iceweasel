@@ -457,6 +457,27 @@ int CamerasChild::StopCapture(CaptureEngine aCapEngine, const int capture_id) {
   return dispatcher.ReturnValue();
 }
 
+int CamerasChild::InvalidateDesktopCaptureDeviceCache(
+    CaptureEngine aCapEngine) {
+  LOG("{}", __PRETTY_FUNCTION__);
+
+  if (aCapEngine != ScreenEngine && aCapEngine != WinEngine &&
+      aCapEngine != BrowserEngine) {
+    MOZ_ASSERT_UNREACHABLE("Only supported for desktop capture");
+    return kError;
+  }
+
+  nsCOMPtr<nsIRunnable> runnable = mozilla::NewRunnableMethod<CaptureEngine>(
+      "camera::PCamerasChild::SendInvalidateDesktopCaptureDeviceCache", this,
+      &CamerasChild::SendInvalidateDesktopCaptureDeviceCache, aCapEngine);
+  LockAndDispatch<> dispatcher(this, __func__, runnable, kError, kIpcError,
+                               kSuccess);
+  if (dispatcher.Success()) {
+    LOG("Capture Device Cache is invalidated");
+  }
+  return dispatcher.ReturnValue();
+}
+
 class ShutdownRunnable : public Runnable {
  public:
   explicit ShutdownRunnable(already_AddRefed<Runnable> aReplyEvent)

@@ -29,6 +29,10 @@ struct StyleLockedDeclarationBlock;
 namespace dom {
 class Element;
 class ElementInternals;
+
+// Caller-supplied assertion that an attribute does not already exist, used
+// to skip redundant scans on the addition path.
+enum class IsKnownNewAttr : bool { No, Yes };
 }  // namespace dom
 }  // namespace mozilla
 
@@ -102,7 +106,14 @@ class AttrArray {
   // Otherwise, crash.
   const nsAttrName* GetSafeAttrNameAt(uint32_t aPos) const;
 
-  const nsAttrName* GetExistingAttrNameFromQName(const nsAString& aName) const;
+  // Find an existing attribute by qualified name.
+  //
+  // When aOutAtom is non-null and no matching attribute is found, *aOutAtom
+  // is set to the atomized lookup name so callers can reuse it without
+  // re-atomizing. In all other cases (match found, or the element has no
+  // attributes), *aOutAtom is set to nullptr.
+  const nsAttrName* GetExistingAttrNameFromQName(
+      const nsAString& aName, RefPtr<nsAtom>* aOutAtom = nullptr) const;
   int32_t IndexOfAttr(const nsAtom* aLocalName) const;
   int32_t IndexOfAttr(const nsAtom* aLocalName, int32_t aNamespaceID) const;
 
@@ -372,6 +383,26 @@ class AttrArray {
     return (bloom & aHash) == aHash;
   }
 
+  // Hash function for bloom filter (k=2). Returns a 64-bit value with bit 0
+  // set to 1 (tag bit) and 2 bits set in the available bloom range.
+  static uint64_t HashForBloomFilter(const nsAtom* aAtom) {
+    if (!aAtom) {
+      return 1ULL;  // Just the tag bit
+    }
+    // On 32-bit platforms, we have 31 bits for bloom + 1 tag bit
+    // On 64-bit platforms, we have 63 bits for bloom + 1 tag bit
+    constexpr int kAttrBloomBits = sizeof(uintptr_t) == 4 ? 31 : 63;
+
+    uint32_t hash = aAtom->hash();
+    uint64_t filter = 1ULL;
+    // Set 2 bits in the available range (bits 1-31 on 32-bit, 1-63 on 64-bit)
+    uint32_t bit1 = hash % kAttrBloomBits;
+    uint32_t bit2 = (hash >> 6) % kAttrBloomBits;
+    filter |= 1ULL << (1 + bit1);
+    filter |= 1ULL << (1 + bit2);
+    return filter;
+  }
+
  private:
   // Internal method that swaps the current attribute value with aValue.
   // Does NOT update bloom filters - external code should always use
@@ -380,9 +411,11 @@ class AttrArray {
   // aValue and aHadValue will be set to false. Otherwise, aHadValue will be set
   // to true.
   nsresult SetAndSwapAttr(nsAtom* aLocalName, nsAttrValue& aValue,
-                          bool* aHadValue);
+                          bool* aHadValue,
+                          mozilla::dom::IsKnownNewAttr aIsKnownNew);
   nsresult SetAndSwapAttr(mozilla::dom::NodeInfo* aName, nsAttrValue& aValue,
-                          bool* aHadValue);
+                          bool* aHadValue,
+                          mozilla::dom::IsKnownNewAttr aIsKnownNew);
 
   // mImpl serves dual purposes using pointer tagging:
   //

@@ -11,8 +11,8 @@ ChromeUtils.defineESModuleGetters(this, {
 
 const TEST_RESULTS = [
   new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.TIP,
-    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    type: UrlbarShared.RESULT_TYPE.TIP,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
     payload: {
       helpUrl: "https://example.com/",
       type: "test",
@@ -29,7 +29,7 @@ const TEST_RESULTS = [
             {
               name: "menu-command-1-1",
               l10n: {
-                id: "urlbar-result-menu-dismiss-suggestion",
+                id: "urlbar-result-menu-dismiss-suggestion2",
               },
             },
           ],
@@ -41,13 +41,13 @@ const TEST_RESULTS = [
             {
               name: "menu-command-2-1",
               l10n: {
-                id: "urlbar-result-menu-dismiss-suggestion",
+                id: "urlbar-result-menu-dismiss-suggestion2",
               },
             },
             {
               name: "menu-command-2-2",
               l10n: {
-                id: "urlbar-result-menu-dismiss-suggestion",
+                id: "urlbar-result-menu-dismiss-suggestion2",
               },
             },
           ],
@@ -63,19 +63,19 @@ const TEST_RESULTS = [
             {
               name: "menu-command-3-1",
               l10n: {
-                id: "urlbar-result-menu-dismiss-suggestion",
+                id: "urlbar-result-menu-dismiss-suggestion2",
               },
             },
             {
               name: "menu-command-3-2",
               l10n: {
-                id: "urlbar-result-menu-dismiss-suggestion",
+                id: "urlbar-result-menu-dismiss-suggestion2",
               },
             },
             {
               name: "menu-command-3-3",
               l10n: {
-                id: "urlbar-result-menu-dismiss-suggestion",
+                id: "urlbar-result-menu-dismiss-suggestion2",
               },
             },
           ],
@@ -225,7 +225,7 @@ async function doActivateTest({
   );
   Assert.equal(splitButtonMain.dataset.command, expectedMainCommand);
   EventUtils.synthesizeMouseAtCenter(splitButtonMain, {});
-  await BrowserTestUtils.waitForCondition(() => engaged == expectedMainCommand);
+  await TestUtils.waitForCondition(() => engaged == expectedMainCommand);
   Assert.ok(true, `${expectedMainCommand} is engaged`);
 
   for (let i = 0; i < expectedMenuCommands.length; i++) {
@@ -233,7 +233,7 @@ async function doActivateTest({
 
     info("Click on dropdown button");
     const popup = gURLBar.view.resultMenu;
-    const onPopupShown = BrowserTestUtils.waitForEvent(popup, "popupshown");
+    const onPopupShown = BrowserTestUtils.waitForEvent(popup, "shown");
     const dropmarker = splitButton.querySelector(
       ".urlbarView-splitbutton-dropmarker"
     );
@@ -241,20 +241,14 @@ async function doActivateTest({
     await onPopupShown;
 
     info("Activate the menuitem");
-    const onPopupHidden = BrowserTestUtils.waitForEvent(popup, "popuphidden");
-    const targetMenuItem = popup.querySelector(`menuitem:nth-child(${i + 1})`);
-    if (AppConstants.platform == "macosx") {
-      // Synthesized clicks don't work in the native Mac menu.
-      targetMenuItem.doCommand();
-      popup.hidePopup(true);
-    } else {
-      EventUtils.synthesizeMouseAtCenter(targetMenuItem, {});
-    }
+    const onPopupHidden = BrowserTestUtils.waitForEvent(popup, "hidden");
+    const targetMenuItem = popup.querySelector(
+      `panel-item:nth-child(${i + 1})`
+    );
+    EventUtils.synthesizeMouseAtCenter(targetMenuItem, {});
     await onPopupHidden;
     const expectedMenuCommand = expectedMenuCommands[i];
-    await BrowserTestUtils.waitForCondition(
-      () => engaged == expectedMenuCommand
-    );
+    await TestUtils.waitForCondition(() => engaged == expectedMenuCommand);
     Assert.ok(true, `${expectedMenuCommand} is engaged`);
   }
 

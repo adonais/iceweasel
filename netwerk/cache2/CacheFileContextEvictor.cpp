@@ -2,25 +2,26 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "CacheLog.h"
 #include "CacheFileContextEvictor.h"
+
 #include "CacheFileIOManager.h"
 #include "CacheFileMetadata.h"
+#include "CacheFileUtils.h"
 #include "CacheIndex.h"
 #include "CacheIndexIterator.h"
-#include "CacheFileUtils.h"
+#include "CacheLog.h"
 #include "CacheObserver.h"
-#include "mozilla/Components.h"
-#include "nsIEffectiveTLDService.h"
-#include "nsIFile.h"
 #include "LoadContextInfo.h"
-#include "nsThreadUtils.h"
-#include "nsString.h"
-#include "nsIDirectoryEnumerator.h"
 #include "mozilla/Base64.h"
+#include "mozilla/Components.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "nsContentUtils.h"
+#include "nsIDirectoryEnumerator.h"
+#include "nsIEffectiveTLDService.h"
+#include "nsIFile.h"
 #include "nsNetUtil.h"
+#include "nsString.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla::net {
 

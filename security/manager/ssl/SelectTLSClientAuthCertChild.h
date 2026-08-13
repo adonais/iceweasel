@@ -6,8 +6,8 @@
 #ifndef SECURITY_MANAGER_SSL_SELECTTLSCLIENTAUTHCERTCHILD_H_
 #define SECURITY_MANAGER_SSL_SELECTTLSCLIENTAUTHCERTCHILD_H_
 
-#include "mozilla/psm/PSelectTLSClientAuthCertChild.h"
 #include "TLSClientAuthCertSelection.h"
+#include "mozilla/psm/PSelectTLSClientAuthCertChild.h"
 
 namespace mozilla {
 namespace psm {

@@ -5,11 +5,11 @@
 #ifndef nsAHttpTransaction_h_
 #define nsAHttpTransaction_h_
 
-#include "nsTArray.h"
-#include "nsWeakReference.h"
+#include "nsILoadInfo.h"
 #include "nsIRequest.h"
 #include "nsITRRSkipReason.h"
-#include "nsILoadInfo.h"
+#include "nsTArray.h"
+#include "nsWeakReference.h"
 
 #ifdef Status
 /* Xlib headers insist on this for some reason... Nuke it because
@@ -117,8 +117,11 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
   // called to indicate a failure with proxy CONNECT
   virtual void SetProxyConnectFailed() = 0;
 
-  // called to retrieve the request headers of the transaction
-  virtual nsHttpRequestHead* RequestHead() = 0;
+  // called to retrieve the request headers of the transaction. Returns a
+  // const pointer so that the transaction's immutable snapshot of the
+  // request head (see nsHttpTransaction::AsyncRead) cannot be mutated by
+  // callers. Internal state mutations must go through the owning transaction.
+  virtual const nsHttpRequestHead* RequestHead() = 0;
 
   // determine the number of real http/1.x transactions on this
   // abstract object. Pipelines had multiple, SPDY has 0,
@@ -275,7 +278,7 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
   virtual void Close(nsresult reason) override;                                \
   nsHttpConnectionInfo* ConnectionInfo() override;                             \
   void SetProxyConnectFailed() override;                                       \
-  virtual nsHttpRequestHead* RequestHead() override;                           \
+  virtual const nsHttpRequestHead* RequestHead() override;                     \
   uint32_t Http1xTransactionCount() override;                                  \
   [[nodiscard]] nsresult TakeSubTransactions(                                  \
       nsTArray<RefPtr<nsAHttpTransaction> >& outTransactions) override;

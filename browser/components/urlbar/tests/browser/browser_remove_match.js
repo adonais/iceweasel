@@ -99,8 +99,8 @@ add_task(async function test_remove_form_history() {
   for (; index < count; index++) {
     let result = await UrlbarTestUtils.getDetailsOfResultAt(window, index);
     if (
-      result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
-      result.source == UrlbarUtils.RESULT_SOURCE.HISTORY
+      result.type == UrlbarShared.RESULT_TYPE.SEARCH &&
+      result.source == UrlbarShared.RESULT_SOURCE.HISTORY
     ) {
       break;
     }
@@ -120,8 +120,8 @@ add_task(async function test_remove_form_history() {
   for (let i = 0; i < UrlbarTestUtils.getResultCount(window); i++) {
     let result = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
     Assert.ok(
-      result.type != UrlbarUtils.RESULT_TYPE.SEARCH ||
-        result.source != UrlbarUtils.RESULT_SOURCE.HISTORY,
+      result.type != UrlbarShared.RESULT_TYPE.SEARCH ||
+        result.source != UrlbarShared.RESULT_SOURCE.HISTORY,
       "Should not find the form history result in the remaining results"
     );
   }
@@ -197,8 +197,8 @@ add_task(async function test_searchMode_removeRestyledHistory() {
     await UrlbarTestUtils.enterSearchMode(window);
 
     let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 1);
-    Assert.equal(result.type, UrlbarUtils.RESULT_TYPE.SEARCH);
-    Assert.equal(result.source, UrlbarUtils.RESULT_SOURCE.HISTORY);
+    Assert.equal(result.type, UrlbarShared.RESULT_TYPE.SEARCH);
+    Assert.equal(result.source, UrlbarShared.RESULT_SOURCE.HISTORY);
 
     EventUtils.synthesizeKey("KEY_ArrowDown");
     Assert.equal(UrlbarTestUtils.getSelectedRowIndex(window), 1);

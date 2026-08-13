@@ -195,7 +195,7 @@ add_task(async function test_hash_collision() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: testURL,
         title: testURL,
         iconUri: "page-icon:https://example.com/",
@@ -216,7 +216,7 @@ add_task(async function test_null_title() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: "https://example.com/",
         title: "https://example.com/",
         iconUri: "page-icon:https://example.com/",
@@ -242,7 +242,7 @@ add_task(async function test_over_max_length_text() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri,
         title: uri,
         iconUri: "page-icon:https://example.com/",
@@ -266,7 +266,7 @@ add_task(async function test_unsupported_protocol() {
     context,
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: "about:robots",
         title: "about:robots",
         heuristic: true,
@@ -277,7 +277,7 @@ add_task(async function test_unsupported_protocol() {
         title: "Robots!",
       }),
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: "about:robots",
         title: "about:robots",
         iconUri: "page-icon:about:robots",

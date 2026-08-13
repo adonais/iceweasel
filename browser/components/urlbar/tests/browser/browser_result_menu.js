@@ -42,7 +42,7 @@ add_task(async function test_history() {
     byMouse: true,
     resultIndex,
   });
-  gURLBar.view.resultMenu.hidePopup();
+  gURLBar.view.resultMenu.removeAttribute("open");
   await SpecialPowers.popPrefEnv();
   await startQuery();
   EventUtils.synthesizeKey("KEY_Tab");
@@ -57,7 +57,8 @@ add_task(async function test_history() {
   await UrlbarTestUtils.openResultMenu(window, {
     activationKey: " ",
   });
-  gURLBar.view.resultMenu.hidePopup();
+
+  gURLBar.view.resultMenu.removeAttribute("open");
 
   info("Selecting Learn more item from the result menu");
   let tabOpenPromise = BrowserTestUtils.waitForNewTab(
@@ -65,6 +66,7 @@ add_task(async function test_history() {
     Services.urlFormatter.formatURLPref("app.support.baseURL") +
       "awesome-bar-result-menu"
   );
+
   await UrlbarTestUtils.openResultMenuAndPressAccesskey(window, "L");
   info("Waiting for Learn more link to open in a new tab");
   await tabOpenPromise;
@@ -147,8 +149,8 @@ add_task(async function test_remove_search_history() {
       resultIndex
     );
     if (
-      result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
-      result.source == UrlbarUtils.RESULT_SOURCE.HISTORY
+      result.type == UrlbarShared.RESULT_TYPE.SEARCH &&
+      result.source == UrlbarShared.RESULT_SOURCE.HISTORY
     ) {
       break;
     }
@@ -168,8 +170,8 @@ add_task(async function test_remove_search_history() {
   for (let i = 0; i < UrlbarTestUtils.getResultCount(window); i++) {
     let result = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
     Assert.ok(
-      result.type != UrlbarUtils.RESULT_TYPE.SEARCH ||
-        result.source != UrlbarUtils.RESULT_SOURCE.HISTORY,
+      result.type != UrlbarShared.RESULT_TYPE.SEARCH ||
+        result.source != UrlbarShared.RESULT_SOURCE.HISTORY,
       "Should not find the form history result in the remaining results"
     );
   }
@@ -198,14 +200,14 @@ add_task(async function firefoxSuggest() {
     priority: Infinity,
     results: [
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         payload: {
           url,
           isBlockable: true,
           helpUrl,
           helpL10n: {
-            id: "urlbar-result-menu-learn-more",
+            id: "urlbar-result-menu-learn-more2",
           },
         },
       }),

@@ -107,7 +107,7 @@ add_task(async function test_switchToTab_tab_closed_in_background() {
 
   Assert.equal(UrlbarTestUtils.getResultCount(window), 2);
   let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 1);
-  Assert.equal(result.source, UrlbarUtils.RESULT_SOURCE.TABS);
+  Assert.equal(result.source, UrlbarShared.RESULT_SOURCE.TABS);
 
   gBrowser.removeTab(backgroundTab);
   await UrlbarTestUtils.promiseSearchComplete(window);
@@ -120,7 +120,7 @@ add_task(async function test_switchToTab_tab_closed_in_background() {
   result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
   Assert.equal(
     result.source,
-    UrlbarUtils.RESULT_SOURCE.SEARCH,
+    UrlbarShared.RESULT_SOURCE.SEARCH,
     "We should only have a heuristic result"
   );
 

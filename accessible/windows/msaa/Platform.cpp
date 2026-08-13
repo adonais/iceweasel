@@ -7,13 +7,13 @@
 #include "AccEvent.h"
 #include "Compatibility.h"
 #include "MsaaAccessible.h"
-#include "nsWinUtils.h"
+#include "ia2AccessibleText.h"
+#include "mozilla/StaticPtr.h"
+#include "mozilla/WinHeaderOnlyUtils.h"
 #include "mozilla/a11y/DocAccessibleParent.h"
 #include "mozilla/a11y/HyperTextAccessibleBase.h"
 #include "mozilla/a11y/RemoteAccessible.h"
-#include "mozilla/StaticPtr.h"
-#include "mozilla/WinHeaderOnlyUtils.h"
-#include "ia2AccessibleText.h"
+#include "nsWinUtils.h"
 
 #if defined(MOZ_TELEMETRY_REPORTING)
 #  include "mozilla/glean/AccessibleMetrics.h"

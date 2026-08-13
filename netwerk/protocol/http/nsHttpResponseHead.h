@@ -5,12 +5,12 @@
 #ifndef nsHttpResponseHead_h_
 #define nsHttpResponseHead_h_
 
-#include "nsHttpHeaderArray.h"
-#include "nsHttp.h"
-#include "nsISupportsImpl.h"
-#include "nsString.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/RecursiveMutex.h"
+#include "nsHttp.h"
+#include "nsHttpHeaderArray.h"
+#include "nsISupportsImpl.h"
+#include "nsString.h"
 
 #ifdef Status
 /* Xlib headers insist on this for some reason... Nuke it because

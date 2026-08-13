@@ -187,7 +187,7 @@ struct ComputedStyleMap {
 
   /**
    * Returns the number of properties that should be exposed on an
-   * nsComputedDOMStyle, ecxluding any disabled properties.
+   * nsComputedDOMStyle, excluding any disabled properties.
    */
   uint32_t Length() {
     Update();
@@ -385,6 +385,19 @@ void nsComputedDOMStyle::SetCssText(const nsACString& aCssText,
   aRv.ThrowNoModificationAllowedError("Can't set cssText on computed style");
 }
 
+uint32_t nsComputedDOMStyle::NonCustomPropertyCount() {
+  return GetComputedStyleMap()->Length();
+}
+
+NonCustomCSSPropertyId nsComputedDOMStyle::NonCustomPropertyAt(
+    uint32_t aIndex) {
+  return GetComputedStyleMap()->PropertyAt(aIndex);
+}
+
+bool nsComputedDOMStyle::HasNonCustomProperty(NonCustomCSSPropertyId aId) {
+  return !!GetComputedStyleMap()->FindEntryForProperty(aId);
+}
+
 uint32_t nsComputedDOMStyle::Length() {
   // Make sure we have up to date style so that we can include custom
   // properties.
@@ -393,8 +406,8 @@ uint32_t nsComputedDOMStyle::Length() {
     return 0;
   }
 
-  uint32_t length = GetComputedStyleMap()->Length() +
-                    Servo_GetCustomPropertiesCount(mComputedStyle);
+  uint32_t length =
+      NonCustomPropertyCount() + Servo_GetCustomPropertiesCount(mComputedStyle);
 
   ClearCurrentStyleSources();
 
@@ -939,8 +952,6 @@ bool nsComputedDOMStyle::NeedsToFlushLayout(
     case eCSSProperty_width:
     case eCSSProperty_height:
       return !IsNonReplacedInline(frame);
-    case eCSSProperty_line_height:
-      return frame->StyleFont()->mLineHeight.IsMozBlockHeight();
     case eCSSProperty_grid_template_rows:
     case eCSSProperty_grid_template_columns:
       return !!nsGridContainerFrame::GetGridContainerFrame(frame);

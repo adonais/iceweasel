@@ -2,6 +2,20 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "TRRService.h"
+
+#include "DNSServiceBase.h"
+#include "TRR.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/ProfilerMarkers.h"
+#include "mozilla/StaticPrefs_network.h"
+#include "mozilla/Telemetry.h"
+#include "mozilla/Tokenizer.h"
+#include "mozilla/dom/ContentParent.h"
+#include "mozilla/glean/NetwerkDnsMetrics.h"
+#include "mozilla/glean/NetwerkMetrics.h"
+#include "mozilla/net/NeckoParent.h"
+#include "mozilla/net/TRRServiceChild.h"
 #include "nsCharSeparatedTokenizer.h"
 #include "nsComponentManagerUtils.h"
 #include "nsDirectoryServiceUtils.h"
@@ -10,25 +24,11 @@
 #include "nsICaptivePortalService.h"
 #include "nsIFile.h"
 #include "nsINetworkLinkService.h"
-#include "nsIObserverService.h"
 #include "nsIOService.h"
+#include "nsIObserverService.h"
 #include "nsNetUtil.h"
-#include "nsStandardURL.h"
-#include "DNSServiceBase.h"
-#include "TRR.h"
-#include "TRRService.h"
-
-#include "mozilla/Preferences.h"
-#include "mozilla/StaticPrefs_network.h"
-#include "mozilla/glean/NetwerkDnsMetrics.h"
-#include "mozilla/Telemetry.h"
-#include "mozilla/Tokenizer.h"
-#include "mozilla/dom/ContentParent.h"
-#include "mozilla/glean/NetwerkMetrics.h"
-#include "mozilla/net/NeckoParent.h"
-#include "mozilla/net/TRRServiceChild.h"
-#include "mozilla/ProfilerMarkers.h"
 #include "nsSocketTransportService2.h"
+#include "nsStandardURL.h"
 // Put DNSLogging.h at the end to avoid LOG being overwritten by other headers.
 #include "DNSLogging.h"
 
@@ -1221,12 +1221,13 @@ void TRRService::RecordTRRStatus(TRR* aTrrRequest) {
 
   nsresult channelStatus = aTrrRequest->ChannelStatus();
 
-  glean::dns::trr_success.Get(
-      ProviderKey(),
-      NS_SUCCEEDED(channelStatus)
-          ? "Fine"_ns
-          : (channelStatus == NS_ERROR_NET_TIMEOUT_EXTERNAL ? "Timeout"_ns
-                                                            : "Bad"_ns));
+  glean::dns::trr_success
+      .Get(ProviderKey(),
+           NS_SUCCEEDED(channelStatus)
+               ? "Fine"_ns
+               : (channelStatus == NS_ERROR_NET_TIMEOUT_EXTERNAL ? "Timeout"_ns
+                                                                 : "Bad"_ns))
+      .Add();
   mConfirmation.RecordTRRStatus(aTrrRequest);
 }
 

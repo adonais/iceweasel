@@ -5,11 +5,11 @@
 #ifndef MOZ_WAYLAND_SURFACE_H_
 #define MOZ_WAYLAND_SURFACE_H_
 
-#include "nsWaylandDisplay.h"
-#include "mozilla/Mutex.h"
-#include "mozilla/Atomics.h"
 #include "WaylandSurfaceLock.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/GRefPtr.h"
+#include "mozilla/Mutex.h"
+#include "nsWaylandDisplay.h"
 
 /* Workaround for bug at wayland-util.h,
  * present in wayland-devel < 1.12
@@ -197,7 +197,7 @@ class WaylandSurface final {
   void SetViewportFollowsSizeChangesLocked(
       const WaylandSurfaceLock& aProofOfLock);
   void SetViewPortSourceRectLocked(const WaylandSurfaceLock& aProofOfLock,
-                                   const DesktopIntRect& aRect);
+                                   const DesktopRect& aRect);
   void SetViewPortDestLocked(const WaylandSurfaceLock& aProofOfLock,
                              const DesktopIntSize& aDestSize);
   void SetTransformFlippedLocked(const WaylandSurfaceLock& aProofOfLock,
@@ -473,7 +473,7 @@ class WaylandSurface final {
 
   bool mViewportFollowsSizeChanges = false;
   wp_viewport* mViewport = nullptr;
-  DesktopIntRect mViewportSourceRect{-1, -1, -1, -1};
+  DesktopRect mViewportSourceRect{-1, -1, -1, -1};
   DesktopIntSize mViewportDestinationSize{-1, -1};
 
   // Surface flip state on X/Y asix

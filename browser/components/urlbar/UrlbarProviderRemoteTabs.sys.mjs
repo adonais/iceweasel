@@ -157,7 +157,7 @@ export class UrlbarProviderRemoteTabs extends UrlbarProvider {
     return (
       lazy.syncUsernamePref &&
       lazy.UrlbarPrefs.get("suggest.remotetab") &&
-      queryContext.sources.includes(UrlbarUtils.RESULT_SOURCE.TABS) &&
+      queryContext.sources.includes(lazy.UrlbarShared.RESULT_SOURCE.TABS) &&
       lazy.weaveXPCService &&
       lazy.weaveXPCService.ready &&
       lazy.weaveXPCService.enabled
@@ -197,8 +197,8 @@ export class UrlbarProviderRemoteTabs extends UrlbarProvider {
           ? UrlbarUtils.getIconForUrl(tab.url)
           : "";
         let result = new lazy.UrlbarResult({
-          type: UrlbarUtils.RESULT_TYPE.REMOTE_TAB,
-          source: UrlbarUtils.RESULT_SOURCE.TABS,
+          type: lazy.UrlbarShared.RESULT_TYPE.REMOTE_TAB,
+          source: lazy.UrlbarShared.RESULT_SOURCE.TABS,
           payload: {
             url: tab.url,
             title: tab.title,

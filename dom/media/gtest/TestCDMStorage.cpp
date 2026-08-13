@@ -925,7 +925,7 @@ class CDMStorageTest {
 
     // Send the decryptor the message "store recordid $time"
     // Wait for the decrytor to send us "stored recordid $time"
-    auto t = time(0);
+    auto t = time(nullptr);
     nsCString response("stored crossOriginTestRecordId ");
     response.AppendInt((int64_t)t);
     Expect(

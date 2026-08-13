@@ -269,8 +269,12 @@ async function dragScroll()
   synthesizeMouseAtPoint(popupRect.left + 5, popupRect.top - 10, { type: "mousemove" });
   is(getScrollPos(), scrollPos, "scroll position after mousemove over button should not change");
 
-  synthesizeMouseAtPoint(popupRect.left + 20, popupRect.top + 10, { type: "mousemove" });
-  synthesizeMouseAtPoint(popupRect.left + 20, popupRect.top + 10, { type: "mousedown", buttons: 1 });
+  // Press on an item to start dragging. Use the popup's vertical center so the
+  // point lands on a menuitem regardless of the popup's padding, which varies
+  // between themes.
+  let pressY = popupRect.top + popupRect.height / 2;
+  synthesizeMouseAtPoint(popupRect.left + 20, pressY, { type: "mousemove" });
+  synthesizeMouseAtPoint(popupRect.left + 20, pressY, { type: "mousedown", buttons: 1 });
 
   // Dragging above the popup scrolls it up.
   let scrolledPromise = waitForEvent(popup, "scroll", false,

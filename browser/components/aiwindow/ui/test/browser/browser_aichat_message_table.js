@@ -168,6 +168,64 @@ describe("chat message table rendering", () => {
     });
   });
 
+  it("should show scroll indicator when table overflows", async () => {
+    await SpecialPowers.spawn(chatTab.linkedBrowser, [], async () => {
+      await content.customElements.whenDefined("ai-chat-table");
+
+      const table = content.document.createElement("ai-chat-table");
+      table.style.display = "block";
+      table.style.width = "100px";
+
+      const innerTable = content.document.createElement("table");
+      let headerCells = "";
+      for (let i = 0; i < 10; i++) {
+        headerCells += `<th style="white-space: nowrap">Long header ${i}</th>`;
+      }
+      innerTable.innerHTML = `<thead><tr>${headerCells}</tr></thead>`;
+      table.appendChild(innerTable);
+
+      content.document.body.appendChild(table);
+      await table.updateComplete;
+
+      await ContentTaskUtils.waitForCondition(
+        () => table.shadowRoot.querySelector(".table-scroll-indicator"),
+        "Scroll indicator should appear for an overflowing table"
+      );
+
+      table.remove();
+    });
+  });
+
+  it("should not show scroll indicator when table fits", async () => {
+    await SpecialPowers.spawn(chatTab.linkedBrowser, [], async () => {
+      await content.customElements.whenDefined("ai-chat-table");
+
+      const table = content.document.createElement("ai-chat-table");
+      table.style.display = "block";
+      table.style.width = "600px";
+
+      const innerTable = content.document.createElement("table");
+      innerTable.innerHTML = `<thead><tr><th>A</th><th>B</th></tr></thead>`;
+      table.appendChild(innerTable);
+
+      content.document.body.appendChild(table);
+      await table.updateComplete;
+
+      await new Promise(resolve =>
+        content.requestAnimationFrame(() =>
+          content.requestAnimationFrame(resolve)
+        )
+      );
+
+      Assert.ok(
+        !table.shadowRoot.querySelector(".table-scroll-indicator"),
+        "Scroll indicator should not render when the table fits"
+      );
+
+      table.remove();
+    });
+  });
+
   it("should copy table markdown to clipboard", async () => {
     const restoreSignIn = skipSignIn();
     const messageWithTable = `Here is a markdown table:\n\n${TABLE_MARKDOWN}\n\nThis was a markdown table.`;

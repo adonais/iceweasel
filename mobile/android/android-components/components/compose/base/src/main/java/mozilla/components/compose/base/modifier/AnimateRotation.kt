@@ -9,7 +9,6 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.tween
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -22,6 +21,7 @@ import androidx.compose.ui.composed
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.theme.AcornTheme
 import kotlin.math.ceil
 import mozilla.components.ui.icons.R as iconsR
@@ -85,7 +85,9 @@ fun Modifier.animateRotation(
 private fun AnimateRotationPreview() {
     var syncing by remember { mutableStateOf(false) }
     AcornTheme {
-        Button(onClick = { syncing = !syncing }) {
+        FilledButton(
+            onClick = { syncing = !syncing },
+        ) {
             Icon(
                 painter = painterResource(id = iconsR.drawable.mozac_ic_sync_24),
                 contentDescription = null,

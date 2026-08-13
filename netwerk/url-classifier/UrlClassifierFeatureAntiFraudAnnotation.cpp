@@ -10,11 +10,11 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/net/ChannelClassifierUtils.h"
 #include "mozilla/net/UrlClassifierCommon.h"
-#include "nsIChannel.h"
-#include "nsILoadInfo.h"
-#include "nsIClassifiedChannel.h"
-#include "nsIWebProgressListener.h"
 #include "nsContentUtils.h"
+#include "nsIChannel.h"
+#include "nsIClassifiedChannel.h"
+#include "nsILoadInfo.h"
+#include "nsIWebProgressListener.h"
 
 namespace mozilla {
 namespace net {

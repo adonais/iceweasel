@@ -11,8 +11,8 @@ add_task(async function test_PIN_FIREFOX_TO_START_MENU() {
       return this;
     },
 
-    isCurrentAppPinnedToStartMenuAsync: sandbox.stub(),
-    pinCurrentAppToStartMenuAsync: sandbox.stub().resolves(true),
+    isCurrentAppPinnedToStartMenu: sandbox.stub(),
+    pinCurrentAppToStartMenu: sandbox.stub().resolves(true),
   };
 
   // Prefer the mocked implementation and fall back to the original version,
@@ -23,7 +23,7 @@ add_task(async function test_PIN_FIREFOX_TO_START_MENU() {
     },
   });
 
-  shell.isCurrentAppPinnedToStartMenuAsync.resolves(false);
+  shell.isCurrentAppPinnedToStartMenu.resolves(false);
   const test = () =>
     SMATestUtils.executeAndValidateAction(
       { type: "PIN_FIREFOX_TO_START_MENU" },
@@ -34,25 +34,25 @@ add_task(async function test_PIN_FIREFOX_TO_START_MENU() {
       }
     );
 
-  shell.isCurrentAppPinnedToStartMenuAsync.resolves(false);
+  shell.isCurrentAppPinnedToStartMenu.resolves(false);
   await test();
 
   function check(count, message) {
     Assert.equal(
-      shell.pinCurrentAppToStartMenuAsync.callCount,
+      shell.pinCurrentAppToStartMenu.callCount,
       count,
-      `pinCurrentAppToStartMenuAsync was ${message} by the action for Windows`
+      `pinCurrentAppToStartMenu was ${message} by the action for Windows`
     );
   }
   check(1, "called");
 
   // Pretend the app is already pinned.
-  shell.isCurrentAppPinnedToStartMenuAsync.resolves(true);
+  shell.isCurrentAppPinnedToStartMenu.resolves(true);
   await test();
   check(1, "not called");
 
   // Pretend the app became unpinned.
-  shell.isCurrentAppPinnedToStartMenuAsync.resolves(false);
+  shell.isCurrentAppPinnedToStartMenu.resolves(false);
   await test();
   check(2, "called again");
 });

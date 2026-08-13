@@ -15,8 +15,8 @@
 #include "ConnectionEntry.h"
 #include "DnsAndConnectSocket.h"
 #include "HappyEyeballsConnectionAttempt.h"
-#include "nsHttpHandler.h"
 #include "nsHttpConnectionMgr.h"
+#include "nsHttpHandler.h"
 
 namespace mozilla::net {
 
@@ -33,7 +33,7 @@ ConnectionAttemptPool::~ConnectionAttemptPool() {
 nsresult ConnectionAttemptPool::StartConnectionEstablishment(
     ConnectionEntry* entry, nsAHttpTransaction* trans, uint32_t caps,
     bool speculative, bool urgentStart, bool allow1918,
-    PendingTransactionInfo* pendingTransInfo) {
+    PendingTransactionInfo* pendingTransInfo, bool retryWithoutTRR) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   MOZ_ASSERT((speculative && !pendingTransInfo) ||
              (!speculative && pendingTransInfo));
@@ -41,8 +41,8 @@ nsresult ConnectionAttemptPool::StartConnectionEstablishment(
   RefPtr<ConnectionAttempt> connAttempt;
   nsHttpConnectionInfo* ci = trans->ConnectionInfo();
   if (ci->GetHappyEyeballsEnabled()) {
-    connAttempt = new HappyEyeballsConnectionAttempt(ci, trans, caps,
-                                                     speculative, urgentStart);
+    connAttempt = new HappyEyeballsConnectionAttempt(
+        ci, trans, caps, speculative, urgentStart, retryWithoutTRR);
   } else {
     connAttempt = new DnsAndConnectSocket(entry->mConnInfo, trans, caps,
                                           speculative, urgentStart);

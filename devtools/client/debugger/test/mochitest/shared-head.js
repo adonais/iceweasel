@@ -286,7 +286,10 @@ function waitForSelectedSource(dbg, sourceOrUrl) {
         return allSourceActorsProcessed;
       }
 
-      if (!getBreakableLines(location.source.id)) {
+      if (
+        !location.source.isStyleSheet &&
+        !getBreakableLines(location.source.id)
+      ) {
         return false;
       }
 
@@ -1919,6 +1922,8 @@ const selectors = {
   stepOut: ".stepOut.active",
   stepIn: ".stepIn.active",
   prettyPrintButton: ".source-footer .prettyPrint",
+  toggleStyleSheetVisibilityButton:
+    ".source-footer .toggleStyleSheetVisibility",
   mappedSourceLink: ".source-footer .mapped-source",
   sourceMapFooterButton: ".debugger-source-map-button",
   sourceNode: i => `.sources-list .tree-node:nth-child(${i}) .node`,

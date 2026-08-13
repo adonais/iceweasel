@@ -7,8 +7,5 @@ var bigScript = `
 
 eval(bigScript);
 
-if (isAsmJSCompilationAvailable())
-    assertEq(isAsmJSModule(asmModule), true);
-
 assertEq(wee(), 42);
 assertEq(eval('(' + wee.toString() + ')')(), 42);

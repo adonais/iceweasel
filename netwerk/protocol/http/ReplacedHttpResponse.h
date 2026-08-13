@@ -5,10 +5,10 @@
 #ifndef NETWERK_PROTOCOL_HTTP_REPLACEDHTTPRESPONSE_H_
 #define NETWERK_PROTOCOL_HTTP_REPLACEDHTTPRESPONSE_H_
 
-#include "nsString.h"
+#include "mozilla/Atomics.h"
 #include "nsHttpHeaderArray.h"
 #include "nsIReplacedHttpResponse.h"
-#include "mozilla/Atomics.h"
+#include "nsString.h"
 
 namespace mozilla::net {
 

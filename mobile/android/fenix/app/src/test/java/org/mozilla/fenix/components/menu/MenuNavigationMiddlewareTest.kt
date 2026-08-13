@@ -575,7 +575,6 @@ class MenuNavigationMiddlewareTest {
         val store = createStore(
             scope = this,
             browserStore = browserStore,
-            customTab = null,
             menuState = MenuState(
                 browserMenuState = BrowserMenuState(
                     selectedTab = tab,
@@ -612,8 +611,9 @@ class MenuNavigationMiddlewareTest {
         )
         val store = createStore(
             scope = this,
-            customTab = customTab,
-            menuState = MenuState(),
+            menuState = MenuState(
+                browserMenuState = BrowserMenuState(selectedTab = customTab),
+            ),
         )
 
         store.dispatch(MenuAction.Navigate.Share)
@@ -725,8 +725,12 @@ class MenuNavigationMiddlewareTest {
 
         val store = createStore(
             scope = this,
-            customTab = createCustomTab(
-                url = expectedTabUrl,
+            menuState = MenuState(
+                browserMenuState = BrowserMenuState(
+                    selectedTab = createCustomTab(
+                        url = expectedTabUrl,
+                    ),
+                ),
             ),
             webCompatReporterMoreInfoSender = webCompatReporterMoreInfoSender,
             openToBrowser = {
@@ -748,8 +752,12 @@ class MenuNavigationMiddlewareTest {
         val expectedTabUrl = "www.mozilla.org"
         createStore(
             scope = this,
-            customTab = createCustomTab(
-                url = expectedTabUrl,
+            menuState = MenuState(
+                browserMenuState = BrowserMenuState(
+                    selectedTab = createCustomTab(
+                        url = expectedTabUrl,
+                    ),
+                ),
             ),
         ).dispatch(MenuAction.Navigate.WebCompatReporter)
         testScheduler.advanceUntilIdle()
@@ -763,11 +771,13 @@ class MenuNavigationMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN view history is true WHEN navigate back action is dispatched THEN navigate to tab history dialog fragment`() = runTest {
+    fun `GIVEN view history is true for non-custom tab WHEN navigate back action is dispatched THEN navigate to tab history dialog fragment with no session id`() = runTest {
         val store = createStore(
             scope = this,
             menuState = MenuState(
-                customTabSessionId = "0",
+                browserMenuState = BrowserMenuState(
+                    selectedTab = createTab(id = "0", url = "https://example.com"),
+                ),
             ),
         )
 
@@ -777,7 +787,33 @@ class MenuNavigationMiddlewareTest {
         verify {
             navController.navigate(
                 directions = MenuDialogFragmentDirections.actionGlobalTabHistoryDialogFragment(
-                    activeSessionId = store.state.customTabSessionId,
+                    activeSessionId = null,
+                ),
+                navOptions = NavOptions.Builder()
+                    .setPopUpTo(R.id.browserFragment, false)
+                    .build(),
+            )
+        }
+    }
+
+    @Test
+    fun `GIVEN view history is true for a custom tab WHEN navigate back action is dispatched THEN navigate to tab history dialog fragment with the session id`() = runTest {
+        val store = createStore(
+            scope = this,
+            menuState = MenuState(
+                browserMenuState = BrowserMenuState(
+                    selectedTab = createCustomTab(id = "0", url = "https://example.com"),
+                ),
+            ),
+        )
+
+        store.dispatch(MenuAction.Navigate.Back(viewHistory = true))
+        testScheduler.advanceUntilIdle()
+
+        verify {
+            navController.navigate(
+                directions = MenuDialogFragmentDirections.actionGlobalTabHistoryDialogFragment(
+                    activeSessionId = "0",
                 ),
                 navOptions = NavOptions.Builder()
                     .setPopUpTo(R.id.browserFragment, false)
@@ -792,7 +828,6 @@ class MenuNavigationMiddlewareTest {
         var dismissWasCalled = false
         val store = createStore(
             scope = this,
-            customTab = null,
             menuState = MenuState(
                 browserMenuState = BrowserMenuState(
                     selectedTab = tab,
@@ -816,7 +851,9 @@ class MenuNavigationMiddlewareTest {
         var dismissWasCalled = false
         val store = createStore(
             scope = this,
-            customTab = customTab,
+            menuState = MenuState(
+                browserMenuState = BrowserMenuState(selectedTab = customTab),
+            ),
             onDismiss = { dismissWasCalled = true },
         )
 
@@ -842,7 +879,6 @@ class MenuNavigationMiddlewareTest {
         val store = createStore(
             scope = this,
             browserStore = browserStore,
-            customTab = null,
             menuState = MenuState(
                 browserMenuState = BrowserMenuState(
                     selectedTab = tab,
@@ -867,7 +903,6 @@ class MenuNavigationMiddlewareTest {
         var dismissWasCalled = false
         val store = createStore(
             scope = this,
-            customTab = null,
             menuState = MenuState(
                 browserMenuState = BrowserMenuState(
                     selectedTab = tab,
@@ -895,7 +930,6 @@ class MenuNavigationMiddlewareTest {
         var dismissWasCalled = false
         val store = createStore(
             scope = this,
-            customTab = null,
             menuState = MenuState(
                 browserMenuState = BrowserMenuState(
                     selectedTab = tab,
@@ -924,7 +958,6 @@ class MenuNavigationMiddlewareTest {
         var dismissWasCalled = false
         val store = createStore(
             scope = this,
-            customTab = null,
             menuState = MenuState(
                 browserMenuState = BrowserMenuState(
                     selectedTab = tab,
@@ -954,7 +987,6 @@ class MenuNavigationMiddlewareTest {
         var dismissWasCalled = false
         val store = createStore(
             scope = this,
-            customTab = null,
             menuState = MenuState(
                 browserMenuState = BrowserMenuState(
                     selectedTab = tab,
@@ -978,11 +1010,13 @@ class MenuNavigationMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN view history is true WHEN navigate forward action is dispatched THEN navigate to tab history dialog fragment`() = runTest {
+    fun `GIVEN view history is true for non-custom tab WHEN navigate forward action is dispatched THEN navigate to tab history dialog fragment with no session id`() = runTest {
         val store = createStore(
             scope = this,
             menuState = MenuState(
-                customTabSessionId = "0",
+                browserMenuState = BrowserMenuState(
+                    selectedTab = createTab(id = "1", url = "https://example.com"),
+                ),
             ),
         )
 
@@ -991,9 +1025,31 @@ class MenuNavigationMiddlewareTest {
 
         verify {
             navController.navigate(
-                directions = MenuDialogFragmentDirections.actionGlobalTabHistoryDialogFragment(
-                    activeSessionId = store.state.customTabSessionId,
+                directions = MenuDialogFragmentDirections.actionGlobalTabHistoryDialogFragment(activeSessionId = null),
+                navOptions = NavOptions.Builder()
+                    .setPopUpTo(R.id.browserFragment, false)
+                    .build(),
+            )
+        }
+    }
+
+    @Test
+    fun `GIVEN view history is true for custom tab WHEN navigate forward action is dispatched THEN navigate to tab history dialog fragment with no session id`() = runTest {
+        val store = createStore(
+            scope = this,
+            menuState = MenuState(
+                browserMenuState = BrowserMenuState(
+                    selectedTab = createCustomTab(id = "1", url = "https://example.com"),
                 ),
+            ),
+        )
+
+        store.dispatch(MenuAction.Navigate.Forward(viewHistory = true))
+        testScheduler.advanceUntilIdle()
+
+        verify {
+            navController.navigate(
+                directions = MenuDialogFragmentDirections.actionGlobalTabHistoryDialogFragment(activeSessionId = "1"),
                 navOptions = NavOptions.Builder()
                     .setPopUpTo(R.id.browserFragment, false)
                     .build(),
@@ -1007,7 +1063,6 @@ class MenuNavigationMiddlewareTest {
         var dismissWasCalled = false
         val store = createStore(
             scope = this,
-            customTab = null,
             menuState = MenuState(
                 browserMenuState = BrowserMenuState(
                     selectedTab = tab,
@@ -1031,7 +1086,11 @@ class MenuNavigationMiddlewareTest {
         var dismissWasCalled = false
         val store = createStore(
             scope = this,
-            customTab = customTab,
+            menuState = MenuState(
+                browserMenuState = BrowserMenuState(
+                    selectedTab = customTab,
+                ),
+            ),
             onDismiss = { dismissWasCalled = true },
         )
 
@@ -1050,7 +1109,6 @@ class MenuNavigationMiddlewareTest {
         var dismissWasCalled = false
         val store = createStore(
             scope = this,
-            customTab = null,
             menuState = MenuState(
                 browserMenuState = BrowserMenuState(
                     selectedTab = tab,
@@ -1077,7 +1135,6 @@ class MenuNavigationMiddlewareTest {
         var dismissWasCalled = false
         val store = createStore(
             scope = this,
-            customTab = null,
             menuState = MenuState(
                 browserMenuState = BrowserMenuState(
                     selectedTab = tab,
@@ -1104,7 +1161,9 @@ class MenuNavigationMiddlewareTest {
         var dismissWasCalled = false
         val store = createStore(
             scope = this,
-            customTab = customTab,
+            menuState = MenuState(
+                browserMenuState = BrowserMenuState(selectedTab = customTab),
+            ),
             onDismiss = { dismissWasCalled = true },
         )
 
@@ -1126,7 +1185,6 @@ class MenuNavigationMiddlewareTest {
         var dismissWasCalled = false
         val store = createStore(
             scope = this,
-            customTab = null,
             menuState = MenuState(
                 browserMenuState = BrowserMenuState(
                     selectedTab = tab,
@@ -1150,7 +1208,7 @@ class MenuNavigationMiddlewareTest {
         var dismissWasCalled = false
         val store = createStore(
             scope = this,
-            customTab = customTab,
+            menuState = MenuState(browserMenuState = BrowserMenuState(selectedTab = customTab)),
             onDismiss = { dismissWasCalled = true },
         )
 
@@ -1166,7 +1224,6 @@ class MenuNavigationMiddlewareTest {
     private fun createStore(
         scope: CoroutineScope,
         browserStore: BrowserStore = createBrowserStore(),
-        customTab: CustomTabSessionState? = null,
         menuState: MenuState = MenuState(),
         webCompatReporterMoreInfoSender: WebCompatReporterMoreInfoSender = FakeWebCompatReporterMoreInfoSender(),
         openToBrowser: (params: BrowserNavigationParams) -> Unit = {},
@@ -1184,7 +1241,6 @@ class MenuNavigationMiddlewareTest {
                 settings = settings,
                 onDismiss = onDismiss,
                 scope = scope,
-                customTab = customTab,
                 webCompatReporterMoreInfoSender = webCompatReporterMoreInfoSender,
             ),
         ),

@@ -12,7 +12,6 @@
 #include "mozilla/Vector.h"
 
 #include "js/AllocPolicy.h"
-
 #include "wasm/WasmSerialize.h"
 #include "wasm/WasmShareable.h"
 

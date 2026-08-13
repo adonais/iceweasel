@@ -4,15 +4,15 @@
 
 #include "GLBlitHelper.h"
 
-#include "gfxEnv.h"
-#include "gfxUtils.h"
 #include "GLContext.h"
 #include "GLScreenBuffer.h"
+#include "GLUploadHelpers.h"
 #include "GPUVideoImage.h"
 #include "HeapCopyOfStackArray.h"
 #include "ImageContainer.h"
 #include "ScopedGLHelpers.h"
-#include "GLUploadHelpers.h"
+#include "gfxEnv.h"
+#include "gfxUtils.h"
 #include "mozilla/Casting.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_gfx.h"
@@ -36,14 +36,14 @@
 
 #ifdef XP_WIN
 #  include "mozilla/layers/D3D11ShareHandleImage.h"
-#  include "mozilla/layers/D3D11ZeroCopyTextureImage.h"
 #  include "mozilla/layers/D3D11YCbCrImage.h"
+#  include "mozilla/layers/D3D11ZeroCopyTextureImage.h"
 #endif
 
 #ifdef MOZ_WIDGET_GTK
 #  include "mozilla/layers/DMABUFSurfaceImage.h"
-#  include "mozilla/widget/DMABufSurface.h"
 #  include "mozilla/widget/DMABufDevice.h"
+#  include "mozilla/widget/DMABufSurface.h"
 #endif
 
 using mozilla::layers::PlanarYCbCrData;
@@ -1014,6 +1014,10 @@ bool GLBlitHelper::BlitImageToFramebuffer(layers::Image* const srcImage,
       return false;
 #endif
     }
+    case ImageFormat::ANDROID_IMAGE_READER: {
+      MOZ_ASSERT(false);
+      return false;
+    }
     case ImageFormat::MAC_IOSURFACE:
 #ifdef XP_MACOSX
       return BlitImage(srcImage->AsMacIOSurfaceImage(), destRect, destOrigin,
@@ -1336,8 +1340,9 @@ bool GLBlitHelper::BlitImage(MacIOSurface* const iosurf,
     gfxCriticalError() << "Null MacIOSurface for GLBlitHelper::BlitImage";
     return false;
   }
-  if (mGL->GetContextType() != GLContextType::CGL) {
-    MOZ_ASSERT(false);
+  if (mGL->GetContextType() != GLContextType::CGL &&
+      mGL->GetContextType() != GLContextType::EGL) {
+    MOZ_ASSERT_UNREACHABLE();
     return false;
   }
 
@@ -1410,7 +1415,7 @@ bool GLBlitHelper::BlitImage(MacIOSurface* const iosurf,
       return false;
   }
 
-  const GLenum texTarget = LOCAL_GL_TEXTURE_RECTANGLE;
+  const GLenum texTarget = mGL->GetPreferredMacIOSurfaceTextureTarget();
   const ScopedSaveMultiTex saveTex(mGL, planes, texTarget);
   Maybe<ScopedTexture> texs[3];
 
@@ -1423,19 +1428,32 @@ bool GLBlitHelper::BlitImage(MacIOSurface* const iosurf,
     if (!iosurf->BindTexImage(mGL, p)) {
       return false;
     }
+  }
 
-    if (p == 0) {
-      const auto width = iosurf->GetDevicePixelWidth(p);
-      const auto height = iosurf->GetDevicePixelHeight(p);
+  const auto width = iosurf->GetDevicePixelWidth(0);
+  const auto height = iosurf->GetDevicePixelHeight(0);
+  baseArgs.texSize = gfx::IntSize(width, height);
+  const char* texHeader;
+  switch (texTarget) {
+    case LOCAL_GL_TEXTURE_RECTANGLE_ARB:
+      texHeader = kFragHeader_Tex2DRect;
       baseArgs.texMatrix0 = SubRectMat3(0, 0, width, height);
-      baseArgs.texSize = gfx::IntSize(width, height);
-      yuvArgs.texMatrix1 = SubRectMat3(0, 0, width / 2.0, height / 2.0);
-    }
+      yuvArgs.texMatrix1 = SubRectMat3(0, 0, iosurf->GetDevicePixelWidth(1),
+                                       iosurf->GetDevicePixelHeight(1));
+      break;
+    case LOCAL_GL_TEXTURE_2D:
+      texHeader = kFragHeader_Tex2D;
+      baseArgs.texMatrix0 = Mat3::I();
+      yuvArgs.texMatrix1 = Mat3::I();
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE();
+      return false;
   }
 
   const char* fragConvert = yuv ? kFragConvert_ColorMatrix : kFragConvert_None;
   const auto& prog = GetDrawBlitProg({
-      kFragHeader_Tex2DRect,
+      texHeader,
       {fragSample, fragConvert, GetAlphaMixin(convertAlpha)},
   });
   prog.Draw(baseArgs, yuv ? &yuvArgs : nullptr);
@@ -1565,10 +1583,7 @@ bool GLBlitHelper::BlitImage(layers::GPUVideoImage* const srcImage,
                              const gfx::IntRect& destRect,
                              const OriginPos destOrigin,
                              const gfx::IntSize& fbSize) const {
-  const auto& data = srcImage->GetData();
-  if (!data) return false;
-
-  const auto& desc = data->SD();
+  const auto& desc = srcImage->SD();
 
   MOZ_ASSERT(
       desc.type() ==

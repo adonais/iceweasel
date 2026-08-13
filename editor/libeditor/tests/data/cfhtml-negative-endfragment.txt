@@ -1,0 +1,10 @@
+Version:0.9
+StartHTML:-1
+EndHTML:-1
+StartFragment:00000159
+EndFragment:-1
+SourceURL:http://example.invalid/CFHTML_NEG_ENDFRAGMENT_SENTINEL
+<html><body>
+<!--StartFragment--><p>benign clipboard text</p><!--EndFragment-->
+</body>
+</html>

@@ -61,7 +61,7 @@ add_task(async function test_breached_origin_alert() {
   const editBtn = notifMsgBar.shadowRoot.querySelector("moz-button");
   await waitForReauth(() => editBtn.click());
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => megalist.querySelector("login-form"),
     "Login form failed to render"
   );
@@ -105,7 +105,7 @@ add_task(async function test_no_username_alert() {
   info("Click on add username.");
   const editBtn = notifMsgBar.shadowRoot.querySelector("moz-button");
   await waitForReauth(() => editBtn.click());
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => megalist.querySelector("login-form"),
     "Login form failed to render"
   );
@@ -147,7 +147,7 @@ add_task(async function test_vulnerable_password_alert() {
   info("Click on change password.");
   const editBtn = notifMsgBar.shadowRoot.querySelector("moz-button");
   await waitForReauth(() => editBtn.click());
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => megalist.querySelector("login-form"),
     "Login form failed to render"
   );

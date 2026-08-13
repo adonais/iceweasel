@@ -1,5 +1,3 @@
-// |jit-test| skip-if: !isAsmJSCompilationAvailable()
-
 // Generate a function with many parameters and local variables.
 // We want to test the limits and this module should fail validation.
 function build_asm_code(num_params, num_locals_decl_extra) {

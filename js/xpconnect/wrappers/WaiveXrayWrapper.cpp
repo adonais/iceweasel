@@ -3,8 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "WaiveXrayWrapper.h"
-#include "WrapperFactory.h"
+
 #include "jsapi.h"
+#include "WrapperFactory.h"
+
 #include "js/CallAndConstruct.h"  // JS::IsCallable
 
 using namespace JS;

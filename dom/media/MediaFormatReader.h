@@ -851,6 +851,11 @@ class MediaFormatReader final
   // Temporary seek information while we wait for the data
   Maybe<media::TimeUnit> mFallbackSeekTime;
   Maybe<media::TimeUnit> mPendingSeekTime;
+  // Decode threshold computed when a video seek completes, remembered so it can
+  // be delivered once the decoder is restarted: a cold start during the seek
+  // releases and recreates the decoder after IsSeeking() is already false,
+  // which would otherwise drop the threshold before it reaches the new decoder.
+  Maybe<media::TimeUnit> mPendingVideoSeekThreshold;
   MozPromiseHolder<SeekPromise> mSeekPromise;
 
   RefPtr<VideoFrameContainer> mVideoFrameContainer;

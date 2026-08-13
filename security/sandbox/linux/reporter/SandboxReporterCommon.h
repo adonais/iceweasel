@@ -5,9 +5,9 @@
 #ifndef mozilla_SandboxReporterCommon_h
 #define mozilla_SandboxReporterCommon_h
 
-#include "mozilla/IntegerTypeTraits.h"
-
 #include <sys/types.h>
+
+#include "mozilla/IntegerTypeTraits.h"
 
 // Note: this is also used in libmozsandbox, so dependencies on
 // symbols from libxul probably won't work.

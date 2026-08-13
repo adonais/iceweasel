@@ -36,11 +36,13 @@ class ChannelClassifierUtils final {
 
   // Helper function for the Classifier to decide whether to cancel or replace
   // a channel. The resolved block decision (Blocked / Replaced / Allowed) is
-  // written to |aOutDecision|.
+  // written to |aOutDecision|. If |aCancelCallback| is non-null it is invoked
+  // after SetBlockedContent and before the channel cancel.
   static nsresult MaybeBlockChannel(
       nsIChannel* aChannel, const nsACString& aFeatureName,
       const nsACString& aList, nsresult aErrorCode, uint32_t aReplacedEvent,
-      uint32_t aAllowedEvent, ChannelBlockDecision* aOutDecision);
+      uint32_t aAllowedEvent, void (*aCancelCallback)(nsIChannel*),
+      ChannelBlockDecision* aOutDecision);
 
   // Returns true if this error is known as one of the blocking error codes.
   static bool IsClassifierBlockingErrorCode(nsresult aError);

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Audio-focus interrupt: start gating</title>
+</head>
+<body>
+<!-- Audible media is gated while interrupted; the inaudible variants (muted,
+     zero volume, no audio track) are not and should still start. -->
+<audio id="audible" src="gizmo.mp4" loop></audio>
+<audio id="muted" src="gizmo.mp4" loop muted></audio>
+<audio id="vol0" src="gizmo.mp4" loop></audio>
+<video id="noaudio" src="gizmo-noaudio.webm" loop preload="metadata"></video>
+<script>
+// Web Audio doubles as the interrupt-arrival barrier: it participates in the
+// suspend fan-out, so its state transitions confirm the interrupt has reached
+// this content process (and therefore the per-tab interrupted flag is set)
+// before the test probes the other sources.
+let ac;
+window.startWebAudio = async () => {
+  ac = new AudioContext();
+  const osc = ac.createOscillator();
+  const gain = ac.createGain();
+  gain.gain.value = 0.05;
+  osc.connect(gain);
+  gain.connect(ac.destination);
+  osc.start();
+  await ac.resume();
+  return ac.state;
+};
+window.audioContextState = () => (ac ? ac.state : "none");
+window.waitForAudioContextState = expected =>
+  new Promise(resolve => {
+    const check = () => ac && ac.state === expected;
+    if (check()) {
+      resolve(true);
+      return;
+    }
+    const timer = setInterval(() => {
+      if (check()) {
+        clearInterval(timer);
+        resolve(true);
+      }
+    }, 50);
+  });
+// Call resume() and report whether it took effect within ms ("running") or was
+// gated ("suspended"). Keeps the promise so its deferred resolution can be
+// awaited once the interruption ends.
+let pendingResume;
+window.resumeWebAudioGated = ms =>
+  new Promise(resolve => {
+    let settled = false;
+    const finish = r => {
+      if (!settled) {
+        settled = true;
+        resolve(r);
+      }
+    };
+    pendingResume = ac.resume();
+    pendingResume.then(() => finish("running"));
+    setTimeout(() => finish(ac.state), ms);
+  });
+// Await the deferred resume() promise from resumeWebAudioGated; report the
+// resulting state ("running"), "rejected", or "stuck" if it never settles.
+window.awaitPendingResume = ms =>
+  new Promise(resolve => {
+    let settled = false;
+    const finish = r => {
+      if (!settled) {
+        settled = true;
+        resolve(r);
+      }
+    };
+    pendingResume.then(
+      () => finish(ac.state),
+      () => finish("rejected")
+    );
+    setTimeout(() => finish("stuck"), ms);
+  });
+
+// Create a fresh context, resume() it (deferred while interrupted), then
+// close() that context, and report whether the deferred resume promise settles
+// ("rejected") or is left hanging ("pending").
+window.closeContextWithDeferredResume = ms =>
+  new Promise(resolve => {
+    let settled = false;
+    const finish = r => {
+      if (!settled) {
+        settled = true;
+        resolve(r);
+      }
+    };
+    const ctx = new AudioContext();
+    ctx.resume().then(
+      () => finish("resolved"),
+      () => finish("rejected")
+    );
+    ctx.close();
+    setTimeout(() => finish("pending"), ms);
+  });
+
+document.getElementById("vol0").volume = 0;
+
+// Resolve once the element has loaded metadata, so HAVE_METADATA is reached and
+// a missing audio track is recognised by the inaudible check.
+window.waitForMetadata = id =>
+  new Promise(resolve => {
+    const el = document.getElementById(id);
+    if (el.readyState >= HTMLMediaElement.HAVE_METADATA) {
+      resolve();
+      return;
+    }
+    el.addEventListener("loadedmetadata", () => resolve(), { once: true });
+  });
+
+// play() the given element and report "played" or the rejection name (e.g.
+// "NotAllowedError" when gated).
+window.playMedia = async id => {
+  try {
+    await document.getElementById(id).play();
+    return "played";
+  } catch (e) {
+    return e.name;
+  }
+};
+window.cancelMedia = id => document.getElementById(id).pause();
+
+// Web Speech.
+let utt;
+// Speak and report which event wins within ms: "started", "error", or
+// "timeout". Both listeners are attached before speak() so a synchronous
+// error during speak() is observed.
+window.speakAndRace = ms =>
+  new Promise(resolve => {
+    let settled = false;
+    const finish = r => {
+      if (!settled) {
+        settled = true;
+        resolve(r);
+      }
+    };
+    utt = new SpeechSynthesisUtterance("audio focus interrupt start test");
+    utt.lang = "it-IT-noend";
+    utt.addEventListener("start", () => finish("started"));
+    utt.addEventListener("error", () => finish("error"));
+    setTimeout(() => finish("timeout"), ms);
+    speechSynthesis.speak(utt);
+  });
+// Speak and resolve only once the utterance actually starts ("started") or
+// errors ("error"); no timeout race, since speak() must succeed once the
+// interruption has ended.
+window.speakAndAwaitStart = () =>
+  new Promise(resolve => {
+    utt = new SpeechSynthesisUtterance("audio focus interrupt start test");
+    utt.lang = "it-IT-noend";
+    utt.addEventListener("start", () => resolve("started"), { once: true });
+    utt.addEventListener("error", () => resolve("error"), { once: true });
+    speechSynthesis.speak(utt);
+  });
+window.cancelSpeech = () => speechSynthesis.cancel();
+</script>
+</body>
+</html>

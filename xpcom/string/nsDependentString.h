@@ -5,9 +5,8 @@
 #ifndef nsDependentString_h_
 #define nsDependentString_h_
 
-#include "nsString.h"
 #include "nsDebug.h"
-
+#include "nsString.h"
 #include "nsTDependentString.h"
 
 #endif /* !defined(nsDependentString_h_) */

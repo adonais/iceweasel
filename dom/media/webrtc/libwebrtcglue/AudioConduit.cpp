@@ -260,8 +260,11 @@ MediaConduitErrorCode WebrtcAudioConduit::Init() {
 
 void WebrtcAudioConduit::OnDtmfEvent(const DtmfEvent& aEvent) {
   MOZ_ASSERT(mCallThread->IsOnCurrentThread());
-  MOZ_ASSERT(mSendStream);
   MOZ_ASSERT(mDtmfEnabled);
+  // Drop DTMF if sending is disabled.
+  if (!mSendStream) {
+    return;
+  }
   mSendStream->SendTelephoneEvent(aEvent.mPayloadType, aEvent.mPayloadFrequency,
                                   aEvent.mEventCode, aEvent.mLengthMs);
 }
@@ -543,8 +546,26 @@ Maybe<webrtc::AudioSendStream::Stats> WebrtcAudioConduit::GetSenderStats()
     const {
   MOZ_ASSERT(mCallThread->IsOnCurrentThread());
   if (!mSendStream) {
-    // Might be nothing
-    return mTransitionalSendStreamStats;
+    // Prefer transitional stats left over from a recently destroyed stream
+    // (e.g. during a codec change). These carry real cumulative counters and
+    // should take priority over the synthesised fallback below.
+    if (mTransitionalSendStreamStats) {
+      return mTransitionalSendStreamStats;
+    }
+    // The send stream is only created when mTransmitting is true, which
+    // requires a track to be bound (see RTCRtpSender::UpdateBaseConfig). For
+    // a trackless sender the stream never starts, yet the WebRTC stats spec
+    // requires RTCOutboundRtpStreamStats to exist as soon as the sender is
+    // configured by a completed offer/answer exchange. Synthesise minimal
+    // stats from the SSRC that was negotiated in SDP so that outbound-rtp
+    // entries appear in getStats() even before a track arrives.
+    const auto& ssrcs = mControl.mLocalSsrcs.Ref();
+    if (ssrcs.empty()) {
+      return Nothing();
+    }
+    webrtc::AudioSendStream::Stats synthStats;
+    synthStats.local_ssrc = ssrcs[0];
+    return Some(std::move(synthStats));
   }
   // Successfully got stats, so clear the transitional stats.
   mTransitionalSendStreamStats = Nothing();

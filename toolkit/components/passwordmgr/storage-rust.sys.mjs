@@ -9,9 +9,6 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  FXA_PWDMGR_HOST: "resource://gre/modules/FxAccountsCommon.sys.mjs",
-  FXA_PWDMGR_REALM: "resource://gre/modules/FxAccountsCommon.sys.mjs",
-
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
 
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
@@ -107,6 +104,16 @@ const loginToLoginInfo = login => {
   return loginInfo;
 };
 
+// Build a bare LoginInfo carrying only the given guid. Used to report the ids
+// of removed logins in "removeAllLogins" notifications, since the bulk deletion
+// APIs only return guids rather than full logins.
+const guidToLoginInfo = guid => {
+  const loginInfo = new LoginInfo("", "", null, "", "", "", "");
+  loginInfo.QueryInterface(Ci.nsILoginMetaInfo);
+  loginInfo.guid = guid;
+  return loginInfo;
+};
+
 // An adapter which talks to the Rust Logins Store via LoginInfo objects
 class RustLoginsStoreAdapter {
   #store = null;
@@ -181,6 +188,14 @@ class RustLoginsStoreAdapter {
     return await this.#store.deleteMany(ids);
   }
 
+  async deleteAll() {
+    return await this.#store.deleteAll();
+  }
+
+  async deleteAllExceptFxa() {
+    return await this.#store.deleteAllExceptFxa();
+  }
+
   // reset() {
   //   return this.#store.reset()
   // }
@@ -189,16 +204,12 @@ class RustLoginsStoreAdapter {
     return await this.#store.wipeLocal();
   }
 
+  async wipeLocalExceptFxa() {
+    return await this.#store.wipeLocalExceptFxa();
+  }
+
   async count() {
     return await this.#store.count();
-  }
-
-  async countByOrigin(origin) {
-    return await this.#store.countByOrigin(origin);
-  }
-
-  async countByFormActionOrigin(formActionOrigin) {
-    return await this.#store.countByFormActionOrigin(formActionOrigin);
   }
 
   async touch(id) {
@@ -246,6 +257,10 @@ class RustLoginsStoreAdapter {
     return result;
   }
 
+  bridgedEngine() {
+    return this.#store.bridgedEngine();
+  }
+
   shutdown() {
     return this.#store.shutdown();
   }
@@ -253,6 +268,14 @@ class RustLoginsStoreAdapter {
 
 class RustLoginStorageAuthenticator extends PrimaryPasswordAuthenticator {
   #logger = null;
+
+  // True while a primary-password prompt is displayed, so the storage can
+  // report `uiBusy` like the SDR crypto does.
+  uiBusy = false;
+
+  // Set when the user cancels the prompt. The storage uses this to translate
+  // the resulting store failure into NS_ERROR_ABORT (matching crypto-SDR).
+  authCanceled = false;
 
   constructor() {
     super();
@@ -266,27 +289,34 @@ class RustLoginStorageAuthenticator extends PrimaryPasswordAuthenticator {
   // calling get_key(), so this method is always invoked serially.
   async getPrimaryPassword() {
     this.#logger.log("getPrimaryPassword called");
-    const win = Services.wm.getMostRecentBrowserWindow();
-    // Empty title causes Prompter.sys.mjs to fall back to the localised
-    // "PromptPassword3" string ("Password Required - <AppName>").
-    const message = await lazy.l10n.formatValue(
-      "primary-password-prompt-message"
-    );
-    const result = await Services.prompt.asyncPromptPassword(
-      win?.browsingContext,
-      Services.prompt.MODAL_TYPE_WINDOW,
-      "",
-      message,
-      ""
-    );
+    this.authCanceled = false;
+    this.uiBusy = true;
+    try {
+      const win = Services.wm.getMostRecentBrowserWindow();
+      // Empty title causes Prompter.sys.mjs to fall back to the localised
+      // "PromptPassword3" string ("Password Required - <AppName>").
+      const message = await lazy.l10n.formatValue(
+        "primary-password-prompt-message"
+      );
+      const result = await Services.prompt.asyncPromptPassword(
+        win?.browsingContext,
+        Services.prompt.MODAL_TYPE_WINDOW,
+        "",
+        message,
+        ""
+      );
 
-    if (!result.getProperty("ok")) {
-      Services.obs.notifyObservers(null, "passwordmgr-crypto-loginCanceled");
-      throw new AuthenticationCanceled("User cancelled");
+      if (!result.getProperty("ok")) {
+        this.authCanceled = true;
+        Services.obs.notifyObservers(null, "passwordmgr-crypto-loginCanceled");
+        throw new AuthenticationCanceled("User cancelled");
+      }
+
+      this.#logger.log("got a password");
+      return result.getProperty("pass");
+    } finally {
+      this.uiBusy = false;
     }
-
-    this.#logger.log("got a password");
-    return result.getProperty("pass");
   }
 
   async onAuthenticationSuccess() {
@@ -301,6 +331,7 @@ class RustLoginStorageAuthenticator extends PrimaryPasswordAuthenticator {
 
 export class LoginManagerRustStorage {
   #storageAdapter = null;
+  #authenticator = null;
   #initializationPromise = null;
   // Only the active backend fires storage-changed events to avoid duplicates
   // when both JSON and Rust stores are initialized.
@@ -332,6 +363,7 @@ export class LoginManagerRustStorage {
 
           initRustComponents(profilePath).then(() => {
             const authenticator = new RustLoginStorageAuthenticator();
+            this.#authenticator = authenticator;
             const store = createLoginStoreWithNssKeymanager(
               path,
               authenticator
@@ -360,9 +392,7 @@ export class LoginManagerRustStorage {
     // TODO: Currently we do not mark the instance as closed, not sure if later
     // calls would be rejected elsewhere.
 
-    // Note: This is a synchronous call.
-    this.#storageAdapter.shutdown();
-    return Promise.resolve();
+    await this.#storageAdapter.shutdown();
   }
 
   /**
@@ -394,6 +424,17 @@ export class LoginManagerRustStorage {
   testSaveForReplace() {}
 
   /**
+   * Returns the Sync bridged engine backed by the same Rust store instance the
+   * storage layer uses, so that Sync and data access share one database handle.
+   * Assumes the storage is already initialized; the sync engine only reaches it
+   * via the active store, which is set after initialization completes.
+   *
+   */
+  bridgedEngine() {
+    return this.#storageAdapter.bridgedEngine();
+  }
+
+  /**
    * Returns the "sync id" used by Sync to know whether the store is current with
    * respect to the sync servers. It is stored encrypted, but only so we
    * can detect failure to decrypt (for example, a "reset" of the primary
@@ -421,10 +462,6 @@ export class LoginManagerRustStorage {
     throw Components.Exception("setLastSync", Cr.NS_ERROR_NOT_IMPLEMENTED);
   }
 
-  async resetSyncCounter(_guid, _value) {
-    throw Components.Exception("resetSyncCounter", Cr.NS_ERROR_NOT_IMPLEMENTED);
-  }
-
   loginIsDeleted(_guid) {
     throw Components.Exception("loginIsDeleted", Cr.NS_ERROR_NOT_IMPLEMENTED);
   }
@@ -437,8 +474,43 @@ export class LoginManagerRustStorage {
   }
 
   async addLoginsAsync(logins, continueOnDuplicates = false) {
+    const result = await this.#addLoginsWithResults(
+      logins,
+      continueOnDuplicates
+    );
+
+    // Return only successfully added logins, matching the JSON backend.
+    return continueOnDuplicates
+      ? result.filter(item => !item.error).map(item => item.login)
+      : result;
+  }
+
+  /**
+   * Adds multiple logins and returns the raw per-login results, with each
+   * entry being either { login } or { error } and aligned by index with the
+   * input. Used by the migrator to detect and rescue duplicates; most callers
+   * want addLoginsAsync instead.
+   */
+  async addLoginsWithResultsAsync(logins) {
+    return this.#addLoginsWithResults(logins, true);
+  }
+
+  async #addLoginsWithResults(logins, continueOnDuplicates) {
     if (logins.length === 0) {
       return logins;
+    }
+
+    // The Rust backend only treats an exact formActionOrigin match as a
+    // duplicate, whereas desktop treats an empty formActionOrigin as a wildcard
+    // (see LoginHelper.doLoginsMatch). Reproduce the JSON backend's check up
+    // front so a manually-added login (formActionOrigin === "") is rejected as
+    // a duplicate, and so callers such as about:logins get the existing login's
+    // GUID to link to and select the conflicting login.
+    if (!continueOnDuplicates) {
+      const existing = await this.#findExistingDuplicate(logins);
+      if (existing) {
+        throw lazy.LoginHelper.createLoginAlreadyExistsError(existing.guid);
+      }
     }
 
     const result = await this.#storageAdapter.addManyWithMeta(
@@ -461,14 +533,37 @@ export class LoginManagerRustStorage {
     return result;
   }
 
+  // Finds the stored login that a to-be-added login duplicates, so the existing
+  // login's GUID can be reported in the "already exists" error. Mirrors the
+  // duplicate lookup in modifyLoginAsync.
+  async #findExistingDuplicate(logins) {
+    for (const login of logins) {
+      const matchData = {};
+      for (const field of ["origin", "formActionOrigin", "httpRealm"]) {
+        if (login[field] != "") {
+          matchData[field] = login[field];
+        }
+      }
+      const [matches] = await this.#searchLogins(matchData);
+      const match = matches.find(l => login.matches(l, true));
+      if (match) {
+        return match;
+      }
+    }
+    return null;
+  }
+
   async modifyLoginAsync(oldLogin, newLoginData, _fromSync) {
-    const oldStoredLogin = await this.#storageAdapter.get(oldLogin.guid);
+    // Resolve the stored login by value so callers may pass a login without a
+    // guid, matching the JSON storage backend.
+    const oldStoredLogin =
+      await this.#storageAdapter.findLoginToUpdate(oldLogin);
 
     if (!oldStoredLogin) {
       throw new Error("No matching logins");
     }
 
-    const idToModify = oldLogin.guid;
+    const idToModify = oldStoredLogin.guid;
 
     const newLogin = lazy.LoginHelper.buildModifiedLogin(
       oldStoredLogin,
@@ -506,14 +601,26 @@ export class LoginManagerRustStorage {
       newLogin
     );
 
+    // The Rust `update` deliberately treats an edit as "not a use" and leaves
+    // timesUsed/timeLastUsed unchanged (bug 2045032). Honor a requested
+    // increment (e.g. timesUsedIncrement) by recording the use(s) via `touch`.
+    let finalLogin = updatedLogin;
+    const increment = newLogin.timesUsed - oldStoredLogin.timesUsed;
+    for (let i = 0; i < increment; i++) {
+      await this.#storageAdapter.touch(updatedLogin.guid);
+    }
+    if (increment > 0) {
+      finalLogin = await this.#storageAdapter.get(updatedLogin.guid);
+    }
+
     if (this.#isActive) {
       lazy.LoginHelper.notifyStorageChanged("modifyLogin", [
         oldStoredLogin,
-        updatedLogin,
+        finalLogin,
       ]);
     }
 
-    return updatedLogin;
+    return finalLogin;
   }
 
   async recordPasswordUseAsync(login) {
@@ -523,7 +630,15 @@ export class LoginManagerRustStorage {
       throw new Error("No matching logins");
     }
 
-    return await this.#storageAdapter.touch(oldStoredLogin.guid);
+    await this.#storageAdapter.touch(oldStoredLogin.guid);
+    const updatedLogin = await this.#storageAdapter.get(oldStoredLogin.guid);
+
+    if (this.#isActive) {
+      lazy.LoginHelper.notifyStorageChanged("modifyLogin", [
+        oldStoredLogin,
+        updatedLogin,
+      ]);
+    }
   }
 
   async recordBreachAlertDismissal(loginGUID) {
@@ -549,7 +664,28 @@ export class LoginManagerRustStorage {
         Cr.NS_ERROR_NOT_IMPLEMENTED
       );
     }
-    return await this.#storageAdapter.list();
+    try {
+      return await this.#storageAdapter.list();
+    } catch (e) {
+      // The store fails to decrypt when the primary password is locked (either
+      // the user cancelled the prompt, or the key can't be unlocked). Translate
+      // that into NS_ERROR_ABORT so callers (e.g. getAllUserFacingLogins) treat
+      // it as "no logins available right now" instead of leaking a raw Rust
+      // error, matching crypto-SDR and searchLoginsAsync.
+      if (
+        this.#authenticator?.authCanceled ||
+        /decryption failed/i.test(e.message)
+      ) {
+        if (this.#authenticator) {
+          this.#authenticator.authCanceled = false;
+        }
+        throw Components.Exception(
+          "Primary password locked",
+          Cr.NS_ERROR_ABORT
+        );
+      }
+      throw e;
+    }
   }
 
   async searchLoginsAsync(matchData, includeDeleted) {
@@ -578,12 +714,26 @@ export class LoginManagerRustStorage {
       }
     }
 
-    const [logins] = await this.#searchLogins(
-      realMatchData,
-      includeDeleted,
-      options
-    );
-    return logins;
+    try {
+      const [logins] = await this.#searchLogins(
+        realMatchData,
+        includeDeleted,
+        options
+      );
+      return logins;
+    } catch (e) {
+      // When the user cancels the primary-password prompt, the store fails to
+      // decrypt. Translate that into NS_ERROR_ABORT so callers (e.g.
+      // LoginManagerParent) can throttle further prompts, matching crypto-SDR.
+      if (this.#authenticator?.authCanceled) {
+        this.#authenticator.authCanceled = false;
+        throw Components.Exception(
+          "User canceled primary password entry",
+          Cr.NS_ERROR_ABORT
+        );
+      }
+      throw e;
+    }
   }
 
   async #searchLogins(
@@ -704,91 +854,77 @@ export class LoginManagerRustStorage {
   }
 
   async removeLoginAsync(login, _fromSync) {
-    const deleted = await this.#storageAdapter.delete(login.guid);
-    if (!deleted) {
+    // Resolve the stored login by value so callers may pass a login without a
+    // guid, matching the JSON storage backend.
+    const storedLogin = await this.#storageAdapter.findLoginToUpdate(login);
+    if (!storedLogin) {
       throw new Error("No matching logins");
     }
+
+    await this.#storageAdapter.delete(storedLogin.guid);
 
     if (this.#isActive) {
       Glean.pwmgr.numSavedPasswords.set(
         await this.countLoginsAsync("", "", "")
       );
-      lazy.LoginHelper.notifyStorageChanged("removeLogin", login);
+      lazy.LoginHelper.notifyStorageChanged("removeLogin", storedLogin);
     }
   }
 
   /**
-   * Removes all logins from local storage, including FxA Sync key.
+   * Removes all logins from local storage, including the FxA Sync key. The
+   * logins are marked as deleted so the deletions propagate to Sync.
    *
-   * NOTE: You probably want removeAllUserFacingLogins instead of this function.
-   *
+   * NOTE: You probably want removeAllUserFacingLoginsAsync instead of this
+   * function.
    */
   async removeAllLoginsAsync() {
-    const removed = await this.#removeLogins(false, true);
+    this.log("Removing all logins.");
+    const removedIds = await this.#storageAdapter.deleteAll();
+
     if (this.#isActive) {
-      lazy.LoginHelper.notifyStorageChanged("removeAllLogins", removed ?? []);
+      lazy.LoginHelper.notifyStorageChanged(
+        "removeAllLogins",
+        removedIds.map(guidToLoginInfo)
+      );
     }
-    return removed;
   }
 
   /**
-   * Removes all user facing logins from storage. e.g. all logins except the FxA Sync key
+   * Removes all user facing logins from storage, i.e. all logins except the
+   * FxA Sync key.
    *
-   * If you need to remove the FxA key, use `removeAllLogins` instead
+   * If you need to remove the FxA key, use `removeAllLoginsAsync` instead.
    *
    * @param fullyRemove remove the logins rather than mark them deleted.
    */
   async removeAllUserFacingLoginsAsync(fullyRemove) {
-    return await this.#removeLogins(fullyRemove, true);
-  }
-
-  /**
-   * Removes all logins from storage. If removeFXALogin is true, then the FxA Sync
-   * key is also removed.
-   *
-   * @param fullyRemove remove the logins rather than mark them deleted.
-   * @param removeFXALogin also remove the FxA Sync key.
-   */
-  async #removeLogins(fullyRemove, removeFXALogin = false) {
-    this.log("Removing all logins.");
-
-    const removedLogins = [];
-    const remainingLogins = [];
-
-    const logins = await this.#storageAdapter.list();
-    const idsToDelete = [];
-    for (const login of logins) {
-      if (
-        !removeFXALogin &&
-        login.hostname == lazy.FXA_PWDMGR_HOST &&
-        login.httpRealm == lazy.FXA_PWDMGR_REALM
-      ) {
-        remainingLogins.push(login);
-      } else {
-        removedLogins.push(login);
-
-        idsToDelete.push(login.guid);
-      }
+    this.log("Removing all user facing logins.");
+    let removedIds = [];
+    if (fullyRemove) {
+      // wipeLocalExceptFxa() does not return the removed ids.
+      await this.#storageAdapter.wipeLocalExceptFxa();
+    } else {
+      removedIds = await this.#storageAdapter.deleteAllExceptFxa();
     }
 
-    if (idsToDelete.length) {
-      await this.#storageAdapter.deleteMany(idsToDelete);
+    if (this.#isActive) {
+      lazy.LoginHelper.notifyStorageChanged(
+        "removeAllLogins",
+        removedIds.map(guidToLoginInfo)
+      );
     }
   }
 
   async countLoginsAsync(origin, formActionOrigin, httpRealm) {
-    if (!origin && !formActionOrigin && !httpRealm) {
+    // The optimized adapter path only applies when all fields are the empty
+    // string wildcard. Origin and formActionOrigin must go through the generic
+    // search below so that count and search share the same strict matching
+    // semantics; the native countByOrigin/countByFormActionOrigin paths
+    // normalize the origin (e.g. stripping a trailing slash) and would count
+    // logins that searchLoginsAsync does not return.
+    if (origin === "" && formActionOrigin === "" && httpRealm === "") {
       return await this.#storageAdapter.count();
-    }
-
-    if (origin && !formActionOrigin && !httpRealm) {
-      return await this.#storageAdapter.countByOrigin(origin);
-    }
-
-    if (!origin && formActionOrigin && !httpRealm) {
-      return await this.#storageAdapter.countByFormActionOrigin(
-        formActionOrigin
-      );
     }
 
     const loginData = {
@@ -833,7 +969,17 @@ export class LoginManagerRustStorage {
   }
 
   async arePotentiallyVulnerablePasswords(logins) {
-    const ids = logins.map(l => l.QueryInterface(Ci.nsILoginMetaInfo).guid);
+    // Logins without a guid aren't stored, so they can't be recorded as
+    // vulnerable. Filter them out to avoid passing null guids to the Rust API.
+    const ids = logins
+      .map(
+        l =>
+          (typeof l.QueryInterface === "function"
+            ? l.QueryInterface(Ci.nsILoginMetaInfo)
+            : l
+          ).guid
+      )
+      .filter(Boolean);
     return this.#storageAdapter.arePotentiallyVulnerablePasswords(ids);
   }
 
@@ -856,7 +1002,9 @@ export class LoginManagerRustStorage {
   }
 
   get uiBusy() {
-    return this._crypto.uiBusy;
+    // The Rust store shows its own primary-password prompt via the
+    // authenticator, which the SDR crypto is unaware of.
+    return this.#authenticator?.uiBusy || this._crypto.uiBusy;
   }
 
   get isLoggedIn() {

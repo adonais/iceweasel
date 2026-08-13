@@ -10,8 +10,9 @@
 #if defined(MOZ_WIDGET_GTK)
 #  include <gdk/gdk.h>
 #  include <gdk/gdkx.h>
-#  include "mozilla/WidgetUtilsGtk.h"
+
 #  include "X11UndefineNone.h"
+#  include "mozilla/WidgetUtilsGtk.h"
 #else
 #  error Unknown toolkit
 #endif

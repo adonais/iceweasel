@@ -6,10 +6,10 @@
 #define GLREADTEXIMAGEHELPER_H_
 
 #include "GLContextTypes.h"
-#include "nsSize.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/gfx/MatrixFwd.h"
 #include "mozilla/gfx/Types.h"
+#include "nsSize.h"
 
 namespace mozilla {
 

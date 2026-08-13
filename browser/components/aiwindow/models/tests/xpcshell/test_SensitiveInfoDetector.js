@@ -55,6 +55,16 @@ add_task(function test_containsSensitiveInfo_sin() {
   );
 });
 
+add_task(function test_containsSensitiveInfo_insee() {
+  const detector = new SensitiveInfoDetector();
+
+  const withINSEE = "My INSEE is 1 90 05 75 101 022 45.";
+  Assert.ok(
+    detector.containsSensitiveInfo(withINSEE),
+    "Detects French National ID Number"
+  );
+});
+
 add_task(function test_containsSensitiveInfo_email() {
   const detector = new SensitiveInfoDetector();
 
@@ -105,6 +115,28 @@ add_task(function test_containsSensitiveInfo_phone() {
   Assert.ok(
     !detector.containsSensitiveInfo(shortNumber),
     "Does not flag short numbers"
+  );
+});
+
+add_task(function test_containsSensitiveInfo_french_phone() {
+  const detector = new SensitiveInfoDetector();
+
+  const phoneWithCountryCode = "Dial +33 1 94 24 99 99";
+  Assert.ok(
+    detector.containsSensitiveInfo(phoneWithCountryCode),
+    "Detects French phone numbers with the leading country code"
+  );
+
+  const phoneWithCountryCodeDifferentFormat = "Dial +33 1.94.24.99.99";
+  Assert.ok(
+    detector.containsSensitiveInfo(phoneWithCountryCodeDifferentFormat),
+    "Detects French phone numbers with the leading country code and different format"
+  );
+
+  const phoneWithoutCountryCode = "Dial 0033 1 94 24 99 99";
+  Assert.ok(
+    detector.containsSensitiveInfo(phoneWithoutCountryCode),
+    "Detects French phone numbers without the leading country code"
   );
 });
 
@@ -225,6 +257,21 @@ add_task(function test_containsSensitiveInfo_streetAddress() {
     !detector.containsSensitiveInfo(noStreet),
     "Does not flag generic text with street words"
   );
+});
+
+add_task(function test_containsSensitiveInfo_fr_streetAddress() {
+  const detector = new SensitiveInfoDetector();
+
+  for (const address of [
+    "5 Av. Anatole France",
+    "12 Rue de la Paix",
+    "29 Boulevard Haussmann",
+  ]) {
+    Assert.ok(
+      detector.containsSensitiveInfo(address),
+      `Detects French street address: ${address}`
+    );
+  }
 });
 
 add_task(function test_containsSensitiveInfo_poBox() {
@@ -358,6 +405,23 @@ add_task(function test_containsSensitiveKeywords_medical() {
   );
 
   Assert.ok(
+    detector.containsSensitiveKeywords(
+      "Options de traitement contre le cancer"
+    ),
+    "Detects French medical keyword: cancer"
+  );
+
+  Assert.ok(
+    detector.containsSensitiveKeywords("Je cherche un thérapeute près de moi"),
+    "Detects French medical keyword: thérapeute"
+  );
+
+  Assert.ok(
+    detector.containsSensitiveKeywords("Symptômes de dépression et traitement"),
+    "Detects French medical keyword: dépression"
+  );
+
+  Assert.ok(
     !detector.containsSensitiveKeywords("Healthy recipes for dinner"),
     "Does not flag non-medical health context"
   );
@@ -392,6 +456,21 @@ add_task(function test_containsSensitiveKeywords_finance() {
     ),
     "Detects finance keyword: loan"
   );
+
+  Assert.ok(
+    detector.containsSensitiveKeywords("Déclaration d'impôt sur le revenu"),
+    "Detects French finance keyword: impôt"
+  );
+
+  Assert.ok(
+    detector.containsSensitiveKeywords("Taux hypothèque aujourd'hui"),
+    "Detects French finance keyword: hypothèque"
+  );
+
+  Assert.ok(
+    detector.containsSensitiveKeywords("Déclarer faillite en France"),
+    "Detects French finance keyword: faillite"
+  );
 });
 
 add_task(function test_containsSensitiveKeywords_legal() {
@@ -416,6 +495,21 @@ add_task(function test_containsSensitiveKeywords_legal() {
     detector.containsSensitiveKeywords("Criminal defense attorney near me"),
     "Detects legal keyword: criminal"
   );
+
+  Assert.ok(
+    detector.containsSensitiveKeywords("Demande de divorce en France"),
+    "Detects French legal keyword: divorce"
+  );
+
+  Assert.ok(
+    detector.containsSensitiveKeywords("Audience pour la garde des enfants"),
+    "Detects French legal keyword: garde"
+  );
+
+  Assert.ok(
+    detector.containsSensitiveKeywords("Avocat pénaliste près de moi"),
+    "Detects French legal keyword: avocat"
+  );
 });
 
 add_task(function test_containsSensitiveKeywords_political() {
@@ -434,6 +528,21 @@ add_task(function test_containsSensitiveKeywords_political() {
   Assert.ok(
     detector.containsSensitiveKeywords("Liberal vs conservative viewpoints"),
     "Detects political keyword: liberal"
+  );
+
+  Assert.ok(
+    detector.containsSensitiveKeywords("Débat entre socialiste et communiste"),
+    "Detects French political keyword: socialiste"
+  );
+
+  Assert.ok(
+    detector.containsSensitiveKeywords("Comment voter à la prochaine élection"),
+    "Detects French political keyword: élection"
+  );
+
+  Assert.ok(
+    detector.containsSensitiveKeywords("Points de vue libéral et conservateur"),
+    "Detects French political keyword: libéral"
   );
 });
 
@@ -459,6 +568,21 @@ add_task(function test_containsSensitiveKeywords_religion() {
     detector.containsSensitiveKeywords("Atheism vs agnosticism debate"),
     "Detects religion keyword: atheism"
   );
+
+  Assert.ok(
+    detector.containsSensitiveKeywords("Église catholique près de moi"),
+    "Detects French religion keyword: catholique"
+  );
+
+  Assert.ok(
+    detector.containsSensitiveKeywords("Heures de prière islamique"),
+    "Detects French religion keyword: islamique"
+  );
+
+  Assert.ok(
+    detector.containsSensitiveKeywords("Débat entre athéisme et agnosticisme"),
+    "Detects French religion keyword: athéisme"
+  );
 });
 
 add_task(function test_containsSensitiveKeywords_demographics() {
@@ -482,6 +606,23 @@ add_task(function test_containsSensitiveKeywords_demographics() {
   Assert.ok(
     detector.containsSensitiveKeywords("Race and ethnicity demographics"),
     "Detects demographic keyword: race"
+  );
+
+  Assert.ok(
+    detector.containsSensitiveKeywords("Droits des personnes transgenres"),
+    "Detects French demographic keyword: transgenre"
+  );
+
+  Assert.ok(
+    detector.containsSensitiveKeywords("Comprendre l'identité de genre"),
+    "Detects French demographic keyword: identité de genre"
+  );
+
+  Assert.ok(
+    detector.containsSensitiveKeywords(
+      "Orientation sexuelle et discrimination"
+    ),
+    "Detects French demographic keyword: orientation sexuelle"
   );
 });
 

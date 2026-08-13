@@ -13,9 +13,11 @@ import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.action.MediaSessionAction
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.MediaSessionState
+import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.state.createCustomTab
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.concept.engine.mediasession.MediaSession
 import mozilla.components.concept.engine.mediasession.MediaSession.PlaybackState
 import mozilla.components.feature.media.service.MediaServiceBinder
 import mozilla.components.feature.media.service.MediaSessionDelegate
@@ -29,6 +31,7 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.anyInt
+import org.mockito.Mockito.atLeastOnce
 import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.verify
 import kotlin.coroutines.ContinuationInterceptor
@@ -164,6 +167,41 @@ class MediaSessionFeatureTest {
             testScheduler.advanceUntilIdle()
 
             verify(feature.mediaService)!!.handleMediaPlaying(mediaTab)
+        }
+
+    @Test
+    fun `GIVEN media is playing WHEN the audio-session type arrives later THEN re-handle playing media with the new type`() =
+        runTest {
+            val mediaTab = getMediaTab(PlaybackState.PLAYING)
+            val store = BrowserStore(BrowserState(tabs = listOf(mediaTab)))
+            val feature = MediaSessionFeature(
+                mock(),
+                MediaSessionServiceDelegate::class.java,
+                store,
+                mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
+            )
+            feature.mediaService = mock()
+            feature.start()
+            testScheduler.advanceUntilIdle()
+
+            // The audio-session type is delivered asynchronously, after playback
+            // already started. Because the feature observes mediaSessionState, a
+            // later type change re-handles the playing media, so audio focus is
+            // re-requested with the updated type instead of staying at the default.
+            store.dispatch(
+                MediaSessionAction.UpdateMediaAudioSessionTypeAction(
+                    mediaTab.id,
+                    MediaSession.AudioSessionType.TRANSIENT,
+                ),
+            )
+            testScheduler.advanceUntilIdle()
+
+            val captor = argumentCaptor<SessionState>()
+            verify(feature.mediaService, atLeastOnce())!!.handleMediaPlaying(captor.capture())
+            assertEquals(
+                MediaSession.AudioSessionType.TRANSIENT,
+                captor.value.mediaSessionState?.audioSessionType,
+            )
         }
 
     @Test

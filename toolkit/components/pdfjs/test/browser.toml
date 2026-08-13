@@ -35,6 +35,12 @@ run-if = [
 
 ["browser_pdfjs_csp.js"]
 
+["browser_pdfjs_digital_signature_properties.js"]
+support-files = [
+  "file_pdfjs_signed_verified.pdf",
+  "file_pdfjs_signed_invalid.pdf",
+]
+
 ["browser_pdfjs_download_button.js"]
 
 ["browser_pdfjs_editing_contextmenu.js"]

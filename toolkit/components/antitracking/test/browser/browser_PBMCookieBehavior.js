@@ -1,9 +1,5 @@
 "use strict";
 
-// This test will run all combinations of CookieBehavior. So, request a longer
-// timeout here
-requestLongerTimeout(3);
-
 const COOKIE_BEHAVIORS = [
   Ci.nsICookieService.BEHAVIOR_ACCEPT,
   Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN,
@@ -47,6 +43,8 @@ async function verifyCookieBehavior(browser, expected) {
 }
 
 add_task(async function () {
+  let pb_win = await BrowserTestUtils.openNewBrowserWindow({ private: true });
+
   for (let regularCookieBehavior of COOKIE_BEHAVIORS) {
     for (let PBMCookieBehavior of COOKIE_BEHAVIORS) {
       await SpecialPowers.flushPrefEnv();
@@ -75,10 +73,6 @@ add_task(async function () {
       BrowserTestUtils.removeTab(tab);
 
       info(" Open a tab in private window.");
-      let pb_win = await BrowserTestUtils.openNewBrowserWindow({
-        private: true,
-      });
-
       tab = await BrowserTestUtils.openNewForegroundTab(
         pb_win.gBrowser,
         TEST_TOP_PAGE
@@ -100,7 +94,8 @@ add_task(async function () {
       );
       await verifyCookieBehavior(tab.linkedBrowser, expectPBMCookieBehavior);
       BrowserTestUtils.removeTab(tab);
-      await BrowserTestUtils.closeWindow(pb_win);
     }
   }
+
+  await BrowserTestUtils.closeWindow(pb_win);
 });

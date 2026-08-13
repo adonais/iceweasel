@@ -943,12 +943,15 @@ def _run_analysis_batch(command_context, clang_paths, compilation_commands_path,
         )
         return TOOLS_CHECKER_LIST_EMPTY
 
+    # Some checks need header interaction
+    test_file_path_h = "|".join(checker + ".h" for checker in items)
+
     issues, clang_output = _run_analysis(
         command_context,
         clang_paths,
         compilation_commands_path,
         checks="-*," + ",".join(items),
-        header_filter="",
+        header_filter=test_file_path_h,
         sources={
             mozpath.join(clang_paths._clang_tidy_base_path, "test", checker)
             + ".cpp": None
@@ -1015,7 +1018,7 @@ def _create_temp_compilation_db(command_context):
             file = item + ".cpp"
             element = {}
             element["directory"] = director
-            element["command"] = "cpp -std=c++17 " + file
+            element["command"] = "cpp -std=c++20 " + file
             element["file"] = mozpath.join(director, file)
             compile_commands.append(element)
 
@@ -1172,12 +1175,15 @@ def _verify_checker(
         checkers_results.append(checker_error)
         return TOOLS_CHECKER_NO_TEST_FILE
 
+    # Some checks need header interaction
+    test_file_path_h = os.path.splitext(os.path.basename(test_file_path_cpp))[0] + ".h"
+
     issues, clang_output = _run_analysis(
         command_context,
         clang_paths,
         compilation_commands_path,
         checks="-*," + check,
-        header_filter="",
+        header_filter=test_file_path_h,
         sources={test_file_path_cpp: None},
     )
     if issues is None:

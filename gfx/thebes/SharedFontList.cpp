@@ -3,14 +3,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SharedFontList-impl.h"
-#include "gfxPlatformFontList.h"
-#include "gfxFontUtils.h"
 #include "gfxFont.h"
-#include "nsReadableUtils.h"
-#include "prerror.h"
+#include "gfxFontUtils.h"
+#include "gfxPlatformFontList.h"
+#include "mozilla/Logging.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentParent.h"
-#include "mozilla/Logging.h"
+#include "nsReadableUtils.h"
+#include "prerror.h"
 
 #define LOG_FONTLIST(args) \
   MOZ_LOG(gfxPlatform::GetLog(eGfxLog_fontlist), LogLevel::Debug, args)

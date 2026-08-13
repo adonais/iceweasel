@@ -2,19 +2,19 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/Logging.h"
-
 #include "IMMHandler.h"
-#include "nsWindow.h"
-#include "nsWindowDefs.h"
-#include "WinIMEHandler.h"
-#include "WinUtils.h"
-#include "KeyboardLayout.h"
+
 #include <algorithm>
 
+#include "KeyboardLayout.h"
+#include "WinIMEHandler.h"
+#include "WinUtils.h"
+#include "mozilla/Logging.h"
 #include "mozilla/MiscEvents.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/ToString.h"
+#include "nsWindow.h"
+#include "nsWindowDefs.h"
 
 #ifndef IME_PROP_ACCEPT_WIDE_VKEY
 #  define IME_PROP_ACCEPT_WIDE_VKEY 0x20

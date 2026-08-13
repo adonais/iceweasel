@@ -46,7 +46,7 @@ add_task(async function heuristicResultMouse() {
     let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
     Assert.equal(
       result.type,
-      UrlbarUtils.RESULT_TYPE.SEARCH,
+      UrlbarShared.RESULT_TYPE.SEARCH,
       "Should be of type search"
     );
     let loadPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
@@ -69,7 +69,7 @@ add_task(async function heuristicResultKeyboard() {
     let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
     Assert.equal(
       result.type,
-      UrlbarUtils.RESULT_TYPE.SEARCH,
+      UrlbarShared.RESULT_TYPE.SEARCH,
       "Should be of type search"
     );
     let loadPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
@@ -135,8 +135,8 @@ add_task(async function formHistoryMouse() {
     let index = await getFirstSuggestionIndex();
     Assert.greaterOrEqual(index, 0, "there should be a first suggestion");
     let result = await UrlbarTestUtils.getDetailsOfResultAt(window, index);
-    Assert.equal(result.type, UrlbarUtils.RESULT_TYPE.SEARCH);
-    Assert.equal(result.source, UrlbarUtils.RESULT_SOURCE.HISTORY);
+    Assert.equal(result.type, UrlbarShared.RESULT_TYPE.SEARCH);
+    Assert.equal(result.source, UrlbarShared.RESULT_SOURCE.HISTORY);
     let loadPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
     let element = await UrlbarTestUtils.waitForAutocompleteResultAt(
       window,
@@ -161,8 +161,8 @@ add_task(async function formHistoryKeyboard() {
     let index = await getFirstSuggestionIndex();
     Assert.greaterOrEqual(index, 0, "there should be a first suggestion");
     let result = await UrlbarTestUtils.getDetailsOfResultAt(window, index);
-    Assert.equal(result.type, UrlbarUtils.RESULT_TYPE.SEARCH);
-    Assert.equal(result.source, UrlbarUtils.RESULT_SOURCE.HISTORY);
+    Assert.equal(result.type, UrlbarShared.RESULT_TYPE.SEARCH);
+    Assert.equal(result.source, UrlbarShared.RESULT_SOURCE.HISTORY);
     let loadPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
     while (index--) {
       EventUtils.sendKey("down");
@@ -212,7 +212,7 @@ async function getFirstSuggestionIndex() {
   for (let i = 0; i < matchCount; i++) {
     let result = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
     if (
-      result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
+      result.type == UrlbarShared.RESULT_TYPE.SEARCH &&
       result.searchParams.suggestion
     ) {
       return i;

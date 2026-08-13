@@ -2,18 +2,20 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsThreadUtils.h"
 #include <stdio.h>
+
 #include <memory>
-#include "nspr.h"
+
+#include "gtest/gtest.h"
+#include "mozilla/Monitor.h"
+#include "mozilla/SyncRunnable.h"
+#include "mozilla/gtest/MozAssertions.h"
 #include "nsCOMPtr.h"
 #include "nsITargetShutdownTask.h"
 #include "nsIThread.h"
+#include "nsThreadUtils.h"
 #include "nsXPCOM.h"
-#include "mozilla/gtest/MozAssertions.h"
-#include "mozilla/Monitor.h"
-#include "mozilla/SyncRunnable.h"
-#include "gtest/gtest.h"
+#include "nspr.h"
 
 #ifdef XP_WIN
 #  include <windef.h>

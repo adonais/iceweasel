@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { DateNormalizationUtils } from "resource://gre/modules/DateNormalizationUtils.sys.mjs";
+
 // The list of known and supported credit card network ids ("types")
 // This list mirrors the networks from dom/payments/BasicCardPayment.cpp
 // and is defined by https://www.w3.org/Payments/card-network-ids
@@ -127,7 +129,7 @@ export class CreditCard {
   }
 
   set expirationString(value) {
-    let { month, year } = CreditCard.parseExpirationString(value);
+    let { month, year } = DateNormalizationUtils.parseMonthYearString(value);
     this.expirationMonth = month;
     this.expirationYear = year;
   }
@@ -361,74 +363,11 @@ export class CreditCard {
   }
 
   static normalizeExpirationMonth(month) {
-    month = parseInt(month, 10);
-    if (isNaN(month) || month < 1 || month > 12) {
-      return undefined;
-    }
-    return month;
+    return DateNormalizationUtils.normalizeMonth(month);
   }
 
   static normalizeExpirationYear(year) {
-    year = parseInt(year, 10);
-    if (isNaN(year) || year < 0) {
-      return undefined;
-    }
-    if (year < 100) {
-      year += 2000;
-    }
-    return year;
-  }
-
-  static parseExpirationString(expirationString) {
-    let rules = [
-      {
-        regex: /(?:^|\D)(\d{2})(\d{2})(?!\d)/,
-      },
-      {
-        regex: /(?:^|\D)(\d{4})[-/](\d{1,2})(?!\d)/,
-        yearIndex: 0,
-        monthIndex: 1,
-      },
-      {
-        regex: /(?:^|\D)(\d{1,2})[-/](\d{4})(?!\d)/,
-        yearIndex: 1,
-        monthIndex: 0,
-      },
-      {
-        regex: /(?:^|\D)(\d{1,2})[-/](\d{1,2})(?!\d)/,
-      },
-      {
-        regex: /(?:^|\D)(\d{2})(\d{2})(?!\d)/,
-      },
-    ];
-
-    expirationString = expirationString.replaceAll(" ", "");
-    for (let rule of rules) {
-      let result = rule.regex.exec(expirationString);
-      if (!result) {
-        continue;
-      }
-
-      let year, month;
-      const parsedResults = [parseInt(result[1], 10), parseInt(result[2], 10)];
-      if (!rule.yearIndex || !rule.monthIndex) {
-        month = parsedResults[0];
-        if (month > 12) {
-          year = parsedResults[0];
-          month = parsedResults[1];
-        } else {
-          year = parsedResults[1];
-        }
-      } else {
-        year = parsedResults[rule.yearIndex];
-        month = parsedResults[rule.monthIndex];
-      }
-
-      if (month >= 1 && month <= 12 && (year < 100 || year > 2000)) {
-        return { month, year };
-      }
-    }
-    return { month: undefined, year: undefined };
+    return DateNormalizationUtils.normalizeYear(year);
   }
 
   static normalizeExpiration({
@@ -437,18 +376,12 @@ export class CreditCard {
     expirationYear,
   }) {
     // Only prefer the string version if missing one or both parsed formats.
-    let parsedExpiration = {};
-    if (expirationString && (!expirationMonth || !expirationYear)) {
-      parsedExpiration = CreditCard.parseExpirationString(expirationString);
-    }
-    return {
-      month: CreditCard.normalizeExpirationMonth(
-        parsedExpiration.month || expirationMonth
-      ),
-      year: CreditCard.normalizeExpirationYear(
-        parsedExpiration.year || expirationYear
-      ),
-    };
+    return DateNormalizationUtils.normalizeComponents({
+      string: expirationString,
+      month: expirationMonth,
+      year: expirationYear,
+      parts: ["month", "year"],
+    });
   }
 
   static formatMaskedNumber(maskedNumber) {

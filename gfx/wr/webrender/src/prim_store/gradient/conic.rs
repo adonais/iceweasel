@@ -16,66 +16,21 @@ use crate::scene_building::IsVisible;
 use crate::intern::{Internable, InternDebug, Handle as InternHandle};
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::prim_store::{PrimitiveKind, PrimitiveOpacity};
-use crate::prim_store::{PrimKeyCommonData, PrimTemplateCommonData, PrimitiveStore};
-use crate::prim_store::{NinePatchDescriptor, PointKey, SizeKey, InternablePrimitive};
+use crate::prim_store::{PrimTemplateCommonData, PrimitiveStore};
+use crate::prim_store::{NinePatchDescriptor, InternablePrimitive};
 
-use std::{hash, ops::{Deref, DerefMut}};
-use super::{stops_and_min_alpha, GradientStopKey};
+use std::ops::{Deref, DerefMut};
+use super::stops_and_min_alpha;
 
-/// Hashable conic gradient parameters, for use during prim interning.
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Clone, MallocSizeOf, PartialEq)]
-pub struct ConicGradientParams {
-    pub angle: f32, // in radians
-    pub start_offset: f32,
-    pub end_offset: f32,
-}
+// `ConicGradientParams` now lives in `webrender_api::key_types` so builder-side
+// interning keys can reference it. Re-exported to keep existing references
+// working.
+pub use api::key_types::ConicGradientParams;
 
-impl Eq for ConicGradientParams {}
-
-impl hash::Hash for ConicGradientParams {
-    fn hash<H: hash::Hasher>(&self, state: &mut H) {
-        self.angle.to_bits().hash(state);
-        self.start_offset.to_bits().hash(state);
-        self.end_offset.to_bits().hash(state);
-    }
-}
-
-/// Identifying key for a line decoration.
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Clone, Eq, PartialEq, Hash, MallocSizeOf)]
-pub struct ConicGradientKey {
-    pub common: PrimKeyCommonData,
-    pub extend_mode: ExtendMode,
-    pub center: PointKey,
-    pub params: ConicGradientParams,
-    /// Per-axis tile size encoded as a fraction of `common.prim_size`. The
-    /// runtime `stretch_size` is `stretch_ratio * common.prim_size`.
-    pub stretch_ratio: SizeKey,
-    pub stops: Vec<GradientStopKey>,
-    pub tile_spacing: SizeKey,
-    pub nine_patch: Option<Box<NinePatchDescriptor>>,
-}
-
-impl ConicGradientKey {
-    pub fn new(
-        info: &LayoutPrimitiveInfo,
-        conic_grad: ConicGradient,
-    ) -> Self {
-        ConicGradientKey {
-            common: info.into(),
-            extend_mode: conic_grad.extend_mode,
-            center: conic_grad.center,
-            params: conic_grad.params,
-            stretch_ratio: conic_grad.stretch_ratio,
-            stops: conic_grad.stops,
-            tile_spacing: conic_grad.tile_spacing,
-            nine_patch: conic_grad.nine_patch,
-        }
-    }
-}
+// `ConicGradientKey` lives in `webrender_api::interned_prims` (alongside the
+// `ConicGradient` value) so the key can be built from api-resident types. The
+// frame-time `ConicGradientTemplate` and interning glue stay here.
+pub use api::interned_prims::ConicGradientKey;
 
 impl InternDebug for ConicGradientKey {}
 
@@ -167,20 +122,9 @@ impl From<ConicGradientKey> for ConicGradientTemplate {
 
 pub type ConicGradientDataHandle = InternHandle<ConicGradient>;
 
-#[derive(Debug, MallocSizeOf)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct ConicGradient {
-    pub extend_mode: ExtendMode,
-    pub center: PointKey,
-    pub params: ConicGradientParams,
-    /// Per-axis tile size encoded as a fraction of the prim's size. See
-    /// [`ConicGradientKey::stretch_ratio`].
-    pub stretch_ratio: SizeKey,
-    pub stops: Vec<GradientStopKey>,
-    pub tile_spacing: SizeKey,
-    pub nine_patch: Option<Box<NinePatchDescriptor>>,
-}
+// `ConicGradient` now lives in `webrender_api::interned_prims` so content-process
+// interning can hold it. Re-exported to keep existing references working.
+pub use api::interned_prims::ConicGradient;
 
 impl Internable for ConicGradient {
     type Key = ConicGradientKey;
@@ -194,7 +138,7 @@ impl InternablePrimitive for ConicGradient {
         self,
         info: &LayoutPrimitiveInfo,
     ) -> ConicGradientKey {
-        ConicGradientKey::new(info, self)
+        ConicGradientKey::new(info.into(), self)
     }
 
     fn make_instance_kind(

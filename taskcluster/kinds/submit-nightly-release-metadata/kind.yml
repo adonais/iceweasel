@@ -1,0 +1,55 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+---
+loader: taskgraph.loader.transform:loader
+
+transforms:
+    - taskgraph.transforms.task_context
+    - gecko_taskgraph.transforms.release:run_on_releases
+    - gecko_taskgraph.transforms.task:transforms
+
+task-defaults:
+    run-on-repo-type: [hg]
+    description: Submit nightly release metadata to ship it
+    attributes:
+        shippable: true
+    task-context:
+        from-parameters:
+            moz_build_date: moz_build_date
+            project: project
+            version: version
+        from-custom:
+            - release-level
+        substitution-fields:
+            - scopes
+            - worker
+    worker-type: shipit
+    worker:
+        implementation: shipit-nightly-metadata
+    scopes:
+        by-release-level:
+            production:
+                - project:releng:ship-it:server:production
+                - project:releng:ship-it:action:create-new-nightly-release
+            staging:
+                - project:releng:ship-it:server:staging
+                - project:releng:ship-it:action:create-new-nightly-release
+    shipping-phase: ship
+    treeherder:
+        symbol: Rel(metadata)
+        kind: other
+        tier: 1
+
+tasks:
+    firefox:
+        run-on-releases: ["nightly"]
+        shipping-product: firefox
+        treeherder:
+            platform: firefox-release/opt
+        worker:
+            product: firefox
+            channel: nightly
+            buildid: "{moz_build_date}"
+            version: "{version}"
+            locales-file: browser/locales/all-locales

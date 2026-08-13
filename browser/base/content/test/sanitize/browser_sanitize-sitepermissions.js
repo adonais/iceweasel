@@ -35,3 +35,70 @@ add_task(async function test() {
     "Permission manager should have the same count it started with"
   );
 });
+
+// Bug 1767271: a manual "Clear Now → Site Settings" must wipe
+// persist-data-on-shutdown exceptions too (user has explicitly asked to
+// clear everything). The shutdown-clearing path keeps them.
+add_task(async function siteSettingsManualClearRemovesShutdownException() {
+  let origin = "https://example.com";
+  let principal =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(origin);
+
+  PermissionTestUtils.add(
+    origin,
+    "persist-data-on-shutdown",
+    Services.perms.ALLOW_ACTION
+  );
+  is(
+    Services.perms.testPermissionFromPrincipal(
+      principal,
+      "persist-data-on-shutdown"
+    ),
+    Services.perms.ALLOW_ACTION,
+    "persist-data-on-shutdown set before manual clear"
+  );
+
+  // Default `Sanitizer.sanitize` call ⇒ clearHonoringExceptions is falsy ⇒
+  // siteSettings cleaner uses CLEAR_PERMISSIONS and wipes the exception.
+  await Sanitizer.sanitize(["siteSettings"], { ignoreTimespan: false });
+
+  is(
+    Services.perms.testPermissionFromPrincipal(
+      principal,
+      "persist-data-on-shutdown"
+    ),
+    Services.perms.UNKNOWN_ACTION,
+    "Manual Clear Now → Site Settings wipes persist-data-on-shutdown"
+  );
+});
+
+// Conversely: a shutdown-context clear (clearHonoringExceptions=true) must
+// preserve the persist-data-on-shutdown exception — that's literally what
+// the exception is for.
+add_task(async function siteSettingsShutdownClearKeepsShutdownException() {
+  let origin = "https://example.com";
+  let principal =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(origin);
+
+  PermissionTestUtils.add(
+    origin,
+    "persist-data-on-shutdown",
+    Services.perms.ALLOW_ACTION
+  );
+
+  await Sanitizer.sanitize(["siteSettings"], {
+    ignoreTimespan: false,
+    progress: { clearHonoringExceptions: true },
+  });
+
+  is(
+    Services.perms.testPermissionFromPrincipal(
+      principal,
+      "persist-data-on-shutdown"
+    ),
+    Services.perms.ALLOW_ACTION,
+    "Shutdown-context Site Settings clear preserves persist-data-on-shutdown"
+  );
+
+  PermissionTestUtils.remove(origin, "persist-data-on-shutdown");
+});

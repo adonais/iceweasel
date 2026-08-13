@@ -4,14 +4,14 @@
 
 #include "mozilla/net/URLPatternGlue.h"
 
-#include "mozilla/dom/ScriptSettings.h"  // for AutoJSAPI
+#include "js/Array.h"         // JS::GetArrayLength
+#include "js/GlobalObject.h"  // JS::CurrentGlobalOrNull
 #include "js/RegExp.h"
 #include "js/RegExpFlags.h"
 #include "js/RootingAPI.h"
-#include "js/Array.h"         // JS::GetArrayLength
-#include "js/GlobalObject.h"  // JS::CurrentGlobalOrNull
-#include "nsJSUtils.h"
 #include "mozilla/dom/BindingUtils.h"
+#include "mozilla/dom/ScriptSettings.h"  // for AutoJSAPI
+#include "nsJSUtils.h"
 
 mozilla::LazyLogModule gUrlPatternLog("urlpattern");
 

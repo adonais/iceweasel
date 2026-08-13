@@ -29,13 +29,6 @@ class JUnitAssertNotNullDetectorTest : LintDetectorTest() {
         """,
     ).indented()
 
-    private val kotlinTestStub = TestFiles.kotlin(
-        """
-        package kotlin.test
-        fun <T : Any> assertNotNull(actual: T?, message: String? = null): T = actual!!
-        """,
-    ).indented()
-
     @Test
     fun `single-arg JUnit assertNotNull via static import is replaced`() {
         lint()
@@ -130,36 +123,15 @@ class JUnitAssertNotNullDetectorTest : LintDetectorTest() {
     }
 
     @Test
-    fun `kotlin test assertNotNull is clean`() {
+    fun `non-JUnit assertNotNull is clean`() {
         lint()
             .files(
-                kotlinTestStub,
+                // lint won't resolve source stubs declared in kotlin.* packages, so the
+                // kotlin.test-style assertNotNull is stubbed in the test package.
                 TestFiles.kotlin(
                     """
                     package com.example.test
-                    import kotlin.test.assertNotNull
-
-                    class MyTest {
-                        fun test() {
-                            val value: String? = "x"
-                            assertNotNull(value)
-                        }
-                    }
-                    """,
-                ).indented(),
-            )
-            .run()
-            .expectClean()
-    }
-
-    @Test
-    fun `unrelated assertNotNull function is clean`() {
-        lint()
-            .files(
-                TestFiles.kotlin(
-                    """
-                    package com.example.test
-                    fun assertNotNull(value: Any?) {}
+                    fun <T : Any> assertNotNull(actual: T?, message: String? = null): T = actual!!
 
                     class MyTest {
                         fun test() {

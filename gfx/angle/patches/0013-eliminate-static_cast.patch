@@ -1,0 +1,65 @@
+From d7228e6ed21c3ea4d710f595fe7f65f7fc01d80c Mon Sep 17 00:00:00 2001
+From: teoxoy <28601907+teoxoy@users.noreply.github.com>
+Date: Mon, 11 May 2026 11:16:18 +0200
+Subject: [PATCH] eliminate `static_cast`
+
+---
+ .../renderer/d3d/d3d11/ResourceManager11.h        |  7 +------
+ .../renderer/d3d/d3d11/renderer11_utils.h         | 15 +++++++++------
+ 2 files changed, 10 insertions(+), 12 deletions(-)
+
+diff --git a/src/libANGLE/renderer/d3d/d3d11/ResourceManager11.h b/src/libANGLE/renderer/d3d/d3d11/ResourceManager11.h
+index 67302c5fce..d51f61812e 100644
+--- a/src/libANGLE/renderer/d3d/d3d11/ResourceManager11.h
++++ b/src/libANGLE/renderer/d3d/d3d11/ResourceManager11.h
+@@ -317,12 +317,7 @@ class SharedResource11 : public Resource11Base<T, std::shared_ptr, TypedData<T>>
+     friend class ResourceManager11;
+     SharedResource11(Resource11<T> &&obj) : Resource11Base<T, std::shared_ptr, TypedData<T>>()
+     {
+-        std::swap(this->mData->manager, obj.mData->manager);
+-
+-        // Can't use std::swap because of ID3D11Resource.
+-        auto temp           = this->mData->object;
+-        this->mData->object = obj.mData->object;
+-        obj.mData->object   = static_cast<T *>(temp);
++        this->mData = std::move(obj.mData);
+     }
+ };
+ 
+diff --git a/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.h b/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.h
+index 8c3ee454fc..85594703ec 100644
+--- a/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.h
++++ b/src/libANGLE/renderer/d3d/d3d11/renderer11_utils.h
+@@ -341,7 +341,9 @@ class [[nodiscard]] ScopedUnmapper final : angle::NonCopyable
+ struct GenericData
+ {
+     GenericData() {}
+-    ~GenericData()
++    ~GenericData() { reset(); }
++
++    void reset()
+     {
+         if (object)
+         {
+@@ -384,12 +386,13 @@ class TextureHelper11 : public Resource11Base<ID3D11Resource, std::shared_ptr, G
+     template <typename DescT, typename ResourceT>
+     void init(Resource11<ResourceT> &&texture, const DescT &desc, const d3d11::Format &format)
+     {
+-        std::swap(mData->manager, texture.mData->manager);
++        // Release previous resource, if any.
++        mData->reset();
+ 
+-        // Can't use std::swap because texture is typed, and here we use ID3D11Resource.
+-        ID3D11Resource *temp  = mData->object;
+-        mData->object         = texture.mData->object;
+-        texture.mData->object = static_cast<ResourceT *>(temp);
++        mData->manager         = texture.mData->manager;
++        texture.mData->manager = nullptr;
++        mData->object          = texture.mData->object;
++        texture.mData->object  = nullptr;
+ 
+         mFormatSet = &format;
+         initDesc(desc);
+-- 
+2.54.0
+

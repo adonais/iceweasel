@@ -29,6 +29,7 @@ import mozilla.components.concept.storage.Address
 import mozilla.components.concept.storage.CreditCardEntry
 import mozilla.components.concept.storage.Login
 import mozilla.components.concept.storage.LoginEntry
+import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.android.net.toFileUri
 import mozilla.components.support.ktx.kotlin.ifNullOrEmpty
 import mozilla.components.support.ktx.kotlin.toDate
@@ -425,6 +426,49 @@ internal class GeckoPromptDelegate(private val geckoEngineSession: GeckoEngineSe
 
         geckoEngineSession.notifyObservers {
             onPromptRequest(promptRequest)
+        }
+
+        return geckoResult
+    }
+
+    override fun onAddressSave(
+        session: GeckoSession,
+        request: AutocompleteRequest<Autocomplete.AddressSaveOption>,
+    ): GeckoResult<PromptResponse> {
+        val incoming = request.options[0].value
+        Logger("GeckoPromptDelegate").info(
+            "onAddressSave: received from Gecko: $incoming",
+        )
+
+        val geckoResult = GeckoResult<PromptResponse>()
+
+        val onConfirm: (Address) -> Unit = { address ->
+            if (!request.isComplete) {
+                geckoResult.complete(
+                    request.confirm(
+                        Autocomplete.AddressSaveOption(address.toAutocompleteAddress()),
+                    ),
+                )
+            }
+        }
+
+        val onDismiss: () -> Unit = {
+            request.dismissSafely(geckoResult)
+        }
+
+        geckoEngineSession.notifyObservers {
+            onPromptRequest(
+                PromptRequest.SaveAddress(
+                    address = incoming.toAddress(),
+                    onConfirm = onConfirm,
+                    onDismiss = onDismiss,
+                ).also {
+                    request.delegate = PromptInstanceDismissDelegate(
+                        geckoEngineSession,
+                        it,
+                    )
+                },
+            )
         }
 
         return geckoResult

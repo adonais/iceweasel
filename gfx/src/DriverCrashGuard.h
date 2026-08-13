@@ -4,12 +4,13 @@
 #ifndef gfx_src_DriverCrashGuard_h_
 #define gfx_src_DriverCrashGuard_h_
 
-#include "nsCOMPtr.h"
-#include "nsIGfxInfo.h"
-#include "nsIFile.h"
-#include "nsString.h"
 #include <functional>
 #include <string>
+
+#include "nsCOMPtr.h"
+#include "nsIFile.h"
+#include "nsIGfxInfo.h"
+#include "nsString.h"
 
 namespace mozilla {
 

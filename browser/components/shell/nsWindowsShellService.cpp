@@ -2,10 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "mozilla/StaticPrefs_browser.h"
 #define UNICODE
 
 #include "nsWindowsShellService.h"
 #include "nsWindowsShellServiceInternal.h"
+#include "WindowsShellServiceRust.h"
 
 #include "BinaryPath.h"
 #include "gfxUtils.h"
@@ -16,6 +18,7 @@
 #include "mozilla/dom/Promise.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/FileUtils.h"
+#include "mozilla/GetKnownFolderPath.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/intl/Localization.h"
 #include "mozilla/Preferences.h"
@@ -51,8 +54,11 @@
 #include "nsXULAppAPI.h"
 #include "Windows11TaskbarPinning.h"
 #include "WindowsDefaultBrowser.h"
+#include "WindowsUIElement.h"
+#include "WindowsUIOverlayImage.h"
 #include "WindowsUserChoice.h"
 #include "WinUtils.h"
+#include "xpcpublic.h"
 
 #include <comutil.h>
 #include <knownfolders.h>
@@ -131,9 +137,6 @@ static LazyLogModule sLog("nsWindowsShellService");
 
 static bool PollAppsFolderForShortcut(const nsAString& aAppUserModelId,
                                       const TimeDuration aTimeout);
-static nsresult PinCurrentAppToTaskbarWin10(bool aCheckOnly,
-                                            const nsAString& aAppUserModelId,
-                                            const nsAString& aShortcutPath);
 static nsresult WriteBitmap(nsIFile* aFile, imgIContainer* aImage);
 
 static nsresult OpenKeyForReading(HKEY aKeyRoot, const nsAString& aKeyName,
@@ -518,32 +521,152 @@ nsWindowsShellService::LaunchModernSettingsDialogDefaultApps() {
   return ::LaunchModernSettingsDialogDefaultApps() ? NS_OK : NS_ERROR_FAILURE;
 }
 
-static void FocusSetDefaultBrowserButton() {
+static void DisplayOverlayImageWhileVisible(
+    nsCOMPtr<nsISerialEventTarget> aSerialEventTarget,
+    RefPtr<WindowsUIElement> aElement,
+    WindowsUIOverlayImage::DisplayMode aDisplayMode) {
+  RefPtr<WindowsUIOverlayImage> overlayImage{
+      aElement->CreateOverlayImage(aDisplayMode)};
+  if (!overlayImage) {
+    return;
+  }
+
+  auto timer{std::make_shared<nsCOMPtr<nsITimer>>()};
+  auto lastTime{std::make_shared<TimeStamp>(TimeStamp::Now())};
+  auto callback{[timer, lastTime, aElement, overlayImage](nsITimer* aTimer) {
+    if (aElement->IsMoving().valueOr(true)) {
+      // The element is moving or not available
+      aTimer->Cancel();
+      return;
+    }
+
+    if (!overlayImage->IsVisible()) {
+      // The overlay image isn't visible
+      aTimer->Cancel();
+      return;
+    }
+
+    const TimeStamp now{TimeStamp::Now()};
+    const TimeDuration elapsed{now - *lastTime};
+    overlayImage->AdvanceAnimation(elapsed);
+    *lastTime = now;
+  }};
+
+  const uint32_t kDelayMs{10};
+  NS_NewTimerWithCallback(getter_AddRefs(*timer), callback, kDelayMs,
+                          nsITimer::TYPE_REPEATING_SLACK,
+                          "DisplayOverlayImageWhileVisibleTimer"_ns,
+                          aSerialEventTarget);
+}
+
+static void DisplayOverlayImageWhenElementIsStill(
+    nsCOMPtr<nsISerialEventTarget> aSerialEventTarget,
+    RefPtr<WindowsUIElement> aElement,
+    WindowsUIOverlayImage::DisplayMode aDisplayMode) {
+  auto timer{std::make_shared<nsCOMPtr<nsITimer>>()};
+  auto attempts{std::make_shared<int>(0)};
+  auto callback{[timer, attempts, aSerialEventTarget, aElement,
+                 aDisplayMode](nsITimer* aTimer) {
+    const int kMaxAttempts{10};
+    if (++(*attempts) > kMaxAttempts) {
+      // Maximum number of attempts reached
+      aTimer->Cancel();
+      return;
+    }
+
+    if (aElement->IsMoving().valueOr(true)) {
+      // The element is moving
+      return;
+    }
+
+    // The element is still
+    aTimer->Cancel();
+
+    DisplayOverlayImageWhileVisible(aSerialEventTarget, aElement, aDisplayMode);
+  }};
+
+  const uint32_t kDelayMs{500};
+  NS_NewTimerWithCallback(getter_AddRefs(*timer), callback, kDelayMs,
+                          nsITimer::TYPE_REPEATING_SLACK,
+                          "DisplayOverlayImageWhenElementIsStillTimer"_ns,
+                          aSerialEventTarget);
+}
+
+static mozilla::Maybe<WindowsUIOverlayImage::DisplayMode>
+GetDisplayKitImagePref() {
+  if (!mozilla::IsWin11OrLater()) {
+    // The feature is only available in Win11
+    return mozilla::Nothing();
+  }
+
+  nsAutoString pref;
+  Preferences::GetString(
+      "browser.shell.displayKitImageBehindSetDefaultBrowserButton", pref);
+
+  if (pref.EqualsIgnoreCase("static")) {
+    return mozilla::Some(WindowsUIOverlayImage::DisplayMode::Static);
+  }
+  if (pref.EqualsIgnoreCase("animated")) {
+    return mozilla::Some(WindowsUIOverlayImage::DisplayMode::Animated);
+  }
+  return mozilla::Nothing();
+}
+
+static bool GetFocusPref() {
+  return Preferences::GetBool("browser.shell.focusSetDefaultBrowserButton",
+                              false);
+}
+
+static void HighlightSetDefaultBrowserButton() {
+  const bool focus{GetFocusPref()};
+  const mozilla::Maybe<WindowsUIOverlayImage::DisplayMode> displayMode{
+      GetDisplayKitImagePref()};
+  if (!focus && displayMode.isNothing()) {
+    return;
+  }
+
   nsCOMPtr<nsISerialEventTarget> serialEventTarget;
-  const nsresult nsr{NS_CreateBackgroundTaskQueue(
-      "FocusSetDefaultBrowserButtonQueue", getter_AddRefs(serialEventTarget))};
+  const nsresult nsr{
+      NS_CreateBackgroundTaskQueue("HighlightSetDefaultBrowserButtonQueue",
+                                   getter_AddRefs(serialEventTarget))};
   if (NS_FAILED(nsr)) {
     return;
   }
 
-  auto attempts{std::make_shared<int>(0)};
   auto timer{std::make_shared<nsCOMPtr<nsITimer>>()};
-  auto timerCallback{[attempts, timer](nsITimer* aTimer) {
+  auto attempts{std::make_shared<int>(0)};
+  auto callback{[timer, attempts, focus, displayMode,
+                 serialEventTarget](nsITimer* aTimer) {
     const int kMaxAttempts{40};
     if (++(*attempts) > kMaxAttempts) {
+      // Maximum number of attempts reached
       aTimer->Cancel();
       return;
     }
+
     auto [window, button]{FindSetDefaultBrowserButton()};
-    if (window && button) {
-      FocusElement(window, button);
-      aTimer->Cancel();
+    if (!window || !button) {
+      // The window or button cannot be found
+      return;
+    }
+
+    // The window and button are found
+    aTimer->Cancel();
+
+    RefPtr<WindowsUIElement> element{new WindowsUIElement(window, button)};
+    if (focus) {
+      element->Focus();
+    }
+    if (displayMode.isSome()) {
+      DisplayOverlayImageWhenElementIsStill(serialEventTarget, element,
+                                            *displayMode);
     }
   }};
-  const uint32_t kRetryDelayMs{500};
-  NS_NewTimerWithCallback(getter_AddRefs(*timer), timerCallback, kRetryDelayMs,
+
+  const uint32_t kDelayMs{500};
+  NS_NewTimerWithCallback(getter_AddRefs(*timer), callback, kDelayMs,
                           nsITimer::TYPE_REPEATING_SLACK,
-                          "FocusSetDefaultBrowserButtonTimer"_ns,
+                          "HighlightSetDefaultBrowserButtonTimer"_ns,
                           serialEventTarget);
 }
 
@@ -569,10 +692,7 @@ nsWindowsShellService::SetDefaultBrowser(bool aForAllUsers) {
   if (NS_SUCCEEDED(rv)) {
     rv = LaunchModernSettingsDialogDefaultApps();
     if (NS_SUCCEEDED(rv)) {
-      if (Preferences::GetBool("browser.shell.focusSetDefaultBrowserButton",
-                               false)) {
-        FocusSetDefaultBrowserButton();
-      }
+      HighlightSetDefaultBrowserButton();
     } else {
       // The above call should never really fail, but just in case
       // fall back to showing control panel for all defaults
@@ -1053,6 +1173,11 @@ static nsresult CreateShortcutImpl(nsIFile* aBinary,
   NS_ENSURE_ARG(aBinary);
   NS_ENSURE_ARG(aIconFile);
 
+  if (xpc::IsInAutomation() && !StaticPrefs::browser_shell_shortcut_test()) {
+    // Don't create shortcuts under test.
+    return NS_OK;
+  }
+
   nsresult rv =
       UpdateShortcutInLog(location.shortcutsLogDir, location.folderId,
                           ShortcutsLogChange::Add, aShortcutRelativePath);
@@ -1191,6 +1316,11 @@ nsWindowsShellService::CreateShortcut(nsIFile* aBinary,
 
 static nsresult DeleteShortcutImpl(const ShortcutLocations& aLocation,
                                    const nsAString& aShortcutRelativePath) {
+  if (xpc::IsInAutomation() && !StaticPrefs::browser_shell_shortcut_test()) {
+    // Don't delete shortcuts under test.
+    return NS_OK;
+  }
+
   // Do the removal first so an error keeps it in the log.
   nsresult rv = aLocation.shortcutFile->Remove(false);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -1375,7 +1505,7 @@ nsWindowsShellService::GetLaunchOnLoginShortcuts(
 static nsresult GetMatchingShortcut(int aCSIDL, const nsAString& aAUMID,
                                     const wchar_t aExePath[MAXPATHLEN],
                                     const nsAString& aShortcutSubstring,
-                                    /* out */ nsAutoString& aShortcutPath) {
+                                    /* out */ nsAString& aShortcutPath) {
   nsresult result = NS_ERROR_FAILURE;
 
   wchar_t folderPath[MAX_PATH] = {};
@@ -1495,7 +1625,7 @@ static nsresult GetMatchingShortcut(int aCSIDL, const nsAString& aAUMID,
 static nsresult FindPinnableShortcut(const nsAString& aAppUserModelId,
                                      const nsAString& aShortcutSubstring,
                                      const bool aPrivateBrowsing,
-                                     nsAutoString& aShortcutPath) {
+                                     nsAString& aShortcutPath) {
   wchar_t exePath[MAXPATHLEN] = {};
   if (NS_WARN_IF(NS_FAILED(BinaryPath::GetLong(exePath)))) {
     return NS_ERROR_FAILURE;
@@ -1563,23 +1693,18 @@ NS_IMETHODIMP nsWindowsShellService::HasPinnableShortcut(
           "HasPinnableShortcut",
           [aAppUserModelId = nsString{aAppUserModelId}, aPrivateBrowsing,
            promiseHolder = std::move(promiseHolder)] {
-            bool rv = false;
-            HRESULT hr = CoInitialize(nullptr);
-
-            if (SUCCEEDED(hr)) {
-              nsAutoString shortcutSubstring;
-              shortcutSubstring.AssignLiteral(MOZ_APP_DISPLAYNAME);
-              rv = HasPinnableShortcutImpl(aAppUserModelId, aPrivateBrowsing,
-                                           shortcutSubstring);
-              CoUninitialize();
-            }
+            nsAutoString shortcutSubstring;
+            shortcutSubstring.AssignLiteral(MOZ_APP_DISPLAYNAME);
+            bool hasPinnableShortcut = HasPinnableShortcutImpl(
+                aAppUserModelId, aPrivateBrowsing, shortcutSubstring);
 
             NS_DispatchToMainThread(NS_NewRunnableFunction(
                 "HasPinnableShortcut callback",
-                [rv, promiseHolder = std::move(promiseHolder)] {
+                [hasPinnableShortcut,
+                 promiseHolder = std::move(promiseHolder)] {
                   dom::Promise* promise = promiseHolder.get()->get();
 
-                  promise->MaybeResolve(rv);
+                  promise->MaybeResolve(hasPinnableShortcut);
                 }));
           }),
       NS_DISPATCH_EVENT_MAY_BLOCK);
@@ -1739,118 +1864,22 @@ static bool IsCurrentAppPinnedToTaskbarSync(const nsAString& aumid) {
   return isPinned;
 }
 
-static nsresult ManageShortcutTaskbarPins(bool aCheckOnly, bool aPinType,
-                                          const nsAString& aShortcutPath) {
-  // This enum is likely only used for Windows telemetry, INT_MAX is chosen to
-  // avoid confusion with existing uses.
-  enum PINNEDLISTMODIFYCALLER { PLMC_INT_MAX = INT_MAX };
+static nsresult EnsureShellAppsFolderShortcut(
+    const nsAString& aAppUserModelId) {
+  MOZ_ASSERT(!NS_IsMainThread());
 
-  // The types below, and the idea of using IPinnedList3::Modify,
-  // are thanks to Gee Law <https://geelaw.blog/entries/msedge-pins/>
-  static constexpr GUID CLSID_TaskbandPin = {
-      0x90aa3a4e,
-      0x1cba,
-      0x4233,
-      {0xb8, 0xbb, 0x53, 0x57, 0x73, 0xd4, 0x84, 0x49}};
-
-  static constexpr GUID IID_IPinnedList3 = {
-      0x0dd79ae2,
-      0xd156,
-      0x45d4,
-      {0x9e, 0xeb, 0x3b, 0x54, 0x97, 0x69, 0xe9, 0x40}};
-
-  struct IPinnedList3Vtbl;
-  struct IPinnedList3 {
-    IPinnedList3Vtbl* vtbl;
-  };
-
-  typedef ULONG STDMETHODCALLTYPE ReleaseFunc(IPinnedList3 * that);
-  typedef HRESULT STDMETHODCALLTYPE ModifyFunc(
-      IPinnedList3 * that, PCIDLIST_ABSOLUTE unpin, PCIDLIST_ABSOLUTE pin,
-      PINNEDLISTMODIFYCALLER caller);
-
-  struct IPinnedList3Vtbl {
-    void* QueryInterface;  // 0
-    void* AddRef;          // 1
-    ReleaseFunc* Release;  // 2
-    void* Other[13];       // 3-15
-    ModifyFunc* Modify;    // 16
-  };
-
-  struct ILFreeDeleter {
-    void operator()(LPITEMIDLIST aPtr) {
-      if (aPtr) {
-        ILFree(aPtr);
-      }
-    }
-  };
-
-  mozilla::UniquePtr<__unaligned ITEMIDLIST, ILFreeDeleter> path(
-      ILCreateFromPathW(nsString(aShortcutPath).get()));
-  if (NS_WARN_IF(!path)) {
-    return NS_ERROR_FILE_NOT_FOUND;
-  }
-
-  IPinnedList3* pinnedList = nullptr;
-  HRESULT hr = CoCreateInstance(CLSID_TaskbandPin, NULL, CLSCTX_INPROC_SERVER,
-                                IID_IPinnedList3, (void**)&pinnedList);
-  if (FAILED(hr) || !pinnedList) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  if (!aCheckOnly) {
-    hr = pinnedList->vtbl->Modify(pinnedList, aPinType ? NULL : path.get(),
-                                  aPinType ? path.get() : NULL, PLMC_INT_MAX);
-  }
-
-  pinnedList->vtbl->Release(pinnedList);
-
-  if (FAILED(hr)) {
-    return NS_ERROR_FILE_ACCESS_DENIED;
-  }
-  return NS_OK;
-}
-
-static nsresult PinShortcutToTaskbarImpl(bool aCheckOnly,
-                                         const nsAString& aAppUserModelId,
-                                         const nsAString& aShortcutPath,
-                                         const bool aFireAndForget = false) {
   // Verify shortcut is visible to `shell:appsfolder`. Shortcut creation -
   // during install or runtime - causes a race between it propagating to the
   // virtual `shell:appsfolder` and attempts to pin via `ITaskbarManager`,
   // resulting in pin failures when the latter occurs before the former. We can
-  // skip this when we're in a MSIX build or only checking whether we're pinned.
-  if (!widget::WinUtils::HasPackageIdentity() && !aCheckOnly &&
+  // skip this when we're in an MSIX build.
+  if (!widget::WinUtils::HasPackageIdentity() &&
       !PollAppsFolderForShortcut(aAppUserModelId,
                                  TimeDuration::FromSeconds(15))) {
     return NS_ERROR_FILE_NOT_FOUND;
   }
 
-  auto pinWithWin11TaskbarAPIResults =
-      PinCurrentAppToTaskbarWin11(aCheckOnly, aAppUserModelId, aFireAndForget);
-  switch (pinWithWin11TaskbarAPIResults.result) {
-    case Win11PinToTaskBarResultStatus::NotSupported:
-      // Fall through to the win 10 mechanism
-      break;
-
-    case Win11PinToTaskBarResultStatus::Success:
-    case Win11PinToTaskBarResultStatus::AlreadyPinned:
-      return NS_OK;
-
-    case Win11PinToTaskBarResultStatus::NotPinned:
-    case Win11PinToTaskBarResultStatus::NotCurrentlyAllowed:
-    case Win11PinToTaskBarResultStatus::Failed:
-      // return NS_ERROR_FAILURE;
-
-      // Fall through to the old mechanism for now
-      // In future, we should be sending telemetry for when
-      // an error occurs or for when pinning is not allowed
-      // with the Win 11 APIs.
-      break;
-  }
-
-  return PinCurrentAppToTaskbarWin10(aCheckOnly, aAppUserModelId,
-                                     aShortcutPath);
+  return NS_OK;
 }
 
 /* This function pins a shortcut to the taskbar based on its location. While
@@ -1897,22 +1926,18 @@ nsWindowsShellService::PinShortcutToTaskbar(
           "pinShortcutToTaskbar",
           [aumid = nsString{aAppUserModelId}, location = std::move(location),
            promiseHolder = std::move(promiseHolder)] {
-            nsresult rv = NS_ERROR_FAILURE;
-            HRESULT hr = CoInitialize(nullptr);
-
-            if (SUCCEEDED(hr)) {
-              rv = PinShortcutToTaskbarImpl(
-                  false, aumid, location.shortcutFile->NativePath());
-              CoUninitialize();
-            }
+            nsresult rv = EnsureShellAppsFolderShortcut(aumid);
 
             NS_DispatchToMainThread(NS_NewRunnableFunction(
                 "pinShortcutToTaskbar callback",
-                [rv, promiseHolder = std::move(promiseHolder)] {
+                [aumid, rv, location,
+                 promiseHolder = std::move(promiseHolder)] {
                   dom::Promise* promise = promiseHolder.get()->get();
 
+                  auto shortcut_path = location.shortcutFile->NativePath();
                   if (NS_SUCCEEDED(rv)) {
-                    promise->MaybeResolveWithUndefined();
+                    shell_windows_taskbar_pin_app_to_taskbar(
+                        &aumid, &shortcut_path, false, promise);
                   } else {
                     promise->MaybeReject(rv);
                   }
@@ -1927,26 +1952,11 @@ nsWindowsShellService::PinShortcutToTaskbar(
 NS_IMETHODIMP
 nsWindowsShellService::UnpinShortcutFromTaskbar(
     const nsAString& aShortcutFolder, const nsAString& aShortcutRelativePath) {
-  const bool pinType = false;  // false means unpin
-  const bool runInTestMode = false;
-
   ShortcutLocations location =
       MOZ_TRY(GetShortcutPaths(aShortcutFolder, aShortcutRelativePath));
 
-  return ManageShortcutTaskbarPins(runInTestMode, pinType,
-                                   location.shortcutFile->NativePath());
-}
-
-static nsresult PinCurrentAppToTaskbarWin10(bool aCheckOnly,
-                                            const nsAString& aAppUserModelId,
-                                            const nsAString& aShortcutPath) {
-  // The behavior here is identical if we're only checking or if we try to pin
-  // but the app is already pinned so we update the variable accordingly.
-  if (!aCheckOnly) {
-    aCheckOnly = IsCurrentAppPinnedToTaskbarSync(aAppUserModelId);
-  }
-  const bool pinType = true;  // true means pin
-  return ManageShortcutTaskbarPins(aCheckOnly, pinType, aShortcutPath);
+  mozilla::PathString path = location.shortcutFile->NativePath();
+  return shell_windows_taskbar_unpin_shortcut_from_taskbar(&path);
 }
 
 // There's a delay between shortcuts being created in locations visible to
@@ -2032,67 +2042,55 @@ static bool PollAppsFolderForShortcut(const nsAString& aAppUserModelId,
   return false;
 }
 
-static nsresult PinCurrentAppToTaskbarImpl(
-    bool aCheckOnly, bool aPrivateBrowsing, const bool aFireAndForget,
-    const nsAString& aAppUserModelId, const nsAString& aShortcutName,
-    const nsAString& aShortcutSubstring, nsIFile* aGreDir,
-    const ShortcutLocations& location) {
+static Result<nsString, nsresult> EnsurePinnableShortcutExists(
+    bool aPrivateBrowsing, const nsAString& aAppUserModelId,
+    const nsAString& aShortcutName, const nsAString& aShortcutSubstring,
+    nsIFile* aGreDir, const ShortcutLocations& location) {
   MOZ_DIAGNOSTIC_ASSERT(
       !NS_IsMainThread(),
-      "PinCurrentAppToTaskbarImpl should be called off main thread only");
+      "EnsurePinnableShortcutExists should be called off main thread only");
 
-  nsAutoString shortcutPath;
+  if (xpc::IsInAutomation()) {
+    // We don't create or use pinnable shortcuts in tests.
+    return nsString(u"dummy_test_shortcut_path"_ns);
+  }
+
+  nsString shortcutPath;
   nsresult rv = FindPinnableShortcut(aAppUserModelId, aShortcutSubstring,
                                      aPrivateBrowsing, shortcutPath);
   if (NS_FAILED(rv)) {
     shortcutPath.Truncate();
   }
   if (shortcutPath.IsEmpty()) {
-    if (aCheckOnly) {
-      // Later checks rely on a shortcut already existing.
-      // We don't want to create a shortcut in check only mode
-      // so the best we can do is assume those parts will work.
-      return NS_OK;
-    }
-
     nsAutoString linkName(aShortcutName);
 
     nsCOMPtr<nsIFile> exeFile(aGreDir);
     if (aPrivateBrowsing) {
       nsAutoString pbExeStr(PRIVATE_BROWSING_BINARY);
-      nsresult rv = exeFile->Append(pbExeStr);
-      if (!NS_SUCCEEDED(rv)) {
-        return NS_ERROR_FAILURE;
-      }
+      MOZ_TRY(exeFile->Append(pbExeStr));
     } else {
       wchar_t exePath[MAXPATHLEN] = {};
-      if (NS_WARN_IF(NS_FAILED(BinaryPath::GetLong(exePath)))) {
-        return NS_ERROR_FAILURE;
-      }
+      MOZ_TRY(BinaryPath::GetLong(exePath));
       nsAutoString exeStr(exePath);
-      nsresult rv = NS_NewLocalFile(exeStr, getter_AddRefs(exeFile));
-      if (!NS_SUCCEEDED(rv)) {
-        return NS_ERROR_FILE_NOT_FOUND;
-      }
+      MOZ_TRY(NS_NewLocalFile(exeStr, getter_AddRefs(exeFile)));
     }
 
     nsTArray<nsString> arguments;
-    rv = CreateShortcutImpl(exeFile, arguments, aShortcutName, exeFile,
-                            // Icon indexes are defined as Resource IDs, but
-                            // CreateShortcutImpl needs an index.
-                            IDI_APPICON - 1, aAppUserModelId, location,
-                            linkName);
-    if (!NS_SUCCEEDED(rv)) {
-      return NS_ERROR_FILE_NOT_FOUND;
-    }
+    MOZ_TRY(CreateShortcutImpl(exeFile, arguments, aShortcutName, exeFile,
+                               // Icon indexes are defined as Resource IDs, but
+                               // CreateShortcutImpl needs an index.
+                               IDI_APPICON - 1, aAppUserModelId, location,
+                               linkName));
   }
-  return PinShortcutToTaskbarImpl(aCheckOnly, aAppUserModelId, shortcutPath,
-                                  aFireAndForget);
+  MOZ_TRY(EnsureShellAppsFolderShortcut(aAppUserModelId));
+
+  return shortcutPath;
 }
 
-static nsresult PinCurrentAppToTaskbarAsyncImpl(
-    bool aCheckOnly, bool aPrivateBrowsing, JSContext* aCx,
-    dom::Promise** aPromise, const bool aFireAndForget = false) {
+static nsresult PinCurrentAppToTaskbarImpl(bool aPrivateBrowsing,
+                                           JSContext* aCx,
+                                           dom::Promise** aPromise,
+                                           const bool aFireAndForget = false) {
   if (!NS_IsMainThread()) {
     return NS_ERROR_NOT_SAME_THREAD;
   }
@@ -2153,35 +2151,31 @@ static nsresult PinCurrentAppToTaskbarAsyncImpl(
       MOZ_TRY(GetShortcutPaths(nsString(L"Programs"), shortcutName));
 
   auto promiseHolder = MakeRefPtr<nsMainThreadPtrHolder<dom::Promise>>(
-      "CheckPinCurrentAppToTaskbarAsync promise", promise);
+      "PinCurrentAppToTaskbarImpl promise", promise);
 
   NS_DispatchBackgroundTask(
       NS_NewRunnableFunction(
-          "CheckPinCurrentAppToTaskbarAsync",
-          [aCheckOnly, aPrivateBrowsing, aFireAndForget, shortcutName,
+          "PinCurrentAppToTaskbarImpl",
+          [aPrivateBrowsing, aFireAndForget, shortcutName,
            aumid = nsString{aumid}, greDir, location = std::move(location),
            promiseHolder = std::move(promiseHolder)] {
-            nsresult rv = NS_ERROR_FAILURE;
-            HRESULT hr = CoInitialize(nullptr);
-
-            if (SUCCEEDED(hr)) {
-              nsAutoString shortcutSubstring;
-              shortcutSubstring.AssignLiteral(MOZ_APP_DISPLAYNAME);
-              rv = PinCurrentAppToTaskbarImpl(
-                  aCheckOnly, aPrivateBrowsing, aFireAndForget, aumid,
-                  shortcutName, shortcutSubstring, greDir.get(), location);
-              CoUninitialize();
-            }
+            nsAutoString shortcutSubstring;
+            shortcutSubstring.AssignLiteral(MOZ_APP_DISPLAYNAME);
+            Result<nsString, nsresult> rv = EnsurePinnableShortcutExists(
+                aPrivateBrowsing, aumid, shortcutName, shortcutSubstring,
+                greDir.get(), location);
 
             NS_DispatchToMainThread(NS_NewRunnableFunction(
-                "CheckPinCurrentAppToTaskbarAsync callback",
-                [rv, promiseHolder = std::move(promiseHolder)] {
+                "PinCurrentAppToTaskbarImpl callback",
+                [aFireAndForget, aumid, rv = std::move(rv),
+                 promiseHolder = std::move(promiseHolder)] {
                   dom::Promise* promise = promiseHolder.get()->get();
 
-                  if (NS_SUCCEEDED(rv)) {
-                    promise->MaybeResolveWithUndefined();
+                  if (rv.isOk()) {
+                    shell_windows_taskbar_pin_app_to_taskbar(
+                        &aumid, &rv.inspect(), aFireAndForget, promise);
                   } else {
-                    promise->MaybeReject(rv);
+                    promise->MaybeReject(rv.inspectErr());
                   }
                 }));
           }),
@@ -2192,23 +2186,26 @@ static nsresult PinCurrentAppToTaskbarAsyncImpl(
 }
 
 NS_IMETHODIMP
-nsWindowsShellService::PinCurrentAppToTaskbarAsync(bool aPrivateBrowsing,
-                                                   bool aFireAndForget,
-                                                   JSContext* aCx,
-                                                   dom::Promise** aPromise) {
-  return PinCurrentAppToTaskbarAsyncImpl(
-      /* aCheckOnly */ false, aPrivateBrowsing, aCx, aPromise, aFireAndForget);
+nsWindowsShellService::PinCurrentAppToTaskbar(bool aPrivateBrowsing,
+                                              bool aFireAndForget,
+                                              JSContext* aCx,
+                                              dom::Promise** aPromise) {
+  return PinCurrentAppToTaskbarImpl(aPrivateBrowsing, aCx, aPromise,
+                                    aFireAndForget);
 }
 
 NS_IMETHODIMP
-nsWindowsShellService::CheckPinCurrentAppToTaskbarAsync(
-    bool aPrivateBrowsing, JSContext* aCx, dom::Promise** aPromise) {
-  return PinCurrentAppToTaskbarAsyncImpl(
-      /* aCheckOnly = */ true, aPrivateBrowsing, aCx, aPromise);
+nsWindowsShellService::CanPinToTaskbar() {
+  // First available on 1809
+  if (!IsWin10Sep2018UpdateOrLater()) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  return shell_windows_taskbar_can_pin_to_taskbar();
 }
 
 NS_IMETHODIMP
-nsWindowsShellService::IsCurrentAppPinnedToTaskbarAsync(
+nsWindowsShellService::IsCurrentAppPinnedToTaskbar(
     const nsAString& aumid, JSContext* aCx, /* out */ dom::Promise** aPromise) {
   if (!NS_IsMainThread()) {
     return NS_ERROR_NOT_SAME_THREAD;
@@ -2224,26 +2221,19 @@ nsWindowsShellService::IsCurrentAppPinnedToTaskbarAsync(
   // A holder to pass the promise through the background task and back to
   // the main thread when finished.
   auto promiseHolder = MakeRefPtr<nsMainThreadPtrHolder<dom::Promise>>(
-      "IsCurrentAppPinnedToTaskbarAsync promise", promise);
+      "IsCurrentAppPinnedToTaskbar promise", promise);
 
   // nsAString can't be captured by a lambda because it does not have a
   // public copy constructor
   nsAutoString capturedAumid(aumid);
   NS_DispatchBackgroundTask(
       NS_NewRunnableFunction(
-          "IsCurrentAppPinnedToTaskbarAsync",
+          "IsCurrentAppPinnedToTaskbar",
           [capturedAumid, promiseHolder = std::move(promiseHolder)] {
-            bool isPinned = false;
+            bool isPinned = IsCurrentAppPinnedToTaskbarSync(capturedAumid);
 
-            HRESULT hr = CoInitialize(nullptr);
-            if (SUCCEEDED(hr)) {
-              isPinned = IsCurrentAppPinnedToTaskbarSync(capturedAumid);
-              CoUninitialize();
-            }
-
-            // Dispatch back to the main thread to resolve the promise.
             NS_DispatchToMainThread(NS_NewRunnableFunction(
-                "IsCurrentAppPinnedToTaskbarAsync callback",
+                "IsCurrentAppPinnedToTaskbar callback",
                 [isPinned, promiseHolder = std::move(promiseHolder)] {
                   promiseHolder.get()->get()->MaybeResolve(isPinned);
                 }));
@@ -2269,7 +2259,7 @@ nsWindowsShellService::IsCurrentAppPinnedToTaskbarAsync(
         }));                                                        \
     return RETURN
 
-static void EnableLaunchOnLoginMSIXAsyncImpl(
+static void EnableLaunchOnLoginMSIXImpl(
     const nsString& capturedTaskId,
     const RefPtr<nsMainThreadPtrHolder<dom::Promise>> promiseHolder) {
   ComPtr<IStartupTaskStatics> startupTaskStatics;
@@ -2327,7 +2317,7 @@ static void EnableLaunchOnLoginMSIXAsyncImpl(
   }
 }
 
-static void DisableLaunchOnLoginMSIXAsyncImpl(
+static void DisableLaunchOnLoginMSIXImpl(
     const nsString& capturedTaskId,
     const RefPtr<nsMainThreadPtrHolder<dom::Promise>> promiseHolder) {
   ComPtr<IStartupTaskStatics> startupTaskStatics;
@@ -2367,7 +2357,7 @@ static void DisableLaunchOnLoginMSIXAsyncImpl(
   }
 }
 
-static void GetLaunchOnLoginEnabledMSIXAsyncImpl(
+static void GetLaunchOnLoginEnabledMSIXImpl(
     const nsString& capturedTaskId,
     const RefPtr<nsMainThreadPtrHolder<dom::Promise>> promiseHolder) {
   ComPtr<IStartupTaskStatics> startupTaskStatics;
@@ -2438,7 +2428,7 @@ static void GetLaunchOnLoginEnabledMSIXAsyncImpl(
 }
 
 NS_IMETHODIMP
-nsWindowsShellService::EnableLaunchOnLoginMSIXAsync(
+nsWindowsShellService::EnableLaunchOnLoginMSIX(
     const nsAString& aTaskId, JSContext* aCx,
     /* out */ dom::Promise** aPromise) {
   if (!widget::WinUtils::HasPackageIdentity()) {
@@ -2458,12 +2448,11 @@ nsWindowsShellService::EnableLaunchOnLoginMSIXAsync(
   // A holder to pass the promise through the background task and back to
   // the main thread when finished.
   auto promiseHolder = MakeRefPtr<nsMainThreadPtrHolder<dom::Promise>>(
-      "EnableLaunchOnLoginMSIXAsync promise", promise);
+      "EnableLaunchOnLoginMSIX promise", promise);
 
   NS_DispatchBackgroundTask(NS_NewRunnableFunction(
-      "EnableLaunchOnLoginMSIXAsync",
-      [taskId = nsString(aTaskId), promiseHolder] {
-        EnableLaunchOnLoginMSIXAsyncImpl(taskId, promiseHolder);
+      "EnableLaunchOnLoginMSIX", [taskId = nsString(aTaskId), promiseHolder] {
+        EnableLaunchOnLoginMSIXImpl(taskId, promiseHolder);
       }));
 
   promise.forget(aPromise);
@@ -2471,7 +2460,7 @@ nsWindowsShellService::EnableLaunchOnLoginMSIXAsync(
 }
 
 NS_IMETHODIMP
-nsWindowsShellService::DisableLaunchOnLoginMSIXAsync(
+nsWindowsShellService::DisableLaunchOnLoginMSIX(
     const nsAString& aTaskId, JSContext* aCx,
     /* out */ dom::Promise** aPromise) {
   if (!widget::WinUtils::HasPackageIdentity()) {
@@ -2491,12 +2480,11 @@ nsWindowsShellService::DisableLaunchOnLoginMSIXAsync(
   // A holder to pass the promise through the background task and back to
   // the main thread when finished.
   auto promiseHolder = MakeRefPtr<nsMainThreadPtrHolder<dom::Promise>>(
-      "DisableLaunchOnLoginMSIXAsync promise", promise);
+      "DisableLaunchOnLoginMSIX promise", promise);
 
   NS_DispatchBackgroundTask(NS_NewRunnableFunction(
-      "DisableLaunchOnLoginMSIXAsync",
-      [taskId = nsString(aTaskId), promiseHolder] {
-        DisableLaunchOnLoginMSIXAsyncImpl(taskId, promiseHolder);
+      "DisableLaunchOnLoginMSIX", [taskId = nsString(aTaskId), promiseHolder] {
+        DisableLaunchOnLoginMSIXImpl(taskId, promiseHolder);
       }));
 
   promise.forget(aPromise);
@@ -2504,7 +2492,7 @@ nsWindowsShellService::DisableLaunchOnLoginMSIXAsync(
 }
 
 NS_IMETHODIMP
-nsWindowsShellService::GetLaunchOnLoginEnabledMSIXAsync(
+nsWindowsShellService::GetLaunchOnLoginEnabledMSIX(
     const nsAString& aTaskId, JSContext* aCx,
     /* out */ dom::Promise** aPromise) {
   if (!widget::WinUtils::HasPackageIdentity()) {
@@ -2524,12 +2512,12 @@ nsWindowsShellService::GetLaunchOnLoginEnabledMSIXAsync(
   // A holder to pass the promise through the background task and back to
   // the main thread when finished.
   auto promiseHolder = MakeRefPtr<nsMainThreadPtrHolder<dom::Promise>>(
-      "GetLaunchOnLoginEnabledMSIXAsync promise", promise);
+      "GetLaunchOnLoginEnabledMSIX promise", promise);
 
   NS_DispatchBackgroundTask(NS_NewRunnableFunction(
-      "GetLaunchOnLoginEnabledMSIXAsync",
+      "GetLaunchOnLoginEnabledMSIX",
       [taskId = nsString(aTaskId), promiseHolder] {
-        GetLaunchOnLoginEnabledMSIXAsyncImpl(taskId, promiseHolder);
+        GetLaunchOnLoginEnabledMSIXImpl(taskId, promiseHolder);
       }));
 
   promise.forget(aPromise);
@@ -2585,8 +2573,7 @@ static HRESULT GetStartScreenManager(
   return hr;
 }
 
-static void PinCurrentAppToStartMenuAsyncImpl(
-    bool aCheckOnly,
+static void PinCurrentAppToStartMenuImpl(
     const RefPtr<nsMainThreadPtrHolder<dom::Promise>> promiseHolder) {
   ComPtr<IPackage3> package3;
   HRESULT hr = GetPackage3(package3);
@@ -2602,87 +2589,80 @@ static void PinCurrentAppToStartMenuAsyncImpl(
   if (FAILED(hr)) {
     REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE, /* void */);
   }
-  auto getAppListEntriesCallback =
-      Callback<IAsyncOperationCompletedHandler<IVectorView<AppListEntry*>*>>(
-          [promiseHolder, aCheckOnly](
-              IAsyncOperation<IVectorView<AppListEntry*>*>* operation,
-              AsyncStatus status) -> HRESULT {
-            if (status != AsyncStatus::Completed) {
-              REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE, E_FAIL);
-            }
-            ComPtr<IVectorView<AppListEntry*>> appListEntries;
-            HRESULT hr = operation->GetResults(&appListEntries);
-            if (FAILED(hr)) {
-              REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE, E_FAIL);
-            }
-            ComPtr<IStartScreenManager> startScreenManager;
-            ComPtr<IAppListEntry> entry;
-            hr = GetStartScreenManager(appListEntries, entry,
-                                       startScreenManager);
-            if (FAILED(hr)) {
-              REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE, E_FAIL);
-            }
-            ComPtr<IAsyncOperation<bool>> getPinnedOperation;
-            hr = startScreenManager->ContainsAppListEntryAsync(
-                entry.Get(), &getPinnedOperation);
-            if (FAILED(hr)) {
-              REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE, E_FAIL);
-            }
-            auto getPinnedCallback =
-                Callback<IAsyncOperationCompletedHandler<bool>>(
-                    [promiseHolder, entry, startScreenManager, aCheckOnly](
-                        IAsyncOperation<bool>* operation,
-                        AsyncStatus status) -> HRESULT {
-                      if (status != AsyncStatus::Completed) {
-                        REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE,
-                                          E_FAIL);
-                      }
-                      boolean isAlreadyPinned;
-                      HRESULT hr = operation->GetResults(&isAlreadyPinned);
-                      if (FAILED(hr)) {
-                        REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE,
-                                          E_FAIL);
-                      }
-                      // If we're already pinned we can return early
-                      // Ditto if we're just checking whether we *can* pin
-                      if (isAlreadyPinned || aCheckOnly) {
-                        RESOLVE_AND_RETURN(promiseHolder, true, S_OK);
-                      }
-                      ComPtr<IAsyncOperation<bool>> pinOperation;
-                      startScreenManager->RequestAddAppListEntryAsync(
-                          entry.Get(), &pinOperation);
-                      // Set another callback for pinning to the start menu
-                      auto pinOperationCallback =
-                          Callback<IAsyncOperationCompletedHandler<bool>>(
-                              [promiseHolder](IAsyncOperation<bool>* operation,
-                                              AsyncStatus status) -> HRESULT {
-                                if (status != AsyncStatus::Completed) {
-                                  REJECT_AND_RETURN(promiseHolder,
-                                                    NS_ERROR_FAILURE, E_FAIL);
-                                };
-                                boolean pinSuccess;
-                                HRESULT hr = operation->GetResults(&pinSuccess);
-                                if (FAILED(hr)) {
-                                  REJECT_AND_RETURN(promiseHolder,
-                                                    NS_ERROR_FAILURE, E_FAIL);
-                                }
-                                RESOLVE_AND_RETURN(promiseHolder,
-                                                   pinSuccess ? true : false,
-                                                   S_OK);
-                              });
-                      hr = pinOperation->put_Completed(
-                          pinOperationCallback.Get());
-                      if (FAILED(hr)) {
-                        REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE, hr);
-                      }
-                      return hr;
-                    });
-            hr = getPinnedOperation->put_Completed(getPinnedCallback.Get());
-            if (FAILED(hr)) {
-              REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE, hr);
-            }
-            return hr;
-          });
+  auto getAppListEntriesCallback = Callback<
+      IAsyncOperationCompletedHandler<IVectorView<AppListEntry*>*>>(
+      [promiseHolder](IAsyncOperation<IVectorView<AppListEntry*>*>* operation,
+                      AsyncStatus status) -> HRESULT {
+        if (status != AsyncStatus::Completed) {
+          REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE, E_FAIL);
+        }
+        ComPtr<IVectorView<AppListEntry*>> appListEntries;
+        HRESULT hr = operation->GetResults(&appListEntries);
+        if (FAILED(hr)) {
+          REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE, E_FAIL);
+        }
+        ComPtr<IStartScreenManager> startScreenManager;
+        ComPtr<IAppListEntry> entry;
+        hr = GetStartScreenManager(appListEntries, entry, startScreenManager);
+        if (FAILED(hr)) {
+          REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE, E_FAIL);
+        }
+        ComPtr<IAsyncOperation<bool>> getPinnedOperation;
+        hr = startScreenManager->ContainsAppListEntryAsync(entry.Get(),
+                                                           &getPinnedOperation);
+        if (FAILED(hr)) {
+          REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE, E_FAIL);
+        }
+        auto getPinnedCallback =
+            Callback<IAsyncOperationCompletedHandler<bool>>(
+                [promiseHolder, entry, startScreenManager](
+                    IAsyncOperation<bool>* operation,
+                    AsyncStatus status) -> HRESULT {
+                  if (status != AsyncStatus::Completed) {
+                    REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE, E_FAIL);
+                  }
+                  boolean isAlreadyPinned;
+                  HRESULT hr = operation->GetResults(&isAlreadyPinned);
+                  if (FAILED(hr)) {
+                    REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE, E_FAIL);
+                  }
+                  // If we're already pinned we can return early
+                  if (isAlreadyPinned) {
+                    RESOLVE_AND_RETURN(promiseHolder, true, S_OK);
+                  }
+                  ComPtr<IAsyncOperation<bool>> pinOperation;
+                  startScreenManager->RequestAddAppListEntryAsync(
+                      entry.Get(), &pinOperation);
+                  // Set another callback for pinning to the start menu
+                  auto pinOperationCallback =
+                      Callback<IAsyncOperationCompletedHandler<bool>>(
+                          [promiseHolder](IAsyncOperation<bool>* operation,
+                                          AsyncStatus status) -> HRESULT {
+                            if (status != AsyncStatus::Completed) {
+                              REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE,
+                                                E_FAIL);
+                            };
+                            boolean pinSuccess;
+                            HRESULT hr = operation->GetResults(&pinSuccess);
+                            if (FAILED(hr)) {
+                              REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE,
+                                                E_FAIL);
+                            }
+                            RESOLVE_AND_RETURN(promiseHolder,
+                                               pinSuccess ? true : false, S_OK);
+                          });
+                  hr = pinOperation->put_Completed(pinOperationCallback.Get());
+                  if (FAILED(hr)) {
+                    REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE, hr);
+                  }
+                  return hr;
+                });
+        hr = getPinnedOperation->put_Completed(getPinnedCallback.Get());
+        if (FAILED(hr)) {
+          REJECT_AND_RETURN(promiseHolder, NS_ERROR_FAILURE, hr);
+        }
+        return hr;
+      });
   hr = getAppListEntriesOperation->put_Completed(
       getAppListEntriesCallback.Get());
   if (FAILED(hr)) {
@@ -2691,9 +2671,8 @@ static void PinCurrentAppToStartMenuAsyncImpl(
 }
 
 NS_IMETHODIMP
-nsWindowsShellService::PinCurrentAppToStartMenuAsync(bool aCheckOnly,
-                                                     JSContext* aCx,
-                                                     dom::Promise** aPromise) {
+nsWindowsShellService::PinCurrentAppToStartMenu(JSContext* aCx,
+                                                dom::Promise** aPromise) {
   if (!NS_IsMainThread()) {
     return NS_ERROR_NOT_SAME_THREAD;
   }
@@ -2712,16 +2691,15 @@ nsWindowsShellService::PinCurrentAppToStartMenuAsync(bool aCheckOnly,
   // A holder to pass the promise through the background task and back to
   // the main thread when finished.
   auto promiseHolder = MakeRefPtr<nsMainThreadPtrHolder<dom::Promise>>(
-      "PinCurrentAppToStartMenuAsync promise", promise);
+      "PinCurrentAppToStartMenu promise", promise);
   NS_DispatchBackgroundTask(NS_NewRunnableFunction(
-      "PinCurrentAppToStartMenuAsync", [aCheckOnly, promiseHolder] {
-        PinCurrentAppToStartMenuAsyncImpl(aCheckOnly, promiseHolder);
-      }));
+      "PinCurrentAppToStartMenu",
+      [promiseHolder] { PinCurrentAppToStartMenuImpl(promiseHolder); }));
   promise.forget(aPromise);
   return NS_OK;
 }
 
-static void IsCurrentAppPinnedToStartMenuAsyncImpl(
+static void IsCurrentAppPinnedToStartMenuImpl(
     const RefPtr<nsMainThreadPtrHolder<dom::Promise>> promiseHolder) {
   ComPtr<IPackage3> package3;
   HRESULT hr = GetPackage3(package3);
@@ -2795,8 +2773,8 @@ static void IsCurrentAppPinnedToStartMenuAsyncImpl(
 }
 
 NS_IMETHODIMP
-nsWindowsShellService::IsCurrentAppPinnedToStartMenuAsync(
-    JSContext* aCx, dom::Promise** aPromise) {
+nsWindowsShellService::IsCurrentAppPinnedToStartMenu(JSContext* aCx,
+                                                     dom::Promise** aPromise) {
   if (!NS_IsMainThread()) {
     return NS_ERROR_NOT_SAME_THREAD;
   }
@@ -2815,47 +2793,45 @@ nsWindowsShellService::IsCurrentAppPinnedToStartMenuAsync(
   // A holder to pass the promise through the background task and back to
   // the main thread when finished.
   auto promiseHolder = MakeRefPtr<nsMainThreadPtrHolder<dom::Promise>>(
-      "IsCurrentAppPinnedToStartMenuAsync promise", promise);
+      "IsCurrentAppPinnedToStartMenu promise", promise);
   NS_DispatchBackgroundTask(NS_NewRunnableFunction(
-      "IsCurrentAppPinnedToStartMenuAsync", [promiseHolder] {
-        IsCurrentAppPinnedToStartMenuAsyncImpl(promiseHolder);
-      }));
+      "IsCurrentAppPinnedToStartMenu",
+      [promiseHolder] { IsCurrentAppPinnedToStartMenuImpl(promiseHolder); }));
   promise.forget(aPromise);
   return NS_OK;
 }
 
 #else
 NS_IMETHODIMP
-nsWindowsShellService::EnableLaunchOnLoginMSIXAsync(
+nsWindowsShellService::EnableLaunchOnLoginMSIX(
     const nsAString& aTaskId, JSContext* aCx,
     /* out */ dom::Promise** aPromise) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
-nsWindowsShellService::DisableLaunchOnLoginMSIXAsync(
+nsWindowsShellService::DisableLaunchOnLoginMSIX(
     const nsAString& aTaskId, JSContext* aCx,
     /* out */ dom::Promise** aPromise) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
-nsWindowsShellService::GetLaunchOnLoginEnabledMSIXAsync(
+nsWindowsShellService::GetLaunchOnLoginEnabledMSIX(
     const nsAString& aTaskId, JSContext* aCx,
     /* out */ dom::Promise** aPromise) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
-nsWindowsShellService::PinCurrentAppToStartMenuAsync(bool aCheckOnly,
-                                                     JSContext* aCx,
+nsWindowsShellService::PinCurrentAppToStartMenu(JSContext* aCx,
+                                                dom::Promise** aPromise) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+nsWindowsShellService::IsCurrentAppPinnedToStartMenu(JSContext* aCx,
                                                      dom::Promise** aPromise) {
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP
-nsWindowsShellService::IsCurrentAppPinnedToStartMenuAsync(
-    JSContext* aCx, dom::Promise** aPromise) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 #endif
@@ -2922,6 +2898,296 @@ nsWindowsShellService::ClassifyShortcut(const nsAString& aPath,
   }
 
   // Nothing found, aResult is already "".
+  return NS_OK;
+}
+
+static nsresult SetShortcutsIconImpl(
+    const CopyableTArray<nsString>& aShortcutPaths, const nsAString& aIconPath,
+    uint16_t aIconResourceId) {
+  // Reference the icon by resource ID using the Win32 negative-index
+  // convention (see ExtractIconExW), so the reference stays valid regardless of
+  // the order icons are embedded in aIconPath. A resource ID of 0 selects the
+  // binary's default icon (positional index 0).
+  int32_t iconLocationIndex =
+      aIconResourceId == 0 ? 0 : -static_cast<int32_t>(aIconResourceId);
+
+  bool updatedAtLeastOne = false;
+  for (const auto& shortcutPath : aShortcutPaths) {
+    RefPtr<IShellLinkW> link;
+    HRESULT hr =
+        CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER,
+                         IID_IShellLinkW, getter_AddRefs(link));
+    if (FAILED(hr)) {
+      MOZ_LOG(sLog, LogLevel::Error, ("Could not create CLSID_ShellLink"));
+      continue;
+    }
+
+    RefPtr<IPersistFile> persist;
+    hr = link->QueryInterface(IID_IPersistFile, getter_AddRefs(persist));
+    if (FAILED(hr)) {
+      MOZ_LOG(sLog, LogLevel::Error,
+              ("Could not get IPersistFile off CLSID_ShellLink"));
+      continue;
+    }
+
+    const nsString& flatShortcutPath = PromiseFlatString(shortcutPath);
+    const NS_ConvertUTF16toUTF8 loggablePath(flatShortcutPath);
+    hr = persist->Load(flatShortcutPath.get(), STGM_READWRITE);
+    if (FAILED(hr)) {
+      if (hr == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND)) {
+        MOZ_LOG(sLog, LogLevel::Warning,
+                ("Could not find shortcut at %s to update. Skipping.",
+                 loggablePath.get()));
+      } else {
+        MOZ_LOG(sLog, LogLevel::Warning,
+                ("Could not load shortcut at %s to update (%ld). Skipping.",
+                 loggablePath.get(), hr));
+      }
+      continue;
+    }
+
+    hr = link->SetIconLocation(PromiseFlatString(aIconPath).get(),
+                               iconLocationIndex);
+    if (FAILED(hr)) {
+      MOZ_LOG(sLog, LogLevel::Warning,
+              ("Could not update icon for shortcut at %s (%ld). Skipping.",
+               loggablePath.get(), hr));
+      continue;
+    }
+
+    hr = persist->Save(flatShortcutPath.get(), TRUE);
+    if (FAILED(hr)) {
+      MOZ_LOG(sLog, LogLevel::Warning,
+              ("Could not save icon update for shortcut at %s (%ld). Skipping.",
+               loggablePath.get(), hr));
+      continue;
+    }
+
+    ::SHChangeNotify(SHCNE_UPDATEITEM, SHCNF_PATHW, flatShortcutPath.get(),
+                     nullptr);
+    updatedAtLeastOne = true;
+  }
+  ::SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nullptr, nullptr);
+
+  if (updatedAtLeastOne) {
+    return NS_OK;
+  } else {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+}
+
+NS_IMETHODIMP
+nsWindowsShellService::SetShortcutsIcon(
+    const nsTArray<nsString>& aShortcutPaths, const nsAString& aIconPath,
+    uint16_t aIconResourceId, JSContext* aCx, dom::Promise** aPromise) {
+  if (!NS_IsMainThread()) {
+    return NS_ERROR_NOT_SAME_THREAD;
+  }
+
+  ErrorResult rv;
+  RefPtr<dom::Promise> promise =
+      dom::Promise::Create(xpc::CurrentNativeGlobal(aCx), rv);
+
+  if (MOZ_UNLIKELY(rv.Failed())) {
+    return rv.StealNSResult();
+  }
+
+  auto promiseHolder = MakeRefPtr<nsMainThreadPtrHolder<dom::Promise>>(
+      "SetShortcutsIcon promise", promise);
+
+  NS_DispatchBackgroundTask(
+      NS_NewRunnableFunction(
+          "SetShortcutsIcon",
+          [aShortcutPaths = CopyableTArray<nsString>(aShortcutPaths),
+           aIconPath = nsString{aIconPath}, aIconResourceId,
+           promiseHolder = std::move(promiseHolder)] {
+            nsresult rv = SetShortcutsIconImpl(aShortcutPaths, aIconPath,
+                                               aIconResourceId);
+            NS_DispatchToMainThread(NS_NewRunnableFunction(
+                "SetShortcutsIcon callback",
+                [rv, promiseHolder = std::move(promiseHolder)] {
+                  dom::Promise* promise = promiseHolder.get()->get();
+                  if (NS_SUCCEEDED(rv)) {
+                    promise->MaybeResolveWithUndefined();
+                  } else {
+                    promise->MaybeReject(rv);
+                  }
+                }));
+          }),
+      NS_DISPATCH_EVENT_MAY_BLOCK);
+
+  promise.forget(aPromise);
+  return NS_OK;
+}
+
+static void CollectMatchingShortcutsInDir(const nsAString& aDirPath,
+                                          const nsAString& aAUMID,
+                                          const wchar_t aExePath[MAXPATHLEN],
+                                          const nsAString& aShortcutSubstring,
+                                          nsTArray<nsString>& aOut) {
+  nsAutoString pattern(aDirPath);
+  if (pattern.IsEmpty()) {
+    return;
+  }
+  if (pattern.Last() != L'\\') {
+    pattern.Append(u'\\');
+  }
+  nsAutoString folderWithSlash(pattern);
+  pattern.AppendLiteral("*.lnk");
+
+  WIN32_FIND_DATAW findData = {};
+  HANDLE hFindFile = FindFirstFileW(pattern.get(), &findData);
+  if (hFindFile == INVALID_HANDLE_VALUE) {
+    return;
+  }
+
+  do {
+    if (!aShortcutSubstring.IsEmpty() &&
+        StrStrIW(findData.cFileName,
+                 PromiseFlatString(aShortcutSubstring).get()) == nullptr) {
+      continue;
+    }
+
+    nsAutoString path(folderWithSlash);
+    path.Append(findData.cFileName);
+
+    RefPtr<IShellLinkW> link;
+    HRESULT hr =
+        CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER,
+                         IID_IShellLinkW, getter_AddRefs(link));
+    if (FAILED(hr)) {
+      continue;
+    }
+
+    RefPtr<IPersistFile> persist;
+    hr = link->QueryInterface(IID_IPersistFile, getter_AddRefs(persist));
+    if (FAILED(hr)) {
+      continue;
+    }
+
+    hr = persist->Load(path.get(), STGM_READ);
+    if (FAILED(hr)) {
+      continue;
+    }
+
+    RefPtr<IPropertyStore> propStore;
+    hr = link->QueryInterface(IID_IPropertyStore, getter_AddRefs(propStore));
+    if (FAILED(hr)) {
+      continue;
+    }
+
+    PROPVARIANT pv;
+    hr = propStore->GetValue(PKEY_AppUserModel_ID, &pv);
+    if (FAILED(hr)) {
+      continue;
+    }
+
+    wchar_t storedAUMID[MAX_PATH];
+    hr = PropVariantToString(pv, storedAUMID, MAX_PATH);
+    PropVariantClear(&pv);
+    if (FAILED(hr)) {
+      continue;
+    }
+
+    if (!aAUMID.Equals(storedAUMID)) {
+      continue;
+    }
+
+    static_assert(MAXPATHLEN == MAX_PATH);
+    wchar_t storedExePath[MAX_PATH] = {};
+    hr = link->GetPath(storedExePath, std::size(storedExePath), nullptr, 0);
+    if (FAILED(hr) || hr == S_FALSE) {
+      continue;
+    }
+
+    if (wcsnicmp(storedExePath, aExePath, MAXPATHLEN) == 0) {
+      aOut.AppendElement(path);
+    }
+  } while (FindNextFileW(hFindFile, &findData));
+
+  FindClose(hFindFile);
+}
+
+static nsresult EnumerateInstallShortcutsImpl(const nsAString& aAUMID,
+                                              nsTArray<nsString>& aOut) {
+  wchar_t exePath[MAXPATHLEN] = {};
+  if (NS_FAILED(BinaryPath::GetLong(exePath))) {
+    return NS_ERROR_FAILURE;
+  }
+
+  nsAutoString shortcutSubstring;
+  shortcutSubstring.AssignLiteral(MOZ_APP_DISPLAYNAME);
+
+  KNOWNFOLDERID folderIds[] = {FOLDERID_Desktop, FOLDERID_Programs};
+  for (KNOWNFOLDERID folderId : folderIds) {
+    UniquePtr<wchar_t, mozilla::CoTaskMemFreeDeleter> folderPath;
+    HRESULT hr = SHGetKnownFolderPath(folderId, SHGFP_TYPE_CURRENT, nullptr,
+                                      getter_Transfers(folderPath));
+    if (FAILED(hr)) {
+      continue;
+    }
+    CollectMatchingShortcutsInDir(nsDependentString(folderPath.get()), aAUMID,
+                                  exePath, shortcutSubstring, aOut);
+  }
+
+  UniquePtr<wchar_t, mozilla::CoTaskMemFreeDeleter> appDataPath;
+  HRESULT hr = SHGetKnownFolderPath(FOLDERID_RoamingAppData, SHGFP_TYPE_CURRENT,
+                                    nullptr, getter_Transfers(appDataPath));
+  if (SUCCEEDED(hr)) {
+    nsAutoString taskbarPath(appDataPath.get());
+    taskbarPath.AppendLiteral(
+        "\\Microsoft\\Internet Explorer\\Quick Launch\\User Pinned\\TaskBar");
+    if (taskbarPath.Length() < MAX_PATH) {
+      CollectMatchingShortcutsInDir(taskbarPath, aAUMID, exePath,
+                                    shortcutSubstring, aOut);
+    }
+  }
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsWindowsShellService::EnumerateInstallShortcuts(
+    const nsAString& aAppUserModelId, JSContext* aCx, dom::Promise** aPromise) {
+  if (!NS_IsMainThread()) {
+    return NS_ERROR_NOT_SAME_THREAD;
+  }
+
+  ErrorResult rv;
+  RefPtr<dom::Promise> promise =
+      dom::Promise::Create(xpc::CurrentNativeGlobal(aCx), rv);
+
+  if (MOZ_UNLIKELY(rv.Failed())) {
+    return rv.StealNSResult();
+  }
+
+  auto promiseHolder = MakeRefPtr<nsMainThreadPtrHolder<dom::Promise>>(
+      "EnumerateInstallShortcuts promise", promise);
+
+  NS_DispatchBackgroundTask(
+      NS_NewRunnableFunction(
+          "EnumerateInstallShortcuts",
+          [aAppUserModelId = nsString{aAppUserModelId},
+           promiseHolder = std::move(promiseHolder)] {
+            nsTArray<nsString> results;
+            nsresult rv =
+                EnumerateInstallShortcutsImpl(aAppUserModelId, results);
+
+            NS_DispatchToMainThread(NS_NewRunnableFunction(
+                "EnumerateInstallShortcuts callback",
+                [rv, results = std::move(results),
+                 promiseHolder = std::move(promiseHolder)]() mutable {
+                  dom::Promise* promise = promiseHolder.get()->get();
+                  if (NS_SUCCEEDED(rv)) {
+                    promise->MaybeResolve(results);
+                  } else {
+                    promise->MaybeReject(rv);
+                  }
+                }));
+          }),
+      NS_DISPATCH_EVENT_MAY_BLOCK);
+
+  promise.forget(aPromise);
   return NS_OK;
 }
 

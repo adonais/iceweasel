@@ -62,6 +62,13 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug",
 ]
 
+["browser_popupNotification_dropmarker.js"]
+skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && debug",
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan",
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug",
+]
+
 ["browser_popupNotification_hide_after_trust_panel.js"]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && debug",

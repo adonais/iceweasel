@@ -1,4 +1,54 @@
 {
+  "nova": {
+    "border": {
+      "@base": {
+        "value": "{border.width} solid {border.color.interactive.@base}"
+      },
+      "color": {
+        "hover": {
+          "value": "{border.color.interactive.hover}"
+        },
+        "disabled": {
+          "value": "{border.color.interactive.disabled}"
+        }
+      }
+    },
+    "font": {
+      "size": {
+        "@base": {
+          "value": "{font.size.root}"
+        },
+        "small": {
+          "value": "{font.size.small}"
+        }
+      }
+    },
+    "min": {
+      "height": {
+        "@base": {
+          "value": "{button.min-height.@base}"
+        },
+        "small": {
+          "value": "{button.min-height.small}"
+        }
+      }
+    },
+    "padding": {
+      "block": {
+        "value": "{button.padding.block.@base}"
+      }
+    },
+    "space": {
+      "inline": {
+        "@base": {
+          "value": "{button.padding.inline.@base}"
+        },
+        "small": {
+          "value": "{space.medium}"
+        }
+      }
+    }
+  },
   "background": {
     "color": {
       "@base": {
@@ -30,7 +80,12 @@
   },
   "font": {
     "size": {
-      "value": "{button.font.size.@base}"
+      "@base": {
+        "value": "{button.font.size.@base}"
+      },
+      "small": {
+        "value": "{select.font.size.@base}"
+      }
     },
     "weight": {
       "value": "{button.font.weight}"
@@ -43,7 +98,12 @@
   },
   "min": {
     "height": {
-      "value": "{button.min-height.@base}"
+      "@base": {
+        "value": "{button.min-height.@base}"
+      },
+      "small": {
+        "value": "{select.min.height.@base}"
+      }
     }
   },
   "opacity": {
@@ -60,6 +120,24 @@
     "text": {
       "color": {
         "value": "{text.color.@base}"
+      }
+    }
+  },
+  "padding": {
+    "block": {
+      "value": "{space.small}"
+    },
+    "icon": {
+      "value": "{icon.size.@base}"
+    }
+  },
+  "space": {
+    "inline": {
+      "@base": {
+        "value": "{space.large}"
+      },
+      "small": {
+        "value": "{space.large}"
       }
     }
   },

@@ -77,4 +77,18 @@
             android:title="@string/preferences_sync_debug_oauth_token_result_title"
             android:selectable="false" />
     </PreferenceCategory>
+    <PreferenceCategory
+        android:selectable="false"
+        android:title="@string/preferences_sync_debug_pairing_category"
+        app:iconSpaceReserved="false">
+        <androidx.preference.EditTextPreference
+            android:key="@string/pref_key_sync_debug_pairing_url"
+            android:title="@string/preferences_sync_debug_pairing_url_title"
+            android:inputType="textUri"
+            app:iconSpaceReserved="false"
+            app:useSimpleSummaryProvider="true" />
+        <androidx.preference.Preference
+            android:key="@string/pref_key_sync_debug_pairing_start"
+            android:title="@string/preferences_sync_debug_pairing_start_title" />
+    </PreferenceCategory>
 </PreferenceScreen>

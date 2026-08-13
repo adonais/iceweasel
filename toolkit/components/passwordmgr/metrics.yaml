@@ -119,6 +119,7 @@ pwmgr:
       - https://bugzil.la/1850872
       - https://bugzil.la/1969169
       - https://bugzil.la/1999882
+      - https://bugzil.la/2048463
     data_reviews: &pwmgr_doorhanger_submitted_data_reviews
       - https://bugzil.la/1650929
       - https://bugzil.la/1650941
@@ -128,7 +129,7 @@ pwmgr:
       - https://bugzil.la/1850872
     notification_emails: &pwmgr_doorhanger_submitted_emails
       - passwords-dev@mozilla.org
-    expires: 155
+    expires: 165
     extra_keys: &pwmgr_doorhanger_submitted_extra
       did_edit_un:
         description: >
@@ -168,7 +169,7 @@ pwmgr:
     bugs: *pwmgr_doorhanger_submitted_bugs
     data_reviews: *pwmgr_doorhanger_submitted_data_reviews
     notification_emails: *pwmgr_doorhanger_submitted_emails
-    expires: 155
+    expires: 165
     extra_keys: *pwmgr_doorhanger_submitted_extra
 
   saved_login_used_form_login:
@@ -852,42 +853,11 @@ pwmgr:
       - passwords-dev@mozilla.org
     expires: never
 
-  rust_mirror_status:
-    type: event
-    description: >
-      Records the outcome of each operation mirrored into the Rust password store.
-      Each record contains the operation type and whether it
-      succeeded or failed.
-    bugs:
-      - https://bugzil.la/1981812
-    data_reviews:
-      - https://bugzil.la/1981812
-    data_sensitivity:
-      - technical
-    notification_emails:
-      - passwords-dev@mozilla.org
-    expires: never
-    extra_keys:
-      metric_version:
-         type: string
-         description: Identifier for rust mirror telemetry version
-      run_id:
-        type: string
-        description: Unique identifier for the login change event
-      operation:
-        description: >
-          The type of operation that failed (e.g. "add", "modify", "remove", "remove-all", "migration", etc.).
-        type: string
-      status:
-        description: >
-          The result of the operation ("success" or "failure").
-        type: string
-
   rust_migration_status:
     type: event
     description: >
-      One record per rolling migration run, recording duration, total number
-      of logins migrated and whether there have been errors.
+      One record per migration run, recording duration, login and vulnerable
+      password counts, the resulting state and any fatal error.
     bugs:
       - https://bugzil.la/1985800
     data_reviews:
@@ -900,10 +870,14 @@ pwmgr:
     extra_keys:
       metric_version:
         type: string
-        description: Identifier for rust mirror telemetry version
+        description: Identifier for rust migration telemetry version
       run_id:
         type: string
         description: Unique identifier for the migration run.
+      duration_ms:
+        description: >
+          Duration of the migration in milliseconds.
+        type: quantity
       number_of_logins_to_migrate:
         description: >
           Total number of logins to be migrated during this run.
@@ -916,19 +890,34 @@ pwmgr:
         description: >
           Number of logins quarantined during this run.
         type: quantity
-      duration_ms:
+      number_of_vulnerable_passwords:
         description: >
-          Duration of the migration in milliseconds.
+          Number of potentially vulnerable passwords migrated during this run.
         type: quantity
-      had_errors:
+      attempt:
         description: >
-          Whether the migration had errors.
+          Number of prior migration attempts across sessions (0 on the first
+          attempt).
+        type: quantity
+      end_state:
+        description: >
+          Migrator state after the run, e.g. "RustPrimary" when the migration
+          completed or "MigrationPending" when it did not.
+        type: string
+      primary_password_set:
+        description: >
+          Whether a Primary Password was set at the time of the run.
         type: boolean
+      error_message:
+        description: >
+          The fatal error that aborted the run, or empty if the run completed.
+        type: string
 
-  rust_write_failure:
+  rust_migration_login_error:
     type: event
     description: >
-      Records errors during mirror or migration run.
+      Records one event per login that could not be migrated, with the
+      normalized error message.
     bugs:
       - https://bugzil.la/1991676
     data_reviews:
@@ -940,46 +929,14 @@ pwmgr:
     expires: never
     extra_keys:
       metric_version:
-         type: string
-         description: Identifier for rust mirror telemetry version
+        type: string
+        description: Identifier for rust migration telemetry version
       run_id:
         type: string
-        description: Unique identifier for the login change event
-      operation:
-        description: >
-          The type of operation that failed (e.g. "add", "modify", "remove", "remove-all", "migration", etc.).
-        type: string
-      poisoned:
-        description: >
-          Whether there was a previous error, meaning that this event must be viewed with caution.
-        type: boolean
+        description: Unique identifier for the migration run
       error_message:
         description: >
           The error message or exception string from the failure.
-        type: string
-      has_origin:
-        description: >
-          Whether the login includes an origin
-        type: boolean
-      has_form_action_origin:
-        description: >
-          Whether the login includes a form action origin
-        type: boolean
-      has_http_realm:
-        description: >
-          Whether the login includes a http realm
-        type: boolean
-      is_deleted:
-        description: >
-          Whether the login to add/modify/remove is a deletion stub
-        type: boolean
-      time_created:
-        description: >
-          Time when login was created (rounded to month)
-        type: string
-      time_last_used:
-        description: >
-          Time when login was last used (rounded to month)
         type: string
 
   saving_enabled:

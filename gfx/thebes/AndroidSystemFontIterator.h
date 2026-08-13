@@ -5,10 +5,10 @@
 #ifndef AndroidSystemFontIterator_h_
 #define AndroidSystemFontIterator_h_
 
-#include "mozilla/Maybe.h"
-
 #include <android/font.h>
 #include <android/system_fonts.h>
+
+#include "mozilla/Maybe.h"
 
 namespace mozilla {
 

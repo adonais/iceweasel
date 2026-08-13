@@ -42,6 +42,7 @@
 #include "nsCharTraits.h"
 #include "nsComponentManagerUtils.h"
 #include "mozilla/dom/ContentList.h"
+#include "mozilla/Utf16.h"
 #include "nsDebug.h"
 #include "nsDependentSubstring.h"
 #include "nsError.h"
@@ -408,7 +409,7 @@ nsresult TextEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
   if (!StaticPrefs::dom_event_keypress_dispatch_once_per_surrogate_pair() &&
       !StaticPrefs::dom_event_keypress_key_allow_lone_surrogate() &&
       aKeyboardEvent->mKeyValue.IsEmpty() &&
-      IS_SURROGATE(aKeyboardEvent->mCharCode)) {
+      mozilla::IsSurrogate(aKeyboardEvent->mCharCode)) {
     return NS_OK;
   }
   // Our widget shouldn't set `\r` to `mKeyValue`, but it may be synthesized
@@ -1043,9 +1044,9 @@ void TextEditor::MaskString(nsString& aString, const Text& aTextNode,
 
   const char16_t kPasswordMask = TextEditor::PasswordMask();
   for (uint32_t i = aStartOffsetInString; i < aString.Length(); ++i) {
-    bool isSurrogatePair = NS_IS_HIGH_SURROGATE(aString.CharAt(i)) &&
+    bool isSurrogatePair = mozilla::IsHighSurrogate(aString.CharAt(i)) &&
                            i < aString.Length() - 1 &&
-                           NS_IS_LOW_SURROGATE(aString.CharAt(i + 1));
+                           mozilla::IsLowSurrogate(aString.CharAt(i + 1));
     if (i < unmaskStart || i >= unmaskStart + unmaskLength) {
       if (isSurrogatePair) {
         aString.SetCharAt(kPasswordMask, i);

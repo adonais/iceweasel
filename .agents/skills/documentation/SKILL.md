@@ -1,4 +1,5 @@
 ---
+name: documentation
 description: Use this skill when working with Firefox documentation,
   including building documentation with `./mach doc`,
   fixing Sphinx build errors or warnings, modifying existing
@@ -9,8 +10,7 @@ description: Use this skill when working with Firefox documentation,
 
 Firefox documentation is built using **Sphinx**
 through the `./mach doc` command. Documentation sources are distributed
-throughout the repository and can be written in **reStructuredText
-(`.rst`)** or **Markdown (`.md`)**.
+throughout the repository and are written in **Markdown (`.md`)**.
 
 The documentation system integrates:
 
@@ -127,7 +127,7 @@ This file controls several critical aspects of the documentation build:
 
 Typical process:
 
-1.  Create a `.rst` or `.md` file in the appropriate directory. Prefer Markdown.
+1.  Create a `.md` file in the appropriate directory.
 2.  Add the document to a parent `toctree`.
 3.  Add the documentation path to the appropriate category in `docs/config.yml`.
 4.  If adding docs in a new directory, ensure `SPHINX_TREES` is set in the

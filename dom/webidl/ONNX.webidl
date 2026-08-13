@@ -65,6 +65,7 @@ dictionary InferenceSessionSessionOptions {
 
 [Func="InferenceSession::InInferenceProcess", Exposed=(DedicatedWorker,Window)]
 interface InferenceSession {
+  static boolean isAvailable();
   [NewObject]
   Promise<InferenceSessionReturnType> run(InferenceSessionFeedsType feeds, optional InferenceSessionRunOptions options = {});
   [NewObject] static Promise<InferenceSession> create((UTF8String or Uint8Array) uriOrBuffer, optional InferenceSessionSessionOptions options = {});

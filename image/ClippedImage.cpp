@@ -17,9 +17,8 @@
 #include "gfxUtils.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/SVGImageContext.h"
-#include "nsPresContext.h"
-
 #include "mozilla/gfx/2D.h"
+#include "nsPresContext.h"
 
 namespace mozilla {
 

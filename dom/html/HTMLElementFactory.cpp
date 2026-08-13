@@ -38,6 +38,15 @@ nsresult NS_NewHTMLElement(Element** aResult,
                            already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
                            FromParser aFromParser, nsAtom* aIsAtom,
                            mozilla::dom::CustomElementDefinition* aDefinition) {
+  return NS_NewHTMLElement(aResult, std::move(aNodeInfo), aFromParser, aIsAtom,
+                           aDefinition, Nothing());
+}
+
+nsresult NS_NewHTMLElement(
+    Element** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
+    FromParser aFromParser, nsAtom* aIsAtom,
+    mozilla::dom::CustomElementDefinition* aDefinition,
+    Maybe<RefPtr<CustomElementRegistry>> aCustomElementRegistry) {
   RefPtr<mozilla::dom::NodeInfo> nodeInfo = aNodeInfo;
 
   MOZ_ASSERT(
@@ -45,7 +54,8 @@ nsresult NS_NewHTMLElement(Element** aResult,
       "Trying to create HTML elements that don't have the XHTML namespace");
 
   return nsContentUtils::NewXULOrHTMLElement(aResult, nodeInfo, aFromParser,
-                                             aIsAtom, aDefinition);
+                                             aIsAtom, aDefinition,
+                                             std::move(aCustomElementRegistry));
 }
 
 already_AddRefed<nsGenericHTMLElement> CreateHTMLElement(

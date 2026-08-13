@@ -95,7 +95,7 @@ add_task(async function test() {
         await waitForSelector(browser, ".highlightEditor:not(.selectedEditor)");
 
         document.getElementById("cmd_print").doCommand();
-        await BrowserTestUtils.waitForCondition(() => {
+        await TestUtils.waitForCondition(() => {
           let preview = document.querySelector(".printPreviewBrowser");
           return preview && BrowserTestUtils.isVisible(preview);
         });
@@ -173,7 +173,7 @@ add_task(async function test() {
       );
 
       document.getElementById("cmd_print").doCommand();
-      await BrowserTestUtils.waitForCondition(() => {
+      await TestUtils.waitForCondition(() => {
         let preview = document.querySelector(".printPreviewBrowser");
         return preview && BrowserTestUtils.isVisible(preview);
       });
@@ -204,7 +204,7 @@ add_task(async function test() {
       Assert.equal(Glean.pdfjsEditingHighlight.colorChanged.testGetValue(), 1);
 
       document.getElementById("cmd_print").doCommand();
-      await BrowserTestUtils.waitForCondition(() => {
+      await TestUtils.waitForCondition(() => {
         let preview = document.querySelector(".printPreviewBrowser");
         return preview && BrowserTestUtils.isVisible(preview);
       });

@@ -451,11 +451,11 @@ add_task(async function universal_inline_anchor_dismiss_multiple_windows() {
   const getNotification2 = () =>
     win2.gNotificationBox.getNotificationWithValue(message.id);
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !!getNotification1(),
     "Infobar present in window 1"
   );
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !!getNotification2(),
     "Infobar present in window 2"
   );
@@ -470,11 +470,11 @@ add_task(async function universal_inline_anchor_dismiss_multiple_windows() {
   Assert.ok(link, "Inline anchor exists in window 1");
   EventUtils.synthesizeMouseAtCenter(link, {}, win1);
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !getNotification1(),
     "Infobar removed in window 1"
   );
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !getNotification2(),
     "Infobar removed in window 2"
   );
@@ -545,11 +545,11 @@ add_task(async function universal_dismiss_on_pref_change_multiple_windows() {
   const getInfobart2 = () =>
     win2.gNotificationBox.getNotificationWithValue(message.id);
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !!getInfobar1(),
     "Infobar present in window 1"
   );
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !!getInfobart2(),
     "Infobar present in window 2"
   );
@@ -560,11 +560,11 @@ add_task(async function universal_dismiss_on_pref_change_multiple_windows() {
 
   Services.prefs.setBoolPref(PREF, true);
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !getInfobar1(),
     "Infobar removed in window 1"
   );
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !getInfobart2(),
     "Infobar removed in window 2"
   );
@@ -619,11 +619,11 @@ add_task(async function replace_universal_with_universal_across_two_windows() {
     dispatchFirstUniversal
   );
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !!getFromWin1(firstUniversalMessage.id),
     "First universal visible in window 1"
   );
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !!getFromWin2(firstUniversalMessage.id),
     "First universal visible in window 2"
   );
@@ -644,19 +644,19 @@ add_task(async function replace_universal_with_universal_across_two_windows() {
     dispatchSecondUniversal
   );
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !!getFromWin1(secondUniversalMessage.id),
     "Second universal visible in window 1"
   );
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !!getFromWin2(secondUniversalMessage.id),
     "Second universal visible in window 2"
   );
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !getFromWin1(firstUniversalMessage.id),
     "First universal removed in window 1"
   );
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !getFromWin2(firstUniversalMessage.id),
     "First universal removed in window 2"
   );
@@ -677,19 +677,19 @@ add_task(async function replace_universal_with_universal_across_two_windows() {
     dispatchFirstUniversalAgain
   );
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !!getFromWin1(firstUniversalMessage.id),
     "First universal visible again in window 1"
   );
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !!getFromWin2(firstUniversalMessage.id),
     "First universal visible again in window 2"
   );
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !getFromWin1(secondUniversalMessage.id),
     "Second universal removed in window 1"
   );
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !getFromWin2(secondUniversalMessage.id),
     "Second universal removed in window 2"
   );
@@ -746,7 +746,7 @@ add_task(async function universal_replaces_global_across_windows() {
   const dispatchGlobal = sandbox.stub();
   await InfoBar.showInfoBarMessage(firstBrowser, globalMessage, dispatchGlobal);
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !!getNotificationFromWin(firstWindow, globalMessage.id),
     "Global infobar visible in the first window"
   );
@@ -771,15 +771,15 @@ add_task(async function universal_replaces_global_across_windows() {
     dispatchUniversal
   );
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !!getNotificationFromWin(firstWindow, universalReplacement.id),
     "Universal replacement visible in the first window"
   );
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !!getNotificationFromWin(secondWindow, universalReplacement.id),
     "Universal replacement visible in the second window"
   );
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !getNotificationFromWin(firstWindow, globalMessage.id),
     "Original global infobar removed from the first window"
   );
@@ -836,11 +836,11 @@ add_task(async function global_replaces_universal_across_windows() {
     dispatchUniversal
   );
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !!getNotificationFromWin(firstWindow, universalOriginal.id),
     "Original universal visible in the first window"
   );
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !!getNotificationFromWin(secondWindow, universalOriginal.id),
     "Original universal visible in the second window"
   );
@@ -875,15 +875,15 @@ add_task(async function global_replaces_universal_across_windows() {
     dispatchGlobal
   );
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !getNotificationFromWin(firstWindow, universalOriginal.id),
     "Universal removed from the first window"
   );
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !getNotificationFromWin(secondWindow, universalOriginal.id),
     "Universal removed from the second window"
   );
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !!getNotificationFromWin(firstWindow, globalReplacement.id),
     "Global replacement visible in the first window"
   );

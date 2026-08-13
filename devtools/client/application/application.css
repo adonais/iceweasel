@@ -28,6 +28,7 @@
 @import "chrome://devtools/content/application/src/components/service-workers/Worker.css";
 @import "chrome://devtools/content/application/src/components/session-history/SessionHistory.css";
 @import "chrome://devtools/content/application/src/components/ui/UIButton.css";
+@import "chrome://devtools/content/shared/components/MdnLink.css";
 
 html,
 body,

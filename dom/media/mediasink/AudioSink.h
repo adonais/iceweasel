@@ -69,6 +69,27 @@ class AudioSink : private AudioStream::DataSource {
   // Shut down the AudioSink's resources.
   void ShutDown();
 
+  // Reuse this sink and its still-running stream across a seek instead of
+  // destroying and recreating them. PrepareForReuse detaches the audio-queue
+  // listeners while the stream keeps running; ResetForReuse rebases the sink
+  // and its clock to |aStartTime| in place, drops the stale pre-seek audio, and
+  // returns a fresh ended promise.
+  void PrepareForReuse();
+  RefPtr<MediaSink::EndedPromise> ResetForReuse(
+      const PlaybackParams& aParams, const media::TimeUnit& aStartTime);
+
+  void SetStreamKeepRunning(bool aKeepRunning) {
+    if (mAudioStream) {
+      mAudioStream->SetKeepRunningMode(aKeepRunning);
+    }
+  }
+
+  bool IsErrored() const { return mErrored; }
+
+  bool IsStreamDrained() const {
+    return mAudioStream && mAudioStream->IsPlaybackCompleted();
+  }
+
   void SetVolume(double aVolume);
   void SetStreamName(const nsAString& aStreamName);
   void SetPlaybackRate(double aPlaybackRate);
@@ -132,7 +153,28 @@ class AudioSink : private AudioStream::DataSource {
   // True if there is any error in processing audio data like overflow.
   Atomic<bool> mErrored;
 
+  // Absolute sample totals over the sink's lifetime, used to drop the stale
+  // pre-seek audio still queued when the stream is reused across a seek.
+  // mTotalSamplesPushed counts every sample enqueued to the ring buffer and is
+  // maintained on the owner thread; mTotalSamplesPopped counts every sample the
+  // audio callback has dequeued, whether played or discarded, and is maintained
+  // on the audio callback thread; mDiscardUpToSampleCount is the push total
+  // below which dequeued samples are stale and must be dropped, written on the
+  // owner thread and read on the callback thread, hence atomic. Using absolute
+  // totals rather than counts that are reset keeps the drop race-free against
+  // the running callback.
+  Atomic<int64_t> mDiscardUpToSampleCount{0};
+  int64_t mTotalSamplesPushed = 0;
+  int64_t mTotalSamplesPopped = 0;
+
   const RefPtr<AbstractThread> mOwnerThread;
+
+  // Set the playback accounting fields to their initial values.
+  void InitPlaybackState();
+
+  void ApplyPlaybackParams(const PlaybackParams& aParams);
+
+  void ConnectAudioQueues();
 
   // Audio Processing objects and methods
   void OnAudioPopped();
@@ -162,7 +204,7 @@ class AudioSink : private AudioStream::DataSource {
   uint32_t mOutputRate;
   uint32_t mOutputChannels;
   AudibilityMonitor mAudibilityMonitor;
-  bool mIsAudioDataAudible;
+  Atomic<bool> mIsAudioDataAudible;
   MediaEventProducer<bool> mAudibleEvent;
   // Only signed on the real-time audio thread.
   MediaEventProducer<void> mAudioPopped;

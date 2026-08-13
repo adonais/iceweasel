@@ -5,21 +5,24 @@
 #ifndef MOZILLA_GFX_DCLAYER_TREE_H
 #define MOZILLA_GFX_DCLAYER_TREE_H
 
+// clang-format off
 #include <windows.h>
-#include <deque>
 #include <dxgicommon.h>
 #include <dxgiformat.h>
+// clang-format on
+
+#include <deque>
 #include <unordered_map>
 #include <vector>
 
 #include "Colorspaces.h"
 #include "GLTypes.h"
 #include "mozilla/HashFunctions.h"
-#include "mozilla/layers/OverlayInfo.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/layers/OverlayInfo.h"
 #include "mozilla/webrender/WebRenderTypes.h"
 
 struct ID3D11Device;

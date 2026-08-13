@@ -3,16 +3,17 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/net/TRRServiceChild.h"
+
+#include "TRRService.h"
 #include "mozilla/Atomics.h"
-#include "mozilla/Components.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/Components.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPtr.h"
 #include "nsHttpConnectionInfo.h"
 #include "nsIDNService.h"
 #include "nsIObserverService.h"
 #include "nsServiceManagerUtils.h"
-#include "TRRService.h"
 
 namespace mozilla {
 namespace net {

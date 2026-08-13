@@ -23,68 +23,64 @@
   </head>
   <body>
     <form id="form" class="editCreditCardForm contentPane" autocomplete="off">
-      <!--
-        The <span class="label-text" …/> needs to be after the form field in the same element in
-        order to get proper label styling with :focus and :user-invalid
-      -->
-      <label id="cc-number-container" class="container" role="none">
+      <div id="cc-number-container" class="container">
         <span
           id="invalidCardNumberString"
           hidden="hidden"
           data-l10n-id="autofill-card-invalid-number"
         ></span>
-        <!-- Because there is text both before and after the input, a11y will
-          include the value of the input in the label. Therefore, we override
-          with aria-labelledby.
-        -->
-        <input
+        <moz-input-text
           id="cc-number"
-          type="text"
-          required="required"
-          minlength="14"
-          pattern="[\- 0-9]+"
-          aria-labelledby="cc-number-label"
-        />
-        <span
-          id="cc-number-label"
-          data-l10n-id="autofill-card-number"
-          class="label-text"
-        />
-      </label>
-      <label id="cc-exp-month-container" class="container">
-        <select id="cc-exp-month" required="required">
-          <option />
-        </select>
-        <span data-l10n-id="autofill-card-expires-month" class="label-text" />
-      </label>
-      <label id="cc-exp-year-container" class="container">
-        <select id="cc-exp-year" required="required">
-          <option />
-        </select>
-        <span data-l10n-id="autofill-card-expires-year" class="label-text" />
-      </label>
-      <label id="cc-name-container" class="container">
-        <input id="cc-name" type="text" required="required" />
-        <span data-l10n-id="autofill-card-name-on-card" class="label-text" />
-      </label>
-      <label id="cc-csc-container" class="container" hidden="hidden">
+          data-l10n-id="autofill-card-number-2"
+        ></moz-input-text>
+      </div>
+      <div id="cc-name-container" class="container">
+        <moz-input-text
+          id="cc-name"
+          data-l10n-id="autofill-card-name-on-card-2"
+        ></moz-input-text>
+      </div>
+      <div id="cc-exp-month-container" class="container">
+        <moz-select
+          id="cc-exp-month"
+          data-l10n-id="autofill-card-expires-month-2"
+        >
+          <moz-option value=""></moz-option>
+        </moz-select>
+      </div>
+      <div id="cc-exp-year-container" class="container">
+        <moz-select
+          id="cc-exp-year"
+          data-l10n-id="autofill-card-expires-year-2"
+        >
+          <moz-option value=""></moz-option>
+        </moz-select>
+      </div>
+      <div id="cc-csc-container" class="container" hidden="hidden">
         <!-- The CSC container will get filled in by forms that need a CSC (using csc-input.js) -->
-      </label>
+      </div>
       <div
         id="billingAddressGUID-container"
-        class="billingAddressRow container rich-picker"
+        class="billingAddressRow container"
       >
-        <select id="billingAddressGUID" required="required"></select>
-        <label
-          for="billingAddressGUID"
-          data-l10n-id="autofill-card-billing-address"
-          class="label-text"
-        />
+        <moz-select
+          id="billingAddressGUID"
+          data-l10n-id="autofill-card-billing-address-2"
+        ></moz-select>
       </div>
     </form>
     <div id="controls-container">
-      <button id="cancel" data-l10n-id="autofill-cancel-button" />
-      <button id="save" class="primary" data-l10n-id="autofill-save-button" />
+      <moz-button-group>
+        <moz-button
+          id="cancel"
+          data-l10n-id="autofill-cancel-button"
+        ></moz-button>
+        <moz-button
+          id="save"
+          type="primary"
+          data-l10n-id="autofill-save-button"
+        ></moz-button>
+      </moz-button-group>
     </div>
   </body>
 </html>

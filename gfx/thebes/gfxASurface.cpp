@@ -2,22 +2,21 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsIMemoryReporter.h"
-#include "mozilla/Base64.h"
-#include "mozilla/MemoryReporting.h"
-#include "nsISupportsImpl.h"
-#include "mozilla/gfx/2D.h"
-#include "mozilla/gfx/Logging.h"
-#include "mozilla/gfx/HelpersCairo.h"
-#include "gfx2DGlue.h"
-
 #include "gfxASurface.h"
+
+#include "cairo.h"
+#include "gfx2DGlue.h"
 #include "gfxContext.h"
 #include "gfxImageSurface.h"
 #include "gfxPlatform.h"
 #include "gfxRect.h"
-
-#include "cairo.h"
+#include "mozilla/Base64.h"
+#include "mozilla/MemoryReporting.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/HelpersCairo.h"
+#include "mozilla/gfx/Logging.h"
+#include "nsIMemoryReporter.h"
+#include "nsISupportsImpl.h"
 
 #ifdef CAIRO_HAS_WIN32_SURFACE
 #  include "gfxWindowsSurface.h"
@@ -31,12 +30,12 @@
 #  include "gfxQuartzSurface.h"
 #endif
 
-#include <stdio.h>
 #include <limits.h>
+#include <stdio.h>
 
+#include "nsCOMPtr.h"
 #include "nsComponentManagerUtils.h"
 #include "nsISupportsUtils.h"
-#include "nsCOMPtr.h"
 #include "nsServiceManagerUtils.h"
 #include "nsString.h"
 

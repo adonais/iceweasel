@@ -46,7 +46,7 @@ add_task(async function test_TabGroupA11y() {
   );
 
   tabGroup.label = "test";
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => tabGroup.labelElement.getAttribute("aria-label") == "test",
     "Tab group label was updated"
   );

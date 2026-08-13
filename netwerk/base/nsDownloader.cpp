@@ -3,12 +3,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsDownloader.h"
+
+#include "nsCRTGlue.h"
+#include "nsDirectoryServiceDefs.h"
+#include "nsDirectoryServiceUtils.h"
 #include "nsIInputStream.h"
 #include "nsIOutputStream.h"
-#include "nsDirectoryServiceUtils.h"
-#include "nsDirectoryServiceDefs.h"
 #include "nsNetUtil.h"
-#include "nsCRTGlue.h"
 
 nsDownloader::~nsDownloader() {
   if (mLocation && mLocationIsTemp) {

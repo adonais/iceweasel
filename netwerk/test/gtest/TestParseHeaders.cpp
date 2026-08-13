@@ -1,7 +1,8 @@
-#include "gtest/gtest.h"
-#include "nsString.h"
 #include <cstring>
 #include <vector>
+
+#include "gtest/gtest.h"
+#include "nsString.h"
 #include "nsTArray.h"
 
 struct ParsedHeader {

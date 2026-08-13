@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "InputStreamLengthWrapper.h"
+
 #include "mozilla/ipc/InputStreamUtils.h"
 #include "nsISeekableStream.h"
 #include "nsStreamUtils.h"

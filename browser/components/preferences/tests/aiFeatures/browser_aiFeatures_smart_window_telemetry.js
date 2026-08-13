@@ -146,7 +146,7 @@ describe("Smart Window telemetry", () => {
     );
     customRadio.click();
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => BrowserTestUtils.isVisible(doc.getElementById("customModelName")),
       "Waiting for custom fields to be visible"
     );
@@ -156,7 +156,7 @@ describe("Smart Window telemetry", () => {
     customModelEndpoint.dispatchEvent(new Event("change", { bubbles: true }));
 
     const customModelSaveButton = doc.getElementById("customModelSaveButton");
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => !customModelSaveButton.disabled,
       "Waiting for save button to be enabled"
     );
@@ -206,7 +206,7 @@ describe("Smart Window telemetry", () => {
 
     let { doc } = await openSmartWindowPanel();
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => BrowserTestUtils.isVisible(doc.getElementById("customModelName")),
       "Waiting for custom fields to be visible"
     );
@@ -216,7 +216,7 @@ describe("Smart Window telemetry", () => {
     customModelEndpoint.dispatchEvent(new Event("change", { bubbles: true }));
 
     const customModelSaveButton = doc.getElementById("customModelSaveButton");
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => !customModelSaveButton.disabled,
       "Waiting for save button to be enabled"
     );
@@ -450,7 +450,7 @@ describe("Smart Window telemetry", () => {
     deleteAllMemoriesButton.click();
     await dialogPromise;
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => Glean.smartWindow.memoriesNuke.testGetValue(),
       "Waiting for memoriesNuke telemetry to be recorded"
     );

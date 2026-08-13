@@ -29,7 +29,7 @@ add_task(async function () {
     () => ok(true, "Got sizemodechange."),
     () => ok(false, "Rejected sizemodechange.")
   );
-  let promiseBrowserInactive = BrowserTestUtils.waitForCondition(
+  let promiseBrowserInactive = TestUtils.waitForCondition(
     () => !isActive(),
     "Docshell should be inactive."
   ).then(
@@ -50,7 +50,7 @@ add_task(async function () {
     () => ok(true, "Got sizemodechange."),
     () => ok(false, "Rejected sizemodechange.")
   );
-  let promiseBrowserActive = BrowserTestUtils.waitForCondition(
+  let promiseBrowserActive = TestUtils.waitForCondition(
     () => isActive(),
     "Docshell should be active."
   ).then(

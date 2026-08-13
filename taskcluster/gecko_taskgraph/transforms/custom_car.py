@@ -9,7 +9,6 @@ transforms = TransformSequence()
 CUSTOM_CAR_TASKS = [
     "linux64-custom-car",
     "win64-custom-car",
-    "macosx-custom-car",
     "macosx-arm64-custom-car",
     "android-custom-car",
 ]

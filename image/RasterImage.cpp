@@ -22,6 +22,7 @@
 #include "OrientedImage.h"
 #include "SourceBuffer.h"
 #include "SurfaceCache.h"
+#include "WindowRenderer.h"
 #include "gfx2DGlue.h"
 #include "gfxContext.h"
 #include "gfxPlatform.h"
@@ -29,10 +30,9 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/SizeOfState.h"
 #include "mozilla/StaticPrefs_image.h"
-#include "mozilla/glean/ImageDecodersMetrics.h"
 #include "mozilla/TimeStamp.h"
-
 #include "mozilla/gfx/2D.h"
+#include "mozilla/glean/ImageDecodersMetrics.h"
 #include "nsComponentManagerUtils.h"
 #include "nsError.h"
 #include "nsIConsoleService.h"
@@ -44,7 +44,6 @@
 #include "nsProperties.h"
 #include "prenv.h"
 #include "prsystem.h"
-#include "WindowRenderer.h"
 
 namespace mozilla {
 
@@ -77,8 +76,6 @@ RasterImage::RasterImage(nsIURI* aURI /* = nullptr */)
 
 //******************************************************************************
 RasterImage::~RasterImage() {
-  mIsBeingDestroyed = true;
-
   // Make sure our SourceBuffer is marked as complete. This will ensure that any
   // outstanding decoders terminate.
   if (!mSourceBuffer->IsComplete()) {
@@ -487,19 +484,21 @@ RasterImage::WillDrawOpaqueNow() {
 void RasterImage::OnSurfaceDiscarded(const SurfaceKey& aSurfaceKey) {
   MOZ_ASSERT(mProgressTracker);
 
-  if (mIsBeingDestroyed) {
-    return;
-  }
-
   bool animatedFramesDiscarded =
       aSurfaceKey.Playback() == PlaybackType::eAnimated;
 
   nsCOMPtr<nsIEventTarget> eventTarget = do_GetMainThread();
 
-  RefPtr<RasterImage> image = this;
-  nsCOMPtr<nsIRunnable> ev =
-      NS_NewRunnableFunction("RasterImage::OnSurfaceDiscarded", [=]() -> void {
-        image->OnSurfaceDiscardedInternal(animatedFramesDiscarded);
+  RefPtr<ProgressTracker> progressTracker = mProgressTracker;
+  nsCOMPtr<nsIRunnable> ev = NS_NewRunnableFunction(
+      "RasterImage::OnSurfaceDiscarded",
+      [progressTracker, animatedFramesDiscarded]() -> void {
+        RefPtr<Image> image = progressTracker->GetImage();
+        if (!image) {
+          return;
+        }
+        static_cast<RasterImage*>(image.get())
+            ->OnSurfaceDiscardedInternal(animatedFramesDiscarded);
       });
   eventTarget->Dispatch(ev.forget(), NS_DISPATCH_NORMAL);
 }

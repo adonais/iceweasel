@@ -9,10 +9,10 @@
 #include "GLTypes.h"
 #include "ImageContainer.h"      // for Image
 #include "ImageTypes.h"          // for ImageFormat::SHARED_GLTEXTURE
-#include "nsCOMPtr.h"            // for already_AddRefed
 #include "mozilla/Maybe.h"       // for Maybe
 #include "mozilla/gfx/Matrix.h"  // for Matrix4x4
 #include "mozilla/gfx/Point.h"   // for IntSize
+#include "nsCOMPtr.h"            // for already_AddRefed
 
 #ifdef MOZ_WIDGET_ANDROID
 #  include "AndroidSurfaceTexture.h"
@@ -45,7 +45,7 @@ class SurfaceTextureImage final : public GLImage {
  public:
   class SetCurrentCallback {
    public:
-    virtual void operator()(void) = 0;
+    virtual bool operator()(bool aRender) = 0;
     virtual ~SetCurrentCallback() {}
   };
 
@@ -91,7 +91,7 @@ class SurfaceTextureImage final : public GLImage {
 
   void OnSetCurrent() override {
     if (mSetCurrentCallback) {
-      (*mSetCurrentCallback)();
+      (*mSetCurrentCallback)(/* aRender */ true);
       mSetCurrentCallback.reset();
     }
   }

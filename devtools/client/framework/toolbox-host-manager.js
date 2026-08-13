@@ -9,7 +9,6 @@ const L10N = new LocalizationHelper(
   "devtools/client/locales/toolbox.properties"
 );
 const DevToolsUtils = require("resource://devtools/shared/DevToolsUtils.js");
-const { DOMHelpers } = require("resource://devtools/shared/dom-helpers.js");
 
 // The min-width of toolbox and browser toolbox.
 const WIDTH_CHEVRON_AND_MEATBALL = 50;
@@ -26,6 +25,12 @@ loader.lazyRequireGetter(
   this,
   "Hosts",
   "resource://devtools/client/framework/toolbox-hosts.js",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "LocalTabCommandsFactory",
+  "resource://devtools/client/framework/local-tab-commands-factory.js",
   true
 );
 
@@ -96,7 +101,8 @@ class ToolboxHostManager {
    * @returns {Toolbox}
    */
   async create(toolId, toolOptions) {
-    await this.host.create();
+    this.host.createElements();
+    await this.host.finalizeCreation();
     if (this.currentTab) {
       this.hostPerTab.set(this.currentTab, this.host);
     }
@@ -107,6 +113,12 @@ class ToolboxHostManager {
       this.#onMessage,
       { signal: this.eventController.signal }
     );
+    if (this.currentTab) {
+      this.currentTab.addEventListener("TabClose", this, {
+        capture: true,
+        signal: this.eventController.signal,
+      });
+    }
 
     const toolbox = new Toolbox({
       commands: this.commands,
@@ -270,17 +282,37 @@ class ToolboxHostManager {
     }
     const iframe = this.host.frame;
     const newHost = this.createHost(hostType);
-    const newIframe = await newHost.create();
 
-    // Load a blank document in the host frame. The new iframe must have a valid
-    // document before using swapFrameLoaders().
-    await new Promise(resolve => {
-      newIframe.setAttribute("src", "about:blank");
-      DOMHelpers.onceDOMReady(newIframe.contentWindow, resolve);
-    });
+    // Create the host DOM Elements so that we can retrieve the new host's iframe
+    newHost.createElements();
 
-    // change toolbox document's parent to the new host
-    newIframe.swapFrameLoaders(iframe);
+    let newIframe = newHost.frame;
+    // For any in-browser hosts (left, bottom, right), we should have the iframe
+    // available synchronously.
+    //
+    // This is the critical code spot where we actually move the devtools
+    // from the former to the new iframe/host.
+    //
+    // Is is important when moving tab between two top level windows
+    // to call swapFrameLoaders right away before the former iframe
+    // gets destroyed (removed from DOM).
+    if (newIframe) {
+      newIframe.swapFrameLoaders(iframe);
+    }
+
+    // Do any asynchronous action required to create the new host DOM Elements
+    await newHost.finalizeCreation();
+
+    // For Window host, the iframe isn't available synchronously
+    // as it requires opening the window asynchronously.
+    //
+    // It is fine calling swapFrameLoaders asynchronously
+    // as we moving the debugged tab between two windows
+    // doesn't require switching hosts between tabs.
+    if (!newIframe) {
+      newIframe = newHost.frame;
+      newIframe.swapFrameLoaders(iframe);
+    }
 
     // swapFrameLoaders ends up disabling the new frame activeness,
     // so ensure we set the expected state at the end of this method
@@ -308,6 +340,12 @@ class ToolboxHostManager {
       this.#onMessage,
       { signal: this.eventController.signal }
     );
+    if (this.currentTab) {
+      this.currentTab.addEventListener("TabClose", this, {
+        capture: true,
+        signal: this.eventController.signal,
+      });
+    }
 
     this.setMinWidthWithZoom();
 
@@ -371,6 +409,59 @@ class ToolboxHostManager {
       name: "switched-host-to-tab",
       browsingContextID: tabBrowsingContextID,
     });
+  }
+
+  async handleEvent(event) {
+    if (event.type != "TabClose") {
+      return;
+    }
+
+    // Handle moving the debugged tab to another top-level window.
+    // Reuse a logic similar to switchHostToTab.
+    //
+    // Listen to `TabClose` as it is emitted sooner than `SwapDocShells`.
+    // By the time `SwapDocShells` is emitted, the former DevTools iframe
+    // is destroyed and can't be "swaped" to another one in the destination
+    // top level window.
+    //
+    // Some important care is required within `switchHost()` in order to
+    // call `newIframe.swapFrameLoaders` synchronously, otherwise again,
+    // the former DevTools iframe (this.host.frame) will be destroyed
+    // and can't be swaped.
+    const newTab = event.detail.adoptedBy;
+
+    // If there is no new tab, this is a regular TabClose (without cross window move).
+    if (!newTab) {
+      return;
+    }
+
+    // Remove event listener before switching to the new tab.
+    this.currentTab.removeEventListener("TabClose", this);
+
+    // Update all places refering to the toolbox's tab:
+    LocalTabCommandsFactory.swapTab(this.currentTab, newTab);
+    this.commands.descriptorFront.setLocalTab(newTab);
+
+    this.currentTab = newTab;
+
+    // We only have to switch host to new tab for browser-integrated hosts
+    if (
+      this.hostType !== Toolbox.HostType.LEFT &&
+      this.hostType !== Toolbox.HostType.RIGHT &&
+      this.hostType !== Toolbox.HostType.BOTTOM
+    ) {
+      return;
+    }
+
+    // Ensure collecting any message sent by the toolbox in order to emit them
+    // on the newly created host, which is created asynchronously
+    const pendingMessages = [];
+    this.collectPendingMessages = pendingMessages;
+    await this.switchHost(this.hostType);
+    this.collectPendingMessages = null;
+    for (const message of pendingMessages) {
+      this.#onMessage(message);
+    }
   }
 
   /**

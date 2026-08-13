@@ -3,20 +3,20 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "DMABUFSurfaceImage.h"
-#include "mozilla/widget/DMABufSurface.h"
+
+#include "GLBlitHelper.h"
+#include "GLContext.h"
+#include "GLContextEGL.h"
+#include "GLContextProvider.h"
+#include "GLContextTypes.h"  // for GLContext, etc
+#include "GLReadTexImageHelper.h"
+#include "ScopedGLHelpers.h"
+#include "mozilla/StaticMutex.h"
 #include "mozilla/layers/CompositableClient.h"
 #include "mozilla/layers/CompositableForwarder.h"
 #include "mozilla/layers/DMABUFTextureClientOGL.h"
 #include "mozilla/layers/TextureForwarder.h"
-#include "mozilla/StaticMutex.h"
-#include "GLContext.h"
-#include "GLContextProvider.h"
-#include "GLBlitHelper.h"
-#include "GLReadTexImageHelper.h"
-#include "GLContextTypes.h"  // for GLContext, etc
-#include "GLContextEGL.h"
-#include "GLContextProvider.h"
-#include "ScopedGLHelpers.h"
+#include "mozilla/widget/DMABufSurface.h"
 
 using namespace mozilla;
 using namespace mozilla::layers;

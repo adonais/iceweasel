@@ -3,10 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsRegion.h"
-#include "nsTArray.h"
-#include "gfxUtils.h"
+
 #include "gfx2DGlue.h"
+#include "gfxUtils.h"
 #include "mozilla/ToString.h"
+#include "nsTArray.h"
 
 void nsRegion::AssertStateInternal() const {
   bool failed = false;

@@ -406,8 +406,8 @@ add_task(async function test() {
       otherResults: [
         // heuristic
         new UrlbarResult({
-          type: UrlbarUtils.RESULT_TYPE.SEARCH,
-          source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+          type: UrlbarShared.RESULT_TYPE.SEARCH,
+          source: UrlbarShared.RESULT_SOURCE.SEARCH,
           heuristic: true,
           group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST,
           payload: {
@@ -418,8 +418,8 @@ add_task(async function test() {
         }),
         // global suggestedIndex with resultSpan = 2
         new UrlbarResult({
-          type: UrlbarUtils.RESULT_TYPE.SEARCH,
-          source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+          type: UrlbarShared.RESULT_TYPE.SEARCH,
+          source: UrlbarShared.RESULT_SOURCE.SEARCH,
           suggestedIndex: 1,
           resultSpan: 2,
           payload: {
@@ -565,8 +565,8 @@ function makeHistoryResults(count = MAX_RESULTS) {
   for (let i = 0; i < count; i++) {
     results.push(
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         payload: { url: "http://example.com/" + i },
       })
     );
@@ -579,8 +579,8 @@ function makeRemoteSuggestionResults(count = MAX_RESULTS) {
   for (let i = 0; i < count; i++) {
     results.push(
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        type: UrlbarShared.RESULT_TYPE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         payload: {
           engine: "test",
           query: "test",
@@ -598,8 +598,8 @@ function makeFormHistoryResults(count = MAX_RESULTS) {
   for (let i = 0; i < count; i++) {
     results.push(
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        type: UrlbarShared.RESULT_TYPE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         payload: {
           engine: "test",
           suggestion: "test " + i,
@@ -615,8 +615,8 @@ function makeSuggestedIndexResults(objects) {
   return objects.map(({ suggestedIndex, group }) =>
     Object.assign(
       new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         group,
         suggestedIndex,
         isSuggestedIndexRelativeToGroup: true,

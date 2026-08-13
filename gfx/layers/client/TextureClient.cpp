@@ -26,9 +26,9 @@
 #include "mozilla/layers/CanvasRenderer.h"
 #include "mozilla/layers/CompositableForwarder.h"
 #include "mozilla/layers/ISurfaceAllocator.h"
-#include "mozilla/layers/LayersMessages.h"
 #include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/ImageDataSerializer.h"
+#include "mozilla/layers/LayersMessages.h"
 #include "mozilla/layers/PTextureChild.h"
 #include "mozilla/layers/SynchronousTask.h"
 #include "mozilla/layers/TextureClientOGL.h"
@@ -47,6 +47,7 @@
 #endif
 #ifdef MOZ_WIDGET_GTK
 #  include <gtk/gtkx.h>
+
 #  include "gfxPlatformGtk.h"
 #endif
 #ifdef MOZ_WAYLAND

@@ -11,13 +11,11 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=936340
 <body>
 <a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=936340">Mozilla Bug 936340</a>
 <p id="display"></p>
-<div id="content" style="display: none">
-  
-</div>
+<div id="content" style="display: none"></div>
 <pre id="test">
 <script class="testbody" type="text/javascript">
 
-var beaconUrl = "http://mochi.test:8888/tests/dom/tests/mochitest/beacon/beacon-handler.sjs";
+var beaconUrl = `${location.protocol}//${location.host}/tests/dom/tests/mochitest/beacon/beacon-handler.sjs`;
 
 const Cc = SpecialPowers.Cc;
 const Ci = SpecialPowers.Ci;

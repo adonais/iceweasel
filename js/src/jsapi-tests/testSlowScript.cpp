@@ -2,8 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "js/PropertyAndElement.h"  // JS_DefineFunction
 #include "jsapi-tests/tests.h"
+
+#include "js/PropertyAndElement.h"  // JS_DefineFunction
 
 static bool InterruptCallback(JSContext* cx) { return false; }
 

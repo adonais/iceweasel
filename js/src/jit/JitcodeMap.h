@@ -218,6 +218,19 @@ inline UniqueJitcodeGlobalEntry MakeJitcodeGlobalEntry(JSContext* cx,
   return res;
 }
 
+// Whether script's baseline JitCode is realm-independent: when the self-hosted
+// code cache is enabled, self-hosted scripts are compiled once with no realm
+// set and the resulting code is shared across realms.
+bool IsRealmIndependentBaselineCode(JSScript* script);
+
+// Register a JitcodeGlobalEntry describing script's baseline JitCode so the
+// profiler can resolve its frames, and mark the code as having a bytecode map.
+// On failure returns false with an error pending on cx; callers for which
+// registration is best-effort should clear it with recoverFromOutOfMemory.
+[[nodiscard]] bool AddBaselineJitcodeGlobalEntry(JSContext* cx,
+                                                 JSScript* script,
+                                                 JitCode* code);
+
 // Identity key used by the profiler to refer to a script after the JSScript
 // may have gone away.
 //

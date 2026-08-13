@@ -3,15 +3,16 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/net/CaptivePortalService.h"
+
 #include "mozilla/AppShutdown.h"
 #include "mozilla/ClearOnShutdown.h"
-#include "mozilla/Services.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/Services.h"
 #include "nsIObserverService.h"
 #include "nsServiceManagerUtils.h"
 #include "nsXULAppAPI.h"
-#include "xpcpublic.h"
 #include "xpcprivate.h"
+#include "xpcpublic.h"
 
 static constexpr auto kInterfaceName = u"captive-portal-inteface"_ns;
 

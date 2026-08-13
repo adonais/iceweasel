@@ -33,7 +33,6 @@ class ReviewPromptMiddlewareGleanTest {
     private val store = AppStore(
         middlewares = listOf(
             ReviewPromptMiddleware(
-                shouldUseNewTriggerCriteria = { assertUnused() },
                 shouldShowCustomPrompt = { assertUnused() },
                 disableCustomPrompt = {
                     // This is called, but there's nothing to do in these tests.
@@ -42,7 +41,6 @@ class ReviewPromptMiddlewareGleanTest {
                 createJexlHelper = { assertUnused() },
                 buildTriggerMainCriteria = { assertUnused() },
                 buildTriggerSubCriteria = { assertUnused() },
-                buildTriggerLegacyCriteria = { assertUnused() },
                 nimbusEventStore = eventStore,
             ),
         ),

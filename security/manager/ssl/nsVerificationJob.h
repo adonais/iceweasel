@@ -6,10 +6,9 @@
 #ifndef INC_NSVERIFICATIONJOB_H
 #define INC_NSVERIFICATIONJOB_H
 
-#include "nspr.h"
-
 #include "nsIX509Cert.h"
 #include "nsProxyRelease.h"
+#include "nspr.h"
 
 class nsBaseVerificationJob {
  public:

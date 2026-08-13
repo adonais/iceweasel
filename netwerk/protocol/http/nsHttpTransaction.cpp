@@ -8,31 +8,33 @@
 #include <algorithm>
 #include <utility>
 
-#include "HttpLog.h"
 #include "HTTPSRecordResolver.h"
+#include "HttpLog.h"
+#include "MockHttpAuth.h"
 #include "NSSErrorsService.h"
 #include "base/basictypes.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/Components.h"
+#include "mozilla/ScopeExit.h"
+#include "mozilla/StaticPrefs_network.h"
+#include "mozilla/Tokenizer.h"
 #include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "mozilla/net/SSLTokensCache.h"
-#include "mozilla/ScopeExit.h"
-#include "mozilla/Tokenizer.h"
-#include "mozilla/StaticPrefs_network.h"
-#include "MockHttpAuth.h"
 #include "nsCRT.h"
 #include "nsComponentManagerUtils.h"  // do_CreateInstance
 #include "nsHttpBasicAuth.h"
 #include "nsHttpChannel.h"
 #include "nsHttpChunkedDecoder.h"
+#include "nsHttpConnectionMgr.h"
 #include "nsHttpDigestAuth.h"
 #include "nsHttpHandler.h"
-#include "nsHttpConnectionMgr.h"
 #include "nsHttpNTLMAuth.h"
 #ifdef MOZ_AUTH_EXTENSION
 #  include "nsHttpNegotiateAuth.h"
 #endif
+#include "SpeculativeTransaction.h"
+#include "mozilla/Preferences.h"
 #include "nsHttpRequestHead.h"
 #include "nsHttpResponseHead.h"
 #include "nsICancelable.h"
@@ -62,8 +64,6 @@
 #include "nsThreadUtils.h"
 #include "nsTransportUtils.h"
 #include "sslerr.h"
-#include "SpeculativeTransaction.h"
-#include "mozilla/Preferences.h"
 
 //-----------------------------------------------------------------------------
 
@@ -186,11 +186,11 @@ nsHttpTransaction::~nsHttpTransaction() {
 nsresult nsHttpTransaction::Init(
     uint32_t caps, nsHttpConnectionInfo* cinfo, nsHttpRequestHead* requestHead,
     nsIInputStream* requestBody, uint64_t requestContentLength,
-    bool requestBodyHasHeaders, nsIEventTarget* target,
-    nsIInterfaceRequestor* callbacks, nsITransportEventSink* eventsink,
-    uint64_t browserId, HttpTrafficCategory trafficCategory,
-    nsIRequestContext* requestContext, ClassOfService classOfService,
-    uint32_t initialRwin, bool responseTimeoutEnabled, uint64_t channelId,
+    nsIEventTarget* target, nsIInterfaceRequestor* callbacks,
+    nsITransportEventSink* eventsink, uint64_t browserId,
+    HttpTrafficCategory trafficCategory, nsIRequestContext* requestContext,
+    ClassOfService classOfService, uint32_t initialRwin,
+    bool responseTimeoutEnabled, uint64_t channelId,
     TransactionObserverFunc&& transactionObserver,
     nsILoadInfo::IPAddressSpace aParentIpAddressSpace,
     const struct LNAPerms& aLnaPermissionStatus) {
@@ -267,8 +267,7 @@ nsresult nsHttpTransaction::Init(
   mRequestHead = requestHead;
 
   mReqHeaderBuf = nsHttp::ConvertRequestHeadToString(
-      *requestHead, !!requestBody, requestBodyHasHeaders,
-      cinfo->UsingConnect());
+      *requestHead, !!requestBody, false, cinfo->UsingConnect());
 
   if (LOG1_ENABLED()) {
     LOG1(("http request [\n"));
@@ -520,7 +519,9 @@ UniquePtr<nsHttpHeaderArray> nsHttpTransaction::TakeResponseTrailers() {
 
 void nsHttpTransaction::SetProxyConnectFailed() { mProxyConnectFailed = true; }
 
-nsHttpRequestHead* nsHttpTransaction::RequestHead() { return mRequestHead; }
+const nsHttpRequestHead* nsHttpTransaction::RequestHead() {
+  return mRequestHead;
+}
 
 uint32_t nsHttpTransaction::Http1xTransactionCount() { return 1; }
 
@@ -692,18 +693,18 @@ void nsHttpTransaction::OnTransportStatus(nsITransport* transport,
     }
   }
 
-  // Clamp requestStart to connectEnd for 0-RTT connections where the
-  // HandshakeDoneInternal async dispatch ran before TLS_HANDSHAKE_ENDED
-  // arrived, causing requestStart (set in Finish0RTT) to be earlier than
-  // connectEnd (set by the subsequent TLS_HANDSHAKE_ENDED). The clamp
-  // only adjusts requestStart — it does not retimestamp connectEnd.
-  // This fires every time TLS_HANDSHAKE_ENDED is received; for
-  // non-0-RTT connections requestStart is null here so the guard is
-  // a no-op.
+  // TLS_HANDSHAKE_ENDED stamped connectEnd (above) at full-handshake
+  // completion. For an accepted 0-RTT request, override it to the early-data
+  // send point (see Apply0RTTTimingOverride). Otherwise clamp requestStart to
+  // connectEnd, covering 0-RTT paths where HandshakeDoneInternal's async
+  // dispatch set requestStart (in Finish0RTT) before this status arrived.
   if (status == NS_NET_STATUS_TLS_HANDSHAKE_ENDED) {
     MutexAutoLock lock(mLock);
-    if (!mTimings.requestStart.IsNull() && !mTimings.connectEnd.IsNull() &&
-        mTimings.requestStart < mTimings.connectEnd) {
+    if (mEarlyDataDisposition == EARLY_ACCEPTED) {
+      Apply0RTTTimingOverride();
+    } else if (!mTimings.requestStart.IsNull() &&
+               !mTimings.connectEnd.IsNull() &&
+               mTimings.requestStart < mTimings.connectEnd) {
       mTimings.requestStart = mTimings.connectEnd;
     }
   }
@@ -841,6 +842,7 @@ nsresult nsHttpTransaction::ReadSegments(nsAHttpSegmentReader* reader,
       NS_SUCCEEDED(rv) && (*countRead > 0)) {
     LOG(("mEarlyDataDisposition = EARLY_SENT"));
     mEarlyDataDisposition = EARLY_SENT;
+    mEarlyDataSentTime = TimeStamp::Now();
   }
 
   if (mDeferredSendProgress && mConnection) {
@@ -3011,6 +3013,9 @@ void nsHttpTransaction::BootstrapTimings(TimingStruct times) {
       mTimings.requestStart < mTimings.connectEnd) {
     mTimings.requestStart = mTimings.connectEnd;
   }
+  // Accepted 0-RTT: override the full-handshake connectEnd from `times` with
+  // the early-data send point.
+  Apply0RTTTimingOverride();
 }
 
 void nsHttpTransaction::SetDomainLookupStart(mozilla::TimeStamp timeStamp,
@@ -3029,6 +3034,25 @@ void nsHttpTransaction::SetDomainLookupEnd(mozilla::TimeStamp timeStamp,
     return;  // We only set the timestamp if it was previously null
   }
   mTimings.domainLookupEnd = timeStamp;
+}
+
+void nsHttpTransaction::Apply0RTTTimingOverride() {
+  mLock.AssertCurrentThreadOwns();
+  // Only when this request's early data (0-RTT) was accepted; otherwise
+  // connectEnd keeps the full-handshake time set elsewhere.
+  if (mEarlyDataDisposition != EARLY_ACCEPTED || mEarlyDataSentTime.IsNull()) {
+    return;
+  }
+  // The request went out as early data, so connectEnd must exclude the
+  // ServerHello round trip: report it (and requestStart) at the early-data
+  // send. See "record connection timing info":
+  // https://fetch.spec.whatwg.org/#record-connection-timing-info
+  TimeStamp early = mEarlyDataSentTime;
+  if (!mTimings.connectStart.IsNull() && early < mTimings.connectStart) {
+    early = mTimings.connectStart;
+  }
+  mTimings.connectEnd = early;
+  mTimings.requestStart = early;
 }
 
 void nsHttpTransaction::SetConnectStart(mozilla::TimeStamp timeStamp,
@@ -3329,15 +3353,11 @@ nsresult nsHttpTransaction::Finish0RTT(bool aRestart,
     // disposition might be reverted
     mEarlyDataDisposition = EARLY_ACCEPTED;
 
-    // Early data was accepted: the request bytes went on the wire before
-    // TLS completed, so SENDING_TO was suppressed (m0RTTInProgress was
-    // true). Set requestStart now that connectEnd is known, so the
-    // W3C Resource Timing ordering (requestStart >= connectEnd) holds.
+    // Early data was accepted: the request bytes went on the wire before TLS
+    // completed, so SENDING_TO was suppressed (m0RTTInProgress was true).
+    // Report connectEnd/requestStart at the early-data send point.
     MutexAutoLock lock(mLock);
-    if (mTimings.requestStart.IsNull()) {
-      mTimings.requestStart =
-          mTimings.connectEnd.IsNull() ? TimeStamp::Now() : mTimings.connectEnd;
-    }
+    Apply0RTTTimingOverride();
   }
   if (aRestart) {
     // Not to use 0RTT when this transaction is restarted next time.
@@ -3371,15 +3391,10 @@ void nsHttpTransaction::FinishAdopted0RTT(bool aRestart) {
       mEarlyDataDisposition = EARLY_ACCEPTED;
 
       // SENDING_TO was suppressed while early data was in flight so
-      // requestStart was never set. Set it now to connectEnd (which
-      // was set when TLS_HANDSHAKE_ENDED fired) so that the W3C
-      // Resource Timing ordering (requestStart >= connectEnd) holds.
+      // requestStart was never set. Report connectEnd/requestStart at the
+      // early-data send point.
       MutexAutoLock lock(mLock);
-      if (mTimings.requestStart.IsNull()) {
-        mTimings.requestStart = mTimings.connectEnd.IsNull()
-                                    ? TimeStamp::Now()
-                                    : mTimings.connectEnd;
-      }
+      Apply0RTTTimingOverride();
     }
   } else {
     mDoNotTryEarlyData = true;

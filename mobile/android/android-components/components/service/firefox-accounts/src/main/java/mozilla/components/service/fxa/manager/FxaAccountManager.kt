@@ -31,6 +31,8 @@ import mozilla.components.concept.sync.DeviceConfig
 import mozilla.components.concept.sync.FxAEntryPoint
 import mozilla.components.concept.sync.OAuthAccount
 import mozilla.components.concept.sync.Profile
+import mozilla.components.concept.sync.SyncConfig
+import mozilla.components.concept.sync.SyncEngine
 import mozilla.components.service.fxa.AccessTokenUnexpectedlyWithoutKey
 import mozilla.components.service.fxa.AccountManagerException
 import mozilla.components.service.fxa.AccountStorage
@@ -42,8 +44,6 @@ import mozilla.components.service.fxa.ServerConfig
 import mozilla.components.service.fxa.SharedPrefAccountStorage
 import mozilla.components.service.fxa.StorageWrapper
 import mozilla.components.service.fxa.SyncAuthInfoCache
-import mozilla.components.service.fxa.SyncConfig
-import mozilla.components.service.fxa.SyncEngine
 import mozilla.components.service.fxa.asSyncAuthInfo
 import mozilla.components.service.fxa.emitSyncFailedFact
 import mozilla.components.service.fxa.into
@@ -223,7 +223,7 @@ open class FxaAccountManager(
             FxaState.Connected -> {
                 // Make sure auth cache is populated before we try to sync.
                 try {
-                    maybeUpdateSyncAuthInfoCache()
+                    updateSyncAuthInfoCache()
                 } catch (e: AccessTokenUnexpectedlyWithoutKey) {
                     crashReporter?.submitCaughtException(
                         AccountManagerException.MissingKeyFromSyncScopedAccessToken("syncNow"),
@@ -395,6 +395,23 @@ open class FxaAccountManager(
     }
 
     /**
+     * Handles the `fxaccounts:change_password` WebChannel payload after the user
+     * changes their password from the manage-account flow.
+     */
+    suspend fun handleWebChannelPasswordChange(jsonPayload: String) = withContext(coroutineContext) {
+        val wasInAuthIssues = state == FxaState.AuthIssues
+        processQueue(Event.Account.WebChannelPasswordChange(jsonPayload))
+        if (state == FxaState.Connected) {
+            SyncAuthInfoCache(context).clear()
+            authenticationSideEffects("WebChannelPasswordChange")
+            if (wasInAuthIssues) {
+                notifyObservers { onAuthenticated(account, AuthType.Recovered) }
+            }
+            refreshProfile(ignoreCache = true)
+        }
+    }
+
+    /**
      * Finalize authentication that was started via [beginAuthentication].
      *
      * If authentication wasn't started via this manager we won't accept this authentication attempt,
@@ -518,6 +535,8 @@ open class FxaAccountManager(
         is Event.Account.AuthenticationError -> FxaEvent.CheckAuthorizationStatus
         Event.Account.AccessTokenKeyError -> FxaEvent.CheckAuthorizationStatus
         Event.Account.Logout -> FxaEvent.Disconnect
+        is Event.Account.WebChannelPasswordChange ->
+            FxaEvent.WebChannelPasswordChange(jsonPayload = event.jsonPayload)
         // This is the one ProgressEvent that's considered a "public event" in app-services
         is Event.Progress.AuthData -> FxaEvent.CompleteOAuthFlow(event.authData.code, event.authData.state)
         else -> null
@@ -602,15 +621,9 @@ open class FxaAccountManager(
         clearSyncState(context)
     }
 
-    private suspend fun maybeUpdateSyncAuthInfoCache() {
+    private suspend fun updateSyncAuthInfoCache() {
         // Update cached sync auth info only if we have a syncConfig (e.g. sync is enabled)...
         if (syncConfig == null) {
-            return
-        }
-
-        // .. and our cache is stale.
-        val cache = SyncAuthInfoCache(context)
-        if (!cache.expired()) {
             return
         }
 
@@ -683,7 +696,7 @@ open class FxaAccountManager(
     private suspend fun authenticationSideEffects(operation: String): Boolean {
         // Make sure our SyncAuthInfo cache is hot, background sync worker needs it to function.
         try {
-            maybeUpdateSyncAuthInfoCache()
+            updateSyncAuthInfoCache()
         } catch (e: AccessTokenUnexpectedlyWithoutKey) {
             crashReporter?.submitCaughtException(
                 AccountManagerException.MissingKeyFromSyncScopedAccessToken(operation),

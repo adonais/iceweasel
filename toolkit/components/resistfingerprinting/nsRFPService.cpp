@@ -3217,8 +3217,17 @@ CSSIntRect nsRFPService::GetSpoofedScreenAvailSize(const nsRect& aRect,
   spoofedHeightOffset =
       NS_lround(float(spoofedHeightOffset) / aScale * AppUnitsPerCSSPixel());
 
-  return CSSIntRect::FromAppUnitsRounded(
-      nsRect{0, 0, aRect.width, aRect.height - spoofedHeightOffset});
+  int spoofedHeightStart = aIsFullscreen ? 0 :
+#ifdef XP_MACOSX
+                                         25;
+#else
+                                         0;
+#endif
+  spoofedHeightStart =
+      NS_lround(float(spoofedHeightStart) / aScale * AppUnitsPerCSSPixel());
+
+  return CSSIntRect::FromAppUnitsRounded(nsRect{
+      0, spoofedHeightStart, aRect.width, aRect.height - spoofedHeightOffset});
 }
 
 /* static */

@@ -18,7 +18,6 @@ namespace gl {
 
 class AndroidSurfaceTexture {
  public:
-  static void Init();
   static void GetTransformMatrix(
       const java::sdk::SurfaceTexture::Ref& surfaceTexture,
       mozilla::gfx::Matrix4x4* outMatrix);

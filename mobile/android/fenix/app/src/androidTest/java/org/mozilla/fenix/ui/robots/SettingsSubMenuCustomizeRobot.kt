@@ -132,9 +132,11 @@ class SettingsSubMenuCustomizeRobot {
     }
 
     fun verifyPullToRefreshGesturePrefState(isEnabled: Boolean) {
-        Log.i(TAG, "verifyPullToRefreshGesturePrefState: Trying to verify that the \"Pull to refresh\" toggle is checked: $isEnabled")
+        Log.i(TAG, "verifyPullToRefreshGesturePrefState: Trying to scroll to the end of the Customize setting sub menu")
+        UiScrollable(UiSelector().resourceId("$packageName:id/recycler_view")).scrollToEnd(LISTS_MAXSWIPES)
+        Log.i(TAG, "verifyPullToRefreshGesturePrefState: Scrolled to the end of the Customize setting sub menu")
 
-        scrollToElementByText("Pull to refresh")
+        Log.i(TAG, "verifyPullToRefreshGesturePrefState: Trying to verify that the \"Pull to refresh\" toggle is checked: $isEnabled")
         pullToRefreshToggle()
             .check(
                 matches(
@@ -298,10 +300,6 @@ class SettingsSubMenuCustomizeRobot {
         Log.i(TAG, "verifyTheSimpleToolbarShortcutOptions: Trying to verify that the \"Add bookmark\" simple toolbar shortcut option is visible")
         addBookmarkToolbarShortcutOption()
             .check(matches(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
-        Log.i(TAG, "verifyTheSimpleToolbarShortcutOptions: Verified that the \"Add bookmark\" simple toolbar shortcut option is visible")
-        Log.i(TAG, "verifyTheSimpleToolbarShortcutOptions: Trying to verify that the \"Translate\" simple toolbar shortcut option is visible")
-        translateToolbarShortcutOption()
-            .check(matches(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
         Log.i(TAG, "verifyTheSimpleToolbarShortcutOptions: Verified that the \"Translate\" simple toolbar shortcut option is visible")
         Log.i(TAG, "verifyTheSimpleToolbarShortcutOptions: Trying to verify that the \"Homepage\" simple toolbar shortcut option is visible")
         homepageToolbarShortcutOption()
@@ -322,11 +320,6 @@ class SettingsSubMenuCustomizeRobot {
         addBookmarkToolbarShortcutOption()
             .check(matches(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
         Log.i(TAG, "verifyTheSimpleToolbarShortcutOptions: Verified that the \"Add bookmark\" simple toolbar shortcut option is visible")
-        Log.i(TAG, "verifyTheSimpleToolbarShortcutOptions: Trying to verify that the \"Translate\" simple toolbar shortcut option is visible")
-        translateToolbarShortcutOption()
-            .check(matches(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
-        Log.i(TAG, "verifyTheSimpleToolbarShortcutOptions: Verified that the \"Translate\" simple toolbar shortcut option is visible")
-        Log.i(TAG, "verifyTheSimpleToolbarShortcutOptions: Trying to verify that the \"Homepage\" simple toolbar shortcut option is visible")
         homepageToolbarShortcutOption()
             .check(matches(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
         Log.i(TAG, "verifyTheSimpleToolbarShortcutOptions: Verified that the \"Homepage\" simple toolbar shortcut option is visible")

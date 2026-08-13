@@ -5,10 +5,9 @@
 #ifndef nsComponentManagerUtils_h_
 #define nsComponentManagerUtils_h_
 
-#include "nscore.h"
 #include "nsCOMPtr.h"
-
 #include "nsIFactory.h"
+#include "nscore.h"
 
 nsresult CallCreateInstance(const nsCID& aCID, const nsIID& aIID,
                             void** aResult);

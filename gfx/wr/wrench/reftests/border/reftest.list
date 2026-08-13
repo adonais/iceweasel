@@ -7,6 +7,9 @@ platform(linux,mac) == border-radial-gradient-nine-patch.yaml border-radial-grad
 == border-none.yaml border-none-ref.yaml
 fuzzy(128,69) fuzzy-if(platform(swgl),2,118) == border-overlapping-corner.yaml border-overlapping-corner-ref.yaml
 == border-overlapping-edge.yaml border-overlapping-edge-ref.yaml
+fuzzy(20,100) == border-fractional-overlap.yaml border-fractional-overlap-ref.yaml
+== long-solid-edge-with-rounded-corner.yaml long-solid-edge-with-rounded-corner-ref.yaml
+== long-edge-all-styles.yaml long-edge-all-styles-ref.yaml
 == border-invisible.yaml border-invisible-ref.yaml
 platform(linux,mac) fuzzy(3,80) == border-suite.yaml border-suite.png
 platform(linux,mac) fuzzy(8,105) == border-suite-2.yaml border-suite-2.png
@@ -20,8 +23,9 @@ platform(linux,mac) == border-image.yaml border-image-ref.png
 platform(linux,mac) == border-image-empty-slice.yaml border-image-empty-slice-ref.png
 platform(linux,mac) == border-image-round.yaml border-image-round-ref.png
 == border-image-crash.yaml border-image-crash-ref.yaml
-fuzzy(1,5000) == border-image-fill.yaml border-image-fill-ref.png
-fuzzy(2,25360) == border-image-fill-2.yaml border-image-fill-2-ref.png
+== border-image-empty.yaml border-image-empty-ref.yaml
+platform(linux,mac) fuzzy(32,700) == border-image-fill.yaml border-image-fill-ref.png
+platform(linux,mac) fuzzy(2,25360) == border-image-fill-2.yaml border-image-fill-2-ref.png
 fuzzy-if(platform(swgl),1,8) == border-no-bogus-line.yaml border-no-bogus-line-ref.png
 platform(linux,mac) fuzzy(1,130) == dotted-corner-small-radius.yaml dotted-corner-small-radius.png
 fuzzy-if(platform(swgl),1,20) == overlapping.yaml overlapping.png

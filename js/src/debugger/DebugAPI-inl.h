@@ -174,17 +174,11 @@ void DebugAPI::onNewWasmInstance(JSContext* cx,
 }
 
 /* static */
-void DebugAPI::onNewPromise(JSContext* cx, Handle<PromiseObject*> promise) {
+bool DebugAPI::onNewPromise(JSContext* cx, Handle<PromiseObject*> promise) {
   if (MOZ_UNLIKELY(cx->realm()->isDebuggee())) {
-    slowPathOnNewPromise(cx, promise);
+    return slowPathOnNewPromise(cx, promise);
   }
-}
-
-/* static */
-void DebugAPI::onPromiseSettled(JSContext* cx, Handle<PromiseObject*> promise) {
-  if (MOZ_UNLIKELY(promise->realm()->isDebuggee())) {
-    slowPathOnPromiseSettled(cx, promise);
-  }
+  return true;
 }
 
 /* static */

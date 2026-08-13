@@ -6,8 +6,8 @@
 #define SPECIALSYSTEMDIRECTORY_H_
 
 #include "nsCOMArray.h"
-#include "nscore.h"
 #include "nsIFile.h"
+#include "nscore.h"
 
 #ifdef MOZ_WIDGET_COCOA
 #  include "nsILocalFileMac.h"

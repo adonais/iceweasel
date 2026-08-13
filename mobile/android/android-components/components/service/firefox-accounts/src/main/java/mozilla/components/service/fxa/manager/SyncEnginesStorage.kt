@@ -6,7 +6,7 @@ package mozilla.components.service.fxa.manager
 
 import android.content.Context
 import androidx.core.content.edit
-import mozilla.components.service.fxa.SyncEngine
+import mozilla.components.concept.sync.SyncEngine
 import mozilla.components.service.fxa.sync.toSyncEngine
 
 /**

@@ -33,3 +33,54 @@ protocolhandler.mailto:
         type: boolean
     send_in_pings:
       - events
+  prompt_click:
+    type: event
+    description: >
+      Recorded when the user clicks a button in the mailto handler picker
+      dialog. We record which button was clicked and the kind of handler that
+      was selected, but deliberately not which specific web mailer it was.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2046063
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2046063
+    notification_emails:
+      - install-update@mozilla.com
+    expires: 161
+    extra_keys:
+      button:
+        description: >
+          Which button was clicked, either "set_default" or "not_now".
+        type: string
+      handler:
+        description: >
+          The kind of handler that was selected when the button was clicked,
+          either "webmail" or "system_default". The specific web mailer is not
+          recorded.
+        type: string
+      always_ask:
+        description: >
+          The state of the "Always ask me when I click an email link" checkbox
+          when the button was clicked.
+        type: boolean
+    send_in_pings:
+      - events
+  error:
+    type: event
+    description: >
+      Recorded when an error occurs while handling a mailto: link or showing
+      the mailto handler picker dialog.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2046063
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2046063
+    notification_emails:
+      - install-update@mozilla.com
+    expires: 161
+    extra_keys:
+      reason:
+        description: >
+          A short identifier for the error case, one of "dialog_failed",
+          "launch_webmail" or "launch_system_default".
+        type: string
+    send_in_pings:
+      - events

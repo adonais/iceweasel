@@ -9,13 +9,11 @@
   Currently supported is h2
 */
 
-#include "nsHttp.h"
-#include "nsHttpHandler.h"
-
 #include "ASpdySession.h"
 #include "Http2Session.h"
-
 #include "mozilla/StaticPrefs_network.h"
+#include "nsHttp.h"
+#include "nsHttpHandler.h"
 
 namespace mozilla {
 namespace net {

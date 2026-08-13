@@ -22,10 +22,9 @@ diff --git a/expat/lib/expat_external.h b/expat/lib/expat_external.h
  typedef long long XML_Index;
  typedef unsigned long long XML_Size;
 diff --git a/expat/lib/xmlparse.c b/expat/lib/xmlparse.c
-index a187a3a18f19..3a3bb9aa45e2 100644
 --- a/expat/lib/xmlparse.c
 +++ b/expat/lib/xmlparse.c
-@@ -195,6 +195,9 @@ typedef char ICHAR;
+@@ -194,6 +194,9 @@ typedef char ICHAR;
  
  #endif
  
@@ -35,13 +34,13 @@ index a187a3a18f19..3a3bb9aa45e2 100644
  #ifdef XML_UNICODE
  
  #  ifdef XML_UNICODE_WCHAR_T
-@@ -212,6 +215,9 @@ typedef char ICHAR;
+@@ -211,6 +214,9 @@ typedef char ICHAR;
  
  #endif
  
 +#endif
 +/* END MOZILLA CHANGE */
 +
- /* Round up n to be a multiple of sz, where sz is a power of 2. */
- #define ROUND_UP(n, sz) (((n) + ((sz) - 1)) & ~((sz) - 1))
- 
+ #ifdef XML_LARGE_SIZE
+ #  define XML_INDEX_MAX LLONG_MAX
+ #else

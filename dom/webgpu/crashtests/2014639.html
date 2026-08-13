@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html class="reftest-wait">
+  <body>
+    <canvas id="canvas" width="256" height="32"></canvas>
+    <script>
+      async function test() {
+        if (!navigator.gpu) {
+          return;
+        }
+
+        const adapter = await navigator.gpu.requestAdapter();
+        if (!adapter) {
+          return;
+        }
+
+        const device = await adapter.requestDevice();
+        const format = navigator.gpu.getPreferredCanvasFormat();
+
+        const canvas = document.getElementById("canvas");
+        const context = canvas.getContext("webgpu");
+
+        const usage = GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT;
+        context.configure({ device, format, usage });
+
+        const CHUNK = 128;
+        const W = canvas.width;
+        const H = canvas.height;
+        const bytesPerRow = W * 4;
+        const bufferSize = bytesPerRow * H;
+
+        const writeChunk = new Uint8Array(CHUNK);
+        const gpuBuffer = device.createBuffer({
+          size: bufferSize,
+          usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST,
+        });
+
+        const gc = () =>
+          new Promise(resolve => SpecialPowers.exactGC(resolve));
+        const yieldToEventLoop = () =>
+          new Promise(resolve => setTimeout(resolve, 0));
+
+        function submitCopyToCanvas(ctx) {
+          const texture = ctx.getCurrentTexture();
+          const encoder = device.createCommandEncoder();
+          encoder.copyBufferToTexture(
+            { buffer: gpuBuffer, bytesPerRow },
+            { texture },
+            [W, H, 1]
+          );
+          const cmdBuf = encoder.finish();
+          device.queue.submit([cmdBuf]);
+        }
+
+        // Write something to the canvas. This isn't that important, but without
+        // it, there is a software-readback fallback path that can get used for
+        // the first paint. Which is also not that important, the test should
+        // work anyways, but it seems better not to have an extraneous use of
+        // the codepath we're testing.
+        submitCopyToCanvas(context);
+
+        // Run GC to get a clean state. This is mainly to make what the next GC
+        // does more predictable.
+        await gc();
+
+        // WebGPU canvases aren't eligible for readback until they've been
+        // composited at least once (bug 2045840).
+        await new Promise(r => requestAnimationFrame(r));
+        await yieldToEventLoop();
+
+        // Copy the buffer contents to the canvas. This is important for two
+        // reasons:
+        //  1. It uses a command encoder.
+        //  2. We also need to ensure that the canvas data _isn't_ available from
+        //     `mRemoteTextureOwner`, since that would bypass the readback codepath.
+        //     Overwriting the canvas invalidates the previous contents.
+        submitCopyToCanvas(context);
+
+        // Originally, this test ping-ponged between two canvases to ensure that
+        // the readback below does not stall waiting on the submit we just did.
+        // That turned out not to matter in the environment where the test was
+        // developed, but could matter in some other context.
+
+        // Generate a bunch of IPC traffic...
+        for (let offset = 0; offset < bufferSize; offset += writeChunk.length) {
+          device.queue.writeBuffer(gpuBuffer, offset, writeChunk);
+        }
+
+        // ... and run the event loop to flush it.
+        await yieldToEventLoop();
+
+        // GC to make sure that the encoder's JS objects and client-side IDs
+        // have been reclaimed.
+        SpecialPowers.forceGC();
+        SpecialPowers.forceCC();
+
+        // Read back the canvas contents. This uses synchronous IPC. If it
+        // reuses an ID that was recently released, it may do that before
+        // processing the async IPC releasing the ID.
+        canvas.toDataURL();
+
+        document.documentElement.removeAttribute("class");
+      }
+
+      test();
+    </script>
+  </body>
+</html>

@@ -5,10 +5,9 @@
 #include "ia2AccessibleValue.h"
 
 #include "AccessibleValue_i.c"
-
 #include "AccessibleWrap.h"
-#include "LocalAccessible-inl.h"
 #include "IUnknownImpl.h"
+#include "LocalAccessible-inl.h"
 #include "MsaaAccessible.h"
 
 using namespace mozilla::a11y;

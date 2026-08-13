@@ -5,10 +5,10 @@
 #ifndef mozilla_FileLocation_h
 #define mozilla_FileLocation_h
 
-#include "nsString.h"
+#include "mozilla/FileUtils.h"
 #include "nsCOMPtr.h"
 #include "nsIFile.h"
-#include "mozilla/FileUtils.h"
+#include "nsString.h"
 
 class nsZipArchive;
 class nsZipItem;

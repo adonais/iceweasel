@@ -415,6 +415,72 @@ class DownloadMiddlewareTest {
     }
 
     @Test
+    fun `restoreDownloads MUST remove download if file is missing and status is not DOWNLOADING`() =
+        runTest(dispatcher) {
+            val applicationContext: Context = mock()
+            val downloadStorage: DownloadStorage = mock()
+            val download = DownloadState(
+                id = "1",
+                url = "https://mozilla.org/file.zip",
+                fileName = "file.zip",
+                status = COMPLETED,
+            )
+
+            val downloadMiddleware = DownloadMiddleware(
+                applicationContext = applicationContext,
+                downloadServiceClass = AbstractFetchDownloadService::class.java,
+                downloadFileUtils = FakeDownloadFileUtils(fileExists = { _, _ -> false }),
+                downloadStorage = downloadStorage,
+                coroutineContext = dispatcher,
+                deleteFileFromStorage = { false },
+            )
+            val store = BrowserStore(
+                initialState = BrowserState(),
+                middleware = listOf(downloadMiddleware),
+            )
+
+            whenever(downloadStorage.getDownloadsList()).thenReturn(listOf(download))
+
+            store.dispatch(DownloadAction.RestoreDownloadsStateAction)
+            dispatcher.scheduler.advanceUntilIdle()
+
+            verify(downloadStorage).remove(download)
+        }
+
+    @Test
+    fun `restoreDownloads MUST NOT remove download if file is missing but status is DOWNLOADING`() =
+        runTest(dispatcher) {
+            val applicationContext: Context = mock()
+            val downloadStorage: DownloadStorage = mock()
+            val download = DownloadState(
+                id = "1",
+                url = "https://mozilla.org/file.zip",
+                fileName = "file.zip",
+                status = DOWNLOADING,
+            )
+
+            val downloadMiddleware = DownloadMiddleware(
+                applicationContext = applicationContext,
+                downloadServiceClass = AbstractFetchDownloadService::class.java,
+                downloadFileUtils = FakeDownloadFileUtils(fileExists = { _, _ -> false }),
+                downloadStorage = downloadStorage,
+                coroutineContext = dispatcher,
+                deleteFileFromStorage = { false },
+            )
+            val store = BrowserStore(
+                initialState = BrowserState(),
+                middleware = listOf(downloadMiddleware),
+            )
+
+            whenever(downloadStorage.getDownloadsList()).thenReturn(listOf(download))
+
+            store.dispatch(DownloadAction.RestoreDownloadsStateAction)
+            dispatcher.scheduler.advanceUntilIdle()
+
+            verify(downloadStorage, never()).remove(download)
+        }
+
+    @Test
     fun `sendDownloadIntent MUST call startForegroundService WHEN downloads are NOT COMPLETED, CANCELLED and FAILED`() = runTest(dispatcher) {
             val applicationContext: Context = mock()
             val downloadMiddleware = spy(

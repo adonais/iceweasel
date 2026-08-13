@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "wasm/WasmGcObject-inl.h"
-
 #include "mozilla/DebugOnly.h"
 
 #include "gc/Tracer.h"
@@ -28,6 +26,7 @@
 #include "gc/GCContext-inl.h"  // GCContext::removeCellMemory
 #include "gc/ObjectKind-inl.h"
 #include "vm/JSContext-inl.h"
+#include "wasm/WasmGcObject-inl.h"
 
 using namespace js;
 using namespace wasm;
@@ -271,15 +270,6 @@ size_t js::WasmArrayObject::sizeOfExcludingThis() const {
 /* static */
 void WasmArrayObject::obj_trace(JSTracer* trc, JSObject* object) {
   WasmArrayObject& arrayObj = object->as<WasmArrayObject>();
-  uint8_t* data = arrayObj.data_;
-
-  // data_ may be null if the array was only partially initialized due to OOM
-  // during createArrayOOL.
-  if (!data) {
-    MOZ_ASSERT(arrayObj.numElements_ == 0);
-    return;
-  }
-
   if (!arrayObj.isDataInline()) {
     OOLDataHeader* oolHeader = oolDataHeaderFromDataPointer(arrayObj.data_);
     OOLDataHeader* prior = oolHeader;
@@ -298,7 +288,8 @@ void WasmArrayObject::obj_trace(JSTracer* trc, JSObject* object) {
   uint32_t numElements = arrayObj.numElements_;
   uint32_t elemSize = arrayType.elementType().size();
   for (uint32_t i = 0; i < numElements; i++) {
-    AnyRef* elementPtr = reinterpret_cast<AnyRef*>(data + i * elemSize);
+    AnyRef* elementPtr =
+        reinterpret_cast<AnyRef*>(arrayObj.data_ + i * elemSize);
     TraceManuallyBarrieredEdge(trc, elementPtr, "wasm-array-element");
   }
 }

@@ -1,3 +1,7 @@
+add_setup(function () {
+  registerCleanupFunction(clearSiteTestData);
+});
+
 add_task(async function () {
   info("Starting subResources test");
 
@@ -65,13 +69,4 @@ add_task(async function () {
   await BrowserTestUtils.browserLoaded(browser);
 
   BrowserTestUtils.removeTab(tab);
-});
-
-add_task(async function () {
-  info("Cleaning up.");
-  await new Promise(resolve => {
-    Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-      resolve()
-    );
-  });
 });

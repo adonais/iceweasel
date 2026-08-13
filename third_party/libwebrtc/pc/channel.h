@@ -20,6 +20,7 @@
 #include <variant>
 #include <vector>
 
+#include "absl/base/nullability.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "api/crypto/crypto_options.h"
@@ -78,16 +79,16 @@ class BaseChannel : public ChannelInterface,
 
   // Constructor for use when the MediaChannels are split
   BaseChannel(
-      TaskQueueBase* worker_thread,
-      Thread* network_thread,
-      TaskQueueBase* signaling_thread,
+      TaskQueueBase* absl_nonnull worker_thread,
+      Thread* absl_nonnull network_thread,
+      TaskQueueBase* absl_nonnull signaling_thread,
       std::unique_ptr<MediaSendChannelInterface> media_send_channel,
       std::unique_ptr<MediaReceiveChannelInterface> media_receive_channel,
       absl::string_view mid,
       MediaType media_type,
       bool srtp_required,
       CryptoOptions crypto_options,
-      UniqueRandomIdGenerator* ssrc_generator,
+      UniqueRandomIdGenerator* absl_nonnull ssrc_generator,
       ChannelCallbacks callbacks = {});
   ~BaseChannel() override;
 
@@ -264,8 +265,8 @@ class BaseChannel : public ChannelInterface,
   // Registers a demuxer criteria with the transport, on the network thread.
   // This function will fail if there's no transport of if a sink is already
   // registered for this channel's demuxer_critera().
-  bool RegisterRtpDemuxerSink_w(bool clear_payload_types,
-                                std::optional<flat_set<uint32_t>> ssrcs)
+  bool RegisterRtpDemuxerSink_w(const MediaContentDescription* content,
+                                std::vector<uint32_t> removed_ssrcs = {})
       RTC_RUN_ON(worker_thread());
 
   // Return description of media channel to facilitate logging
@@ -277,7 +278,8 @@ class BaseChannel : public ChannelInterface,
  private:
   bool ConnectToRtpTransport_n(RtpTransportInternal* rtp_transport)
       RTC_RUN_ON(network_thread());
-  void DisconnectFromRtpTransport_n() RTC_RUN_ON(network_thread());
+  void DisconnectFromRtpTransport_n(bool permanent_teardown)
+      RTC_RUN_ON(network_thread());
   void SignalSentPacket_n(const SentPacketInfo& sent_packet);
   // Only called on the network thread.
   RtpDemuxerCriteria demuxer_criteria() const RTC_RUN_ON(network_thread());

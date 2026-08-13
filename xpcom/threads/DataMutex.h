@@ -6,6 +6,7 @@
 #define DataMutex_h_
 
 #include <utility>
+
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticMutex.h"
 

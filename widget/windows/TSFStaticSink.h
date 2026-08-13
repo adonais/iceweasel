@@ -11,7 +11,6 @@
 
 #include "TSFTextInputProcessorList.h"
 #include "WinUtils.h"
-
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPtr.h"
 

@@ -16,6 +16,7 @@
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/Try.h"
 #include "mozilla/dom/ClientInfo.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/EventSourceBinding.h"
 #include "mozilla/dom/EventSourceEventService.h"
 #include "mozilla/dom/MessageEvent.h"

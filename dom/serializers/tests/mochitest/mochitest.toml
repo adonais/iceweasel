@@ -148,3 +148,5 @@ skip-if = [
 ["test_plaintext_linebreak.html"]
 
 ["test_plaintext_linebreak_compress.html"]
+
+["test_plaintext_selection_quote_span.html"]

@@ -2,10 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "gtest/gtest.h"
 #include "nsCOMArray.h"
 #include "nsCOMPtr.h"
 #include "nsISupports.h"
-#include "gtest/gtest.h"
 
 // {9e70a320-be02-11d1-8031-006008159b5a}
 #define NS_IFOO_IID \

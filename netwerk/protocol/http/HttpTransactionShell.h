@@ -10,14 +10,14 @@
 #include "TimingStruct.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
+#include "nsHttpRequestHead.h"
 #include "nsIClassOfService.h"
 #include "nsIEarlyHintObserver.h"
 #include "nsILoadInfo.h"
 #include "nsISupports.h"
+#include "nsITRRSkipReason.h"
 #include "nsITransportSecurityInfo.h"
 #include "nsInputStreamPump.h"
-#include "nsHttpRequestHead.h"
-#include "nsITRRSkipReason.h"
 
 class nsIEventTraget;
 class nsIInputStream;
@@ -75,8 +75,6 @@ class HttpTransactionShell : public nsISupports {
   //        the request header struct
   // @param reqBody
   //        the request body (POST or PUT data stream)
-  // @param reqBodyIncludesHeaders
-  //        fun stuff to support NPAPI plugins.
   // @param target
   //        the dispatch target were notifications should be sent.
   // @param callbacks
@@ -87,12 +85,11 @@ class HttpTransactionShell : public nsISupports {
   [[nodiscard]] nsresult virtual Init(
       uint32_t caps, nsHttpConnectionInfo* connInfo,
       nsHttpRequestHead* reqHeaders, nsIInputStream* reqBody,
-      uint64_t reqContentLength, bool reqBodyIncludesHeaders,
-      nsIEventTarget* consumerTarget, nsIInterfaceRequestor* callbacks,
-      nsITransportEventSink* eventsink, uint64_t browserId,
-      HttpTrafficCategory trafficCategory, nsIRequestContext* requestContext,
-      ClassOfService classOfService, uint32_t initialRwin,
-      bool responseTimeoutEnabled, uint64_t channelId,
+      uint64_t reqContentLength, nsIEventTarget* consumerTarget,
+      nsIInterfaceRequestor* callbacks, nsITransportEventSink* eventsink,
+      uint64_t browserId, HttpTrafficCategory trafficCategory,
+      nsIRequestContext* requestContext, ClassOfService classOfService,
+      uint32_t initialRwin, bool responseTimeoutEnabled, uint64_t channelId,
       TransactionObserverFunc&& transactionObserver,
       nsILoadInfo::IPAddressSpace aParentIPAddressSpace,
       const LNAPerms& aLnaPermissionStatus) = 0;
@@ -194,12 +191,11 @@ class HttpTransactionShell : public nsISupports {
   virtual nsresult Init(                                                       \
       uint32_t caps, nsHttpConnectionInfo* connInfo,                           \
       nsHttpRequestHead* reqHeaders, nsIInputStream* reqBody,                  \
-      uint64_t reqContentLength, bool reqBodyIncludesHeaders,                  \
-      nsIEventTarget* consumerTarget, nsIInterfaceRequestor* callbacks,        \
-      nsITransportEventSink* eventsink, uint64_t browserId,                    \
-      HttpTrafficCategory trafficCategory, nsIRequestContext* requestContext,  \
-      ClassOfService classOfService, uint32_t initialRwin,                     \
-      bool responseTimeoutEnabled, uint64_t channelId,                         \
+      uint64_t reqContentLength, nsIEventTarget* consumerTarget,               \
+      nsIInterfaceRequestor* callbacks, nsITransportEventSink* eventsink,      \
+      uint64_t browserId, HttpTrafficCategory trafficCategory,                 \
+      nsIRequestContext* requestContext, ClassOfService classOfService,        \
+      uint32_t initialRwin, bool responseTimeoutEnabled, uint64_t channelId,   \
       TransactionObserverFunc&& transactionObserver,                           \
       nsILoadInfo::IPAddressSpace aParentIPAddressSpace,                       \
       const LNAPerms& aLnaPermissionStatus) override;                          \

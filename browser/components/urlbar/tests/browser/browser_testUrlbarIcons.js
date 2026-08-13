@@ -48,7 +48,7 @@ add_task(async function test_icon_is_search_glass_when_empty() {
     value: "",
   });
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => getSwitcherIconUrl(window) == DEFAULT_ENGINE_ICON,
     "Icon should be default engine icon when focused"
   );
@@ -65,15 +65,15 @@ add_task(async function test_icon_updates_to_engine_icon_on_search_result() {
   });
 
   let engine = await SearchService.getDefault();
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     let result = window.gURLBar.view.getResultAtIndex(0);
     return (
-      result?.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
+      result?.type == UrlbarShared.RESULT_TYPE.SEARCH &&
       result?.payload?.engine == engine.name
     );
   }, "Waiting for a default engine SEARCH result at index 0");
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => getSwitcherIconUrl(window) == DEFAULT_ENGINE_ICON,
     "Waiting for icon to update to the default engine's icon"
   );
@@ -96,12 +96,12 @@ add_task(async function test_icon_updates_to_globe_on_url_result() {
     value: "example.com",
   });
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     let result = window.gURLBar.view.getResultAtIndex(0);
-    return result?.type == UrlbarUtils.RESULT_TYPE.URL;
+    return result?.type == UrlbarShared.RESULT_TYPE.URL;
   }, "Waiting for a URL result at index 0");
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => getSwitcherIconUrl(window) == UrlbarUtils.ICON.GLOBE,
     "Waiting for icon to update to globe for URL result"
   );
@@ -124,12 +124,12 @@ add_task(async function test_icon_updates_to_globe_on_autofill_result() {
     value: "example.com/autofill",
   });
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     let result = window.gURLBar.view.getResultAtIndex(0);
     return result?.autofill;
   }, "Waiting for an autofill result at index 0");
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => getSwitcherIconUrl(window) == UrlbarUtils.ICON.GLOBE,
     "Waiting for icon to update to globe for autofill result"
   );
@@ -141,4 +141,58 @@ add_task(async function test_icon_updates_to_globe_on_autofill_result() {
   );
 
   await UrlbarTestUtils.promisePopupClose(window);
+});
+
+add_task(async function test_icon_updates() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.unifiedSearchButton.historyInSearchMode", true],
+      ["browser.search.suggest.enabled", false],
+    ],
+  });
+
+  await PlacesTestUtils.addVisits("https://example.com");
+
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "example.com",
+  });
+
+  await TestUtils.waitForCondition(() => {
+    let result = window.gURLBar.view.getResultAtIndex(0);
+    return result?.type == UrlbarShared.RESULT_TYPE.URL;
+  }, "Waiting for a URL result at index 0");
+
+  await TestUtils.waitForCondition(
+    () => getSwitcherIconUrl(window) == UrlbarUtils.ICON.GLOBE,
+    "Waiting for icon to update to globe for URL result"
+  );
+
+  Assert.equal(
+    getSwitcherIconUrl(window),
+    UrlbarUtils.ICON.GLOBE,
+    "Icon should be the globe when the top result is a URL"
+  );
+
+  // Enter the searchMode for the default engine.
+  EventUtils.synthesizeKey("KEY_ArrowDown", { accelKey: true }, window);
+  EventUtils.synthesizeKey("KEY_ArrowUp", { accelKey: true }, window);
+
+  await TestUtils.waitForCondition(
+    () => getSwitcherIconUrl(window) == DEFAULT_ENGINE_ICON,
+    "Switch to engine icon to indicate change in search mode"
+  );
+
+  EventUtils.synthesizeKey("KEY_Backspace");
+  await UrlbarTestUtils.promiseSearchComplete(window);
+  EventUtils.sendString("m");
+
+  await TestUtils.waitForCondition(
+    () => getSwitcherIconUrl(window) == UrlbarUtils.ICON.GLOBE,
+    "Icon switches back to globe when user has typed"
+  );
+
+  await UrlbarTestUtils.exitSearchMode(window, { backspace: true });
+  await UrlbarTestUtils.promisePopupClose(window);
+  await SpecialPowers.popPrefEnv();
 });

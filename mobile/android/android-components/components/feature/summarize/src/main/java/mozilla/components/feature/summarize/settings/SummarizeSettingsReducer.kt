@@ -12,7 +12,15 @@ fun summarizeSettingsReducer(
     action: SummarizeSettingsAction,
 ) = when (action) {
     is SettingsLoaded -> {
-        state.copy(isFeatureEnabled = action.isFeatureEnabled, isGestureEnabled = action.isGestureEnabled)
+        state.copy(
+            isFeatureEnabled = action.isFeatureEnabled,
+            isGestureEnabled = action.isGestureEnabled,
+            shakeSensitivity = action.shakeSensitivity,
+        )
+    }
+
+    is ShakeSensitivityChanged -> {
+        state.copy(shakeSensitivity = action.value)
     }
 
     SummarizePagesPreferenceToggled -> {

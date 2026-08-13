@@ -138,6 +138,8 @@
   REAL(WebAssembly, OCLASP(WasmNamespace))                                   \
   REAL(WasmModule, OCLASP(WasmModule))                                       \
   REAL_IF_WASM_COMPONENTS(WasmComponent, OCLASP(WasmComponent))              \
+  REAL_IF_WASM_COMPONENTS(WasmComponentInstance,                             \
+                          OCLASP(WasmComponentInstance))                     \
   REAL(WasmInstance, OCLASP(WasmInstance))                                   \
   REAL(WasmMemory, OCLASP(WasmMemory))                                       \
   REAL(WasmTable, OCLASP(WasmTable))                                         \

@@ -14,8 +14,8 @@ LazyLogModule SdpLog("sdp");
 // For compile time enum comparison
 template <typename E, typename F>
 constexpr bool compareEnum(const E e, const F f) {
-  return static_cast<typename std::underlying_type<E>::type>(e) ==
-         static_cast<typename std::underlying_type<F>::type>(f);
+  return static_cast<std::underlying_type_t<E>>(e) ==
+         static_cast<std::underlying_type_t<F>>(f);
 }
 
 CSFLogLevel SDPToCSFLogLevel(const SDPLogLevel priority) {

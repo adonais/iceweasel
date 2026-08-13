@@ -4,6 +4,17 @@
 
 "use strict";
 
+const { RemoteSettings } = ChromeUtils.importESModule(
+  "resource://services-settings/remote-settings.sys.mjs"
+);
+const { TestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/TestUtils.sys.mjs"
+);
+
+const CONTENT_CLASSIFIER_COLLECTION = "content-classifier-lists";
+const CONTENT_CLASSIFIER_LISTS_LOADED_TOPIC =
+  "test-content-classifier-filter-lists-loaded";
+
 add_setup(async () => {
   do_get_profile();
   Services.fog.initializeFOG();
@@ -31,6 +42,12 @@ add_setup(async () => {
     Services.prefs.clearUserPref(
       "urlclassifier.features.harmfuladdon.skipURLs"
     );
+  });
+
+  let contentClassifierClient = RemoteSettings(CONTENT_CLASSIFIER_COLLECTION);
+  await populateContentClassifierHarmfulAddon(contentClassifierClient);
+  registerCleanupFunction(async () => {
+    await contentClassifierClient.db.clear();
   });
 });
 
@@ -65,7 +82,7 @@ add_task(
 
 add_task(
   { pref_set: [["privacy.trackingprotection.harmfuladdon.enabled", false]] },
-  async function test_addon_blocked_by_url_classifier() {
+  async function test_addon_not_blocked_by_url_classifier() {
     await runTest("backgroundScript_loaded", "contentScript_loaded", false);
   }
 );
@@ -140,6 +157,11 @@ async function runTest(message1, message2, expectGleanEvent) {
     return;
   }
 
+  const legacyEnabled = Services.prefs.getBoolPref(
+    "privacy.trackingprotection.harmfuladdon.enabled",
+    false
+  );
+
   await GleanPings.urlClassifierHarmfulAddon.testSubmission(() => {
     const events = Glean.network.urlclassifierHarmfulAddonBlock.testGetValue();
     Assert.greater(events.length, 1, "We have received glean events");
@@ -147,13 +169,92 @@ async function runTest(message1, message2, expectGleanEvent) {
     let glean = events[0];
     Assert.greater(glean.extra.addon_id.length, 0);
     Assert.equal(glean.extra.addon_version, "1.2.3");
-    Assert.equal(glean.extra.table, "harmfuladdon-blocklist-pref");
+    if (legacyEnabled) {
+      Assert.equal(glean.extra.table, "harmfuladdon-blocklist-pref");
+    } else {
+      Assert.equal(
+        glean.extra.table,
+        undefined,
+        "content-classifier path does not record a table extra"
+      );
+    }
     Assert.equal(glean.extra.etld, "example.org");
 
     glean = events[1];
     Assert.greater(glean.extra.addon_id.length, 0);
     Assert.equal(glean.extra.addon_version, "1.2.3");
-    Assert.equal(glean.extra.table, "harmfuladdon-blocklist-pref");
+    if (legacyEnabled) {
+      Assert.equal(glean.extra.table, "harmfuladdon-blocklist-pref");
+    } else {
+      Assert.equal(
+        glean.extra.table,
+        undefined,
+        "content-classifier path does not record a table extra"
+      );
+    }
     Assert.equal(glean.extra.etld, "example.org");
   }, finalizeTest);
 }
+
+async function populateContentClassifierHarmfulAddon(client) {
+  let id = "harmful-addon";
+  let name = "mozilla-harmful-addon";
+  let bytes = new TextEncoder().encode("||example.org^\n");
+  let blob = new Blob([bytes]);
+  let buffer = await blob.arrayBuffer();
+  let hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
+  let hash = Array.from(new Uint8Array(hashBuffer))
+    .map(b => b.toString(16).padStart(2, "0"))
+    .join("");
+  let record = {
+    id,
+    Name: name,
+    last_modified: Date.now(),
+    attachment: {
+      hash,
+      size: bytes.length,
+      filename: name + ".txt",
+      location: `main-workspace/content-classifier-lists/${id}.txt`,
+      mimetype: "text/plain",
+    },
+  };
+  await client.db.importChanges({}, Date.now(), [record], { clear: true });
+  await client.db.saveAttachment(id, { record, blob });
+  return record;
+}
+
+add_task(async function test_addon_blocked_by_content_classifier() {
+  let listsLoaded = TestUtils.topicObserved(
+    CONTENT_CLASSIFIER_LISTS_LOADED_TOPIC
+  );
+  await runWithPrefs(
+    [
+      ["privacy.trackingprotection.harmfuladdon.enabled", false],
+      ["privacy.trackingprotection.content.testing", true],
+      ["privacy.trackingprotection.content.protection.enabled", true],
+      [
+        "privacy.trackingprotection.content.protection.engines",
+        "harmful-addon",
+      ],
+    ],
+    async () => {
+      // We need to wait for asynchronous loading of the lists.
+      // Unloading is synchronous, so we don't need to await its destruction.
+      await listsLoaded;
+
+      await runTest("backgroundScript_failed", "contentScript_failed", true);
+    }
+  );
+});
+
+add_task(async function test_addon_not_blocked_by_content_classifier() {
+  await runWithPrefs(
+    [
+      ["privacy.trackingprotection.harmfuladdon.enabled", false],
+      ["privacy.trackingprotection.content.protection.enabled", false],
+    ],
+    async () => {
+      await runTest("backgroundScript_loaded", "contentScript_loaded", false);
+    }
+  );
+});

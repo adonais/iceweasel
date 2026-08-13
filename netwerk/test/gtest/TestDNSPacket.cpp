@@ -1,7 +1,6 @@
 #include "gtest/gtest.h"
-
-#include "mozilla/net/DNSPacket.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/net/DNSPacket.h"
 
 using namespace mozilla;
 using namespace mozilla::net;

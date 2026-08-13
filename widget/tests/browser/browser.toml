@@ -8,6 +8,11 @@ run-if = [
   "os == 'mac'",
 ]
 
+["browser_idle_service_mutter.js"]
+run-if = [
+  "os == 'linux'",
+]
+
 ["browser_test_AZERTY_digit_shortcut.js"]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Linux build has not implemented sendNativeKeyEvent yet
@@ -106,6 +111,8 @@ support-files = ["helper_scrollbar_colors.html"]
 support-files = [
   "helper_swipe_gesture.html",
   "helper_swipe_gesture_rotated_vertical.html",
+  "helper_swipe_gesture_double_rotated_oopif.html",
+  "helper_swipe_gesture_double_rotated_oopif_child.html",
   "!/gfx/layers/apz/test/mochitest/apz_test_native_event_utils.js",
   "!/gfx/layers/apz/test/mochitest/apz_test_utils.js",
 ]

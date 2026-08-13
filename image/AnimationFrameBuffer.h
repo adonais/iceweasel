@@ -5,8 +5,9 @@
 #ifndef mozilla_image_AnimationFrameBuffer_h
 #define mozilla_image_AnimationFrameBuffer_h
 
-#include "ISurfaceProvider.h"
 #include <deque>
+
+#include "ISurfaceProvider.h"
 
 namespace mozilla {
 namespace image {

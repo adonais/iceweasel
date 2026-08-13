@@ -11,6 +11,7 @@
 #include "mozilla/dom/DocumentPictureInPictureEvent.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/widget/Screen.h"
+#include "nsContentUtils.h"
 #include "nsDocShell.h"
 #include "nsDocShellLoadState.h"
 #include "nsGlobalWindowOuter.h"
@@ -136,6 +137,9 @@ static nsresult OpenPiPWindowUtility(nsPIDOMWindowOuter* aParent,
 
   RefPtr<nsDocShellLoadState> loadState =
       nsWindowWatcher::CreateLoadState(uri, aParent);
+
+  // Ensure we load with this's relevant global object's principal
+  loadState->SetTriggeringPrincipal(aParent->GetExtantDoc()->NodePrincipal());
 
   // pictureinpicture, disallow_return_to_oopener are non-standard window
   // features not available from JS
@@ -269,6 +273,7 @@ already_AddRefed<Promise> DocumentPictureInPicture::RequestWindow(
   }
 
   // 4, 7. Require transient activation
+  // XXX maybe exempt extensions, see bug 2047870.
   WindowContext* wc = ownerWin->GetWindowContext();
   if (!wc || !wc->ConsumeTransientUserGestureActivation()) {
     aRv.ThrowNotAllowedError(

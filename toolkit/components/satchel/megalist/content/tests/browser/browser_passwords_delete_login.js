@@ -28,7 +28,7 @@ add_task(async function test_delete_login_success() {
 
   const passwordCard = megalist.querySelector("password-card");
   await waitForReauth(() => passwordCard.editBtn.click());
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => megalist.querySelector("login-form"),
     "Login form failed to render"
   );
@@ -37,7 +37,7 @@ add_task(async function test_delete_login_success() {
   const deleteLoginBtn = loginForm.querySelector(".delete-login-button");
   deleteLoginBtn.click();
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => loginForm.querySelector(".remove-login-card"),
     "Remove login card failed to render."
   );

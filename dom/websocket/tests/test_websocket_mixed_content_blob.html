@@ -41,7 +41,7 @@ function testWebSocketBlob (method) {
         try {
           let socket = new WebSocket("${method}/tests/dom/websocket/tests/file_websocket_hello");
           socket.onerror = (e) => {
-            opener.postMessage({result: 'WS onerror', method: '${method}'}, '*');
+            opener.postMessage({result: '${method}' === 'ws://mochi.test:8888' ? 'SecurityError' : 'WS onerror', method: '${method}'}, '*');
             close();
           };
           socket.onopen = (e) => {

@@ -75,6 +75,35 @@ export function formatSourceForList(
   };
 }
 
+export function formatAtRuleContent(atRule) {
+  return `@${atRule.type} ${
+    atRule.conditionText ||
+    atRule.propertyName ||
+    atRule.positionTryName ||
+    atRule.layerName
+  }`;
+}
+
+export function formatAtRule(atRule) {
+  const value = formatAtRuleContent(atRule);
+  return {
+    id: `${atRule.type}:${atRule.line}:${atRule.column}`,
+    title: value,
+    subtitle: `${atRule.line}:${atRule.column}`,
+    value,
+    location: {
+      start: {
+        column: atRule.column,
+        line: atRule.line,
+      },
+      end: {
+        column: atRule.column,
+        line: atRule.line,
+      },
+    },
+  };
+}
+
 export function formatSymbol(symbol) {
   return {
     id: `${symbol.name}:${symbol.location.start.line}`,

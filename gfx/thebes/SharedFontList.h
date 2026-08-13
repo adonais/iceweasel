@@ -5,8 +5,9 @@
 #ifndef SharedFontList_h
 #define SharedFontList_h
 
-#include "gfxFontEntry.h"
 #include <atomic>
+
+#include "gfxFontEntry.h"
 
 class gfxCharacterMap;
 struct gfxFontStyle;

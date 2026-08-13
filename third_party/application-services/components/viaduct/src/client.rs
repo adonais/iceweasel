@@ -3,16 +3,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use crate::{
+    backend::get_backend,
     header_names::USER_AGENT,
-    new_backend::get_backend,
     settings::{validate_request, GLOBAL_SETTINGS},
     Request, Response, Result,
 };
 
 /// HTTP Client
-///
-/// This represents the "new" API.
-/// See `README.md` for details about the transition from the old to new API.
 #[derive(Default)]
 pub struct Client {
     settings: ClientSettings,
@@ -78,7 +75,7 @@ impl Client {
 #[repr(C)]
 pub struct ClientSettings {
     /// Timeout for the entire request in ms (0 indicates no timeout).
-    #[uniffi(default = 0)]
+    #[uniffi(default = 60_000)]
     pub timeout: u32,
     /// Maximum amount of redirects to follow (0 means redirects are not allowed)
     #[uniffi(default = 10)]
@@ -106,10 +103,7 @@ impl ClientSettings {
 impl Default for ClientSettings {
     fn default() -> Self {
         Self {
-            #[cfg(target_os = "ios")]
-            timeout: 7000,
-            #[cfg(not(target_os = "ios"))]
-            timeout: 10000,
+            timeout: 60000,
             redirect_limit: 10,
             user_agent: None,
             #[cfg(feature = "ohttp")]

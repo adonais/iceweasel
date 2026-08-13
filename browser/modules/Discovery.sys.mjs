@@ -9,7 +9,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   ClientID: "resource://gre/modules/ClientID.sys.mjs",
   ContextualIdentityService:
-    "resource://gre/modules/ContextualIdentityService.sys.mjs",
+    "moz-src:///toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs",
 });
 
 const RECOMMENDATION_ENABLED = "browser.discovery.enabled";

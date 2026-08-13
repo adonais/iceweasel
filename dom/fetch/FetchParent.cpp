@@ -10,6 +10,7 @@
 #include "InternalResponse.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/ClientInfo.h"
+#include "mozilla/dom/ClientValidation.h"
 #include "mozilla/dom/FetchTypes.h"
 #include "mozilla/dom/PerformanceTimingTypes.h"
 #include "mozilla/dom/ProcessIsolation.h"
@@ -121,6 +122,11 @@ IPCResult FetchParent::RecvFetchOp(FetchOpArgs&& aArgs) {
                                                      options)) {
       return IPC_FAIL(this,
                       "RecvFetchOp principal not allowed for remote type");
+    }
+    if (!ClientIsValidPrincipalInfo(aArgs.clientInfo().principalInfo(),
+                                    remoteType)) {
+      return IPC_FAIL(
+          this, "RecvFetchOp clientInfo principal not allowed for remote type");
     }
   }
 

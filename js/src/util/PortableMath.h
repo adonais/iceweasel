@@ -35,6 +35,23 @@ inline double NumberMod(double a, double b) {
   if (b == 0) {
     return JS::GenericNaN();
   }
+
+  // Fast path: both operands are integer-valued and fit in Int32.
+  int32_t ai, bi;
+  if (mozilla::NumberEqualsInt32(a, &ai) &&
+      mozilla::NumberEqualsInt32(b, &bi)) {
+    // N % -1 == 0
+    if (bi != -1) {
+      int32_t m = ai % bi;
+      if (m != 0) {
+        return double(m);
+      }
+    }
+
+    // Zero remainder takes the sign of a
+    return mozilla::IsNegative(a) ? -0.0 : 0.0;
+  }
+
   double r = fmod(a, b);
 #if defined(XP_WIN)
   // Some versions of Windows (Win 10 v1803, v1809) miscompute the sign of zero

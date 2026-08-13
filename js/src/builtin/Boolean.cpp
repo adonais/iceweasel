@@ -6,8 +6,6 @@
  * JS boolean implementation.
  */
 
-#include "builtin/Boolean-inl.h"
-
 #include "jstypes.h"
 
 #include "jit/InlinableNatives.h"
@@ -18,6 +16,7 @@
 #include "vm/JSContext.h"
 #include "vm/JSObject.h"
 
+#include "builtin/Boolean-inl.h"
 #include "vm/BooleanObject-inl.h"
 
 using namespace js;

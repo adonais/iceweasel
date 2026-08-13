@@ -182,6 +182,14 @@ def export_mots(config_path):
     # Create export directory if it does not exist.
     path.parent.mkdir(parents=True, exist_ok=True)
 
+    # Remove stale exports left over from a previous format (e.g. an
+    # index.rst from before the switch to Markdown). Sphinx would otherwise
+    # treat both as the same document and fail with a "multiple files found"
+    # warning.
+    for stale in path.parent.glob(f"{path.stem}.*"):
+        if stale != path:
+            stale.unlink()
+
     # Write changes to disk.
     with path.open("w", encoding="utf-8") as f:
         f.write(output)

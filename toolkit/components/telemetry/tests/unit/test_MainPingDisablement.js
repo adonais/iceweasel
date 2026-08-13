@@ -78,11 +78,9 @@ add_task(async function test_scalarDisablement() {
 });
 
 add_task(async function test_hgramDisablement() {
-  const ARCHIVE_HGRAM = "TELEMETRY_ARCHIVE_DIRECTORIES_COUNT";
-  const SEND_KEYED_HGRAM = "TELEMETRY_SEND_FAILURE_TYPE_PER_PING";
-  // Let's check both normal and keyed.
-  Glean.telemetry.archiveDirectoriesCount.accumulateSingleSample(42);
-  Glean.telemetry.sendFailureTypePerPing.get("some-ping", "eOK").add(1);
+  // Using SEARCH_COUNTS because it's likely to be one of the last ones to go.
+  const SEARCH_KEYED_HGRAM = "SEARCH_COUNTS";
+  Glean.sap.deprecatedCounts.something.add(1);
 
   info("1. Ensure histogram data is reported normally to begin with.");
 
@@ -91,8 +89,7 @@ add_task(async function test_hgramDisablement() {
     /*clearSubsession*/ false
   );
 
-  Assert.ok(ARCHIVE_HGRAM in payload.histograms);
-  Assert.ok(SEND_KEYED_HGRAM in payload.keyedHistograms);
+  Assert.ok(SEARCH_KEYED_HGRAM in payload.keyedHistograms);
 
   info("2. Ensure we can disable histograms.");
   const { cleanup } = await NimbusTestUtils.setupTest();
@@ -109,8 +106,7 @@ add_task(async function test_hgramDisablement() {
     /*clearSubsession*/ false
   );
 
-  Assert.ok(!(ARCHIVE_HGRAM in filtered.histograms));
-  Assert.ok(!(SEND_KEYED_HGRAM in filtered.keyedHistograms));
+  Assert.ok(!(SEARCH_KEYED_HGRAM in filtered.keyedHistograms));
 
   await nimbusCleanup();
   await cleanup();

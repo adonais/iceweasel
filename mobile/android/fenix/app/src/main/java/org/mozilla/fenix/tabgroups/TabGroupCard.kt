@@ -46,7 +46,7 @@ import mozilla.components.browser.state.state.createTab
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.theme.surfaceDimVariant
 import mozilla.components.support.base.utils.MAX_URI_LENGTH
-import mozilla.components.ui.colors.PhotonColors
+import mozilla.components.ui.colors.NovaColors
 import org.mozilla.fenix.compose.SwipeToDismissState2
 import org.mozilla.fenix.compose.TabThumbnail
 import org.mozilla.fenix.compose.TabThumbnailImageData
@@ -103,7 +103,7 @@ fun TabGroupCard(
     Box(
         modifier = modifier
             .wrapContentSize()
-            .tabItemGridInteractionAnimation(interactionState)
+            .tabItemGridInteractionAnimation(interactionState = interactionState)
             .testTag(TabsTrayTestTag.TAB_ITEM_ROOT),
     ) {
         Card(
@@ -332,7 +332,7 @@ private fun TabGroupThumbnail(
 
 private data class TabGroupCardPreviewState(
     val title: String = "Group 1",
-    val color: Color = PhotonColors.Pink70,
+    val color: Color = NovaColors.Pink70,
     val selectionState: TabsTrayItemSelectionState =
         TabsTrayItemSelectionState(
             isSelected = false,

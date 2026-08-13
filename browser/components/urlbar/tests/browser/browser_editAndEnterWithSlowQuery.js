@@ -66,7 +66,7 @@ add_task(async function test_url_type() {
     info("Find target result");
     let targetRowIndex = await findTargetRowIndex(
       result =>
-        result.type == UrlbarUtils.RESULT_TYPE.URL && result.url == testURL
+        result.type == UrlbarShared.RESULT_TYPE.URL && result.url == testURL
     );
 
     info("Select a visit suggestion");
@@ -87,7 +87,7 @@ add_task(async function test_url_type() {
     Assert.ok(gURLBar.valueIsTyped);
     Assert.equal(UrlbarTestUtils.getSelectedRowIndex(window), targetRowIndex);
     let selectedResult = UrlbarTestUtils.getSelectedRow(window).result;
-    Assert.equal(selectedResult.type, UrlbarUtils.RESULT_TYPE.URL);
+    Assert.equal(selectedResult.type, UrlbarShared.RESULT_TYPE.URL);
 
     info("Enter before updating");
     let loadingURL = testURL.substring(0, testURL.length - 1);
@@ -120,7 +120,7 @@ add_task(async function test_search_type() {
   info("Find target result");
   let targetRowIndex = await findTargetRowIndex(
     result =>
-      result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
+      result.type == UrlbarShared.RESULT_TYPE.SEARCH &&
       result.url == "http://mochi.test:8888/?terms=123foo"
   );
 
@@ -142,7 +142,7 @@ add_task(async function test_search_type() {
   Assert.ok(gURLBar.valueIsTyped);
   Assert.equal(UrlbarTestUtils.getSelectedRowIndex(window), targetRowIndex);
   let selectedResult = UrlbarTestUtils.getSelectedRow(window).result;
-  Assert.equal(selectedResult.type, UrlbarUtils.RESULT_TYPE.SEARCH);
+  Assert.equal(selectedResult.type, UrlbarShared.RESULT_TYPE.SEARCH);
 
   info("Enter before updating");
   let loadingURL = "http://mochi.test:8888/?terms=123fo";
@@ -178,7 +178,7 @@ add_task(async function test_keyword_type() {
   info("Find target result");
   let targetRowIndex = await findTargetRowIndex(
     result =>
-      result.type == UrlbarUtils.RESULT_TYPE.KEYWORD &&
+      result.type == UrlbarShared.RESULT_TYPE.KEYWORD &&
       result.url == "https://example.com/?q=123"
   );
 
@@ -200,7 +200,7 @@ add_task(async function test_keyword_type() {
   Assert.ok(gURLBar.valueIsTyped);
   Assert.equal(UrlbarTestUtils.getSelectedRowIndex(window), targetRowIndex);
   let selectedResult = UrlbarTestUtils.getSelectedRow(window).result;
-  Assert.equal(selectedResult.type, UrlbarUtils.RESULT_TYPE.KEYWORD);
+  Assert.equal(selectedResult.type, UrlbarShared.RESULT_TYPE.KEYWORD);
 
   info("Enter before updating");
   let loadingURL = "https://example.com/?q=12";
@@ -235,7 +235,7 @@ add_task(async function test_dynamic_type() {
 
   info("Find target result");
   let targetRowIndex = await findTargetRowIndex(
-    result => result.type == UrlbarUtils.RESULT_TYPE.DYNAMIC
+    result => result.type == UrlbarShared.RESULT_TYPE.DYNAMIC
   );
 
   info("Select a dynamic suggestion");
@@ -256,7 +256,7 @@ add_task(async function test_dynamic_type() {
   Assert.ok(gURLBar.valueIsTyped);
   Assert.equal(UrlbarTestUtils.getSelectedRowIndex(window), targetRowIndex);
   let selectedResult = UrlbarTestUtils.getSelectedRow(window).result;
-  Assert.equal(selectedResult.type, UrlbarUtils.RESULT_TYPE.DYNAMIC);
+  Assert.equal(selectedResult.type, UrlbarShared.RESULT_TYPE.DYNAMIC);
 
   info("Enter before updating");
   // TODO: We need to show the dynamic result with different word here.
@@ -310,7 +310,7 @@ add_task(async function test_omnibox_type() {
 
   info("Find target result");
   let targetRowIndex = await findTargetRowIndex(
-    result => result.type == UrlbarUtils.RESULT_TYPE.OMNIBOX
+    result => result.type == UrlbarShared.RESULT_TYPE.OMNIBOX
   );
 
   info("Select an omnibox suggestion");
@@ -331,7 +331,7 @@ add_task(async function test_omnibox_type() {
   Assert.ok(gURLBar.valueIsTyped);
   Assert.equal(UrlbarTestUtils.getSelectedRowIndex(window), targetRowIndex);
   let selectedResult = UrlbarTestUtils.getSelectedRow(window).result;
-  Assert.equal(selectedResult.type, UrlbarUtils.RESULT_TYPE.OMNIBOX);
+  Assert.equal(selectedResult.type, UrlbarShared.RESULT_TYPE.OMNIBOX);
   Assert.ok(selectedResult.heuristic);
 
   info("Enter before updating");
@@ -357,8 +357,8 @@ add_task(async function test_heuristic() {
   const testCases = [
     {
       testResult: new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         heuristic: true,
         payload: { url: "https://example.com/123" },
       }),
@@ -367,8 +367,8 @@ add_task(async function test_heuristic() {
     },
     {
       testResult: new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         heuristic: true,
         // eslint-disable-next-line @microsoft/sdl/no-insecure-url
         payload: { url: "http://example.com/123" },
@@ -379,8 +379,8 @@ add_task(async function test_heuristic() {
     },
     {
       testResult: new UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.SEARCH,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        type: UrlbarShared.RESULT_TYPE.SEARCH,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
         heuristic: true,
         payload: {
           engine: SearchService.defaultEngine.name,

@@ -4,107 +4,86 @@
 
 #include "ThreadEventTarget.h"
 #include "XPCOMModule.h"
-
 #include "base/basictypes.h"
-
+#include "mozJSModuleLoader.h"
 #include "mozilla/AbstractThread.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/TaskController.h"
-#include "mozJSModuleLoader.h"
 #include "nsXULAppAPI.h"
 
 #ifndef ANDROID
 #  include "nsTerminator.h"
 #endif
 
-#include "nsXPCOMPrivate.h"
-#include "nsXPCOMCIDInternal.h"
-
-#include "mozilla/dom/JSExecutionManager.h"
-#include "mozilla/dom/SharedScriptCache.h"
-#include "mozilla/SharedStyleSheetCache.h"
-#include "mozilla/layers/ImageBridgeChild.h"
-#include "mozilla/layers/CompositorBridgeParent.h"
-
-#include "prlink.h"
-
-#include "nsCycleCollector.h"
-#include "nsObserverService.h"
-
-#include "nsDebugImpl.h"
-#include "nsSystemInfo.h"
-
-#include "nsComponentManager.h"
-#include "nsCategoryManagerUtils.h"
-#include "nsIServiceManager.h"
-
-#include "nsThreadManager.h"
-#include "nsThreadPool.h"
-
-#include "nsTimerImpl.h"
-#include "TimerThread.h"
-
-#include "nsThread.h"
-#include "nsVersionComparatorImpl.h"
-
-#include "nsIFile.h"
-#include "nsLocalFile.h"
-#include "nsDirectoryService.h"
-#include "nsDirectoryServiceDefs.h"
-#include "nsCategoryManager.h"
-#include "nsMultiplexInputStream.h"
-
-#include "nsAtomTable.h"
-#include "nsISupportsImpl.h"
-#include "nsLanguageAtomService.h"
-
-#include "nsSystemInfo.h"
-#include "nsMemoryReporterManager.h"
-#include "nss.h"
-#include "nsNSSComponent.h"
-
 #include <locale.h>
-#include "mozilla/Services.h"
-#include "mozilla/Omnijar.h"
-#include "mozilla/ScriptPreloader.h"
-#include "mozilla/Telemetry.h"
-#include "mozilla/BackgroundHangMonitor.h"
 
-#include "mozilla/PoisonIOInterposer.h"
-#include "mozilla/LateWriteChecks.h"
-
-#include "mozilla/scache/StartupCache.h"
-
+#include "TimerThread.h"
 #include "base/at_exit.h"
 #include "base/command_line.h"
 #include "base/message_loop.h"
-
-#include "mozilla/ipc/IOThread.h"
 #include "mozilla/AvailableMemoryTracker.h"
+#include "mozilla/BackgroundHangMonitor.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/CountingAllocatorBase.h"
+#include "mozilla/LateWriteChecks.h"
+#include "mozilla/Omnijar.h"
+#include "mozilla/PoisonIOInterposer.h"
+#include "mozilla/ScriptPreloader.h"
+#include "mozilla/Services.h"
+#include "mozilla/SharedStyleSheetCache.h"
+#include "mozilla/Telemetry.h"
+#include "mozilla/dom/JSExecutionManager.h"
+#include "mozilla/dom/SharedScriptCache.h"
+#include "mozilla/ipc/IOThread.h"
+#include "mozilla/layers/CompositorBridgeParent.h"
+#include "mozilla/layers/ImageBridgeChild.h"
+#include "mozilla/scache/StartupCache.h"
+#include "nsAtomTable.h"
+#include "nsCategoryManager.h"
+#include "nsCategoryManagerUtils.h"
+#include "nsComponentManager.h"
+#include "nsCycleCollector.h"
+#include "nsDebugImpl.h"
+#include "nsDirectoryService.h"
+#include "nsDirectoryServiceDefs.h"
+#include "nsIFile.h"
+#include "nsIServiceManager.h"
+#include "nsISupportsImpl.h"
+#include "nsLanguageAtomService.h"
+#include "nsLocalFile.h"
+#include "nsMemoryReporterManager.h"
+#include "nsMultiplexInputStream.h"
+#include "nsObserverService.h"
+#include "nsSystemInfo.h"
+#include "nsThread.h"
+#include "nsThreadManager.h"
+#include "nsThreadPool.h"
+#include "nsTimerImpl.h"
+#include "nsVersionComparatorImpl.h"
+#include "nsXPCOMCIDInternal.h"
+#include "nsXPCOMPrivate.h"
+#include "nss.h"
+#include "prlink.h"
+#include "ssl.h"
 #ifdef MOZ_PHC
 #  include "mozilla/PHCManager.h"
 #endif
-#include "mozilla/ServoStyleConsts.h"
-
-#include "mozilla/ipc/GeckoChildProcessHost.h"
-
-#include "ogg/ogg.h"
-
 #include "GeckoProfiler.h"
 #include "ProfilerControl.h"
-
-#include "jsapi.h"
-#include "js/Initialization.h"
 #include "XPCSelfHostedShmem.h"
-
 #include "gfxPlatform.h"
-
+#include "js/Initialization.h"
+#include "jsapi.h"
 #include "mozilla/GeckoTrace.h"
+#include "mozilla/ServoStyleConsts.h"
+#include "mozilla/ipc/GeckoChildProcessHost.h"
+#include "ogg/ogg.h"
+#ifdef XP_MACOSX
+#  include "mozilla/MacAutoreleasePool.h"
+#endif
 
 using base::AtExitManager;
 using mozilla::ipc::IOThreadParent;
@@ -220,6 +199,13 @@ EXPORT_XPCOM_API(nsresult)
 NS_InitXPCOM(nsIServiceManager** aResult, nsIFile* aBinDirectory,
              nsIDirectoryServiceProvider* aAppFileLocationProvider,
              bool aInitJSContext) {
+#ifdef XP_MACOSX
+  // Some of the work done here calls into macOS APIs that need an Obj-C
+  // autorelease pool in place. For example, nsComponentManagerImpl::Init
+  // will call a lot of macOS APIs as part of initializing nsLookAndFeel.
+  mozilla::MacAutoreleasePool pool;
+#endif
+
   static bool sInitialized = false;
   if (sInitialized) {
     XPCOM_INIT_FATAL("!sInitialized", NS_ERROR_FAILURE)
@@ -711,7 +697,7 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
   // down, any remaining objects that could be holding NSS resources (should)
   // have been released, so we can safely shut down NSS.
   if (NSS_IsInitialized()) {
-    nsNSSComponent::DoClearSSLExternalAndInternalSessionCache();
+    SSL_ClearSessionCache();
     if (NSS_Shutdown() != SECSuccess) {
       // If you're seeing this crash and/or warning, some NSS resources are
       // still in use (see bugs 1417680 and 1230312). Set the environment

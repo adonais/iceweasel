@@ -46,6 +46,7 @@ Messages use the `newtab_message` template with `messageType: "ASRouterMultistag
     id: "MY_NEWTAB_MULTISTAGE_MESSAGE",
     transitions: false,
     backdrop: "transparent",
+    wrapper_content_style: { height: "400px" },
     screens: [
       {
         id: "SCREEN_1",
@@ -66,6 +67,8 @@ Messages use the `newtab_message` template with `messageType: "ASRouterMultistag
 ```
 
 The `screens` array follows the standard aboutwelcome multistage screen schema. See the [about:welcome documentation](./about-welcome.md) for the full list of supported screen properties.
+
+The `wrapper_content_style` allows for customizing the height of the newtab multistage message. If it's not specified, the default height of the message is set to 500px.
 
 ## Handler Functions
 
@@ -109,4 +112,4 @@ See `browser/components/asrouter/tests/browser/browser_asrouter_newtab_multistag
 - [about:welcome Documentation](./about-welcome.md)
 - [New Tab External Components](../../../extensions/newtab/docs/v2-system-addon/external_components_guide.md)
 - [New Tab Train-hop Compatibility](../../../extensions/newtab/docs/v2-system-addon/train_hopping.md)
-- [ASRouter Documentation](../../asrouter/docs/index.rst)
+- [ASRouter Documentation](index.md)

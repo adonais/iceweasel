@@ -96,9 +96,9 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
     // If the sources don't include search or the user used a restriction
     // character other than search, don't allow any suggestions.
     if (
-      !queryContext.sources.includes(UrlbarUtils.RESULT_SOURCE.SEARCH) ||
+      !queryContext.sources.includes(lazy.UrlbarShared.RESULT_SOURCE.SEARCH) ||
       (queryContext.restrictSource &&
-        queryContext.restrictSource != UrlbarUtils.RESULT_SOURCE.SEARCH)
+        queryContext.restrictSource != lazy.UrlbarShared.RESULT_SOURCE.SEARCH)
     ) {
       return false;
     }
@@ -139,12 +139,13 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
     return (
       queryContext.searchString.startsWith("@") ||
       (queryContext.restrictSource &&
-        queryContext.restrictSource == UrlbarUtils.RESULT_SOURCE.SEARCH) ||
+        queryContext.restrictSource ==
+          lazy.UrlbarShared.RESULT_SOURCE.SEARCH) ||
       queryContext.tokens.some(
         t => t.type == lazy.UrlbarShared.TOKEN_TYPE.RESTRICT_SEARCH
       ) ||
       (queryContext.searchMode &&
-        queryContext.sources.includes(UrlbarUtils.RESULT_SOURCE.SEARCH))
+        queryContext.sources.includes(lazy.UrlbarShared.RESULT_SOURCE.SEARCH))
     );
   }
 
@@ -231,7 +232,7 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
    * @param {UrlbarQueryContext} queryContext
    * @param {(provider: UrlbarProvider, result: UrlbarResult) => void} addCallback
    *   Callback invoked by the provider to add a new result.
-   * @param {UrlbarController} controller The UrlbarController instance.
+   * @param {UrlbarParentController} controller The UrlbarParentController instance.
    */
   async startQuery(queryContext, addCallback, controller) {
     let instance = this.queryInstance;
@@ -341,14 +342,14 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
       return /** @type {UrlbarResultCommand[]} */ ([
         {
           name: RESULT_MENU_COMMANDS.TRENDING_BLOCK,
-          l10n: { id: "urlbar-result-menu-trending-dont-show" },
+          l10n: { id: "urlbar-result-menu-trending-dont-show2" },
         },
         {
           name: "separator",
         },
         {
           name: RESULT_MENU_COMMANDS.TRENDING_HELP,
-          l10n: { id: "urlbar-result-menu-learn-more" },
+          l10n: { id: "urlbar-result-menu-learn-more2" },
         },
       ]);
     }
@@ -526,8 +527,8 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
 
         results.push(
           new lazy.UrlbarResult({
-            type: UrlbarUtils.RESULT_TYPE.SEARCH,
-            source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+            type: lazy.UrlbarShared.RESULT_TYPE.SEARCH,
+            source: lazy.UrlbarShared.RESULT_SOURCE.SEARCH,
             isRichSuggestion: !!entry.icon,
             richSuggestionIconSize: entry.icon
               ? UrlbarProviderSearchSuggestions.RICH_ICON_SIZE
@@ -661,29 +662,36 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
     let resultsToRemove = controller.view.visibleResults.filter(
       result => result.payload.trending
     );
-    if (resultsToRemove.length) {
-      // Show an acknowledgement tip for the first result.
-      resultsToRemove[0].acknowledgeDismissalL10n = {
-        id: "urlbar-trending-dismissal-acknowledgment",
-      };
-    }
+    // Show an acknowledgement tip for the first result.
+    let acknowledgedResult = resultsToRemove[0];
     // Remove results in reverse order so the acknowledgment tip isn't removed.
     resultsToRemove.reverse();
-    resultsToRemove.forEach(result => controller.removeResult(result));
+    resultsToRemove.forEach(result =>
+      controller.removeResult(
+        result,
+        result == acknowledgedResult
+          ? {
+              acknowledgeDismissalL10n: {
+                id: "urlbar-trending-dismissal-acknowledgment",
+              },
+            }
+          : undefined
+      )
+    );
   }
 }
 
 function makeFormHistoryResult(queryContext, engine, entry) {
   return new lazy.UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.SEARCH,
-    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    type: lazy.UrlbarShared.RESULT_TYPE.SEARCH,
+    source: lazy.UrlbarShared.RESULT_SOURCE.HISTORY,
     payload: {
       engine: engine.name,
       suggestion: entry.value,
       title: entry.value,
       lowerCaseSuggestion: entry.value.toLocaleLowerCase(),
       isBlockable: true,
-      blockL10n: { id: "urlbar-result-menu-remove-from-history" },
+      blockL10n: { id: "urlbar-result-menu-remove-from-history2" },
       helpUrl:
         Services.urlFormatter.formatURLPref("app.support.baseURL") +
         "awesome-bar-result-menu",

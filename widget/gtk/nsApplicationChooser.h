@@ -6,6 +6,7 @@
 #define nsApplicationChooser_h_
 
 #include <gtk/gtk.h>
+
 #include "nsCOMPtr.h"
 #include "nsIApplicationChooser.h"
 #include "nsString.h"

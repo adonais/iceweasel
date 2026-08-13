@@ -52,7 +52,7 @@ def test_document_extends_beyond_viewport(session, inline):
     assert png_dimensions(value) == document_dimensions(session)
 
 
-@pytest.mark.allow_system_access
+@pytest.mark.geckodriver(allow_system_access=True)
 def test_huge_full_screenshot(session, inline):
     max_size = get_pref(session, "gfx.canvas.max-size")
 
@@ -64,7 +64,7 @@ def test_huge_full_screenshot(session, inline):
     assert_error(response, "unsupported operation")
 
 
-@pytest.mark.allow_system_access
+@pytest.mark.geckodriver(allow_system_access=True)
 @pytest.mark.parametrize("axis", ["width", "height"])
 def test_screenshot_large_dimension(session, inline, axis):
     max_size = get_pref(session, "gfx.canvas.max-size")

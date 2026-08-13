@@ -41,6 +41,7 @@ function frameLoaded(iframe) {
   let mouseupFired = false;
   slot.addEventListener('mousedown', function() {
     ok(true, "Mousedown should fire on the slot when clicking on text");
+    ok(this.matches(":active"), "Slot should become active");
     mousedownFired = true;
   });
 
@@ -52,8 +53,6 @@ function frameLoaded(iframe) {
   });
 
   slot.addEventListener('mouseup', function() {
-    // FIXME: When we fix bug 1481517, this check should move to the mousedown listener.
-    ok(this.matches(":active"), "Slot should become active");
     mouseupFired = true;
   });
 

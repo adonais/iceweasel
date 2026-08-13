@@ -12,6 +12,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/dom/Selection.h"
+#include "mozilla/Utf16.h"
 
 #include "nsDebug.h"
 #include "nsError.h"
@@ -52,7 +53,7 @@ DeleteTextTransaction::MaybeCreateForPreviousCharacter(EditorBase& aEditorBase,
 
   uint32_t length = 1;
   uint32_t offset = aOffset - 1;
-  if (offset && NS_IS_SURROGATE_PAIR(data[offset - 1], data[offset])) {
+  if (offset && mozilla::IsSurrogatePair(data[offset - 1], data[offset])) {
     ++length;
     --offset;
   }
@@ -73,7 +74,7 @@ DeleteTextTransaction::MaybeCreateForNextCharacter(EditorBase& aEditorBase,
 
   uint32_t length = 1;
   if (aOffset + 1 < data.Length() &&
-      NS_IS_SURROGATE_PAIR(data[aOffset], data[aOffset + 1])) {
+      mozilla::IsSurrogatePair(data[aOffset], data[aOffset + 1])) {
     ++length;
   }
   return DeleteTextTransaction::MaybeCreate(aEditorBase, aTextNode, aOffset,

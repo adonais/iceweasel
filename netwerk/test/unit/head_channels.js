@@ -628,7 +628,9 @@ async function asyncSetupFaultyServer(callbackServer, { use0RTT = true } = {}) {
     "FaultyServer",
     "../../../security/manager/ssl/tests/unit/test_faulty_server"
   );
-  let nssComponent = Cc["@mozilla.org/psm;1"].getService(Ci.nsINSSComponent);
+  let nssComponent = Cc["@mozilla.org/network/ssl-tokens-cache;1"].getService(
+    Ci.nsISSLTokensCache
+  );
   await nssComponent.asyncClearSSLExternalAndInternalSessionCache();
   Services.prefs.setIntPref("network.http.speculative-parallel-limit", 0);
   registerCleanupFunction(() => {

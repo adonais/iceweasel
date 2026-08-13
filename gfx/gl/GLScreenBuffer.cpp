@@ -6,9 +6,9 @@
 
 #include "CompositorTypes.h"
 #include "GLContext.h"
-#include "gfx2DGlue.h"
 #include "MozFramebuffer.h"
 #include "SharedSurface.h"
+#include "gfx2DGlue.h"
 #include "mozilla/gfx/BuildConstants.h"
 
 namespace mozilla::gl {

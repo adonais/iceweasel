@@ -106,6 +106,7 @@ add_task(async function test_fullscreen_api_cross_origin_tree() {
       },
     },
     allFrames: true,
+    safeForUntrustedWebProcess: true,
   });
 
   let tab = await BrowserTestUtils.openNewForegroundTab({

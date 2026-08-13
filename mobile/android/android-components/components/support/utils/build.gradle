@@ -3,12 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 plugins {
+    id 'com.android.library'
     alias(libs.plugins.dependency.analysis)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 }
-
-apply plugin: 'com.android.library'
 
 android {
     buildFeatures {
@@ -34,7 +32,6 @@ dependencies {
     implementation libs.androidx.compose.foundation
     implementation libs.androidx.compose.ui
     implementation libs.androidx.core
-    implementation libs.androidx.core.ktx
     implementation libs.androidx.documentfile
     implementation libs.disklrucache
     implementation libs.kotlinx.coroutines

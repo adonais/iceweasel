@@ -423,6 +423,9 @@ typedef enum {
     SDP_RTX_TIME,
     SDP_LEVEL_IDX,
     SDP_TIER,
+    SDP_OPUS_PTIME,
+    SDP_OPUS_MINPTIME,
+    SDP_OPUS_MAXPTIME,
     SDP_MAX_FMTP_PARAM,
     SDP_FMTP_PARAM_UNKNOWN
 } sdp_fmtp_codec_param_e;
@@ -675,6 +678,9 @@ typedef struct sdp_fmtp {
     uint16_t                       useinbandfec;
     char                      maxcodedaudiobandwidth[SDP_MAX_STRING_LEN+1];
     uint16_t                       cbr;
+    uint32_t                       opus_ptime;
+    uint32_t                       opus_minptime;
+    uint32_t                       opus_maxptime;
 
     /* BEGIN - All Video related FMTP parameters */
     uint16_t                       qcif;

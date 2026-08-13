@@ -1,0 +1,15 @@
+strcat.h isn't needed and it causes a conflict if StrCat is already defined.
+
+diff --git a/base/types/expected.h b/base/types/expected.h
+--- a/base/types/expected.h
++++ b/base/types/expected.h
+@@ -12,7 +12,9 @@
+ #include <variant>
+ 
+ #include "base/check.h"
++#if !defined(MOZ_SANDBOX)
+ #include "base/strings/strcat.h"
++#endif  // !defined(MOZ_SANDBOX)
+ #include "base/strings/to_string.h"
+ #include "base/types/expected_internal.h"  // IWYU pragma: export
+ 

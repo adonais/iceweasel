@@ -6,14 +6,14 @@ some cases (like network shares) and fails because we never ask the broker.
 diff --git a/sandbox/win/src/filesystem_interception.cc b/sandbox/win/src/filesystem_interception.cc
 --- a/sandbox/win/src/filesystem_interception.cc
 +++ b/sandbox/win/src/filesystem_interception.cc
-@@ -11,16 +11,20 @@
- #include "sandbox/win/src/ipc_tags.h"
+@@ -13,16 +13,20 @@
  #include "sandbox/win/src/policy_params.h"
  #include "sandbox/win/src/policy_target.h"
  #include "sandbox/win/src/sandbox_factory.h"
  #include "sandbox/win/src/sandbox_nt_util.h"
  #include "sandbox/win/src/sharedmem_ipc_client.h"
  #include "sandbox/win/src/target_services.h"
+ #include "sandbox/win/src/win_utils.h"
  
 +// This status occurs when trying to access a network share on the machine from
 +// which it is shared.
@@ -27,7 +27,7 @@ diff --git a/sandbox/win/src/filesystem_interception.cc b/sandbox/win/src/filesy
  // - The path looks like a short-name path.
  // - Whether the details match the policy.
  bool ShouldAskBroker(IpcTag ipc_tag,
-@@ -29,17 +33,18 @@ NTSTATUS WINAPI TargetNtCreateFile(NtCre
+@@ -81,17 +85,18 @@ NTSTATUS WINAPI TargetNtCreateFile(NtCre
                                     ULONG disposition,
                                     ULONG options,
                                     PVOID ea_buffer,
@@ -47,7 +47,7 @@ diff --git a/sandbox/win/src/filesystem_interception.cc b/sandbox/win/src/filesy
      return status;
    }
  
-@@ -106,17 +111,18 @@ NTSTATUS WINAPI TargetNtOpenFile(NtOpenF
+@@ -159,17 +164,18 @@ NTSTATUS WINAPI TargetNtOpenFile(NtOpenF
                                   ACCESS_MASK desired_access,
                                   POBJECT_ATTRIBUTES object_attributes,
                                   PIO_STATUS_BLOCK io_status,
@@ -67,7 +67,7 @@ diff --git a/sandbox/win/src/filesystem_interception.cc b/sandbox/win/src/filesy
  
    do {
      if (!ValidParameter(file, sizeof(HANDLE), WRITE))
-@@ -176,17 +182,18 @@ NTSTATUS WINAPI TargetNtOpenFile(NtOpenF
+@@ -215,17 +221,18 @@ NTSTATUS WINAPI TargetNtOpenFile(NtOpenF
  }
  
  NTSTATUS WINAPI
@@ -87,7 +87,7 @@ diff --git a/sandbox/win/src/filesystem_interception.cc b/sandbox/win/src/filesy
  
    do {
      if (!ValidParameter(file_attributes, sizeof(FILE_BASIC_INFORMATION), WRITE))
-@@ -232,17 +239,18 @@ TargetNtQueryAttributesFile(NtQueryAttri
+@@ -263,17 +270,18 @@ TargetNtQueryAttributesFile(NtQueryAttri
  
  NTSTATUS WINAPI TargetNtQueryFullAttributesFile(
      NtQueryFullAttributesFileFunction orig_QueryFullAttributes,

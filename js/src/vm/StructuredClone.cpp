@@ -2371,11 +2371,6 @@ bool JSStructuredCloneWriter::transferOwnership() {
         return false;
       }
 
-      if (arrayBuffer->isPreparedForAsmJS()) {
-        reportDataCloneError(JS_SCERR_WASM_NO_TRANSFER);
-        return false;
-      }
-
       if (scope == JS::StructuredCloneScope::DifferentProcess ||
           scope == JS::StructuredCloneScope::DifferentProcessForIndexedDB ||
           arrayBuffer->isResizable()) {
@@ -3278,7 +3273,7 @@ bool JSStructuredCloneReader::startReadUnchecked(
         obj = NewDenseUnallocatedArray(
             context(), NativeEndian::swapFromLittleEndian(data), kind);
       } else {
-        obj = NewPlainObject(context(), kind);
+        obj = NewPlainObject(context(), {.newKind = kind});
       }
       if (!obj || !objs.append(ObjectValue(*obj))) {
         return false;

@@ -1433,7 +1433,7 @@ static JSObject* NewIteratorRecord(JSContext* cx, HandleObject iterator,
                                    HandleValue nextMethod) {
   gc::AllocKind allocKind = gc::GetGCObjectKind(3);
   Rooted<PlainObject*> obj(
-      cx, NewPlainObjectWithProtoAndAllocKind(cx, nullptr, allocKind));
+      cx, NewPlainObjectWithProto(cx, nullptr, {.allocKind = allocKind}));
   if (!obj) {
     return nullptr;
   }
@@ -2354,7 +2354,7 @@ static bool GetComputedIntrinsic(JSContext* cx, Handle<PropertyName*> name,
     // Attach the computed intrinsics holder to the global now to capture
     // generated values.
     computedIntrinsicsHolder =
-        NewPlainObjectWithProto(cx, nullptr, TenuredObject);
+        NewPlainObjectWithProto(cx, nullptr, {.newKind = TenuredObject});
     if (!computedIntrinsicsHolder) {
       return false;
     }

@@ -88,7 +88,7 @@ add_task(async function test_history_disabled_bookmarked_page_url() {
       makeVisitResult(context, {
         uri: url,
         title: "Sample Bookmark",
-        source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+        source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
       }),
     ],
   });

@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -29,6 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import mozilla.components.compose.base.button.FilledButton
 
 typealias DismissAction = () -> Unit
 
@@ -156,8 +156,9 @@ private fun CFRPopupLayoutPreview() {
 
         Spacer(modifier = Modifier.height(60.dp))
 
-        Button(onClick = { cfrVisible = true }) {
-            Text(text = "Show CFR")
-        }
+        FilledButton(
+            text = "Show CFR",
+            onClick = { cfrVisible = true },
+        )
     }
 }

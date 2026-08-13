@@ -118,6 +118,12 @@ function ensureType(type) {
 }
 
 /**
+ * @typedef {{ key: string, value?: any, id?: string, initialValue?: any } | null} SettingItem
+ *          An object with a property for key, and either value and id (for a
+ *          stored setting) or initialValue. Null cases are noted per method.
+ */
+
+/**
  * Return an object with properties for key, value|initialValue, id|null, or
  * null if no setting has been stored for that key.
  *
@@ -132,9 +138,7 @@ function ensureType(type) {
  *        If no id is passed, then the highest priority item for the key
  *        is returned.
  *
- * @returns {object | null}
- *          Either an object with properties for key and value, or
- *          null if no key is found.
+ * @returns {SettingItem} Null if no setting is stored for the key.
  */
 function getItem(type, key, id) {
   ensureType(type);
@@ -225,10 +229,7 @@ function precedenceComparator(a, b) {
  *        The action to perform on the setting.
  *        Will be one of remove|enable|disable.
  *
- * @returns {object | null}
- *          Either an object with properties for key and value, which
- *          corresponds to the current top precedent setting, or null if
- *          the current top precedent setting has not changed.
+ * @returns {SettingItem} Null if the top precedent setting is unchanged.
  */
 function alterSetting(id, type, key, action) {
   let returnItem = null;
@@ -345,7 +346,7 @@ export var ExtensionSettingsStore = {
    *        The type of setting to be stored.
    * @param {string} key
    *        A string that uniquely identifies the setting.
-   * @param {string} value
+   * @param {any} value
    *        The value to be stored in the setting.
    * @param {Function} initialValueCallback
    *        A function to be called to determine the initial value for the
@@ -357,11 +358,7 @@ export var ExtensionSettingsStore = {
    * @param {Function} settingDataUpdate
    *        A function to be called to modify the initial value if necessary.
    *
-   * @returns {Promise<object?>} Either an object with properties for key and
-   *                          value, which corresponds to the item that was
-   *                          just added, or null if the item that was just
-   *                          added does not need to be set because it is not
-   *                          selected or at the top of the precedence list.
+   * @returns {Promise<SettingItem>} Null if the added item is not controlling.
    */
   async addSetting(
     id,
@@ -445,8 +442,7 @@ export var ExtensionSettingsStore = {
    * @param {string} key
    *        A string that uniquely identifies the setting.
    *
-   * @returns {object | null}
-   *          Either an object with properties for key and value if the setting changes, or null.
+   * @returns {SettingItem} Null if the controlling setting is unchanged.
    */
   removeSetting(id, type, key) {
     return alterSetting(id, type, key, "remove");
@@ -462,8 +458,7 @@ export var ExtensionSettingsStore = {
    * @param {string} key
    *        A string that uniquely identifies the setting.
    *
-   * @returns {object | null}
-   *          Either an object with properties for key and value if the setting changes, or null.
+   * @returns {SettingItem} Null if the controlling setting is unchanged.
    */
   enable(id, type, key) {
     return alterSetting(id, type, key, "enable");
@@ -479,8 +474,7 @@ export var ExtensionSettingsStore = {
    * @param {string} key
    *        A string that uniquely identifies the setting.
    *
-   * @returns {object | null}
-   *          Either an object with properties for key and value if the setting changes, or null.
+   * @returns {SettingItem} Null if the controlling setting is unchanged.
    */
   disable(id, type, key) {
     return alterSetting(id, type, key, "disable");
@@ -505,8 +499,7 @@ export var ExtensionSettingsStore = {
    * @param {string} key
    *        A string that uniquely identifies the setting.
    *
-   * @returns {object | null}
-   *          Either an object with properties for key and value if the setting changes, or null.
+   * @returns {SettingItem} Null if the controlling setting is unchanged.
    */
   select(id, type, key) {
     return alterSetting(id, type, key, "select");
@@ -546,7 +539,7 @@ export var ExtensionSettingsStore = {
    *        The id of the extension for which the setting is being retrieved.
    *        Defaults to undefined, in which case the top setting is returned.
    *
-   * @returns {{ id: string, key: string, value: string}} An object with properties for key, value and id.
+   * @returns {SettingItem} Null if no setting is found.
    */
   getSetting(type, key, id) {
     return getItem(type, key, id);

@@ -73,7 +73,7 @@ JSObject* ChromeWorker::WrapObject(JSContext* aCx,
     // reflector is always present.  In order to guarantee that it's always
     // present, we have to preserve it. Otherwise the GC will happily collect it
     // as needed.
-    MOZ_ALWAYS_TRUE(TryPreserveWrapper(wrapper));
+    TryPreserveWrapper(wrapper);
   }
 
   return wrapper;

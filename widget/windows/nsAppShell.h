@@ -5,11 +5,13 @@
 #ifndef nsAppShell_h_
 #define nsAppShell_h_
 
-#include "nsBaseAppShell.h"
 #include <windows.h>
+
 #include <vector>
-#include "mozilla/TimeStamp.h"
+
 #include "mozilla/Mutex.h"
+#include "mozilla/TimeStamp.h"
+#include "nsBaseAppShell.h"
 
 // The maximum time we allow before forcing a native event callback.
 // In seconds.

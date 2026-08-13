@@ -88,7 +88,7 @@ add_task(async function mainTest() {
       let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
       Assert.equal(
         result.type,
-        UrlbarUtils.RESULT_TYPE.SEARCH,
+        UrlbarShared.RESULT_TYPE.SEARCH,
         "Should have the correct result type"
       );
       Assert.equal(
@@ -103,7 +103,7 @@ add_task(async function mainTest() {
       for (let i = 1; i < count; i++) {
         result = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
         Assert.ok(
-          result.type != UrlbarUtils.RESULT_TYPE.SEARCH ||
+          result.type != UrlbarShared.RESULT_TYPE.SEARCH ||
             !["amplfoo", "amplbar"].includes(result.searchParams.suggestion),
           "Suggestions should not contain the typed l char"
         );

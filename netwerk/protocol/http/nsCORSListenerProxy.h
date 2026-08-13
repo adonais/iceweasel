@@ -5,18 +5,17 @@
 #ifndef nsCORSListenerProxy_h_
 #define nsCORSListenerProxy_h_
 
-#include "nsIStreamListener.h"
-#include "nsIInterfaceRequestor.h"
-#include "nsCOMPtr.h"
-#include "nsString.h"
-#include "nsIURI.h"
-#include "nsTArray.h"
-#include "nsIInterfaceRequestor.h"
-#include "nsIChannelEventSink.h"
-#include "nsICORSPreflightCache.h"
-#include "nsIThreadRetargetableStreamListener.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Mutex.h"
+#include "nsCOMPtr.h"
+#include "nsICORSPreflightCache.h"
+#include "nsIChannelEventSink.h"
+#include "nsIInterfaceRequestor.h"
+#include "nsIStreamListener.h"
+#include "nsIThreadRetargetableStreamListener.h"
+#include "nsIURI.h"
+#include "nsString.h"
+#include "nsTArray.h"
 
 class nsIHttpChannel;
 class nsIURI;

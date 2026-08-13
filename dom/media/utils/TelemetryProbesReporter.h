@@ -16,6 +16,7 @@
 
 namespace mozilla {
 class FrameStatistics;
+class MediaResult;
 
 class TelemetryProbesReporterOwner {
  public:
@@ -69,6 +70,14 @@ class TelemetryProbesReporter final {
   void OnMediaContentChanged(MediaContent aContent);
   void OnMutedChanged(bool aMuted);
 
+  // Records that a session-ending decode error happened. Transient errors are
+  // ignored (see IsSessionEndingError).
+  void OnDecodeError(const MediaResult& aError);
+
+  // Whether a decode error terminates the playback session. Transient
+  // conditions (waiting for more data, cancellation) are not session-ending.
+  static bool IsSessionEndingError(nsresult aError);
+
   enum class FirstFrameLoadedFlag {
     IsMSE,
     IsExternalEngineStateMachine,
@@ -95,6 +104,7 @@ class TelemetryProbesReporter final {
   double GetMutedPlayTimeInSeconds() const;
 
  private:
+  void ClearSessionErrorState();
   void StartInvisibleVideoTimeAccumulator();
   void PauseInvisibleVideoTimeAccumulator();
   void StartInaudibleAudioTimeAccumulator();
@@ -188,6 +198,11 @@ class TelemetryProbesReporter final {
   bool mIsPlaying = false;
 
   bool mIsMuted = false;
+
+  // Per-session decode-error state, reset each time the MFCDM playback event is
+  // reported. Used to populate the session-outcome fields on that event.
+  Maybe<int32_t> mLastPlatformError;
+  bool mEndedInError = false;
 };
 
 }  // namespace mozilla

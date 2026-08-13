@@ -28,9 +28,10 @@
 #include "nsTArray.h"
 #include "nsWrapperCache.h"
 
-class nsGeolocationService;
 class nsGeolocationRequest;
-
+namespace mozilla {
+class GeolocationService;
+}
 namespace mozilla::dom {
 class Geolocation;
 using GeoPositionCallback =
@@ -42,80 +43,6 @@ enum class LocationOSPermission;
 }
 }  // namespace mozilla::dom
 
-struct CachedPositionAndAccuracy {
-  nsCOMPtr<nsIDOMGeoPosition> position;
-  bool isHighAccuracy;
-};
-
-/**
- * Singleton that manages the geolocation provider
- */
-class nsGeolocationService final : public nsIGeolocationUpdate,
-                                   public nsIObserver {
- public:
-  static already_AddRefed<nsGeolocationService> GetGeolocationService(
-      mozilla::dom::BrowsingContext* browsingContext = nullptr);
-  static mozilla::StaticRefPtr<nsGeolocationService> sService;
-
-  NS_DECL_THREADSAFE_ISUPPORTS
-  NS_DECL_NSIGEOLOCATIONUPDATE
-  NS_DECL_NSIOBSERVER
-
-  nsGeolocationService() = default;
-
-  nsresult Init();
-
-  // Management of the Geolocation objects
-  void AddLocator(mozilla::dom::Geolocation* aLocator);
-  void RemoveLocator(mozilla::dom::Geolocation* aLocator);
-
-  // Move locators from service override to the original service.
-  void MoveLocators(nsGeolocationService* aService);
-
-  void SetCachedPosition(nsIDOMGeoPosition* aPosition);
-  CachedPositionAndAccuracy GetCachedPosition();
-
-  // Find and startup a geolocation device (gps, nmea, etc.)
-  MOZ_CAN_RUN_SCRIPT nsresult StartDevice();
-
-  // Stop the started geolocation device (gps, nmea, etc.)
-  void StopDevice();
-
-  // create, or reinitialize the callback timer
-  void SetDisconnectTimer();
-
-  // Update the accuracy and notify the provider if changed
-  void UpdateAccuracy(bool aForceHigh = false);
-  bool HighAccuracyRequested();
-
- private:
-  ~nsGeolocationService();
-
-  // Disconnect timer.  When this timer expires, it clears all pending callbacks
-  // and closes down the provider, unless we are watching a point, and in that
-  // case, we disable the disconnect timer.
-  nsCOMPtr<nsITimer> mDisconnectTimer;
-
-  // The object providing geo location information to us.
-  nsCOMPtr<nsIGeolocationProvider> mProvider;
-
-  // mGeolocators are not owned here.  Their constructor
-  // adds them to this list, and their destructor removes
-  // them from this list.
-  nsTArray<mozilla::WeakPtr<mozilla::dom::Geolocation>> mGeolocators;
-
-  // This is the last geo position that we have seen.
-  CachedPositionAndAccuracy mLastPosition;
-
-  // Current state of requests for higher accuracy
-  bool mHigherAccuracy = false;
-
-  // Whether the geolocation device is starting.
-  // Nothing() if not being started, or a boolean reflecting the requested
-  // accuracy.
-  mozilla::Maybe<bool> mStarting;
-};
-
 namespace mozilla::dom {
 
 /**
@@ -124,7 +51,7 @@ namespace mozilla::dom {
 class Geolocation final : public nsIGeolocationUpdate,
                           public nsWrapperCache,
                           public SupportsWeakPtr {
-  friend class ::nsGeolocationService;
+  friend class ::mozilla::GeolocationService;
 
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
@@ -235,7 +162,7 @@ class Geolocation final : public nsIGeolocationUpdate,
   static void RequestIfPermitted(nsGeolocationRequest* request);
 
   // Allow updating service for shutdown deregistering
-  void SetService(nsGeolocationService* aService) { mService = aService; }
+  void SetService(GeolocationService* aService);
 
   // Two callback arrays.  The first |mPendingCallbacks| holds objects for only
   // one callback and then they are released/removed from the array.  The second
@@ -260,9 +187,9 @@ class Geolocation final : public nsIGeolocationUpdate,
   ProtocolType mProtocolType;
 
   // owning back pointer.
-  RefPtr<nsGeolocationService> mService;
+  RefPtr<GeolocationService> mService;
   // owning back pointer for service override.
-  RefPtr<nsGeolocationService> mServiceOverride;
+  RefPtr<GeolocationService> mServiceOverride;
 
   // Watch ID
   uint32_t mLastWatchId;

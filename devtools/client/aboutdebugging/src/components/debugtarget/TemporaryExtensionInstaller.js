@@ -40,7 +40,7 @@ class TemporaryExtensionInstaller extends PureComponent {
       },
       dom.button(
         {
-          className: `${className} default-button qa-temporary-extension-install-button`,
+          className: `${className} qa-temporary-extension-install-button`,
           onClick: () => this.install(),
           disabled: !Services.policies.isAllowed("installTemporaryAddon"),
         },

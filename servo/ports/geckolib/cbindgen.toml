@@ -95,6 +95,7 @@ exclude = [
   "LockedNestedDeclarationsRule",
 ]
 include = [
+  "ContainerAttributeDependencyKind",
   "AlignmentBaseline",
   "AnchorName",
   "ScopedName",
@@ -129,7 +130,7 @@ include = [
   "FontVariantNumeric",
   "ComputedMozPrefFeatureValue",
   "ComputedFontStretchRange",
-  "ComputedFontStyleDescriptor",
+  "ComputedFontStyleRange",
   "ComputedFontWeightRange",
   "ComputedTimingFunction",
   "ComputedValueFlags",
@@ -235,6 +236,7 @@ include = [
   "LineClamp",
   "WordBreak",
   "Contain",
+  "MarginTrim",
   "ContainerType",
   "ContainerName",
   "ContentVisibility",
@@ -333,6 +335,7 @@ include = [
   "PageOrientation",
   "PageSize",
   "DProperty",
+  "ImageDecoding",
   "ImageRendering",
   "PrintColorAdjust",
   "ForcedColorAdjust",
@@ -1185,12 +1188,6 @@ renaming_overrides_prefixing = true
  float ToMilliseconds() const { return seconds * 1000.0f; }
 """
 
-"ComputedFontStyleDescriptor" = """
-  inline static StyleComputedFontStyleDescriptor Normal() {
-    return StyleComputedFontStyleDescriptor::Oblique(0, 0);
-  }
-"""
-
 "FontFaceSourceTechFlags" = """
   inline static StyleFontFaceSourceTechFlags Empty() {
     return StyleFontFaceSourceTechFlags{0};
@@ -1327,11 +1324,38 @@ renaming_overrides_prefixing = true
   inline Span<const mozilla::StyleAtom> AsSpan() const;
 """
 
+"Optional" = """
+  explicit operator bool() const { return IsSome(); }
+
+  const T& operator*() const { return AsSome(); }
+"""
+
 "NumericType" = """
   static_assert(static_cast<size_t>(StyleNumericBaseType::Percent) + 1 ==
                 StyleNUMERIC_BASE_TYPE_COUNT);
 
   inline StyleNumericType();
+
+ private:
+  inline static StyleNumericType Empty();
+
+  // Keep in sync with NumericType::with_base_type() in Stylo.
+  // This is a manual C++ duplicate to avoid FFI calls.
+  inline static StyleNumericType WithBaseType(StyleNumericBaseType aBaseType);
+
+ public:
+  inline static StyleNumericType Number();
+  inline static StyleNumericType Percent();
+  inline static StyleNumericType Length();
+  inline static StyleNumericType Angle();
+  inline static StyleNumericType Time();
+  inline static StyleNumericType Frequency();
+  inline static StyleNumericType Resolution();
+  inline static StyleNumericType Flex();
+
+  inline int32_t Exponent(StyleNumericBaseType aBaseType) const;
+
+  inline bool operator==(const StyleNumericType& aOther) const;
 """
 
 "PropertyTypedValueList" = """

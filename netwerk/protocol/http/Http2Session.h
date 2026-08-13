@@ -9,19 +9,18 @@
 // https://www.rfc-editor.org/rfc/rfc7540.txt
 
 #include "ASpdySession.h"
+#include "Http2Compression.h"
 #include "mozilla/Queue.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
 #include "nsAHttpConnection.h"
 #include "nsCOMArray.h"
-#include "nsRefPtrHashtable.h"
-#include "nsTHashMap.h"
 #include "nsDeque.h"
 #include "nsHashKeys.h"
 #include "nsHttpRequestHead.h"
 #include "nsICacheEntryOpenCallback.h"
-
-#include "Http2Compression.h"
+#include "nsRefPtrHashtable.h"
+#include "nsTHashMap.h"
 
 class nsISocketTransport;
 

@@ -6,6 +6,7 @@
 #define TlsHandshaker_h_
 
 #include "nsITlsHandshakeListener.h"
+#include "nsString.h"
 
 class nsISocketTransport;
 class nsITLSSocketControl;

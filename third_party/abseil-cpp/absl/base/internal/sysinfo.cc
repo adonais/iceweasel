@@ -244,8 +244,7 @@ static int64_t ReadMonotonicClockNanos() {
   int rc = clock_gettime(CLOCK_MONOTONIC, &t);
 #endif
   if (rc != 0) {
-    ABSL_INTERNAL_LOG(
-        FATAL, "clock_gettime() failed: (" + std::to_string(errno) + ")");
+    ABSL_RAW_LOG(FATAL, "clock_gettime() failed: (%d)", errno);
   }
   return int64_t{t.tv_sec} * 1000000000 + t.tv_nsec;
 }
@@ -455,15 +454,6 @@ pid_t GetTID() { return getthrid(); }
 #elif defined(__NetBSD__)
 
 pid_t GetTID() { return static_cast<pid_t>(_lwp_self()); }
-
-#elif defined(__native_client__)
-
-pid_t GetTID() {
-  auto* thread = pthread_self();
-  static_assert(sizeof(pid_t) == sizeof(thread),
-                "In NaCL int expected to be the same size as a pointer");
-  return reinterpret_cast<pid_t>(thread);
-}
 
 #elif defined(__Fuchsia__)
 

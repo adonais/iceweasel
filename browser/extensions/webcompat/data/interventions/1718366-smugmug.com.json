@@ -1,0 +1,22 @@
+{
+  "label": "smugmug.com",
+  "bugs": {
+    "1718366": {
+      "issue": "broken-images",
+      "matches": ["*://*.smugmug.com/*"]
+    }
+  },
+  "css": {
+    "fix_image_flickering": ".sm-lightbox-v2-photo { -moz-image-decoding: sync }"
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "min_version": 154,
+      "css": {
+        "user_styles": true,
+        "which": ["fix_image_flickering"]
+      }
+    }
+  ]
+}

@@ -22,3 +22,5 @@ moz_task = { path = "../../../../xpcom/rust/moz_task" }
 xpcom = { path = "../../../../xpcom/rust/xpcom" }
 fluent-ffi = { path = "../fluent-ffi" }
 fluent-fallback = "0.7.0"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", default-features = false, features = ["std"] }

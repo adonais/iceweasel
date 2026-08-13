@@ -7,6 +7,7 @@
 #include "nsFind.h"
 #include "mozilla/Likely.h"
 #include "nsIContent.h"
+#include "nsIContentInlines.h"  // Is required by TreeIterator.h
 #include "nsINode.h"
 #include "nsIFrame.h"
 #include "nsIFormControl.h"
@@ -30,6 +31,7 @@
 #include "mozilla/intl/Segmenter.h"
 #include "mozilla/intl/UnicodeProperties.h"
 #include "mozilla/StaticPrefs_browser.h"
+#include "mozilla/Utf16.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -522,13 +524,13 @@ nsFind::SetMatchDiacritics(bool aMatchDiacritics) {
 char32_t nsFind::DecodeChar(const char16_t* t2b, int32_t* index) const {
   char32_t c = t2b[*index];
   if (mFindBackward) {
-    if (*index >= 1 && NS_IS_SURROGATE_PAIR(t2b[*index - 1], t2b[*index])) {
-      c = SURROGATE_TO_UCS4(t2b[*index - 1], t2b[*index]);
+    if (*index >= 1 && mozilla::IsSurrogatePair(t2b[*index - 1], t2b[*index])) {
+      c = mozilla::SurrogateToUCS4(t2b[*index - 1], t2b[*index]);
       (*index)--;
     }
   } else {
-    if (NS_IS_SURROGATE_PAIR(t2b[*index], t2b[*index + 1])) {
-      c = SURROGATE_TO_UCS4(t2b[*index], t2b[*index + 1]);
+    if (mozilla::IsSurrogatePair(t2b[*index], t2b[*index + 1])) {
+      c = mozilla::SurrogateToUCS4(t2b[*index], t2b[*index + 1]);
       (*index)++;
     }
   }
@@ -629,8 +631,8 @@ already_AddRefed<nsRange> nsFind::FindFromRangeBoundaries(
     mNodeIndexCache = &localCache;
   }
 #if MOZ_DIAGNOSTIC_ASSERT_ENABLED
-  auto cmp =
-      nsContentUtils::ComparePoints(aStartPoint, aEndPoint, mNodeIndexCache);
+  auto cmp = nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
+      aStartPoint, aEndPoint, mNodeIndexCache);
   MOZ_DIAGNOSTIC_ASSERT(cmp, "Start and end points in different trees?");
   MOZ_DIAGNOSTIC_ASSERT(*cmp != 1, "Start point must not be after end point");
 #endif
@@ -829,7 +831,7 @@ already_AddRefed<nsRange> nsFind::FindFromRangeBoundaries(
 
     // Have we gone past the endpoint yet? If we have, and we're not in the
     // middle of a match, return.
-    if (auto cmp = nsContentUtils::ComparePoints(
+    if (auto cmp = nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
             RawRangeBoundary(state.GetCurrentNode(), findex), endPoint,
             mNodeIndexCache)) {
       if ((mFindBackward && *cmp < 0) || (!mFindBackward && *cmp > 0)) {
@@ -848,6 +850,12 @@ already_AddRefed<nsRange> nsFind::FindFromRangeBoundaries(
         !intl::UnicodeProperties::IsMathOrMusicSymbol(prevChar)) {
       continue;
     }
+
+    if (c == CH_SHY) {
+      // Ignore soft hyphens in the document.
+      continue;
+    }
+
     patc = DecodeChar(patStr, &pindex);
 
     DEBUG_FIND_PRINTF(
@@ -880,11 +888,6 @@ already_AddRefed<nsRange> nsFind::FindFromRangeBoundaries(
       if (!mMatchDiacritics) {
         c = ToNaked(c);
       }
-    }
-
-    if (c == CH_SHY) {
-      // ignore soft hyphens in the document
-      continue;
     }
 
     if (pindex != patternStart && c != patc && !inWhitespace) {
@@ -935,7 +938,7 @@ already_AddRefed<nsRange> nsFind::FindFromRangeBoundaries(
       if (!matchAnchorNode) {
         matchAnchorNode = state.GetCurrentNode();
         matchAnchorOffset = findex;
-        if (!IS_IN_BMP(c)) {
+        if (!mozilla::IsInBMP(c)) {
           matchAnchorOffset -= incr;
         }
         matchAnchorChar = c;
@@ -970,7 +973,7 @@ already_AddRefed<nsRange> nsFind::FindFromRangeBoundaries(
 
           // If a word break isn't there when it needs to be, reset search.
           if (mWordEndBounded && nextChar && !BreakInBetween(c, nextChar)) {
-            matchAnchorNode = nullptr;
+            EndPartialMatch();
             continue;
           }
 

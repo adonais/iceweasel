@@ -3,8 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "HitTestInfoManager.h"
-#include "HitTestInfo.h"
 
+#include "HitTestInfo.h"
 #include "mozilla/gfx/CompositorHitTestInfo.h"
 #include "mozilla/layers/ScrollableLayerGuid.h"
 #include "nsDisplayList.h"

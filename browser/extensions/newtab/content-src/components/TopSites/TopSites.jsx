@@ -12,7 +12,8 @@ import React from "react";
 import { SearchShortcutsForm } from "./SearchShortcutsForm";
 import { TOP_SITES_MAX_SITES_PER_ROW } from "common/Reducers.sys.mjs";
 import { TopSiteForm } from "./TopSiteForm";
-import { TopSiteList } from "./TopSite";
+import { TopSiteListContainer } from "./TopSiteListContainer";
+import { GroupedTopSiteListContainer } from "./GroupedTopSiteListContainer";
 
 // @nova-cleanup(remove-pref): Remove once classic path is gone
 const PREF_NOVA_ENABLED = "nova.enabled";
@@ -153,6 +154,9 @@ export class _TopSites extends React.PureComponent {
     const { editForm, showSearchShortcutsForm } = props.TopSites;
     let visibleTopSites;
     const colors = props.Prefs.values["newNewtabExperience.colors"];
+    const ListContainer = props.Prefs.values.topSitesGroupedPins
+      ? GroupedTopSiteListContainer
+      : TopSiteListContainer;
 
     // do not run this function when for startup cache
     if (!props.App.isForStartupCache.TopSites) {
@@ -168,7 +172,7 @@ export class _TopSites extends React.PureComponent {
         <section className="top-sites" data-section-id="topsites">
           {/* nova-cleanup: Can be removed once classic path is gone since Nova wraps TopSites in ErrorBoundary in Base.jsx */}
           <ErrorBoundary className="section-body-fallback">
-            <TopSiteList
+            <ListContainer
               TopSites={props.TopSites}
               TopSitesRows={props.TopSitesRows}
               topSitesMaxSitesPerRow={props.TopSitesMaxSitesPerRow}

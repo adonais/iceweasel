@@ -6,18 +6,16 @@
 #define LocalAccessible_H_
 
 #include "mozilla/ComputedStyle.h"
-#include "mozilla/a11y/Accessible.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/a11y/AccTypes.h"
+#include "mozilla/a11y/Accessible.h"
 #include "mozilla/a11y/CacheConstants.h"
 #include "mozilla/a11y/RelationType.h"
 #include "mozilla/a11y/States.h"
-
-#include "mozilla/UniquePtr.h"
-
 #include "nsIContent.h"
-#include "nsTArray.h"
-#include "nsRefPtrHashtable.h"
 #include "nsRect.h"
+#include "nsRefPtrHashtable.h"
+#include "nsTArray.h"
 
 struct nsRoleMapEntry;
 

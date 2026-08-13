@@ -1,4 +1,3 @@
-# META: timeout=long
 from tests.support.classic.asserts import assert_success
 
 

@@ -23,8 +23,10 @@ class EffectSet;
 class ErrorResult;
 
 namespace dom {
+class Animation;
 class Document;
 class Element;
+struct KeyframeAnimationOptions;
 }  // namespace dom
 
 class AnimationUtils {
@@ -65,6 +67,14 @@ class AnimationUtils {
   // TypeError on aRv, if aValue is not valid for the timeline type.
   static bool ValidateCSSNumberishTime(const dom::CSSNumberish& aValue,
                                        bool aProgressBased, ErrorResult& aRv);
+
+  // Applies the rangeStart/rangeEnd members of a KeyframeAnimationOptions
+  // object to |aAnimation|'s animation range. Returns false, having thrown a
+  // TypeError on aRv, if a range boundary doesn't parse.
+  // https://drafts.csswg.org/web-animations-2/#dom-keyframeanimationoptions-rangestart
+  static bool ApplyKeyframeAnimationRange(
+      const dom::KeyframeAnimationOptions& aOptions, dom::Animation* aAnimation,
+      ErrorResult& aRv);
 
   // Fills a non-nullable CSSNumberish dictionary field from a millisecond
   // value, converting to percent (0..100) when |aProgressBased| is true
@@ -121,7 +131,9 @@ class AnimationUtils {
     return aType == PseudoStyleType::Before ||
            aType == PseudoStyleType::After ||
            aType == PseudoStyleType::Marker ||
-           aType == PseudoStyleType::Backdrop;
+           aType == PseudoStyleType::Backdrop ||
+           aType == PseudoStyleType::Checkmark ||
+           aType == PseudoStyleType::PickerIcon;
   }
 
   /**

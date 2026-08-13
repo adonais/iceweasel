@@ -1,0 +1,89 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 680 92">
+  <g clip-path="url(#theme-preview-background)">
+    <path id="tabbar-background" d="M0 0h680v92H0z"/>
+    <path id="tabbar-gradient-overlay" fill-opacity=".5" d="M0 0h680v92H0z"/>
+    <path id="active-tab" d="M23 5.5h132c9.113 0 16.5 7.387 16.5 16.5s-7.387 16.5-16.5 16.5H23c-9.113 0-16.5-7.387-16.5-16.5S13.887 5.5 23 5.5Z"/>
+    <path id="tabbar-text" fill-opacity=".7" d="M28 22a2 2 0 0 1 2-2h117a2 2 0 1 1 0 4H30a2 2 0 0 1-2-2M191 22a2 2 0 0 1 2-2h117a2 2 0 1 1 0 4H193a2 2 0 0 1-2-2"/>
+    <path id="toolbar-background" d="M0 44h680v48H0z"/>
+    <circle class="toolbar-icon" cx="24" cy="68" r="6.25" stroke-width="1.5"/>
+    <circle class="toolbar-icon" cx="60" cy="68" r="6.25" stroke-width="1.5"/>
+    <path id="appmenu-icon" stroke-linecap="round" stroke-width="1.5" d="M662.25 73.75h-12.5M662.25 67.75h-12.5M662.25 61.75h-12.5"/>
+    <path id="urlbar" stroke-width="1.5" d="M130 52.75h386c8.422 0 15.25 6.828 15.25 15.25S524.422 83.25 516 83.25H130c-8.422 0-15.25-6.828-15.25-15.25s6.828-15.25 15.25-15.25Z"/>
+    <circle class="toolbar-icon" cx="130" cy="68" r="6.25" stroke-width="1.5"/>
+    <path id="urlbar-text" fill-opacity=".7" d="M146 68a2 2 0 0 1 2-2h304a2 2 0 1 1 0 4H148a2 2 0 0 1-2-2"/>
+  </g>
+  <defs>
+    <linearGradient id="tabbar-gradient-light" x1="31.241" x2="474.074" y1="-51.231" y2="391.601" gradientUnits="userSpaceOnUse">
+      <stop offset=".4" stop-color="#FAEBFF"/>
+      <stop offset="1" stop-color="#E8B7FF"/>
+    </linearGradient>
+    <linearGradient id="tabbar-gradient-dark" x1="31.241" x2="474.074" y1="-51.231" y2="391.601" gradientUnits="userSpaceOnUse">
+      <stop offset=".4" stop-color="#4F216B"/>
+      <stop offset="1" stop-color="#1A1220"/>
+    </linearGradient>
+    <clipPath id="theme-preview-background">
+      <path fill="#fff" d="M0 0h680v92H0z"/>
+    </clipPath>
+  </defs>
+  <style>
+  :root {
+    color-scheme: light dark;
+
+    --tabbar-background: light-dark(#FAEBFF, #1A1220);
+    --tabbar-text: light-dark(#1A1220, #FAEBFF);
+    --active-tab-background: light-dark(#FFFFFF, #1D1B1F);
+    --active-tab-stroke-color: light-dark(#D490FF, #702E98);
+    --toolbar-background: light-dark(#FFFFFF, #1D1B1F);
+    --urlbar-background: light-dark(#FFFFFF, #1D1B1F);
+    --urlbar-border: light-dark(#00000024, #3F3E42);
+    --urlbar-text: light-dark(#1A1220, #FAEBFF);
+    --appmenu-icon-color: light-dark(#4F216B, #FAEBFF);
+    --toolbar-icon-color: light-dark(#4F216B, #FAEBFF);
+
+    --tabbar-gradient-ref: url(#tabbar-gradient-light);
+    @media (prefers-color-scheme: dark) {
+      --tabbar-gradient-ref: url(#tabbar-gradient-dark);
+    }
+  }
+
+  #tabbar-background {
+    fill: var(--tabbar-background);
+  }
+  #tabbar-text {
+    fill: var(--tabbar-text);
+  }
+
+  #tabbar-gradient-overlay {
+    fill: var(--tabbar-gradient-ref);
+  }
+
+  #active-tab {
+    fill: var(--active-tab-background);
+    stroke: var(--active-tab-stroke-color);
+  }
+
+  #toolbar-background {
+    fill: var(--toolbar-background);
+  }
+
+  #urlbar {
+    fill: var(--urlbar-background);
+    stroke: var(--urlbar-border);
+  }
+
+  #urlbar-text {
+    fill: var(--urlbar-text);
+  }
+
+  #appmenu-icon {
+    stroke: var(--appmenu-icon-color);
+  }
+
+  .toolbar-icon {
+    stroke: var(--toolbar-icon-color);
+  }
+  </style>
+</svg>

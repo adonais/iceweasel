@@ -1081,6 +1081,18 @@ PK11_IVFromParam(CK_MECHANISM_TYPE type, SECItem *param, int *len)
             rc5_cbc_params = (CK_RC5_CBC_PARAMS *)param->data;
             *len = rc5_cbc_params->ulIvLen;
             return rc5_cbc_params->pIv;
+        case CKM_AES_GCM:
+            if (param->len == sizeof(CK_GCM_PARAMS_V3)) {
+                CK_GCM_PARAMS_V3 *gcm_params = (CK_GCM_PARAMS_V3 *)param->data;
+                *len = gcm_params->ulIvLen;
+                return gcm_params->pIv;
+            }
+            if (param->len == sizeof(CK_NSS_GCM_PARAMS)) {
+                CK_NSS_GCM_PARAMS *gcm_params = (CK_NSS_GCM_PARAMS *)param->data;
+                *len = gcm_params->ulIvLen;
+                return gcm_params->pIv;
+            }
+            return NULL;
         case CKM_SEED_CBC:
         case CKM_CAMELLIA_CBC:
         case CKM_AES_CBC:
@@ -1218,7 +1230,22 @@ rc2_unmap(unsigned long x)
     return 58;
 }
 
-/* Generate a mechaism param from a type, and iv. */
+PRBool
+PK11_IsAEAD(CK_MECHANISM_TYPE type)
+{
+    switch (type) {
+        case CKM_AES_GCM:
+        case CKM_AES_CCM:
+        case CKM_CHACHA20_POLY1305:
+        case CKM_NSS_CHACHA20_POLY1305:
+        case CKM_SALSA20_POLY1305:
+            return PR_TRUE;
+        default:
+            return PR_FALSE;
+    }
+}
+
+/* Generate a mechanism param from a type, and iv. */
 SECItem *
 PK11_ParamFromAlgid(SECAlgorithmID *algid)
 {
@@ -1339,6 +1366,7 @@ PK11_ParamFromAlgid(SECAlgorithmID *algid)
         case CKM_PBE_SHA1_RC4_40:
         case CKM_PBE_SHA1_RC4_128:
         case CKM_PKCS5_PBKD2:
+        case CKM_AES_GCM:
             rv = pbe_PK11AlgidToParam(algid, mech);
             if (rv != SECSuccess) {
                 goto loser;

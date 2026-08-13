@@ -1,0 +1,46 @@
+<!--
+  Any copyright is dedicated to the Public Domain.
+  http://creativecommons.org/publicdomain/zero/1.0/
+-->
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>RemoteWorkerDebugger freeze/sync-loop frame</title>
+  </head>
+  <body>
+    <script type="text/javascript">
+      "use strict";
+      // Owner page for the shared worker. Relays worker port messages to the
+      // test over a BroadcastChannel and navigates itself into/out of bfcache
+      // on command, which freezes/thaws the shared worker.
+      const bc = SpecialPowers.wrap(BroadcastChannel).unpartitionedTestingChannel(
+        "remoteDebugger_freeze_syncloop"
+      );
+
+      const worker = new SharedWorker(
+        "remoteDebugger_freeze_syncloop_worker.js",
+        "remoteDebugger_freeze_syncloop"
+      );
+      worker.port.onmessage = event => {
+        bc.postMessage({ from: "worker", data: event.data });
+      };
+      worker.port.start();
+
+      bc.onmessage = event => {
+        const command = event.data.command;
+        if (command == "start") {
+          worker.port.postMessage("start");
+        } else if (command == "freeze") {
+          // Navigate away so this page enters bfcache and the shared worker is
+          // frozen while it is parked in its synchronous XHR.
+          window.location = "remoteDebugger_freeze_syncloop_nav.html";
+        }
+      };
+
+      window.onpageshow = event => {
+        bc.postMessage({ from: "frame", event: "pageshow", persisted: event.persisted });
+      };
+    </script>
+  </body>
+</html>

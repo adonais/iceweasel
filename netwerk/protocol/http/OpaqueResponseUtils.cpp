@@ -4,18 +4,18 @@
 
 #include "mozilla/net/OpaqueResponseUtils.h"
 
-#include "mozilla/dom/Document.h"
-#include "mozilla/StaticPrefs_browser.h"
-#include "mozilla/dom/JSValidatorParent.h"
 #include "ErrorList.h"
+#include "HttpBaseChannel.h"
+#include "mozilla/StaticPrefs_browser.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/JSValidatorParent.h"
 #include "nsContentUtils.h"
 #include "nsHttpResponseHead.h"
 #include "nsISupports.h"
 #include "nsMimeTypes.h"
 #include "nsStreamUtils.h"
-#include "nsThreadUtils.h"
 #include "nsStringStream.h"
-#include "HttpBaseChannel.h"
+#include "nsThreadUtils.h"
 
 static mozilla::LazyLogModule gORBLog("ORB");
 
@@ -444,7 +444,7 @@ nsresult OpaqueResponseBlocker::EnsureOpaqueResponseIsAllowedAfterSniff(
   switch (httpBaseChannel->PerformOpaqueResponseSafelistCheckAfterSniff(
       mContentType, mNoSniff)) {
     case OpaqueResponse::Block:
-      BlockResponse(httpBaseChannel, NS_BINDING_ABORTED);
+      BlockResponse(httpBaseChannel, NS_ERROR_DOM_NETWORK_ERR);
       return NS_BINDING_ABORTED;
     case OpaqueResponse::Allow:
       AllowResponse();
@@ -560,15 +560,16 @@ nsresult OpaqueResponseBlocker::ValidateJavaScript(HttpBaseChannel* aChannel,
             // case.
             allowed = true;
             self->AllowResponse();
+            channel->OnOpaqueResponseAllowed();
             break;
           case OpaqueResponse::Block:
-            self->BlockResponse(channel, NS_ERROR_FAILURE);
+            self->BlockResponse(channel, NS_ERROR_DOM_NETWORK_ERR);
             break;
           default:
             MOZ_ASSERT_UNREACHABLE(
                 "We should only ever have Allow or Block here.");
             allowed = false;
-            self->BlockResponse(channel, NS_BINDING_ABORTED);
+            self->BlockResponse(channel, NS_ERROR_DOM_NETWORK_ERR);
             break;
         }
 

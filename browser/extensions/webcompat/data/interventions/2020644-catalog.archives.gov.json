@@ -1,0 +1,17 @@
+{
+  "label": "catalog.archives.gov",
+  "bugs": {
+    "2020644": {
+      "issue": "broken-layout",
+      "matches": ["*://catalog.archives.gov/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["all"],
+      "content_scripts": {
+        "js": ["bug2020644-catalog.archives.gov-change-array-sort-behavior.js"]
+      }
+    }
+  ]
+}

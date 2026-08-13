@@ -5,7 +5,6 @@
 #include <math.h>
 
 #include "js/Conversions.h"
-
 #include "jsapi-tests/tests.h"
 
 using JS::ToSignedInteger;

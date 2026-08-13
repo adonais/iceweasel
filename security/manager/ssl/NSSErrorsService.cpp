@@ -4,10 +4,10 @@
 
 #include "NSSErrorsService.h"
 
+#include "mozpkix/pkixnss.h"
 #include "nsIStringBundle.h"
 #include "nsNSSComponent.h"
 #include "nsServiceManagerUtils.h"
-#include "mozpkix/pkixnss.h"
 #include "secerr.h"
 #include "sslerr.h"
 

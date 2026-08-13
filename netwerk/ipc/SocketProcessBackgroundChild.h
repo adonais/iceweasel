@@ -6,9 +6,9 @@
 #define mozilla_net_SocketProcessBackgroundChild_h
 
 #include "mozilla/MoveOnlyFunction.h"
-#include "mozilla/net/PSocketProcessBackgroundChild.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/net/PSocketProcessBackgroundChild.h"
 
 namespace mozilla {
 namespace net {

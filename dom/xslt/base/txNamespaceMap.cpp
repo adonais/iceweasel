@@ -57,7 +57,7 @@ int32_t txNamespaceMap::lookupNamespace(nsAtom* aPrefix) {
     return kNameSpaceID_XML;
   }
 
-  nsAtom* prefix = aPrefix == nsGkAtoms::_empty ? 0 : aPrefix;
+  nsAtom* prefix = aPrefix == nsGkAtoms::_empty ? nullptr : aPrefix;
 
   int32_t index = mPrefixes.IndexOf(prefix);
   if (index >= 0) {

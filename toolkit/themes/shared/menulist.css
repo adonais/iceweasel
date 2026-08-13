@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+@import url("chrome://global/content/elements/moz-select.tokens.css");
+
 :host([native]) {
   appearance: auto;
   -moz-default-appearance: menulist;
@@ -53,9 +55,10 @@
 
 :host(:not([native])) {
   appearance: none;
-  background-color: var(--button-background-color);
-  color: var(--button-text-color);
-  border-radius: var(--button-border-radius);
+  background-color: var(--select-background-color);
+  color: var(--select-text-color);
+  border: var(--select-border);
+  border-radius: var(--select-border-radius);
   padding-block: var(--space-xsmall);
   padding-inline: var(--space-medium) var(--space-small);
   margin: var(--space-xsmall) var(--space-xxsmall);
@@ -72,11 +75,9 @@
 }
 
 :host(:not([native]):hover) {
-  background-color: var(--button-background-color-hover);
-}
-
-:host(:not([native]):hover:active) {
-  background-color: var(--button-background-color-active);
+  background-color: var(--select-background-color-hover);
+  border-color: var(--select-border-color-hover);
+  color: var(--select-text-color-hover);
 }
 
 :host(:not([native]):focus-visible) {

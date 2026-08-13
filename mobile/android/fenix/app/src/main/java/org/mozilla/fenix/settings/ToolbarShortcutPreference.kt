@@ -47,10 +47,27 @@ internal abstract class ToolbarShortcutPreference @JvmOverloads constructor(
     }
 
     protected abstract val options: List<ShortcutOption>
+
+    /**
+     * Returns whether [option] can be selected.
+     * A disabled option is still shown but greyed out and non-clickable.
+     * Defaults to `true`.
+     */
+    protected open fun isOptionEnabled(option: ShortcutOption): Boolean = true
+
     protected abstract fun readSelectedKey(): String
     protected abstract fun writeSelectedKey(key: String)
     protected abstract fun getToolbarType(): String
     protected abstract fun getSelectedIconImageView(holder: PreferenceViewHolder): ImageView?
+
+    /**
+     * The toolbar type reported in telemetry. Separate from [getToolbarType] so a preference can reuse
+     * another type's preview layout but still be reported on its own.
+     */
+    protected open fun getTelemetryToolbarType(): String = when (getToolbarType()) {
+        EXPANDED_TOOLBAR_TYPE -> EXPANDED_TOOLBAR_TYPE
+        else -> SIMPLE_TOOLBAR_TYPE
+    }
 
     override fun onBindViewHolder(holder: PreferenceViewHolder) {
         super.onBindViewHolder(holder)
@@ -120,14 +137,12 @@ internal abstract class ToolbarShortcutPreference @JvmOverloads constructor(
     ): RadioButtonPreference = RadioButtonPreference(context).apply {
         key = newOption.key.value
         title = context.getString(newOption.label)
+        isEnabled = isOptionEnabled(newOption)
         setCheckedWithoutClickListener(newOption == selectedOption)
         onClickListener {
             CustomizationSettings.toolbarShortcutSelection.record(
                 CustomizationSettings.ToolbarShortcutSelectionExtra(
-                    toolbarType = when (getToolbarType()) {
-                        EXPANDED_TOOLBAR_TYPE -> EXPANDED_TOOLBAR_TYPE
-                        else -> SIMPLE_TOOLBAR_TYPE
-                    },
+                    toolbarType = getTelemetryToolbarType(),
                     item = newOption.key.value,
                 ),
             )

@@ -49,6 +49,16 @@ class ApplicationServices {
     );
   }
 
+  canNavigateToSessionHistoryIndex() {
+    this._assertInit();
+    return !!this._toolbox.target.getTrait("navigationByIndex");
+  }
+
+  navigateToSessionHistoryIndex(index) {
+    this._assertInit();
+    return this._toolbox.target.gotoIndex(index);
+  }
+
   async fetchManifest() {
     let response;
 

@@ -8,9 +8,9 @@
 #include <cstdint>
 
 #include "mozilla/Span.h"
-#include "nscore.h"
 #include "nsStringFwd.h"
 #include "nsTArrayForwardDeclare.h"
+#include "nscore.h"
 
 namespace mozilla {
 

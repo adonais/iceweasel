@@ -7,13 +7,12 @@
 #include "ARIAMap.h"
 #include "EventTree.h"
 #include "mozilla/a11y/Role.h"
-
+#include "mozilla/dom/HTMLAreaElement.h"
 #include "nsCoreUtils.h"
 #include "nsIFrame.h"
 #include "nsImageFrame.h"
 #include "nsImageMap.h"
 #include "nsLayoutUtils.h"
-#include "mozilla/dom/HTMLAreaElement.h"
 
 using namespace mozilla::a11y;
 

@@ -199,6 +199,15 @@ BufferOffset AssemblerRiscvBase::GenInstrI(uint8_t funct3, BaseOpcode opcode,
 }
 
 BufferOffset AssemblerRiscvBase::GenInstrI(uint8_t funct3, BaseOpcode opcode,
+                                           Register rd, Register rs1,
+                                           int16_t imm12, LabelDoc doc) {
+  MOZ_ASSERT(is_uint3(funct3) && (is_uint12(imm12) || is_int12(imm12)));
+  Instr instr = opcode | (rd.code() << kRdShift) | (funct3 << kFunct3Shift) |
+                (rs1.code() << kRs1Shift) | (imm12 << kImm12Shift);
+  return emit(instr, doc);
+}
+
+BufferOffset AssemblerRiscvBase::GenInstrI(uint8_t funct3, BaseOpcode opcode,
                                            FPURegister rd, Register rs1,
                                            int16_t imm12) {
   MOZ_ASSERT(is_uint3(funct3) && (is_uint12(imm12) || is_int12(imm12)));
@@ -250,7 +259,8 @@ void AssemblerRiscvBase::GenInstrS(uint8_t funct3, BaseOpcode opcode,
 }
 
 void AssemblerRiscvBase::GenInstrB(uint8_t funct3, BaseOpcode opcode,
-                                   Register rs1, Register rs2, int16_t imm13) {
+                                   Register rs1, Register rs2, int16_t imm13,
+                                   LabelDoc doc) {
   MOZ_ASSERT(is_uint3(funct3) && is_int13(imm13) && ((imm13 & 1) == 0));
   Instr instr = opcode | ((imm13 & 0x800) >> 4) |  // bit  11
                 ((imm13 & 0x1e) << 7) |            // bits 4-1
@@ -258,7 +268,7 @@ void AssemblerRiscvBase::GenInstrB(uint8_t funct3, BaseOpcode opcode,
                 (rs2.code() << kRs2Shift) |
                 ((imm13 & 0x7e0) << 20) |  // bits 10-5
                 ((imm13 & 0x1000) << 19);  // bit 12
-  emit(instr);
+  emit(instr, doc);
 }
 
 void AssemblerRiscvBase::GenInstrU(BaseOpcode opcode, Register rd,
@@ -269,14 +279,14 @@ void AssemblerRiscvBase::GenInstrU(BaseOpcode opcode, Register rd,
 }
 
 void AssemblerRiscvBase::GenInstrJ(BaseOpcode opcode, Register rd,
-                                   int32_t imm21) {
+                                   int32_t imm21, LabelDoc doc) {
   MOZ_ASSERT(is_int21(imm21) && ((imm21 & 1) == 0));
   Instr instr = opcode | (rd.code() << kRdShift) |
                 (imm21 & 0xff000) |          // bits 19-12
                 ((imm21 & 0x800) << 9) |     // bit  11
                 ((imm21 & 0x7fe) << 20) |    // bits 10-1
                 ((imm21 & 0x100000) << 11);  // bit  20
-  emit(instr);
+  emit(instr, doc);
 }
 
 void AssemblerRiscvBase::GenInstrCR(uint8_t funct4, BaseOpcode opcode,
@@ -417,8 +427,9 @@ void AssemblerRiscvBase::GenInstrCBA(uint8_t funct3, uint8_t funct2,
 // ----- Instruction class templates match those in the compiler
 
 void AssemblerRiscvBase::GenInstrBranchCC_rri(uint8_t funct3, Register rs1,
-                                              Register rs2, int16_t imm13) {
-  GenInstrB(funct3, BRANCH, rs1, rs2, imm13);
+                                              Register rs2, int16_t imm13,
+                                              LabelDoc doc) {
+  GenInstrB(funct3, BRANCH, rs1, rs2, imm13, doc);
 }
 
 void AssemblerRiscvBase::GenInstrLoad_ri(uint8_t funct3, Register rd,

@@ -6,10 +6,11 @@
 #define mozilla_FixedBufferOutputStream_h
 
 #include <cstddef>
-#include "mozilla/fallible.h"
+
 #include "mozilla/Mutex.h"
 #include "mozilla/Span.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/fallible.h"
 #include "nsIOutputStream.h"
 #include "nsStringFwd.h"
 

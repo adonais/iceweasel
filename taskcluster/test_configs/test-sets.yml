@@ -31,6 +31,7 @@ web-platform-tests:
     - web-platform-tests-canvas
     - web-platform-tests-webcodecs
     - web-platform-tests-eme
+    - web-platform-tests-aam
 
 web-platform-tests-2404-tsan:
     - web-platform-tests
@@ -41,6 +42,7 @@ web-platform-tests-2404-tsan:
     - web-platform-tests-canvas
     - web-platform-tests-webcodecs
     - web-platform-tests-eme
+    - web-platform-tests-aam
 
 web-platform-tests-backlog:
     - web-platform-tests-backlog
@@ -105,6 +107,7 @@ browsertime:
     - browsertime-benchmark-wasm
     - browsertime-youtube-playback
     - browsertime-youtube-playback-power
+    - browsertime-media-seek
     - browsertime-custom
     - browsertime-first-install
     - browsertime-responsiveness
@@ -114,11 +117,13 @@ browsertime:
     - browsertime-speculative
     - browsertime-throttled
     - browsertime-pageload-benchmark
+    - browsertime-nav-bench
     - browsertime-indexeddb
     - browsertime-video-playback-latency
     - browsertime-network-bench
     - browsertime-webcodecs
     - browsertime-trr-performance
+    - browsertime-hev3-connection
 
 browsertime-clang:
     - browsertime-tp6
@@ -141,6 +146,7 @@ browsertime-high-priority:
 
 browsertime-ref-hw:
     - browsertime-benchmark
+    - browsertime-nav-bench
 
 awsy:
     - awsy
@@ -502,6 +508,13 @@ macosx1500-aarch64-tests:
 # omitted. web-platform-tests is also omitted pending Bug 2038639 (GPU process
 # leak in APZCTreeManager::CheckerboardFlushObservers on headless macOS).
 # Suites can be re-added as headless support improves.
+#
+# In particular, no browser-chrome flavor suite belongs here: browser-test.js
+# calls SimpleTest.waitForFocus before every test, which awaits a focus event
+# with no timeout, and window activation never completes on these workers. That
+# hangs the browser before the first test and burns the full harness timeout on
+# every retry. See Bug 2059365 (mochitest-remote) and Bug 2050174 (the
+# underlying activation issue).
 macosx1500-aarch64-vms-tests:
     - cppunittest
     - crashtest
@@ -511,7 +524,6 @@ macosx1500-aarch64-vms-tests:
     - marionette-unittest
     - mochitest-chrome
     - mochitest-plain
-    - mochitest-remote
     - telemetry-tests-client
     - xpcshell
 
@@ -555,6 +567,7 @@ macosx64-talos:
 
 macosx1500-64-perftests:
     - browsertime-benchmark
+    - browsertime-nav-bench
     - browsertime-tp6-essential
 
 # Android
@@ -619,6 +632,7 @@ android-hw-browsertime:
     - browsertime-video-playback-latency-mobile
     - browsertime-youtube-playback-power-mobile
     - browsertime-trr-performance-m
+    - browsertime-hev3-connection-m
 
 android-hw-browsertime-profiling:
     - browsertime-tp6m-profiling

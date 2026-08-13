@@ -385,10 +385,16 @@ bool TexUnpackBlob::ConvertIfNeeded(
     WebGLTexelFormat dstFormat, const ptrdiff_t dstStride,
     const uint8_t** const out_begin,
     UniqueBuffer* const out_anchoredBuffer) const {
-  MOZ_ASSERT(srcFormat != WebGLTexelFormat::FormatNotSupportingAnyConversion);
-  MOZ_ASSERT(dstFormat != WebGLTexelFormat::FormatNotSupportingAnyConversion);
-
   *out_begin = srcBegin;
+
+  // TexelBytesForFormat() has no size for these, so the stride validation below
+  // would be vacuous. Bail before it rather than relying on ConvertImage() to
+  // reject them.
+  if (srcFormat == WebGLTexelFormat::FormatNotSupportingAnyConversion ||
+      dstFormat == WebGLTexelFormat::FormatNotSupportingAnyConversion) {
+    webgl->ErrorImplementationBug("Unconvertible texel format.");
+    return false;
+  }
 
   const auto& unpacking = mDesc.unpacking;
 

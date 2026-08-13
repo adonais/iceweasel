@@ -5,10 +5,11 @@
 #ifndef NSCOORD_H
 #define NSCOORD_H
 
+#include <math.h>
+
 #include <algorithm>
 #include <cstdint>
 #include <cstdlib>
-#include <math.h>
 
 #include "mozilla/Assertions.h"
 #include "mozilla/gfx/Coord.h"

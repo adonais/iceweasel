@@ -1060,15 +1060,16 @@ impl Parse for TextIndent {
 ///
 /// https://drafts.csswg.org/css-text-decor-4/#text-decoration-skip-ink-property
 #[repr(u8)]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[derive(
     Clone,
     Copy,
     Debug,
+    Deserialize,
     Eq,
     MallocSizeOf,
     Parse,
     PartialEq,
+    Serialize,
     SpecifiedValueInfo,
     ToComputedValue,
     ToCss,
@@ -1101,7 +1102,7 @@ impl TextDecorationLength {
 }
 
 /// Implements type for `text-decoration-inset` property
-pub type TextDecorationInset = GenericTextDecorationInset<Length>;
+pub type TextDecorationInset = GenericTextDecorationInset<LengthPercentage>;
 
 impl TextDecorationInset {
     /// `Auto` value.
@@ -1117,18 +1118,31 @@ impl TextDecorationInset {
     }
 }
 
+fn parse_inset_endpoint<'i, 't>(
+    ctx: &ParserContext,
+    input: &mut Parser<'i, 't>,
+) -> Result<LengthPercentage, ParseError<'i>> {
+    if !static_prefs::pref!("layout.css.text-decoration-inset-percentage.enabled") {
+        Length::parse(ctx, input).map(|l| l.into())
+    } else {
+        LengthPercentage::parse(ctx, input)
+    }
+}
+
 impl Parse for TextDecorationInset {
     fn parse<'i, 't>(
         ctx: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        if let Ok(start) = input.try_parse(|i| Length::parse(ctx, i)) {
-            let end = input.try_parse(|i| Length::parse(ctx, i));
-            let end = end.unwrap_or_else(|_| start.clone());
-            return Ok(TextDecorationInset::Length { start, end });
+        if input.try_parse(|i| i.expect_ident_matching("auto")).is_ok() {
+            return Ok(TextDecorationInset::Auto);
         }
-        input.expect_ident_matching("auto")?;
-        Ok(TextDecorationInset::Auto)
+
+        let start = parse_inset_endpoint(ctx, input)?;
+        let end = input
+            .try_parse(|i| parse_inset_endpoint(ctx, i))
+            .unwrap_or_else(|_| start.clone());
+        Ok(TextDecorationInset::LengthPercentage { start, end })
     }
 }
 

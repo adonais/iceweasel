@@ -61,16 +61,21 @@ async function addTopSites(url) {
   });
 }
 
+// The engagement, abandonment, exposure, and bounce events can be recorded
+// parent-side after an async actor round-trip on the message path, so these wait
+// for the events before asserting (see waitForGleanTelemetry). They resolve
+// immediately on the default in-process path. Disable is recorded in-process, so
+// it stays synchronous.
 function assertAbandonmentTelemetry(expectedExtraList) {
-  assertGleanTelemetry("abandonment", expectedExtraList);
+  return waitForGleanTelemetry("abandonment", expectedExtraList);
 }
 
 function assertEngagementTelemetry(expectedExtraList) {
-  assertGleanTelemetry("engagement", expectedExtraList);
+  return waitForGleanTelemetry("engagement", expectedExtraList);
 }
 
 function assertExposureTelemetry(expectedExtraList) {
-  assertGleanTelemetry("exposure", expectedExtraList);
+  return waitForGleanTelemetry("exposure", expectedExtraList);
 }
 
 function assertDisableTelemetry(expectedExtraList) {
@@ -78,7 +83,34 @@ function assertDisableTelemetry(expectedExtraList) {
 }
 
 function assertBounceTelemetry(expectedExtraList) {
-  assertGleanTelemetry("bounce", expectedExtraList);
+  return waitForGleanTelemetry("bounce", expectedExtraList);
+}
+
+/**
+ * Waits for the expected number of events to be recorded, then asserts on them
+ * with `assertGleanTelemetry`. With `browser.urlbar.ipc.chromeMessagePassing`,
+ * telemetry is recorded parent-side after an async actor round-trip, so a test
+ * that asserts synchronously right after the triggering action can race it. The
+ * `assert{Abandonment,Engagement,Exposure,Bounce}Telemetry` helpers go through here; on
+ * the default in-process path the events are already recorded, so the wait
+ * resolves immediately.
+ *
+ * @param {string} telemetryName The Glean metric name.
+ * @param {object[]} expectedExtraList The expected events' extra keys.
+ */
+async function waitForGleanTelemetry(telemetryName, expectedExtraList) {
+  const camelName = telemetryName.replaceAll(/_(.)/g, (match, p1) =>
+    p1.toUpperCase()
+  );
+  await TestUtils.waitForCondition(
+    () =>
+      (Glean.urlbar[camelName].testGetValue() ?? []).length >=
+      expectedExtraList.length,
+    `Waiting for ${expectedExtraList.length} ${telemetryName} telemetry event(s)`
+  ).catch(() => {
+    // Fall through to assertGleanTelemetry for a precise assertion failure.
+  });
+  assertGleanTelemetry(telemetryName, expectedExtraList);
 }
 
 function assertGleanTelemetry(telemetryName, expectedExtraList) {

@@ -16,6 +16,7 @@
 
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -26,31 +27,28 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 
-#ifdef ABSL_HAVE_STD_STRING_VIEW
-#include <string_view>
-#endif
-
 namespace {
 
 using ::testing::StaticAssertTypeEq;
 
 template <typename T>
 using IsOwnerAndNotView =
-    absl::conjunction<absl::type_traits_internal::IsOwner<T>,
-                      absl::negation<absl::type_traits_internal::IsView<T>>>;
+    std::conjunction<absl::type_traits_internal::IsOwner<T>,
+                      std::negation<absl::type_traits_internal::IsView<T>>>;
 
+static_assert(
+    IsOwnerAndNotView<std::pair<std::vector<int>, std::string>>::value,
+    "pair of owners is an owner, not a view");
 static_assert(IsOwnerAndNotView<std::vector<int>>::value,
               "vector is an owner, not a view");
 static_assert(IsOwnerAndNotView<std::string>::value,
               "string is an owner, not a view");
 static_assert(IsOwnerAndNotView<std::wstring>::value,
               "wstring is an owner, not a view");
-#ifdef ABSL_HAVE_STD_STRING_VIEW
 static_assert(!IsOwnerAndNotView<std::string_view>::value,
               "string_view is a view, not an owner");
 static_assert(!IsOwnerAndNotView<std::wstring_view>::value,
               "wstring_view is a view, not an owner");
-#endif
 
 template <class T, class U>
 struct simple_pair {
@@ -71,14 +69,12 @@ struct StructB {};
 struct StructC {};
 
 struct TypeWithBarFunction {
-  template <class T,
-            absl::enable_if_t<std::is_same<T&&, StructA&>::value, int> = 0>
+  template <class T, std::enable_if_t<std::is_same_v<T&&, StructA&>, int> = 0>
   ReturnType bar(T&&, const StructB&, StructC&&) &&;  // NOLINT
 };
 
 struct TypeWithBarFunctionAndConvertibleReturnType {
-  template <class T,
-            absl::enable_if_t<std::is_same<T&&, StructA&>::value, int> = 0>
+  template <class T, std::enable_if_t<std::is_same_v<T&&, StructA&>, int> = 0>
   ConvertibleToReturnType bar(T&&, const StructB&, StructC&&) &&;  // NOLINT
 };
 
@@ -112,31 +108,40 @@ TEST(VoidTTest, BasicUsage) {
 }
 
 TEST(TypeTraitsTest, TestRemoveCVRef) {
+  EXPECT_TRUE((std::is_same_v<typename absl::remove_cvref<int>::type, int>));
+  EXPECT_TRUE((std::is_same_v<typename absl::remove_cvref<int&>::type, int>));
+  EXPECT_TRUE((std::is_same_v<typename absl::remove_cvref<int&&>::type, int>));
   EXPECT_TRUE(
-      (std::is_same<typename absl::remove_cvref<int>::type, int>::value));
-  EXPECT_TRUE(
-      (std::is_same<typename absl::remove_cvref<int&>::type, int>::value));
-  EXPECT_TRUE(
-      (std::is_same<typename absl::remove_cvref<int&&>::type, int>::value));
-  EXPECT_TRUE((
-      std::is_same<typename absl::remove_cvref<const int&>::type, int>::value));
-  EXPECT_TRUE(
-      (std::is_same<typename absl::remove_cvref<int*>::type, int*>::value));
+      (std::is_same_v<typename absl::remove_cvref<const int&>::type, int>));
+  EXPECT_TRUE((std::is_same_v<typename absl::remove_cvref<int*>::type, int*>));
   // Does not remove const in this case.
-  EXPECT_TRUE((std::is_same<typename absl::remove_cvref<const int*>::type,
-                            const int*>::value));
+  EXPECT_TRUE((std::is_same_v<typename absl::remove_cvref<const int*>::type,
+                              const int*>));
   EXPECT_TRUE(
-      (std::is_same<typename absl::remove_cvref<int[2]>::type, int[2]>::value));
-  EXPECT_TRUE((std::is_same<typename absl::remove_cvref<int(&)[2]>::type,
-                            int[2]>::value));
-  EXPECT_TRUE((std::is_same<typename absl::remove_cvref<int(&&)[2]>::type,
-                            int[2]>::value));
-  EXPECT_TRUE((std::is_same<typename absl::remove_cvref<const int[2]>::type,
-                            int[2]>::value));
-  EXPECT_TRUE((std::is_same<typename absl::remove_cvref<const int(&)[2]>::type,
-                            int[2]>::value));
-  EXPECT_TRUE((std::is_same<typename absl::remove_cvref<const int(&&)[2]>::type,
-                            int[2]>::value));
+      (std::is_same_v<typename absl::remove_cvref<int[2]>::type, int[2]>));
+  EXPECT_TRUE(
+      (std::is_same_v<typename absl::remove_cvref<int (&)[2]>::type, int[2]>));
+  EXPECT_TRUE(
+      (std::is_same_v<typename absl::remove_cvref<int (&&)[2]>::type, int[2]>));
+  EXPECT_TRUE((
+      std::is_same_v<typename absl::remove_cvref<const int[2]>::type, int[2]>));
+  EXPECT_TRUE(
+      (std::is_same_v<typename absl::remove_cvref<const int (&)[2]>::type,
+                      int[2]>));
+  EXPECT_TRUE(
+      (std::is_same_v<typename absl::remove_cvref<const int (&&)[2]>::type,
+                      int[2]>));
+}
+
+TEST(TypeTraitsTest, TestTypeIdentity) {
+  EXPECT_TRUE((std::is_same_v<typename absl::type_identity<int>::type, int>));
+  EXPECT_TRUE((std::is_same_v<absl::type_identity_t<int>, int>));
+  EXPECT_TRUE((std::is_same_v<typename absl::type_identity<int&>::type, int&>));
+  EXPECT_TRUE((std::is_same_v<absl::type_identity_t<int&>, int&>));
+
+  EXPECT_FALSE(
+      (std::is_same_v<typename absl::type_identity<int64_t>::type, int32_t>));
+  EXPECT_FALSE((std::is_same_v<absl::type_identity_t<int64_t>, int32_t>));
 }
 
 struct TypeA {};
@@ -150,20 +155,17 @@ struct Wrap {};
 enum class TypeEnum { A, B, C, D };
 
 struct GetTypeT {
-  template <typename T,
-            absl::enable_if_t<std::is_same<T, TypeA>::value, int> = 0>
+  template <typename T, std::enable_if_t<std::is_same_v<T, TypeA>, int> = 0>
   TypeEnum operator()(Wrap<T>) const {
     return TypeEnum::A;
   }
 
-  template <typename T,
-            absl::enable_if_t<std::is_same<T, TypeB>::value, int> = 0>
+  template <typename T, std::enable_if_t<std::is_same_v<T, TypeB>, int> = 0>
   TypeEnum operator()(Wrap<T>) const {
     return TypeEnum::B;
   }
 
-  template <typename T,
-            absl::enable_if_t<std::is_same<T, TypeC>::value, int> = 0>
+  template <typename T, std::enable_if_t<std::is_same_v<T, TypeC>, int> = 0>
   TypeEnum operator()(Wrap<T>) const {
     return TypeEnum::C;
   }
@@ -337,51 +339,6 @@ TEST(TriviallyRelocatable, UserProvidedDestructor) {
 
   static_assert(!absl::is_trivially_relocatable<S>::value, "");
 }
-
-// TODO(b/275003464): remove the opt-out for Clang on Windows once
-// __is_trivially_relocatable is used there again.
-// TODO(b/324278148): remove the opt-out for Apple once
-// __is_trivially_relocatable is fixed there.
-// TODO(b/325479096): remove the opt-out for Clang once
-// __is_trivially_relocatable is fixed there.
-#if defined(ABSL_HAVE_ATTRIBUTE_TRIVIAL_ABI) &&      \
-    ABSL_HAVE_BUILTIN(__is_trivially_relocatable) && \
-    (defined(__cpp_impl_trivially_relocatable) ||    \
-     (!defined(__clang__) && !defined(__APPLE__) && !defined(__NVCC__)))
-// A type marked with the "trivial ABI" attribute is trivially relocatable even
-// if it has user-provided special members.
-TEST(TriviallyRelocatable, TrivialAbi) {
-  struct ABSL_ATTRIBUTE_TRIVIAL_ABI S {
-    S(S&&) {}       // NOLINT(modernize-use-equals-default)
-    S(const S&) {}  // NOLINT(modernize-use-equals-default)
-    S& operator=(S&&) { return *this; }
-    S& operator=(const S&) { return *this; }
-    ~S() {}  // NOLINT(modernize-use-equals-default)
-  };
-
-  static_assert(absl::is_trivially_relocatable<S>::value, "");
-}
-#endif
-
-// TODO(b/275003464): remove the opt-out for Clang on Windows once
-// __is_trivially_relocatable is used there again.
-// TODO(b/324278148): remove the opt-out for Apple once
-// __is_trivially_relocatable is fixed there.
-#if defined(ABSL_HAVE_ATTRIBUTE_TRIVIAL_ABI) &&                            \
-    ABSL_HAVE_BUILTIN(__is_trivially_relocatable) && defined(__clang__) && \
-    !(defined(_WIN32) || defined(_WIN64)) && !defined(__APPLE__) &&        \
-    !defined(__NVCC__)
-// A type marked with the "trivial ABI" attribute is trivially relocatable even
-// if it has a user-provided copy constructor and a user-provided destructor.
-TEST(TriviallyRelocatable, TrivialAbi_NoUserProvidedMove) {
-  struct ABSL_ATTRIBUTE_TRIVIAL_ABI S {
-    S(const S&) {}  // NOLINT(modernize-use-equals-default)
-    ~S() {}  // NOLINT(modernize-use-equals-default)
-  };
-
-  static_assert(absl::is_trivially_relocatable<S>::value, "");
-}
-#endif
 
 #ifdef ABSL_HAVE_CONSTANT_EVALUATED
 

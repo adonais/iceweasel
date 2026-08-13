@@ -31,14 +31,14 @@ nsresult GetDefaultBundleURL(const nsACString& aScheme, CFURLRef* aBundleURL) {
       aScheme.Length(), kCFStringEncodingUTF8, false);
 
   if (schemeCFString) {
-    CFStringRef lookupCFString =
-        ::CFStringCreateWithFormat(NULL, NULL, CFSTR("%@:"), schemeCFString);
+    CFStringRef lookupCFString = ::CFStringCreateWithFormat(
+        nullptr, nullptr, CFSTR("%@:"), schemeCFString);
     if (lookupCFString) {
       CFURLRef lookupCFURL =
-          ::CFURLCreateWithString(NULL, lookupCFString, NULL);
+          ::CFURLCreateWithString(nullptr, lookupCFString, nullptr);
       if (lookupCFURL) {
-        *aBundleURL =
-            ::LSCopyDefaultApplicationURLForURL(lookupCFURL, kLSRolesAll, NULL);
+        *aBundleURL = ::LSCopyDefaultApplicationURLForURL(lookupCFURL,
+                                                          kLSRolesAll, nullptr);
         if (*aBundleURL) {
           rv = NS_OK;
         }
@@ -190,7 +190,7 @@ nsresult nsOSHelperAppService::GetFileTokenForPath(
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   CFStringRef pathAsCFString = ::CFStringCreateWithCharacters(
-      NULL, reinterpret_cast<const UniChar*>(aPlatformAppPath),
+      nullptr, reinterpret_cast<const UniChar*>(aPlatformAppPath),
       NS_strlen(aPlatformAppPath));
   if (!pathAsCFString) {
     return NS_ERROR_FAILURE;
@@ -243,25 +243,25 @@ nsresult nsOSHelperAppService::GetFileTokenForPath(
 static CFArrayRef GetMIMETypesHandledByApp(FSRef* aAppRef) {
   CFURLRef appURL = ::CFURLCreateFromFSRef(kCFAllocatorDefault, aAppRef);
   if (!appURL) {
-    return NULL;
+    return nullptr;
   }
   CFDictionaryRef infoDict = ::CFBundleCopyInfoDictionaryForURL(appURL);
   ::CFRelease(appURL);
   if (!infoDict) {
-    return NULL;
+    return nullptr;
   }
   CFTypeRef cfObject =
       ::CFDictionaryGetValue(infoDict, CFSTR("CFBundleDocumentTypes"));
   if (!cfObject || (::CFGetTypeID(cfObject) != ::CFArrayGetTypeID())) {
     ::CFRelease(infoDict);
-    return NULL;
+    return nullptr;
   }
 
   CFArrayRef docTypes = static_cast<CFArrayRef>(cfObject);
   CFIndex docTypesCount = ::CFArrayGetCount(docTypes);
   if (docTypesCount == 0) {
     ::CFRelease(infoDict);
-    return NULL;
+    return nullptr;
   }
 
   CFMutableArrayRef mimeTypes =
@@ -293,7 +293,7 @@ static CFArrayRef GetMIMETypesHandledByApp(FSRef* aAppRef) {
   ::CFRelease(infoDict);
   if (!::CFArrayGetCount(mimeTypes)) {
     ::CFRelease(mimeTypes);
-    mimeTypes = NULL;
+    mimeTypes = nullptr;
   }
   return mimeTypes;
 }
@@ -327,15 +327,15 @@ nsresult nsOSHelperAppService::GetMIMEInfoFromOS(const nsACString& aMIMEType,
   FSRef typeAppFSRef;
   FSRef extAppFSRef;
 
-  CFStringRef cfMIMEType = NULL;
+  CFStringRef cfMIMEType = nullptr;
 
   if (!aMIMEType.IsEmpty()) {
     typeIsOctetStream =
         aMIMEType.LowerCaseEqualsLiteral(APPLICATION_OCTET_STREAM);
-    cfMIMEType = ::CFStringCreateWithCString(NULL, flatType.get(),
+    cfMIMEType = ::CFStringCreateWithCString(nullptr, flatType.get(),
                                              kCFStringEncodingUTF8);
     if (cfMIMEType) {
-      CFURLRef appURL = NULL;
+      CFURLRef appURL = nullptr;
       err = ::LSCopyApplicationForMIMEType(cfMIMEType, kLSRolesAll, &appURL);
       if ((err == noErr) && appURL && ::CFURLGetFSRef(appURL, &typeAppFSRef)) {
         haveAppForType = true;
@@ -348,8 +348,8 @@ nsresult nsOSHelperAppService::GetMIMEInfoFromOS(const nsACString& aMIMEType,
     }
   }
   if (!aFileExt.IsEmpty()) {
-    CFStringRef cfExt =
-        ::CFStringCreateWithCString(NULL, flatExt.get(), kCFStringEncodingUTF8);
+    CFStringRef cfExt = ::CFStringCreateWithCString(nullptr, flatExt.get(),
+                                                    kCFStringEncodingUTF8);
     if (cfExt) {
       err = ::LSGetApplicationForInfo(kLSUnknownType, kLSUnknownCreator, cfExt,
                                       kLSRolesAll, &extAppFSRef, nullptr);
@@ -438,7 +438,7 @@ nsresult nsOSHelperAppService::GetMIMEInfoFromOS(const nsACString& aMIMEType,
       NSURLFileTypeMappings* map = [NSURLFileTypeMappings sharedMappings];
       NSString* extStr = [NSString stringWithCString:flatExt.get()
                                             encoding:NSASCIIStringEncoding];
-      NSString* typeStr = map ? [map MIMETypeForExtension:extStr] : NULL;
+      NSString* typeStr = map ? [map MIMETypeForExtension:extStr] : nullptr;
       if (typeStr) {
         nsAutoCString mimeType;
         mimeType.Assign(
@@ -473,7 +473,7 @@ nsresult nsOSHelperAppService::GetMIMEInfoFromOS(const nsACString& aMIMEType,
     if (NS_SUCCEEDED(NS_NewLocalFileWithFSRef(appFSRef, getter_AddRefs(app)))) {
       mimeInfoMac->SetDefaultApplication(app);
 
-      CFStringRef cfAppName = NULL;
+      CFStringRef cfAppName = nullptr;
       ::LSCopyItemAttribute(appFSRef, kLSRolesAll, kLSItemDisplayName,
                             (CFTypeRef*)&cfAppName);
       if (cfAppName) {
@@ -501,7 +501,8 @@ nsresult nsOSHelperAppService::GetMIMEInfoFromOS(const nsACString& aMIMEType,
     NSURLFileTypeMappings* map = [NSURLFileTypeMappings sharedMappings];
     NSString* typeStr = [NSString stringWithCString:mimeType.get()
                                            encoding:NSASCIIStringEncoding];
-    NSArray* extensionsList = map ? [map extensionsForMIMEType:typeStr] : NULL;
+    NSArray* extensionsList =
+        map ? [map extensionsForMIMEType:typeStr] : nullptr;
     if (extensionsList) {
       for (NSString* extension in extensionsList) {
         nsAutoCString ext;
@@ -512,7 +513,7 @@ nsresult nsOSHelperAppService::GetMIMEInfoFromOS(const nsACString& aMIMEType,
     }
 
     if (CFStringRef cfType = ::CFStringCreateWithCString(
-            NULL, mimeType.get(), kCFStringEncodingUTF8)) {
+            nullptr, mimeType.get(), kCFStringEncodingUTF8)) {
       if (CFStringRef cfTypeDesc = ::UTTypeCopyDescription(cfType)) {
         AutoTArray<UniChar, 255> buffer;
         CFIndex typeDescLength = ::CFStringGetLength(cfTypeDesc);

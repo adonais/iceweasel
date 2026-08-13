@@ -5,20 +5,18 @@
 #ifndef MOZILLA_GFX_RECORDEDEVENTIMPL_H_
 #define MOZILLA_GFX_RECORDEDEVENTIMPL_H_
 
-#include "RecordedEvent.h"
-
-#include "PathRecording.h"
-#include "RecordingTypes.h"
-#include "Tools.h"
 #include "Filters.h"
 #include "Logging.h"
-#include "ScaledFontBase.h"
+#include "PathRecording.h"
+#include "RecordedEvent.h"
+#include "RecordingTypes.h"
 #include "SFNTData.h"
-
+#include "ScaledFontBase.h"
+#include "Tools.h"
 #include "mozilla/dom/CanvasRenderingContextHelper.h"
+#include "mozilla/ipc/SerializeToBytesUtil.h"
 #include "mozilla/layers/BuildConstants.h"
 #include "mozilla/layers/LayersSurfaces.h"
-#include "mozilla/ipc/SerializeToBytesUtil.h"
 
 namespace mozilla {
 namespace gfx {
@@ -4226,9 +4224,8 @@ inline bool RecordedFontDescriptor::PlayEvent(Translator* aTranslator) const {
   RefPtr<UnscaledFont> font = Factory::CreateUnscaledFontFromFontDescriptor(
       mType, mData.data(), mData.size(), mIndex);
   if (!font) {
-    gfxDevCrash(LogReason::InvalidFont)
-        << "Failed creating UnscaledFont of type " << int(mType)
-        << " from font descriptor";
+    gfxCriticalNote << "Failed creating UnscaledFont of type " << int(mType)
+                    << " from font descriptor";
     return false;
   }
 

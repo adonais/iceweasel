@@ -5,8 +5,8 @@
 #ifndef CacheConstants_h_
 #define CacheConstants_h_
 
-#include "nsGkAtoms.h"
 #include "mozilla/a11y/RelationType.h"
+#include "nsGkAtoms.h"
 
 namespace mozilla {
 namespace a11y {

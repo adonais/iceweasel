@@ -8,7 +8,7 @@ BROWSER_CHROME_MANIFESTS += ["tests/browser/browser.toml"]
 
 MOCHITEST_CHROME_MANIFESTS += ["tests/chrome/chrome.toml"]
 
-EXTRA_JS_MODULES += [
+MOZ_SRC_FILES += [
     "AboutCertViewerChild.sys.mjs",
     "AboutCertViewerParent.sys.mjs",
 ]

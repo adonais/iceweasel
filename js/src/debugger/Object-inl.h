@@ -23,6 +23,11 @@ inline js::Debugger* js::DebuggerObject::owner() const {
   return Debugger::fromJSObject(dbgobj);
 }
 
+inline js::Debugger* js::DebuggerPrivateName::owner() const {
+  JSObject* dbgobj = &getReservedSlot(OWNER_SLOT).toObject();
+  return Debugger::fromJSObject(dbgobj);
+}
+
 inline js::PromiseObject* js::DebuggerObject::promise() const {
   MOZ_ASSERT(isPromise());
 

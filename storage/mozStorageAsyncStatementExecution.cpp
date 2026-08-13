@@ -17,10 +17,8 @@
 
 #include "mozilla/DebugOnly.h"
 
-#ifndef MOZ_STORAGE_SORTWARNING_SQL_DUMP
-#  include "mozilla/Logging.h"
+#include "mozilla/Logging.h"
 extern mozilla::LazyLogModule gStorageLog;
-#endif
 
 namespace mozilla {
 namespace storage {
@@ -202,10 +200,7 @@ bool AsyncExecuteStatements::executeAndProcessStatement(StatementData& aData,
     }
   } while (hasResults);
 
-#ifndef MOZ_STORAGE_SORTWARNING_SQL_DUMP
-  if (MOZ_LOG_TEST(gStorageLog, LogLevel::Warning))
-#endif
-  {
+  if (MOZ_LOG_TEST(gStorageLog, LogLevel::Warning)) {
     // Check to make sure that this statement was smart about what it did.
     checkAndLogStatementPerformance(aStatement);
   }

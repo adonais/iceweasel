@@ -12,6 +12,7 @@ template <class T>
 struct already_AddRefed;
 
 #include <cstdint>
+
 #include "mozilla/Attributes.h"
 #include "mozilla/TimeStamp.h"
 #include "nsCycleCollectionParticipant.h"

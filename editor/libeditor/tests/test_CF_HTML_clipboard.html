@@ -96,6 +96,9 @@ var gTests = [
   {fileName: "cfhtml-chromium.txt", expected: "Pacific"},
   // CF_HTML with no context specified (StartHTML and EndHTML set to -1)
   {fileName: "cfhtml-nocontext.txt", expected: "3.1415926535897932"},
+  // Regression test for bug 2051149: a negative EndFragment offset must be rejected (Coverity CID 1639416).
+  {fileName: "cfhtml-negative-endfragment.txt",
+   expected: "CFHTML_NEG_ENDFRAGMENT_SENTINEL"},
 ];
 var gTestIndex = 0;
 

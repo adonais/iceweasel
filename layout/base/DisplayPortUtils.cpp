@@ -1258,12 +1258,8 @@ const ActiveScrolledRoot* DisplayPortUtils::ActivateDisplayportOnASRAncestors(
              : FrameAndASRKind::default_value()) ==
         GetASRAncestorFrame(OneStepInASRChain(asrFrame, aBuilder), aBuilder));
 
-    asr = (asrFrame.mASRKind == ActiveScrolledRoot::ASRKind::Scroll)
-              ? aBuilder->GetOrCreateActiveScrolledRoot(
-                    asr, static_cast<ScrollContainerFrame*>(
-                             do_QueryFrame(asrFrame.mFrame)))
-              : aBuilder->GetOrCreateActiveScrolledRootForSticky(
-                    asr, asrFrame.mFrame);
+    asr = aBuilder->GetOrCreateActiveScrolledRoot(asr, asrFrame.mFrame,
+                                                  asrFrame.mASRKind);
   }
   return asr;
 }

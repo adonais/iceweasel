@@ -3,12 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 plugins {
+    id 'com.android.library'
     alias(libs.plugins.dependency.analysis)
     alias(libs.plugins.kotlin.compose)
 }
-
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
 
 android {
     buildFeatures {
@@ -23,8 +21,10 @@ dependencies {
     implementation project(':components:browser-state')
     implementation project(':components:compose-base')
     implementation project(':components:concept-engine')
+    implementation project(':components:concept-integrity')
     implementation project(':components:concept-sync')
     implementation project(':components:feature-tabs')
+    implementation project(':components:lib-integrity-googleplay')
     implementation project(':components:lib-state')
     implementation project(':components:service-firefox-accounts')
     implementation project(':components:support-base')
@@ -38,6 +38,7 @@ dependencies {
     debugImplementation libs.androidx.compose.ui.tooling
 
     testImplementation project(':components:support-test')
+    testImplementation project(':components:support-test-libstate')
     testImplementation libs.androidx.compose.ui.test
     testImplementation libs.androidx.compose.ui.test.manifest
     testImplementation libs.androidx.test.core

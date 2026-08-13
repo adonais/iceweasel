@@ -184,8 +184,8 @@ async function withProvider(result, callback) {
 
 function makeBestMatchResult(payloadExtra = {}) {
   return new UrlbarResult({
-    type: UrlbarUtils.RESULT_TYPE.URL,
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    type: UrlbarShared.RESULT_TYPE.URL,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
     isBestMatch: true,
     payload: {
       title: "Test best match",

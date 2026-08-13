@@ -50,7 +50,7 @@ add_task(async function testSuggestionsDisabled() {
   // Disable search suggestions.
   suggestionsCheckbox.click();
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => trendingCheckbox.disabled,
     "Trending checkbox should be disabled when search suggestions are disabled"
   );

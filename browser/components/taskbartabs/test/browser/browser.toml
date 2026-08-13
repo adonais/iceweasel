@@ -26,6 +26,8 @@ support-files = [
 
 ["browser_taskbarTabs_pageAction.js"]
 
+["browser_taskbarTabs_pin.js"]
+
 ["browser_taskbarTabs_telemetry.js"]
 
 ["browser_taskbarTabs_title.js"]

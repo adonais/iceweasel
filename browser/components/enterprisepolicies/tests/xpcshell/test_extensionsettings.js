@@ -968,12 +968,12 @@ add_task(
       msg =>
         msg.level == "error" &&
         msg.arguments[0].includes(
-          `Ignoring parameter "not-a-valid-url" - scheme (http or https) must be specified`
+          "Invalid parameters specified for ExtensionSettings"
         )
     );
     Assert.ok(
       updateURLValidationError,
-      "Got expected JsonSchemaValidator error for the invalid update_url"
+      "Got expected validation error for the invalid update_url"
     );
 
     await verifyAddonUpdateCheck(

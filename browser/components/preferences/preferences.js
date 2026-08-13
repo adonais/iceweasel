@@ -19,6 +19,7 @@
 /** @import {SettingControlConfig, SettingOptionConfig} from "chrome://browser/content/preferences/widgets/setting-control.mjs" */
 /** @import {SettingGroup} from "chrome://browser/content/preferences/widgets/setting-group.mjs" */
 /** @import {SettingPane, SettingPaneConfig} from "chrome://browser/content/preferences/widgets/setting-pane.mjs" */
+/** @import {FocusHistory} from "chrome://browser/content/preferences/FocusHistory.mjs" */
 
 /**
  * @typedef {object} PaneShownEventDetail
@@ -97,7 +98,7 @@ if (Cc["@mozilla.org/gio-service;1"]) {
 ChromeUtils.defineESModuleGetters(this, {
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
   ContextualIdentityService:
-    "resource://gre/modules/ContextualIdentityService.sys.mjs",
+    "moz-src:///toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs",
   DownloadUtils: "resource://gre/modules/DownloadUtils.sys.mjs",
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
   ExtensionPreferencesManager:
@@ -107,7 +108,7 @@ ChromeUtils.defineESModuleGetters(this, {
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
   FirefoxRelay: "resource://gre/modules/FirefoxRelay.sys.mjs",
   HomePage: "resource:///modules/HomePage.sys.mjs",
-  LangPackMatcher: "resource://gre/modules/LangPackMatcher.sys.mjs",
+  LangPackMatcher: "moz-src:///intl/locale/LangPackMatcher.sys.mjs",
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   OSKeyStore: "resource://gre/modules/OSKeyStore.sys.mjs",
@@ -213,8 +214,26 @@ var { ScrollOffsets } = ChromeUtils.importESModule(
   }
 );
 
+var { FocusHistory } = ChromeUtils.importESModule(
+  "chrome://browser/content/preferences/FocusHistory.mjs",
+  {
+    global: "current",
+  }
+);
+
 /** @type {ScrollOffsets} */
 var scrollOffsets;
+
+/** @type {FocusHistory} */
+var focusHistory = new FocusHistory();
+
+/**
+ * Id of the history entry currently shown. Tracked so the entry being
+ * left can be passed to `focusHistory.save()` before transitioning.
+ *
+ * @type {number?}
+ */
+var gCurrentHistoryEntryId = null;
 
 /**
  * Register initial config-based setting panes here. If you need to register a
@@ -245,7 +264,13 @@ const CONFIG_PANES = Object.freeze({
   },
   appearance: {
     l10nId: "preferences-appearance-header",
-    groupIds: ["appearance", "browserTheme", "relatedSettings"],
+    groupIds: [
+      "appearance",
+      "browserTheme",
+      "browserIconEntry",
+      "windowDensity",
+      "relatedSettings",
+    ],
     module: "chrome://browser/content/preferences/config/appearance.mjs",
     iconSrc: "chrome://global/skin/icons/eye.svg",
     visible: () => srdSectionPrefs.all,
@@ -441,6 +466,7 @@ const CONFIG_PANES = Object.freeze({
       "browserLayout",
       "tabs",
       "pageNavigation",
+      "keyboardShortcuts",
       "media",
       "performance",
       "recommendations",
@@ -575,6 +601,20 @@ function init_all() {
       groupIds: ["customHomepage"],
       module: "chrome://browser/content/preferences/config/home-startup.mjs",
     });
+
+    if (
+      AppConstants.platform == "win" &&
+      Services.prefs.getBoolPref("browser.shell.customIcon.enabled", false) &&
+      !Services.sysinfo.getProperty("hasWinPackageId")
+    ) {
+      SettingPaneManager.registerPane("browserIcon", {
+        parent: "appearance",
+        iconSrc: "chrome://browser/skin/sidebar/firefox.svg",
+        l10nId: "appearance-browser-icon-subpage-title",
+        groupIds: ["browserIconBasic", "browserIconBonus"],
+        module: "chrome://browser/content/preferences/config/browser-icon.mjs",
+      });
+    }
   } else {
     NimbusFeatures.moreFromMozilla.recordExposureEvent({ once: true });
     if (NimbusFeatures.moreFromMozilla.getVariable("enabled")) {
@@ -620,8 +660,33 @@ function init_all() {
   });
 }
 
+/**
+ * Fires when navigating back/forward from or to
+ * a hashed URL or if the hash is changed in the URL bar.
+ */
 function onHashChange() {
-  gotoPref(null, "Hash");
+  /**
+   * If there is a query that was active, it would be on `history.state.searchQuery`,
+   * in which case this reapplies it or {@link gotoPref} will inadvertently
+   * redirect to the default pane if the input is empty. Then it replays the search
+   * after {@link gotoPref} settles so results are shown and highlighted again.
+   */
+  let restoredQuery =
+    document.location.hash === "#searchResults" &&
+    history.state?.searchQuery &&
+    !gSearchResultsPane.searchInput.value
+      ? history.state.searchQuery
+      : null;
+  if (restoredQuery) {
+    gSearchResultsPane.searchInput.value = restoredQuery;
+  }
+  gotoPref(null, "Hash").then(() => {
+    if (restoredQuery) {
+      gSearchResultsPane.searchFunction({
+        target: gSearchResultsPane.searchInput,
+      });
+    }
+  });
 }
 
 function onBeforeunload() {
@@ -696,6 +761,18 @@ async function gotoPref(
   // Updating the hash (below) or changing the selected category
   // will re-enter gotoPref.
   if (gLastCategory.category == category && !subcategory) {
+    document.dispatchEvent(
+      /** @type {PaneShownEvent} */ (
+        new CustomEvent("paneshown", {
+          bubbles: true,
+          cancelable: true,
+          detail: {
+            category,
+            subcategory,
+          },
+        })
+      )
+    );
     return;
   }
 
@@ -750,10 +827,11 @@ async function gotoPref(
       }
     }
   }
-  // Treat back/forward navigations (aShowReason == "Hash") as visits to the
-  // existing history entry so we can restore the scroll position saved when
-  // leaving it. Everything else — initial load, sidebar click, openPreferences
-  // call — is a brand-new entry and gets a fresh id.
+  /**
+   * On back/forward (aShowReason == "Hash") reuse the entry's saved id
+   * so its scroll position gets restored. Any other reason is a new
+   * entry with a fresh id.
+   */
   let historyEntryId =
     (aShowReason == "Hash" && history.state?.historyEntryId) ||
     scrollOffsets.newHistoryEntryId();
@@ -764,10 +842,14 @@ async function gotoPref(
    */
   let prevCategory = gLastCategory.category;
 
-  // Save the previous entry's scroll offset before switching, so that
-  // returning to it later restores the user's place.
+  // Save the previous entry's scroll offset and focused element before
+  // switching, so that returning to it later restores the user's place.
   scrollOffsets.save();
   scrollOffsets.setView(historyEntryId);
+  if (gCurrentHistoryEntryId != null) {
+    focusHistory.save(gCurrentHistoryEntryId);
+  }
+  gCurrentHistoryEntryId = historyEntryId;
 
   // Need to set the gLastCategory before setting categories.currentView since
   // the change-view event will re-enter the gotoPref codepath.
@@ -805,14 +887,17 @@ async function gotoPref(
   } else if (aShowReason == "Click" && prevCategory) {
     previousCategory = internalPrefCategoryNameToFriendlyName(prevCategory);
   }
-  window.history.replaceState(
-    {
-      historyEntryId,
-      category: internalPrefCategoryNameToFriendlyName(category),
-      previousCategory,
-    },
-    document.title
-  );
+  // history.state may be a string (set as `category` by the pushState/
+  // replaceState calls above), so only spread it when it's an object.
+  let prevState =
+    history.state && typeof history.state === "object" ? history.state : null;
+  let newState = {
+    ...prevState,
+    historyEntryId,
+    category: internalPrefCategoryNameToFriendlyName(category),
+    previousCategory,
+  };
+  window.history.replaceState(newState, document.title);
 
   let categoryInfo = gCategoryInits.get(category);
   if (!categoryInfo) {
@@ -842,6 +927,7 @@ async function gotoPref(
 
   if (aShowReason != "Initial") {
     scrollOffsets.restore();
+    focusHistory.restore(historyEntryId);
   }
 
   // Check to see if the category module wants to do any special

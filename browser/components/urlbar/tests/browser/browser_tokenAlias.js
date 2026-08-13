@@ -127,7 +127,7 @@ async function doSimpleTest(revertBetweenSteps) {
     await UrlbarTestUtils.assertSearchMode(window, {
       engineName: TEST_ALIAS_ENGINE_NAME,
       entry: "typed",
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      source: UrlbarShared.RESULT_SOURCE.SEARCH,
     });
     Assert.equal(gURLBar.value, "", "value should be empty");
     await UrlbarTestUtils.exitSearchMode(window);
@@ -151,7 +151,7 @@ async function doSimpleTest(revertBetweenSteps) {
     await UrlbarTestUtils.assertSearchMode(window, {
       engineName: TEST_ALIAS_ENGINE_NAME,
       entry: "typed",
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      source: UrlbarShared.RESULT_SOURCE.SEARCH,
     });
     Assert.equal(gURLBar.value, "foo", "value should be query");
     await UrlbarTestUtils.exitSearchMode(window);
@@ -175,7 +175,7 @@ async function doSimpleTest(revertBetweenSteps) {
     await UrlbarTestUtils.assertSearchMode(window, {
       engineName: TEST_ALIAS_ENGINE_NAME,
       entry: "typed",
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      source: UrlbarShared.RESULT_SOURCE.SEARCH,
     });
     Assert.equal(gURLBar.value, "", "value should be empty");
     await UrlbarTestUtils.exitSearchMode(window);
@@ -233,7 +233,7 @@ add_task(async function spacesBeforeAlias() {
     await UrlbarTestUtils.assertSearchMode(window, {
       engineName: TEST_ALIAS_ENGINE_NAME,
       entry: "typed",
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      source: UrlbarShared.RESULT_SOURCE.SEARCH,
     });
     Assert.equal(gURLBar.value, "", "value should be empty");
     await UrlbarTestUtils.exitSearchMode(window);
@@ -270,7 +270,7 @@ add_task(async function alreadyInSearchMode() {
     value: "t",
   });
   await UrlbarTestUtils.enterSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
   });
 
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -280,7 +280,7 @@ add_task(async function alreadyInSearchMode() {
 
   // Search mode source should still be bookmarks.
   await UrlbarTestUtils.assertSearchMode(window, {
-    source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     entry: "oneoff",
   });
   Assert.equal(gURLBar.value, ALIAS + " ", "value should be unchanged");
@@ -339,7 +339,7 @@ add_task(async function aliasCase() {
   await UrlbarTestUtils.assertSearchMode(window, {
     engineName: TEST_ALIAS_ENGINE_NAME,
     entry: "typed",
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
   });
   Assert.equal(gURLBar.value, "", "value should be empty");
   await UrlbarTestUtils.exitSearchMode(window);
@@ -359,7 +359,7 @@ add_task(async function aliasCase_query() {
   await UrlbarTestUtils.assertSearchMode(window, {
     engineName: TEST_ALIAS_ENGINE_NAME,
     entry: "typed",
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
   });
   Assert.equal(gURLBar.value, "query", "value should be query");
   await UrlbarTestUtils.exitSearchMode(window);
@@ -416,7 +416,7 @@ add_task(async function nonHeuristicAliases() {
       isPreview: true,
     };
     if (SearchService.getEngineByName(engineName).isGeneralPurposeEngine) {
-      expectedSearchMode.source = UrlbarUtils.RESULT_SOURCE.SEARCH;
+      expectedSearchMode.source = UrlbarShared.RESULT_SOURCE.SEARCH;
     }
     await UrlbarTestUtils.assertSearchMode(window, expectedSearchMode);
     Assert.ok(!gURLBar.value, "The Urlbar should be empty.");
@@ -442,7 +442,7 @@ add_task(async function clickAndFillAlias() {
   for (let i = 0; !testEngineItem; i++) {
     let details = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
 
-    if (details.result.type == UrlbarUtils.RESULT_TYPE.RESTRICT) {
+    if (details.result.type == UrlbarShared.RESULT_TYPE.RESTRICT) {
       let category = details.result.payload.l10nRestrictKeywords[0];
       let keyword = `@${category.toLowerCase()}`;
 
@@ -484,7 +484,7 @@ add_task(async function clickAndFillAlias() {
   await UrlbarTestUtils.assertSearchMode(window, {
     engineName: testEngineItem.result.payload.engine,
     entry: "keywordoffer",
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
   });
 
   await UrlbarTestUtils.exitSearchMode(window);
@@ -523,7 +523,7 @@ add_task(async function enterAndFillAlias() {
   await UrlbarTestUtils.assertSearchMode(window, {
     engineName: details.searchParams.engine,
     entry: "keywordoffer",
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
   });
 
   await UrlbarTestUtils.exitSearchMode(window);
@@ -550,7 +550,7 @@ add_task(async function enterAutofillsAlias() {
     await UrlbarTestUtils.assertSearchMode(window, {
       engineName: TEST_ALIAS_ENGINE_NAME,
       entry: "keywordoffer",
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      source: UrlbarShared.RESULT_SOURCE.SEARCH,
     });
 
     await UrlbarTestUtils.exitSearchMode(window);
@@ -577,7 +577,7 @@ add_task(async function rightEntersSearchMode() {
     await UrlbarTestUtils.assertSearchMode(window, {
       engineName: TEST_ALIAS_ENGINE_NAME,
       entry: "typed",
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      source: UrlbarShared.RESULT_SOURCE.SEARCH,
     });
     Assert.equal(gURLBar.value, "", "value should be empty");
     await UrlbarTestUtils.exitSearchMode(window);
@@ -615,7 +615,7 @@ add_task(async function rightEntersSearchMode() {
       engineName: TEST_ALIAS_ENGINE_NAME,
       entry: "keywordoffer",
       isPreview: true,
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      source: UrlbarShared.RESULT_SOURCE.SEARCH,
     });
     Assert.equal(gURLBar.value, "", "value should be empty");
 
@@ -627,7 +627,7 @@ add_task(async function rightEntersSearchMode() {
       engineName: TEST_ALIAS_ENGINE_NAME,
       entry: "keywordoffer",
       isPreview: false,
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      source: UrlbarShared.RESULT_SOURCE.SEARCH,
     });
     await UrlbarTestUtils.exitSearchMode(window);
   }
@@ -656,7 +656,7 @@ add_task(async function hiddenEngine() {
   for (let i = 0; i < UrlbarTestUtils.getResultCount(window); i++) {
     let details = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
     if (
-      details.result.type != UrlbarUtils.RESULT_TYPE.RESTRICT &&
+      details.result.type != UrlbarShared.RESULT_TYPE.RESTRICT &&
       defaultEngine.name == details.searchParams.engine
     ) {
       foundDefaultEngineInPopup = true;
@@ -681,7 +681,7 @@ add_task(async function hiddenEngine() {
   for (let i = 0; i < UrlbarTestUtils.getResultCount(window); i++) {
     let details = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
     if (
-      details.result.type != UrlbarUtils.RESULT_TYPE.RESTRICT &&
+      details.result.type != UrlbarShared.RESULT_TYPE.RESTRICT &&
       defaultEngine.name == details.searchParams.engine
     ) {
       foundDefaultEngineInPopup = true;
@@ -738,7 +738,7 @@ add_task(async function nonPrefixedKeyword() {
   for (let i = 0; i < UrlbarTestUtils.getResultCount(window); i++) {
     let details = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
     if (
-      details.result.type != UrlbarUtils.RESULT_TYPE.RESTRICT &&
+      details.result.type != UrlbarShared.RESULT_TYPE.RESTRICT &&
       details.searchParams.engine === name
     ) {
       foundEngineInPopup = true;
@@ -866,7 +866,7 @@ add_task(async function doNotShowInSearchMode() {
   await UrlbarTestUtils.assertSearchMode(window, {
     engineName: testEngineItem.result.payload.engine,
     entry: "keywordoffer",
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
   });
 
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -959,7 +959,7 @@ add_task(async function duplicateAliases() {
   await UrlbarTestUtils.assertSearchMode(window, {
     engineName: TEST_ALIAS_ENGINE_NAME,
     entry: "typed",
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
   });
 
   await UrlbarTestUtils.exitSearchMode(window);
@@ -983,7 +983,7 @@ add_task(async function duplicateAliases() {
   await UrlbarTestUtils.assertSearchMode(window, {
     engineName: TEST_ALIAS_ENGINE_NAME,
     entry: "typed",
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
   });
 
   await UrlbarTestUtils.exitSearchMode(window);
@@ -1000,7 +1000,7 @@ add_task(async function duplicateAliases() {
   await UrlbarTestUtils.assertSearchMode(window, {
     engineName: TEST_ALIAS_ENGINE_NAME,
     entry: "typed",
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
   });
 
   await UrlbarTestUtils.exitSearchMode(window);
@@ -1052,7 +1052,7 @@ add_task(async function duplicateAliases_private() {
   await UrlbarTestUtils.assertSearchMode(window, {
     engineName: TEST_ALIAS2_ENGINE_NAME,
     entry: "typed",
-    source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+    source: UrlbarShared.RESULT_SOURCE.SEARCH,
   });
 
   await UrlbarTestUtils.exitSearchMode(window);
@@ -1128,11 +1128,84 @@ add_task(async function duplicateAliases_results_order() {
   await SearchService.moveEngine(SearchService.getEngineById("default"), 0);
 });
 
+add_task(async function selection() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.autoFill", true]],
+  });
+  await doSelectionTest("@", { find: null, normal: null });
+  await doSelectionTest("@t", {
+    find: { start: 0, end: 6 },
+    normal: { start: 2, end: 6 },
+  });
+  await doSelectionTest("@te", {
+    find: { start: 0, end: 6 },
+    normal: { start: 3, end: 6 },
+  });
+  await doSelectionTest("@tes", {
+    find: { start: 0, end: 6 },
+    normal: { start: 4, end: 6 },
+  });
+  await doSelectionTest("@test", {
+    find: { start: 0, end: 6 },
+    normal: { start: 5, end: 6 },
+  });
+  await doSelectionTest("@test ", { find: null, normal: null });
+  await SpecialPowers.popPrefEnv();
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.autoFill", false]],
+  });
+  await doSelectionTest("@tes", { find: null, normal: null });
+  await SpecialPowers.popPrefEnv();
+});
+
+async function doSelectionTest(value, { find, normal }) {
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value,
+    selectionStart: value.length,
+    selectionEnd: value.length,
+  });
+
+  // The highlight is applied asynchronously, so wait for the expected state.
+  let findSelection = gURLBar.editor.selectionController.getSelection(
+    Ci.nsISelectionController.SELECTION_FIND
+  );
+  await TestUtils.waitForCondition(() => {
+    if (find) {
+      return findSelection.rangeCount == 1;
+    }
+    return findSelection.isCollapsed;
+  }, `Waiting for the expected find selection for "${value}"`);
+
+  if (find) {
+    let range = findSelection.getRangeAt(0);
+    Assert.equal(range.startOffset, find.start, `Find start for "${value}"`);
+    Assert.equal(range.endOffset, find.end, `Find end for "${value}"`);
+  }
+
+  if (normal) {
+    Assert.equal(
+      gURLBar.selectionStart,
+      normal.start,
+      `Normal start for "${value}"`
+    );
+    Assert.equal(gURLBar.selectionEnd, normal.end, `Normal end for "${value}"`);
+  } else {
+    Assert.equal(
+      gURLBar.selectionStart,
+      gURLBar.selectionEnd,
+      `No normal selection for "${value}"`
+    );
+  }
+  await UrlbarTestUtils.promisePopupClose(window);
+}
+
 async function assertFirstResultIsAlias(isAlias, expectedAlias) {
   let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
   Assert.equal(
     result.type,
-    UrlbarUtils.RESULT_TYPE.SEARCH,
+    UrlbarShared.RESULT_TYPE.SEARCH,
     "Should have the correct type"
   );
 
@@ -1149,28 +1222,6 @@ async function assertFirstResultIsAlias(isAlias, expectedAlias) {
       "Payload keyword should be absent or not the alias"
     );
   }
-}
-
-function assertHighlighted(highlighted, expectedAlias) {
-  let selection = gURLBar.editor.selectionController.getSelection(
-    Ci.nsISelectionController.SELECTION_FIND
-  );
-  Assert.ok(selection);
-  if (!highlighted) {
-    Assert.equal(selection.rangeCount, 0);
-    return;
-  }
-  Assert.equal(selection.rangeCount, 1);
-  let index = gURLBar.value.indexOf(expectedAlias);
-  Assert.greaterOrEqual(
-    index,
-    0,
-    `gURLBar.value="${gURLBar.value}" expectedAlias="${expectedAlias}"`
-  );
-  let range = selection.getRangeAt(0);
-  Assert.ok(range);
-  Assert.equal(range.startOffset, index);
-  Assert.equal(range.endOffset, index + expectedAlias.length);
 }
 
 /**

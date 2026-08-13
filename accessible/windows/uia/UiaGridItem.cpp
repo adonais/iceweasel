@@ -2,10 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "UiaGridItem.h"
+
 #include "ia2AccessibleTableCell.h"
 #include "mozilla/a11y/TableAccessible.h"
 #include "mozilla/a11y/TableCellAccessible.h"
-#include "UiaGridItem.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;

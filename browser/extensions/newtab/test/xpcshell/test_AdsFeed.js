@@ -720,3 +720,113 @@ add_task(async function test_fetchData_OHTTP_with_adsBackendConfig() {
 
   sandbox.restore();
 });
+
+add_task(async function test_fetchWithAdsClient_mapsToLegacyShape() {
+  let sandbox = sinon.createSandbox();
+  sandbox.stub(AdsFeed.prototype, "PersistentCache").returns({
+    set: () => {},
+    get: () => {},
+  });
+
+  let feed = getAdsFeedForTest();
+
+  // Fake MozAdsClient returning canonical MozAdsTile/MozAdsSpoc objects.
+  feed.adsClient = {
+    requestTileAds: async () =>
+      new Map([
+        [
+          "newtab_tile_1",
+          {
+            blockKey: "block1",
+            name: "Tile 1",
+            url: "https://tile.example/",
+            imageUrl: "https://tile.example/img.png",
+            callbacks: {
+              click: "https://tile.example/click",
+              impression: "https://tile.example/impression",
+            },
+          },
+        ],
+      ]),
+    requestSpocAds: async () =>
+      new Map([
+        [
+          "newtab_spocs",
+          [
+            {
+              format: "spoc",
+              url: "https://spoc.example/",
+              imageUrl: "https://spoc.example/img.png",
+              callbacks: { click: "https://spoc.example/click" },
+              title: "Spoc 1",
+              domain: "spoc.example",
+              excerpt: "Excerpt",
+              sponsor: "Sponsor",
+              sponsoredByOverride: null,
+              blockKey: "spocblock1",
+              caps: { capKey: "cap1", day: 5 },
+              ranking: {
+                itemScore: 0.5,
+                personalizationModels: new Map([
+                  ["arts_and_entertainment", 1],
+                  ["travel", 1],
+                ]),
+                priority: 2,
+              },
+            },
+          ],
+        ],
+      ]),
+  };
+
+  const returnData = await feed._fetchWithAdsClient(
+    { tiles: true, spocs: true },
+    [
+      { placement: "newtab_tile_1", count: 1 },
+      { placement: "newtab_spocs", count: 6 },
+    ],
+    {}
+  );
+
+  Assert.deepEqual(
+    returnData.tiles,
+    [
+      {
+        id: "block1",
+        block_key: "block1",
+        name: "Tile 1",
+        url: "https://tile.example/",
+        click_url: "https://tile.example/click",
+        image_url: "https://tile.example/img.png",
+        impression_url: "https://tile.example/impression",
+        image_size: 200,
+      },
+    ],
+    "Tiles are mapped from MozAdsTile to the legacy tile shape"
+  );
+
+  Assert.strictEqual(returnData.spocs.length, 1, "One spoc is returned");
+  const [spoc] = returnData.spocs;
+  Assert.strictEqual(spoc.block_key, "spocblock1", "spoc block_key mapped");
+  Assert.strictEqual(
+    spoc.image_url,
+    "https://spoc.example/img.png",
+    "spoc image_url mapped"
+  );
+  Assert.strictEqual(spoc.sponsored_by_override, null, "override mapped");
+  Assert.deepEqual(spoc.caps, { cap_key: "cap1", day: 5 }, "caps mapped");
+  Assert.deepEqual(
+    spoc.ranking,
+    {
+      item_score: 0.5,
+      personalization_models: {
+        arts_and_entertainment: 1,
+        travel: 1,
+      },
+      priority: 2,
+    },
+    "ranking mapped"
+  );
+
+  sandbox.restore();
+});

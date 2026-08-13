@@ -350,7 +350,7 @@ static const JSFunctionSpec generator_methods[] = {
 JSObject* js::NewTenuredObjectWithFunctionPrototype(
     JSContext* cx, Handle<GlobalObject*> global) {
   RootedObject proto(cx, &cx->global()->getFunctionPrototype());
-  return NewPlainObjectWithProto(cx, proto, TenuredObject);
+  return NewPlainObjectWithProto(cx, proto, {.newKind = TenuredObject});
 }
 
 static JSObject* CreateGeneratorFunction(JSContext* cx, JSProtoKey key) {

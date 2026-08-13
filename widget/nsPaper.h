@@ -5,13 +5,13 @@
 #ifndef nsPaper_h_
 #define nsPaper_h_
 
+#include "js/TypeDecls.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/gfx/Rect.h"
-#include "mozilla/Maybe.h"
 #include "nsIPaper.h"
 #include "nsISupportsImpl.h"
-#include "js/TypeDecls.h"
 #include "nsString.h"
 
 struct JSContext;

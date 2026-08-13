@@ -1,0 +1,15 @@
+{
+  "label": "ebok.citylink.pl",
+  "bugs": {
+    "2045679": {
+      "issue": "broken-layout",
+      "matches": ["*://ebok.citylink.pl/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["android"],
+      "ua_string": ["add_Chrome"]
+    }
+  ]
+}

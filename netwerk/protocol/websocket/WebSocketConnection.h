@@ -7,12 +7,12 @@
 
 #include <list>
 
-#include "nsIStreamListener.h"
+#include "mozilla/net/WebSocketConnectionBase.h"
 #include "nsIAsyncInputStream.h"
 #include "nsIAsyncOutputStream.h"
-#include "mozilla/net/WebSocketConnectionBase.h"
-#include "nsTArray.h"
 #include "nsISocketTransport.h"
+#include "nsIStreamListener.h"
+#include "nsTArray.h"
 
 class nsISocketTransport;
 

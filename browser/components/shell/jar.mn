@@ -5,3 +5,11 @@
 browser.jar:
 *       content/browser/setDesktopBackground.xhtml            (content/setDesktopBackground.xhtml)
         content/browser/setDesktopBackground.js               (content/setDesktopBackground.js)
+        content/browser/icons/retro2004.ico                   (icons/retro2004.ico)
+        content/browser/icons/retro2017.ico                   (icons/retro2017.ico)
+        content/browser/icons/pride.ico                       (icons/pride.ico)
+        content/browser/icons/minimal-dark.ico                (icons/minimal-dark.ico)
+        content/browser/icons/minimal-light.ico               (icons/minimal-light.ico)
+        content/browser/icons/pixelated.ico                   (icons/pixelated.ico)
+        content/browser/icons/momo.ico                        (icons/momo.ico)
+        content/browser/icons/kit.ico                         (icons/kit.ico)

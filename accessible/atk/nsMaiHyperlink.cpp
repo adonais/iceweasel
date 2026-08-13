@@ -2,9 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsIURI.h"
 #include "nsMaiHyperlink.h"
+
 #include "mozilla/a11y/RemoteAccessible.h"
+#include "nsIURI.h"
 
 using namespace mozilla::a11y;
 

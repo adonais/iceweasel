@@ -3,12 +3,6 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SandboxBroker.h"
-#include "SandboxInfo.h"
-
-#include "SandboxProfilerParent.h"
-#include "SandboxLogging.h"
-
-#include "SandboxBrokerUtils.h"
 
 #include <dirent.h>
 #include <errno.h>
@@ -26,8 +20,12 @@
 #include <utility>
 
 #include "GeckoProfiler.h"
+#include "SandboxBrokerUtils.h"
+#include "SandboxInfo.h"
+#include "SandboxLogging.h"
+#include "SandboxProfilerParent.h"
 #include "SpecialSystemDirectory.h"
-#include "base/string_util.h"
+#include "base/strings/string_util.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Sprintf.h"

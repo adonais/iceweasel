@@ -156,6 +156,11 @@ run-if = [
   "debug", # Requires hard-coded debug-only data
 ]
 
+["test_crlite_preexisting_tls.js"]
+run-if = [
+  "debug", # Requires hard-coded debug-only data
+]
+
 ["test_ct.js"]
 run-if = [
   "debug", # Requires hard-coded debug-only data
@@ -383,7 +388,6 @@ run-if = [
 
 ["test_sss_sanitizeOnShutdown_v2.js"]
 prefs = ["security.storage.encryption.sqlite.enabled=false"]
-requesttimeoutfactor = 2  # Slow on condprof
 firefox-appdir = "browser"
 skip-if = [
   "appname == 'thunderbird'", # browser/modules/Sanitizer.sys.mjs used by the test isn't available in Thunderbird.

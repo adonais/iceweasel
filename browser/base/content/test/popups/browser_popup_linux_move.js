@@ -28,7 +28,7 @@ if (AppConstants.platform == "linux" && gfxInfo.windowProtocol == "wayland") {
     let win = browsingContext.topChromeWindow;
     let targetX = win.screenX + 10;
     win.moveTo(targetX, win.screenY);
-    await BrowserTestUtils.waitForCondition(() => win.screenX == targetX).catch(
+    await TestUtils.waitForCondition(() => win.screenX == targetX).catch(
       () => {}
     );
     todo(win.screenX == targetX, "Moving windows on wayland.");

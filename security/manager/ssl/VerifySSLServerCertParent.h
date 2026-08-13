@@ -5,10 +5,10 @@
 #ifndef mozilla_psm_VerifySSLServerCertParent_h_
 #define mozilla_psm_VerifySSLServerCertParent_h_
 
-#include "mozilla/psm/PVerifySSLServerCertParent.h"
-#include "mozpkix/Time.h"
 #include "ScopedNSSTypes.h"
 #include "SharedCertVerifier.h"
+#include "mozilla/psm/PVerifySSLServerCertParent.h"
+#include "mozpkix/Time.h"
 
 namespace mozilla {
 namespace psm {

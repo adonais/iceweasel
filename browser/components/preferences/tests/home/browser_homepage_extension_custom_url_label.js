@@ -34,7 +34,7 @@ add_task(
 
     let { doc, tab } = await openCustomHomepageSubpage();
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => doc.querySelectorAll("moz-box-item[data-url]").length === 2,
       "Wait for both URLs to render"
     );

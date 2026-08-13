@@ -18,8 +18,8 @@
     },
     "canvas": {
       "value": {
-        "light": "{color.gray.0}",
-        "dark": "{color.gray.90}",
+        "light": "{color.gray.05}",
+        "dark": "{color.gray.85}",
         "forcedColors": "Canvas"
       }
     },

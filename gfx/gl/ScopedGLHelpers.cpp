@@ -2,9 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "ScopedGLHelpers.h"
+
 #include "GLContext.h"
 #include "GLContextEGL.h"
-#include "ScopedGLHelpers.h"
 
 #ifdef MOZ_WIDGET_ANDROID
 #  include "mozilla/layers/AndroidHardwareBuffer.h"

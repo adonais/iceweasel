@@ -1,0 +1,12 @@
+<script>
+const func_01 = async function(arg) {
+  try { arg.initEvent("q", {}) } catch (e) {}
+}
+window.addEventListener("DOMContentLoaded", () => {
+  const elem = document.createElementNS("http://www.w3.org/1998/Math/MathML", "merror")
+  elem.setAttribute("style", "border-inline-end-width: 411304389.59mm")
+  document.documentElement.appendChild(elem)
+  const t = document.startViewTransition(func_01)
+  t.finished.finally(() => { parent.postMessage("done", "*") })
+})
+</script>

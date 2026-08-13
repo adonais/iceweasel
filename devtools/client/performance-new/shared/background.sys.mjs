@@ -35,8 +35,8 @@ const POPUP_FEATURE_FLAG_PREF = "devtools.performance.popup.feature-flag";
 // This is reported from the STATUS_QUERY message, and identifies the
 // capabilities of the WebChannel. The front-end can handle old WebChannel
 // versions and has a full list of versions and capabilities here:
-// https://github.com/firefox-devtools/profiler/blob/main/src/app-logic/web-channel.js
-const CURRENT_WEBCHANNEL_VERSION = 6;
+// https://github.com/firefox-devtools/profiler/blob/main/src/app-logic/web-channel.ts
+const CURRENT_WEBCHANNEL_VERSION = 7;
 
 const lazyRequire = {};
 // eslint-disable-next-line mozilla/lazy-getter-object-name
@@ -87,6 +87,14 @@ const lazy = createLazyLoaders({
   PlacesUtils: () =>
     ChromeUtils.importESModule("resource://gre/modules/PlacesUtils.sys.mjs")
       .PlacesUtils,
+  SourceMapNetworkRequest: () =>
+    require("resource://devtools/client/shared/source-map-loader/utils/network-request.js"),
+  WasmDwarfConverter: () =>
+    require("resource://devtools/client/shared/source-map-loader/wasm-dwarf/convertToJSON.js"),
+  SourceMapResolver: () =>
+    require("resource://devtools/client/shared/source-map-loader/utils/fetchSourceMap.js"),
+  SourceMapUtil: () =>
+    require("resource://devtools/client/shared/vendor/source-map/lib/util.js"),
 });
 
 /** @type {{[key:string]: number} | null} */
@@ -275,6 +283,95 @@ export function restartProfiler(pageContext) {
 const infoForBrowserMap = new WeakMap();
 
 /**
+ * @param {string} url
+ * @param {string} sourceMapURL
+ */
+async function fetchSourceMap(url, sourceMapURL) {
+  if (!sourceMapURL) {
+    throw new Error("sourceMapURL must not be empty");
+  }
+
+  const { resolvedSourceMapURL, baseURL } = lazy
+    .SourceMapResolver()
+    .resolveSourceMapURL({ sourceMapBaseURL: url, sourceMapURL });
+  const { networkRequest } = lazy.SourceMapNetworkRequest();
+
+  if (new URL(resolvedSourceMapURL).protocol === "file:") {
+    throw new Error("file:// source maps are not supported");
+  }
+
+  const fetchOpts = {
+    loadFromCache: false,
+    allowRedirects: false,
+    sourceMapBaseURL: url,
+  };
+  const fetched = await networkRequest(resolvedSourceMapURL, fetchOpts);
+
+  let { content } = fetched;
+  if (fetched.isDwarf) {
+    const { convertToJSON } = lazy.WasmDwarfConverter();
+    content = await convertToJSON(content);
+  }
+
+  const sourceMap = JSON.parse(content);
+  const sources = sourceMap.sources ?? [];
+  const existingSourcesContent = sourceMap.sourcesContent ?? [];
+  const sourceRoot = sourceMap.sourceRoot ?? "";
+  const { computeSourceURL } = lazy.SourceMapUtil();
+
+  sourceMap.sourcesContent = await Promise.all(
+    sources.map(
+      async (/** @type {string} */ sourceUrl, /** @type {number} */ i) => {
+        if (existingSourcesContent[i] != null) {
+          return existingSourcesContent[i];
+        }
+        if (sourceUrl == null) {
+          return null;
+        }
+        try {
+          const absoluteSourceUrl = new URL(
+            computeSourceURL(sourceRoot, sourceUrl, baseURL)
+          );
+          if (absoluteSourceUrl.protocol === "file:") {
+            return null;
+          }
+          const sourceFetched = await networkRequest(
+            absoluteSourceUrl.href,
+            fetchOpts
+          );
+          return sourceFetched.content;
+        } catch (_e) {
+          return null;
+        }
+      }
+    )
+  );
+
+  return sourceMap;
+}
+
+/**
+ * @param {string} sourceId
+ * @param {MockedExports.Browser} browser
+ * @return {Promise<object>}
+ */
+async function handleGetSourceMap(sourceId, browser) {
+  const infoForBrowser = infoForBrowserMap.get(browser);
+  if (infoForBrowser === undefined) {
+    throw new Error("No JS source data found for this tab");
+  }
+  const jsSources = infoForBrowser.jsSources;
+  if (jsSources === null) {
+    throw new Error("Source not found in the browser");
+  }
+  const sourceInfo = jsSources[sourceId];
+  if (!sourceInfo?.url || !sourceInfo?.sourceMapURL) {
+    throw new Error("Source or source map URL not found");
+  }
+  return fetchSourceMap(sourceInfo.url, sourceInfo.sourceMapURL);
+}
+
+/**
  * This handler computes the response for any messages coming
  * from the WebChannel from profiler.firefox.com.
  *
@@ -403,9 +500,9 @@ async function getResponseForMessage(request, browser) {
       return openScriptInDebugger(tabId, scriptUrl, line, column);
     }
     case "GET_JS_SOURCES": {
-      const { sourceUuids } = request;
-      if (!Array.isArray(sourceUuids)) {
-        throw new Error("sourceUuids must be an array");
+      const { sourceIds } = request;
+      if (!Array.isArray(sourceIds)) {
+        throw new Error("sourceIds must be an array");
       }
 
       const infoForBrowser = infoForBrowserMap.get(browser);
@@ -415,19 +512,22 @@ async function getResponseForMessage(request, browser) {
 
       const jsSources = infoForBrowser.jsSources;
       if (jsSources === null) {
-        return sourceUuids.map(() => ({
+        return sourceIds.map(() => ({
           error: "Source not found in the browser",
         }));
       }
 
-      return sourceUuids.map(uuid => {
-        const sourceText = jsSources[uuid];
-        if (!sourceText) {
+      return sourceIds.map(id => {
+        const sourceInfo = jsSources[id];
+        if (!sourceInfo?.sourceText) {
           return { error: "Source not found in the browser" };
         }
 
-        return { sourceText };
+        return { sourceText: sourceInfo.sourceText };
       });
+    }
+    case "GET_SOURCE_MAP": {
+      return handleGetSourceMap(request.sourceId, browser);
     }
     default: {
       console.error(
@@ -559,27 +659,34 @@ async function getPageFavicons(pageUrls) {
   // Get the data of favicons and return them.
   const { favicons, toURI } = lazy.PlacesUtils();
 
-  const promises = pageUrls.map(pageUrl =>
-    favicons
-      .getFaviconForPage(toURI(pageUrl), /* preferredWidth = */ 32)
-      .then(favicon => {
-        // Check if data is found in the database and return it if so.
-        if (favicon.rawData.length) {
-          return {
-            // PlacesUtils returns a number array for the data. Converting it to
-            // the Uint8Array here to send it to the tab more efficiently.
-            data: new Uint8Array(favicon.rawData).buffer,
-            mimeType: favicon.mimeType,
-          };
-        }
+  const promises = pageUrls.map(async pageUrl => {
+    try {
+      // toURI can throw synchronously for URLs that can't be parsed into
+      // a URI, so it needs to be inside the try block rather than outside the
+      // promise chain.
+      const favicon = await favicons.getFaviconForPage(
+        toURI(pageUrl),
+        /* preferredWidth = */ 32
+      );
 
-        return null;
-      })
-      .catch(() => {
-        // Couldn't find a favicon for this page, return null explicitly.
-        return null;
-      })
-  );
+      // Check if data is found in the database and return it if so.
+      if (favicon.rawData.length) {
+        return {
+          // PlacesUtils returns a number array for the data. Converting it to
+          // the Uint8Array here to send it to the tab more efficiently.
+          data: new Uint8Array(favicon.rawData).buffer,
+          mimeType: favicon.mimeType,
+        };
+      }
+
+      return null;
+    } catch (e) {
+      // Couldn't find a favicon for this page, or the URL couldn't be parsed
+      // into a URI. Return null explicitly so a single bad URL doesn't abort
+      // the whole batch.
+      return null;
+    }
+  });
 
   return Promise.all(promises);
 }

@@ -4,7 +4,6 @@
 package org.mozilla.geckoview.test
 
 import android.content.ClipData
-import android.os.Build
 import android.os.Parcel
 import android.os.SystemClock
 import android.view.DragEvent
@@ -21,7 +20,10 @@ import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.WithDisplay
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 class DragAndDropTest : BaseSessionTest() {
-    // DragEvent has no constructor, so we create it via Java reflection.
+    /* DragEvent has no constructor, so we create it via Java reflection.
+     * Attention: this method might get broken when targeting different Android version.
+     * Make sure to verify the shape of the Parceleable against current API in case of any timeouts.
+     */
     fun createDragEvent(action: Int, x: Float = 0.0F, y: Float = 0.0F): DragEvent {
         val p = Parcel.obtain()
         p.writeInt(action) // mAction
@@ -33,6 +35,8 @@ class DragAndDropTest : BaseSessionTest() {
             p.writeFloat(0.0F) // mX
             p.writeFloat(0.0F) // mY
         }
+        p.writeFloat(0.0F) // mOffsetX
+        p.writeFloat(0.0F) // mOffsetY
         p.writeInt(0) // mDragResult
 
         val clipData = ClipData.newPlainText("label", "foo")
@@ -95,7 +99,6 @@ class DragAndDropTest : BaseSessionTest() {
         assertThat("drag event is started correctly", true, equalTo(true))
     }
 
-    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1983057")
     @WithDisplay(width = 300, height = 300)
     @Test
     fun dropFromExternalTest() {
@@ -117,7 +120,6 @@ class DragAndDropTest : BaseSessionTest() {
         assertThat("drop event is fired correctly", promise.value as String, equalTo("foo"))
     }
 
-    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1983057")
     @WithDisplay(width = 300, height = 500)
     @Test
     fun dropFromExternalToTextControlTest() {

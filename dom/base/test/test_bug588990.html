@@ -170,16 +170,15 @@ function test() {
   is(document.n1[1], t1, "t1 doc.name inserted after");
   is(document.n1.length, 2, "doc.name1.length inserted after");
   is(document.n2[0], i2_1, "i2_1 doc.name inserted after");
-  todo_is(document.n2[1], t2, "This is where t2 should show up. The elements in here should be in order-in-document rather than order-of-insertion");
-  is(document.n2[1], i2_2, "i2_2 doc.name inserted after");
-  is(document.n2[2], t2, "t2 doc.name inserted after");
+  is(document.n2[1], t2, "t2 doc.name inserted after");
+  is(document.n2[2], i2_2, "i2_2 doc.name inserted after");
   is(document.n2[3], t3, "t3 doc.name inserted after");
   is(document.n2.length, 4, "doc.name2.length inserted after");
   is(document.n3[0], i3_1, "i3_1 doc.name inserted after");
-  is(document.n3[1], i3_2, "i3_3 doc.name inserted after");
-  is(document.n3[2], i3_3, "i3_2 doc.name inserted after");
-  is(document.n3[3], t4, "t4 doc.name inserted after");
-  is(document.n3[4], t5, "t5 doc.name inserted after");
+  is(document.n3[1], t4, "t4 doc.name inserted after");
+  is(document.n3[2], i3_2, "i3_2 doc.name inserted after");
+  is(document.n3[3], t5, "t5 doc.name inserted after");
+  is(document.n3[4], i3_3, "i3_3 doc.name inserted after");
   is(document.n3[5], t6, "t6 doc.name inserted after");
   is(document.n3.length, 6, "doc.name3.length inserted after");
 
@@ -191,20 +190,20 @@ function test() {
   insertBefore(t6, i3_3);
 
   checkHasNameNoDocProp("inserted before");
-  is(document.n1[0], i1_1, "i1_1 doc.name inserted before");
-  is(document.n1[1], t1, "t1 doc.name inserted before");
+  is(document.n1[0], t1, "t1 doc.name inserted before");
+  is(document.n1[1], i1_1, "i1_1 doc.name inserted before");
   is(document.n1.length, 2, "doc.name1.length inserted before");
-  is(document.n2[0], i2_1, "i2_1 doc.name inserted before");
-  is(document.n2[1], i2_2, "i2_2 doc.name inserted before");
-  is(document.n2[2], t2, "t2 doc.name inserted before");
-  is(document.n2[3], t3, "t3 doc.name inserted before");
+  is(document.n2[0], t2, "t2 doc.name inserted before");
+  is(document.n2[1], i2_1, "i2_1 doc.name inserted before");
+  is(document.n2[2], t3, "t3 doc.name inserted before");
+  is(document.n2[3], i2_2, "i2_2 doc.name inserted before");
   is(document.n2.length, 4, "doc.name2.length inserted before");
-  is(document.n3[0], i3_1, "i3_1 doc.name inserted before");
-  is(document.n3[1], i3_2, "i3_3 doc.name inserted before");
-  is(document.n3[2], i3_3, "i3_2 doc.name inserted before");
-  is(document.n3[3], t4, "t4 doc.name inserted before");
-  is(document.n3[4], t5, "t5 doc.name inserted before");
-  is(document.n3[5], t6, "t6 doc.name inserted before");
+  is(document.n3[0], t4, "t4 doc.name inserted before");
+  is(document.n3[1], i3_1, "i3_1 doc.name inserted before");
+  is(document.n3[2], t5, "t5 doc.name inserted before");
+  is(document.n3[3], i3_2, "i3_2 doc.name inserted before");
+  is(document.n3[4], t6, "t6 doc.name inserted before");
+  is(document.n3[5], i3_3, "i3_3 doc.name inserted before");
   is(document.n3.length, 6, "doc.name3.length inserted before");
 
   t1.removeAttribute("name");
@@ -224,20 +223,20 @@ function test() {
   t6.setAttribute("name", "n3");
 
   checkHasNameNoDocProp("inserted before");
-  is(document.n1[0], i1_1, "i1_1 doc.name inserted before");
-  is(document.n1[1], t1, "t1 doc.name inserted before");
+  is(document.n1[0], t1, "t1 doc.name inserted before");
+  is(document.n1[1], i1_1, "i1_1 doc.name inserted before");
   is(document.n1.length, 2, "doc.name1.length inserted before");
-  is(document.n2[0], i2_1, "i2_1 doc.name inserted before");
-  is(document.n2[1], i2_2, "i2_2 doc.name inserted before");
-  is(document.n2[2], t2, "t2 doc.name inserted before");
-  is(document.n2[3], t3, "t3 doc.name inserted before");
+  is(document.n2[0], t2, "t2 doc.name inserted before");
+  is(document.n2[1], i2_1, "i2_1 doc.name inserted before");
+  is(document.n2[2], t3, "t3 doc.name inserted before");
+  is(document.n2[3], i2_2, "i2_2 doc.name inserted before");
   is(document.n2.length, 4, "doc.name2.length inserted before");
-  is(document.n3[0], i3_1, "i3_1 doc.name inserted before");
-  is(document.n3[1], i3_2, "i3_3 doc.name inserted before");
-  is(document.n3[2], i3_3, "i3_2 doc.name inserted before");
-  is(document.n3[3], t4, "t4 doc.name inserted before");
-  is(document.n3[4], t5, "t5 doc.name inserted before");
-  is(document.n3[5], t6, "t6 doc.name inserted before");
+  is(document.n3[0], t4, "t4 doc.name inserted before");
+  is(document.n3[1], i3_1, "i3_1 doc.name inserted before");
+  is(document.n3[2], t5, "t5 doc.name inserted before");
+  is(document.n3[3], i3_2, "i3_2 doc.name inserted before");
+  is(document.n3[4], t6, "t6 doc.name inserted before");
+  is(document.n3[5], i3_3, "i3_3 doc.name inserted before");
   is(document.n3.length, 6, "doc.name3.length inserted before");
 
   removeNode(t1);

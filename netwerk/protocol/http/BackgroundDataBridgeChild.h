@@ -5,8 +5,8 @@
 #ifndef mozilla_net_BackgroundDataBridgeChild_h
 #define mozilla_net_BackgroundDataBridgeChild_h
 
-#include "mozilla/net/PBackgroundDataBridgeChild.h"
 #include "mozilla/ipc/BackgroundChild.h"
+#include "mozilla/net/PBackgroundDataBridgeChild.h"
 
 namespace mozilla {
 namespace net {

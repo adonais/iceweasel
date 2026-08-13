@@ -5,10 +5,10 @@
 #ifndef mozilla_net_DocumentChannelChild_h
 #define mozilla_net_DocumentChannelChild_h
 
-#include "mozilla/net/PDocumentChannelChild.h"
-#include "mozilla/net/DocumentChannel.h"
-#include "nsIAsyncVerifyRedirectCallback.h"
 #include "mozilla/dom/nsCSPContext.h"
+#include "mozilla/net/DocumentChannel.h"
+#include "mozilla/net/PDocumentChannelChild.h"
+#include "nsIAsyncVerifyRedirectCallback.h"
 
 namespace mozilla {
 namespace net {

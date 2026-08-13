@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <ostream>
+#include <tuple>
 
 #include "mozilla/Attributes.h"
 
@@ -92,6 +93,8 @@ struct BaseSize {
   Sub operator/(const Sub& aSize) const {
     return Sub(width / aSize.width, height / aSize.height);
   }
+
+  auto MutTiedFields() { return std::tie(components); }
 
   friend Sub Min(const Sub& aA, const Sub& aB) {
     return Sub(std::min(aA.width, aB.width), std::min(aA.height, aB.height));

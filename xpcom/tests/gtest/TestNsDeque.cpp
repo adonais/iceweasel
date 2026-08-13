@@ -2,13 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "gtest/gtest.h"
-#include "nsDeque.h"
-#include "nsCRT.h"
-#include "mozilla/RefPtr.h"
 #include <functional>
 #include <type_traits>
 #include <utility>
+
+#include "gtest/gtest.h"
+#include "mozilla/RefPtr.h"
+#include "nsCRT.h"
+#include "nsDeque.h"
 
 /**************************************************************
   Now define the token deallocator class...

@@ -3,11 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 plugins {
+    id 'com.android.library'
     alias(libs.plugins.dependency.analysis)
 }
-
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
 
 android {
     testFixtures {
@@ -24,7 +22,7 @@ dependencies {
 
     implementation libs.androidx.annotation
     implementation libs.androidx.appcompat
-    implementation libs.androidx.core.ktx
+    implementation libs.androidx.core
 
     testImplementation project(':components:support-test')
 

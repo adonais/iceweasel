@@ -43,6 +43,7 @@ import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppAction.BookmarkAction
 import org.mozilla.fenix.components.appstate.AppAction.ShareAction
+import org.mozilla.fenix.components.appstate.AppAction.ShortcutAction
 import org.mozilla.fenix.components.appstate.AppAction.SnackbarAction
 import org.mozilla.fenix.components.appstate.AppAction.TranslationsAction
 import org.mozilla.fenix.components.appstate.AppAction.WebCompatAction
@@ -65,6 +66,8 @@ import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.WebCompatRep
 import org.mozilla.fenix.components.metrics.MetricsUtils.BookmarkAction.Source
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.tabClosedUndoMessage
+import org.mozilla.fenix.home.topsites.AddShortcutEntryPoint
+import org.mozilla.fenix.home.topsites.AddShortcutSource
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.getSnackbarTimeout
 
@@ -289,7 +292,10 @@ class SnackbarBindingTest {
         binding.start()
 
         appStore.dispatch(
-            AppAction.ShortcutAction.ShortcutAdded,
+            ShortcutAction.ShortcutAdded(
+                source = AddShortcutSource.MANUAL,
+                entryPoint = AddShortcutEntryPoint.PAGE_MENU,
+            ),
         )
         waitForStoreToSettle()
 

@@ -1583,7 +1583,7 @@ PlacesTreeView.prototype = {
         }
         return PlacesUIUtils.getBestTitle(node, true);
       case this.COLUMN_TYPE_TAGS:
-        return node.tags?.replace(",", ", ");
+        return node.tags?.replaceAll(",", ", ");
       case this.COLUMN_TYPE_URI:
         if (PlacesUtils.nodeIsURI(node)) {
           return node.uri;

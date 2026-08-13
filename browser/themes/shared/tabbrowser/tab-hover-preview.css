@@ -5,6 +5,12 @@
 #tab-preview-panel {
   --panel-width: 280px;
   --panel-padding: 0;
+
+  @media -moz-pref("browser.nova.enabled") {
+    --panel-padding: 0 var(--space-small) var(--space-small);
+    --panel-border-radius: var(--border-radius-xlarge);
+  }
+
   @media not -moz-pref("browser.tabs.notes.enabled") {
     pointer-events: none;
 
@@ -54,6 +60,7 @@
 
 .tab-preview-thumbnail-container {
   width: 264px;
+  max-width: 100%;
   margin: 0 auto;
   overflow: hidden;
 
@@ -67,9 +74,12 @@
     display: block;
     width: 100%;
     animation: tab-hover-preview-fadein 0.2s ease;
-    border: 1px solid var(--border-color-deemphasized);
+    border: var(--border-width) solid var(--border-color-deemphasized);
     border-radius: var(--border-radius-medium);
     box-sizing: border-box;
+    @media -moz-pref("browser.nova.enabled") {
+      border-radius: var(--border-radius-large);
+    }
   }
 }
 
@@ -77,6 +87,7 @@
   margin: 0 !important;
   -moz-context-properties: fill;
   fill: currentColor;
+  border: var(--border-width) solid var(--button-border-color-ghost);
 
   &[hidden] {
     display: none;
@@ -93,7 +104,7 @@
   }
 
   > moz-badge {
-    margin-inline-start: 8px;
+    margin-inline-start: var(--space-small);
     align-self: center;
   }
 }

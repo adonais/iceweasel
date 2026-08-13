@@ -6,7 +6,6 @@
 
 #include "js/ErrorReport.h"  // JS::PrintError
 #include "js/Warnings.h"     // JS::SetWarningReporter, JS::WarnUTF8
-
 #include "jsapi-tests/tests.h"
 
 class AutoStreamBuffer {

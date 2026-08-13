@@ -336,6 +336,8 @@ class MockCall : public webrtc::Call {
     return nullptr;
   }
 
+  virtual void DisconnectFromNetworkThread() override { }
+
   virtual webrtc::TaskQueueBase* worker_thread() const override {
     return nullptr;
   }

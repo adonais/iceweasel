@@ -5,52 +5,36 @@
 package org.mozilla.fenix.settings.trustpanel.ui
 
 import android.graphics.Bitmap
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.LinkText
 import mozilla.components.compose.base.LinkTextState
@@ -58,7 +42,6 @@ import mozilla.components.compose.base.menu.DropdownMenu
 import mozilla.components.compose.base.menu.MenuItem.CheckableItem
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.text.value
-import mozilla.components.compose.base.theme.surfaceDimVariant
 import mozilla.components.support.utils.CertificateUtils
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.compose.IPProtectionMenuItem
@@ -75,19 +58,6 @@ import org.mozilla.fenix.settings.trustpanel.store.WebsiteInfoState
 import org.mozilla.fenix.settings.trustpanel.store.WebsitePermission
 import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.ui.icons.R as iconsR
-
-private val BANNER_ROUNDED_CORNER_SHAPE = RoundedCornerShape(
-    topStart = 28.dp,
-    topEnd = 28.dp,
-    bottomStart = 4.dp,
-    bottomEnd = 4.dp,
-)
-
-private val BANNER_IMAGE_SIZE = 80.dp
-private val GradientAISubtleStop2Light = Color(0xFFE9DAFB)
-private val GradientAISubtleStop3Light = Color(0xFFFFE3CE)
-private val GradientAISubtleStop2Dark = Color(0xFFAB71FF)
-private val GradientAISubtleStop3Dark = Color(0xFFFF8A50)
 
 private const val DROPDOWN_TEXT_WIDTH_FRACTION = 0.5f
 
@@ -259,7 +229,7 @@ private fun TrackersBlockedMenuItem(
     if (!isSiteProtectionEnabled) {
         MenuItem(
             label = stringResource(id = R.string.protection_panel_etp_disabled_no_trackers_blocked),
-            beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_shield_slash_critical_24),
+            beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_shield_slash_multicolor_24),
             state = MenuItemState.CRITICAL,
         )
     }
@@ -301,7 +271,7 @@ private fun ConnectionSecurityMenuGroup(
         } else {
             MenuItem(
                 label = stringResource(id = R.string.connection_security_panel_not_secure),
-                beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_lock_slash_critical_24),
+                beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_lock_slash_multicolor_24),
                 state = MenuItemState.CRITICAL,
             )
         }
@@ -321,190 +291,6 @@ private fun IPProtectionMenuGroup(
                 state = ipProtectionMenuState,
                 onToggle = onIPProtectionToggle,
                 onNavigate = onIPProtectionNavigate,
-            )
-        }
-    }
-}
-
-@Immutable
-private data class ProtectionPanelBannerContent(
-    val imageId: Int,
-    val title: String,
-    val description: String?,
-    val backgroundColor: Color,
-    val isGradient: Boolean = false,
-)
-
-@Composable
-private fun protectionPanelBannerContent(
-    isSecured: Boolean,
-    isTrackingProtectionEnabled: Boolean,
-    numberOfTrackersBlocked: Int,
-): ProtectionPanelBannerContent {
-    val defaultBackground = MaterialTheme.colorScheme.surfaceDimVariant
-    val appName = stringResource(id = R.string.app_name_firefox)
-    val protectedTitle = stringResource(id = R.string.protection_panel_banner_protected_title, appName)
-    return when {
-        !isSecured -> ProtectionPanelBannerContent(
-            imageId = R.drawable.protection_panel_not_secure,
-            title = stringResource(id = R.string.protection_panel_banner_not_secure_title),
-            description = stringResource(id = R.string.protection_panel_banner_not_secure_description),
-            backgroundColor = defaultBackground,
-        )
-        !isTrackingProtectionEnabled -> ProtectionPanelBannerContent(
-            imageId = R.drawable.protection_panel_not_protected,
-            title = stringResource(id = R.string.protection_panel_banner_not_protected_title),
-            description = stringResource(
-                id = R.string.protection_panel_banner_not_protected_description,
-                appName,
-            ),
-            backgroundColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-        )
-        else -> ProtectionPanelBannerContent(
-            imageId = R.drawable.kit_head_protection_blocker_banner,
-            title = protectedTitle,
-            description = if (numberOfTrackersBlocked > 0) {
-                pluralStringResource(
-                    id = R.plurals.protection_panel_banner_protected_blocked_trackers_description,
-                    count = numberOfTrackersBlocked,
-                    numberOfTrackersBlocked,
-                )
-            } else {
-                stringResource(id = R.string.protection_panel_banner_protected_no_blocked_trackers_description)
-            },
-            backgroundColor = defaultBackground,
-            isGradient = true,
-        )
-    }
-}
-
-@Composable
-private fun ProtectionPanelBanner(
-    isSecured: Boolean,
-    isTrackingProtectionEnabled: Boolean,
-    numberOfTrackersBlocked: Int,
-    onClick: (() -> Unit)? = null,
-) {
-    val content = protectionPanelBannerContent(
-        isSecured = isSecured,
-        isTrackingProtectionEnabled = isTrackingProtectionEnabled,
-        numberOfTrackersBlocked = numberOfTrackersBlocked,
-    )
-    val mergedContentDescription = if (content.description == null) {
-        content.title
-    } else {
-        "${content.title}. ${content.description}"
-    }
-    val bannerModifier = Modifier
-        .fillMaxWidth()
-        .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-        .clearAndSetSemantics {
-            contentDescription = mergedContentDescription
-            if (onClick != null) {
-                role = Role.Button
-                onClick { onClick(); true }
-            }
-        }
-
-    if (content.isGradient) {
-        ProtectionPanelGradientBanner(
-            title = content.title,
-            description = content.description,
-            imageId = content.imageId,
-            modifier = bannerModifier,
-        )
-    } else {
-        Card(
-            modifier = bannerModifier,
-            colors = CardDefaults.cardColors(containerColor = content.backgroundColor),
-            shape = BANNER_ROUNDED_CORNER_SHAPE,
-        ) {
-            ProtectionPanelBannerRow(content = content, showChevron = onClick != null)
-        }
-    }
-}
-
-@Composable
-private fun BannerTexts(title: String, description: String?) {
-    Text(text = title, style = FirefoxTheme.typography.headline7)
-    if (description != null) {
-        Text(text = description, style = FirefoxTheme.typography.body2)
-    }
-}
-
-@Composable
-private fun ProtectionPanelBannerRow(
-    content: ProtectionPanelBannerContent,
-    showChevron: Boolean,
-) {
-    Row(
-        modifier = Modifier.padding(horizontal = FirefoxTheme.layout.space.static200),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Image(
-            modifier = Modifier.size(BANNER_IMAGE_SIZE),
-            painter = painterResource(id = content.imageId),
-            contentDescription = null,
-        )
-
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
-                BannerTexts(title = content.title, description = content.description)
-            }
-        }
-
-        if (showChevron) {
-            Icon(
-                painter = painterResource(id = iconsR.drawable.mozac_ic_chevron_right_24),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurface,
-            )
-        }
-    }
-}
-
-@Composable
-private fun ProtectionPanelGradientBanner(
-    title: String,
-    description: String?,
-    imageId: Int,
-    modifier: Modifier = Modifier,
-) {
-    val (stop2, stop3) = if (isSystemInDarkTheme()) {
-        GradientAISubtleStop2Dark to GradientAISubtleStop3Dark
-    } else {
-        GradientAISubtleStop2Light to GradientAISubtleStop3Light
-    }
-    Box(
-        modifier = Modifier
-            .clip(MaterialTheme.shapes.extraLarge)
-            .background(
-                brush = Brush.horizontalGradient(listOf(stop2, stop3)),
-            )
-            .then(modifier),
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = FirefoxTheme.layout.space.static200),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(
-                modifier = Modifier
-                    .padding(vertical = FirefoxTheme.layout.space.static150)
-                    .weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                BannerTexts(title = title, description = description)
-            }
-
-            Image(
-                painter = painterResource(id = imageId),
-                contentDescription = null,
-                modifier = Modifier.size(BANNER_IMAGE_SIZE),
             )
         }
     }
@@ -664,22 +450,21 @@ private fun AutoplayDropdownMenu(
 
 @PreviewLightDark
 @Composable
-private fun ProtectionPanelPreview() {
+private fun ProtectionPanelPreview(
+    @PreviewParameter(ProtectionPanelBannerPreviewProvider::class) state: ProtectionPanelBannerPreviewState,
+) {
     FirefoxTheme {
-        Column(
-            modifier = Modifier
-                .background(color = MaterialTheme.colorScheme.surface),
-        ) {
+        Surface {
             ProtectionPanel(
                 websiteInfoState = WebsiteInfoState(
-                    isSecured = true,
+                    isSecured = state.isSecured,
                     websiteUrl = "https://www.mozilla.org",
                     websiteTitle = "Mozilla",
                     certificate = null,
                 ),
                 ipProtectionMenuState = IPProtectionMenuState(),
                 icon = null,
-                isTrackingProtectionEnabled = true,
+                isTrackingProtectionEnabled = state.isTrackingProtectionEnabled,
                 isGlobalTrackingProtectionEnabled = true,
                 isLocalPdf = false,
                 showIPProtection = true,

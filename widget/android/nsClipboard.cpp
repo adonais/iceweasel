@@ -2,15 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "nsClipboard.h"
+
 #include "mozilla/java/ClipboardWrappers.h"
 #include "mozilla/java/GeckoAppShellWrappers.h"
-#include "nsClipboard.h"
-#include "nsISupportsPrimitives.h"
 #include "nsCOMPtr.h"
 #include "nsComponentManagerUtils.h"
+#include "nsISupportsPrimitives.h"
 #include "nsMemory.h"
-#include "nsStringStream.h"
 #include "nsPrimitiveHelpers.h"
+#include "nsStringStream.h"
 
 using namespace mozilla;
 

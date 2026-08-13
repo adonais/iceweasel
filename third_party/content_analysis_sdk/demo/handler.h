@@ -249,6 +249,9 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
         case content_analysis::sdk::FILE_TRANSFER:
           connector = "file-transfer";
           break;
+        case content_analysis::sdk::DATA_COPIED:
+          connector = "data-copied";
+          break;
         default:
           break;
       }
@@ -280,6 +283,9 @@ class Handler : public content_analysis::sdk::AgentEventHandler {
           break;
         case content_analysis::sdk::ContentAnalysisRequest::SAVE_AS_DOWNLOAD:
           reason = "SAVE_AS_DOWNLOAD";
+          break;
+        case content_analysis::sdk::ContentAnalysisRequest::CLIPBOARD_COPY:
+          reason = "CLIPBOARD_COPY";
           break;
       }
     }

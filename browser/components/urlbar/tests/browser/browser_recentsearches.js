@@ -186,3 +186,68 @@ add_task(async () => {
   await BrowserTestUtils.removeTab(tab);
   await SpecialPowers.popPrefEnv();
 });
+
+// Shift+deleting the last remaining suggestion should clear the input rather
+// than leaving the removed suggestion's text behind (bug 2032429).
+add_task(async function test_removeLastSuggestion_clearsInput() {
+  await UrlbarTestUtils.formHistory.clear();
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.suggest.topsites", false],
+      ["browser.urlbar.suggest.trending", false],
+    ],
+  });
+
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    window.gBrowser,
+    "data:text/html,"
+  );
+
+  info("Seed a single recent search.");
+  let browserLoaded = BrowserTestUtils.browserLoaded(
+    window.gBrowser.selectedBrowser,
+    false,
+    "https://example.com/?q=Delete+Me"
+  );
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "Delete Me",
+  });
+  await UrlbarTestUtils.promisePopupClose(window, () => {
+    EventUtils.synthesizeKey("KEY_Enter", {}, window);
+  });
+  await browserLoaded;
+
+  info("Open the empty urlbar with the recent search as the only result.");
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "",
+  });
+  Assert.equal(
+    UrlbarTestUtils.getResultCount(window),
+    1,
+    "The recent search is the only result"
+  );
+  let { result } = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
+  Assert.equal(result.providerName, "UrlbarProviderRecentSearches");
+
+  info("Select and shift+delete the recent search.");
+  EventUtils.synthesizeKey("KEY_ArrowDown");
+  Assert.equal(UrlbarTestUtils.getSelectedRowIndex(window), 0);
+  Assert.equal(gURLBar.value, "Delete Me", "Value reflects the selection");
+  EventUtils.synthesizeKey("KEY_Delete", { shiftKey: true });
+
+  await TestUtils.waitForCondition(
+    () => UrlbarTestUtils.getResultCount(window) == 0,
+    "Waiting for the recent search to be removed"
+  );
+  Assert.equal(
+    gURLBar.value,
+    "",
+    "The input is cleared after removing the last suggestion"
+  );
+
+  await UrlbarTestUtils.promisePopupClose(window);
+  await BrowserTestUtils.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
+});

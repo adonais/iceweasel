@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "AsyncDBus.h"
+
 #include "gio/gio.h"
 #include "mozilla/XREAppData.h"
 #include "nsAppShell.h"

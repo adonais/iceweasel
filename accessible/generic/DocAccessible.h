@@ -5,15 +5,14 @@
 #ifndef mozilla_a11y_DocAccessible_h_
 #define mozilla_a11y_DocAccessible_h_
 
-#include "HyperTextAccessible.h"
 #include "AccEvent.h"
-#include "nsAccessibilityService.h"
-
-#include "nsClassHashtable.h"
-#include "nsTHashMap.h"
+#include "HyperTextAccessible.h"
 #include "mozilla/UniquePtr.h"
+#include "nsAccessibilityService.h"
+#include "nsClassHashtable.h"
 #include "nsIDocumentObserver.h"
 #include "nsITimer.h"
+#include "nsTHashMap.h"
 #include "nsTHashSet.h"
 #include "nsWeakReference.h"
 

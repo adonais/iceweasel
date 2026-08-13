@@ -10,10 +10,10 @@
 #include "GLLibraryEGL.h"
 #include "GLReadTexImageHelper.h"
 #include "MozFramebuffer.h"
-#include "mozilla/layers/LayersSurfaces.h"  // for SurfaceDescriptor, etc
-#include "mozilla/layers/AndroidHardwareBuffer.h"
 #include "ScopedGLHelpers.h"
 #include "SharedSurface.h"
+#include "mozilla/layers/AndroidHardwareBuffer.h"
+#include "mozilla/layers/LayersSurfaces.h"  // for SurfaceDescriptor, etc
 
 namespace mozilla {
 namespace gl {

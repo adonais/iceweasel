@@ -120,6 +120,104 @@ describe("ASRouterScreenUtils", () => {
         await ASRouterScreenUtils.evaluateTargetingAndRemoveScreens(screens);
       assert.deepEqual(evaluatedStrings, expectedScreens);
     });
+    it("should filter multiselect checkboxes by their targeting", async () => {
+      const screens = [
+        {
+          id: "kept",
+          content: {
+            tiles: {
+              type: "multiselect",
+              data: [
+                { id: "checkbox-1", targeting: true },
+                { id: "checkbox-2", targeting: false },
+                { id: "checkbox-3" },
+              ],
+            },
+          },
+        },
+      ];
+      sandbox
+        .stub(ASRouterScreenUtils, "evaluateScreenTargeting")
+        .callsFake(targeting => targeting);
+      const [testScreen] =
+        await ASRouterScreenUtils.evaluateTargetingAndRemoveScreens(screens);
+      assert.deepEqual(
+        testScreen.content.tiles.data.map(checkbox => checkbox.id),
+        ["checkbox-1", "checkbox-3"]
+      );
+    });
+  });
+
+  describe("filterMultiSelectTargeting", () => {
+    it("should keep checkboxes without targeting", async () => {
+      const testScreen = {
+        content: {
+          tiles: {
+            type: "multiselect",
+            data: [{ id: "checkbox-1" }, { id: "checkbox-2" }],
+          },
+        },
+      };
+      const stub = sandbox.stub(ASRouterScreenUtils, "evaluateScreenTargeting");
+      await ASRouterScreenUtils.filterMultiSelectTargeting(testScreen);
+      assert.notCalled(stub);
+      assert.deepEqual(
+        testScreen.content.tiles.data.map(checkbox => checkbox.id),
+        ["checkbox-1", "checkbox-2"]
+      );
+    });
+    it("should remove the multiselect tile when all checkboxes are filtered out", async () => {
+      const testScreen = {
+        content: {
+          tiles: {
+            type: "multiselect",
+            data: [
+              { id: "checkbox-1", targeting: false },
+              { id: "checkbox-2", targeting: false },
+            ],
+          },
+        },
+      };
+      sandbox
+        .stub(ASRouterScreenUtils, "evaluateScreenTargeting")
+        .callsFake(targeting => targeting);
+      await ASRouterScreenUtils.filterMultiSelectTargeting(testScreen);
+      assert.isUndefined(testScreen.content.tiles);
+    });
+    it("should handle an array of tiles, dropping only emptied multiselects", async () => {
+      const testScreen = {
+        content: {
+          tiles: [
+            {
+              type: "multiselect",
+              data: [{ id: "checkbox-1", targeting: false }],
+            },
+            {
+              type: "multiselect",
+              data: [{ id: "checkbox-2", targeting: true }],
+            },
+            { type: "theme", data: [] },
+          ],
+        },
+      };
+      sandbox
+        .stub(ASRouterScreenUtils, "evaluateScreenTargeting")
+        .callsFake(targeting => targeting);
+      await ASRouterScreenUtils.filterMultiSelectTargeting(testScreen);
+      assert.deepEqual(
+        testScreen.content.tiles.map(t => t.type),
+        ["multiselect", "theme"]
+      );
+      assert.deepEqual(
+        testScreen.content.tiles[0].data.map(checkbox => checkbox.id),
+        ["checkbox-2"]
+      );
+    });
+    it("should be a no-op for screens without tiles", async () => {
+      const testScreen = { content: {} };
+      await ASRouterScreenUtils.filterMultiSelectTargeting(testScreen);
+      assert.isUndefined(testScreen.content.tiles);
+    });
   });
 
   describe("addScreenImpression", () => {

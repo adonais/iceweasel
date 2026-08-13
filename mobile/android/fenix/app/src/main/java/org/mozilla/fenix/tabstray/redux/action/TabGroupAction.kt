@@ -23,9 +23,26 @@ sealed interface TabGroupAction : TabsTrayAction {
     data object AddToNewTabGroup : TabGroupAction
 
     /**
+     * Fired when the user clicks the Tab Groups page FAB to create a starter tab group.
+     */
+    data object NewTabGroupFabClicked : TabGroupAction
+
+    /**
+     * Navigates to the expanded view of a tab group that was created.
+     *
+     * @property group The newly created [TabsTrayItem.TabGroup] to open.
+     */
+    data class OpenCreatedTabGroup(val group: TabsTrayItem.TabGroup) : TabGroupAction
+
+    /**
      * Fired when the user drags a tab onto another to create a new tab group.
      */
     data class DragAndDropTwoTabs(val sourceTabId: String, val destinationTabId: String) : TabGroupAction
+
+    /**
+     * Fired when the drag and drop handling is complete.
+     */
+    data object DragAndDropProcessed : TabGroupAction
 
     /**
      * Fired when the user changes the tab group name.
@@ -66,6 +83,13 @@ sealed interface TabGroupAction : TabsTrayAction {
      * @property theme The theme of the tab group the user has selected.
      */
     data class ThemeChanged(val theme: TabGroupTheme) : TabGroupAction
+
+    /**
+     * Invoked when a new tab group is created.
+     *
+     * @property id The tab group's id
+     */
+    data class NewGroupCreated(val id: String) : TabGroupAction
 
     /**
      * Fired when the user performs an action to add the current collection of
@@ -110,7 +134,7 @@ sealed interface TabGroupAction : TabsTrayAction {
      * @property sourceId The id of the source item
      * @property destinationId The id of the destination item
      */
-    data class DragAndDropCompleted(val sourceId: String, val destinationId: String) : TabGroupAction, TabsStorageAction
+    data class DragAndDropInitiated(val sourceId: String, val destinationId: String) : TabGroupAction, TabsStorageAction
 
     /**
      * Fired when the user confirms they want to close the last tab and delete the Tab Group.
@@ -133,5 +157,15 @@ sealed interface TabGroupAction : TabsTrayAction {
     /**
      * Invoked when the user dismisses the tab group onboarding card.
      */
-    data object OnboardingDismissed : TabGroupAction
+    data object OnboardingDismissed : TabGroupAction, TabManagerUiStateStorageAction
+
+    /**
+     * Invoked when the tab group onboarding card is shown to the user.
+     */
+    data object OnboardingShown : TabGroupAction, TabManagerUiStateStorageAction
+
+    /**
+     * Invoked when a new group's animation is played.
+     */
+    data object NewGroupAnimationFinished : TabGroupAction
 }

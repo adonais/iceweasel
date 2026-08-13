@@ -5,13 +5,13 @@
 #ifndef nsIClassInfoImpl_h_
 #define nsIClassInfoImpl_h_
 
+#include <new>
+
 #include "mozilla/Alignment.h"
 #include "mozilla/MacroArgs.h"
 #include "mozilla/MacroForEach.h"
 #include "nsIClassInfo.h"
 #include "nsISupportsImpl.h"
-
-#include <new>
 
 /**
  * This header file provides macros which help you make your class implement

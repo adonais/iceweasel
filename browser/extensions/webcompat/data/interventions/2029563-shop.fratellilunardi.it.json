@@ -1,0 +1,15 @@
+{
+  "label": "shop.fratellilunardi.it",
+  "bugs": {
+    "2029563": {
+      "issue": "desktop-layout-not-mobile",
+      "matches": ["*://shop.fratellilunardi.it/*"]
+    }
+  },
+  "interventions": [
+    {
+      "platforms": ["android"],
+      "ua_string": ["Chrome_with_FxQuantum"]
+    }
+  ]
+}

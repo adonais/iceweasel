@@ -9,7 +9,8 @@
 #include "mozilla/ThreadLocal.h"
 
 #include "jspubtd.h"
-#include "jstypes.h"                  // JS_PUBLIC_API
+#include "jstypes.h"  // JS_PUBLIC_API
+
 #include "gc/GCEnum.h"                // js::MemoryUse
 #include "jit/ExecutableAllocator.h"  // jit::JitPoisonRangeVector
 #include "js/Utility.h"               // js_free

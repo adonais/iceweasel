@@ -39,9 +39,6 @@ void HTMLEditorController::RegisterEditorDocStateCommands(
 // static
 void HTMLEditorController::RegisterHTMLEditorCommands(
     nsControllerCommandTable* aCommandTable) {
-  // Edit menu
-  NS_REGISTER_COMMAND(PasteNoFormattingCommand, "cmd_pasteNoFormatting");
-
   // indent/outdent
   NS_REGISTER_COMMAND(IndentCommand, "cmd_indent");
   NS_REGISTER_COMMAND(OutdentCommand, "cmd_outdent");

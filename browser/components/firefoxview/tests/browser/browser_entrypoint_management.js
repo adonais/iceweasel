@@ -15,32 +15,6 @@ add_task(async function test_removing_button_should_close_tab() {
   CustomizableUI.reset();
 });
 
-add_task(async function test_button_auto_readd() {
-  await withFirefoxView({}, async browser => {
-    let { FirefoxViewHandler } = browser.documentGlobal;
-
-    CustomizableUI.removeWidgetFromArea("firefox-view-button");
-    ok(
-      !CustomizableUI.getPlacementOfWidget("firefox-view-button"),
-      "Button has no placement"
-    );
-    ok(!FirefoxViewHandler.tab, "Shouldn't have tab reference");
-    ok(!FirefoxViewHandler.button, "Shouldn't have button reference");
-
-    FirefoxViewHandler.openTab();
-    ok(FirefoxViewHandler.tab, "Tab re-opened");
-    ok(FirefoxViewHandler.button, "Button re-added");
-    let placement = CustomizableUI.getPlacementOfWidget("firefox-view-button");
-    is(
-      placement.area,
-      CustomizableUI.AREA_TABSTRIP,
-      "Button re-added to the tabs toolbar"
-    );
-    is(placement.position, 0, "Button re-added as the first toolbar element");
-  });
-  CustomizableUI.reset();
-});
-
 add_task(async function test_button_moved() {
   await withFirefoxView({}, async browser => {
     let { FirefoxViewHandler } = browser.documentGlobal;

@@ -3,11 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "APZTestCommon.h"
-
 #include "InputUtils.h"
-#include "gtest/gtest.h"
-
 #include "RecentEventsBuffer.h"
+#include "gtest/gtest.h"
 
 struct TestEvent {
  public:

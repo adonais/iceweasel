@@ -121,6 +121,13 @@ class MachSettings:
                     "Remote name or url to push to.",
                     "ssh://hg.mozilla.org/try",
                 ),
+                (
+                    "try.gitbacking",
+                    "boolean",
+                    "Push the source tree to the git-backing repo before pushing to try, "
+                    "so that CI tasks can clone from GitHub.",
+                    False,
+                ),
             ]
 
         def taskgraph_config_settings():

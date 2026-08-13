@@ -6,6 +6,7 @@
 /* global content */
 
 import { BrowserTestUtils } from "resource://testing-common/BrowserTestUtils.sys.mjs";
+import { TestUtils } from "resource://testing-common/TestUtils.sys.mjs";
 
 const TEST_URL =
   "https://test1.example.com/browser/browser/tools/mozscreenshots/mozscreenshots/extension/mozscreenshots/browser/resources/lib/permissionPrompts.html";
@@ -120,7 +121,7 @@ export var PermissionPrompts = {
 
         // We want to skip the progress-notification, so we wait for
         // the install-confirmation screen to be "not hidden" = shown.
-        return BrowserTestUtils.waitForCondition(
+        return TestUtils.waitForCondition(
           () => !notification.hidden,
           "addon install confirmation did not show",
           200

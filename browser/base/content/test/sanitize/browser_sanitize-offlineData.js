@@ -192,8 +192,8 @@ for (let itemsToClear of prefs) {
     let originALLOW = "https://example.org";
     PermissionTestUtils.add(
       originALLOW,
-      "cookie",
-      Ci.nsICookiePermission.ACCESS_ALLOW
+      "persist-data-on-shutdown",
+      Services.perms.ALLOW_ACTION
     );
 
     ok(

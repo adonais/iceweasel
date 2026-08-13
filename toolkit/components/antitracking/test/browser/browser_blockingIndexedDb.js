@@ -1,5 +1,3 @@
-requestLongerTimeout(4);
-
 AntiTracking.runTestInNormalAndPrivateMode(
   "IndexedDB",
   // blocking callback
@@ -18,13 +16,7 @@ AntiTracking.runTestInNormalAndPrivateMode(
     ok(true, "IDB should be allowed");
   },
   // Cleanup callback
-  async _ => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  },
+  clearSiteTestData,
   [["network.lna.block_trackers", false]]
 );
 
@@ -89,13 +81,7 @@ AntiTracking.runTestInNormalAndPrivateMode(
     ok(true, "IDB should be allowed");
   },
   // Cleanup callback
-  async _ => {
-    await new Promise(resolve => {
-      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
-        resolve()
-      );
-    });
-  },
+  clearSiteTestData,
   [["network.lna.block_trackers", false]],
   false,
   false

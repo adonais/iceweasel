@@ -232,6 +232,7 @@ NSS_CMSUtil_GetTemplateByTypeTag(SECOidTag type)
     extern const SEC_ASN1Template NSSCMSEnvelopedDataTemplate[];
     extern const SEC_ASN1Template NSSCMSEncryptedDataTemplate[];
     extern const SEC_ASN1Template NSSCMSDigestedDataTemplate[];
+    extern const SEC_ASN1Template NSSCMSAuthEnvelopedDataTemplate[];
 
     switch (type) {
         case SEC_OID_PKCS7_SIGNED_DATA:
@@ -239,6 +240,9 @@ NSS_CMSUtil_GetTemplateByTypeTag(SECOidTag type)
             break;
         case SEC_OID_PKCS7_ENVELOPED_DATA:
             template = NSSCMSEnvelopedDataTemplate;
+            break;
+        case SEC_OID_CMS_AUTH_ENVELOPED_DATA:
+            template = NSSCMSAuthEnvelopedDataTemplate;
             break;
         case SEC_OID_PKCS7_ENCRYPTED_DATA:
             template = NSSCMSEncryptedDataTemplate;
@@ -264,6 +268,9 @@ NSS_CMSUtil_GetSizeByTypeTag(SECOidTag type)
             break;
         case SEC_OID_PKCS7_ENVELOPED_DATA:
             size = sizeof(NSSCMSEnvelopedData);
+            break;
+        case SEC_OID_CMS_AUTH_ENVELOPED_DATA:
+            size = sizeof(NSSCMSAuthEnvelopedData);
             break;
         case SEC_OID_PKCS7_ENCRYPTED_DATA:
             size = sizeof(NSSCMSEncryptedData);
@@ -293,6 +300,9 @@ NSS_CMSContent_GetContentInfo(void *msg, SECOidTag type)
             break;
         case SEC_OID_PKCS7_ENVELOPED_DATA:
             cinfo = &(c.envelopedData->contentInfo);
+            break;
+        case SEC_OID_CMS_AUTH_ENVELOPED_DATA:
+            cinfo = &(c.authEnvelopedData->contentInfo);
             break;
         case SEC_OID_PKCS7_ENCRYPTED_DATA:
             cinfo = &(c.encryptedData->contentInfo);

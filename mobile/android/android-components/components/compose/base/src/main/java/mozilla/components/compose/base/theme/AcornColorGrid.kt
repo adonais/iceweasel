@@ -44,7 +44,7 @@ private class ColorParameterProvider : PreviewParameterProvider<ColorGridParamet
 }
 
 @Suppress("LongMethod", "MagicNumber")
-@Preview(widthDp = CONTAINER_STACK_WIDTH * 4 + CONTAINER_GUTTER * 3 + 16, heightDp = 1600)
+@Preview(widthDp = CONTAINER_STACK_WIDTH * 4 + CONTAINER_GUTTER * 3 + 16, heightDp = 1700)
 @Composable
 private fun AcornColorGrid(
     @PreviewParameter(ColorParameterProvider::class)
@@ -393,6 +393,11 @@ private fun AcornColorGrid(
                         text = gradients::tabOutline.name,
                         modifier = Modifier.gradientGridItemShort(brush = gradients.tabOutline.brush),
                         color = colorScheme.onPrimary,
+                    )
+
+                    Text(
+                        text = gradients::privacyMask.name,
+                        modifier = Modifier.gradientGridItemShort(brush = gradients.privacyMask.brush),
                     )
                 }
             }

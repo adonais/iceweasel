@@ -143,6 +143,7 @@ class AbstractFetchDownloadServiceTest {
         testScope: CoroutineScope,
         scheduler: TestCoroutineScheduler,
         downloadFileUtils: DownloadFileUtils = FakeDownloadFileUtils(),
+        downloadFileWriter: FakeDownloadFileWriter = FakeDownloadFileWriter(),
     ): AbstractFetchDownloadService = spy(
         object : AbstractFetchDownloadService() {
             override val httpClient = client
@@ -153,7 +154,7 @@ class AbstractFetchDownloadServiceTest {
             override val downloadFileUtils = downloadFileUtils
             override val packageNameProvider = fakePackageNameProvider
             override val context: Context = testContext
-            override val downloadFileWriter: DownloadFileWriter = FakeDownloadFileWriter()
+            override val downloadFileWriter: DownloadFileWriter = downloadFileWriter
             override val dateTimeProvider: DateTimeProvider = FakeDateTimeProvider(scheduler)
             override val mainDispatcher: CoroutineDispatcher = testDispatcher
             override val ioDispatcher: CoroutineDispatcher = testDispatcher
@@ -762,7 +763,7 @@ class AbstractFetchDownloadServiceTest {
             val resumeResponse = Response(
                 "https://example.com/file.txt",
                 206,
-                MutableHeaders("Content-Range" to "1-67589/67589"),
+                MutableHeaders("Content-Range" to "bytes 1-67588/67589"),
                 Response.Body(mock()),
             )
             doReturn(downloadResponse).`when`(client)
@@ -1487,6 +1488,308 @@ class AbstractFetchDownloadServiceTest {
 
         verify(responseFromClient, atLeastOnce()).status
         verifyNoInteractions(responseFromDownloadState)
+    }
+
+    @Test
+    fun `performDownload - append when resuming a download with partial content response`() = runTest(testDispatcher) {
+        val downloadFileWriter = FakeDownloadFileWriter(executeBlock = true)
+        val service = createService(
+            browserStore,
+            backgroundScope,
+            testScheduler,
+            downloadFileWriter = downloadFileWriter,
+        )
+        val response = Response(
+            "https://example.com/file.txt",
+            206,
+            MutableHeaders("Content-Range" to "bytes 100-999/1000"),
+            Response.Body(mock()),
+        )
+        val download = DownloadState("https://example.com/file.txt", "file.txt", contentLength = 1000)
+        val downloadJob = DownloadJobState(currentBytesCopied = 100, state = download, status = DOWNLOADING)
+
+        doReturn(response).`when`(client).fetch(any())
+        doReturn(ERROR_IN_STREAM_CLOSED).`when`(service)
+            .copyInChunks(any(), any(), any(), anyBoolean())
+
+        service.performDownload(downloadJob)
+
+        assertEquals(true, downloadFileWriter.lastAppend)
+        assertEquals(100L, downloadJob.currentBytesCopied)
+        assertEquals(DOWNLOADING, service.getDownloadJobStatus(downloadJob))
+    }
+
+    @Test
+    fun `performDownload - resumed download with unknown size uses Content-Range total length`() = runTest(testDispatcher) {
+        val service = createService(
+            browserStore,
+            backgroundScope,
+            testScheduler,
+            downloadFileWriter = FakeDownloadFileWriter(executeBlock = true),
+        )
+        val response = Response(
+            "https://example.com/file.txt",
+            206,
+            MutableHeaders(
+                "Content-Range" to "bytes 100-199/200",
+                "Content-Length" to "100",
+            ),
+            Response.Body(mock()),
+        )
+        val download = DownloadState("https://example.com/file.txt", "file.txt", contentLength = null)
+        val downloadJob = DownloadJobState(currentBytesCopied = 100, state = download, status = DOWNLOADING)
+
+        doReturn(response).`when`(client).fetch(any())
+        doReturn(AbstractFetchDownloadService.CopyInChuckStatus.COMPLETED).`when`(service)
+            .copyInChunks(any(), any(), any(), anyBoolean())
+
+        service.performDownload(downloadJob)
+
+        assertEquals(200L, downloadJob.state.contentLength)
+        assertEquals(FAILED, service.getDownloadJobStatus(downloadJob))
+        verify(service, never()).setDownloadJobStatus(downloadJob, COMPLETED)
+    }
+
+    @Test
+    fun `performDownload - restart from beginning when resume response ignores Range`() = runTest(testDispatcher) {
+        var deleteMediaFileCalled = false
+        val downloadFileWriter = FakeDownloadFileWriter(executeBlock = true)
+        val staleResponse = mock<Response>()
+        val service = createService(
+            browserStore,
+            backgroundScope,
+            testScheduler,
+            downloadFileUtils = FakeDownloadFileUtils(
+                fileExists = { _, _ -> true },
+                deleteMediaFile = { _, _, _ ->
+                    deleteMediaFileCalled = true
+                    true
+                },
+            ),
+            downloadFileWriter = downloadFileWriter,
+        )
+        val response = Response(
+            "https://example.com/file.txt",
+            200,
+            MutableHeaders(),
+            Response.Body(mock()),
+        )
+        val download = DownloadState(
+            "https://example.com/file.txt",
+            "file.txt",
+            contentLength = 1000,
+            response = staleResponse,
+        )
+        val downloadJob = DownloadJobState(currentBytesCopied = 100, state = download, status = DOWNLOADING)
+
+        doReturn(response).`when`(client).fetch(any())
+        doReturn(ERROR_IN_STREAM_CLOSED).`when`(service)
+            .copyInChunks(any(), any(), any(), anyBoolean())
+
+        service.performDownload(downloadJob)
+
+        assertEquals(false, downloadFileWriter.lastAppend)
+        assertEquals(0L, downloadJob.currentBytesCopied)
+        assertEquals(0L, downloadJob.state.currentBytesCopied)
+        assertEquals(null, downloadJob.state.response)
+        assertTrue(deleteMediaFileCalled)
+        assertEquals(DOWNLOADING, service.getDownloadJobStatus(downloadJob))
+    }
+
+    @Test
+    fun `performDownload - restart from beginning when partial file is already missing`() = runTest(testDispatcher) {
+        var deleteMediaFileCalled = false
+        val downloadFileWriter = FakeDownloadFileWriter(executeBlock = true)
+        val service = createService(
+            browserStore,
+            backgroundScope,
+            testScheduler,
+            downloadFileUtils = FakeDownloadFileUtils(
+                fileExists = { _, _ -> false },
+                deleteMediaFile = { _, _, _ ->
+                    deleteMediaFileCalled = true
+                    true
+                },
+            ),
+            downloadFileWriter = downloadFileWriter,
+        )
+        val response = Response(
+            "https://example.com/file.txt",
+            200,
+            MutableHeaders(),
+            Response.Body(mock()),
+        )
+        val download = DownloadState("https://example.com/file.txt", "file.txt", contentLength = 1000)
+        val downloadJob = DownloadJobState(currentBytesCopied = 100, state = download, status = DOWNLOADING)
+
+        doReturn(response).`when`(client).fetch(any())
+        doReturn(ERROR_IN_STREAM_CLOSED).`when`(service)
+            .copyInChunks(any(), any(), any(), anyBoolean())
+
+        service.performDownload(downloadJob)
+
+        assertEquals(false, downloadFileWriter.lastAppend)
+        assertFalse(deleteMediaFileCalled)
+        assertEquals(0L, downloadJob.currentBytesCopied)
+        assertEquals(DOWNLOADING, service.getDownloadJobStatus(downloadJob))
+    }
+
+    @Test
+    fun `performDownload - fail when partial file deletion fails before restart`() = runTest(testDispatcher) {
+        var deleteMediaFileCalled = false
+        val downloadFileWriter = FakeDownloadFileWriter(executeBlock = true)
+        val staleResponse = mock<Response>()
+        val service = createService(
+            browserStore,
+            backgroundScope,
+            testScheduler,
+            downloadFileUtils = FakeDownloadFileUtils(
+                fileExists = { _, _ -> true },
+                deleteMediaFile = { _, _, _ ->
+                    deleteMediaFileCalled = true
+                    false
+                },
+            ),
+            downloadFileWriter = downloadFileWriter,
+        )
+        val response = Response(
+            "https://example.com/file.txt",
+            200,
+            MutableHeaders(),
+            Response.Body(mock()),
+        )
+        val download = DownloadState(
+            "https://example.com/file.txt",
+            "file.txt",
+            contentLength = 1000,
+            response = staleResponse,
+        )
+        val downloadJob = DownloadJobState(currentBytesCopied = 100, state = download, status = DOWNLOADING)
+
+        doReturn(response).`when`(client).fetch(any())
+
+        service.performDownload(downloadJob)
+
+        assertTrue(deleteMediaFileCalled)
+        assertEquals(null, downloadFileWriter.lastAppend)
+        assertEquals(100L, downloadJob.currentBytesCopied)
+        assertEquals(FAILED, service.getDownloadJobStatus(downloadJob))
+    }
+
+    @Test
+    fun `performDownload - refresh content length when restart from beginning ignores stale resume metadata`() = runTest(testDispatcher) {
+        val downloadFileWriter = FakeDownloadFileWriter()
+        val service = createService(
+            browserStore,
+            backgroundScope,
+            testScheduler,
+            downloadFileUtils = FakeDownloadFileUtils(
+                fileExists = { _, _ -> true },
+                deleteMediaFile = { _, _, _ -> true },
+            ),
+            downloadFileWriter = downloadFileWriter,
+        )
+        val response = Response(
+            "https://example.com/file.txt",
+            200,
+            MutableHeaders("Content-Length" to "2000"),
+            Response.Body(mock()),
+        )
+        val download = DownloadState("https://example.com/file.txt", "file.txt", contentLength = 1000)
+        val downloadJob = DownloadJobState(currentBytesCopied = 100, state = download, status = DOWNLOADING)
+
+        doReturn(response).`when`(client).fetch(any())
+
+        service.performDownload(downloadJob)
+
+        assertEquals(false, downloadFileWriter.lastAppend)
+        assertEquals(2000L, downloadJob.state.contentLength)
+    }
+
+    @Test
+    fun `performDownload - fail resumed download when partial content response lacks Content-Range`() =
+        runTest(testDispatcher) {
+            val downloadFileWriter = FakeDownloadFileWriter()
+            val service = createService(
+                browserStore,
+                backgroundScope,
+                testScheduler,
+                downloadFileWriter = downloadFileWriter,
+            )
+            val response = Response(
+                "https://example.com/file.txt",
+                206,
+                MutableHeaders(),
+                Response.Body(mock()),
+            )
+            val download = DownloadState("https://example.com/file.txt", "file.txt", contentLength = 1000)
+            val downloadJob = DownloadJobState(currentBytesCopied = 100, state = download, status = DOWNLOADING)
+
+            doReturn(response).`when`(client).fetch(any())
+
+            service.performDownload(downloadJob)
+
+            assertEquals(null, downloadFileWriter.lastAppend)
+            assertEquals(FAILED, service.getDownloadJobStatus(downloadJob))
+        }
+
+    @Test
+    fun `performDownload - fail resumed download when Content-Range start does not match requested byte`() =
+        runTest(testDispatcher) {
+            val downloadFileWriter = FakeDownloadFileWriter()
+            val service = createService(
+                browserStore,
+                backgroundScope,
+                testScheduler,
+                downloadFileWriter = downloadFileWriter,
+            )
+            val response = Response(
+                "https://example.com/file.txt",
+                206,
+                MutableHeaders("Content-Range" to "bytes 0-999/1000"),
+                Response.Body(mock()),
+            )
+            val download = DownloadState("https://example.com/file.txt", "file.txt", contentLength = 1000)
+            val downloadJob = DownloadJobState(currentBytesCopied = 100, state = download, status = DOWNLOADING)
+
+            doReturn(response).`when`(client).fetch(any())
+
+            service.performDownload(downloadJob)
+
+            assertEquals(null, downloadFileWriter.lastAppend)
+            assertEquals(FAILED, service.getDownloadJobStatus(downloadJob))
+        }
+
+    @Test
+    fun `performDownload - fail resumed download when response status is invalid`() = runTest(testDispatcher) {
+        val downloadFileWriter = FakeDownloadFileWriter()
+        val staleResponse = mock<Response>()
+        val service = createService(
+            browserStore,
+            backgroundScope,
+            testScheduler,
+            downloadFileWriter = downloadFileWriter,
+        )
+        val response = Response(
+            "https://example.com/file.txt",
+            400,
+            MutableHeaders(),
+            Response.Body(mock()),
+        )
+        val download = DownloadState(
+            "https://example.com/file.txt",
+            "file.txt",
+            contentLength = 1000,
+            response = staleResponse,
+        )
+        val downloadJob = DownloadJobState(currentBytesCopied = 100, state = download, status = DOWNLOADING)
+
+        doReturn(response).`when`(client).fetch(any())
+
+        service.performDownload(downloadJob)
+
+        assertEquals(null, downloadFileWriter.lastAppend)
+        assertEquals(FAILED, service.getDownloadJobStatus(downloadJob))
     }
 
     @Test

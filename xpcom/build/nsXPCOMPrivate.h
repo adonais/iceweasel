@@ -5,9 +5,9 @@
 #ifndef nsXPCOMPrivate_h_
 #define nsXPCOMPrivate_h_
 
-#include "nscore.h"
-#include "nsXPCOM.h"
 #include "mozilla/Attributes.h"
+#include "nsXPCOM.h"
+#include "nscore.h"
 
 /**
  * During this shutdown notification all threads which run XPCOM code must

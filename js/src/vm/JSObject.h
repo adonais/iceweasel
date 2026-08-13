@@ -56,6 +56,14 @@ enum NewObjectKind {
   TenuredObject
 };
 
+// Combined options struct for functions that create objects.
+struct NewObjectOptions {
+  NewObjectKind newKind = GenericObject;
+  ObjectFlags flags = {};
+  gc::AllocKind allocKind = gc::AllocKind::INVALID;
+  gc::AllocSite* site = nullptr;
+};
+
 // Forward declarations, required for later friend declarations.
 bool PreventExtensions(JSContext* cx, JS::HandleObject obj,
                        JS::ObjectOpResult& result);

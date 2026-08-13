@@ -66,7 +66,9 @@ class ColorwayRemovalNotice extends AboutAddonsHTMLElement {
       e.type === "click" &&
       e.target.getAttribute("action") === "open-amo-colorway-collection"
     ) {
-      openAmoInTab(this, "collections/4757633/colorways");
+      openAmoInTab("collections/4757633/colorways", {
+        utmContent: "colorway-removal-notice",
+      });
     }
   }
 }

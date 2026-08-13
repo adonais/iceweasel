@@ -114,11 +114,9 @@ void profiler_remove_sampled_counter(BaseProfilerCount* aCounter);
 enum class SamplingState {
   JustStopped,  // Sampling loop has just stopped without sampling, between the
                 // callback registration and now.
-  SamplingPaused,  // Profiler is active but sampling loop has gone through a
-                   // pause.
-  NoStackSamplingCompleted,  // A full sampling loop has completed in
-                             // no-stack-sampling mode.
-  SamplingCompleted          // A full sampling loop has completed.
+  SamplingPaused,    // Profiler is active but sampling loop has gone through a
+                     // pause.
+  SamplingCompleted  // A full sampling loop has completed.
 };
 
 using PostSamplingCallback = std::function<void(SamplingState)>;
@@ -318,6 +316,32 @@ profiler_stream_json_for_this_process(
 extern "C" {
 void profiler_save_profile_to_file(const char* aFilename);
 }
+
+// Schedule a one-shot profile dump that the sampler thread performs off the
+// main thread once aDelaySeconds have elapsed, writing this process's profile
+// to aFilename (a no-op if the profiler stops first).
+//
+// Because it runs on the sampler thread rather than a main-thread timer, it
+// still fires while the main thread is blocked in a long synchronous run (or a
+// blocking native call) and can't write a profile itself; the sampled
+// main-thread stack shows where the time went. The caller that set the deadline
+// is responsible for reporting the written file, and should call
+// profiler_cancel_scheduled_dump() if it no longer wants the dump.
+//
+// If aExitAfterDump is true, the process exits as soon as the profile has been
+// written.
+void profiler_schedule_dump_to_file(double aDelaySeconds, const char* aFilename,
+                                    bool aExitAfterDump);
+void profiler_cancel_scheduled_dump();
+
+// Block until an in-progress scheduled dump (see
+// profiler_schedule_dump_to_file) finishes; a no-op if none is in progress, and
+// always a no-op outside automation. Lets a caller on a fatal-abort path avoid
+// acting over a half-written profile; when the dump was scheduled with
+// aExitAfterDump the process exits on completion, so the caller never returns.
+// It can block for as long as the dump takes, hence the automation-only
+// restriction.
+void profiler_wait_for_scheduled_dump();
 
 //---------------------------------------------------------------------------
 // RAII classes

@@ -17,6 +17,7 @@ with Files("**"):
         "web-platform-tests",
         "web-platform-tests-reftest",
         "web-platform-tests-wdspec",
+        "web-platform-tests-aam",
     ]
 
 with Files("moz.build"):
@@ -517,6 +518,9 @@ with Files("tests/generic-sensor/**"):
 
 with Files("tests/geolocation-sensor/**"):
     BUG_COMPONENT = ("Core", "DOM: Geolocation")
+
+with Files("tests/gif/**"):
+    BUG_COMPONENT = ("Core", "Graphics: ImageLib")
 
 with Files("tests/graphics-aam/**"):
     BUG_COMPONENT = ("Core", "Disability Access APIs")

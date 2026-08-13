@@ -1,6 +1,7 @@
+#include "jsapi-tests/tests.h"
+
 #include "builtin/TestingFunctions.h"
 #include "js/SharedArrayBuffer.h"
-#include "jsapi-tests/tests.h"
 
 BEGIN_TEST(testSABAccounting) {
   // Purge what we can

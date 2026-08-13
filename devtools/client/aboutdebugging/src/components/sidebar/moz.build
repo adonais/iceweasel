@@ -5,7 +5,6 @@
 DevToolsModules(
     "RefreshDevicesButton.js",
     "Sidebar.js",
-    "SidebarFixedItem.js",
     "SidebarItem.js",
     "SidebarRuntimeItem.js",
 )

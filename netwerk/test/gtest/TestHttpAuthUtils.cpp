@@ -1,7 +1,6 @@
 #include "gtest/gtest.h"
-
-#include "mozilla/net/HttpAuthUtils.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/net/HttpAuthUtils.h"
 #include "nsNetUtil.h"
 
 namespace mozilla {

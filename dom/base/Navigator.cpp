@@ -1338,7 +1338,7 @@ bool Navigator::SendBeaconInternal(const nsAString& aUrl,
     }
 
     uploadChannel->ExplicitSetUploadStream(in, contentTypeWithCharset, length,
-                                           "POST"_ns, false);
+                                           "POST"_ns);
   } else {
     rv = httpChannel->SetRequestMethod("POST"_ns);
     MOZ_ASSERT(NS_SUCCEEDED(rv));

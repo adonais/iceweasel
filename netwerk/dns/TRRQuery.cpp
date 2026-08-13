@@ -4,11 +4,12 @@
 
 #include "TRRQuery.h"
 
-#include "mozilla/StaticPrefs_network.h"
-#include "mozilla/glean/NetwerkDnsMetrics.h"
-#include "nsQueryObject.h"
 #include "TRR.h"
 #include "TRRService.h"
+#include "mozilla/StaticPrefs_network.h"
+#include "mozilla/glean/NetwerkDnsMetrics.h"
+#include "nsITRRSkipReason.h"
+#include "nsQueryObject.h"
 // Put DNSLogging.h at the end to avoid LOG being overwritten by other headers.
 #include "DNSLogging.h"
 
@@ -271,9 +272,8 @@ AHostResolver::LookupStatus TRRQuery::CompleteLookup(
       status = aaaaResult;
     }
 
-    if (NS_FAILED(status) &&
-        (aaaaResult == NS_ERROR_DEFINITIVE_UNKNOWN_HOST ||
-         aResult == NS_ERROR_DEFINITIVE_UNKNOWN_HOST)) {
+    if (NS_FAILED(status) && (aaaaResult == NS_ERROR_DEFINITIVE_UNKNOWN_HOST ||
+                              aResult == NS_ERROR_DEFINITIVE_UNKNOWN_HOST)) {
       status = NS_ERROR_DEFINITIVE_UNKNOWN_HOST;
     }
   } else {
@@ -311,8 +311,8 @@ AHostResolver::LookupStatus TRRQuery::CompleteLookup(
       newRRSet = addrInfoA;
       status = aResult;
       if (NS_FAILED(status) &&
-          (otherSucceeded ||
-           aaaaResult == NS_ERROR_DEFINITIVE_UNKNOWN_HOST)) {
+          !IsConnectionFailedTRRSkipReason(mTRRAFailReason) &&
+          (otherSucceeded || aaaaResult == NS_ERROR_DEFINITIVE_UNKNOWN_HOST)) {
         LOG(("status set to NS_ERROR_DEFINITIVE_UNKNOWN_HOST"));
         status = NS_ERROR_DEFINITIVE_UNKNOWN_HOST;
       }
@@ -323,6 +323,7 @@ AHostResolver::LookupStatus TRRQuery::CompleteLookup(
       status = aaaaResult;
 
       if (NS_FAILED(status) &&
+          !IsConnectionFailedTRRSkipReason(mTRRAAAAFailReason) &&
           (otherSucceeded || aResult == NS_ERROR_DEFINITIVE_UNKNOWN_HOST)) {
         LOG(("status set to NS_ERROR_DEFINITIVE_UNKNOWN_HOST"));
         status = NS_ERROR_DEFINITIVE_UNKNOWN_HOST;

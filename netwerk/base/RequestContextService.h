@@ -6,9 +6,9 @@
 #define mozilla_net_RequestContextService_h
 
 #include "nsCOMPtr.h"
-#include "nsInterfaceHashtable.h"
 #include "nsIObserver.h"
 #include "nsIRequestContext.h"
+#include "nsInterfaceHashtable.h"
 
 namespace mozilla {
 namespace net {

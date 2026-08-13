@@ -5,16 +5,14 @@
 #ifndef nsAboutCache_h_
 #define nsAboutCache_h_
 
-#include "nsIAboutModule.h"
-#include "nsICacheStorageVisitor.h"
-#include "nsICacheStorage.h"
-
-#include "nsString.h"
-#include "nsIChannel.h"
-#include "nsIOutputStream.h"
-#include "nsILoadContextInfo.h"
-
 #include "nsCOMPtr.h"
+#include "nsIAboutModule.h"
+#include "nsICacheStorage.h"
+#include "nsICacheStorageVisitor.h"
+#include "nsIChannel.h"
+#include "nsILoadContextInfo.h"
+#include "nsIOutputStream.h"
+#include "nsString.h"
 #include "nsTArray.h"
 
 #define NS_FORWARD_SAFE_NSICHANNEL_SUBSET(_to)                                 \

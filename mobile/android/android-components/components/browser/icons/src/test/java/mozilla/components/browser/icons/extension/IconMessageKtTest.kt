@@ -44,15 +44,11 @@ class IconMessageKtTest {
     }
 
     @Test
-    fun `GIVEN resource types are from tippy top and merino manifest WHEN resources are serialized THEN tippy top and merino manifest resource types are not serialized`() {
+    fun `GIVEN resource type is from merino manifest WHEN resources are serialized THEN merino manifest resource type is not serialized`() {
         val resources = listOf(
             IconRequest.Resource(
                 url = "https://www.mozilla.org/icon64.png",
                 type = IconRequest.Resource.Type.FAVICON,
-            ),
-            IconRequest.Resource(
-                url = "https://tippytop.example/icon.png",
-                type = IconRequest.Resource.Type.TIPPY_TOP,
             ),
             IconRequest.Resource(
                 url = "https://merino.example/icon.png",

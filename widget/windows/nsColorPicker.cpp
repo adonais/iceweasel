@@ -5,17 +5,18 @@
 
 #include "nsColorPicker.h"
 
-#include <algorithm>
 #include <shlwapi.h>
 
+#include <algorithm>
+
+#include "WidgetUtils.h"
+#include "WinUtils.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "nsIWidget.h"
-#include "nsString.h"
-#include "WidgetUtils.h"
-#include "WinUtils.h"
 #include "nsPIDOMWindow.h"
+#include "nsString.h"
 
 using namespace mozilla::widget;
 

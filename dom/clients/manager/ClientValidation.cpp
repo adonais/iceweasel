@@ -5,6 +5,7 @@
 #include "ClientValidation.h"
 
 #include "mozilla/StaticPrefs_security.h"
+#include "mozilla/dom/ClientIPCTypes.h"
 #include "mozilla/dom/ProcessIsolation.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "mozilla/net/MozURL.h"
@@ -21,72 +22,69 @@ bool ClientIsValidPrincipalInfo(const PrincipalInfo& aPrincipalInfo,
   if (NS_WARN_IF(result.isErr())) {
     return false;
   }
+  nsCOMPtr<nsIPrincipal> principal = result.unwrap();
 
   // FIXME: Remove the system allowance once for non-inference processes once we
   // can load documents with the system principal into content.
   if (NS_WARN_IF(!ValidatePrincipalCouldPotentiallyBeLoadedBy(
-          result.inspect(), aRemoteType,
-          {ValidatePrincipalOptions::AllowSystem}))) {
+          principal, aRemoteType, {ValidatePrincipalOptions::AllowSystem}))) {
     return false;
   }
 
-  // Verify the PrincipalInfo is an expected type and has a parsable
-  // origin/spec.
-  switch (aPrincipalInfo.type()) {
-    // Any system and null principal is acceptable.
-    case PrincipalInfo::TSystemPrincipalInfo:
-    case PrincipalInfo::TNullPrincipalInfo: {
+  // Windows and workers should not have expanded principals, etc.
+  return principal->IsSystemPrincipal() || principal->GetIsNullPrincipal() ||
+         principal->GetIsContentPrincipal();
+}
+
+bool IsValidClientOpConstructorArgs(const ClientOpConstructorArgs& aArgs,
+                                    const nsACString& aRemoteType) {
+  switch (aArgs.type()) {
+    case ClientOpConstructorArgs::TClientControlledArgs:
+      return ClientIsValidPrincipalInfo(
+          aArgs.get_ClientControlledArgs().serviceWorker().principalInfo(),
+          aRemoteType);
+
+    case ClientOpConstructorArgs::TClientNavigateArgs: {
+      const ClientNavigateArgs& args = aArgs.get_ClientNavigateArgs();
+      return ClientIsValidPrincipalInfo(args.target().principalInfo(),
+                                        aRemoteType) &&
+             ClientIsValidPrincipalInfo(args.serviceWorker().principalInfo(),
+                                        aRemoteType);
+    }
+
+    case ClientOpConstructorArgs::TClientPostMessageArgs:
+      return ClientIsValidPrincipalInfo(
+          aArgs.get_ClientPostMessageArgs().serviceWorker().principalInfo(),
+          aRemoteType);
+
+    case ClientOpConstructorArgs::TClientMatchAllArgs:
+      return ClientIsValidPrincipalInfo(
+          aArgs.get_ClientMatchAllArgs().serviceWorker().principalInfo(),
+          aRemoteType);
+
+    case ClientOpConstructorArgs::TClientClaimArgs:
+      return ClientIsValidPrincipalInfo(
+          aArgs.get_ClientClaimArgs().serviceWorker().principalInfo(),
+          aRemoteType);
+
+    case ClientOpConstructorArgs::TClientGetInfoAndStateArgs:
+      return ClientIsValidPrincipalInfo(
+          aArgs.get_ClientGetInfoAndStateArgs().principalInfo(), aRemoteType);
+
+    case ClientOpConstructorArgs::TClientOpenWindowArgs:
+      return ClientIsValidPrincipalInfo(
+          aArgs.get_ClientOpenWindowArgs().principalInfo(), aRemoteType);
+
+    case ClientOpConstructorArgs::TClientFocusArgs:
+    case ClientOpConstructorArgs::TClientEvictBFCacheArgs:
+      // No principals.
       return true;
-    }
 
-    // Validate content principals to ensure that the origin and spec are sane.
-    case PrincipalInfo::TContentPrincipalInfo: {
-      const ContentPrincipalInfo& content =
-          aPrincipalInfo.get_ContentPrincipalInfo();
-
-      // Verify the principal spec parses.
-      RefPtr<MozURL> specURL;
-      nsresult rv = MozURL::Init(getter_AddRefs(specURL), content.spec());
-      NS_ENSURE_SUCCESS(rv, false);
-
-      // Verify the principal originNoSuffix parses.
-      RefPtr<MozURL> originURL;
-      rv = MozURL::Init(getter_AddRefs(originURL), content.originNoSuffix());
-      NS_ENSURE_SUCCESS(rv, false);
-
-      nsAutoCString originOrigin;
-      originURL->Origin(originOrigin);
-
-      nsAutoCString specOrigin;
-      specURL->Origin(specOrigin);
-
-      // Linkable about URIs end up with a nested inner scheme of moz-safe-about
-      // which will have been captured in the originNoSuffix but the spec and
-      // its resulting specOrigin will not have this transformed scheme, so
-      // ignore the "moz-safe-" prefix when the originURL has that transformed
-      // scheme.
-      if (originURL->Scheme().Equals("moz-safe-about")) {
-        return specOrigin == originOrigin ||
-               specOrigin == Substring(originOrigin, 9 /*moz-safe-*/,
-                                       specOrigin.Length());
-      }
-
-      // For now require Clients to have a principal where both its
-      // originNoSuffix and spec have the same origin.  This will
-      // exclude a variety of unusual combinations within the browser
-      // but its adequate for the features need to support right now.
-      // If necessary we could expand this function to handle more
-      // cases in the future.
-
-      return specOrigin == originOrigin;
-    }
-    default: {
+    case ClientOpConstructorArgs::T__None:
       break;
-    }
   }
 
-  // Windows and workers should not have expanded URLs, etc.
-  return false;
+  MOZ_CRASH("Unhandled ClientOpConstructorArgs");
 }
 
 bool ClientIsValidCreationURL(const PrincipalInfo& aPrincipalInfo,
@@ -129,16 +127,6 @@ bool ClientIsValidCreationURL(const PrincipalInfo& aPrincipalInfo,
       // Generally any origin can also open javascript: windows and workers.
       if (scheme.LowerCaseEqualsLiteral("javascript")) {
         return true;
-      }
-
-      // Linkable about URIs end up with a nested inner scheme of moz-safe-about
-      // but the url and its resulting origin will not have this transformed
-      // scheme, so ignore the "moz-safe-" prefix when the principal has that
-      // transformed scheme.
-      if (principalURL->Scheme().Equals("moz-safe-about")) {
-        return origin == principalOrigin ||
-               origin ==
-                   Substring(principalOrigin, 9 /*moz-safe-*/, origin.Length());
       }
 
       // Otherwise don't support this URL type in the clients sub-system for

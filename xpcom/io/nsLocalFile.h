@@ -30,6 +30,7 @@
 // on this.
 
 #include <errno.h>
+
 #include "nsIFile.h"
 
 #ifdef XP_WIN

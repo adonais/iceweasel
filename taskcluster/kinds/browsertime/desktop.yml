@@ -20,10 +20,8 @@ task-defaults:
                 - .*macosx.*shippable.*
             safari-tp:
                 - macosx1400.*
-                - macosx1500.*
+                - macosx1500(?!.*nightlyasrelease).*
             custom-car:
-                - macosx1400.*shippable.*
-                - macosx1470.*shippable.*
                 - macosx1500.*shippable.*
                 - linux.*-64.*shippable.*
                 - windows.*-64.*shippable.*
@@ -68,10 +66,6 @@ task-defaults:
                             - macosx-arm64-custom-car
                             - macosx64-aarch64-minidump-stackwalk
                             - macosx64-aarch64-fix-stacks
-                        macosx.*-64.*:
-                            - macosx-custom-car
-                            - macosx64-minidump-stackwalk
-                            - macosx64-fix-stacks
                         default: []
                 safari-tp:
                     by-test-platform:
@@ -114,8 +108,6 @@ browsertime-tp6:
                 safari:
                     - .*macos.*shippable.*
                 custom-car:
-                    - macosx1400.*shippable.*
-                    - macosx1470.*shippable.*
                     - macosx1500.*shippable.*
                     - linux.*shippable.*
                     # - windows.*-64.*shippable.*  # Bug 2038340: temporarily disabled
@@ -243,7 +235,6 @@ browsertime-tp6-essential:
                     # - windows.*shippable.*  # Bug 2038340: temporarily disabled
                     - macosx1470.*shippable.*
                 custom-car:
-                    - macosx1470.*shippable.*
                     - linux.*shippable.*
                     # - windows.*-64.*shippable.*  # Bug 2038340: temporarily disabled
                 default: []
@@ -345,8 +336,6 @@ browsertime-tp7:
                 safari:
                     - .*macos.*shippable.*
                 custom-car:
-                    - macosx1400.*shippable.*
-                    - macosx1470.*shippable.*
                     - macosx1500.*shippable.*
                     - linux.*shippable.*
                     - windows.*-64.*shippable.*
@@ -598,6 +587,7 @@ browsertime-benchmark:
                 by-test-platform:
                     macosx1400.*shippable.*: 4200
                     macosx1500.*shippable.*: 4200
+                    macosx1500.*nightlyasrelease.*: 4200
                     default: 2100
             speedometer2: 2100
             default: 900
@@ -617,6 +607,9 @@ browsertime-benchmark:
                             - --extra-profiler-run
                             - --page-timeout=900000
                         macosx1500.*shippable.*:
+                            - --extra-profiler-run
+                            - --page-timeout=900000
+                        macosx1500.*nightlyasrelease.*:
                             - --extra-profiler-run
                             - --page-timeout=900000
                         default:
@@ -915,6 +908,19 @@ browsertime-custom:
     tier: 1
     treeherder-symbol: Btime(ps)
 
+browsertime-media-seek:
+    raptor:
+        apps: [firefox]
+        subtests: [[media-seek, mseek]]
+    description: Raptor (browsertime) media seek-latency test
+    max-run-time: 2700
+    run-on-projects:
+        by-test-platform:
+            .*64(?!.*nightlyasrelease).*shippable.*: [trunk]
+            default: []
+    tier: 2
+    treeherder-symbol: Btime(mseek)
+
 browsertime-first-install:
     raptor:
         apps: [firefox]
@@ -1075,6 +1081,34 @@ browsertime-pageload-benchmark:
             default: 3
     treeherder-symbol: Btime(tp6-bench)
 
+browsertime-nav-bench:
+    raptor:
+        apps: [firefox]
+        subtests: [nav-bench]
+        run-visual-metrics: true
+    description: Raptor (browsertime) navigation benchmark across 5 sites
+    max-run-time: 3600
+    run-on-projects:
+        by-app:
+            firefox:
+                by-test-platform:
+                    linux.*shippable.*: [autoland]
+                    macosx1500.*shippable.*: [autoland]
+                    windows11-64-.*-hw-ref-shippable/opt: [autoland]
+                    windows11-64-24h2-shippable/opt: [autoland]
+                    default: []
+            default: []
+    tier: 3
+    treeherder-symbol: Btime(nav-bench)
+    mozharness:
+        extra-options:
+            by-test-platform:
+                windows.*:
+                    - --browsertime-no-ffwindowrecorder
+                    - --conditioned-profile=settled
+                default:
+                    - --conditioned-profile=settled
+
 browsertime-video-playback-latency:
     <<: *tp6-defaults
     raptor:
@@ -1120,8 +1154,6 @@ browsertime-webcodecs:
             safari:
                 - .*macosx.*shippable.*
             custom-car:
-                - macosx1400.*shippable.*
-                - macosx1470.*shippable.*
                 - macosx1500.*shippable.*
                 - linux.*-64.*shippable.*
                 # - windows.*-64.*shippable.*  # Bug 2038340: temporarily disabled
@@ -1233,7 +1265,11 @@ browsertime-speculation-rules:
     raptor:
         apps: [firefox, chrome]
         run-visual-metrics: true
-        subtests: [prefetch]
+        subtests:
+            - [prefetch-immediate, pf-imm]
+            - [prefetch-eager, pf-eag]
+            - [prefetch-moderate, pf-mod]
+            - [prefetch-conservative, pf-con]
     description: Raptor (browsertime) Speculation Rules prefetch pageload test
     limit-platforms:
         by-app:
@@ -1336,8 +1372,6 @@ browsertime-indexeddb:
                 - linux.*shippable.*
                 - macosx.*shippable.*
             custom-car:
-                - macosx1400.*shippable.*
-                - macosx1470.*shippable.*
                 - macosx1500.*shippable.*
                 - linux.*shippable.*
                 # - windows.*-64.*shippable.*  # Bug 2038340: temporarily disabled
@@ -1363,6 +1397,9 @@ browsertime-indexeddb:
             - addkBL1
             - addkBLN
             - getkeyrng
+            - idbCurNext
+            - idbCurPKey
+            - idbCurPrev
     run-on-projects:
         by-app:
             firefox:
@@ -1417,3 +1454,40 @@ browsertime-trr-performance:
             default: []
     tier: 3
     treeherder-symbol: Btime(trrperf)
+
+browsertime-hev3-connection:
+    raptor:
+        apps: [firefox, chrome]
+        run-visual-metrics: false
+        subtests:
+            by-app:
+                firefox:
+                    - he3off-dns
+                    - he3off-doh
+                    - he3on-dns
+                    - he3on-doh
+                chrome:
+                    - baseline
+
+    description: Raptor (browsertime) Happy Eyeballs v3 connection tests
+    max-run-time: 900
+    mozharness:
+        extra-options:
+            - --extra-profiler-run
+    run-on-projects:
+        by-app:
+            firefox:
+                by-test-platform:
+                    linux2404-64-shippable/opt: [mozilla-central]
+                    macosx1470-64-shippable/opt: [mozilla-central]
+                    windows11-64-24h2-shippable/opt: [mozilla-central]
+                    default: []
+            chrome:
+                by-test-platform:
+                    linux2404-64-shippable/opt: [mozilla-central]
+                    macosx1470-64-shippable/opt: [mozilla-central]
+                    windows11-64-24h2-shippable/opt: [mozilla-central]
+                    default: []
+            default: []
+    tier: 3
+    treeherder-symbol: Btime(hev3conn)

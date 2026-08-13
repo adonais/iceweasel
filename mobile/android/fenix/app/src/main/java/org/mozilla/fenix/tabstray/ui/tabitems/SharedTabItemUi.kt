@@ -4,7 +4,10 @@
 
 package org.mozilla.fenix.tabstray.ui.tabitems
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Indication
 import androidx.compose.foundation.border
@@ -14,6 +17,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyItemScope
+import androidx.compose.foundation.lazy.grid.LazyGridItemScope
 import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,8 +28,10 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -63,7 +70,7 @@ import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.theme.AcornCorners
 import mozilla.components.compose.base.theme.layout.AcornLayout
 import mozilla.components.support.utils.ext.isLandscape
-import mozilla.components.ui.colors.PhotonColors
+import mozilla.components.ui.colors.NovaColors
 import org.mozilla.fenix.R
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.browser.compose.TabItemInteractionState
@@ -196,8 +203,8 @@ fun Modifier.tabItemClickable(
 private val clickRipple: Indication
     @Composable get() = ripple(
         color = when (isSystemInDarkTheme()) {
-            true -> PhotonColors.White
-            false -> PhotonColors.Black
+            true -> NovaColors.White
+            false -> NovaColors.Black
         },
     )
 
@@ -215,7 +222,7 @@ val gridItemAspectRatio: Float
     }
 
 /**
- * Renders the three dot button and its menu items for [org.mozilla.fenix.tabstray.data.TabsTrayItem.TabGroup] views.
+ * Renders the three dot button and its menu items for [TabsTrayItem.TabGroup] views.
  * @param modifier: The Modifier parameter
  * @param includeCloseOption: Whether to include the "Close" dropdown item in the menu item list.
  * @param onDeleteTabGroupClick Invoked when the user clicks on delete tab group.
@@ -459,7 +466,7 @@ private fun tabListItemAnimatedScale(interactionState: TabItemInteractionState):
 }
 
 /**
- * Renders an animated scale and alpha transition for the tab item based on its interaction state.
+ * Renders an animated scale and alpha transition for the tab grid item based on its interaction state.
  * This happens at the graphics layer to avoid recomposition of the item.
  * The semantics properties are provided so that the state can be evaluated, as evaluating the composable will not
  * return the correct result, since these graphical animations occur at draw time.
@@ -477,7 +484,38 @@ fun Modifier.tabItemGridInteractionAnimation(interactionState: TabItemInteractio
 }
 
 /**
- * Renders an animated scale and alpha transition for the tab item based on its interaction state.
+ * Renders an animated scale and alpha transition for the tab list group item based on its interaction state.
+ * This happens at the graphics layer to avoid recomposition of the item.
+ * The semantics properties are provided so that the state can be evaluated, as evaluating the composable will not
+ * return the correct result, since these graphical animations occur at draw time.
+ * The list and grid animations differ slightly in terms of scale and corner radius.
+ * @param interactionState: State holding the hovered and dragged statuses.
+ * @param key The item's key
+ * @param onGroupEntranceAnimationPlayed Invoked when the group's entrance animation is played.
+ */
+@Composable
+fun Modifier.tabItemGroupListInteractionAnimation(
+    interactionState: TabItemInteractionState,
+    key: String? = null,
+    onGroupEntranceAnimationPlayed: () -> Unit = {},
+): Modifier {
+    val interactionScale = tabListItemAnimatedScale(interactionState)
+    val entranceScale = tabGroupAppearanceScale(
+        interactionState = interactionState,
+        key = key,
+        onGroupEntranceAnimationPlayed = onGroupEntranceAnimationPlayed,
+    )
+    val combinedScale = remember { derivedStateOf { interactionScale.value * entranceScale.value } }
+    return this.tabItemInteractionAnimation(
+        tabItemScaleState = combinedScale,
+        tabItemAlphaState = tabListItemAnimatedAlpha(interactionState),
+        cornerSize = AcornCorners.medium,
+        interactionState = interactionState,
+    )
+}
+
+/**
+ * Renders an animated scale and alpha transition for the tab list item based on its interaction state.
  * This happens at the graphics layer to avoid recomposition of the item.
  * The semantics properties are provided so that the state can be evaluated, as evaluating the composable will not
  * return the correct result, since these graphical animations occur at draw time.
@@ -492,6 +530,92 @@ fun Modifier.tabItemListInteractionAnimation(interactionState: TabItemInteractio
         cornerSize = AcornCorners.medium,
         interactionState = interactionState,
     )
+}
+
+/**
+ * Provides the alpha state for the tab group appearance animation.
+ * @param interactionState The tab interaction state
+ * @param key The tab item's key
+ */
+@Composable
+private fun tabGroupAppearanceAlpha(
+    interactionState: TabItemInteractionState,
+    key: String?,
+): State<Float> {
+    val alpha = remember { Animatable(1f) }
+    LaunchedEffect(key, interactionState.isEnteringGroup) {
+        if (interactionState.isEnteringGroup) {
+            alpha.snapTo(targetValue = 0f)
+            alpha.animateTo(
+                targetValue = 1f,
+                animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
+            )
+        }
+    }
+    return alpha.asState()
+}
+
+/**
+ * Provides the scale state for the tab group appearance animation.
+ * @param interactionState The tab interaction state
+ * @param key The tab item's key
+ * @param onGroupEntranceAnimationPlayed Invoked when the animation is finished playing
+ */
+@Composable
+private fun tabGroupAppearanceScale(
+    interactionState: TabItemInteractionState,
+    key: String?,
+    onGroupEntranceAnimationPlayed: () -> Unit,
+): State<Float> {
+    // This must be the default, else all group items will be incorrectly scaled
+    val scale = remember { Animatable(Scale.NO_INTERACTION) }
+    LaunchedEffect(key, interactionState.isEnteringGroup) {
+        if (interactionState.isEnteringGroup) {
+            scale.snapTo(targetValue = Scale.NEW_GROUP_ENTRANCE_START)
+            scale.animateTo(
+                targetValue = Scale.NEW_GROUP_ENTRANCE_PEAK,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioNoBouncy,
+                    stiffness = Spring.StiffnessMediumLow,
+                ),
+            )
+            scale.animateTo(
+                targetValue = Scale.NO_INTERACTION,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioNoBouncy,
+                    stiffness = Spring.StiffnessMediumLow,
+                ),
+            )
+            onGroupEntranceAnimationPlayed()
+        }
+    }
+    return scale.asState()
+}
+
+/**
+ * Plays the entrance animation for a tab group.
+ * @param interactionState The tab item's interaction state
+ * @param key The tab item's key
+ * @param onGroupEntranceAnimationPlayed Invoked when the animation is finished playing.
+ */
+@Composable
+internal fun Modifier.tabGroupEntranceAnimation(
+    interactionState: TabItemInteractionState,
+    key: String?,
+    onGroupEntranceAnimationPlayed: () -> Unit,
+): Modifier {
+    if (!interactionState.isEnteringGroup) return this
+    val entranceScale = tabGroupAppearanceScale(
+        interactionState = interactionState,
+        key = key,
+        onGroupEntranceAnimationPlayed = onGroupEntranceAnimationPlayed,
+    )
+    val entranceAlpha = tabGroupAppearanceAlpha(interactionState = interactionState, key = key)
+    return this.graphicsLayer {
+        scaleX = entranceScale.value
+        scaleY = entranceScale.value
+        alpha = entranceAlpha.value
+    }
 }
 
 /**
@@ -510,7 +634,6 @@ private fun Modifier.tabItemInteractionAnimation(
     val backdropColor = MaterialTheme.colorScheme.secondaryContainer
     val backdropBorder = MaterialTheme.colorScheme.tertiary
     val borderSize = FirefoxTheme.layout.border.thick
-
     return this
         .thenConditional(
             Modifier.drawBehind(
@@ -549,6 +672,74 @@ private fun Modifier.tabItemInteractionAnimation(
 }
 
 /**
+ * The default animations for a tab GridItem.
+ * @param lazyGridItemScope The [LazyGridItemScope] (needed to define animateItem())
+ * @param enteringGroupId The id of the group entering composition, if any.  Can be null.
+ */
+@Composable
+fun Modifier.defaultGridItemAnimation(
+    lazyGridItemScope: LazyGridItemScope,
+    enteringGroupId: String?,
+): Modifier = with(lazyGridItemScope) {
+    /*
+     * We need to explicitly set each of the LazyGrid animations to NULL to prevent some defaults
+     * from occurring while the group entrance animation is playing.  Items are by default
+     * clipped to their bounds while fade in/out animations are playing, and the group animation
+     * scales to overshoot its bounds.
+     *
+     * Additionally, per the spec, we don't want to see 'ghost' items of the tabs that are being
+     * combined to show the group, and the group should start at its placed position.
+     */
+    this@defaultGridItemAnimation.animateItem(
+        fadeOutSpec = if (enteringGroupId != null) {
+            null
+        } else {
+            spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
+        },
+        placementSpec = if (enteringGroupId != null) {
+            null
+        } else {
+            spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
+        },
+        fadeInSpec = if (enteringGroupId != null) {
+            null
+        } else {
+            spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
+        },
+    )
+}
+
+/**
+ * The default animations for a tab ListItem.
+ * @param lazyListItemScope The [LazyItemScope] (needed to define animateItem())
+ * @param enteringGroupId The id of the group entering composition, if any.  Can be null.
+ */
+@Composable
+fun Modifier.defaultListItemAnimation(
+    lazyListItemScope: LazyItemScope,
+    enteringGroupId: String?,
+): Modifier = with(lazyListItemScope) {
+    this@defaultListItemAnimation.animateItem(
+        // When the group entrance animation is playing, all fade-out animations should be suppressed.
+        // You should not see the exiting tabs fade out that are becoming a group.
+        fadeOutSpec = if (enteringGroupId != null) {
+            null
+        } else {
+            spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
+        },
+        // When the group entrance animation is playing, all grid shuffle animations should be suppressed.
+        // The group should appear to enter at the place it was dropped (without translating up/down/left/right).
+        // Nearby tabs should not appear to shuffle to make room for the group.
+        placementSpec = if (enteringGroupId != null) {
+            null
+        } else {
+            spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
+        },
+        fadeInSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
+    )
+}
+
+/**
  * Semantic property for accessing a Composable item's current graphical scale property.
  * This is intended to be applied evenly across X and Y and set and fetched as needed for verification.
  */
@@ -563,10 +754,17 @@ internal val AlphaKey = SemanticsPropertyKey<Float>("Alpha")
 internal var SemanticsPropertyReceiver.alpha by AlphaKey
 
 /**
+ * Semantic property for accessing a tab grid's column count.
+ */
+internal val TabGridColumnCountKey = SemanticsPropertyKey<Int>("TabGridColumnCount")
+internal var SemanticsPropertyReceiver.tabGridColumnCount by TabGridColumnCountKey
+
+/**
  * Elevation parameters for interactable tab items.
  */
 object Elevation {
     const val SWIPE_ACTIVE = 10f
+    const val ENTERING_ITEM = 2f
     const val DRAGGED_ITEM = 1f
     const val NO_INTERACTION = 0f
 }
@@ -579,4 +777,6 @@ object Scale {
     const val HOVER_ACTIVE = 0.75f
     const val HOVER_ACTIVE_LIST = 0.90f
     const val NO_INTERACTION = 1f
+    const val NEW_GROUP_ENTRANCE_START = 0.92f
+    const val NEW_GROUP_ENTRANCE_PEAK = 1.06f
 }

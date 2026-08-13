@@ -8,8 +8,6 @@
 #include "nsIThreadRetargetableStreamListener.h"
 #undef LoadImage
 
-#include "imgLoader.h"
-
 #include <algorithm>
 #include <utility>
 
@@ -17,31 +15,33 @@
 #include "Image.h"
 #include "ImageLogging.h"
 #include "ReferrerInfo.h"
+#include "imgLoader.h"
 #include "imgRequestProxy.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ChaosMode.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/LoadInfo.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ProfilerLabels.h"
+#include "mozilla/SharedSubResourceCache.h"
 #include "mozilla/StaticPrefs_image.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StoragePrincipalHelper.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/SharedSubResourceCache.h"
 #include "mozilla/dom/CacheExpirationTime.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/FetchPriority.h"
 #include "mozilla/dom/nsMixedContentBlocker.h"
 #ifdef NIGHTLY_BUILD
-#  include "mozilla/dom/PolicyContainer.h"
-#  include "mozilla/dom/IntegrityPolicyWAICT.h"
-#  include "mozilla/dom/WAICTUtils.h"
 #  include "mozilla/StaticPrefs_security.h"
+#  include "mozilla/dom/IntegrityPolicyWAICT.h"
+#  include "mozilla/dom/PolicyContainer.h"
+#  include "mozilla/dom/WAICTUtils.h"
 #  include "nsStringStream.h"
 static bool ShouldEnableWAICT(mozilla::dom::Document* aDoc);
 #endif
+#include "mozilla/gfx/Types.h"
 #include "mozilla/image/ImageMemoryReporter.h"
 #include "mozilla/layers/CompositorManagerChild.h"
 #include "nsCOMPtr.h"
@@ -78,9 +78,9 @@ static bool ShouldEnableWAICT(mozilla::dom::Document* aDoc);
 // we want to explore making the document own the load group
 // so we can associate the document URI with the load group.
 // until this point, we have an evil hack:
+#include "nsIDocShell.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsILoadGroupChild.h"
-#include "nsIDocShell.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -352,6 +352,7 @@ class imgMemoryReporter final : public nsIMemoryReporter {
       nsIHandleReportCallback* aHandleReport, nsISupports* aData,
       const nsACString& aPathPrefix, const ImageMemoryCounter& aCounter,
       layers::SharedSurfacesMemoryReport& aSharedSurfaces) {
+    using DeviceColor = mozilla::gfx::DeviceColor;
     for (const SurfaceMemoryCounter& counter : aCounter.Surfaces()) {
       nsAutoCString surfacePathPrefix(aPathPrefix);
       switch (counter.Type()) {
@@ -467,24 +468,27 @@ class imgMemoryReporter final : public nsIMemoryReporter {
         surfacePathPrefix.AppendInt(int32_t(*scheme));
         surfacePathPrefix.AppendLiteral(" ");
       }
-      if (context.GetContextPaint()) {
-        const SVGEmbeddingContextPaint* paint = context.GetContextPaint();
+      if (const SVGContextPaint* paint = context.GetContextPaint()) {
         surfacePathPrefix.AppendLiteral("contextPaint=(");
-        if (paint->GetFill()) {
+        if (paint->IsSolidColor(SVGContextPaint::Tag::Fill)) {
+          DeviceColor color = paint->AsSolidColor(SVGContextPaint::Tag::Fill);
           surfacePathPrefix.AppendLiteral(" fill=");
-          surfacePathPrefix.AppendInt(paint->GetFill()->ToABGR(), 16);
+          surfacePathPrefix.AppendInt(color.ToABGR(), 16);
         }
-        if (paint->GetFillOpacity() != 1.0) {
+        if (paint->GetOpacity(SVGContextPaint::Tag::Fill) != 1.0) {
           surfacePathPrefix.AppendLiteral(" fillOpa=");
-          surfacePathPrefix.AppendFloat(paint->GetFillOpacity());
+          surfacePathPrefix.AppendFloat(
+              paint->GetOpacity(SVGContextPaint::Tag::Fill));
         }
-        if (paint->GetStroke()) {
+        if (paint->IsSolidColor(SVGContextPaint::Tag::Stroke)) {
+          DeviceColor color = paint->AsSolidColor(SVGContextPaint::Tag::Stroke);
           surfacePathPrefix.AppendLiteral(" stroke=");
-          surfacePathPrefix.AppendInt(paint->GetStroke()->ToABGR(), 16);
+          surfacePathPrefix.AppendInt(color.ToABGR(), 16);
         }
-        if (paint->GetStrokeOpacity() != 1.0) {
+        if (paint->GetOpacity(SVGContextPaint::Tag::Stroke) != 1.0) {
           surfacePathPrefix.AppendLiteral(" strokeOpa=");
-          surfacePathPrefix.AppendFloat(paint->GetStrokeOpacity());
+          surfacePathPrefix.AppendFloat(
+              paint->GetOpacity(SVGContextPaint::Tag::Stroke));
         }
         surfacePathPrefix.AppendLiteral(" ) ");
       }

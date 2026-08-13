@@ -10,7 +10,6 @@
 #include "TextEventDispatcher.h"
 #include "TextEvents.h"
 #include "TouchEvents.h"
-
 #include "mozilla/EventForwards.h"
 #include "mozilla/EventStateManager.h"
 #include "mozilla/Maybe.h"
@@ -18,6 +17,7 @@
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_mousewheel.h"
 #include "mozilla/StaticPrefs_ui.h"
+#include "mozilla/Utf16.h"
 #include "mozilla/WritingModes.h"
 #include "mozilla/dom/CSSAnimation.h"
 #include "mozilla/dom/CSSTransition.h"
@@ -33,10 +33,10 @@
 #include "nsPrintfCString.h"
 
 #if defined(XP_WIN)
+#  include "WinUtils.h"
+#  include "npapi.h"
 #  include "windef.h"
 #  include "winnetwk.h"
-#  include "npapi.h"
-#  include "WinUtils.h"
 #endif  // #if defined (XP_WIN)
 
 #if defined(MOZ_WIDGET_GTK) || defined(XP_MACOSX)
@@ -1408,14 +1408,14 @@ static bool HasASCIIDigit(const ShortcutKeyCandidateArray& aCandidates) {
 }
 
 static bool CharsCaseInsensitiveEqual(uint32_t aChar1, uint32_t aChar2) {
-  return aChar1 == aChar2 || (IS_IN_BMP(aChar1) && IS_IN_BMP(aChar2) &&
+  return aChar1 == aChar2 || (IsInBMP(aChar1) && IsInBMP(aChar2) &&
                               ToLowerCase(static_cast<char16_t>(aChar1)) ==
                                   ToLowerCase(static_cast<char16_t>(aChar2)));
 }
 
 static bool IsCaseChangeableChar(uint32_t aChar) {
-  return IS_IN_BMP(aChar) && ToLowerCase(static_cast<char16_t>(aChar)) !=
-                                 ToUpperCase(static_cast<char16_t>(aChar));
+  return IsInBMP(aChar) && ToLowerCase(static_cast<char16_t>(aChar)) !=
+                               ToUpperCase(static_cast<char16_t>(aChar));
 }
 
 void WidgetKeyboardEvent::GetShortcutKeyCandidates(
@@ -1538,7 +1538,7 @@ void WidgetKeyboardEvent::GetAccessKeyCandidates(
   uint32_t pseudoCharCode = PseudoCharCode();
   if (pseudoCharCode) {
     uint32_t ch = pseudoCharCode;
-    if (IS_IN_BMP(ch)) {
+    if (mozilla::IsInBMP(ch)) {
       ch = ToLowerCase(static_cast<char16_t>(ch));
     }
     aCandidates.AppendElement(ch);
@@ -1550,7 +1550,7 @@ void WidgetKeyboardEvent::GetAccessKeyCandidates(
       if (!c) {
         continue;
       }
-      if (IS_IN_BMP(c)) {
+      if (mozilla::IsInBMP(c)) {
         c = ToLowerCase(static_cast<char16_t>(c));
       }
       // Don't append the charcode that was already appended.
@@ -2370,6 +2370,7 @@ bool WidgetKeyboardEvent::IsLockableModifier(KeyNameIndex aKeyNameIndex) {
 #define NS_DEFINE_INPUTTYPE(aCPPName, aDOMName) (u"" aDOMName),
 const char16_t* const InternalEditorInputEvent::kInputTypeNames[] = {
 #include "mozilla/InputTypeList.inc"
+#include "mozilla/Utf16.h"
 };
 #undef NS_DEFINE_INPUTTYPE
 

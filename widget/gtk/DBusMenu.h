@@ -5,8 +5,8 @@
 #ifndef mozilla_widget_DBusMenu_h
 #define mozilla_widget_DBusMenu_h
 
-#include <glib.h>
 #include <gdk/gdk.h>
+#include <glib.h>
 
 namespace mozilla {
 

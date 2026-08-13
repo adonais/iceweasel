@@ -8,12 +8,12 @@ Transform the {partials,mar}-signing task into an actual task description.
 import logging
 import os
 
+from mozilla_taskgraph.util.attributes import copy_attributes_from_dependent_job
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.dependencies import get_primary_dependency
 from taskgraph.util.taskcluster import get_artifact_prefix
 from taskgraph.util.treeherder import inherit_treeherder_from_dep, join_symbol
 
-from gecko_taskgraph.util.attributes import copy_attributes_from_dependent_job
 from gecko_taskgraph.util.partials import get_partials_artifacts_from_params
 from gecko_taskgraph.util.scriptworker import get_signing_type_per_platform
 

@@ -17,45 +17,67 @@ var gProfiles = {
       "chrome://browser/locale/browser.properties"
     );
 
-    this.emptyProfilesButton = PanelMultiView.getViewNode(
-      document,
-      "appMenu-empty-profiles-button"
-    );
     this.profilesButton = PanelMultiView.getViewNode(
       document,
       "appMenu-profiles-button"
     );
-    this.fxaMenuEmptyProfilesButton = PanelMultiView.getViewNode(
+    this.appMenuCreateProfileButton = PanelMultiView.getViewNode(
       document,
-      "PanelUI-fxa-menu-empty-profiles-button"
+      "appMenu-create-profile-button"
     );
-    this.fxaMenuProfilesButton = PanelMultiView.getViewNode(
+    this.fxaMenuProfileButtonsContainer = PanelMultiView.getViewNode(
       document,
-      "PanelUI-fxa-menu-profiles-button"
+      "PanelUI-fxa-menu-profile-buttons"
+    );
+    this.fxaMenuProfilesHeaderSeparator = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-profiles-header-separator"
+    );
+    this.fxaMenuProfilesHeaderLabel = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-profiles-header-label"
+    );
+    this.fxaMenuAllProfilesPanel = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-all-profiles"
+    );
+    this.fxaMenuAllProfilesPanel.addEventListener(
+      "command",
+      this.handleCommand
     );
     this.subview = PanelMultiView.getViewNode(document, "PanelUI-profiles");
     this.subview.addEventListener("command", this.handleCommand);
 
     PanelUI.mainView.addEventListener("ViewShowing", () =>
-      this._onPanelShowing(this.profilesButton, this.emptyProfilesButton)
+      this._onPanelShowing(this.profilesButton)
     );
 
     let fxaPanelView = PanelMultiView.getViewNode(document, "PanelUI-fxa");
     fxaPanelView.addEventListener("ViewShowing", () =>
-      this._onPanelShowing(
-        this.fxaMenuProfilesButton,
-        this.fxaMenuEmptyProfilesButton
-      )
+      this._onFxaMenuPanelShowing()
     );
 
     this.profilesButton.addEventListener("command", this.handleCommand);
-    this.emptyProfilesButton.addEventListener("command", this.handleCommand);
-
-    this.fxaMenuProfilesButton.addEventListener("command", this.handleCommand);
-    this.fxaMenuEmptyProfilesButton.addEventListener(
+    this.appMenuCreateProfileButton.addEventListener(
       "command",
       this.handleCommand
     );
+
+    this.fxaMenuProfileButtonsContainer.addEventListener(
+      "command",
+      this.handleCommand
+    );
+
+    PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-create-profile"
+    ).addEventListener("command", this.handleCommand);
+
+    // moz-button emits "click" rather than "command".
+    PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-create-profile-confirm-button"
+    ).addEventListener("click", this.handleCommand);
 
     this.toggleProfileMenus(SelectableProfileService?.isEnabled);
 
@@ -74,10 +96,10 @@ var gProfiles = {
     profilesMenu.hidden = !isEnabled;
   },
 
-  async _onPanelShowing(profilesButton, emptyProfilesButton) {
+  async _onPanelShowing(profilesButton) {
     if (!SelectableProfileService?.isEnabled) {
-      emptyProfilesButton.hidden = true;
       profilesButton.hidden = true;
+      this.appMenuCreateProfileButton.hidden = true;
       return;
     }
 
@@ -86,13 +108,13 @@ var gProfiles = {
     let profiles = SelectableProfileService.initialized
       ? await SelectableProfileService.getAllProfiles()
       : [];
-    if (profiles.length < 2) {
+    if (!profiles.length) {
       profilesButton.hidden = true;
-      emptyProfilesButton.hidden = false;
+      this.appMenuCreateProfileButton.hidden = false;
       return;
     }
+    this.appMenuCreateProfileButton.hidden = true;
 
-    emptyProfilesButton.hidden = true;
     profilesButton.hidden = false;
 
     let { themeBg, themeFg } = SelectableProfileService.currentProfile.theme;
@@ -102,9 +124,177 @@ var gProfiles = {
       "label",
       SelectableProfileService.currentProfile.name
     );
-    let avatarURL =
-      await SelectableProfileService.currentProfile.getAvatarURL(16);
-    profilesButton.setAttribute("image", avatarURL);
+    profilesButton.setAttribute(
+      "image",
+      await SelectableProfileService.currentProfile.getAvatarURL(24)
+    );
+  },
+
+  async _onFxaMenuPanelShowing() {
+    const container = this.fxaMenuProfileButtonsContainer;
+    const headerSeparator = this.fxaMenuProfilesHeaderSeparator;
+    const headerLabel = this.fxaMenuProfilesHeaderLabel;
+
+    const hideProfilesSection = () => {
+      container.hidden = true;
+      headerSeparator.hidden = true;
+      headerLabel.hidden = true;
+    };
+
+    if (!SelectableProfileService?.isEnabled) {
+      hideProfilesSection();
+      return;
+    }
+
+    let profiles = SelectableProfileService.initialized
+      ? await SelectableProfileService.getAllProfiles()
+      : [];
+
+    while (container.lastChild) {
+      container.lastChild.remove();
+    }
+
+    // When there are no user created profiles, surface a
+    // call to action to create a new profile instead of the profile list.
+    if (!profiles.length) {
+      let createBtn = document.createXULElement("toolbarbutton");
+      createBtn.id = "PanelUI-fxa-menu-create-profile-button";
+      createBtn.classList.add(
+        "subviewbutton",
+        "subviewbutton-iconic",
+        "subviewbutton-nav"
+      );
+      createBtn.setAttribute("closemenu", "none");
+      createBtn.setAttribute("data-l10n-id", "appmenu-create-profile2");
+      container.appendChild(createBtn);
+
+      container.hidden = false;
+      headerSeparator.hidden = false;
+      headerLabel.hidden = false;
+      return;
+    }
+
+    let currentProfileId = SelectableProfileService.currentProfile?.id;
+    profiles.sort((a, b) => {
+      if (a.id === currentProfileId) {
+        return -1;
+      }
+      if (b.id === currentProfileId) {
+        return 1;
+      }
+      return 0;
+    });
+
+    for (let profile of profiles.slice(0, 3)) {
+      let btn = document.createXULElement("toolbarbutton");
+      btn.classList.add(
+        "subviewbutton",
+        "subviewbutton-iconic",
+        "profile-item"
+      );
+      if (profile.id === SelectableProfileService.currentProfile?.id) {
+        btn.classList.add("subviewbutton-nav");
+      }
+      btn.setAttribute("closemenu", "none");
+      btn.setAttribute("profileid", profile.id);
+      btn.setAttribute("label", profile.name);
+      let { themeBg, themeFg } = profile.theme;
+      btn.style.setProperty("--appmenu-profiles-theme-bg", themeBg);
+      btn.style.setProperty("--appmenu-profiles-theme-fg", themeFg);
+      let avatarURL = await profile.getAvatarURL(24);
+      btn.setAttribute("image", avatarURL);
+      container.appendChild(btn);
+    }
+
+    if (profiles.length > 3) {
+      let allBtn = document.createXULElement("toolbarbutton");
+      allBtn.id = "PanelUI-fxa-menu-all-profiles-button";
+      allBtn.classList.add("subviewbutton", "subviewbutton-nav");
+      allBtn.setAttribute("closemenu", "none");
+      allBtn.setAttribute("data-l10n-id", "appmenu-all-profiles");
+      container.appendChild(allBtn);
+    }
+
+    container.hidden = false;
+    headerSeparator.hidden = false;
+    headerLabel.hidden = false;
+  },
+
+  async _populateAllProfilesPanel() {
+    const list = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-all-profiles-list"
+    );
+
+    while (list.lastChild) {
+      list.lastChild.remove();
+    }
+
+    let profiles = SelectableProfileService.initialized
+      ? await SelectableProfileService.getAllProfiles()
+      : [];
+
+    let currentProfileId = SelectableProfileService.currentProfile?.id;
+    profiles.sort((a, b) => {
+      if (a.id === currentProfileId) {
+        return -1;
+      }
+      if (b.id === currentProfileId) {
+        return 1;
+      }
+      return 0;
+    });
+
+    for (let profile of profiles) {
+      let btn = document.createXULElement("toolbarbutton");
+      btn.classList.add(
+        "subviewbutton",
+        "subviewbutton-iconic",
+        "profile-item"
+      );
+      btn.setAttribute("profileid", profile.id);
+      let { themeBg, themeFg } = profile.theme;
+      btn.style.setProperty("--appmenu-profiles-theme-bg", themeBg);
+      btn.style.setProperty("--appmenu-profiles-theme-fg", themeFg);
+
+      if (profile.id === currentProfileId) {
+        btn.setAttribute("closemenu", "none");
+        btn.setAttribute("align", "center");
+
+        let icon = document.createXULElement("image");
+        icon.classList.add("toolbarbutton-icon");
+        icon.setAttribute("src", await profile.getAvatarURL(24));
+        btn.appendChild(icon);
+
+        let labelVbox = document.createXULElement("vbox");
+        labelVbox.classList.add("toolbarbutton-text", "profile-item-labels");
+
+        let mainLabel = document.createXULElement("label");
+        mainLabel.setAttribute("value", profile.name);
+        mainLabel.setAttribute("crop", "end");
+        labelVbox.appendChild(mainLabel);
+
+        let currentLabel = document.createXULElement("label");
+        document.l10n.setAttributes(
+          currentLabel,
+          "appmenu-profile-current-in-use"
+        );
+        currentLabel.classList.add("profile-item-current-label");
+        labelVbox.appendChild(currentLabel);
+
+        btn.appendChild(labelVbox);
+
+        let checkIcon = document.createXULElement("image");
+        checkIcon.classList.add("profile-item-check-icon");
+        checkIcon.setAttribute("src", "chrome://global/skin/icons/check.svg");
+        btn.appendChild(checkIcon);
+      } else {
+        btn.setAttribute("label", profile.name);
+        btn.setAttribute("image", await profile.getAvatarURL(24));
+      }
+
+      list.appendChild(btn);
+    }
   },
 
   /**
@@ -167,8 +357,10 @@ var gProfiles = {
   },
 
   copyProfile() {
+    const profile =
+      this._subViewProfile ?? SelectableProfileService.currentProfile;
     SelectableProfileService.maybeSetupDataStore().then(() => {
-      SelectableProfileService.currentProfile.copyProfile();
+      profile.copyProfile();
     });
   },
 
@@ -177,12 +369,24 @@ var gProfiles = {
   },
 
   updateView(target) {
+    const closestPanelView = target.closest("panelview");
+    const panelView = closestPanelView
+      ? PanelView.forNode(closestPanelView)
+      : null;
+    const wasKeyboardActivation = panelView?._doingKeyboardActivation ?? false;
     this.populateSubView();
+    if (panelView && wasKeyboardActivation) {
+      panelView._doingKeyboardActivation = true;
+    }
     PanelUI.showSubView("PanelUI-profiles", target);
   },
 
-  updateFxAView(target) {
-    this.populateSubView();
+  async updateFxAView(target) {
+    const profileId = parseInt(target.getAttribute("profileid"), 10);
+    this._subViewProfile = profileId
+      ? await SelectableProfileService.getProfile(profileId)
+      : null;
+    this.populateSubView(this._subViewProfile);
     PanelUI.showSubView("PanelUI-profiles", target);
   },
 
@@ -207,18 +411,59 @@ var gProfiles = {
   async handleCommand(aEvent) {
     switch (aEvent.target.id) {
       /* App menu button events */
-      case "appMenu-profiles-button":
-      // deliberate fallthrough
-      case "appMenu-empty-profiles-button": {
+      case "appMenu-profiles-button": {
         this.updateView(aEvent.target);
         break;
       }
       /* FxA menu button events */
-      case "PanelUI-fxa-menu-empty-profiles-button":
-      // deliberate fallthrough
-      case "PanelUI-fxa-menu-profiles-button": {
+      case "PanelUI-fxa-menu-all-profiles-button": {
         aEvent.stopPropagation();
-        this.updateFxAView(aEvent.target);
+        this._populateAllProfilesPanel();
+        PanelUI.showSubView("PanelUI-fxa-menu-all-profiles", aEvent.target);
+        break;
+      }
+      case "PanelUI-fxa-menu-all-profiles-manage-button": {
+        this.manageProfiles();
+        break;
+      }
+      case "PanelUI-fxa-menu-all-profiles-create-button": {
+        this.createNewProfile("profiles-panel");
+        break;
+      }
+      case "appMenu-create-profile-button":
+      // fall through
+      case "PanelUI-fxa-menu-create-profile-button": {
+        aEvent.stopPropagation();
+        PanelUI.showSubView("PanelUI-fxa-menu-create-profile", aEvent.target);
+        break;
+      }
+      case "PanelUI-fxa-menu-create-profile-confirm-button": {
+        this.createNewProfile("profiles-panel");
+        break;
+      }
+      case "PanelUI-fxa-menu-create-profile-learn-more-button": {
+        openTrustedLinkIn(
+          "https://support.mozilla.org/kb/profile-management",
+          "tab"
+        );
+        break;
+      }
+      case "PanelUI-fxa-menu-create-profile-copy-button": {
+        this.copyProfile();
+        break;
+      }
+      case "PanelUI-fxa-menu-create-profile-manage-button": {
+        this.manageProfiles();
+        break;
+      }
+      default: {
+        if (
+          aEvent.target.classList.contains("profile-item") &&
+          aEvent.target.classList.contains("subviewbutton-nav")
+        ) {
+          aEvent.stopPropagation();
+          this.updateFxAView(aEvent.target);
+        }
         break;
       }
       /* Subpanel events that may be triggered in FxA menu or app menu */
@@ -269,7 +514,12 @@ var gProfiles = {
       }
     }
     /* Subpanel profile events that may be triggered in FxA menu or app menu */
-    if (aEvent.target.classList.contains("profile-item")) {
+    if (
+      aEvent.target.classList.contains("profile-item") &&
+      aEvent.target.hasAttribute("profileid") &&
+      aEvent.target.getAttribute("profileid") !==
+        String(SelectableProfileService.currentProfile?.id)
+    ) {
       this.launchProfile(aEvent);
     }
   },
@@ -277,8 +527,12 @@ var gProfiles = {
   /**
    * Inserts the subpanel contents for the PanelUI subpanel, which may be shown
    * either in the app menu or the FxA toolbar button menu.
+   *
+   *   @param {SelectableProfile|null} [displayProfile]
+   *   The profile to display in the subview. If null, falls back to the
+   *   current profile.
    */
-  async populateSubView() {
+  async populateSubView(displayProfile = null) {
     let profiles = [];
     let currentProfile = null;
 
@@ -286,6 +540,9 @@ var gProfiles = {
       profiles = await SelectableProfileService.getAllProfiles();
       currentProfile = SelectableProfileService.currentProfile;
     }
+
+    const targetProfile = displayProfile ?? currentProfile;
+    const showProfileInfo = displayProfile !== null || profiles.length >= 1;
 
     let subview = PanelMultiView.getViewNode(document, "PanelUI-profiles");
 
@@ -299,23 +556,34 @@ var gProfiles = {
     );
     backButton.style.fill = "var(--appmenu-profiles-theme-fg, currentColor)";
 
+    const subviewBody = subview.querySelector(".panel-subview-body");
+    subviewBody.hidden = !targetProfile;
+
     let currentProfileCard = PanelMultiView.getViewNode(
       document,
       "current-profile"
     );
-    currentProfileCard.hidden = !(currentProfile && profiles.length > 1);
+    currentProfileCard.hidden = !targetProfile;
 
     let profilesHeader = PanelMultiView.getViewNode(
       document,
       "PanelUI-profiles-header"
     );
 
-    let editButton = PanelMultiView.getViewNode(
+    let editThisProfileButton = PanelMultiView.getViewNode(
       document,
       "profiles-edit-this-profile-button"
     );
+    if (!editThisProfileButton) {
+      editThisProfileButton = document.createXULElement("toolbarbutton");
+      editThisProfileButton.id = "profiles-edit-this-profile-button";
+      editThisProfileButton.classList.add("subviewbutton");
+      editThisProfileButton.setAttribute(
+        "data-l10n-id",
+        "appmenu-edit-this-profile"
+      );
+    }
 
-    let profilesList = PanelMultiView.getViewNode(document, "profiles-list");
     // Automatically created by PanelMultiView.
     const headerSeparator = profilesHeader.nextElementSibling;
     let footerSeparator = PanelMultiView.getViewNode(
@@ -336,11 +604,11 @@ var gProfiles = {
       createProfileButton.id = "profiles-create-profile-button";
       createProfileButton.classList.add(
         "subviewbutton",
-        "subviewbutton-iconic"
+        "panel-subview-footer-button"
       );
       createProfileButton.setAttribute(
         "data-l10n-id",
-        "appmenu-create-profile"
+        "appmenu-create-profile2"
       );
     }
 
@@ -352,7 +620,7 @@ var gProfiles = {
     if (!copyProfileButton) {
       copyProfileButton = document.createXULElement("toolbarbutton");
       copyProfileButton.id = "profiles-copy-profile-button";
-      copyProfileButton.classList.add("subviewbutton", "subviewbutton-iconic");
+      copyProfileButton.classList.add("subviewbutton");
       copyProfileButton.setAttribute("data-l10n-id", "appmenu-copy-profile");
     }
 
@@ -364,49 +632,25 @@ var gProfiles = {
     if (!manageProfilesButton) {
       manageProfilesButton = document.createXULElement("toolbarbutton");
       manageProfilesButton.id = "profiles-manage-profiles-button";
-      manageProfilesButton.classList.add(
-        "subviewbutton",
-        "panel-subview-footer-button"
-      );
+      manageProfilesButton.classList.add("subviewbutton");
       manageProfilesButton.setAttribute(
         "data-l10n-id",
         "appmenu-manage-profiles"
       );
     }
 
-    if (profiles.length < 2) {
-      profilesHeader.removeAttribute("style");
-      editButton.hidden = true;
-
-      headerSeparator.hidden = false;
-      footerSeparator.hidden = true;
-      const subviewBody = subview.querySelector(".panel-subview-body");
-      subview.insertBefore(createProfileButton, subviewBody);
-      subview.insertBefore(copyProfileButton, subviewBody);
-      subview.insertBefore(manageProfilesButton, subviewBody);
-    } else {
-      profilesHeader.style.backgroundColor = "var(--appmenu-profiles-theme-bg)";
-      profilesHeader.style.color = "var(--appmenu-profiles-theme-fg)";
-      editButton.hidden = false;
-    }
-
-    if (currentProfile && profiles.length > 1) {
-      let { themeBg, themeFg } = currentProfile.theme;
+    if (targetProfile) {
+      let { themeBg, themeFg } = targetProfile.theme;
       subview.style.setProperty("--appmenu-profiles-theme-bg", themeBg);
       subview.style.setProperty("--appmenu-profiles-theme-fg", themeFg);
-
-      headerSeparator.hidden = true;
-      footerSeparator.hidden = false;
-      subview.appendChild(footerSeparator);
-      subview.appendChild(createProfileButton);
-      subview.appendChild(copyProfileButton);
-      subview.appendChild(manageProfilesButton);
+      profilesHeader.style.backgroundColor = "var(--appmenu-profiles-theme-bg)";
+      profilesHeader.style.color = "var(--appmenu-profiles-theme-fg)";
 
       let headerText = PanelMultiView.getViewNode(
         document,
         "profiles-header-content"
       );
-      headerText.textContent = currentProfile.name;
+      headerText.textContent = targetProfile.name;
 
       let profileIconEl = PanelMultiView.getViewNode(
         document,
@@ -421,30 +665,77 @@ var gProfiles = {
         themeFg
       );
 
-      profileIconEl.style.listStyleImage = `url(${await currentProfile.getAvatarURL(80)})`;
+      profileIconEl.style.listStyleImage = `url(${await targetProfile.getAvatarURL(80)})`;
+    } else {
+      profilesHeader.removeAttribute("style");
     }
 
-    let subtitle = PanelMultiView.getViewNode(document, "profiles-subtitle");
-    subtitle.hidden = profiles.length < 2;
+    if (showProfileInfo) {
+      headerSeparator.hidden = true;
+      editThisProfileButton.hidden = false;
+      subview.appendChild(editThisProfileButton);
+      subview.appendChild(copyProfileButton);
 
-    while (profilesList.lastElementChild) {
-      profilesList.lastElementChild.remove();
-    }
-    for (let profile of profiles) {
-      if (profile.id === SelectableProfileService.currentProfile.id) {
-        continue;
+      for (let item of subview.querySelectorAll(".profiles-subview-item")) {
+        item.remove();
+      }
+      PanelMultiView.getViewNode(
+        document,
+        "profiles-subview-list-start-separator"
+      )?.remove();
+      PanelMultiView.getViewNode(document, "profiles-subview-list")?.remove();
+
+      let hasOtherProfiles = false;
+      if (displayProfile === null) {
+        let profilesListStartSeparator =
+          document.createXULElement("toolbarseparator");
+        profilesListStartSeparator.id = "profiles-subview-list-start-separator";
+
+        subview.appendChild(profilesListStartSeparator);
+
+        let profilesList = document.createXULElement("vbox");
+        profilesList.id = "profiles-subview-list";
+        subview.appendChild(profilesList);
+
+        for (let profile of profiles) {
+          if (profile.id === targetProfile?.id) {
+            continue;
+          }
+          let btn = document.createXULElement("toolbarbutton");
+          btn.classList.add(
+            "subviewbutton",
+            "subviewbutton-iconic",
+            "profile-item",
+            "profiles-subview-item"
+          );
+          btn.setAttribute("profileid", profile.id);
+          btn.setAttribute("label", profile.name);
+          let { themeBg, themeFg } = profile.theme;
+          btn.style.setProperty("--appmenu-profiles-theme-bg", themeBg);
+          btn.style.setProperty("--appmenu-profiles-theme-fg", themeFg);
+          btn.setAttribute("image", await profile.getAvatarURL(24));
+          profilesList.appendChild(btn);
+          hasOtherProfiles = true;
+        }
+
+        // With no other profiles the list is empty, so hide it and the footer
+        // separator to avoid rendering two adjacent separators.
+        profilesList.hidden = !hasOtherProfiles;
       }
 
-      let button = document.createXULElement("toolbarbutton");
-      button.setAttribute("profileid", profile.id);
-      button.setAttribute("label", profile.name);
-      button.className = "subviewbutton subviewbutton-iconic profile-item";
-      let { themeFg, themeBg } = profile.theme;
-      button.style.setProperty("--appmenu-profiles-theme-bg", themeBg);
-      button.style.setProperty("--appmenu-profiles-theme-fg", themeFg);
-      button.setAttribute("image", await profile.getAvatarURL(16));
+      footerSeparator.hidden = displayProfile === null && !hasOtherProfiles;
+      subview.appendChild(footerSeparator);
 
-      profilesList.appendChild(button);
+      subview.appendChild(manageProfilesButton);
+      subview.appendChild(createProfileButton);
+    } else {
+      headerSeparator.hidden = false;
+      footerSeparator.hidden = true;
+      editThisProfileButton.hidden = true;
+      subview.insertBefore(editThisProfileButton, subviewBody);
+      subview.insertBefore(createProfileButton, subviewBody);
+      subview.insertBefore(copyProfileButton, subviewBody);
+      subview.insertBefore(manageProfilesButton, subviewBody);
     }
   },
 
@@ -463,14 +754,17 @@ var gProfiles = {
       ...menuPopup.querySelectorAll(":scope > menuitem[profileid]"),
     ];
 
+    // Place the profile items immediately after the separator, repositioning
+    // reused ones too. Anchoring keeps them in their declared slot regardless of
+    // any later items in the popup (e.g. Select All Tabs in the alt layout).
+    let anchor = separator;
     for (let profile of profiles) {
       if (profile.id === currentProfile.id) {
         continue;
       }
 
       let menuitem = existingItems.shift();
-      let isNewItem = !menuitem;
-      if (isNewItem) {
+      if (!menuitem) {
         menuitem = document.createXULElement("menuitem");
         menuitem.setAttribute("tbattr", "tabbrowser-multiple-visible");
         menuitem.setAttribute("data-l10n-id", "move-to-new-profile");
@@ -484,9 +778,8 @@ var gProfiles = {
         JSON.stringify({ profileName: profile.name })
       );
 
-      if (isNewItem) {
-        menuPopup.appendChild(menuitem);
-      }
+      anchor.after(menuitem);
+      anchor = menuitem;
     }
     // If there's any old item to remove, do so now.
     for (let remaining of existingItems) {

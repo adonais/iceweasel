@@ -114,7 +114,7 @@ class IonIC {
         fallbackOffset_(0),
         kind_(kind) {}
 
-  void attachStub(IonICStub* newStub, JitCode* code);
+  void attachStub(IonScript* ionScript, IonICStub* newStub, JitCode* code);
 
  public:
   void setScriptedLocation(JSScript* script, jsbytecode* pc) {

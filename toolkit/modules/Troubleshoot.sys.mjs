@@ -488,8 +488,13 @@ var dataProviders = {
     // Limit the environment variables to those that we
     // know may affect Firefox to reduce leaking PII.
     let filteredEnvironmentKeys = ["xre_", "moz_", "gdk", "display"];
+    let exactEnvironmentKeys = ["sslkeylogfile"];
     for (let key of Object.keys(environment)) {
-      if (filteredEnvironmentKeys.some(k => key.toLowerCase().startsWith(k))) {
+      let lowerKey = key.toLowerCase();
+      if (
+        filteredEnvironmentKeys.some(k => lowerKey.startsWith(k)) ||
+        exactEnvironmentKeys.includes(lowerKey)
+      ) {
         filteredEnvironment[key] = environment[key];
       }
     }
@@ -1088,7 +1093,7 @@ var dataProviders = {
 if (AppConstants.MOZ_CRASHREPORTER) {
   dataProviders.crashes = function crashes(done) {
     const { CrashReports } = ChromeUtils.importESModule(
-      "resource://gre/modules/CrashReports.sys.mjs"
+      "moz-src:///toolkit/crashreporter/CrashReports.sys.mjs"
     );
     let reports = CrashReports.getReports();
     let now = new Date();

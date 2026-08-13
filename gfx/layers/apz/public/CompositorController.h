@@ -5,8 +5,8 @@
 #ifndef mozilla_layers_CompositorController_h
 #define mozilla_layers_CompositorController_h
 
-#include "nsISupportsImpl.h"  // for NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 #include "mozilla/webrender/WebRenderTypes.h"
+#include "nsISupportsImpl.h"  // for NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 
 namespace mozilla {
 namespace layers {

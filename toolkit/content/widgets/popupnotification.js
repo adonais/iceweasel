@@ -37,6 +37,10 @@
       };
     }
 
+    static get observedAttributes() {
+      return [...super.observedAttributes, "dropmarkerhidden"];
+    }
+
     attributeChangedCallback(name, oldValue, newValue) {
       if (!this._hasSlotted) {
         return;

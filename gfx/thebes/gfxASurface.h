@@ -5,17 +5,15 @@
 #ifndef GFX_ASURFACE_H
 #define GFX_ASURFACE_H
 
-#include "mozilla/MemoryReporting.h"
-#include "mozilla/UniquePtr.h"
-
 #include "gfxPoint.h"
 #include "gfxRect.h"
 #include "gfxTypes.h"
-#include "nscore.h"
-#include "nsSize.h"
+#include "mozilla/MemoryReporting.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/Rect.h"
-
+#include "nsSize.h"
 #include "nsStringFwd.h"
+#include "nscore.h"
 
 class gfxImageSurface;
 

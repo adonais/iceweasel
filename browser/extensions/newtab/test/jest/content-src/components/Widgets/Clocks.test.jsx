@@ -531,11 +531,11 @@ describe("<Clocks> (Widgets/Clocks)", () => {
       ).toBe(false);
     });
 
-    it("contains hide (singular 'Hide clock') and learn-more items", () => {
+    it("contains hide ('Hide widget') and learn-more items", () => {
       const { container } = renderClocks();
       expect(
         container.querySelector(
-          "panel-item[data-l10n-id='newtab-clock-widget-menu-hide']"
+          "panel-item[data-l10n-id='newtab-widget-menu-hide']"
         )
       ).toBeInTheDocument();
       expect(
@@ -549,7 +549,7 @@ describe("<Clocks> (Widgets/Clocks)", () => {
       const { container } = renderClocks();
       const widget = container.querySelector(".clocks-widget");
       const item = container.querySelector(
-        "panel-item[data-l10n-id='newtab-clock-widget-menu-hide']"
+        "panel-item[data-l10n-id='newtab-widget-menu-hide']"
       );
       fireEvent.click(item);
       expect(widget.classList.contains("is-dismissed")).toBe(true);
@@ -594,7 +594,7 @@ describe("<Clocks> (Widgets/Clocks)", () => {
     it("dispatches SET_PREF(widgets.clocks.enabled, false) and WIDGETS_ENABLED on hide click", () => {
       const { container, dispatch } = renderClocks();
       const item = container.querySelector(
-        "panel-item[data-l10n-id='newtab-clock-widget-menu-hide']"
+        "panel-item[data-l10n-id='newtab-widget-menu-hide']"
       );
       fireEvent.click(item);
 
@@ -626,6 +626,7 @@ describe("<Clocks> (Widgets/Clocks)", () => {
         type: at.OPEN_LINK,
         data: {
           url: "https://support.mozilla.org/kb/firefox-new-tab-widgets",
+          where: "tab",
         },
       });
       expect(dispatch.mock.calls[1][0]).toMatchObject({

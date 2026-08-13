@@ -63,10 +63,10 @@ index 4f24d26b24..57ae638042 100644
    std::optional<TimeDelta> AverageRtt() const;
    std::optional<TimeDelta> LastRtt() const;
 diff --git a/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc b/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
-index f7cf85e5b6..24f65485be 100644
+index af800a3daf..5b651c84a8 100644
 --- a/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
 +++ b/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
-@@ -542,8 +542,10 @@ void ModuleRtpRtcpImpl2::GetSendStreamDataCounters(
+@@ -548,8 +548,10 @@ void ModuleRtpRtcpImpl2::GetSendStreamDataCounters(
  
  // Received RTCP report.
  void ModuleRtpRtcpImpl2::RemoteRTCPSenderInfo(uint32_t* packet_count,
@@ -80,10 +80,10 @@ index f7cf85e5b6..24f65485be 100644
  
  std::vector<ReportBlockData> ModuleRtpRtcpImpl2::GetLatestReportBlockData()
 diff --git a/modules/rtp_rtcp/source/rtp_rtcp_impl2.h b/modules/rtp_rtcp/source/rtp_rtcp_impl2.h
-index 6c1f673644..7037658ee7 100644
+index 771a19c88a..4ec4174b51 100644
 --- a/modules/rtp_rtcp/source/rtp_rtcp_impl2.h
 +++ b/modules/rtp_rtcp/source/rtp_rtcp_impl2.h
-@@ -232,7 +232,8 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
+@@ -233,7 +233,8 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
        StreamDataCounters* rtx_counters) const override;
  
    void RemoteRTCPSenderInfo(uint32_t* packet_count,
@@ -94,10 +94,10 @@ index 6c1f673644..7037658ee7 100644
    // A snapshot of the most recent Report Block with additional data of
    // interest to statistics. Used to implement RTCRemoteInboundRtpStreamStats.
 diff --git a/modules/rtp_rtcp/source/rtp_rtcp_interface.h b/modules/rtp_rtcp/source/rtp_rtcp_interface.h
-index 0d5fcc05f6..c133f44597 100644
+index baeb704155..6bb4a3ac6e 100644
 --- a/modules/rtp_rtcp/source/rtp_rtcp_interface.h
 +++ b/modules/rtp_rtcp/source/rtp_rtcp_interface.h
-@@ -399,9 +399,10 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
+@@ -410,9 +410,10 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
        StreamDataCounters* rtx_counters) const = 0;
  
  

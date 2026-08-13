@@ -815,6 +815,7 @@ rtc_library("transport_description_factory") {
     "../rtc_base:checks",
     "../rtc_base:logging",
     "../rtc_base:ssl",
+    "../rtc_base:ssl_adapter",
   ]
 }
 
@@ -989,6 +990,7 @@ if (rtc_include_tests) {
       "../rtc_base:async_packet_socket",
       "../rtc_base:checks",
       "../rtc_base:ip_address",
+      "../rtc_base:net_helpers",
       "../rtc_base:net_test_helpers",
       "../rtc_base:network",
       "../rtc_base:socket_factory",

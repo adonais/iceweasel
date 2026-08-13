@@ -1337,6 +1337,22 @@ quick_suggest:
     send_in_pings:
       - quick-suggest
 
+  suggestion_id:
+    type: string
+    description: >
+      The suggestion ID from MARS/Merino.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2050684
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2050684
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - najiang@mozilla.com
+    expires: never
+    send_in_pings:
+      - quick-suggest
+
 # Metrics from the Rust suggest component.
 #
 # We can't record metrics from Rust directly.  To work around that we:
@@ -1631,6 +1647,26 @@ urlbar.autofill:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2019719
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2019719
+    notification_emails:
+      - fx-search-telemetry@mozilla.com
+    expires: never
+    data_sensitivity:
+      - interaction
+
+  input_context_menu_dismissal:
+    type: labeled_counter
+    description: >
+      Counts how many times the user dismissed a heuristic autofill result
+      via the urlbar input's right-click context menu. Labeled by which
+      menu item was used: `dismiss` only blocks the autofill pairing,
+      `forget` also removes the page from history.
+    labels:
+      - dismiss
+      - forget
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2013362
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2013362
     notification_emails:
       - fx-search-telemetry@mozilla.com
     expires: never

@@ -3,11 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ia2AccessibleEditableText.h"
-#include "ia2AccessibleHypertext.h"
 
 #include "AccessibleEditableText_i.c"
+#include "ia2AccessibleHypertext.h"
 #include "mozilla/a11y/HyperTextAccessibleBase.h"
-
 #include "nsCOMPtr.h"
 #include "nsString.h"
 

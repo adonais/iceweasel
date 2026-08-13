@@ -64,18 +64,25 @@ MOZ_ALWAYS_INLINE bool AtomMarkingRuntime::inlinedMarkAtomInternal(Zone* zone,
       oomUnsafe.emplace();
     }
 
-    bool ok = zone->markedAtoms().setBit(blackBit);
-    if constexpr (std::is_same_v<T, JS::Symbol>) {
-      ok = ok && zone->markedAtoms().setBit(grayOrBlackBit);
-    }
-
-    if (!ok) {
+    SparseBitmap& bitmap = zone->markedAtoms();
+    if (!bitmap.ensureBitExists(grayOrBlackBit)) {
       if constexpr (!Fallible) {
         oomUnsafe->crash("AtomMarkingRuntime::inlinedMarkAtomInternal");
-      } else {
-        return false;
       }
+      return false;
     }
+
+#ifdef JS_GC_CONCURRENT_MARKING
+    bitmap.atomicSetExistingBit(blackBit);
+    if constexpr (std::is_same_v<T, JS::Symbol>) {
+      bitmap.atomicSetExistingBit(grayOrBlackBit);
+    }
+#else
+    MOZ_ALWAYS_TRUE(bitmap.setBit(blackBit));
+    if constexpr (std::is_same_v<T, JS::Symbol>) {
+      MOZ_ALWAYS_TRUE(bitmap.setBit(grayOrBlackBit));
+    }
+#endif
   }
 
   // Children of the thing also need to be marked in the context's zone.

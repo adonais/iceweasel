@@ -3,13 +3,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsHostRecord.h"
+
 #include "TRRQuery.h"
 // Put DNSLogging.h at the end to avoid LOG being overwritten by other headers.
 #include "DNSLogging.h"
-#include "mozilla/StaticPrefs_network.h"
-#include "mozilla/glean/NetwerkDnsMetrics.h"
 #include "TRRService.h"
 #include "mozilla/ProfilerMarkers.h"
+#include "mozilla/StaticPrefs_network.h"
+#include "mozilla/glean/NetwerkDnsMetrics.h"
 
 //----------------------------------------------------------------------------
 // this macro filters out any flags that are not used when constructing the
@@ -85,8 +86,8 @@ bool nsHostKey::operator==(const nsHostKey& other) const {
 }
 
 PLDHashNumber nsHostKey::Hash() const {
-  return AddToHash(HashString(host.get()), HashString(mTrrServer.get()), type,
-                   RES_KEY_FLAGS(flags), af, HashString(originSuffix.get()));
+  return AddToHash(HashString(host), HashString(mTrrServer), type,
+                   RES_KEY_FLAGS(flags), af, HashString(originSuffix));
 }
 
 size_t nsHostKey::SizeOfExcludingThis(
@@ -259,8 +260,23 @@ size_t AddrHostRecord::SizeOfIncludingThis(MallocSizeOf mallocSizeOf) const {
 
 bool AddrHostRecord::HasUsableResultInternal(
     const mozilla::TimeStamp& now, nsIDNSService::DNSFlags queryFlags) const {
-  // don't use cached negative results for high priority queries.
-  if (negative && IsHighPriority(queryFlags)) {
+  // Normally we don't use cached negative results for high priority queries, so
+  // that user-facing lookups get a fresh answer. Happy Eyeballs, however,
+  // issues high priority per-family (A and AAAA) lookups, so this rule would
+  // force a re-resolution of a permanently-negative family on every connection
+  // (e.g. the AAAA lookup on an IPv4-only network), tanking the DNS cache hit
+  // rate. When HE is enabled, reuse the negative result instead; a background
+  // refresh still runs, so a host that gains the missing family is picked up on
+  // a later lookup.
+  if (negative && IsHighPriority(queryFlags) &&
+      !StaticPrefs::network_http_happy_eyeballs_enabled()) {
+    return false;
+  }
+
+  // The caller explicitly refuses a cached negative (e.g. the TRR service
+  // channel resolving the DoH server) so a transient negative can't stick.
+  if (negative &&
+      (queryFlags & nsIDNSService::RESOLVE_REFRESH_NEGATIVE_CACHE)) {
     return false;
   }
 
@@ -500,6 +516,13 @@ TypeHostRecord::~TypeHostRecord() { mCallbacks.clear(); }
 
 bool TypeHostRecord::HasUsableResultInternal(
     const mozilla::TimeStamp& now, nsIDNSService::DNSFlags queryFlags) const {
+  // The caller explicitly refuses a cached negative so a transient negative
+  // can't stick (see AddrHostRecord::HasUsableResultInternal).
+  if (negative &&
+      (queryFlags & nsIDNSService::RESOLVE_REFRESH_NEGATIVE_CACHE)) {
+    return false;
+  }
+
   if (CheckExpiration(now) == EXP_EXPIRED) {
     return false;
   }

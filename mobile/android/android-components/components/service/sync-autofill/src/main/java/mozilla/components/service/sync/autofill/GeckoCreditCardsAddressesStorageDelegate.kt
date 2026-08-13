@@ -16,6 +16,7 @@ import mozilla.components.concept.storage.CreditCardsAddressesStorage
 import mozilla.components.concept.storage.CreditCardsAddressesStorageDelegate
 import mozilla.components.concept.storage.ManagedKey
 import mozilla.components.concept.storage.NewCreditCardFields
+import mozilla.components.concept.storage.UpdatableAddressFields
 import mozilla.components.concept.storage.UpdatableCreditCardFields
 import mozilla.components.support.ktx.kotlin.last4Digits
 
@@ -58,7 +59,26 @@ class GeckoCreditCardsAddressesStorageDelegate(
     }
 
     override suspend fun onAddressSave(address: Address) {
-        TODO("Not yet implemented")
+        val fields = UpdatableAddressFields(
+            name = address.name,
+            organization = address.organization,
+            streetAddress = address.streetAddress,
+            addressLevel3 = address.addressLevel3,
+            addressLevel2 = address.addressLevel2,
+            addressLevel1 = address.addressLevel1,
+            postalCode = address.postalCode,
+            country = address.country,
+            tel = address.tel,
+            email = address.email,
+        )
+
+        withContext(dispatcher) {
+            if (address.guid.isBlank()) {
+                storage.value.addAddress(fields)
+            } else {
+                storage.value.updateAddress(address.guid, fields)
+            }
+        }
     }
 
     override suspend fun onCreditCardsFetch(): List<CreditCard> =

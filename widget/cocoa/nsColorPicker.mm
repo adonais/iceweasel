@@ -4,8 +4,8 @@
 
 #import <Cocoa/Cocoa.h>
 
-#include "nsColorPicker.h"
 #include "nsCocoaUtils.h"
+#include "nsColorPicker.h"
 #include "nsThreadUtils.h"
 
 using namespace mozilla;

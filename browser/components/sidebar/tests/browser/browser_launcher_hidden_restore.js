@@ -10,13 +10,19 @@ add_setup(async () => {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["sidebar.animation.enabled", false],
+      // These tests cover the vertical-tabs "hide-sidebar" behavior, where the
+      // launcher is hidden but becomes visible while a panel is open and
+      // restores to hidden once the panel closes. (In horizontal tabs
+      // "hide-sidebar" the launcher stays hidden and the panel is shown on its
+      // own; that mode is covered by browser_hide_sidebar.js.)
       // Note: "visibility" in the context of the sidebar launcher refers to the
       // pref-controlled behavior of when and how the launcher shows/hides, not
-      // if it is currently showing or hiding. These tests are specifically for
-      // the "hide-sidebar" behavior.
+      // if it is currently showing or hiding.
+      [VERTICAL_TABS_PREF, true],
       [SIDEBAR_VISIBILITY_PREF, "hide-sidebar"],
     ],
   });
+  await SidebarTestUtils.waitForTabstripOrientation(window, "vertical");
   await SidebarController.waitUntilStable();
   sidebarLauncher = SidebarController.sidebarContainer;
 });
@@ -96,6 +102,41 @@ add_task(async function test_launcher_hidden_restored_via_toggle() {
     "Launcher is hidden again after toggling panel off"
   );
 });
+
+add_task(
+  async function test_horizontal_hide_on_close_launcher_restored_after_panel_close() {
+    // Regression test for bug 2052334: in horizontal-tabs "hide-on-close" mode,
+    // a launcher the user has hidden must return to hidden after a panel is
+    // opened and then closed.
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        [VERTICAL_TABS_PREF, false],
+        [SIDEBAR_VISIBILITY_PREF, "hide-on-close"],
+      ],
+    });
+    await SidebarTestUtils.waitForTabstripOrientation(window, "horizontal");
+    await SidebarController.waitUntilStable();
+
+    await SidebarTestUtils.ensureLauncherHidden(window);
+
+    await SidebarTestUtils.showPanel(window, "viewHistorySidebar");
+    await SidebarController.waitUntilStable();
+    Assert.ok(
+      !SidebarController.sidebarContainer.hidden,
+      "Launcher is visible while panel is open"
+    );
+
+    SidebarTestUtils.closePanel(window);
+    await waitForElementHidden(SidebarController.sidebarContainer);
+    Assert.ok(
+      SidebarController.sidebarContainer.hidden,
+      "Launcher is hidden again after panel close in hide-on-close mode"
+    );
+
+    await SpecialPowers.popPrefEnv();
+    await SidebarController.waitUntilStable();
+  }
+);
 
 add_task(async function test_visibility_mode_change_while_panel_open() {
   // When the launcher is initially hidden, if the visibility pref changes to something

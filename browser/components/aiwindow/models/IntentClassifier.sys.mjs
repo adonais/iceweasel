@@ -6,6 +6,19 @@
 
 import { createEngine } from "chrome://global/content/ml/EngineProcess.sys.mjs";
 
+const lazy = {};
+
+ChromeUtils.defineESModuleGetters(lazy, {
+  Region: "resource://gre/modules/Region.sys.mjs",
+});
+
+export const INTENT_MODEL_ENGLISH_FRENCH =
+  "mozilla/query-intent-detection-en-fr";
+export const DEFAULT_INTENT_MODEL = "mozilla/mobilebert-query-intent-detection";
+
+const INTENT_FEATURE = "smart-intent";
+const INTENT_FEATURE_ENGLISH_FRENCH = "smart-intent-en-fr";
+
 const FORCED_CHAT_PHRASES = [
   "amuse me",
   "are we alone",
@@ -119,8 +132,45 @@ const FORCED_CHAT_PHRASES = [
   "your model is",
 ];
 
+// Short forced-chat allowlist for French. Appended to FORCED_CHAT_PHRASES when
+// the French/English intent model is in use.
+const FRENCH_FORCED_CHAT_PHRASES = [
+  "amuse-moi",
+  "au revoir",
+  "bonjour",
+  "bonne nuit",
+  "bonsoir",
+  "comment ça va",
+  "comment vas-tu",
+  "coucou",
+  "donne un conseil",
+  "écris un poème",
+  "écris une chanson",
+  "es-tu humain",
+  "es-tu réel",
+  "es-tu une ia",
+  "le sens de la vie",
+  "motive-moi",
+  "quel modèle es-tu",
+  "qui es-tu",
+  "raconte une blague",
+  "raconte une histoire",
+  "salut",
+  "surprends-moi",
+  "ça va",
+];
+
 export function normalizeTextForChatAllowlist(s) {
-  return s.toLowerCase().normalize("NFKC").replace(/\s+/g, " ").trim();
+  // Fold diacritics (NFD + strip combining marks) so accent-insensitive input
+  // still matches, e.g. "ecris un poeme" matches "écris un poème". French input
+  // is frequently typed without accents.
+  return s
+    .normalize("NFKC")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 // Split on non-word chars; letters/numbers/_ are "word" characters
@@ -172,39 +222,87 @@ export function makeIsolatedPhraseChecker(phrases) {
 }
 
 /**
+ * Returns the intent model and its feature id appropriate for the current
+ * region, falling back to the default (English) model.
+ *
+ * @returns {{ modelId: string, featureId: string }}
+ */
+function getIntentModelInfoForLocale() {
+  if (lazy.Region.home == "FR") {
+    return {
+      modelId: INTENT_MODEL_ENGLISH_FRENCH,
+      featureId: INTENT_FEATURE_ENGLISH_FRENCH,
+    };
+  }
+  return {
+    modelId: DEFAULT_INTENT_MODEL,
+    featureId: INTENT_FEATURE,
+  };
+}
+
+/**
+ * Returns the forced-chat phrase list for a given intent model. The French/
+ * English model gets the French phrases appended to the English ones.
+ *
+ * @param {string} modelId
+ * @returns {string[]}
+ */
+function getForcedChatPhrasesForModel(modelId) {
+  if (modelId === INTENT_MODEL_ENGLISH_FRENCH) {
+    return [...FORCED_CHAT_PHRASES, ...FRENCH_FORCED_CHAT_PHRASES];
+  }
+  return FORCED_CHAT_PHRASES;
+}
+
+/**
  * Intent Classifier Engine
  */
 export const IntentClassifier = {
   /**
    * Exposing createEngine for testing purposes.
    */
-
   _createEngine: createEngine,
 
   /**
-   * Initialize forced-chat checker at module load.
-   * Keeping it as a property ensures easy stubbing in tests.
+   * Lazily-built forced-chat checkers, keyed by model id so each locale's
+   * allowlist is only compiled once. Kept as a property for easy stubbing.
    */
+  _forcedChatCheckers: new Map(),
 
-  _isForcedChat: makeIsolatedPhraseChecker(FORCED_CHAT_PHRASES),
+  /**
+   * Returns whether the query is on the forced-chat allowlist for the model.
+   *
+   * @param {string} query
+   * @param {string} modelId
+   * @returns {boolean}
+   */
+  _isForcedChat(query, modelId) {
+    let checker = this._forcedChatCheckers.get(modelId);
+    if (!checker) {
+      checker = makeIsolatedPhraseChecker(
+        getForcedChatPhrasesForModel(modelId)
+      );
+      this._forcedChatCheckers.set(modelId, checker);
+    }
+    return checker(query);
+  },
 
   /**
    * Gets the intent of the prompt using a text classification model.
    *
-   * @param {string} prompt
+   * @param {string} query
    * @returns {string} "search" | "chat"
    */
-
   async getPromptIntent(query) {
     try {
+      const modelInfo = getIntentModelInfoForLocale();
       const cleanedQuery = this._preprocessQuery(query);
-      if (this._isForcedChat(cleanedQuery)) {
+      if (this._isForcedChat(cleanedQuery, modelInfo.modelId)) {
         return "chat";
       }
       const engine = await this._createEngine({
-        backend: "onnx-native",
-        featureId: "smart-intent",
-        modelId: "mozilla/mobilebert-query-intent-detection",
+        backend: "best-onnx",
+        ...modelInfo,
         taskName: "text-classification",
       });
       const threshold = 0.8;

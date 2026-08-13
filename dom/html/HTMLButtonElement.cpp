@@ -306,12 +306,11 @@ void EndSubmitClick(EventChainVisitor& aVisitor) {
 
 // https://html.spec.whatwg.org/multipage/form-elements.html#the-button-element:activation-behaviour
 void HTMLButtonElement::ActivationBehavior(EventChainPostVisitor& aVisitor) {
+  auto endSubmit = MakeScopeExit([&] { EndSubmitClick(aVisitor); });
+
   if (!aVisitor.mPresContext) {
-    // Should check whether EndSubmitClick is needed here.
     return;
   }
-
-  auto endSubmit = MakeScopeExit([&] { EndSubmitClick(aVisitor); });
 
   // 1. If element is disabled, then return.
   if (IsDisabled()) {

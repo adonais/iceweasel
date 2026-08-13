@@ -35,8 +35,7 @@ nsresult NS_GeneratePlacesGUID(nsACString* _guid) {
 
 }  // extern "C"
 
-namespace mozilla {
-namespace places {
+namespace mozilla::places {
 
 ////////////////////////////////////////////////////////////////////////////////
 //// AsyncStatementCallback
@@ -249,12 +248,21 @@ PRTime RoundToMilliseconds(PRTime aTime) {
 
 PRTime RoundedPRNow() { return RoundToMilliseconds(PR_Now()); }
 
+// NOTE(emilio): This can't match mozilla::HashString() because we persist
+// this hash in the places database. We'd need a migration to switch to regular
+// HashString(). See bug 2048255.
+static constexpr HashNumber PlacesHashString(const char* aStr, uint32_t aLen) {
+  HashNumber hash = 0;
+  for (uint32_t i = 0; i < aLen; i++) {
+    hash = AddToHash(hash, static_cast<unsigned char>(aStr[i]));
+  }
+  return hash;
+}
+
 nsresult HashURL(const nsACString& aSpec, const nsACString& aMode,
                  uint64_t* _hash) {
   NS_ENSURE_ARG_POINTER(_hash);
 
-  // HashString doesn't stop at the string boundaries if a length is passed to
-  // it, so ensure to pass a proper value.
   const uint32_t maxLenToHash =
       std::min(static_cast<uint32_t>(aSpec.Length()), MAX_CHARS_TO_HASH);
 
@@ -271,11 +279,12 @@ nsresult HashURL(const nsACString& aSpec, const nsACString& aMode,
     strHead.BeginReading(tip);
     start = tip;
     strHead.EndReading(end);
-    uint32_t strHash = HashString(aSpec.BeginReading(), maxLenToHash);
+    uint32_t strHash = PlacesHashString(aSpec.BeginReading(), maxLenToHash);
     if (FindCharInReadable(':', tip, end)) {
       const nsDependentCSubstring& prefix = Substring(start, tip);
-      uint64_t prefixHash =
-          static_cast<uint64_t>(HashString(prefix) & 0x0000FFFF);
+      uint64_t prefixHash = static_cast<uint64_t>(
+          PlacesHashString(prefix.BeginReading(), prefix.Length()) &
+          0x0000FFFF);
       // The second half of the url is more likely to be unique, so we add it.
       *_hash = (prefixHash << 32) + strHash;
     } else {
@@ -283,14 +292,16 @@ nsresult HashURL(const nsACString& aSpec, const nsACString& aMode,
     }
   } else if (aMode.EqualsLiteral("prefix_lo")) {
     // Keep only 16 bits.
-    *_hash = static_cast<uint64_t>(
-                 HashString(aSpec.BeginReading(), maxLenToHash) & 0x0000FFFF)
-             << 32;
+    *_hash =
+        static_cast<uint64_t>(
+            PlacesHashString(aSpec.BeginReading(), maxLenToHash) & 0x0000FFFF)
+        << 32;
   } else if (aMode.EqualsLiteral("prefix_hi")) {
     // Keep only 16 bits.
-    *_hash = static_cast<uint64_t>(
-                 HashString(aSpec.BeginReading(), maxLenToHash) & 0x0000FFFF)
-             << 32;
+    *_hash =
+        static_cast<uint64_t>(
+            PlacesHashString(aSpec.BeginReading(), maxLenToHash) & 0x0000FFFF)
+        << 32;
     // Make this a prefix upper bound by filling the lowest 32 bits.
     *_hash += 0xFFFFFFFF;
   } else {
@@ -404,5 +415,4 @@ already_AddRefed<nsIURI> GetExposableURI(nsIURI* aURI) {
   return uri.forget();
 }
 
-}  // namespace places
-}  // namespace mozilla
+}  // namespace mozilla::places

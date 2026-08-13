@@ -46,7 +46,7 @@ add_task(async function test_with_rs_messages() {
   await ASRouter._updateMessageProviders();
   await ASRouter.loadMessagesFromAllProviders();
   // Wait to load the WNPanel messages
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => ASRouter.state.messages.length > initialMessageCount,
     "Messages did not load"
   );
@@ -56,7 +56,7 @@ add_task(async function test_with_rs_messages() {
     template: "update_action",
   });
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return Services.prefs.getStringPref(HOMEPAGE_OVERRIDE_PREF, "").length;
   }, "Pref value was not set");
 
@@ -81,7 +81,7 @@ add_task(async function test_with_rs_messages() {
   let prevLength = ASRouter.state.messages.length;
   // Wait to load the messages
   await ASRouter.loadMessagesFromAllProviders();
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => ASRouter.state.messages.length > prevLength,
     "Messages did not load"
   );
@@ -91,7 +91,7 @@ add_task(async function test_with_rs_messages() {
     template: "update_action",
   });
 
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     return Services.prefs.getStringPref(HOMEPAGE_OVERRIDE_PREF, "").length;
   }, "Pref value was not set");
 
@@ -106,7 +106,7 @@ add_task(async function test_with_rs_messages() {
   // Wait to reset the WNPanel messages from state
   const previousMessageCount = ASRouter.state.messages.length;
   await ASRouter.loadMessagesFromAllProviders();
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => ASRouter.state.messages.length < previousMessageCount,
     "ASRouter messages should have been removed"
   );

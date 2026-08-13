@@ -3,8 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "NullHttpChannel.h"
-#include "nsContentUtils.h"
+
 #include "nsContentSecurityManager.h"
+#include "nsContentUtils.h"
 #include "nsIScriptSecurityManager.h"
 #include "nsIStreamListener.h"
 

@@ -119,6 +119,7 @@ impl InitOptions {
                 app_display_version: APP_DISPLAY_VERSION.into(),
                 channel: None,
                 locale: self.locale,
+                os_version: None, // TODO: bug 2017277
             },
         );
         init_glean.configuration.uploader = Some(Box::new(uploader::Uploader::new()));

@@ -12,13 +12,13 @@
 #include "mozilla/Mutex.h"
 #include "mozilla/TimeStamp.h"
 
+#include "CFTypeRefPtr.h"
 #include "mozilla/gfx/MacIOSurface.h"
 #include "mozilla/layers/NativeLayer.h"
 #include "mozilla/layers/NativeLayerMacSurfaceHandler.h"
 #include "mozilla/webrender/RenderMacIOSurfaceTextureHost.h"
-#include "CFTypeRefPtr.h"
-#include "nsRegion.h"
 #include "nsISupportsImpl.h"
+#include "nsRegion.h"
 
 #ifdef __OBJC__
 @class CALayer;

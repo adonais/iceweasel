@@ -57,7 +57,6 @@ class HistoryTest : BaseTest() {
             .mozVerifyElementsByGroup("deleteConfirmation")
             .mozClick(HistorySelectors.DELETE_EVERYTHING_OPTION_BUTTON)
             .mozClick(HistorySelectors.DELETE_CONFIRM_BUTTON)
-            .mozVerify(HistorySelectors.BROWSING_DATA_DELETED_SNACKBAR)
             .mozVerifyElementsByGroup("emptyHistoryMenuView")
     }
 }

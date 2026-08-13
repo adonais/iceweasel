@@ -88,7 +88,7 @@ def main():
     )
 
     args = parser.parse_args()
-    web_servers = WebServers(args.host, args.port, "%s/html" % here, args.count)
+    web_servers = WebServers(args.host, args.port, f"{here}/html", args.count)
     web_servers.start()
 
 

@@ -3,11 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <algorithm>
-#include "gtest/gtest.h"
+
 #include "Helpers.h"
-#include "mozilla/gtest/MozAssertions.h"
-#include "mozilla/ReentrantMonitor.h"
+#include "gtest/gtest.h"
 #include "mozilla/Printf.h"
+#include "mozilla/ReentrantMonitor.h"
+#include "mozilla/gtest/MozAssertions.h"
 #include "nsCOMPtr.h"
 #include "nsCRT.h"
 #include "nsIAsyncInputStream.h"
@@ -18,9 +19,9 @@
 #include "nsIInputStream.h"
 #include "nsIOutputStream.h"
 #include "nsIPipe.h"
+#include "nsIRunnable.h"
 #include "nsITellableStream.h"
 #include "nsIThread.h"
-#include "nsIRunnable.h"
 #include "nsStreamUtils.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"

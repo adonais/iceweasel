@@ -41,6 +41,12 @@ interface nsIDeviceSensors : nsISupports
    */
   boolean hasWindowListener(in unsigned long aType, in nsIDOMWindow aWindow);
 
+  /**
+   * Notify web contents of sensor event. 4 floats value are PHal.ipdl's values
+   */
+  void notifySensorEvent(in unsigned long aType, in float aX, in float aY,
+                         in float aZ, in float aW);
+
   // Holds pointers, not AddRef objects -- it is up to the caller
   // to call RemoveWindowListener before the window is deleted.
 

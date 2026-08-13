@@ -17,7 +17,7 @@ When the messaging system encounters a message with `template: "multi"`, it flat
 
 This pattern has a specialized purpose. Normally, when adding messages to the Firefox messaging system (in the source code), there is no reason to wrap multiple messages in a single message, because you can just add multiple messages directly to one of the local message providers. But this pattern comes into play when running a messaging experiment through Experimenter that needs to provide multiple messages.
 
-For example, this is needed for experiments that roll out a large feature requiring multiple onboarding messages, callouts, reminders, etc. Nimbus experiments have a [branch](messaging-glossary.rst#Treatment-Branch) structure, where each user can only be enrolled in one branch at a time, and each branch’s value must be an object. This template provides a way to include multiple messages in a single feature value on a single branch.
+For example, this is needed for experiments that roll out a large feature requiring multiple onboarding messages, callouts, reminders, etc. Nimbus experiments have a {term}`branch <Treatment Branch>` structure, where each user can only be enrolled in one branch at a time, and each branch’s value must be an object. This template provides a way to include multiple messages in a single feature value on a single branch.
 
 Since the most commonly used message templates support multi-screens, it’s relatively common for a multi-message experiment to include messages that have multiple screens. In that case, each branch contains multiple messages, and each message contains multiple screens. It can be thought of in the same way as a folder structure:
 

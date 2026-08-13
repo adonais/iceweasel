@@ -4,19 +4,18 @@
 
 #include "AccIterator.h"
 
-#include "AccGroupInfo.h"
 #include "ARIAMap.h"
+#include "AccGroupInfo.h"
 #include "DocAccessible-inl.h"
 #include "LocalAccessible-inl.h"
-#include "nsAccUtils.h"
 #include "XULTreeAccessible.h"
-
 #include "mozilla/a11y/DocAccessibleParent.h"
 #include "mozilla/dom/DocumentOrShadowRoot.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ElementInternals.h"
 #include "mozilla/dom/HTMLLabelElement.h"
 #include "mozilla/dom/TreeOrderedArrayInlines.h"
+#include "nsAccUtils.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;

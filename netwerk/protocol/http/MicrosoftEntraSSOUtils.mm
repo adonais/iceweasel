@@ -9,15 +9,15 @@
 #include <functional>  // For std::function
 
 #include "MicrosoftEntraSSOUtils.h"
-#include "nsIURI.h"
-#include "nsHttp.h"
-#include "nsHttpChannel.h"
-#include "nsCocoaUtils.h"
-#include "nsTHashMap.h"
-#include "nsHashKeys.h"
-#include "nsThreadUtils.h"
 #include "mozilla/Logging.h"
 #include "mozilla/glean/NetwerkMetrics.h"
+#include "nsCocoaUtils.h"
+#include "nsHashKeys.h"
+#include "nsHttp.h"
+#include "nsHttpChannel.h"
+#include "nsIURI.h"
+#include "nsTHashMap.h"
+#include "nsThreadUtils.h"
 
 namespace {
 static mozilla::LazyLogModule gMacOSWebAuthnServiceLog("macOSSingleSignOn");

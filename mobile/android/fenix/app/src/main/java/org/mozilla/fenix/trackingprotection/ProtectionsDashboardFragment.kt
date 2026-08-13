@@ -107,5 +107,6 @@ class ProtectionsDashboardFragment : BottomSheetDialogFragment() {
         const val SOURCE_HOME = "home"
         const val SOURCE_TABS_TRAY = "tabs_tray"
         const val SOURCE_TRUST_PANEL = "trust_panel"
+        const val SOURCE_DEEPLINK = "deeplink"
     }
 }

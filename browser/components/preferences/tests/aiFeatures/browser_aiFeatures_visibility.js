@@ -216,7 +216,7 @@ describe("settings ai features", () => {
       );
 
       gBrowser.selectedTab = generalTab;
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => !BrowserTestUtils.isVisible(translationsGroup),
         "Translations group is hidden after blocking"
       );
@@ -244,7 +244,7 @@ describe("settings ai features", () => {
       });
 
       gBrowser.selectedTab = generalTab;
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => BrowserTestUtils.isVisible(translationsGroup),
         "Translations group is visible after explicitly enabling"
       );

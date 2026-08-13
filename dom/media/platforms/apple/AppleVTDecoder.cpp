@@ -25,9 +25,9 @@
 #include "mozilla/TaskQueue.h"
 #include "mozilla/gfx/gfxVars.h"
 
-#define LOG(...) DDMOZ_LOG(sPDMLog, mozilla::LogLevel::Debug, __VA_ARGS__)
+#define LOG(...) DDMOZ_LOG_FMT(sPDMLog, mozilla::LogLevel::Debug, __VA_ARGS__)
 #define LOGEX(_this, ...) \
-  DDMOZ_LOGEX(_this, sPDMLog, mozilla::LogLevel::Debug, __VA_ARGS__)
+  DDMOZ_LOGEX_FMT(_this, sPDMLog, mozilla::LogLevel::Debug, __VA_ARGS__)
 
 namespace mozilla {
 
@@ -83,7 +83,7 @@ AppleVTDecoder::AppleVTDecoder(const VideoInfo& aConfig,
       mIsHardwareAccelerated(false) {
   MOZ_COUNT_CTOR(AppleVTDecoder);
   MOZ_ASSERT(mStreamType != StreamType::Unknown);
-  LOG("Creating AppleVTDecoder for %dx%d %s video, mMaxRefFrames=%u",
+  LOG("Creating AppleVTDecoder for {}x{} {} video, mMaxRefFrames={}",
       mDisplayWidth, mDisplayHeight, EnumValueToString(mStreamType),
       mMaxRefFrames);
 }
@@ -103,7 +103,7 @@ RefPtr<MediaDataDecoder::InitPromise> AppleVTDecoder::Init() {
 
 RefPtr<MediaDataDecoder::DecodePromise> AppleVTDecoder::Decode(
     MediaRawData* aSample) {
-  LOG("mp4 input sample %p pts %lld duration %lld us%s %zu bytes", aSample,
+  LOG("mp4 input sample {} pts {} duration {} us{} {} bytes", fmt::ptr(aSample),
       aSample->mTime.ToMicroseconds(), aSample->mDuration.ToMicroseconds(),
       aSample->mKeyframe ? " keyframe" : "", aSample->Size());
 
@@ -116,6 +116,24 @@ RefPtr<MediaDataDecoder::DecodePromise> AppleVTDecoder::Decode(
       p = mPromise.Ensure(__func__);
     }
     ProcessDecode(sample);
+    // While skipping the keyframe->target run after a seek, do not block this
+    // Decode on its own VideoToolbox callback. Resolve it immediately with
+    // whatever frames are already buffered (often none early on) so the reader
+    // keeps feeding the next sample and VideoToolbox decodes the run with
+    // several frames in flight instead of one at a time. Decoded frames still
+    // arrive in composition order via the reorder queue and are returned on
+    // later Decode() calls. The seek threshold is only set during this skip
+    // window, so outside a seek behaviour is unchanged.
+    {
+      MonitorAutoLock mon(mMonitor);
+      if (mSeekTargetThreshold.isSome() && !mPromise.IsEmpty()) {
+        DecodedData results;
+        while (mReorderQueue.Length() > mMaxRefFrames) {
+          results.AppendElement(mReorderQueue.Pop());
+        }
+        mPromise.Resolve(std::move(results), __func__);
+      }
+    }
     return p;
   });
 }
@@ -201,7 +219,7 @@ void AppleVTDecoder::ProcessDecode(MediaRawData* aSample) {
       kCFAllocatorDefault,  // Struct allocator.
       const_cast<uint8_t*>(aSample->Data()), aSample->Size(),
       kCFAllocatorNull,  // Block allocator.
-      NULL,              // Block source.
+      nullptr,           // Block source.
       0,                 // Data offset.
       aSample->Size(), false, block.Receive());
   if (rv != noErr) {
@@ -215,8 +233,9 @@ void AppleVTDecoder::ProcessDecode(MediaRawData* aSample) {
   }
 
   CMSampleTimingInfo timestamp = TimingInfoFromSample(aSample);
-  rv = CMSampleBufferCreate(kCFAllocatorDefault, block, true, 0, 0, mFormat, 1,
-                            1, &timestamp, 0, NULL, sample.Receive());
+  rv = CMSampleBufferCreate(kCFAllocatorDefault, block, true, nullptr, nullptr,
+                            mFormat, 1, 1, &timestamp, 0, nullptr,
+                            sample.Receive());
   if (rv != noErr) {
     NS_ERROR("Couldn't create CMSampleBuffer");
     MonitorAutoLock mon(mMonitor);
@@ -228,6 +247,21 @@ void AppleVTDecoder::ProcessDecode(MediaRawData* aSample) {
 
   VTDecodeFrameFlags decodeFlags =
       kVTDecodeFrame_EnableAsynchronousDecompression;
+  // During the post-seek skip window, frames whose presentation interval ends
+  // before the seek target are decoded only to satisfy reference dependencies
+  // and are then dropped (see the matching threshold check in OutputFrame). Ask
+  // VideoToolbox to decode them for reference without producing an output
+  // image, which skips per-frame surface production for the bulk of a seek's
+  // re-decode.
+  {
+    MonitorAutoLock mon(mMonitor);
+    if (mSeekTargetThreshold.isSome() &&
+        (aSample->mTime + aSample->mDuration) < mSeekTargetThreshold.ref()) {
+      decodeFlags |= kVTDecodeFrame_DoNotOutputFrame;
+      LOG("seek skip: decoding pts {} for reference only (no output)",
+          aSample->mTime.ToMicroseconds());
+    }
+  }
   rv = VTDecompressionSessionDecodeFrame(
       mSession, sample, decodeFlags, CreateAppleFrameRef(aSample), &infoFlags);
   if (infoFlags & kVTDecodeInfo_FrameDropped) {
@@ -239,7 +273,7 @@ void AppleVTDecoder::ProcessDecode(MediaRawData* aSample) {
   }
 
   if (rv != noErr) {
-    LOG("AppleVTDecoder: Error %d VTDecompressionSessionDecodeFrame", rv);
+    LOG("AppleVTDecoder: Error {} VTDecompressionSessionDecodeFrame", rv);
     NS_WARNING("Couldn't pass frame to decoder");
     // It appears that even when VTDecompressionSessionDecodeFrame returned a
     // failure. Decoding sometimes actually get processed.
@@ -255,12 +289,12 @@ void AppleVTDecoder::ProcessDecode(MediaRawData* aSample) {
 void AppleVTDecoder::ProcessShutdown() {
   AUTO_PROFILER_LABEL("AppleVTDecoder::ProcessShutdown", MEDIA_PLAYBACK);
   if (mSession) {
-    LOG("%s: cleaning up session", __func__);
+    LOG("{}: cleaning up session", __func__);
     VTDecompressionSessionInvalidate(mSession);
     mSession.Reset();
   }
   if (mFormat) {
-    LOG("%s: releasing format", __func__);
+    LOG("{}: releasing format", __func__);
     mFormat.Reset();
   }
 }
@@ -279,7 +313,6 @@ RefPtr<MediaDataDecoder::FlushPromise> AppleVTDecoder::ProcessFlush() {
     mReorderQueue.Pop();
   }
   mPerformanceRecorder.Record(std::numeric_limits<int64_t>::max());
-  mSeekTargetThreshold.reset();
   mIsFlushing = false;
   return FlushPromise::CreateAndResolve(true, __func__);
 }
@@ -306,6 +339,7 @@ AppleVTDecoder::AppleFrameRef* AppleVTDecoder::CreateAppleFrameRef(
 }
 
 void AppleVTDecoder::SetSeekThreshold(const media::TimeUnit& aTime) {
+  MonitorAutoLock mon(mMonitor);
   if (aTime.IsValid()) {
     mSeekTargetThreshold = Some(aTime);
   } else {
@@ -328,8 +362,8 @@ static void PlatformCallback(void* decompressionOutputRefCon,
                              CMTime presentationDuration) {
   AppleVTDecoder* decoder =
       static_cast<AppleVTDecoder*>(decompressionOutputRefCon);
-  LOGEX(decoder, "AppleVideoDecoder %s status %d flags %d", __func__,
-        static_cast<int>(status), flags);
+  LOGEX(decoder, "AppleVideoDecoder {} status {} flags {}", __func__,
+        static_cast<int>(status), static_cast<int>(flags));
 
   UniquePtr<AppleVTDecoder::AppleFrameRef> frameRef(
       static_cast<AppleVTDecoder::AppleFrameRef*>(sourceFrameRefCon));
@@ -390,7 +424,7 @@ void AppleVTDecoder::OutputFrame(CVPixelBufferRef aImage,
     return;
   }
 
-  LOG("mp4 output frame %lld dts %lld pts %lld duration %lld us%s",
+  LOG("mp4 output frame {} dts {} pts {} duration {} us{}",
       aFrameRef.byte_offset, aFrameRef.decode_timestamp.ToMicroseconds(),
       aFrameRef.composition_timestamp.ToMicroseconds(),
       aFrameRef.duration.ToMicroseconds(),
@@ -405,12 +439,15 @@ void AppleVTDecoder::OutputFrame(CVPixelBufferRef aImage,
   }
 
   bool useNullSample = false;
-  if (mSeekTargetThreshold.isSome()) {
-    if ((aFrameRef.composition_timestamp + aFrameRef.duration) <
-        mSeekTargetThreshold.ref()) {
-      useNullSample = true;
-    } else {
-      mSeekTargetThreshold.reset();
+  {
+    MonitorAutoLock mon(mMonitor);
+    if (mSeekTargetThreshold.isSome()) {
+      if ((aFrameRef.composition_timestamp + aFrameRef.duration) <
+          mSeekTargetThreshold.ref()) {
+        useNullSample = true;
+      } else {
+        mSeekTargetThreshold.reset();
+      }
     }
   }
 
@@ -602,7 +639,7 @@ void AppleVTDecoder::OutputFrame(CVPixelBufferRef aImage,
   mReorderQueue.Push(std::move(data));
   MaybeResolveBufferedFrames();
 
-  LOG("%llu decoded frames queued",
+  LOG("{} decoded frames queued",
       static_cast<unsigned long long>(mReorderQueue.Length()));
 }
 
@@ -661,7 +698,7 @@ MediaResult AppleVTDecoder::InitializeSession() {
                                    &cb, mSession.Receive());
 
   if (rv != noErr) {
-    LOG("AppleVTDecoder: VTDecompressionSessionCreate failed: %d", rv);
+    LOG("AppleVTDecoder: VTDecompressionSessionCreate failed: {}", rv);
     return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                        RESULT_DETAIL("Couldn't create decompression session!"));
   }
@@ -673,11 +710,11 @@ MediaResult AppleVTDecoder::InitializeSession() {
       kCFAllocatorDefault, &isUsingHW);
   if (rv == noErr) {
     mIsHardwareAccelerated = isUsingHW == kCFBooleanTrue;
-    LOG("AppleVTDecoder: %s hardware accelerated decoding",
+    LOG("AppleVTDecoder: {} hardware accelerated decoding",
         mIsHardwareAccelerated ? "using" : "not using");
   } else {
     LOG("AppleVTDecoder: maybe hardware accelerated decoding "
-        "(VTSessionCopyProperty query failed %d)",
+        "(VTSessionCopyProperty query failed {})",
         static_cast<int>(rv));
   }
   if (isUsingHW) {

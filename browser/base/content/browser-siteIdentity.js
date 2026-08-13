@@ -405,6 +405,11 @@ var gIdentityHandler = {
   },
   get _httpsFirstModeEnabled() {
     delete this._httpsFirstModeEnabled;
+    // [pref-trie-audit] "dom.security.https_first" is an ambiguous prefix of
+    // "dom.security.https_first_add_exception_on_failure", "dom.security.https_first_exception_lifetime",
+    // "dom.security.https_first_for_custom_ports", "dom.security.https_first_for_local_addresses",
+    // "dom.security.https_first_for_unknown_suffixes", "dom.security.https_first_schemeless";
+    // triggers only for the exact pref (all siblings have their own registrations).
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
       "_httpsFirstModeEnabled",

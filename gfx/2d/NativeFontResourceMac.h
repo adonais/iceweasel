@@ -6,8 +6,8 @@
 #define mozilla_gfx_NativeFontResourceMac_h
 
 #include "2D.h"
-#include "mozilla/AlreadyAddRefed.h"
 #include "ScaledFontMac.h"
+#include "mozilla/AlreadyAddRefed.h"
 
 namespace mozilla {
 namespace gfx {

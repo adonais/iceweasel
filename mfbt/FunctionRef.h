@@ -14,7 +14,7 @@
 #include "mozilla/OperatorNewExtensions.h"  // mozilla::NotNull, ::operator new
 
 #include <cstddef>      // std::nullptr_t
-#include <type_traits>  // std::{declval,integral_constant}, std::is_{convertible,same,void}_v, std::{enable_if,remove_reference,remove_cv}_t
+#include <type_traits>  // std::{declval,integral_constant}, std::is_{convertible,same,void}_v, std::{enable_if,remove_cvref}_t
 #include <utility>      // std::forward
 
 // This concept and its implementation are substantially inspired by foonathan's
@@ -170,8 +170,7 @@ class MOZ_TEMPORARY_CLASS FunctionRef<Ret(Params...)> {
             typename = detail::EnableFunctionTag<detail::MatchingFunctorTag,
                                                  Callable, Ret, Params...>,
             typename std::enable_if_t<!std::is_same_v<
-                std::remove_cv_t<std::remove_reference_t<Callable>>,
-                FunctionRef>>* = nullptr>
+                std::remove_cvref_t<Callable>, FunctionRef>>* = nullptr>
   MOZ_IMPLICIT FunctionRef(Callable&& aCallable MOZ_LIFETIME_BOUND) noexcept
       : mAdaptor([](const Payload& aPayload, Params... aParams) {
           auto& func = *static_cast<std::remove_reference_t<Callable>*>(

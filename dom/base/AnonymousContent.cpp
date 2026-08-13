@@ -26,7 +26,8 @@ already_AddRefed<AnonymousContent> AnonymousContent::Create(Document& aDoc) {
                 u"anonymous-content-host"_ns, false);
   ShadowRootInit init;
   init.mMode = ShadowRootMode::Closed;
-  RefPtr<ShadowRoot> root = host->AttachShadowWithoutNameChecks(init);
+  RefPtr<ShadowRoot> root =
+      host->AttachShadowWithoutNameChecks(init, Nothing());
   root->SetIsUAWidget();
   return do_AddRef(new AnonymousContent(host.forget(), root.forget()));
 }

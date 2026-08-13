@@ -173,14 +173,21 @@ class ResponsePanel extends Component {
    * as text/plain instead.
    */
   handleJSONResponse(mimeType, response) {
-    const limit = Services.prefs.getIntPref(
-      "devtools.netmonitor.responseBodyLimit"
-    );
+    // @backward-compat { version 153 } Fx 153 started emitting "truncated" boolean
+    // on request to have a more reliable way to identify truncated requests.
+    // Once 153 is released, we can stop reading the pref and only use this flag.
+    const limit = Services.prefs.getIntPref("devtools.netmonitor.bodyLimit");
     const { request } = this.props;
 
     // Check if the response has been truncated, in which case no parse should
     // be attempted.
-    if (limit > 0 && limit <= request.responseContent.content.size) {
+    //
+    // Note that this logic isn't specific to JSON at all and is the generic handling
+    // of truncated requests!
+    if (
+      request.truncated ||
+      (limit > 0 && limit <= request.responseContent.content.size)
+    ) {
       const result = {};
       result.error = RESPONSE_TRUNCATED;
       return result;
@@ -459,6 +466,13 @@ class ResponsePanel extends Component {
       return div(
         { className: "panel-container" },
         CORSBlockedReasonDetails,
+        // Response body limit configuration may lead to completely empty response body
+        // often because of encoded response which would cut the whole encoded chunk.
+        request.truncated &&
+          div(
+            { className: "response-error-header", title: RESPONSE_TRUNCATED },
+            RESPONSE_TRUNCATED
+          ),
         div(
           { className: "empty-notice" },
           isRedirect ? RESPONSE_REDIRECT_EMPTY_TEXT : RESPONSE_EMPTY_TEXT

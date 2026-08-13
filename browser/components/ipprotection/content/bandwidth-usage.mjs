@@ -63,8 +63,8 @@ export default class BandwidthUsageCustomElement extends MozLitElement {
 
   get bandwidthLeftDataL10nId() {
     return formatRemainingBandwidth(this.remaining).useGB
-      ? "ip-protection-bandwidth-left-gb"
-      : "ip-protection-bandwidth-left-mb";
+      ? "ip-protection-bandwidth-left-gb-1"
+      : "ip-protection-bandwidth-left-mb-1";
   }
 
   get bandwidthLeftThisMonthDataL10nId() {
@@ -85,14 +85,16 @@ export default class BandwidthUsageCustomElement extends MozLitElement {
 
     let descriptionText;
     if (this.remaining > 0) {
-      descriptionText = html`<span
+      descriptionText = html`<div
         id="progress-description"
         data-l10n-id=${this.bandwidthLeftDataL10nId}
         data-l10n-args=${JSON.stringify({
           usageLeft: this.remainingRounded,
           maxUsage: this.maxGB,
         })}
-      ></span>`;
+      >
+        <span data-l10n-name="usage"></span>
+      </div>`;
     } else {
       descriptionText = html`<span
         id="progress-description"
@@ -105,10 +107,10 @@ export default class BandwidthUsageCustomElement extends MozLitElement {
 
     return html`
       <div class="container">
-        <h3
-          id="bandwidth-header"
+        <span
+          id="bandwidth-section-label"
           data-l10n-id="ip-protection-bandwidth-header-1"
-        ></h3>
+        ></span>
         <div>
           <span
             id="usage-help-text"
@@ -129,7 +131,7 @@ export default class BandwidthUsageCustomElement extends MozLitElement {
             max=${this.maxGB}
             value=${parseFloat(this.bandwidthUsedGB.toFixed(1))}
             percent=${this.bandwidthPercent}
-            aria-labelledby="bandwidth-header"
+            aria-labelledby="bandwidth-section-label"
             aria-describedby="progress-description"
           ></progress>
           <div id="min-progress"></div>

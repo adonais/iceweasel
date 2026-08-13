@@ -62,6 +62,20 @@ describe("Discovery Stream <DSImage>", () => {
         "https://img-getpocket.cdn.mozilla.net/404x202/filters:format(webp):quality(75):no_upscale():strip_exif()/https%3A%2F%2Fplacekitten.com%2Fg%2F640%2F480 404w",
       ].join(",")
     );
+    // The last size doubles as an explicit pixel size on the img so it renders
+    // at its downloaded dimensions regardless of card width.
+    assert.deepEqual(img.find("img").prop("style"), {
+      width: "202px",
+      height: "101px",
+    });
+  });
+
+  it("should not set an explicit size when no sizes are provided", () => {
+    const img = mount(
+      <DSImage rawSource="https://placekitten.com/g/640/480" />
+    );
+
+    assert.isUndefined(img.find("img").prop("style"));
   });
 
   it("should fall back to unoptimized when optimized failed", () => {

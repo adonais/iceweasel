@@ -39,5 +39,8 @@ object SitePermissionsSelectors {
 
     val all = listOf(
         PAGE_PERMISSION_DIALOG_ALLOW_BUTTON,
+        MICROPHONE_PERMISSION_PROMPT,
+        PAGE_PERMISSION_REMEMBER_DECISION_CHECKBOX,
+        PAGE_PERMISSION_DIALOG_DENY_BUTTON,
     )
 }

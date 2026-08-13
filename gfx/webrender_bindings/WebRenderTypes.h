@@ -5,21 +5,21 @@
 #ifndef GFX_WEBRENDERTYPES_H
 #define GFX_WEBRENDERTYPES_H
 
+#include <tuple>
+
 #include "ImageTypes.h"
-#include "mozilla/webrender/webrender_ffi.h"
+#include "Units.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/gfx/Matrix.h"
-#include "mozilla/gfx/Types.h"
-#include "mozilla/gfx/Tools.h"
-#include "mozilla/gfx/Rect.h"
-#include "mozilla/layers/LayersTypes.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/Range.h"
 #include "mozilla/ScrollGeneration.h"
-#include "Units.h"
+#include "mozilla/gfx/Matrix.h"
+#include "mozilla/gfx/Rect.h"
+#include "mozilla/gfx/Tools.h"
+#include "mozilla/gfx/Types.h"
+#include "mozilla/layers/LayersTypes.h"
+#include "mozilla/webrender/webrender_ffi.h"
 #include "nsIWidgetListener.h"
-
-#include <tuple>
 
 namespace mozilla {
 

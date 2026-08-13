@@ -22,6 +22,9 @@ describe("sidebar auto-open pref prompt", () => {
   let win, askButton;
 
   beforeEach(async () => {
+    Services.prefs.clearUserPref("browser.smartwindow.sidebar.emptyCloseCount");
+    await lazy.ASRouter.resetMessageState();
+
     win = await openAIWindow();
     askButton = win.document.getElementById("smartwindow-ask-button-inner");
 
@@ -251,12 +254,6 @@ describe("sidebar auto-open pref prompt", () => {
     let callout, newTab;
 
     beforeEach(async () => {
-      Services.prefs.clearUserPref(
-        "browser.smartwindow.sidebar.emptyCloseCount"
-      );
-
-      await lazy.ASRouter.resetMessageState();
-
       await triggerAutoOpenPrompt(win, askButton);
 
       callout = await waitForCallout(win, promptShowingSelector);

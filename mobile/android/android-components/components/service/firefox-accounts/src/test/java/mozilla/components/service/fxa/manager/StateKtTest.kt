@@ -97,6 +97,7 @@ class StateKtTest {
             "AuthenticationError" -> Event.Account.AuthenticationError("fxa op")
             "AccessTokenKeyError" -> Event.Account.AccessTokenKeyError
             "Logout" -> Event.Account.Logout
+            "WebChannelPasswordChange" -> Event.Account.WebChannelPasswordChange("{}")
             "AccountNotFound" -> Event.Progress.AccountNotFound
             "AccountRestored" -> Event.Progress.AccountRestored
             "AuthData" -> Event.Progress.AuthData(mock())

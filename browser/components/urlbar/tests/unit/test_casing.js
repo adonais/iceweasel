@@ -47,7 +47,7 @@ add_task(async function test_casing_2() {
     completed: "http://mozilla.org/test/",
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         uri: "http://mozilla.org/test/",
         title: "test visit for http://mozilla.org/test/",
         iconUri: "page-icon:http://mozilla.org/test/",
@@ -94,7 +94,7 @@ add_task(async function test_casing_4() {
     completed: "http://mozilla.org/Test/",
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         uri: "http://mozilla.org/Test/",
         title: "test visit for http://mozilla.org/Test/",
         iconUri: "page-icon:http://mozilla.org/Test/",
@@ -195,7 +195,7 @@ add_task(async function test_untrimmed_path_casing() {
     completed: "http://mozilla.org/Test/",
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         uri: "http://mozilla.org/Test/",
         title: "test visit for http://mozilla.org/Test/",
         iconUri: "page-icon:http://mozilla.org/Test/",
@@ -242,7 +242,7 @@ add_task(async function test_untrimmed_path_www_casing() {
     completed: "http://www.mozilla.org/Test/",
     matches: [
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         uri: "http://www.mozilla.org/Test/",
         title: "test visit for http://www.mozilla.org/Test/",
         iconUri: "page-icon:http://www.mozilla.org/Test/",

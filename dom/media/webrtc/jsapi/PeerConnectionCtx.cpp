@@ -131,12 +131,12 @@ class DummyAudioProcessing : public AudioProcessing {
   }
   void set_stream_key_pressed(bool) override { MOZ_CRASH("Unexpected call"); }
   bool CreateAndAttachAecDump(absl::string_view, int64_t,
-                              absl::Nonnull<TaskQueueBase*>) override {
+                              TaskQueueBase* absl_nonnull) override {
     MOZ_CRASH("Unexpected call");
     return false;
   }
   bool CreateAndAttachAecDump(FILE*, int64_t,
-                              absl::Nonnull<TaskQueueBase*>) override {
+                              TaskQueueBase* absl_nonnull) override {
     MOZ_CRASH("Unexpected call");
     return false;
   }

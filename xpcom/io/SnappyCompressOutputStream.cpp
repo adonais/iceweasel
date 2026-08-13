@@ -5,6 +5,7 @@
 #include "mozilla/SnappyCompressOutputStream.h"
 
 #include <algorithm>
+
 #include "nsStreamUtils.h"
 #include "snappy/snappy.h"
 

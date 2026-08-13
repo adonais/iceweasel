@@ -6,7 +6,8 @@
 
 #include "APZUtils.h"
 #include "AsyncPanZoomController.h"  // for AsyncPanZoomController
-
+#include "OverscrollHandoffState.h"
+#include "QueuedInput.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/StaticPrefs_browser.h"
@@ -16,8 +17,6 @@
 #include "mozilla/ToString.h"
 #include "mozilla/layers/APZEventState.h"
 #include "mozilla/layers/IAPZCTreeManager.h"  // for AllowedTouchBehavior
-#include "OverscrollHandoffState.h"
-#include "QueuedInput.h"
 
 static mozilla::LazyLogModule sApzIbsLog("apz.inputstate");
 #define TBS_LOG(...) MOZ_LOG(sApzIbsLog, LogLevel::Debug, (__VA_ARGS__))

@@ -43,7 +43,7 @@ add_task(async function () {
     "http://httpsfirst.com"
   );
   await promiseLoaded;
-  await BrowserTestUtils.waitForCondition(() => tests.length === 0);
+  await TestUtils.waitForCondition(() => tests.length === 0);
 
   // Clean up
   Services.console.unregisterListener(on_new_message);

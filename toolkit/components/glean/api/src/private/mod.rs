@@ -238,6 +238,18 @@ pub(crate) mod profiler_utils {
                     },
                 }
             }
+            // A contended map lock is expected and routine (a concurrent writer
+            // registering a submetric), not a lookup failure, so emit a neutral
+            // id rather than a diagnostic "Error looking up ..." string.
+            Err(
+                crate::private::LookupError::FOGSubmetricMapLockWouldBlock
+                | crate::private::LookupError::JOGMetricMapLockWouldBlock,
+            ) => {
+                json_writer.unique_string_property(
+                    "id",
+                    &format!("metric {} (metadata unavailable)", **id),
+                );
+            }
             Err(e) => {
                 let error_string = format!("Error looking up {:?}: {:?}", id, e);
                 json_writer.unique_string_property("id", &error_string);

@@ -170,7 +170,7 @@ add_task(async function test_button_visibility_by_navigate_blank_page() {
 
 async function assertState(expectedVisible, expectedProxyPageState) {
   let switcher = gURLBar.querySelector(".searchmode-switcher");
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     // If Unified Search Button is displayed as off-screen, the position should
     // be 'fixed'.
     let isVisible = window.getComputedStyle(switcher).position != "fixed";
@@ -191,7 +191,7 @@ async function clickOnBrowserElement() {
   AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
   EventUtils.synthesizeMouseAtCenter(document.getElementById("browser"), {});
   AccessibilityUtils.resetEnv();
-  await BrowserTestUtils.waitForCondition(() =>
+  await TestUtils.waitForCondition(() =>
     document.activeElement.closest("#browser")
   );
 }

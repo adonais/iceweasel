@@ -254,8 +254,7 @@ function makeMockContentAnalysis() {
       info(
         `  Text content: '${request.textContent}' ` +
           `| filePath: '${request.filePath}' ` +
-          `| printDataHandle: ${request.printDataHandle} ` +
-          `| printDataSize: ${request.printDataSize}`
+          `| printDataLength: ${request.getPrintData().length}`
       );
       info(
         `  Printer name: '${request.printerName}' ` +
@@ -276,6 +275,12 @@ function makeMockContentAnalysis() {
       this.calls.push(request);
       if (this.showDialogs) {
         Services.obs.notifyObservers(request, "dlp-request-made");
+      }
+
+      // If we are checking a file, make sure it exists.
+      if (request.filePath) {
+        const nsiFile = new FileUtils.File(request.filePath);
+        ok(nsiFile.exists(), "File to check exists");
       }
 
       // Use setTimeout to simulate an async activity.

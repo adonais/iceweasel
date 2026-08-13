@@ -7,10 +7,10 @@
 
 #include <cstdint>  // for uint32_t
 #include <unordered_map>
+
 #include "base/process.h"
 #include "ipc/IPCMessageUtils.h"
 #include "ipc/IPCMessageUtilsSpecializations.h"
-#include "mozilla/ParamTraits_TiedFields.h"
 #include "mozilla/gfx/Point.h"  // for IntSize
 
 namespace mozilla {

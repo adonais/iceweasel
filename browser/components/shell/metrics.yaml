@@ -1,0 +1,40 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+---
+$schema: moz://mozilla.org/schemas/glean/metrics/2-0-0
+$tags:
+  - 'Firefox :: Shell Integration'
+
+custom_icon:
+  changed:
+    type: event
+    description: >
+      Recorded when a user changes the current browser icon to something new.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2055046
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2055046
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - mconley@mozilla.com
+    expires: never
+    extra_keys:
+      icon_id:
+        type: string
+        description: >
+          The ID string for the icon that was selected.
+
+  current:
+    type: string
+    description: >
+      The ID of the current browser icon, recorded once at startup.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2055046
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2055046
+    notification_emails:
+      - mconley@mozilla.com
+    expires: never

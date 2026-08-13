@@ -2,14 +2,14 @@
    http://creativecommons.org/publicdomain/zero/1.0/ */
 
 Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/browser/components/preferences/tests/head.js",
+  "chrome://mochitests/content/browser/browser/components/preferences/tests/head-common.js",
   this
 );
 
 async function openHomePreferences() {
   await openPreferencesViaOpenPreferencesAPI("home", { leaveOpen: true });
   let doc = gBrowser.contentDocument;
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => doc.querySelector('setting-group[groupid="home"]'),
     "Wait for the Firefox Home setting group to render"
   );
@@ -39,7 +39,7 @@ async function openCustomHomepageSubpage() {
   });
   let doc = gBrowser.contentDocument;
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => doc.querySelector("#setting-control-customHomepageAddUrlInput"),
     "Wait for custom homepage subpage to fully render"
   );

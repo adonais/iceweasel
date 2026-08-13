@@ -5,16 +5,16 @@
 #ifndef nsTransferable_h_
 #define nsTransferable_h_
 
+#include "mozilla/Maybe.h"
+#include "nsCOMPtr.h"
 #include "nsICookieJarSettings.h"
 #include "nsIFormatConverter.h"
-#include "nsITransferable.h"
-#include "nsCOMPtr.h"
-#include "nsString.h"
-#include "nsTArray.h"
 #include "nsIPrincipal.h"
 #include "nsIReferrerInfo.h"
+#include "nsITransferable.h"
+#include "nsString.h"
+#include "nsTArray.h"
 #include "prio.h"
-#include "mozilla/Maybe.h"
 
 class nsIMutableArray;
 

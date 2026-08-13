@@ -5,6 +5,8 @@
 import platform as platform_mod
 import sys
 
+from mozboot.util import is_win_aarch64_host
+
 # Base url for pulling the rustup installer.
 RUSTUP_URL_BASE = "https://static.rust-lang.org/rustup"
 
@@ -12,17 +14,18 @@ RUSTUP_URL_BASE = "https://static.rust-lang.org/rustup"
 RUSTUP_MANIFEST = RUSTUP_URL_BASE + "/release-stable.toml"
 
 # We bake in a known version number so we can verify a checksum.
-RUSTUP_VERSION = "1.23.1"
+RUSTUP_VERSION = "1.29.0"
 
 # SHA-256 checksums of the installers, per platform.
 RUSTUP_HASHES = {
-    "x86_64-unknown-freebsd": "3fb56018ec6009c5a3e345f07d7ea2fbc67d4c6768e528c6d990c7ebe2388d09",
-    "aarch64-apple-darwin": "6d56735284181b2eb804ed7f57f76cf5ff924251e8ab69d9b5822c3be1ca1dc7",
-    "x86_64-apple-darwin": "39101feb178a7e3e4443b09b36338e794a9e00385e5f44a2f7789aefb91354a9",
-    "x86_64-unknown-linux-gnu": "ed7773edaf1d289656bdec2aacad12413b38ad0193fff54b2231f5140a4b07c5",
-    "aarch64-unknown-linux-gnu": "f80a0a792b3ab905ab4919474daf4d3f60e574fc6987e69bfba2fd877241a8de",
-    "x86_64-pc-windows-msvc": "a586cf9de3e4aa791fd5796b6a5f99ca05591ccef8bb94e53af5b69f0261fb03",
-    "x86_64-unknown-netbsd": "8b29918e765f2cec3b81a911652b164471c42f8f31241f7401bb89582d6a3ed5",
+    "x86_64-unknown-freebsd": "c3fdfa4553e088edad701ea74776eb707644bed9f4a44f42a077e733201e966a",
+    "aarch64-apple-darwin": "aeb4105778ca1bd3c6b0e75768f581c656633cd51368fa61289b6a71696ac7e1",
+    "x86_64-apple-darwin": "33cf85df9142bc6d29cbc62fa5ca1d4c29622cddb55213a4c1a43c457fb9b2d7",
+    "x86_64-unknown-linux-gnu": "4acc9acc76d5079515b46346a485974457b5a79893cfb01112423c89aeb5aa10",
+    "aarch64-unknown-linux-gnu": "9732d6c5e2a098d3521fca8145d826ae0aaa067ef2385ead08e6feac88fa5792",
+    "x86_64-pc-windows-msvc": "86478e53f769379d7f0ebfa7c9aa97cb76ca92233f79aa2cc0dbee2efaac73c7",
+    "aarch64-pc-windows-msvc": "3af309e6c3062aa11df0e932954f69d13b734d8a431e593812f3ecd9ff9e6ef6",
+    "x86_64-unknown-netbsd": "0f513ad0d0dd4e6f650183793b47f1a59f69a89862f18b59c42503d08828ed90",
 }
 
 NO_PLATFORM = """
@@ -55,6 +58,8 @@ def platform():
             return "aarch64-apple-darwin"
         return "x86_64-apple-darwin"
     elif sys.platform.startswith(("win32", "msys")):
+        if is_win_aarch64_host():
+            return "aarch64-pc-windows-msvc"
         # Bravely assume we'll be building 64-bit Firefox.
         return "x86_64-pc-windows-msvc"
     elif sys.platform.startswith("linux"):

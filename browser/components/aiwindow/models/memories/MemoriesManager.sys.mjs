@@ -4,13 +4,11 @@
 
 import {
   getRecentHistory,
-  sessionizeVisits,
-  generateProfileInputs,
-  aggregateSessions,
-  topkAggregates,
   countRecentVisits,
 } from "moz-src:///browser/components/aiwindow/models/memories/MemoriesHistorySource.sys.mjs";
 import { getRecentChats } from "./MemoriesChatSource.sys.mjs";
+import { buildSessions } from "./MemoriesSessions.sys.mjs";
+import { runHeuristicGate } from "./MemoriesSessionGate.sys.mjs";
 import {
   MODEL_FEATURES,
   renderPrompt,
@@ -21,54 +19,56 @@ import {
   buildConversation,
   loadPrompt,
 } from "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs";
+import {
+  ChatStore,
+  MESSAGE_ROLE,
+} from "moz-src:///browser/components/aiwindow/ui/modules/ChatStore.sys.mjs";
+import { SensitiveInfoDetector } from "moz-src:///browser/components/aiwindow/models/memories/SensitiveInfoDetector.sys.mjs";
 
 import { MemoryStore } from "moz-src:///browser/components/aiwindow/services/MemoryStore.sys.mjs";
 import {
   CATEGORIES,
   INTENTS,
+  GATE_SKIP,
   HISTORY as SOURCE_HISTORY,
   CONVERSATION as SOURCE_CONVERSATION,
+  CONVERSATION_USER_REQUEST as SOURCE_USER_REQUEST,
   PREF_GENERATE_MEMORIES_FROM_HISTORY,
   PREF_GENERATE_MEMORIES_FROM_CONVERSATION,
+  MAX_MEMORY_SUMMARY_LENGTH,
+  DEFAULT_RELEVANT_MEMORIES_TOP_K,
+  DEFAULT_RELEVANT_MEMORIES_SIMILARITY_THRESHOLD,
 } from "moz-src:///browser/components/aiwindow/models/memories/MemoriesConstants.sys.mjs";
 import {
   getFormattedMemoryAttributeList,
-  generateMemories,
+  runSessionMemoryPipeline,
 } from "moz-src:///browser/components/aiwindow/models/memories/Memories.sys.mjs";
 import { MEMORIES_MESSAGE_CLASSIFY_SCHEMA } from "moz-src:///browser/components/aiwindow/models/memories/MemoriesSchemas.sys.mjs";
 import { AIWindow } from "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs";
 import { EveryWindow } from "resource:///modules/EveryWindow.sys.mjs";
 import { AIWindowAccountAuth } from "moz-src:///browser/components/aiwindow/ui/modules/AIWindowAccountAuth.sys.mjs";
-import { EmbeddingsGenerator } from "chrome://global/content/ml/EmbeddingsGenerator.sys.mjs";
-import { cosSim } from "chrome://global/content/ml/NLPUtils.sys.mjs";
 
-const K_DOMAINS_FULL = 100;
-const K_TITLES_FULL = 100;
-const K_SEARCHES_FULL = 10;
-
-const K_DOMAINS_DELTA = 30;
-const K_TITLES_DELTA = 60;
-const K_SEARCHES_DELTA = 10;
-
-// for initial memory generation batches
-const TOKEN_BUDGET = 2000;
-
-const DEFAULT_HISTORY_FULL_LOOKUP_DAYS = 60;
+const DEFAULT_HISTORY_FULL_LOOKUP_DAYS = 20;
 const DEFAULT_HISTORY_FULL_MAX_RESULTS = 3000;
 const DEFAULT_HISTORY_DELTA_MAX_RESULTS = 500;
 const DEFAULT_CHAT_FULL_MAX_RESULTS = 50;
 const DEFAULT_CHAT_HALF_LIFE_DAYS_FULL_RESULTS = 7;
 
-const LAST_HISTORY_MEMORY_TS_ATTRIBUTE = "last_history_memory_ts";
-const LAST_CONVERSATION_MEMORY_TS_ATTRIBUTE = "last_chat_memory_ts";
+const LAST_SESSION_MEMORY_TS_ATTRIBUTE = "last_session_memory_ts";
 
 const PREF_FIRSTRUN_HAS_COMPLETED = "browser.smartwindow.firstrun.hasCompleted";
+
+// Single shared detector instance, mirroring MemoriesChatSource /
+// MemoriesHistorySource usage.
+const _sensitiveInfoDetector = new SensitiveInfoDetector();
+
 /**
  * MemoriesManager class
  */
 export class MemoriesManager {
   // Exposed to be stubbed for testing
   static _getRecentChats = getRecentChats;
+  static _getRecentHistory = getRecentHistory;
 
   // Cached Conversation for the 3 serial LLM steps in one generateMemories()
   // pass. Callers MUST NOT invoke generation concurrently — clearMessages /
@@ -78,12 +78,6 @@ export class MemoriesManager {
   // Cached Conversation for memory usage (classification, relevance).
   // Same serial-only contract.
   static #usageConversationPromise = null;
-
-  // Embeddings cache for semantic memory search
-  static #embeddingsGenerator = null;
-  static #memoryEmbeddingsCache = null;
-  static #memoryCacheKey = null;
-
   /**
    * Returns a Conversation wired to the memory-generation feature. Used for:
    * initial generation, deduplication, sensitivity filter.
@@ -151,233 +145,122 @@ export class MemoriesManager {
   }
 
   /**
-   * Generates, saves, and returns memories from pre-computed sources
+   * Unified entry point: generates and persists memories from cross-modal
+   * session bundles built from the user's recent browsing history AND chats.
    *
-   * @param {object} sources      User data source type to aggregrated records (i.e., {history: [domainItems, titleItems, searchItems]})
-   * @param {string} sourceName   Specific source type from which memories are generated ("history" or "conversation")
-   * @returns {Promise<Memory[]>}
-   *          A promise that resolves to the list of persisted memories
-   *          (newly created or updated), sorted and shaped as returned by
-   *          {@link MemoryStore.addMemory}.
+   *  1. Resolves which sources are enabled (history and/or conversation).
+   *  2. Reads the single {@link getLastSessionMemoryTimestamp} watermark and
+   *     pulls recent history rows and/or chat messages since it (delta), or a
+   *     full lookup on first run. Disabled sources contribute `[]`.
+   *  3. Builds unified sessions via {@link buildSessions} and drops sessions
+   *     the heuristic gate marks `SKIP`.
+   *  4. Runs the batched generate -> global filter -> global dedup pipeline.
+   *  5. Persists survivors once and advances the unified watermark to the
+   *     contiguous successfully-processed point.
+   *
+   * @param {object} [pipelineOpts={}]
+   *        Options forwarded to {@link runSessionMemoryPipeline} (e.g.
+   *        `batchSize`, `maxBatchRetries`). Omitted keys fall back to the
+   *        pipeline's own defaults.
+   * @returns {Promise<Memory[]>}  Persisted memories (possibly empty).
    */
-  static async generateAndSaveMemoriesFromSources(sources, sourceName) {
-    const now = Date.now();
+  static async generateMemoriesFromSessions(pipelineOpts = {}) {
+    const historyEnabled =
+      this.shouldEnableMemoriesFromSchedulers(SOURCE_HISTORY);
+    const conversationEnabled =
+      this.shouldEnableMemoriesFromSchedulers(SOURCE_CONVERSATION);
+
+    if (!historyEnabled && !conversationEnabled) {
+      return [];
+    }
+
+    const watermarkMs = await this.getLastSessionMemoryTimestamp();
+    const isDelta = watermarkMs > 0;
+
+    let historyRows = [];
+    if (historyEnabled) {
+      const recentHistoryOpts = isDelta
+        ? {
+            sinceMicros: watermarkMs * 1000,
+            maxResults: DEFAULT_HISTORY_DELTA_MAX_RESULTS,
+          }
+        : {
+            days: DEFAULT_HISTORY_FULL_LOOKUP_DAYS,
+            maxResults: DEFAULT_HISTORY_FULL_MAX_RESULTS,
+          };
+      historyRows = await this._getRecentHistory(recentHistoryOpts);
+    }
+
+    let chatMessages = [];
+    if (conversationEnabled) {
+      chatMessages = await this._getRecentChats(
+        isDelta ? watermarkMs : 0,
+        DEFAULT_CHAT_FULL_MAX_RESULTS,
+        DEFAULT_CHAT_HALF_LIFE_DAYS_FULL_RESULTS
+      );
+    }
+
+    const sessions = buildSessions(historyRows, chatMessages);
+    const retainedSessions = sessions.filter(
+      session => runHeuristicGate(session).decision !== GATE_SKIP
+    );
+
+    if (!retainedSessions.length) {
+      // Since no retainedSessions are present due to SKIP decisions, then advance
+      // the watermark past them to avoid re-pulling and re-gating the same
+      // trivial sessions next run.
+      const maxSessionEndMs = sessions.reduce(
+        (max, session) => Math.max(max, session.session_end_ms),
+        0
+      );
+      if (maxSessionEndMs > watermarkMs) {
+        await this.setLastSessionMemoryTimestamp(maxSessionEndMs);
+      }
+      console.warn(
+        "MemoriesManager.generateMemoriesFromSessions: " +
+          "No sessions to process after gating; skipping memory generation."
+      );
+      return [];
+    }
+
     const existingMemories = await this.getAllMemories();
     const existingMemoriesSummaries = existingMemories.map(
       i => i.memory_summary
     );
+
     const conversation = await this.ensureConversationForGeneration();
-    const memories = await generateMemories(
-      conversation,
-      sources,
-      existingMemoriesSummaries
-    );
-    const { persistedMemories } = await this.saveMemories(
-      memories,
-      sourceName,
-      now
-    );
+
+    let result;
+    try {
+      result = await runSessionMemoryPipeline(
+        conversation,
+        retainedSessions,
+        existingMemoriesSummaries,
+        pipelineOpts
+      );
+    } catch (e) {
+      // Pipeline failed; don't advance the watermark. Re-throw retryable errors
+      // so the scheduler can back off; swallow permanent ones.
+      console.error(
+        "MemoriesManager.generateMemoriesFromSessions: " +
+          "pipeline failed; watermark not advanced.",
+        e
+      );
+      if (openAIEngine.isRetryableError(e)) {
+        throw e;
+      }
+      return [];
+    }
+
+    const { persistedMemories } = await this.saveMemories(result.memories);
+
+    if (result.processedThroughMs > 0) {
+      await this.setLastSessionMemoryTimestamp(
+        Math.max(watermarkMs, result.processedThroughMs)
+      );
+    }
+
     return persistedMemories;
-  }
-
-  /**
-   * Generates and persists memories derived from the user's recent browsing history.
-   *
-   * This method:
-   *  1. Reads {@link last_history_memory_ts} via {@link getLastHistoryMemoryTimestamp}.
-   *  2. Decides between:
-   *     - Full processing (first run, no prior timestamp):
-   *         * Uses a days-based cutoff (DEFAULT_HISTORY_FULL_LOOKUP_DAYS).
-   *         * Uses max-results cap (DEFAULT_HISTORY_FULL_MAX_RESULTS).
-   *         * Uses full top-k settings (K_DOMAINS_FULL, K_TITLES_FULL, K_SEARCHES_FULL).
-   *     - Delta processing (subsequent runs, prior timestamp present):
-   *         * Uses an absolute cutoff via `sinceMicros = lastTsMs * 1000`.
-   *         * Uses a smaller max-results cap (DEFAULT_HISTORY_DELTA_MAX_RESULTS).
-   *         * Uses delta top-k settings (K_DOMAINS_DELTA, K_TITLES_DELTA, K_SEARCHES_DELTA).
-   *  3. Calls {@link getAggregatedBrowserHistory} with the computed options to obtain
-   *     domain, title, and search aggregates.
-   *  4. Calls {@link generateAndSaveMemoriesFromSources} with retrieved history to generate and save new memories.
-   *
-   * @returns {Promise<Memory[]>}
-   *          A promise that resolves to the list of persisted history memories
-   *          (newly created or updated), sorted and shaped as returned by
-   *          {@link MemoryStore.addMemory}.
-   */
-  static async generateMemoriesFromBrowsingHistory() {
-    const now = Date.now();
-    // get last history memory timestamp in ms
-    const lastTsMs = await this.getLastHistoryMemoryTimestamp();
-    const isDelta = typeof lastTsMs === "number" && lastTsMs > 0;
-    // set up the options based on delta or full (first) run
-    let recentHistoryOpts = {};
-    let topkAggregatesOpts;
-    if (isDelta) {
-      recentHistoryOpts = {
-        sinceMicros: lastTsMs * 1000,
-        maxResults: DEFAULT_HISTORY_DELTA_MAX_RESULTS,
-      };
-      topkAggregatesOpts = {
-        k_domains: K_DOMAINS_DELTA,
-        k_titles: K_TITLES_DELTA,
-        k_searches: K_SEARCHES_DELTA,
-        now,
-      };
-    } else {
-      recentHistoryOpts = {
-        days: DEFAULT_HISTORY_FULL_LOOKUP_DAYS,
-        maxResults: DEFAULT_HISTORY_FULL_MAX_RESULTS,
-      };
-      topkAggregatesOpts = {
-        k_domains: K_DOMAINS_FULL,
-        k_titles: K_TITLES_FULL,
-        k_searches: K_SEARCHES_FULL,
-        now,
-      };
-    }
-
-    const [domainItems, titleItems, searchItems] =
-      await this.getAggregatedBrowserHistory(
-        recentHistoryOpts,
-        topkAggregatesOpts
-      );
-    const sources = { history: [domainItems, titleItems, searchItems] };
-
-    const hasAnyHistory = sources.history.some(
-      items => Array.isArray(items) && !!items.length
-    );
-
-    if (!hasAnyHistory) {
-      console.warn(
-        "MemoriesManager.generateMemoriesFromBrowsingHistory: " +
-          "History aggregates are empty; skipping memory generation."
-      );
-      return [];
-    }
-
-    const batches = this._createHistoryBatches(
-      domainItems,
-      titleItems,
-      searchItems,
-      TOKEN_BUDGET
-    );
-
-    const allGeneratedMemories = [];
-    for (let i = 0; i < batches.length; i++) {
-      const batchSources = { history: batches[i] };
-      const batchMemories = await this.generateAndSaveMemoriesFromSources(
-        batchSources,
-        SOURCE_HISTORY
-      );
-      allGeneratedMemories.push(...batchMemories);
-    }
-
-    return allGeneratedMemories;
-  }
-
-  /**
-   * Generates and persists memories derived from the user's recent chat history.
-   *
-   * This method:
-   *  1. Reads {@link last_chat_memory_ts} via {@link getLastConversationMemoryTimestamp}.
-   *  2. Decides between:
-   *     - Full processing (first run, no prior timestamp):
-   *         * Pulls all messages from the beginning of time.
-   *     - Delta processing (subsequent runs, prior timestamp present):
-   *         * Pulls all messages since the last timestamp.
-   *  3. Calls {@link getRecentChats} with the computed options to obtain messages.
-   *  4. Calls {@link generateAndSaveMemoriesFromSources} with messages to generate and save new memories.
-   *
-   * @returns {Promise<Memory[]>}
-   *          A promise that resolves to the list of persisted conversation memories
-   *          (newly created or updated), sorted and shaped as returned by
-   *          {@link MemoryStore.addMemory}.
-   */
-  static async generateMemoriesFromConversationHistory() {
-    // get last chat memory timestamp in ms
-    const lastTsMs = await this.getLastConversationMemoryTimestamp();
-    const isDelta = typeof lastTsMs === "number" && lastTsMs > 0;
-
-    let startTime = 0;
-
-    // If this is a subsequent run, set startTime to lastTsMs, the last time we generated chat-based memories
-    if (isDelta) {
-      startTime = lastTsMs;
-    }
-
-    const chatMessages = await this._getRecentChats(
-      startTime,
-      DEFAULT_CHAT_FULL_MAX_RESULTS,
-      DEFAULT_CHAT_HALF_LIFE_DAYS_FULL_RESULTS
-    );
-    const sources = { conversation: chatMessages };
-
-    if (!Array.isArray(chatMessages) || chatMessages.length === 0) {
-      console.warn(
-        "MemoriesManager.generateMemoriesFromConversationHistory: " +
-          "No recent chat messages found; skipping memory generation."
-      );
-      return [];
-    }
-
-    return await this.generateAndSaveMemoriesFromSources(
-      sources,
-      SOURCE_CONVERSATION
-    );
-  }
-
-  /**
-   * Retrieves and aggregates recent browser history into top-k domain, title, and search aggregates.
-   *
-   * @param {object} [recentHistoryOpts={}]
-   * @param {number} [recentHistoryOpts.sinceMicros=null]
-   *        Optional absolute cutoff in microseconds since epoch (Places
-   *        visit_date). If provided, this is used directly as the cutoff:
-   *        only visits with `visit_date >= sinceMicros` are returned.
-   *
-   *        This is the recommended way to implement incremental reads:
-   *        store the max `visitDateMicros` from the previous run and pass
-   *        it (or max + 1) back in as `sinceMicros`.
-   *
-   * @param {number} [recentHistoryOpts.days=DEFAULT_DAYS]
-   *        How far back to look if `sinceMicros` is not provided.
-   *        The cutoff is computed as:
-   *          cutoff = now() - days * MS_PER_DAY
-   *
-   *        Ignored when `sinceMicros` is non-null.
-   *
-   * @param {number} [recentHistoryOpts.maxResults=DEFAULT_MAX_RESULTS]
-   *        Maximum number of rows to return from the SQL query (after
-   *        sorting by most recent visit). Note that this caps the number
-   *        of visits, not distinct URLs.
-   * @param {object} [topkAggregatesOpts]
-   * @param {number} [topkAggregatesOpts.k_domains=30]    Max number of domain aggregates to return
-   * @param {number} [topkAggregatesOpts.k_titles=60]     Max number of title aggregates to return
-   * @param {number} [topkAggregatesOpts.k_searches=10]   Max number of search aggregates to return
-   * @param {number} [topkAggregatesOpts.now]             Current time; seconds or ms, normalized internally.}
-   * @returns {Promise<[Array, Array, Array]>}            Top-k domain, title, and search aggregates
-   */
-  static async getAggregatedBrowserHistory(
-    recentHistoryOpts = {},
-    topkAggregatesOpts = {
-      k_domains: K_DOMAINS_DELTA,
-      k_titles: K_TITLES_DELTA,
-      k_searches: K_SEARCHES_DELTA,
-      now: undefined,
-    }
-  ) {
-    const recentVisitRecords = await getRecentHistory(recentHistoryOpts);
-    const sessionized = sessionizeVisits(recentVisitRecords);
-    const profilePreparedInputs = generateProfileInputs(sessionized);
-    const [domainAgg, titleAgg, searchAgg] = aggregateSessions(
-      profilePreparedInputs
-    );
-
-    return await topkAggregates(
-      domainAgg,
-      titleAgg,
-      searchAgg,
-      topkAggregatesOpts
-    );
   }
 
   /**
@@ -387,12 +270,8 @@ export class MemoriesManager {
    * @param {object} [opts={}]
    * @param {boolean} [opts.includeSoftDeleted=false]
    *        Whether to include soft-deleted memories.
-   * @returns {Promise<Array<Map<{
-   *  memory_summary: string,
-   *  category: string,
-   *  intent: string,
-   *  score: number,
-   * }>>>}                                    List of memories
+   * @returns {Promise<Array<object>>}
+   *        List of memories
    */
   static async getAllMemories(opts = { includeSoftDeleted: false }) {
     return await MemoryStore.getMemories(opts);
@@ -403,102 +282,148 @@ export class MemoriesManager {
    * This is a quick-access wrapper around MemoryStore.getMemories() specifically requiring the memoryIds option.
    *
    * @param {Set<string>} memoryIds   Set of memory IDs
-   * @returns {Promise<Array<Map<{
-   *  memory_summary: string,
-   *  category: string,
-   *  intent: string,
-   *  score: number,
-   * }>>>}
+   * @returns {Promise<Array<Map>>}
    */
   static async getMemoriesByID(memoryIds) {
     return await MemoryStore.getMemories({ memoryIds });
   }
 
   /**
-   * Returns the last timestamp (in ms since Unix epoch) when a history-based
-   * memory was generated, as persisted in MemoryStore.meta.
+   * Public API wrapper around MemoryStore.getMemories
    *
-   * If the store has never been updated, this returns 0.
-   *
-   * @returns {Promise<number>}  Milliseconds since Unix epoch
+   * @param {Array<object>} [attributeFilters]     // Filtering options
+   * @param {string} [attributeFilters.field]      // Memory field (attribute) on which to filter
+   * @param {string} [attributeFilters.value]      // The value to filter against
+   * @param {string} [attributeFilters.comparator] // How the filter should be applied (equal to, greater than, less than, etc.)
+   * @returns {Array<object>}                      // Array of filtered memories
    */
-  static async getLastHistoryMemoryTimestamp() {
-    const meta = await MemoryStore.getMeta();
-    return meta.last_history_memory_ts || 0;
+  static async getMemoriesByAttribute(attributeFilters) {
+    return await MemoryStore.getMemories({ attributeFilters });
   }
 
   /**
-   * Returns the last timestamp (in ms since Unix epoch) when a chat-based
-   * memory was generated, as persisted in MemoryStore.meta.
+   * Returns the unified session-memory watermark (ms since Unix epoch): the
+   * point through which the combined history+chat session pipeline has been
+   * processed.
    *
-   * If the store has never been updated, this returns 0.
+   * On first read after migrating from the two legacy per-modality watermarks,
+   * this seeds from the older of the two so the first unified run does a delta
+   * pull rather than re-scanning all history.
    *
-   * @returns {Promise<number>}  Milliseconds since Unix epoch
+   * @returns {Promise<number>}  Milliseconds since Unix epoch (0 if never run)
    */
-  static async getLastConversationMemoryTimestamp() {
+  static async getLastSessionMemoryTimestamp() {
     const meta = await MemoryStore.getMeta();
-    return meta.last_chat_memory_ts || 0;
+    if (meta.last_session_memory_ts) {
+      return meta.last_session_memory_ts;
+    }
+    const legacy = [
+      meta.last_history_memory_ts,
+      meta.last_chat_memory_ts,
+    ].filter(ts => typeof ts === "number" && ts > 0);
+    return legacy.length ? Math.min(...legacy) : 0;
   }
 
   /**
-   * Persist a list of generated memories and update the appropriate meta timestamp.
+   * Persists the unified session-memory watermark.
+   *
+   * @param {number} tsMs  Milliseconds since Unix epoch
+   * @returns {Promise<void>}
+   */
+  static async setLastSessionMemoryTimestamp(tsMs) {
+    await MemoryStore.updateMeta({ [LAST_SESSION_MEMORY_TS_ATTRIBUTE]: tsMs });
+  }
+
+  /**
+   * Persists a list of generated memories, tagged with the given source. The
+   * unified session watermark is advanced separately by the caller
+   * (see {@link setLastSessionMemoryTimestamp}), so this no longer touches
+   * MemoryStore.meta.
    *
    * @param {Array<object>|null|undefined} generatedMemories
    *        Array of MemoryPartial-like objects to persist.
-   * @param {"history"|"conversation"} source
-   *        Source of these memories; controls which meta timestamp to update.
-   * @param {number} [nowMs=Date.now()]
-   *        Optional "now" timestamp in ms, for meta update fallback.
-   *
-   * @returns {Promise<{ persistedMemories: Array<object>, newTimestampMs: number | null }>}
+   * @returns {Promise<{ persistedMemories: Array<object> }>}
    */
-  static async saveMemories(generatedMemories, source, nowMs = Date.now()) {
+  static async saveMemories(generatedMemories) {
     const persistedMemories = [];
 
     if (Array.isArray(generatedMemories)) {
       for (const memoryPartial of generatedMemories) {
-        const stored = await MemoryStore.addMemory({
-          ...memoryPartial,
-          source,
-        });
+        const stored = await MemoryStore.addMemory(memoryPartial);
         persistedMemories.push(stored);
       }
     }
 
-    // Decide which meta field to update
-    let metaKey;
-    if (source === SOURCE_HISTORY) {
-      metaKey = LAST_HISTORY_MEMORY_TS_ATTRIBUTE;
-    } else if (source === SOURCE_CONVERSATION) {
-      metaKey = LAST_CONVERSATION_MEMORY_TS_ATTRIBUTE;
-    } else {
-      // Unknown source: don't update meta, just return persisted results.
+    return { persistedMemories };
+  }
+
+  /**
+   * Adds a single memory based on a user request. Rejects requests with empty
+   * summaries or containing personally identifiable information (PII).
+   * Unlike saveMemories, this does not advance the conversation/history meta
+   * timestamps, so it won't interfere with delta memory generation.
+   *
+   * @param {string} memorySummary
+   * @returns {Promise<{ok: true,  memory: MemoryPartial, action: string} | {ok: false, reason: string}>}
+   */
+  static async saveRequestedMemory(memorySummary) {
+    if (typeof memorySummary !== "string" || !memorySummary.trim()) {
+      return { ok: false, reason: "Memory summary is empty." };
+    }
+
+    // Hard-truncate independently of the schema's maxLength: the stored summary is
+    // later treated as trusted context, so bound any payload that survives.
+    const summary = memorySummary.trim().slice(0, MAX_MEMORY_SUMMARY_LENGTH);
+
+    // The chat message that triggered this tool, used as evidence and as a second
+    // input to the PII detector.
+    const recentUserMessages = await ChatStore.getMostRecentMessages(
+      MESSAGE_ROLE.USER,
+      1
+    );
+    const message = recentUserMessages[0]?.content?.body ?? "";
+
+    // Structured PII/financial pattern detection.
+    if (
+      _sensitiveInfoDetector.containsSensitiveInfo(summary) ||
+      _sensitiveInfoDetector.containsSensitiveInfo(message)
+    ) {
       return {
-        persistedMemories,
-        newTimestampMs: null,
+        ok: false,
+        reason: "Memory contains personally identifiable information.",
       };
     }
 
-    // Compute new timestamp: prefer max(updated_at) if present, otherwise fall back to nowMs.
-    let newTsMs = nowMs;
-    if (persistedMemories.length) {
-      const maxUpdated = persistedMemories.reduce(
-        (max, i) => Math.max(max, i.updated_at ?? 0),
-        0
-      );
-      if (maxUpdated > 0) {
-        newTsMs = maxUpdated;
-      }
-    }
-
-    await MemoryStore.updateMeta({
-      [metaKey]: newTsMs,
-    });
-
-    return {
-      persistedMemories,
-      newTimestampMs: newTsMs,
+    let candidateMemory = {
+      memory_summary: summary,
+      reasoning: "User requested.",
+      evidence: [{ type: "user", value: message }],
+      sources: [SOURCE_USER_REQUEST],
     };
+
+    const addedMemory = await MemoryStore.addMemory(candidateMemory);
+    return { ok: true, memory: addedMemory, action: "created" };
+  }
+
+  /**
+   * Enriches an existing memory with classified categories and intents.
+   * Intended to be called fire-and-forget after saveRequestedMemory.
+   *
+   * @param {string} memoryId
+   * @param {string} memorySummary
+   */
+  static async enrichExistingMemory(memoryId, memorySummary) {
+    const { categories, intents } =
+      await this.memoryClassifyMessage(memorySummary);
+
+    const tags = [];
+    if (categories[0]) {
+      tags.push(`category:${categories[0]}`);
+    }
+    if (intents[0]) {
+      tags.push(`intent:${intents[0]}`);
+    }
+    await MemoryStore.updateMemory(memoryId, { tags });
   }
 
   /**
@@ -572,106 +497,32 @@ export class MemoriesManager {
   }
 
   /**
-   * Clears the embeddings cache. Used for testing.
+   * Clears the embeddings cache in MemoryStore. Used for testing.
    *
    * @private
    */
   static _clearEmbeddingsCache() {
-    this.#memoryEmbeddingsCache = null;
-    this.#memoryCacheKey = null;
+    MemoryStore._clearEmbeddingsCache();
   }
 
   /**
-   * Computes a hash of memories for cache invalidation.
-   * Uses incremental FNV-1a hashing to avoid allocating large concatenated strings
-   * based on https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function#FNV-1a_hash
-   *
-   * @param {Array} memories  Array of memory objects with id and updated_at fields
-   * @returns {number}        32-bit hash representing the memories state
-   */
-  static #computeMemoriesHash(memories) {
-    // FNV-1a offset basis (32-bit)
-    let hash = 0x811c9dc5;
-
-    for (const m of memories) {
-      const str = `${m.id}-${m.updated_at}`;
-      for (let i = 0; i < str.length; i++) {
-        hash ^= str.charCodeAt(i);
-        // FNV prime, keep 32-bit
-        hash = (hash * 0x01000193) >>> 0;
-      }
-    }
-
-    return hash;
-  }
-
-  /**
-   * Fetches relevant memories for a given user message using semantic similarity.
-   * Uses embeddings and cosine similarity for fast, accurate memory retrieval.
+   * Public API wrapper around MemoryStore.getRelevantMemories
    *
    * @param {string} message                  User message to find relevant memories for
    * @param {number} topK                     Number of top relevant memories to return (default: 5)
-   * @param {number} similarityThreshold      Minimum similarity score (0-1) to include (default: 0.3)
-   * @returns {Promise<Array<{
-   *  memory_summary: string,
-   *  category: string,
-   *  intent: string,
-   *  score: number,
-   *  similarity: number,
-   * }>>}                                     List of relevant memories sorted by similarity
+   * @param {number} similarityThreshold      Minimum similarity score (0-1) to include (default: 0.22)
+   * @returns {Promise<Array<object>>}        List of relevant memories sorted by similarity
    */
   static async getRelevantMemories(
     message,
-    topK = 5,
-    similarityThreshold = 0.22
+    topK = DEFAULT_RELEVANT_MEMORIES_TOP_K,
+    similarityThreshold = DEFAULT_RELEVANT_MEMORIES_SIMILARITY_THRESHOLD
   ) {
-    const memories = await MemoriesManager.getAllMemories();
-
-    if (memories.length === 0) {
-      return [];
-    }
-
-    // Lazy initialize embeddings generator
-    if (!this.#embeddingsGenerator) {
-      this.#embeddingsGenerator = EmbeddingsGenerator.forGeneral();
-    }
-
-    // Re-embed memories only if cache is invalid
-    const currentCacheKey = this.#computeMemoriesHash(memories);
-    if (
-      !this.#memoryEmbeddingsCache ||
-      this.#memoryCacheKey !== currentCacheKey
-    ) {
-      const memoryTexts = memories.map(m => {
-        const summary = m.memory_summary?.toLowerCase() || "";
-        const reasoning = m.reasoning?.toLowerCase() || "";
-        return reasoning ? `${summary}. ${reasoning}` : summary;
-      });
-      const result = await this.#embeddingsGenerator.embedMany(memoryTexts);
-      this.#memoryEmbeddingsCache = result.output || result;
-      this.#memoryCacheKey = currentCacheKey;
-    }
-
-    const queryResult = await this.#embeddingsGenerator.embed(
-      message.toLowerCase()
+    return await MemoryStore.getRelevantMemories(
+      message,
+      topK,
+      similarityThreshold
     );
-    let queryEmbedding = queryResult.output || queryResult;
-
-    if (Array.isArray(queryEmbedding) && queryEmbedding.length === 1) {
-      queryEmbedding = queryEmbedding[0];
-    }
-
-    // Calculate cosine similarity
-    const similarities = this.#memoryEmbeddingsCache.map((memEmb, idx) => ({
-      ...memories[idx],
-      similarity: cosSim(queryEmbedding, memEmb),
-    }));
-
-    // Filter by threshold, sort by similarity, and return top K
-    return similarities
-      .filter(m => m.similarity >= similarityThreshold)
-      .sort((a, b) => b.similarity - a.similarity)
-      .slice(0, topK);
   }
 
   /**
@@ -746,100 +597,5 @@ export class MemoriesManager {
    */
   static async countRecentVisits(opts = {}) {
     return await countRecentVisits(opts);
-  }
-
-  // Helper: Estimate token count for history items
-  static _estimateHistoryTokens(domainItems, titleItems, searchItems) {
-    let chars = 0;
-
-    // Domains: "domain.com,99.5\n"
-    chars += domainItems.reduce(
-      (sum, [domain, _score]) => sum + domain.length + 10,
-      0
-    );
-
-    // Titles: "Long Title | domain.com,99.5\n"
-    chars += titleItems.reduce(
-      (sum, [title, _score]) => sum + title.length + 10,
-      0
-    );
-
-    // Searches: can have multiple queries per item
-    chars += searchItems.reduce(
-      (sum, item) => sum + (item.q || []).join(",").length + 20,
-      0
-    );
-
-    // CSV headers and formatting overhead
-    chars += 1000;
-
-    // Rough conversion: 1 token ≈ 4 characters
-    return Math.ceil(chars / 4);
-  }
-
-  // Helper: Split history items into token-budget-compliant batches
-  static _createHistoryBatches(
-    domainItems,
-    titleItems,
-    searchItems,
-    tokenBudget
-  ) {
-    const batches = [];
-
-    // Calculate how many items per batch based on average item size
-    const totalItems =
-      domainItems.length + titleItems.length + searchItems.length;
-    const avgTokensPerItem =
-      this._estimateHistoryTokens(domainItems, titleItems, searchItems) /
-      totalItems;
-
-    const itemsPerBatch = Math.max(
-      10, // Minimum batch size
-      Math.floor((tokenBudget * 0.9) / avgTokensPerItem) // 0.9 for safety margin
-    );
-
-    // Calculate proportional splits
-    const domainRatio = domainItems.length / totalItems;
-    const titleRatio = titleItems.length / totalItems;
-    const searchRatio = searchItems.length / totalItems;
-
-    const domainsPerBatch = Math.ceil(itemsPerBatch * domainRatio);
-    const titlesPerBatch = Math.ceil(itemsPerBatch * titleRatio);
-    const searchesPerBatch = Math.ceil(itemsPerBatch * searchRatio);
-
-    let domainIdx = 0;
-    let titleIdx = 0;
-    let searchIdx = 0;
-
-    while (
-      domainIdx < domainItems.length ||
-      titleIdx < titleItems.length ||
-      searchIdx < searchItems.length
-    ) {
-      const batchDomains = domainItems.slice(
-        domainIdx,
-        domainIdx + domainsPerBatch
-      );
-      const batchTitles = titleItems.slice(titleIdx, titleIdx + titlesPerBatch);
-      const batchSearches = searchItems.slice(
-        searchIdx,
-        searchIdx + searchesPerBatch
-      );
-
-      // Only add batch if it has content
-      if (
-        !!batchDomains.length ||
-        !!batchTitles.length ||
-        batchSearches.length
-      ) {
-        batches.push([batchDomains, batchTitles, batchSearches]);
-      }
-
-      domainIdx += domainsPerBatch;
-      titleIdx += titlesPerBatch;
-      searchIdx += searchesPerBatch;
-    }
-
-    return batches;
   }
 }

@@ -4,17 +4,17 @@
 
 #include "ParentProcessDocumentChannel.h"
 
+#include "mozilla/StaticPrefs_extensions.h"
 #include "mozilla/extensions/StreamFilterParent.h"
 #include "mozilla/net/ParentChannelWrapper.h"
 #include "mozilla/net/UrlClassifierCommon.h"
-#include "mozilla/StaticPrefs_extensions.h"
 #include "nsCRT.h"
 #include "nsDocShell.h"
-#include "nsIObserverService.h"
-#include "nsIClassifiedChannel.h"
-#include "nsIXULRuntime.h"
-#include "nsHttpHandler.h"
 #include "nsDocShellLoadState.h"
+#include "nsHttpHandler.h"
+#include "nsIClassifiedChannel.h"
+#include "nsIObserverService.h"
+#include "nsIXULRuntime.h"
 
 extern mozilla::LazyLogModule gDocumentChannelLog;
 #define LOG(fmt) MOZ_LOG(gDocumentChannelLog, mozilla::LogLevel::Verbose, fmt)

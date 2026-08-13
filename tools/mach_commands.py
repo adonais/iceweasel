@@ -311,7 +311,7 @@ def npx(command_context, args):
 
 
 @Command(
-    "devtools-mcp",
+    "firefox-devtools-mcp",
     category="devenv",
     description="Run the firefox-devtools-mcp server with the local build.",
 )

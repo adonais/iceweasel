@@ -3,17 +3,16 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "Utils.h"
-#include "Types.h"
 
 #include <android/log.h>
 #include <pthread.h>
 #include <sys/prctl.h>
 
+#include "AndroidBuild.h"
+#include "Types.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/java/GeckoAppShellWrappers.h"
 #include "mozilla/java/GeckoThreadWrappers.h"
-
-#include "AndroidBuild.h"
 #include "nsAppShell.h"
 #include "nsExceptionHandler.h"
 

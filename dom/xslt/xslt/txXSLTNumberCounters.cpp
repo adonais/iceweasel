@@ -47,7 +47,7 @@ nsresult txFormattedCounter::getCounterFor(const nsString& aToken,
                                            txFormattedCounter*& aCounter) {
   int32_t length = aToken.Length();
   NS_ASSERTION(length, "getting counter for empty token");
-  aCounter = 0;
+  aCounter = nullptr;
 
   if (length == 1) {
     char16_t ch = aToken.CharAt(0);

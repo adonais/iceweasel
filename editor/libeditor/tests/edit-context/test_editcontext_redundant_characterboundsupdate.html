@@ -1,0 +1,76 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test that redundant characterboundsupdate events are not fired at EditContext.</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="/tests/SimpleTest/EventUtils.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<span id="spanBefore"></span>
+<div></div>
+<span id="spanAfter"></span>
+<script>
+'use strict';
+
+const host = document.querySelector('div');
+const editContext = new EditContext({text: 'hello'});
+host.editContext = editContext;
+const spanBefore = document.getElementById('spanBefore');
+const spanAfter = document.getElementById('spanAfter');
+
+function check(func, shouldFire, message) {
+  let fired = false;
+  editContext.addEventListener('characterboundsupdate', () => fired = true);
+  func();
+  synthesizeQueryTextRect(3, 1);
+  is(fired, shouldFire, `Should${shouldFire ? " " : " not "} fire characterboundsupdate when ${message}.`);
+}
+
+add_task(async () => {
+  await SimpleTest.promiseFocus();
+  host.focus();
+  editContext.oncharacterboundsupdate = () => {
+    editContext.updateCharacterBounds(3, [new DOMRect(10,20,30,40)]);
+  };
+  check(() => {}, true, 'rectangle is first queried.');
+  check(() => {
+    spanAfter.textContent = 'something';
+    spanAfter.getBoundingClientRect();
+  }, false, 'unrelated element is reflowed');
+  check(() => {
+    spanBefore.textContent = 'something';
+    spanBefore.getBoundingClientRect();
+  }, true, 'associated element bounding rect changes');
+  for (let viaUserInput of [false, true]) {
+    function insertChar(start, end, replacement) {
+      if (viaUserInput) {
+        editContext.updateSelection(start, end);
+        synthesizeKey(replacement);
+      } else {
+        editContext.updateText(start, end, replacement);
+      }
+    }
+    check(() => {
+      insertChar(1, 2, 'x');
+    }, true, 'text before queried character changes');
+    check(() => {
+      insertChar(4, 4, 'z');
+    }, false, 'text after queried character changes');
+  }
+  check(() => {
+    editContext.updateControlBounds(new DOMRect(99, 99, 1, 1));
+  }, true, 'control bounds are set');
+  check(() => {
+    editContext.updateControlBounds(new DOMRect(999, 9, 1, 1));
+  }, true, 'control bounds are changed');
+  check(() => {
+    spanBefore.replaceChildren();
+    spanBefore.getBoundingClientRect();
+  }, false, 'associated element bounding rect changes, but control bounds stay the same');
+});
+
+</script>
+</body>
+</html>

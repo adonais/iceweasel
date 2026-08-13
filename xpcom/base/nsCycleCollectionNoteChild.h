@@ -9,10 +9,10 @@
 #ifndef nsCycleCollectionNoteChild_h_
 #define nsCycleCollectionNoteChild_h_
 
-#include "nsCycleCollectionTraversalCallback.h"
-#include "mozilla/Likely.h"
-
 #include <type_traits>
+
+#include "mozilla/Likely.h"
+#include "nsCycleCollectionTraversalCallback.h"
 
 enum { CycleCollectionEdgeNameArrayFlag = 1 };
 

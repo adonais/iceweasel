@@ -1270,6 +1270,60 @@ TEST_P(TlsConnectGenericResumptionToken, ConnectResumeGetInfo) {
   SendReceive();
 }
 
+TEST_P(TlsConnectGenericResumptionToken, RefuseLongWrappedMasterSecret) {
+  ConfigureSessionCache(RESUME_BOTH, RESUME_BOTH);
+  client_->SetResumptionTokenCallback();
+  Connect();
+  SendReceive();
+
+  auto& token = client_->GetResumptionToken();
+  ASSERT_FALSE(token.empty());
+
+  // skip fixed-length fields at beginning
+  size_t off = 41;
+  // skip peerCert (3-byte length prefix)
+  ASSERT_GE(token.size(), off + 3);
+  off += 3 + ((size_t(token[off]) << 16) | (size_t(token[off + 1]) << 8) |
+              size_t(token[off + 2]));
+  // skip peerCertStatus (2-byte length prefix)
+  ASSERT_GE(token.size(), off + 2);
+  off += 2 + ((size_t(token[off]) << 8) | size_t(token[off + 1]));
+  // skip peerID (1-byte length prefix)
+  ASSERT_GE(token.size(), off + 1);
+  off += 1 + size_t(token[off]);
+  // skip urlSvrName (1-byte length prefix)
+  ASSERT_GE(token.size(), off + 1);
+  off += 1 + size_t(token[off]);
+  // skip localCert (3-byte length prefix)
+  ASSERT_GE(token.size(), off + 3);
+  off += 3 + ((size_t(token[off]) << 16) | (size_t(token[off + 1]) << 8) |
+              size_t(token[off + 2]));
+  // skip IP address, port, version, creationTime, authType, authKeyBits,
+  // keaType, keaKeyBits, keaGroup, sigScheme, and sessionIDLength (46 bytes)
+  off += 47;
+  // skip sessionID (1-byte length prefix)
+  ASSERT_GE(token.size(), off + 1);
+  off += 1 + size_t(token[off]);
+  // skip cipherSuite and policy (3 bytes)
+  off += 3;
+  // skip wrapped_master_secret (1-byte length prefix)
+  ASSERT_GE(token.size(), off + 1);
+  off += 1 + size_t(token[off]);
+  // alter wrapped_master_secret_len to be too large
+  std::vector<uint8_t> crafted(token.begin(),
+                               token.begin() + static_cast<ptrdiff_t>(off));
+  crafted.push_back(0xff);
+  crafted.insert(crafted.end(), token.begin() + static_cast<ptrdiff_t>(off + 1),
+                 token.end());
+
+  Reset();
+  StartConnect();
+  ASSERT_EQ(SECFailure,
+            SSL_SetResumptionToken(client_->ssl_fd(), crafted.data(),
+                                   static_cast<unsigned int>(crafted.size())));
+  EXPECT_EQ(SSL_ERROR_BAD_RESUMPTION_TOKEN_ERROR, PORT_GetError());
+}
+
 TEST_P(TlsConnectGenericResumptionToken, RefuseExpiredTicketClient) {
   ConfigureSessionCache(RESUME_BOTH, RESUME_BOTH);
   Connect();

@@ -139,6 +139,9 @@
         "match_origin_as_fallback": {
           "type": "boolean"
         },
+        "user_styles": {
+          "type": "boolean"
+        },
         "css": {
           "type": "array",
           "minItems": 1,
@@ -260,6 +263,9 @@
                   "type": "boolean"
                 },
                 "match_origin_as_fallback": {
+                  "type": "boolean"
+                },
+                "user_styles": {
                   "type": "boolean"
                 },
                 "which": {

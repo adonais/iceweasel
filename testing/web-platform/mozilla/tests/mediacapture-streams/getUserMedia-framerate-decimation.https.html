@@ -1,0 +1,41 @@
+<!doctype html>
+<title>getUserMedia crop-and-scale framerate decimation. Assumes Mozilla's fake camera with 640x480@30fps capability.</title>
+<meta name="timeout" content="long">
+<script src=/resources/testharness.js></script>
+<script src=/resources/testharnessreport.js></script>
+<script src=/resources/testdriver.js></script>
+<script src=/resources/testdriver-vendor.js></script>
+<script>
+"use strict"
+
+promise_test(async t => {
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: {width: 640, height: 480, frameRate: 24, resizeMode: "crop-and-scale"}
+  });
+  const [track] = stream.getTracks();
+  t.add_cleanup(async () => track.stop());
+
+  const video = document.createElement("video");
+  document.body.appendChild(video);
+  t.add_cleanup(async () => document.body.removeChild(video));
+  video.style = "width:320px;height:240px;";
+  video.srcObject = new MediaStream([track]);
+  await video.play();
+
+  // Wait for the compositor to report painted frames before measuring.
+  while (video.mozPaintedFrames == 0) {
+    await new Promise(r => t.step_timeout(r, 50));
+  }
+
+  const frames1 = video.mozPaintedFrames;
+  const t1 = performance.now();
+  await new Promise(r => t.step_timeout(r, 1000));
+  const frames2 = video.mozPaintedFrames;
+  const elapsed = (performance.now() - t1) / 1000;
+
+  const avgFps = (frames2 - frames1) / elapsed;
+  // 30fps source decimated to 24fps target: expect ~24fps, not ~15fps
+  // (15fps is what floor-to-divisor produces for non-divisor targets).
+  assert_between_exclusive(avgFps, 19, 29, "Framerate should be ~24fps");
+}, "crop-and-scale framerate decimation achieves target framerate on average");
+</script>

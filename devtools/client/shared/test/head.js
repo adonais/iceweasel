@@ -115,7 +115,9 @@ const createHost = async function (
   src = CHROME_URL_ROOT + "dummy.html"
 ) {
   const host = new Hosts[type](gBrowser.selectedTab);
-  const iframe = await host.create();
+  host.createElements();
+  await host.finalizeCreation();
+  const iframe = host.frame;
 
   await new Promise(resolve => {
     iframe.setAttribute("src", src);

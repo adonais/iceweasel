@@ -23,7 +23,7 @@ namespace {
 
 // Const variable for generate padding size
 // XXX This will be tweaked to something more meaningful in Bug 1383656.
-const uint32_t kMaxRandomNumber = 102400;
+const uint32_t kMaxRandomNumber = 1048576;
 
 }  // namespace
 

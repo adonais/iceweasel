@@ -8,6 +8,7 @@
 #include "nsAuth.h"
 #include "nsIAuthModule.h"
 #include "nsString.h"
+#include "mozilla/UniquePtrExtensions.h"
 
 #include <windows.h>
 
@@ -41,6 +42,11 @@ class nsAuthSSPI final : public nsIAuthModule {
 
  private:
   nsresult MakeSN(const nsACString& principal, nsCString& result);
+
+  // Builds the SEC_CHANNEL_BINDINGS blob describing the "tls-server-end-point"
+  // binding for the server certificate stored in mCertDERData.
+  nsresult MakeChannelBindings(mozilla::UniqueFreePtr<char>& aBuffer,
+                               uint32_t& aBufferLength);
 
   CredHandle mCred;
   CtxtHandle mCtxt;

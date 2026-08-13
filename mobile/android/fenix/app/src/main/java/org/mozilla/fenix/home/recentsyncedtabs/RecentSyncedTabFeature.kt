@@ -16,9 +16,9 @@ import mozilla.components.browser.storage.sync.Tab
 import mozilla.components.concept.storage.HistoryStorage
 import mozilla.components.concept.sync.Device
 import mozilla.components.concept.sync.DeviceType
+import mozilla.components.concept.sync.SyncEngine
 import mozilla.components.feature.syncedtabs.storage.SyncedTabsStorage
 import mozilla.components.lib.state.ext.flow
-import mozilla.components.service.fxa.SyncEngine
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.service.fxa.manager.SyncEnginesStorage
 import mozilla.components.service.fxa.manager.ext.withConstellationIfExists

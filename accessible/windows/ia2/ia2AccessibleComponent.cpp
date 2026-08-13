@@ -5,12 +5,10 @@
 #include "ia2AccessibleComponent.h"
 
 #include "AccessibleComponent_i.c"
-
 #include "AccessibleWrap.h"
-#include "States.h"
 #include "IUnknownImpl.h"
 #include "MsaaAccessible.h"
-
+#include "States.h"
 #include "nsIFrame.h"
 
 using namespace mozilla::a11y;

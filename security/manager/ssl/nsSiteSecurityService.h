@@ -7,12 +7,12 @@
 
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Dafsa.h"
+#include "mozpkix/pkixtypes.h"
 #include "nsCOMPtr.h"
 #include "nsIDataStorage.h"
 #include "nsISiteSecurityService.h"
 #include "nsString.h"
 #include "nsTArray.h"
-#include "mozpkix/pkixtypes.h"
 #include "prtime.h"
 
 class nsIURI;

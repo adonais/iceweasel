@@ -17,6 +17,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlbarTokenizer:
     "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
 });
@@ -72,7 +73,7 @@ export class UrlbarProviderRestrictKeywordsAutofill extends UrlbarProvider {
     this.#autofillData = null;
 
     if (
-      queryContext.searchMode ||
+      queryContext.restrictInSearchMode() ||
       queryContext.tokens.length != 1 ||
       queryContext.searchString.length == 1 ||
       queryContext.restrictSource ||
@@ -145,8 +146,8 @@ export class UrlbarProviderRestrictKeywordsAutofill extends UrlbarProvider {
 
     if (restrictSymbol && typedKeyword == aliasKeyword) {
       let result = new lazy.UrlbarResult({
-        type: UrlbarUtils.RESULT_TYPE.RESTRICT,
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        type: lazy.UrlbarShared.RESULT_TYPE.RESTRICT,
+        source: lazy.UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         heuristic: true,
         hideRowLabel: true,
         payload: {
@@ -189,8 +190,8 @@ export class UrlbarProviderRestrictKeywordsAutofill extends UrlbarProvider {
         )?.icon;
 
         return new lazy.UrlbarResult({
-          type: UrlbarUtils.RESULT_TYPE.RESTRICT,
-          source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+          type: lazy.UrlbarShared.RESULT_TYPE.RESTRICT,
+          source: lazy.UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
           hideRowLabel: true,
           autofill: {
             value,

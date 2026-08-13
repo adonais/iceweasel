@@ -168,7 +168,7 @@ class ShowSnackbarDetectorTest : LintDetectorTest() {
 
     @Test
     fun `GIVEN direct call to SnackbarHostState_showSnackbar THEN expect lint error`() {
-        lint().allowMissingSdk().files(
+        lint().files(
                 snackbarHostStateStub,
                 composableAnnotationStub,
                 kotlinxCoroutinesStubs,
@@ -178,7 +178,7 @@ class ShowSnackbarDetectorTest : LintDetectorTest() {
 
     @Test
     fun `GIVEN direct call to showSnackbar on a subclass THEN expect lint error`() {
-        lint().allowMissingSdk().files(
+        lint().files(
             snackbarHostStateStub,
             snackbarHostStateSubclassStub,
             composableAnnotationStub,
@@ -189,7 +189,7 @@ class ShowSnackbarDetectorTest : LintDetectorTest() {
 
     @Test
     fun `GIVEN call to displaySnackbar wrapper THEN expect clean`() {
-        lint().allowMissingSdk().files(
+        lint().files(
             snackbarHostStateStub,
             composableAnnotationStub,
             displaySnackbarStub,
@@ -200,7 +200,7 @@ class ShowSnackbarDetectorTest : LintDetectorTest() {
 
     @Test
     fun `GIVEN call to a different showSnackbar method THEN expect clean`() {
-        lint().allowMissingSdk().files(
+        lint().files(
             snackbarHostStateStub,
             composableAnnotationStub,
             kotlinxCoroutinesStubs,

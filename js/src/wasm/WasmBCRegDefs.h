@@ -327,9 +327,8 @@ struct AnyReg {
 #ifdef JS_PUNBOX64
         return AnyRegister(i64_.reg);
 #else
-        // The compiler is written so that this is never needed: any() is
-        // called on arbitrary registers for asm.js but asm.js does not have
-        // 64-bit ints.  For wasm, any() is called on arbitrary registers
+        // The compiler is written so that this is never needed.
+        // For wasm, any() is called on arbitrary registers
         // only on 64-bit platforms.
         MOZ_CRASH("AnyReg::any() on 32-bit platform");
 #endif
@@ -410,18 +409,18 @@ class BaseRegAlloc {
   // Notes on float register allocation.
   //
   // The general rule in SpiderMonkey is that float registers can alias double
-  // registers, but there are predicates to handle exceptions to that rule:
-  // hasUnaliasedDouble() and hasMultiAlias().  The way aliasing actually
-  // works is platform dependent and exposed through the aliased(n, &r)
-  // predicate, etc.
+  // registers, but there's a predicate to handle exceptions to that rule:
+  // hasMultiAlias().  The way aliasing actually works is platform dependent
+  // and exposed through the aliased(n, &r) predicate, etc.
   //
-  //  - hasUnaliasedDouble(): on ARM VFPv3-D32 there are double registers that
-  //    cannot be treated as float.
   //  - hasMultiAlias(): on ARM and MIPS a double register aliases two float
   //    registers.
   //
   // On some platforms (x86, x64, ARM64) but not all (ARM)
   // ScratchFloat32Register is the same as ScratchDoubleRegister.
+  //
+  // On ARM VFPv3-D32 there are double registers that cannot be treated as
+  // float.
   //
   // It's a basic invariant of the AllocatableRegisterSet that it deals
   // properly with aliasing of registers: if s0 or s1 are allocated then d0 is

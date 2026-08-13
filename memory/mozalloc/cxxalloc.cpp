@@ -2,18 +2,27 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#define MOZ_MEMORY_IMPL
-#include "mozmemory_wrap.h"
-#define MALLOC_FUNCS MALLOC_FUNCS_MALLOC
+#if defined(MOZ_MEMORY) && defined(IMPL_MFBT)
+#  define MOZ_MEMORY_IMPL
+#  include "mozmemory_wrap.h"
+#  define MALLOC_FUNCS MALLOC_FUNCS_MALLOC
 // See mozmemory_wrap.h for more details. Files that are part of libmozglue,
 // need to use _impl suffixes, which is becoming cumbersome. We'll have to use
 // something like a malloc.h wrapper and allow the use of the functions without
 // a _impl suffix. In the meanwhile, this is enough to get by for C++ code.
-#define MALLOC_DECL(name, return_type, ...) \
-  MOZ_MEMORY_API return_type name##_impl(__VA_ARGS__);
-#include "malloc_decls.h"
+#  define MALLOC_DECL(name, return_type, ...) \
+    MOZ_MEMORY_API return_type name##_impl(__VA_ARGS__);
+#  include "malloc_decls.h"
+#else
+// No libmozglue/jemalloc to forward to here (e.g. the RLBox wasm sandboxes):
+// fall back to the plain libc allocator, same as mozalloc.h's malloc_impl.
+#  include <cstdlib>
+#  define malloc_impl malloc
+#  define free_impl free
+#endif
 
 #include "mozilla/Attributes.h"
+#include "mozilla/Types.h"
 
 extern "C" MFBT_API void* moz_xmalloc(size_t size) MOZ_INFALLIBLE_ALLOCATOR;
 

@@ -5,18 +5,15 @@
 #ifndef TimerThread_h_
 #define TimerThread_h_
 
-#include "nsIObserver.h"
-#include "nsIRunnable.h"
-#include "nsIThread.h"
-
-#include "nsTimerImpl.h"
-#include "nsThreadUtils.h"
-
-#include "nsTArray.h"
-
 #include "mozilla/Monitor.h"
 #include "mozilla/ProfilerUtils.h"
 #include "mozilla/Span.h"
+#include "nsIObserver.h"
+#include "nsIRunnable.h"
+#include "nsIThread.h"
+#include "nsTArray.h"
+#include "nsThreadUtils.h"
+#include "nsTimerImpl.h"
 
 #if defined(XP_WIN)
 #  include <windows.h>

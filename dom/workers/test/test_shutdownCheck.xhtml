@@ -33,11 +33,20 @@ function checkWorker() {
   return false;
 }
 
-new Promise(resolve => {
+// This test synchronously enumerates the WorkerDebuggerManager right after
+// creating the worker and matches the relative script URL. The parent-process
+// RemoteWorkerDebugger registers asynchronously over IPC and reports the
+// absolute script URL, so force the local WorkerDebugger (bug 1944240). Remove
+// this pin (or the test) once the local WorkerDebugger mechanism is removed;
+// this legacy synchronous worker-introspection path still needs to be
+// modernized to the RemoteWorkerDebugger model.
+SpecialPowers.pushPrefEnv({
+  set: [["dom.worker.remoteDebugger.enabled", false]],
+}).then(() => new Promise(resolve => {
   var w = new Worker(URL);
   ok(checkWorker(), "We have the worker");
   w.onmessage = () => { resolve(); }
-}).then(() => {
+})).then(() => {
   info("Waiting...");
 
   // We don't know if the worker thread is able to shutdown when calling

@@ -67,7 +67,7 @@ const kSubviewEvents = ["ViewShowing", "ViewHiding"];
  * The current version. We can use this to auto-add new default widgets as necessary.
  * (would be const but isn't because of testing purposes)
  */
-var kVersion = 24;
+var kVersion = 25;
 
 /**
  * Buttons removed from built-ins by version they were removed. kVersion must be
@@ -182,6 +182,7 @@ var gUIStateBeforeReset = {
   drawInTitlebar: null,
   currentTheme: null,
   uiDensity: null,
+  uiDensityHadUserValue: null,
   autoTouchMode: null,
   sidebarPositionStart: null,
 };
@@ -377,10 +378,7 @@ var CustomizableUIInternal = {
         type: CustomizableUI.TYPE_TOOLBAR,
         overflowable: true,
         defaultPlacements: navbarPlacements,
-        verticalTabsDefaultPlacements: [
-          "firefox-view-button",
-          "alltabs-button",
-        ],
+        verticalTabsDefaultPlacements: ["alltabs-button", "ai-window-toggle"],
         defaultCollapsed: false,
       },
       true
@@ -403,10 +401,10 @@ var CustomizableUIInternal = {
       {
         type: CustomizableUI.TYPE_TOOLBAR,
         defaultPlacements: [
-          "firefox-view-button",
           "tabbrowser-tabs",
           "new-tab-button",
           "alltabs-button",
+          "ai-window-toggle",
         ],
         verticalTabsDefaultPlacements: [],
         defaultCollapsed: null,
@@ -850,6 +848,31 @@ var CustomizableUIInternal = {
         !navbarPlacements.includes("reset-pbm-toolbar-button")
       ) {
         navbarPlacements.push("reset-pbm-toolbar-button");
+      }
+    }
+
+    // Remove firefox view button for new profiles and users who have barely
+    // interacted with it (<=2 recorded clicks).
+    if (currentVersion < 25) {
+      let firefoxViewArea = CustomizableUI.verticalTabsEnabled
+        ? gSavedState.placements[CustomizableUI.AREA_NAVBAR]
+        : gSavedState.placements[CustomizableUI.AREA_TABSTRIP];
+      let defaultIndex = CustomizableUI.verticalTabsEnabled
+        ? firefoxViewArea?.indexOf("alltabs-button") - 1
+        : 0;
+      if (firefoxViewArea?.[defaultIndex] === "firefox-view-button") {
+        let shouldKeepFirefoxView = false;
+        try {
+          let { count } = JSON.parse(
+            Services.prefs.getStringPref("browser.firefox-view.button-clicks")
+          );
+          shouldKeepFirefoxView = count > 2;
+        } catch (e) {
+          console.error(e);
+        }
+        if (!shouldKeepFirefoxView) {
+          firefoxViewArea.splice(defaultIndex, 1);
+        }
       }
     }
   },
@@ -3953,14 +3976,14 @@ var CustomizableUIInternal = {
   /**
    * @see CustomizableUI.createWidget
    * @param {CustomizableUICreateWidgetProperties} aProperties
+   * @param {string} [aSource]
+   *   One of the CustomizableUI.SOURCE_* constants; defaults to
+   *   CustomizableUI.SOURCE_EXTERNAL.
    * @returns {string}
    *   The ID of the created widget.
    */
-  createWidget(aProperties) {
-    let widget = this.normalizeWidget(
-      aProperties,
-      CustomizableUI.SOURCE_EXTERNAL
-    );
+  createWidget(aProperties, aSource = CustomizableUI.SOURCE_EXTERNAL) {
+    let widget = this.normalizeWidget(aProperties, aSource);
     // XXXunf This should probably throw.
     if (!widget) {
       lazy.log.error("unable to normalize widget");
@@ -4500,6 +4523,12 @@ var CustomizableUIInternal = {
         kPrefCustomizationState
       );
       gUIStateBeforeReset.uiDensity = Services.prefs.getIntPref(kPrefUIDensity);
+      // browser.uidensity is sticky, so an explicit value equal to the default
+      // (normal density) still counts as a user value. Remember whether one was
+      // set so undoReset can faithfully restore the automatic (no user value)
+      // state rather than pinning the density to normal.
+      gUIStateBeforeReset.uiDensityHadUserValue =
+        Services.prefs.prefHasUserValue(kPrefUIDensity);
       gUIStateBeforeReset.autoTouchMode =
         Services.prefs.getBoolPref(kPrefAutoTouchMode);
       gUIStateBeforeReset.currentTheme = gSelectedTheme;
@@ -4607,6 +4636,7 @@ var CustomizableUIInternal = {
       drawInTitlebar,
       currentTheme,
       uiDensity,
+      uiDensityHadUserValue,
       autoTouchMode,
       autoHideDownloadsButton,
       sidebarPositionStart,
@@ -4619,7 +4649,11 @@ var CustomizableUIInternal = {
 
     Services.prefs.setCharPref(kPrefCustomizationState, uiCustomizationState);
     Services.prefs.setIntPref(kPrefDrawInTitlebar, drawInTitlebar);
-    Services.prefs.setIntPref(kPrefUIDensity, uiDensity);
+    if (uiDensityHadUserValue) {
+      Services.prefs.setIntPref(kPrefUIDensity, uiDensity);
+    } else {
+      Services.prefs.clearUserPref(kPrefUIDensity);
+    }
     Services.prefs.setBoolPref(kPrefAutoTouchMode, autoTouchMode);
     Services.prefs.setBoolPref(
       kPrefAutoHideDownloadsButton,
@@ -6168,11 +6202,14 @@ export var CustomizableUI = {
    *
    * @param {CustomizableUICreateWidgetProperties} aProperties
    *   The properties for the widget to be created.
+   * @param {string} [aSource]
+   *   One of the CustomizableUI.SOURCE_* constants; defaults to
+   *   CustomizableUI.SOURCE_EXTERNAL.
    * @returns {WidgetGroupWrapper|XULWidgetGroupWrapper}
    */
-  createWidget(aProperties) {
+  createWidget(aProperties, aSource) {
     return CustomizableUIInternal.wrapWidget(
-      CustomizableUIInternal.createWidget(aProperties)
+      CustomizableUIInternal.createWidget(aProperties, aSource)
     );
   },
   /**
@@ -7128,7 +7165,11 @@ function WidgetGroupWrapper(aWidget) {
   });
 
   this.__defineGetter__("areaType", function () {
-    let areaProps = gAreas.get(aWidget.currentArea);
+    let { currentArea } = aWidget;
+    if (!currentArea) {
+      return null;
+    }
+    let areaProps = gAreas.get(currentArea);
     return areaProps && areaProps.get("type");
   });
 

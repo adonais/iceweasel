@@ -2,18 +2,22 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* Each color uses its legacy value by default and, when browser.nova.enabled
-   is on, the refreshed value from the design-system palette. The legacy values
-   have no design-system token, so they stay literal. Kept in sync with
-   CONTAINER_COLORS (code / codeNova) in ContextualIdentityService. */
+/* Each container color carries a legacy literal (used when browser.nova.enabled
+   is off) and, when nova is on, refreshed design-system tokens. Kept in sync
+   with CONTAINER_COLORS in ContextualIdentityService: `code` matches the legacy
+   literal, `codeNova` matches the nova stroke shade (--color-<name>-40).
+
+   Under nova each container surface picks a dedicated palette shade:
+   --identity-fill-color   light 60 / dark 20  (URL-bar pill, menus, panel subviews,
+                                                preferences list, tab-row indicators)
+   --identity-stroke-color shade 40            (tab stroke, URL-bar badge, all-tabs indicator, preferences color swatches) */
 .identity-color-blue {
   --identity-tab-color: #37adff;
   --identity-icon-color: #37adff;
 
   @media -moz-pref("browser.nova.enabled") {
-    --identity-tab-color: light-dark(var(--color-blue-30), var(--color-blue-50));
-    --identity-icon-color: light-dark(var(--color-blue-30), var(--color-blue-50));
-    --identity-pill-color: light-dark(var(--color-blue-50), var(--color-blue-20));
+    --identity-fill-color: light-dark(var(--color-blue-60), var(--color-blue-20));
+    --identity-stroke-color: var(--color-blue-40);
   }
 }
 
@@ -22,9 +26,8 @@
   --identity-icon-color: #00c79a;
 
   @media -moz-pref("browser.nova.enabled") {
-    --identity-tab-color: light-dark(var(--color-cyan-30), var(--color-cyan-50));
-    --identity-icon-color: light-dark(var(--color-cyan-30), var(--color-cyan-50));
-    --identity-pill-color: light-dark(var(--color-cyan-50), var(--color-cyan-20));
+    --identity-fill-color: light-dark(var(--color-cyan-60), var(--color-cyan-20));
+    --identity-stroke-color: var(--color-cyan-40);
   }
 }
 
@@ -33,9 +36,8 @@
   --identity-icon-color: #51cd00;
 
   @media -moz-pref("browser.nova.enabled") {
-    --identity-tab-color: light-dark(var(--color-green-30), var(--color-green-50));
-    --identity-icon-color: light-dark(var(--color-green-30), var(--color-green-50));
-    --identity-pill-color: light-dark(var(--color-green-50), var(--color-green-20));
+    --identity-fill-color: light-dark(var(--color-green-60), var(--color-green-20));
+    --identity-stroke-color: var(--color-green-40);
   }
 }
 
@@ -44,9 +46,8 @@
   --identity-icon-color: #ffcb00;
 
   @media -moz-pref("browser.nova.enabled") {
-    --identity-tab-color: light-dark(var(--color-yellow-30), var(--color-yellow-50));
-    --identity-icon-color: light-dark(var(--color-yellow-30), var(--color-yellow-50));
-    --identity-pill-color: light-dark(var(--color-yellow-50), var(--color-yellow-20));
+    --identity-fill-color: light-dark(var(--color-yellow-60), var(--color-yellow-20));
+    --identity-stroke-color: var(--color-yellow-40);
   }
 }
 
@@ -55,9 +56,8 @@
   --identity-icon-color: #ff9f00;
 
   @media -moz-pref("browser.nova.enabled") {
-    --identity-tab-color: light-dark(var(--color-orange-30), var(--color-orange-50));
-    --identity-icon-color: light-dark(var(--color-orange-30), var(--color-orange-50));
-    --identity-pill-color: light-dark(var(--color-orange-50), var(--color-orange-20));
+    --identity-fill-color: light-dark(var(--color-orange-60), var(--color-orange-20));
+    --identity-stroke-color: var(--color-orange-40);
   }
 }
 
@@ -66,9 +66,8 @@
   --identity-icon-color: #ff613d;
 
   @media -moz-pref("browser.nova.enabled") {
-    --identity-tab-color: light-dark(var(--color-red-30), var(--color-red-50));
-    --identity-icon-color: light-dark(var(--color-red-30), var(--color-red-50));
-    --identity-pill-color: light-dark(var(--color-red-50), var(--color-red-20));
+    --identity-fill-color: light-dark(var(--color-red-60), var(--color-red-20));
+    --identity-stroke-color: var(--color-red-40);
   }
 }
 
@@ -77,9 +76,8 @@
   --identity-icon-color: #ff4bda;
 
   @media -moz-pref("browser.nova.enabled") {
-    --identity-tab-color: light-dark(var(--color-pink-30), var(--color-pink-50));
-    --identity-icon-color: light-dark(var(--color-pink-30), var(--color-pink-50));
-    --identity-pill-color: light-dark(var(--color-pink-50), var(--color-pink-20));
+    --identity-fill-color: light-dark(var(--color-pink-60), var(--color-pink-20));
+    --identity-stroke-color: var(--color-pink-40);
   }
 }
 
@@ -88,9 +86,8 @@
   --identity-icon-color: #af51f5;
 
   @media -moz-pref("browser.nova.enabled") {
-    --identity-tab-color: light-dark(var(--color-purple-30), var(--color-purple-50));
-    --identity-icon-color: light-dark(var(--color-purple-30), var(--color-purple-50));
-    --identity-pill-color: light-dark(var(--color-purple-50), var(--color-purple-20));
+    --identity-fill-color: light-dark(var(--color-purple-60), var(--color-purple-20));
+    --identity-stroke-color: var(--color-purple-40);
   }
 }
 
@@ -99,9 +96,8 @@
   --identity-icon-color: #764edd;
 
   @media -moz-pref("browser.nova.enabled") {
-    --identity-tab-color: light-dark(var(--color-violet-30), var(--color-violet-50));
-    --identity-icon-color: light-dark(var(--color-violet-30), var(--color-violet-50));
-    --identity-pill-color: light-dark(var(--color-violet-50), var(--color-violet-20));
+    --identity-fill-color: light-dark(var(--color-violet-60), var(--color-violet-20));
+    --identity-stroke-color: var(--color-violet-40);
   }
 }
 
@@ -110,9 +106,16 @@
   --identity-icon-color: currentColor;
 
   @media -moz-pref("browser.nova.enabled") {
-    --identity-tab-color: light-dark(var(--color-gray-30), var(--color-gray-50));
-    --identity-icon-color: light-dark(var(--color-gray-30), var(--color-gray-50));
-    --identity-pill-color: light-dark(var(--color-gray-50), var(--color-gray-20));
+    --identity-fill-color: light-dark(var(--color-gray-60), var(--color-gray-20));
+    --identity-stroke-color: var(--color-gray-40);
+  }
+}
+
+/* Tinted background shared by every nova container fill surface (URL-bar pill,
+   menus, panel subviews, preferences list, tab-row indicators). */
+@media -moz-pref("browser.nova.enabled") {
+  [class*="identity-color-"] {
+    --identity-fill-tint: color-mix(in srgb, var(--identity-fill-color) 15%, transparent);
   }
 }
 
@@ -183,7 +186,7 @@
   white-space: nowrap;
 
   @media -moz-pref("browser.nova.enabled") {
-    color: var(--identity-pill-color);
+    color: var(--identity-fill-color);
     /* Reorder hack; fix the DOM order and drop it once nova ships (Bug 2046350). */
     order: 2;
   }
@@ -198,15 +201,15 @@
     gap: var(--space-xxsmall);
     padding: var(--space-xxsmall) var(--space-small);
     border-radius: var(--border-radius-circle);
-    background-color: color-mix(in srgb, var(--identity-pill-color) 15%, transparent);
+    background-color: var(--identity-fill-tint);
     cursor: pointer;
 
     &:hover {
-      background-color: color-mix(in srgb, var(--identity-pill-color) 25%, transparent);
+      background-color: color-mix(in srgb, var(--identity-fill-color) 25%, transparent);
     }
 
     &:hover:active {
-      background-color: color-mix(in srgb, var(--identity-pill-color) 40%, transparent);
+      background-color: color-mix(in srgb, var(--identity-fill-color) 40%, transparent);
     }
   }
 }
@@ -219,6 +222,7 @@
   position: relative;
 
   @media -moz-pref("browser.nova.enabled") {
+    background-color: var(--identity-stroke-color);
     height: 4px;
     border-radius: 4px;
     /* From the favicon center to the close button center. */
@@ -271,7 +275,7 @@
     /* Reorder hack; fix the DOM order and drop it once nova ships (Bug 2046350). */
     order: 1;
     margin-inline-start: 0;
-    fill: var(--identity-pill-color);
+    fill: var(--identity-fill-color);
   }
 }
 
@@ -282,14 +286,14 @@
   /* When nova is enabled the container icon sits inside a round tinted
      background, mirroring the about:preferences#containers list. */
   @media -moz-pref("browser.nova.enabled") {
-    --menuitem-icon-fill: var(--identity-pill-color);
+    --menuitem-icon-fill: var(--identity-fill-color);
 
     > .menu-icon {
       width: var(--icon-size-large);
       height: var(--icon-size-large);
       padding: var(--space-xsmall);
       border-radius: var(--border-radius-circle);
-      background-color: color-mix(in srgb, var(--identity-pill-color) 15%, transparent);
+      background-color: var(--identity-fill-tint);
     }
   }
 }

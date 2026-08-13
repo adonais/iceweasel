@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.home.topsites
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -25,6 +24,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -38,7 +38,6 @@ import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -55,7 +54,6 @@ import mozilla.components.compose.base.PagerIndicator
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.modifier.rightClickable
 import mozilla.components.feature.top.sites.TopSite
-import mozilla.components.ui.colors.PhotonColors
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.ContextualMenu
 import org.mozilla.fenix.compose.Favicon
@@ -84,31 +82,27 @@ internal const val TOP_SITES_FAVICON_SIZE = 36
 /**
  * A list of top sites.
  *
- * @param topSites List of [TopSite] to display.
- * @param topSiteColors The color set defined by [TopSiteColors] used to style a top site.
+ * @param state [TopSiteState] describing the top sites to display.
  * @param interactor The interactor which handles user actions with the widget.
  * @param onTopSitesItemBound Invoked during the composition of a top site item.
  * @param onAddShortcutClicked Invoked when the user clicks on the "Add shortcut" tile.
  * @param isPager Whether the top sites should be rendered as a horizontally pageable pager.
- * @param showAddShortcut Whether to display the "Add shortcut" tile after the top sites.
  */
 @Composable
-fun TopSites(
-    topSites: List<TopSite>,
-    topSiteColors: TopSiteColors = TopSiteColors.colors(),
+internal fun TopSites(
+    state: TopSiteState,
     interactor: TopSiteInteractor,
     onTopSitesItemBound: () -> Unit,
     onAddShortcutClicked: () -> Unit,
     isPager: Boolean = false,
-    showAddShortcut: Boolean = false,
 ) {
     TopSites(
-        topSites = topSites,
-        topSiteColors = topSiteColors,
+        topSites = state.topSites,
+        topSiteColors = state.colors,
         onTopSiteClick = { topSite ->
             interactor.onSelectTopSite(
                 topSite = topSite,
-                position = topSites.indexOf(topSite),
+                position = state.topSites.indexOf(topSite),
             )
         },
         onTopSiteLongClick = interactor::onTopSiteLongClicked,
@@ -121,7 +115,7 @@ fun TopSites(
         onTopSitesItemBound = onTopSitesItemBound,
         onAddShortcutClicked = onAddShortcutClicked,
         isPager = isPager,
-        showAddShortcut = showAddShortcut,
+        showAddShortcut = state.showAddShortcut,
     )
 }
 
@@ -517,10 +511,10 @@ fun TopSiteItem(
                             .size(16.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Image(
+                        Icon(
                             painter = painterResource(id = iconsR.drawable.mozac_ic_pin_8),
-                            colorFilter = ColorFilter.tint(PhotonColors.LightGrey80),
                             contentDescription = null,
+                            tint = MaterialTheme.colorScheme.secondary,
                         )
                     }
                 }

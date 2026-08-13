@@ -116,7 +116,7 @@ class gaussian_distribution : random_internal::gaussian_distribution_base {
     result_type stddev_;
 
     static_assert(
-        std::is_floating_point<RealType>::value,
+        std::is_floating_point_v<RealType>,
         "Class-template absl::gaussian_distribution<> must be parameterized "
         "using a floating-point type.");
   };
@@ -244,7 +244,7 @@ inline double gaussian_distribution_base::zignor(
         bits);  // U(-1, 1)
     const double x = j * zg_.x[i];
 
-    // Retangular box. Handles >97% of all cases.
+    // Rectangular box. Handles >97% of all cases.
     // For any given box, this handles between 75% and 99% of values.
     // Equivalent to U(01) < (x[i+1] / x[i]), and when i == 0, ~93.5%
     if (std::abs(x) < zg_.x[i + 1]) {

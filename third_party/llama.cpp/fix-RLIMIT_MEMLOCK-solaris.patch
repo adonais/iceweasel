@@ -1,16 +1,15 @@
-diff --git a/fix-RLIMIT_MEMLOCK-solaris.patch b/fix-RLIMIT_MEMLOCK-solaris.patch
-new file mode 100644
-index 0000000000..e69de29bb2
 diff --git a/src/llama-mmap.cpp b/src/llama-mmap.cpp
-index c5f8a28bb3..519e81bf5a 100644
+index 0e4c620c5dd4..44c0745ff16d 100644
 --- a/src/llama-mmap.cpp
 +++ b/src/llama-mmap.cpp
-@@ -478,7 +478,7 @@
+@@ -657,8 +657,8 @@ struct llama_mlock::impl {
  
          char* errmsg = std::strerror(errno);
          bool suggest = (errno == ENOMEM);
--#if defined(TARGET_OS_VISION) || defined(TARGET_OS_TV) || defined(_AIX)
-+#if defined(TARGET_OS_VISION) || defined(TARGET_OS_TV) || defined(_AIX) || defined(__sun__)
-         // visionOS/tvOS dont't support RLIMIT_MEMLOCK
-         // Skip resource limit checks on visionOS/tvOS
+-#if defined(TARGET_OS_VISION) || defined(TARGET_OS_TV) || defined(_AIX) || defined(__HAIKU__)
+-        // visionOS/tvOS/Haiku don't support RLIMIT_MEMLOCK
++#if defined(TARGET_OS_VISION) || defined(TARGET_OS_TV) || defined(_AIX) || defined(__HAIKU__) || defined(__sun__)
++        // visionOS/tvOS/Haiku/Solaris don't support RLIMIT_MEMLOCK
+         // Skip resource limit checks on these platforms
          suggest = false;
+ #else

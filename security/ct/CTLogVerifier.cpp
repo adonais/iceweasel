@@ -9,10 +9,10 @@
 #include "CTSerialization.h"
 #include "CertVerifier.h"
 #include "hasht.h"
+#include "mozilla/glean/SecurityCtMetrics.h"
 #include "mozpkix/Result.h"
 #include "mozpkix/pkixnss.h"
 #include "mozpkix/pkixutil.h"
-#include "mozilla/glean/SecurityCtMetrics.h"
 
 using namespace mozilla::pkix;
 

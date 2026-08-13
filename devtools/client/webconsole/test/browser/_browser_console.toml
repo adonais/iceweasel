@@ -100,6 +100,8 @@ skip-if = [
 
 ["browser_console_open_or_focus.js"]
 
+["browser_console_origin_filters.js"]
+
 ["browser_console_restore.js"]
 skip-if = [
   "verify",

@@ -162,6 +162,22 @@ html[dir="rtl"] .dbg-img.dbg-img-more-tabs {
   -moz-context-properties: fill, stroke;
 }
 
+.dbg-img.dbg-img-eye-opened {
+  background-image: url(chrome://devtools/skin/images/eye-opened.svg);
+  background-size: 14px 14px;
+  background-color: transparent !important;
+  fill: var(--theme-icon-color);
+  -moz-context-properties: fill, stroke;
+}
+
+.dbg-img.dbg-img-eye-closed {
+  background-image: url(chrome://devtools/skin/images/eye-closed.svg);
+  background-size: 14px 14px;
+  background-color: transparent !important;
+  fill: var(--theme-icon-color);
+  -moz-context-properties: fill, stroke;
+}
+
 .dbg-img.dbg-img-removeAll {
   mask-image: url(chrome://devtools/skin/images/clear.svg);
 }

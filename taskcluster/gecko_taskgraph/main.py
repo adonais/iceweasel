@@ -32,16 +32,9 @@ from gecko_taskgraph.files_changed import get_locally_changed_files
 
 
 def format_taskgraph_yaml(taskgraph):
-    from taskgraph.util.readonlydict import ReadOnlyDict
-
     class TGDumper(yaml.SafeDumper):
         def ignore_aliases(self, data):
             return True
-
-        def represent_ro_dict(self, data):
-            return self.represent_dict(dict(data))
-
-    TGDumper.add_representer(ReadOnlyDict, TGDumper.represent_ro_dict)
 
     return yaml.dump(taskgraph.to_json(), Dumper=TGDumper, default_flow_style=False)
 

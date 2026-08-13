@@ -79,6 +79,9 @@ static constexpr FloatRegister ft9{FloatRegisters::f29};
 static constexpr FloatRegister ft10{FloatRegisters::f30};
 static constexpr FloatRegister ft11{FloatRegisters::f31};
 
+static constexpr Register InvalidReg{};
+static constexpr FloatRegister InvalidFloatReg{};
+
 static constexpr Register StackPointer{Registers::sp};
 static constexpr Register FramePointer{Registers::fp};
 static constexpr Register ReturnReg{Registers::a0};
@@ -91,10 +94,9 @@ static constexpr FloatRegister ReturnFloat32Reg{FloatRegisters::fa0,
                                                 FloatRegisters::Single};
 static constexpr FloatRegister ReturnDoubleReg{FloatRegisters::fa0};
 #ifdef ENABLE_WASM_SIMD
-static constexpr FloatRegister ReturnSimd128Reg{FloatRegisters::invalid_reg};
-static constexpr FloatRegister ScratchSimd128Reg{FloatRegisters::invalid_reg};
+static constexpr FloatRegister ReturnSimd128Reg = InvalidFloatReg;
+static constexpr FloatRegister ScratchSimd128Reg = InvalidFloatReg;
 #endif
-static constexpr FloatRegister InvalidFloatReg{};
 
 static constexpr FloatRegister ScratchFloat32Reg{FloatRegisters::ft10,
                                                  FloatRegisters::Single};
@@ -113,7 +115,6 @@ static constexpr Register CallTempReg2{Registers::t2};
 static constexpr Register CallTempReg3{Registers::t3};
 static constexpr Register CallTempReg4{Registers::a6};
 static constexpr Register CallTempReg5{Registers::a7};
-static constexpr Register InvalidReg{Registers::invalid_reg};
 static constexpr Register CallTempNonArgRegs[] = {t0, t1, t2, t3};
 static const uint32_t NumCallTempNonArgRegs = std::size(CallTempNonArgRegs);
 

@@ -613,10 +613,6 @@ class MOZ_STACK_CLASS ParseContext : public Nestable<ParseContext> {
 
   bool superScopeNeedsHomeObject() const { return superScopeNeedsHomeObject_; }
 
-  bool useAsmOrInsideUseAsm() const {
-    return sc_->isFunctionBox() && sc_->asFunctionBox()->useAsmOrInsideUseAsm();
-  }
-
   // A generator is marked as a generator before its body is parsed.
   GeneratorKind generatorKind() const {
     return sc_->isFunctionBox() ? sc_->asFunctionBox()->generatorKind()

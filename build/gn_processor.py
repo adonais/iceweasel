@@ -281,6 +281,7 @@ def filter_gn_config(path, gn_result, sandbox_vars, input_vars, gn_target):
             "cflags_objcc",
             "deps",
             "libs",
+            "frameworks",
             "output_name",
         ):
             spec[spec_attr] = raw_spec.get(spec_attr, [])
@@ -417,6 +418,19 @@ def process_gn_config(
                 "added, or you may need to re-run the "
                 "`GnConfigGen` step."
             )
+
+        # GN static_library targets are intended to produce real archives,
+        # whereas mozbuild static libraries are expanded into their object files
+        # by default, which is closer to GN source_set semantics. Using
+        # `NO_EXPAND_LIBS = True` preserves that archive boundary.
+        #
+        # Note that we only set NO_EXPAND_LIBS when FINAL_LIBRARY is not
+        # set. When FINAL_LIBRARY is set, we intentionally do not emit USE_LIBS
+        # for the targets' dependencies. Combined with NO_EXPAND_LIBS, this can
+        # cause mozbuild to attempt to produce real archives for GN targets that
+        # have no object files of their own, resulting in link failures.
+        if spec["type"] == "static_library" and "FINAL_LIBRARY" not in sandbox_vars:
+            context_attrs["NO_EXPAND_LIBS"] = True
 
         if spec["type"] == "shared_library":
             context_attrs["FORCE_SHARED_LIB"] = True
@@ -625,7 +639,7 @@ def process_gn_config(
             context_attrs["USE_LIBS"] = find_lib_deps(target_fullname)
 
         context_attrs["OS_LIBS"] = []
-        for lib in spec.get("libs", []):
+        for lib in spec.get("libs", []) + spec.get("frameworks", []):
             lib_name = os.path.splitext(lib)[0]
             if lib.endswith(".framework"):
                 context_attrs["OS_LIBS"] += ["-framework " + lib_name]

@@ -19,67 +19,68 @@ const CONTEXTUAL_IDENTITY_ENABLED_PREF = "privacy.userContext.enabled";
 //
 // Each color carries two codes: `code` is the legacy value used when
 // `browser.nova.enabled` is off, `codeNova` is the refreshed value used when it
-// is on. getContainerColorCode() and usercontext.css pick between them based on
-// the pref.
+// is on. getContainerColorCode() picks between them based on the pref. Under
+// nova `codeNova` is the design-system `--color-<name>-40` token, matching the
+// shade usercontext.css paints as the tab stroke (--identity-stroke-color).
 export const CONTAINER_COLORS = [
   {
     name: "gray",
     code: "#7c7c7d",
-    codeNova: "#b7b6ba",
+    codeNova: "#949297",
     l10nId: "user-context-color-gray",
   },
   {
     name: "yellow",
     code: "#ffcb00",
-    codeNova: "#f3a81e",
+    codeNova: "#db820e",
     l10nId: "user-context-color-yellow",
   },
   {
     name: "orange",
     code: "#ff9f00",
-    codeNova: "#ff9565",
+    codeNova: "#f4682c",
     l10nId: "user-context-color-orange",
   },
   {
     name: "red",
     code: "#ff613d",
-    codeNova: "#ff8998",
+    codeNova: "#ed566e",
     l10nId: "user-context-color-red",
   },
   {
     name: "pink",
     code: "#ff4bda",
-    codeNova: "#f585d3",
+    codeNova: "#db54bf",
     l10nId: "user-context-color-pink",
   },
   {
     name: "purple",
     code: "#af51f5",
-    codeNova: "#d490ff",
+    codeNova: "#b864ee",
     l10nId: "user-context-color-purple",
   },
   {
     name: "violet",
     code: "#764edd",
-    codeNova: "#b89cff",
+    codeNova: "#9871ff",
     l10nId: "user-context-color-violet",
   },
   {
     name: "blue",
     code: "#37adff",
-    codeNova: "#7bb2ff",
+    codeNova: "#5a87fd",
     l10nId: "user-context-color-blue",
   },
   {
     name: "cyan",
     code: "#00c79a",
-    codeNova: "#4cc4e1",
+    codeNova: "#10a4ca",
     l10nId: "user-context-color-cyan",
   },
   {
     name: "green",
     code: "#51cd00",
-    codeNova: "#4acca6",
+    codeNova: "#11ae84",
     l10nId: "user-context-color-green",
   },
 ];
@@ -739,15 +740,20 @@ _ContextualIdentityService.prototype = {
     let userContextId = tab.getAttribute("usercontextid");
     let identity = this.getPublicIdentityFromId(userContextId);
 
-    let prefix = "identity-color-";
-    /* Remove the existing container color highlight if it exists */
-    for (let className of tab.classList) {
-      if (className.startsWith(prefix)) {
+    /* Remove any existing container color/icon classes. */
+    for (let className of [...tab.classList]) {
+      if (
+        className.startsWith("identity-color-") ||
+        className.startsWith("identity-icon-")
+      ) {
         tab.classList.remove(className);
       }
     }
-    if (identity && identity.color) {
-      tab.classList.add(prefix + identity.color);
+    if (identity?.color) {
+      tab.classList.add("identity-color-" + identity.color);
+    }
+    if (identity?.icon) {
+      tab.classList.add("identity-icon-" + identity.icon);
     }
   },
 

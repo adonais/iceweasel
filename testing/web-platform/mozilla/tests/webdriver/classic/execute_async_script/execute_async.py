@@ -6,7 +6,9 @@ from webdriver.error import NoSuchAlertException
 
 
 @pytest.mark.parametrize("dialog_type", ["alert", "confirm", "prompt"])
-def test_no_abort_by_user_prompt_in_other_tab(session, inline, dialog_type):
+def test_no_abort_by_user_prompt_in_other_tab(
+    configuration, session, inline, dialog_type
+):
     original_handle = session.window_handle
     original_handles = session.handles
 
@@ -51,7 +53,7 @@ def test_no_abort_by_user_prompt_in_other_tab(session, inline, dialog_type):
     # delays in slow builds like CCOV or TSAN.
     wait = Poll(
         session,
-        timeout=15,
+        timeout=5 * configuration["timeout_multiplier"],
         ignored_exceptions=NoSuchAlertException,
         message="No user prompt with text 'foo' detected",
     )

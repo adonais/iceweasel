@@ -71,57 +71,66 @@ export function EditClocksPanel({
         )}
       </div>
       <ul className="clocks-edit-list">
-        {clockZones.map((clock, i) => (
-          <li
-            className="clocks-edit-item"
-            key={`${clock.timeZone}-${i}`}
-            tabIndex={0}
-          >
-            <div className="clocks-edit-top-row">
-              <span className="clocks-edit-city">
-                {clock.city || getCityFromTimeZone(clock.timeZone)}
-              </span>
-              <div className="clocks-edit-item-actions">
-                <moz-button
-                  className="clocks-edit-item-button clocks-edit-item-edit-button"
-                  type="icon ghost"
-                  size="small"
-                  iconSrc="chrome://global/skin/icons/edit-outline.svg"
-                  data-l10n-id="newtab-clock-widget-button-edit-clock"
-                  onClick={() => onEditClock(i)}
-                />
-                {clockZones.length > 1 && (
-                  <moz-button
-                    className="clocks-edit-item-button clocks-edit-item-remove-button"
-                    type="icon ghost"
-                    size="small"
-                    iconSrc="chrome://global/skin/icons/delete.svg"
-                    data-l10n-id="newtab-clock-widget-button-remove-clock"
-                    onClick={() => onRemoveClock(i)}
-                  />
-                )}
-              </div>
-            </div>
-            <span
-              aria-hidden={!clock.label}
-              className="clocks-edit-subtitle"
+        {clockZones.map((clock, i) => {
+          const city = clock.city || getCityFromTimeZone(clock.timeZone);
+          return (
+            <li
+              className="clocks-edit-item"
+              key={`${clock.timeZone}-${i}`}
+              tabIndex={0}
               data-l10n-id={
                 clock.label
-                  ? "newtab-clock-widget-label-nickname-with-value"
-                  : undefined
+                  ? "newtab-clock-widget-edit-item-with-nickname"
+                  : "newtab-clock-widget-edit-item"
               }
-              data-l10n-args={
-                clock.label
-                  ? JSON.stringify({
-                      nickname: clock.label,
-                    })
-                  : undefined
-              }
+              data-l10n-args={JSON.stringify(
+                clock.label ? { city, nickname: clock.label } : { city }
+              )}
             >
-              {clock.label ? null : " "}
-            </span>
-          </li>
-        ))}
+              <div className="clocks-edit-top-row">
+                <span className="clocks-edit-city">{city}</span>
+                <div className="clocks-edit-item-actions">
+                  <moz-button
+                    className="clocks-edit-item-button clocks-edit-item-edit-button"
+                    type="icon ghost"
+                    size="small"
+                    iconSrc="chrome://global/skin/icons/edit-outline.svg"
+                    data-l10n-id="newtab-clock-widget-button-edit-clock"
+                    onClick={() => onEditClock(i)}
+                  />
+                  {clockZones.length > 1 && (
+                    <moz-button
+                      className="clocks-edit-item-button clocks-edit-item-remove-button"
+                      type="icon ghost"
+                      size="small"
+                      iconSrc="chrome://global/skin/icons/delete.svg"
+                      data-l10n-id="newtab-clock-widget-button-remove-clock"
+                      onClick={() => onRemoveClock(i)}
+                    />
+                  )}
+                </div>
+              </div>
+              <span
+                aria-hidden="true"
+                className="clocks-edit-subtitle"
+                data-l10n-id={
+                  clock.label
+                    ? "newtab-clock-widget-label-nickname-with-value"
+                    : undefined
+                }
+                data-l10n-args={
+                  clock.label
+                    ? JSON.stringify({
+                        nickname: clock.label,
+                      })
+                    : undefined
+                }
+              >
+                {clock.label ? null : " "}
+              </span>
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

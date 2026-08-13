@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { PictureInPicture } = ChromeUtils.importESModule(
-  "resource://gre/modules/PictureInPicture.sys.mjs"
+  "moz-src:///toolkit/components/pictureinpicture/PictureInPicture.sys.mjs"
 );
 const { ShortcutUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/ShortcutUtils.sys.mjs"

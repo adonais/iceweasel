@@ -220,9 +220,7 @@ TEST(EncodeAPI, InvalidUVStrides) {
                              buf.get()),
                 &img)
           << "Unable to wrap vpx_image for format: " << img_fmt;
-      const bool is_420 =
-          (img.x_chroma_shift == 1 && img.y_chroma_shift == 1) ||
-          img_fmt == VPX_IMG_FMT_NV12;
+      const bool is_420 = img.x_chroma_shift == 1 && img.y_chroma_shift == 1;
       // In profiles 0 and 2, only 4:2:0 format is allowed. In profiles 1 and 3,
       // all other subsampling formats are allowed. In profiles 0 and 1, only
       // bit depth 8 is allowed. In profiles 2 and 3, only bit depths 10 and 12
@@ -3368,6 +3366,29 @@ TEST(EncodeAPI, PerceptualAQKMeansHeapOverflow) {
 
   vpx_img_free(img);
   ASSERT_EQ(vpx_codec_destroy(&enc), VPX_CODEC_OK);
+}
+
+// Reproduces a VP9 encoder assertion failure / SEGV crash caused by
+// superblock search failure under specific scaling and rate control scenarios.
+// Bug: 479149056
+TEST(EncodeAPI, VP9OssFuzz479149056) {
+  VP9Encoder encoder(3, 1, VPX_BITS_8, VPX_IMG_FMT_I422);
+  encoder.Configure(/*threads=*/2, /*width=*/33, /*height=*/341, VPX_CBR,
+                    VPX_DL_GOOD_QUALITY);
+  encoder.Encode(/*key_frame=*/true);
+  encoder.Encode(/*key_frame=*/false);
+  encoder.Encode(/*key_frame=*/false);
+  encoder.Configure(/*threads=*/14, /*width=*/29, /*height=*/177, VPX_VBR,
+                    VPX_DL_GOOD_QUALITY);
+  encoder.Encode(/*key_frame=*/false);
+  encoder.Configure(/*threads=*/0, /*width=*/33, /*height=*/337, VPX_CBR,
+                    VPX_DL_REALTIME);
+  encoder.Configure(/*threads=*/0, /*width=*/33, /*height=*/341, VPX_VBR,
+                    VPX_DL_GOOD_QUALITY);
+  encoder.Encode(/*key_frame=*/false);
+  encoder.Encode(/*key_frame=*/false);
+  encoder.Encode(/*key_frame=*/false);
+  encoder.Encode(/*key_frame=*/false);
 }
 #endif  // CONFIG_VP9_ENCODER
 

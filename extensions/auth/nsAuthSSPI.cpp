@@ -183,8 +183,9 @@ nsAuthSSPI::Init(const nsACString& aServiceName, uint32_t aServiceFlags,
   LOG(("  nsAuthSSPI::Init\n"));
 
   mIsFirst = true;
-  mCertDERLength = 0;
+  free(mCertDERData);
   mCertDERData = nullptr;
+  mCertDERLength = 0;
 
   // The caller must supply a service name to be used. (For why we now require
   // a service name for NTLM, see bug 487872.)
@@ -271,27 +272,132 @@ nsAuthSSPI::Init(const nsACString& aServiceName, uint32_t aServiceFlags,
   return NS_OK;
 }
 
+nsresult nsAuthSSPI::MakeChannelBindings(mozilla::UniqueFreePtr<char>& aBuffer,
+                                         uint32_t& aBufferLength) {
+  // String for end-point bindings.
+  const char end_point[] = "tls-server-end-point:";
+  const uint32_t end_point_length = sizeof(end_point) - 1;
+
+  // Default to SHA256 for compatibility, but detect SHA384 and SHA512
+  uint32_t hashAlgorithm = nsICryptoHash::SHA256;
+  uint32_t hashSize = 32;  // SHA256 hash size
+
+  // Compute the hash size.
+  [&]() {
+    if (!mozilla::StaticPrefs::network_auth_sspi_detect_hash()) {
+      // This check only exists to make sure that the hash algorithm check
+      // doesn't break previous working behaviour.
+      return;
+    }
+    using namespace mozilla::pkix;
+    Input certDER;
+
+    mozilla::pkix::Result pkixResult =
+        certDER.Init(static_cast<const uint8_t*>(mCertDERData), mCertDERLength);
+    if (pkixResult != Success) {
+      return;
+    }
+
+    BackCert cert(certDER, EndEntityOrCA::MustBeEndEntity, nullptr);
+    pkixResult = cert.Init();
+    if (pkixResult != Success) {
+      return;
+    }
+
+    // Parse the signature algorithm from the signed data
+    der::PublicKeyAlgorithm publicKeyAlg;
+    DigestAlgorithm digestAlg;
+    Reader signatureAlgorithmReader(cert.GetSignedData().algorithm);
+    pkixResult = der::SignatureAlgorithmIdentifierValue(
+        signatureAlgorithmReader, publicKeyAlg, digestAlg);
+
+    if (pkixResult != Success) {
+      return;
+    }
+    // Map digest algorithms to hash algorithms for Extended Protection
+    switch (digestAlg) {
+      case DigestAlgorithm::sha384:
+        hashAlgorithm = nsICryptoHash::SHA384;
+        hashSize = 48;  // SHA384 hash size
+        break;
+      case DigestAlgorithm::sha512:
+        hashAlgorithm = nsICryptoHash::SHA512;
+        hashSize = 64;  // SHA512 hash size
+        break;
+      case DigestAlgorithm::sha256:
+      default:
+        // Use SHA256 as default for compatibility
+        hashAlgorithm = nsICryptoHash::SHA256;
+        hashSize = 32;
+        break;
+    }
+  }();
+
+  // Create Endpoint Binding structure with correct size
+  SEC_CHANNEL_BINDINGS endpointBinding;
+  endpointBinding.dwInitiatorAddrType = 0;
+  endpointBinding.cbInitiatorLength = 0;
+  endpointBinding.dwInitiatorOffset = 0;
+  endpointBinding.dwAcceptorAddrType = 0;
+  endpointBinding.cbAcceptorLength = 0;
+  endpointBinding.dwAcceptorOffset = 0;
+  endpointBinding.cbApplicationDataLength = hashSize + end_point_length;
+  endpointBinding.dwApplicationDataOffset = sizeof(SEC_CHANNEL_BINDINGS);
+
+  aBufferLength = endpointBinding.cbApplicationDataLength +
+                  endpointBinding.dwApplicationDataOffset;
+  aBuffer.reset(static_cast<char*>(moz_xmalloc(aBufferLength)));
+
+  // Helper to write in the memory block that stores the CBT
+  char* sspi_cbt_ptr = aBuffer.get();
+
+  memcpy(sspi_cbt_ptr, &endpointBinding,
+         endpointBinding.dwApplicationDataOffset);
+  sspi_cbt_ptr += endpointBinding.dwApplicationDataOffset;
+
+  memcpy(sspi_cbt_ptr, end_point, end_point_length);
+  sspi_cbt_ptr += end_point_length;
+
+  nsAutoCString hashString;
+  nsresult rv = NS_ERROR_FAILURE;
+
+  nsCOMPtr<nsICryptoHash> crypto;
+  crypto = do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID, &rv);
+  if (NS_SUCCEEDED(rv)) {
+    rv = crypto->Init(hashAlgorithm);
+  }
+  if (NS_SUCCEEDED(rv)) {
+    rv = crypto->Update((unsigned char*)mCertDERData, mCertDERLength);
+  }
+  if (NS_SUCCEEDED(rv)) rv = crypto->Finish(false, hashString);
+
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  // Store the computed hash in memory right after the Endpoint
+  // structure and the "tls-server-end-point:" char array
+  memcpy(sspi_cbt_ptr, hashString.get(), hashSize);
+
+  return NS_OK;
+}
+
 // The arguments inToken and inTokenLen are used to pass in the server
 // certificate (when available) in the first call of the function. The
 // second time these arguments hold an input token.
 NS_IMETHODIMP
 nsAuthSSPI::GetNextToken(const void* inToken, uint32_t inTokenLen,
                          void** outToken, uint32_t* outTokenLen) {
-  // String for end-point bindings.
-  const char end_point[] = "tls-server-end-point:";
-  const int end_point_length = sizeof(end_point) - 1;
-
   SECURITY_STATUS rc;
   MS_TimeStamp ignored;
 
   DWORD ctxAttr, ctxReq = 0;
-  CtxtHandle* ctxIn;
+  CtxtHandle* ctxIn = nullptr;
   SecBufferDesc ibd, obd;
   // Optional second input buffer for the CBT (Channel Binding Token)
   SecBuffer ib[2], ob;
-  // Pointer to the block of memory that stores the CBT
-  char* sspi_cbt = nullptr;
-  SEC_CHANNEL_BINDINGS pendpoint_binding;
+  // Block of memory that stores the CBT
+  mozilla::UniqueFreePtr<char> sspi_cbt;
 
   LOG(("entering nsAuthSSPI::GetNextToken()\n"));
 
@@ -302,6 +408,10 @@ nsAuthSSPI::GetNextToken(const void* inToken, uint32_t inTokenLen,
 
   if (mServiceFlags & REQ_DELEGATE) ctxReq |= ISC_REQ_DELEGATE;
   if (mServiceFlags & REQ_MUTUAL_AUTH) ctxReq |= ISC_REQ_MUTUAL_AUTH;
+
+  ibd.ulVersion = SECBUFFER_VERSION;
+  ibd.cBuffers = 0;
+  ibd.pBuffers = ib;
 
   if (inToken) {
     if (mIsFirst) {
@@ -321,142 +431,11 @@ nsAuthSSPI::GetNextToken(const void* inToken, uint32_t inTokenLen,
         LOG(("Cannot restart authentication sequence!"));
         return NS_ERROR_UNEXPECTED;
       }
-      ctxIn = nullptr;
       // The certificate needs to be erased before being passed
       // to InitializeSecurityContextW().
       inToken = nullptr;
       inTokenLen = 0;
     } else {
-      ibd.ulVersion = SECBUFFER_VERSION;
-      ibd.cBuffers = 0;
-      ibd.pBuffers = ib;
-
-      // If we have stored a certificate, the Channel Binding Token
-      // needs to be generated and sent in the first input buffer.
-      if (mCertDERLength > 0) {
-        // Default to SHA256 for compatibility, but detect SHA384 and SHA512
-        uint32_t hashAlgorithm = nsICryptoHash::SHA256;
-        uint32_t hashSize = 32;  // SHA256 hash size
-
-        // Compute the hash size.
-        [&]() {
-          if (!mozilla::StaticPrefs::network_auth_sspi_detect_hash()) {
-            // This check only exists to make sure that the hash algorithm check
-            // doesn't break previous working behaviour.
-            return;
-          }
-          using namespace mozilla::pkix;
-          Input certDER;
-
-          mozilla::pkix::Result pkixResult = certDER.Init(
-              static_cast<const uint8_t*>(mCertDERData), mCertDERLength);
-          if (pkixResult != Success) {
-            return;
-          }
-
-          BackCert cert(certDER, EndEntityOrCA::MustBeEndEntity, nullptr);
-          pkixResult = cert.Init();
-          if (pkixResult != Success) {
-            return;
-          }
-
-          // Parse the signature algorithm from the signed data
-          der::PublicKeyAlgorithm publicKeyAlg;
-          DigestAlgorithm digestAlg;
-          Reader signatureAlgorithmReader(cert.GetSignedData().algorithm);
-          pkixResult = der::SignatureAlgorithmIdentifierValue(
-              signatureAlgorithmReader, publicKeyAlg, digestAlg);
-
-          if (pkixResult != Success) {
-            return;
-          }
-          // Map digest algorithms to hash algorithms for Extended Protection
-          switch (digestAlg) {
-            case DigestAlgorithm::sha384:
-              hashAlgorithm = nsICryptoHash::SHA384;
-              hashSize = 48;  // SHA384 hash size
-              break;
-            case DigestAlgorithm::sha512:
-              hashAlgorithm = nsICryptoHash::SHA512;
-              hashSize = 64;  // SHA512 hash size
-              break;
-            case DigestAlgorithm::sha256:
-            default:
-              // Use SHA256 as default for compatibility
-              hashAlgorithm = nsICryptoHash::SHA256;
-              hashSize = 32;
-              break;
-          }
-        }();
-
-        // Create Endpoint Binding structure with correct size
-        const int cbt_size = hashSize + end_point_length;
-        pendpoint_binding.dwInitiatorAddrType = 0;
-        pendpoint_binding.cbInitiatorLength = 0;
-        pendpoint_binding.dwInitiatorOffset = 0;
-        pendpoint_binding.dwAcceptorAddrType = 0;
-        pendpoint_binding.cbAcceptorLength = 0;
-        pendpoint_binding.dwAcceptorOffset = 0;
-        pendpoint_binding.cbApplicationDataLength = cbt_size;
-        pendpoint_binding.dwApplicationDataOffset =
-            sizeof(SEC_CHANNEL_BINDINGS);
-
-        // Then add it to the array of sec buffers accordingly.
-        ib[ibd.cBuffers].BufferType = SECBUFFER_CHANNEL_BINDINGS;
-        ib[ibd.cBuffers].cbBuffer = pendpoint_binding.cbApplicationDataLength +
-                                    pendpoint_binding.dwApplicationDataOffset;
-
-        sspi_cbt = (char*)moz_xmalloc(ib[ibd.cBuffers].cbBuffer);
-
-        // Helper to write in the memory block that stores the CBT
-        char* sspi_cbt_ptr = sspi_cbt;
-
-        ib[ibd.cBuffers].pvBuffer = sspi_cbt;
-        ibd.cBuffers++;
-
-        memcpy(sspi_cbt_ptr, &pendpoint_binding,
-               pendpoint_binding.dwApplicationDataOffset);
-        sspi_cbt_ptr += pendpoint_binding.dwApplicationDataOffset;
-
-        memcpy(sspi_cbt_ptr, end_point, end_point_length);
-        sspi_cbt_ptr += end_point_length;
-
-        nsAutoCString hashString;
-        nsresult rv = NS_ERROR_FAILURE;
-
-        nsCOMPtr<nsICryptoHash> crypto;
-        crypto = do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID, &rv);
-        if (NS_SUCCEEDED(rv)) {
-          rv = crypto->Init(hashAlgorithm);
-        }
-        if (NS_SUCCEEDED(rv)) {
-          rv = crypto->Update((unsigned char*)mCertDERData, mCertDERLength);
-        }
-        if (NS_SUCCEEDED(rv)) rv = crypto->Finish(false, hashString);
-
-        if (NS_FAILED(rv)) {
-          free(mCertDERData);
-          mCertDERData = nullptr;
-          mCertDERLength = 0;
-          free(sspi_cbt);
-          return rv;
-        }
-
-        // Store the computed hash in memory right after the Endpoint
-        // structure and the "tls-server-end-point:" char array
-        memcpy(sspi_cbt_ptr, hashString.get(), hashSize);
-
-        // Free memory used to store the server certificate
-        free(mCertDERData);
-        mCertDERData = nullptr;
-        mCertDERLength = 0;
-      }  // End of CBT computation.
-
-      // We always need this SECBUFFER.
-      ib[ibd.cBuffers].BufferType = SECBUFFER_TOKEN;
-      ib[ibd.cBuffers].cbBuffer = inTokenLen;
-      ib[ibd.cBuffers].pvBuffer = (void*)inToken;
-      ibd.cBuffers++;
       ctxIn = &mCtxt;
     }
   } else {  // First time and without a token (no server certificate)
@@ -468,8 +447,34 @@ nsAuthSSPI::GetNextToken(const void* inToken, uint32_t inTokenLen,
       LOG(("Cannot restart authentication sequence!"));
       return NS_ERROR_UNEXPECTED;
     }
-    ctxIn = nullptr;
     mIsFirst = false;
+  }
+
+  // If we have stored a certificate, the Channel Binding Token needs to be
+  // generated and sent in the first input buffer. Kerberos carries the AP-REQ
+  // in the very first token, so for SPNEGO the bindings have to be attached
+  // from the initial call on. Raw NTLM instead carries them in message 3,
+  // generated on a continuation call, so that package keeps sending them only
+  // once a context exists.
+  bool haveContext = mCtxt.dwLower || mCtxt.dwUpper;
+  if (mCertDERLength > 0 && (haveContext || mPackage != PACKAGE_TYPE_NTLM)) {
+    uint32_t cbtLength = 0;
+    nsresult rv = MakeChannelBindings(sspi_cbt, cbtLength);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    ib[ibd.cBuffers].BufferType = SECBUFFER_CHANNEL_BINDINGS;
+    ib[ibd.cBuffers].cbBuffer = cbtLength;
+    ib[ibd.cBuffers].pvBuffer = sspi_cbt.get();
+    ibd.cBuffers++;
+  }
+
+  if (inToken) {
+    ib[ibd.cBuffers].BufferType = SECBUFFER_TOKEN;
+    ib[ibd.cBuffers].cbBuffer = inTokenLen;
+    ib[ibd.cBuffers].pvBuffer = (void*)inToken;
+    ibd.cBuffers++;
   }
 
   obd.ulVersion = SECBUFFER_VERSION;
@@ -485,14 +490,12 @@ nsAuthSSPI::GetNextToken(const void* inToken, uint32_t inTokenLen,
 
   rc = (sspi->InitializeSecurityContextW)(
       &mCred, ctxIn, sn, ctxReq, 0, SECURITY_NATIVE_DREP,
-      inToken ? &ibd : nullptr, 0, &mCtxt, &obd, &ctxAttr, &ignored);
+      ibd.cBuffers ? &ibd : nullptr, 0, &mCtxt, &obd, &ctxAttr, &ignored);
   if (rc == SEC_I_CONTINUE_NEEDED || rc == SEC_E_OK) {
     if (rc == SEC_E_OK)
       LOG(("InitializeSecurityContext: succeeded.\n"));
     else
       LOG(("InitializeSecurityContext: continue.\n"));
-
-    if (sspi_cbt) free(sspi_cbt);
 
     if (!ob.cbBuffer) {
       free(ob.pvBuffer);

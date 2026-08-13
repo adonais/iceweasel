@@ -51,6 +51,7 @@ dictionary OptionalEffectTiming {
 };
 
 dictionary ComputedEffectTiming : EffectTiming {
+  CSSNumberish          startTime;
   CSSNumberish          endTime;
   CSSNumberish          activeDuration;
   CSSNumberish?         localTime;

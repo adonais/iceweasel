@@ -5,14 +5,15 @@
 #ifndef ScriptPreloader_inl_h
 #define ScriptPreloader_inl_h
 
-#include "mozilla/Attributes.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/ResultExtensions.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/dom/ScriptSettings.h"
-#include "nsString.h"
-#include "nsTArray.h"
+#include "mozilla/ResultExtensions.h"
 
 #include <prio.h>
+
+#include "nsString.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 

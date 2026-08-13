@@ -5,12 +5,12 @@
 #ifndef mozilla_TRRLoadInfo_h
 #define mozilla_TRRLoadInfo_h
 
+#include "mozilla/OriginAttributes.h"
+#include "mozilla/dom/ClientInfo.h"
+#include "mozilla/dom/ServiceWorkerDescriptor.h"
 #include "nsILoadInfo.h"
 #include "nsIURI.h"
 #include "nsTArray.h"
-#include "mozilla/dom/ClientInfo.h"
-#include "mozilla/dom/ServiceWorkerDescriptor.h"
-#include "mozilla/OriginAttributes.h"
 
 namespace mozilla {
 namespace net {

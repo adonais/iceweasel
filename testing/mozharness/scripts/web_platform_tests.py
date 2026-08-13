@@ -366,7 +366,7 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
 
         mozinfo.find_and_update_from_json(dirs["abs_test_install_dir"])
 
-        raw_log_file, error_summary_file = self.get_indexed_logs(
+        raw_log_file, error_summary_file, _test_summary_file = self.get_indexed_logs(
             dirs["abs_blob_upload_dir"], "wpt"
         )
 
@@ -502,7 +502,7 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
 
         options = list(c.get("options", []))
 
-        if "wdspec" in test_types:
+        if "wdspec" in test_types or "aamtest" in test_types:
             geckodriver_path = self._query_geckodriver()
             if not geckodriver_path or not os.path.isfile(geckodriver_path):
                 self.fatal(

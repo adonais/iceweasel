@@ -5,9 +5,10 @@
 #ifndef mozilla_widget_WinModifierKeyState_h_
 #define mozilla_widget_WinModifierKeyState_h_
 
+#include <windows.h>
+
 #include "mozilla/EventForwards.h"
 #include "nsStringFwd.h"
-#include <windows.h>
 
 namespace mozilla {
 namespace widget {

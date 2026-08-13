@@ -4,11 +4,11 @@
 
 #include "LayerTreeOwnerTracker.h"
 
+#include <functional>
+
 #include "mozilla/StaticPtr.h"              // for StaticAutoPtr
 #include "mozilla/gfx/GPUChild.h"           // for GPUChild
 #include "mozilla/gfx/GPUProcessManager.h"  // for GPUProcessManager
-
-#include <functional>
 
 namespace mozilla {
 namespace layers {

@@ -53,6 +53,7 @@ namespace js::wasm {
 struct SwitchTarget;
 struct Handler;
 struct Handlers;
+class Instance;
 class ContStack;
 class ContObject;
 class ContStackArena;
@@ -267,8 +268,10 @@ class ContStack {
   // Trace the fields on this stack, but no the frames.
   void traceFields(JSTracer* trc);
   // Trace the fields and all frames for a suspended stack. This must be the
-  // resume base.
-  void traceSuspended(JSTracer* trc);
+  // resume base. When marking, |src| (the owning ContObject) also traces the
+  // inferred ContObject to Debugger.Frame edges via
+  // DebugAPI::traceWasmContFrame.
+  void traceSuspended(JSTracer* trc, JSObject* src);
   // Update all the frames for a moving GC. This must be the resume base.
   void updateSuspendedForMovingGC(Nursery& nursery);
 

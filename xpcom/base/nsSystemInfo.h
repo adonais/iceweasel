@@ -5,9 +5,9 @@
 #ifndef NSSYSTEMINFO_H_
 #define NSSYSTEMINFO_H_
 
+#include "mozilla/MozPromise.h"
 #include "nsHashPropertyBag.h"
 #include "nsISystemInfo.h"
-#include "mozilla/MozPromise.h"
 
 #ifdef MOZ_WIDGET_ANDROID
 #  include "mozilla/dom/PContent.h"

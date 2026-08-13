@@ -9,7 +9,7 @@
  *
  * ```
  *     let { keyValueService } =
- *       ChromeUtils.importESModule("resource://gre/modules/kvstore.sys.mjs");
+ *       ChromeUtils.importESModule("moz-src:///toolkit/components/kvstore/kvstore.sys.mjs");
  *     let database = await KeyValueService.getOrCreate(path, name);
  * ```
  *

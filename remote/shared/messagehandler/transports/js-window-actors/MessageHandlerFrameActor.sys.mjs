@@ -28,6 +28,7 @@ const FRAME_ACTOR_CONFIG = {
     },
   },
   allFrames: true,
+  safeForUntrustedWebProcess: true,
 };
 
 // Bug 1713440: Workaround until the MessageHandler

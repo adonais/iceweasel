@@ -13,56 +13,45 @@ namespace jit {
 
 class MoveEmitterMIPSShared {
  protected:
-  uint32_t inCycle_;
   MacroAssembler& masm;
 
   // Original stack push value.
   uint32_t pushedAtStart_;
 
-  // These store stack offsets to spill locations, snapshotting
-  // codegen->framePushed_ at the time they were allocated. They are -1 if no
+  // This stores a stack offset to a spill location, snapshotting
+  // `masm.framePushed()` at the time it was allocated. It is -1 if no
   // stack space has been allocated for that particular spill.
-  int32_t pushedAtCycle_;
-  int32_t pushedAtSpill_;
+  int32_t pushedAtCycle_ = -1;
 
-  // These are registers that are available for temporary use. They may be
-  // assigned InvalidReg. If no corresponding spill space has been assigned,
-  // then these registers do not need to be spilled.
-  Register spilledReg_;
-  FloatRegister spilledFloatReg_;
+  // Scratch register available for temporary use. It may be assigned
+  // InvalidReg.
+  Register tempReg_ = InvalidReg;
 
-  void assertDone();
+  uint32_t inCycle_ = 0;
+
+  void assertDone() { MOZ_ASSERT(inCycle_ == 0); }
   Register tempReg();
-  FloatRegister tempFloatReg();
-  Address cycleSlot(uint32_t slot, uint32_t subslot = 0) const;
-  int32_t getAdjustedOffset(const MoveOperand& operand);
-  Address getAdjustedAddress(const MoveOperand& operand);
+  Address cycleSlot(uint32_t slot) const;
+  int32_t getAdjustedOffset(const MoveOperand& operand) const;
+  Address getAdjustedAddress(const MoveOperand& operand) const;
 
   void emitMove(const MoveOperand& from, const MoveOperand& to);
   void emitInt32Move(const MoveOperand& from, const MoveOperand& to);
   void emitFloat32Move(const MoveOperand& from, const MoveOperand& to);
   virtual void emitDoubleMove(const MoveOperand& from,
                               const MoveOperand& to) = 0;
-  virtual void breakCycle(const MoveOperand& from, const MoveOperand& to,
-                          MoveOp::Type type, uint32_t slot) = 0;
+  virtual void breakCycle(const MoveOperand& to, MoveOp::Type type,
+                          uint32_t slot) = 0;
   virtual void completeCycle(const MoveOperand& from, const MoveOperand& to,
                              MoveOp::Type type, uint32_t slot) = 0;
   void emit(const MoveOp& move);
 
  public:
   explicit MoveEmitterMIPSShared(MacroAssembler& masm)
-      : inCycle_(0),
-        masm(masm),
-        pushedAtStart_(masm.framePushed()),
-        pushedAtCycle_(-1),
-        pushedAtSpill_(-1),
-        spilledReg_(InvalidReg),
-        spilledFloatReg_(InvalidFloatReg) {}
+      : masm(masm), pushedAtStart_(masm.framePushed()) {}
   ~MoveEmitterMIPSShared() { assertDone(); }
   void emit(const MoveResolver& moves);
   void finish();
-
-  void setScratchRegister(Register reg) {}
 };
 
 }  // namespace jit

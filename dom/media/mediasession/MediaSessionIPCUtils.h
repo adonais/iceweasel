@@ -7,6 +7,7 @@
 
 #include "MediaMetadata.h"
 #include "ipc/EnumSerializer.h"
+#include "ipc/IPCMessageUtils.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/dom/BindingIPCUtils.h"
 #include "mozilla/dom/DOMTypes.h"
@@ -58,51 +59,12 @@ struct ParamTraits<mozilla::dom::MediaImageData> {
   }
 };
 
-template <>
-struct ParamTraits<mozilla::dom::MediaMetadataBase> {
-  typedef mozilla::dom::MediaMetadataBase paramType;
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::MediaMetadataBase, mTitle,
+                                  mArtist, mAlbum, mUrl, mArtwork);
 
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mTitle);
-    WriteParam(aWriter, aParam.mArtist);
-    WriteParam(aWriter, aParam.mAlbum);
-    WriteParam(aWriter, aParam.mUrl);
-    WriteParam(aWriter, aParam.mArtwork);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    if (!ReadParam(aReader, &(aResult->mTitle)) ||
-        !ReadParam(aReader, &(aResult->mArtist)) ||
-        !ReadParam(aReader, &(aResult->mAlbum)) ||
-        !ReadParam(aReader, &(aResult->mUrl)) ||
-        !ReadParam(aReader, &(aResult->mArtwork))) {
-      return false;
-    }
-    return true;
-  }
-};
-
-template <>
-struct ParamTraits<mozilla::dom::PositionState> {
-  typedef mozilla::dom::PositionState paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mDuration);
-    WriteParam(aWriter, aParam.mPlaybackRate);
-    WriteParam(aWriter, aParam.mLastReportedPlaybackPosition);
-    WriteParam(aWriter, aParam.mPositionUpdatedTime);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    if (!ReadParam(aReader, &(aResult->mDuration)) ||
-        !ReadParam(aReader, &(aResult->mPlaybackRate)) ||
-        !ReadParam(aReader, &(aResult->mLastReportedPlaybackPosition)) ||
-        !ReadParam(aReader, &(aResult->mPositionUpdatedTime))) {
-      return false;
-    }
-    return true;
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::PositionState, mDuration,
+                                  mPlaybackRate, mLastReportedPlaybackPosition,
+                                  mPositionUpdatedTime);
 
 template <>
 struct ParamTraits<mozilla::dom::MediaSessionPlaybackState>

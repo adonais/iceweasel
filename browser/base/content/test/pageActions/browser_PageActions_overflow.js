@@ -234,7 +234,7 @@ add_task(async function test_disabledPageAction_hidden_in_protonOverflowMenu() {
     extension.sendMessage("hide-pageAction");
     await extension.awaitMessage("hide-pageAction:done");
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => !win.BrowserPageActions.panelButtonNodeForActionID(widgetId),
       "Wait for the disabled pageAction to be removed from the urlbar overflow menu"
     );

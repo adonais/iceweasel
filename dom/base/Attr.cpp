@@ -177,7 +177,8 @@ void Attr::SetValueInternal(const nsAString& aValue, ErrorResult& aRv) {
 
   RefPtr<nsAtom> nameAtom = mNodeInfo->NameAtom();
   aRv = element->SetAttr(mNodeInfo->NamespaceID(), nameAtom,
-                         mNodeInfo->GetPrefixAtom(), aValue, nullptr, true);
+                         mNodeInfo->GetPrefixAtom(), aValue, nullptr, true,
+                         IsKnownNewAttr::No);
 }
 
 bool Attr::Specified() const { return true; }

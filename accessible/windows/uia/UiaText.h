@@ -5,11 +5,10 @@
 #ifndef mozilla_a11y_UiaText_h_
 #define mozilla_a11y_UiaText_h_
 
-#include "objbase.h"
-#include "uiautomation.h"
-
 #include "IUnknownImpl.h"
 #include "mozilla/RefPtr.h"
+#include "objbase.h"
+#include "uiautomation.h"
 
 namespace mozilla::a11y {
 class Accessible;

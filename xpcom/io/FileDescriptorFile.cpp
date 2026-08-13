@@ -4,6 +4,7 @@
 
 #include "FileDescriptorFile.h"
 
+#include "SerializedLoadContext.h"
 #include "mozilla/ipc/FileDescriptorUtils.h"
 #include "mozilla/ipc/URIUtils.h"
 #include "mozilla/net/NeckoChild.h"
@@ -11,7 +12,6 @@
 #include "nsProxyRelease.h"
 #include "nsThreadUtils.h"
 #include "private/pprio.h"
-#include "SerializedLoadContext.h"
 
 namespace mozilla {
 namespace net {

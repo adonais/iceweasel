@@ -536,7 +536,7 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   void* allocSmall(size_t bytes, bool nurseryOwned, bool inGC);
   void* retrySmallAlloc(size_t requestedBytes, size_t sizeClass, bool inGC);
   bool allocNewSmallRegion(bool inGC);
-  void traceSmallAlloc(JSTracer* trc, void** allocp, const char* name);
+  void traceSmallAlloc(JSTracer* trc, void* alloc, const char* name);
   void markSmallNurseryOwnedBuffer(void* alloc, bool nurseryOwned);
   bool markSmallTenuredAlloc(void* alloc);
 
@@ -600,7 +600,7 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   bool canModifyAllocations(BufferChunk* chunk);
   bool isConcurrentMarking() const;
   bool isSweepingChunk(BufferChunk* chunk);
-  void traceMediumAlloc(JSTracer* trc, void** allocp, const char* name);
+  void traceMediumAlloc(JSTracer* trc, void* alloc, const char* name);
   bool isMediumBufferNurseryOwned(void* alloc) const;
   void markMediumNurseryOwnedBuffer(void* alloc, bool nurseryOwned);
   bool markMediumTenuredAlloc(void* alloc);

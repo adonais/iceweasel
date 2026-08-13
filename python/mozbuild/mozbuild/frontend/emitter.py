@@ -15,6 +15,7 @@ import mozpack.path as mozpath
 import toml
 from mach.mixin.logging import LoggingMixin
 from mozpack.chrome.manifest import Manifest
+from mozshellutil import quote
 
 from mozbuild.base import ExecutionSummary
 from mozbuild.util import HierarchicalStringList
@@ -1567,12 +1568,16 @@ class TreeMetadataEmitter(LoggingMixin):
                                 context,
                             )
                     else:
+                        # The file is matched against GENERATED_FILES by its
+                        # source name, which is unaffected by a rename at install
+                        # time (a (source, target_basename) tuple).
+                        source_basename = mozpath.basename(f.full_path)
                         # TODO: Bug 1254682 - The '/' check is to allow
                         # installing files generated from other directories,
                         # which is done occasionally for tests. However, it
                         # means we don't fail early if the file isn't actually
                         # created by the other moz.build file.
-                        if f.target_basename not in generated_files and "/" not in f:
+                        if source_basename not in generated_files and "/" not in f:
                             raise SandboxValidationError(
                                 (
                                     "Objdir file listed in %s not in "
@@ -1585,7 +1590,7 @@ class TreeMetadataEmitter(LoggingMixin):
                         if var.startswith("LOCALIZED_"):
                             # Further require that LOCALIZED_FILES are from
                             # LOCALIZED_GENERATED_FILES.
-                            if f.target_basename not in localized_generated_files:
+                            if source_basename not in localized_generated_files:
                                 raise SandboxValidationError(
                                     (
                                         "Objdir file listed in %s not in "
@@ -1596,7 +1601,7 @@ class TreeMetadataEmitter(LoggingMixin):
                                 )
                         # Additionally, don't allow LOCALIZED_GENERATED_FILES to be used
                         # in anything *but* LOCALIZED_FILES.
-                        elif f.target_basename in localized_generated_files:
+                        elif source_basename in localized_generated_files:
                             raise SandboxValidationError(
                                 (
                                     "Outputs of LOCALIZED_GENERATED_FILES cannot "
@@ -1685,7 +1690,7 @@ class TreeMetadataEmitter(LoggingMixin):
         if context.get("USE_INTEGRATED_CLANGCL_AS") is True:
             if context.config.substs.get("CC_TYPE") != "clang-cl":
                 raise SandboxValidationError("clang-cl is not available", context)
-            passthru.variables["AS"] = context.config.substs.get("CC")
+            passthru.variables["AS"] = quote(*context.config.substs.get("CC"))
             passthru.variables["AS_DASH_C_FLAG"] = "-c"
             passthru.variables["ASOUTOPTION"] = "-o "
 

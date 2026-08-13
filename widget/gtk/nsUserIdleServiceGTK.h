@@ -5,9 +5,9 @@
 #ifndef nsUserIdleServiceGTK_h_
 #define nsUserIdleServiceGTK_h_
 
-#include "nsUserIdleService.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/UniquePtr.h"
+#include "nsUserIdleService.h"
 
 class nsUserIdleServiceGTK;
 

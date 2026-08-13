@@ -31,6 +31,14 @@ export function initialSourcesState() {
     mutableBreakpointPositions: new Map(),
 
     /**
+     * Set(Source ID: string)
+     *
+     * This is a list of IDs for the style sheet sources which have been disabled and
+     * no longer have an impact on the page.
+     */
+    mutableDisabledStylesheetsIDs: new Set(),
+
+    /**
      * List of all breakable lines for original sources only.
      *
      * Map(source id => promise or array<int> : breakable line numbers>)
@@ -123,7 +131,6 @@ export function initialSourcesState() {
   };
   /* eslint-disable sort-keys */
 }
-
 function update(state = initialSourcesState(), action) {
   switch (action.type) {
     case "ADD_SOURCES":
@@ -253,6 +260,10 @@ function update(state = initialSourcesState(), action) {
 
     case "REMOVE_SOURCES": {
       return removeSourcesAndActors(state, action);
+    }
+
+    case "SET_STYLESHEET_VISIBILITY": {
+      return updateDisabledStyleSheets(state, action);
     }
   }
 
@@ -442,6 +453,23 @@ function insertSourceActors(state, action) {
     }
   }
 
+  return { ...state };
+}
+
+function updateDisabledStyleSheets(state, action) {
+  const { sourceId, isDisabled } = action;
+  const { mutableDisabledStylesheetsIDs } = state;
+  if (isDisabled) {
+    if (mutableDisabledStylesheetsIDs.has(sourceId)) {
+      return state;
+    }
+    mutableDisabledStylesheetsIDs.add(sourceId);
+  } else {
+    if (!mutableDisabledStylesheetsIDs.has(sourceId)) {
+      return state;
+    }
+    mutableDisabledStylesheetsIDs.delete(sourceId);
+  }
   return { ...state };
 }
 

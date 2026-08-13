@@ -3,7 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 .printSettingsBrowser {
-  width: 250px !important;
+  /* This matches the font used in print.html */
+  font: menu;
+  width: 20em !important;
 }
 
 .previewStack {

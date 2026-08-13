@@ -134,6 +134,23 @@
       inset-inline-end: var(--space-medium);
     }
   }
+
+  // Ensure images are centered and can visibly overflow into container padding.
+  // This is to ensure if an image size doesn't match the container we do not:
+  // 1. Stretch or shrink the image.
+  // 2. Stretch the card.
+  // 3. Clip the card visibly.
+  .img img {
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    transform: translate(-50%, -50%);
+
+    // inset-inline-start flips to the right edge under RTL, so flip the
+    // transform's horizontal direction to keep the image centered.
+    &:dir(rtl) {
+      transform: translate(50%, -50%);
+    }
+  }
 }
 
 .nova-enabled .ds-card.ds-spoc {
@@ -158,4 +175,9 @@
       font-size: var(--font-size-small);
     }
   }
+}
+
+// Bug 2039943: prevent the broken-image fallback from inheriting the active link color.
+.nova-enabled .ds-card .img-wrapper {
+  color: var(--newtab-primary-action-background);
 }

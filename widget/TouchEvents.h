@@ -7,9 +7,9 @@
 
 #include <stdint.h>
 
-#include "mozilla/dom/Touch.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/dom/Touch.h"
 #include "nsTArray.h"
 
 namespace mozilla {

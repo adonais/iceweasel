@@ -141,11 +141,12 @@ var generateRequestMethods = function (actorSpec, frontProto) {
     // Release methods should call the destroy function on return.
     if (spec.release) {
       const fn = frontProto[name];
-      frontProto[name] = function (...args) {
-        return fn.apply(this, args).then(result => {
-          this.destroy();
-          return result;
-        });
+      frontProto[name] = async function (...args) {
+        // Note that if release is oneway, fn.apply won't be async,
+        // nor return any value.
+        const result = await fn.apply(this, args);
+        this.destroy();
+        return result;
       };
     }
   });

@@ -3,9 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "gfxDrawable.h"
+
+#include "gfx2DGlue.h"
 #include "gfxContext.h"
 #include "gfxPlatform.h"
-#include "gfx2DGlue.h"
 #ifdef MOZ_X11
 #  include "cairo.h"
 #  include "gfxXlibSurface.h"

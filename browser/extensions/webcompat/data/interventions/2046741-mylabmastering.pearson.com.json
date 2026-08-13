@@ -1,0 +1,18 @@
+{
+  "label": "mylabmastering.pearson.com",
+  "bugs": {
+    "2046741": {
+      "issue": "unsupported-warning",
+      "matches": ["*://mylabmastering.pearson.com/*", "*://login.pearson.com/*"]
+    }
+  },
+  "css": {
+    "hide_unsupported_modal": ".osb-modal-content { display: none !important; }"
+  },
+  "interventions": [
+    {
+      "platforms": ["android"],
+      "css": ["hide_unsupported_modal"]
+    }
+  ]
+}

@@ -7,13 +7,12 @@
 #ifndef js_Symbol_h
 #define js_Symbol_h
 
-#include "js/shadow/Symbol.h"  // JS::shadow::Symbol::WellKnownAPILimit
-
 #include <stddef.h>  // size_t
 #include <stdint.h>  // uintptr_t, uint32_t
 
 #include "jstypes.h"  // JS_PUBLIC_API
 
+#include "js/shadow/Symbol.h"  // JS::shadow::Symbol::WellKnownAPILimit
 #include "js/TypeDecls.h"
 
 namespace JS {

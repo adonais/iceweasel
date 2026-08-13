@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstdint>
 #include <new>
+#include <numbers>
 
 #include "ErrorList.h"
 #include "js/Conversions.h"
@@ -900,7 +901,7 @@ DOMMatrix* DOMMatrix::Scale3dSelf(double aScale, double aOriginX,
 DOMMatrix* DOMMatrix::RotateFromVectorSelf(double aX, double aY) {
   const double angle = (aX == 0.0 && aY == 0.0) ? 0 : atan2(aY, aX);
 
-  if (fmod(angle, 2 * M_PI) == 0) {
+  if (fmod(angle, 2 * std::numbers::pi) == 0) {
     return this;
   }
 

@@ -5,10 +5,10 @@
 #ifndef mozilla_widget_HeadlessClipboard_h
 #define mozilla_widget_HeadlessClipboard_h
 
+#include "HeadlessClipboardData.h"
+#include "mozilla/UniquePtr.h"
 #include "nsBaseClipboard.h"
 #include "nsIClipboard.h"
-#include "mozilla/UniquePtr.h"
-#include "HeadlessClipboardData.h"
 
 namespace mozilla {
 namespace widget {

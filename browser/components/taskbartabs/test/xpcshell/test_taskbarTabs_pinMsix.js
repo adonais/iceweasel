@@ -13,10 +13,7 @@ ChromeUtils.defineESModuleGetters(this, {
   XPCOMUtils: "resource://gre/modules/XPCOMUtils.sys.mjs",
 });
 
-const gRegistry = new TaskbarTabsRegistry();
-
-const patchedSpy = sinon.stub();
-gRegistry.on(TaskbarTabsRegistry.events.patched, patchedSpy);
+const gRegistry = createInMemoryRegistry();
 
 sinon.stub(ShellService, "writeShortcutIcon").resolves();
 sinon.stub(ShellService, "shellService").value({
@@ -73,13 +70,6 @@ function checkCreateSecondaryTileCall(aTaskbarTab) {
     ),
     "Reasonable arguments were specified."
   );
-
-  Assert.equal(patchedSpy.callCount, 1, "A single patched event was emitted");
-  Assert.equal(
-    aTaskbarTab.shortcutRelativePath,
-    "taskbartab-" + aTaskbarTab.id,
-    "Correct relative path is saved to the taskbar tab"
-  );
 }
 
 add_task(async function test_pinCreatesDesktopEntry() {
@@ -87,7 +77,12 @@ add_task(async function test_pinCreatesDesktopEntry() {
   const taskbarTab = createTaskbarTab(gRegistry, parsedURI, 0);
   sinon.resetHistory();
 
-  await TaskbarTabsPin.pinTaskbarTab(taskbarTab, gRegistry);
+  Assert.equal(
+    await TaskbarTabsPin.pinTaskbarTab(taskbarTab),
+    "taskbartab-" + taskbarTab.id,
+    "Correct relative path is saved to the taskbar tab"
+  );
+
   checkCreateSecondaryTileCall(taskbarTab);
   gRegistry.removeTaskbarTab(taskbarTab.id);
 });
@@ -102,7 +97,12 @@ add_task(async function test_pinUnusualName() {
   });
   sinon.resetHistory();
 
-  await TaskbarTabsPin.pinTaskbarTab(invalidTaskbarTab, gRegistry);
+  Assert.equal(
+    await TaskbarTabsPin.pinTaskbarTab(invalidTaskbarTab),
+    "taskbartab-" + invalidTaskbarTab.id,
+    "Correct relative path is saved to the taskbar tab"
+  );
+
   checkCreateSecondaryTileCall(invalidTaskbarTab);
   gRegistry.removeTaskbarTab(invalidTaskbarTab.id);
 });
@@ -115,7 +115,7 @@ add_task(async function test_unpin() {
   });
 
   sinon.resetHistory();
-  await TaskbarTabsPin.unpinTaskbarTab(tt, gRegistry);
+  await TaskbarTabsPin.unpinTaskbarTab(tt);
 
   Assert.equal(
     ShellService.requestDeleteSecondaryTile.callCount,
@@ -127,10 +127,4 @@ add_task(async function test_unpin() {
     ["321cba-batrabksat"],
     "requestDeleteSecondaryTile was called with the value in shortcutRelativePath"
   );
-  Assert.equal(
-    tt.shortcutRelativePath,
-    null,
-    "Shortcut relative path was removed from the taskbar tab"
-  );
-  Assert.equal(patchedSpy.callCount, 1, "A single patched event was emitted");
 });

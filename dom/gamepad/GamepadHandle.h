@@ -79,7 +79,7 @@ class GamepadHandle {
   friend struct IPC::ParamTraits<mozilla::dom::GamepadHandle>;
 };
 
-static_assert(std::is_trivially_copyable<GamepadHandle>::value,
+static_assert(std::is_trivially_copyable_v<GamepadHandle>,
               "GamepadHandle must be trivially copyable");
 
 }  // namespace mozilla::dom

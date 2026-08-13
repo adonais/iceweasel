@@ -6,8 +6,8 @@
 #define MOZILLA_GFX_SOURCESURFACESHAREDDATA_H_
 
 #include "base/process.h"
-#include "mozilla/gfx/2D.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/gfx/2D.h"
 #include "mozilla/ipc/SharedMemoryHandle.h"
 #include "mozilla/ipc/SharedMemoryMapping.h"
 #include "nsExpirationTracker.h"

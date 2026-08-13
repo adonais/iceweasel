@@ -66,8 +66,8 @@ static_assert(RegExpFlag::Sticky == REGEXP_STICKY_FLAG,
  */
 RegExpObject* js::RegExpAlloc(JSContext* cx, NewObjectKind newKind,
                               HandleObject proto, HandleObject newTarget) {
-  Rooted<RegExpObject*> regexp(
-      cx, NewObjectWithClassProtoAndKind<RegExpObject>(cx, proto, newKind));
+  Rooted<RegExpObject*> regexp(cx, NewObjectWithClassProto<RegExpObject>(
+                                       cx, proto, {.newKind = newKind}));
   if (!regexp) {
     return nullptr;
   }
@@ -648,14 +648,11 @@ RegExpShared::RegExpShared(JSAtom* source, RegExpFlags flags)
 
 void RegExpShared::traceChildren(JSTracer* trc) {
   TraceCellHeaderEdge(trc, this, "RegExpShared source");
-  if (kind() == RegExpShared::Kind::Atom) {
-    TraceEdge(trc, &patternAtom_, "RegExpShared pattern atom");
-  } else {
-    for (auto& comp : compilationArray) {
-      TraceEdge(trc, &comp.jitCode, "RegExpShared code");
-    }
-    TraceEdge(trc, &groupsTemplate_, "RegExpShared groups template");
+  TraceEdge(trc, &patternAtom_, "RegExpShared pattern atom");
+  for (auto& comp : compilationArray) {
+    TraceEdge(trc, &comp.jitCode, "RegExpShared code");
   }
+  TraceEdge(trc, &groupsTemplate_, "RegExpShared groups template");
 }
 
 void RegExpShared::discardJitCode() {

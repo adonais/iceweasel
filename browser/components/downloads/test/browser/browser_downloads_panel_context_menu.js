@@ -419,3 +419,59 @@ async function prepareDownloads(downloads, overrideExtension = null) {
   // reversed order. Short, we just reverse the array to preserve the order.
   await task_addDownloads(downloads.reverse());
 }
+
+/**
+ * Verifies that "Copy Location" is absent from the context menu for a large
+ * data URI download whose source URL is cleared after completion.
+ */
+add_task(async function test_large_data_uri_hides_copy_location() {
+  await task_resetState();
+
+  const largeDataUri = "data:," + "a".repeat(10 * 1024 * 1024);
+  let publicList = await Downloads.getList(Downloads.PUBLIC);
+  let download = await Downloads.createDownload({
+    source: { url: largeDataUri },
+    target: { path: TestFiles.txt.path },
+  });
+  await publicList.add(download);
+  await download.start();
+
+  Assert.ok(
+    download.source.isDataURICleared,
+    "Large data URI should be marked as cleared after the download succeeds"
+  );
+  Assert.ok(
+    download.source.url.startsWith("data:") &&
+      download.source.url.endsWith(","),
+    "Large data URI body should be stripped, leaving only the header"
+  );
+
+  await task_openPanel();
+  let downloadsListBox = document.getElementById("downloadsListBox");
+  await BrowserTestUtils.waitForMutationCondition(
+    downloadsListBox,
+    { childList: true },
+    () => downloadsListBox.childElementCount == 1
+  );
+
+  let itemTarget = downloadsListBox.querySelector(
+    "richlistitem .downloadMainArea"
+  );
+  let contextMenu = await openContextMenu(itemTarget);
+
+  let copyLocationItem = contextMenu.querySelector(MENU_ITEMS.copyLocation);
+  ok(
+    !BrowserTestUtils.isVisible(copyLocationItem),
+    "Copy Location should not be visible after large data URI URL was cleared"
+  );
+
+  contextMenu.hidePopup();
+  let hiddenPromise = BrowserTestUtils.waitForEvent(
+    DownloadsPanel.panel,
+    "popuphidden"
+  );
+  DownloadsPanel.hidePanel();
+  await hiddenPromise;
+
+  await publicList.removeFinished();
+});

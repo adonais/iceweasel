@@ -78,7 +78,7 @@ add_task(async function test_display_keyword_without_query() {
 
   Assert.equal(
     result.type,
-    UrlbarUtils.RESULT_TYPE.KEYWORD,
+    UrlbarShared.RESULT_TYPE.KEYWORD,
     "Should have a keyword result"
   );
   Assert.equal(
@@ -102,7 +102,7 @@ add_task(async function test_keyword_using_get() {
 
   Assert.equal(
     result.type,
-    UrlbarUtils.RESULT_TYPE.KEYWORD,
+    UrlbarShared.RESULT_TYPE.KEYWORD,
     "Should have a keyword result"
   );
   Assert.equal(
@@ -133,7 +133,7 @@ add_task(async function test_keyword_using_get() {
 
   Assert.equal(
     result.type,
-    UrlbarUtils.RESULT_TYPE.KEYWORD,
+    UrlbarShared.RESULT_TYPE.KEYWORD,
     "Should have a keyword result"
   );
 
@@ -162,7 +162,7 @@ add_task(async function test_keyword_using_post() {
 
   Assert.equal(
     result.type,
-    UrlbarUtils.RESULT_TYPE.KEYWORD,
+    UrlbarShared.RESULT_TYPE.KEYWORD,
     "Should have a keyword result"
   );
   Assert.equal(
@@ -203,7 +203,7 @@ add_task(async function test_keyword_with_question_mark() {
   let result = await promise_first_result("question?");
   Assert.equal(
     result.type,
-    UrlbarUtils.RESULT_TYPE.KEYWORD,
+    UrlbarShared.RESULT_TYPE.KEYWORD,
     "Result should be a keyword"
   );
   Assert.equal(result.keyword, "question?", "Check search query");
@@ -211,7 +211,7 @@ add_task(async function test_keyword_with_question_mark() {
   result = await promise_first_result("question? something");
   Assert.equal(
     result.type,
-    UrlbarUtils.RESULT_TYPE.KEYWORD,
+    UrlbarShared.RESULT_TYPE.KEYWORD,
     "Result should be a keyword"
   );
   Assert.equal(result.keyword, "question?", "Check search query");
@@ -219,7 +219,7 @@ add_task(async function test_keyword_with_question_mark() {
   result = await promise_first_result("?question");
   Assert.equal(
     result.type,
-    UrlbarUtils.RESULT_TYPE.KEYWORD,
+    UrlbarShared.RESULT_TYPE.KEYWORD,
     "Result should be a keyword"
   );
   Assert.equal(result.keyword, "?question", "Check search query");
@@ -227,7 +227,7 @@ add_task(async function test_keyword_with_question_mark() {
   result = await promise_first_result("?question something");
   Assert.equal(
     result.type,
-    UrlbarUtils.RESULT_TYPE.KEYWORD,
+    UrlbarShared.RESULT_TYPE.KEYWORD,
     "Result should be a keyword"
   );
   Assert.equal(result.keyword, "?question", "Check search query");

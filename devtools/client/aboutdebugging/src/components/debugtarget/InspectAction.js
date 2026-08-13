@@ -45,7 +45,7 @@ class InspectAction extends PureComponent {
       dom.button(
         {
           onClick: () => this.inspect(),
-          className: "default-button  qa-debug-target-inspect-button",
+          className: "qa-debug-target-inspect-button",
           disabled,
           title,
         },

@@ -41,7 +41,7 @@ add_task(async function engagement() {
       Assert.equal(index, i, "The expected row index should be selected");
       let details = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
       info(`Checked row at index ${i}, result type is: ${details.type}`);
-      if (details.type == UrlbarUtils.RESULT_TYPE.URL) {
+      if (details.type == UrlbarShared.RESULT_TYPE.URL) {
         foundURLRow = true;
       }
     }

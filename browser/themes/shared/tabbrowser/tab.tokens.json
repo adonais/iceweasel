@@ -1,17 +1,35 @@
 {
-  "block": {
-    "margin": {
+  "margin": {
+    "block": {
       "value": "{dimension.4}"
     }
   },
   "border": {
     "radius": {
       "value": "var(--toolbarbutton-border-radius)"
+    },
+    "color": {
+      "accent": {
+        "override": true,
+        "value": "unset"
+      },
+      "selected": {
+        "leading": {
+          "override": true,
+          "value": "unset"
+        },
+        "trailing": {
+          "override": true,
+          "value": "unset"
+        }
+      }
     }
   },
   "box": {
     "shadow": {
-      "value": "{box-shadow.level-1}"
+      "selected": {
+        "value": "{box-shadow.level-1}"
+      }
     }
   },
   "attention": {

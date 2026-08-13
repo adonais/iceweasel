@@ -46,6 +46,8 @@ support-files = [
 
 ["test_expireAllFavicons.js"]
 
+["test_expireFaviconsForPage.js"]
+
 ["test_expire_migrated_icons.js"]
 
 ["test_expire_on_new_icons.js"]

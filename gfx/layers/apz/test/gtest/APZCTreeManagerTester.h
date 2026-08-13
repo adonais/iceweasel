@@ -12,10 +12,9 @@
 
 #include "APZTestAccess.h"
 #include "APZTestCommon.h"
-#include "gfxPlatform.h"
 #include "MockHitTester.h"
 #include "apz/src/WRHitTester.h"
-
+#include "gfxPlatform.h"
 #include "mozilla/layers/APZSampler.h"
 #include "mozilla/layers/APZUpdater.h"
 #include "mozilla/layers/WebRenderScrollDataWrapper.h"

@@ -16,38 +16,38 @@
  **************************************************************
  **************************************************************/
 
-#include "mozilla/dom/ContentParent.h"
-
 #include "nsWindowGfx.h"
-#include "nsAppRunner.h"
-#include <windows.h>
+
 #include <shellapi.h>
+#include <windows.h>
+
+#include "ImageRegion.h"
+#include "InProcessWinCompositorWidget.h"
+#include "WinUtils.h"
+#include "WinWindowOcclusionTracker.h"
+#include "WindowRenderer.h"
+#include "gfxConfig.h"
+#include "gfxContext.h"
+#include "gfxDWriteFonts.h"
 #include "gfxEnv.h"
 #include "gfxImageSurface.h"
 #include "gfxUtils.h"
-#include "gfxConfig.h"
-#include "gfxWindowsSurface.h"
 #include "gfxWindowsPlatform.h"
-#include "gfxDWriteFonts.h"
+#include "gfxWindowsSurface.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/SVGImageContext.h"
+#include "mozilla/dom/ContentParent.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/DataSurfaceHelpers.h"
 #include "mozilla/gfx/Tools.h"
-#include "mozilla/RefPtr.h"
-#include "mozilla/SVGImageContext.h"
-#include "nsGfxCIID.h"
-#include "gfxContext.h"
-#include "WinUtils.h"
-#include "WinWindowOcclusionTracker.h"
-#include "nsIWidgetListener.h"
-#include "nsDebug.h"
-#include "WindowRenderer.h"
-#include "mozilla/layers/WebRenderLayerManager.h"
-#include "ImageRegion.h"
-
-#include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
+#include "mozilla/layers/CompositorBridgeParent.h"
+#include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/webrender/RenderThread.h"
-#include "InProcessWinCompositorWidget.h"
+#include "nsAppRunner.h"
+#include "nsDebug.h"
+#include "nsGfxCIID.h"
+#include "nsIWidgetListener.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;

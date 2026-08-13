@@ -6,6 +6,7 @@
 
 #include <utility>
 
+#include "mozilla/Utf16.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/nsCSPContext.h"
 #include "nsCharTraits.h"
@@ -22,7 +23,7 @@ const nsDependentSubstring CSPViolationData::MaybeTruncateSample(
     // Don't cut off right before a low surrogate. Just include it.
     // TODO(bug 1935996): Should we also count previous surrogate pairs as
     // single characters?
-    if (NS_IS_LOW_SURROGATE(aSample[maybeTruncatedLength])) {
+    if (mozilla::IsLowSurrogate(aSample[maybeTruncatedLength])) {
       maybeTruncatedLength++;
     }
   }

@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { FormAutofillUtils } from "resource://gre/modules/shared/FormAutofillUtils.sys.mjs";
+import { AutofillDataTypes } from "resource://gre/modules/shared/AutofillDataTypes.sys.mjs";
 
 const { FIELD_STATES } = FormAutofillUtils;
 
@@ -356,20 +357,23 @@ export class AutofillTelemetry {
   static #creditCardTelemetry = new CreditCardTelemetry();
   static #addressTelemetry = new AddressTelemetry();
 
-  // const for `type` parameter used in the utility functions
-  static ADDRESS = "address";
-  static CREDIT_CARD = "creditcard";
-
-  static #getTelemetryByFieldDetail(fieldDetail) {
-    return FormAutofillUtils.isAddressField(fieldDetail.fieldName)
-      ? this.#addressTelemetry
-      : this.#creditCardTelemetry;
+  // Maps an AutofillDataType's id to its telemetry instance, or null for a type
+  // with no telemetry schema (callers no-op on null). The Glean metric
+  // category lives on each instance's
+  // EVENT_CATEGORY.
+  static #getTelemetryByType(typeId) {
+    switch (typeId) {
+      case AutofillDataTypes.ADDRESS:
+        return this.#addressTelemetry;
+      case AutofillDataTypes.CREDIT_CARD:
+        return this.#creditCardTelemetry;
+    }
+    return null;
   }
 
-  static #getTelemetryByType(type) {
-    return type == AutofillTelemetry.CREDIT_CARD
-      ? this.#creditCardTelemetry
-      : this.#addressTelemetry;
+  static #getTelemetryByFieldDetail(fieldDetail) {
+    const typeId = AutofillDataTypes.typeIdForFieldName(fieldDetail.fieldName);
+    return this.#getTelemetryByType(typeId);
   }
 
   /**
@@ -380,7 +384,7 @@ export class AutofillTelemetry {
    */
   static recordDoorhangerShown(type, object, flowId) {
     const telemetry = this.#getTelemetryByType(type);
-    telemetry.recordDoorhangerEvent("show", object, flowId);
+    telemetry?.recordDoorhangerEvent("show", object, flowId);
   }
 
   static recordDoorhangerClicked(type, method, object, flowId) {
@@ -399,7 +403,7 @@ export class AutofillTelemetry {
         break;
     }
 
-    telemetry.recordDoorhangerEvent(method, object, flowId);
+    telemetry?.recordDoorhangerEvent(method, object, flowId);
   }
 
   /**
@@ -411,17 +415,17 @@ export class AutofillTelemetry {
 
   static recordFormInteractionEvent(method, flowId, fieldDetails, data) {
     const telemetry = this.#getTelemetryByFieldDetail(fieldDetails[0]);
-    telemetry.recordFormInteractionEvent(method, flowId, fieldDetails, data);
+    telemetry?.recordFormInteractionEvent(method, flowId, fieldDetails, data);
   }
 
   static recordManageEvent(type, method) {
     const telemetry = this.#getTelemetryByType(type);
-    telemetry.recordManageEvent(method);
+    telemetry?.recordManageEvent(method);
   }
 
   static recordAutofillProfileCount(type, count) {
     const telemetry = this.#getTelemetryByType(type);
-    telemetry.recordAutofillProfileCount(count);
+    telemetry?.recordAutofillProfileCount(count);
   }
 
   static recordFormSubmissionHeuristicCount(label) {

@@ -9,14 +9,14 @@ def get_window_handle(session):
     )
 
 
-@pytest.mark.allow_system_access
+@pytest.mark.geckodriver(allow_system_access=True)
 def test_basic(session):
     with using_context(session, "chrome"):
         response = get_window_handle(session)
         assert_success(response, session.window_handle)
 
 
-@pytest.mark.allow_system_access
+@pytest.mark.geckodriver(allow_system_access=True)
 def test_different_handle_than_content_scope(session):
     response = get_window_handle(session)
     content_handle = assert_success(response)

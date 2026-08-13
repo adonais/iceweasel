@@ -3,10 +3,10 @@
 
 "use strict";
 
-add_task(async function test_detected_language() {
+add_task(async function test_lang_tag_resolution() {
   const { cleanup, tab } = await loadTestPage({
-    // This page will get its language changed by the test.
-    page: ENGLISH_PAGE_URL,
+    // This page is replaced by an inline per-lang-tag test page.
+    page: BLANK_PAGE_URL,
     autoDownloadFromRemoteSettings: true,
     languagePairs: [
       // Spanish
@@ -27,73 +27,64 @@ add_task(async function test_detected_language() {
     ],
   });
 
-  async function getDetectedLanguagesFor(langTag) {
-    await SpecialPowers.spawn(
-      tab.linkedBrowser,
-      [{ langTag }],
-      function changeLanguage({ langTag }) {
-        content.document.body.parentNode.setAttribute("lang", langTag);
-      }
-    );
-    // Clear out the cached values.
-    getTranslationsParent().languageState.detectedLanguages = null;
+  async function getLangTagsFor(langTag) {
     const { docLangTag, userLangTag, isDocLangTagSupported } =
-      await getTranslationsParent().getDetectedLanguages(langTag);
+      await getLangTagsForLangTagTestPage(tab.linkedBrowser, langTag);
     return { docLangTag, userLangTag, isDocLangTagSupported };
   }
 
   Assert.deepEqual(
-    await getDetectedLanguagesFor("es"),
+    await getLangTagsFor("es"),
     {
       docLangTag: "es",
       userLangTag: "en",
       isDocLangTagSupported: true,
     },
-    "Spanish is detected as a supported language."
+    "Spanish resolves to a supported language."
   );
 
   Assert.deepEqual(
-    await getDetectedLanguagesFor("chr"),
+    await getLangTagsFor("de"),
     {
-      docLangTag: "chr",
+      docLangTag: "de",
       userLangTag: "en",
       isDocLangTagSupported: false,
     },
-    "Cherokee is detected, but is not a supported language."
+    "German resolves to a valid but unsupported language."
   );
 
   Assert.deepEqual(
-    await getDetectedLanguagesFor("nb"),
+    await getLangTagsFor("nb"),
     {
       docLangTag: "nb",
       userLangTag: "en",
       isDocLangTagSupported: true,
     },
-    "Norwegian Bokmål is detected as a supported language."
+    "Norwegian Bokmål resolves to a supported language."
   );
 
   Assert.deepEqual(
-    await getDetectedLanguagesFor("nn"),
+    await getLangTagsFor("nn"),
     {
       docLangTag: "nn",
       userLangTag: "en",
       isDocLangTagSupported: false,
     },
-    "Norwegian Nynorsk is detected, but is not a supported language."
+    "Norwegian Nynorsk resolves to a valid but unsupported language."
   );
 
   Assert.deepEqual(
-    await getDetectedLanguagesFor("no"),
+    await getLangTagsFor("no"),
     {
       docLangTag: "nb",
       userLangTag: "en",
       isDocLangTagSupported: true,
     },
-    "The Norwegian macro language is detected, but it defaults to Norwegian Bokmål."
+    "The Norwegian macro language resolves to Norwegian Bokmål."
   );
 
   Assert.deepEqual(
-    await getDetectedLanguagesFor("zh-Hans"),
+    await getLangTagsFor("zh-Hans"),
     {
       docLangTag: "zh-Hans",
       userLangTag: "en",
@@ -103,7 +94,7 @@ add_task(async function test_detected_language() {
   );
 
   Assert.deepEqual(
-    await getDetectedLanguagesFor("zh"),
+    await getLangTagsFor("zh"),
     {
       docLangTag: "zh-Hans",
       userLangTag: "en",
@@ -113,7 +104,7 @@ add_task(async function test_detected_language() {
   );
 
   Assert.deepEqual(
-    await getDetectedLanguagesFor("zh-CN"),
+    await getLangTagsFor("zh-CN"),
     {
       docLangTag: "zh-Hans",
       userLangTag: "en",
@@ -123,7 +114,7 @@ add_task(async function test_detected_language() {
   );
 
   Assert.deepEqual(
-    await getDetectedLanguagesFor("zh-MY"),
+    await getLangTagsFor("zh-MY"),
     {
       docLangTag: "zh-Hans",
       userLangTag: "en",
@@ -133,7 +124,7 @@ add_task(async function test_detected_language() {
   );
 
   Assert.deepEqual(
-    await getDetectedLanguagesFor("zh-SG"),
+    await getLangTagsFor("zh-SG"),
     {
       docLangTag: "zh-Hans",
       userLangTag: "en",
@@ -143,7 +134,7 @@ add_task(async function test_detected_language() {
   );
 
   Assert.deepEqual(
-    await getDetectedLanguagesFor("zh-Hant"),
+    await getLangTagsFor("zh-Hant"),
     {
       docLangTag: "zh-Hant",
       userLangTag: "en",
@@ -153,7 +144,7 @@ add_task(async function test_detected_language() {
   );
 
   Assert.deepEqual(
-    await getDetectedLanguagesFor("zh-TW"),
+    await getLangTagsFor("zh-TW"),
     {
       docLangTag: "zh-Hant",
       userLangTag: "en",
@@ -163,7 +154,7 @@ add_task(async function test_detected_language() {
   );
 
   Assert.deepEqual(
-    await getDetectedLanguagesFor("zh-HK"),
+    await getLangTagsFor("zh-HK"),
     {
       docLangTag: "zh-Hant",
       userLangTag: "en",
@@ -173,7 +164,7 @@ add_task(async function test_detected_language() {
   );
 
   Assert.deepEqual(
-    await getDetectedLanguagesFor("zh-MO"),
+    await getLangTagsFor("zh-MO"),
     {
       docLangTag: "zh-Hant",
       userLangTag: "en",
@@ -183,7 +174,7 @@ add_task(async function test_detected_language() {
   );
 
   Assert.deepEqual(
-    await getDetectedLanguagesFor("zh-Hant-CN"),
+    await getLangTagsFor("zh-Hant-CN"),
     {
       docLangTag: "zh-Hant",
       userLangTag: "en",
@@ -193,7 +184,7 @@ add_task(async function test_detected_language() {
   );
 
   Assert.deepEqual(
-    await getDetectedLanguagesFor("zh-Hans-TW"),
+    await getLangTagsFor("zh-Hans-TW"),
     {
       docLangTag: "zh-Hans",
       userLangTag: "en",
@@ -203,7 +194,7 @@ add_task(async function test_detected_language() {
   );
 
   Assert.deepEqual(
-    await getDetectedLanguagesFor("es-Latn-ES"),
+    await getLangTagsFor("es-Latn-ES"),
     {
       docLangTag: "es",
       userLangTag: "en",
@@ -213,7 +204,7 @@ add_task(async function test_detected_language() {
   );
 
   Assert.deepEqual(
-    await getDetectedLanguagesFor("es-Hans"),
+    await getLangTagsFor("es-Hans"),
     {
       docLangTag: "es-Hans",
       userLangTag: "en",
@@ -223,7 +214,7 @@ add_task(async function test_detected_language() {
   );
 
   Assert.deepEqual(
-    await getDetectedLanguagesFor("spa"),
+    await getLangTagsFor("spa"),
     {
       docLangTag: "es",
       userLangTag: "en",
@@ -233,13 +224,13 @@ add_task(async function test_detected_language() {
   );
 
   Assert.deepEqual(
-    await getDetectedLanguagesFor("gibberish"),
+    await getLangTagsFor("gibberish"),
     {
       docLangTag: "en",
       userLangTag: null,
       isDocLangTagSupported: true,
     },
-    "A gibberish locale is discarded, and the language is detected."
+    "A gibberish locale is discarded, and the language is identified from the text sample."
   );
 
   return cleanup();

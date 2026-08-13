@@ -448,6 +448,7 @@ class PLDHashTable {
 
   uint32_t EntrySize() const { return mEntrySize; }
   uint32_t EntryCount() const { return mEntryCount; }
+  bool IsEmpty() const { return mEntryCount == 0; }
   uint32_t Generation() const { return mGeneration; }
 
   // To search for a |key| in |table|, call:

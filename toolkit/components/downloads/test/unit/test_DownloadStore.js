@@ -11,6 +11,7 @@
 
 ChromeUtils.defineESModuleGetters(this, {
   DownloadError: "resource://gre/modules/DownloadCore.sys.mjs",
+  DownloadSource: "resource://gre/modules/DownloadCore.sys.mjs",
   DownloadStore: "resource://gre/modules/DownloadStore.sys.mjs",
 });
 
@@ -386,21 +387,21 @@ add_task(async function test_save_reload_unknownProperties() {
 });
 
 /**
- * Saves insecure downloads to a file, then reloads the file and checks if they
- * are still there.
+ * Saves insecure and malware downloads to a file, then reloads the file and
+ * checks if they are still there.
  */
-add_task(async function test_insecure_download_deletion() {
-  let [listForSave, storeForSave] = await promiseNewListAndStore();
-  let [listForLoad, storeForLoad] = await promiseNewListAndStore(
-    storeForSave.path
-  );
+add_task(async function test_blocked_download_deletion() {
   let referrerInfo = new ReferrerInfo(
     Ci.nsIReferrerInfo.EMPTY,
     true,
     NetUtil.newURI(TEST_REFERRER_URL)
   );
 
-  const createTestDownload = async startTime => {
+  const createTestDownload = async (startTime, reputationCheckVerdict) => {
+    let [listForSave, storeForSave] = await promiseNewListAndStore();
+    let [listForLoad, storeForLoad] = await promiseNewListAndStore(
+      storeForSave.path
+    );
     // Create a valid test download and start it so it creates a file
     let targetFile = getTempFile(TEST_TARGET_FILE_NAME);
     let download = await Downloads.createDownload({
@@ -416,7 +417,7 @@ add_task(async function test_insecure_download_deletion() {
     download.hasBlockedData = true;
     download.error = DownloadError.fromSerializable({
       becauseBlockedByReputationCheck: true,
-      reputationCheckVerdict: "Insecure",
+      reputationCheckVerdict,
     });
     download.startTime = startTime;
 
@@ -431,25 +432,56 @@ add_task(async function test_insecure_download_deletion() {
     return [loadedDownloadList, targetPath];
   };
 
-  // Insecure downloads that are older than 5 minutes should get removed from
-  // the download-store and the file should get deleted. (360000 = 6 minutes)
-  let [loadedDownloadList1, targetPath1] = await createTestDownload(
-    new Date(Date.now() - 360000)
-  );
+  for (let { old, verdict } of [
+    {
+      old: true,
+      verdict: "Insecure",
+    },
+    {
+      old: false,
+      verdict: "Insecure",
+    },
+    {
+      old: true,
+      verdict: "Malware",
+    },
+    {
+      old: false,
+      verdict: "Malware",
+    },
+  ]) {
+    let date = old ? new Date(Date.now() - 660000) : new Date();
+    let expectRemoval = old;
+    let desc = `${old ? "Old" : "New"} ${verdict} download`;
+    let [loadedDownloadList, targetPath] = await createTestDownload(
+      date,
+      verdict
+    );
 
-  Assert.equal(loadedDownloadList1.length, 0, "Download should be removed");
-  Assert.ok(
-    !(await IOUtils.exists(targetPath1)),
-    "The file should have been deleted."
-  );
+    Assert.equal(
+      loadedDownloadList.length,
+      expectRemoval ? 0 : 1,
+      `${desc} should ${expectRemoval ? "be removed" : "be kept"}`
+    );
+    Assert.equal(
+      await IOUtils.exists(targetPath),
+      !expectRemoval,
+      `${desc} file should ${expectRemoval ? "have been deleted" : "be kept"}.`
+    );
+  }
+});
 
-  // Insecure downloads that are newer than 5 minutes should stay in the
-  // download store and the file should remain.
-  let [loadedDownloadList2, targetPath2] = await createTestDownload(new Date());
-
-  Assert.equal(loadedDownloadList2.length, 1, "Download should be kept");
-  Assert.ok(
-    await IOUtils.exists(targetPath2),
-    "The file should have not been deleted."
+/**
+ * Tests that a DownloadSource with a cleared URL (null) is not serializable,
+ * which prevents it from being written to the store.
+ */
+add_task(async function test_source_cleared_data_uri_not_serializable() {
+  let source = new DownloadSource();
+  source.url = "data:,";
+  source.isDataURICleared = true;
+  Assert.strictEqual(
+    source.toSerializable(),
+    null,
+    "DownloadSource.toSerializable() should return null when isDataURICleared is set"
   );
 });

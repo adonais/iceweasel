@@ -919,17 +919,7 @@ HttpObserverManager = {
         data.urgentSend = data.urgentSend && opts.blocking;
 
         if (registerFilter && opts.blocking && opts.policy) {
-          data.registerTraceableChannel = (policy, remoteTab) => {
-            // `channel` is a ChannelWrapper, which contains the actual
-            // underlying nsIChannel in `channel.channel`.  For startup events
-            // that are held until the extension background page is started,
-            // it is possible that the underlying channel can be closed and
-            // cleaned up between the time the event occurred and the time
-            // we reach this code.
-            if (channel.channel) {
-              channel.registerTraceableChannel(policy, remoteTab);
-            }
-          };
+          channel.registerTraceableChannel(opts.policy);
         }
 
         if (opts.requestHeaders) {

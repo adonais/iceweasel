@@ -551,9 +551,7 @@ async function emitTestEvent(root, browsingContext, monitoringEvents) {
   // The monitoring event is always emitted, regardless of the status of the
   // module. Wait for catching this event before resuming the assertions.
   info("Wait for the monitoring event");
-  await BrowserTestUtils.waitForCondition(
-    () => monitoringEvents.length >= count + 1
-  );
+  await TestUtils.waitForCondition(() => monitoringEvents.length >= count + 1);
   is(monitoringEvents.length, count + 1);
 }
 

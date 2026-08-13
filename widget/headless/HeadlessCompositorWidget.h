@@ -5,9 +5,8 @@
 #ifndef widget_headless_HeadlessCompositorWidget_h
 #define widget_headless_HeadlessCompositorWidget_h
 
-#include "mozilla/widget/CompositorWidget.h"
-
 #include "HeadlessWidget.h"
+#include "mozilla/widget/CompositorWidget.h"
 
 namespace mozilla {
 namespace widget {

@@ -6,29 +6,12 @@
 #include "MediaControlService.h"
 #include "gtest/gtest.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/gtest/ScopedPrefSetter.h"
 
 using namespace mozilla::dom;
 
 #define FIRST_CONTROLLER_ID 0
 #define SECOND_CONTROLLER_ID 1
-
-// This RAII class is used to set the audio focus management pref within a test
-// and automatically revert the change when a test ends, in order not to
-// interfere other tests unexpectedly.
-class AudioFocusManagmentPrefSetterRAII {
- public:
-  explicit AudioFocusManagmentPrefSetterRAII(bool aPrefValue) {
-    mOriginalValue = mozilla::Preferences::GetBool(mPrefName, false);
-    mozilla::Preferences::SetBool(mPrefName, aPrefValue);
-  }
-  ~AudioFocusManagmentPrefSetterRAII() {
-    mozilla::Preferences::SetBool(mPrefName, mOriginalValue);
-  }
-
- private:
-  const char* mPrefName = "media.audioFocus.management";
-  bool mOriginalValue;
-};
 
 TEST(AudioFocusManager, TestRequestAudioFocus)
 {
@@ -50,7 +33,7 @@ TEST(AudioFocusManager, TestAudioFocusNumsWhenEnableAudioFocusManagement)
   // audio focus at a time when the audio competing occurs. As the mechanism of
   // handling the audio competing involves multiple components, we can't test it
   // simply by using the APIs from AudioFocusManager.
-  AudioFocusManagmentPrefSetterRAII prefSetter(true);
+  mozilla::ScopedPrefSetter prefSetter("media.audioFocus.management", true);
 
   AudioFocusManager manager;
   ASSERT_TRUE(manager.GetAudioFocusNums() == 0);
@@ -77,7 +60,7 @@ TEST(AudioFocusManager, TestAudioFocusNumsWhenDisableAudioFocusManagement)
 {
   // When disabling audio focus management, we won't handle the audio competing,
   // so we allow multiple audio focus existing at the same time.
-  AudioFocusManagmentPrefSetterRAII prefSetter(false);
+  mozilla::ScopedPrefSetter prefSetter("media.audioFocus.management", false);
 
   AudioFocusManager manager;
   ASSERT_TRUE(manager.GetAudioFocusNums() == 0);

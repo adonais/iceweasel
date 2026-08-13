@@ -4,8 +4,8 @@
 #ifndef nsPrintSettingsServiceAndroid_h
 #define nsPrintSettingsServiceAndroid_h
 
-#include "nsPrintSettingsService.h"
 #include "nsIPrintSettings.h"
+#include "nsPrintSettingsService.h"
 
 class nsPrintSettingsServiceAndroid final : public nsPrintSettingsService {
  public:

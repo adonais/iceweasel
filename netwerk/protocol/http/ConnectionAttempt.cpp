@@ -3,8 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ConnectionAttempt.h"
-#include "nsHttpTransaction.h"
+
 #include "nsHttpConnectionInfo.h"
+#include "nsHttpTransaction.h"
 
 namespace mozilla::net {
 

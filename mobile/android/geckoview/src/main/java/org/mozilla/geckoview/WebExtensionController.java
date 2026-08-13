@@ -1064,6 +1064,9 @@ public class WebExtensionController {
     return webExtension;
   }
 
+  // ThreadConstraint false positive: runs in a GeckoResult continuation on the UI thread, which
+  // lint cannot model.
+  @SuppressLint("ThreadConstraint")
   /* package */ void handleMessage(
       final String event,
       final GeckoBundle bundle,
@@ -1497,6 +1500,9 @@ public class WebExtensionController {
     message.callback.resolveTo(response);
   }
 
+  // ThreadConstraint false positive: runs in a GeckoResult continuation on the UI thread, which
+  // lint cannot model.
+  @SuppressLint("ThreadConstraint")
   /* package */ void download(final Message message, final WebExtension extension) {
     final WebExtension.DownloadDelegate delegate = mListener.getDownloadDelegate(extension);
     if (delegate == null) {

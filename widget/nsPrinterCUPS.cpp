@@ -4,14 +4,14 @@
 
 #include "nsPrinterCUPS.h"
 
-#include "mozilla/gfx/2D.h"
 #include "mozilla/GkRustUtils.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_print.h"
-#include "nsTHashtable.h"
+#include "mozilla/gfx/2D.h"
 #include "nsPaper.h"
-#include "nsPrinterBase.h"
 #include "nsPrintSettingsImpl.h"
+#include "nsPrinterBase.h"
+#include "nsTHashtable.h"
 
 using namespace mozilla;
 using MarginDouble = mozilla::gfx::MarginDouble;

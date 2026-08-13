@@ -13,6 +13,7 @@
 #  include "MFCDMParent.h"
 #  include "MFContentProtectionManager.h"
 #  include "mozilla/EMEUtils.h"
+#  include "mozilla/glean/DomMediaPlatformsWmfMetrics.h"
 #endif
 
 #include "MFMediaEngineExtension.h"
@@ -29,6 +30,7 @@
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/gfx/DeviceManagerDx.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/ipc/UtilityMediaServiceParent.h"
 #include "mozilla/ipc/UtilityProcessChild.h"
 
@@ -261,6 +263,32 @@ void MFMediaEngineParent::HandleMediaEngineEvent(
       break;
     }
     case MF_MEDIA_ENGINE_EVENT_FIRSTFRAMEREADY: {
+#ifdef MOZ_WMF_CDM
+      // A produced frame means protected activation succeeded; refresh the
+      // readiness conditions and restore the recovery budget so a later
+      // transient failure on this playback is not constrained by earlier ones.
+      if (mProxyId) {
+        if (RefPtr<MFCDMParent> cdmParent =
+                MFCDMParent::GetCDMById(*mProxyId)) {
+          if (cdmParent->IsHardwareDRM()) {
+            // Record before restoring the budget so the success event reports
+            // how many recoveries it took to reach the first frame.
+            RecordProtectedReadiness(cdmParent,
+                                     ProtectedActivationPhase::Succeeded, S_OK,
+                                     Nothing());
+          }
+          // A produced frame proves the protected pipeline is working, so
+          // refresh the conditions (e.g. an HDCP pre-warm that could not
+          // confirm support and marked it failed) to ready. Skip this for
+          // clearlead: its first frame is clear and does not exercise HDCP or
+          // the decryptor, so it does not prove them ready.
+          if (cdmParent->IsHardwareDRM() && !cdmParent->IsClearLead()) {
+            cdmParent->ReadinessMonitor().MarkAllReady();
+          }
+          cdmParent->ReadinessMonitor().ResetRecoveryBudget();
+        }
+      }
+#endif
       if (mMediaEngine->HasVideo() && !mIsFrameServerMode) {
         EnsureDcompSurfaceHandle();
       }
@@ -303,6 +331,65 @@ void MFMediaEngineParent::HandleMediaEngineEvent(
   }
 }
 
+#ifdef MOZ_WMF_CDM
+void MFMediaEngineParent::RecordProtectedReadiness(
+    MFCDMParent* aCdmParent, ProtectedActivationPhase aPhase,
+    HRESULT aPlatformError,
+    const Maybe<MFProtectedPathReadinessMonitor::Reaction>& aReaction) {
+  AssertOnManagerThread();
+  auto& monitor = aCdmParent->ReadinessMonitor();
+  const uint32_t recoveryCount = monitor.RecoveriesUsed();
+  nsCString readiness = monitor.DescribeReadiness();
+  // A reaction only exists for a failed activation handled by the gate; it is
+  // Nothing on the other phases (and when the gate is disabled).
+  const char* reactionStr = "none";
+  if (aReaction) {
+    reactionStr =
+        MFProtectedPathReadinessMonitor::EnumValueToString(*aReaction);
+  }
+  glean::mfcdm::ProtectedReadinessExtra extra;
+  extra.readiness = Some(readiness);
+  extra.platformError =
+      Some(static_cast<int64_t>(static_cast<uint32_t>(aPlatformError)));
+  extra.phase = Some(nsCString(EnumValueToString(aPhase)));
+  if (aReaction) {
+    extra.reaction = Some(nsCString(reactionStr));
+  }
+  extra.gateWaitMs =
+      Some(static_cast<int64_t>(mProtectedGateWait.ToMilliseconds()));
+  extra.recoveryCount = Some(static_cast<int64_t>(recoveryCount));
+  extra.keySystem = Some(NS_ConvertUTF16toUTF8(aCdmParent->GetKeySystem()));
+  const nsCString adapterVendorID = gfx::gfxVars::AdapterVendorID();
+  if (!adapterVendorID.IsEmpty()) {
+    extra.adapterVendorId = Some(adapterVendorID);
+    extra.adapterDeviceId = Some(gfx::gfxVars::AdapterDeviceID());
+    extra.adapterDriverVersion = Some(gfx::gfxVars::AdapterDriverVersion());
+  }
+  LOG("protected_readiness probe: phase={}, reaction={}, error={:#x}, "
+      "recoveryCount={}, gateWaitMs={}, readiness=[{}]",
+      EnumValueToString(aPhase), reactionStr,
+      static_cast<uint32_t>(aPlatformError), recoveryCount,
+      static_cast<int64_t>(mProtectedGateWait.ToMilliseconds()),
+      readiness.get());
+  glean::mfcdm::protected_readiness.Record(Some(std::move(extra)));
+}
+
+void MFMediaEngineParent::RecoverProtectedPlayback(HRESULT aResult) {
+  AssertOnManagerThread();
+  LOG("Recovering protected playback, hr={:x}", aResult);
+  // SendNotifyHardwareReset drives the content side to tear this engine down
+  // and build a fresh one (new IMFMediaEngine + SetSource), which re-drives
+  // Media Foundation instead of leaving it wedged in the error state.
+  sPendingHDCPCheck = nullptr;
+  if (RefPtr<MFCDMParent> cdmParent =
+          mProxyId ? MFCDMParent::GetCDMById(*mProxyId) : nullptr) {
+    cdmParent->OnHardwareContextReset();
+    sPendingHDCPCheck = cdmParent->WaitForHDCPSettleAfterReset();
+  }
+  (void)SendNotifyHardwareReset(static_cast<uint32_t>(aResult));
+}
+#endif
+
 void MFMediaEngineParent::NotifyError(MF_MEDIA_ENGINE_ERR aError,
                                       HRESULT aResult) {
   AssertOnManagerThread();
@@ -314,16 +401,42 @@ void MFMediaEngineParent::NotifyError(MF_MEDIA_ENGINE_ERR aError,
   if (IsHardwareResetHRESULT(aResult)) {
     LOG("Notifying hardware reset error, hr={:x}", aResult);
     ENGINE_MARKER("MFMediaEngineParent,HardwareContextReset");
-    sPendingHDCPCheck = nullptr;
-    mHardwareResetInProgress = true;
-    RefPtr<MFCDMParent> cdmParent =
-        mProxyId ? MFCDMParent::GetCDMById(*mProxyId) : nullptr;
-    if (cdmParent) {
-      cdmParent->OnHardwareContextReset();
-      sPendingHDCPCheck = cdmParent->WaitForHDCPSettleAfterReset();
-    }
-    (void)SendNotifyHardwareReset();
+    RecoverProtectedPlayback(aResult);
     return;
+  }
+
+  // Bounded last-resort reaction for the two protected-activation errors Media
+  // Foundation gives no advance signal for. When the gate is enabled, re-drive
+  // the protected pipeline within budget; once the budget is spent the error
+  // falls through to the terminal handling below. SL3000 is never demoted.
+  if (mProxyId) {
+    if (RefPtr<MFCDMParent> cdmParent = MFCDMParent::GetCDMById(*mProxyId);
+        cdmParent && cdmParent->IsHardwareDRM()) {
+      // The bounded-recovery decision only runs when the gate is enabled;
+      // otherwise the reaction stays Nothing and the error falls through to the
+      // terminal handling below.
+      Maybe<MFProtectedPathReadinessMonitor::Reaction> reaction;
+      if (StaticPrefs::
+              media_wmf_media_engine_protected_readiness_gate_enabled_AtStartup()) {
+        reaction = Some(cdmParent->ReadinessMonitor().OnActivationError(
+            aResult,
+            StaticPrefs::
+                media_wmf_media_engine_protected_readiness_gate_max_recoveries()));
+      }
+
+      // Record the readiness snapshot at the failure.
+      RecordProtectedReadiness(cdmParent, ProtectedActivationPhase::Failed,
+                               aResult, reaction);
+
+      if (reaction ==
+          Some(MFProtectedPathReadinessMonitor::Reaction::Recover)) {
+        LOG("Re-driving protected playback after activation error, hr={:x}",
+            aResult);
+        ENGINE_MARKER("MFMediaEngineParent,RetryProtectedActivation");
+        RecoverProtectedPlayback(aResult);
+        return;
+      }
+    }
   }
 #endif
   LOG("Notify error '{}', hr={:x}", MFMediaEngineErrorToStr(aError), aResult);
@@ -433,6 +546,10 @@ mozilla::ipc::IPCResult MFMediaEngineParent::RecvInitMediaEngine(
     aResolver(0);
     return IPC_OK();
   }
+  if (MOZ_UNLIKELY(mIsMediaEngineInitialized)) {
+    MOZ_ASSERT_UNREACHABLE("MFMediaEngine must not be initialized twice");
+    return IPC_FAIL(this, "MFMediaEngine must not be initialized twice");
+  }
   // Metadata preload is controlled by content process side before creating
   // media engine.
   if (aInfo.preload()) {
@@ -441,6 +558,7 @@ mozilla::ipc::IPCResult MFMediaEngineParent::RecvInitMediaEngine(
   }
   RETURN_PARAM_IF_FAILED(
       SetMediaInfo(aInfo.mediaInfo(), aInfo.encryptedCustomIdent()), IPC_OK());
+  mIsMediaEngineInitialized = true;
   aResolver(mMediaEngineId);
   return IPC_OK();
 }
@@ -500,7 +618,7 @@ HRESULT MFMediaEngineParent::SetMediaInfo(const MediaInfoIPDL& aInfo,
   }
 
   if (isEncrypted && mContentProtectionManager) {
-    auto* proxy = mContentProtectionManager->GetCDMProxy();
+    RefPtr<MFCDMProxy> proxy = mContentProtectionManager->GetCDMProxy();
     MOZ_ASSERT(proxy);
     mMediaSource->SetCDMProxy(proxy);
   }
@@ -513,6 +631,46 @@ HRESULT MFMediaEngineParent::SetMediaInfo(const MediaInfoIPDL& aInfo,
 void MFMediaEngineParent::SetMediaSourceOnEngine() {
   AssertOnManagerThread();
   MOZ_ASSERT(mMediaSource);
+
+#ifdef MOZ_WMF_CDM
+  // Hold the protected topology build until the readiness conditions have
+  // settled, so activation happens when the protected pipeline is ready rather
+  // than being attempted blind and reacted to on failure. Only hardware-DRM
+  // playback is gated; software and clearkey are not. The gate releases once
+  // every gating condition has settled (each is resolved to ready, or failed,
+  // which also counts as settled): the adapter and content protection manager
+  // settle when the engine attaches to the CDM, and HDCP settles when its
+  // pre-warm query completes or fails. There is no timer.
+  const bool gateEnabled =
+      mProxyId && !mIsFrameServerMode &&
+      StaticPrefs::
+          media_wmf_media_engine_protected_readiness_gate_enabled_AtStartup();
+  RefPtr<MFCDMParent> cdmParent =
+      gateEnabled ? MFCDMParent::GetCDMById(*mProxyId) : nullptr;
+  const bool holdForReadiness =
+      cdmParent && cdmParent->IsHardwareDRM() &&
+      !cdmParent->ReadinessMonitor().AllActivationConditionsSettled();
+  if (holdForReadiness) {
+    LOG("Holding protected topology build until readiness conditions settle");
+    ENGINE_MARKER("MFMediaEngineParent, HoldForReadiness");
+    // Record that the gate engaged. A "gate_held" event with no later
+    // succeeded/failed event for this session indicates the gate never
+    // released, which this otherwise-silent hold would not surface.
+    RecordProtectedReadiness(cdmParent, ProtectedActivationPhase::GateHeld,
+                             S_OK, Nothing());
+    mProtectedGateHoldStart = TimeStamp::Now();
+    cdmParent->ReadinessMonitor().RunWhenActivationSettled(
+        [self = RefPtr{this}, this] {
+          if (mMediaEngine) {
+            mProtectedGateWait = TimeStamp::Now() - mProtectedGateHoldStart;
+            LOG("Readiness settled; setting protected media source on engine");
+            SetMediaSourceOnEngine();
+          }
+        },
+        mManagerThread);
+    return;
+  }
+#endif
 
   auto errorExit = MakeScopeExit([&] {
     MediaResult error(NS_ERROR_DOM_MEDIA_FATAL_ERR,
@@ -635,8 +793,11 @@ mozilla::ipc::IPCResult MFMediaEngineParent::RecvSetCDMProxyId(
     LOG("WMFClearKey CDM detected, enabling frame server mode");
     mIsFrameServerMode = true;
   }
-  HRESULT rv =
-      MakeAndInitialize<MFContentProtectionManager>(&mContentProtectionManager);
+  if (mContentProtectionManager) {
+    mContentProtectionManager->Shutdown();
+  }
+  HRESULT rv = MakeAndInitialize<MFContentProtectionManager>(
+      &mContentProtectionManager, mManagerThread);
   CDM_SETUP_IPC_RETURN_IF_FAILED(rv,
                                  "Failed to create content protection manager");
 
@@ -660,13 +821,29 @@ mozilla::ipc::IPCResult MFMediaEngineParent::RecvSetCDMProxyId(
   rv = mContentProtectionManager->SetCDMProxy(proxy);
   CDM_SETUP_IPC_RETURN_IF_FAILED(rv, "Failed to set CDM proxy");
 
+  // Record the engine-side readiness here, at engine<->CDM attach, rather than
+  // when the DXGI device manager is first created: this is the earliest point
+  // where the CDM (and so its readiness monitor) is known. The adapter was
+  // bound when the engine was created; on an adapter change the engine is
+  // recreated and re-attaches, re-marking these conditions after the monitor's
+  // engine-side conditions are reset.
+  auto& readiness = cdmParent->ReadinessMonitor();
+  readiness.MarkReady(
+      MFProtectedPathReadinessMonitor::Condition::ContentProtectionManager);
+  if (mDXGIDeviceManager) {
+    readiness.MarkReady(
+        MFProtectedPathReadinessMonitor::Condition::HwDrmAdapter);
+  } else {
+    readiness.MarkFailed(
+        MFProtectedPathReadinessMonitor::Condition::HwDrmAdapter, E_FAIL);
+  }
+
   mContentProtectionManager->SetNotifyWaitingForKeyCallback(
       [self = RefPtr{this}]() {
         if (self->CanSend() && self->mMediaEngine) {
           (void)self->SendNotifyWaitingForKey();
         }
-      },
-      mManagerThread);
+      });
 
   // TODO : is it possible to set CDM proxy before creating media source? If so,
   // handle that as well.
@@ -829,7 +1006,7 @@ void MFMediaEngineParent::EnsureDcompSurfaceHandle() {
   if (FAILED(rv)) {
     if (IsHardwareResetHRESULT(rv)) {
       LOG("GetVideoSwapchainHandle failed with hardware reset hr={:x}", rv);
-      (void)SendNotifyHardwareReset();
+      (void)SendNotifyHardwareReset(static_cast<uint32_t>(rv));
     } else {
       LOG("GetVideoSwapchainHandle failed, hr={:x}", rv);
       MediaResult error(

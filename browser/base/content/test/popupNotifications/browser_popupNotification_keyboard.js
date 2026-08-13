@@ -26,7 +26,7 @@ async function focusNotificationAnchor(anchor) {
   AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
   EventUtils.synthesizeMouseAtCenter(document.getElementById("browser"), {});
   AccessibilityUtils.resetEnv();
-  await BrowserTestUtils.waitForCondition(() =>
+  await TestUtils.waitForCondition(() =>
     document.activeElement.closest("#browser")
   );
 

@@ -3,7 +3,6 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <dimen name="menu_elevation">8dp</dimen>
 
     <dimen name="tab_sheet_end_margin">40dp</dimen>
     <dimen name="activity_horizontal_margin">16dp</dimen>
@@ -12,25 +11,7 @@
 
     <item name="match_parent" type="dimen">-1</item>
 
-    <!-- The custom tabs spec defines a maximum close button size, we need to define this here to enforce that sizing. -->
-    <dimen name="customtabs_toolbar_icon_size">24dp</dimen>
-
-    <!-- We are using a NavigationView in our context menu and it adds padding that we do not want. -->
-    <dimen name="design_navigation_padding_top_default" tools:override="true">0dp</dimen>
-    <dimen name="design_navigation_separator_vertical_padding" tools:override="true">0dp</dimen>
-    <dimen name="design_navigation_padding_bottom" tools:override="true">0dp</dimen>
-
-    <dimen name="firstrun_card_width">300dp</dimen>
-    <dimen name="firstrun_card_height">460dp</dimen>
-
-    <dimen name="fingerprint_icon_size">64dp</dimen>
-    <dimen name="fingerprint_status_layout_margin_vertical">48dp</dimen>
-
-    <dimen name="tabs_button_text_size">12dp</dimen>
-
     <dimen name="adaptive_icon_drawable_dimen">108dp</dimen> <!-- Specified in AdaptiveIconDrawable docs. -->
-
-    <dimen name="dialogHorizontalPadding">24dp</dimen>
 
     <dimen name="preference_root_layout_padding">16dp</dimen>
     <dimen name="preference_icon_drawable_size">24dp</dimen>
@@ -43,29 +24,6 @@
     <dimen name="textinputlayout_spacing">8dp</dimen>
 
     <dimen name="urlinput_height">57dp</dimen>
-
-    <dimen name="doorhanger_width">300dp</dimen>
-    <dimen name="doorhanger_input_width">250dp</dimen>
-    <dimen name="doorhanger_offsetX">12dp</dimen>
-    <dimen name="doorhanger_offsetY">67dp</dimen>
-    <dimen name="doorhanger_drawable_padding">5dp</dimen>
-    <dimen name="doorhanger_subsection_padding">8dp</dimen>
-    <dimen name="doorhanger_section_padding_small">10dp</dimen>
-    <dimen name="doorhanger_section_padding_medium">20dp</dimen>
-    <dimen name="doorhanger_section_padding_large">30dp</dimen>
-    <dimen name="doorhanger_icon_size">60dp</dimen>
-    <dimen name="doorhanger_rounded_corner_radius">4dp</dimen>
-    <dimen name="doorhanger_small_icon">16dp</dimen>
-
-    <dimen name="browser_menu_height">280dp</dimen>
-
-    <dimen name="menu_blocking_switch_container_height">88dp</dimen>
-    <dimen name="menu_blocking_switch_height">20dp</dimen>
-    <dimen name="menu_blocking_switch_width">46dp</dimen>
-    <dimen name="menu_blocking_switch_margin">12dp</dimen>
-
-    <dimen name="search_suggestions_padding_start">56dp</dimen>
-    <dimen name="search_suggestions_padding_with_icon">16dp</dimen>
 
     <dimen name="browser_toolbar_height">56dp</dimen>
 

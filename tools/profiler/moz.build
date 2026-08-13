@@ -251,6 +251,7 @@ EXPORTS.mozilla += [
     "public/ProfileJSONWriter.h",
     "public/ProfilerBandwidthCounter.h",
     "public/ProfilerCounts.h",
+    "public/ProfilerDumpOrCrash.h",
     "public/ProfilerLabels.h",
     "public/ProfilerMarkers.h",
     "public/ProfilerMarkersDetail.h",

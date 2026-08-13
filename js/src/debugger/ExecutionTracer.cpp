@@ -11,10 +11,8 @@
 #include "builtin/BigInt.h"     // BigIntObject
 #include "builtin/MapObject.h"  // MapObject, SetObject
 #include "builtin/Symbol.h"     // SymbolObject
-
-#include "debugger/Frame.h"  // DebuggerFrameType
-
-#include "vm/BooleanObject.h"  // BooleanObject
+#include "debugger/Frame.h"     // DebuggerFrameType
+#include "vm/BooleanObject.h"   // BooleanObject
 #include "vm/ErrorObject.h"
 #include "vm/NumberObject.h"      // NumberObject
 #include "vm/ObjectOperations.h"  // DefineDataElement

@@ -5,35 +5,41 @@
 #include "GfxInfo.h"
 
 #include <errno.h>
-#include <unistd.h>
-#include <string>
+#include <fcntl.h>
+#include <gbm.h>
+#include <glib.h>
 #include <poll.h>
 #include <sys/types.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
-#include <glib.h>
-#include <fcntl.h>
+#include <unistd.h>
 
-#include "mozilla/gfx/Logging.h"
-#include "mozilla/SSE.h"
-#include "mozilla/glean/GfxMetrics.h"
-#include "mozilla/XREAppData.h"
-#include "mozilla/ScopeExit.h"
+#include <string>
+
+#include "MediaCodecsSupport.h"
+#include "WidgetUtilsGtk.h"
 #include "mozilla/GUniquePtr.h"
+#include "mozilla/SSE.h"
+#include "mozilla/ScopeExit.h"
+#include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_media.h"
+#include "mozilla/XREAppData.h"
+#include "mozilla/gfx/Logging.h"
+#include "mozilla/glean/GfxMetrics.h"
+#include "nsAppRunner.h"
 #include "nsCRTGlue.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "nsExceptionHandler.h"
 #include "nsPrintfCString.h"
 #include "nsString.h"
 #include "nsStringFwd.h"
 #include "nsUnicharUtils.h"
-#include "nsCharSeparatedTokenizer.h"
 #include "nsWhitespaceTokenizer.h"
 #include "prenv.h"
-#include "WidgetUtilsGtk.h"
-#include "MediaCodecsSupport.h"
-#include "nsAppRunner.h"
-#include <gbm.h>
+
+#ifdef MOZ_WAYLAND
+#  include "nsWaylandDisplay.h"
+#endif
 
 #ifndef GBM_FORMAT_P010
 #  define GBM_FORMAT_P010 __gbm_fourcc_code('P', '0', '1', '0')
@@ -1170,14 +1176,6 @@ const nsTArray<RefPtr<GfxDriverInfo>>& GfxInfo::GetGfxDriverInfo() {
         "391.0.0");
 
     ////////////////////////////////////
-    // FEATURE_WEBRENDER_COMPOSITOR
-    APPEND_TO_DRIVER_BLOCKLIST(
-        OperatingSystem::Linux, DeviceFamily::All,
-        nsIGfxInfo::FEATURE_WEBRENDER_COMPOSITOR,
-        nsIGfxInfo::FEATURE_BLOCKED_DEVICE, DRIVER_COMPARISON_IGNORED,
-        V(0, 0, 0, 0), "FEATURE_FAILURE_WEBRENDER_COMPOSITOR_DISABLED", "");
-
-    ////////////////////////////////////
     // FEATURE_X11_EGL
     APPEND_TO_DRIVER_BLOCKLIST_EXT(
         OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
@@ -1338,7 +1336,33 @@ const nsTArray<RefPtr<GfxDriverInfo>>& GfxInfo::GetGfxDriverInfo() {
         "FEATURE_HARDWARE_VIDEO_ZERO_COPY_LINUX_AMD_DISABLE", "Mesa 24.2.0.0");
 
     ////////////////////////////////////
-    // FEATURE_VIDEO_HDR
+    // FEATURE_VIDEO_HDR & FEATURE_WEBRENDER_COMPOSITOR
+
+    // Disable when Wayland compositor support is missing or it's disabled by
+    // pref, mirror gfxPlatform::UseHDR() logic.
+    // We do that because:
+    // 1) we need to enable HDR early to use WEBRENDER_COMPOSITOR
+    // 2) advertise HDR/WEBRENDER_COMPOSITOR at about:support
+    bool hdrEnabled = false;
+#ifdef MOZ_WAYLAND
+    hdrEnabled = GdkIsWaylandDisplay() &&
+                 ((WaylandDisplayGet()->IsHDREnabled() &&
+                   WaylandDisplayGet()->GetFractionalScaleManager() &&
+                   StaticPrefs::gfx_color_management_hdr()) ||
+                  StaticPrefs::gfx_color_management_hdr_force_enabled());
+#endif
+    if (!hdrEnabled) {
+      APPEND_TO_DRIVER_BLOCKLIST(OperatingSystem::Linux, DeviceFamily::All,
+                                 nsIGfxInfo::FEATURE_VIDEO_HDR,
+                                 nsIGfxInfo::FEATURE_BLOCKED_DEVICE,
+                                 DRIVER_COMPARISON_IGNORED, V(0, 0, 0, 0),
+                                 "FEATURE_VIDEO_HDR_DISABLED", "");
+      APPEND_TO_DRIVER_BLOCKLIST(
+          OperatingSystem::Linux, DeviceFamily::All,
+          nsIGfxInfo::FEATURE_WEBRENDER_COMPOSITOR,
+          nsIGfxInfo::FEATURE_BLOCKED_DEVICE, DRIVER_COMPARISON_IGNORED,
+          V(0, 0, 0, 0), "FEATURE_FAILURE_WEBRENDER_COMPOSITOR_DISABLED", "");
+    }
 
     ////////////////////////////////////
     // FEATURE_WEBRENDER_PARTIAL_PRESENT

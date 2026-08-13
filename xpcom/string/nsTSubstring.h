@@ -15,7 +15,6 @@
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/Span.h"
 #include "mozilla/Try.h"
-
 #include "nsISupports.h"
 #include "nsTStringRepr.h"
 

@@ -4,16 +4,17 @@
 
 #include "XULFormControlAccessible.h"
 
-#include "LocalAccessible-inl.h"
-#include "HTMLFormControlAccessible.h"
-#include "nsAccUtils.h"
 #include "DocAccessible.h"
+#include "HTMLFormControlAccessible.h"
+#include "LocalAccessible-inl.h"
 #include "Relation.h"
-#include "mozilla/a11y/Role.h"
 #include "States.h"
 #include "TreeWalker.h"
 #include "XULMenuAccessible.h"
-
+#include "mozilla/a11y/Role.h"
+#include "mozilla/dom/Element.h"
+#include "nsAccUtils.h"
+#include "nsIContentInlines.h"
 #include "nsIDOMXULButtonElement.h"
 #include "nsIDOMXULMenuListElement.h"
 #include "nsIDOMXULRadioGroupElement.h"
@@ -21,7 +22,6 @@
 #include "nsIFrame.h"
 #include "nsMenuPopupFrame.h"
 #include "nsNameSpaceManager.h"
-#include "mozilla/dom/Element.h"
 
 using namespace mozilla::a11y;
 

@@ -52,10 +52,12 @@ UNIFIED_SOURCES += [
 # Not in UNIFIED_SOURCES: adding a file to the unified list reshuffles which
 # files share a translation unit, and TestHttpAtom relies on nsHttp atom string
 # literals being pooled within a single TU (a cross-TU pointer-identity
-# assumption). Keeping this file out of the unified build avoids perturbing
+# assumption). Keeping these files out of the unified build avoids perturbing
 # that grouping.
 SOURCES += [
     "TestCacheCrypto.cpp",
+    "TestCacheEntryWriterHang.cpp",
+    "TestHappyEyeballsConnectionAttempt.cpp",
 ]
 
 if CONFIG["OS_TARGET"] == "WINNT":
@@ -94,6 +96,10 @@ if CONFIG["OS_TARGET"] == "WINNT":
 # mac includes only
 if CONFIG["TARGET_OS"] == "OSX":
     LOCAL_INCLUDES += ["/netwerk/system/mac"]
+
+# android includes only
+if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
+    LOCAL_INCLUDES += ["/netwerk/system/android"]
 
 include("/ipc/chromium/chromium-config.mozbuild")
 

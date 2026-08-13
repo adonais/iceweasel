@@ -63,6 +63,14 @@ function generatePlaceholderKeyframeStyles(placeholderCount) {
 }
 
 /**
+ * A ProseMirror transaction.
+ *
+ * TODO (Bug 2052510): Export and use `Transaction` from the ProseMirror bundle.
+ *
+ * @typedef {EditorState["tr"]} Transaction
+ */
+
+/**
  * @typedef {object} MultilineEditorPlugin
  * @property {object} [schemaExtension] - Schema extensions
  * @property {object} [schemaExtension.nodes] - Node specs
@@ -235,20 +243,77 @@ export class MultilineEditor extends MozLitElement {
     const doc = this.#textToDoc(val, state.schema);
 
     const tr = state.tr.replaceWith(0, state.doc.content.size, doc.content);
-    tr.setMeta("addToHistory", false);
-
     const cursorPos = this.#posFromTextOffset(val.length, tr.doc);
-    // Suppress input events when updating only the text selection.
+    tr.setSelection(
+      TextSelection.between(
+        tr.doc.resolve(cursorPos),
+        tr.doc.resolve(cursorPos)
+      )
+    );
+    this.#dispatchSilently(tr);
+  }
+
+  /**
+   * Set a range of text and selection.
+   *
+   * @param {string} replacement - The string to insert.
+   * @param {number} [start] - Index of the first character to replace.
+   * @param {number} [end] - Index of the after the last character to replace.
+   * @param {SelectionMode} [selectionMode] - Selection after the replacement.
+   */
+  setRangeText(replacement, start, end, selectionMode) {
+    if (!this.#view) {
+      return;
+    }
+
+    const state = this.#view.state;
+    const from = this.#posFromTextOffset(
+      start ?? this.selectionStart,
+      state.doc
+    );
+    const to = this.#posFromTextOffset(end ?? this.selectionEnd, state.doc);
+    const tr = state.tr.insertText(replacement, from, to);
+
+    let selectionStart;
+    let selectionEnd;
+    switch (selectionMode) {
+      case "select":
+        selectionStart = from;
+        selectionEnd = tr.mapping.map(to);
+        break;
+      case "start":
+        selectionStart = from;
+        selectionEnd = from;
+        break;
+      case "end":
+        selectionStart = selectionEnd = tr.mapping.map(to);
+        break;
+      case "preserve":
+      default:
+        selectionStart = tr.mapping.map(state.selection.from);
+        selectionEnd = tr.mapping.map(state.selection.to);
+    }
+
+    tr.setSelection(
+      TextSelection.between(
+        tr.doc.resolve(selectionStart),
+        tr.doc.resolve(selectionEnd)
+      )
+    );
+    this.#dispatchSilently(tr);
+  }
+
+  /**
+   * Dispatch a transaction for programmatic updates without adding it to the
+   * history and firing an input event.
+   *
+   * @param {Transaction} tr - The transaction to dispatch.
+   */
+  #dispatchSilently(tr) {
+    tr.setMeta("addToHistory", false);
     this.#suppressInputEvent = true;
     try {
-      this.#view.dispatch(
-        tr.setSelection(
-          TextSelection.between(
-            tr.doc.resolve(cursorPos),
-            tr.doc.resolve(cursorPos)
-          )
-        )
-      );
+      this.#view.dispatch(tr);
     } finally {
       this.#suppressInputEvent = false;
     }
@@ -379,7 +444,6 @@ export class MultilineEditor extends MozLitElement {
     this.#view.dispatch(
       this.#view.state.tr.setSelection(selection).scrollIntoView()
     );
-    this.#dispatchSelectionChange();
   }
 
   /**
@@ -396,6 +460,37 @@ export class MultilineEditor extends MozLitElement {
   focus() {
     this.#view?.focus();
     super.focus();
+  }
+
+  /**
+   * Run ProseMirror's normal paste pipeline with the given DataTransfer's
+   * contents. Used by the context-menu cmd_paste route, which on some
+   * platforms (e.g. Windows) does not reliably reach a contenteditable
+   * inside a shadow DOM — TODO(Bug 2047067), remove once that is fixed.
+   *
+   * `new ClipboardEvent("paste", { clipboardData })` can't be used because
+   * Firefox's ClipboardEventInit dictionary has no clipboardData member, so
+   * the field is dropped and the event arrives at ProseMirror with null
+   * clipboardData. EditorView.pasteText / pasteHTML invoke the same paste
+   * machinery (plugins, history entry) directly.
+   *
+   * @param {DataTransfer} dataTransfer - Clipboard data to paste.
+   */
+  paste(dataTransfer) {
+    if (!this.#view || !dataTransfer) {
+      return;
+    }
+    const htmlData = dataTransfer.getData("text/html");
+    const textData = dataTransfer.getData("text/plain");
+    if (!htmlData && !textData) {
+      return;
+    }
+    this.#view.focus();
+    if (htmlData) {
+      this.#view.pasteHTML(htmlData);
+    } else {
+      this.#view.pasteText(textData);
+    }
   }
 
   /**
@@ -569,10 +664,34 @@ export class MultilineEditor extends MozLitElement {
       attributes: this.#viewAttributes(),
       editable: () => !this.readOnly,
       dispatchTransaction: this.#dispatchTransaction,
+      handleDOMEvents: {
+        contextmenu: (view, event) => {
+          if (this.readOnly) {
+            return false;
+          }
+          // TODO(Bug 2047067): right-clicks on the inner contenteditable show
+          // a native context menu on Windows whose Paste command does not
+          // reach ProseMirror. Forward the event to the host so moz-input-box
+          // can show its menu. Remove this workaround once the platform bug
+          // is fixed.
+          event.preventDefault();
+          const host = view.dom.getRootNode().host;
+          if (host && host != view.dom) {
+            host.dispatchEvent(new PointerEvent("contextmenu", event));
+          }
+          return true;
+        },
+      },
       nodeViews: Object.assign(
         {},
         ...this.plugins.map(plugin => plugin.nodeViews).filter(Boolean)
       ),
+    });
+
+    // An `input` event is already dispatched from #dispatchTransaction:
+    // Stop the contenteditable’s duplicate event from propagating.
+    this.#view.dom.addEventListener("input", event => event.stopPropagation(), {
+      capture: true,
     });
 
     if (this.#pendingValue) {

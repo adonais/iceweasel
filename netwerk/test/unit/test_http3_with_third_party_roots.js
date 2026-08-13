@@ -64,7 +64,9 @@ add_setup(async function setup() {
 });
 
 async function do_test(host, expectedVersion) {
-  let nssComponent = Cc["@mozilla.org/psm;1"].getService(Ci.nsINSSComponent);
+  let nssComponent = Cc["@mozilla.org/network/ssl-tokens-cache;1"].getService(
+    Ci.nsISSLTokensCache
+  );
   await nssComponent.asyncClearSSLExternalAndInternalSessionCache();
 
   Services.obs.notifyObservers(null, "net:cancel-all-connections");

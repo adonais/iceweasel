@@ -1052,12 +1052,12 @@ inline BigInt* BigInt::absoluteBitwiseOp(JSContext* cx, HandleBigInt x,
 
 BigInt* BigInt::absoluteAnd(JSContext* cx, HandleBigInt x, HandleBigInt y) {
   return absoluteBitwiseOp<BitwiseOpKind::SymmetricTrim>(cx, x, y,
-                                                         std::bit_and<Digit>());
+                                                         std::bit_and<>());
 }
 
 BigInt* BigInt::absoluteOr(JSContext* cx, HandleBigInt x, HandleBigInt y) {
   return absoluteBitwiseOp<BitwiseOpKind::SymmetricFill>(cx, x, y,
-                                                         std::bit_or<Digit>());
+                                                         std::bit_or<>());
 }
 
 BigInt* BigInt::absoluteAndNot(JSContext* cx, HandleBigInt x, HandleBigInt y) {
@@ -1068,7 +1068,7 @@ BigInt* BigInt::absoluteAndNot(JSContext* cx, HandleBigInt x, HandleBigInt y) {
 
 BigInt* BigInt::absoluteXor(JSContext* cx, HandleBigInt x, HandleBigInt y) {
   return absoluteBitwiseOp<BitwiseOpKind::SymmetricFill>(cx, x, y,
-                                                         std::bit_xor<Digit>());
+                                                         std::bit_xor<>());
 }
 
 BigInt* BigInt::absoluteAddOne(JSContext* cx, HandleBigInt x,

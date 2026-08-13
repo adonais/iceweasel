@@ -5,8 +5,8 @@
 #ifndef mozilla_widget_NativeMenu_h
 #define mozilla_widget_NativeMenu_h
 
-#include "nsISupportsImpl.h"
 #include "Units.h"
+#include "nsISupportsImpl.h"
 
 class nsIURI;
 class nsIFrame;

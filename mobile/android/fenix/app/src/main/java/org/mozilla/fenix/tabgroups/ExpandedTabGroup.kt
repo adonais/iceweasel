@@ -40,6 +40,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.tabstray.LocalTabManagementFeatureHelper
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.controller.NoOpTabInteractionHandler
+import org.mozilla.fenix.tabstray.controller.TabInteractionHandler
 import org.mozilla.fenix.tabstray.data.TabGroupTheme
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.data.createTab
@@ -59,6 +60,7 @@ import mozilla.components.ui.icons.R as iconsR
  * @param onDeleteTabGroupClick Invoked when the user clicks on delete tab group.
  * @param onEditTabGroupClick Invoked when the user clicks to edit the [group].
  * @param onCloseTabGroupClick Invoked when the user clicks to close a tab group.
+ * @param tabInteractionHandler Handler for tab interactions.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,6 +71,7 @@ fun ExpandedTabGroup(
     onDeleteTabGroupClick: () -> Unit,
     onEditTabGroupClick: () -> Unit,
     onCloseTabGroupClick: () -> Unit,
+    tabInteractionHandler: TabInteractionHandler,
 ) {
     Column(
         modifier = Modifier
@@ -91,11 +94,12 @@ fun ExpandedTabGroup(
             tabs = group.tabs,
             displayTabsInGrid = true,
             dragAndDropEnabled = false,
-            reorderingEnabled = false,
+            reorderingEnabled = true,
             displayTabGroupOnboarding = false,
+            liveReorderEnabled = true,
             selectedItemIndex = group.initialScrollIndex,
             selectionMode = TabsTrayState.Mode.Normal,
-            tabInteractionHandler = NoOpTabInteractionHandler, // todo Bug 2032255: Inject interaction handling
+            tabInteractionHandler = tabInteractionHandler,
             modifier = Modifier,
             onTabClose = onTabClose,
             onItemClick = onItemClick,
@@ -241,6 +245,7 @@ private fun ExpandedTabGroupPreview(
                     onDeleteTabGroupClick = {},
                     onEditTabGroupClick = {},
                     onCloseTabGroupClick = {},
+                    tabInteractionHandler = NoOpTabInteractionHandler,
                 )
             }
         }

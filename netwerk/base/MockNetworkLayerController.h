@@ -5,8 +5,8 @@
 #ifndef MockNetworkLayerController_h_
 #define MockNetworkLayerController_h_
 
-#include "mozilla/net/DNS.h"
 #include "mozilla/RWLock.h"
+#include "mozilla/net/DNS.h"
 #include "nsIMockNetworkLayerController.h"
 #include "nsTHashMap.h"
 #include "nsTHashSet.h"

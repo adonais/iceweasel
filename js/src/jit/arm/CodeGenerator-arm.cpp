@@ -1722,76 +1722,6 @@ void CodeGenerator::visitWasmCompareAndSelect(LWasmCompareAndSelect* ins) {
                    trueExprAndDest);
 }
 
-void CodeGenerator::visitAsmJSLoadHeap(LAsmJSLoadHeap* ins) {
-  const MAsmJSLoadHeap* mir = ins->mir();
-
-  const LAllocation* ptr = ins->ptr();
-  const LAllocation* boundsCheckLimit = ins->boundsCheckLimit();
-
-  Scalar::Type accessType = mir->access().type();
-  bool isSigned = Scalar::isSignedIntType(accessType);
-  int size = Scalar::byteSize(accessType) * 8;
-  bool isFloat = Scalar::isFloatingType(accessType);
-
-  if (ptr->isConstant()) {
-    MOZ_ASSERT(!mir->needsBoundsCheck());
-    int32_t ptrImm = ptr->toConstant()->toInt32();
-    MOZ_ASSERT(ptrImm >= 0);
-    if (isFloat) {
-      ScratchRegisterScope scratch(masm);
-      VFPRegister vd(ToFloatRegister(ins->output()));
-      if (size == 32) {
-        masm.ma_vldr(Address(HeapReg, ptrImm), vd.singleOverlay(), scratch,
-                     Assembler::Always);
-      } else {
-        masm.ma_vldr(Address(HeapReg, ptrImm), vd, scratch, Assembler::Always);
-      }
-    } else {
-      ScratchRegisterScope scratch(masm);
-      masm.ma_dataTransferN(IsLoad, size, isSigned, HeapReg, Imm32(ptrImm),
-                            ToRegister(ins->output()), scratch, Offset,
-                            Assembler::Always);
-    }
-  } else {
-    Register ptrReg = ToRegister(ptr);
-    if (isFloat) {
-      FloatRegister output = ToFloatRegister(ins->output());
-      if (size == 32) {
-        output = output.singleOverlay();
-      }
-
-      Assembler::Condition cond = Assembler::Always;
-      if (mir->needsBoundsCheck()) {
-        Register boundsCheckLimitReg = ToRegister(boundsCheckLimit);
-        masm.as_cmp(ptrReg, O2Reg(boundsCheckLimitReg));
-        if (size == 32) {
-          masm.ma_vimm_f32(GenericNaN(), output, Assembler::AboveOrEqual);
-        } else {
-          masm.ma_vimm(GenericNaN(), output, Assembler::AboveOrEqual);
-        }
-        cond = Assembler::Below;
-      }
-
-      ScratchRegisterScope scratch(masm);
-      masm.ma_vldr(output, HeapReg, ptrReg, scratch, 0, cond);
-    } else {
-      Register output = ToRegister(ins->output());
-
-      Assembler::Condition cond = Assembler::Always;
-      if (mir->needsBoundsCheck()) {
-        Register boundsCheckLimitReg = ToRegister(boundsCheckLimit);
-        masm.as_cmp(ptrReg, O2Reg(boundsCheckLimitReg));
-        masm.ma_mov(Imm32(0), output, Assembler::AboveOrEqual);
-        cond = Assembler::Below;
-      }
-
-      ScratchRegisterScope scratch(masm);
-      masm.ma_dataTransferN(IsLoad, size, isSigned, HeapReg, ptrReg, output,
-                            scratch, Offset, cond);
-    }
-  }
-}
-
 template <typename T>
 void CodeGeneratorARM::emitWasmLoad(T* lir) {
   const MWasmLoad* mir = lir->mir();
@@ -1876,62 +1806,6 @@ void CodeGenerator::visitWasmStore(LWasmStore* lir) { emitWasmStore(lir); }
 
 void CodeGenerator::visitWasmStoreI64(LWasmStoreI64* lir) {
   emitWasmStore(lir);
-}
-
-void CodeGenerator::visitAsmJSStoreHeap(LAsmJSStoreHeap* ins) {
-  const MAsmJSStoreHeap* mir = ins->mir();
-
-  const LAllocation* ptr = ins->ptr();
-  const LAllocation* boundsCheckLimit = ins->boundsCheckLimit();
-
-  Scalar::Type accessType = mir->access().type();
-  bool isSigned = accessType == Scalar::Int32 || accessType == Scalar::Uint32;
-  int size = Scalar::byteSize(accessType) * 8;
-  bool isFloat = Scalar::isFloatingType(accessType);
-
-  if (ptr->isConstant()) {
-    MOZ_ASSERT(!mir->needsBoundsCheck());
-    int32_t ptrImm = ptr->toConstant()->toInt32();
-    MOZ_ASSERT(ptrImm >= 0);
-    if (isFloat) {
-      VFPRegister vd(ToFloatRegister(ins->value()));
-      Address addr(HeapReg, ptrImm);
-      if (size == 32) {
-        masm.storeFloat32(vd, addr);
-      } else {
-        masm.storeDouble(vd, addr);
-      }
-    } else {
-      ScratchRegisterScope scratch(masm);
-      masm.ma_dataTransferN(IsStore, size, isSigned, HeapReg, Imm32(ptrImm),
-                            ToRegister(ins->value()), scratch, Offset,
-                            Assembler::Always);
-    }
-  } else {
-    Register ptrReg = ToRegister(ptr);
-
-    Assembler::Condition cond = Assembler::Always;
-    if (mir->needsBoundsCheck()) {
-      Register boundsCheckLimitReg = ToRegister(boundsCheckLimit);
-      masm.as_cmp(ptrReg, O2Reg(boundsCheckLimitReg));
-      cond = Assembler::Below;
-    }
-
-    if (isFloat) {
-      ScratchRegisterScope scratch(masm);
-      FloatRegister value = ToFloatRegister(ins->value());
-      if (size == 32) {
-        value = value.singleOverlay();
-      }
-
-      masm.ma_vstr(value, HeapReg, ptrReg, scratch, 0, Assembler::Below);
-    } else {
-      ScratchRegisterScope scratch(masm);
-      Register value = ToRegister(ins->value());
-      masm.ma_dataTransferN(IsStore, size, isSigned, HeapReg, ptrReg, value,
-                            scratch, Offset, cond);
-    }
-  }
 }
 
 void CodeGenerator::visitWasmCompareExchangeHeap(

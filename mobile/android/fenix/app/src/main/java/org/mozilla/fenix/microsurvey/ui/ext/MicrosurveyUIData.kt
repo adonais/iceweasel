@@ -18,6 +18,7 @@ import mozilla.components.ui.icons.R as iconsR
  * @property question The survey question.
  * @property answers The list of survey answers in randomized order.
  * @property utmContent Optional utm content parameter to specify the surveyed feature in a URL.
+ * @property maxNumberLines The maximum number of lines allowed for the answer text layout.
  */
 data class MicrosurveyUIData(
     val id: String,
@@ -26,6 +27,7 @@ data class MicrosurveyUIData(
     val question: String,
     val answers: List<String>,
     val utmContent: String? = null,
+    val maxNumberLines: Int,
 )
 
 /**
@@ -43,6 +45,7 @@ fun Message.toMicrosurveyUIData() = if (hasValidMicrosurveyConfig()) {
         // microsurvey null checked in hasValidMicrosurveyConfig
         answers = microsurvey!!.toShuffledAnswers(),
         utmContent = microsurvey?.utmContent,
+        maxNumberLines = microsurvey!!.maxNumberLines,
     )
 } else {
     null

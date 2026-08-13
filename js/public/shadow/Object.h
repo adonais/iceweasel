@@ -24,7 +24,7 @@ class JS_PUBLIC_API Value;
 
 namespace shadow {
 
-inline size_t NumObjectFixedSlots(Shape* shape) {
+inline size_t NumNativeObjectFixedSlots(Shape* shape) {
   return (shape->immutableFlags & shadow::Shape::FIXED_SLOTS_MASK) >>
          shadow::Shape::FIXED_SLOTS_SHIFT;
 }
@@ -48,7 +48,7 @@ struct NativeObject : public Object {
   Value* slots;
   void* _1;
 
-  size_t numFixedSlots() const { return NumObjectFixedSlots(shape); }
+  size_t numFixedSlots() const { return NumNativeObjectFixedSlots(shape); }
 
   Value* fixedSlots() const {
     auto address = reinterpret_cast<uintptr_t>(this);

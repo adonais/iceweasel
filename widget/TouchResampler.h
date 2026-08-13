@@ -8,9 +8,9 @@
 #include <queue>
 #include <unordered_map>
 
+#include "InputData.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/TimeStamp.h"
-#include "InputData.h"
 
 namespace mozilla {
 namespace widget {

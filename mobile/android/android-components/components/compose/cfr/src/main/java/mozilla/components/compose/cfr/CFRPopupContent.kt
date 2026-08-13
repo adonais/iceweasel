@@ -34,6 +34,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.button.IconButton
+import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.cfr.CFRPopup.IndicatorDirection.DOWN
 import mozilla.components.compose.cfr.CFRPopup.IndicatorDirection.UP
 import mozilla.components.ui.icons.R as iconsR
@@ -42,13 +43,16 @@ import mozilla.components.ui.icons.R as iconsR
  * Complete content of the popup.
  * [CFRPopupShape] with a gradient background containing [text] and a dismiss ("X") button.
  *
- * @param popupBodyColors One or more colors serving as the popup background.
+ * @param popupBodyColors The [CFRPopupBackground] painted in the popup.
+ * @param showDismissButton Whether to show the dismiss button in the popup.
  * @param dismissButtonColor The tint color that should be applied to the dismiss button.
  * @param indicatorDirection The direction the indicator arrow is pointing to.
  * @param indicatorArrowStartOffset Maximum distance between the popup start and the indicator arrow.
  * If there isn't enough space this could automatically be overridden up to 0.
  * @param onDismiss  Callback for when the popup is dismissed indicating also if the dismissal
  * was explicit - by tapping the "X" button or not.
+ * @param popupWidth Width of the popup. Defaults to [CFRPopup.DEFAULT_WIDTH]. To be used as maximum
+ * width when alignment is set to [PopupAlignment.BODY_CENTERED_IN_SCREEN].
  * @param title Optional [Text] composable to show just above the popup text.
  * @param text [Text] already styled and ready to be shown in the popup.
  * @param action Optional other composable to show just below the popup text.
@@ -56,7 +60,7 @@ import mozilla.components.ui.icons.R as iconsR
 @Composable
 @Suppress("LongMethod", "CognitiveComplexMethod")
 fun CFRPopupContent(
-    popupBodyColors: List<Int>,
+    popupBodyColors: CFRPopupBackground,
     showDismissButton: Boolean,
     dismissButtonColor: Int,
     indicatorDirection: CFRPopup.IndicatorDirection,
@@ -74,6 +78,15 @@ fun CFRPopupContent(
         CFRPopup.DEFAULT_CORNER_RADIUS.dp,
     )
 
+    val brush = when (popupBodyColors) {
+        is CFRPopupBackground.Gradient -> popupBodyColors.brush
+        is CFRPopupBackground.Colors -> Brush.linearGradient(
+            colors = popupBodyColors.colors.map { Color(it) },
+            end = Offset(0f, Float.POSITIVE_INFINITY),
+            start = Offset(Float.POSITIVE_INFINITY, 0f),
+        )
+    }
+
     Box(modifier = Modifier.width(popupWidth + CFRPopup.DEFAULT_EXTRA_HORIZONTAL_PADDING.dp)) {
         Surface(
             color = Color.Transparent,
@@ -83,11 +96,7 @@ fun CFRPopupContent(
                 .align(Alignment.CenterStart)
                 .background(
                     shape = popupShape,
-                    brush = Brush.linearGradient(
-                        colors = popupBodyColors.map { Color(it) },
-                        end = Offset(0f, Float.POSITIVE_INFINITY),
-                        start = Offset(Float.POSITIVE_INFINITY, 0f),
-                    ),
+                    brush = brush,
                 )
                 .wrapContentHeight()
                 .width(popupWidth),
@@ -154,8 +163,7 @@ fun CFRPopupContent(
                         .align(Alignment.Center)
                         .padding(
                             top = if (indicatorDirection == CFRPopup.IndicatorDirection.UP) 9.dp else 0.dp,
-                        )
-                        .size(24.dp),
+                        ),
                     tint = Color(dismissButtonColor),
                 )
             }
@@ -170,7 +178,7 @@ fun CFRPopupContent(
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_NO, name = "Light theme")
 private fun CFRPopupAbovePreview() {
     CFRPopupContent(
-        popupBodyColors = listOf(Color.Cyan.toArgb(), Color.Blue.toArgb()),
+        popupBodyColors = CFRPopupBackground.Colors(listOf(Color.Cyan.toArgb(), Color.Blue.toArgb())),
         showDismissButton = true,
         dismissButtonColor = Color.Black.toArgb(),
         indicatorDirection = DOWN,
@@ -187,7 +195,7 @@ private fun CFRPopupAbovePreview() {
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_NO, name = "Light theme")
 private fun CFRPopupBelowPreview() {
     CFRPopupContent(
-        popupBodyColors = listOf(Color.Cyan.toArgb(), Color.Blue.toArgb()),
+        popupBodyColors = CFRPopupBackground.Colors(listOf(Color.Cyan.toArgb(), Color.Blue.toArgb())),
         showDismissButton = true,
         dismissButtonColor = Color.Black.toArgb(),
         indicatorDirection = UP,
@@ -204,7 +212,7 @@ private fun CFRPopupBelowPreview() {
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_NO, name = "Light theme")
 private fun CFRPopupBelowPreviewWithTitle() {
     CFRPopupContent(
-        popupBodyColors = listOf(Color.Cyan.toArgb(), Color.Blue.toArgb()),
+        popupBodyColors = CFRPopupBackground.Colors(listOf(Color.Cyan.toArgb(), Color.Blue.toArgb())),
         showDismissButton = true,
         dismissButtonColor = Color.Black.toArgb(),
         indicatorDirection = UP,
@@ -218,6 +226,35 @@ private fun CFRPopupBelowPreviewWithTitle() {
         },
         text = {
             Text("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod")
+        },
+    )
+}
+
+@Composable
+@Preview(locale = "en", name = "LTR")
+@Preview(locale = "ar", name = "RTL")
+@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, name = "Dark theme")
+@Preview(uiMode = Configuration.UI_MODE_NIGHT_NO, name = "Light theme")
+private fun CFRPopupGradient() {
+    CFRPopupContent(
+        popupBodyColors = CFRPopupBackground.Gradient(brush = AcornTheme.gradients.cfr.brush),
+        showDismissButton = true,
+        dismissButtonColor = Color.White.toArgb(),
+        indicatorDirection = UP,
+        indicatorArrowStartOffset = CFRPopup.DEFAULT_INDICATOR_START_OFFSET.dp,
+        onDismiss = { },
+        title = {
+            Text(
+                text = "This is the title",
+                color = Color.White,
+                fontWeight = FontWeight.SemiBold,
+            )
+        },
+        text = {
+            Text(
+                text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod",
+                color = Color.White,
+            )
         },
     )
 }

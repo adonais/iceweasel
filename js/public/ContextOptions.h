@@ -36,19 +36,6 @@ class JS_PUBLIC_API ContextOptions {
   }
   // clang-format on
 
-  bool asmJS() const {
-    return compileOptions_.asmJSOption() == AsmJSOption::Enabled;
-  }
-  AsmJSOption asmJSOption() const { return compileOptions_.asmJSOption(); }
-  ContextOptions& setAsmJS(bool flag) {
-    compileOptions_.setAsmJS(flag);
-    return *this;
-  }
-  ContextOptions& setAsmJSOption(AsmJSOption option) {
-    compileOptions_.setAsmJSOption(option);
-    return *this;
-  }
-
   bool wasm() const { return wasm_; }
   ContextOptions& setWasm(bool flag) {
     wasm_ = flag;
@@ -80,18 +67,6 @@ class JS_PUBLIC_API ContextOptions {
   bool testWasmAwaitTier2() const { return testWasmAwaitTier2_; }
   ContextOptions& setTestWasmAwaitTier2(bool flag) {
     testWasmAwaitTier2_ = flag;
-    return *this;
-  }
-
-  bool throwOnAsmJSValidationFailure() const {
-    return compileOptions_.throwOnAsmJSValidationFailure();
-  }
-  ContextOptions& setThrowOnAsmJSValidationFailure(bool flag) {
-    compileOptions_.setThrowOnAsmJSValidationFailure(flag);
-    return *this;
-  }
-  ContextOptions& toggleThrowOnAsmJSValidationFailure() {
-    compileOptions_.toggleThrowOnAsmJSValidationFailure();
     return *this;
   }
 
@@ -167,10 +142,7 @@ class JS_PUBLIC_API ContextOptions {
   // Defined out-of-line because it depends on a compile-time option
   ContextOptions& setFuzzing(bool flag);
 
-  void disableOptionsForSafeMode() {
-    setAsmJSOption(AsmJSOption::DisabledByAsmJSPref);
-    setWasmBaseline(false);
-  }
+  void disableOptionsForSafeMode() { setWasmBaseline(false); }
 
   PrefableCompileOptions& compileOptions() { return compileOptions_; }
   const PrefableCompileOptions& compileOptions() const {

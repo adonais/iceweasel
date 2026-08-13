@@ -7,18 +7,14 @@
  * implemented for nsTArrays that contain JavaScript Values.
  */
 
-#include "mozilla/UniquePtr.h"
-
-#include "jsapi.h"
-#include "nsTArray.h"
-
 #include "gtest/gtest.h"
-
+#include "js/HeapAPI.h"
 #include "js/PropertyAndElement.h"  // JS_GetProperty, JS_SetProperty
 #include "js/TracingAPI.h"
-#include "js/HeapAPI.h"
-
+#include "jsapi.h"
 #include "mozilla/CycleCollectedJSContext.h"
+#include "mozilla/UniquePtr.h"
+#include "nsTArray.h"
 
 using namespace mozilla;
 

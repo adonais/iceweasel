@@ -1551,10 +1551,11 @@ class PresShell final : public nsStubDocumentObserver,
    * long as the ancestor chain between them doesn't cross a reflow root.
    *
    * The bit to add should be NS_FRAME_IS_DIRTY, NS_FRAME_HAS_DIRTY_CHILDREN
-   * or nsFrameState(0); passing 0 means that dirty bits won't be set on the
-   * frame or its ancestors/descendants, but that intrinsic widths will still
-   * be marked dirty.  Passing aIntrinsicDirty = eResize and aBitToAdd = 0
-   * would result in no work being done, so don't do that.
+   * or NS_FRAME_STATE_NONE; passing NS_FRAME_STATE_NONE means that dirty bits
+   * won't be set on the frame or its ancestors/descendants, but that intrinsic
+   * widths will still be marked dirty.  Passing aIntrinsicDirty = eResize and
+   * aBitToAdd = NS_FRAME_STATE_NONE would result in no work being done, so
+   * don't do that.
    */
   void FrameNeedsReflow(
       nsIFrame* aFrame, IntrinsicDirty aIntrinsicDirty, nsFrameState aBitToAdd,

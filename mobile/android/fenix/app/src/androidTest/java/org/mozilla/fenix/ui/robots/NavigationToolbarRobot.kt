@@ -317,10 +317,50 @@ class NavigationToolbarRobot(private val composeTestRule: ComposeTestRule) {
     }
 
     /**
-     * Asserts that the navigation bar compose node is positioned below the view
+     * Verifies navigation bar exists and is correctly positioned when Edge-to-Edge is enabled.
+     * Edge-to-Edge mode extends content to screen edges, so we verify it's at the very edge.
+     */
+    fun verifyNavBarPositionForEdgeToEdge(isAtBottom: Boolean = true) {
+        Log.i(TAG, "verifyNavBarPositionForEdgeToEdge: Verifying navbar is docked to the edge (isAtBottom=$isAtBottom)")
+
+        composeTestRule.waitForIdle()
+        mDevice.waitForIdle()
+
+        val navBarBounds = composeTestRule.onNodeWithTag(NAVIGATION_BAR)
+            .fetchSemanticsNode()
+            .boundsInWindow
+
+        val displayHeight = mDevice.displayHeight
+
+        // Allows enough pixels to account for the System Navigation Bar or Status Bar
+        val maxSystemInsetsPx = 150
+
+        if (isAtBottom) {
+            val bottomEdge = navBarBounds.bottom.toInt()
+            val distanceToBottom = displayHeight - bottomEdge
+
+            assertTrue(
+                "Navigation bar should be docked at the bottom, accounting for system insets. " +
+                    "Distance to bottom was $distanceToBottom px (expected <= $maxSystemInsetsPx px). Bounds: $navBarBounds",
+                distanceToBottom in 0..maxSystemInsetsPx,
+            )
+        } else {
+            val topEdge = navBarBounds.top.toInt()
+
+            assertTrue(
+                "Navigation bar should be docked at the top, accounting for system insets. " +
+                    "Distance to top was $topEdge px (expected <= $maxSystemInsetsPx px). Bounds: $navBarBounds",
+                topEdge in 0..maxSystemInsetsPx,
+            )
+        }
+        Log.i(TAG, "verifyNavBarPositionForEdgeToEdge: Verified navbar is at the expected edge within safe insets")
+    }
+
+    /**
+     * Asserts that the navigation bar compose node is positioned relative to the view
      * identified by [referenceResourceId].
      */
-    private fun assertNavBarIsPositioned(referenceResourceId: String) {
+    private fun assertNavBarIsPositioned(referenceResourceId: String, isAtBottom: Boolean = true) {
         val navBarBounds = composeTestRule.onNodeWithTag(NAVIGATION_BAR)
             .fetchSemanticsNode()
             .boundsInWindow
@@ -381,6 +421,12 @@ class NavigationToolbarRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifyTheTabStripCloseTabButton: Trying to verify close button for tab in tab strip is displayed")
         composeTestRule.onNodeWithContentDescription("Close tab $tabName").assertIsDisplayed()
         Log.i(TAG, "verifyTheTabStripCloseTabButton: Verified close button for tab in tab strip is displayed")
+    }
+
+    fun verifyTheTabStripAddTabButton() {
+        Log.i(TAG, "verifyTheTabStripAddTabButton: Trying to verify the tab strip \"Add tab\" button is displayed")
+        composeTestRule.onNodeWithContentDescription("Add tab").assertIsDisplayed()
+        Log.i(TAG, "verifyTheTabStripAddTabButton: Verified the tab strip \"Add tab\" button is displayed")
     }
 
     fun verifyTheBackButton() {
@@ -649,9 +695,9 @@ class NavigationToolbarRobot(private val composeTestRule: ComposeTestRule) {
         }
 
         fun openUnifiedTrustPanel(interact: UnifiedTrustPanelRobot.() -> Unit): UnifiedTrustPanelRobot.Transition {
-            Log.i(TAG, "openSiteSecuritySheet: Trying to click the site security toolbar button and wait for $waitingTime ms for a new window")
+            Log.i(TAG, "openUnifiedTrustPanel: Trying to click the site information button and wait for $waitingTime ms for a new window")
             composeTestRule.onNodeWithContentDescription("Site information").performClick()
-            Log.i(TAG, "openSiteSecuritySheet: Clicked the site security toolbar button and waited for $waitingTime ms for a new window")
+            Log.i(TAG, "openUnifiedTrustPanel: Clicked the site information button and waited for $waitingTime ms for a new window")
             waitForAppWindowToBeUpdated()
 
             UnifiedTrustPanelRobot().interact()

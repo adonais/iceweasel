@@ -21,10 +21,10 @@ add_task(async function test_clickInsecureFieldWarning() {
       await openACPopup(popup, browser, "#form-basic-username");
       await new Promise(requestAnimationFrame);
 
-      let warningItem = popup.querySelector(`[type="insecureWarning"]`);
+      let warningItem = popup.querySelector(`[originaltype="insecureWarning"]`);
       Assert.ok(warningItem, "Got warning richlistitem");
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => !warningItem.collapsed,
         "Wait for warning to show"
       );

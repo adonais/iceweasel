@@ -370,6 +370,10 @@ internal class EngineObserver(
         dispatchAsync(MediaSessionAction.UpdateMediaMetadataAction(tabId, metadata))
     }
 
+    override fun onMediaAudioSessionTypeChanged(type: MediaSession.AudioSessionType) {
+        dispatchAsync(MediaSessionAction.UpdateMediaAudioSessionTypeAction(tabId, type))
+    }
+
     override fun onMediaPlaybackStateChanged(playbackState: MediaSession.PlaybackState) {
         dispatchAsync(
             MediaSessionAction.UpdateMediaPlaybackStateAction(

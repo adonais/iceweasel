@@ -179,7 +179,8 @@ allowlist-vars = [
     "nsNameSpaceManager_.*",
     "GECKO_IS_NIGHTLY",
     "NS_SAME_AS_FOREGROUND_COLOR",
-    "mozilla::detail::gGkAtoms",
+    "nsGkAtoms::detail::gGkAtoms",
+    "nsGkAtoms::kStaticAtomCount",
 ]
 # TODO(emilio): A bunch of types here can go away once we generate bindings and
 # structs together.
@@ -379,7 +380,7 @@ cbindgen-types = [
     { gecko = "StyleBaselineSource", servo = "crate::values::specified::BaselineSource" },
     { gecko = "StyleCustomIdent", servo = "crate::values::CustomIdent" },
     { gecko = "StyleComputedFontStretchRange", servo = "crate::font_face::ComputedFontStretchRange" },
-    { gecko = "StyleComputedFontStyleDescriptor", servo = "crate::font_face::ComputedFontStyleDescriptor" },
+    { gecko = "StyleComputedFontStyleRange", servo = "crate::font_face::ComputedFontStyleRange" },
     { gecko = "StyleComputedFontWeightRange", servo = "crate::font_face::ComputedFontWeightRange" },
     { gecko = "StyleComputedTimingFunction", servo = "crate::values::computed::easing::TimingFunction" },
     { gecko = "StyleDominantBaseline", servo = "crate::values::specified::DominantBaseline" },
@@ -505,6 +506,7 @@ cbindgen-types = [
     { gecko = "StyleGenericLineHeight", servo = "crate::values::generics::font::LineHeight" },
     { gecko = "StyleCaretColor", servo = "crate::values::computed::color::CaretColor" },
     { gecko = "StyleContain", servo = "crate::values::computed::Contain" },
+    { gecko = "StyleMarginTrim", servo = "crate::values::computed::MarginTrim" },
     { gecko = "StyleContainerType", servo = "crate::values::computed::ContainerType" },
     { gecko = "StyleContainerName", servo = "crate::values::computed::ContainerName" },
     { gecko = "StyleRestyleHint", servo = "crate::invalidation::element::restyle_hints::RestyleHint" },
@@ -612,6 +614,7 @@ cbindgen-types = [
     { gecko = "StylePageSize", servo = "crate::values::computed::page::PageSize" },
     { gecko = "StyleDProperty", servo = "crate::values::specified::svg::DProperty" },
     { gecko = "StyleVectorEffect", servo = "crate::values::specified::svg::VectorEffect" },
+    { gecko = "StyleImageDecoding", servo = "crate::values::computed::ImageDecoding" },
     { gecko = "StyleImageRendering", servo = "crate::values::computed::ImageRendering" },
     { gecko = "StylePrintColorAdjust", servo = "crate::values::computed::PrintColorAdjust" },
     { gecko = "StyleForcedColorAdjust", servo = "crate::values::computed::ForcedColorAdjust" },

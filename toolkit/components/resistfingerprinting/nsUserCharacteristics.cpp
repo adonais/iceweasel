@@ -920,17 +920,8 @@ void PopulateTextAntiAliasing() {
     }
   }
   levels.AppendElement(value);
-#elif defined(MOZ_WIDGET_GTK)
-  nsAutoCString level;
-  mozilla::widget::GSettings::GetString("org.gnome.desktop.interface"_ns,
-                                        "font-antialiasing"_ns, level);
-  if (level == "rgba") {  // Subpixel
-    levels.AppendElement(2);
-  } else if (level == "grayscale") {  // Standard
-    levels.AppendElement(1);
-  } else if (level == "none") {
-    levels.AppendElement(0);
-  }
+  // Linux/GTK exposes no smoothing *level*; its smoothing *type* (subpixel /
+  // grayscale / none) is collected separately in PopulateFontSmoothingType.
 #endif
 
   for (const auto& level : levels) {
@@ -944,6 +935,107 @@ void PopulateTextAntiAliasing() {
   output.Append("]");
 
   glean::characteristics::text_anti_aliasing.Set(output);
+}
+
+// The font-smoothing *type* (subpixel vs. grayscale vs. disabled), normalized
+// across platforms: 0 = disabled, 1 = grayscale (standard), 2 = subpixel. This
+// is distinct from text_anti_aliasing, which carries the smoothing *level* /
+// strength (Windows ClearType level, macOS AppleFontSmoothing). macOS has no
+// subpixel/grayscale type (grayscale-only since 10.14) and is not reported
+// here.
+void PopulateFontSmoothingType() {
+  int32_t type = -1;  // -1 = not applicable / undetermined on this platform
+
+#if defined(XP_WIN)
+  // SPI_GETFONTSMOOTHINGTYPE / FE_FONTSMOOTHINGCLEARTYPE are not always exposed
+  // by the SDK headers in use (cf. gfx/thebes/gfxDWriteFonts.cpp).
+#  ifndef SPI_GETFONTSMOOTHINGTYPE
+#    define SPI_GETFONTSMOOTHINGTYPE 0x200a
+#  endif
+#  ifndef FE_FONTSMOOTHINGCLEARTYPE
+#    define FE_FONTSMOOTHINGCLEARTYPE 2
+#  endif
+
+  BOOL fontSmoothing = FALSE;
+  if (SystemParametersInfo(SPI_GETFONTSMOOTHING, 0, &fontSmoothing, 0)) {
+    if (!fontSmoothing) {
+      type = 0;  // disabled
+    } else {
+      UINT smoothingType = 0;
+      if (SystemParametersInfo(SPI_GETFONTSMOOTHINGTYPE, 0, &smoothingType,
+                               0) &&
+          smoothingType == FE_FONTSMOOTHINGCLEARTYPE) {
+        type = 2;  // subpixel (ClearType)
+      } else {
+        type = 1;  // grayscale (standard)
+      }
+    }
+  }
+#elif defined(MOZ_WIDGET_GTK)
+  // GNOME org.gnome.desktop.interface font-antialiasing: rgba = subpixel,
+  // grayscale = standard, none = disabled. (Previously reported, as this same
+  // type, in text_anti_aliasing.)
+  nsAutoCString antialiasing;
+  mozilla::widget::GSettings::GetString("org.gnome.desktop.interface"_ns,
+                                        "font-antialiasing"_ns, antialiasing);
+  if (antialiasing == "rgba") {
+    type = 2;  // subpixel
+  } else if (antialiasing == "grayscale") {
+    type = 1;  // standard
+  } else if (antialiasing == "none") {
+    type = 0;  // disabled
+  }
+#endif
+
+  if (type >= 0) {
+    glean::characteristics::font_smoothing_type.Set(type);
+  }
+}
+
+// Font-rendering settings beyond the antialiasing type:
+//   font_hinting    -> hinting style (none/slight/medium/full)
+//   font_rgba_order -> subpixel (LCD) element order
+// Hinting reshapes glyph outlines and therefore affects rasterized (incl.
+// canvas) output; the rgba order only matters when subpixel antialiasing is
+// actually applied (no canvas effect, since the canvas is grayscale).
+// Hinting is a Linux/GNOME-only user setting (Windows hinting is implicit,
+// macOS/Android expose none). The subpixel order is also exposed on Windows as
+// the ClearType orientation (SPI_GETFONTSMOOTHINGORIENTATION), so it is
+// collected there too, normalized to the same "rgb"/"bgr" nicks Linux uses.
+void PopulateFontRenderingSettings() {
+#if defined(MOZ_WIDGET_GTK)
+  nsAutoCString hinting;
+  if (mozilla::widget::GSettings::GetString("org.gnome.desktop.interface"_ns,
+                                            "font-hinting"_ns, hinting) &&
+      !hinting.IsEmpty()) {
+    glean::characteristics::font_hinting.Set(hinting);
+  }
+#endif
+
+  nsAutoCString rgbaOrder;
+#if defined(MOZ_WIDGET_GTK)
+  mozilla::widget::GSettings::GetString("org.gnome.desktop.interface"_ns,
+                                        "font-rgba-order"_ns, rgbaOrder);
+#elif defined(XP_WIN)
+  // SPI_GETFONTSMOOTHINGORIENTATION / FE_FONTSMOOTHINGORIENTATIONRGB are not
+  // always exposed by the SDK headers in use.
+#  ifndef SPI_GETFONTSMOOTHINGORIENTATION
+#    define SPI_GETFONTSMOOTHINGORIENTATION 0x2012
+#  endif
+#  ifndef FE_FONTSMOOTHINGORIENTATIONRGB
+#    define FE_FONTSMOOTHINGORIENTATIONRGB 0x0001
+#  endif
+  UINT orientation = 0;
+  if (SystemParametersInfo(SPI_GETFONTSMOOTHINGORIENTATION, 0, &orientation,
+                           0)) {
+    // Windows exposes only horizontal RGB/BGR (no vertical variants).
+    rgbaOrder.Assign(orientation == FE_FONTSMOOTHINGORIENTATIONRGB ? "rgb"
+                                                                   : "bgr");
+  }
+#endif
+  if (!rgbaOrder.IsEmpty()) {
+    glean::characteristics::font_rgba_order.Set(rgbaOrder);
+  }
 }
 
 void PopulateErrors(
@@ -1207,7 +1299,7 @@ const RefPtr<PopulatePromise>& TimoutPromise(
 // metric is set, this variable should be incremented. It'll be a lot. It's
 // okay. We're going to need it to know (including during development) what is
 // the source of the data we are looking at.
-const int kSubmissionSchema = 43;
+const int kSubmissionSchema = 49;
 
 const auto* const kUUIDPref =
     "toolkit.telemetry.user_characteristics_ping.uuid";
@@ -1404,6 +1496,8 @@ void nsUserCharacteristics::PopulateDataAndEventuallySubmit(
     PopulateKeyboardLayout();
     PopulateLanguages();
     PopulateTextAntiAliasing();
+    PopulateFontSmoothingType();
+    PopulateFontRenderingSettings();
     PopulateProcessorCount();
     PopulateModelName();
     PopulateMisc(false);

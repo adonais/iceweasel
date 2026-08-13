@@ -9,12 +9,13 @@
  * nsWinGesture - Touch input handling for tablet displays.
  */
 
-#include "nsdefs.h"
-#include <winuser.h>
 #include <tpcshrd.h>
-#include "nsPoint.h"
+#include <winuser.h>
+
 #include "mozilla/EventForwards.h"
 #include "mozilla/TouchEvents.h"
+#include "nsPoint.h"
+#include "nsdefs.h"
 
 // WM_TABLET_QUERYSYSTEMGESTURESTATUS return values
 #define TABLET_ROTATE_GESTURE_ENABLE 0x02000000

@@ -5,6 +5,7 @@
 #include "MediaController.h"
 
 #include "AudioSessionManager.h"
+#include "ContentMediaController.h"
 #include "MediaControlKeySource.h"
 #include "MediaControlService.h"
 #include "MediaControlUtils.h"
@@ -132,6 +133,35 @@ void MediaController::Pause() {
       MediaControlAction(MediaControlKey::Pause));
 }
 
+void MediaController::PauseWithReason(AudioFocusLossReason aReason) {
+  LOG("PauseWithReason {}", GetEnumString(aReason).get());
+  switch (aReason) {
+    case AudioFocusLossReason::User:
+      // User pause keeps the existing media-key behaviour (controllable only).
+      Pause();
+      return;
+    case AudioFocusLossReason::System_transient:
+      InterruptAudioSession(AudioSessionInterruptKind::Transient);
+      UpdateMediaSessionInterruptToContentMediaIfNeeded(
+          AudioFocusInterruptAction::Suspend);
+      return;
+    case AudioFocusLossReason::System_permanent:
+      InterruptAudioSession(AudioSessionInterruptKind::Permanent);
+      UpdateMediaSessionInterruptToContentMediaIfNeeded(
+          AudioFocusInterruptAction::Suspend);
+      return;
+    default:
+      MOZ_ASSERT_UNREACHABLE("Unknown AudioFocusLossReason");
+  }
+}
+
+void MediaController::Resume() {
+  LOG("Resume");
+  RestoreAudioSession();
+  UpdateMediaSessionInterruptToContentMediaIfNeeded(
+      AudioFocusInterruptAction::Resume);
+}
+
 void MediaController::PrevTrack() {
   LOG("Prev Track");
   UpdateMediaControlActionToContentMediaIfNeeded(
@@ -185,19 +215,41 @@ void MediaController::SetVolume(double aVolume) {
 
 void MediaController::Mute() {
   LOG("Mute");
+  const bool wasAudible = IsAudible();
+  mIsMuted = true;
+  if (RefPtr<BrowsingContext> bc = BrowsingContext::Get(Id())) {
+    IgnoredErrorResult rv;
+    bc->Canonical()->Top()->SetMuted(true, rv);
+  }
+  if (IsAudible() != wasAudible) {
+    DispatchAsyncEvent(u"audiblechange"_ns);
+  }
   UpdateMediaControlActionToContentMediaIfNeeded(
       MediaControlAction(MediaControlKey::Mute));
 }
 
 void MediaController::Unmute() {
   LOG("Unmute");
+  const bool wasAudible = IsAudible();
+  mIsMuted = false;
+  if (RefPtr<BrowsingContext> bc = BrowsingContext::Get(Id())) {
+    IgnoredErrorResult rv;
+    bc->Canonical()->Top()->SetMuted(false, rv);
+  }
+  if (IsAudible() != wasAudible) {
+    DispatchAsyncEvent(u"audiblechange"_ns);
+  }
   UpdateMediaControlActionToContentMediaIfNeeded(
       MediaControlAction(MediaControlKey::Unmute));
 }
 
+bool MediaController::IsMuted() const { return mIsMuted; }
+
 uint64_t MediaController::Id() const { return mTopLevelBrowsingContextId; }
 
-bool MediaController::IsAudible() const { return IsMediaAudible(); }
+bool MediaController::IsAudible() const {
+  return !mIsMuted && IsMediaAudible();
+}
 
 bool MediaController::IsPlaying() const { return IsMediaPlaying(); }
 
@@ -260,6 +312,22 @@ void MediaController::UpdateMediaControlActionToContentMediaIfNeeded(
   } else {
     context->Canonical()->UpdateMediaControlAction(aAction);
   }
+}
+
+void MediaController::UpdateMediaSessionInterruptToContentMediaIfNeeded(
+    AudioFocusInterruptAction aAction) {
+  if (mShutdown) {
+    return;
+  }
+  // An interrupt reaches uncontrollable receivers, which never activate the
+  // controller, so it is dispatched to every context regardless of mIsActive.
+  RefPtr<BrowsingContext> context = BrowsingContext::Get(Id());
+  if (!context || context->IsDiscarded()) {
+    return;
+  }
+  context->PreOrderWalk([&](BrowsingContext* bc) {
+    bc->Canonical()->UpdateMediaSessionInterrupt(aAction);
+  });
 }
 
 void MediaController::Shutdown() {
@@ -383,6 +451,19 @@ void MediaController::NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
     service->GetAudioFocusManager().RequestAudioFocus(this);
   } else {
     service->GetAudioFocusManager().RevokeAudioFocus(this);
+  }
+}
+
+void MediaController::NotifyBrowsingContextDiscarded(
+    uint64_t aBrowsingContextId) {
+  if (mShutdown) {
+    return;
+  }
+  LOG("NotifyBrowsingContextDiscarded %" PRIu64, aBrowsingContextId);
+  const bool oldAudible = IsAudible();
+  MediaStatusManager::NotifyBrowsingContextDiscarded(aBrowsingContextId);
+  if (IsAudible() != oldAudible) {
+    DispatchAsyncEvent(u"audiblechange"_ns);
   }
 }
 
@@ -635,6 +716,14 @@ void MediaController::ClearAudioSessionFor(uint64_t aBrowsingContextId) {
     return;
   }
   mAudioSessionManager.NotifyBcDiscarded(aBrowsingContextId);
+}
+
+void MediaController::InterruptAudioSession(AudioSessionInterruptKind aKind) {
+  mAudioSessionManager.InterruptAudioSessions(aKind);
+}
+
+void MediaController::RestoreAudioSession() {
+  mAudioSessionManager.RestoreAudioSessions();
 }
 
 AudioSessionType MediaController::GetEffectiveAudioSessionType() const {

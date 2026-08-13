@@ -1,12 +1,11 @@
+#include "Helpers.h"
 #include "gtest/gtest.h"
-
 #include "mozilla/SpinEventLoopUntil.h"
 #include "nsBufferedStreams.h"
 #include "nsIThread.h"
 #include "nsNetUtil.h"
 #include "nsStreamUtils.h"
 #include "nsThreadUtils.h"
-#include "Helpers.h"
 
 // Helper function for creating a testing::AsyncStringStream
 already_AddRefed<nsBufferedInputStream> CreateStream(uint32_t aSize,

@@ -4,9 +4,9 @@
 
 #include "mozilla/layers/OMTAController.h"
 
+#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/CompositorThread.h"
-#include "mozilla/StaticPrefs_layout.h"
 
 namespace mozilla {
 namespace layers {

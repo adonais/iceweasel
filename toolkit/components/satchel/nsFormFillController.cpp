@@ -970,9 +970,28 @@ nsresult nsFormFillController::KeyDown(Event* aEvent) {
   bool cancel = false;
   bool unused = false;
 
+  // The popup owns a keyboard sub-selection on its secondary-action button
+  // (e.g. the edit button on a saved-login row). When the popup is open, let
+  // it consume Tab/Enter/Space so it is reachable for keyboard users.
+  auto isPopupOpen = [&]() -> bool {
+    bool open = false;
+    if (mFocusedPopup) {
+      mFocusedPopup->GetPopupOpen(&open);
+    }
+    return open;
+  };
+
   uint32_t k = keyEvent->KeyCode();
   switch (k) {
     case KeyboardEvent_Binding::DOM_VK_RETURN: {
+      bool activated = false;
+      if (isPopupOpen()) {
+        mFocusedPopup->MaybeActivateSecondaryAction(&activated);
+      }
+      if (activated) {
+        cancel = true;
+        break;
+      }
       nsCOMPtr<nsIAutoCompleteController> controller = mController;
       controller->HandleEnter(false, aEvent, &cancel);
       if (nsFocusManager::GetFocusedElementStatic() != mControlledElement) {
@@ -1055,9 +1074,28 @@ nsresult nsFormFillController::KeyDown(Event* aEvent) {
       break;
     }
     case KeyboardEvent_Binding::DOM_VK_TAB: {
+      bool consumed = false;
+      if (isPopupOpen()) {
+        mFocusedPopup->NavigateSecondaryAction(keyEvent->ShiftKey(), &consumed);
+      }
+      if (consumed) {
+        aEvent->StopPropagation();
+        aEvent->PreventDefault();
+        return NS_OK;
+      }
       nsCOMPtr<nsIAutoCompleteController> controller = mController;
       controller->HandleTab();
       cancel = false;
+      break;
+    }
+    case KeyboardEvent_Binding::DOM_VK_SPACE: {
+      bool activated = false;
+      if (isPopupOpen()) {
+        mFocusedPopup->MaybeActivateSecondaryAction(&activated);
+      }
+      if (activated) {
+        cancel = true;
+      }
       break;
     }
   }

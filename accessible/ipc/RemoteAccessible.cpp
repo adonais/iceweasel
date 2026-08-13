@@ -2,27 +2,28 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "RemoteAccessible.h"
+
 #include "ARIAMap.h"
 #include "CachedTableAccessible.h"
-#include "RemoteAccessible.h"
+#include "Pivot.h"
+#include "Relation.h"
+#include "TextLeafRange.h"
 #include "mozilla/a11y/CacheConstants.h"
 #include "mozilla/a11y/DocAccessibleParent.h"
 #include "mozilla/a11y/DocManager.h"
 #include "mozilla/a11y/Platform.h"
+#include "mozilla/a11y/RelationType.h"
 #include "mozilla/a11y/TableAccessible.h"
 #include "mozilla/a11y/TableCellAccessible.h"
-#include "mozilla/dom/Element.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
+#include "mozilla/dom/Element.h"
 #include "mozilla/gfx/Matrix.h"
-#include "nsAccessibilityService.h"
 #include "nsAccUtils.h"
+#include "nsAccessibilityService.h"
 #include "nsFocusManager.h"
 #include "nsTextEquivUtils.h"
-#include "Pivot.h"
-#include "Relation.h"
-#include "TextLeafRange.h"
-#include "mozilla/a11y/RelationType.h"
 #include "xpcAccessibleDocument.h"
 
 #ifdef A11Y_LOG
@@ -146,7 +147,7 @@ Accessible* RemoteAccessible::EmbeddedChildAt(uint32_t aChildIdx) {
 }
 
 LocalAccessible* RemoteAccessible::OuterDocOfRemoteBrowser() const {
-  auto tab = static_cast<dom::BrowserParent*>(mDoc->Manager());
+  auto tab = mDoc->Manager();
   dom::Element* frame = tab->GetOwnerElement();
   NS_ASSERTION(frame, "why isn't the tab in a frame!");
   if (!frame) return nullptr;
@@ -2397,7 +2398,7 @@ bool RemoteAccessible::HasPrimaryAction() const {
 
 void RemoteAccessible::TakeFocus() const {
   (void)mDoc->SendTakeFocus(mID);
-  auto* bp = static_cast<dom::BrowserParent*>(mDoc->Manager());
+  auto* bp = mDoc->Manager();
   MOZ_ASSERT(bp);
   if (nsFocusManager::GetFocusedElementStatic() == bp->GetOwnerElement()) {
     // This remote document tree is already focused. We don't need to do

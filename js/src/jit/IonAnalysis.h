@@ -76,6 +76,9 @@ void RenumberBlocks(MIRGraph& graph);
 
 [[nodiscard]] bool EliminateRedundantGCBarriers(MIRGraph& graph);
 
+[[nodiscard]] bool CanonicalizeNaNAtUses(const MIRGenerator* mir,
+                                         MIRGraph& graph);
+
 [[nodiscard]] bool AddKeepAliveInstructions(MIRGraph& graph);
 
 [[nodiscard]] bool MarkLoadsUsedAsPropertyKeys(MIRGraph& graph);

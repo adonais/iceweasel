@@ -7,14 +7,13 @@
 
 #include "Cookie.h"
 #include "CookieStorage.h"
-
-#include "mozilla/Atomics.h"
-#include "mozilla/Monitor.h"
-#include "mozilla/net/NeckoChannelParams.h"
 #include "mozIStorageBindingParamsArray.h"
 #include "mozIStorageCompletionCallback.h"
 #include "mozIStorageStatement.h"
 #include "mozIStorageStatementCallback.h"
+#include "mozilla/Atomics.h"
+#include "mozilla/Monitor.h"
+#include "mozilla/net/NeckoChannelParams.h"
 #include "nsIAsyncShutdown.h"
 
 class mozIStorageAsyncStatement;

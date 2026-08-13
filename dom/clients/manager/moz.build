@@ -16,6 +16,7 @@ EXPORTS.mozilla.dom += [
     "ClientSource.h",
     "ClientState.h",
     "ClientThing.h",
+    "ClientValidation.h",
 ]
 
 UNIFIED_SOURCES += [

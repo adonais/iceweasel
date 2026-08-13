@@ -42,6 +42,7 @@ absl_cc_library(
     absl::config
     absl::core_headers
     absl::dynamic_annotations
+    absl::malloc_internal
     absl::raw_logging_internal
   PUBLIC
 )
@@ -57,6 +58,7 @@ absl_cc_test(
     absl::stacktrace
     absl::config
     absl::core_headers
+    absl::errno_saver
     absl::span
     GTest::gmock_main
 )
@@ -105,12 +107,15 @@ absl_cc_test(
   DEPS
     absl::base
     absl::check
+    absl::cleanup
     absl::config
     absl::core_headers
     absl::log
+    absl::malloc_internal
     absl::memory
     absl::stack_consumption
     absl::strings
+    absl::str_format
     absl::symbolize
     GTest::gmock
 )

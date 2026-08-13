@@ -6,18 +6,24 @@
 @namespace html url("http://www.w3.org/1999/xhtml");
 
 xul|findbar {
-  border-top: 1px solid ThreeDShadow;
   min-width: 1px;
   transition-property: margin-bottom, visibility;
   transition-duration: 150ms, 0s;
   transition-timing-function: ease-in-out, linear;
   padding-block: 6px;
-  background-color: -moz-dialog;
+  border-top: 1px solid var(--chrome-content-separator-color);
+  background-color: var(--toolbar-background-color);
   color: -moz-dialogtext;
 
+  @media not -moz-pref("browser.nova.enabled") {
+    border-top: 1px solid ThreeDShadow;
+    background-color: -moz-dialog;
+  }
+
   &:where([hidden]) {
-    /* Override display:none to make the transition work. */
-    display: flex;
+    /* Override display:none to make the transition work. `!important` beats the
+       global `[hidden] { display: none !important }` rule. */
+    display: flex !important;
     margin-bottom: calc(-1 * (28px + 12px + 1px)); /* findbar-container's height + padding-block + top border */
     visibility: collapse;
     transition-delay: 0s, 150ms;
@@ -47,9 +53,14 @@ xul|findbar {
 
 .findbar-container {
   margin-inline-start: 8px;
-  height: 28px;
   overflow-inline: hidden; /* Ensures the close button stays visible. */
   transition: opacity 150ms ease-in-out;
+  height: 32px;
+  padding-inline-start: var(--space-xsmall);
+
+  @media not -moz-pref("browser.nova.enabled") {
+    height: 28px;
+  }
 }
 
 /* Remove start margin when close button is on the left side (on macOS) */
@@ -61,22 +72,36 @@ xul|findbar {
 
 .findbar-textbox {
   appearance: none;
-  background-color: var(--input-text-background-color);
+  background-color: var(--background-color-box);
   color: var(--input-text-color);
+  min-height: 28px;
 
-  :root[lwtheme] & {
+  :root[lwtheme] &:not([status="notfound"], [flash="true"]) {
     background-color: var(--toolbar-field-background-color);
     color: var(--toolbar-field-text-color);
   }
 
-  border: 1px solid var(--input-border-color);
-  border-radius: var(--border-radius-small);
+  border: var(--border-width) solid var(--border-color-interactive);
+  border-radius: var(--border-radius-xlarge);
   outline: none;
   margin: 0;
-  padding: 2px 5px;
-  padding-inline-start: 8px;
+  padding-inline-start: var(--space-medium);
   width: 18em;
   box-sizing: border-box;
+
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media not -moz-pref("browser.nova.enabled") {
+    border-radius: var(--border-radius-small);
+    border: 1px solid var(--input-border-color);
+    background-color: var(--input-text-background-color);
+    min-height: auto;
+    padding: 2px 5px;
+
+    &:focus {
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.23);
+      outline-color: var(--toolbar-field-border-color-focus);
+    }
+  }
 
   &::placeholder {
     opacity: 0.69;
@@ -88,8 +113,6 @@ xul|findbar {
     border-color: transparent;
     outline: var(--focus-outline);
     outline-offset: var(--focus-outline-inset);
-    outline-color: var(--toolbar-field-border-color-focus);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.23);
   }
 
   :root[lwtheme] &::selection {
@@ -117,11 +140,21 @@ xul|findbar {
 .findbar-find-previous,
 .findbar-find-next {
   appearance: none;
-  padding: 4px 7px;
   -moz-context-properties: fill;
   fill: var(--toolbarbutton-icon-fill);
   color: inherit;
-  border-radius: var(--border-radius-small);
+  border-radius: var(--border-radius-circle);
+  padding: var(--space-xsmall) var(--space-small);
+
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media not -moz-pref("browser.nova.enabled") {
+    border-radius: var(--border-radius-small);
+    padding: 4px 7px;
+  }
+
+  @media (prefers-contrast) {
+    border: var(--border-width) solid var(--toolbarbutton-outline-color);
+  }
 
   &:focus-visible {
     outline: var(--focus-outline);
@@ -159,6 +192,10 @@ xul|findbar {
   flex-shrink: 0;
 }
 
+.findbar-container > checkbox {
+  accent-color: var(--color-accent-primary);
+}
+
 .findbar-find-status,
 .found-matches {
   margin-inline-start: 12px;
@@ -183,9 +220,12 @@ xul|findbar {
 /* Increase specificity to override close-icon.css */
 .close-icon.findbar-closebutton {
   margin: 2px 8px;
-  width: 24px;
   fill: var(--toolbarbutton-icon-fill);
   transition: opacity 150ms ease-in-out;
+  border-radius: var(--border-radius-circle);
+  border: var(--border-width) solid var(--toolbarbutton-outline-color);
+  padding: var(--space-xsmall) var(--space-small);
+  width: auto;
 
   &:hover {
     background-color: var(--toolbarbutton-background-color-hover, rgba(190, 190, 190, 0.2));
@@ -194,5 +234,11 @@ xul|findbar {
 
   &:hover:active {
     background-color: var(--toolbarbutton-background-color-active, rgba(190, 190, 190, 0.4));
+  }
+
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media not -moz-pref("browser.nova.enabled") {
+    border-radius: var(--border-radius-small);
+    width: 24px;
   }
 }

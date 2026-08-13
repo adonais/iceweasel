@@ -107,3 +107,8 @@ experimental-features-semantic-history-search-description = Use a local Machine 
 experimental-features-tab-notes =
     .label = Tab notes
 experimental-features-tab-notes-description = Tab notes are an experimental feature that lets you add sticky notes to your browser tabs. Jot down context, reminders, or next steps so you can come back and remember why you opened it. We’d love your feedback as we keep improving this feature. <a data-l10n-name="connect">Share feedback</a>
+
+# Streamlined Tab Context Menu
+experimental-features-tab-context-menu =
+    .label = Streamlined tab menu
+experimental-features-tab-context-menu-description = See a simpler context menu when you right-click a tab. It’s designed to make common actions easier to find. <a data-l10n-name="connect">Share feedback</a>

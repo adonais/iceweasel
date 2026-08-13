@@ -10,22 +10,11 @@
         }
       }
     },
-    "xsmall": {
-      "value": {
-        "brand": {
-          "default": "0.733rem",
-          "comment": "11px / Note this token is to be used in rare cases because its hard to read. Please consult with the Design Systems and A11y teams for case-by-case feedback."
-        },
-        "platform": {
-          "default": "unset"
-        }
-      }
-    },
     "small": {
       "value": {
         "brand": {
           "default": "0.867rem",
-          "comment": "13px"
+          "comment": "13px (in-content)"
         },
         "platform": {
           "default": "unset"
@@ -33,48 +22,20 @@
       }
     },
     "large": {
-      "value": {
-        "brand": {
-          "default": "1.133rem",
-          "comment": "17px"
-        },
-        "platform": {
-          "default": "unset"
-        }
-      }
+      "value": "1.133rem",
+      "comment": "17px (in-content)"
     },
     "xlarge": {
-      "value": {
-        "brand": {
-          "default": "1.467rem",
-          "comment": "22px"
-        },
-        "platform": {
-          "default": "unset"
-        }
-      }
+      "value": "1.467rem",
+      "comment": "22px (in-content)"
     },
     "xxlarge": {
-      "value": {
-        "brand": {
-          "default": "1.6rem",
-          "comment": "24px"
-        },
-        "platform": {
-          "default": "unset"
-        }
-      }
+      "value": "1.6rem",
+      "comment": "24px (in-content)"
     },
     "xxxlarge": {
-      "value": {
-        "brand": {
-          "default": "2.2rem",
-          "comment": "33px"
-        },
-        "platform": {
-          "default": "unset"
-        }
-      }
+      "value": "2.2rem",
+      "comment": "33px (in-content)"
     },
     "heading": {
       "xlarge": {

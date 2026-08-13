@@ -5,16 +5,16 @@
 #ifndef TRRService_h_
 #define TRRService_h_
 
+#include "TRR.h"
+#include "TRRServiceBase.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/DataMutex.h"
 #include "nsHostResolver.h"
+#include "nsICaptivePortalService.h"
 #include "nsIObserver.h"
 #include "nsITimer.h"
-#include "nsWeakReference.h"
-#include "TRRServiceBase.h"
-#include "nsICaptivePortalService.h"
 #include "nsTHashSet.h"
-#include "TRR.h"
+#include "nsWeakReference.h"
 
 class nsDNSService;
 class nsIPrefBranch;

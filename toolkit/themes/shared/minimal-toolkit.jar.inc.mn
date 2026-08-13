@@ -53,3 +53,5 @@ toolkit.jar:
 # used in about:certificate on desktop/Android
   skin/classic/global/icons/error.svg                       (../../shared/icons/error.svg)
   skin/classic/global/illustrations/error-malformed-url.svg (../../shared/illustrations/error-malformed-url.svg)
+# used by moz-message-bar (type="warning") in about:neterror
+  skin/classic/global/icons/warning.svg                     (../../shared/icons/warning.svg)

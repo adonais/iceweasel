@@ -11,8 +11,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ActorManagerParent: "resource://gre/modules/ActorManagerParent.sys.mjs",
   DoHController: "moz-src:///toolkit/components/doh/DoHController.sys.mjs",
   EventDispatcher: "resource://gre/modules/Messaging.sys.mjs",
-  NimbusGeckoViewQATelemetry:
-    "resource://gre/modules/NimbusGeckoViewQATelemetry.sys.mjs",
   PdfJs: "resource://pdf.js/PdfJs.sys.mjs",
   GeckoViewPreferences: "resource://gre/modules/GeckoViewPreferences.sys.mjs",
 });
@@ -38,12 +36,14 @@ const JSPROCESSACTORS = {
         "PeerConnection:request",
       ],
     },
+    safeForUntrustedWebProcess: true,
   },
   GeckoViewPush: {
     parent: {
       esModuleURI: "resource:///actors/GeckoViewPushParent.sys.mjs",
     },
     includeParent: true,
+    safeForUntrustedWebProcess: true,
   },
 };
 
@@ -56,6 +56,7 @@ const JSWINDOWACTORS = {
       esModuleURI: "resource:///actors/LoadURIDelegateChild.sys.mjs",
     },
     messageManagerGroups: ["browsers"],
+    safeForUntrustedWebProcess: true,
   },
   GeckoViewPermission: {
     parent: {
@@ -66,6 +67,7 @@ const JSWINDOWACTORS = {
     },
     allFrames: true,
     includeChrome: true,
+    safeForUntrustedWebProcess: true,
   },
   GeckoViewPrompt: {
     parent: {
@@ -84,6 +86,7 @@ const JSWINDOWACTORS = {
     },
     allFrames: true,
     messageManagerGroups: ["browsers"],
+    safeForUntrustedWebProcess: true,
   },
   GeckoViewFormValidation: {
     child: {
@@ -94,6 +97,7 @@ const JSWINDOWACTORS = {
     },
     allFrames: true,
     messageManagerGroups: ["browsers"],
+    safeForUntrustedWebProcess: true,
   },
   GeckoViewPdfjs: {
     parent: {
@@ -103,6 +107,7 @@ const JSWINDOWACTORS = {
       esModuleURI: "resource://pdf.js/GeckoViewPdfjsChild.sys.mjs",
     },
     allFrames: true,
+    safeForUntrustedWebProcess: true,
   },
 };
 
@@ -217,6 +222,8 @@ export class GeckoViewStartup {
               "GeckoView:IPProtection:Activate",
               "GeckoView:IPProtection:Deactivate",
               "GeckoView:IPProtection:Enroll",
+              "GeckoView:IPProtection:RefreshUsage",
+              "GeckoView:IPProtection:ServerList:GetCountryList",
             ],
           });
 
@@ -327,8 +334,6 @@ export class GeckoViewStartup {
 
         Services.obs.addObserver(this, "browser-idle-startup-tasks-finished");
         Services.obs.addObserver(this, "handlersvc-store-initialized");
-
-        lazy.NimbusGeckoViewQATelemetry.init();
 
         Services.obs.notifyObservers(null, "geckoview-startup-complete");
         break;

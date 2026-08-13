@@ -7,13 +7,14 @@
 
 #include <stddef.h>  // for size_t
 #include <stdint.h>  // for uint64_t
+
 #include "CompositableHost.h"
 #include "GLContextTypes.h"  // for GLContext
 #include "GLDefs.h"          // for GLenum, LOCAL_GL_CLAMP_TO_EDGE, etc
 #include "GLTextureImage.h"  // for TextureImage
 #include "gfxTypes.h"
-#include "mozilla/GfxMessageUtils.h"         // for gfxContentType
 #include "mozilla/Assertions.h"              // for MOZ_ASSERT, etc
+#include "mozilla/GfxMessageUtils.h"         // for gfxContentType
 #include "mozilla/RefPtr.h"                  // for RefPtr
 #include "mozilla/gfx/Matrix.h"              // for Matrix4x4
 #include "mozilla/gfx/Point.h"               // for IntSize, IntPoint
@@ -44,6 +45,7 @@ namespace layers {
 class Compositor;
 class CompositorOGL;
 class AndroidHardwareBuffer;
+class AndroidImageConsumer;
 class SurfaceDescriptorAndroidHardwareBuffer;
 class TextureImageTextureSourceOGL;
 class GLTextureSource;
@@ -552,6 +554,98 @@ class AndroidHardwareBufferTextureHost : public TextureHost {
 
  protected:
   RefPtr<AndroidHardwareBuffer> mAndroidHardwareBuffer;
+};
+
+class AndroidImageReaderImageTextureSource : public TextureSource,
+                                             public TextureSourceOGL {
+ public:
+  AndroidImageReaderImageTextureSource(
+      TextureSourceProvider* aProvider,
+      AndroidImageConsumer* aAndroidImageConsumer, gfx::SurfaceFormat aFormat,
+      GLenum aTarget, GLenum aWrapMode, gfx::IntSize aSize);
+
+  const char* Name() const override {
+    return "AndroidImageReaderImageTextureSource";
+  }
+
+  TextureSourceOGL* AsSourceOGL() override { return this; }
+
+  void BindTexture(GLenum activetex,
+                   gfx::SamplingFilter aSamplingFilter) override;
+
+  bool IsValid() const override;
+
+  gfx::IntSize GetSize() const override { return mSize; }
+
+  gfx::SurfaceFormat GetFormat() const override { return mFormat; }
+
+  GLenum GetTextureTarget() const override { return mTextureTarget; }
+
+  GLenum GetWrapMode() const override { return mWrapMode; }
+
+  void DeallocateDeviceData() override;
+
+  gl::GLContext* gl() const { return mGL; }
+
+ protected:
+  virtual ~AndroidImageReaderImageTextureSource();
+
+  RefPtr<gl::GLContext> mGL;
+  RefPtr<AndroidImageConsumer> mAndroidImageConsumer;
+  const gfx::SurfaceFormat mFormat;
+  const GLenum mTextureTarget;
+  const GLenum mWrapMode;
+  const gfx::IntSize mSize;
+};
+
+class AndroidImageReaderImageTextureHost : public TextureHost {
+ public:
+  AndroidImageReaderImageTextureHost(
+      TextureFlags aFlags,
+      const AndroidImageReaderImageDescriptor& aDescriptor);
+
+  virtual ~AndroidImageReaderImageTextureHost();
+
+  void DeallocateDeviceData() override;
+
+  gfx::SurfaceFormat GetFormat() const override;
+
+  already_AddRefed<gfx::DataSourceSurface> GetAsSurface(
+      gfx::DataSourceSurface* aSurface) override {
+    return nullptr;  // XXX - implement this (for MOZ_DUMP_PAINTING)
+  }
+
+  gfx::IntSize GetSize() const override { return mSize; }
+
+  const char* Name() override { return "AndroidImageReaderImageTextureHost"; }
+
+  void CreateRenderTexture(
+      const wr::ExternalImageId& aExternalImageId) override;
+
+  uint32_t NumSubTextures() override;
+
+  void PushResourceUpdates(wr::TransactionBuilder& aResources,
+                           ResourceUpdateOp aOp,
+                           const Range<wr::ImageKey>& aImageKeys,
+                           const wr::ExternalImageId& aExtID) override;
+
+  void PushDisplayItems(wr::DisplayListBuilder& aBuilder,
+                        const wr::LayoutRect& aBounds,
+                        const wr::LayoutRect& aClip, wr::ImageRendering aFilter,
+                        const Range<wr::ImageKey>& aImageKeys,
+                        PushDisplayItemFlagSet aFlags) override;
+
+  bool SupportsExternalCompositing(WebRenderBackend aBackend) override;
+
+  // gecko does not need deferred deletion with WebRender
+  // GPU/hardware task end could be checked by android fence.
+  // SurfaceTexture uses android fence internally,
+  bool NeedsDeferredDeletion() const override { return false; }
+
+  const layers::GpuProcessAndroidImageReaderId mImageReaderId;
+  const layers::AndroidMediaCodecFrameId mFrameId;
+  const gfx::IntSize mSize;
+  const gfx::SurfaceFormat mFormat;
 };
 
 #endif  // MOZ_WIDGET_ANDROID

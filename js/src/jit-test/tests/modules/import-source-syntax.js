@@ -8,6 +8,7 @@ function assertIsImportDeclaration(src) {
   assertEq(ast.body.length, 1);
   const importDecl = ast.body[0];
   assertEq(importDecl.type, "ImportDeclaration");
+  assertEq(importDecl.phase, "evaluation");
 }
 
 function assertIsImportSourceDeclaration(src) {
@@ -15,7 +16,17 @@ function assertIsImportSourceDeclaration(src) {
   assertEq(ast.type, "Program");
   assertEq(ast.body.length, 1);
   const importDecl = ast.body[0];
-  assertEq(importDecl.type, "ImportSourceDeclaration");
+  assertEq(importDecl.type, "ImportDeclaration");
+  assertEq(importDecl.phase, "source");
+}
+
+function assertImportSourceBinding(src, name) {
+  const ast = Reflect.parse(src, {target: "module"});
+  const importDecl = ast.body[0];
+  assertEq(importDecl.type, "ImportDeclaration");
+  assertEq(importDecl.phase, "source");
+  assertEq(importDecl.binding.type, "Identifier");
+  assertEq(importDecl.binding.name, name);
 }
 
 const ast = Reflect.parse("import source mod from './module.js'", {target: "module"});
@@ -23,7 +34,8 @@ assertEq(ast.type, "Program");
 assertEq(ast.body.length, 1);
 
 const importDecl = ast.body[0];
-assertEq(importDecl.type, "ImportSourceDeclaration");
+assertEq(importDecl.type, "ImportDeclaration");
+assertEq(importDecl.phase, "source");
 
 const binding = importDecl.binding;
 assertEq(binding.type, "Identifier");
@@ -61,4 +73,19 @@ assertThrowsInstanceOf(() => Reflect.parse("import source from 42", {target: "mo
 assertThrowsInstanceOf(() => Reflect.parse("import source mod from 'module.js' with { type: 'json' }", {target: "module"}), SyntaxError);
 
 assertErrorMessage(() => Reflect.parse("import source * from './module.js'", {target: "module"}), SyntaxError, "missing declaration after 'import source'");
+
+// Disambiguation must resolve the source binding to the right identifier,
+// including the two-token `from` lookahead where the binding is `from` itself.
+assertImportSourceBinding("import source mod from './module.js'", "mod");
+assertImportSourceBinding("import source source from './module.js'", "source");
+assertImportSourceBinding("import source from from './module.js'", "from");
+
+// `source` followed by a token that cannot begin an ImportedBinding (and is
+// neither `from` nor `,`) commits to a source phase import, so a non-binding
+// clause is a missing-declaration error rather than an evaluation import.
+assertErrorMessage(() => Reflect.parse("import source { mod } from './module.js'", {target: "module"}), SyntaxError, "missing declaration after 'import source'");
+
+// `source` as an ordinary default binding stays an evaluation import, whether
+// followed by named imports or a namespace import.
+assertIsImportDeclaration("import source, * as ns from './module.js'");
 

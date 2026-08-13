@@ -1533,6 +1533,11 @@ void TextControlState::EnsureTextInputListener() {
   mTextInputListener->StartToHandleShortcutKeys();
 }
 
+bool TextControlState::IsPreparingEditor() const {
+  return mHandlingState &&
+         mHandlingState->IsHandling(TextControlAction::PrepareEditor);
+}
+
 nsresult TextControlState::PrepareEditor() {
   if (mEditorInitialized) {
     // Do not initialize the editor multiple times.

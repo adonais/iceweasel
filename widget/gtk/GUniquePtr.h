@@ -9,6 +9,7 @@
 
 #include <glib.h>
 #include <gtk/gtk.h>
+
 #include "mozilla/UniquePtr.h"
 
 namespace mozilla {

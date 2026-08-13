@@ -5,21 +5,20 @@
 #ifndef MOZILLA_GFX_DRAWEVENTRECORDER_H_
 #define MOZILLA_GFX_DRAWEVENTRECORDER_H_
 
-#include "2D.h"
-#include "DrawEventRecorderTypes.h"
-#include "RecordedEvent.h"
-#include "RecordingTypes.h"
-
 #include <deque>
 #include <functional>
 #include <vector>
 
+#include "2D.h"
+#include "DrawEventRecorderTypes.h"
 #include "ImageContainer.h"
+#include "RecordedEvent.h"
+#include "RecordingTypes.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/ThreadSafeWeakPtr.h"
+#include "nsISupportsImpl.h"
 #include "nsTHashMap.h"
 #include "nsTHashSet.h"
-#include "nsISupportsImpl.h"
 
 namespace mozilla {
 namespace layers {

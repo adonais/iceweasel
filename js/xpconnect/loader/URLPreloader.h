@@ -13,14 +13,15 @@
 #include "mozilla/Monitor.h"
 #include "mozilla/Omnijar.h"
 #include "mozilla/Result.h"
+
 #include "nsClassHashtable.h"
 #include "nsHashKeys.h"
 #include "nsIChromeRegistry.h"
 #include "nsIFile.h"
-#include "nsIURI.h"
 #include "nsIMemoryReporter.h"
 #include "nsIResProtocolHandler.h"
 #include "nsIThread.h"
+#include "nsIURI.h"
 #include "nsReadableUtils.h"
 
 class nsZipArchive;

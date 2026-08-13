@@ -5,10 +5,9 @@
 #ifndef mozilla_widget_Screen_h
 #define mozilla_widget_Screen_h
 
-#include "nsIScreen.h"
-
 #include "Units.h"
 #include "mozilla/HalScreenConfiguration.h"  // For hal::ScreenOrientation
+#include "nsIScreen.h"
 
 namespace mozilla {
 namespace dom {

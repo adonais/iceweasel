@@ -6,6 +6,7 @@
 #define wasm_WasmSummarizeInsn_h
 
 #include "mozilla/Maybe.h"
+
 #include "wasm/WasmCodegenTypes.h"  // TrapMachineInsn
 
 namespace js {

@@ -54,7 +54,7 @@ add_task(async function test_paste_then_switch_tab() {
     // Switch to a new tab.
     const originalTab = gBrowser.selectedTab;
     const newTab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
-    await BrowserTestUtils.waitForCondition(() => !gURLBar.value);
+    await TestUtils.waitForCondition(() => !gURLBar.value);
 
     // Switch back to original tab.
     gBrowser.selectedTab = originalTab;

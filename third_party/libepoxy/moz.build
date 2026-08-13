@@ -4,7 +4,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 LOCAL_INCLUDES += [
-    '/gfx/angle/checkout/include/',
+    '/third_party/angle/include',
     'libepoxy/include',
 ]
 
@@ -30,4 +30,3 @@ CFLAGS += [
 ]
 
 FINAL_LIBRARY = 'xul'
-

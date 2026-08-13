@@ -4,14 +4,14 @@
 
 #include "AndroidHardwareBuffer.h"
 
+#include <sys/socket.h>
+
+#include "mozilla/TimeStamp.h"
+#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/TextureClientSharedSurface.h"
-#include "mozilla/TimeStamp.h"
-#include "mozilla/UniquePtrExtensions.h"
-
-#include <sys/socket.h>
 
 namespace mozilla {
 namespace layers {

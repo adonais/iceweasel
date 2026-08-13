@@ -5,6 +5,11 @@
 // profileString_ was already set. And that was causing us to never re-insert
 // the script source.
 
+// Disable zeal GCs: a GC between the two enableGeckoProfiling calls can
+// discard the JitScripts of scripts that are no longer on the stack, so their
+// sources would legitimately not be re-registered on the second enable.
+gczeal(0);
+
 // Set a low warmup threshold to trigger baseline compilation.
 setJitCompilerOption("baseline.warmup.trigger", 5);
 

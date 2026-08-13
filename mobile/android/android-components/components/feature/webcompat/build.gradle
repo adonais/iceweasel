@@ -5,11 +5,9 @@
 import javax.inject.Inject
 
 plugins {
+    id 'com.android.library'
     alias(libs.plugins.dependency.analysis)
 }
-
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
 
 android {
     namespace = 'mozilla.components.feature.webcompat'
@@ -71,7 +69,7 @@ tasks.matching { it.name.startsWith("explodeAssetSource") }.configureEach { t ->
 dependencies {
     implementation project(':components:concept-engine')
 
-    implementation libs.androidx.core.ktx
+    implementation libs.androidx.core
     implementation libs.kotlinx.coroutines
 
     testImplementation project(':components:support-test')

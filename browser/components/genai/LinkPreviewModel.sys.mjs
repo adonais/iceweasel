@@ -416,7 +416,7 @@ export const LinkPreviewModel = {
     try {
       engine = await this.createEngine(
         {
-          backend: "best-llama",
+          backend: "llama.cpp",
           engineId: this.engineId,
           featureId: this.id,
           kvCacheDtype: "q8_0",
@@ -427,10 +427,10 @@ export const LinkPreviewModel = {
           numBatch: numContext,
           numContext,
           numUbatch: numContext,
-          taskName: "wllama-text-generation",
+          taskName: "llama-text-generation",
           timeoutMS: -1,
           useMlock: false,
-          useMmap: true,
+          useMmap: false,
           ...JSON.parse(lazy.config),
         },
         data => {

@@ -408,7 +408,7 @@ const TEST_DATA = [
   {
     description: "Visit history and no bookamrk with HISTORY source",
     pref: true,
-    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    source: UrlbarShared.RESULT_SOURCE.HISTORY,
     visitHistory: ["http://example.com/test"],
     inputHistory: [{ uri: "http://example.com/test", input: "exa" }],
     userInput: "exa",
@@ -428,7 +428,7 @@ const TEST_DATA = [
   {
     description: "Visit history and no bookamrk with BOOKMARK source",
     pref: true,
-    source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     visitHistory: ["http://example.com/test"],
     inputHistory: [{ uri: "http://example.com/test", input: "exa" }],
     userInput: "exa",
@@ -445,7 +445,7 @@ const TEST_DATA = [
   {
     description: "Bookmarked visit history with HISTORY source",
     pref: true,
-    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    source: UrlbarShared.RESULT_SOURCE.HISTORY,
     visitHistory: ["http://example.com/test", "http://example.com/bookmarked"],
     bookmarks: [
       { uri: "http://example.com/bookmarked", title: "test bookmark" },
@@ -482,7 +482,7 @@ const TEST_DATA = [
   {
     description: "Bookmarked visit history with BOOKMARK source",
     pref: true,
-    source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     visitHistory: ["http://example.com/test", "http://example.com/bookmarked"],
     bookmarks: [
       { uri: "http://example.com/bookmarked", title: "test bookmark" },
@@ -514,7 +514,7 @@ const TEST_DATA = [
   {
     description: "No visit history with HISTORY source",
     pref: true,
-    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    source: UrlbarShared.RESULT_SOURCE.HISTORY,
     inputHistory: [{ uri: "http://example.com/test", input: "exa" }],
     userInput: "exa",
     expected: {
@@ -530,7 +530,7 @@ const TEST_DATA = [
   {
     description: "No visit history with BOOKMARK source",
     pref: true,
-    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    source: UrlbarShared.RESULT_SOURCE.HISTORY,
     bookmarks: [{ uri: "http://example.com/bookmarked", title: "test" }],
     inputHistory: [{ uri: "http://example.com/test", input: "exa" }],
     userInput: "exa",
@@ -1097,7 +1097,7 @@ const TEST_DATA = [
     description:
       "With history source, visit_count == 0, foreign_count != 0: No adaptive history autofill",
     pref: true,
-    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    source: UrlbarShared.RESULT_SOURCE.HISTORY,
     inputHistory: [{ uri: "http://example.com/test", input: "exa" }],
     bookmarks: [{ uri: "http://example.com/test", title: "test bookmark" }],
     userInput: "exa",
@@ -1115,7 +1115,7 @@ const TEST_DATA = [
     description:
       "With history source, visit_count > 0, foreign_count != 0, frecency <= 20: No adaptive history autofill",
     pref: true,
-    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    source: UrlbarShared.RESULT_SOURCE.HISTORY,
     visitHistory: ["http://example.com/test"],
     inputHistory: [{ uri: "http://example.com/test", input: "exa" }],
     bookmarks: [{ uri: "http://example.com/test", title: "test bookmark" }],
@@ -1143,7 +1143,7 @@ const TEST_DATA = [
     description:
       "With history source, visit_count > 0, foreign_count == 0, frecency <= 20: No adaptive history autofill",
     pref: true,
-    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    source: UrlbarShared.RESULT_SOURCE.HISTORY,
     visitHistory: ["http://example.com/test"],
     inputHistory: [{ uri: "http://example.com/test", input: "exa" }],
     frecency: 5,
@@ -1278,8 +1278,8 @@ add_task(async function inputTest() {
     const sources = source
       ? [source]
       : [
-          UrlbarUtils.RESULT_SOURCE.HISTORY,
-          UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+          UrlbarShared.RESULT_SOURCE.HISTORY,
+          UrlbarShared.RESULT_SOURCE.BOOKMARKS,
         ];
 
     const context = createContext(userInput, {

@@ -32,7 +32,7 @@ diff --git a/sandbox/win/src/interceptors_64.cc b/sandbox/win/src/interceptors_6
  TargetNtImpersonateAnonymousToken64(HANDLE thread) {
    NtImpersonateAnonymousTokenFunction orig_fn =
        reinterpret_cast<NtImpersonateAnonymousTokenFunction>(
-           g_originals[IMPERSONATE_ANONYMOUS_TOKEN_ID]);
+           g_originals.functions[IMPERSONATE_ANONYMOUS_TOKEN_ID]);
    return TargetNtImpersonateAnonymousToken(orig_fn, thread);
  }
  
@@ -40,7 +40,7 @@ diff --git a/sandbox/win/src/interceptors_64.cc b/sandbox/win/src/interceptors_6
 +                                      ACCESS_MASK desired_access,
 +                                      POBJECT_ATTRIBUTES object_attributes) {
 +  NtOpenSectionFunction orig_fn = reinterpret_cast<NtOpenSectionFunction>(
-+      g_originals[OPEN_SECTION_TOKEN_ID]);
++      g_originals.functions[OPEN_SECTION_TOKEN_ID]);
 +
 +  return TargetNtOpenSection(orig_fn, section_handle, desired_access,
 +                             object_attributes);
@@ -53,7 +53,7 @@ diff --git a/sandbox/win/src/interceptors_64.cc b/sandbox/win/src/interceptors_6
                                 ULONG thread_information_bytes) {
    NtSetInformationThreadFunction orig_fn =
        reinterpret_cast<NtSetInformationThreadFunction>(
-           g_originals[SET_INFORMATION_THREAD_ID]);
+           g_originals.functions[SET_INFORMATION_THREAD_ID]);
 diff --git a/sandbox/win/src/interceptors_64.h b/sandbox/win/src/interceptors_64.h
 --- a/sandbox/win/src/interceptors_64.h
 +++ b/sandbox/win/src/interceptors_64.h
@@ -82,7 +82,7 @@ diff --git a/sandbox/win/src/interceptors_64.h b/sandbox/win/src/interceptors_64
 diff --git a/sandbox/win/src/nt_internals.h b/sandbox/win/src/nt_internals.h
 --- a/sandbox/win/src/nt_internals.h
 +++ b/sandbox/win/src/nt_internals.h
-@@ -154,16 +154,20 @@ typedef NTSTATUS(WINAPI* NtOpenProcessFu
+@@ -148,16 +148,20 @@ typedef NTSTATUS(WINAPI* NtOpenProcessFu
                                                  IN PCLIENT_ID ClientId);
  
  // Provide ThreadImpersonationToken which is not in THREADINFOCLASS.
@@ -101,14 +101,14 @@ diff --git a/sandbox/win/src/nt_internals.h b/sandbox/win/src/nt_internals.h
      IN PVOID ThreadInformation,
      IN ULONG ThreadInformationLength);
  
- // Partial definition only for values not in PROCESS_INFO_CLASS.
- #pragma clang diagnostic push
+ // Partial definition only adding fields not in winternl.h, from
+ // https://msdn.microsoft.com/en-us/library/windows/desktop/aa813706(v=vs.85).aspx
 diff --git a/sandbox/win/src/policy_broker.cc b/sandbox/win/src/policy_broker.cc
 --- a/sandbox/win/src/policy_broker.cc
 +++ b/sandbox/win/src/policy_broker.cc
-@@ -30,28 +30,31 @@ bool SetupNtdllImports(TargetProcess& ch
-   return (SBOX_ALL_OK ==
-           child.TransferVariable("g_nt", GetNtExports(), sizeof(NtExports)));
+@@ -32,28 +32,31 @@ bool SetupNtdllImports(TargetProcess& ch
+                                  const_cast<NtExports*>(GetNtExports()),
+                                  sizeof(NtExports)));
  }
  
  #undef INIT_GLOBAL_NT
@@ -162,7 +162,7 @@ diff --git a/sandbox/win/src/policy_broker.h b/sandbox/win/src/policy_broker.h
 diff --git a/sandbox/win/src/policy_target.cc b/sandbox/win/src/policy_target.cc
 --- a/sandbox/win/src/policy_target.cc
 +++ b/sandbox/win/src/policy_target.cc
-@@ -12,16 +12,18 @@
+@@ -13,16 +13,18 @@
  #include "sandbox/win/src/policy_engine_processor.h"
  #include "sandbox/win/src/policy_low_level.h"
  #include "sandbox/win/src/policy_params.h"
@@ -180,8 +180,8 @@ diff --git a/sandbox/win/src/policy_target.cc b/sandbox/win/src/policy_target.cc
  SANDBOX_INTERCEPT size_t g_shared_policy_size;
  
  bool QueryBroker(IpcTag ipc_id, CountedParameterSetBase* params) {
-   DCHECK_NT(static_cast<size_t>(ipc_id) < kMaxServiceCount);
-@@ -80,16 +82,70 @@ NTSTATUS WINAPI TargetNtImpersonateAnony
+   DCHECK_NT(ipc_id <= IpcTag::kMaxValue);
+@@ -83,16 +85,70 @@ NTSTATUS WINAPI TargetNtImpersonateAnony
      HANDLE thread) {
    if (!SandboxFactory::GetTargetServices()->GetState()->RevertedToSelf()) {
      return STATUS_ACCESS_DENIED;
@@ -281,7 +281,7 @@ diff --git a/sandbox/win/src/policy_target.h b/sandbox/win/src/policy_target.h
 diff --git a/sandbox/win/src/sandbox_policy.h b/sandbox/win/src/sandbox_policy.h
 --- a/sandbox/win/src/sandbox_policy.h
 +++ b/sandbox/win/src/sandbox_policy.h
-@@ -86,16 +86,20 @@ class [[clang::lto_visibility_public]] T
+@@ -98,16 +98,20 @@ class [[clang::lto_visibility_public]] T
    // Sets that we should not use restricting SIDs in the access tokens. We need
    // to do this in some circumstances even though it weakens the sandbox.
    // The default is to use them.
@@ -305,7 +305,7 @@ diff --git a/sandbox/win/src/sandbox_policy.h b/sandbox/win/src/sandbox_policy.h
 diff --git a/sandbox/win/src/sandbox_policy_base.cc b/sandbox/win/src/sandbox_policy_base.cc
 --- a/sandbox/win/src/sandbox_policy_base.cc
 +++ b/sandbox/win/src/sandbox_policy_base.cc
-@@ -424,16 +424,20 @@ bool ConfigBase::GetUseRestrictingSIDs()
+@@ -434,16 +434,20 @@ bool ConfigBase::GetUseRestrictingSIDs()
  void ConfigBase::SetDoNotUseRestrictingSIDs() {
    use_restricting_sids_ = false;
  }
@@ -326,7 +326,7 @@ diff --git a/sandbox/win/src/sandbox_policy_base.cc b/sandbox/win/src/sandbox_po
  
  JobLevel ConfigBase::GetJobLevel() const {
    return job_level_;
-@@ -762,17 +766,19 @@ ResultCode PolicyBase::SetupAllIntercept
+@@ -786,17 +790,19 @@ ResultCode PolicyBase::SetupAllIntercept
            !dispatcher_->SetupService(&manager, static_cast<IpcTag>(i)))
          return SBOX_ERROR_SETUP_INTERCEPTION_SERVICE;
      }
@@ -350,7 +350,7 @@ diff --git a/sandbox/win/src/sandbox_policy_base.cc b/sandbox/win/src/sandbox_po
 diff --git a/sandbox/win/src/sandbox_policy_base.h b/sandbox/win/src/sandbox_policy_base.h
 --- a/sandbox/win/src/sandbox_policy_base.h
 +++ b/sandbox/win/src/sandbox_policy_base.h
-@@ -55,16 +55,17 @@ class ConfigBase final : public TargetCo
+@@ -51,16 +51,17 @@ class ConfigBase final : public TargetCo
  
    bool IsConfigured() const override;
  
@@ -365,13 +365,13 @@ diff --git a/sandbox/win/src/sandbox_policy_base.h b/sandbox/win/src/sandbox_pol
    void SetJobMemoryLimit(size_t memory_limit) override;
    ResultCode AllowFileAccess(FileSemantics semantics,
                               const wchar_t* pattern) override;
-   ResultCode AllowNamedPipes(const wchar_t* pattern) override;
    ResultCode AllowRegistryRead(const wchar_t* pattern) final;
-   ResultCode AllowExtraDlls(const wchar_t* pattern) override;
-@@ -134,16 +135,17 @@ class ConfigBase final : public TargetCo
+   ResultCode AllowExtraDll(const wchar_t* path) override;
+   ResultCode SetFakeGdiInit() override;
+@@ -133,16 +134,17 @@ class ConfigBase final : public TargetCo
+   uint32_t ui_exceptions() { return ui_exceptions_; }
    Desktop desktop() { return desktop_; }
-   // nullptr if no objects have been added via AddKernelObjectToClose().
-   HandleCloser* handle_closer() { return handle_closer_.get(); }
+   const HandleCloserConfig& handle_closer() { return handle_closer_; }
    bool zero_appshim() { return zero_appshim_; }
  
    TokenLevel lockdown_level_;

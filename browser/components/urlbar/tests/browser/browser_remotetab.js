@@ -88,7 +88,7 @@ add_task(async function test_remotetab_opens() {
 
       Assert.equal(
         result.type,
-        UrlbarUtils.RESULT_TYPE.REMOTE_TAB,
+        UrlbarShared.RESULT_TYPE.REMOTE_TAB,
         "Should be the remote tab entry"
       );
 

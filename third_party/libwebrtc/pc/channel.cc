@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "absl/algorithm/container.h"
+#include "absl/base/nullability.h"
 #include "absl/cleanup/cleanup.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
@@ -171,16 +172,16 @@ RTCError MaybeIgnorePacketization(const MediaChannelParameters& new_params,
 }  // namespace
 
 BaseChannel::BaseChannel(
-    TaskQueueBase* worker_thread,
-    Thread* network_thread,
-    TaskQueueBase* signaling_thread,
+    TaskQueueBase* absl_nonnull worker_thread,
+    Thread* absl_nonnull network_thread,
+    TaskQueueBase* absl_nonnull signaling_thread,
     std::unique_ptr<MediaSendChannelInterface> send_media_channel_impl,
     std::unique_ptr<MediaReceiveChannelInterface> receive_media_channel_impl,
     absl::string_view mid,
     MediaType media_type,
     bool srtp_required,
     CryptoOptions crypto_options,
-    UniqueRandomIdGenerator* ssrc_generator,
+    UniqueRandomIdGenerator* absl_nonnull ssrc_generator,
     ChannelCallbacks callbacks)
     : media_send_channel_(std::move(send_media_channel_impl)),
       media_receive_channel_(std::move(receive_media_channel_impl)),
@@ -252,7 +253,7 @@ bool BaseChannel::ConnectToRtpTransport_n(RtpTransportInternal* rtp_transport) {
   return true;
 }
 
-void BaseChannel::DisconnectFromRtpTransport_n() {
+void BaseChannel::DisconnectFromRtpTransport_n(bool permanent_teardown) {
   RTC_DCHECK(rtp_transport_);
   RTC_DCHECK(media_send_channel());
   rtp_transport_->UnregisterRtpDemuxerSink(this);
@@ -261,6 +262,9 @@ void BaseChannel::DisconnectFromRtpTransport_n() {
   rtp_transport_->UnsubscribeSentPacket(this);
   rtp_transport_ = nullptr;
   media_send_channel()->SetInterface(nullptr);
+  if (permanent_teardown) {
+    media_receive_channel()->ClearReceiveSinks_n(std::nullopt);
+  }
   media_receive_channel()->SetInterface(nullptr);
 }
 
@@ -272,7 +276,7 @@ bool BaseChannel::SetRtpTransport(RtpTransportInternal* rtp_transport) {
   }
 
   if (rtp_transport_) {
-    DisconnectFromRtpTransport_n();
+    DisconnectFromRtpTransport_n(rtp_transport == nullptr);
   }
 
   RTC_DCHECK(!rtp_transport_);
@@ -502,7 +506,7 @@ RTCError BaseChannel::MaybeUpdateDemuxerAndRtpExtensions_w(
             : (RTCError::InvalidState() << "No transport assigned.");
     if (!error.ok()) {
       error.string_builder() << " (mid=" << mid() << ")";
-      return LOG_ERROR(error);
+      return RTC_LOG_ERROR(error);
     }
 
     if (payload_types) {
@@ -535,12 +539,22 @@ RTCError BaseChannel::MaybeUpdateDemuxerAndRtpExtensions_w(
 }
 
 bool BaseChannel::RegisterRtpDemuxerSink_w(
-    bool clear_payload_types,
-    std::optional<flat_set<uint32_t>> ssrcs) {
-  media_receive_channel()->OnDemuxerCriteriaUpdatePending();
-  absl::Cleanup cleanup = [this] {
-    media_receive_channel()->OnDemuxerCriteriaUpdateComplete();
-  };
+    const MediaContentDescription* content,
+    std::vector<uint32_t> removed_ssrcs) {
+  bool clear_payload_types = false;
+  if (!RtpTransceiverDirectionHasSend(content->direction())) {
+    RTC_DLOG(LS_VERBOSE)
+        << "RegisterRtpDemuxerSink_w: remote side will not send "
+           "- disable payload type demuxing for "
+        << ToString();
+    clear_payload_types = true;
+  }
+
+  flat_set<uint32_t> ssrcs;
+  for (const StreamParams& new_stream : content->streams()) {
+    ssrcs.insert(new_stream.ssrcs.begin(), new_stream.ssrcs.end());
+  }
+
   bool ret = network_thread_->BlockingCall([&] {
     RTC_DCHECK_RUN_ON(network_thread());
     if (!rtp_transport_) {
@@ -550,6 +564,10 @@ bool BaseChannel::RegisterRtpDemuxerSink_w(
       return false;
     }
 
+    if (!removed_ssrcs.empty()) {
+      media_receive_channel()->ClearReceiveSinks_n(std::move(removed_ssrcs));
+    }
+
     bool needs_re_registration = false;
 
     if (clear_payload_types && !payload_types_.empty()) {
@@ -557,12 +575,11 @@ bool BaseChannel::RegisterRtpDemuxerSink_w(
       needs_re_registration = true;
     }
 
-    if (ssrcs) {
-      if (ssrcs_ != *ssrcs) {
-        ssrcs_ = std::move(*ssrcs);
-        needs_re_registration = true;
-      }
+    if (ssrcs_ != ssrcs) {
+      ssrcs_ = std::move(ssrcs);
+      needs_re_registration = true;
     }
+    media_receive_channel()->SetReceiveSsrcs_n(ssrcs_);
 
     if (!needs_re_registration) {
       return true;
@@ -956,28 +973,55 @@ RTCError BaseChannel::UpdateRemoteStreams_w(
     const MediaContentDescription* content,
     SdpType type) {
   RTC_LOG_THREAD_BLOCK_COUNT();
-  bool clear_payload_types = false;
-  if (!RtpTransceiverDirectionHasSend(content->direction())) {
-    RTC_DLOG(LS_VERBOSE) << "UpdateRemoteStreams_w: remote side will not send "
-                            "- disable payload type demuxing for "
-                         << ToString();
-    clear_payload_types = true;
-  }
+  media_receive_channel()->OnDemuxerCriteriaUpdatePending();
+  absl::Cleanup cleanup = [this] {
+    media_receive_channel()->OnDemuxerCriteriaUpdateComplete();
+  };
 
   const std::vector<StreamParams>& streams = content->streams();
   const bool new_has_unsignaled_ssrcs = HasStreamWithNoSsrcs(streams);
   const bool old_has_unsignaled_ssrcs = HasStreamWithNoSsrcs(remote_streams_);
 
   // Check for streams that have been removed.
+  std::vector<uint32_t> removed_ssrcs;
+  bool reset_unsignaled_streams = false;
   for (const StreamParams& old_stream : remote_streams_) {
     // If we no longer have an unsignaled stream, we would like to remove
     // the unsignaled stream params that are cached.
     if (!old_stream.has_ssrcs() && !new_has_unsignaled_ssrcs) {
-      media_receive_channel()->ResetUnsignaledRecvStream();
-      RTC_LOG(LS_INFO) << "Reset unsignaled remote stream for " << ToString()
-                       << ".";
+      if (!reset_unsignaled_streams) {
+        reset_unsignaled_streams = true;
+        std::vector<uint32_t> unsignaled =
+            media_receive_channel()->GetUnsignaledSsrcs();
+        removed_ssrcs.insert(removed_ssrcs.end(), unsignaled.begin(),
+                             unsignaled.end());
+        RTC_LOG(LS_INFO) << "Reset unsignaled remote stream for " << ToString()
+                         << ".";
+      }
     } else if (old_stream.has_ssrcs() &&
                !GetStreamBySsrc(streams, old_stream.first_ssrc())) {
+      removed_ssrcs.push_back(old_stream.first_ssrc());
+    }
+  }
+
+  RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(0);
+
+  // Re-register the sink to update after changing the demuxer criteria first.
+  if (!RegisterRtpDemuxerSink_w(content, std::move(removed_ssrcs))) {
+    return RTCError::InvalidParameter()
+           << "Failed to set up audio demuxing for mid='" << mid() << "'.";
+  }
+
+  RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(1);
+
+  if (reset_unsignaled_streams) {
+    media_receive_channel()->ResetUnsignaledRecvStream();
+  }
+
+  // Now remove the old streams on the worker thread.
+  for (const StreamParams& old_stream : remote_streams_) {
+    if (old_stream.has_ssrcs() &&
+        !GetStreamBySsrc(streams, old_stream.first_ssrc())) {
       if (media_receive_channel()->RemoveRecvStream(old_stream.first_ssrc())) {
         RTC_LOG(LS_INFO) << "Remove remote ssrc: " << old_stream.first_ssrc()
                          << " from " << ToString() << ".";
@@ -991,7 +1035,6 @@ RTCError BaseChannel::UpdateRemoteStreams_w(
   }
 
   // Check for new streams.
-  flat_set<uint32_t> ssrcs;
   for (const StreamParams& new_stream : streams) {
     // We allow a StreamParams with an empty list of SSRCs, in which case the
     // MediaChannel will cache the parameters and use them for any unsignaled
@@ -1013,19 +1056,7 @@ RTCError BaseChannel::UpdateRemoteStreams_w(
                << " to " << ToString();
       }
     }
-    // Update the receiving SSRCs.
-    ssrcs.insert(new_stream.ssrcs.begin(), new_stream.ssrcs.end());
   }
-
-  RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(0);
-
-  // Re-register the sink to update after changing the demuxer criteria.
-  if (!RegisterRtpDemuxerSink_w(clear_payload_types, std::move(ssrcs))) {
-    return RTCError::InvalidParameter()
-           << "Failed to set up audio demuxing for mid='" << mid() << "'.";
-  }
-
-  RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(1);
 
   remote_streams_ = streams;
 

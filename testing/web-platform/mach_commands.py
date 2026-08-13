@@ -511,19 +511,21 @@ def run_web_platform_tests(command_context, **params):
     wpt_setup._virtualenv_name = command_context._virtualenv_name
     wpt_runner = WebPlatformTestsRunner(wpt_setup)
 
-    logger = wpt_runner.setup_logging(**params)
-    # wptrunner already handles setting any log parameter from
-    # mach test to the logger, so it's OK to remove that argument now
-    if "log" in params:
-        del params["log"]
+    with wpt_runner.logging_manager(**params) as logger:
+        # wptrunner already handles setting any log parameter from
+        # mach test to the logger, so it's OK to remove that argument now
+        if "log" in params:
+            del params["log"]
 
-    if (
-        conditions.is_android(command_context)
-        and params["product"] != "firefox_android"
-    ):
-        logger.warning("Must specify --product=firefox_android in Android environment.")
+        if (
+            conditions.is_android(command_context)
+            and params["product"] != "firefox_android"
+        ):
+            logger.warning(
+                "Must specify --product=firefox_android in Android environment."
+            )
 
-    return wpt_runner.run(logger, **params)
+        return wpt_runner.run(logger, **params)
 
 
 @Command(
@@ -572,12 +574,12 @@ def update_wpt(command_context, **params):
 def wpt_manifest_update(command_context, **params):
     wpt_setup = command_context._spawn(WebPlatformTestsRunnerSetup)
     wpt_runner = WebPlatformTestsRunner(wpt_setup)
-    logger = wpt_runner.setup_logging(**params)
-    logger.warning(
-        "The wpt manifest is now automatically updated, "
-        "so running this command is usually unnecessary"
-    )
-    return 0 if wpt_runner.update_manifest(logger, **params) else 1
+    with wpt_runner.logging_manager(**params) as logger:
+        logger.warning(
+            "The wpt manifest is now automatically updated, "
+            "so running this command is usually unnecessary"
+        )
+        return 0 if wpt_runner.update_manifest(logger, **params) else 1
 
 
 @Command(

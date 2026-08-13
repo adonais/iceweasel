@@ -22,15 +22,31 @@ const SUBMIT_CONFIRMATION_EVENT = "ai-website-confirmation:submit";
  *   {string} iconSrc - URL for the tab favicon
  *   {string} url - URL of the tab
  *   {boolean} checked - Selection state of the tab
+ * @property {object} confirmActionL10n - Fluent IDs for confirm action button:
+ *   {string} disabled - L10n ID when button is disabled (no selection)
+ *   {string} enabled - L10n ID when button is enabled (has selection)
+ * @property {string} actionType - Type of action being performed ("close_tabs" or "group_tabs"), this is passed through in
+ * dispatched events for parent handling
+ * @property {string} tabGroupLabel - Label of the tab group being acted on, used for context in dispatched events
  */
 export class AIWebsiteConfirmation extends MozLitElement {
   static properties = {
     tabs: { type: Array },
+    confirmActionL10n: { type: Object },
+    actionType: { type: String },
+    tabGroupLabel: { type: String },
   };
 
   constructor() {
     super();
     this.tabs = [];
+    // Default to close tabs fluent strings
+    this.confirmActionL10n = {
+      disabled: "smart-window-confirm-close-tab",
+      enabled: "smart-window-confirm-close-tabs",
+    };
+    this.actionType = "";
+    this.tabGroupLabel = "";
   }
 
   /**
@@ -93,6 +109,9 @@ export class AIWebsiteConfirmation extends MozLitElement {
     const closeEvent = new CustomEvent(CLOSE_CONFIRMATION_EVENT, {
       bubbles: true,
       composed: true,
+      detail: {
+        actionType: this.actionType,
+      },
     });
     this.dispatchEvent(closeEvent);
   }
@@ -110,6 +129,7 @@ export class AIWebsiteConfirmation extends MozLitElement {
       composed: true,
       detail: {
         selectedTabs,
+        tabGroupLabel: this.tabGroupLabel,
       },
     });
     this.dispatchEvent(closeEvent);
@@ -139,8 +159,8 @@ export class AIWebsiteConfirmation extends MozLitElement {
     const selectedCount = this.tabs.filter(tab => tab.checked).length;
     const confirmButtonDisabled = selectedCount === 0;
     const confirmButtonL10nId = confirmButtonDisabled
-      ? "smart-window-confirm-close-tab"
-      : "smart-window-confirm-close-tabs";
+      ? this.confirmActionL10n.disabled
+      : this.confirmActionL10n.enabled;
 
     return html`
       <link

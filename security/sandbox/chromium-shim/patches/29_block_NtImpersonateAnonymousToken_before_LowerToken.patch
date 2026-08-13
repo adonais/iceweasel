@@ -45,7 +45,7 @@ diff --git a/sandbox/win/src/interceptors_64.cc b/sandbox/win/src/interceptors_6
 +TargetNtImpersonateAnonymousToken64(HANDLE thread) {
 +  NtImpersonateAnonymousTokenFunction orig_fn =
 +      reinterpret_cast<NtImpersonateAnonymousTokenFunction>(
-+          g_originals[IMPERSONATE_ANONYMOUS_TOKEN_ID]);
++          g_originals.functions[IMPERSONATE_ANONYMOUS_TOKEN_ID]);
 +  return TargetNtImpersonateAnonymousToken(orig_fn, thread);
 +}
 +
@@ -108,7 +108,7 @@ diff --git a/sandbox/win/src/nt_internals.h b/sandbox/win/src/nt_internals.h
 diff --git a/sandbox/win/src/policy_broker.cc b/sandbox/win/src/policy_broker.cc
 --- a/sandbox/win/src/policy_broker.cc
 +++ b/sandbox/win/src/policy_broker.cc
-@@ -95,16 +95,18 @@ bool SetupBasicInterceptions(Interceptio
+@@ -42,16 +42,18 @@ bool SetupBasicInterceptions(Interceptio
    if (!INTERCEPT_NT(manager, NtOpenThread, OPEN_THREAD_ID, 20) ||
        !INTERCEPT_NT(manager, NtOpenProcess, OPEN_PROCESS_ID, 20) ||
        !INTERCEPT_NT(manager, NtOpenProcessToken, OPEN_PROCESS_TOKEN_ID, 16))
@@ -140,7 +140,7 @@ diff --git a/sandbox/win/src/policy_target.cc b/sandbox/win/src/policy_target.cc
  // -----------------------------------------------------------------------
  
 +// Hooks NtImpersonateAnonymousToken so we can block until call to LowerToken.
-+// This means a non-retricted token behaves the same as restricted one before
++// This means a non-restricted token behaves the same as restricted one before
 +// LowerToken and prevents us from being left with an anonymous logon token
 +// because we are blocking the RevertToSelf that would undo it.
 +NTSTATUS WINAPI TargetNtImpersonateAnonymousToken(

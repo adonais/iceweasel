@@ -8,9 +8,9 @@
 #include <oleidl.h>
 
 #include "mozilla/RefPtr.h"
+#include "nsDataObj.h"
 #include "nsString.h"
 #include "nsTArray.h"
-#include "nsDataObj.h"
 
 #define MULTI_MIME "Mozilla/IDataObjectCollectionFormat"
 

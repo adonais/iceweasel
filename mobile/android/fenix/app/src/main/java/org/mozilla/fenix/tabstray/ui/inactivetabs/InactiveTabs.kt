@@ -38,13 +38,17 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.button.TextButton
 import mozilla.components.compose.cfr.CFRPopup
+import mozilla.components.compose.cfr.CFRPopupBackground
 import mozilla.components.compose.cfr.CFRPopupLayout
 import mozilla.components.compose.cfr.CFRPopupProperties
+import mozilla.components.ui.colors.NovaColors
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.list.ExpandableListHeader
 import org.mozilla.fenix.ext.toShortUrl
@@ -165,11 +169,8 @@ private fun InactiveTabsHeader(
     CFRPopupLayout(
         showCFR = showCFR,
         properties = CFRPopupProperties(
-            popupBodyColors = listOf(
-                FirefoxTheme.colors.layerGradientEnd.toArgb(),
-                FirefoxTheme.colors.layerGradientStart.toArgb(),
-            ),
-            dismissButtonColor = FirefoxTheme.colors.iconOnColor.toArgb(),
+            popupBodyColors = CFRPopupBackground.Gradient(brush = FirefoxTheme.gradients.cfr.brush),
+            dismissButtonColor = NovaColors.White.toArgb(),
             indicatorDirection = CFRPopup.IndicatorDirection.UP,
             popupVerticalOffset = (-12).dp,
         ),
@@ -179,7 +180,7 @@ private fun InactiveTabsHeader(
             FirefoxTheme {
                 Text(
                     text = stringResource(R.string.tab_tray_inactive_onboarding_message),
-                    color = FirefoxTheme.colors.textOnColorPrimary,
+                    color = NovaColors.White,
                     style = FirefoxTheme.typography.body2,
                 )
             }
@@ -188,7 +189,7 @@ private fun InactiveTabsHeader(
             FirefoxTheme {
                 Text(
                     text = stringResource(R.string.tab_tray_inactive_onboarding_button_text),
-                    color = FirefoxTheme.colors.textOnColorPrimary,
+                    color = NovaColors.White,
                     modifier = Modifier.clickable {
                         dismissCFR()
                         onCFRClick()
@@ -331,7 +332,9 @@ private fun InactiveTabsAutoClosePromptPreview() {
 
 @Composable
 @PreviewLightDark
-private fun InactiveTabsListPreview() {
+private fun InactiveTabsListPreview(
+    @PreviewParameter(InactiveTabsListPreviewParameterProvider::class) showCFR: Boolean,
+) {
     var expanded by remember { mutableStateOf(true) }
     var showAutoClosePrompt by remember { mutableStateOf(true) }
 
@@ -344,7 +347,7 @@ private fun InactiveTabsListPreview() {
                 ),
                 expanded = expanded,
                 showAutoCloseDialog = showAutoClosePrompt,
-                showCFR = false,
+                showCFR = showCFR,
                 onHeaderClick = { expanded = !expanded },
                 onDeleteAllButtonClick = {},
                 onAutoCloseDismissClick = { showAutoClosePrompt = !showAutoClosePrompt },
@@ -357,4 +360,8 @@ private fun InactiveTabsListPreview() {
             )
         }
     }
+}
+
+private class InactiveTabsListPreviewParameterProvider : PreviewParameterProvider<Boolean> {
+    override val values: Sequence<Boolean> = sequenceOf(true, false)
 }

@@ -35,6 +35,30 @@
       getNode("alert").textContent = "new alert";
       await alerted;
 
+      // Regression test for Coverity CID 1473402: the "inside alert" context
+      // flag must propagate to descendants, so inserting content into a nested
+      // (non-alert) descendant of an existing alert must still fire EVENT_ALERT
+      // on the alert ancestor.
+      let nestedAlert = document.createElement("div");
+      nestedAlert.setAttribute("role", "alert");
+      nestedAlert.setAttribute("id", "nestedAlert");
+      let inner = document.createElement("div");
+      inner.setAttribute("role", "group");
+      inner.setAttribute("id", "inner");
+      nestedAlert.appendChild(inner);
+
+      // Showing the alert subtree fires EVENT_ALERT via the show path.
+      alerted = waitForEvent(EVENT_ALERT, "nestedAlert");
+      document.body.appendChild(nestedAlert);
+      await alerted;
+
+      // Inserting into the nested descendant must fire EVENT_ALERT too; this
+      // relies on the inside-alert flag set when "inner" was bound to its
+      // parent. Before the fix the flag was never set, so no event fired here.
+      alerted = waitForEvent(EVENT_ALERT, "nestedAlert");
+      getNode("inner").appendChild(document.createTextNode("nested alert content"));
+      await alerted;
+
       SimpleTest.finish();
     }
 

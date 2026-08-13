@@ -2,6 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+:host {
+  --icon-height: var(--icon-size);
+  --icon-width: var(--icon-size);
+}
+
 .row-item {
   display: flex;
   align-items: center;
@@ -10,14 +15,16 @@
   border-radius: var(--border-radius-large);
 
   &:hover {
-    background-color: var(--button-background-color-ghost-hover);
+    color: var(--button-text-color-hover);
+    background-color: var(--button-background-color-hover);
 
     > .secondary-action {
       visibility: visible;
     }
   }
 
-  &:active:hover {
+  &:active {
+    color: var(--button-text-color-active);
     background-color: var(--button-background-color-active);
   }
 }
@@ -38,8 +45,8 @@
 }
 
 .icon {
-  height: var(--icon-size-medium);
-  width: var(--icon-size-medium);
+  height: var(--icon-height);
+  width: var(--icon-width);
   -moz-context-properties: fill, fill-opacity, stroke;
   fill: var(--button-icon-fill);
   stroke: var(--button-icon-stroke);
@@ -48,4 +55,15 @@
 .secondary-action {
   visibility: hidden;
   margin-inline-start: auto;
+
+  &.selected {
+    visibility: visible;
+  }
+}
+
+:host([subfocused]) .secondary-action {
+  visibility: visible;
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-outline-offset);
+  border-radius: var(--button-border-radius);
 }

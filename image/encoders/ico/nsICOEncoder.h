@@ -5,11 +5,9 @@
 #ifndef mozilla_image_encoders_ico_nsICOEncoder_h
 #define mozilla_image_encoders_ico_nsICOEncoder_h
 
+#include "imgIEncoder.h"
 #include "mozilla/ReentrantMonitor.h"
 #include "mozilla/image/ICOFileHeaders.h"
-
-#include "imgIEncoder.h"
-
 #include "nsCOMPtr.h"
 
 #define NS_ICOENCODER_CID                    \

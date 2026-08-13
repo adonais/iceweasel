@@ -7,8 +7,9 @@
 #define mozilla_image_AnimationParams_h
 
 #include <stdint.h>
-#include "mozilla/gfx/Rect.h"
+
 #include "FrameTimeout.h"
+#include "mozilla/gfx/Rect.h"
 
 namespace mozilla {
 namespace image {

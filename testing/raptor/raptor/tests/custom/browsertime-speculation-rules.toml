@@ -17,4 +17,14 @@ unit = "ms"
 # speculation_rules.py serves the pages locally, so mitmproxy playback is off.
 use_live_sites = true
 
-["prefetch"]
+["prefetch-immediate"]
+browsertime_args = "--browsertime.eagerness=immediate"
+
+["prefetch-eager"]
+browsertime_args = "--browsertime.eagerness=eager"
+
+["prefetch-moderate"]
+browsertime_args = "--browsertime.eagerness=moderate"
+
+["prefetch-conservative"]
+browsertime_args = "--browsertime.eagerness=conservative"

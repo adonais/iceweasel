@@ -33,7 +33,7 @@ async function doBookmarksTest({ trigger, assert }) {
     });
     await openPopup("bookmark");
     await UrlbarTestUtils.enterSearchMode(window, {
-      source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      source: UrlbarShared.RESULT_SOURCE.BOOKMARKS,
     });
     await selectRowByURL("https://example.com/bookmark");
 
@@ -51,7 +51,7 @@ async function doHistoryTest({ trigger, assert }) {
     await PlacesTestUtils.addVisits("https://example.com/test");
     await openPopup("example");
     await UrlbarTestUtils.enterSearchMode(window, {
-      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      source: UrlbarShared.RESULT_SOURCE.HISTORY,
     });
     await selectRowByURL("https://example.com/test");
 
@@ -68,7 +68,7 @@ async function doTabTest({ trigger, assert }) {
   await doTest(async () => {
     await openPopup("example");
     await UrlbarTestUtils.enterSearchMode(window, {
-      source: UrlbarUtils.RESULT_SOURCE.TABS,
+      source: UrlbarShared.RESULT_SOURCE.TABS,
     });
     await selectRowByProvider("UrlbarProviderPlaces");
 

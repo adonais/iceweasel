@@ -9,16 +9,16 @@
 
 #include "CompositableHost.h"  // for CompositableHost, ImageCompositeNotificationInfo
 #include "GLContextProvider.h"
+#include "WindowRenderer.h"
 #include "mozilla/DataMutex.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/layers/CompositableTransactionParent.h"
 #include "mozilla/layers/CompositorVsyncSchedulerOwner.h"
 #include "mozilla/layers/PWebRenderBridgeParent.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/UniquePtr.h"
-#include "mozilla/webrender/WebRenderTypes.h"
 #include "mozilla/webrender/WebRenderAPI.h"
+#include "mozilla/webrender/WebRenderTypes.h"
 #include "nsTArrayForwardDeclare.h"
-#include "WindowRenderer.h"
 
 namespace mozilla {
 
@@ -269,6 +269,15 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
            mLateInit->mIdNamespace.mHandle;
   }
 
+  /**
+   * AnimationHelper::GetNextCompositorAnimationsId() encodes the child
+   * process PID in the upper 32 bits of the id, verify that this is as
+   * expected.
+   */
+  bool OwnsCompositorAnimationsId(uint64_t aId) const {
+    return (aId >> 32) == (uint64_t)OtherPid();
+  }
+
   void FlushRendering(wr::RenderReasons aReasons, bool aBlocking);
 
   /**
@@ -316,13 +325,13 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
   void BeginRecording(const TimeStamp& aRecordingStart);
 
 #if defined(MOZ_WIDGET_ANDROID)
-  using ScreenPixelsPromise =
-      MozPromise<RefPtr<layers::AndroidHardwareBuffer>, nsresult, true>;
+  using ScreenPixelsPromise = MozPromise<Ok, nsresult, true>;
   /**
    * Request a screengrab for android
    */
-  RefPtr<ScreenPixelsPromise> RequestScreenPixels(gfx::IntRect aSourceRect,
-                                                  gfx::IntSize aDestSize);
+  RefPtr<ScreenPixelsPromise> RequestScreenPixels(
+      gfx::IntRect aSourceRect,
+      RefPtr<layers::AndroidHardwareBuffer> aHardwareBuffer);
 #endif
 
   /**
@@ -530,7 +539,7 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
 #if defined(MOZ_WIDGET_ANDROID)
   struct ScreenPixelsRequest {
     gfx::IntRect mSourceRect;
-    gfx::IntSize mDestSize;
+    RefPtr<layers::AndroidHardwareBuffer> mHardwareBuffer;
     RefPtr<ScreenPixelsPromise::Private> mPromise;
   };
   Maybe<ScreenPixelsRequest> mScreenPixelsRequest;
@@ -544,6 +553,13 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
   bool mLastNotifiedHasLayers = false;
   bool mReceivedDisplayList = false;
   bool mSkippedComposite = false;
+  // Whether this is a root (widget) WebRenderBridgeParent. Determined at
+  // construction and stable for the object's lifetime. This must not be
+  // derived from mWidget, because mWidget is cleared on a WebRender
+  // initialization failure (see FinishInitializationError), which would
+  // otherwise make a failed root bridge masquerade as a content bridge during
+  // teardown.
+  const bool mIsRootWebRenderBridgeParent;
   // These payloads are being used for SCROLL_PRESENT_LATENCY telemetry
   DataMutex<nsClassHashtable<nsUint64HashKey, nsTArray<CompositionPayload>>>
       mPendingScrollPayloads{"WebRenderBridgeParent::mPendingScrollPayloads"};

@@ -48,8 +48,8 @@ struct ImplCycleCollectionIsContainerT<Container<Args...>, Container>
     : std::true_type {};
 
 template <typename T, template <typename...> typename Container>
-constexpr bool ImplCycleCollectionIsContainer = ImplCycleCollectionIsContainerT<
-    std::remove_cv_t<std::remove_reference_t<T>>, Container>::value;
+constexpr bool ImplCycleCollectionIsContainer =
+    ImplCycleCollectionIsContainerT<std::remove_cvref_t<T>, Container>::value;
 
 template <typename T, template <typename...> typename Container>
 using EnableCycleCollectionIf =

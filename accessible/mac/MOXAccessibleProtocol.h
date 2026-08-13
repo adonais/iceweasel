@@ -80,6 +80,9 @@
 // AXChildren
 - (NSArray* _Nullable)moxUnignoredChildren;
 
+// AXChildrenInNavigationOrder
+- (NSArray* _Nullable)moxChildrenInNavigationOrder;
+
 // AXParent
 - (id _Nullable)moxUnignoredParent;
 
@@ -152,8 +155,8 @@
 // AXLinkedUIElements
 - (NSArray* _Nullable)moxLinkedUIElements;
 
-// AXARIAControls
-- (NSArray* _Nullable)moxARIAControls;
+// AXDetailsElements
+- (NSArray* _Nullable)moxDetailsElements;
 
 // AXDOMIdentifier
 - (NSString* _Nullable)moxDOMIdentifier;

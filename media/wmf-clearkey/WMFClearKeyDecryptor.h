@@ -6,9 +6,10 @@
 #define DOM_MEDIA_PLATFORM_WMF_CLEARKEY_WMFCLEARKEYDECRYPTOR_H
 
 #include <mfidl.h>
-#include <mutex>
 #include <windows.h>
 #include <wrl.h>
+
+#include <mutex>
 
 #include "RefCounted.h"
 #include "WMFClearKeyUtils.h"

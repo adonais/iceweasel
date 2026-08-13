@@ -1,7 +1,7 @@
 #include "gdb-tests.h"
 
-#include "js/CompileOptions.h"
 #include "js/CompilationAndEvaluation.h"
+#include "js/CompileOptions.h"
 #include "js/GlobalObject.h"
 #include "js/HeapAPI.h"
 #include "js/RegExpFlags.h"

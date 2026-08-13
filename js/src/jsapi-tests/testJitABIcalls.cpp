@@ -16,7 +16,6 @@
 #include "jit/ValueNumbering.h"
 #include "jit/VMFunctions.h"
 #include "js/Value.h"
-
 #include "jsapi-tests/tests.h"
 #include "jsapi-tests/testsJit.h"
 

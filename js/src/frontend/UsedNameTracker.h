@@ -93,6 +93,29 @@ namespace frontend {
 // }                                       // Leaving Script 2, Scope 2: Declared(2) = [y]
 //                                         // - Used[y][1] = (4,6) is > (2,2), so mark y as closed over.
 //                                         // - Update Used[y]: [].
+//
+// // A second case shows why isClosedOver() must scan *every*
+// // outstanding use, not just the most recent one. Uses are appended in
+// // increasing scopeId order, so a use from a more deeply nested script can sit
+// // before a later use in a newer sibling scope of the same script.
+//
+// function outer() {// Script 5, Scope 7
+//     var z = 1;                          // Declared(7) = [z]
+//     function inner() // Script 6
+//     { // Scope 8
+//         return z;                       // Used[z] = [(6,8)]
+//     }                                   // Leaving Script 6, Scope 8: No declared variables.
+//     { // Scope 9
+//         z++;                            // Used[z] = [(6,8), (5,9)]
+//     }                                   // Leaving Script 5, Scope 9: No declared variables.
+// }                                       // Leaving Script 5, Scope 7: Declared(7) = [z]
+//                                         //
+//                                         // Query isClosedOver(z) for Script 5.
+//                                         // - Used[z].back() = Used[z][2] = (5,9): 5 is not > 5.
+//                                         // - But Used[z][1] = (6,8): 6 > 5, so z is
+//                                         //   closed over.
+//                                         // Inspecting only the last use would wrongly
+//                                         // report false.
 
 // clang-format on
 
@@ -158,8 +181,19 @@ class UsedNameTracker {
       return !uses_.empty() && uses_.back().scriptId >= scriptId;
     }
 
+    // A name is closed over if any outstanding use comes from a more deeply
+    // nested script. Uses are appended by increasing scopeId (source order of
+    // scope creation), so a later use in a newer sibling/lexical scope of the
+    // current script can follow an earlier use from a nested script.
+    //
+    // For a worked example, see the top of the file.
     bool isClosedOver(uint32_t scriptId) const {
-      return !uses_.empty() && uses_.back().scriptId > scriptId;
+      for (const Use& use : uses_) {
+        if (use.scriptId > scriptId) {
+          return true;
+        }
+      }
+      return false;
     }
 
     // To allow disambiguating public and private symbols

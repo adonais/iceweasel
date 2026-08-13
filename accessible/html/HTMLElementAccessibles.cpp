@@ -5,15 +5,14 @@
 #include "HTMLElementAccessibles.h"
 
 #include "CacheConstants.h"
+#include "Relation.h"
+#include "States.h"
+#include "mozilla/a11y/Role.h"
+#include "mozilla/dom/HTMLDetailsElement.h"
+#include "mozilla/dom/HTMLLabelElement.h"
+#include "mozilla/dom/HTMLSummaryElement.h"
 #include "nsCoreUtils.h"
 #include "nsTextEquivUtils.h"
-#include "Relation.h"
-#include "mozilla/a11y/Role.h"
-#include "States.h"
-
-#include "mozilla/dom/HTMLLabelElement.h"
-#include "mozilla/dom/HTMLDetailsElement.h"
-#include "mozilla/dom/HTMLSummaryElement.h"
 
 using namespace mozilla::a11y;
 

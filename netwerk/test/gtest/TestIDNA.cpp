@@ -1,11 +1,10 @@
-#include "gtest/gtest.h"
-#include "gtest/MozGTestBench.h"  // For MOZ_GTEST_BENCH
 #include "gtest/BlackBox.h"
-
-#include "nsNetUtil.h"
-#include "nsIURI.h"
-#include "nsCOMPtr.h"
+#include "gtest/MozGTestBench.h"  // For MOZ_GTEST_BENCH
+#include "gtest/gtest.h"
 #include "mozilla/Encoding.h"
+#include "nsCOMPtr.h"
+#include "nsIURI.h"
+#include "nsNetUtil.h"
 
 #define TEST_COUNT 10000
 

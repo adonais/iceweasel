@@ -4,45 +4,40 @@
 
 #include "nsIconChannel.h"
 
+#include <gio/gdesktopappinfo.h>
+#include <gio/gio.h>
+#include <gtk/gtk.h>
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "ErrorList.h"
-#include "gdk/gdk.h"
-#include "mozilla/AlreadyAddRefed.h"
-#include "nsIIconURI.h"
-#include "mozilla/gfx/DataSurfaceHelpers.h"
-#include "mozilla/NullPrincipal.h"
-#include "mozilla/LookAndFeel.h"
-#include "mozilla/CheckedInt.h"
-#include "mozilla/dom/ContentChild.h"
-#include "mozilla/gfx/Swizzle.h"
-#include "mozilla/ipc/ByteBuf.h"
-#include "mozilla/GUniquePtr.h"
-#include "mozilla/GRefPtr.h"
 #include <algorithm>
 
-#include <gio/gio.h>
-#include <gio/gdesktopappinfo.h>
-
-#include <gtk/gtk.h>
-
-#include "nsMimeTypes.h"
-#include "nsIMIMEService.h"
-
-#include "nsServiceManagerUtils.h"
-
-#include "nsNetUtil.h"
+#include "ErrorList.h"
+#include "gdk/gdk.h"
+#include "gfxPlatform.h"
+#include "gfxUtils.h"
+#include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/CheckedInt.h"
+#include "mozilla/GRefPtr.h"
+#include "mozilla/GUniquePtr.h"
+#include "mozilla/LookAndFeel.h"
+#include "mozilla/NullPrincipal.h"
+#include "mozilla/dom/ContentChild.h"
+#include "mozilla/gfx/DataSurfaceHelpers.h"
+#include "mozilla/gfx/Swizzle.h"
+#include "mozilla/ipc/ByteBuf.h"
 #include "nsComponentManagerUtils.h"
-#include "nsIStringStream.h"
-#include "nsServiceManagerUtils.h"
-#include "nsIURL.h"
-#include "nsIPipe.h"
 #include "nsIAsyncInputStream.h"
 #include "nsIAsyncOutputStream.h"
+#include "nsIIconURI.h"
+#include "nsIMIMEService.h"
+#include "nsIPipe.h"
+#include "nsIStringStream.h"
+#include "nsIURL.h"
+#include "nsMimeTypes.h"
+#include "nsNetUtil.h"
+#include "nsServiceManagerUtils.h"
 #include "prlink.h"
-#include "gfxUtils.h"
-#include "gfxPlatform.h"
 
 using namespace mozilla;
 using mozilla::ipc::ByteBuf;

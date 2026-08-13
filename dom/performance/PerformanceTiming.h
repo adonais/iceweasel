@@ -410,85 +410,17 @@ struct ParamTraits<mozilla::dom::RenderBlockingStatusType>
           mozilla::dom::RenderBlockingStatusType::Blocking,
           mozilla::dom::RenderBlockingStatusType::Non_blocking> {};
 
-template <>
-struct ParamTraits<mozilla::dom::PerformanceTimingData> {
-  using paramType = mozilla::dom::PerformanceTimingData;
-  static void Write(IPC::MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mServerTiming);
-    WriteParam(aWriter, aParam.mNextHopProtocol);
-    WriteParam(aWriter, aParam.mAsyncOpen);
-    WriteParam(aWriter, aParam.mRedirectStart);
-    WriteParam(aWriter, aParam.mRedirectEnd);
-    WriteParam(aWriter, aParam.mDomainLookupStart);
-    WriteParam(aWriter, aParam.mDomainLookupEnd);
-    WriteParam(aWriter, aParam.mConnectStart);
-    WriteParam(aWriter, aParam.mSecureConnectionStart);
-    WriteParam(aWriter, aParam.mConnectEnd);
-    WriteParam(aWriter, aParam.mRequestStart);
-    WriteParam(aWriter, aParam.mResponseStart);
-    WriteParam(aWriter, aParam.mFirstInterimResponseStart);
-    WriteParam(aWriter, aParam.mFinalResponseHeadersStart);
-    WriteParam(aWriter, aParam.mCacheReadStart);
-    WriteParam(aWriter, aParam.mResponseEnd);
-    WriteParam(aWriter, aParam.mCacheReadEnd);
-    WriteParam(aWriter, aParam.mWorkerStart);
-    WriteParam(aWriter, aParam.mWorkerRequestStart);
-    WriteParam(aWriter, aParam.mWorkerResponseEnd);
-    WriteParam(aWriter, aParam.mZeroTime);
-    WriteParam(aWriter, aParam.mFetchStart);
-    WriteParam(aWriter, aParam.mEncodedBodySize);
-    WriteParam(aWriter, aParam.mTransferSize);
-    WriteParam(aWriter, aParam.mDecodedBodySize);
-    WriteParam(aWriter, aParam.mResponseStatus);
-    WriteParam(aWriter, aParam.mRedirectCount);
-    WriteParam(aWriter, aParam.mContentType);
-    WriteParam(aWriter, aParam.mAllRedirectsSameOrigin);
-    WriteParam(aWriter, aParam.mAllRedirectsPassTAO);
-    WriteParam(aWriter, aParam.mSecureConnection);
-    WriteParam(aWriter, aParam.mBodyInfoAccessAllowed);
-    WriteParam(aWriter, aParam.mTimingAllowed);
-    WriteParam(aWriter, aParam.mInitialized);
-    WriteParam(aWriter, aParam.mRenderBlockingStatus);
-  }
-
-  static bool Read(IPC::MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mServerTiming) &&
-           ReadParam(aReader, &aResult->mNextHopProtocol) &&
-           ReadParam(aReader, &aResult->mAsyncOpen) &&
-           ReadParam(aReader, &aResult->mRedirectStart) &&
-           ReadParam(aReader, &aResult->mRedirectEnd) &&
-           ReadParam(aReader, &aResult->mDomainLookupStart) &&
-           ReadParam(aReader, &aResult->mDomainLookupEnd) &&
-           ReadParam(aReader, &aResult->mConnectStart) &&
-           ReadParam(aReader, &aResult->mSecureConnectionStart) &&
-           ReadParam(aReader, &aResult->mConnectEnd) &&
-           ReadParam(aReader, &aResult->mRequestStart) &&
-           ReadParam(aReader, &aResult->mResponseStart) &&
-           ReadParam(aReader, &aResult->mFirstInterimResponseStart) &&
-           ReadParam(aReader, &aResult->mFinalResponseHeadersStart) &&
-           ReadParam(aReader, &aResult->mCacheReadStart) &&
-           ReadParam(aReader, &aResult->mResponseEnd) &&
-           ReadParam(aReader, &aResult->mCacheReadEnd) &&
-           ReadParam(aReader, &aResult->mWorkerStart) &&
-           ReadParam(aReader, &aResult->mWorkerRequestStart) &&
-           ReadParam(aReader, &aResult->mWorkerResponseEnd) &&
-           ReadParam(aReader, &aResult->mZeroTime) &&
-           ReadParam(aReader, &aResult->mFetchStart) &&
-           ReadParam(aReader, &aResult->mEncodedBodySize) &&
-           ReadParam(aReader, &aResult->mTransferSize) &&
-           ReadParam(aReader, &aResult->mDecodedBodySize) &&
-           ReadParam(aReader, &aResult->mResponseStatus) &&
-           ReadParam(aReader, &aResult->mRedirectCount) &&
-           ReadParam(aReader, &aResult->mContentType) &&
-           ReadParam(aReader, &aResult->mAllRedirectsSameOrigin) &&
-           ReadParam(aReader, &aResult->mAllRedirectsPassTAO) &&
-           ReadParam(aReader, &aResult->mSecureConnection) &&
-           ReadParam(aReader, &aResult->mBodyInfoAccessAllowed) &&
-           ReadParam(aReader, &aResult->mTimingAllowed) &&
-           ReadParam(aReader, &aResult->mInitialized) &&
-           ReadParam(aReader, &aResult->mRenderBlockingStatus);
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(
+    mozilla::dom::PerformanceTimingData, mServerTiming, mNextHopProtocol,
+    mAsyncOpen, mRedirectStart, mRedirectEnd, mDomainLookupStart,
+    mDomainLookupEnd, mConnectStart, mSecureConnectionStart, mConnectEnd,
+    mRequestStart, mResponseStart, mFirstInterimResponseStart,
+    mFinalResponseHeadersStart, mCacheReadStart, mResponseEnd, mCacheReadEnd,
+    mWorkerStart, mWorkerRequestStart, mWorkerResponseEnd, mZeroTime,
+    mFetchStart, mEncodedBodySize, mTransferSize, mDecodedBodySize,
+    mResponseStatus, mRedirectCount, mContentType, mAllRedirectsSameOrigin,
+    mAllRedirectsPassTAO, mSecureConnection, mBodyInfoAccessAllowed,
+    mTimingAllowed, mInitialized, mRenderBlockingStatus);
 
 template <>
 struct ParamTraits<nsIServerTiming*> {

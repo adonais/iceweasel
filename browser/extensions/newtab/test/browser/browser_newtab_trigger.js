@@ -28,7 +28,7 @@ async function testPageTrigger(url, waitForLoad, expectedTrigger) {
     waitForLoad
   );
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => sendTriggerMessageSpy.calledWith(expectedTrigger),
     `After ${url} finishes loading`
   );

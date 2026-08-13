@@ -41,7 +41,7 @@ add_task(async function test_paused_content() {
   resolve();
   refreshStub.restore();
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => content.statusBoxEl,
     "Status box should be shown when paused"
   );
@@ -117,7 +117,7 @@ add_task(async function test_paused_content_upgraded() {
   resolve();
   refreshStub.restore();
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => content.statusBoxEl,
     "Status box should be shown when paused"
   );
@@ -186,7 +186,7 @@ add_task(async function test_showing_refreshes_usage_when_paused() {
   resolve();
   refreshStub.restore();
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => content.statusBoxEl,
     "Paused screen should be shown once the usage refresh completes"
   );

@@ -3,11 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "CookieValidation.h"
+
 #include "CookieLogging.h"
-#include "CookieService.h"
 #include "CookiePrefixes.h"
-#include "mozilla/dom/nsMixedContentBlocker.h"
+#include "CookieService.h"
 #include "mozilla/StaticPrefs_network.h"
+#include "mozilla/dom/nsMixedContentBlocker.h"
 
 constexpr uint32_t kMaxBytesPerCookie = 4096;
 constexpr uint32_t kMaxBytesPerDomain = 1024;

@@ -105,7 +105,7 @@
         await scrollEndPromise;
 
         is(scrollEndCount, 1, "One scrollend event should be fired");
-        is(window.scrollY, window.scrollMaxY, "We should snap to the end of the document")
+        isfuzzy(window.scrollY, window.scrollMaxY, 0.5, "We should snap to the end of the document")
       }
 
       // Note: on Linux, if the gtk-primary-button-warps-slider setting

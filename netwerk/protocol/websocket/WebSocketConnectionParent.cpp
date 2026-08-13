@@ -2,14 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "WebSocketLog.h"
 #include "WebSocketConnectionParent.h"
 
+#include "WebSocketConnectionListener.h"
+#include "WebSocketLog.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsITransportSecurityInfo.h"
 #include "nsSerializationHelper.h"
 #include "nsThreadUtils.h"
-#include "WebSocketConnectionListener.h"
 
 namespace mozilla {
 namespace net {

@@ -77,7 +77,6 @@ MSG_DEF(JSMSG_OFFSET_LARGER_THAN_FILESIZE, 0, JSEXN_RANGEERR, "offset is larger 
 MSG_DEF(JSMSG_OFFSET_OUT_OF_BUFFER,    0, JSEXN_RANGEERR, "start offset is outside the bounds of the buffer")
 MSG_DEF(JSMSG_OFFSET_OUT_OF_DATAVIEW,  0, JSEXN_RANGEERR, "offset is outside the bounds of the DataView")
 MSG_DEF(JSMSG_SPREAD_TOO_LARGE,        0, JSEXN_RANGEERR, "array too large due to spread operand(s)")
-MSG_DEF(JSMSG_BAD_WEAKMAP_KEY,         0, JSEXN_TYPEERR, "cannot use the given object as a weak map key")
 MSG_DEF(JSMSG_WEAKMAP_KEY_CANT_BE_HELD_WEAKLY, 1, JSEXN_TYPEERR, "WeakMap key {0} must be an object or an unregistered symbol")
 MSG_DEF(JSMSG_WEAKSET_VAL_CANT_BE_HELD_WEAKLY, 1, JSEXN_TYPEERR, "WeakSet value {0} must be an object or an unregistered symbol")
 MSG_DEF(JSMSG_WEAKMAP_KEY_MUST_BE_AN_OBJECT, 1, JSEXN_TYPEERR, "WeakMap key {0} must be an object")
@@ -380,7 +379,6 @@ MSG_DEF(JSMSG_UNTERMINATED_STATIC_CLASS_BLOCK, 0, JSEXN_SYNTAXERR, "unterminated
 MSG_DEF(JSMSG_EOF_BEFORE_END_OF_LITERAL,1,JSEXN_SYNTAXERR, "{0} literal not terminated before end of script")
 MSG_DEF(JSMSG_EOL_BEFORE_END_OF_STRING,1, JSEXN_SYNTAXERR, "{0} string literal contains an unescaped line break")
 MSG_DEF(JSMSG_EOF_IN_ESCAPE_IN_LITERAL,1, JSEXN_SYNTAXERR, "reached end of script in the middle of an escape sequence in a {0} literal")
-MSG_DEF(JSMSG_USE_ASM_DIRECTIVE_FAIL,  0, JSEXN_SYNTAXERR, "\"use asm\" is only meaningful in the Directive Prologue of a function body")
 MSG_DEF(JSMSG_VAR_HIDES_ARG,           1, JSEXN_TYPEERR, "variable {0} redeclares argument")
 MSG_DEF(JSMSG_WHILE_AFTER_DO,          0, JSEXN_SYNTAXERR, "missing while after do-loop body")
 MSG_DEF(JSMSG_YIELD_IN_PARAMETER,      0, JSEXN_SYNTAXERR, "yield expression can't be used in parameter")
@@ -420,12 +418,6 @@ MSG_DEF(JSMSG_CANT_CONVERT_TO_NARROW,  0, JSEXN_ERR, "can't convert to narrow st
 MSG_DEF(JSMSG_CANT_CONVERT_TO_WIDE,    0, JSEXN_ERR, "can't convert to wide string")
 MSG_DEF(JSMSG_CANT_CONVERT_WIDE_TO_UTF8, 0, JSEXN_ERR, "can't convert wide string to UTF-8")
 MSG_DEF(JSMSG_CANT_CONVERT_UTF8_TO_WIDE, 0, JSEXN_ERR, "can't convert UTF-8 to wide string")
-
-// asm.js
-MSG_DEF(JSMSG_USE_ASM_TYPE_FAIL,       1, JSEXN_TYPEERR, "asm.js type error: {0}")
-MSG_DEF(JSMSG_USE_ASM_LINK_FAIL,       1, JSEXN_TYPEERR, "asm.js link error: {0}")
-MSG_DEF(JSMSG_USE_ASM_TYPE_OK,         1, JSEXN_WARN,    "Successfully compiled asm.js code (total compilation time {0}ms)")
-MSG_DEF(JSMSG_USE_ASM_TYPE_OK_NO_TIME, 0, JSEXN_WARN,    "Successfully compiled asm.js code ()")
 
 // wasm
 MSG_DEF(JSMSG_WASM_VERBOSE,            1, JSEXN_WARN,    "WebAssembly verbose: {0}")
@@ -470,6 +462,7 @@ MSG_DEF(JSMSG_WASM_BAD_ENFORCE_RANGE,  2, JSEXN_TYPEERR,     "bad {0} {1}")
 MSG_DEF(JSMSG_WASM_BAD_BUF_ARG,        0, JSEXN_TYPEERR,     "first argument must be an ArrayBuffer or typed array object")
 MSG_DEF(JSMSG_WASM_BAD_MOD_ARG,        0, JSEXN_TYPEERR,     "first argument must be a WebAssembly.Module")
 MSG_DEF(JSMSG_WASM_BAD_BUF_MOD_ARG,    0, JSEXN_TYPEERR,     "first argument must be a WebAssembly.Module, ArrayBuffer or typed array object")
+MSG_DEF(JSMSG_WASM_BAD_COMPONENT_ARG,  0, JSEXN_TYPEERR,     "first argument must be a WebAssembly.Component")
 MSG_DEF(JSMSG_WASM_BAD_DESC_ARG,       1, JSEXN_TYPEERR,     "first argument must be a {0} descriptor")
 MSG_DEF(JSMSG_WASM_BAD_IMPORT_ARG,     0, JSEXN_TYPEERR,     "second argument must be an object")
 MSG_DEF(JSMSG_WASM_BAD_IMPORT_FIELD,   1, JSEXN_TYPEERR,     "import object field '{0}' is not an Object")
@@ -500,7 +493,7 @@ MSG_DEF(JSMSG_WASM_BAD_FUNCTION_VALUE, 1, JSEXN_TYPEERR,     "{0} argument must 
 MSG_DEF(JSMSG_WASM_BAD_COMPILE_OPTIONS, 0, JSEXN_TYPEERR,    "argument cannot be converted to a CompileOptions")
 MSG_DEF(JSMSG_WASM_DUPLICATE_BUILTIN,   0, JSEXN_TYPEERR,    "duplicate builtin")
 MSG_DEF(JSMSG_WASM_BAD_CODEPOINT,       0, JSEXN_WASMRUNTIMEERROR,     "bad codepoint")
-MSG_DEF(JSMSG_WASM_NO_TRANSFER,        0, JSEXN_TYPEERR,     "cannot transfer WebAssembly/asm.js ArrayBuffer")
+MSG_DEF(JSMSG_WASM_NO_TRANSFER,        0, JSEXN_TYPEERR,     "cannot transfer WebAssembly ArrayBuffer")
 MSG_DEF(JSMSG_WASM_TEXT_FAIL,          1, JSEXN_SYNTAXERR,   "wasm text error: {0}")
 MSG_DEF(JSMSG_WASM_MISSING_MAXIMUM,    0, JSEXN_TYPEERR,     "'shared' is true but maximum is not specified")
 MSG_DEF(JSMSG_WASM_GLOBAL_IMMUTABLE,   0, JSEXN_TYPEERR,     "can't set value of immutable global")
@@ -516,9 +509,8 @@ MSG_DEF(JSMSG_WASM_ESM_RESERVED_MODULE_NAME,  1, JSEXN_WASMLINKERROR, "module im
 MSG_DEF(JSMSG_WASM_ESM_RESERVED_FIELD_NAME,   1, JSEXN_WASMLINKERROR, "field import name '{0}' is reserved")
 MSG_DEF(JSMSG_WASM_ESM_RESERVED_EXPORT_NAME,  1, JSEXN_WASMLINKERROR, "export name '{0}' is reserved")
 
-// Wasm/asm.js deprecation warnings
+// Wasm deprecation warnings
 MSG_DEF(JSMSG_WASM_LEGACY_EXCEPTIONS_DEPRECATED, 0, JSEXN_WARN, "The WebAssembly exception handling 'try' instruction is deprecated and should no longer be used. Please recompile to use the 'try_table' instruction instead.")
-MSG_DEF(JSMSG_USE_ASM_DEPRECATED,                0, JSEXN_WARN, "asm.js is deprecated and should no longer be used. Please recompile using WebAssembly to get the best performance.")
 
 // JSPI
 MSG_DEF(JSMSG_JSPI_INVALID_STATE,      0, IF_WASM_JSPI(JSEXN_WASMSUSPENDERROR, JSEXN_WASMRUNTIMEERROR), "Invalid state")
@@ -792,6 +784,11 @@ MSG_DEF(JSMSG_IMPORT_MAPS_SCOPES_NOT_A_MAP, 0, JSEXN_TYPEERR, "the scopes top-le
 MSG_DEF(JSMSG_IMPORT_MAPS_SCOPE_VALUE_NOT_A_MAP, 1, JSEXN_TYPEERR, "the value of the scope with prefix '{0}' needs to be a JSON object")
 MSG_DEF(JSMSG_IMPORT_MAPS_INTEGRITY_NOT_A_MAP, 0, JSEXN_TYPEERR, "the integrity top-level key needs to be a JSON object")
 
+// Speculation rules
+MSG_DEF(JSMSG_SPECULATION_RULES_NOT_A_MAP,     0, JSEXN_TYPEERR, "the top-level value needs to be a JSON object")
+MSG_DEF(JSMSG_SPECULATION_RULES_INVALID_TAG,   0, JSEXN_TYPEERR, "the speculation rule tag is invalid")
+MSG_DEF(JSMSG_SPECULATION_RULES_INVALID_BASE_URL, 0, JSEXN_TYPEERR, "the base URL of the speculation rule set is invalid")
+
 // Import Attributes
 MSG_DEF(JSMSG_IMPORT_ATTRIBUTES_STATIC_IMPORT_UNSUPPORTED_ATTRIBUTE, 1, JSEXN_SYNTAXERR, "Unsupported import attribute: {0}")
 MSG_DEF(JSMSG_IMPORT_ATTRIBUTES_DYNAMIC_IMPORT_UNSUPPORTED_ATTRIBUTE, 1, JSEXN_TYPEERR, "Unsupported import attribute: {0}")
@@ -840,7 +837,6 @@ MSG_DEF(JSMSG_NOT_A_FINALIZATION_REGISTRY,               1, JSEXN_TYPEERR, "{0} 
 MSG_DEF(JSMSG_BAD_FINALIZATION_REGISTRY_TARGET,          0, JSEXN_TYPEERR, "The target registered with a finalization registry must be either an object or a symbol")
 MSG_DEF(JSMSG_BAD_HELD_VALUE,                            0, JSEXN_TYPEERR, "The heldValue parameter passed to FinalizationRegistry.register must not be the same as the target parameter")
 MSG_DEF(JSMSG_BAD_UNREGISTER_TOKEN,                      1, JSEXN_TYPEERR, "Invalid unregister token passed to {0}")
-MSG_DEF(JSMSG_BAD_FINALIZATION_REGISTRY_OBJECT,          0, JSEXN_TYPEERR, "cannot register the given object with a FinalizationRegistry")
 
 // WeakRef
 MSG_DEF(JSMSG_NOT_A_WEAK_REF,                            1, JSEXN_TYPEERR, "{0} is not a WeakRef")
@@ -849,8 +845,11 @@ MSG_DEF(JSMSG_BAD_WEAKREF_TARGET,                        0, JSEXN_TYPEERR, "cann
 // Iterator Helpers
 MSG_DEF(JSMSG_NEGATIVE_LIMIT,                            0, JSEXN_RANGEERR, "Iterator limits cannot be negative")
 MSG_DEF(JSMSG_INVALID_CHUNKSIZE,                         0, JSEXN_RANGEERR, "Iterator chunkSize must be an integer between 1 and 2**32-1 inclusive")
+MSG_DEF(JSMSG_CHUNK_SIZE_NOT_INTEGER,                    0, JSEXN_TYPEERR, "Iterator chunkSize must be an integral Number")
 MSG_DEF(JSMSG_INVALID_WINDOWSIZE,                        0, JSEXN_RANGEERR, "Iterator windowSize must be an integer between 1 and 2**32-1 inclusive")
+MSG_DEF(JSMSG_WINDOW_SIZE_NOT_INTEGER,                   0, JSEXN_TYPEERR, "Iterator windowSize must be an integral Number")
 MSG_DEF(JSMSG_INVALID_SKIP_COUNT,                        0, JSEXN_TYPEERR, "Iterator skippedElements must be +Infinity, -Infinity, or an integral Number")
+MSG_DEF(JSMSG_SKIP_COUNT_TOO_LARGE,                      0, JSEXN_RANGEERR, "Iterator skippedElements cannot be greater than 2**53-1")
 MSG_DEF(JSMSG_INVALID_UNDERSIZED_OPTION_VALUE,           2, JSEXN_TYPEERR, "invalid value for \"{0}\" option: {1}")
 MSG_DEF(JSMSG_ITERATOR_ZIP_INVALID_OPTION_TYPE,          2, JSEXN_TYPEERR, "invalid type for \"{0}\" option: {1}")
 MSG_DEF(JSMSG_ITERATOR_ZIP_INVALID_OPTION_VALUE,         2, JSEXN_TYPEERR, "invalid value for \"{0}\" option: {1}")

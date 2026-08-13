@@ -70,15 +70,7 @@ async function runPopupPositionTest(parentDocumentFileName, oop) {
   const popupRect = selectPopup.getBoundingClientRect();
   const popupMarginTop = parseFloat(getComputedStyle(selectPopup).marginTop);
   const popupMarginLeft = parseFloat(getComputedStyle(selectPopup).marginLeft);
-  let sidebarRevampEnabled = Services.prefs.getBoolPref(
-    "sidebar.revamp",
-    false
-  );
-  let sidebarWidth;
-  if (sidebarRevampEnabled) {
-    const sidebar = document.querySelector("sidebar-main");
-    sidebarWidth = sidebar.getBoundingClientRect().width;
-  }
+  const browserRect = tab.linkedBrowser.getBoundingClientRect();
 
   info(
     `popup rect: (${popupRect.x}, ${popupRect.y}) ${popupRect.width}x${popupRect.height}`
@@ -87,12 +79,12 @@ async function runPopupPositionTest(parentDocumentFileName, oop) {
   info(
     `select rect: (${selectRect.x}, ${selectRect.y}) ${selectRect.width}x${selectRect.height}`
   );
+  info(`browser rect: (${browserRect.x}, ${browserRect.y})`);
 
-  is(
-    !sidebarRevampEnabled
-      ? popupRect.left - popupMarginLeft
-      : popupRect.left - popupMarginLeft - sidebarWidth,
-    selectRect.x * 2.0,
+  isfuzzy(
+    popupRect.left - popupMarginLeft,
+    browserRect.left + selectRect.x * 2.0,
+    1,
     "select popup position x should be scaled by the desktop zoom"
   );
 
@@ -101,8 +93,7 @@ async function runPopupPositionTest(parentDocumentFileName, oop) {
   if (!navigator.platform.includes("Mac")) {
     isfuzzy(
       popupRect.top - popupMarginTop,
-      tab.linkedBrowser.getBoundingClientRect().top +
-        (selectRect.y + selectRect.height) * 2.0,
+      browserRect.top + (selectRect.y + selectRect.height) * 2.0,
       1,
       "select popup position y should be scaled by the desktop zoom"
     );
@@ -113,7 +104,7 @@ async function runPopupPositionTest(parentDocumentFileName, oop) {
         .top - popupRect.top;
     isfuzzy(
       popupRect.top - popupMarginTop + offsetToSelectedItem,
-      tab.linkedBrowser.getBoundingClientRect().top + selectRect.y * 2.0,
+      browserRect.top + selectRect.y * 2.0,
       1,
       "select popup position y should be scaled by the desktop zoom"
     );

@@ -80,11 +80,6 @@ pub struct FrameGlobalResources {
     /// The image shader block for the most common / default
     /// set of image parameters (color white, stretch == rect.size).
     pub default_image_data: GpuBufferAddress,
-
-    /// A GPU cache config for drawing cut-out rectangle primitives.
-    /// This is used to 'cut out' overlay tiles where a compositor
-    /// surface exists.
-    pub default_black_rect_address: GpuBufferAddress,
 }
 
 impl FrameGlobalResources {
@@ -98,13 +93,8 @@ impl FrameGlobalResources {
         });
         let default_image_data = writer.finish();
 
-        let mut writer = gpu_buffers.f32.write_blocks(1);
-        writer.push_one(PremultipliedColorF::BLACK);
-        let default_black_rect_address = writer.finish();
-
         FrameGlobalResources {
             default_image_data,
-            default_black_rect_address,
         }
     }
 }
@@ -282,7 +272,7 @@ impl FrameBuilder {
         global_device_pixel_scale: DevicePixelScale,
         scene_properties: &SceneProperties,
         transform_palette: &mut TransformPalette,
-        data_stores: &mut DataStores,
+        data_stores: &DataStores,
         scratch: &mut ScratchBuffer,
         debug_flags: DebugFlags,
         composite_state: &mut CompositeState,
@@ -663,7 +653,7 @@ impl FrameBuilder {
         stamp: FrameStamp,
         device_origin: DeviceIntPoint,
         scene_properties: &SceneProperties,
-        data_stores: &mut DataStores,
+        data_stores: &DataStores,
         scratch: &mut ScratchBuffer,
         debug_flags: DebugFlags,
         tile_caches: &mut FastHashMap<SliceId, Box<TileCacheInstance>>,
@@ -773,7 +763,6 @@ impl FrameBuilder {
                     prim_store: &scene.prim_store,
                     resource_cache,
                     use_dual_source_blending,
-                    use_advanced_blending: scene.config.gpu_supports_advanced_blend,
                     break_advanced_blend_batches: !scene.config.advanced_blend_is_coherent,
                     batch_lookback_count: scene.config.batch_lookback_count,
                     spatial_tree,
@@ -793,11 +782,9 @@ impl FrameBuilder {
                     &mut ctx,
                     &mut gpu_buffer_builder,
                     &render_tasks,
-                    &scene.clip_store,
                     &mut transform_palette,
                     &mut prim_headers,
                     &mut z_generator,
-                    scene.config.gpu_supports_fast_clears,
                     &scene.prim_instances,
                     &cmd_buffers,
                 );
@@ -814,7 +801,6 @@ impl FrameBuilder {
                     prim_store: &scene.prim_store,
                     resource_cache,
                     use_dual_source_blending,
-                    use_advanced_blending: scene.config.gpu_supports_advanced_blend,
                     break_advanced_blend_batches: !scene.config.advanced_blend_is_coherent,
                     batch_lookback_count: scene.config.batch_lookback_count,
                     spatial_tree,
@@ -1143,11 +1129,9 @@ pub fn build_render_pass(
     ctx: &mut RenderTargetContext,
     gpu_buffer_builder: &mut GpuBufferBuilder,
     render_tasks: &RenderTaskGraph,
-    clip_store: &ClipStore,
     transforms: &mut TransformPalette,
     prim_headers: &mut PrimitiveHeaders,
     z_generator: &mut ZBufferIdGenerator,
-    gpu_supports_fast_clears: bool,
     prim_instances: &[PrimitiveInstance],
     cmd_buffers: &CommandBufferList,
 ) -> RenderPass {
@@ -1169,7 +1153,6 @@ pub fn build_render_pass(
                             false,
                             texture_id,
                             screen_size,
-                            gpu_supports_fast_clears,
                             Some(used_rect),
                             &ctx.frame_memory,
                         );
@@ -1180,7 +1163,6 @@ pub fn build_render_pass(
                                 ctx,
                                 gpu_buffer_builder,
                                 render_tasks,
-                                clip_store,
                                 transforms,
                             );
                         }
@@ -1193,7 +1175,6 @@ pub fn build_render_pass(
                             false,
                             texture_id,
                             screen_size,
-                            gpu_supports_fast_clears,
                             Some(used_rect),
                             &ctx.frame_memory,
                         );
@@ -1204,7 +1185,6 @@ pub fn build_render_pass(
                                 ctx,
                                 gpu_buffer_builder,
                                 render_tasks,
-                                clip_store,
                                 transforms,
                             );
                         }
@@ -1329,7 +1309,6 @@ pub fn build_render_pass(
                             true,
                             texture,
                             screen_size,
-                            gpu_supports_fast_clears,
                             None,
                             &ctx.frame_memory
                         )
@@ -1340,7 +1319,6 @@ pub fn build_render_pass(
                         ctx,
                         gpu_buffer_builder,
                         render_tasks,
-                        clip_store,
                         transforms,
                     );
                 }

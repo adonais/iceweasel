@@ -12,7 +12,16 @@ sealed class NavigationStep {
     data class ClickIfPresent(val selector: Selector) : NavigationStep()
     data class Swipe(val selector: Selector, val direction: SwipeDirection = SwipeDirection.UP) : NavigationStep()
     data class OpenNotificationsTray(val openNotificationsTrayAction: () -> Unit) : NavigationStep()
+    data class Action(val action: () -> Unit) : NavigationStep()
     data class EnterText(val selector: Selector) : NavigationStep()
     data class PressEnter(val selector: Selector) : NavigationStep()
     object PressBack : NavigationStep()
+    object WaitForIdle : NavigationStep()
+
+    /**
+     * Presses back until [selector] is no longer present, bounded by [maxPresses]. Use for
+     * multi-screen back-out flows (e.g. nested Settings) where a fixed count of [PressBack] is
+     * unreliable because a press issued before the previous transition settles gets swallowed.
+     */
+    data class PressBackUntilGone(val selector: Selector, val maxPresses: Int = 5) : NavigationStep()
 }

@@ -111,7 +111,7 @@ add_task(async function test_updateRecipes_invalidFeatureId() {
   sandbox.spy(manager, "enroll");
   loader.remoteSettingsClients.experiments.get.resolves([badRecipe]);
 
-  await loader.updateRecipes();
+  await loader.updateRecipes("test");
 
   Assert.ok(
     manager.onRecipe.calledOnceWith(badRecipe, "rs-loader", {
@@ -708,7 +708,19 @@ add_task(async function test_updateRecipes_appId() {
   info("Testing updateRecipes() with the default application ID");
 
   loader.remoteSettingsClients.experiments.get.resolves([recipe]);
-  await loader.updateRecipes();
+
+  await GleanPings.nimbusTargetingContext.testSubmission(
+    () => {
+      Assert.deepEqual(
+        Glean.nimbusEvents.enrollmentStatus
+          .testGetValue("nimbus-targeting-context")
+          ?.map(ev => ev.extra) ?? [],
+        [],
+        "No enrollment status events submitted"
+      );
+    },
+    () => loader.updateRecipes()
+  );
 
   Assert.ok(
     manager.onRecipe.calledOnceWith(recipe, "rs-loader", {
@@ -1036,6 +1048,57 @@ add_task(async function test_reenroll_rollout_resized() {
   );
   Assert.ok(
     !("unenrollReason" in newEnrollment),
+    "New enrollment should not have unenroll reason"
+  );
+
+  manager.unenroll(rollout.slug);
+
+  await cleanup();
+});
+
+add_task(async function test_rollout_reenroll_recipe_not_seen() {
+  const rollout = NimbusTestUtils.factories.recipe("rollout", {
+    isRollout: true,
+  });
+
+  const { loader, manager, cleanup } = await setupTest();
+
+  loader.remoteSettingsClients.experiments.get.resolves([rollout]);
+  await loader.updateRecipes();
+
+  Assert.equal(
+    manager.store.getRolloutForFeature("testFeature")?.slug,
+    rollout.slug,
+    "Should enroll in rollout"
+  );
+
+  loader.remoteSettingsClients.experiments.get.resolves([]);
+  await loader.updateRecipes();
+
+  Assert.ok(
+    !manager.store.getRolloutForFeature("testFeature"),
+    "Should unenroll from rollout when recipe is no longer seen"
+  );
+
+  const enrollment = manager.store.get(rollout.slug);
+  Assert.equal(
+    enrollment.unenrollReason,
+    NimbusTelemetry.UnenrollReason.RECIPE_NOT_SEEN
+  );
+
+  loader.remoteSettingsClients.experiments.get.resolves([rollout]);
+  await loader.updateRecipes();
+
+  Assert.equal(
+    manager.store.getRolloutForFeature("testFeature")?.slug,
+    rollout.slug,
+    "Should re-enroll in rollout when recipe is seen again"
+  );
+
+  const newEnrollment = manager.store.get(rollout.slug);
+  Assert.strictEqual(
+    typeof newEnrollment.unenrollReason,
+    "undefined",
     "New enrollment should not have unenroll reason"
   );
 

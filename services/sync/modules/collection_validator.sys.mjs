@@ -80,7 +80,12 @@ export class CollectionValidator {
 
     await lazy.Async.yieldingForEach(result.records, async record => {
       await record.decrypt(collectionKey);
-      cleartexts.push(record.cleartext);
+      // Bridged engines (eg, the Rust logins engine) use RawCryptoWrapper, so
+      // the cleartext is the raw payload string rather than a parsed object.
+      let cleartext = record.cleartext;
+      cleartexts.push(
+        typeof cleartext == "string" ? JSON.parse(cleartext) : cleartext
+      );
     });
 
     return cleartexts;

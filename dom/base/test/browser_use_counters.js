@@ -372,7 +372,7 @@ async function ensureData(prevSentinelValue = null) {
   // To wait for the use counters to be reported, we repeatedly flush IPC and
   // check for a change in the "sentinel" use counters
   // `use.counter.css.{page|doc}.css_marker_mid`.
-  return BrowserTestUtils.waitForCondition(
+  return TestUtils.waitForCondition(
     async () => {
       await Services.fog.testFlushAllChildren();
       return (

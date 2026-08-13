@@ -6,16 +6,19 @@
  * nsWinGesture - Touch input handling for tablet displays.
  */
 
-#include "nscore.h"
 #include "nsWinGesture.h"
+
+#include <uxtheme.h>
+
+#include <numbers>
+
 #include "mozilla/Logging.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/TouchEvents.h"
 #include "mozilla/dom/SimpleGestureEventBinding.h"
 #include "mozilla/dom/WheelEventBinding.h"
-
-#include <uxtheme.h>
+#include "nscore.h"
 
 using namespace mozilla;
 using namespace mozilla::widget;
@@ -173,7 +176,7 @@ bool nsWinGesture::ProcessGestureMessage(HWND hWnd, WPARAM wParam,
       if (gi.ullArguments != 0)
         radians = GID_ROTATE_ANGLE_FROM_ARGUMENT(gi.ullArguments);
 
-      double degrees = -1 * radians * (180 / M_PI);
+      double degrees = -1 * radians * (180 / std::numbers::pi);
 
       if (gi.dwFlags & GF_BEGIN) {
         // At some point we should pass the initial angle in

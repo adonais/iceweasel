@@ -19,11 +19,32 @@ const TEST_URI = `data:text/html,<meta charset=utf8>
     div::after {
       line-height: calc(1em + 1px);
     }
+
+    ol {
+      font-size: 36px;
+    }
+
+    li {
+      line-height: 20px;
+      rotate: calc(sibling-index() * 2deg);
+      translate: calc(sibling-count() * 1em + 1lh);
+    }
+
+    li::after {
+      content: "-";
+      outline: calc((sibling-count() + sibling-index()) * 1px) solid tomato;
+    }
   </style>
-  <div>CSS explainers</div>`;
+  <div>CSS explainers</div>
+  <ol>
+    <li>First</li>
+    <li>Second</li>
+    <li>Third</li>
+  </ol>`;
 
 add_task(async function () {
   await pushPref("devtools.inspector.css-explainers", true);
+  await pushPref("layout.css.tree-counting-functions.enabled", true);
 
   await addTab(TEST_URI);
   const { inspector, view } = await openRuleView();
@@ -66,6 +87,93 @@ add_task(async function () {
     expected: {
       functionText: "calc(1em + 1px)",
       tooltipText: ["calc(1em + 1px)", "calc(24px + 1px)", "25px"].join("\n"),
+    },
+  });
+
+  const secondLiNodeFront = await getNodeFront("li:nth-of-type(2)", inspector);
+  await selectNode(secondLiNodeFront, inspector);
+  await assertCssExplainersTooltip({
+    view,
+    selector: "li",
+    propertyName: "rotate",
+    functionIndex: 0,
+    expected: {
+      functionText: "calc(sibling-index() * 2deg)",
+      tooltipText: [
+        "calc(sibling-index() * 2deg)",
+        "calc(2 * 2deg)",
+        "4deg",
+      ].join("\n"),
+    },
+  });
+
+  await assertCssExplainersTooltip({
+    view,
+    selector: "li",
+    propertyName: "rotate",
+    functionIndex: 1,
+    expected: {
+      functionText: "sibling-index()",
+      tooltipText: ["sibling-index()", "2"].join("\n"),
+    },
+  });
+
+  await assertCssExplainersTooltip({
+    view,
+    selector: "li",
+    propertyName: "translate",
+    functionIndex: 0,
+    expected: {
+      functionText: "calc(sibling-count() * 1em + 1lh)",
+      tooltipText: [
+        "calc(sibling-count() * 1em + 1lh)",
+        "calc((sibling-count() * 1em) + 1lh)",
+        "calc((3 * 36px) + 20px)",
+        "calc(108px + 20px)",
+        "128px",
+      ].join("\n"),
+    },
+  });
+
+  await assertCssExplainersTooltip({
+    view,
+    selector: "li::after",
+    propertyName: "outline",
+    functionIndex: 0,
+    expected: {
+      functionText: "calc((sibling-count() + sibling-index()) * 1px)",
+      tooltipText: [
+        "calc((sibling-count() + sibling-index()) * 1px)",
+        "calc((3 + 2) * 1px)",
+        "calc(5 * 1px)",
+        "5px",
+      ].join("\n"),
+    },
+  });
+
+  info("Select the li::after element in the markup view");
+  const secondLiNodeFrontChildren =
+    await inspector.markup.walker.children(secondLiNodeFront);
+  const secondLiAfterElementNodeFront = secondLiNodeFrontChildren.nodes.at(-1);
+  is(
+    secondLiAfterElementNodeFront.displayName,
+    "::after",
+    "Got expected ::after pseudo element"
+  );
+  await selectNode(secondLiAfterElementNodeFront, inspector);
+  await assertCssExplainersTooltip({
+    view,
+    selector: "li::after",
+    propertyName: "outline",
+    functionIndex: 0,
+    expected: {
+      functionText: "calc((sibling-count() + sibling-index()) * 1px)",
+      tooltipText: [
+        "calc((sibling-count() + sibling-index()) * 1px)",
+        "calc((3 + 2) * 1px)",
+        "calc(5 * 1px)",
+        "5px",
+      ].join("\n"),
     },
   });
 });

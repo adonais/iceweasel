@@ -13,7 +13,6 @@
 #include "jit/arm64/vixl/Cpu-Features-vixl.h"
 #include "jit/arm64/vixl/Instructions-vixl.h"
 #include "jit/shared/Architecture-shared.h"
-
 #include "js/Utility.h"
 
 #define JS_HAS_HIDDEN_SP
@@ -518,14 +517,12 @@ class FloatRegisters {
   };
 
   static constexpr Encoding encoding(Code c) {
-    // assert() not available in constexpr function.
-    // assert(c < Total);
+    MOZ_ASSERT(c < Total);
     return Encoding(c & 31);
   }
 
   static constexpr Kind kind(Code c) {
-    // assert() not available in constexpr function.
-    // assert(c < Total && ((c >> 5) & 3) < NumTypes);
+    MOZ_ASSERT(c < Total && ((c >> 5) & 3) < NumTypes);
     return Kind((c >> 5) & 3);
   }
 
@@ -595,7 +592,7 @@ struct FloatRegister {
  public:
   constexpr FloatRegister(Encoding encoding, Kind kind)
       : encoding_(encoding), kind_(kind), invalid_(false) {
-    // assert(uint32_t(encoding) < Codes::TotalPhys);
+    MOZ_ASSERT(uint32_t(encoding) < Codes::TotalPhys);
   }
 
   constexpr FloatRegister()
@@ -646,7 +643,7 @@ struct FloatRegister {
   }
 
   constexpr Code code() const {
-    // assert(!invalid_);
+    MOZ_ASSERT(!invalid_);
     return Codes::fromParts(encoding_, kind_, invalid_);
   }
 
@@ -660,12 +657,7 @@ struct FloatRegister {
     MOZ_ASSERT(!invalid_);
     return !!((SetType(1) << code()) & FloatRegisters::VolatileMask);
   }
-  constexpr bool operator!=(FloatRegister other) const {
-    return code() != other.code();
-  }
-  constexpr bool operator==(FloatRegister other) const {
-    return code() == other.code();
-  }
+  constexpr bool operator==(const FloatRegister&) const = default;
 
   bool aliases(FloatRegister other) const {
     return other.encoding_ == encoding_;
@@ -778,10 +770,6 @@ class ARM64Flags final {
     return 0;
   }
 };
-
-// ARM/D32 has double registers that cannot be treated as float32.
-// Luckily, ARMv8 doesn't have the same misfortune.
-inline bool hasUnaliasedDouble() { return false; }
 
 // ARM prior to ARMv8 also has doubles that alias multiple floats.
 // Again, ARMv8 is in the clear.

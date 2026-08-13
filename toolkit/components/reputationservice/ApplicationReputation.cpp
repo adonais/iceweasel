@@ -261,7 +261,8 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     //".hlp", exec // Windows Help
     ".hqx",  // Mac archive
     //".hta", exec // HTML trusted application
-    ".htm", ".html",
+    ".htm",
+    ".html",
     ".htt",  // MS HTML template
     //".ica",
     ".img",      // Mac disk image
@@ -510,7 +511,9 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     //".wsh", exec  // Windows script
     ".xar",   // MS Excel
     ".xbap",  // XAML Browser Application
-    ".xht", ".xhtm", ".xhtml",
+    ".xht",
+    ".xhtm",
+    ".xhtml",
     ".xip",   // Mac archive
     ".xla",   // MS Excel
     ".xlam",  // MS Excel
@@ -933,7 +936,8 @@ static const char* GetFileExt(const nsACString& aFilename,
                               const char* const aFileExtensions[],
                               const size_t aLength) {
   for (size_t i = 0; i < aLength; ++i) {
-    if (StringEndsWith(aFilename, nsDependentCString(aFileExtensions[i]))) {
+    if (StringEndsWith(aFilename, nsDependentCString(aFileExtensions[i]),
+                       nsCaseInsensitiveCStringComparator)) {
       return aFileExtensions[i];
     }
   }
@@ -973,37 +977,42 @@ ClientDownloadRequest::DownloadType PendingLookup::GetDownloadType(
     const nsACString& aFilename) {
   MOZ_ASSERT(IsBinary(aFilename));
 
+  // Extensions are matched case-insensitively, so compare against a lowercased
+  // copy of the filename.
+  nsAutoCString fileName(aFilename);
+  ToLowerCase(fileName);
+
   // From
   // https://cs.chromium.org/chromium/src/chrome/common/safe_browsing/download_protection_util.cc?l=17
-  if (StringEndsWith(aFilename, ".zip"_ns)) {
+  if (StringEndsWith(fileName, ".zip"_ns)) {
     return ClientDownloadRequest::ZIPPED_EXECUTABLE;
-  } else if (StringEndsWith(aFilename, ".apk"_ns)) {
+  } else if (StringEndsWith(fileName, ".apk"_ns)) {
     return ClientDownloadRequest::ANDROID_APK;
-  } else if (StringEndsWith(aFilename, ".app"_ns) ||
-             StringEndsWith(aFilename, ".applescript"_ns) ||
-             StringEndsWith(aFilename, ".cdr"_ns) ||
-             StringEndsWith(aFilename, ".dart"_ns) ||
-             StringEndsWith(aFilename, ".dc42"_ns) ||
-             StringEndsWith(aFilename, ".diskcopy42"_ns) ||
-             StringEndsWith(aFilename, ".dmg"_ns) ||
-             StringEndsWith(aFilename, ".dmgpart"_ns) ||
-             StringEndsWith(aFilename, ".dvdr"_ns) ||
-             StringEndsWith(aFilename, ".img"_ns) ||
-             StringEndsWith(aFilename, ".imgpart"_ns) ||
-             StringEndsWith(aFilename, ".iso"_ns) ||
-             StringEndsWith(aFilename, ".mpkg"_ns) ||
-             StringEndsWith(aFilename, ".ndif"_ns) ||
-             StringEndsWith(aFilename, ".osas"_ns) ||
-             StringEndsWith(aFilename, ".osax"_ns) ||
-             StringEndsWith(aFilename, ".pkg"_ns) ||
-             StringEndsWith(aFilename, ".scpt"_ns) ||
-             StringEndsWith(aFilename, ".scptd"_ns) ||
-             StringEndsWith(aFilename, ".seplugin"_ns) ||
-             StringEndsWith(aFilename, ".smi"_ns) ||
-             StringEndsWith(aFilename, ".sparsebundle"_ns) ||
-             StringEndsWith(aFilename, ".sparseimage"_ns) ||
-             StringEndsWith(aFilename, ".toast"_ns) ||
-             StringEndsWith(aFilename, ".udif"_ns)) {
+  } else if (StringEndsWith(fileName, ".app"_ns) ||
+             StringEndsWith(fileName, ".applescript"_ns) ||
+             StringEndsWith(fileName, ".cdr"_ns) ||
+             StringEndsWith(fileName, ".dart"_ns) ||
+             StringEndsWith(fileName, ".dc42"_ns) ||
+             StringEndsWith(fileName, ".diskcopy42"_ns) ||
+             StringEndsWith(fileName, ".dmg"_ns) ||
+             StringEndsWith(fileName, ".dmgpart"_ns) ||
+             StringEndsWith(fileName, ".dvdr"_ns) ||
+             StringEndsWith(fileName, ".img"_ns) ||
+             StringEndsWith(fileName, ".imgpart"_ns) ||
+             StringEndsWith(fileName, ".iso"_ns) ||
+             StringEndsWith(fileName, ".mpkg"_ns) ||
+             StringEndsWith(fileName, ".ndif"_ns) ||
+             StringEndsWith(fileName, ".osas"_ns) ||
+             StringEndsWith(fileName, ".osax"_ns) ||
+             StringEndsWith(fileName, ".pkg"_ns) ||
+             StringEndsWith(fileName, ".scpt"_ns) ||
+             StringEndsWith(fileName, ".scptd"_ns) ||
+             StringEndsWith(fileName, ".seplugin"_ns) ||
+             StringEndsWith(fileName, ".smi"_ns) ||
+             StringEndsWith(fileName, ".sparsebundle"_ns) ||
+             StringEndsWith(fileName, ".sparseimage"_ns) ||
+             StringEndsWith(fileName, ".toast"_ns) ||
+             StringEndsWith(fileName, ".udif"_ns)) {
     return ClientDownloadRequest::MAC_EXECUTABLE;
   }
 
@@ -1706,8 +1715,7 @@ nsresult PendingLookup::SendRemoteQueryInternal(Reason& aReason) {
   NS_ENSURE_SUCCESS(rv, rv);
 
   rv = uploadChannel->ExplicitSetUploadStream(
-      sstream, "application/octet-stream"_ns, serialized.size(), "POST"_ns,
-      false);
+      sstream, "application/octet-stream"_ns, serialized.size(), "POST"_ns);
   NS_ENSURE_SUCCESS(rv, rv);
 
   uint32_t timeoutMs =

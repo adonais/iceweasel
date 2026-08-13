@@ -44,6 +44,8 @@ module.exports = {
     `${projectRoot}/browser/components/webrtc/content/**/*.stories.mjs`,
     // AI Window components stories
     `${projectRoot}/browser/components/aiwindow/ui/**/*.stories.mjs`,
+    // Genai components stories
+    `${projectRoot}/browser/components/genai/content/**/*.stories.mjs`,
     // Multiline editor components stories
     `${projectRoot}/browser/components/multilineeditor/**/*.stories.@(mjs|md)`,
     // Trust Panel components stories

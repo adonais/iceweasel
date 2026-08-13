@@ -3,7 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "vm/FunctionFlags.h"  // js::FunctionFlags::Flags
-#include "jsfriendapi.h"       // js::JS_FUNCTION_INTERPRETED_BITS
+
+#include "jsfriendapi.h"  // js::JS_FUNCTION_INTERPRETED_BITS
 
 static_assert((js::FunctionFlags::Flags::BASESCRIPT |
                js::FunctionFlags::Flags::SELFHOSTLAZY) ==

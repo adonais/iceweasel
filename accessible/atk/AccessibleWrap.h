@@ -5,8 +5,8 @@
 #ifndef NS_ACCESSIBLE_WRAP_H_
 #define NS_ACCESSIBLE_WRAP_H_
 
-#include "nsCOMPtr.h"
 #include "LocalAccessible.h"
+#include "nsCOMPtr.h"
 
 struct _AtkObject;
 typedef struct _AtkObject AtkObject;

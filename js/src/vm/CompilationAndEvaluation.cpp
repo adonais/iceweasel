@@ -119,14 +119,6 @@ static bool StartCollectingDelazifications(
     return true;
   }
 
-  // We don't support asm.js in XDR.
-  // Failures are reported by the FinishCollectingDelazifications function
-  // below.
-  if (stencil->getInitial()->hasAsmJS()) {
-    result = JS::CollectDelazificationsResult::NotSupported;
-    return true;
-  }
-
   result = JS::CollectDelazificationsResult::NewlyStarted;
 
   if (!sso->maybeGetStencils()) {

@@ -6,6 +6,7 @@ subsuite = "media"
 tags = "media-gpu"
 support-files = [
   "mediasource.js",
+  "h264_sps_utils.js",
   "seek.webm",
   "seek.webm^headers^",
   "seek_lowres.webm",
@@ -247,6 +248,8 @@ skip-if = [
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # mac due to bug 1487973
   "os == 'win'", # bug 1487973,
 ]
+
+["test_H264_SPS_InvalidDimensions.html"]
 
 ["test_HEAAC_extradata.html"]
 

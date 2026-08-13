@@ -20,6 +20,14 @@
     font-size: max(1em, 12px);
   }
 
+  &:focus-visible {
+    outline-offset: var(--focus-outline-offset);
+  }
+
+  :host([invalid]) & {
+    border-color: var(--border-color-error);
+  }
+
   &:disabled {
     border-color: var(--input-text-border-color-disabled);
     background-color: var(--input-text-background-color-disabled);

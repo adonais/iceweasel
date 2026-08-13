@@ -22,8 +22,8 @@ ChromeUtils.defineESModuleGetters(this, {
   TaskbarTabsUtils: "resource:///modules/taskbartabs/TaskbarTabsUtils.sys.mjs",
 });
 
-const gPinStub = sinon.stub(TaskbarTabsPin, "pinTaskbarTab");
-const gUnpinStub = sinon.stub(TaskbarTabsPin, "unpinTaskbarTab");
+sinon.stub(TaskbarTabsPin, "pinTaskbarTab");
+sinon.stub(TaskbarTabsPin, "unpinTaskbarTab");
 
 registerCleanupFunction(async () => {
   sinon.restore();
@@ -369,50 +369,6 @@ add_task(async function test_moveTabIntoTaskbarTabReuse() {
     await BrowserTestUtils.closeWindow(move.window);
     await TaskbarTabs.removeTaskbarTab(tt.id);
   });
-});
-
-add_task(async function test_moveTabIntoTaskbarTabParentWindow() {
-  await BrowserTestUtils.withNewTab("https://example.com/", async browser => {
-    const tab = window.gBrowser.getTabForBrowser(browser);
-    gPinStub.resetHistory();
-
-    const move = await TaskbarTabs.moveTabIntoTaskbarTab(tab);
-    is(gPinStub.callCount, 1, "Exactly one pin was attempted");
-    is(
-      gPinStub.firstCall.args[3],
-      move.window,
-      "The newly-created window was passed as part of the pinning"
-    );
-
-    await BrowserTestUtils.closeWindow(move.window);
-    await TaskbarTabs.removeTaskbarTab(move.taskbarTab.id);
-  });
-});
-
-add_task(async function test_findOrCreateTaskbarTabParentWindow() {
-  gPinStub.resetHistory();
-
-  let uri = Services.io.newURI(BASE_URL);
-  let result = await TaskbarTabs.findOrCreateTaskbarTab(uri, 0);
-  is(gPinStub.callCount, 1, "Exactly one pin was attempted");
-  ok(
-    !gPinStub.firstCall.args[3]?.window,
-    "No window was passed to pinTaskbarTab"
-  );
-  await TaskbarTabs.removeTaskbarTab(result.taskbarTab.id);
-
-  uri = Services.io.newURI(BASE_URL);
-  const fakeWindow = {};
-  result = await TaskbarTabs.findOrCreateTaskbarTab(uri, 0, {
-    window: fakeWindow,
-  });
-  is(gPinStub.callCount, 2, "Exactly one pin was attempted");
-  is(
-    gPinStub.secondCall.args[3]?.window,
-    fakeWindow,
-    "Provided window was passed to pinTaskbarTab"
-  );
-  await TaskbarTabs.removeTaskbarTab(result.taskbarTab.id);
 });
 
 add_task(async function test_page_action_uses_manifest() {

@@ -8,6 +8,11 @@ const kPrefCustomizationNavBarWhenVerticalTabs =
 const tabsToolbar = "TabsToolbar";
 const navBar = "nav-bar";
 
+const FirefoxViewTestUtils = ChromeUtils.importESModule(
+  "resource://testing-common/FirefoxViewTestUtils.sys.mjs"
+);
+FirefoxViewTestUtils.init(this);
+
 add_setup(async () => {
   Services.prefs.setCharPref(kPrefCustomizationNavBarWhenVerticalTabs, "");
   await SpecialPowers.pushPrefEnv({
@@ -25,6 +30,8 @@ registerCleanupFunction(async () => {
 // This test asserts we remember any tab strip widget customizations in the nav-bar
 // when switching between vertical and horizontal modes
 add_task(async function () {
+  FirefoxViewTestUtils.enableFirefoxViewButton(window);
+
   let defaultHorizontalAllTabsPlacement =
     CustomizableUI.getPlacementOfWidget("alltabs-button");
   let defaultHorizontalFirefoxViewPlacement =

@@ -5,11 +5,9 @@
  */
 
 plugins {
+    id 'com.android.library'
     alias(libs.plugins.kotlin.compose)
 }
-
-apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
 
 android {
     namespace 'org.mozilla.fenix.longfox'
@@ -41,7 +39,7 @@ dependencies {
     implementation libs.androidx.compose.ui
     implementation libs.androidx.compose.ui.tooling.preview
     implementation libs.androidx.compose.ui.graphics
-    implementation libs.androidx.core.ktx
+    implementation libs.androidx.core
     implementation libs.androidx.lifecycle.runtime
     implementation libs.androidx.datastore.core
     implementation libs.androidx.datastore.preferences

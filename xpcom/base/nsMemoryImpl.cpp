@@ -2,18 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsMemory.h"
-#include "nsThreadUtils.h"
-
+#include "mozilla/Atomics.h"
+#include "mozilla/IntegerPrintfMacros.h"
+#include "mozilla/Services.h"
+#include "nsCOMPtr.h"
 #include "nsIObserver.h"
 #include "nsIObserverService.h"
 #include "nsIRunnable.h"
 #include "nsISimpleEnumerator.h"
-
-#include "nsCOMPtr.h"
-#include "mozilla/Services.h"
-#include "mozilla/Atomics.h"
-#include "mozilla/IntegerPrintfMacros.h"
+#include "nsMemory.h"
+#include "nsThreadUtils.h"
 
 #ifdef ANDROID
 #  include <stdio.h>

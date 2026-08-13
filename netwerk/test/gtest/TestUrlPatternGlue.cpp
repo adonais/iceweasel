@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "gtest/gtest.h"
 #include "gtest/MozGTestBench.h"  // For MOZ_GTEST_BENCH
+#include "gtest/gtest.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/net/URLPatternGlue.h"
 #include "mozilla/net/urlpattern_glue.h"

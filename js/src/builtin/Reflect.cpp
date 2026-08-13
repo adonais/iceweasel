@@ -225,7 +225,7 @@ static const JSPropertySpec reflect_properties[] = {
 
 static JSObject* CreateReflectObject(JSContext* cx, JSProtoKey key) {
   RootedObject proto(cx, &cx->global()->getObjectPrototype());
-  return NewPlainObjectWithProto(cx, proto, TenuredObject);
+  return NewPlainObjectWithProto(cx, proto, {.newKind = TenuredObject});
 }
 
 static const ClassSpec ReflectClassSpec = {

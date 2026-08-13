@@ -5,11 +5,11 @@
 #ifndef GFX_PLATFORM_ANDROID_H
 #define GFX_PLATFORM_ANDROID_H
 
+#include "MediaCodecsSupport.h"
 #include "gfxPlatform.h"
 #include "gfxUserFontSet.h"
 #include "nsCOMPtr.h"
 #include "nsTArray.h"
-#include "MediaCodecsSupport.h"
 
 class gfxAndroidPlatform final : public gfxPlatform {
  public:

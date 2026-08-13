@@ -25,7 +25,7 @@
 
       // A function which requests the JS sources from the browser using the GET_JS_SOURCES
       // WebChannel message.
-      function getJSSources(sourceUuids, expectError = false) {
+      function getJSSources(sourceIds, expectError = false) {
         return new Promise((resolve, reject) => {
           const requestId = Date.now();
 
@@ -76,7 +76,7 @@
             new CustomEvent("WebChannelMessageToChrome", {
               detail: JSON.stringify({
                 id: "profiler.firefox.com",
-                message: { type: "GET_JS_SOURCES", requestId, sourceUuids },
+                message: { type: "GET_JS_SOURCES", requestId, sourceIds },
               }),
             })
           );
@@ -93,12 +93,12 @@
           let sourcesToRequest;
           let expectedResponse;
 
-          // Handle invalid-request test case where sourceUuids is intentionally not JSON
+          // Handle invalid-request test case where sourceIds is intentionally not JSON
           if (testType === "invalid-request") {
-            sourcesToRequest = params.get("sourceUuids"); // Keep as string for invalid test
+            sourcesToRequest = params.get("sourceIds"); // Keep as string for invalid test
             expectedResponse = null;
           } else {
-            sourcesToRequest = JSON.parse(params.get("sourceUuids") || "[]");
+            sourcesToRequest = JSON.parse(params.get("sourceIds") || "[]");
             expectedResponse = JSON.parse(params.get("expectedResponse") || "null");
           }
 
@@ -146,7 +146,7 @@
               // Test case: Invalid sources parameter (should return error)
               testPassed = response &&
                 response.error &&
-                response.error.includes("sourceUuids must be an array");
+                response.error.includes("sourceIds must be an array");
               break;
 
             default:

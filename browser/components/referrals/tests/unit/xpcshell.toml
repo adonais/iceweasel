@@ -1,0 +1,8 @@
+[DEFAULT]
+run-if = [
+  "os != 'android'",
+]
+head = "head.js"
+firefox-appdir = "browser"
+
+["test_referralCode.js"]

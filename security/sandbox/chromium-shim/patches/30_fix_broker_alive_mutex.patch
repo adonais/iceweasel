@@ -21,24 +21,23 @@ main thread, during sandbox initialization. This ensures that clients
 will not get disturbed by the death of the IPC launcher thread anymore.
 
 diff --git a/sandbox/win/src/broker_services.cc b/sandbox/win/src/broker_services.cc
-index c25d89928249..ef8758ef68cb 100644
 --- a/sandbox/win/src/broker_services.cc
 +++ b/sandbox/win/src/broker_services.cc
-@@ -261,6 +261,9 @@ ResultCode BrokerServicesBase::Init(
-   if (job_port_.IsValid() || thread_pool_)
+@@ -265,6 +265,10 @@ ResultCode BrokerServicesBase::Init() {
      return SBOX_ERROR_UNEXPECTED_CALL;
+   }
  
-+  if (!SharedMemIPCServer::CreateBrokerAliveMutex())
++  if (!SharedMemIPCServer::CreateBrokerAliveMutex()) {
 +    return SBOX_ERROR_CANNOT_INIT_BROKERSERVICES;
++  }
 +
    job_port_.Set(::CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, 0, 0));
-   if (!job_port_.IsValid())
+   if (!job_port_.is_valid()) {
      return SBOX_ERROR_CANNOT_INIT_BROKERSERVICES;
 diff --git a/sandbox/win/src/sharedmem_ipc_server.cc b/sandbox/win/src/sharedmem_ipc_server.cc
-index f8b98202036a..a86d44bb1abb 100644
 --- a/sandbox/win/src/sharedmem_ipc_server.cc
 +++ b/sandbox/win/src/sharedmem_ipc_server.cc
-@@ -26,6 +26,18 @@ volatile HANDLE g_alive_mutex = nullptr;
+@@ -27,6 +27,18 @@ volatile HANDLE g_alive_mutex = nullptr;
  
  namespace sandbox {
  
@@ -57,7 +56,7 @@ index f8b98202036a..a86d44bb1abb 100644
  SharedMemIPCServer::ServerControl::ServerControl() {}
  
  SharedMemIPCServer::ServerControl::~ServerControl() {}
-@@ -39,19 +51,7 @@ SharedMemIPCServer::SharedMemIPCServer(HANDLE target_process,
+@@ -40,19 +52,7 @@ SharedMemIPCServer::SharedMemIPCServer(H
        target_process_(target_process),
        target_process_id_(target_process_id),
        call_dispatcher_(dispatcher) {
@@ -79,7 +78,6 @@ index f8b98202036a..a86d44bb1abb 100644
  
  SharedMemIPCServer::~SharedMemIPCServer() {
 diff --git a/sandbox/win/src/sharedmem_ipc_server.h b/sandbox/win/src/sharedmem_ipc_server.h
-index 52603ae12506..270641c5e954 100644
 --- a/sandbox/win/src/sharedmem_ipc_server.h
 +++ b/sandbox/win/src/sharedmem_ipc_server.h
 @@ -64,6 +64,12 @@ class SharedMemIPCServer {

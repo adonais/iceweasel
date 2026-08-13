@@ -2,50 +2,48 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/LookAndFeel.h"
-#include "mozilla/RWLock.h"
-#include "nscore.h"
-
 #include "nsXPLookAndFeel.h"
-#include "nsLookAndFeel.h"
+
+#include <bitset>
+
 #include "HeadlessLookAndFeel.h"
 #include "RemoteLookAndFeel.h"
-#include "nsContentUtils.h"
-#include "nsCRT.h"
-#include "nsFont.h"
-#include "nsIFrame.h"
-#include "nsIXULRuntime.h"
-#include "nsLayoutUtils.h"
-#include "Theme.h"
 #include "SurfaceCacheUtils.h"
-#include "mozilla/dom/ContentParent.h"
-#include "mozilla/dom/ContentChild.h"
-#include "mozilla/glean/WidgetMetrics.h"
+#include "Theme.h"
+#include "gfxFont.h"
+#include "gfxPlatform.h"
+#include "mozilla/LookAndFeel.h"
+#include "mozilla/PreferenceSheet.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/RWLock.h"
+#include "mozilla/RelativeLuminanceUtils.h"
 #include "mozilla/Services.h"
-#include "mozilla/ServoStyleSet.h"
 #include "mozilla/ServoCSSParser.h"
+#include "mozilla/ServoStyleSet.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_editor.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/StaticPrefs_ui.h"
 #include "mozilla/StaticPrefs_widget.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/PreferenceSheet.h"
-#include "mozilla/gfx/2D.h"
-#include "mozilla/widget/WidgetMessageUtils.h"
-#include "mozilla/dom/KeyboardEventBinding.h"
-#include "mozilla/RelativeLuminanceUtils.h"
-#include "mozilla/glean/GleanMetrics.h"
 #include "mozilla/TelemetryScalarEnums.h"
 #include "mozilla/Try.h"
-
-#include "gfxPlatform.h"
-#include "gfxFont.h"
-
+#include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/ContentParent.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/KeyboardEventBinding.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/glean/GleanMetrics.h"
+#include "mozilla/glean/WidgetMetrics.h"
+#include "mozilla/widget/WidgetMessageUtils.h"
+#include "nsCRT.h"
+#include "nsContentUtils.h"
+#include "nsFont.h"
+#include "nsIFrame.h"
+#include "nsIXULRuntime.h"
+#include "nsLayoutUtils.h"
+#include "nsLookAndFeel.h"
+#include "nscore.h"
 #include "qcms.h"
-
-#include <bitset>
 
 using namespace mozilla;
 

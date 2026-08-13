@@ -48,6 +48,7 @@ class ErrorPagesTest {
         assertUrlEncodingIsValid(ErrorType.ERROR_NET_INTERRUPT)
         assertUrlEncodingIsValid(ErrorType.ERROR_NET_TIMEOUT)
         assertUrlEncodingIsValid(ErrorType.ERROR_CONNECTION_REFUSED)
+        assertUrlEncodingIsValid(ErrorType.ERROR_LOCAL_NETWORK_ACCESS_DENIED)
         assertUrlEncodingIsValid(ErrorType.ERROR_UNKNOWN_SOCKET_TYPE)
         assertUrlEncodingIsValid(ErrorType.ERROR_REDIRECT_LOOP)
         assertUrlEncodingIsValid(ErrorType.ERROR_OFFLINE)

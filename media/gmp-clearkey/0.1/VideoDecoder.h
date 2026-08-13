@@ -22,8 +22,10 @@
 
 #include <queue>
 
-#include "content_decryption_module.h"
+#include "ClearKeyDecryptionManager.h"
+#include "RefCounted.h"
 #include "WMFH264Decoder.h"
+#include "content_decryption_module.h"
 
 class VideoDecoder : public RefCounted {
  public:

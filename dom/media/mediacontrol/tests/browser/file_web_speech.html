@@ -7,6 +7,7 @@
 <button id="start">start</button>
 <script>
 let utt;
+let speechStarted = false;
 
 document.getElementById("start").addEventListener("click", () => {
   utt = new SpeechSynthesisUtterance("audio focus competition test");
@@ -16,30 +17,38 @@ document.getElementById("start").addEventListener("click", () => {
   // nsFakeSynthServices.cpp (the "it-IT-noend" / "teresa" voice carries
   // eSuppressEnd).
   utt.lang = "it-IT-noend";
+  speechStarted = false;
+  utt.addEventListener("start", () => {
+    speechStarted = true;
+  });
   speechSynthesis.speak(utt);
 });
 
-window.waitForSpeechStart = () =>
-  new Promise(resolve => {
-    if (!utt) {
-      resolve(false);
-      return;
-    }
-    utt.addEventListener("start", () => resolve(true), { once: true });
-  });
-
-window.waitForSpeechPause = () =>
-  new Promise(resolve => {
-    if (!utt) {
-      resolve(false);
-      return;
-    }
-    if (speechSynthesis.paused) {
+// Poll the observable state rather than waiting on a one-shot event: the
+// start/pause/resume transition can land before the test attaches a listener,
+// and a missed one-shot event would hang the spawn (and leak the tab).
+function waitForState(predicate) {
+  return new Promise(resolve => {
+    if (predicate()) {
       resolve(true);
       return;
     }
-    utt.addEventListener("pause", () => resolve(true), { once: true });
+    const timer = setInterval(() => {
+      if (predicate()) {
+        clearInterval(timer);
+        resolve(true);
+      }
+    }, 50);
   });
+}
+
+window.waitForSpeechStart = () => waitForState(() => speechStarted);
+
+window.waitForSpeechPause = () =>
+  waitForState(() => !!utt && speechSynthesis.paused);
+
+window.waitForSpeechResume = () =>
+  waitForState(() => !!utt && speechStarted && !speechSynthesis.paused);
 
 window.cancelSpeech = () => {
   if (utt) {

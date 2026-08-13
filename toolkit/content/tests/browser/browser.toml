@@ -40,6 +40,9 @@ fail-if = [
 
 ["browser_about_restricted.js"]
 
+["browser_aboutsupport_codec_extension_link.js"]
+run-if = ["os == 'win'"]
+
 ["browser_autoscroll_disabled.js"]
 
 ["browser_autoscroll_disabled_on_editable_content.js"]

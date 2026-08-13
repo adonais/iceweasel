@@ -8,11 +8,13 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
+import mozilla.components.lib.shake.ShakeSensitivity
 
 /**
  * Defines the contract for persisting and retrieving user settings related to
@@ -73,6 +75,18 @@ interface SummarizationSettings {
      */
     suspend fun incrementShakeConsentRejectedCount()
 
+    /**
+     * @return A [Flow] emitting the user's current preference for ShakeSensitivity
+     */
+    fun getShakeSensitivity(): Flow<ShakeSensitivity>
+
+    /**
+     * Persists the user's preference for the shake sensitivity
+     *
+     * @param newValue the new sensitivity to persist
+     */
+    suspend fun setShakeSensitivity(newValue: ShakeSensitivity)
+
     companion object {
         /**
          * Creates a simple in-memory implementation of [SummarizationSettings].
@@ -90,6 +104,7 @@ interface SummarizationSettings {
             isGestureEnabled: Boolean = false,
             hasConsentedToShake: Boolean = false,
             shakeConsentRejectedCount: Int = 0,
+            shakeSensitivity: ShakeSensitivity = ShakeSensitivity.Medium,
         ) = object : SummarizationSettings {
             var isFeatureEnabledFlow =
                 MutableStateFlow(isFeatureEnabled)
@@ -97,6 +112,8 @@ interface SummarizationSettings {
                 MutableStateFlow(isGestureEnabled)
             var hasConsentedToShakeFlow =
                 MutableStateFlow(hasConsentedToShake)
+            var shakeSensitivityFlow =
+                MutableStateFlow(shakeSensitivity)
             private var shakeConsentRejectedCount = 0
 
             override fun getFeatureEnabledUserStatus(): Flow<Boolean?> = isFeatureEnabledFlow
@@ -123,6 +140,12 @@ interface SummarizationSettings {
                     isGestureEnabledFlow.value = false
                 }
             }
+
+            override fun getShakeSensitivity(): Flow<ShakeSensitivity> = shakeSensitivityFlow
+
+            override suspend fun setShakeSensitivity(newValue: ShakeSensitivity) {
+                shakeSensitivityFlow.emit(newValue)
+            }
         }
 
         /**
@@ -144,6 +167,7 @@ internal class DataStoreBackedSettings(private val dataStore: DataStore<Preferen
     private val gestureEnabledKey = booleanPreferencesKey("gesture_enabled_user_status_key")
     private val hasConsentedToShakeKey = booleanPreferencesKey("has_consented_to_shake_key")
     private val shakeConsentRejectedCountKey = intPreferencesKey("shake_consent_rejected_count_key")
+    private val shakeSensitivityKey = floatPreferencesKey("shake_sensitivity_threshold_key")
 
     override fun getFeatureEnabledUserStatus(): Flow<Boolean?> = dataStore.data.map { preferences ->
         preferences[featureEnabledKey]
@@ -189,6 +213,18 @@ internal class DataStoreBackedSettings(private val dataStore: DataStore<Preferen
                 if (updatedCount >= MAX_SHAKE_CONSENT_REJECTION) {
                     preferences[gestureEnabledKey] = false
                 }
+            }
+        }
+    }
+
+    override fun getShakeSensitivity(): Flow<ShakeSensitivity> = dataStore.data.map { preferences ->
+        preferences[shakeSensitivityKey] ?.let { ShakeSensitivity(it) } ?: ShakeSensitivity.Medium
+    }
+
+    override suspend fun setShakeSensitivity(newValue: ShakeSensitivity) {
+        dataStore.updateData {
+            it.toMutablePreferences().also { preferences ->
+                preferences[shakeSensitivityKey] = newValue.threshold
             }
         }
     }

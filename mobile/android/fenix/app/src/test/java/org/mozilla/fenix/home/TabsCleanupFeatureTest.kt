@@ -6,6 +6,7 @@ package org.mozilla.fenix.home
 
 import androidx.compose.material3.SnackbarHostState
 import androidx.navigation.NavController
+import androidx.navigation.NavDirections
 import io.mockk.MockKAnnotations
 import io.mockk.Runs
 import io.mockk.every
@@ -235,6 +236,7 @@ class TabsCleanupFeatureTest {
 
         val tab: TabSessionState = mockk {
             every { content.private } returns private
+            every { content.url } returns "https://www.mozilla.org"
             every { id } returns sessionId
         }
 
@@ -261,6 +263,7 @@ class TabsCleanupFeatureTest {
         val sessionId = "1"
         val tab: TabSessionState = mockk {
             every { content.private } returns private
+            every { content.url } returns "https://www.mozilla.org"
             every { id } returns sessionId
         }
 
@@ -295,6 +298,7 @@ class TabsCleanupFeatureTest {
 
         val tab: TabSessionState = mockk {
             every { content.private } returns private
+            every { content.url } returns "https://www.mozilla.org"
             every { id } returns sessionId
         }
 
@@ -375,6 +379,18 @@ class TabsCleanupFeatureTest {
             navController.navigate(
                 HomeFragmentDirections.actionGlobalBrowser(null),
             )
+        }
+    }
+
+    @Test
+    fun `GIVEN the restored tab is a homepage tab WHEN undo tab removed is called THEN do not navigate away from the homepage`() {
+        feature.onUndoTabRemoved(tabId = "", isRestoringHomepageTab = true)
+
+        verify {
+            tabsUseCases.undo.invoke()
+        }
+        verify(exactly = 0) {
+            navController.navigate(any<NavDirections>())
         }
     }
 

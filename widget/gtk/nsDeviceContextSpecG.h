@@ -7,17 +7,16 @@
 
 struct JSContext;
 
-#include "nsIDeviceContextSpec.h"
-#include "nsIPrinterList.h"
-#include "nsIPrintSettings.h"
-#include "nsCOMPtr.h"
-#include "nsString.h"
-#include "mozilla/gfx/PrintPromise.h"
-
-#include "nsCRT.h" /* should be <limits.h>? */
-
 #include <gtk/gtk.h>
 #include <gtk/gtkunixprint.h>
+
+#include "mozilla/gfx/PrintPromise.h"
+#include "nsCOMPtr.h"
+#include "nsCRT.h" /* should be <limits.h>? */
+#include "nsIDeviceContextSpec.h"
+#include "nsIPrintSettings.h"
+#include "nsIPrinterList.h"
+#include "nsString.h"
 
 #define NS_PORTRAIT 0
 #define NS_LANDSCAPE 1

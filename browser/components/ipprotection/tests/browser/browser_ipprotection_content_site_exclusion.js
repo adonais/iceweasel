@@ -4,10 +4,6 @@
 
 "use strict";
 
-const { IPPExceptionsManager } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/ipprotection/IPPExceptionsManager.sys.mjs"
-);
-
 const MOCK_SITE_NAME = "https://example.com";
 
 const PERM_NAME = "ipp-vpn";
@@ -678,7 +674,9 @@ add_task(async function test_site_exclusion_description_visibility() {
 });
 
 /**
- * Tests that we don't show the site exclusion toggle on privileged pages.
+ * Tests that on a privileged (non-manageable) page neither the panel toggle nor
+ * the toolbar excluded icon are shown, even though the underlying rule would be
+ * EXCLUDED for a non-http principal.
  */
 add_task(async function test_site_exclusion_toggle_privileged_page() {
   const sandbox = sinon.createSandbox();
@@ -688,8 +686,8 @@ add_task(async function test_site_exclusion_toggle_privileged_page() {
     isReady: true,
   });
 
-  let panel = IPProtection.getPanel(window);
-  sandbox.stub(panel, "_isPrivilegedPage").returns(true);
+  sandbox.stub(IPPExceptionsManager, "canManage").returns(false);
+  sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
 
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, ABOUT_PAGE);
 
@@ -704,6 +702,16 @@ add_task(async function test_site_exclusion_toggle_privileged_page() {
   Assert.ok(
     !content.siteExclusionControlEl,
     "Site exclusion control should not be present on privileged pages"
+  );
+
+  let toolbarButton = document.getElementById(IPProtectionWidget.WIDGET_ID);
+  Assert.ok(
+    toolbarButton.classList.contains("ipprotection-on"),
+    "Toolbar icon should show the connection status on privileged pages"
+  );
+  Assert.ok(
+    !toolbarButton.classList.contains("ipprotection-excluded"),
+    "Toolbar icon should not show excluded status on privileged pages"
   );
 
   await closePanel();

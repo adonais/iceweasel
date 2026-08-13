@@ -44,7 +44,7 @@ class RecommendedThemesFooter extends AboutAddonsHTMLElement {
     let action = event.target.getAttribute("action");
     switch (action) {
       case "open-amo":
-        openAmoInTab(this, "themes");
+        openAmoInTab("themes", { utmContent: "find-more-link-bottom" });
         break;
     }
   }

@@ -6,12 +6,14 @@
 #define mozilla_widget_WinRegistry_h_
 
 #include <windows.h>
+
 #include <functional>
+
+#include "mozilla/Maybe.h"
+#include "mozilla/Span.h"
 #include "nsCOMPtr.h"
 #include "nsString.h"
 #include "nsTArray.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/Span.h"
 
 class nsISerialEventTarget;
 

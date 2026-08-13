@@ -1,0 +1,317 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
+});
+
+const PREFS = {
+  // Intent: Rust is the desired backend.
+  RUST_ENABLED: "signon.storage.rust.enabled",
+  // Reality: Rust is the active backend right now. Owned by the migrator.
+  // Also drives Sync's engine selection (services/sync/modules/service.sys.mjs).
+  RUST_ACTIVE: "signon.storage.rust.active",
+  MIGRATION_ATTEMPTS: "signon.storage.rust.migrationAttempts",
+};
+
+const MAX_MIGRATION_ATTEMPTS = 10;
+const MAX_RUNTIME_RETRIES = 3;
+
+// Continues the rust mirror's telemetry version sequence (last was 8); the
+// rust_migration_status event is shared with the former mirror.
+const telemetryVersion = "9";
+
+// Replace an origin's scheme with `moz-pwmngr-fixed-<prefix extracted from
+// login guid>://`.
+// Used during migration when two JSON logins collapse onto the same Rust dedup
+// key after origin normalization: rewriting the loser's scheme gives it a
+// distinct origin in Rust so both records can be persisted.
+function rewriteOriginToFixedScheme(origin, guid) {
+  const id = guid.replace(/\W/, "").split("-", 1)[0];
+  const idx = origin.indexOf("://");
+  if (idx === -1) {
+    return `moz-pwmngr-fixed-${id}://${origin}`;
+  }
+  return `moz-pwmngr-fixed-${id}://${origin.slice(idx + 3)}`;
+}
+
+// Normalize different Rust storage error messages so similar failures group
+// together in telemetry.
+function normalizeRustStorageErrorMessage(error) {
+  const message = error?.message || String(error);
+
+  return message
+    .replace(/^reason: /, "")
+    .replace(/^Invalid login: /, "")
+    .replace(/\{[0-9a-fA-F-]{36}\}/, "{UUID}");
+}
+
+// Records one summary event per migration run. `error` is the fatal error that
+// aborted the run, or null if the run completed.
+function recordMigrationStatus({
+  runId,
+  duration,
+  numberOfLoginsToMigrate,
+  numberOfLoginsMigrated,
+  numberOfLoginsQuarantined,
+  numberOfVulnerablePasswords,
+  attempt,
+  endState,
+  primaryPasswordSet,
+  error,
+}) {
+  Glean.pwmgr.rustMigrationStatus.record({
+    metric_version: telemetryVersion,
+    run_id: runId,
+    duration_ms: duration,
+    number_of_logins_to_migrate: numberOfLoginsToMigrate,
+    number_of_logins_migrated: numberOfLoginsMigrated,
+    number_of_logins_quarantined: numberOfLoginsQuarantined,
+    number_of_vulnerable_passwords: numberOfVulnerablePasswords,
+    attempt,
+    end_state: endState,
+    primary_password_set: primaryPasswordSet,
+    error_message: error ? normalizeRustStorageErrorMessage(error) : null,
+  });
+}
+
+// Records one event per login that could not be migrated.
+function recordMigrationLoginError(runId, error) {
+  Glean.pwmgr.rustMigrationLoginError.record({
+    metric_version: telemetryVersion,
+    run_id: runId,
+    error_message: normalizeRustStorageErrorMessage(error),
+  });
+}
+
+export class LoginStorageMigrator {
+  #jsonStorage;
+  #rustStorage;
+  // Tracks execution progress within a single run() call. Never persisted.
+  #retryCount = 0;
+  #logger;
+
+  constructor(jsonStorage, rustStorage) {
+    this.#jsonStorage = jsonStorage;
+    this.#rustStorage = rustStorage;
+    this.#logger = lazy.LoginHelper.createLogger("LoginStorageMigrator");
+  }
+
+  // Returns the state derived from prefs.
+  get #state() {
+    const enabled = Services.prefs.getBoolPref(PREFS.RUST_ENABLED, false);
+    const active = Services.prefs.getBoolPref(PREFS.RUST_ACTIVE, false);
+    if (!enabled) {
+      return active ? "RevertPending" : "JSONPrimary";
+    }
+    return active ? "RustPrimary" : "MigrationPending";
+  }
+
+  // Runs the migration if necessary and returns the active storage backend.
+  async run() {
+    const state = this.#state;
+    this.#logger.log(`run: ${state}`);
+    switch (state) {
+      case "RustPrimary":
+        return this.#rustStorage;
+
+      case "MigrationPending":
+        if (
+          Services.prefs.getIntPref(PREFS.MIGRATION_ATTEMPTS, 0) >=
+          MAX_MIGRATION_ATTEMPTS
+        ) {
+          return this.#exceedMigrationBudget();
+        }
+        return this.#startMigration();
+
+      case "RevertPending":
+        return this.#deactivateRust();
+
+      default:
+        return this.#jsonStorage;
+    }
+  }
+
+  // If a PrP is set, prompt for it. Then start the migration.
+  async #startMigration() {
+    if (
+      lazy.LoginHelper.isPrimaryPasswordSet() &&
+      !this.#jsonStorage.isLoggedIn
+    ) {
+      const token = Cc[
+        "@mozilla.org/security/internalkeytoken;1"
+      ].createInstance(Ci.nsIPKCS11Token);
+      try {
+        // Logs in, which prompts for the primary password.
+        await token.login();
+      } catch (e) {
+        // An exception is thrown if the user cancels the prompt.
+      }
+      if (!token.isLoggedIn) {
+        this.#logger.log("Migration deferred: primary password locked");
+        return this.#jsonStorage;
+      }
+    }
+    return this.#executeMigration();
+  }
+
+  async #executeMigration() {
+    this.#logger.log("Starting migration...");
+
+    const t0 = Date.now();
+    const runId = Services.uuid.generateUUID();
+    const attempt = Services.prefs.getIntPref(PREFS.MIGRATION_ATTEMPTS, 0);
+    const primaryPasswordSet = lazy.LoginHelper.isPrimaryPasswordSet();
+    let numberOfLoginsToMigrate = 0;
+    let numberOfLoginsMigrated = 0;
+    let numberOfLoginsQuarantined = 0;
+    let numberOfVulnerablePasswords = 0;
+    let fatalError = null;
+    let endState;
+
+    try {
+      await this.#rustStorage.removeAllLoginsAsync();
+      await this.#rustStorage.clearAllPotentiallyVulnerablePasswords();
+
+      const logins = await this.#jsonStorage.getAllLogins(false);
+      numberOfLoginsToMigrate = logins.length;
+
+      // Sort by timePasswordChanged descending so the most recently changed
+      // password wins origin-normalization collisions; older duplicates are
+      // quarantined under moz-pwmngr-fixed:// below.
+      const sortedLogins = [...logins].sort(
+        (a, b) => (b.timePasswordChanged || 0) - (a.timePasswordChanged || 0)
+      );
+
+      const results =
+        await this.#rustStorage.addLoginsWithResultsAsync(sortedLogins);
+      const failedLogins = results
+        .map(({ error }, i) => ({
+          login: sortedLogins[i],
+          error,
+          isDuplicate: /Login already exists/i.test(error?.message || ""),
+        }))
+        .filter(({ error }) => error);
+
+      numberOfLoginsMigrated += results.length - failedLogins.length;
+
+      const duplicates = [];
+      for (const { isDuplicate, error, login } of failedLogins) {
+        if (isDuplicate) {
+          const rescued = login.clone();
+          rescued.QueryInterface(Ci.nsILoginMetaInfo);
+          rescued.origin = rewriteOriginToFixedScheme(login.origin, login.guid);
+          duplicates.push(rescued);
+        } else {
+          this.#logger.error("Migration error:", error.message);
+          recordMigrationLoginError(runId, error);
+        }
+      }
+
+      const duplicatesResults =
+        await this.#rustStorage.addLoginsWithResultsAsync(duplicates);
+      for (const { error } of duplicatesResults) {
+        if (error) {
+          this.#logger.error(
+            "Migration error for rescued duplicate:",
+            error.message
+          );
+          recordMigrationLoginError(runId, error);
+        } else {
+          numberOfLoginsMigrated++;
+          numberOfLoginsQuarantined++;
+        }
+      }
+
+      const potentiallyVulnerablePasswords =
+        this.#jsonStorage.decryptedPotentiallyVulnerablePasswords;
+      numberOfVulnerablePasswords = potentiallyVulnerablePasswords.length;
+      try {
+        await this.#rustStorage.addPotentiallyVulnerablePasswords(
+          potentiallyVulnerablePasswords
+        );
+      } catch (e) {
+        this.#logger.error("Vulnerable passwords migration error:", e);
+      }
+
+      this.#logger.log(
+        `Migration complete: ${numberOfLoginsMigrated}/${numberOfLoginsToMigrate} logins` +
+          (numberOfLoginsQuarantined
+            ? `, ${numberOfLoginsQuarantined} quarantined`
+            : "")
+      );
+
+      const activeStore = this.#completeMigration();
+      endState = this.#state;
+      return activeStore;
+    } catch (e) {
+      this.#logger.error("Migration failed:", e);
+      fatalError = e;
+      endState = this.#state;
+      return this.#failMigration(e);
+    } finally {
+      recordMigrationStatus({
+        runId,
+        duration: Date.now() - t0,
+        numberOfLoginsToMigrate,
+        numberOfLoginsMigrated,
+        numberOfLoginsQuarantined,
+        numberOfVulnerablePasswords,
+        attempt,
+        endState,
+        primaryPasswordSet,
+        error: fatalError,
+      });
+    }
+  }
+
+  #completeMigration() {
+    Services.prefs.setBoolPref(PREFS.RUST_ACTIVE, true);
+    Services.prefs.setIntPref(PREFS.MIGRATION_ATTEMPTS, 0);
+    return this.#rustStorage;
+  }
+
+  async #failMigration(_error) {
+    if (this.#retryCount < MAX_RUNTIME_RETRIES) {
+      return this.#retryMigration();
+    }
+    return this.#abortMigration();
+  }
+
+  async #retryMigration() {
+    this.#retryCount++;
+    this.#logger.log(
+      `Retrying migration (${this.#retryCount}/${MAX_RUNTIME_RETRIES})`
+    );
+    return this.#executeMigration();
+  }
+
+  #abortMigration() {
+    this.#logger.log("Migration aborted; will retry on next startup");
+    Services.prefs.setIntPref(
+      PREFS.MIGRATION_ATTEMPTS,
+      Services.prefs.getIntPref(PREFS.MIGRATION_ATTEMPTS, 0) + 1
+    );
+    // rust.enabled is not reset — next startup retries automatically.
+    return this.#jsonStorage;
+  }
+
+  #exceedMigrationBudget() {
+    this.#logger.log("Migration budget exceeded; disabling Rust backend");
+    Services.prefs.setBoolPref(PREFS.RUST_ENABLED, false);
+    Services.prefs.setIntPref(PREFS.MIGRATION_ATTEMPTS, 0);
+    return this.#jsonStorage;
+  }
+
+  // Rust is no longer the desired backend but is still active. Deactivate it;
+  // changes made while Rust was active are lost. Reset the attempt budget so a
+  // later re-enable starts fresh.
+  #deactivateRust() {
+    this.#logger.log("Deactivating Rust backend");
+    Services.prefs.setBoolPref(PREFS.RUST_ACTIVE, false);
+    Services.prefs.setIntPref(PREFS.MIGRATION_ATTEMPTS, 0);
+    return this.#jsonStorage;
+  }
+}

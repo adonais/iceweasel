@@ -219,8 +219,8 @@ void AudioTimelineEvent::FillFromValueCurve(TimeType aBufferStartTime,
   double curveStartTime = Time<TimeType>();
   MOZ_ASSERT(aBufferStartTime >= curveStartTime);
   MOZ_ASSERT(aBufferStartTime - curveStartTime <= mDuration);
-  MOZ_ASSERT((std::is_same<TimeType, int64_t>::value) || aBuffer.Length() == 1);
-  MOZ_ASSERT((!std::is_same<TimeType, int64_t>::value) ||
+  MOZ_ASSERT((std::is_same_v<TimeType, int64_t>) || aBuffer.Length() == 1);
+  MOZ_ASSERT(!(std::is_same_v<TimeType, int64_t>) ||
              aBufferStartTime - curveStartTime + aBuffer.Length() - 1 <=
                  mDuration);
   uint32_t stepCount = mCurveLength - 1;
@@ -417,7 +417,7 @@ void AudioEventTimeline::GetValuesAtTimeHelperInternal(
     TimeType aStartTime, Span<float> aBuffer,
     const AudioTimelineEvent* aPrevious, const AudioTimelineEvent* aNext) {
   MOZ_ASSERT(aBuffer.Length() >= 1);
-  MOZ_ASSERT((std::is_same<TimeType, int64_t>::value) || aBuffer.Length() == 1);
+  MOZ_ASSERT((std::is_same_v<TimeType, int64_t>) || aBuffer.Length() == 1);
 
   // If the requested time is before all of the existing events
   if (!aPrevious) {

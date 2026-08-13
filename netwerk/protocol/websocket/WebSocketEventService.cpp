@@ -2,19 +2,19 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "WebSocketEventListenerChild.h"
 #include "WebSocketEventService.h"
-#include "WebSocketFrame.h"
 
-#include "mozilla/net/NeckoChild.h"
+#include "WebSocketEventListenerChild.h"
+#include "WebSocketFrame.h"
+#include "mozilla/Services.h"
 #include "mozilla/StaticPtr.h"
-#include "nsISupportsPrimitives.h"
+#include "mozilla/net/NeckoChild.h"
 #include "nsIObserverService.h"
-#include "nsXULAppAPI.h"
+#include "nsISupportsPrimitives.h"
+#include "nsIWebSocketImpl.h"
 #include "nsSocketTransportService2.h"
 #include "nsThreadUtils.h"
-#include "mozilla/Services.h"
-#include "nsIWebSocketImpl.h"
+#include "nsXULAppAPI.h"
 
 namespace mozilla {
 namespace net {

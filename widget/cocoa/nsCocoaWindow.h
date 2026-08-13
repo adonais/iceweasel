@@ -9,16 +9,16 @@
 
 #import <Cocoa/Cocoa.h>
 
+#include <dlfcn.h>
+#include <queue>
+#include "ViewRegion.h"
+#include "mozView.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/layers/NativeLayerRootRemoteMacChild.h"
 #include "mozilla/layers/NativeLayerRootRemoteMacParent.h"
-#include "nsIWidget.h"
 #include "nsCocoaUtils.h"
+#include "nsIWidget.h"
 #include "nsTouchBar.h"
-#include "ViewRegion.h"
-#include "mozView.h"
-#include <dlfcn.h>
-#include <queue>
 
 class nsCocoaWindow;
 class nsChildView;

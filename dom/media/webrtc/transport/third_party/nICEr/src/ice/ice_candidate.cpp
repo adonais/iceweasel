@@ -241,8 +241,10 @@ int nr_ice_peer_peer_rflx_candidate_create(nr_ice_ctx *ctx, const char *label, n
       ABORT(r);
     if(r=nr_transport_addr_copy(&cand->addr,addr))
       ABORT(r);
-    /* Bogus foundation */
-    if(!(cand->foundation=strdup(cand->addr.as_string)))
+    /* It is impossible to determine the foundation of a remote prflx unless
+     * there happens to be another trickle candidate that matches exactly. So,
+     * put a placeholder here so the result is parseable. */
+    if(!(cand->foundation=strdup("prflx")))
       ABORT(R_NO_MEMORY);
 
     nr_ice_candidate_compute_codeword(cand);
@@ -356,6 +358,8 @@ int nr_ice_candidate_destroy(nr_ice_candidate **candp)
 
     free(cand->mdns_addr);
     free(cand->foundation);
+    free(cand->raw_addr);
+    free(cand->raw_raddr);
     free(cand->label);
     free(cand);
 
@@ -687,12 +691,12 @@ int nr_ice_candidate_initialize(nr_ice_candidate *cand, NR_async_cb ready_cb, vo
               cand->stun_server->addr.ip_version,
               cand->stun_server->addr.protocol == IPPROTO_UDP ? "UDP" : "TCP");
           nr_resolver_resource resource;
-          int port;
+          uint16_t port;
           resource.domain_name = cand->stun_server->addr.fqdn;
           if (r = nr_transport_addr_get_port(&cand->stun_server->addr, &port)) {
             ABORT(r);
           }
-          resource.port = (uint16_t)port;
+          resource.port = port;
           resource.stun_turn=protocol;
           resource.transport_protocol = cand->stun_server->addr.protocol;
 
@@ -1033,11 +1037,11 @@ static void nr_ice_turn_allocated_cb(NR_SOCKET s, int how, void *cb_arg)
 #endif /* USE_TURN */
 
 /* Format the candidate attribute as per ICE S 15.1 */
-int nr_ice_format_candidate_attribute(nr_ice_candidate *cand, char *attr, int maxlen, int obfuscate_srflx_addr)
+int nr_ice_format_candidate_attribute(nr_ice_candidate *cand, char *attr, int maxlen, int obfuscate_raddr)
   {
     int r,_status;
-    char addr[64];
-    int port;
+    char addr[256];
+    uint16_t port;
     int len;
     nr_transport_addr *raddr;
 
@@ -1045,9 +1049,10 @@ int nr_ice_format_candidate_attribute(nr_ice_candidate *cand, char *attr, int ma
     assert(!strcmp(nr_ice_candidate_type_names[RELAYED], "relay"));
 
     if (cand->mdns_addr) {
-      /* mdns_addr is NSID_LENGTH which is 39, - 2 for removing the "{" and "}"
-         + 6 for ".local" for a total of 43. */
-      strncpy(addr, cand->mdns_addr, sizeof(addr) - 1);
+      // This function is used on remote candidates, so permit larger mDNS
+      // addresses than we use.
+      strncpy(addr, cand->mdns_addr, sizeof(addr));
+      addr[sizeof(addr) - 1] = 0;
     } else {
       if(r=nr_transport_addr_get_addrstring(&cand->addr,addr,sizeof(addr)))
         ABORT(r);
@@ -1057,52 +1062,27 @@ int nr_ice_format_candidate_attribute(nr_ice_candidate *cand, char *attr, int ma
     /* https://tools.ietf.org/html/rfc6544#section-4.5 */
     if (cand->base.protocol==IPPROTO_TCP && cand->tcp_type==TCP_TYPE_ACTIVE)
       port=9;
-    snprintf(attr,maxlen,"candidate:%s %d %s %u %s %d typ %s",
+    snprintf(attr,maxlen,"candidate:%s %d %s %u %s %u typ %s",
       cand->foundation, cand->component_id, cand->addr.protocol==IPPROTO_UDP?"UDP":"TCP",cand->priority, addr, port,
       nr_ctype_name(cand->type));
 
     len=strlen(attr); attr+=len; maxlen-=len;
 
-    /* raddr, rport */
-    raddr = (cand->stream->flags &
-             (NR_ICE_CTX_FLAGS_RELAY_ONLY |
-              NR_ICE_CTX_FLAGS_DISABLE_HOST_CANDIDATES)) ?
-      &cand->addr : &cand->base;
-
-    switch(cand->type){
-      case HOST:
-        break;
-      case SERVER_REFLEXIVE:
-        if (obfuscate_srflx_addr) {
-          snprintf(attr,maxlen," raddr 0.0.0.0 rport 0");
-        } else {
-          if(r=nr_transport_addr_get_addrstring(raddr,addr,sizeof(addr)))
-            ABORT(r);
-          if(r=nr_transport_addr_get_port(raddr,&port))
-            ABORT(r);
-          snprintf(attr,maxlen," raddr %s rport %d",addr,port);
-        }
-        break;
-      case PEER_REFLEXIVE:
+    /* raddr, rport are determined in the same way for prflx/srflx/relay. */
+    if (cand->type != HOST) {
+      if (obfuscate_raddr) {
+        snprintf(attr,maxlen," raddr 0.0.0.0 rport 0");
+      } else {
+        raddr = (cand->stream->flags &
+                 (NR_ICE_CTX_FLAGS_RELAY_ONLY |
+                  NR_ICE_CTX_FLAGS_DISABLE_HOST_CANDIDATES)) ?
+          &cand->addr : &cand->base;
         if(r=nr_transport_addr_get_addrstring(raddr,addr,sizeof(addr)))
           ABORT(r);
         if(r=nr_transport_addr_get_port(raddr,&port))
           ABORT(r);
-        snprintf(attr,maxlen," raddr %s rport %d",addr,port);
-        break;
-      case RELAYED:
-        // comes from XorMappedAddress via AllocateResponse
-        if(r=nr_transport_addr_get_addrstring(raddr,addr,sizeof(addr)))
-          ABORT(r);
-        if(r=nr_transport_addr_get_port(raddr,&port))
-          ABORT(r);
-
-        snprintf(attr,maxlen," raddr %s rport %d",addr,port);
-        break;
-      default:
-        assert(0);
-        ABORT(R_INTERNAL);
-        break;
+        snprintf(attr,maxlen," raddr %s rport %u",addr,port);
+      }
     }
 
     if (cand->base.protocol==IPPROTO_TCP && cand->tcp_type){

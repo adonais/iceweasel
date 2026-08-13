@@ -1,0 +1,17 @@
+
+2 Added functions:
+
+  [A] 'function SECKEYPrivateKey* PK11_CreatePrivateKeyFromTemplate(PK11SlotInfo*, const CK_ATTRIBUTE*, unsigned int, void*)'    {PK11_CreatePrivateKeyFromTemplate@@NSS_3.126}
+  [A] 'function PRBool PK11_IsAEAD(CK_MECHANISM_TYPE)'    {PK11_IsAEAD@@NSS_3.126}
+
+1 function with some indirect sub-type change:
+
+  [C]'function SECStatus CERT_AddOCSPAcceptableResponses(CERTOCSPRequest*, SECOidTag, ...)' at ocsp.c:2202:1 has some indirect sub-type changes:
+    parameter 2 of type 'typedef SECOidTag' has sub-type changes:
+      underlying type 'enum SECOidTag' at secoidt.h:34:1 changed:
+        type size hasn't changed
+        1 enumerator insertion:
+          'SECOidTag::SEC_OID_CMS_AUTH_ENVELOPED_DATA' value '399'
+        1 enumerator change:
+          'SECOidTag::SEC_OID_TOTAL' from value '399' to '400' at secoidt.h:34:1
+

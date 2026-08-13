@@ -6,7 +6,6 @@ package org.mozilla.gecko.crashhelper;
 
 import android.app.Service;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Binder;
@@ -57,7 +56,11 @@ public final class CrashHelper extends Service {
       // additional separation within the crash generation code to prevent this
       // from happening even though it's very unlikely.
       CrashHelper.crash_generator(
-          browserPid, breakpadFd.detachFd(), minidumpPath, serverFd.detachFd());
+          BuildConfig.MOZ_APP_BUILDID,
+          browserPid,
+          breakpadFd.detachFd(),
+          minidumpPath,
+          serverFd.detachFd());
 
       return false;
     }
@@ -152,7 +155,7 @@ public final class CrashHelper extends Service {
   // google_breakpad::CrashGenerationServer::CreateReportChannel(), so we can
   // use them Breakpad's crash generation server & clients. The rest are
   // specific to the crash helper process.
-  public static Pipes createCrashHelperPipes(final Context context) {
+  public static Pipes createCrashHelperPipes() {
     try {
       final FileDescriptor breakpad_client_fd = new FileDescriptor();
       final FileDescriptor breakpad_server_fd = new FileDescriptor();
@@ -190,5 +193,5 @@ public final class CrashHelper extends Service {
   // tear it down for us.
 
   protected static native void crash_generator(
-      int clientPid, int breakpadFd, String minidumpPath, int serverFd);
+      String buildId, int clientPid, int breakpadFd, String minidumpPath, int serverFd);
 }

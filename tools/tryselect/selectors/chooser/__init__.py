@@ -41,6 +41,7 @@ class ChooserParser(BaseTryParser):
         "disable-pgo",
         "env",
         "existing-tasks",
+        "extensions",
         "gecko-profile",
         "path",
         "pernosco",

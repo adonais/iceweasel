@@ -50,6 +50,7 @@ import mozilla.components.compose.base.text.Text
 import org.mozilla.fenix.R
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.data.createTab
+import org.mozilla.fenix.tabstray.redux.action.TabGroupAction
 import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
 import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
@@ -62,9 +63,9 @@ import mozilla.components.ui.icons.R as iconsR
 /**
  * Floating Toolbar for the Tab Manager.
  *
- * @param tabsTrayStore [TabsTrayStore] used to listen for changes to [TabsTrayState].
- * @param isSignedIn Whether the user is signed into their Firefox account.
+ * @param state The current snapshot of [TabsTrayState].
  * @param modifier The [Modifier] to be applied to this FAB.
+ * @param onAction Invoked to pass upwards a [TabsTrayAction] in response to a UI event.
  * @param onOpenNewNormalTabClicked Invoked when the fab is clicked in [Page.NormalTabs].
  * @param onOpenNewPrivateTabClicked Invoked when the fab is clicked in [Page.PrivateTabs].
  * @param onSyncedTabsFabClicked Invoked when the fab is clicked in [Page.SyncedTabs].
@@ -76,9 +77,9 @@ import mozilla.components.ui.icons.R as iconsR
 @Suppress("LongParameterList")
 @Composable
 internal fun TabManagerFloatingToolbar(
-    tabsTrayStore: TabsTrayStore,
-    isSignedIn: Boolean,
+    state: TabsTrayState,
     modifier: Modifier = Modifier,
+    onAction: (TabsTrayAction) -> Unit,
     onOpenNewNormalTabClicked: () -> Unit,
     onOpenNewPrivateTabClicked: () -> Unit,
     onSyncedTabsFabClicked: () -> Unit,
@@ -87,8 +88,6 @@ internal fun TabManagerFloatingToolbar(
     onAccountSettingsClick: () -> Unit,
     onDeleteAllTabsClick: () -> Unit,
 ) {
-    val state by tabsTrayStore.stateFlow.collectAsState()
-
     AnimatedVisibility(
         visible = state.isFloatingToolbarVisible,
         modifier = modifier,
@@ -103,25 +102,27 @@ internal fun TabManagerFloatingToolbar(
                 modifier = Modifier.weight(1f),
                 contentAlignment = Alignment.CenterStart,
             ) {
-                FloatingToolbarActions(
-                    state = state,
-                    onMenuShown = {
-                        tabsTrayStore.dispatch(TabsTrayAction.ThreeDotMenuShown)
-                    },
-                    onEnterMultiselectModeClick = {
-                        tabsTrayStore.dispatch(TabsTrayAction.EnterSelectMode)
-                    },
-                    onSelectAllTabsClick = {
-                        tabsTrayStore.dispatch(TabsTrayAction.SelectAllNormalTabs)
-                    },
-                    onTabSettingsClick = onTabSettingsClick,
-                    onRecentlyClosedClick = onRecentlyClosedClick,
-                    onAccountSettingsClick = onAccountSettingsClick,
-                    onDeleteAllTabsClick = onDeleteAllTabsClick,
-                    onSearchClicked = {
-                        tabsTrayStore.dispatch(TabsTrayAction.TabSearchClicked)
-                    },
-                )
+                if (state.selectedPage != Page.TabGroups) {
+                    FloatingToolbarActions(
+                        state = state,
+                        onMenuShown = {
+                            onAction(TabsTrayAction.ThreeDotMenuShown)
+                        },
+                        onEnterMultiselectModeClick = {
+                            onAction(TabsTrayAction.EnterSelectMode)
+                        },
+                        onSelectAllTabsClick = {
+                            onAction(TabsTrayAction.SelectAllNormalTabs)
+                        },
+                        onTabSettingsClick = onTabSettingsClick,
+                        onRecentlyClosedClick = onRecentlyClosedClick,
+                        onAccountSettingsClick = onAccountSettingsClick,
+                        onDeleteAllTabsClick = onDeleteAllTabsClick,
+                        onSearchClicked = {
+                            onAction(TabsTrayAction.TabSearchClicked)
+                        },
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(FirefoxTheme.layout.space.static100))
@@ -132,10 +133,12 @@ internal fun TabManagerFloatingToolbar(
             ) {
                 FloatingToolbarFAB(
                     state = state,
-                    isSignedIn = isSignedIn,
                     onOpenNewNormalTabClicked = onOpenNewNormalTabClicked,
                     onOpenNewPrivateTabClicked = onOpenNewPrivateTabClicked,
                     onSyncedTabsFabClicked = onSyncedTabsFabClicked,
+                    onTabGroupsFabClicked = {
+                        onAction(TabGroupAction.NewTabGroupFabClicked)
+                    },
                 )
             }
         }
@@ -230,16 +233,16 @@ private fun FloatingToolbarActions(
     }
 }
 
-@Composable
 @VisibleForTesting
+@Composable
 internal fun FloatingToolbarFAB(
     state: TabsTrayState,
-    isSignedIn: Boolean,
     onOpenNewNormalTabClicked: () -> Unit,
     onOpenNewPrivateTabClicked: () -> Unit,
     onSyncedTabsFabClicked: () -> Unit,
+    onTabGroupsFabClicked: () -> Unit,
 ) {
-    val isSyncDisabled = !isSignedIn || state.sync.syncedTabs.any {
+    val isSyncDisabled = !state.sync.isSignedIn || state.sync.syncedTabs.any {
         it is SyncedTabsListItem.Error && it.errorText == stringResource(
             id = R.string.synced_tabs_reauth,
         )
@@ -265,7 +268,11 @@ internal fun FloatingToolbarFAB(
             onClick = onOpenNewPrivateTabClicked
         }
 
-        Page.TabGroups -> return
+        Page.TabGroups -> {
+            icon = iconsR.drawable.mozac_ic_plus_24
+            contentDescription = stringResource(id = R.string.create_tab_group_content_description)
+            onClick = onTabGroupsFabClicked
+        }
 
         Page.SyncedTabs -> {
             icon = iconsR.drawable.mozac_ic_sync_24
@@ -289,11 +296,14 @@ internal fun FloatingToolbarFAB(
     }
 
     FloatingActionButton(
-        icon = painterResource(id = icon),
-        modifier = Modifier
-            .testTag(TabsTrayTestTag.FAB)
-            .then(iconModifier),
-        contentDescription = contentDescription,
+        modifier = Modifier.testTag(TabsTrayTestTag.FAB),
+        icon = {
+            Icon(
+                painter = painterResource(id = icon),
+                contentDescription = contentDescription,
+                modifier = iconModifier,
+            )
+        },
         colors = colors,
         elevation = elevation,
         onClick = onClick,
@@ -361,7 +371,7 @@ private fun generateMenuItems(
     )
     val selectAllTabsItem = MenuItem.IconItem(
         text = Text.Resource(R.string.tab_tray_menu_select_all_tabs),
-        drawableRes = iconsR.drawable.ic_select_all_24,
+        drawableRes = iconsR.drawable.mozac_ic_select_all_24,
         testTag = TabsTrayTestTag.SELECT_ALL_TABS,
         onClick = onSelectAllTabsClick,
     )
@@ -420,74 +430,92 @@ private fun generateMenuItems(
     }
 }
 
-private data class TabManagerFloatingToolbarPreviewModel(
-    val state: TabsTrayState,
-    val isSignedIn: Boolean = true,
-)
-
-private class TabManagerFloatingToolbarParameterProvider :
-    PreviewParameterProvider<TabManagerFloatingToolbarPreviewModel> {
-    override val values: Sequence<TabManagerFloatingToolbarPreviewModel>
-        get() = sequenceOf(
-            TabManagerFloatingToolbarPreviewModel(
-                state = TabsTrayState(
+private class TabManagerFloatingToolbarParameterProvider : PreviewParameterProvider<TabsTrayState> {
+        val data = listOf(
+            Pair(
+                "Normal tabs page with at least one tab",
+                TabsTrayState(
                     selectedPage = Page.NormalTabs,
                     normalTabsState = TabsTrayState.NormalTabsState(
                         items = listOf(createTab(url = "url")),
                     ),
                 ),
             ),
-            TabManagerFloatingToolbarPreviewModel(
-                state = TabsTrayState(
+            Pair(
+                "Private tabs page with no tabs",
+                TabsTrayState(
                     selectedPage = Page.NormalTabs,
                     normalTabsState = TabsTrayState.NormalTabsState(
                         items = emptyList(),
                     ),
                 ),
             ),
-            TabManagerFloatingToolbarPreviewModel(
-                state = TabsTrayState(
+            Pair(
+                "Private tabs page with tabs",
+                TabsTrayState(
                     selectedPage = Page.PrivateTabs,
                     privateBrowsing = TabsTrayState.PrivateBrowsingState(
                         tabs = listOf(createTab(url = "url")),
                     ),
                 ),
             ),
-            TabManagerFloatingToolbarPreviewModel(
-                state = TabsTrayState(
+            Pair(
+                "Private tabs page with no tabs",
+                TabsTrayState(
                     selectedPage = Page.PrivateTabs,
                     privateBrowsing = TabsTrayState.PrivateBrowsingState(
                         tabs = emptyList(),
                     ),
                 ),
             ),
-            TabManagerFloatingToolbarPreviewModel(
-                state = TabsTrayState(
+            Pair(
+                "Synced page while signed in",
+                TabsTrayState(
                     selectedPage = Page.SyncedTabs,
+                    sync = TabsTrayState.SyncState(isSignedIn = true),
                 ),
-                isSignedIn = true,
             ),
-            TabManagerFloatingToolbarPreviewModel(
-                state = TabsTrayState(
+            Pair(
+                "Synced page while syncing",
+                TabsTrayState(
                     selectedPage = Page.SyncedTabs,
+                    sync = TabsTrayState.SyncState(
+                        isSignedIn = true,
+                        isSyncing = true,
+                    ),
                 ),
-                isSignedIn = false,
+            ),
+            Pair(
+                "Synced page while signed out",
+                TabsTrayState(
+                    selectedPage = Page.SyncedTabs,
+                    sync = TabsTrayState.SyncState(isSignedIn = false),
+                ),
             ),
         )
+
+    override val values: Sequence<TabsTrayState>
+        get() = data.map { it.second }.asSequence()
+
+    override fun getDisplayName(index: Int): String {
+        return data[index].first
+    }
 }
 
 @PreviewLightDark
 @Composable
 private fun TabManagerFloatingToolbarPreview(
-    @PreviewParameter(TabManagerFloatingToolbarParameterProvider::class)
-    previewDataModel: TabManagerFloatingToolbarPreviewModel,
+    @PreviewParameter(TabManagerFloatingToolbarParameterProvider::class) previewState: TabsTrayState,
 ) {
+    val store = remember { TabsTrayStore(initialState = previewState) }
+    val state by store.stateFlow.collectAsState(initial = store.state)
+
     FirefoxTheme {
         Surface {
             TabManagerFloatingToolbar(
-                tabsTrayStore = remember { TabsTrayStore(initialState = previewDataModel.state) },
-                isSignedIn = previewDataModel.isSignedIn,
+                state = state,
                 modifier = Modifier.padding(all = 16.dp),
+                onAction = store::dispatch,
                 onOpenNewNormalTabClicked = {},
                 onOpenNewPrivateTabClicked = {},
                 onSyncedTabsFabClicked = {},

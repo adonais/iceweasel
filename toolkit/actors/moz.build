@@ -6,7 +6,7 @@ with Files("**"):
     BUG_COMPONENT = ("Toolkit", "General")
 
 with Files("AboutPDF*.sys.mjs"):
-    BUG_COMPONENT = ("Core", "PDF Viewer")
+    BUG_COMPONENT = ("Firefox", "PDF Viewer")
 
 with Files("AutoScroll*.sys.mjs"):
     BUG_COMPONENT = ("Core", "Panning and Zooming")

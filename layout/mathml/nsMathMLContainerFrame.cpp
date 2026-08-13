@@ -791,10 +791,8 @@ void nsMathMLContainerFrame::ReflowChild(nsIFrame* aChildFrame,
   // most frames may be reflowed generically, but nsInlineFrames need extra
   // care.
 
-#ifdef DEBUG
-  nsInlineFrame* inlineFrame = do_QueryFrame(aChildFrame);
-  NS_ASSERTION(!inlineFrame, "Inline frames should be wrapped in blocks");
-#endif
+  NS_ASSERTION(!aChildFrame->IsInlineFrameOrSubclass(),
+               "Inline frames should be wrapped in blocks");
 
   nsContainerFrame::ReflowChild(aChildFrame, aPresContext, aDesiredSize,
                                 aReflowInput, 0, 0,

@@ -1,5 +1,3 @@
-# META: timeout=long
-
 import pytest
 
 from bidi.session.new.support.test_data import flat_valid_data

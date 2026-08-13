@@ -226,7 +226,9 @@
                           command="Tools:Sanitize" data-l10n-id="menu-history-clear-recent-history"/>
                 <menuseparator id="sanitizeSeparator"/>
                 <menuitem id="sync-tabs-menuitem"
-                          hidden="true" data-l10n-id="menu-history-synced-tabs"/>
+                          hidden="true" data-l10n-id="menu-history-remote-tabs-promo"/>
+                <menuitem id="historyRemoteTabsPromo" class="sync-ui-item"
+                          hidden="true" data-l10n-id="menu-history-remote-tabs-promo"/>
                 <menuitem id="historyRestoreLastSession"
                           command="Browser:RestoreLastSession" data-l10n-id="menu-history-restore-last-session"/>
                 <menuitem id="hiddenTabsMenu"
@@ -290,6 +292,8 @@
                 command="Browser:ShowAllBookmarks"
                 key="manBookmarkKb"
                 data-l10n-id="menu-bookmarks-manage"/>
+      <menuitem id="bookmarksRemoteTabsPromo"
+                data-l10n-id="menu-bookmarks-remote-tabs-promo"/>
       <menuseparator id="organizeBookmarksSeparator"/>
       <menuitem id="menu_bookmarkThisPage"
                 command="Browser:AddBookmarkAs"
@@ -385,6 +389,8 @@
 
               <menuitem id="menu_openFirefoxView"
                         data-l10n-id="menu-tools-firefox-view"/>
+              <menuitem id="menu_editPDF"
+                        command="cmd_editPDF" data-l10n-id="menu-tools-edit-pdf"/>
               <menuseparator id="devToolsSeparator"/>
               <menu id="browserToolsMenu" data-l10n-id="menu-tools-browser-tools">
                 <menupopup id="menuWebDeveloperPopup">

@@ -7,7 +7,7 @@ import { GeckoViewActorChild } from "resource://gre/modules/GeckoViewActorChild.
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  ManifestObtainer: "resource://gre/modules/ManifestObtainer.sys.mjs",
+  ManifestObtainer: "moz-src:///dom/manifest/ManifestObtainer.sys.mjs",
   SelectionUtils: "resource://gre/modules/SelectionUtils.sys.mjs",
   SpellCheckHelper: "resource://gre/modules/InlineSpellChecker.sys.mjs",
 });

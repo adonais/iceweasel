@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <new>
 #include <utility>
+
 #include "mozilla/AbstractThread.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Logging.h"

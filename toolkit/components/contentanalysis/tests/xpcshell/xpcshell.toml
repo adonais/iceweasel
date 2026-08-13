@@ -1,0 +1,5 @@
+[DEFAULT]
+head = "head.js"
+support-files = ["content_analysis_wasm.wasm"]
+
+["test_wasm_backend.js"]

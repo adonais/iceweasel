@@ -5,7 +5,6 @@
 #include "RendererScreenshotGrabber.h"
 
 #include "RendererOGL.h"
-
 #include "mozilla/gfx/2D.h"
 
 using mozilla::layers::ProfilerScreenshots;
@@ -60,9 +59,16 @@ void RendererScreenshotGrabber::GrabScreenshot(
     Renderer* aRenderer, const gfx::IntSize& aWindowSize) {
   gfx::IntSize screenshotSize;
 
+  // Some GLES drivers cannot read back BGRA directly (they lack
+  // GL_EXT_read_format_bgra). On those we read RGBA and let ProcessQueue() swap
+  // the channels into the BGRA8 profiler surface.
+  ImageFormat readbackFormat = wr_renderer_supports_bgra_readback(aRenderer)
+                                   ? ImageFormat::BGRA8
+                                   : ImageFormat::RGBA8;
+
   AsyncScreenshotHandle handle = wr_renderer_get_screenshot_async(
       aRenderer, 0, 0, aWindowSize.width, aWindowSize.height,
-      mMaxScreenshotSize.width, mMaxScreenshotSize.height, ImageFormat::BGRA8,
+      mMaxScreenshotSize.width, mMaxScreenshotSize.height, readbackFormat,
       &screenshotSize.width, &screenshotSize.height);
 
   mCurrentFrameQueueItem = Some(QueueItem{
@@ -82,9 +88,12 @@ void RendererScreenshotGrabber::ProcessQueue(Renderer* aRenderer) {
                                                 gfx::DataSourceSurface::WRITE);
           int32_t destStride = map.GetStride();
 
+          // The profiler surface is always BGRA8; map_and_recycle_screenshot
+          // swizzles if the data was read back in a different format.
           bool success = wr_renderer_map_and_recycle_screenshot(
               aRenderer, item.mHandle, map.GetData(),
-              destStride * aTargetSurface->GetSize().height, destStride);
+              destStride * aTargetSurface->GetSize().height, destStride,
+              ImageFormat::BGRA8);
 
           return success;
         });

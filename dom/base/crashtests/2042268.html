@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<meta charset="utf-8">
+<script>
+onload = async () => {
+  console.log("Step 1: Create HTMLDocument.");
+  let d = document.implementation.createHTMLDocument('x');
+
+  console.log("Step 2: Get the adoptedStyleSheets proxy (ObservableArray).");
+  let proxy = d.adoptedStyleSheets;
+
+  console.log("Step 3: Remove the JS reference to HTMLDocument, but keep proxy alive.");
+  d = null;
+
+  console.log("Step 4: Forcing CC/GC to unlink and delete HTMLDocument.");
+  SpecialPowers.forceShrinkingGC();
+  SpecialPowers.forceCC();
+  SpecialPowers.forceShrinkingGC();
+  SpecialPowers.forceCC();
+
+  console.log("Step 5: Access proxy after HTMLDocument is unlinked and deleted.");
+  try {
+    let sheet = new CSSStyleSheet();
+    sheet.replaceSync("div { color: blue; }");
+    proxy[0] = sheet;
+    proxy.length = 0;
+  } catch(e) {}
+};
+</script>
+</html>

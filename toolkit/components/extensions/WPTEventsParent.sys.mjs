@@ -37,6 +37,7 @@ export class WPTEventsParent extends JSWindowActorParent {
       parent: {
         esModuleURI: "resource://gre/modules/WPTEventsParent.sys.mjs",
       },
+      safeForUntrustedWebProcess: true,
     });
   }
 

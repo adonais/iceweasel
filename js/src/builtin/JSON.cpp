@@ -2126,7 +2126,8 @@ static const JSPropertySpec json_static_properties[] = {
 
 static JSObject* CreateJSONObject(JSContext* cx, JSProtoKey key) {
   RootedObject proto(cx, &cx->global()->getObjectPrototype());
-  return NewTenuredObjectWithGivenProto(cx, &JSONClass, proto);
+  return NewObjectWithGivenProto(cx, &JSONClass, proto,
+                                 {.newKind = TenuredObject});
 }
 
 static const ClassSpec JSONClassSpec = {

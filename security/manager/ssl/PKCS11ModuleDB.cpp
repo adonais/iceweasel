@@ -23,8 +23,8 @@
 #include "xpcpublic.h"
 
 #if defined(XP_MACOSX)
-#  include "nsMacUtilsImpl.h"
 #  include "nsIFile.h"
+#  include "nsMacUtilsImpl.h"
 #endif  // defined(XP_MACOSX)
 
 using mozilla::ErrorResult;

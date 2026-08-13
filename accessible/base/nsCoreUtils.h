@@ -6,16 +6,15 @@
 #define nsCoreUtils_h_
 
 #include "AttrArray.h"
+#include "Units.h"
 #include "mozilla/EventForwards.h"
+#include "mozilla/FlushType.h"
+#include "mozilla/PresShellForwards.h"
 #include "nsCaseTreatment.h"
 #include "nsIAccessibleEvent.h"
 #include "nsIContent.h"
-#include "mozilla/FlushType.h"
-#include "mozilla/PresShellForwards.h"
-
 #include "nsPoint.h"
 #include "nsTArray.h"
-#include "Units.h"
 
 class nsAttrValue;
 class nsGenericHTMLElement;

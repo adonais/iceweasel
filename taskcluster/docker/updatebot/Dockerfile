@@ -17,6 +17,9 @@ ENV     SHELL               /bin/bash
 ENV     USER                worker
 ENV     LOGNAME             worker
 ENV     PYTHONUNBUFFERED    1
+# Pin the Claude Code CLI (installed in privileged-setup.sh) and stop it from
+# updating itself at runtime, so the version we execute is reproducible.
+ENV     DISABLE_AUTOUPDATER 1
 ENV     PATH                "/builds/worker/go/bin:/builds/worker/fetches/rustc/bin:/builds/worker/fetches/cargo-vet:${PATH}"
 
 RUN     cd /builds/worker && ./setup.sh

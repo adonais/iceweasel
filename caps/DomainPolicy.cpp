@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "DomainPolicy.h"
+
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/ipc/URIUtils.h"
 #include "nsIURIMutator.h"

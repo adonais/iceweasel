@@ -6,9 +6,8 @@
 #define WakeLockListener_h_
 
 #include "nsHashKeys.h"
-#include "nsRefPtrHashtable.h"
-
 #include "nsIDOMWakeLockListener.h"
+#include "nsRefPtrHashtable.h"
 
 class WakeLockTopic;
 

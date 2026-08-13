@@ -5,8 +5,8 @@
 #ifndef MOZILLA_GFX_FONTSRCPRINCIPAL_H
 #define MOZILLA_GFX_FONTSRCPRINCIPAL_H
 
-#include "nsCOMPtr.h"
 #include "PLDHashTable.h"
+#include "nsCOMPtr.h"
 
 class nsIPrincipal;
 

@@ -32,7 +32,7 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
  public:
   nsPlainTextSerializer();
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS(nsPlainTextSerializer)
 
   // nsIContentSerializer

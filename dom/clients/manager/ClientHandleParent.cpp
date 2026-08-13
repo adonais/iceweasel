@@ -8,10 +8,15 @@
 #include "ClientManagerService.h"
 #include "ClientPrincipalUtils.h"
 #include "ClientSourceParent.h"
+#include "ClientValidation.h"
 #include "mozilla/dom/ClientIPCTypes.h"
+#include "mozilla/dom/ContentParent.h"
+#include "mozilla/dom/PClientManagerParent.h"
+#include "mozilla/ipc/BackgroundParent.h"
 
 namespace mozilla::dom {
 
+using mozilla::ipc::BackgroundParent;
 using mozilla::ipc::IPCResult;
 
 IPCResult ClientHandleParent::RecvTeardown() {
@@ -57,7 +62,13 @@ ClientHandleParent::ClientHandleParent()
 
 ClientHandleParent::~ClientHandleParent() { MOZ_DIAGNOSTIC_ASSERT(!mSource); }
 
-void ClientHandleParent::Init(const IPCClientInfo& aClientInfo) {
+IPCResult ClientHandleParent::Init(const IPCClientInfo& aClientInfo) {
+  if (!ClientIsValidPrincipalInfo(
+          aClientInfo.principalInfo(),
+          BackgroundParent::GetRemoteType(Manager()->Manager()))) {
+    return IPC_FAIL(this, "Invalid PrincipalInfo!");
+  }
+
   mClientId = aClientInfo.id();
   mPrincipalInfo = aClientInfo.principalInfo();
 
@@ -78,6 +89,8 @@ void ClientHandleParent::Init(const IPCClientInfo& aClientInfo) {
             (void)Send__delete__(self);
           })
       ->Track(mSourcePromiseRequestHolder);
+
+  return IPC_OK();
 }
 
 ClientSourceParent* ClientHandleParent::GetSource() const { return mSource; }

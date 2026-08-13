@@ -31,6 +31,7 @@ const JSWINDOWACTORS = {
       attributionActorRegister = register;
       attributionActorUnregister = unregister;
     },
+    safeForUntrustedWebProcess: true,
   },
   MozNewTabRemoteRendererProtocol: {
     parent: {

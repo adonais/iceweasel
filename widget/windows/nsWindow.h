@@ -9,49 +9,48 @@
  * nsWindow - Native window management and event handling.
  */
 
-#include "mozilla/RefPtr.h"
-#include "nsIWidget.h"
-#include "CompositorWidget.h"
-#include "mozilla/EventForwards.h"
-#include "nsClassHashtable.h"
 #include <windows.h>
-#include "touchinjection_sdk80.h"
-#include "nsdefs.h"
-#include "nsUserIdleService.h"
-#include "nsToolkit.h"
-#include "nsString.h"
-#include "nsTArray.h"
-#include "gfxWindowsPlatform.h"
-#include "gfxWindowsSurface.h"
-#include "nsWindowDbg.h"
-#include "cairo.h"
-#include "nsRegion.h"
-#include "mozilla/EnumeratedArray.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/MouseEvents.h"
-#include "mozilla/TimeStamp.h"
-#include "mozilla/webrender/WebRenderTypes.h"
-#include "mozilla/dom/MouseEventBinding.h"
-#include "mozilla/DataMutex.h"
-#include "mozilla/UniquePtr.h"
-#include "nsMargin.h"
-#include "nsRegionFwd.h"
 
-#include "nsWinGesture.h"
+#include "CompositorWidget.h"
+#include "TaskbarWindowPreview.h"
 #include "WinPointerEvents.h"
 #include "WinUtils.h"
 #include "WindowHook.h"
-#include "TaskbarWindowPreview.h"
+#include "cairo.h"
+#include "gfxWindowsPlatform.h"
+#include "gfxWindowsSurface.h"
+#include "mozilla/DataMutex.h"
+#include "mozilla/EnumeratedArray.h"
+#include "mozilla/EventForwards.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/MouseEvents.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/TimeStamp.h"
+#include "mozilla/UniquePtr.h"
+#include "mozilla/dom/MouseEventBinding.h"
+#include "mozilla/webrender/WebRenderTypes.h"
+#include "nsClassHashtable.h"
+#include "nsIWidget.h"
+#include "nsMargin.h"
+#include "nsRegion.h"
+#include "nsRegionFwd.h"
+#include "nsString.h"
+#include "nsTArray.h"
+#include "nsToolkit.h"
+#include "nsUserIdleService.h"
+#include "nsWinGesture.h"
+#include "nsWindowDbg.h"
+#include "nsdefs.h"
+#include "touchinjection_sdk80.h"
 
 #ifdef ACCESSIBILITY
-#  include "oleacc.h"
 #  include "mozilla/a11y/LocalAccessible.h"
+#  include "oleacc.h"
 #endif
 
-#include "nsIUserIdleServiceInternal.h"
-
-#include "IMMHandler.h"
 #include "CheckInvariantWrapper.h"
+#include "IMMHandler.h"
+#include "nsIUserIdleServiceInternal.h"
 
 /**
  * Forward class definitions
@@ -240,6 +239,9 @@ class nsWindow final : public nsIWidget {
   void* GetNativeData(uint32_t aDataType) override;
   nsresult SetTitle(const nsAString& aTitle) override;
   void SetIcon(const nsAString& aIconSpec) override;
+  // Apply WM_SETICON from an icon resource embedded in this process's
+  // executable. A resource ID of 0 reverts to IDI_APPICON.
+  void SetIconFromExeResource(uint16_t aResourceId);
   LayoutDeviceIntPoint WidgetToScreenOffset() override;
   LayoutDeviceIntMargin NormalSizeModeClientToWindowMargin() override;
   void EnableDragDrop(bool aEnable) override;

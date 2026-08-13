@@ -476,6 +476,7 @@ ul.children + .tag-line::before {
 .styleinspector-propertyeditor {
   vertical-align: top;
   border: none;
+  min-width: 2ch;
 
   &.newattr-input {
     margin-inline: var(--markup-new-attr-focused-margin-inline);

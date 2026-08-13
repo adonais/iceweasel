@@ -1,9 +1,9 @@
 #include <string>
-#include "gtest/gtest.h"
 
 #include "ScopedNSSTypes.h"
-#include "mozilla/gtest/MozAssertions.h"
+#include "gtest/gtest.h"
 #include "mozilla/Span.h"
+#include "mozilla/gtest/MozAssertions.h"
 #include "nss.h"
 #include "secoidt.h"
 

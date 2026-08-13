@@ -279,7 +279,7 @@ export class NetworkResponseListener {
   /**
    * Stores the received data, if request/response body logging is enabled. It
    * also does limit the number of stored bytes, based on the
-   * `devtools.netmonitor.responseBodyLimit` pref.
+   * `devtools.netmonitor.bodyLimit` pref.
    *
    * Learn more about nsIStreamListener at:
    * https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIStreamListener

@@ -5,11 +5,10 @@
 #include "xpcAccessibilityService.h"
 
 #include "mozilla/dom/Document.h"
-
-#include "xpcAccessiblePivot.h"
 #include "nsAccessibilityService.h"
 #include "xpcAccessibleApplication.h"
 #include "xpcAccessibleDocument.h"
+#include "xpcAccessiblePivot.h"
 #include "xpcAccessibleTextLeafRange.h"
 
 #ifdef A11Y_LOG

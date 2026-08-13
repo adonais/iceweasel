@@ -36,7 +36,7 @@ add_task(async function test() {
     BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, url);
     await BrowserTestUtils.browserLoaded(tab.linkedBrowser, { wantLoad: url });
 
-    await BrowserTestUtils.waitForCondition(() => {
+    await TestUtils.waitForCondition(() => {
       return aWindow.document.title === expected_title;
     }, `Window title should be ${expected_title}, got ${aWindow.document.title}`);
 
@@ -53,7 +53,7 @@ add_task(async function test() {
     let win = aWindow.gBrowser.replaceTabWithWindow(tab);
     await BrowserTestUtils.waitForEvent(win, "load", false);
 
-    await BrowserTestUtils.waitForCondition(() => {
+    await TestUtils.waitForCondition(() => {
       return win.document.title === expected_title;
     }, `Window title should be ${expected_title}, got ${win.document.title}`);
 

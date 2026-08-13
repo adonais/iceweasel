@@ -2,71 +2,83 @@ const pb = Services.prefs;
 
 // This pref is chosen somewhat arbitrarily --- we just need one
 // that's guaranteed to have a default value.
-const kPrefName = "intl.accept_languages"; // of type char, which we
-// assume below
-var initialValue = null;
+const kPrefName1 = "intl.accept_languages";
+// A second pref on the same branch that's also guaranteed to have a default value.
+const kPrefName2 = "intl.hyphenation-alias.en";
 
-function check_child_pref_info_eq(continuation) {
-  sendCommand(
-    'var pb = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefBranch);\n' +
-      // Returns concatenation "[value],[isUser]"
-      'pb.getCharPref("' +
-      kPrefName +
-      '")+ "," +' +
-      'pb.prefHasUserValue("' +
-      kPrefName +
-      '");',
-    function (info) {
-      let [value, isUser] = info.split(",");
-      Assert.equal(pb.getCharPref(kPrefName), value);
-      Assert.equal(pb.prefHasUserValue(kPrefName), isUser == "true");
-      continuation();
-    }
-  );
+function check_child_pref_info_eq() {
+  return new Promise((resolve, reject) => {
+    sendCommand(
+      // Returns concatenation "[value1],[isUser1],[value2],[isUser2]"
+      `Services.prefs.getCharPref("${kPrefName1}") + "," +
+       Services.prefs.prefHasUserValue("${kPrefName1}") + "," +
+       Services.prefs.getCharPref("${kPrefName2}", "") + "," +
+       Services.prefs.prefHasUserValue("${kPrefName2}");`,
+      function (info) {
+        let [value1, isUser1, value2, isUser2] = info.split(",");
+        try {
+          Assert.equal(pb.getCharPref(kPrefName1), value1);
+          Assert.equal(pb.prefHasUserValue(kPrefName1), isUser1 == "true");
+          Assert.equal(pb.getCharPref(kPrefName2, ""), value2);
+          Assert.equal(pb.prefHasUserValue(kPrefName2), isUser2 == "true");
+        } catch (ex) {
+          reject();
+        }
+        resolve();
+      }
+    );
+  });
 }
 
-function run_test() {
-  // We finish in clean_up()
-  do_test_pending();
+add_setup(async () => {
+  let initialValue = pb.getCharPref(kPrefName1);
 
-  initialValue = pb.getCharPref(kPrefName);
+  registerCleanupFunction(async () => {
+    pb.setCharPref(kPrefName1, initialValue);
+    // NB: processing of the value-change notification in the child
+    // process triggered by the above set happens-before the remaining
+    // code here.
+    await check_child_pref_info_eq();
+  });
+});
 
-  test_user_setting();
-}
-
-function test_user_setting() {
+add_task(async function test_setting_and_clearing_pref() {
   // We rely on setting this before the content process starts up.
   // When it starts up, it should recognize this as a user pref, not
   // a default pref.
-  pb.setCharPref(kPrefName, "i-imaginarylanguage");
+  pb.setCharPref(kPrefName1, "i-imaginarylanguage");
   // NB: processing of the value-change notification in the child
   // process triggered by the above set happens-before the remaining
   // code here
-  check_child_pref_info_eq(function () {
-    Assert.equal(pb.prefHasUserValue(kPrefName), true);
+  await check_child_pref_info_eq();
+  Assert.equal(pb.prefHasUserValue(kPrefName1), true);
 
-    test_cleared_is_default();
-  });
-}
-
-function test_cleared_is_default() {
-  pb.clearUserPref(kPrefName);
   // NB: processing of the value-change notification in the child
   // process triggered by the above set happens-before the remaining
   // code here
-  check_child_pref_info_eq(function () {
-    Assert.equal(pb.prefHasUserValue(kPrefName), false);
+  pb.clearUserPref(kPrefName1);
+  await check_child_pref_info_eq();
 
-    clean_up();
-  });
-}
+  Assert.equal(pb.prefHasUserValue(kPrefName1), false);
+});
 
-function clean_up() {
-  pb.setCharPref(kPrefName, initialValue);
+add_task(async function test_setting_and_clearing_pref_branch() {
+  pb.setCharPref(kPrefName1, "i-imaginarylanguage");
+  // Also set a random preference on the same branch, but without a default value.
+  pb.setCharPref(kPrefName2, "i-imaginaryRandom");
   // NB: processing of the value-change notification in the child
   // process triggered by the above set happens-before the remaining
   // code here
-  check_child_pref_info_eq(function () {
-    do_test_finished();
-  });
-}
+  await check_child_pref_info_eq();
+  Assert.equal(pb.prefHasUserValue(kPrefName1), true);
+  Assert.equal(pb.prefHasUserValue(kPrefName2), true);
+
+  // NB: processing of the value-change notification in the child
+  // process triggered by the above set happens-before the remaining
+  // code here
+  pb.clearUserBranch("intl.");
+  await check_child_pref_info_eq();
+
+  Assert.equal(pb.prefHasUserValue(kPrefName1), false);
+  Assert.equal(pb.prefHasUserValue(kPrefName2), false);
+});

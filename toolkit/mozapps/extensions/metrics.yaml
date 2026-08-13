@@ -294,7 +294,8 @@ addons_manager:
           "install-from-file" or "url" as method), one of: "amWebAPI",
           "drag-and-drop", "installTrigger", "install-from-file",
           "link", "management-webext-api", "sideload", "onboarding",
-          "rtamo", "synthetic-install", "url", "product-updates".
+          "rtamo", "synthetic-install", "url", "product-updates",
+          "FirefoxThemesList".
         type: string
       num_strings:
         description: |

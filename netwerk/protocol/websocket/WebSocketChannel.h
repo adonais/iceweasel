@@ -5,26 +5,25 @@
 #ifndef mozilla_net_WebSocketChannel_h
 #define mozilla_net_WebSocketChannel_h
 
-#include "nsISupports.h"
-#include "nsIInterfaceRequestor.h"
-#include "nsIStreamListener.h"
+#include "BaseWebSocketChannel.h"
+#include "mozilla/Atomics.h"
+#include "mozilla/Mutex.h"
+#include "mozilla/net/WebSocketConnectionListener.h"
+#include "nsCOMPtr.h"
+#include "nsDeque.h"
 #include "nsIAsyncInputStream.h"
 #include "nsIAsyncOutputStream.h"
-#include "nsITimer.h"
+#include "nsIChannelEventSink.h"
 #include "nsIDNSListener.h"
+#include "nsIHttpChannelInternal.h"
+#include "nsIInterfaceRequestor.h"
 #include "nsINamed.h"
 #include "nsIObserver.h"
 #include "nsIProtocolProxyCallback.h"
-#include "nsIChannelEventSink.h"
-#include "nsIHttpChannelInternal.h"
-#include "mozilla/net/WebSocketConnectionListener.h"
-#include "mozilla/Mutex.h"
-#include "BaseWebSocketChannel.h"
-
-#include "nsCOMPtr.h"
+#include "nsIStreamListener.h"
+#include "nsISupports.h"
+#include "nsITimer.h"
 #include "nsString.h"
-#include "nsDeque.h"
-#include "mozilla/Atomics.h"
 
 class nsIAsyncVerifyRedirectCallback;
 class nsIDashboardEventNotifier;

@@ -2,16 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "chrome/common/ipc_channel.h"
 #include "mozilla/a11y/DocAccessibleChild.h"
-#include "mozilla/a11y/CacheConstants.h"
-#include "mozilla/a11y/FocusManager.h"
+
+#include "LocalAccessible-inl.h"
+#include "chrome/common/ipc_channel.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/PerfStats.h"
 #include "mozilla/ProfilerMarkers.h"
+#include "mozilla/a11y/CacheConstants.h"
+#include "mozilla/a11y/FocusManager.h"
 #include "nsAccessibilityService.h"
-
-#include "LocalAccessible-inl.h"
 #ifdef A11Y_LOG
 #  include "Logging.h"
 #endif

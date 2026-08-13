@@ -76,7 +76,7 @@ add_task(async function aboutAboutAndAboutAddons() {
         heuristic: true,
       }),
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: "about:addons",
         title: "about:addons",
         iconUri: "page-icon:about:addons",
@@ -95,7 +95,7 @@ add_task(async function aboutColonMatchesOnlyAboutPages() {
     const aboutPageNames = AboutPagesUtils.visibleAboutUrls.slice(0, 9);
     const aboutPageResults = aboutPageNames.map(aboutPageName => {
       return makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: aboutPageName,
         title: aboutPageName,
         iconUri: "page-icon:" + aboutPageName,
@@ -169,7 +169,7 @@ add_task(async function after_general() {
         title: "Guide to about:addons in Firefox",
       }),
       makeVisitResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        source: UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
         uri: "about:addons",
         title: "about:addons",
         iconUri: "page-icon:about:addons",

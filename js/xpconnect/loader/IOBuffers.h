@@ -10,6 +10,7 @@
 #include "mozilla/EndianUtils.h"
 #include "mozilla/EnumSet.h"
 #include "mozilla/Range.h"
+
 #include "nsString.h"
 #include "nsTArray.h"
 

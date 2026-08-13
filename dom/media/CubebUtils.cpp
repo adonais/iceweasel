@@ -1003,9 +1003,9 @@ bool EstimatedLatencyDefaultDevices(double* aMean, double* aStdDev,
 
   cubeb_stream* stm;
   rv = cubeb_stream_init(handle->Context(), &stm,
-                         "about:support latency estimation", NULL,
-                         &input_params, NULL, &output_params, latencyFrames,
-                         datacb, statecb, NULL);
+                         "about:support latency estimation", nullptr,
+                         &input_params, nullptr, &output_params, latencyFrames,
+                         datacb, statecb, nullptr);
   if (rv != CUBEB_OK) {
     MOZ_LOG_FMT(gCubebLog, LogLevel::Error, "Could not get init stream");
     return false;

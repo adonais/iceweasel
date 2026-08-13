@@ -205,7 +205,7 @@ add_task(async function test_contextualsearch_extension_set_as_default() {
   await enterAndAssertContextualSearch(
     "example",
     "Example",
-    UrlbarUtils.RESULT_SOURCE.SEARCH
+    UrlbarShared.RESULT_SOURCE.SEARCH
   );
 
   let exampleTest = SearchService.getEngineByName("Example Test");
@@ -244,7 +244,7 @@ add_task(async function test_contextualsearch_open_search_set_as_default() {
   await enterAndAssertContextualSearch(
     "foo",
     "Foo Config",
-    UrlbarUtils.RESULT_SOURCE.SEARCH
+    UrlbarShared.RESULT_SOURCE.SEARCH
   );
 
   info("Change default to OpenSearch engine.");

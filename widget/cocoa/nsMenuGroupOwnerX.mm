@@ -3,21 +3,21 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsMenuGroupOwnerX.h"
-#include "nsMenuBarX.h"
-#include "nsMenuX.h"
-#include "nsMenuItemX.h"
-#include "nsMenuUtilsX.h"
 #include "nsCocoaUtils.h"
 #include "nsCocoaWindow.h"
+#include "nsMenuBarX.h"
+#include "nsMenuItemX.h"
+#include "nsMenuUtilsX.h"
+#include "nsMenuX.h"
 
 #include "nsCOMPtr.h"
-#include "nsString.h"
 #include "nsObjCExceptions.h"
+#include "nsString.h"
 #include "nsThreadUtils.h"
 
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "nsIWidget.h"
-#include "mozilla/dom/Document.h"
 
 #include "nsINode.h"
 

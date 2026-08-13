@@ -41,42 +41,14 @@ tlsfuzzer_init()
   tlsfuzzer_certs
 
   TLSFUZZER=${TLSFUZZER:=tlsfuzzer}
+  # tlsfuzzer has no release tags, so pin a known-good (Python 3.12 compatible)
+  # revision. Fetch it as a tarball and install its dependencies (tlslite-ng,
+  # which pulls in ecdsa) from pip.
+  TLSFUZZER_REV=bf7f579dc0e65498cfb21b60e9b152f6bd84a3bf
   if [ ! -d "$TLSFUZZER" ]; then
-    # Can't use git-copy.sh here, as tlsfuzzer doesn't have any tags
-    git clone -q https://github.com/tomato42/tlsfuzzer/ "$TLSFUZZER"
-    git -C "$TLSFUZZER" checkout 21fd6522f695693a320a1df3c117fd7ced1352a5
-
-    # We could use tlslite-ng from pip, but the pip command installed
-    # on TC is too old to support --pre
-    ${QADIR}/../fuzz/config/git-copy.sh https://github.com/tomato42/tlslite-ng/ v0.8.0-alpha42 tlslite-ng
-    if [ $? != 0 ]; then
-       echo "Error setting up tlslite-ng"
-       exit $?
-    fi
-
-    pushd "$TLSFUZZER"
-    ln -s ../tlslite-ng/tlslite tlslite
-    popd
-
-    # Install tlslite-ng dependencies
-    ${QADIR}/../fuzz/config/git-copy.sh https://github.com/warner/python-ecdsa master python-ecdsa
-    if [ $? != 0 ]; then
-       echo "Error setting up python-ecdsa"
-       exit $?
-    fi
-
-    ${QADIR}/../fuzz/config/git-copy.sh https://github.com/benjaminp/six main six
-    if [ $? != 0 ]; then
-       echo "Error setting up six"
-       exit $?
-    fi
-
-
-
-    pushd "$TLSFUZZER"
-    ln -s ../python-ecdsa/src/ecdsa ecdsa
-    ln -s ../six/six.py .
-    popd
+    curl -sSfL "https://github.com/tomato42/tlsfuzzer/archive/${TLSFUZZER_REV}.tar.gz" | tar xz
+    mv "tlsfuzzer-${TLSFUZZER_REV}" "$TLSFUZZER"
+    python3 -m pip install --break-system-packages -r "${TLSFUZZER}/requirements.txt"
   fi
 
   # Find usable port

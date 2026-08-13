@@ -5,15 +5,16 @@
 #ifndef MOZ_DMABUF_LIB_WRAPPER_H_
 #define MOZ_DMABUF_LIB_WRAPPER_H_
 
+#include <gbm.h>
+
 #include "mozilla/StaticMutex.h"
 #include "mozilla/widget/DMABufFormats.h"
-#include <gbm.h>
 
 #undef LOGDMABUF
 #ifdef MOZ_LOGGING
+#  include "Units.h"
 #  include "mozilla/Logging.h"
 #  include "nsTArray.h"
-#  include "Units.h"
 extern mozilla::LazyLogModule gDmabufLog;
 #  define LOGDMABUF(args) MOZ_LOG(gDmabufLog, mozilla::LogLevel::Debug, args)
 #else

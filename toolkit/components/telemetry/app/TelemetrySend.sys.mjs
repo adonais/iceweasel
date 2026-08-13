@@ -961,21 +961,6 @@ export var TelemetrySendImpl = {
     this._isOSShutdown = false;
     this._sendingEnabled = true;
 
-    const histograms = [
-      "TELEMETRY_SUCCESS",
-      "TELEMETRY_SEND_SUCCESS",
-      "TELEMETRY_SEND_FAILURE",
-      "TELEMETRY_SEND_FAILURE_TYPE",
-    ];
-
-    histograms.forEach(h => Services.telemetry.getHistogramById(h).clear());
-
-    const keyedHistograms = ["TELEMETRY_SEND_FAILURE_TYPE_PER_PING"];
-
-    keyedHistograms.forEach(h =>
-      Services.telemetry.getKeyedHistogramById(h).clear()
-    );
-
     return SendScheduler.reset();
   },
 

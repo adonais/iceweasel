@@ -4,6 +4,7 @@
 
 plugins {
     `kotlin-dsl`
+    alias(libs.plugins.android.lint.plugin)
 }
 
 val mozconfig = gradle.extra["mozconfig"] as Map<*, *>
@@ -14,6 +15,8 @@ layout.buildDirectory.set(file("$topobjdir/gradle/build/mobile/android/fenix/plu
 dependencies {
     implementation(libs.android.gradle.plugin)
     implementation(libs.json)
+
+    lintChecks(libs.androidx.lint)
 }
 
 gradlePlugin {

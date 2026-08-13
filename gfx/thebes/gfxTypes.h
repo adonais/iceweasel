@@ -6,6 +6,7 @@
 #define GFX_TYPES_H
 
 #include <stdint.h>
+
 #include "mozilla/Attributes.h"
 #include "mozilla/TypedEnumBits.h"
 

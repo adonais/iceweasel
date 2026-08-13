@@ -71,7 +71,6 @@
 #  if defined(MOZ_SANDBOX)
 #    include "WinUtils.h"
 #    include "mozilla/Preferences.h"
-#    include "mozilla/sandboxing/sandboxLogging.h"
 #  endif
 
 #  include "mozilla/NativeNt.h"

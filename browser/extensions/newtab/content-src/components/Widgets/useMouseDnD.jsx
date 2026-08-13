@@ -20,6 +20,7 @@ const INTERACTIVE_DESCENDANT_SELECTOR = [
   "input",
   "textarea",
   "select",
+  "dialog",
   "[contenteditable='true']",
   "[role='button']",
   "[role='checkbox']",

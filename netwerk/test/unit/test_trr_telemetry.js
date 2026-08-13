@@ -37,6 +37,9 @@ async function trrLookup(mode, rolloutMode) {
   let metric = Glean.dns.trrSkipReasonTrrFirst[expectedKey];
   let baseline = metric.testGetValue();
 
+  let successMetric = Glean.dns.trrSuccess.get(expectedKey, "Fine");
+  let successBaseline = successMetric.testGetValue() ?? 0;
+
   Services.dns.clearCache(true);
   await new TRRDNSListener("test.example.com", "2.2.2.2");
 
@@ -51,6 +54,15 @@ async function trrLookup(mode, rolloutMode) {
   let delta =
     (current?.values?.[bucketKey] ?? 0) - (baseline?.values?.[bucketKey] ?? 0);
   Assert.equal(delta, 1, `Expected 1 new TRR_OK entry for key ${expectedKey}`);
+
+  await TestUtils.waitForCondition(
+    () => (successMetric.testGetValue() ?? 0) > successBaseline
+  );
+  Assert.greater(
+    successMetric.testGetValue() ?? 0,
+    successBaseline,
+    "Expected dns.trr_success 'Fine' to be recorded for key (other)"
+  );
 }
 
 add_task(async function test_trr_lookup_mode_2() {

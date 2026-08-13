@@ -6,8 +6,8 @@
 
 #include "ScopedNSSTypes.h"
 #include "mozilla/ArrayAlgorithm.h"
-#include "mozilla/Components.h"
 #include "mozilla/Casting.h"
+#include "mozilla/Components.h"
 #include "mozilla/Logging.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_network.h"
@@ -25,9 +25,11 @@
 #include "secoidt.h"
 
 #ifdef XP_WIN
+// clang-format off
 #  include <windows.h>
 #  include <softpub.h>
 #  include <wintrust.h>
+// clang-format on
 #endif  // XP_WIN
 
 namespace mozilla {
@@ -436,15 +438,6 @@ nsresult BackgroundFileSaver::ProcessStateChange() {
         nsAutoString renamedTargetName;
         rv = renamedTarget->GetLeafName(renamedTargetName);
         NS_ENSURE_SUCCESS(rv, rv);
-
-        // We must delete any existing target file before moving the current
-        // one.
-        rv = renamedTarget->Exists(&exists);
-        NS_ENSURE_SUCCESS(rv, rv);
-        if (exists) {
-          rv = renamedTarget->Remove(false);
-          NS_ENSURE_SUCCESS(rv, rv);
-        }
 
         // Move the file.  If this fails, we still reference the original file
         // in mActualTarget, so that it is deleted if requested.  If this

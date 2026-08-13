@@ -6,8 +6,8 @@
 #define mozilla_image_VectorImage_h
 
 #include "Image.h"
-#include "nsIStreamListener.h"
 #include "mozilla/gfx/Point.h"
+#include "nsIStreamListener.h"
 
 class nsIRequest;
 class gfxDrawable;

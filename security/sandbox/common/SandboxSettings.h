@@ -12,8 +12,8 @@
 #include "nsIXULRuntime.h"
 
 #ifdef __OpenBSD__
-#  include "nsXULAppAPI.h"
 #  include "mozilla/ipc/UtilityProcessSandboxing.h"
+#  include "nsXULAppAPI.h"
 #endif
 
 namespace mozilla {

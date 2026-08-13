@@ -30,7 +30,9 @@
 #define mozilla_DarwinObjectPtr_h
 
 #include <os/object.h>
+
 #include <utility>
+
 #include "mozilla/Attributes.h"
 
 // Because ARC enablement is a compile-time choice, and we compile this header

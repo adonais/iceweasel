@@ -1109,7 +1109,10 @@ var DownloadsView = {
     // allows selecting multiple downloads, so in that view the menuitem will be
     // shown according to whether at least one of the selected items has a URL.
     this.contextMenu.querySelector(".downloadCopyLocationMenuItem").hidden =
-      !element._shell.download.source?.url;
+      !element._shell.isCommandEnabled("downloadsCmd_copyLocation");
+    this.contextMenu.querySelector(".downloadLinksSeparator").hidden =
+      this.contextMenu.querySelector(".downloadCopyLocationMenuItem").hidden &&
+      this.contextMenu.querySelector(".downloadOpenReferrerMenuItem").hidden;
   },
 
   _onDownloadDragStart(aEvent) {
@@ -1205,7 +1208,9 @@ class DownloadsViewItem extends DownloadsViewUI.DownloadElementShell {
         return partFile.exists();
       }
       case "downloadsCmd_copyLocation":
-        return !!this.download.source?.url;
+        return (
+          !!this.download.source?.url && !this.download.source.isDataURICleared
+        );
       case "cmd_delete":
       case "downloadsCmd_doDefault":
         return true;

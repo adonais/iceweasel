@@ -12,7 +12,7 @@ const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
 const { ForgetAboutSite } = ChromeUtils.importESModule(
-  "resource://gre/modules/ForgetAboutSite.sys.mjs"
+  "moz-src:///toolkit/components/forgetaboutsite/ForgetAboutSite.sys.mjs"
 );
 
 const TEST_URIs = [

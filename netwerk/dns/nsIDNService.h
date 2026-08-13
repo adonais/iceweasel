@@ -5,12 +5,11 @@
 #ifndef nsIDNService_h_
 #define nsIDNService_h_
 
-#include "nsIIDNService.h"
-
 #include "mozilla/RWLock.h"
+#include "mozilla/Span.h"
 #include "mozilla/intl/UnicodeScriptCodes.h"
 #include "mozilla/net/IDNBlocklistUtils.h"
-#include "mozilla/Span.h"
+#include "nsIIDNService.h"
 #include "nsTHashSet.h"
 
 class nsIPrefBranch;

@@ -16,12 +16,12 @@ import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
-import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -30,10 +30,10 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
 import androidx.core.net.toUri
 import androidx.test.espresso.Espresso.closeSoftKeyboard
 import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.action.ViewActions.longClick
 import androidx.test.espresso.matcher.RootMatchers.isDialog
 import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
 import androidx.test.espresso.matcher.ViewMatchers.withId
@@ -87,6 +87,7 @@ import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.webcompat.BrokenSiteReporterTestTags
 import org.mozilla.fenix.webcompat.BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_CHOOSE_REASON_BUTTON
+import org.mozilla.fenix.webcompat.BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_REASON_OPTION
 import org.mozilla.fenix.webcompat.BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_SEND_BUTTON
 import java.time.LocalDate
 import mozilla.components.browser.errorpages.R as errorpagesR
@@ -431,6 +432,29 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
             Until.findObject(text("Copy image location")),
             waitingTime,
         )
+    }
+
+    fun verifyTabHistorySheetIsDisplayed(isDisplayed: Boolean) {
+        assertUIObjectExists(
+            itemWithResId("$packageName:id/tabHistoryRecyclerView"),
+            exists = isDisplayed,
+        )
+    }
+
+    fun verifyTabHistoryContainsWebsite(websiteUrl: String, isDisplayed: Boolean) {
+        Log.i(TAG, "verifyTabHistoryContainsWebsite: Trying to verify that tab history contains website: $websiteUrl")
+        val historyList = itemWithResId("$packageName:id/tabHistoryRecyclerView")
+        val websiteItem = historyList.getChild(
+            // selector =
+            UiSelector()
+                .resourceId("$packageName:id/site_list_item")
+                .childSelector(UiSelector().text(websiteUrl)),
+        )
+        assertUIObjectExists(
+            websiteItem,
+            exists = isDisplayed,
+        )
+        Log.i(TAG, "verifyTabHistoryContainsWebsite: Verified that the tab history contains website: $websiteUrl")
     }
 
     fun verifyNavURLBarHidden() = assertUIObjectIsGone(navURLBar())
@@ -961,13 +985,6 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
         }
     }
 
-    fun verifyCookieBannerBlockerCFRExists(exists: Boolean) =
-        assertUIObjectExists(
-            itemContainingText(getStringResource(R.string.cookie_banner_cfr_message)),
-            exists = exists,
-            waitingTime = waitingTimeLong,
-        )
-
     fun verifyOpenLinkInAnotherAppPrompt(appName: String) {
         assertUIObjectExists(
             itemContainingText(
@@ -1138,9 +1155,24 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
     }
 
     fun longClickToolbar() {
-        Log.i(TAG, "longClickToolbar: Trying to long click the toolbar")
-        onView(withId(toolbarR.id.mozac_browser_toolbar_url_view)).perform(longClick())
-        Log.i(TAG, "longClickToolbar: Long clicked the toolbar")
+        Log.i(TAG, "longClickToolbar: Waiting for compose rule to be idle")
+        composeTestRule.waitForIdle()
+        Log.i(TAG, "longClickToolbar: Waited for compose rule to be idle")
+
+        Log.i(TAG, "longClickToolbar: Trying to long click the navigation toolbar")
+        composeTestRule.onAllNodesWithTag(ADDRESSBAR_URL_BOX, useUnmergedTree = true)
+            .onLast()
+            .assertExists()
+            .performTouchInput {
+                longClick()
+            }
+        Log.i(TAG, "longClickToolbar: Long clicked the navigation toolbar")
+    }
+
+    fun clickDisplayModeToolbarContextMenuItem(contextMenuItemDescription: String) {
+        Log.i(TAG, "clickDisplayModeToolbarContextMenuItem: Trying to click context menu item: $contextMenuItemDescription")
+        composeTestRule.onNodeWithContentDescription(contextMenuItemDescription).performClick()
+        Log.i(TAG, "clickDisplayModeToolbarContextMenuItem: Clicked context menu item: $contextMenuItemDescription")
     }
 
     fun verifyDownloadPromptIsDismissed() =
@@ -1230,6 +1262,18 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
     }
 
     fun verifyWebCompatReporterViewItems(websiteURL: String) {
+        Log.i(TAG, "verifyWebCompatReporterViewItems: Trying to verify that the \"URL\" header is displayed")
+        this@BrowserRobot.composeTestRule.onNodeWithText(getStringResource(R.string.webcompat_reporter_label_url))
+            .performScrollTo().assertIsDisplayed()
+        Log.i(TAG, "verifyWebCompatReporterViewItems: Verified that the \"URL\" header is displayed")
+        Log.i(TAG, "verifyWebCompatReporterViewItems: Trying to verify that the $websiteURL url is displayed")
+        this@BrowserRobot.composeTestRule.onNodeWithText(websiteURL)
+            .performScrollTo().assertIsDisplayed()
+        Log.i(TAG, "verifyWebCompatReporterViewItems: Verified that the $websiteURL url is displayed")
+        Log.i(TAG, "verifyWebCompatReporterViewItems: Trying to verify that the \"What’s not working?\" header is displayed")
+        this@BrowserRobot.composeTestRule.onNodeWithText(getStringResource(R.string.webcompat_reporter_label_whats_broken_3))
+            .performScrollTo().assertIsDisplayed()
+        Log.i(TAG, "verifyWebCompatReporterViewItems: Verified that the \"What’s not working?\" header is displayed")
         Log.i(TAG, "verifyWebCompatReporterViewItems: Trying to verify that the report broken site description is displayed")
         this@BrowserRobot.composeTestRule.onNodeWithContentDescription(
             getStringResource(
@@ -1239,76 +1283,53 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
             ) + " " + getStringResource(composeBaseR.string.mozac_compose_base_link_text_links_available),
         ).performScrollTo().assertIsDisplayed()
         Log.i(TAG, "verifyWebCompatReporterViewItems: Verified that the report broken site description is displayed")
-        Log.i(TAG, "verifyWebCompatReporterViewItems: Trying to verify that the \"URL\" header is displayed")
-        this@BrowserRobot.composeTestRule.onNodeWithText(getStringResource(R.string.webcompat_reporter_label_url)).assertIsDisplayed()
-        Log.i(TAG, "verifyWebCompatReporterViewItems: Verified that the \"What’s broken?\" header is displayed")
-        Log.i(TAG, "verifyWebCompatReporterViewItems: Trying to verify that the $websiteURL url is displayed")
-        this@BrowserRobot.composeTestRule.onNodeWithText(websiteURL).assertIsDisplayed()
-        Log.i(TAG, "verifyWebCompatReporterViewItems: Verified that the $websiteURL url is displayed")
-        Log.i(TAG, "verifyWebCompatReporterViewItems: Trying to verify that the \"What’s broken?\" header is displayed")
-        this@BrowserRobot.composeTestRule.onNodeWithText(getStringResource(R.string.webcompat_reporter_label_whats_broken_2)).assertIsDisplayed()
-        Log.i(TAG, "verifyWebCompatReporterViewItems: Verified that the \"What’s broken?\" header is displayed")
-        Log.i(TAG, "verifyWebCompatReporterViewItems: Trying to verify that the \"Choose a reason\" field is displayed")
-        this@BrowserRobot.composeTestRule.onNodeWithText(getStringResource(R.string.webcompat_reporter_choose_reason_2)).assertIsDisplayed()
-        Log.i(TAG, "verifyWebCompatReporterViewItems: Verified that the \"Choose a reason\" field is displayed")
-        Log.i(TAG, "verifyWebCompatReporterViewItems: Trying to verify that the \"Please choose a reason\" error message is displayed")
-        this@BrowserRobot.composeTestRule.onNodeWithTag(BROKEN_SITE_REPORTER_CHOOSE_REASON_BUTTON).assertIsDisplayed()
-        Log.i(TAG, "verifyWebCompatReporterViewItems: Verified that the \"Please choose a reason\" error message is displayed")
-        Log.i(TAG, "verifyWebCompatReporterViewItems: Trying to verify that the \"Describe the problem in detail to help us investigate the issue (optional)\" field is displayed")
-        this@BrowserRobot.composeTestRule.onNodeWithText(getStringResource(R.string.webcompat_reporter_label_description_2)).assertIsDisplayed()
-        Log.i(TAG, "verifyWebCompatReporterViewItems: Verified that the \"Describe the problem in detail to help us investigate the issue (optional)\" field is displayed")
-        if (appContext.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE) {
-            Log.i(
-                TAG,
-                "Release channel is ${appContext.components.core.engine.version.releaseChannel}",
-            )
-            Log.i(
-                TAG,
-                "verifyWebCompatReporterViewItems: Trying to verify that the \"Add more info\" link is displayed",
-            )
-            this@BrowserRobot.composeTestRule.onNodeWithText(getStringResource(R.string.webcompat_reporter_add_more_info))
-                .assertIsDisplayed()
-            Log.i(
-                TAG,
-                "verifyWebCompatReporterViewItems: Verified that the \"Add more info\" link is displayed",
-            )
-        }
-        Log.i(TAG, "verifyWebCompatReporterViewItems: Trying to verify that the \"Cancel\" button is displayed")
-        this@BrowserRobot.composeTestRule.onNodeWithText(getStringResource(R.string.webcompat_reporter_cancel)).assertIsDisplayed()
-        Log.i(TAG, "verifyWebCompatReporterViewItems: Verified that the \"Cancel \" button is displayed")
-        Log.i(TAG, "verifyWebCompatReporterViewItems: Trying to verify that the \"Send\" button is displayed")
-        this@BrowserRobot.composeTestRule.onNodeWithText(getStringResource(R.string.webcompat_reporter_send)).assertIsDisplayed()
-        Log.i(TAG, "verifyWebCompatReporterViewItems: Verified that the \"Send \" button is displayed")
     }
 
     fun verifyWhatIsBrokenField(composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifyWhatIsBrokenField: Trying to verify that the \"What’s broken?\" header is displayed")
-        composeTestRule.onNodeWithText(getStringResource(R.string.webcompat_reporter_label_whats_broken_2)).assertIsDisplayed()
-        Log.i(TAG, "verifyWhatIsBrokenField: Verified that the \"What’s broken?\" header is displayed")
-        Log.i(TAG, "verifyWhatIsBrokenField: Trying to verify that the \"Choose a reason\" field is displayed")
-        composeTestRule.onNodeWithText(getStringResource(R.string.webcompat_reporter_choose_reason_2)).assertIsDisplayed()
-        Log.i(TAG, "verifyWhatIsBrokenField: Verified that the \"Choose a reason\" field is displayed")
-        Log.i(TAG, "verifyWhatIsBrokenField: Trying to verify that the \"Please choose a reason\" error message is displayed")
-        composeTestRule.onNodeWithTag(BROKEN_SITE_REPORTER_CHOOSE_REASON_BUTTON).assertIsDisplayed()
-        Log.i(TAG, "verifyWhatIsBrokenField: Verified that the \"Please choose a reason\" error message is displayed")
+        composeTestRule.onNodeWithText(getStringResource(R.string.webcompat_reporter_label_whats_broken_3))
+            .performScrollTo()
+            .assertIsDisplayed()
+        Log.i(TAG, "verifyWhatIsBrokenField: Verified that the \"What’s not working?\" header is displayed")
     }
 
     fun verifyChooseReasonErrorMessageIsNotDisplayed(composeTestRule: ComposeTestRule) {
+        Log.i(TAG, "verifyChooseReasonErrorMessageIsNotDisplayed: Waiting for Compose to finish updating the UI")
         Log.i(TAG, "verifyChooseReasonErrorMessageIsNotDisplayed: Trying to verify that the \"Please choose a reason\" error message is not displayed")
-        composeTestRule.onNodeWithTag(BROKEN_SITE_REPORTER_CHOOSE_REASON_BUTTON).assertIsNotDisplayed()
+        composeTestRule.onNodeWithTag(BROKEN_SITE_REPORTER_CHOOSE_REASON_BUTTON).assertDoesNotExist()
         Log.i(TAG, "verifyChooseReasonErrorMessageIsNotDisplayed: Verified that the \"Please choose a reason\" error message is not displayed")
     }
 
-    fun clickChooseReasonField(composeTestRule: ComposeTestRule) {
-        Log.i(TAG, "clickChooseReasonField: Trying to click the \"Choose a reason\" field")
-        composeTestRule.onNodeWithText(getStringResource(R.string.webcompat_reporter_choose_reason_2))
+    fun verifyBrokenSiteProblemDescriptionField(isDisplayed: Boolean) {
+        val descriptionLabel = getStringResource(R.string.webcompat_reporter_label_mandatory_description)
+
+        if (isDisplayed) {
+            Log.i(TAG, "verifyBrokenSiteProblemDescriptionField: Verifying description field is displayed")
+            this@BrowserRobot.composeTestRule.onNodeWithText(descriptionLabel)
+                .performScrollTo()
+                .assertIsDisplayed()
+        } else {
+            Log.i(TAG, "verifyBrokenSiteProblemDescriptionField: Verifying description field does not exist")
+            this@BrowserRobot.composeTestRule.onNodeWithText(descriptionLabel)
+                .assertDoesNotExist()
+        }
+    }
+
+    fun clickClearSelectedReason(composeTestRule: ComposeTestRule) {
+        Log.i(TAG, "clickClearSelectedReason: Trying to clear the selected reason")
+        composeTestRule.onNodeWithTag(BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_SELECTED_REASON)
+            .performScrollTo()
             .performClick()
-        Log.i(TAG, "clickChooseReasonField: Trying to clicked the \"Choose a reason\" field")
+        Log.i(TAG, "clickClearSelectedReason: Cleared the selected reason")
     }
 
     fun clickSiteDoesNotLoadReason(composeTestRule: ComposeTestRule) {
         Log.i(TAG, "clickSiteDoesNotLoadReason: Trying to click the \"Site doesn’t load\" reason option")
-        composeTestRule.onNodeWithText(getStringResource(R.string.webcompat_reporter_reason_load))
+        composeTestRule.onNodeWithText(getStringResource(R.string.webcompat_reporter_label_url))
+            .performScrollTo()
+        val reasonText = getStringResource(R.string.webcompat_reporter_reason_load)
+        composeTestRule.onNodeWithTag("$BROKEN_SITE_REPORTER_REASON_OPTION-$reasonText")
+            .performScrollTo()
             .performClick()
         Log.i(TAG, "clickSiteDoesNotLoadReason: Clicked the \"Site doesn’t load\" reason option")
     }
@@ -1316,6 +1337,7 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
     fun clickBrokenSiteFormCancelButton(composeTestRule: ComposeTestRule) {
         Log.i(TAG, "clickBrokenSiteFormCancelButton: Trying to click the \"Cancel\" button")
         composeTestRule.onNodeWithText(getStringResource(R.string.webcompat_reporter_cancel))
+            .performScrollTo()
             .performClick()
         Log.i(TAG, "clickBrokenSiteFormCancelButton: Clicked the \"Cancel\" button")
     }
@@ -1324,22 +1346,29 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "clickBrokenSiteFormSendButton: Trying to close the keyboard.")
         closeSoftKeyboard()
         Log.i(TAG, "clickBrokenSiteFormSendButton: Closed the keyboard.")
-        Log.i(TAG, "clickBrokenSiteFormSendButton: Trying to click the \"Cancel\" button")
-        composeTestRule.onNodeWithText(getStringResource(R.string.webcompat_reporter_send))
+        Log.i(TAG, "clickBrokenSiteFormSendButton: Trying to click the \"Send\" button")
+
+        composeTestRule.onNodeWithTag(BROKEN_SITE_REPORTER_SEND_BUTTON)
+            .performScrollTo()
             .performClick()
-        Log.i(TAG, "clickBrokenSiteFormSendButton: Clicked the \"Cancel\" button")
+
+        composeTestRule.waitForIdle()
+
+        Log.i(TAG, "clickBrokenSiteFormSendButton: Clicked the \"Send\" button")
     }
 
     fun describeBrokenSiteProblem(problemDescription: String) {
         Log.i(TAG, "describeBrokenSiteProblem: Trying to click the description field")
         this@BrowserRobot.composeTestRule
             .onNodeWithTag(BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_DESCRIPTION_INPUT)
+            .performScrollTo()
             .performClick()
         Log.i(TAG, "describeBrokenSiteProblem: Clicked the description field")
 
         Log.i(TAG, "describeBrokenSiteProblem: Trying to set the text to $problemDescription")
         this@BrowserRobot.composeTestRule
             .onNodeWithTag(BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_DESCRIPTION_INPUT)
+            .performScrollTo()
             .performTextInput(problemDescription)
         Log.i(TAG, "describeBrokenSiteProblem: Set the text to $problemDescription")
     }
@@ -1350,20 +1379,24 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
             this@BrowserRobot.composeTestRule.onNodeWithText(problemDescription).assertIsDisplayed()
             Log.i(TAG, "verifyBrokenSiteProblem: Verified that the $problemDescription broken site problem is displayed")
         } else {
-            Log.i(TAG, "verifyBrokenSiteProblem: Trying to verify that the $problemDescription broken site problem is not displayed")
-            this@BrowserRobot.composeTestRule.onNodeWithText(problemDescription).assertIsNotDisplayed()
-            Log.i(TAG, "verifyBrokenSiteProblem: Verified that the $problemDescription broken site problem is not displayed")
+            Log.i(TAG, "verifyBrokenSiteProblem: Trying to verify that the $problemDescription broken site problem does not exist")
+            this@BrowserRobot.composeTestRule.onNodeWithText(problemDescription).assertDoesNotExist()
+            Log.i(TAG, "verifyBrokenSiteProblem: Verified that the $problemDescription broken site problem does not exist")
         }
     }
 
     fun verifySendButtonIsEnabled(isEnabled: Boolean) {
         if (isEnabled) {
             Log.i(TAG, "verifySendButtonIsEnabled: Trying to verify that the the \"Send\" button is enabled")
-            this@BrowserRobot.composeTestRule.onNodeWithTag(BROKEN_SITE_REPORTER_SEND_BUTTON).assertIsEnabled()
+            this@BrowserRobot.composeTestRule.onNodeWithTag(BROKEN_SITE_REPORTER_SEND_BUTTON)
+                .performScrollTo()
+                .assertIsEnabled()
             Log.i(TAG, "verifySendButtonIsEnabled: Verified that the the \"Send\" button is enabled")
         } else {
             Log.i(TAG, "verifySendButtonIsEnabled: Trying to verify that the the \"Send\" button is not enabled")
-            this@BrowserRobot.composeTestRule.onNodeWithTag(BROKEN_SITE_REPORTER_SEND_BUTTON).assertIsNotEnabled()
+            this@BrowserRobot.composeTestRule.onNodeWithTag(BROKEN_SITE_REPORTER_SEND_BUTTON)
+                .performScrollTo()
+                .assertIsNotEnabled()
             Log.i(TAG, "verifySendButtonIsEnabled: Verified that the the \"Send\" button is not enabled")
         }
     }
@@ -1427,6 +1460,13 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "clickTheDismissButtonOnSummarizeCFR: Trying to click the \"X\" button on the summarize CFR")
         composeTestRule.summarizeCFRButton().performClick()
         Log.i(TAG, "clickTheDismissButtonOnSummarizeCFR: Clicked the \"X\" button on the summarize CFR")
+    }
+
+    fun clickStayInAppPromptButton() {
+        val stayInAppButton = itemContainingText(getStringResource(R.string.applinks_prompt_negative_button, argument = appName))
+        if (stayInAppButton.exists()) {
+            stayInAppButton.click()
+        }
     }
 
     class Transition(private val composeTestRule: ComposeTestRule) {
@@ -1652,18 +1692,6 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
 
             SitePermissionsRobot(composeTestRule).interact()
             return SitePermissionsRobot.Transition(composeTestRule)
-        }
-
-        fun openSiteSecuritySheet(interact: SiteSecurityRobot.() -> Unit): SiteSecurityRobot.Transition {
-            Log.i(TAG, "openSiteSecuritySheet: Trying to click the site security toolbar button and wait for $waitingTime ms for a new window")
-            composeTestRule.onNodeWithContentDescription(getStringResource(toolbarR.string.mozac_browser_toolbar_content_description_site_info)).performClick()
-            Log.i(TAG, "openSiteSecuritySheet: Clicked the site security toolbar button and waited for $waitingTime ms for a new window")
-            composeTestRule.waitForIdle()
-            mDevice.waitForIdle()
-            waitForAppWindowToBeUpdated()
-
-            SiteSecurityRobot().interact()
-            return SiteSecurityRobot.Transition()
         }
 
         fun clickManageAddressButton(interact: SettingsSubMenuAutofillRobot.() -> Unit): SettingsSubMenuAutofillRobot.Transition {

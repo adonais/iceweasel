@@ -12,6 +12,7 @@
 #include "mozilla/net/Cookie.h"
 #include "mozilla/net/CookieCommons.h"
 #include "nsAppDirectoryServiceDefs.h"
+#include "nsContentUtils.h"
 #include "nsICookieNotification.h"
 
 using namespace mozilla::dom;
@@ -318,6 +319,22 @@ CookieStoreSubscriptionService::Observe(nsISupports* aSubject,
     }
 
     if (cookie->OriginAttributesNative() != principalInfo.attrs()) {
+      continue;
+    }
+
+    nsCOMPtr<nsIURI> principalURI;
+    rv = NS_NewURI(getter_AddRefs(principalURI), principalInfo.spec());
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      continue;
+    }
+
+    nsAutoCString host;
+    rv = nsContentUtils::GetHostOrIPv6WithBrackets(principalURI, host);
+    if (NS_WARN_IF(NS_FAILED(rv)) || host.IsEmpty()) {
+      continue;
+    }
+
+    if (!CookieCommons::DomainMatches(Cookie::Cast(cookie), host)) {
       continue;
     }
 

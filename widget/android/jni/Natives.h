@@ -6,12 +6,13 @@
 #define mozilla_jni_Natives_h_
 
 #include <jni.h>
+
 #include <tuple>
 #include <type_traits>
 #include <utility>
 
-#include "mozilla/RefPtr.h"
 #include "mozilla/RWLock.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/jni/Accessors.h"

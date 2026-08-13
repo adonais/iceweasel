@@ -32,10 +32,7 @@ support-files = [
 ["browser_ml_embeddings_generator.js"]
 
 ["browser_ml_engine_e2e.js"]
-support-files = [
-  "ml_engine_e2e_backend_stub.worker.mjs",
-  "ml_engine_e2e_cancel_stub.worker.mjs",
-]
+support-files = ["ml_engine_e2e_cancel_stub.worker.mjs"]
 
 ["browser_ml_engine_lifetime.js"]
 
@@ -59,6 +56,13 @@ skip-if = [
   "verify",
 ]
 
+["browser_ml_native_ort_availability.js"]
+support-files = [
+  "ml_native_ort_available_stub.worker.mjs",
+  "ml_native_ort_error_stub.worker.mjs",
+  "ml_native_ort_unavailable_stub.worker.mjs",
+]
+
 ["browser_ml_nlp_utils.js"]
 
 ["browser_ml_openai.js"]
@@ -80,5 +84,15 @@ support-files = [
 ]
 
 ["browser_ml_thompson_sample.js"]
+
+["browser_ml_utf8_codepoint.js"]
+skip-if = [
+  "arch == 'x86'",
+  "asan",
+  "debug",
+  "os == 'android'",
+  "tsan",
+  "verify",
+]
 
 ["browser_ml_utils.js"]

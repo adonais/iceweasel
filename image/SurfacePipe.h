@@ -25,15 +25,14 @@
 #include <utility>
 
 #include "AnimationParams.h"
+#include "Orientation.h"
 #include "mozilla/Likely.h"
 #include "mozilla/Maybe.h"
-
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Variant.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Swizzle.h"
 #include "nsDebug.h"
-#include "Orientation.h"
 
 namespace mozilla {
 namespace image {

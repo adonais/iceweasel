@@ -5,12 +5,12 @@
 #ifndef MOZILLA_GFX_PRINTTARGETSKPDF_H
 #define MOZILLA_GFX_PRINTTARGETSKPDF_H
 
+#include "PrintTarget.h"
 #include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
-#include "PrintTarget.h"
 #include "skia/include/core/SkCanvas.h"
-#include "skia/include/docs/SkPDFDocument.h"
 #include "skia/include/core/SkStream.h"
+#include "skia/include/docs/SkPDFDocument.h"
 
 namespace mozilla {
 namespace gfx {

@@ -228,6 +228,174 @@ add_task(async function test_observers_only_active_while_active() {
   sandbox.restore();
 });
 
+/**
+ * On Android the helper reacts to the app moving to the background/foreground
+ * the same way it reacts to sleep/wake on desktop: suspend on background, resume
+ * on foreground.
+ */
+add_task(async function test_android_background_foreground_cycle() {
+  setupStubs({ validProxyPass: true });
+  await startActiveProxy();
+
+  const channelFilter = IPPProxyManager.channelFilter();
+  const savedKey = IPPProxyManager.isolationKey;
+
+  Services.obs.notifyObservers(null, "application-background");
+  Assert.equal(
+    channelFilter.proxyInfo,
+    null,
+    "Channel filter is suspended when the app is backgrounded"
+  );
+
+  Services.obs.notifyObservers(null, "application-foreground");
+  Assert.ok(
+    channelFilter.proxyInfo,
+    "Connection resumed when the app is foregrounded"
+  );
+  Assert.equal(
+    IPPProxyManager.isolationKey,
+    savedKey,
+    "Resuming reuses the isolation key captured before backgrounding"
+  );
+
+  await IPPProxyManager.stop();
+  IPProtectionService.uninit();
+});
+
+/**
+ * isSuspended reflects the sleep/background state, tracking both the desktop
+ * sleep/wake and the Android background/foreground notifications.
+ */
+add_task(async function test_isSuspended_tracks_sleep_wake() {
+  setupStubs({ validProxyPass: true });
+  await startActiveProxy();
+
+  Assert.ok(
+    !IPPLifecycleHelper.isSuspended,
+    "Not suspended while awake and active"
+  );
+
+  Services.obs.notifyObservers(null, SLEEP_TOPIC);
+  Assert.ok(IPPLifecycleHelper.isSuspended, "Suspended after sleep");
+
+  Services.obs.notifyObservers(null, WAKE_TOPIC);
+  Assert.ok(!IPPLifecycleHelper.isSuspended, "Not suspended after wake");
+
+  Services.obs.notifyObservers(null, "application-background");
+  Assert.ok(
+    IPPLifecycleHelper.isSuspended,
+    "Suspended when the app is backgrounded"
+  );
+
+  Services.obs.notifyObservers(null, "application-foreground");
+  Assert.ok(
+    !IPPLifecycleHelper.isSuspended,
+    "Not suspended when the app is foregrounded"
+  );
+
+  await IPPProxyManager.stop();
+  IPProtectionService.uninit();
+});
+
+/**
+ * A successful rotation reschedules the next one for the freshly obtained pass,
+ * cancelling any earlier schedule. This keeps rotation going even when the
+ * rotation was triggered outside the scheduled timer (e.g. by the wake handler).
+ */
+add_task(async function test_successful_rotation_reschedules_next() {
+  let sandbox = sinon.createSandbox();
+  setupStubs({ validProxyPass: true });
+
+  await startActiveProxy();
+
+  // The pass returned by the manual rotation is due for rotation almost
+  // immediately, so the reschedule it triggers fires shortly after.
+  const now = Temporal.Now.instant();
+  const soonDuePass = new ProxyPass(
+    createProxyPassToken(now, now.add({ minutes: 2, seconds: 1 }))
+  );
+  const longLivedPass = new ProxyPass(createProxyPassToken());
+
+  // Resolves when the rescheduled rotation fires on its own and fetches again.
+  const rescheduledRotationRan = Promise.withResolvers();
+  const fetchStub = sandbox.stub(IPPDummyAuthProvider, "fetchProxyPass");
+  fetchStub.onCall(0).resolves({ status: 200, pass: soonDuePass });
+  fetchStub.callsFake(() => {
+    rescheduledRotationRan.resolve();
+    return Promise.resolve({ status: 200, pass: longLivedPass });
+  });
+
+  const rotated = await IPPProxyManager.rotateProxyPass();
+  Assert.equal(
+    rotated.token,
+    soonDuePass.token,
+    "Manual rotation returned the soon-due pass"
+  );
+
+  // If the rotation had not rescheduled, this would never resolve.
+  await rescheduledRotationRan.promise;
+
+  Assert.equal(
+    IPPProxyManager.state,
+    IPPProxyStates.ACTIVE,
+    "Proxy stays ACTIVE after the rescheduled rotation"
+  );
+
+  await IPPProxyManager.stop();
+  IPProtectionService.uninit();
+  sandbox.restore();
+});
+
+/**
+ * A pass that is always fetched already due for rotation must not spin the
+ * scheduled rotation into a tight loop while awake: the reschedule delay is
+ * floored by browser.ipProtection.guardian.minRotationInterval.
+ */
+add_task(async function test_scheduled_rotation_does_not_livelock() {
+  const MIN_ROTATION_INTERVAL_PREF =
+    "browser.ipProtection.guardian.minRotationInterval";
+  let sandbox = sinon.createSandbox();
+  setupStubs({ validProxyPass: true });
+  Services.prefs.setIntPref(MIN_ROTATION_INTERVAL_PREF, 100);
+
+  // Every fetch returns a pass that is already past its rotation point, so each
+  // scheduled rotation immediately schedules another one.
+  const now = Temporal.Now.instant();
+  const alwaysDue = new ProxyPass(
+    createProxyPassToken(now.subtract({ minutes: 2 }), now.add({ seconds: 1 }))
+  );
+  const fetchSpy = sandbox.spy(IPPDummyAuthProvider, "fetchProxyPass");
+  IPPDummyAuthProvider.setProxyPass({
+    status: 200,
+    error: undefined,
+    pass: alwaysDue,
+    usage: new ProxyUsage(
+      "5368709120",
+      "4294967296",
+      "3026-02-01T00:00:00.000Z"
+    ),
+  });
+
+  await startActiveProxy();
+
+  const fetchesAfterStart = fetchSpy.callCount;
+
+  // Stay awake and let scheduled rotations run for several floor intervals.
+  await new Promise(resolve => do_timeout(500, resolve));
+
+  const scheduledRotations = fetchSpy.callCount - fetchesAfterStart;
+  Assert.lessOrEqual(
+    scheduledRotations,
+    20,
+    "Scheduled rotations are bounded by the minimum interval, not a busy loop"
+  );
+
+  await IPPProxyManager.stop();
+  IPProtectionService.uninit();
+  sandbox.restore();
+  Services.prefs.clearUserPref(MIN_ROTATION_INTERVAL_PREF);
+});
+
 function channelFilterProxyInfoPresent() {
   return !!IPPProxyManager.channelFilter()?.proxyInfo;
 }

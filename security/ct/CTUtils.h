@@ -10,9 +10,9 @@
 #include "cryptohi.h"
 #include "keyhi.h"
 #include "keythi.h"
-#include "pk11pub.h"
 #include "mozpkix/Input.h"
 #include "mozpkix/Result.h"
+#include "pk11pub.h"
 
 #define MOZILLA_CT_ARRAY_LENGTH(x) (sizeof(x) / sizeof((x)[0]))
 

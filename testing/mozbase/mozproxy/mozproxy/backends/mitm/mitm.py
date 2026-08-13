@@ -69,17 +69,15 @@ class Mitmproxy(Playback):
 
             if not os.path.splitext(self.config.get("recording_file"))[1] == ".zip":
                 LOG.error(
-                    "Recording file type (%s) should be a zip. "
+                    f"Recording file type ({self.config.get('recording_file')}) should be a zip. "
                     "Please provide a valid file type!"
-                    % self.config.get("recording_file")
                 )
                 raise Exception("Recording file type should be a zip")
 
             if os.path.exists(self.config.get("recording_file")):
                 LOG.error(
-                    "Recording file (%s) already exists."
+                    f"Recording file ({self.config.get('recording_file')}) already exists. "
                     "Please provide a valid file path!"
-                    % self.config.get("recording_file")
                 )
                 raise Exception("Recording file already exists.")
 
@@ -113,15 +111,14 @@ class Mitmproxy(Playback):
         self.mozproxy_dir = os.path.join(self.mozproxy_dir, "testing", "mozproxy")
 
         LOG.info(
-            "mozproxy_dir used for mitmproxy downloads and exe files: %s"
-            % self.mozproxy_dir
+            f"mozproxy_dir used for mitmproxy downloads and exe files: {self.mozproxy_dir}"
         )
         # setting up the MOZPROXY_DIR env variable so custom scripts know
         # where to get the data
         os.environ["MOZPROXY_DIR"] = self.mozproxy_dir
 
-        LOG.info("Playback tool: %s" % self.config["playback_tool"])
-        LOG.info("Playback tool version: %s" % self.config["playback_version"])
+        LOG.info(f"Playback tool: {self.config['playback_tool']}")
+        LOG.info(f"Playback tool version: {self.config['playback_version']}")
 
     def _is_test_environment(self):
         """Check if running under pytest.
@@ -158,6 +155,32 @@ class Mitmproxy(Playback):
         finally:
             sys.exit(128 + sig)
 
+    def _build_replay_paths(self):
+        """Return the deduped, deterministic list of recording paths to pass
+        to mitmproxy. Logs each path so failures can be attributed to a
+        specific recording in mitmproxy.log."""
+        seen = set()
+        paths = []
+        for playback_file in self.playback_files:
+            normalized = os.path.normpath(playback_file.recording_path)
+            if normalized in seen:
+                LOG.warning(f"Duplicate playback file ignored: {normalized}")
+                continue
+            if not os.path.exists(normalized):
+                LOG.error(
+                    f"Playback file is missing on disk and will be skipped: {normalized}"
+                )
+                continue
+            seen.add(normalized)
+            paths.append(normalized)
+
+        if not paths:
+            raise Exception("No usable playback recordings after dedupe; aborting.")
+
+        for path in paths:
+            LOG.info(f"mitmproxy recording: {path}")
+        return paths
+
     def generate_mitmdump_path(self):
         mitmdump_path_tail = ["mitmdump"]
         if (
@@ -176,7 +199,7 @@ class Mitmproxy(Playback):
         self.mitmdump_path_dir = os.path.normpath(
             os.path.join(
                 self.mozproxy_dir,
-                "mitmdump-%s" % self.config["playback_version"],
+                f"mitmdump-{self.config['playback_version']}",
             )
         )
         self.mitmdump_path = os.path.normpath(
@@ -189,8 +212,7 @@ class Mitmproxy(Playback):
         manifest = os.path.join(
             here,
             "manifests",
-            "mitmproxy-rel-bin-%s-{platform}.manifest"
-            % self.config["playback_version"],
+            f"mitmproxy-rel-bin-{self.config['playback_version']}-{{platform}}.manifest",
         )
         transformed_manifest = transform_platform(
             manifest,
@@ -208,7 +230,7 @@ class Mitmproxy(Playback):
         else:
             # Download and unpack mitmproxy binary
             download_path = self.mitmdump_path_dir
-            LOG.info("create mitmproxy %s dir" % self.config["playback_version"])
+            LOG.info(f"create mitmproxy {self.config['playback_version']} dir")
             if not os.path.exists(download_path):
                 os.makedirs(download_path)
 
@@ -228,7 +250,7 @@ class Mitmproxy(Playback):
             manifest = json.load(manifest_file)
             for file in manifest:
                 zip_path = os.path.join(self.mozproxy_dir, file["filename"])
-                LOG.info("Adding %s to recording list" % zip_path)
+                LOG.info(f"Adding {zip_path} to recording list")
                 self.playback_files.append(RecordingFile(zip_path))
 
     def download_playback_files(self):
@@ -249,20 +271,19 @@ class Mitmproxy(Playback):
                 dest = os.path.join(self.mozproxy_dir, os.path.basename(playback_file))
                 download_file_from_url(playback_file, self.mozproxy_dir, extract=False)
                 # Add Downloaded file to playback_files list
-                LOG.info("Adding %s to recording list" % dest)
+                LOG.info(f"Adding {dest} to recording list")
                 self.playback_files.append(RecordingFile(dest))
                 continue
 
             if not os.path.exists(playback_file):
                 LOG.error(
-                    "Zip or manifest file path (%s) does not exist. Please provide a valid path!"
-                    % playback_file
+                    f"Zip or manifest file path ({playback_file}) does not exist. Please provide a valid path!"
                 )
                 raise Exception("Zip or manifest file path does not exist")
 
             if os.path.splitext(playback_file)[1] == ".zip":
                 # zip file path provided
-                LOG.info("Adding %s to recording list" % playback_file)
+                LOG.info(f"Adding {playback_file} to recording list")
                 self.playback_files.append(RecordingFile(playback_file))
             elif os.path.splitext(playback_file)[1] == ".manifest":
                 # manifest file path provided
@@ -320,8 +341,8 @@ class Mitmproxy(Playback):
             raise Exception("Proxy already started.")
         self.port = get_available_port()
 
-        LOG.info("mitmdump path: %s" % mitmdump_path)
-        LOG.info("browser path: %s" % browser_path)
+        LOG.info(f"mitmdump path: {mitmdump_path}")
+        LOG.info(f"browser path: {browser_path}")
 
         # mitmproxy needs some DLL's that are a part of Firefox itself, so add to path
         env = os.environ.copy()
@@ -331,13 +352,18 @@ class Mitmproxy(Playback):
         if self.config.get("verbose", False):
             # Generate mitmproxy verbose logs
             command.extend(["-v"])
+
         # add proxy host and port options
-        command.extend(["--listen-host", self.host, "--listen-port", str(self.port)])
+        command.extend([
+            "--listen-host",
+            self.host,
+            "--listen-port",
+            str(self.port),
+        ])
 
         # record mode
         if self.record_mode:
             # generate recording script paths
-
             command.extend([
                 "--save-stream-file",
                 os.path.normpath(self.recording.recording_path),
@@ -354,7 +380,42 @@ class Mitmproxy(Playback):
             )
         # playback mode
         elif len(self.playback_files) > 0:
-            if self.config["playback_version"] in ["8.1.1", "11.0.0", "12.2.1"]:
+            if (
+                self.config.get("test_name") == "nav-bench"
+                and self.config["playback_version"] == "12.2.1"
+            ):
+                # Common dynamic / anti-bot / session params to strip from
+                # URL matching during replay. Without this, sites like reddit
+                # produce per-session tokens (?solution=, ?token=, ?_=) that
+                # change between recording and playback, causing mitmproxy to
+                # 404 every page load.
+                ignore_params = ",".join([
+                    "solution",
+                    "token",
+                    "jsc_orig_r",
+                    "js_challenge",
+                    "_",
+                    "t",
+                    "ts",
+                    "timestamp",
+                    "cb",
+                    "callback",
+                    "ref",
+                    "ref_",
+                    "pd_rd_r",
+                    "pd_rd_w",
+                    "pd_rd_wg",
+                    "pf_rd_p",
+                    "pf_rd_r",
+                    "qid",
+                    "sr",
+                    "sprefix",
+                    "psc",
+                    "dib",
+                    "dib_tag",
+                    "browsertime_run",
+                ])
+                replay_paths = self._build_replay_paths()
                 command.extend([
                     "--set",
                     "websocket=false",
@@ -369,12 +430,39 @@ class Mitmproxy(Playback):
                     "--set",
                     "tls_version_client_min=TLS1_2",
                     "--set",
-                    "alt_server_replay={}".format(
-                        ",".join([
-                            os.path.normpath(playback_file.recording_path)
-                            for playback_file in self.playback_files
-                        ])
+                    f"server_replay_ignore_params={ignore_params}",
+                    # Force script log calls (replay.match/kill/miss) into
+                    # the mitmproxy.log file so we can debug iteration-N
+                    # hangs. Without this, ctx.log/logger output is
+                    # filtered to warnings only.
+                    "--set",
+                    "termlog_verbosity=info",
+                    "--set",
+                    f"alt_server_replay={','.join(replay_paths)}",
+                    "--scripts",
+                    os.path.normpath(
+                        os.path.join(mitm_folder, "scripts", "nav-serverplayback.py")
                     ),
+                ])
+            elif self.config["playback_version"] in ["8.1.1", "11.0.0", "12.2.1"]:
+                replay_paths = self._build_replay_paths()
+                command.extend([
+                    "--set",
+                    "websocket=false",
+                    "--set",
+                    "connection_strategy=lazy",
+                    "--set",
+                    "alt_server_replay_nopop=true",
+                    "--set",
+                    "alt_server_replay_kill_extra=true",
+                    "--set",
+                    "alt_server_replay_order_reversed=true",
+                    "--set",
+                    "tls_version_client_min=TLS1_2",
+                    "--set",
+                    "termlog_verbosity=info",
+                    "--set",
+                    f"alt_server_replay={','.join(replay_paths)}",
                     "--scripts",
                     os.path.normpath(
                         os.path.join(mitm_folder, "scripts", "alt-serverplayback.py")
@@ -419,17 +507,24 @@ class Mitmproxy(Playback):
         if not os.path.dirname(self.browser_path) in env["PATH"]:
             env["PATH"] = os.path.dirname(self.browser_path) + os.pathsep + env["PATH"]
 
-        LOG.info("Starting mitmproxy playback using env path: %s" % env["PATH"])
-        LOG.info("Starting mitmproxy playback using command: %s" % " ".join(command))
+        mitmproxy_log_path = os.path.join(self.upload_dir, "mitmproxy.log")
+        LOG.info(f"Starting mitmproxy playback using env path: {env['PATH']}")
+        LOG.info(f"Starting mitmproxy playback using command: {' '.join(command)}")
+        # Announce the log path so anyone debugging a hang in CI knows
+        # where to look. mitmproxy.log captures replay.match/kill/miss
+        # lines from the replay script and is uploaded with the rest
+        # of the artifacts.
+        LOG.info(f"mitmproxy log file: {mitmproxy_log_path}")
         # to turn off mitmproxy log output, use these params for Popen:
         # Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
         self.mitmproxy_proc = ProcessHandler(
             command,
-            logfile=os.path.join(self.upload_dir, "mitmproxy.log"),
+            logfile=mitmproxy_log_path,
             env=env,
             storeOutput=False,
         )
         self.mitmproxy_proc.run()
+
         end_time = time.time() + MITMDUMP_COMMAND_TIMEOUT
 
         ready = False
@@ -437,8 +532,7 @@ class Mitmproxy(Playback):
             ready = self.check_proxy(host=self.host, port=self.port)
             if ready:
                 LOG.info(
-                    "Mitmproxy playback successfully started on %s:%d as pid %d"
-                    % (self.host, self.port, self.mitmproxy_proc.pid)
+                    f"Mitmproxy playback successfully started on {self.host}:{self.port} as pid {self.mitmproxy_proc.pid}"
                 )
                 return
             time.sleep(0.25)
@@ -453,7 +547,7 @@ class Mitmproxy(Playback):
         if self.mitmproxy_proc is None or self.mitmproxy_proc.poll() is not None:
             return
         LOG.info(
-            "Stopping mitmproxy playback, killing process %d" % self.mitmproxy_proc.pid
+            f"Stopping mitmproxy playback, killing process {self.mitmproxy_proc.pid}"
         )
         # On Windows, mozprocess brutally kills mitmproxy with TerminateJobObject
         # The process has no chance to gracefully shutdown.
@@ -480,14 +574,13 @@ class Mitmproxy(Playback):
 
                 if exit_code in [ERROR_CONTROL_C_EXIT, ERROR_CONTROL_C_EXIT_DECIMAL]:
                     LOG.info(
-                        "Successfully killed the mitmproxy playback process"
-                        " with exit code %d" % exit_code
+                        f"Successfully killed the mitmproxy playback process with exit code {exit_code}"
                     )
                     return
             log_func = LOG.error
             if self.ignore_mitmdump_exit_failure:
                 log_func = LOG.info
-            log_func("Mitmproxy exited with error code %d" % exit_code)
+            log_func(f"Mitmproxy exited with error code {exit_code}")
         else:
             LOG.info("Successfully killed the mitmproxy playback process")
 

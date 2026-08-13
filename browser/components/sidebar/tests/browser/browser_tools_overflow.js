@@ -294,6 +294,83 @@ add_task(async function test_overflow_menu_with_keyboard() {
   }
 });
 
+add_task(
+  async function test_overflowing_buttons_restored_switching_to_horizontal() {
+    await SidebarController.updateUIState({
+      launcherExpanded: false,
+    });
+
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["sidebar.main.tools", "aichat,passwords,syncedtabs,history,bookmarks"],
+      ],
+    });
+
+    const sidebar = SidebarController.sidebarMain;
+    await resetToolsHeight();
+
+    info("Resize the tools container to force overflow.");
+    await resizeTools(600);
+    await sidebar.updateComplete;
+    await SidebarController.waitUntilStable();
+    await BrowserTestUtils.waitForMutationCondition(
+      sidebar.buttonsWrapper,
+      { attributes: true, attributeFilter: ["overflowing"] },
+      () => sidebar.shouldShowOverflowButton
+    );
+
+    await BrowserTestUtils.waitForMutationCondition(
+      sidebar.buttonsWrapper,
+      { attributes: true, attributeFilter: ["style"], subtree: true },
+      () =>
+        Array.from(sidebar.toolButtons).some(
+          button => button.style.visibility === "hidden"
+        ),
+      "At least one tool button is hidden while overflowing in vertical tabs."
+    );
+
+    info("Switch to horizontal tabs.");
+    await SpecialPowers.pushPrefEnv({ set: [[VERTICAL_TABS_PREF, false]] });
+    await sidebar.updateComplete;
+    await SidebarController.waitUntilStable();
+
+    await BrowserTestUtils.waitForMutationCondition(
+      sidebar.buttonsWrapper,
+      { attributes: true, attributeFilter: ["style"], subtree: true },
+      () =>
+        Array.from(sidebar.toolButtons).every(
+          button => button.style.visibility !== "hidden"
+        ),
+      "No tool buttons remain hidden after switching to horizontal tabs."
+    );
+    for (const button of sidebar.toolButtons) {
+      is(
+        window.getComputedStyle(button).visibility,
+        "visible",
+        `Tool button ${button.getAttribute("view")} is visible in horizontal tabs.`
+      );
+    }
+    ok(
+      !sidebar.shouldShowOverflowButton,
+      "Overflow button is not shown in horizontal tabs."
+    );
+    is(
+      document.getElementById("tools-overflow-list").childElementCount,
+      0,
+      "Overflow panel copies were cleared."
+    );
+
+    info("Switch back to vertical tabs.");
+    await SpecialPowers.popPrefEnv();
+    await sidebar.updateComplete;
+    await resetToolsHeight();
+
+    while (gBrowser.tabs.length > 1) {
+      BrowserTestUtils.removeTab(gBrowser.tabs.at(-1));
+    }
+  }
+);
+
 add_task(async function test_tools_overflow() {
   const sidebar = document.querySelector("sidebar-main");
   ok(sidebar, "Sidebar is shown.");

@@ -1,0 +1,30 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+@import url("chrome://global/content/elements/moz-promo.tokens.css");
+
+:host {
+  --promo-border-color: transparent;
+
+  display: block;
+  margin-block-end: var(--space-large);
+  width: 100%;
+}
+
+.promo-container {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-base-design-tokens */
+  background:
+    linear-gradient(90deg, var(--color-violet-30) 50%, light-dark(var(--color-orange-30), var(--color-violet-50)) 100%) border-box,
+    var(--panel-background-color) padding-box;
+  border-radius: var(--promo-border-radius);
+  padding: 1px;
+}
+
+moz-promo {
+  --promo-background-color: var(--panel-background-color);
+  --promo-padding: var(--space-large);
+  --promo-border-color: transparent;
+  --font-size-heading-medium: var(--font-size-root);
+  width: 100%;
+}

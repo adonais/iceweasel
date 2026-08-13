@@ -6,6 +6,7 @@ export const TOP_SITES_SOURCE = "TOP_SITES";
 export const TOP_SITES_CONTEXT_MENU_OPTIONS = [
   "CheckPinTopSite",
   "EditTopSite",
+  "AddTopSite",
   "Separator",
   "OpenInNewWindow",
   "OpenInPrivateWindow",
@@ -37,3 +38,13 @@ export const TOP_SITES_SEARCH_SHORTCUTS_CONTEXT_MENU_OPTIONS = [
 export const MIN_RICH_FAVICON_SIZE = 96;
 // minimum size necessary to show any icon
 export const MIN_SMALL_FAVICON_SIZE = 16;
+
+// "SPOC" = Sponsored Pocket content; one of the two sponsored-topsite sources.
+export const SPOC_TYPE = "SPOC";
+
+// We have two sources for sponsored topsites: sponsored_position is set by one
+// source, and type is set by another. Use this when we only care whether a link
+// is sponsored by either.
+export function isSponsored(link) {
+  return link?.sponsored_position || link?.type === SPOC_TYPE;
+}

@@ -20,6 +20,25 @@
   width: var(--col-width);
 }
 
+#diagram-container-table thead th button {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  width: 100%;
+  padding: 0;
+  cursor: pointer;
+}
+
+#diagram-container-table thead th#current button {
+  cursor: default;
+}
+
+#diagram-container-table thead th.disabled button {
+  cursor: default;
+}
+
 #diagram-container-table tbody td:not([aria-hidden]) {
   --cell-padding: 4px;
   --cell-border: 1px;

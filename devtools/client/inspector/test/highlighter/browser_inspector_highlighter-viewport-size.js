@@ -66,9 +66,7 @@ add_task(async function () {
   );
   rulersToggleButton.click();
   // wait until we get the highlighter
-  const rulersHighlighterFront = await waitFor(() =>
-    front.getKnownHighlighter(TYPES.RULERS)
-  );
+  const rulersHighlighterFront = await front.getHighlighterByType(TYPES.RULERS);
   await waitFor(async () => {
     const hidden = await isRulersHighlighterHidden(
       rulersHighlighterFront,

@@ -27,6 +27,11 @@ include $(CORE_DEPTH)/coreconf/config.mk
 
 include ../common/gtest.mk
 
+# Don't link this test with the shared smime library, because we must
+# be able to use internal symbols.
+# manifest.mn uses EXTRA_LIBS to link with the static library.
+EXTRA_SHARED_LIBS := $(filter-out -lsmime3,$(EXTRA_SHARED_LIBS))
+
 #######################################################################
 # (5) Execute "global" rules. (OPTIONAL)                              #
 #######################################################################

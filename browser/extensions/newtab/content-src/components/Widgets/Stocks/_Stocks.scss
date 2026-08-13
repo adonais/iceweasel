@@ -1,0 +1,248 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
+
+.stocks {
+  @include widget-base-style;
+
+  &.small-widget {
+    grid-row: span 1;
+  }
+
+  &.medium-widget {
+    grid-row: span 2;
+    padding-block-start: var(--space-large);
+  }
+
+  &.large-widget {
+    grid-row: span 4;
+    padding-block-start: var(--space-large);
+  }
+}
+
+.stocks-title-wrapper {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.stocks-title {
+  color: var(--text-color-deemphasized);
+  font-size: var(--font-size-small);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stocks-context-menu-wrapper {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.stocks:hover,
+.stocks:focus-within {
+  .stocks-context-menu-wrapper {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.stocks-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.stocks-error {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+  color: var(--text-color-deemphasized);
+
+  .icon-info-warning {
+    flex-shrink: 0;
+    inline-size: var(--icon-size);
+    block-size: var(--icon-size);
+  }
+
+  .stocks-error-text {
+    margin: 0;
+    font-size: var(--font-size-small);
+  }
+}
+
+.large-widget .stocks-error {
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+}
+
+.stocks-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-small) var(--space-medium);
+  margin: var(--space-medium) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stock-ticker {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+  flex: 1;
+}
+
+.stock-ticker-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.stock-indicator {
+  flex-shrink: 0;
+  inline-size: var(--size-item-medium);
+  block-size: var(--size-item-medium);
+  border-radius: var(--border-radius-small);
+  border: 0.75px solid var(--border-color);
+  background-color: var(--background-color-canvas);
+  background-repeat: no-repeat;
+  background-position: center;
+  -moz-context-properties: fill;
+  fill: var(--icon-color);
+}
+
+.stock-indicator--up {
+  fill: var(--icon-color-success);
+  background-color: var(--background-color-success);
+  background-image: url('chrome://global/skin/icons/shaft-arrow-up.svg');
+}
+
+.stock-indicator--down {
+  fill: var(--icon-color-critical);
+  background-color: var(--background-color-critical);
+  background-image: url('chrome://global/skin/icons/shaft-arrow-down.svg');
+}
+
+.stock-indicator--flat {
+  // The arrow (shaft-arrow-right or -left, chosen for text direction) is set on
+  // the element in StockTicker.jsx.
+  background-color: var(--background-color-canvas);
+}
+
+.stock-ticker-label {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+.stock-ticker-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xsmall);
+}
+
+.stock-ticker-symbol {
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-small);
+  color: var(--text-color);
+}
+
+.stock-ticker-dot {
+  inline-size: 2px;
+  block-size: 2px;
+  border-radius: var(--border-radius-circle);
+  background-color: var(--text-color-deemphasized);
+}
+
+.stock-ticker-price {
+  font-size: var(--newtab-font-size-xsmall);
+  color: var(--text-color-deemphasized);
+}
+
+.stock-ticker-change {
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-small);
+}
+
+.stocks-grid--loading .stock-indicator,
+.stocks-grid--loading .stock-ticker-symbol,
+.stocks-grid--loading .stock-ticker-price,
+.stocks-grid--loading .stock-ticker-change,
+.stocks-list--loading .stock-indicator,
+.stocks-list--loading .stock-ticker-name,
+.stocks-list--loading .stock-ticker-symbol,
+.stocks-list--loading .stock-ticker-price,
+.stocks-list--loading .stock-ticker-change {
+  opacity: 0.4;
+}
+
+.stocks-list {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--space-xxlarge) - var(--space-xxsmall));
+  margin: var(--space-small) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stock-ticker--large {
+  // Large rows span the full card width instead of flexing like grid cells.
+  inline-size: auto;
+  gap: var(--space-large);
+}
+
+.stock-ticker--large .stock-indicator {
+  inline-size: var(--size-item-large);
+  block-size: var(--size-item-large);
+  border-width: var(--border-width);
+  background-size: var(--icon-size);
+}
+
+.stock-ticker--large .stock-ticker-label {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.stock-ticker--large .stock-ticker-line {
+  min-inline-size: 0;
+}
+
+.stock-ticker-name {
+  // No flex-grow so the ticker sits next to the name; min-inline-size: 0 (here
+  // and on the label) lets the name ellipsize only when it is too long.
+  min-inline-size: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-weight: var(--font-weight-semibold);
+}
+
+.stock-ticker--large .stock-ticker-symbol,
+.stock-ticker--large .stock-ticker-dot {
+  flex-shrink: 0;
+}
+
+.stock-ticker--large .stock-ticker-symbol {
+  font-weight: var(--font-weight);
+  color: var(--text-color-deemphasized);
+}
+
+.stock-ticker--large .stock-ticker-price {
+  font-size: var(--font-size-small);
+}
+
+// The dot is a filled shape; forced-colors resets background-color, so pin it to
+// a system colour to keep the separator visible in High Contrast Mode.
+@media (forced-colors: active) {
+  .stock-ticker-dot {
+    background-color: CanvasText;
+  }
+}

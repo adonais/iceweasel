@@ -198,7 +198,9 @@ add_task(async function test_form_history_delete() {
     "Should have selected the first entry"
   );
   Assert.equal(
-    searchPopup.children[2].selectedItems[0].getAttribute("ac-value"),
+    searchPopup.children[2].selectedItems[0].querySelector(
+      "autocomplete-row-item"
+    )?.value,
     "first",
     "Should have selected the expected first result"
   );
@@ -228,7 +230,9 @@ add_task(async function test_form_history_delete() {
     "Should have the second entry selected; now in the first index"
   );
   Assert.equal(
-    searchPopup.children[2].selectedItems[0].getAttribute("ac-value"),
+    searchPopup.children[2].selectedItems[0].querySelector(
+      "autocomplete-row-item"
+    )?.value,
     "second",
     "Should have selected the second item in the list"
   );

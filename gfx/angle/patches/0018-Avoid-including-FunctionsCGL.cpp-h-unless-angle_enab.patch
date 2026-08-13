@@ -1,0 +1,39 @@
+From 337fbe2239817261f1d058cad58c2288cbac66a4 Mon Sep 17 00:00:00 2001
+From: Jamie Nicol <jnicol@mozilla.com>
+Date: Tue, 16 Jun 2026 13:33:11 +0100
+Subject: [PATCH] Avoid including FunctionsCGL.cpp/h unless angle_enable_cgl is
+ set
+
+Because gn_processor.py does not distinguish between macOS and iOS
+builds, these files were being pulled into the iOS build, causing it
+to fail.
+
+We purposefully do not enable ANGLE's GL backend, which means CGL is
+disabled too. We can therefore avoid compiling these files altogether.
+---
+ src/libGLESv2.gni | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/src/libGLESv2.gni b/src/libGLESv2.gni
+index ce5ab0ba89..c9db7dc180 100644
+--- a/src/libGLESv2.gni
++++ b/src/libGLESv2.gni
+@@ -133,10 +133,14 @@ if (is_apple) {
+     "src/common/system_utils_posix.cpp",
+   ]
+   if (is_mac) {
++    libangle_common_sources += [
++      "src/common/system_utils_mac.cpp",
++    ]
++  }
++  if (angle_enable_cgl) {
+     libangle_common_sources += [
+       "src/common/gl/cgl/FunctionsCGL.cpp",
+       "src/common/gl/cgl/FunctionsCGL.h",
+-      "src/common/system_utils_mac.cpp",
+     ]
+   }
+   if (is_ios) {
+-- 
+2.54.0
+

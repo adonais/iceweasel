@@ -79,7 +79,7 @@ internal sealed class BookmarksListSortOrder {
  * @property bookmarksEditFolderState State representing the edit folder subscreen, if visible.
  * @property bookmarksMultiselectMoveState State representing multi-select moving.
  * @property isLoading State representing if the initial load has completed.
- * @property isSearching State representing if currently in search mode.
+ * @property searchState Represents the search state of the bookmark screen.
  */
 internal data class BookmarksState(
     val bookmarkItems: List<BookmarkItem>,
@@ -100,8 +100,14 @@ internal data class BookmarksState(
     val bookmarksEditFolderState: BookmarksEditFolderState?,
     val bookmarksMultiselectMoveState: MultiselectMoveState?,
     val isLoading: Boolean,
-    val isSearching: Boolean,
+    val searchState: SearchState? = null,
 ) : State {
+    val isSearching: Boolean
+        get() = searchState != null
+
+    val canEnterSearch: Boolean
+        get() = !isLoading && !isSearching && bookmarkItems.isNotEmpty()
+
     val showNewFolderButton: Boolean
         get() = bookmarksSelectFolderState?.innerSelectionGuid == null &&
             bookmarksAddFolderState == null && bookmarksEditFolderState == null
@@ -126,10 +132,14 @@ internal data class BookmarksState(
             bookmarksEditFolderState = null,
             bookmarksMultiselectMoveState = null,
             isLoading = true,
-            isSearching = false,
+            searchState = null,
         )
     }
 }
+
+internal data class SearchState(
+    val searchQuery: String = "",
+)
 
 internal fun BookmarksState.isGuidBeingMoved(guid: String): Boolean {
     return bookmarksMultiselectMoveState?.guidsToMove?.contains(guid) ?: false ||

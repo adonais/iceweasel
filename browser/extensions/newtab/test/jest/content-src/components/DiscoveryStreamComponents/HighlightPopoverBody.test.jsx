@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { render } from "@testing-library/react";
+import { render, fireEvent } from "@testing-library/react";
 import { HighlightPopoverBody } from "content-src/components/DiscoveryStreamComponents/FeatureHighlight/HighlightPopoverBody";
 
 const defaultBody = {
@@ -94,5 +94,65 @@ describe("<HighlightPopoverBody>", () => {
       container.querySelector('source[media="(prefers-color-scheme: light)"]')
         .srcset
     ).toBe("light.png");
+  });
+
+  it("renders no CTA button when the body has no cta", () => {
+    const { container } = render(
+      <HighlightPopoverBody
+        body={defaultBody}
+        content={{}}
+        onCtaClick={jest.fn()}
+      />
+    );
+    expect(container.querySelector(".button-wrapper")).toBeNull();
+  });
+
+  it("renders no CTA button when a cta exists but onCtaClick is missing", () => {
+    const { container } = render(
+      <HighlightPopoverBody
+        body={{ ...defaultBody, cta: { l10nId: "default-cta-id" } }}
+        content={{}}
+      />
+    );
+    expect(container.querySelector(".button-wrapper")).toBeNull();
+  });
+
+  it("renders the CTA moz-button from the registry default cta l10n id", () => {
+    const { container } = render(
+      <HighlightPopoverBody
+        body={{ ...defaultBody, cta: { l10nId: "default-cta-id" } }}
+        content={{}}
+        onCtaClick={jest.fn()}
+      />
+    );
+    const button = container.querySelector(".button-wrapper moz-button");
+    expect(button).toBeInTheDocument();
+    expect(button.getAttribute("data-l10n-id")).toBe("default-cta-id");
+  });
+
+  it("renders a raw cardCta label over the default l10n id", () => {
+    const { container } = render(
+      <HighlightPopoverBody
+        body={{ ...defaultBody, cta: { l10nId: "default-cta-id" } }}
+        content={{ cardCta: "Raw CTA" }}
+        onCtaClick={jest.fn()}
+      />
+    );
+    const button = container.querySelector(".button-wrapper moz-button");
+    expect(button.getAttribute("label")).toBe("Raw CTA");
+    expect(button.hasAttribute("data-l10n-id")).toBe(false);
+  });
+
+  it("calls onCtaClick when the CTA button is clicked", () => {
+    const onCtaClick = jest.fn();
+    const { container } = render(
+      <HighlightPopoverBody
+        body={{ ...defaultBody, cta: { l10nId: "default-cta-id" } }}
+        content={{}}
+        onCtaClick={onCtaClick}
+      />
+    );
+    fireEvent.click(container.querySelector(".button-wrapper moz-button"));
+    expect(onCtaClick).toHaveBeenCalledTimes(1);
   });
 });

@@ -641,8 +641,11 @@ void update_plc_state(LPCNetPLCState *lpcnet, celt_sig *decode_mem[2], float *pl
    int i;
    int tmp_read_post, tmp_fec_skip;
    int offset;
-   celt_sig buf48k[DECODE_BUFFER_SIZE];
-   opus_int16 buf16k[PLC_UPDATE_SAMPLES];
+   VARDECL(celt_sig, buf48k);
+   VARDECL(opus_int16, buf16k);
+   SAVE_STACK;
+   ALLOC(buf48k, DECODE_BUFFER_SIZE, celt_sig);
+   ALLOC(buf16k, PLC_UPDATE_SAMPLES, opus_int16);
    if (CC == 1) OPUS_COPY(buf48k, decode_mem[0], DECODE_BUFFER_SIZE);
    else {
       for (i=0;i<DECODE_BUFFER_SIZE;i++) {
@@ -669,6 +672,7 @@ void update_plc_state(LPCNetPLCState *lpcnet, celt_sig *decode_mem[2], float *pl
    }
    lpcnet->fec_read_pos = tmp_read_post;
    lpcnet->fec_skip = tmp_fec_skip;
+   RESTORE_STACK;
 }
 #endif
 
@@ -1471,7 +1475,7 @@ int celt_decode_with_ec_dred(CELTDecoder * OPUS_RESTRICT st, const unsigned char
    }
    ALLOC(extra_quant, nbEBands+NB_QEXT_BANDS, int);
    ALLOC(extra_pulses, nbEBands+NB_QEXT_BANDS, int);
-   qext_bits = ((opus_int32)qext_bytes*8<<BITRES) - (opus_int32)ec_tell_frac(dec) - 1;
+   qext_bits = ((opus_int32)qext_bytes*8<<BITRES) - (opus_int32)ec_tell_frac(&ext_dec) - 1;
    clt_compute_extra_allocation(mode, qext_mode, start, end, qext_end, NULL, NULL,
          qext_bits, extra_pulses, extra_quant, C, LM, &ext_dec, 0, 0, 0);
    if (qext_bytes > 0) {
@@ -1504,7 +1508,7 @@ int celt_decode_with_ec_dred(CELTDecoder * OPUS_RESTRICT st, const unsigned char
       ec_dec_init(&dummy_dec, NULL, 0);
       OPUS_CLEAR(zeros, end);
       ext_balance = qext_bytes*(8<<BITRES) - ec_tell_frac(&ext_dec);
-      for (i=0;i<qext_end;i++) ext_balance -= extra_pulses[nbEBands+i] + C*(extra_quant[nbEBands+1]<<BITRES);
+      for (i=0;i<qext_end;i++) ext_balance -= extra_pulses[nbEBands+i] + C*(extra_quant[nbEBands+i]<<BITRES);
       unquant_fine_energy(qext_mode, 0, qext_end, st->qext_oldBandE, NULL, &extra_quant[nbEBands], &ext_dec, C);
       quant_all_bands(0, qext_mode, 0, qext_end, X, C==2 ? X+N : NULL, qext_collapse_masks,
             NULL, &extra_pulses[nbEBands], shortBlocks, spread_decision, qext_dual_stereo, qext_intensity, zeros,

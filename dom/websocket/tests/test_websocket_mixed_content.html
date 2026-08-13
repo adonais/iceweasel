@@ -46,10 +46,18 @@ function testWebSocketSecure () {
 // Negative test: this should fail as the page was loaded over https
 function testWebSocketInsecure () {
   try {
-    new WebSocket("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket_hello");
-    ok(false, "Should throw DOMException");
+    let ws = new WebSocket("ws://mochi.test:8888/tests/dom/websocket/tests/file_websocket_hello");
+    ws.onerror = function() {
+      ok(true, "onerror should be called");
+      nextIFrameTest();
+    };
+    ws.onopen = function() {
+      ok(false, "onopen should not be called for insecure websocket in secure context");
+      ws.close();
+      nextIFrameTest();
+    };
   } catch (e) {
-    ok(e instanceof DOMException, "DOMException thrown ");
+    ok(false, "Should not throw DOMException synchronously: " + e);
     nextIFrameTest();
   }
 }

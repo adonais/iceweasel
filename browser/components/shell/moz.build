@@ -23,12 +23,18 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
     ]
 
     SOURCES += [
-        "nsMacShellService.cpp",
+        "nsMacShellService.mm",
     ]
 
     LOCAL_INCLUDES += [
         # For CocoaFileUtils
         "/xpcom/io"
+    ]
+
+    # UniformTypeIdentifiers only exists on macOS 11+; weak-link it so builds
+    # targeting older macOS still load (its use is guarded by @available).
+    OS_LIBS += [
+        "-weak_framework UniformTypeIdentifiers",
     ]
 elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
     XPIDL_SOURCES += [
@@ -62,17 +68,29 @@ elif CONFIG["OS_ARCH"] == "WINNT":
         "nsWindowsShellService.cpp",
         "Windows11TaskbarPinning.cpp",
         "WindowsDefaultBrowser.cpp",
+        "WindowsUIElement.cpp",
+        "WindowsUIOverlayImage.cpp",
         "WindowsUserChoice.cpp",
+    ]
+    MOZ_SRC_FILES += [
+        "CustomIconManager.sys.mjs",
     ]
     LOCAL_INCLUDES += [
         "../../../other-licenses/nsis/Contrib/CityHash/cityhash",
         "/toolkit/xre",
+        "rust/shell_windows/src",
     ]
     OS_LIBS += [
         "bcrypt",
         "crypt32",
         "propsys",
+        "windowscodecs",
     ]
+
+    FINAL_TARGET_FILES.components.shell.assets += [
+        "assets/kit.gif",
+    ]
+
     FINAL_TARGET_FILES += ["content/blank.pdf", "content/confused_fox.pdf"]
 
     MOZ_SRC_FILES += [

@@ -6,7 +6,7 @@
 let btp;
 
 async function assertProtectionsPanelCounter(value) {
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     async () => (await TrackingDBService.sumAllEvents()) == value,
     "Waiting for TrackingDBService to record the tracker stats from the purge."
   );

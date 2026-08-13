@@ -127,6 +127,14 @@ async function deleteOnShutdown(opt) {
     let uri = Services.io.newURI("https://www.example.com");
     PermissionTestUtils.add(uri, "cookie", opt.cookiePermission);
   }
+  if (opt.shutdownException !== undefined) {
+    let uri = Services.io.newURI("https://www.example.com");
+    PermissionTestUtils.add(
+      uri,
+      "persist-data-on-shutdown",
+      opt.shutdownException
+    );
+  }
 
   // Let's create a tab with some data.
   await opt.createData(
@@ -179,6 +187,10 @@ async function deleteOnShutdown(opt) {
   if (opt.cookiePermission !== undefined) {
     let uri = Services.io.newURI("https://www.example.com");
     PermissionTestUtils.remove(uri, "cookie");
+  }
+  if (opt.shutdownException !== undefined) {
+    let uri = Services.io.newURI("https://www.example.com");
+    PermissionTestUtils.remove(uri, "persist-data-on-shutdown");
   }
 }
 
@@ -241,13 +253,13 @@ function runAllCookiePermissionTests(originAttributes) {
     });
   });
 
-  // All is session, but with ALLOW custom permission, data in example.com,
-  // cookie permission set for www.example.com
+  // All is session, but with persist-data-on-shutdown ALLOW exception for
+  // www.example.com, data in example.com.
   tests.forEach(methods => {
     add_task(async function deleteStorageWithCustomPermission() {
       info(
         methods.name +
-          ": All is session, but with ALLOW custom permission, data in example.com, cookie permission set for www.example.com - OA: " +
+          ": All is session, but with persist-data-on-shutdown ALLOW exception, data in example.com, exception set for www.example.com - OA: " +
           originAttributes.name
       );
       await deleteOnShutdown({
@@ -255,7 +267,7 @@ function runAllCookiePermissionTests(originAttributes) {
         createData: methods.createData,
         checkData: methods.checkData,
         originAttributes: originAttributes.oa,
-        cookiePermission: Ci.nsICookiePermission.ACCESS_ALLOW,
+        shutdownException: Services.perms.ALLOW_ACTION,
         expectedForOrg: false,
         expectedForCom: true,
         fullHost: false,
@@ -263,13 +275,13 @@ function runAllCookiePermissionTests(originAttributes) {
     });
   });
 
-  // All is session, but with ALLOW custom permission, data in www.example.com,
-  // cookie permission set for www.example.com
+  // All is session, but with persist-data-on-shutdown ALLOW exception for
+  // www.example.com, data in www.example.com.
   tests.forEach(methods => {
     add_task(async function deleteStorageWithCustomPermission() {
       info(
         methods.name +
-          ": All is session, but with ALLOW custom permission, data in www.example.com, cookie permission set for www.example.com - OA: " +
+          ": All is session, but with persist-data-on-shutdown ALLOW exception, data in www.example.com, exception set for www.example.com - OA: " +
           originAttributes.name
       );
       await deleteOnShutdown({
@@ -277,7 +289,7 @@ function runAllCookiePermissionTests(originAttributes) {
         createData: methods.createData,
         checkData: methods.checkData,
         originAttributes: originAttributes.oa,
-        cookiePermission: Ci.nsICookiePermission.ACCESS_ALLOW,
+        shutdownException: Services.perms.ALLOW_ACTION,
         expectedForOrg: false,
         expectedForCom: true,
         fullHost: true,

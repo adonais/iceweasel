@@ -5,12 +5,11 @@
 #include "nsIDeviceContextSpec.h"
 
 #include "gfxPoint.h"
+#include "mozilla/Components.h"
+#include "mozilla/TaskQueue.h"
 #include "mozilla/gfx/PrintPromise.h"
 #include "nsError.h"
 #include "nsIPrintSettings.h"
-
-#include "mozilla/Components.h"
-#include "mozilla/TaskQueue.h"
 
 using mozilla::MakeRefPtr;
 using mozilla::gfx::PrintEndDocumentPromise;

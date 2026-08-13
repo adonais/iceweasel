@@ -5,8 +5,8 @@
 #ifndef nsIIdleRunnable_h_
 #define nsIIdleRunnable_h_
 
-#include "nsISupports.h"
 #include "mozilla/TimeStamp.h"
+#include "nsISupports.h"
 
 #define NS_IIDLERUNNABLE_IID \
   {0x688be92e, 0x7ade, 0x4fdc, {0x9d, 0x83, 0x74, 0xcb, 0xef, 0xf4, 0xa5, 0x2c}}

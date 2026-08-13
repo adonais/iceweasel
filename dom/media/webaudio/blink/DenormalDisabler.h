@@ -27,6 +27,9 @@
 
 #include <float.h>
 
+#if defined(__GNUC__) && defined(__SSE__) && !defined(__x86_64__)
+#  include <cstdint>
+#endif
 #include <cmath>
 #include <cstring>
 

@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/SchedulerGroup.h"
+
 #include "nsThreadUtils.h"
 
 namespace mozilla {

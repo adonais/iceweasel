@@ -38,16 +38,7 @@ function testMultipleInitialization(doc) {
 
   is(span.style.display, "none", "The original <span> is hidden");
   is(doc.querySelectorAll("input").length, 1, "Only one <input>");
-  is(
-    doc.querySelectorAll("span").length,
-    2,
-    "Correct number of <span> elements"
-  );
-  is(
-    doc.querySelectorAll("span.autosizer").length,
-    1,
-    "There is an autosizer element"
-  );
+  is(doc.querySelectorAll("span").length, 1, "Only one <span>");
 }
 
 function testReturnCommit(doc) {

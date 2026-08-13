@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "jit/IonCacheIRCompiler.h"
+
 #include "mozilla/Maybe.h"
 
 #include <algorithm>
@@ -2124,7 +2125,7 @@ void IonIC::attachCacheIRStub(JSContext* cx, const CacheIRWriter& writer,
     }
   }
 
-  attachStub(newStub, code);
+  attachStub(ionScript, newStub, code);
   *attached = true;
 }
 

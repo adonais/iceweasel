@@ -35,13 +35,13 @@ add_task(async function test_newtab_tab_close_sends_ping() {
     false // waitForLoad; about:newtab is cached so this would never resolve
   );
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => sendTriggerMessageSpy.called,
     "After about:newtab finishes loading"
   );
   sendTriggerMessageSpy.resetHistory();
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !!Glean.newtab.opened.testGetValue("newtab"),
     "We expect the newtab open to be recorded"
   );
@@ -72,7 +72,7 @@ add_task(async function test_newtab_tab_close_sends_ping() {
   });
 
   BrowserTestUtils.removeTab(tab);
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => pingSubmitted,
     "We expect the ping to have submitted."
   );
@@ -95,13 +95,13 @@ add_task(async function test_newtab_tab_nav_sends_ping() {
     false // waitForLoad; about:newtab is cached so this would never resolve
   );
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => sendTriggerMessageSpy.called,
     "After about:newtab finishes loading"
   );
   sendTriggerMessageSpy.resetHistory();
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !!Glean.newtab.opened.testGetValue("newtab"),
     "We expect the newtab open to be recorded"
   );
@@ -132,7 +132,7 @@ add_task(async function test_newtab_tab_nav_sends_ping() {
   });
 
   BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, "about:mozilla");
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => pingSubmitted,
     "We expect the ping to have submitted."
   );
@@ -160,13 +160,13 @@ add_task(async function test_newtab_doesnt_send_pref() {
     false // waitForLoad; about:newtab is cached so this would never resolve
   );
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => sendTriggerMessageSpy.called,
     "After about:newtab finishes loading"
   );
   sendTriggerMessageSpy.resetHistory();
 
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !!Glean.newtab.opened.testGetValue("newtab"),
     "We expect the newtab open to be recorded"
   );
@@ -180,7 +180,7 @@ add_task(async function test_newtab_doesnt_send_pref() {
   });
   BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, "about:mozilla");
   BrowserTestUtils.removeTab(tab);
-  await BrowserTestUtils.waitForCondition(() => {
+  await TestUtils.waitForCondition(() => {
     let { sessions } =
       AboutNewTab.activityStream.store.feeds.get("feeds.telemetry");
     return !Array.from(sessions.entries()).filter(
@@ -238,13 +238,13 @@ add_task(async function test_newtab_highlights_enabled_pref() {
         false // waitForLoad; about:newtab is cached so this would never resolve
       );
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => sendTriggerMessageSpy.called,
         "After about:newtab finishes loading"
       );
       sendTriggerMessageSpy.resetHistory();
 
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () => !!Glean.newtab.opened.testGetValue("newtab"),
         "We expect the newtab open to be recorded"
       );

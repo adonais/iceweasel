@@ -1984,8 +1984,8 @@ secmod_MkAppendTokensList(PLArenaPool *arena, char *oldParam, char *newToken,
         goto loser;
     }
 
-    PORT_Strcpy(newParam, oldParam);
-    tmpLen = strlen(oldParam);
+    PORT_Strcpy(newParam, rawParam);
+    tmpLen = strlen(rawParam);
     nextParam = newParam + tmpLen;
     length -= tmpLen;
     PORT_Memcpy(nextParam, TOKEN_STRING, sizeof(TOKEN_STRING) - 1);

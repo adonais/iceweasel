@@ -4,24 +4,23 @@
 
 #include "gfxMacFont.h"
 
+#include <algorithm>
+
+#include "AppleUtils.h"
+#include "CoreTextFontList.h"
+#include "cairo-quartz.h"
+#include "gfxContext.h"
+#include "gfxCoreTextShaper.h"
+#include "gfxFontConstants.h"
+#include "gfxFontUtils.h"
+#include "gfxHarfBuzzShaper.h"
+#include "gfxPlatformMac.h"
+#include "gfxTextRun.h"
+#include "gfxUtils.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/gfx/ScaledFontMac.h"
-
-#include <algorithm>
-
-#include "CoreTextFontList.h"
-#include "gfxCoreTextShaper.h"
-#include "gfxPlatformMac.h"
-#include "gfxContext.h"
-#include "gfxFontUtils.h"
-#include "gfxHarfBuzzShaper.h"
-#include "gfxFontConstants.h"
-#include "gfxTextRun.h"
-#include "gfxUtils.h"
-#include "AppleUtils.h"
-#include "cairo-quartz.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;
@@ -189,10 +188,11 @@ gfxFont::RunMetrics gfxMacFont::Measure(const gfxTextRun* aTextRun,
                                         BoundingBoxType aBoundingBoxType,
                                         DrawTarget* aRefDrawTarget,
                                         Spacing* aSpacing,
+                                        nscoord aLetterSpacing,
                                         gfx::ShapedTextFlags aOrientation) {
   gfxFont::RunMetrics metrics =
       gfxFont::Measure(aTextRun, aStart, aEnd, aBoundingBoxType, aRefDrawTarget,
-                       aSpacing, aOrientation);
+                       aSpacing, aLetterSpacing, aOrientation);
 
   // if aBoundingBoxType is not TIGHT_HINTED_OUTLINE_EXTENTS then we need to add
   // a pixel column each side of the bounding box in case of antialiasing

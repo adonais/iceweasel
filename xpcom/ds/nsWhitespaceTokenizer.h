@@ -6,8 +6,8 @@
 #define _nsWhitespaceTokenizer_h
 
 #include "mozilla/RangedPtr.h"
-#include "nsDependentSubstring.h"
 #include "nsCRTGlue.h"
+#include "nsDependentSubstring.h"
 
 template <typename DependentSubstringType, bool IsWhitespace(char16_t)>
 class nsTWhitespaceTokenizer {

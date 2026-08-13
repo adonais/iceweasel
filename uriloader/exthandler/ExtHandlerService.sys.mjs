@@ -22,6 +22,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   kHandlerListVersion: "resource://gre/modules/handlers/HandlerList.sys.mjs",
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
   JSONFile: "resource://gre/modules/JSONFile.sys.mjs",
+  NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
 });
 
 XPCOMUtils.defineLazyServiceGetter(
@@ -542,11 +543,21 @@ HandlerService.prototype = {
         // the same here.
         handlerInfo.preferredAction = useHelperApp;
       }
+      // New installations should default to always asking how to handle mailto
+      // links (showing the handler picker) rather than silently using an OS
+      // default. This applies only to the unconfigured stub; once the user
+      // makes a choice and it is stored, their preference is respected.
+      if (
+        type == "mailto" &&
+        lazy.NimbusFeatures.mailto.getVariable("dialog")
+      ) {
+        handlerInfo.alwaysAskBeforeHandling = true;
+      }
     }
-    // If it *is* a stub, don't override alwaysAskBeforeHandling or the
-    // preferred actions. Instead, just append the stored handlers, without
-    // overriding the preferred app, and then schedule a task to store proper
-    // info for this handler.
+    // If it *is* a stub, don't override alwaysAskBeforeHandling (except for the
+    // mailto picker above) or the preferred actions. Instead, just append the
+    // stored handlers, without overriding the preferred app, and then schedule
+    // a task to store proper info for this handler.
     this._appendStoredHandlers(handlerInfo, storedHandlerInfo.handlers, isStub);
 
     if (this._isMIMEInfo(handlerInfo) && storedHandlerInfo.extensions) {

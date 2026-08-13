@@ -66,7 +66,7 @@ async function testSimpleReload() {
 async function testResponseBodyLimits() {
   {
     info("Test response body limit (non zero).");
-    await pushPref("devtools.netmonitor.responseBodyLimit", 10);
+    await pushPref("devtools.netmonitor.bodyLimit", 10);
     const { tab, monitor, toolbox } = await initNetMonitor(HTTPS_SIMPLE_URL, {
       requestCount: 1,
     });
@@ -82,7 +82,7 @@ async function testResponseBodyLimits() {
   }
 
   {
-    await pushPref("devtools.netmonitor.responseBodyLimit", 0);
+    await pushPref("devtools.netmonitor.bodyLimit", 0);
     info("Test response body limit (zero).");
 
     const { tab, monitor, toolbox } = await initNetMonitor(HTTPS_SIMPLE_URL, {

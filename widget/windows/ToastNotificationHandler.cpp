@@ -6,8 +6,8 @@
 
 #include <windows.foundation.h>
 
-#include "gfxUtils.h"
 #include "gfxPlatform.h"
+#include "gfxUtils.h"
 #include "imgIContainer.h"
 #include "imgIRequest.h"
 #include "json/json.h"
@@ -15,9 +15,13 @@
 #ifdef MOZ_BACKGROUNDTASKS
 #  include "mozilla/BackgroundTasks.h"
 #endif
+#include "ToastNotification.h"
+#include "ToastNotificationHeaderOnlyUtils.h"
+#include "WidgetUtils.h"
+#include "WinUtils.h"
 #include "mozilla/JSONStringWriteFuncs.h"
-#include "mozilla/Result.h"
 #include "mozilla/Logging.h"
+#include "mozilla/Result.h"
 #include "mozilla/Tokenizer.h"
 #include "mozilla/WindowsVersion.h"
 #include "mozilla/intl/Localization.h"
@@ -36,11 +40,6 @@
 #include "nsPIDOMWindow.h"
 #include "nsProxyRelease.h"
 #include "nsXREDirProvider.h"
-#include "ToastNotificationHeaderOnlyUtils.h"
-#include "WidgetUtils.h"
-#include "WinUtils.h"
-
-#include "ToastNotification.h"
 
 namespace mozilla {
 namespace widget {

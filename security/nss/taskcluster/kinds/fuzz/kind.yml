@@ -41,477 +41,477 @@ task-defaults:
         kind: test
 
 tasks:
-    linux64-asn1:
+    linux-x64-asn1:
         description: Linux x64 ASN1
         dependencies:
-            build: build-linux64/debug-fuzz
+            build: build-linux-x64/debug-fuzz
         treeherder:
             symbol: ASN1
-            platform: linux64/debug-fuzz
+            platform: linux-x64/debug-fuzz
         task-context:
             from-object:
                 target: asn1
                 corpus: asn1
 
-    linux64-certdn:
+    linux-x64-certdn:
         description: Linux x64 CertDN
         dependencies:
-            build: build-linux64/debug-fuzz
+            build: build-linux-x64/debug-fuzz
         treeherder:
             symbol: CertDN
-            platform: linux64/debug-fuzz
+            platform: linux-x64/debug-fuzz
         task-context:
             from-object:
                 target: certDN
                 corpus: certDN
 
-    linux64-dsau:
+    linux-x64-dsau:
         description: Linux x64 DSAU
         dependencies:
-            build: build-linux64/debug-fuzz
+            build: build-linux-x64/debug-fuzz
         treeherder:
             symbol: DSAU
-            platform: linux64/debug-fuzz
+            platform: linux-x64/debug-fuzz
         task-context:
             from-object:
                 target: dsau
                 corpus: dsau
 
-    linux64-ec-derive:
+    linux-x64-ec-derive:
         description: Linux x64 EC Derive
         dependencies:
-            build: build-linux64/debug-fuzz
+            build: build-linux-x64/debug-fuzz
         treeherder:
             symbol: ECDerive
-            platform: linux64/debug-fuzz
+            platform: linux-x64/debug-fuzz
         task-context:
             from-object:
                 target: ec-derive
                 corpus: ec-derive
 
-    linux64-ech:
+    linux-x64-ech:
         description: Linux x64 ECH
         dependencies:
-            build: build-linux64/debug-fuzz
+            build: build-linux-x64/debug-fuzz
         treeherder:
             symbol: ECH
-            platform: linux64/debug-fuzz
+            platform: linux-x64/debug-fuzz
         task-context:
             from-object:
                 target: ech
                 corpus: ech
 
-    linux64-pkcs7:
+    linux-x64-pkcs7:
         description: Linux x64 PKCS7
         dependencies:
-            build: build-linux64/debug-fuzz
+            build: build-linux-x64/debug-fuzz
         treeherder:
             symbol: PKCS7
-            platform: linux64/debug-fuzz
+            platform: linux-x64/debug-fuzz
         task-context:
             from-object:
                 target: pkcs7
                 corpus: pkcs7
 
-    linux64-pkcs8:
+    linux-x64-pkcs8:
         description: Linux x64 PKCS8
         dependencies:
-            build: build-linux64/debug-fuzz
+            build: build-linux-x64/debug-fuzz
         treeherder:
             symbol: PKCS8
-            platform: linux64/debug-fuzz
+            platform: linux-x64/debug-fuzz
         task-context:
             from-object:
                 target: pkcs8
                 corpus: pkcs8
 
-    linux64-pkcs12:
+    linux-x64-pkcs12:
         description: Linux x64 PKCS12
         dependencies:
-            build: build-linux64/debug-fuzz
+            build: build-linux-x64/debug-fuzz
         treeherder:
             symbol: PKCS12
-            platform: linux64/debug-fuzz
+            platform: linux-x64/debug-fuzz
         task-context:
             from-object:
                 target: pkcs12
                 corpus: pkcs12-no_fuzzer_mode
 
-    linux64-quickder:
+    linux-x64-quickder:
         description: Linux x64 QuickDER
         dependencies:
-            build: build-linux64/debug-fuzz
+            build: build-linux-x64/debug-fuzz
         treeherder:
             symbol: QuickDER
-            platform: linux64/debug-fuzz
+            platform: linux-x64/debug-fuzz
         task-context:
             from-object:
                 target: quickder
                 corpus: quickder
 
-    linux64-smime:
+    linux-x64-smime:
         description: Linux x64 SMIME
         dependencies:
-            build: build-linux64/debug-fuzz
+            build: build-linux-x64/debug-fuzz
         treeherder:
             symbol: SMIME
-            platform: linux64/debug-fuzz
+            platform: linux-x64/debug-fuzz
         task-context:
             from-object:
                 target: smime
                 corpus: smime
 
-    linux64-tls-client:
+    linux-x64-tls-client:
         description: Linux x64 TLS Client
         dependencies:
-            build: build-linux64/debug-fuzz
+            build: build-linux-x64/debug-fuzz
         treeherder:
             symbol: TLS-Client
-            platform: linux64/debug-fuzz
+            platform: linux-x64/debug-fuzz
         task-context:
             from-object:
                 target: tls-client
                 corpus: tls-client-no_fuzzer_mode
 
-    linux64-tls-server:
+    linux-x64-tls-server:
         description: Linux x64 TLS Server
         dependencies:
-            build: build-linux64/debug-fuzz
+            build: build-linux-x64/debug-fuzz
         treeherder:
             symbol: TLS-Server
-            platform: linux64/debug-fuzz
+            platform: linux-x64/debug-fuzz
         task-context:
             from-object:
                 target: tls-server
                 corpus: tls-server-no_fuzzer_mode
 
-    linux64-dtls-client:
+    linux-x64-dtls-client:
         description: Linux x64 DTLS Client
         dependencies:
-            build: build-linux64/debug-fuzz
+            build: build-linux-x64/debug-fuzz
         treeherder:
             symbol: DTLS-Client
-            platform: linux64/debug-fuzz
+            platform: linux-x64/debug-fuzz
         task-context:
             from-object:
                 target: dtls-client
                 corpus: dtls-client-no_fuzzer_mode
 
-    linux64-dtls-server:
+    linux-x64-dtls-server:
         description: Linux x64 DTLS Server
         dependencies:
-            build: build-linux64/debug-fuzz
+            build: build-linux-x64/debug-fuzz
         treeherder:
             symbol: DTLS-Server
-            platform: linux64/debug-fuzz
+            platform: linux-x64/debug-fuzz
         task-context:
             from-object:
                 target: dtls-server
                 corpus: dtls-server-no_fuzzer_mode
 
-    linux64-cryptofuzz:
+    linux-x64-cryptofuzz:
         description: Cryptofuzz
         dependencies:
-            build: build-linux64/debug-fuzz
+            build: build-linux-x64/debug-fuzz
         run:
             command: "${{VCS_PATH}}/nss/automation/taskcluster/scripts/cryptofuzz.sh -max_total_time={MAX_FUZZ_TIME}"
         treeherder:
             symbol: Cryptofuzz
-            platform: linux64/debug-fuzz
+            platform: linux-x64/debug-fuzz
 
-    linux64-tlsfuzz-pkcs12:
+    linux-x64-tlsfuzz-pkcs12:
         description: Linux x64 PKCS12
         dependencies:
-            build: build-linux64/debug-tlsfuzz
+            build: build-linux-x64/debug-tlsfuzz
         treeherder:
             symbol: TLS(PKCS12)
-            platform: linux64/debug-fuzz
+            platform: linux-x64/debug-fuzz
         task-context:
             from-object:
                 target: pkcs12
                 corpus: pkcs12
 
-    linux64-tlsfuzz-tls-client:
+    linux-x64-tlsfuzz-tls-client:
         description: Linux x64 TLS Client
         dependencies:
-            build: build-linux64/debug-tlsfuzz
+            build: build-linux-x64/debug-tlsfuzz
         treeherder:
             symbol: TLS(TLS-Client)
-            platform: linux64/debug-fuzz
+            platform: linux-x64/debug-fuzz
         task-context:
             from-object:
                 target: tls-client
                 corpus: tls-client
 
-    linux64-tlsfuzz-tls-server:
+    linux-x64-tlsfuzz-tls-server:
         description: Linux x64 TLS Server
         dependencies:
-            build: build-linux64/debug-tlsfuzz
+            build: build-linux-x64/debug-tlsfuzz
         treeherder:
             symbol: TLS(TLS-Server)
-            platform: linux64/debug-fuzz
+            platform: linux-x64/debug-fuzz
         task-context:
             from-object:
                 target: tls-server
                 corpus: tls-server
 
-    linux64-tlsfuzz-dtls-client:
+    linux-x64-tlsfuzz-dtls-client:
         description: Linux x64 DTLS Client
         dependencies:
-            build: build-linux64/debug-tlsfuzz
+            build: build-linux-x64/debug-tlsfuzz
         treeherder:
             symbol: TLS(DTLS-Client)
-            platform: linux64/debug-fuzz
+            platform: linux-x64/debug-fuzz
         task-context:
             from-object:
                 target: dtls-client
                 corpus: dtls-client
 
-    linux64-tlsfuzz-dtls-server:
+    linux-x64-tlsfuzz-dtls-server:
         description: Linux x64 DTLS Server
         dependencies:
-            build: build-linux64/debug-tlsfuzz
+            build: build-linux-x64/debug-tlsfuzz
         treeherder:
             symbol: TLS(DTLS-Server)
-            platform: linux64/debug-fuzz
+            platform: linux-x64/debug-fuzz
         task-context:
             from-object:
                 target: dtls-server
                 corpus: dtls-server
 
-    linux32-asn1:
+    linux-x86-asn1:
         description: Linux 32 ASN1
         dependencies:
-            build: build-linux32/debug-fuzz
+            build: build-linux-x86/debug-fuzz
         treeherder:
             symbol: ASN1
-            platform: linux32/debug-fuzz
+            platform: linux-x86/debug-fuzz
         task-context:
             from-object:
                 target: asn1
                 corpus: asn1
 
-    linux32-certdn:
+    linux-x86-certdn:
         description: Linux 32 CertDN
         dependencies:
-            build: build-linux32/debug-fuzz
+            build: build-linux-x86/debug-fuzz
         treeherder:
             symbol: CertDN
-            platform: linux32/debug-fuzz
+            platform: linux-x86/debug-fuzz
         task-context:
             from-object:
                 target: certDN
                 corpus: certDN
 
-    linux32-dsau:
+    linux-x86-dsau:
         description: Linux 32 DSAU
         dependencies:
-            build: build-linux32/debug-fuzz
+            build: build-linux-x86/debug-fuzz
         treeherder:
             symbol: DSAU
-            platform: linux32/debug-fuzz
+            platform: linux-x86/debug-fuzz
         task-context:
             from-object:
                 target: dsau
                 corpus: dsau
 
-    linux32-ec-derive:
+    linux-x86-ec-derive:
         description: Linux 32 EC Derive
         dependencies:
-            build: build-linux32/debug-fuzz
+            build: build-linux-x86/debug-fuzz
         treeherder:
             symbol: ECDerive
-            platform: linux32/debug-fuzz
+            platform: linux-x86/debug-fuzz
         task-context:
             from-object:
                 target: ec-derive
                 corpus: ec-derive
 
-    linux32-ech:
+    linux-x86-ech:
         description: Linux 32 ECH
         dependencies:
-            build: build-linux32/debug-fuzz
+            build: build-linux-x86/debug-fuzz
         treeherder:
             symbol: ECH
-            platform: linux32/debug-fuzz
+            platform: linux-x86/debug-fuzz
         task-context:
             from-object:
                 target: ech
                 corpus: ech
 
-    linux32-pkcs7:
+    linux-x86-pkcs7:
         description: Linux 32 PKCS7
         dependencies:
-            build: build-linux32/debug-fuzz
+            build: build-linux-x86/debug-fuzz
         treeherder:
             symbol: PKCS7
-            platform: linux32/debug-fuzz
+            platform: linux-x86/debug-fuzz
         task-context:
             from-object:
                 target: pkcs7
                 corpus: pkcs7
 
-    linux32-pkcs8:
+    linux-x86-pkcs8:
         description: Linux 32 PKCS8
         dependencies:
-            build: build-linux32/debug-fuzz
+            build: build-linux-x86/debug-fuzz
         treeherder:
             symbol: PKCS8
-            platform: linux32/debug-fuzz
+            platform: linux-x86/debug-fuzz
         task-context:
             from-object:
                 target: pkcs8
                 corpus: pkcs8
 
-    linux32-pkcs12:
+    linux-x86-pkcs12:
         description: Linux 32 PKCS12
         dependencies:
-            build: build-linux32/debug-fuzz
+            build: build-linux-x86/debug-fuzz
         treeherder:
             symbol: PKCS12
-            platform: linux32/debug-fuzz
+            platform: linux-x86/debug-fuzz
         task-context:
             from-object:
                 target: pkcs12
                 corpus: pkcs12-no_fuzzer_mode
 
-    linux32-quickder:
+    linux-x86-quickder:
         description: Linux 32 QuickDER
         dependencies:
-            build: build-linux32/debug-fuzz
+            build: build-linux-x86/debug-fuzz
         treeherder:
             symbol: QuickDER
-            platform: linux32/debug-fuzz
+            platform: linux-x86/debug-fuzz
         task-context:
             from-object:
                 target: quickder
                 corpus: quickder
 
-    linux32-smime:
+    linux-x86-smime:
         description: Linux 32 SMIME
         dependencies:
-            build: build-linux32/debug-fuzz
+            build: build-linux-x86/debug-fuzz
         treeherder:
             symbol: SMIME
-            platform: linux32/debug-fuzz
+            platform: linux-x86/debug-fuzz
         task-context:
             from-object:
                 target: smime
                 corpus: smime
 
-    linux32-tls-client:
+    linux-x86-tls-client:
         description: Linux 32 TLS Client
         dependencies:
-            build: build-linux32/debug-fuzz
+            build: build-linux-x86/debug-fuzz
         treeherder:
             symbol: TLS-Client
-            platform: linux32/debug-fuzz
+            platform: linux-x86/debug-fuzz
         task-context:
             from-object:
                 target: tls-client
                 corpus: tls-client-no_fuzzer_mode
 
-    linux32-tls-server:
+    linux-x86-tls-server:
         description: Linux 32 TLS Server
         dependencies:
-            build: build-linux32/debug-fuzz
+            build: build-linux-x86/debug-fuzz
         treeherder:
             symbol: TLS-Server
-            platform: linux32/debug-fuzz
+            platform: linux-x86/debug-fuzz
         task-context:
             from-object:
                 target: tls-server
                 corpus: tls-server-no_fuzzer_mode
 
-    linux32-dtls-client:
+    linux-x86-dtls-client:
         description: Linux 32 DTLS Client
         dependencies:
-            build: build-linux32/debug-fuzz
+            build: build-linux-x86/debug-fuzz
         treeherder:
             symbol: DTLS-Client
-            platform: linux32/debug-fuzz
+            platform: linux-x86/debug-fuzz
         task-context:
             from-object:
                 target: dtls-client
                 corpus: dtls-client-no_fuzzer_mode
 
-    linux32-dtls-server:
+    linux-x86-dtls-server:
         description: Linux 32 DTLS Server
         dependencies:
-            build: build-linux32/debug-fuzz
+            build: build-linux-x86/debug-fuzz
         treeherder:
             symbol: DTLS-Server
-            platform: linux32/debug-fuzz
+            platform: linux-x86/debug-fuzz
         task-context:
             from-object:
                 target: dtls-server
                 corpus: dtls-server-no_fuzzer_mode
 
-    linux32-cryptofuzz:
+    linux-x86-cryptofuzz:
         description: Cryptofuzz
         dependencies:
-            build: build-linux32/debug-fuzz
+            build: build-linux-x86/debug-fuzz
         run:
             command: "${{VCS_PATH}}/nss/automation/taskcluster/scripts/cryptofuzz.sh -max_total_time={MAX_FUZZ_TIME}"
         treeherder:
             symbol: Cryptofuzz
-            platform: linux32/debug-fuzz
+            platform: linux-x86/debug-fuzz
 
-    linux32-tlsfuzz-pkcs12:
+    linux-x86-tlsfuzz-pkcs12:
         description: Linux 32 PKCS12
         dependencies:
-            build: build-linux32/debug-tlsfuzz
+            build: build-linux-x86/debug-tlsfuzz
         treeherder:
             symbol: TLS(PKCS12)
-            platform: linux32/debug-fuzz
+            platform: linux-x86/debug-fuzz
         task-context:
             from-object:
                 target: pkcs12
                 corpus: pkcs12
 
-    linux32-tlsfuzz-tls-client:
+    linux-x86-tlsfuzz-tls-client:
         description: Linux 32 TLS Client
         dependencies:
-            build: build-linux32/debug-tlsfuzz
+            build: build-linux-x86/debug-tlsfuzz
         treeherder:
             symbol: TLS(TLS-Client)
-            platform: linux32/debug-fuzz
+            platform: linux-x86/debug-fuzz
         task-context:
             from-object:
                 target: tls-client
                 corpus: tls-client
 
-    linux32-tlsfuzz-tls-server:
+    linux-x86-tlsfuzz-tls-server:
         description: Linux 32 TLS Server
         dependencies:
-            build: build-linux32/debug-tlsfuzz
+            build: build-linux-x86/debug-tlsfuzz
         treeherder:
             symbol: TLS(TLS-Server)
-            platform: linux32/debug-fuzz
+            platform: linux-x86/debug-fuzz
         task-context:
             from-object:
                 target: tls-server
                 corpus: tls-server
 
-    linux32-tlsfuzz-dtls-client:
+    linux-x86-tlsfuzz-dtls-client:
         description: Linux 32 DTLS Client
         dependencies:
-            build: build-linux32/debug-tlsfuzz
+            build: build-linux-x86/debug-tlsfuzz
         treeherder:
             symbol: TLS(DTLS-Client)
-            platform: linux32/debug-fuzz
+            platform: linux-x86/debug-fuzz
         task-context:
             from-object:
                 target: dtls-client
                 corpus: dtls-client
 
-    linux32-tlsfuzz-dtls-server:
+    linux-x86-tlsfuzz-dtls-server:
         description: Linux 32 DTLS Server
         dependencies:
-            build: build-linux32/debug-tlsfuzz
+            build: build-linux-x86/debug-tlsfuzz
         treeherder:
             symbol: TLS(DTLS-Server)
-            platform: linux32/debug-fuzz
+            platform: linux-x86/debug-fuzz
         task-context:
             from-object:
                 target: dtls-server

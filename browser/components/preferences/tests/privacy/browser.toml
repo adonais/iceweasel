@@ -14,6 +14,8 @@ support-files = [
 ]
 tags = "os_integration"
 
+["browser_containers_dialog_size.js"]
+
 ["browser_containers_name_input.js"]
 
 ["browser_privacy_allowListPreference.js"]
@@ -60,5 +62,7 @@ skip-if = [
 ]
 
 ["browser_sanitizeOnShutdown_prefLocked.js"]
+
+["browser_shutdownClearingExceptions.js"]
 
 ["browser_warning_permanent_private_browsing.js"]

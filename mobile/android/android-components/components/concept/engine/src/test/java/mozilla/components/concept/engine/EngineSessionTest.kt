@@ -1016,6 +1016,11 @@ open class DummyEngineSession : EngineSession() {
         onException: (Throwable) -> Unit,
     ) {}
 
+    override fun getBrokenSiteReport(
+        onResult: (JSONObject) -> Unit,
+        onException: (Throwable) -> Unit,
+    ) {}
+
     override fun getWebCompatInfo(
         onResult: (JSONObject) -> Unit,
         onException: (Throwable) -> Unit,

@@ -1,0 +1,38 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+#include "nsISupports.idl"
+
+/**
+ * Scriptable entry point for mozilla::net::SSLTokensCache. Clears or removes
+ * TLS session resumption tokens (and, where noted, the NSS in-memory
+ * session cache) on behalf of JS callers such as the clear-data service and
+ * tests.
+ */
+[scriptable, uuid(2c9c9a2c-9c1a-4b6a-9c1e-6f8b0a4b8b1a)]
+interface nsISSLTokensCache : nsISupports {
+  /**
+   * Clears both the NSS in-memory session cache and all SSLTokensCache
+   * resumption tokens.
+   * WARNING: May be racy when using the socket process.
+   */
+  void clearSSLExternalAndInternalSessionCache();
+
+  /**
+   * Same as clearSSLExternalAndInternalSessionCache(), but returns a promise
+   * that resolves once the socket process (if any) has also cleared.
+   */
+  [implicit_jscontext]
+  Promise asyncClearSSLExternalAndInternalSessionCache();
+
+  /**
+   * Remove TLS session resumption tokens matching the given
+   * OriginAttributesPattern (serialized as JSON). Used by the clear-data
+   * service to honour per-partition site-data clearing.
+   */
+  void removeSSLTokensByHostAndOriginAttributesPattern(in ACString aHost,
+                                                       in AString aPattern);
+  void removeSSLTokensBySiteAndOriginAttributesPattern(in ACString aSite,
+                                                       in AString aPattern);
+};

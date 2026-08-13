@@ -13,7 +13,7 @@ Services.scriptloader.loadSubScript(
 );
 
 const assertAction = async name => {
-  await BrowserTestUtils.waitForCondition(() =>
+  await TestUtils.waitForCondition(() =>
     window.document.querySelector(`.urlbarView-action-btn[data-action=${name}]`)
   );
   Assert.ok(true, `We found action "${name}"`);
@@ -406,7 +406,7 @@ add_task(async function test_translate_switches_to_existing_tab() {
   EventUtils.synthesizeKey("KEY_Enter", {}, window);
 
   info("Wait for the existing tab to be selected");
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => gBrowser.selectedTab === translateTab,
     "Should switch to existing about:translations tab"
   );

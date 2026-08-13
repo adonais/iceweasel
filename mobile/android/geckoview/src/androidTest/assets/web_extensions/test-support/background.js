@@ -116,6 +116,35 @@ const APIS = {
   RemoveVirtualAuthenticator({ authenticatorId }) {
     return browser.test.removeVirtualAuthenticator(authenticatorId);
   },
+  SetupIPPAuthProvider({ options }) {
+    const nowSec = Math.floor(Date.now() / 1000);
+    const encode = obj => btoa(JSON.stringify(obj));
+    const proxyPassToken = [
+      encode({ alg: "HS256", typ: "JWT" }),
+      encode({
+        iat: nowSec + 1,
+        nbf: nowSec,
+        exp: nowSec + 24 * 60 * 60,
+        sub: "proxy-pass-user-42",
+        aud: "guardian-proxy",
+        iss: "vpn.mozilla.org",
+      }),
+      "signature",
+    ].join(".");
+    return browser.test.setupIPPAuthProvider({ ...options, proxyPassToken });
+  },
+  SimulateIPPSignIn({ signedIn }) {
+    return browser.test.simulateIPPSignIn(signedIn);
+  },
+  SetIPPProxyPassError({ error }) {
+    return browser.test.setIPPProxyPassError(error);
+  },
+  SetIPPProxyUsage({ usage }) {
+    return browser.test.setIPPProxyUsage(usage);
+  },
+  GetIPPProxyInfo() {
+    return browser.test.getIPPProxyInfo();
+  },
 };
 
 port.onMessage.addListener(async message => {

@@ -393,8 +393,8 @@ function TimeKeeper(props) {
         Math.floor((max.valueOf() - min.valueOf()) / step) * step;
       let steps = [];
 
-      // Increment by timeStep until reaching the end of the range.
-      while (time <= endValue) {
+      // Increment by timeStep until reaching the end of the range. We always want at least one step.
+      do {
         steps.push({
           value: formatter(time),
           // Check if the value is within the min and max. If it's out of range,
@@ -412,7 +412,7 @@ function TimeKeeper(props) {
               formatter(time) == formatter(maxValue)),
         });
         time += timeStep;
-      }
+      } while (time <= endValue);
 
       return steps;
     },

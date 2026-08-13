@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsIGenericFactory.h"
 #include "nsDataHandler.h"
+#include "nsIGenericFactory.h"
 
 // The list of components we register
 static const nsModuleComponentInfo components[] = {

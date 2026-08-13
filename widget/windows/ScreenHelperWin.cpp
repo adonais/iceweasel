@@ -4,14 +4,14 @@
 
 #include "ScreenHelperWin.h"
 
+#include <dxgi.h>
+
+#include "WinUtils.h"
 #include "mozilla/Logging.h"
 #include "mozilla/ToString.h"
 #include "mozilla/gfx/DeviceManagerDx.h"
 #include "mozilla/gfx/DisplayConfigWindows.h"
 #include "nsTArray.h"
-#include "WinUtils.h"
-
-#include <dxgi.h>
 
 static mozilla::LazyLogModule sScreenLog("WidgetScreen");
 

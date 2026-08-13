@@ -73,7 +73,7 @@ add_task(async function test_calculator() {
 
     let res = (await UrlbarTestUtils.waitForAutocompleteResultAt(window, 1))
       .result;
-    Assert.equal(res.type, UrlbarUtils.RESULT_TYPE.DYNAMIC);
+    Assert.equal(res.type, UrlbarShared.RESULT_TYPE.DYNAMIC);
     Assert.equal(res.payload.input, formula);
 
     EventUtils.synthesizeKey("KEY_ArrowDown");

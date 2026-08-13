@@ -17,53 +17,18 @@ use crate::pattern::{Pattern, PatternBuilder, PatternBuilderContext, PatternBuil
 use crate::scene_building::IsVisible;
 use crate::intern::{Internable, InternDebug, Handle as InternHandle};
 use crate::internal_types::LayoutPrimitiveInfo;
-use crate::image_tiling::simplify_repeated_primitive;
 use crate::prim_store::{PrimitiveKind, PrimitiveOpacity};
-use crate::prim_store::{PrimKeyCommonData, PrimTemplateCommonData, PrimitiveStore};
-use crate::prim_store::{NinePatchDescriptor, PointKey, SizeKey, InternablePrimitive};
+use crate::prim_store::{PrimTemplateCommonData, PrimitiveStore};
+use crate::prim_store::{NinePatchDescriptor, InternablePrimitive};
 use crate::segment::EdgeMask;
-use super::{stops_and_min_alpha, GradientStopKey, apply_gradient_local_clip};
+use super::stops_and_min_alpha;
 use std::ops::{Deref, DerefMut};
 use std::mem::swap;
 
-/// Identifying key for a linear gradient.
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Clone, Eq, PartialEq, Hash, MallocSizeOf)]
-pub struct LinearGradientKey {
-    pub common: PrimKeyCommonData,
-    pub extend_mode: ExtendMode,
-    pub start_point: PointKey,
-    pub end_point: PointKey,
-    /// Per-axis tile size encoded as a fraction of `common.prim_size`. The
-    /// runtime `stretch_size` is `stretch_ratio * common.prim_size`.
-    pub stretch_ratio: SizeKey,
-    pub tile_spacing: SizeKey,
-    pub stops: Vec<GradientStopKey>,
-    pub reverse_stops: bool,
-    pub nine_patch: Option<Box<NinePatchDescriptor>>,
-    pub enable_dithering: bool,
-}
-
-impl LinearGradientKey {
-    pub fn new(
-        info: &LayoutPrimitiveInfo,
-        linear_grad: LinearGradient,
-    ) -> Self {
-        LinearGradientKey {
-            common: info.into(),
-            extend_mode: linear_grad.extend_mode,
-            start_point: linear_grad.start_point,
-            end_point: linear_grad.end_point,
-            stretch_ratio: linear_grad.stretch_ratio,
-            tile_spacing: linear_grad.tile_spacing,
-            stops: linear_grad.stops,
-            reverse_stops: linear_grad.reverse_stops,
-            nine_patch: linear_grad.nine_patch,
-            enable_dithering: linear_grad.enable_dithering,
-        }
-    }
-}
+// `LinearGradient` (the interned value) and `LinearGradientKey` live in
+// `webrender_api::interned_prims` so the key can be built from api-resident
+// types. The frame-time `LinearGradientTemplate` and the interning glue stay here.
+pub use api::interned_prims::{LinearGradient, LinearGradientKey};
 
 impl InternDebug for LinearGradientKey {}
 
@@ -137,47 +102,10 @@ impl DerefMut for LinearGradientTemplate {
 /// gradient is eligible. Doing the decomposition at frame-build keeps adjacent
 /// segments phase-aligned with the snapped outer prim, even when the frame-time
 /// snap pass nudges the outer rect.
-pub fn optimize_linear_gradient(
-    prim_rect: &mut LayoutRect,
-    tile_size: &mut LayoutSize,
-    mut tile_spacing: LayoutSize,
-    clip_rect: &LayoutRect,
-    start: &mut LayoutPoint,
-    end: &mut LayoutPoint,
-) {
-    simplify_repeated_primitive(&tile_size, &mut tile_spacing, prim_rect);
-
-    let vertical = start.x.approx_eq(&end.x);
-    let horizontal = start.y.approx_eq(&end.y);
-
-    let horizontally_tiled = prim_rect.width() > tile_size.width;
-    let vertically_tiled = prim_rect.height() > tile_size.height;
-
-    // Check whether the tiling is equivalent to stretching on either axis.
-    // Stretching the gradient is more efficient than repeating it.
-    if vertically_tiled && horizontal && tile_spacing.height == 0.0 {
-        tile_size.height = prim_rect.height();
-    }
-
-    if horizontally_tiled && vertical && tile_spacing.width == 0.0 {
-        tile_size.width = prim_rect.width();
-    }
-
-    let offset = apply_gradient_local_clip(
-        prim_rect,
-        &tile_size,
-        &tile_spacing,
-        &clip_rect
-    );
-
-    // The size of gradient render tasks depends on the tile_size. No need to generate
-    // large stretch sizes that will be clipped to the bounds of the primitive.
-    tile_size.width = tile_size.width.min(prim_rect.width());
-    tile_size.height = tile_size.height.min(prim_rect.height());
-
-    *start += offset;
-    *end += offset;
-}
+// `optimize_linear_gradient` now lives in `webrender_api::prim_geometry` so
+// content-process interning can share it. Re-exported here to keep existing
+// references working.
+pub use api::prim_geometry::optimize_linear_gradient;
 
 /// Whether a linear gradient is eligible for the fast-path two-stop-per-segment
 /// decomposition at prepare time. Inputs are the values produced by
@@ -433,24 +361,6 @@ impl From<LinearGradientKey> for LinearGradientTemplate {
 
 pub type LinearGradientDataHandle = InternHandle<LinearGradient>;
 
-#[derive(Debug, MallocSizeOf)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct LinearGradient {
-    pub extend_mode: ExtendMode,
-    pub start_point: PointKey,
-    pub end_point: PointKey,
-    /// Per-axis tile size encoded as a fraction of the prim's size. See
-    /// [`LinearGradientKey::stretch_ratio`].
-    pub stretch_ratio: SizeKey,
-    pub tile_spacing: SizeKey,
-    pub stops: Vec<GradientStopKey>,
-    pub reverse_stops: bool,
-    pub nine_patch: Option<Box<NinePatchDescriptor>>,
-    pub edge_aa_mask: EdgeMask,
-    pub enable_dithering: bool,
-}
-
 impl Internable for LinearGradient {
     type Key = LinearGradientKey;
     type StoreData = LinearGradientTemplate;
@@ -463,7 +373,7 @@ impl InternablePrimitive for LinearGradient {
         self,
         info: &LayoutPrimitiveInfo,
     ) -> LinearGradientKey {
-        LinearGradientKey::new(info, self)
+        LinearGradientKey::new(info.into(), self)
     }
 
     fn make_instance_kind(

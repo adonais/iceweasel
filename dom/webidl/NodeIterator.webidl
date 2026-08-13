@@ -27,5 +27,6 @@ interface NodeIterator {
   [Throws]
   Node? previousNode();
 
+  [Deprecated=NodeIteratorDetach]
   undefined detach();
 };

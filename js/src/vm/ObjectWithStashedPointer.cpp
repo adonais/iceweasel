@@ -3,7 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "js/ObjectWithStashedPointer.h"
-#include "jsapi.h"         // JS_NewObject
+
+#include "jsapi.h"  // JS_NewObject
+
 #include "vm/JSContext.h"  // CHECK_THREAD
 
 namespace JS::detail {

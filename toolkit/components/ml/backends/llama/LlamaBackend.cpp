@@ -197,7 +197,9 @@ ResultStatus LlamaBackend::ReinitializeContext(
   ctxParams.type_k = GgmlTypeFromKVCacheDtype(aOptions.mKCacheDtype);
   ctxParams.type_v = GgmlTypeFromKVCacheDtype(aOptions.mVCacheDtype);
   ctxParams.offload_kqv = aOptions.mOffloadKqv;
-  ctxParams.flash_attn = aOptions.mFlashAttn;
+  ctxParams.flash_attn_type = aOptions.mFlashAttn
+                                  ? LLAMA_FLASH_ATTN_TYPE_ENABLED
+                                  : LLAMA_FLASH_ATTN_TYPE_DISABLED;
   ctxParams.no_perf = aOptions.mNoPerf;
   ctxParams.op_offload = aOptions.mOpOffload;
   ctxParams.swa_full = aOptions.mSwaFull;

@@ -4,28 +4,32 @@
 
 #include "ToastNotification.h"
 
+// clang-format off
 #include <windows.h>
-#include <shellapi.h>
 #include <appmodel.h>
 #include <ktmw32.h>
+#include <shellapi.h>
 #include <windows.foundation.h>
 #include <wrl/client.h>
+// clang-format on
 
 #include "ErrorList.h"
+#include "ToastNotificationHandler.h"
+#include "ToastNotificationHeaderOnlyUtils.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Buffer.h"
-#include "mozilla/dom/Promise.h"
 #include "mozilla/DynamicallyLinkedFunctionPtr.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/mscom/COMWrappers.h"
-#include "mozilla/mscom/Utils.h"
-#include "mozilla/widget/WinRegistry.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Services.h"
 #include "mozilla/WidgetUtils.h"
+#include "mozilla/dom/Promise.h"
+#include "mozilla/mscom/COMWrappers.h"
+#include "mozilla/mscom/Utils.h"
+#include "mozilla/widget/WinRegistry.h"
 #include "nsAppRunner.h"
-#include "nsComponentManagerUtils.h"
 #include "nsCOMPtr.h"
+#include "nsComponentManagerUtils.h"
 #include "nsIAlertsServiceRust.h"
 #include "nsIObserverService.h"
 #include "nsIWindowMediator.h"
@@ -35,8 +39,6 @@
 #include "nsWindowsHelpers.h"
 #include "nsXREDirProvider.h"
 #include "prenv.h"
-#include "ToastNotificationHandler.h"
-#include "ToastNotificationHeaderOnlyUtils.h"
 
 namespace mozilla {
 namespace widget {

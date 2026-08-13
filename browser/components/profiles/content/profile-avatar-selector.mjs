@@ -282,9 +282,9 @@ export class ProfileAvatarSelector extends MozLitElement {
     );
   }
 
-  handleTabClick(event) {
+  handleTabChange(event) {
     event.stopImmediatePropagation();
-    if (event.target.id === "icon") {
+    if (event.target.value === VIEWS.ICON) {
       this.setView(VIEWS.ICON);
     } else {
       this.setView(VIEWS.CUSTOM);
@@ -294,7 +294,7 @@ export class ProfileAvatarSelector extends MozLitElement {
   iconTabContentTemplate() {
     return html`<moz-visual-picker
       type="listbox"
-      value=${this.avatar}
+      value=${this.value}
       name="avatar"
       id="avatars"
       @change=${this.handleAvatarChange}
@@ -1017,22 +1017,24 @@ export class ProfileAvatarSelector extends MozLitElement {
       />
       <moz-card id="avatar-selector">
         <div id="content">
-          <div class="button-group">
-            <moz-button
+          <moz-segmented-control
+            class="button-group"
+            value=${this.view === VIEWS.ICON ? VIEWS.ICON : VIEWS.CUSTOM}
+            @change=${this.handleTabChange}
+          >
+            <moz-segmented-control-item
               id="icon"
-              type=${this.view === VIEWS.ICON ? "primary" : "default"}
+              value=${VIEWS.ICON}
               size="small"
               data-l10n-id="avatar-selector-icon-tab"
-              @click=${this.handleTabClick}
-            ></moz-button>
-            <moz-button
+            ></moz-segmented-control-item>
+            <moz-segmented-control-item
               id="custom"
-              type=${this.view === VIEWS.ICON ? "default" : "primary"}
+              value=${VIEWS.CUSTOM}
               size="small"
               data-l10n-id="avatar-selector-custom-tab"
-              @click=${this.handleTabClick}
-            ></moz-button>
-          </div>
+            ></moz-segmented-control-item>
+          </moz-segmented-control>
           ${this.contentTemplate()}
         </div>
       </moz-card>`;

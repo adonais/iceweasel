@@ -77,6 +77,10 @@
   }
 }
 
+.persist-data-on-shutdown-icon {
+  list-style-image: url(chrome://browser/skin/controlcenter/3rdpartycookies.svg);
+}
+
 .desktop-notification-icon {
   list-style-image: url(chrome://browser/skin/notification-icons/desktop-notification.svg);
 

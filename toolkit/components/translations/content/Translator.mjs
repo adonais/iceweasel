@@ -47,6 +47,20 @@ export class Translator {
   #ready = Promise.reject;
 
   /**
+   * The shared promise for an in-progress port acquisition.
+   *
+   * @type {Promise<void> | null}
+   */
+  #portAcquisition = null;
+
+  /**
+   * Whether the current port has carried a translation request.
+   *
+   * @type {boolean}
+   */
+  #hasUsedPort = false;
+
+  /**
    * The language pair consisting of the source language and target language.
    *
    * @type {LanguagePair}
@@ -210,6 +224,11 @@ export class Translator {
    *  Rejects if an error has occurred during translation.
    */
   async translate(sourceText, isHTML = false) {
+    if (this.#hasUsedPort && this.#translationRequests.size === 0) {
+      this.#port?.close();
+      this.#port = null;
+    }
+
     await this.#createNewPortIfClosed();
     await this.#ready;
 
@@ -226,6 +245,7 @@ export class Translator {
       reject,
     });
 
+    this.#hasUsedPort = true;
     this.#port?.postMessage({
       type: "TranslationsPort:TranslationRequest",
       translationId,
@@ -270,7 +290,26 @@ export class Translator {
       return;
     }
 
+    const portAcquisition =
+      this.#portAcquisition ?? (this.#portAcquisition = this.#acquirePort());
+
+    try {
+      await portAcquisition;
+    } finally {
+      if (this.#portAcquisition === portAcquisition) {
+        this.#portAcquisition = null;
+      }
+    }
+  }
+
+  /**
+   * Requests and initializes a new engine port.
+   *
+   * @returns {Promise<void>}
+   */
+  async #acquirePort() {
     this.#port = await this.#requestTranslationsPort(this.#languagePair);
+    this.#hasUsedPort = false;
 
     const { promise, resolve, reject } = Promise.withResolvers();
 

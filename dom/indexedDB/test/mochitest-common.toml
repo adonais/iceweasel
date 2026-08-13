@@ -90,6 +90,7 @@ support-files = [
   "unit/test_rename_objectStore.js",
   "unit/test_rename_objectStore_errors.js",
   "unit/test_request_readyState.js",
+  "unit/test_response_too_large.js",
   "unit/test_setVersion.js",
   "unit/test_setVersion_abort.js",
   "unit/test_setVersion_events.js",
@@ -360,6 +361,8 @@ skip-if = [
 ["test_rename_objectStore_errors.html"]
 
 ["test_request_readyState.html"]
+
+["test_response_too_large.html"]
 
 ["test_sandbox.html"]
 skip-if = [

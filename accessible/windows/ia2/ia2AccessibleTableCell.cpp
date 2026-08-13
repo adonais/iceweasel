@@ -6,7 +6,6 @@
 
 #include "AccessibleTable2_i.c"
 #include "AccessibleTableCell_i.c"
-
 #include "IUnknownImpl.h"
 #include "mozilla/a11y/Accessible.h"
 #include "mozilla/a11y/TableAccessible.h"

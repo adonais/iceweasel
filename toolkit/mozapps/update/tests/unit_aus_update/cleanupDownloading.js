@@ -4,7 +4,7 @@
  */
 
 const { BitsError } = ChromeUtils.importESModule(
-  "resource://gre/modules/Bits.sys.mjs"
+  "moz-src:///toolkit/components/bitsdownload/Bits.sys.mjs"
 );
 
 // There are multiple reasons that we might cleanup a downloading update on

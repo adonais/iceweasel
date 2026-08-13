@@ -490,7 +490,6 @@ export default {
     RTCIceCandidate: "readonly",
     RTCPeerConnection: "readonly",
     RTCPeerConnectionIceEvent: "readonly",
-    RTCPeerConnectionStatic: "readonly",
     RTCRtpReceiver: "readonly",
     RTCRtpSender: "readonly",
     RTCRtpTransceiver: "readonly",

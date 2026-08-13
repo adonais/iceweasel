@@ -3,11 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /* Unix-specific local file uri parsing */
-#include "nsURLHelper.h"
+#include "mozilla/Utf8.h"
 #include "nsEscape.h"
 #include "nsIFile.h"
 #include "nsNativeCharsetUtils.h"
-#include "mozilla/Utf8.h"
+#include "nsURLHelper.h"
 
 using mozilla::IsUtf8;
 

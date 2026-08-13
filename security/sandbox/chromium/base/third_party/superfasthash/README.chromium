@@ -1,9 +1,10 @@
 Name: Paul Hsieh's SuperFastHash
 Short Name: SuperFastHash
 URL: http://www.azillionmonkeys.com/qed/hash.html
-Version: 0
+Version: N/A
 Date: 2012-02-21
-License: BSD
+Update Mechanism: Static (https://crbug.com/459566936)
+License: BSD-3-Clause
 License File: LICENSE
 Security Critical: yes
 Shipped: yes
@@ -17,6 +18,7 @@ Local Modifications:
 - #include <stdint.h> instead of "pstdint.h".
 - #include <stdlib.h>.
 - Added casts.
+- Fix some undefined behavior (signed left-shift overflow, bad pointer cast)
 
 The license is a standard 3-clause BSD license with the following minor changes:
 

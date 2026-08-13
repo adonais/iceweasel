@@ -5,8 +5,8 @@
 #ifndef MOZILLA_GFX_RENDEREXTERNALTEXTUREHOST_H
 #define MOZILLA_GFX_RENDEREXTERNALTEXTUREHOST_H
 
-#include "mozilla/layers/TextureHostOGL.h"
 #include "RenderTextureHostSWGL.h"
+#include "mozilla/layers/TextureHostOGL.h"
 
 namespace mozilla {
 namespace wr {

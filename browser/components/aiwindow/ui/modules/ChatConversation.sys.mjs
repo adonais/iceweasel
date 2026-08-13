@@ -33,7 +33,17 @@ import {
 import { EventEmitter } from "resource://gre/modules/EventEmitter.sys.mjs";
 import { Conversation } from "moz-src:///browser/components/aiwindow/models/Conversation.sys.mjs";
 import { consumeStreamChunk } from "moz-src:///browser/components/aiwindow/models/TokenStreamParser.sys.mjs";
-import { SecurityProperties } from "moz-src:///browser/components/aiwindow/models/SecurityProperties.sys.mjs";
+
+/** @typedef {import("moz-src:///browser/components/aiwindow/models/SearchBrowsingHistory.sys.mjs").HistoryRow} HistoryRow */
+
+/**
+ * A pooled history result: the subset of `HistoryRow` fields the
+ * `search_browsing_history` tool projects into the pool (Tools.sys.mjs) minus
+ * `relevanceScore`, plus a localized `timestamp` and the resolved `image` and
+ * `hasFavicon` asset fields.
+ *
+ * @typedef {Omit<HistoryRow, "relevanceScore"> & { timestamp?: string, image?: (string|null), hasFavicon?: boolean }} PooledHistoryResult
+ */
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -45,7 +55,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   loadPrompt:
     "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs",
   ToolUI: "moz-src:///browser/components/aiwindow/ui/modules/ToolUI.sys.mjs",
-  UI_TYPES: "moz-src:///browser/components/aiwindow/ui/modules/ToolUI.sys.mjs",
+  CONFIRMATION_UI_TYPES:
+    "moz-src:///browser/components/aiwindow/ui/modules/ToolUI.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "fluentStrings", () => {
@@ -93,8 +104,6 @@ export class ChatConversation extends Conversation {
   pageUrl;
   pageMeta;
   status;
-  /** @type {SecurityProperties} */
-  securityProperties;
   activeBranchTipMessageId;
 
   #emitter = new EventEmitter();
@@ -162,53 +171,18 @@ export class ChatConversation extends Conversation {
   #baseTokenCounts = new Map();
 
   /**
-   * Language models can generate arbitrary URLs. If a conversation has been exposed
-   * to untrusted content (such as from summarizing a webpage) then it can be prompt
-   * injected to display arbitrary URLs. Language models can also invent plausible URLs
-   * for a conversation that do not exist.
-   *
-   * To mitigate these issues we collect all URLs that have been seen in a conversation
-   * so that we can decide how to show them to users in a safe way. If a URL has not
-   * been seen before, then it's untrusted in different circumstances.
-   *
-   * Initialized from the constructor params (restored from DB) or as an empty Set.
-   *
-   * @type {Set<string>}
-   */
-  seenUrls;
-
-  /**
-   * URLs found in SERP contents from run_search that we are willing to
-   * fetch via a anonymous request even when the conversation has
-   * been exposed to both private and untrusted content.
-   *
-   * Initialized from the constructor params (restored from DB) or as an empty Set.
-   *
-   * @type {Set<string>}
-   */
-  serpUrlsForAnonymousFetch;
-
-  /**
    * Conversation-level pool of history results keyed by URL, accumulated across
    * every `search_browsing_history` invocation in this conversation. A message
    * snapshots this pool when it completes (see `receiveResponse`), so any
    * assistant message that lists previously-searched URLs renders a history
    * grid — even when the model answered a follow-up from prior results without
-   * re-invoking the tool. Not persisted to the database.
+   * re-invoking the tool. The pool itself is not persisted; instead each
+   * message persists its own snapshot, and the pool is rehydrated from those
+   * snapshots when the conversation is constructed from the database.
    *
    * @type {Map<string, object>}
    */
   #historyResultsPool = new Map();
-
-  /**
-   * Dispatcher that forwards the history results pool to the
-   * content page. Injected by the owner (ai-window). Called from
-   * `addHistoryResults` during tool execution; actor delivers
-   * the pool to content before the follow-up answer streams.
-   *
-   * @type {?function(object): void}
-   */
-  #historyResultsDispatcher = null;
 
   /**
    * @param {object} params
@@ -236,18 +210,25 @@ export class ChatConversation extends Conversation {
       seenUrls,
       serpUrlsForAnonymousFetch,
       memoriesToggled = null,
+      securityProperties = null,
     } = params;
 
-    super({ id, createdDate, updatedDate, messages, feature: "chat" });
+    super({
+      id,
+      createdDate,
+      updatedDate,
+      messages,
+      seenUrls,
+      serpUrlsForAnonymousFetch,
+      feature: "chat",
+      securityProperties,
+    });
 
     this.title = title;
     this.description = description;
     this.pageUrl = pageUrl;
     this.pageMeta = pageMeta;
-    this.seenUrls = seenUrls ? new Set(seenUrls) : new Set();
-    this.serpUrlsForAnonymousFetch = serpUrlsForAnonymousFetch
-      ? new Set(serpUrlsForAnonymousFetch)
-      : new Set();
+    this.rehydrateHistoryResultsPool();
     this.memoriesToggled = memoriesToggled;
 
     // transient: tracks the URL the current starter prompts were generated
@@ -266,15 +247,6 @@ export class ChatConversation extends Conversation {
 
     // NOTE: Destructuring params.status causes a linter error
     this.status = params.status || CONVERSATION_STATUS.ACTIVE;
-    if (params.securityProperties instanceof SecurityProperties) {
-      this.securityProperties = params.securityProperties;
-    } else if (params.securityProperties != null) {
-      this.securityProperties = SecurityProperties.fromJSON(
-        params.securityProperties
-      );
-    } else {
-      this.securityProperties = new SecurityProperties();
-    }
 
     // Seed the branch-tip cache so restored-from-DB conversations have it
     // set before the first turn.
@@ -396,33 +368,44 @@ export class ChatConversation extends Conversation {
    */
   async receiveResponse(stream) {
     const currentMessage = this.#getCurrentAssistantResponse();
+    if (!currentMessage) {
+      return {
+        pendingToolCalls: [],
+        fullResponseText: "",
+        usage: null,
+      };
+    }
 
-    if (currentMessage?.content?.body) {
+    if (currentMessage.content?.body) {
       currentMessage.content.body += "\n\n";
+    }
+
+    // Set the browsing history snapshot on the message before streaming so its
+    // list is recognized while streaming and swapped to a grid on completion.
+    if (this.#historyResultsPool.size) {
+      currentMessage.historyResults = this.getHistoryResultsSnapshot();
     }
 
     const result = await super.receiveResponse(stream, currentMessage);
 
     if (result.currentMessage?.content?.body) {
-      this.emit("chat-conversation:message-update", result.currentMessage);
+      // Expand URL tokens and remove any hallucinated ones.
+      if (this.urlToToken.size) {
+        result.currentMessage.content.body = stripUnresolvedUrlTokens(
+          result.currentMessage.content.body
+        );
+      }
+
+      this.emit("chat-conversation:message-update", currentMessage);
     }
 
-    if (currentMessage?.memoriesApplied?.length) {
+    if (currentMessage.memoriesApplied.length) {
       currentMessage.memoriesApplied =
         await lazy.MemoriesManager.getMemoriesByID(
           new Set(currentMessage.memoriesApplied)
         );
 
       this.emit("chat-conversation:message-update", currentMessage);
-    }
-
-    // Expand URL tokens and remove any hallucinated ones.
-    if (this.urlToToken.size && currentMessage?.content?.body) {
-      let body = stripUnresolvedUrlTokens(currentMessage.content.body);
-      if (body !== currentMessage.content.body) {
-        currentMessage.content.body = body;
-        this.emit("chat-conversation:message-update", currentMessage);
-      }
     }
 
     await lazy.ChatStore.updateConversation(this);
@@ -479,26 +462,6 @@ export class ChatConversation extends Conversation {
 
   _createMessage(args) {
     return new ChatMessage({ ...args, convId: this.id });
-  }
-
-  /**
-   * Gets any URL mentioned in the conversation. These URLs have heightened security
-   * permissions as they have been explicitly added to the conversation by the user.
-   *
-   * @returns {Set<string>}
-   */
-  getAllMentionURLs() {
-    /** @type {Set<string>} */
-    const mentionUrls = new Set();
-    for (const message of this.messages) {
-      const { contextMentions } = message.content;
-      if (contextMentions) {
-        for (const { url } of contextMentions) {
-          mentionUrls.add(url);
-        }
-      }
-    }
-    return mentionUrls;
   }
 
   /**
@@ -715,6 +678,10 @@ export class ChatConversation extends Conversation {
    * Takes a new prompt and generates LLM context messages before
    * adding new user prompt to messages.
    *
+   * SECURITY: each data source added here may carry private or untrusted
+   * content and MUST raise the matching SecurityProperties flag before commit(),
+   * and add a security test asserting the flags it sets.
+   *
    * @param {string} prompt - new user prompt
    * @param {?URL} pageUrl - The URL of the page when prompt was submitted
    * @param {UserRoleOpts} [userOpts]
@@ -802,6 +769,10 @@ export class ChatConversation extends Conversation {
    * Fetch real-time browser/tab data, render the prompt, mutate
    * `userMessage.content.userContext.realTimeContext` in place.
    *
+   * SECURITY: current-tab info is private, so it raises setPrivateData() when
+   * hasTabInfo is true. Context mentions inject only a URL and sanitized
+   * label, not page content, so they raise no flag.
+   *
    * @param {ChatMessage} userMessage
    * @param {object} [opts]
    * @param {ContextWebsite[]} [opts.contextMentions]
@@ -856,6 +827,9 @@ export class ChatConversation extends Conversation {
   /**
    * Fetch relevant memories, mutate
    * `userMessage.content.userContext.memoriesContext` in place.
+   *
+   * SECURITY: retrieved memories are private user data, so this raises
+   * setPrivateData() whenever memories are returned.
    *
    * @todo Bug2009434 Rename type and change enum to renamed values
    * @param {ChatMessage} userMessage
@@ -1022,21 +996,8 @@ export class ChatConversation extends Conversation {
    * @param {Iterable<string>} urls
    */
   addSeenUrls(urls) {
-    for (const url of urls) {
-      this.seenUrls.add(url);
-    }
+    super.addSeenUrls(urls);
     this.emit("chat-conversation:seen-urls-updated", this.seenUrls);
-  }
-
-  /**
-   * Add an iterable of URLs to the serpUrlsForAnonymousFetch ledger
-   *
-   * @param {Iterable<string>} urls
-   */
-  addSerpUrlsForAnonymousFetch(urls) {
-    for (const url of urls) {
-      this.serpUrlsForAnonymousFetch.add(url);
-    }
   }
 
   /**
@@ -1113,8 +1074,8 @@ export class ChatConversation extends Conversation {
       }
     }
 
-    // For website confirmations, add the original user prompt
-    if (uiData.uiType === lazy.UI_TYPES.WEBSITE_CONFIRMATION) {
+    // For certain UI types, add the original user prompt
+    if (lazy.CONFIRMATION_UI_TYPES.includes(uiData.uiType)) {
       const originalUserPrompt = lazy.ToolUI.findOriginalUserPrompt(
         this.messages,
         currentMessage
@@ -1181,7 +1142,7 @@ export class ChatConversation extends Conversation {
    * triggered the search and any later message reusing those results
    * can both render a grid.
    *
-   * @param {Iterable<object>} records - Per-URL records from search_browsing_history.
+   * @param {Iterable<PooledHistoryResult>} records - Per-URL records from search_browsing_history.
    */
   addHistoryResults(records) {
     for (const record of records) {
@@ -1191,36 +1152,46 @@ export class ChatConversation extends Conversation {
       );
       this.#historyResultsPool.set(record.url, record);
     }
-
-    // Deliver to the content page. This runs during tool
-    // execution, so it's dispatched before the assistant's follow-up answer
-    // streams, content side should have the pool
-    // before it renders the list. Tool execution should not block content
-    // process side.
-    this.#historyResultsDispatcher?.({
-      records: [...this.#historyResultsPool.values()],
-    });
-  }
-
-  /**
-   * Register the dispatcher used to forward history results to the content
-   * page. See {@link ChatConversation#addHistoryResults}.
-   *
-   * @param {?function(object): void} dispatcher
-   */
-  setHistoryResultsDispatcher(dispatcher) {
-    this.#historyResultsDispatcher = dispatcher;
   }
 
   /**
    * A snapshot of the accumulated history results pool, as a records array.
-   * Attached to a message when it completes so the content page can render the
-   * history grid deterministically — independent of the streaming-time
-   * dispatch, whose delivery races the message lifecycle.
+   * Set on the active assistant message in `receiveResponse` so the content
+   * page can render the history grid.
    *
-   * @returns {object[]}
+   * @returns {PooledHistoryResult[]}
    */
   getHistoryResultsSnapshot() {
     return [...this.#historyResultsPool.values()];
+  }
+
+  /**
+   * Apply resolved page assets (thumbnail image URI and favicon availability)
+   * onto the pooled history records by URL, so snapshots dispatched afterward
+   * already include them.
+   *
+   * @param {Array<{url: string, image: ?string, hasFavicon: boolean}>} assets
+   */
+  applyHistoryAssets(assets) {
+    for (const { url, image, hasFavicon } of assets) {
+      const record = this.#historyResultsPool.get(url);
+      if (record) {
+        record.image = image;
+        record.hasFavicon = hasFavicon;
+      }
+    }
+  }
+
+  /**
+   * Rehydrate the history results pool from each message's persisted snapshot so
+   * follow-ups that reference prior URLs still render a grid after reload. Safe
+   * to call after messages are attached post-construction (e.g. DB load).
+   */
+  rehydrateHistoryResultsPool() {
+    for (const message of this.messages) {
+      for (const record of message.historyResults) {
+        this.#historyResultsPool.set(record.url, record);
+      }
+    }
   }
 }

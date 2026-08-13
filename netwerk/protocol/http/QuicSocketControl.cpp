@@ -12,8 +12,8 @@
 #include "nsNSSComponent.h"
 #include "nsSocketTransportService2.h"
 #include "nsThreadUtils.h"
-#include "sslt.h"
 #include "ssl.h"
+#include "sslt.h"
 
 namespace mozilla {
 namespace net {

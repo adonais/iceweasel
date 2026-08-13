@@ -364,6 +364,14 @@ with modules["NETWORK"]:
     # Used to indicate cases where we need to fall back from HTTP/2
     # to HTTP/1.1.
     errors["NS_ERROR_HTTP2_FALLBACK_TO_HTTP1"] = FAILURE(94)
+    # The connection was blocked by the OS itself because this app lacks the
+    # platform-level local-network permission (e.g. Android 16+'s Local
+    # Network Protection, gated on ACCESS_LOCAL_NETWORK/NEARBY_DEVICES).
+    # Distinct from NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED, which is Firefox's
+    # own site-permission decision made after a successful connect -- this
+    # error means the connect itself never had a chance to succeed, so it
+    # must not be routed through that (unrelated) content-permission flow.
+    errors["NS_ERROR_OS_LOCAL_NETWORK_ACCESS_DENIED"] = FAILURE(95)
 
     # XXX really need to better rationalize these error codes.  are consumers of
     # necko really expected to know how to discern the meaning of these??

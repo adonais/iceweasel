@@ -5,20 +5,20 @@
 #ifndef _nsWifiMonitor_
 #define _nsWifiMonitor_
 
-#include "nsIWifiMonitor.h"
-#include "nsCOMPtr.h"
-#include "nsProxyRelease.h"
-#include "nsIThread.h"
-#include "nsIRunnable.h"
-#include "nsCOMArray.h"
-#include "nsIWifiListener.h"
-#include "mozilla/Atomics.h"
-#include "mozilla/ReentrantMonitor.h"
-#include "mozilla/Logging.h"
-#include "nsIObserver.h"
-#include "nsTArray.h"
-#include "mozilla/Monitor.h"
 #include "WifiScanner.h"
+#include "mozilla/Atomics.h"
+#include "mozilla/Logging.h"
+#include "mozilla/Monitor.h"
+#include "mozilla/ReentrantMonitor.h"
+#include "nsCOMArray.h"
+#include "nsCOMPtr.h"
+#include "nsIObserver.h"
+#include "nsIRunnable.h"
+#include "nsIThread.h"
+#include "nsIWifiListener.h"
+#include "nsIWifiMonitor.h"
+#include "nsProxyRelease.h"
+#include "nsTArray.h"
 #include "nsTHashMap.h"
 
 namespace mozilla {

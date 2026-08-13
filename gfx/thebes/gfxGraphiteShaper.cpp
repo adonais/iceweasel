@@ -3,20 +3,18 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "gfxGraphiteShaper.h"
-#include "nsString.h"
+
+#include "ThebesRLBox.h"
 #include "gfxContext.h"
 #include "gfxFontConstants.h"
 #include "gfxTextRun.h"
-
 #include "graphite2/Font.h"
 #include "graphite2/GraphiteExtra.h"
 #include "graphite2/Segment.h"
-
 #include "harfbuzz/hb.h"
-
 #include "mozilla/ScopeExit.h"
-
-#include "ThebesRLBox.h"
+#include "mozilla/Utf16.h"
+#include "nsString.h"
 
 #define FloatToFixed(f) (65536 * (f))
 #define FixedToFloat(f) ((f) * (1.0 / 65536.0))
@@ -116,8 +114,8 @@ static inline size_t CountUnicodes(const char16_t* aText, uint32_t aLength) {
   size_t total = 0;
   const char16_t* end = aText + aLength;
   while (aText < end) {
-    if (NS_IS_HIGH_SURROGATE(*aText) && aText + 1 < end &&
-        NS_IS_LOW_SURROGATE(*(aText + 1))) {
+    if (mozilla::IsHighSurrogate(*aText) && aText + 1 < end &&
+        mozilla::IsLowSurrogate(*(aText + 1))) {
       aText += 2;
     } else {
       aText++;
@@ -296,6 +294,9 @@ nsresult gfxGraphiteShaper::SetGlyphsFromSegment(
   if (failedVerify) {
     return NS_ERROR_ILLEGAL_VALUE;
   }
+  // Minimum acceptable baseChar for the next cluster (to ensure monotonically
+  // increasing indexes).
+  uint32_t minBaseChar = 0;
   // now put glyphs into the textrun, one cluster at a time
   for (uint32_t i = 0; i <= cIndex; ++i) {
     // We makes a local copy of "clusters[i]" which is of type
@@ -333,11 +334,12 @@ nsresult gfxGraphiteShaper::SetGlyphsFromSegment(
         "nscoord values. But, these will not result in safety issues.");
 
     // check unexpected offset - offs used to index into aText
-    uint32_t offs =
-        CopyAndVerifyOrFail(c.baseChar, val < aLength, &failedVerify);
+    uint32_t offs = CopyAndVerifyOrFail(
+        c.baseChar, val < aLength && val >= minBaseChar, &failedVerify);
     if (failedVerify) {
       return NS_ERROR_ILLEGAL_VALUE;
     }
+    minBaseChar = offs + 1;
 
     // Check for default-ignorable char that didn't get filtered, combined,
     // etc by the shaping process, and skip it.

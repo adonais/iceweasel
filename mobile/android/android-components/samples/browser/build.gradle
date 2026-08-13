@@ -5,12 +5,11 @@
 import static org.mozilla.conventions.BuildConfigKt.updateExtensionVersion
 
 plugins {
+    id 'com.android.application'
     alias(libs.plugins.dependency.analysis)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 }
 
-apply plugin: 'com.android.application'
 
 android {
     compileSdk { version = release(config.compileSdkMajorVersion) { minorApiLevel = config.compileSdkMinorVersion } }
@@ -150,7 +149,7 @@ dependencies {
     implementation libs.androidx.compose.material3
     implementation libs.androidx.compose.ui.tooling
     implementation libs.androidx.constraintlayout
-    implementation libs.androidx.core.ktx
+    implementation libs.androidx.core
     implementation libs.androidx.swiperefreshlayout
     implementation libs.google.material
     implementation libs.mozilla.glean

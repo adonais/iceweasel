@@ -802,7 +802,7 @@ nsresult nsJSContext::AddSupportsPrimitiveTojsvals(JSContext* aCx,
 
       p->GetData(&data);
 
-      *aArgv = ::JS_NumberValue(data);
+      aArgv->setNumber(data);
 
       break;
     }
@@ -814,7 +814,7 @@ nsresult nsJSContext::AddSupportsPrimitiveTojsvals(JSContext* aCx,
 
       p->GetData(&data);
 
-      *aArgv = ::JS_NumberValue(data);
+      aArgv->setNumber(data);
 
       break;
     }

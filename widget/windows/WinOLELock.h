@@ -5,9 +5,11 @@
 #ifndef mozilla_widget_WinOLELock_h_
 #define mozilla_widget_WinOLELock_h_
 
-#include <type_traits>
 #include <minwindef.h>
 #include <winbase.h>
+
+#include <type_traits>
+
 #include "mozilla/Assertions.h"
 
 namespace details {

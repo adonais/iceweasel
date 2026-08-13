@@ -31,7 +31,7 @@ addA11YPanelTask(
     await toggleRow(doc, 0);
     selectRow(doc, 1);
 
-    await BrowserTestUtils.waitForCondition(
+    await TestUtils.waitForCondition(
       () => getPropertyValue(doc, "name") === `"Hello"`,
       "Wait until the sidebar is updated"
     );

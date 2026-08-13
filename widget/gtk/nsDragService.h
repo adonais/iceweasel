@@ -5,15 +5,16 @@
 #ifndef nsDragService_h_
 #define nsDragService_h_
 
+#include <gtk/gtk.h>
+
+#include "GUniquePtr.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "nsBaseDragService.h"
 #include "nsCOMArray.h"
-#include "nsIObserver.h"
-#include <gtk/gtk.h>
-#include "nsITimer.h"
-#include "GUniquePtr.h"
 #include "nsClipboard.h"
+#include "nsIObserver.h"
+#include "nsITimer.h"
 
 class nsICookieJarSettings;
 class nsWindow;

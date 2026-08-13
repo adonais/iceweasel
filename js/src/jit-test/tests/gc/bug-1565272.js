@@ -1,4 +1,6 @@
-// |jit-test| --fuzzing-safe; --ion-offthread-compile=off; --ion-warmup-threshold=10; skip-if: (getBuildConfiguration("android") && getBuildConfiguration("debug") && getBuildConfiguration("arm64"))
+// |jit-test| --fuzzing-safe; --ion-offthread-compile=off; --ion-warmup-threshold=10; skip-if: (getBuildConfiguration("android") && getBuildConfiguration("debug") && getBuildConfiguration("arm64")) || (getBuildConfiguration("asan") && getBuildConfiguration("pointer-byte-size") === 4)
+
+// This test is skipped on 32-bit ASan builds because it frequently OOMs.
 
 // Test that Nursery::disable() waits for poisoning to finish before
 // discarding and re-poisoning its chunks.

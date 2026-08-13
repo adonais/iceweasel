@@ -10,21 +10,21 @@
 #include <memory>
 #include <unordered_map>
 
-#include "mozilla/dom/ipc/IdType.h"
-#include "mozilla/gfx/InlineTranslator.h"
-#include "mozilla/gfx/RecordedEvent.h"
 #include "CanvasChild.h"
-#include "mozilla/ipc/SharedMemoryHandle.h"
-#include "mozilla/layers/CanvasDrawEventRecorder.h"
-#include "mozilla/layers/LayersSurfaces.h"
-#include "mozilla/layers/PCanvasParent.h"
-#include "mozilla/layers/RemoteTextureMap.h"
-#include "mozilla/ipc/CrossProcessSemaphore.h"
-#include "mozilla/ipc/SharedMemoryMapping.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Variant.h"
 #include "mozilla/WeakPtr.h"
+#include "mozilla/dom/ipc/IdType.h"
+#include "mozilla/gfx/InlineTranslator.h"
+#include "mozilla/gfx/RecordedEvent.h"
+#include "mozilla/ipc/CrossProcessSemaphore.h"
+#include "mozilla/ipc/SharedMemoryHandle.h"
+#include "mozilla/ipc/SharedMemoryMapping.h"
+#include "mozilla/layers/CanvasDrawEventRecorder.h"
+#include "mozilla/layers/LayersSurfaces.h"
+#include "mozilla/layers/PCanvasParent.h"
+#include "mozilla/layers/RemoteTextureMap.h"
 
 namespace mozilla {
 

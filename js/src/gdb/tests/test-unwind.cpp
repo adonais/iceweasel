@@ -1,3 +1,8 @@
+#include "mozilla/Utf8.h"  // mozilla::Utf8Unit
+
+#include <stdint.h>  // uint32_t
+#include <string.h>  // strlen
+
 #include "gdb-tests.h"
 #include "jsfriendapi.h"  // JSFunctionSpecWithHelp
 
@@ -11,11 +16,6 @@
 #include "js/RootingAPI.h"                // JS::Rooted
 #include "js/SourceText.h"                // JS::Source{Ownership,Text}
 #include "js/Value.h"                     // JS::Value
-
-#include "mozilla/Utf8.h"  // mozilla::Utf8Unit
-
-#include <stdint.h>  // uint32_t
-#include <string.h>  // strlen
 
 static bool Something(JSContext* cx, unsigned argc, JS::Value* vp) {
   JS::CallArgs args = JS::CallArgsFromVp(argc, vp);

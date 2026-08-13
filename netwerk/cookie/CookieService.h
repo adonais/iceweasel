@@ -5,20 +5,18 @@
 #ifndef mozilla_net_CookieService_h
 #define mozilla_net_CookieService_h
 
-#include "nsICookieService.h"
-#include "nsICookieManager.h"
-#include "nsIObserver.h"
-#include "nsWeakReference.h"
-
 #include "Cookie.h"
 #include "CookieCommons.h"
 #include "ThirdPartyCookieBlockingExceptions.h"
-
-#include "nsString.h"
-#include "nsICookieValidation.h"
-#include "nsIMemoryReporter.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/MozPromise.h"
+#include "nsICookieManager.h"
+#include "nsICookieService.h"
+#include "nsICookieValidation.h"
+#include "nsIMemoryReporter.h"
+#include "nsIObserver.h"
+#include "nsString.h"
+#include "nsWeakReference.h"
 
 class nsIConsoleReportCollector;
 class nsICookieJarSettings;

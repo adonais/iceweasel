@@ -8,7 +8,6 @@
 #include "vm/ErrorObject.h"
 
 #include "js/ColumnNumber.h"  // JS::ColumnNumberOneOrigin
-
 #include "vm/JSAtomState.h"
 #include "vm/JSContext.h"
 

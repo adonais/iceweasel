@@ -200,7 +200,7 @@ class AbstractRange : public nsISupports,
    */
   bool IsInAnySelection() const { return !mSelections.IsEmpty(); }
 
-  void RegisterSelection(mozilla::dom::Selection& aSelection);
+  [[nodiscard]] nsresult RegisterSelection(mozilla::dom::Selection& aSelection);
 
   void UnregisterSelection(const mozilla::dom::Selection& aSelection,
                            IsUnlinking aIsUnlinking = IsUnlinking::No);

@@ -54,104 +54,12 @@ struct OverrideMapping {
 
 namespace IPC {
 
-template <>
-struct ParamTraits<SerializedURI> {
-  typedef SerializedURI paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.spec);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    nsCString spec;
-    if (ReadParam(aReader, &spec)) {
-      aResult->spec = spec;
-      return true;
-    }
-    return false;
-  }
-};
-
-template <>
-struct ParamTraits<ChromePackage> {
-  typedef ChromePackage paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.package);
-    WriteParam(aWriter, aParam.contentBaseURI);
-    WriteParam(aWriter, aParam.localeBaseURI);
-    WriteParam(aWriter, aParam.skinBaseURI);
-    WriteParam(aWriter, aParam.flags);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    nsCString package;
-    SerializedURI contentBaseURI, localeBaseURI, skinBaseURI;
-    uint32_t flags;
-
-    if (ReadParam(aReader, &package) && ReadParam(aReader, &contentBaseURI) &&
-        ReadParam(aReader, &localeBaseURI) &&
-        ReadParam(aReader, &skinBaseURI) && ReadParam(aReader, &flags)) {
-      aResult->package = std::move(package);
-      aResult->contentBaseURI = std::move(contentBaseURI);
-      aResult->localeBaseURI = std::move(localeBaseURI);
-      aResult->skinBaseURI = std::move(skinBaseURI);
-      aResult->flags = flags;
-      return true;
-    }
-    return false;
-  }
-};
-
-template <>
-struct ParamTraits<SubstitutionMapping> {
-  typedef SubstitutionMapping paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.scheme);
-    WriteParam(aWriter, aParam.path);
-    WriteParam(aWriter, aParam.resolvedURI);
-    WriteParam(aWriter, aParam.flags);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    nsCString scheme, path;
-    SerializedURI resolvedURI;
-    uint32_t flags;
-
-    if (ReadParam(aReader, &scheme) && ReadParam(aReader, &path) &&
-        ReadParam(aReader, &resolvedURI) && ReadParam(aReader, &flags)) {
-      aResult->scheme = std::move(scheme);
-      aResult->path = std::move(path);
-      aResult->resolvedURI = std::move(resolvedURI);
-      aResult->flags = flags;
-      return true;
-    }
-    return false;
-  }
-};
-
-template <>
-struct ParamTraits<OverrideMapping> {
-  typedef OverrideMapping paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.originalURI);
-    WriteParam(aWriter, aParam.overrideURI);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    SerializedURI originalURI;
-    SerializedURI overrideURI;
-
-    if (ReadParam(aReader, &originalURI) && ReadParam(aReader, &overrideURI)) {
-      aResult->originalURI = std::move(originalURI);
-      aResult->overrideURI = std::move(overrideURI);
-      return true;
-    }
-    return false;
-  }
-};
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(SerializedURI, spec);
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(ChromePackage, package, contentBaseURI,
+                                  localeBaseURI, skinBaseURI, flags);
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(SubstitutionMapping, scheme, path,
+                                  resolvedURI, flags);
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(OverrideMapping, originalURI, overrideURI);
 
 }  // namespace IPC
 

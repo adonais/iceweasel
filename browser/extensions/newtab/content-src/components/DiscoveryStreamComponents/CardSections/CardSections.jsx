@@ -55,6 +55,51 @@ const CURATED_RECOMMENDATIONS_FEED_URL =
 // Divides evenly by 2, 3, and 4 to avoid orphan cards in any column layout.
 const DEFAULT_MAX_TILES = 12;
 
+// Each card's footprint in grid units, sized so a medium reads as the square it
+// is: a small is half a medium (2x1), a large is two mediums wide (4x2). A grid
+// column is 2 units wide, so a full row spans columnCount * 2 units.
+const CARD_SIZE = {
+  small: { width: 2, height: 1 },
+  medium: { width: 2, height: 2 },
+  large: { width: 4, height: 2 },
+};
+
+const sizeOf = tile => CARD_SIZE[tile.size] ?? CARD_SIZE.medium;
+
+// Return the tileIndexes that fall into an incomplete final row at this
+// breakpoint. These are the orphan cards to hide.
+function getOrphanTileIndexes(tiles, columnCount) {
+  const rowWidth = columnCount * 2; // a grid column is 2 units wide
+  let currentRow = []; // tile indexes in the row we're filling
+  let filled = 0; // units used in this row, including tall cards from above
+  let carry = 0; // units this row's tall cards reserve in the next row
+
+  // Walks each tile, filling currentRow until the row is filled,
+  // then clears it and goes to the next row.
+  // At the end if currentRow is not empty, we have a remainder.
+  tiles.forEach((tile, index) => {
+    const { width, height } = sizeOf(tile);
+    currentRow.push(index);
+    filled += width;
+    if (height > 1) {
+      carry += width;
+    }
+
+    // This row is complete, we can reset and keep looking.
+    if (filled >= rowWidth) {
+      currentRow = [];
+      filled = carry; // next row starts seeded by tall cards from above
+      carry = 0;
+      // The carry alone filled the whole next row (all-tall row), so reset it.
+      if (filled >= rowWidth) {
+        filled = 0;
+      }
+    }
+  });
+
+  return new Set(currentRow);
+}
+
 function getLayoutData(responsiveLayouts, index) {
   let layoutData = {
     classNames: [],
@@ -64,8 +109,12 @@ function getLayoutData(responsiveLayouts, index) {
   };
 
   responsiveLayouts.forEach(layout => {
+    const orphanTiles = getOrphanTileIndexes(layout.tiles, layout.columnCount);
     layout.tiles.forEach((tile, tileIndex) => {
       if (tile.position === index) {
+        if (orphanTiles.has(tileIndex)) {
+          layoutData.classNames.push(`col-${layout.columnCount}-hidden`);
+        }
         layoutData.classNames.push(`col-${layout.columnCount}-${tile.size}`);
         layoutData.classNames.push(
           `col-${layout.columnCount}-position-${tileIndex}`
@@ -834,4 +883,4 @@ function CardSections({
   );
 }
 
-export { CardSections };
+export { CardSections, getOrphanTileIndexes };

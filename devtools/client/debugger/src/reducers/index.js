@@ -10,6 +10,7 @@
 
 import expressions, { initialExpressionState } from "./expressions";
 import sourceActors, { initialSourceActorsState } from "./source-actors";
+import stylesheets, { initialStyleSheetsState } from "./stylesheets";
 import sources, { initialSourcesState } from "./sources";
 import sourceBlackBox, { initialSourceBlackBoxState } from "./source-blackbox";
 import sourcesContent, { initialSourcesContentState } from "./sources-content";
@@ -41,6 +42,7 @@ export function initialState() {
     sourcesContent: initialSourcesContentState(),
     expressions: initialExpressionState(),
     sourceActors: initialSourceActorsState(),
+    stylesheets: initialStyleSheetsState(),
     sourceBlackBox: initialSourceBlackBoxState(),
     tabs: initialTabState(),
     breakpoints: initialBreakpointsState(),
@@ -64,6 +66,7 @@ export default {
   sourceBlackBox,
   sourcesContent,
   sources,
+  stylesheets,
   tabs,
   breakpoints,
   pendingBreakpoints,

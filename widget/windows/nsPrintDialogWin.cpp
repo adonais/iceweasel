@@ -4,11 +4,13 @@
 
 #include "nsPrintDialogWin.h"
 
+#include "WidgetUtils.h"
+#include "WinUtils.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/dom/Promise.h"
 #include "nsArray.h"
-#include "nsComponentManagerUtils.h"
 #include "nsCOMPtr.h"
+#include "nsComponentManagerUtils.h"
 #include "nsIBaseWindow.h"
 #include "nsIBrowserChild.h"
 #include "nsIDialogParamBlock.h"
@@ -18,15 +20,11 @@
 #include "nsIPrintSettings.h"
 #include "nsIWebBrowserChrome.h"
 #include "nsIWidget.h"
-#include "nsPrintDialogUtil.h"
-#include "nsIPrintSettings.h"
-#include "nsIWebBrowserChrome.h"
-#include "nsServiceManagerUtils.h"
 #include "nsPIDOMWindow.h"
+#include "nsPrintDialogUtil.h"
 #include "nsQueryObject.h"
+#include "nsServiceManagerUtils.h"
 #include "nsThreadUtils.h"
-#include "WidgetUtils.h"
-#include "WinUtils.h"
 #include "xpcpublic.h"
 
 static const char* kPageSetupDialogURL =

@@ -120,7 +120,7 @@ async function doOptInTest(useKeyboard) {
   let { element, result } = await openRealtimeSuggestion({ input: "stock" });
   Assert.ok(result.isBestMatch);
   Assert.equal(result.payload.suggestionType, "market_opt_in");
-  Assert.equal(result.type, UrlbarUtils.RESULT_TYPE.TIP);
+  Assert.equal(result.type, UrlbarShared.RESULT_TYPE.TIP);
 
   Assert.ok(
     !element.row.querySelector(".urlbarView-button-result-menu"),
@@ -429,7 +429,7 @@ add_task(async function not_interested() {
   let { element } = await openRealtimeSuggestion({ input: "stock" });
 
   const popup = gURLBar.view.resultMenu;
-  const onPopupShown = BrowserTestUtils.waitForEvent(popup, "popupshown");
+  const onPopupShown = BrowserTestUtils.waitForEvent(popup, "shown");
   const dropmarker = element.row.querySelector(
     ".urlbarView-splitbutton-dropmarker"
   );
@@ -437,15 +437,9 @@ add_task(async function not_interested() {
   await onPopupShown;
 
   info("Activate the not_interested item");
-  const onPopupHidden = BrowserTestUtils.waitForEvent(popup, "popuphidden");
-  const targetMenuItem = popup.querySelector("menuitem");
-  if (AppConstants.platform == "macosx") {
-    // Synthesized clicks don't work in the native Mac menu.
-    targetMenuItem.doCommand();
-    popup.hidePopup(true);
-  } else {
-    EventUtils.synthesizeMouseAtCenter(targetMenuItem, {});
-  }
+  const onPopupHidden = BrowserTestUtils.waitForEvent(popup, "hidden");
+  const targetMenuItem = popup.querySelector("panel-item");
+  EventUtils.synthesizeMouseAtCenter(targetMenuItem, {});
   await onPopupHidden;
   await TestUtils.waitForCondition(
     () => !UrlbarPrefs.get("suggest.realtimeOptIn"),
@@ -474,7 +468,7 @@ add_task(async function not_interested() {
 });
 
 async function openRealtimeSuggestion({ input }) {
-  await BrowserTestUtils.waitForCondition(async () => {
+  await TestUtils.waitForCondition(async () => {
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,
       value: input,

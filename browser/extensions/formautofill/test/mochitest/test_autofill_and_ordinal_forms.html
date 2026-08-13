@@ -51,7 +51,7 @@ add_task(async function check_switch_autofill_form_popup() {
     ],
   );
 
-  await testMenuEntry(0, "autocomplete-autofill-richlistitem");
+  await testMenuEntry(0, "autofill");
 });
 
 add_task(async function check_switch_oridnal_form_popup() {
@@ -62,7 +62,7 @@ add_task(async function check_switch_oridnal_form_popup() {
   await expectPopup();
   checkMenuEntries(["petya"], 0);
 
-  await testMenuEntry(0, "autocomplete-richlistitem");
+  await testMenuEntry(0, "fromhistory");
 });
 
 add_task(async function check_switch_autofill_form_popup_back() {
@@ -80,7 +80,7 @@ add_task(async function check_switch_autofill_form_popup_back() {
     ],
   );
 
-  await testMenuEntry(0, "autocomplete-autofill-richlistitem");
+  await testMenuEntry(0, "autofill");
 });
 
 </script>

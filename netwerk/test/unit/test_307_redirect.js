@@ -56,16 +56,15 @@ function noHeaderStreamObserver(request, buffer) {
   var uploadStream = Cc["@mozilla.org/io/string-input-stream;1"].createInstance(
     Ci.nsIStringInputStream
   );
-  var streamBody =
-    "Content-Type: text/plain\r\n" +
-    "Content-Length: " +
-    requestBody.length +
-    "\r\n\r\n" +
-    requestBody;
-  uploadStream.setByteStringData(streamBody);
+  uploadStream.setByteStringData(requestBody);
   chan
-    .QueryInterface(Ci.nsIUploadChannel)
-    .setUploadStream(uploadStream, "", -1);
+    .QueryInterface(Ci.nsIUploadChannel2)
+    .explicitSetUploadStream(
+      uploadStream,
+      "text/plain",
+      requestBody.length,
+      "POST"
+    );
   chan.asyncOpen(new ChannelListener(headerStreamObserver, null));
 }
 

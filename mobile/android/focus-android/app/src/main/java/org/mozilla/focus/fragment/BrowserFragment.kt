@@ -559,13 +559,10 @@ class BrowserFragment :
                     positiveButtonTextColor = R.color.colorPrimary,
                 ),
                 onNeedToRequestPermissions = { permissions ->
-                    if (SitePermissionOptionsStorage(requireContext()).isSitePermissionNotBlocked(permissions)) {
-                        requestPermissionLauncher.launch(permissions)
-                    }
+                    requestPermissionLauncher.launch(permissions)
                 },
                 onShouldShowRequestPermissionRationale = {
-                    // Since we don't request permissions this it will not be called
-                    false
+                    shouldShowRequestPermissionRationale(it)
                 },
                 sitePermissionsRules = SitePermissionOptionsStorage(requireContext()).getSitePermissionsSettingsRules(),
                 sessionId = tabId,

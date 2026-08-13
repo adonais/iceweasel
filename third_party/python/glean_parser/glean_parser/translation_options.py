@@ -45,6 +45,11 @@ JavaScript:
 Markdown:
 - `project_title`: The project's title.
 
+Go server (`go_server`):
+- `transport`: Transport mode. One of `logging` (Cloud Logging, the default),
+        `pubsub` (Pub/Sub direct publishing), or `combined` (emit both in a
+        single file, sharing common types, for a gradual migration).
+
 (press q to exit)"""
 
     if value:

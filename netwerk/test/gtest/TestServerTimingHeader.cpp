@@ -1,8 +1,8 @@
-#include "gtest/gtest.h"
-
-#include "mozilla/net/nsServerTiming.h"
 #include <string>
 #include <vector>
+
+#include "gtest/gtest.h"
+#include "mozilla/net/nsServerTiming.h"
 
 using namespace mozilla;
 using namespace mozilla::net;

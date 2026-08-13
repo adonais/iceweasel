@@ -3,9 +3,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import argparse
-import shlex
 import sys
 from operator import itemgetter
+
+from mozshellutil import split as shell_split
 
 from mach.command_util import suggest_command
 
@@ -17,6 +18,19 @@ class CommandFormatter(argparse.HelpFormatter):
 
     def add_usage(self, *args):
         pass
+
+
+class CommandArgumentParser(argparse.ArgumentParser):
+    """An ArgumentParser that prints the command help on error.
+
+    argparse's default error handling prints only the usage line, which hides
+    the descriptions of the arguments involved. Printing the help makes errors
+    such as a missing required argument self-explanatory.
+    """
+
+    def error(self, message):
+        self.print_help(sys.stderr)
+        self.exit(2, f"\n{self.prog}: error: {message}\n")
 
 
 class CommandAction(argparse.Action):
@@ -77,6 +91,19 @@ class CommandAction(argparse.Action):
         self._mach_registrar = registrar
         self._context = context
 
+    def _resolve_command(self, command, args):
+        # First see if this is a user-defined alias
+        if command in self._context.settings.alias:
+            alias = self._context.settings.alias[command]
+            command, *defaults = shell_split(alias)
+            args = defaults + args
+
+        if command not in self._mach_registrar.command_handlers:
+            # Try to find similar commands, may raise UnknownCommandError.
+            command = suggest_command(command)
+
+        return command, args
+
     def __call__(self, parser, namespace, values, option_string=None):
         """This is called when the ArgumentParser has reached our arguments.
 
@@ -100,10 +127,16 @@ class CommandAction(argparse.Action):
         elif values:
             command = values[0].lower()
             args = values[1:]
+
+            # "help" is handled specially below and isn't a registered command.
+            if command != "help":
+                command, args = self._resolve_command(command, args)
+
             if command == "help":
                 if args and args[0] not in ["-h", "--help"]:
                     # Make sure args[0] is indeed a command.
-                    self._handle_command_help(parser, args[0], args)
+                    help_command, _ = self._resolve_command(args[0], args[1:])
+                    self._handle_command_help(parser, help_command, args)
                 else:
                     self._handle_main_help(parser, namespace.verbose)
                 sys.exit(0)
@@ -123,17 +156,6 @@ class CommandAction(argparse.Action):
                     sys.exit(0)
         else:
             raise NoCommandError(namespace)
-
-        # First see if the this is a user-defined alias
-        if command in self._context.settings.alias:
-            alias = self._context.settings.alias[command]
-            defaults = shlex.split(alias)
-            command = defaults.pop(0)
-            args = defaults + args
-
-        if command not in self._mach_registrar.command_handlers:
-            # Try to find similar commands, may raise UnknownCommandError.
-            command = suggest_command(command)
 
         handler = self._mach_registrar.command_handlers.get(command)
 
@@ -189,7 +211,7 @@ class CommandAction(argparse.Action):
                         {"default": arg.default, "nargs": arg.nargs, "help": arg.help},
                     )
         else:
-            subparser = argparse.ArgumentParser(**parser_args)
+            subparser = CommandArgumentParser(**parser_args)
 
         for arg in handler.arguments:
             # Remove our group keyword; it's not needed here.

@@ -5,17 +5,17 @@
 #ifndef MOZILLA_GFX_RECT_H_
 #define MOZILLA_GFX_RECT_H_
 
-#include "BaseRect.h"
-#include "BaseMargin.h"
-#include "NumericTools.h"
-#include "Point.h"
-#include "Tools.h"
-#include "mozilla/Maybe.h"
-
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <iterator>
+
+#include "BaseMargin.h"
+#include "BaseRect.h"
+#include "NumericTools.h"
+#include "Point.h"
+#include "Tools.h"
+#include "mozilla/Maybe.h"
 
 namespace mozilla {
 
@@ -61,7 +61,7 @@ struct MOZ_EMPTY_BASES IntMarginTyped
 typedef IntMarginTyped<UnknownUnits> IntMargin;
 
 template <class Units, class F = Float>
-struct MarginTyped
+struct MOZ_EMPTY_BASES MarginTyped
     : public BaseMargin<F, MarginTyped<Units, F>, CoordTyped<Units, F> >,
       public Units {
   static_assert(IsPixel<Units>::value,

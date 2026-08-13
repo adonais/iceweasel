@@ -2,20 +2,19 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/TimeStamp.h"
-
-#include <stdlib.h>
 #include <stdio.h>
-#include "nsTArray.h"
-#include "nsString.h"
-#include "nsDirectoryServiceDefs.h"
-#include "nsDirectoryServiceUtils.h"
-#include "nsComponentManagerUtils.h"
-#include "nsXPCOM.h"
-#include "nsIFile.h"
+#include <stdlib.h>
 
 #include "gtest/gtest.h"
+#include "mozilla/TimeStamp.h"
 #include "mozilla/gtest/MozAssertions.h"
+#include "nsComponentManagerUtils.h"
+#include "nsDirectoryServiceDefs.h"
+#include "nsDirectoryServiceUtils.h"
+#include "nsIFile.h"
+#include "nsString.h"
+#include "nsTArray.h"
+#include "nsXPCOM.h"
 
 using namespace mozilla;
 

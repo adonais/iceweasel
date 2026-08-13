@@ -122,6 +122,14 @@ class nsIScriptElement : public nsIScriptLoaderObserver {
   }
 
   /**
+   * Is the script a speculation rule set.
+   */
+  bool GetScriptIsSpeculationRules() {
+    MOZ_ASSERT(mFrozen, "Not ready for this call yet!");
+    return mKind == JS::loader::ScriptKind::eSpeculationRules;
+  }
+
+  /**
    * Is the script deferred.
    */
   bool GetScriptDeferred() {

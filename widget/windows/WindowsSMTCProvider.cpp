@@ -13,14 +13,14 @@
 #  include <windows.media.h>
 #  include <wrl.h>
 
-#  include "nsMimeTypes.h"
 #  include "mozilla/Assertions.h"
 #  include "mozilla/Logging.h"
 #  include "mozilla/Maybe.h"
-#  include "mozilla/WidgetUtils.h"
 #  include "mozilla/ScopeExit.h"
+#  include "mozilla/WidgetUtils.h"
 #  include "mozilla/dom/MediaControlUtils.h"
 #  include "mozilla/media/MediaUtils.h"
+#  include "nsMimeTypes.h"
 #  include "nsThreadUtils.h"
 
 #  pragma comment(lib, "runtimeobject.lib")

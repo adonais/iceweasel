@@ -1,7 +1,21 @@
 <!-- This Source Code Form is subject to the terms of the Mozilla Public
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
-  <path fill="context-fill" fill-opacity="context-fill-opacity" d="M13.5 3h-11A2.5 2.5 0 0 0 0 5.5v5A2.5 2.5 0 0 0 2.5 13h3a2 2 0 0 0 1.56-0.75l0.1-0.15 0.38-0.7a0.5 0.5 0 0 1 0.88 0l0.38 0.7 0.1 0.15A2 2 0 0 0 10.46 13h3A2.5 2.5 0 0 0 16 10.5v-5A2.5 2.5 0 0 0 13.5 3zm0.5 7.5a0.5 0.5 0 0 1-0.5 0.5h-3l-0.3-0.56a2.51 2.51 0 0 0-4.4 0L5.5 11h-3A0.5 0.5 0 0 1 2 10.5v-5A0.5 0.5 0 0 1 2.5 5h11A0.5 0.5 0 0 1 14 5.5z"/>
-  <path fill="context-fill" fill-opacity="context-fill-opacity" d="M12.5 6h-9a0.5 0.5 0 0 0 0 1h9a0.5 0.5 0 0 0 0-1z"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="context-fill" fill-opacity="context-fill-opacity">
+<style>
+.nova { display: none; }
+
+@media -moz-pref("browser.nova.enabled") {
+  .proton { display: none; }
+  .nova { display: revert; }
+}
+</style>
+<g class="proton">
+  <path d="M13.5 3h-11A2.5 2.5 0 0 0 0 5.5v5A2.5 2.5 0 0 0 2.5 13h3a2 2 0 0 0 1.56-0.75l0.1-0.15 0.38-0.7a0.5 0.5 0 0 1 0.88 0l0.38 0.7 0.1 0.15A2 2 0 0 0 10.46 13h3A2.5 2.5 0 0 0 16 10.5v-5A2.5 2.5 0 0 0 13.5 3zm0.5 7.5a0.5 0.5 0 0 1-0.5 0.5h-3l-0.3-0.56a2.51 2.51 0 0 0-4.4 0L5.5 11h-3A0.5 0.5 0 0 1 2 10.5v-5A0.5 0.5 0 0 1 2.5 5h11A0.5 0.5 0 0 1 14 5.5z"/>
+  <path d="M12.5 6h-9a0.5 0.5 0 0 0 0 1h9a0.5 0.5 0 0 0 0-1z"/>
+</g>
+<g class="nova">
+  <path d="M11.625 5.5a.75.75 0 0 1 0 1.5h-7.25a.75.75 0 0 1 0-1.5z" />
+  <path fill-rule="evenodd" d="M8 2.5c1.663 0 3.516.077 5.523.286l.258.04A2.76 2.76 0 0 1 16 5.525v4.712a2.755 2.755 0 0 1-2.654 2.752v.001q-.23.01-.471.01a12 12 0 0 1-1.687-.117 2.77 2.77 0 0 1-1.735-.967l-1.26-1.514a.25.25 0 0 0-.384 0h-.001l-1.261 1.511a2.75 2.75 0 0 1-1.47.919l-.252.048a12 12 0 0 1-2.214.108C1.137 12.927.001 11.693 0 10.242V5.525c0-1.4 1.049-2.59 2.454-2.737A54 54 0 0 1 8 2.5M8 4c-1.945 0-3.75.11-5.39.28A1.246 1.246 0 0 0 1.5 5.525v4.717c0 .671.526 1.22 1.174 1.248q.239.01.451.01c.547 0 1.047-.042 1.49-.104l.112-.022c.258-.062.49-.207.668-.419l1.261-1.513a1.75 1.75 0 0 1 2.688 0l1.262 1.515.08.086c.192.191.443.318.71.355a10.7 10.7 0 0 0 1.887.094h.003a1.256 1.256 0 0 0 1.214-1.254V5.526c0-.638-.49-1.181-1.133-1.248A52 52 0 0 0 8 4" clip-rule="evenodd" />
+</g>
 </svg>

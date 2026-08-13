@@ -31,6 +31,7 @@ import org.mozilla.geckoview.TranslationsController.RuntimeTranslation.ModelMana
 import org.mozilla.geckoview.TranslationsController.RuntimeTranslation.NEVER
 import org.mozilla.geckoview.TranslationsController.RuntimeTranslation.OFFER
 import org.mozilla.geckoview.TranslationsController.SessionTranslation.Delegate
+import org.mozilla.geckoview.TranslationsController.SessionTranslation.DetectedLanguages
 import org.mozilla.geckoview.TranslationsController.SessionTranslation.TranslationOptions
 import org.mozilla.geckoview.TranslationsController.SessionTranslation.TranslationState
 import org.mozilla.geckoview.TranslationsController.TranslationsException
@@ -149,6 +150,58 @@ class TranslationsTest : BaseSessionTest() {
         }
         mainSession.loadTestPath(TRANSLATIONS_ES)
         mainSession.waitForPageStop()
+    }
+
+    @Test
+    fun offerTranslationForNonPrimaryLanguageTest() {
+        if (!sessionRule.env.isAutomation) {
+            // On Android the Accept-Language list is generated from the app and OS
+            // locales rather than being user-curated, so only the primary language
+            // ("en") suppresses the automatic offer. A page in a language that is
+            // only present as a secondary entry ("es") should still be offered a
+            // translation into the primary language.
+            sessionRule.setPrefsUntilTestEnd(
+                mapOf("intl.accept_languages" to "en, es"),
+            )
+
+            val detected = GeckoResult<DetectedLanguages>()
+            var completed = false
+            sessionRule.delegateUntilTestEnd(object : Delegate {
+                override fun onTranslationStateChange(
+                    session: GeckoSession,
+                    translationState: TranslationState?,
+                ) {
+                    val languages = translationState?.detectedLanguages
+                    // onTranslationStateChange fires multiple times; capture the
+                    // first state change that carries a detected document language.
+                    if (!completed && languages?.docLangTag != null) {
+                        completed = true
+                        detected.complete(languages)
+                    }
+                }
+            })
+
+            mainSession.loadTestPath(TRANSLATIONS_ES)
+            mainSession.waitForPageStop()
+
+            sessionRule.waitForResult(detected).let {
+                assertEquals(
+                    "The document language is detected as Spanish.",
+                    "es",
+                    it.docLangTag,
+                )
+                assertTrue(
+                    "The Spanish document language is supported.",
+                    it.isDocLangTagSupported,
+                )
+                assertEquals(
+                    "A translation into the primary language is offered even though " +
+                        "Spanish is only present as a secondary Accept-Language entry.",
+                    "en",
+                    it.userLangTag,
+                )
+            }
+        }
     }
 
     // Simpler translation test that doesn't test delegate state.

@@ -111,6 +111,7 @@ class SmallMenuCandidateViewHolderTest {
         assertFalse(clicked)
 
         dismissed = false
+        clearInvocations(view)
         holder.bind(
             SmallMenuCandidate(
                 "hello",

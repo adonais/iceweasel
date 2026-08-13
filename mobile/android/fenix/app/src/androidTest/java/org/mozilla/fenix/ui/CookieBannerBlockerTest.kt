@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.ui
 
-import androidx.core.net.toUri
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -16,7 +15,6 @@ import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestHelper.appContext
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.homeScreen
-import org.mozilla.fenix.ui.robots.navigationToolbar
 import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
 /**
@@ -45,22 +43,6 @@ class CookieBannerBlockerTest {
             }.openThreeDotMenu {
             }.clickSettingsButton {
                 verifyCookieBannerBlockerButton(enabled = true)
-            }
-        }
-    }
-
-    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2419273
-    @SmokeTest
-    @Test
-    fun verifyCFRAfterBlockingTheCookieBanner() {
-        runWithCondition(appContext.components.settings.shouldUseCookieBannerPrivateMode) {
-            homeScreen(composeTestRule) {
-            }.togglePrivateBrowsingMode()
-
-            navigationToolbar(composeTestRule) {
-            }.enterURLAndEnterToBrowser("materiel.net".toUri()) {
-                verifyCookieBannerExists(exists = false)
-                verifyCookieBannerBlockerCFRExists(exists = true)
             }
         }
     }

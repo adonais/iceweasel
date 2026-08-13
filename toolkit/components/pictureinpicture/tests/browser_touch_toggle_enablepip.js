@@ -236,7 +236,7 @@ add_task(async () => {
 
       try {
         info("Picture-in-Picture window should open");
-        await BrowserTestUtils.waitForCondition(
+        await TestUtils.waitForCondition(
           () => Services.wm.getEnumerator(WINDOW_TYPE).hasMoreElements(),
           "Found a Picture-in-Picture"
         );

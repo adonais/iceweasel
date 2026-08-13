@@ -5147,8 +5147,8 @@ static void set_mb_ssim_rdmult_scaling(VP9_COMP *cpi) {
 
 // Process the wiener variance in 16x16 block basis.
 static int qsort_comp(const void *elem1, const void *elem2) {
-  int a = *((const int *)elem1);
-  int b = *((const int *)elem2);
+  int a = *((const tran_low_t *)elem1);
+  int b = *((const tran_low_t *)elem2);
   if (a > b) return 1;
   if (a < b) return -1;
   return 0;
@@ -5256,7 +5256,7 @@ static void set_mb_wiener_variance(VP9_COMP *cpi) {
       coeff[0] = 0;
       for (idx = 1; idx < coeff_count; ++idx) coeff[idx] = abs(coeff[idx]);
 
-      qsort(coeff, coeff_count - 1, sizeof(*coeff), qsort_comp);
+      qsort(coeff, coeff_count, sizeof(*coeff), qsort_comp);
 
       // Noise level estimation
       median_val = coeff[coeff_count / 2];

@@ -3,15 +3,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 // HttpLog.h should generally be included first
-#include "HttpLog.h"
-
 #include "TlsHandshaker.h"
+
+#include "HttpLog.h"
 #include "mozilla/StaticPrefs_network.h"
+#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "nsHttpConnection.h"
 #include "nsHttpConnectionInfo.h"
 #include "nsHttpHandler.h"
 #include "nsITLSSocketControl.h"
-#include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 
 #define TLS_EARLY_DATA_NOT_AVAILABLE 0
 #define TLS_EARLY_DATA_AVAILABLE_BUT_NOT_USED 1

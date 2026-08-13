@@ -495,7 +495,7 @@ impl ApplicationInformation {
         let release_channel = ApplicationInformation::get_release_channel(install_path.as_ref())?;
         let crash_reports_dir = ApplicationInformation::get_crash_reports_dir(&application_data)?;
         let install_time =
-            crash_helper_common::ApplicationInfo::get_install_time(Some(exe_path)).unwrap_or(0);
+            crash_helper_common::ApplicationInfo::compute_install_time(Some(exe_path)).unwrap_or(0);
 
         Ok(ApplicationInformation {
             install_path,

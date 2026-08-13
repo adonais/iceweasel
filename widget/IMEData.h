@@ -5,19 +5,18 @@
 #ifndef mozilla_widget_IMEData_h_
 #define mozilla_widget_IMEData_h_
 
+#include "Units.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/EnumSet.h"
 #include "mozilla/EnumTypeTraits.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/NativeKeyBindingsType.h"
-
 #include "nsCOMPtr.h"
 #include "nsIURI.h"
 #include "nsPoint.h"
 #include "nsRect.h"
 #include "nsString.h"
 #include "nsXULAppAPI.h"
-#include "Units.h"
 
 class nsIWidget;
 

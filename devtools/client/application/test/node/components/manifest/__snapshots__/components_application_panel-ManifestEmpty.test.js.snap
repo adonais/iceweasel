@@ -31,8 +31,8 @@ exports[`ManifestEmpty renders the expected snapshot 1`] = `
       <Localized
         id="manifest-empty-intro-link"
       >
-        <a
-          onClick={[Function]}
+        <MDNLink
+          url="https://developer.mozilla.org/docs/Web/Progressive_web_apps/Manifest?utm_source=devtools&utm_medium=sw-panel-blank&utm_campaign=default"
         />
       </Localized>
     </p>

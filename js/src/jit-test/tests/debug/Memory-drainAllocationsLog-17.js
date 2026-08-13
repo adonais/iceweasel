@@ -21,7 +21,7 @@ root.eval(
   this.tests = [
     { name: "new UInt8Array(256)", fn: () => new Uint8Array(256)         },
     { name: "arguments",           fn: function () { return arguments; } },
-    { name: "asm.js module",       fn: () => AsmModule(this, {}, buf)    },
+    { name: "AsmModule call",      fn: () => AsmModule(this, {}, buf)    },
     { name: "/2manyproblemz/g",    fn: () => /2manyproblemz/g            },
     { name: "iterator",            fn: () => [1,2,3][Symbol.iterator]()  },
     { name: "Error()",             fn: () => Error()                     },

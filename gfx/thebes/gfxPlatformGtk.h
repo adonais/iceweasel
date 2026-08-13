@@ -6,9 +6,9 @@
 #define GFX_PLATFORM_GTK_H
 
 #include "gfxPlatform.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "nsAutoRef.h"
 #include "nsTArray.h"
-#include "mozilla/gfx/gfxVars.h"
 
 #ifdef MOZ_X11
 struct _XDisplay;

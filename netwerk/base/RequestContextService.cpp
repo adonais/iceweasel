@@ -2,28 +2,26 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsIDocShell.h"
-#include "mozilla/dom/Document.h"
-#include "nsComponentManagerUtils.h"
-#include "nsIDocumentLoader.h"
-#include "nsIObserverService.h"
-#include "nsITimer.h"
-#include "nsIXULRuntime.h"
-#include "nsServiceManagerUtils.h"
-#include "nsThreadUtils.h"
 #include "RequestContextService.h"
 
+#include "../protocol/http/nsHttpHandler.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TimeStamp.h"
-
+#include "mozilla/dom/Document.h"
 #include "mozilla/net/NeckoChild.h"
 #include "mozilla/net/NeckoCommon.h"
-
-#include "../protocol/http/nsHttpHandler.h"
+#include "nsComponentManagerUtils.h"
+#include "nsIDocShell.h"
+#include "nsIDocumentLoader.h"
+#include "nsIObserverService.h"
+#include "nsITimer.h"
+#include "nsIXULRuntime.h"
+#include "nsServiceManagerUtils.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla {
 namespace net {

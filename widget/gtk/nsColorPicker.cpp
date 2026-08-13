@@ -8,6 +8,8 @@
 #  include "X11UndefineNone.h"
 #endif
 
+#include "WidgetUtils.h"
+#include "gfxPlatform.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/HTMLInputElement.h"
@@ -15,9 +17,7 @@
 #include "nsColorPicker.h"
 #include "nsGtkUtils.h"
 #include "nsIWidget.h"
-#include "WidgetUtils.h"
 #include "nsPIDOMWindow.h"
-#include "gfxPlatform.h"
 
 using mozilla::dom::HTMLInputElement;
 

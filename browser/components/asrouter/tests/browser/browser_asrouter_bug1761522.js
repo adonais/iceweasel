@@ -39,7 +39,7 @@ async function serveRemoteSettings() {
       JSON.stringify({
         capabilities: {
           attachments: {
-            base_url: `${baseURL}cdn`,
+            base_url: `${baseURL}cdn/`,
           },
         },
       })

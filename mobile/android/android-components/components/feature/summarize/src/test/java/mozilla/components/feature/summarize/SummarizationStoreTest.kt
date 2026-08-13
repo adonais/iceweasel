@@ -8,6 +8,8 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.toList
@@ -26,7 +28,6 @@ import mozilla.components.feature.summarize.SummarizationState.Summarized
 import mozilla.components.feature.summarize.SummarizationState.Summarizing
 import mozilla.components.feature.summarize.content.Content
 import mozilla.components.feature.summarize.content.ContentProvider
-import mozilla.components.feature.summarize.content.PageContentExtractor
 import mozilla.components.feature.summarize.content.PageMetadata
 import mozilla.components.feature.summarize.ext.defaultInstructions
 import mozilla.components.feature.summarize.ext.recipeInstructions
@@ -39,6 +40,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import kotlin.test.assertIs
 import kotlin.time.Duration.Companion.seconds
 
 class SummarizationStoreTest {
@@ -63,6 +65,7 @@ class SummarizationStoreTest {
             reducer = ::summarizationReducer,
             middleware = listOf(
                 SummarizationMiddleware(
+                    isPageLoadingFlow = MutableStateFlow(false),
                     settings = settings,
                     llmProvider = provider,
                     contentProvider = { Result.success(Content(PageMetadata(pageTitle = pageTitle))) },
@@ -106,6 +109,7 @@ class SummarizationStoreTest {
             reducer = ::summarizationReducer,
             middleware = listOf(
                 SummarizationMiddleware(
+                    isPageLoadingFlow = MutableStateFlow(false),
                     settings = settings,
                     llmProvider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(FakeLlm.successful)),
                     contentProvider = { Result.success(Content()) },
@@ -149,6 +153,7 @@ class SummarizationStoreTest {
             reducer = ::summarizationReducer,
             middleware = listOf(
                 SummarizationMiddleware(
+                    isPageLoadingFlow = MutableStateFlow(false),
                     llmProvider = provider,
                     settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
                     contentProvider = { Result.success(Content(PageMetadata(listOf("Article"), 0, "en", pageTitle = pageTitle), content)) },
@@ -193,6 +198,7 @@ class SummarizationStoreTest {
             reducer = ::summarizationReducer,
             middleware = listOf(
                 SummarizationMiddleware(
+                    isPageLoadingFlow = MutableStateFlow(false),
                     llmProvider = provider,
                     settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
                     contentProvider = { Result.success(Content(PageMetadata(listOf("Article"), 0, language, pageTitle = pageTitle), content)) },
@@ -237,6 +243,7 @@ class SummarizationStoreTest {
             reducer = ::summarizationReducer,
             middleware = listOf(
                 SummarizationMiddleware(
+                    isPageLoadingFlow = MutableStateFlow(false),
                     llmProvider = provider,
                     settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
                     contentProvider = { Result.success(Content(PageMetadata(listOf("Recipe"), 0, language, pageTitle = pageTitle), content)) },
@@ -278,6 +285,7 @@ class SummarizationStoreTest {
             reducer = ::summarizationReducer,
             middleware = listOf(
                 SummarizationMiddleware(
+                    isPageLoadingFlow = MutableStateFlow(false),
                     llmProvider = provider,
                     settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
                     contentProvider = { Result.failure(failureThrowable) },
@@ -315,10 +323,11 @@ class SummarizationStoreTest {
         val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(hangingLlm))
         val pageTitle = "Article Headline"
         val store = SummarizationStore(
-            initialState = Inert(true),
+            initialState = Inert(false),
             reducer = ::summarizationReducer,
             middleware = listOf(
                 SummarizationMiddleware(
+                    isPageLoadingFlow = MutableStateFlow(true),
                     llmProvider = provider,
                     settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
                     contentProvider = { Result.success(Content(PageMetadata(pageTitle = pageTitle), "body")) },
@@ -339,10 +348,10 @@ class SummarizationStoreTest {
 
         val terminal = states.last() as Error
         val failure = terminal.error as SummarizationError.SummarizationFailed
-        assertTrue(failure.exception.cause is TimeoutCancellationException)
+        assertIs<TimeoutCancellationException>(failure.exception.cause)
 
         assertEquals(1, reportedErrors.size)
-        assertTrue(reportedErrors.single().cause is TimeoutCancellationException)
+        assertIs<TimeoutCancellationException>(reportedErrors.single().cause)
     }
 
     @Test
@@ -357,6 +366,7 @@ class SummarizationStoreTest {
             reducer = ::summarizationReducer,
             middleware = listOf(
                 SummarizationMiddleware(
+                    isPageLoadingFlow = MutableStateFlow(false),
                     settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
                     llmProvider = provider,
                     contentProvider = ContentProvider.fromPage(
@@ -411,6 +421,7 @@ class SummarizationStoreTest {
             reducer = ::summarizationReducer,
             middleware = listOf(
                 SummarizationMiddleware(
+                    isPageLoadingFlow = MutableStateFlow(false),
                     settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
                     llmProvider = provider,
                     contentProvider = ContentProvider.fromPage(
@@ -462,6 +473,7 @@ class SummarizationStoreTest {
             reducer = ::summarizationReducer,
             middleware = listOf(
                 SummarizationMiddleware(
+                    isPageLoadingFlow = MutableStateFlow(false),
                     llmProvider = provider,
                     settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
                     contentProvider = { Result.failure(failureThrowable) },
@@ -511,6 +523,7 @@ class SummarizationStoreTest {
             reducer = ::summarizationReducer,
             middleware = listOf(
                 SummarizationMiddleware(
+                    isPageLoadingFlow = MutableStateFlow(false),
                     settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
                     llmProvider = provider,
                     contentProvider = {
@@ -565,6 +578,7 @@ class SummarizationStoreTest {
             reducer = ::summarizationReducer,
             middleware = listOf(
                 SummarizationMiddleware(
+                    isPageLoadingFlow = MutableStateFlow(false),
                     llmProvider = provider,
                     settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
                     contentProvider = { Result.success(Content(PageMetadata(listOf("Article"), 0, "en"), content)) },
@@ -608,6 +622,7 @@ class SummarizationStoreTest {
             reducer = ::summarizationReducer,
             middleware = listOf(
                 SummarizationMiddleware(
+                    isPageLoadingFlow = MutableStateFlow(false),
                     llmProvider = provider,
                     settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
                     contentProvider = { Result.failure(IllegalStateException()) },
@@ -633,6 +648,66 @@ class SummarizationStoreTest {
             Loading(provider.info),
             Error(SummarizationError.SummarizationFailed(exception)),
         )
+        assertEquals(expected, states)
+    }
+
+    @Test
+    fun `WHEN the page is loading THEN this is reflected in the state`() {
+        val store = SummarizationStore(
+            initialState = Inert(true),
+            reducer = ::summarizationReducer,
+            middleware = listOf(),
+        )
+
+        assertFalse(store.state.isPageLoading)
+
+        store.dispatch(PageLoadStarted)
+
+        assertTrue(store.state.isPageLoading)
+    }
+
+    @Test
+    fun `WHEN the page has finished loading THEN the state transitions to loading, followed by summarization states`() = runTest {
+        val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(FakeLlm.successful))
+        val pageTitle = "Article Headline"
+        val isPageLoadingMutableFlow = MutableStateFlow(true)
+        val isPageLoadingFlow = isPageLoadingMutableFlow.asStateFlow()
+        val store = SummarizationStore(
+            initialState = Inert(true),
+            reducer = ::summarizationReducer,
+            middleware = listOf(
+                SummarizationMiddleware(
+                    isPageLoadingFlow = isPageLoadingFlow,
+                    settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
+                    llmProvider = provider,
+                    contentProvider = { Result.success(Content(PageMetadata(pageTitle = pageTitle))) },
+                    errorReporter = noopReporter,
+                    scope = backgroundScope,
+                    dispatcher = StandardTestDispatcher(testScheduler),
+                ),
+            ),
+        )
+
+        val states = mutableListOf<SummarizationState>()
+        backgroundScope.launch {
+            store.stateFlow.toList(states)
+        }
+
+        store.dispatch(ViewAppeared)
+        testScheduler.advanceTimeBy(15.seconds)
+        isPageLoadingMutableFlow.emit(false)
+        testScheduler.advanceTimeBy(15.seconds)
+
+        val expected = listOf<SummarizationState>(
+            Inert(true),
+            SummarizationState.PageLoading,
+            Loading(provider.info),
+            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\n")),
+            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\n")),
+            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
+            Summarized(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
+        )
+
         assertEquals(expected, states)
     }
 }

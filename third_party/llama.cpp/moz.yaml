@@ -10,8 +10,8 @@ origin:
 
   url: https://github.com/ggml-org/llama.cpp
 
-  release: d32e03f4495d3efa1c5126f53b449f1d429c5664 (2025-08-14T11:59:50Z).
-  revision: d32e03f4495d3efa1c5126f53b449f1d429c5664
+  release: 74ade52741203e5c8f81eaf06a96cb1cfe15f2a3 (2026-06-16T18:24:28Z).
+  revision: 74ade52741203e5c8f81eaf06a96cb1cfe15f2a3
 
   license: MIT
 
@@ -42,6 +42,8 @@ vendoring:
     - LICENSE
     - src/*.cpp
     - src/*.h
+    - src/models/*.cpp
+    - src/models/*.h
     - src/CMakeLists.txt
     - CMakeLists.txt
     - include/llama.h
@@ -84,5 +86,6 @@ vendoring:
      - load-from-buffer-or-fd.patch # add an API to load a model from a buffer or a fd
      - static-ctors.patch # remove some static ctors
      - fix-RLIMIT_MEMLOCK-solaris.patch # fix the build on solaris
-     - missing-include.patch # backported from https://github.com/ggml-org/llama.cpp/commit/2aa45ef9e31069ea0a7d0fef7ce858facdf25218
      - profiler-hooks.patch # add thread callbacks for Firefox Profiler integration
+     - missing-includes.patch # missing include cerrno in gguf.cpp, include mutex in llama-model-loader.cpp
+     - skip-metadata-dump.patch # skip dumping metadata strings that proved costly in profiling

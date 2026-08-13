@@ -3,9 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsRedirectHistoryEntry.h"
+
 #include "nsCOMPtr.h"
-#include "nsIURI.h"
 #include "nsIPrincipal.h"
+#include "nsIURI.h"
 
 namespace mozilla {
 namespace net {

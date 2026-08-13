@@ -794,9 +794,10 @@ int nr_ice_peer_ctx_deliver_packet_maybe(nr_ice_peer_ctx *pctx, nr_ice_component
     if(!cand)
       ABORT(R_REJECTED);
 
-    // accumulate the received bytes for the active candidate pair
+    // accumulate the received bytes and packets for the active candidate pair
     if (peer_comp->active) {
       peer_comp->active->bytes_recvd += len;
+      peer_comp->active->packets_recvd += 1;
       gettimeofday(&peer_comp->active->last_recvd, 0);
     }
 

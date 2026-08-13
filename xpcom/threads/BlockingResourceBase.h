@@ -7,10 +7,8 @@
 
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/ThreadLocal.h"
-
-#include "nscore.h"
 #include "nsDebug.h"
-
+#include "nscore.h"
 #include "prtypes.h"
 
 #ifdef DEBUG

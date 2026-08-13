@@ -5,7 +5,8 @@
 #ifndef js_experimental_CodeCoverage_h
 #define js_experimental_CodeCoverage_h
 
-#include "jstypes.h"     // JS_PUBLIC_API
+#include "jstypes.h"  // JS_PUBLIC_API
+
 #include "js/Utility.h"  // JS::UniqueChars
 
 struct JS_PUBLIC_API JSContext;

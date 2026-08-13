@@ -8,14 +8,15 @@
 
 #include <gdk/gdk.h>
 
+#include "Units.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Types.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/widget/WindowSurface.h"
-#include "Units.h"
 
 #ifdef MOZ_X11
 #  include <X11/Xlib.h>  // for Window, Display, Visual, etc.
+
 #  include "X11UndefineNone.h"
 #endif
 

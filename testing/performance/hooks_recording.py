@@ -17,6 +17,8 @@ options = [
 ]
 
 next_site = None
+current_site = None
+failed_sites = []
 
 RECORDING_LIST = Path(Path(__file__).parent, "pageload_sites.json")
 
@@ -25,12 +27,23 @@ RECORDING_LIST = Path(Path(__file__).parent, "pageload_sites.json")
 # perftest team.
 # RECORDING_LIST = Path(Path(__file__).parent, "tp7_desktop_sites.json")
 
+# Allow overriding the recording list via env var, so we don't need to edit
+# this file when switching between site lists.
+if os.environ.get("PERFTEST_RECORDING_LIST"):
+    RECORDING_LIST = Path(os.environ["PERFTEST_RECORDING_LIST"])
+
 SCM_1_LOGIN_SITES = ("facebook", "netflix")
 
 
 def before_iterations(kw):
-    global next_site
+    global next_site, RECORDING_LIST  # noqa: PLW0603
     print("Setting up next site to record.")
+
+    # Nav sites all use a -nav suffix. Auto-switch to nav_sites.json so the
+    # caller doesn't need to set PERFTEST_RECORDING_LIST manually.
+    page = kw.get("proxy_perftest_page") or ""
+    if page.endswith("-nav") and not os.environ.get("PERFTEST_RECORDING_LIST"):
+        RECORDING_LIST = Path(Path(__file__).parent, "nav_sites.json")
 
     with RECORDING_LIST.open() as f:
         site_list = json.load(f)
@@ -110,7 +123,9 @@ def before_runs(env):
 
     if next_site:
         test_site = next(next_site)
-        print("Next site: %s" % test_site)
+        global current_site  # noqa: PLW0603
+        current_site = test_site.get("name")
+        print(f"Next site: {test_site}")
 
         if env.get_arg("android"):
             platform_name = "android"
@@ -119,15 +134,23 @@ def before_runs(env):
             platform_name = platform.system().lower()
             app_name = "firefox"
 
-        # bug 1883701 linux uses a different version for now
         name = [
-            "mitm8" if platform_name == "linux" else "mitm12",
+            "mitm12",
             platform_name,
             "gve" if app_name == "geckoview_example" else app_name,
             test_site["name"],
         ]
 
-        recording_file = "%s.zip" % "-".join(name)
+        recording_file = f"{'-'.join(name)}.zip"
+
+        # Remove any leftover zip from a previous failed/interrupted run so
+        # mozproxy doesn't refuse to start with "Recording file already exists".
+        output_dir = env.get_arg("output")
+        if output_dir:
+            full_path = os.path.join(output_dir, recording_file)
+            if os.path.exists(full_path):
+                os.remove(full_path)
+                print(f"Removed existing recording: {full_path}")
 
         env.set_arg("proxy-mode", "record")
         env.set_arg(
@@ -177,4 +200,22 @@ def before_runs(env):
             parsed_cmds = [":::".join([str(i) for i in item]) for item in cmds if item]
             add_option(env, "browsertime.commands", ";;;".join(parsed_cmds))
 
-        print("Recording %s to file: %s" % (test_site.get("test_url"), recording_file))
+        print(f"Recording {test_site.get('test_url')} to file: {recording_file}")
+
+
+def on_exception(env, layer, exc):
+    print(f"Recording failed for site '{current_site}': {exc}")
+    failed_sites.append(current_site)
+    return True
+
+
+def after_runs(env):
+    if not failed_sites:
+        return
+    print(f"Sites failed so far: {', '.join(failed_sites)}")
+    output_dir = env.get_arg("output")
+    if output_dir:
+        failure_log = os.path.join(output_dir, "recording_failures.txt")
+        with open(failure_log, "w") as f:
+            f.write("\n".join(failed_sites) + "\n")
+        print(f"Failure list written to {failure_log}")

@@ -50,6 +50,12 @@ bool isConst(C*) { return false; }
 bool isConst(const C*) { return true; }
 
 int main() {
+  // A default-constructed WeakPtr is empty and allocates no WeakReference.
+  WeakPtr<C> empty;
+  MOZ_RELEASE_ASSERT(!empty);
+  MOZ_RELEASE_ASSERT(!empty.get());
+  MOZ_RELEASE_ASSERT(empty == nullptr);
+
   C* c1 = new C;
   MOZ_RELEASE_ASSERT(c1->mNum == 0);
 
@@ -140,4 +146,21 @@ int main() {
 
   MOZ_RELEASE_ASSERT(!db);
   MOZ_RELEASE_ASSERT(!weakd);
+
+  // Resetting a populated WeakPtr back to empty via assignment.
+  C* c3 = new C;
+  WeakPtr<C> w5 = c3;
+  MOZ_RELEASE_ASSERT(w5 == c3);
+  w5 = nullptr;
+  MOZ_RELEASE_ASSERT(!w5);
+  MOZ_RELEASE_ASSERT(!w5.get());
+
+  w5 = c3;
+  MOZ_RELEASE_ASSERT(w5 == c3);
+  C* nullc = nullptr;
+  w5 = nullc;
+  MOZ_RELEASE_ASSERT(!w5);
+  MOZ_RELEASE_ASSERT(!w5.get());
+
+  delete c3;
 }

@@ -28,6 +28,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarProviderTopSites:
     "moz-src:///browser/components/urlbar/UrlbarProviderTopSites.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
 });
 
@@ -422,8 +423,8 @@ export class UrlbarProviderSearchTips extends UrlbarProvider {
 
   #makeResult({ tip, icon, titleL10n, heuristic = false }) {
     return new lazy.UrlbarResult({
-      type: UrlbarUtils.RESULT_TYPE.TIP,
-      source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+      type: lazy.UrlbarShared.RESULT_TYPE.TIP,
+      source: lazy.UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
       heuristic,
       payload: {
         type: tip,

@@ -2,33 +2,34 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsIOService.h"
 #include "nsFileChannel.h"
-#include "nsBaseContentStream.h"
-#include "nsDirectoryIndexStream.h"
-#include "nsThreadUtils.h"
-#include "nsTransportUtils.h"
-#include "nsStreamUtils.h"
-#include "nsMimeTypes.h"
-#include "nsNetUtil.h"
-#include "nsNetCID.h"
-#include "nsIOutputStream.h"
-#include "nsIFileStreams.h"
-#include "nsFileProtocolHandler.h"
-#include "nsProxyRelease.h"
-#include "nsIContentPolicy.h"
-#include "nsContentUtils.h"
+
+#include <algorithm>
+
+#include "../protocol/http/nsHttpHandler.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/net/NeckoChild.h"
-#include "../protocol/http/nsHttpHandler.h"
-
-#include "nsIFileURL.h"
-#include "nsIURIMutator.h"
+#include "nsBaseContentStream.h"
+#include "nsContentUtils.h"
+#include "nsDirectoryIndexStream.h"
+#include "nsFileProtocolHandler.h"
+#include "nsIContentPolicy.h"
 #include "nsIFile.h"
+#include "nsIFileStreams.h"
+#include "nsIFileURL.h"
 #include "nsIMIMEService.h"
+#include "nsIOService.h"
+#include "nsIOutputStream.h"
+#include "nsIURIMutator.h"
+#include "nsMimeTypes.h"
+#include "nsNetCID.h"
+#include "nsNetUtil.h"
+#include "nsProxyRelease.h"
+#include "nsStreamUtils.h"
 #include "nsStringStream.h"
+#include "nsThreadUtils.h"
+#include "nsTransportUtils.h"
 #include "prio.h"
-#include <algorithm>
 
 #ifdef XP_WIN
 #  include <windows.h>

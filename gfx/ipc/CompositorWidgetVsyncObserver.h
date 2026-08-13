@@ -5,8 +5,8 @@
 #ifndef mozilla_gfx_ipc_CompositorWidgetVsyncObserver_h
 #define mozilla_gfx_ipc_CompositorWidgetVsyncObserver_h
 
-#include "mozilla/layers/LayersTypes.h"
 #include "mozilla/VsyncDispatcher.h"
+#include "mozilla/layers/LayersTypes.h"
 
 namespace mozilla {
 namespace gfx {

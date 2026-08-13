@@ -42,15 +42,30 @@ const TEST_URI = `
     .relative-color {
       color: rgb(from gold g b r);
     }
+
+    .alpha {
+      color: alpha(from oklch(50% 0.25 315 / 0.2) / 1);
+    }
+
+    .tree-counting-functions {
+      color: rgb(100 calc(sibling-count() * 100) calc(sibling-index() * 100));
+    }
   </style>
   <h1>Testing the color picker contrast ratio data</h1>
   <div>————</div>
   <section class="color-mix">mixed colors</section>
   <section class="contrast-color">contrast color</section>
   <section class="relative-color">relative color</section>
+  <section class="alpha">alpha color</section>
+  <section>
+    <span class="tree-counting-functions">tree counting functions</span>
+  </section>
 `;
 
 add_task(async function () {
+  await pushPref("layout.css.alpha-color-function.enabled", true);
+  await pushPref("layout.css.tree-counting-functions.enabled", true);
+
   await addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
   const { inspector, view } = await openRuleView();
 
@@ -197,6 +212,51 @@ add_task(async function () {
     // This is for `gold`
     swatchIndex: 1,
     expectVisibleContrast: false,
+  });
+
+  await selectNode(".alpha", inspector);
+  const colorWithAlpha = getRuleViewProperty(view, ".alpha", "color");
+  await checkColorPickerConstrastData({
+    view,
+    label: "Displays contrast information on resulting color from `alpha()`",
+    // color: alpha(from oklch(50% 0.25 315 / 0.2) / 1)
+    ruleViewPropertyEl: colorWithAlpha,
+    swatchIndex: 0,
+    expectVisibleContrast: true,
+    expectedContrastValueResult: "AA",
+    expectedContrastValueTitle:
+      "Meets WCAG AA standards for accessible text. Calculated against background: rgba(238,238,238,1)",
+    expectedContrastValueScore: "5.94",
+  });
+  await checkColorPickerConstrastData({
+    view,
+    label: "Does not display contrast information on color within `alpha()`",
+    // color: alpha(from oklch(50% 0.25 315 / 0.2) / 1)
+    ruleViewPropertyEl: colorWithAlpha,
+    // This is for `oklch(50% 0.25 315 / 0.2) / 1)`
+    swatchIndex: 1,
+    expectVisibleContrast: false,
+  });
+
+  await selectNode(".tree-counting-functions", inspector);
+  const colorWithTreeFunctions = getRuleViewProperty(
+    view,
+    ".tree-counting-functions",
+    "color"
+  );
+  await checkColorPickerConstrastData({
+    view,
+    label:
+      "Displays contrast information on resulting color using `sibling-count()` and `sibling-index()`",
+    // color: rgb(100 calc(sibling-count() * 100) calc(sibling-index() * 100))
+    //        ^ computes to `rgb(100 100 100)`
+    ruleViewPropertyEl: colorWithTreeFunctions,
+    swatchIndex: 0,
+    expectVisibleContrast: true,
+    expectedContrastValueResult: "AA",
+    expectedContrastValueTitle:
+      "Meets WCAG AA standards for accessible text. Calculated against background: rgba(238,238,238,1)",
+    expectedContrastValueScore: "5.10",
   });
 });
 

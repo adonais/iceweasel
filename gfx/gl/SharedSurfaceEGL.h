@@ -5,10 +5,10 @@
 #ifndef SHARED_SURFACE_EGL_H_
 #define SHARED_SURFACE_EGL_H_
 
-#include "mozilla/Attributes.h"
-#include "mozilla/Mutex.h"
 #include "CompositorTypes.h"
 #include "SharedSurface.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/Mutex.h"
 
 #ifdef MOZ_WIDGET_ANDROID
 #  include "AndroidNativeWindow.h"

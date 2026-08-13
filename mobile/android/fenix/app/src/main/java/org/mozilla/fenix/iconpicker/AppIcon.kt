@@ -30,7 +30,7 @@ import mozilla.components.ui.colors.R as colorsR
 enum class AppIcon(
     val aliasSuffix: String,
     @param:DrawableRes val iconForegroundId: Int = R.drawable.ic_firefox,
-    val iconBackground: IconBackground = IconBackground.Color(colorResId = colorsR.color.photonWhite),
+    val iconBackground: IconBackground = IconBackground.Color(colorResId = colorsR.color.novaWhite),
     @param:StringRes val titleId: Int,
     @param:StringRes val subtitleId: Int? = null,
 ) {
@@ -45,7 +45,7 @@ enum class AppIcon(
     ),
     AppSolidDark(
         aliasSuffix = "AppSolidDark",
-        iconBackground = IconBackground.Color(colorResId = colorsR.color.photonBlack),
+        iconBackground = IconBackground.Color(colorResId = colorsR.color.novaBlack),
         titleId = R.string.alternative_app_icon_option_dark,
     ),
     AppSolidRed(
@@ -131,7 +131,7 @@ enum class AppIcon(
     ),
     AppFlaming(
         aliasSuffix = "AppFlaming",
-        iconBackground = IconBackground.Color(colorResId = colorsR.color.photonBlack),
+        iconBackground = IconBackground.Color(colorResId = colorsR.color.novaBlack),
         iconForegroundId = R.drawable.ic_flaming,
         titleId = R.string.alternative_app_icon_option_flaming,
     ),

@@ -13,7 +13,7 @@ const WORKER_FILE = "test_worker.js";
 const WORKER_URL = URL_ROOT_SSL + WORKER_FILE;
 const REMOTE_IFRAME_WORKER_URL = URL_ROOT_ORG_SSL + WORKER_FILE;
 
-add_task(async function () {
+async function doTest() {
   // Disable the preloaded process as it creates processes intermittently
   // which forces the emission of RDP requests we aren't correctly waiting for.
   await pushPref("dom.ipc.processPrelaunch.enabled", false);
@@ -324,4 +324,17 @@ add_task(async function () {
 
   BrowserTestUtils.removeTab(tab);
   await commands.destroy();
-});
+}
+
+// Run once per dom.worker.remoteDebugger.enabled value so the worker debugger
+// is exercised against both the local WorkerDebugger and the parent-process
+// RemoteWorkerDebugger (bug 1944240).
+for (const remoteDebuggerEnabled of [false, true]) {
+  add_task(async function () {
+    await pushPref("dom.worker.remoteDebugger.enabled", remoteDebuggerEnabled);
+    info(
+      "Running with dom.worker.remoteDebugger.enabled=" + remoteDebuggerEnabled
+    );
+    await doTest();
+  });
+}

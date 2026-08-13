@@ -7,11 +7,12 @@
 #ifdef ANDROID
 #  include <android/log.h>
 #endif
-#include <algorithm>
 #include <stdio.h>
 #include <string.h>
 #include <sys/uio.h>
 #include <unistd.h>
+
+#include <algorithm>
 
 #include "base/posix/eintr_wrapper.h"
 

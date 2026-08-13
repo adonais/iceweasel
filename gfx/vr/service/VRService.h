@@ -5,8 +5,8 @@
 #ifndef GFX_VR_SERVICE_VRSERVICE_H
 #define GFX_VR_SERVICE_VRSERVICE_H
 
-#include "moz_external_vr.h"
 #include "base/process.h"  // for base::ProcessHandle
+#include "moz_external_vr.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"

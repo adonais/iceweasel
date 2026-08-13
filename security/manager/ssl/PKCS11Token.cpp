@@ -3,9 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "PKCS11Token.h"
+
 #include "ScopedNSSTypes.h"
 #include "mozilla/Casting.h"
+#include "mozilla/ErrorResult.h"
 #include "mozilla/Logging.h"
+#include "mozilla/dom/Promise.h"
 #include "nsISupports.h"
 #include "nsNSSCertHelper.h"
 #include "nsNSSComponent.h"
@@ -15,11 +18,13 @@
 #include "prerror.h"
 #include "secerr.h"
 
+using namespace mozilla;
+using mozilla::ErrorResult;
+using mozilla::dom::Promise;
+
 extern mozilla::LazyLogModule gPIPNSSLog;
 
 NS_IMPL_ISUPPORTS(PKCS11Token, nsIPKCS11Token)
-
-PKCS11Token::PKCS11Token() : mUIContext(new PipUIContext()) {}
 
 nsresult PKCS11Token::Init() {
   static NS_DEFINE_CID(kNSSComponentCID, NS_NSSCOMPONENT_CID);
@@ -34,7 +39,7 @@ nsresult PKCS11Token::Init() {
   return refreshTokenInfo();
 }
 
-PKCS11Token::PKCS11Token(PK11SlotInfo* slot) : mUIContext(new PipUIContext()) {
+PKCS11Token::PKCS11Token(PK11SlotInfo* slot) {
   MOZ_ASSERT(slot);
   mSlot.reset(PK11_ReferenceSlot(slot));
   mIsInternalCryptoToken =
@@ -159,29 +164,84 @@ PKCS11Token::GetIsLoggedIn(bool* isLoggedIn) {
 }
 
 NS_IMETHODIMP
-PKCS11Token::Login() {
-  return mozilla::MapSECStatus(
-      PK11_Authenticate(mSlot.get(), true, mUIContext));
+PKCS11Token::Login(JSContext* aCx, Promise** aPromise) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!NS_IsMainThread()) {
+    return NS_ERROR_NOT_SAME_THREAD;
+  }
+
+  ErrorResult result;
+  RefPtr<Promise> promise =
+      Promise::Create(xpc::CurrentNativeGlobal(aCx), result);
+  if (result.Failed()) {
+    return result.StealNSResult();
+  }
+  auto promiseHolder =
+      MakeRefPtr<nsMainThreadPtrHolder<Promise>>("Login promise", promise);
+
+  nsCOMPtr<nsIRunnable> runnable(NS_NewRunnableFunction(
+      "Login runnable",
+      [promiseHolder,
+       slot = UniquePK11SlotInfo(PK11_ReferenceSlot(mSlot.get()))]() {
+        nsresult rv =
+            mozilla::MapSECStatus(PK11_Authenticate(slot.get(), true, nullptr));
+        NS_DispatchToMainThread(
+            NS_NewRunnableFunction("Login callback", [rv, promiseHolder] {
+              if (NS_SUCCEEDED(rv)) {
+                promiseHolder->get()->MaybeResolveWithUndefined();
+              } else {
+                promiseHolder->get()->MaybeReject(rv);
+              }
+            }));
+      }));
+
+  promise.forget(aPromise);
+  return NS_DispatchBackgroundTask(runnable.forget());
 }
 
 NS_IMETHODIMP
-PKCS11Token::Logout() {
-  // PK11_Logout() can fail if the user wasn't logged in beforehand. We want
-  // this method to succeed even in this case, so we ignore the return value.
-  (void)PK11_Logout(mSlot.get());
-  return NS_OK;
+PKCS11Token::Logout(JSContext* aCx, Promise** aPromise) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!NS_IsMainThread()) {
+    return NS_ERROR_NOT_SAME_THREAD;
+  }
+
+  ErrorResult result;
+  RefPtr<Promise> promise =
+      Promise::Create(xpc::CurrentNativeGlobal(aCx), result);
+  if (result.Failed()) {
+    return result.StealNSResult();
+  }
+  auto promiseHolder =
+      MakeRefPtr<nsMainThreadPtrHolder<Promise>>("Logout promise", promise);
+
+  nsCOMPtr<nsIRunnable> runnable(NS_NewRunnableFunction(
+      "Logout runnable",
+      [promiseHolder,
+       slot = UniquePK11SlotInfo(PK11_ReferenceSlot(mSlot.get()))]() {
+        // PK11_Logout() can fail if the user wasn't logged in beforehand. We
+        // want this method to succeed even in this case, so we ignore the
+        // return value.
+        (void)PK11_Logout(slot.get());
+        NS_DispatchToMainThread(
+            NS_NewRunnableFunction("Logout callback", [promiseHolder] {
+              promiseHolder->get()->MaybeResolveWithUndefined();
+            }));
+      }));
+
+  promise.forget(aPromise);
+  return NS_DispatchBackgroundTask(runnable.forget());
 }
 
-NS_IMETHODIMP
-PKCS11Token::Reset() {
-  SECStatus rv = PK11_ResetToken(mSlot.get(), nullptr);
+nsresult DoReset(const UniquePK11SlotInfo& slot, bool isInternalKeyToken) {
+  SECStatus rv = PK11_ResetToken(slot.get(), nullptr);
   if (rv != SECSuccess) {
     return mozilla::MapSECStatus(rv);
   }
   // If this is the internal key token, set an empty password to enable the SQL
   // DB to work properly.
-  if (mIsInternalKeyToken) {
-    rv = PK11_InitPin(mSlot.get(), nullptr, nullptr);
+  if (isInternalKeyToken) {
+    rv = PK11_InitPin(slot.get(), nullptr, nullptr);
     if (rv != SECSuccess) {
       return mozilla::MapSECStatus(rv);
     }
@@ -190,20 +250,94 @@ PKCS11Token::Reset() {
 }
 
 NS_IMETHODIMP
-PKCS11Token::ChangePassword(const nsACString& oldPassword,
-                            const nsACString& newPassword) {
-  if (oldPassword.IsEmpty() && PK11_NeedUserInit(mSlot.get())) {
-    return mozilla::MapSECStatus(
-        PK11_InitPin(mSlot.get(), "", PromiseFlatCString(newPassword).get()));
+PKCS11Token::Reset(JSContext* aCx, Promise** aPromise) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!NS_IsMainThread()) {
+    return NS_ERROR_NOT_SAME_THREAD;
   }
-  SECStatus rv = PK11_CheckUserPassword(mSlot.get(),
-                                        PromiseFlatCString(oldPassword).get());
+
+  ErrorResult result;
+  RefPtr<Promise> promise =
+      Promise::Create(xpc::CurrentNativeGlobal(aCx), result);
+  if (result.Failed()) {
+    return result.StealNSResult();
+  }
+  auto promiseHolder =
+      MakeRefPtr<nsMainThreadPtrHolder<Promise>>("Reset promise", promise);
+
+  nsCOMPtr<nsIRunnable> runnable(NS_NewRunnableFunction(
+      "Reset runnable",
+      [promiseHolder,
+       slot = UniquePK11SlotInfo(PK11_ReferenceSlot(mSlot.get())),
+       isInternalKeyToken(mIsInternalKeyToken)]() {
+        nsresult rv = DoReset(slot, isInternalKeyToken);
+        NS_DispatchToMainThread(
+            NS_NewRunnableFunction("Reset callback", [rv, promiseHolder] {
+              if (NS_SUCCEEDED(rv)) {
+                promiseHolder->get()->MaybeResolveWithUndefined();
+              } else {
+                promiseHolder->get()->MaybeReject(rv);
+              }
+            }));
+      }));
+
+  promise.forget(aPromise);
+  return NS_DispatchBackgroundTask(runnable.forget());
+}
+
+nsresult DoChangePassword(const UniquePK11SlotInfo& slot,
+                          const nsACString& oldPassword,
+                          const nsACString& newPassword) {
+  if (oldPassword.IsEmpty() && PK11_NeedUserInit(slot.get())) {
+    return mozilla::MapSECStatus(
+        PK11_InitPin(slot.get(), "", PromiseFlatCString(newPassword).get()));
+  }
+  SECStatus rv =
+      PK11_CheckUserPassword(slot.get(), PromiseFlatCString(oldPassword).get());
   if (rv != SECSuccess) {
     return mozilla::MapSECStatus(rv);
   }
   return mozilla::MapSECStatus(
-      PK11_ChangePW(mSlot.get(), PromiseFlatCString(oldPassword).get(),
+      PK11_ChangePW(slot.get(), PromiseFlatCString(oldPassword).get(),
                     PromiseFlatCString(newPassword).get()));
+}
+
+NS_IMETHODIMP
+PKCS11Token::ChangePassword(const nsACString& oldPassword,
+                            const nsACString& newPassword, JSContext* aCx,
+                            Promise** aPromise) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!NS_IsMainThread()) {
+    return NS_ERROR_NOT_SAME_THREAD;
+  }
+
+  ErrorResult result;
+  RefPtr<Promise> promise =
+      Promise::Create(xpc::CurrentNativeGlobal(aCx), result);
+  if (result.Failed()) {
+    return result.StealNSResult();
+  }
+  auto promiseHolder = MakeRefPtr<nsMainThreadPtrHolder<Promise>>(
+      "ChangePassword promise", promise);
+
+  nsCOMPtr<nsIRunnable> runnable(NS_NewRunnableFunction(
+      "ChangePassword runnable",
+      [promiseHolder, oldPassword = nsCString(oldPassword),
+       newPassword = nsCString(newPassword),
+       slot = UniquePK11SlotInfo(PK11_ReferenceSlot(mSlot.get()))]() {
+        nsresult rv = DoChangePassword(slot, oldPassword, newPassword);
+        NS_DispatchToMainThread(NS_NewRunnableFunction(
+            "ChangePassword callback", [rv, promiseHolder] {
+              if (NS_SUCCEEDED(rv)) {
+                promiseHolder->get()->MaybeResolveWithUndefined();
+              } else {
+                promiseHolder->get()->MaybeReject(rv);
+              }
+            }));
+      }));
+
+  promise.forget(aPromise);
+  return NS_DispatchBackgroundTask(runnable.forget());
 }
 
 // Two PKCS#11 flags are relevant here: CKF_LOGIN_REQUIRED and

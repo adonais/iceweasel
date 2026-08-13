@@ -5,12 +5,12 @@
 #ifndef nsRequestObserverProxy_h_
 #define nsRequestObserverProxy_h_
 
+#include "nsCOMPtr.h"
+#include "nsIRequest.h"
 #include "nsIRequestObserver.h"
 #include "nsIRequestObserverProxy.h"
-#include "nsIRequest.h"
-#include "nsThreadUtils.h"
-#include "nsCOMPtr.h"
 #include "nsProxyRelease.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla {
 namespace net {

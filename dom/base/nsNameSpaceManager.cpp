@@ -11,12 +11,14 @@
 
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/NodeInfo.h"
 #include "nsAtom.h"
 #include "nsCOMArray.h"
 #include "nsContentCreatorFunctions.h"
+#include "nsContentUtils.h"
 #include "nsGkAtoms.h"
 #include "nsString.h"
 #include "nscore.h"
@@ -174,51 +176,86 @@ const char* nsNameSpaceManager::GetNameSpaceDisplayName(uint32_t aNameSpaceID) {
 nsresult NS_NewElement(Element** aResult,
                        already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
                        FromParser aFromParser, const nsAString* aIs) {
+  return NS_NewElement(aResult, std::move(aNodeInfo), aFromParser, aIs,
+                       Nothing());
+}
+
+nsresult NS_NewElement(
+    Element** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
+    FromParser aFromParser, const nsAString* aIs,
+    Maybe<RefPtr<CustomElementRegistry>> aCustomElementRegistry) {
   RefPtr<nsAtom> isAtom = aIs ? NS_AtomizeMainThread(*aIs) : nullptr;
-  return NS_NewElement(aResult, std::move(aNodeInfo), aFromParser, isAtom);
+  return NS_NewElement(aResult, std::move(aNodeInfo), aFromParser, isAtom,
+                       nullptr, std::move(aCustomElementRegistry));
 }
 
 nsresult NS_NewElement(Element** aResult,
                        already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
                        FromParser aFromParser, nsAtom* aIsAtom,
                        CustomElementDefinition* aDefinition) {
+  return NS_NewElement(aResult, std::move(aNodeInfo), aFromParser, aIsAtom,
+                       aDefinition, Nothing());
+}
+
+nsresult NS_NewElement(
+    Element** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
+    FromParser aFromParser, nsAtom* aIsAtom,
+    CustomElementDefinition* aDefinition,
+    Maybe<RefPtr<CustomElementRegistry>> aCustomElementRegistry) {
   RefPtr<mozilla::dom::NodeInfo> ni = aNodeInfo;
   int32_t ns = ni->NamespaceID();
   if (ns == kNameSpaceID_XHTML) {
     return NS_NewHTMLElement(aResult, ni.forget(), aFromParser, aIsAtom,
-                             aDefinition);
+                             aDefinition, std::move(aCustomElementRegistry));
   }
   if (ns == kNameSpaceID_XUL) {
     return NS_NewXULElement(aResult, ni.forget(), aFromParser, aIsAtom,
-                            aDefinition);
+                            aDefinition, std::move(aCustomElementRegistry));
   }
+
+  if (ns == kNameSpaceID_MathML && !ni->NodeInfoManager()->MathMLEnabled()) {
+    ni = ni->NodeInfoManager()->GetNodeInfo(ni->NameAtom(), ni->GetPrefixAtom(),
+                                            kNameSpaceID_disabled_MathML,
+                                            ni->NodeType(), ni->GetExtraName());
+    ns = kNameSpaceID_disabled_MathML;
+  } else if (ns == kNameSpaceID_SVG && !ni->NodeInfoManager()->SVGEnabled()) {
+    ni = ni->NodeInfoManager()->GetNodeInfo(ni->NameAtom(), ni->GetPrefixAtom(),
+                                            kNameSpaceID_disabled_SVG,
+                                            ni->NodeType(), ni->GetExtraName());
+    ns = kNameSpaceID_disabled_SVG;
+  }
+
+  nsresult rv;
   if (ns == kNameSpaceID_MathML) {
-    // If the mathml.disabled pref. is true, convert all MathML nodes into
-    // disabled MathML nodes by swapping the namespace.
-    if (ni->NodeInfoManager()->MathMLEnabled()) {
-      return NS_NewMathMLElement(aResult, ni.forget());
-    }
-
-    RefPtr<mozilla::dom::NodeInfo> genericXMLNI =
-        ni->NodeInfoManager()->GetNodeInfo(ni->NameAtom(), ni->GetPrefixAtom(),
-                                           kNameSpaceID_disabled_MathML,
-                                           ni->NodeType(), ni->GetExtraName());
-    return NS_NewXMLElement(aResult, genericXMLNI.forget());
-  }
-  if (ns == kNameSpaceID_SVG) {
-    // If the svg.disabled pref. is true, convert all SVG nodes into
-    // disabled SVG nodes by swapping the namespace.
-    if (ni->NodeInfoManager()->SVGEnabled()) {
-      return NS_NewSVGElement(aResult, ni.forget(), aFromParser);
-    }
-    RefPtr<mozilla::dom::NodeInfo> genericXMLNI =
-        ni->NodeInfoManager()->GetNodeInfo(ni->NameAtom(), ni->GetPrefixAtom(),
-                                           kNameSpaceID_disabled_SVG,
-                                           ni->NodeType(), ni->GetExtraName());
-    return NS_NewXMLElement(aResult, genericXMLNI.forget());
+    rv = NS_NewMathMLElement(aResult, ni.forget());
+  } else if (ns == kNameSpaceID_SVG) {
+    rv = NS_NewSVGElement(aResult, ni.forget(), aFromParser);
+  } else {
+    rv = NS_NewXMLElement(aResult, ni.forget());
   }
 
-  return NS_NewXMLElement(aResult, ni.forget());
+  // For non-XHTML/XUL elements (which don't go through NewXULOrHTMLElement),
+  // set the custom element registry on the created element.
+  if (NS_SUCCEEDED(rv) && *aResult &&
+      mozilla::StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
+    if (aCustomElementRegistry.isSome()) {
+      RefPtr<CustomElementRegistry> registry = aCustomElementRegistry.value();
+      if (registry) {
+        (*aResult)->SetCustomElementRegistry(registry);
+      } else {
+        (*aResult)->SetKeepCustomElementRegistryNull();
+      }
+    } else if (aFromParser == FromParser::NOT_FROM_PARSER) {
+      if (Document* doc = (*aResult)->OwnerDoc()) {
+        if (CustomElementRegistry* globalRegistry =
+                doc->GetEffectiveGlobalCustomElementRegistry()) {
+          (*aResult)->SetCustomElementRegistry(globalRegistry);
+        }
+      }
+    }
+  }
+
+  return rv;
 }
 
 bool nsNameSpaceManager::HasElementCreator(int32_t aNameSpaceID) {

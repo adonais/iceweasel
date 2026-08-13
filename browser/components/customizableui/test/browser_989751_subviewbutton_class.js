@@ -41,6 +41,11 @@ function checkSubviewButtonClass(menuId, buttonId, subviewId) {
     await document.getElementById("nav-bar").overflowable.show();
 
     let button = document.getElementById(buttonId);
+    ok(
+      button.classList.contains("subviewbutton-nav"),
+      buttonId +
+        " in the overflow panel should have the subviewbutton-nav chevron class."
+    );
     button.click();
 
     await BrowserTestUtils.waitForEvent(PanelUI.overflowPanel, "ViewShown");

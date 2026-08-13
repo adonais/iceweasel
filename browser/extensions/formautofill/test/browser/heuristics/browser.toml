@@ -51,7 +51,11 @@ support-files = [
 
 ["browser_parse_tel_fields.js"]
 
+["browser_passport_fields.js"]
+
 ["browser_section_validation_address.js"]
+
+["browser_section_validation_passport.js"]
 
 ["browser_sections_by_name.js"]
 

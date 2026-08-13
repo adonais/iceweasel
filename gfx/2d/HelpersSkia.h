@@ -5,7 +5,12 @@
 #ifndef MOZILLA_GFX_HELPERSSKIA_H_
 #define MOZILLA_GFX_HELPERSSKIA_H_
 
+#include <cmath>
+#include <vector>
+
 #include "2D.h"
+#include "mozilla/Assertions.h"
+#include "nsDebug.h"
 #include "skia/include/core/SkCanvas.h"
 #include "skia/include/core/SkFontTypes.h"
 #include "skia/include/core/SkPathEffect.h"
@@ -13,10 +18,6 @@
 #include "skia/include/core/SkShader.h"
 #include "skia/include/core/SkTileMode.h"
 #include "skia/include/effects/SkDashPathEffect.h"
-#include "mozilla/Assertions.h"
-#include <cmath>
-#include <vector>
-#include "nsDebug.h"
 
 namespace mozilla {
 namespace gfx {

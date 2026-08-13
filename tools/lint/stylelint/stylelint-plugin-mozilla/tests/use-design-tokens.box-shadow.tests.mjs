@@ -57,7 +57,7 @@ testRule({
       description: "Using box-shadow-popup token is valid.",
     },
     {
-      code: ".a { box-shadow: var(--tab-box-shadow); }",
+      code: ".a { box-shadow: var(--tab-box-shadow-selected); }",
       description: "Using box-shadow-tab token is valid.",
     },
     // allowed CSS values

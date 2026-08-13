@@ -5,9 +5,9 @@
 #ifndef mozilla_a11y_SelectionManager_h_
 #define mozilla_a11y_SelectionManager_h_
 
+#include "mozilla/WeakPtr.h"
 #include "nsISelectionController.h"
 #include "nsISelectionListener.h"
-#include "mozilla/WeakPtr.h"
 
 namespace mozilla {
 

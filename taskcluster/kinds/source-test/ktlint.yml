@@ -4,7 +4,6 @@
 ---
 task-defaults:
     description: 'Run ktlint over all modules'
-    run-on-repo-type: [hg]
     run:
         using: gradlew
         gradlew: ['ktlint']

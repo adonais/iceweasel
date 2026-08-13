@@ -7,8 +7,8 @@
 #define nsColorPicker_h_
 
 #include "nsBaseColorPicker.h"
-#include "nsString.h"
 #include "nsCOMPtr.h"
+#include "nsString.h"
 
 class nsIColorPickerShownCallback;
 class mozIDOMWindowProxy;

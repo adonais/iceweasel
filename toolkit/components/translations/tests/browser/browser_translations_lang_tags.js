@@ -8,6 +8,9 @@ async function runLangTagsTest(
     systemLocales,
     appLocales,
     webLanguages,
+    // When set, overrides AppConstants.platform (e.g. "android"). On Android the
+    // offer decision only considers the primary web-content language.
+    platform = null,
     page,
     languagePairs = LANGUAGE_PAIRS,
   },
@@ -18,6 +21,8 @@ async function runLangTagsTest(
     appLocales,
     webLanguages,
   });
+
+  TranslationsParent.mockedPlatform = platform;
 
   const { cleanup: cleanupTestPage } = await loadTestPage({
     page,
@@ -38,6 +43,7 @@ async function runLangTagsTest(
     langTags
   );
 
+  TranslationsParent.mockedPlatform = null;
   await cleanupLocales();
   await cleanupTestPage();
 }
@@ -96,6 +102,55 @@ add_task(async function test_lang_tags_with_pivots_second_preferred() {
     }
   );
 });
+
+add_task(async function test_lang_tags_android_offers_secondary_language() {
+  info(
+    "On Android the Accept-Language list is generated from the app and OS " +
+      "locales rather than user-curated, so only the primary language ('fr') " +
+      "suppresses the offer. A page in a secondary language ('en') is still " +
+      "offered a translation into the primary language."
+  );
+  await runLangTagsTest(
+    {
+      systemLocales: ["fr"],
+      appLocales: ["fr", "en"],
+      // French is primary; English is a secondary entry.
+      webLanguages: ["fr", "en"],
+      platform: "android",
+      page: ENGLISH_PAGE_URL,
+    },
+    {
+      docLangTag: "en",
+      userLangTag: "fr",
+      isDocLangTagSupported: true,
+    }
+  );
+});
+
+add_task(
+  async function test_lang_tags_non_android_suppresses_secondary_language() {
+    info(
+      "Off Android, every configured web-content language is considered, so a " +
+        "page in a secondary language the user has listed ('en') is not offered a " +
+        "translation. Same inputs as the Android case above, to show the behavior " +
+        "is scoped to Android."
+    );
+    await runLangTagsTest(
+      {
+        systemLocales: ["fr"],
+        appLocales: ["fr", "en"],
+        webLanguages: ["fr", "en"],
+        platform: "linux",
+        page: ENGLISH_PAGE_URL,
+      },
+      {
+        docLangTag: "en",
+        userLangTag: null,
+        isDocLangTagSupported: true,
+      }
+    );
+  }
+);
 
 add_task(async function test_lang_tags_with_non_supported_doc_language() {
   info("Test using a pivot language when the doc language isn't supported");

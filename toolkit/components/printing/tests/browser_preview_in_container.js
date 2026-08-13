@@ -25,7 +25,7 @@ async function runTest() {
   await waitForPreviewVisible();
 
   let printPreviewEl = document.querySelector("print-preview");
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => !!printPreviewEl.settingsBrowser.contentWindow._initialized
   );
   await printPreviewEl.settingsBrowser.contentWindow._initialized;

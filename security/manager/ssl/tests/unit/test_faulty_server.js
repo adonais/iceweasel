@@ -138,3 +138,36 @@ add_task(
     );
   }
 );
+
+// SSL_ERROR_BASE + 155. The client aborts when a HelloRetryRequest selects a
+// group it did not offer.
+const SSL_ERROR_RX_MALFORMED_HELLO_RETRY_REQUEST = SSL_ERROR_BASE + 155;
+
+// With the pref disabled, the client does not enable ML-KEM-1024. The server
+// offers only ML-KEM-1024 and requests it via a HelloRetryRequest, but since
+// the client did not advertise ML-KEM-1024 it rejects the retry.
+add_connection_test(
+  "mlkem1024.example.com",
+  SSL_ERROR_RX_MALFORMED_HELLO_RETRY_REQUEST,
+  function () {
+    Services.prefs.setBoolPref("security.tls.enable_mlkem1024", false);
+  }
+);
+
+// With the pref enabled, the client advertises ML-KEM-1024 in supported_groups
+// without sending a key share for it. A server that offers only ML-KEM-1024
+// therefore completes the handshake via a HelloRetryRequest.
+add_connection_test(
+  "mlkem1024.example.com",
+  PRErrorCodeSuccess,
+  function () {
+    Services.prefs.setBoolPref("security.tls.enable_mlkem1024", true);
+  },
+  function (aSecurityInfo) {
+    equal(
+      aSecurityInfo.keaGroupName,
+      "mlkem1024",
+      "should have negotiated ML-KEM-1024 via HelloRetryRequest"
+    );
+  }
+);

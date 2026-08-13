@@ -5,12 +5,12 @@
 #ifndef nsClipboard_h_
 #define nsClipboard_h_
 
+#include "mozilla/Maybe.h"
+#include "mozilla/StaticPtr.h"
 #include "nsBaseClipboard.h"
 #include "nsCOMPtr.h"
 #include "nsIClipboard.h"
 #include "nsString.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/StaticPtr.h"
 
 #import <Cocoa/Cocoa.h>
 

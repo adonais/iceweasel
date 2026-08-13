@@ -6,9 +6,9 @@
 #ifndef nsSOCKSIOLayer_h_
 #define nsSOCKSIOLayer_h_
 
-#include "prio.h"
-#include "nscore.h"
 #include "nsIProxyInfo.h"
+#include "nscore.h"
+#include "prio.h"
 
 nsresult nsSOCKSIOLayerAddToSocket(int32_t family, const char* host,
                                    int32_t port, nsIProxyInfo* proxyInfo,

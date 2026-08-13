@@ -40,7 +40,7 @@ async function doExposureTest({
 
     await trigger();
 
-    assertExposureTelemetry(
+    await assertExposureTelemetry(
       expectedEvents.map(e => ({
         ...e,
         results: e.results

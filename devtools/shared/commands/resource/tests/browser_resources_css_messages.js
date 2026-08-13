@@ -58,7 +58,7 @@ async function testWatchingCssMessages() {
   // We need to wait for the first CSS Warning as it is not a cached message; when we
   // start watching, the `cssErrorReportingEnabled` is checked on the target docShell, and
   // if it is false, we re-parse the stylesheets to get the messages.
-  await BrowserTestUtils.waitForCondition(() => receivedMessages.length === 1);
+  await TestUtils.waitForCondition(() => receivedMessages.length === 1);
 
   info("Trigger a CSS Warning");
   triggerCSSWarning(tab);

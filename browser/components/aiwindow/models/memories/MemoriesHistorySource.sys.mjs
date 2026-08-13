@@ -84,6 +84,7 @@ let _sensitiveInfoDetector = new SensitiveInfoDetector();
  *   url: string,
  *   urlHash: number,
  *   title: string,
+ *   searchQuery: string,
  *   domain: string,
  *   visitDateMicros: number,
  *   totalViewTimeMs: number,
@@ -91,6 +92,9 @@ let _sensitiveInfoDetector = new SensitiveInfoDetector();
  *   domainFrequencyPct: number,
  *   source: 'history'|'search'
  * }>>}
+ *   For `source === 'search'` rows, `searchQuery` is the parsed query text
+ *   from `moz_inputhistory.input` or the URL's `q`/`search_query` param.
+ *   For `source === 'history'` rows, `searchQuery` is an empty string.
  */
 export async function getRecentHistory(opts = {}) {
   // If provided, this is a Places visit_date-style cutoff in microseconds
@@ -231,6 +235,7 @@ export async function getRecentHistory(opts = {}) {
       a.host,
       a.source,
       a.title,
+      a.search_query,
       a.visit_date,
       a.total_view_time,
       p.frecency_pct,
@@ -257,6 +262,9 @@ export async function getRecentHistory(opts = {}) {
           const urlHash = row.getResultByName("url_hash");
           const host = row.getResultByName("host");
           const source = row.getResultByName("source");
+          const searchQuery = safeDecodeURIComponent(
+            row.getResultByName("search_query") || ""
+          );
           const onlyTitle = row.getResultByName("title") || "";
           let title;
           if (onlyTitle) {
@@ -285,6 +293,7 @@ export async function getRecentHistory(opts = {}) {
             urlHash,
             domain: host,
             title: sanitizeUntrustedContent(title, true),
+            searchQuery: sanitizeUntrustedContent(searchQuery, true),
             visitDateMicros,
             totalViewTimeMs,
             frequencyPct,
@@ -817,6 +826,17 @@ function getOrInit(mapObj, key, initFn) {
 
 function round2(x) {
   return Math.round(Number(x) * 100) / 100;
+}
+
+function safeDecodeURIComponent(s) {
+  if (!s) {
+    return s;
+  }
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return s;
+  }
 }
 
 /**

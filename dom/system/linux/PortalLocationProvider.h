@@ -7,11 +7,12 @@
 
 #include <gio/gio.h>
 
-#include "Geolocation.h"
 #include "mozilla/GRefPtr.h"
 #include "mozilla/GUniquePtr.h"
 #include "nsCOMPtr.h"
+#include "nsIDOMGeoPositionCoords.h"
 #include "nsIGeolocationProvider.h"
+#include "nsITimer.h"
 
 class MLSFallback;
 

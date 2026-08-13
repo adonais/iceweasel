@@ -521,8 +521,6 @@ bitflags! {
         /// This picture establishes a sub-graph, which affects how SurfaceBuilder will
         /// set up dependencies in the render task graph
         const IS_SUB_GRAPH = 1 << 1;
-        /// If set, this picture should not apply snapping via changing the raster root
-        const DISABLE_SNAPPING = 1 << 2;
     }
 }
 
@@ -699,7 +697,7 @@ impl PictureInstance {
         parent_subpixel_mode: SubpixelMode,
         frame_state: &mut FrameBuildingState,
         frame_context: &FrameBuildingContext,
-        data_stores: &mut DataStores,
+        data_stores: &DataStores,
         scratch: &mut PrimitiveScratchBuffer,
         tile_caches: &mut FastHashMap<SliceId, Box<TileCacheInstance>>,
     ) -> Option<(PictureContext, PictureState, PrimitiveList, storage::Index<PictureScratch>)> {
@@ -908,6 +906,7 @@ impl PictureInstance {
                 pic_index,
                 frame_state.rg_builder,
                 frame_state.cmd_buffers,
+                frame_context.spatial_tree,
             );
         }
 
@@ -926,13 +925,33 @@ impl PictureInstance {
             // Add the child prims to the relevant command buffers
             let mut cmd_buffer_targets = Vec::new();
             for child in list {
+                let draw = &scratch.frame.draws[child.anchor.instance_index.0 as usize];
                 if frame_state.surface_builder.get_cmd_buffer_targets_for_prim(
-                    &scratch.frame.draws[child.anchor.instance_index.0 as usize],
+                    draw,
                     &mut cmd_buffer_targets,
                 ) {
-                    let prim_cmd = PrimitiveCommand::complex(
+                    // The picture content this plane samples. Missing when the
+                    // child has no content task (for example a detached snapshot),
+                    // in which case there is nothing to composite.
+                    let pic_scratch_handle = draw.kind_scratch.unwrap_picture();
+                    let src_task_id = match scratch.frame.pictures[pic_scratch_handle].primary_render_task_id {
+                        Some(task_id) => task_id,
+                        None => continue,
+                    };
+
+                    // Maps the plane's local space to the destination raster space.
+                    let transform_id = frame_state.transforms.gpu.get_id(
+                        child.anchor.spatial_node_index,
+                        context.raster_spatial_node_index,
+                        frame_context.spatial_tree,
+                    );
+
+                    let prim_cmd = PrimitiveCommand::split_composite(
                         storage::Index::from_u32(child.anchor.instance_index.0),
-                        child.gpu_address
+                        child.gpu_address,
+                        transform_id,
+                        src_task_id,
+                        child.anchor.local_rect,
                     );
 
                     frame_state.push_prim(
@@ -965,6 +984,11 @@ impl PictureInstance {
         dirty_rect: VisRect,
         plane_split_anchor: PlaneSplitAnchor,
     ) -> bool {
+        let plane_split_anchor = PlaneSplitAnchor {
+            local_rect: original_local_rect,
+            ..plane_split_anchor
+        };
+
         let prim_to_ancestor = spatial_tree.get_relative_transform(
             prim_spatial_node_index,
             ancestor_spatial_node_index
@@ -1175,14 +1199,6 @@ impl PictureInstance {
                     }
                 };
 
-                // TODO(gw): For now, we disable snapping on any sub-graph, as that implies
-                //           that the spatial / raster node must be the same as the parent
-                //           surface. In future, we may be able to support snapping in these
-                //           cases (if it's even useful?) or perhaps add a ENABLE_SNAPPING
-                //           picture flag, if the IS_SUB_GRAPH is ever useful in a different
-                //           context.
-                let allow_snapping = !self.flags.contains(PictureFlags::DISABLE_SNAPPING);
-
                 // For some primitives (e.g. text runs) we can't rely on the bounding rect being
                 // exactly correct. For these cases, ensure we set a scissor rect when drawing
                 // this picture to a surface.
@@ -1250,7 +1266,6 @@ impl PictureInstance {
                         let surface_spatial_node = frame_context.spatial_tree.get_spatial_node(surface_spatial_node_index);
 
                         let enable_snapping =
-                            allow_snapping &&
                             surface_spatial_node.coordinate_system_id == CoordinateSystemId::root();
 
                         if enable_snapping {
@@ -1413,27 +1428,6 @@ impl PictureInstance {
                 }
             }
         }
-    }
-
-    pub fn write_gpu_blocks(
-        &mut self,
-        frame_state: &mut FrameBuildingState,
-        data_stores: &mut DataStores,
-        scratch: &mut PictureScratch,
-    ) {
-        let raster_config = match self.raster_config {
-            Some(ref mut raster_config) => raster_config,
-            None => {
-                return;
-            }
-        };
-
-        raster_config.composite_mode.write_gpu_blocks(
-            &frame_state.surfaces[raster_config.surface_index.0],
-            &mut frame_state.frame_gpu_data,
-            data_stores,
-            &mut scratch.extra_gpu_data,
-        );
     }
 
     #[cold]
@@ -1634,7 +1628,16 @@ fn prepare_tiled_picture_surface(
         .map(&tile_cache.local_clip_rect)
         .expect("bug: unable to map clip rect")
         .round();
-    let device_clip_rect = (world_clip_rect * frame_context.global_device_pixel_scale).round();
+    // The composite clip must be on the same device grid the tiles are placed
+    // on (the compositor transform), not the raw pic->world transform. When the
+    // tile cache's world offset is fractional (e.g. a transformed, flex-centered
+    // scroller), `get_relative_scale_offset` rounds the compositor offset to an
+    // integer, so the two grids differ by up to a pixel; deriving the clip from
+    // pic->world then clips content that was placed on the compositor grid,
+    // cropping the max-side edges.
+    let device_clip_rect = frame_state
+        .composite_state
+        .get_device_rect(&tile_cache.local_clip_rect, tile_cache.transform_index);
 
     for (sub_slice_index, sub_slice) in tile_cache.sub_slices.iter_mut().enumerate() {
         for tile in sub_slice.tiles.values_mut() {

@@ -60,7 +60,6 @@ BEGIN_TEST(testValueCanonicalizeNaN) {
 
     CHECK(JS::DoubleValue(nan).asRawBits() == canonicalBits);
     CHECK(JS::NumberValue(nan).asRawBits() == canonicalBits);
-    CHECK(JS_NumberValue(nan).asRawBits() == canonicalBits);
   }
 
   static constexpr uint32_t nonCanonicalFloatNaNs[] = {

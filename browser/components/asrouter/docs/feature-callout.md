@@ -301,6 +301,17 @@ interface FeatureCallout {
         // you want a single row with a more inline layout, you can use this
         // property, which works well in tandem with title_logo.
         layout?: "inline";
+        // Adds a colorful gradient border to the callout. This is only
+        // supported for callouts with `hide_arrow`, due to technical issues
+        // with the arrow and callout sharing a border. No effect if HCM or a
+        // custom theme add-on is enabled.
+        zap_border?: boolean;
+        // Adds a colorful gradient shadow to the callout. This is only
+        // supported for callouts with `hide_arrow` and either
+        // `absolute_position` or `arrow_position` (i.e. <div> callouts). This
+        // is because panel callouts have a bounding box that would clip the
+        // shadow. No effect if HCM or a custom theme add-on is enabled.
+        zap_shadow?: boolean;
         // An optional object representing a large illustration to show above
         // other content. See Logo below for the possible properties.
         logo?: Logo;

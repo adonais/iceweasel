@@ -42,10 +42,16 @@ class MockMediaTrackDemuxer : public MediaTrackDemuxer {
       return CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
           extended.Type().AsString(), extended);
     });
+    // Mirror the base MediaTrackDemuxer default so tests that don't opt in are
+    // unaffected.
+    ON_CALL(*this, GetNextRandomAccessPoint)
+        .WillByDefault(testing::Return(NS_ERROR_NOT_IMPLEMENTED));
   }
 
   MOCK_METHOD(UniquePtr<TrackInfo>, GetInfo, (), (const, override));
   MOCK_METHOD(RefPtr<SeekPromise>, Seek, (const media::TimeUnit& aTime),
+              (override));
+  MOCK_METHOD(nsresult, GetNextRandomAccessPoint, (media::TimeUnit * aTime),
               (override));
   RefPtr<SamplesPromise> GetSamples(int32_t aNumSamples = 1) override {
     EXPECT_EQ(aNumSamples, 1) << "Multiple samples not implemented";

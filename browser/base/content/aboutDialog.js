@@ -11,6 +11,12 @@
 var { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
+
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  Referrals: "resource:///modules/referrals/Referrals.sys.mjs",
+});
+
 if (AppConstants.MOZ_UPDATER) {
   Services.scriptloader.loadSubScript(
     "chrome://browser/content/aboutDialog-appUpdater.js",
@@ -113,6 +119,33 @@ function init() {
     ) {
       channelLabel.hidden = true;
     }
+  }
+
+  // contributeDescReferrals contains the Share Firefox link, so we
+  // toggle which description based on the referrals config flag
+  let referralsEnabled = Services.prefs.getBoolPref(
+    "browser.referrals.enabled",
+    false
+  );
+  document.getElementById("contributeDesc").hidden = referralsEnabled;
+  let contributeDescReferrals = document.getElementById(
+    "contributeDescReferrals"
+  );
+  contributeDescReferrals.hidden = !referralsEnabled;
+
+  if (referralsEnabled) {
+    contributeDescReferrals.addEventListener(
+      "click",
+      event => {
+        if (
+          event.target.closest('[data-l10n-name="helpus-shareFirefoxLink"]')
+        ) {
+          event.preventDefault();
+          lazy.Referrals.openReferralsTab(window);
+        }
+      },
+      true
+    );
   }
 
   if (AppConstants.IS_ESR) {

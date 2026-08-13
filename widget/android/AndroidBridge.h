@@ -7,16 +7,12 @@
 
 #include <unistd.h>  // for gettid
 
-#include "nsCOMPtr.h"
-
 #include "mozilla/jni/Refs.h"
-
-#include "nsIMutableArray.h"
-#include "nsIMIMEInfo.h"
-
-#include "nsIGeckoViewBridge.h"
-
 #include "mozilla/jni/Utils.h"
+#include "nsCOMPtr.h"
+#include "nsIGeckoViewBridge.h"
+#include "nsIMIMEInfo.h"
+#include "nsIMutableArray.h"
 
 // Some debug #defines
 // #define DEBUG_ANDROID_EVENTS

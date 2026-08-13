@@ -9,17 +9,17 @@
 #include "GLContext.h"
 #include "GLReadTexImageHelper.h"
 #include "GLScreenBuffer.h"
-#include "nsThreadUtils.h"
 #include "ScopedGLHelpers.h"
-#include "SharedSurfaceGL.h"
 #include "SharedSurfaceEGL.h"
-#include "mozilla/gfx/gfxVars.h"
+#include "SharedSurfaceGL.h"
+#include "VRManagerChild.h"
+#include "mozilla/StaticPrefs_webgl.h"
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/layers/TextureClientSharedSurface.h"
 #include "mozilla/layers/TextureForwarder.h"
-#include "mozilla/StaticPrefs_webgl.h"
-#include "VRManagerChild.h"
+#include "nsThreadUtils.h"
 
 #ifdef XP_WIN
 #  include "SharedSurfaceANGLE.h"
@@ -31,8 +31,8 @@
 #endif
 
 #ifdef MOZ_WIDGET_GTK
-#  include "gfxPlatformGtk.h"
 #  include "SharedSurfaceDMABUF.h"
+#  include "gfxPlatformGtk.h"
 #  include "mozilla/widget/DMABufDevice.h"
 #endif
 

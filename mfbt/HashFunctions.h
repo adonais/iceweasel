@@ -46,11 +46,13 @@
 #define mozilla_HashFunctions_h
 
 #include "mozilla/Attributes.h"
+#include "mozilla/EndianUtils.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Types.h"
 #include "mozilla/WrappingOperations.h"
 
-#include <stdint.h>
+#include <cstdint>
+#include <cstring>
 #include <type_traits>
 
 namespace mozilla {
@@ -166,7 +168,7 @@ inline HashNumber AddUintNToHash<8>(HashNumber aHash, uint64_t aValue) {
   return AddU32ToHash(AddU32ToHash(aHash, v1), v2);
 }
 
-} /* namespace detail */
+}  // namespace detail
 
 /**
  * AddToHash takes a hash and some values and returns a new hash based on the
@@ -233,98 +235,158 @@ template <typename... Args>
 }
 
 /**
- * Hash successive |*aIter| until |!*aIter|, i.e. til null-termination.
+ * Hash |aLength| bytes of |aBytes|.
  *
- * This function is *not* named HashString like the non-template overloads
- * below.  Some users define HashString overloads and pass inexactly-matching
- * values to them -- but an inexactly-matching value would match this overload
- * instead!  We follow the general rule and don't mix and match template and
- * regular overloads to avoid this.
- *
- * If you have the string's length, call HashStringKnownLength: it may be
- * marginally faster.
+ * This walks uint32_t by uint32_t (in native byte order) rather than
+ * byte-by-byte, so you won't get the same result out of HashBytes as you would
+ * out of hashing the same data one character at a time with AddToHash.
  */
-template <typename Iterator>
-[[nodiscard]] constexpr HashNumber HashStringUntilZero(Iterator aIter) {
-  HashNumber hash = 0;
-  for (; auto c = *aIter; ++aIter) {
-    hash = AddToHash(hash, c);
+constexpr HashNumber HashBytes(const uint8_t* aBytes, size_t aLength,
+                               HashNumber aStartingHash = 0) {
+  uint32_t hash = aStartingHash;
+
+  /* Walk uint32_t by uint32_t. */
+  size_t i = 0;
+  for (; i < aLength - (aLength % sizeof(uint32_t)); i += sizeof(uint32_t)) {
+    uint32_t data;
+    if (std::is_constant_evaluated()) {
+      data = uint32_t(aBytes[i]) | (uint32_t(aBytes[i + 1]) << 8) |
+             (uint32_t(aBytes[i + 2]) << 16) | (uint32_t(aBytes[i + 3]) << 24);
+      if constexpr (std::endian::native == std::endian::big) {
+        data = mozilla::byteswap(data);
+      }
+    } else {
+      /* Do an explicitly unaligned load of the data. */
+      memcpy(&data, aBytes + i, sizeof(uint32_t));
+    }
+    hash = AddToHash(hash, data);
+  }
+
+  /* Get the remaining bytes. */
+  for (; i < aLength; i++) {
+    hash = AddToHash(hash, aBytes[i]);
   }
   return hash;
 }
 
-/**
- * Hash successive |aIter[i]| up to |i == aLength|.
- */
-template <typename Iterator>
-[[nodiscard]] constexpr HashNumber HashStringKnownLength(Iterator aIter,
-                                                         size_t aLength) {
-  HashNumber hash = 0;
-  for (size_t i = 0; i < aLength; i++) {
-    hash = AddToHash(hash, aIter[i]);
-  }
-  return hash;
-}
-
-/**
- * The HashString overloads below do just what you'd expect.
- *
- * These functions are non-template functions so that users can 1) overload them
- * with their own types 2) in a way that allows implicit conversions to happen.
- */
-[[nodiscard]] inline HashNumber HashString(const char* aStr) {
-  // Use the |const unsigned char*| version of the above so that all ordinary
-  // character data hashes identically.
-  return HashStringUntilZero(reinterpret_cast<const unsigned char*>(aStr));
+inline HashNumber HashBytes(const void* aBytes, size_t aLength,
+                            HashNumber aStartingHash = 0) {
+  return HashBytes(reinterpret_cast<const uint8_t*>(aBytes), aLength,
+                   aStartingHash);
 }
 
 [[nodiscard]] inline HashNumber HashString(const char* aStr, size_t aLength) {
-  // Delegate to the |const unsigned char*| version of the above to share
-  // template instantiations.
-  return HashStringKnownLength(reinterpret_cast<const unsigned char*>(aStr),
-                               aLength);
+  return HashBytes(aStr, aLength);
+}
+
+template <size_t N>
+[[nodiscard]] inline HashNumber HashString(const char (&aStr)[N]) {
+  return HashString(aStr, N - 1);
 }
 
 [[nodiscard]] inline HashNumber HashString(const unsigned char* aStr,
                                            size_t aLength) {
-  return HashStringKnownLength(aStr, aLength);
+  return HashBytes(aStr, aLength);
 }
 
-[[nodiscard]] constexpr HashNumber HashString(const char16_t* aStr) {
-  return HashStringUntilZero(aStr);
-}
-
-[[nodiscard]] inline HashNumber HashString(const char16_t* aStr,
-                                           size_t aLength) {
-  return HashStringKnownLength(aStr, aLength);
-}
+namespace detail {
 
 /**
- * HashString overloads for |wchar_t| on platforms where it isn't |char16_t|.
+ * Helper to hash a stream of char16_t code units two-at-a-time (i.e. four bytes
+ * at a time), so that the result matches HashBytes() run over the units' native
+ * byte representation. This is used to keep HashString(const char16_t*),
+ * HashLatin1AsUTF16() and HashUTF8AsUTF16() producing identical hashes for
+ * equivalent strings while hashing 32 bits at a time.
  */
-template <typename WCharT, typename = typename std::enable_if<
-                               std::is_same<WCharT, wchar_t>::value &&
-                               !std::is_same<wchar_t, char16_t>::value>::type>
-[[nodiscard]] inline HashNumber HashString(const WCharT* aStr) {
-  return HashStringUntilZero(aStr);
+class UTF16Hasher {
+  HashNumber mHash;
+  char16_t mPending = 0;
+  bool mHasPending = false;
+
+ public:
+  constexpr explicit UTF16Hasher(HashNumber aStartingHash = 0)
+      : mHash(aStartingHash) {}
+
+  constexpr void Add(char16_t aUnit) {
+    if (!mHasPending) {
+      mPending = aUnit;
+      mHasPending = true;
+      return;
+    }
+    uint32_t data;
+    if constexpr (std::endian::native == std::endian::big) {
+      data = (uint32_t(mPending) << 16) | uint32_t(aUnit);
+    } else {
+      data = uint32_t(mPending) | (uint32_t(aUnit) << 16);
+    }
+    mHash = AddToHash(mHash, data);
+    mHasPending = false;
+  }
+
+  constexpr HashNumber Finish() const {
+    if (!mHasPending) {
+      return mHash;
+    }
+    // Match HashBytes()'s handling of the trailing bytes that don't fill a
+    // whole uint32_t: hash them one byte at a time, in native byte order.
+    if constexpr (std::endian::native == std::endian::big) {
+      return AddToHash(AddToHash(mHash, uint8_t(mPending >> 8)),
+                       uint8_t(mPending & 0xff));
+    }
+    return AddToHash(AddToHash(mHash, uint8_t(mPending & 0xff)),
+                     uint8_t(mPending >> 8));
+  }
+};
+
+}  // namespace detail
+
+[[nodiscard]] constexpr HashNumber HashString(const char16_t* aStr,
+                                              size_t aLength) {
+  if (std::is_constant_evaluated()) {
+    detail::UTF16Hasher hasher;
+    for (size_t i = 0; i < aLength; i++) {
+      hasher.Add(aStr[i]);
+    }
+    return hasher.Finish();
+  }
+  return HashBytes(aStr, aLength * sizeof(char16_t));
 }
 
-template <typename WCharT, typename = typename std::enable_if<
-                               std::is_same<WCharT, wchar_t>::value &&
-                               !std::is_same<wchar_t, char16_t>::value>::type>
+template <typename WCharT>
+  requires(std::is_same_v<WCharT, wchar_t> &&
+           !std::is_same_v<wchar_t, char16_t>)
 [[nodiscard]] inline HashNumber HashString(const WCharT* aStr, size_t aLength) {
-  return HashStringKnownLength(aStr, aLength);
+  static_assert(sizeof(WCharT) == sizeof(char16_t));
+  return HashString(reinterpret_cast<const char16_t*>(aStr), aLength);
+}
+
+template <size_t N>
+[[nodiscard]] constexpr HashNumber HashString(const char16_t (&aStr)[N]) {
+  return HashString(aStr, N - 1);
+}
+
+// Some callers like the JS engine require hashing latin-1 strings as if they
+// were char16_t strings. See also HashUTF8AsUTF16.
+[[nodiscard]] constexpr HashNumber HashLatin1AsUTF16(const unsigned char* aStr,
+                                                     size_t aLength) {
+  detail::UTF16Hasher hasher;
+  for (size_t i = 0; i < aLength; i++) {
+    hasher.Add(char16_t(aStr[i]));
+  }
+  return hasher.Finish();
 }
 
 /**
- * Hash some number of bytes.
+ * Hash a UTF-8 string as though it were a UTF-16 string.
  *
- * This hash walks word-by-word, rather than byte-by-byte, so you won't get the
- * same result out of HashBytes as you would out of HashString.
+ * The value returned is the same as if we converted the string to UTF-16 and
+ * then ran HashString() on the result, with the same semantics as
+ * NS_ConvertUTF8toUTF16 (i.e. replacing invalid codepoints by the unicode
+ * replacement character).
+ *
+ * The given |aLength| is in bytes.
  */
-[[nodiscard]] extern MFBT_API HashNumber HashBytes(const void* bytes,
-                                                   size_t aLength,
-                                                   HashNumber startingHash = 0);
+extern MFBT_API HashNumber HashUTF8AsUTF16(const char* aUTF8, size_t aLength);
 
 /**
  * A pseudorandom function mapping 32-bit integers to 32-bit integers.

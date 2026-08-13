@@ -55,6 +55,21 @@ function testCancelPrefetchNotCrash(url) {
   prefetch.cancelPrefetchPreloadURI(ios.newURI(url), link);
 }
 
+let gCacheBuster = 0;
+
+// A CORS-mode prefetch served from cache whose CORS check fails must fire error,
+// not load. The first prefetch caches the 200 response (the CORS failure does
+// not doom the entry); the second is served from that cache entry.
+async function testCachedCorsFailureFiresError() {
+  const id = gCacheBuster++;
+  const url = CROSS_ORIGIN + "?statusCode=200&cacheControl=max-age%3D120" +
+              "&cachedCors=" + id;
+  await testPrefetchEvent(url, true, false);
+  await testPrefetchEvent(url, true, false);
+  const count = await fetch(CROSS_ORIGIN + "?getCount=" + id).then(r => r.text());
+  is(count, "1", "second prefetch should be served from cache, not refetched");
+}
+
 const SJS_PATH = window.location.pathname.replace(/[^/]+$/, "file_bug1268962.sjs");
 const SAME_ORIGIN = "http://mochi.test:8888" + SJS_PATH;
 const CROSS_ORIGIN = "http://example.com" + SJS_PATH;
@@ -81,17 +96,21 @@ SpecialPowers.pushPrefEnv({"set": [["network.prefetch-next.aggressive", true]]})
 .then(() => testPrefetchEvent(SAME_ORIGIN + "?redirect=crossorigin&statusCode=200&cacheControl=max-age%3D120", false, true))
 .then(() => testPrefetchEvent(SAME_ORIGIN + "?redirect=crossorigin&statusCode=404&cacheControl=max-age%3D120", false, true))
 
-// test cross origin with CORS request but no CORS response
-.then(() => testPrefetchEvent(CROSS_ORIGIN + "?statusCode=200&cacheControl=no-cache", true, true))
-.then(() => testPrefetchEvent(CROSS_ORIGIN + "?statusCode=404&cacheControl=no-cache", true, true))
-.then(() => testPrefetchEvent(CROSS_ORIGIN + "?statusCode=200&cacheControl=max-age%3D120", true, true))
-.then(() => testPrefetchEvent(CROSS_ORIGIN + "?statusCode=404&cacheControl=max-age%3D120", true, true))
+// test cross origin with CORS request but no CORS response: the CORS check
+// fails, which is a network error, so the error event fires
+.then(() => testPrefetchEvent(CROSS_ORIGIN + "?statusCode=200&cacheControl=no-cache", true, false))
+.then(() => testPrefetchEvent(CROSS_ORIGIN + "?statusCode=404&cacheControl=no-cache", true, false))
+.then(() => testPrefetchEvent(CROSS_ORIGIN + "?statusCode=200&cacheControl=max-age%3D120", true, false))
+.then(() => testPrefetchEvent(CROSS_ORIGIN + "?statusCode=404&cacheControl=max-age%3D120", true, false))
 
 // test cross origin with CORS request and CORS response
 .then(() => testPrefetchEvent(CROSS_ORIGIN + "?statusCode=200&cacheControl=no-cache&allowOrigin=*", true, false))
 .then(() => testPrefetchEvent(CROSS_ORIGIN + "?statusCode=404&cacheControl=no-cache&allowOrigin=*", true, false))
 .then(() => testPrefetchEvent(CROSS_ORIGIN + "?statusCode=200&cacheControl=max-age%3D120&allowOrigin=*", true, true))
 .then(() => testPrefetchEvent(CROSS_ORIGIN + "?statusCode=404&cacheControl=max-age%3D120&allowOrigin=*", true, false))
+
+// test that a cached CORS-mode failure fires error, not load
+.then(() => testCachedCorsFailureFiresError())
 
 // test the crash issue: https://bugzilla.mozilla.org/show_bug.cgi?id=1294159
 .then(() => testCancelPrefetchNotCrash(SAME_ORIGIN + "?statusCode=200&cacheControl=max-age%3D120"))

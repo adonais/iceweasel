@@ -20,6 +20,7 @@
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/HTMLDNSPrefetch.h"
 #include "mozilla/dom/HTMLLinkElementBinding.h"
+#include "mozilla/dom/ModuleLoader.h"
 #include "mozilla/dom/ReferrerInfo.h"
 #include "mozilla/dom/ScriptLoader.h"
 #include "nsAttrValueInlines.h"

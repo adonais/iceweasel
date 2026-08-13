@@ -606,7 +606,7 @@ function accessibleTask(doc, task, options = {}) {
           // Chrome documents don't fire DOCUMENT_LOAD_COMPLETE. Instead, wait
           // until we can get the DocAccessible and it doesn't have the busy
           // state.
-          await BrowserTestUtils.waitForCondition(() => {
+          await TestUtils.waitForCondition(() => {
             docAccessible = getAccessible(browser.contentWindow.document);
             if (!docAccessible) {
               return false;

@@ -339,6 +339,47 @@ static inline void get_txb_dimensions(const MACROBLOCKD *xd, int plane,
   if (width) *width = txb_width;
 }
 
+static inline int get_visible_dimensions(const MACROBLOCK *x, int plane,
+                                         BLOCK_SIZE plane_bsize, int blk_col,
+                                         int blk_row, int cols, int rows,
+                                         int *visible_cols, int *visible_rows,
+                                         bool use_crop_dim) {
+  if ((x->pix_to_bottom_edge >= 0 && x->pix_to_right_edge >= 0) ||
+      !use_crop_dim) {
+    if (visible_cols != NULL && visible_rows != NULL) {
+      *visible_rows = rows;
+      *visible_cols = cols;
+    }
+    return 0;
+  }
+  const MACROBLOCKD *const xd = &x->e_mbd;
+  const struct macroblockd_plane *const pd = &xd->plane[plane];
+  int valid_cols, valid_rows;
+
+  if (x->pix_to_bottom_edge >= 0) {
+    valid_rows = rows;
+  } else {
+    const int block_height = block_size_high[plane_bsize];
+    const int block_rows =
+        (x->pix_to_bottom_edge >> pd->subsampling_y) + block_height;
+    valid_rows = clamp(block_rows - (blk_row << MI_SIZE_LOG2), 0, rows);
+  }
+
+  if (x->pix_to_right_edge >= 0) {
+    valid_cols = cols;
+  } else {
+    const int block_width = block_size_wide[plane_bsize];
+    const int block_cols =
+        (x->pix_to_right_edge >> pd->subsampling_x) + block_width;
+    valid_cols = clamp(block_cols - (blk_col << MI_SIZE_LOG2), 0, cols);
+  }
+  if (visible_cols != NULL && visible_rows != NULL) {
+    *visible_cols = valid_cols;
+    *visible_rows = valid_rows;
+  }
+  return (valid_cols < cols || valid_rows < rows);
+}
+
 static inline int bsize_to_num_blk(BLOCK_SIZE bsize) {
   int num_blk = 1 << (num_pels_log2_lookup[bsize] - 2 * MI_SIZE_LOG2);
   return num_blk;
@@ -648,6 +689,23 @@ static inline void set_mode_eval_params(const struct AV1_COMP *cpi,
   txfm_params->mode_eval_type = mode_eval_type;
 }
 
+static inline int increase_motion_mode_rate(const MB_MODE_INFO *this_mbmi,
+                                            int rate,
+                                            float rd_warp_bias_scale_pct,
+                                            float rd_obmc_bias_scale_pct) {
+  double rd_bias_scale = 0.0;
+  if (this_mbmi->motion_mode == WARPED_CAUSAL) {
+    rd_bias_scale = rd_warp_bias_scale_pct / 100.0;
+  } else if (this_mbmi->motion_mode == OBMC_CAUSAL) {
+    rd_bias_scale = rd_obmc_bias_scale_pct / 100.0;
+  }
+  if (rd_bias_scale <= 0.0) return rate;
+
+  int scaled_rate = rate;
+  scaled_rate += (int)(rd_bias_scale * rate + 0.5);
+  return scaled_rate;
+}
+
 // Similar to store_cfl_required(), but for use during the RDO process,
 // where we haven't yet determined whether this block uses CfL.
 static inline CFL_ALLOWED_TYPE store_cfl_required_rdo(const AV1_COMMON *cm,
@@ -677,10 +735,11 @@ static inline void init_sbuv_mode(MB_MODE_INFO *const mbmi) {
 
 // Store best mode stats for winner mode processing
 static inline void store_winner_mode_stats(
-    const AV1_COMMON *const cm, MACROBLOCK *x, const MB_MODE_INFO *mbmi,
+    const AV1_COMP *cpi, MACROBLOCK *x, const MB_MODE_INFO *mbmi,
     RD_STATS *rd_cost, RD_STATS *rd_cost_y, RD_STATS *rd_cost_uv,
     THR_MODES mode_index, uint8_t *color_map, BLOCK_SIZE bsize, int64_t this_rd,
     int multi_winner_mode_type, int txfm_search_done) {
+  const AV1_COMMON *const cm = &cpi->common;
   WinnerModeStats *winner_mode_stats = x->winner_mode_stats;
   int mode_idx = 0;
   int is_palette_mode = mbmi->palette_mode_info.palette_size[PLANE_TYPE_Y] > 0;
@@ -725,10 +784,13 @@ static inline void store_winner_mode_stats(
 
     winner_mode_stats[mode_idx].rd_cost = *rd_cost;
     if (txfm_search_done) {
-      winner_mode_stats[mode_idx].rate_y =
-          rd_cost_y->rate +
+      const int skip_rate =
           x->mode_costs
               .skip_txfm_cost[skip_ctx][rd_cost->skip_txfm || skip_txfm];
+      const int scaled_skip_rate = increase_motion_mode_rate(
+          mbmi, skip_rate, cpi->sf.inter_sf.bias_warp_mode_rd_scale_pct,
+          cpi->sf.inter_sf.bias_obmc_mode_rd_scale_pct);
+      winner_mode_stats[mode_idx].rate_y = rd_cost_y->rate + scaled_skip_rate;
       winner_mode_stats[mode_idx].rate_uv = rd_cost_uv->rate;
     }
   }

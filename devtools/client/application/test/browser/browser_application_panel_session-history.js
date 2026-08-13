@@ -103,6 +103,20 @@ add_task(async function () {
     tBodyRows[2].cells[1].firstChild.innerText.endsWith("iframe.html?1")
   );
 
+  info("The current entry header is a no-op, other entry headers navigate");
+  const currentHeaderButton = doc.querySelector("#current button");
+  Assert.ok(
+    !currentHeaderButton.hasAttribute("title"),
+    "The current entry header button does not navigate (no title)"
+  );
+  const otherHeaderButton = doc.querySelector(
+    "#diagram-container-table thead th:not(#current) button"
+  );
+  Assert.ok(
+    otherHeaderButton.hasAttribute("title"),
+    "A non-current entry header button navigates (has a title)"
+  );
+
   info("Click on a button to bring up entry info");
   tBodyRows[2].cells[1].firstChild.click();
 
@@ -272,6 +286,45 @@ add_task(async function () {
     "#2",
     new URL(popover.firstChild.getElementsByTagName("dd")[0].innerText).hash,
     "hash should be updated by replaceState"
+  );
+
+  info("Click a numbered header to navigate to that session history index");
+  Assert.notEqual(
+    0,
+    tab.linkedBrowser.browsingContext.sessionHistory.index,
+    "Sanity check: we are not already at index 0"
+  );
+
+  const headerButtons = [
+    ...doc.querySelectorAll("#diagram-container-table thead button"),
+  ];
+  const firstHeaderButton = headerButtons.find(
+    button => button.innerText === "0"
+  );
+  Assert.ok(
+    HTMLButtonElement.isInstance(firstHeaderButton),
+    "Found the header button for index 0"
+  );
+
+  firstHeaderButton.click();
+
+  await waitFor(
+    () => tab.linkedBrowser.browsingContext.sessionHistory.index === 0
+  );
+  Assert.equal(
+    0,
+    tab.linkedBrowser.browsingContext.sessionHistory.index,
+    "Clicking the header navigated to session history index 0"
+  );
+
+  await waitFor(
+    () =>
+      doc.querySelector("#current")?.querySelector("button")?.innerText === "0"
+  );
+  Assert.equal(
+    "0",
+    doc.querySelector("#current").querySelector("button").innerText,
+    "The current marker moved to the header for index 0"
   );
 
   resourceCommand.unwatchResources([resourceCommand.TYPES.SESSION_HISTORY], {

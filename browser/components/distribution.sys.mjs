@@ -399,6 +399,7 @@ DistributionCustomizer.prototype = {
       Services.prefs.getBoolPref("distribution.mozillaonline.ignore", false)
     ) {
       Glean.distribution.mozillaonlineIgnored.set(true);
+      Services.fog.clearDistribution();
       this.__defineGetter__("_ini", () => null);
       return this._checkCustomizationComplete();
     }

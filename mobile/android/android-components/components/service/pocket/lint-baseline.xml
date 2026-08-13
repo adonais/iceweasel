@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.13.2" type="baseline" client="gradle" dependencies="false" name="AGP (8.13.2)" variant="all" version="8.13.2">
+<issues format="6" by="lint 9.2.1" type="baseline" client="gradle" dependencies="false" name="AGP (9.2.1)" variant="all" version="9.2.1">
 
     <issue
         id="NoSystemCurrentTimeMillis"
@@ -11,6 +11,7 @@
             line="16"
             column="47"/>
     </issue>
+
     <issue
         id="NoSystemCurrentTimeMillis"
         message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
@@ -21,6 +22,7 @@
             line="37"
             column="92"/>
     </issue>
+
     <issue
         id="NoSystemCurrentTimeMillis"
         message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
@@ -31,6 +33,7 @@
             line="44"
             column="41"/>
     </issue>
+
     <issue
         id="NoSystemCurrentTimeMillis"
         message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."
@@ -41,6 +44,7 @@
             line="41"
             column="41"/>
     </issue>
+
     <issue
         id="NoSystemCurrentTimeMillis"
         message="`System.currentTimeMillis()` must be injectable. Only permitted as a default value of a parameter on a top-level function or on a class."

@@ -5,13 +5,12 @@
 #ifndef SubstitutingProtocolHandler_h_
 #define SubstitutingProtocolHandler_h_
 
-#include "nsISubstitutingProtocolHandler.h"
-
-#include "nsTHashMap.h"
-#include "nsStandardURL.h"
-#include "nsJARURI.h"
-#include "mozilla/chrome/RegistryMessageUtils.h"
 #include "mozilla/RWLock.h"
+#include "mozilla/chrome/RegistryMessageUtils.h"
+#include "nsISubstitutingProtocolHandler.h"
+#include "nsJARURI.h"
+#include "nsStandardURL.h"
+#include "nsTHashMap.h"
 
 class nsIIOService;
 

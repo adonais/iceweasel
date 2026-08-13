@@ -28,7 +28,7 @@ add_task(async function test_embedded_url_show_up_as_places_result() {
       makeVisitResult(context, {
         uri: "http://example.com/?url=http://kitten.com/",
         title: "kitten",
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
       }),
     ],
   });
@@ -60,7 +60,7 @@ add_task(async function test_deduplication_of_embedded_url_autofill_result() {
       makeVisitResult(context, {
         uri: "http://kitten.com/",
         title: "kitten",
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
         heuristic: true,
         providerName: "UrlbarProviderAutofill",
       }),
@@ -98,7 +98,7 @@ add_task(async function test_deduplication_of_embedded_url_places_result() {
       makeVisitResult(context, {
         uri: "http://kitten.com/",
         title: "kitten",
-        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
       }),
     ],
   });
@@ -139,7 +139,7 @@ add_task(
         makeVisitResult(context, {
           uri: "http://kitten.com/",
           title: "kitten",
-          source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+          source: UrlbarShared.RESULT_SOURCE.HISTORY,
         }),
       ],
     });
@@ -177,7 +177,7 @@ add_task(
         makeVisitResult(context, {
           uri: "http://kitten.com/",
           title: "kitten",
-          source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+          source: UrlbarShared.RESULT_SOURCE.HISTORY,
         }),
       ],
     });
@@ -216,7 +216,7 @@ add_task(async function test_deduplication_of_embedded_url_switchTab_result() {
         engineName: SearchService.defaultEngine.name,
       }),
       makeTabSwitchResult(context, {
-        source: UrlbarUtils.RESULT_SOURCE.TAB,
+        source: UrlbarShared.RESULT_SOURCE.TAB,
         uri: "http://kitten.com/",
         title: "kitten",
       }),

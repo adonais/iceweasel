@@ -46,7 +46,7 @@ add_task(async function test_replaceDismissedWithVisibleWhileOpening() {
         null
       );
       await Promise.race([
-        BrowserTestUtils.waitForCondition(() => {
+        TestUtils.waitForCondition(() => {
           if (
             document.getElementById("password-notification-username").value !=
               "the username" ||

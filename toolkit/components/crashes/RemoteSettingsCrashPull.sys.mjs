@@ -5,7 +5,7 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  CrashSubmit: "resource://gre/modules/CrashSubmit.sys.mjs",
+  CrashSubmit: "moz-src:///toolkit/crashreporter/CrashSubmit.sys.mjs",
   CrashServiceUtils: "resource://gre/modules/CrashService.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   RemoteSettingsClient:

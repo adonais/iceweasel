@@ -22,7 +22,7 @@ import mozilla.components.concept.sync.Device
 import mozilla.components.concept.sync.DeviceConstellation
 import mozilla.components.concept.sync.DeviceType
 import mozilla.components.concept.sync.OAuthAccount
-import mozilla.components.service.fxa.SyncEngine
+import mozilla.components.concept.sync.SyncEngine
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.service.fxa.sync.SyncReason
 import mozilla.components.support.test.any

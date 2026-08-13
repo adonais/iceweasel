@@ -5,8 +5,10 @@
 #ifndef FilteringWrapper_h_
 #define FilteringWrapper_h_
 
-#include "XrayWrapper.h"
 #include "mozilla/Maybe.h"
+
+#include "XrayWrapper.h"
+
 #include "js/CallNonGenericMethod.h"
 #include "js/Wrapper.h"
 

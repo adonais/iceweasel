@@ -53,7 +53,7 @@ export const presets = {
   "web-developer": {
     entries: 128 * 1024 * 1024,
     interval: 1,
-    features: ["screenshots", "js", "cpu", "memory"],
+    features: ["screenshots", "js", "memory"],
     threads: ["GeckoMain", "Compositor", "Renderer", "DOM Worker"],
     duration: 0,
     profilerViewMode: "active-tab",
@@ -75,7 +75,6 @@ export const presets = {
       "screenshots",
       "js",
       "stackwalk",
-      "cpu",
       "java",
       "processcpu",
       "memory",
@@ -105,7 +104,7 @@ export const presets = {
   graphics: {
     entries: 128 * 1024 * 1024,
     interval: 1,
-    features: ["stackwalk", "js", "cpu", "java", "processcpu", "memory"],
+    features: ["stackwalk", "js", "java", "processcpu", "memory"],
     threads: [
       "GeckoMain",
       "Compositor",
@@ -136,7 +135,6 @@ export const presets = {
     features: [
       "js",
       "stackwalk",
-      "cpu",
       "audiocallbacktracing",
       "ipcmessages",
       "processcpu",
@@ -183,7 +181,7 @@ export const presets = {
   ml: {
     entries: 128 * 1024 * 1024,
     interval: 1,
-    features: ["js", "stackwalk", "cpu", "ipcmessages", "processcpu", "memory"],
+    features: ["js", "stackwalk", "ipcmessages", "processcpu", "memory"],
     threads: [
       "BackgroundThreadPool",
       "DOM Worker",
@@ -211,7 +209,6 @@ export const presets = {
       "screenshots",
       "js",
       "stackwalk",
-      "cpu",
       "java",
       "processcpu",
       "bandwidth",
@@ -241,6 +238,48 @@ export const presets = {
       },
     },
   },
+  "networking-with-logs": {
+    entries: 128 * 1024 * 1024,
+    interval: 1,
+    features: [
+      "screenshots",
+      "js",
+      "stackwalk",
+      "cpu",
+      "java",
+      "processcpu",
+      "bandwidth",
+      "memory",
+    ],
+    threads: [
+      "Cache2 I/O",
+      "Compositor",
+      "DNS Resolver",
+      "DOM Worker",
+      "GeckoMain",
+      "Renderer",
+      "Socket Thread",
+      "StreamTrans",
+      "SwComposite",
+      "TRR Background",
+    ],
+    // Keep these MOZ_LOG modules in sync with the "networking" logging preset
+    // in toolkit/content/aboutLogging/aboutLogging.mjs (the profiler does not
+    // need the "timestamp" and "sync" modules used there).
+    mozLogs:
+      "nsHttp:5,cache2:5,nsSocketTransport:5,nsHostResolver:5,EarlyHint:5",
+    duration: 0,
+    l10nIds: {
+      popup: {
+        label: "profiler-popup-presets-networking-with-logs-label",
+        description: "profiler-popup-presets-networking-with-logs-description",
+      },
+      devtools: {
+        label: "perftools-presets-networking-with-logs-label",
+        description: "perftools-presets-networking-with-logs-description",
+      },
+    },
+  },
   power: {
     entries: 128 * 1024 * 1024,
     interval: 10,
@@ -248,7 +287,6 @@ export const presets = {
       "screenshots",
       "js",
       "stackwalk",
-      "cpu",
       "processcpu",
       "nostacksampling",
       "ipcmessages",
@@ -274,7 +312,6 @@ export const presets = {
     entries: 128 * 1024 * 1024,
     interval: 1,
     features: [
-      "cpu",
       "ipcmessages",
       "js",
       "markersallthreads",
@@ -340,12 +377,16 @@ export function getPrefPostfix(pageContext) {
   switch (pageContext) {
     case "devtools":
     case "aboutprofiling":
-    case "aboutlogging":
       // Don't use any postfix on the prefs.
       return "";
     case "devtools-remote":
     case "aboutprofiling-remote":
       return ".remote";
+    case "aboutlogging":
+      // about:logging uses its own set of recording prefs, so that using it
+      // doesn't clobber the settings used for normal profiling (the popup,
+      // about:profiling).
+      return ".aboutlogging";
     default: {
       const { UnhandledCaseError } = ChromeUtils.importESModule(
         "resource://devtools/shared/performance-new/errors.sys.mjs",
@@ -459,7 +500,7 @@ export function setRecordingSettings(pageContext, prefs) {
  * @return {void}
  */
 export function revertRecordingSettings() {
-  for (const prefPostfix of ["", ".remote"]) {
+  for (const prefPostfix of ["", ".remote", ".aboutlogging"]) {
     Services.prefs.clearUserPref(PRESET_PREF + prefPostfix);
     Services.prefs.clearUserPref(ENTRIES_PREF + prefPostfix);
     Services.prefs.clearUserPref(INTERVAL_PREF + prefPostfix);

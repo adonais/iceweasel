@@ -22,8 +22,8 @@ import mozilla.components.browser.storage.sync.SyncedDeviceTabs
 import mozilla.components.browser.storage.sync.Tab
 import mozilla.components.browser.storage.sync.TabEntry
 import mozilla.components.concept.sync.Device
+import mozilla.components.concept.sync.SyncEngine
 import mozilla.components.lib.state.ext.flowScoped
-import mozilla.components.service.fxa.SyncEngine
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.service.fxa.manager.ext.withConstellationIfExists
 import mozilla.components.service.fxa.sync.SyncReason

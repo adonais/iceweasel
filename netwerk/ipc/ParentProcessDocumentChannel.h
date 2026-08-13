@@ -8,8 +8,8 @@
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/net/DocumentChannel.h"
 #include "mozilla/net/DocumentLoadListener.h"
-#include "nsIObserver.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
+#include "nsIObserver.h"
 
 namespace mozilla {
 namespace net {

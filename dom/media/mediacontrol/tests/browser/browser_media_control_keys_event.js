@@ -131,36 +131,46 @@ add_task(async function testMute() {
   const tab = await createLoadedTabWrapper(PAGE);
   await playMedia(tab, testVideoId);
 
+  // Media-control mute makes the media inaudible (so the controller reports it
+  // as no longer audible) but must NOT change the web-visible `muted`
+  // attribute, which only reflects content muting.
   info(`pressing 'mute' key`);
   MediaControlService.generateMediaControlKey("mute");
-
-  await SpecialPowers.spawn(tab.linkedBrowser, [testVideoId], async Id => {
-    const video = content.document.getElementById(Id);
-    await new Promise(r => {
-      if (video.muted) {
-        r();
-      } else {
-        video.addEventListener("volumechange", r, { once: true });
-      }
-    });
-    is(video.muted, true, "Media should be muted");
-  });
+  await checkMediaControlMutedState(tab, true);
 
   info(`pressing 'unmute' key`);
   MediaControlService.generateMediaControlKey("unmute");
-
-  await SpecialPowers.spawn(tab.linkedBrowser, [testVideoId], async Id => {
-    const video = content.document.getElementById(Id);
-    await new Promise(r => {
-      if (!video.muted) {
-        r();
-      } else {
-        video.addEventListener("volumechange", r, { once: true });
-      }
-    });
-    is(video.muted, false, "Media should be unmuted");
-  });
+  await checkMediaControlMutedState(tab, false);
 
   info(`remove tab`);
   await tab.close();
 });
+
+async function checkMediaControlMutedState(tab, expectMuted) {
+  await TestUtils.waitForCondition(
+    () => tab.controller.isAudible === !expectMuted,
+    `media should be ${
+      expectMuted ? "inaudible (muted)" : "audible (unmuted)"
+    } via media control`
+  );
+  await SpecialPowers.spawn(
+    tab.linkedBrowser,
+    [testVideoId, expectMuted],
+    (Id, muted) => {
+      const video = content.document.getElementById(Id);
+      is(
+        video.muted,
+        false,
+        "Web-visible muted attribute is unchanged by media-control mute"
+      );
+      // MUTED_BY_MEDIA_CONTROL = 0x10 (see MutedReasons in HTMLMediaElement.h).
+      const MUTED_BY_MEDIA_CONTROL = 0x10;
+      const reasons = SpecialPowers.wrap(video).mutedReasons;
+      is(
+        !!(reasons & MUTED_BY_MEDIA_CONTROL),
+        muted,
+        `media-control mute reason should be ${muted ? "set" : "cleared"} internally`
+      );
+    }
+  );
+}

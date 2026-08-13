@@ -11,6 +11,21 @@
 // the union of rules in the feature's mListIds, and used at classify time
 // based on the channel's PBM-ness and the protection-vs-annotation phase.
 
+add_setup(function () {
+  registerCleanupFunction(() => {
+    for (const pref of [
+      "privacy.trackingprotection.content.protection.enabled",
+      "privacy.trackingprotection.content.protection.engines",
+      "privacy.trackingprotection.content.protection.engines.pbmode",
+      "privacy.trackingprotection.content.annotation.enabled",
+      "privacy.trackingprotection.content.annotation.engines",
+      "privacy.trackingprotection.content.annotation.engines.pbmode",
+    ]) {
+      Services.prefs.clearUserPref(pref);
+    }
+  });
+});
+
 // "trackers" feature reads rules from RS list "disconnect-tracker-base"
 // (see kFeatures table in ContentClassifierService.cpp). With protection.
 // engines = "trackers" set, a matching third-party image should be blocked.
@@ -632,6 +647,120 @@ add_task(async function test_major_exceptions_allows_blocker() {
   await runExceptionAllowsBlocker({
     exceptionFeature: "major-exceptions",
     exceptionListName: "mozilla-major-exceptions",
+  });
+});
+
+// A helper function to test the WebCompat allowlist mechanism.
+async function runExceptionAllowListTest({
+  exceptionListName,
+  baselineEnabled,
+  convenienceEnabled,
+  expectBlocked,
+}) {
+  let client = getRSClient();
+  let records = await populateMultipleRS(client.db, [
+    { id: "exception", name: exceptionListName, rules: ["@@||example.com^"] },
+    {
+      id: "trackers",
+      name: "disconnect-tracker-base",
+      rules: ["||example.com^"],
+    },
+  ]);
+
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["privacy.trackingprotection.content.testing", true],
+      ["privacy.trackingprotection.content.mirror.enabled", true],
+      ["privacy.trackingprotection.enabled", true],
+      [
+        "privacy.trackingprotection.allow_list.baseline.enabled",
+        baselineEnabled,
+      ],
+      [
+        "privacy.trackingprotection.allow_list.convenience.enabled",
+        convenienceEnabled,
+      ],
+    ],
+  });
+
+  // The pref mirror recomputes the engine prefs on a coalesced main-thread
+  // runnable; spin the event loop once so that Sync() has written them before
+  // we drive the rebuild below.
+  await new Promise(resolve => Services.tm.dispatchToMainThread(resolve));
+
+  let tab = await openTestTab();
+  let browser = tab.linkedBrowser;
+  await syncAndWaitForLists(client, records);
+
+  let desc = `baseline=${baselineEnabled} convenience=${convenienceEnabled}`;
+
+  if (expectBlocked) {
+    await assertImageBlocked(
+      browser,
+      TEST_ANNOTATED_3RD_PARTY_DOMAIN,
+      `${desc}: disabled allowlist no longer suppresses the block`
+    );
+    await assertHasBlockingState(
+      browser,
+      TEST_ANNOTATED_3RD_PARTY_DOMAIN,
+      Ci.nsIWebProgressListener.STATE_BLOCKED_TRACKING_CONTENT,
+      `${desc}: STATE_BLOCKED_TRACKING_CONTENT set when allowlist disabled`
+    );
+  } else {
+    await assertImageLoaded(
+      browser,
+      TEST_ANNOTATED_3RD_PARTY_DOMAIN,
+      `${desc}: enabled allowlist still allows example.com`
+    );
+    await assertLacksBlockingState(
+      browser,
+      TEST_ANNOTATED_3RD_PARTY_DOMAIN,
+      Ci.nsIWebProgressListener.STATE_BLOCKED_TRACKING_CONTENT,
+      `${desc}: no STATE_BLOCKED_TRACKING_CONTENT when allowlist enabled`
+    );
+  }
+}
+
+// baseline.enabled=false keeps the mirror from appending major-exceptions, so
+// its allow rule no longer suppresses the trackers block.
+add_task(async function test_major_exceptions_gated_by_baseline_pref() {
+  await runExceptionAllowListTest({
+    exceptionListName: "mozilla-major-exceptions",
+    baselineEnabled: false,
+    convenienceEnabled: true,
+    expectBlocked: true,
+  });
+});
+
+// convenience.enabled=false keeps the mirror from appending minor-exceptions
+// while baseline keeps major-exceptions present.
+add_task(async function test_minor_exceptions_gated_by_convenience_pref() {
+  await runExceptionAllowListTest({
+    exceptionListName: "mozilla-minor-exceptions",
+    baselineEnabled: true,
+    convenienceEnabled: false,
+    expectBlocked: true,
+  });
+});
+
+// Disabling convenience must not affect the major-exceptions (baseline) engine.
+add_task(async function test_major_exceptions_unaffected_by_convenience_pref() {
+  await runExceptionAllowListTest({
+    exceptionListName: "mozilla-major-exceptions",
+    baselineEnabled: true,
+    convenienceEnabled: false,
+    expectBlocked: false,
+  });
+});
+
+// convenience depends on baseline: with baseline disabled the mirror appends
+// neither exception engine even though convenience.enabled is true.
+add_task(async function test_minor_exceptions_requires_baseline_pref() {
+  await runExceptionAllowListTest({
+    exceptionListName: "mozilla-minor-exceptions",
+    baselineEnabled: false,
+    convenienceEnabled: true,
+    expectBlocked: true,
   });
 });
 

@@ -6,6 +6,7 @@
 
 #include "mozilla/CheckedInt.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/HashFunctions.h"
 #include "mozilla/Latin1.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Range.h"
@@ -589,19 +590,19 @@ bool GetUTF8AtomizationData(JSContext* cx, const JS::UTF8Chars& utf8,
                             HashNumber* hashNum) {
   *outlen = 0;
   *encoding = JS::SmallestEncoding::ASCII;
-  *hashNum = 0;
 
+  mozilla::detail::UTF16Hasher hasher;
   auto getMetadata = [outlen, encoding,
-                      hashNum](char16_t c) -> LoopDisposition {
+                      &hasher](char16_t c) -> LoopDisposition {
     (*outlen)++;
     UpdateSmallestEncodingForChar(c, encoding);
-    *hashNum = mozilla::AddToHash(*hashNum, c);
+    hasher.Add(c);
     return LoopDisposition::Continue;
   };
   if (!InflateUTF8ToUTF16<OnUTF8Error::Throw>(cx, utf8, getMetadata)) {
     return false;
   }
-
+  *hashNum = hasher.Finish();
   return true;
 }
 

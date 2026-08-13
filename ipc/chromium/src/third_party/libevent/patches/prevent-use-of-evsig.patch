@@ -1,7 +1,7 @@
-diff --git a/ipc/chromium/src/third_party/libevent/signal.c b/ipc/chromium/src/third_party/libevent/signal.c
+diff --git a/signal.c b/signal.c
 index 3f46295024e57..1eec621b48c6c 100644
---- a/ipc/chromium/src/third_party/libevent/signal.c
-+++ b/ipc/chromium/src/third_party/libevent/signal.c
+--- a/signal.c
++++ b/signal.c
 @@ -64,6 +64,8 @@
  #include "evmap-internal.h"
  #include "evthread-internal.h"

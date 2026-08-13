@@ -16,6 +16,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AboutPagesUtils: "resource://gre/modules/AboutPagesUtils.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
 });
 
 /**
@@ -52,8 +53,8 @@ export class UrlbarProviderAboutPages extends UrlbarProvider {
     for (const aboutUrl of lazy.AboutPagesUtils.visibleAboutUrls) {
       if (aboutUrl.startsWith(searchString)) {
         let result = new lazy.UrlbarResult({
-          type: UrlbarUtils.RESULT_TYPE.URL,
-          source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+          type: lazy.UrlbarShared.RESULT_TYPE.URL,
+          source: lazy.UrlbarShared.RESULT_SOURCE.OTHER_LOCAL,
           payload: {
             title: aboutUrl,
             url: aboutUrl,

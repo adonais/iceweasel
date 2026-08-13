@@ -215,7 +215,7 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   size_t length() const { return headerLengthField(); }
   MOZ_ALWAYS_INLINE
   uint32_t flags() const { return headerFlagsField(); }
-  uint32_t getFlagsAtomic() const { return headerFlagsFieldAtomic(); }
+  uint32_t getFlagsForTracing() const { return headerFlagsFieldForTracing(); }
 
   // Class for temporarily holding character data that will be used for JSString
   // contents. The data may be allocated in the nursery, the malloc heap, or as
@@ -320,8 +320,7 @@ class JSString : public js::gc::CellWithLengthAndFlags {
           JSRope* parent;                             /* Used in flattening */
         } u2;
         union {
-          JSLinearString* base; /* JSDependentString */
-          JSAtom* atom;         /* JSAtomRefString */
+          JSLinearString* base; /* JSDependentString or JSAtomRefString */
           JSString* right;      /* JSRope */
           size_t capacity;      /* JSLinearString (extensible) */
           const JSExternalStringCallbacks*
@@ -490,8 +489,6 @@ class JSString : public js::gc::CellWithLengthAndFlags {
 
   MOZ_ALWAYS_INLINE
   bool isRope() const { return StringFlags::isRope(flags()); }
-  MOZ_ALWAYS_INLINE
-  bool isRopeAtomic() const { return StringFlags::isRope(getFlagsAtomic()); }
 
   MOZ_ALWAYS_INLINE
   JSRope& asRope() const {
@@ -790,6 +787,26 @@ class JSString : public js::gc::CellWithLengthAndFlags {
 
  protected:
   JSString() = default;
+
+  // These methods are used to ensure atomic access to fields when concurrent
+  // marking is in use. JSString doesn't use standard GC barrier wrappers for
+  // its fields which would otherwise do this.
+  template <typename T>
+  static T getFieldForTracing(T* ptr) {
+#ifdef JS_GC_CONCURRENT_MARKING
+    return __atomic_load_n(ptr, __ATOMIC_RELAXED);
+#else
+    return *ptr;
+#endif
+  }
+  template <typename T>
+  static void setField(T* ptr, T value) {
+#ifdef JS_GC_CONCURRENT_MARKING
+    __atomic_store_n(ptr, value, __ATOMIC_RELAXED);
+#else
+    *ptr = value;
+#endif
+  }
 };
 
 namespace js {
@@ -866,13 +883,6 @@ class JSRope : public JSString {
   js::UniquePtr<CharT[], JS::FreePolicy> copyChars(
       JSContext* maybecx, arena_id_t destArenaId) const;
 
-  // Hash function specific for ropes that avoids allocating a temporary
-  // string. There are still allocations internally so it's technically
-  // fallible.
-  //
-  // Returns the same value as if this were a linear string being hashed.
-  [[nodiscard]] bool hash(uint32_t* outhHash) const;
-
   // Like hash(), but hashes only the first |budget| characters. Cheaper for
   // long ropes when an approximate hash is acceptable (caller must verify
   // equality with match()).
@@ -893,6 +903,16 @@ class JSRope : public JSString {
   JSString* rightChild() const {
     MOZ_ASSERT(isRope());
     return d.s.u3.right;
+  }
+
+  JSString* getLeftChildForTracing() const {
+    // The flags are checked by MarkingTracerT::eagerlyMarkChildren.
+    return getFieldForTracing(&d.s.u2.left);
+  }
+
+  JSString* getRightChildForTracing() const {
+    // The flags are checked by MarkingTracerT::eagerlyMarkChildren.
+    return getFieldForTracing(&d.s.u3.right);
   }
 
   void traceChildren(JSTracer* trc);
@@ -972,6 +992,8 @@ class JSLinearString : public JSString {
   // caller must ensure that it is a plain or extensible string already, and
   // that `capacity` is adequate.
   JSExtensibleString& makeExtensible(size_t capacity);
+
+  JSLinearString* getBaseForTracing() const;
 
   template <typename CharT>
   MOZ_ALWAYS_INLINE const CharT* nonInlineChars(
@@ -1228,7 +1250,7 @@ class JSAtomRefString : public JSDependentString {
 
  public:
   inline static size_t offsetOfAtom() {
-    return offsetof(JSAtomRefString, d.s.u3.atom);
+    return offsetof(JSAtomRefString, d.s.u3.base);
   }
 };
 
@@ -2023,8 +2045,11 @@ JSString* SubstringKernel(JSContext* cx, HandleString str, int32_t beginInt,
 inline js::HashNumber HashStringChars(const JSLinearString* str) {
   JS::AutoCheckCannotGC nogc;
   size_t len = str->length();
+  // NOTE: This uses HashLatin1AsUTF16 so that the hash is independent of
+  // the internal latin1 or not representation, but using HashString would be
+  // faster if we didn't care about that distinction.
   return str->hasLatin1Chars()
-             ? mozilla::HashString(str->latin1Chars(nogc), len)
+             ? mozilla::HashLatin1AsUTF16(str->latin1Chars(nogc), len)
              : mozilla::HashString(str->twoByteChars(nogc), len);
 }
 
@@ -2286,17 +2311,20 @@ MOZ_ALWAYS_INLINE JSLinearString* JSString::ensureLinear(JSContext* cx) {
 
 inline JSLinearString* JSString::base() const {
   MOZ_ASSERT(hasBase());
-  MOZ_ASSERT_IF(!isAtomRef(), !d.s.u3.base->isInline());
   MOZ_ASSERT(d.s.u3.base->assertIsValidBase());
-  if (isAtomRef()) {
-    return static_cast<JSLinearString*>(d.s.u3.atom);
-  }
+  MOZ_ASSERT_IF(!isAtomRef(), !d.s.u3.base->isInline());
+  MOZ_ASSERT_IF(isAtomRef(), d.s.u3.base->isAtom());
   return d.s.u3.base;
+}
+
+inline JSLinearString* JSLinearString::getBaseForTracing() const {
+  MOZ_ASSERT(hasBase());
+  return getFieldForTracing(&d.s.u3.base);
 }
 
 inline JSAtom* JSString::atom() const {
   MOZ_ASSERT(isAtomRef());
-  return d.s.u3.atom;
+  return &d.s.u3.base->asAtom();
 }
 
 inline JSLinearString* JSString::nurseryBaseOrRelocOverlay() const {
@@ -2447,7 +2475,7 @@ MOZ_ALWAYS_INLINE void JSString::setNonInlineChars(const char16_t* chars,
   if (!(isAtomRef() && atom()->isInline())) {
     checkStringCharsArena(chars, usesStringBuffer);
   }
-  d.s.u2.nonInlineCharsTwoByte = chars;
+  setField(&d.s.u2.nonInlineCharsTwoByte, chars);
 }
 
 template <>
@@ -2457,7 +2485,7 @@ MOZ_ALWAYS_INLINE void JSString::setNonInlineChars(const JS::Latin1Char* chars,
   if (!(isAtomRef() && atom()->isInline())) {
     checkStringCharsArena(chars, usesStringBuffer);
   }
-  d.s.u2.nonInlineCharsLatin1 = chars;
+  setField(&d.s.u2.nonInlineCharsLatin1, chars);
 }
 
 MOZ_ALWAYS_INLINE const JS::Latin1Char* JSLinearString::rawLatin1Chars() const {

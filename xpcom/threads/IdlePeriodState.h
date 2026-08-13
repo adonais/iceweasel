@@ -12,13 +12,13 @@
  * cross-pprocess idle detection.
  */
 
+#include <stdint.h>
+
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
 #include "nsCOMPtr.h"
-
-#include <stdint.h>
 
 class nsIIdlePeriod;
 

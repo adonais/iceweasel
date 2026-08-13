@@ -7,12 +7,29 @@ ChromeUtils.defineESModuleGetters(this, {
 const PREF_SYSTEM_SHORTCUTS_PERSONALIZATION =
   "discoverystream.shortcuts.personalization.enabled";
 
+function attachLocalWorker(provider, WorkerMod) {
+  provider._rankShortcutsWorker = {
+    async post(name, args) {
+      const fn = WorkerMod[name];
+      if (typeof fn === "function") {
+        return Array.isArray(args) ? fn(...args) : fn(args);
+      }
+      throw new Error(`No worker function for ${name}`);
+    },
+  };
+}
+
 add_task(async function test_weightedSampleTopSites_no_guid_last() {
   // Ranker are utilities we are testing
   const Ranker = ChromeUtils.importESModule(
     "resource://newtab/lib/SmartShortcutsRanker/RankShortcuts.mjs"
   );
+  const Worker = ChromeUtils.importESModule(
+    "resource://newtab/lib/SmartShortcutsRanker/RankShortcutsWorkerClass.mjs"
+  );
   const provider = new Ranker.RankShortcutsProvider();
+
+  attachLocalWorker(provider, Worker);
   // We are going to stub a database call
   const { NewTabUtils } = ChromeUtils.importESModule(
     "resource://gre/modules/NewTabUtils.sys.mjs"
@@ -29,24 +46,26 @@ add_task(async function test_weightedSampleTopSites_no_guid_last() {
       ["a", 5, 10],
       ["b", 2, 10],
     ]);
+  sandbox.stub(provider.sc_obj, "get").resolves({});
+  sandbox.stub(provider.sc_obj, "set").resolves();
 
   // First item here intentially has no guid
   const input = [
     { url: "no-guid.com" },
-    { guid: "a", url: "a.com" },
-    { guid: "b", url: "b.com" },
+    { guid: "a", url: "a.com", frecency: 10 },
+    { guid: "b", url: "b.com", frecency: 5 },
   ];
 
   const prefValues = {
     trainhopConfig: {
       smartShortcuts: {
-        // fset: "custom", // uncomment iff your build defines a "custom" fset you want to use
         enabled: true,
+        features: ["frec"],
+        frec_weight: 100,
         eta: 0,
         click_bonus: 10,
         positive_prior: 1,
         negative_prior: 1,
-        fset: 1,
       },
     },
   };
@@ -62,6 +81,7 @@ add_task(async function test_weightedSampleTopSites_no_guid_last() {
     "top-site without GUID is last"
   );
 
+  provider._rankShortcutsWorker?.terminate?.();
   sandbox.restore();
 });
 
@@ -129,22 +149,28 @@ add_task(
 
     Assert.deepEqual(
       weightedInput.features,
-      ["frec", "rece"],
+      ["thom", "rece", "freq", "ctr"],
       "built-in feature defaults are used without trainhop config"
     );
     Assert.equal(
-      weightedInput.weights.frec,
-      0.7,
-      "frec uses the built-in default"
+      weightedInput.weights.thom,
+      0,
+      "thom is gated without enough engagement"
     );
     Assert.equal(
       weightedInput.weights.rece,
-      0.3,
+      4.66,
       "rece uses the built-in default"
     );
-    Assert.ok(
-      !Object.hasOwn(weightedInput.weights, "bias"),
-      "bias weight is omitted when bias is not in the default feature set"
+    Assert.equal(
+      weightedInput.weights.freq,
+      2,
+      "freq uses the built-in default"
+    );
+    Assert.equal(
+      weightedInput.weights.ctr,
+      9.54,
+      "ctr uses the built-in default"
     );
     Assert.equal(
       out[0].guid,
@@ -1052,6 +1078,9 @@ add_task(async function test_rankTopSites_sql_pipeline_happy_path() {
   const Ranker = ChromeUtils.importESModule(
     "resource://newtab/lib/SmartShortcutsRanker/RankShortcuts.mjs"
   );
+  const Worker = ChromeUtils.importESModule(
+    "resource://newtab/lib/SmartShortcutsRanker/RankShortcutsWorkerClass.mjs"
+  );
   const { NewTabUtils } = ChromeUtils.importESModule(
     "resource://gre/modules/NewTabUtils.sys.mjs"
   );
@@ -1072,6 +1101,7 @@ add_task(async function test_rankTopSites_sql_pipeline_happy_path() {
 
   // provider under test
   const provider = new Ranker.RankShortcutsProvider();
+  attachLocalWorker(provider, Worker);
 
   // keep cache interactions in-memory + observable
   const initialWeights = {
@@ -1190,19 +1220,24 @@ add_task(async function test_rankTopSites_sql_pipeline_happy_path() {
     });
 
   // prefs: set eta=0 so updateWeights is a no-op (deterministic)
-  // NOTE: Feature set comes from the module's SHORTCUT_FSETS.
-  // If your build's default fset already includes ["bmark","rece","freq","refre","hour","daily","bias","frec"],
-  // this test will exercise all the SQL above. If not, it still passes the core assertions.
   const prefValues = {
     trainhopConfig: {
       smartShortcuts: {
-        // fset: "custom", // uncomment iff your build defines a "custom" fset you want to use
         enabled: true,
+        features: [
+          "bmark",
+          "rece",
+          "freq",
+          "refre",
+          "hour",
+          "daily",
+          "bias",
+          "frec",
+        ],
         eta: 0,
         click_bonus: 10,
         positive_prior: 1,
         negative_prior: 1,
-        fset: 8,
         telem: true,
       },
     },
@@ -1249,6 +1284,7 @@ add_task(async function test_rankTopSites_sql_pipeline_happy_path() {
   Assert.greater(execStub.callCount, 0, "executePlacesQuery was called");
 
   // cleanup
+  provider._rankShortcutsWorker?.terminate?.();
   clock.restore();
   sandbox.restore();
 });
@@ -1558,251 +1594,6 @@ add_task(async function test_weightedSampleTopSites_ctr_with_prior_norm() {
   Assert.greater(x, y, "higher ctr ranks higher under prior normalization");
 });
 
-// sticky clicks testing
-
-add_task(async function test_fetchShortcutLastClickPositions_empty() {
-  const Ranker = ChromeUtils.importESModule(
-    "resource://newtab/lib/SmartShortcutsRanker/RankShortcuts.mjs"
-  );
-  const out = await Ranker.fetchShortcutLastClickPositions(
-    [],
-    "smart_shortcuts",
-    "moz_places"
-  );
-  Assert.deepEqual(out, [], "empty guid list → empty result");
-});
-
-add_task(
-  async function test_fetchShortcutLastClickPositions_happy_path_and_numImps() {
-    const Ranker = ChromeUtils.importESModule(
-      "resource://newtab/lib/SmartShortcutsRanker/RankShortcuts.mjs"
-    );
-    const { NewTabUtils } = ChromeUtils.importESModule(
-      "resource://gre/modules/NewTabUtils.sys.mjs"
-    );
-    await NewTabUtils.init();
-
-    const sandbox = sinon.createSandbox();
-    const guids = ["g1", "g2", "g3"];
-    const numImps = 7;
-
-    // Stub DB: we just need to return rows in the final SELECT shape:
-    // [guid, position|null]
-    const execStub = sandbox
-      .stub(NewTabUtils.activityStreamProvider, "executePlacesQuery")
-      .callsFake(async _sql => {
-        // Return positions for two guids; one missing (null)
-        return [
-          ["g1", 3],
-          ["g2", null],
-          // g3 absent → should default to null in the aligned output
-        ];
-      });
-
-    const out = await Ranker.fetchShortcutLastClickPositions(
-      guids,
-      "smart_shortcuts",
-      "moz_places",
-      numImps
-    );
-
-    Assert.deepEqual(
-      out,
-      [3, null, null],
-      "aligned array: g1=3, g2=null, g3=null (missing → null)"
-    );
-    Assert.greater(execStub.callCount, 0, "DB was queried");
-    sandbox.restore();
-  }
-);
-
-add_task(async function test_placeGuidsByPositions_basic_and_collisions() {
-  const Ranker = ChromeUtils.importESModule(
-    "resource://newtab/lib/SmartShortcutsRanker/RankShortcutsWorkerClass.mjs"
-  );
-
-  const guids = ["a", "b", "c", "d"];
-  // a→1, b→1 (collision), c→3, d→null
-  const pos = new Map(Object.entries({ a: 1, b: 1, c: 3, d: null }));
-
-  const out = Ranker.placeGuidsByPositions(guids, pos);
-  // Pass #1 (hard place): out[1] = "a", out[3] = "c"
-  // Pass #2 (fill holes left→right) with [b, d] in original order:
-  // holes are idx 0 then 2 → place "b" at 0, "d" at 2
-  Assert.deepEqual(
-    out,
-    ["b", "a", "d", "c"],
-    "collision resolved by first-come; others fill holes stably"
-  );
-});
-
-add_task(async function test_placeGuidsByPositions_inferred_size() {
-  const Ranker = ChromeUtils.importESModule(
-    "resource://newtab/lib/SmartShortcutsRanker/RankShortcutsWorkerClass.mjs"
-  );
-
-  const guids = ["p", "q"];
-  const pos = new Map(Object.entries({ p: 0, q: null }));
-  const out = Ranker.placeGuidsByPositions(guids, pos);
-  Assert.equal(
-    out.length,
-    guids.length,
-    "default size inferred to guids.length"
-  );
-  Assert.deepEqual(out, ["p", "q"]);
-});
-
-add_task(async function test_fetchShortcutLastClickPositions_empty() {
-  const Ranker = ChromeUtils.importESModule(
-    "resource://newtab/lib/SmartShortcutsRanker/RankShortcuts.mjs"
-  );
-  // Empty GUID list → empty aligned output; should not query DB.
-  const { NewTabUtils } = ChromeUtils.importESModule(
-    "resource://gre/modules/NewTabUtils.sys.mjs"
-  );
-  await NewTabUtils.init();
-
-  const sandbox = sinon.createSandbox();
-  const stub = sandbox
-    .stub(NewTabUtils.activityStreamProvider, "executePlacesQuery")
-    .resolves([]);
-
-  const out = await Ranker.fetchShortcutLastClickPositions(
-    [],
-    "smart_shortcuts",
-    "moz_places",
-    10
-  );
-  Assert.deepEqual(out, [], "empty guid list → empty result");
-  Assert.equal(stub.callCount, 0, "no DB query for empty input");
-  sandbox.restore();
-});
-
-add_task(async function test_placeGuidsByPositions_empty_inputs() {
-  const Ranker = ChromeUtils.importESModule(
-    "resource://newtab/lib/SmartShortcutsRanker/RankShortcutsWorkerClass.mjs"
-  );
-
-  // Empty guids, empty positions
-  {
-    const out = Ranker.placeGuidsByPositions([], new Map());
-    Assert.deepEqual(out, [], "empty → empty");
-  }
-
-  // Empty guids, non-empty positions map (should still produce empty)
-  {
-    const pos = new Map(Object.entries({ x: 5, y: 0 }));
-    const out = Ranker.placeGuidsByPositions([], pos);
-    Assert.deepEqual(out, [], "no guids to place → empty result");
-  }
-});
-
-add_task(async function test_placeGuidsByPositions_all_null_positions() {
-  const Ranker = ChromeUtils.importESModule(
-    "resource://newtab/lib/SmartShortcutsRanker/RankShortcutsWorkerClass.mjs"
-  );
-
-  const guids = ["a", "b", "c"];
-  const pos = new Map(Object.entries({ a: null, b: null, c: null }));
-  const out = Ranker.placeGuidsByPositions(guids, pos);
-  Assert.deepEqual(out, guids, "all null → stable original order");
-});
-
-add_task(async function test_placeGuidsByPositions_plain_object_positions() {
-  const Ranker = ChromeUtils.importESModule(
-    "resource://newtab/lib/SmartShortcutsRanker/RankShortcutsWorkerClass.mjs"
-  );
-
-  const guids = ["a", "b", "c"];
-  // Use a plain object (exercises normalization)
-  const pos = new Map(Object.entries({ a: 2, b: 0, c: 1 }));
-  const out = Ranker.placeGuidsByPositions(guids, pos);
-  Assert.deepEqual(out, ["b", "c", "a"], "plain object map works");
-});
-
-add_task(async function test_placeGuidsByPositions_negative_and_noninteger() {
-  const Ranker = ChromeUtils.importESModule(
-    "resource://newtab/lib/SmartShortcutsRanker/RankShortcutsWorkerClass.mjs"
-  );
-
-  const guids = ["a", "b", "c", "d"];
-  // a→-1 (ignored), b→1.7 (non-integer → ignored), c→0 (valid), d→null
-  const pos = new Map(Object.entries({ a: -1, b: 1.7, c: 0, d: null }));
-  const out = Ranker.placeGuidsByPositions(guids, pos);
-  // Pass #1 puts c at 0. Others (a,b,d) fill holes in order → [c, a, b, d]
-  Assert.deepEqual(
-    out,
-    ["c", "a", "b", "d"],
-    "negative & non-integer treated as unpositioned"
-  );
-});
-
-add_task(
-  async function test_placeGuidsByPositions_large_position_goes_lastish() {
-    const Ranker = ChromeUtils.importESModule(
-      "resource://newtab/lib/SmartShortcutsRanker/RankShortcutsWorkerClass.mjs"
-    );
-
-    const guids = ["a", "b", "c"];
-    // If your implementation infers size as max(guids.length, maxPos+1),
-    // this will create a 6-slot array. The fill pass will leave trailing nulls.
-    // We at least assert that ordering of real items is stable and includes "a" at its slot.
-    const pos = new Map(Object.entries({ a: 5, b: null, c: null }));
-    const out = Ranker.placeGuidsByPositions(guids, pos);
-
-    // out length may be > guids.length depending on your impl; assert item order:
-    const nonNull = out.filter(x => x !== null);
-    // "a" should still appear once, and b/c follow in original order somewhere after
-    Assert.ok(nonNull.includes("a"), "contains 'a'");
-    // The fill order is stable for the unpositioned ones
-    const idxB = nonNull.indexOf("b");
-    const idxC = nonNull.indexOf("c");
-    Assert.greater(
-      idxC,
-      idxB,
-      "unpositioned items stay in input order (b before c)"
-    );
-  }
-);
-
-add_task(
-  async function test_applyStickyClicks_preserves_null_and_clamps_negative() {
-    const Worker = ChromeUtils.importESModule(
-      "resource://newtab/lib/SmartShortcutsRanker/RankShortcutsWorkerClass.mjs"
-    );
-
-    // positions aligned with guids; pos[1] is null; pos[2] becomes negative after shift
-    const guids = ["g1", "g2", "g3"];
-    const positions = [3, null, 1]; // absolute
-    const numSponsored = 2; // shift by 2 → [1, null, -1] → clamp -1 → 0
-
-    const out = Worker.applyStickyClicks(positions, guids, numSponsored);
-    // After building guid→pos: g1→1, g2→null, g3→0
-    // Hard place: out[1]=g1, out[0]=g3; fill hole(s) with g2 → [g3, g1, g2]
-    Assert.deepEqual(
-      out,
-      ["g3", "g1", "g2"],
-      "null preserved, negatives clamped to 0"
-    );
-  }
-);
-
-add_task(
-  async function test_applyStickyClicks_undefined_numSponsored_defaults_zero() {
-    const Worker = ChromeUtils.importESModule(
-      "resource://newtab/lib/SmartShortcutsRanker/RankShortcutsWorkerClass.mjs"
-    );
-
-    const guids = ["g1", "g2"];
-    const positions = [4, null]; // shift by undefined → treated as 0 in robust version
-
-    const out = Worker.applyStickyClicks(positions, guids, undefined);
-    // guid→pos: g1→4, g2→null → places g1 at 4 (if your placer grows size) or ignores (if not)
-    // We assert at least the unpositioned stays in order and g1 appears once.
-    Assert.ok(out.includes("g1") && out.includes("g2"), "both guids present");
-  }
-);
-
 function prefsFor(features, extra = {}) {
   // Map every feature in FEATURE_META to a weight; default 0, chosen ones 100.
   const baseWeights = {
@@ -1849,26 +1640,9 @@ function prefsFor(features, extra = {}) {
         click_bonus: 10,
         positive_prior: 1,
         negative_prior: 1,
-        sticky_numimps: 0, // off for matrix tests
         ...baseWeights,
         ...extra,
       },
-    },
-  };
-}
-
-function attachLocalWorker(provider, WorkerMod) {
-  provider._rankShortcutsWorker = {
-    async post(name, args) {
-      // name is a string like "weightedSampleTopSites"
-      // Worker functions are exported with same names.
-      // Some are standalone, some are exported in the class wrapper too.
-      const fn = WorkerMod[name] || new WorkerMod.RankShortcutsWorker()[name];
-      if (typeof fn === "function") {
-        // if it's a plain function, spread args; if method, pass as method
-        return Array.isArray(args) ? fn(...args) : fn(args);
-      }
-      throw new Error(`No worker function for ${name}`);
     },
   };
 }
@@ -2052,13 +1826,10 @@ add_task(async function test_rankTopSites_feature_matrix() {
   const cases = [...singles, ...pairs, ...triples];
 
   for (const features of cases) {
-    const prefs = prefsFor(features, { sticky_numimps: 0 });
-    const out = await provider.rankTopSites(
-      topsites,
-      prefs,
-      { isStartup: true },
-      /*numSponsored*/ 0
-    );
+    const prefs = prefsFor(features);
+    const out = await provider.rankTopSites(topsites, prefs, {
+      isStartup: true,
+    });
 
     // basic shape assertions
     Assert.ok(Array.isArray(out), `(${features}) returns array`);

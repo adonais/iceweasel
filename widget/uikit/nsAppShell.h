@@ -13,8 +13,8 @@
 #include "nsBaseAppShell.h"
 #include "nsTArray.h"
 
-#include <Foundation/NSAutoreleasePool.h>
 #include <CoreFoundation/CFRunLoop.h>
+#include <Foundation/NSAutoreleasePool.h>
 #include <UIKit/UIWindow.h>
 
 @class AppShellDelegate;
